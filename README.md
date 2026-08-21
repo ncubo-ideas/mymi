@@ -1,0 +1,3 @@
+# Gnothi
+
+Repositorio inicial.
