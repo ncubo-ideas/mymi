@@ -1,0 +1,18 @@
+# Build
+bin/
+obj/
+[Dd]ebug/
+[Rr]elease/
+*.user
+.vs/
+
+# El publish de la caratula que sirve URL1: se genera, no se versiona (~85 MB)
+Facturas/PaginaDeDescarga/publicado/
+
+# Certificados self-signed del listener https: los genera cada persona
+Facturas/PaginaDeDescarga/certs/
+
+# JOURNALS. Son datos de una persona, no codigo. Si el picker apunto al arbol de
+# fuentes por error, esto evita que se commiteen sin que nadie lo note.
+**/facturas/journal/
+**/facturas/meta.bin

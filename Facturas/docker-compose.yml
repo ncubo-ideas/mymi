@@ -1,0 +1,33 @@
+# Los dos servers del diagrama, simulados. Mocks de happy path, nada mas.
+#
+#   URL1  wasm-host    la pagina donde esta el binario .wasm  (8080 http / 8443 https)
+#   URL2  eventos-api  el endpoint que provee la narrativa    (8081)
+#
+# wasm-host sirve el publish de la caratula, asi que ANTES de levantarlo hay que
+# generarlo:
+#   dotnet publish ./App/Facturas.Wasm -c Release -o ./PaginaDeDescarga/publicado
+# y los certificados del listener https:
+#   ./PaginaDeDescarga/generar-certificado.sh
+
+services:
+  eventos-api:
+    build:
+      context: ./EndPointDeEventos
+    container_name: app1-eventos-api
+    ports:
+      - "8081:8081"
+    restart: unless-stopped
+
+  wasm-host:
+    image: nginx:1.27-alpine
+    container_name: app1-wasm-host
+    ports:
+      - "8080:8080"
+      - "8443:8443"
+    volumes:
+      - ./PaginaDeDescarga/nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./PaginaDeDescarga/publicado/wwwroot:/usr/share/nginx/html:ro
+      - ./PaginaDeDescarga/certs:/etc/nginx/certs:ro
+    depends_on:
+      - eventos-api
+    restart: unless-stopped

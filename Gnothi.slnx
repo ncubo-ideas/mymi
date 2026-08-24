@@ -1,0 +1,9 @@
+<Solution>
+  <Project Path="Facturas/App/Facturas.App/Facturas.App.csproj" />
+  <Project Path="Facturas/App/Facturas.Mcp/Facturas.Mcp.csproj" />
+  <Project Path="Facturas/App/Facturas.Wasm/Facturas.Wasm.csproj" />
+  <Project Path="Facturas/Dominio/Facturas.Dominio.csproj" />
+  <Project Path="Facturas/EndPointDeEventos/Facturas.EventosMock.csproj" />
+  <Project Path="Facturas/InyectorDeEventosDemo/Facturas.InyectorDeEventosDemo.csproj" />
+  <Project Path="Mecanismo/Puppets.Portador/Puppets.Portador.csproj" />
+</Solution>

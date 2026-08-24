@@ -1,0 +1,274 @@
+@page "/"
+@using System.Globalization
+@using Facturas.App.Vistas
+@using Puppets.Portador
+@inject EstadoDeLaApp estado
+@inject NavigationManager navegacion
+
+<PageTitle>Mis facturas</PageTitle>
+
+<h1>Mis facturas</h1>
+
+@* UN solo lugar para los errores, y arriba. Antes habia dos bloques -uno adentro del
+   arranque y otro al final de la pagina- asi que un mismo fallo se veia dos veces, y
+   estando abajo quedaba fuera de pantalla: la app parecia no reaccionar al click. *@
+@if (error.Length > 0)
+{
+    <div class="alert alert-danger">
+        <strong>@(estado.EstaArriba ? "No se pudo completar la operación." : "No se pudo abrir la app.")</strong>
+        <pre class="mb-0 mt-2 small" style="white-space:pre-wrap">@error</pre>
+    </div>
+}
+
+@if (!estado.EstaArriba)
+{
+    <div class="alert alert-secondary">
+        @* Cuando el handle volvio de IndexedDB pero el permiso caduco, la accion correcta
+           es RE-OTORGAR, no volver a elegir la carpeta. Ofrecer "Elegir carpeta" como
+           primaria hacia que la persona reabriera el picker y volviera a navegar hasta la
+           misma carpeta cada vez. *@
+        @if (estado.FaltaReotorgarPermiso)
+        {
+            <p class="mb-2">
+                Tu carpeta es <strong>&laquo;@estado.NombreDeLaCarpeta&raquo;</strong>. El browser pide
+                confirmar el permiso de escritura cada vez que volvés a abrir la app.
+            </p>
+            <div class="d-flex flex-wrap gap-2">
+                <button class="btn btn-warning" @onclick="PedirPermiso">
+                    Dar permiso a &laquo;@estado.NombreDeLaCarpeta&raquo;
+                </button>
+                @* Elegir carpeta es una accion de primera clase, siempre. Estaba como
+                   outline-secondary y se leia deshabilitada, asi que la opcion de elegir
+                   OTRA carpeta parecia no estar disponible. *@
+                <button class="btn btn-primary" @onclick="ConectarCarpeta"
+                        disabled="@(soportado == false)">
+                    Elegir carpeta
+                </button>
+            </div>
+        }
+        else
+        {
+            <p class="mb-2">
+                Esta app guarda <strong>tus</strong> facturas en una carpeta <strong>tuya</strong>.
+                Elegí la carpeta y la app escribe su registro ahí; nadie más la lee.
+            </p>
+
+            @if (soportado == false)
+            {
+                <p class="text-danger mb-2">
+                    Este browser no tiene <code>showDirectoryPicker</code>, así que no puede escribir en
+                    una carpeta tuya. La app funciona igual, pero el registro vive solo en memoria y se
+                    pierde al cerrar.
+                </p>
+            }
+
+            <button class="btn btn-primary" @onclick="ConectarCarpeta" disabled="@(soportado == false)">
+                Elegir carpeta
+            </button>
+        }
+
+        @* Abrir sin guardar es la salida de emergencia, no una alternativa pareja: la app
+           anda pero no deja registro tuyo. Va aparte y como enlace, para que se note que
+           es otra cosa. *@
+        <div class="mt-3">
+            <button class="btn btn-link p-0" @onclick="Arrancar">Abrir sin guardar nada</button>
+        </div>
+    </div>
+}
+else
+{
+    <div class="d-flex align-items-center flex-wrap gap-2 mb-3">
+        <button class="btn btn-primary" @onclick="Refrescar" disabled="@refrescando">
+            @(refrescando ? "Refrescando…" : "Refresh")
+        </button>
+        <span class="text-muted">
+            @cantidad @(cantidad == 1 ? "factura" : "facturas") &middot;
+            total <strong>@Plata(total)</strong> &middot;
+            leído hasta el evento @ultimoEvento
+        </span>
+    </div>
+
+    @* Si la app no esta guardando, eso es lo MAS importante de la pantalla y va arriba,
+       no en una nota al pie debajo de la tabla. Sin carpeta la app sigue funcionando
+       -se pone al dia contra el proveedor en cada apertura- asi que se ve completa y
+       correcta, y no hay forma de notar que no persiste salvo que se diga. Es la
+       degradacion silenciosa que hizo que el servidor MCP leyera un estado viejo. *@
+    @if (!estado.HayCarpeta)
+    {
+        <div class="alert alert-warning d-flex align-items-center flex-wrap gap-2">
+            <div class="flex-grow-1">
+                <strong>No se está guardando nada.</strong>
+                Esta app está funcionando sin carpeta: lo que ves lo vuelve a pedir al proveedor
+                cada vez que abrís, y no queda registro tuyo en disco.
+            </div>
+            <button class="btn btn-warning" @onclick="ConectarCarpeta">Elegir carpeta</button>
+        </div>
+    }
+    else if (estado.GuardadoFallando.Length > 0)
+    {
+        <div class="alert alert-danger d-flex align-items-center flex-wrap gap-2">
+            <div class="flex-grow-1">
+                <strong>La carpeta rechazó la escritura.</strong>
+                Lo que ves en pantalla no está guardado en &laquo;@estado.NombreDeLaCarpeta&raquo;.
+                Suele ser el permiso, que caduca al reabrir.
+                <div class="small mt-1">@estado.GuardadoFallando</div>
+            </div>
+            <button class="btn btn-danger" @onclick="PedirPermiso">Volver a dar permiso</button>
+        </div>
+    }
+    else
+    {
+        <p class="small text-muted">
+            Se guarda en &laquo;@estado.NombreDeLaCarpeta&raquo; después de cada cambio.
+        </p>
+    }
+
+    @* El web token ya no se pega: la app se lo pide al proveedor contra el device key de
+       esta instalacion, y las tres piezas de la credencial viven en el journal. Por eso
+       esta pantalla tiene lo que tiene que tener y nada mas. *@
+    @if (facturas.Count == 0)
+    {
+        <p class="text-muted">Todavía no hay facturas. Apretá <em>Refresh</em>.</p>
+    }
+    else
+    {
+        <table class="table table-hover align-middle">
+            <thead>
+                <tr><th>Número</th><th>Fecha</th><th class="text-end">Líneas</th><th class="text-end">Total</th></tr>
+            </thead>
+            <tbody>
+                @foreach (FacturaEnLista factura in facturas)
+                {
+                    <tr style="cursor:pointer" @onclick="() => VerDetalle(factura.Numero)">
+                        <td>@factura.Numero</td>
+                        <td>@factura.Fecha.ToString("dd/MM/yyyy HH:mm", CultureInfo.InvariantCulture)</td>
+                        <td class="text-end">@factura.Lineas</td>
+                        <td class="text-end">@Plata(factura.Total)</td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    }
+
+    @* La ventana de perdida se dice, porque esconderla seria vender durabilidad que no hay.
+       El conteo de archivos y bytes de MEMFS era diagnostico mio, no informacion para el
+       usuario, y se fue. *@
+    @if (!estado.HayCarpeta)
+    {
+        <p class="small text-muted mt-4">
+            <strong>Sin carpeta:</strong> el registro vive solo en memoria y se pierde al cerrar.
+        </p>
+    }
+}
+
+@code {
+    private bool? soportado;
+    private bool refrescando;
+
+    private IReadOnlyList<FacturaEnLista> facturas = new List<FacturaEnLista>();
+    private decimal total;
+    private int cantidad;
+    private long ultimoEvento;
+    private string error = "";
+
+    protected override async Task OnInitializedAsync()
+    {
+        if (estado.EstaArriba) { Releer(); return; }
+
+        soportado = await estado.EstaSoportado();
+        if (soportado != true) return;
+
+        // Recuperar el handle NO necesita gesto; volver a otorgar el permiso SI. Por eso
+        // acá solo se consulta, y si quedó en 'prompt' la UI ofrece el botón.
+        ResultadoDeCarpeta recuperada = await estado.RecuperarCarpeta();
+        // el estado del permiso lo lleva el puente; la pantalla lo consulta
+
+        // Con permiso ya otorgado se abre solo: el usuario no tiene que apretar nada
+        // para ver sus propias facturas.
+        if (recuperada.Ok) await Arrancar();
+    }
+
+    private Task ConectarCarpeta() => Intentar("elegir carpeta", async () =>
+    {
+        if ((await estado.ConectarCarpeta()).Ok)
+        {
+            await estado.Arrancar();
+            Releer();
+        }
+    });
+
+    private Task PedirPermiso() => Intentar("dar permiso a la carpeta", async () =>
+    {
+        if ((await estado.PedirPermiso()).Ok)
+        {
+            await estado.Arrancar();
+            Releer();
+        }
+    });
+
+    private Task Arrancar() => Intentar("abrir la app", async () =>
+    {
+        await estado.Arrancar();
+        Releer();
+    });
+
+
+    private Task Refrescar() => Intentar("refrescar contra el proveedor", async () =>
+    {
+        refrescando = true;
+        try { await estado.Refrescar(); }
+        finally { refrescando = false; Releer(); }
+    });
+
+    // Una app que no puede abrir tiene que DECIR por que. Sin esto, un fallo en el
+    // arranque deja la pantalla igual que antes de apretar el boton y no hay forma de
+    // distinguirlo de un click perdido.
+    // El mensaje del error solo no alcanza: "no se encontró el archivo" puede venir de
+    // leer la carpeta, de escribirla o de la base de handles, y cada una se arregla
+    // distinto. Cada paso se nombra, así el próximo fallo dice DÓNDE ocurrió.
+    private async Task Intentar(string paso, Func<Task> accion)
+    {
+        error = "";
+        try
+        {
+            await accion();
+        }
+        catch (Exception ex)
+        {
+            var detalle = new System.Text.StringBuilder($"Paso: {paso}\n{ex.GetType().FullName}: {ex.Message}");
+            for (Exception? interna = ex.InnerException; interna is not null; interna = interna.InnerException)
+                detalle.Append($"\n  causa: {interna.GetType().FullName}: {interna.Message}");
+            error = detalle.ToString();
+        }
+        finally
+        {
+            // Repintar SIEMPRE, en cualquier salida.
+            //
+            // Casi todo lo que decide esta pantalla -si hay carpeta, si falta re-otorgar
+            // el permiso, si la app ya arranco- vive en EstadoDeLaApp, que es un servicio
+            // inyectado. Blazor no observa objetos ajenos al componente: solo repinta por
+            // sus propios campos y por el ciclo del evento. Al elegir carpeta el estado
+            // cambiaba de verdad, pero la pantalla seguia mostrando el boton, y recien el
+            // click siguiente -aunque se cancelara el dialogo sin elegir nada- disparaba
+            // el render que mostraba lo correcto. Se veia como "hay que apretar dos veces".
+            StateHasChanged();
+        }
+    }
+
+    // TODO lo que se ve sale de consultar al actor. El payload del proveedor nunca llega
+    // hasta acá: solo entra como argumento de un comando, dentro del bucle de refresh.
+    private void Releer()
+    {
+        facturas = estado.Facturas();
+        total = estado.Total();
+        cantidad = estado.Cantidad();
+        ultimoEvento = estado.UltimoEvento();
+    }
+
+    private void VerDetalle(string numero) => navegacion.NavigateTo($"factura/{Uri.EscapeDataString(numero)}");
+
+    // Formato explícito SIEMPRE. Medido: la escala del decimal no sobrevive el journal
+    // (5571.50 entra, 5571.5 sale del replay), así que un ToString() pelado mostraría
+    // montos distintos antes y después de reabrir la app.
+    private static string Plata(decimal monto) => monto.ToString("N2", CultureInfo.InvariantCulture);
+}

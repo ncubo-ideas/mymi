@@ -1,0 +1,18 @@
+{
+  "name": "Mis facturas",
+  "short_name": "Mis facturas",
+  "description": "Tus facturas de compra, guardadas en una carpeta tuya. Funciona sin conexion.",
+  "id": "./",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#03173d",
+  "lang": "es",
+  "prefer_related_applications": false,
+  "icons": [
+    { "src": "icon-192.png", "type": "image/png", "sizes": "192x192" },
+    { "src": "icon-512.png", "type": "image/png", "sizes": "512x512" },
+    { "src": "icon-512.png", "type": "image/png", "sizes": "512x512", "purpose": "maskable" }
+  ]
+}

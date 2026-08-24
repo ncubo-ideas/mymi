@@ -1,0 +1,21 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!-- Caratula de andamio para las fases 1 y 2. El MISMO actor y los MISMOS
+       performs que va a usar el browser; lo unico que cambia es como llegan las
+       entradas y donde va la salida. Sirve para medir el dominio y el bucle de
+       refresh en disco real, sin el sandbox del browser encima. -->
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net9.0</TargetFramework>
+    <Nullable>disable</Nullable>
+    <ImplicitUsings>disable</ImplicitUsings>
+    <RootNamespace>Facturas.Consola</RootNamespace>
+    <AssemblyName>Facturas.Consola</AssemblyName>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Facturas.App\Facturas.App.csproj" />
+  </ItemGroup>
+
+</Project>
