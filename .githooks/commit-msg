@@ -1,0 +1,73 @@
+#!/usr/bin/env bash
+# Conventional Commits, verificado antes de que el commit exista.
+#
+# El asunto tiene que ser:   tipo(alcance opcional)!: descripcion
+#
+# Va como hook y no como norma escrita en un README porque una norma que nadie
+# verifica se cumple las primeras dos semanas. Rechaza el commit y explica que
+# faltaba, asi no hay que ir a buscar el formato a ningun lado.
+#
+# Se activa una vez por clon:
+#     git config core.hooksPath .githooks
+#
+# Y se salta con --no-verify cuando de verdad haga falta.
+set -u
+
+MENSAJE=$(cat "$1")
+ASUNTO=$(printf '%s\n' "$MENSAJE" | head -n 1)
+
+# Los merges y los revert los genera git con su propio formato.
+case "$ASUNTO" in
+    Merge\ *|Revert\ *|fixup!\ *|squash!\ *) exit 0 ;;
+esac
+
+TIPOS='feat|fix|docs|style|refactor|perf|test|build|ci|chore|revert'
+PATRON="^(${TIPOS})(\([a-z0-9./-]+\))?!?: .+"
+
+if printf '%s' "$ASUNTO" | grep -Eq "$PATRON"; then
+    # 72 es lo que muestran sin cortar la mayoria de las interfaces de git.
+    if [ ${#ASUNTO} -gt 72 ]; then
+        echo "El asunto tiene ${#ASUNTO} caracteres; el maximo es 72." >&2
+        echo "Lo que sobra va en el cuerpo, despues de una linea en blanco." >&2
+        echo >&2
+        echo "  $ASUNTO" >&2
+        exit 1
+    fi
+    exit 0
+fi
+
+cat >&2 <<'AYUDA'
+El asunto del commit no sigue Conventional Commits.
+
+  tipo(alcance): descripcion en minuscula, sin punto final
+
+Tipos validos:
+
+  feat      una capacidad nueva del producto
+  fix       corrige un comportamiento que estaba mal
+  docs      solo documentacion
+  style     formato, sin cambio de comportamiento
+  refactor  reescribe sin cambiar lo que hace
+  perf      mejora de rendimiento
+  test      pruebas
+  build     build, dependencias, Dockerfile, publish
+  ci        automatizacion
+  chore     mantenimiento que no entra en las anteriores
+  revert    deshace un commit anterior
+
+El alcance es el negocio o el nodo que se toca:
+
+  feat(examenes): evalua la velocidad de cambio de un analito
+  fix(examenes/url1): el service worker ya no tapa la pagina de descarga
+  build(examenes): corrige el puerto del Dockerfile de URL2
+
+Un cambio que rompe compatibilidad lleva "!" antes de los dos puntos, y el cuerpo
+explica que se rompe:
+
+  feat(examenes)!: el evento de orina ahora exige nitritos
+
+AYUDA
+
+echo "Tu asunto fue:" >&2
+echo "  $ASUNTO" >&2
+exit 1
