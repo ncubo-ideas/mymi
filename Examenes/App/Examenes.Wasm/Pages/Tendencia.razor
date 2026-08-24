@@ -1,0 +1,123 @@
+@page "/analito/{Analito}"
+@using System.Globalization
+@using Examenes.App.Vistas
+@inject EstadoDeLaApp estado
+@inject NavigationManager navegacion
+
+@* La pantalla de detalle de este negocio NO es "el examen": es LA SERIE de un analito.
+   Un examen suelto ya se ve en la lista, y ademas el laboratorio ya se lo entrego en una
+   hoja. Lo que la app puede mostrar y la hoja no es la historia: de cuanto a cuanto, en
+   cuanto tiempo, y que significa ese ritmo.
+
+   Igual que en la lista, la frase la arma la PANTALLA con los hechos del dominio. El
+   dominio devuelve tendencia, extremos, unidad y dias; no devuelve prosa. Por eso aca no
+   hay -y no puede haber- un consejo de plantilla. *@
+
+<PageTitle>@Analito</PageTitle>
+
+<button class="btn btn-outline-secondary mb-3" @onclick="Volver">&larr; Volver a mis exámenes</button>
+
+@if (!estado.EstaArriba)
+{
+    <div class="alert alert-warning">
+        La app no está abierta. <a href="">Volvé a la lista</a> para abrirla.
+    </div>
+}
+else if (error.Length > 0)
+{
+    <div class="alert alert-danger">@error</div>
+}
+else
+{
+    <h1>@lectura.Analito</h1>
+
+    @if (!lectura.HaySerie)
+    {
+        <p class="text-muted">
+            @(lectura.Mediciones == 0
+                ? "No hay ninguna medición de este analito todavía."
+                : "Hay una sola medición. Con un solo punto no se puede decir para dónde viene: "
+                  + "hace falta al menos una segunda para que haya serie.")
+        </p>
+        @if (lectura.Mediciones == 1)
+        {
+            <p class="fs-4">@Valor(lectura.ValorFinal) <span class="small text-muted">@lectura.Unidad</span></p>
+        }
+    }
+    else
+    {
+        <p>
+            <span class="badge @Insignia() fs-6">@lectura.Tendencia</span>
+        </p>
+
+        <p class="fs-4 mb-1">
+            @Valor(lectura.ValorInicial) &rarr; @Valor(lectura.ValorFinal)
+            <span class="small text-muted">@lectura.Unidad</span>
+        </p>
+        <p class="text-muted">
+            en @lectura.Dias @(lectura.Dias == 1 ? "día" : "días"),
+            sobre @lectura.Mediciones mediciones
+            @(lectura.Cambio >= 0 ? "· subió " : "· bajó ")@Valor(Math.Abs(lectura.Cambio)) @lectura.Unidad
+        </p>
+
+        @if (lectura.SugiereRepetirElExamen)
+        {
+            <div class="alert alert-secondary">
+                <strong>Ese cambio no da para el tiempo que pasó.</strong>
+                Un salto así en tan pocos días no es biológicamente esperable, así que lo más
+                probable es un error de medición. Lo que corresponde es <strong>repetir el
+                examen</strong>, no sacar conclusiones.
+            </div>
+        }
+        else if (lectura.ExigeAtencion)
+        {
+            <div class="alert alert-warning">
+                <strong>Este valor viene moviéndose en la dirección que importa.</strong>
+                No es un diagnóstico: es la lectura de tu propia serie. Conviene que lo vea tu médico.
+            </div>
+        }
+        else
+        {
+            <div class="alert alert-success">
+                Se mantiene dentro de lo esperable para tu historia.
+            </div>
+        }
+    }
+
+    <p class="small text-muted mt-4">
+        Los rangos de referencia se evalúan para @estado.EdadDelPaciente() años.
+        Leído hasta el evento @estado.UltimoEvento().
+    </p>
+}
+
+@code {
+    [Parameter] public string Analito { get; set; } = "";
+
+    private TendenciaDeAnalito lectura = new();
+    private string error = "";
+
+    protected override void OnParametersSet()
+    {
+        error = "";
+        if (!estado.EstaArriba) return;
+
+        // TODO lo que se ve sale de consultar al actor. El payload del laboratorio nunca
+        // llega hasta acá: solo entra como argumento de un comando, dentro del refresh.
+        try { lectura = estado.Tendencia(Analito); }
+        catch (Exception ex) { error = $"No se pudo leer la serie de {Analito}: {ex.Message}"; }
+    }
+
+    private string Insignia()
+    {
+        if (lectura.SugiereRepetirElExamen) return "text-bg-secondary";
+        if (lectura.ExigeAtencion) return "text-bg-warning";
+        return "text-bg-success";
+    }
+
+    private void Volver() => navegacion.NavigateTo("");
+
+    // Formato explícito SIEMPRE. Medido en el negocio de facturas: la escala del decimal
+    // no sobrevive el journal (5571.50 entra, 5571.5 sale del replay), así que un
+    // ToString() pelado mostraría valores distintos antes y después de reabrir la app.
+    private static string Valor(decimal medido) => medido.ToString("0.##", CultureInfo.InvariantCulture);
+}

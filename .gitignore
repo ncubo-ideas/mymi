@@ -7,12 +7,28 @@ obj/
 .vs/
 
 # El publish de la caratula que sirve URL1: se genera, no se versiona (~85 MB)
-Facturas/PaginaDeDescarga/publicado/
+Examenes/PaginaDeDescarga/publicado/
+HolaMundo/Facturas/PaginaDeDescarga/publicado/
 
 # Certificados self-signed del listener https: los genera cada persona
-Facturas/PaginaDeDescarga/certs/
+Examenes/PaginaDeDescarga/certs/
+HolaMundo/Facturas/PaginaDeDescarga/certs/
 
 # JOURNALS. Son datos de una persona, no codigo. Si el picker apunto al arbol de
 # fuentes por error, esto evita que se commiteen sin que nadie lo note.
 **/facturas/journal/
 **/facturas/meta.bin
+**/examenes/journal/
+**/examenes/meta.bin
+
+# El paquete de entrega de Jonathan. Es material de referencia, no parte del build:
+# el negocio Facturas ya vive versionado en HolaMundo/Facturas/.
+Facturas-ejemplo-de-negocio/
+
+# Notas de trabajo que NO se versionan, por acuerdo de equipo. Siguen existiendo en
+# cada clon; simplemente no viajan en el repo.
+#
+# La norma de commits que describian igual se hace cumplir: vive en el propio
+# .githooks/commit-msg, que imprime el formato y los tipos cuando rechaza uno.
+CLAUDE.md
+CONTRIBUTING.md

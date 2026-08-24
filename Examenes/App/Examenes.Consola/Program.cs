@@ -1,0 +1,317 @@
+using System;
+using System.Globalization;
+using System.IO;
+using System.Net.Http;
+using System.Threading.Tasks;
+using Examenes.App;
+using Examenes.App.Eventos;
+using Examenes.App.Vistas;
+using Puppeteer;
+using Puppets.Portador;
+
+namespace Examenes.Consola
+{
+	internal static class Program
+	{
+		private const string NombreDelActor = "examenes";
+
+		private static async Task<int> Main(string[] args)
+		{
+			if (args.Length == 0) { Ayuda(); return 1; }
+
+			try
+			{
+				switch (args[0])
+				{
+					// Comprobaciones del dominio puro: sin actor, sin journal, sin disco.
+					case "comprobar": return Comprobaciones.Correr();
+					case "medir":     return Medir(Carpeta(args, 1));
+					case "estado":    return Estado(Carpeta(args, 1));
+					case "tendencia": return TendenciaDe(args);
+					case "velocidad": return VelocidadDe(args);
+					// El token ya no se pega a mano: la app lo pide sola contra su device key.
+					case "refrescar": return await Refrescar(args);
+					default:          Ayuda(); return 1;
+				}
+			}
+			catch (Exception ex)
+			{
+				Console.Error.WriteLine($"Error: {ex.GetType().Name}: {ex.Message}");
+				for (Exception interna = ex.InnerException; interna != null; interna = interna.InnerException)
+					Console.Error.WriteLine($"  causa: {interna.GetType().FullName}: {interna.Message}");
+				return 2;
+			}
+		}
+
+		// Abre el puppet sobre una carpeta real. Es el mismo par ConfigureStorage + Start
+		// que va a hacer la caratula del browser, solo que ahi el path apunta a MEMFS.
+		private static ExamenesApp Abrir(string carpeta)
+		{
+			Directory.CreateDirectory(carpeta);
+
+			var app = new ExamenesApp(NombreDelActor);
+			app.ConfigureStorage(DatabaseType.FileSystem, "path=" + carpeta);
+			app.Start();
+			return app;
+		}
+
+		// ---------------------------------------------------------------- fase 1
+		private static int Medir(string carpeta)
+		{
+			Console.WriteLine($"carpeta : {carpeta}");
+			ExamenesApp app = Abrir(carpeta);
+			var api = new ExamenesAPI(app);
+			IDiarioDeLaApp diario = api;
+
+			Console.WriteLine($"entrada inicial del journal : {app.Actor.CurrentEntryId}");
+			Console.WriteLine($"ultimo evento procesado     : {api.UltimoEventoProcesado()}");
+			Console.WriteLine($"edad del paciente           : {api.EdadDelPaciente()}");
+
+			int aplicados = 0, descartados = 0, rechazados = 0;
+			foreach (SenalDeEvento senal in Muestras.LaHistoria())
+			{
+				IMensajeDeEvento mensaje = RutaDeExamenes.Rutear(senal);
+				if (mensaje == null) { descartados++; continue; }
+
+				string rechazo = diario.Aplicar(mensaje);
+				if (rechazo.Length > 0)
+				{
+					rechazados++;
+					Console.WriteLine($"  rechazado {senal.Numero}: {rechazo}");
+					continue;
+				}
+				aplicados++;
+			}
+			Console.WriteLine($"aplicados={aplicados} descartados={descartados} rechazados={rechazados}");
+
+			// Dos formas distintas de descartar, y las dos tienen que devolver null.
+			bool descartaTipo = RutaDeExamenes.Rutear(Muestras.TipoDesconocido()) == null;
+			bool descartaExamen = RutaDeExamenes.Rutear(Muestras.ExamenNoModelado()) == null;
+			Console.WriteLine($"descarta tipo desconocido   : {descartaTipo}");
+			Console.WriteLine($"descarta examen no modelado : {descartaExamen}");
+
+			ImprimirEstado(app, api, conVeredicto: true);
+
+			// ---- criterio: un evento ya procesado se rechaza y NO deja entrada.
+			long antes = app.Actor.CurrentEntryId;
+			string mensajeDeRechazo = diario.Aplicar(RutaDeExamenes.Rutear(Muestras.LaHistoria()[0]));
+			long despues = app.Actor.CurrentEntryId;
+
+			Console.WriteLine();
+			Console.WriteLine("-- reintento de un evento ya procesado --");
+			Console.WriteLine($"mensaje del Check           : [{mensajeDeRechazo}]");
+			Console.WriteLine($"entrada antes / despues     : {antes} / {despues}");
+			Console.WriteLine($"NO dejo entrada             : {antes == despues}");
+			Console.WriteLine($"cantidad sin cambio         : {api.CantidadDeExamenes() == Muestras.ExamenesEsperados}");
+
+			// ---- criterio: el mismo salto, en un dia, se lee como error de medicion.
+			Console.WriteLine();
+			Console.WriteLine("-- el mismo salto en UN DIA es otra cosa --");
+			diario.Aplicar(RutaDeExamenes.Rutear(Muestras.SaltoInverosimil()));
+			TendenciaDeAnalito conSalto = api.Tendencia(Muestras.AnalitoDelColesterol);
+			Console.WriteLine($"colesterol tras el salto    : {conSalto.Tendencia}");
+			Console.WriteLine($"sugiere repetir el examen   : {conSalto.SugiereRepetirElExamen}");
+
+			app.Actor.GracefulExit();
+			return 0;
+		}
+
+		// Se corre en un proceso NUEVO: si las tendencias siguen, el replay rehidrato.
+		private static int Estado(string carpeta)
+		{
+			ExamenesApp app = Abrir(carpeta);
+			// Sin veredicto: esta carpeta puede venir de un medir, que a proposito le
+			// agrega al final una medicion inverosimil para demostrar esa lectura.
+			ImprimirEstado(app, new ExamenesAPI(app), conVeredicto: false);
+			app.Actor.GracefulExit();
+			return 0;
+		}
+
+		private static void ImprimirEstado(ExamenesApp app, ExamenesAPI api, bool conVeredicto)
+		{
+			Console.WriteLine();
+			Console.WriteLine($"entrada del journal         : {app.Actor.CurrentEntryId}");
+			Console.WriteLine($"ultimo evento procesado     : {api.UltimoEventoProcesado()}");
+			Console.WriteLine($"cantidad de examenes        : {api.CantidadDeExamenes()}");
+			Console.WriteLine($"esperados                   : {Muestras.ExamenesEsperados}");
+			Console.WriteLine($"analitos fuera de rango     : {api.AnalitosFueraDeRango()}");
+			Console.WriteLine($"token guardado              : [{api.TokenGuardado()}]");
+
+			Console.WriteLine();
+			Console.WriteLine("-- lista (print, formatter JSON) --");
+			Console.WriteLine(api.ListaDeExamenes());
+
+			Console.WriteLine();
+			Console.WriteLine("-- LA PREGUNTA QUE NINGUNA PANTALLA CONTESTA --");
+			foreach (string analito in api.Analitos()) ImprimirTendencia(api, analito);
+
+			if (!conVeredicto) return;
+
+			bool antigenoOk = api.Tendencia(Muestras.AnalitoDelAntigeno).Tendencia
+				== Muestras.TendenciaEsperadaDelAntigeno;
+			bool colesterolOk = api.Tendencia(Muestras.AnalitoDelColesterol).Tendencia
+				== Muestras.TendenciaEsperadaDelColesterol;
+			Console.WriteLine($"TENDENCIAS CORRECTAS        : {antigenoOk && colesterolOk}");
+		}
+
+		private static void ImprimirTendencia(ExamenesAPI api, string analito)
+		{
+			TendenciaDeAnalito t = api.Tendencia(analito);
+
+			// La frase la arma la SUPERFICIE con los hechos del dominio. El dominio no
+			// devuelve prosa, y por eso no puede devolver un consejo de plantilla.
+			string relato = t.HaySerie
+				? $"paso de {Formato(t.ValorInicial)} a {Formato(t.ValorFinal)} {t.Unidad} en {t.Dias} {(t.Dias == 1 ? "dia" : "dias")}"
+				: $"una sola medicion ({Formato(t.ValorFinal)} {t.Unidad}): todavia no hay serie";
+
+			Console.WriteLine($"  {analito,-22} {t.Tendencia,-20} {relato}");
+			if (t.ExigeAtencion) Console.WriteLine($"  {"",-22} ^ exige atencion");
+			if (t.SugiereRepetirElExamen) Console.WriteLine($"  {"",-22} ^ conviene repetir el examen");
+
+			// La velocidad solo se dice donde significa algo. Que el colesterol no la
+			// muestre no es un hueco de la caratula: es el analito contestando que no se
+			// interpreta asi.
+			VelocidadDeAnalito v = api.Velocidad(analito);
+			if (!v.EsAplicable) return;
+
+			Console.WriteLine($"  {"",-22} ritmo: {v.Expresada} (tramo de {v.Dias} dias, umbral {Formato(v.Umbral)})");
+			if (v.ExigeAtencion)
+				Console.WriteLine($"  {"",-22} ^ la VELOCIDAD sola ya exige atencion");
+		}
+
+		private static string Formato(decimal valor) =>
+			valor.ToString("0.##", CultureInfo.InvariantCulture);
+
+		// Consulta puntual, para la demo en vivo.
+		private static int TendenciaDe(string[] args)
+		{
+			string carpeta = Carpeta(args, 1);
+			string analito = Opcional(args, 2, Muestras.AnalitoDelAntigeno);
+
+			ExamenesApp app = Abrir(carpeta);
+			var api = new ExamenesAPI(app);
+
+			Console.WriteLine($"analito: {analito}");
+			ImprimirTendencia(api, analito);
+			Console.WriteLine();
+			Console.WriteLine("-- crudo (print, formatter JSON) --");
+			Console.WriteLine(api.TendenciaDe(analito));
+
+			app.Actor.GracefulExit();
+			return 0;
+		}
+
+		// A que ritmo viene cambiando un analito. Es la consulta del antigeno prostatico:
+		// la que no se puede contestar con el ultimo valor ni con una pantalla.
+		private static int VelocidadDe(string[] args)
+		{
+			string carpeta = Carpeta(args, 1);
+			string analito = Opcional(args, 2, Muestras.AnalitoDelAntigeno);
+
+			ExamenesApp app = Abrir(carpeta);
+			var api = new ExamenesAPI(app);
+
+			VelocidadDeAnalito v = api.Velocidad(analito);
+			Console.WriteLine($"analito   : {v.Analito}");
+			Console.WriteLine($"ritmo     : {v.Expresada}");
+			Console.WriteLine($"tramo     : {v.Dias} dias");
+			Console.WriteLine($"umbral    : {Formato(v.Umbral)} {v.Unidad} por ano");
+			Console.WriteLine($"aplicable : {v.EsAplicable}");
+			Console.WriteLine($"ALARMA    : {v.ExigeAtencion}");
+			Console.WriteLine();
+			Console.WriteLine("-- crudo (print, formatter JSON) --");
+			Console.WriteLine(api.VelocidadDe(analito));
+
+			app.Actor.GracefulExit();
+			return 0;
+		}
+
+		// ---------------------------------------------------------------- fase 2
+		private static async Task<int> Refrescar(string[] args)
+		{
+			string carpeta = Carpeta(args, 1);
+			string baseUrl = Opcional(args, 2, "http://localhost:8091/");
+			string recurso = Opcional(args, 3, "expediente");
+			string id      = Opcional(args, 4, "1");
+
+			using var http = new HttpClient { BaseAddress = new Uri(baseUrl) };
+			ExamenesApp app = Abrir(carpeta);
+			var api = new ExamenesAPI(app);
+
+			var proveedorDeToken = new ProveedorDeToken(http);
+
+			// La app consigue su credencial SOLA, contra su device key. Ni la consola ni
+			// la persona pegan un token: el laboratorio lo emite para ESTA instalacion.
+			if (api.DeviceKeyGuardado().Length == 0)
+				api.RegistrarDevice("device-consola-de-medicion");
+
+			if (api.TokenGuardado().Length == 0)
+			{
+				Credencial credencial = await proveedorDeToken.Pedir(api.DeviceKeyGuardado(), recurso, id);
+				Console.WriteLine($"credencial: scope={credencial.Scope} expiresIn={credencial.ExpiresIn}s");
+				api.GuardarCredencial(credencial.AccessToken, credencial.RefreshToken);
+			}
+
+			// Que hacer cuando el laboratorio rechaza el access token: rotar con el
+			// refresh token, que es para lo que existe. El access es corto a proposito.
+			async Task<string> Renovar(System.Threading.CancellationToken ct)
+			{
+				string refresh = api.RefreshTokenGuardado();
+
+				// Rotar devuelve null si el refresh ya no vale; ahi se pide una credencial
+				// nueva con el device key, que es lo que la instalacion siempre puede hacer.
+				Credencial renovada = refresh.Length > 0
+					? await proveedorDeToken.Rotar(refresh, ct)
+					: null;
+				string comoSeObtuvo = renovada != null ? "rotada con el refresh token" : "nueva contra el device key";
+				renovada ??= await proveedorDeToken.Pedir(api.DeviceKeyGuardado(), recurso, id, ct);
+
+				Console.WriteLine($"  credencial renovada: {comoSeObtuvo} (scope {renovada.Scope})");
+				api.GuardarCredencial(renovada.AccessToken, renovada.RefreshToken);
+				return renovada.AccessToken;
+			}
+
+			var bucle = new BucleDeRefresh(api, new FuenteHttpDeEventos(http, recurso, id),
+				RutaDeExamenes.Rutear, null, Renovar);
+
+			ResultadoDeRefresh primero = await bucle.Ejecutar();
+			Console.WriteLine($"refresh 1 : {primero}");
+
+			// Segundo refresh sin novedad: debe traer 0 y no aplicar nada.
+			long antes = app.Actor.CurrentEntryId;
+			ResultadoDeRefresh segundo = await bucle.Ejecutar();
+			long despues = app.Actor.CurrentEntryId;
+			Console.WriteLine($"refresh 2 : {segundo}");
+			Console.WriteLine($"sin novedad no escribio     : {antes == despues}");
+
+			ImprimirEstado(app, api, conVeredicto: true);
+
+			app.Actor.GracefulExit();
+			return 0;
+		}
+
+		// ---------------------------------------------------------------- argumentos
+		private static string Carpeta(string[] args, int i) =>
+			Path.GetFullPath(Opcional(args, i, Path.Combine(
+				Environment.GetFolderPath(Environment.SpecialFolder.UserProfile), "Examenes-journal")));
+
+		private static string Opcional(string[] args, int i, string porDefecto) =>
+			args.Length > i && args[i].Length > 0 ? args[i] : porDefecto;
+
+		private static void Ayuda()
+		{
+			Console.WriteLine("Examenes - caratula de consola, para medir el dominio y el refresh");
+			Console.WriteLine();
+			Console.WriteLine("  comprobar                                      comprueba las reglas del dominio puro (sin journal)");
+			Console.WriteLine("  medir     [carpeta]                            aplica la historia y mide los criterios de fase 1");
+			Console.WriteLine("  estado    [carpeta]                            abre el journal y reporta (correr en proceso nuevo)");
+			Console.WriteLine("  tendencia [carpeta] [analito]                  evalua la serie de un analito");
+			Console.WriteLine("  velocidad [carpeta] [analito]                  a que ritmo viene cambiando (ng/mL por ano)");
+			Console.WriteLine("  refrescar [carpeta] [baseUrl] [recurso] [id]   trae eventos del laboratorio y los aplica de a uno");
+			Console.WriteLine();
+			Console.WriteLine("carpeta por defecto: ~/Examenes-journal");
+			Console.WriteLine("baseUrl por defecto: http://localhost:8091/");
+			Console.WriteLine("analitos           : 'Antigeno prostatico', 'Colesterol total', 'Hemoglobina', 'Colesterol LDL'");
+		}
+	}
+}

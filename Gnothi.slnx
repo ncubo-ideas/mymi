@@ -1,1 +1,17 @@
-<Solution />
+<Solution>
+
+  <!-- Solo Examenes. El negocio de Facturas vive en HolaMundo/ y es el ejemplo de
+       referencia: lo mantiene Jonathan y sus proyectos no se listan aca, para que un
+       cambio nuestro no le pise las rutas.
+
+       Nuestro dominio esta BASADO en ese ejemplo, pero no es parte de el. -->
+
+  <Project Path="Examenes/App/Examenes.App/Examenes.App.csproj" />
+  <Project Path="Examenes/App/Examenes.Consola/Examenes.Consola.csproj" />
+  <Project Path="Examenes/App/Examenes.Mcp/Examenes.Mcp.csproj" />
+  <Project Path="Examenes/App/Examenes.Wasm/Examenes.Wasm.csproj" />
+  <Project Path="Examenes/Dominio/Examenes.Dominio.csproj" />
+  <Project Path="Examenes/EndPointDeEventos/Examenes.EventosMock.csproj" />
+  <Project Path="Examenes/InyectorDeEventosDemo/Examenes.InyectorDeEventosDemo.csproj" />
+  <Project Path="Examenes/Mecanismo/Puppets.Portador/Puppets.Portador.csproj" />
+</Solution>

@@ -1,0 +1,156 @@
+using System;
+using System.Collections.Generic;
+using System.Globalization;
+using System.Text.Json;
+using Examenes.App.Vistas;
+
+namespace Examenes.App
+{
+	// Convierte la emision del print en los records de vista.
+	//
+	// Esto NO es el antipatron de "parsear el print para sacar un valor tipado". Ese
+	// antipatron es re-derivar en C# un ESCALAR que el actor ya calculo, y para eso la
+	// app usa parametros Out tipados (CantidadDeExamenes, AnalitosFueraDeRango,
+	// EdadDelPaciente). Lo de aca es otra cosa: una VISTA, y el print con formatter JSON
+	// es su canal declarado - la guia dice devolver ese string tal cual porque "el print
+	// ya hizo todo el trabajo de serializacion". Un cliente REST hace exactamente esto.
+	// La diferencia es que aca el cliente esta en el mismo proceso.
+	//
+	// El formato de fecha es el del formatter: MM/dd/yyyy HH:mm:ss en cultura
+	// invariante.
+	internal static class ProyeccionDeVistas
+	{
+		private const string FormatoDeFecha = "MM/dd/yyyy HH:mm:ss";
+		private const string FormatoDeFechaSinHora = "MM/dd/yyyy";
+
+		internal static IReadOnlyList<ExamenEnLista> Lista(string json)
+		{
+			var examenes = new List<ExamenEnLista>();
+			if (string.IsNullOrWhiteSpace(json)) return examenes;
+
+			using JsonDocument documento = JsonDocument.Parse(json);
+
+			// Sin examenes el foreach no emite nada y la propiedad no existe: eso es una
+			// lista vacia, no un error.
+			if (!documento.RootElement.TryGetProperty("examen", out JsonElement arreglo)) return examenes;
+
+			foreach (JsonElement elemento in Elementos(arreglo))
+				examenes.Add(new ExamenEnLista
+				{
+					Nombre = Texto(elemento, "nombre"),
+					Fecha = Fecha(elemento, "fecha"),
+					Resultado = Texto(elemento, "resultado"),
+					AportaSerie = Booleano(elemento, "aportaSerie"),
+				});
+
+			return examenes;
+		}
+
+		internal static TendenciaDeAnalito Tendencia(string json)
+		{
+			if (string.IsNullOrWhiteSpace(json)) return new TendenciaDeAnalito();
+
+			using JsonDocument documento = JsonDocument.Parse(json);
+			JsonElement raiz = documento.RootElement;
+
+			return new TendenciaDeAnalito
+			{
+				Analito = Texto(raiz, "analito"),
+				Tendencia = Texto(raiz, "tendencia"),
+				Mediciones = Entero(raiz, "mediciones"),
+				ValorInicial = Decimal(raiz, "valorInicial"),
+				ValorFinal = Decimal(raiz, "valorFinal"),
+				Unidad = Texto(raiz, "unidad"),
+				Dias = Entero(raiz, "dias"),
+				Cambio = Decimal(raiz, "cambio"),
+				ExigeAtencion = Booleano(raiz, "exigeAtencion"),
+				SugiereRepetirElExamen = Booleano(raiz, "sugiereRepetirElExamen"),
+				HaySerie = Booleano(raiz, "haySerie"),
+			};
+		}
+
+		internal static VelocidadDeAnalito Velocidad(string json)
+		{
+			if (string.IsNullOrWhiteSpace(json)) return new VelocidadDeAnalito();
+
+			using JsonDocument documento = JsonDocument.Parse(json);
+			JsonElement raiz = documento.RootElement;
+
+			return new VelocidadDeAnalito
+			{
+				Analito = Texto(raiz, "analito"),
+				PorAno = Decimal(raiz, "porAno"),
+				Unidad = Texto(raiz, "unidad"),
+				Dias = Entero(raiz, "dias"),
+				Umbral = Decimal(raiz, "umbral"),
+				EsAplicable = Booleano(raiz, "esAplicable"),
+				ExigeAtencion = Booleano(raiz, "exigeAtencion"),
+				Expresada = Texto(raiz, "expresada"),
+			};
+		}
+
+		internal static IReadOnlyList<string> Analitos(string json)
+		{
+			var nombres = new List<string>();
+			if (string.IsNullOrWhiteSpace(json)) return nombres;
+
+			using JsonDocument documento = JsonDocument.Parse(json);
+			if (!documento.RootElement.TryGetProperty("analito", out JsonElement arreglo)) return nombres;
+
+			foreach (JsonElement elemento in Elementos(arreglo))
+			{
+				string nombre = Texto(elemento, "nombre");
+				if (nombre.Length > 0) nombres.Add(nombre);
+			}
+			return nombres;
+		}
+
+		// Un solo print emite un objeto; varios emiten un arreglo. Tratar los dos casos
+		// evita que la vista se rompa justo cuando hay un solo examen.
+		private static IEnumerable<JsonElement> Elementos(JsonElement elemento)
+		{
+			if (elemento.ValueKind == JsonValueKind.Array)
+			{
+				foreach (JsonElement hijo in elemento.EnumerateArray()) yield return hijo;
+				yield break;
+			}
+			if (elemento.ValueKind == JsonValueKind.Object) yield return elemento;
+		}
+
+		private static string Texto(JsonElement padre, string nombre) =>
+			padre.TryGetProperty(nombre, out JsonElement e) && e.ValueKind == JsonValueKind.String
+				? e.GetString() : "";
+
+		private static int Entero(JsonElement padre, string nombre) =>
+			padre.TryGetProperty(nombre, out JsonElement e) && e.TryGetInt32(out int valor) ? valor : 0;
+
+		private static decimal Decimal(JsonElement padre, string nombre) =>
+			padre.TryGetProperty(nombre, out JsonElement e) && e.TryGetDecimal(out decimal valor) ? valor : 0m;
+
+		private static bool Booleano(JsonElement padre, string nombre)
+		{
+			if (!padre.TryGetProperty(nombre, out JsonElement e)) return false;
+			if (e.ValueKind == JsonValueKind.True) return true;
+			if (e.ValueKind == JsonValueKind.False) return false;
+
+			// El formatter puede emitir el booleano como texto; se aceptan las dos formas
+			// para que la vista no dependa de ese detalle.
+			return e.ValueKind == JsonValueKind.String
+				&& bool.TryParse(e.GetString(), out bool valor) && valor;
+		}
+
+		private static DateTime Fecha(JsonElement padre, string nombre)
+		{
+			string texto = Texto(padre, nombre);
+			if (texto.Length == 0) return default;
+
+			if (DateTime.TryParseExact(texto, FormatoDeFecha, CultureInfo.InvariantCulture,
+					DateTimeStyles.None, out DateTime conHora)) return conHora;
+			if (DateTime.TryParseExact(texto, FormatoDeFechaSinHora, CultureInfo.InvariantCulture,
+					DateTimeStyles.None, out DateTime soloFecha)) return soloFecha;
+
+			return DateTime.TryParse(texto, CultureInfo.InvariantCulture, DateTimeStyles.None, out DateTime suelta)
+				? suelta : default;
+		}
+	}
+}
