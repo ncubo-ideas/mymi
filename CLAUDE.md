@@ -2,14 +2,14 @@
 
 ## Commits
 
-**Conventional Commits en español, sin excepciones.** Los tipos son
-`func`, `arreglo`, `docs`, `estilo`, `refactor`, `rendimiento`, `prueba`, `construccion`,
-`ci`, `tarea` y `reversion` — **no** `feat`/`fix`/`chore`. Sin tilde. La tabla completa con
-su equivalencia al estándar en inglés está en [`CONTRIBUTING.md`](CONTRIBUTING.md), y hay un
-hook en `.githooks/commit-msg` que lo verifica.
+**Conventional Commits, sin excepciones.** El **tipo va en inglés** (`feat`, `fix`, `docs`,
+`style`, `refactor`, `perf`, `test`, `build`, `ci`, `chore`, `revert`) y **la descripción y
+el cuerpo van en español**. La tabla completa está en
+[`CONTRIBUTING.md`](CONTRIBUTING.md), y hay un hook en `.githooks/commit-msg` que verifica
+el tipo.
 
 Asunto en minúscula, máximo 72 caracteres, sin punto final. El alcance es el negocio o el
-nodo: `func(examenes)`, `arreglo(examenes/url1)`.
+nodo: `feat(examenes)`, `fix(examenes/url1)`.
 
 El cuerpo dice **por qué**, no qué. El diff ya dice qué. Si algo se midió, va el número.
 

@@ -1,7 +1,11 @@
 #!/usr/bin/env bash
-# Conventional Commits EN ESPANOL, verificado antes de que el commit exista.
+# Conventional Commits, verificado antes de que el commit exista.
 #
 # El asunto tiene que ser:   tipo(alcance opcional)!: descripcion
+#
+# EL TIPO VA EN INGLES -es el estandar, y es lo que la herramienta del ecosistema
+# reconoce- y LA DESCRIPCION VA EN ESPANOL, igual que el cuerpo. El hook verifica el
+# tipo; el idioma de la descripcion no se puede verificar, va por convencion.
 #
 # Va como hook y no como norma escrita en un README porque una norma que nadie
 # verifica se cumple las primeras dos semanas. Rechaza el commit y explica que
@@ -13,9 +17,8 @@
 # Y se salta con --no-verify cuando de verdad haga falta.
 set -u
 
-# Los tipos, en una sola linea para que cambiarlos sea cambiar esto y la ayuda de
-# abajo. Sin tildes a proposito: son palabras clave que se escriben y se grepean.
-TIPOS='func|arreglo|docs|estilo|refactor|rendimiento|prueba|construccion|ci|tarea|reversion'
+# Los tipos, en una sola linea para que cambiarlos sea cambiar esto y la ayuda de abajo.
+TIPOS='feat|fix|docs|style|refactor|perf|test|build|ci|chore|revert'
 
 MENSAJE=$(cat "$1")
 ASUNTO=$(printf '%s\n' "$MENSAJE" | head -n 1)
@@ -40,34 +43,36 @@ if printf '%s' "$ASUNTO" | grep -Eq "$PATRON"; then
 fi
 
 cat >&2 <<'AYUDA'
-El asunto del commit no sigue la convencion.
+El asunto del commit no sigue Conventional Commits.
 
-  tipo(alcance): descripcion en minuscula, sin punto final
+  tipo(alcance): descripcion en espanol, minuscula, sin punto final
+
+El TIPO va en ingles, que es el estandar. La DESCRIPCION y el cuerpo, en espanol.
 
 Tipos validos:
 
-  func          una capacidad nueva del producto
-  arreglo       corrige un comportamiento que estaba mal
-  docs          solo documentacion
-  estilo        formato, sin cambio de comportamiento
-  refactor      reescribe sin cambiar lo que hace
-  rendimiento   mejora de rendimiento
-  prueba        pruebas
-  construccion  build, dependencias, Dockerfile, publish
-  ci            automatizacion
-  tarea         mantenimiento que no entra en las anteriores
-  reversion     deshace un commit anterior
+  feat      una capacidad nueva del producto
+  fix       corrige un comportamiento que estaba mal
+  docs      solo documentacion
+  style     formato, sin cambio de comportamiento
+  refactor  reescribe sin cambiar lo que hace
+  perf      mejora de rendimiento
+  test      pruebas
+  build     build, dependencias, Dockerfile, publish
+  ci        automatizacion
+  chore     mantenimiento que no entra en las anteriores
+  revert    deshace un commit anterior
 
 El alcance es el negocio o el nodo que se toca:
 
-  func(examenes): evalua la velocidad de cambio de un analito
-  arreglo(examenes/url1): el service worker ya no tapa la pagina de descarga
-  construccion(examenes): corrige el puerto del Dockerfile de URL2
+  feat(examenes): evalua la velocidad de cambio de un analito
+  fix(examenes/url1): el service worker ya no tapa la pagina de descarga
+  build(examenes): corrige el puerto del Dockerfile de URL2
 
 Un cambio que rompe compatibilidad lleva "!" antes de los dos puntos, y el cuerpo
-lo explica bajo "CAMBIO IMPORTANTE:":
+lo explica bajo "BREAKING CHANGE:":
 
-  func(examenes)!: el evento de orina ahora exige nitritos
+  feat(examenes)!: el evento de orina ahora exige nitritos
 
 AYUDA
 
