@@ -1,0 +1,37 @@
+<Project Sdk="Microsoft.NET.Sdk.BlazorWebAssembly">
+
+  <PropertyGroup>
+    <TargetFramework>net9.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <ServiceWorkerAssetsManifest>service-worker-assets.js</ServiceWorkerAssetsManifest>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.AspNetCore.Components.WebAssembly" Version="9.0.19" />
+    <PackageReference Include="Microsoft.AspNetCore.Components.WebAssembly.DevServer" Version="9.0.19" PrivateAssets="all" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ServiceWorker Include="wwwroot\service-worker.js" PublishedContent="wwwroot\service-worker.published.js" />
+  </ItemGroup>
+
+  <!-- La caratula referencia Examenes.App DIRECTO: la misma logica que usan el servidor
+       MCP y la consola. Por eso la IA y la persona ven exactamente lo mismo.
+
+       Hasta la version 2.0.1 del motor hacia falta un csproj ESPEJO en el medio, porque
+       Choreography declaraba <FrameworkReference Microsoft.AspNetCore.App> y eso se
+       propaga por ProjectReference dando NETSDK1082 (sin runtime pack para browser-wasm).
+       Con el motor por NuGet ese espejo dejo de hacer falta: MEDIDO en 3.0.0-beta.10027,
+       compila directo sin NETSDK1082, porque un frameworkReference declarado en un nuspec
+       no se propaga igual.
+
+       NO poner InvariantGlobalization ni recortar los datos de globalizacion: MEDIDO que
+       el ctor estatico del Parser de Puppeteer pide la cultura en-us y tira
+       CultureNotFoundException si no esta. Es justo el flag que uno agrega para bajar el
+       payload, asi que es facil de reintroducir sin querer. -->
+  <ItemGroup>
+    <ProjectReference Include="..\Examenes.App\Examenes.App.csproj" />
+  </ItemGroup>
+
+</Project>

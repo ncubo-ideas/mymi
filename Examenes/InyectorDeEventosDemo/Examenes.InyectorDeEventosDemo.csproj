@@ -1,0 +1,24 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!-- El nodo [UI o Cmd para inyectar eventos de demo para URL2].
+       Una herramienta de OPERACION, no parte del producto: la usa quien monta la demo
+       para sembrar la historia que se va a contar.
+
+       Por que existe aparte y no como endpoint de URL2: los datos del demo se orquestan
+       como test cases. Con un endpoint que agrega una factura ALEATORIA no se puede
+       predecir el total ni contar una historia; con esto se inyecta la factura QUE HACE
+       FALTA - la grasosa para el que tiene colesterol alto, la de salmuera para el
+       hipertenso - y el total sale calculable de antemano.
+
+       Cero dependencias del negocio: le habla a URL2 por HTTP como cualquier operador. -->
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net9.0</TargetFramework>
+    <Nullable>disable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <RootNamespace>Examenes.InyectorDeEventosDemo</RootNamespace>
+    <AssemblyName>InyectorDeEventosDemo</AssemblyName>
+  </PropertyGroup>
+
+</Project>
