@@ -17,7 +17,7 @@
       "command": "dotnet",
       "args": [
         "Examenes/App/Examenes.Mcp/bin/Debug/net9.0/Examenes.Mcp.dll",
-        "C:\\Users\\jon32\\Documents\\ExamenesMCP"
+        "/Users/renandiazreyes/Documents/ExamenesMCP"
       ]
     }
   }
