@@ -24,3 +24,11 @@ HolaMundo/Facturas/PaginaDeDescarga/certs/
 # El paquete de entrega de Jonathan. Es material de referencia, no parte del build:
 # el negocio Facturas ya vive versionado en HolaMundo/Facturas/.
 Facturas-ejemplo-de-negocio/
+
+# Notas de trabajo que NO se versionan, por acuerdo de equipo. Siguen existiendo en
+# cada clon; simplemente no viajan en el repo.
+#
+# La norma de commits que describian igual se hace cumplir: vive en el propio
+# .githooks/commit-msg, que imprime el formato y los tipos cuando rechaza uno.
+CLAUDE.md
+CONTRIBUTING.md
