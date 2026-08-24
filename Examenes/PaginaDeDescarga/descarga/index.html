@@ -24,15 +24,14 @@
   Sin dependencias externas salvo la hoja de Google Fonts, y con stack de respaldo en cada
   familia por si la demo corre sin red.
 
-  ABIERTO: hoy nginx sirve la app en / y esta página en /descarga, y las dos comparten
-  origen con el service worker de la PWA — que toma scope de la raíz y contesta TODA
-  navegación con el index.html de la app. Por eso el SW lleva /descarga en su lista de
-  rutasDelServidor: sin esa línea, esta página es inalcanzable en cuanto alguien instala
-  la app, aunque nginx la sirva perfecto.
+  ESTA PÁGINA VIVE EN LA RAÍZ, y la app cuelga de /app/. No es cosmético: el service
+  worker de la PWA toma scope del directorio donde se registra y contesta TODA navegación
+  de ese scope con su index.html cacheado. Con la app en / esta página era inalcanzable en
+  cuanto alguien la instalaba — nginx la servía perfecto y el browser mostraba igual el 404
+  del router de Blazor, porque la respuesta nunca llegaba a pedirse.
 
-  La salida de fondo sería al revés: esta página en / y la app colgando de /app/, con lo
-  que el scope del SW dejaría de cubrirla. Cuesta cambiar el <base href> del publish y el
-  `base` del propio service worker. Decisión de equipo — ver el README del negocio.
+  Con la app en /app/ el scope es /app/ y la raíz queda afuera. La separación la hace la
+  ruta, no una lista de excepciones.
 -->
 
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -373,7 +372,7 @@
       </p>
 
       <div class="acciones anim d4">
-        <a class="boton" href="/">
+        <a class="boton" href="/app/">
           Instalar la aplicación
           <svg width="15" height="15" viewBox="0 0 15 15" fill="none" aria-hidden="true">
             <path d="M7.5 1v10M3.4 7.2l4.1 4.1 4.1-4.1M1.6 13.6h11.8"

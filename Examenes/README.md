@@ -96,8 +96,18 @@ dotnet publish Examenes/App/Examenes.Wasm -c Release -o Examenes/PaginaDeDescarg
 cd Examenes && ./PaginaDeDescarga/generar-certificado.sh && docker compose up -d
 ```
 
-Y queda en **`http://localhost:8090`** — la app — y **`http://localhost:8090/descarga`** — la
-página branded de la institución.
+Y queda en **`http://localhost:8090`** — la página de descarga de la institución — con la
+app colgando de **`/app/`**.
+
+Que la app no esté en la raíz no es cosmético. El service worker de la PWA toma scope del
+directorio donde se registra y contesta **toda** navegación de ese scope con su `index.html`
+cacheado. Con la app en `/`, la página de descarga era inalcanzable en cuanto alguien
+instalaba la app: nginx la servía perfecto —medido, `GET /descarga 200 18173`— y el browser
+mostraba igual el 404 del router de Blazor, porque la respuesta nunca llegaba a pedirse.
+
+Con la app en `/app/` el scope es `/app/` y la raíz queda afuera. Lo hace la ruta, no una
+lista de excepciones. Tres archivos tienen que decir lo mismo: el `<base href>` de
+`index.html`, el `const base` de `service-worker.published.js` y el `nginx.conf`.
 
 > El literal **`localhost`** importa. El secure context se decide por el *string* del host:
 > medido en el negocio de facturas, `http://127.0.0.1.nip.io:8765` da
@@ -238,7 +248,6 @@ acotado que lo que dice el doc, y eso importa para el reporte a Álvaro.
 | # | Pendiente |
 |---|---|
 | 1 | **Versión del motor** con los tres commits de `wasm-replay`. Es una línea en `Directory.Build.props`. Es de Álvaro |
-| 2 | **Dónde va la página branded.** App en `/` y página en `/descarga`, compartiendo origen con el service worker. El SW toma scope de la raíz y contesta toda navegación con el `index.html` de la app, así que la página lleva una excepción explícita en `service-worker.published.js` (`rutasDelServidor`). Funciona, pero la salida limpia es al revés: página en `/` y app en `/app/`, con lo que el scope deja de cubrirla. Cuesta el `<base href>` del publish y el `base` del SW. Decisión de equipo |
 | 3 | **Tras publicar de nuevo, hay que cerrar todas las pestañas del origen.** El service worker de Blazor no llama a `skipWaiting()`, así que la versión nueva se instala pero queda esperando hasta que no quede ninguna pestaña abierta de `localhost:8090`. Un cambio en el SW que "no se aplica" casi siempre es esto |
 | 4 | **El workload `wasm-tools-net9` no está instalado**, así que el publish sale sin optimizar (57 MB). Funciona; conviene instalarlo antes de mostrarlo |
 | 5 | **La marca ficticia** (*Laboratorios Sotavento*) es un placeholder. La definitiva la define el equipo. Vive solo en `PaginaDeDescarga/descarga/index.html` y en los assets de la carátula |
