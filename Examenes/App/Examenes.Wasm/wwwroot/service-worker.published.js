@@ -37,6 +37,19 @@ async function onActivate(event) {
         .map(key => caches.delete(key)));
 }
 
+// Rutas de ESTE ORIGEN que sirve el servidor, no la app.
+//
+// El service worker toma scope de la raiz, asi que se queda con TODA navegacion del
+// origen y contesta index.html desde su cache. Para las rutas internas del router de
+// Blazor eso es lo correcto; para la pagina de descarga no, porque es un archivo que
+// sirve nginx y la app no la conoce: su router no la encuentra y muestra su propio
+// "Sorry, there's nothing at this address".
+//
+// MEDIDO: con la app instalada, nginx registraba "GET /descarga 200 18173" -la pagina
+// entera, bien servida- mientras el browser mostraba el 404 de Blazor. El servidor
+// nunca estuvo mal; la respuesta no llegaba a pedirse.
+const rutasDelServidor = ['/descarga'];
+
 async function onFetch(event) {
     let cachedResponse = null;
     if (event.request.method === 'GET') {
@@ -44,7 +57,8 @@ async function onFetch(event) {
         // unless that request is for an offline resource.
         // If you need some URLs to be server-rendered, edit the following check to exclude those URLs
         const shouldServeIndexHtml = event.request.mode === 'navigate'
-            && !manifestUrlList.some(url => url === event.request.url);
+            && !manifestUrlList.some(url => url === event.request.url)
+            && !rutasDelServidor.includes(new URL(event.request.url).pathname);
 
         const request = shouldServeIndexHtml ? 'index.html' : event.request;
         const cache = await caches.open(cacheName);

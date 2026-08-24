@@ -24,9 +24,15 @@
   Sin dependencias externas salvo la hoja de Google Fonts, y con stack de respaldo en cada
   familia por si la demo corre sin red.
 
-  ABIERTO: hoy nginx sirve la app en / y esta página en /descarga. Moverla a la raíz
-  obliga a cambiar el <base href> del publish y le quita al service worker el scope de /.
-  Ver el README de este negocio.
+  ABIERTO: hoy nginx sirve la app en / y esta página en /descarga, y las dos comparten
+  origen con el service worker de la PWA — que toma scope de la raíz y contesta TODA
+  navegación con el index.html de la app. Por eso el SW lleva /descarga en su lista de
+  rutasDelServidor: sin esa línea, esta página es inalcanzable en cuanto alguien instala
+  la app, aunque nginx la sirva perfecto.
+
+  La salida de fondo sería al revés: esta página en / y la app colgando de /app/, con lo
+  que el scope del SW dejaría de cubrirla. Cuesta cambiar el <base href> del publish y el
+  `base` del propio service worker. Decisión de equipo — ver el README del negocio.
 -->
 
 <link rel="preconnect" href="https://fonts.googleapis.com">
