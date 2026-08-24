@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Conventional Commits, verificado antes de que el commit exista.
+# Conventional Commits EN ESPANOL, verificado antes de que el commit exista.
 #
 # El asunto tiene que ser:   tipo(alcance opcional)!: descripcion
 #
@@ -13,6 +13,10 @@
 # Y se salta con --no-verify cuando de verdad haga falta.
 set -u
 
+# Los tipos, en una sola linea para que cambiarlos sea cambiar esto y la ayuda de
+# abajo. Sin tildes a proposito: son palabras clave que se escriben y se grepean.
+TIPOS='func|arreglo|docs|estilo|refactor|rendimiento|prueba|construccion|ci|tarea|reversion'
+
 MENSAJE=$(cat "$1")
 ASUNTO=$(printf '%s\n' "$MENSAJE" | head -n 1)
 
@@ -21,7 +25,6 @@ case "$ASUNTO" in
     Merge\ *|Revert\ *|fixup!\ *|squash!\ *) exit 0 ;;
 esac
 
-TIPOS='feat|fix|docs|style|refactor|perf|test|build|ci|chore|revert'
 PATRON="^(${TIPOS})(\([a-z0-9./-]+\))?!?: .+"
 
 if printf '%s' "$ASUNTO" | grep -Eq "$PATRON"; then
@@ -37,34 +40,34 @@ if printf '%s' "$ASUNTO" | grep -Eq "$PATRON"; then
 fi
 
 cat >&2 <<'AYUDA'
-El asunto del commit no sigue Conventional Commits.
+El asunto del commit no sigue la convencion.
 
   tipo(alcance): descripcion en minuscula, sin punto final
 
 Tipos validos:
 
-  feat      una capacidad nueva del producto
-  fix       corrige un comportamiento que estaba mal
-  docs      solo documentacion
-  style     formato, sin cambio de comportamiento
-  refactor  reescribe sin cambiar lo que hace
-  perf      mejora de rendimiento
-  test      pruebas
-  build     build, dependencias, Dockerfile, publish
-  ci        automatizacion
-  chore     mantenimiento que no entra en las anteriores
-  revert    deshace un commit anterior
+  func          una capacidad nueva del producto
+  arreglo       corrige un comportamiento que estaba mal
+  docs          solo documentacion
+  estilo        formato, sin cambio de comportamiento
+  refactor      reescribe sin cambiar lo que hace
+  rendimiento   mejora de rendimiento
+  prueba        pruebas
+  construccion  build, dependencias, Dockerfile, publish
+  ci            automatizacion
+  tarea         mantenimiento que no entra en las anteriores
+  reversion     deshace un commit anterior
 
 El alcance es el negocio o el nodo que se toca:
 
-  feat(examenes): evalua la velocidad de cambio de un analito
-  fix(examenes/url1): el service worker ya no tapa la pagina de descarga
-  build(examenes): corrige el puerto del Dockerfile de URL2
+  func(examenes): evalua la velocidad de cambio de un analito
+  arreglo(examenes/url1): el service worker ya no tapa la pagina de descarga
+  construccion(examenes): corrige el puerto del Dockerfile de URL2
 
 Un cambio que rompe compatibilidad lleva "!" antes de los dos puntos, y el cuerpo
-explica que se rompe:
+lo explica bajo "CAMBIO IMPORTANTE:":
 
-  feat(examenes)!: el evento de orina ahora exige nitritos
+  func(examenes)!: el evento de orina ahora exige nitritos
 
 AYUDA
 
