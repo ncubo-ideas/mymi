@@ -6,13 +6,13 @@ obj/
 *.user
 .vs/
 
-# El publish de la caratula que sirve URL1: se genera, no se versiona (~85 MB)
-Examenes/PaginaDeDescarga/publicado/
-HolaMundo/Facturas/PaginaDeDescarga/publicado/
+# El publish de la caratula que sirve URL1: se genera, no se versiona (~85 MB).
+# El patron cubre a cualquier negocio: con cuatro en camino, enumerarlos de a uno es
+# esperar a que al primero que se olvide se le vayan 85 MB al repo.
+**/PaginaDeDescarga/publicado/
 
 # Certificados self-signed del listener https: los genera cada persona
-Examenes/PaginaDeDescarga/certs/
-HolaMundo/Facturas/PaginaDeDescarga/certs/
+**/PaginaDeDescarga/certs/
 
 # JOURNALS. Son datos de una persona, no codigo. Si el picker apunto al arbol de
 # fuentes por error, esto evita que se commiteen sin que nadie lo note.
@@ -20,6 +20,8 @@ HolaMundo/Facturas/PaginaDeDescarga/certs/
 **/facturas/meta.bin
 **/examenes/journal/
 **/examenes/meta.bin
+**/compras/journal/
+**/compras/meta.bin
 
 # El paquete de entrega de Jonathan. Es material de referencia, no parte del build:
 # el negocio Facturas ya vive versionado en HolaMundo/Facturas/.
