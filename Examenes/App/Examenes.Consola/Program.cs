@@ -165,7 +165,9 @@ namespace Examenes.Consola
 				? $"paso de {Formato(t.ValorInicial)} a {Formato(t.ValorFinal)} {t.Unidad} en {t.Dias} {(t.Dias == 1 ? "dia" : "dias")}"
 				: $"una sola medicion ({Formato(t.ValorFinal)} {t.Unidad}): todavia no hay serie";
 
-			Console.WriteLine($"  {analito,-22} {t.Tendencia,-20} {relato}");
+			// Se imprime ParaMostrar y no el analito con el que se pregunto: la llave es
+			// para buscar, el nombre para mostrar es para leer.
+			Console.WriteLine($"  {t.ParaMostrar,-22} {t.Tendencia,-20} {relato}");
 			if (t.ExigeAtencion) Console.WriteLine($"  {"",-22} ^ exige atencion");
 			if (t.SugiereRepetirElExamen) Console.WriteLine($"  {"",-22} ^ conviene repetir el examen");
 
@@ -338,7 +340,17 @@ namespace Examenes.Consola
 			Console.WriteLine();
 			Console.WriteLine("carpeta por defecto: ~/Examenes-journal");
 			Console.WriteLine("baseUrl por defecto: http://localhost:8091/");
-			Console.WriteLine("analitos           : 'Antigeno prostatico', 'Colesterol total', 'Hemoglobina', 'Colesterol LDL'");
+			// La lista sale del propio conjunto cerrado, no de un literal: agregar un
+			// analito y olvidarse de la ayuda deja de ser posible.
+			var nombres = new System.Text.StringBuilder();
+			foreach (Examenes.Dominio.Analito analito in Examenes.Dominio.Analito.Todos)
+			{
+				if (nombres.Length > 0) nombres.Append(", ");
+				nombres.Append('\'').Append(analito.Nombre).Append('\'');
+			}
+			Console.WriteLine($"analitos           : {nombres}");
+			Console.WriteLine("                     tambien responden a como los nombra cada laboratorio:");
+			Console.WriteLine("                     'PSA', 'HGB', 'LDL', y con o sin acentos y mayusculas.");
 		}
 	}
 }

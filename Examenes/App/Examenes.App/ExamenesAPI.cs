@@ -341,6 +341,7 @@ namespace Examenes.App
 				{
 					evaluacion = expediente.EvaluarTendenciaDe(@analito);
 					print evaluacion.Analito analito,
+						evaluacion.AnalitoParaMostrar paraMostrar,
 						evaluacion.NombreDeLaTendencia tendencia,
 						evaluacion.CantidadDeMediciones mediciones,
 						evaluacion.ValorInicial valorInicial,
@@ -375,6 +376,7 @@ namespace Examenes.App
 				{
 					velocidad = expediente.VelocidadDe(@analito);
 					print velocidad.Analito analito,
+						velocidad.AnalitoParaMostrar paraMostrar,
 						velocidad.PorAno porAno,
 						velocidad.Unidad unidad,
 						velocidad.DiasDelTramo dias,

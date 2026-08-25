@@ -23,11 +23,13 @@ namespace Examenes.Dominio
 	{
 		private readonly List<ExamenDeSangre> mediciones = new List<ExamenDeSangre>();
 
-		public string Analito { get; private set; }
+		// La identidad del analito, no su nombre. Es lo que hace que dos hojas que
+		// escriben "HEMOGLOBINA" y "HGB" caigan en ESTA serie y no en dos.
+		public Analito Analito { get; private set; }
 
-		public SerieDeAnalito(string analito)
+		public SerieDeAnalito(Analito analito)
 		{
-			ArgumentNullException.ThrowIfNullOrWhiteSpace(analito);
+			ArgumentNullException.ThrowIfNull(analito);
 			Analito = analito;
 		}
 
@@ -41,9 +43,10 @@ namespace Examenes.Dominio
 		public void Agregar(ExamenDeSangre examen)
 		{
 			ArgumentNullException.ThrowIfNull(examen);
-			if (examen.Analito != Analito)
+			if (!examen.Analito.EsElMismo(Analito))
 				throw new ArgumentException(
-					$"Un examen de '{examen.Analito}' no pertenece a la serie de '{Analito}'.", nameof(examen));
+					$"Un examen de '{examen.Analito.Nombre}' no pertenece a la serie de '{Analito.Nombre}'.",
+					nameof(examen));
 
 			int posicion = mediciones.Count;
 			while (posicion > 0 && mediciones[posicion - 1].Fecha > examen.Fecha) posicion--;
