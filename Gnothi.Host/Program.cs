@@ -28,10 +28,6 @@ foreach (string a in avisos) Console.Error.WriteLine($"[gnothi] aviso: {a}");
 
 var despacho = new Despacho(catalogo, new Medidor());
 
-// La sintesis: manifiesto -> tools MCP. Esto es el "join": N modulos, una sola lista.
-IReadOnlyList<McpServerTool> toolsDeModulos = PuenteDeTools.Sintetizar(despacho, out List<string> avisosDeTools);
-foreach (string a in avisosDeTools) Console.Error.WriteLine($"[gnothi] aviso: {a}");
-
 foreach ((Modulo m, ToolDeclarada t) in despacho.Catalogo())
 	Console.Error.WriteLine($"[gnothi] publica: {Modulo.NombrePublico(m.Nombre, t.Nombre)}");
 
@@ -63,10 +59,27 @@ builder.Services.AddMcpServer(opciones =>
 		Si un total no cambio y ella esperaba que si, pedile que abra el modulo y lo
 		actualice, y volve a consultar.
 		""";
+
+	// SE DECLARA que este servidor sabe avisar cuando su catalogo cambia. Sin esta
+	// capacidad el cliente no tiene ningun motivo para volver a pedir tools/list, y la
+	// notificacion se cae al piso sin error: el Host cree que aviso y el asistente sigue
+	// con la lista vieja.
+	opciones.Capabilities ??= new();
+	opciones.Capabilities.Tools ??= new();
+	opciones.Capabilities.Tools.ListChanged = true;
 })
 	.WithStdioServerTransport()
-	.WithTools<ToolsDelHost>()      // las propias del Host
-	.WithTools(toolsDeModulos);     // las agregadas de los manifiestos
+	.WithTools<ToolsDelHost>()      // las propias del Host, con firma conocida en compilacion
+	// Las de los modulos se contestan A MANO. El esquema de entrada sale del manifiesto, que
+	// es un dato: sintetizar un delegate ataria la tool a una firma que el Host no puede
+	// conocer, y por eso la version anterior salteaba las que tenian parametros.
+	.WithListToolsHandler((peticion, ct) => PuenteDeTools.Listar(despacho, peticion, ct))
+	.WithCallToolHandler((peticion, ct) => PuenteDeTools.Atender(despacho, peticion, ct));
+
+// EL VIGILANTE del consentimiento. Va como servicio del host -y no como un hilo suelto-
+// para arrancar y apagarse junto con el servidor, y para poder pedirle el McpServer a la
+// inyeccion recien cuando hace falta avisar.
+builder.Services.AddHostedService<VigilanteDeConsentimiento>();
 
 IHost host = builder.Build();
 

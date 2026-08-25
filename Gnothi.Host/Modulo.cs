@@ -22,7 +22,10 @@ internal sealed class Modulo : IAsyncDisposable
 	}
 
 	public Manifiesto Manifiesto { get; }
-	public Instalacion Instalacion { get; }
+	// El consentimiento es lo UNICO mutable de un modulo en caliente: setter privado y un
+	// solo camino de escritura, Reconsentir. La cascara y la carpeta concedida no se
+	// recargan, porque cambiarlas es reinstalar y no reconsentir.
+	public Instalacion Instalacion { get; private set; }
 	public string Directorio { get; }
 	public string Nombre => Manifiesto.Modulo;
 	public bool Levantado => cascara.Levantado;
@@ -40,6 +43,26 @@ internal sealed class Modulo : IAsyncDisposable
 	{
 		if (!Instalacion.Encendido) return [];
 		return Manifiesto.Tools.Where(t => !Instalacion.ToolsApagadas.Contains(t.Nombre));
+	}
+
+	// RECONSENTIR: la persona movio un interruptor y el Host se enteró leyendo su archivo.
+	//
+	// Devuelve si algo cambió de verdad, porque un editor de texto escribe el mismo archivo
+	// tres veces y no hay que avisarle al asistente tres veces que su catalogo cambió.
+	//
+	// Solo entran los dos campos del consentimiento. Que la firma no acepte una Instalacion
+	// entera es a proposito: hace IMPOSIBLE que un cambio de cascara se cuele por acá y le
+	// mueva el piso a un modulo que ya está corriendo.
+	public bool Reconsentir(bool encendido, IReadOnlyList<string> toolsApagadas)
+	{
+		bool mismoInterruptor = Instalacion.Encendido == encendido;
+		bool mismasApagadas = Instalacion.ToolsApagadas.Count == toolsApagadas.Count
+			&& !Instalacion.ToolsApagadas.Except(toolsApagadas, StringComparer.Ordinal).Any();
+
+		if (mismoInterruptor && mismasApagadas) return false;
+
+		Instalacion = Instalacion with { Encendido = encendido, ToolsApagadas = toolsApagadas };
+		return true;
 	}
 
 	public bool Permitida(string tool)
