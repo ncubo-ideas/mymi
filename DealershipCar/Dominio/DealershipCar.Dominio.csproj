@@ -19,9 +19,18 @@
     <RootNamespace>DealershipCar.Dominio</RootNamespace>
     <AssemblyName>DealershipCar.Dominio</AssemblyName>
 
-    <!-- E21 exige /// en cada tipo y cada miembro expuesto. Con esto, olvidarse de uno
-         es un WARNING del compilador y no algo que se descubra en la revision.
-         CS1591 = "falta el comentario XML para el tipo o miembro visible publicamente". -->
+    <!-- E21 exige /// en cada tipo y cada miembro expuesto.
+
+         OJO, MEDIDO EN T2: esto NO alcanza para hacerlo cumplir. CS1591 dice literalmente
+         "falta el comentario XML para el tipo o miembro VISIBLE PUBLICAMENTE", y este
+         dominio es internal de punta a punta (E2, spike S1). O sea que el warning nunca se
+         dispara: se puede escribir todo el dominio sin un solo /// y compilar en verde.
+
+         La bandera se queda igual, pero por otra razon: GENERA EL XML. El XML si lleva a
+         los miembros internal que tienen ///, asi que
+         Pruebas/CadaTipoDelDominioEstaDocumentado.cs lo lee y compara lo que el ensamblado
+         declara contra lo que quedo documentado. Ahi si hay quien lo haga cumplir, y se
+         falsifico a proposito para verlo rojo. -->
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
   </PropertyGroup>
 
