@@ -223,6 +223,26 @@ h1:focus, h1:focus-visible { outline: none; }
 .modo--nodisponible .modo-titulo { color: var(--tinta-3); }
 .modo-nota { font-size: 12.8px; color: var(--tinta-3); }
 
+/* ------------------------------------------------------------------ permisos */
+
+.permiso {
+    display: flex; align-items: center; gap: 18px;
+    background: var(--papel-2);
+    border: 1px solid var(--linea);
+    border-radius: 3px;
+    padding: 16px 18px;
+    margin-bottom: 10px;
+}
+.permiso-nombre { font-weight: 600; font-size: 15.5px; }
+.permiso-que-hace { margin: 4px 0 0; font-size: 13.5px; color: var(--tinta-2); }
+.permiso .boton { flex: none; }
+
+/* Apagado se VE apagado. Que el estado se lea de un vistazo importa mas acá que en
+   ningún otro lado: es la pantalla donde la persona decide qué sabe su IA de ella. */
+.permiso--apagado { background: transparent; border-style: dashed; }
+.permiso--apagado .permiso-nombre { color: var(--tinta-3); }
+.permiso--apagado .permiso-que-hace { color: var(--tinta-3); }
+
 /* ------------------------------------------------------------------ chips */
 
 .chip {

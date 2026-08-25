@@ -287,6 +287,32 @@ diferencia decide el caso:
 Los tres años estables de antes no diluyen un salto de este año: lo hacen más notable.
 Promediar sobre toda la historia es exactamente como se pierde un cambio recién empezado.
 
+### Los ajustes, y por qué el toggle no es decoración
+
+La pantalla de **Ajustes** deja apagar cada consulta de la IA por separado. Lo que la hace
+real es dónde vive la decisión: **es un comando journalizado**, no una preferencia del
+browser.
+
+Tiene que serlo. El servidor MCP es **otro proceso**, fuera del browser, y entre los dos no
+hay protocolo — lo único que comparten es el journal. Una preferencia en `localStorage` la
+vería la pantalla y no la vería la IA: el toggle no gobernaría nada.
+
+**Medido, entre procesos:**
+
+```bash
+dotnet run --project Examenes/App/Examenes.Consola -- permisos "$HOME/Documents/ExamenesMCP" velocidad no
+```
+
+Después de eso, `velocidad_de` en el MCP contesta `hayDatos: false` con *"la persona
+deshabilitó esta consulta desde los ajustes de su app; no es un error, es una decisión
+suya"*, mientras `evaluar_tendencia` sigue respondiendo normal. Es el mismo principio que el
+señuelo de 403: **el permiso se demuestra, no se promete.**
+
+Los permisos se siembran con un `upgrade('permisos-de-la-ia')` propio y no dentro de
+`'semilla'`: la guarda de upgrade es una-vez-por-actor, así que agregar algo a `'semilla'`
+no le llegaría a ningún expediente ya escrito. Una clave nueva sí se aplica — migrar sin un
+`.exe` de migración.
+
 ### Lo que ve la IA
 
 Tres tools intencionales, una por pregunta — nunca un `Query(puppet, operacion, ...)`
