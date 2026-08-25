@@ -90,6 +90,66 @@ public sealed class PuenteDeJournal : IAsyncDisposable
 		return resultado;
 	}
 
+	// ---------------------------------------------------------------- los tres modos
+
+	// AGREGADO SOBRE LA PIEZA ORIGINAL, y a proposito solo por agregado: el orden
+	// precarga-MEMFS -> actor -> flush-por-comando NO se toca. Lo unico que cambia es a
+	// que raiz apunta el destino, y eso pasa entero del lado de JavaScript.
+	//
+	// Funciona barato porque OPFS devuelve un FileSystemDirectoryHandle, el MISMO tipo
+	// que el picker: listar/leer/escribir no distinguen uno del otro.
+	//
+	// Por que hacen falta (briefing §6.2): "carpeta real elegida por el usuario" es hoy
+	// desktop Chromium. En Safari, Firefox y movil no hay picker, y la app NO puede
+	// quedarse sin persistir - degrada a OPFS y ofrece exportar.
+
+	public async ValueTask<bool> OpfsSoportado() =>
+		await (await Modulo()).InvokeAsync<bool>("opfsSoportado");
+
+	// Entra por el MISMO Pedir que la carpeta, asi que deja el estado del puente
+	// coherente -NombreDeLaCarpeta y PermisoOtorgado- sin una segunda ruta que mantener.
+	public async ValueTask<ResultadoDeCarpeta> UsarOpfs() => await Pedir("usarOpfs");
+
+	// 'carpeta', 'opfs' o 'ninguno'.
+	public async ValueTask<string> ModoActual() =>
+		await (await Modulo()).InvokeAsync<string>("modoActual");
+
+	// Que modo eligio la persona la vez pasada. Se consulta al arrancar: si ya opto por
+	// OPFS, se reengancha sola y sin pedirle un gesto.
+	public async ValueTask<string> ModoRecordado() =>
+		await (await Modulo()).InvokeAsync<string>("modoRecordado");
+
+	// El tercer modo: un archivo que la persona se lleva. No depende de ninguna API de
+	// almacenamiento, asi que funciona en cualquier navegador.
+	public async ValueTask<ResultadoDeExportacion> Exportar() =>
+		await (await Modulo()).InvokeAsync<ResultadoDeExportacion>("exportarJournal");
+
+	// Abre el selector y devuelve el contenido, SIN escribir. Quien decide que hacer con
+	// el es la caratula: importar exige un destino activo y rearrancar el actor.
+	public async ValueTask<ResultadoDeImportacion> AbrirExportado() =>
+		await (await Modulo()).InvokeAsync<ResultadoDeImportacion>("abrirJournalExportado");
+
+	// Escribe en MEMFS lo que vino del archivo. Se hace ACA y no en JS por la misma razon
+	// que la precarga: MEMFS lo maneja C# con System.IO, que es la superficie que usa el
+	// motor. Despues hay que rearrancar el actor para que lo rehidrate.
+	public int RestaurarEnMemfs(ArchivoExportado[] archivos)
+	{
+		ArgumentNullException.ThrowIfNull(archivos);
+
+		if (Directory.Exists(RaizEnMemfs)) Directory.Delete(RaizEnMemfs, recursive: true);
+		Directory.CreateDirectory(RaizEnMemfs);
+
+		int escritos = 0;
+		foreach (ArchivoExportado archivo in archivos)
+		{
+			string destino = Path.Combine(RaizEnMemfs, archivo.Ruta.Replace('/', Path.DirectorySeparatorChar));
+			Directory.CreateDirectory(Path.GetDirectoryName(destino)!);
+			File.WriteAllBytes(destino, Convert.FromBase64String(archivo.Contenido));
+			escritos++;
+		}
+		return escritos;
+	}
+
 	// ---------------------------------------------------------------- precarga
 
 	// ARRANQUE: carpeta -> MEMFS. Corre ANTES de que exista el actor, que es lo que
@@ -249,4 +309,24 @@ public sealed class ResultadoDeLectura
 	[JsonPropertyName("ok")]        public bool Ok { get; set; }
 	[JsonPropertyName("contenido")] public string Contenido { get; set; } = "";
 	[JsonPropertyName("motivo")]    public string Motivo { get; set; } = "";
+}
+
+public sealed class ResultadoDeExportacion
+{
+	public bool Ok { get; set; }
+	public string Motivo { get; set; } = "";
+	public int Archivos { get; set; }
+}
+
+public sealed class ResultadoDeImportacion
+{
+	public bool Ok { get; set; }
+	public string Motivo { get; set; } = "";
+	public ArchivoExportado[] Archivos { get; set; } = Array.Empty<ArchivoExportado>();
+}
+
+public sealed class ArchivoExportado
+{
+	public string Ruta { get; set; } = "";
+	public string Contenido { get; set; } = "";
 }

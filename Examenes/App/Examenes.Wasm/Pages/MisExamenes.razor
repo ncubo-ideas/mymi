@@ -49,29 +49,49 @@
         }
         else
         {
-            <p>
-                Esta app guarda <strong>tus</strong> exámenes en una carpeta <strong>tuya</strong>.
-                Elegí la carpeta y la app escribe su registro ahí; nadie más la lee.
-            </p>
+            <p>Esta app guarda <strong>tus</strong> exámenes. Elegí dónde.</p>
 
-            @if (soportado == false)
-            {
-                @* El nombre de la API era diagnostico mio, no informacion para quien usa la
-                   app: "showDirectoryPicker" no le dice nada a un paciente y ademas suena a
-                   que algo se rompio. Lo que necesita saber es que NO es culpa suya, que la
-                   app igual funciona, y CUAL es la salida. *@
-                <p class="aviso aviso--atencion">
-                    <strong>Este navegador no puede guardar en una carpeta tuya.</strong>
-                    Podés seguir usando la app —vas a ver tus exámenes igual— pero el registro
-                    va a vivir solo en memoria y se pierde al cerrar. Para que quede guardado,
-                    y para que tu asistente pueda leerlo, abrila en <strong>Chrome</strong> o
-                    <strong>Edge</strong>.
-                </p>
-            }
+            @* TRES MODOS, y los tres se dicen con lo que dan y lo que no. Ofrecer solo la
+               carpeta y fallar donde no hay picker es lo que hacia antes: en Safari,
+               Firefox y movil la app andaba pero no persistia nada, y la unica forma de
+               enterarse era cerrarla y perder todo. *@
+            <div class="modos">
+                <div class="modo @(soportado == true ? "" : "modo--nodisponible")">
+                    <div class="modo-titulo">Una carpeta tuya</div>
+                    <p>El expediente queda en la carpeta que elijas, en tu disco.
+                       <strong>Es el único modo en el que tu asistente lo puede leer.</strong></p>
+                    @if (soportado == true)
+                    {
+                        <button class="boton" @onclick="ConectarCarpeta">Elegir carpeta</button>
+                    }
+                    else
+                    {
+                        <p class="modo-nota">Este navegador no lo permite. Para usarlo, abrí la app
+                           en <strong>Chrome</strong> o <strong>Edge</strong>.</p>
+                    }
+                </div>
 
-            <button class="boton" @onclick="ConectarCarpeta" disabled="@(soportado == false)" style="margin-top:12px">
-                Elegir carpeta
-            </button>
+                <div class="modo @(opfs == true ? "" : "modo--nodisponible")">
+                    <div class="modo-titulo">En este navegador</div>
+                    <p>Se guarda igual y sobrevive al cerrar, pero lo administra el navegador:
+                       <strong>no es una carpeta tuya y tu asistente no lo puede leer.</strong></p>
+                    @if (opfs == true)
+                    {
+                        <button class="boton boton--contorno" @onclick="UsarNavegador">Guardar acá</button>
+                    }
+                    else
+                    {
+                        <p class="modo-nota">Este navegador tampoco lo permite.</p>
+                    }
+                </div>
+
+                <div class="modo">
+                    <div class="modo-titulo">Un archivo</div>
+                    <p>Traé un expediente que exportaste antes, desde esta u otra computadora.
+                       Funciona en cualquier navegador.</p>
+                    <button class="boton boton--contorno" @onclick="Importar">Importar</button>
+                </div>
+            </div>
         }
 
         @* Abrir sin guardar es la salida de emergencia, no una alternativa pareja: la app
@@ -107,10 +127,17 @@ else
         <div class="aviso aviso--atencion fila">
             <div class="crece">
                 <strong>No se está guardando nada.</strong>
-                Esta app está funcionando sin carpeta: lo que ves lo vuelve a pedir al proveedor
-                cada vez que abrís, y no queda registro tuyo en disco.
+                Esta app está funcionando sin destino: lo que ves lo vuelve a pedir al proveedor
+                cada vez que abrís, y no queda registro tuyo.
             </div>
-            <button class="boton boton--atencion" @onclick="ConectarCarpeta">Elegir carpeta</button>
+            @if (soportado == true)
+            {
+                <button class="boton boton--atencion" @onclick="ConectarCarpeta">Elegir carpeta</button>
+            }
+            else if (opfs == true)
+            {
+                <button class="boton boton--atencion" @onclick="UsarNavegador">Guardar en este navegador</button>
+            }
         </div>
     }
     else if (estado.GuardadoFallando.Length > 0)
@@ -127,9 +154,25 @@ else
     }
     else
     {
-        <p class="apunte">
-            Se guarda en &laquo;@estado.NombreDeLaCarpeta&raquo; después de cada cambio.
-        </p>
+        @if (estado.EnAlmacenamientoDelNavegador)
+        {
+            @* Que persista no alcanza: en este modo la mitad "tu IA lo lee" del producto NO
+               funciona, porque el MCP corre afuera del browser y no ve este almacenamiento.
+               Decirlo es la diferencia entre degradar y enganar. *@
+            <p class="aviso aviso--atencion">
+                <strong>Se está guardando en este navegador</strong>, así que tu expediente
+                sobrevive al cerrar. Pero tu asistente <strong>no lo puede leer</strong>: para eso
+                hace falta una carpeta tuya, y este navegador no las permite.
+                <button class="boton boton--enlace" @onclick="Exportar">Exportar a un archivo</button>
+            </p>
+        }
+        else
+        {
+            <p class="apunte">
+                Se guarda en &laquo;@estado.NombreDeLaCarpeta&raquo; después de cada cambio.
+                &middot; <button class="boton boton--enlace" @onclick="Exportar">Exportar</button>
+            </p>
+        }
     }
 
     @* El web token ya no se pega: la app se lo pide al proveedor contra el device key de
@@ -207,6 +250,7 @@ else
 
 @code {
     private bool? soportado;
+    private bool? opfs;
     private bool refrescando;
 
     private IReadOnlyList<ExamenEnLista> examenes = new List<ExamenEnLista>();
@@ -221,6 +265,7 @@ else
         if (estado.EstaArriba) { Releer(); return; }
 
         soportado = await estado.EstaSoportado();
+        opfs = await estado.OpfsSoportado();
         if (soportado != true) return;
 
         // Recuperar el handle NO necesita gesto; volver a otorgar el permiso SI. Por eso
@@ -249,6 +294,30 @@ else
             await estado.Arrancar();
             Releer();
         }
+    });
+
+    private Task UsarNavegador() => Intentar("guardar en este navegador", async () =>
+    {
+        if ((await estado.UsarAlmacenamientoDelNavegador()).Ok)
+        {
+            await estado.Arrancar();
+            Releer();
+        }
+    });
+
+    private Task Exportar() => Intentar("exportar el expediente", async () =>
+    {
+        ResultadoDeExportacion resultado = await estado.Exportar();
+        if (!resultado.Ok) throw new InvalidOperationException(resultado.Motivo);
+    });
+
+    // Importar reemplaza el expediente y rearranca el actor, asi que despues hay que
+    // releer TODO de la app: los campos del componente quedaron del expediente viejo.
+    private Task Importar() => Intentar("importar un expediente", async () =>
+    {
+        string motivo = await estado.Importar();
+        if (motivo.Length > 0) throw new InvalidOperationException(motivo);
+        Releer();
     });
 
     private Task Arrancar() => Intentar("abrir la app", async () =>

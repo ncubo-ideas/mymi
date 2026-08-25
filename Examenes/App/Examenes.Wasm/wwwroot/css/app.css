@@ -189,6 +189,40 @@ h1:focus, h1:focus-visible { outline: none; }
 .serie-lectura--atencion { color: var(--ambar); }
 .serie-lectura--atencion b { color: var(--ambar); }
 
+/* ------------------------------------------------------------------ los modos */
+
+/* Las tres formas de guardar, lado a lado. Van en tarjetas y no en una lista de botones
+   porque cada una tiene una CONSECUENCIA distinta que hay que leer antes de elegir: la
+   diferencia entre ellas no es de comodidad, es si tu IA va a poder leer el expediente. */
+.modos {
+    display: grid; gap: 14px;
+    grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
+    margin: 18px 0 4px;
+}
+.modo {
+    background: var(--papel-2);
+    border: 1px solid var(--linea);
+    border-radius: 3px;
+    padding: 16px 17px;
+    display: flex; flex-direction: column; gap: 10px;
+}
+.modo p { margin: 0; font-size: 13.6px; color: var(--tinta-2); flex: 1; }
+.modo p strong { color: var(--tinta); font-weight: 600; }
+.modo .boton { align-self: flex-start; font-size: 14px; padding: 9px 16px; }
+
+.modo-titulo {
+    font-family: var(--mono);
+    font-size: 11px; letter-spacing: .11em; text-transform: uppercase;
+    color: var(--pino-cl);
+}
+
+/* No disponible NO es lo mismo que deshabilitado: la opcion existe y en otro navegador
+   funciona. Se atenua y se explica, no se esconde — esconderla haria parecer que la app
+   solo sabe hacer una cosa. */
+.modo--nodisponible { background: transparent; border-style: dashed; }
+.modo--nodisponible .modo-titulo { color: var(--tinta-3); }
+.modo-nota { font-size: 12.8px; color: var(--tinta-3); }
+
 /* ------------------------------------------------------------------ chips */
 
 .chip {

@@ -67,10 +67,59 @@ public sealed class EstadoDeLaApp : IAsyncDisposable
 
 	public ValueTask<bool> EstaSoportado() => puente.EstaSoportado();
 
+	// ---------------------------------------------------------------- los tres modos
+
+	// El modo tiene que ser VISIBLE, no un detalle interno: los tres persisten distinto
+	// y la persona necesita saber en cual esta. En 'opfs' el expediente sobrevive al
+	// cierre pero NO lo puede leer su IA, y callarlo seria vender algo que no hay.
+	public string Modo { get; private set; } = "ninguno";
+
+	public bool EnCarpetaPropia => Modo == "carpeta";
+	public bool EnAlmacenamientoDelNavegador => Modo == "opfs";
+
+	public ValueTask<bool> OpfsSoportado() => puente.OpfsSoportado();
+
+	public ValueTask<string> ModoRecordado() => puente.ModoRecordado();
+
+	public async ValueTask<ResultadoDeCarpeta> UsarAlmacenamientoDelNavegador()
+	{
+		ResultadoDeCarpeta resultado = await puente.UsarOpfs();
+		Modo = await puente.ModoActual();
+		UltimoMensaje = $"almacenamiento del navegador: {resultado}";
+		return resultado;
+	}
+
+	public async ValueTask<ResultadoDeExportacion> Exportar() => await puente.Exportar();
+
+	// Importar REEMPLAZA el expediente y rearranca el actor: el motor rehidrata en
+	// ConfigureStorage, asi que escribir MEMFS con un actor ya vivo no cambiaria nada de
+	// lo que se ve. Por eso se suelta y se vuelve a abrir.
+	public async ValueTask<string> Importar()
+	{
+		ResultadoDeImportacion abierto = await puente.AbrirExportado();
+		if (!abierto.Ok) return abierto.Motivo;
+
+		app?.Actor?.GracefulExit();
+		app = null;
+		api = null;
+		bucle = null;
+
+		int escritos = puente.RestaurarEnMemfs(abierto.Archivos);
+		await Arrancar();
+
+		// Lo importado vive en MEMFS. Si hay destino, se baja para que quede persistido
+		// tambien ahi; sin destino se pierde al cerrar, igual que todo lo demas.
+		if (puente.HayCarpeta) await BajarADisco();
+
+		UltimoMensaje = $"importados {escritos} archivos del expediente";
+		return "";
+	}
+
 	// Sin gesto: solo revalida el permiso de un handle ya guardado en IndexedDB.
 	public async ValueTask<ResultadoDeCarpeta> RecuperarCarpeta()
 	{
 		ResultadoDeCarpeta resultado = await puente.RecuperarCarpeta();
+		Modo = await puente.ModoActual();
 		UltimoMensaje = $"recuperar carpeta: {resultado}";
 		return resultado;
 	}
@@ -79,6 +128,7 @@ public sealed class EstadoDeLaApp : IAsyncDisposable
 	public async ValueTask<ResultadoDeCarpeta> ConectarCarpeta()
 	{
 		ResultadoDeCarpeta resultado = await puente.ElegirCarpeta();
+		Modo = await puente.ModoActual();
 		UltimoMensaje = $"conectar carpeta: {resultado}";
 		return resultado;
 	}

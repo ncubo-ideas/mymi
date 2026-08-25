@@ -115,7 +115,31 @@ Con la app en `/app/` el scope es `/app/` y la raíz queda afuera. Lo hace la ru
 lista de excepciones. Tres archivos tienen que decir lo mismo: el `<base href>` de
 `index.html`, el `const base` de `service-worker.published.js` y el `nginx.conf`.
 
-### El demo corre en Chrome o Edge, no en Safari
+### Los tres modos de persistencia
+
+El briefing del MVP (§6.2) es explícito: *"No hagas que la app falle donde no hay picker:
+degrada a OPFS y ofrece export/import"*. La app detecta en runtime y ofrece los tres, y
+**dice de cada uno lo que da y lo que no**:
+
+| Modo | Persiste | ¿Lo lee el MCP? | Dónde funciona |
+|---|---|---|---|
+| **Una carpeta tuya** | sí, en tu disco | **sí** — es el caso estrella | Chromium desktop |
+| **En este navegador** (OPFS) | sí, pero lo administra el browser | **no** | casi todos, incl. móvil |
+| **Un archivo** (export/import) | manual | a mano | todos |
+
+Que OPFS persista **no lo convierte en reemplazo**: el servidor MCP corre fuera del browser
+y no ve ese almacenamiento, así que la mitad *"tu IA lo lee"* del producto no funciona ahí.
+La pantalla lo dice con todas las letras en vez de dejar creer que está todo resuelto.
+
+La pieza que hizo esto barato: **OPFS devuelve un `FileSystemDirectoryHandle`**, el mismo
+tipo que el picker. Por eso `listar` / `leer` / `escribir` no distinguen uno del otro, y el
+orden precarga-MEMFS → actor → flush **no se tocó** — sólo cambia a qué raíz apuntan.
+
+**Medido** en el navegador, sobre la app servida por nginx: activar OPFS, escribir, listar y
+leer da un round-trip byte por byte idéntico, y el modo queda recordado para el próximo
+arranque.
+
+### El caso estrella corre en Chrome o Edge, no en Safari
 
 **Medido**: instalada desde Edge, la app solo tropieza con el bloqueo del motor. Desde
 Safari muestra además que *no puede guardar en una carpeta tuya*, y el botón de elegir
@@ -257,7 +281,7 @@ dónde sacar *"bajá las grasas"*.
 | MCP | ✅ heredado del paquete, no se volvió a medir después de tocar el dominio |
 | PaginaDeDescarga | ⚠️ **no se pudo levantar**: Docker no está corriendo en esta máquina |
 | Wasm | ⚠️ **arranca, renderiza y se instala**, y falla al abrir el actor — ver abajo |
-| Navegador | ⚠️ **solo Chromium**. Safari y Firefox no tienen `showDirectoryPicker`, así que no pueden guardar en una carpeta de la persona |
+| Navegador | ⚠️ la **carpeta propia** es solo Chromium. Safari y Firefox degradan a OPFS o a export/import — la app no se queda sin persistir |
 
 ### El bloqueo del motor, medido acá
 
