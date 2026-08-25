@@ -190,7 +190,7 @@ static void Ayuda()
     Console.WriteLine("     nitritos: positivo | negativo | (vacio = no se corrio la prueba, que NO es negativo)");
     Console.WriteLine("                                agrega UN examen concreto");
     Console.WriteLine();
-    Console.WriteLine("  examenes: Colesterol, ColesterolDetallado, AntigenoProstatico, Hemoglobina, Orina");
+    Console.WriteLine("  examenes: Colesterol, ColesterolDetallado, AntigenoProstatico, Hemoglobina, Orina, Heces");
     Console.WriteLine("  --url      default http://localhost:8091/");
     Console.WriteLine("  --recurso  default expediente");
     Console.WriteLine("  --id       default 1");

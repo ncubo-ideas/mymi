@@ -264,10 +264,20 @@ sealed class EventoDeExamen
     // que negativo.
     [JsonPropertyName("nitritos")]        public string Nitritos { get; init; } = "";
 
-    internal string Resultado() =>
-        Examen != "Orina"                      ? $"{Valor} {Unidad}"
-        : string.IsNullOrWhiteSpace(Nitritos)  ? Color
-        :                                        $"{Color}, nitritos {Nitritos}";
+    // La sangre oculta. El mismo campo sirve para orina y para heces: en el wire es un
+    // binario con las mismas tres palabras. Lo que cambia -que una espere a la proxima
+    // cita y la otra no- lo decide la app, no este mock.
+    [JsonPropertyName("sangre")]          public string Sangre { get; init; } = "";
+
+    internal string Resultado()
+    {
+        if (Examen != "Orina" && Examen != "Heces") return $"{Valor} {Unidad}";
+
+        string texto = Color;
+        if (!string.IsNullOrWhiteSpace(Nitritos)) texto += $", nitritos {Nitritos}";
+        if (!string.IsNullOrWhiteSpace(Sangre)) texto += $", sangre {Sangre}";
+        return texto;
+    }
 }
 
 sealed class AlmacenDeEventos
@@ -276,7 +286,7 @@ sealed class AlmacenDeEventos
     private readonly Lock candado = new();
 
     internal static readonly string[] ExamenesConocidos =
-        { "Colesterol", "ColesterolDetallado", "AntigenoProstatico", "Hemoglobina", "Orina" };
+        { "Colesterol", "ColesterolDetallado", "AntigenoProstatico", "Hemoglobina", "Orina", "Heces" };
 
     internal static bool EsExamenConocido(string examen) =>
         Array.IndexOf(ExamenesConocidos, examen) >= 0;
@@ -304,7 +314,20 @@ sealed class AlmacenDeEventos
         new EventoDeExamen
         {
             Id = 208, Examen = "Orina", Fecha = new DateTime(2026, 8, 21, 8, 33, 0),
-            Color = "ambar", Nitritos = "negativo",
+            Color = "ambar", Nitritos = "negativo", Sangre = "negativo",
+        },
+
+        // EL CONTRASTE DE ALVARO, en el guion. Una sangre oculta POSITIVA, y la app tiene
+        // que decir "conviene revisarlo" y no alarmar: la causa mas frecuente es local.
+        //
+        // El mismo positivo en el examen de ARRIBA -la orina- diria que hay que verlo
+        // pronto. Cambiar el "negativo" del 208 por "positivo" es la forma mas corta de
+        // ver la diferencia en pantalla, y no esta asi de fabrica porque el hallazgo que
+        // manda en esta demo es la velocidad del antigeno.
+        new EventoDeExamen
+        {
+            Id = 209, Examen = "Heces", Fecha = new DateTime(2026, 8, 21, 8, 34, 0),
+            Color = "chocolate", Sangre = "positivo",
         },
     };
 

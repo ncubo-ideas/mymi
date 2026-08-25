@@ -41,6 +41,8 @@ namespace Examenes.App
 					Fecha = Fecha(elemento, "fecha"),
 					Resultado = Texto(elemento, "resultado"),
 					AportaSerie = Booleano(elemento, "aportaSerie"),
+					Severidad = Texto(elemento, "severidad"),
+					ParaSonia = Texto(elemento, "paraSonia"),
 				});
 
 			return examenes;
@@ -89,6 +91,8 @@ namespace Examenes.App
 					Fecha = Fecha(elemento, "fecha"),
 					Expresado = Texto(elemento, "expresado"),
 					AportaSerie = Booleano(elemento, "aportaSerie"),
+					Severidad = Texto(elemento, "severidad"),
+					ParaSonia = Texto(elemento, "paraSonia"),
 				});
 
 			return celdas;

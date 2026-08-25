@@ -144,6 +144,18 @@ namespace Examenes.Dominio
 				foreach (KeyValuePair<Analito, SerieDeAnalito> par in series)
 					mayor = Severidad.LaMayor(mayor, par.Value.Interpretar(Edad).Severidad);
 
+				// Los examenes que NO forman serie tambien pesan, y esto es justamente lo
+				// que el feedback pedia: lo mas urgente del expediente puede ser una
+				// sangre en la orina, que no tiene tendencia ninguna, y no el analito que
+				// mas se movio. Un modelo que solo mirara series se la perderia entera.
+				foreach (Examen examen in examenes)
+				{
+					if (examen is ExamenDeOrina orina)
+						mayor = Severidad.LaMayor(mayor, orina.SeveridadDelExamen);
+					else if (examen is ExamenDeHeces heces)
+						mayor = Severidad.LaMayor(mayor, heces.SeveridadDelExamen);
+				}
+
 				return mayor;
 			}
 		}
@@ -213,6 +225,21 @@ namespace Examenes.Dominio
 				Examen examen = par.Value;
 				string llave = LlaveDeFila(examen);
 
+				// La lectura viaja SOLO para los que no forman serie. Los otros la piden
+				// por separado, porque la suya necesita la serie completa.
+				string severidad = "";
+				string paraSonia = "";
+				if (examen is ExamenDeOrina orina)
+				{
+					severidad = orina.SeveridadDelExamen.Nombre;
+					paraSonia = orina.ParaSonia;
+				}
+				else if (examen is ExamenDeHeces heces)
+				{
+					severidad = heces.SeveridadDelExamen.Nombre;
+					paraSonia = heces.ParaSonia;
+				}
+
 				celdas.Add(new CeldaDelCuadro(
 					filas.IndexOf(llave),
 					columnas.IndexOf(examen.Fecha.Date),
@@ -220,7 +247,9 @@ namespace Examenes.Dominio
 					examen.Nombre,
 					examen.Fecha.Date,
 					examen.ResultadoExpresado,
-					examen.AportaSerie));
+					examen.AportaSerie,
+					severidad,
+					paraSonia));
 			}
 
 			celdas.Sort((una, otra) => una.Fila == otra.Fila

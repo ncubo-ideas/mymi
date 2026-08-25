@@ -45,6 +45,7 @@ namespace Examenes.Consola
 			LaRutaResuelveElNombreDelLaboratorio();
 			LaLecturaEsDelAnalitoNoDeLaPantalla();
 			ElCuadroPoneLasFechasEnElEje();
+			DosBinariosIgualesPidenCosasDistintas();
 
 			Console.WriteLine();
 			Console.WriteLine(fallas == 0
@@ -695,6 +696,92 @@ namespace Examenes.Consola
 			foreach (CeldaDelCuadro celda in celdas)
 				if (celda.Fila == fila && celda.Columna == columna) return celda;
 			throw new InvalidOperationException($"no hay celda en ({fila},{columna})");
+		}
+
+
+		// ---- misma forma, distinta conducta ----
+		//
+		// Criterio 5, y el ejemplo con el que Alvaro explico TODO el feedback:
+		//
+		//   "Sangre en las heces ⟹ quizas estrenimiento. Sangre en la orina ⟹ quizas CORRA
+		//    donde el medico, rapido. No es asunto de pantalla, es que el dominio deberia
+		//    tener mas funciones o metodos."
+		//
+		// Si estas comprobaciones dieran lo mismo para las dos, el modelo colapso a la
+		// misma tabla y no hacia falta el dominio.
+		private static void DosBinariosIgualesPidenCosasDistintas()
+		{
+			Titulo("dos binarios de la misma forma piden cosas distintas");
+
+			// Los dos son un binario positivo. Los dos son "fuera de lo normal".
+			Igual("sangre en orina y en heces son la misma FORMA", "True",
+				(SangreEnOrina.Positivo is MagnitudBinaria
+					&& SangreEnHeces.Positivo is MagnitudBinaria).ToString());
+			Igual("  las dos son hallazgo", "True",
+				(SangreEnOrina.Positivo.EsHallazgo && SangreEnHeces.Positivo.EsHallazgo).ToString());
+
+			// Y piden cosas distintas. ESTA es la comprobacion del criterio.
+			Igual("la de orina no espera", "atencion inmediata",
+				SangreEnOrina.Positivo.SeveridadDelHallazgo.Nombre);
+			Igual("  la de heces se revisa", "seguimiento",
+				SangreEnHeces.Positivo.SeveridadDelHallazgo.Nombre);
+			Igual("  o sea que NO dan lo mismo", "True",
+				SangreEnOrina.Positivo.SeveridadDelHallazgo
+					.EsMasUrgenteQue(SangreEnHeces.Positivo.SeveridadDelHallazgo).ToString());
+
+			// Y las acciones tampoco, porque salen de la severidad y no de la pantalla.
+			Igual("la accion de la orina", "buscá atención médica pronto",
+				SangreEnOrina.Positivo.SeveridadDelHallazgo.QueHacer);
+			Igual("  la de heces", "conviene repetir el examen",
+				SangreEnHeces.Positivo.SeveridadDelHallazgo.QueHacer);
+
+			// TRES magnitudes en el urianalisis, y DOS de ellas son la misma forma sin
+			// leerse igual: los nitritos van a consulta, la sangre no espera.
+			Igual("en la MISMA tira, los nitritos piden otra cosa", "consulta medica",
+				Nitritos.Positivo.SeveridadDelHallazgo.Nombre);
+			Igual("  que la sangre de al lado", "atencion inmediata",
+				SangreEnOrina.Positivo.SeveridadDelHallazgo.Nombre);
+
+			// El tercer estado sigue vivo en los dos: no medido no es negativo.
+			Igual("no medido no es negativo, tampoco aca", "False",
+				SangreEnOrina.NoRealizado.EsHallazgo.ToString());
+			Revienta<InvalidOperationException>("  y preguntar el resultado revienta",
+				() => { bool _ = SangreEnOrina.NoRealizado.EsPositivo; });
+
+			// Un negativo no pide nada. La severidad no se deduce de la forma.
+			Igual("un negativo no pide nada", "informativo",
+				SangreEnOrina.Negativo.SeveridadDelHallazgo.Nombre);
+
+			// Y en el expediente entero: lo mas urgente puede ser un examen SIN SERIE.
+			// Un modelo que solo mirara tendencias se lo perderia completo.
+			var conOrina = new Expediente(60);
+			conOrina.Agregar(new Colesterol(Hoy.AddDays(-365), 190m, "mg/dL"));
+			conOrina.Agregar(new Colesterol(Hoy, 195m, "mg/dL"));
+			conOrina.Agregar(new ExamenDeOrina(Hoy, "ambar", "negativo", "positivo"));
+			Igual("lo mas urgente del expediente no tiene serie", "atencion inmediata",
+				conOrina.SeveridadMayor.Nombre);
+
+			var conHeces = new Expediente(60);
+			conHeces.Agregar(new Colesterol(Hoy.AddDays(-365), 190m, "mg/dL"));
+			conHeces.Agregar(new Colesterol(Hoy, 195m, "mg/dL"));
+			conHeces.Agregar(new ExamenDeHeces(Hoy, "chocolate", "positivo"));
+			Igual("  y el mismo positivo en heces no escala igual", "seguimiento",
+				conHeces.SeveridadMayor.Nombre);
+
+			// El examen dice la lectura; la pantalla no la compone.
+			Igual("el examen de heces dice lo suyo", "True",
+				new ExamenDeHeces(Hoy, "chocolate", "positivo").ParaSonia
+					.Contains("conviene revisarlo").ToString());
+			Igual("  y el de orina dice otra cosa", "True",
+				new ExamenDeOrina(Hoy, "ambar", "negativo", "positivo").ParaSonia
+					.Contains("pronto").ToString());
+
+			// Los journals viejos siguen entrando: un examen de orina escrito antes de que
+			// existiera la sangre no midio sangre, que es lo que NoRealizado significa.
+			Igual("un journal viejo de dos argumentos sigue reproduciendo", "no realizado",
+				new ExamenDeOrina(Hoy, "ambar").Sangre.Expresado);
+			Igual("  y uno de tres tambien", "no realizado",
+				new ExamenDeOrina(Hoy, "ambar", "negativo").Sangre.Expresado);
 		}
 
 		private static void Titulo(string texto)

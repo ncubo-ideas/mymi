@@ -249,6 +249,16 @@ else
         }
     }
 
+    @* Un hallazgo de un examen sin serie. Va acá arriba y no perdido en una celda:
+       «apareció sangre» no es un dato de tabla. El texto y la urgencia los pone el
+       dominio — dos positivos de la misma forma pueden decir cosas muy distintas. *@
+    @foreach (FilaDelCuadro hallazgo in Hallazgos())
+    {
+        <div class="aviso @(hallazgo.Severidad == "atencion inmediata" ? "aviso--problema" : "aviso--atencion")" style="margin-top:26px">
+            <strong>@hallazgo.ParaMostrar.</strong> @hallazgo.ParaSonia.
+        </div>
+    }
+
     <h2 class="seccion">Tus exámenes</h2>
     @if (examenes.Count == 0)
     {
@@ -483,6 +493,10 @@ else
         public string ParaMostrar { get; init; } = "";
         public bool AportaSerie { get; init; }
         public string[] Celdas { get; init; } = new string[0];
+
+        // Las filas sin serie traen su lectura en la celda; las de serie la piden aparte.
+        public string Severidad { get; init; } = "";
+        public string ParaSonia { get; init; } = "";
     }
 
     // Las columnas salen de las celdas: el dominio manda la fecha en cada una, ya
@@ -513,6 +527,8 @@ else
                     Analito = celda.Analito,
                     ParaMostrar = celda.ParaMostrar,
                     AportaSerie = celda.AportaSerie,
+                    Severidad = celda.Severidad,
+                    ParaSonia = celda.ParaSonia,
                     // Vacias por defecto: lo que el dominio no mando, no se midio.
                     Celdas = new string[columnas],
                 };
@@ -533,11 +549,26 @@ else
     // no es un hueco: es que no hay veredicto que dar sobre un color.
     private string Marca(FilaDelCuadro fila)
     {
-        if (!fila.AportaSerie) return "";
+        // Las filas sin serie traen su severidad en la celda: una orina o unas heces se
+        // leen de un solo punto. Las de serie la piden a su Interpretación.
+        if (!fila.AportaSerie)
+            return fila.Severidad == "informativo" || fila.Severidad == "" ? "·" : "⚠";
 
         InterpretacionDeAnalito lectura = Lectura(fila.Analito);
         if (lectura.SugiereRepetirElExamen) return "↻";
         return lectura.PideAlgo ? "⚠" : "·";
+    }
+
+    // Los hallazgos de los exámenes que no forman serie. No entran en «Cómo vienen tus
+    // valores» porque no vienen de ningún lado: son de un solo punto. Pero un positivo
+    // no puede quedar escondido en una celda de tabla.
+    private List<FilaDelCuadro> Hallazgos()
+    {
+        var hallazgos = new List<FilaDelCuadro>();
+        foreach (FilaDelCuadro fila in FilasDelCuadro())
+            if (!fila.AportaSerie && fila.Severidad != "" && fila.Severidad != "informativo")
+                hallazgos.Add(fila);
+        return hallazgos;
     }
 
     private Dictionary<string, InterpretacionDeAnalito> interpretaciones = new();

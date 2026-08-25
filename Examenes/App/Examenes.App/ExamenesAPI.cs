@@ -72,6 +72,7 @@ namespace Examenes.App
 					"El numero de evento debe ser positivo.");
 
 			if (evento.EsDeOrina) return Orina(evento);
+			if (evento.EsDeHeces) return Heces(evento);
 			if (evento.TraeFraccionamiento) return ColesterolDetallado(evento);
 
 			return UnValor(evento, ClaseDelDominio(evento.Analito));
@@ -168,7 +169,7 @@ namespace Examenes.App
 				",
 				@"
 					{
-						examen = ExamenDeOrina(@fecha, @color, @nitritos);
+						examen = ExamenDeOrina(@fecha, @color, @nitritos, @sangre);
 						expediente.Agregar(examen);
 						bitacora.Avanzar(@evento);
 					}
@@ -178,6 +179,30 @@ namespace Examenes.App
 				p["fecha",    typeof(DateTime)] = evento.Fecha;
 				p["color",    typeof(string)]   = evento.Color;
 				p["nitritos", typeof(string)]   = evento.Nitritos ?? "";
+				p["sangre",   typeof(string)]   = evento.Sangre ?? "";
+			})
+			.PerformCheckThenCommand();
+
+		// El examen de heces. Es su propio comando y no un parametro del de orina porque
+		// construye OTRA clase del dominio: el journal guarda "ExamenDeHeces(...)" y al
+		// reproducirlo arma esa, con su propia sangre que no se lee igual que la de orina.
+		private string Heces(ExamenAgregado evento) =>
+			app.Using(
+				scriptForChk: @"
+					Check(@evento > bitacora.UltimoEvento) Error 'evento ya procesado';
+				",
+				@"
+					{
+						examen = ExamenDeHeces(@fecha, @color, @sangre);
+						expediente.Agregar(examen);
+						bitacora.Avanzar(@evento);
+					}
+				")
+			.WithParameters(p => {
+				p["evento", typeof(long)]     = evento.Evento;
+				p["fecha",  typeof(DateTime)] = evento.Fecha;
+				p["color",  typeof(string)]   = evento.Color;
+				p["sangre", typeof(string)]   = evento.Sangre ?? "";
 			})
 			.PerformCheckThenCommand();
 
@@ -350,7 +375,9 @@ namespace Examenes.App
 						celda.ParaMostrar paraMostrar,
 						celda.Fecha fecha,
 						celda.Expresado expresado,
-						celda.AportaSerie aportaSerie;
+						celda.AportaSerie aportaSerie,
+						celda.Severidad severidad,
+						celda.ParaSonia paraSonia;
 				}
 			")
 			.PerformQuery();

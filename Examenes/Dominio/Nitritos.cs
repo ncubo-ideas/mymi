@@ -70,6 +70,19 @@ namespace Examenes.Dominio
 		public override bool EsHallazgo => realizada && positivo;
 
 		/// <summary>
+		/// Unos nitritos positivos sugieren infeccion urinaria: hay que verlo, y puede
+		/// esperar a una consulta. NO es lo mismo que sangre en la orina, que esta al lado
+		/// en la misma tira y en el mismo examen, y sin embargo no espera.
+		/// </summary>
+		public override Severidad SeveridadDelHallazgo =>
+			EsHallazgo ? Severidad.ConsultaMedica : Severidad.Informativo;
+
+		public override string ParaSonia =>
+			!realizada ? "el laboratorio no corrió esta prueba"
+			: positivo ? "los nitritos salieron positivos, que suele indicar una infección urinaria"
+			: "los nitritos salieron negativos, que es lo esperable";
+
+		/// <summary>
 		/// La frontera. La tira llega como texto en el evento del proveedor y se resuelve UNA
 		/// vez, aca. Un evento sin el campo significa que la prueba no se corrio, que es un
 		/// estado legitimo; un texto que no es ninguno de los tres es un evento mal formado y

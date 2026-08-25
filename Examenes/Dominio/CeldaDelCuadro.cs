@@ -64,8 +64,20 @@ namespace Examenes.Dominio
 		// saberlo para no dejar un hueco donde no falta nada.
 		public bool AportaSerie { get; private set; }
 
+		// QUE PIDE este examen, para las filas que NO forman serie. Las que si la forman
+		// lo dicen por su Interpretacion, que necesita la serie entera; una orina o unas
+		// heces se leen de un solo punto, asi que su lectura viaja en la celda.
+		//
+		// Vacio en las filas de serie, y eso no es un faltante: es que ahi la respuesta la
+		// da otro. Ver SangreEnOrina y SangreEnHeces para por que dos celdas identicas en
+		// forma pueden traer severidades distintas.
+		public string Severidad { get; private set; }
+
+		public string ParaSonia { get; private set; }
+
 		public CeldaDelCuadro(int fila, int columna, string analito, string paraMostrar,
-			DateTime fecha, string expresado, bool aportaSerie)
+			DateTime fecha, string expresado, bool aportaSerie,
+			string severidad = "", string paraSonia = "")
 		{
 			if (fila < 0)
 				throw new ArgumentOutOfRangeException(nameof(fila), fila, "La fila no puede ser negativa.");
@@ -80,6 +92,8 @@ namespace Examenes.Dominio
 			Fecha = fecha;
 			Expresado = expresado;
 			AportaSerie = aportaSerie;
+			Severidad = severidad ?? "";
+			ParaSonia = paraSonia ?? "";
 		}
 	}
 }

@@ -45,6 +45,12 @@ namespace Examenes.Consola
 			// --- relleno con modelo real, no adorno ---
 			Sangre(207, "Hemoglobina", "2026-08-21T08:32:00", "14.2", "g/dL"),
 			Orina(208, "2026-08-21T08:33:00", "ambar"),
+
+			// EL CONTRASTE DE ALVARO. Una sangre oculta positiva en heces se lee
+			// "conviene revisarlo"; el MISMO positivo en la orina no espera a la proxima
+			// cita. Misma forma de magnitud, distinta conducta, y la diferencia vive en el
+			// analito.
+			Heces(209, "2026-08-21T08:34:00", "chocolate", "positivo"),
 		};
 
 		private static SenalDeEvento Sangre(long id, string examen, string fecha, string valor, string unidad) =>
@@ -54,6 +60,15 @@ namespace Examenes.Consola
 				""fecha"": ""{fecha}"",
 				""valor"": {valor},
 				""unidad"": ""{unidad}""
+			}}");
+
+		private static SenalDeEvento Heces(long id, string fecha, string color, string sangre) =>
+			new SenalDeEvento(id, "ExamenAgregado", $@"{{
+				""id"": {id}, ""tipo"": ""ExamenAgregado"",
+				""examen"": ""Heces"",
+				""fecha"": ""{fecha}"",
+				""color"": ""{color}"",
+				""sangre"": ""{sangre}""
 			}}");
 
 		private static SenalDeEvento Orina(long id, string fecha, string color) =>
@@ -66,20 +81,20 @@ namespace Examenes.Consola
 
 		// Lo que la historia tiene que dar. Son los criterios de la fase 1: si esto no
 		// sale asi, el dominio no esta contando la historia que la demo promete.
-		internal const int ExamenesEsperados = 8;
+		internal const int ExamenesEsperados = 9;
 		internal const string TendenciaEsperadaDelAntigeno = "en ascenso";
 		internal const string TendenciaEsperadaDelColesterol = "en ascenso";
 
 		// Una senal de un tipo que esta app no consume. La ruta debe devolver null y el
 		// bucle descartarla, sin inventar un comando para tragarsela.
 		internal static SenalDeEvento TipoDesconocido() =>
-			new SenalDeEvento(209, "CitaAgendada", @"{ ""id"": 209, ""tipo"": ""CitaAgendada"" }");
+			new SenalDeEvento(301, "CitaAgendada", @"{ ""id"": 301, ""tipo"": ""CitaAgendada"" }");
 
 		// Un ExamenAgregado de un examen que la app NO modela. Tambien se descarta: el
 		// laboratorio puede emitir mas examenes de los que esta app sabe leer.
 		internal static SenalDeEvento ExamenNoModelado() =>
-			new SenalDeEvento(210, "ExamenAgregado", @"{
-				""id"": 210, ""tipo"": ""ExamenAgregado"",
+			new SenalDeEvento(302, "ExamenAgregado", @"{
+				""id"": 302, ""tipo"": ""ExamenAgregado"",
 				""examen"": ""Tiroides"",
 				""fecha"": ""2026-08-21T08:34:00"",
 				""valor"": 2.1, ""unidad"": ""mg/dL""
@@ -89,6 +104,6 @@ namespace Examenes.Consola
 		// demostrar que el dominio distingue un error de medicion de un cambio real:
 		// mismo salto que 203->205, pero en un dia.
 		internal static SenalDeEvento SaltoInverosimil() =>
-			Sangre(211, "Colesterol", "2026-08-22T08:30:00", "360.0", "mg/dL");
+			Sangre(303, "Colesterol", "2026-08-22T08:30:00", "360.0", "mg/dL");
 	}
 }

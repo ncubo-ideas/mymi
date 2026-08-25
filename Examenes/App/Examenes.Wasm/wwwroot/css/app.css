@@ -286,10 +286,12 @@ h1:focus, h1:focus-visible { outline: none; }
 .tabla--cuadro td:first-child { white-space: normal; min-width: 9.5em; }
 .tabla--cuadro .resultado { font-size: 13px; }
 
-/* Los resultados no se parten... hasta cierto ancho. Un "280.0 mg/dL" entra siempre; el
-   resultado de la orina -"ambar, nitritos negativo"- no es un numero y si se deja en una
-   sola linea ensancha SU columna y desparrama todas las fechas. */
-.tabla--cuadro td.resultado { white-space: normal; max-width: 12em; }
+/* La tabla puede ser MAS ANCHA que su contenedor, y el contenedor scrollea. Con
+   width:100% pasa lo contrario: al no entrar, el navegador comprime las columnas y parte
+   "200.0 mg/dL" en dos lineas, que es justo lo que arruina el barrido horizontal. Con
+   varias fechas la tabla no entra en un telefono y lo correcto es que scrollee ELLA, no
+   que se deforme. */
+.tabla--cuadro { width: auto; min-width: 100%; }
 
 /* La primera columna se come el espacio sobrante. Sin esto la tabla reparte el ancho
    entre todas y las fechas quedan desparramadas, con la ultima pegada al borde derecho y

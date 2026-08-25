@@ -17,6 +17,10 @@ namespace Examenes.App.Vistas
 		public DateTime Fecha { get; init; }
 		public string Resultado { get; init; } = "";
 		public bool AportaSerie { get; init; }
+
+		// Solo para las filas que no forman serie. Ver CeldaDelCuadro.
+		public string Severidad { get; init; } = "";
+		public string ParaSonia { get; init; } = "";
 	}
 
 	// La lectura de la serie. Es la vista que NO tiene equivalente en una pantalla de
@@ -55,6 +59,10 @@ namespace Examenes.App.Vistas
 		public DateTime Fecha { get; init; }
 		public string Expresado { get; init; } = "";
 		public bool AportaSerie { get; init; }
+
+		// Solo para las filas que no forman serie. Ver CeldaDelCuadro.
+		public string Severidad { get; init; } = "";
+		public string ParaSonia { get; init; } = "";
 	}
 
 	// LO QUE EL ANALITO CONCLUYE. Vista aparte de TendenciaDeAnalito porque son dos capas
