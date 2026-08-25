@@ -59,6 +59,53 @@ internal sealed class CatalogoDeModulos : IAsyncDisposable
 		return avisos;
 	}
 
+	// RECARGA EN CALIENTE DEL CONSENTIMIENTO.
+	//
+	// Vuelve a leer SOLO los instalacion.json -el archivo de la persona- y devuelve qué
+	// modulos cambiaron. No vuelve a leer manifiestos ni reconstruye modulos: recrear un
+	// Modulo recrearia su cascara, y una cascara nueva le arranca el proceso hijo de abajo
+	// a una llamada que podria estar en vuelo.
+	//
+	// Si el archivo no se puede leer, el modulo queda APAGADO. Es un archivo de
+	// consentimiento: cuando no se puede saber qué autorizó la persona, la respuesta no es
+	// suponer que autorizó. Cuesta un parpadeo si alguien lo pesca a medio escribir, y ese
+	// es el precio correcto.
+	public IReadOnlyList<string> RecargarConsentimiento()
+	{
+		List<string> cambios = [];
+
+		foreach (Modulo m in modulos)
+		{
+			string ruta = Path.Combine(m.Directorio, "instalacion.json");
+			bool encendido;
+			IReadOnlyList<string> apagadas;
+
+			try
+			{
+				Instalacion i = Instalacion.Leer(ruta);
+				encendido = i.Encendido;
+				apagadas = i.ToolsApagadas;
+
+				// Lo que este metodo NO recarga, dicho en voz alta en vez de en silencio.
+				bool otraCarpeta = i.CarpetaConcedida != m.Instalacion.CarpetaConcedida;
+				bool otraCascara = i.Cascara.Comando != m.Instalacion.Cascara.Comando;
+				if (otraCarpeta || otraCascara)
+					cambios.Add($"{m.Nombre}: cambió la cascara o la carpeta, eso pide reiniciar el Host");
+			}
+			catch (Exception e)
+			{
+				encendido = false;
+				apagadas = [];
+				cambios.Add($"{m.Nombre}: no se pudo leer el consentimiento ({e.GetType().Name}), queda apagado");
+			}
+
+			if (m.Reconsentir(encendido, apagadas))
+				cambios.Add($"{m.Nombre}: encendido={encendido}, apagadas=[{string.Join(", ", apagadas)}]");
+		}
+
+		return cambios;
+	}
+
 	public Modulo? Buscar(string nombre)
 		=> modulos.FirstOrDefault(m => string.Equals(m.Nombre, nombre, StringComparison.OrdinalIgnoreCase));
 

@@ -1,0 +1,23 @@
+{
+  "//": "ESTE ARCHIVO ES DEL HOST. Separado del manifiesto a proposito: son dos autoridades. La institucion declara quien es y que ofrece; el HOST decide como se lo ejecuta y que carpeta le concede. Si la cascara viniera en el manifiesto, el modulo elegiria como se lo corre.",
+
+  "//rutas": "Con barras normales. Windows las acepta igual y evitan el escapado doble de JSON, que ya rompio este archivo una vez.",
+
+  "//cascara": "Etapa 1: proceso hijo + stdio, porque en este POC el modulo trae su propio servidor MCP. La Etapa 2 cambia SOLO este bloque por un runtime wasm con --dir, y ni el manifiesto ni el modulo se enteran. La carpeta concedida se agrega como ultimo argumento; no va aca.",
+  "cascara": {
+    "tipo": "stdio",
+    "comando": "dotnet",
+    "argumentos": [
+      "C:/Users/edgar/Documents/Game/Gnothi/HolaMundo/Facturas/App/Facturas.Mcp/bin/Debug/net9.0/Facturas.Mcp.dll"
+    ]
+  },
+
+  "//carpetaConcedida": "La UNICA carpeta que este modulo puede tocar. El modulo no la elige: conceder es un acto del que concede. TIENE QUE SER LA MISMA que elegiste en la app al instalarla — si no coinciden, el modulo va a reportar hayDatos=false y Claude te va a pedir que abras la app.",
+  "carpetaConcedida": "C:/Gnothi/facturas",
+
+  "//encendido": "El interruptor es del Host. Apagado = Gnothi omite las tools de este modulo de la lista que le entrega al asistente, y el modulo NO se entera: no puede distinguir 'me apagaron' de 'nadie pregunto'.",
+  "encendido": true,
+
+  "//toolsApagadas": "El corte fino, que es el que de verdad hace falta: 'el total si, el detalle no'. Poner aca el nombre tal como esta en el manifiesto, sin el prefijo del modulo.",
+  "toolsApagadas": []
+}
