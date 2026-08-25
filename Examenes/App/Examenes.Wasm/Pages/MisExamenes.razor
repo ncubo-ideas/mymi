@@ -64,9 +64,10 @@
             else if (sinAlmacenamiento == "navegador")
             {
                 <p class="aviso aviso--atencion">
-                    <strong>Este navegador no puede guardar el expediente.</strong>
+                    <strong>@(instalada ? "Acá no se puede guardar el expediente." : "Este navegador no puede guardar el expediente.")</strong>
                     Podés usar la app igual, pero lo que veas se pierde al cerrar. Para que
-                    quede guardado, abrila en <strong>Chrome</strong> o <strong>Edge</strong>.
+                    quede guardado, @(instalada ? "instalala" : "abrila") desde
+                    <strong>Chrome</strong> o <strong>Edge</strong>.
                 </p>
             }
 
@@ -88,14 +89,21 @@
                         <p class="modo-nota">
                             @(sinAlmacenamiento == "inseguro"
                                 ? "Hace falta una conexión segura (https)."
-                                : "Este navegador no lo permite. Para usarlo, abrí la app en Chrome o Edge.")
+                                : instalada
+                                    ? "Acá no está disponible. Para usarlo, instalá la app desde Chrome o Edge."
+                                    : "Este navegador no lo permite. Para usarlo, abrí la app en Chrome o Edge.")
                         </p>
                     }
                 </div>
 
+                @* Instalada, la app NO es "un navegador" para quien la usa: es una ventana
+                   con su nombre y su icono, y hablarle de navegadores ahi suena a que se
+                   refiere a otra cosa. El almacenamiento es el mismo; cambia como se
+                   llama delante de la persona. *@
                 <div class="modo @(opfs == true ? "" : "modo--nodisponible")">
-                    <div class="modo-titulo">En este navegador</div>
-                    <p>Se guarda igual y sobrevive al cerrar, pero lo administra el navegador:
+                    <div class="modo-titulo">@(instalada ? "Dentro de la app" : "En este navegador")</div>
+                    <p>Se guarda igual y sobrevive al cerrar, pero
+                       @(instalada ? "queda dentro de la app" : "lo administra el navegador"):
                        <strong>no es una carpeta tuya y tu asistente no lo puede leer.</strong></p>
                     @if (opfs == true)
                     {
@@ -106,7 +114,7 @@
                         <p class="modo-nota">
                             @(sinAlmacenamiento == "inseguro"
                                 ? "También hace falta una conexión segura (https)."
-                                : "Este navegador tampoco lo permite.")
+                                : "Acá tampoco está disponible.")
                         </p>
                     }
                 </div>
@@ -186,9 +194,10 @@ else
                funciona, porque el MCP corre afuera del browser y no ve este almacenamiento.
                Decirlo es la diferencia entre degradar y enganar. *@
             <p class="aviso aviso--atencion">
-                <strong>Se está guardando en este navegador</strong>, así que tu expediente
-                sobrevive al cerrar. Pero tu asistente <strong>no lo puede leer</strong>: para eso
-                hace falta una carpeta tuya, y este navegador no las permite.
+                <strong>@(instalada ? "Se está guardando dentro de la app" : "Se está guardando en este navegador")</strong>,
+                así que tu expediente sobrevive al cerrar. Pero tu asistente
+                <strong>no lo puede leer</strong>: para eso hace falta una carpeta tuya, y
+                @(instalada ? "acá" : "este navegador") no las permite.
                 <button class="boton boton--enlace" @onclick="Exportar">Exportar a un archivo</button>
             </p>
         }
@@ -278,6 +287,7 @@ else
     private bool? soportado;
     private bool? opfs;
     private string sinAlmacenamiento = "";
+    private bool instalada;
     private bool refrescando;
 
     private IReadOnlyList<ExamenEnLista> examenes = new List<ExamenEnLista>();
@@ -294,6 +304,7 @@ else
         soportado = await estado.EstaSoportado();
         opfs = await estado.OpfsSoportado();
         sinAlmacenamiento = await estado.MotivoSinAlmacenamiento();
+        instalada = await estado.EstaInstalada();
         if (soportado != true) return;
 
         // Recuperar el handle NO necesita gesto; volver a otorgar el permiso SI. Por eso

@@ -68,6 +68,19 @@ export function esContextoSeguro() {
     return window.isSecureContext === true;
 }
 
+// INSTALADA, la app no es "un navegador" para quien la usa: es una ventana con su
+// nombre y su icono. Decirle "en este navegador" ahi suena a que esta hablando de otra
+// cosa. El almacenamiento es el mismo; lo que cambia es como se llama delante de la
+// persona.
+//
+// Dos formas porque iOS no implementa display-mode: navigator.standalone es lo unico
+// que lo reporta ahi.
+export function estaInstalada() {
+    if (navigator.standalone === true) return true;
+    return window.matchMedia('(display-mode: standalone)').matches
+        || window.matchMedia('(display-mode: window-controls-overlay)').matches;
+}
+
 export function modoActual() {
     return modo;
 }

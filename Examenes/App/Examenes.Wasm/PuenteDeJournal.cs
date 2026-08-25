@@ -111,6 +111,11 @@ public sealed class PuenteDeJournal : IAsyncDisposable
 	public async ValueTask<string> MotivoSinAlmacenamiento() =>
 		await (await Modulo()).InvokeAsync<string>("motivoSinAlmacenamiento");
 
+	// Si corre como app instalada y no como pestana. No cambia nada del mecanismo: cambia
+	// como se le habla a la persona.
+	public async ValueTask<bool> EstaInstalada() =>
+		await (await Modulo()).InvokeAsync<bool>("estaInstalada");
+
 	// Entra por el MISMO Pedir que la carpeta, asi que deja el estado del puente
 	// coherente -NombreDeLaCarpeta y PermisoOtorgado- sin una segunda ruta que mantener.
 	public async ValueTask<ResultadoDeCarpeta> UsarOpfs() => await Pedir("usarOpfs");

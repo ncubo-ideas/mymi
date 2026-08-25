@@ -81,6 +81,8 @@ public sealed class EstadoDeLaApp : IAsyncDisposable
 
 	public ValueTask<string> MotivoSinAlmacenamiento() => puente.MotivoSinAlmacenamiento();
 
+	public ValueTask<bool> EstaInstalada() => puente.EstaInstalada();
+
 	public ValueTask<string> ModoRecordado() => puente.ModoRecordado();
 
 	public async ValueTask<ResultadoDeCarpeta> UsarAlmacenamientoDelNavegador()
