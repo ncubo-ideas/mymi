@@ -56,10 +56,16 @@
 
             @if (soportado == false)
             {
-                <p class="aviso aviso--problema">
-                    Este browser no tiene <code>showDirectoryPicker</code>, así que no puede escribir en
-                    una carpeta tuya. La app funciona igual, pero el registro vive solo en memoria y se
-                    pierde al cerrar.
+                @* El nombre de la API era diagnostico mio, no informacion para quien usa la
+                   app: "showDirectoryPicker" no le dice nada a un paciente y ademas suena a
+                   que algo se rompio. Lo que necesita saber es que NO es culpa suya, que la
+                   app igual funciona, y CUAL es la salida. *@
+                <p class="aviso aviso--atencion">
+                    <strong>Este navegador no puede guardar en una carpeta tuya.</strong>
+                    Podés seguir usando la app —vas a ver tus exámenes igual— pero el registro
+                    va a vivir solo en memoria y se pierde al cerrar. Para que quede guardado,
+                    y para que tu asistente pueda leerlo, abrila en <strong>Chrome</strong> o
+                    <strong>Edge</strong>.
                 </p>
             }
 

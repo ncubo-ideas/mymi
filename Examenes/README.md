@@ -115,6 +115,32 @@ Con la app en `/app/` el scope es `/app/` y la raíz queda afuera. Lo hace la ru
 lista de excepciones. Tres archivos tienen que decir lo mismo: el `<base href>` de
 `index.html`, el `const base` de `service-worker.published.js` y el `nginx.conf`.
 
+### El demo corre en Chrome o Edge, no en Safari
+
+**Medido**: instalada desde Edge, la app solo tropieza con el bloqueo del motor. Desde
+Safari muestra además que *no puede guardar en una carpeta tuya*, y el botón de elegir
+carpeta queda deshabilitado.
+
+No es un bug: `showDirectoryPicker` —la File System Access API— **existe solo en
+navegadores Chromium** (Chrome, Edge, Brave, Arc). Safari y Firefox no la tienen.
+
+Y esto **no es un detalle de pantalla, es una condición de la propuesta**. El argumento
+del producto tiene dos mitades y las dos dependen de esa API:
+
+| | Necesita |
+|---|---|
+| *"el expediente vive en una carpeta tuya"* | que la app escriba en una carpeta que la persona eligió |
+| *"tu IA lo lee sin que salga de tu computadora"* | que el servidor MCP lea **esa misma carpeta** desde afuera del browser |
+
+Safari tiene OPFS (`navigator.storage.getDirectory()`), pero **no sirve como reemplazo**:
+es almacenamiento privado que administra el browser, no una carpeta que la persona eligió,
+y no se puede leer desde afuera. Usarlo rompería las dos mitades a la vez — dejaría de ser
+*su* carpeta y el MCP no encontraría nada.
+
+Aplica a **los cuatro dominios**, no solo a este. Vale que Geaninna lo sepa antes de fijar
+el speech: la narrativa puede seguir siendo cualquiera, pero el demo se enseña en un
+navegador Chromium.
+
 > El literal **`localhost`** importa. El secure context se decide por el *string* del host:
 > medido en el negocio de facturas, `http://127.0.0.1.nip.io:8765` da
 > `isSecureContext=false` —sin `showDirectoryPicker` y sin service worker— siendo el mismo
@@ -230,7 +256,8 @@ dónde sacar *"bajá las grasas"*.
 | EndPointDeEventos | ✅ 8 eventos, rotación de token y señuelo 403 |
 | MCP | ✅ heredado del paquete, no se volvió a medir después de tocar el dominio |
 | PaginaDeDescarga | ⚠️ **no se pudo levantar**: Docker no está corriendo en esta máquina |
-| Wasm | ⚠️ **arranca y renderiza**, y falla al abrir el actor — ver abajo |
+| Wasm | ⚠️ **arranca, renderiza y se instala**, y falla al abrir el actor — ver abajo |
+| Navegador | ⚠️ **solo Chromium**. Safari y Firefox no tienen `showDirectoryPicker`, así que no pueden guardar en una carpeta de la persona |
 
 ### El bloqueo del motor, medido acá
 
