@@ -1,23 +1,18 @@
 {
-  "//": "Un servidor MCP POR NEGOCIO. Este archivo va en la RAIZ del repo, no dentro de un negocio: Claude Code lo busca en el directorio desde donde arranca, y ademas el sentido es que UNA IA vea VARIOS negocios a la vez — es el universo de datos de la persona, no una app aislada. Cuando existan concesionario y gasolinera, cada uno agrega su seccion aca.",
+  "//": "UNA SOLA entrada: gnothi. Antes aca habia un servidor MCP POR NEGOCIO, y el asistente les hablaba directo. Ahora le habla al Host, y el Host agrega las tools de todos los modulos instalados leyendo sus manifiestos. Esa es la diferencia entera.",
+
+  "//lo-que-reemplaza": "La entrada 'facturas' que estaba aca apuntaba a Facturas/App/Facturas.Mcp/bin/.../Facturas.Mcp.dll con la carpeta del journal. Ese modulo sigue existiendo y sigue siendo el que responde: lo que cambio es que ahora lo invoca Gnothi, no Claude.",
 
   "//comando": "Ruta RELATIVA con 'dotnet <dll>' para que funcione en la maquina de cualquiera. Verificado: 'dotnet <dll>' no escribe nada propio a stdout, que con transporte stdio ES el canal JSON-RPC. NO usar 'dotnet run': ese si escribe y rompe el protocolo.",
 
-  "//lo-unico-por-persona": "El argumento es LA CARPETA que la persona eligio en la app al instalarla. Es el unico valor de este archivo que cambia de maquina en maquina — ajustalo antes de usarlo.",
+  "//argumento": "El directorio de modulos instalados. Cada subcarpeta con manifiesto.json + instalacion.json es un modulo. Ahi es donde Gnothi descubre que existe 'facturas' sin que nadie se lo diga.",
 
   "mcpServers": {
-    "facturas": {
+    "gnothi": {
       "command": "dotnet",
       "args": [
-        "HolaMundo/Facturas/App/Facturas.Mcp/bin/Debug/net9.0/Facturas.Mcp.dll",
-        "C:\\Users\\jon32\\Documents\\FacturasMCP"
-      ]
-    },
-    "examenes": {
-      "command": "dotnet",
-      "args": [
-        "Examenes/App/Examenes.Mcp/bin/Debug/net9.0/Examenes.Mcp.dll",
-        "/Users/renandiazreyes/Documents/ExamenesMCP"
+        "GnothiHolaMundo/Gnothi.Host/bin/Debug/net9.0/Gnothi.Host.dll",
+        "GnothiHolaMundo/Modulos"
       ]
     }
   }
