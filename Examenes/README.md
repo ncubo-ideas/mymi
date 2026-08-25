@@ -139,6 +139,23 @@ orden precarga-MEMFS → actor → flush **no se tocó** — sólo cambia a qué
 leer da un round-trip byte por byte idéntico, y el modo queda recordado para el próximo
 arranque. En **Safari desktop** los modos 2 y 3 están disponibles: degrada, no falla.
 
+### URL2 entra por el mismo origen que la app
+
+El publish apunta a **`eventos/`**, una URL *relativa*, y nginx la proxea al contenedor de
+URL2. No es que los dos nodos se fusionen —siguen siendo dos procesos, dos contenedores y
+el token con su scope no cambia—: es sólo por dónde entra el pedido, y resuelve tres cosas
+de una.
+
+| | Con `http://localhost:8091/` | Con `eventos/` |
+|---|---|---|
+| desde un teléfono | `localhost` es el teléfono | sigue al host que sirvió la app |
+| app servida por https | bloqueado por contenido mixto | mismo protocolo |
+| CORS | preflight | deja de ser cross-origin |
+
+**Medido**: en un iPhone la app abría, no alcanzaba al proveedor y quedaba en cero exámenes.
+Con `eventos/`, el mismo publish sirve en `localhost`, por IP y por https sin recompilar.
+Una URL absoluta en la config sigue ganando, para apuntar a otro host sin recompilar.
+
 ### Desde un teléfono hay que entrar por https
 
 Las dos APIs de almacenamiento exigen **contexto seguro**: https, o el literal `localhost`.

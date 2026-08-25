@@ -226,6 +226,10 @@ public sealed class EstadoDeLaApp : IAsyncDisposable
 	// El token lo pide LA APP, no la persona. El proveedor lo emite contra el device key
 	// de esta instalacion, acotado a leer los eventos de un recurso. Las tres piezas
 	// viven en el journal, asi que al reabrir la app ya sabe quien es.
+	// Donde quedo apuntando el cliente. Se dice en los errores: "no se pudo hablar con el
+	// laboratorio" sin decir CON CUAL es un mensaje que no se puede accionar.
+	public string DondeEstaElProveedor => http.BaseAddress?.ToString() ?? "(sin configurar)";
+
 	private async ValueTask<string> Credencial(CancellationToken ct)
 	{
 		Exigir();
@@ -280,6 +284,18 @@ public sealed class EstadoDeLaApp : IAsyncDisposable
 	public async ValueTask<ResultadoDeRefresh> Refrescar(CancellationToken ct = default)
 	{
 		Exigir();
+
+		// PIDE LA CREDENCIAL PRIMERO, igual que el arranque. Antes iba derecho al bucle, y
+		// eso hacia que Refresh no pudiera recuperarse NUNCA: si al abrir no se habia
+		// podido hablar con el laboratorio -sin red, otra maquina, la URL equivocada- no
+		// quedaba token, y cada Refresh moria diciendo "la app no tiene web token
+		// guardado". El unico camino que conseguia el token era el arranque, que ya habia
+		// pasado.
+		//
+		// Medido en un iPhone: la app abria, el arranque no alcanzaba el proveedor, y el
+		// boton quedaba inutil reportando la consecuencia en vez de la causa.
+		await Credencial(ct);
+
 		ResultadoDeRefresh resultado = await bucle!.Ejecutar(ct);
 		UltimoMensaje = $"refresh: {resultado}";
 		return resultado;
@@ -324,7 +340,7 @@ public sealed class ConfiguracionDelProveedor
 {
 	// El juego de URLs de este negocio. Otro negocio es otro recurso sobre el mismo
 	// mecanismo: cambiar estos tres valores y su dominio, nada mas.
-	public string BaseUrl { get; set; } = "http://localhost:8091/";
+	public string BaseUrl { get; set; } = "eventos/";
 	public string Recurso { get; set; } = "expediente";
 	public string Id { get; set; } = "1";
 }

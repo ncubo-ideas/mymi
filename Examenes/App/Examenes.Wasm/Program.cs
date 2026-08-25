@@ -18,7 +18,20 @@ builder.Services.AddSingleton(proveedor);
 // UN SOLO HttpClient, apuntado al proveedor. La app no es cliente de sus servicios
 // generales: la unica lectura que hace es su propia narrativa, y esa la arma
 // FuenteHttpDeEventos con una sola forma de URL.
-builder.Services.AddSingleton(_ => new HttpClient { BaseAddress = new Uri(proveedor.BaseUrl) });
+//
+// LA BASE PUEDE SER RELATIVA, y por defecto lo es. Una URL absoluta con localhost adentro
+// solo funciona en la maquina que sirve la app: desde un telefono, "localhost" es el
+// telefono. Y aunque se pusiera la IP, una app servida por https no puede llamar a un
+// http -el browser lo bloquea por contenido mixto-.
+//
+// Resuelta contra el origen que sirvio la app, "eventos/" apunta al mismo host, el mismo
+// protocolo y el mismo puerto, asi que funciona igual en localhost, por IP y por https.
+// Una URL absoluta en la config sigue ganando, para poder apuntar a otro host sin
+// recompilar.
+builder.Services.AddSingleton(_ => new HttpClient
+{
+	BaseAddress = new Uri(new Uri(builder.HostEnvironment.BaseAddress), proveedor.BaseUrl),
+});
 
 builder.Services.AddSingleton<PuenteDeJournal>(sp => new PuenteDeJournal(sp.GetRequiredService<IJSRuntime>()));
 
