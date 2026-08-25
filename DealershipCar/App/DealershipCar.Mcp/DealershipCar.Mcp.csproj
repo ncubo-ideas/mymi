@@ -1,0 +1,40 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!-- La superficie MCP: un proceso local, SOLO LECTURA, sobre la misma carpeta de journal
+       que escribe la app instalada. No le habla al browser ni el browser le habla a el: los
+       dos comparten la carpeta, y el journal YA es el protocolo.
+
+       Una pagina en el browser no puede hospedar un servidor MCP -no puede escuchar
+       conexiones entrantes-, asi que este proceso es inevitable.
+
+       SOLO LECTURA son dos disciplinas, no una: (1) nunca un PerformCommand, y (2) NUNCA la
+       semilla — OnHydrated vacio, porque el PerformCommand que envuelve al upgrade
+       journaliza una entrada en cada arranque, y eso haria que cada pregunta de la IA
+       escribiera en el journal de la persona.
+
+       Se llena en T9. -->
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net9.0</TargetFramework>
+    <Nullable>disable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <RootNamespace>DealershipCar.Mcp</RootNamespace>
+    <AssemblyName>DealershipCar.Mcp</AssemblyName>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="ModelContextProtocol" Version="2.2.0" />
+
+    <!-- El host generico (Host.CreateApplicationBuilder). Se declara ACA a proposito: antes
+         llegaba transitivamente porque Choreography arrastraba el FrameworkReference de
+         ASP.NET Core, y al pasar el motor a NuGet eso desaparecio. Quien usa un host
+         generico lo declara, en vez de heredarlo de una dependencia que no tiene que ver. -->
+    <PackageReference Include="Microsoft.Extensions.Hosting" Version="9.0.0" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\DealershipCar.App\DealershipCar.App.csproj" />
+  </ItemGroup>
+
+</Project>

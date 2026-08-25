@@ -1,11 +1,28 @@
 <Solution>
 
-  <!-- Solo Examenes. El negocio de Facturas vive en HolaMundo/ y es el ejemplo de
-       referencia: lo mantiene Jonathan y sus proyectos no se listan aca, para que un
-       cambio nuestro no le pise las rutas.
+  <!-- Los negocios que mantenemos nosotros. El negocio de Facturas vive en HolaMundo/ y es
+       el ejemplo de referencia: lo mantiene Jonathan y sus proyectos no se listan aca, para
+       que un cambio nuestro no le pise las rutas.
 
-       Nuestro dominio esta BASADO en ese ejemplo, pero no es parte de el. -->
+       Nuestro dominio esta BASADO en ese ejemplo, pero no es parte de el.
 
+       "Una solucion que abarca todos los modulos" (ARQUITECTURE 2) quiere decir todos los
+       que SON NUESTROS. Eso era la contradiccion C11 de DealershipCar/CONTRADICTIONS.md. -->
+
+  <!-- EL MECANISMO, compartido. Subio a la raiz cuando entro DealershipCar, que es el
+       disparador que dejo escrito Examenes/Mecanismo/README.md. Ver /Mecanismo/README.md.
+       La copia de Examenes sigue en su lugar y sin tocar: mover su referencia es un cambio
+       de ese modulo.
+
+       Va en una CARPETA DE SOLUCION y no suelto en la raiz por una razon mecanica: una
+       solucion no admite dos proyectos con el mismo nombre en la misma carpeta, y mientras
+       existan las dos copias de Puppets.Portador hay que desambiguarlas. Cuando Examenes
+       apunte a esta y borre la suya, esta carpeta puede desaparecer. -->
+  <Folder Name="/Mecanismo/">
+    <Project Path="Mecanismo/Puppets.Portador/Puppets.Portador.csproj" />
+  </Folder>
+
+  <!-- Examenes: el negocio de laboratorio clinico. -->
   <Project Path="Examenes/App/Examenes.App/Examenes.App.csproj" />
   <Project Path="Examenes/App/Examenes.Consola/Examenes.Consola.csproj" />
   <Project Path="Examenes/App/Examenes.Mcp/Examenes.Mcp.csproj" />
@@ -14,4 +31,19 @@
   <Project Path="Examenes/EndPointDeEventos/Examenes.EventosMock.csproj" />
   <Project Path="Examenes/InyectorDeEventosDemo/Examenes.InyectorDeEventosDemo.csproj" />
   <Project Path="Examenes/Mecanismo/Puppets.Portador/Puppets.Portador.csproj" />
+
+  <!-- DealershipCar: la app del dueno del vehiculo. Rebanada OS2, MaintenanceSchedule.
+
+       NO esta DealershipCar.Wasm: el motor fijado (3.0.0-beta.10027) no trae el replay
+       secuencial -MEDIDO: cero referencias a OperatingSystem.IsBrowser-, asi que la
+       caratula compilaria y no arrancaria en un browser. Entra en T10, cuando se mueva el
+       pin. Un proyecto que no puede correr es peor que no tenerlo. -->
+  <Project Path="DealershipCar/App/DealershipCar.App/DealershipCar.App.csproj" />
+  <Project Path="DealershipCar/App/DealershipCar.Consola/DealershipCar.Consola.csproj" />
+  <Project Path="DealershipCar/App/DealershipCar.Mcp/DealershipCar.Mcp.csproj" />
+  <Project Path="DealershipCar/Dominio/DealershipCar.Dominio.csproj" />
+  <Project Path="DealershipCar/EndPointDeEventos/DealershipCar.EventosMock.csproj" />
+  <Project Path="DealershipCar/InyectorDeEventosDemo/DealershipCar.InyectorDeEventosDemo.csproj" />
+  <Project Path="DealershipCar/Pruebas/DealershipCar.Dominio.Pruebas/DealershipCar.Dominio.Pruebas.csproj" />
+
 </Solution>

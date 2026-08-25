@@ -1,0 +1,37 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!-- La superficie intencional de la app y LA CAPA DE PERFORM: donde viven los
+       PerformCommand y PerformQuery. La UI, el servidor MCP y la consola llaman a
+       DealershipCarAPI, nunca al actor crudo. Que la logica sea UNA es lo que hace que la
+       IA y la persona vean lo mismo.
+
+       Ojo con la rebanada OS2: la guia y el brief dicen que la capa de perform "viene
+       dada" (E1). En este repo NO LA DA NADIE — este proyecto ES la capa de perform y se
+       escribe aca. Eso es la contradiccion C4 de DealershipCar/CONTRADICTIONS.md.
+
+       El motor viene por NuGet; la version esta en Directory.Build.props (raiz) para no
+       repetirla en cada proyecto. Solo el core: la app unicamente necesita PerformanceV2,
+       que viene en este paquete. -->
+
+  <PropertyGroup>
+    <TargetFramework>net9.0</TargetFramework>
+    <Nullable>disable</Nullable>
+    <ImplicitUsings>disable</ImplicitUsings>
+    <RootNamespace>DealershipCar.App</RootNamespace>
+    <AssemblyName>DealershipCar.App</AssemblyName>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\Dominio\DealershipCar.Dominio.csproj" />
+
+    <!-- El mecanismo compartido, desde la RAIZ del repo. No es la copia de Examenes: subio
+         a /Mecanismo/ cuando entro este negocio, que es justo el disparador que dejo escrito
+         Examenes/Mecanismo/README.md. Ver /Mecanismo/README.md. -->
+    <ProjectReference Include="..\..\..\Mecanismo\Puppets.Portador\Puppets.Portador.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Ncubo.Puppeteer" Version="$(VersionDelMotor)" />
+  </ItemGroup>
+
+</Project>

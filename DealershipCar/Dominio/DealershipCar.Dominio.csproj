@@ -1,0 +1,28 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!-- EL PUPPET. CERO dependencias: ni Puppeteer, ni HTTP, ni wasm, ni MCP.
+
+       Que este csproj no tenga un solo PackageReference ni ProjectReference es la prueba
+       de que el dominio no cambia al cruzar a wasm (ARQUITECTURE 3.1). Si algun dia
+       necesita una, ESO ES EL HALLAZGO: se para y se reporta, no se agrega.
+
+       La prueba no es de honor: DealershipCar.Dominio.Pruebas la verifica
+       mecanicamente en cada corrida (ver ElDominioNoTieneDependencias.cs).
+
+       InternalsVisibleTo NO es una referencia, es un atributo, asi que la invariante
+       sigue intacta. Vive en VisibilidadInterna.cs, con el porque. -->
+
+  <PropertyGroup>
+    <TargetFramework>net9.0</TargetFramework>
+    <Nullable>disable</Nullable>
+    <ImplicitUsings>disable</ImplicitUsings>
+    <RootNamespace>DealershipCar.Dominio</RootNamespace>
+    <AssemblyName>DealershipCar.Dominio</AssemblyName>
+
+    <!-- E21 exige /// en cada tipo y cada miembro expuesto. Con esto, olvidarse de uno
+         es un WARNING del compilador y no algo que se descubra en la revision.
+         CS1591 = "falta el comentario XML para el tipo o miembro visible publicamente". -->
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
+  </PropertyGroup>
+
+</Project>

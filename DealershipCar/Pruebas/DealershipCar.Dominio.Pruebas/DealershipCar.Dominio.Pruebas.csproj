@@ -1,0 +1,63 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!-- Las pruebas de aceptacion. E4 las pide PRIMERO, antes de que exista el dominio:
+       rojas de compilacion, y verdes a medida que el dominio aparece.
+
+       En el repo NO HABIA NINGUN proyecto de pruebas (contradiccion C9). Este es el
+       primero, y corre en DOS NIVELES:
+
+         nivel A  contra la fachada del agregado, DIRECTO. Es la clausula de E4 para
+                  cuando no hay fixture — y aca no la hay, porque nadie la provee (C4).
+                  Sin motor, sin journal, sin disco: solo el dominio puro.
+
+         nivel B  las MISMAS afirmaciones de negocio, pero de punta a punta contra un
+                  actor journalizado de verdad, sobre una carpeta temporal por prueba.
+                  Es E4 propiamente. Llega en T6, con DealershipCar.App.
+
+       El nivel B no es un lujo: MEDIDO en T0 (spike S5) que un error de tipeo en un script
+       del DSL se descubre en RUNTIME, no al compilar, y deja entradas permanentes en el
+       journal que hacen loguear un fallo de rehidratacion en cada arranque futuro. La unica
+       defensa es haber ejecutado cada script antes de que toque el journal de una persona.
+
+       NUnit y no otro: los ejemplos de la guia estan escritos con [SetUp], [Test],
+       Assert.AreEqual y Assert.Throws. -->
+
+  <PropertyGroup>
+    <TargetFramework>net9.0</TargetFramework>
+    <Nullable>disable</Nullable>
+    <ImplicitUsings>disable</ImplicitUsings>
+    <RootNamespace>DealershipCar.Dominio.Pruebas</RootNamespace>
+    <AssemblyName>DealershipCar.Dominio.Pruebas</AssemblyName>
+    <IsPackable>false</IsPackable>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.11.1" />
+    <PackageReference Include="NUnit" Version="4.2.2" />
+    <PackageReference Include="NUnit3TestAdapter" Version="4.6.0" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\Dominio\DealershipCar.Dominio.csproj" />
+
+    <!-- El nivel B entra por aca. Se referencia desde T1 para que la primera prueba pueda
+         comprobar que el dominio NO arrastro dependencias, comparandolo con una app que si
+         las tiene. -->
+    <ProjectReference Include="..\..\App\DealershipCar.App\DealershipCar.App.csproj" />
+  </ItemGroup>
+
+  <!-- El csproj del dominio viaja al output COMO DATO, para que la prueba de pureza lo lea
+       y cuente sus referencias DECLARADAS.
+
+       Hace falta porque el chequeo obvio no alcanza: Assembly.GetReferencedAssemblies() solo
+       reporta lo que el compilador REALMENTE emitio, y una dependencia declarada pero no
+       usada se optimiza y desaparece. MEDIDO: con un <PackageReference Include="Newtonsoft.Json" />
+       metido en el dominio, la prueba por reflexion pasaba igual. Una prueba que no puede
+       fallar no sirve de nada, asi que se lee la fuente de la verdad: el csproj. -->
+  <ItemGroup>
+    <None Include="..\..\Dominio\DealershipCar.Dominio.csproj"
+          Link="DealershipCar.Dominio.csproj.dato"
+          CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
+
+</Project>

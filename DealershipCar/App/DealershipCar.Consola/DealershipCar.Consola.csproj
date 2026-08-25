@@ -1,0 +1,24 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!-- Caratula de andamio. El MISMO actor y los MISMOS performs que va a usar el browser;
+       lo unico que cambia es como llegan las entradas y donde va la salida.
+
+       Existe para medir el dominio y el bucle de refresh contra un disco de verdad, sin el
+       sandbox del browser encima: ids de entrada del journal, conteo de bytes, corridas de
+       muestra deterministas. Y es donde se paga el reloj recibido — "adelanta seis meses"
+       es un parametro, no una espera. -->
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net9.0</TargetFramework>
+    <Nullable>disable</Nullable>
+    <ImplicitUsings>disable</ImplicitUsings>
+    <RootNamespace>DealershipCar.Consola</RootNamespace>
+    <AssemblyName>DealershipCar.Consola</AssemblyName>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\DealershipCar.App\DealershipCar.App.csproj" />
+  </ItemGroup>
+
+</Project>
