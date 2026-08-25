@@ -64,9 +64,28 @@ namespace Examenes.App
 				Unidad = Texto(raiz, "unidad"),
 				Dias = Entero(raiz, "dias"),
 				Cambio = Decimal(raiz, "cambio"),
-				ExigeAtencion = Booleano(raiz, "exigeAtencion"),
 				SugiereRepetirElExamen = Booleano(raiz, "sugiereRepetirElExamen"),
 				HaySerie = Booleano(raiz, "haySerie"),
+			};
+		}
+
+		internal static InterpretacionDeAnalito Interpretacion(string json)
+		{
+			if (string.IsNullOrWhiteSpace(json)) return new InterpretacionDeAnalito();
+
+			using JsonDocument documento = JsonDocument.Parse(json);
+			JsonElement raiz = documento.RootElement;
+
+			return new InterpretacionDeAnalito
+			{
+				Analito = Texto(raiz, "analito"),
+				ParaMostrar = Texto(raiz, "paraMostrar"),
+				Veredicto = Texto(raiz, "veredicto"),
+				Severidad = Texto(raiz, "severidad"),
+				ParaSonia = Texto(raiz, "paraSonia"),
+				Accion = Texto(raiz, "accion"),
+				PideAlgo = Booleano(raiz, "pideAlgo"),
+				SugiereRepetirElExamen = Booleano(raiz, "sugiereRepetirElExamen"),
 			};
 		}
 

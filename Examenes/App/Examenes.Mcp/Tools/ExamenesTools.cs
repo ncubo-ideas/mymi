@@ -141,7 +141,7 @@ internal sealed class ExamenesTools
 						+ "Pedile que abra su app y apriete Refresh.",
 				};
 
-			return Armar(t, api.UltimoEventoProcesado(), api.EdadDelPaciente());
+			return Armar(t, api.Interpretacion(nombre), api.UltimoEventoProcesado(), api.EdadDelPaciente());
 		});
 	}
 
@@ -235,8 +235,9 @@ internal sealed class ExamenesTools
 
 			foreach (string analito in api.Analitos())
 			{
-				TendenciaDelAnalito t = Armar(api.Tendencia(analito), ultimoEvento, edad);
-				if (t.ExigeAtencion) exigenAtencion++;
+				TendenciaDelAnalito t = Armar(api.Tendencia(analito), api.Interpretacion(analito),
+					ultimoEvento, edad);
+				if (t.PideAlgo) exigenAtencion++;
 				tendencias.Add(t);
 			}
 
@@ -254,7 +255,8 @@ internal sealed class ExamenesTools
 		});
 	}
 
-	private TendenciaDelAnalito Armar(TendenciaDeAnalito t, long ultimoEvento, int edad) =>
+	private TendenciaDelAnalito Armar(TendenciaDeAnalito t, InterpretacionDeAnalito i,
+		long ultimoEvento, int edad) =>
 		new TendenciaDelAnalito
 		{
 			HayDatos = true,
@@ -266,7 +268,11 @@ internal sealed class ExamenesTools
 			Unidad = t.Unidad,
 			DiasEntreLaPrimeraYLaUltima = t.Dias,
 			Cambio = t.Cambio,
-			ExigeAtencion = t.ExigeAtencion,
+			Veredicto = i.Veredicto,
+			Severidad = i.Severidad,
+			Lectura = i.ParaSonia,
+			Accion = i.Accion,
+			PideAlgo = i.PideAlgo,
 			SugiereRepetirElExamen = t.SugiereRepetirElExamen,
 			HaySerie = t.HaySerie,
 			EdadDelPaciente = edad,
@@ -331,10 +337,31 @@ internal sealed class TendenciaDelAnalito
 	[Description("Cuanto cambio, con signo: positivo si subio.")]
 	public decimal Cambio { get; init; }
 
-	[JsonPropertyName("exigeAtencion")]
-	[Description("true si el cambio va en la direccion que preocupa para ESTE analito y alcanzo el "
-		+ "umbral clinico. Conviene que lo vea su medico. No diagnostiques.")]
-	public bool ExigeAtencion { get; init; }
+	[JsonPropertyName("veredicto")]
+	[Description("Lo que ESTE analito concluye de su serie: estable, mejorando, empeorando, "
+		+ "indeterminado o probable error de medicion. Ojo: 'mejorando' puede venir con un valor "
+		+ "todavia fuera de rango, y eso es buena noticia, no una alarma.")]
+	public string Veredicto { get; init; } = "";
+
+	[JsonPropertyName("severidad")]
+	[Description("Que tan urgente es: informativo, seguimiento, consulta medica o atencion "
+		+ "inmediata. Lo decide el analito, no el tamano del numero: dos hallazgos identicos en "
+		+ "forma pueden tener severidades distintas.")]
+	public string Severidad { get; init; } = "";
+
+	[JsonPropertyName("lectura")]
+	[Description("La lectura de la serie en una linea, escrita por el propio analito. Deci esto, "
+		+ "no lo reformules en un consejo generico.")]
+	public string Lectura { get; init; } = "";
+
+	[JsonPropertyName("accion")]
+	[Description("Que corresponde hacer, si algo. Vacio significa que NO hay nada que hacer: no "
+		+ "inventes una recomendacion para llenar el hueco.")]
+	public string Accion { get; init; } = "";
+
+	[JsonPropertyName("pideAlgo")]
+	[Description("true si este analito pide alguna accion de la persona.")]
+	public bool PideAlgo { get; init; }
 
 	[JsonPropertyName("sugiereRepetirElExamen")]
 	[Description("true cuando el cambio es demasiado grande para el tiempo transcurrido. Lo mas "

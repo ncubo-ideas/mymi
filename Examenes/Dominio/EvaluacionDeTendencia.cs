@@ -36,13 +36,13 @@ namespace Examenes.Dominio
 		// Con signo: positivo si subio.
 		public decimal Cambio { get; private set; }
 
-		// Si el cambio observado va en la direccion que preocupa PARA ESTE ANALITO y
-		// alcanzo el umbral que el analito considera significativo. Lo calcula la serie,
-		// que es la que tiene a mano el analito y sus umbrales.
-		public bool ExigeAtencion { get; private set; }
-
+		// YA NO LLEVA "exigeAtencion". Era un juicio guardado adentro de un objeto de
+		// HECHOS, y se calculaba con un bool -"la direccion preocupante es el ascenso"-
+		// que no alcanzaba: a la hemoglobina lo que le conviene es quedarse quieta, y ese
+		// bool la obligaba a elegir entre subir o bajar. La lectura vive ahora en
+		// Interpretacion, que la produce el analito.
 		public EvaluacionDeTendencia(Analito analito, Tendencia tendencia, int cantidadDeMediciones,
-			Medicion primero, Medicion ultimo, int diasTranscurridos, decimal cambio, bool exigeAtencion)
+			Medicion primero, Medicion ultimo, int diasTranscurridos, decimal cambio)
 		{
 			ArgumentNullException.ThrowIfNull(analito);
 			ArgumentNullException.ThrowIfNull(tendencia);
@@ -55,13 +55,12 @@ namespace Examenes.Dominio
 			Ultimo = ultimo;
 			DiasTranscurridos = diasTranscurridos;
 			Cambio = cambio;
-			ExigeAtencion = exigeAtencion;
 		}
 
 		// Cero o una medicion: no hay serie que evaluar.
 		public static EvaluacionDeTendencia SinSerie(Analito analito, int cantidadDeMediciones, Medicion unico) =>
 			new EvaluacionDeTendencia(analito, Tendencia.Indeterminada, cantidadDeMediciones,
-				unico, unico, 0, 0m, false);
+				unico, unico, 0, 0m);
 
 		// Proyecciones escalares, para que la superficie no tenga que abrir los objetos
 		// ni el print tenga que navegar dos niveles.

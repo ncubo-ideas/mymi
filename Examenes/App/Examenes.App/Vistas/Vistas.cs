@@ -40,9 +40,31 @@ namespace Examenes.App.Vistas
 		public string Unidad { get; init; } = "";
 		public int Dias { get; init; }
 		public decimal Cambio { get; init; }
-		public bool ExigeAtencion { get; init; }
 		public bool SugiereRepetirElExamen { get; init; }
 		public bool HaySerie { get; init; }
+	}
+
+	// LO QUE EL ANALITO CONCLUYE. Vista aparte de TendenciaDeAnalito porque son dos capas
+	// distintas: aquella trae los HECHOS de la serie, esta trae la LECTURA de esos hechos
+	// hecha por el analito que sabe interpretarlos.
+	//
+	// Que la accion venga de aca y no de la pantalla es el punto: un .razor no tiene de
+	// donde sacar si un hallazgo espera a la proxima cita o no.
+	public sealed class InterpretacionDeAnalito
+	{
+		public string Analito { get; init; } = "";
+		public string ParaMostrar { get; init; } = "";
+		public string Veredicto { get; init; } = "";
+		public string Severidad { get; init; } = "";
+
+		// La lectura en una linea, escrita por el analito.
+		public string ParaSonia { get; init; } = "";
+
+		// Que hacer. Vacio cuando no hay nada que hacer, que es la mayoria de las veces.
+		public string Accion { get; init; } = "";
+
+		public bool PideAlgo { get; init; }
+		public bool SugiereRepetirElExamen { get; init; }
 	}
 
 	// A QUE RITMO viene cambiando un analito. Vista aparte de TendenciaDeAnalito porque

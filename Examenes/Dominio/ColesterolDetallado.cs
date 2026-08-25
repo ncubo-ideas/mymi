@@ -40,15 +40,63 @@ namespace Examenes.Dominio
 
 		public override decimal CambioMaximoVerosimilPorDia => 0.8m;
 
-		public override decimal CambioQueExigeAtencion => 40m;
+		public override decimal CambioMinimoSignificativo => 12m;
 
-		public override bool DireccionPreocupanteEsAscenso => true;
+		public override DireccionDeseable Direccion => DireccionDeseable.Bajar;
 
-		public override decimal VelocidadQueExigeAtencionPorAno => 0m;
+		// ---------------------------------------------------------------- lo suyo
 
 		// El HDL es el unico analito del demo donde ALTO es lo bueno, asi que su
 		// clasificacion no se puede delegar al rango de la clase. Se dice aparte, con
 		// nombre, en vez de invertir silenciosamente el significado de "alto".
+		//
+		// Es la DireccionDeseable.Subir del dominio hecha caso concreto, y el metodo que
+		// ningun otro analito tiene: nadie mas trae una fraccion acompanante que se lea
+		// al reves que el valor principal.
 		public bool HdlEsProtector => Hdl.Valor >= 40m;
+
+		// ---------------------------------------------------------------- la lectura
+
+		// Se lee por NIVEL del LDL, y el HDL modula: un LDL alto con HDL protector no es
+		// lo mismo que un LDL alto con HDL bajo. Esa combinacion es propia de este examen
+		// porque es el unico que trae dos fracciones.
+		public override Interpretacion Interpretar(SerieDeAnalito serie, int edad)
+		{
+			ArgumentNullException.ThrowIfNull(serie);
+
+			EvaluacionDeTendencia hechos = serie.Evaluar();
+			if (!hechos.HaySerie) return Interpretacion.SinSerie(hechos);
+
+			if (hechos.Tendencia.SugiereRepetirElExamen)
+				return new Interpretacion(Veredicto.ProbableErrorDeMedicion, Severidad.Seguimiento,
+					$"el LDL pasó de {hechos.ValorInicial} a {hechos.ValorFinal} {hechos.Unidad} "
+					+ $"en {hechos.DiasTranscurridos} día{(hechos.DiasTranscurridos == 1 ? "" : "s")}",
+					hechos);
+
+			bool enRango = EsNormalPara(edad);
+			string sobreElHdl = HdlEsProtector
+				? $", y tu HDL de {Hdl.Expresado} juega a favor"
+				: $", y tu HDL de {Hdl.Expresado} no alcanza para compensarlo";
+
+			if (!EsCambioReal(hechos.Cambio))
+				return enRango
+					? new Interpretacion(Veredicto.Estable, Severidad.Informativo,
+						$"el LDL se mantiene en {Ldl.Expresado}, dentro de lo deseable", hechos)
+					: new Interpretacion(Veredicto.Estable, Severidad.ConsultaMedica,
+						$"el LDL lleva tiempo en {Ldl.Expresado}" + sobreElHdl, hechos);
+
+			if (Direccion.EsFavorable(hechos.Cambio))
+				return new Interpretacion(Veredicto.Mejorando, Severidad.Informativo,
+					$"el LDL bajó de {hechos.ValorInicial} a {hechos.ValorFinal} {hechos.Unidad}",
+					hechos);
+
+			return enRango
+				? new Interpretacion(Veredicto.Empeorando, Severidad.Seguimiento,
+					$"el LDL subió de {hechos.ValorInicial} a {hechos.ValorFinal} {hechos.Unidad}, "
+					+ "todavía dentro de lo deseable", hechos)
+				: new Interpretacion(Veredicto.Empeorando, Severidad.ConsultaMedica,
+					$"el LDL subió de {hechos.ValorInicial} a {hechos.ValorFinal} {hechos.Unidad}"
+					+ sobreElHdl, hechos);
+		}
 	}
 }

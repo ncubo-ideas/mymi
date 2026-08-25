@@ -82,7 +82,7 @@ namespace Examenes.Dominio
 
 		/// <summary>La velocidad ya dicha. "2.20 ng/mL por ano".</summary>
 		public string Expresada => EsAplicable
-			? $"{PorAno:0.00} {Unidad} por ano"
+			? $"{PorAno:0.00} {Unidad} por año"
 			: "no se interpreta por velocidad";
 	}
 }

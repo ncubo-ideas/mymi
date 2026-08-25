@@ -358,7 +358,6 @@ namespace Examenes.App
 						evaluacion.Unidad unidad,
 						evaluacion.DiasTranscurridos dias,
 						evaluacion.Cambio cambio,
-						evaluacion.ExigeAtencion exigeAtencion,
 						evaluacion.SugiereRepetirElExamen sugiereRepetirElExamen,
 						evaluacion.HaySerie haySerie;
 				}
@@ -368,6 +367,38 @@ namespace Examenes.App
 			})
 			.PerformQuery();
 		}
+
+		// LO QUE EL ANALITO CONCLUYE de su serie: veredicto, severidad, la linea para la
+		// persona y que hacer.
+		//
+		// Es la consulta que reemplaza al "exige atencion" generico. Aquella salia de un
+		// bool por analito y le ponia la misma etiqueta al antigeno subiendo y al
+		// colesterol bajando desde un pico; esta la produce cada analito con su criterio.
+		public string InterpretacionDe(string analito)
+		{
+			ArgumentNullException.ThrowIfNullOrWhiteSpace(analito);
+
+			return app.Using(@"
+				{
+					lectura = expediente.InterpretarSerieDe(@analito);
+					print lectura.Analito analito,
+						lectura.AnalitoParaMostrar paraMostrar,
+						lectura.NombreDelVeredicto veredicto,
+						lectura.NombreDeLaSeveridad severidad,
+						lectura.ParaSonia paraSonia,
+						lectura.Accion accion,
+						lectura.PideAlgo pideAlgo,
+						lectura.SugiereRepetirElExamen sugiereRepetirElExamen;
+				}
+			")
+			.WithParameters(p => {
+				p["analito", typeof(string)] = analito;
+			})
+			.PerformQuery();
+		}
+
+		public InterpretacionDeAnalito Interpretacion(string analito) =>
+			ProyeccionDeVistas.Interpretacion(InterpretacionDe(analito));
 
 		// A QUE RITMO viene cambiando un analito. Es la segunda pregunta que exige la serie
 		// completa, y para el antigeno prostatico es LA pregunta: la practica clinica no

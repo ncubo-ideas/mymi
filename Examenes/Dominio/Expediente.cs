@@ -119,6 +119,35 @@ namespace Examenes.Dominio
 				: EvaluacionDeTendencia.SinSerie(cual, 0, null);
 		}
 
+		// LO QUE EL ANALITO CONCLUYE de su propia serie: veredicto, severidad y la linea
+		// para la persona. Es la consulta que reemplaza al "exige atencion" generico.
+		//
+		// Total por la misma razon que EvaluarTendenciaDe: preguntar por un analito real
+		// del que todavia no hay nada es legitimo, y la respuesta es "no hay serie".
+		public Interpretacion InterpretarSerieDe(string analito)
+		{
+			Analito cual = Analito.PorNombre(analito);
+
+			return series.TryGetValue(cual, out SerieDeAnalito serie)
+				? serie.Interpretar(Edad)
+				: Interpretacion.SinSerie(EvaluacionDeTendencia.SinSerie(cual, 0, null));
+		}
+
+		// LO MAS URGENTE de todo el expediente. Es una pregunta que ninguna pantalla
+		// contesta hoy y que no se puede armar afuera: exige recorrer cada serie,
+		// interpretarla con el criterio de SU analito y quedarse con la mayor.
+		public Severidad SeveridadMayor
+		{
+			get
+			{
+				Severidad mayor = Severidad.Informativo;
+				foreach (KeyValuePair<Analito, SerieDeAnalito> par in series)
+					mayor = Severidad.LaMayor(mayor, par.Value.Interpretar(Edad).Severidad);
+
+				return mayor;
+			}
+		}
+
 		// A que ritmo viene cambiando un analito. Total por la misma razon que
 		// EvaluarTendenciaDe: preguntar por un analito del que no hay nada es legitimo, y
 		// la respuesta es "no hay velocidad que dar", no una excepcion.

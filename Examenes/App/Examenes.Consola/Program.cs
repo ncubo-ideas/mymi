@@ -168,8 +168,14 @@ namespace Examenes.Consola
 			// Se imprime ParaMostrar y no el analito con el que se pregunto: la llave es
 			// para buscar, el nombre para mostrar es para leer.
 			Console.WriteLine($"  {t.ParaMostrar,-22} {t.Tendencia,-20} {relato}");
-			if (t.ExigeAtencion) Console.WriteLine($"  {"",-22} ^ exige atencion");
-			if (t.SugiereRepetirElExamen) Console.WriteLine($"  {"",-22} ^ conviene repetir el examen");
+
+			// La LECTURA la da el analito, no esta caratula. Antes esta funcion decidia
+			// que imprimir mirando un bool generico; ahora solo muestra lo que el analito
+			// concluyo, incluida la accion.
+			InterpretacionDeAnalito lectura = api.Interpretacion(analito);
+			Console.WriteLine($"  {"",-22} {lectura.Veredicto}: {lectura.ParaSonia}");
+			if (lectura.PideAlgo)
+				Console.WriteLine($"  {"",-22} ^ {lectura.Severidad} - {lectura.Accion}");
 
 			// La velocidad solo se dice donde significa algo. Que el colesterol no la
 			// muestre no es un hueco de la caratula: es el analito contestando que no se

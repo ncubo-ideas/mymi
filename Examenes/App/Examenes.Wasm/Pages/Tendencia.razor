@@ -51,7 +51,7 @@ else
         @* Los dos extremos, grandes y monoespaciados: es LA lectura de la pantalla. El
            valor final se tiñe solo cuando exige atencion - el color dice algo o no esta. *@
         <p class="cifra-par">
-            @Valor(lectura.ValorInicial)<span class="flecha">&rarr;</span><span class="@(lectura.ExigeAtencion ? "final" : "")">@Valor(lectura.ValorFinal)</span><span class="unidad">@lectura.Unidad</span>
+            @Valor(lectura.ValorInicial)<span class="flecha">&rarr;</span><span class="@(interpretacion.PideAlgo ? "final" : "")">@Valor(lectura.ValorFinal)</span><span class="unidad">@lectura.Unidad</span>
         </p>
         <p class="apunte">
             en @lectura.Dias @(lectura.Dias == 1 ? "día" : "días"),
@@ -59,20 +59,15 @@ else
             @(lectura.Cambio >= 0 ? "· subió " : "· bajó ")@Valor(Math.Abs(lectura.Cambio)) @lectura.Unidad
         </p>
 
-        @if (lectura.SugiereRepetirElExamen)
+        @* TODO este bloque salia de la pantalla: dos textos fijos que se elegian con un
+           bool. Ahora la frase la escribe el analito y la accion sale del conjunto cerrado
+           de severidades, asi que agregar un analito no obliga a tocar este .razor. *@
+        @if (interpretacion.PideAlgo)
         {
-            <div class="aviso aviso--neutro" style="margin-top:22px">
-                <strong>Ese cambio no da para el tiempo que pasó.</strong>
-                Un salto así en tan pocos días no es biológicamente esperable, así que lo más
-                probable es un error de medición. Lo que corresponde es <strong>repetir el
-                examen</strong>, no sacar conclusiones.
-            </div>
-        }
-        else if (lectura.ExigeAtencion)
-        {
-            <div class="aviso aviso--atencion" style="margin-top:22px">
-                <strong>Este valor viene moviéndose en la dirección que importa.</strong>
-                No es un diagnóstico: es la lectura de tu propia serie. Conviene que lo vea tu médico.
+            <div class="aviso @(interpretacion.SugiereRepetirElExamen ? "aviso--neutro" : "aviso--atencion")" style="margin-top:22px">
+                <strong>@interpretacion.Veredicto.</strong>
+                @interpretacion.ParaSonia. No es un diagnóstico: es la lectura de tu propia
+                serie. Lo que corresponde es <strong>@interpretacion.Accion</strong>.
             </div>
         }
         else
@@ -93,6 +88,10 @@ else
     [Parameter] public string Analito { get; set; } = "";
 
     private TendenciaDeAnalito lectura = new();
+
+    // Los HECHOS y la LECTURA son dos consultas distintas: aquella dice que paso, esta
+    // dice que significa segun el analito. La pantalla no combina ni interpreta, muestra.
+    private InterpretacionDeAnalito interpretacion = new();
     private string error = "";
 
     protected override void OnParametersSet()
@@ -102,14 +101,18 @@ else
 
         // TODO lo que se ve sale de consultar al actor. El payload del laboratorio nunca
         // llega hasta acá: solo entra como argumento de un comando, dentro del refresh.
-        try { lectura = estado.Tendencia(Analito); }
+        try
+        {
+            lectura = estado.Tendencia(Analito);
+            interpretacion = estado.Interpretacion(Analito);
+        }
         catch (Exception ex) { error = $"No se pudo leer la serie de {Analito}: {ex.Message}"; }
     }
 
     private string Insignia()
     {
-        if (lectura.SugiereRepetirElExamen) return "chip--repetir";
-        if (lectura.ExigeAtencion) return "chip--atencion";
+        if (interpretacion.SugiereRepetirElExamen) return "chip--repetir";
+        if (interpretacion.PideAlgo) return "chip--atencion";
         return "chip--estable";
     }
 

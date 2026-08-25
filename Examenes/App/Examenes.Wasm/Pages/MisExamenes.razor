@@ -234,16 +234,16 @@ else
                     </div>
                     <div class="serie-valor">@Valor(t.ValorFinal) <span>@t.Unidad</span></div>
                 </div>
-                @if (t.SugiereRepetirElExamen)
+                @* La lectura y la accion salen del ANALITO. Esta pantalla ya no decide
+                   que decir: antes tenia escrito "Conviene que lo vea tu medico" acá
+                   adentro, igual para el antigeno que para el colesterol, y un .razor no
+                   tiene de donde saber si algo espera a la proxima cita. *@
+                @{ InterpretacionDeAnalito lectura = Lectura(t.Analito); }
+                @if (!string.IsNullOrEmpty(lectura.ParaSonia))
                 {
-                    <div class="serie-lectura">
-                        El cambio es demasiado grande para el tiempo que pasó. Lo más probable es un
-                        error de medición: conviene <b>repetir el examen</b>.
+                    <div class="serie-lectura@(lectura.PideAlgo ? " serie-lectura--atencion" : "")">
+                        @lectura.ParaSonia@(lectura.PideAlgo ? ": " : ".")<b>@lectura.Accion</b>
                     </div>
-                }
-                else if (t.ExigeAtencion)
-                {
-                    <div class="serie-lectura serie-lectura--atencion">Conviene que lo vea <b>tu médico</b>.</div>
                 }
             </button>
         }
@@ -420,9 +420,15 @@ else
 
         // Una lectura por analito con historia. Se piden de a uno porque cada una es una
         // consulta sobre el actor: la pantalla no recorre el dominio, le pregunta.
-        var lecturas = new List<TendenciaDeAnalito>();
-        foreach (string analito in estado.Analitos()) lecturas.Add(estado.Tendencia(analito));
-        analitos = lecturas;
+        var hechos = new List<TendenciaDeAnalito>();
+        var leidos = new Dictionary<string, InterpretacionDeAnalito>();
+        foreach (string analito in estado.Analitos())
+        {
+            hechos.Add(estado.Tendencia(analito));
+            leidos[analito] = estado.Interpretacion(analito);
+        }
+        analitos = hechos;
+        interpretaciones = leidos;
     }
 
     private void VerSerie(string analito) =>
@@ -436,12 +442,22 @@ else
               + $"en {t.Dias} {(t.Dias == 1 ? "día" : "días")}, sobre {t.Mediciones} mediciones"
             : $"una sola medición: todavía no hay serie para decir para dónde viene";
 
-    private static string Insignia(TendenciaDeAnalito t)
+    private Dictionary<string, InterpretacionDeAnalito> interpretaciones = new();
+
+    private InterpretacionDeAnalito Lectura(string analito) =>
+        interpretaciones.TryGetValue(analito, out InterpretacionDeAnalito l)
+            ? l
+            : new InterpretacionDeAnalito();
+
+    // El chip sale de la SEVERIDAD que decidio el analito, no de un bool generico.
+    //
+    // El ambar sigue reservado para lo que exige atencion, y por eso "salto inverosimil"
+    // NO lo usa: no es una alarma clinica, es "repeti el examen".
+    private string Insignia(TendenciaDeAnalito t)
     {
-        // El ambar esta reservado para lo que exige atencion, y por eso "salto
-        // inverosimil" NO lo usa: no es una alarma clinica, es "repeti el examen".
-        if (t.SugiereRepetirElExamen) return "chip--repetir";
-        if (t.ExigeAtencion) return "chip--atencion";
+        InterpretacionDeAnalito lectura = Lectura(t.Analito);
+        if (lectura.SugiereRepetirElExamen) return "chip--repetir";
+        if (lectura.PideAlgo) return "chip--atencion";
         if (!t.HaySerie) return "chip--sinserie";
         return "chip--estable";
     }
