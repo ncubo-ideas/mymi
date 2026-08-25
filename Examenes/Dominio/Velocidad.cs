@@ -25,8 +25,11 @@ namespace Examenes.Dominio
 	/// Carrier por identidad: sin Equals, sin GetHashCode, no es llave de nada (E9/E23).
 	public sealed class Velocidad
 	{
-		/// <summary>El analito del que se hablo.</summary>
+		/// <summary>El analito del que se hablo, por su nombre canonico.</summary>
 		public string Analito { get; }
+
+		/// <summary>El mismo analito como se le muestra a la persona, con acentos.</summary>
+		public string AnalitoParaMostrar { get; }
 
 		/// <summary>Cambio por ano, con signo. Positivo si subio. En la unidad del analito.</summary>
 		public decimal PorAno { get; }
@@ -43,10 +46,13 @@ namespace Examenes.Dominio
 		/// <summary>El umbral de ESTE analito, para que la superficie pueda decir contra que se comparo.</summary>
 		public decimal UmbralPorAno { get; }
 
-		private Velocidad(string analito, decimal porAno, string unidad, int diasDelTramo,
+		private Velocidad(Analito analito, decimal porAno, string unidad, int diasDelTramo,
 			bool esAplicable, decimal umbralPorAno)
 		{
-			Analito = analito;
+			ArgumentNullException.ThrowIfNull(analito);
+
+			Analito = analito.Nombre;
+			AnalitoParaMostrar = analito.ParaMostrar;
 			PorAno = porAno;
 			Unidad = unidad;
 			DiasDelTramo = diasDelTramo;
@@ -55,7 +61,7 @@ namespace Examenes.Dominio
 		}
 
 		/// <summary>Una velocidad medida de verdad, sobre un tramo real.</summary>
-		internal static Velocidad Medida(string analito, decimal porAno, string unidad, int diasDelTramo,
+		internal static Velocidad Medida(Analito analito, decimal porAno, string unidad, int diasDelTramo,
 			decimal umbralPorAno) =>
 			new Velocidad(analito, porAno, unidad, diasDelTramo, umbralPorAno > 0m, umbralPorAno);
 
@@ -63,7 +69,7 @@ namespace Examenes.Dominio
 		/// No hay velocidad que dar. Pasa por dos razones distintas y las dos son legitimas:
 		/// no hay dos mediciones, o este analito no se lee por velocidad.
 		/// </summary>
-		internal static Velocidad NoAplica(string analito, string unidad, decimal umbralPorAno) =>
+		internal static Velocidad NoAplica(Analito analito, string unidad, decimal umbralPorAno) =>
 			new Velocidad(analito, 0m, unidad, 0, false, umbralPorAno);
 
 		/// <summary>

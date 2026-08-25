@@ -22,16 +22,18 @@ namespace Examenes.Dominio
 	// hace que la tool MCP sobre este analito no sea una repeticion de la UI.
 	public sealed class AntigenoProstatico : ExamenDeSangre
 	{
-		public const string NombreDelAnalito = "Antigeno prostatico";
+		// Se nombra el analito UNA vez y con el namespace por delante. Dentro de esta
+		// clase el identificador `Analito` es tambien la propiedad heredada, y calificarlo
+		// deja sin lugar a dudas que aca se habla del tipo. Las otras tres subclases hacen
+		// lo mismo por la misma razon.
+		private static readonly Analito Suyo = Examenes.Dominio.Analito.AntigenoProstatico;
 
 		public AntigenoProstatico(DateTime fecha, decimal valor, string unidad)
-			: base(fecha, Medida(valor, unidad, UnidadDeMedida.NanogramosPorMililitro, NombreDelAnalito))
+			: base(fecha, Suyo, Medida(valor, unidad, Suyo))
 		{
 		}
 
-		public override string Nombre => NombreDelAnalito;
-
-		public override string Analito => NombreDelAnalito;
+		public override string Nombre => Suyo.ParaMostrar;
 
 		// El techo sube con la edad: la prostata crece, y 4.0 a los 70 no significa lo
 		// mismo que 4.0 a los 45. Este escalonado por decada es la razon concreta de que
@@ -44,7 +46,7 @@ namespace Examenes.Dominio
 			else if (edad < 70) techo = 4.5m;
 			else techo = 6.5m;
 
-			return RangoDeReferencia.HastaUnMaximoDe(techo, UnidadDeMedida.NanogramosPorMililitro);
+			return RangoDeReferencia.HastaUnMaximoDe(techo, Suyo.Unidad);
 		}
 
 		public override decimal CambioMaximoVerosimilPorDia => 0.05m;

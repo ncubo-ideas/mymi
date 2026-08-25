@@ -57,6 +57,7 @@ namespace Examenes.App
 			{
 				Analito = Texto(raiz, "analito"),
 				Tendencia = Texto(raiz, "tendencia"),
+				ParaMostrar = Texto(raiz, "paraMostrar"),
 				Mediciones = Entero(raiz, "mediciones"),
 				ValorInicial = Decimal(raiz, "valorInicial"),
 				ValorFinal = Decimal(raiz, "valorFinal"),
@@ -79,6 +80,7 @@ namespace Examenes.App
 			return new VelocidadDeAnalito
 			{
 				Analito = Texto(raiz, "analito"),
+				ParaMostrar = Texto(raiz, "paraMostrar"),
 				PorAno = Decimal(raiz, "porAno"),
 				Unidad = Texto(raiz, "unidad"),
 				Dias = Entero(raiz, "dias"),

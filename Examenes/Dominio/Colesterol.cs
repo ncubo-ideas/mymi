@@ -14,21 +14,19 @@ namespace Examenes.Dominio
 	//                                         real no es ruido.
 	public sealed class Colesterol : ExamenDeSangre
 	{
-		public const string NombreDelAnalito = "Colesterol total";
+		private static readonly Analito Suyo = Examenes.Dominio.Analito.ColesterolTotal;
 
 		public Colesterol(DateTime fecha, decimal valor, string unidad)
-			: base(fecha, Medida(valor, unidad, UnidadDeMedida.MiligramosPorDecilitro, NombreDelAnalito))
+			: base(fecha, Suyo, Medida(valor, unidad, Suyo))
 		{
 		}
 
-		public override string Nombre => NombreDelAnalito;
-
-		public override string Analito => NombreDelAnalito;
+		public override string Nombre => Suyo.ParaMostrar;
 
 		// El techo de lo deseable baja con la edad: a los 60 el mismo 210 pesa mas que
 		// a los 30.
 		public override RangoDeReferencia RangoPara(int edad) =>
-			RangoDeReferencia.HastaUnMaximoDe(edad >= 50 ? 200m : 220m, UnidadDeMedida.MiligramosPorDecilitro);
+			RangoDeReferencia.HastaUnMaximoDe(edad >= 50 ? 200m : 220m, Suyo.Unidad);
 
 		public override decimal CambioMaximoVerosimilPorDia => 1.0m;
 

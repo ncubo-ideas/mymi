@@ -7,22 +7,20 @@ namespace Examenes.Dominio
 	// con "pasarse del techo" y el rango con dos extremos no se estaria usando.
 	public sealed class Hemoglobina : ExamenDeSangre
 	{
-		public const string NombreDelAnalito = "Hemoglobina";
+		private static readonly Analito Suyo = Examenes.Dominio.Analito.Hemoglobina;
 
 		public Hemoglobina(DateTime fecha, decimal valor, string unidad)
-			: base(fecha, Medida(valor, unidad, UnidadDeMedida.GramosPorDecilitro, NombreDelAnalito))
+			: base(fecha, Suyo, Medida(valor, unidad, Suyo))
 		{
 		}
 
-		public override string Nombre => NombreDelAnalito;
-
-		public override string Analito => NombreDelAnalito;
+		public override string Nombre => Suyo.ParaMostrar;
 
 		// Rango con piso Y techo, a diferencia del colesterol y el antigeno.
 		public override RangoDeReferencia RangoPara(int edad) =>
 			edad >= 60
-				? RangoDeReferencia.Entre(12.5m, 16.5m, UnidadDeMedida.GramosPorDecilitro)
-				: RangoDeReferencia.Entre(13.0m, 17.0m, UnidadDeMedida.GramosPorDecilitro);
+				? RangoDeReferencia.Entre(12.5m, 16.5m, Suyo.Unidad)
+				: RangoDeReferencia.Entre(13.0m, 17.0m, Suyo.Unidad);
 
 		public override decimal CambioMaximoVerosimilPorDia => 0.1m;
 

@@ -1,5 +1,7 @@
 using System;
+using Examenes.App.Eventos;
 using Examenes.Dominio;
+using Puppets.Portador;
 
 namespace Examenes.Consola
 {
@@ -38,6 +40,8 @@ namespace Examenes.Consola
 			ElOrdenDeLlegadaNoImportaS();
 			LaVelocidadEsLaLecturaDelAntigeno();
 			ElUrianalisisInformaDosFormas();
+			ElAnalitoEsUnaIdentidadNoUnNombre();
+			LaRutaResuelveElNombreDelLaboratorio();
 
 			Console.WriteLine();
 			Console.WriteLine(fallas == 0
@@ -123,7 +127,7 @@ namespace Examenes.Consola
 			var bajando = new Expediente(60);
 			bajando.Agregar(new Hemoglobina(Hoy.AddDays(-365), 15.0m, "g/dL"));
 			bajando.Agregar(new Hemoglobina(Hoy, 11.0m, "g/dL"));
-			EvaluacionDeTendencia baja = bajando.EvaluarTendenciaDe(Hemoglobina.NombreDelAnalito);
+			EvaluacionDeTendencia baja = bajando.EvaluarTendenciaDe(Analito.Hemoglobina.Nombre);
 			Igual("hemoglobina 15->11 en 1 ano", "en descenso", baja.NombreDeLaTendencia);
 			Igual("  exige atencion (bajar es lo malo)", "True", baja.ExigeAtencion.ToString());
 
@@ -131,7 +135,7 @@ namespace Examenes.Consola
 			subiendo.Agregar(new Hemoglobina(Hoy.AddDays(-365), 11.0m, "g/dL"));
 			subiendo.Agregar(new Hemoglobina(Hoy, 15.0m, "g/dL"));
 			Igual("hemoglobina 11->15 NO exige atencion", "False",
-				subiendo.EvaluarTendenciaDe(Hemoglobina.NombreDelAnalito).ExigeAtencion.ToString());
+				subiendo.EvaluarTendenciaDe(Analito.Hemoglobina.Nombre).ExigeAtencion.ToString());
 		}
 
 		// ---- la orina no tiene numero; la sangre no tiene color ----
@@ -161,11 +165,11 @@ namespace Examenes.Consola
 			var expediente = new Expediente(60);
 			expediente.Agregar(new AntigenoProstatico(Hoy, 3.0m, "ng/mL"));
 			Igual("una sola medicion", "indeterminada",
-				expediente.EvaluarTendenciaDe(AntigenoProstatico.NombreDelAnalito).NombreDeLaTendencia);
+				expediente.EvaluarTendenciaDe(Analito.AntigenoProstatico.Nombre).NombreDeLaTendencia);
 			Igual("analito sin ninguna medicion", "indeterminada",
-				expediente.EvaluarTendenciaDe(Hemoglobina.NombreDelAnalito).NombreDeLaTendencia);
+				expediente.EvaluarTendenciaDe(Analito.Hemoglobina.Nombre).NombreDeLaTendencia);
 			Igual("  y se puede saber que no hay serie", "False",
-				expediente.EvaluarTendenciaDe(Hemoglobina.NombreDelAnalito).HaySerie.ToString());
+				expediente.EvaluarTendenciaDe(Analito.Hemoglobina.Nombre).HaySerie.ToString());
 		}
 
 		// ---- un evento atrasado no da vuelta la tendencia ----
@@ -176,7 +180,7 @@ namespace Examenes.Consola
 			var expediente = new Expediente(60);
 			expediente.Agregar(new Colesterol(Hoy, 280m, "mg/dL"));
 			expediente.Agregar(new Colesterol(Hoy.AddDays(-365), 200m, "mg/dL"));
-			EvaluacionDeTendencia t = expediente.EvaluarTendenciaDe(Colesterol.NombreDelAnalito);
+			EvaluacionDeTendencia t = expediente.EvaluarTendenciaDe(Analito.ColesterolTotal.Nombre);
 			Igual("insertado al reves: sigue siendo ascenso", "en ascenso", t.NombreDeLaTendencia);
 			Igual("  cambio +80, no -80", "80", t.Cambio.ToString());
 		}
@@ -195,7 +199,7 @@ namespace Examenes.Consola
 			expediente.Agregar(new AntigenoProstatico(Hoy.AddDays(-365), 3.0m, "ng/mL"));
 			expediente.Agregar(new AntigenoProstatico(Hoy, 5.2m, "ng/mL"));
 
-			Velocidad psa = expediente.VelocidadDe(AntigenoProstatico.NombreDelAnalito);
+			Velocidad psa = expediente.VelocidadDe(Analito.AntigenoProstatico.Nombre);
 			Igual("PSA: el tramo son los ultimos 365 dias", "365", psa.DiasDelTramo.ToString());
 			Igual("  2.2 ng/mL en un ano = 2.20 por ano", "2.20", psa.PorAno.ToString("0.00"));
 			Igual("  supera el umbral de 0.75", "True", psa.ExigeAtencion.ToString());
@@ -217,13 +221,13 @@ namespace Examenes.Consola
 			bajando.Agregar(new AntigenoProstatico(Hoy.AddDays(-365), 5.2m, "ng/mL"));
 			bajando.Agregar(new AntigenoProstatico(Hoy, 3.0m, "ng/mL"));
 			Igual("un PSA que BAJA rapido no exige atencion", "False",
-				bajando.VelocidadDe(AntigenoProstatico.NombreDelAnalito).ExigeAtencion.ToString());
+				bajando.VelocidadDe(Analito.AntigenoProstatico.Nombre).ExigeAtencion.ToString());
 
 			// El colesterol no se lee por velocidad, y esa es una respuesta del analito.
 			var col = new Expediente(60);
 			col.Agregar(new Colesterol(Hoy.AddDays(-365), 200m, "mg/dL"));
 			col.Agregar(new Colesterol(Hoy, 280m, "mg/dL"));
-			Velocidad velColesterol = col.VelocidadDe(Colesterol.NombreDelAnalito);
+			Velocidad velColesterol = col.VelocidadDe(Analito.ColesterolTotal.Nombre);
 			Igual("el colesterol NO se interpreta por velocidad", "False",
 				velColesterol.EsAplicable.ToString());
 			Igual("  aunque cambio 80 en un ano", "False", velColesterol.ExigeAtencion.ToString());
@@ -232,9 +236,9 @@ namespace Examenes.Consola
 			var unSolo = new Expediente(60);
 			unSolo.Agregar(new AntigenoProstatico(Hoy, 5.2m, "ng/mL"));
 			Igual("una sola medicion no da velocidad", "False",
-				unSolo.VelocidadDe(AntigenoProstatico.NombreDelAnalito).EsAplicable.ToString());
+				unSolo.VelocidadDe(Analito.AntigenoProstatico.Nombre).EsAplicable.ToString());
 			Igual("un analito del que no hay nada tampoco revienta", "False",
-				unSolo.VelocidadDe(Hemoglobina.NombreDelAnalito).EsAplicable.ToString());
+				unSolo.VelocidadDe(Analito.Hemoglobina.Nombre).EsAplicable.ToString());
 		}
 
 		// ---- un examen, dos formas de magnitud, y ninguna es un numero ----
@@ -275,7 +279,7 @@ namespace Examenes.Consola
 			var expediente = new Expediente(60);
 			foreach ((DateTime fecha, decimal valor) in puntos)
 				expediente.Agregar(new Colesterol(fecha, valor, "mg/dL"));
-			return expediente.EvaluarTendenciaDe(Colesterol.NombreDelAnalito);
+			return expediente.EvaluarTendenciaDe(Analito.ColesterolTotal.Nombre);
 		}
 
 		private static EvaluacionDeTendencia SerieDeAntigeno(params (DateTime fecha, decimal valor)[] puntos)
@@ -283,8 +287,168 @@ namespace Examenes.Consola
 			var expediente = new Expediente(60);
 			foreach ((DateTime fecha, decimal valor) in puntos)
 				expediente.Agregar(new AntigenoProstatico(fecha, valor, "ng/mL"));
-			return expediente.EvaluarTendenciaDe(AntigenoProstatico.NombreDelAnalito);
+			return expediente.EvaluarTendenciaDe(Analito.AntigenoProstatico.Nombre);
 		}
+
+
+		// ---- el analito es una identidad, no la cadena con que lo escribieron ----
+		//
+		// MEDIDO sobre tres reportes reales del mismo paciente: el mismo analito llega como
+		// "HEMOGLOBINA", como "HGB" y como "Hemoglobina" segun el laboratorio. Con el
+		// analito como cadena eso daba tres series de un punto y la app contestaba
+		// "indeterminada" tres veces, que es perder la unica capacidad que justifica el
+		// dominio justo en el caso para el que existe.
+		private static void ElAnalitoEsUnaIdentidadNoUnNombre()
+		{
+			Titulo("el analito es una identidad, no un nombre");
+
+			Igual("una abreviatura de laboratorio resuelve al analito", "True",
+				Analito.PorNombre("HGB").EsElMismo(Analito.Hemoglobina).ToString());
+			Igual("  el acento no lo convierte en otro", "True",
+				Analito.PorNombre("Antígeno prostático")
+					.EsElMismo(Analito.AntigenoProstatico).ToString());
+			Igual("  ni las mayusculas ni los espacios sobrantes", "True",
+				Analito.PorNombre("  COLESTEROL  ").EsElMismo(Analito.ColesterolTotal).ToString());
+			Igual("  ni los guiones en el medio", "True",
+				Analito.PorNombre("LDL-C").EsElMismo(Analito.ColesterolLdl).ToString());
+
+			// LA comprobacion de toda la seccion: la serie NO se parte por el nombre.
+			Expediente expediente = new Expediente(60);
+			expediente.Agregar(new Hemoglobina(Hoy.AddDays(-730), 15.8m, "g/dL"));
+			expediente.Agregar(new Hemoglobina(Hoy.AddDays(-52), 15.3m, "g/dL"));
+			expediente.Agregar(new Hemoglobina(Hoy, 16.2m, "g/dL"));
+
+			Igual("tres hojas de tres laboratorios son UNA serie", "1",
+				expediente.CantidadDeAnalitosConSerie.ToString());
+			Igual("  y se alcanza preguntando como la nombra cada uno", "3",
+				expediente.EvaluarTendenciaDe("HGB").CantidadDeMediciones.ToString());
+			Igual("  da lo mismo por cual de sus nombres se pregunte", "3",
+				expediente.EvaluarTendenciaDe("Hemoglobina").CantidadDeMediciones.ToString());
+			Igual("  y por el nombre con acento tambien", "3",
+				expediente.SerieDe("HB").Cantidad.ToString());
+
+			// Las dos respuestas que antes eran indistinguibles.
+			Revienta<ArgumentException>("un nombre que no es ningun analito revienta",
+				() => expediente.EvaluarTendenciaDe("colesterol malo"));
+			Igual("un analito real sin mediciones NO revienta", "indeterminada",
+				expediente.EvaluarTendenciaDe("PSA").NombreDeLaTendencia);
+
+			Igual("el nombre para mostrar lleva el acento", "Antígeno prostático",
+				Analito.AntigenoProstatico.ParaMostrar);
+			Igual("  y el canonico es el que sigue siendo la llave", "Antigeno prostatico",
+				Analito.AntigenoProstatico.Nombre);
+
+			// La unidad ahora la dice el analito, no la subclase del examen.
+			Igual("la unidad es del analito", "g/dL", Analito.Hemoglobina.Unidad.Simbolo);
+			Revienta<ArgumentException>("  y un evento en otra unidad no entra",
+				() => new Hemoglobina(Hoy, 15.3m, "mg/dL"));
+
+			// Propiedad, no ejemplo: TODOS los nombres de cada analito vuelven a el. Es lo
+			// que protege la tabla de sinonimos el dia que alguien agregue uno de mas.
+			foreach (Analito analito in Analito.Todos)
+			{
+				bool todosVuelven = analito.RespondeA(analito.Nombre)
+					&& analito.RespondeA(analito.ParaMostrar);
+				foreach (string sinonimo in analito.Sinonimos)
+					todosVuelven = todosVuelven && analito.RespondeA(sinonimo);
+
+				Igual($"  todos los nombres de {analito.Nombre} vuelven a el", "True",
+					todosVuelven.ToString());
+			}
+		}
+
+
+		// ---- la ruta acepta el vocabulario del laboratorio que emitio ----
+		//
+		// La otra punta de la identidad. Resolver bien al CONSULTAR no sirve de nada si al
+		// INGERIR se compara el nombre con == contra el token que esta app eligio: el
+		// evento se descarta y no hay serie que consultar.
+		//
+		// Y descartar sigue siendo lo correcto para lo que esta app no modela. Las dos
+		// cosas conviven porque son preguntas distintas: "no se como se llama" es un
+		// problema, "no modelo eso" no lo es.
+		private static void LaRutaResuelveElNombreDelLaboratorio()
+		{
+			Titulo("la ruta acepta el vocabulario del laboratorio");
+
+			Igual("un laboratorio que escribe 'HGB'", "Hemoglobina",
+				AnalitoRuteado(Sangre("HGB", "15.3", "g/dL")));
+			Igual("  otro que escribe 'HEMOGLOBINA'", "Hemoglobina",
+				AnalitoRuteado(Sangre("HEMOGLOBINA", "15.8", "g/dL")));
+			Igual("  y el token que emite URL2 hoy", "Hemoglobina",
+				AnalitoRuteado(Sangre("Hemoglobina", "16.2", "g/dL")));
+			Igual("el antigeno con acentos y todo", "Antigeno prostatico",
+				AnalitoRuteado(Sangre("Antígeno prostático", "5.2", "ng/mL")));
+			Igual("  y por su sigla", "Antigeno prostatico",
+				AnalitoRuteado(Sangre("PSA", "5.2", "ng/mL")));
+
+			// Lo que NO cambia: lo que esta app no modela se sigue descartando.
+			Igual("un examen que esta app no modela se descarta", "descartado",
+				AnalitoRuteado(Sangre("Tiroides", "2.1", "mg/dL")));
+			Igual("  y un evento de otro tipo tampoco entra", "descartado",
+				AnalitoRuteado(new SenalDeEvento(900, "CitaAgendada", @"{ ""id"": 900 }")));
+			Igual("  ni uno sin fecha", "descartado",
+				AnalitoRuteado(new SenalDeEvento(901, "ExamenAgregado", @"{
+					""id"": 901, ""tipo"": ""ExamenAgregado"",
+					""examen"": ""Hemoglobina"", ""valor"": 15.0, ""unidad"": ""g/dL"" }")));
+
+			// La forma del payload dejo de estar codificada en el nombre: el token viejo y
+			// el nombre del analito con su fraccion producen el MISMO mensaje.
+			ExamenAgregado porToken = Ruteado(Fraccionado("ColesterolDetallado"));
+			ExamenAgregado porNombre = Ruteado(Fraccionado("LDL"));
+			Igual("el token de forma que emite URL2 sigue entrando", "Colesterol LDL",
+				porToken.Analito.Nombre);
+			Igual("  y trae su fraccionamiento", "True", porToken.TraeFraccionamiento.ToString());
+			Igual("un emisor que manda 'LDL' con su HDL da lo mismo", "Colesterol LDL",
+				porNombre.Analito.Nombre);
+			Igual("  y tambien trae fraccionamiento", "True", porNombre.TraeFraccionamiento.ToString());
+
+			// Los dos casos que la ruta filtra para que el comando no arme un examen a
+			// medias. El dominio modela el LDL junto con su HDL, no sueltos.
+			Igual("un LDL sin su HDL no se aplica a medias", "descartado",
+				AnalitoRuteado(Sangre("LDL", "177", "mg/dL")));
+			Igual("  ni un HDL solo, que no forma serie", "descartado",
+				AnalitoRuteado(Sangre("HDL", "32", "mg/dL")));
+
+			// La orina no es un analito: es otro tipo de muestra, y por eso sigue siendo
+			// el unico token propio que queda.
+			ExamenAgregado orina = Ruteado(new SenalDeEvento(905, "ExamenAgregado", @"{
+				""id"": 905, ""tipo"": ""ExamenAgregado"", ""examen"": ""Orina"",
+				""fecha"": ""2026-08-21T08:33:00"", ""color"": ""ambar"" }"));
+			Igual("la orina entra sin ser un analito", "True", orina.EsDeOrina.ToString());
+			Igual("  y una orina sin color se descarta", "descartado",
+				AnalitoRuteado(new SenalDeEvento(906, "ExamenAgregado", @"{
+					""id"": 906, ""tipo"": ""ExamenAgregado"", ""examen"": ""Orina"",
+					""fecha"": ""2026-08-21T08:33:00"" }")));
+		}
+
+		private static ExamenAgregado Ruteado(SenalDeEvento senal) =>
+			RutaDeExamenes.Rutear(senal) as ExamenAgregado;
+
+		// El nombre canonico del analito que la ruta resolvio, o "descartado" si devolvio
+		// null. Un solo texto para comparar hace que la comprobacion diga que paso.
+		private static string AnalitoRuteado(SenalDeEvento senal)
+		{
+			ExamenAgregado mensaje = Ruteado(senal);
+			if (mensaje == null) return "descartado";
+			return mensaje.EsDeOrina ? "orina" : mensaje.Analito.Nombre;
+		}
+
+		private static SenalDeEvento Sangre(string examen, string valor, string unidad) =>
+			new SenalDeEvento(910, "ExamenAgregado", $@"{{
+				""id"": 910, ""tipo"": ""ExamenAgregado"",
+				""examen"": ""{examen}"",
+				""fecha"": ""2026-08-21T08:30:00"",
+				""valor"": {valor}, ""unidad"": ""{unidad}""
+			}}");
+
+		private static SenalDeEvento Fraccionado(string examen) =>
+			new SenalDeEvento(911, "ExamenAgregado", $@"{{
+				""id"": 911, ""tipo"": ""ExamenAgregado"",
+				""examen"": ""{examen}"",
+				""fecha"": ""2026-08-21T08:30:00"",
+				""valor"": 177, ""valorSecundario"": 32, ""unidad"": ""mg/dL""
+			}}");
 
 		private static void Titulo(string texto)
 		{

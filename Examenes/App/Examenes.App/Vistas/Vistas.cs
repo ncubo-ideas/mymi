@@ -27,7 +27,12 @@ namespace Examenes.App.Vistas
 	// no se puede armar con esto es un consejo de plantilla, y es a proposito.
 	public sealed class TendenciaDeAnalito
 	{
+		// Analito es la LLAVE: con ese nombre se vuelve a preguntar. ParaMostrar es el
+		// TEXTO: es lo que se le pone delante a la persona. Son dos campos porque son dos
+		// usos, y confundirlos es como se termina preguntando por "Antígeno prostático"
+		// con tilde a un indice que la llave sin ella.
 		public string Analito { get; init; } = "";
+		public string ParaMostrar { get; init; } = "";
 		public string Tendencia { get; init; } = "";
 		public int Mediciones { get; init; }
 		public decimal ValorInicial { get; init; }
@@ -47,6 +52,7 @@ namespace Examenes.App.Vistas
 	public sealed class VelocidadDeAnalito
 	{
 		public string Analito { get; init; } = "";
+		public string ParaMostrar { get; init; } = "";
 		public decimal PorAno { get; init; }
 		public string Unidad { get; init; } = "";
 		public int Dias { get; init; }

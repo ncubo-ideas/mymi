@@ -24,9 +24,20 @@ namespace Examenes.Dominio
 	{
 		public Medicion Valor { get; private set; }
 
-		protected ExamenDeSangre(DateTime fecha, Medicion valor) : base(fecha)
+		// QUE se midio, como identidad. Es la llave de la serie: dos examenes del mismo
+		// analito forman serie aunque cada laboratorio lo haya nombrado distinto.
+		//
+		// Entra por constructor y no es abstracta. Antes cada subclase declaraba un
+		// `override string Analito` con una constante, y la subclase repetia ademas su
+		// UnidadDeMedida al armar la medicion: dos hechos sobre el mismo analito escritos
+		// en dos lugares, que podian contradecirse. Ahora los dice Analito, una vez.
+		public Analito Analito { get; private set; }
+
+		protected ExamenDeSangre(DateTime fecha, Analito analito, Medicion valor) : base(fecha)
 		{
+			ArgumentNullException.ThrowIfNull(analito);
 			ArgumentNullException.ThrowIfNull(valor);
+			Analito = analito;
 			Valor = valor;
 		}
 
@@ -35,27 +46,22 @@ namespace Examenes.Dominio
 		// constructor a proposito: una llamada virtual desde el constructor de la base
 		// corre antes de que la subclase este inicializada, y funciona solo mientras
 		// nadie la haga depender de un campo. Este helper no tiene ese riesgo.
-		protected static Medicion Medida(decimal valor, string simboloRecibido,
-			UnidadDeMedida unidadDelAnalito, string analito)
+		protected static Medicion Medida(decimal valor, string simboloRecibido, Analito analito)
 		{
-			ArgumentNullException.ThrowIfNull(unidadDelAnalito);
+			ArgumentNullException.ThrowIfNull(analito);
 
 			UnidadDeMedida recibida = UnidadDeMedida.PorSimbolo(simboloRecibido);
-			if (!recibida.EsLaMisma(unidadDelAnalito))
+			if (!recibida.EsLaMisma(analito.Unidad))
 				throw new ArgumentException(
-					$"{analito} se mide en {unidadDelAnalito.Simbolo}, y el evento lo trajo en {recibida.Simbolo}.",
+					$"{analito.Nombre} se mide en {analito.Unidad.Simbolo}, y el evento lo trajo en {recibida.Simbolo}.",
 					nameof(simboloRecibido));
 
-			return new Medicion(valor, unidadDelAnalito);
+			return new Medicion(valor, analito.Unidad);
 		}
 
 		public override bool AportaSerie => true;
 
 		public override string ResultadoExpresado => Valor.Expresado;
-
-		// El nombre del analito, que es la llave de la serie. Dos examenes del mismo
-		// analito forman serie; uno de colesterol y uno de hemoglobina no.
-		public abstract string Analito { get; }
 
 		// El rango normal para una edad. Es una funcion de la edad, no una constante:
 		// eso es lo que significa "los rangos por edad van en el codigo del dominio".

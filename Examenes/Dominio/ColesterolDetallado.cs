@@ -14,19 +14,21 @@ namespace Examenes.Dominio
 	// modelar dos series en un examen seria mezclar dos cosas distintas en una.
 	public sealed class ColesterolDetallado : ExamenDeSangre
 	{
-		public const string NombreDelAnalito = "Colesterol LDL";
+		private static readonly Analito Suyo = Examenes.Dominio.Analito.ColesterolLdl;
+
+		// El HDL es OTRO analito, y ahora se puede decir asi en vez de pasar su nombre
+		// suelto como texto: viaja en el examen, se muestra, y no es la llave de la serie.
+		private static readonly Analito ElDelHdl = Examenes.Dominio.Analito.ColesterolHdl;
 
 		public Medicion Hdl { get; private set; }
 
 		public ColesterolDetallado(DateTime fecha, decimal ldl, decimal hdl, string unidad)
-			: base(fecha, Medida(ldl, unidad, UnidadDeMedida.MiligramosPorDecilitro, NombreDelAnalito))
+			: base(fecha, Suyo, Medida(ldl, unidad, Suyo))
 		{
-			Hdl = Medida(hdl, unidad, UnidadDeMedida.MiligramosPorDecilitro, "Colesterol HDL");
+			Hdl = Medida(hdl, unidad, ElDelHdl);
 		}
 
 		public override string Nombre => "Colesterol HDL/LDL";
-
-		public override string Analito => NombreDelAnalito;
 
 		public Medicion Ldl => Valor;
 
@@ -34,7 +36,7 @@ namespace Examenes.Dominio
 		public override string ResultadoExpresado => $"LDL {Ldl.Expresado} / HDL {Hdl.Expresado}";
 
 		public override RangoDeReferencia RangoPara(int edad) =>
-			RangoDeReferencia.HastaUnMaximoDe(edad >= 50 ? 100m : 130m, UnidadDeMedida.MiligramosPorDecilitro);
+			RangoDeReferencia.HastaUnMaximoDe(edad >= 50 ? 100m : 130m, Suyo.Unidad);
 
 		public override decimal CambioMaximoVerosimilPorDia => 0.8m;
 

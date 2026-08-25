@@ -22,8 +22,15 @@ namespace Examenes.Dominio
 		// Serie por analito. Es lo que evita recorrer todos los examenes y filtrar en
 		// cada consulta, y es la estructura que hace que "veni subiendo?" sea O(1) para
 		// encontrar la serie.
-		private readonly Dictionary<string, SerieDeAnalito> series =
-			new Dictionary<string, SerieDeAnalito>(StringComparer.OrdinalIgnoreCase);
+		// La llave es la IDENTIDAD del analito, no su nombre. El diccionario compara por
+		// referencia -Analito no define Equals- y eso es exactamente lo que se quiere: dos
+		// examenes son de la misma serie si son del mismo analito, no si el emisor escribio
+		// el nombre igual.
+		//
+		// Antes era un Dictionary<string,...> con OrdinalIgnoreCase, que resolvia las
+		// mayusculas y NADA mas: "HGB" y "Hemoglobina" seguian siendo dos series.
+		private readonly Dictionary<Analito, SerieDeAnalito> series =
+			new Dictionary<Analito, SerieDeAnalito>();
 
 		public int Edad { get; private set; }
 
@@ -76,18 +83,26 @@ namespace Examenes.Dominio
 			}
 		}
 
-		public bool TieneSerieDe(string analito)
-		{
-			ArgumentNullException.ThrowIfNullOrWhiteSpace(analito);
-			return series.ContainsKey(analito);
-		}
+		// Las cuatro consultas de abajo reciben el analito COMO TEXTO porque asi llega: de
+		// una pregunta de la IA, de un click en la pantalla, del DSL. El texto se resuelve
+		// a identidad UNA vez, en la frontera, igual que UnidadDeMedida.PorSimbolo.
+		//
+		// Y ahi se separan dos cosas que antes se confundian en una sola respuesta:
+		//
+		//   nombre que no resuelve      -> DEFECTO de quien pregunta. Revienta.
+		//   analito real, sin mediciones -> respuesta legitima. Contesta "no hay serie".
+		//
+		// Antes las dos daban "no hay datos de eso", asi que un nombre mal escrito se veia
+		// igual que un analito que la persona todavia no se hizo. Eran indistinguibles
+		// justo cuando importa distinguirlas: al agregar un sinonimo y equivocarse.
+		public bool TieneSerieDe(string analito) => series.ContainsKey(Analito.PorNombre(analito));
 
 		public SerieDeAnalito SerieDe(string analito)
 		{
-			ArgumentNullException.ThrowIfNullOrWhiteSpace(analito);
-			if (!series.TryGetValue(analito, out SerieDeAnalito serie))
+			Analito cual = Analito.PorNombre(analito);
+			if (!series.TryGetValue(cual, out SerieDeAnalito serie))
 				throw new KeyNotFoundException(
-					$"El expediente no tiene ninguna medicion de '{analito}'.");
+					$"El expediente no tiene ninguna medicion de '{cual.Nombre}'.");
 
 			return serie;
 		}
@@ -97,11 +112,11 @@ namespace Examenes.Dominio
 		// de eso" es una respuesta legitima para quien pregunta.
 		public EvaluacionDeTendencia EvaluarTendenciaDe(string analito)
 		{
-			ArgumentNullException.ThrowIfNullOrWhiteSpace(analito);
+			Analito cual = Analito.PorNombre(analito);
 
-			return series.TryGetValue(analito, out SerieDeAnalito serie)
+			return series.TryGetValue(cual, out SerieDeAnalito serie)
 				? serie.Evaluar()
-				: EvaluacionDeTendencia.SinSerie(analito, 0, null);
+				: EvaluacionDeTendencia.SinSerie(cual, 0, null);
 		}
 
 		// A que ritmo viene cambiando un analito. Total por la misma razon que
@@ -109,21 +124,24 @@ namespace Examenes.Dominio
 		// la respuesta es "no hay velocidad que dar", no una excepcion.
 		public Velocidad VelocidadDe(string analito)
 		{
-			ArgumentNullException.ThrowIfNullOrWhiteSpace(analito);
+			Analito cual = Analito.PorNombre(analito);
 
-			return series.TryGetValue(analito, out SerieDeAnalito serie)
+			return series.TryGetValue(cual, out SerieDeAnalito serie)
 				? serie.Velocidad()
-				: Examenes.Dominio.Velocidad.NoAplica(analito, "", 0m);
+				: Examenes.Dominio.Velocidad.NoAplica(cual, "", 0m);
 		}
 
 		// Los analitos de los que hay historia, para que la superficie pueda recorrerlos
 		// sin conocer la lista de clases del dominio.
+		// Salen los nombres CANONICOS: es con esos que se vuelve a preguntar, y son los
+		// que el enum del MCP conoce. El nombre para mostrar viaja en cada evaluacion.
 		public IReadOnlyList<string> Analitos
 		{
 			get
 			{
 				var nombres = new List<string>();
-				foreach (KeyValuePair<string, SerieDeAnalito> par in series) nombres.Add(par.Key);
+				foreach (KeyValuePair<Analito, SerieDeAnalito> par in series)
+					nombres.Add(par.Key.Nombre);
 				nombres.Sort(StringComparer.OrdinalIgnoreCase);
 				return nombres;
 			}
@@ -136,7 +154,7 @@ namespace Examenes.Dominio
 			get
 			{
 				int fuera = 0;
-				foreach (KeyValuePair<string, SerieDeAnalito> par in series)
+				foreach (KeyValuePair<Analito, SerieDeAnalito> par in series)
 				{
 					ExamenDeSangre ultimo = par.Value.Ultimo;
 					if (ultimo != null && !ultimo.EsNormalPara(Edad)) fuera++;
