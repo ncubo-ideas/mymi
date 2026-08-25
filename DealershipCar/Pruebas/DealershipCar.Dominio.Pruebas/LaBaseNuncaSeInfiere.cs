@@ -1,6 +1,14 @@
 using System;
 using NUnit.Framework;
 
+// El canon (§4 del slice) nombra a la base "TimeOnly", y el canon manda sobre los nombres.
+// Da la casualidad de que System.TimeOnly existe desde .NET 6, y desde ESTE espacio de
+// nombres gana el del using: la busqueda mira primero los miembros del namespace y despues
+// sus usings, y DealershipCar.Dominio no es un namespace que encierre a este. Adentro del
+// dominio no hay ambiguedad -- ahi el tipo propio esta en el namespace mismo -- pero aca hace
+// falta decir cual. El alias es la forma de no renombrar el canon por una colision del BCL.
+using TimeOnly = DealershipCar.Dominio.TimeOnly;
+
 namespace DealershipCar.Dominio.Pruebas
 {
 	// OINV-20, ultima frase: "LA BASE NUNCA SE INFIERE."
@@ -21,18 +29,14 @@ namespace DealershipCar.Dominio.Pruebas
 	// eso REVIENTA y no devuelve un estado. Un aplazamiento rechazado en el tope es lo otro
 	// -- un estado -- y eso llega en T4.
 	//
-	// LO QUE T2 CONSTRUYE ES LA GUARDA, NO LA JERARQUIA. Los cinco subtipos y sus dos
-	// preguntas son T3. Asi que Of() valida y despues avisa que la construccion todavia no
-	// existe: la prueba de mas abajo fija ese orden -- la guarda corre ANTES -- porque es la
-	// propiedad que tiene que seguir siendo cierta cuando T3 reemplace el aviso por los
-	// cinco constructores.
+	// T2 CONSTRUYO LA GUARDA; T3 TRAJO LA JERARQUIA. Mientras los cinco subtipos no existian,
+	// Of() validaba y despues avisaba que no habia a quien construir, y dos pruebas de aca
+	// abajo fijaban ese aviso. Al llegar T3 se pusieron rojas -- estaba previsto: eran el
+	// punto de entrega -- y hoy afirman lo que quedo en su lugar: que la guarda sigue
+	// corriendo ANTES de construir, y que Of() devuelve la regla de la base pedida.
 	[TestFixture]
 	public sealed class LaBaseNuncaSeInfiere
 	{
-		// La marca del aviso pendiente. Cuando T3 construya los subtipos, las dos pruebas
-		// que la usan se ponen rojas -- y eso es correcto: son el punto de entrega.
-		private const string MarcaDeLoQuePendeDeT3 = "T3";
-
 		private const int UnLimiteDeTiempo = 365;
 		private const int UnLimiteDeDistancia = 10000;
 		private const int SinLimite = 0;
@@ -145,48 +149,110 @@ namespace DealershipCar.Dominio.Pruebas
 
 		// --- la fabrica ------------------------------------------------------------------
 
-		// LA PROPIEDAD QUE TIENE QUE SOBREVIVIR A T3: Of() valida la base ANTES de intentar
-		// construir. Una combinacion rechazada revienta con el mensaje de la guarda, no con
-		// el aviso de lo que falta -- asi que el orden queda fijado por la prueba y no por
-		// el orden en que alguien escribio las lineas.
+		// LA PROPIEDAD QUE SOBREVIVIO A T3: Of() valida la base ANTES de construir. Una
+		// combinacion rechazada revienta con EL MENSAJE DE LA GUARDA, palabra por palabra --
+		// no con uno propio de la fabrica ni con uno de un constructor. Comparar contra el
+		// mensaje que la guarda produce por su cuenta es lo que fija el orden sin depender de
+		// como este redactado.
 		[Test]
-		public void OfCorreLaGuardaAntesDeIntentarConstruir()
+		public void OfCorreLaGuardaAntesDeConstruir()
 		{
-			DomainException error = Assert.Throws<DomainException>(() => IntervalRule.Of(
+			DomainException laGuardaSola = Assert.Throws<DomainException>(() =>
+				IntervalRule.BasisIsNeverInferred(
+					IntervalBasisCode.TimeOnly, UnLimiteDeTiempo, UnLimiteDeDistancia));
+
+			DomainException laFabrica = Assert.Throws<DomainException>(() => IntervalRule.Of(
 				IntervalBasisCode.TimeOnly, UnLimiteDeTiempo, UnLimiteDeDistancia,
 				DistanceUnitCode.UnitA));
 
-			Assert.That(error.Message, Does.Not.Contain(MarcaDeLoQuePendeDeT3),
-				"Of() intento construir antes de validar la base. La guarda va primero: una "
+			Assert.That(laFabrica.Message, Is.EqualTo(laGuardaSola.Message),
+				"Of() no revento con el mensaje de la guarda. La guarda va primero: una "
 				+ "combinacion invalida nunca debe llegar a un constructor.");
 		}
 
-		// La combinacion VALIDA pasa la guarda -- y hoy se topa con lo que T2 no construye.
-		// Cuando T3 traiga los cinco subtipos, esta prueba se pone roja y se convierte en la
-		// que afirma que Of() devuelve la regla de la base pedida.
+		// Lo que T2 dejo pendiente. La combinacion valida pasa la guarda y ahora sale de la
+		// fabrica convertida en la regla de la base que se declaro -- una por base, cinco en
+		// total, y ninguna inferida.
+		//
+		// Va como una sola prueba con cinco afirmaciones y no como cinco TestCase porque un
+		// IntervalBasisCode no puede viajar por la firma de un metodo publico: el enum es
+		// internal, como todo el dominio (E2), y NUnit descubre metodos publicos.
 		[Test]
-		public void UnaCombinacionValidaPasaLaGuardaYQuedaEsperandoASusSubtipos()
+		public void OfDevuelveLaReglaDeLaBasePedida()
 		{
-			DomainException error = Assert.Throws<DomainException>(() => IntervalRule.Of(
-				IntervalBasisCode.TimeOrDistance, UnLimiteDeTiempo, UnLimiteDeDistancia,
-				DistanceUnitCode.UnitA));
+			Assert.That(
+				IntervalRule.Of(IntervalBasisCode.TimeOrDistance, UnLimiteDeTiempo,
+					UnLimiteDeDistancia, DistanceUnitCode.UnitA),
+				Is.InstanceOf<TimeOrDistance>(),
+				"La base ES el subtipo: si la fabrica se equivoca de tipo, la operacion cambia de "
+				+ "ley en silencio.");
 
-			Assert.That(error.Message, Does.Contain(MarcaDeLoQuePendeDeT3),
-				"La combinacion es valida, asi que la guarda tiene que haberla dejado pasar. Si "
-				+ "revento por otra razon, la guarda esta rechazando algo que OINV-20 permite.");
+			Assert.That(
+				IntervalRule.Of(IntervalBasisCode.TimeAndDistance, UnLimiteDeTiempo,
+					UnLimiteDeDistancia, DistanceUnitCode.UnitA),
+				Is.InstanceOf<TimeAndDistance>());
+
+			Assert.That(
+				IntervalRule.Of(IntervalBasisCode.TimeOnly, UnLimiteDeTiempo, SinLimite,
+					DistanceUnitCode.UnitA),
+				Is.InstanceOf<TimeOnly>());
+
+			Assert.That(
+				IntervalRule.Of(IntervalBasisCode.DistanceOnly, SinLimite, UnLimiteDeDistancia,
+					DistanceUnitCode.UnitA),
+				Is.InstanceOf<DistanceOnly>());
+
+			Assert.That(
+				IntervalRule.Of(IntervalBasisCode.ConditionOnly, SinLimite, SinLimite,
+					DistanceUnitCode.UnitA),
+				Is.InstanceOf<ConditionOnly>());
+		}
+
+		// Las mismas dos bases que reciben los mismos numeros salen tipos distintos. Es la
+		// forma mecanica de OINV-20: no hay dato que las distinga, solo la declaracion.
+		[Test]
+		public void LosMismosNumerosConDosBasesDistintasDanDosReglasDistintas()
+		{
+			IntervalRule primera = IntervalRule.Of(IntervalBasisCode.TimeOrDistance,
+				UnLimiteDeTiempo, UnLimiteDeDistancia, DistanceUnitCode.UnitA);
+
+			IntervalRule segunda = IntervalRule.Of(IntervalBasisCode.TimeAndDistance,
+				UnLimiteDeTiempo, UnLimiteDeDistancia, DistanceUnitCode.UnitA);
+
+			Assert.That(primera.GetType(), Is.Not.EqualTo(segunda.GetType()));
+		}
+
+		// Los cinco subtipos son HOJAS y se sellan (E43). La base se queda abierta; lo que
+		// nadie extiende, se cierra.
+		[TestCase(typeof(TimeOrDistance))]
+		[TestCase(typeof(TimeAndDistance))]
+		[TestCase(typeof(TimeOnly))]
+		[TestCase(typeof(DistanceOnly))]
+		[TestCase(typeof(ConditionOnly))]
+		public void CadaSubtipoEsUnaHojaSellada(Type subtipo)
+		{
+			Assert.That(subtipo.IsSealed, Is.True,
+				$"{subtipo.Name} no esta sellado. E43: se sellan las hojas y los conjuntos "
+				+ "cerrados; solo la base polimorfica se queda abierta.");
+
+			Assert.That(subtipo.BaseType, Is.EqualTo(typeof(IntervalRule)),
+				$"{subtipo.Name} dejo de heredar de IntervalRule.");
 		}
 
 		// El codigo de unidad tambien es un primitivo del wire, y se resuelve con la misma
-		// polaridad total-con-excepcion (E32).
+		// polaridad total-con-excepcion (E32) -- antes de construir nada.
 		[Test]
 		public void OfRechazaUnCodigoDeUnidadQueNoNombraNingunMiembro()
 		{
-			DomainException error = Assert.Throws<DomainException>(() => IntervalRule.Of(
+			DomainException elResolutorSolo = Assert.Throws<DomainException>(
+				() => DistanceUnit.OfCode((DistanceUnitCode)99));
+
+			DomainException laFabrica = Assert.Throws<DomainException>(() => IntervalRule.Of(
 				IntervalBasisCode.TimeOrDistance, UnLimiteDeTiempo, UnLimiteDeDistancia,
 				(DistanceUnitCode)99));
 
-			Assert.That(error.Message, Does.Not.Contain(MarcaDeLoQuePendeDeT3),
-				"Of() llego al aviso pendiente con una unidad que no existe: la resolucion de la "
+			Assert.That(laFabrica.Message, Is.EqualTo(elResolutorSolo.Message),
+				"Of() construyo una regla con una unidad que no existe: la resolucion de la "
 				+ "unidad tambien tiene que pasar antes de construir.");
 		}
 
