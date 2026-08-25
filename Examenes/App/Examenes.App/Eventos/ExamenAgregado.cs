@@ -36,6 +36,10 @@ namespace Examenes.App.Eventos
 		// color y unos nitritos, y en el dominio no es un ExamenDeSangre.
 		public const string Orina = "Orina";
 
+		// La tercera muestra. Es su propio token por la misma razon que la orina: no es
+		// otra sustancia medida, es otra muestra, y en el dominio no es un ExamenDeSangre.
+		public const string Heces = "Heces";
+
 		// Token de FORMA, no de analito, y el unico que queda. Dice "colesterol
 		// fraccionado", o sea LDL con su HDL al lado en el mismo examen. Se sigue
 		// aceptando porque es lo que emite URL2 hoy; un emisor que mande "LDL" con
@@ -49,7 +53,14 @@ namespace Examenes.App.Eventos
 		// el unico caso en que no hay un analito detras.
 		public Analito Analito { get; private set; }
 
-		public bool EsDeOrina => Analito == null;
+		// Que MUESTRA es, cuando no hay analito detras. Vacio para los de sangre.
+		public string Muestra { get; private set; }
+
+		public bool EsDeOrina => Muestra == Orina;
+
+		public bool EsDeHeces => Muestra == Heces;
+
+		public bool EsDeSangre => Analito != null;
 
 		// Si el examen trajo DOS valores: el del analito y su fraccion acompanante. Es la
 		// forma del payload y no la identidad de lo medido, y por eso viaja aparte en vez
@@ -66,6 +77,12 @@ namespace Examenes.App.Eventos
 		// estado legitimo del urianalisis y distinto de un negativo. El dominio lo
 		// resuelve a Nitritos.NoRealizado; aca no se decide nada, solo se transporta.
 		public string Nitritos { get; private set; }
+
+		// La sangre oculta. El MISMO campo sirve para orina y para heces, y eso no es
+		// pereza: en el wire es un binario con las mismas tres palabras. Lo que cambia
+		// -que una espere a la proxima cita y la otra no- lo decide el dominio segun a que
+		// examen entra, no el emisor.
+		public string Sangre { get; private set; }
 
 		private ExamenAgregado() { }
 
@@ -92,16 +109,28 @@ namespace Examenes.App.Eventos
 
 				string color = Texto(raiz, "color");
 				string unidad = Texto(raiz, "unidad");
-				bool traeFraccionamiento = TieneNumero(raiz, "valorSecundario");
+				// OJO CON ESTO, y esta medido contra el emisor real: la PRESENCIA del campo
+				// no dice nada. URL2 serializa `valorSecundario` en TODOS los eventos
+				// porque es un decimal no anulable, asi que llega en cero hasta en un
+				// antigeno prostatico. Preguntando por presencia, todos los examenes
+				// parecian fraccionados y el primer Refresh reventaba con "Colesterol LDL
+				// se mide en mg/dL y el evento lo trajo en ng/mL".
+				//
+				// Lo que dice que hay fraccion es que haya un VALOR: una fraccion de cero
+				// no es una fraccion.
+				bool traeFraccionamiento = Decimal(raiz, "valorSecundario") > 0m;
 
 				// La orina no trae numero ni unidad; los de sangre no traen color. Se
 				// exige aca lo que cada uno necesita: un evento incompleto se descarta
 				// en la frontera, no revienta adentro del comando.
-				if (EsOrina(queSeMidio))
+				// Las dos muestras que no son sangre. Las dos necesitan color y ninguna
+				// trae numero ni unidad.
+				if (EsDeLaMuestra(queSeMidio, Orina) || EsDeLaMuestra(queSeMidio, Heces))
 				{
 					if (color.Length == 0) return null;
 
-					return Armar(senal, null, false, raiz, fecha, unidad, color);
+					string muestra = EsDeLaMuestra(queSeMidio, Orina) ? Orina : Heces;
+					return Armar(senal, null, false, raiz, fecha, unidad, color, muestra);
 				}
 
 				Analito analito = Resolver(queSeMidio, ref traeFraccionamiento);
@@ -123,7 +152,7 @@ namespace Examenes.App.Eventos
 				// Llegar solo es un evento que esta app no sabe aplicar.
 				if (analito.EsElMismo(Analito.ColesterolHdl)) return null;
 
-				return Armar(senal, analito, traeFraccionamiento, raiz, fecha, unidad, color);
+				return Armar(senal, analito, traeFraccionamiento, raiz, fecha, unidad, color, "");
 			}
 			catch (JsonException)
 			{
@@ -150,11 +179,13 @@ namespace Examenes.App.Eventos
 		}
 
 		private static ExamenAgregado Armar(SenalDeEvento senal, Analito analito,
-			bool traeFraccionamiento, JsonElement raiz, DateTime fecha, string unidad, string color) =>
+			bool traeFraccionamiento, JsonElement raiz, DateTime fecha, string unidad, string color,
+			string muestra) =>
 			new ExamenAgregado
 			{
 				Evento = senal.Numero,
 				Analito = analito,
+				Muestra = muestra,
 				TraeFraccionamiento = traeFraccionamiento,
 				Fecha = fecha,
 				Valor = Decimal(raiz, "valor"),
@@ -162,10 +193,11 @@ namespace Examenes.App.Eventos
 				Unidad = unidad,
 				Color = color,
 				Nitritos = Texto(raiz, "nitritos"),
+				Sangre = Texto(raiz, "sangre"),
 			};
 
-		private static bool EsOrina(string examen) =>
-			string.Equals(examen, Orina, StringComparison.OrdinalIgnoreCase);
+		private static bool EsDeLaMuestra(string examen, string muestra) =>
+			string.Equals(examen, muestra, StringComparison.OrdinalIgnoreCase);
 
 		private static bool TieneNumero(JsonElement raiz, string nombre) =>
 			raiz.TryGetProperty(nombre, out JsonElement e) && e.TryGetDecimal(out _);

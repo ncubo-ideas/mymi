@@ -17,6 +17,10 @@ namespace Examenes.App.Vistas
 		public DateTime Fecha { get; init; }
 		public string Resultado { get; init; } = "";
 		public bool AportaSerie { get; init; }
+
+		// Solo para las filas que no forman serie. Ver CeldaDelCuadro.
+		public string Severidad { get; init; } = "";
+		public string ParaSonia { get; init; } = "";
 	}
 
 	// La lectura de la serie. Es la vista que NO tiene equivalente en una pantalla de
@@ -40,9 +44,48 @@ namespace Examenes.App.Vistas
 		public string Unidad { get; init; } = "";
 		public int Dias { get; init; }
 		public decimal Cambio { get; init; }
-		public bool ExigeAtencion { get; init; }
 		public bool SugiereRepetirElExamen { get; init; }
 		public bool HaySerie { get; init; }
+	}
+
+	// UNA CELDA del cuadro historico, con sus dos indices. Llega plana desde el dominio;
+	// la pantalla la ubica en la grilla y no decide nada. Ver CeldaDelCuadro.
+	public sealed class CeldaEnCuadro
+	{
+		public int Fila { get; init; }
+		public int Columna { get; init; }
+		public string Analito { get; init; } = "";
+		public string ParaMostrar { get; init; } = "";
+		public DateTime Fecha { get; init; }
+		public string Expresado { get; init; } = "";
+		public bool AportaSerie { get; init; }
+
+		// Solo para las filas que no forman serie. Ver CeldaDelCuadro.
+		public string Severidad { get; init; } = "";
+		public string ParaSonia { get; init; } = "";
+	}
+
+	// LO QUE EL ANALITO CONCLUYE. Vista aparte de TendenciaDeAnalito porque son dos capas
+	// distintas: aquella trae los HECHOS de la serie, esta trae la LECTURA de esos hechos
+	// hecha por el analito que sabe interpretarlos.
+	//
+	// Que la accion venga de aca y no de la pantalla es el punto: un .razor no tiene de
+	// donde sacar si un hallazgo espera a la proxima cita o no.
+	public sealed class InterpretacionDeAnalito
+	{
+		public string Analito { get; init; } = "";
+		public string ParaMostrar { get; init; } = "";
+		public string Veredicto { get; init; } = "";
+		public string Severidad { get; init; } = "";
+
+		// La lectura en una linea, escrita por el analito.
+		public string ParaSonia { get; init; } = "";
+
+		// Que hacer. Vacio cuando no hay nada que hacer, que es la mayoria de las veces.
+		public string Accion { get; init; } = "";
+
+		public bool PideAlgo { get; init; }
+		public bool SugiereRepetirElExamen { get; init; }
 	}
 
 	// A QUE RITMO viene cambiando un analito. Vista aparte de TendenciaDeAnalito porque

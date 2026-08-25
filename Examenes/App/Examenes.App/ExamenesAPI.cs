@@ -72,6 +72,7 @@ namespace Examenes.App
 					"El numero de evento debe ser positivo.");
 
 			if (evento.EsDeOrina) return Orina(evento);
+			if (evento.EsDeHeces) return Heces(evento);
 			if (evento.TraeFraccionamiento) return ColesterolDetallado(evento);
 
 			return UnValor(evento, ClaseDelDominio(evento.Analito));
@@ -168,7 +169,7 @@ namespace Examenes.App
 				",
 				@"
 					{
-						examen = ExamenDeOrina(@fecha, @color, @nitritos);
+						examen = ExamenDeOrina(@fecha, @color, @nitritos, @sangre);
 						expediente.Agregar(examen);
 						bitacora.Avanzar(@evento);
 					}
@@ -178,6 +179,30 @@ namespace Examenes.App
 				p["fecha",    typeof(DateTime)] = evento.Fecha;
 				p["color",    typeof(string)]   = evento.Color;
 				p["nitritos", typeof(string)]   = evento.Nitritos ?? "";
+				p["sangre",   typeof(string)]   = evento.Sangre ?? "";
+			})
+			.PerformCheckThenCommand();
+
+		// El examen de heces. Es su propio comando y no un parametro del de orina porque
+		// construye OTRA clase del dominio: el journal guarda "ExamenDeHeces(...)" y al
+		// reproducirlo arma esa, con su propia sangre que no se lee igual que la de orina.
+		private string Heces(ExamenAgregado evento) =>
+			app.Using(
+				scriptForChk: @"
+					Check(@evento > bitacora.UltimoEvento) Error 'evento ya procesado';
+				",
+				@"
+					{
+						examen = ExamenDeHeces(@fecha, @color, @sangre);
+						expediente.Agregar(examen);
+						bitacora.Avanzar(@evento);
+					}
+				")
+			.WithParameters(p => {
+				p["evento", typeof(long)]     = evento.Evento;
+				p["fecha",  typeof(DateTime)] = evento.Fecha;
+				p["color",  typeof(string)]   = evento.Color;
+				p["sangre", typeof(string)]   = evento.Sangre ?? "";
 			})
 			.PerformCheckThenCommand();
 
@@ -337,6 +362,26 @@ namespace Examenes.App
 			")
 			.PerformQuery();
 
+		// EL CUADRO HISTORICO, plano. Ver CeldaDelCuadro en el dominio para por que viaja
+		// asi: el print proyecta un solo nivel, y una coleccion de filas que a su vez
+		// tienen celdas no cruza. Los indices son los que dejan que la superficie rearme
+		// la grilla SIN volver a decidir que va donde.
+		public string CuadroHistorico() =>
+			app.Using(@"
+				foreach (celda in expediente.CeldasDelCuadro) {
+					print celda.Fila fila,
+						celda.Columna columna,
+						celda.Analito analito,
+						celda.ParaMostrar paraMostrar,
+						celda.Fecha fecha,
+						celda.Expresado expresado,
+						celda.AportaSerie aportaSerie,
+						celda.Severidad severidad,
+						celda.ParaSonia paraSonia;
+				}
+			")
+			.PerformQuery();
+
 		// LA consulta que justifica el dominio. Evalua la SERIE de un analito, no su
 		// ultimo valor.
 		//
@@ -358,7 +403,6 @@ namespace Examenes.App
 						evaluacion.Unidad unidad,
 						evaluacion.DiasTranscurridos dias,
 						evaluacion.Cambio cambio,
-						evaluacion.ExigeAtencion exigeAtencion,
 						evaluacion.SugiereRepetirElExamen sugiereRepetirElExamen,
 						evaluacion.HaySerie haySerie;
 				}
@@ -368,6 +412,38 @@ namespace Examenes.App
 			})
 			.PerformQuery();
 		}
+
+		// LO QUE EL ANALITO CONCLUYE de su serie: veredicto, severidad, la linea para la
+		// persona y que hacer.
+		//
+		// Es la consulta que reemplaza al "exige atencion" generico. Aquella salia de un
+		// bool por analito y le ponia la misma etiqueta al antigeno subiendo y al
+		// colesterol bajando desde un pico; esta la produce cada analito con su criterio.
+		public string InterpretacionDe(string analito)
+		{
+			ArgumentNullException.ThrowIfNullOrWhiteSpace(analito);
+
+			return app.Using(@"
+				{
+					lectura = expediente.InterpretarSerieDe(@analito);
+					print lectura.Analito analito,
+						lectura.AnalitoParaMostrar paraMostrar,
+						lectura.NombreDelVeredicto veredicto,
+						lectura.NombreDeLaSeveridad severidad,
+						lectura.ParaSonia paraSonia,
+						lectura.Accion accion,
+						lectura.PideAlgo pideAlgo,
+						lectura.SugiereRepetirElExamen sugiereRepetirElExamen;
+				}
+			")
+			.WithParameters(p => {
+				p["analito", typeof(string)] = analito;
+			})
+			.PerformQuery();
+		}
+
+		public InterpretacionDeAnalito Interpretacion(string analito) =>
+			ProyeccionDeVistas.Interpretacion(InterpretacionDe(analito));
 
 		// A QUE RITMO viene cambiando un analito. Es la segunda pregunta que exige la serie
 		// completa, y para el antigeno prostatico es LA pregunta: la practica clinica no
@@ -415,6 +491,9 @@ namespace Examenes.App
 		// variantes que devuelven el string crudo quedan para diagnostico.
 		public IReadOnlyList<ExamenEnLista> Examenes() =>
 			ProyeccionDeVistas.Lista(ListaDeExamenes());
+
+		public IReadOnlyList<CeldaEnCuadro> Cuadro() =>
+			ProyeccionDeVistas.Cuadro(CuadroHistorico());
 
 		public TendenciaDeAnalito Tendencia(string analito) =>
 			ProyeccionDeVistas.Tendencia(TendenciaDe(analito));

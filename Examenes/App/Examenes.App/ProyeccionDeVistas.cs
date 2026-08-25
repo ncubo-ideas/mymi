@@ -41,6 +41,8 @@ namespace Examenes.App
 					Fecha = Fecha(elemento, "fecha"),
 					Resultado = Texto(elemento, "resultado"),
 					AportaSerie = Booleano(elemento, "aportaSerie"),
+					Severidad = Texto(elemento, "severidad"),
+					ParaSonia = Texto(elemento, "paraSonia"),
 				});
 
 			return examenes;
@@ -64,9 +66,55 @@ namespace Examenes.App
 				Unidad = Texto(raiz, "unidad"),
 				Dias = Entero(raiz, "dias"),
 				Cambio = Decimal(raiz, "cambio"),
-				ExigeAtencion = Booleano(raiz, "exigeAtencion"),
 				SugiereRepetirElExamen = Booleano(raiz, "sugiereRepetirElExamen"),
 				HaySerie = Booleano(raiz, "haySerie"),
+			};
+		}
+
+		internal static IReadOnlyList<CeldaEnCuadro> Cuadro(string json)
+		{
+			var celdas = new List<CeldaEnCuadro>();
+			if (string.IsNullOrWhiteSpace(json)) return celdas;
+
+			using JsonDocument documento = JsonDocument.Parse(json);
+			// La llave del arreglo es el nombre de la variable del foreach del DSL -"celda"-,
+			// igual que "examen" en Lista. No es el nombre de la primera columna.
+			if (!documento.RootElement.TryGetProperty("celda", out JsonElement arreglo)) return celdas;
+
+			foreach (JsonElement elemento in Elementos(arreglo))
+				celdas.Add(new CeldaEnCuadro
+				{
+					Fila = Entero(elemento, "fila"),
+					Columna = Entero(elemento, "columna"),
+					Analito = Texto(elemento, "analito"),
+					ParaMostrar = Texto(elemento, "paraMostrar"),
+					Fecha = Fecha(elemento, "fecha"),
+					Expresado = Texto(elemento, "expresado"),
+					AportaSerie = Booleano(elemento, "aportaSerie"),
+					Severidad = Texto(elemento, "severidad"),
+					ParaSonia = Texto(elemento, "paraSonia"),
+				});
+
+			return celdas;
+		}
+
+		internal static InterpretacionDeAnalito Interpretacion(string json)
+		{
+			if (string.IsNullOrWhiteSpace(json)) return new InterpretacionDeAnalito();
+
+			using JsonDocument documento = JsonDocument.Parse(json);
+			JsonElement raiz = documento.RootElement;
+
+			return new InterpretacionDeAnalito
+			{
+				Analito = Texto(raiz, "analito"),
+				ParaMostrar = Texto(raiz, "paraMostrar"),
+				Veredicto = Texto(raiz, "veredicto"),
+				Severidad = Texto(raiz, "severidad"),
+				ParaSonia = Texto(raiz, "paraSonia"),
+				Accion = Texto(raiz, "accion"),
+				PideAlgo = Booleano(raiz, "pideAlgo"),
+				SugiereRepetirElExamen = Booleano(raiz, "sugiereRepetirElExamen"),
 			};
 		}
 

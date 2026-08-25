@@ -276,6 +276,32 @@ h1:focus, h1:focus-visible { outline: none; }
 .tabla .fecha, .tabla .resultado { font-family: var(--mono); font-size: 13.5px; }
 .tabla tbody tr:hover td { background: var(--papel-2); }
 
+/* El cuadro historico: una fila por analito, una columna por fecha. Las columnas van
+   apretadas porque son muchas y lo que importa es leer la fila de corrido; la primera
+   columna no se parte, para que el barrido horizontal empiece siempre en el mismo lugar.
+   El contenedor scrollea solo: con diez fechas la tabla no entra en un telefono y lo que
+   NO puede pasar es que scrollee la pagina entera. */
+.tabla--cuadro th, .tabla--cuadro td { padding-left: 14px; white-space: nowrap; }
+.tabla--cuadro th:first-child, .tabla--cuadro td:first-child { padding-left: 0; }
+.tabla--cuadro td:first-child { white-space: normal; min-width: 9.5em; }
+.tabla--cuadro .resultado { font-size: 13px; }
+
+/* La tabla puede ser MAS ANCHA que su contenedor, y el contenedor scrollea. Con
+   width:100% pasa lo contrario: al no entrar, el navegador comprime las columnas y parte
+   "200.0 mg/dL" en dos lineas, que es justo lo que arruina el barrido horizontal. Con
+   varias fechas la tabla no entra en un telefono y lo correcto es que scrollee ELLA, no
+   que se deforme. */
+.tabla--cuadro { width: auto; min-width: 100%; }
+
+/* La primera columna se come el espacio sobrante. Sin esto la tabla reparte el ancho
+   entre todas y las fechas quedan desparramadas, con la ultima pegada al borde derecho y
+   un hueco en el medio que rompe el barrido horizontal. */
+.tabla--cuadro th:first-child, .tabla--cuadro td:first-child { width: 100%; }
+
+/* El indicador del final de la fila lo decide el dominio; aca solo se pinta. El ambar
+   sigue significando una sola cosa. */
+.tabla--cuadro td:last-child { font-size: 15px; padding-left: 16px; color: var(--tinta-3); }
+
 /* ------------------------------------------------------------------ detalle */
 
 .cifra-par {
