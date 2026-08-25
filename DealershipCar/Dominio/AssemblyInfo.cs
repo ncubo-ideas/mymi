@@ -1,9 +1,9 @@
 using System.Runtime.CompilerServices;
 
-// El dominio es internal por defecto (domain-guide E2, E15, E42) y se queda asi.
+// El dominio es internal por defecto (/puppeteer-domain-modeling E2, E15, E42) y se queda asi.
 //
 // La guia justifica ese internal diciendo que "el perform comparte el ensamblado". ACA NO
-// LO COMPARTE: ARQUITECTURE 3.1 parte Dominio de App a proposito, porque un csproj sin
+// LO COMPARTE: ARCHITECTURE 3.1 parte Dominio de App a proposito, porque un csproj sin
 // referencias es la prueba de que el dominio no cambia al cruzar a wasm.
 //
 // La justificacion de la guia no aplica; LA REGLA SI, y por una razon mejor: MEDIDO en T0

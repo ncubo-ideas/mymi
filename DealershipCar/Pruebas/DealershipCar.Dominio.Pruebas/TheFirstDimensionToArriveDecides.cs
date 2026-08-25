@@ -27,7 +27,7 @@ namespace DealershipCar.Dominio.Pruebas
 	// alcanzado, Assess NUNCA contesta DueSoon. El nombre de la ley vive en
 	// ScheduledOperation (T4); lo que se fija aca es la respuesta sobre la que T4 la nombra.
 	[TestFixture]
-	public sealed class LaPrimeraDimensionQueLlegaDecide
+	public sealed class TheFirstDimensionToArriveDecides
 	{
 		private const int DoceMesesEnDias = 365;
 		private const int DiezMilUnidades = 10000;
@@ -57,7 +57,7 @@ namespace DealershipCar.Dominio.Pruebas
 		//   tiempo transcurrido   228 de 365,   y el anticipo es 30   -> ni cerca
 		// Decide la DISTANCIA, que es la que llego primero.
 		[Test]
-		public void LaDistanciaLlegaPrimeroYElMotivoLaNombra()
+		public void DistanceArrivesFirstAndTheReasonNamesIt()
 		{
 			DueAssessment vencimiento = regla.Assess(
 				desde, new DateTime(2026, 1, 15), Lectura(39000, DistanceUnit.UnitA), sinEscalar);
@@ -81,7 +81,7 @@ namespace DealershipCar.Dominio.Pruebas
 		// Decide el TIEMPO. Es la prueba 1 al reves, y las dos juntas son las que obligan a
 		// mirar de verdad las dos dimensiones.
 		[Test]
-		public void ElTiempoLlegaPrimeroYElMotivoLoNombra()
+		public void TimeArrivesFirstAndTheReasonNamesIt()
 		{
 			DueAssessment vencimiento = regla.Assess(
 				desde, new DateTime(2026, 5, 2), Lectura(33000, DistanceUnit.UnitA), sinEscalar);
@@ -98,7 +98,7 @@ namespace DealershipCar.Dominio.Pruebas
 		// PRUEBA 3 de §9. Lectura 40000 el 2026-01-20 -> Due.
 		// EL VALOR DEL LIMITE ES INCLUSIVO, y se prueba por los dos lados del borde.
 		[Test]
-		public void AlcanzarElLimiteYaEsVencer()
+		public void ReachingTheLimitIsAlreadyFallingDue()
 		{
 			DueAssessment enElLimite = regla.Assess(
 				desde, new DateTime(2026, 1, 20), Lectura(40000, DistanceUnit.UnitA), sinEscalar);
@@ -110,7 +110,7 @@ namespace DealershipCar.Dominio.Pruebas
 		}
 
 		[Test]
-		public void UnaUnidadAntesDelLimiteTodaviaNoEsVencer()
+		public void OneUnitBeforeTheLimitIsNotFallingDueYet()
 		{
 			DueAssessment justoAntes = regla.Assess(
 				desde, new DateTime(2026, 1, 20), Lectura(39999, DistanceUnit.UnitA), sinEscalar);
@@ -123,7 +123,7 @@ namespace DealershipCar.Dominio.Pruebas
 		// La otra mitad de la inclusividad: el anticipo tambien es inclusivo. 9000 es
 		// exactamente limite menos anticipo (10000 - 1000).
 		[Test]
-		public void ElAnticipoDeCortesiaTambienEsInclusivo()
+		public void TheCourtesyLeadIsInclusiveToo()
 		{
 			DueAssessment enElBorde = regla.Assess(
 				desde, new DateTime(2026, 1, 15), Lectura(39000, DistanceUnit.UnitA), sinEscalar);
@@ -140,7 +140,7 @@ namespace DealershipCar.Dominio.Pruebas
 		//   2026-06-01 son exactamente 365 dias desde 2025-06-01
 		//   40000 son exactamente 10000 unidades desde 30000
 		[Test]
-		public void LosDosLimitesElMismoDiaVencenUnaSolaVezYElMotivoNombraLasDos()
+		public void BothLimitsOnTheSameDayFallDueOnceAndTheReasonNamesBoth()
 		{
 			DueAssessment vencimiento = regla.Assess(
 				desde, new DateTime(2026, 6, 1), Lectura(40000, DistanceUnit.UnitA), sinEscalar);
@@ -159,7 +159,7 @@ namespace DealershipCar.Dominio.Pruebas
 		// Una implementacion que pregunte por el aviso ANTES que por el vencimiento contesta
 		// DueSoon aca, y esa es exactamente la que L10 prohibe.
 		[Test]
-		public void ElAvisoSeSaltaCuandoElVencimientoYaSeAlcanzo()
+		public void TheWarningIsSkippedWhenTheDueDateWasAlreadyReached()
 		{
 			DueAssessment vencimiento = regla.Assess(
 				desde, new DateTime(2026, 1, 20), Lectura(40200, DistanceUnit.UnitA), sinEscalar);
@@ -178,7 +178,7 @@ namespace DealershipCar.Dominio.Pruebas
 		// razon para invertirla en los otros dos, asi que se aplica la misma a los tres. Con
 		// una gracia de 500, la unidad 40500 es la que la consume entera.
 		[Test]
-		public void ConsumidaLaGraciaLaOperacionQuedaOverdue()
+		public void OnceTheGraceIsSpentTheOperationBecomesOverdue()
 		{
 			DueAssessment dentroDeLaGracia = regla.Assess(
 				desde, new DateTime(2026, 1, 20), Lectura(40499, DistanceUnit.UnitA), sinEscalar);
@@ -197,7 +197,7 @@ namespace DealershipCar.Dominio.Pruebas
 		// Es la mitad de la pureza del reloj (§7) que se puede afirmar a nivel de regla; la
 		// otra mitad -- que no hay DateTime.Now adentro -- es la prueba 16, en T5.
 		[Test]
-		public void DosEvaluacionesIdenticasDanLaMismaRespuesta()
+		public void TwoIdenticalEvaluationsGiveTheSameAnswer()
 		{
 			DueAssessment primera = regla.Assess(
 				desde, new DateTime(2026, 1, 15), Lectura(39000, DistanceUnit.UnitA), sinEscalar);
@@ -212,7 +212,7 @@ namespace DealershipCar.Dominio.Pruebas
 		// Evaluar ANTES del punto base es un defecto de quien llama: no se evalua el pasado de
 		// un ancla que todavia no existia (E32).
 		[Test]
-		public void EvaluarAntesDelPuntoBaseRevienta()
+		public void EvaluatingBeforeTheBasePointThrows()
 		{
 			Assert.Throws<DomainException>(() => regla.Assess(
 				desde, UltimaCompletacion.AddDays(-1), Lectura(30000, DistanceUnit.UnitA),

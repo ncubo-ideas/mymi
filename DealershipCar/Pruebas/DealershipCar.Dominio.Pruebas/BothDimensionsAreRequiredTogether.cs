@@ -17,7 +17,7 @@ namespace DealershipCar.Dominio.Pruebas
 	// 2000 unidades" es util; decirle "ya pasaron los 365 dias" cuando igual no vence es
 	// confundirla.
 	[TestFixture]
-	public sealed class LasDosDimensionesSeExigenJuntas
+	public sealed class BothDimensionsAreRequiredTogether
 	{
 		private const int DoceMesesEnDias = 365;
 		private const int DiezMilUnidades = 10000;
@@ -45,7 +45,7 @@ namespace DealershipCar.Dominio.Pruebas
 		// El mismo escenario que hace vencer a TimeOrDistance por distancia -- 40000 el
 		// 2026-01-20 -- deja a TimeAndDistance sin vencer, porque el tiempo va en 233 de 365.
 		[Test]
-		public void ConUnSoloLimiteAlcanzadoNoVence()
+		public void WithOnlyOneLimitReachedItDoesNotFallDue()
 		{
 			DueAssessment vencimiento = regla.Assess(
 				desde, new DateTime(2026, 1, 20), Lectura(40000, DistanceUnit.UnitA), sinEscalar);
@@ -59,7 +59,7 @@ namespace DealershipCar.Dominio.Pruebas
 		}
 
 		[Test]
-		public void ConLosDosLimitesAlcanzadosVence()
+		public void WithBothLimitsReachedItFallsDue()
 		{
 			DueAssessment vencimiento = regla.Assess(
 				desde, new DateTime(2026, 6, 1), Lectura(40000, DistanceUnit.UnitA), sinEscalar);
@@ -72,7 +72,7 @@ namespace DealershipCar.Dominio.Pruebas
 		// La misma pareja de numeros, las dos bases: una vence y la otra no. Es la prueba de
 		// que la base ES el subtipo y no un dato compartido.
 		[Test]
-		public void LosMismosNumerosDecidenAlRevesSegunLaBase()
+		public void TheSameNumbersDecideTheOppositeWayDependingOnTheBasis()
 		{
 			IntervalRule laPrimeraQueLlegue = IntervalRule.Of(
 				IntervalBasisCode.TimeOrDistance, DoceMesesEnDias, DiezMilUnidades,
@@ -94,7 +94,7 @@ namespace DealershipCar.Dominio.Pruebas
 		// desde ahi: la operacion no puede estar pasada de gracia mientras una dimension ni
 		// siquiera llego.
 		[Test]
-		public void LaGraciaSeCuentaDesdeElLimiteQueFalta()
+		public void TheGraceIsCountedFromTheLimitStillMissing()
 		{
 			DueAssessment vencimiento = regla.Assess(
 				desde, new DateTime(2026, 1, 20), Lectura(60000, DistanceUnit.UnitA), sinEscalar);

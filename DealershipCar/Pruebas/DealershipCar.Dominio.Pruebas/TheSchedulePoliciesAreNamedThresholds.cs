@@ -28,48 +28,48 @@ namespace DealershipCar.Dominio.Pruebas
 	// no pueden ser constantes. Cuando eso pase, SchedulePolicy cambia de forma -- y nada mas
 	// cambia, que es de lo que sirve tener una sola casa para estos numeros.
 	[TestFixture]
-	public sealed class LasPoliticasDeLaAgendaSonUmbralesConNombre
+	public sealed class TheSchedulePoliciesAreNamedThresholds
 	{
 		[Test]
-		public void DueSoonLeadEsTreintaDiasOMilUnidadesDeDistancia()
+		public void DueSoonLeadIsThirtyDaysOrOneThousandDistanceUnits()
 		{
 			Assert.That(SchedulePolicy.DueSoonLeadDays, Is.EqualTo(30));
 			Assert.That(SchedulePolicy.DueSoonLeadDistance, Is.EqualTo(1000));
 		}
 
 		[Test]
-		public void OverdueGraceEsCatorceDiasOQuinientasUnidadesPasadoElVencimiento()
+		public void OverdueGraceIsFourteenDaysOrFiveHundredUnitsPastTheDueDate()
 		{
 			Assert.That(SchedulePolicy.OverdueGraceDays, Is.EqualTo(14));
 			Assert.That(SchedulePolicy.OverdueGraceDistance, Is.EqualTo(500));
 		}
 
 		[Test]
-		public void ElTopeDeAplazamientosEsDos()
+		public void TheDeferralCapIsTwo()
 		{
 			Assert.That(SchedulePolicy.MaxDeferralsPerOperation, Is.EqualTo(2));
 		}
 
 		[Test]
-		public void LaVentanaDeAplazamientoEsSesentaDias()
+		public void TheDeferralWindowIsSixtyDays()
 		{
 			Assert.That(SchedulePolicy.DeferralWindowDays, Is.EqualTo(60));
 		}
 
 		[Test]
-		public void SevereDutyAcortaLosIntervalosAlSetentaPorCiento()
+		public void SevereDutyShortensTheIntervalsToSeventyPercent()
 		{
 			Assert.That(SchedulePolicy.SevereDutyIntervalFactor, Is.EqualTo(0.70m));
 		}
 
 		[Test]
-		public void LowDistanceDejaLosLimitesDeTiempoIntactos()
+		public void LowDistanceLeavesTheTimeLimitsIntact()
 		{
 			Assert.That(SchedulePolicy.LowDistanceTimeFactor, Is.EqualTo(1.00m));
 		}
 
 		[Test]
-		public void LaVentanaDeAgrupamientoEsSesentaDiasODosMilUnidadesDeDistancia()
+		public void TheBundlingWindowIsSixtyDaysOrTwoThousandDistanceUnits()
 		{
 			Assert.That(SchedulePolicy.BundlingWindowDays, Is.EqualTo(60));
 			Assert.That(SchedulePolicy.BundlingWindowDistance, Is.EqualTo(2000));
@@ -79,7 +79,7 @@ namespace DealershipCar.Dominio.Pruebas
 		// pueda instanciar es lo que hace que no haya dos politicas distintas circulando
 		// mientras este slice dice que hay una.
 		[Test]
-		public void SchedulePolicyNoSeInstancia()
+		public void SchedulePolicyIsNotInstantiated()
 		{
 			Assert.That(typeof(SchedulePolicy).IsAbstract && typeof(SchedulePolicy).IsSealed,
 				Is.True,
@@ -92,7 +92,7 @@ namespace DealershipCar.Dominio.Pruebas
 		// interesante como que falte: un numero de politica que nadie declaro en §6 llego
 		// por un camino que no es el slice.
 		[Test]
-		public void EstanLosDiezNombresDeLosSieteUmbralesDeSeisYNingunoMas()
+		public void TheTenNamesOfTheSevenThresholdsAreThereAndNoMore()
 		{
 			string[] esperados =
 			{

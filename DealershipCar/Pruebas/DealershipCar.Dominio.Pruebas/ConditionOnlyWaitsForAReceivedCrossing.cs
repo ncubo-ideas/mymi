@@ -22,7 +22,7 @@ namespace DealershipCar.Dominio.Pruebas
 	// alguien le manda uno. Aca se prueba la otra mitad -- que ademas de no admitirlos,
 	// tampoco los inventa.
 	[TestFixture]
-	public sealed class ConditionOnlyEsperaUnCruceRecibido
+	public sealed class ConditionOnlyWaitsForAReceivedCrossing
 	{
 		private IntervalRule porCondicion;
 		private BasePoint desde;
@@ -39,7 +39,7 @@ namespace DealershipCar.Dominio.Pruebas
 		}
 
 		[Test]
-		public void NoVencePorSiSola()
+		public void ItDoesNotFallDueOnItsOwn()
 		{
 			DueAssessment vencimiento = porCondicion.Assess(
 				desde, new DateTime(2026, 1, 20), Lectura(45000), sinEscalar);
@@ -50,7 +50,7 @@ namespace DealershipCar.Dominio.Pruebas
 		// La propiedad que sostiene a L3: por mucho que pase el tiempo y por mucha distancia
 		// que se recorra, la respuesta no se mueve. No hay punto de vencimiento que empujar.
 		[Test]
-		public void NingunaCantidadDeTiempoNiDeDistanciaLaHaceVencer()
+		public void NoAmountOfTimeOrDistanceMakesItFallDue()
 		{
 			DueAssessment aDiezAnosYCienMilUnidades = porCondicion.Assess(
 				desde, new DateTime(2035, 6, 1), Lectura(300000), sinEscalar);
@@ -66,7 +66,7 @@ namespace DealershipCar.Dominio.Pruebas
 		// Su NotDue SI es evaluable, y ahi esta la diferencia con el NotDue de una distancia
 		// suspendida: aca la respuesta es firme -- no vence -- y alla es "no lo se".
 		[Test]
-		public void SuNoVencidaEsUnaRespuestaFirmeYNoUnaIgnorancia()
+		public void ItsNotDueIsAFirmAnswerAndNotIgnorance()
 		{
 			DueAssessment vencimiento = porCondicion.Assess(
 				desde, new DateTime(2026, 1, 20), Lectura(45000), sinEscalar);
@@ -80,7 +80,7 @@ namespace DealershipCar.Dominio.Pruebas
 
 		// No necesita ancla ni lecturas para contestar, porque no mide nada desde ningun lado.
 		[Test]
-		public void ContestaSinAnclaYSinLecturas()
+		public void ItAnswersWithNoBasePointAndNoReadings()
 		{
 			DueAssessment vencimiento = porCondicion.Assess(
 				null, new DateTime(2026, 1, 20), null, sinEscalar);

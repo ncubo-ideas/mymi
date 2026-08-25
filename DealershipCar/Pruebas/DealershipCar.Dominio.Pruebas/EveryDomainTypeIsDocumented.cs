@@ -28,7 +28,7 @@ namespace DealershipCar.Dominio.Pruebas
 	// significado de cada codigo vive en el /// del miembro HOMONIMO del conjunto cerrado que
 	// ese enum alcanza, y el /// del enum apunta ahi. El tipo enum si necesita el suyo.
 	[TestFixture]
-	public sealed class CadaTipoDelDominioEstaDocumentado
+	public sealed class EveryDomainTypeIsDocumented
 	{
 		private const string EnsambladoDelDominio = "DealershipCar.Dominio";
 		private const string XmlDelDominio = "DealershipCar.Dominio.xml";
@@ -61,7 +61,7 @@ namespace DealershipCar.Dominio.Pruebas
 		}
 
 		[Test]
-		public void CadaTipoDeclaraSuResumen()
+		public void EveryTypeDeclaresItsSummary()
 		{
 			Assert.That(tipos, Is.Not.Empty, "El ensamblado del dominio no declara ni un tipo.");
 
@@ -78,7 +78,7 @@ namespace DealershipCar.Dominio.Pruebas
 		}
 
 		[Test]
-		public void CadaMiembroExpuestoDeclaraSuResumen()
+		public void EveryExposedMemberDeclaresItsSummary()
 		{
 			List<string> sinResumen = new List<string>();
 
@@ -92,14 +92,14 @@ namespace DealershipCar.Dominio.Pruebas
 				foreach (FieldInfo campo in tipo.GetFields(Declarados))
 				{
 					if (!(campo.IsPublic || campo.IsAssembly)) continue;
-					Anotar(sinResumen, tipo, campo.Name, "F:" + tipo.FullName + "." + campo.Name);
+					Note(sinResumen, tipo, campo.Name, "F:" + tipo.FullName + "." + campo.Name);
 				}
 
 				foreach (PropertyInfo propiedad in tipo.GetProperties(Declarados))
 				{
 					MethodInfo lector = propiedad.GetGetMethod(true);
 					if (lector == null || !(lector.IsPublic || lector.IsAssembly)) continue;
-					Anotar(sinResumen, tipo, propiedad.Name,
+					Note(sinResumen, tipo, propiedad.Name,
 						"P:" + tipo.FullName + "." + propiedad.Name);
 				}
 
@@ -107,14 +107,14 @@ namespace DealershipCar.Dominio.Pruebas
 				{
 					if (metodo.IsSpecialName) continue;   // get_/set_/op_: no se documentan solos
 					if (!(metodo.IsPublic || metodo.IsAssembly)) continue;
-					AnotarConFirma(sinResumen, tipo, metodo.Name,
+					NoteWithSignature(sinResumen, tipo, metodo.Name,
 						"M:" + tipo.FullName + "." + metodo.Name);
 				}
 
 				foreach (ConstructorInfo ctor in tipo.GetConstructors(Declarados))
 				{
 					if (!(ctor.IsPublic || ctor.IsAssembly)) continue;
-					AnotarConFirma(sinResumen, tipo, ".ctor", "M:" + tipo.FullName + ".#ctor");
+					NoteWithSignature(sinResumen, tipo, ".ctor", "M:" + tipo.FullName + ".#ctor");
 				}
 			}
 
@@ -125,14 +125,14 @@ namespace DealershipCar.Dominio.Pruebas
 				+ "dominio.");
 		}
 
-		private void Anotar(List<string> sinResumen, Type tipo, string miembro, string id)
+		private void Note(List<string> sinResumen, Type tipo, string miembro, string id)
 		{
 			if (!documentados.Contains(id)) sinResumen.Add(tipo.Name + "." + miembro);
 		}
 
 		// Los metodos y constructores llevan la firma en el id del XML -- "M:T.M(System.Int32)"
 		// -- asi que se compara por prefijo en vez de armar la firma a mano.
-		private void AnotarConFirma(List<string> sinResumen, Type tipo, string miembro, string id)
+		private void NoteWithSignature(List<string> sinResumen, Type tipo, string miembro, string id)
 		{
 			bool documentado = documentados.Contains(id)
 				|| documentados.Any(candidato => candidato.StartsWith(id + "(", StringComparison.Ordinal));

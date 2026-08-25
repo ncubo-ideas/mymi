@@ -35,7 +35,7 @@ namespace DealershipCar.Dominio.Pruebas
 	// punto de entrega -- y hoy afirman lo que quedo en su lugar: que la guarda sigue
 	// corriendo ANTES de construir, y que Of() devuelve la regla de la base pedida.
 	[TestFixture]
-	public sealed class LaBaseNuncaSeInfiere
+	public sealed class TheBasisIsNeverInferred
 	{
 		private const int UnLimiteDeTiempo = 365;
 		private const int UnLimiteDeDistancia = 10000;
@@ -44,7 +44,7 @@ namespace DealershipCar.Dominio.Pruebas
 		// --- lo que cada base EXIGE -------------------------------------------------------
 
 		[Test]
-		public void TimeOrDistanceExigeLosDosLimites()
+		public void TimeOrDistanceRequiresBothLimits()
 		{
 			Assert.DoesNotThrow(() => IntervalRule.BasisIsNeverInferred(
 				IntervalBasisCode.TimeOrDistance, UnLimiteDeTiempo, UnLimiteDeDistancia));
@@ -59,7 +59,7 @@ namespace DealershipCar.Dominio.Pruebas
 		}
 
 		[Test]
-		public void TimeAndDistanceExigeLosDosLimites()
+		public void TimeAndDistanceRequiresBothLimits()
 		{
 			Assert.DoesNotThrow(() => IntervalRule.BasisIsNeverInferred(
 				IntervalBasisCode.TimeAndDistance, UnLimiteDeTiempo, UnLimiteDeDistancia));
@@ -73,7 +73,7 @@ namespace DealershipCar.Dominio.Pruebas
 		}
 
 		[Test]
-		public void TimeOnlyConUnLimiteDeDistanciaRevienta()
+		public void TimeOnlyWithADistanceLimitThrows()
 		{
 			Assert.DoesNotThrow(() => IntervalRule.BasisIsNeverInferred(
 				IntervalBasisCode.TimeOnly, UnLimiteDeTiempo, SinLimite));
@@ -85,7 +85,7 @@ namespace DealershipCar.Dominio.Pruebas
 		}
 
 		[Test]
-		public void TimeOnlySinLimiteDeTiempoRevienta()
+		public void TimeOnlyWithoutATimeLimitThrows()
 		{
 			Assert.Throws<DomainException>(() => IntervalRule.BasisIsNeverInferred(
 				IntervalBasisCode.TimeOnly, SinLimite, SinLimite),
@@ -94,7 +94,7 @@ namespace DealershipCar.Dominio.Pruebas
 		}
 
 		[Test]
-		public void DistanceOnlyConUnLimiteDeTiempoRevienta()
+		public void DistanceOnlyWithATimeLimitThrows()
 		{
 			Assert.DoesNotThrow(() => IntervalRule.BasisIsNeverInferred(
 				IntervalBasisCode.DistanceOnly, SinLimite, UnLimiteDeDistancia));
@@ -104,14 +104,14 @@ namespace DealershipCar.Dominio.Pruebas
 		}
 
 		[Test]
-		public void DistanceOnlySinLimiteDeDistanciaRevienta()
+		public void DistanceOnlyWithoutADistanceLimitThrows()
 		{
 			Assert.Throws<DomainException>(() => IntervalRule.BasisIsNeverInferred(
 				IntervalBasisCode.DistanceOnly, SinLimite, SinLimite));
 		}
 
 		[Test]
-		public void ConditionOnlyConCualquierLimiteRevienta()
+		public void ConditionOnlyWithAnyLimitThrows()
 		{
 			Assert.DoesNotThrow(() => IntervalRule.BasisIsNeverInferred(
 				IntervalBasisCode.ConditionOnly, SinLimite, SinLimite));
@@ -129,7 +129,7 @@ namespace DealershipCar.Dominio.Pruebas
 		}
 
 		[Test]
-		public void UnLimiteNegativoRevienta()
+		public void ANegativeLimitThrows()
 		{
 			Assert.Throws<DomainException>(() => IntervalRule.BasisIsNeverInferred(
 				IntervalBasisCode.TimeOnly, -1, SinLimite));
@@ -141,7 +141,7 @@ namespace DealershipCar.Dominio.Pruebas
 		// Misma polaridad que un resolutor de conjunto cerrado: afuera del conjunto no hay
 		// miembro, asi que un codigo inventado es defecto de quien llama.
 		[Test]
-		public void UnaBaseQueNoNombraNingunaReglaRevienta()
+		public void ABasisThatNamesNoRuleThrows()
 		{
 			Assert.Throws<DomainException>(() => IntervalRule.BasisIsNeverInferred(
 				(IntervalBasisCode)99, UnLimiteDeTiempo, UnLimiteDeDistancia));
@@ -155,7 +155,7 @@ namespace DealershipCar.Dominio.Pruebas
 		// mensaje que la guarda produce por su cuenta es lo que fija el orden sin depender de
 		// como este redactado.
 		[Test]
-		public void OfCorreLaGuardaAntesDeConstruir()
+		public void OfRunsTheGuardBeforeConstructing()
 		{
 			DomainException laGuardaSola = Assert.Throws<DomainException>(() =>
 				IntervalRule.BasisIsNeverInferred(
@@ -178,7 +178,7 @@ namespace DealershipCar.Dominio.Pruebas
 		// IntervalBasisCode no puede viajar por la firma de un metodo publico: el enum es
 		// internal, como todo el dominio (E2), y NUnit descubre metodos publicos.
 		[Test]
-		public void OfDevuelveLaReglaDeLaBasePedida()
+		public void OfReturnsTheRuleOfTheRequestedBasis()
 		{
 			Assert.That(
 				IntervalRule.Of(IntervalBasisCode.TimeOrDistance, UnLimiteDeTiempo,
@@ -211,7 +211,7 @@ namespace DealershipCar.Dominio.Pruebas
 		// Las mismas dos bases que reciben los mismos numeros salen tipos distintos. Es la
 		// forma mecanica de OINV-20: no hay dato que las distinga, solo la declaracion.
 		[Test]
-		public void LosMismosNumerosConDosBasesDistintasDanDosReglasDistintas()
+		public void TheSameNumbersWithTwoDifferentBasesGiveTwoDifferentRules()
 		{
 			IntervalRule primera = IntervalRule.Of(IntervalBasisCode.TimeOrDistance,
 				UnLimiteDeTiempo, UnLimiteDeDistancia, DistanceUnitCode.UnitA);
@@ -229,7 +229,7 @@ namespace DealershipCar.Dominio.Pruebas
 		[TestCase(typeof(TimeOnly))]
 		[TestCase(typeof(DistanceOnly))]
 		[TestCase(typeof(ConditionOnly))]
-		public void CadaSubtipoEsUnaHojaSellada(Type subtipo)
+		public void EverySubtypeIsASealedLeaf(Type subtipo)
 		{
 			Assert.That(subtipo.IsSealed, Is.True,
 				$"{subtipo.Name} no esta sellado. E43: se sellan las hojas y los conjuntos "
@@ -242,7 +242,7 @@ namespace DealershipCar.Dominio.Pruebas
 		// El codigo de unidad tambien es un primitivo del wire, y se resuelve con la misma
 		// polaridad total-con-excepcion (E32) -- antes de construir nada.
 		[Test]
-		public void OfRechazaUnCodigoDeUnidadQueNoNombraNingunMiembro()
+		public void OfRejectsAUnitCodeThatNamesNoMember()
 		{
 			DomainException elResolutorSolo = Assert.Throws<DomainException>(
 				() => DistanceUnit.OfCode((DistanceUnitCode)99));
@@ -259,7 +259,7 @@ namespace DealershipCar.Dominio.Pruebas
 		// E43: IntervalRule es una base POLIMORFICA y se queda ABIERTA. Sellarla es el
 		// reflejo que despues obliga a des-sellarla para meter los cinco subtipos.
 		[Test]
-		public void IntervalRuleSigueSiendoUnaBaseAbierta()
+		public void IntervalRuleRemainsAnOpenBase()
 		{
 			Assert.That(typeof(IntervalRule).IsAbstract, Is.True,
 				"IntervalRule dejo de ser abstracta. La base es el lugar de la pregunta, no de "

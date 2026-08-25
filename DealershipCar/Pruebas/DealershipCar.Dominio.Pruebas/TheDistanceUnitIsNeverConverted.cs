@@ -25,7 +25,7 @@ namespace DealershipCar.Dominio.Pruebas
 	// Name seria igualdad de valor disfrazada de string (E23), y es exactamente el reflejo
 	// que termina en "si son distintas, convierto".
 	[TestFixture]
-	public sealed class LaUnidadDeDistanciaNuncaSeConvierte
+	public sealed class TheDistanceUnitIsNeverConverted
 	{
 		// La lista blanca. Los dos miembros del canon, la proyeccion del nombre y el
 		// resolutor de frontera. Nada mas.
@@ -38,7 +38,7 @@ namespace DealershipCar.Dominio.Pruebas
 		};
 
 		[Test]
-		public void DistanceUnitNoExponeNadaFueraDeLaListaBlanca()
+		public void DistanceUnitExposesNothingOutsideTheAllowlist()
 		{
 			List<string> expuestos = typeof(DistanceUnit)
 				.GetMembers(BindingFlags.Static | BindingFlags.Instance | BindingFlags.Public
@@ -62,7 +62,7 @@ namespace DealershipCar.Dominio.Pruebas
 		}
 
 		[Test]
-		public void LasDosUnidadesSonInstanciasDistintasYSeComparanPorIdentidad()
+		public void TheTwoUnitsAreDistinctInstancesAndCompareByIdentity()
 		{
 			Assert.That(ReferenceEquals(DistanceUnit.UnitA, DistanceUnit.UnitB), Is.False,
 				"UnitA y UnitB son el mismo objeto: entonces no hay discrepancia de unidad posible "
@@ -77,7 +77,7 @@ namespace DealershipCar.Dominio.Pruebas
 		// escondido en el enum (UnitA = 1, UnitB = 1609) seria la conversion entrando por la
 		// puerta de atras: el numero esta ahi y alguien lo va a multiplicar.
 		[Test]
-		public void NiLaUnidadNiSuCodigoLlevanUnNumeroQueInviteAMultiplicar()
+		public void NeitherTheUnitNorItsCodeCarriesANumberThatInvitesMultiplying()
 		{
 			IEnumerable<FieldInfo> camposDeDatos = typeof(DistanceUnit)
 				.GetFields(BindingFlags.Static | BindingFlags.Instance | BindingFlags.Public

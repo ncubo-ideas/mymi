@@ -22,7 +22,7 @@ namespace DealershipCar.Dominio.Pruebas
 	// lecturas posibles dan respuestas distintas en ese punto, que es lo que hace que la
 	// prueba pruebe algo.
 	[TestFixture]
-	public sealed class ElProximoPuntoBaseSaleDeLaCompletacionReal
+	public sealed class TheNextBasePointComesFromTheActualCompletion
 	{
 		private const int DoceMesesEnDias = 365;
 		private const int DiezMilUnidades = 10000;
@@ -48,7 +48,7 @@ namespace DealershipCar.Dominio.Pruebas
 		}
 
 		[Test]
-		public void ElPuntoBaseNuevoEsLaCompletacionReal()
+		public void TheNewBasePointIsTheActualCompletion()
 		{
 			Assert.That(proximaOcurrencia.Instant, Is.EqualTo(SeCompletoEl));
 			Assert.That(proximaOcurrencia.HasReading, Is.True);
@@ -61,7 +61,7 @@ namespace DealershipCar.Dominio.Pruebas
 		// LA DISCRIMINACION. 49800 = 39800 + 10000 -> vence. Si estuviera anclada en la grilla
 		// teorica (40000), 49800 serian 9800 recorridas y esto diria DueSoon.
 		[Test]
-		public void LaProximaVenceAlIntervaloContadoDesdeLaCompletacionReal()
+		public void TheNextOneFallsDueAtTheIntervalCountedFromTheActualCompletion()
 		{
 			DueAssessment vencimiento = regla.Assess(
 				proximaOcurrencia, new DateTime(2026, 6, 1), Lectura(49800), sinEscalar);
@@ -73,7 +73,7 @@ namespace DealershipCar.Dominio.Pruebas
 		}
 
 		[Test]
-		public void UnaUnidadAntesDeEsePuntoTodaviaNoVence()
+		public void OneUnitBeforeThatPointItIsNotDueYet()
 		{
 			DueAssessment vencimiento = regla.Assess(
 				proximaOcurrencia, new DateTime(2026, 6, 1), Lectura(49799), sinEscalar);
@@ -85,7 +85,7 @@ namespace DealershipCar.Dominio.Pruebas
 		// 2027-02-01; anclada en la grilla teorica de la ocurrencia anterior (2025-06-01 mas
 		// 365) habria vencido el 2026-06-01, que es la fecha que se prueba aca en negativo.
 		[Test]
-		public void ElTiempoTambienSeCuentaDesdeLaCompletacionReal()
+		public void TimeIsAlsoCountedFromTheActualCompletion()
 		{
 			DueAssessment enLaFechaDeLaGrillaVieja = regla.Assess(
 				proximaOcurrencia, new DateTime(2026, 6, 1), Lectura(41000), sinEscalar);
@@ -104,7 +104,7 @@ namespace DealershipCar.Dominio.Pruebas
 		// distancia cuenta para esta operacion. La mitad opcional del punto base es la
 		// lectura, nunca el instante: una operacion siempre sabe CUANDO se hizo.
 		[Test]
-		public void TimeOnlyAnclaSoloElInstante()
+		public void TimeOnlyAnchorsOnlyTheInstant()
 		{
 			IntervalRule soloTiempo = IntervalRule.Of(
 				IntervalBasisCode.TimeOnly, DoceMesesEnDias, 0, DistanceUnitCode.UnitA);
@@ -119,7 +119,7 @@ namespace DealershipCar.Dominio.Pruebas
 		}
 
 		[Test]
-		public void ConditionOnlyAnclaSoloElInstante()
+		public void ConditionOnlyAnchorsOnlyTheInstant()
 		{
 			IntervalRule porCondicion = IntervalRule.Of(
 				IntervalBasisCode.ConditionOnly, 0, 0, DistanceUnitCode.UnitA);
@@ -136,7 +136,7 @@ namespace DealershipCar.Dominio.Pruebas
 		// confundirlas hace que un vehiculo recien entregado parezca haber recorrido cero
 		// unidades desde su ultima completacion inexistente (E41, la mitad guardada).
 		[Test]
-		public void LeerLaLecturaDeUnAnclaQueNoLaTieneRevienta()
+		public void ReadingTheOdometerOfABasePointThatHasNoneThrows()
 		{
 			BasePoint soloInstante = BasePoint.AtInstantOnly(SeCompletoEl);
 

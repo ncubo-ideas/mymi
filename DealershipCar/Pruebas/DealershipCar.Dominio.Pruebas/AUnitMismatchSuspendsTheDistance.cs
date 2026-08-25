@@ -29,7 +29,7 @@ namespace DealershipCar.Dominio.Pruebas
 	// levante. Guardada, alguien tendria que acordarse de apagarla -- y el dia que se olvide,
 	// la distancia queda muerta para siempre sin que nada lo diga.
 	[TestFixture]
-	public sealed class LaDiscrepanciaDeUnidadSuspendeLaDistancia
+	public sealed class AUnitMismatchSuspendsTheDistance
 	{
 		private const int DoceMesesEnDias = 365;
 		private const int DiezMilUnidades = 10000;
@@ -56,7 +56,7 @@ namespace DealershipCar.Dominio.Pruebas
 		// exactamente lo que OINV-21 prohibe, y no hace falta que exista un Convert para
 		// cometerlo: basta con no mirar la unidad.
 		[Test]
-		public void UnaLecturaEnLaOtraUnidadNoSeCompara()
+		public void AReadingInTheOtherUnitIsNotCompared()
 		{
 			DueAssessment vencimiento = ReglaDeLasDos().Assess(
 				desde, new DateTime(2026, 1, 20), Lectura(45000, DistanceUnit.UnitB), sinEscalar);
@@ -76,7 +76,7 @@ namespace DealershipCar.Dominio.Pruebas
 		// esto" en vez de inventar un numero, y un numero inventado en una agenda de
 		// mantenimiento es una operacion que parece al dia y no lo esta.
 		[Test]
-		public void LaDiscrepanciaSeVeEnElMotivo()
+		public void TheMismatchShowsInTheReason()
 		{
 			DueAssessment vencimiento = ReglaDeLasDos().Assess(
 				desde, new DateTime(2026, 1, 20), Lectura(45000, DistanceUnit.UnitB), sinEscalar);
@@ -94,7 +94,7 @@ namespace DealershipCar.Dominio.Pruebas
 		// GAP G4. La suspension es CALCULADA: llega una lectura en la unidad del plan y
 		// desaparece sola, sin que nadie la levante.
 		[Test]
-		public void LaSuspensionSeCuraSolaCuandoLlegaUnaLecturaEnLaUnidadDelPlan()
+		public void TheSuspensionHealsItselfWhenAReadingInThePlanUnitArrives()
 		{
 			IntervalRule regla = ReglaDeLasDos();
 
@@ -116,7 +116,7 @@ namespace DealershipCar.Dominio.Pruebas
 		// inevaluable como "todavia no llego" deja la operacion NotDue para siempre. La
 		// respuesta adoptada es DEGRADAR a la dimension que si se puede evaluar.
 		[Test]
-		public void ConLosDosLimitesLaDistanciaInevaluableNoCongelaLaOperacion()
+		public void WithBothLimitsAnUnevaluableDistanceDoesNotFreezeTheOperation()
 		{
 			IntervalRule losDos = IntervalRule.Of(
 				IntervalBasisCode.TimeAndDistance, DoceMesesEnDias, DiezMilUnidades,
@@ -136,7 +136,7 @@ namespace DealershipCar.Dominio.Pruebas
 		// Sin lectura ninguna -- un vehiculo recien entregado, o una operacion cuyo ancla nunca
 		// se completo -- es el mismo caso: no se puede evaluar, no es que no llego.
 		[Test]
-		public void SinLecturaLaDistanciaTampocoSePuedeEvaluar()
+		public void WithoutAReadingTheDistanceCannotBeEvaluatedEither()
 		{
 			DueAssessment vencimiento = ReglaDeLasDos().Assess(
 				desde, new DateTime(2026, 1, 20), null, sinEscalar);
@@ -150,7 +150,7 @@ namespace DealershipCar.Dominio.Pruebas
 		// Un ancla sin lectura -- la operacion nunca se completo -- suspende la distancia por
 		// el mismo motivo: no hay desde donde contar.
 		[Test]
-		public void UnAnclaSinLecturaTampocoDaDeDondeContar()
+		public void ABasePointWithoutAReadingGivesNothingToCountFromEither()
 		{
 			DueAssessment vencimiento = ReglaDeLasDos().Assess(
 				BasePoint.AtInstantOnly(UltimaCompletacion), new DateTime(2026, 1, 20),
@@ -166,7 +166,7 @@ namespace DealershipCar.Dominio.Pruebas
 		// siete -- sino NotDue CON LA INEVALUABILIDAD DICHA EN VOZ ALTA. Callarla seria
 		// exactamente el "parece al dia y no lo esta" que G2 existe para impedir.
 		[Test]
-		public void DistanceOnlySinDistanciaEvaluableLoDiceEnVozAlta()
+		public void DistanceOnlyWithoutAnEvaluableDistanceSaysSoOutLoud()
 		{
 			IntervalRule soloDistancia = IntervalRule.Of(
 				IntervalBasisCode.DistanceOnly, 0, DiezMilUnidades, DistanceUnitCode.UnitA);
@@ -183,7 +183,7 @@ namespace DealershipCar.Dominio.Pruebas
 		}
 
 		[Test]
-		public void DistanceOnlySeCuraSolaIgualQueLasDemas()
+		public void DistanceOnlyHealsItselfLikeTheOthers()
 		{
 			IntervalRule soloDistancia = IntervalRule.Of(
 				IntervalBasisCode.DistanceOnly, 0, DiezMilUnidades, DistanceUnitCode.UnitA);
@@ -198,7 +198,7 @@ namespace DealershipCar.Dominio.Pruebas
 		// Un ancla tomada en una unidad y un limite en la otra es la misma discrepancia por el
 		// otro lado. Convertir el ancla seria la conversion entrando por la puerta de atras.
 		[Test]
-		public void UnAnclaEnLaOtraUnidadTambienSuspende()
+		public void ABasePointInTheOtherUnitAlsoSuspends()
 		{
 			DueAssessment vencimiento = ReglaDeLasDos().Assess(
 				BasePoint.At(UltimaCompletacion, LecturaDeLaUltimaCompletacion, DistanceUnit.UnitB),
@@ -212,7 +212,7 @@ namespace DealershipCar.Dominio.Pruebas
 		// defecto de quien llama (E32). Quien filtra las lecturas usables es el agregado (T5);
 		// la regla no adivina cual de las dos esta mal.
 		[Test]
-		public void UnaLecturaPorDebajoDelAnclaRevienta()
+		public void AReadingBelowTheBasePointThrows()
 		{
 			Assert.Throws<DomainException>(() => ReglaDeLasDos().Assess(
 				desde, new DateTime(2026, 1, 20), Lectura(29999, DistanceUnit.UnitA), sinEscalar));

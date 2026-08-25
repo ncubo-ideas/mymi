@@ -25,7 +25,7 @@ namespace DealershipCar.Dominio.Pruebas
 	//
 	// §12 del slice pide esto como grep. Un grep hay que acordarse de correr; esto corre solo.
 	[TestFixture]
-	public sealed class ElDominioNoEscribeIgualdad
+	public sealed class TheDomainWritesNoEquality
 	{
 		private const string EnsambladoDelDominio = "DealershipCar.Dominio";
 
@@ -42,7 +42,7 @@ namespace DealershipCar.Dominio.Pruebas
 		}
 
 		[Test]
-		public void NingunTipoSobreescribeEqualsNiGetHashCode()
+		public void NoTypeOverridesEqualsOrGetHashCode()
 		{
 			List<string> culpables = new List<string>();
 
@@ -65,7 +65,7 @@ namespace DealershipCar.Dominio.Pruebas
 		}
 
 		[Test]
-		public void NingunTipoImplementaIEquatableNiDeclaraOperadoresDeIgualdad()
+		public void NoTypeImplementsIEquatableOrDeclaresEqualityOperators()
 		{
 			List<string> culpables = new List<string>();
 
@@ -95,7 +95,7 @@ namespace DealershipCar.Dominio.Pruebas
 		// nadie la escriba. Es la forma en que la doctrina se rompe sin dejar rastro en un
 		// diff: la palabra 'record' entra en una linea y la igualdad viene de regalo.
 		[Test]
-		public void NingunTipoEsRecordNiStructDeValor()
+		public void NoTypeIsARecordOrAValueStruct()
 		{
 			List<string> culpables = tipos
 				.Where(tipo => tipo.IsValueType && !tipo.IsEnum)

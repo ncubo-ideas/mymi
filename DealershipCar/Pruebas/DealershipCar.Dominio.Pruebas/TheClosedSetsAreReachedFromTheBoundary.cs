@@ -27,10 +27,10 @@ namespace DealershipCar.Dominio.Pruebas
 	// el wire hacia adentro, y no se entrega nunca. Tambien eso se prueba, porque el dia
 	// que alguien le agregue un OfCode habra abierto una puerta que el slice no quiso.
 	[TestFixture]
-	public sealed class LosConjuntosCerradosSeAlcanzanDesdeLaFrontera
+	public sealed class TheClosedSetsAreReachedFromTheBoundary
 	{
 		[Test]
-		public void CadaCodigoDeOperacionCaeEnSuMiembro()
+		public void EveryOperationCodeLandsOnItsMember()
 		{
 			Assert.That(MaintenanceOperationKind.OfCode(OperationKindCode.Inspection),
 				Is.SameAs(MaintenanceOperationKind.Inspection));
@@ -53,7 +53,7 @@ namespace DealershipCar.Dominio.Pruebas
 		}
 
 		[Test]
-		public void UnCodigoDeOperacionQueNoNombraNingunMiembroRevienta()
+		public void AnOperationCodeThatNamesNoMemberThrows()
 		{
 			DomainException error = Assert.Throws<DomainException>(
 				() => MaintenanceOperationKind.OfCode((OperationKindCode)99));
@@ -64,20 +64,20 @@ namespace DealershipCar.Dominio.Pruebas
 		}
 
 		[Test]
-		public void CadaCodigoDeUnidadCaeEnSuMiembro()
+		public void EveryUnitCodeLandsOnItsMember()
 		{
 			Assert.That(DistanceUnit.OfCode(DistanceUnitCode.UnitA), Is.SameAs(DistanceUnit.UnitA));
 			Assert.That(DistanceUnit.OfCode(DistanceUnitCode.UnitB), Is.SameAs(DistanceUnit.UnitB));
 		}
 
 		[Test]
-		public void UnCodigoDeUnidadQueNoNombraNingunMiembroRevienta()
+		public void AUnitCodeThatNamesNoMemberThrows()
 		{
 			Assert.Throws<DomainException>(() => DistanceUnit.OfCode((DistanceUnitCode)99));
 		}
 
 		[Test]
-		public void CadaCodigoDeFuenteDeLecturaCaeEnSuMiembro()
+		public void EveryReadingSourceCodeLandsOnItsMember()
 		{
 			Assert.That(ReadingSource.OfCode(ReadingSourceCode.HumanEntry),
 				Is.SameAs(ReadingSource.HumanEntry));
@@ -92,13 +92,13 @@ namespace DealershipCar.Dominio.Pruebas
 		}
 
 		[Test]
-		public void UnCodigoDeFuenteDeLecturaQueNoNombraNingunMiembroRevienta()
+		public void AReadingSourceCodeThatNamesNoMemberThrows()
 		{
 			Assert.Throws<DomainException>(() => ReadingSource.OfCode((ReadingSourceCode)99));
 		}
 
 		[Test]
-		public void CadaCodigoDePerfilDeUsoCaeEnSuMiembro()
+		public void EveryUsageProfileCodeLandsOnItsMember()
 		{
 			Assert.That(UsageProfile.OfCode(UsageProfileCode.Standard), Is.SameAs(UsageProfile.Standard));
 			Assert.That(UsageProfile.OfCode(UsageProfileCode.SevereDuty), Is.SameAs(UsageProfile.SevereDuty));
@@ -107,13 +107,13 @@ namespace DealershipCar.Dominio.Pruebas
 		}
 
 		[Test]
-		public void UnCodigoDePerfilDeUsoQueNoNombraNingunMiembroRevienta()
+		public void AUsageProfileCodeThatNamesNoMemberThrows()
 		{
 			Assert.Throws<DomainException>(() => UsageProfile.OfCode((UsageProfileCode)99));
 		}
 
 		[Test]
-		public void CadaCodigoDeRazonDeAplazamientoCaeEnSuMiembro()
+		public void EveryDeferralReasonCodeLandsOnItsMember()
 		{
 			Assert.That(DeferralReason.OfCode(DeferralReasonCode.Cost), Is.SameAs(DeferralReason.Cost));
 			Assert.That(DeferralReason.OfCode(DeferralReasonCode.Timing), Is.SameAs(DeferralReason.Timing));
@@ -126,7 +126,7 @@ namespace DealershipCar.Dominio.Pruebas
 		}
 
 		[Test]
-		public void UnCodigoDeRazonDeAplazamientoQueNoNombraNingunMiembroRevienta()
+		public void ADeferralReasonCodeThatNamesNoMemberThrows()
 		{
 			Assert.Throws<DomainException>(() => DeferralReason.OfCode((DeferralReasonCode)99));
 		}
@@ -139,7 +139,7 @@ namespace DealershipCar.Dominio.Pruebas
 		[TestCase(typeof(ReadingSourceCode), typeof(ReadingSource))]
 		[TestCase(typeof(UsageProfileCode), typeof(UsageProfile))]
 		[TestCase(typeof(DeferralReasonCode), typeof(DeferralReason))]
-		public void NingunCodigoDeclaradoSeQuedaSinMiembro(Type codigos, Type conjunto)
+		public void NoDeclaredCodeIsLeftWithoutAMember(Type codigos, Type conjunto)
 		{
 			MethodInfo resolutor = conjunto.GetMethod("OfCode",
 				BindingFlags.Static | BindingFlags.Public | BindingFlags.NonPublic);
@@ -159,7 +159,7 @@ namespace DealershipCar.Dominio.Pruebas
 		// Si fabricara, la comparacion por referencia -- que es la unica que estos tipos
 		// tienen (E23) -- diria "distintos" para el mismo miembro del dominio.
 		[Test]
-		public void ElResolutorDevuelveSiempreLaMismaInstancia()
+		public void TheResolverAlwaysReturnsTheSameInstance()
 		{
 			Assert.That(MaintenanceOperationKind.OfCode(OperationKindCode.FluidChange),
 				Is.SameAs(MaintenanceOperationKind.OfCode(OperationKindCode.FluidChange)));
@@ -178,7 +178,7 @@ namespace DealershipCar.Dominio.Pruebas
 		[TestCase(typeof(ReadingSource), 5)]
 		[TestCase(typeof(UsageProfile), 4)]
 		[TestCase(typeof(DeferralReason), 5)]
-		public void CadaConjuntoCerradoDeclaraExactamenteSusMiembros(Type conjunto, int cuantos)
+		public void EveryClosedSetDeclaresExactlyItsMembers(Type conjunto, int cuantos)
 		{
 			List<object> miembros = MiembrosDe(conjunto);
 
@@ -204,7 +204,7 @@ namespace DealershipCar.Dominio.Pruebas
 		[TestCase(typeof(ReadingSource))]
 		[TestCase(typeof(UsageProfile))]
 		[TestCase(typeof(DeferralReason))]
-		public void NingunConjuntoCerradoSePuedeInstanciarDesdeAfuera(Type conjunto)
+		public void NoClosedSetCanBeInstantiatedFromOutside(Type conjunto)
 		{
 			ConstructorInfo[] ctores = conjunto.GetConstructors(
 				BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic);
@@ -221,7 +221,7 @@ namespace DealershipCar.Dominio.Pruebas
 		// asi que no tiene resolutor ni enum de frontera -- y no tenerlos es la decision,
 		// no un olvido.
 		[Test]
-		public void DueStateNoSeAlcanzaDesdeLaFrontera()
+		public void DueStateIsNotReachedFromTheBoundary()
 		{
 			Assert.That(typeof(DueState).GetMethod("OfCode",
 					BindingFlags.Static | BindingFlags.Public | BindingFlags.NonPublic),
@@ -238,7 +238,7 @@ namespace DealershipCar.Dominio.Pruebas
 		}
 
 		[Test]
-		public void DueStateTieneLosSieteEstadosDelCanon()
+		public void DueStateHasTheSevenStatesOfTheCanon()
 		{
 			Assert.That(DueState.NotDue.Name, Is.EqualTo("NotDue"));
 			Assert.That(DueState.DueSoon.Name, Is.EqualTo("DueSoon"));
@@ -259,7 +259,7 @@ namespace DealershipCar.Dominio.Pruebas
 		[TestCase(typeof(ReadingSourceCode), typeof(ReadingSource))]
 		[TestCase(typeof(UsageProfileCode), typeof(UsageProfile))]
 		[TestCase(typeof(DeferralReasonCode), typeof(DeferralReason))]
-		public void LosNombresDelEnumDeFronteraYDelConjuntoCoinciden(Type codigos, Type conjunto)
+		public void TheBoundaryEnumNamesAndTheSetNamesMatch(Type codigos, Type conjunto)
 		{
 			List<string> nombresDelEnum = Enum.GetNames(codigos)
 				.OrderBy(nombre => nombre, StringComparer.Ordinal)

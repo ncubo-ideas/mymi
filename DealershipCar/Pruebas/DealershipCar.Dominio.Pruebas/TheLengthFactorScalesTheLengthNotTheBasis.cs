@@ -27,7 +27,7 @@ namespace DealershipCar.Dominio.Pruebas
 	// -- asi que ignorar es una tercera cosa, y cae en el mismo cajon que la discrepancia de
 	// unidad: la dimension NO SE PUEDE EVALUAR (G2).
 	[TestFixture]
-	public sealed class ElFactorDeLargoEscalaElLargoYNoLaBase
+	public sealed class TheLengthFactorScalesTheLengthNotTheBasis
 	{
 		private static readonly string[] LoQueElFactorPuedeExponer =
 		{
@@ -39,7 +39,7 @@ namespace DealershipCar.Dominio.Pruebas
 		};
 
 		[Test]
-		public void ElFactorNoExponeNadaFueraDeLaListaBlanca()
+		public void TheFactorExposesNothingOutsideTheAllowlist()
 		{
 			List<string> intrusos = typeof(IntervalLengthFactor)
 				.GetMembers(BindingFlags.Static | BindingFlags.Instance | BindingFlags.Public
@@ -59,7 +59,7 @@ namespace DealershipCar.Dominio.Pruebas
 		}
 
 		[Test]
-		public void StandardDejaLosLimitesComoElFabricanteLosDio()
+		public void StandardLeavesTheLimitsAsTheManufacturerGaveThem()
 		{
 			IntervalLengthFactor factor = IntervalLengthFactor.For(UsageProfile.Standard);
 
@@ -72,7 +72,7 @@ namespace DealershipCar.Dominio.Pruebas
 		// decision con nombre, no un truncamiento accidental: truncar acortaria el intervalo
 		// una segunda vez, ademas del factor.
 		[Test]
-		public void SevereDutyDejaElSetentaPorCientoDelLargoDeclarado()
+		public void SevereDutyLeavesSeventyPercentOfTheDeclaredLength()
 		{
 			IntervalLengthFactor factor = IntervalLengthFactor.For(UsageProfile.SevereDuty);
 
@@ -82,7 +82,7 @@ namespace DealershipCar.Dominio.Pruebas
 		}
 
 		[Test]
-		public void LowDistanceDejaElTiempoIntactoEIgnoraLaDistancia()
+		public void LowDistanceLeavesTimeIntactAndIgnoresDistance()
 		{
 			IntervalLengthFactor factor = IntervalLengthFactor.For(UsageProfile.LowDistance);
 
@@ -97,7 +97,7 @@ namespace DealershipCar.Dominio.Pruebas
 		// §6 no declara factor para Commercial. Inventarle uno seria exactamente el camino que
 		// OHS-07 cerro: acortar intervalos por una via que nadie declaro.
 		[Test]
-		public void CommercialNoTieneFactorDeclaradoYPorEsoNoEscalaNada()
+		public void CommercialHasNoDeclaredFactorAndSoScalesNothing()
 		{
 			IntervalLengthFactor factor = IntervalLengthFactor.For(UsageProfile.Commercial);
 
@@ -106,7 +106,7 @@ namespace DealershipCar.Dominio.Pruebas
 		}
 
 		[Test]
-		public void UnLimiteAusenteSigueAusenteDespuesDeEscalar()
+		public void AnAbsentLimitStaysAbsentAfterScaling()
 		{
 			IntervalLengthFactor factor = IntervalLengthFactor.For(UsageProfile.SevereDuty);
 
@@ -120,7 +120,7 @@ namespace DealershipCar.Dominio.Pruebas
 		// Con SevereDuty el limite de 365 dias queda en 256, asi que a los 256 dias vence algo
 		// que con Standard todavia no vencia -- y sigue siendo una TimeOrDistance.
 		[Test]
-		public void ElMismoIntervaloVenceAntesConSevereDutyYSigueSiendoLaMismaBase()
+		public void TheSameIntervalFallsDueSoonerWithSevereDutyAndKeepsTheSameBasis()
 		{
 			IntervalRule regla = IntervalRule.Of(
 				IntervalBasisCode.TimeOrDistance, 365, 10000, DistanceUnitCode.UnitA);
@@ -148,7 +148,7 @@ namespace DealershipCar.Dominio.Pruebas
 		// LowDistance ignora la distancia, y eso cae en el mismo cajon que la discrepancia de
 		// unidad: la dimension NO SE PUEDE EVALUAR, no es que no llego (G2).
 		[Test]
-		public void ConLowDistanceLaDistanciaQuedaSuspendidaYSeDice()
+		public void WithLowDistanceTheDistanceIsSuspendedAndSaidSo()
 		{
 			IntervalRule regla = IntervalRule.Of(
 				IntervalBasisCode.TimeOrDistance, 365, 10000, DistanceUnitCode.UnitA);

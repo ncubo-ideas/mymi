@@ -9,7 +9,7 @@ using NUnit.Framework;
 
 namespace DealershipCar.Dominio.Pruebas
 {
-	// LA INVARIANTE CENTRAL DE ARQUITECTURE 3.1, ejecutable.
+	// LA INVARIANTE CENTRAL DE ARCHITECTURE 3.1, ejecutable.
 	//
 	// "Que este csproj no tenga un solo PackageReference ni ProjectReference es la prueba de
 	// que el dominio no cambia al cruzar a wasm. Si algun dia necesita una, ESO ES EL
@@ -20,7 +20,7 @@ namespace DealershipCar.Dominio.Pruebas
 	// dia que alguien agregue Newtonsoft "solo para serializar", esto se pone rojo y dice
 	// exactamente que entro y por donde.
 	[TestFixture]
-	public sealed class ElDominioNoTieneDependencias
+	public sealed class TheDomainHasNoDependencies
 	{
 		private const string EnsambladoDelDominio = "DealershipCar.Dominio";
 
@@ -54,7 +54,7 @@ namespace DealershipCar.Dominio.Pruebas
 		// declarada se ve aunque nadie la use todavia, que es exactamente cuando conviene
 		// verla — antes de que alguien escriba el using.
 		[Test]
-		public void ElCsprojDelDominioNoDeclaraNiUnaSolaReferencia()
+		public void TheDomainCsprojDeclaresNotASingleReference()
 		{
 			string ruta = Path.Combine(AppContext.BaseDirectory, CsprojDelDominio);
 			Assert.That(File.Exists(ruta), Is.True,
@@ -72,7 +72,7 @@ namespace DealershipCar.Dominio.Pruebas
 
 			Assert.That(declaradas, Is.Empty,
 				"El dominio declaro referencias: " + string.Join(" | ", declaradas) + ". "
-				+ "ARQUITECTURE 3.1: que este csproj no tenga ni una es LA PRUEBA de que el "
+				+ "ARCHITECTURE 3.1: que este csproj no tenga ni una es LA PRUEBA de que el "
 				+ "dominio no cambia al cruzar a wasm. Si de verdad hace falta, ESO ES EL "
 				+ "HALLAZGO — se para y se reporta, no se agrega la referencia ni se afloja "
 				+ "esta prueba.");
@@ -97,7 +97,7 @@ namespace DealershipCar.Dominio.Pruebas
 		// Directory.Build.props, un import, un paquete transitivo que se termine usando).
 		// Las dos juntas cubren declarado Y usado.
 		[Test]
-		public void ElDominioSoloReferenciaLaBibliotecaBase()
+		public void TheDomainReferencesOnlyTheBaseLibrary()
 		{
 			List<string> intrusos = dominio.GetReferencedAssemblies()
 				.Select(referencia => referencia.Name)
@@ -116,7 +116,7 @@ namespace DealershipCar.Dominio.Pruebas
 		// prueba de arriba a proposito: cuando esta se pone roja, el mensaje nombra al
 		// culpable en vez de obligar a leer una lista.
 		[Test]
-		public void ElDominioNoConoceNiElMotorNiElTransporte()
+		public void TheDomainKnowsNeitherTheEngineNorTheTransport()
 		{
 			string[] prohibidos = { "Ncubo", "Puppeteer", "Choreography", "Puppets.Portador", "ModelContextProtocol" };
 
@@ -141,7 +141,7 @@ namespace DealershipCar.Dominio.Pruebas
 		// posibilidad de hablarle al dominio por la espalda en vez de entrar por
 		// DealershipCarAPI, que es la unica puerta.
 		[Test]
-		public void SoloDosEnsambladosVenElInteriorDelDominio()
+		public void OnlyTwoAssembliesSeeInsideTheDomain()
 		{
 			string[] esperados = { "DealershipCar.App", "DealershipCar.Dominio.Pruebas" };
 
@@ -154,7 +154,7 @@ namespace DealershipCar.Dominio.Pruebas
 			Assert.That(declarados, Is.EquivalentTo(esperados),
 				"Cambio quien ve el interior del dominio. Declarados: ["
 				+ string.Join(", ", declarados) + "]. Si hace falta uno mas, la razon va escrita "
-				+ "en VisibilidadInterna.cs, no solo aca.");
+				+ "en AssemblyInfo.cs, no solo aca.");
 		}
 	}
 }
