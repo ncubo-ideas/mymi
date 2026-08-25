@@ -1,5 +1,7 @@
 using System;
+using Examenes.App.Eventos;
 using Examenes.Dominio;
+using Puppets.Portador;
 
 namespace Examenes.Consola
 {
@@ -39,6 +41,7 @@ namespace Examenes.Consola
 			LaVelocidadEsLaLecturaDelAntigeno();
 			ElUrianalisisInformaDosFormas();
 			ElAnalitoEsUnaIdentidadNoUnNombre();
+			LaRutaResuelveElNombreDelLaboratorio();
 
 			Console.WriteLine();
 			Console.WriteLine(fallas == 0
@@ -353,6 +356,99 @@ namespace Examenes.Consola
 					todosVuelven.ToString());
 			}
 		}
+
+
+		// ---- la ruta acepta el vocabulario del laboratorio que emitio ----
+		//
+		// La otra punta de la identidad. Resolver bien al CONSULTAR no sirve de nada si al
+		// INGERIR se compara el nombre con == contra el token que esta app eligio: el
+		// evento se descarta y no hay serie que consultar.
+		//
+		// Y descartar sigue siendo lo correcto para lo que esta app no modela. Las dos
+		// cosas conviven porque son preguntas distintas: "no se como se llama" es un
+		// problema, "no modelo eso" no lo es.
+		private static void LaRutaResuelveElNombreDelLaboratorio()
+		{
+			Titulo("la ruta acepta el vocabulario del laboratorio");
+
+			Igual("un laboratorio que escribe 'HGB'", "Hemoglobina",
+				AnalitoRuteado(Sangre("HGB", "15.3", "g/dL")));
+			Igual("  otro que escribe 'HEMOGLOBINA'", "Hemoglobina",
+				AnalitoRuteado(Sangre("HEMOGLOBINA", "15.8", "g/dL")));
+			Igual("  y el token que emite URL2 hoy", "Hemoglobina",
+				AnalitoRuteado(Sangre("Hemoglobina", "16.2", "g/dL")));
+			Igual("el antigeno con acentos y todo", "Antigeno prostatico",
+				AnalitoRuteado(Sangre("Antígeno prostático", "5.2", "ng/mL")));
+			Igual("  y por su sigla", "Antigeno prostatico",
+				AnalitoRuteado(Sangre("PSA", "5.2", "ng/mL")));
+
+			// Lo que NO cambia: lo que esta app no modela se sigue descartando.
+			Igual("un examen que esta app no modela se descarta", "descartado",
+				AnalitoRuteado(Sangre("Tiroides", "2.1", "mg/dL")));
+			Igual("  y un evento de otro tipo tampoco entra", "descartado",
+				AnalitoRuteado(new SenalDeEvento(900, "CitaAgendada", @"{ ""id"": 900 }")));
+			Igual("  ni uno sin fecha", "descartado",
+				AnalitoRuteado(new SenalDeEvento(901, "ExamenAgregado", @"{
+					""id"": 901, ""tipo"": ""ExamenAgregado"",
+					""examen"": ""Hemoglobina"", ""valor"": 15.0, ""unidad"": ""g/dL"" }")));
+
+			// La forma del payload dejo de estar codificada en el nombre: el token viejo y
+			// el nombre del analito con su fraccion producen el MISMO mensaje.
+			ExamenAgregado porToken = Ruteado(Fraccionado("ColesterolDetallado"));
+			ExamenAgregado porNombre = Ruteado(Fraccionado("LDL"));
+			Igual("el token de forma que emite URL2 sigue entrando", "Colesterol LDL",
+				porToken.Analito.Nombre);
+			Igual("  y trae su fraccionamiento", "True", porToken.TraeFraccionamiento.ToString());
+			Igual("un emisor que manda 'LDL' con su HDL da lo mismo", "Colesterol LDL",
+				porNombre.Analito.Nombre);
+			Igual("  y tambien trae fraccionamiento", "True", porNombre.TraeFraccionamiento.ToString());
+
+			// Los dos casos que la ruta filtra para que el comando no arme un examen a
+			// medias. El dominio modela el LDL junto con su HDL, no sueltos.
+			Igual("un LDL sin su HDL no se aplica a medias", "descartado",
+				AnalitoRuteado(Sangre("LDL", "177", "mg/dL")));
+			Igual("  ni un HDL solo, que no forma serie", "descartado",
+				AnalitoRuteado(Sangre("HDL", "32", "mg/dL")));
+
+			// La orina no es un analito: es otro tipo de muestra, y por eso sigue siendo
+			// el unico token propio que queda.
+			ExamenAgregado orina = Ruteado(new SenalDeEvento(905, "ExamenAgregado", @"{
+				""id"": 905, ""tipo"": ""ExamenAgregado"", ""examen"": ""Orina"",
+				""fecha"": ""2026-08-21T08:33:00"", ""color"": ""ambar"" }"));
+			Igual("la orina entra sin ser un analito", "True", orina.EsDeOrina.ToString());
+			Igual("  y una orina sin color se descarta", "descartado",
+				AnalitoRuteado(new SenalDeEvento(906, "ExamenAgregado", @"{
+					""id"": 906, ""tipo"": ""ExamenAgregado"", ""examen"": ""Orina"",
+					""fecha"": ""2026-08-21T08:33:00"" }")));
+		}
+
+		private static ExamenAgregado Ruteado(SenalDeEvento senal) =>
+			RutaDeExamenes.Rutear(senal) as ExamenAgregado;
+
+		// El nombre canonico del analito que la ruta resolvio, o "descartado" si devolvio
+		// null. Un solo texto para comparar hace que la comprobacion diga que paso.
+		private static string AnalitoRuteado(SenalDeEvento senal)
+		{
+			ExamenAgregado mensaje = Ruteado(senal);
+			if (mensaje == null) return "descartado";
+			return mensaje.EsDeOrina ? "orina" : mensaje.Analito.Nombre;
+		}
+
+		private static SenalDeEvento Sangre(string examen, string valor, string unidad) =>
+			new SenalDeEvento(910, "ExamenAgregado", $@"{{
+				""id"": 910, ""tipo"": ""ExamenAgregado"",
+				""examen"": ""{examen}"",
+				""fecha"": ""2026-08-21T08:30:00"",
+				""valor"": {valor}, ""unidad"": ""{unidad}""
+			}}");
+
+		private static SenalDeEvento Fraccionado(string examen) =>
+			new SenalDeEvento(911, "ExamenAgregado", $@"{{
+				""id"": 911, ""tipo"": ""ExamenAgregado"",
+				""examen"": ""{examen}"",
+				""fecha"": ""2026-08-21T08:30:00"",
+				""valor"": 177, ""valorSecundario"": 32, ""unidad"": ""mg/dL""
+			}}");
 
 		private static void Titulo(string texto)
 		{

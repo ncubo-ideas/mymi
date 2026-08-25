@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using Choreography.Theater;
 using Examenes.App.Eventos;
 using Examenes.App.Vistas;
+using Examenes.Dominio;
 using Puppeteer;
 using Puppets.Portador;
 
@@ -70,23 +71,31 @@ namespace Examenes.App
 				throw new ArgumentOutOfRangeException(nameof(evento), evento.Evento,
 					"El numero de evento debe ser positivo.");
 
-			switch (evento.Examen)
-			{
-				case ExamenAgregado.Colesterol:
-					return UnValor(evento, "Colesterol");
-				case ExamenAgregado.AntigenoProstatico:
-					return UnValor(evento, "AntigenoProstatico");
-				case ExamenAgregado.Hemoglobina:
-					return UnValor(evento, "Hemoglobina");
-				case ExamenAgregado.ColesterolDetallado:
-					return ColesterolDetallado(evento);
-				case ExamenAgregado.Orina:
-					return Orina(evento);
-				default:
-					throw new ArgumentException(
-						$"Esta app no tiene comando para el examen '{evento.Examen}'. La ruta debio devolver null "
-						+ "para descartarlo.", nameof(evento));
-			}
+			if (evento.EsDeOrina) return Orina(evento);
+			if (evento.TraeFraccionamiento) return ColesterolDetallado(evento);
+
+			return UnValor(evento, ClaseDelDominio(evento.Analito));
+		}
+
+		// La ULTIMA traduccion que queda: de la identidad del analito al nombre de la clase
+		// que el comando construye. Vive aca y no en el dominio porque es un detalle del
+		// DSL -el journal guarda texto y ese texto nombra una clase-, no conocimiento
+		// clinico.
+		//
+		// Se compara por identidad y no por cadena: da igual como haya escrito el
+		// laboratorio el nombre, para cuando llega aca ya se resolvio.
+		private static string ClaseDelDominio(Analito analito)
+		{
+			if (analito.EsElMismo(Analito.ColesterolTotal)) return "Colesterol";
+			if (analito.EsElMismo(Analito.AntigenoProstatico)) return "AntigenoProstatico";
+			if (analito.EsElMismo(Analito.Hemoglobina)) return "Hemoglobina";
+
+			// El conjunto de analitos es mas grande que el de examenes construibles: el
+			// LDL entra fraccionado y el HDL no entra solo, y las dos cosas ya las filtro
+			// la ruta. Llegar aca significa que se agrego un analito y no su comando.
+			throw new ArgumentException(
+				$"Esta app no tiene comando para construir un examen de '{analito.Nombre}'. "
+				+ "La ruta debio devolver null para descartarlo.", nameof(analito));
 		}
 
 		// Los tres analitos que se construyen igual: fecha, valor y unidad. El nombre de
