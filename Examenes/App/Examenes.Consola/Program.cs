@@ -30,7 +30,6 @@ namespace Examenes.Consola
 					case "estado":    return Estado(Carpeta(args, 1));
 					case "tendencia": return TendenciaDe(args);
 					case "velocidad": return VelocidadDe(args);
-					case "permisos":  return Permisos(args);
 					// El token ya no se pega a mano: la app lo pide sola contra su device key.
 					case "refrescar": return await Refrescar(args);
 					default:          Ayuda(); return 1;
@@ -278,31 +277,6 @@ namespace Examenes.Consola
 			return 0;
 		}
 
-		// Lo que la persona le deja consultar a su IA. Sirve para probar SIN browser que el
-		// toggle de verdad gobierna: se deniega aca y el servidor MCP tiene que negarse.
-		private static int Permisos(string[] args)
-		{
-			string carpeta = Carpeta(args, 1);
-			ExamenesApp app = Abrir(carpeta);
-			var api = new ExamenesAPI(app);
-
-			// permisos [carpeta] [consulta] [si|no]
-			if (args.Length >= 4)
-			{
-				bool permitir = args[3] == "si";
-				api.PermitirConsultaDeLaIA(args[2], permitir);
-				Console.WriteLine($"{args[2]} -> {(permitir ? "permitida" : "denegada")}");
-			}
-
-			Console.WriteLine();
-			foreach (string consulta in new[] { "tendencia", "velocidad", "revision" })
-				Console.WriteLine($"  {consulta,-12} {(api.ConsultaDeLaIAPermitida(consulta) ? "permitida" : "DENEGADA")}");
-			Console.WriteLine($"  denegadas    {api.ConsultasDenegadas()}");
-
-			app.Actor.GracefulExit();
-			return 0;
-		}
-
 		// ---------------------------------------------------------------- fase 2
 		private static async Task<int> Refrescar(string[] args)
 		{
@@ -384,7 +358,6 @@ namespace Examenes.Consola
 			Console.WriteLine("  estado    [carpeta]                            abre el journal y reporta (correr en proceso nuevo)");
 			Console.WriteLine("  tendencia [carpeta] [analito]                  evalua la serie de un analito");
 			Console.WriteLine("  velocidad [carpeta] [analito]                  a que ritmo viene cambiando (ng/mL por ano)");
-			Console.WriteLine("  permisos  [carpeta] [consulta] [si|no]         que le deja consultar la persona a su IA");
 			Console.WriteLine("  refrescar [carpeta] [baseUrl] [recurso] [id]   trae eventos del laboratorio y los aplica de a uno");
 			Console.WriteLine();
 			Console.WriteLine("carpeta por defecto: ~/Examenes-journal");

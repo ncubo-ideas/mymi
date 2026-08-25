@@ -79,15 +79,6 @@ internal sealed class ExamenesTools
 	// EL TOGGLE SE HACE CUMPLIR ACA, y por eso no es decoracion.
 	//
 	// La persona decide en su app; queda como un comando en SU journal; este proceso lo
-	// lee al rehidratar y se niega ANTES de mirar ningun dato. No hay canal entre el
-	// browser y este servidor: el journal ES el protocolo, y esto es lo que lo demuestra.
-	//
-	// El mensaje dice que fue una decision de la persona y no una falla, para que la IA
-	// no insista ni lo reporte como error del sistema.
-	private static string NegadaPorLaPersona(string queEs) =>
-		$"La persona deshabilito esta consulta ({queEs}) desde los ajustes de su app. "
-		+ "No es un error: es una decision suya. Si quiere habilitarla, puede hacerlo ahi.";
-
 	// UseStructuredContent es el ultimo tramo de "sin strings en ninguna frontera
 	// semantica". Sin el, el SDK serializa el record a JSON y lo manda como un bloque de
 	// TEXTO: la IA recibe un string que tiene que volver a parsear. Con el, el resultado
@@ -110,13 +101,6 @@ internal sealed class ExamenesTools
 		// se volvio inalcanzable, que es justamente lo que se compra al tipar.
 		if (!lector.HayJournal) return SinJournal();
 
-		if (!lector.Consultar(api => api.ConsultaDeLaIAPermitida("tendencia")))
-			return new TendenciaDelAnalito
-			{
-				HayDatos = false,
-				Carpeta = lector.Carpeta,
-				Detalle = NegadaPorLaPersona("la tendencia de un analito"),
-			};
 
 		string nombre = analito.Nombre();
 
@@ -168,14 +152,6 @@ internal sealed class ExamenesTools
 		if (!lector.HayJournal)
 			return new VelocidadDelAnalito { HayDatos = false, Carpeta = lector.Carpeta };
 
-		if (!lector.Consultar(api => api.ConsultaDeLaIAPermitida("velocidad")))
-			return new VelocidadDelAnalito
-			{
-				HayDatos = false,
-				Carpeta = lector.Carpeta,
-				Expresada = NegadaPorLaPersona("la velocidad de un analito"),
-			};
-
 		string nombre = analito.Nombre();
 
 		return lector.Consultar(api =>
@@ -216,13 +192,6 @@ internal sealed class ExamenesTools
 				Detalle = DetalleSinJournal,
 			};
 
-		if (!lector.Consultar(api => api.ConsultaDeLaIAPermitida("revision")))
-			return new RevisionDeAnalitos
-			{
-				HayDatos = false,
-				Carpeta = lector.Carpeta,
-				Detalle = NegadaPorLaPersona("el repaso de todos los analitos"),
-			};
 
 		// UNA sola rehidratacion para todas las preguntas. Separarlas releeria el journal
 		// varias veces y, peor, podria mezclar dos estados si la app escribe en el medio.

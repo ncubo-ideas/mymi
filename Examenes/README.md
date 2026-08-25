@@ -304,31 +304,34 @@ diferencia decide el caso:
 Los tres años estables de antes no diluyen un salto de este año: lo hacen más notable.
 Promediar sobre toda la historia es exactamente como se pierde un cambio recién empezado.
 
-### Los ajustes, y por qué el toggle no es decoración
+### Los permisos de la IA se fueron, y por qué queda una lápida
 
-La pantalla de **Ajustes** deja apagar cada consulta de la IA por separado. Lo que la hace
-real es dónde vive la decisión: **es un comando journalizado**, no una preferencia del
-browser.
+Hubo una pantalla de **Ajustes** para apagar cada consulta de la IA por separado, con la
+decisión journalizada. La idea era buena y el mecanismo funcionaba, pero la
+responsabilidad no era nuestra: **quien se conecta con la IA es el Gnothi Host**, no esta
+app. Édgar y Jonathan reportaron que además daba problemas al conectar.
 
-Tiene que serlo. El servidor MCP es **otro proceso**, fuera del browser, y entre los dos no
-hay protocolo — lo único que comparten es el journal. Una preferencia en `localStorage` la
-vería la pantalla y no la vería la IA: el toggle no gobernaría nada.
+Su reporte trae la receta, y vale conservarla porque es una propiedad del motor:
 
-**Medido, entre procesos:**
+> el `upgrade('permisos-de-la-ia')` no asienta en la corrida que siembra el journal, así
+> que la vista de solo lectura del MCP no ve el global.
 
-```bash
-dotnet run --project Examenes/App/Examenes.Consola -- permisos "$HOME/Documents/ExamenesMCP" velocidad no
+O sea: un `upgrade` agregado en un segundo `PerformCommand` **no queda disponible para
+otro proceso que rehidrate ese mismo journal**. Verificado en un journal real: `'semilla'`
+y `'permisos-de-la-ia'` aparecen dos veces cada uno. Si alguna vez hace falta un upgrade
+nuevo, hay que probarlo **abriendo el journal desde cero con el MCP**, no solo con la app
+que lo sembró.
+
+Quedó `Dominio/PermisosDeLaIA.cs` como clase vacía. No la llama nadie y existe solo para
+que los journals ya escritos sigan abriendo: adentro tienen `permisos = PermisosDeLaIA();`
+y el replay lo vuelve a ejecutar. **Medido** — sacando la clase, la rehidratación falla:
+
+```
+Puppeteer.LanguageException: Class 'PermisosDeLaIA' is not registered in the actor's library
 ```
 
-Después de eso, `velocidad_de` en el MCP contesta `hayDatos: false` con *"la persona
-deshabilitó esta consulta desde los ajustes de su app; no es un error, es una decisión
-suya"*, mientras `evaluar_tendencia` sigue respondiendo normal. Es el mismo principio que el
-señuelo de 403: **el permiso se demuestra, no se promete.**
-
-Los permisos se siembran con un `upgrade('permisos-de-la-ia')` propio y no dentro de
-`'semilla'`: la guarda de upgrade es una-vez-por-actor, así que agregar algo a `'semilla'`
-no le llegaría a ningún expediente ya escrito. Una clave nueva sí se aplica — migrar sin un
-`.exe` de migración.
+Se puede borrar de verdad el día que nadie tenga un journal con esa entrada. Los del demo
+se regeneran solos: se borra la carpeta y se aprieta Refresh.
 
 ### Lo que ve la IA
 
@@ -382,9 +385,9 @@ Cómo se distinguió la versión que sí lo traía de la que no:
 tamaño exacto, 281 bytes de diferencia, que es el MVID y el timestamp del PE. `10029` es
 código nuevo, y la prueba en el browser lo confirma.
 
-**Medido corriendo**: la app abre el actor, se pone al día contra URL2, muestra los 8
-exámenes y las tres lecturas de serie, la pantalla de detalle del antígeno, y los toggles
-de Ajustes escriben en el journal.
+**Medido corriendo**: la app abre el actor, se pone al día contra URL2, muestra los 9
+exámenes, las tres lecturas de serie, el cuadro histórico y la pantalla de detalle del
+antígeno.
 
 ---
 
