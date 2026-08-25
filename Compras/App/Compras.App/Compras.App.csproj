@@ -1,0 +1,26 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!-- La superficie intencional de la app: donde viven los PerformCmd y PerformQry.
+       La UI, el servidor MCP y la consola llaman a ComprasAPI, nunca al actor crudo.
+       Que la logica sea UNA es lo que hace que la IA y la persona vean lo mismo.
+
+       El motor viene por NuGet; la version esta en Directory.Build.props (raiz) para no
+       repetirla en cada proyecto. -->
+
+  <PropertyGroup>
+    <TargetFramework>net9.0</TargetFramework>
+    <Nullable>disable</Nullable>
+    <ImplicitUsings>disable</ImplicitUsings>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\Dominio\Compras.Dominio.csproj" />
+    <ProjectReference Include="..\..\Mecanismo\Puppets.Portador\Puppets.Portador.csproj" />
+  </ItemGroup>
+
+  <!-- Solo el core, igual que Examenes: la app solo necesita PerformanceV2. -->
+  <ItemGroup>
+    <PackageReference Include="Ncubo.Puppeteer" Version="$(VersionDelMotor)" />
+  </ItemGroup>
+
+</Project>

@@ -19,6 +19,13 @@
         "Examenes/App/Examenes.Mcp/bin/Debug/net9.0/Examenes.Mcp.dll",
         "/Users/renandiazreyes/Documents/ExamenesMCP"
       ]
+    },
+    "compras": {
+      "command": "dotnet",
+      "args": [
+        "Compras/App/Compras.Mcp/bin/Debug/net9.0/Compras.Mcp.dll",
+        "C:\\Users\\Juan\\Compras-journal"
+      ]
     }
   }
 }

@@ -1,0 +1,218 @@
+using System;
+using System.Collections.Generic;
+using System.Globalization;
+using System.Text.Json;
+using Compras.App.Vistas;
+
+namespace Compras.App
+{
+	// Convierte la emision del print en los records de vista.
+	//
+	// Esto NO es el antipatron de "parsear el print para sacar un valor tipado". Ese
+	// antipatron es re-derivar en C# un ESCALAR que el actor ya calculo, y para eso la
+	// app usa parametros Out tipados (TotalDeCompras, CantidadDeCompras). Lo de aca es
+	// otra cosa: una VISTA, y el print con formatter JSON es su canal declarado - se
+	// devuelve ese string tal cual porque el print ya hizo todo el trabajo de
+	// serializacion. Un cliente REST hace exactamente esto; aca el cliente esta en el
+	// mismo proceso.
+	//
+	// El formato de fecha es el del formatter: MM/dd/yyyy HH:mm:ss en cultura
+	// invariante.
+	internal static class ProyeccionDeVistas
+	{
+		private const string FormatoDeFecha = "MM/dd/yyyy HH:mm:ss";
+		private const string FormatoDeFechaSinHora = "MM/dd/yyyy";
+
+		internal static IReadOnlyList<CompraEnLista> Lista(string json)
+		{
+			var compras = new List<CompraEnLista>();
+			if (string.IsNullOrWhiteSpace(json)) return compras;
+
+			using JsonDocument documento = JsonDocument.Parse(json);
+
+			// Sin compras el foreach no emite nada y la propiedad no existe: eso es una
+			// lista vacia, no un error.
+			if (!documento.RootElement.TryGetProperty("compra", out JsonElement arreglo)) return compras;
+
+			foreach (JsonElement elemento in Elementos(arreglo))
+				compras.Add(new CompraEnLista
+				{
+					Numero = Texto(elemento, "numero"),
+					Fecha = Fecha(elemento, "fecha"),
+					Lineas = Entero(elemento, "lineas"),
+					Total = Decimal(elemento, "total"),
+				});
+
+			return compras;
+		}
+
+		internal static CompraDetallada Detalle(string json)
+		{
+			if (string.IsNullOrWhiteSpace(json)) return new CompraDetallada();
+
+			using JsonDocument documento = JsonDocument.Parse(json);
+			JsonElement raiz = documento.RootElement;
+
+			var lineas = new List<LineaDeCompra>();
+			if (raiz.TryGetProperty("item", out JsonElement arreglo))
+				foreach (JsonElement elemento in Elementos(arreglo))
+					lineas.Add(new LineaDeCompra
+					{
+						Sku = Texto(elemento, "sku"),
+						Descripcion = Texto(elemento, "descripcion"),
+						Cantidad = Entero(elemento, "cantidad"),
+						PrecioUnitario = Decimal(elemento, "precioUnitario"),
+						Total = Decimal(elemento, "totalDeLinea"),
+						Categoria = Texto(elemento, "categoria"),
+						TieneGarantia = Booleano(elemento, "tieneGarantia"),
+					});
+
+			return new CompraDetallada
+			{
+				Numero = Texto(raiz, "numero"),
+				Fecha = Fecha(raiz, "fecha"),
+				Total = Decimal(raiz, "total"),
+				Lineas = lineas,
+			};
+		}
+
+		internal static CanastaDelMesVista Canasta(string json)
+		{
+			if (string.IsNullOrWhiteSpace(json)) return new CanastaDelMesVista();
+
+			using JsonDocument documento = JsonDocument.Parse(json);
+			JsonElement raiz = documento.RootElement;
+
+			return new CanastaDelMesVista
+			{
+				Anio = Entero(raiz, "anio"),
+				Mes = Entero(raiz, "mes"),
+				CantidadDeCompras = Entero(raiz, "cantidadDeCompras"),
+				GastoRecomendado = Decimal(raiz, "gastoRecomendado"),
+				GastoNeutro = Decimal(raiz, "gastoNeutro"),
+				GastoOcasional = Decimal(raiz, "gastoOcasional"),
+				GastoNoComestible = Decimal(raiz, "gastoNoComestible"),
+				GastoComestible = Decimal(raiz, "gastoComestible"),
+				GastoTotal = Decimal(raiz, "gastoTotal"),
+				ProporcionOcasional = Decimal(raiz, "proporcionOcasional"),
+				HayComestible = Booleano(raiz, "hayComestible"),
+				HayCompras = Booleano(raiz, "hayCompras"),
+			};
+		}
+
+		internal static CanastasComparadas Comparacion(string json)
+		{
+			if (string.IsNullOrWhiteSpace(json)) return new CanastasComparadas();
+
+			using JsonDocument documento = JsonDocument.Parse(json);
+			JsonElement raiz = documento.RootElement;
+
+			return new CanastasComparadas
+			{
+				HayComparacion = Booleano(raiz, "hayComparacion"),
+				ProporcionAntes = Decimal(raiz, "proporcionAntes"),
+				ProporcionDespues = Decimal(raiz, "proporcionDespues"),
+				Cambio = Decimal(raiz, "cambio"),
+				CrecioLoOcasional = Booleano(raiz, "crecioLoOcasional"),
+				AnioAntes = Entero(raiz, "anioAntes"),
+				MesAntes = Entero(raiz, "mesAntes"),
+				GastoOcasionalAntes = Decimal(raiz, "gastoOcasionalAntes"),
+				GastoComestibleAntes = Decimal(raiz, "gastoComestibleAntes"),
+				AnioDespues = Entero(raiz, "anioDespues"),
+				MesDespues = Entero(raiz, "mesDespues"),
+				GastoOcasionalDespues = Decimal(raiz, "gastoOcasionalDespues"),
+				GastoComestibleDespues = Decimal(raiz, "gastoComestibleDespues"),
+			};
+		}
+
+		internal static GarantiaDeProducto Garantia(string json)
+		{
+			if (string.IsNullOrWhiteSpace(json)) return new GarantiaDeProducto();
+
+			using JsonDocument documento = JsonDocument.Parse(json);
+			return Garantia(documento.RootElement);
+		}
+
+		internal static IReadOnlyList<GarantiaDeProducto> GarantiasVigentes(string json)
+		{
+			var garantias = new List<GarantiaDeProducto>();
+			if (string.IsNullOrWhiteSpace(json)) return garantias;
+
+			using JsonDocument documento = JsonDocument.Parse(json);
+			if (!documento.RootElement.TryGetProperty("registro", out JsonElement arreglo)) return garantias;
+
+			foreach (JsonElement elemento in Elementos(arreglo))
+				garantias.Add(Garantia(elemento));
+
+			return garantias;
+		}
+
+		private static GarantiaDeProducto Garantia(JsonElement elemento) =>
+			new GarantiaDeProducto
+			{
+				// La lista de vigentes no emite "encontrada" (todas lo estan); la
+				// busqueda puntual si. Ausente se lee como encontrada si trae sku.
+				Encontrada = elemento.TryGetProperty("encontrada", out _)
+					? Booleano(elemento, "encontrada")
+					: Texto(elemento, "sku").Length > 0,
+				TextoBuscado = Texto(elemento, "textoBuscado"),
+				Sku = Texto(elemento, "sku"),
+				Descripcion = Texto(elemento, "descripcion"),
+				NumeroDeCompra = Texto(elemento, "numeroDeCompra"),
+				FechaDeCompra = Fecha(elemento, "fechaDeCompra"),
+				MesesDeCobertura = Entero(elemento, "mesesDeCobertura"),
+				VenceEl = Fecha(elemento, "venceEl"),
+				Vigente = elemento.TryGetProperty("vigente", out _)
+					? Booleano(elemento, "vigente")
+					: true,
+			};
+
+		// Un solo print emite un objeto; varios emiten un arreglo. Tratar los dos casos
+		// evita que la vista se rompa justo cuando hay una sola compra.
+		private static IEnumerable<JsonElement> Elementos(JsonElement elemento)
+		{
+			if (elemento.ValueKind == JsonValueKind.Array)
+			{
+				foreach (JsonElement hijo in elemento.EnumerateArray()) yield return hijo;
+				yield break;
+			}
+			if (elemento.ValueKind == JsonValueKind.Object) yield return elemento;
+		}
+
+		private static string Texto(JsonElement padre, string nombre) =>
+			padre.TryGetProperty(nombre, out JsonElement e) && e.ValueKind == JsonValueKind.String
+				? e.GetString() : "";
+
+		private static int Entero(JsonElement padre, string nombre) =>
+			padre.TryGetProperty(nombre, out JsonElement e) && e.TryGetInt32(out int valor) ? valor : 0;
+
+		private static decimal Decimal(JsonElement padre, string nombre) =>
+			padre.TryGetProperty(nombre, out JsonElement e) && e.TryGetDecimal(out decimal valor) ? valor : 0m;
+
+		private static bool Booleano(JsonElement padre, string nombre)
+		{
+			if (!padre.TryGetProperty(nombre, out JsonElement e)) return false;
+			if (e.ValueKind == JsonValueKind.True) return true;
+			if (e.ValueKind == JsonValueKind.False) return false;
+
+			// El formatter puede emitir el booleano como texto; se aceptan las dos formas
+			// para que la vista no dependa de ese detalle.
+			return e.ValueKind == JsonValueKind.String
+				&& bool.TryParse(e.GetString(), out bool valor) && valor;
+		}
+
+		private static DateTime Fecha(JsonElement padre, string nombre)
+		{
+			string texto = Texto(padre, nombre);
+			if (texto.Length == 0) return default;
+
+			if (DateTime.TryParseExact(texto, FormatoDeFecha, CultureInfo.InvariantCulture,
+					DateTimeStyles.None, out DateTime conHora)) return conHora;
+			if (DateTime.TryParseExact(texto, FormatoDeFechaSinHora, CultureInfo.InvariantCulture,
+					DateTimeStyles.None, out DateTime soloFecha)) return soloFecha;
+
+			return DateTime.TryParse(texto, CultureInfo.InvariantCulture, DateTimeStyles.None, out DateTime suelta)
+				? suelta : default;
+		}
+	}
+}
