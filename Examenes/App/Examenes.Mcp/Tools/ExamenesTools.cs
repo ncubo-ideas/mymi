@@ -27,6 +27,44 @@ namespace Examenes.Mcp.Tools;
 // El [Description] NO es documentacion: ES la semantica que lee la IA, lo unico que tiene
 // para decidir si esta tool responde la pregunta de la persona. Por eso esta redactado
 // como la pregunta que una persona se hace sobre sus propios datos.
+/// <summary>A que ritmo viene cambiando un analito. Lo que ninguna pantalla muestra.</summary>
+internal sealed class VelocidadDelAnalito
+{
+	[Description("false cuando la app todavia no registro nada; ahi el resto viene en cero.")]
+	[JsonPropertyName("hayDatos")] public bool HayDatos { get; init; }
+
+	[Description("El analito medido.")]
+	[JsonPropertyName("analito")] public string Analito { get; init; } = "";
+
+	[Description("Cambio por ano, con signo. Positivo si viene subiendo.")]
+	[JsonPropertyName("porAno")] public decimal PorAno { get; init; }
+
+	[Description("La unidad del analito, para poder decir '2,20 ng/mL por ano' y no '2,20'.")]
+	[JsonPropertyName("unidad")] public string Unidad { get; init; } = "";
+
+	[Description("Dias del tramo sobre el que se midio. Es el MAS RECIENTE, no la serie entera.")]
+	[JsonPropertyName("diasDelTramo")] public int DiasDelTramo { get; init; }
+
+	[Description("El umbral clinico de ESTE analito, para poder decir contra que se comparo.")]
+	[JsonPropertyName("umbralPorAno")] public decimal UmbralPorAno { get; init; }
+
+	[Description("false si este analito no se interpreta por velocidad, o si no hay dos "
+		+ "mediciones. En ese caso NO hay que inventar una lectura del ritmo.")]
+	[JsonPropertyName("esAplicable")] public bool EsAplicable { get; init; }
+
+	[Description("true si el ritmo por si solo ya exige atencion, aunque el valor absoluto "
+		+ "este en rango. Ahi corresponde recomendar que lo vea su medico, no diagnosticar.")]
+	[JsonPropertyName("exigeAtencion")] public bool ExigeAtencion { get; init; }
+
+	[Description("El ritmo ya dicho, por ejemplo '2.20 ng/mL por ano'.")]
+	[JsonPropertyName("expresada")] public string Expresada { get; init; } = "";
+
+	[JsonPropertyName("carpeta")] public string Carpeta { get; init; } = "";
+
+	[Description("Hasta que evento leyo la app. Si no sube, no entro nada nuevo.")]
+	[JsonPropertyName("ultimoEventoLeido")] public long UltimoEventoLeido { get; init; }
+}
+
 [McpServerToolType]
 internal sealed class ExamenesTools
 {
@@ -51,25 +89,20 @@ internal sealed class ExamenesTools
 		+ "'¿como viene mi colesterol?'. Devuelve la tendencia, los valores inicial y final con su "
 		+ "unidad, y cuantos dias pasaron entre los dos. Si sugiereRepetirElExamen viene en true, "
 		+ "el cambio es demasiado grande para el tiempo transcurrido y lo mas probable es un error "
-		+ "de medicion: hay que sugerir repetir el examen, no alarmar. Nombres de analito validos: "
-		+ "'Antigeno prostatico', 'Colesterol total', 'Colesterol LDL', 'Hemoglobina'.")]
+		+ "de medicion: hay que sugerir repetir el examen, no alarmar.")]
 	public TendenciaDelAnalito Tendencia(
-		[Description("El analito a evaluar, por ejemplo 'Antigeno prostatico' o 'Colesterol total'.")]
-		string analito)
+		[Description("Cual analito evaluar.")] Analito analito)
 	{
-		if (string.IsNullOrWhiteSpace(analito))
-			return new TendenciaDelAnalito
-			{
-				HayDatos = false,
-				Carpeta = lector.Carpeta,
-				Detalle = "Hay que decir cual analito evaluar.",
-			};
-
+		// La guarda de "vino vacio" ya no existe, y no es un descuido: con un enum el
+		// cliente MCP no PUEDE mandar algo fuera del conjunto. Esa rama se borro porque
+		// se volvio inalcanzable, que es justamente lo que se compra al tipar.
 		if (!lector.HayJournal) return SinJournal();
+
+		string nombre = analito.Nombre();
 
 		return lector.Consultar(api =>
 		{
-			TendenciaDeAnalito t = api.Tendencia(analito);
+			TendenciaDeAnalito t = api.Tendencia(nombre);
 
 			// Sin mediciones no se inventa una tendencia: se dice que no hay datos de ese
 			// analito, que es distinto de "esta estable".
@@ -77,15 +110,64 @@ internal sealed class ExamenesTools
 				return new TendenciaDelAnalito
 				{
 					HayDatos = true,
-					Analito = analito,
+					Analito = nombre,
 					Tendencia = "sin mediciones",
 					Carpeta = lector.Carpeta,
 					UltimoEventoLeido = api.UltimoEventoProcesado(),
-					Detalle = $"El expediente no tiene ninguna medicion de '{analito}'. "
-						+ "Puede ser que el nombre no sea el correcto, o que la app todavia no lo trajo.",
+					// Ya no puede ser "el nombre esta mal": el enum lo impide. Si no hay
+					// mediciones es que la app todavia no las trajo, y eso se arregla con
+					// un Refresh.
+					Detalle = $"El expediente todavia no tiene ninguna medicion de '{nombre}'. "
+						+ "Pedile que abra su app y apriete Refresh.",
 				};
 
 			return Armar(t, api.UltimoEventoProcesado(), api.EdadDelPaciente());
+		});
+	}
+
+	// LA TOOL QUE NINGUNA PANTALLA DUPLICA, y ese era el criterio de Alvaro: si la IA
+	// puede contestar algo que ya esta a la vista, el demo no probo nada.
+	//
+	// La app muestra la tendencia -de cuanto a cuanto, en cuantos dias-. El RITMO es otra
+	// cosa y se mide sobre otro tramo: el mas reciente, no la serie entera. Con los datos
+	// del guion la diferencia decide el caso -la serie completa da 0,73 por ano y no
+	// alarmaria; el ultimo tramo da 2,20 contra un umbral de 0,75- y es exactamente el
+	// criterio con el que se lee un antigeno prostatico en la practica.
+	[McpServerTool(Name = "velocidad_de", UseStructuredContent = true)]
+	[Description("Contesta A QUE RITMO viene cambiando un analito, en unidades por ano, y si ese "
+		+ "ritmo por si solo ya exige atencion aunque el valor absoluto todavia este en rango. Es "
+		+ "distinto de evaluar_tendencia: la tendencia mira la serie entera y esto mira el tramo "
+		+ "MAS RECIENTE, que es como se lee un antigeno prostatico en la practica clinica. Usala "
+		+ "cuando pregunte '¿que tan rapido esta subiendo?', '¿deberia preocuparme por la "
+		+ "velocidad?' o cuando evaluar_tendencia haya dado 'en ascenso' y haga falta el ritmo. Si "
+		+ "esAplicable viene en false, ese analito no se interpreta por velocidad -el colesterol se "
+		+ "lee por nivel, no por pendiente- y no hay que inventar una lectura.")]
+	public VelocidadDelAnalito Velocidad(
+		[Description("Cual analito medir.")] Analito analito)
+	{
+		if (!lector.HayJournal)
+			return new VelocidadDelAnalito { HayDatos = false, Carpeta = lector.Carpeta };
+
+		string nombre = analito.Nombre();
+
+		return lector.Consultar(api =>
+		{
+			VelocidadDeAnalito v = api.Velocidad(nombre);
+
+			return new VelocidadDelAnalito
+			{
+				HayDatos = true,
+				Analito = nombre,
+				PorAno = v.PorAno,
+				Unidad = v.Unidad,
+				DiasDelTramo = v.Dias,
+				UmbralPorAno = v.Umbral,
+				EsAplicable = v.EsAplicable,
+				ExigeAtencion = v.ExigeAtencion,
+				Expresada = v.Expresada,
+				Carpeta = lector.Carpeta,
+				UltimoEventoLeido = api.UltimoEventoProcesado(),
+			};
 		});
 	}
 

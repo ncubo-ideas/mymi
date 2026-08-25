@@ -287,6 +287,23 @@ diferencia decide el caso:
 Los tres años estables de antes no diluyen un salto de este año: lo hacen más notable.
 Promediar sobre toda la historia es exactamente como se pierde un cambio recién empezado.
 
+### Lo que ve la IA
+
+Tres tools intencionales, una por pregunta — nunca un `Query(puppet, operacion, ...)`
+genérico, que convertiría todo en strings y desperdiciaría el schema por tool:
+
+| Tool | Contesta | ¿Está en alguna pantalla? |
+|---|---|---|
+| `evaluar_tendencia` | para dónde viene y si es creíble | sí, la app la muestra |
+| `velocidad_de` | **a qué ritmo, sobre el tramo reciente** | **no** |
+| `revisar_mis_analitos` | todos de una | sí |
+
+El argumento es un **enum**, no un string. Con un string la lista de valores válidos vivía
+en la descripción —prosa que la IA tiene que leer bien— y con un enum vive en el
+`inputSchema`, que es un contrato: el cliente no puede mandar un valor que no exista.
+**Medido**: `{"analito":"Nitritos"}` se rechaza en la frontera, y los llamados válidos que
+viajan junto a él no se ven afectados.
+
 El dominio devuelve **hechos** —tendencia, extremos, unidad, días, ritmo— y nunca prosa. La
 frase la arma la superficie. Es lo que hace **imposible** el consejo de plantilla: no hay de
 dónde sacar *"bajá las grasas"*.
@@ -327,6 +344,7 @@ acotado que lo que dice el doc, y eso importa para el reporte a Álvaro.
 | # | Pendiente |
 |---|---|
 | 1 | **Versión del motor** con los tres commits de `wasm-replay`. Es una línea en `Directory.Build.props`. Es de Álvaro |
+| 3b | **`revisar_mis_analitos` devuelve lo que la lista de la app ya muestra.** Es el mismo reclamo que Álvaro le hizo al `total` de Jonathan: si la IA contesta algo que ya está en una pantalla, no probó nada. `velocidad_de` sí es exclusiva de la IA |
 | 3 | **Tras publicar de nuevo, hay que cerrar todas las pestañas del origen.** El service worker de Blazor no llama a `skipWaiting()`, así que la versión nueva se instala pero queda esperando hasta que no quede ninguna pestaña abierta de `localhost:8090`. Un cambio en el SW que "no se aplica" casi siempre es esto |
 | 4 | **El workload `wasm-tools-net9` no está instalado**, así que el publish sale sin optimizar (57 MB). Funciona; conviene instalarlo antes de mostrarlo |
 | 5 | **La marca ficticia** (*Laboratorios Sotavento*) es un placeholder. La definitiva la define el equipo. Vive solo en `PaginaDeDescarga/descarga/index.html` y en los assets de la carátula |
