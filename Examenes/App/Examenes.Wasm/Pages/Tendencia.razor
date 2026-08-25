@@ -15,25 +15,25 @@
 
 <PageTitle>@Analito</PageTitle>
 
-<button class="btn btn-outline-secondary mb-3" @onclick="Volver">&larr; Volver a mis exámenes</button>
+<button class="boton boton--contorno" @onclick="Volver" style="margin-bottom:24px">&larr; Volver a mis exámenes</button>
 
 @if (!estado.EstaArriba)
 {
-    <div class="alert alert-warning">
+    <div class="aviso aviso--atencion">
         La app no está abierta. <a href="">Volvé a la lista</a> para abrirla.
     </div>
 }
 else if (error.Length > 0)
 {
-    <div class="alert alert-danger">@error</div>
+    <div class="aviso aviso--problema">@error</div>
 }
 else
 {
-    <h1>@lectura.Analito</h1>
+    <h1 class="titular">@lectura.Analito</h1>
 
     @if (!lectura.HaySerie)
     {
-        <p class="text-muted">
+        <p class="apunte" style="margin-top:14px">
             @(lectura.Mediciones == 0
                 ? "No hay ninguna medición de este analito todavía."
                 : "Hay una sola medición. Con un solo punto no se puede decir para dónde viene: "
@@ -41,20 +41,19 @@ else
         </p>
         @if (lectura.Mediciones == 1)
         {
-            <p class="fs-4">@Valor(lectura.ValorFinal) <span class="small text-muted">@lectura.Unidad</span></p>
+            <p class="cifra-par">@Valor(lectura.ValorFinal)<span class="unidad">@lectura.Unidad</span></p>
         }
     }
     else
     {
-        <p>
-            <span class="badge @Insignia() fs-6">@lectura.Tendencia</span>
-        </p>
+        <p style="margin:10px 0 0"><span class="chip chip--grande @Insignia()">@lectura.Tendencia</span></p>
 
-        <p class="fs-4 mb-1">
-            @Valor(lectura.ValorInicial) &rarr; @Valor(lectura.ValorFinal)
-            <span class="small text-muted">@lectura.Unidad</span>
+        @* Los dos extremos, grandes y monoespaciados: es LA lectura de la pantalla. El
+           valor final se tiñe solo cuando exige atencion - el color dice algo o no esta. *@
+        <p class="cifra-par">
+            @Valor(lectura.ValorInicial)<span class="flecha">&rarr;</span><span class="@(lectura.ExigeAtencion ? "final" : "")">@Valor(lectura.ValorFinal)</span><span class="unidad">@lectura.Unidad</span>
         </p>
-        <p class="text-muted">
+        <p class="apunte">
             en @lectura.Dias @(lectura.Dias == 1 ? "día" : "días"),
             sobre @lectura.Mediciones mediciones
             @(lectura.Cambio >= 0 ? "· subió " : "· bajó ")@Valor(Math.Abs(lectura.Cambio)) @lectura.Unidad
@@ -62,7 +61,7 @@ else
 
         @if (lectura.SugiereRepetirElExamen)
         {
-            <div class="alert alert-secondary">
+            <div class="aviso aviso--neutro" style="margin-top:22px">
                 <strong>Ese cambio no da para el tiempo que pasó.</strong>
                 Un salto así en tan pocos días no es biológicamente esperable, así que lo más
                 probable es un error de medición. Lo que corresponde es <strong>repetir el
@@ -71,20 +70,20 @@ else
         }
         else if (lectura.ExigeAtencion)
         {
-            <div class="alert alert-warning">
+            <div class="aviso aviso--atencion" style="margin-top:22px">
                 <strong>Este valor viene moviéndose en la dirección que importa.</strong>
                 No es un diagnóstico: es la lectura de tu propia serie. Conviene que lo vea tu médico.
             </div>
         }
         else
         {
-            <div class="alert alert-success">
+            <div class="aviso" style="margin-top:22px;border-left-color:var(--pino)">
                 Se mantiene dentro de lo esperable para tu historia.
             </div>
         }
     }
 
-    <p class="small text-muted mt-4">
+    <p class="apunte" style="margin-top:30px">
         Los rangos de referencia se evalúan para @estado.EdadDelPaciente() años.
         Leído hasta el evento @estado.UltimoEvento().
     </p>
@@ -109,9 +108,9 @@ else
 
     private string Insignia()
     {
-        if (lectura.SugiereRepetirElExamen) return "text-bg-secondary";
-        if (lectura.ExigeAtencion) return "text-bg-warning";
-        return "text-bg-success";
+        if (lectura.SugiereRepetirElExamen) return "chip--repetir";
+        if (lectura.ExigeAtencion) return "chip--atencion";
+        return "chip--estable";
     }
 
     private void Volver() => navegacion.NavigateTo("");

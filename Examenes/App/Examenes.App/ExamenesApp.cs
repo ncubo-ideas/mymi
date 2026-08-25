@@ -37,6 +37,20 @@ namespace Examenes.App
 				}
 			")
 			.PerformCommand();
+
+			// UN UPGRADE APARTE, y no una linea mas adentro de 'semilla'. La guarda de
+			// upgrade es una-vez-por-actor: 'semilla' ya corrio en todo expediente que
+			// exista, asi que agregarle algo ahi no le llegaria a ninguno. Una clave
+			// nueva si se aplica, y en los que ya la tienen no hace nada.
+			//
+			// Esto es exactamente para lo que sirve el mecanismo: migrar sin un .exe de
+			// migracion.
+			Using(@"
+				upgrade('permisos-de-la-ia') {
+					permisos = PermisosDeLaIA();
+				}
+			")
+			.PerformCommand();
 		}
 	}
 }

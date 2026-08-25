@@ -67,10 +67,80 @@ public sealed class EstadoDeLaApp : IAsyncDisposable
 
 	public ValueTask<bool> EstaSoportado() => puente.EstaSoportado();
 
+	// ---------------------------------------------------------------- los tres modos
+
+	// El modo tiene que ser VISIBLE, no un detalle interno: los tres persisten distinto
+	// y la persona necesita saber en cual esta. En 'opfs' el expediente sobrevive al
+	// cierre pero NO lo puede leer su IA, y callarlo seria vender algo que no hay.
+	public string Modo { get; private set; } = "ninguno";
+
+	public bool EnCarpetaPropia => Modo == "carpeta";
+	public bool EnAlmacenamientoDelNavegador => Modo == "opfs";
+
+	public ValueTask<bool> OpfsSoportado() => puente.OpfsSoportado();
+
+	public ValueTask<string> MotivoSinAlmacenamiento() => puente.MotivoSinAlmacenamiento();
+
+	public ValueTask<bool> EstaInstalada() => puente.EstaInstalada();
+
+	// ------------------------------------------------- lo que la IA puede consultar
+
+	public bool ConsultaDeLaIAPermitida(string consulta) =>
+		api is null ? true : api.ConsultaDeLaIAPermitida(consulta);
+
+	public int ConsultasDenegadas() => api is null ? 0 : api.ConsultasDenegadas();
+
+	// Cambiar un permiso es un COMANDO: se journaliza y por eso hay que bajarlo a disco,
+	// igual que un examen. Si no, el servidor MCP seguiria leyendo el permiso viejo.
+	public void PermitirConsultaDeLaIA(string consulta, bool permitida)
+	{
+		if (api is null) return;
+
+		api.PermitirConsultaDeLaIA(consulta, permitida);
+		_ = BajarADisco();
+	}
+
+	public ValueTask<string> ModoRecordado() => puente.ModoRecordado();
+
+	public async ValueTask<ResultadoDeCarpeta> UsarAlmacenamientoDelNavegador()
+	{
+		ResultadoDeCarpeta resultado = await puente.UsarOpfs();
+		Modo = await puente.ModoActual();
+		UltimoMensaje = $"almacenamiento del navegador: {resultado}";
+		return resultado;
+	}
+
+	public async ValueTask<ResultadoDeExportacion> Exportar() => await puente.Exportar();
+
+	// Importar REEMPLAZA el expediente y rearranca el actor: el motor rehidrata en
+	// ConfigureStorage, asi que escribir MEMFS con un actor ya vivo no cambiaria nada de
+	// lo que se ve. Por eso se suelta y se vuelve a abrir.
+	public async ValueTask<string> Importar()
+	{
+		ResultadoDeImportacion abierto = await puente.AbrirExportado();
+		if (!abierto.Ok) return abierto.Motivo;
+
+		app?.Actor?.GracefulExit();
+		app = null;
+		api = null;
+		bucle = null;
+
+		int escritos = puente.RestaurarEnMemfs(abierto.Archivos);
+		await Arrancar();
+
+		// Lo importado vive en MEMFS. Si hay destino, se baja para que quede persistido
+		// tambien ahi; sin destino se pierde al cerrar, igual que todo lo demas.
+		if (puente.HayCarpeta) await BajarADisco();
+
+		UltimoMensaje = $"importados {escritos} archivos del expediente";
+		return "";
+	}
+
 	// Sin gesto: solo revalida el permiso de un handle ya guardado en IndexedDB.
 	public async ValueTask<ResultadoDeCarpeta> RecuperarCarpeta()
 	{
 		ResultadoDeCarpeta resultado = await puente.RecuperarCarpeta();
+		Modo = await puente.ModoActual();
 		UltimoMensaje = $"recuperar carpeta: {resultado}";
 		return resultado;
 	}
@@ -79,6 +149,7 @@ public sealed class EstadoDeLaApp : IAsyncDisposable
 	public async ValueTask<ResultadoDeCarpeta> ConectarCarpeta()
 	{
 		ResultadoDeCarpeta resultado = await puente.ElegirCarpeta();
+		Modo = await puente.ModoActual();
 		UltimoMensaje = $"conectar carpeta: {resultado}";
 		return resultado;
 	}
@@ -155,6 +226,10 @@ public sealed class EstadoDeLaApp : IAsyncDisposable
 	// El token lo pide LA APP, no la persona. El proveedor lo emite contra el device key
 	// de esta instalacion, acotado a leer los eventos de un recurso. Las tres piezas
 	// viven en el journal, asi que al reabrir la app ya sabe quien es.
+	// Donde quedo apuntando el cliente. Se dice en los errores: "no se pudo hablar con el
+	// laboratorio" sin decir CON CUAL es un mensaje que no se puede accionar.
+	public string DondeEstaElProveedor => http.BaseAddress?.ToString() ?? "(sin configurar)";
+
 	private async ValueTask<string> Credencial(CancellationToken ct)
 	{
 		Exigir();
@@ -209,6 +284,18 @@ public sealed class EstadoDeLaApp : IAsyncDisposable
 	public async ValueTask<ResultadoDeRefresh> Refrescar(CancellationToken ct = default)
 	{
 		Exigir();
+
+		// PIDE LA CREDENCIAL PRIMERO, igual que el arranque. Antes iba derecho al bucle, y
+		// eso hacia que Refresh no pudiera recuperarse NUNCA: si al abrir no se habia
+		// podido hablar con el laboratorio -sin red, otra maquina, la URL equivocada- no
+		// quedaba token, y cada Refresh moria diciendo "la app no tiene web token
+		// guardado". El unico camino que conseguia el token era el arranque, que ya habia
+		// pasado.
+		//
+		// Medido en un iPhone: la app abria, el arranque no alcanzaba el proveedor, y el
+		// boton quedaba inutil reportando la consecuencia en vez de la causa.
+		await Credencial(ct);
+
 		ResultadoDeRefresh resultado = await bucle!.Ejecutar(ct);
 		UltimoMensaje = $"refresh: {resultado}";
 		return resultado;
@@ -253,7 +340,7 @@ public sealed class ConfiguracionDelProveedor
 {
 	// El juego de URLs de este negocio. Otro negocio es otro recurso sobre el mismo
 	// mecanismo: cambiar estos tres valores y su dominio, nada mas.
-	public string BaseUrl { get; set; } = "http://localhost:8091/";
+	public string BaseUrl { get; set; } = "eventos/";
 	public string Recurso { get; set; } = "expediente";
 	public string Id { get; set; } = "1";
 }

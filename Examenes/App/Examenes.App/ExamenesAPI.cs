@@ -172,7 +172,58 @@ namespace Examenes.App
 			})
 			.PerformCheckThenCommand();
 
+		// LO QUE LA PERSONA LE DEJA CONSULTAR A SU IA. Es un comando y no una preferencia
+		// local a proposito: el servidor MCP es otro proceso y lo unico que comparte con
+		// la app es el journal. Guardado afuera, el toggle no gobernaria nada.
+		public void PermitirConsultaDeLaIA(string consulta, bool permitida)
+		{
+			ArgumentNullException.ThrowIfNullOrWhiteSpace(consulta);
+
+			// El verbo entra en el TEXTO del comando y no como parametro: asi el journal
+			// dice "permisos.Denegar('velocidad')" y se lee sin desempaquetar nada.
+			string verbo = permitida ? "Permitir" : "Denegar";
+
+			app.Using("permisos." + verbo + "(@consulta);")
+			.WithParameters(p => {
+				p["consulta", typeof(string)] = consulta;
+			})
+			.PerformCommand();
+		}
+
 		// ---------------------------------------------------------------- consultas
+
+		// Si la persona habilito una consulta. La usan las dos superficies: la pantalla
+		// para pintar el toggle, y el servidor MCP para negarse antes de contestar.
+		public bool ConsultaDeLaIAPermitida(string consulta)
+		{
+			ArgumentNullException.ThrowIfNullOrWhiteSpace(consulta);
+
+			using (RentedParameter alquilados = app.Actor.RentedParameters())
+			{
+				app.Actor.Using("@permitida = permisos.EstaPermitida(@consulta);")
+				.WithParameters(alquilados, p => {
+					p["consulta", typeof(string)] = consulta;
+					p[Parameter.Out, "permitida", typeof(bool)] = default;
+				})
+				.PerformQuery();
+
+				return alquilados["permitida"].GetValue<bool>();
+			}
+		}
+
+		public int ConsultasDenegadas()
+		{
+			using (RentedParameter alquilados = app.Actor.RentedParameters())
+			{
+				app.Actor.Using("@cuantas = permisos.CantidadDenegada;")
+				.WithParameters(alquilados, p => {
+					p[Parameter.Out, "cuantas", typeof(int)] = default;
+				})
+				.PerformQuery();
+
+				return alquilados["cuantas"].GetValue<int>();
+			}
+		}
 
 		// Valores TIPADOS, no texto parseado: es lo que le permite a las tools MCP
 		// devolver structuredContent con numeros de verdad, y a la UI hacer aritmetica

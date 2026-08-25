@@ -89,8 +89,14 @@ dotnet run --project Examenes/App/Examenes.Consola -- velocidad "/tmp/journal-ex
 URL1 es nginx, así que no corre por consola. Publicar la app y levantar los dos servidores:
 
 ```bash
-dotnet publish Examenes/App/Examenes.Wasm -c Release -o Examenes/PaginaDeDescarga/publicado -p:PublishTrimmed=false
+MSBuildEnableWorkloadResolver=false dotnet publish Examenes/App/Examenes.Wasm -c Release -o Examenes/PaginaDeDescarga/publicado -p:PublishTrimmed=false
 ```
+
+> **Ese `MSBuildEnableWorkloadResolver=false` no es adorno.** Si el SDK te pide el workload
+> `wasm-tools` (`NETSDK1147`), esa variable desactiva el resolver y el build pasa — la app
+> no necesita el workload, solo publica sin optimizar. Instalarlo pide `sudo`, y un
+> `dotnet workload install` que falla por permisos igual alcanza a actualizar los manifests
+> del SDK y **deja el error pegado**. Si ya te pasó, esta es la salida sin contraseña.
 
 ```bash
 cd Examenes && ./PaginaDeDescarga/generar-certificado.sh && docker compose up -d
@@ -108,6 +114,95 @@ mostraba igual el 404 del router de Blazor, porque la respuesta nunca llegaba a 
 Con la app en `/app/` el scope es `/app/` y la raíz queda afuera. Lo hace la ruta, no una
 lista de excepciones. Tres archivos tienen que decir lo mismo: el `<base href>` de
 `index.html`, el `const base` de `service-worker.published.js` y el `nginx.conf`.
+
+### Los tres modos de persistencia
+
+El briefing del MVP (§6.2) es explícito: *"No hagas que la app falle donde no hay picker:
+degrada a OPFS y ofrece export/import"*. La app detecta en runtime y ofrece los tres, y
+**dice de cada uno lo que da y lo que no**:
+
+| Modo | Persiste | ¿Lo lee el MCP? | Dónde funciona |
+|---|---|---|---|
+| **Una carpeta tuya** | sí, en tu disco | **sí** — es el caso estrella | Chromium desktop |
+| **En este navegador** (OPFS) | sí, pero lo administra el browser | **no** | casi todos, incl. móvil |
+| **Un archivo** (export/import) | manual | a mano | todos |
+
+Que OPFS persista **no lo convierte en reemplazo**: el servidor MCP corre fuera del browser
+y no ve ese almacenamiento, así que la mitad *"tu IA lo lee"* del producto no funciona ahí.
+La pantalla lo dice con todas las letras en vez de dejar creer que está todo resuelto.
+
+La pieza que hizo esto barato: **OPFS devuelve un `FileSystemDirectoryHandle`**, el mismo
+tipo que el picker. Por eso `listar` / `leer` / `escribir` no distinguen uno del otro, y el
+orden precarga-MEMFS → actor → flush **no se tocó** — sólo cambia a qué raíz apuntan.
+
+**Medido** en el navegador, sobre la app servida por nginx: activar OPFS, escribir, listar y
+leer da un round-trip byte por byte idéntico, y el modo queda recordado para el próximo
+arranque. En **Safari desktop** los modos 2 y 3 están disponibles: degrada, no falla.
+
+### URL2 entra por el mismo origen que la app
+
+El publish apunta a **`eventos/`**, una URL *relativa*, y nginx la proxea al contenedor de
+URL2. No es que los dos nodos se fusionen —siguen siendo dos procesos, dos contenedores y
+el token con su scope no cambia—: es sólo por dónde entra el pedido, y resuelve tres cosas
+de una.
+
+| | Con `http://localhost:8091/` | Con `eventos/` |
+|---|---|---|
+| desde un teléfono | `localhost` es el teléfono | sigue al host que sirvió la app |
+| app servida por https | bloqueado por contenido mixto | mismo protocolo |
+| CORS | preflight | deja de ser cross-origin |
+
+**Medido**: en un iPhone la app abría, no alcanzaba al proveedor y quedaba en cero exámenes.
+Con `eventos/`, el mismo publish sirve en `localhost`, por IP y por https sin recompilar.
+Una URL absoluta en la config sigue ganando, para apuntar a otro host sin recompilar.
+
+### Desde un teléfono hay que entrar por https
+
+Las dos APIs de almacenamiento exigen **contexto seguro**: https, o el literal `localhost`.
+Un teléfono no puede usar `localhost` para llegar a esta máquina — entra por la IP — y por
+`http://` esa página **no es contexto seguro**, así que el navegador ni define las APIs.
+
+**Medido**: en un iPhone entrando por `http://<ip>:8090` la app reportaba que el navegador
+no permitía guardar. La misma Safari en la Mac, por `localhost`, sí podía. **No era Safari.**
+
+Por eso la app ahora distingue las dos causas —`navegador` vs `inseguro`— y dice cuál es:
+mandar a buscar otro navegador cuando el problema es el protocolo es culpar al equipo
+equivocado.
+
+`generar-certificado.sh` incluye la IP de la máquina en el SAN, así que:
+
+```bash
+cd Examenes && ./PaginaDeDescarga/generar-certificado.sh
+```
+
+deja la app accesible en **`https://<ip>:8453`**. Sigue siendo self-signed: hay que aceptar
+la advertencia, y en iOS conviene instalar y confiar el certificado en Ajustes.
+
+### El caso estrella corre en Chrome o Edge, no en Safari
+
+**Medido**: instalada desde Edge, la app solo tropieza con el bloqueo del motor. Desde
+Safari muestra además que *no puede guardar en una carpeta tuya*, y el botón de elegir
+carpeta queda deshabilitado.
+
+No es un bug: `showDirectoryPicker` —la File System Access API— **existe solo en
+navegadores Chromium** (Chrome, Edge, Brave, Arc). Safari y Firefox no la tienen.
+
+Y esto **no es un detalle de pantalla, es una condición de la propuesta**. El argumento
+del producto tiene dos mitades y las dos dependen de esa API:
+
+| | Necesita |
+|---|---|
+| *"el expediente vive en una carpeta tuya"* | que la app escriba en una carpeta que la persona eligió |
+| *"tu IA lo lee sin que salga de tu computadora"* | que el servidor MCP lea **esa misma carpeta** desde afuera del browser |
+
+Safari tiene OPFS (`navigator.storage.getDirectory()`), pero **no sirve como reemplazo**:
+es almacenamiento privado que administra el browser, no una carpeta que la persona eligió,
+y no se puede leer desde afuera. Usarlo rompería las dos mitades a la vez — dejaría de ser
+*su* carpeta y el MCP no encontraría nada.
+
+Aplica a **los cuatro dominios**, no solo a este. Vale que Geaninna lo sepa antes de fijar
+el speech: la narrativa puede seguir siendo cualquiera, pero el demo se enseña en un
+navegador Chromium.
 
 > El literal **`localhost`** importa. El secure context se decide por el *string* del host:
 > medido en el negocio de facturas, `http://127.0.0.1.nip.io:8765` da
@@ -209,6 +304,49 @@ diferencia decide el caso:
 Los tres años estables de antes no diluyen un salto de este año: lo hacen más notable.
 Promediar sobre toda la historia es exactamente como se pierde un cambio recién empezado.
 
+### Los ajustes, y por qué el toggle no es decoración
+
+La pantalla de **Ajustes** deja apagar cada consulta de la IA por separado. Lo que la hace
+real es dónde vive la decisión: **es un comando journalizado**, no una preferencia del
+browser.
+
+Tiene que serlo. El servidor MCP es **otro proceso**, fuera del browser, y entre los dos no
+hay protocolo — lo único que comparten es el journal. Una preferencia en `localStorage` la
+vería la pantalla y no la vería la IA: el toggle no gobernaría nada.
+
+**Medido, entre procesos:**
+
+```bash
+dotnet run --project Examenes/App/Examenes.Consola -- permisos "$HOME/Documents/ExamenesMCP" velocidad no
+```
+
+Después de eso, `velocidad_de` en el MCP contesta `hayDatos: false` con *"la persona
+deshabilitó esta consulta desde los ajustes de su app; no es un error, es una decisión
+suya"*, mientras `evaluar_tendencia` sigue respondiendo normal. Es el mismo principio que el
+señuelo de 403: **el permiso se demuestra, no se promete.**
+
+Los permisos se siembran con un `upgrade('permisos-de-la-ia')` propio y no dentro de
+`'semilla'`: la guarda de upgrade es una-vez-por-actor, así que agregar algo a `'semilla'`
+no le llegaría a ningún expediente ya escrito. Una clave nueva sí se aplica — migrar sin un
+`.exe` de migración.
+
+### Lo que ve la IA
+
+Tres tools intencionales, una por pregunta — nunca un `Query(puppet, operacion, ...)`
+genérico, que convertiría todo en strings y desperdiciaría el schema por tool:
+
+| Tool | Contesta | ¿Está en alguna pantalla? |
+|---|---|---|
+| `evaluar_tendencia` | para dónde viene y si es creíble | sí, la app la muestra |
+| `velocidad_de` | **a qué ritmo, sobre el tramo reciente** | **no** |
+| `revisar_mis_analitos` | todos de una | sí |
+
+El argumento es un **enum**, no un string. Con un string la lista de valores válidos vivía
+en la descripción —prosa que la IA tiene que leer bien— y con un enum vive en el
+`inputSchema`, que es un contrato: el cliente no puede mandar un valor que no exista.
+**Medido**: `{"analito":"Nitritos"}` se rechaza en la frontera, y los llamados válidos que
+viajan junto a él no se ven afectados.
+
 El dominio devuelve **hechos** —tendencia, extremos, unidad, días, ritmo— y nunca prosa. La
 frase la arma la superficie. Es lo que hace **imposible** el consejo de plantilla: no hay de
 dónde sacar *"bajá las grasas"*.
@@ -224,22 +362,29 @@ dónde sacar *"bajá las grasas"*.
 | EndPointDeEventos | ✅ 8 eventos, rotación de token y señuelo 403 |
 | MCP | ✅ heredado del paquete, no se volvió a medir después de tocar el dominio |
 | PaginaDeDescarga | ⚠️ **no se pudo levantar**: Docker no está corriendo en esta máquina |
-| Wasm | ⚠️ **arranca y renderiza**, y falla al abrir el actor — ver abajo |
+| Wasm | ✅ **corre completo** desde `3.0.0-beta.10029` — el bloqueo del motor se levantó |
+| Navegador | ⚠️ la **carpeta propia** es solo Chromium. Safari y Firefox degradan a OPFS o a export/import — la app no se queda sin persistir |
 
-### El bloqueo del motor, medido acá
+### El bloqueo del motor se levantó en `10029`
 
-Las notas del equipo dicen que la carátula del browser *"no arranca"*. Medido sirviendo el
-publish por nginx: eso es **impreciso y conviene corregirlo**. La app carga, Blazor
-renderiza y la pantalla de permisos se ve bien. Lo que falla es el paso siguiente, al abrir
-el actor:
+Durante todo el desarrollo la carátula cargaba, renderizaba y moría al abrir el actor con
+`PlatformNotSupportedException: Cannot wait on monitors`. **Con `3.0.0-beta.10029` ya no.**
 
-```
-System.PlatformNotSupportedException: Cannot wait on monitors on this runtime.
-```
+Cómo se distinguió la versión que sí lo traía de la que no:
 
-La app lo atrapa y lo reporta en pantalla en vez de morirse en blanco. Sigue siendo el mismo
-bloqueo —falta el replay secuencial en `3.0.0-beta.10027`— pero el síntoma real es más
-acotado que lo que dice el doc, y eso importa para el reporte a Álvaro.
+| | 10027 | 10028 | **10029** |
+|---|---|---|---|
+| referencias a `IsBrowser` | 0 | 0 | **1** |
+| tamaño de `Puppeteer.dll` | 815 104 | 815 104 | **815 616** |
+| bytes distintos vs. la anterior | — | 281 | **680 368** |
+
+`10028` se anunció como el arreglo y era una **recompilación del mismo código** — mismo
+tamaño exacto, 281 bytes de diferencia, que es el MVID y el timestamp del PE. `10029` es
+código nuevo, y la prueba en el browser lo confirma.
+
+**Medido corriendo**: la app abre el actor, se pone al día contra URL2, muestra los 8
+exámenes y las tres lecturas de serie, la pantalla de detalle del antígeno, y los toggles
+de Ajustes escriben en el journal.
 
 ---
 
@@ -248,6 +393,7 @@ acotado que lo que dice el doc, y eso importa para el reporte a Álvaro.
 | # | Pendiente |
 |---|---|
 | 1 | **Versión del motor** con los tres commits de `wasm-replay`. Es una línea en `Directory.Build.props`. Es de Álvaro |
+| 3b | **`revisar_mis_analitos` devuelve lo que la lista de la app ya muestra.** Es el mismo reclamo que Álvaro le hizo al `total` de Jonathan: si la IA contesta algo que ya está en una pantalla, no probó nada. `velocidad_de` sí es exclusiva de la IA |
 | 3 | **Tras publicar de nuevo, hay que cerrar todas las pestañas del origen.** El service worker de Blazor no llama a `skipWaiting()`, así que la versión nueva se instala pero queda esperando hasta que no quede ninguna pestaña abierta de `localhost:8090`. Un cambio en el SW que "no se aplica" casi siempre es esto |
 | 4 | **El workload `wasm-tools-net9` no está instalado**, así que el publish sale sin optimizar (57 MB). Funciona; conviene instalarlo antes de mostrarlo |
 | 5 | **La marca ficticia** (*Laboratorios Sotavento*) es un placeholder. La definitiva la define el equipo. Vive solo en `PaginaDeDescarga/descarga/index.html` y en los assets de la carátula |

@@ -1,0 +1,136 @@
+@page "/ajustes"
+@inject EstadoDeLaApp estado
+@inject NavigationManager navegacion
+
+@* Qué le deja consultar la persona a su IA.
+
+   Esta pantalla NO es un extra de configuración: es la mitad visible del argumento de
+   privacidad. La otra mitad es que el permiso se hace cumplir de verdad — la persona
+   decide acá, queda como un comando en SU journal, y el servidor MCP lo lee al
+   rehidratar y se niega antes de mirar ningún dato.
+
+   Eso importa porque el servidor MCP es OTRO proceso, afuera del browser. Entre los dos
+   no hay protocolo: lo único que comparten es el journal. Una preferencia guardada en
+   el browser la vería la pantalla y no la vería la IA, o sea que el toggle no
+   gobernaría nada. Journalizada, gobierna.
+
+   Es el mismo principio que el señuelo de 403 en URL2: el permiso se demuestra, no se
+   promete. *@
+
+<PageTitle>Ajustes</PageTitle>
+
+<button class="boton boton--contorno" @onclick="Volver" style="margin-bottom:24px">
+    &larr; Volver a mis exámenes
+</button>
+
+<h1 class="titular">Ajustes</h1>
+<p class="membrete">Qué puede consultar tu asistente sobre tu expediente.</p>
+
+@if (error.Length > 0)
+{
+    <div class="aviso aviso--problema">@error</div>
+}
+
+@if (!estado.EstaArriba)
+{
+    <div class="aviso aviso--atencion">
+        La app no está abierta. <a href="">Volvé a la lista</a> para abrirla.
+    </div>
+}
+else
+{
+    <p class="apunte" style="margin-bottom:22px">
+        Tu asistente lee tu expediente desde tu propia carpeta, sin pedirle nada al
+        laboratorio. Acá decidís qué le dejás consultar. Lo que apagues,
+        <strong>deja de contestarse</strong> — no se oculta de la pantalla, se niega de raíz.
+    </p>
+
+    @foreach (ConsultaDeLaIA consulta in ConsultaDeLaIA.Todas)
+    {
+        bool permitida = permisos.GetValueOrDefault(consulta.Nombre, true);
+
+        <div class="permiso @(permitida ? "" : "permiso--apagado")">
+            <div class="crece">
+                <div class="permiso-nombre">@Titulo(consulta)</div>
+                <p class="permiso-que-hace">@consulta.QueHace</p>
+            </div>
+
+            @* Un boton y no un checkbox: la accion tiene consecuencia y conviene que se
+               lea como una decision, no como una casilla que se marca al pasar. *@
+            <button class="boton @(permitida ? "boton--contorno" : "")"
+                    @onclick="() => Cambiar(consulta.Nombre, !permitida)">
+                @(permitida ? "Apagar" : "Encender")
+            </button>
+        </div>
+    }
+
+    @if (denegadas > 0)
+    {
+        <p class="aviso aviso--atencion" style="margin-top:18px">
+            <strong>@denegadas @(denegadas == 1 ? "consulta apagada" : "consultas apagadas").</strong>
+            Si tu asistente la intenta, va a recibir que vos la deshabilitaste — no un error.
+        </p>
+    }
+    else
+    {
+        <p class="apunte" style="margin-top:18px">
+            Tu asistente puede consultar todo lo que esta app sabe leer.
+        </p>
+    }
+
+    <h2 class="seccion">Lo que nunca puede hacer</h2>
+    <p class="apunte">
+        Tu asistente <strong>solo consulta</strong>. No puede escribir en tu expediente, ni
+        borrarlo, ni mandarle nada al laboratorio — esas capacidades no existen en la
+        superficie que ve, así que no hay nada que apagar. Tampoco recibe tu expediente
+        entero: cada consulta le devuelve una respuesta puntual.
+    </p>
+}
+
+@code {
+    private Dictionary<string, bool> permisos = new();
+    private int denegadas;
+    private string error = "";
+
+    protected override void OnInitialized() => Releer();
+
+    private void Releer()
+    {
+        if (!estado.EstaArriba) return;
+
+        // Se le pregunta al actor por cada una, igual que las tendencias: la pantalla no
+        // recorre el dominio ni guarda una copia del estado, le pregunta.
+        var leidos = new Dictionary<string, bool>();
+        foreach (ConsultaDeLaIA consulta in ConsultaDeLaIA.Todas)
+            leidos[consulta.Nombre] = estado.ConsultaDeLaIAPermitida(consulta.Nombre);
+
+        permisos = leidos;
+        denegadas = estado.ConsultasDenegadas();
+    }
+
+    private void Cambiar(string consulta, bool permitir)
+    {
+        error = "";
+        try
+        {
+            estado.PermitirConsultaDeLaIA(consulta, permitir);
+            Releer();
+        }
+        catch (Exception ex)
+        {
+            error = $"No se pudo cambiar el permiso de {consulta}: {ex.Message}";
+        }
+    }
+
+    // El nombre que ve la persona. El dominio nombra las consultas por lo que hacen
+    // -"tendencia", "velocidad"-, que es correcto adentro y seco acá.
+    private static string Titulo(ConsultaDeLaIA consulta) => consulta.Nombre switch
+    {
+        "tendencia" => "Cómo viene un valor",
+        "velocidad" => "A qué ritmo está cambiando",
+        "revision"  => "Un repaso de todo",
+        _ => consulta.Nombre,
+    };
+
+    private void Volver() => navegacion.NavigateTo("");
+}
