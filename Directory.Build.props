@@ -24,7 +24,7 @@
        (ec9177d / aa29edb / c9da4f0), esto es UNA linea. -->
 
   <PropertyGroup>
-    <VersionDelMotor Condition="'$(VersionDelMotor)' == ''">3.0.0-beta.10028</VersionDelMotor>
+    <VersionDelMotor Condition="'$(VersionDelMotor)' == ''">3.0.0-beta.10029</VersionDelMotor>
   </PropertyGroup>
 
 </Project>

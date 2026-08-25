@@ -345,23 +345,29 @@ dónde sacar *"bajá las grasas"*.
 | EndPointDeEventos | ✅ 8 eventos, rotación de token y señuelo 403 |
 | MCP | ✅ heredado del paquete, no se volvió a medir después de tocar el dominio |
 | PaginaDeDescarga | ⚠️ **no se pudo levantar**: Docker no está corriendo en esta máquina |
-| Wasm | ⚠️ **arranca, renderiza y se instala**, y falla al abrir el actor — ver abajo |
+| Wasm | ✅ **corre completo** desde `3.0.0-beta.10029` — el bloqueo del motor se levantó |
 | Navegador | ⚠️ la **carpeta propia** es solo Chromium. Safari y Firefox degradan a OPFS o a export/import — la app no se queda sin persistir |
 
-### El bloqueo del motor, medido acá
+### El bloqueo del motor se levantó en `10029`
 
-Las notas del equipo dicen que la carátula del browser *"no arranca"*. Medido sirviendo el
-publish por nginx: eso es **impreciso y conviene corregirlo**. La app carga, Blazor
-renderiza y la pantalla de permisos se ve bien. Lo que falla es el paso siguiente, al abrir
-el actor:
+Durante todo el desarrollo la carátula cargaba, renderizaba y moría al abrir el actor con
+`PlatformNotSupportedException: Cannot wait on monitors`. **Con `3.0.0-beta.10029` ya no.**
 
-```
-System.PlatformNotSupportedException: Cannot wait on monitors on this runtime.
-```
+Cómo se distinguió la versión que sí lo traía de la que no:
 
-La app lo atrapa y lo reporta en pantalla en vez de morirse en blanco. Sigue siendo el mismo
-bloqueo —falta el replay secuencial en `3.0.0-beta.10027`— pero el síntoma real es más
-acotado que lo que dice el doc, y eso importa para el reporte a Álvaro.
+| | 10027 | 10028 | **10029** |
+|---|---|---|---|
+| referencias a `IsBrowser` | 0 | 0 | **1** |
+| tamaño de `Puppeteer.dll` | 815 104 | 815 104 | **815 616** |
+| bytes distintos vs. la anterior | — | 281 | **680 368** |
+
+`10028` se anunció como el arreglo y era una **recompilación del mismo código** — mismo
+tamaño exacto, 281 bytes de diferencia, que es el MVID y el timestamp del PE. `10029` es
+código nuevo, y la prueba en el browser lo confirma.
+
+**Medido corriendo**: la app abre el actor, se pone al día contra URL2, muestra los 8
+exámenes y las tres lecturas de serie, la pantalla de detalle del antígeno, y los toggles
+de Ajustes escriben en el journal.
 
 ---
 
