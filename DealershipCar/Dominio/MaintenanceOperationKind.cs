@@ -2,30 +2,6 @@ using System;
 
 namespace DealershipCar.Dominio
 {
-	// QUE OPERACION ES ESTA. Conjunto cerrado del canon (§3 del slice), comparado por
-	// referencia: existen exactamente estas nueve instancias y ninguna mas.
-	//
-	// El enum de al lado NO es una duplicacion del conjunto: es su FRONTERA. El conjunto vive
-	// adentro y se compara por identidad; el codigo es lo que cruza el wire, y las dos mitades
-	// se unen en OfCode, que se resuelve UNA sola vez al entrar (E12, E32).
-	//
-	// POR QUE UN ENUM Y NO UN STRING: para una familia chica, fija y elegida desde el wire, la
-	// guia prefiere el enum (E16, E39, E40) -- cerrado, con chequeo de tipo, sin el modo de
-	// falla del string, que es que el wire pueda nombrar algo que no existe.
-	//
-	// Y COMO CRUZA DE VERDAD -- MEDIDO en T0, spike S2: el motor RECHAZA a proposito el tipo
-	// enum concreto como tipo de parametro del DSL. La forma soportada es typeof(Enum)
-	// llevando el NOMBRE del miembro como string, que el call site del script coacciona. La
-	// firma del dominio se queda con el enum; lo que cambia es solo la declaracion del
-	// parametro en DealershipCarAPI. Dos propiedades que conviene tener a proposito: el
-	// journal guarda "FluidChange" y no "2", asi que renumerar el enum no puede reinterpretar
-	// la historia en silencio; y el proyecto que llama nunca toma una referencia sobre un tipo
-	// del dominio solo para nombrar una constante.
-	//
-	// Por eso los nombres de los dos lados tienen que coincidir EXACTAMENTE, y hay una prueba
-	// que lo afirma: si se despegan, la coercion falla en runtime -- y un error de runtime en
-	// un script deja entradas permanentes en el journal (spike S5).
-
 	/// <summary>
 	/// El codigo con el que una MaintenanceOperationKind cruza el wire hacia adentro.
 	/// Cada miembro nombra al miembro homonimo del conjunto cerrado, donde esta documentado
@@ -113,8 +89,7 @@ namespace DealershipCar.Dominio
 			new MaintenanceOperationKind("Repair");
 
 		/// <summary>
-		/// El nombre del miembro. Es lo unico que sale del conjunto hacia afuera: el agregado
-		/// proyecta un escalar (ReadNextDueKind devuelve este texto), nunca el objeto (E24).
+		/// El nombre. Es lo unico que sale del conjunto hacia afuera; el objeto no se entrega (E24).
 		/// </summary>
 		internal string Name { get; }
 
@@ -124,11 +99,8 @@ namespace DealershipCar.Dominio
 		}
 
 		/// <summary>
-		/// Resuelve el codigo del wire al miembro del conjunto. FUNCION TOTAL CON EXCEPCION:
-		/// un codigo que no nombra ningun miembro es un defecto de quien llama y revienta.
-		/// Es la polaridad OPUESTA a una lectura con clave sobre un espacio -- ahi la ausencia
-		/// es una respuesta legitima; aca, afuera del conjunto cerrado no hay miembro que
-		/// devolver. Se resuelve UNA vez al entrar; adentro nadie vuelve a validar.
+		/// Resuelve el codigo del wire al miembro, una sola vez al entrar. Total con excepcion: un
+		/// codigo desconocido es un defecto de quien llama y revienta (E32).
 		/// </summary>
 		internal static MaintenanceOperationKind OfCode(OperationKindCode code)
 		{

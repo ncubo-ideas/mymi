@@ -134,12 +134,14 @@ namespace DealershipCar.Dominio.Pruebas
 		}
 
 		// Sin lectura ninguna -- un vehiculo recien entregado, o una operacion cuyo ancla nunca
-		// se completo -- es el mismo caso: no se puede evaluar, no es que no llego.
+		// se completo -- es el mismo caso: no se puede evaluar, no es que no llego. La ausencia
+		// se dice con None, que CONTESTA que no hay; hasta E45 viajaba como un null, que no
+		// contesta nada.
 		[Test]
 		public void WithoutAReadingTheDistanceCannotBeEvaluatedEither()
 		{
 			DueAssessment vencimiento = ReglaDeLasDos().Assess(
-				desde, new DateTime(2026, 1, 20), null, sinEscalar);
+				desde, new DateTime(2026, 1, 20), UsableReading.None, sinEscalar);
 
 			Assert.That(vencimiento.DistanceIsSuspended, Is.True);
 			Assert.That(vencimiento.SuspendedByAnAbsentReading, Is.True);
@@ -225,10 +227,10 @@ namespace DealershipCar.Dominio.Pruebas
 				DistanceUnitCode.UnitA);
 		}
 
-		private static OdometerReading Lectura(int valor, DistanceUnit unidad)
+		private static UsableReading Lectura(int valor, DistanceUnit unidad)
 		{
-			return new OdometerReading(
-				valor, unidad, new DateTime(2026, 1, 1), ReadingSource.Telemetry);
+			return UsableReading.Of(new OdometerReading(
+				valor, unidad, new DateTime(2026, 1, 1), ReadingSource.Telemetry));
 		}
 	}
 }

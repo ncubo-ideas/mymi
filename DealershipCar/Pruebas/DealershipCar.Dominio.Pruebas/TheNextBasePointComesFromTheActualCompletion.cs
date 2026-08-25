@@ -145,10 +145,10 @@ namespace DealershipCar.Dominio.Pruebas
 			Assert.Throws<DomainException>(() => { DistanceUnit _ = soloInstante.Unit; });
 		}
 
-		private static OdometerReading Lectura(int valor)
+		private static UsableReading Lectura(int valor)
 		{
-			return new OdometerReading(
-				valor, DistanceUnit.UnitA, new DateTime(2026, 6, 1), ReadingSource.Telemetry);
+			return UsableReading.Of(new OdometerReading(
+				valor, DistanceUnit.UnitA, new DateTime(2026, 6, 1), ReadingSource.Telemetry));
 		}
 	}
 }

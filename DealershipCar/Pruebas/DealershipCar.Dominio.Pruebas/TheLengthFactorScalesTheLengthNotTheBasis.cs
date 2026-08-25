@@ -127,8 +127,8 @@ namespace DealershipCar.Dominio.Pruebas
 
 			BasePoint desde = BasePoint.At(new DateTime(2025, 6, 1), 30000, DistanceUnit.UnitA);
 			DateTime alDiaDoscientosCincuentaYSeis = new DateTime(2026, 2, 12);
-			OdometerReading lectura = new OdometerReading(
-				30000, DistanceUnit.UnitA, alDiaDoscientosCincuentaYSeis, ReadingSource.Telemetry);
+			UsableReading lectura = UsableReading.Of(new OdometerReading(
+				30000, DistanceUnit.UnitA, alDiaDoscientosCincuentaYSeis, ReadingSource.Telemetry));
 
 			DueAssessment conStandard = regla.Assess(
 				desde, alDiaDoscientosCincuentaYSeis, lectura,
@@ -156,8 +156,8 @@ namespace DealershipCar.Dominio.Pruebas
 			DueAssessment vencimiento = regla.Assess(
 				BasePoint.At(new DateTime(2025, 6, 1), 30000, DistanceUnit.UnitA),
 				new DateTime(2026, 1, 20),
-				new OdometerReading(45000, DistanceUnit.UnitA, new DateTime(2026, 1, 20),
-					ReadingSource.Telemetry),
+				UsableReading.Of(new OdometerReading(45000, DistanceUnit.UnitA,
+					new DateTime(2026, 1, 20), ReadingSource.Telemetry)),
 				IntervalLengthFactor.For(UsageProfile.LowDistance));
 
 			Assert.That(vencimiento.DistanceIsSuspended, Is.True);

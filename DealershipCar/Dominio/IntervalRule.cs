@@ -2,36 +2,6 @@ using System;
 
 namespace DealershipCar.Dominio
 {
-	// LA LEY QUE DECIDE CUANDO VENCE UNA OPERACION. Comportamiento, no dato (§4 del slice).
-	//
-	// Las cinco bases DECIDEN distinto, no solo guardan numeros distintos: una vence con la
-	// PRIMERA de las dos dimensiones, otra con LAS DOS, dos con UNA SOLA, y la ultima con
-	// ninguna -- espera un cruce de umbral recibido. Ese es el "tell" de E39: una rama por base
-	// que corre LOGICA distinta es comportamiento, y el comportamiento subtipa. Se corrio el
-	// test del Curador: quitando los nombres de los subtipos y metiendo los limites en datos, lo
-	// que se pierde es el PROCEDIMIENTO DE DECISION either / both / single / none. Se pierde una
-	// regla, asi que los subtipos se ganan el lugar.
-	//
-	// La base es EL SUBTIPO. No hay un campo "basis" que alguien pueda cambiar despues; el tipo
-	// de la regla ES su base, y por eso no hay como desincronizarlos.
-	//
-	// E43: esta base se queda ABIERTA. Sellarla es el reflejo que despues obliga a des-sellarla.
-	//
-	// DOS PREGUNTAS, Y NADA MAS. Ni cuando evaluar, ni cuantos aplazamientos van, ni que hacer
-	// con el resultado: eso es del agregado y de la operacion (T4, T5). Lo que esta lista deja
-	// afuera es tan parte del diseno como lo que deja adentro.
-	//
-	// POR QUE LA GUARDA VALE TANTO COMO LA CUENTA. OINV-20 termina con cuatro palabras que se
-	// leen como relleno: "LA BASE NUNCA SE INFIERE". No lo son. TimeOrDistance y
-	// TimeAndDistance reciben EXACTAMENTE los mismos dos numeros y deciden al reves; ningun
-	// dato los distingue. Si la fabrica dedujera la base de los limites -- "vinieron los dos,
-	// entonces sera TimeOrDistance" -- una operacion sembrada con un limite de mas cambiaria
-	// de LEY en silencio. La unica forma de que la base sea la que el plan del fabricante dice
-	// es que llegue DECLARADA y que lo que no concuerda se RECHACE.
-	//
-	// La ausencia de un limite se expresa con CERO, porque lo que cruza el wire son primitivos
-	// y no hay "int ausente". Negativo no es ausencia: es un defecto.
-
 	/// <summary>
 	/// El codigo con el que la base de un intervalo cruza el wire hacia adentro. NO es un
 	/// septimo conjunto cerrado: la base ES el subtipo de <see cref="IntervalRule"/>, asi que
@@ -59,71 +29,37 @@ namespace DealershipCar.Dominio
 	}
 
 	/// <summary>
-	/// La ley que decide cuando vence una operacion de mantenimiento. Base polimorfica: la base
-	/// del intervalo ES el subtipo, nunca un campo, asi que no hay forma de que la base y los
-	/// limites se desincronicen. Queda ABIERTA a proposito (E43).
-	/// <para>
-	/// Cada subtipo contesta exactamente dos preguntas y nada mas: donde esta parada la
-	/// operacion (<see cref="Assess"/>, donde viven las leyes L1 y L2), y donde queda el
-	/// proximo punto base tras una completacion real
-	/// (<see cref="NextOccurrenceFromActualCompletion"/>, la ley L4).
-	/// </para>
+	/// La ley que decide cuando vence una operacion de mantenimiento. La base del intervalo ES el
+	/// subtipo, nunca un campo. Cada subtipo contesta dos preguntas: donde esta parada la
+	/// operacion (<see cref="Assess"/>, leyes L1 y L2) y donde queda el proximo punto base
+	/// (<see cref="NextOccurrenceFromActualCompletion"/>, ley L4).
 	/// </summary>
 	internal abstract class IntervalRule
 	{
 		/// <summary>
-		/// PRIMERA PREGUNTA: donde esta parada la operacion. Dado el ancla desde la que se mide
-		/// el intervalo, el instante que se evalua, la ultima lectura usable -- que puede no
-		/// existir, y eso es un hecho legitimo y no un defecto -- y el escalamiento que el
-		/// perfil de uso aplica al largo, devuelve el estado, cual dimension lo decidio y si
-		/// alguna no se pudo evaluar.
-		/// <para>
-		/// El instante SE RECIBE, siempre (§7, E30/E31/E44). El dominio no lee un reloj: es lo
-		/// que hace que el mismo journal de hechos recibidos vuelva a dar los mismos estados
-		/// para siempre, y lo que deja adelantar la demo seis meses con un parametro en vez de
-		/// esperando seis meses.
-		/// </para>
-		/// <para>
-		/// Es una FUNCION PURA de lo que recibe: no guarda nada entre llamadas. Por eso la
-		/// suspension de una dimension se cura sola cuando llegan los hechos que faltaban
-		/// (GAP G4) -- no hay estado que alguien tenga que acordarse de levantar.
-		/// </para>
+		/// Donde esta parada la operacion, dados el ancla, el instante evaluado, la ultima lectura
+		/// usable y el escalamiento del perfil de uso. El instante SE RECIBE: el dominio no lee un
+		/// reloj (§7). Funcion pura, asi que una suspension se cura sola cuando llegan los hechos
+		/// (GAP G4).
 		/// </summary>
 		internal abstract DueAssessment Assess(
-			BasePoint from, DateTime asOf, OdometerReading latestUsable, IntervalLengthFactor factor);
+			BasePoint from, DateTime asOf, UsableReading latestUsable, IntervalLengthFactor factor);
 
 		/// <summary>
-		/// SEGUNDA PREGUNTA, y LEY L4 (§5 del slice, OINV-26): "La proxima ocurrencia se calcula
-		/// desde el instante y la lectura en que la operacion se completo DE VERDAD, nunca desde
-		/// la grilla teorica en que estaba agendada."
-		/// <para>
-		/// Vencia a 40000 y se hizo a 39800: la proxima se mide desde 39800. La grilla teorica
-		/// -- 30000, 40000, 50000, siempre redondo -- es comoda de programar y es mentira: le
-		/// regala a la persona 200 unidades que nadie le dio, y el error SE ACUMULA hasta que el
-		/// plan del fabricante y la realidad no se parecen.
-		/// </para>
-		/// <para>
-		/// Es ABSTRACTA porque lo que cambia entre las bases es QUE DIMENSIONES ANCLA: las que
-		/// no miden distancia devuelven un ancla sin lectura, ya que guardar una que ninguna ley
-		/// lee haria creer que la distancia cuenta para esa operacion.
-		/// </para>
+		/// LEY L4 (OINV-26): la proxima ocurrencia se mide desde el instante y la lectura en que la
+		/// operacion se completo DE VERDAD, nunca desde la grilla teorica en que estaba agendada.
+		/// Abstracta porque cada base ancla dimensiones distintas.
 		/// </summary>
 		internal abstract BasePoint NextOccurrenceFromActualCompletion(
 			DateTime completedAt, int reading, DistanceUnit unit);
 
 		/// <summary>
-		/// Lo que toda evaluacion que MIDA algo necesita para estar bien planteada: un ancla
-		/// desde donde medir, un escalamiento que aplicar, y un instante que no sea anterior al
-		/// ancla. Los tres son violaciones de contrato de quien llama y por eso revientan (E32);
-		/// evaluar antes del ancla no es un resultado del negocio, es preguntar por el pasado de
-		/// algo que todavia no existia.
-		/// <para>
-		/// ConditionOnly no la llama, y no es un olvido: no mide desde ningun lado, asi que
-		/// contesta sin ancla y sin lecturas.
-		/// </para>
+		/// Lo que toda evaluacion que mida algo exige: un ancla, un escalamiento, una respuesta
+		/// sobre la ultima lectura usable, y un instante no anterior al ancla. Los cuatro son
+		/// violaciones de contrato y revientan (E32). ConditionOnly no la llama: no mide nada.
 		/// </summary>
-		protected static void RequireAnAnchorAndAFactor(
-			BasePoint from, DateTime asOf, IntervalLengthFactor factor)
+		protected static void RequireAnAnchorAFactorAndAReading(
+			BasePoint from, DateTime asOf, UsableReading latestUsable, IntervalLengthFactor factor)
 		{
 			if (from == null)
 				throw new DomainException(
@@ -136,6 +72,12 @@ namespace DealershipCar.Dominio
 					"Falta el escalamiento del perfil de uso. Que no escale nada es el factor de "
 					+ "Standard, que existe; no es la ausencia del factor.");
 
+			if (latestUsable == null)
+				throw new DomainException(
+					"Falta la respuesta sobre la ultima lectura usable. Que no haya ninguna se "
+					+ "dice con UsableReading.None, que contesta que no hay; un null no contesta "
+					+ "nada y obliga a cada llamador a acordarse solo (E45).");
+
 			if (asOf < from.Instant)
 				throw new DomainException(
 					$"Se pidio evaluar al {asOf} un intervalo anclado en {from.Instant}: el "
@@ -144,19 +86,10 @@ namespace DealershipCar.Dominio
 		}
 
 		/// <summary>
-		/// OINV-20, ultima frase: LA BASE NUNCA SE INFIERE. Quien siembra una operacion declara
-		/// la base, y esta guarda rechaza los limites que no concuerdan con la base declarada.
-		/// <para>
-		/// TimeOrDistance y TimeAndDistance exigen los dos limites; TimeOnly exige el de tiempo
-		/// y ninguno de distancia; DistanceOnly al reves; ConditionOnly no admite ninguno. Un
-		/// limite ausente se expresa con cero -- lo que cruza el wire son primitivos -- y un
-		/// limite negativo es siempre un defecto.
-		/// </para>
-		/// <para>
-		/// Polaridad (E32): esto es una violacion de contrato de quien llama, asi que REVIENTA.
-		/// Aceptar callado una combinacion que no concuerda seria inferir la base, y una
-		/// operacion cambiaria de ley sin que nadie lo vea.
-		/// </para>
+		/// OINV-20: LA BASE NUNCA SE INFIERE. Rechaza los limites que no concuerdan con la base
+		/// declarada -- las dos de dos dimensiones exigen los dos limites, TimeOnly solo el de
+		/// tiempo, DistanceOnly solo el de distancia, ConditionOnly ninguno. Un limite ausente se
+		/// expresa con cero; uno negativo es un defecto. Revienta (E32).
 		/// </summary>
 		internal static void BasisIsNeverInferred(
 			IntervalBasisCode basis, int timeLimitDays, int distanceLimit)
@@ -228,21 +161,9 @@ namespace DealershipCar.Dominio
 		}
 
 		/// <summary>
-		/// La UNICA fabrica de reglas de intervalo, en la frontera: recibe los primitivos del
-		/// wire, corre la guarda de OINV-20 y resuelve la unidad, y de ahi sale la regla de la
-		/// base pedida.
-		/// <para>
-		/// El orden no es casual y hay una prueba que lo fija: primero la guarda, despues
-		/// cualquier construccion. Una combinacion que no concuerda no debe llegar nunca a un
-		/// constructor.
-		/// </para>
-		/// <para>
-		/// La unidad solo tiene sentido donde hay limite de distancia; en TimeOnly y
-		/// ConditionOnly el wire igual la trae porque la firma del contrato es una sola, y se
-		/// resuelve de todas formas -- un codigo que no nombra ninguna unidad es un defecto de
-		/// quien llama, cualquiera sea la base. Las dos bases que no miden distancia la reciben
-		/// y no se la quedan.
-		/// </para>
+		/// La unica fabrica de reglas, en la frontera: corre la guarda de OINV-20, resuelve la
+		/// unidad, y devuelve la regla de la base pedida. La guarda va primero, siempre. La unidad
+		/// se resuelve aunque la base no mida distancia, porque la firma del contrato es una sola.
 		/// </summary>
 		internal static IntervalRule Of(
 			IntervalBasisCode basis, int timeLimitDays, int distanceLimit, DistanceUnitCode unitCode)
@@ -269,9 +190,6 @@ namespace DealershipCar.Dominio
 					return new ConditionOnly();
 			}
 
-			// Inalcanzable: la guarda ya rechazo cualquier base que no sea una de las cinco.
-			// Queda escrito porque el dia que entre una sexta base y alguien se olvide de este
-			// switch, lo que tiene que pasar es esto y no un null viajando hacia adentro.
 			throw new DomainException(
 				$"'{basis}' paso la guarda y no tiene regla que construir. Si entro una base "
 				+ "nueva, BasisIsNeverInferred y esta fabrica se actualizan juntas.");

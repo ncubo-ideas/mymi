@@ -79,7 +79,7 @@ namespace DealershipCar.Dominio.Pruebas
 				DistanceUnitCode.UnitA);
 
 			DateTime mismoInstante = new DateTime(2026, 1, 20);
-			OdometerReading mismaLectura = Lectura(40000, DistanceUnit.UnitA);
+			UsableReading mismaLectura = Lectura(40000, DistanceUnit.UnitA);
 
 			Assert.That(laPrimeraQueLlegue.Assess(desde, mismoInstante, mismaLectura, sinEscalar).State,
 				Is.SameAs(DueState.Due));
@@ -104,10 +104,10 @@ namespace DealershipCar.Dominio.Pruebas
 				+ "operacion no vencio, asi que menos todavia esta Overdue.");
 		}
 
-		private static OdometerReading Lectura(int valor, DistanceUnit unidad)
+		private static UsableReading Lectura(int valor, DistanceUnit unidad)
 		{
-			return new OdometerReading(
-				valor, unidad, new DateTime(2026, 1, 1), ReadingSource.Telemetry);
+			return UsableReading.Of(new OdometerReading(
+				valor, unidad, new DateTime(2026, 1, 1), ReadingSource.Telemetry));
 		}
 	}
 }

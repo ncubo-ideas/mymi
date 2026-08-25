@@ -151,6 +151,29 @@ namespace DealershipCar.Dominio.Pruebas
 			Assert.That(vencimiento.Describe(), Does.Contain("decided by time and distance"));
 		}
 
+		// CADA CLAUSULA SE NOMBRA A SI MISMA, y hasta aqui nadie lo defendia: una etiqueta
+		// cambiada dejaba el motivo diciendo "distance" dos veces, con la cuenta de los dias
+		// adentro de la clausula equivocada, y toda la suite seguia verde. Se encontro
+		// falsificando a proposito el nombre de la dimension de tiempo.
+		//
+		// "decided by time and distance" NO alcanza para taparlo: esa frase la compone
+		// DueAssessment con dos booleanos, y no toca las etiquetas que pone cada dimension.
+		[Test]
+		public void EachClauseOfTheReasonNamesItsOwnDimension()
+		{
+			string motivo = regla.Assess(
+				desde, new DateTime(2026, 6, 1), Lectura(40000, DistanceUnit.UnitA), sinEscalar)
+				.Describe();
+
+			Assert.That(motivo, Does.Contain("time: "),
+				"La clausula del tiempo tiene que decir que es del tiempo.");
+			Assert.That(motivo, Does.Contain("distance: "),
+				"Y la de la distancia, que es de la distancia.");
+			Assert.That(motivo, Does.Contain("days"), "Los dias van en la clausula del tiempo.");
+			Assert.That(motivo, Does.Contain("UnitA"),
+				"Y la unidad del limite en la de la distancia.");
+		}
+
 		// PRUEBA 6 de §9, ley L10. La evaluacion que habria puesto DueSoon encuentra el limite
 		// ya alcanzado: se va derecho a Due. A nivel de regla, DueSoon NUNCA sale cuando el
 		// limite esta alcanzado.
@@ -219,10 +242,10 @@ namespace DealershipCar.Dominio.Pruebas
 				sinEscalar));
 		}
 
-		private static OdometerReading Lectura(int valor, DistanceUnit unidad)
+		private static UsableReading Lectura(int valor, DistanceUnit unidad)
 		{
-			return new OdometerReading(
-				valor, unidad, new DateTime(2026, 1, 1), ReadingSource.Telemetry);
+			return UsableReading.Of(new OdometerReading(
+				valor, unidad, new DateTime(2026, 1, 1), ReadingSource.Telemetry));
 		}
 	}
 }

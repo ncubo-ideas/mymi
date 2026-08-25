@@ -83,15 +83,15 @@ namespace DealershipCar.Dominio.Pruebas
 		public void ItAnswersWithNoBasePointAndNoReadings()
 		{
 			DueAssessment vencimiento = porCondicion.Assess(
-				null, new DateTime(2026, 1, 20), null, sinEscalar);
+				null, new DateTime(2026, 1, 20), UsableReading.None, sinEscalar);
 
 			Assert.That(vencimiento.State, Is.SameAs(DueState.NotDue));
 		}
 
-		private static OdometerReading Lectura(int valor)
+		private static UsableReading Lectura(int valor)
 		{
-			return new OdometerReading(
-				valor, DistanceUnit.UnitA, new DateTime(2026, 1, 1), ReadingSource.Telemetry);
+			return UsableReading.Of(new OdometerReading(
+				valor, DistanceUnit.UnitA, new DateTime(2026, 1, 1), ReadingSource.Telemetry));
 		}
 	}
 }
