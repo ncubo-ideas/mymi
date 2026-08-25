@@ -89,8 +89,14 @@ dotnet run --project Examenes/App/Examenes.Consola -- velocidad "/tmp/journal-ex
 URL1 es nginx, así que no corre por consola. Publicar la app y levantar los dos servidores:
 
 ```bash
-dotnet publish Examenes/App/Examenes.Wasm -c Release -o Examenes/PaginaDeDescarga/publicado -p:PublishTrimmed=false
+MSBuildEnableWorkloadResolver=false dotnet publish Examenes/App/Examenes.Wasm -c Release -o Examenes/PaginaDeDescarga/publicado -p:PublishTrimmed=false
 ```
+
+> **Ese `MSBuildEnableWorkloadResolver=false` no es adorno.** Si el SDK te pide el workload
+> `wasm-tools` (`NETSDK1147`), esa variable desactiva el resolver y el build pasa — la app
+> no necesita el workload, solo publica sin optimizar. Instalarlo pide `sudo`, y un
+> `dotnet workload install` que falla por permisos igual alcanza a actualizar los manifests
+> del SDK y **deja el error pegado**. Si ya te pasó, esta es la salida sin contraseña.
 
 ```bash
 cd Examenes && ./PaginaDeDescarga/generar-certificado.sh && docker compose up -d

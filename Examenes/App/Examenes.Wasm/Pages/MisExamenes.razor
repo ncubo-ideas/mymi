@@ -7,43 +7,41 @@
 
 <PageTitle>Mis exámenes</PageTitle>
 
-<h1>Mis exámenes</h1>
-<p class="text-muted mb-4">
-    Laboratorios Sotavento &middot; tu expediente, en tu computadora.
-</p>
+<h1 class="titular">Mis exámenes</h1>
+<p class="membrete"><b>Laboratorios Sotavento</b> &middot; tu expediente, en tu computadora.</p>
 
 @* UN solo lugar para los errores, y arriba. Antes habia dos bloques -uno adentro del
    arranque y otro al final de la pagina- asi que un mismo fallo se veia dos veces, y
    estando abajo quedaba fuera de pantalla: la app parecia no reaccionar al click. *@
 @if (error.Length > 0)
 {
-    <div class="alert alert-danger">
+    <div class="aviso aviso--problema">
         <strong>@(estado.EstaArriba ? "No se pudo completar la operación." : "No se pudo abrir la app.")</strong>
-        <pre class="mb-0 mt-2 small" style="white-space:pre-wrap">@error</pre>
+        <pre>@error</pre>
     </div>
 }
 
 @if (!estado.EstaArriba)
 {
-    <div class="alert alert-secondary">
+    <div class="aviso aviso--neutro">
         @* Cuando el handle volvio de IndexedDB pero el permiso caduco, la accion correcta
            es RE-OTORGAR, no volver a elegir la carpeta. Ofrecer "Elegir carpeta" como
            primaria hacia que la persona reabriera el picker y volviera a navegar hasta la
            misma carpeta cada vez. *@
         @if (estado.FaltaReotorgarPermiso)
         {
-            <p class="mb-2">
+            <p>
                 Tu carpeta es <strong>&laquo;@estado.NombreDeLaCarpeta&raquo;</strong>. El browser pide
                 confirmar el permiso de escritura cada vez que volvés a abrir la app.
             </p>
-            <div class="d-flex flex-wrap gap-2">
-                <button class="btn btn-warning" @onclick="PedirPermiso">
+            <div class="fila" style="margin-top:12px">
+                <button class="boton boton--atencion" @onclick="PedirPermiso">
                     Dar permiso a &laquo;@estado.NombreDeLaCarpeta&raquo;
                 </button>
                 @* Elegir carpeta es una accion de primera clase, siempre. Estaba como
                    outline-secondary y se leia deshabilitada, asi que la opcion de elegir
                    OTRA carpeta parecia no estar disponible. *@
-                <button class="btn btn-primary" @onclick="ConectarCarpeta"
+                <button class="boton" @onclick="ConectarCarpeta"
                         disabled="@(soportado == false)">
                     Elegir carpeta
                 </button>
@@ -51,21 +49,21 @@
         }
         else
         {
-            <p class="mb-2">
+            <p>
                 Esta app guarda <strong>tus</strong> exámenes en una carpeta <strong>tuya</strong>.
                 Elegí la carpeta y la app escribe su registro ahí; nadie más la lee.
             </p>
 
             @if (soportado == false)
             {
-                <p class="text-danger mb-2">
+                <p class="aviso aviso--problema">
                     Este browser no tiene <code>showDirectoryPicker</code>, así que no puede escribir en
                     una carpeta tuya. La app funciona igual, pero el registro vive solo en memoria y se
                     pierde al cerrar.
                 </p>
             }
 
-            <button class="btn btn-primary" @onclick="ConectarCarpeta" disabled="@(soportado == false)">
+            <button class="boton" @onclick="ConectarCarpeta" disabled="@(soportado == false)" style="margin-top:12px">
                 Elegir carpeta
             </button>
         }
@@ -73,18 +71,18 @@
         @* Abrir sin guardar es la salida de emergencia, no una alternativa pareja: la app
            anda pero no deja registro tuyo. Va aparte y como enlace, para que se note que
            es otra cosa. *@
-        <div class="mt-3">
-            <button class="btn btn-link p-0" @onclick="Arrancar">Abrir sin guardar nada</button>
+        <div style="margin-top:16px">
+            <button class="boton boton--enlace" @onclick="Arrancar">Abrir sin guardar nada</button>
         </div>
     </div>
 }
 else
 {
-    <div class="d-flex align-items-center flex-wrap gap-2 mb-3">
-        <button class="btn btn-primary" @onclick="Refrescar" disabled="@refrescando">
+    <div class="fila" style="margin-bottom:18px">
+        <button class="boton" @onclick="Refrescar" disabled="@refrescando">
             @(refrescando ? "Refrescando…" : "Refresh")
         </button>
-        <span class="text-muted">
+        <span class="apunte mono">
             @cantidad @(cantidad == 1 ? "examen" : "exámenes") &middot;
             @(fueraDeRango == 0
                 ? "todo dentro de rango"
@@ -100,30 +98,30 @@ else
        degradacion silenciosa que hizo que el servidor MCP leyera un estado viejo. *@
     @if (!estado.HayCarpeta)
     {
-        <div class="alert alert-warning d-flex align-items-center flex-wrap gap-2">
-            <div class="flex-grow-1">
+        <div class="aviso aviso--atencion fila">
+            <div class="crece">
                 <strong>No se está guardando nada.</strong>
                 Esta app está funcionando sin carpeta: lo que ves lo vuelve a pedir al proveedor
                 cada vez que abrís, y no queda registro tuyo en disco.
             </div>
-            <button class="btn btn-warning" @onclick="ConectarCarpeta">Elegir carpeta</button>
+            <button class="boton boton--atencion" @onclick="ConectarCarpeta">Elegir carpeta</button>
         </div>
     }
     else if (estado.GuardadoFallando.Length > 0)
     {
-        <div class="alert alert-danger d-flex align-items-center flex-wrap gap-2">
-            <div class="flex-grow-1">
+        <div class="aviso aviso--problema fila">
+            <div class="crece">
                 <strong>La carpeta rechazó la escritura.</strong>
                 Lo que ves en pantalla no está guardado en &laquo;@estado.NombreDeLaCarpeta&raquo;.
                 Suele ser el permiso, que caduca al reabrir.
-                <div class="small mt-1">@estado.GuardadoFallando</div>
+                <div class="apunte mono" style="margin-top:6px">@estado.GuardadoFallando</div>
             </div>
-            <button class="btn btn-danger" @onclick="PedirPermiso">Volver a dar permiso</button>
+            <button class="boton boton--problema" @onclick="PedirPermiso">Volver a dar permiso</button>
         </div>
     }
     else
     {
-        <p class="small text-muted">
+        <p class="apunte">
             Se guarda en &laquo;@estado.NombreDeLaCarpeta&raquo; después de cada cambio.
         </p>
     }
@@ -139,56 +137,51 @@ else
        dice "pasó de 200 a 280 mg/dL en 365 días", no "bajá las grasas". *@
     @if (analitos.Count > 0)
     {
-        <h2 class="h5 mt-4">Cómo vienen tus valores</h2>
-        <div class="list-group mb-4">
-            @foreach (TendenciaDeAnalito t in analitos)
-            {
-                <div class="list-group-item list-group-item-action" style="cursor:pointer"
-                     @onclick="() => VerSerie(t.Analito)">
-                    <div class="d-flex justify-content-between align-items-start flex-wrap gap-2">
-                        <div>
-                            <strong>@t.Analito</strong>
-                            <span class="badge @Insignia(t) ms-2">@t.Tendencia</span>
-                            <div class="small text-muted mt-1">@Relato(t)</div>
-                        </div>
-                        <div class="text-end">
-                            <div class="fs-5">@Valor(t.ValorFinal) <span class="small text-muted">@t.Unidad</span></div>
-                        </div>
+        <h2 class="seccion">Cómo vienen tus valores</h2>
+        @foreach (TendenciaDeAnalito t in analitos)
+        {
+            <button class="serie" @onclick="() => VerSerie(t.Analito)">
+                <div class="serie-cabeza">
+                    <div>
+                        <span class="serie-nombre">@t.Analito</span>
+                        <span class="chip @Insignia(t)">@t.Tendencia</span>
+                        <div class="serie-relato">@Relato(t)</div>
                     </div>
-                    @if (t.SugiereRepetirElExamen)
-                    {
-                        <div class="small mt-2">
-                            El cambio es demasiado grande para el tiempo que pasó. Lo más probable es un
-                            error de medición: conviene <strong>repetir el examen</strong>.
-                        </div>
-                    }
-                    else if (t.ExigeAtencion)
-                    {
-                        <div class="small mt-2">Conviene que lo vea tu médico.</div>
-                    }
+                    <div class="serie-valor">@Valor(t.ValorFinal) <span>@t.Unidad</span></div>
                 </div>
-            }
-        </div>
+                @if (t.SugiereRepetirElExamen)
+                {
+                    <div class="serie-lectura">
+                        El cambio es demasiado grande para el tiempo que pasó. Lo más probable es un
+                        error de medición: conviene <b>repetir el examen</b>.
+                    </div>
+                }
+                else if (t.ExigeAtencion)
+                {
+                    <div class="serie-lectura serie-lectura--atencion">Conviene que lo vea <b>tu médico</b>.</div>
+                }
+            </button>
+        }
     }
 
-    <h2 class="h5">Tus exámenes</h2>
+    <h2 class="seccion">Tus exámenes</h2>
     @if (examenes.Count == 0)
     {
-        <p class="text-muted">Todavía no hay exámenes. Apretá <em>Refresh</em>.</p>
+        <p class="apunte">Todavía no hay exámenes. Apretá <em>Refresh</em>.</p>
     }
     else
     {
-        <table class="table table-hover align-middle">
+        <table class="tabla">
             <thead>
-                <tr><th>Examen</th><th>Fecha</th><th class="text-end">Resultado</th></tr>
+                <tr><th>Examen</th><th>Fecha</th><th class="der">Resultado</th></tr>
             </thead>
             <tbody>
                 @foreach (ExamenEnLista examen in examenes)
                 {
                     <tr>
                         <td>@examen.Nombre</td>
-                        <td>@examen.Fecha.ToString("dd/MM/yyyy", CultureInfo.InvariantCulture)</td>
-                        <td class="text-end">@examen.Resultado</td>
+                        <td class="fecha">@examen.Fecha.ToString("dd/MM/yyyy", CultureInfo.InvariantCulture)</td>
+                        <td class="der resultado">@examen.Resultado</td>
                     </tr>
                 }
             </tbody>
@@ -200,7 +193,7 @@ else
        usuario, y se fue. *@
     @if (!estado.HayCarpeta)
     {
-        <p class="small text-muted mt-4">
+        <p class="apunte" style="margin-top:28px">
             <strong>Sin carpeta:</strong> el registro vive solo en memoria y se pierde al cerrar.
         </p>
     }
@@ -330,10 +323,12 @@ else
 
     private static string Insignia(TendenciaDeAnalito t)
     {
-        if (t.SugiereRepetirElExamen) return "text-bg-secondary";
-        if (t.ExigeAtencion) return "text-bg-warning";
-        if (!t.HaySerie) return "text-bg-light text-dark";
-        return "text-bg-success";
+        // El ambar esta reservado para lo que exige atencion, y por eso "salto
+        // inverosimil" NO lo usa: no es una alarma clinica, es "repeti el examen".
+        if (t.SugiereRepetirElExamen) return "chip--repetir";
+        if (t.ExigeAtencion) return "chip--atencion";
+        if (!t.HaySerie) return "chip--sinserie";
+        return "chip--estable";
     }
 
     // Formato explícito SIEMPRE. Medido en el negocio de facturas: la escala del decimal
