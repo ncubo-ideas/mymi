@@ -79,6 +79,8 @@ public sealed class EstadoDeLaApp : IAsyncDisposable
 
 	public ValueTask<bool> OpfsSoportado() => puente.OpfsSoportado();
 
+	public ValueTask<string> MotivoSinAlmacenamiento() => puente.MotivoSinAlmacenamiento();
+
 	public ValueTask<string> ModoRecordado() => puente.ModoRecordado();
 
 	public async ValueTask<ResultadoDeCarpeta> UsarAlmacenamientoDelNavegador()

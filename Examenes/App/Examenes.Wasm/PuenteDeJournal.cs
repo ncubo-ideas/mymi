@@ -106,6 +106,11 @@ public sealed class PuenteDeJournal : IAsyncDisposable
 	public async ValueTask<bool> OpfsSoportado() =>
 		await (await Modulo()).InvokeAsync<bool>("opfsSoportado");
 
+	// '' si hay algun almacenamiento; 'navegador' o 'inseguro' si no hay ninguno. Son dos
+	// causas que se arreglan distinto y la deteccion cruda las confunde en un solo false.
+	public async ValueTask<string> MotivoSinAlmacenamiento() =>
+		await (await Modulo()).InvokeAsync<string>("motivoSinAlmacenamiento");
+
 	// Entra por el MISMO Pedir que la carpeta, asi que deja el estado del puente
 	// coherente -NombreDeLaCarpeta y PermisoOtorgado- sin una segunda ruta que mantener.
 	public async ValueTask<ResultadoDeCarpeta> UsarOpfs() => await Pedir("usarOpfs");

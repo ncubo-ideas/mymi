@@ -137,7 +137,29 @@ orden precarga-MEMFS → actor → flush **no se tocó** — sólo cambia a qué
 
 **Medido** en el navegador, sobre la app servida por nginx: activar OPFS, escribir, listar y
 leer da un round-trip byte por byte idéntico, y el modo queda recordado para el próximo
-arranque.
+arranque. En **Safari desktop** los modos 2 y 3 están disponibles: degrada, no falla.
+
+### Desde un teléfono hay que entrar por https
+
+Las dos APIs de almacenamiento exigen **contexto seguro**: https, o el literal `localhost`.
+Un teléfono no puede usar `localhost` para llegar a esta máquina — entra por la IP — y por
+`http://` esa página **no es contexto seguro**, así que el navegador ni define las APIs.
+
+**Medido**: en un iPhone entrando por `http://<ip>:8090` la app reportaba que el navegador
+no permitía guardar. La misma Safari en la Mac, por `localhost`, sí podía. **No era Safari.**
+
+Por eso la app ahora distingue las dos causas —`navegador` vs `inseguro`— y dice cuál es:
+mandar a buscar otro navegador cuando el problema es el protocolo es culpar al equipo
+equivocado.
+
+`generar-certificado.sh` incluye la IP de la máquina en el SAN, así que:
+
+```bash
+cd Examenes && ./PaginaDeDescarga/generar-certificado.sh
+```
+
+deja la app accesible en **`https://<ip>:8453`**. Sigue siendo self-signed: hay que aceptar
+la advertencia, y en iOS conviene instalar y confiar el certificado en Ajustes.
 
 ### El caso estrella corre en Chrome o Edge, no en Safari
 

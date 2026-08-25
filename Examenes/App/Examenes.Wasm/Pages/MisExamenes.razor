@@ -51,6 +51,25 @@
         {
             <p>Esta app guarda <strong>tus</strong> exámenes. Elegí dónde.</p>
 
+            @* Cuando NINGUN modo de guardado esta disponible, la causa importa: se
+               arreglan distinto y una de las dos no es culpa del navegador. *@
+            @if (sinAlmacenamiento == "inseguro")
+            {
+                <p class="aviso aviso--atencion">
+                    <strong>Esta página no está en una conexión segura</strong>, y por eso el
+                    navegador no le deja guardar nada — en cualquier navegador pasaría lo mismo.
+                    Entrá por <strong>https</strong> y las opciones de guardado aparecen.
+                </p>
+            }
+            else if (sinAlmacenamiento == "navegador")
+            {
+                <p class="aviso aviso--atencion">
+                    <strong>Este navegador no puede guardar el expediente.</strong>
+                    Podés usar la app igual, pero lo que veas se pierde al cerrar. Para que
+                    quede guardado, abrila en <strong>Chrome</strong> o <strong>Edge</strong>.
+                </p>
+            }
+
             @* TRES MODOS, y los tres se dicen con lo que dan y lo que no. Ofrecer solo la
                carpeta y fallar donde no hay picker es lo que hacia antes: en Safari,
                Firefox y movil la app andaba pero no persistia nada, y la unica forma de
@@ -66,8 +85,11 @@
                     }
                     else
                     {
-                        <p class="modo-nota">Este navegador no lo permite. Para usarlo, abrí la app
-                           en <strong>Chrome</strong> o <strong>Edge</strong>.</p>
+                        <p class="modo-nota">
+                            @(sinAlmacenamiento == "inseguro"
+                                ? "Hace falta una conexión segura (https)."
+                                : "Este navegador no lo permite. Para usarlo, abrí la app en Chrome o Edge.")
+                        </p>
                     }
                 </div>
 
@@ -81,7 +103,11 @@
                     }
                     else
                     {
-                        <p class="modo-nota">Este navegador tampoco lo permite.</p>
+                        <p class="modo-nota">
+                            @(sinAlmacenamiento == "inseguro"
+                                ? "También hace falta una conexión segura (https)."
+                                : "Este navegador tampoco lo permite.")
+                        </p>
                     }
                 </div>
 
@@ -251,6 +277,7 @@ else
 @code {
     private bool? soportado;
     private bool? opfs;
+    private string sinAlmacenamiento = "";
     private bool refrescando;
 
     private IReadOnlyList<ExamenEnLista> examenes = new List<ExamenEnLista>();
@@ -266,6 +293,7 @@ else
 
         soportado = await estado.EstaSoportado();
         opfs = await estado.OpfsSoportado();
+        sinAlmacenamiento = await estado.MotivoSinAlmacenamiento();
         if (soportado != true) return;
 
         // Recuperar el handle NO necesita gesto; volver a otorgar el permiso SI. Por eso

@@ -45,6 +45,29 @@ export function opfsSoportado() {
     return !!(navigator.storage && typeof navigator.storage.getDirectory === 'function');
 }
 
+// POR QUE no hay almacenamiento, que no es lo mismo que QUE no lo haya.
+//
+// Las dos APIs de storage -el picker y OPFS- exigen CONTEXTO SEGURO: https, o el literal
+// localhost. Fuera de eso el browser ni siquiera las define, asi que la deteccion por
+// "typeof === function" da el MISMO false para dos causas que se arreglan distinto:
+//
+//   'navegador'  este browser no las tiene. La salida es abrir la app en otro.
+//   'inseguro'   la pagina no es contexto seguro. La salida es entrar por https, y el
+//                browser NO tiene la culpa.
+//
+// MEDIDO: en un iPhone entrando por la IP de la maquina -http://192.168.x.x:8090- OPFS
+// figuraba como no soportado. Desde la misma Safari en la Mac, por localhost, si estaba.
+// Decir "tu navegador no puede" en ese caso es culpar al equipo equivocado y mandar a la
+// persona a buscar otro browser que va a fallar igual.
+export function motivoSinAlmacenamiento() {
+    if (opfsSoportado() || estaSoportado()) return '';
+    return window.isSecureContext ? 'navegador' : 'inseguro';
+}
+
+export function esContextoSeguro() {
+    return window.isSecureContext === true;
+}
+
 export function modoActual() {
     return modo;
 }
