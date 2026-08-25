@@ -256,21 +256,49 @@ else
     }
     else
     {
-        <table class="tabla">
+        @* UNA FILA POR ANALITO Y UNA COLUMNA POR FECHA. Antes era una fila por medicion,
+           que repetia el nombre del analito y obligaba a leer salteado para reconstruir
+           una serie. Con las fechas en el eje, la serie se lee de un barrido horizontal,
+           que es el punto: la serie ES el dato.
+
+           La pantalla NO arma la grilla: ubica cada celda por los dos indices que manda
+           el dominio. Que dos examenes del mismo dia sean una columna, y que una celda
+           vacia quede vacia en vez de arrastrar el valor anterior, ya se decidio alla. *@
+        <div style="overflow-x:auto">
+        <table class="tabla tabla--cuadro">
             <thead>
-                <tr><th>Examen</th><th>Fecha</th><th class="der">Resultado</th></tr>
+                <tr>
+                    <th>Analito</th>
+                    @foreach (DateTime fecha in ColumnasDelCuadro())
+                    {
+                        <th class="der fecha">@fecha.ToString("dd/MM/yy", CultureInfo.InvariantCulture)</th>
+                    }
+                    <th class="der"></th>
+                </tr>
             </thead>
             <tbody>
-                @foreach (ExamenEnLista examen in examenes)
+                @foreach (FilaDelCuadro fila in FilasDelCuadro())
                 {
                     <tr>
-                        <td>@examen.Nombre</td>
-                        <td class="fecha">@examen.Fecha.ToString("dd/MM/yyyy", CultureInfo.InvariantCulture)</td>
-                        <td class="der resultado">@examen.Resultado</td>
+                        <td>@fila.ParaMostrar</td>
+                        @for (int columna = 0; columna < ColumnasDelCuadro().Count; columna++)
+                        {
+                            @* Celda vacía = ese analito NO se midió ese día. La raya se
+                               pone acá y no con un :empty en el CSS porque hay que verla:
+                               un hueco en blanco se lee como un error de la pantalla, y es
+                               justamente lo contrario — es el dominio negándose a
+                               interpolar un punto que nadie midió. *@
+                            <td class="der resultado">
+                                @(string.IsNullOrEmpty(fila.Celdas[columna])
+                                    ? "—" : fila.Celdas[columna])
+                            </td>
+                        }
+                        <td class="der">@Marca(fila)</td>
                     </tr>
                 }
             </tbody>
         </table>
+        </div>
     }
 
     @* La ventana de perdida se dice, porque esconderla seria vender durabilidad que no hay.
@@ -429,18 +457,88 @@ else
         }
         analitos = hechos;
         interpretaciones = leidos;
+        celdas = estado.Cuadro();
     }
 
     private void VerSerie(string analito) =>
         navegacion.NavigateTo($"analito/{Uri.EscapeDataString(analito)}");
 
-    // La frase la arma la PANTALLA con los hechos del dominio. Es lo que hace imposible
-    // el consejo de plantilla: no hay de dónde sacar "bajá las grasas".
+    // Los HECHOS de la serie, contados por la pantalla. Es lo que hace imposible el
+    // consejo de plantilla: acá no hay de dónde sacar "bajá las grasas".
+    //
+    // Sin serie devuelve VACÍO y no una frase: esa la dice el analito en su ParaSonia, y
+    // tenerla en los dos lados imprimía "todavía no hay serie" dos veces seguidas en la
+    // misma tarjeta.
     private static string Relato(TendenciaDeAnalito t) =>
         t.HaySerie
             ? $"pasó de {Valor(t.ValorInicial)} a {Valor(t.ValorFinal)} {t.Unidad} "
               + $"en {t.Dias} {(t.Dias == 1 ? "día" : "días")}, sobre {t.Mediciones} mediciones"
-            : $"una sola medición: todavía no hay serie para decir para dónde viene";
+            : "";
+
+    private IReadOnlyList<CeldaEnCuadro> celdas = new List<CeldaEnCuadro>();
+
+    private sealed class FilaDelCuadro
+    {
+        public string Analito { get; init; } = "";
+        public string ParaMostrar { get; init; } = "";
+        public bool AportaSerie { get; init; }
+        public string[] Celdas { get; init; } = new string[0];
+    }
+
+    // Las columnas salen de las celdas: el dominio manda la fecha en cada una, ya
+    // colapsada por dia, asi que reconstruirlas es juntar las distintas en orden. No es
+    // una decision, es un desarmado.
+    private List<DateTime> ColumnasDelCuadro()
+    {
+        var fechas = new List<DateTime>();
+        foreach (CeldaEnCuadro celda in celdas)
+        {
+            while (fechas.Count <= celda.Columna) fechas.Add(default);
+            fechas[celda.Columna] = celda.Fecha;
+        }
+        return fechas;
+    }
+
+    private List<FilaDelCuadro> FilasDelCuadro()
+    {
+        int columnas = ColumnasDelCuadro().Count;
+        var porFila = new Dictionary<int, FilaDelCuadro>();
+
+        foreach (CeldaEnCuadro celda in celdas)
+        {
+            if (!porFila.TryGetValue(celda.Fila, out FilaDelCuadro fila))
+            {
+                fila = new FilaDelCuadro
+                {
+                    Analito = celda.Analito,
+                    ParaMostrar = celda.ParaMostrar,
+                    AportaSerie = celda.AportaSerie,
+                    // Vacias por defecto: lo que el dominio no mando, no se midio.
+                    Celdas = new string[columnas],
+                };
+                for (int i = 0; i < columnas; i++) fila.Celdas[i] = "";
+                porFila[celda.Fila] = fila;
+            }
+            fila.Celdas[celda.Columna] = celda.Expresado;
+        }
+
+        var ordenadas = new List<FilaDelCuadro>();
+        for (int i = 0; i < porFila.Count; i++)
+            if (porFila.TryGetValue(i, out FilaDelCuadro fila)) ordenadas.Add(fila);
+        return ordenadas;
+    }
+
+    // El indicador del final de la fila. Lo provee el DOMINIO: es la severidad que
+    // decidio el analito. Una fila que no forma serie -la orina- no lleva ninguno, y eso
+    // no es un hueco: es que no hay veredicto que dar sobre un color.
+    private string Marca(FilaDelCuadro fila)
+    {
+        if (!fila.AportaSerie) return "";
+
+        InterpretacionDeAnalito lectura = Lectura(fila.Analito);
+        if (lectura.SugiereRepetirElExamen) return "↻";
+        return lectura.PideAlgo ? "⚠" : "·";
+    }
 
     private Dictionary<string, InterpretacionDeAnalito> interpretaciones = new();
 

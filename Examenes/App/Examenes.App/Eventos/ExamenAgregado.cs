@@ -92,7 +92,16 @@ namespace Examenes.App.Eventos
 
 				string color = Texto(raiz, "color");
 				string unidad = Texto(raiz, "unidad");
-				bool traeFraccionamiento = TieneNumero(raiz, "valorSecundario");
+				// OJO CON ESTO, y esta medido contra el emisor real: la PRESENCIA del campo
+				// no dice nada. URL2 serializa `valorSecundario` en TODOS los eventos
+				// porque es un decimal no anulable, asi que llega en cero hasta en un
+				// antigeno prostatico. Preguntando por presencia, todos los examenes
+				// parecian fraccionados y el primer Refresh reventaba con "Colesterol LDL
+				// se mide en mg/dL y el evento lo trajo en ng/mL".
+				//
+				// Lo que dice que hay fraccion es que haya un VALOR: una fraccion de cero
+				// no es una fraccion.
+				bool traeFraccionamiento = Decimal(raiz, "valorSecundario") > 0m;
 
 				// La orina no trae numero ni unidad; los de sangre no traen color. Se
 				// exige aca lo que cada uno necesita: un evento incompleto se descarta

@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using Examenes.App.Eventos;
 using Examenes.Dominio;
 using Puppets.Portador;
@@ -43,6 +44,7 @@ namespace Examenes.Consola
 			ElAnalitoEsUnaIdentidadNoUnNombre();
 			LaRutaResuelveElNombreDelLaboratorio();
 			LaLecturaEsDelAnalitoNoDeLaPantalla();
+			ElCuadroPoneLasFechasEnElEje();
 
 			Console.WriteLine();
 			Console.WriteLine(fallas == 0
@@ -435,6 +437,26 @@ namespace Examenes.Consola
 				porNombre.Analito.Nombre);
 			Igual("  y tambien trae fraccionamiento", "True", porNombre.TraeFraccionamiento.ToString());
 
+			// MEDIDO contra el emisor real: URL2 serializa `valorSecundario` en TODOS los
+			// eventos porque es un decimal no anulable, asi que llega en cero hasta en un
+			// antigeno. Preguntar por PRESENCIA hacia que todo pareciera fraccionado y el
+			// primer Refresh reventaba. Lo que dice que hay fraccion es que haya un valor.
+			Igual("un antigeno con valorSecundario en cero NO es fraccionado",
+				"Antigeno prostatico",
+				AnalitoRuteado(new SenalDeEvento(912, "ExamenAgregado", @"{
+					""id"": 912, ""tipo"": ""ExamenAgregado"",
+					""examen"": ""AntigenoProstatico"",
+					""fecha"": ""2026-08-21T08:31:00"",
+					""valor"": 5.2, ""valorSecundario"": 0, ""unidad"": ""ng/mL""
+				}")));
+			Igual("  y no dice traer fraccionamiento", "False",
+				Ruteado(new SenalDeEvento(913, "ExamenAgregado", @"{
+					""id"": 913, ""tipo"": ""ExamenAgregado"",
+					""examen"": ""Hemoglobina"",
+					""fecha"": ""2026-08-21T08:32:00"",
+					""valor"": 14.2, ""valorSecundario"": 0, ""unidad"": ""g/dL""
+				}")).TraeFraccionamiento.ToString());
+
 			// Los dos casos que la ruta filtra para que el comando no arme un examen a
 			// medias. El dominio modela el LDL junto con su HDL, no sueltos.
 			Igual("un LDL sin su HDL no se aplica a medias", "descartado",
@@ -579,6 +601,100 @@ namespace Examenes.Consola
 			variosAnalitos.Agregar(new Hemoglobina(Hoy, 14.2m, "g/dL"));
 			Igual("lo mas urgente del expediente entero", "consulta medica",
 				variosAnalitos.SeveridadMayor.Nombre);
+		}
+
+
+		// ---- el cuadro historico: las fechas son el eje ----
+		//
+		// Criterio 1 del feedback. La lista plana repetia el nombre del analito en cada
+		// fila; el cuadro pone una fila por analito y una columna por fecha, para que la
+		// serie se lea de un barrido horizontal.
+		private static void ElCuadroPoneLasFechasEnElEje()
+		{
+			Titulo("el cuadro historico pone las fechas en el eje");
+
+			var expediente = new Expediente(60);
+			// Dos analitos el MISMO dia, a horas distintas: es una visita, una columna.
+			expediente.Agregar(new AntigenoProstatico(Fecha(2023, 8, 21, 9, 10), 3.0m, "ng/mL"));
+			expediente.Agregar(new AntigenoProstatico(Fecha(2024, 8, 21, 9, 5), 3.1m, "ng/mL"));
+			expediente.Agregar(new Colesterol(Fecha(2025, 8, 21, 8, 40), 200m, "mg/dL"));
+			expediente.Agregar(new AntigenoProstatico(Fecha(2025, 8, 21, 8, 41), 3.0m, "ng/mL"));
+			expediente.Agregar(new Colesterol(Fecha(2026, 8, 21, 8, 30), 280m, "mg/dL"));
+			expediente.Agregar(new AntigenoProstatico(Fecha(2026, 8, 21, 8, 31), 5.2m, "ng/mL"));
+			expediente.Agregar(new Hemoglobina(Fecha(2026, 8, 21, 8, 32), 14.2m, "g/dL"));
+
+			IReadOnlyList<CeldaDelCuadro> celdas = expediente.CeldasDelCuadro;
+
+			// Siete examenes en cuatro dias: cuatro columnas, no siete.
+			Igual("siete examenes en cuatro dias dan cuatro columnas", "4",
+				(Maximo(celdas, c => c.Columna) + 1).ToString());
+			Igual("  y tres analitos dan tres filas", "3",
+				(Maximo(celdas, c => c.Fila) + 1).ToString());
+
+			// NO se interpola: la grilla tiene 3x4 = 12 lugares y solo 7 estan ocupados.
+			Igual("las celdas sin medicion NO se rellenan", "7", celdas.Count.ToString());
+
+			// El barrido horizontal del antigeno: cuatro puntos en cuatro columnas.
+			Igual("el antigeno ocupa las cuatro columnas", "0,1,2,3",
+				Columnas(celdas, Analito.AntigenoProstatico.Nombre));
+			// El colesterol entro tarde: sus dos primeras celdas no existen.
+			Igual("  el colesterol solo las dos ultimas", "2,3",
+				Columnas(celdas, Analito.ColesterolTotal.Nombre));
+			Igual("  y la hemoglobina solo la ultima", "3",
+				Columnas(celdas, Analito.Hemoglobina.Nombre));
+
+			// La llave de la fila es el nombre CANONICO, que es con el que se pide la
+			// lectura de esa fila.
+			Igual("la fila se identifica con la llave del analito", "True",
+				(expediente.InterpretarSerieDe(Celda(celdas, 0, 0).Analito) != null).ToString());
+			Igual("  y muestra el nombre con acento", "Antígeno prostático",
+				Celda(celdas, 0, 0).ParaMostrar);
+			Igual("  con el resultado ya dicho, con unidad", "3.0 ng/mL",
+				Celda(celdas, 0, 0).Expresado);
+
+			// La orina no forma serie pero SI tiene un resultado por fecha, asi que entra
+			// al cuadro. Va despues de las que si forman serie, y sin veredicto al final.
+			expediente.Agregar(new ExamenDeOrina(Fecha(2026, 8, 21, 8, 33), "ambar"));
+			IReadOnlyList<CeldaDelCuadro> conOrina = expediente.CeldasDelCuadro;
+			Igual("la orina entra al cuadro", "4",
+				(Maximo(conOrina, c => c.Fila) + 1).ToString());
+			Igual("  al final, porque no forma serie", "False",
+				Celda(conOrina, 3, 3).AportaSerie.ToString());
+			Igual("  y su resultado no es un numero", "ambar", Celda(conOrina, 3, 3).Expresado);
+
+			// Una remedicion el mismo dia no abre una columna nueva: gana la ultima.
+			var mismoDia = new Expediente(60);
+			mismoDia.Agregar(new Colesterol(Fecha(2026, 8, 21, 8, 30), 280m, "mg/dL"));
+			mismoDia.Agregar(new Colesterol(Fecha(2026, 8, 21, 15, 0), 265m, "mg/dL"));
+			IReadOnlyList<CeldaDelCuadro> repetido = mismoDia.CeldasDelCuadro;
+			Igual("dos mediciones el mismo dia son una columna", "1", repetido.Count.ToString());
+			Igual("  y gana la ultima por hora", "265 mg/dL", repetido[0].Expresado);
+		}
+
+		private static DateTime Fecha(int ano, int mes, int dia, int hora, int minuto) =>
+			new DateTime(ano, mes, dia, hora, minuto, 0);
+
+		private static int Maximo(IReadOnlyList<CeldaDelCuadro> celdas, Func<CeldaDelCuadro, int> de)
+		{
+			int mayor = -1;
+			foreach (CeldaDelCuadro celda in celdas) if (de(celda) > mayor) mayor = de(celda);
+			return mayor;
+		}
+
+		// Las columnas que ocupa un analito, para leer de un vistazo donde tiene huecos.
+		private static string Columnas(IReadOnlyList<CeldaDelCuadro> celdas, string analito)
+		{
+			var indices = new List<string>();
+			foreach (CeldaDelCuadro celda in celdas)
+				if (celda.Analito == analito) indices.Add(celda.Columna.ToString());
+			return string.Join(",", indices);
+		}
+
+		private static CeldaDelCuadro Celda(IReadOnlyList<CeldaDelCuadro> celdas, int fila, int columna)
+		{
+			foreach (CeldaDelCuadro celda in celdas)
+				if (celda.Fila == fila && celda.Columna == columna) return celda;
+			throw new InvalidOperationException($"no hay celda en ({fila},{columna})");
 		}
 
 		private static void Titulo(string texto)

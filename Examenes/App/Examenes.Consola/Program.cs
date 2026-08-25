@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Globalization;
 using System.IO;
 using System.Net.Http;
@@ -143,6 +144,10 @@ namespace Examenes.Consola
 			Console.WriteLine(api.ListaDeExamenes());
 
 			Console.WriteLine();
+			Console.WriteLine("-- el cuadro historico, ya rearmado desde las celdas planas --");
+			ImprimirCuadro(api);
+
+			Console.WriteLine();
 			Console.WriteLine("-- LA PREGUNTA QUE NINGUNA PANTALLA CONTESTA --");
 			foreach (string analito in api.Analitos()) ImprimirTendencia(api, analito);
 
@@ -153,6 +158,44 @@ namespace Examenes.Consola
 			bool colesterolOk = api.Tendencia(Muestras.AnalitoDelColesterol).Tendencia
 				== Muestras.TendenciaEsperadaDelColesterol;
 			Console.WriteLine($"TENDENCIAS CORRECTAS        : {antigenoOk && colesterolOk}");
+		}
+
+		// El cuadro rearmado, que es exactamente lo que hace la pantalla: ubicar cada
+		// celda por sus dos indices y dejar vacio lo que el dominio no mando. Aca no se
+		// decide nada; si la grilla sale mal, esta mal el dominio.
+		private static void ImprimirCuadro(ExamenesAPI api)
+		{
+			IReadOnlyList<CeldaEnCuadro> celdas = api.Cuadro();
+			if (celdas.Count == 0) { Console.WriteLine("  (sin examenes)"); return; }
+
+			int filas = 0, columnas = 0;
+			foreach (CeldaEnCuadro c in celdas)
+			{
+				if (c.Fila + 1 > filas) filas = c.Fila + 1;
+				if (c.Columna + 1 > columnas) columnas = c.Columna + 1;
+			}
+
+			var grilla = new string[filas, columnas];
+			var nombres = new string[filas];
+			var fechas = new string[columnas];
+			foreach (CeldaEnCuadro c in celdas)
+			{
+				grilla[c.Fila, c.Columna] = c.Expresado;
+				nombres[c.Fila] = c.ParaMostrar;
+				fechas[c.Columna] = c.Fecha.ToString("dd/MM/yyyy", CultureInfo.InvariantCulture);
+			}
+
+			Console.Write($"  {"",-22}");
+			for (int j = 0; j < columnas; j++) Console.Write($"{fechas[j],14}");
+			Console.WriteLine();
+
+			for (int i = 0; i < filas; i++)
+			{
+				Console.Write($"  {nombres[i],-22}");
+				for (int j = 0; j < columnas; j++)
+					Console.Write($"{(grilla[i, j] ?? "-"),14}");
+				Console.WriteLine();
+			}
 		}
 
 		private static void ImprimirTendencia(ExamenesAPI api, string analito)

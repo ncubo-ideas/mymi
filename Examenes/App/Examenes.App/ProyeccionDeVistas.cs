@@ -69,6 +69,31 @@ namespace Examenes.App
 			};
 		}
 
+		internal static IReadOnlyList<CeldaEnCuadro> Cuadro(string json)
+		{
+			var celdas = new List<CeldaEnCuadro>();
+			if (string.IsNullOrWhiteSpace(json)) return celdas;
+
+			using JsonDocument documento = JsonDocument.Parse(json);
+			// La llave del arreglo es el nombre de la variable del foreach del DSL -"celda"-,
+			// igual que "examen" en Lista. No es el nombre de la primera columna.
+			if (!documento.RootElement.TryGetProperty("celda", out JsonElement arreglo)) return celdas;
+
+			foreach (JsonElement elemento in Elementos(arreglo))
+				celdas.Add(new CeldaEnCuadro
+				{
+					Fila = Entero(elemento, "fila"),
+					Columna = Entero(elemento, "columna"),
+					Analito = Texto(elemento, "analito"),
+					ParaMostrar = Texto(elemento, "paraMostrar"),
+					Fecha = Fecha(elemento, "fecha"),
+					Expresado = Texto(elemento, "expresado"),
+					AportaSerie = Booleano(elemento, "aportaSerie"),
+				});
+
+			return celdas;
+		}
+
 		internal static InterpretacionDeAnalito Interpretacion(string json)
 		{
 			if (string.IsNullOrWhiteSpace(json)) return new InterpretacionDeAnalito();

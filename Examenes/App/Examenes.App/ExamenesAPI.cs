@@ -337,6 +337,24 @@ namespace Examenes.App
 			")
 			.PerformQuery();
 
+		// EL CUADRO HISTORICO, plano. Ver CeldaDelCuadro en el dominio para por que viaja
+		// asi: el print proyecta un solo nivel, y una coleccion de filas que a su vez
+		// tienen celdas no cruza. Los indices son los que dejan que la superficie rearme
+		// la grilla SIN volver a decidir que va donde.
+		public string CuadroHistorico() =>
+			app.Using(@"
+				foreach (celda in expediente.CeldasDelCuadro) {
+					print celda.Fila fila,
+						celda.Columna columna,
+						celda.Analito analito,
+						celda.ParaMostrar paraMostrar,
+						celda.Fecha fecha,
+						celda.Expresado expresado,
+						celda.AportaSerie aportaSerie;
+				}
+			")
+			.PerformQuery();
+
 		// LA consulta que justifica el dominio. Evalua la SERIE de un analito, no su
 		// ultimo valor.
 		//
@@ -446,6 +464,9 @@ namespace Examenes.App
 		// variantes que devuelven el string crudo quedan para diagnostico.
 		public IReadOnlyList<ExamenEnLista> Examenes() =>
 			ProyeccionDeVistas.Lista(ListaDeExamenes());
+
+		public IReadOnlyList<CeldaEnCuadro> Cuadro() =>
+			ProyeccionDeVistas.Cuadro(CuadroHistorico());
 
 		public TendenciaDeAnalito Tendencia(string analito) =>
 			ProyeccionDeVistas.Tendencia(TendenciaDe(analito));

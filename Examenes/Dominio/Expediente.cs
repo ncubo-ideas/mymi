@@ -176,6 +176,84 @@ namespace Examenes.Dominio
 			}
 		}
 
+		// EL CUADRO HISTORICO, plano y con indices. Ver CeldaDelCuadro para por que esto
+		// es una decision del dominio y no un acomodo de pantalla.
+		//
+		// COLUMNAS: los dias distintos en que hubo algun examen, en orden. Un dia es una
+		// visita al laboratorio, aunque haya traido cinco analitos a horas distintas.
+		//
+		// FILAS: primero las que forman serie y despues las que no, y adentro de cada
+		// grupo por nombre. Es un orden ESTABLE a proposito: si las filas se ordenaran por
+		// urgencia, el cuadro se reacomodaria solo cada vez que entra un examen, y una
+		// tabla que se mueve deja de servir para comparar contra la vez pasada.
+		//
+		// Dos mediciones del mismo analito el mismo dia colapsan en una celda y gana la
+		// ULTIMA por hora: es una remedicion, no dos columnas.
+		public IReadOnlyList<CeldaDelCuadro> CeldasDelCuadro
+		{
+			get
+			{
+			var columnas = new List<DateTime>();
+			foreach (Examen examen in examenes)
+				if (!columnas.Contains(examen.Fecha.Date)) columnas.Add(examen.Fecha.Date);
+			columnas.Sort();
+
+			var filas = new List<string>();
+			var porFila = new Dictionary<string, Examen>();
+			foreach (Examen examen in OrdenadosParaElCuadro())
+			{
+				string llave = LlaveDeFila(examen);
+				if (!filas.Contains(llave)) filas.Add(llave);
+				porFila[llave + "|" + examen.Fecha.Date.Ticks] = examen;
+			}
+
+			var celdas = new List<CeldaDelCuadro>();
+			foreach (KeyValuePair<string, Examen> par in porFila)
+			{
+				Examen examen = par.Value;
+				string llave = LlaveDeFila(examen);
+
+				celdas.Add(new CeldaDelCuadro(
+					filas.IndexOf(llave),
+					columnas.IndexOf(examen.Fecha.Date),
+					llave,
+					examen.Nombre,
+					examen.Fecha.Date,
+					examen.ResultadoExpresado,
+					examen.AportaSerie));
+			}
+
+			celdas.Sort((una, otra) => una.Fila == otra.Fila
+				? una.Columna.CompareTo(otra.Columna)
+				: una.Fila.CompareTo(otra.Fila));
+
+				return celdas;
+			}
+		}
+
+		// La llave de la fila. Para los de sangre es el nombre CANONICO del analito, y eso
+		// importa: es la llave con la que la superficie pide despues la interpretacion de
+		// esa fila. Si fuera el nombre del examen, un ColesterolDetallado -que se llama
+		// "Colesterol HDL/LDL"- no encontraria su lectura.
+		private static string LlaveDeFila(Examen examen) =>
+			examen is ExamenDeSangre deSangre ? deSangre.Analito.Nombre : examen.Nombre;
+
+		// Series primero, y adentro por nombre. Estable e independiente del orden en que
+		// llegaron los eventos.
+		private List<Examen> OrdenadosParaElCuadro()
+		{
+			var ordenados = new List<Examen>(examenes);
+			ordenados.Sort((uno, otro) =>
+			{
+				if (uno.AportaSerie != otro.AportaSerie) return uno.AportaSerie ? -1 : 1;
+
+				int porNombre = string.Compare(LlaveDeFila(uno), LlaveDeFila(otro),
+					StringComparison.OrdinalIgnoreCase);
+				return porNombre != 0 ? porNombre : uno.Fecha.CompareTo(otro.Fecha);
+			});
+			return ordenados;
+		}
+
 		// Cuantos analitos estan hoy fuera de su rango de referencia para la edad del
 		// paciente. Es un conteo derivado, no un campo que pueda quedar desincronizado.
 		public int AnalitosFueraDeRango

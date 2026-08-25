@@ -309,6 +309,9 @@ public sealed class EstadoDeLaApp : IAsyncDisposable
 	// una lectura por serie, sin conocer las clases del dominio.
 	public IReadOnlyList<string> Analitos() { Exigir(); return api!.Analitos(); }
 
+	// EL CUADRO HISTORICO, plano. La pantalla lo rearma; el dominio decidio que va donde.
+	public IReadOnlyList<CeldaEnCuadro> Cuadro() { Exigir(); return api!.Cuadro(); }
+
 	// LO QUE EL ANALITO CONCLUYE. La pantalla ya no arma el consejo: lo pide.
 	public InterpretacionDeAnalito Interpretacion(string analito)
 	{

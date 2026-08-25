@@ -44,6 +44,19 @@ namespace Examenes.App.Vistas
 		public bool HaySerie { get; init; }
 	}
 
+	// UNA CELDA del cuadro historico, con sus dos indices. Llega plana desde el dominio;
+	// la pantalla la ubica en la grilla y no decide nada. Ver CeldaDelCuadro.
+	public sealed class CeldaEnCuadro
+	{
+		public int Fila { get; init; }
+		public int Columna { get; init; }
+		public string Analito { get; init; } = "";
+		public string ParaMostrar { get; init; } = "";
+		public DateTime Fecha { get; init; }
+		public string Expresado { get; init; } = "";
+		public bool AportaSerie { get; init; }
+	}
+
 	// LO QUE EL ANALITO CONCLUYE. Vista aparte de TendenciaDeAnalito porque son dos capas
 	// distintas: aquella trae los HECHOS de la serie, esta trae la LECTURA de esos hechos
 	// hecha por el analito que sabe interpretarlos.
