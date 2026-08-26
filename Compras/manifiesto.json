@@ -1,0 +1,84 @@
+{
+  "//": "ESTE ARCHIVO ES DEL MODULO. Lo escribe la institucion, y algun dia lo firma. Declara quien es, que sustrato necesita, que capacidades pide, y su lista de tools. Gnothi lo lee para armar el catalogo SIN arrancar el modulo. El instalacion.json es del HOST -son dos autoridades- y no viene aca: lo escribe quien opera Gnothi, con la cascara y la carpeta que concede.",
+
+  "manifiesto": "1.0",
+  "modulo": "compras",
+  "titulo": "La Cosecha y vos",
+  "institucion": "Supermercado La Cosecha (mock del POC)",
+
+  "//sustrato": "Un RANGO, no una version exacta: si un modulo pinea una version puntual, cada actualizacion del Host huerfana a todos los modulos instalados.",
+  "sustrato": { "rango": ">=3.0.0 <4.0.0" },
+
+  "//capacidades": "Lo que el modulo declara necesitar. Es CONTRASTABLE: un modulo de compras que pidiera microfono no necesita analisis, necesita un aviso.",
+  "capacidades": {
+    "red": false,
+    "carpeta": "propia",
+    "parlante": false,
+    "microfono": false
+  },
+
+  "//tools": "LA LISTA QUE GNOTHI LE PASA AL ASISTENTE. La descripcion viaja tal cual: no es documentacion, es lo unico que la IA tiene para decidir si esta tool contesta la pregunta de la persona.",
+
+  "//el-hueco": "Las dos ULTIMAS son las que justifican conectar una IA a este modulo. Las cuatro primeras contestan lo que la app ya muestra en pantalla y sirven de contexto; que_dejaste_de_comprar y garantias_por_vencer miran lo que la pantalla NO PUEDE renderizar, porque no es un dato del historial sino una conclusion sobre el historial mas el calendario.",
+
+  "//parametros-numericos": "PRECEDENTE NUEVO, y queda anotado porque el formato de 'entrada' esta abierto en el set del equipo: el manifiesto de examenes solo tiene parametros string y el de facturas no tiene ninguno, asi que estas son las primeras tools con NUMEROS. Se declaran como tipo 'number' y el rango va en la descripcion, igual que alla los valores validos del enum se repiten en la descripcion porque el esquema no los puede expresar. Si el equipo decide otro formato, este archivo cambia y el modulo no se entera.",
+
+  "tools": [
+    {
+      "nombre": "total_de_compras",
+      "titulo": "Cuanto he gastado",
+      "soloLectura": true,
+      "entrada": [],
+      "descripcion": "Cuanto gasto en total la persona en el supermercado, cuantas compras tiene registradas y hasta que evento del supermercado leyo su app. Los datos salen del registro que la app escribio en la carpeta de la persona, no de ningun servidor. Si hayDatos viene en false, la app nunca se abrio en esta computadora: hay que pedirle que la abra, no es un error."
+    },
+    {
+      "nombre": "canasta_del_mes",
+      "titulo": "Como fue mi canasta",
+      "soloLectura": true,
+      "entrada": [
+        { "nombre": "anio", "tipo": "number", "descripcion": "El anio, por ejemplo 2026." },
+        { "nombre": "mes", "tipo": "number", "descripcion": "El mes, de 1 a 12." }
+      ],
+      "descripcion": "Como se compuso la canasta de UN mes: cuanto gasto en alimentos recomendados (proteinas, frutas y verduras), cuanto en neutros (granos, lacteos) y cuanto en ocasionales (azucarados, snacks, aceites y grasas), mas lo no comestible aparte. La proporcionOcasional va de 0 a 1 y se calcula SOLO sobre lo comestible, para que un electrodomestico caro no diluya el resto. Son hechos para razonar, no un juicio sobre la persona."
+    },
+    {
+      "nombre": "comparar_canastas",
+      "titulo": "Como cambio mi canasta",
+      "soloLectura": true,
+      "entrada": [
+        { "nombre": "anioAntes", "tipo": "number", "descripcion": "El anio del mes de referencia." },
+        { "nombre": "mesAntes", "tipo": "number", "descripcion": "El mes de referencia, de 1 a 12." },
+        { "nombre": "anioDespues", "tipo": "number", "descripcion": "El anio del mes a comparar." },
+        { "nombre": "mesDespues", "tipo": "number", "descripcion": "El mes a comparar, de 1 a 12." }
+      ],
+      "descripcion": "Como CAMBIO la canasta de la persona entre dos meses, y que significa ese cambio. El campo veredicto lo produce el dominio y puede ser mejorando, empeorando, estable o indeterminado: en lo ocasional bajar es hacia donde conviene, asi que un cambio negativo es una buena noticia aunque la proporcion siga alta. No lo vuelvas a interpretar por el signo. El campo paraSonia trae la lectura ya redactada. Es la pregunta que ningun ticket suelto contesta. Si hayComparacion viene en false, alguno de los dos meses no tiene compras de comida y no hay lectura que dar: decilo tal cual."
+    },
+    {
+      "nombre": "garantia_de_producto",
+      "titulo": "Hasta cuando tiene garantia",
+      "soloLectura": true,
+      "entrada": [
+        {
+          "nombre": "producto",
+          "tipo": "string",
+          "descripcion": "Nombre (o parte del nombre) o sku del producto, por ejemplo 'olla arrocera'. Es una busqueda por texto, no un valor de una lista."
+        }
+      ],
+      "descripcion": "Cuando compro la persona un producto y hasta cuando tiene garantia, con el respaldo completo: numero de compra, fecha, meses de cobertura, vencimiento, cuantos dias le quedan y si esta vigente hoy. Si encontrada viene en false, o el producto no esta en el registro o no tiene garantia: son dos hechos legitimos, no un error. El campo queHacer viene vacio cuando no hay nada que hacer, y eso tambien es una respuesta."
+    },
+    {
+      "nombre": "que_dejaste_de_comprar",
+      "titulo": "Que me esta faltando",
+      "soloLectura": true,
+      "entrada": [],
+      "descripcion": "Que categorias de las que la persona reponia con regularidad HACE DEMASIADO QUE NO COMPRA -proteinas, frutas y verduras, lacteos, granos, limpieza-, segun la periodicidad propia de cada una y la fecha de hoy. Es lo que NO esta en su historial, asi que no es la lista de compras que la app le muestra: ninguna pantalla puede renderizar una ausencia. Usala cuando pregunte '¿que me esta faltando?', '¿estoy comiendo peor?' o '¿que deje de comprar?'. Devuelve solo las atrasadas, de la mas atrasada a la menos; una lista vacia significa que esta al dia. Los azucarados y los snacks NO se reportan aca a proposito: este modulo no le dice a nadie que hace un mes que no compra helado."
+    },
+    {
+      "nombre": "garantias_por_vencer",
+      "titulo": "Que garantia se me vence",
+      "soloLectura": true,
+      "entrada": [],
+      "descripcion": "Las garantias cuya VENTANA PARA RECLAMAR se esta cerrando, de la mas urgente a la menos, con cuantos dias quedan y que conviene hacer. No es la lista de garantias vigentes que la app muestra: son solo las que ya piden algo, y eso sale del plazo de cada una contra la fecha de hoy. Usala cuando pregunte si se le vence alguna garantia, si tiene algo por reclamar, o antes de que tire una factura. Una lista vacia significa que ninguna esta cerca de vencer."
+    }
+  ]
+}

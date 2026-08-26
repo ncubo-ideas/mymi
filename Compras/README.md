@@ -17,8 +17,9 @@ cinco nodos adentro, nombres en español. Este README es **cómo se corre**.
 | `PaginaDeDescarga/` | **URL1** · nginx que sirve la app publicada. `8100` http, `8463` https. **No es un csproj** |
 | `EndPointDeEventos/` | **URL2** · `8101`. El GET de eventos, el token de device y su rotación, y el señuelo que devuelve 403 |
 | `InyectorDeEventosDemo/` | Siembra la historia en URL2. Valores y fechas **elegidos**, no aleatorios |
-| `Dominio/` | El puppet: `Historial`, `Compra`, `Item`, `Categoria`, `Garantia`, `Canasta`, `Bitacora`. **Cero dependencias** |
+| `Dominio/` | El puppet: `Historial`, `Compra`, `Item`, `Categoria`, `Garantia`, `Canasta`, `Veredicto`, `Severidad`, `AbastecimientoPendiente`, `Bitacora`. **Cero dependencias** |
 | `App/` | Una lógica y tres carátulas |
+| `manifiesto.json` | Lo que **el Host** lee para armar el catálogo sin arrancar el módulo: quién es, qué sustrato necesita, qué capacidades pide y sus tools |
 
 Dentro de `App/`:
 
@@ -87,6 +88,16 @@ busca un producto con su respaldo.
 
 ```bash
 dotnet run --project Compras/App/Compras.Consola -- garantia "/tmp/journal-compras" "olla arrocera"
+```
+
+Y los dos que miran **lo que no está**:
+
+```bash
+dotnet run --project Compras/App/Compras.Consola -- pendientes "/tmp/journal-compras"
+```
+
+```bash
+dotnet run --project Compras/App/Compras.Consola -- porvencer "/tmp/journal-compras"
 ```
 
 ### URL1: necesita Docker
@@ -179,19 +190,67 @@ arrocera y hasta cuándo tiene garantía?"*: compra T-93872, 2026-05-10, 12 mese
 2027-05-10. Total: lo que no está o no tiene garantía devuelve el registro **`Ausente`**
 (`Encontrada=false`), no una excepción. Si se recompró, gana la compra más reciente.
 
-El dominio devuelve **hechos** — montos, proporciones, fechas — y nunca prosa. La frase
-la arma la superficie. Es lo que hace **imposible** el consejo de plantilla: no hay de
-dónde sacar *"comprá menos helado"*.
+### El veredicto no es el cambio
+
+`CambioEnProporcion` es un **hecho neutro**: "bajó 29 puntos". El **`Veredicto`** dice
+qué significa: en lo ocasional bajar es hacia donde conviene, así que ese mismo hecho es
+*mejorando*.
+
+Existe porque sin él la pantalla tenía que decidirlo, **y decidía mal**: con un solo
+booleano (`CrecioLoOcasional`) una canasta que MEJORA 29 puntos se mostraba igual que una
+que no se movió — "estable", en verde. Es el mismo defecto que Exámenes tenía al poner
+"EN ASCENSO" al colesterol y al antígeno con el mismo texto: el signo solo no alcanza,
+hace falta saber hacia dónde conviene ir.
+
+La línea (`ParaSonia`) también la escribe el dominio. La posición anterior — *"el dominio
+devuelve hechos, la frase la arma la superficie"* — sigue valiendo y los hechos siguen
+viajando al lado; lo que cambia es quién redacta: una pantalla no tiene de dónde sacar si
+-29 puntos es bueno. La **acción** (`Severidad.QueHacer`) sale de un conjunto cerrado
+para que la pantalla no pueda inventar una.
+
+Y las acciones de este negocio son **administrativas** (una garantía que se cierra),
+nunca consejos de salud: que la canasta se haya vuelto ocasional es un hecho que este
+módulo reporta, y qué hacer con eso no lo decide un supermercado.
+
+### Lo que NO está
+
+**`AbastecimientosPendientes(fecha)`** es la única pregunta del dominio que mira **el
+hueco**: qué categorías de las que se reponen cada tanto hace demasiado que no entran.
+
+Una pantalla solo puede mostrar lo que tiene — puede ordenar las compras, sumarlas,
+pintarlas — pero **no puede renderizar una ausencia que nadie le pasó**. "Hace 12 meses
+que no entra un lácteo" no es un dato del historial: es una conclusión sobre el historial
+más el calendario más la periodicidad propia de cada categoría (proteínas cada 10 días,
+granos cada 35, limpieza cada 45).
+
+Con una decisión de dominio deliberada: **lo ocasional no tiene periodicidad**.
+Preguntarle a `Categoria.Azucarados` cada cuánto se repone **revienta**, y un año sin
+comprar helado no genera ningún pendiente. Este módulo no existe para decirle a nadie que
+hace un mes que no compra helado.
 
 ---
 
 ## La superficie MCP (medida)
 
-Cuatro tools intencionales: `total_de_compras`, `canasta_del_mes`, `comparar_canastas`,
-`garantia_de_producto`. Verificado con un cliente stdio: `initialize` → instructions,
-`tools/list` → schemas, y `tools/call` devuelve `structuredContent` tipado
-(la garantía con su respaldo; la comparación con 0.0878 → 0.9718 y
-`crecioLoOcasional:true`). La sección `compras` ya está en el `.mcp.json` de la raíz.
+Seis tools intencionales. Las cuatro primeras contestan lo que la app ya muestra en
+pantalla y sirven de contexto: `total_de_compras`, `canasta_del_mes`,
+`comparar_canastas`, `garantia_de_producto`.
+
+Las dos últimas son las que **justifican conectar una IA a este módulo**, según el
+criterio de Álvaro que Exámenes dejó escrito — *si la IA contesta algo que ya está en una
+pantalla, el demo no probó nada*:
+
+- **`que_dejaste_de_comprar`** — el hueco: las categorías atrasadas, de la más atrasada a
+  la menos. Lista vacía = está al día.
+- **`garantias_por_vencer`** — solo las que **ya piden algo**, de la más urgente a la
+  menos, con los días que quedan y qué conviene hacer. No es la lista de vigentes que la
+  app muestra.
+
+Verificado con un cliente stdio: `tools/list` devuelve las seis, y `tools/call` sobre
+`que_dejaste_de_comprar` trae los cuatro pendientes con su línea del dominio;
+`garantias_por_vencer` devuelve `[]` con el guion (la olla vence en 258 días: todavía no
+pide nada, y eso **es** la respuesta). La sección `compras` está en el `.mcp.json` de la
+raíz.
 
 ---
 
@@ -199,11 +258,12 @@ Cuatro tools intencionales: `total_de_compras`, `canasta_del_mes`, `comparar_can
 
 | Capa | Estado |
 |---|---|
-| Dominio | ✅ 60 comprobaciones (`comprobar`), incluidas las dos proporciones del guion, los límites de la garantía y la ausencia con tipo (E45) |
-| Consola | ✅ ciclo completo: `comprobar`, `medir`, `estado`, `detalle`, `canasta`, `comparar`, `garantia`, `refrescar` |
+| Dominio | ✅ 97 comprobaciones (`comprobar`): las proporciones del guion, los límites de la garantía, la ausencia con tipo (E45), el veredicto en las dos direcciones y el hueco |
+| Consola | ✅ ciclo completo: `comprobar`, `medir`, `estado`, `detalle`, `canasta`, `comparar`, `garantia`, `pendientes`, `porvencer`, `refrescar` |
+| Manifiesto | ✅ escrito contra el contrato de la rama `master_gnothiHost`; ⚠️ **no ejercitado con el Host**, que todavía no está en master |
 | EndPointDeEventos | ✅ 6 eventos sembrados, rotación de token (medida con `/device/expirar-access`) y señuelo 403 |
 | Inyector | ✅ `listar`, `inyectar` (líneas con categoría y garantía), `senuelo` |
-| MCP | ✅ medido con cliente stdio: initialize, tools/list y dos tools/call con structuredContent |
+| MCP | ✅ medido con cliente stdio: las 6 tools en `tools/list` y `tools/call` con structuredContent tipado, incluidas las dos del hueco |
 | Wasm | ✅ **CORRE EN EL BROWSER** con el motor `10029` — ver abajo |
 | PaginaDeDescarga | ✅ landing servida y verificada; ⚠️ con **nginx/Docker sin probar** (daemon apagado): la prueba se hizo sirviendo el mismo webroot (landing en `/`, publish en `/app/`) con un estático |
 
@@ -242,3 +302,5 @@ la trajo — evento 307 → 308, 7 → 8 compras — y la proporción ocasional 
 | 5 | **La gasolinera**: Tareas.md la asigna también a Pleitez "de momento"; puede salir del ecosistema si no cuenta una historia interesante. Este negocio ya deja el molde para armarla rápido |
 | 6 | **Icons de la carátula** (favicon/icon-192/icon-512) siguen siendo los del template copiado de Exámenes |
 | 7 | **Bootstrap**: la carátula carga `bootstrap.min.css` (227 KB, el único de los 44 archivos del template que la página pide — el resto no se versionó). Exámenes lo quitó del todo y escribió su propio CSS; conviene alinearse cuando la UI la revise Fernanda |
+| 8 | **El `instalacion.json` es del Host**, no de este módulo (son dos autoridades: la institución declara qué ofrece, el Host decide cómo se lo ejecuta y qué carpeta le concede). Cuando el Host entre a master, quien lo opere debe crear `Modulos/compras/` con nuestro `manifiesto.json` y su propio `instalacion.json` apuntando a `Compras/App/Compras.Mcp/bin/.../Compras.Mcp.dll` y a la carpeta concedida — **la misma que se eligió en la app**, o el módulo reporta `hayDatos=false` |
+| 9 | **Nombres para mostrar**: `AbastecimientoPendiente` traduce la llave del repertorio (`FrutasYVerduras`) a algo legible con un `switch`. Exámenes resolvió lo mismo tipando el analito con un `ParaMostrar` propio; conviene mover eso a `Categoria` |

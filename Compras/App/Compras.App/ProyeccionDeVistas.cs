@@ -113,6 +113,8 @@ namespace Compras.App
 				ProporcionAntes = Decimal(raiz, "proporcionAntes"),
 				ProporcionDespues = Decimal(raiz, "proporcionDespues"),
 				Cambio = Decimal(raiz, "cambio"),
+				Veredicto = Texto(raiz, "veredicto"),
+				ParaSonia = Texto(raiz, "paraSonia"),
 				CrecioLoOcasional = Booleano(raiz, "crecioLoOcasional"),
 				AnioAntes = Entero(raiz, "anioAntes"),
 				MesAntes = Entero(raiz, "mesAntes"),
@@ -147,6 +149,29 @@ namespace Compras.App
 			return garantias;
 		}
 
+		internal static IReadOnlyList<AbastecimientoEnEspera> Abastecimientos(string json)
+		{
+			var pendientes = new List<AbastecimientoEnEspera>();
+			if (string.IsNullOrWhiteSpace(json)) return pendientes;
+
+			using JsonDocument documento = JsonDocument.Parse(json);
+			if (!documento.RootElement.TryGetProperty("pendiente", out JsonElement arreglo)) return pendientes;
+
+			foreach (JsonElement elemento in Elementos(arreglo))
+				pendientes.Add(new AbastecimientoEnEspera
+				{
+					Categoria = Texto(elemento, "categoria"),
+					UltimaCompra = Fecha(elemento, "ultimaCompra"),
+					DiasDesdeLaUltima = Entero(elemento, "diasDesdeLaUltima"),
+					DiasEsperados = Entero(elemento, "diasEsperados"),
+					EsRecomendado = Booleano(elemento, "esRecomendado"),
+					Severidad = Texto(elemento, "severidad"),
+					ParaSonia = Texto(elemento, "paraSonia"),
+				});
+
+			return pendientes;
+		}
+
 		private static GarantiaDeProducto Garantia(JsonElement elemento) =>
 			new GarantiaDeProducto
 			{
@@ -165,6 +190,10 @@ namespace Compras.App
 				Vigente = elemento.TryGetProperty("vigente", out _)
 					? Booleano(elemento, "vigente")
 					: true,
+				DiasParaVencer = Entero(elemento, "diasParaVencer"),
+				Severidad = Texto(elemento, "severidad"),
+				QueHacer = Texto(elemento, "queHacer"),
+				ParaSonia = Texto(elemento, "paraSonia"),
 			};
 
 		// Un solo print emite un objeto; varios emiten un arreglo. Tratar los dos casos

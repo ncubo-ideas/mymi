@@ -235,6 +235,10 @@ public sealed class EstadoDeLaApp : IAsyncDisposable
 	// El "hoy" lo pone la caratula: el dominio no lee el reloj.
 	public IReadOnlyList<GarantiaDeProducto> GarantiasVigentes() { Exigir(); return api!.GarantiasVigentes(DateTime.Now); }
 
+	// LO QUE NO ESTA: lo unico que esta pantalla no podria calcular sola.
+	public IReadOnlyList<AbastecimientoEnEspera> AbastecimientosPendientes()
+	{ Exigir(); return api!.AbastecimientosPendientes(DateTime.Now); }
+
 	public int Cantidad() { Exigir(); return api!.CantidadDeCompras(); }
 
 	public decimal Total() { Exigir(); return api!.TotalDeCompras(); }

@@ -90,9 +90,11 @@ internal sealed class ComprasTools
 	[McpServerTool(Name = "garantia_de_producto", UseStructuredContent = true)]
 	[Description("Cuando compro la persona un producto y hasta cuando tiene garantia. Busca por "
 		+ "nombre o sku (por ejemplo 'olla arrocera') en las compras registradas y devuelve el "
-		+ "respaldo completo: numero de compra, fecha, meses de cobertura, fecha de vencimiento "
-		+ "y si esta vigente HOY. Si encontrada viene en false, o el producto no esta en el "
-		+ "registro o no tiene garantia — son dos hechos legitimos, no un error.")]
+		+ "respaldo completo: numero de compra, fecha, meses de cobertura, fecha de vencimiento, "
+		+ "cuantos dias le quedan y si esta vigente HOY. Si encontrada viene en false, o el "
+		+ "producto no esta en el registro o no tiene garantia — son dos hechos legitimos, no un "
+		+ "error. El campo paraSonia trae la lectura ya redactada por el dominio; queHacer viene "
+		+ "vacio cuando no hay nada que hacer, y eso tambien es una respuesta.")]
 	public GarantiaDeProducto Garantia(
 		[Description("Nombre (o parte del nombre) o sku del producto, por ejemplo 'olla arrocera'.")] string producto)
 	{
@@ -100,6 +102,45 @@ internal sealed class ComprasTools
 
 		// El "hoy" lo pone la superficie: el dominio no lee el reloj.
 		return lector.Consultar(api => api.Garantia(producto, DateTime.Now));
+	}
+
+	// ---------------------------------------------------- lo que NO esta (el hueco)
+	//
+	// Las dos de aca son las que justifican conectar una IA a este modulo. Las cuatro de
+	// arriba contestan lo que la app YA muestra en pantalla: sirven de contexto, pero si
+	// la IA solo pudiera eso, el demo no probaria nada. Estas dos miran lo que la
+	// pantalla NO PUEDE renderizar, porque no es un dato del historial sino una
+	// conclusion sobre el historial mas el calendario.
+
+	[McpServerTool(Name = "que_dejaste_de_comprar", UseStructuredContent = true)]
+	[Description("Que categorias de las que la persona reponia con regularidad HACE DEMASIADO QUE "
+		+ "NO COMPRA — proteinas, frutas y verduras, lacteos, granos, limpieza — segun la "
+		+ "periodicidad propia de cada una y la fecha de hoy. Es lo que NO esta en su historial, "
+		+ "asi que no es la lista de compras que la app le muestra: ninguna pantalla puede "
+		+ "renderizar una ausencia. Usala cuando pregunte cosas como '¿que me esta faltando?', "
+		+ "'¿estoy comiendo peor?' o '¿que deje de comprar?'. Devuelve solo las atrasadas, de la "
+		+ "mas atrasada a la menos; una lista vacia significa que esta al dia con todo. Los "
+		+ "azucarados y los snacks NO se reportan aca a proposito: este modulo no le dice a nadie "
+		+ "que hace un mes que no compra helado.")]
+	public IReadOnlyList<AbastecimientoEnEspera> QueDejasteDeComprar()
+	{
+		if (!lector.HayJournal) return new List<AbastecimientoEnEspera>();
+
+		return lector.Consultar(api => api.AbastecimientosPendientes(DateTime.Now));
+	}
+
+	[McpServerTool(Name = "garantias_por_vencer", UseStructuredContent = true)]
+	[Description("Las garantias de la persona cuya VENTANA PARA RECLAMAR se esta cerrando, de la "
+		+ "mas urgente a la menos, con cuantos dias le quedan y que le conviene hacer. No es la "
+		+ "lista de garantias vigentes que la app muestra: son solo las que ya piden algo, y eso "
+		+ "sale del plazo de cada una contra la fecha de hoy. Usala cuando pregunte '¿se me vence "
+		+ "alguna garantia?', '¿tengo algo por reclamar?' o antes de que tire una factura. Una "
+		+ "lista vacia significa que ninguna esta cerca de vencer.")]
+	public IReadOnlyList<GarantiaDeProducto> GarantiasPorVencer()
+	{
+		if (!lector.HayJournal) return new List<GarantiaDeProducto>();
+
+		return lector.Consultar(api => api.GarantiasPorVencer(DateTime.Now));
 	}
 
 	private const string SinJournal =

@@ -95,6 +95,75 @@ namespace Compras.Dominio
 			return mejor;
 		}
 
+		/// <summary>
+		/// LO QUE NO ESTA: las categorias que se reponen cada tanto y hace demasiado que
+		/// no entran a la canasta. Es la pregunta que ninguna pantalla puede renderizar,
+		/// porque no es un dato del historial sino una conclusion sobre el historial mas
+		/// el calendario. Devuelve solo las vencidas, de la mas atrasada a la menos.
+		/// </summary>
+		public IReadOnlyList<AbastecimientoPendiente> AbastecimientosPendientes(DateTime fechaDeConsulta)
+		{
+			var pendientes = new List<AbastecimientoPendiente>();
+
+			foreach (Categoria categoria in Categoria.Todas)
+			{
+				if (!categoria.SeReabastece) continue;
+
+				// De algo que nunca se compro no se puede decir que falta: no hay ritmo
+				// propio con el que comparar.
+				if (!AlgunaVezEntro(categoria)) continue;
+
+				DateTime ultima = UltimaVezQueEntro(categoria);
+				int dias = (int)(fechaDeConsulta.Date - ultima.Date).TotalDays;
+				if (dias < 0) continue;
+
+				var pendiente = new AbastecimientoPendiente(categoria, ultima, dias);
+				if (pendiente.EstaVencido) pendientes.Add(pendiente);
+			}
+
+			pendientes.Sort((una, otra) => otra.DiasDesdeLaUltima.CompareTo(una.DiasDesdeLaUltima));
+			return pendientes;
+		}
+
+		private bool AlgunaVezEntro(Categoria categoria)
+		{
+			foreach (Compra compra in compras)
+				foreach (Item item in compra.Items)
+					if (ReferenceEquals(item.Categoria, categoria)) return true;
+
+			return false;
+		}
+
+		private DateTime UltimaVezQueEntro(Categoria categoria)
+		{
+			DateTime ultima = DateTime.MinValue;
+			foreach (Compra compra in compras)
+				foreach (Item item in compra.Items)
+					if (ReferenceEquals(item.Categoria, categoria) && compra.Fecha > ultima)
+						ultima = compra.Fecha;
+
+			if (ultima == DateTime.MinValue)
+				throw new InvalidOperationException(
+					$"La categoria '{categoria.Nombre}' nunca entro al historial. "
+					+ "Preguntar por ella antes es un error de quien llama.");
+
+			return ultima;
+		}
+
+		/// <summary>
+		/// Las coberturas cuya ventana se esta cerrando: vigentes hoy y con la severidad
+		/// que su propio plazo determina, de la mas urgente a la menos.
+		/// </summary>
+		public IReadOnlyList<RegistroDeGarantia> GarantiasPorVencer(DateTime fechaDeConsulta)
+		{
+			var porVencer = new List<RegistroDeGarantia>();
+			foreach (RegistroDeGarantia registro in GarantiasVigentes(fechaDeConsulta))
+				if (registro.Severidad.PideAlgo) porVencer.Add(registro);
+
+			porVencer.Sort((uno, otro) => uno.DiasParaVencer.CompareTo(otro.DiasParaVencer));
+			return porVencer;
+		}
+
 		/// <summary>Las coberturas que siguen corriendo en la fecha de consulta, con su respaldo.</summary>
 		public IReadOnlyList<RegistroDeGarantia> GarantiasVigentes(DateTime fechaDeConsulta)
 		{

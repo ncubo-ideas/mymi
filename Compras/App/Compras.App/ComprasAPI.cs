@@ -244,6 +244,9 @@ namespace Compras.App
 		// LA consulta que justifica el dominio: como cambio la canasta entre dos meses.
 		// Es la pregunta que ningun ticket contesta, y la mitad "compras" del cruce con
 		// el colesterol que hace el asistente.
+		//
+		// El veredicto y la linea los produce el DOMINIO: la pantalla no puede decidir si
+		// un cambio de -29 puntos es bueno, y con un booleano lo mostraba como "estable".
 		public string ComparacionDeCanastas(int anioAntes, int mesAntes, int anioDespues, int mesDespues) =>
 			app.Using(@"
 				{
@@ -252,6 +255,8 @@ namespace Compras.App
 						comparacion.ProporcionOcasionalAntes proporcionAntes,
 						comparacion.ProporcionOcasionalDespues proporcionDespues,
 						comparacion.CambioEnProporcion cambio,
+						comparacion.NombreDelVeredicto veredicto,
+						comparacion.ParaSonia paraSonia,
 						comparacion.CrecioLoOcasional crecioLoOcasional,
 						comparacion.Antes.Anio anioAntes,
 						comparacion.Antes.Mes mesAntes,
@@ -289,7 +294,11 @@ namespace Compras.App
 						registro.FechaDeCompra fechaDeCompra,
 						registro.MesesDeCobertura mesesDeCobertura,
 						registro.VenceEl venceEl,
-						registro.Vigente vigente;
+						registro.Vigente vigente,
+						registro.DiasParaVencer diasParaVencer,
+						registro.NombreDeLaSeveridad severidad,
+						registro.QueHacer queHacer,
+						registro.ParaSonia paraSonia;
 				}
 			")
 			.WithParameters(p => {
@@ -310,7 +319,60 @@ namespace Compras.App
 							registro.NumeroDeCompra numeroDeCompra,
 							registro.FechaDeCompra fechaDeCompra,
 							registro.MesesDeCobertura mesesDeCobertura,
-							registro.VenceEl venceEl;
+							registro.VenceEl venceEl,
+							registro.DiasParaVencer diasParaVencer,
+							registro.NombreDeLaSeveridad severidad,
+							registro.QueHacer queHacer,
+							registro.ParaSonia paraSonia;
+					}
+				}
+			")
+			.WithParameters(p => {
+				p["fecha", typeof(DateTime)] = fechaDeConsulta;
+			})
+			.PerformQuery();
+
+		// ---------------------------------------------------- lo que NO esta (el hueco)
+
+		// Las coberturas cuya ventana se esta cerrando. No es la lista de garantias que
+		// la app ya muestra: son las que piden algo, y eso sale del plazo de cada una
+		// contra la fecha de consulta.
+		public string GarantiasPorVencerEl(DateTime fechaDeConsulta) =>
+			app.Using(@"
+				{
+					porVencer = compras.GarantiasPorVencer(@fecha);
+					foreach (registro in porVencer) {
+						print registro.Sku sku,
+							registro.Descripcion descripcion,
+							registro.NumeroDeCompra numeroDeCompra,
+							registro.FechaDeCompra fechaDeCompra,
+							registro.VenceEl venceEl,
+							registro.DiasParaVencer diasParaVencer,
+							registro.NombreDeLaSeveridad severidad,
+							registro.QueHacer queHacer,
+							registro.ParaSonia paraSonia;
+					}
+				}
+			")
+			.WithParameters(p => {
+				p["fecha", typeof(DateTime)] = fechaDeConsulta;
+			})
+			.PerformQuery();
+
+		// LA consulta que mira el hueco: que dejo de entrar a la canasta. Una pantalla no
+		// puede renderizar una ausencia que nadie le paso.
+		public string AbastecimientosPendientesEl(DateTime fechaDeConsulta) =>
+			app.Using(@"
+				{
+					pendientes = compras.AbastecimientosPendientes(@fecha);
+					foreach (pendiente in pendientes) {
+						print pendiente.NombreDeLaCategoria categoria,
+							pendiente.UltimaCompra ultimaCompra,
+							pendiente.DiasDesdeLaUltima diasDesdeLaUltima,
+							pendiente.DiasEsperados diasEsperados,
+							pendiente.EsRecomendado esRecomendado,
+							pendiente.NombreDeLaSeveridad severidad,
+							pendiente.ParaSonia paraSonia;
 					}
 				}
 			")
@@ -338,6 +400,12 @@ namespace Compras.App
 
 		public IReadOnlyList<GarantiaDeProducto> GarantiasVigentes(DateTime fechaDeConsulta) =>
 			ProyeccionDeVistas.GarantiasVigentes(GarantiasVigentesEl(fechaDeConsulta));
+
+		public IReadOnlyList<GarantiaDeProducto> GarantiasPorVencer(DateTime fechaDeConsulta) =>
+			ProyeccionDeVistas.GarantiasVigentes(GarantiasPorVencerEl(fechaDeConsulta));
+
+		public IReadOnlyList<AbastecimientoEnEspera> AbastecimientosPendientes(DateTime fechaDeConsulta) =>
+			ProyeccionDeVistas.Abastecimientos(AbastecimientosPendientesEl(fechaDeConsulta));
 
 		// ------------------------------------------------- IDiarioDeLaApp (Portador)
 

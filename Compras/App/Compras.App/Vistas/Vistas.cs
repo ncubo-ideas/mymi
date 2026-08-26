@@ -60,12 +60,17 @@ namespace Compras.App.Vistas
 
 	// Como cambio la canasta entre dos meses. Es la vista del cruce: el asistente la
 	// pone al lado de la tendencia del colesterol y la relacion aparece sola.
+	//
+	// Veredicto y ParaSonia vienen del DOMINIO, no se arman aca: la pantalla no tiene de
+	// donde saber si un cambio de -29 puntos es bueno.
 	public sealed class CanastasComparadas
 	{
 		public bool HayComparacion { get; init; }
 		public decimal ProporcionAntes { get; init; }
 		public decimal ProporcionDespues { get; init; }
 		public decimal Cambio { get; init; }
+		public string Veredicto { get; init; } = "";
+		public string ParaSonia { get; init; } = "";
 		public bool CrecioLoOcasional { get; init; }
 		public int AnioAntes { get; init; }
 		public int MesAntes { get; init; }
@@ -90,5 +95,22 @@ namespace Compras.App.Vistas
 		public int MesesDeCobertura { get; init; }
 		public DateTime VenceEl { get; init; }
 		public bool Vigente { get; init; }
+		public int DiasParaVencer { get; init; }
+		public string Severidad { get; init; } = "";
+		public string QueHacer { get; init; } = "";
+		public string ParaSonia { get; init; } = "";
+	}
+
+	// LO QUE NO ESTA: una categoria que se repone cada tanto y hace demasiado que no
+	// entra. La pantalla no puede renderizar una ausencia que nadie le paso.
+	public sealed class AbastecimientoEnEspera
+	{
+		public string Categoria { get; init; } = "";
+		public DateTime UltimaCompra { get; init; }
+		public int DiasDesdeLaUltima { get; init; }
+		public int DiasEsperados { get; init; }
+		public bool EsRecomendado { get; init; }
+		public string Severidad { get; init; } = "";
+		public string ParaSonia { get; init; } = "";
 	}
 }

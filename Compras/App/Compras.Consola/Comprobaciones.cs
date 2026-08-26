@@ -43,6 +43,10 @@ namespace Compras.Consola
 			LaGarantiaSeEncuentraConSuRespaldo();
 			BuscarLoQueNoExisteEsLegitimo();
 			GanaLaCompraMasReciente();
+			ElVeredictoNoEsElCambio();
+			LaVentanaDeLaGarantiaAvisaCuandoSeCierra();
+			ElHuecoEsLoQueNoEsta();
+			LoOcasionalNoTienePeriodicidad();
 
 			Console.WriteLine();
 			Console.WriteLine(fallas == 0
@@ -283,6 +287,148 @@ namespace Compras.Consola
 			RegistroDeGarantia registro = historial.BuscarGarantia("olla", Hoy);
 			Igual("la cobertura que corre es la nueva", "T-2", registro.NumeroDeCompra);
 			Igual("y esta vigente", "True", registro.Vigente.ToString());
+		}
+
+		// ---- el veredicto dice que SIGNIFICA el cambio, no cuanto cambio ----
+		private static void ElVeredictoNoEsElCambio()
+		{
+			Titulo("el veredicto no es el cambio");
+
+			// EL DEFECTO QUE ESTO ARREGLA: con un booleano "crecio o no crecio", una
+			// canasta que MEJORA 29 puntos se leia igual que una que no se movio.
+			ComparacionDeCanastas mejora = Comparar(
+				(2026, 7, ("HELADO", "Helado", 39, 1000m, "Azucarados", 0), ("POLLO", "Pollo", 1, 1000m, "Proteinas", 0)),
+				(2026, 8, ("HELADO", "Helado", 68, 100m, "Azucarados", 0), ("POLLO", "Pollo", 32, 100m, "Proteinas", 0)));
+			Igual("de 97.5% a 68% es MEJORANDO", "mejorando", mejora.Veredicto.Nombre);
+			Igual("  y no dice que crecio", "False", mejora.CrecioLoOcasional.ToString());
+			Igual("  el cambio tiene signo negativo", "True", (mejora.CambioEnProporcion < 0m).ToString());
+			Igual("  la linea la escribe el dominio", "True", mejora.ParaSonia.Contains("bajó").ToString());
+
+			ComparacionDeCanastas empeora = Comparar(
+				(2026, 7, ("POLLO", "Pollo", 9, 1000m, "Proteinas", 0), ("HELADO", "Helado", 1, 1000m, "Azucarados", 0)),
+				(2026, 8, ("POLLO", "Pollo", 1, 1000m, "Proteinas", 0), ("HELADO", "Helado", 9, 1000m, "Azucarados", 0)));
+			Igual("de 10% a 90% es EMPEORANDO", "empeorando", empeora.Veredicto.Nombre);
+			Igual("  y ese si crecio", "True", empeora.CrecioLoOcasional.ToString());
+			Igual("  la linea dice que subio", "True", empeora.ParaSonia.Contains("subió").ToString());
+
+			// Dos puntos es ruido de despensa, no un cambio de habitos.
+			ComparacionDeCanastas ruido = Comparar(
+				(2026, 7, ("HELADO", "Helado", 50, 100m, "Azucarados", 0), ("POLLO", "Pollo", 50, 100m, "Proteinas", 0)),
+				(2026, 8, ("HELADO", "Helado", 52, 100m, "Azucarados", 0), ("POLLO", "Pollo", 48, 100m, "Proteinas", 0)));
+			Igual("2 puntos es ESTABLE", "estable", ruido.Veredicto.Nombre);
+
+			// Sin dos meses no se afirma nada, y eso hay que preservarlo.
+			ComparacionDeCanastas sinDatos = ElGuion().CompararCanastas(2024, 1, 2026, 8);
+			Igual("sin el mes de antes: INDETERMINADO", "indeterminado", sinDatos.Veredicto.Nombre);
+			Igual("  no hay lectura", "False", sinDatos.Veredicto.HayLectura.ToString());
+		}
+
+		// ---- la ventana de la garantia, y que hacer con ella ----
+		private static void LaVentanaDeLaGarantiaAvisaCuandoSeCierra()
+		{
+			Titulo("la ventana de la garantia avisa cuando se cierra");
+
+			// Una garantia de 12 meses comprada hace 11 meses y 10 dias: quedan 20.
+			var historial = new Historial();
+			historial.Agregar(UnaCompra("T-A", Hoy.AddMonths(-12).AddDays(10),
+				("LICUA", "Licuadora", 1, 28900m, "Electrohogar", 12)));
+			// Otra de 24 meses comprada hace 22 meses: quedan ~60.
+			historial.Agregar(UnaCompra("T-B", Hoy.AddMonths(-22),
+				("MICRO", "Microondas", 1, 62000m, "Electrohogar", 24)));
+			// Y una recien comprada: la ventana no se esta cerrando.
+			historial.Agregar(UnaCompra("T-C", Hoy.AddDays(-5),
+				("BATID", "Batidora", 1, 18000m, "Electrohogar", 12)));
+
+			Igual("a 20 dias: antes de que se cierre", "antes de que se cierre",
+				historial.BuscarGarantia("licuadora", Hoy).Severidad.Nombre);
+			Igual("  y dice que hacer", "hacé el reclamo antes de que venza",
+				historial.BuscarGarantia("licuadora", Hoy).QueHacer);
+			Igual("a ~60 dias: conviene revisar", "conviene revisar",
+				historial.BuscarGarantia("microondas", Hoy).Severidad.Nombre);
+			Igual("recien comprada: informativo", "informativo",
+				historial.BuscarGarantia("batidora", Hoy).Severidad.Nombre);
+			Igual("  y no pide nada", "False",
+				historial.BuscarGarantia("batidora", Hoy).Severidad.PideAlgo.ToString());
+
+			// La lista del hueco trae SOLO las que piden algo, de la mas urgente primero.
+			var porVencer = historial.GarantiasPorVencer(Hoy);
+			Igual("por vencer: 2 de 3", "2", porVencer.Count.ToString());
+			Igual("  la mas urgente primero", "Licuadora", porVencer[0].Descripcion);
+			Igual("  vigentes en total: 3", "3", historial.GarantiasVigentes(Hoy).Count.ToString());
+
+			// Una vencida no esta ni vigente ni por vencer: ya no hay ventana.
+			Igual("vencida: no aparece por vencer", "0",
+				historial.GarantiasPorVencer(Hoy.AddYears(3)).Count.ToString());
+		}
+
+		// ---- lo que NO esta ----
+		private static void ElHuecoEsLoQueNoEsta()
+		{
+			Titulo("el hueco es lo que no esta");
+
+			var pendientes = ElGuion().AbastecimientosPendientes(Hoy);
+
+			// Con el guion al 25/08/2026: lacteos (370 dias), proteinas (192), granos
+			// (107) y limpieza (53) estan atrasados; el brocoli entro hace 10 dias, que
+			// es justo su periodicidad.
+			Igual("cuatro categorias atrasadas", "4", pendientes.Count.ToString());
+			Igual("la mas atrasada primero", "LacteosYHuevos", pendientes[0].NombreDeLaCategoria);
+			Igual("  con su severidad", "conviene revisar", pendientes[0].Severidad.Nombre);
+			Igual("  y su linea del dominio", "True", pendientes[0].ParaSonia.Contains("lácteo").ToString());
+
+			bool frutasAlDia = true;
+            foreach (AbastecimientoPendiente p in pendientes)
+				if (p.NombreDeLaCategoria == "FrutasYVerduras") frutasAlDia = false;
+			Igual("lo que entro a tiempo NO aparece", "True", frutasAlDia.ToString());
+
+			// De algo que nunca se compro no se puede decir que falta.
+			var reciente = new Historial();
+			reciente.Agregar(UnaCompra("T-1", Hoy, ("POLLO", "Pollo", 1, 4000m, "Proteinas", 0)));
+			Igual("historial al dia: nada pendiente", "0",
+				reciente.AbastecimientosPendientes(Hoy).Count.ToString());
+			Igual("una categoria que nunca entro no falta", "0",
+				reciente.AbastecimientosPendientes(Hoy.AddDays(5)).Count.ToString());
+
+			// Y al pasar el tiempo, lo mismo SI aparece.
+			Igual("a los 40 dias ya falta la proteina", "1",
+				reciente.AbastecimientosPendientes(Hoy.AddDays(40)).Count.ToString());
+		}
+
+		private static void LoOcasionalNoTienePeriodicidad()
+		{
+			Titulo("lo ocasional no tiene periodicidad");
+
+			// Decision de dominio: este modulo no le dice a nadie que hace un mes que no
+			// compra helado. Preguntar la periodicidad de lo ocasional revienta.
+			Igual("azucarados no se reabastece", "False", Categoria.Azucarados.SeReabastece.ToString());
+			Igual("snacks tampoco", "False", Categoria.Snacks.SeReabastece.ToString());
+			Igual("aceites tampoco", "False", Categoria.AceitesYGrasas.SeReabastece.ToString());
+			Igual("electrohogar no se repone", "False", Categoria.Electrohogar.SeReabastece.ToString());
+			Igual("las proteinas si", "True", Categoria.Proteinas.SeReabastece.ToString());
+			Igual("  cada 10 dias", "10", Categoria.Proteinas.DiasDeReabastecimiento.ToString());
+			Igual("limpieza si, aunque no sea comestible", "True", Categoria.Limpieza.SeReabastece.ToString());
+			Revienta("la periodicidad de los azucarados revienta",
+				() => Categoria.Azucarados.DiasDeReabastecimiento);
+
+			// Un helado sin comprar hace un ano no genera pendiente.
+			var soloHelado = new Historial();
+			soloHelado.Agregar(UnaCompra("T-1", Hoy.AddYears(-1), ("HELADO", "Helado", 1, 3000m, "Azucarados", 0)));
+			Igual("un ano sin helado no es un pendiente", "0",
+				soloHelado.AbastecimientosPendientes(Hoy).Count.ToString());
+			Revienta("y no se puede construir el pendiente a mano",
+				() => new AbastecimientoPendiente(Categoria.Azucarados, Hoy.AddYears(-1), 365));
+		}
+
+		// Dos meses, cada uno con sus lineas, comparados.
+		private static ComparacionDeCanastas Comparar(
+			(int Anio, int Mes, (string, string, int, decimal, string, int) Linea1, (string, string, int, decimal, string, int) Linea2) antes,
+			(int Anio, int Mes, (string, string, int, decimal, string, int) Linea1, (string, string, int, decimal, string, int) Linea2) despues)
+		{
+			var historial = new Historial();
+			historial.Agregar(UnaCompra("T-antes", new DateTime(antes.Anio, antes.Mes, 5), antes.Linea1, antes.Linea2));
+			historial.Agregar(UnaCompra("T-despues", new DateTime(despues.Anio, despues.Mes, 5), despues.Linea1, despues.Linea2));
+
+			return historial.CompararCanastas(antes.Anio, antes.Mes, despues.Anio, despues.Mes);
 		}
 
 		// -------------------------------------------------------------- el guion
