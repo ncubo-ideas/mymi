@@ -12,6 +12,9 @@
     <ImplicitUsings>disable</ImplicitUsings>
     <RootNamespace>Compras.Consola</RootNamespace>
     <AssemblyName>Compras.Consola</AssemblyName>
+
+    <AssemblyTitle>Compras - caratula de consola</AssemblyTitle>
+    <Description>El arnes del negocio: comprueba las reglas del dominio puro sin actor ni disco, mide los invariantes contra un diario real y ejercita el ciclo de refresh contra el servidor del supermercado.</Description>
   </PropertyGroup>
 
   <ItemGroup>
@@ -19,3 +22,4 @@
   </ItemGroup>
 
 </Project>
+

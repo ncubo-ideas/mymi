@@ -9,6 +9,12 @@
     <TargetFramework>net9.0</TargetFramework>
     <Nullable>disable</Nullable>
     <ImplicitUsings>disable</ImplicitUsings>
+
+    <!-- Lo que el Host puede mostrar de ESTE dll sin arrancarlo. La compania y la version
+         vienen del props del negocio; lo que cambia por proyecto es que ES cada uno. -->
+    <AssemblyTitle>Compras - dominio</AssemblyTitle>
+    <Description>El dominio de las compras de la persona: sus tickets, la canasta del mes por perfil de consumo, las garantias con su respaldo, el precio que ella pago por unidad de medida y el ritmo con que repone cada categoria. Cero dependencias: ni motor, ni HTTP, ni wasm.</Description>
   </PropertyGroup>
 
 </Project>
+

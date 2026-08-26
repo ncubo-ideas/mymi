@@ -11,6 +11,9 @@
     <TargetFramework>net9.0</TargetFramework>
     <Nullable>disable</Nullable>
     <ImplicitUsings>disable</ImplicitUsings>
+
+    <AssemblyTitle>Compras - logica de la app</AssemblyTitle>
+    <Description>La superficie intencional del modulo de compras: los comandos que aplican una compra al diario de la persona y las consultas que la caratula y el servidor MCP le hacen. Una sola logica, para que la IA y la persona vean lo mismo.</Description>
   </PropertyGroup>
 
   <ItemGroup>
@@ -24,3 +27,4 @@
   </ItemGroup>
 
 </Project>
+
