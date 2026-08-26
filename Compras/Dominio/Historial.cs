@@ -160,8 +160,6 @@ namespace Compras.Dominio
 			bool esCategoria = Categoria.Existe(termino);
 			var porMes = new Dictionary<int, MesDeConsumo>();
 			var orden = new List<int>();
-			PerfilDeConsumo perfil = null;
-			bool perfilAmbiguo = false;
 
 			foreach (Compra compra in compras)
 			{
@@ -180,15 +178,6 @@ namespace Compras.Dominio
 
 					mes.Sumar(item.Cantidad, item.Total);
 					if (!contada) { mes.ContarCompra(); contada = true; }
-
-					// El perfil es el de la categoria, pero una busqueda por texto puede
-					// cruzar categorias con perfiles distintos: ahi no hay direccion
-					// deseable que consultar y el consumo no se pronuncia.
-					if (!item.Categoria.EsComestible) { perfilAmbiguo = true; continue; }
-
-					PerfilDeConsumo suyo = item.Categoria.Perfil;
-					if (perfil == null) perfil = suyo;
-					else if (!ReferenceEquals(perfil, suyo)) perfilAmbiguo = true;
 				}
 			}
 
@@ -198,7 +187,7 @@ namespace Compras.Dominio
 			var meses = new List<MesDeConsumo>();
 			foreach (int llave in orden) meses.Add(porMes[llave]);
 
-			return Consumo.De(termino, esCategoria, perfilAmbiguo ? null : perfil, meses);
+			return Consumo.De(termino, esCategoria, meses);
 		}
 
 		private static bool Alcanza(Item item, string termino, bool esCategoria) =>

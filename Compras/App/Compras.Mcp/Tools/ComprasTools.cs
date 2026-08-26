@@ -66,13 +66,15 @@ internal sealed class ComprasTools
 	[McpServerTool(Name = "como_viene_mi_canasta", UseStructuredContent = true)]
 	[Description("Como viene la canasta de la persona SIN TENER QUE ELEGIR MESES: compara el ultimo "
 		+ "mes que tiene compras contra el mismo mes del anio anterior, que es la lectura que la "
-		+ "app le muestra. Usala para preguntas generales como '¿como vengo?', '¿estoy comiendo "
-		+ "peor que antes?' o '¿mi canasta empeoro?'. Preferila sobre comparar_canastas salvo que "
-		+ "la persona nombre dos meses concretos. El campo veredicto lo produce el dominio y puede "
-		+ "ser mejorando, empeorando, estable o indeterminado: en lo ocasional bajar es hacia donde "
-		+ "conviene, asi que un cambio negativo es buena noticia aunque la proporcion siga alta. No "
-		+ "lo vuelvas a interpretar por el signo. Si hayComparacion viene en false, no hay dos meses "
-		+ "comparables todavia y hay que decirlo tal cual.")]
+		+ "app le muestra. Usala para preguntas generales como '¿como vengo?', '¿en que se me va "
+		+ "la plata en el super?' o '¿que cambio en mis compras?'. Preferila sobre comparar_canastas "
+		+ "salvo que la persona nombre dos meses concretos. Trae los dos totales y, en diferencias, "
+		+ "DE DONDE sale el cambio pasillo por pasillo: mira las que tienen explicaElCambio en true, "
+		+ "que son las que de verdad mueven la aguja, y esNuevo para los pasillos que antes no "
+		+ "aparecian. Usa titulo y nunca categoria al hablarle a la persona. Este modulo reporta "
+		+ "hechos de compra y NO juzga la alimentacion: si la persona quiere saber que significan "
+		+ "para su salud, cruzalos vos con sus otras fuentes. Si hayComparacion viene en false, no "
+		+ "hay dos meses comparables todavia y hay que decirlo tal cual.")]
 	public CanastasComparadas ComoVieneMiCanasta()
 	{
 		if (!lector.HayJournal) return new CanastasComparadas();
@@ -81,12 +83,14 @@ internal sealed class ComprasTools
 	}
 
 	[McpServerTool(Name = "canasta_del_mes", UseStructuredContent = true)]
-	[Description("Como se compuso la canasta del supermercado de la persona en UN mes: cuanto gasto "
-		+ "en alimentos recomendados (proteinas, frutas y verduras), cuanto en neutros (granos, "
-		+ "lacteos) y cuanto en ocasionales (azucarados, snacks, aceites y grasas), mas lo no "
-		+ "comestible aparte. La proporcionOcasional va de 0 a 1 y se calcula SOLO sobre lo "
-		+ "comestible. Son hechos para razonar — por ejemplo, cruzarlos con examenes de salud si "
-		+ "la persona lo pide — no un juicio sobre la persona.")]
+	[Description("Como se compuso la canasta del supermercado de la persona en UN mes, DEPARTAMENTO "
+		+ "POR DEPARTAMENTO: cuanto entro de cada pasillo (proteinas, frutas y verduras, lacteos, "
+		+ "granos, aceites, dulces, snacks, limpieza, electrodomesticos), ordenados del que mas pesa "
+		+ "al que menos, con la proporcionDelTotal de cada uno entre 0 y 1. Trae aparte el gasto "
+		+ "comestible y el no comestible, para que un electrodomestico caro no se coma la lectura de "
+		+ "la comida. Usa titulo y nunca categoria al hablarle a la persona: categoria es una llave "
+		+ "tecnica. Son hechos de compra para razonar — cruzalos con otras fuentes si la persona lo "
+		+ "pide — y no un juicio sobre su alimentacion: eso el supermercado no lo emite.")]
 	public CanastaDelMesVista Canasta(
 		[Description("El anio, por ejemplo 2026.")] int anio,
 		[Description("El mes, de 1 a 12.")] int mes)
@@ -100,10 +104,10 @@ internal sealed class ComprasTools
 	[Description("Como CAMBIO la canasta de la persona entre DOS MESES QUE ELLA NOMBRE. Si no "
 		+ "nombro meses concretos, usa como_viene_mi_canasta en vez de esta: los meses validos "
 		+ "salen del rango que devuelve total_de_compras, y pedir un mes fuera de ese rango "
-		+ "devuelve hayComparacion en false aunque la persona si tenga datos. El campo veredicto "
-		+ "lo produce el dominio (mejorando, empeorando, estable, indeterminado): en lo ocasional "
-		+ "bajar es hacia donde conviene, asi que un cambio negativo es buena noticia. No lo "
-		+ "vuelvas a interpretar por el signo.")]
+		+ "devuelve hayComparacion en false aunque la persona si tenga datos. Devuelve los dos "
+		+ "totales y, en diferencias, que pasillos explican el cambio (mira explicaElCambio, "
+		+ "esNuevo y desaparecio). El cambio lleva la direccion en el SIGNO; no hay veredicto "
+		+ "porque el supermercado no opina sobre la alimentacion de nadie.")]
 	public CanastasComparadas Comparar(
 		[Description("El anio del mes de referencia (antes).")] int anioAntes,
 		[Description("El mes de referencia (antes), de 1 a 12.")] int mesAntes,

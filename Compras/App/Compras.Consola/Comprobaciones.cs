@@ -32,26 +32,26 @@ namespace Compras.Consola
 			corridas = 0;
 
 			LasLineasSeValidanJuntas();
-			LaCategoriaLlevaElPerfil();
-			LoNoComestibleNoTienePerfil();
+			LaCategoriaLlevaSuTitulo();
+			ElRepertorioNoValoraNada();
 			LaGarantiaCorreDesdeLaCompra();
 			NoTodoTieneGarantia();
 			ElHistorialRechazaElTicketRepetido();
-			LaCanastaSumaPorPerfil();
-			LoNoComestibleNoContaminaLaProporcion();
+			LaCanastaSumaPorDepartamento();
+			LoComestibleVaSeparadoDeLoQueNoLoEs();
 			LaComparacionCuentaElGuion();
 			CompararContraUnMesVacioEsLegitimo();
 			LaGarantiaSeEncuentraConSuRespaldo();
 			BuscarLoQueNoExisteEsLegitimo();
 			GanaLaCompraMasReciente();
-			ElVeredictoNoEsElCambio();
+			LaComparacionDiceDeDondeSaleLaDiferencia();
 			LaVentanaDeLaGarantiaAvisaCuandoSeCierra();
 			ElHuecoEsLoQueNoEsta();
-			LoOcasionalNoTienePeriodicidad();
+			LosAntojosNoTienenPeriodicidad();
 			ElRangoDiceQueMesesSePuedenPedir();
 			LaComparacionPorDefectoLaEligeElDominio();
 			LaSerieDiceDesdeCuando();
-			ElVeredictoDelConsumoSaleDelPerfil();
+			ElConsumoDiceCuantoSeMovio();
 			LaCantidadDiceDeQue();
 			ElPrecioPorUnidadPermiteComparar();
 			LosJournalsViejosSiguenReproduciendo();
@@ -97,31 +97,47 @@ namespace Compras.Consola
 			Igual("el total se deriva de las lineas", "6", valida.Total.ToString());
 		}
 
-		// ---- el repertorio: la categoria sabe su perfil ----
-		private static void LaCategoriaLlevaElPerfil()
+		// ---- el repertorio: la llave viaja, el titulo se lee ----
+		private static void LaCategoriaLlevaSuTitulo()
 		{
-			Titulo("la categoria lleva el perfil");
+			Titulo("la categoria lleva su titulo");
 
-			Igual("proteinas es recomendado", "recomendado", Categoria.Proteinas.Perfil.Nombre);
-			Igual("azucarados es ocasional", "ocasional", Categoria.Azucarados.Perfil.Nombre);
-			Igual("aceites es ocasional", "ocasional", Categoria.AceitesYGrasas.Perfil.Nombre);
-			Igual("granos es neutro", "neutro", Categoria.GranosYAbarrotes.Perfil.Nombre);
+			// El nombre es la LLAVE que viene en el evento y ya esta escrita en los
+			// diarios; el titulo es lo que lee una persona. Cambiar la llave rompe lo ya
+			// escrito, asi que se fija aca.
+			Igual("la llave no cambia", "FrutasYVerduras", Categoria.FrutasYVerduras.Nombre);
+			Igual("el titulo se lee", "frutas y verduras", Categoria.FrutasYVerduras.Titulo);
+			Igual("y la mencion entra en una frase", "una fruta o verdura",
+				Categoria.FrutasYVerduras.Mencion);
+			Igual("azucarados es un pasillo, no una etiqueta", "dulces y postres",
+				Categoria.Azucarados.Titulo);
 
 			// El resolver de la frontera: mismo string -> LA instancia (referencia).
 			Igual("Desde resuelve a la instancia", "True",
 				ReferenceEquals(Categoria.Desde("azucarados"), Categoria.Azucarados).ToString());
 			Revienta("Desde con nombre desconocido", () => Categoria.Desde("Mascotas"));
+			Igual("Existe es la pareja total", "False", Categoria.Existe("Mascotas").ToString());
 		}
 
-		private static void LoNoComestibleNoTienePerfil()
+		private static void ElRepertorioNoValoraNada()
 		{
-			Titulo("lo no comestible no tiene perfil");
+			Titulo("el repertorio no valora nada");
 
-			Igual("limpieza no es comestible", "False", Categoria.Limpieza.EsComestible.ToString());
-			// Preguntar el perfil de un detergente revienta: devolver "neutro" seria
-			// mentir en las proporciones de la canasta.
-			Revienta("el perfil de limpieza revienta", () => Categoria.Limpieza.Perfil);
-			Revienta("el perfil de electrohogar revienta", () => Categoria.Electrohogar.Perfil);
+			// La spec de marca: "no inventar en la app conclusiones de salud". Un
+			// departamento dice DONDE esta la gondola, nunca si conviene. Si alguien
+			// vuelve a colgarle una etiqueta de valor al repertorio, esto lo caza.
+			string[] valoraciones = { "recomend", "ocasional", "saludable", "conviene", "malo", "bueno" };
+
+			foreach (Categoria categoria in Categoria.Todas)
+			{
+				string dice = (categoria.Titulo + " " + categoria.Mencion).ToLowerInvariant();
+				foreach (string valoracion in valoraciones)
+					Igual($"{categoria.Nombre} no dice '{valoracion}'", "False",
+						dice.Contains(valoracion).ToString());
+			}
+
+			Igual("lo comestible es un hecho de gondola", "True", Categoria.Proteinas.EsComestible.ToString());
+			Igual("y el detergente no lo es", "False", Categoria.Limpieza.EsComestible.ToString());
 		}
 
 		// ---- la garantia corre desde la fecha del ticket ----
@@ -176,40 +192,49 @@ namespace Compras.Consola
 		}
 
 		// ---- la canasta: los hechos del analisis ----
-		private static void LaCanastaSumaPorPerfil()
+		private static void LaCanastaSumaPorDepartamento()
 		{
-			Titulo("la canasta suma por perfil");
+			Titulo("la canasta suma por departamento");
 
 			var historial = new Historial();
 			historial.Agregar(UnaCompra("T-1", new DateTime(2026, 8, 3),
-				("POLLO", "Pollo", 2, 4000m, "Proteinas", 0),          // 8000 recomendado
-				("ARROZ", "Arroz", 1, 2000m, "GranosYAbarrotes", 0),   // 2000 neutro
-				("HELADO", "Helado", 3, 3000m, "Azucarados", 0)));     // 9000 ocasional
+				("POLLO", "Pollo", 2, 4000m, "Proteinas", 0),          // 8000
+				("ARROZ", "Arroz", 1, 2000m, "GranosYAbarrotes", 0),   // 2000
+				("HELADO", "Helado", 3, 3000m, "Azucarados", 0)));     // 9000
 			historial.Agregar(UnaCompra("T-2", new DateTime(2026, 8, 20),
-				("SODA", "Soda", 1, 1000m, "Azucarados", 0)));         // 1000 ocasional
+				("SODA", "Soda", 1, 1000m, "Azucarados", 0)));         // 1000
 
 			Canasta canasta = historial.CanastaDe(2026, 8);
 			Igual("compras del mes", "2", canasta.CantidadDeCompras.ToString());
-			Igual("recomendado", "8000", canasta.GastoRecomendado.ToString());
-			Igual("neutro", "2000", canasta.GastoNeutro.ToString());
-			Igual("ocasional", "10000", canasta.GastoOcasional.ToString());
+			Igual("proteinas", "8000", canasta.GastoDe(Categoria.Proteinas).ToString());
+			Igual("granos", "2000", canasta.GastoDe(Categoria.GranosYAbarrotes).ToString());
+			Igual("dulces suma las dos compras", "10000", canasta.GastoDe(Categoria.Azucarados).ToString());
 			Igual("comestible", "20000", canasta.GastoComestible.ToString());
-			Igual("proporcion ocasional", "0.5",
-				canasta.ProporcionOcasional.ToString(CultureInfo.InvariantCulture));
+
+			// Total: un pasillo que no entro es cero, no una ausencia que revienta.
+			Igual("un pasillo que no entro es cero", "0", canasta.GastoDe(Categoria.Limpieza).ToString());
+			Igual("  y se puede preguntar sin reventar", "False",
+				canasta.Tiene(Categoria.Limpieza).ToString());
+
+			// Ordenados del que mas pesa al que menos: es lo que hace legible la portada.
+			Igual("tres pasillos", "3", canasta.Departamentos.Count.ToString());
+			Igual("el que mas pesa es dulces", "dulces y postres", canasta.Departamentos[0].Titulo);
+			Igual("  y es la mitad del mes", "0.5",
+				canasta.Departamentos[0].ProporcionDelTotal.ToString(CultureInfo.InvariantCulture));
 
 			// Un mes sin compras es una pregunta legitima, no una excepcion.
 			Canasta vacia = historial.CanastaDe(2026, 1);
 			Igual("mes vacio: sin compras", "False", vacia.HayCompras.ToString());
-			Igual("mes vacio: proporcion 0", "0", vacia.ProporcionOcasional.ToString());
+			Igual("mes vacio: sin pasillos", "0", vacia.Departamentos.Count.ToString());
 		}
 
-		private static void LoNoComestibleNoContaminaLaProporcion()
+		private static void LoComestibleVaSeparadoDeLoQueNoLoEs()
 		{
-			Titulo("lo no comestible no contamina la proporcion");
+			Titulo("lo comestible va separado de lo que no");
 
 			var historial = new Historial();
-			// La olla arrocera vale 45900 y el helado 3000: si la proporcion se sacara
-			// sobre el total, el electrodomestico esconderia el helado.
+			// La olla arrocera vale 45900 y el helado 3000: mezclarlos haria que un
+			// electrodomestico se coma el mes entero en cualquier lectura de comida.
 			historial.Agregar(UnaCompra("T-1", new DateTime(2026, 5, 10),
 				("OLLA", "Olla arrocera", 1, 45900m, "Electrohogar", 12),
 				("HELADO", "Helado", 1, 3000m, "Azucarados", 0)));
@@ -217,7 +242,7 @@ namespace Compras.Consola
 			Canasta canasta = historial.CanastaDe(2026, 5);
 			Igual("no comestible aparte", "45900", canasta.GastoNoComestible.ToString());
 			Igual("comestible solo el helado", "3000", canasta.GastoComestible.ToString());
-			Igual("proporcion ocasional 100%", "1", canasta.ProporcionOcasional.ToString());
+			Igual("y el total los suma", "48900", canasta.GastoTotal.ToString());
 		}
 
 		private static void LaComparacionCuentaElGuion()
@@ -228,15 +253,14 @@ namespace Compras.Consola
 			ComparacionDeCanastas comparacion = historial.CompararCanastas(2025, 8, 2026, 8);
 
 			Igual("hay comparacion", "True", comparacion.HayComparacion.ToString());
-			// Los numeros del guion: agosto 2025 = 2890 ocasional de 32910 comestible;
-			// agosto 2026 = 31680 de 32600.
-			Igual("proporcion antes ~9%", "0.09",
-				Math.Round(comparacion.ProporcionOcasionalAntes, 2).ToString(CultureInfo.InvariantCulture));
-			Igual("proporcion despues ~97%", "0.97",
-				Math.Round(comparacion.ProporcionOcasionalDespues, 2).ToString(CultureInfo.InvariantCulture));
-			Igual("lo ocasional CRECIO", "True", comparacion.CrecioLoOcasional.ToString());
-			Igual("el cambio tiene signo positivo", "True",
-				(comparacion.CambioEnProporcion > 0m).ToString());
+			Igual("el total de agosto 2025", "32910", comparacion.GastoAntes.ToString());
+			Igual("el total de agosto 2026", "32600", comparacion.GastoDespues.ToString());
+			Igual("el cambio tiene signo", "True", (comparacion.CambioEnElTotal < 0m).ToString());
+
+			// Lo que ningun ticket contesta: de DONDE sale la diferencia.
+			Igual("hay pasillos que la explican", "True", comparacion.HayAlgoQueLoExplique.ToString());
+			Igual("el que mas movio es dulces", "dulces y postres", comparacion.Diferencias[0].Titulo);
+			Igual("  y subio", "True", comparacion.Diferencias[0].Subio.ToString());
 		}
 
 		private static void CompararContraUnMesVacioEsLegitimo()
@@ -247,8 +271,13 @@ namespace Compras.Consola
 			ComparacionDeCanastas sinDatos = historial.CompararCanastas(2024, 1, 2026, 8);
 
 			Igual("no hay comparacion", "False", sinDatos.HayComparacion.ToString());
-			Igual("no inventa crecimiento", "False", sinDatos.CrecioLoOcasional.ToString());
-			Igual("el cambio es 0", "0", sinDatos.CambioEnProporcion.ToString());
+			Igual("el cambio es 0", "0", sinDatos.CambioEnElTotal.ToString());
+			// Sin dos meses no hay diferencias que repartir: la lista viene vacia en vez de
+			// mostrar el mes de despues entero como si todo fuera nuevo.
+			Igual("no inventa pasillos", "0", sinDatos.Diferencias.Count.ToString());
+			Igual("y no hay nada que lo explique", "False", sinDatos.HayAlgoQueLoExplique.ToString());
+			Igual("lo dice sin rodeos", "True",
+				sinDatos.ParaSonia.Contains("todavía no hay dos meses").ToString());
 		}
 
 		// ---- la garantia con su respaldo ----
@@ -302,38 +331,50 @@ namespace Compras.Consola
 			Igual("y esta vigente", "True", registro.Vigente.ToString());
 		}
 
-		// ---- el veredicto dice que SIGNIFICA el cambio, no cuanto cambio ----
-		private static void ElVeredictoNoEsElCambio()
+		// ---- la comparacion dice de DONDE sale la diferencia, y no si esta bien ----
+		private static void LaComparacionDiceDeDondeSaleLaDiferencia()
 		{
-			Titulo("el veredicto no es el cambio");
+			Titulo("la comparacion dice de donde sale la diferencia");
 
-			// EL DEFECTO QUE ESTO ARREGLA: con un booleano "crecio o no crecio", una
-			// canasta que MEJORA 29 puntos se leia igual que una que no se movio.
-			ComparacionDeCanastas mejora = Comparar(
-				(2026, 7, ("HELADO", "Helado", 39, 1000m, "Azucarados", 0), ("POLLO", "Pollo", 1, 1000m, "Proteinas", 0)),
-				(2026, 8, ("HELADO", "Helado", 68, 100m, "Azucarados", 0), ("POLLO", "Pollo", 32, 100m, "Proteinas", 0)));
-			Igual("de 97.5% a 68% es MEJORANDO", "mejorando", mejora.Veredicto.Nombre);
-			Igual("  y no dice que crecio", "False", mejora.CrecioLoOcasional.ToString());
-			Igual("  el cambio tiene signo negativo", "True", (mejora.CambioEnProporcion < 0m).ToString());
-			Igual("  la linea la escribe el dominio", "True", mejora.ParaSonia.Contains("bajó").ToString());
+			// La pregunta S14 de la wiki: "en que se me va la plata en el super". Un total
+			// contra otro total lo suma cualquiera; de donde salio la diferencia, no.
+			var historial = new Historial();
+			historial.Agregar(UnaCompra("T-JUL", new DateTime(2026, 7, 10),
+				("POLLO", "Pollo", 10, 1000m, "Proteinas", 0),
+				("ARROZ", "Arroz", 1, 2000m, "GranosYAbarrotes", 0)));
+			historial.Agregar(UnaCompra("T-AGO", new DateTime(2026, 8, 10),
+				("POLLO", "Pollo", 5, 1000m, "Proteinas", 0),
+				("ARROZ", "Arroz", 1, 2000m, "GranosYAbarrotes", 0),
+				("HELADO", "Helado", 8, 2500m, "Azucarados", 0)));
 
-			ComparacionDeCanastas empeora = Comparar(
-				(2026, 7, ("POLLO", "Pollo", 9, 1000m, "Proteinas", 0), ("HELADO", "Helado", 1, 1000m, "Azucarados", 0)),
-				(2026, 8, ("POLLO", "Pollo", 1, 1000m, "Proteinas", 0), ("HELADO", "Helado", 9, 1000m, "Azucarados", 0)));
-			Igual("de 10% a 90% es EMPEORANDO", "empeorando", empeora.Veredicto.Nombre);
-			Igual("  y ese si crecio", "True", empeora.CrecioLoOcasional.ToString());
-			Igual("  la linea dice que subio", "True", empeora.ParaSonia.Contains("subió").ToString());
+			ComparacionDeCanastas comparacion = historial.CompararCanastas(2026, 7, 2026, 8);
 
-			// Dos puntos es ruido de despensa, no un cambio de habitos.
-			ComparacionDeCanastas ruido = Comparar(
-				(2026, 7, ("HELADO", "Helado", 50, 100m, "Azucarados", 0), ("POLLO", "Pollo", 50, 100m, "Proteinas", 0)),
-				(2026, 8, ("HELADO", "Helado", 52, 100m, "Azucarados", 0), ("POLLO", "Pollo", 48, 100m, "Proteinas", 0)));
-			Igual("2 puntos es ESTABLE", "estable", ruido.Veredicto.Nombre);
+			Igual("el total subio", "True", (comparacion.CambioEnElTotal > 0m).ToString());
+			// Dos pasillos movieron: el que ENTRO (20000) y proteinas, que bajo 5000.
+			// Granos no se movio y por eso no figura entre los que explican.
+			Igual("dos pasillos explican el cambio", "2", comparacion.LasQueExplican.Count.ToString());
+			Igual("el que mas movio entro este mes", "True", comparacion.LasQueExplican[0].EsNuevo.ToString());
+			Igual("  y no aparecia antes", "0", comparacion.LasQueExplican[0].MontoAntes.ToString());
+			Igual("el otro bajo", "False", comparacion.LasQueExplican[1].Subio.ToString());
+			Igual("granos no movio nada", "0",
+				(comparacion.Diferencias[2].Cambio).ToString());
+			Igual("  asi que no explica nada", "False",
+				comparacion.Diferencias[2].CuentaEnElMovimiento.ToString());
 
-			// Sin dos meses no se afirma nada, y eso hay que preservarlo.
-			ComparacionDeCanastas sinDatos = ElGuion().CompararCanastas(2024, 1, 2026, 8);
-			Igual("sin el mes de antes: INDETERMINADO", "indeterminado", sinDatos.Veredicto.Nombre);
-			Igual("  no hay lectura", "False", sinDatos.Veredicto.HayLectura.ToString());
+			string linea = comparacion.ParaSonia;
+			Igual("la linea da los dos totales", "True", linea.Contains("₡").ToString());
+			Igual("  nombra el pasillo que entro", "True", linea.Contains("dulces y postres").ToString());
+			Igual("  y dice que el otro bajo", "True", linea.Contains("bajó").ToString());
+			// Ni la llave tecnica ni jerga de retail en lo que lee una persona.
+			Igual("  sin la llave del repertorio", "False", linea.Contains("Azucarados").ToString());
+
+			// LO QUE NO DICE, y es el punto: la spec de marca pide que la app senale y se
+			// calle -"el juicio no es suyo"-. Que entren dulces y bajen proteinas es un
+			// dato; si eso esta bien o mal lo cruza el asistente, no el supermercado.
+			string[] juicios = { "peor", "mejor", "empeora", "mejora", "debería", "conviene", "cuidado", "mal" };
+			foreach (string juicio in juicios)
+				Igual($"  la linea no dice '{juicio}'", "False",
+					linea.ToLowerInvariant().Contains(juicio).ToString());
 		}
 
 		// ---- la ventana de la garantia, y que hacer con ella ----
@@ -414,12 +455,12 @@ namespace Compras.Consola
 				reciente.AbastecimientosPendientes(Hoy.AddDays(40)).Count.ToString());
 		}
 
-		private static void LoOcasionalNoTienePeriodicidad()
+		private static void LosAntojosNoTienenPeriodicidad()
 		{
-			Titulo("lo ocasional no tiene periodicidad");
+			Titulo("los antojos no tienen periodicidad");
 
 			// Decision de dominio: este modulo no le dice a nadie que hace un mes que no
-			// compra helado. Preguntar la periodicidad de lo ocasional revienta.
+			// compra helado. Preguntar la periodicidad de un antojo revienta.
 			Igual("azucarados no se reabastece", "False", Categoria.Azucarados.SeReabastece.ToString());
 			Igual("snacks tampoco", "False", Categoria.Snacks.SeReabastece.ToString());
 			Igual("aceites tampoco", "False", Categoria.AceitesYGrasas.SeReabastece.ToString());
@@ -595,7 +636,8 @@ namespace Compras.Consola
 			Igual("  subio 2.9%", "0.0286",
 				arroz.CambioEnProporcion.ToString(CultureInfo.InvariantCulture));
 			// 2,9% es redondeo de gondola: no llega al umbral del 3%.
-			Igual("  y eso es ESTABLE", "estable", arroz.Veredicto.Nombre);
+			Igual("  y eso no es un cambio real", "False", arroz.HayCambioReal.ToString());
+			Revienta("  darle direccion revienta", () => arroz.Subio);
 
 			// LA LECTURA QUE MENTIRIA SIN LA PRESENTACION: la persona pasa de dos leches de
 			// 1 L a 950 a una de 2 L a 1.800. Por LINEA el precio "subio" 850; por LITRO
@@ -610,19 +652,19 @@ namespace Compras.Consola
 			Igual("el precio de linea subio", "True",
 				(leche.Observados[1].PrecioDeLinea > leche.Observados[0].PrecioDeLinea).ToString());
 			Igual("  pero el del litro BAJO", "True", (leche.Cambio < 0m).ToString());
-			Igual("  y el veredicto es mejorando", "mejorando", leche.Veredicto.Nombre);
+			Igual("  y por litro no subio", "False", leche.Subio.ToString());
 			Igual("  la linea lo dice como bajada", "True", leche.ParaSonia.Contains("bajó").ToString());
 			Igual("  y la unidad de referencia es el litro", "L", leche.UnidadDeReferencia);
 
 			// Un aumento de verdad: la manteca de 1.980 a 2.050 el medio kilo.
             PrecioEnElTiempo manteca = ElGuion().PrecioDe("MANTECA-500");
-			Igual("la manteca subio", "empeorando", manteca.Veredicto.Nombre);
+			Igual("la manteca subio", "True", manteca.Subio.ToString());
 			Igual("  y lo dice con el porcentaje", "True", manteca.ParaSonia.Contains("subió").ToString());
 
 			// Una sola compra no es una serie de precios, y se dice.
 			PrecioEnElTiempo olla = ElGuion().PrecioDe("OLLA-ARR-18");
 			Igual("una sola compra: no hay serie", "False", olla.HaySerie.ToString());
-			Igual("  veredicto indeterminado", "indeterminado", olla.Veredicto.Nombre);
+			Revienta("  y preguntar la direccion revienta", () => olla.Subio);
 			Igual("  pero el precio pagado esta", "True", (olla.UltimoPrecioPorUnidad > 0m).ToString());
 
 			// Total: un sku que nunca se compro.
@@ -639,7 +681,7 @@ namespace Compras.Consola
 				("PAN", "Pan", 1, 1000m, "GranosYAbarrotes", 0, "u")));
 			Igual("ordena por fecha, no por llegada", "1000",
 				desordenado.PrecioDe("PAN").PrimerPrecioPorUnidad.ToString(CultureInfo.InvariantCulture));
-			Igual("  asi que el pan SUBIO", "empeorando", desordenado.PrecioDe("PAN").Veredicto.Nombre);
+			Igual("  asi que el pan SUBIO", "True", desordenado.PrecioDe("PAN").Subio.ToString());
 		}
 
 		// ---- el ritmo es el de ella, no el que supusimos ----
@@ -876,12 +918,12 @@ namespace Compras.Consola
 			Igual("compara el ultimo mes con el del ano pasado", "8/2025 vs 8/2026",
 				$"{porDefecto.Antes.Mes}/{porDefecto.Antes.Anio} vs {porDefecto.Despues.Mes}/{porDefecto.Despues.Anio}");
 			Igual("  y da la misma lectura que pidiendola a mano", "True",
-				(porDefecto.Veredicto.Nombre == ElGuion().CompararCanastas(2025, 8, 2026, 8).Veredicto.Nombre).ToString());
+				(porDefecto.ParaSonia == ElGuion().CompararCanastas(2025, 8, 2026, 8).ParaSonia).ToString());
 
 			// Total: sin compras no revienta, contesta que no hay comparacion.
 			ComparacionDeCanastas sinNada = new Historial().CompararConElAnioPasado();
 			Igual("historial vacio: no hay comparacion", "False", sinNada.HayComparacion.ToString());
-			Igual("  veredicto indeterminado", "indeterminado", sinNada.Veredicto.Nombre);
+			Igual("  y no hay pasillos que repartir", "0", sinNada.Diferencias.Count.ToString());
 
 			// Con un solo mes tampoco hay dos meses que comparar, y se dice.
 			var unaSola = new Historial();
@@ -920,16 +962,19 @@ namespace Compras.Consola
 			Igual("lo que no se compro: no existe", "False", nada.Existe().ToString());
 			Igual("  sin meses", "0", nada.MesesConConsumo.ToString());
 			Igual("  y lo dice", "True", nada.ParaSonia.Contains("no hay compras").ToString());
-			Igual("  no se puede juzgar", "False", nada.SePuedeJuzgar.ToString());
+			Igual("  no hay cambio que leer", "False", nada.HayCambioReal.ToString());
+			Revienta("  y darle direccion revienta", () => nada.Subio);
 		}
 
-		// ---- el veredicto del consumo sale del perfil, no del signo ----
-		private static void ElVeredictoDelConsumoSaleDelPerfil()
+		// ---- el consumo dice cuanto se movio, y no si eso esta bien ----
+		private static void ElConsumoDiceCuantoSeMovio()
 		{
-			Titulo("el veredicto del consumo sale del perfil");
+			Titulo("el consumo dice cuanto se movio");
 
-			// EL MISMO MOVIMIENTO, dos categorias, veredictos OPUESTOS: subir azucarados
-			// es empeorar y subir proteinas es mejorar. Es lo que un signo no puede decir.
+			// EL MISMO MOVIMIENTO en dos pasillos distintos se lee IGUAL: los dos subieron.
+			// Antes uno era "empeorando" y el otro "mejorando" segun una etiqueta de salud
+			// que este modulo se habia puesto solo; la spec de marca la prohibe -"no
+			// inventar en la app conclusiones de salud"- y quien cruza es el asistente.
 			var historial = new Historial();
 			historial.Agregar(UnaCompra("T-1", new DateTime(2026, 1, 5),
 				("HELADO", "Helado", 1, 1000m, "Azucarados", 0),
@@ -938,36 +983,40 @@ namespace Compras.Consola
 				("HELADO", "Helado", 5, 1000m, "Azucarados", 0),
 				("POLLO", "Pollo", 5, 1000m, "Proteinas", 0)));
 
-			Igual("azucarados que suben: empeorando", "empeorando",
-				historial.ConsumoDe("Azucarados").Veredicto.Nombre);
-			Igual("proteinas que suben: mejorando", "mejorando",
-				historial.ConsumoDe("Proteinas").Veredicto.Nombre);
+			Consumo dulces = historial.ConsumoDe("Azucarados");
+			Consumo proteinas = historial.ConsumoDe("Proteinas");
+			Igual("los dulces subieron", "True", dulces.Subio.ToString());
+			Igual("las proteinas tambien", "True", proteinas.Subio.ToString());
+			Igual("y las dos lecturas son la misma forma", "True",
+				(dulces.HayCambioReal == proteinas.HayCambioReal).ToString());
 
-			// Y al revés, con el mismo dominio.
+			// Y al reves, con el mismo dominio.
 			var bajando = new Historial();
 			bajando.Agregar(UnaCompra("T-1", new DateTime(2026, 1, 5),
 				("HELADO", "Helado", 5, 1000m, "Azucarados", 0)));
 			bajando.Agregar(UnaCompra("T-2", new DateTime(2026, 2, 5),
 				("HELADO", "Helado", 1, 1000m, "Azucarados", 0)));
-			Igual("azucarados que bajan: mejorando", "mejorando",
-				bajando.ConsumoDe("Azucarados").Veredicto.Nombre);
+			Igual("dulces que bajan: bajaron", "False", bajando.ConsumoDe("Azucarados").Subio.ToString());
 
-			// Un solo mes no es una serie: entrega los hechos y no se pronuncia.
+			// Un solo mes no es una serie: entrega los hechos y no le pone direccion.
 			var unMes = new Historial();
 			unMes.Agregar(UnaCompra("T-1", Hoy, ("HELADO", "Helado", 3, 3000m, "Azucarados", 0)));
 			Consumo deUnMes = unMes.ConsumoDe("Azucarados");
-			Igual("un solo mes: no se puede juzgar", "False", deUnMes.SePuedeJuzgar.ToString());
-			Igual("  veredicto indeterminado", "indeterminado", deUnMes.Veredicto.Nombre);
+			Igual("un solo mes: no hay serie", "False", deUnMes.HaySerie.ToString());
+			Igual("  ni cambio real", "False", deUnMes.HayCambioReal.ToString());
+			Revienta("  y la direccion revienta", () => deUnMes.Subio);
 			Igual("  pero los hechos estan", "9000", deUnMes.TotalGastado.ToString());
 
-			// Sin perfil que consultar tampoco se pronuncia: la olla no es comestible.
+			// Lo no comestible entrega la misma serie que lo demas: la olla no es un caso
+			// aparte, porque ya no hay etiqueta que consultarle.
 			Consumo olla = ElGuion().ConsumoDe("olla");
-			Igual("lo no comestible: no se juzga", "False", olla.SePuedeJuzgar.ToString());
-			Igual("  pero se sabe cuanto y cuando", "2026-05", olla.PrimerMesExpresado);
+			Igual("lo no comestible tambien tiene serie", "2026-05", olla.PrimerMesExpresado);
 
-			// Una busqueda que cruza perfiles distintos tampoco.
-			Consumo arroz = ElGuion().ConsumoDe("a");
-			Igual("un texto que cruza categorias: no se juzga", "False", arroz.SePuedeJuzgar.ToString());
+			// Ninguna linea del consumo se pronuncia sobre si el cambio esta bien.
+			string[] juicios = { "peor", "mejor", "empeora", "mejora", "debería", "conviene", "cuidado" };
+			foreach (string juicio in juicios)
+				Igual($"la linea no dice '{juicio}'", "False",
+					dulces.ParaSonia.ToLowerInvariant().Contains(juicio).ToString());
 		}
 
 		// Dos meses, cada uno con sus lineas, comparados.

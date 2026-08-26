@@ -12,18 +12,17 @@ namespace Compras.Dominio
 	// Es la contraparte de la serie de un analito del lado de las compras. Una pantalla
 	// muestra tickets y totales por mes; esto mira la forma de la serie completa.
 	//
-	// El VEREDICTO sale del perfil de la categoria, no del signo: que los azucarados
-	// suban es empeorar y que las proteinas suban es mejorar. Cuando no hay perfil que
-	// consultar -una busqueda por texto que cruza categorias, o algo no comestible- el
-	// consumo entrega los hechos y NO se pronuncia: SePuedeJuzgar lo dice.
+	// Dice CUANTO se movio y DESDE QUE MES, nunca si eso esta bien: que el helado pase de
+	// mensual a semanal es un dato, no una falta. Quien cruza esa serie con cualquier otra
+	// cosa que le pase a la persona es el asistente, con permiso; el super no tiene con
+	// que hacerlo.
 	public abstract class Consumo
 	{
 		/// <summary>Lo que no se encontro: nunca null.</summary>
 		internal static Consumo Ninguno(string termino) => new SinConsumo(termino);
 
-		internal static Consumo De(string termino, bool esCategoria, PerfilDeConsumo perfil,
-			IReadOnlyList<MesDeConsumo> meses) =>
-			new Serie(termino, esCategoria, perfil, meses);
+		internal static Consumo De(string termino, bool esCategoria, IReadOnlyList<MesDeConsumo> meses) =>
+			new Serie(termino, esCategoria, meses);
 
 		public string Termino { get; private set; }
 
@@ -57,13 +56,14 @@ namespace Compras.Dominio
 		/// <summary>El HECHO, con signo: cuanto cambio el gasto entre el primer mes y el ultimo.</summary>
 		public abstract decimal CambioDeGasto { get; }
 
-		/// <summary>Si hay con que juzgar: hace falta perfil de consumo y al menos dos meses.</summary>
-		public abstract bool SePuedeJuzgar { get; }
+		/// <summary>Si hay serie con la que leer un cambio: hacen falta al menos dos meses.</summary>
+		public abstract bool HaySerie { get; }
 
-		/// <summary>Que SIGNIFICA el cambio, cuando se puede decir. Si no, Indeterminado.</summary>
-		public abstract Veredicto Veredicto { get; }
+		/// <summary>Si el gasto se movio lo bastante como para no ser variacion de despensa.</summary>
+		public abstract bool HayCambioReal { get; }
 
-		public string NombreDelVeredicto => Veredicto.Nombre;
+		/// <summary>La direccion del cambio, sin valorarla. Preguntar HayCambioReal primero.</summary>
+		public abstract bool Subio { get; }
 
 		/// <summary>La linea, escrita por el dominio con SUS hechos. Nunca un consejo.</summary>
 		public abstract string ParaSonia { get; }
@@ -84,8 +84,12 @@ namespace Compras.Dominio
 			public override decimal GastoEnElPrimerMes => 0m;
 			public override decimal GastoEnElUltimoMes => 0m;
 			public override decimal CambioDeGasto => 0m;
-			public override bool SePuedeJuzgar => false;
-			public override Veredicto Veredicto => Veredicto.Indeterminado;
+			public override bool HaySerie => false;
+			public override bool HayCambioReal => false;
+
+			public override bool Subio =>
+				throw new InvalidOperationException(
+					$"No hay compras de «{Termino}»: no hay direccion que dar. Preguntar HayCambioReal antes.");
 
 			public override string ParaSonia =>
 				$"no hay compras de «{Termino}» en el historial";
@@ -98,11 +102,10 @@ namespace Compras.Dominio
 			private const decimal CambioQueCuentaComoReal = 0.20m;
 
 			private readonly bool esCategoria;
-			private readonly PerfilDeConsumo perfil;
 			private readonly IReadOnlyList<MesDeConsumo> meses;
 
-			internal Serie(string termino, bool esCategoria, PerfilDeConsumo perfil,
-				IReadOnlyList<MesDeConsumo> meses) : base(termino)
+			internal Serie(string termino, bool esCategoria, IReadOnlyList<MesDeConsumo> meses)
+				: base(termino)
 			{
 				ArgumentNullException.ThrowIfNull(meses);
 				if (meses.Count == 0)
@@ -110,7 +113,6 @@ namespace Compras.Dominio
 						nameof(meses));
 
 				this.esCategoria = esCategoria;
-				this.perfil = perfil;
 				this.meses = meses;
 			}
 
@@ -157,27 +159,32 @@ namespace Compras.Dominio
 
 			public override decimal CambioDeGasto => GastoEnElUltimoMes - GastoEnElPrimerMes;
 
-			// Un solo mes no es una serie, y sin perfil no hay direccion deseable que
-			// consultar: en los dos casos el consumo entrega los hechos y no se pronuncia.
-			public override bool SePuedeJuzgar => meses.Count >= 2 && perfil != null;
+			// Un solo mes no es una serie: con una sola observacion no hay cambio que leer.
+			public override bool HaySerie => meses.Count >= 2;
 
-			public override Veredicto Veredicto
+			public override bool HayCambioReal
 			{
 				get
 				{
-					if (!SePuedeJuzgar) return Veredicto.Indeterminado;
-					if (ReferenceEquals(perfil, PerfilDeConsumo.Neutro)) return Veredicto.Estable;
+					if (!HaySerie) return false;
 
 					decimal referencia = GastoEnElPrimerMes;
-					if (referencia == 0m) return Veredicto.Indeterminado;
+					if (referencia == 0m) return false;
 
-					decimal proporcion = CambioDeGasto / referencia;
-					if (Math.Abs(proporcion) < CambioQueCuentaComoReal) return Veredicto.Estable;
+					return Math.Abs(CambioDeGasto / referencia) >= CambioQueCuentaComoReal;
+				}
+			}
 
-					// En lo ocasional subir es empeorar; en lo recomendado, mejorar.
-					bool subio = proporcion > 0m;
-					if (perfil.EsOcasional) return subio ? Veredicto.Empeorando : Veredicto.Mejorando;
-					return subio ? Veredicto.Mejorando : Veredicto.Empeorando;
+			public override bool Subio
+			{
+				get
+				{
+					if (!HayCambioReal)
+						throw new InvalidOperationException(
+							$"El consumo de «{Termino}» no se movio lo suficiente como para darle una "
+							+ "direccion. Preguntar HayCambioReal antes.");
+
+					return CambioDeGasto > 0m;
 				}
 			}
 
@@ -194,7 +201,7 @@ namespace Compras.Dominio
 					string tramo = $"de {Colones(GastoEnElPrimerMes)} en {PrimerMesExpresado} a "
 						+ $"{Colones(GastoEnElUltimoMes)} en {UltimoMesExpresado}";
 
-					if (Veredicto.EsEmpeorando || Veredicto.EsMejorando)
+					if (HayCambioReal)
 						return $"{que} pasó {tramo}, sobre {MesesConConsumo} meses con compras "
 							+ $"(el mes más alto fue {MesDelPicoExpresado})";
 

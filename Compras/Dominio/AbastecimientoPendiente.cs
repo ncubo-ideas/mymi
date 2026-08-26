@@ -82,7 +82,7 @@ namespace Compras.Dominio
 
 		public string NombreDeLaSeveridad => Severidad.Nombre;
 
-		public bool EsRecomendado => Categoria.EsComestible && !Categoria.Perfil.EsOcasional;
+		public bool EsComestible => Categoria.EsComestible;
 
 		/// <summary>La línea, escrita por el dominio con SUS hechos. No es un consejo: es lo que pasó.</summary>
 		public string ParaSonia
@@ -99,22 +99,12 @@ namespace Compras.Dominio
 					? $"y vos lo comprás cada {DiasEsperados} días"
 					: $"y suele reponerse cada {DiasEsperados} días";
 
+				// La mencion sale del repertorio: el nombre es una llave (FrutasYVerduras) y
+				// eso no se le muestra a nadie.
 				return EstaVencido
-					? $"la última vez que entró {Legible()} a tu canasta fue {hace}, {cada}"
-					: $"{Legible()} entró {hace}: al día";
+					? $"la última vez que entró {Categoria.Mencion} a tu canasta fue {hace}, {cada}"
+					: $"{Categoria.Mencion} entró {hace}: al día";
 			}
 		}
-
-		// El nombre del repertorio es una llave (FrutasYVerduras); lo que se le muestra a
-		// la persona es otra cosa.
-		private string Legible() => Categoria.Nombre switch
-		{
-			"Proteinas" => "una proteína",
-			"FrutasYVerduras" => "una fruta o verdura",
-			"LacteosYHuevos" => "un lácteo",
-			"GranosYAbarrotes" => "un grano o abarrote",
-			"Limpieza" => "algo de limpieza",
-			_ => Categoria.Nombre,
-		};
 	}
 }

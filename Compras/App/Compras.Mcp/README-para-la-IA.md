@@ -20,10 +20,11 @@ Con MCP no hay que enseñarle nada a la IA. El descubrimiento es del protocolo:
 
 - **`total_de_compras`** — cuánto gastó la persona en total, cuántas compras son, y
   hasta qué evento del supermercado leyó su app.
-- **`canasta_del_mes`** — la composición de UN mes: gasto recomendado / neutro /
-  ocasional (sobre lo comestible) y lo no comestible aparte.
-- **`comparar_canastas`** — cómo CAMBIÓ la canasta entre dos meses. Es la pregunta que
-  ningún ticket suelto contesta, y la mitad "compras" del cruce con el laboratorio.
+- **`canasta_del_mes`** — la composición de UN mes, departamento por departamento, con lo
+  comestible y lo no comestible separados.
+- **`comparar_canastas`** — cómo CAMBIÓ la canasta entre dos meses y **de qué pasillos
+  sale la diferencia**. Es la pregunta que ningún ticket suelto contesta, y la mitad
+  "compras" del cruce con el laboratorio.
 - **`garantia_de_producto`** — cuándo se compró un producto y hasta cuándo tiene
   garantía, con su respaldo completo (compra, fecha, cobertura, vigencia).
 
@@ -38,11 +39,16 @@ diseño: cada tool es una pregunta que la app decide contestar.
 
 ## Los datos se prestan para el análisis — y ese es el punto
 
-Cada línea de compra lleva su **categoría**, y la categoría lleva su **perfil de
-consumo** (recomendado / neutro / ocasional). El dominio devuelve **hechos** — montos y
-proporciones — nunca prosa: la canasta de agosto 2025 del guion es 9% ocasional, la de
-agosto 2026 es 97%. El cruce con el colesterol del laboratorio lo hace el **asistente**,
+Cada línea de compra lleva su **departamento**, que es el pasillo del supermercado: un
+hecho de góndola y no una valoración. El dominio devuelve **hechos** — montos,
+proporciones y de dónde salió cada diferencia — y la línea ya redactada, pero **nunca un
+veredicto**: en agosto de 2026 el guion lleva ₡32.600 y ₡27.580 salieron de dulces y
+postres, un pasillo que el agosto anterior no aparecía. Que eso esté bien o mal no lo
+contesta el súper: el cruce con el colesterol del laboratorio lo hace el **asistente**,
 que es el único que ve los dos negocios; los módulos no se hablan entre sí.
+
+La llave del departamento (`categoria`) es técnica y no se le muestra a nadie: para eso
+viene `titulo`.
 
 ## Solo lectura, y por qué importa
 

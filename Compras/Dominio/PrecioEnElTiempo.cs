@@ -50,10 +50,11 @@ namespace Compras.Dominio
 		/// <summary>El cambio en proporción del primer precio. 0,18 es un 18% más caro.</summary>
 		public abstract decimal CambioEnProporcion { get; }
 
-		/// <summary>Qué SIGNIFICA el cambio. Que un precio suba nunca es mejorar para quien paga.</summary>
-		public abstract Veredicto Veredicto { get; }
+		/// <summary>Si el precio se movio lo bastante como para no ser redondeo de góndola.</summary>
+		public abstract bool HayCambioReal { get; }
 
-		public string NombreDelVeredicto => Veredicto.Nombre;
+		/// <summary>La dirección del cambio. Preguntar HayCambioReal primero.</summary>
+		public abstract bool Subio { get; }
 
 		/// <summary>La lectura en una línea, escrita por el dominio con SUS hechos.</summary>
 		public abstract string ParaSonia { get; }
@@ -72,7 +73,11 @@ namespace Compras.Dominio
 			public override string UnidadDeReferencia => "";
 			public override decimal Cambio => 0m;
 			public override decimal CambioEnProporcion => 0m;
-			public override Veredicto Veredicto => Veredicto.Indeterminado;
+			public override bool HayCambioReal => false;
+
+			public override bool Subio =>
+				throw new InvalidOperationException(
+					$"No hay compras de «{Sku}»: no hay dirección que dar. Preguntar HayCambioReal antes.");
 
 			public override string ParaSonia => $"no hay compras de «{Sku}» en el historial";
 		}
@@ -122,15 +127,19 @@ namespace Compras.Dominio
 					? Math.Round(Cambio / PrimerPrecioPorUnidad, 4)
 					: 0m;
 
-			// Que un precio SUBA nunca es mejorar para quien paga: la direccion deseable de
-			// un precio es una sola, y por eso no hace falta consultarle nada al producto.
-			public override Veredicto Veredicto
+			public override bool HayCambioReal =>
+				HaySerie && Math.Abs(CambioEnProporcion) >= CambioQueCuentaComoReal;
+
+			public override bool Subio
 			{
 				get
 				{
-					if (!HaySerie) return Veredicto.Indeterminado;
-					if (Math.Abs(CambioEnProporcion) < CambioQueCuentaComoReal) return Veredicto.Estable;
-					return Cambio > 0m ? Veredicto.Empeorando : Veredicto.Mejorando;
+					if (!HayCambioReal)
+						throw new InvalidOperationException(
+							$"El precio de «{Sku}» no se movió lo suficiente como para darle una "
+							+ "dirección. Preguntar HayCambioReal antes.");
+
+					return Cambio > 0m;
 				}
 			}
 
@@ -149,10 +158,10 @@ namespace Compras.Dominio
 					string tramo = $"de {Colones(PrimerPrecioPorUnidad)} a {Colones(UltimoPrecioPorUnidad)} "
 						+ $"por {unidad}, entre {desde} y {hasta}";
 
-					if (Veredicto.EsEmpeorando)
-						return $"{Descripcion} te subió {Porcentaje(CambioEnProporcion)}: {tramo}";
-					if (Veredicto.EsMejorando)
-						return $"{Descripcion} te bajó {Porcentaje(Math.Abs(CambioEnProporcion))}: {tramo}";
+					if (HayCambioReal)
+						return Subio
+							? $"{Descripcion} te subió {Porcentaje(CambioEnProporcion)}: {tramo}"
+							: $"{Descripcion} te bajó {Porcentaje(Math.Abs(CambioEnProporcion))}: {tramo}";
 
 					return $"{Descripcion} se mantuvo {tramo}";
 				}
