@@ -334,9 +334,18 @@ Y dos reglas que el repo sostiene y que conviene adoptar desde el primer día:
 - **El dominio no lee el reloj.** La fecha entra por parámetro. Si el dominio consultara la hora, el
   mismo journal reproducido mañana daría otra respuesta. Saber qué día es hoy es derecho de la
   superficie.
-- **El dominio devuelve hechos, nunca prosa.** Tendencia, extremos, unidad, días, ritmo. La frase la
-  arma la carátula. Eso es lo que hace **imposible** el consejo de plantilla: no hay de dónde sacar
-  *"bajá las grasas"*.
+- **El dominio nombra, pero no inventa.** Tiene tres partes y colapsarlas en *"devuelve hechos, nunca
+  prosa"* pierde justo lo que importa:
+  - **Sí** arma su propia lectura, en una línea. *"Tu antígeno pasó de 3,0 a 5,2 ng/mL en tres
+    años"* la escribe el analito, con sus hechos y su vocabulario, porque es **lo único que puede
+    decir mejor que nadie**.
+  - **No** inventa el consejo. La acción sale de un conjunto cerrado de textos fijos asociados a la
+    severidad — ésa es la garantía de que ningún analito se fabrique una recomendación propia.
+  - **Los hechos viajan siempre al lado** de la lectura, para que la carátula o la IA puedan decir
+    otra cosa con ellos. La interpretación no los reemplaza, y por eso la conclusión es auditable.
+
+  El límite no está entre el hecho y la frase: está entre **nombrar** e **inventar**. Eso es lo que
+  hace imposible el consejo de plantilla — no hay de dónde sacar *"bajá las grasas"*.
 
 ---
 

@@ -18,7 +18,7 @@ que sabe programar, menos que nadie.
 | **5** | **Construir** — dominio, hosting, carátulas | la app | [3](03-construir-la-app.md) |
 | **6** | **Traer los datos del proveedor** | URL2 alimentando el journal | [5](#) *pendiente* |
 | **7** | **Exponerla al CLI y a la IA** | la superficie | [6](06-cli-y-acceso-de-la-ia.md) |
-| **8** | **Auditar** contra `Preguntas.md` | el reporte de deriva | *pendiente* |
+| **8** | **Auditar** contra `Preguntas.md` | el reporte de deriva | [Observables](observables.md) |
 
 Aparte del orden, y se lee cuando haga falta:
 
@@ -87,8 +87,11 @@ los negocios del repo se citan, no se adoptan.
 **6 (datos del proveedor).** Sigue bloqueado: falta el lado del proveedor y no hay ningún motor SQL
 corriendo contra el cual probar una receta.
 
-**8 (auditar).** Depende de que el capítulo 4 se reescriba con observables. Sin eso, un agente puede
-leer el código pero no sabe contra qué compararlo.
+**8 (auditar). Parcialmente desbloqueado.** Ya existe el instrumento: [la tabla de
+observables](observables.md), con cinco chequeos corridos contra los tres negocios. Faltan cuatro por
+correr, y uno quedó declarado **no observable** a propósito. Lo que todavía bloquea la auditoría
+completa es que **ningún negocio tiene su `Preguntas.md`**: sin la intención declarada, un agente
+puede leer el código pero no sabe contra qué compararlo.
 
 **A (compartir entre apps).** El capítulo 0 §6 fija el punto de partida: el cruce lo hace **el
 asistente**, sobre journals que la persona autorizó, no un canal entre módulos. Falta el caso en que
