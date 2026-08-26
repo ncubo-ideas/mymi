@@ -85,6 +85,24 @@ namespace Examenes.App.Vistas
 		public bool EsHallazgo { get; init; }
 	}
 
+	// LO MAS URGENTE DE TODO EL EXPEDIENTE, en una sola respuesta.
+	//
+	// Es la pregunta con la que una persona ABRE la app —«¿estoy bien?»— y hasta ahora
+	// ninguna carátula la hacía: el dominio la contestaba y nadie escuchaba. Componerla
+	// afuera no era una opción: exige recorrer cada serie, interpretarla con el criterio
+	// de SU analito y quedarse con la mayor, y ordenar severidades es conocimiento del
+	// dominio, no de una pantalla.
+	public sealed class LoMasUrgente
+	{
+		// "informativo", "seguimiento", "consulta medica", "atencion inmediata".
+		public string Severidad { get; init; } = "";
+
+		// Qué hacer, del conjunto cerrado. Vacío cuando no hay nada que hacer.
+		public string Accion { get; init; } = "";
+
+		public bool PideAlgo { get; init; }
+	}
+
 	// UN PUNTO de la serie, con su NUMERO. Es lo que un grafico necesita y una celda del
 	// cuadro no da: aquella trae "3.0 ng/mL" ya dicho, esto trae 3.0.
 	public sealed class PuntoDeSerie
