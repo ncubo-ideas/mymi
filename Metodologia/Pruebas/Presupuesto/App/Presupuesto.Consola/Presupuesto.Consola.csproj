@@ -1,0 +1,21 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!-- La caratula de consola. Es el arnes con el que se trabaja: mide el dominio sin el
+       sandbox del browser encima, y por eso es donde se valida primero.
+
+       `comprobar` corre las comprobaciones del dominio PURO: sin actor, sin journal y sin
+       disco. Cuando algo se rompe, dice que regla se rompio. -->
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net9.0</TargetFramework>
+    <Nullable>disable</Nullable>
+    <ImplicitUsings>disable</ImplicitUsings>
+    <RootNamespace>Presupuesto.Consola</RootNamespace>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\Dominio\Presupuesto.Dominio.csproj" />
+  </ItemGroup>
+
+</Project>
