@@ -199,56 +199,70 @@ internal sealed class ExamenesTools
 		});
 	}
 
-	[McpServerTool(Name = "revisar_mis_analitos", UseStructuredContent = true)]
-	[Description("Revisa TODOS los analitos de los que la persona tiene historia y devuelve la "
-		+ "tendencia de cada uno, marcando cuales exigen atencion. Usala cuando pregunte algo "
-		+ "general como '¿hay algo en mis examenes que venga empeorando?', '¿como vengo?' o "
-		+ "'¿tengo que preocuparme por algo?'. No es la lista de examenes que la app ya le "
-		+ "muestra: es la LECTURA de cada serie a lo largo del tiempo, que ninguna pantalla trae. "
-		+ "Los que tengan exigeAtencion en true son los que conviene que vea su medico.")]
-	public RevisionDeAnalitos Revision()
+	// LA TOOL QUE MIRA EL HUECO, no el dato.
+	//
+	// Reemplaza a `revisar_mis_analitos`, que recorria los analitos y devolvia la tendencia
+	// de cada uno — o sea, exactamente lo que la app renderiza. Su propia descripcion tenia
+	// que aclarar que "no es la lista que la app ya le muestra", y cuando una tool necesita
+	// defenderse de eso, ya se contesto sola. Es el mismo reclamo que Alvaro le hizo al
+	// `total` de Jonathan: si la IA contesta algo que ya esta en una pantalla, el demo no
+	// probo nada.
+	//
+	// Esta contesta lo unico que una pantalla NO puede: una ausencia. Una pantalla solo
+	// renderiza datos que tiene; "hace cuatro anos que no te medis el colesterol" no es un
+	// dato del expediente, es una conclusion sobre el expediente MAS el calendario MAS la
+	// periodicidad que cada analito define para si mismo.
+	[McpServerTool(Name = "que_me_falta_medir", UseStructuredContent = true)]
+	[Description("Que analitos estan vencidos: cuanto hace que no se miden y cada cuanto conviene "
+		+ "repetir cada uno. Usala cuando pregunte '¿que examenes me toca hacerme?', '¿hace "
+		+ "cuanto que no me chequeo el colesterol?' o '¿estoy al dia?'. Es lo que NINGUNA "
+		+ "pantalla puede mostrar: la app muestra lo que hay, esto dice lo que FALTA. La "
+		+ "periodicidad la decide cada analito y no es fija — un colesterol en rango se repite "
+		+ "cada cinco anos y uno alto todos los anos. Solo aparecen analitos que ya se midieron "
+		+ "alguna vez: de uno que nunca se hizo no hay nada que repetir.")]
+	public ControlesEnEspera QueMeFaltaMedir()
 	{
 		if (!lector.HayJournal)
-			return new RevisionDeAnalitos
+			return new ControlesEnEspera
 			{
 				HayDatos = false,
 				Carpeta = lector.Carpeta,
 				Detalle = DetalleSinJournal,
 			};
 
-		if (!lector.Consultar(api => api.ConsultaDeLaIAPermitida("revision")))
-			return new RevisionDeAnalitos
-			{
-				HayDatos = false,
-				Carpeta = lector.Carpeta,
-				Detalle = NegadaPorLaPersona("el repaso de todos los analitos"),
-			};
+		// HOY lo pone ESTE proceso, no el dominio. El modelo no lee el reloj: si lo
+		// hiciera, el mismo journal reproducido manana daria otra respuesta. Saber que dia
+		// es hoy es derecho de la superficie.
+		DateTime hoy = DateTime.Now;
 
-		// UNA sola rehidratacion para todas las preguntas. Separarlas releeria el journal
-		// varias veces y, peor, podria mezclar dos estados si la app escribe en el medio.
 		return lector.Consultar(api =>
 		{
-			var tendencias = new List<TendenciaDelAnalito>();
-			int exigenAtencion = 0;
-			long ultimoEvento = api.UltimoEventoProcesado();
-			int edad = api.EdadDelPaciente();
+			var controles = new List<ControlVencido>();
+			int vencidos = 0;
 
-			foreach (string analito in api.Analitos())
+			foreach (ControlEnEspera c in api.Controles(hoy))
 			{
-				TendenciaDelAnalito t = Armar(api.Tendencia(analito), api.Interpretacion(analito),
-					ultimoEvento, edad);
-				if (t.PideAlgo) exigenAtencion++;
-				tendencias.Add(t);
+				if (c.EstaVencido) vencidos++;
+				controles.Add(new ControlVencido
+				{
+					Analito = c.ParaMostrar,
+					UltimaMedicion = c.UltimaMedicion,
+					DiasDesdeLaUltima = c.DiasDesdeLaUltima,
+					CadaCuantosMeses = c.MesesRecomendados,
+					EstaVencido = c.EstaVencido,
+					Severidad = c.Severidad,
+					Accion = c.Accion,
+					Lectura = c.ParaSonia,
+				});
 			}
 
-			return new RevisionDeAnalitos
+			return new ControlesEnEspera
 			{
 				HayDatos = true,
-				Analitos = tendencias,
-				CuantosExigenAtencion = exigenAtencion,
-				EdadDelPaciente = edad,
-				CantidadDeExamenes = api.CantidadDeExamenes(),
-				UltimoEventoLeido = ultimoEvento,
+				Controles = controles,
+				CuantosVencidos = vencidos,
+				EvaluadoAl = hoy.Date,
+				UltimoEventoLeido = api.UltimoEventoProcesado(),
 				Carpeta = lector.Carpeta,
 				Detalle = "",
 			};
@@ -391,28 +405,26 @@ internal sealed class TendenciaDelAnalito
 	public string Detalle { get; init; } = "";
 }
 
-internal sealed class RevisionDeAnalitos
+internal sealed class ControlesEnEspera
 {
 	[JsonPropertyName("hayDatos")]
 	[Description("false cuando la app todavia no registro nada.")]
 	public bool HayDatos { get; init; }
 
-	[JsonPropertyName("analitos")]
-	[Description("La tendencia de cada analito del que hay historia.")]
-	public IReadOnlyList<TendenciaDelAnalito> Analitos { get; init; } = new List<TendenciaDelAnalito>();
+	[JsonPropertyName("controles")]
+	[Description("Un renglon por analito con historia, LO MAS VENCIDO PRIMERO. El que esta al "
+		+ "dia igual aparece, para poder decirlo.")]
+	public IReadOnlyList<ControlVencido> Controles { get; init; } = new List<ControlVencido>();
 
-	[JsonPropertyName("cuantosExigenAtencion")]
-	[Description("Cuantos analitos vienen cambiando en la direccion que preocupa. Si es cero, no "
-		+ "hay nada que la serie este marcando.")]
-	public int CuantosExigenAtencion { get; init; }
+	[JsonPropertyName("cuantosVencidos")]
+	[Description("Cuantos pasaron su periodicidad. Cero significa al dia con todo lo que alguna "
+		+ "vez se midio.")]
+	public int CuantosVencidos { get; init; }
 
-	[JsonPropertyName("edadDelPaciente")]
-	[Description("La edad con la que el dominio elige los rangos de referencia.")]
-	public int EdadDelPaciente { get; init; }
-
-	[JsonPropertyName("cantidadDeExamenes")]
-	[Description("Cuantos examenes tiene registrados el expediente en total.")]
-	public int CantidadDeExamenes { get; init; }
+	[JsonPropertyName("evaluadoAl")]
+	[Description("Contra que fecha se calculo. El dominio no lee el reloj: esta fecha la puso "
+		+ "este servidor, asi que la respuesta vale para ese dia.")]
+	public DateTime EvaluadoAl { get; init; }
 
 	[JsonPropertyName("ultimoEventoLeido")]
 	[Description("Hasta que evento del laboratorio leyo la app.")]
@@ -425,4 +437,42 @@ internal sealed class RevisionDeAnalitos
 	[JsonPropertyName("detalle")]
 	[Description("Vacio cuando todo esta bien; si no, que le conviene hacer a la persona.")]
 	public string Detalle { get; init; } = "";
+}
+
+internal sealed class ControlVencido
+{
+	[JsonPropertyName("analito")]
+	[Description("Como se llama para la persona, con acentos.")]
+	public string Analito { get; init; } = "";
+
+	[JsonPropertyName("ultimaMedicion")]
+	[Description("La fecha de la ultima vez que se midio.")]
+	public DateTime UltimaMedicion { get; init; }
+
+	[JsonPropertyName("diasDesdeLaUltima")]
+	[Description("Cuantos dias pasaron desde esa medicion.")]
+	public int DiasDesdeLaUltima { get; init; }
+
+	[JsonPropertyName("cadaCuantosMeses")]
+	[Description("Cada cuanto conviene repetir ESTE analito. NO es fijo: varios lo resuelven "
+		+ "contra su ultimo valor -un colesterol en rango cada 5 anos, uno alto cada ano-.")]
+	public int CadaCuantosMeses { get; init; }
+
+	[JsonPropertyName("estaVencido")]
+	[Description("true si ya paso su periodicidad.")]
+	public bool EstaVencido { get; init; }
+
+	[JsonPropertyName("severidad")]
+	[Description("informativo, seguimiento o consulta medica. Un control vencido NO es un "
+		+ "hallazgo clinico: no dice que haya nada mal, dice que hay algo que hacer.")]
+	public string Severidad { get; init; } = "";
+
+	[JsonPropertyName("accion")]
+	[Description("Que corresponde hacer, si algo. Vacio significa que esta al dia.")]
+	public string Accion { get; init; } = "";
+
+	[JsonPropertyName("lectura")]
+	[Description("La frase que arma el dominio. Deci esto, no lo reformules en un consejo "
+		+ "generico.")]
+	public string Lectura { get; init; } = "";
 }

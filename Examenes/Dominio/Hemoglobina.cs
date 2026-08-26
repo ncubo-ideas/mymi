@@ -38,6 +38,11 @@ namespace Examenes.Dominio
 
 		public override DireccionDeseable Direccion => DireccionDeseable.Mantenerse;
 
+		// Anual, y semestral si hay anemia: cuando el valor ya esta bajo, lo que importa
+		// es si sigue bajando, y eso no se ve esperando un ano.
+		public override int MesesHastaElProximo(int edad) =>
+			GradoDeAnemia().HayAnemia ? 6 : 12;
+
 		// ---------------------------------------------------------------- lo suyo
 
 		// CUANTA anemia hay, que es distinto de "esta bajo". El rango dice si cruzo el

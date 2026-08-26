@@ -53,6 +53,11 @@ namespace Examenes.Dominio
 
 		public override DireccionDeseable Direccion => DireccionDeseable.Bajar;
 
+		// EN RANGO se revisa cada cinco anos; FUERA, todos los anos. Es el ejemplo mas
+		// claro de por que esto no puede ser una constante: el mismo analito, la misma
+		// persona, y la respuesta cambia segun donde quedo el ultimo valor.
+		public override int MesesHastaElProximo(int edad) => EsNormalPara(edad) ? 60 : 12;
+
 		// ---------------------------------------------------------------- lo suyo
 
 		// EL NIVEL HABITUAL de esta persona, que no es lo mismo que el limite de la

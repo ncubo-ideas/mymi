@@ -362,6 +362,33 @@ namespace Examenes.App
 			")
 			.PerformQuery();
 
+		// QUE FALTA MEDIR. La consulta que ninguna pantalla puede contestar, porque una
+		// pantalla solo renderiza datos que tiene y esto es una AUSENCIA.
+		//
+		// `hoy` viaja como parametro y no lo lee el dominio: el modelo no toca el reloj.
+		public string ControlesPendientes(DateTime hoy) =>
+			app.Using(@"
+				foreach (control in expediente.ControlesPendientes(@hoy)) {
+					print control.Nombre analito,
+						control.ParaMostrar paraMostrar,
+						control.UltimaMedicion ultimaMedicion,
+						control.DiasDesdeLaUltima diasDesdeLaUltima,
+						control.MesesRecomendados mesesRecomendados,
+						control.DiasQueFaltan diasQueFaltan,
+						control.EstaVencido estaVencido,
+						control.NombreDeLaSeveridad severidad,
+						control.QueHacer accion,
+						control.ParaSonia paraSonia;
+				}
+			")
+			.WithParameters(p => {
+				p["hoy", typeof(DateTime)] = hoy;
+			})
+			.PerformQuery();
+
+		public IReadOnlyList<ControlEnEspera> Controles(DateTime hoy) =>
+			ProyeccionDeVistas.Controles(ControlesPendientes(hoy));
+
 		// EL CUADRO HISTORICO, plano. Ver CeldaDelCuadro en el dominio para por que viaja
 		// asi: el print proyecta un solo nivel, y una coleccion de filas que a su vez
 		// tienen celdas no cruza. Los indices son los que dejan que la superficie rearme
