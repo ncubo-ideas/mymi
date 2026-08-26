@@ -54,6 +54,7 @@ namespace Compras.Consola
 			LaCantidadDiceDeQue();
 			ElPrecioPorUnidadPermiteComparar();
 			LosJournalsViejosSiguenReproduciendo();
+			LaCategoriaEsDelProductoNoDeLaCompra();
 
 			Console.WriteLine();
 			Console.WriteLine(fallas == 0
@@ -523,6 +524,48 @@ namespace Compras.Consola
 			Revienta("presentaciones de largo distinto", () => new Compra("T-1", Hoy,
 				new[] { "A", "B" }, new[] { "a", "b" }, new[] { 1, 1 }, new[] { 1m, 1m },
 				new[] { "Proteinas", "Proteinas" }, new[] { 0, 0 }, new[] { "u" }));
+		}
+
+		// ---- la categoria es del producto, no del ticket ----
+		private static void LaCategoriaEsDelProductoNoDeLaCompra()
+		{
+			Titulo("la categoria es del producto, no del ticket");
+
+			Historial historial = ElGuion();
+			Igual("el catalogo se armo desde las compras", "True", (historial.Catalogo.Cantidad > 0).ToString());
+			Igual("  y conoce el helado", "True", historial.Catalogo.Tiene("HELADO-1L").ToString());
+			Igual("  con su categoria", "Azucarados", historial.Catalogo["HELADO-1L"].Categoria.Nombre);
+			Igual("  aunque aparezca en tres tickets", "3",
+				historial.ConsumoDe("helado").MesesConConsumo.ToString());
+
+			// EL DEFECTO QUE ESTO ARREGLA: el mismo sku entrando con otra categoria
+			// cambiaria el significado de las canastas ya leidas, sin que nada avise.
+			var mezclado = new Historial();
+			mezclado.Agregar(UnaCompra("T-1", new DateTime(2026, 1, 5),
+				("HELADO-1L", "Helado", 1, 3000m, "Azucarados", 0)));
+			Revienta("el mismo sku con otra categoria revienta", () =>
+				mezclado.Agregar(UnaCompra("T-2", new DateTime(2026, 2, 5),
+					("HELADO-1L", "Helado", 1, 3000m, "Proteinas", 0))));
+			Igual("  y la compra NO entro a medias", "1", mezclado.Cantidad.ToString());
+			Igual("  el catalogo quedo intacto", "Azucarados", mezclado.Catalogo["HELADO-1L"].Categoria.Nombre);
+
+			// La DESCRIPCION si puede afinarse: es el mismo producto mejor nombrado.
+			var renombrado = new Historial();
+			renombrado.Agregar(UnaCompra("T-1", new DateTime(2026, 1, 5),
+				("LECHE-1L", "Leche", 1, 950m, "LacteosYHuevos", 0)));
+			renombrado.Agregar(UnaCompra("T-2", new DateTime(2026, 2, 5),
+				("LECHE-1L", "Leche semidescremada 1L", 1, 980m, "LacteosYHuevos", 0)));
+			Igual("la descripcion se afina", "Leche semidescremada 1L",
+				renombrado.Catalogo["LECHE-1L"].Descripcion);
+			Igual("  y sigue siendo un solo producto", "1", renombrado.Catalogo.Cantidad.ToString());
+
+			// Y la pregunta que ningun ticket contesta: cuantos productos distintos de una
+			// categoria compra esta persona.
+			Igual("productos distintos de azucarados", "5",
+				historial.Catalogo.CuantosDe(Categoria.Azucarados).ToString());
+			Igual("  de electrohogar", "1", historial.Catalogo.CuantosDe(Categoria.Electrohogar).ToString());
+			Igual("un sku que nunca compro no esta", "False", historial.Catalogo.Tiene("CAVIAR").ToString());
+			Revienta("y preguntarlo revienta", () => historial.Catalogo["CAVIAR"]);
 		}
 
 		// ---- el rango: el contexto para elegir que pedir ----

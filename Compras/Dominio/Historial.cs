@@ -14,6 +14,12 @@ namespace Compras.Dominio
 		private readonly Dictionary<string, Compra> porNumero =
 			new Dictionary<string, Compra>(StringComparer.OrdinalIgnoreCase);
 
+		/// <summary>
+		/// Los productos que esta persona conoce, armados desde sus propias compras. Es lo
+		/// que mantiene coherente el historial: la categoría es del producto, no del ticket.
+		/// </summary>
+		public Catalogo Catalogo { get; private set; } = new Catalogo();
+
 		public IReadOnlyList<Compra> Lista => compras;
 
 		public int Cantidad => compras.Count;
@@ -52,6 +58,12 @@ namespace Compras.Dominio
 			ArgumentNullException.ThrowIfNull(compra);
 			if (porNumero.ContainsKey(compra.Numero))
 				throw new InvalidOperationException($"La compra '{compra.Numero}' ya estaba registrada.");
+
+			// El catalogo se reconoce ANTES de guardar la compra: si una linea contradice
+			// la categoria de un producto ya conocido, revienta y la compra no entra. Una
+			// compra a medias seria peor que rechazarla -la mitad de las lineas cambiando
+			// el significado de la canasta-, y aca es donde el journal todavia no escribio.
+			foreach (Item item in compra.Items) Catalogo.Reconocer(item);
 
 			compras.Add(compra);
 			porNumero[compra.Numero] = compra;
