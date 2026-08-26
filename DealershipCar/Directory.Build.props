@@ -1,0 +1,104 @@
+<Project>
+
+  <!-- LA IMPORTACION VA PRIMERO Y NO ES OPCIONAL.
+
+       MSBuild busca Directory.Build.props hacia arriba y SE DETIENE EN EL PRIMERO que
+       encuentra. Con este archivo aca, el de la raiz deja de cargarse solo — y ahi vive
+       VersionDelMotor, que DealershipCar.App.csproj usa para pinear Ncubo.Puppeteer.
+
+       Sin esta linea el PackageReference queda con Version vacia y el restore muere. Esa
+       es exactamente la forma de romper el pin que el comentario de la raiz documenta, asi
+       que se importa a mano y sin Condition: si el archivo de la raiz desaparece, esto
+       tiene que fallar fuerte, no seguir de largo con el pin perdido. -->
+  <Import Project="$([MSBuild]::GetPathOfFileAbove('Directory.Build.props', '$(MSBuildThisFileDirectory)../'))" />
+
+  <!-- EL FLAG DE PRIVACIDAD VA APARTE, ARRIBA, Y SIN Condition: aplica a TODO lo que este
+       debajo de DealershipCar/, incluida la copia del mecanismo — que NO lleva nuestra
+       identidad (el PropertyGroup de abajo la excluye) pero SI se entrega.
+
+       Esa distincion es el punto: la identidad es atribucion, y esto no. Meter el flag
+       adentro del grupo condicionado cambiaria una marca de mas por un sha de mas, que es
+       peor negocio.
+
+       MEDIDO, no supuesto: desde .NET 8 SourceLink viene en la caja y el SDK le pega
+       "+<sha del commit>" a InformationalVersion cuando el proyecto esta en un repo git.
+       O sea que el hash del commit de un repo privado sale publicado dentro de un dll que
+       se le entrega a la persona. Se apaga.
+
+       Comprobable en las dos direcciones: prender esto de nuevo y leer ProductVersion del
+       dll — vuelve el +sha. Y al reves, Examenes/Mecanismo/Puppets.Portador.dll no tiene
+       Directory.Build.props de modulo que lo apague, y publica el sha de verdad
+       (1.0.0+30fe0aac...). Es la misma copia del mismo mecanismo. -->
+  <PropertyGroup>
+    <IncludeSourceRevisionInInformationalVersion>false</IncludeSourceRevisionInInformationalVersion>
+  </PropertyGroup>
+
+  <!-- LA IDENTIDAD QUE VIAJA DENTRO DEL DLL, para este modulo y nada mas. Va aca y no en la
+       raiz porque Examenes y BugsDelMotor no son de este negocio ni de esta marca.
+
+       No es decoracion: el SDK convierte cada propiedad en un atributo de ensamblado Y en el
+       recurso VERSIONINFO del PE, asi que cualquiera que tenga el archivo lo lee sin fuente
+       y sin depurador — Propiedades del archivo en el Explorador, FileVersionInfo, ILSpy.
+       Es la unica forma que tiene soporte de contestar "que build tiene esta persona".
+
+       ACA NO VA NADA SENSIBLE: es texto plano dentro del binario. Ni rutas internas, ni
+       nombres de servidor, ni datos de la persona.
+
+       Y EN ESTE MODULO ES MAS FUERTE QUE ESO, MEDIDO EN EL PAYLOAD WASM. Blazor empaqueta
+       los ensamblados como Webcil dentro de un .wasm (cabecera \0asm), lo que SI descarta
+       el VERSIONINFO — FileVersionInfo sobre _framework/DealershipCar.Dominio.*.wasm
+       devuelve vacio. Pero los atributos manejados viajan enteros: "Sotavento Motors",
+       "My maintenance schedule" y "0.2.0" aparecen como texto en los bytes del .wasm.
+
+       O sea que esto no lo lee "quien tenga el archivo": lo lee CUALQUIERA QUE ABRA LA APP,
+       porque nginx sirve ese .wasm por HTTP a quien lo pida. Es por eso que el flag de arriba
+       importa de verdad y no es paranoia.
+
+       Y ES POR ESO QUE LA Condition EXCLUYE Puppets.Portador, que no es cosmetica.
+
+       El mecanismo se copia VERBATIM y no es nuestro (C8). Desde que bajo de /Mecanismo/ a
+       DealershipCar/Mecanismo/ quedo debajo de este archivo, y MSBuild no distingue: sin la
+       Condition hereda Company, Product, Copyright y Version igual que el resto. MEDIDO con
+       FileVersionInfo justo despues de la mudanza, su dll decia Company "Sotavento Motors" y
+       Product "My maintenance schedule" — y por el parrafo de arriba, ese texto lo sirve
+       nginx dentro del payload a cualquiera que abra la app.
+
+       Atribuirle a Sotavento Motors una pieza que no escribio es exactamente el argumento
+       con el que este archivo NO vive en la raiz, aplicado un nivel mas adentro: Examenes y
+       BugsDelMotor no son de esta marca, y el Portador tampoco.
+
+       Sin identidad propia queda en los defaults del SDK, igual que la copia de Examenes:
+       Company y Product pasan a ser "Puppets.Portador" y la version 1.0.0. Eso es lo
+       correcto — es una pieza sin marca, no una pieza nuestra sin llenar.
+
+       ARREGLA ADENTRO Y NO AFUERA: la alternativa era ponerle las propiedades al csproj del
+       Portador, y editar la copia verbatim es un hallazgo y no un arreglo (C8). Este archivo
+       es nuestro, asi que la exclusion vive aca. -->
+  <PropertyGroup Condition="'$(MSBuildProjectName)' != 'Puppets.Portador'">
+
+    <!-- El concesionario, no el fabricante del software. Es lo coherente con lo que la
+         persona ya ve: el manifest de la PWA y el <title> de index.html dicen Sotavento
+         Motors, porque la ficcion del modulo es que la app se la dio su concesionario. -->
+    <Company>Sotavento Motors</Company>
+    <Product>My maintenance schedule</Product>
+    <Copyright>Copyright (c) Sotavento Motors 2026</Copyright>
+
+    <!-- LA VERSION DEL MODULO, separada de VersionDelMotor a proposito: una es nuestra y la
+         otra es del paquete que consumimos. 0.2.0 es la rebanada OS2.
+
+         Version siembra las TRES: AssemblyVersion, FileVersion e InformationalVersion.
+         AssemblyVersion se fija aparte porque es la unica que participa del binding — las
+         otras dos son etiquetas. En 0.x cada minor puede romper, asi que se mueve con el
+         minor en vez de quedarse en 0.0.0.0. -->
+    <VersionDeLaApp Condition="'$(VersionDeLaApp)' == ''">0.2.0</VersionDeLaApp>
+    <Version>$(VersionDeLaApp)</Version>
+    <AssemblyVersion>0.2.0.0</AssemblyVersion>
+
+    <!-- El Description de cada proyecto lo pone cada csproj, porque cada ensamblado hace otra
+         cosa y una descripcion igual en ocho dll no informa nada. Este es el respaldo para
+         los que no lo declaran (pruebas, mocks, el inyector de demo). -->
+    <Description>Part of the Sotavento Motors maintenance schedule app.</Description>
+
+  </PropertyGroup>
+
+</Project>
