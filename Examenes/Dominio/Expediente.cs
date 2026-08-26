@@ -290,20 +290,26 @@ namespace Examenes.Dominio
 				if (!columnas.Contains(examen.Fecha.Date)) columnas.Add(examen.Fecha.Date);
 			columnas.Sort();
 
+			// UNA FILA POR ANALITO, no por examen. Un urianalisis trae tres cosas medidas y
+			// antes las tres caian en la misma fila, aplanadas en un string. Ahora cada
+			// lectura es su propia fila, con su nombre y su resultado.
 			var filas = new List<string>();
-			var porFila = new Dictionary<string, Examen>();
+			var porFila = new Dictionary<string, LecturaEnFecha>();
 			foreach (Examen examen in OrdenadosParaElCuadro())
-			{
-				string llave = LlaveDeFila(examen);
-				if (!filas.Contains(llave)) filas.Add(llave);
-				porFila[llave + "|" + examen.Fecha.Date.Ticks] = examen;
-			}
+				foreach (LecturaDeExamen lectura in examen.Lecturas)
+				{
+					string llave = lectura.Analito.Nombre;
+					if (!filas.Contains(llave)) filas.Add(llave);
+					porFila[llave + "|" + examen.Fecha.Date.Ticks] =
+						new LecturaEnFecha(lectura, examen);
+				}
 
 			var celdas = new List<CeldaDelCuadro>();
-			foreach (KeyValuePair<string, Examen> par in porFila)
+			foreach (KeyValuePair<string, LecturaEnFecha> par in porFila)
 			{
-				Examen examen = par.Value;
-				string llave = LlaveDeFila(examen);
+				Examen examen = par.Value.Examen;
+				LecturaDeExamen lectura = par.Value.Lectura;
+				string llave = lectura.Analito.Nombre;
 
 				// La lectura viaja SOLO para los que no forman serie. Los otros la piden
 				// por separado, porque la suya necesita la serie completa.
@@ -324,9 +330,9 @@ namespace Examenes.Dominio
 					filas.IndexOf(llave),
 					columnas.IndexOf(examen.Fecha.Date),
 					llave,
-					examen.Nombre,
+					lectura.ParaMostrar,
 					examen.Fecha.Date,
-					examen.ResultadoExpresado,
+					lectura.Expresado,
 					examen.AportaSerie,
 					severidad,
 					paraSonia));
@@ -340,12 +346,20 @@ namespace Examenes.Dominio
 			}
 		}
 
-		// La llave de la fila. Para los de sangre es el nombre CANONICO del analito, y eso
-		// importa: es la llave con la que la superficie pide despues la interpretacion de
-		// esa fila. Si fuera el nombre del examen, un ColesterolDetallado -que se llama
-		// "Colesterol HDL/LDL"- no encontraria su lectura.
-		private static string LlaveDeFila(Examen examen) =>
-			examen is ExamenDeSangre deSangre ? deSangre.Analito.Nombre : examen.Nombre;
+		// Una lectura junto al examen del que salio. Hace falta porque la celda necesita
+		// las dos cosas: el analito y el resultado vienen de la lectura, la fecha y la
+		// severidad del examen.
+		private sealed class LecturaEnFecha
+		{
+			internal LecturaDeExamen Lectura { get; }
+			internal Examen Examen { get; }
+
+			internal LecturaEnFecha(LecturaDeExamen lectura, Examen examen)
+			{
+				Lectura = lectura;
+				Examen = examen;
+			}
+		}
 
 		// Series primero, y adentro por nombre. Estable e independiente del orden en que
 		// llegaron los eventos.
@@ -356,7 +370,7 @@ namespace Examenes.Dominio
 			{
 				if (uno.AportaSerie != otro.AportaSerie) return uno.AportaSerie ? -1 : 1;
 
-				int porNombre = string.Compare(LlaveDeFila(uno), LlaveDeFila(otro),
+				int porNombre = string.Compare(uno.Nombre, otro.Nombre,
 					StringComparison.OrdinalIgnoreCase);
 				return porNombre != 0 ? porNombre : uno.Fecha.CompareTo(otro.Fecha);
 			});

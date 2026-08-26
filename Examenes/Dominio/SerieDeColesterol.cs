@@ -15,7 +15,7 @@ namespace Examenes.Dominio
 
 		private Colesterol Ultima => (Colesterol)Ultimo;
 
-		private static readonly Analito Suyo = Analito.ColesterolTotal;
+		private static readonly AnalitoContinuo Suyo = Analito.ColesterolTotal;
 
 		// LA META, y de donde arranco el episodio.
 		//
@@ -46,7 +46,7 @@ namespace Examenes.Dominio
 			for (int i = 0; i < mediciones.Count - 1; i++)
 				if (mediciones[i].Valor.Valor > pico) pico = mediciones[i].Valor.Valor;
 
-			return pico > Ultima.Valor.Valor ? new Medicion(pico, Analito.Unidad) : null;
+			return pico > Ultima.Valor.Valor ? new Medicion(pico, Suyo.Unidad) : null;
 		}
 
 		// CUANTO LLEVA RECORRIDO hacia la meta, de cero a uno. Es lo que una barra de

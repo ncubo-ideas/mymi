@@ -38,48 +38,90 @@ namespace Examenes.Dominio
 	// La UNIDAD tambien vive aca. Antes cada subclase de ExamenDeSangre repetia su
 	// constante al llamar a Medida(); ahora la dice el analito, que es de quien es. Es
 	// §5.2 del brief: la unidad gobierna la conversion, el analito gobierna el significado.
-	public sealed class Analito
+	// YA NO ES SOLO DE SANGRE, y esa es la correccion. Hasta ahora Analito exigia una
+	// UnidadDeMedida -un conjunto cerrado de tres concentraciones masicas- asi que los
+	// unicos que podian existir eran los cuantitativos de sangre. El color de la orina es
+	// algo que se midio, y no podia ser un analito; la sangre oculta tampoco.
+	//
+	// O sea que "Analito" era, en realidad, "analito cuantitativo de sangre" con un nombre
+	// general puesto encima. La misma clase de cosa que el feedback viene senalando, en un
+	// lugar donde no la habiamos buscado.
+	//
+	// LA UNIDAD BAJA A DONDE VIVE. No es de todo analito: es de la FORMA CONTINUA, igual
+	// que en la taxonomia de Magnitud. Un color es un analito sin unidad, del mismo modo
+	// que es una magnitud sin unidad.
+	//
+	// La identidad, los sinonimos y la resolucion por nombre se quedan aca: son de TODO
+	// analito, y son la razon de que esta clase exista.
+	public abstract class Analito
 	{
 		// Los sinonimos NO son adornos ni traducciones libres: son los encabezados con los
 		// que estos analitos aparecen impresos en reportes reales.
-		public static readonly Analito AntigenoProstatico = new Analito(
+		public static readonly AnalitoContinuo AntigenoProstatico = new AnalitoContinuo(
 			"Antigeno prostatico",
 			"Antígeno prostático",
 			UnidadDeMedida.NanogramosPorMililitro,
 			0m, 5000m,
 			"PSA", "APE", "antigeno prostatico especifico");
 
-		public static readonly Analito ColesterolTotal = new Analito(
+		public static readonly AnalitoContinuo ColesterolTotal = new AnalitoContinuo(
 			"Colesterol total",
 			"Colesterol total",
 			UnidadDeMedida.MiligramosPorDecilitro,
 			20m, 1200m,
 			"colesterol", "CHOL", "colesterol serico");
 
-		public static readonly Analito ColesterolLdl = new Analito(
+		public static readonly AnalitoContinuo ColesterolLdl = new AnalitoContinuo(
 			"Colesterol LDL",
 			"Colesterol LDL",
 			UnidadDeMedida.MiligramosPorDecilitro,
 			10m, 900m,
 			"LDL", "LDL-C", "lipoproteina de baja densidad");
 
-		public static readonly Analito ColesterolHdl = new Analito(
+		public static readonly AnalitoContinuo ColesterolHdl = new AnalitoContinuo(
 			"Colesterol HDL",
 			"Colesterol HDL",
 			UnidadDeMedida.MiligramosPorDecilitro,
 			5m, 200m,
 			"HDL", "HDL-C", "lipoproteina de alta densidad");
 
-		public static readonly Analito Hemoglobina = new Analito(
+		public static readonly AnalitoContinuo Hemoglobina = new AnalitoContinuo(
 			"Hemoglobina",
 			"Hemoglobina",
 			UnidadDeMedida.GramosPorDecilitro,
 			2m, 25m,
 			"HGB", "HB");
 
+		// ---------------------------------------------------------- los que faltaban
+		//
+		// El urianalisis informa TRES cosas medidas y el de heces DOS. Hasta ahora ninguna
+		// era un analito, asi que las tres colapsaban en una fila del historial y en un
+		// string: "ambar, nitritos negativo, sangre negativo". Es la misma aplanadora que
+		// sacamos del dominio, sobreviviendo en la identidad.
+		//
+		// Los nombres NO chocan con las clases de magnitud -ColorDeOrina, Nitritos,
+		// SangreEnOrina- a proposito: aquellas son el RESULTADO, estas son QUE se midio.
+
+		public static readonly AnalitoNominal ColorDeLaOrina = new AnalitoNominal(
+			"Color de la orina", "Color de la orina", "color de orina", "aspecto de la orina");
+
+		public static readonly AnalitoBinario NitritosEnOrina = new AnalitoBinario(
+			"Nitritos", "Nitritos", "nitrito", "nitritos en orina");
+
+		public static readonly AnalitoBinario SangreEnLaOrina = new AnalitoBinario(
+			"Sangre en orina", "Sangre en orina", "hematuria", "sangre oculta en orina");
+
+		public static readonly AnalitoNominal ColorDeLasHeces = new AnalitoNominal(
+			"Color de las heces", "Color de las heces", "color de heces", "consistencia");
+
+		public static readonly AnalitoBinario SangreEnLasHeces = new AnalitoBinario(
+			"Sangre en heces", "Sangre en heces", "sangre oculta en heces");
+
 		private static readonly Analito[] todos =
 		{
 			AntigenoProstatico, ColesterolTotal, ColesterolLdl, ColesterolHdl, Hemoglobina,
+			ColorDeLaOrina, NitritosEnOrina, SangreEnLaOrina,
+			ColorDeLasHeces, SangreEnLasHeces,
 		};
 
 		// Indice de TODOS los nombres -el canonico y los sinonimos- ya normalizados. Se
@@ -90,42 +132,12 @@ namespace Examenes.Dominio
 
 		public string ParaMostrar { get; }
 
-		public UnidadDeMedida Unidad { get; }
-
-		// EL RANGO DE LO FISIOLOGICAMENTE POSIBLE, que NO es el rango de referencia.
-		//
-		// El de referencia dice que es NORMAL; este dice que es POSIBLE en una persona
-		// viva. Entre los dos hay lugar para valores altos y reales -una hemoglobina de 9
-		// es anemia, no un error- y afuera de este ya no hay hallazgo que interpretar: hay
-		// un dato malformado.
-		//
-		// Alvaro: "aqui me estan mandando una vaina de un cadaver". Una hemoglobina de 40
-		// no es una hemoglobina alta, es un numero que nadie midio en un paciente.
-		//
-		// Vive en el ANALITO y no en el examen porque hace falta ANTES de construirlo: la
-		// ruta necesita poder descartar el evento sin que reviente el comando.
-		//
-		// ⚠️ Los limites son deliberadamente ANCHOS y orientativos. La guarda existe para
-		// atajar basura, no para opinar de clinica: apretarlos de mas descartaria hallazgos
-		// reales, que es peor que dejar pasar uno raro. Antes de mostrarse fuera del equipo
-		// conviene que alguien de laboratorio los revise.
-		public decimal ValorMinimoPosible { get; }
-
-		public decimal ValorMaximoPosible { get; }
-
-		public bool EsValorPosible(decimal valor) =>
-			valor >= ValorMinimoPosible && valor <= ValorMaximoPosible;
-
 		private readonly string[] sinonimos;
 
-		private Analito(string nombre, string paraMostrar, UnidadDeMedida unidad,
-			decimal minimoPosible, decimal maximoPosible, params string[] sinonimos)
+		protected Analito(string nombre, string paraMostrar, string[] sinonimos)
 		{
 			Nombre = nombre;
 			ParaMostrar = paraMostrar;
-			Unidad = unidad;
-			ValorMinimoPosible = minimoPosible;
-			ValorMaximoPosible = maximoPosible;
 			this.sinonimos = sinonimos ?? new string[0];
 		}
 

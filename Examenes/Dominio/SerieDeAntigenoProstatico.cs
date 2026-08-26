@@ -19,7 +19,7 @@ namespace Examenes.Dominio
 		// lo suyo sin castear en cada linea.
 		private AntigenoProstatico Ultima => (AntigenoProstatico)Ultimo;
 
-		private static readonly Analito Suyo = Analito.AntigenoProstatico;
+		private static readonly AnalitoContinuo Suyo = Analito.AntigenoProstatico;
 
 		// LA capacidad de este analito. Es publica y con nombre porque es lo que la IA
 		// pregunta y la pantalla no contesta.
@@ -77,7 +77,7 @@ namespace Examenes.Dominio
 				? previos[medio]
 				: (previos[medio - 1] + previos[medio]) / 2m;
 
-			return new Medicion(mediana, Analito.Unidad);
+			return new Medicion(mediana, Suyo.Unidad);
 		}
 
 		// Si el ultimo valor se salio de LO SUYO, que no es lo mismo que salirse del rango
@@ -225,8 +225,8 @@ namespace Examenes.Dominio
 			if (maximo == minimo)
 			{
 				bandas.Add(new BandaDelHistograma(
-					new Medicion(Borde(minimo), Analito.Unidad),
-					new Medicion(Borde(maximo), Analito.Unidad),
+					new Medicion(Borde(minimo), Suyo.Unidad),
+					new Medicion(Borde(maximo), Suyo.Unidad),
 					Cantidad, true));
 				return bandas;
 			}
@@ -261,7 +261,7 @@ namespace Examenes.Dominio
 				}
 
 				bandas.Add(new BandaDelHistograma(
-					new Medicion(desde, Analito.Unidad), new Medicion(hasta, Analito.Unidad),
+					new Medicion(desde, Suyo.Unidad), new Medicion(hasta, Suyo.Unidad),
 					cuantas, caeLaUltima));
 			}
 

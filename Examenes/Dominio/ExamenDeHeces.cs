@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 
 namespace Examenes.Dominio
 {
@@ -48,6 +49,23 @@ namespace Examenes.Dominio
 		public override string ResultadoExpresado => Sangre.FueRealizada
 			? $"{Color.Expresado}, sangre {Sangre.Expresado}"
 			: Color.Expresado;
+
+		public override IReadOnlyList<LecturaDeExamen> Lecturas
+		{
+			get
+			{
+				var lecturas = new List<LecturaDeExamen>
+				{
+					new LecturaDeExamen(Examenes.Dominio.Analito.ColorDeLasHeces, Color),
+				};
+
+				if (Sangre.FueRealizada)
+					lecturas.Add(new LecturaDeExamen(
+						Examenes.Dominio.Analito.SangreEnLasHeces, Sangre));
+
+				return lecturas;
+			}
+		}
 
 		public bool TieneHallazgo => !Color.EsEsperable || Sangre.EsHallazgo;
 

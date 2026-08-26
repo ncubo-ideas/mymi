@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 
 namespace Examenes.Dominio
 {
@@ -31,9 +32,13 @@ namespace Examenes.Dominio
 		// `override string Analito` con una constante, y la subclase repetia ademas su
 		// UnidadDeMedida al armar la medicion: dos hechos sobre el mismo analito escritos
 		// en dos lugares, que podian contradecirse. Ahora los dice Analito, una vez.
-		public Analito Analito { get; private set; }
+		// TIPADO COMO CONTINUO, no como Analito a secas. Un examen de sangre mide un numero
+		// con unidad, y necesita la unidad para validar el evento y el rango posible para
+		// rechazar basura. El color de la orina es un analito y no tiene ninguna de las
+		// dos: por eso Analito dejo de exigirlas y ellas bajaron a la forma que si las usa.
+		public AnalitoContinuo Analito { get; private set; }
 
-		protected ExamenDeSangre(DateTime fecha, Analito analito, Medicion valor) : base(fecha)
+		protected ExamenDeSangre(DateTime fecha, AnalitoContinuo analito, Medicion valor) : base(fecha)
 		{
 			ArgumentNullException.ThrowIfNull(analito);
 			ArgumentNullException.ThrowIfNull(valor);
@@ -46,7 +51,7 @@ namespace Examenes.Dominio
 		// constructor a proposito: una llamada virtual desde el constructor de la base
 		// corre antes de que la subclase este inicializada, y funciona solo mientras
 		// nadie la haga depender de un campo. Este helper no tiene ese riesgo.
-		protected static Medicion Medida(decimal valor, string simboloRecibido, Analito analito)
+		protected static Medicion Medida(decimal valor, string simboloRecibido, AnalitoContinuo analito)
 		{
 			ArgumentNullException.ThrowIfNull(analito);
 
@@ -71,6 +76,11 @@ namespace Examenes.Dominio
 		public override bool AportaSerie => true;
 
 		public override string ResultadoExpresado => Valor.Expresado;
+
+		// Un examen de sangre mide UN analito. Es el caso simple, y es justamente por eso
+		// que la forma singular parecia alcanzar para todos.
+		public override IReadOnlyList<LecturaDeExamen> Lecturas =>
+			new[] { new LecturaDeExamen(Analito, Valor) };
 
 		// El rango normal para una edad. Es una funcion de la edad, no una constante:
 		// eso es lo que significa "los rangos por edad van en el codigo del dominio".

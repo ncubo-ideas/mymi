@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 
 namespace Examenes.Dominio
 {
@@ -71,6 +72,30 @@ namespace Examenes.Dominio
 				if (Nitritos.FueRealizada) texto += $", nitritos {Nitritos.Expresado}";
 				if (Sangre.FueRealizada) texto += $", sangre {Sangre.Expresado}";
 				return texto;
+			}
+		}
+
+		// TRES COSAS MEDIDAS, y cada una es un analito. Las que el laboratorio no corrio no
+		// aparecen: una prueba no realizada no es una lectura vacia, es una lectura que no
+		// existe. Es el mismo criterio que la celda vacia del historial.
+		public override IReadOnlyList<LecturaDeExamen> Lecturas
+		{
+			get
+			{
+				var lecturas = new List<LecturaDeExamen>
+				{
+					new LecturaDeExamen(Examenes.Dominio.Analito.ColorDeLaOrina, Color),
+				};
+
+				if (Nitritos.FueRealizada)
+					lecturas.Add(new LecturaDeExamen(
+						Examenes.Dominio.Analito.NitritosEnOrina, Nitritos));
+
+				if (Sangre.FueRealizada)
+					lecturas.Add(new LecturaDeExamen(
+						Examenes.Dominio.Analito.SangreEnLaOrina, Sangre));
+
+				return lecturas;
 			}
 		}
 
