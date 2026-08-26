@@ -3,10 +3,13 @@
  * LA MARCA ES LABORATORIO CLÍNICO DELFOS, y las especificaciones vienen del código real
  * de su página (LaboratorioDelfos.module.css en nCuboSite), no de un boceto: cuando
  * Sonia descarga la app desde la página del laboratorio, lo que se abre debe
- * reconocerse en un segundo. Eso hace que el azul #123f6d sea vinculante.
+ * reconocerse en un segundo.
  *
- * FONDO CLARO, por legibilidad: es una app de resultados clínicos y la §6 de las
- * especificaciones permite el fondo oscuro pero no lo exige.
+ * FONDO OSCURO, y la decisión la cerró el landing real: el teléfono con el que
+ * Geaninna vende la app la muestra en gradiente navy, con los colores de semáforo que
+ * las especificaciones dan PARA fondo oscuro — los únicos no negociables. La app tiene
+ * que parecerse a la promesa desde la que se instala, y con el fondo oscuro el
+ * semáforo deja de ser una variante inventada: es el de ella, exacto.
  *
  * SIN BOOTSTRAP y CERO WEBFONTS. Georgia y Segoe UI son de sistema; con un payload sin
  * trimming de ~35 MB, no agregar descargas de fuentes es una decisión que conviene no
@@ -20,37 +23,43 @@
 
 :root {
     /* Institucional — «el laboratorio». Los valores vienen de las especificaciones. */
-    --azul:        #123f6d;   /* color de marca: header, logo, primarios */
-    --azul-oscuro: #0b2c4e;   /* titulares */
-    --azul-claro:  #1d5c9e;   /* hover, iconos, kickers, dato resaltado */
-    --celeste:     #7db4e0;   /* acentos sobre oscuro */
-    --tinta:       #1c2b3a;   /* texto principal sobre blanco */
-    --tenue:       #55677a;   /* texto secundario */
-    --tenue-2:     #8698ab;   /* rotulitos y pies; derivado de --tenue */
-    --fondo:       #ffffff;
-    --carta:       #ffffff;   /* la tarjeta se separa por borde y sombra, no por tono */
-    --suave:       #f4f7fa;   /* sección alterna, hovers */
-    --linea:       #dde6ee;
+    --azul:        #123f6d;   /* color de marca */
+    --azul-oscuro: #0b2c4e;
+    --azul-claro:  #1d5c9e;
+    --celeste:     #7db4e0;   /* acentos sobre oscuro: kickers, trazos, enlaces */
+    --logo:        #ffffff;   /* la gota y el círculo, sobre oscuro, van en blanco */
+
+    /* El gradiente navy de la §6, y la tinta que se lee encima. */
+    --fondo:       #0e2f55;   /* el navy base; --app-navy de las especificaciones */
+    --fondo-hondo: #0a2140;   /* el final del gradiente */
+    --tinta:       #eef4fb;   /* texto principal sobre navy */
+    --tenue:       #a9bdd3;   /* texto secundario */
+    --tenue-2:     #7e95ae;   /* rotulitos y pies */
+    --carta:       rgba(125, 180, 224, .07);   /* paneles translúcidos, como el mock */
+    --suave:       rgba(125, 180, 224, .12);   /* hovers */
+    --linea:       rgba(125, 180, 224, .22);
 
     /* Aplicación — «la app es de hoy, la página es de 1987». */
     --accion:      #1a6ff5;   /* color de acción: Refresh, Exportar */
-    --navy:        #0e2f55;
 
-    /* EL SEMÁFORO, ⚠️ PROVISIONAL PARA FONDO CLARO. Las especificaciones dan los
-     * colores de semáforo solo para fondo oscuro (#6ee7a0, #fbd06a), que sobre blanco
-     * no se leen. Estas variantes son derivadas para no bloquear, y Geaninna tiene que
-     * dar las definitivas: el semáforo es lo único que marcó como no negociable. */
-    --bien:        #1f7a4d;   /* está en rango / va en la dirección correcta */
-    --bien-suave:  #e7f5ec;
-    --bien-borde:  #c4e6d2;
-    --bien-zona:   #cdeadb;   /* donde es normal estar: las bandas de las formas */
-    --bien-vivo:   #46b380;   /* lo que ya se recorrio: el avance hacia la meta */
+    /* EL SEMÁFORO, con los valores EXACTOS de la §5 para fondo oscuro: trazo, fondo y
+     * borde tal como los dio Geaninna. Es lo único que marcó como no negociable, y
+     * desde que la app es oscura ya no hay nada que inventar.
+     * ⚠️ Solo el ROJO sigue provisional: las especificaciones lo dejan «pendiente»
+     * porque está reservado, y este valor es derivado hasta que ella dé el suyo. */
+    --bien:        #6ee7a0;
+    --bien-suave:  rgba(74, 222, 128, .12);
+    --bien-borde:  rgba(74, 222, 128, .35);
+    --bien-zona:   rgba(74, 222, 128, .14);   /* donde es normal estar: las bandas */
+    --bien-vivo:   #4ade80;   /* lo que ya se recorrio: el avance hacia la meta */
 
-    --ambar:       #b45309;   /* vigilar / consulte pronto: lo que exige atención */
-    --ambar-suave: #fdf3e3;
+    --ambar:       #fbd06a;   /* vigilar / consulte pronto: lo que exige atención */
+    --ambar-suave: rgba(251, 191, 36, .10);
+    --ambar-borde: rgba(251, 191, 36, .30);
 
-    --rojo:        #b3261e;   /* urgente — RESERVADO, lo decide el dominio */
-    --rojo-suave:  #fdecea;
+    --rojo:        #f87171;   /* urgente — RESERVADO; ⚠️ provisional */
+    --rojo-suave:  rgba(248, 113, 113, .12);
+    --rojo-borde:  rgba(248, 113, 113, .35);
 
     /* Serif para lo que se lee de un vistazo, sans para lo que se lee de verdad.
        Ambas de sistema: cero webfonts. */
@@ -61,9 +70,12 @@
 
 * { box-sizing: border-box; }
 
-html, body {
+html { background: var(--fondo-hondo); }
+
+body {
     margin: 0;
-    background: var(--fondo);
+    min-height: 100vh;
+    background: linear-gradient(180deg, var(--fondo) 0%, var(--fondo-hondo) 100%) fixed;
     color: var(--tinta);
     font-family: var(--sans);
     font-size: 16.5px;
@@ -84,7 +96,7 @@ h1:focus, h1:focus-visible { outline: none; }
     font-size: clamp(2rem, 4.2vw, 2.9rem);
     line-height: 1.15;
     letter-spacing: -.015em;
-    color: var(--azul-oscuro);
+    color: #ffffff;
     margin: 0 0 6px;
 }
 
@@ -108,7 +120,7 @@ h1:focus, h1:focus-visible { outline: none; }
 .marca-nombre {
     font-family: var(--serif);
     font-weight: 700; font-size: 1.15rem; line-height: 1.2;
-    color: var(--azul-oscuro);
+    color: #ffffff;
 }
 .marca-claim {
     font-size: 0.74rem; color: var(--tenue);
@@ -119,7 +131,7 @@ h1:focus, h1:focus-visible { outline: none; }
     font-family: var(--sans);
     font-weight: 700;
     font-size: 0.80rem; letter-spacing: .18em; text-transform: uppercase;
-    color: var(--azul-claro);
+    color: var(--celeste);
     display: flex; align-items: center; gap: 12px;
     margin: 40px 0 16px;
 }
@@ -143,8 +155,8 @@ h1:focus, h1:focus-visible { outline: none; }
 .aviso strong { font-weight: 600; }
 
 .aviso--neutro    { border-left-color: var(--tenue-2); }
-.aviso--atencion  { border-left-color: var(--ambar); background: var(--ambar-suave); }
-.aviso--problema  { border-left-color: var(--rojo);  background: var(--rojo-suave); color: #5f1d1d; }
+.aviso--atencion  { border-left-color: var(--ambar); background: var(--ambar-suave); border-color: var(--ambar-borde); }
+.aviso--problema  { border-left-color: var(--rojo);  background: var(--rojo-suave); border-color: var(--rojo-borde); }
 
 /* El detalle técnico de un error es para quien pueda hacer algo con él: se muestra, pero
    no compite con la frase que explica qué pasó. */
@@ -172,7 +184,7 @@ h1:focus, h1:focus-visible { outline: none; }
 }
 .boton:hover:not(:disabled) { filter: brightness(1.12); }
 .boton:disabled { opacity: .45; cursor: not-allowed; }
-.boton:focus-visible { outline: 2px solid var(--azul-claro); outline-offset: 2px; }
+.boton:focus-visible { outline: 2px solid var(--celeste); outline-offset: 2px; }
 
 .boton--atencion { background: var(--ambar); }
 .boton--problema { background: var(--rojo); }
@@ -184,12 +196,12 @@ h1:focus, h1:focus-visible { outline: none; }
 .boton--contorno:hover:not(:disabled) { background: var(--suave); filter: none; }
 
 .boton--enlace {
-    background: none; color: var(--azul-claro);
+    background: none; color: var(--celeste);
     padding: 0; border: 0;
     text-decoration: underline; text-underline-offset: 3px;
     font-size: 14.5px;
 }
-.boton--enlace:hover { color: var(--tinta); filter: none; }
+.boton--enlace:hover { color: #ffffff; filter: none; }
 
 /* ------------------------------------------------------------------ la serie */
 
@@ -202,18 +214,18 @@ h1:focus, h1:focus-visible { outline: none; }
     background: var(--carta);
     border: 1px solid var(--linea);
     border-radius: 14px;
-    box-shadow: 0 1px 4px rgba(11, 44, 78, 0.05);
+    box-shadow: 0 1px 4px rgba(0, 0, 0, .22);
     padding: 18px 20px;
     margin-bottom: 10px;
     cursor: pointer;
     transition: border-color .18s ease, box-shadow .18s ease, transform .18s ease;
 }
 .serie:hover {
-    border-color: var(--azul-claro);
-    box-shadow: 0 6px 18px -12px rgba(11,44,78,.45);
+    border-color: var(--celeste);
+    box-shadow: 0 6px 18px -12px rgba(0,0,0,.6);
     transform: translateY(-1px);
 }
-.serie:focus-visible { outline: 2px solid var(--azul-claro); outline-offset: 2px; }
+.serie:focus-visible { outline: 2px solid var(--celeste); outline-offset: 2px; }
 
 .serie-cabeza { display: flex; justify-content: space-between; align-items: flex-start; gap: 16px; }
 .serie-nombre { font-weight: 600; font-size: 16px; }
@@ -259,7 +271,7 @@ h1:focus, h1:focus-visible { outline: none; }
     background: var(--carta);
     border: 1px solid var(--linea);
     border-radius: 14px;
-    box-shadow: 0 1px 4px rgba(11, 44, 78, 0.05);
+    box-shadow: 0 1px 4px rgba(0, 0, 0, .22);
     padding: 16px 17px;
     display: flex; flex-direction: column; gap: 10px;
 }
@@ -270,7 +282,7 @@ h1:focus, h1:focus-visible { outline: none; }
 .modo-titulo {
     font-family: var(--sans); font-weight: 700;
     font-size: 11px; letter-spacing: .16em; text-transform: uppercase;
-    color: var(--azul-claro);
+    color: var(--celeste);
 }
 
 /* No disponible NO es lo mismo que deshabilitado: la opcion existe y en otro navegador
@@ -287,7 +299,7 @@ h1:focus, h1:focus-visible { outline: none; }
     background: var(--carta);
     border: 1px solid var(--linea);
     border-radius: 14px;
-    box-shadow: 0 1px 4px rgba(11, 44, 78, 0.05);
+    box-shadow: 0 1px 4px rgba(0, 0, 0, .22);
     padding: 16px 18px;
     margin-bottom: 10px;
 }
@@ -312,9 +324,9 @@ h1:focus, h1:focus-visible { outline: none; }
     white-space: nowrap;
 }
 .chip--estable  { background: var(--bien-suave);  color: var(--bien);  border-color: var(--bien-borde); }
-.chip--atencion { background: var(--ambar-suave); color: var(--ambar); border-color: #f0d7c0; }
+.chip--atencion { background: var(--ambar-suave); color: var(--ambar); border-color: var(--ambar-borde); }
 .chip--repetir  { background: var(--suave); color: var(--tenue); border-color: var(--linea); }
-.chip--problema { background: var(--rojo-suave); color: var(--rojo); border-color: #f2c6c2; }
+.chip--problema { background: var(--rojo-suave); color: var(--rojo); border-color: var(--rojo-borde); }
 .chip--sinserie { background: transparent; color: var(--tenue-2); border-color: var(--linea); }
 .chip--grande   { font-size: 12px; padding: 5px 12px; }
 
@@ -369,17 +381,17 @@ h1:focus, h1:focus-visible { outline: none; }
 /* --- trayectoria: la banda ES el fondo contra el que se lee todo lo demas --- */
 .forma--trayectoria .banda { fill: var(--bien-zona); }
 .forma--trayectoria .linea-base {
-    stroke: var(--azul); stroke-width: 1.5; opacity: .55;
+    stroke: var(--celeste); stroke-width: 1.5; opacity: .55;
 }
 .forma--trayectoria .linea-techo {
     stroke: var(--tenue-2); stroke-width: 1; stroke-dasharray: 4 4; opacity: .7;
 }
 .forma--trayectoria .trazo {
-    fill: none; stroke: var(--azul); stroke-width: 2;
+    fill: none; stroke: var(--celeste); stroke-width: 2;
     stroke-linejoin: round; stroke-linecap: round;
 }
-.forma--trayectoria .punto { fill: var(--azul); }
-.forma--trayectoria .punto--final { fill: var(--azul); stroke: var(--carta); stroke-width: 2; }
+.forma--trayectoria .punto { fill: var(--celeste); }
+.forma--trayectoria .punto--final { fill: var(--celeste); stroke: var(--fondo); stroke-width: 2; }
 .forma--trayectoria .punto--atencion { fill: var(--ambar); stroke: var(--fondo); stroke-width: 2; }
 
 /* --- progreso: el eje es el VALOR, no el tiempo --- */
@@ -389,7 +401,7 @@ h1:focus, h1:focus-visible { outline: none; }
 .forma--progreso .avance { fill: var(--bien-vivo); }
 /* Lo que falta, en ambar: es lo unico de esta forma que pide algo. */
 .forma--progreso .pendiente { fill: var(--ambar); opacity: .3; }
-.forma--progreso .hito-meta { stroke: var(--azul); stroke-width: 2; }
+.forma--progreso .hito-meta { stroke: var(--celeste); stroke-width: 2; }
 .forma--progreso .marca { fill: var(--ambar); stroke: var(--fondo); stroke-width: 2.5; }
 .forma--progreso .marca--llego { fill: var(--bien); }
 
@@ -398,7 +410,7 @@ h1:focus, h1:focus-visible { outline: none; }
    donde es normal estar, no donde no. Con los dos en gris no se distinguian. */
 .forma--banda .fuera { fill: var(--linea); opacity: .35; }
 .forma--banda .dentro { fill: var(--bien-zona); }
-.forma--banda .aguja { stroke: var(--azul); stroke-width: 3; stroke-linecap: round; }
+.forma--banda .aguja { stroke: var(--celeste); stroke-width: 3; stroke-linecap: round; }
 .forma--banda .aguja--fuera { stroke: var(--ambar); }
 
 /* ---------------------------------------------------------------- el historial
@@ -517,7 +529,7 @@ h1:focus, h1:focus-visible { outline: none; }
     transform-origin: 50% 50%; transform: rotate(-90deg);
 }
 .loading-progress circle:last-child {
-    stroke: var(--azul);
+    stroke: var(--celeste);
     stroke-dasharray: calc(3.141 * var(--blazor-load-percentage, 0%) * 0.8), 500%;
     transition: stroke-dasharray .05s ease-in-out;
 }
@@ -529,8 +541,7 @@ h1:focus, h1:focus-visible { outline: none; }
 .loading-progress-text:after { content: var(--blazor-load-percentage-text, "Cargando"); }
 
 #blazor-error-ui {
-    color-scheme: light only;
-    background: var(--rojo-suave); color: #5f1d1d;
+    background: #7f1d1d; color: #ffffff;
     border-top: 2px solid var(--rojo);
     bottom: 0; left: 0; width: 100%;
     box-sizing: border-box; display: none; position: fixed; z-index: 1000;
@@ -538,7 +549,7 @@ h1:focus, h1:focus-visible { outline: none; }
 }
 #blazor-error-ui .dismiss { cursor: pointer; position: absolute; right: .9rem; top: .6rem; }
 
-.blazor-error-boundary { background: var(--rojo); color: #fff; padding: 1rem 1.25rem; }
+.blazor-error-boundary { background: #7f1d1d; color: #fff; padding: 1rem 1.25rem; }
 .blazor-error-boundary::after { content: "Ocurrió un error."; }
 
 code { font-family: var(--mono); font-size: .9em; color: var(--ambar); }
@@ -566,7 +577,7 @@ code { font-family: var(--mono); font-size: .9em; color: var(--ambar); }
    unico hecho que esta forma tiene para contar. */
 .forma--presencia .hilo { stroke: var(--linea); stroke-width: 2; stroke-linecap: round; }
 .forma--presencia .racha { stroke: var(--ambar); stroke-width: 4; stroke-linecap: round; opacity: .45; }
-.forma--presencia .prueba { fill: var(--carta); stroke: var(--tenue-2); stroke-width: 2; }
+.forma--presencia .prueba { fill: var(--fondo); stroke: var(--tenue-2); stroke-width: 2; }
 .forma--presencia .prueba--presente { fill: var(--ambar); stroke: var(--fondo); stroke-width: 2; }
 
 /* ---------------------------------------------------------------- la portada
@@ -574,36 +585,37 @@ code { font-family: var(--mono); font-size: .9em; color: var(--ambar); }
    LA PRIMERA PREGUNTA. Alguien abre esta app para saber si esta bien, y lo primero que
    veia era un boton de Refresh y el numero de evento del journal.
 
-   El TONO lo decide el dominio -es la severidad mayor de todo el expediente- y aca solo
-   se traduce a color. El ambar sigue queriendo decir una sola cosa. */
+   Es LA TARJETA DE SEMAFORO del mock del landing: panel translucido con el borde y el
+   titular en el color de la severidad. El TONO lo decide el dominio -es la severidad
+   mayor de todo el expediente- y aca solo se traduce a color. */
 
 .portada {
     background: var(--carta);
     border: 1px solid var(--linea);
-    border-left: 4px solid var(--tenue-2);
     border-radius: 14px;
-    box-shadow: 0 1px 4px rgba(11, 44, 78, 0.05);
     padding: 22px 26px 20px;
     margin-bottom: 18px;
 }
-.portada--calma        { border-left-color: var(--bien); }
-.portada--atencion     { border-left-color: var(--ambar);  background: var(--ambar-suave); }
-.portada--problema     { border-left-color: var(--rojo);   background: var(--rojo-suave); }
+.portada--calma        { background: var(--bien-suave);  border-color: var(--bien-borde); }
+.portada--atencion     { background: var(--ambar-suave); border-color: var(--ambar-borde); }
+.portada--problema     { background: var(--rojo-suave);  border-color: var(--rojo-borde); }
 
 .portada-rotulo {
     font-family: var(--sans); font-weight: 700; font-size: 10.5px; letter-spacing: .18em;
-    text-transform: uppercase; color: var(--tenue-2);
+    text-transform: uppercase; color: var(--tenue);
     margin: 0 0 10px;
 }
 
 /* El titular es la frase del DOMINIO cuando hay algo que hacer. Va en serif y grande
-   porque es lo unico que alguien necesita leer si no lee nada mas. */
+   porque es lo unico que alguien necesita leer si no lee nada mas — y en el trazo del
+   semaforo, como el «Todo está bien» del mock. */
 .portada-titular {
     font-family: var(--serif); font-weight: 700;
     font-size: clamp(25px, 5vw, 34px); line-height: 1.1;
-    letter-spacing: -.01em; margin: 0; color: var(--azul-oscuro);
+    letter-spacing: -.01em; margin: 0; color: var(--tinta);
     text-wrap: balance;
 }
+.portada--calma .portada-titular    { color: var(--bien); }
 .portada--atencion .portada-titular { color: var(--ambar); }
 .portada--problema .portada-titular { color: var(--rojo); }
 
@@ -613,12 +625,12 @@ code { font-family: var(--mono); font-size: .9em; color: var(--ambar); }
 .portada-cual {
     font: inherit; font-size: 13.5px; font-weight: 500;
     padding: 5px 12px; cursor: pointer;
-    background: var(--carta); color: var(--tinta);
-    border: 1px solid var(--linea-2, var(--linea)); border-radius: 999px;
+    background: transparent; color: var(--tinta);
+    border: 1px solid var(--linea); border-radius: 999px;
     transition: transform .12s ease, border-color .12s ease;
 }
-.portada-cual:hover { border-color: var(--tenue-2); transform: translateY(-1px); }
-.portada-cual:focus-visible { outline: 2px solid var(--azul-claro); outline-offset: 2px; }
+.portada-cual:hover { border-color: var(--celeste); transform: translateY(-1px); }
+.portada-cual:focus-visible { outline: 2px solid var(--celeste); outline-offset: 2px; }
 
 /* LO QUE SE VIENE JUNTANDO. No es adorno: "desde ago 2022" es lo que convierte una lista
    de examenes en un historial, y es la razon por la que a alguien le importaria seguir
