@@ -14,7 +14,6 @@
   <Project Path="Examenes/EndPointDeEventos/Examenes.EventosMock.csproj" />
   <Project Path="Examenes/InyectorDeEventosDemo/Examenes.InyectorDeEventosDemo.csproj" />
   <Project Path="Examenes/Mecanismo/Puppets.Portador/Puppets.Portador.csproj" />
-  <Project Path="DealershipCar/InyectorDeEventosDemo/DealershipCar.InyectorDeEventosDemo.csproj" />
 
   <Project Path="DealershipCar/App/DealershipCar.App/DealershipCar.App.csproj" />
   <Project Path="DealershipCar/App/DealershipCar.Consola/DealershipCar.Consola.csproj" />
