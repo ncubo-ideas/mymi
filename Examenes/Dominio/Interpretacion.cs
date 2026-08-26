@@ -53,6 +53,16 @@ namespace Examenes.Dominio
 		// sin volver a pedirlos y para que la conclusion sea auditable.
 		public EvaluacionDeTendencia Hechos { get; private set; }
 
+		// COMO SE DIBUJA esta lectura. Viaja con la interpretacion porque llega junta: la
+		// superficie pide una vez y sabe que veredicto es Y que forma tiene.
+		public FormaDeLectura Forma { get; private set; }
+
+		public Interpretacion ConForma(FormaDeLectura forma)
+		{
+			Forma = forma;
+			return this;
+		}
+
 		public Interpretacion(Veredicto veredicto, Severidad severidad, string paraSonia,
 			EvaluacionDeTendencia hechos)
 		{
@@ -86,6 +96,7 @@ namespace Examenes.Dominio
 		public string Analito => Hechos.Analito;
 		public string AnalitoParaMostrar => Hechos.AnalitoParaMostrar;
 		public string NombreDelVeredicto => Veredicto.Nombre;
+		public string NombreDeLaForma => Forma == null ? "" : Forma.Nombre;
 		public string NombreDeLaSeveridad => Severidad.Nombre;
 		public bool PideAlgo => Severidad.PideAlgo;
 		public bool SugiereRepetirElExamen => Veredicto.SugiereRepetirElExamen;

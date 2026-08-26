@@ -33,6 +33,26 @@ namespace Examenes.Dominio
 		public bool VieneRecuperandose() =>
 			Cantidad >= 2 && PeorGrado().HayAnemia && !Ultima.GradoDeAnemia().HayAnemia;
 
+		// ---------------------------------------------------------------- como se dibuja
+
+		public override FormaDeLectura Forma => FormaDeLectura.PosicionEnBanda;
+
+		// Piso Y techo: es el unico analito del demo donde alejarse es peor en las dos
+		// direcciones, y por eso su dibujo es una banda y no una linea.
+		public override IReadOnlyList<ReferenciaDeLectura> Referencias(int edad)
+		{
+			var lineas = new List<ReferenciaDeLectura>();
+			if (Ultimo == null) return lineas;
+
+			RangoDeReferencia rango = Ultima.RangoPara(edad);
+			lineas.Add(new ReferenciaDeLectura("piso", rango.Minimo,
+				$"por debajo de {rango.Minimo.Expresado} ya es anemia"));
+			lineas.Add(new ReferenciaDeLectura("techo", rango.Maximo,
+				$"lo normal llega hasta {rango.Maximo.Expresado}"));
+
+			return lineas;
+		}
+
 		// ---------------------------------------------------------------- la lectura
 
 		public override Interpretacion Interpretar(int edad)

@@ -293,6 +293,20 @@ public sealed class EstadoDeLaApp : IAsyncDisposable
 	// una lectura por serie, sin conocer las clases del dominio.
 	public IReadOnlyList<string> Analitos() { Exigir(); return api!.Analitos(); }
 
+	// LOS PUNTOS de la serie, con su numero, y LAS LINEAS que los acompanan. Es lo que un
+	// grafico necesita y el cuadro no da: aquel trae "3.0 ng/mL" ya dicho.
+	public IReadOnlyList<PuntoDeSerie> Puntos(string analito)
+	{
+		Exigir();
+		return api!.Puntos(analito);
+	}
+
+	public IReadOnlyList<LineaDeReferencia> Referencias(string analito)
+	{
+		Exigir();
+		return api!.Referencias(analito);
+	}
+
 	// EL CUADRO HISTORICO, plano. La pantalla lo rearma; el dominio decidio que va donde.
 	public IReadOnlyList<CeldaEnCuadro> Cuadro() { Exigir(); return api!.Cuadro(); }
 

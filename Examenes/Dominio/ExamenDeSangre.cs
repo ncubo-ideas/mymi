@@ -134,6 +134,12 @@ namespace Examenes.Dominio
 		// de mostrarlas fuera del equipo.
 		public abstract int MesesHastaElProximo(int edad);
 
+		// Proyecciones planas para el print del DSL, que no navega dos niveles. Es lo que
+		// permite que un grafico reciba NUMEROS y no el texto "3.0 ng/mL".
+		public decimal ValorNumerico => Valor.Valor;
+
+		public string UnidadDelValor => Valor.Unidad.Simbolo;
+
 		public ClasificacionDeValor ClasificarPara(int edad) => RangoPara(edad).Clasificar(Valor);
 
 		// Si el valor se movio lo suficiente como para llamarlo cambio. Vive en la base

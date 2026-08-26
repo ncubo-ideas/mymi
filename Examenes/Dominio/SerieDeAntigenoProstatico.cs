@@ -268,6 +268,29 @@ namespace Examenes.Dominio
 			return bandas;
 		}
 
+		// ---------------------------------------------------------------- como se dibuja
+
+		public override FormaDeLectura Forma => FormaDeLectura.TrayectoriaConLineaBase;
+
+		// La linea base y el techo de la edad. La base solo aparece cuando hay fondo: sin
+		// ella no se dibuja una banda inventada.
+		public override IReadOnlyList<ReferenciaDeLectura> Referencias(int edad)
+		{
+			var lineas = new List<ReferenciaDeLectura>();
+			if (Ultimo == null) return lineas;
+
+			Medicion habitual = NivelHabitual();
+			if (habitual != null)
+				lineas.Add(new ReferenciaDeLectura("habitual", habitual,
+					$"tu nivel de siempre ronda {habitual.Expresado}"));
+
+			RangoDeReferencia rango = Ultima.RangoPara(edad);
+			lineas.Add(new ReferenciaDeLectura("techo", rango.Maximo,
+				$"a tu edad, lo esperable llega hasta {rango.Maximo.Expresado}"));
+
+			return lineas;
+		}
+
 		// ---------------------------------------------------------------- la lectura
 
 		public override Interpretacion Interpretar(int edad)

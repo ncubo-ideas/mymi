@@ -178,6 +178,15 @@ namespace Examenes.Dominio
 		// reciba umbrales y devuelva el mismo veredicto para todos.
 		public abstract Interpretacion Interpretar(int edad);
 
+		// COMO SE LEE esta serie, y por lo tanto como se dibuja. Ver FormaDeLectura para
+		// por que la forma es dominio y no estilo.
+		public abstract FormaDeLectura Forma { get; }
+
+		// LAS LINEAS QUE IMPORTAN para dibujar esa forma. Cada serie emite SOLO las que
+		// tiene: la del antigeno su linea base, la del colesterol su meta y su partida, la
+		// de la hemoglobina su piso y su techo. Nadie devuelve cero para rellenar.
+		public abstract IReadOnlyList<ReferenciaDeLectura> Referencias(int edad);
+
 		// El tramo mas reciente, en dias. Lo necesita el analito que calcula velocidad y
 		// no tiene por que rehacer la aritmetica de fechas de la serie.
 		public int DiasDelUltimoTramo =>

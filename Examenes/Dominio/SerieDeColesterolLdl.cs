@@ -17,6 +17,22 @@ namespace Examenes.Dominio
 		// fraccion que juega en contra del valor principal.
 		public bool HdlAcompana() => Ultima.HdlEsProtector;
 
+		// ---------------------------------------------------------------- como se dibuja
+
+		public override FormaDeLectura Forma => FormaDeLectura.ProgresoHaciaMeta;
+
+		public override IReadOnlyList<ReferenciaDeLectura> Referencias(int edad)
+		{
+			var lineas = new List<ReferenciaDeLectura>();
+			if (Ultimo == null) return lineas;
+
+			RangoDeReferencia rango = Ultima.RangoPara(edad);
+			lineas.Add(new ReferenciaDeLectura("meta", rango.Maximo,
+				$"tu meta de LDL es bajar de {rango.Maximo.Expresado}"));
+
+			return lineas;
+		}
+
 		// ---------------------------------------------------------------- la lectura
 
 		public override Interpretacion Interpretar(int edad)

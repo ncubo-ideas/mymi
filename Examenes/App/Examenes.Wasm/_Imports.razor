@@ -8,4 +8,8 @@
 @using Microsoft.JSInterop
 @using Examenes.Wasm
 @using Examenes.Wasm.Layout
+@* Sin esto, Razor trata <TrayectoriaConLineaBase> como un tag HTML desconocido: compila
+   sin una queja y emite <trayectoriaconlineabase puntos="Serie(t.Analito)"> literal. No
+   falla, no se ve, y solo se descubre mirando el DOM. *@
+@using Examenes.Wasm.Formas
 @using Examenes.Dominio

@@ -132,8 +132,9 @@ namespace Examenes.Dominio
 			Analito cual = Analito.PorNombre(analito);
 
 			return series.TryGetValue(cual, out SerieDeAnalito serie)
-				? serie.Interpretar(Edad)
-				: Interpretacion.SinSerie(EvaluacionDeTendencia.SinSerie(cual, 0, null));
+				? serie.Interpretar(Edad).ConForma(serie.Forma)
+				: Interpretacion.SinSerie(EvaluacionDeTendencia.SinSerie(cual, 0, null))
+					.ConForma(FormaDeLectura.Afirmacion);
 		}
 
 		// LO MAS URGENTE de todo el expediente. Es una pregunta que ninguna pantalla
@@ -232,6 +233,39 @@ namespace Examenes.Dominio
 			// superficie tenga que decidirlo.
 			pendientes.Sort((uno, otro) => uno.DiasQueFaltan.CompareTo(otro.DiasQueFaltan));
 			return pendientes;
+		}
+
+		// LOS PUNTOS DE LA SERIE, con su valor NUMERICO. El cuadro los da ya convertidos a
+		// texto -"3.0 ng/mL"-, que sirve para una tabla y no para dibujar. Un grafico
+		// necesita numeros.
+		public IReadOnlyList<ExamenDeSangre> PuntosDe(string analito)
+		{
+			Analito cual = Analito.PorNombre(analito);
+
+			return series.TryGetValue(cual, out SerieDeAnalito serie)
+				? serie.Mediciones
+				: new List<ExamenDeSangre>();
+		}
+
+		// COMO SE LEE ese analito. Total: de uno sin mediciones la respuesta es que no hay
+		// nada que dibujar.
+		public string FormaDeLecturaDe(string analito)
+		{
+			Analito cual = Analito.PorNombre(analito);
+
+			return series.TryGetValue(cual, out SerieDeAnalito serie)
+				? serie.Forma.Nombre
+				: FormaDeLectura.Afirmacion.Nombre;
+		}
+
+		// LAS LINEAS que hay que dibujar junto a los puntos.
+		public IReadOnlyList<ReferenciaDeLectura> ReferenciasDe(string analito)
+		{
+			Analito cual = Analito.PorNombre(analito);
+
+			return series.TryGetValue(cual, out SerieDeAnalito serie)
+				? serie.Referencias(Edad)
+				: new List<ReferenciaDeLectura>();
 		}
 
 		// EL CUADRO HISTORICO, plano y con indices. Ver CeldaDelCuadro para por que esto

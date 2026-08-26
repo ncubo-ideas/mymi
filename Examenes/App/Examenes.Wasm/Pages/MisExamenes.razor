@@ -233,11 +233,41 @@ else
                     </div>
                     <div class="serie-valor">@Valor(t.ValorFinal) <span>@t.Unidad</span></div>
                 </div>
-                @* La lectura y la accion salen del ANALITO. Esta pantalla ya no decide
-                   que decir: antes tenia escrito "Conviene que lo vea tu medico" acá
-                   adentro, igual para el antigeno que para el colesterol, y un .razor no
-                   tiene de donde saber si algo espera a la proxima cita. *@
                 @{ InterpretacionDeAnalito lectura = Lectura(t.Analito); }
+
+                @* CADA ANALITO CON SU FORMA. El dominio dice cuál es -no la pantalla- y
+                   acá solo se traduce a píxeles. Un antígeno se lee como trayectoria
+                   contra su línea base, un colesterol como progreso hacia una meta, una
+                   hemoglobina como posición en una banda. Dibujarlos igual sería la misma
+                   tabla que Álvaro rechazó, un piso más arriba. *@
+                @* La trayectoria necesita serie; la meta y la banda se dibujan con un
+                   solo punto, porque no hablan del tiempo sino de dónde estás parado. *@
+                @if (t.HaySerie || lectura.Forma != "trayectoria con linea base")
+                {
+                    @switch (lectura.Forma)
+                    {
+                        case "trayectoria con linea base":
+                            <TrayectoriaConLineaBase Puntos="Serie(t.Analito)"
+                                                     Referencias="Lineas(t.Analito)"
+                                                     PideAlgo="lectura.PideAlgo"
+                                                     Descripcion="@lectura.ParaSonia" />
+                            break;
+                        case "progreso hacia meta":
+                            <ProgresoHaciaMeta Puntos="Serie(t.Analito)"
+                                               Referencias="Lineas(t.Analito)"
+                                               Descripcion="@lectura.ParaSonia" />
+                            break;
+                        case "posicion en banda":
+                            <PosicionEnBanda Puntos="Serie(t.Analito)"
+                                             Referencias="Lineas(t.Analito)"
+                                             Descripcion="@lectura.ParaSonia" />
+                            break;
+                    }
+                }
+
+                @* La lectura y la acción salen del ANALITO. Esta pantalla ya no decide
+                   qué decir: antes tenía escrito "Conviene que lo vea tu médico" acá
+                   adentro, igual para el antígeno que para el colesterol. *@
                 @if (!string.IsNullOrEmpty(lectura.ParaSonia))
                 {
                     <div class="serie-lectura@(lectura.PideAlgo ? " serie-lectura--atencion" : "")">
@@ -258,56 +288,43 @@ else
         </div>
     }
 
-    <h2 class="seccion">Tus exámenes</h2>
+    <h2 class="seccion">Tu historial</h2>
     @if (examenes.Count == 0)
     {
         <p class="apunte">Todavía no hay exámenes. Apretá <em>Refresh</em>.</p>
     }
     else
     {
-        @* UNA FILA POR ANALITO Y UNA COLUMNA POR FECHA. Antes era una fila por medicion,
-           que repetia el nombre del analito y obligaba a leer salteado para reconstruir
-           una serie. Con las fechas en el eje, la serie se lee de un barrido horizontal,
-           que es el punto: la serie ES el dato.
+        @*  UNA LÍNEA DE TIEMPO DE VISITAS, no una tabla.
 
-           La pantalla NO arma la grilla: ubica cada celda por los dos indices que manda
-           el dominio. Que dos examenes del mismo dia sean una columna, y que una celda
-           vacia quede vacia en vez de arrastrar el valor anterior, ya se decidio alla. *@
-        <div style="overflow-x:auto">
-        <table class="tabla tabla--cuadro">
-            <thead>
-                <tr>
-                    <th>Analito</th>
-                    @foreach (DateTime fecha in ColumnasDelCuadro())
-                    {
-                        <th class="der fecha">@fecha.ToString("dd/MM/yy", CultureInfo.InvariantCulture)</th>
-                    }
-                    <th class="der"></th>
-                </tr>
-            </thead>
-            <tbody>
-                @foreach (FilaDelCuadro fila in FilasDelCuadro())
-                {
-                    <tr>
-                        <td>@fila.ParaMostrar</td>
-                        @for (int columna = 0; columna < ColumnasDelCuadro().Count; columna++)
+            La matriz que había acá era mejor que la lista plana, pero seguía siendo una
+            tabla genérica sobre analitos que no se parecen en nada — y las trayectorias
+            ya se ven arriba, cada una con su forma. Lo que esta sección aporta que las
+            tarjetas no: QUÉ PASÓ CADA DÍA. Una visita al laboratorio trae varios
+            analitos a la vez, y eso es una cronología, no una grilla.
+
+            Por eso también cambia el nombre. «Tus exámenes» describía una lista de
+            papeles; esto es el historial.                                              *@
+        <ol class="visitas">
+            @foreach (Visita visita in Visitas())
+            {
+                <li class="visita">
+                    <div class="visita-fecha">
+                        <span class="visita-dia">@visita.Fecha.ToString("dd MMM", Cultura)</span>
+                        <span class="visita-ano">@visita.Fecha.Year</span>
+                    </div>
+                    <ul class="visita-cosas">
+                        @foreach (CeldaEnCuadro celda in visita.Celdas)
                         {
-                            @* Celda vacía = ese analito NO se midió ese día. La raya se
-                               pone acá y no con un :empty en el CSS porque hay que verla:
-                               un hueco en blanco se lee como un error de la pantalla, y es
-                               justamente lo contrario — es el dominio negándose a
-                               interpolar un punto que nadie midió. *@
-                            <td class="der resultado">
-                                @(string.IsNullOrEmpty(fila.Celdas[columna])
-                                    ? "—" : fila.Celdas[columna])
-                            </td>
+                            <li class="visita-cosa">
+                                <span class="visita-que">@celda.ParaMostrar</span>
+                                <span class="visita-cuanto">@celda.Expresado</span>
+                            </li>
                         }
-                        <td class="der">@Marca(fila)</td>
-                    </tr>
-                }
-            </tbody>
-        </table>
-        </div>
+                    </ul>
+                </li>
+            }
+        </ol>
     }
 
     @* La ventana de perdida se dice, porque esconderla seria vender durabilidad que no hay.
@@ -463,6 +480,8 @@ else
         {
             hechos.Add(estado.Tendencia(analito));
             leidos[analito] = estado.Interpretacion(analito);
+            puntos[analito] = estado.Puntos(analito);
+            lineas[analito] = estado.Referencias(analito);
         }
         analitos = hechos;
         interpretaciones = leidos;
@@ -568,6 +587,44 @@ else
             if (!fila.AportaSerie && fila.Severidad != "" && fila.Severidad != "informativo")
                 hallazgos.Add(fila);
         return hallazgos;
+    }
+
+    private Dictionary<string, IReadOnlyList<PuntoDeSerie>> puntos = new();
+    private Dictionary<string, IReadOnlyList<LineaDeReferencia>> lineas = new();
+
+    private IReadOnlyList<PuntoDeSerie> Serie(string analito) =>
+        puntos.TryGetValue(analito, out var p) ? p : new List<PuntoDeSerie>();
+
+    private IReadOnlyList<LineaDeReferencia> Lineas(string analito) =>
+        lineas.TryGetValue(analito, out var l) ? l : new List<LineaDeReferencia>();
+
+    private static readonly CultureInfo Cultura = new CultureInfo("es-ES");
+
+    // Una visita: todo lo que se midió el mismo día. Las celdas ya vienen del dominio
+    // agrupadas por columna, así que acá solo se dan vuelta las filas por las fechas.
+    private sealed class Visita
+    {
+        public DateTime Fecha { get; init; }
+        public List<CeldaEnCuadro> Celdas { get; } = new();
+    }
+
+    // Lo más reciente primero: en un historial se mira para atrás, no para adelante.
+    private List<Visita> Visitas()
+    {
+        var porFecha = new Dictionary<DateTime, Visita>();
+        foreach (CeldaEnCuadro celda in celdas)
+        {
+            if (!porFecha.TryGetValue(celda.Fecha, out Visita? visita))
+            {
+                visita = new Visita { Fecha = celda.Fecha };
+                porFecha[celda.Fecha] = visita;
+            }
+            visita.Celdas.Add(celda);
+        }
+
+        var visitas = porFecha.Values.ToList();
+        visitas.Sort((una, otra) => otra.Fecha.CompareTo(una.Fecha));
+        return visitas;
     }
 
     private Dictionary<string, InterpretacionDeAnalito> interpretaciones = new();

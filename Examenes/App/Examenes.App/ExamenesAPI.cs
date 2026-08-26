@@ -311,6 +311,47 @@ namespace Examenes.App
 			")
 			.PerformQuery();
 
+		// LOS PUNTOS DE LA SERIE, con su numero. Es lo que un grafico necesita y una tabla
+		// no: el cuadro historico los da ya convertidos a texto.
+		public string PuntosDe(string analito)
+		{
+			ArgumentNullException.ThrowIfNullOrWhiteSpace(analito);
+
+			return app.Using(@"
+				foreach (punto in expediente.PuntosDe(@analito)) {
+					print punto.Fecha fecha,
+						punto.ValorNumerico valor,
+						punto.UnidadDelValor unidad;
+				}
+			")
+			.WithParameters(p => { p["analito", typeof(string)] = analito; })
+			.PerformQuery();
+		}
+
+		// LAS LINEAS que se dibujan junto a los puntos, y COMO se dibujan. Cada analito
+		// emite solo las que tiene; ninguno devuelve cero para rellenar.
+		public string ReferenciasDe(string analito)
+		{
+			ArgumentNullException.ThrowIfNullOrWhiteSpace(analito);
+
+			return app.Using(@"
+				foreach (referencia in expediente.ReferenciasDe(@analito)) {
+					print referencia.Nombre nombre,
+						referencia.Numero valor,
+						referencia.Unidad unidad,
+						referencia.ParaSonia paraSonia;
+				}
+			")
+			.WithParameters(p => { p["analito", typeof(string)] = analito; })
+			.PerformQuery();
+		}
+
+		public IReadOnlyList<PuntoDeSerie> Puntos(string analito) =>
+			ProyeccionDeVistas.Puntos(PuntosDe(analito));
+
+		public IReadOnlyList<LineaDeReferencia> Referencias(string analito) =>
+			ProyeccionDeVistas.Referencias(ReferenciasDe(analito));
+
 		// QUE FALTA MEDIR. La consulta que ninguna pantalla puede contestar, porque una
 		// pantalla solo renderiza datos que tiene y esto es una AUSENCIA.
 		//
@@ -406,6 +447,7 @@ namespace Examenes.App
 						lectura.AnalitoParaMostrar paraMostrar,
 						lectura.NombreDelVeredicto veredicto,
 						lectura.NombreDeLaSeveridad severidad,
+						lectura.NombreDeLaForma forma,
 						lectura.ParaSonia paraSonia,
 						lectura.Accion accion,
 						lectura.PideAlgo pideAlgo,

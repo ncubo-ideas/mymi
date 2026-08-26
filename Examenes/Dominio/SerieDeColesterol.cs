@@ -70,6 +70,29 @@ namespace Examenes.Dominio
 			return Ultima.EsCambioReal(Ultima.Valor.Valor - pico) && Ultima.Valor.Valor < pico;
 		}
 
+		// ---------------------------------------------------------------- como se dibuja
+
+		public override FormaDeLectura Forma => FormaDeLectura.ProgresoHaciaMeta;
+
+		// De donde partio y a donde va. La partida solo aparece si hubo episodio: sin el,
+		// no hay barra de progreso que dibujar, hay un valor.
+		public override IReadOnlyList<ReferenciaDeLectura> Referencias(int edad)
+		{
+			var lineas = new List<ReferenciaDeLectura>();
+			if (Ultimo == null) return lineas;
+
+			Medicion partida = PartidaDelEpisodio();
+			if (partida != null)
+				lineas.Add(new ReferenciaDeLectura("partida", partida,
+					$"veniás de {partida.Expresado}"));
+
+			MetaDeColesterol meta = Meta();
+			lineas.Add(new ReferenciaDeLectura("meta", meta.Objetivo,
+				meta.ComoObjetivo));
+
+			return lineas;
+		}
+
 		// ---------------------------------------------------------------- la lectura
 
 		public override Interpretacion Interpretar(int edad)
