@@ -5,6 +5,11 @@
     <Nullable>disable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
     <ServiceWorkerAssetsManifest>service-worker-assets.js</ServiceWorkerAssetsManifest>
+
+    <!-- Igual que name y description del manifest.webmanifest, a proposito: es la misma app y
+         la persona no tiene por que ver dos nombres segun donde mire. -->
+    <AssemblyTitle>My maintenance schedule</AssemblyTitle>
+    <Description>Your vehicle's maintenance schedule, kept in a folder of yours. Works offline.</Description>
   </PropertyGroup>
 
   <ItemGroup>

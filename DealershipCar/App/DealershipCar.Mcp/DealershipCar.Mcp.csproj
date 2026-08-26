@@ -21,6 +21,8 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <RootNamespace>DealershipCar.Mcp</RootNamespace>
     <AssemblyName>DealershipCar.Mcp</AssemblyName>
+    <AssemblyTitle>Maintenance schedule MCP server</AssemblyTitle>
+    <Description>Read-only MCP server that answers an assistant's questions from the owner's own journal folder. Never writes.</Description>
   </PropertyGroup>
 
   <ItemGroup>

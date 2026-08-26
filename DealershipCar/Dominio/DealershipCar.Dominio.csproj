@@ -19,6 +19,15 @@
     <RootNamespace>DealershipCar.Dominio</RootNamespace>
     <AssemblyName>DealershipCar.Dominio</AssemblyName>
 
+    <!-- AssemblyTitle y Description son propiedades, no referencias: la invariante de cero
+         dependencias sigue intacta. Lo demas de la identidad sale de ../Directory.Build.props.
+
+         OJO, MEDIDO: la propiedad es AssemblyTitle, NO Title. Title es del paquete NuGet y no
+         toca el ensamblado; con Title puesto, FileDescription salia "DealershipCar.Dominio",
+         que es el default $(AssemblyName). -->
+    <AssemblyTitle>Maintenance schedule rules</AssemblyTitle>
+    <Description>The maintenance schedule itself: due states, distance limits and deferral windows. Reads no clock and has no dependencies.</Description>
+
     <!-- E21 exige /// en cada tipo y cada miembro expuesto.
 
          OJO, MEDIDO EN T2: esto NO alcanza para hacerlo cumplir. CS1591 dice literalmente

@@ -15,6 +15,8 @@
     <ImplicitUsings>disable</ImplicitUsings>
     <RootNamespace>DealershipCar.Consola</RootNamespace>
     <AssemblyName>DealershipCar.Consola</AssemblyName>
+    <AssemblyTitle>Maintenance schedule measuring console</AssemblyTitle>
+    <Description>Scaffold shell: the same actor and the same performs as the browser, against a real disk, for measuring.</Description>
 
     <!-- El analizador de Microsoft.VisualStudio.Threading llega con el paquete del motor y se
          despierta en T8, cuando esta caratula se vuelve async para poder esperar al refresh.

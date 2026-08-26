@@ -19,6 +19,8 @@
     <ImplicitUsings>disable</ImplicitUsings>
     <RootNamespace>DealershipCar.App</RootNamespace>
     <AssemblyName>DealershipCar.App</AssemblyName>
+    <AssemblyTitle>Maintenance schedule API</AssemblyTitle>
+    <Description>The only door into the maintenance schedule: the commands and queries that the app, the console and the MCP server all enter through.</Description>
   </PropertyGroup>
 
   <ItemGroup>
