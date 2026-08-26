@@ -14,7 +14,7 @@ namespace Gnothi.Host;
 //
 // The direction of the arrows is the property, and it is verifiable: front end -> dispatcher
 // -> modules. Never the other way around, never sideways.
-internal sealed class Dispatcher
+public sealed class Dispatcher
 {
 	private readonly ModuleCatalog catalog;
 	private readonly Meter meter;
@@ -62,13 +62,13 @@ internal sealed class Dispatcher
 	}
 }
 
-internal sealed record Request(string Module, string Tool, IReadOnlyDictionary<string, object?>? Arguments);
+public sealed record Request(string Module, string Tool, IReadOnlyDictionary<string, object?>? Arguments);
 
 // The content travels OPAQUE on purpose. The dispatcher does not look at it, does not parse it
 // and does not reformat it: if it did, it would have to understand the domain, and that is
 // where the layer gets contaminated. The front end returns it exactly as it came from the
 // module.
-internal sealed record Response(bool Authorized, object? Content, string Reason)
+public sealed record Response(bool Authorized, object? Content, string Reason)
 {
 	public static Response Ok(object content) => new(true, content, "");
 	public static Response Denied(string reason) => new(false, null, reason);
@@ -77,7 +77,7 @@ internal sealed record Response(bool Authorized, object? Content, string Reason)
 // METERING is one of the Host's four verbs, and what gets metered is the ASSISTANT: how many
 // times it asked and what for. It is not a quota to protect the device -it is so the person can
 // see how much was taken from them.
-internal sealed class Meter
+public sealed class Meter
 {
 	private readonly Dictionary<string, int> perTool = [];
 	private readonly Lock gate = new();

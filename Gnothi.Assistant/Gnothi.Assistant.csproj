@@ -1,0 +1,26 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!-- GATE 2: our own agent loop + the model key.
+       It exists ONLY because a third-party assistant app still cannot call us on mobile.
+
+       IT IS DESIGNED TO BE DELETED, and that is a verifiable property, not an intention:
+         it lives in ITS OWN assembly, it references Gnothi.Host, and Gnothi.Host does NOT
+         reference it back. There is a test that asserts it (Gnothi.Assistant.Tests).
+
+       The day a mobile assistant can call a local host, this project is deleted and nothing
+       gets rewritten. If the Host ever named it, the reference graph would give it away. -->
+
+  <PropertyGroup>
+    <TargetFramework>net9.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <RootNamespace>Gnothi.Assistant</RootNamespace>
+    <AssemblyName>Gnothi.Assistant</AssemblyName>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <!-- THE ONLY reference, and the arrow goes one way. -->
+    <ProjectReference Include="..\Gnothi.Host\Gnothi.Host.csproj" />
+  </ItemGroup>
+
+</Project>

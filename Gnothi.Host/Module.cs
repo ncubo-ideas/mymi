@@ -1,5 +1,3 @@
-using ModelContextProtocol.Protocol;
-
 namespace Gnothi.Host;
 
 // ONE MODULE INSTANCE: what the institution declared + what the Host granted it + the shell
@@ -9,16 +7,16 @@ namespace Gnothi.Host;
 // system gives a child process -which is little- plus the folder of its own. Hard isolation
 // (its own linear memory, --dir) arrives with Stage 2. Better not to claim that this POC
 // demonstrates confinement: it demonstrates the aggregation link, which is another thing.
-internal sealed class Module : IAsyncDisposable
+public sealed class Module : IAsyncDisposable
 {
-	private readonly StdioShell shell;
+	private readonly IShell shell;
 
 	public Module(Manifest manifest, Installation installation, string directory)
 	{
 		Manifest = manifest;
 		Installation = installation;
 		Directory = directory;
-		shell = new StdioShell(manifest.Module, installation.Shell, installation.GrantedFolder);
+		shell = ChooseShell(manifest.Module, installation);
 	}
 
 	public Manifest Manifest { get; }
@@ -33,6 +31,20 @@ internal sealed class Module : IAsyncDisposable
 	// The name the tool travels under towards the assistant. Prefixed by module because two
 	// institutions are going to call two different things 'total', and the assistant picks by
 	// name and description.
+
+	// THE FACTORY. This is where `Shell.Type` starts being read -- it was declared in
+	// Installation.cs from the beginning and nobody consulted it: the shell was hardcoded.
+	// Now the choice is PER MODULE, and it lives in installation.json, which is the Host's.
+	//
+	// Practical consequence: facturas can stay on stdio while examenes runs in-process, both
+	// over the same journals. Migrating is changing one word in a json.
+	private static IShell ChooseShell(string name, Installation installation) =>
+		installation.Shell.Type.ToLowerInvariant() switch
+		{
+			"in-process" => new InProcessShell(name, installation.Shell, installation.GrantedFolder),
+			_            => new StdioShell(name, installation.Shell, installation.GrantedFolder),
+		};
+
 	public static string PublicName(string module, string tool) => $"{module}_{tool}";
 
 	// The tools this module CONTRIBUTES to the catalog, already filtered by consent.
@@ -69,13 +81,13 @@ internal sealed class Module : IAsyncDisposable
 	public bool Allows(string tool)
 		=> Installation.Enabled && !Installation.DisabledTools.Contains(tool);
 
-	public Task<CallToolResult> Invoke(
+	public Task<object> Invoke(
 		string tool, IReadOnlyDictionary<string, object?>? args, CancellationToken ct)
 		=> shell.Invoke(tool, args, ct);
 
 	// For the declared-against-real verification.
-	public async Task<IReadOnlyList<string>> ActualToolNames(CancellationToken ct)
-		=> [.. (await shell.ActualTools(ct)).Select(t => t.Name)];
+	public Task<IReadOnlyList<string>> ActualToolNames(CancellationToken ct)
+		=> shell.ActualTools(ct);
 
 	// Measured FROM OUTSIDE, with stat over the folder the Host granted. The module is not
 	// asked how much it takes up: a module that reports 4 MB while taking up 400 cannot exist

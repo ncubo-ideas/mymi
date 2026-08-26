@@ -1,0 +1,50 @@
+{
+  "//": "ESTE ARCHIVO ES DE LA INSTITUCION. El supermercado declara quien es y que ofrece.",
+  "manifest": "1.0",
+  "module": "compras",
+  "title": "Mis compras",
+  "institution": "Supermercado La Cosecha (mock del POC)",
+  "substrate": { "range": ">=3.0.0 <4.0.0" },
+
+  "//tools": "Cuatro tools intencionales. Las dos del medio piden numeros, y el manifiesto solo sabe declarar texto: se ve en el esquema publicado.",
+  "tools": [
+    {
+      "name": "total_de_compras",
+      "title": "Cuanto gaste en total",
+      "description": "Cuanto gasto en total la persona en el supermercado, sumando todas las compras que su app tiene registradas en esta computadora. Devuelve tambien cuantas compras son y hasta que evento del proveedor leyo la app.",
+      "readOnly": true,
+      "input": []
+    },
+    {
+      "name": "canasta_del_mes",
+      "title": "Como fue mi canasta de un mes",
+      "description": "Como se compuso la canasta del supermercado en UN mes: cuanto se gasto en cada categoria y que proporcion de lo COMESTIBLE fue de consumo ocasional. Lo no comestible no diluye la proporcion. Es la lectura que un ticket no puede dar.",
+      "readOnly": true,
+      "input": [
+        { "name": "anio", "type": "string", "description": "El anio, por ejemplo 2026. Es un numero entero." },
+        { "name": "mes", "type": "string", "description": "El mes, de 1 a 12. Es un numero entero." }
+      ]
+    },
+    {
+      "name": "comparar_canastas",
+      "title": "Como cambio mi canasta entre dos meses",
+      "description": "Como CAMBIO la canasta de la persona entre dos meses: si la proporcion de gasto ocasional crecio o bajo. Sirve para responder si esta comiendo distinto que antes, con numeros y no con impresiones.",
+      "readOnly": true,
+      "input": [
+        { "name": "anioAntes", "type": "string", "description": "El anio del mes de referencia (antes). Numero entero." },
+        { "name": "mesAntes", "type": "string", "description": "El mes de referencia (antes), de 1 a 12. Numero entero." },
+        { "name": "anioDespues", "type": "string", "description": "El anio del mes a comparar (despues). Numero entero." },
+        { "name": "mesDespues", "type": "string", "description": "El mes a comparar (despues), de 1 a 12. Numero entero." }
+      ]
+    },
+    {
+      "name": "garantia_de_producto",
+      "title": "Hasta cuando tiene garantia",
+      "description": "Cuando compro la persona un producto y hasta cuando tiene garantia. Busca por nombre o sku. Si no lo encuentra o no tiene cobertura contesta que no hay registro, no es un error. Si se recompro, gana la compra mas reciente.",
+      "readOnly": true,
+      "input": [
+        { "name": "producto", "type": "string", "description": "Nombre o parte del nombre, o el sku del producto. Por ejemplo 'olla arrocera'." }
+      ]
+    }
+  ]
+}

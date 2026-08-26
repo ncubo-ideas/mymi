@@ -97,9 +97,21 @@ internal static class ToolBridge
 				Content = [new TextContentBlock { Text = r.Reason }],
 			};
 
-		// The module's CallToolResult is returned WHOLE and untouched, with its
-		// structuredContent and its _meta. The Host is a postman.
-		return (CallToolResult)r.Content!;
+		// THE CONTENT ARRIVES OPAQUE, and it can have TWO shapes depending on the shell.
+		// Translating it is Gate 1's job and nobody else's: this is the only place in the Host
+		// that knows MCP.
+		//
+		//   stdio       the module ALREADY spoke MCP -> a CallToolResult arrives and is
+		//               forwarded WHOLE and untouched, with its structuredContent and _meta.
+		//   in-process  the module returned a domain object, already projected by the shell
+		//               -> it has to be dressed as an MCP response right here.
+		if (r.Content is CallToolResult fromModule) return fromModule;
+
+		return new CallToolResult
+		{
+			Content = [new TextContentBlock { Text = JsonSerializer.Serialize(r.Content) }],
+			StructuredContent = JsonSerializer.SerializeToElement(r.Content),
+		};
 	}
 
 	// The arguments arrive as JsonElement and are passed straight through: the Host does not

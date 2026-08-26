@@ -12,7 +12,7 @@ namespace Gnothi.Host;
 //
 // If the shell and the folder came in the manifest, the module would choose how it is run and
 // where it writes. Both belong to the Host by definition: granting is an act of the granter.
-internal sealed record Installation
+public sealed record Installation
 {
 	// How the Host brings this module up. In this POC: child process + stdio.
 	// Stage 2 changes ONLY this for a wasm runtime with --dir, and neither the manifest nor
@@ -35,7 +35,7 @@ internal sealed record Installation
 		   ?? throw new InvalidDataException($"empty or unreadable installation: {path}");
 }
 
-internal sealed record Shell
+public sealed record Shell
 {
 	[JsonPropertyName("type")] public string Type { get; init; } = "stdio";
 	[JsonPropertyName("command")] public string Command { get; init; } = "";

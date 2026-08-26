@@ -5,7 +5,7 @@
 
   "//shell": "Stage 1: child process + stdio, because in this POC the module ships its own MCP server. Stage 2 changes ONLY this block for a wasm runtime with --dir, and neither the manifest nor the module notices. The granted folder is appended as the last argument; it does not go here.",
   "shell": {
-    "type": "stdio",
+    "type": "in-process",
     "command": "dotnet",
     "arguments": [
       "C:/Users/edgar/Documents/Game/Gnothi/HolaMundo/Facturas/App/Facturas.Mcp/bin/Debug/net9.0/Facturas.Mcp.dll"

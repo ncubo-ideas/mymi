@@ -15,4 +15,16 @@
   <Project Path="Examenes/InyectorDeEventosDemo/Examenes.InyectorDeEventosDemo.csproj" />
   <Project Path="Examenes/Mecanismo/Puppets.Portador/Puppets.Portador.csproj" />
   <Project Path="Gnothi.Host/Gnothi.Host.csproj" />
+
+  <!-- Gate 2: our own agent loop, in its own projects BECAUSE it is designed to be
+       deleted. The day an external assistant reaches the Host directly, these three go
+       away and Gnothi.Host does not change a line. Gnothi.Assistant.Tests is what keeps
+       that true: it fails if the loop ever names something internal to the Host.
+
+       The Android app is NOT listed here on purpose. It targets net9.0-android and
+       would break the build for anyone without that workload installed. -->
+
+  <Project Path="Gnothi.Assistant/Gnothi.Assistant.csproj" />
+  <Project Path="Gnothi.Assistant.Measure/Gnothi.Assistant.Measure.csproj" />
+  <Project Path="Gnothi.Assistant.Tests/Gnothi.Assistant.Tests.csproj" />
 </Solution>

@@ -17,7 +17,7 @@ namespace Gnothi.Host;
 //
 // LAZY START, on purpose: reading twenty manifests is reading twenty json files; starting
 // twenty modules is twenty journal replays. The catalog does NOT need the module alive.
-internal sealed class StdioShell : IAsyncDisposable
+internal sealed class StdioShell : IShell
 {
 	private readonly string name;
 	private readonly Shell shell;
@@ -73,11 +73,11 @@ internal sealed class StdioShell : IAsyncDisposable
 	//
 	// It also evicts: asking a module who it is is no reason to leave it holding the person's
 	// folder open.
-	public async Task<IReadOnlyList<McpClientTool>> ActualTools(CancellationToken ct)
+	public async Task<IReadOnlyList<string>> ActualTools(CancellationToken ct)
 	{
 		try
 		{
-			return [.. await (await Start(ct)).ListToolsAsync(cancellationToken: ct)];
+			return [.. (await (await Start(ct)).ListToolsAsync(cancellationToken: ct)).Select(t => t.Name)];
 		}
 		finally { await Evict(); }
 	}
@@ -107,7 +107,7 @@ internal sealed class StdioShell : IAsyncDisposable
 	//
 	// And it happens to be right for another reason too: N live modules on a device is real
 	// RAM, and the module starts nothing on its own, so there is nothing to keep awake.
-	public async Task<CallToolResult> Invoke(
+	public async Task<object> Invoke(
 		string tool, IReadOnlyDictionary<string, object?>? arguments, CancellationToken ct)
 	{
 		try

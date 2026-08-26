@@ -10,7 +10,7 @@ namespace Gnothi.Host;
 // A module with an unreadable manifest is SKIPPED with a warning on stderr; it does not bring
 // the Host down. A Host that fails to start because one institution published a crooked json
 // is a Host that hands a third party the availability of every other module.
-internal sealed class ModuleCatalog : IAsyncDisposable
+public sealed class ModuleCatalog : IAsyncDisposable
 {
 	private readonly List<Module> modules = [];
 

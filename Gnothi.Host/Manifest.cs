@@ -14,7 +14,7 @@ namespace Gnothi.Host;
 //
 // And because it is a DECLARATION, it can be verified: later on the Host asks the module for
 // its real tools/list and compares. What was declared against what is.
-internal sealed record Manifest
+public sealed record Manifest
 {
 	[JsonPropertyName("manifest")] public string Version { get; init; } = "";
 	[JsonPropertyName("module")] public string Module { get; init; } = "";
@@ -43,7 +43,7 @@ internal sealed record Manifest
 
 // A RANGE, NOT an exact version. If a module pins one precise version, every Host update
 // orphans every installed module.
-internal sealed record Substrate
+public sealed record Substrate
 {
 	[JsonPropertyName("range")] public string Range { get; init; } = "";
 }
@@ -51,7 +51,7 @@ internal sealed record Substrate
 // What the module DECLARES it needs. The value of this is not informational: it is that the
 // Host can check it against what the module actually asks for at run time. A module that
 // declares 'network: false' and opens a socket is a module that lies, and that is detectable.
-internal sealed record Capabilities
+public sealed record Capabilities
 {
 	[JsonPropertyName("network")] public bool Network { get; init; }
 	[JsonPropertyName("folder")] public string Folder { get; init; } = "own";
@@ -71,7 +71,7 @@ internal sealed record Capabilities
 // POC covers tools with no parameters and tools with text parameters, which is what the
 // invoices module needs. The general case -an arbitrary input schema- calls for handling
 // tools/call by hand instead of synthesizing a delegate, and is noted as pending.
-internal sealed record DeclaredTool
+public sealed record DeclaredTool
 {
 	[JsonPropertyName("name")] public string Name { get; init; } = "";
 	[JsonPropertyName("title")] public string Title { get; init; } = "";
@@ -80,7 +80,7 @@ internal sealed record DeclaredTool
 	[JsonPropertyName("input")] public IReadOnlyList<DeclaredParameter> Input { get; init; } = [];
 }
 
-internal sealed record DeclaredParameter
+public sealed record DeclaredParameter
 {
 	[JsonPropertyName("name")] public string Name { get; init; } = "";
 	[JsonPropertyName("type")] public string Type { get; init; } = "string";
