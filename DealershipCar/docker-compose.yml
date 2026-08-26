@@ -1,0 +1,38 @@
+# Los dos servers del diagrama, simulados. Mocks de happy path, nada mas.
+#
+#   URL1  wasm-host    la pagina de descarga en / y la app en /app/  (8190 http / 8454 https)
+#   URL2  eventos-api  el endpoint que provee la narrativa del concesionario  (8092)
+#
+# wasm-host sirve el PUBLISH de la caratula, asi que ANTES de levantarlo hay que generarlo:
+#   dotnet publish ./App/DealershipCar.Wasm -c Release -o ./PaginaDeDescarga/publicado
+# y los certificados del listener https:
+#   ./PaginaDeDescarga/generar-certificado.sh
+#
+# El publish es Release, o sea TRIMMEADO. Es a proposito: es el unico build en el que la pregunta
+# del trimmer sobre el dominio internal se puede medir, y medirla es parte de T10.
+
+services:
+  eventos-api:
+    build:
+      context: ./EndPointDeEventos
+    container_name: dealership-car-eventos-api
+    ports:
+      - "8092:8092"
+    restart: unless-stopped
+
+  wasm-host:
+    image: nginx:1.27-alpine
+    container_name: dealership-car-wasm-host
+    ports:
+      - "8190:8190"
+      - "8454:8454"
+    volumes:
+      - ./PaginaDeDescarga/nginx.conf:/etc/nginx/nginx.conf:ro
+      # La pagina de descarga va en la RAIZ y la app bajo /app/. Dos monturas hermanas, no
+      # anidadas: una montura dentro de otra :ro no se puede crear.
+      - ./PaginaDeDescarga/descarga:/usr/share/nginx/descarga:ro
+      - ./PaginaDeDescarga/publicado/wwwroot:/usr/share/nginx/app:ro
+      - ./PaginaDeDescarga/certs:/etc/nginx/certs:ro
+    depends_on:
+      - eventos-api
+    restart: unless-stopped

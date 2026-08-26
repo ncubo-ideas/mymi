@@ -54,6 +54,17 @@
          Es un Exe y se referencia igual: un Exe es un ensamblado como cualquier otro. Las
          tools siguen internal y las pruebas entran por InternalsVisibleTo. -->
     <ProjectReference Include="..\..\App\DealershipCar.Mcp\DealershipCar.Mcp.csproj" />
+
+    <!-- La caratula del browser, desde T10, y por UNA sola razon: los tres conjuntos cerrados
+         que la pantalla ofrece en sus desplegables estan escritos a mano como texto, porque una
+         caratula no referencia el dominio (C25). Un nombre mal escrito lo rechaza la puerta sin
+         escribir nada, pero una clase que el dominio AGREGUE y la lista no simplemente no se
+         muestra, en silencio y para siempre. Esa es la mitad que ninguna otra prueba cubre y la
+         que T7 solo pudo dejar dicha.
+
+         ReferenceOutputAssembly basta: se necesita el ensamblado para leer tres arrays static,
+         no los assets de browser-wasm. -->
+    <ProjectReference Include="..\..\App\DealershipCar.Wasm\DealershipCar.Wasm.csproj" />
   </ItemGroup>
 
   <!-- El csproj del dominio viaja al output COMO DATO, para que la prueba de pureza lo lea

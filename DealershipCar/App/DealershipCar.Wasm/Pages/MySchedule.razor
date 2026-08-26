@@ -1,0 +1,628 @@
+@page "/"
+@inject AppState state
+
+@* LA PANTALLA. Todo lo que se ve sale de preguntarle al actor por DealershipCarAPI; el payload
+   del concesionario nunca llega hasta aca -- solo entra como argumento de un comando, adentro
+   del bucle de refresh.
+
+   EL TEXTO ES INGLES y los comentarios espanol, que es la decision 6 de T7 un piso mas arriba:
+   ReadDueReason y cada nombre de DueState los COMPONE EL DOMINIO en ingles (OUS-07 dice que
+   componer la razon es trabajo del dominio, no de la vista), asi que etiquetas en espanol
+   alrededor de payload en ingles se leerian como ruido. *@
+
+<PageTitle>My maintenance schedule</PageTitle>
+
+<h1 class="headline">My maintenance schedule</h1>
+<p class="letterhead"><b>Sotavento Motors</b> &middot; your vehicle's schedule, on your own computer.</p>
+
+@* UN solo lugar para los errores, y arriba. Abajo queda fuera de pantalla y la app parece no
+   reaccionar al click. *@
+@if (error.Length > 0)
+{
+    <div class="notice notice--problem">
+        <strong>@(state.IsUp ? "The operation could not be completed." : "The app could not be opened.")</strong>
+        <pre>@error</pre>
+    </div>
+}
+
+@if (destinationProblem.Length > 0)
+{
+    <div class="notice notice--problem" id="destination-problem">
+        <strong>The browser said no.</strong>
+        <p style="margin:6px 0 0">@destinationProblem</p>
+    </div>
+}
+
+@if (!state.IsUp)
+{
+    <div class="notice notice--neutral">
+        @* Cuando el handle volvio de IndexedDB pero el permiso caduco, la accion correcta es
+           RE-OTORGAR, no volver a elegir la carpeta. Ofrecer "Choose folder" como primaria hacia
+           que la persona reabriera el picker y volviera a navegar hasta la misma carpeta cada
+           vez. *@
+        @if (state.NeedsRegrant)
+        {
+            <p>
+                Your folder is <strong>&laquo;@state.FolderName&raquo;</strong>. The browser asks you to
+                confirm write permission every time you reopen the app.
+            </p>
+            <div class="row" style="margin-top:12px">
+                <button class="button button--attention" id="regrant" @onclick="RequestPermission">
+                    Grant permission to &laquo;@state.FolderName&raquo;
+                </button>
+                <button class="button" id="choose-folder" @onclick="ConnectFolder"
+                        disabled="@(pickerSupported == false)">
+                    Choose a different folder
+                </button>
+                <button class="button button--link" id="forget-folder" @onclick="ForgetFolder">
+                    Forget this folder
+                </button>
+            </div>
+            <p class="footnote" style="margin-top:8px">
+                If granting keeps failing without the browser asking you anything, this browser is not
+                going to grant it: some in-app and embedded browsers never do. Open this app in Chrome
+                or Edge directly. If you do have a padlock next to the address, resetting this site's
+                permissions there and reloading is the other thing to try.
+            </p>
+        }
+        else
+        {
+            <p>This app keeps <strong>your</strong> maintenance record. Choose where.</p>
+
+            @* Cuando NINGUN destino esta disponible, la causa importa: se arreglan distinto y una
+               de las dos no es culpa del navegador. *@
+            @if (noStorage == "insecure")
+            {
+                <p class="notice notice--attention">
+                    <strong>This page is not on a secure connection</strong>, so the browser will not let
+                    it save anything &mdash; any browser would do the same. Open it over
+                    <code>https</code>, or over <code>localhost</code>.
+                </p>
+            }
+            else if (noStorage == "browser")
+            {
+                <p class="notice notice--attention">
+                    <strong>This browser cannot save anything for this app.</strong> It has neither a
+                    folder picker nor private storage. Opening the app in another browser is the way out.
+                </p>
+            }
+
+            <div class="row" style="margin-top:12px">
+                @if (pickerSupported == true)
+                {
+                    <div class="option">
+                        <button class="button button--attention" id="choose-folder" @onclick="ConnectFolder">
+                            Choose a folder
+                        </button>
+                        <p class="footnote">
+                            The record lives in a folder of yours, and <strong>your assistant can read
+                            it</strong> &mdash; that is what the MCP server reads. This is the one that
+                            makes the app worth having.
+                        </p>
+                    </div>
+                }
+                @if (browserStorageSupported == true)
+                {
+                    <div class="option">
+                        <button class="button" id="use-browser-storage" @onclick="UseBrowserStorage">
+                            @(installedApp ? "Save inside this app" : "Save in this browser")
+                        </button>
+                        @* Que persista no alcanza: en este destino la mitad "tu IA lo lee" del
+                           producto NO funciona, porque el MCP corre AFUERA del browser y no ve
+                           este almacenamiento. Decirlo es la diferencia entre degradar y
+                           enganar. *@
+                        <p class="footnote">
+                            It survives closing, but it is <strong>not a folder of yours</strong> and your
+                            assistant <strong>cannot read it</strong>. The folder picker is desktop
+                            Chromium only, so this is the fallback, not an equal choice.
+                        </p>
+                    </div>
+                }
+            </div>
+        }
+
+        @* Abrir sin guardar es la salida de emergencia, no una alternativa pareja: la app anda y
+           no deja registro. Va aparte y como enlace, para que se note que es otra cosa. *@
+        <div style="margin-top:16px">
+            <button class="button button--link" id="open-without-saving" @onclick="Open">Open without saving anything</button>
+        </div>
+    </div>
+}
+else
+{
+    <div class="row" style="margin-bottom:18px">
+        <button class="button" id="refresh" @onclick="Refresh" disabled="@refreshing">
+            @(refreshing ? "Refreshing…" : "Refresh")
+        </button>
+        <button class="button button--outline" id="evaluate" @onclick="Evaluate">Re-evaluate now</button>
+        <span class="footnote mono" id="summary">
+            @due due &middot; @overdue overdue &middot; @missed missed maintenance &middot;
+            read up to event @lastEvent
+        </span>
+    </div>
+
+    @* Si la app no esta guardando, eso es lo MAS importante de la pantalla y va arriba, no en una
+       nota al pie. Sin destino la app se ve completa y correcta -- se pone al dia contra el
+       concesionario en cada apertura -- y no hay forma de notar que no persiste salvo que se
+       diga. Es la degradacion silenciosa que hace que el servidor MCP lea un estado viejo. *@
+    @* TRES ESTADOS DISTINTOS, no dos, y confundirlos era un defecto: "elegiste una carpeta pero
+       no hay permiso de escritura" salia por la misma rama que "no elegiste nada", asi que la
+       pantalla nombraba la causa equivocada y por lo tanto el remedio equivocado. *@
+    @if (state.NeedsRegrant)
+    {
+        <div class="notice notice--problem row" id="needs-regrant">
+            <div class="grow">
+                <strong>Your folder &laquo;@state.FolderName&raquo; is read-only for this app.</strong>
+                The browser grants permission to <em>write</em> separately from letting you pick the
+                folder, and it withdraws it when you reopen the app. Until you grant it again,
+                <strong>nothing you do here is being saved</strong> and your assistant is reading an
+                older version.
+            </div>
+            <button class="button button--problem" id="regrant" @onclick="RequestPermission">
+                Grant write access
+            </button>
+        </div>
+    }
+    else if (!state.HasFolder)
+    {
+        <div class="notice notice--attention row" id="not-saving">
+            <div class="grow">
+                <strong>Nothing is being saved.</strong>
+                This app is running with no destination: what you see is fetched from the dealership
+                every time you open it, and no record of yours is kept.
+            </div>
+            @if (pickerSupported == true)
+            {
+                <button class="button button--attention" id="choose-folder" @onclick="ConnectFolder">Choose a folder</button>
+            }
+            else if (browserStorageSupported == true)
+            {
+                <button class="button button--attention" id="use-browser-storage" @onclick="UseBrowserStorage">Save in this browser</button>
+            }
+            else
+            {
+                @* NI UNO NI OTRO: el aviso no puede quedarse sin salida. Un banner que dice "no se
+                   esta guardando nada" y no ofrece nada es una app sin salida, que es justo lo que
+                   se reporto. *@
+                <span class="footnote">
+                    This browser offers neither a folder picker nor its own storage, so there is
+                    nothing to attach. Open this app in Chrome or Edge directly.
+                </span>
+            }
+        </div>
+    }
+    else if (state.SavingIsFailing.Length > 0)
+    {
+        <div class="notice notice--problem row" id="saving-failing">
+            <div class="grow">
+                <strong>The folder refused the write.</strong>
+                What you see is <strong>not</strong> saved in &laquo;@state.FolderName&raquo;. It is usually
+                the permission, which expires when you reopen the app.
+                <div class="footnote mono" style="margin-top:6px">@state.SavingIsFailing</div>
+            </div>
+            <button class="button button--problem" id="regrant" @onclick="RequestPermission">Grant permission again</button>
+        </div>
+    }
+    else if (state.InBrowserStorage)
+    {
+        <p class="notice notice--attention" id="in-browser-storage">
+            <strong>@(installedApp ? "Saving inside this app" : "Saving in this browser")</strong>, so your
+            record survives closing. But your assistant <strong>cannot read it</strong>: that needs a
+            folder of yours, and @(installedApp ? "here" : "this browser") does not allow one.
+        </p>
+    }
+    else
+    {
+        <p class="footnote" id="in-own-folder">
+            Saved to &laquo;@state.FolderName&raquo; after every change.
+        </p>
+    }
+
+    @* NO ALCANZAR AL CONCESIONARIO NO IMPIDE ABRIR -- eso es de lo que sirve tener el dato propio
+       -- pero TIENE que decirse. Sin este aviso la pantalla es indistinguible de una que si se
+       puso al dia, y lo que la persona esta leyendo puede tener meses. Medido: el aviso vivia
+       dentro de LastMessage y la evaluacion de apertura, que corre despues, lo pisaba. *@
+    @if (state.DealershipUnreachable.Length > 0)
+    {
+        <div class="notice notice--attention row" id="dealership-unreachable">
+            <div class="grow">
+                <strong>This is your own record, not today's news from the dealership.</strong>
+                The app could not reach it when it opened, so anything the dealership sent since the
+                last time is not here yet. Everything below is what your record already holds.
+                <div class="footnote mono" style="margin-top:6px">@state.DealershipUnreachable</div>
+            </div>
+            <button class="button button--attention" id="retry-dealership" @onclick="Refresh">Try again</button>
+        </div>
+    }
+
+    @* LA CARATULA DEL VEHICULO. El VIN sale del JOURNAL, no de appsettings.json: abrir con otro
+       vin no cambia el que quedo journalizado, asi que preguntarselo al actor es la unica
+       respuesta que no miente. *@
+    <div class="plate" id="vehicle">
+        <span class="mono">VIN @vin</span>
+        @if (evaluatedUpTo.Length > 0)
+        {
+            <span class="footnote">as of @evaluatedUpTo</span>
+        }
+        else
+        {
+            <span class="footnote">not evaluated yet</span>
+        }
+    </div>
+
+    @* EL TABLERO PUEDE NO SER DE HOY, y eso hay que decirlo. Un journal evaluado hasta un instante
+       posterior al reloj hace que la evaluacion de apertura se rechace (C6, correctamente), y sin
+       este aviso la persona lee el estado de ese instante futuro creyendo que es el de hoy. *@
+    @if (state.EvaluationSkipped.Length > 0)
+    {
+        <p class="notice notice--attention" id="evaluation-skipped">
+            <strong>This is not today's reading.</strong> @state.EvaluationSkipped
+        </p>
+    }
+
+    @* LA UNICA PREGUNTA QUE LA PERSONA HACE PRIMERO, y por eso va antes de la tabla. Se pregunta
+       con su guarda de presencia: ReadNextDueKind TIRA cuando no hay nada vencido (E41), y "nada
+       esta vencido" es la mejor noticia que esta app puede dar, no un error. *@
+    @if (nextDue.Length > 0)
+    {
+        <p class="verdict verdict--attention" id="next-due">
+            The next thing due is <strong>@Spaced(nextDue)</strong>.
+        </p>
+    }
+    else
+    {
+        <p class="verdict" id="next-due">Nothing is due right now.</p>
+    }
+
+    <p class="footnote" id="what-you-can-do">
+        <strong>Putting something off</strong> records that you are postponing it, and why &mdash; the
+        reason becomes part of your record. The schedule limits how many times each operation can be
+        put off, and it will not let a safety operation be put off at all.
+    </p>
+
+    <div class="scrolls">
+        <table class="board" id="board">
+            <thead>
+                <tr>
+                    <th>Operation</th>
+                    <th>State</th>
+                    <th>Why</th>
+                    <th>Times put off</th>
+                    <th>What you can do</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (string kind in AppState.TheNineKinds)
+                {
+                    <tr id="@("row-" + kind)">
+                        <td class="mono">@Spaced(kind)</td>
+                        <td class="state state--@board[kind].ToLowerInvariant()">@board[kind]</td>
+                        <td class="reason">@reasons[kind]</td>
+                        <td class="mono">@deferrals[kind]</td>
+                        <td>
+                            @* DEFER es un no-op del dominio fuera de un estado vencido, en el tope o
+                               sobre una clasificada de seguridad (L6), y NO tira: se puede ofrecer
+                               siempre sin arriesgar una cicatriz. *@
+                            @* UNA RAZON POR FILA, y no un campo compartido por las nueve. Con un
+                               solo campo los nueve desplegables se movian juntos: la persona
+                               elegia "Timing" en una fila y las otras ocho cambiaban tambien, que
+                               es una pantalla mintiendo sobre que va a mandar. *@
+                            <div class="row">
+                                <select id="@("reason-" + kind)"
+                                        value="@chosenReason[kind]"
+                                        @onchange="e => chosenReason[kind] = e.Value?.ToString() ?? AppState.TheFiveDeferralReasons[0]">
+                                    @foreach (string reason in AppState.TheFiveDeferralReasons)
+                                    {
+                                        <option value="@reason">@Spaced(reason)</option>
+                                    }
+                                </select>
+                                <button class="button button--small" id="@("defer-" + kind)"
+                                        title="Put this off for now, for the reason on the left. The schedule allows a limited number of these per operation, and refuses to defer a safety operation at all."
+                                        @onclick="() => Defer(kind)">Put off</button>
+                            </div>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+
+    @* EL PERFIL DE USO NO SE OFRECE EN ESTA REBANADA. L8/OINV-22 es real -- declarar SevereDuty
+       acorta cada intervalo al 70% -- y el comando esta implementado, probado y con su guarda de
+       frontera (CONTRADICTIONS C36). Lo que no esta es el control: esta pantalla es LA AGENDA, y
+       un selector de perfil sin el formulario de "agregar mi propia operacion" que lo acompana
+       (L9) es media capacidad suelta. Entra junto con ese formulario, en la rebanada que traiga
+       la captura.
+
+       No es lo mismo que el boton de quitar, que se fue por imposible: aquel no podia hacer nada
+       nunca. Este funciona; se retiene por alcance. Por eso el metodo y sus pruebas siguen ahi. *@
+
+    @* LA VENTANA DE PERDIDA se dice, porque esconderla seria vender durabilidad que no hay. *@
+    <p class="footnote" style="margin-top:28px" id="loss-window">
+        @if (state.HasFolder)
+        {
+            <text>
+                <strong>Between a change and its save</strong> there is an instant in which an abrupt close
+                loses it. The save happens after every single change, never on a timer, so that instant is
+                as short as it can be &mdash; but it is not transactional durability.
+            </text>
+        }
+        else
+        {
+            <text><strong>With no destination:</strong> the record lives only in memory and is lost when you close.</text>
+        }
+    </p>
+
+    @* EL INSTRUMENTO. Esto no es informacion para la persona y en la implementacion de referencia
+       se saco por eso -- pero esta caratula es tambien la primera medicion de este modulo en un
+       browser, y sin estos numeros una comparacion entre dos estados no puede distinguirlos.
+       Entradas del journal, archivos en MEMFS y el permiso vigente son los tres que se miran. *@
+    <details class="instrument" id="instrument">
+        <summary>What this app is doing</summary>
+        <ul class="mono">
+            <li id="i-entries">journal entries: @entries</li>
+            <li id="i-memfs">memfs: @memfsFiles files, @memfsBytes bytes</li>
+            <li id="i-mode">destination: @state.Mode @(state.FolderName.Length > 0 ? $"({state.FolderName})" : "")</li>
+            <li id="i-permission">permission: @permission</li>
+            <li id="i-dealership">dealership: @state.WhereTheDealershipIs</li>
+            <li id="i-credential">credential stored: @hasCredential</li>
+            <li id="i-message">last: @state.LastMessage</li>
+        </ul>
+    </details>
+}
+
+@code {
+    private bool? pickerSupported;
+    private bool? browserStorageSupported;
+    private string noStorage = "";
+    private bool installedApp;
+    private bool refreshing;
+
+    private string vin = "";
+    private string evaluatedUpTo = "";
+    private string nextDue = "";
+    private int due;
+    private int overdue;
+    private int missed;
+    private long lastEvent;
+    private long entries;
+    private int memfsFiles;
+    private long memfsBytes;
+    private string permission = "";
+    private bool hasCredential;
+
+    // LOS TRES ARRANCAN CON LAS NUEVE CLAVES, y el tercero arrancaba vacio. Ese fue un defecto
+    // real que encontro la pasada de falsificacion: IsUp se vuelve true en cuanto el actor
+    // existe, ANTES del primer flush, asi que si el flush falla, Reread() nunca corre y la tabla
+    // se dibuja igual. Con deferrals vacio eso era un KeyNotFoundException adentro de
+    // BuildRenderTree -- Blazor descarta el render, la pantalla se queda como estaba y el aviso
+    // de "la carpeta rechazo la escritura" NO aparece. O sea: el render se caia exactamente en
+    // el caso para el que existe el aviso.
+    private Dictionary<string, string> board = Empty();
+    private Dictionary<string, string> reasons = Empty();
+    private Dictionary<string, int> deferrals = NoDeferralsYet();
+
+    private Dictionary<string, string> chosenReason = EveryKindStartsAt(AppState.TheFiveDeferralReasons[0]);
+    private string error = "";
+    private string destinationProblem = "";
+
+    protected override async Task OnInitializedAsync()
+    {
+        // LAS CAPACIDADES SE PREGUNTAN SIEMPRE, Y ANTES DEL ATAJO. El estado de la app es un
+        // SINGLETON -- lo pide el §T10, el actor no se crea por pantalla -- pero el COMPONENTE no lo
+        // es. Si esta pagina se inicializa con el actor ya arriba, el `return` temprano se saltaba
+        // estas tres preguntas y dejaba pickerSupported y browserStorageSupported en null; y todo
+        // control que depende de ellos esta escrito `@if (pickerSupported == true)`, asi que
+        // desaparecia entero.
+        //
+        // La consecuencia la reporto la persona usandola: la app abierta SIN destino, el aviso
+        // "no se esta guardando nada" en pantalla, y NINGUN boton para elegir carpeta -- o sea, sin
+        // salida. Preguntar siempre cuesta tres llamadas a JS y no depende del orden.
+        pickerSupported = await state.PickerIsSupportedAsync();
+        browserStorageSupported = await state.BrowserStorageIsSupportedAsync();
+        installedApp = await state.RunsAsInstalledAppAsync();
+
+        // Las dos causas de "no hay donde guardar" se dicen distinto, asi que se traducen a un
+        // nombre y no a un bool.
+        noStorage = await state.WhyThereIsNoStorageAsync() switch
+        {
+            "inseguro" => "insecure",
+            "navegador" => "browser",
+            _ => "",
+        };
+
+        if (state.IsUp) { await Reread(); return; }
+
+        // QUE DESTINO ELIGIO LA VEZ PASADA. Si ya opto por el almacenamiento del navegador se
+        // reengancha sola y sin pedirle un gesto: OPFS es del origen y no tiene permiso que
+        // revalidar.
+        if (await state.RememberedModeAsync() == "opfs" && browserStorageSupported == true)
+        {
+            if ((await state.UseBrowserStorageAsync()).Ok) { await Open(); return; }
+        }
+
+        if (pickerSupported != true) return;
+
+        // Recuperar el handle NO necesita gesto; volver a otorgar el permiso SI. Por eso aca solo
+        // se consulta, y si quedo en 'prompt' la UI ofrece el boton.
+        FolderResult recovered = await state.RecoverFolderAsync();
+
+        // Con permiso ya otorgado se abre sola: la persona no tiene que apretar nada para ver la
+        // agenda de su propio vehiculo.
+        if (recovered.Ok) await Open();
+    }
+
+    private Task ConnectFolder() => Try("choose a folder", async () =>
+        await OpenOrSay(await state.ConnectFolderAsync(), "choose that folder"));
+
+    private Task RequestPermission() => Try("grant permission to the folder", async () =>
+        await OpenOrSay(await state.RequestPermissionAsync(), "get write permission on that folder"));
+
+    private Task UseBrowserStorage() => Try("save in this browser", async () =>
+        await OpenOrSay(await state.UseBrowserStorageAsync(), "use this browser's storage"));
+
+    // UN ok:false NO ES UNA EXCEPCION, y por eso no se veia. Las tres acciones de destino
+    // actuaban solo en el caso exitoso y se quedaban MUDAS cuando el browser decia no: el click
+    // no hacia nada, la pantalla quedaba igual, y desde afuera se ve como una app colgada. Lo
+    // reporto la persona usandola, sobre "Grant permission" despues de quitar el permiso a mano.
+    //
+    // El remedio importa y no siempre esta en la app: si el browser BLOQUEO el permiso para este
+    // origen, ningun boton de aca lo puede recuperar -- hay que reponerlo en la configuracion del
+    // sitio. Decirlo es la diferencia entre un boton que no hace nada y una instruccion.
+    private async Task OpenOrSay(FolderResult result, string whatItWasTrying)
+    {
+        if (result.Ok)
+        {
+            destinationProblem = "";
+            await state.StartAsync();
+            await Reread();
+            return;
+        }
+
+        // UN 'denied' TIENE DOS CAUSAS Y SE ARREGLAN EN LUGARES DISTINTOS, y decir solo una fue un
+        // error medido: este mensaje mandaba a la persona al candado de la barra de direcciones,
+        // y en un browser EMBEBIDO no hay barra de direcciones ni candado -- el permiso no esta
+        // "bloqueado para este sitio", es que ese browser no otorga edicion de archivos, punto.
+        //
+        // MEDIDO en el navegador embebido de la app de Claude: dos carpetas distintas, las dos
+        // 'denied' sin prompt, y ademas persistent-storage 'denied' y el service worker sin poder
+        // registrarse. Es un patron de navegador restringido, no una preferencia del sitio.
+        //
+        // No se olfatea el user-agent: se nombran las dos causas y el camino que funciona en las
+        // dos. Sniffear un producto envejece mal y aca no hace falta.
+        destinationProblem = result.Permission == "denied"
+            ? $"The browser refused to {whatItWasTrying}, without asking you. Two things do that, and "
+              + "they are fixed in different places. Either this site's file-editing permission is "
+              + "blocked — open the padlock next to the address, reset this site's permissions, reload, "
+              + "and pick the folder again — or this browser does not grant file editing at all, which "
+              + "is normal for an in-app or embedded browser. If there is no padlock to open, it is the "
+              + "second one: open this app in Chrome or Edge directly and the folder will work there."
+            : $"Could not {whatItWasTrying}. The browser said: "
+              + (result.Reason.Length > 0 ? result.Reason : result.Permission);
+    }
+
+    private Task ForgetFolder() => Try("forget the saved folder", async () =>
+    {
+        await state.ForgetTheFolderAsync();
+        destinationProblem = "";
+    });
+
+    private Task Open() => Try("open the app", async () =>
+    {
+        await state.StartAsync();
+        await Reread();
+    });
+
+    private Task Refresh() => Try("refresh against the dealership", async () =>
+    {
+        refreshing = true;
+        try { await state.RefreshAsync(); }
+        finally { refreshing = false; await Reread(); }
+    });
+
+    private Task Evaluate() => Try("re-evaluate the schedule", async () =>
+    {
+        await state.EvaluateNowAsync();
+        await Reread();
+    });
+
+    private Task Defer(string kind) => Try($"defer {kind}", async () =>
+    {
+        await state.DeferOperationAsync(kind, chosenReason[kind]);
+        await Reread();
+    });
+
+    // Una app que no puede abrir tiene que DECIR por que. Sin esto, un fallo en el arranque deja
+    // la pantalla igual que antes de apretar el boton y no hay forma de distinguirlo de un click
+    // perdido. Y el mensaje solo no alcanza: "no se encontro el archivo" puede venir de leer la
+    // carpeta, de escribirla o de la base de handles, y cada una se arregla distinto. Cada paso se
+    // nombra, asi el proximo fallo dice DONDE ocurrio.
+    private async Task Try(string step, Func<Task> action)
+    {
+        error = "";
+        try
+        {
+            await action();
+        }
+        catch (Exception ex)
+        {
+            var detail = new System.Text.StringBuilder($"Step: {step}\n{ex.GetType().FullName}: {ex.Message}");
+            for (Exception inner = ex.InnerException; inner is not null; inner = inner.InnerException)
+                detail.Append($"\n  cause: {inner.GetType().FullName}: {inner.Message}");
+            error = detail.ToString();
+        }
+        finally
+        {
+            // Repintar SIEMPRE, en cualquier salida. Casi todo lo que decide esta pantalla vive en
+            // AppState, que es un servicio inyectado, y Blazor no observa objetos ajenos al
+            // componente: solo repinta por sus propios campos y por el ciclo del evento. Sin esto
+            // el estado cambia de verdad y la pantalla sigue mostrando el boton, que se ve como
+            // "hay que apretar dos veces".
+            StateHasChanged();
+        }
+    }
+
+    // TODO lo que se ve sale de preguntarle al actor. Nueve estados, nueve razones y nueve
+    // conteos de aplazamiento, pedidos de a uno porque cada uno es una consulta sobre el actor:
+    // la pantalla no recorre el dominio, le pregunta.
+    private async Task Reread()
+    {
+        vin = state.ReadVin();
+        due = state.CountDue();
+        overdue = state.CountOverdue();
+        missed = state.MissedCount();
+        lastEvent = state.LastEventApplied();
+        evaluatedUpTo = state.EvaluatedUpTo();
+        nextDue = state.NextDueKind();
+        entries = state.JournalEntries();
+        hasCredential = state.HasCredential();
+
+        var states = new Dictionary<string, string>();
+        var why = new Dictionary<string, string>();
+        var used = new Dictionary<string, int>();
+        foreach (string kind in AppState.TheNineKinds)
+        {
+            states[kind] = state.ReadDueState(kind);
+            why[kind] = state.ReadDueReason(kind);
+            used[kind] = state.DeferralsUsed(kind);
+        }
+        board = states;
+        reasons = why;
+        deferrals = used;
+
+        (memfsFiles, memfsBytes) = state.MemfsState();
+        permission = await state.CurrentPermissionAsync();
+    }
+
+    private static Dictionary<string, string> Empty() => EveryKindStartsAt("");
+
+    private static Dictionary<string, int> NoDeferralsYet()
+    {
+        var start = new Dictionary<string, int>();
+        foreach (string kind in AppState.TheNineKinds) start[kind] = 0;
+        return start;
+    }
+
+    private static Dictionary<string, string> EveryKindStartsAt(string value)
+    {
+        var start = new Dictionary<string, string>();
+        foreach (string kind in AppState.TheNineKinds) start[kind] = value;
+        return start;
+    }
+
+    // "WearPartReplacement" -> "Wear part replacement". El canon manda en el NOMBRE que cruza la
+    // puerta, no en como se lee en pantalla; separar las palabras no lo renombra.
+    private static string Spaced(string name)
+    {
+        if (name.Length == 0) return name;
+
+        var spaced = new System.Text.StringBuilder(name.Length + 4);
+        spaced.Append(name[0]);
+        for (int i = 1; i < name.Length; i++)
+        {
+            if (char.IsUpper(name[i])) spaced.Append(' ').Append(char.ToLowerInvariant(name[i]));
+            else spaced.Append(name[i]);
+        }
+        return spaced.ToString();
+    }
+}

@@ -22,6 +22,7 @@
   <Project Path="DealershipCar/App/DealershipCar.App/DealershipCar.App.csproj" />
   <Project Path="DealershipCar/App/DealershipCar.Consola/DealershipCar.Consola.csproj" />
   <Project Path="DealershipCar/App/DealershipCar.Mcp/DealershipCar.Mcp.csproj" />
+  <Project Path="DealershipCar/App/DealershipCar.Wasm/DealershipCar.Wasm.csproj" />
   <Project Path="DealershipCar/Dominio/DealershipCar.Dominio.csproj" />
   <Project Path="DealershipCar/EndPointDeEventos/DealershipCar.EventosMock.csproj" />
   <Project Path="DealershipCar/InyectorDeEventosDemo/DealershipCar.InyectorDeEventosDemo.csproj" />

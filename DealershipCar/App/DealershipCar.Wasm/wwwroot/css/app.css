@@ -1,0 +1,155 @@
+/* La hoja de la app. Sin framework de CSS: son unos pocos elementos y un tema.
+
+   El estado de cada operacion se colorea por el NOMBRE que compone el dominio -- notdue,
+   duesoon, due, overdue, deferred, completed, superseded -- asi que agregar un estado al
+   dominio no rompe la pantalla: cae al color neutro. */
+
+:root {
+    --tinta: #16202c;
+    --tinta-suave: #5b6b7c;
+    --papel: #f7f8fa;
+    --tarjeta: #ffffff;
+    --borde: #dfe4ea;
+    --marca: #1f3a5f;
+    --atencion: #8a5300;
+    --atencion-fondo: #fff6e5;
+    --problema: #97231f;
+    --problema-fondo: #fdeceb;
+    --bien: #1d6b45;
+    --bien-fondo: #eaf6f0;
+}
+
+* { box-sizing: border-box; }
+
+body {
+    margin: 0;
+    background: var(--papel);
+    color: var(--tinta);
+    font-family: "Segoe UI", system-ui, -apple-system, sans-serif;
+    font-size: 15px;
+    line-height: 1.5;
+}
+
+.sheet {
+    max-width: 1040px;
+    margin: 0 auto;
+    padding: 28px 20px 64px;
+}
+
+.headline { font-size: 30px; margin: 0 0 4px; letter-spacing: -0.01em; }
+.letterhead { margin: 0 0 24px; color: var(--tinta-suave); }
+
+.mono { font-family: "Cascadia Mono", Consolas, "SF Mono", monospace; font-size: 13px; }
+.footnote { color: var(--tinta-suave); font-size: 13px; }
+
+.row { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+.grow { flex: 1 1 auto; }
+.option { flex: 1 1 300px; min-width: 260px; }
+
+.notice {
+    border: 1px solid var(--borde);
+    border-left-width: 4px;
+    background: var(--tarjeta);
+    border-radius: 6px;
+    padding: 14px 16px;
+    margin: 0 0 18px;
+}
+
+.notice--neutral   { border-left-color: var(--marca); }
+.notice--attention { border-left-color: var(--atencion); background: var(--atencion-fondo); }
+.notice--problem   { border-left-color: var(--problema); background: var(--problema-fondo); }
+
+.notice pre { white-space: pre-wrap; margin: 8px 0 0; font-size: 12px; }
+
+.button {
+    font: inherit;
+    padding: 8px 14px;
+    border-radius: 6px;
+    border: 1px solid var(--marca);
+    background: var(--marca);
+    color: #fff;
+    cursor: pointer;
+}
+
+.button:disabled { opacity: 0.45; cursor: not-allowed; }
+.button--outline   { background: transparent; color: var(--marca); }
+.button--attention { background: var(--atencion); border-color: var(--atencion); }
+.button--problem   { background: var(--problema); border-color: var(--problema); }
+.button--small     { padding: 4px 9px; font-size: 13px; }
+.button--link {
+    background: none;
+    border: none;
+    color: var(--marca);
+    text-decoration: underline;
+    padding: 0;
+}
+
+select { font: inherit; padding: 5px 7px; border-radius: 5px; border: 1px solid var(--borde); }
+label { color: var(--tinta-suave); }
+
+.plate {
+    display: flex;
+    gap: 14px;
+    align-items: baseline;
+    justify-content: space-between;
+    border: 1px solid var(--borde);
+    background: var(--tarjeta);
+    border-radius: 6px;
+    padding: 10px 14px;
+    margin-bottom: 14px;
+}
+
+.verdict {
+    font-size: 17px;
+    margin: 0 0 18px;
+    padding: 12px 14px;
+    border-radius: 6px;
+    background: var(--bien-fondo);
+    border: 1px solid var(--borde);
+    border-left: 4px solid var(--bien);
+}
+
+.verdict--attention { background: var(--atencion-fondo); border-left-color: var(--atencion); }
+
+/* Una tabla ancha tiene que scrollear en SU propio contenedor: la pagina nunca scrollea de
+   lado. */
+.scrolls { overflow-x: auto; }
+
+.board { border-collapse: collapse; width: 100%; background: var(--tarjeta); }
+.board th, .board td { border-bottom: 1px solid var(--borde); padding: 9px 11px; text-align: left; vertical-align: top; }
+.board th { font-size: 12px; text-transform: uppercase; letter-spacing: 0.04em; color: var(--tinta-suave); }
+.board .reason { max-width: 420px; font-size: 13px; color: var(--tinta-suave); }
+
+.state { font-weight: 600; white-space: nowrap; }
+.state--overdue   { color: var(--problema); }
+.state--due       { color: var(--atencion); }
+.state--duesoon   { color: var(--atencion); font-weight: 500; }
+.state--notdue    { color: var(--tinta-suave); font-weight: 400; }
+.state--completed { color: var(--bien); }
+.state--deferred  { color: var(--tinta-suave); }
+.state--superseded{ color: var(--tinta-suave); font-weight: 400; text-decoration: line-through; }
+
+.instrument { margin-top: 28px; color: var(--tinta-suave); }
+.instrument summary { cursor: pointer; font-size: 13px; }
+.instrument ul { margin: 8px 0 0; padding-left: 18px; }
+
+/* Los dos del template de Blazor, que el index.html referencia. */
+.loading-progress { position: relative; display: block; width: 8rem; height: 8rem; margin: 20vh auto 1rem; }
+.loading-progress circle { fill: none; stroke: #e0e0e0; stroke-width: 0.6rem; transform-origin: 50% 50%; transform: rotate(-90deg); }
+.loading-progress circle:last-child { stroke: var(--marca); stroke-dasharray: calc(3.141 * var(--blazor-load-percentage, 0%) * 0.8) 500%; transition: stroke-dasharray 0.05s ease-in-out; }
+.loading-progress-text { position: absolute; text-align: center; inset: calc(20vh + 3.25rem) 0 auto 0; color: var(--tinta-suave); }
+.loading-progress-text:after { content: var(--blazor-load-percentage-text, "Loading"); }
+
+#blazor-error-ui {
+    background: var(--atencion-fondo);
+    bottom: 0;
+    box-shadow: 0 -1px 2px rgba(0, 0, 0, 0.2);
+    display: none;
+    left: 0;
+    padding: 0.6rem 1.25rem 0.7rem 1.25rem;
+    position: fixed;
+    width: 100%;
+    z-index: 1000;
+}
+
+#blazor-error-ui .dismiss { cursor: pointer; position: absolute; right: 0.75rem; top: 0.5rem; }
