@@ -265,12 +265,46 @@ namespace Compras.Dominio
 				int dias = (int)(fechaDeConsulta.Date - ultima.Date).TotalDays;
 				if (dias < 0) continue;
 
-				var pendiente = new AbastecimientoPendiente(categoria, ultima, dias);
+				var pendiente = new AbastecimientoPendiente(categoria, ultima, dias, RitmoDe(categoria));
 				if (pendiente.EstaVencido) pendientes.Add(pendiente);
 			}
 
 			pendientes.Sort((una, otra) => otra.DiasDesdeLaUltima.CompareTo(una.DiasDesdeLaUltima));
 			return pendientes;
+		}
+
+		/// <summary>
+		/// CADA CUÁNTO compra ella esta categoría, medido en su propio historial. Total:
+		/// sin dos compras devuelve el ritmo Ninguno, que remite al catálogo.
+		/// </summary>
+		public RitmoDeCompra RitmoDe(Categoria categoria)
+		{
+			ArgumentNullException.ThrowIfNull(categoria);
+
+			var fechas = new List<DateTime>();
+			foreach (Compra compra in Ordenadas())
+				foreach (Item item in compra.Items)
+					if (ReferenceEquals(item.Categoria, categoria))
+					{
+						// Una categoria puede aparecer en varias lineas del mismo ticket, y
+						// eso es UNA compra: dos intervalos de cero dias no son un ritmo.
+						if (fechas.Count == 0 || fechas[fechas.Count - 1].Date != compra.Fecha.Date)
+							fechas.Add(compra.Fecha);
+						break;
+					}
+
+			if (fechas.Count < 2) return RitmoDeCompra.Ninguno(categoria);
+
+			var intervalos = new List<int>();
+			for (int i = 1; i < fechas.Count; i++)
+			{
+				int dias = (int)(fechas[i].Date - fechas[i - 1].Date).TotalDays;
+				if (dias > 0) intervalos.Add(dias);
+			}
+
+			return intervalos.Count == 0
+				? RitmoDeCompra.Ninguno(categoria)
+				: RitmoDeCompra.De(categoria, intervalos);
 		}
 
 		private bool AlgunaVezEntro(Categoria categoria)

@@ -445,6 +445,7 @@ namespace Compras.App
 							pendiente.UltimaCompra ultimaCompra,
 							pendiente.DiasDesdeLaUltima diasDesdeLaUltima,
 							pendiente.DiasEsperados diasEsperados,
+							pendiente.EsRitmoObservado esRitmoObservado,
 							pendiente.EsRecomendado esRecomendado,
 							pendiente.NombreDeLaSeveridad severidad,
 							pendiente.ParaSonia paraSonia;

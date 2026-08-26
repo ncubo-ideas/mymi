@@ -150,6 +150,8 @@ namespace Compras.App.Vistas
 		public DateTime UltimaCompra { get; init; }
 		public int DiasDesdeLaUltima { get; init; }
 		public int DiasEsperados { get; init; }
+		/// <summary>Si los dias esperados se midieron en su historial o salen del catalogo.</summary>
+		public bool EsRitmoObservado { get; init; }
 		public bool EsRecomendado { get; init; }
 		public string Severidad { get; init; } = "";
 		public string ParaSonia { get; init; } = "";

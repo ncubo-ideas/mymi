@@ -221,6 +221,7 @@ namespace Compras.App
 					UltimaCompra = Fecha(elemento, "ultimaCompra"),
 					DiasDesdeLaUltima = Entero(elemento, "diasDesdeLaUltima"),
 					DiasEsperados = Entero(elemento, "diasEsperados"),
+					EsRitmoObservado = Booleano(elemento, "esRitmoObservado"),
 					EsRecomendado = Booleano(elemento, "esRecomendado"),
 					Severidad = Texto(elemento, "severidad"),
 					ParaSonia = Texto(elemento, "paraSonia"),

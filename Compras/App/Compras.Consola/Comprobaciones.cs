@@ -56,6 +56,7 @@ namespace Compras.Consola
 			LosJournalsViejosSiguenReproduciendo();
 			LaCategoriaEsDelProductoNoDeLaCompra();
 			ElPrecioSeLeePorUnidadDeMedida();
+			ElRitmoEsElDeElla();
 
 			Console.WriteLine();
 			Console.WriteLine(fallas == 0
@@ -377,11 +378,18 @@ namespace Compras.Consola
 
 			var pendientes = ElGuion().AbastecimientosPendientes(Hoy);
 
-			// Con el guion al 25/08/2026: lacteos (370 dias), proteinas (192), granos
-			// (107) y limpieza (53) estan atrasados; el brocoli entro hace 10 dias, que
-			// es justo su periodicidad.
-			Igual("cuatro categorias atrasadas", "4", pendientes.Count.ToString());
+			// Con el guion al 25/08/2026 quedan TRES: lacteos (370 dias contra un ritmo
+			// medido de 15), proteinas (192 contra 97) y limpieza (53 contra los 45 del
+			// catalogo, porque una sola compra no da ritmo).
+			//
+			// LOS GRANOS SALIERON, y es la fase del ritmo haciendo su trabajo: llevan 107
+			// dias sin entrar, pero ELLA los compra cada 139 -tiene dos compras separadas
+			// por 15 dias y otra 263 dias despues-. Con la periodicidad del catalogo (35)
+			// esto figuraba como hueco; con su propio ritmo no lo es, y eso es lo honesto.
+			Igual("tres categorias atrasadas", "3", pendientes.Count.ToString());
 			Igual("la mas atrasada primero", "LacteosYHuevos", pendientes[0].NombreDeLaCategoria);
+			Igual("los granos ya no figuran", "139",
+				ElGuion().RitmoDe(Categoria.GranosYAbarrotes).DiasTipicos.ToString());
 			Igual("  con su severidad", "conviene revisar", pendientes[0].Severidad.Nombre);
 			Igual("  y su linea del dominio", "True", pendientes[0].ParaSonia.Contains("lácteo").ToString());
 
@@ -425,7 +433,8 @@ namespace Compras.Consola
 			Igual("un ano sin helado no es un pendiente", "0",
 				soloHelado.AbastecimientosPendientes(Hoy).Count.ToString());
 			Revienta("y no se puede construir el pendiente a mano",
-				() => new AbastecimientoPendiente(Categoria.Azucarados, Hoy.AddYears(-1), 365));
+				() => new AbastecimientoPendiente(Categoria.Azucarados, Hoy.AddYears(-1), 365,
+					soloHelado.RitmoDe(Categoria.Azucarados)));
 		}
 
 		// ---- "3" no es un dato: la cantidad dice de que ----
@@ -628,6 +637,67 @@ namespace Compras.Consola
 			Igual("ordena por fecha, no por llegada", "1000",
 				desordenado.PrecioDe("PAN").PrimerPrecioPorUnidad.ToString(CultureInfo.InvariantCulture));
 			Igual("  asi que el pan SUBIO", "empeorando", desordenado.PrecioDe("PAN").Veredicto.Nombre);
+		}
+
+		// ---- el ritmo es el de ella, no el que supusimos ----
+		private static void ElRitmoEsElDeElla()
+		{
+			Titulo("el ritmo es el de ella");
+
+			// Una familia que compra lacteos cada 15 dias. El catalogo supone 12.
+			var quincenal = new Historial();
+			for (int i = 0; i < 5; i++)
+				quincenal.Agregar(UnaCompra($"T-{i}", new DateTime(2026, 1, 1).AddDays(i * 15),
+					("LECHE-1L", "Leche", 2, 950m, "LacteosYHuevos", 0)));
+
+			RitmoDeCompra ritmo = quincenal.RitmoDe(Categoria.LacteosYHuevos);
+			Igual("el ritmo se midio", "True", ritmo.EsObservado.ToString());
+			Igual("  cuatro intervalos", "4", ritmo.IntervalosMedidos.ToString());
+			Igual("  cada 15 dias", "15", ritmo.DiasTipicos.ToString());
+			Igual("  y con eso se lee el hueco", "15", ritmo.DiasParaLeerElHueco.ToString());
+			Igual("  no con los 12 del catalogo", "12", Categoria.LacteosYHuevos.DiasDeReabastecimiento.ToString());
+
+			// EL DEFECTO QUE ESTO ARREGLA: a los 13 dias de la ultima compra, el catalogo
+			// diria que hay hueco -pasaron 12- y para ELLA es martes.
+			DateTime alDia = new DateTime(2026, 1, 1).AddDays(4 * 15 + 13);
+			Igual("a los 13 dias NO hay hueco para ella", "0",
+				quincenal.AbastecimientosPendientes(alDia).Count.ToString());
+
+			// A los 20 si, porque paso su propio ritmo.
+			DateTime pasado = new DateTime(2026, 1, 1).AddDays(4 * 15 + 20);
+			var pendientes = quincenal.AbastecimientosPendientes(pasado);
+			Igual("a los 20 dias si", "1", pendientes.Count.ToString());
+			Igual("  y dice que el ritmo es suyo", "True", pendientes[0].EsRitmoObservado.ToString());
+			Igual("  la linea lo dice en segunda persona", "True",
+				pendientes[0].ParaSonia.Contains("vos lo comprás").ToString());
+
+			// La MEDIANA y no el promedio: una compra de reserva no corre el ritmo tipico.
+			var conReserva = new Historial();
+			conReserva.Agregar(UnaCompra("T-1", new DateTime(2026, 1, 1), ("ARROZ", "Arroz", 1, 2500m, "GranosYAbarrotes", 0)));
+			conReserva.Agregar(UnaCompra("T-2", new DateTime(2026, 2, 1), ("ARROZ", "Arroz", 1, 2500m, "GranosYAbarrotes", 0)));
+			conReserva.Agregar(UnaCompra("T-3", new DateTime(2026, 2, 2), ("ARROZ", "Arroz", 5, 2500m, "GranosYAbarrotes", 0)));
+			conReserva.Agregar(UnaCompra("T-4", new DateTime(2026, 3, 4), ("ARROZ", "Arroz", 1, 2500m, "GranosYAbarrotes", 0)));
+			RitmoDeCompra deArroz = conReserva.RitmoDe(Categoria.GranosYAbarrotes);
+			Igual("con una reserva de por medio", "3", deArroz.IntervalosMedidos.ToString());
+			Igual("  el mas corto fue de un dia", "1", deArroz.DiasMasCorto.ToString());
+			Igual("  y el tipico sigue siendo mensual", "30", deArroz.DiasTipicos.ToString());
+
+			// Sin dos compras no hay ritmo que medir, y se cae al catalogo DICIENDOLO.
+			var unaSola = new Historial();
+			unaSola.Agregar(UnaCompra("T-1", Hoy, ("POLLO", "Pollo", 1, 4000m, "Proteinas", 0)));
+			RitmoDeCompra sinRitmo = unaSola.RitmoDe(Categoria.Proteinas);
+			Igual("una sola compra: no hay ritmo", "False", sinRitmo.EsObservado.ToString());
+			Igual("  se cae al catalogo", "10", sinRitmo.DiasParaLeerElHueco.ToString());
+			Igual("  y lo dice", "True", sinRitmo.ParaSonia.Contains("del catálogo").ToString());
+			Revienta("preguntarle el tipico revienta", () => sinRitmo.DiasTipicos);
+
+			// Dos lineas de la misma categoria en UN ticket son una compra, no dos.
+			var mismoTicket = new Historial();
+			mismoTicket.Agregar(UnaCompra("T-1", new DateTime(2026, 1, 1),
+				("LECHE-1L", "Leche", 1, 950m, "LacteosYHuevos", 0),
+				("HUEVOS-30", "Huevos", 1, 3300m, "LacteosYHuevos", 0)));
+			Igual("dos lineas, un ticket: no hay ritmo", "False",
+				mismoTicket.RitmoDe(Categoria.LacteosYHuevos).EsObservado.ToString());
 		}
 
 		// Una compra con presentacion por linea (la forma nueva).
