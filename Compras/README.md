@@ -16,7 +16,7 @@ cinco nodos adentro, nombres en español. Este README es **cómo se corre**.
 |---|---|
 | `PaginaDeDescarga/` | **URL1** · nginx que sirve la app publicada. `8100` http, `8463` https. **No es un csproj** |
 | `EndPointDeEventos/` | **URL2** · `8101`. El GET de eventos, el token de device y su rotación, y el señuelo que devuelve 403 |
-| `InyectorDeEventosDemo/` | Siembra la historia en URL2. Valores y fechas **elegidos**, no aleatorios |
+| `InyectorDeEventosDemo/` | Siembra la historia en URL2. Valores y fechas **elegidos**, no aleatorios. Dos caras: el CLI (para guionar) y **la caja** en `ui/` (para mostrar) |
 | `Dominio/` | El puppet: `Historial`, `Compra`, `Item`, `Categoria`, `Garantia`, `Canasta`, `Veredicto`, `Severidad`, `AbastecimientoPendiente`, `Bitacora`. **Cero dependencias** |
 | `App/` | Una lógica y tres carátulas |
 | `manifiesto.json` | Lo que **el Host** lee para armar el catálogo sin arrancar el módulo: quién es, qué sustrato necesita, qué capacidades pide y sus tools |
@@ -47,6 +47,7 @@ corran a la vez — las historias cruzadas lo necesitan.
 | PaginaDeDescarga http | 8080 | 8090 | **8100** |
 | PaginaDeDescarga https | 8443 | 8453 | **8463** |
 | EndPointDeEventos | 8081 | 8091 | **8101** |
+| Caja (solo Compras) | — | — | **8102** |
 
 ---
 
@@ -113,6 +114,39 @@ cd Compras && ./PaginaDeDescarga/generar-certificado.sh && docker compose up -d
 Y queda en **`http://localhost:8100`** — la página de descarga de la institución — con
 la app colgando de **`/app/`** (la separación por el scope del service worker, medida
 por Exámenes; tras republicar hay que cerrar TODAS las pestañas del origen).
+
+### La caja: la demo en vivo
+
+El pedido de la reunión era explícito: *"los inyectores de datos del demo también con UI
+presentable, no la consola del developer… tiene que verse corriendo en la realidad, no
+una filmina"*. Eso es `InyectorDeEventosDemo/ui/`: **el sistema del supermercado**, con
+cara de software de operación y no de landing, porque no es para el cliente.
+
+```bash
+dotnet run --project Compras/EndPointDeEventos
+```
+
+y la caja se sirve como estático (con Docker es el servicio `caja` en el `8102`; sin
+Docker, cualquier estático sobre `Compras/InyectorDeEventosDemo/ui`).
+
+El guion de la demo, medido de punta a punta: se arma un ticket con productos del
+catálogo, **Registrar compra** → *"publicada como evento 307"*, y en la app del cliente
+un **Refresh** la trae. Con la compra de salmón, espinaca y leche del ejemplo cambiaron
+tres cosas a la vez, y ninguna la escribió nadie a mano:
+
+- la proporción ocasional bajó de 68% a **61,9%**;
+- **proteínas y lácteos desaparecieron de "lo que dejó de entrar"** — el hueco se cerró
+  porque acababa de entrar lo que faltaba;
+- la licuadora apareció en garantías vigentes, con vencimiento en 2028.
+
+El catálogo (`GET /catalogo`, 34 productos con precio, categoría y garantía) es **del
+supermercado**, no del dominio de la persona: la caja le pregunta a su propio sistema qué
+vende, en vez de llevarlo hardcodeado. Y el invariante se mantiene — la caja habla con
+URL2 por HTTP y nada más: no conoce el dominio, no toca el journal y no sabe qué es una
+canasta.
+
+El CLI no se va: sirve para guionar una siembra o correrla en CI. La caja es para
+mostrarlo.
 
 ## El invariante, y es falsable
 
@@ -262,7 +296,9 @@ raíz.
 | Consola | ✅ ciclo completo: `comprobar`, `medir`, `estado`, `detalle`, `canasta`, `comparar`, `garantia`, `pendientes`, `porvencer`, `refrescar` |
 | Manifiesto | ✅ escrito contra el contrato de la rama `master_gnothiHost`; ⚠️ **no ejercitado con el Host**, que todavía no está en master |
 | EndPointDeEventos | ✅ 6 eventos sembrados, rotación de token (medida con `/device/expirar-access`) y señuelo 403 |
-| Inyector | ✅ `listar`, `inyectar` (líneas con categoría y garantía), `senuelo` |
+| Inyector CLI | ✅ `listar`, `inyectar` (líneas con categoría y garantía), `senuelo` |
+| Caja (UI) | ✅ medida en browser: catálogo de 34 productos con filtros, ticket con cantidades y precios editables, **Registrar compra** publicando el evento 307, y la narrativa publicada a la derecha |
+| Catálogo | ✅ `GET /catalogo` con las 9 categorías y los 4 electrodomésticos que traen garantía |
 | MCP | ✅ medido con cliente stdio: las 6 tools en `tools/list` y `tools/call` con structuredContent tipado, incluidas las dos del hueco |
 | Wasm | ✅ **CORRE EN EL BROWSER** con el motor `10029` — ver abajo |
 | PaginaDeDescarga | ✅ landing servida y verificada; ⚠️ con **nginx/Docker sin probar** (daemon apagado): la prueba se hizo sirviendo el mismo webroot (landing en `/`, publish en `/app/`) con un estático |
