@@ -304,7 +304,7 @@ diferencia decide el caso:
 Los tres años estables de antes no diluyen un salto de este año: lo hacen más notable.
 Promediar sobre toda la historia es exactamente como se pierde un cambio recién empezado.
 
-### Los permisos de la IA se fueron, y por qué queda una lápida
+### Los permisos de la IA se fueron
 
 Hubo una pantalla de **Ajustes** para apagar cada consulta de la IA por separado, con la
 decisión journalizada. La idea era buena y el mecanismo funcionaba, pero la
@@ -322,16 +322,30 @@ y `'permisos-de-la-ia'` aparecen dos veces cada uno. Si alguna vez hace falta un
 nuevo, hay que probarlo **abriendo el journal desde cero con el MCP**, no solo con la app
 que lo sembró.
 
-Quedó `Dominio/PermisosDeLaIA.cs` como clase vacía. No la llama nadie y existe solo para
-que los journals ya escritos sigan abriendo: adentro tienen `permisos = PermisosDeLaIA();`
-y el replay lo vuelve a ejecutar. **Medido** — sacando la clase, la rehidratación falla:
+#### Si tenías un journal de antes
+
+Los journals escritos antes de este cambio tienen adentro `permisos = PermisosDeLaIA();`,
+y el replay lo vuelve a ejecutar. Como la clase ya no existe, en cada arranque van a
+aparecer dos líneas así:
 
 ```
-Puppeteer.LanguageException: Class 'PermisosDeLaIA' is not registered in the actor's library
+[Puppeteer ERROR] Rehydration execution failed. EntryId=2,
+Cause: Class 'PermisosDeLaIA' is not registered in the actor's library
 ```
 
-Se puede borrar de verdad el día que nadie tenga un journal con esa entrada. Los del demo
-se regeneran solos: se borra la carpeta y se aprieta Refresh.
+**El expediente abre igual y el estado queda correcto** — medido: los nueve exámenes, el
+cuadro y las tres lecturas de serie salen bien. El replay no aborta: registra el error de
+esa entrada y sigue con la siguiente. Es ruido, no pérdida.
+
+Para que deje de aparecer, **se borra la carpeta del journal y se aprieta Refresh**. Se
+reconstruye entero desde URL2, porque el journal no es fuente de verdad: es la copia local
+de los eventos del laboratorio. Medido con `refrescar` contra el proveedor real.
+
+> Esto vale **mientras** todo lo del expediente venga de URL2. El día que la persona
+> aporte datos propios que el laboratorio no manda —altitud de residencia, medicación; los
+> que prevé `01-enriquecimiento-dominio-examenes.md`— el journal deja de ser reconstruible
+> y borrarlo pasa a ser pérdida de datos. Hoy no es el caso: hasta la edad está quemada en
+> la semilla.
 
 ### Lo que ve la IA
 
