@@ -6,6 +6,16 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>My maintenance schedule · Sotavento Motors</title>
     <base href="/app/" />
+
+    <!-- LA HOJA DE MUDBLAZOR VA PRIMERO Y LA DE LA APP DESPUES, para que la nuestra pueda
+         ajustar lo suyo sin pelear por especificidad.
+
+         NO SE ENLAZA LA FUENTE DE GOOGLE que la guia de MudBlazor sugiere: esta app es una PWA
+         que tiene que abrir sin red -- el service worker cachea lo que se publica, y un
+         fonts.googleapis.com no se publica -- asi que un enlace ahi seria una peticion que
+         falla justo cuando la app mas promete funcionar. La tipografia sale del tema, del stack
+         del sistema. -->
+    <link rel="stylesheet" href="_content/MudBlazor/MudBlazor.min.css" />
     <link rel="stylesheet" href="css/app.css" />
     <link rel="icon" type="image/png" href="favicon.png" />
     <link href="DealershipCar.Wasm.styles.css" rel="stylesheet" />
@@ -29,6 +39,7 @@
         <span class="dismiss">🗙</span>
     </div>
     <script src="_framework/blazor.webassembly.js"></script>
+    <script src="_content/MudBlazor/MudBlazor.min.js"></script>
     <script>
         // El service worker es opcional para que la app funcione: si el registro falla -- por
         // ejemplo servida sin Service-Worker-Allowed, o desde un origen sin https -- la app tiene

@@ -356,6 +356,19 @@ namespace DealershipCar.Dominio
 		}
 
 		/// <summary>
+		/// Si aplazar esa clase haria algo (ley L6). Total: una clase sin operacion agendada no se
+		/// puede aplazar, que es la misma respuesta que da el comando.
+		/// </summary>
+		internal bool CanBeDeferred(OperationKindCode kind)
+		{
+			AKindThatNamesNoMemberIsACallerBug(kind);
+
+			if (!_operations.ContainsKey(kind)) return false;
+
+			return _operations[kind].CanBeDeferred();
+		}
+
+		/// <summary>
 		/// Si hay algo vencido. Total: es la pregunta de presencia que se hace ANTES de
 		/// <see cref="ReadNextDueKind"/> (E41).
 		/// </summary>

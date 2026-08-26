@@ -1,147 +1,190 @@
-/* La hoja de la app. Sin framework de CSS: son unos pocos elementos y un tema.
+/* La hoja de la app. Ya NO define el tema: eso lo hace SotaventoTheme.cs y lo propaga MudBlazor
+   como variables --mud-palette-*. Lo que queda aca es solo lo que la biblioteca no da hecho.
 
-   El estado de cada operacion se colorea por el NOMBRE que compone el dominio -- notdue,
-   duesoon, due, overdue, deferred, completed, superseded -- asi que agregar un estado al
-   dominio no rompe la pantalla: cae al color neutro. */
+   POR QUE TODO LO QUE PINTA USA --mud-palette-*: la app tiene modo claro y oscuro, y un color
+   escrito a mano queda fijo en uno de los dos. Un numero rojo sobre fondo oscuro que no cambia
+   es la forma facil de que la mitad de la pantalla se vuelva ilegible sin que nadie lo note.
 
-:root {
-    --tinta: #16202c;
-    --tinta-suave: #5b6b7c;
-    --papel: #f7f8fa;
-    --tarjeta: #ffffff;
-    --borde: #dfe4ea;
-    --marca: #1f3a5f;
-    --atencion: #8a5300;
-    --atencion-fondo: #fff6e5;
-    --problema: #97231f;
-    --problema-fondo: #fdeceb;
-    --bien: #1d6b45;
-    --bien-fondo: #eaf6f0;
+   EL ESTADO DE CADA OPERACION NO SE PINTA ACA: se pide por nombre semantico en
+   SotaventoTheme.ColorOf, asi que agregar un estado al dominio lo deja en el color neutro en
+   lugar de romper la pantalla. Las clases .state--* que quedan son solo puntos de anclaje para
+   inspeccionar la pantalla desde afuera, no colores. */
+
+/* ------------------------------------------------------------------ la barra de la marca */
+
+.brand {
+    display: flex;
+    flex-direction: column;
+    line-height: 1.15;
+    min-width: 0;
 }
 
-* { box-sizing: border-box; }
-
-body {
-    margin: 0;
-    background: var(--papel);
-    color: var(--tinta);
-    font-family: "Segoe UI", system-ui, -apple-system, sans-serif;
+.brand__name {
     font-size: 15px;
-    line-height: 1.5;
+    font-weight: 600;
+    letter-spacing: 0.01em;
 }
 
-.sheet {
-    max-width: 1040px;
-    margin: 0 auto;
-    padding: 28px 20px 64px;
+.brand__tagline {
+    font-size: 11px;
+    opacity: 0.72;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
 }
 
-.headline { font-size: 30px; margin: 0 0 4px; letter-spacing: -0.01em; }
-.letterhead { margin: 0 0 24px; color: var(--tinta-suave); }
-
-.mono { font-family: "Cascadia Mono", Consolas, "SF Mono", monospace; font-size: 13px; }
-.footnote { color: var(--tinta-suave); font-size: 13px; }
-
-.row { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
-.grow { flex: 1 1 auto; }
-.option { flex: 1 1 300px; min-width: 260px; }
-
-.notice {
-    border: 1px solid var(--borde);
-    border-left-width: 4px;
-    background: var(--tarjeta);
-    border-radius: 6px;
-    padding: 14px 16px;
-    margin: 0 0 18px;
+.sotavento-mark {
+    display: block;
+    flex: 0 0 auto;
 }
 
-.notice--neutral   { border-left-color: var(--marca); }
-.notice--attention { border-left-color: var(--atencion); background: var(--atencion-fondo); }
-.notice--problem   { border-left-color: var(--problema); background: var(--problema-fondo); }
+/* ------------------------------------------------------------------ de uso general */
 
-.notice pre { white-space: pre-wrap; margin: 8px 0 0; font-size: 12px; }
-
-.button {
-    font: inherit;
-    padding: 8px 14px;
-    border-radius: 6px;
-    border: 1px solid var(--marca);
-    background: var(--marca);
-    color: #fff;
-    cursor: pointer;
+.mono {
+    font-family: "Cascadia Mono", Consolas, "SF Mono", monospace;
+    font-size: 13px;
 }
 
-.button:disabled { opacity: 0.45; cursor: not-allowed; }
-.button--outline   { background: transparent; color: var(--marca); }
-.button--attention { background: var(--atencion); border-color: var(--atencion); }
-.button--problem   { background: var(--problema); border-color: var(--problema); }
-.button--small     { padding: 4px 9px; font-size: 13px; }
-.button--link {
-    background: none;
-    border: none;
-    color: var(--marca);
-    text-decoration: underline;
-    padding: 0;
+.muted { color: var(--mud-palette-text-secondary); }
+
+.inline-icon { vertical-align: -3px; }
+
+/* La explicacion que estaba desplegada siempre y ahora vive detras de un "why?". Bloque y no
+   inline: pegada al final de la linea se leia como parte de la frase, y es otra cosa. */
+.disclosure {
+    display: block;
+    margin-top: 6px;
+    max-width: 620px;
 }
 
-select { font: inherit; padding: 5px 7px; border-radius: 5px; border: 1px solid var(--borde); }
-label { color: var(--tinta-suave); }
+/* Una fila de botones que se apila sola cuando no entra. */
+.actions {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+    flex-wrap: wrap;
+}
+
+/* Un aviso con su boton al costado: el boton baja debajo del texto en pantalla angosta, que es
+   lo que hace que el remedio siga siendo alcanzable en un telefono. */
+.alert-row {
+    display: flex;
+    gap: 14px;
+    align-items: center;
+    flex-wrap: wrap;
+}
+
+.alert-row > div:first-child { flex: 1 1 320px; }
+
+.alert-detail {
+    white-space: pre-wrap;
+    margin: 6px 0 0;
+    font-size: 12px;
+    font-family: "Cascadia Mono", Consolas, "SF Mono", monospace;
+    opacity: 0.9;
+}
+
+/* ------------------------------------------------------------------ la caratula del vehiculo */
 
 .plate {
     display: flex;
-    gap: 14px;
-    align-items: baseline;
+    gap: 16px;
+    align-items: center;
     justify-content: space-between;
-    border: 1px solid var(--borde);
-    background: var(--tarjeta);
-    border-radius: 6px;
-    padding: 10px 14px;
-    margin-bottom: 14px;
+    flex-wrap: wrap;
 }
 
-.verdict {
-    font-size: 17px;
-    margin: 0 0 18px;
-    padding: 12px 14px;
-    border-radius: 6px;
-    background: var(--bien-fondo);
-    border: 1px solid var(--borde);
-    border-left: 4px solid var(--bien);
+.plate__id {
+    display: flex;
+    gap: 14px;
+    align-items: center;
+    min-width: 0;
 }
 
-.verdict--attention { background: var(--atencion-fondo); border-left-color: var(--atencion); }
+.plate__title { line-height: 1.2; }
 
-/* Una tabla ancha tiene que scrollear en SU propio contenedor: la pagina nunca scrollea de
-   lado. */
-.scrolls { overflow-x: auto; }
+/* ------------------------------------------------------------------ el veredicto y las baldosas */
 
-.board { border-collapse: collapse; width: 100%; background: var(--tarjeta); }
-.board th, .board td { border-bottom: 1px solid var(--borde); padding: 9px 11px; text-align: left; vertical-align: top; }
-.board th { font-size: 12px; text-transform: uppercase; letter-spacing: 0.04em; color: var(--tinta-suave); }
-.board .reason { max-width: 420px; font-size: 13px; color: var(--tinta-suave); }
+.verdict { border-left: 4px solid var(--mud-palette-success); }
 
-.state { font-weight: 600; white-space: nowrap; }
-.state--overdue   { color: var(--problema); }
-.state--due       { color: var(--atencion); }
-.state--duesoon   { color: var(--atencion); font-weight: 500; }
-.state--notdue    { color: var(--tinta-suave); font-weight: 400; }
-.state--completed { color: var(--bien); }
-.state--deferred  { color: var(--tinta-suave); }
-.state--superseded{ color: var(--tinta-suave); font-weight: 400; text-decoration: line-through; }
+.verdict--attention { border-left-color: var(--mud-palette-warning); }
 
-.instrument { margin-top: 28px; color: var(--tinta-suave); }
-.instrument summary { cursor: pointer; font-size: 13px; }
-.instrument ul { margin: 8px 0 0; padding-left: 18px; }
+.verdict__line {
+    display: flex;
+    gap: 12px;
+    align-items: center;
+    margin: 4px 0 6px;
+}
 
-/* Los dos del template de Blazor, que el index.html referencia. */
+.stat {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    text-align: center;
+}
+
+.stat__value {
+    font-size: 34px;
+    font-weight: 600;
+    line-height: 1.1;
+    font-variant-numeric: tabular-nums;
+}
+
+.stat__value--error   { color: var(--mud-palette-error); }
+.stat__value--warning { color: var(--mud-palette-warning); }
+
+.stat__label {
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--mud-palette-text-secondary);
+    margin-top: 4px;
+}
+
+/* ------------------------------------------------------------------ la tabla */
+
+.board-head { margin-bottom: 12px; }
+
+.op-name { font-weight: 600; }
+
+/* La razon la COMPONE EL DOMINIO y puede ser larga: se le da ancho y se la deja respirar, en
+   vez de recortarla. Recortar la razon es tirar justo lo que la pantalla vino a decir. */
+.board .reason {
+    max-width: 460px;
+    font-size: 13px;
+    color: var(--mud-palette-text-secondary);
+}
+
+.defer {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+    flex-wrap: wrap;
+}
+
+.defer__reason {
+    min-width: 152px;
+    max-width: 176px;
+}
+
+.instrument {
+    margin: 0;
+    padding-left: 18px;
+    color: var(--mud-palette-text-secondary);
+}
+
+/* ------------------------------------------------------------------ el arranque de Blazor */
+
+/* Los dos del template de Blazor, que el index.html referencia. Estos SI llevan color escrito a
+   mano: se dibujan antes de que exista el proveedor de tema, asi que no hay variable que leer. */
 .loading-progress { position: relative; display: block; width: 8rem; height: 8rem; margin: 20vh auto 1rem; }
 .loading-progress circle { fill: none; stroke: #e0e0e0; stroke-width: 0.6rem; transform-origin: 50% 50%; transform: rotate(-90deg); }
-.loading-progress circle:last-child { stroke: var(--marca); stroke-dasharray: calc(3.141 * var(--blazor-load-percentage, 0%) * 0.8) 500%; transition: stroke-dasharray 0.05s ease-in-out; }
-.loading-progress-text { position: absolute; text-align: center; inset: calc(20vh + 3.25rem) 0 auto 0; color: var(--tinta-suave); }
+.loading-progress circle:last-child { stroke: #1f3a5f; stroke-dasharray: calc(3.141 * var(--blazor-load-percentage, 0%) * 0.8) 500%; transition: stroke-dasharray 0.05s ease-in-out; }
+.loading-progress-text { position: absolute; text-align: center; inset: calc(20vh + 3.25rem) 0 auto 0; color: #5b6b7c; }
 .loading-progress-text:after { content: var(--blazor-load-percentage-text, "Loading"); }
 
 #blazor-error-ui {
-    background: var(--atencion-fondo);
+    background: #fff6e5;
+    color: #16202c;
     bottom: 0;
     box-shadow: 0 -1px 2px rgba(0, 0, 0, 0.2);
     display: none;
@@ -149,7 +192,7 @@ label { color: var(--tinta-suave); }
     padding: 0.6rem 1.25rem 0.7rem 1.25rem;
     position: fixed;
     width: 100%;
-    z-index: 1000;
+    z-index: 3000;
 }
 
 #blazor-error-ui .dismiss { cursor: pointer; position: absolute; right: 0.75rem; top: 0.5rem; }

@@ -177,6 +177,71 @@ namespace DealershipCar.Dominio.Pruebas
 				+ "arriba este midiendo la clasificacion y no otra cosa.");
 		}
 
+		// EL CASO QUE LA PANTALLA NO PUEDE ALCANZAR HOY, y por eso vive aca.
+		//
+		// La agenda que sirve el concesionario tiene UNA operacion clasificada de seguridad --
+		// TimedComponent -- y hoy esta en NotDue, asi que el control sale apagado por el ESTADO y no
+		// por la clasificacion. Una pantalla que decidiera solo con el estado se veria identica de
+		// correcta, y encenderia el control el dia que esa operacion pase a DueSoon: la unica
+		// operacion que el dominio no aplaza NUNCA seria la que ofrece el boton.
+		//
+		// Aca esa operacion SI llega vencida, y la pregunta cruza la puerta de verdad -- el script
+		// del DSL, el nombre por el wire, el journal -- que es lo que S5 exige antes de que una linea
+		// de DSL toque el journal de una persona.
+		[Test]
+		public void TheDoorSaysADueSafetyOperationCannotBeDeferred()
+		{
+			SeedAWearPartOf(true);
+			ReachTheLimit();
+
+			Assert.That(journal.Api.ReadDueState("WearPartReplacement"), Is.EqualTo("Due"),
+				"Vencida: el estado por si solo diria que se puede aplazar.");
+
+			Assert.That(journal.Api.CanBeDeferred("WearPartReplacement"), Is.False,
+				"OINV-52: no se aplaza nunca, y la pantalla tiene que poder saberlo ANTES de ofrecer "
+				+ "el control. Deducirlo del estado da true justo aca.");
+
+			// El bool de seguridad viaja por parametro y el replay lo reusa. Si se perdiera al
+			// rehidratar, la operacion volveria aplazable al reabrir la app -- la peor forma de
+			// fallar, porque nadie mira dos veces un control que ya vio funcionar.
+			journal.CloseAndReopenFromTheJournal();
+
+			Assert.That(journal.Api.CanBeDeferred("WearPartReplacement"), Is.False,
+				"Y sigue diciendo lo mismo despues de reproducir el journal: la clasificacion es un "
+				+ "hecho journalizado, no un dato de la sesion.");
+		}
+
+		[Test]
+		public void TheDoorSaysTheSameOperationUnclassifiedCanBeDeferred()
+		{
+			SeedAWearPartOf(false);
+			ReachTheLimit();
+
+			Assert.That(journal.Api.CanBeDeferred("WearPartReplacement"), Is.True,
+				"La MISMA operacion sin clasificar si se puede. Es lo que hace que la prueba de "
+				+ "arriba este midiendo la clasificacion y no otra cosa.");
+		}
+
+		// Y EN EL TOPE, tambien por la puerta: es la tercera condicion de L6, y la unica que la
+		// pantalla podria haber intentado deducir -- tiene DeferralsUsed -- salvo que el TOPE no se
+		// proyecta, asi que 2 no se distingue de 1 desde afuera.
+		[Test]
+		public void TheDoorSaysAnOperationAtTheCapCannotBeDeferred()
+		{
+			SeedAWearPartOf(false);
+			ReachTheLimit();
+
+			journal.Api.DeferOperation("WearPartReplacement", "Cost", FellDue);
+			journal.Api.Evaluate(TheWindowEnds);
+			journal.Api.DeferOperation("WearPartReplacement", "Timing", TheWindowEnds);
+			journal.Api.Evaluate(TheSecondWindowEnds);
+
+			Assert.That(journal.Api.ReadDueState("WearPartReplacement"), Is.EqualTo("Due"));
+			Assert.That(journal.Api.DeferralsUsed("WearPartReplacement"), Is.EqualTo(2));
+
+			Assert.That(journal.Api.CanBeDeferred("WearPartReplacement"), Is.False);
+		}
+
 		private void SeedAWearPartOf(bool isSafety)
 		{
 			journal.Api.SeedPlanOperation(

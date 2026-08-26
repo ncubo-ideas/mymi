@@ -3,7 +3,7 @@ using NUnit.Framework;
 
 namespace DealershipCar.Dominio.Pruebas
 {
-	// LA POLARIDAD PARTIDA DE E41, sobre las ocho lecturas de §4. Es la doctrina que se equivoca
+	// LA POLARIDAD PARTIDA DE E41, sobre las nueve lecturas de §4. Es la doctrina que se equivoca
 	// sola, porque las tres polaridades viven a dos lineas una de otra:
 	//
 	//   TOTAL           una lectura CON CLAVE sobre un espacio contesta siempre. Una clase que no
@@ -54,6 +54,23 @@ namespace DealershipCar.Dominio.Pruebas
 		public void AnUnscheduledKindHasNoDeferralsUsed()
 		{
 			Assert.That(schedule.DeferralsUsed(OperationKindCode.FilterChange), Is.EqualTo(0));
+		}
+
+		// La novena lectura es total por el mismo motivo que las otras con clave, y su respuesta
+		// vacia es FALSE: una clase que no esta agendada no se puede aplazar, que es exactamente lo
+		// que hace el comando cuando se la mandan. La pregunta y el comando contestan lo mismo
+		// tambien aca, no solo sobre una operacion que existe.
+		[Test]
+		public void AnUnscheduledKindCannotBeDeferredAndThatIsALegalAnswer()
+		{
+			Assert.That(schedule.CanBeDeferred(OperationKindCode.FilterChange), Is.False);
+
+			Assert.DoesNotThrow(
+				() => schedule.DeferOperation(
+					OperationKindCode.FilterChange, DeferralReasonCode.Cost, Delivery),
+				"El comando sobre una clase no agendada es un no-op, asi que la pregunta tiene "
+				+ "que ser total tambien: reventar aca obligaria a la vista a saber cuales de las "
+				+ "nueve clases estan agendadas antes de poder preguntar.");
 		}
 
 		// El motivo es total tambien, pero con una FRASE de verdad y no con una cadena vacia: es
@@ -166,6 +183,7 @@ namespace DealershipCar.Dominio.Pruebas
 			Assert.Throws<DomainException>(() => schedule.ReadDueState((OperationKindCode)99));
 			Assert.Throws<DomainException>(() => schedule.DeferralsUsed((OperationKindCode)99));
 			Assert.Throws<DomainException>(() => schedule.ReadDueReason((OperationKindCode)99));
+			Assert.Throws<DomainException>(() => schedule.CanBeDeferred((OperationKindCode)99));
 		}
 
 		// Una operacion agendada y todavia no evaluada tampoco miente: no dice NotDue a secas,

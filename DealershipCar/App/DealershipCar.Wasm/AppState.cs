@@ -20,10 +20,16 @@ namespace DealershipCar.Wasm
 	// EL PASO 2 TIENE QUE PASAR ANTES DEL 3 porque el motor lee el journal de forma sincrona y en
 	// wasm single-thread no se puede bloquear esperando una promesa.
 	//
-	// VENTANA DE PERDIDA, y la pantalla la dice: entre el commit del actor y el flush a disco hay un
-	// instante en el que un cierre abrupto pierde entradas. El flush es por comando (no por timer)
-	// para que sea lo mas angosta posible, pero NO es durabilidad transaccional y no se presenta
-	// como tal.
+	// VENTANA DE PERDIDA, y ESTE es el lugar donde se dice: entre el commit del actor y el flush a
+	// disco hay un instante en el que un cierre abrupto pierde entradas. El flush es por comando (no
+	// por timer) para que sea lo mas angosta posible, pero NO es durabilidad transaccional y no se
+	// presenta como tal.
+	//
+	// LA PANTALLA YA NO LA IMPRIME. La caratula llevaba este mismo parrafo al pie, y se saco: es
+	// vocabulario de ingenieria sobre el que la persona no puede actuar, y el hecho que si le
+	// importa -- que se guarda despues de CADA cambio, no cada tantos segundos -- lo dice la linea
+	// de in-own-folder. El dato no se perdio, cambio de lector: aca lo lee quien puede hacer algo
+	// con el, que es quien toque este archivo.
 	//
 	// ESTA ES LA UNICA CARATULA QUE LEE UN RELOJ, y hay que decirlo porque el repo tiene un grep
 	// mecanico que lo busca (C27). El DOMINIO nunca lo lee -- cada operacion dependiente del tiempo
@@ -106,7 +112,7 @@ namespace DealershipCar.Wasm
 		// abriendo un journal real.
 		public string EvaluationSkipped { get; private set; } = "";
 
-		public string WhereTheDealershipIs => http.BaseAddress?.ToString() ?? "(sin configurar)";
+		public string WhereTheDealershipIs => http.BaseAddress?.ToString() ?? "(not configured)";
 
 		public string Vin => dealership.Vin;
 
@@ -517,11 +523,14 @@ namespace DealershipCar.Wasm
 			now = new DateTime(now.Year, now.Month, now.Day, now.Hour, now.Minute, now.Second, DateTimeKind.Utc);
 
 			if (now < lastStampSent)
+				// EN INGLES PORQUE LLEGA A LA PANTALLA. `Try` lo atrapa y lo imprime en el alert de
+				// error, y la pantalla es inglesa (decision 6 de T7). Los comentarios se quedan en
+				// espanol; el mensaje que lee la persona, no.
 				throw new InvalidOperationException(
-					$"El reloj de esta maquina retrocedio: son las {Instant(now)} y esta app ya mando "
-					+ $"un comando fechado {Instant(lastStampSent)}. No se manda un instante hacia "
-					+ "atras -- una declaracion retroactiva revienta ADENTRO del comando y deja una "
-					+ "entrada permanente en el journal.");
+					$"This machine's clock went backwards: it is now {Instant(now)} and this app has "
+					+ $"already sent a command stamped {Instant(lastStampSent)}. It will not send an "
+					+ "instant that moves backwards -- a retroactive declaration fails INSIDE the "
+					+ "command and leaves a permanent entry in the journal.");
 
 			lastStampSent = now;
 			return now;
@@ -559,6 +568,11 @@ namespace DealershipCar.Wasm
 		public string ReadDueReason(string kind) { Require(); return api.ReadDueReason(kind); }
 
 		public int DeferralsUsed(string kind) { Require(); return api.DeferralsUsed(kind); }
+
+		// SI OFRECER EL APLAZAMIENTO. La pantalla no la deduce del estado: L6 tiene cuatro
+		// condiciones y el estado es una sola. Preguntarsela al dominio es lo que evita un control
+		// habilitado sobre una operacion clasificada de seguridad, que no se aplaza nunca.
+		public bool CanBeDeferred(string kind) { Require(); return api.CanBeDeferred(kind); }
 
 		public int CountDue() { Require(); return api.CountDue(); }
 
@@ -621,7 +635,7 @@ namespace DealershipCar.Wasm
 
 		private void Require()
 		{
-			if (api is null) throw new InvalidOperationException("La app todavia no arranco.");
+			if (api is null) throw new InvalidOperationException("This app has not opened yet.");
 		}
 
 		public async ValueTask DisposeAsync()

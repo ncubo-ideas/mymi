@@ -137,8 +137,11 @@ namespace DealershipCar.Wasm
 			if (!listing.Ok)
 			{
 				await ForgetFolderAsync();
+				// LOS CUATRO MENSAJES DE ESTE ARCHIVO VAN EN INGLES, porque los cuatro llegan a la
+				// pantalla: dos por el alert de error y dos por SavingIsFailing. La pantalla es
+				// inglesa (decision 6 de T7). Los comentarios se quedan en espanol.
 				throw new FolderNotAvailableException(
-					$"No se pudo leer la carpeta guardada: {listing.Reason}. Elegi una carpeta de nuevo.");
+					$"Could not read the saved folder: {listing.Reason}. Choose a folder again.");
 			}
 
 			int copied = 0;
@@ -150,8 +153,8 @@ namespace DealershipCar.Wasm
 				// quedaria incompleta y la agenda saldria mal, sin aviso. Falla ruidosamente.
 				if (!read.Ok)
 					throw new FolderNotAvailableException(
-						$"No se pudo leer '{path}' de la carpeta '{FolderName}': {read.Reason}. "
-						+ "Abrir con el journal a medias daria una agenda equivocada.");
+						$"Could not read '{path}' from '{FolderName}': {read.Reason}. "
+						+ "Opening with half the journal would give a wrong schedule.");
 
 				string destination = Path.Combine(RootInMemfs, path.Replace('/', Path.DirectorySeparatorChar));
 				string directory = Path.GetDirectoryName(destination);
@@ -184,9 +187,9 @@ namespace DealershipCar.Wasm
 			// MEDIDO sobre una carpeta real cuyo permiso quedo en 'denied'.
 			if (NeedsRegrant)
 				throw new WriteRefusedException(
-					$"No hay permiso de escritura sobre la carpeta '{FolderName}'. El browser lo da por "
-					+ "separado de elegir la carpeta, y lo degrada al reabrir la app. Se recupera "
-					+ "volviendolo a otorgar; hasta entonces nada de lo que se ve queda guardado.");
+					$"There is no write permission on '{FolderName}'. The browser grants it separately "
+					+ "from letting you pick the folder, and it withdraws it when the app reopens. "
+					+ "Granting it again recovers it; until then nothing you see is being saved.");
 
 			if (!HasFolder || !Directory.Exists(RootInMemfs)) return 0;
 
@@ -212,8 +215,8 @@ namespace DealershipCar.Wasm
 			// el permiso de escritura caduco, y eso se arregla volviendolo a otorgar.
 			if (failed.Count > 0)
 				throw new WriteRefusedException(
-					$"No se pudo guardar en la carpeta '{FolderName}': fallaron {failed.Count} de "
-					+ $"{failed.Count + written} archivos. {string.Join("; ", failed)}");
+					$"Could not save to '{FolderName}': {failed.Count} of {failed.Count + written} "
+					+ $"files failed. {string.Join("; ", failed)}");
 
 			return written;
 		}

@@ -245,6 +245,95 @@ namespace DealershipCar.Dominio.Pruebas
 			Assert.That(operation.State, Is.SameAs(DueState.Due));
 		}
 
+		// LA PREGUNTA Y EL COMANDO NO PUEDEN DISCREPAR, y esto es lo que lo fija.
+		//
+		// CanBeDeferred existe porque una PANTALLA no puede deducir L6: el estado es UNA de sus
+		// cuatro condiciones, y las otras tres -- agendada, no clasificada de seguridad, por debajo
+		// del tope -- no se proyectan. Ofrecer el control mirando solo el estado habilita un boton
+		// muerto sobre justo la operacion que el dominio no aplaza NUNCA.
+		//
+		// Por eso no se compara contra una lista de casos escrita a mano, que envejeceria con la
+		// ley: se PREGUNTA, se aplaza, y se mira si de verdad se movio. Si alguien agrega una quinta
+		// condicion al comando y no a la pregunta, este archivo se pone rojo en el caso que la
+		// estrene.
+		[Test]
+		public void TheQuestionAnswersExactlyWhatTheCommandWillDo()
+		{
+			// 1. Fuera de un estado vencido: E36, no-op.
+			EvaluateAt(new DateTime(2025, 12, 1), 31000);
+			TheQuestionMatchesTheCommand(operation, new DateTime(2025, 12, 1), "NotDue");
+
+			// 2. Vencida y con el tope entero: se aplaza.
+			EvaluateAt(FellDue);
+			TheQuestionMatchesTheCommand(operation, FellDue, "Due, first deferral");
+
+			// 3. En el tope: rechazo, y es estado y no excepcion.
+			EvaluateAt(TheWindowEnds);
+			operation.Defer(DeferralReason.Timing, TheWindowEnds);
+
+			DateTime theSecondWindowEnds = TheWindowEnds.AddDays(SchedulePolicy.DeferralWindowDays);
+			EvaluateAt(theSecondWindowEnds);
+			TheQuestionMatchesTheCommand(operation, theSecondWindowEnds, "at the cap");
+
+			// 4. Clasificada de seguridad y vencida: no tiene ninguno, no es un tope mas bajo.
+			ScheduledOperation safety = AnOperationOf(MaintenanceOperationKind.RecallRemedy, true);
+			safety.Evaluate(FellDue, AReadingOf(40000, DistanceUnit.UnitA), noScaling);
+
+			Assert.That(safety.State, Is.SameAs(DueState.Due));
+			TheQuestionMatchesTheCommand(safety, FellDue, "safety classified");
+		}
+
+		// DueSoon SI SE APLAZA, y es el que se contesta mal solo. IsInADueState son TRES estados y
+		// no dos, asi que una pantalla que ofreciera el control solo en Due y Overdue apagaria un
+		// control que funciona -- el error contrario al que trajo esta pregunta, y igual de mentira.
+		[Test]
+		public void TheCourtesyWarningCanBeDeferredToo()
+		{
+			EvaluateAt(FellDue, 39500);
+
+			Assert.That(operation.State, Is.SameAs(DueState.DueSoon),
+				"El escenario tiene que llegar en DueSoon: 9500 de un limite de 10000, con un "
+				+ "anticipo de " + SchedulePolicy.DueSoonLeadDistance + " unidades.");
+
+			Assert.That(operation.CanBeDeferred(), Is.True);
+
+			TheQuestionMatchesTheCommand(operation, FellDue, "DueSoon");
+
+			Assert.That(operation.State, Is.SameAs(DueState.Deferred));
+		}
+
+		// Preguntar no mueve nada. Suena obvio y no lo es: la pantalla la llama en CADA repintado,
+		// asi que una pregunta con efecto seria un cambio de estado por mirar.
+		[Test]
+		public void AskingTheQuestionChangesNothing()
+		{
+			EvaluateAt(FellDue);
+
+			DueState before = operation.State;
+
+			Assert.That(operation.CanBeDeferred(), Is.True);
+			Assert.That(operation.CanBeDeferred(), Is.True);
+
+			Assert.That(operation.State, Is.SameAs(before));
+			Assert.That(operation.DeferralsUsed, Is.EqualTo(0));
+		}
+
+		private void TheQuestionMatchesTheCommand(
+			ScheduledOperation subject, DateTime decidedAt, string theCase)
+		{
+			bool theQuestionSaid = subject.CanBeDeferred();
+			int before = subject.DeferralsUsed;
+
+			subject.Defer(DeferralReason.Cost, decidedAt);
+
+			bool theCommandDid = subject.DeferralsUsed > before;
+
+			Assert.That(theQuestionSaid, Is.EqualTo(theCommandDid),
+				$"'{theCase}': CanBeDeferred dijo {theQuestionSaid} y el comando hizo "
+				+ $"{theCommandDid}. Una pantalla que pregunta antes de ofrecer el control queda "
+				+ "mintiendo en ese caso: o esconde una accion que funciona, o ofrece una que no.");
+		}
+
 		// Un motivo en null si es un defecto de quien llama: el aplazamiento se journaliza CON
 		// su motivo (OINV-28), asi que uno sin motivo no es un aplazamiento incompleto, es un
 		// hecho que no se puede registrar.

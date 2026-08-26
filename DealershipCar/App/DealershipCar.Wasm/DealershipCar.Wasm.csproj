@@ -10,6 +10,36 @@
   <ItemGroup>
     <PackageReference Include="Microsoft.AspNetCore.Components.WebAssembly" Version="9.0.19" />
     <PackageReference Include="Microsoft.AspNetCore.Components.WebAssembly.DevServer" Version="9.0.19" PrivateAssets="all" />
+
+    <!-- LA BIBLIOTECA DE COMPONENTES, y va SOLO en la caratula. El dominio sigue con cero
+         referencias (C1) y DealershipCar.App tampoco la nombra: una biblioteca de UI es un
+         detalle del shell, y si algun dia esta app se dibuja de otra forma, lo unico que se
+         tira es este proyecto.
+
+         MudBlazor corre en wasm sin nada especial: es C# con un solo .js estatico, no
+         necesita prerender ni un servidor, y sus assets viajan como _content/MudBlazor/*.
+
+         EL COSTO DE PAYLOAD ESTA MEDIDO, no supuesto. Dos publish Release limpios, mismo
+         comando, misma maquina:
+
+                                          sin MudBlazor   con MudBlazor      delta
+           archivos en wwwroot                      219             246        +27
+           bytes en disco                    19 902 255      22 864 165  +2 962 kb
+           bytes sin .br/.gz                 11 744 403      13 753 487  +2 009 kb
+           BYTES QUE SE BAJAN                 4 560 537       5 097 987    +537 kb
+
+         LA ULTIMA FILA ES LA QUE IMPORTA y es la que casi nadie mide: nginx sirve con
+         gzip_static, asi que lo que cruza la red es el .gz de cada archivo, no el archivo.
+         Sumar los tres tamanos del disco cuenta tres veces la misma cosa y da un +14,9%
+         que no le pasa a nadie. Sobre lo que se baja de verdad son 525 kb, +11,8%, una
+         sola vez, y despues el service worker lo cachea.
+
+         Las dos piezas grandes, con el .gz que es lo que nginx entrega: MudBlazor.wasm
+         778 517 b -> 285 123, y MudBlazor.min.css 624 511 b -> 66 562. La hoja comprime a
+         menos de una decima parte, que es por lo que el numero de disco asusta y el de red
+         no. -->
+
+    <PackageReference Include="MudBlazor" Version="9.9.0" />
   </ItemGroup>
 
   <ItemGroup>

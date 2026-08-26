@@ -181,6 +181,17 @@ namespace DealershipCar.Dominio
 		}
 
 		/// <summary>
+		/// Si un aplazamiento haria algo. Es la forma PREGUNTA de la ley L6, y la forma comando la
+		/// usa: quien ofrece la accion pregunta lo mismo que la ley decide.
+		/// </summary>
+		internal bool CanBeDeferred()
+		{
+			return IsInADueState()
+				&& !_definition.IsSafetyClassified
+				&& _deferrals.Count < SchedulePolicy.MaxDeferralsPerOperation;
+		}
+
+		/// <summary>
 		/// LEY L6 (OINV-27, OINV-52): la operacion se aplaza como maximo
 		/// <see cref="SchedulePolicy.MaxDeferralsPerOperation"/> veces, cada una por
 		/// <see cref="SchedulePolicy.DeferralWindowDays"/> dias, y una clasificada de seguridad no
@@ -189,9 +200,7 @@ namespace DealershipCar.Dominio
 		/// </summary>
 		internal void DeferralCapAndWindow(DeferralReason reason, DateTime decidedAt)
 		{
-			if (!IsInADueState()) return;
-			if (_definition.IsSafetyClassified) return;
-			if (_deferrals.Count >= SchedulePolicy.MaxDeferralsPerOperation) return;
+			if (!CanBeDeferred()) return;
 
 			_deferrals.Add(new Deferral(reason, decidedAt));
 			_state = DueState.Deferred;

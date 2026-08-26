@@ -3,10 +3,16 @@ using Microsoft.AspNetCore.Components.Web;
 using Microsoft.AspNetCore.Components.WebAssembly.Hosting;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.JSInterop;
+using MudBlazor.Services;
 
 var builder = WebAssemblyHostBuilder.CreateDefault(args);
 builder.RootComponents.Add<App>("#app");
 builder.RootComponents.Add<HeadOutlet>("head::after");
+
+// LOS SERVICIOS DE LA BIBLIOTECA DE COMPONENTES. Registra el popover, el dialogo, el snackbar y
+// el observador de breakpoints; sin esto los proveedores de MainLayout no tienen de donde
+// resolverse y la pantalla se dibuja sin desplegables. Es lo unico que MudBlazor pide del host.
+builder.Services.AddMudServices();
 
 // EL JUEGO DE URLS DEL CONCESIONARIO SALE DE wwwroot/appsettings.json, no de una constante
 // compilada: la app servida desde el contenedor tiene que poder apuntar a otro host, u otro

@@ -325,6 +325,22 @@ namespace DealershipCar.App
 			});
 		}
 
+		// Si aplazar esa clase haria algo (ley L6). Total: una clase sin operacion agendada contesta
+		// false, que es lo mismo que hace el comando.
+		//
+		// EXISTE PORQUE UNA CARATULA NO PUEDE DEDUCIRLA. L6 tiene cuatro condiciones y la puerta solo
+		// proyectaba una: el ESTADO. Las otras tres -- que la clase este agendada, que no sea
+		// clasificada de seguridad, y que no haya llegado al tope -- no se ven desde afuera, asi que
+		// una pantalla que decidiera con lo que tenia acertaria a veces y ofreceria un boton muerto
+		// sobre justo la operacion que el dominio nunca aplaza. Es la pregunta, no una copia de la
+		// regla: ScheduledOperation.DeferralCapAndWindow la usa para decidir.
+		public bool CanBeDeferred(string kind)
+		{
+			return ATruth("@can = schedule.CanBeDeferred(@kind);", "can", p => {
+				p["kind", typeof(Enum)] = WireName.OperationKind(kind);
+			});
+		}
+
 		// Si hay algo vencido. Es la pregunta de presencia que se hace ANTES de ReadNextDueKind.
 		public bool HasAnythingDue()
 		{

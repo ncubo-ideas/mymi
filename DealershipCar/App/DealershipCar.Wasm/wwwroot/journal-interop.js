@@ -69,8 +69,11 @@ export function modoActual() {
     return modo;
 }
 
+// EN INGLES, porque esto NO es un identificador: es el nombre que la pantalla imprime, y la
+// pantalla es inglesa (decision 6 de T7). El token de modo de arriba si es identificador y se
+// queda en espanol -- ademas esta persistido en IndexedDB y renombrarlo romperia el reengache.
 export function nombreDeLaCarpeta() {
-    if (modo === 'opfs') return 'almacenamiento de este navegador';
+    if (modo === 'opfs') return "this browser's storage";
     return carpeta ? carpeta.name : '';
 }
 

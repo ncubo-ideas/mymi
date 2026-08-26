@@ -1,5 +1,6 @@
 @page "/"
 @inject AppState state
+@inject NavigationManager nav
 
 @* LA PANTALLA. Todo lo que se ve sale de preguntarle al actor por DealershipCarAPI; el payload
    del concesionario nunca llega hasta aca -- solo entra como argumento de un comando, adentro
@@ -8,138 +9,203 @@
    EL TEXTO ES INGLES y los comentarios espanol, que es la decision 6 de T7 un piso mas arriba:
    ReadDueReason y cada nombre de DueState los COMPONE EL DOMINIO en ingles (OUS-07 dice que
    componer la razon es trabajo del dominio, no de la vista), asi que etiquetas en espanol
-   alrededor de payload en ingles se leerian como ruido. *@
+   alrededor de payload en ingles se leerian como ruido.
+
+   ES UN TABLERO, y eso es una decision sobre el ORDEN, no sobre el contenido: primero el
+   veredicto y los conteos que la persona vino a buscar, despues la tabla completa que los
+   respalda. Tres cosas NO se movieron al reordenar, y son las que hacen que el tablero no
+   mienta:
+
+     1. LOS NUMEROS SON LOS DE LA PUERTA. CountDue, CountOverdue y MissedCount los cuenta el
+        dominio. Esta vista NO deriva un cuarto conteo recorriendo las nueve filas -- seria un
+        numero que el dominio no avala y que puede discrepar de los otros tres.
+     2. DueSoon NO SE PINTA COMO Due. Es un aviso de cortesia y nunca una parada obligatoria; un
+        tablero que le da el mismo rojo a los dos borra la distincion que el dominio se toma el
+        trabajo de hacer. Va en Info, y no tiene baldosa propia.
+     3. LOS AVISOS SIGUEN ARRIBA Y ENTEROS. Un tablero tiende a degradar las advertencias a
+        adornos chiquitos; aca "no se esta guardando nada" y "esto no son las noticias de hoy"
+        son lo mas importante de la pantalla cuando ocurren, y por eso siguen siendo bloques
+        anchos con su boton, antes que cualquier numero.
+
+   LA PROSA TIENE PRESUPUESTO, y se lo paso: en un tablero sano habia seis lineas de explicacion
+   permanente que la persona no habia pedido. Se recorto, y el criterio del recorte NO fue el
+   largo -- fue si la linea le dice algo que no este ya dicho en otra parte de la pantalla:
+
+     - un parrafo con las tres reglas del aplazamiento, ARRIBA de la tabla: duplicaba el tooltip
+       del boton de cada fila, que es donde la regla sirve. Fuera. Lo que lo justificaba -- que
+       Defer es un no-op MUDO cuando el dominio lo rechaza -- lo cierra CanBeDeferred por fila.
+     - la ventana de perdida, al pie: no es accionable y lo accionable ("se guarda despues de
+       cada cambio") lo dice in-own-folder. Fuera, y sigue escrita en AppState.
+     - el aviso de opfs: CIERTO y se queda, pero como una linea con su "why?" en vez de un banner
+       de advertencia en cada apertura sobre un destino que la persona eligio.
+     - el instrumento: detras de ?instrument, porque nunca fue para ella.
+
+   LOS CUATRO AVISOS DEL PUNTO 3 NO ENTRARON EN EL RECORTE, y eso es la linea que lo separa de
+   maquillar: ninguno de ellos esta dicho en otro lado, y un tablero mas limpio a costa de callar
+   que no se esta guardando nada es exactamente el defecto que el punto 3 existe para evitar. *@
 
 <PageTitle>My maintenance schedule</PageTitle>
-
-<h1 class="headline">My maintenance schedule</h1>
-<p class="letterhead"><b>Sotavento Motors</b> &middot; your vehicle's schedule, on your own computer.</p>
 
 @* UN solo lugar para los errores, y arriba. Abajo queda fuera de pantalla y la app parece no
    reaccionar al click. *@
 @if (error.Length > 0)
 {
-    <div class="notice notice--problem">
+    <MudAlert Severity="Severity.Error" Variant="Variant.Filled" Class="mb-4">
         <strong>@(state.IsUp ? "The operation could not be completed." : "The app could not be opened.")</strong>
-        <pre>@error</pre>
-    </div>
+        <pre class="alert-detail">@error</pre>
+    </MudAlert>
 }
 
 @if (destinationProblem.Length > 0)
 {
-    <div class="notice notice--problem" id="destination-problem">
+    <MudAlert Severity="Severity.Error" Variant="Variant.Outlined" Class="mb-4" id="destination-problem">
         <strong>The browser said no.</strong>
-        <p style="margin:6px 0 0">@destinationProblem</p>
-    </div>
+        <div class="mt-1">@destinationProblem</div>
+    </MudAlert>
 }
 
 @if (!state.IsUp)
 {
-    <div class="notice notice--neutral">
+    <MudPaper Elevation="0" Outlined="true" Class="pa-6">
         @* Cuando el handle volvio de IndexedDB pero el permiso caduco, la accion correcta es
            RE-OTORGAR, no volver a elegir la carpeta. Ofrecer "Choose folder" como primaria hacia
            que la persona reabriera el picker y volviera a navegar hasta la misma carpeta cada
            vez. *@
         @if (state.NeedsRegrant)
         {
-            <p>
+            <MudText Typo="Typo.h5" Class="mb-2">Welcome back</MudText>
+            <MudText Typo="Typo.body1">
                 Your folder is <strong>&laquo;@state.FolderName&raquo;</strong>. The browser asks you to
                 confirm write permission every time you reopen the app.
-            </p>
-            <div class="row" style="margin-top:12px">
-                <button class="button button--attention" id="regrant" @onclick="RequestPermission">
+            </MudText>
+
+            <div class="actions mt-4">
+                <MudButton Variant="Variant.Filled" Color="Color.Warning" id="regrant"
+                           StartIcon="@Icons.Material.Rounded.LockOpen" OnClick="RequestPermission">
                     Grant permission to &laquo;@state.FolderName&raquo;
-                </button>
-                <button class="button" id="choose-folder" @onclick="ConnectFolder"
-                        disabled="@(pickerSupported == false)">
+                </MudButton>
+                <MudButton Variant="Variant.Outlined" Color="Color.Primary" id="choose-folder"
+                           StartIcon="@Icons.Material.Rounded.FolderOpen" OnClick="ConnectFolder"
+                           Disabled="@(pickerSupported == false)">
                     Choose a different folder
-                </button>
-                <button class="button button--link" id="forget-folder" @onclick="ForgetFolder">
+                </MudButton>
+                <MudButton Variant="Variant.Text" Color="Color.Default" id="forget-folder"
+                           OnClick="ForgetFolder">
                     Forget this folder
-                </button>
+                </MudButton>
             </div>
-            <p class="footnote" style="margin-top:8px">
+
+            <MudText Typo="Typo.caption" HtmlTag="p" Class="mt-4 muted">
                 If granting keeps failing without the browser asking you anything, this browser is not
                 going to grant it: some in-app and embedded browsers never do. Open this app in Chrome
                 or Edge directly. If you do have a padlock next to the address, resetting this site's
                 permissions there and reloading is the other thing to try.
-            </p>
+            </MudText>
         }
         else
         {
-            <p>This app keeps <strong>your</strong> maintenance record. Choose where.</p>
+            <MudText Typo="Typo.h5" Class="mb-1">My maintenance schedule</MudText>
+            <MudText Typo="Typo.body1" Class="mb-4">
+                This app keeps <strong>your</strong> maintenance record. Choose where.
+            </MudText>
 
             @* Cuando NINGUN destino esta disponible, la causa importa: se arreglan distinto y una
                de las dos no es culpa del navegador. *@
             @if (noStorage == "insecure")
             {
-                <p class="notice notice--attention">
+                <MudAlert Severity="Severity.Warning" Variant="Variant.Outlined" Class="mb-4">
                     <strong>This page is not on a secure connection</strong>, so the browser will not let
                     it save anything &mdash; any browser would do the same. Open it over
                     <code>https</code>, or over <code>localhost</code>.
-                </p>
+                </MudAlert>
             }
             else if (noStorage == "browser")
             {
-                <p class="notice notice--attention">
+                <MudAlert Severity="Severity.Warning" Variant="Variant.Outlined" Class="mb-4">
                     <strong>This browser cannot save anything for this app.</strong> It has neither a
                     folder picker nor private storage. Opening the app in another browser is the way out.
-                </p>
+                </MudAlert>
             }
 
-            <div class="row" style="margin-top:12px">
+            <MudGrid Spacing="3">
                 @if (pickerSupported == true)
                 {
-                    <div class="option">
-                        <button class="button button--attention" id="choose-folder" @onclick="ConnectFolder">
-                            Choose a folder
-                        </button>
-                        <p class="footnote">
-                            The record lives in a folder of yours, and <strong>your assistant can read
-                            it</strong> &mdash; that is what the MCP server reads. This is the one that
-                            makes the app worth having.
-                        </p>
-                    </div>
+                    <MudItem xs="12" md="6">
+                        <MudPaper Elevation="0" Outlined="true" Class="pa-4 h-100">
+                            <MudButton Variant="Variant.Filled" Color="Color.Primary" id="choose-folder"
+                                       StartIcon="@Icons.Material.Rounded.FolderOpen" OnClick="ConnectFolder">
+                                Choose a folder
+                            </MudButton>
+                            <MudText Typo="Typo.caption" HtmlTag="p" Class="mt-3 muted">
+                                The record lives in a folder of yours, and <strong>your assistant can read
+                                it</strong> &mdash; that is what the MCP server reads. This is the one that
+                                makes the app worth having.
+                            </MudText>
+                        </MudPaper>
+                    </MudItem>
                 }
                 @if (browserStorageSupported == true)
                 {
-                    <div class="option">
-                        <button class="button" id="use-browser-storage" @onclick="UseBrowserStorage">
-                            @(installedApp ? "Save inside this app" : "Save in this browser")
-                        </button>
-                        @* Que persista no alcanza: en este destino la mitad "tu IA lo lee" del
-                           producto NO funciona, porque el MCP corre AFUERA del browser y no ve
-                           este almacenamiento. Decirlo es la diferencia entre degradar y
-                           enganar. *@
-                        <p class="footnote">
-                            It survives closing, but it is <strong>not a folder of yours</strong> and your
-                            assistant <strong>cannot read it</strong>. The folder picker is desktop
-                            Chromium only, so this is the fallback, not an equal choice.
-                        </p>
-                    </div>
+                    <MudItem xs="12" md="6">
+                        <MudPaper Elevation="0" Outlined="true" Class="pa-4 h-100">
+                            <MudButton Variant="Variant.Outlined" Color="Color.Primary" id="use-browser-storage"
+                                       StartIcon="@Icons.Material.Rounded.Storage" OnClick="UseBrowserStorage">
+                                @(installedApp ? "Save inside this app" : "Save in this browser")
+                            </MudButton>
+                            @* Que persista no alcanza: en este destino la mitad "tu IA lo lee" del
+                               producto NO funciona, porque el MCP corre AFUERA del browser y no ve
+                               este almacenamiento. Decirlo es la diferencia entre degradar y
+                               enganar. *@
+                            <MudText Typo="Typo.caption" HtmlTag="p" Class="mt-3 muted">
+                                It survives closing, but it is <strong>not a folder of yours</strong> and your
+                                assistant <strong>cannot read it</strong>. The folder picker is desktop
+                                Chromium only, so this is the fallback, not an equal choice.
+                            </MudText>
+                        </MudPaper>
+                    </MudItem>
                 }
-            </div>
+            </MudGrid>
         }
 
         @* Abrir sin guardar es la salida de emergencia, no una alternativa pareja: la app anda y
            no deja registro. Va aparte y como enlace, para que se note que es otra cosa. *@
-        <div style="margin-top:16px">
-            <button class="button button--link" id="open-without-saving" @onclick="Open">Open without saving anything</button>
+        <div class="mt-4">
+            <MudButton Variant="Variant.Text" Color="Color.Default" id="open-without-saving"
+                       OnClick="Open">Open without saving anything</MudButton>
         </div>
-    </div>
+    </MudPaper>
 }
 else
 {
-    <div class="row" style="margin-bottom:18px">
-        <button class="button" id="refresh" @onclick="Refresh" disabled="@refreshing">
-            @(refreshing ? "Refreshing…" : "Refresh")
-        </button>
-        <button class="button button--outline" id="evaluate" @onclick="Evaluate">Re-evaluate now</button>
-        <span class="footnote mono" id="summary">
-            @due due &middot; @overdue overdue &middot; @missed missed maintenance &middot;
-            read up to event @lastEvent
-        </span>
-    </div>
+    @* LA CARATULA DEL VEHICULO. El VIN sale del JOURNAL, no de appsettings.json: abrir con otro
+       vin no cambia el que quedo journalizado, asi que preguntarselo al actor es la unica
+       respuesta que no miente. *@
+    <MudPaper Elevation="0" Outlined="true" Class="pa-4 mb-4 plate" id="vehicle">
+        <div class="plate__id">
+            <MudAvatar Color="Color.Primary" Variant="Variant.Filled" Rounded="true" Size="Size.Medium">
+                <MudIcon Icon="@Icons.Material.Rounded.DirectionsCar" />
+            </MudAvatar>
+            <div>
+                <MudText Typo="Typo.h6" Class="plate__title">My maintenance schedule</MudText>
+                <span class="mono muted">VIN @vin</span>
+                <span class="muted"> &middot; </span>
+                <span class="muted">
+                    @(evaluatedUpTo.Length > 0 ? $"as of {evaluatedUpTo}" : "not evaluated yet")
+                </span>
+            </div>
+        </div>
+
+        <div class="actions">
+            <MudButton Variant="Variant.Filled" Color="Color.Primary" id="refresh"
+                       StartIcon="@Icons.Material.Rounded.CloudSync" OnClick="Refresh" Disabled="@refreshing">
+                @(refreshing ? "Refreshing…" : "Refresh")
+            </MudButton>
+            <MudButton Variant="Variant.Outlined" Color="Color.Primary" id="evaluate"
+                       StartIcon="@Icons.Material.Rounded.Calculate" OnClick="Evaluate">
+                Re-evaluate now
+            </MudButton>
+        </div>
+    </MudPaper>
 
     @* Si la app no esta guardando, eso es lo MAS importante de la pantalla y va arriba, no en una
        nota al pie. Sin destino la app se ve completa y correcta -- se pone al dia contra el
@@ -150,72 +216,105 @@ else
        pantalla nombraba la causa equivocada y por lo tanto el remedio equivocado. *@
     @if (state.NeedsRegrant)
     {
-        <div class="notice notice--problem row" id="needs-regrant">
-            <div class="grow">
-                <strong>Your folder &laquo;@state.FolderName&raquo; is read-only for this app.</strong>
-                The browser grants permission to <em>write</em> separately from letting you pick the
-                folder, and it withdraws it when you reopen the app. Until you grant it again,
-                <strong>nothing you do here is being saved</strong> and your assistant is reading an
-                older version.
+        <MudAlert Severity="Severity.Error" Variant="Variant.Filled" Class="mb-4" id="needs-regrant">
+            <div class="alert-row">
+                <div>
+                    <strong>Your folder &laquo;@state.FolderName&raquo; is read-only for this app.</strong>
+                    The browser grants permission to <em>write</em> separately from letting you pick the
+                    folder, and it withdraws it when you reopen the app. Until you grant it again,
+                    <strong>nothing you do here is being saved</strong> and your assistant is reading an
+                    older version.
+                </div>
+                <MudButton Variant="Variant.Filled" Color="Color.Default" id="regrant"
+                           StartIcon="@Icons.Material.Rounded.LockOpen" OnClick="RequestPermission">
+                    Grant write access
+                </MudButton>
             </div>
-            <button class="button button--problem" id="regrant" @onclick="RequestPermission">
-                Grant write access
-            </button>
-        </div>
+        </MudAlert>
     }
     else if (!state.HasFolder)
     {
-        <div class="notice notice--attention row" id="not-saving">
-            <div class="grow">
-                <strong>Nothing is being saved.</strong>
-                This app is running with no destination: what you see is fetched from the dealership
-                every time you open it, and no record of yours is kept.
+        <MudAlert Severity="Severity.Warning" Variant="Variant.Filled" Class="mb-4" id="not-saving">
+            <div class="alert-row">
+                <div>
+                    <strong>Nothing is being saved.</strong>
+                    This app is running with no destination: what you see is fetched from the dealership
+                    every time you open it, and no record of yours is kept.
+                </div>
+                @if (pickerSupported == true)
+                {
+                    <MudButton Variant="Variant.Filled" Color="Color.Default" id="choose-folder"
+                               StartIcon="@Icons.Material.Rounded.FolderOpen" OnClick="ConnectFolder">
+                        Choose a folder
+                    </MudButton>
+                }
+                else if (browserStorageSupported == true)
+                {
+                    <MudButton Variant="Variant.Filled" Color="Color.Default" id="use-browser-storage"
+                               StartIcon="@Icons.Material.Rounded.Storage" OnClick="UseBrowserStorage">
+                        Save in this browser
+                    </MudButton>
+                }
+                else
+                {
+                    @* NI UNO NI OTRO: el aviso no puede quedarse sin salida. Un banner que dice "no se
+                       esta guardando nada" y no ofrece nada es una app sin salida, que es justo lo que
+                       se reporto. *@
+                    <span>
+                        This browser offers neither a folder picker nor its own storage, so there is
+                        nothing to attach. Open this app in Chrome or Edge directly.
+                    </span>
+                }
             </div>
-            @if (pickerSupported == true)
-            {
-                <button class="button button--attention" id="choose-folder" @onclick="ConnectFolder">Choose a folder</button>
-            }
-            else if (browserStorageSupported == true)
-            {
-                <button class="button button--attention" id="use-browser-storage" @onclick="UseBrowserStorage">Save in this browser</button>
-            }
-            else
-            {
-                @* NI UNO NI OTRO: el aviso no puede quedarse sin salida. Un banner que dice "no se
-                   esta guardando nada" y no ofrece nada es una app sin salida, que es justo lo que
-                   se reporto. *@
-                <span class="footnote">
-                    This browser offers neither a folder picker nor its own storage, so there is
-                    nothing to attach. Open this app in Chrome or Edge directly.
-                </span>
-            }
-        </div>
+        </MudAlert>
     }
     else if (state.SavingIsFailing.Length > 0)
     {
-        <div class="notice notice--problem row" id="saving-failing">
-            <div class="grow">
-                <strong>The folder refused the write.</strong>
-                What you see is <strong>not</strong> saved in &laquo;@state.FolderName&raquo;. It is usually
-                the permission, which expires when you reopen the app.
-                <div class="footnote mono" style="margin-top:6px">@state.SavingIsFailing</div>
+        <MudAlert Severity="Severity.Error" Variant="Variant.Filled" Class="mb-4" id="saving-failing">
+            <div class="alert-row">
+                <div>
+                    <strong>The folder refused the write.</strong>
+                    What you see is <strong>not</strong> saved in &laquo;@state.FolderName&raquo;. It is usually
+                    the permission, which expires when you reopen the app.
+                    <div class="mono alert-detail mt-1">@state.SavingIsFailing</div>
+                </div>
+                <MudButton Variant="Variant.Filled" Color="Color.Default" id="regrant"
+                           StartIcon="@Icons.Material.Rounded.LockOpen" OnClick="RequestPermission">
+                    Grant permission again
+                </MudButton>
             </div>
-            <button class="button button--problem" id="regrant" @onclick="RequestPermission">Grant permission again</button>
-        </div>
+        </MudAlert>
     }
     else if (state.InBrowserStorage)
     {
-        <p class="notice notice--attention" id="in-browser-storage">
-            <strong>@(installedApp ? "Saving inside this app" : "Saving in this browser")</strong>, so your
-            record survives closing. But your assistant <strong>cannot read it</strong>: that needs a
-            folder of yours, and @(installedApp ? "here" : "this browser") does not allow one.
-        </p>
+        @* UNA LINEA, NO UN BANNER, y el porque a un click. El hecho es cierto y sigue dicho -- la
+           mitad "tu IA lo lee" no funciona en este destino -- pero la persona ELIGIO este destino, y
+           un banner de advertencia en cada apertura sobre una decision ya tomada es regano, no
+           informacion. Ademas empareja con la linea del caso de carpeta, que ya era una sola. *@
+        <MudText Typo="Typo.caption" HtmlTag="p" Class="muted mb-4" id="in-browser-storage">
+            <MudIcon Icon="@Icons.Material.Rounded.Storage" Size="Size.Small" Class="inline-icon" />
+            @(installedApp ? "Saving inside this app" : "Saving in this browser") &mdash; your assistant
+            cannot read it.
+            <MudLink Typo="Typo.caption" Class="ml-1" id="why-browser-storage"
+                     OnClick="@(() => whyBrowserStorage = !whyBrowserStorage)">
+                @(whyBrowserStorage ? "hide" : "why?")
+            </MudLink>
+            @if (whyBrowserStorage)
+            {
+                <span class="disclosure">
+                    Your record survives closing, but it lives in this browser's private storage. Your
+                    assistant reads a <strong>folder of yours</strong>, from outside the browser, and
+                    @(installedApp ? "here" : "this browser") does not allow one.
+                </span>
+            }
+        </MudText>
     }
     else
     {
-        <p class="footnote" id="in-own-folder">
+        <MudText Typo="Typo.caption" HtmlTag="p" Class="muted mb-4" id="in-own-folder">
+            <MudIcon Icon="@Icons.Material.Rounded.Check" Size="Size.Small" Class="inline-icon" />
             Saved to &laquo;@state.FolderName&raquo; after every change.
-        </p>
+        </MudText>
     }
 
     @* NO ALCANZAR AL CONCESIONARIO NO IMPIDE ABRIR -- eso es de lo que sirve tener el dato propio
@@ -224,108 +323,189 @@ else
        dentro de LastMessage y la evaluacion de apertura, que corre despues, lo pisaba. *@
     @if (state.DealershipUnreachable.Length > 0)
     {
-        <div class="notice notice--attention row" id="dealership-unreachable">
-            <div class="grow">
-                <strong>This is your own record, not today's news from the dealership.</strong>
-                The app could not reach it when it opened, so anything the dealership sent since the
-                last time is not here yet. Everything below is what your record already holds.
-                <div class="footnote mono" style="margin-top:6px">@state.DealershipUnreachable</div>
+        <MudAlert Severity="Severity.Warning" Variant="Variant.Filled" Class="mb-4" id="dealership-unreachable">
+            <div class="alert-row">
+                <div>
+                    <strong>This is your own record, not today's news from the dealership.</strong>
+                    The app could not reach it when it opened, so anything the dealership sent since the
+                    last time is not here yet. Everything below is what your record already holds.
+                    <div class="mono alert-detail mt-1">@state.DealershipUnreachable</div>
+                </div>
+                <MudButton Variant="Variant.Filled" Color="Color.Default" id="retry-dealership"
+                           StartIcon="@Icons.Material.Rounded.Refresh" OnClick="Refresh">
+                    Try again
+                </MudButton>
             </div>
-            <button class="button button--attention" id="retry-dealership" @onclick="Refresh">Try again</button>
-        </div>
+        </MudAlert>
     }
-
-    @* LA CARATULA DEL VEHICULO. El VIN sale del JOURNAL, no de appsettings.json: abrir con otro
-       vin no cambia el que quedo journalizado, asi que preguntarselo al actor es la unica
-       respuesta que no miente. *@
-    <div class="plate" id="vehicle">
-        <span class="mono">VIN @vin</span>
-        @if (evaluatedUpTo.Length > 0)
-        {
-            <span class="footnote">as of @evaluatedUpTo</span>
-        }
-        else
-        {
-            <span class="footnote">not evaluated yet</span>
-        }
-    </div>
 
     @* EL TABLERO PUEDE NO SER DE HOY, y eso hay que decirlo. Un journal evaluado hasta un instante
        posterior al reloj hace que la evaluacion de apertura se rechace (C6, correctamente), y sin
        este aviso la persona lee el estado de ese instante futuro creyendo que es el de hoy. *@
     @if (state.EvaluationSkipped.Length > 0)
     {
-        <p class="notice notice--attention" id="evaluation-skipped">
+        <MudAlert Severity="Severity.Warning" Variant="Variant.Outlined" Class="mb-4" id="evaluation-skipped">
             <strong>This is not today's reading.</strong> @state.EvaluationSkipped
-        </p>
+        </MudAlert>
     }
 
-    @* LA UNICA PREGUNTA QUE LA PERSONA HACE PRIMERO, y por eso va antes de la tabla. Se pregunta
-       con su guarda de presencia: ReadNextDueKind TIRA cuando no hay nada vencido (E41), y "nada
-       esta vencido" es la mejor noticia que esta app puede dar, no un error. *@
-    @if (nextDue.Length > 0)
-    {
-        <p class="verdict verdict--attention" id="next-due">
-            The next thing due is <strong>@Spaced(nextDue)</strong>.
-        </p>
-    }
-    else
-    {
-        <p class="verdict" id="next-due">Nothing is due right now.</p>
-    }
+    @* EL VEREDICTO Y LOS TRES CONTEOS, en una sola fila en pantalla ancha. La pregunta que la
+       persona hace PRIMERO es "que me toca", asi que va primero y grande.
 
-    <p class="footnote" id="what-you-can-do">
-        <strong>Putting something off</strong> records that you are postponing it, and why &mdash; the
-        reason becomes part of your record. The schedule limits how many times each operation can be
-        put off, and it will not let a safety operation be put off at all.
-    </p>
+       Se pregunta con su guarda de presencia: ReadNextDueKind TIRA cuando no hay nada vencido
+       (E41), y "nada esta vencido" es la mejor noticia que esta app puede dar, no un error. *@
+    <MudGrid Spacing="3" Class="mb-2">
+        <MudItem xs="12" md="6">
+            @if (nextDue.Length > 0)
+            {
+                <MudPaper Elevation="0" Outlined="true" Class="pa-4 verdict verdict--attention h-100" id="next-due">
+                    <MudText Typo="Typo.overline" Class="muted">Next due</MudText>
+                    <div class="verdict__line">
+                        <MudIcon Icon="@Icons.Material.Rounded.Schedule" Color="Color.Warning" Size="Size.Large" />
+                        <MudText Typo="Typo.h5">@Spaced(nextDue)</MudText>
+                    </div>
+                </MudPaper>
+            }
+            else
+            {
+                <MudPaper Elevation="0" Outlined="true" Class="pa-4 verdict h-100" id="next-due">
+                    <MudText Typo="Typo.overline" Class="muted">Next due</MudText>
+                    <div class="verdict__line">
+                        <MudIcon Icon="@Icons.Material.Rounded.CheckCircle" Color="Color.Success" Size="Size.Large" />
+                        <MudText Typo="Typo.h5">Nothing is due right now.</MudText>
+                    </div>
+                </MudPaper>
+            }
+        </MudItem>
 
-    <div class="scrolls">
-        <table class="board" id="board">
-            <thead>
-                <tr>
-                    <th>Operation</th>
-                    <th>State</th>
-                    <th>Why</th>
-                    <th>Times put off</th>
-                    <th>What you can do</th>
-                </tr>
-            </thead>
-            <tbody>
-                @foreach (string kind in AppState.TheNineKinds)
-                {
-                    <tr id="@("row-" + kind)">
-                        <td class="mono">@Spaced(kind)</td>
-                        <td class="state state--@board[kind].ToLowerInvariant()">@board[kind]</td>
-                        <td class="reason">@reasons[kind]</td>
-                        <td class="mono">@deferrals[kind]</td>
-                        <td>
-                            @* DEFER es un no-op del dominio fuera de un estado vencido, en el tope o
-                               sobre una clasificada de seguridad (L6), y NO tira: se puede ofrecer
-                               siempre sin arriesgar una cicatriz. *@
-                            @* UNA RAZON POR FILA, y no un campo compartido por las nueve. Con un
-                               solo campo los nueve desplegables se movian juntos: la persona
-                               elegia "Timing" en una fila y las otras ocho cambiaban tambien, que
-                               es una pantalla mintiendo sobre que va a mandar. *@
-                            <div class="row">
-                                <select id="@("reason-" + kind)"
-                                        value="@chosenReason[kind]"
-                                        @onchange="e => chosenReason[kind] = e.Value?.ToString() ?? AppState.TheFiveDeferralReasons[0]">
-                                    @foreach (string reason in AppState.TheFiveDeferralReasons)
-                                    {
-                                        <option value="@reason">@Spaced(reason)</option>
-                                    }
-                                </select>
-                                <button class="button button--small" id="@("defer-" + kind)"
-                                        title="Put this off for now, for the reason on the left. The schedule allows a limited number of these per operation, and refuses to defer a safety operation at all."
-                                        @onclick="() => Defer(kind)">Put off</button>
-                            </div>
-                        </td>
-                    </tr>
-                }
-            </tbody>
-        </table>
+        @* LAS TRES BALDOSAS SON LOS TRES CONTEOS DE LA PUERTA, ni uno mas. No hay baldosa de
+           DueSoon porque el dominio no cuenta DueSoon: inventar el conteo aca seria un numero
+           que nadie avala, y ademas ascenderia una cortesia al rango de los otros tres. *@
+        <MudItem xs="4" md="2">
+            <MudPaper Elevation="0" Outlined="true" Class="pa-4 stat h-100" id="stat-overdue">
+                <div class="stat__value stat__value--error">@overdue</div>
+                <div class="stat__label">Overdue</div>
+            </MudPaper>
+        </MudItem>
+        <MudItem xs="4" md="2">
+            <MudPaper Elevation="0" Outlined="true" Class="pa-4 stat h-100" id="stat-due">
+                <div class="stat__value stat__value--warning">@due</div>
+                <div class="stat__label">Due</div>
+            </MudPaper>
+        </MudItem>
+        <MudItem xs="4" md="2">
+            <MudPaper Elevation="0" Outlined="true" Class="pa-4 stat h-100" id="stat-missed">
+                <div class="stat__value">@missed</div>
+                <div class="stat__label">Missed maintenance</div>
+            </MudPaper>
+        </MudItem>
+    </MudGrid>
+
+    <MudText Typo="Typo.caption" HtmlTag="p" Class="muted mono mb-6" id="summary">
+        @due due &middot; @overdue overdue &middot; @missed missed maintenance &middot;
+        read up to event @lastEvent
+    </MudText>
+
+    @* SIN PARRAFO DE INSTRUCCIONES ARRIBA DE LA TABLA. Decia las tres reglas del aplazamiento, y
+       las tres estaban ya en el tooltip del boton de cada fila: la misma leccion dos veces, una de
+       ellas lejos del control al que aplica. Lo que lo justificaba era que Defer es un no-op MUDO
+       cuando el dominio lo rechaza -- y eso ahora lo resuelve CanBeDeferred por fila, que es la
+       pregunta que la puerta proyecta justamente para esto. *@
+    <div class="board-head">
+        <MudText Typo="Typo.h6">The nine operations</MudText>
     </div>
+
+    @* LA TABLA SE APILA EN TARJETAS en pantalla angosta, que es lo que hace que el tablero siga
+       siendo legible en un telefono sin scrollear de lado. Cada MudTd lleva su DataLabel porque
+       es la etiqueta que se muestra en ese modo.
+
+       Sm Y NO Md, y esto se midio en pantalla: el umbral de MudTable es "apila hasta el
+       breakpoint SIGUIENTE", asi que Md apilaba hasta 1280 px -- o sea, en la ventana de un
+       portatil normal la tabla salia apilada y las cinco columnas no se veian nunca. Con Sm la
+       tabla es tabla desde 960 px y se apila debajo, que es donde de verdad no entra. *@
+    <MudTable T="string" Items="@AppState.TheNineKinds" Hover="true" Elevation="0" Outlined="true"
+              Breakpoint="Breakpoint.Sm" Class="board" id="board">
+        <HeaderContent>
+            <MudTh>Operation</MudTh>
+            <MudTh>State</MudTh>
+            <MudTh>Why</MudTh>
+            <MudTh Style="width:96px">Times put off</MudTh>
+            @* LA COLUMNA DE LA ACCION SE RESERVA SU ANCHO. Sin esto la tabla se lo reparte por
+               contenido, la razon de una fila larga se lo come, y el desplegable y el boton
+               terminan uno encima del otro: dos controles apilados en una celda se leen como
+               dos acciones distintas, y son una sola. *@
+            <MudTh Style="width:296px">What you can do</MudTh>
+        </HeaderContent>
+        <RowTemplate Context="kind">
+            <MudTd DataLabel="Operation" id="@("row-" + kind)">
+                <span class="op-name">@Spaced(kind)</span>
+            </MudTd>
+            <MudTd DataLabel="State">
+                <MudChip T="string" Size="Size.Small" Variant="Variant.Text"
+                         Color="@SotaventoTheme.ColorOf(board[kind])"
+                         Icon="@SotaventoTheme.IconOf(board[kind])"
+                         Class="@("state state--" + board[kind].ToLowerInvariant())">
+                    @board[kind]
+                </MudChip>
+            </MudTd>
+            <MudTd DataLabel="Why" Class="reason">@reasons[kind]</MudTd>
+            <MudTd DataLabel="Times put off">
+                <span class="mono">@deferrals[kind]</span>
+            </MudTd>
+            <MudTd DataLabel="What you can do">
+                @* SE OFRECE SOLO CUANDO HARIA ALGO, y la pregunta la contesta EL DOMINIO.
+                   Antes se ofrecia siempre, con el argumento de que aplazar fuera de un
+                   estado vencido, en el tope o sobre una clasificada de seguridad es un
+                   no-op de L6 que NO tira: no arriesga una cicatriz en el journal. Cierto,
+                   y no alcanza -- es el mismo argumento con el que T10 dejo el boton de
+                   quitar de L9, y la razon por la que despues lo saco: que un control sea
+                   SEGURO no es razon para ponerlo en una pantalla. Apretarlo no hacia nada,
+                   sin decir nada, siete filas de nueve.
+
+                   Y NO SE DEDUCE DEL ESTADO. L6 tiene cuatro condiciones y el estado es una
+                   sola; las otras tres -- agendada, no clasificada de seguridad, por debajo
+                   del tope -- no se ven desde aca. Decidir con el estado solo habilitaria el
+                   control sobre TimedComponent en cuanto pase a DueSoon, que es la unica
+                   operacion de este plan que el dominio no aplaza NUNCA. Por eso la puerta
+                   proyecta la pregunta entera y esta vista solo la lee. *@
+                @* UNA RAZON POR FILA, y no un campo compartido por las nueve. Con un
+                   solo campo los nueve desplegables se movian juntos: la persona
+                   elegia "Timing" en una fila y las otras ocho cambiaban tambien, que
+                   es una pantalla mintiendo sobre que va a mandar. *@
+                <div class="defer">
+                    <MudSelect T="string" id="@("reason-" + kind)" Dense="true" Margin="Margin.Dense"
+                               Variant="Variant.Outlined" Value="@chosenReason[kind]"
+                               ValueChanged="@(chosen => chosenReason[kind] = chosen)"
+                               Disabled="@(!deferrable[kind])"
+                               Class="defer__reason">
+                        @foreach (string reason in AppState.TheFiveDeferralReasons)
+                        {
+                            <MudSelectItem T="string" Value="@reason">@Spaced(reason)</MudSelectItem>
+                        }
+                    </MudSelect>
+                    @* EL DESHABILITADO TIENE QUE DECIR POR QUE. Un control gris sin explicacion
+                       es la misma pantalla muda de antes, solo que ahora tampoco se puede
+                       apretar. No nombra la ley ni el numero del tope.
+                       Y ESTE TOOLTIP ES AHORA EL UNICO LUGAR DONDE VIVEN LAS TRES REGLAS. Estaban
+                       tambien en un parrafo arriba de la tabla, que se saco: era la misma leccion
+                       dos veces y la copia de alla estaba lejos del control al que aplica. Por eso
+                       la rama habilitada ya no las recita -- con el boton apagado cuando el dominio
+                       dice no, recitar los limites sobre una fila que SI se puede aplazar es
+                       explicar una regla que no la afecta. *@
+                    <MudTooltip Text="@(deferrable[kind]
+                        ? "Put this off for now, for the reason on the left. The postponement and its reason become part of your record."
+                        : "This one cannot be put off. The schedule only allows it while an operation is due, never for a safety operation, and only a limited number of times.")">
+                        <MudButton Variant="Variant.Outlined" Size="Size.Small" Color="Color.Primary"
+                                   id="@("defer-" + kind)" StartIcon="@Icons.Material.Rounded.Snooze"
+                                   Disabled="@(!deferrable[kind])"
+                                   OnClick="@(() => Defer(kind))">
+                            Put off
+                        </MudButton>
+                    </MudTooltip>
+                </div>
+            </MudTd>
+        </RowTemplate>
+    </MudTable>
 
     @* EL PERFIL DE USO NO SE OFRECE EN ESTA REBANADA. L8/OINV-22 es real -- declarar SevereDuty
        acorta cada intervalo al 70% -- y el comando esta implementado, probado y con su guarda de
@@ -335,40 +515,46 @@ else
        la captura.
 
        No es lo mismo que el boton de quitar, que se fue por imposible: aquel no podia hacer nada
-       nunca. Este funciona; se retiene por alcance. Por eso el metodo y sus pruebas siguen ahi. *@
+       nunca. Este funciona; se retiene por alcance. *@
 
-    @* LA VENTANA DE PERDIDA se dice, porque esconderla seria vender durabilidad que no hay. *@
-    <p class="footnote" style="margin-top:28px" id="loss-window">
-        @if (state.HasFolder)
-        {
-            <text>
-                <strong>Between a change and its save</strong> there is an instant in which an abrupt close
-                loses it. The save happens after every single change, never on a timer, so that instant is
-                as short as it can be &mdash; but it is not transactional durability.
-            </text>
-        }
-        else
-        {
-            <text><strong>With no destination:</strong> the record lives only in memory and is lost when you close.</text>
-        }
-    </p>
+    @* LA VENTANA DE PERDIDA YA NO SE DICE ACA, y no porque se haya vuelto falsa: sigue siendo
+       exacta y sigue escrita, en el comentario de cabecera de AppState, que es donde la lee quien
+       puede hacer algo con ella.
+       LAS DOS RAMAS SOBRABAN POR RAZONES DISTINTAS. La de "no es durabilidad transaccional" es
+       vocabulario de ingenieria sobre el que la persona no puede actuar, y el hecho que le
+       importa -- que se guarda despues de cada cambio -- ya lo dice la linea de in-own-folder una
+       pantalla mas arriba. La rama sin destino era redundante entera: cuando corre, arriba hay un
+       MudAlert Filled que dice "Nothing is being saved" con su boton.
+       ES UN RECORTE DE PROSA, NO DE HONESTIDAD: no se saco ningun aviso que nombre un estado que
+       la pantalla no diga en otra parte. Los cuatro de arriba -- sin destino, permiso caducado,
+       escritura rechazada y concesionario inalcanzable -- siguen enteros y siguen antes de
+       cualquier numero. *@
 
-    @* EL INSTRUMENTO. Esto no es informacion para la persona y en la implementacion de referencia
-       se saco por eso -- pero esta caratula es tambien la primera medicion de este modulo en un
-       browser, y sin estos numeros una comparacion entre dos estados no puede distinguirlos.
-       Entradas del journal, archivos en MEMFS y el permiso vigente son los tres que se miran. *@
-    <details class="instrument" id="instrument">
-        <summary>What this app is doing</summary>
-        <ul class="mono">
-            <li id="i-entries">journal entries: @entries</li>
-            <li id="i-memfs">memfs: @memfsFiles files, @memfsBytes bytes</li>
-            <li id="i-mode">destination: @state.Mode @(state.FolderName.Length > 0 ? $"({state.FolderName})" : "")</li>
-            <li id="i-permission">permission: @permission</li>
-            <li id="i-dealership">dealership: @state.WhereTheDealershipIs</li>
-            <li id="i-credential">credential stored: @hasCredential</li>
-            <li id="i-message">last: @state.LastMessage</li>
-        </ul>
-    </details>
+    @* EL INSTRUMENTO, Y NO EN LA PANTALLA DE LA PERSONA. No es informacion para ella -- la
+       implementacion de referencia lo saco por eso -- pero esta caratula es tambien la primera
+       medicion de este modulo en un browser, y sin estos numeros una comparacion entre dos estados
+       no puede distinguirlos. Entradas del journal, archivos en MEMFS y el permiso vigente son los
+       tres que se miran, y los dos §8 que siguen sin verificar (el picker nativo y el service
+       worker) se miran desde aca.
+       DETRAS DE ?instrument, Y NO DE #if DEBUG: el contenedor sirve un build Release, asi que un
+       gate de compilacion lo dejaria justo fuera del unico entorno donde hay que medirlo. Un
+       parametro de URL esta en los dos builds y nadie lo escribe por accidente. *@
+    @if (showInstrument)
+    {
+        <MudExpansionPanels Elevation="0" Class="mt-8" id="instrument">
+            <MudExpansionPanel Text="What this app is doing" Dense="true">
+                <ul class="mono instrument">
+                    <li id="i-entries">journal entries: @entries</li>
+                    <li id="i-memfs">memfs: @memfsFiles files, @memfsBytes bytes</li>
+                    <li id="i-mode">destination: @Destination()</li>
+                    <li id="i-permission">permission: @permission</li>
+                    <li id="i-dealership">dealership: @state.WhereTheDealershipIs</li>
+                    <li id="i-credential">credential stored: @hasCredential</li>
+                    <li id="i-message">last: @state.LastMessage</li>
+                </ul>
+            </MudExpansionPanel>
+        </MudExpansionPanels>
+    }
 }
 
 @code {
@@ -377,6 +563,11 @@ else
     private string noStorage = "";
     private bool installedApp;
     private bool refreshing;
+
+    // LOS DOS QUE GOBIERNAN CUANTA PROSA HAY EN PANTALLA, y ninguno de los dos toca lo que la
+    // pantalla puede decir: el primero pliega una explicacion, el segundo esconde un instrumento.
+    private bool whyBrowserStorage;
+    private bool showInstrument;
 
     private string vin = "";
     private string evaluatedUpTo = "";
@@ -402,6 +593,13 @@ else
     private Dictionary<string, string> reasons = Empty();
     private Dictionary<string, int> deferrals = NoDeferralsYet();
 
+    // ARRANCA EN FALSO, LAS NUEVE, y las dos mitades importan. Las nueve claves por la misma razon
+    // que las tres de arriba: sin ellas el render revienta con KeyNotFoundException justo cuando el
+    // primer flush fallo, que es el caso para el que existe el aviso. Y en FALSO porque es el lado
+    // seguro de equivocarse: hasta que el dominio conteste, un control apagado no promete nada,
+    // mientras que uno encendido promete algo que puede no cumplir.
+    private Dictionary<string, bool> deferrable = NothingIsDeferrableYet();
+
     private Dictionary<string, string> chosenReason = EveryKindStartsAt(AppState.TheFiveDeferralReasons[0]);
     private string error = "";
     private string destinationProblem = "";
@@ -421,6 +619,11 @@ else
         pickerSupported = await state.PickerIsSupportedAsync();
         browserStorageSupported = await state.BrowserStorageIsSupportedAsync();
         installedApp = await state.RunsAsInstalledAppAsync();
+
+        // SE LEE UNA VEZ Y NO EN CADA RENDER. Va ANTES del atajo `if (state.IsUp)` por la misma
+        // razon que las tres capacidades de arriba: con el actor ya arriba, el return temprano se
+        // lo saltaria y el panel no habria forma de encenderlo.
+        showInstrument = new Uri(nav.Uri).Query.Contains("instrument", StringComparison.OrdinalIgnoreCase);
 
         // Las dos causas de "no hay donde guardar" se dicen distinto, asi que se traducen a un
         // nombre y no a un bool.
@@ -580,19 +783,34 @@ else
         var states = new Dictionary<string, string>();
         var why = new Dictionary<string, string>();
         var used = new Dictionary<string, int>();
+        var canDefer = new Dictionary<string, bool>();
         foreach (string kind in AppState.TheNineKinds)
         {
             states[kind] = state.ReadDueState(kind);
             why[kind] = state.ReadDueReason(kind);
             used[kind] = state.DeferralsUsed(kind);
+            canDefer[kind] = state.CanBeDeferred(kind);
         }
         board = states;
         reasons = why;
         deferrals = used;
+        deferrable = canDefer;
 
         (memfsFiles, memfsBytes) = state.MemfsState();
         permission = await state.CurrentPermissionAsync();
     }
+
+    // EL TOKEN DE MODO NO SE RENOMBRA, SE TRADUCE AL MOSTRARLO. 'carpeta' | 'opfs' | 'ninguno' es
+    // un identificador PERSISTIDO en IndexedDB, no texto de pantalla: renombrarlo dejaria sin
+    // reconocer el destino que ya eligio quien tenga la app abierta hoy, y RememberedModeAsync
+    // dejaria de reengancharse solo. Lo unico que hacia falta era que el instrumento no imprimiera
+    // 'ninguno' en una pantalla en ingles.
+    private string Destination() => state.Mode switch
+    {
+        "carpeta" => $"your folder ({state.FolderName})",
+        "opfs" => "this browser's storage",
+        _ => "none",
+    };
 
     private static Dictionary<string, string> Empty() => EveryKindStartsAt("");
 
@@ -600,6 +818,13 @@ else
     {
         var start = new Dictionary<string, int>();
         foreach (string kind in AppState.TheNineKinds) start[kind] = 0;
+        return start;
+    }
+
+    private static Dictionary<string, bool> NothingIsDeferrableYet()
+    {
+        var start = new Dictionary<string, bool>();
+        foreach (string kind in AppState.TheNineKinds) start[kind] = false;
         return start;
     }
 

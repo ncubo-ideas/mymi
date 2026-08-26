@@ -10,9 +10,9 @@ namespace DealershipCar.Dominio.Pruebas
 	// aunque el estado siga siendo correcto.
 	//
 	// Asi que ninguna linea de DSL de DealershipCarAPI puede llegar al journal de una persona sin
-	// haberse ejecutado antes aca. Esta prueba corre CADA UNA de las veintiocho operaciones de la
-	// puerta al menos una vez -- las veintiuna de T6 mas las siete que trajo T8: los dos comandos de
-	// la bitacora, sus cuatro lecturas, y el Apply de la ingesta.
+	// haberse ejecutado antes aca. Esta prueba corre CADA UNA de las veintinueve operaciones de la
+	// puerta al menos una vez -- las veintiuna de T6, las siete que trajo T8 (los dos comandos de
+	// la bitacora, sus cuatro lecturas, y el Apply de la ingesta) y CanBeDeferred.
 	// No mira reglas de negocio -- de eso se ocupan las otras pruebas del nivel B -- mira que el
 	// script exista, parsee, ate sus parametros y devuelva lo que dijo que devolvia.
 	[TestFixture]
@@ -106,6 +106,7 @@ namespace DealershipCar.Dominio.Pruebas
 			Assert.That(journal.Api.CountDue(), Is.EqualTo(1));
 			Assert.That(journal.Api.CountOverdue(), Is.EqualTo(0));
 			Assert.That(journal.Api.DeferralsUsed("FluidChange"), Is.EqualTo(0));
+			Assert.That(journal.Api.CanBeDeferred("FluidChange"), Is.True);
 			Assert.That(journal.Api.HasAnythingDue(), Is.True);
 			Assert.That(journal.Api.ReadNextDueKind(), Is.EqualTo("FluidChange"));
 			Assert.That(journal.Api.ReadDueReason("FluidChange"), Does.Contain("Due"));
@@ -207,6 +208,7 @@ namespace DealershipCar.Dominio.Pruebas
 			Assert.That(journal.Api.ReadDueState("RecallRemedy"), Is.EqualTo("NotDue"));
 			Assert.That(journal.Api.DeferralsUsed("RecallRemedy"), Is.EqualTo(0));
 			Assert.That(journal.Api.ReadDueReason("RecallRemedy"), Does.Contain("no scheduled"));
+			Assert.That(journal.Api.CanBeDeferred("RecallRemedy"), Is.False);
 		}
 	}
 }
