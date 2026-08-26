@@ -49,6 +49,8 @@ namespace Compras.Consola
 			LoOcasionalNoTienePeriodicidad();
 			ElRangoDiceQueMesesSePuedenPedir();
 			LaComparacionPorDefectoLaEligeElDominio();
+			LaSerieDiceDesdeCuando();
+			ElVeredictoDelConsumoSaleDelPerfil();
 
 			Console.WriteLine();
 			Console.WriteLine(fallas == 0
@@ -471,6 +473,86 @@ namespace Compras.Consola
 			unaSola.Agregar(UnaCompra("T-1", Hoy, ("HELADO", "Helado", 1, 3000m, "Azucarados", 0)));
 			Igual("con un solo mes: no hay comparacion", "False",
 				unaSola.CompararConElAnioPasado().HayComparacion.ToString());
+		}
+
+		// ---- la serie: cuanto y CUANDO ----
+		private static void LaSerieDiceDesdeCuando()
+		{
+			Titulo("la serie dice cuanto y desde cuando");
+
+			Consumo azucarados = ElGuion().ConsumoDe("Azucarados");
+			Igual("existe", "True", azucarados.Existe().ToString());
+			Igual("  es una categoria", "True", azucarados.EsCategoria.ToString());
+			// El guion mete azucarados en feb, jul y agosto de 2026.
+			Igual("  tres meses con consumo", "3", azucarados.MesesConConsumo.ToString());
+			Igual("  arranca en", "2026-02", azucarados.PrimerMesExpresado);
+			Igual("  termina en", "2026-08", azucarados.UltimoMesExpresado);
+			Igual("  el mes mas alto", "2026-08", azucarados.MesDelPicoExpresado);
+			Igual("  el cambio tiene signo positivo", "True", (azucarados.CambioDeGasto > 0m).ToString());
+			Igual("  y la linea nombra los dos extremos", "True",
+				(azucarados.ParaSonia.Contains("2026-02") && azucarados.ParaSonia.Contains("2026-08")).ToString());
+
+			// Por TEXTO de producto, no por categoria: el helado solo.
+			Consumo helado = ElGuion().ConsumoDe("helado");
+			Igual("por texto: no es categoria", "False", helado.EsCategoria.ToString());
+			Igual("  tres meses de helado", "3", helado.MesesConConsumo.ToString());
+			Igual("  siete unidades en total", "7", helado.TotalUnidades.ToString());
+			Igual("  el primer mes son 2 unidades", "2", helado.Meses[0].Unidades.ToString());
+			Igual("  el ultimo son 3", "3", helado.Meses[helado.MesesConConsumo - 1].Unidades.ToString());
+
+			// Total: lo que no esta no revienta.
+			Consumo nada = ElGuion().ConsumoDe("langosta");
+			Igual("lo que no se compro: no existe", "False", nada.Existe().ToString());
+			Igual("  sin meses", "0", nada.MesesConConsumo.ToString());
+			Igual("  y lo dice", "True", nada.ParaSonia.Contains("no hay compras").ToString());
+			Igual("  no se puede juzgar", "False", nada.SePuedeJuzgar.ToString());
+		}
+
+		// ---- el veredicto del consumo sale del perfil, no del signo ----
+		private static void ElVeredictoDelConsumoSaleDelPerfil()
+		{
+			Titulo("el veredicto del consumo sale del perfil");
+
+			// EL MISMO MOVIMIENTO, dos categorias, veredictos OPUESTOS: subir azucarados
+			// es empeorar y subir proteinas es mejorar. Es lo que un signo no puede decir.
+			var historial = new Historial();
+			historial.Agregar(UnaCompra("T-1", new DateTime(2026, 1, 5),
+				("HELADO", "Helado", 1, 1000m, "Azucarados", 0),
+				("POLLO", "Pollo", 1, 1000m, "Proteinas", 0)));
+			historial.Agregar(UnaCompra("T-2", new DateTime(2026, 2, 5),
+				("HELADO", "Helado", 5, 1000m, "Azucarados", 0),
+				("POLLO", "Pollo", 5, 1000m, "Proteinas", 0)));
+
+			Igual("azucarados que suben: empeorando", "empeorando",
+				historial.ConsumoDe("Azucarados").Veredicto.Nombre);
+			Igual("proteinas que suben: mejorando", "mejorando",
+				historial.ConsumoDe("Proteinas").Veredicto.Nombre);
+
+			// Y al revés, con el mismo dominio.
+			var bajando = new Historial();
+			bajando.Agregar(UnaCompra("T-1", new DateTime(2026, 1, 5),
+				("HELADO", "Helado", 5, 1000m, "Azucarados", 0)));
+			bajando.Agregar(UnaCompra("T-2", new DateTime(2026, 2, 5),
+				("HELADO", "Helado", 1, 1000m, "Azucarados", 0)));
+			Igual("azucarados que bajan: mejorando", "mejorando",
+				bajando.ConsumoDe("Azucarados").Veredicto.Nombre);
+
+			// Un solo mes no es una serie: entrega los hechos y no se pronuncia.
+			var unMes = new Historial();
+			unMes.Agregar(UnaCompra("T-1", Hoy, ("HELADO", "Helado", 3, 3000m, "Azucarados", 0)));
+			Consumo deUnMes = unMes.ConsumoDe("Azucarados");
+			Igual("un solo mes: no se puede juzgar", "False", deUnMes.SePuedeJuzgar.ToString());
+			Igual("  veredicto indeterminado", "indeterminado", deUnMes.Veredicto.Nombre);
+			Igual("  pero los hechos estan", "9000", deUnMes.TotalGastado.ToString());
+
+			// Sin perfil que consultar tampoco se pronuncia: la olla no es comestible.
+			Consumo olla = ElGuion().ConsumoDe("olla");
+			Igual("lo no comestible: no se juzga", "False", olla.SePuedeJuzgar.ToString());
+			Igual("  pero se sabe cuanto y cuando", "2026-05", olla.PrimerMesExpresado);
+
+			// Una busqueda que cruza perfiles distintos tampoco.
+			Consumo arroz = ElGuion().ConsumoDe("a");
+			Igual("un texto que cruza categorias: no se juzga", "False", arroz.SePuedeJuzgar.ToString());
 		}
 
 		// Dos meses, cada uno con sus lineas, comparados.

@@ -397,6 +397,43 @@ namespace Compras.App
 			})
 			.PerformQuery();
 
+		// CUANTO Y CUANDO entro algo, mes a mes. La cabecera y los meses se imprimen en
+		// el mismo bloque: la cabecera sale como "consumo" y cada mes como "mes".
+		public string ConsumoDe(string termino)
+		{
+			ArgumentNullException.ThrowIfNullOrWhiteSpace(termino);
+
+			return app.Using(@"
+				{
+					consumo = compras.ConsumoDe(@termino);
+					print consumo.Termino termino,
+						consumo.EsCategoria esCategoria,
+						consumo.MesesConConsumo mesesConConsumo,
+						consumo.TotalGastado totalGastado,
+						consumo.TotalUnidades totalUnidades,
+						consumo.PrimerMesExpresado primerMes,
+						consumo.UltimoMesExpresado ultimoMes,
+						consumo.MesDelPicoExpresado mesDelPico,
+						consumo.GastoEnElPrimerMes gastoEnElPrimerMes,
+						consumo.GastoEnElUltimoMes gastoEnElUltimoMes,
+						consumo.CambioDeGasto cambioDeGasto,
+						consumo.SePuedeJuzgar sePuedeJuzgar,
+						consumo.NombreDelVeredicto veredicto,
+						consumo.ParaSonia paraSonia;
+					foreach (mes in consumo.Meses) {
+						print mes.MesExpresado mes,
+							mes.Unidades unidades,
+							mes.Gasto gasto,
+							mes.Compras compras;
+					}
+				}
+			")
+			.WithParameters(p => {
+				p["termino", typeof(string)] = termino;
+			})
+			.PerformQuery();
+		}
+
 		// LA consulta que mira el hueco: que dejo de entrar a la canasta. Una pantalla no
 		// puede renderizar una ausencia que nadie le paso.
 		public string AbastecimientosPendientesEl(DateTime fechaDeConsulta) =>
@@ -438,6 +475,9 @@ namespace Compras.App
 
 		public RangoDelHistorialVista Rango() =>
 			ProyeccionDeVistas.Rango(RangoDelHistorial());
+
+		public ConsumoEnElTiempo Consumo(string termino) =>
+			ProyeccionDeVistas.Consumo(ConsumoDe(termino));
 
 		public GarantiaDeProducto Garantia(string texto, DateTime fechaDeConsulta) =>
 			ProyeccionDeVistas.Garantia(GarantiaDe(texto, fechaDeConsulta));

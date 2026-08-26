@@ -157,6 +157,28 @@ internal sealed class ComprasTools
 		return lector.Consultar(api => api.AbastecimientosPendientes(DateTime.Now));
 	}
 
+	[McpServerTool(Name = "consumo_de", UseStructuredContent = true)]
+	[Description("CUANTO Y CUANDO entro algo a la canasta de la persona, MES A MES: unidades, gasto "
+		+ "y en cuantas compras, mas el mes mas alto y como cambio entre el primer mes y el ultimo. "
+		+ "Acepta una categoria del catalogo (Azucarados, Proteinas, FrutasYVerduras, LacteosYHuevos, "
+		+ "GranosYAbarrotes, AceitesYGrasas, Snacks, Limpieza, Electrohogar) o un texto de producto "
+		+ "('helado', 'soda', 'olla'). Es la serie completa, no un total: es lo que permite decir "
+		+ "DESDE QUE MES cambio un consumo, y ninguna pantalla lo muestra. Usala cuando la persona "
+		+ "pregunte por un producto o categoria a lo largo del tiempo, o cuando quiera relacionar "
+		+ "sus compras con algo mas que le este pasando -por ejemplo un resultado de laboratorio-: "
+		+ "ahi lo que sirve es la fecha, no el total. Si sePuedeJuzgar viene en false, entrega los "
+		+ "hechos y NO te apoyes en el veredicto: puede ser que haya un solo mes, o que la busqueda "
+		+ "cruce categorias con perfiles distintos. IMPORTANTE: esto dice que compro y cuando, NO "
+		+ "por que; la relacion con cualquier otra cosa la propone la persona o vos, con su permiso, "
+		+ "y siempre como una posibilidad a conversar con su medico, no como una causa.")]
+	public ConsumoEnElTiempo Consumo(
+		[Description("Una categoria del catalogo o un texto de producto, por ejemplo 'Azucarados' o 'helado'.")] string termino)
+	{
+		if (!lector.HayJournal) return new ConsumoEnElTiempo();
+
+		return lector.Consultar(api => api.Consumo(termino));
+	}
+
 	[McpServerTool(Name = "garantias_por_vencer", UseStructuredContent = true)]
 	[Description("Las garantias de la persona cuya VENTANA PARA RECLAMAR se esta cerrando, de la "
 		+ "mas urgente a la menos, con cuantos dias le quedan y que le conviene hacer. No es la "

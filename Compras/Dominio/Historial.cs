@@ -135,6 +135,66 @@ namespace Compras.Dominio
 		}
 
 		/// <summary>
+		/// CUANTO Y CUANDO entro algo, mes a mes. El termino puede ser una categoria del
+		/// repertorio (Azucarados) o un texto de producto (helado, olla). Total: lo que
+		/// no esta devuelve Consumo.Ninguno, no una excepcion.
+		/// </summary>
+		// Es la serie que hace posible decir DESDE CUANDO cambio un consumo. Sin la
+		// fecha, una relacion con cualquier otra cosa de la persona no es creible.
+		public Consumo ConsumoDe(string termino)
+		{
+			ArgumentNullException.ThrowIfNullOrWhiteSpace(termino);
+
+			bool esCategoria = Categoria.Existe(termino);
+			var porMes = new Dictionary<int, MesDeConsumo>();
+			var orden = new List<int>();
+			PerfilDeConsumo perfil = null;
+			bool perfilAmbiguo = false;
+
+			foreach (Compra compra in compras)
+			{
+				bool contada = false;
+				foreach (Item item in compra.Items)
+				{
+					if (!Alcanza(item, termino, esCategoria)) continue;
+
+					int llave = compra.Fecha.Year * 100 + compra.Fecha.Month;
+					if (!porMes.TryGetValue(llave, out MesDeConsumo mes))
+					{
+						mes = new MesDeConsumo(compra.Fecha.Year, compra.Fecha.Month);
+						porMes[llave] = mes;
+						orden.Add(llave);
+					}
+
+					mes.Sumar(item.Cantidad, item.Total);
+					if (!contada) { mes.ContarCompra(); contada = true; }
+
+					// El perfil es el de la categoria, pero una busqueda por texto puede
+					// cruzar categorias con perfiles distintos: ahi no hay direccion
+					// deseable que consultar y el consumo no se pronuncia.
+					if (!item.Categoria.EsComestible) { perfilAmbiguo = true; continue; }
+
+					PerfilDeConsumo suyo = item.Categoria.Perfil;
+					if (perfil == null) perfil = suyo;
+					else if (!ReferenceEquals(perfil, suyo)) perfilAmbiguo = true;
+				}
+			}
+
+			if (porMes.Count == 0) return Consumo.Ninguno(termino);
+
+			orden.Sort();
+			var meses = new List<MesDeConsumo>();
+			foreach (int llave in orden) meses.Add(porMes[llave]);
+
+			return Consumo.De(termino, esCategoria, perfilAmbiguo ? null : perfil, meses);
+		}
+
+		private static bool Alcanza(Item item, string termino, bool esCategoria) =>
+			esCategoria
+				? string.Equals(item.Categoria.Nombre, termino, StringComparison.OrdinalIgnoreCase)
+				: Coincide(item, termino);
+
+		/// <summary>
 		/// LO QUE NO ESTA: las categorias que se reponen cada tanto y hace demasiado que
 		/// no entran a la canasta. Es la pregunta que ninguna pantalla puede renderizar,
 		/// porque no es un dato del historial sino una conclusion sobre el historial mas

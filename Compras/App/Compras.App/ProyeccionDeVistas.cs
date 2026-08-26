@@ -149,6 +149,48 @@ namespace Compras.App
 			return garantias;
 		}
 
+		internal static ConsumoEnElTiempo Consumo(string json)
+		{
+			if (string.IsNullOrWhiteSpace(json)) return new ConsumoEnElTiempo();
+
+			using JsonDocument documento = JsonDocument.Parse(json);
+			JsonElement raiz = documento.RootElement;
+
+			// La cabecera sale como "consumo" y cada mes como "mes": son dos print
+			// distintos del mismo bloque.
+			JsonElement cabecera = raiz.TryGetProperty("consumo", out JsonElement c) ? c : raiz;
+
+			var meses = new List<MesDeConsumoVista>();
+			if (raiz.TryGetProperty("mes", out JsonElement arreglo))
+				foreach (JsonElement elemento in Elementos(arreglo))
+					meses.Add(new MesDeConsumoVista
+					{
+						Mes = Texto(elemento, "mes"),
+						Unidades = Entero(elemento, "unidades"),
+						Gasto = Decimal(elemento, "gasto"),
+						Compras = Entero(elemento, "compras"),
+					});
+
+			return new ConsumoEnElTiempo
+			{
+				Termino = Texto(cabecera, "termino"),
+				EsCategoria = Booleano(cabecera, "esCategoria"),
+				MesesConConsumo = Entero(cabecera, "mesesConConsumo"),
+				TotalGastado = Decimal(cabecera, "totalGastado"),
+				TotalUnidades = Entero(cabecera, "totalUnidades"),
+				PrimerMes = Texto(cabecera, "primerMes"),
+				UltimoMes = Texto(cabecera, "ultimoMes"),
+				MesDelPico = Texto(cabecera, "mesDelPico"),
+				GastoEnElPrimerMes = Decimal(cabecera, "gastoEnElPrimerMes"),
+				GastoEnElUltimoMes = Decimal(cabecera, "gastoEnElUltimoMes"),
+				CambioDeGasto = Decimal(cabecera, "cambioDeGasto"),
+				SePuedeJuzgar = Booleano(cabecera, "sePuedeJuzgar"),
+				Veredicto = Texto(cabecera, "veredicto"),
+				ParaSonia = Texto(cabecera, "paraSonia"),
+				Meses = meses,
+			};
+		}
+
 		internal static RangoDelHistorialVista Rango(string json)
 		{
 			if (string.IsNullOrWhiteSpace(json)) return new RangoDelHistorialVista();

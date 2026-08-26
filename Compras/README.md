@@ -279,6 +279,36 @@ pantalla, el demo no probó nada*:
 - **`garantias_por_vencer`** — solo las que **ya piden algo**, de la más urgente a la
   menos, con los días que quedan y qué conviene hacer. No es la lista de vigentes que la
   app muestra.
+- **`consumo_de(termino)`** — la **serie mes a mes** de una categoría o un producto. La
+  app muestra tickets y totales por mes; esto muestra la *forma* de la serie, que es lo
+  único con lo que se puede decir **desde cuándo** cambió un consumo.
+- **`como_viene_mi_canasta`** — la lectura por defecto, sin obligar a elegir meses.
+
+### Por qué la serie, y no la lista de tickets
+
+Probando con una IA de verdad apareció la pregunta *"¿compré un brócoli hoy?"*, y la
+respuesta correcta fue que **no puede contestarla**: no exponemos líneas de compra. Eso
+es deliberado — la lista y el detalle de cada ticket ya están en la app, y una IA que los
+lea es un lector de facturas, no un lector de la historia.
+
+Lo que sí faltaba, y es distinto, es **cuándo**. `consumo_de` lo da:
+
+```
+consumo_de('helado') -> 3 meses, ₡25.060 en total, empeorando
+   serie: 2026-02=₡6,900   2026-07=₡7,120   2026-08=₡11,040
+   pico: 2026-08
+```
+
+Eso es lo que hace creíble una relación con cualquier otra cosa que le pase a la persona:
+no *"tu canasta empeoró"* sino *"el helado se duplicó y arranca en febrero"*. Es la
+contraparte de la `SerieDeAnalito` del laboratorio, del lado de las compras — y el cruce
+lo hace **el asistente en el dispositivo de ella**, nunca una institución consultando a
+la otra.
+
+El **veredicto sale del perfil, no del signo**: que los azucarados suban es *empeorando*
+y que las proteínas suban es *mejorando*. Y cuando no hay con qué juzgar — un solo mes, o
+una búsqueda por texto que cruza categorías con perfiles distintos — entrega los hechos y
+**no se pronuncia** (`sePuedeJuzgar: false`), en vez de inventar una lectura.
 
 Verificado con un cliente stdio: `tools/list` devuelve las seis, y `tools/call` sobre
 `que_dejaste_de_comprar` trae los cuatro pendientes con su línea del dominio;
@@ -292,14 +322,14 @@ raíz.
 
 | Capa | Estado |
 |---|---|
-| Dominio | ✅ 97 comprobaciones (`comprobar`): las proporciones del guion, los límites de la garantía, la ausencia con tipo (E45), el veredicto en las dos direcciones y el hueco |
+| Dominio | ✅ 138 comprobaciones (`comprobar`): las proporciones del guion, los límites de la garantía, la ausencia con tipo (E45), el veredicto en las dos direcciones, el hueco, el rango y la serie de consumo |
 | Consola | ✅ ciclo completo: `comprobar`, `medir`, `estado`, `detalle`, `canasta`, `comparar`, `garantia`, `pendientes`, `porvencer`, `refrescar` |
 | Manifiesto | ✅ escrito contra el contrato de la rama `master_gnothiHost`; ⚠️ **no ejercitado con el Host**, que todavía no está en master |
 | EndPointDeEventos | ✅ 6 eventos sembrados, rotación de token (medida con `/device/expirar-access`) y señuelo 403 |
 | Inyector CLI | ✅ `listar`, `inyectar` (líneas con categoría y garantía), `senuelo` |
 | Caja (UI) | ✅ medida en browser: catálogo de 34 productos con filtros, ticket con cantidades y precios editables, **Registrar compra** publicando el evento 307, y la narrativa publicada a la derecha |
 | Catálogo | ✅ `GET /catalogo` con las 9 categorías y los 4 electrodomésticos que traen garantía |
-| MCP | ✅ medido con cliente stdio: las 6 tools en `tools/list` y `tools/call` con structuredContent tipado, incluidas las dos del hueco |
+| MCP | ✅ medido con cliente stdio y **probado con Claude Code real**: las 8 tools en `tools/list` y `tools/call` con structuredContent tipado |
 | Wasm | ✅ **CORRE EN EL BROWSER** con el motor `10029` — ver abajo |
 | PaginaDeDescarga | ✅ landing servida y verificada; ⚠️ con **nginx/Docker sin probar** (daemon apagado): la prueba se hizo sirviendo el mismo webroot (landing en `/`, publish en `/app/`) con un estático |
 
@@ -340,3 +370,4 @@ la trajo — evento 307 → 308, 7 → 8 compras — y la proporción ocasional 
 | 7 | **Bootstrap**: la carátula carga `bootstrap.min.css` (227 KB, el único de los 44 archivos del template que la página pide — el resto no se versionó). Exámenes lo quitó del todo y escribió su propio CSS; conviene alinearse cuando la UI la revise Fernanda |
 | 8 | **El `instalacion.json` es del Host**, no de este módulo (son dos autoridades: la institución declara qué ofrece, el Host decide cómo se lo ejecuta y qué carpeta le concede). Cuando el Host entre a master, quien lo opere debe crear `Modulos/compras/` con nuestro `manifiesto.json` y su propio `instalacion.json` apuntando a `Compras/App/Compras.Mcp/bin/.../Compras.Mcp.dll` y a la carpeta concedida — **la misma que se eligió en la app**, o el módulo reporta `hayDatos=false` |
 | 9 | **Nombres para mostrar**: `AbastecimientoPendiente` traduce la llave del repertorio (`FrutasYVerduras`) a algo legible con un `switch`. Exámenes resolvió lo mismo tipando el analito con un `ParaMostrar` propio; conviene mover eso a `Categoria` |
+| 10 | **El veredicto del consumo compara los extremos**, así que un valle en el medio no lo mueve: las proteínas del guion (13.600 → 4.350 → 12.800) salen *estable*, y es cierto entre extremos pero esconde el bajón de febrero. Exámenes resolvió lo análogo con dos lecturas — tendencia sobre la serie entera y velocidad sobre el tramo reciente. Conviene traer esa segunda lectura |

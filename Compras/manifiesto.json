@@ -74,6 +74,19 @@
       "descripcion": "Cuando compro la persona un producto y hasta cuando tiene garantia, con el respaldo completo: numero de compra, fecha, meses de cobertura, vencimiento, cuantos dias le quedan y si esta vigente hoy. Si encontrada viene en false, o el producto no esta en el registro o no tiene garantia: son dos hechos legitimos, no un error. El campo queHacer viene vacio cuando no hay nada que hacer, y eso tambien es una respuesta."
     },
     {
+      "nombre": "consumo_de",
+      "titulo": "Cuanto y cuando compro esto",
+      "soloLectura": true,
+      "entrada": [
+        {
+          "nombre": "termino",
+          "tipo": "string",
+          "descripcion": "Una categoria del catalogo -Proteinas, FrutasYVerduras, LacteosYHuevos, GranosYAbarrotes, AceitesYGrasas, Azucarados, Snacks, Limpieza, Electrohogar- o un texto de producto como 'helado' u 'olla'."
+        }
+      ],
+      "descripcion": "CUANTO Y CUANDO entro algo a la canasta, MES A MES: unidades, gasto y en cuantas compras, mas el mes mas alto y como cambio entre el primer mes y el ultimo. Es la serie completa, no un total, y es lo que permite decir DESDE QUE MES cambio un consumo: ninguna pantalla lo muestra. Usala cuando la persona pregunte por un producto o categoria a lo largo del tiempo, o cuando quiera relacionar sus compras con algo mas que le este pasando -por ejemplo un resultado de laboratorio-, porque ahi lo que sirve es la fecha y no el total. Si sePuedeJuzgar viene en false, entrega los hechos y no te apoyes en el veredicto: puede haber un solo mes, o la busqueda puede cruzar categorias con perfiles distintos. IMPORTANTE: esto dice que compro y cuando, NO por que; la relacion con cualquier otra cosa la propone la persona o vos, con su permiso, y siempre como una posibilidad a conversar con su medico, nunca como una causa."
+    },
+    {
       "nombre": "que_dejaste_de_comprar",
       "titulo": "Que me esta faltando",
       "soloLectura": true,

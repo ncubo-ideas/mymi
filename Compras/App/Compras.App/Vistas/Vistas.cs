@@ -101,6 +101,37 @@ namespace Compras.App.Vistas
 		public string ParaSonia { get; init; } = "";
 	}
 
+	// CUANTO Y CUANDO entro algo, mes a mes. Es la serie que permite decir desde cuando
+	// cambio un consumo — lo que una lista de tickets no puede contar.
+	public sealed class ConsumoEnElTiempo
+	{
+		public string Termino { get; init; } = "";
+		public bool EsCategoria { get; init; }
+		public int MesesConConsumo { get; init; }
+		public decimal TotalGastado { get; init; }
+		public int TotalUnidades { get; init; }
+		public string PrimerMes { get; init; } = "";
+		public string UltimoMes { get; init; } = "";
+		public string MesDelPico { get; init; } = "";
+		public decimal GastoEnElPrimerMes { get; init; }
+		public decimal GastoEnElUltimoMes { get; init; }
+		public decimal CambioDeGasto { get; init; }
+		public bool SePuedeJuzgar { get; init; }
+		public string Veredicto { get; init; } = "";
+		public string ParaSonia { get; init; } = "";
+		public IReadOnlyList<MesDeConsumoVista> Meses { get; init; } = new List<MesDeConsumoVista>();
+
+		public bool Existe => MesesConConsumo > 0;
+	}
+
+	public sealed class MesDeConsumoVista
+	{
+		public string Mes { get; init; } = "";
+		public int Unidades { get; init; }
+		public decimal Gasto { get; init; }
+		public int Compras { get; init; }
+	}
+
 	// Desde cuando hasta cuando hay compras. Es el contexto que necesita quien pregunta
 	// para elegir que meses comparar; sin el, adivina un mes vacio y concluye que no hay
 	// datos cuando si hay.
