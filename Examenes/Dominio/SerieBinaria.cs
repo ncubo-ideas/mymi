@@ -81,6 +81,12 @@ namespace Examenes.Dominio
 		public override IReadOnlyList<ReferenciaDeLectura> Referencias(int edad) =>
 			new List<ReferenciaDeLectura>();
 
+		// Un binario no tiene rango: su referencia es la polaridad. En los tres del demo
+		// lo esperable es negativo, y decirlo al lado del resultado es lo que le da a un
+		// "positivo" el mismo acompanamiento que la referencia le da a un 5.2.
+		public override string ReferenciaLegible(int edad) =>
+			Ultima == null ? "" : "lo esperable es negativo";
+
 		// LOS HECHOS DE LA SERIE. Cuantas pruebas, cuantas dieron positivas, y —la que
 		// importa— cuantas positivas hay SEGUIDAS al final.
 		//

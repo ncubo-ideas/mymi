@@ -3,7 +3,11 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Mis exámenes · Laboratorios Sotavento</title>
+<!-- Sin esto, iOS detecta los telefonos de la barra y los pinta como links azules
+     sobre el navy: quedaban ilegibles. Los numeros son ficticios; no hay tel: que
+     perder. -->
+<meta name="format-detection" content="telephone=no">
+<title>Mis exámenes · Laboratorio Clínico Delfos</title>
 <meta name="description" content="Sus exámenes de laboratorio, instalados en su computadora. El expediente vive en una carpeta suya.">
 
 <!--
@@ -13,16 +17,20 @@
   renderice nada: la marca está escrita acá y en los assets de la carátula, que es donde la
   convención dice que vive — el árbol de código nunca nombra a una institución.
 
-  "Laboratorios Sotavento" es FICTICIA, y es la misma que trae la carátula wasm en su
-  index.html y su manifest. Es un placeholder: la marca definitiva la define el equipo.
+  "Laboratorio Clínico Delfos" es FICTICIA, y es la misma que trae la carátula wasm en su
+  index.html y su manifest. El DISEÑO SIGUE EL LANDING REAL de Geaninna en nCuboSite
+  (LaboratorioDelfos.module.css): la barra superior con teléfono y horario, el membrete
+  con navegación y botón sólido, el héroe sobre celeste con serif 700, y las tarjetas
+  limpias con iconos de solo trazo. Esta página es "Su aplicación" contada entera: la
+  sección del landing, expandida.
 
   EL GRÁFICO NO ES DECORACIÓN. Son los cuatro antígenos prostáticos del guion sembrado
   (3,0 → 3,1 → 3,0 → 5,2) dibujados a escala real. La página no explica el argumento del
   producto: lo muestra. Tres años planchados y un salto, que es exactamente lo que una
   hoja de resultados no puede decir.
 
-  Sin dependencias externas salvo la hoja de Google Fonts, y con stack de respaldo en cada
-  familia por si la demo corre sin red.
+  Sin NINGUNA dependencia externa: Georgia y Segoe UI son fuentes de sistema, así que la
+  página se ve igual con y sin red, y no le regala una descarga a nadie.
 
   ESTA PÁGINA VIVE EN LA RAÍZ, y la app cuelga de /app/. No es cosmético: el service
   worker de la PWA toma scope del directorio donde se registra y contesta TODA navegación
@@ -49,167 +57,172 @@
 <link rel="icon" type="image/png" href="/favicon.png">
 <link rel="apple-touch-icon" href="/apple-touch-icon.png">
 
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
-
 <style>
   :root {
-    /* Papel cálido, no blanco. Un blanco puro se lee a pantalla, no a documento. */
-    --papel:    #f6f3ec;
-    --papel-2:  #fffdf8;
-    --tinta:    #161c19;
-    --tinta-2:  #5d6660;
-    --linea:    #ddd8cc;
+    /* La paleta institucional de Delfos, del código real de su página. */
+    --papel:    #ffffff;
+    --papel-2:  #f4f7fa;
+    --celeste:  #eaf1f8;   /* el fondo del héroe del landing */
+    --tinta:    #1c2b3a;
+    --tinta-2:  #55677a;
+    --linea:    #dde6ee;
 
-    /* Verde institucional: pino, no el turquesa de siempre. */
-    --pino:     #1f4034;
-    --pino-cl:  #2e5c4a;
+    /* El azul de marca: es lo que hace reconocible al laboratorio. */
+    --azul:        #123f6d;
+    --azul-oscuro: #0b2c4e;
+    --azul-claro:  #1d5c9e;
+
+    /* El azul de ACCIÓN del landing: "la app es de hoy, la página es de 1987" — en la
+       página aparece solo como acento de texto, nunca en un botón. */
+    --accion:   #1a6ff5;
 
     /* El ámbar tiene UN solo trabajo en toda la página: marcar el dato que se salió
        de su propia historia. Si aparece en otro lado, deja de significar algo. */
-    --ambar:    #b4541a;
+    --ambar:    #b45309;
+
+    --serif: Georgia, "Times New Roman", serif;
+    --sans:  "Segoe UI", "Helvetica Neue", Arial, sans-serif;
+    --mono:  ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
   }
 
   * { box-sizing: border-box; }
 
-  html { -webkit-text-size-adjust: 100%; }
+  html { -webkit-text-size-adjust: 100%; scroll-behavior: smooth; }
 
   body {
     margin: 0;
     background: var(--papel);
     color: var(--tinta);
-    font-family: "IBM Plex Sans", ui-sans-serif, system-ui, sans-serif;
+    font-family: var(--sans);
     font-size: 16.5px;
     line-height: 1.62;
     -webkit-font-smoothing: antialiased;
     text-rendering: optimizeLegibility;
   }
 
-  /* Grano finísimo sobre el papel. Da materia sin que se note de dónde viene. */
-  body::before {
-    content: "";
-    position: fixed;
-    inset: 0;
-    pointer-events: none;
-    z-index: 1;
-    opacity: .035;
-    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.82' numOctaves='3'/%3E%3C/filter%3E%3Crect width='160' height='160' filter='url(%23n)'/%3E%3C/svg%3E");
-  }
-
   .envoltura { max-width: 1080px; margin: 0 auto; padding: 0 32px; }
+
+  /* ------------------------------------------------------------- barra superior
+
+     La primera franja del landing: teléfono y horario en azul pleno. Los datos son
+     ficticios, como la marca, y calcan los del landing real. */
+
+  .barra { background: var(--azul); color: #dfe9f4; font-size: 13px; }
+  .barra a { color: inherit; }
+  .barra-adentro {
+    display: flex; justify-content: space-between; gap: 18px;
+    padding: 7px 0;
+    white-space: nowrap;
+  }
 
   /* ---------------------------------------------------------------- membrete */
 
   header {
-    border-bottom: 1px solid var(--linea);
-    background: color-mix(in srgb, var(--papel-2) 60%, transparent);
+    background: var(--papel);
+    border-bottom: 2px solid var(--azul-oscuro);
   }
   .membrete {
-    display: flex; align-items: baseline; gap: 14px;
-    padding: 22px 0;
+    display: flex; align-items: center; gap: 14px;
+    padding: 16px 0;
   }
-  .sello {
-    align-self: center;
-    width: 34px; height: 34px; flex: none;
-    border: 1.5px solid var(--pino);
-    border-radius: 50%;
-    display: grid; place-items: center;
-    font-family: "Instrument Serif", Georgia, serif;
-    font-size: 15px; letter-spacing: .04em;
-    color: var(--pino);
-  }
-  .membrete b {
-    font-weight: 600; font-size: 15px; letter-spacing: .01em;
-  }
-  .membrete i {
-    font-style: normal; color: var(--tinta-2); font-size: 13px;
-    margin-left: auto;
-    font-family: "IBM Plex Mono", ui-monospace, monospace;
-    letter-spacing: .02em;
-  }
+  /* El logo: la gota por la muestra, el círculo por el oráculo. Solo trazo, nunca
+     relleno, y a menos de 24 px no se usa. */
+  .sello { width: 44px; height: 44px; flex: none; }
+  .sello svg { display: block; width: 100%; height: 100%; }
+  .marca-texto b { display: block; font-family: var(--serif);
+    font-weight: 700; font-size: 19px; color: var(--azul-oscuro); line-height: 1.2; }
+  .marca-texto i { font-style: normal; color: var(--tinta-2); font-size: 12.5px; }
 
-  /* ---------------------------------------------------------------- portada */
+  /* La navegación del landing. En una página de una sola pantalla los destinos son
+     anclas, y el botón sólido es el mismo lugar al que el héroe invita: la app. */
+  nav {
+    margin-left: auto;
+    display: flex; align-items: center; gap: 26px;
+  }
+  nav a { color: var(--tinta); text-decoration: none; font-size: 15px; }
+  nav a:hover { color: var(--azul-claro); }
+  nav .boton { font-size: 14.5px; padding: 10px 18px; }
+
+  /* ---------------------------------------------------------------- botones */
+
+  .boton {
+    display: inline-flex; align-items: center; gap: 10px;
+    background: var(--azul); color: #ffffff;
+    text-decoration: none;
+    font-weight: 600; font-size: 15.5px; letter-spacing: .005em;
+    padding: 14px 26px;
+    border-radius: 6px;
+    transition: background .18s ease, transform .18s ease, box-shadow .18s ease;
+  }
+  .boton:hover {
+    background: var(--azul-claro);
+    transform: translateY(-1px);
+    box-shadow: 0 6px 16px rgba(11,44,78,.18);
+  }
+  .boton svg { transition: transform .18s ease; }
+  .boton:hover svg { transform: translateY(2px); }
+
+  .boton--contorno {
+    background: var(--papel); color: var(--azul);
+    border: 1px solid var(--azul);
+  }
+  .boton--contorno:hover { background: var(--papel-2); color: var(--azul-oscuro); box-shadow: none; }
+
+  /* ---------------------------------------------------------------- héroe */
+
+  /* El celeste del landing: la franja que hace que la portada no sea una hoja en
+     blanco. Degrada apenas, como allá. */
+  .heroe { background: linear-gradient(180deg, var(--celeste), var(--papel-2)); }
 
   .portada {
     display: grid;
     grid-template-columns: minmax(0, 1.05fr) minmax(0, .95fr);
     gap: 64px;
     align-items: center;
-    padding: 76px 0 64px;
+    padding: 72px 0 64px;
   }
 
   .rotulo {
-    font-family: "IBM Plex Mono", ui-monospace, monospace;
-    font-size: 11.5px; letter-spacing: .16em; text-transform: uppercase;
-    color: var(--pino-cl);
-    display: flex; align-items: center; gap: 10px;
-    margin-bottom: 20px;
-  }
-  .rotulo::after {
-    content: ""; height: 1px; flex: 1; background: var(--linea);
+    font-weight: 700;
+    font-size: 12px; letter-spacing: .18em; text-transform: uppercase;
+    color: var(--azul-claro);
+    margin-bottom: 18px;
   }
 
   h1 {
-    font-family: "Instrument Serif", Georgia, "Times New Roman", serif;
-    font-weight: 400;
-    font-size: clamp(46px, 6.2vw, 78px);
-    line-height: 1.02;
+    font-family: var(--serif);
+    font-weight: 700;
+    font-size: clamp(40px, 5vw, 58px);
+    line-height: 1.08;
     letter-spacing: -.015em;
+    color: var(--azul-oscuro);
     margin: 0 0 22px;
   }
-  h1 em { font-style: italic; color: var(--pino); }
+  h1 em { font-style: italic; color: var(--azul-claro); }
 
   .bajada {
     font-size: 18.5px; color: var(--tinta-2);
     margin: 0 0 34px; max-width: 43ch; text-wrap: pretty;
   }
-  .bajada strong { color: var(--tinta); font-weight: 500; }
+  .bajada strong { color: var(--tinta); font-weight: 600; }
 
-  .acciones { display: flex; align-items: center; gap: 22px; flex-wrap: wrap; }
-
-  .boton {
-    --y: 0px;
-    position: relative;
-    display: inline-flex; align-items: center; gap: 11px;
-    background: var(--pino); color: var(--papel-2);
-    text-decoration: none;
-    font-weight: 500; font-size: 15.5px; letter-spacing: .005em;
-    padding: 15px 26px;
-    border-radius: 2px;
-    transform: translateY(var(--y));
-    box-shadow: 0 calc(6px - var(--y)) calc(18px - var(--y)) rgba(22,28,25,.16);
-    transition: background .22s ease, transform .22s cubic-bezier(.2,.7,.3,1), box-shadow .22s ease;
-  }
-  .boton:hover { --y: -2px; background: var(--pino-cl); }
-  .boton svg { transition: transform .22s cubic-bezier(.2,.7,.3,1); }
-  .boton:hover svg { transform: translateY(2px); }
+  .acciones { display: flex; align-items: center; gap: 14px; flex-wrap: wrap; }
 
   .acciones small {
-    color: var(--tinta-2); font-size: 13.5px; max-width: 30ch; line-height: 1.5;
-    border-left: 1px solid var(--linea); padding-left: 20px;
+    flex-basis: 100%;
+    color: var(--tinta-2); font-size: 13.5px;
   }
 
   /* ---------------------------------------------------------------- la ficha */
 
-  /* La pieza que se recuerda. Es una ficha de laboratorio, no una tarjeta de landing:
-     por eso el borde recto, el monoespaciado y el gráfico a escala. */
+  /* La pieza que se recuerda. Donde el landing pone un microscopio de trazo, esta
+     página pone la serie real: es la sección "Su aplicación" contada con el dato. */
   .ficha {
-    background: var(--papel-2);
+    background: var(--papel);
     border: 1px solid var(--linea);
-    border-radius: 3px;
+    border-radius: 12px;
     padding: 26px 28px 22px;
-    box-shadow: 0 18px 44px -28px rgba(22,28,25,.4);
-    position: relative;
-  }
-  .ficha::after {
-    /* La esquina doblada de una hoja archivada. */
-    content: "";
-    position: absolute; top: -1px; right: -1px;
-    width: 26px; height: 26px;
-    background: linear-gradient(225deg, var(--papel) 50%, var(--linea) 50%, var(--papel-2) 52%);
-    border-left: 1px solid var(--linea);
-    border-bottom: 1px solid var(--linea);
+    box-shadow: 0 12px 34px -18px rgba(11,44,78,.3);
   }
 
   .ficha-cabeza {
@@ -220,7 +233,7 @@
     margin: 0; font-size: 14.5px; font-weight: 600; letter-spacing: .005em;
   }
   .ficha-cabeza span {
-    font-family: "IBM Plex Mono", ui-monospace, monospace;
+    font-family: var(--mono);
     font-size: 11px; color: var(--tinta-2); letter-spacing: .06em;
   }
   .ficha-nota {
@@ -238,83 +251,112 @@
   .lectura p { margin: 0; font-size: 13.8px; line-height: 1.5; }
   .lectura b { font-weight: 600; }
   .lectura .cifra {
-    font-family: "IBM Plex Mono", ui-monospace, monospace;
-    color: var(--ambar); font-weight: 500;
+    font-family: var(--mono);
+    color: var(--ambar); font-weight: 600;
   }
 
   /* ---------------------------------------------------------------- argumento */
 
-  .argumento { border-top: 1px solid var(--linea); padding: 58px 0 10px; }
+  .argumento { padding: 64px 0 24px; }
+
+  /* El titular de sección del landing: sans pesada, con el remate en el azul de
+     acción. Es el único lugar de la página donde ese azul aparece — habla de la app,
+     que es de hoy. */
+  .argumento h2 {
+    font-weight: 700; font-size: clamp(28px, 3.6vw, 38px); line-height: 1.15;
+    letter-spacing: -.01em;
+    margin: 10px 0 14px; max-width: 26ch;
+  }
+  .argumento h2 span { color: var(--accion); }
+  .argumento > .adentro > p {
+    margin: 0 0 38px; color: var(--tinta-2); font-size: 17px; max-width: 52ch;
+  }
 
   .puntos {
-    display: grid; gap: 44px;
+    display: grid; gap: 18px;
     grid-template-columns: repeat(3, minmax(0, 1fr));
-    counter-reset: p;
   }
-  .punto { counter-increment: p; }
-  .punto::before {
-    content: counter(p, decimal-leading-zero);
-    display: block;
-    font-family: "IBM Plex Mono", ui-monospace, monospace;
-    font-size: 11.5px; letter-spacing: .1em;
-    color: var(--pino-cl);
-    padding-bottom: 12px; margin-bottom: 14px;
-    border-bottom: 1px solid var(--linea);
+  /* Tarjetas como las del landing: blancas, redondeadas, con el icono de solo trazo
+     en una pastilla celeste. */
+  .punto {
+    background: var(--papel);
+    border: 1px solid var(--linea);
+    border-radius: 12px;
+    padding: 22px 22px 20px;
+    box-shadow: 0 1px 4px rgba(11,44,78,.05);
   }
+  .punto .icono {
+    width: 44px; height: 44px;
+    border-radius: 10px;
+    background: var(--celeste);
+    display: grid; place-items: center;
+    margin-bottom: 14px;
+  }
+  .punto .icono svg { display: block; }
   .punto h3 {
-    font-family: "Instrument Serif", Georgia, serif;
-    font-weight: 400; font-size: 25px; line-height: 1.15;
-    margin: 0 0 9px; letter-spacing: -.005em;
+    font-weight: 600; font-size: 17px; line-height: 1.3;
+    margin: 0 0 7px;
   }
-  .punto p { margin: 0; color: var(--tinta-2); font-size: 15.2px; }
+  .punto p { margin: 0; color: var(--tinta-2); font-size: 14.5px; }
 
   /* ---------------------------------------------------------------- pasos */
 
   .instalar {
-    margin-top: 68px; padding: 44px 0 60px;
+    margin-top: 56px; padding: 48px 0 64px;
     border-top: 1px solid var(--linea);
-    display: grid; grid-template-columns: minmax(0, 260px) minmax(0, 1fr); gap: 56px;
+    display: grid; grid-template-columns: minmax(0, 300px) minmax(0, 1fr); gap: 56px;
   }
   .instalar h2 {
-    font-family: "Instrument Serif", Georgia, serif;
-    font-weight: 400; font-size: 32px; line-height: 1.1; margin: 0;
-    letter-spacing: -.01em;
+    font-family: var(--serif);
+    font-weight: 700; font-size: 32px; line-height: 1.15; margin: 0;
+    letter-spacing: -.01em; color: var(--azul-oscuro);
   }
   .instalar h2 + p { margin: 12px 0 0; color: var(--tinta-2); font-size: 14.5px; }
 
   ol.pasos { margin: 0; padding: 0; list-style: none; counter-reset: s; }
   ol.pasos li {
     counter-increment: s;
-    display: grid; grid-template-columns: 34px minmax(0, 1fr); gap: 16px;
+    display: grid; grid-template-columns: 40px minmax(0, 1fr); gap: 16px;
+    align-items: baseline;
     padding: 15px 0;
     border-bottom: 1px solid var(--linea);
   }
   /* El texto va envuelto en UN elemento. Sueltos, el <b> y el <span> caen como dos
-     celdas del grid y el segundo termina en la columna de 34px, una palabra por linea. */
+     celdas del grid y el segundo termina en la columna angosta, una palabra por linea. */
   ol.pasos li p { margin: 0; }
   ol.pasos li:first-child { padding-top: 0; }
-  ol.pasos li:last-child { border-bottom: 0; padding-bottom: 0; }
+  ol.pasos li:last-child { border-bottom: 0; }
+  /* El número en pastilla, como los checks circulados del landing. */
   ol.pasos li::before {
     content: counter(s);
-    font-family: "IBM Plex Mono", ui-monospace, monospace;
-    font-size: 12.5px; color: var(--pino-cl);
-    padding-top: 3px;
+    align-self: start;
+    width: 28px; height: 28px;
+    border-radius: 50%;
+    background: var(--celeste); color: var(--azul);
+    font-weight: 700; font-size: 13.5px;
+    display: grid; place-items: center;
   }
   ol.pasos b { font-weight: 600; }
   ol.pasos span { color: var(--tinta-2); }
+
+  /* La línea de confianza del landing, debajo de los pasos: la descarga es directa
+     de la institución, no de una tienda. */
+  .sin-tienda {
+    margin: 18px 0 0; font-size: 13.5px; color: var(--tinta-2);
+  }
 
   /* ---------------------------------------------------------------- pie */
 
   footer {
     border-top: 1px solid var(--linea);
-    background: color-mix(in srgb, var(--papel-2) 55%, transparent);
+    background: var(--papel-2);
   }
   .pie {
     padding: 26px 0 34px;
     display: flex; justify-content: space-between; gap: 20px; flex-wrap: wrap;
     font-size: 12.5px; color: var(--tinta-2);
   }
-  .pie span { font-family: "IBM Plex Mono", ui-monospace, monospace; letter-spacing: .02em; }
+  .pie span { font-family: var(--mono); letter-spacing: .02em; }
 
   /* ---------------------------------------------------------------- entrada */
 
@@ -345,6 +387,7 @@
   .halo { transform-origin: center; animation: latir 2.6s ease-in-out 2.1s infinite; }
 
   @media (prefers-reduced-motion: reduce) {
+    html { scroll-behavior: auto; }
     .anim, .punto-serie { opacity: 1; animation: none; }
     .trazo { stroke-dashoffset: 0; animation: none; }
     .halo { animation: none; }
@@ -354,126 +397,186 @@
   /* ---------------------------------------------------------------- angosto */
 
   @media (max-width: 900px) {
-    .portada { grid-template-columns: 1fr; gap: 44px; padding: 52px 0 48px; }
-    .puntos { grid-template-columns: 1fr; gap: 34px; }
-    .instalar { grid-template-columns: 1fr; gap: 28px; margin-top: 48px; }
+    .barra { font-size: 12px; }
+    .barra-adentro span:last-child { display: none; }
+    nav a:not(.boton) { display: none; }
+    nav .boton { font-size: 13px; padding: 9px 13px; }
+    .membrete { gap: 10px; padding: 12px 0; }
+    .sello { width: 36px; height: 36px; }
+    .marca-texto b { font-size: 16px; }
+    .marca-texto i { font-size: 11px; display: block; line-height: 1.35; }
+    .portada { grid-template-columns: 1fr; gap: 44px; padding: 48px 0 48px; }
+    .puntos { grid-template-columns: 1fr; gap: 16px; }
+    .instalar { grid-template-columns: 1fr; gap: 28px; margin-top: 44px; }
     .envoltura { padding: 0 22px; }
-    .membrete i { display: none; }
   }
 </style>
 </head>
 <body>
 
+<div class="barra">
+  <div class="envoltura barra-adentro">
+    <span>Tel. 2222-0000 · WhatsApp 8888-0000</span>
+    <span>L–V 6:30 a. m. – 5:00 p. m. · Sáb 7:00 a. m. – 12 m. d.</span>
+  </div>
+</div>
+
 <header>
   <div class="envoltura membrete">
-    <div class="sello">LS</div>
-    <b>Laboratorios&nbsp;Sotavento</b>
-    <i>Expediente personal</i>
+    <div class="sello">
+      <svg viewBox="0 0 40 40" xmlns="http://www.w3.org/2000/svg"
+           fill="none" stroke="#123f6d" stroke-width="2.4" aria-hidden="true">
+        <circle cx="20" cy="20" r="18" />
+        <path d="M20 9c4.4 5.4 6.8 9.3 6.8 12.4A6.8 6.8 0 0 1 20 28.2a6.8 6.8 0
+                 0 1-6.8-6.8C13.2 18.3 15.6 14.4 20 9z" />
+      </svg>
+    </div>
+    <div class="marca-texto">
+      <b>Laboratorio Clínico Delfos</b>
+      <i>Al servicio de su salud desde&nbsp;1987</i>
+    </div>
+    <nav>
+      <a href="#porque">Su aplicación</a>
+      <a href="#instalar">Cómo se instala</a>
+      <a class="boton" href="/app/">Instalar la aplicación</a>
+    </nav>
   </div>
 </header>
 
 <main>
-  <div class="envoltura portada">
+  <section class="heroe">
+    <div class="envoltura portada">
 
-    <div>
-      <div class="rotulo anim d1">Para nuestros pacientes</div>
+      <div>
+        <div class="rotulo anim d1">Para nuestros pacientes</div>
 
-      <h1 class="anim d2">Sus exámenes,<br>en <em>su</em> computadora.</h1>
+        <h1 class="anim d2">Sus exámenes,<br>en <em>su</em> computadora.</h1>
 
-      <p class="bajada anim d3">
-        Le entregamos su historial completo en una aplicación que se instala en su
-        equipo. El expediente queda en <strong>una carpeta suya</strong> — no en un
-        servidor nuestro — y usted decide quién lo lee.
-      </p>
-
-      <div class="acciones anim d4">
-        <a class="boton" href="/app/">
-          Instalar la aplicación
-          <svg width="15" height="15" viewBox="0 0 15 15" fill="none" aria-hidden="true">
-            <path d="M7.5 1v10M3.4 7.2l4.1 4.1 4.1-4.1M1.6 13.6h11.8"
-                  stroke="currentColor" stroke-width="1.4"
-                  stroke-linecap="round" stroke-linejoin="round"/>
-          </svg>
-        </a>
-        <small>Gratuita, y se instala desde el navegador. Sin tienda de aplicaciones.</small>
-      </div>
-    </div>
-
-    <!-- La ficha. Datos reales del expediente sembrado, a escala. -->
-    <div class="ficha anim d5">
-      <div class="ficha-cabeza">
-        <h2>Antígeno prostático</h2>
-        <span>ng/mL</span>
-      </div>
-      <p class="ficha-nota">Cuatro controles anuales del mismo paciente.</p>
-
-      <svg class="serie" viewBox="0 0 330 152" role="img"
-           aria-label="Serie de antígeno prostático: 3,0 en 2023; 3,1 en 2024; 3,0 en 2025; 5,2 en 2026.">
-        <!-- pauta -->
-        <g stroke="#ddd8cc" stroke-width="1">
-          <line x1="34" y1="24"  x2="318" y2="24"  stroke-dasharray="2 4"/>
-          <line x1="34" y1="66"  x2="318" y2="66"  stroke-dasharray="2 4"/>
-          <line x1="34" y1="108" x2="318" y2="108"/>
-        </g>
-        <g fill="#5d6660" font-family="IBM Plex Mono, monospace" font-size="9.5" text-anchor="end">
-          <text x="26" y="27">5,5</text>
-          <text x="26" y="69">4,1</text>
-          <text x="26" y="111">2,8</text>
-        </g>
-
-        <!-- la serie -->
-        <path class="trazo" d="M34,101.5 L121,98.3 L208,101.5 L295,30.5"
-              fill="none" stroke="#1f4034" stroke-width="2"
-              stroke-linecap="round" stroke-linejoin="round"/>
-
-        <g class="punto-serie p1"><circle cx="34"  cy="101.5" r="3.4" fill="#f6f3ec" stroke="#1f4034" stroke-width="1.8"/></g>
-        <g class="punto-serie p2"><circle cx="121" cy="98.3"  r="3.4" fill="#f6f3ec" stroke="#1f4034" stroke-width="1.8"/></g>
-        <g class="punto-serie p3"><circle cx="208" cy="101.5" r="3.4" fill="#f6f3ec" stroke="#1f4034" stroke-width="1.8"/></g>
-        <g class="punto-serie p4">
-          <circle class="halo" cx="295" cy="30.5" r="4.6" fill="#b4541a" opacity=".22"/>
-          <circle cx="295" cy="30.5" r="4" fill="#b4541a"/>
-          <text x="295" y="17" fill="#b4541a" font-family="IBM Plex Mono, monospace"
-                font-size="11.5" font-weight="500" text-anchor="middle">5,2</text>
-        </g>
-
-        <!-- años -->
-        <g fill="#5d6660" font-family="IBM Plex Mono, monospace" font-size="9.5" text-anchor="middle">
-          <text x="34"  y="127">2023</text>
-          <text x="121" y="127">2024</text>
-          <text x="208" y="127">2025</text>
-          <text x="295" y="127">2026</text>
-        </g>
-        <g fill="#5d6660" font-family="IBM Plex Mono, monospace" font-size="9.5" text-anchor="middle" opacity=".85">
-          <text x="34"  y="140">3,0</text>
-          <text x="121" y="140">3,1</text>
-          <text x="208" y="140">3,0</text>
-        </g>
-      </svg>
-
-      <div class="lectura">
-        <span class="flecha" aria-hidden="true">▲</span>
-        <p>
-          Tres años estable, y <b>+2,2 en el último</b>. La aplicación lo lee como
-          <span class="cifra">2,20&nbsp;ng/mL por año</span> — el umbral clínico es 0,75.
+        <p class="bajada anim d3">
+          Le entregamos su historial completo en una aplicación que se instala en su
+          equipo. El expediente queda en <strong>una carpeta suya</strong> — no en un
+          servidor nuestro — y usted decide quién lo lee.
         </p>
+
+        <div class="acciones anim d4">
+          <a class="boton" href="/app/">
+            Instalar la aplicación
+            <svg width="15" height="15" viewBox="0 0 15 15" fill="none" aria-hidden="true">
+              <path d="M7.5 1v10M3.4 7.2l4.1 4.1 4.1-4.1M1.6 13.6h11.8"
+                    stroke="currentColor" stroke-width="1.4"
+                    stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+          </a>
+          <a class="boton boton--contorno" href="#instalar">Cómo se instala</a>
+          <small>Gratuita, y se instala desde el navegador. Sin tienda de aplicaciones.</small>
+        </div>
       </div>
+
+      <!-- La ficha. Datos reales del expediente sembrado, a escala. -->
+      <div class="ficha anim d5">
+        <div class="ficha-cabeza">
+          <h2>Antígeno prostático</h2>
+          <span>ng/mL</span>
+        </div>
+        <p class="ficha-nota">Cuatro controles anuales del mismo paciente.</p>
+
+        <svg class="serie" viewBox="0 0 330 152" role="img"
+             aria-label="Serie de antígeno prostático: 3,0 en 2023; 3,1 en 2024; 3,0 en 2025; 5,2 en 2026.">
+          <!-- pauta -->
+          <g stroke="#dde6ee" stroke-width="1">
+            <line x1="34" y1="24"  x2="318" y2="24"  stroke-dasharray="2 4"/>
+            <line x1="34" y1="66"  x2="318" y2="66"  stroke-dasharray="2 4"/>
+            <line x1="34" y1="108" x2="318" y2="108"/>
+          </g>
+          <g fill="#55677a" font-family="ui-monospace, Menlo, monospace" font-size="9.5" text-anchor="end">
+            <text x="26" y="27">5,5</text>
+            <text x="26" y="69">4,1</text>
+            <text x="26" y="111">2,8</text>
+          </g>
+
+          <!-- la serie -->
+          <path class="trazo" d="M34,101.5 L121,98.3 L208,101.5 L295,30.5"
+                fill="none" stroke="#123f6d" stroke-width="2"
+                stroke-linecap="round" stroke-linejoin="round"/>
+
+          <g class="punto-serie p1"><circle cx="34"  cy="101.5" r="3.4" fill="#ffffff" stroke="#123f6d" stroke-width="1.8"/></g>
+          <g class="punto-serie p2"><circle cx="121" cy="98.3"  r="3.4" fill="#ffffff" stroke="#123f6d" stroke-width="1.8"/></g>
+          <g class="punto-serie p3"><circle cx="208" cy="101.5" r="3.4" fill="#ffffff" stroke="#123f6d" stroke-width="1.8"/></g>
+          <g class="punto-serie p4">
+            <circle class="halo" cx="295" cy="30.5" r="4.6" fill="#b45309" opacity=".22"/>
+            <circle cx="295" cy="30.5" r="4" fill="#b45309"/>
+            <text x="295" y="17" fill="#b45309" font-family="ui-monospace, Menlo, monospace"
+                  font-size="11.5" font-weight="500" text-anchor="middle">5,2</text>
+          </g>
+
+          <!-- años -->
+          <g fill="#55677a" font-family="ui-monospace, Menlo, monospace" font-size="9.5" text-anchor="middle">
+            <text x="34"  y="127">2023</text>
+            <text x="121" y="127">2024</text>
+            <text x="208" y="127">2025</text>
+            <text x="295" y="127">2026</text>
+          </g>
+          <g fill="#55677a" font-family="ui-monospace, Menlo, monospace" font-size="9.5" text-anchor="middle" opacity=".85">
+            <text x="34"  y="140">3,0</text>
+            <text x="121" y="140">3,1</text>
+            <text x="208" y="140">3,0</text>
+          </g>
+        </svg>
+
+        <div class="lectura">
+          <span class="flecha" aria-hidden="true">▲</span>
+          <p>
+            Tres años estable, y <b>+2,2 en el último</b>. La aplicación lo lee como
+            <span class="cifra">2,20&nbsp;ng/mL por año</span> — el umbral clínico es 0,75.
+          </p>
+        </div>
+      </div>
+
+    </div>
+  </section>
+
+  <section id="porque" class="envoltura argumento">
+    <div class="adentro">
+      <div class="rotulo anim d1">Nuevo para nuestros pacientes</div>
+      <h2 class="anim d2">Sus exámenes son suyos. <span>Lléveselos siempre con usted.</span></h2>
+      <p class="anim d3">Su historial de exámenes vive con usted — en su dispositivo, no en
+         nuestros servidores.</p>
     </div>
 
-  </div>
-
-  <section class="envoltura argumento">
     <div class="puntos">
       <div class="punto anim d3">
+        <div class="icono">
+          <!-- carpeta, solo trazo -->
+          <svg width="22" height="22" viewBox="0 0 22 22" fill="none" stroke="#123f6d"
+               stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <path d="M2.5 6.5v10a2 2 0 0 0 2 2h13a2 2 0 0 0 2-2v-8a2 2 0 0 0-2-2h-7l-2-2.5h-4a2 2 0 0 0-2 2.5z"/>
+          </svg>
+        </div>
         <h3>El expediente es suyo</h3>
         <p>La aplicación baja sus resultados una vez y los guarda donde usted diga.
            Después funciona sin nosotros, y sin conexión.</p>
       </div>
       <div class="punto anim d4">
+        <div class="icono">
+          <!-- la serie, solo trazo -->
+          <svg width="22" height="22" viewBox="0 0 22 22" fill="none" stroke="#123f6d"
+               stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <path d="M2.5 15.5l5-5 3.5 3 6.5-8"/>
+            <circle cx="17.5" cy="5.5" r="1.6"/>
+          </svg>
+        </div>
         <h3>Lee la serie, no el último valor</h3>
         <p>Un 5,2 aislado no dice casi nada. <em>Venía en 3,0 hace tres años</em> sí dice.
            Eso una hoja de resultados no lo puede contar.</p>
       </div>
       <div class="punto anim d5">
+        <div class="icono">
+          <!-- conversación, solo trazo -->
+          <svg width="22" height="22" viewBox="0 0 22 22" fill="none" stroke="#123f6d"
+               stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <path d="M19.5 10a7 7 0 0 1-7 7H5.5l-3 2.5v-9.5a7 7 0 0 1 7-7h3a7 7 0 0 1 7 7z"/>
+          </svg>
+        </div>
         <h3>Su asistente lo puede leer</h3>
         <p>Puede preguntarle a su IA sobre sus resultados sin subir nada a la nube:
            los datos no salen de su computadora.</p>
@@ -481,22 +584,26 @@
     </div>
   </section>
 
-  <section class="envoltura instalar">
+  <section id="instalar" class="envoltura instalar">
     <div>
       <h2>Cómo se instala</h2>
       <p>Toma menos de un minuto. No hace falta crear una cuenta.</p>
     </div>
-    <ol class="pasos">
-      <li><p><b>Abra la aplicación</b> <span>con el botón de arriba.</span></p></li>
-      <li><p><b>Instálela</b> <span>desde el icono que aparece en la barra de direcciones del navegador.</span></p></li>
-      <li><p><b>Elija la carpeta</b> <span>donde quiere guardar su expediente, y toque <b>Refresh</b>.</span></p></li>
-    </ol>
+    <div>
+      <ol class="pasos">
+        <li><p><b>Abra la aplicación</b> <span>con el botón de arriba.</span></p></li>
+        <li><p><b>Instálela</b> <span>desde el icono que aparece en la barra de direcciones del navegador.</span></p></li>
+        <li><p><b>Elija la carpeta</b> <span>donde quiere guardar su expediente, y toque <b>Refresh</b>.</span></p></li>
+      </ol>
+      <p class="sin-tienda">No está en tiendas: la descarga es directa de esta página,
+         de la institución en la que ya confía.</p>
+    </div>
   </section>
 </main>
 
 <footer>
   <div class="envoltura pie">
-    <div>Laboratorios Sotavento · La marca es ficticia.</div>
+    <div>Laboratorio Clínico Delfos · La marca es ficticia.</div>
     <span>Demo del milestone Gnothi</span>
   </div>
 </footer>

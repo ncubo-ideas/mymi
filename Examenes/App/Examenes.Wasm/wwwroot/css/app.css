@@ -1,67 +1,81 @@
 /* Mis exámenes — la carátula que la persona instala.
  *
- * Mismo lenguaje visual que la página de descarga de URL1: es la misma institución, y si
- * la app se viera de otra forma la entrega se sentiría como dos productos.
+ * LA MARCA ES LABORATORIO CLÍNICO DELFOS, y las especificaciones vienen del código real
+ * de su página (LaboratorioDelfos.module.css en nCuboSite), no de un boceto: cuando
+ * Sonia descarga la app desde la página del laboratorio, lo que se abre debe
+ * reconocerse en un segundo.
  *
- * SIN BOOTSTRAP. La app tiene cuatro pantallas y nada de formularios; traer un framework
- * de CSS entero para eso costaba 30 KB y, sobre todo, hacía que se viera como un andamio
- * de plantilla en vez de como algo que un laboratorio te entrega.
+ * FONDO OSCURO, y la decisión la cerró el landing real: el teléfono con el que
+ * Geaninna vende la app la muestra en gradiente navy, con los colores de semáforo que
+ * las especificaciones dan PARA fondo oscuro — los únicos no negociables. La app tiene
+ * que parecerse a la promesa desde la que se instala, y con el fondo oscuro el
+ * semáforo deja de ser una variante inventada: es el de ella, exacto.
  *
- * El ámbar tiene UN solo trabajo, igual que en la página de descarga: marcar lo que exige
- * atención. Si aparece en otro lado deja de significar algo. Por eso "salto inverosímil"
- * NO es ámbar: no es una alarma clínica, es "repetí el examen".
+ * SIN BOOTSTRAP y CERO WEBFONTS. Georgia y Segoe UI son de sistema; con un payload sin
+ * trimming de ~35 MB, no agregar descargas de fuentes es una decisión que conviene no
+ * romper después «por diseño».
+ *
+ * El ámbar tiene UN solo trabajo: marcar lo que exige atención. Y el ROJO está
+ * RESERVADO — lo produce solo el dominio, con la severidad «urgente», y ningún
+ * colesterol llega ahí. Si el rojo se usara para el colesterol dejaría de significar
+ * algo: esa regla vive en el dominio y acá solo se pinta.
  */
 
 :root {
-    --papel:    #f6f3ec;
-    --papel-2:  #fffdf8;
-    --tinta:    #161c19;
-    --tinta-2:  #5d6660;
-    --tinta-3:  #8b938d;
-    --linea:    #ddd8cc;
+    /* Institucional — «el laboratorio». Los valores vienen de las especificaciones. */
+    --azul:        #123f6d;   /* color de marca */
+    --azul-oscuro: #0b2c4e;
+    --azul-claro:  #1d5c9e;
+    --celeste:     #7db4e0;   /* acentos sobre oscuro: kickers, trazos, enlaces */
+    --logo:        #ffffff;   /* la gota y el círculo, sobre oscuro, van en blanco */
 
-    --pino:     #1f4034;
-    --pino-cl:  #2e5c4a;
-    --pino-suave: #e8efe9;
+    /* El gradiente navy de la §6, y la tinta que se lee encima. */
+    --fondo:       #0e2f55;   /* el navy base; --app-navy de las especificaciones */
+    --fondo-hondo: #0a2140;   /* el final del gradiente */
+    --tinta:       #eef4fb;   /* texto principal sobre navy */
+    --tenue:       #a9bdd3;   /* texto secundario */
+    --tenue-2:     #7e95ae;   /* rotulitos y pies */
+    --carta:       rgba(125, 180, 224, .07);   /* paneles translúcidos, como el mock */
+    --suave:       rgba(125, 180, 224, .12);   /* hovers */
+    --linea:       rgba(125, 180, 224, .22);
 
-    /* EL VERDE QUE SE PINTA, distinto del que se escribe.
-     *
-     * --pino es TINTA: es oscuro (L 19%) y poco saturado (S 35%), y sobre un papel casi
-     * blanco una dilucion suya no da un verde claro — da gris. Medido sobre el fondo de
-     * la tarjeta, antes de este cambio:
-     *
-     *     .dentro   pino al 22%   ->  S  6.4%   la zona SEGURA
-     *     .fuera    linea al 35%  ->  S 29.4%   la zona de afuera
-     *
-     * O sea que el lado seguro tenia MENOS color que el lado de afuera, y encima era mas
-     * oscuro, que se lee como "peor". La banda no decia "aca esta bien": decia "aca hay
-     * un rectangulo gris".
-     *
-     * Estos dos son COLORES PROPIOS y no diluciones, y por eso siguen siendo verdes
-     * cuando se aplican. Mismo tono que el pino (158°) para que sigan siendo la misma
-     * familia; lo que cambia es que la saturacion sobrevive.
-     *
-     * No le sacan trabajo al ambar: el ambar sigue siendo lo unico que dice "esto exige
-     * atencion", y estos dos solo dicen "esto esta bien". */
-    --pino-zona: #c8e4da;   /* donde es normal estar: las bandas */
-    --pino-vivo: #6bbd9f;   /* lo que ya se recorrio: el avance hacia la meta */
+    /* Aplicación — «la app es de hoy, la página es de 1987». */
+    --accion:      #1a6ff5;   /* color de acción: Refresh, Exportar */
 
-    --ambar:    #b4541a;
-    --ambar-suave: #fdf0e4;
+    /* EL SEMÁFORO, con los valores EXACTOS de la §5 para fondo oscuro: trazo, fondo y
+     * borde tal como los dio Geaninna. Es lo único que marcó como no negociable, y
+     * desde que la app es oscura ya no hay nada que inventar.
+     * ⚠️ Solo el ROJO sigue provisional: las especificaciones lo dejan «pendiente»
+     * porque está reservado, y este valor es derivado hasta que ella dé el suyo. */
+    --bien:        #6ee7a0;
+    --bien-suave:  rgba(74, 222, 128, .12);
+    --bien-borde:  rgba(74, 222, 128, .35);
+    --bien-zona:   rgba(74, 222, 128, .14);   /* donde es normal estar: las bandas */
+    --bien-vivo:   #4ade80;   /* lo que ya se recorrio: el avance hacia la meta */
 
-    --rojo:     #9b2c2c;
-    --rojo-suave: #fbeaea;
+    --ambar:       #fbd06a;   /* vigilar / consulte pronto: lo que exige atención */
+    --ambar-suave: rgba(251, 191, 36, .10);
+    --ambar-borde: rgba(251, 191, 36, .30);
 
-    --serif: "Instrument Serif", Georgia, "Times New Roman", serif;
-    --sans:  "IBM Plex Sans", ui-sans-serif, system-ui, sans-serif;
-    --mono:  "IBM Plex Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
+    --rojo:        #f87171;   /* urgente — RESERVADO; ⚠️ provisional */
+    --rojo-suave:  rgba(248, 113, 113, .12);
+    --rojo-borde:  rgba(248, 113, 113, .35);
+
+    /* Serif para lo que se lee de un vistazo, sans para lo que se lee de verdad.
+       Ambas de sistema: cero webfonts. */
+    --serif: Georgia, "Times New Roman", serif;
+    --sans:  "Segoe UI", "Helvetica Neue", Arial, sans-serif;
+    --mono:  ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
 }
 
 * { box-sizing: border-box; }
 
-html, body {
+html { background: var(--fondo-hondo); }
+
+body {
     margin: 0;
-    background: var(--papel);
+    min-height: 100vh;
+    background: linear-gradient(180deg, var(--fondo) 0%, var(--fondo-hondo) 100%) fixed;
     color: var(--tinta);
     font-family: var(--sans);
     font-size: 16.5px;
@@ -78,30 +92,52 @@ h1:focus, h1:focus-visible { outline: none; }
 
 .titular {
     font-family: var(--serif);
-    font-weight: 400;
-    font-size: clamp(38px, 5.5vw, 54px);
-    line-height: 1.05;
+    font-weight: 700;
+    font-size: clamp(2rem, 4.2vw, 2.9rem);
+    line-height: 1.15;
     letter-spacing: -.015em;
+    color: #ffffff;
     margin: 0 0 6px;
 }
 
 .membrete {
-    color: var(--tinta-2);
+    color: var(--tenue);
     font-size: 14.5px;
     margin: 0 0 32px;
 }
 .membrete b { font-weight: 600; color: var(--tinta); }
 
+/* ------------------------------------------------------------- bloque de marca
+
+   Gota dentro de un circulo, 40 px, solo trazo — identico al de la pagina. El nombre va
+   ACA y no solo en el subtitulo: es lo que hace que la app se reconozca en un segundo. */
+
+.marca {
+    display: flex; align-items: center; gap: 12px;
+    margin: 0 0 26px;
+}
+.marca svg { width: 40px; height: 40px; flex: none; }
+.marca-nombre {
+    font-family: var(--serif);
+    font-weight: 700; font-size: 1.15rem; line-height: 1.2;
+    color: #ffffff;
+}
+.marca-claim {
+    font-size: 0.74rem; color: var(--tenue);
+    line-height: 1.35;
+}
+
 .seccion {
-    font-family: var(--mono);
-    font-size: 11.5px; letter-spacing: .15em; text-transform: uppercase;
-    color: var(--pino-cl);
+    font-family: var(--sans);
+    font-weight: 700;
+    font-size: 0.80rem; letter-spacing: .18em; text-transform: uppercase;
+    color: var(--celeste);
     display: flex; align-items: center; gap: 12px;
     margin: 40px 0 16px;
 }
 .seccion::after { content: ""; height: 1px; flex: 1; background: var(--linea); }
 
-.apunte { color: var(--tinta-2); font-size: 13.5px; }
+.apunte { color: var(--tenue); font-size: 13.5px; }
 .mono   { font-family: var(--mono); }
 
 /* ------------------------------------------------------------------ avisos */
@@ -109,8 +145,8 @@ h1:focus, h1:focus-visible { outline: none; }
 .aviso {
     border: 1px solid var(--linea);
     border-left-width: 3px;
-    border-radius: 3px;
-    background: var(--papel-2);
+    border-radius: 14px;
+    background: var(--carta);
     padding: 16px 18px;
     margin-bottom: 18px;
 }
@@ -118,9 +154,9 @@ h1:focus, h1:focus-visible { outline: none; }
 .aviso p:last-child  { margin-bottom: 0; }
 .aviso strong { font-weight: 600; }
 
-.aviso--neutro    { border-left-color: var(--tinta-3); }
-.aviso--atencion  { border-left-color: var(--ambar); background: var(--ambar-suave); }
-.aviso--problema  { border-left-color: var(--rojo);  background: var(--rojo-suave); color: #5f1d1d; }
+.aviso--neutro    { border-left-color: var(--tenue-2); }
+.aviso--atencion  { border-left-color: var(--ambar); background: var(--ambar-suave); border-color: var(--ambar-borde); }
+.aviso--problema  { border-left-color: var(--rojo);  background: var(--rojo-suave); border-color: var(--rojo-borde); }
 
 /* El detalle técnico de un error es para quien pueda hacer algo con él: se muestra, pero
    no compite con la frase que explica qué pasó. */
@@ -141,14 +177,14 @@ h1:focus, h1:focus-visible { outline: none; }
     font: inherit; font-weight: 500; font-size: 15px;
     padding: 11px 20px;
     border: 1px solid transparent;
-    border-radius: 2px;
+    border-radius: 10px;
     cursor: pointer;
-    background: var(--pino); color: var(--papel-2);
+    background: var(--accion); color: #ffffff;
     transition: filter .18s ease, background .18s ease;
 }
 .boton:hover:not(:disabled) { filter: brightness(1.12); }
 .boton:disabled { opacity: .45; cursor: not-allowed; }
-.boton:focus-visible { outline: 2px solid var(--pino-cl); outline-offset: 2px; }
+.boton:focus-visible { outline: 2px solid var(--celeste); outline-offset: 2px; }
 
 .boton--atencion { background: var(--ambar); }
 .boton--problema { background: var(--rojo); }
@@ -157,15 +193,15 @@ h1:focus, h1:focus-visible { outline: none; }
     background: transparent; color: var(--tinta);
     border-color: var(--linea);
 }
-.boton--contorno:hover:not(:disabled) { background: var(--papel-2); filter: none; }
+.boton--contorno:hover:not(:disabled) { background: var(--suave); filter: none; }
 
 .boton--enlace {
-    background: none; color: var(--pino-cl);
+    background: none; color: var(--celeste);
     padding: 0; border: 0;
     text-decoration: underline; text-underline-offset: 3px;
     font-size: 14.5px;
 }
-.boton--enlace:hover { color: var(--tinta); filter: none; }
+.boton--enlace:hover { color: #ffffff; filter: none; }
 
 /* ------------------------------------------------------------------ la serie */
 
@@ -175,37 +211,47 @@ h1:focus, h1:focus-visible { outline: none; }
 .serie {
     display: block; width: 100%; text-align: left;
     font: inherit; color: inherit;
-    background: var(--papel-2);
+    background: var(--carta);
     border: 1px solid var(--linea);
-    border-radius: 3px;
+    border-radius: 14px;
+    box-shadow: 0 1px 4px rgba(0, 0, 0, .22);
     padding: 18px 20px;
     margin-bottom: 10px;
     cursor: pointer;
     transition: border-color .18s ease, box-shadow .18s ease, transform .18s ease;
 }
 .serie:hover {
-    border-color: var(--pino-cl);
-    box-shadow: 0 6px 18px -12px rgba(22,28,25,.45);
+    border-color: var(--celeste);
+    box-shadow: 0 6px 18px -12px rgba(0,0,0,.6);
     transform: translateY(-1px);
 }
-.serie:focus-visible { outline: 2px solid var(--pino-cl); outline-offset: 2px; }
+.serie:focus-visible { outline: 2px solid var(--celeste); outline-offset: 2px; }
 
 .serie-cabeza { display: flex; justify-content: space-between; align-items: flex-start; gap: 16px; }
 .serie-nombre { font-weight: 600; font-size: 16px; }
-.serie-relato { color: var(--tinta-2); font-size: 13.5px; margin-top: 5px; }
+.serie-relato { color: var(--tenue); font-size: 13.5px; margin-top: 5px; }
 
 .serie-valor {
-    font-family: var(--mono);
-    font-size: 21px; font-weight: 500;
+    font-family: var(--serif);
+    font-size: 1.9rem; font-weight: 700; line-height: 1.1;
     white-space: nowrap; text-align: right;
 }
-.serie-valor span { font-size: 12px; color: var(--tinta-2); font-weight: 400; }
+.serie-valor span { font-family: var(--sans); font-size: 12px; color: var(--tenue); font-weight: 400; }
+
+/* NINGUN NUMERO SIN SU REFERENCIA. Va pegada al valor y en voz baja: es el contexto del
+   dato, no un dato mas. La escribe el dominio; aca solo se ubica. */
+.serie-referencia {
+    font-family: var(--mono);
+    font-size: 11px; color: var(--tenue-2);
+    text-align: right; margin-top: 2px;
+    white-space: nowrap;
+}
 
 /* La consecuencia va abajo, separada por una línea: es una conclusión, no un dato más. */
 .serie-lectura {
     margin-top: 12px; padding-top: 11px;
     border-top: 1px solid var(--linea);
-    font-size: 13.8px; color: var(--tinta-2);
+    font-size: 13.8px; color: var(--tenue);
 }
 .serie-lectura b { color: var(--tinta); font-weight: 600; }
 .serie-lectura--atencion { color: var(--ambar); }
@@ -222,48 +268,50 @@ h1:focus, h1:focus-visible { outline: none; }
     margin: 18px 0 4px;
 }
 .modo {
-    background: var(--papel-2);
+    background: var(--carta);
     border: 1px solid var(--linea);
-    border-radius: 3px;
+    border-radius: 14px;
+    box-shadow: 0 1px 4px rgba(0, 0, 0, .22);
     padding: 16px 17px;
     display: flex; flex-direction: column; gap: 10px;
 }
-.modo p { margin: 0; font-size: 13.6px; color: var(--tinta-2); flex: 1; }
+.modo p { margin: 0; font-size: 13.6px; color: var(--tenue); flex: 1; }
 .modo p strong { color: var(--tinta); font-weight: 600; }
 .modo .boton { align-self: flex-start; font-size: 14px; padding: 9px 16px; }
 
 .modo-titulo {
-    font-family: var(--mono);
-    font-size: 11px; letter-spacing: .11em; text-transform: uppercase;
-    color: var(--pino-cl);
+    font-family: var(--sans); font-weight: 700;
+    font-size: 11px; letter-spacing: .16em; text-transform: uppercase;
+    color: var(--celeste);
 }
 
 /* No disponible NO es lo mismo que deshabilitado: la opcion existe y en otro navegador
    funciona. Se atenua y se explica, no se esconde — esconderla haria parecer que la app
    solo sabe hacer una cosa. */
 .modo--nodisponible { background: transparent; border-style: dashed; }
-.modo--nodisponible .modo-titulo { color: var(--tinta-3); }
-.modo-nota { font-size: 12.8px; color: var(--tinta-3); }
+.modo--nodisponible .modo-titulo { color: var(--tenue-2); }
+.modo-nota { font-size: 12.8px; color: var(--tenue-2); }
 
 /* ------------------------------------------------------------------ permisos */
 
 .permiso {
     display: flex; align-items: center; gap: 18px;
-    background: var(--papel-2);
+    background: var(--carta);
     border: 1px solid var(--linea);
-    border-radius: 3px;
+    border-radius: 14px;
+    box-shadow: 0 1px 4px rgba(0, 0, 0, .22);
     padding: 16px 18px;
     margin-bottom: 10px;
 }
 .permiso-nombre { font-weight: 600; font-size: 15.5px; }
-.permiso-que-hace { margin: 4px 0 0; font-size: 13.5px; color: var(--tinta-2); }
+.permiso-que-hace { margin: 4px 0 0; font-size: 13.5px; color: var(--tenue); }
 .permiso .boton { flex: none; }
 
 /* Apagado se VE apagado. Que el estado se lea de un vistazo importa mas acá que en
    ningún otro lado: es la pantalla donde la persona decide qué sabe su IA de ella. */
 .permiso--apagado { background: transparent; border-style: dashed; }
-.permiso--apagado .permiso-nombre { color: var(--tinta-3); }
-.permiso--apagado .permiso-que-hace { color: var(--tinta-3); }
+.permiso--apagado .permiso-nombre { color: var(--tenue-2); }
+.permiso--apagado .permiso-que-hace { color: var(--tenue-2); }
 
 /* ------------------------------------------------------------------ chips */
 
@@ -275,10 +323,11 @@ h1:focus, h1:focus-visible { outline: none; }
     border: 1px solid transparent;
     white-space: nowrap;
 }
-.chip--estable  { background: var(--pino-suave);  color: var(--pino);  border-color: #cfe0d4; }
-.chip--atencion { background: var(--ambar-suave); color: var(--ambar); border-color: #f0d7c0; }
-.chip--repetir  { background: #eceeed; color: var(--tinta-2); border-color: var(--linea); }
-.chip--sinserie { background: transparent; color: var(--tinta-3); border-color: var(--linea); }
+.chip--estable  { background: var(--bien-suave);  color: var(--bien);  border-color: var(--bien-borde); }
+.chip--atencion { background: var(--ambar-suave); color: var(--ambar); border-color: var(--ambar-borde); }
+.chip--repetir  { background: var(--suave); color: var(--tenue); border-color: var(--linea); }
+.chip--problema { background: var(--rojo-suave); color: var(--rojo); border-color: var(--rojo-borde); }
+.chip--sinserie { background: transparent; color: var(--tenue-2); border-color: var(--linea); }
 .chip--grande   { font-size: 12px; padding: 5px 12px; }
 
 /* ------------------------------------------------------------------ tabla */
@@ -287,7 +336,7 @@ h1:focus, h1:focus-visible { outline: none; }
 .tabla th {
     font-family: var(--mono);
     font-size: 10.5px; letter-spacing: .1em; text-transform: uppercase;
-    color: var(--tinta-2); font-weight: 400;
+    color: var(--tenue); font-weight: 400;
     text-align: left; padding: 0 12px 9px 0;
     border-bottom: 1px solid var(--linea);
 }
@@ -296,7 +345,7 @@ h1:focus, h1:focus-visible { outline: none; }
 .tabla .der { text-align: right; padding-right: 0; }
 .tabla th.der { padding-right: 0; }
 .tabla .fecha, .tabla .resultado { font-family: var(--mono); font-size: 13.5px; }
-.tabla tbody tr:hover td { background: var(--papel-2); }
+.tabla tbody tr:hover td { background: var(--suave); }
 
 /* ---------------------------------------------------------------- las formas
 
@@ -314,7 +363,7 @@ h1:focus, h1:focus-visible { outline: none; }
 .forma-pie {
     display: flex; gap: 18px; flex-wrap: wrap;
     margin-top: 6px;
-    font-family: var(--mono); font-size: 11px; color: var(--tinta-3);
+    font-family: var(--mono); font-size: 11px; color: var(--tenue-2);
 }
 .forma-pie--extremos { justify-content: space-between; gap: 8px; }
 .forma-nota { display: inline-flex; align-items: center; gap: 5px; }
@@ -326,42 +375,42 @@ h1:focus, h1:focus-visible { outline: none; }
 .muestra { width: 10px; height: 10px; border-radius: 2px; display: inline-block; }
 /* La muestra tiene que ser EL MISMO color que la banda que nombra. Antes era pino al
    30% y la banda pino al 16%: dos grises distintos para la misma cosa. */
-.muestra--banda { background: var(--pino-zona); }
-.muestra--techo { height: 0; border-top: 1.5px dashed var(--tinta-3); border-radius: 0; }
+.muestra--banda { background: var(--bien-zona); }
+.muestra--techo { height: 0; border-top: 1.5px dashed var(--tenue-2); border-radius: 0; }
 
 /* --- trayectoria: la banda ES el fondo contra el que se lee todo lo demas --- */
-.forma--trayectoria .banda { fill: var(--pino-zona); }
+.forma--trayectoria .banda { fill: var(--bien-zona); }
 .forma--trayectoria .linea-base {
-    stroke: var(--pino); stroke-width: 1.5; opacity: .55;
+    stroke: var(--celeste); stroke-width: 1.5; opacity: .55;
 }
 .forma--trayectoria .linea-techo {
-    stroke: var(--tinta-3); stroke-width: 1; stroke-dasharray: 4 4; opacity: .7;
+    stroke: var(--tenue-2); stroke-width: 1; stroke-dasharray: 4 4; opacity: .7;
 }
 .forma--trayectoria .trazo {
-    fill: none; stroke: var(--pino); stroke-width: 2;
+    fill: none; stroke: var(--celeste); stroke-width: 2;
     stroke-linejoin: round; stroke-linecap: round;
 }
-.forma--trayectoria .punto { fill: var(--pino); }
-.forma--trayectoria .punto--final { fill: var(--pino); stroke: var(--papel); stroke-width: 2; }
-.forma--trayectoria .punto--atencion { fill: var(--ambar); stroke: var(--papel); stroke-width: 2; }
+.forma--trayectoria .punto { fill: var(--celeste); }
+.forma--trayectoria .punto--final { fill: var(--celeste); stroke: var(--fondo); stroke-width: 2; }
+.forma--trayectoria .punto--atencion { fill: var(--ambar); stroke: var(--fondo); stroke-width: 2; }
 
 /* --- progreso: el eje es el VALOR, no el tiempo --- */
 .forma--progreso .pista { fill: var(--linea); opacity: .5; }
 /* Lo YA recorrido. Es lo unico de esta pantalla que se gana, asi que tiene color de
    verdad y no una dilucion: la barra que avanza es la recompensa. */
-.forma--progreso .avance { fill: var(--pino-vivo); }
+.forma--progreso .avance { fill: var(--bien-vivo); }
 /* Lo que falta, en ambar: es lo unico de esta forma que pide algo. */
 .forma--progreso .pendiente { fill: var(--ambar); opacity: .3; }
-.forma--progreso .hito-meta { stroke: var(--pino); stroke-width: 2; }
-.forma--progreso .marca { fill: var(--ambar); stroke: var(--papel); stroke-width: 2.5; }
-.forma--progreso .marca--llego { fill: var(--pino); }
+.forma--progreso .hito-meta { stroke: var(--celeste); stroke-width: 2; }
+.forma--progreso .marca { fill: var(--ambar); stroke: var(--fondo); stroke-width: 2.5; }
+.forma--progreso .marca--llego { fill: var(--bien); }
 
 /* --- banda: alejarse es peor en las DOS direcciones, por eso no hay flecha --- */
 /* El AFUERA casi no se pinta y el ADENTRO si: lo que tiene que saltar a la vista es
    donde es normal estar, no donde no. Con los dos en gris no se distinguian. */
 .forma--banda .fuera { fill: var(--linea); opacity: .35; }
-.forma--banda .dentro { fill: var(--pino-zona); }
-.forma--banda .aguja { stroke: var(--pino); stroke-width: 3; stroke-linecap: round; }
+.forma--banda .dentro { fill: var(--bien-zona); }
+.forma--banda .aguja { stroke: var(--celeste); stroke-width: 3; stroke-linecap: round; }
 .forma--banda .aguja--fuera { stroke: var(--ambar); }
 
 /* ---------------------------------------------------------------- el historial
@@ -383,14 +432,14 @@ h1:focus, h1:focus-visible { outline: none; }
     font-family: var(--mono); line-height: 1.25;
 }
 .visita-dia { display: block; font-size: 13px; color: var(--tinta); text-transform: lowercase; }
-.visita-ano { display: block; font-size: 11px; color: var(--tinta-3); }
+.visita-ano { display: block; font-size: 11px; color: var(--tenue-2); }
 
 .visita-cosas { list-style: none; margin: 0; padding: 0; flex: 1; }
 .visita-cosa {
     display: flex; justify-content: space-between; gap: 14px;
     padding: 2px 0;
 }
-.visita-que { color: var(--tinta-2); font-size: 14px; }
+.visita-que { color: var(--tenue); font-size: 14px; }
 .visita-cuanto {
     font-family: var(--mono); font-size: 13px; color: var(--tinta);
     text-align: right;
@@ -422,17 +471,17 @@ h1:focus, h1:focus-visible { outline: none; }
     font-family: var(--mono); line-height: 1.25;
 }
 .medicion-dia { display: block; font-size: 13px; color: var(--tinta); text-transform: lowercase; }
-.medicion-ano { display: block; font-size: 11px; color: var(--tinta-3); }
+.medicion-ano { display: block; font-size: 11px; color: var(--tenue-2); }
 
 .medicion-valor {
     flex: 0 0 6.5em;
     font-family: var(--mono); font-size: 16px; color: var(--tinta);
 }
-.medicion-valor span { font-size: 11.5px; color: var(--tinta-3); margin-left: 3px; }
+.medicion-valor span { font-size: 11.5px; color: var(--tenue-2); margin-left: 3px; }
 
 .medicion-salto {
     flex: 1;
-    font-family: var(--mono); font-size: 12.5px; color: var(--tinta-2);
+    font-family: var(--mono); font-size: 12.5px; color: var(--tenue);
     text-align: right;
 }
 
@@ -447,25 +496,25 @@ h1:focus, h1:focus-visible { outline: none; }
 .ritmo {
     display: flex; flex-direction: column; gap: 3px;
     margin: 22px 0 0; padding: 14px 16px;
-    background: var(--papel-2);
-    border: 1px solid var(--linea); border-radius: 8px;
+    background: var(--carta);
+    border: 1px solid var(--linea); border-radius: 14px;
 }
 .ritmo-rotulo {
     font-size: 11px; letter-spacing: .07em; text-transform: uppercase;
-    color: var(--tinta-3);
+    color: var(--tenue-2);
 }
 .ritmo-cifra { font-family: var(--mono); font-size: 19px; color: var(--tinta); }
-.ritmo-nota { font-size: 12.5px; color: var(--tinta-2); }
+.ritmo-nota { font-size: 12.5px; color: var(--tenue); }
 .ritmo--atencion .ritmo-cifra { color: var(--ambar); }
 
 .cifra-par {
-    font-family: var(--mono);
-    font-size: clamp(28px, 5vw, 38px); font-weight: 500;
+    font-family: var(--serif);
+    font-size: clamp(28px, 5vw, 38px); font-weight: 700;
     letter-spacing: -.01em;
     margin: 14px 0 6px;
 }
-.cifra-par .flecha { color: var(--tinta-3); margin: 0 10px; }
-.cifra-par .unidad { font-size: 15px; color: var(--tinta-2); font-weight: 400; margin-left: 8px; }
+.cifra-par .flecha { color: var(--tenue-2); margin: 0 10px; }
+.cifra-par .unidad { font-size: 15px; color: var(--tenue); font-weight: 400; margin-left: 8px; }
 .cifra-par .final  { color: var(--ambar); }
 
 /* ------------------------------------------------------------------ arranque */
@@ -480,20 +529,19 @@ h1:focus, h1:focus-visible { outline: none; }
     transform-origin: 50% 50%; transform: rotate(-90deg);
 }
 .loading-progress circle:last-child {
-    stroke: var(--pino);
+    stroke: var(--celeste);
     stroke-dasharray: calc(3.141 * var(--blazor-load-percentage, 0%) * 0.8), 500%;
     transition: stroke-dasharray .05s ease-in-out;
 }
 .loading-progress-text {
     position: absolute; text-align: center;
-    font-family: var(--mono); font-size: 13px; color: var(--tinta-2);
+    font-family: var(--mono); font-size: 13px; color: var(--tenue);
     inset: calc(22vh + 2.4rem) 0 auto 0;
 }
 .loading-progress-text:after { content: var(--blazor-load-percentage-text, "Cargando"); }
 
 #blazor-error-ui {
-    color-scheme: light only;
-    background: var(--rojo-suave); color: #5f1d1d;
+    background: #7f1d1d; color: #ffffff;
     border-top: 2px solid var(--rojo);
     bottom: 0; left: 0; width: 100%;
     box-sizing: border-box; display: none; position: fixed; z-index: 1000;
@@ -501,7 +549,7 @@ h1:focus, h1:focus-visible { outline: none; }
 }
 #blazor-error-ui .dismiss { cursor: pointer; position: absolute; right: .9rem; top: .6rem; }
 
-.blazor-error-boundary { background: var(--rojo); color: #fff; padding: 1rem 1.25rem; }
+.blazor-error-boundary { background: #7f1d1d; color: #fff; padding: 1rem 1.25rem; }
 .blazor-error-boundary::after { content: "Ocurrió un error."; }
 
 code { font-family: var(--mono); font-size: .9em; color: var(--ambar); }
@@ -529,44 +577,45 @@ code { font-family: var(--mono); font-size: .9em; color: var(--ambar); }
    unico hecho que esta forma tiene para contar. */
 .forma--presencia .hilo { stroke: var(--linea); stroke-width: 2; stroke-linecap: round; }
 .forma--presencia .racha { stroke: var(--ambar); stroke-width: 4; stroke-linecap: round; opacity: .45; }
-.forma--presencia .prueba { fill: var(--papel-2); stroke: var(--tinta-3); stroke-width: 2; }
-.forma--presencia .prueba--presente { fill: var(--ambar); stroke: var(--papel); stroke-width: 2; }
+.forma--presencia .prueba { fill: var(--fondo); stroke: var(--tenue-2); stroke-width: 2; }
+.forma--presencia .prueba--presente { fill: var(--ambar); stroke: var(--fondo); stroke-width: 2; }
 
 /* ---------------------------------------------------------------- la portada
 
    LA PRIMERA PREGUNTA. Alguien abre esta app para saber si esta bien, y lo primero que
    veia era un boton de Refresh y el numero de evento del journal.
 
-   El TONO lo decide el dominio -es la severidad mayor de todo el expediente- y aca solo
-   se traduce a color. El ambar sigue queriendo decir una sola cosa. */
+   Es LA TARJETA DE SEMAFORO del mock del landing: panel translucido con el borde y el
+   titular en el color de la severidad. El TONO lo decide el dominio -es la severidad
+   mayor de todo el expediente- y aca solo se traduce a color. */
 
 .portada {
-    background: var(--papel-2);
+    background: var(--carta);
     border: 1px solid var(--linea);
-    border-left: 4px solid var(--tinta-3);
-    border-radius: 3px;
+    border-radius: 14px;
     padding: 22px 26px 20px;
     margin-bottom: 18px;
 }
-.portada--calma        { border-left-color: var(--pino); }
-.portada--seguimiento  { border-left-color: var(--tinta-3); }
-.portada--atencion     { border-left-color: var(--ambar);  background: var(--ambar-suave); }
-.portada--problema     { border-left-color: var(--rojo);   background: var(--rojo-suave); }
+.portada--calma        { background: var(--bien-suave);  border-color: var(--bien-borde); }
+.portada--atencion     { background: var(--ambar-suave); border-color: var(--ambar-borde); }
+.portada--problema     { background: var(--rojo-suave);  border-color: var(--rojo-borde); }
 
 .portada-rotulo {
-    font-family: var(--mono); font-size: 10.5px; letter-spacing: .12em;
-    text-transform: uppercase; color: var(--tinta-3);
+    font-family: var(--sans); font-weight: 700; font-size: 10.5px; letter-spacing: .18em;
+    text-transform: uppercase; color: var(--tenue);
     margin: 0 0 10px;
 }
 
 /* El titular es la frase del DOMINIO cuando hay algo que hacer. Va en serif y grande
-   porque es lo unico que alguien necesita leer si no lee nada mas. */
+   porque es lo unico que alguien necesita leer si no lee nada mas — y en el trazo del
+   semaforo, como el «Todo está bien» del mock. */
 .portada-titular {
-    font-family: var(--serif); font-weight: 400;
+    font-family: var(--serif); font-weight: 700;
     font-size: clamp(25px, 5vw, 34px); line-height: 1.1;
     letter-spacing: -.01em; margin: 0; color: var(--tinta);
     text-wrap: balance;
 }
+.portada--calma .portada-titular    { color: var(--bien); }
 .portada--atencion .portada-titular { color: var(--ambar); }
 .portada--problema .portada-titular { color: var(--rojo); }
 
@@ -576,12 +625,12 @@ code { font-family: var(--mono); font-size: .9em; color: var(--ambar); }
 .portada-cual {
     font: inherit; font-size: 13.5px; font-weight: 500;
     padding: 5px 12px; cursor: pointer;
-    background: var(--papel-2); color: var(--tinta);
-    border: 1px solid var(--linea-2, var(--linea)); border-radius: 999px;
+    background: transparent; color: var(--tinta);
+    border: 1px solid var(--linea); border-radius: 999px;
     transition: transform .12s ease, border-color .12s ease;
 }
-.portada-cual:hover { border-color: var(--tinta-3); transform: translateY(-1px); }
-.portada-cual:focus-visible { outline: 2px solid var(--pino-cl); outline-offset: 2px; }
+.portada-cual:hover { border-color: var(--celeste); transform: translateY(-1px); }
+.portada-cual:focus-visible { outline: 2px solid var(--celeste); outline-offset: 2px; }
 
 /* LO QUE SE VIENE JUNTANDO. No es adorno: "desde ago 2022" es lo que convierte una lista
    de examenes en un historial, y es la razon por la que a alguien le importaria seguir
@@ -589,7 +638,7 @@ code { font-family: var(--mono); font-size: .9em; color: var(--ambar); }
 .portada-pie {
     display: flex; flex-wrap: wrap; gap: 6px 20px; margin-top: 18px;
     padding-top: 14px; border-top: 1px solid var(--linea);
-    font-family: var(--mono); font-size: 11.5px; color: var(--tinta-3);
+    font-family: var(--mono); font-size: 11.5px; color: var(--tenue-2);
 }
 .portada-pie b { color: var(--tinta); font-weight: 500; font-size: 13px; }
 

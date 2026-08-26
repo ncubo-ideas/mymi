@@ -312,48 +312,54 @@ namespace Examenes.Dominio
 			}
 
 			if (hechos.Tendencia.SugiereRepetirElExamen)
-				return new Interpretacion(Veredicto.ProbableErrorDeMedicion, Severidad.Seguimiento,
+				return new Interpretacion(Veredicto.ProbableErrorDeMedicion, Severidad.Vigilar,
 					$"cambió {Formato(hechos.Cambio)} {hechos.Unidad} en {hechos.DiasTranscurridos} días, "
-					+ "que es demasiado para el tiempo transcurrido", hechos);
+					+ "que es demasiado para el tiempo transcurrido", hechos,
+					// El "espere una semana" de Alvaro: la repeticion no espera al control.
+					Accion.RepetirElExamen(Plazo.EstaSemana));
 
 			// EL CASO DEL ANALITO: la velocidad sola alcanza, aunque el valor este en
 			// rango. Va primero por eso.
 			Velocidad velocidad = VelocidadDelTramo();
 			if (velocidad.ExigeAtencion)
-				return new Interpretacion(Veredicto.Empeorando, Severidad.ConsultaMedica,
+				return new Interpretacion(Veredicto.Empeorando, Severidad.ConsultePronto,
 					$"viene subiendo a {velocidad.Expresada}, y por encima de "
 					+ $"{Formato(AntigenoProstatico.VelocidadQueExigeAtencionPorAno)} {hechos.Unidad} por año conviene mirarlo",
-					hechos);
+					hechos, Accion.MostrarleEstoATuMedico(Plazo.EsteMes));
 
 			// SALIRSE DE LO SUYO, aunque el valor siga bajo el techo de la poblacion. Es la
 			// lectura que este analito exige y que un rango de referencia no puede dar.
 			if (SeSalioDeLoSuyo())
 			{
 				Medicion linea = NivelHabitual();
-				return new Interpretacion(Veredicto.Empeorando, Severidad.ConsultaMedica,
+				return new Interpretacion(Veredicto.Empeorando, Severidad.ConsultePronto,
 					$"venías alrededor de {linea.Expresado} y esta vez dio {Ultima.Valor.Expresado}: "
-					+ "lo que importa acá no es el número sino que se salió de lo tuyo", hechos);
+					+ "lo que importa acá no es el número sino que se salió de lo tuyo", hechos,
+					Accion.MostrarleEstoATuMedico(Plazo.EsteMes));
 			}
 
 			if (!Ultima.EsCambioReal(hechos.Cambio))
 			{
 				// Estable pero por encima del techo de su edad sigue siendo algo que un
-				// medico tiene que ver. Estable no significa bien.
+				// medico tiene que ver. Estable no significa bien — aunque, quieto, puede
+				// esperar a la cita que ya ibas a tener.
 				return Ultima.EsNormalPara(edad)
 					? new Interpretacion(Veredicto.Estable, Severidad.Informativo,
 						$"se mantiene alrededor de {Ultima.Valor.Expresado} desde hace "
 						+ $"{hechos.DiasTranscurridos} días", hechos)
-					: new Interpretacion(Veredicto.Estable, Severidad.ConsultaMedica,
+					: new Interpretacion(Veredicto.Estable, Severidad.ConsultePronto,
 						$"se mantiene estable, pero en {Ultima.Valor.Expresado} está por encima de "
-						+ $"lo esperado a tu edad", hechos);
+						+ $"lo esperado a tu edad", hechos,
+						Accion.MostrarleEstoATuMedico(Plazo.EnLaProximaCita));
 			}
 
 			return Ultima.Direccion.EsFavorable(hechos.Cambio)
 				? new Interpretacion(Veredicto.Mejorando, Severidad.Informativo,
 					$"bajó de {hechos.ValorInicial} a {hechos.ValorFinal} {hechos.Unidad}", hechos)
-				: new Interpretacion(Veredicto.Empeorando, Severidad.Seguimiento,
+				: new Interpretacion(Veredicto.Empeorando, Severidad.Vigilar,
 					$"subió de {hechos.ValorInicial} a {hechos.ValorFinal} {hechos.Unidad} "
-					+ $"en {hechos.DiasTranscurridos} días", hechos);
+					+ $"en {hechos.DiasTranscurridos} días", hechos,
+					Accion.ConversarloConTuMedico(Plazo.EnLaProximaCita));
 		}
 
 		private static string Formato(decimal valor) => valor.ToString("0.##");

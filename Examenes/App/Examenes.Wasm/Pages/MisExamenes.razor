@@ -7,8 +7,26 @@
 
 <PageTitle>Mis exámenes</PageTitle>
 
+@* EL BLOQUE DE MARCA. La gota por la muestra, el círculo por el oráculo; solo trazo,
+   nunca relleno, y el nombre va acá y no solo en el subtítulo: cuando alguien descarga
+   la app desde la página del laboratorio, lo que se abre debe reconocerse en un
+   segundo. El SVG es el mismo de la página, a 40 px — sobre oscuro va en blanco, y el
+   blanco lo dice el token para que el manual viva en un solo lugar. *@
+<div class="marca">
+    <svg viewBox="0 0 40 40" xmlns="http://www.w3.org/2000/svg"
+         fill="none" stroke="var(--logo)" stroke-width="2.4" aria-hidden="true">
+        <circle cx="20" cy="20" r="18" />
+        <path d="M20 9c4.4 5.4 6.8 9.3 6.8 12.4A6.8 6.8 0 0 1 20 28.2a6.8 6.8 0
+                 0 1-6.8-6.8C13.2 18.3 15.6 14.4 20 9z" />
+    </svg>
+    <div>
+        <div class="marca-nombre">Laboratorio Clínico Delfos</div>
+        <div class="marca-claim">Al servicio de su salud desde 1987</div>
+    </div>
+</div>
+
 <h1 class="titular">Mis exámenes</h1>
-<p class="membrete"><b>Laboratorios Sotavento</b> &middot; tu expediente, en tu computadora.</p>
+<p class="membrete">Tu expediente, en tu computadora.</p>
 
 @* UN solo lugar para los errores, y arriba. Antes habia dos bloques -uno adentro del
    arranque y otro al final de la pagina- asi que un mismo fallo se veia dos veces, y
@@ -273,15 +291,23 @@ else
         @foreach (TendenciaDeAnalito t in analitos)
         {
             <button class="serie" @key="@($"{t.Analito}-{redibujo}")" @onclick="() => VerSerie(t.Analito)">
+                @{ InterpretacionDeAnalito lectura = Lectura(t.Analito); }
                 <div class="serie-cabeza">
                     <div>
                         <span class="serie-nombre">@t.ParaMostrar</span>
                         <span class="chip @Insignia(t)">@t.Tendencia</span>
                         <div class="serie-relato">@Relato(t)</div>
                     </div>
-                    <div class="serie-valor">@Valor(t.ValorFinal) <span>@t.Unidad</span></div>
+                    <div>
+                        <div class="serie-valor">@Valor(t.ValorFinal) <span>@t.Unidad</span></div>
+                        @* NINGUN NUMERO SIN SU REFERENCIA. La escribe el dominio, no esta
+                           pantalla: sale del analito, que sabe que depende de la edad. *@
+                        @if (lectura.ReferenciaLegible.Length > 0)
+                        {
+                            <div class="serie-referencia">referencia: @lectura.ReferenciaLegible</div>
+                        }
+                    </div>
                 </div>
-                @{ InterpretacionDeAnalito lectura = Lectura(t.Analito); }
 
                 @* CADA ANALITO CON SU FORMA. El dominio dice cuál es -no la pantalla- y
                    acá solo se traduce a píxeles. Un antígeno se lee como trayectoria
@@ -336,15 +362,21 @@ else
     @foreach (PresenciaDeAnalito p in presencias)
     {
         <button class="serie" @key="@($"{p.Analito}-{redibujo}")" @onclick="() => VerSerie(p.Analito)">
+            @{ InterpretacionDeAnalito suya = Lectura(p.Analito); }
             <div class="serie-cabeza">
                 <div>
                     <span class="serie-nombre">@p.ParaMostrar</span>
                     <span class="chip @Insignia(p)">@p.Presencia</span>
                     <div class="serie-relato">@Relato(p)</div>
                 </div>
-                <div class="serie-valor">@p.UltimoResultado</div>
+                <div>
+                    <div class="serie-valor">@p.UltimoResultado</div>
+                    @if (suya.ReferenciaLegible.Length > 0)
+                    {
+                        <div class="serie-referencia">@suya.ReferenciaLegible</div>
+                    }
+                </div>
             </div>
-            @{ InterpretacionDeAnalito suya = Lectura(p.Analito); }
 
             @if (p.HaySerie)
             {
@@ -370,7 +402,7 @@ else
        cuanto tuvieron serie, que es donde tenían que estar desde el principio. *@
     @foreach (FilaDelCuadro hallazgo in Hallazgos())
     {
-        <div class="aviso @(hallazgo.Severidad == "atencion inmediata" ? "aviso--problema" : "aviso--atencion")" style="margin-top:26px">
+        <div class="aviso @(hallazgo.Severidad == "urgente" ? "aviso--problema" : "aviso--atencion")" style="margin-top:26px">
             <strong>@hallazgo.ParaMostrar.</strong> @hallazgo.ParaSonia.
         </div>
     }
@@ -444,13 +476,14 @@ else
     private int redibujo;
 
     // El tono de la portada lo decide el DOMINIO, no esta pantalla: es la severidad que
-    // salió de recorrer las series. Acá sólo se traduce a una clase de CSS.
+    // salió de recorrer las series, traducida con el mapeo del semáforo de la marca:
+    // verde informativo, ámbar para vigilar y consulte pronto, rojo reservado a urgente.
     private string Tono() => urgente.Severidad switch
     {
-        "atencion inmediata" => "portada--problema",
-        "consulta medica"    => "portada--atencion",
-        "seguimiento"        => "portada--seguimiento",
-        _                    => "portada--calma",
+        "urgente"         => "portada--problema",
+        "consulte pronto" => "portada--atencion",
+        "vigilar"         => "portada--atencion",
+        _                 => "portada--calma",
     };
 
     // Las series que piden LO MISMO que el expediente entero. Es una igualdad, no un
@@ -804,13 +837,15 @@ else
             ? l
             : new InterpretacionDeAnalito();
 
-    // El chip sale de la SEVERIDAD que decidio el analito, no de un bool generico.
+    // El chip sale de la SEVERIDAD que decidio el analito, con el mapeo del semáforo:
+    // rojo solo para "urgente", que el dominio reserva.
     //
-    // El ambar sigue reservado para lo que exige atencion, y por eso "salto inverosimil"
-    // NO lo usa: no es una alarma clinica, es "repeti el examen".
+    // El ambar sigue sin usarse para "salto inverosimil": no es una alarma clinica, es
+    // "repeti el examen", y el chip neutro lo dice sin gritar.
     private string Insignia(PresenciaDeAnalito p)
     {
         InterpretacionDeAnalito lectura = Lectura(p.Analito);
+        if (lectura.Severidad == "urgente") return "chip--problema";
         if (lectura.PideAlgo) return "chip--atencion";
         if (!p.HaySerie) return "chip--sinserie";
         return "chip--estable";
@@ -820,6 +855,7 @@ else
     {
         InterpretacionDeAnalito lectura = Lectura(t.Analito);
         if (lectura.SugiereRepetirElExamen) return "chip--repetir";
+        if (lectura.Severidad == "urgente") return "chip--problema";
         if (lectura.PideAlgo) return "chip--atencion";
         if (!t.HaySerie) return "chip--sinserie";
         return "chip--estable";

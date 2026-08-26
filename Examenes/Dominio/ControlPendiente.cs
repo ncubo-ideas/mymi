@@ -78,8 +78,22 @@ namespace Examenes.Dominio
 			{
 				if (!EstaVencido) return Severidad.Informativo;
 				return DiasDesdeLaUltima > DiasRecomendados * 2
-					? Severidad.ConsultaMedica
-					: Severidad.Seguimiento;
+					? Severidad.ConsultePronto
+					: Severidad.Vigilar;
+			}
+		}
+
+		// Que hacer con el control vencido, con su plazo. Apenas vencido puede esperar
+		// al mes; al doble del intervalo la serie dejo de ser util y ya no conviene
+		// seguir empujando la fecha.
+		public Accion Accion
+		{
+			get
+			{
+				if (!EstaVencido) return null;
+				return DiasDesdeLaUltima > DiasRecomendados * 2
+					? Examenes.Dominio.Accion.RepetirElExamen(Plazo.EstaSemana)
+					: Examenes.Dominio.Accion.RepetirElExamen(Plazo.EsteMes);
 			}
 		}
 
@@ -87,7 +101,7 @@ namespace Examenes.Dominio
 		public string Nombre => Analito.Nombre;
 		public string ParaMostrar => Analito.ParaMostrar;
 		public string NombreDeLaSeveridad => Severidad.Nombre;
-		public string QueHacer => Severidad.QueHacer;
+		public string AccionLegible => Accion == null ? "" : Accion.Legible;
 
 		public string ParaSonia
 		{

@@ -82,6 +82,10 @@ else
                 @(presencia.PositivasSeguidas >= 2
                     ? $"· {presencia.PositivasSeguidas} seguidas al final"
                     : "")
+                @if (interpretacion.ReferenciaLegible.Length > 0)
+                {
+                    <text>· @interpretacion.ReferenciaLegible</text>
+                }
             </p>
 
             <PresenciaEnElTiempo Pruebas="pruebas"
@@ -91,7 +95,7 @@ else
 
         @if (interpretacion.PideAlgo)
         {
-            <div class="aviso @(interpretacion.Severidad == "atencion inmediata" ? "aviso--problema" : "aviso--atencion")" style="margin-top:22px">
+            <div class="aviso @(interpretacion.Severidad == "urgente" ? "aviso--problema" : "aviso--atencion")" style="margin-top:22px">
                 <strong>@interpretacion.Veredicto.</strong>
                 @interpretacion.ParaSonia. No es un diagnóstico: es la lectura de tu propia
                 serie. Lo que corresponde es <strong>@interpretacion.Accion</strong>.
@@ -99,7 +103,7 @@ else
         }
         else if (interpretacion.ParaSonia.Length > 0)
         {
-            <div class="aviso" style="margin-top:22px;border-left-color:var(--pino)">
+            <div class="aviso" style="margin-top:22px;border-left-color:var(--bien)">
                 @interpretacion.ParaSonia.
             </div>
         }
@@ -136,6 +140,10 @@ else
         @if (lectura.Mediciones == 1)
         {
             <p class="cifra-par">@Valor(lectura.ValorFinal)<span class="unidad">@lectura.Unidad</span></p>
+            @if (interpretacion.ReferenciaLegible.Length > 0)
+            {
+                <p class="apunte">referencia: @interpretacion.ReferenciaLegible</p>
+            }
         }
     }
     else
@@ -151,6 +159,10 @@ else
             en @lectura.Dias @(lectura.Dias == 1 ? "día" : "días"),
             sobre @lectura.Mediciones mediciones
             @(lectura.Cambio >= 0 ? "· subió " : "· bajó ")@Valor(Math.Abs(lectura.Cambio)) @lectura.Unidad
+            @if (interpretacion.ReferenciaLegible.Length > 0)
+            {
+                <text>· referencia: @interpretacion.ReferenciaLegible</text>
+            }
         </p>
 
         @* LA FORMA, la misma que en la tarjeta y por la misma razón: el dominio dice cuál
@@ -189,7 +201,7 @@ else
         }
         else
         {
-            <div class="aviso" style="margin-top:22px;border-left-color:var(--pino)">
+            <div class="aviso" style="margin-top:22px;border-left-color:var(--bien)">
                 Se mantiene dentro de lo esperable para tu historia.
             </div>
         }
@@ -298,6 +310,7 @@ else
     private string Insignia()
     {
         if (interpretacion.SugiereRepetirElExamen) return "chip--repetir";
+        if (interpretacion.Severidad == "urgente") return "chip--problema";
         if (interpretacion.PideAlgo) return "chip--atencion";
         return "chip--estable";
     }
@@ -332,7 +345,12 @@ else
             if (i > 0)
             {
                 decimal cambio = punto.Valor - puntos[i - 1].Valor;
-                int dias = (punto.Fecha - puntos[i - 1].Fecha).Days;
+                // TotalDays y NO .Days: el corelib recortado del runtime browser-wasm no
+                // trae TimeSpan.get_Days y el detalle reventaba SOLO publicado — con
+                // dotnet run andaba. MEDIDO: strings sobre System.Private.CoreLib.*.wasm
+                // encuentra get_TotalDays y no get_Days. El dominio ya usa TotalDays en
+                // todos lados, por eso el resto de la app no lo sufria.
+                int dias = (int)(punto.Fecha - puntos[i - 1].Fecha).TotalDays;
                 salto = $"{(cambio >= 0 ? "+" : "−")}{Valor(Math.Abs(cambio))} en {dias} {(dias == 1 ? "día" : "días")}";
             }
 
@@ -354,7 +372,8 @@ else
             string salto = "";
             if (i > 0)
             {
-                int dias = (prueba.Fecha - pruebas[i - 1].Fecha).Days;
+                // TotalDays por lo mismo que en Pasos(): get_Days no existe publicado.
+                int dias = (int)(prueba.Fecha - pruebas[i - 1].Fecha).TotalDays;
                 salto = $"{dias} {(dias == 1 ? "día" : "días")} después";
             }
 
