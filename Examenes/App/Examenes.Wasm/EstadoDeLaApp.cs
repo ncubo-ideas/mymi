@@ -83,22 +83,6 @@ public sealed class EstadoDeLaApp : IAsyncDisposable
 
 	public ValueTask<bool> EstaInstalada() => puente.EstaInstalada();
 
-	// ------------------------------------------------- lo que la IA puede consultar
-
-	public bool ConsultaDeLaIAPermitida(string consulta) =>
-		api is null ? true : api.ConsultaDeLaIAPermitida(consulta);
-
-	public int ConsultasDenegadas() => api is null ? 0 : api.ConsultasDenegadas();
-
-	// Cambiar un permiso es un COMANDO: se journaliza y por eso hay que bajarlo a disco,
-	// igual que un examen. Si no, el servidor MCP seguiria leyendo el permiso viejo.
-	public void PermitirConsultaDeLaIA(string consulta, bool permitida)
-	{
-		if (api is null) return;
-
-		api.PermitirConsultaDeLaIA(consulta, permitida);
-		_ = BajarADisco();
-	}
 
 	public ValueTask<string> ModoRecordado() => puente.ModoRecordado();
 
