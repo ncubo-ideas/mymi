@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Globalization;
 using System.IO;
 using System.Net.Http;
@@ -29,7 +30,6 @@ namespace Examenes.Consola
 					case "estado":    return Estado(Carpeta(args, 1));
 					case "tendencia": return TendenciaDe(args);
 					case "velocidad": return VelocidadDe(args);
-					case "permisos":  return Permisos(args);
 					// El token ya no se pega a mano: la app lo pide sola contra su device key.
 					case "refrescar": return await Refrescar(args);
 					default:          Ayuda(); return 1;
@@ -143,6 +143,10 @@ namespace Examenes.Consola
 			Console.WriteLine(api.ListaDeExamenes());
 
 			Console.WriteLine();
+			Console.WriteLine("-- el cuadro historico, ya rearmado desde las celdas planas --");
+			ImprimirCuadro(api);
+
+			Console.WriteLine();
 			Console.WriteLine("-- LA PREGUNTA QUE NINGUNA PANTALLA CONTESTA --");
 			foreach (string analito in api.Analitos()) ImprimirTendencia(api, analito);
 
@@ -155,6 +159,44 @@ namespace Examenes.Consola
 			Console.WriteLine($"TENDENCIAS CORRECTAS        : {antigenoOk && colesterolOk}");
 		}
 
+		// El cuadro rearmado, que es exactamente lo que hace la pantalla: ubicar cada
+		// celda por sus dos indices y dejar vacio lo que el dominio no mando. Aca no se
+		// decide nada; si la grilla sale mal, esta mal el dominio.
+		private static void ImprimirCuadro(ExamenesAPI api)
+		{
+			IReadOnlyList<CeldaEnCuadro> celdas = api.Cuadro();
+			if (celdas.Count == 0) { Console.WriteLine("  (sin examenes)"); return; }
+
+			int filas = 0, columnas = 0;
+			foreach (CeldaEnCuadro c in celdas)
+			{
+				if (c.Fila + 1 > filas) filas = c.Fila + 1;
+				if (c.Columna + 1 > columnas) columnas = c.Columna + 1;
+			}
+
+			var grilla = new string[filas, columnas];
+			var nombres = new string[filas];
+			var fechas = new string[columnas];
+			foreach (CeldaEnCuadro c in celdas)
+			{
+				grilla[c.Fila, c.Columna] = c.Expresado;
+				nombres[c.Fila] = c.ParaMostrar;
+				fechas[c.Columna] = c.Fecha.ToString("dd/MM/yyyy", CultureInfo.InvariantCulture);
+			}
+
+			Console.Write($"  {"",-22}");
+			for (int j = 0; j < columnas; j++) Console.Write($"{fechas[j],14}");
+			Console.WriteLine();
+
+			for (int i = 0; i < filas; i++)
+			{
+				Console.Write($"  {nombres[i],-22}");
+				for (int j = 0; j < columnas; j++)
+					Console.Write($"{(grilla[i, j] ?? "-"),14}");
+				Console.WriteLine();
+			}
+		}
+
 		private static void ImprimirTendencia(ExamenesAPI api, string analito)
 		{
 			TendenciaDeAnalito t = api.Tendencia(analito);
@@ -165,9 +207,17 @@ namespace Examenes.Consola
 				? $"paso de {Formato(t.ValorInicial)} a {Formato(t.ValorFinal)} {t.Unidad} en {t.Dias} {(t.Dias == 1 ? "dia" : "dias")}"
 				: $"una sola medicion ({Formato(t.ValorFinal)} {t.Unidad}): todavia no hay serie";
 
-			Console.WriteLine($"  {analito,-22} {t.Tendencia,-20} {relato}");
-			if (t.ExigeAtencion) Console.WriteLine($"  {"",-22} ^ exige atencion");
-			if (t.SugiereRepetirElExamen) Console.WriteLine($"  {"",-22} ^ conviene repetir el examen");
+			// Se imprime ParaMostrar y no el analito con el que se pregunto: la llave es
+			// para buscar, el nombre para mostrar es para leer.
+			Console.WriteLine($"  {t.ParaMostrar,-22} {t.Tendencia,-20} {relato}");
+
+			// La LECTURA la da el analito, no esta caratula. Antes esta funcion decidia
+			// que imprimir mirando un bool generico; ahora solo muestra lo que el analito
+			// concluyo, incluida la accion.
+			InterpretacionDeAnalito lectura = api.Interpretacion(analito);
+			Console.WriteLine($"  {"",-22} {lectura.Veredicto}: {lectura.ParaSonia}");
+			if (lectura.PideAlgo)
+				Console.WriteLine($"  {"",-22} ^ {lectura.Severidad} - {lectura.Accion}");
 
 			// La velocidad solo se dice donde significa algo. Que el colesterol no la
 			// muestre no es un hueco de la caratula: es el analito contestando que no se
@@ -222,31 +272,6 @@ namespace Examenes.Consola
 			Console.WriteLine();
 			Console.WriteLine("-- crudo (print, formatter JSON) --");
 			Console.WriteLine(api.VelocidadDe(analito));
-
-			app.Actor.GracefulExit();
-			return 0;
-		}
-
-		// Lo que la persona le deja consultar a su IA. Sirve para probar SIN browser que el
-		// toggle de verdad gobierna: se deniega aca y el servidor MCP tiene que negarse.
-		private static int Permisos(string[] args)
-		{
-			string carpeta = Carpeta(args, 1);
-			ExamenesApp app = Abrir(carpeta);
-			var api = new ExamenesAPI(app);
-
-			// permisos [carpeta] [consulta] [si|no]
-			if (args.Length >= 4)
-			{
-				bool permitir = args[3] == "si";
-				api.PermitirConsultaDeLaIA(args[2], permitir);
-				Console.WriteLine($"{args[2]} -> {(permitir ? "permitida" : "denegada")}");
-			}
-
-			Console.WriteLine();
-			foreach (string consulta in new[] { "tendencia", "velocidad", "revision" })
-				Console.WriteLine($"  {consulta,-12} {(api.ConsultaDeLaIAPermitida(consulta) ? "permitida" : "DENEGADA")}");
-			Console.WriteLine($"  denegadas    {api.ConsultasDenegadas()}");
 
 			app.Actor.GracefulExit();
 			return 0;
@@ -333,12 +358,21 @@ namespace Examenes.Consola
 			Console.WriteLine("  estado    [carpeta]                            abre el journal y reporta (correr en proceso nuevo)");
 			Console.WriteLine("  tendencia [carpeta] [analito]                  evalua la serie de un analito");
 			Console.WriteLine("  velocidad [carpeta] [analito]                  a que ritmo viene cambiando (ng/mL por ano)");
-			Console.WriteLine("  permisos  [carpeta] [consulta] [si|no]         que le deja consultar la persona a su IA");
 			Console.WriteLine("  refrescar [carpeta] [baseUrl] [recurso] [id]   trae eventos del laboratorio y los aplica de a uno");
 			Console.WriteLine();
 			Console.WriteLine("carpeta por defecto: ~/Examenes-journal");
 			Console.WriteLine("baseUrl por defecto: http://localhost:8091/");
-			Console.WriteLine("analitos           : 'Antigeno prostatico', 'Colesterol total', 'Hemoglobina', 'Colesterol LDL'");
+			// La lista sale del propio conjunto cerrado, no de un literal: agregar un
+			// analito y olvidarse de la ayuda deja de ser posible.
+			var nombres = new System.Text.StringBuilder();
+			foreach (Examenes.Dominio.Analito analito in Examenes.Dominio.Analito.Todos)
+			{
+				if (nombres.Length > 0) nombres.Append(", ");
+				nombres.Append('\'').Append(analito.Nombre).Append('\'');
+			}
+			Console.WriteLine($"analitos           : {nombres}");
+			Console.WriteLine("                     tambien responden a como los nombra cada laboratorio:");
+			Console.WriteLine("                     'PSA', 'HGB', 'LDL', y con o sin acentos y mayusculas.");
 		}
 	}
 }

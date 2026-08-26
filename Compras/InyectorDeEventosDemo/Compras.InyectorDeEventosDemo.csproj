@@ -1,0 +1,17 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!-- Herramienta de operacion de la demo: le habla a URL2 por HTTP igual que
+       cualquier operador, sin referenciar ni el dominio ni la app. Que NO tenga
+       ProjectReference es un invariante del diseno, no una omision: el proveedor
+       no conoce el dominio de la persona. -->
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net9.0</TargetFramework>
+    <Nullable>disable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <RootNamespace>Compras.InyectorDeEventosDemo</RootNamespace>
+    <AssemblyName>Compras.InyectorDeEventosDemo</AssemblyName>
+  </PropertyGroup>
+
+</Project>

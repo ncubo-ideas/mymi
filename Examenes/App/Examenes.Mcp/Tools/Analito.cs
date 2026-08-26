@@ -41,10 +41,14 @@ internal static class AnalitoDelDominio
 	/// que la rama imposible no se escribe. Eso es exactamente lo que se gana al tipar.
 	internal static string Nombre(this Analito analito) => analito switch
 	{
-		Analito.AntigenoProstatico => AntigenoProstatico.NombreDelAnalito,
-		Analito.ColesterolTotal    => Colesterol.NombreDelAnalito,
-		Analito.ColesterolLdl      => ColesterolDetallado.NombreDelAnalito,
-		Analito.Hemoglobina        => Hemoglobina.NombreDelAnalito,
+		// El namespace por delante no es ruido: en este archivo `Analito` a secas es el
+		// enum de la frontera, y el de la derecha es el conjunto cerrado del dominio. Son
+		// dos cosas distintas con el mismo nombre, y esta es justamente la linea donde se
+		// traduce una a la otra.
+		Analito.AntigenoProstatico => Examenes.Dominio.Analito.AntigenoProstatico.Nombre,
+		Analito.ColesterolTotal    => Examenes.Dominio.Analito.ColesterolTotal.Nombre,
+		Analito.ColesterolLdl      => Examenes.Dominio.Analito.ColesterolLdl.Nombre,
+		Analito.Hemoglobina        => Examenes.Dominio.Analito.Hemoglobina.Nombre,
 		_ => throw new ArgumentOutOfRangeException(nameof(analito), analito,
 			"Se agregó un analito al enum y no se lo mapeó al dominio."),
 	};

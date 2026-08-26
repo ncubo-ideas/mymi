@@ -22,8 +22,15 @@ namespace Examenes.Dominio
 		// Serie por analito. Es lo que evita recorrer todos los examenes y filtrar en
 		// cada consulta, y es la estructura que hace que "veni subiendo?" sea O(1) para
 		// encontrar la serie.
-		private readonly Dictionary<string, SerieDeAnalito> series =
-			new Dictionary<string, SerieDeAnalito>(StringComparer.OrdinalIgnoreCase);
+		// La llave es la IDENTIDAD del analito, no su nombre. El diccionario compara por
+		// referencia -Analito no define Equals- y eso es exactamente lo que se quiere: dos
+		// examenes son de la misma serie si son del mismo analito, no si el emisor escribio
+		// el nombre igual.
+		//
+		// Antes era un Dictionary<string,...> con OrdinalIgnoreCase, que resolvia las
+		// mayusculas y NADA mas: "HGB" y "Hemoglobina" seguian siendo dos series.
+		private readonly Dictionary<Analito, SerieDeAnalito> series =
+			new Dictionary<Analito, SerieDeAnalito>();
 
 		public int Edad { get; private set; }
 
@@ -76,18 +83,26 @@ namespace Examenes.Dominio
 			}
 		}
 
-		public bool TieneSerieDe(string analito)
-		{
-			ArgumentNullException.ThrowIfNullOrWhiteSpace(analito);
-			return series.ContainsKey(analito);
-		}
+		// Las cuatro consultas de abajo reciben el analito COMO TEXTO porque asi llega: de
+		// una pregunta de la IA, de un click en la pantalla, del DSL. El texto se resuelve
+		// a identidad UNA vez, en la frontera, igual que UnidadDeMedida.PorSimbolo.
+		//
+		// Y ahi se separan dos cosas que antes se confundian en una sola respuesta:
+		//
+		//   nombre que no resuelve      -> DEFECTO de quien pregunta. Revienta.
+		//   analito real, sin mediciones -> respuesta legitima. Contesta "no hay serie".
+		//
+		// Antes las dos daban "no hay datos de eso", asi que un nombre mal escrito se veia
+		// igual que un analito que la persona todavia no se hizo. Eran indistinguibles
+		// justo cuando importa distinguirlas: al agregar un sinonimo y equivocarse.
+		public bool TieneSerieDe(string analito) => series.ContainsKey(Analito.PorNombre(analito));
 
 		public SerieDeAnalito SerieDe(string analito)
 		{
-			ArgumentNullException.ThrowIfNullOrWhiteSpace(analito);
-			if (!series.TryGetValue(analito, out SerieDeAnalito serie))
+			Analito cual = Analito.PorNombre(analito);
+			if (!series.TryGetValue(cual, out SerieDeAnalito serie))
 				throw new KeyNotFoundException(
-					$"El expediente no tiene ninguna medicion de '{analito}'.");
+					$"El expediente no tiene ninguna medicion de '{cual.Nombre}'.");
 
 			return serie;
 		}
@@ -97,11 +112,52 @@ namespace Examenes.Dominio
 		// de eso" es una respuesta legitima para quien pregunta.
 		public EvaluacionDeTendencia EvaluarTendenciaDe(string analito)
 		{
-			ArgumentNullException.ThrowIfNullOrWhiteSpace(analito);
+			Analito cual = Analito.PorNombre(analito);
 
-			return series.TryGetValue(analito, out SerieDeAnalito serie)
+			return series.TryGetValue(cual, out SerieDeAnalito serie)
 				? serie.Evaluar()
-				: EvaluacionDeTendencia.SinSerie(analito, 0, null);
+				: EvaluacionDeTendencia.SinSerie(cual, 0, null);
+		}
+
+		// LO QUE EL ANALITO CONCLUYE de su propia serie: veredicto, severidad y la linea
+		// para la persona. Es la consulta que reemplaza al "exige atencion" generico.
+		//
+		// Total por la misma razon que EvaluarTendenciaDe: preguntar por un analito real
+		// del que todavia no hay nada es legitimo, y la respuesta es "no hay serie".
+		public Interpretacion InterpretarSerieDe(string analito)
+		{
+			Analito cual = Analito.PorNombre(analito);
+
+			return series.TryGetValue(cual, out SerieDeAnalito serie)
+				? serie.Interpretar(Edad)
+				: Interpretacion.SinSerie(EvaluacionDeTendencia.SinSerie(cual, 0, null));
+		}
+
+		// LO MAS URGENTE de todo el expediente. Es una pregunta que ninguna pantalla
+		// contesta hoy y que no se puede armar afuera: exige recorrer cada serie,
+		// interpretarla con el criterio de SU analito y quedarse con la mayor.
+		public Severidad SeveridadMayor
+		{
+			get
+			{
+				Severidad mayor = Severidad.Informativo;
+				foreach (KeyValuePair<Analito, SerieDeAnalito> par in series)
+					mayor = Severidad.LaMayor(mayor, par.Value.Interpretar(Edad).Severidad);
+
+				// Los examenes que NO forman serie tambien pesan, y esto es justamente lo
+				// que el feedback pedia: lo mas urgente del expediente puede ser una
+				// sangre en la orina, que no tiene tendencia ninguna, y no el analito que
+				// mas se movio. Un modelo que solo mirara series se la perderia entera.
+				foreach (Examen examen in examenes)
+				{
+					if (examen is ExamenDeOrina orina)
+						mayor = Severidad.LaMayor(mayor, orina.SeveridadDelExamen);
+					else if (examen is ExamenDeHeces heces)
+						mayor = Severidad.LaMayor(mayor, heces.SeveridadDelExamen);
+				}
+
+				return mayor;
+			}
 		}
 
 		// A que ritmo viene cambiando un analito. Total por la misma razon que
@@ -109,24 +165,122 @@ namespace Examenes.Dominio
 		// la respuesta es "no hay velocidad que dar", no una excepcion.
 		public Velocidad VelocidadDe(string analito)
 		{
-			ArgumentNullException.ThrowIfNullOrWhiteSpace(analito);
+			Analito cual = Analito.PorNombre(analito);
 
-			return series.TryGetValue(analito, out SerieDeAnalito serie)
+			return series.TryGetValue(cual, out SerieDeAnalito serie)
 				? serie.Velocidad()
-				: Examenes.Dominio.Velocidad.NoAplica(analito, "", 0m);
+				: Examenes.Dominio.Velocidad.NoAplica(cual, "", 0m);
 		}
 
 		// Los analitos de los que hay historia, para que la superficie pueda recorrerlos
 		// sin conocer la lista de clases del dominio.
+		// Salen los nombres CANONICOS: es con esos que se vuelve a preguntar, y son los
+		// que el enum del MCP conoce. El nombre para mostrar viaja en cada evaluacion.
 		public IReadOnlyList<string> Analitos
 		{
 			get
 			{
 				var nombres = new List<string>();
-				foreach (KeyValuePair<string, SerieDeAnalito> par in series) nombres.Add(par.Key);
+				foreach (KeyValuePair<Analito, SerieDeAnalito> par in series)
+					nombres.Add(par.Key.Nombre);
 				nombres.Sort(StringComparer.OrdinalIgnoreCase);
 				return nombres;
 			}
+		}
+
+		// EL CUADRO HISTORICO, plano y con indices. Ver CeldaDelCuadro para por que esto
+		// es una decision del dominio y no un acomodo de pantalla.
+		//
+		// COLUMNAS: los dias distintos en que hubo algun examen, en orden. Un dia es una
+		// visita al laboratorio, aunque haya traido cinco analitos a horas distintas.
+		//
+		// FILAS: primero las que forman serie y despues las que no, y adentro de cada
+		// grupo por nombre. Es un orden ESTABLE a proposito: si las filas se ordenaran por
+		// urgencia, el cuadro se reacomodaria solo cada vez que entra un examen, y una
+		// tabla que se mueve deja de servir para comparar contra la vez pasada.
+		//
+		// Dos mediciones del mismo analito el mismo dia colapsan en una celda y gana la
+		// ULTIMA por hora: es una remedicion, no dos columnas.
+		public IReadOnlyList<CeldaDelCuadro> CeldasDelCuadro
+		{
+			get
+			{
+			var columnas = new List<DateTime>();
+			foreach (Examen examen in examenes)
+				if (!columnas.Contains(examen.Fecha.Date)) columnas.Add(examen.Fecha.Date);
+			columnas.Sort();
+
+			var filas = new List<string>();
+			var porFila = new Dictionary<string, Examen>();
+			foreach (Examen examen in OrdenadosParaElCuadro())
+			{
+				string llave = LlaveDeFila(examen);
+				if (!filas.Contains(llave)) filas.Add(llave);
+				porFila[llave + "|" + examen.Fecha.Date.Ticks] = examen;
+			}
+
+			var celdas = new List<CeldaDelCuadro>();
+			foreach (KeyValuePair<string, Examen> par in porFila)
+			{
+				Examen examen = par.Value;
+				string llave = LlaveDeFila(examen);
+
+				// La lectura viaja SOLO para los que no forman serie. Los otros la piden
+				// por separado, porque la suya necesita la serie completa.
+				string severidad = "";
+				string paraSonia = "";
+				if (examen is ExamenDeOrina orina)
+				{
+					severidad = orina.SeveridadDelExamen.Nombre;
+					paraSonia = orina.ParaSonia;
+				}
+				else if (examen is ExamenDeHeces heces)
+				{
+					severidad = heces.SeveridadDelExamen.Nombre;
+					paraSonia = heces.ParaSonia;
+				}
+
+				celdas.Add(new CeldaDelCuadro(
+					filas.IndexOf(llave),
+					columnas.IndexOf(examen.Fecha.Date),
+					llave,
+					examen.Nombre,
+					examen.Fecha.Date,
+					examen.ResultadoExpresado,
+					examen.AportaSerie,
+					severidad,
+					paraSonia));
+			}
+
+			celdas.Sort((una, otra) => una.Fila == otra.Fila
+				? una.Columna.CompareTo(otra.Columna)
+				: una.Fila.CompareTo(otra.Fila));
+
+				return celdas;
+			}
+		}
+
+		// La llave de la fila. Para los de sangre es el nombre CANONICO del analito, y eso
+		// importa: es la llave con la que la superficie pide despues la interpretacion de
+		// esa fila. Si fuera el nombre del examen, un ColesterolDetallado -que se llama
+		// "Colesterol HDL/LDL"- no encontraria su lectura.
+		private static string LlaveDeFila(Examen examen) =>
+			examen is ExamenDeSangre deSangre ? deSangre.Analito.Nombre : examen.Nombre;
+
+		// Series primero, y adentro por nombre. Estable e independiente del orden en que
+		// llegaron los eventos.
+		private List<Examen> OrdenadosParaElCuadro()
+		{
+			var ordenados = new List<Examen>(examenes);
+			ordenados.Sort((uno, otro) =>
+			{
+				if (uno.AportaSerie != otro.AportaSerie) return uno.AportaSerie ? -1 : 1;
+
+				int porNombre = string.Compare(LlaveDeFila(uno), LlaveDeFila(otro),
+					StringComparison.OrdinalIgnoreCase);
+				return porNombre != 0 ? porNombre : uno.Fecha.CompareTo(otro.Fecha);
+			});
+			return ordenados;
 		}
 
 		// Cuantos analitos estan hoy fuera de su rango de referencia para la edad del
@@ -136,7 +290,7 @@ namespace Examenes.Dominio
 			get
 			{
 				int fuera = 0;
-				foreach (KeyValuePair<string, SerieDeAnalito> par in series)
+				foreach (KeyValuePair<Analito, SerieDeAnalito> par in series)
 				{
 					ExamenDeSangre ultimo = par.Value.Ultimo;
 					if (ultimo != null && !ultimo.EsNormalPara(Edad)) fuera++;

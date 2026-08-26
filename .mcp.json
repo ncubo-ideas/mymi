@@ -12,6 +12,13 @@
         "Gnothi.Host/bin/Debug/net9.0/Gnothi.Host.dll",
         "Modulos"
       ]
+    },
+    "compras": {
+      "command": "dotnet",
+      "args": [
+        "Compras/App/Compras.Mcp/bin/Debug/net9.0/Compras.Mcp.dll",
+        "C:\\Users\\Juan\\Compras-journal"
+      ]
     }
   }
 }

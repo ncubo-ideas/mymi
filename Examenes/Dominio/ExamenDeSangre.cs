@@ -24,9 +24,20 @@ namespace Examenes.Dominio
 	{
 		public Medicion Valor { get; private set; }
 
-		protected ExamenDeSangre(DateTime fecha, Medicion valor) : base(fecha)
+		// QUE se midio, como identidad. Es la llave de la serie: dos examenes del mismo
+		// analito forman serie aunque cada laboratorio lo haya nombrado distinto.
+		//
+		// Entra por constructor y no es abstracta. Antes cada subclase declaraba un
+		// `override string Analito` con una constante, y la subclase repetia ademas su
+		// UnidadDeMedida al armar la medicion: dos hechos sobre el mismo analito escritos
+		// en dos lugares, que podian contradecirse. Ahora los dice Analito, una vez.
+		public Analito Analito { get; private set; }
+
+		protected ExamenDeSangre(DateTime fecha, Analito analito, Medicion valor) : base(fecha)
 		{
+			ArgumentNullException.ThrowIfNull(analito);
 			ArgumentNullException.ThrowIfNull(valor);
+			Analito = analito;
 			Valor = valor;
 		}
 
@@ -35,27 +46,22 @@ namespace Examenes.Dominio
 		// constructor a proposito: una llamada virtual desde el constructor de la base
 		// corre antes de que la subclase este inicializada, y funciona solo mientras
 		// nadie la haga depender de un campo. Este helper no tiene ese riesgo.
-		protected static Medicion Medida(decimal valor, string simboloRecibido,
-			UnidadDeMedida unidadDelAnalito, string analito)
+		protected static Medicion Medida(decimal valor, string simboloRecibido, Analito analito)
 		{
-			ArgumentNullException.ThrowIfNull(unidadDelAnalito);
+			ArgumentNullException.ThrowIfNull(analito);
 
 			UnidadDeMedida recibida = UnidadDeMedida.PorSimbolo(simboloRecibido);
-			if (!recibida.EsLaMisma(unidadDelAnalito))
+			if (!recibida.EsLaMisma(analito.Unidad))
 				throw new ArgumentException(
-					$"{analito} se mide en {unidadDelAnalito.Simbolo}, y el evento lo trajo en {recibida.Simbolo}.",
+					$"{analito.Nombre} se mide en {analito.Unidad.Simbolo}, y el evento lo trajo en {recibida.Simbolo}.",
 					nameof(simboloRecibido));
 
-			return new Medicion(valor, unidadDelAnalito);
+			return new Medicion(valor, analito.Unidad);
 		}
 
 		public override bool AportaSerie => true;
 
 		public override string ResultadoExpresado => Valor.Expresado;
-
-		// El nombre del analito, que es la llave de la serie. Dos examenes del mismo
-		// analito forman serie; uno de colesterol y uno de hemoglobina no.
-		public abstract string Analito { get; }
 
 		// El rango normal para una edad. Es una funcion de la edad, no una constante:
 		// eso es lo que significa "los rangos por edad van en el codigo del dominio".
@@ -66,29 +72,44 @@ namespace Examenes.Dominio
 		// sea que alguien midio mal".
 		public abstract decimal CambioMaximoVerosimilPorDia { get; }
 
-		// A partir de que cambio absoluto (en la unidad del analito) un ascenso real
-		// deja de ser ruido y pasa a exigir atencion.
-		public abstract decimal CambioQueExigeAtencion { get; }
-
-		// Cual de las dos direcciones es la que preocupa en ESTE analito. Subir es malo
-		// para el colesterol y para el antigeno; lo que preocupa en la hemoglobina es
-		// que baje. Sin esto habria que meter un switch por analito afuera del analito,
-		// que es exactamente lo que la herencia esta evitando.
-		public abstract bool DireccionPreocupanteEsAscenso { get; }
-
-		// Cuanto puede moverse este analito POR ANO antes de que la velocidad misma sea el
-		// hallazgo, independientemente de si el valor absoluto quedo en rango.
+		// El cambio minimo que este analito considera un cambio DE VERDAD. Por debajo de
+		// esto la diferencia no se distingue de la variacion normal del propio analito
+		// mas la imprecision del metodo, asi que llamarla tendencia seria inventar.
 		//
-		// CERO significa "este analito no se interpreta por velocidad", y es una respuesta
-		// legitima, no un valor faltante: la velocidad del PSA en ng/mL por ano es un
-		// criterio clinico real, y "el colesterol subio 12 mg/dL por ano" no es nada que
-		// nadie use. Un solo miembro y un predicado derivado de el, para que no puedan
-		// contradecirse.
-		public abstract decimal VelocidadQueExigeAtencionPorAno { get; }
+		// Antes se llamaba CambioQueExigeAtencion, y el nombre conflacionaba dos cosas
+		// que este cambio separa: que algo se haya movido de verdad, y que ese movimiento
+		// exija algo. Un colesterol que baja 60 mg/dL se movio de verdad Y no exige nada.
+		public abstract decimal CambioMinimoSignificativo { get; }
 
-		public bool SeLeePorVelocidad => VelocidadQueExigeAtencionPorAno > 0m;
+		// HACIA DONDE conviene que se mueva este analito. Reemplaza al bool
+		// DireccionPreocupanteEsAscenso, que solo sabia contestar "asciende o desciende"
+		// y no tenia como decir que lo bueno es quedarse quieto.
+		public abstract DireccionDeseable Direccion { get; }
+
+		// LA UNICA OPERACION QUE TODOS LOS ANALITOS TIENEN EN COMUN, y la razon de que la
+		// herencia aca no sea decorativa.
+		//
+		// No hay un algoritmo generico que reciba umbrales y devuelva el mismo veredicto
+		// para todos: cada analito lee SU serie con SU criterio. Un colesterol bajando
+		// desde un pico y un antigeno subiendo tienen la misma forma y conclusiones
+		// opuestas, y esa diferencia es conocimiento clinico, no configuracion.
+		//
+		// Todo lo demas que cada analito sabe hacer -la velocidad del antigeno, el nivel
+		// habitual del colesterol, el grado de anemia- vive SOLO en el analito que lo
+		// tiene, y no aparece aca. Si un metodo sirve para todos, esta en el nivel
+		// equivocado.
+		// Recibe la EDAD por la misma razon que RangoPara: un veredicto que mira el rango
+		// depende de ella, y el dominio no lee el reloj ni guarda un estado mutable para
+		// esquivarlo.
+		public abstract Interpretacion Interpretar(SerieDeAnalito serie, int edad);
 
 		public ClasificacionDeValor ClasificarPara(int edad) => RangoPara(edad).Clasificar(Valor);
+
+		// Si el valor se movio lo suficiente como para llamarlo cambio. Vive en la base
+		// porque la comparacion es la misma para todos; el UMBRAL, que es lo que cambia
+		// por analito, lo pone cada uno.
+		public bool EsCambioReal(decimal cambio) =>
+			Math.Abs(cambio) >= CambioMinimoSignificativo;
 
 		public bool EsNormalPara(int edad) => RangoPara(edad).Contiene(Valor);
 	}

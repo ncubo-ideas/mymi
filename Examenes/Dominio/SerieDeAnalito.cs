@@ -13,21 +13,29 @@ namespace Examenes.Dominio
 	//      considera biologicamente verosimil -> SaltoInverosimil: alguien midio mal, y
 	//      lo que corresponde es repetir el examen, no asustar al paciente.
 	//   3. El cambio no llega al umbral significativo del analito -> Estable.
-	//   4. Si llega -> EnAscenso o EnDescenso, y se marca ExigeAtencion solo si la
-	//      direccion es la que preocupa PARA ESE analito.
+	//   4. Si llega -> EnAscenso o EnDescenso. Si esa direccion es buena o mala NO se
+	//      decide aca: lo contesta el analito en Interpretar().
 	//
 	// Los umbrales los aporta el analito (CambioMaximoVerosimilPorDia,
-	// CambioQueExigeAtencion, DireccionPreocupanteEsAscenso). El algoritmo es uno; el
-	// conocimiento clinico es de cada subclase.
+	// CambioMinimoSignificativo, Direccion). El algoritmo es uno; el conocimiento clinico
+	// es de cada subclase.
+	//
+	// ESTO ES LA CAPA DE LOS HECHOS, no la de la lectura. Evaluar() dice que paso -para
+	// donde, cuanto, en cuantos dias- con reglas que valen para cualquier magnitud
+	// continua. Que SIGNIFICA lo dice Interpretar(), que delega en el analito, porque un
+	// colesterol bajando y una hemoglobina bajando son el mismo hecho y conclusiones
+	// opuestas.
 	public class SerieDeAnalito
 	{
 		private readonly List<ExamenDeSangre> mediciones = new List<ExamenDeSangre>();
 
-		public string Analito { get; private set; }
+		// La identidad del analito, no su nombre. Es lo que hace que dos hojas que
+		// escriben "HEMOGLOBINA" y "HGB" caigan en ESTA serie y no en dos.
+		public Analito Analito { get; private set; }
 
-		public SerieDeAnalito(string analito)
+		public SerieDeAnalito(Analito analito)
 		{
-			ArgumentNullException.ThrowIfNullOrWhiteSpace(analito);
+			ArgumentNullException.ThrowIfNull(analito);
 			Analito = analito;
 		}
 
@@ -41,9 +49,10 @@ namespace Examenes.Dominio
 		public void Agregar(ExamenDeSangre examen)
 		{
 			ArgumentNullException.ThrowIfNull(examen);
-			if (examen.Analito != Analito)
+			if (!examen.Analito.EsElMismo(Analito))
 				throw new ArgumentException(
-					$"Un examen de '{examen.Analito}' no pertenece a la serie de '{Analito}'.", nameof(examen));
+					$"Un examen de '{examen.Analito.Nombre}' no pertenece a la serie de '{Analito.Nombre}'.",
+					nameof(examen));
 
 			int posicion = mediciones.Count;
 			while (posicion > 0 && mediciones[posicion - 1].Fecha > examen.Fecha) posicion--;
@@ -91,7 +100,7 @@ namespace Examenes.Dominio
 
 				if (Math.Abs(cambioDelPaso) / DiasParaLaTasa(diasDelPaso) > actual.CambioMaximoVerosimilPorDia)
 					return new EvaluacionDeTendencia(Analito, Tendencia.SaltoInverosimil, mediciones.Count,
-						anterior.Valor, actual.Valor, diasDelPaso, cambioDelPaso, false);
+						anterior.Valor, actual.Valor, diasDelPaso, cambioDelPaso);
 			}
 
 			ExamenDeSangre primero = mediciones[0];
@@ -102,17 +111,18 @@ namespace Examenes.Dominio
 			int dias = Dias(primero, ultimo);
 
 			// Regla 2: cambio real pero por debajo del umbral significativo del analito.
-			if (magnitud < ultimo.CambioQueExigeAtencion)
+			if (!ultimo.EsCambioReal(cambio))
 				return new EvaluacionDeTendencia(Analito, Tendencia.Estable, mediciones.Count,
-					primero.Valor, ultimo.Valor, dias, cambio, false);
+					primero.Valor, ultimo.Valor, dias, cambio);
 
 			// Regla 3: cambio significativo. La direccion es un hecho; que preocupe depende
 			// del analito.
+			// Solo la DIRECCION, que es un hecho. Si esa direccion es buena o mala lo dice
+			// Interpretar(), porque depende del analito.
 			Tendencia tendencia = cambio > 0 ? Tendencia.EnAscenso : Tendencia.EnDescenso;
-			bool exigeAtencion = ultimo.DireccionPreocupanteEsAscenso ? cambio > 0 : cambio < 0;
 
 			return new EvaluacionDeTendencia(Analito, tendencia, mediciones.Count,
-				primero.Valor, ultimo.Valor, dias, cambio, exigeAtencion);
+				primero.Valor, ultimo.Valor, dias, cambio);
 		}
 
 		// LA OTRA operacion de la serie, y la que el antigeno prostatico exige: cuanto se
@@ -129,23 +139,49 @@ namespace Examenes.Dominio
 		// Dos mediciones el MISMO dia no dan una velocidad: un cociente sobre cero dias no
 		// es un ritmo anual, es una division por cero disfrazada. Ese caso ya lo atrapa
 		// Evaluar() como salto inverosimil, que es la lectura correcta.
+		// LA VELOCIDAD NO ES UNA CAPACIDAD DE TODO ANALITO. Antes lo parecia: la base
+		// declaraba VelocidadQueExigeAtencionPorAno y tres de los cuatro analitos
+		// devolvian cero para decir "a mi no me preguntes". Eso es exactamente el metodo
+		// que sirve para todos y esta en el nivel equivocado.
+		//
+		// Ahora existe solo en AntigenoProstatico, que es de quien es: "la glucosuria
+		// subio 1,5 cruces por ano" no es nada, y "el PSA subio 2,2 ng/mL por ano" es un
+		// criterio clinico. Esta consulta sigue siendo TOTAL para que la superficie pueda
+		// preguntarle a cualquier analito sin saber cual la tiene.
 		public Velocidad Velocidad()
 		{
 			ExamenDeSangre ultimo = Ultimo;
 			string unidad = ultimo == null ? "" : ultimo.Valor.Unidad.Simbolo;
-			decimal umbral = ultimo == null ? 0m : ultimo.VelocidadQueExigeAtencionPorAno;
 
-			if (mediciones.Count < 2) return Examenes.Dominio.Velocidad.NoAplica(Analito, unidad, umbral);
-
-			ExamenDeSangre anterior = mediciones[mediciones.Count - 2];
-			int dias = Dias(anterior, ultimo);
-			if (dias <= 0) return Examenes.Dominio.Velocidad.NoAplica(Analito, unidad, umbral);
-
-			decimal cambio = ultimo.Valor.DiferenciaDesde(anterior.Valor);
-			decimal porAno = cambio * DiasDelAno / dias;
-
-			return Examenes.Dominio.Velocidad.Medida(Analito, porAno, unidad, dias, umbral);
+			return ultimo is AntigenoProstatico antigeno
+				? antigeno.VelocidadDe(this)
+				: Examenes.Dominio.Velocidad.NoAplica(Analito, unidad, 0m);
 		}
+
+		// Lo que el ANALITO concluye de esta serie. La serie sabe ordenar y sabe los
+		// hechos; que significan es del analito, y por eso esto solo delega.
+		public Interpretacion Interpretar(int edad)
+		{
+			ExamenDeSangre ultimo = Ultimo;
+			return ultimo == null
+				? Interpretacion.SinSerie(Evaluar())
+				: ultimo.Interpretar(this, edad);
+		}
+
+		// El tramo mas reciente, en dias. Lo necesita el analito que calcula velocidad y
+		// no tiene por que rehacer la aritmetica de fechas de la serie.
+		public int DiasDelUltimoTramo =>
+			mediciones.Count < 2 ? 0 : Dias(mediciones[mediciones.Count - 2], Ultimo);
+
+		// El cambio con signo del tramo mas reciente.
+		public decimal CambioDelUltimoTramo =>
+			mediciones.Count < 2
+				? 0m
+				: Ultimo.Valor.DiferenciaDesde(mediciones[mediciones.Count - 2].Valor);
+
+		// El ano que usa el dominio para anualizar, expuesto para el analito que lo
+		// necesita. Ver la nota de abajo sobre por que es una constante nombrada.
+		public static decimal DiasDeUnAno => DiasDelAno;
 
 		// El ano que usa el dominio para anualizar. Es una constante nombrada y no un 365
 		// suelto adentro de la formula, porque es una decision del modelo: se usa el ano

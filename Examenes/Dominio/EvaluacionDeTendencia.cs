@@ -14,7 +14,16 @@ namespace Examenes.Dominio
 	// Carrier por identidad: sin Equals, sin GetHashCode, no es llave de nada.
 	public class EvaluacionDeTendencia
 	{
+		// El nombre CANONICO del analito. Sigue siendo una cadena y no la identidad a
+		// proposito: esto es un carrier de proyeccion, cruza al DSL y de ahi a JSON, y del
+		// otro lado nadie puede comparar por referencia. La identidad vive en el dominio;
+		// lo que sale es su nombre.
 		public string Analito { get; private set; }
+
+		// El mismo analito escrito como se le muestra a la persona, con acentos. Va al
+		// lado del canonico y no en su lugar porque son dos cosas: uno es la llave con la
+		// que se pregunta, el otro es el texto que se lee.
+		public string AnalitoParaMostrar { get; private set; }
 		public Tendencia Tendencia { get; private set; }
 		public int CantidadDeMediciones { get; private set; }
 
@@ -27,31 +36,31 @@ namespace Examenes.Dominio
 		// Con signo: positivo si subio.
 		public decimal Cambio { get; private set; }
 
-		// Si el cambio observado va en la direccion que preocupa PARA ESTE ANALITO y
-		// alcanzo el umbral que el analito considera significativo. Lo calcula la serie,
-		// que es la que tiene a mano el analito y sus umbrales.
-		public bool ExigeAtencion { get; private set; }
-
-		public EvaluacionDeTendencia(string analito, Tendencia tendencia, int cantidadDeMediciones,
-			Medicion primero, Medicion ultimo, int diasTranscurridos, decimal cambio, bool exigeAtencion)
+		// YA NO LLEVA "exigeAtencion". Era un juicio guardado adentro de un objeto de
+		// HECHOS, y se calculaba con un bool -"la direccion preocupante es el ascenso"-
+		// que no alcanzaba: a la hemoglobina lo que le conviene es quedarse quieta, y ese
+		// bool la obligaba a elegir entre subir o bajar. La lectura vive ahora en
+		// Interpretacion, que la produce el analito.
+		public EvaluacionDeTendencia(Analito analito, Tendencia tendencia, int cantidadDeMediciones,
+			Medicion primero, Medicion ultimo, int diasTranscurridos, decimal cambio)
 		{
-			ArgumentNullException.ThrowIfNullOrWhiteSpace(analito);
+			ArgumentNullException.ThrowIfNull(analito);
 			ArgumentNullException.ThrowIfNull(tendencia);
 
-			Analito = analito;
+			Analito = analito.Nombre;
+			AnalitoParaMostrar = analito.ParaMostrar;
 			Tendencia = tendencia;
 			CantidadDeMediciones = cantidadDeMediciones;
 			Primero = primero;
 			Ultimo = ultimo;
 			DiasTranscurridos = diasTranscurridos;
 			Cambio = cambio;
-			ExigeAtencion = exigeAtencion;
 		}
 
 		// Cero o una medicion: no hay serie que evaluar.
-		public static EvaluacionDeTendencia SinSerie(string analito, int cantidadDeMediciones, Medicion unico) =>
+		public static EvaluacionDeTendencia SinSerie(Analito analito, int cantidadDeMediciones, Medicion unico) =>
 			new EvaluacionDeTendencia(analito, Tendencia.Indeterminada, cantidadDeMediciones,
-				unico, unico, 0, 0m, false);
+				unico, unico, 0, 0m);
 
 		// Proyecciones escalares, para que la superficie no tenga que abrir los objetos
 		// ni el print tenga que navegar dos niveles.

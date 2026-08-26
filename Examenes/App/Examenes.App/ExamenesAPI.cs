@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using Choreography.Theater;
 using Examenes.App.Eventos;
 using Examenes.App.Vistas;
+using Examenes.Dominio;
 using Puppeteer;
 using Puppets.Portador;
 
@@ -70,23 +71,32 @@ namespace Examenes.App
 				throw new ArgumentOutOfRangeException(nameof(evento), evento.Evento,
 					"El numero de evento debe ser positivo.");
 
-			switch (evento.Examen)
-			{
-				case ExamenAgregado.Colesterol:
-					return UnValor(evento, "Colesterol");
-				case ExamenAgregado.AntigenoProstatico:
-					return UnValor(evento, "AntigenoProstatico");
-				case ExamenAgregado.Hemoglobina:
-					return UnValor(evento, "Hemoglobina");
-				case ExamenAgregado.ColesterolDetallado:
-					return ColesterolDetallado(evento);
-				case ExamenAgregado.Orina:
-					return Orina(evento);
-				default:
-					throw new ArgumentException(
-						$"Esta app no tiene comando para el examen '{evento.Examen}'. La ruta debio devolver null "
-						+ "para descartarlo.", nameof(evento));
-			}
+			if (evento.EsDeOrina) return Orina(evento);
+			if (evento.EsDeHeces) return Heces(evento);
+			if (evento.TraeFraccionamiento) return ColesterolDetallado(evento);
+
+			return UnValor(evento, ClaseDelDominio(evento.Analito));
+		}
+
+		// La ULTIMA traduccion que queda: de la identidad del analito al nombre de la clase
+		// que el comando construye. Vive aca y no en el dominio porque es un detalle del
+		// DSL -el journal guarda texto y ese texto nombra una clase-, no conocimiento
+		// clinico.
+		//
+		// Se compara por identidad y no por cadena: da igual como haya escrito el
+		// laboratorio el nombre, para cuando llega aca ya se resolvio.
+		private static string ClaseDelDominio(Analito analito)
+		{
+			if (analito.EsElMismo(Analito.ColesterolTotal)) return "Colesterol";
+			if (analito.EsElMismo(Analito.AntigenoProstatico)) return "AntigenoProstatico";
+			if (analito.EsElMismo(Analito.Hemoglobina)) return "Hemoglobina";
+
+			// El conjunto de analitos es mas grande que el de examenes construibles: el
+			// LDL entra fraccionado y el HDL no entra solo, y las dos cosas ya las filtro
+			// la ruta. Llegar aca significa que se agrego un analito y no su comando.
+			throw new ArgumentException(
+				$"Esta app no tiene comando para construir un examen de '{analito.Nombre}'. "
+				+ "La ruta debio devolver null para descartarlo.", nameof(analito));
 		}
 
 		// Los tres analitos que se construyen igual: fecha, valor y unidad. El nombre de
@@ -159,7 +169,7 @@ namespace Examenes.App
 				",
 				@"
 					{
-						examen = ExamenDeOrina(@fecha, @color, @nitritos);
+						examen = ExamenDeOrina(@fecha, @color, @nitritos, @sangre);
 						expediente.Agregar(examen);
 						bitacora.Avanzar(@evento);
 					}
@@ -169,61 +179,34 @@ namespace Examenes.App
 				p["fecha",    typeof(DateTime)] = evento.Fecha;
 				p["color",    typeof(string)]   = evento.Color;
 				p["nitritos", typeof(string)]   = evento.Nitritos ?? "";
+				p["sangre",   typeof(string)]   = evento.Sangre ?? "";
 			})
 			.PerformCheckThenCommand();
 
-		// LO QUE LA PERSONA LE DEJA CONSULTAR A SU IA. Es un comando y no una preferencia
-		// local a proposito: el servidor MCP es otro proceso y lo unico que comparte con
-		// la app es el journal. Guardado afuera, el toggle no gobernaria nada.
-		public void PermitirConsultaDeLaIA(string consulta, bool permitida)
-		{
-			ArgumentNullException.ThrowIfNullOrWhiteSpace(consulta);
-
-			// El verbo entra en el TEXTO del comando y no como parametro: asi el journal
-			// dice "permisos.Denegar('velocidad')" y se lee sin desempaquetar nada.
-			string verbo = permitida ? "Permitir" : "Denegar";
-
-			app.Using("permisos." + verbo + "(@consulta);")
+		// El examen de heces. Es su propio comando y no un parametro del de orina porque
+		// construye OTRA clase del dominio: el journal guarda "ExamenDeHeces(...)" y al
+		// reproducirlo arma esa, con su propia sangre que no se lee igual que la de orina.
+		private string Heces(ExamenAgregado evento) =>
+			app.Using(
+				scriptForChk: @"
+					Check(@evento > bitacora.UltimoEvento) Error 'evento ya procesado';
+				",
+				@"
+					{
+						examen = ExamenDeHeces(@fecha, @color, @sangre);
+						expediente.Agregar(examen);
+						bitacora.Avanzar(@evento);
+					}
+				")
 			.WithParameters(p => {
-				p["consulta", typeof(string)] = consulta;
+				p["evento", typeof(long)]     = evento.Evento;
+				p["fecha",  typeof(DateTime)] = evento.Fecha;
+				p["color",  typeof(string)]   = evento.Color;
+				p["sangre", typeof(string)]   = evento.Sangre ?? "";
 			})
-			.PerformCommand();
-		}
+			.PerformCheckThenCommand();
 
 		// ---------------------------------------------------------------- consultas
-
-		// Si la persona habilito una consulta. La usan las dos superficies: la pantalla
-		// para pintar el toggle, y el servidor MCP para negarse antes de contestar.
-		public bool ConsultaDeLaIAPermitida(string consulta)
-		{
-			ArgumentNullException.ThrowIfNullOrWhiteSpace(consulta);
-
-			using (RentedParameter alquilados = app.Actor.RentedParameters())
-			{
-				app.Actor.Using("@permitida = permisos.EstaPermitida(@consulta);")
-				.WithParameters(alquilados, p => {
-					p["consulta", typeof(string)] = consulta;
-					p[Parameter.Out, "permitida", typeof(bool)] = default;
-				})
-				.PerformQuery();
-
-				return alquilados["permitida"].GetValue<bool>();
-			}
-		}
-
-		public int ConsultasDenegadas()
-		{
-			using (RentedParameter alquilados = app.Actor.RentedParameters())
-			{
-				app.Actor.Using("@cuantas = permisos.CantidadDenegada;")
-				.WithParameters(alquilados, p => {
-					p[Parameter.Out, "cuantas", typeof(int)] = default;
-				})
-				.PerformQuery();
-
-				return alquilados["cuantas"].GetValue<int>();
-			}
-		}
 
 		// Valores TIPADOS, no texto parseado: es lo que le permite a las tools MCP
 		// devolver structuredContent con numeros de verdad, y a la UI hacer aritmetica
@@ -328,6 +311,26 @@ namespace Examenes.App
 			")
 			.PerformQuery();
 
+		// EL CUADRO HISTORICO, plano. Ver CeldaDelCuadro en el dominio para por que viaja
+		// asi: el print proyecta un solo nivel, y una coleccion de filas que a su vez
+		// tienen celdas no cruza. Los indices son los que dejan que la superficie rearme
+		// la grilla SIN volver a decidir que va donde.
+		public string CuadroHistorico() =>
+			app.Using(@"
+				foreach (celda in expediente.CeldasDelCuadro) {
+					print celda.Fila fila,
+						celda.Columna columna,
+						celda.Analito analito,
+						celda.ParaMostrar paraMostrar,
+						celda.Fecha fecha,
+						celda.Expresado expresado,
+						celda.AportaSerie aportaSerie,
+						celda.Severidad severidad,
+						celda.ParaSonia paraSonia;
+				}
+			")
+			.PerformQuery();
+
 		// LA consulta que justifica el dominio. Evalua la SERIE de un analito, no su
 		// ultimo valor.
 		//
@@ -341,6 +344,7 @@ namespace Examenes.App
 				{
 					evaluacion = expediente.EvaluarTendenciaDe(@analito);
 					print evaluacion.Analito analito,
+						evaluacion.AnalitoParaMostrar paraMostrar,
 						evaluacion.NombreDeLaTendencia tendencia,
 						evaluacion.CantidadDeMediciones mediciones,
 						evaluacion.ValorInicial valorInicial,
@@ -348,7 +352,6 @@ namespace Examenes.App
 						evaluacion.Unidad unidad,
 						evaluacion.DiasTranscurridos dias,
 						evaluacion.Cambio cambio,
-						evaluacion.ExigeAtencion exigeAtencion,
 						evaluacion.SugiereRepetirElExamen sugiereRepetirElExamen,
 						evaluacion.HaySerie haySerie;
 				}
@@ -358,6 +361,38 @@ namespace Examenes.App
 			})
 			.PerformQuery();
 		}
+
+		// LO QUE EL ANALITO CONCLUYE de su serie: veredicto, severidad, la linea para la
+		// persona y que hacer.
+		//
+		// Es la consulta que reemplaza al "exige atencion" generico. Aquella salia de un
+		// bool por analito y le ponia la misma etiqueta al antigeno subiendo y al
+		// colesterol bajando desde un pico; esta la produce cada analito con su criterio.
+		public string InterpretacionDe(string analito)
+		{
+			ArgumentNullException.ThrowIfNullOrWhiteSpace(analito);
+
+			return app.Using(@"
+				{
+					lectura = expediente.InterpretarSerieDe(@analito);
+					print lectura.Analito analito,
+						lectura.AnalitoParaMostrar paraMostrar,
+						lectura.NombreDelVeredicto veredicto,
+						lectura.NombreDeLaSeveridad severidad,
+						lectura.ParaSonia paraSonia,
+						lectura.Accion accion,
+						lectura.PideAlgo pideAlgo,
+						lectura.SugiereRepetirElExamen sugiereRepetirElExamen;
+				}
+			")
+			.WithParameters(p => {
+				p["analito", typeof(string)] = analito;
+			})
+			.PerformQuery();
+		}
+
+		public InterpretacionDeAnalito Interpretacion(string analito) =>
+			ProyeccionDeVistas.Interpretacion(InterpretacionDe(analito));
 
 		// A QUE RITMO viene cambiando un analito. Es la segunda pregunta que exige la serie
 		// completa, y para el antigeno prostatico es LA pregunta: la practica clinica no
@@ -375,6 +410,7 @@ namespace Examenes.App
 				{
 					velocidad = expediente.VelocidadDe(@analito);
 					print velocidad.Analito analito,
+						velocidad.AnalitoParaMostrar paraMostrar,
 						velocidad.PorAno porAno,
 						velocidad.Unidad unidad,
 						velocidad.DiasDelTramo dias,
@@ -404,6 +440,9 @@ namespace Examenes.App
 		// variantes que devuelven el string crudo quedan para diagnostico.
 		public IReadOnlyList<ExamenEnLista> Examenes() =>
 			ProyeccionDeVistas.Lista(ListaDeExamenes());
+
+		public IReadOnlyList<CeldaEnCuadro> Cuadro() =>
+			ProyeccionDeVistas.Cuadro(CuadroHistorico());
 
 		public TendenciaDeAnalito Tendencia(string analito) =>
 			ProyeccionDeVistas.Tendencia(TendenciaDe(analito));

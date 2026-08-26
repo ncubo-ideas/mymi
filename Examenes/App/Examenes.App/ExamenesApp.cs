@@ -38,19 +38,22 @@ namespace Examenes.App
 			")
 			.PerformCommand();
 
-			// UN UPGRADE APARTE, y no una linea mas adentro de 'semilla'. La guarda de
-			// upgrade es una-vez-por-actor: 'semilla' ya corrio en todo expediente que
-			// exista, asi que agregarle algo ahi no le llegaria a ninguno. Una clave
-			// nueva si se aplica, y en los que ya la tienen no hace nada.
+			// NO AGREGAR UN SEGUNDO upgrade ACA SIN LEER ESTO.
 			//
-			// Esto es exactamente para lo que sirve el mecanismo: migrar sin un .exe de
-			// migracion.
-			Using(@"
-				upgrade('permisos-de-la-ia') {
-					permisos = PermisosDeLaIA();
-				}
-			")
-			.PerformCommand();
+			// Hubo uno -'permisos-de-la-ia'- y dio problemas al Host. Reportado por Edgar
+			// y Jonathan con receta de reproduccion: el segundo upgrade NO asienta en la
+			// misma corrida que siembra el journal, asi que la vista de SoloLectura del
+			// MCP -que hidrata con OnHydrated vacio- rehidrataba y no encontraba el
+			// global. Las tools fallaban con algo que no era culpa del Host.
+			//
+			// Verificado en un journal real: 'semilla' y 'permisos-de-la-ia' aparecen
+			// DOS veces cada uno, o sea que la guarda una-vez-por-actor tampoco estaba
+			// conteniendo lo que parecia contener en la corrida de siembra.
+			//
+			// La funcionalidad se fue por otra razon -no era responsabilidad de esta app-,
+			// pero el mecanismo sigue siendo delicado: si alguna vez hace falta un upgrade
+			// nuevo, hay que probarlo abriendo el journal desde CERO con el MCP, no solo
+			// con la app que lo sembro.
 		}
 	}
 }

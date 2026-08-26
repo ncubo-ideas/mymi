@@ -95,6 +95,30 @@ namespace Examenes.Dominio
 		/// En nitritos coinciden; en un factor Rh no. Por eso lo contesta cada analito y no
 		/// se deduce de <see cref="EsPositivo"/> afuera.
 		public abstract bool EsHallazgo { get; }
+
+		/// <summary>QUE HACER si este hallazgo esta presente. Lo decide cada binario.</summary>
+		///
+		/// ES EL PEDIDO CENTRAL DEL FEEDBACK DE ALVARO, y el ejemplo con el que lo explico
+		/// no deja lugar a dudas:
+		///
+		///   "Sangre en las heces ⟹ quizas estrenimiento. Sangre en la orina ⟹ quizas CORRA
+		///    donde el medico, rapido."
+		///
+		/// Los dos hallazgos tienen LA MISMA FORMA: un binario positivo, fuera de lo normal.
+		/// Un modelo generico les pone la misma etiqueta y la misma frase. La accion que
+		/// exigen es radicalmente distinta, y esa distincion es conocimiento clinico DEL
+		/// ANALITO, no una decision de pantalla.
+		///
+		/// Que sea abstracto y no derivado de EsHallazgo es la clave: si se dedujera, dos
+		/// positivos darian siempre lo mismo y estariamos otra vez en la misma tabla.
+		///
+		/// Cuando no hay hallazgo la respuesta es Informativo, y eso es una respuesta: la
+		/// mayoria de los resultados no piden nada.
+		public abstract Severidad SeveridadDelHallazgo { get; }
+
+		/// <summary>La lectura para la persona, escrita por el propio analito.</summary>
+		/// Una linea, no un consejo: el consejo sale de la severidad. Ver Interpretacion.
+		public abstract string ParaSonia { get; }
 	}
 
 	/// <summary>

@@ -15,14 +15,19 @@ namespace Examenes.Dominio
 	//   el color     -> MagnitudNominal   (forma 6: no se ordena, no tiene serie)
 	//   los nitritos -> MagnitudBinaria   (forma 5: presencia, sin escala, con un
 	//                                      tercer estado que no es negativo)
+	//   la sangre    -> MagnitudBinaria   (forma 5 tambien, y NO se lee igual que los
+	//                                      nitritos: ver SangreEnOrina)
 	//
-	// Un solo examen, dos formas, y ninguna de las dos es un numero. Es el argumento de
-	// la taxonomia de Magnitud en la clase mas corta del dominio.
+	// Un solo examen, tres magnitudes, y ninguna es un numero. Que DOS de ellas sean la
+	// misma forma y pidan acciones distintas es el argumento de Alvaro en una sola clase:
+	// si la severidad se dedujera de "es positivo", estos dos darian lo mismo.
 	public sealed class ExamenDeOrina : Examen
 	{
 		public ColorDeOrina Color { get; private set; }
 
 		public Nitritos Nitritos { get; private set; }
+
+		public SangreEnOrina Sangre { get; private set; }
 
 		// El constructor de DOS argumentos existe y se queda: los journals que ya se
 		// escribieron tienen literalmente "ExamenDeOrina(@fecha, @color)" adentro, y el
@@ -30,14 +35,25 @@ namespace Examenes.Dominio
 		// seria romper expedientes ya escritos. Un examen viejo simplemente no midio
 		// nitritos, que es exactamente lo que NoRealizado significa.
 		public ExamenDeOrina(DateTime fecha, string color)
-			: this(fecha, color, null)
+			: this(fecha, color, null, null)
 		{
 		}
 
-		public ExamenDeOrina(DateTime fecha, string color, string nitritos) : base(fecha)
+		// Misma razon que la de dos argumentos: hay journals escritos con
+		// "ExamenDeOrina(@fecha, @color, @nitritos)" y el replay llama a ESA firma. Cada
+		// vez que el examen aprende a informar algo nuevo se agrega una sobrecarga; no se
+		// cambia una que ya se escribio en el registro de alguien.
+		public ExamenDeOrina(DateTime fecha, string color, string nitritos)
+			: this(fecha, color, nitritos, null)
+		{
+		}
+
+		public ExamenDeOrina(DateTime fecha, string color, string nitritos, string sangre)
+			: base(fecha)
 		{
 			Color = ColorDeOrina.PorNombre(color);
 			Nitritos = Nitritos.PorNombre(nitritos);
+			Sangre = SangreEnOrina.PorNombre(sangre);
 		}
 
 		public override string Nombre => "Examen general de orina";
@@ -47,9 +63,16 @@ namespace Examenes.Dominio
 		// este implementado" - es que la pregunta no existe.
 		public override bool AportaSerie => false;
 
-		public override string ResultadoExpresado => Nitritos.FueRealizada
-			? $"{Color.Expresado}, nitritos {Nitritos.Expresado}"
-			: Color.Expresado;
+		public override string ResultadoExpresado
+		{
+			get
+			{
+				string texto = Color.Expresado;
+				if (Nitritos.FueRealizada) texto += $", nitritos {Nitritos.Expresado}";
+				if (Sangre.FueRealizada) texto += $", sangre {Sangre.Expresado}";
+				return texto;
+			}
+		}
 
 		public bool ColorEsEsperable => Color.EsEsperable;
 
@@ -57,6 +80,35 @@ namespace Examenes.Dominio
 		// cada magnitud por SU propia anormalidad, no comparando strings afuera: un color
 		// oscuro es un hallazgo, y unos nitritos positivos tambien, por razones distintas
 		// que cada clase conoce.
-		public bool TieneHallazgo => !Color.EsEsperable || Nitritos.EsHallazgo;
+		public bool TieneHallazgo => !Color.EsEsperable || Nitritos.EsHallazgo || Sangre.EsHallazgo;
+
+		// QUE HACER con este examen: lo mas urgente que digan sus magnitudes. Cada una
+		// aporta su propia severidad, y la del examen es la mayor.
+		//
+		// Aca se ve por que la severidad no puede deducirse de "hay hallazgo": los
+		// nitritos positivos y la sangre positiva son los dos hallazgos binarios de ESTA
+		// misma tira, y no piden lo mismo.
+		public Severidad SeveridadDelExamen
+		{
+			get
+			{
+				Severidad mayor = Color.EsEsperable ? Severidad.Informativo : Severidad.Seguimiento;
+				mayor = Severidad.LaMayor(mayor, Nitritos.SeveridadDelHallazgo);
+				return Severidad.LaMayor(mayor, Sangre.SeveridadDelHallazgo);
+			}
+		}
+
+		// La lectura, armada con lo que dice cada magnitud de si misma. La pantalla no
+		// compone nada: pide esto.
+		public string ParaSonia
+		{
+			get
+			{
+				if (Sangre.EsHallazgo) return Sangre.ParaSonia;
+				if (Nitritos.EsHallazgo) return Nitritos.ParaSonia;
+				if (!Color.EsEsperable) return $"el color de la orina salió {Color.Expresado}";
+				return "sin hallazgos";
+			}
+		}
 	}
 }

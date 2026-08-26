@@ -83,22 +83,6 @@ public sealed class EstadoDeLaApp : IAsyncDisposable
 
 	public ValueTask<bool> EstaInstalada() => puente.EstaInstalada();
 
-	// ------------------------------------------------- lo que la IA puede consultar
-
-	public bool ConsultaDeLaIAPermitida(string consulta) =>
-		api is null ? true : api.ConsultaDeLaIAPermitida(consulta);
-
-	public int ConsultasDenegadas() => api is null ? 0 : api.ConsultasDenegadas();
-
-	// Cambiar un permiso es un COMANDO: se journaliza y por eso hay que bajarlo a disco,
-	// igual que un examen. Si no, el servidor MCP seguiria leyendo el permiso viejo.
-	public void PermitirConsultaDeLaIA(string consulta, bool permitida)
-	{
-		if (api is null) return;
-
-		api.PermitirConsultaDeLaIA(consulta, permitida);
-		_ = BajarADisco();
-	}
 
 	public ValueTask<string> ModoRecordado() => puente.ModoRecordado();
 
@@ -308,6 +292,16 @@ public sealed class EstadoDeLaApp : IAsyncDisposable
 	// Los analitos de los que hay historia. Es lo que la pantalla recorre para mostrar
 	// una lectura por serie, sin conocer las clases del dominio.
 	public IReadOnlyList<string> Analitos() { Exigir(); return api!.Analitos(); }
+
+	// EL CUADRO HISTORICO, plano. La pantalla lo rearma; el dominio decidio que va donde.
+	public IReadOnlyList<CeldaEnCuadro> Cuadro() { Exigir(); return api!.Cuadro(); }
+
+	// LO QUE EL ANALITO CONCLUYE. La pantalla ya no arma el consejo: lo pide.
+	public InterpretacionDeAnalito Interpretacion(string analito)
+	{
+		Exigir();
+		return api!.Interpretacion(analito);
+	}
 
 	// LA consulta que justifica la app. No es el ultimo valor: es la lectura de la serie.
 	public TendenciaDeAnalito Tendencia(string analito) { Exigir(); return api!.Tendencia(analito); }

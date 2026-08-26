@@ -1,0 +1,75 @@
+@page "/compra/{Numero}"
+@using System.Globalization
+@using Compras.App.Vistas
+@inject EstadoDeLaApp estado
+@inject NavigationManager navegacion
+
+<PageTitle>Compra @Numero</PageTitle>
+
+<button class="btn btn-link p-0 mb-3" @onclick="Volver">&larr; Mis compras</button>
+
+@if (!estado.EstaArriba)
+{
+    <div class="alert alert-secondary">La app todavía no abrió. Volvé a la lista y abrila ahí.</div>
+}
+else if (compra is null || compra.Numero.Length == 0)
+{
+    <div class="alert alert-warning">No hay ninguna compra con número «@Numero».</div>
+}
+else
+{
+    <h1 class="h4">Compra @compra.Numero</h1>
+    <p class="text-muted">
+        @compra.Fecha.ToString("dd/MM/yyyy HH:mm", CultureInfo.InvariantCulture) &middot;
+        total @Colones(compra.Total)
+    </p>
+
+    <table class="table align-middle">
+        <thead>
+            <tr>
+                <th>Producto</th><th>Categoría</th>
+                <th class="text-end">Cantidad</th><th class="text-end">Precio</th><th class="text-end">Total</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (LineaDeCompra linea in compra.Lineas)
+            {
+                <tr>
+                    <td>
+                        @linea.Descripcion
+                        <div class="small text-muted">@linea.Sku</div>
+                        @if (linea.TieneGarantia)
+                        {
+                            <span class="badge text-bg-success">con garantía</span>
+                        }
+                    </td>
+                    <td><span class="badge text-bg-light text-dark">@linea.Categoria</span></td>
+                    <td class="text-end">@linea.Cantidad</td>
+                    <td class="text-end">@Colones(linea.PrecioUnitario)</td>
+                    <td class="text-end">@Colones(linea.Total)</td>
+                </tr>
+            }
+        </tbody>
+    </table>
+}
+
+@code {
+    [Parameter] public string Numero { get; set; } = "";
+
+    private CompraDetallada? compra;
+
+    protected override void OnParametersSet()
+    {
+        // El detalle sale de consultar al actor, como todo lo que se ve. Si la compra no
+        // existe el DSL revienta con KeyNotFound; se muestra "no hay" en vez de un error.
+        if (!estado.EstaArriba) return;
+
+        try { compra = estado.Detalle(Numero); }
+        catch { compra = new CompraDetallada(); }
+    }
+
+    private void Volver() => navegacion.NavigateTo("");
+
+    private static string Colones(decimal monto) =>
+        "₡" + monto.ToString("N0", CultureInfo.InvariantCulture);
+}

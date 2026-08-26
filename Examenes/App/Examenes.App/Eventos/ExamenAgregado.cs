@@ -1,5 +1,6 @@
 using System;
 using System.Text.Json;
+using Examenes.Dominio;
 using Puppets.Portador;
 
 namespace Examenes.App.Eventos
@@ -15,28 +16,56 @@ namespace Examenes.App.Eventos
 	// proveedor. Solo se usa como ENTRADA de un PerformCommand, nunca se le muestra a la
 	// UI - lo que la pantalla ve sale siempre de un PerformQuery sobre el actor.
 	//
-	// Un solo tipo de evento con un DISCRIMINADOR de examen, en vez de cinco tipos de
-	// evento: el proveedor emite "te registre un examen" y que examen es un campo. El
-	// que traduce ese campo a una clase del dominio es ExamenesAPI, en la frontera, con
-	// un switch. El dominio nunca ve el string.
+	// EL CAMPO `examen` SE RESUELVE A UNA IDENTIDAD, NO SE COMPARA CONTRA UNA LISTA.
+	//
+	// Antes habia cinco constantes y un EsConocido que las comparaba con ==. Eso obliga al
+	// laboratorio a escribir el token exacto que esta app eligio, y ningun laboratorio
+	// real hace eso: medido sobre tres reportes del mismo paciente, la hemoglobina llega
+	// como "HEMOGLOBINA" en uno y como "HGB" en otro. Con == el segundo se descarta en
+	// silencio, que es la peor forma de perder un dato: sin error y sin rastro.
+	//
+	// Ahora el nombre entra por Analito.PorNombre, que es la misma frontera que ya usaba
+	// UnidadDeMedida.PorSimbolo. El emisor escribe como escribe y el mensaje sale con la
+	// identidad ya resuelta, asi que de aca para adentro nadie vuelve a mirar una cadena.
 	public sealed class ExamenAgregado : IMensajeDeEvento
 	{
 		public const string TipoDeEvento = "ExamenAgregado";
 
-		// Los examenes que ESTA app sabe aplicar. Un examen que no este aca se descarta
-		// en la ruta: el proveedor puede emitir mas de los que la app modela.
-		public const string Colesterol = "Colesterol";
-		public const string ColesterolDetallado = "ColesterolDetallado";
-		public const string AntigenoProstatico = "AntigenoProstatico";
-		public const string Hemoglobina = "Hemoglobina";
+		// El unico token que NO es un analito y por eso sigue siendo una constante: la
+		// orina es otro tipo de muestra, no otra sustancia medida. No da un numero, da un
+		// color y unos nitritos, y en el dominio no es un ExamenDeSangre.
 		public const string Orina = "Orina";
+
+		// La tercera muestra. Es su propio token por la misma razon que la orina: no es
+		// otra sustancia medida, es otra muestra, y en el dominio no es un ExamenDeSangre.
+		public const string Heces = "Heces";
+
+		// Token de FORMA, no de analito, y el unico que queda. Dice "colesterol
+		// fraccionado", o sea LDL con su HDL al lado en el mismo examen. Se sigue
+		// aceptando porque es lo que emite URL2 hoy; un emisor que mande "LDL" con
+		// valorSecundario entra por el mismo lugar y produce el mismo mensaje.
+		private const string TokenDeColesterolFraccionado = "ColesterolDetallado";
 
 		public long Evento { get; private set; }
 		public string Tipo => TipoDeEvento;
 
-		// Cual de los cinco. Se valida en Interpretar, asi que para cuando este mensaje
-		// existe ya se sabe que la app tiene comando para el.
-		public string Examen { get; private set; }
+		// QUE se midio, ya resuelto a identidad. Null cuando el examen es de orina, que es
+		// el unico caso en que no hay un analito detras.
+		public Analito Analito { get; private set; }
+
+		// Que MUESTRA es, cuando no hay analito detras. Vacio para los de sangre.
+		public string Muestra { get; private set; }
+
+		public bool EsDeOrina => Muestra == Orina;
+
+		public bool EsDeHeces => Muestra == Heces;
+
+		public bool EsDeSangre => Analito != null;
+
+		// Si el examen trajo DOS valores: el del analito y su fraccion acompanante. Es la
+		// forma del payload y no la identidad de lo medido, y por eso viaja aparte en vez
+		// de estar codificada en el nombre.
+		public bool TraeFraccionamiento { get; private set; }
 
 		public DateTime Fecha { get; private set; }
 		public decimal Valor { get; private set; }
@@ -48,6 +77,12 @@ namespace Examenes.App.Eventos
 		// estado legitimo del urianalisis y distinto de un negativo. El dominio lo
 		// resuelve a Nitritos.NoRealizado; aca no se decide nada, solo se transporta.
 		public string Nitritos { get; private set; }
+
+		// La sangre oculta. El MISMO campo sirve para orina y para heces, y eso no es
+		// pereza: en el wire es un binario con las mismas tres palabras. Lo que cambia
+		// -que una espere a la proxima cita y la otra no- lo decide el dominio segun a que
+		// examen entra, no el emisor.
+		public string Sangre { get; private set; }
 
 		private ExamenAgregado() { }
 
@@ -64,40 +99,60 @@ namespace Examenes.App.Eventos
 				using JsonDocument documento = JsonDocument.Parse(senal.Contenido);
 				JsonElement raiz = documento.RootElement;
 
-				string examen = Texto(raiz, "examen");
-				if (!EsConocido(examen)) return null;
+				string queSeMidio = Texto(raiz, "examen");
+				if (queSeMidio.Length == 0) return null;
 
+				// Sin fecha no se puede ordenar en una serie, que es para lo que existe
+				// este dominio. Se exige antes que nada.
 				if (!raiz.TryGetProperty("fecha", out JsonElement fechaElemento)
 					|| !fechaElemento.TryGetDateTime(out DateTime fecha)) return null;
 
 				string color = Texto(raiz, "color");
 				string unidad = Texto(raiz, "unidad");
+				// OJO CON ESTO, y esta medido contra el emisor real: la PRESENCIA del campo
+				// no dice nada. URL2 serializa `valorSecundario` en TODOS los eventos
+				// porque es un decimal no anulable, asi que llega en cero hasta en un
+				// antigeno prostatico. Preguntando por presencia, todos los examenes
+				// parecian fraccionados y el primer Refresh reventaba con "Colesterol LDL
+				// se mide en mg/dL y el evento lo trajo en ng/mL".
+				//
+				// Lo que dice que hay fraccion es que haya un VALOR: una fraccion de cero
+				// no es una fraccion.
+				bool traeFraccionamiento = Decimal(raiz, "valorSecundario") > 0m;
 
 				// La orina no trae numero ni unidad; los de sangre no traen color. Se
 				// exige aca lo que cada uno necesita: un evento incompleto se descarta
 				// en la frontera, no revienta adentro del comando.
-				if (examen == Orina)
+				// Las dos muestras que no son sangre. Las dos necesitan color y ninguna
+				// trae numero ni unidad.
+				if (EsDeLaMuestra(queSeMidio, Orina) || EsDeLaMuestra(queSeMidio, Heces))
 				{
 					if (color.Length == 0) return null;
-				}
-				else
-				{
-					if (unidad.Length == 0) return null;
-					if (!raiz.TryGetProperty("valor", out JsonElement valorElemento)
-						|| !valorElemento.TryGetDecimal(out _)) return null;
+
+					string muestra = EsDeLaMuestra(queSeMidio, Orina) ? Orina : Heces;
+					return Armar(senal, null, false, raiz, fecha, unidad, color, muestra);
 				}
 
-				return new ExamenAgregado
-				{
-					Evento = senal.Numero,
-					Examen = examen,
-					Fecha = fecha,
-					Valor = Decimal(raiz, "valor"),
-					ValorSecundario = Decimal(raiz, "valorSecundario"),
-					Unidad = unidad,
-					Color = color,
-					Nitritos = Texto(raiz, "nitritos"),
-				};
+				Analito analito = Resolver(queSeMidio, ref traeFraccionamiento);
+
+				// Descarta, no revienta. Un laboratorio publica el perfil que se le pidio y
+				// esta app modela cinco analitos: recibir uno que no modela es lo normal,
+				// no un defecto. Es la misma razon por la que la ruta devuelve null.
+				if (analito == null) return null;
+
+				if (unidad.Length == 0) return null;
+				if (!TieneNumero(raiz, "valor")) return null;
+
+				// El LDL solo entra fraccionado, porque el dominio lo modela junto con su
+				// HDL en un mismo examen. Un LDL suelto no tiene donde aplicarse, asi que
+				// se descarta en vez de construir un examen a medias.
+				if (analito.EsElMismo(Analito.ColesterolLdl) && !traeFraccionamiento) return null;
+
+				// Y el HDL no forma serie por su cuenta: viaja como acompanante del LDL.
+				// Llegar solo es un evento que esta app no sabe aplicar.
+				if (analito.EsElMismo(Analito.ColesterolHdl)) return null;
+
+				return Armar(senal, analito, traeFraccionamiento, raiz, fecha, unidad, color, "");
 			}
 			catch (JsonException)
 			{
@@ -105,9 +160,47 @@ namespace Examenes.App.Eventos
 			}
 		}
 
-		private static bool EsConocido(string examen) =>
-			examen == Colesterol || examen == ColesterolDetallado || examen == AntigenoProstatico
-			|| examen == Hemoglobina || examen == Orina;
+		// La traduccion del campo `examen` a identidad, con el unico token de forma que
+		// queda. Devuelve null para lo que esta app no modela.
+		private static Analito Resolver(string queSeMidio, ref bool traeFraccionamiento)
+		{
+			if (string.Equals(queSeMidio, TokenDeColesterolFraccionado,
+				StringComparison.OrdinalIgnoreCase))
+			{
+				traeFraccionamiento = true;
+				return Analito.ColesterolLdl;
+			}
+
+			// EsConocido y no PorNombre: aca un nombre que no resuelve NO es un defecto.
+			// PorNombre revienta, que es lo correcto cuando alguien PREGUNTA por un analito
+			// -es un error de quien pregunta- y es lo incorrecto cuando un laboratorio
+			// PUBLICA uno que esta app no modela, que es lo esperable.
+			return Analito.EsConocido(queSeMidio) ? Analito.PorNombre(queSeMidio) : null;
+		}
+
+		private static ExamenAgregado Armar(SenalDeEvento senal, Analito analito,
+			bool traeFraccionamiento, JsonElement raiz, DateTime fecha, string unidad, string color,
+			string muestra) =>
+			new ExamenAgregado
+			{
+				Evento = senal.Numero,
+				Analito = analito,
+				Muestra = muestra,
+				TraeFraccionamiento = traeFraccionamiento,
+				Fecha = fecha,
+				Valor = Decimal(raiz, "valor"),
+				ValorSecundario = Decimal(raiz, "valorSecundario"),
+				Unidad = unidad,
+				Color = color,
+				Nitritos = Texto(raiz, "nitritos"),
+				Sangre = Texto(raiz, "sangre"),
+			};
+
+		private static bool EsDeLaMuestra(string examen, string muestra) =>
+			string.Equals(examen, muestra, StringComparison.OrdinalIgnoreCase);
+
+		private static bool TieneNumero(JsonElement raiz, string nombre) =>
+			raiz.TryGetProperty(nombre, out JsonElement e) && e.TryGetDecimal(out _);
 
 		private static string Texto(JsonElement raiz, string nombre) =>
 			raiz.TryGetProperty(nombre, out JsonElement e) && e.ValueKind == JsonValueKind.String
