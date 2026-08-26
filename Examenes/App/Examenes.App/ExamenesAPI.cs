@@ -311,6 +311,26 @@ namespace Examenes.App
 			")
 			.PerformQuery();
 
+		// LO MAS URGENTE DE TODO EL EXPEDIENTE. Es la unica consulta que mira el expediente
+		// ENTERO y no un analito, y la unica que contesta lo que la persona viene a
+		// preguntar cuando abre la app.
+		//
+		// Estaba en el dominio desde hace rato y no la consumia nadie. No se puede armar
+		// afuera: exige recorrer cada serie, interpretarla con el criterio de SU analito y
+		// quedarse con la mayor, y ordenar severidades es del dominio.
+		public string LoMasUrgente() =>
+			app.Using(@"
+				{
+					severidad = expediente.SeveridadMayor;
+					print severidad.Nombre severidad,
+						severidad.QueHacer accion,
+						severidad.PideAlgo pideAlgo;
+				}
+			")
+			.PerformQuery();
+
+		public LoMasUrgente Urgente() => ProyeccionDeVistas.Urgente(LoMasUrgente());
+
 		// LOS PUNTOS DE LA SERIE, con su numero. Es lo que un grafico necesita y una tabla
 		// no: el cuadro historico los da ya convertidos a texto.
 		public string PuntosDe(string analito)

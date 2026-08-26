@@ -138,6 +138,14 @@ namespace Examenes.Consola
 			// Ya no es solo "fuera de rango": un binario no tiene rango del que salirse, y
 			// una sangre oculta presente cuenta igual. Ver Expediente.AnalitosFueraDeRango.
 			Console.WriteLine($"analitos con algo que mirar : {api.AnalitosFueraDeRango()}");
+
+			// LO MAS URGENTE DE TODO EL EXPEDIENTE. Se imprime aca por la misma razon que
+			// los controles: verifica que la proyeccion del DSL trae algo. Una llave mal
+			// puesta en el print devuelve vacio, y vacio se ve igual que "no hay nada que
+			// hacer" — que es justo la respuesta que no se puede confundir.
+			LoMasUrgente urgente = api.Urgente();
+			Console.WriteLine($"lo mas urgente              : {urgente.Severidad}"
+				+ (urgente.PideAlgo ? $" - {urgente.Accion}" : " (no pide nada)"));
 			Console.WriteLine($"token guardado              : [{api.TokenGuardado()}]");
 
 			Console.WriteLine();

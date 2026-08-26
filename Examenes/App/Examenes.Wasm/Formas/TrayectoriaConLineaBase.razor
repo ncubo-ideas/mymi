@@ -26,7 +26,9 @@
             <line x1="0" y1="@Y(Techo.Valor)" x2="320" y2="@Y(Techo.Valor)" class="linea-techo" />
         }
 
-        <polyline points="@Recorrido" class="trazo" />
+        @* pathLength="1" deja que el dibujado del trazo se anime con una fracción exacta y no
+           con una longitud adivinada: el navegador reescala el dasharray al largo real. *@
+        <polyline points="@Recorrido" class="trazo" pathLength="1" />
 
         @for (int i = 0; i < Puntos.Count; i++)
         {

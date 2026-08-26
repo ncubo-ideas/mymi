@@ -113,6 +113,21 @@ namespace Examenes.App
 			return pruebas;
 		}
 
+		internal static LoMasUrgente Urgente(string json)
+		{
+			if (string.IsNullOrWhiteSpace(json)) return new LoMasUrgente();
+
+			using JsonDocument documento = JsonDocument.Parse(json);
+			JsonElement raiz = documento.RootElement;
+
+			return new LoMasUrgente
+			{
+				Severidad = Texto(raiz, "severidad"),
+				Accion = Texto(raiz, "accion"),
+				PideAlgo = Booleano(raiz, "pideAlgo"),
+			};
+		}
+
 		internal static IReadOnlyList<CeldaEnCuadro> Cuadro(string json)
 		{
 			var celdas = new List<CeldaEnCuadro>();

@@ -464,3 +464,118 @@ code { font-family: var(--mono); font-size: .9em; color: var(--ambar); }
 .forma--presencia .racha { stroke: var(--ambar); stroke-width: 4; stroke-linecap: round; opacity: .45; }
 .forma--presencia .prueba { fill: var(--papel-2); stroke: var(--tinta-3); stroke-width: 2; }
 .forma--presencia .prueba--presente { fill: var(--ambar); stroke: var(--papel); stroke-width: 2; }
+
+/* ---------------------------------------------------------------- la portada
+
+   LA PRIMERA PREGUNTA. Alguien abre esta app para saber si esta bien, y lo primero que
+   veia era un boton de Refresh y el numero de evento del journal.
+
+   El TONO lo decide el dominio -es la severidad mayor de todo el expediente- y aca solo
+   se traduce a color. El ambar sigue queriendo decir una sola cosa. */
+
+.portada {
+    background: var(--papel-2);
+    border: 1px solid var(--linea);
+    border-left: 4px solid var(--tinta-3);
+    border-radius: 3px;
+    padding: 22px 26px 20px;
+    margin-bottom: 18px;
+}
+.portada--calma        { border-left-color: var(--pino); }
+.portada--seguimiento  { border-left-color: var(--tinta-3); }
+.portada--atencion     { border-left-color: var(--ambar);  background: var(--ambar-suave); }
+.portada--problema     { border-left-color: var(--rojo);   background: var(--rojo-suave); }
+
+.portada-rotulo {
+    font-family: var(--mono); font-size: 10.5px; letter-spacing: .12em;
+    text-transform: uppercase; color: var(--tinta-3);
+    margin: 0 0 10px;
+}
+
+/* El titular es la frase del DOMINIO cuando hay algo que hacer. Va en serif y grande
+   porque es lo unico que alguien necesita leer si no lee nada mas. */
+.portada-titular {
+    font-family: var(--serif); font-weight: 400;
+    font-size: clamp(25px, 5vw, 34px); line-height: 1.1;
+    letter-spacing: -.01em; margin: 0; color: var(--tinta);
+    text-wrap: balance;
+}
+.portada--atencion .portada-titular { color: var(--ambar); }
+.portada--problema .portada-titular { color: var(--rojo); }
+
+/* SOBRE QUE. Son botones y no texto porque llevan a la serie: la pregunta siguiente
+   -"¿cual de todos?"- se contesta tocando. */
+.portada-cuales { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 16px; }
+.portada-cual {
+    font: inherit; font-size: 13.5px; font-weight: 500;
+    padding: 5px 12px; cursor: pointer;
+    background: var(--papel-2); color: var(--tinta);
+    border: 1px solid var(--linea-2, var(--linea)); border-radius: 999px;
+    transition: transform .12s ease, border-color .12s ease;
+}
+.portada-cual:hover { border-color: var(--tinta-3); transform: translateY(-1px); }
+.portada-cual:focus-visible { outline: 2px solid var(--pino-cl); outline-offset: 2px; }
+
+/* LO QUE SE VIENE JUNTANDO. No es adorno: "desde ago 2022" es lo que convierte una lista
+   de examenes en un historial, y es la razon por la que a alguien le importaria seguir
+   usando esto. */
+.portada-pie {
+    display: flex; flex-wrap: wrap; gap: 6px 20px; margin-top: 18px;
+    padding-top: 14px; border-top: 1px solid var(--linea);
+    font-family: var(--mono); font-size: 11.5px; color: var(--tinta-3);
+}
+.portada-pie b { color: var(--tinta); font-weight: 500; font-size: 13px; }
+
+/* ---------------------------------------------------------------- movimiento
+
+   POCO Y CON MOTIVO. Cada forma se dibuja como se LEE: la trayectoria se traza en el
+   tiempo, la barra de progreso crece desde su partida, la aguja de la banda se acomoda,
+   y la tira de presencia aparece prueba por prueba. Nada parpadea ni rebota.
+
+   Se dispara al montar, asi que un Refresh vuelve a dibujarlo todo — que es justo cuando
+   la persona quiere ver que algo paso. */
+
+@keyframes entra-desde-abajo { from { opacity: 0; transform: translateY(8px); } }
+@keyframes se-traza         { from { stroke-dashoffset: 1; } }
+@keyframes aparece          { from { opacity: 0; transform: scale(.4); } }
+@keyframes crece-de-izquierda { from { transform: scaleX(0); } }
+
+.portada { animation: entra-desde-abajo .45s ease-out both; }
+.serie   { animation: entra-desde-abajo .45s ease-out both; }
+
+/* El trazo se dibuja de la primera medicion a la ultima. pathLength="1" en el polyline
+   hace que la fraccion sea exacta sin adivinar el largo. */
+.forma--trayectoria .trazo {
+    stroke-dasharray: 1; stroke-dashoffset: 0;
+    animation: se-traza 1s ease-out both;
+}
+.forma--trayectoria .punto { animation: aparece .3s ease-out both .55s; }
+.forma--trayectoria .punto--final,
+.forma--trayectoria .punto--atencion { animation: aparece .4s ease-out both 1s; }
+
+/* La barra crece desde la partida del episodio, que es de donde se viene. */
+.forma--progreso .avance { transform-origin: left center; animation: crece-de-izquierda .8s ease-out both .15s; }
+.forma--progreso .marca  { animation: aparece .4s ease-out both .7s; }
+
+.forma--banda .aguja { animation: aparece .5s ease-out both .25s; }
+
+/* Prueba por prueba, en orden: ver aparecer la racha es el hecho que la forma cuenta. */
+.forma--presencia .prueba { animation: aparece .35s ease-out both; }
+.forma--presencia .prueba:nth-of-type(1) { animation-delay: .15s; }
+.forma--presencia .prueba:nth-of-type(2) { animation-delay: .3s; }
+.forma--presencia .prueba:nth-of-type(3) { animation-delay: .45s; }
+.forma--presencia .prueba:nth-of-type(4) { animation-delay: .6s; }
+.forma--presencia .prueba:nth-of-type(n+5) { animation-delay: .75s; }
+.forma--presencia .racha { transform-origin: left center; animation: crece-de-izquierda .5s ease-out both .55s; }
+
+/* Quien pidio que no se mueva, no se mueve. */
+@media (prefers-reduced-motion: reduce) {
+    .portada, .serie,
+    .forma--trayectoria .trazo, .forma--trayectoria .punto,
+    .forma--trayectoria .punto--final, .forma--trayectoria .punto--atencion,
+    .forma--progreso .avance, .forma--progreso .marca,
+    .forma--banda .aguja,
+    .forma--presencia .prueba, .forma--presencia .racha {
+        animation: none;
+    }
+}
