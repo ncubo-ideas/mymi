@@ -398,6 +398,66 @@ h1:focus, h1:focus-visible { outline: none; }
 
 /* ------------------------------------------------------------------ detalle */
 
+/* CADA MEDICION, UNA POR UNA — lo que la tarjeta de la lista no puede dar.
+
+   La tarjeta comprime la serie en «pasó de 3.0 a 5.2 en 1095 días», y esa frase esconde
+   lo unico que cambia como se lee: si el cambio fue parejo o fue un salto. Tres anos
+   planchados y un salto al final tienen los mismos extremos que una subida lenta.
+
+   Por eso la columna que importa es la del SALTO, y va en mono: es una cifra, no prosa.
+   La medicion mas vieja no lleva salto porque es el punto de partida. */
+
+.mediciones { list-style: none; margin: 4px 0 0; padding: 0; }
+.medicion {
+    display: flex; align-items: baseline; gap: 18px;
+    padding: 13px 0;
+    border-bottom: 1px solid var(--linea);
+}
+.medicion:last-child { border-bottom: 0; }
+
+/* La misma columna de fecha que el historial de visitas: es la misma clase de dato, y
+   dos anchos distintos para lo mismo se leen como dos cosas distintas. */
+.medicion-fecha {
+    flex: 0 0 4.5em;
+    font-family: var(--mono); line-height: 1.25;
+}
+.medicion-dia { display: block; font-size: 13px; color: var(--tinta); text-transform: lowercase; }
+.medicion-ano { display: block; font-size: 11px; color: var(--tinta-3); }
+
+.medicion-valor {
+    flex: 0 0 6.5em;
+    font-family: var(--mono); font-size: 16px; color: var(--tinta);
+}
+.medicion-valor span { font-size: 11.5px; color: var(--tinta-3); margin-left: 3px; }
+
+.medicion-salto {
+    flex: 1;
+    font-family: var(--mono); font-size: 12.5px; color: var(--tinta-2);
+    text-align: right;
+}
+
+/* Un positivo se marca en la fila, no en una columna aparte: en un binario el resultado
+   ES el dato. El ambar mantiene su unico significado. */
+.medicion--presente .medicion-valor { color: var(--ambar); }
+
+/* --- el ritmo del ultimo tramo, cuando el analito lo tiene --- */
+
+/* No es un aviso: es una cifra con su contexto. Va sin borde de color a la izquierda
+   para no competir con el bloque de veredicto, que es el que puede pedir algo. */
+.ritmo {
+    display: flex; flex-direction: column; gap: 3px;
+    margin: 22px 0 0; padding: 14px 16px;
+    background: var(--papel-2);
+    border: 1px solid var(--linea); border-radius: 8px;
+}
+.ritmo-rotulo {
+    font-size: 11px; letter-spacing: .07em; text-transform: uppercase;
+    color: var(--tinta-3);
+}
+.ritmo-cifra { font-family: var(--mono); font-size: 19px; color: var(--tinta); }
+.ritmo-nota { font-size: 12.5px; color: var(--tinta-2); }
+.ritmo--atencion .ritmo-cifra { color: var(--ambar); }
+
 .cifra-par {
     font-family: var(--mono);
     font-size: clamp(28px, 5vw, 38px); font-weight: 500;
@@ -453,6 +513,13 @@ code { font-family: var(--mono); font-size: .9em; color: var(--ambar); }
     .serie-cabeza { flex-direction: column; gap: 8px; }
     .serie-valor { text-align: left; }
     .tabla { font-size: 14px; }
+
+    /* En angosto el salto no cabe en la misma linea sin partirse, y partido deja de ser
+       una cifra. Baja debajo del valor, alineado con el, y la fecha se queda arriba. */
+    .medicion { flex-wrap: wrap; gap: 6px 14px; }
+    .medicion-fecha { flex: 0 0 100%; }
+    .medicion-valor { flex: 0 0 auto; }
+    .medicion-salto { text-align: left; }
 }
 
 /* PRESENCIA EN EL TIEMPO — la forma de los binarios.

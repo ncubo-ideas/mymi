@@ -320,6 +320,16 @@ public sealed class EstadoDeLaApp : IAsyncDisposable
 	// LA consulta que justifica la app. No es el ultimo valor: es la lectura de la serie.
 	public TendenciaDeAnalito Tendencia(string analito) { Exigir(); return api!.Tendencia(analito); }
 
+	// A QUE RITMO viene cambiando. Es otra pregunta que la tendencia y mira otro tramo: la
+	// tendencia mira la serie entera, la velocidad mira el mas reciente. Estaba tipada en
+	// la API y no la alcanzaba ninguna caratula del browser, asi que el dominio contestaba
+	// y nadie escuchaba.
+	//
+	// La consulta es TOTAL: se le puede preguntar a cualquier analito y contesta "no
+	// aplica" donde no corresponde -hoy la velocidad solo existe en el antigeno-, asi que
+	// la pantalla no tiene que saber cual la tiene.
+	public VelocidadDeAnalito Velocidad(string analito) { Exigir(); return api!.Velocidad(analito); }
+
 	// La pregunta con la que se abre la app. Ver ExamenesAPI.LoMasUrgente.
 	public LoMasUrgente Urgente() { Exigir(); return api!.Urgente(); }
 
