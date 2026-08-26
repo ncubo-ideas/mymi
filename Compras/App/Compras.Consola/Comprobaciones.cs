@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Globalization;
 using Compras.Dominio;
 
@@ -57,6 +58,8 @@ namespace Compras.Consola
 			LaCategoriaEsDelProductoNoDeLaCompra();
 			ElPrecioSeLeePorUnidadDeMedida();
 			ElRitmoEsElDeElla();
+			LaFirmaEsLoQueNoFalla();
+			ElCambioLePoneFechaAlQuiebre();
 
 			Console.WriteLine();
 			Console.WriteLine(fallas == 0
@@ -698,6 +701,114 @@ namespace Compras.Consola
 				("HUEVOS-30", "Huevos", 1, 3300m, "LacteosYHuevos", 0)));
 			Igual("dos lineas, un ticket: no hay ritmo", "False",
 				mismoTicket.RitmoDe(Categoria.LacteosYHuevos).EsObservado.ToString());
+		}
+
+		// ---- la firma: lo que no falla ----
+		private static void LaFirmaEsLoQueNoFalla()
+		{
+			Titulo("la firma es lo que no falla");
+
+			// Cuatro compras: el cafe y la leche en todas, el pan en tres, el helado en una.
+			var semanal = new Historial();
+			for (int i = 0; i < 4; i++)
+			{
+				var lineas = new List<(string, string, int, decimal, string, int)>
+				{
+					("CAFE-500", "Café molido 500g", 1, 3200m, "GranosYAbarrotes", 0),
+					("LECHE-1L", "Leche semidescremada 1L", 2, 950m, "LacteosYHuevos", 0),
+				};
+				if (i < 3) lineas.Add(("PAN-INT", "Pan integral", 1, 1450m, "GranosYAbarrotes", 0));
+				if (i == 3) lineas.Add(("HELADO-1L", "Helado de vainilla 1L", 1, 3680m, "Azucarados", 0));
+
+				semanal.Agregar(UnaCompra($"T-{i}", new DateTime(2026, 8, 1).AddDays(i * 7), lineas.ToArray()));
+			}
+
+			FirmaDeLaCanasta firma = semanal.FirmaDeLasUltimas(4);
+			Igual("existe", "True", firma.Existe().ToString());
+			Igual("  mira las cuatro compras", "4", firma.ComprasMiradas.ToString());
+			// El helado esta en 1 de 4: no llega a la mitad y NO es su firma.
+			Igual("  tres habituales, no cuatro", "3", firma.CuantosHabituales.ToString());
+			Igual("  el que mas vuelve primero", "True",
+				(firma.Habituales[0].EstaEnTodas).ToString());
+			Igual("  y la linea los nombra", "True",
+				firma.ParaSonia.Contains("su semana tiene una firma").ToString());
+			Igual("  con el pan adentro", "True", firma.ParaSonia.Contains("Pan integral").ToString());
+			Igual("  y el helado AFUERA", "False", firma.ParaSonia.Contains("Helado").ToString());
+
+			// Sin compras no se inventa un patron.
+			Igual("historial vacio: no hay firma", "False",
+				new Historial().FirmaDeLasUltimas(4).Existe().ToString());
+			Igual("  y lo dice", "True",
+				new Historial().FirmaDeLasUltimas(4).ParaSonia.Contains("todavía no hay compras").ToString());
+
+			// Compras sin nada en comun tampoco: la firma no es "lo que compro alguna vez".
+			var dispares = new Historial();
+			dispares.Agregar(UnaCompra("T-1", new DateTime(2026, 1, 1), ("A", "Cosa A", 1, 100m, "Snacks", 0)));
+			dispares.Agregar(UnaCompra("T-2", new DateTime(2026, 1, 8), ("B", "Cosa B", 1, 100m, "Snacks", 0)));
+			dispares.Agregar(UnaCompra("T-3", new DateTime(2026, 1, 15), ("C", "Cosa C", 1, 100m, "Snacks", 0)));
+			dispares.Agregar(UnaCompra("T-4", new DateTime(2026, 1, 22), ("D", "Cosa D", 1, 100m, "Snacks", 0)));
+			Igual("nada se repite: no hay firma", "False", dispares.FirmaDeLasUltimas(4).Existe().ToString());
+
+			Revienta("mirar cero compras revienta", () => semanal.FirmaDeLasUltimas(0));
+		}
+
+		// ---- el cambio le pone FECHA al quiebre ----
+		private static void ElCambioLePoneFechaAlQuiebre()
+		{
+			Titulo("el cambio le pone fecha al quiebre");
+
+			// Antes: cafe, leche y fruta todas las semanas. Desde marzo entra el helado
+			// todas las semanas y la fruta se cae. El quiebre tiene que decir MARZO.
+			var conQuiebre = new Historial();
+			for (int i = 0; i < 4; i++)
+				conQuiebre.Agregar(UnaCompra($"A-{i}", new DateTime(2026, 1, 5).AddDays(i * 7),
+					("CAFE-500", "Café molido 500g", 1, 3200m, "GranosYAbarrotes", 0),
+					("LECHE-1L", "Leche 1L", 2, 950m, "LacteosYHuevos", 0),
+					("BANANO-KG", "Banano kg", 1, 890m, "FrutasYVerduras", 0)));
+
+			for (int i = 0; i < 4; i++)
+				conQuiebre.Agregar(UnaCompra($"B-{i}", new DateTime(2026, 3, 2).AddDays(i * 7),
+					("CAFE-500", "Café molido 500g", 1, 3200m, "GranosYAbarrotes", 0),
+					("LECHE-1L", "Leche 1L", 2, 950m, "LacteosYHuevos", 0),
+					("HELADO-1L", "Helado de vainilla 1L", 2, 3680m, "Azucarados", 0)));
+
+			CambioEnLaCanasta cambio = conQuiebre.CambioDesde(new DateTime(2026, 3, 1), 4);
+			Igual("hay cambio", "True", cambio.HayCambio.ToString());
+			Igual("  entro uno", "1", cambio.Entraron.Count.ToString());
+			Igual("  y es el helado", "Helado de vainilla 1L", cambio.Entraron[0].Descripcion);
+			Igual("  desde marzo", "2026-03", cambio.MesDelCambioExpresado);
+			Igual("  se cayo uno", "1", cambio.Salieron.Count.ToString());
+			Igual("  y es el banano", "Banano kg", cambio.Salieron[0].Descripcion);
+			Igual("  siguen dos", "2", cambio.Siguen.Count.ToString());
+			Igual("  la linea dice cuando y que", "True",
+				(cambio.ParaSonia.Contains("2026-03") && cambio.ParaSonia.Contains("Helado")).ToString());
+
+			// Y NO JUZGA: la especificacion de marca es explicita -"la app lo senala y se
+			// calla; el juicio no es suyo"-. Nada de mejor, peor, deberia ni conviene.
+			foreach (string juicio in new[] { "peor", "mejor", "debería", "conviene", "cuidado", "mal" })
+				Igual($"  la linea no dice '{juicio}'", "False",
+					cambio.ParaSonia.Contains(juicio).ToString());
+
+			// Sin quiebre lo dice sin inventar uno.
+			var estable = new Historial();
+			for (int i = 0; i < 6; i++)
+				estable.Agregar(UnaCompra($"T-{i}", new DateTime(2026, 1, 5).AddDays(i * 7),
+					("CAFE-500", "Café molido 500g", 1, 3200m, "GranosYAbarrotes", 0),
+					("LECHE-1L", "Leche 1L", 2, 950m, "LacteosYHuevos", 0)));
+
+			CambioEnLaCanasta sinCambio = estable.CambioDesde(new DateTime(2026, 1, 26), 3);
+			Igual("canasta igual: hay con que comparar", "True", sinCambio.HayConQueComparar.ToString());
+			Igual("  y no hay cambio", "False", sinCambio.HayCambio.ToString());
+			Igual("  y lo dice", "True", sinCambio.ParaSonia.Contains("viene igual").ToString());
+			Revienta("y no hay mes de cambio que dar", () => sinCambio.MesDelCambioExpresado);
+
+			// Y si de un lado no hay compras, eso NO es que la canasta cambio: es que no
+			// hay con que comparar. Lo destapo esta comprobacion.
+			CambioEnLaCanasta sinLado = estable.CambioDesde(new DateTime(2026, 6, 1), 3);
+			Igual("sin compras despues: no hay con que comparar", "False", sinLado.HayConQueComparar.ToString());
+			Igual("  y NO se afirma un cambio", "False", sinLado.HayCambio.ToString());
+			Igual("  la linea lo dice", "True",
+				sinLado.ParaSonia.Contains("los dos lados").ToString());
 		}
 
 		// Una compra con presentacion por linea (la forma nueva).

@@ -207,6 +207,157 @@ namespace Compras.Dominio
 				: Coincide(item, termino);
 
 		/// <summary>
+		/// LO QUE NO FALLA: los productos que vuelven compra tras compra, mirando las
+		/// últimas compras. Es la lectura con la que la app abre.
+		/// </summary>
+		// Se mira una cantidad de COMPRAS y no un rango de fechas: la firma es "lo de
+		// siempre", y lo de siempre se reconoce en las ultimas veces que fue al super, no
+		// en un mes del calendario.
+		public FirmaDeLaCanasta FirmaDeLasUltimas(int cuantasCompras)
+		{
+			if (cuantasCompras <= 0)
+				throw new ArgumentOutOfRangeException(nameof(cuantasCompras), cuantasCompras,
+					"Mirar cero compras no da una firma.");
+
+			IReadOnlyList<Compra> ultimas = UltimasCompras(cuantasCompras);
+			if (ultimas.Count == 0) return FirmaDeLaCanasta.Ninguna(0);
+
+			var vecesPorSku = new Dictionary<string, int>(StringComparer.OrdinalIgnoreCase);
+			var ultimaVezPorSku = new Dictionary<string, DateTime>(StringComparer.OrdinalIgnoreCase);
+
+			foreach (Compra compra in ultimas)
+			{
+				// Un producto cuenta UNA vez por compra, aunque venga en dos lineas.
+				var vistos = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+				foreach (Item item in compra.Items)
+				{
+					if (!vistos.Add(item.Sku)) continue;
+
+					vecesPorSku.TryGetValue(item.Sku, out int veces);
+					vecesPorSku[item.Sku] = veces + 1;
+
+					if (!ultimaVezPorSku.TryGetValue(item.Sku, out DateTime ultima) || compra.Fecha > ultima)
+						ultimaVezPorSku[item.Sku] = compra.Fecha;
+				}
+			}
+
+			var habituales = new List<ProductoHabitual>();
+			foreach (KeyValuePair<string, int> par in vecesPorSku)
+			{
+				decimal proporcion = (decimal)par.Value / ultimas.Count;
+				if (proporcion < FirmaDeLaCanasta.ProporcionQueLoVuelveHabitual) continue;
+
+				habituales.Add(new ProductoHabitual(par.Key, Catalogo[par.Key].Descripcion,
+					par.Value, ultimas.Count, ultimaVezPorSku[par.Key]));
+			}
+
+			// De lo que mas vuelve a lo que menos; a igual frecuencia, lo mas reciente.
+			habituales.Sort((uno, otro) =>
+			{
+				int porVeces = otro.ComprasEnQueAparece.CompareTo(uno.ComprasEnQueAparece);
+				return porVeces != 0 ? porVeces : otro.UltimaVez.CompareTo(uno.UltimaVez);
+			});
+
+			return habituales.Count == 0
+				? FirmaDeLaCanasta.Ninguna(ultimas.Count)
+				: FirmaDeLaCanasta.De(ultimas.Count, habituales);
+		}
+
+		/// <summary>
+		/// QUÉ CAMBIÓ en la canasta: los productos que entraron y se quedaron, con el mes
+		/// en que aparecieron, y los que dejaron de estar. Total: si no cambió nada, lo dice.
+		/// </summary>
+		public CambioEnLaCanasta CambioDesde(DateTime corte, int cuantasCompras)
+		{
+			if (cuantasCompras <= 0)
+				throw new ArgumentOutOfRangeException(nameof(cuantasCompras), cuantasCompras,
+					"Mirar cero compras no da un cambio.");
+
+			var antes = new List<Compra>();
+			var despues = new List<Compra>();
+			foreach (Compra compra in Ordenadas())
+				(compra.Fecha < corte ? antes : despues).Add(compra);
+
+			return new CambioEnLaCanasta(
+				FirmaDe(Ultimas(antes, cuantasCompras)),
+				FirmaDe(Primeras(despues, cuantasCompras)),
+				PrimeraVezPorSku());
+		}
+
+		// La primera vez que cada producto entro al historial. Es lo que le pone FECHA al
+		// cambio: sin esto, "entraron cosas nuevas" no dice cuando.
+		private IReadOnlyDictionary<string, DateTime> PrimeraVezPorSku()
+		{
+			var primera = new Dictionary<string, DateTime>(StringComparer.OrdinalIgnoreCase);
+			foreach (Compra compra in Ordenadas())
+				foreach (Item item in compra.Items)
+					if (!primera.TryGetValue(item.Sku, out DateTime cuando) || compra.Fecha < cuando)
+						primera[item.Sku] = compra.Fecha;
+
+			return primera;
+		}
+
+		private IReadOnlyList<Compra> UltimasCompras(int cuantas) => Ultimas(Ordenadas(), cuantas);
+
+		private static IReadOnlyList<Compra> Ultimas(IReadOnlyList<Compra> ordenadas, int cuantas)
+		{
+			var tomadas = new List<Compra>();
+			for (int i = Math.Max(0, ordenadas.Count - cuantas); i < ordenadas.Count; i++)
+				tomadas.Add(ordenadas[i]);
+
+			return tomadas;
+		}
+
+		private static IReadOnlyList<Compra> Primeras(IReadOnlyList<Compra> ordenadas, int cuantas)
+		{
+			var tomadas = new List<Compra>();
+			for (int i = 0; i < Math.Min(cuantas, ordenadas.Count); i++) tomadas.Add(ordenadas[i]);
+
+			return tomadas;
+		}
+
+		// La firma de un conjunto ya elegido de compras. Comparte el criterio con
+		// FirmaDeLasUltimas: un producto es habitual si esta en la mitad o mas.
+		private FirmaDeLaCanasta FirmaDe(IReadOnlyList<Compra> algunas)
+		{
+			if (algunas.Count == 0) return FirmaDeLaCanasta.Ninguna(0);
+
+			var vecesPorSku = new Dictionary<string, int>(StringComparer.OrdinalIgnoreCase);
+			var ultimaVezPorSku = new Dictionary<string, DateTime>(StringComparer.OrdinalIgnoreCase);
+
+			foreach (Compra compra in algunas)
+			{
+				var vistos = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+				foreach (Item item in compra.Items)
+				{
+					if (!vistos.Add(item.Sku)) continue;
+
+					vecesPorSku.TryGetValue(item.Sku, out int veces);
+					vecesPorSku[item.Sku] = veces + 1;
+
+					if (!ultimaVezPorSku.TryGetValue(item.Sku, out DateTime ultima) || compra.Fecha > ultima)
+						ultimaVezPorSku[item.Sku] = compra.Fecha;
+				}
+			}
+
+			var habituales = new List<ProductoHabitual>();
+			foreach (KeyValuePair<string, int> par in vecesPorSku)
+			{
+				decimal proporcion = (decimal)par.Value / algunas.Count;
+				if (proporcion < FirmaDeLaCanasta.ProporcionQueLoVuelveHabitual) continue;
+
+				habituales.Add(new ProductoHabitual(par.Key, Catalogo[par.Key].Descripcion,
+					par.Value, algunas.Count, ultimaVezPorSku[par.Key]));
+			}
+
+			habituales.Sort((uno, otro) => otro.ComprasEnQueAparece.CompareTo(uno.ComprasEnQueAparece));
+
+			return habituales.Count == 0
+				? FirmaDeLaCanasta.Ninguna(algunas.Count)
+				: FirmaDeLaCanasta.De(algunas.Count, habituales);
+		}
+
+		/// <summary>
 		/// CÓMO LE CAMBIÓ EL PRECIO de algo a esta persona, comparando siempre por unidad
 		/// de medida. Total: un sku que nunca compró devuelve Ninguno.
 		/// </summary>
