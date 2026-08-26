@@ -51,6 +51,9 @@ namespace Compras.Consola
 			LaComparacionPorDefectoLaEligeElDominio();
 			LaSerieDiceDesdeCuando();
 			ElVeredictoDelConsumoSaleDelPerfil();
+			LaCantidadDiceDeQue();
+			ElPrecioPorUnidadPermiteComparar();
+			LosJournalsViejosSiguenReproduciendo();
 
 			Console.WriteLine();
 			Console.WriteLine(fallas == 0
@@ -421,6 +424,105 @@ namespace Compras.Consola
 				soloHelado.AbastecimientosPendientes(Hoy).Count.ToString());
 			Revienta("y no se puede construir el pendiente a mano",
 				() => new AbastecimientoPendiente(Categoria.Azucarados, Hoy.AddYears(-1), 365));
+		}
+
+		// ---- "3" no es un dato: la cantidad dice de que ----
+		private static void LaCantidadDiceDeQue()
+		{
+			Titulo("la cantidad dice de que");
+
+			// Seis leches de un litro son SEIS LITROS, no seis.
+			var leche = new Item("LECHE-1L", "Leche 1L", 6, 950m, Categoria.LacteosYHuevos, 0,
+				Presentacion.Desde("1 L"));
+			Igual("seis leches de 1 L", "6 L", leche.CantidadExpresada);
+			Igual("  en unidad base", "6", leche.TotalEnUnidadBase.ToString(CultureInfo.InvariantCulture));
+
+			// Dos mantecas de 500 g son UN KILO: la unidad se convierte a su base.
+			var manteca = new Item("MANTECA-500", "Manteca 500g", 2, 2050m, Categoria.AceitesYGrasas, 0,
+				Presentacion.Desde("500 g"));
+			Igual("dos mantecas de 500 g", "1 kg", manteca.CantidadExpresada);
+
+			// Dos 12-packs son VEINTICUATRO latas, no dos.
+			var soda = new Item("SODA-12PK", "Soda 12-pack", 2, 5990m, Categoria.Azucarados, 0,
+				Presentacion.Desde("12x u"));
+			Igual("dos paquetes de 12", "24 u", soda.CantidadExpresada);
+			Igual("  y se dice como se vende", "12 u por paquete", soda.Presentacion.Expresada);
+
+			// Lo que se cuenta y nada mas.
+			var brocoli = new Item("BROCOLI", "Brocoli", 3, 920m, Categoria.FrutasYVerduras, 0,
+				Presentacion.PorUnidad);
+			Igual("tres brocolis", "3 u", brocoli.CantidadExpresada);
+
+			// Las familias no se mezclan: un litro no es mas ni menos que un kilo.
+			Igual("litro y kilo no son comparables", "False",
+				UnidadDeVenta.Litro.EsComparableCon(UnidadDeVenta.Kilogramo).ToString());
+			Igual("gramo y kilo si", "True",
+				UnidadDeVenta.Gramo.EsComparableCon(UnidadDeVenta.Kilogramo).ToString());
+			// Con formato explicito: la escala del decimal (0.500) no sobrevive el journal,
+			// asi que compararla como texto pelado seria fragil.
+			Igual("500 g a la base", "0.5",
+				UnidadDeVenta.Gramo.ALaBase(500m).ToString("0.###", CultureInfo.InvariantCulture));
+
+			// El resolver de la frontera: total-con-throw.
+			Revienta("una presentacion inventada revienta", () => Presentacion.Desde("2 barriles"));
+			Revienta("una unidad inventada revienta", () => UnidadDeVenta.PorSimbolo("kilo"));
+			Igual("y se puede preguntar antes", "False", Presentacion.Existe("2 barriles").ToString());
+			Igual("  lo valido se reconoce", "True", Presentacion.Existe("500 g").ToString());
+			Revienta("un paquete de una pieza no es un paquete", () => Presentacion.DePaquete(1));
+		}
+
+		// ---- lo que la presentacion habilita: comparar precios ----
+		private static void ElPrecioPorUnidadPermiteComparar()
+		{
+			Titulo("el precio por unidad permite comparar");
+
+			// LA PREGUNTA QUE NO SE PODIA HACER: ¿cual leche sale mas barata? Sin la
+			// presentacion las dos lineas son "1 x 1800" y "2 x 950", y el precio unitario
+			// dice que la de 2 L es la CARA.
+			var grande = new Item("LECHE-2L", "Leche 2L", 1, 1800m, Categoria.LacteosYHuevos, 0,
+				Presentacion.Desde("2 L"));
+			var chica = new Item("LECHE-1L", "Leche 1L", 2, 950m, Categoria.LacteosYHuevos, 0,
+				Presentacion.Desde("1 L"));
+
+			Igual("la de 2 L cuesta mas por linea", "True", (grande.PrecioUnitario > chica.PrecioUnitario).ToString());
+			Igual("pero sale mas barata por litro", "900",
+				grande.PrecioPorUnidadBase.ToString(CultureInfo.InvariantCulture));
+			Igual("  contra la de 1 L", "950", chica.PrecioPorUnidadBase.ToString(CultureInfo.InvariantCulture));
+			Igual("  y el dominio lo puede decir", "True",
+				(grande.PrecioPorUnidadBase < chica.PrecioPorUnidadBase).ToString());
+
+			// El paquete tambien: la lata suelta contra la del 12-pack.
+			var pack = new Item("SODA-12PK", "Soda 12-pack", 1, 5990m, Categoria.Azucarados, 0,
+				Presentacion.Desde("12x u"));
+			Igual("la lata del pack sale a", "499.17",
+				pack.PrecioPorUnidadBase.ToString("0.##", CultureInfo.InvariantCulture));
+		}
+
+		// ---- retrocompatibilidad: el journal es append-only ----
+		private static void LosJournalsViejosSiguenReproduciendo()
+		{
+			Titulo("los journals viejos siguen reproduciendo");
+
+			// La forma VIEJA -sin presentacion- se conserva a proposito: un historial
+			// escrito antes de que la presentacion existiera se rehidrata igual, y sus
+			// lineas se leen como piezas sueltas, que es lo que la app asumia entonces.
+			var vieja = new Compra("T-VIEJA", Hoy,
+				new[] { "LECHE-1L" }, new[] { "Leche 1L" }, new[] { 6 }, new[] { 950m },
+				new[] { "LacteosYHuevos" }, new[] { 0 });
+			Igual("la forma vieja sigue armando la compra", "5700", vieja.Total.ToString());
+			Igual("  y sus lineas son piezas sueltas", "6 u", vieja.Items[0].CantidadExpresada);
+
+			// La forma NUEVA agrega la presentacion sin cambiar nada mas.
+			var nueva = new Compra("T-NUEVA", Hoy,
+				new[] { "LECHE-1L" }, new[] { "Leche 1L" }, new[] { 6 }, new[] { 950m },
+				new[] { "LacteosYHuevos" }, new[] { 0 }, new[] { "1 L" });
+			Igual("la forma nueva dice los litros", "6 L", nueva.Items[0].CantidadExpresada);
+			Igual("  y el total es el mismo", "True", (nueva.Total == vieja.Total).ToString());
+
+			// Y valida que las presentaciones sean tantas como las lineas.
+			Revienta("presentaciones de largo distinto", () => new Compra("T-1", Hoy,
+				new[] { "A", "B" }, new[] { "a", "b" }, new[] { 1, 1 }, new[] { 1m, 1m },
+				new[] { "Proteinas", "Proteinas" }, new[] { 0, 0 }, new[] { "u" }));
 		}
 
 		// ---- el rango: el contexto para elegir que pedir ----
