@@ -3,88 +3,87 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using ModelContextProtocol.Server;
 
-// EL FRENTE MCP: la Puerta 1. Traduce y delega, nada mas.
+// THE MCP FRONT END: Door 1. It translates and delegates, nothing else.
 //
-// Uso:  Gnothi.Host <directorio-de-modulos>
+// Usage:  Gnothi.Host <modules-directory>
 //
-// CON TRANSPORTE STDIO, STDOUT ES EL CANAL JSON-RPC. Cualquier Console.Write propio -o de
-// una libreria- corrompe el protocolo, y peor que romperlo: si no cierra la linea, esos
-// caracteres se pegan adelante del siguiente mensaje y el cliente se desincroniza sin un
-// error claro. Se desvia stdout a stderr ANTES de tocar cualquier otra cosa.
+// WITH THE STDIO TRANSPORT, STDOUT IS THE JSON-RPC CHANNEL. Any Console.Write of our own -or of
+// a library's- corrupts the protocol, and worse than breaking it: if it does not close the
+// line, those characters get glued in front of the next message and the client desynchronizes
+// without a clear error. stdout is redirected to stderr BEFORE touching anything else.
 Console.SetOut(Console.Error);
 
-string raizDeModulos = args.Length > 0
+string modulesRoot = args.Length > 0
 	? args[0]
 	: Path.Combine(AppContext.BaseDirectory, "..", "..", "..", "..", "Modulos");
-raizDeModulos = Path.GetFullPath(raizDeModulos);
+modulesRoot = Path.GetFullPath(modulesRoot);
 
-// El catalogo se carga leyendo MANIFIESTOS. Ningun modulo se levanta acá: veinte modulos
-// son veinte json, no veinte replays de journal.
-var catalogo = new CatalogoDeModulos(raizDeModulos);
-IReadOnlyList<string> avisos = catalogo.Cargar();
+// The catalog is loaded by reading MANIFESTS. No module is brought up here: twenty modules are
+// twenty json files, not twenty journal replays.
+var catalog = new ModuleCatalog(modulesRoot);
+IReadOnlyList<string> warnings = catalog.Load();
 
-Console.Error.WriteLine($"[gnothi] modulos en {raizDeModulos}: {catalogo.Modulos.Count}");
-foreach (string a in avisos) Console.Error.WriteLine($"[gnothi] aviso: {a}");
+Console.Error.WriteLine($"[gnothi] modules in {modulesRoot}: {catalog.Modules.Count}");
+foreach (string w in warnings) Console.Error.WriteLine($"[gnothi] warning: {w}");
 
-var despacho = new Despacho(catalogo, new Medidor());
+var dispatcher = new Dispatcher(catalog, new Meter());
 
-foreach ((Modulo m, ToolDeclarada t) in despacho.Catalogo())
-	Console.Error.WriteLine($"[gnothi] publica: {Modulo.NombrePublico(m.Nombre, t.Nombre)}");
+foreach ((Module m, DeclaredTool t) in dispatcher.Catalog())
+	Console.Error.WriteLine($"[gnothi] publishing: {Module.PublicName(m.Name, t.Name)}");
 
 HostApplicationBuilder builder = Host.CreateApplicationBuilder(args);
 
-builder.Services.AddSingleton(despacho);
+builder.Services.AddSingleton(dispatcher);
 
-builder.Services.AddMcpServer(opciones =>
+builder.Services.AddMcpServer(options =>
 {
-	opciones.ServerInfo = new() { Name = "gnothi", Version = "0.1.0" };
+	options.ServerInfo = new() { Name = "gnothi", Version = "0.1.0" };
 
-	// Las instrucciones son PARA LA IA, y llegan en el handshake. Es donde se le explica
-	// que no esta hablando con el servidor de una empresa.
-	opciones.ServerInstructions = """
-		Sos la IA personal de la persona que usa este dispositivo.
+	// The instructions are FOR THE AI, and they arrive in the handshake. This is where it is
+	// explained that it is not talking to some company's server.
+	options.ServerInstructions = """
+		You are the personal AI of the person using this device.
 
-		Gnothi es el Host que ella instalo. Los modulos son lo que cada institucion le
-		entrego -su laboratorio, su supermercado- y cada uno guarda el registro de ella en
-		una carpeta suya, en este dispositivo. Gnothi no le pregunta nada a ninguna empresa:
-		lee lo que ya esta aca.
+		Gnothi is the Host they installed. The modules are what each institution handed them
+		-their lab, their supermarket- and each one keeps their record in a folder of its own,
+		on this device. Gnothi asks no company anything: it reads what is already here.
 
-		Las tools con prefijo 'gnothi_' son del Host y hablan de los modulos, no de los
-		datos. Las demas vienen prefijadas por el modulo que las aporta.
+		The tools prefixed with 'gnothi_' belong to the Host and speak about the modules, not
+		about the data. The rest come prefixed by the module that contributes them.
 
-		Lo que Gnothi te muestra es lo que la persona autorizo. Si esperas una consulta que
-		no aparece en la lista, lo mas probable es que ella la haya apagado; no insistas ni
-		intentes rodearla. No podes encender nada: el consentimiento es de ella.
+		What Gnothi shows you is what the person authorized. If you expect a query that does not
+		appear in the list, most likely they switched it off; do not insist and do not try to
+		work around it. You cannot switch anything on: consent is theirs.
 
-		Si un total no cambio y ella esperaba que si, pedile que abra el modulo y lo
-		actualice, y volve a consultar.
+		If a total did not change and they expected it to, ask them to open the module and update
+		it, then query again.
 		""";
 
-	// SE DECLARA que este servidor sabe avisar cuando su catalogo cambia. Sin esta
-	// capacidad el cliente no tiene ningun motivo para volver a pedir tools/list, y la
-	// notificacion se cae al piso sin error: el Host cree que aviso y el asistente sigue
-	// con la lista vieja.
-	opciones.Capabilities ??= new();
-	opciones.Capabilities.Tools ??= new();
-	opciones.Capabilities.Tools.ListChanged = true;
+	// IT IS DECLARED that this server knows how to announce when its catalog changes. Without
+	// this capability the client has no reason to ask for tools/list again, and the notification
+	// drops on the floor without an error: the Host thinks it announced and the assistant keeps
+	// the old list.
+	options.Capabilities ??= new();
+	options.Capabilities.Tools ??= new();
+	options.Capabilities.Tools.ListChanged = true;
 })
 	.WithStdioServerTransport()
-	.WithTools<ToolsDelHost>()      // las propias del Host, con firma conocida en compilacion
-	// Las de los modulos se contestan A MANO. El esquema de entrada sale del manifiesto, que
-	// es un dato: sintetizar un delegate ataria la tool a una firma que el Host no puede
-	// conocer, y por eso la version anterior salteaba las que tenian parametros.
-	.WithListToolsHandler((peticion, ct) => PuenteDeTools.Listar(despacho, peticion, ct))
-	.WithCallToolHandler((peticion, ct) => PuenteDeTools.Atender(despacho, peticion, ct));
+	.WithTools<HostTools>()      // the Host's own, with a signature known at compile time
+	// The modules' tools are answered BY HAND. The input schema comes from the manifest, which
+	// is a piece of data: synthesizing a delegate would tie the tool to a signature the Host
+	// cannot know, and that is why the previous version skipped the ones that had parameters.
+	.WithListToolsHandler((request, ct) => ToolBridge.List(dispatcher, request, ct))
+	.WithCallToolHandler((request, ct) => ToolBridge.Call(dispatcher, request, ct));
 
-// EL VIGILANTE del consentimiento. Va como servicio del host -y no como un hilo suelto-
-// para arrancar y apagarse junto con el servidor, y para poder pedirle el McpServer a la
-// inyeccion recien cuando hace falta avisar.
-builder.Services.AddHostedService<VigilanteDeConsentimiento>();
+// THE CONSENT WATCHER. It goes in as a hosted service -and not as a loose thread- so that it
+// starts and shuts down together with the server, and so that the McpServer can be asked of the
+// injection only when an announcement is actually needed.
+builder.Services.AddHostedService<ConsentWatcher>();
 
 IHost host = builder.Build();
 
-// Los procesos hijos de los modulos se cierran cuando se cierra el catalogo.
-await using (catalogo)
+// The modules' child processes are closed when the catalog is closed.
+await using (catalog)
 {
 	await host.RunAsync();
 }

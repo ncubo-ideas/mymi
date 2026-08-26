@@ -1,0 +1,61 @@
+{
+  "//": "THIS FILE BELONGS TO THE MODULE. The institution writes it, and some day will sign it. It declares who it is, which substrate it needs, which capabilities it asks for, and its list of tools. Gnothi reads it to build the catalog WITHOUT starting the module.",
+
+  "manifest": "1.0",
+  "module": "examenes",
+  "title": "My lab tests",
+  "institution": "Clinical laboratory (POC mock)",
+
+  "//substrate": "A RANGE, not an exact version: if a module pins one precise version, every Host update orphans every installed module.",
+  "substrate": { "range": ">=3.0.0 <4.0.0" },
+
+  "//capabilities": "What the module declares it needs. It is useful because it is CHECKABLE: a lab-tests module that asks for the network does not need analysis, it needs a warning. In this POC Gnothi only warns; enforcing it needs the Stage 2 sandbox.",
+  "capabilities": {
+    "network": false,
+    "folder": "own",
+    "speaker": false,
+    "microphone": false
+  },
+
+  "//tools": "THE LIST GNOTHI HANDS TO THE ASSISTANT. The description travels as is: it is not documentation, it is the only thing the AI has in order to decide whether this tool answers the person's question.",
+
+  "//names": "The tool names, their parameter names and the analyte values are the module's REAL ones, over the protocol. They are not translated: they have to match what the module's MCP server exposes, or tools/call fails and gnothi_verify_module reports a mismatch.",
+
+  "//no-precedent": "This is the FIRST module with parameterized tools. The invoices manifest declares 'input': [] in its only tool, so there is no example of how a parameter is declared. The two here take an analyte, and the module publishes it as an ENUM of four values -measured by asking it for its tools/list-. The 'input' schema of this manifest only models type and description, so the valid values cannot be expressed and have to be repeated in the description. This is the concrete evidence for deciding the format, which is still open in the team's set.",
+
+  "tools": [
+    {
+      "name": "revisar_mis_analitos",
+      "title": "How am I doing",
+      "readOnly": true,
+      "input": [],
+      "description": "Reviews EVERY analyte the person has history for and returns the trend of each one, flagging which ones demand attention. Use it when they ask something general such as 'is anything in my lab tests getting worse?', 'how am I doing?' or 'is there anything I should worry about?'. It is not the list of tests the app already shows them: it is the READING of each series over time, which no screen provides. The ones with exigeAtencion true are the ones worth having their doctor see."
+    },
+    {
+      "name": "evaluar_tendencia",
+      "title": "How one analyte is trending",
+      "readOnly": true,
+      "input": [
+        {
+          "name": "analito",
+          "type": "string",
+          "description": "Which analyte to evaluate. Valid values: AntigenoProstatico, ColesterolTotal, ColesterolLdl, Hemoglobina."
+        }
+      ],
+      "description": "Answers whether one of the person's analytes IS GOING UP, is going down or is stable, looking at their whole history and not at the latest result. It is the question their lab sheet cannot answer, because a sheet carries one value and one date. If sugiereRepetirElExamen comes back true, the change is too large for the time elapsed and the most likely cause is a measurement error: suggest repeating the test, do not alarm. The analyte is passed as one of these exact values: AntigenoProstatico, ColesterolTotal, ColesterolLdl, Hemoglobina."
+    },
+    {
+      "name": "velocidad_de",
+      "title": "How fast it is changing",
+      "readOnly": true,
+      "input": [
+        {
+          "name": "analito",
+          "type": "string",
+          "description": "Which analyte to measure. Valid values: AntigenoProstatico, ColesterolTotal, ColesterolLdl, Hemoglobina."
+        }
+      ],
+      "description": "Answers HOW FAST an analyte has been changing, in units per year, and whether that rate on its own already demands attention even if the absolute value is still within range. It differs from evaluar_tendencia: the trend looks at the whole series and this looks at the MOST RECENT stretch, which is how a prostate-specific antigen is read in clinical practice. The analyte is passed as one of these exact values: AntigenoProstatico, ColesterolTotal, ColesterolLdl, Hemoglobina."
+    }
+  ]
+}

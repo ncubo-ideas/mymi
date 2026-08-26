@@ -1,15 +1,15 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
-  <!-- EL HOST. Servidor MCP hacia el asistente (Puerta 1) y cliente MCP hacia cada
-       modulo. Es un proxy que AGREGA: junta las tools de N modulos en una sola lista.
+  <!-- THE HOST. An MCP server towards the assistant (Door 1) and an MCP client towards every
+       module. It is a proxy that AGGREGATES: it joins the tools of N modules into a single list.
 
-       Lo que este proyecto NO hace, a proposito:
-         - no entiende de facturas, ni de examenes, ni de nada de dominio;
-         - no toca ningun journal;
-         - no transcodifica la salida del modulo: la reenvia tal cual.
+       What this project does NOT do, on purpose:
+         - it understands nothing about invoices, nor lab tests, nor any domain;
+         - it touches no journal;
+         - it does not transcode the module's output: it forwards it as is.
 
-       No referencia Puppeteer. El Host no necesita el motor para hacer de proxy, y no
-       tenerlo es la forma de que el compilador garantice que no se metio semantica. -->
+       It does not reference Puppeteer. The Host does not need the engine in order to act as a
+       proxy, and not having it is how the compiler guarantees no semantics crept in. -->
 
   <PropertyGroup>
     <OutputType>Exe</OutputType>
