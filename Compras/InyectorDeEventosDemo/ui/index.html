@@ -1,0 +1,517 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Caja · Supermercado La Cosecha</title>
+
+<!--
+  LA CAJA: el inyector de eventos del demo, con la cara que pide la reunión —
+  "los inyectores de datos del demo también con UI presentable, no la consola del
+  developer: supone que este es el sistema del laboratorio, meto el examen, enter, y
+  ahora mirá lo que pasa en la aplicación de Sonia".
+
+  Es EL SISTEMA DEL SUPERMERCADO, no una app para el cliente: por eso se ve como
+  software de operación —denso, monoespaciado en los números, sin heroísmo visual— y no
+  como la página de descarga, que sí es la cara pública de la institución.
+
+  INVARIANTE QUE SE MANTIENE: esto habla con URL2 por HTTP y nada más. No conoce el
+  dominio de la persona, no toca su journal y no sabe qué es una canasta. El catálogo lo
+  pide a /catalogo, que es del supermercado, y publica con POST al endpoint de eventos.
+  Lo único que conecta las dos mitades del arreglo es HTTP.
+
+  El CLI (Program.cs, al lado) sigue existiendo y no lo reemplaza: sirve para guionar una
+  siembra o correrla en CI. Esto es para mostrarlo en vivo.
+-->
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+
+<style>
+  :root {
+    --fondo:    #eceae4;
+    --panel:    #ffffff;
+    --tinta:    #1c1914;
+    --tinta-2:  #6b6459;
+    --linea:    #d6cfc2;
+    --barro:    #7a4b12;
+    --barro-cl: #96601f;
+    --verde:    #2e5c4a;
+    --ambar:    #b4541a;
+  }
+
+  * { box-sizing: border-box; }
+
+  body {
+    margin: 0;
+    background: var(--fondo);
+    color: var(--tinta);
+    font-family: "IBM Plex Sans", ui-sans-serif, system-ui, sans-serif;
+    font-size: 14.5px;
+    line-height: 1.5;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  .num { font-family: "IBM Plex Mono", ui-monospace, monospace; font-variant-numeric: tabular-nums; }
+
+  /* ------------------------------------------------------------- barra */
+
+  header {
+    background: var(--tinta);
+    color: #f3efe7;
+    padding: 10px 20px;
+    display: flex; align-items: center; gap: 14px; flex-wrap: wrap;
+  }
+  header b { font-size: 14px; font-weight: 600; letter-spacing: .01em; }
+  header .sistema {
+    font-family: "IBM Plex Mono", monospace; font-size: 11px;
+    color: #b9b1a3; letter-spacing: .08em; text-transform: uppercase;
+  }
+  header .estado { margin-left: auto; display: flex; align-items: center; gap: 8px; font-size: 12px; }
+  header .punto { width: 8px; height: 8px; border-radius: 50%; background: #7a7367; }
+  header .punto.si { background: #4ea578; }
+  header .punto.no { background: #c2553a; }
+  header input {
+    font-family: "IBM Plex Mono", monospace; font-size: 11.5px;
+    background: #322d25; color: #efe9de;
+    border: 1px solid #4a4238; border-radius: 2px; padding: 4px 7px; width: 190px;
+  }
+
+  /* ------------------------------------------------------------- layout */
+
+  main {
+    display: grid; grid-template-columns: minmax(0, 1.35fr) minmax(0, 1fr);
+    gap: 18px; padding: 18px; max-width: 1240px; margin: 0 auto; align-items: start;
+  }
+  @media (max-width: 940px) { main { grid-template-columns: 1fr; } }
+
+  .panel {
+    background: var(--panel); border: 1px solid var(--linea); border-radius: 3px;
+  }
+  .panel > h2 {
+    margin: 0; padding: 11px 15px; border-bottom: 1px solid var(--linea);
+    font-size: 12px; font-weight: 600; letter-spacing: .07em; text-transform: uppercase;
+    color: var(--tinta-2);
+    display: flex; align-items: center; gap: 10px;
+  }
+  .panel > h2 span.contador {
+    margin-left: auto; font-family: "IBM Plex Mono", monospace; font-size: 11px;
+    color: var(--tinta-2); font-weight: 400; text-transform: none; letter-spacing: 0;
+  }
+
+  /* ------------------------------------------------------------- catalogo */
+
+  .filtros { display: flex; gap: 6px; flex-wrap: wrap; padding: 11px 15px 0; }
+  .filtros button {
+    font: inherit; font-size: 12px; cursor: pointer;
+    background: #f6f3ec; color: var(--tinta-2);
+    border: 1px solid var(--linea); border-radius: 999px; padding: 3px 11px;
+  }
+  .filtros button:hover { border-color: var(--barro); color: var(--barro); }
+  .filtros button[aria-pressed="true"] {
+    background: var(--barro); border-color: var(--barro); color: #fff;
+  }
+
+  .productos { max-height: 460px; overflow-y: auto; padding: 11px 15px 15px; }
+  .producto {
+    display: grid; grid-template-columns: 1fr auto auto; gap: 10px; align-items: center;
+    padding: 7px 0; border-bottom: 1px dotted var(--linea);
+  }
+  .producto:last-child { border-bottom: 0; }
+  .producto .nombre { font-size: 13.5px; }
+  .producto .meta {
+    font-family: "IBM Plex Mono", monospace; font-size: 10.5px; color: var(--tinta-2);
+  }
+  .producto .meta .gar { color: var(--verde); }
+  .producto .precio { font-family: "IBM Plex Mono", monospace; font-size: 13px; }
+  .producto button {
+    font: inherit; font-size: 12px; font-weight: 500; cursor: pointer;
+    background: #fff; color: var(--barro);
+    border: 1px solid var(--barro); border-radius: 2px; padding: 3px 10px;
+  }
+  .producto button:hover { background: var(--barro); color: #fff; }
+
+  /* ------------------------------------------------------------- ticket */
+
+  .ticket-cab {
+    display: flex; gap: 10px; align-items: center; flex-wrap: wrap;
+    padding: 12px 15px; border-bottom: 1px solid var(--linea);
+  }
+  .ticket-cab label { font-size: 11.5px; color: var(--tinta-2); }
+  .ticket-cab input {
+    font-family: "IBM Plex Mono", monospace; font-size: 12.5px;
+    border: 1px solid var(--linea); border-radius: 2px; padding: 4px 7px;
+  }
+  .ticket-cab input[type=date] { width: 140px; }
+  .ticket-cab input.numero { width: 100px; }
+
+  .lineas { padding: 4px 15px; min-height: 90px; }
+  .linea {
+    display: grid; grid-template-columns: 1fr 74px 92px 26px; gap: 8px; align-items: center;
+    padding: 6px 0; border-bottom: 1px dotted var(--linea);
+  }
+  .linea:last-child { border-bottom: 0; }
+  .linea .desc { font-size: 13px; }
+  .linea .sku { font-family: "IBM Plex Mono", monospace; font-size: 10.5px; color: var(--tinta-2); }
+  .linea input {
+    font-family: "IBM Plex Mono", monospace; font-size: 12.5px; text-align: right;
+    border: 1px solid var(--linea); border-radius: 2px; padding: 3px 6px; width: 100%;
+  }
+  .linea .total { font-family: "IBM Plex Mono", monospace; font-size: 12.5px; text-align: right; }
+  .linea .quitar {
+    font: inherit; cursor: pointer; background: none; border: 0;
+    color: var(--tinta-2); font-size: 15px; line-height: 1; padding: 0;
+  }
+  .linea .quitar:hover { color: var(--ambar); }
+  .vacio { color: var(--tinta-2); font-size: 13px; padding: 22px 0; text-align: center; }
+
+  .totales {
+    border-top: 1px solid var(--linea); padding: 12px 15px;
+    display: flex; align-items: baseline; gap: 12px;
+  }
+  .totales .rot { font-size: 11.5px; letter-spacing: .07em; text-transform: uppercase; color: var(--tinta-2); }
+  .totales .monto { font-family: "IBM Plex Mono", monospace; font-size: 22px; font-weight: 600; margin-left: auto; }
+
+  .acciones { padding: 0 15px 15px; display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+  .registrar {
+    font: inherit; font-size: 14px; font-weight: 600; cursor: pointer;
+    background: var(--barro); color: #fff; border: 0; border-radius: 2px;
+    padding: 10px 20px;
+  }
+  .registrar:hover:not(:disabled) { background: var(--barro-cl); }
+  .registrar:disabled { background: #b9b1a3; cursor: not-allowed; }
+  .limpiar {
+    font: inherit; font-size: 12.5px; cursor: pointer; background: none;
+    border: 0; color: var(--tinta-2); text-decoration: underline;
+  }
+
+  .aviso { margin: 0 15px 15px; padding: 9px 12px; border-radius: 2px; font-size: 13px; }
+  .aviso.ok { background: #e8f2ec; color: #1f4034; border: 1px solid #b9d6c7; }
+  .aviso.mal { background: #f8e7e1; color: #7d3218; border: 1px solid #e0bcac; }
+
+  /* ------------------------------------------------------------- publicado */
+
+  .publicado { padding: 6px 15px 15px; max-height: 260px; overflow-y: auto; }
+  .evento {
+    display: grid; grid-template-columns: 46px 1fr auto; gap: 10px; align-items: baseline;
+    padding: 6px 0; border-bottom: 1px dotted var(--linea);
+    font-size: 12.5px;
+  }
+  .evento:last-child { border-bottom: 0; }
+  .evento .id { font-family: "IBM Plex Mono", monospace; font-size: 11px; color: var(--tinta-2); }
+  .evento .monto { font-family: "IBM Plex Mono", monospace; }
+  .evento.nuevo { background: #fdf6e8; }
+
+  .nota {
+    padding: 0 15px 14px; font-size: 12px; color: var(--tinta-2);
+  }
+  .nota code {
+    font-family: "IBM Plex Mono", monospace; font-size: 11.5px;
+    background: #f2efe8; padding: 1px 5px; border-radius: 2px;
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <b>Supermercado La Cosecha</b>
+  <span class="sistema">Sistema de caja · POS-04</span>
+  <div class="estado">
+    <span>URL2</span>
+    <input id="url2" value="http://127.0.0.1:8101/" spellcheck="false">
+    <span class="punto" id="punto"></span>
+    <span id="estadoTexto">sin verificar</span>
+  </div>
+</header>
+
+<main>
+  <!-- ------------------------------------------------ catalogo -->
+  <section class="panel">
+    <h2>Catálogo <span class="contador" id="contadorCatalogo"></span></h2>
+    <div class="filtros" id="filtros"></div>
+    <div class="productos" id="productos"></div>
+  </section>
+
+  <div>
+    <!-- ------------------------------------------------ ticket -->
+    <section class="panel" style="margin-bottom:18px">
+      <h2>Compra en curso</h2>
+      <div class="ticket-cab">
+        <label for="numero">Ticket</label>
+        <input class="numero" id="numero" spellcheck="false">
+        <label for="fecha">Fecha</label>
+        <input type="date" id="fecha">
+      </div>
+      <div class="lineas" id="lineas"></div>
+      <div class="totales">
+        <span class="rot">Total</span>
+        <span class="monto" id="total">₡0</span>
+      </div>
+      <div class="acciones">
+        <button class="registrar" id="registrar" disabled>Registrar compra</button>
+        <button class="limpiar" id="limpiar">vaciar</button>
+      </div>
+      <div id="aviso"></div>
+    </section>
+
+    <!-- ------------------------------------------------ publicado -->
+    <section class="panel">
+      <h2>Publicado al cliente <span class="contador" id="contadorEventos"></span></h2>
+      <div class="publicado" id="publicado"></div>
+      <p class="nota">
+        Esto es la narrativa que el cliente puede leer desde su app. La app se la trae
+        cuando abre o aprieta <code>Refresh</code>: este sistema no le escribe nada a
+        nadie, solo publica.
+      </p>
+    </section>
+  </div>
+</main>
+
+<script>
+"use strict";
+
+const RECURSO = "cliente";
+const ID = "1";
+
+let catalogo = [];
+let categoriaFiltro = "";
+let lineas = [];
+let ultimoIdVisto = 0;
+
+const $ = (id) => document.getElementById(id);
+const base = () => $("url2").value.trim().replace(/\/?$/, "/");
+const colones = (n) => "₡" + Math.round(n).toLocaleString("en-US");
+
+// ------------------------------------------------------------------ arranque
+
+document.addEventListener("DOMContentLoaded", () => {
+  $("fecha").value = new Date().toISOString().slice(0, 10);
+  $("numero").value = numeroSugerido();
+
+  $("url2").addEventListener("change", conectar);
+  $("registrar").addEventListener("click", registrar);
+  $("limpiar").addEventListener("click", () => { lineas = []; pintarTicket(); });
+
+  conectar();
+});
+
+// El numero de ticket se sugiere, no se impone: quien opera la demo puede escribir el
+// que quiera. Con prefijo de caja para que se vea que sale de un sistema.
+function numeroSugerido() {
+  const d = new Date();
+  return "T-" + String(d.getMonth() + 1).padStart(2, "0") + String(d.getDate()).padStart(2, "0")
+       + "-" + String(Math.floor(d.getSeconds() + d.getMinutes() * 60) % 999).padStart(3, "0");
+}
+
+async function conectar() {
+  marcar(null, "conectando…");
+  try {
+    const salud = await fetch(base() + "salud").then(r => r.json());
+    marcar(salud.estado === "arriba", salud.estado === "arriba" ? "arriba" : "raro");
+    await Promise.all([cargarCatalogo(), cargarPublicado()]);
+  } catch (e) {
+    marcar(false, "no responde");
+    $("productos").innerHTML = `<p class="vacio">No se pudo leer el catálogo.<br>¿Está URL2 arriba en ${base()}?</p>`;
+  }
+}
+
+function marcar(ok, texto) {
+  const punto = $("punto");
+  punto.className = "punto" + (ok === true ? " si" : ok === false ? " no" : "");
+  $("estadoTexto").textContent = texto;
+}
+
+// ------------------------------------------------------------------ catalogo
+
+async function cargarCatalogo() {
+  const datos = await fetch(base() + "catalogo").then(r => r.json());
+  catalogo = datos.productos || [];
+  $("contadorCatalogo").textContent = catalogo.length + " productos";
+  pintarFiltros();
+  pintarCatalogo();
+}
+
+function pintarFiltros() {
+  const categorias = [...new Set(catalogo.map(p => p.categoria))];
+  const botones = [`<button data-cat="" aria-pressed="${categoriaFiltro === ""}">todas</button>`]
+    .concat(categorias.map(c =>
+      `<button data-cat="${c}" aria-pressed="${categoriaFiltro === c}">${c}</button>`));
+
+  $("filtros").innerHTML = botones.join("");
+  $("filtros").querySelectorAll("button").forEach(b =>
+    b.addEventListener("click", () => {
+      categoriaFiltro = b.dataset.cat;
+      pintarFiltros();
+      pintarCatalogo();
+    }));
+}
+
+function pintarCatalogo() {
+  const visibles = categoriaFiltro ? catalogo.filter(p => p.categoria === categoriaFiltro) : catalogo;
+
+  $("productos").innerHTML = visibles.map(p => `
+    <div class="producto">
+      <div>
+        <div class="nombre">${p.descripcion}</div>
+        <div class="meta">${p.sku} · ${p.categoria}${p.mesesDeGarantia > 0
+          ? ` · <span class="gar">garantía ${p.mesesDeGarantia} meses</span>` : ""}</div>
+      </div>
+      <div class="precio">${colones(p.precio)}</div>
+      <button data-sku="${p.sku}">agregar</button>
+    </div>`).join("");
+
+  $("productos").querySelectorAll("button").forEach(b =>
+    b.addEventListener("click", () => agregar(b.dataset.sku)));
+}
+
+// ------------------------------------------------------------------ ticket
+
+function agregar(sku) {
+  const producto = catalogo.find(p => p.sku === sku);
+  if (!producto) return;
+
+  const yaEsta = lineas.find(l => l.sku === sku);
+  if (yaEsta) yaEsta.cantidad += 1;
+  else lineas.push({
+    sku: producto.sku,
+    descripcion: producto.descripcion,
+    cantidad: 1,
+    precio: producto.precio,
+    categoria: producto.categoria,
+    mesesDeGarantia: producto.mesesDeGarantia,
+  });
+
+  pintarTicket();
+}
+
+function pintarTicket() {
+  if (lineas.length === 0) {
+    $("lineas").innerHTML = `<p class="vacio">Agregá productos del catálogo.</p>`;
+    $("total").textContent = colones(0);
+    $("registrar").disabled = true;
+    return;
+  }
+
+  $("lineas").innerHTML = lineas.map((l, i) => `
+    <div class="linea">
+      <div>
+        <div class="desc">${l.descripcion}</div>
+        <div class="sku">${l.sku} · ${l.categoria}${l.mesesDeGarantia > 0
+          ? ` · garantía ${l.mesesDeGarantia}m` : ""}</div>
+      </div>
+      <input type="number" min="1" step="1" value="${l.cantidad}" data-i="${i}" data-campo="cantidad">
+      <input type="number" min="0" step="1" value="${l.precio}" data-i="${i}" data-campo="precio">
+      <button class="quitar" data-i="${i}" title="quitar">×</button>
+    </div>`).join("");
+
+  $("lineas").querySelectorAll("input").forEach(input =>
+    input.addEventListener("input", () => {
+      const linea = lineas[Number(input.dataset.i)];
+      const valor = Number(input.value);
+      if (input.dataset.campo === "cantidad") linea.cantidad = Math.max(1, Math.floor(valor) || 1);
+      else linea.precio = Math.max(0, valor || 0);
+      pintarTotal();
+    }));
+
+  $("lineas").querySelectorAll(".quitar").forEach(b =>
+    b.addEventListener("click", () => {
+      lineas.splice(Number(b.dataset.i), 1);
+      pintarTicket();
+    }));
+
+  pintarTotal();
+  $("registrar").disabled = false;
+}
+
+function pintarTotal() {
+  $("total").textContent = colones(lineas.reduce((s, l) => s + l.cantidad * l.precio, 0));
+}
+
+// ------------------------------------------------------------------ registrar
+
+// El POST es la MISMA forma que usa el CLI: seis listas paralelas. La categoria y los
+// meses de garantia viajan por linea, que es lo que le permite a la app del cliente
+// leer su canasta y sus garantias sin preguntarle nada a nadie.
+async function registrar() {
+  const numero = $("numero").value.trim();
+  if (!numero) return avisar(false, "Falta el número de ticket.");
+  if (lineas.length === 0) return avisar(false, "El ticket no tiene líneas.");
+
+  const cuerpo = {
+    numero,
+    fecha: $("fecha").value,
+    skus: lineas.map(l => l.sku),
+    descripciones: lineas.map(l => l.descripcion),
+    cantidades: lineas.map(l => l.cantidad),
+    preciosUnitarios: lineas.map(l => l.precio),
+    categorias: lineas.map(l => l.categoria),
+    mesesDeGarantia: lineas.map(l => l.mesesDeGarantia),
+  };
+
+  $("registrar").disabled = true;
+  try {
+    const respuesta = await fetch(base() + RECURSO + "/" + ID + "/events/compra", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(cuerpo),
+    });
+    const datos = await respuesta.json();
+
+    if (!respuesta.ok) return avisar(false, "URL2 la rechazó: " + (datos.error || respuesta.status));
+
+    avisar(true, `Compra ${datos.numero} publicada como evento ${datos.agregado}. `
+      + `Ahora la app del cliente la trae con Refresh.`);
+    lineas = [];
+    $("numero").value = numeroSugerido();
+    pintarTicket();
+    await cargarPublicado(datos.agregado);
+  } catch (e) {
+    avisar(false, "No se pudo publicar: " + e.message);
+  } finally {
+    $("registrar").disabled = lineas.length === 0;
+  }
+}
+
+function avisar(ok, texto) {
+  $("aviso").innerHTML = `<div class="aviso ${ok ? "ok" : "mal"}">${texto}</div>`;
+  $("registrar").disabled = lineas.length === 0;
+}
+
+// ------------------------------------------------------------------ publicado
+
+// Se lee con el MISMO verbo que usa la app del cliente, y por eso hace falta un token:
+// la narrativa es de la persona, no del que opera la caja. Este sistema consigue el
+// suyo como cualquier device.
+async function cargarPublicado(destacado) {
+  try {
+    const credencial = await fetch(base() + "device/token", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ deviceKey: "device-caja-pos-04", recurso: RECURSO, id: ID }),
+    }).then(r => r.json());
+
+    const datos = await fetch(base() + RECURSO + "/" + ID + "/events?after=0", {
+      headers: { Authorization: "Bearer " + credencial.accessToken },
+    }).then(r => r.json());
+
+    const eventos = (datos.events || []).slice().reverse();
+    ultimoIdVisto = datos.last || ultimoIdVisto;
+    $("contadorEventos").textContent = eventos.length + " eventos · último " + ultimoIdVisto;
+
+    $("publicado").innerHTML = eventos.map(e => {
+      const total = e.cantidades.reduce((s, c, i) => s + c * e.preciosUnitarios[i], 0);
+      return `<div class="evento${e.id === destacado ? " nuevo" : ""}">
+        <span class="id">#${e.id}</span>
+        <span>${e.numero} · ${String(e.fecha).slice(0, 10)} · ${e.skus.length} líneas</span>
+        <span class="monto">${colones(total)}</span>
+      </div>`;
+    }).join("");
+  } catch (e) {
+    $("publicado").innerHTML = `<p class="vacio">No se pudo leer la narrativa.</p>`;
+  }
+}
+</script>
+
+</body>
+</html>

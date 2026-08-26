@@ -230,10 +230,18 @@ public sealed class EstadoDeLaApp : IAsyncDisposable
 	public CanastasComparadas Comparacion(int anioAntes, int mesAntes, int anioDespues, int mesDespues)
 	{ Exigir(); return api!.Comparacion(anioAntes, mesAntes, anioDespues, mesDespues); }
 
+	// La lectura por defecto. QUE DOS MESES se comparan lo elige el dominio, no esta
+	// pantalla: elegir es parte de la pregunta, no de como se dibuja.
+	public CanastasComparadas ComparacionPorDefecto() { Exigir(); return api!.ComparacionConElAnioAnterior(); }
+
 	public CanastaDelMesVista Canasta(int anio, int mes) { Exigir(); return api!.Canasta(anio, mes); }
 
 	// El "hoy" lo pone la caratula: el dominio no lee el reloj.
 	public IReadOnlyList<GarantiaDeProducto> GarantiasVigentes() { Exigir(); return api!.GarantiasVigentes(DateTime.Now); }
+
+	// LO QUE NO ESTA: lo unico que esta pantalla no podria calcular sola.
+	public IReadOnlyList<AbastecimientoEnEspera> AbastecimientosPendientes()
+	{ Exigir(); return api!.AbastecimientosPendientes(DateTime.Now); }
 
 	public int Cantidad() { Exigir(); return api!.CantidadDeCompras(); }
 

@@ -96,6 +96,17 @@ app.MapGet("/{recurso}/{id}/perfil", (string recurso, string id, HttpRequest ped
     return Results.Ok(new { nombre = "nunca deberia verse", recurso, id });
 });
 
+// ---------------------------------------------------------------- el catalogo
+
+// EL CATALOGO ES DEL SUPERMERCADO, no de la persona: son los productos que vende, con
+// su precio de gondola, su categoria y su garantia si la trae. No pide token porque no
+// es data de nadie — cualquiera que entre a la tienda ve los precios.
+//
+// Existe para que la caja (la UI de operacion de la demo) no lleve el catalogo
+// hardcodeado adentro: el POS le pregunta a su propio sistema que vende, que es lo que
+// haria uno de verdad.
+app.MapGet("/catalogo", () => Results.Ok(new { productos = Catalogo.Productos }));
+
 // ---------------------------------------------------------------- control del mock
 
 // Registra una compra CONCRETA, con sus lineas. Es lo que usa el inyector de eventos de
@@ -250,6 +261,91 @@ sealed class Concesiones
 
     private static string Aleatorio(string prefijo) =>
         prefijo + "_" + Convert.ToHexString(RandomNumberGenerator.GetBytes(16)).ToLowerInvariant();
+}
+
+// ---------------------------------------------------------------- el catalogo
+
+sealed class ProductoDelCatalogo
+{
+    [JsonPropertyName("sku")]             public string Sku { get; init; }
+    [JsonPropertyName("descripcion")]     public string Descripcion { get; init; }
+    [JsonPropertyName("precio")]          public decimal Precio { get; init; }
+    [JsonPropertyName("categoria")]       public string Categoria { get; init; }
+    [JsonPropertyName("mesesDeGarantia")] public int MesesDeGarantia { get; init; }
+}
+
+static class Catalogo
+{
+    // Los precios estan en colones y son de gondola, no inventados al azar: la demo se
+    // cuenta con numeros que uno eligio. Incluye los SKUs de la narrativa sembrada, para
+    // que la caja pueda repetir una compra que ya paso, y bastante mas para que la
+    // historia se pueda seguir escribiendo en vivo.
+    internal static readonly ProductoDelCatalogo[] Productos =
+    {
+        // -- proteinas
+        P("POLLO-KG", "Pechuga de pollo kg", 4350, "Proteinas"),
+        P("TILAPIA-KG", "Filet de tilapia kg", 5200, "Proteinas"),
+        P("SALMON-KG", "Filet de salmon kg", 12800, "Proteinas"),
+        P("CARNE-MOL", "Carne molida kg", 5600, "Proteinas"),
+        P("ATUN-LATA", "Atun en agua lata", 1250, "Proteinas"),
+
+        // -- frutas y verduras
+        P("BROCOLI", "Brocoli unidad", 920, "FrutasYVerduras"),
+        P("ESPINACA", "Espinaca fresca 250g", 1450, "FrutasYVerduras"),
+        P("BANANO-KG", "Banano kg", 890, "FrutasYVerduras"),
+        P("TOMATE-KG", "Tomate kg", 1150, "FrutasYVerduras"),
+        P("MANZANA-KG", "Manzana kg", 2100, "FrutasYVerduras"),
+
+        // -- lacteos y huevos
+        P("LECHE-1L", "Leche semidescremada 1L", 950, "LacteosYHuevos"),
+        P("HUEVOS-30", "Huevos carton 30", 3300, "LacteosYHuevos"),
+        P("QUESO-500", "Queso turrialba 500g", 3450, "LacteosYHuevos"),
+        P("YOGURT-1L", "Yogurt natural 1L", 2200, "LacteosYHuevos"),
+
+        // -- granos y abarrotes
+        P("ARROZ-2KG", "Arroz grano entero 2kg", 2520, "GranosYAbarrotes"),
+        P("FRIJOL-900", "Frijoles negros 900g", 1150, "GranosYAbarrotes"),
+        P("PASTA-500", "Pasta espagueti 500g", 890, "GranosYAbarrotes"),
+        P("AVENA-1KG", "Avena en hojuelas 1kg", 1980, "GranosYAbarrotes"),
+
+        // -- aceites y grasas
+        P("ACEITE-GIR-1L", "Aceite de girasol 1L", 2890, "AceitesYGrasas"),
+        P("MANTECA-500", "Manteca de palma 500g", 2050, "AceitesYGrasas"),
+
+        // -- azucarados
+        P("HELADO-1L", "Helado de vainilla 1L", 3680, "Azucarados"),
+        P("SODA-2L", "Soda cola 2L", 1790, "Azucarados"),
+        P("SODA-12PK", "Soda cola lata 12-pack", 5990, "Azucarados"),
+        P("GALLETA-CHOC", "Galletas de chocolate", 1250, "Azucarados"),
+        P("CHOC-BARRA", "Chocolate de leche barra", 1450, "Azucarados"),
+
+        // -- snacks
+        P("PAPAS-FAM", "Papas fritas familiar", 2100, "Snacks"),
+        P("MANI-300", "Mani salado 300g", 1680, "Snacks"),
+
+        // -- limpieza
+        P("DETERG-5L", "Detergente liquido 5L", 6800, "Limpieza"),
+        P("JABON-3PK", "Jabon de bano 3-pack", 2450, "Limpieza"),
+        P("CLORO-1L", "Cloro 1L", 1100, "Limpieza"),
+
+        // -- electrohogar: LO UNICO QUE TRAE GARANTIA, y por eso la caja tiene que poder
+        //    registrar los meses. Es lo que hace posible la pregunta de la garantia.
+        P("OLLA-ARR-18", "Olla arrocera 1.8L", 45900, "Electrohogar", mesesDeGarantia: 12),
+        P("LICUA-600", "Licuadora 600W", 28900, "Electrohogar", mesesDeGarantia: 24),
+        P("MICROON-20", "Microondas 20L", 62000, "Electrohogar", mesesDeGarantia: 24),
+        P("PLANCHA-V", "Plancha a vapor", 18500, "Electrohogar", mesesDeGarantia: 12),
+    };
+
+    private static ProductoDelCatalogo P(string sku, string descripcion, decimal precio,
+        string categoria, int mesesDeGarantia = 0) =>
+        new ProductoDelCatalogo
+        {
+            Sku = sku,
+            Descripcion = descripcion,
+            Precio = precio,
+            Categoria = categoria,
+            MesesDeGarantia = mesesDeGarantia,
+        };
 }
 
 // ---------------------------------------------------------------- los eventos

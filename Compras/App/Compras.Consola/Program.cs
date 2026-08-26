@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Globalization;
 using System.IO;
 using System.Net.Http;
@@ -31,6 +32,9 @@ namespace Compras.Consola
 					case "canasta":   return CanastaDe(args);
 					case "comparar":  return Comparar(args);
 					case "garantia":  return GarantiaDe(args);
+					// Los dos que miran el hueco: lo que la pantalla no puede renderizar.
+					case "pendientes": return Pendientes(args);
+					case "porvencer":  return PorVencer(args);
 					// El token ya no se pega a mano: la app lo pide sola contra su device key.
 					case "refrescar": return await Refrescar(args);
 					default:          Ayuda(); return 1;
@@ -140,6 +144,13 @@ namespace Compras.Consola
 			Console.WriteLine("-- y la garantia, con su respaldo --");
 			ImprimirGarantia(api, Muestras.ProductoConGarantia, DateTime.Now);
 
+			// LO QUE NO ESTA. Va con el resto porque es parte de lo que la app sabe
+			// contestar, aunque no sea un dato del historial.
+			Console.WriteLine();
+			Console.WriteLine("-- lo que NO esta (el hueco) --");
+			foreach (AbastecimientoEnEspera p in api.AbastecimientosPendientes(DateTime.Now))
+				Console.WriteLine($"  {p.ParaSonia}  [{p.Severidad}]");
+
 			if (!conVeredicto) return;
 
 			bool totalOk = api.TotalDeCompras().ToString(CultureInfo.InvariantCulture) == Muestras.TotalEsperado;
@@ -153,11 +164,12 @@ namespace Compras.Consola
 		{
 			CanastasComparadas c = api.Comparacion(anioAntes, mesAntes, anioDespues, mesDespues);
 
-			// La frase la arma la SUPERFICIE con los hechos del dominio. El dominio no
-			// devuelve prosa, y por eso no puede devolver un consejo de plantilla.
+			// El VEREDICTO y la linea vienen del dominio: una pantalla no tiene de donde
+			// saber si un cambio de -29 puntos es bueno, y con un booleano lo mostraba
+			// como "estable".
 			if (!c.HayComparacion)
 			{
-				Console.WriteLine($"  entre {mesAntes}/{anioAntes} y {mesDespues}/{anioDespues} no hay dos meses con compras comestibles que comparar");
+				Console.WriteLine($"  {c.ParaSonia}");
 				return;
 			}
 
@@ -165,24 +177,23 @@ namespace Compras.Consola
 				+ $"({Formato(c.GastoOcasionalAntes)} de {Formato(c.GastoComestibleAntes)} comestible)");
 			Console.WriteLine($"  canasta {mesDespues}/{anioDespues}: {Porcentaje(c.ProporcionDespues)} ocasional "
 				+ $"({Formato(c.GastoOcasionalDespues)} de {Formato(c.GastoComestibleDespues)} comestible)");
-			if (c.CrecioLoOcasional)
-				Console.WriteLine($"  ^ lo ocasional CRECIO {Porcentaje(c.Cambio)} — el dato que el asistente cruza con el colesterol");
+			Console.WriteLine($"  veredicto: {c.Veredicto.ToUpperInvariant()} — {c.ParaSonia}");
 		}
 
 		private static void ImprimirGarantia(ComprasAPI api, string texto, DateTime fechaDeConsulta)
 		{
 			GarantiaDeProducto g = api.Garantia(texto, fechaDeConsulta);
 
-			if (!g.Encontrada)
-			{
-				Console.WriteLine($"  no hay garantia registrada para '{texto}'");
-				return;
-			}
+			// La linea sale del dominio, incluido el caso "no encontrada".
+			Console.WriteLine($"  {g.ParaSonia}");
+			if (!g.Encontrada) return;
 
 			Console.WriteLine($"  {g.Descripcion} ({g.Sku})");
 			Console.WriteLine($"  comprada el {g.FechaDeCompra:yyyy-MM-dd} en la compra {g.NumeroDeCompra}");
 			Console.WriteLine($"  {g.MesesDeCobertura} meses de cobertura: vence el {g.VenceEl:yyyy-MM-dd}"
-				+ $" — {(g.Vigente ? "VIGENTE" : "vencida")} al {fechaDeConsulta:yyyy-MM-dd}");
+				+ $" — {(g.Vigente ? "VIGENTE" : "vencida")} al {fechaDeConsulta:yyyy-MM-dd}"
+				+ $" [{g.Severidad}]");
+			if (g.QueHacer.Length > 0) Console.WriteLine($"  -> {g.QueHacer}");
 		}
 
 		// Consultas puntuales, para la demo en vivo.
@@ -269,6 +280,55 @@ namespace Compras.Consola
 			Console.WriteLine();
 			Console.WriteLine("-- crudo (print, formatter JSON) --");
 			Console.WriteLine(api.GarantiaDe(texto, fecha));
+
+			app.Actor.GracefulExit();
+			return 0;
+		}
+
+		// ---------------------------------------------------- lo que NO esta (el hueco)
+
+		private static int Pendientes(string[] args)
+		{
+			string carpeta = Carpeta(args, 1);
+			DateTime fecha = FechaOpcional(args, 2, DateTime.Now);
+
+			ComprasApp app = Abrir(carpeta);
+			var api = new ComprasAPI(app);
+
+			IReadOnlyList<AbastecimientoEnEspera> pendientes = api.AbastecimientosPendientes(fecha);
+			Console.WriteLine($"al {fecha:yyyy-MM-dd}: {pendientes.Count} "
+				+ (pendientes.Count == 1 ? "categoria atrasada" : "categorias atrasadas"));
+			foreach (AbastecimientoEnEspera p in pendientes)
+			{
+				Console.WriteLine($"  {p.Categoria,-18} {p.DiasDesdeLaUltima,4} dias (se repone cada {p.DiasEsperados})"
+					+ $"  [{p.Severidad}]");
+				Console.WriteLine($"  {"",-18} {p.ParaSonia}");
+			}
+			if (pendientes.Count == 0) Console.WriteLine("  (al dia con todo lo que se repone)");
+
+			app.Actor.GracefulExit();
+			return 0;
+		}
+
+		private static int PorVencer(string[] args)
+		{
+			string carpeta = Carpeta(args, 1);
+			DateTime fecha = FechaOpcional(args, 2, DateTime.Now);
+
+			ComprasApp app = Abrir(carpeta);
+			var api = new ComprasAPI(app);
+
+			IReadOnlyList<GarantiaDeProducto> porVencer = api.GarantiasPorVencer(fecha);
+			Console.WriteLine($"al {fecha:yyyy-MM-dd}: {porVencer.Count} "
+				+ (porVencer.Count == 1 ? "garantia pide algo" : "garantias piden algo"));
+			foreach (GarantiaDeProducto g in porVencer)
+			{
+				Console.WriteLine($"  {g.Descripcion,-22} quedan {g.DiasParaVencer,4} dias  [{g.Severidad}]");
+				Console.WriteLine($"  {"",-22} {g.ParaSonia}");
+				if (g.QueHacer.Length > 0) Console.WriteLine($"  {"",-22} -> {g.QueHacer}");
+			}
+			if (porVencer.Count == 0)
+				Console.WriteLine("  (ninguna esta cerca de vencer; " + api.GarantiasVigentes(fecha).Count + " vigentes)");
 
 			app.Actor.GracefulExit();
 			return 0;
@@ -368,6 +428,8 @@ namespace Compras.Consola
 			Console.WriteLine("  canasta   [carpeta] [anio] [mes]                la foto de un mes, sumada por perfil");
 			Console.WriteLine("  comparar  [carpeta] [a1] [m1] [a2] [m2]         como cambio la canasta entre dos meses");
 			Console.WriteLine("  garantia  [carpeta] [texto] [yyyy-MM-dd]        la garantia de un producto, con su respaldo");
+			Console.WriteLine("  pendientes [carpeta] [yyyy-MM-dd]              LO QUE NO ESTA: que dejo de entrar a la canasta");
+			Console.WriteLine("  porvencer  [carpeta] [yyyy-MM-dd]              las garantias cuya ventana se esta cerrando");
 			Console.WriteLine("  refrescar [carpeta] [baseUrl] [recurso] [id]    trae eventos del supermercado y los aplica de a uno");
 			Console.WriteLine();
 			Console.WriteLine("carpeta por defecto: ~/Compras-journal");

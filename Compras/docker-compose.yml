@@ -2,6 +2,7 @@
 #
 #   URL1  wasm-host    la pagina de descarga en / y la app en /app/  (8100 http / 8463 https)
 #   URL2  eventos-api  el endpoint que provee la narrativa    (8101)
+#         caja         el sistema del supermercado, para la demo en vivo  (8102)
 #
 # wasm-host sirve el publish de la caratula, asi que ANTES de levantarlo hay que
 # generarlo:
@@ -16,6 +17,20 @@ services:
     container_name: compras-eventos-api
     ports:
       - "8101:8101"
+    restart: unless-stopped
+
+  # La CAJA. No es parte del arreglo -no es ni URL1 ni URL2-: es la herramienta con la
+  # que se opera la demo, la que hace visible el lado de la institucion. Estatica, y le
+  # habla a URL2 por HTTP como cualquier operador.
+  caja:
+    image: nginx:1.27-alpine
+    container_name: compras-caja
+    ports:
+      - "8102:80"
+    volumes:
+      - ./InyectorDeEventosDemo/ui:/usr/share/nginx/html:ro
+    depends_on:
+      - eventos-api
     restart: unless-stopped
 
   wasm-host:
