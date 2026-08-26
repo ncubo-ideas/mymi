@@ -40,9 +40,21 @@
        de advertencia en cada apertura sobre un destino que la persona eligio.
      - el instrumento: detras de ?instrument, porque nunca fue para ella.
 
-   LOS CUATRO AVISOS DEL PUNTO 3 NO ENTRARON EN EL RECORTE, y eso es la linea que lo separa de
-   maquillar: ninguno de ellos esta dicho en otro lado, y un tablero mas limpio a costa de callar
-   que no se esta guardando nada es exactamente el defecto que el punto 3 existe para evitar. *@
+   UNA SEGUNDA PASADA CONTO LOS MENSAJES OCULTOS -- veintiuno en toda la pantalla, catorce de
+   ellos condicionales -- y el mismo criterio alcanzo a tres mas:
+
+     - la nota de troubleshooting del regrant: sin condicion propia en una rama que se entra en
+       CADA reapertura, y duplicando el 'denied' que OpenOrSay compone cuando el permiso se niega
+       de verdad. Era el peor caso de la pantalla y salio entero.
+     - not-saving: se acorto el mecanismo, no el aviso. Sigue arriba, Filled, con su boton.
+     - el volcado de la excepcion: pasa a un click. NO a ?instrument, aunque sea el mismo tipo de
+       dato que el instrumento -- quien necesita copiarlo es quien se topo con el fallo, y no
+       tiene por que conocer un parametro de URL.
+
+   LOS CATORCE MENOS ESOS TRES SE QUEDAN COMO ESTABAN, y esa es la linea que separa esto de
+   maquillar: cada uno nombra un estado que ninguna otra cosa de la pantalla delata. Un tablero
+   mas limpio a costa de callar que no se esta guardando nada es exactamente el defecto que el
+   punto 3 existe para evitar. *@
 
 <PageTitle>My maintenance schedule</PageTitle>
 
@@ -50,9 +62,29 @@
    reaccionar al click. *@
 @if (error.Length > 0)
 {
-    <MudAlert Severity="Severity.Error" Variant="Variant.Filled" Class="mb-4">
+    <MudAlert Severity="Severity.Error" Variant="Variant.Filled" Class="mb-4" id="error">
         <strong>@(state.IsUp ? "The operation could not be completed." : "The app could not be opened.")</strong>
-        <pre class="alert-detail">@error</pre>
+        @* EL VOLCADO NO ES LO PRIMERO QUE SE LEE. Arriba iba el titular y JUSTO DEBAJO el nombre
+           completo del tipo de la excepcion y su cadena de causas, que en el tablero de un dueno
+           de auto es ruido: no le dice que paso ni que hacer.
+           PERO NO SE ESCONDE DETRAS DE ?instrument, y esto se aparta de lo que se dijo a proposito:
+           quien necesita copiar el detalle es justamente la persona que se topo con el fallo, y no
+           tiene por que saber que existe un parametro de URL. Un click lo abre para cualquiera, y
+           con ?instrument viene abierto para no tener que darlo.
+           LA FRASE DE ARRIBA NO PROMETE NADA QUE NO SE SEPA. No dice "no se guardo nada": un fallo
+           en el flush ocurre DESPUES de que el comando se aplico, asi que eso seria mentira en el
+           caso mas probable. Dice de quien es el fallo y donde esta el dato para reportarlo. *@
+        <div class="mt-1">
+            This is a fault in the app, not something you did. The details name the step that failed.
+            <MudLink Typo="Typo.body2" Class="ml-1" id="show-error-detail"
+                     OnClick="@(() => errorDetail = !errorDetail)">
+                @(errorDetail ? "hide details" : "details")
+            </MudLink>
+        </div>
+        @if (errorDetail || showInstrument)
+        {
+            <pre class="alert-detail">@error</pre>
+        }
     </MudAlert>
 }
 
@@ -95,12 +127,16 @@
                 </MudButton>
             </div>
 
-            <MudText Typo="Typo.caption" HtmlTag="p" Class="mt-4 muted">
-                If granting keeps failing without the browser asking you anything, this browser is not
-                going to grant it: some in-app and embedded browsers never do. Open this app in Chrome
-                or Edge directly. If you do have a padlock next to the address, resetting this site's
-                permissions there and reloading is the other thing to try.
-            </MudText>
+            @* LA NOTA DE DIAGNOSTICO SE FUE, y era el peor caso de esta pantalla. Vivia en esta
+               rama SIN CONDICION PROPIA, y el browser retira el permiso de la carpeta en CADA
+               reapertura: o sea que quien usa una carpeta -- el destino bueno, el que hace que la
+               app valga la pena -- leia cincuenta y cinco palabras de troubleshooting cada vez que
+               abria, antes de que nada hubiera fallado.
+               Y NO ERA INFORMACION NUEVA. Nombraba las dos causas de un 'denied' y sus dos
+               remedios, que es exactamente lo que compone OpenOrSay cuando el permiso se niega DE
+               VERDAD -- y eso si aparece en el momento en que sirve, con el paso que fallo dentro.
+               Adelantar la nota no ayudaba a nadie: quien nunca falla no la necesita, y a quien le
+               falla le llega igual. *@
         }
         else
         {
@@ -236,10 +272,17 @@ else
     {
         <MudAlert Severity="Severity.Warning" Variant="Variant.Filled" Class="mb-4" id="not-saving">
             <div class="alert-row">
+                @* EL AVISO SE QUEDA ENTERO Y ARRIBA -- es el punto 3 de la cabecera y el unico
+                   estado que ninguna otra cosa de la pantalla delata: sin destino la app se ve
+                   COMPLETA y correcta, porque se pone al dia contra el concesionario en cada
+                   apertura. Lo que se acorto es el mecanismo: "se re-consulta cada vez que abris"
+                   dice lo mismo que la version larga, y el hecho que importa -- que no queda
+                   registro de la persona -- pasa a ser lo segundo que se lee en vez de lo
+                   ultimo. El boton sigue siendo el que explica que hacer. *@
                 <div>
                     <strong>Nothing is being saved.</strong>
-                    This app is running with no destination: what you see is fetched from the dealership
-                    every time you open it, and no record of yours is kept.
+                    No record of yours is kept &mdash; what you see is re-fetched every time you open
+                    the app.
                 </div>
                 @if (pickerSupported == true)
                 {
@@ -569,6 +612,10 @@ else
     private bool whyBrowserStorage;
     private bool showInstrument;
 
+    // El volcado de la excepcion, plegado. No arranca abierto ni se recuerda entre fallos: cada
+    // error es uno nuevo y el titular es lo que hay que leer primero.
+    private bool errorDetail;
+
     private string vin = "";
     private string evaluatedUpTo = "";
     private string nextDue = "";
@@ -743,6 +790,11 @@ else
     private async Task Try(string step, Func<Task> action)
     {
         error = "";
+
+        // SE REPLIEGA EN CADA INTENTO. Sin esto, abrir el detalle una vez lo deja abierto para
+        // todos los fallos que vengan despues, y el volcado del error ANTERIOR sigue en pantalla
+        // mientras el titular ya habla de otro paso.
+        errorDetail = false;
         try
         {
             await action();
