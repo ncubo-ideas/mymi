@@ -88,7 +88,39 @@ public class MainActivity : Activity
 			foreach (Module m in catalog.Modules) rootView!.AddView(Card(m));
 		});
 
-		await Task.CompletedTask;
+		// 3 - THE PERSON'S SWITCH, WATCHED. Without this the phone reads consent once and never
+		//     again: she switches a query off and the app keeps offering it until she kills it.
+		//     A switch you have to restart for is not a switch.
+		//
+		//     This is the SAME watch the desktop Host runs. What differs is only what happens
+		//     when it fires: there, a 'tools/list_changed' to the assistant; here, redrawing the
+		//     cards. That is why the watch lives in the core and the announcement does not.
+		watch = new ConsentWatch(dispatcher) { Changed = Redraw };
+		await watch.Run(s => global::Android.Util.Log.Info("GNOTHI", s), stop.Token);
+	}
+
+	private ConsentWatch? watch;
+	private readonly CancellationTokenSource stop = new();
+
+	private Task Redraw(IReadOnlyList<string> changes, CancellationToken ct)
+	{
+		RunOnUiThread(() =>
+		{
+			rootView!.RemoveAllViews();
+			Heading("Gnothi");
+			foreach (string c in changes) Note(c);
+
+			foreach (Module m in dispatcher!.Modules.Modules) rootView!.AddView(Card(m));
+		});
+
+		return Task.CompletedTask;
+	}
+
+	protected override void OnDestroy()
+	{
+		stop.Cancel();
+		watch?.Dispose();
+		base.OnDestroy();
 	}
 
 	// ONE CARD PER MODULE: icon, who handed it over, and one button per query.

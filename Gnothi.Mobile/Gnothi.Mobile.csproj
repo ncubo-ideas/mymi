@@ -11,6 +11,10 @@
        WHAT DOES NOT COME IN, and that is the point: Program.cs, ToolBridge.cs, HostTools.cs
        and ConsentWatcher.cs. All of that is Gate 1, which speaks MCP. Here the caller is the
        app (the future assistant) and it does not need the protocol.
+       ConsentWatch.cs DOES come in, and that split is the point: watching the person's file
+       and reloading her consent is not the protocol's business, only ANNOUNCING it is. While
+       the two lived fused, the phone had no hot reload at all.
+
        If this compiles without the MCP SDK, the core is proven transport-agnostic. -->
 
   <PropertyGroup>
@@ -40,6 +44,7 @@
     <Compile Include="..\Gnothi.Host\Installation.cs" />
     <Compile Include="..\Gnothi.Host\IShell.cs" />
     <Compile Include="..\Gnothi.Host\InProcessShell.cs" />
+    <Compile Include="..\Gnothi.Host\ConsentWatch.cs" />
   </ItemGroup>
 
 </Project>
