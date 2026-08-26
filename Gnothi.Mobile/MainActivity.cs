@@ -3,6 +3,7 @@ using Android.Graphics;
 using Android.OS;
 using Android.Views;
 using Android.Widget;
+using Gnothi.Assistant;
 using Gnothi.Host;
 
 namespace Gnothi.Mobile;
@@ -50,6 +51,65 @@ public class MainActivity : Activity
 		_ = Task.Run(Start);
 	}
 
+	// GATE 2, ON THE SCREEN. The person asks in words; the loop decides which queries to run.
+	//
+	// This is the half of mobile the buttons below do NOT cover, and confusing the two is the
+	// mistake to avoid: on a phone TWO things fall at once and they have different answers --
+	// the external assistant falls (this), and the child process falls (InProcessShell). The
+	// buttons prove the second one. Only this proves the first.
+	private View Gate2()
+	{
+		var box = new LinearLayout(this) { Orientation = Orientation.Vertical };
+		box.SetPadding(0, 0, 0, 34);
+
+		var field = new EditText(this) { Hint = "Ask about your modules...", TextSize = 15f };
+		var ask = new Button(this) { Text = "ASK", TextSize = 14f };
+		var trace = new TextView(this) { Text = "", TextSize = 11f };
+		trace.SetPadding(0, 14, 0, 0);
+
+		ask.Click += async (_, _) =>
+		{
+			string question = field.Text?.Trim() ?? "";
+			if (question.Length == 0) return;
+
+			ask.Enabled = false;
+			var steps = new System.Text.StringBuilder();
+			void Step(string s) { steps.AppendLine(s); RunOnUiThread(() => trace.Text = steps.ToString()); }
+
+			try
+			{
+				// WHAT THE QUESTION WOULD COST, measured HERE, on the phone, before any key is
+				// involved. The catalog travels WHOLE on every single question -- even one that
+				// ends up using a single tool -- so with twenty modules installed this is
+				// thousands of tokens per question. Nobody had put it in numbers on a device.
+				IReadOnlyList<ToolForTheModel> catalogue = AgentLoop.CatalogFor(dispatcher!);
+				int chars = catalogue.Sum(t => t.Name.Length + t.Description.Length + t.SchemaJson.Length);
+				Step($"catalog: {catalogue.Count} tools, {chars:N0} chars would travel on this question");
+
+				// THE KEY IS NOT IN THE CODE AND NOT IN THE REPO. It is read from a file the
+				// person puts in the app's own area. If it is not there, ModelClaude throws --
+				// and that throw is the honest shape of the thing: on desktop the loop is Claude
+				// Desktop's and her subscription pays for it; here the loop is ours, so the key
+				// is ours to obtain, and WHOSE key it is has not been decided.
+				string keyFile = System.IO.Path.Combine(FilesDir!.AbsolutePath, "anthropic.key");
+				var loop = new AgentLoop(dispatcher!, new ModelClaude(keyFile));
+
+				Step("asking the model...");
+				string answer = await loop.Answer(question, Step, CancellationToken.None);
+
+				Step("");
+				Step(answer);
+			}
+			catch (System.Exception e) { Step($"{e.GetType().Name}: {e.Message}"); }
+			finally { RunOnUiThread(() => ask.Enabled = true); }
+		};
+
+		box.AddView(field);
+		box.AddView(ask);
+		box.AddView(trace);
+		return box;
+	}
+
 	private async Task Start()
 	{
 		// 1 - LIFECYCLE: the Host installs what was downloaded. adb cannot write into the
@@ -84,6 +144,8 @@ public class MainActivity : Activity
 
 			Note($"{catalog.Modules.Count} modules installed"
 				+ (copied > 0 ? $"  -  {copied} files installed on this launch" : ""));
+
+			rootView!.AddView(Gate2());
 
 			foreach (Module m in catalog.Modules) rootView!.AddView(Card(m));
 		});

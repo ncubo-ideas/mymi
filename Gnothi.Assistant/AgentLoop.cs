@@ -39,7 +39,12 @@ public sealed class AgentLoop
 
 	// THE CATALOG AS THE MODEL SEES IT. Public because it is measurable and because it is
 	// what gets sent on EVERY question: its size is the fixed cost of one query.
-	public IReadOnlyList<ToolForTheModel> CatalogForTheModel() => ForTheModel(ToolIndex.Of(host));
+	public IReadOnlyList<ToolForTheModel> CatalogForTheModel() => CatalogFor(host);
+
+	// The same catalog, WITHOUT needing a model. It is what makes the cost of a question
+	// measurable before there is a key -- and on a phone, where the key is exactly what has not
+	// been decided, it is the only part of Gate 2 that can be shown working.
+	public static IReadOnlyList<ToolForTheModel> CatalogFor(Dispatcher host) => ForTheModel(ToolIndex.Of(host));
 
 	// The projection that belongs to THIS gate. Gate 1 turns the same schema into a JsonElement
 	// for MCP; here it becomes a string for the model. The index underneath is shared.
