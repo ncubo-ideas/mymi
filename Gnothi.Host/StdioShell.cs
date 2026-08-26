@@ -1,3 +1,4 @@
+using System.Text.Json;
 using ModelContextProtocol.Client;
 using ModelContextProtocol.Protocol;
 
@@ -82,11 +83,13 @@ internal sealed class StdioShell : IShell
 		finally { await Evict(); }
 	}
 
-	// The module's CallToolResult is returned whole and untouched.
+	// The module's FACTS are returned, with the MCP envelope taken off -- see Facts below.
 	//
-	// The Host does not parse nor reformat the response, and that is not laziness: if it
-	// transcoded, it would have to understand the domain, and any loss in the conversion would
-	// become a Host bug living inside the person's data.
+	// The Host does not parse nor reformat what is INSIDE: it lifts the payload out of the
+	// protocol wrapper and hands it over as it came. That distinction is the whole point. If it
+	// transcoded the content, it would have to understand the domain, and any loss in the
+	// conversion would become a Host bug living inside the person's data. Unwrapping is not
+	// transcoding: nobody's data changes, only whose envelope it travels in.
 	//
 	// IT EVICTS AFTER EVERY CALL, and it cost a bug to understand why.
 	//
@@ -112,10 +115,42 @@ internal sealed class StdioShell : IShell
 	{
 		try
 		{
-			return await (await Start(ct)).CallToolAsync(tool, arguments, cancellationToken: ct);
+			return Facts(await (await Start(ct)).CallToolAsync(tool, arguments, cancellationToken: ct));
 		}
 		finally { await Evict(); }
 	}
+
+	// THE MCP ENVELOPE STOPS HERE, and that is the whole point of IShell: the seam declares
+	// that content travels as 'object' with NO MCP type in it, and returning a CallToolResult
+	// through it broke that promise in silence.
+	//
+	// It cost a MEASURED defect. Gate 2 serializes whatever arrives, so with a module over
+	// stdio the model received the envelope with the facts escaped INSIDE a string: 525
+	// characters where the in-process shell sent 126, for the very same four invoices. Gate 1
+	// hid it because ToolBridge carried a branch per shape; Gate 2 had no such branch, and
+	// nothing said it needed one.
+	//
+	// So both shells now return THE SAME THING: the module's facts. Dressing them back up as
+	// MCP is Gate 1's job and nobody else's.
+	private static object Facts(CallToolResult result)
+	{
+		// A module's error is THROWN, not returned. Dispatcher.Serve already turns an exception
+		// into a Denied that carries the module's own message, so this needs no new path.
+		if (result.IsError == true)
+			throw new InvalidOperationException(Text(result));
+
+		// structuredContent is the facts as data. The text block carries the same thing
+		// escaped into a string, which is exactly why it costs four times as much.
+		if (result.StructuredContent is JsonElement structured
+			&& structured.ValueKind is not JsonValueKind.Undefined and not JsonValueKind.Null)
+			return structured;
+
+		// A module that answers only in text is legitimate: its text IS its facts.
+		return Text(result);
+	}
+
+	private static string Text(CallToolResult result) =>
+		string.Concat(result.Content.OfType<TextContentBlock>().Select(b => b.Text));
 
 	// Closes the module's process and lets go of the folder. It must not throw: it is called
 	// from a finally, and covering the original error with a cleanup one would be worse than

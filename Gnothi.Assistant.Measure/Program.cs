@@ -48,7 +48,7 @@ Console.WriteLine($"  FIXED COST PER QUESTION      {fixedCost,7:N0} chars   {Est
 Console.WriteLine();
 Console.WriteLine("--- THE WHOLE REQUEST, serialized as it would go over the wire ---");
 string question = "how fast is my prostate antigen rising?";
-string json = JsonSerializer.Serialize(ModelClaude.Body("claude-sonnet-5", question, tools));
+string json = JsonSerializer.Serialize(ModelClaude.Body("claude-sonnet-5", [new Asked(question)], tools));
 Console.WriteLine($"  sample question              {question.Length,7:N0} chars");
 Console.WriteLine($"  POST body JSON               {json.Length,7:N0} chars   {Est(json.Length),8} tokens");
 
@@ -82,8 +82,7 @@ Console.WriteLine("with no key there is no tokenizer, and saying 'measured' woul
 // A model that calls nobody: this tool MEASURES the request, it does not send it.
 internal sealed class MeasuringModel : IModel
 {
-	public Task<Decision> Ask(string q, IReadOnlyList<ToolForTheModel> t, CancellationToken ct)
-		=> throw new NotSupportedException("this tool measures, it does not ask");
-	public Task<string> Compose(string q, ToolCall c, string r, CancellationToken ct)
+	public Task<Said> Next(
+		IReadOnlyList<Exchange> conversation, IReadOnlyList<ToolForTheModel> tools, CancellationToken ct)
 		=> throw new NotSupportedException("this tool measures, it does not ask");
 }

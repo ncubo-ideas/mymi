@@ -50,7 +50,8 @@ public sealed class ModelClaude : IModel
 	// THE REQUEST BODY, in one single place. Public and static so it can be MEASURED without
 	// sending it: the cost per question is the catalog plus the instructions, and that can be
 	// counted before having a key.
-	public static Dictionary<string, object?> Body(string model, string question, IReadOnlyList<ToolForTheModel> tools) =>
+	public static Dictionary<string, object?> Body(
+		string model, IReadOnlyList<Exchange> conversation, IReadOnlyList<ToolForTheModel> tools) =>
 		new()
 		{
 			["model"] = model,
@@ -62,84 +63,104 @@ public sealed class ModelClaude : IModel
 				["description"] = t.Description,
 				["input_schema"] = JsonSerializer.Deserialize<JsonElement>(t.SchemaJson),
 			}).ToArray(),
-			["messages"] = new[] { new Dictionary<string, object?> { ["role"] = "user", ["content"] = question } },
+			["messages"] = Messages(conversation),
 		};
 
-	public async Task<Decision> Ask(string question, IReadOnlyList<ToolForTheModel> tools, CancellationToken ct)
+	// THE EXCHANGE, TRANSLATED TO THE API'S SHAPE. One subtlety carries the whole cross: every
+	// tool_result of a round has to travel in a SINGLE user message. One message per result is
+	// rejected, and one message per result is exactly what a naive entry-by-entry translation
+	// produces -- which is why the grouping is here and not left to the caller.
+	private static object[] Messages(IReadOnlyList<Exchange> conversation)
 	{
-		JsonElement answer = await Post(Body(model, question, tools), ct);
+		List<object> messages = [];
+		List<object> pending = [];
 
-		// The response comes in blocks. Look for tool_use; if there is none, take the text.
-		string? text = null;
-		foreach (JsonElement b in answer.GetProperty("content").EnumerateArray())
+		void Flush()
 		{
-			string kind = b.GetProperty("type").GetString() ?? "";
-
-			if (kind == "tool_use")
-			{
-				string publicName = b.GetProperty("name").GetString() ?? "";
-				(string module, string tool) = Split(publicName, tools);
-
-				Dictionary<string, object?> args = [];
-				if (b.TryGetProperty("input", out JsonElement input))
-					foreach (JsonProperty p in input.EnumerateObject())
-						args[p.Name] = p.Value.ValueKind == JsonValueKind.String ? p.Value.GetString() : p.Value.GetRawText();
-
-				return Decision.CallTool(module, tool, args);
-			}
-
-			if (kind == "text") text ??= b.GetProperty("text").GetString();
+			if (pending.Count == 0) return;
+			messages.Add(new Dictionary<string, object?> { ["role"] = "user", ["content"] = pending.ToArray() });
+			pending = [];
 		}
 
-		return Decision.Answer(text ?? "(no answer)");
-	}
-
-	public async Task<string> Compose(string question, ToolCall call, string resultJson, CancellationToken ct)
-	{
-		var body = new Dictionary<string, object?>
-		{
-			["model"] = model,
-			["max_tokens"] = 1024,
-			["system"] = Instructions,
-			["messages"] = new[]
+		foreach (Exchange e in conversation)
+			switch (e)
 			{
-				new Dictionary<string, object?> { ["role"] = "user", ["content"] = question },
-				new Dictionary<string, object?>
-				{
-					["role"] = "assistant",
-					["content"] = $"I queried {call.Module}_{call.Tool} and the module returned these facts: {resultJson}",
-				},
-				new Dictionary<string, object?>
-				{
-					["role"] = "user",
-					["content"] = "Answer me with those facts, with their numbers and units. Do not add advice.",
-				},
-			},
-		};
+				case Asked a:
+					Flush();
+					messages.Add(new Dictionary<string, object?> { ["role"] = "user", ["content"] = a.Question });
+					break;
 
-		JsonElement r = await Post(body, ct);
-		foreach (JsonElement b in r.GetProperty("content").EnumerateArray())
-			if ((b.GetProperty("type").GetString() ?? "") == "text")
-				return b.GetProperty("text").GetString() ?? "";
+				case Said s:
+					Flush();
+					List<object> blocks = [];
+					if (!string.IsNullOrWhiteSpace(s.Text))
+						blocks.Add(new Dictionary<string, object?> { ["type"] = "text", ["text"] = s.Text });
+					foreach (ToolCall c in s.Calls)
+						blocks.Add(new Dictionary<string, object?>
+						{
+							["type"] = "tool_use",
+							["id"] = c.Id,
+							["name"] = c.PublicName,
+							["input"] = c.Arguments,
+						});
+					messages.Add(new Dictionary<string, object?> { ["role"] = "assistant", ["content"] = blocks.ToArray() });
+					break;
 
-		return resultJson;
-	}
-
-	// The public name is prefixed by module, and it CANNOT be split on the first underscore:
-	// 'total_de_facturas' has three. It is resolved against the catalog, which is what knows
-	// which prefix is a module.
-	private static (string module, string tool) Split(string publicName, IReadOnlyList<ToolForTheModel> tools)
-	{
-		foreach (ToolForTheModel t in tools)
-			if (t.Name == publicName)
-			{
-				int i = publicName.IndexOf('_');
-				return i < 0 ? (publicName, publicName) : (publicName[..i], publicName[(i + 1)..]);
+				case Returned r:
+					pending.Add(new Dictionary<string, object?>
+					{
+						["type"] = "tool_result",
+						["tool_use_id"] = r.CallId,
+						["content"] = r.Json,
+						["is_error"] = r.Failed,
+					});
+					break;
 			}
 
-		int j = publicName.IndexOf('_');
-		return j < 0 ? (publicName, publicName) : (publicName[..j], publicName[(j + 1)..]);
+		Flush();
+		return [.. messages];
 	}
+
+	public async Task<Said> Next(
+		IReadOnlyList<Exchange> conversation, IReadOnlyList<ToolForTheModel> tools, CancellationToken ct)
+	{
+		JsonElement answer = await Post(Body(model, conversation, tools), ct);
+
+		string? text = null;
+		List<ToolCall> calls = [];
+
+		foreach (JsonElement b in answer.GetProperty("content").EnumerateArray())
+			switch (b.GetProperty("type").GetString() ?? "")
+			{
+				case "text":
+					text ??= b.GetProperty("text").GetString();
+					break;
+
+				// EVERY tool_use block, not the first one. Returning on the first is what made
+				// the cross fail in silence: asked about lab tests AND invoices, the model
+				// answers with two, one got run, and the sentence read as if that were all the
+				// facts there were.
+				case "tool_use":
+					Dictionary<string, object?> args = [];
+					if (b.TryGetProperty("input", out JsonElement input))
+						foreach (JsonProperty p in input.EnumerateObject())
+							args[p.Name] = p.Value.ValueKind == JsonValueKind.String
+								? p.Value.GetString()
+								: p.Value.GetRawText();
+
+					calls.Add(new ToolCall(
+						b.GetProperty("id").GetString() ?? "",
+						b.GetProperty("name").GetString() ?? "",
+						args));
+					break;
+			}
+
+		// The name is NOT taken apart here. Who contributes a public name is the Host's index's
+		// business, and the loop is the one holding it -- this class only reports what the model
+		// asked for.
+		return new Said(text, calls);
+	}
+
 
 	private async Task<JsonElement> Post(Dictionary<string, object?> body, CancellationToken ct)
 	{

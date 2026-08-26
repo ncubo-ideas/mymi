@@ -17,14 +17,15 @@ persona no tenía dónde apagar una consulta.
 
 ## El código
 
-`net9.0`, 1 331 líneas, dos paquetes. **No referencia Puppeteer** — y no tenerlo es cómo el
+`net9.0`, 1 391 líneas, dos paquetes. **No referencia Puppeteer** — y no tenerlo es cómo el
 compilador garantiza que no se colara semántica de dominio.
 
 | Archivo | Qué es |
 |---|---|
 | `Program.cs` | El arranque y la **Puerta 1**. Traduce y delega, nada más |
 | `ToolBridge.cs` | Contesta `tools/list` y `tools/call`. El `inputSchema` sale del manifiesto |
-| `Dispatcher.cs` | El núcleo: `Catalogo()` y `Atender()`. **No sabe que existe MCP** |
+| `Dispatcher.cs` | El núcleo: `Catalog()` y `Serve()`. **No sabe que existe MCP** |
+| `ToolIndex.cs` | El índice de tools publicadas, **compartido por las dos Puertas** |
 | `IShell.cs` | La costura hacia el módulo. **No nombra un solo tipo de MCP** |
 | `StdioShell.cs` | Cáscara por proceso hijo con MCP sobre stdio |
 | `InProcessShell.cs` | Cáscara por reflexión: el dll cargado en su propio contexto, sin proceso |
@@ -66,7 +67,7 @@ UNA SALIDA, dos cascaras, elegida por modulo en su instalacion.json:
 > en `NotasGnothiHost/10`.
 
 Nunca al revés y nunca de costado. `Dispatcher` no sabe que existe MCP, ni un asistente, ni
-un bucle de agente: recibe una `Peticion` y devuelve una `Respuesta`.
+un bucle de agente: recibe una `Request` y devuelve una `Response`.
 
 Eso no es prolijidad. El día que exista una segunda entrada —en este proyecto va a ser el
 bucle de agente propio para móvil— tiene que hacer **lo mismo**. Si el catálogo, los
@@ -214,7 +215,7 @@ por cambio real — no una por evento del sistema de archivos.
 Tres decisiones de esa pieza que no son obvias:
 
 **Solo recarga el consentimiento.** `Module.Reconsent(bool, IReadOnlyList<string>)` no
-acepta una `Instalacion` entera **a propósito**: hace imposible por construcción que un
+acepta una `Installation` entera **a propósito**: hace imposible por construcción que un
 cambio de cáscara o de carpeta se cuele por la recarga y le mueva el piso a un módulo con
 una llamada en vuelo. Si esos campos cambian, el Host lo dice y pide reinicio.
 

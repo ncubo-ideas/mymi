@@ -41,6 +41,26 @@ public sealed class ModuleCatalog : IAsyncDisposable
 			try
 			{
 				Manifest m = Manifest.Read(manifestPath);
+
+				// A MODULE NAME MAY NOT CONTAIN '_', and this is not style: the public name a
+				// tool is published under is '{module}_{tool}', so a module called 'mi_super'
+				// with a tool 'x' and a module 'mi' with a tool 'super_x' produce THE SAME
+				// name. The index that both gates share is a dictionary, so the second one in
+				// would silently take the first one's place and a tool would just stop
+				// existing -- with nothing said to anyone.
+				//
+				// Rejected at load and NOT resolved with a suffix: the name is what the
+				// institution declared and what the assistant sees, so renaming it behind its
+				// back would be the Host having an opinion about somebody else's contract.
+				// Saying no here is loud, once, and at the moment it can still be fixed.
+				if (m.Module.Contains('_'))
+				{
+					warnings.Add(
+						$"{m.Module}: a module name cannot contain '_' -- it would collide with " +
+						"the public names of its own tools. Skipped");
+					continue;
+				}
+
 				Installation i = Installation.Read(installationPath);
 				modules.Add(new Module(m, i, dir));
 

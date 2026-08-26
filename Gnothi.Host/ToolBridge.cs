@@ -34,39 +34,25 @@ namespace Gnothi.Host;
 // Reworking the manifest to carry the schema is a format decision, and it is still open.
 internal static class ToolBridge
 {
-	// The index of public name -> who contributes it. It is built from the catalog, which
-	// already comes filtered by consent: a disabled tool does not enter the index, so it is not
-	// published and cannot be called.
-	//
-	// The public name is NOT split on the underscore to get back to the pair:
-	// 'total_de_facturas' has three. The pair is kept when the name is built, which is the only
-	// moment it is known without ambiguity.
-	private static Dictionary<string, (Module module, DeclaredTool tool)> Index(Dispatcher dispatcher)
-	{
-		Dictionary<string, (Module, DeclaredTool)> index = new(StringComparer.Ordinal);
-
-		foreach ((Module m, DeclaredTool t) in dispatcher.Catalog())
-			index[Module.PublicName(m.Name, t.Name)] = (m, t);
-
-		return index;
-	}
-
 	// tools/list. It returns ONLY the modules' tools: the Host's own live in the server's
 	// collection and the SDK adds them to this list.
+	//
+	// THE INDEX IS SHARED WITH GATE 2 -- see ToolIndex. What is this gate's own is the
+	// projection: here the schema becomes a JsonElement for MCP; there, a string for the model.
 	public static ValueTask<ListToolsResult> List(
 		Dispatcher dispatcher, RequestContext<ListToolsRequestParams> _, CancellationToken __)
 	{
 		List<Tool> tools = [];
 
-		foreach ((string publicName, (Module module, DeclaredTool declared)) in Index(dispatcher))
+		foreach (ToolIndex.Entry e in ToolIndex.Of(dispatcher).All)
 		{
 			tools.Add(new Tool
 			{
-				Name = publicName,
-				Title = string.IsNullOrWhiteSpace(declared.Title) ? null : declared.Title,
-				Description = declared.Description,
-				InputSchema = InputSchema(declared),
-				Annotations = new ToolAnnotations { ReadOnlyHint = declared.ReadOnly },
+				Name = e.PublicName,
+				Title = string.IsNullOrWhiteSpace(e.Tool.Title) ? null : e.Tool.Title,
+				Description = e.Tool.Description,
+				InputSchema = JsonSerializer.SerializeToElement(ToolIndex.InputSchema(e.Tool)),
+				Annotations = new ToolAnnotations { ReadOnlyHint = e.Tool.ReadOnly },
 			});
 		}
 
@@ -84,11 +70,11 @@ internal static class ToolBridge
 	{
 		string name = request.Params?.Name ?? "";
 
-		if (!Index(dispatcher).TryGetValue(name, out (Module module, DeclaredTool tool) pair))
+		if (!ToolIndex.Of(dispatcher).TryFind(name, out ToolIndex.Entry e))
 			throw new McpProtocolException($"Unknown tool: '{name}'");
 
 		Response r = await dispatcher.Serve(
-			new Request(pair.module.Name, pair.tool.Name, Arguments(request.Params)), ct);
+			new Request(e.Module.Name, e.Tool.Name, Arguments(request.Params)), ct);
 
 		if (!r.Authorized)
 			return new CallToolResult
@@ -97,16 +83,14 @@ internal static class ToolBridge
 				Content = [new TextContentBlock { Text = r.Reason }],
 			};
 
-		// THE CONTENT ARRIVES OPAQUE, and it can have TWO shapes depending on the shell.
-		// Translating it is Gate 1's job and nobody else's: this is the only place in the Host
-		// that knows MCP.
+		// THE CONTENT ARRIVES OPAQUE, and now it arrives in ONE shape whatever the shell was:
+		// the module's facts. Dressing them as MCP is this gate's job and nobody else's, which
+		// is why this is the only place in the Host that knows the protocol.
 		//
-		//   stdio       the module ALREADY spoke MCP -> a CallToolResult arrives and is
-		//               forwarded WHOLE and untouched, with its structuredContent and _meta.
-		//   in-process  the module returned a domain object, already projected by the shell
-		//               -> it has to be dressed as an MCP response right here.
-		if (r.Content is CallToolResult fromModule) return fromModule;
-
+		// There used to be a branch here for stdio, which forwarded the module's own
+		// CallToolResult whole. It looked like fidelity and it was an asymmetry: Gate 2 got a
+		// different shape depending on the shell and had no branch to notice. StdioShell now
+		// unwraps, so the seam keeps the promise it declares.
 		return new CallToolResult
 		{
 			Content = [new TextContentBlock { Text = JsonSerializer.Serialize(r.Content) }],
@@ -124,40 +108,5 @@ internal static class ToolBridge
 		Dictionary<string, object?> args = [];
 		foreach (KeyValuePair<string, JsonElement> pair in p.Arguments) args[pair.Key] = pair.Value;
 		return args;
-	}
-
-	// The input schema, built from what the manifest declares.
-	//
-	// Every parameter ends up required because the manifest has no way to say that one is
-	// optional. It is a visible simplification: when an optional is needed, the manifest will
-	// have to grow, and it is better for that to show now than to discover it when a tool
-	// fails.
-	private static JsonElement InputSchema(DeclaredTool declared)
-	{
-		Dictionary<string, object> properties = [];
-
-		foreach (DeclaredParameter p in declared.Input)
-		{
-			properties[p.Name] = new Dictionary<string, object>
-			{
-				// Everything is published as text. The manifest only models simple types, and
-				// lying about the type would be worse than simplifying it: a schema that says
-				// 'number' about something that is not one makes the client reject the call
-				// before the module gets to have an opinion.
-				["type"] = "string",
-				["description"] = p.Description,
-			};
-		}
-
-		Dictionary<string, object> schema = new()
-		{
-			["type"] = "object",
-			["properties"] = properties,
-		};
-
-		if (declared.Input.Count > 0)
-			schema["required"] = declared.Input.Select(p => p.Name).ToArray();
-
-		return JsonSerializer.SerializeToElement(schema);
 	}
 }
