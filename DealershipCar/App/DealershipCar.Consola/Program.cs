@@ -2,11 +2,16 @@ using System;
 using System.Collections.Generic;
 using System.Globalization;
 using System.IO;
+using System.Net.Http;
+using System.Net.Http.Headers;
 using System.Reflection;
 using System.Security.Cryptography;
 using System.Text;
 using System.Text.Json;
+using System.Threading;
+using System.Threading.Tasks;
 using DealershipCar.App;
+using DealershipCar.App.Events;
 using Puppeteer;
 using Puppets.Portador;
 
@@ -32,7 +37,7 @@ namespace DealershipCar.Consola
 	// la frontera, y eso necesita que la fachada proyecte lo que cada guarda mira. No es de aca.
 	internal static class Program
 	{
-		private static int Main(string[] args)
+		private static async Task<int> Main(string[] args)
 		{
 			try
 			{
@@ -42,7 +47,8 @@ namespace DealershipCar.Consola
 				{
 					case "historia": return TheSixMonthStory(AFolder(args, 1));
 					case "estado":   return TheBoardFromTheJournal(AFolder(args, 1));
-					case "refresco": return WhatTheRefreshLoopStillNeeds();
+					case "refresco": return await TheRefreshLoopAgainstTheDealership(args);
+					case "corte":    return await ACrashInTheMiddleOfABlock(args);
 					default:         Help(); return 1;
 				}
 			}
@@ -356,71 +362,351 @@ namespace DealershipCar.Consola
 
 		// ---------------------------------------------------------------- el bucle de refresh
 
-		// LO QUE FALTA PARA QUE BucleDeRefresh CORRA, medido y no opinado. §T7 pide cablearlo con
-		// renovacion de credencial y flush nulo; el flush nulo es correcto y es el default -- el
-		// journal de esta consola YA esta en un disco de verdad, asi que no hay nada que bajar --
-		// pero los tres argumentos OBLIGATORIOS del constructor son artefactos de T8, y dos de ellos
-		// necesitan superficie de dominio que no existe. Se deja MEDIDO en vez de escrito: el dia
-		// que T8 la agregue, esto lo dice solo.
-		private static int WhatTheRefreshLoopStillNeeds()
+		// EL REFRESH DE VERDAD: los eventos del concesionario, aplicados de a uno por el mecanismo
+		// compartido. Cierra C26, que T7 dejo MEDIDO en vez de escrito.
+		//
+		// El flush sigue siendo null y sigue siendo lo correcto para esta caratula: existe para
+		// bajar de MEMFS a la carpeta del usuario en wasm, y aca el journal ya esta en disco.
+		//
+		// LA UNICA PIEZA QUE TOCA LA RED ES EL MECANISMO, y el HttpClient lo crea esta caratula --
+		// que es el invariante que §7 del plan pide poder grepear. FuenteHttpDeEventos arma UNA sola
+		// forma de URL y no tiene otro metodo: la app no es cliente de los servicios generales del
+		// concesionario, y el senuelo de mas abajo lo demuestra en vez de afirmarlo.
+		private static async Task<int> TheRefreshLoopAgainstTheDealership(string[] args)
 		{
-			Console.WriteLine("DealershipCar - que le falta al BucleDeRefresh para poder correr");
+			string folder  = AFolder(args, 1);
+			string baseUrl = AnArgument(args, 2, "http://localhost:8092/");
+			string resource = AnArgument(args, 3, "vehicle");
+			string id      = AnArgument(args, 4, Story.TheVin);
+
+			Console.WriteLine("DealershipCar - el refresh contra la API de eventos del concesionario");
 			Console.WriteLine();
-			Console.WriteLine("BucleDeRefresh(diario, fuente, ruta, flush, renovarCredencial)");
-			Console.WriteLine();
-			Console.WriteLine($"  flush              : null, y es lo correcto para esta caratula.");
-			Console.WriteLine("                       El flush existe para bajar de MEMFS a la carpeta");
-			Console.WriteLine("                       del usuario en wasm. Aca el journal ya esta en");
-			Console.WriteLine("                       disco: no hay nada que bajar.");
-			Console.WriteLine();
-			Console.WriteLine("  fuente             : IFuenteDeEventos - la API de eventos de la agencia.");
-			Console.WriteLine("                       No existe todavia; la trae T8.");
-			Console.WriteLine("  ruta               : Ruta - senal cruda -> IMensajeDeEvento.");
-			Console.WriteLine("                       No existe todavia; la trae T8.");
-			Console.WriteLine();
-			Console.WriteLine("  diario             : IDiarioDeLaApp, y aca esta lo que no es solo");
-			Console.WriteLine("                       cuestion de escribirlo. DealershipCarAPI no lo");
-			Console.WriteLine("                       implementa, y estos son sus miembros:");
+			Console.WriteLine($"folder    : {folder}");
+			Console.WriteLine($"url2      : {baseUrl}{resource}/{id}/events?after=N");
 			Console.WriteLine();
 
-			// Se pregunta por reflexion contra los dos tipos de verdad, no contra una lista escrita
-			// a mano: una lista se queda vieja en silencio y esto no puede.
-			//
-			// EL CONTROL VA PRIMERO, y no es adorno. Hoy los tres miembros del diario dan "NO ESTA"
-			// contra CUALQUIER tipo, asi que tres respuestas negativas no prueban que se le este
-			// preguntando a la puerta: probarian lo mismo preguntandole a esta misma clase. El
-			// control pregunta por un miembro que la puerta SI tiene, y es lo que distingue "no lo
-			// implementa" de "estoy mirando el tipo equivocado".
-			Console.WriteLine($"    {"(control) Evaluate",-24} {WhetherTheDoorAnswers("Evaluate")}");
-			Console.WriteLine();
+			WhatTheRefreshLoopNeededAndWhetherTheDoorAnswersItNow();
 
-			foreach (MethodInfo required in typeof(IDiarioDeLaApp).GetMethods())
-				Console.WriteLine($"    {required.Name,-24} {WhetherTheDoorAnswers(required.Name)}");
+			using (var http = new HttpClient { BaseAddress = new Uri(baseUrl) })
+			{
+				DealershipCarApp app = Open(folder);
+				var api = new DealershipCarAPI(app);
+				var tokens = new ProveedorDeToken(http);
 
-			Console.WriteLine();
-			Console.WriteLine("  Aplicar() es cableado: rutea un mensaje tipado a un comando que la");
-			Console.WriteLine("  puerta YA tiene. Se escribe en T8 y no necesita nada nuevo.");
-			Console.WriteLine();
-			Console.WriteLine("  Los otros dos no se escriben y ya. UltimoEventoProcesado() tiene que");
-			Console.WriteLine("  salir DEL JOURNAL -- es lo que hace exacto el resume tras una caida --");
-			Console.WriteLine("  y TokenGuardado() es una credencial guardada. MaintenanceSchedule no");
-			Console.WriteLine("  lleva ni checkpoint de eventos ni credencial: no hay de donde");
-			Console.WriteLine("  contestarlos sin cambiar el dominio, y el dominio esta completo en T6.");
-			Console.WriteLine("  Un adaptador de esta consola que los contestara de memoria seria peor");
-			Console.WriteLine("  que no tenerlo: se veria igual que el de verdad y perderia eventos en");
-			Console.WriteLine("  el primer corte.");
-			Console.WriteLine();
-			Console.WriteLine("  Es el hallazgo C26. Lo cierra T8, que es donde la agenda gana su");
-			Console.WriteLine("  checkpoint y su credencial junto con los hechos que las necesitan.");
+				await TheAppGetsItsOwnCredential(api, tokens, resource, id);
+
+				var loop = new BucleDeRefresh(
+					api,
+					new FuenteHttpDeEventos(http, resource, id),
+					DealershipEventRoute.Route,
+					null,
+					ct => RenewTheCredential(api, tokens, resource, id, ct));
+
+				string actorFolder = Path.Combine(folder, DealershipCarApp.TheActorFor(Story.TheVin));
+
+				Console.WriteLine("-- refresh 1 --");
+				Console.WriteLine($"   punto de control antes    : {api.LastEventApplied()}");
+				long entryBefore = app.Actor.CurrentEntryId;
+				ResultadoDeRefresh first = await loop.Ejecutar();
+				Console.WriteLine($"   {first}");
+				Console.WriteLine($"   entradas del journal      : {entryBefore} -> {app.Actor.CurrentEntryId}");
+				Console.WriteLine($"   punto de control despues  : {api.LastEventApplied()}");
+				Console.WriteLine();
+
+				// EL CRITERIO 1 DE §T8: re-entregar el mismo bloque no deja NI UNA entrada. Aca "byte
+				// a byte" SI se sostiene, y es la forma fuerte de la afirmacion: se compara antes y
+				// despues de algo que no debe escribir nada (C23).
+				string bytesBefore = TheTreeOf(actorFolder);
+				entryBefore = app.Actor.CurrentEntryId;
+				ResultadoDeRefresh second = await loop.Ejecutar();
+
+				Console.WriteLine("-- refresh 2, el MISMO bloque re-entregado --");
+				Console.WriteLine($"   {second}");
+				Console.WriteLine($"   entradas del journal      : {entryBefore} -> {app.Actor.CurrentEntryId}");
+				Console.WriteLine($"   arbol byte a byte igual   : {TheTreeOf(actorFolder) == bytesBefore}");
+				Console.WriteLine("   (el Check rechaza cada evento repetido BAJO EL READ LOCK, asi que no");
+				Console.WriteLine("    escribe ni una entrada no-op. Con un if adentro del cuerpo en vez de");
+				Console.WriteLine("    un Check, esta linea diria False y el journal habria crecido)");
+				Console.WriteLine();
+
+				// Y EL CRITERIO 1 EN SU FORMA COMPLETA: el bloque ENTERO, desde el evento cero,
+				// como si el proveedor hubiera olvidado el checkpoint y re-sirviera todo. El
+				// refresh de arriba solo vuelve a leer lo que hay despues del punto de control, asi
+				// que por si solo no demuestra lo que §T8 pide. Esto si.
+				bytesBefore = TheTreeOf(actorFolder);
+				entryBefore = app.Actor.CurrentEntryId;
+				Ingested whole = await TheWholeBlockAgainFromZero(api, http, resource, id);
+
+				Console.WriteLine("-- el bloque ENTERO re-entregado desde el evento 0 --");
+				Console.WriteLine($"   {whole}");
+				Console.WriteLine($"   entradas del journal      : {entryBefore} -> {app.Actor.CurrentEntryId}");
+				Console.WriteLine($"   arbol byte a byte igual   : {TheTreeOf(actorFolder) == bytesBefore}");
+				Console.WriteLine();
+
+				// EL SALTO DE T7, ahora sobre hechos que llegaron por la red. El instante es un
+				// LITERAL: el dominio no lee un reloj, asi que evaluar seis meses despues es un
+				// argumento y no una espera.
+				EvaluationOutcome evaluated = api.Evaluate(TheInstantTheBoardIsRead);
+				Console.WriteLine($"-- evaluacion al {Day(TheInstantTheBoardIsRead)} --");
+				Report(evaluated);
+				Console.WriteLine();
+
+				PrintTheBoard(api, TheBoard(api), null);
+
+				// EL GUARDIAN DE LAS DOS COMPARACIONES DE ARRIBA, y tiene que dar False. Las dos
+				// afirman que el arbol NO cambio, asi que un TheTreeOf que devolviera una constante
+				// las dejaria verdes para siempre -- que es la leccion de T6 repitiendose, y en T7
+				// costo agregar exactamente esta linea. Evaluar un instante POSTERIOR si escribe.
+				bytesBefore = TheTreeOf(actorFolder);
+				entryBefore = app.Actor.CurrentEntryId;
+				api.Evaluate(TheInstantTheBoardIsRead.AddDays(1));
+
+				Console.WriteLine("-- evaluar un instante POSTERIOR, que SI tiene que escribir --");
+				Console.WriteLine($"   entradas del journal      : {entryBefore} -> {app.Actor.CurrentEntryId}");
+				Console.WriteLine($"   arbol byte a byte igual   : {TheTreeOf(actorFolder) == bytesBefore}   <- tiene que ser False");
+				Console.WriteLine();
+
+				await TheDecoyAnswers403(http, api, resource, id);
+
+				app.Dispose();
+			}
+
 			return 0;
 		}
 
-		private static string WhetherTheDoorAnswers(string member)
+		// EL CORTE A MITAD DE BLOQUE, de verdad: se aplican los primeros N eventos y el proceso se
+		// MATA -- sin Dispose, sin GracefulExit, sin flush -- que es lo mas parecido a que se corte
+		// la luz que se puede escribir. El criterio 2 de §T8 se comprueba corriendo despues un
+		// 'refresco' sobre la misma carpeta: no tiene que duplicar ni saltear nada.
+		//
+		// El bloque se recorre a mano y no con BucleDeRefresh porque el bucle aplica el bloque
+		// entero: cortarlo es justo lo que hay que poder hacer. El cuerpo es identico al suyo.
+		private static async Task<int> ACrashInTheMiddleOfABlock(string[] args)
 		{
-			return typeof(DealershipCarAPI).GetMethod(
-				member, BindingFlags.Public | BindingFlags.Instance) != null
-				? "la puerta ya lo contesta"
-				: "NO ESTA en la puerta";
+			string folder  = AFolder(args, 1);
+			string baseUrl = AnArgument(args, 2, "http://localhost:8092/");
+			string resource = AnArgument(args, 3, "vehicle");
+			string id      = AnArgument(args, 4, Story.TheVin);
+			int howMany    = int.Parse(AnArgument(args, 5, "6"), CultureInfo.InvariantCulture);
+
+			Console.WriteLine("DealershipCar - un corte a mitad de bloque");
+			Console.WriteLine();
+			Console.WriteLine($"folder    : {folder}");
+
+			using (var http = new HttpClient { BaseAddress = new Uri(baseUrl) })
+			{
+				DealershipCarApp app = Open(folder);
+				var api = new DealershipCarAPI(app);
+
+				await TheAppGetsItsOwnCredential(api, new ProveedorDeToken(http), resource, id);
+
+				var source = new FuenteHttpDeEventos(http, resource, id);
+				IReadOnlyList<SenalDeEvento> block =
+					await source.LeerDesde(api.LastEventApplied(), api.StoredToken(), CancellationToken.None);
+
+				Console.WriteLine($"bloque    : {block.Count} eventos desde el {api.LastEventApplied()}");
+				Console.WriteLine($"se aplican: {howMany}, y despues se MATA el proceso");
+				Console.WriteLine();
+
+				int applied = 0;
+				foreach (SenalDeEvento signal in block)
+				{
+					if (applied == howMany) break;
+
+					IMensajeDeEvento message = DealershipEventRoute.Route(signal);
+					if (message == null)
+					{
+						Console.WriteLine($"   #{signal.Numero,-4} {signal.Tipo,-26} DESCARTADO");
+						continue;
+					}
+
+					string rejection = api.Apply(message);
+					Console.WriteLine($"   #{signal.Numero,-4} {signal.Tipo,-26} "
+						+ (rejection.Length > 0 ? "RECHAZADO: " + rejection : "aplicado"));
+					applied++;
+				}
+
+				Console.WriteLine();
+				Console.WriteLine($"punto de control : {api.LastEventApplied()}");
+				Console.WriteLine("MATANDO EL PROCESO (sin Dispose, sin flush)");
+				Console.Out.Flush();
+			}
+
+			// Environment.Exit y no un return: se salta todo cierre ordenado, que es el punto.
+			Environment.Exit(0);
+			return 0;
+		}
+
+		// LA MEDICION QUE T7 DEJO, contestada. Se pregunta por reflexion y no contra una lista
+		// escrita a mano: una lista se queda vieja en silencio y esto no puede.
+		//
+		// SE PREGUNTA POR EL MAPA DE LA INTERFAZ y no por un metodo publico con ese nombre, y eso es
+		// un cambio respecto de T7. Los tres miembros de IDiarioDeLaApp se implementan EXPLICITAMENTE
+		// -- la interfaz es del mecanismo compartido y sus nombres estan en espanol, los de este
+		// modulo en ingles (C29) -- asi que un GetMethod publico por nombre daria "NO ESTA" para
+		// siempre, midiendo la convencion de nombres en vez del cableado.
+		//
+		// EL CONTROL SIGUE ESTANDO y ahora es un NEGATIVO que tiene que quedar negativo: se le hace
+		// la misma pregunta a un tipo que seguro NO implementa la interfaz. Si ese renglon dijera que
+		// si, la reflexion estaria rota y las tres respuestas de arriba no probarian nada.
+		private static void WhatTheRefreshLoopNeededAndWhetherTheDoorAnswersItNow()
+		{
+			Console.WriteLine("BucleDeRefresh(diario, fuente, ruta, flush, renovarCredencial)");
+			Console.WriteLine();
+			Console.WriteLine("  flush     : null, y es lo correcto para esta caratula: existe para bajar");
+			Console.WriteLine("              de MEMFS a la carpeta del usuario en wasm, y aca el journal");
+			Console.WriteLine("              ya esta en disco.");
+			Console.WriteLine("  fuente    : FuenteHttpDeEventos - la API de eventos del concesionario.");
+			Console.WriteLine("  ruta      : DealershipEventRoute.Route - senal cruda -> IMensajeDeEvento.");
+			Console.WriteLine("  diario    : DealershipCarAPI, que ahora ES un IDiarioDeLaApp:");
+			Console.WriteLine();
+
+			Console.WriteLine($"    {"(control) EvaluationOutcome",-30} "
+				+ $"{WhetherItIsAJournalOfTheApp(typeof(EvaluationOutcome))}");
+			Console.WriteLine($"    {"DealershipCarAPI",-30} "
+				+ $"{WhetherItIsAJournalOfTheApp(typeof(DealershipCarAPI))}");
+			Console.WriteLine();
+
+			foreach (MethodInfo required in typeof(IDiarioDeLaApp).GetMethods())
+				Console.WriteLine($"    {required.Name,-30} {WhatAnswers(required)}");
+
+			Console.WriteLine();
+			Console.WriteLine("  UltimoEventoProcesado sale DEL JOURNAL -- es lo que hace exacto el resume");
+			Console.WriteLine("  tras una caida -- y TokenGuardado de una credencial journalizada. Las dos");
+			Console.WriteLine("  viven en Logbook, una SEGUNDA global de raiz al lado de la agenda y nunca");
+			Console.WriteLine("  adentro: ni el punto de control ni la credencial son hechos de");
+			Console.WriteLine("  mantenimiento. MaintenanceSchedule no cambio. Es C26, cerrado.");
+			Console.WriteLine();
+		}
+
+		private static string WhetherItIsAJournalOfTheApp(Type candidate)
+		{
+			return typeof(IDiarioDeLaApp).IsAssignableFrom(candidate)
+				? "implementa IDiarioDeLaApp"
+				: "NO implementa IDiarioDeLaApp";
+		}
+
+		// Que miembro de la puerta contesta cada miembro de la interfaz. El mapa lo da el runtime, y
+		// ve tambien las implementaciones explicitas, que es justo lo que hay que ver.
+		private static string WhatAnswers(MethodInfo required)
+		{
+			if (!typeof(IDiarioDeLaApp).IsAssignableFrom(typeof(DealershipCarAPI)))
+				return "NO ESTA en la puerta";
+
+			InterfaceMapping map = typeof(DealershipCarAPI).GetInterfaceMap(typeof(IDiarioDeLaApp));
+
+			for (int member = 0; member < map.InterfaceMethods.Length; member++)
+				if (map.InterfaceMethods[member] == required)
+					return "lo contesta " + map.TargetMethods[member].Name;
+
+			return "NO ESTA en la puerta";
+		}
+
+		// EL BLOQUE ENTERO, PEDIDO DESDE CERO. Se recorre a mano y no con BucleDeRefresh porque el
+		// bucle pide desde el punto de control journalizado -- que es lo correcto y es justo lo que
+		// hay que puentear para poder afirmar el criterio. El cuerpo del foreach es el suyo.
+		private static async Task<Ingested> TheWholeBlockAgainFromZero(
+			DealershipCarAPI api, HttpClient http, string resource, string id)
+		{
+			var source = new FuenteHttpDeEventos(http, resource, id);
+			IReadOnlyList<SenalDeEvento> block =
+				await source.LeerDesde(0, api.StoredToken(), CancellationToken.None);
+
+			var counted = new Ingested { Read = block.Count };
+
+			foreach (SenalDeEvento signal in block)
+			{
+				IMensajeDeEvento message = DealershipEventRoute.Route(signal);
+				if (message == null) { counted.Discarded++; continue; }
+
+				if (api.Apply(message).Length > 0) { counted.Rejected++; continue; }
+
+				counted.Applied++;
+			}
+
+			return counted;
+		}
+
+		private sealed class Ingested
+		{
+			internal int Read;
+			internal int Applied;
+			internal int Discarded;
+			internal int Rejected;
+
+			public override string ToString()
+			{
+				return $"leidos={Read} aplicados={Applied} descartados={Discarded} rechazados={Rejected}";
+			}
+		}
+
+		// LA APP CONSIGUE SU CREDENCIAL SOLA, contra su clave de device. Ni la caratula ni la persona
+		// pegan un token: el concesionario lo emite para ESTA instalacion, y desde ahi vive en el
+		// journal.
+		private static async Task TheAppGetsItsOwnCredential(
+			DealershipCarAPI api, ProveedorDeToken tokens, string resource, string id)
+		{
+			if (api.StoredDeviceKey().Length == 0)
+				api.RegisterDevice("device-consola-de-medicion");
+
+			if (api.StoredToken().Length > 0) return;
+
+			Credencial credential = await tokens.Pedir(api.StoredDeviceKey(), resource, id);
+			Console.WriteLine($"credencial: scope={credential.Scope} expiresIn={credential.ExpiresIn}s");
+			Console.WriteLine();
+			api.StoreCredential(credential.AccessToken, credential.RefreshToken);
+		}
+
+		// Que hacer cuando el concesionario rechaza el access token: rotar con el refresh token, que
+		// es para lo que existe. El access es corto a proposito, asi que sin rotacion la app
+		// instalada se rompe sola al rato.
+		private static async Task<string> RenewTheCredential(
+			DealershipCarAPI api, ProveedorDeToken tokens, string resource, string id,
+			CancellationToken ct)
+		{
+			string refresh = api.StoredRefreshToken();
+
+			// Rotar devuelve null si el refresh ya no vale; ahi se pide una credencial nueva con la
+			// clave de device, que es lo que la instalacion siempre puede hacer.
+			Credencial renewed = refresh.Length > 0 ? await tokens.Rotar(refresh, ct) : null;
+			string how = renewed != null ? "rotada con el refresh token" : "nueva contra el device key";
+			if (renewed == null) renewed = await tokens.Pedir(api.StoredDeviceKey(), resource, id, ct);
+
+			Console.WriteLine($"   credencial renovada: {how} (scope {renewed.Scope})");
+			api.StoreCredential(renewed.AccessToken, renewed.RefreshToken);
+			return renewed.AccessToken;
+		}
+
+		// EL SENUELO, con la credencial DE LA APP. Lo pide esta caratula y no el mecanismo, y esa es
+		// la diferencia entera: FuenteHttpDeEventos no tiene con que pedir esto -- arma una sola forma
+		// de URL y no tiene otro metodo -- asi que hay que salirse de ella para intentarlo. El 403 no
+		// es cortesia del mock: el scope del token es {recurso}.events.read y el senuelo exige otro.
+		private static async Task TheDecoyAnswers403(
+			HttpClient http, DealershipCarAPI api, string resource, string id)
+		{
+			Console.WriteLine("-- el senuelo: la app NO es cliente de los servicios del concesionario --");
+
+			foreach (string route in new[] { $"{resource}/{id}/events?after=0", $"{resource}/{id}/customer" })
+			{
+				using (var request = new HttpRequestMessage(HttpMethod.Get, route))
+				{
+					request.Headers.Authorization =
+						new AuthenticationHeaderValue("Bearer", api.StoredToken());
+
+					using (HttpResponseMessage answer = await http.SendAsync(request))
+					{
+						Console.WriteLine($"   GET {route,-46} -> {(int)answer.StatusCode}");
+						if (!answer.IsSuccessStatusCode)
+							Console.WriteLine($"       {await answer.Content.ReadAsStringAsync()}");
+					}
+				}
+			}
+
+			Console.WriteLine();
+			Console.WriteLine("   El 403 es ESTRUCTURAL: el token esta acotado a leer eventos de ESTE");
+			Console.WriteLine("   vehiculo, y el expediente del cliente exige un scope que no lleva.");
+			Console.WriteLine("   Es lo que vuelve falsable el invariante en vez de solo afirmarlo.");
+			Console.WriteLine();
 		}
 
 		// ---------------------------------------------------------------- utilidades
@@ -526,6 +812,18 @@ namespace DealershipCar.Consola
 			return instant.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture);
 		}
 
+		// EL INSTANTE EN QUE SE LEE EL TABLERO DESPUES DEL REFRESH, y es un LITERAL. El dominio no lee
+		// un reloj: recibe el instante como parametro. Con DateTime.UtcNow aca, la misma narrativa
+		// aplicada manana daria otros vencimientos y esta caratula dejaria de ser reproducible -- y
+		// dos corridas del mismo dia NO lo notarian, que es exactamente C27.
+		private static readonly DateTime TheInstantTheBoardIsRead =
+			new DateTime(2026, 9, 1, 0, 0, 0, DateTimeKind.Utc);
+
+		private static string AnArgument(string[] args, int i, string byDefault)
+		{
+			return args.Length > i && args[i].Length > 0 ? args[i] : byDefault;
+		}
+
 		private static string AFolder(string[] args, int i)
 		{
 			return Path.GetFullPath(args.Length > i && args[i].Length > 0
@@ -542,9 +840,14 @@ namespace DealershipCar.Consola
 			Console.WriteLine("  historia [carpeta]   la historia de seis meses, desde un journal vacio");
 			Console.WriteLine("                       (es lo que corre 'dotnet run' sin argumentos)");
 			Console.WriteLine("  estado   [carpeta]   reabre ese journal y reporta - correr en proceso NUEVO");
-			Console.WriteLine("  refresco             que le falta al BucleDeRefresh para poder correr");
+			Console.WriteLine("  refresco [carpeta] [url] [recurso] [id]");
+			Console.WriteLine("                       trae los eventos del concesionario y los aplica de a uno");
+			Console.WriteLine("  corte    [carpeta] [url] [recurso] [id] [n]");
+			Console.WriteLine("                       aplica n eventos y MATA el proceso, para comprobar que");
+			Console.WriteLine("                       el 'refresco' siguiente no duplica ni saltea");
 			Console.WriteLine();
 			Console.WriteLine("carpeta por defecto: ~/DealershipCar-journal");
+			Console.WriteLine("url2    por defecto: http://localhost:8092/  (recurso 'vehicle', id = el VIN)");
 			Console.WriteLine();
 			Console.WriteLine("Las clases de operacion cruzan como el NOMBRE de su miembro, no como enum:");
 			Console.WriteLine("esta caratula no referencia el dominio y no puede nombrar sus tipos (C25).");

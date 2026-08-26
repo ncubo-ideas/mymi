@@ -15,6 +15,24 @@
     <ImplicitUsings>disable</ImplicitUsings>
     <RootNamespace>DealershipCar.Consola</RootNamespace>
     <AssemblyName>DealershipCar.Consola</AssemblyName>
+
+    <!-- El analizador de Microsoft.VisualStudio.Threading llega con el paquete del motor y se
+         despierta en T8, cuando esta caratula se vuelve async para poder esperar al refresh.
+         Sus dos reglas aca no aplican y no se acatan a medias:
+
+           VSTHRD103  "Console.WriteLine bloquea; usa WriteLineAsync". Existe para no
+                      bloquear el hilo de UI de una extension de Visual Studio. Esto es una
+                      consola de medicion: bloquear en la salida estandar es lo que hace, y
+                      WriteLineAsync en cada linea de un reporte seria ruido puro.
+           VSTHRD200  "los metodos que devuelven un awaitable llevan sufijo Async". La
+                      convencion de nombres de este modulo esta escrita en CLAUDE.md y dice
+                      otra cosa; el sufijo tampoco compra nada donde no hay dos versiones
+                      del mismo metodo.
+
+         Se silencian ACA y no en el repo entero: es esta caratula la que decidio ser async.
+         Examenes.Consola convive con las mismas seis advertencias sin silenciarlas, y ese es
+         justo el estado que este modulo no quiere. -->
+    <NoWarn>$(NoWarn);VSTHRD103;VSTHRD200</NoWarn>
   </PropertyGroup>
 
   <ItemGroup>

@@ -45,9 +45,24 @@ namespace DealershipCar.App
 
 		protected override void OnHydrated()
 		{
+			// UN UPGRADE APARTE, y no una linea mas adentro de 'semilla'. La guarda de upgrade es
+			// una-vez-por-actor: 'semilla' YA CORRIO en todo journal de DealershipCar que exista --
+			// los de la historia de T7 y los de cualquier persona -- asi que agregarle una linea no
+			// le llegaria a ninguno, en silencio. Una clave nueva si se aplica donde falta y no hace
+			// nada donde ya esta. Es exactamente para lo que sirve el mecanismo: migrar sin un .exe
+			// de migracion.
+			//
+			// VAN LOS DOS EN UN SOLO SCRIPT a proposito: cada PerformCommand deja una entrada en
+			// CADA arranque, aunque el upgrade ya este aplicado y no haga nada (medido en T6). Dos
+			// comandos costarian dos entradas por apertura, para siempre, por una global que se crea
+			// una vez. Que un script pueda llevar dos upgrades con nombres distintos esta medido por
+			// TheSecondGlobalReachesAJournalThatOnlyHasTheSeed.
 			Using(@"
 				upgrade('semilla') {
 					schedule = MaintenanceSchedule(@vin, @usage);
+				}
+				upgrade('bitacora-de-eventos') {
+					logbook = Logbook();
 				}
 			")
 			.WithParameters(p => {

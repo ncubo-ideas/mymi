@@ -1,6 +1,9 @@
 using System;
 using Choreography.Theater;
+using DealershipCar.App.Events;
+using DealershipCar.Dominio;
 using Puppeteer;
+using Puppets.Portador;
 
 namespace DealershipCar.App
 {
@@ -30,7 +33,13 @@ namespace DealershipCar.App
 	// en memoria y otra despues del replay. Truncar en la frontera hace que la corrida viva y la
 	// reproducida sean la misma. El dominio no toca .Kind ni convierte husos: no lee un reloj y
 	// tampoco lo interpreta.
-	public sealed class DealershipCarAPI
+	//
+	// ES TAMBIEN EL IDiarioDeLaApp QUE EL PORTADOR NECESITA: el bucle de refresh no sabe hacer
+	// performs, sabe pedirle a esto que aplique un mensaje. Los tres miembros de esa interfaz van
+	// IMPLICITAMENTE EXPLICITOS -- IMensajeDeEvento y IDiarioDeLaApp son del mecanismo compartido y
+	// sus nombres estan en espanol, los de este modulo en ingles (C29) -- asi que cada uno delega
+	// en el miembro ingles que hace el trabajo.
+	public sealed class DealershipCarAPI : IDiarioDeLaApp
 	{
 		private readonly PerformanceV2 app;
 
@@ -51,6 +60,8 @@ namespace DealershipCar.App
 			bool isMandatory, bool isSafety,
 			DateTime anchoredAt, int anchorReading, string anchorUnit)
 		{
+			TheDeclaredBasisAgreesWithItsLimits(basis, timeLimitDays, distanceLimit);
+
 			app.Using(@"
 				schedule.SeedPlanOperation(
 					@kind, @basis, @timeLimitDays, @distanceLimit, @unit,
@@ -96,6 +107,8 @@ namespace DealershipCar.App
 			string kind, string basis, int timeLimitDays, int distanceLimit, string unit,
 			DateTime anchoredAt, int anchorReading, string anchorUnit)
 		{
+			TheDeclaredBasisAgreesWithItsLimits(basis, timeLimitDays, distanceLimit);
+
 			app.Using(@"
 				schedule.AddOwnerOperation(
 					@kind, @basis, @timeLimitDays, @distanceLimit, @unit,
@@ -189,6 +202,38 @@ namespace DealershipCar.App
 				p["completedAt",       typeof(DateTime)] = InUtc(completedAt);
 				p["completionReading", typeof(int)]      = completionReading;
 				p["unit",              typeof(Enum)]     = WireName.DistanceUnit(unit, nameof(unit));
+			})
+			.PerformCommand();
+		}
+
+		// ------------------------------------------------------ comandos: la bitacora de eventos
+
+		// La clave con que el concesionario conoce a ESTA instalacion. Se genera en C# y entra como
+		// PARAMETRO, no dentro del texto del DSL: asi el valor queda journalizado y el replay lo
+		// reusa. Un identificador generado dentro del dominio daria uno distinto en cada replay y la
+		// app perderia su identidad ante el concesionario.
+		public void RegisterDevice(string deviceKey)
+		{
+			ArgumentException.ThrowIfNullOrWhiteSpace(deviceKey);
+
+			app.Using("logbook.RegisterDevice(@device);")
+			.WithParameters(p => {
+				p["device", typeof(string)] = deviceKey;
+			})
+			.PerformCommand();
+		}
+
+		// Guarda la credencial con que se sigue leyendo la narrativa. Queda EN CLARO en el journal,
+		// que es una deuda conocida y aceptada para el prototipo (plan §8): el access token es
+		// corto, el refresh token es durable.
+		public void StoreCredential(string token, string refreshToken)
+		{
+			ArgumentException.ThrowIfNullOrWhiteSpace(token);
+
+			app.Using("logbook.StoreCredential(@token, @refresh);")
+			.WithParameters(p => {
+				p["token",   typeof(string)] = token;
+				p["refresh", typeof(string)] = refreshToken ?? "";
 			})
 			.PerformCommand();
 		}
@@ -334,6 +379,245 @@ namespace DealershipCar.App
 			return AnInstant("@at = schedule.LastEvaluatedAt();", "at", p => { });
 		}
 
+		// ------------------------------------------------------ lecturas de la bitacora
+
+		// Hasta donde se leyo la narrativa del concesionario. SALE DEL JOURNAL, no de un campo en
+		// memoria, y eso es lo que hace exacto el resume tras una caida: el punto de control avanza
+		// DENTRO del mismo comando que aplica el hecho, asi que no existe el estado intermedio
+		// "guarde el hecho pero no avance el checkpoint", que es el que duplica al reintentar.
+		public long LastEventApplied()
+		{
+			return ANumber("@last = logbook.LastEvent();", "last", p => { });
+		}
+
+		// Las tres piezas de la credencial contestan VACIO cuando no hay, y no revienta: el bucle
+		// del Portador pregunta por el token y decide con IsNullOrWhiteSpace. La lectura guardada
+		// del dominio sigue detras -- se le pregunta la presencia primero, igual que con
+		// ReadNextDueKind -- asi que la polaridad de E41 se conserva y la traduccion a "" pasa aca,
+		// en la frontera, que es donde el contrato del mecanismo la pide.
+		public string StoredToken()
+		{
+			return ATruth("@has = logbook.HasACredential();", "has", p => { })
+				? AText("@value = logbook.Token();", "value", p => { })
+				: "";
+		}
+
+		public string StoredRefreshToken()
+		{
+			return ATruth("@can = logbook.CanRotate();", "can", p => { })
+				? AText("@value = logbook.RefreshToken();", "value", p => { })
+				: "";
+		}
+
+		public string StoredDeviceKey()
+		{
+			return ATruth("@has = logbook.HasADevice();", "has", p => { })
+				? AText("@value = logbook.DeviceKey();", "value", p => { })
+				: "";
+		}
+
+		// ------------------------------------------------------ la ingesta de eventos
+
+		// APLICA UN EVENTO COMO UN COMANDO. Devuelve "" si entro, o el motivo si no entro.
+		//
+		// El switch por tipo de mensaje vive ACA, en la frontera, y es lo unico que traduce el wire
+		// del concesionario a una operacion de la agenda. De este punto para adentro no hay
+		// discriminadores: cada rama es su propio comando, y el texto que queda en el journal dice
+		// QUE hecho entro sin que haya que desempaquetar un JSON para saberlo.
+		public string Apply(IMensajeDeEvento message)
+		{
+			ArgumentNullException.ThrowIfNull(message);
+
+			try
+			{
+				if (message is OdometerReported reading) return ApplyOdometerReported(reading);
+				if (message is ConditionThresholdCrossed crossing) return ApplyConditionThresholdCrossed(crossing);
+				if (message is OperationCompleted completion) return ApplyOperationCompleted(completion);
+				if (message is PlanOperationSeeded seeded) return ApplyPlanOperationSeeded(seeded);
+				if (message is PlanRevisionAdopted revision) return ApplyPlanRevisionAdopted(revision);
+
+				throw new ArgumentException(
+					$"Esta app no tiene comando para un mensaje de tipo '{message.Tipo}'. La ruta "
+					+ "debio devolver null para descartarlo.", nameof(message));
+			}
+			catch (DomainException refused)
+			{
+				return TheNarrativeMovesPast(message, refused);
+			}
+		}
+
+		// EL PUNTO DE CONTROL VA DENTRO DEL MISMO COMANDO QUE APLICA EL HECHO. O entraron los dos o
+		// no entro ninguno: no existe el estado "aplique la lectura pero no avance la bitacora", que
+		// es exactamente el que duplicaria al reintentar despues de una caida.
+		//
+		// Y LA GUARDA ES UN Check, no un if en el cuerpo. Un evento redelivered se rechaza BAJO EL
+		// READ LOCK y NO deja entrada en el journal (medido, SPIKES-OS2 S3); un if adentro del cuerpo
+		// persistiria una entrada no-op por cada reintento, que es la idempotencia costando lo mismo
+		// que no tenerla.
+		private string ApplyOdometerReported(OdometerReported message)
+		{
+			return app.Using(
+				scriptForChk: TheEventIsNew,
+				@"
+					{
+						schedule.RecordReading(@value, @unit, @observedAt, @source);
+						logbook.Advance(@event);
+					}
+				")
+			.WithParameters(p => {
+				p["event",      typeof(long)]     = message.EventNumber;
+				p["value",      typeof(int)]      = message.Value;
+				p["unit",       typeof(Enum)]     = WireName.DistanceUnit(message.Unit, "unit");
+				p["observedAt", typeof(DateTime)] = InUtc(message.ObservedAt);
+				p["source",     typeof(Enum)]     = WireName.ReadingSource(message.Source);
+			})
+			.PerformCheckThenCommand();
+		}
+
+		private string ApplyConditionThresholdCrossed(ConditionThresholdCrossed message)
+		{
+			return app.Using(
+				scriptForChk: TheEventIsNew,
+				@"
+					{
+						schedule.RecordConditionThreshold(@kind, @observedAt);
+						logbook.Advance(@event);
+					}
+				")
+			.WithParameters(p => {
+				p["event",      typeof(long)]     = message.EventNumber;
+				p["kind",       typeof(Enum)]     = WireName.OperationKind(message.Kind);
+				p["observedAt", typeof(DateTime)] = InUtc(message.ObservedAt);
+			})
+			.PerformCheckThenCommand();
+		}
+
+		private string ApplyOperationCompleted(OperationCompleted message)
+		{
+			return app.Using(
+				scriptForChk: TheEventIsNew,
+				@"
+					{
+						schedule.CompleteOperation(@kind, @completedAt, @completionReading, @unit);
+						logbook.Advance(@event);
+					}
+				")
+			.WithParameters(p => {
+				p["event",             typeof(long)]     = message.EventNumber;
+				p["kind",              typeof(Enum)]     = WireName.OperationKind(message.Kind);
+				p["completedAt",       typeof(DateTime)] = InUtc(message.CompletedAt);
+				p["completionReading", typeof(int)]      = message.CompletionReading;
+				p["unit",              typeof(Enum)]     = WireName.DistanceUnit(message.Unit, "unit");
+			})
+			.PerformCheckThenCommand();
+		}
+
+		private string ApplyPlanOperationSeeded(PlanOperationSeeded message)
+		{
+			TheDeclaredBasisAgreesWithItsLimits(
+				message.Basis, message.TimeLimitDays, message.DistanceLimit);
+
+			return app.Using(
+				scriptForChk: TheEventIsNew,
+				@"
+					{
+						schedule.SeedPlanOperation(
+							@kind, @basis, @timeLimitDays, @distanceLimit, @unit,
+							@isMandatory, @isSafety,
+							@anchoredAt, @anchorReading, @anchorUnit);
+						logbook.Advance(@event);
+					}
+				")
+			.WithParameters(p => {
+				p["event",         typeof(long)]     = message.EventNumber;
+				p["kind",          typeof(Enum)]     = WireName.OperationKind(message.Kind);
+				p["basis",         typeof(Enum)]     = WireName.IntervalBasis(message.Basis);
+				p["timeLimitDays", typeof(int)]      = message.TimeLimitDays;
+				p["distanceLimit", typeof(int)]      = message.DistanceLimit;
+				p["unit",          typeof(Enum)]     = WireName.DistanceUnit(message.Unit, "unit");
+				p["isMandatory",   typeof(bool)]     = message.IsMandatory;
+				p["isSafety",      typeof(bool)]     = message.IsSafety;
+				p["anchoredAt",    typeof(DateTime)] = InUtc(message.AnchoredAt);
+				p["anchorReading", typeof(int)]      = message.AnchorReading;
+				p["anchorUnit",    typeof(Enum)]     =
+					WireName.DistanceUnit(message.AnchorUnit, "anchorUnit");
+			})
+			.PerformCheckThenCommand();
+		}
+
+		private string ApplyPlanRevisionAdopted(PlanRevisionAdopted message)
+		{
+			return app.Using(
+				scriptForChk: TheEventIsNew,
+				@"
+					{
+						schedule.AdoptPlanRevision(@revisionCode, @adoptedAt);
+						logbook.Advance(@event);
+					}
+				")
+			.WithParameters(p => {
+				p["event",        typeof(long)]     = message.EventNumber;
+				p["revisionCode", typeof(string)]   = message.RevisionCode;
+				p["adoptedAt",    typeof(DateTime)] = InUtc(message.AdoptedAt);
+			})
+			.PerformCheckThenCommand();
+		}
+
+		// LA GUARDA DE IDEMPOTENCIA, UNA SOLA VEZ. Las cinco ingestas la comparten literalmente:
+		// dos copias de un Check se pueden desincronizar, y la que quedara vieja seria la que deja
+		// entrar un evento repetido.
+		private const string TheEventIsNew =
+			"Check(@event > logbook.LastEvent()) Error 'evento ya procesado';";
+
+		// CUANDO EL DOMINIO RECHAZA EL HECHO ADENTRO DEL CUERPO, LA NARRATIVA IGUAL AVANZA -- y esta
+		// es la decision mas cara de T8, asi que va dicha entera.
+		//
+		// Tres de los hechos que manda un concesionario tienen guardas que revientan DENTRO del
+		// comando: una lectura que va para atras (C21), una completacion de una clase que esta
+		// agenda no tiene activa, y una revision fechada antes de la que rige. El motor ya escribio
+		// la entrada cuando el cuerpo corre, asi que el rechazo queda marcado para siempre (C22).
+		//
+		// LO QUE T8 DESCUBRE ES QUE LA MARCA SE MULTIPLICA. El punto de control esta en el mismo
+		// comando que revento, asi que no avanzo; el proveedor sirve desde ese mismo punto; y el
+		// refresh siguiente vuelve a traer el mismo hecho y a dejar OTRA entrada. Sin esto, un solo
+		// hecho contradictorio deja la app atascada en el, marcando el journal en cada apertura y
+		// sin volver a recibir nada nuevo NUNCA. Queda escrito en C28.
+		//
+		// Asi que el punto de control avanza en un comando aparte y el hecho se pierde. Perder UN
+		// hecho que el dominio declaro imposible es estrictamente mejor que perder todos los que
+		// vengan detras -- incluida la correccion que el concesionario mande despues. No es
+		// silencioso: el motivo vuelve como rechazo, el bucle lo cuenta en Rechazados y la caratula
+		// lo imprime.
+		private string TheNarrativeMovesPast(IMensajeDeEvento message, DomainException refused)
+		{
+			string rejection = app.Using(
+				scriptForChk: TheEventIsNew,
+				"logbook.Advance(@event);")
+			.WithParameters(p => {
+				p["event", typeof(long)] = message.Evento;
+			})
+			.PerformCheckThenCommand();
+
+			return rejection.Length > 0 ? rejection : refused.Message;
+		}
+
+		// ------------------------------------------------- IDiarioDeLaApp (Portador)
+
+		long IDiarioDeLaApp.UltimoEventoProcesado()
+		{
+			return LastEventApplied();
+		}
+
+		string IDiarioDeLaApp.TokenGuardado()
+		{
+			return StoredToken();
+		}
+
+		string IDiarioDeLaApp.Aplicar(IMensajeDeEvento message)
+		{
+			return Apply(message);
+		}
+
 		// ------------------------------------------------------ la mecanica de una lectura
 
 		// Las cuatro formas escalares que cruzan la puerta. El SCRIPT viaja completo desde el sitio
@@ -367,6 +651,23 @@ namespace DealershipCar.App
 				.PerformQuery();
 
 				return rented[name].GetValue<int>();
+			}
+		}
+
+		// El numero del evento es long y no int: es el numero de secuencia de la narrativa de un
+		// proveedor, no una cuenta de cosas de esta agenda.
+		private long ANumber(string script, string name, Action<Parameters> arguments)
+		{
+			using (RentedParameter rented = app.Actor.RentedParameters())
+			{
+				app.Actor.Using(script)
+				.WithParameters(rented, p => {
+					p[Parameter.Out, name, typeof(long)] = default;
+					arguments(p);
+				})
+				.PerformQuery();
+
+				return rented[name].GetValue<long>();
 			}
 		}
 
@@ -404,6 +705,24 @@ namespace DealershipCar.App
 
 				return DateTime.SpecifyKind(rented[name].GetValue<DateTime>(), DateTimeKind.Utc);
 			}
+		}
+
+		// LA COMBINACION DE BASE Y LIMITES SE PREGUNTA EN LA PUERTA, y la contesta LA GUARDA DEL
+		// DOMINIO -- la misma, no una copia. Es la unica de las guardas que revientan adentro del
+		// cuerpo que se puede adelantar sin tocar el agregado: no mira nada de la agenda, solo los
+		// tres valores que vienen en la llamada. Adelantarla convierte una cicatriz permanente en un
+		// rechazo que no escribe nada (C22), y beneficia a toda caratula, no solo a la ingesta.
+		//
+		// Duplicar la tabla aca en vez de llamarla seria una segunda fuente de verdad para la ley
+		// L1/L2, que es justo lo que E32 y C2 argumentan en contra.
+		private static void TheDeclaredBasisAgreesWithItsLimits(
+			string basis, int timeLimitDays, int distanceLimit)
+		{
+			IntervalRule.BasisIsNeverInferred(
+				(IntervalBasisCode)Enum.Parse(
+					typeof(IntervalBasisCode), WireName.IntervalBasis(basis)),
+				timeLimitDays,
+				distanceLimit);
 		}
 
 		// A UTC y al segundo entero. Ver el encabezado de la clase: el journal no guarda ni la
