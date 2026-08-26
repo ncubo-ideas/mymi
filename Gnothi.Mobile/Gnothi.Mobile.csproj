@@ -1,0 +1,45 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!-- THE HOST'S CORE, RUNNING ON A PHONE.
+       Not "loading some dll": these are the SAME files as the desktop Host, compiled inside
+       an Android app.
+
+       <Compile Include> is used instead of a project reference for a concrete reason: the
+       Host is an Exe and its core types were internal until the public seam was opened. The
+       shells stay internal, so the app has to compile them in to name StdioShell.
+
+       WHAT DOES NOT COME IN, and that is the point: Program.cs, ToolBridge.cs, HostTools.cs
+       and ConsentWatcher.cs. All of that is Gate 1, which speaks MCP. Here the caller is the
+       app (the future assistant) and it does not need the protocol.
+       If this compiles without the MCP SDK, the core is proven transport-agnostic. -->
+
+  <PropertyGroup>
+    <TargetFramework>net9.0-android</TargetFramework>
+    <OutputType>Exe</OutputType>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <SupportedOSPlatformVersion>24.0</SupportedOSPlatformVersion>
+    <ApplicationId>com.ncubo.gnothi.host</ApplicationId>
+    <ApplicationDisplayVersion>1.0</ApplicationDisplayVersion>
+    <ApplicationVersion>1</ApplicationVersion>
+    <RootNamespace>Gnothi.Mobile</RootNamespace>
+
+    <!-- No AOT and no linker: reflection IS the mechanism, not a detail. Measuring Release
+         with the linker on is a separate test. -->
+    <RunAOTCompilation>false</RunAOTCompilation>
+    <PublishTrimmed>false</PublishTrimmed>
+    <AndroidLinkMode>None</AndroidLinkMode>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <!-- The Host's core, as it is, with no copy and no fork. -->
+    <Compile Include="..\Gnothi.Host\Dispatcher.cs" />
+    <Compile Include="..\Gnothi.Host\ModuleCatalog.cs" />
+    <Compile Include="..\Gnothi.Host\Module.cs" />
+    <Compile Include="..\Gnothi.Host\Manifest.cs" />
+    <Compile Include="..\Gnothi.Host\Installation.cs" />
+    <Compile Include="..\Gnothi.Host\IShell.cs" />
+    <Compile Include="..\Gnothi.Host\InProcessShell.cs" />
+  </ItemGroup>
+
+</Project>
