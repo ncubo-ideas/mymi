@@ -26,10 +26,15 @@
   <ItemGroup>
     <ProjectReference Include="..\..\Dominio\DealershipCar.Dominio.csproj" />
 
-    <!-- El mecanismo compartido, desde la RAIZ del repo. No es la copia de Examenes: subio
-         a /Mecanismo/ cuando entro este negocio, que es justo el disparador que dejo escrito
-         Examenes/Mecanismo/README.md. Ver /Mecanismo/README.md. -->
-    <ProjectReference Include="..\..\..\Mecanismo\Puppets.Portador\Puppets.Portador.csproj" />
+    <!-- El mecanismo, en la copia DE ESTE MODULO. No sale de la raiz del repo: sale de
+         DealershipCar/Mecanismo/, igual que Examenes, Compras y HolaMundo apuntan cada uno
+         a la suya. Ver DealershipCar/Mecanismo/README.md.
+
+         La copia de la raiz existio en esta rama y se bajo aca a proposito: nadie mas la
+         referenciaba, asi que "compartida" era la ubicacion y no el uso, y la rama pasaba a
+         mover estructura de todo el repo para resolver una dependencia de un solo modulo.
+         Lo que /Mecanismo/ tiene que ser lo decide ARCHITECTURE.md §2, no esta rama. -->
+    <ProjectReference Include="..\..\Mecanismo\Puppets.Portador\Puppets.Portador.csproj" />
   </ItemGroup>
 
   <ItemGroup>

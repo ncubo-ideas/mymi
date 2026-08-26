@@ -332,7 +332,7 @@ namespace DealershipCar.Wasm
 		//
 		// Sin este flush esa entrada se queda en MEMFS hasta el proximo comando que si salga bien, y
 		// la ventana de perdida deja de ser de milisegundos. Corregirlo en el bucle seria editar
-		// /Mecanismo/Puppets.Portador, que se copia verbatim y no es nuestro (C8).
+		// DealershipCar/Mecanismo/Puppets.Portador, que se copia verbatim y no es nuestro (C8).
 		private async Task FlushAfterTheBlockAsync() => await FlushToDiskAsync();
 
 		// ---------------------------------------------------------------- credencial

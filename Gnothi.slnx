@@ -6,10 +6,6 @@
 
        Nuestro dominio esta BASADO en ese ejemplo, pero no es parte de el. -->
 
-  <Folder Name="/Mecanismo/">
-    <Project Path="Mecanismo/Puppets.Portador/Puppets.Portador.csproj" />
-  </Folder>
-
   <Project Path="Examenes/App/Examenes.App/Examenes.App.csproj" />
   <Project Path="Examenes/App/Examenes.Consola/Examenes.Consola.csproj" />
   <Project Path="Examenes/App/Examenes.Mcp/Examenes.Mcp.csproj" />
