@@ -52,6 +52,7 @@ namespace Examenes.Consola
 			CadaSerieEsSuPropioTipo();
 			LoQueNingunaPersonaVivaPodriaTener();
 			ComputosPropiosDelAntigeno();
+			TodoLoQueSeMideEsUnAnalito();
 
 			Console.WriteLine();
 			Console.WriteLine(fallas == 0
@@ -1225,6 +1226,75 @@ namespace Examenes.Consola
 			Igual("la serie del colesterol no tiene histograma", "False",
 				(delColesterol.SerieDe(Analito.ColesterolTotal.Nombre)
 					.GetType().GetMethod("Histograma") != null).ToString());
+		}
+
+
+		// ---- todo lo que se mide es un analito ----
+		//
+		// §7. Lo levanto Renan preguntando: "el aspecto y la presencia de sangre no son
+		// analitos distintos?". Lo eran por la definicion del propio dominio -"Analito: QUE
+		// se midio"- y no podian serlo porque Analito EXIGIA una UnidadDeMedida. O sea que
+		// era "analito cuantitativo de sangre" con un nombre general puesto encima.
+		private static void TodoLoQueSeMideEsUnAnalito()
+		{
+			Titulo("todo lo que se mide es un analito");
+
+			// LA UNIDAD BAJO A LA FORMA CONTINUA, que es de quien es.
+			Igual("un analito de sangre es continuo y tiene unidad", "ng/mL",
+				Analito.AntigenoProstatico.Unidad.Simbolo);
+			Igual("  un color es un analito y NO tiene unidad", "True",
+				(Analito.ColorDeLaOrina is AnalitoNominal).ToString());
+			Igual("  y un binario tampoco", "True",
+				(Analito.SangreEnLaOrina is AnalitoBinario).ToString());
+			Igual("los tres son analitos igual", "True",
+				(Analito.ColorDeLaOrina is Analito && Analito.SangreEnLaOrina is Analito
+					&& Analito.AntigenoProstatico is Analito).ToString());
+
+			// Y resuelven por nombre como cualquier otro, con sus sinonimos.
+			Igual("el color de la orina resuelve por nombre", "True",
+				Analito.PorNombre("color de orina").EsElMismo(Analito.ColorDeLaOrina).ToString());
+			Igual("  la sangre en orina por su sinonimo clinico", "True",
+				Analito.PorNombre("hematuria").EsElMismo(Analito.SangreEnLaOrina).ToString());
+			Igual("  y sigue siendo distinta de la de heces", "False",
+				Analito.SangreEnLaOrina.EsElMismo(Analito.SangreEnLasHeces).ToString());
+
+			// EL SINTOMA QUE ESTO ARREGLA. Un urianalisis mide TRES cosas y antes las tres
+			// caian en una fila, aplanadas en un string:
+			//     "ambar, nitritos negativo, sangre negativo"
+			var expediente = new Expediente(60);
+			expediente.Agregar(new ExamenDeOrina(Hoy, "ambar", "negativo", "positivo"));
+
+			IReadOnlyList<CeldaDelCuadro> celdas = expediente.CeldasDelCuadro;
+			Igual("un urianalisis da TRES filas, no una", "3", celdas.Count.ToString());
+
+			var nombres = new List<string>();
+			foreach (CeldaDelCuadro celda in celdas) nombres.Add(celda.ParaMostrar);
+			nombres.Sort(StringComparer.Ordinal);
+			Igual("  y cada cosa medida tiene la suya", "Color de la orina|Nitritos|Sangre en orina",
+				string.Join("|", nombres));
+
+			// Una prueba NO REALIZADA no es una lectura vacia: es una lectura que no existe.
+			var sinNitritos = new Expediente(60);
+			sinNitritos.Agregar(new ExamenDeOrina(Hoy, "ambar"));
+			Igual("lo que el laboratorio no corrio no aparece", "1",
+				sinNitritos.CeldasDelCuadro.Count.ToString());
+
+			// Y el colesterol fraccionado, que es el unico examen de SANGRE que mide dos
+			// cosas: el HDL desaparecia heredando la lectura singular.
+			var fraccionado = new Expediente(60);
+			fraccionado.Agregar(new ColesterolDetallado(Hoy, 150m, 38m, "mg/dL"));
+			Igual("el fraccionado da dos filas: LDL y HDL", "2",
+				fraccionado.CeldasDelCuadro.Count.ToString());
+
+			// La ruta ahora puede descartar un evento de sangre que nombre un analito que
+			// no es continuo. Esa rama no podia existir antes.
+			Igual("un evento de sangre con un analito nominal se descarta", "descartado",
+				AnalitoRuteado(new SenalDeEvento(930, "ExamenAgregado", @"{
+					""id"": 930, ""tipo"": ""ExamenAgregado"",
+					""examen"": ""Color de la orina"",
+					""fecha"": ""2026-08-21T08:33:00"",
+					""valor"": 3.0, ""unidad"": ""ng/mL""
+				}")));
 		}
 
 		private static void Titulo(string texto)

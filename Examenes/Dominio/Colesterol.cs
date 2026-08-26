@@ -26,7 +26,7 @@ namespace Examenes.Dominio
 	// se moviera, sin mirar hacia donde. Ese es el caso que este analito ahora distingue.
 	public sealed class Colesterol : ExamenDeSangre
 	{
-		private static readonly Analito Suyo = Examenes.Dominio.Analito.ColesterolTotal;
+		private static readonly AnalitoContinuo Suyo = Examenes.Dominio.Analito.ColesterolTotal;
 
 		public Colesterol(DateTime fecha, decimal valor, string unidad)
 			: base(fecha, Suyo, Medida(valor, unidad, Suyo))

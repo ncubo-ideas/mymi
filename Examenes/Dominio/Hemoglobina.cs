@@ -17,7 +17,7 @@ namespace Examenes.Dominio
 	// anemia de un colesterol.
 	public sealed class Hemoglobina : ExamenDeSangre
 	{
-		private static readonly Analito Suyo = Examenes.Dominio.Analito.Hemoglobina;
+		private static readonly AnalitoContinuo Suyo = Examenes.Dominio.Analito.Hemoglobina;
 
 		public Hemoglobina(DateTime fecha, decimal valor, string unidad)
 			: base(fecha, Suyo, Medida(valor, unidad, Suyo))

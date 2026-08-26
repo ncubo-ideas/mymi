@@ -28,7 +28,7 @@ namespace Examenes.Dominio
 		// clase el identificador `Analito` es tambien la propiedad heredada, y calificarlo
 		// deja sin lugar a dudas que aca se habla del tipo. Las otras tres subclases hacen
 		// lo mismo por la misma razon.
-		private static readonly Analito Suyo = Examenes.Dominio.Analito.AntigenoProstatico;
+		private static readonly AnalitoContinuo Suyo = Examenes.Dominio.Analito.AntigenoProstatico;
 
 		// 0.75 ng/mL por ano. NO es un numero inventado para el demo: es el corte habitual
 		// de velocidad de PSA, y se usa incluso con el valor absoluto dentro del rango.

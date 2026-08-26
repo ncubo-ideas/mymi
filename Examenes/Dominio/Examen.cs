@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 
 namespace Examenes.Dominio
 {
@@ -37,6 +38,18 @@ namespace Examenes.Dominio
 
 		// Lo que se le muestra al paciente como resultado, ya expresado. Un numero con
 		// unidad para los de sangre, un color para la orina.
+		//
+		// Sigue existiendo porque hay lugares que quieren UNA linea por examen -la lista
+		// de la caratula de consola-, pero no es lo que describe al examen: para eso estan
+		// las Lecturas.
 		public abstract string ResultadoExpresado { get; }
+
+		// QUE COSAS MIDIO ESTE EXAMEN, una por analito.
+		//
+		// Un examen no mide una cosa: mide las que mide. El de sangre informa un analito;
+		// el urianalisis TRES y el de heces DOS. Sin esto, las tres del urianalisis
+		// terminaban aplanadas en un solo string, que es la misma generalizacion que este
+		// dominio saco de todos lados menos de aca.
+		public abstract IReadOnlyList<LecturaDeExamen> Lecturas { get; }
 	}
 }
