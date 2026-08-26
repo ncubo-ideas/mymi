@@ -48,6 +48,15 @@ namespace Examenes.Dominio
 		public static readonly Veredicto ProbableErrorDeMedicion =
 			new Veredicto("probable error de medicion");
 
+		// HUBO un pico, se repitio el examen a los pocos dias, y el valor volvio a lo de
+		// siempre. El pico NO ERA. Es buena noticia, y merece nombre propio porque sin el
+		// la unica forma de contarlo seria "probable error de medicion", que es otra cosa:
+		// ahi nadie confirmo nada, aca la segunda medicion es justamente la confirmacion.
+		//
+		// Alvaro: "pasó de 3 a casi 4, y cuando lo vuelve a medir pasa otra vez a 3. Ahí al
+		// médico esa segunda lectura le sirve."
+		public static readonly Veredicto PicoNoConfirmado = new Veredicto("pico no confirmado");
+
 		public string Nombre { get; private set; }
 
 		private Veredicto(string nombre)
@@ -62,5 +71,8 @@ namespace Examenes.Dominio
 		public bool HayLectura => !ReferenceEquals(this, Indeterminado);
 
 		public bool SugiereRepetirElExamen => ReferenceEquals(this, ProbableErrorDeMedicion);
+
+		// El pico ya se repitio y no se confirmo: no hay nada mas que hacer.
+		public bool EsPicoDescartado => ReferenceEquals(this, PicoNoConfirmado);
 	}
 }

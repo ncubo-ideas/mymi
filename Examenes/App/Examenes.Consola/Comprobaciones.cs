@@ -47,6 +47,8 @@ namespace Examenes.Consola
 			ElCuadroPoneLasFechasEnElEje();
 			DosBinariosIgualesPidenCosasDistintas();
 			LoQueFaltaMedirEsLoQueNingunaPantallaMuestra();
+			ElAntigenoSeLeeContraLoTuyo();
+			ElColesterolSeLeeContraUnaMeta();
 
 			Console.WriteLine();
 			Console.WriteLine(fallas == 0
@@ -533,13 +535,11 @@ namespace Examenes.Consola
 			Igual("el MISMO 280 subiendo desde 190", "empeorando", subiendo.NombreDelVeredicto);
 			Igual("  ese si va al medico", "consulta medica", subiendo.NombreDeLaSeveridad);
 
-			// El nivel habitual, que es lo que distingue un episodio de un fondo alto.
-			var conFondo = new Expediente(60);
-			foreach (decimal v in new[] { 180m, 175m, 185m, 320m, 280m })
-				conFondo.Agregar(new Colesterol(Hoy.AddDays(-400 + (int)(v % 7) * 10), v, "mg/dL"));
-			Igual("el colesterol sabe cual es tu nivel habitual", "True",
-				(new Colesterol(Hoy, 280m, "mg/dL")
-					.NivelHabitual(conFondo.SerieDe(Analito.ColesterolTotal.Nombre)) != null).ToString());
+			// El colesterol sabe A DONDE tiene que llegar. Antes esto comprobaba un
+			// NivelHabitual() que era el metodo del antigeno puesto en este analito; la
+			// reunion del 2026-08-26 lo corrigio: aca la historia larga no interesa.
+			Igual("el colesterol sabe a donde tiene que llegar", "240 mg/dL",
+				new Colesterol(Hoy, 280m, "mg/dL").Meta().Objetivo.Expresado);
 
 			// MEDIDO sobre un reporte real: 220 (2022) -> 234 (2026), 14 mg/dL en 1362
 			// dias. Parece un ascenso; esta por debajo de la variacion biologica del propio
@@ -859,6 +859,147 @@ namespace Examenes.Consola
 			Igual("mañana el mismo expediente contesta distinto", "True",
 				(alDia.ControlesPendientes(Hoy.AddDays(2000))[0].EstaVencido
 					&& !alDia.ControlesPendientes(Hoy)[0].EstaVencido).ToString());
+		}
+
+
+		// ---- el antigeno se lee contra LO TUYO, no contra la poblacion ----
+		//
+		// Reunion del 2026-08-26. Las dos lecturas que este analito exige y que un rango de
+		// referencia no puede dar.
+		private static void ElAntigenoSeLeeContraLoTuyo()
+		{
+			Titulo("el antigeno se lee contra lo tuyo");
+
+			// EL PICO QUE NO SE CONFIRMA. Alvaro: "paso de 3 a casi 4, y cuando lo vuelve a
+			// medir pasa otra vez a 3. Ahi al medico esa segunda lectura le sirve."
+			//
+			// ANTES esto daba "probable error de medicion": el dominio leia la vuelta a la
+			// normalidad COMO el error, que es la lectura exactamente opuesta.
+			Interpretacion pico = LeeElAntigeno(
+				(Hoy.AddDays(-730), 3.0m), (Hoy.AddDays(-365), 3.1m),
+				(Hoy.AddDays(-7), 3.9m), (Hoy, 3.0m));
+			Igual("el pico se repitio y no se confirmo", "pico no confirmado",
+				pico.NombreDelVeredicto);
+			Igual("  y por lo tanto no pide nada", "informativo", pico.NombreDeLaSeveridad);
+			Igual("  se lo dice como buena noticia", "True",
+				pico.ParaSonia.Contains("no se confirmó").ToString());
+
+			// La MISMA forma pero con un ano de por medio NO es una confirmacion: es el
+			// control siguiente, y ahi los dos valores cuentan.
+			Interpretacion controlSiguiente = LeeElAntigeno(
+				(Hoy.AddDays(-1095), 3.0m), (Hoy.AddDays(-730), 3.1m),
+				(Hoy.AddDays(-365), 3.9m), (Hoy, 3.0m));
+			Igual("a un ano ya no es repeticion del examen", "False",
+				controlSiguiente.NombreDelVeredicto.Equals("pico no confirmado").ToString());
+
+			// SALIRSE DE LO SUYO. Los dos terminan en 3.0 y estan bajo el techo de su edad
+			// (4.5 a los 60): el rango de referencia no los distingue, la linea base si.
+			Interpretacion vivioEnDos = LeeElAntigeno(
+				(Hoy.AddDays(-1825), 2.0m), (Hoy.AddDays(-1460), 2.1m),
+				(Hoy.AddDays(-1095), 1.8m), (Hoy, 3.0m));
+			Interpretacion vivioEnTres = LeeElAntigeno(
+				(Hoy.AddDays(-1825), 3.0m), (Hoy.AddDays(-1460), 3.1m),
+				(Hoy.AddDays(-1095), 2.9m), (Hoy, 3.0m));
+
+			Igual("el que vive en 2.0 y da 3.0 se salio de lo suyo", "empeorando",
+				vivioEnDos.NombreDelVeredicto);
+			Igual("  y el que SIEMPRE vivio en 3.0, no", "estable",
+				vivioEnTres.NombreDelVeredicto);
+			Igual("  mismo valor final, misma edad, mismo techo", "True",
+				(new AntigenoProstatico(Hoy, 3.0m, "ng/mL").EsNormalPara(60)).ToString());
+			Igual("  y la frase habla de SU nivel, no del rango", "True",
+				vivioEnDos.ParaSonia.Contains("se salió de lo tuyo").ToString());
+
+			// La linea base es la MEDIANA de lo previo, no el promedio: un pico no la
+			// arrastra, que es justo lo que se quiere medir contra ella.
+			var expediente = new Expediente(60);
+			foreach ((int dias, decimal v) in new[] {
+				(-1460, 2.0m), (-1095, 2.1m), (-730, 1.9m), (-365, 8.0m), (0, 2.0m) })
+				expediente.Agregar(new AntigenoProstatico(Hoy.AddDays(dias), v, "ng/mL"));
+
+			// Previos: 2.0, 2.1, 1.9 y un pico de 8.0. La MEDIANA da 2.05; el promedio
+			// habria dado 3.5, arrastrado por el unico valor que no es de esta persona.
+			var ultimo = new AntigenoProstatico(Hoy, 2.0m, "ng/mL");
+			Igual("un pico no arrastra la linea base", "2.05 ng/mL",
+				ultimo.NivelHabitual(
+					expediente.SerieDe(Analito.AntigenoProstatico.Nombre)).Expresado);
+
+			// Sin fondo suficiente no se inventa una linea base.
+			var corta = new Expediente(60);
+			corta.Agregar(new AntigenoProstatico(Hoy.AddDays(-365), 3.0m, "ng/mL"));
+			corta.Agregar(new AntigenoProstatico(Hoy, 3.2m, "ng/mL"));
+			Igual("con dos mediciones todavia no hay linea base", "True",
+				(new AntigenoProstatico(Hoy, 3.2m, "ng/mL").NivelHabitual(
+					corta.SerieDe(Analito.AntigenoProstatico.Nombre)) == null).ToString());
+		}
+
+
+		// ---- el colesterol se lee contra una META, no contra su historia ----
+		//
+		// Es la diferencia entera con el antigeno, y sale de la misma reunion:
+		//
+		//   antigeno    "usted no quiere perder la historia"
+		//   colesterol  "yo no ocupo ver esa historia"
+		private static void ElColesterolSeLeeContraUnaMeta()
+		{
+			Titulo("el colesterol se lee contra una meta");
+
+			// LA META ES EL ESCALON SIGUIENTE, no el techo de lo deseable. A alguien en 280
+			// no se le dice "llega a 200": no se ve alcanzable y deja de servir de meta.
+			Igual("280 apunta a 240", "240 mg/dL",
+				new Colesterol(Hoy, 280m, "mg/dL").Meta().Objetivo.Expresado);
+			Igual("  y cuando cruza, la meta se mueve sola", "200 mg/dL",
+				new Colesterol(Hoy, 230m, "mg/dL").Meta().Objetivo.Expresado);
+			Igual("  en 190 ya llego", "True",
+				new Colesterol(Hoy, 190m, "mg/dL").Meta().YaLlego.ToString());
+			Igual("  y dice cuanto falta", "40",
+				new Colesterol(Hoy, 280m, "mg/dL").Meta().CuantoFalta.ToString());
+
+			// EL PROGRESO se cuenta desde donde arranco el EPISODIO, no desde la primera
+			// medicion de la vida de la persona.
+			var bajando = new Expediente(60);
+			foreach ((int dias, decimal v) in new[] {
+				(-1825, 180m), (-1460, 175m), (-730, 320m), (-365, 300m), (0, 280m) })
+				bajando.Agregar(new Colesterol(Hoy.AddDays(dias), v, "mg/dL"));
+
+			SerieDeAnalito serie = bajando.SerieDe(Analito.ColesterolTotal.Nombre);
+			var hoy280 = new Colesterol(Hoy, 280m, "mg/dL");
+
+			Igual("el episodio arranca en el pico, no en la primera medicion", "320 mg/dL",
+				hoy280.PartidaDelEpisodio(serie).Expresado);
+			Igual("  y el progreso se mide contra eso", "0.5",
+				hoy280.TrayectoriaHaciaMeta(serie).ToString());
+
+			// Fuera de rango y BAJANDO sigue siendo buena noticia, y ahora lo dice con la
+			// meta en vez de con el nivel habitual.
+			Interpretacion mejora = bajando.InterpretarSerieDe(Analito.ColesterolTotal.Nombre);
+			Igual("bajando desde el pico", "mejorando", mejora.NombreDelVeredicto);
+			Igual("  y le dice a donde va", "True",
+				mejora.ParaSonia.Contains("te faltan 40 mg/dL").ToString());
+
+			// LA EDAD MODULA. Mismo valor, misma serie, dos lecturas: "a tu edad esto se
+			// corrige" contra "que lo vea tu medico".
+			var joven = new Expediente(35);
+			joven.Agregar(new Colesterol(Hoy.AddDays(-365), 190m, "mg/dL"));
+			joven.Agregar(new Colesterol(Hoy, 280m, "mg/dL"));
+			var mayor = new Expediente(60);
+			mayor.Agregar(new Colesterol(Hoy.AddDays(-365), 190m, "mg/dL"));
+			mayor.Agregar(new Colesterol(Hoy, 280m, "mg/dL"));
+
+			Igual("a los 35, fuera de rango se corrige", "seguimiento",
+				joven.InterpretarSerieDe(Analito.ColesterolTotal.Nombre).NombreDeLaSeveridad);
+			Igual("  a los 60, el mismo valor va al medico", "consulta medica",
+				mayor.InterpretarSerieDe(Analito.ColesterolTotal.Nombre).NombreDeLaSeveridad);
+
+			// Y donde vive ahora el metodo prestado: la linea base es del ANTIGENO, que es
+			// el que se lee contra su propia historia.
+			var suyaDelAntigeno = new Expediente(60);
+			foreach ((int dias, decimal v) in new[] {
+				(-1095, 2.0m), (-730, 2.1m), (-365, 1.9m), (0, 2.0m) })
+				suyaDelAntigeno.Agregar(new AntigenoProstatico(Hoy.AddDays(dias), v, "ng/mL"));
+			Igual("la linea base vive en el antigeno, no en el colesterol", "2.0 ng/mL",
+				new AntigenoProstatico(Hoy, 2.0m, "ng/mL").NivelHabitual(
+					suyaDelAntigeno.SerieDe(Analito.AntigenoProstatico.Nombre)).Expresado);
 		}
 
 		private static void Titulo(string texto)
