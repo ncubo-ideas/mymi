@@ -1,18 +1,24 @@
-# Taller
+# Metodología
 
 Todo lo que hace falta para que alguien que llega nuevo pueda construir una app en este framework.
 
-No es una carpeta de documentos. Es el lugar donde están las herramientas: las guías, lo que prepara
-el escritorio, ejemplos mínimos para tocar y romper, recetas para traer datos de una institución, y
-las plantillas del esqueleto de un negocio nuevo. Se llama Taller porque parte de eso todavía va a
-ser un instalador o un agente, y el nombre tenía que sobrevivir a eso.
+No es una carpeta de documentos. Es **cómo se hacen las cosas acá**: las guías, el guion de la
+entrevista con la que arranca todo, los observables con los que se audita, lo que prepara el
+escritorio, ejemplos mínimos para tocar y romper, recetas para traer datos de una institución, y las
+plantillas del esqueleto de un negocio nuevo.
+
+> **Por qué este nombre.** `Guias/` o `Docs/` mentirían el día que acá adentro haya un instalador o
+> un agente, que es a dónde va esto. El primer candidato fue `Taller/`, y se descartó por una razón
+> que vale dejar escrita: **este repo va a tener un negocio de agencia automotriz**, y un directorio
+> llamado `Taller` al lado de `Examenes/` y `Compras/` se lee como el taller mecánico. El criterio
+> que quedó es que el nombre **no puede chocar con ningún dominio que un negocio pueda tener**.
 
 ---
 
 ## Qué hay y qué falta
 
 ```
-Taller/
+Metodologia/
 ├── Guias/         los capítulos, el guion de la entrevista y los observables    ← hay contenido
 ├── Pruebas/       los sujetos con los que se falsan las guías                   ← hay contenido
 ├── Ambiente/      preparar el escritorio: qué se baja, qué se verifica    (paso 3)
@@ -42,17 +48,17 @@ la arquitectura, el 0 primero.
 
 ---
 
-## El Taller no es dueño de los negocios del repo
+## La Metodología no es dueño de los negocios del repo
 
 `Examenes/`, `Compras/` y `HolaMundo/Facturas/` son negocios de verdad, con sus dueños y sus
-milestones. El Taller **no los administra y no depende de ellos**: si mañana se mueven, se renombran
+milestones. La Metodología **no los administra y no depende de ellos**: si mañana se mueven, se renombran
 o se borran, acá no se rompe nada.
 
-Los ejemplos del Taller son propios y deliberadamente **chiquitos** — lo mínimo que se pueda leer de
+Los ejemplos de la Metodología son propios y deliberadamente **chiquitos** — lo mínimo que se pueda leer de
 una sentada, tocar, romper y volver a armar. Un negocio real no sirve para eso: enseña demasiadas
 cosas a la vez.
 
-Lo que sí hace el Taller es **citarlos**, cuando un negocio real resolvió algo que vale mostrar. En
+Lo que sí hace la Metodología es **citarlos**, cuando un negocio real resolvió algo que vale mostrar. En
 esos casos la cita dice de dónde sale, para que se pueda ir a verlo.
 
 ---

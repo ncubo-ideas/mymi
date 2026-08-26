@@ -12,7 +12,7 @@ para decir si la app hizo lo que dijo.
 
 La tentación es obvia: leer la arquitectura, entender cómo se arma un módulo, abrir el IDE y empezar
 a escribir clases. Es el camino de menor resistencia para alguien técnico, y produce exactamente el
-fracaso que este Taller trata de evitar — **una app impecablemente construida que no contesta nada
+fracaso que esta Metodología trata de evitar — **una app impecablemente construida que no contesta nada
 que la persona no tuviera ya.**
 
 Hay una segunda razón, y es más dura. Lo que se decide acá **no es conocimiento técnico**:

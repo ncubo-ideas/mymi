@@ -81,7 +81,7 @@ probarlo **abriendo el journal desde cero desde el MCP**, no sólo con la app qu
 
 **3 y 4 del orden de trabajo (escritorio y Hello World). Desbloqueados.** El repo ya tiene tres
 negocios corriendo con sus READMEs de "cómo se corre", `docker-compose` por negocio, `.mcp.json` y
-`NuGet.config`. Se pueden escribir mirando. Ojo: los ejemplos **del Taller** son propios y chiquitos;
+`NuGet.config`. Se pueden escribir mirando. Ojo: los ejemplos **de la Metodología** son propios y chiquitos;
 los negocios del repo se citan, no se adoptan.
 
 **6 (datos del proveedor).** Sigue bloqueado: falta el lado del proveedor y no hay ningún motor SQL

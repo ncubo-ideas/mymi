@@ -1,6 +1,6 @@
 # Pruebas — los sujetos con los que se validan las guías
 
-Acá viven los dominios que se construyen **para probar que el Taller funciona**, no para enseñar.
+Acá viven los dominios que se construyen **para probar que la Metodología funciona**, no para enseñar.
 
 ## No confundir con `Ejemplos/`
 
@@ -15,11 +15,11 @@ Un dominio de prueba puede ser grande y feo. No importa: nadie lo va a leer para
 
 ## Y tampoco son los negocios del repo
 
-`Examenes/`, `Compras/` y `HolaMundo/Facturas/` son negocios reales, con sus dueños. El Taller los
+`Examenes/`, `Compras/` y `HolaMundo/Facturas/` son negocios reales, con sus dueños. La Metodología los
 **cita** y los usa como vara para calibrar sus [observables](../Guias/observables.md), pero no los
 administra y no depende de ellos.
 
-Lo de acá es al revés: son del Taller, existen por el Taller, y si el Taller cambia de idea se
+Lo de acá es al revés: son de la Metodología, existen por la Metodología, y si la Metodología cambia de idea se
 tiran.
 
 ---
