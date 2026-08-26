@@ -42,7 +42,7 @@ Importa, porque estas guías se van a leer como si todo tuviera el mismo respald
 | **Capítulo 0** | Cruzado contra las infografías del equipo **y contra el repo corriendo** (`Examenes`, `Compras`, `HolaMundo/Facturas`). Lo que es objetivo y no realidad está marcado como tal |
 | **Capítulo 3** | Construido y corrido de punta a punta en un ejercicio de presupuesto. Las reglas de §7 salieron de chocar con ellas, y hay pruebas que las fijan |
 | **Capítulo 4** | Doctrina, **confirmada** por los tres casos del equipo: los tres contestan una pregunta sobre la serie, ninguno lista datos |
-| **Punto de partida** | **Escrito, nunca corrido.** Nadie hizo todavía esa entrevista con una persona de verdad. Es lo primero que hay que probar |
+| **Punto de partida** | **Corrido una vez**, sobre un dominio de presupuesto personal (2026-08-26). La corrida encontró seis defectos en el guion, y los seis están corregidos. Falta probar si el `Preguntas.md` que produce alcanza para modelar |
 | **Capítulo 6, CLI** | Construido y corrido. 44 pruebas |
 | **Capítulo 6, MCP** | **Contradicho por el repo.** Ver abajo |
 
