@@ -55,6 +55,7 @@ namespace Compras.Consola
 			ElPrecioPorUnidadPermiteComparar();
 			LosJournalsViejosSiguenReproduciendo();
 			LaCategoriaEsDelProductoNoDeLaCompra();
+			ElPrecioSeLeePorUnidadDeMedida();
 
 			Console.WriteLine();
 			Console.WriteLine(fallas == 0
@@ -566,6 +567,94 @@ namespace Compras.Consola
 			Igual("  de electrohogar", "1", historial.Catalogo.CuantosDe(Categoria.Electrohogar).ToString());
 			Igual("un sku que nunca compro no esta", "False", historial.Catalogo.Tiene("CAVIAR").ToString());
 			Revienta("y preguntarlo revienta", () => historial.Catalogo["CAVIAR"]);
+		}
+
+		// ---- la inflacion propia, leida por unidad de medida ----
+		private static void ElPrecioSeLeePorUnidadDeMedida()
+		{
+			Titulo("el precio se lee por unidad de medida");
+
+			// El arroz del guion: 2.450 en agosto 2025 y 2.520 en mayo 2026. Misma
+			// presentacion, asi que por linea y por unidad dicen lo mismo.
+			PrecioEnElTiempo arroz = ElGuion().PrecioDe("ARROZ-2KG");
+			Igual("existe", "True", arroz.Existe().ToString());
+			Igual("  hay serie", "True", arroz.HaySerie.ToString());
+			Igual("  dos veces comprado", "2", arroz.VecesQueLoCompro.ToString());
+			Igual("  subio 2.9%", "0.0286",
+				arroz.CambioEnProporcion.ToString(CultureInfo.InvariantCulture));
+			// 2,9% es redondeo de gondola: no llega al umbral del 3%.
+			Igual("  y eso es ESTABLE", "estable", arroz.Veredicto.Nombre);
+
+			// LA LECTURA QUE MENTIRIA SIN LA PRESENTACION: la persona pasa de dos leches de
+			// 1 L a 950 a una de 2 L a 1.800. Por LINEA el precio "subio" 850; por LITRO
+			// bajo 50. Sin unidad de medida, esta lectura miente en cada cambio de formato.
+			var cambioDeFormato = new Historial();
+			cambioDeFormato.Agregar(UnaCompraCon("T-1", new DateTime(2026, 1, 5),
+				("LECHE-1L", "Leche 1L", 2, 950m, "LacteosYHuevos", 0, "1 L")));
+			cambioDeFormato.Agregar(UnaCompraCon("T-2", new DateTime(2026, 2, 5),
+				("LECHE-1L", "Leche 1L", 1, 1800m, "LacteosYHuevos", 0, "2 L")));
+
+			PrecioEnElTiempo leche = cambioDeFormato.PrecioDe("LECHE-1L");
+			Igual("el precio de linea subio", "True",
+				(leche.Observados[1].PrecioDeLinea > leche.Observados[0].PrecioDeLinea).ToString());
+			Igual("  pero el del litro BAJO", "True", (leche.Cambio < 0m).ToString());
+			Igual("  y el veredicto es mejorando", "mejorando", leche.Veredicto.Nombre);
+			Igual("  la linea lo dice como bajada", "True", leche.ParaSonia.Contains("bajó").ToString());
+			Igual("  y la unidad de referencia es el litro", "L", leche.UnidadDeReferencia);
+
+			// Un aumento de verdad: la manteca de 1.980 a 2.050 el medio kilo.
+            PrecioEnElTiempo manteca = ElGuion().PrecioDe("MANTECA-500");
+			Igual("la manteca subio", "empeorando", manteca.Veredicto.Nombre);
+			Igual("  y lo dice con el porcentaje", "True", manteca.ParaSonia.Contains("subió").ToString());
+
+			// Una sola compra no es una serie de precios, y se dice.
+			PrecioEnElTiempo olla = ElGuion().PrecioDe("OLLA-ARR-18");
+			Igual("una sola compra: no hay serie", "False", olla.HaySerie.ToString());
+			Igual("  veredicto indeterminado", "indeterminado", olla.Veredicto.Nombre);
+			Igual("  pero el precio pagado esta", "True", (olla.UltimoPrecioPorUnidad > 0m).ToString());
+
+			// Total: un sku que nunca se compro.
+			PrecioEnElTiempo nada = ElGuion().PrecioDe("CAVIAR");
+			Igual("lo que nunca compro: no existe", "False", nada.Existe().ToString());
+			Igual("  y lo dice", "True", nada.ParaSonia.Contains("no hay compras").ToString());
+
+			// El orden lo pone la FECHA, no el orden en que entraron al journal: el
+			// proveedor puede publicar un ticket viejo despues de uno nuevo.
+			var desordenado = new Historial();
+			desordenado.Agregar(UnaCompraCon("T-NUEVO", new DateTime(2026, 6, 1),
+				("PAN", "Pan", 1, 1200m, "GranosYAbarrotes", 0, "u")));
+			desordenado.Agregar(UnaCompraCon("T-VIEJO", new DateTime(2026, 1, 1),
+				("PAN", "Pan", 1, 1000m, "GranosYAbarrotes", 0, "u")));
+			Igual("ordena por fecha, no por llegada", "1000",
+				desordenado.PrecioDe("PAN").PrimerPrecioPorUnidad.ToString(CultureInfo.InvariantCulture));
+			Igual("  asi que el pan SUBIO", "empeorando", desordenado.PrecioDe("PAN").Veredicto.Nombre);
+		}
+
+		// Una compra con presentacion por linea (la forma nueva).
+		private static Compra UnaCompraCon(string numero, DateTime fecha,
+			params (string Sku, string Descripcion, int Cantidad, decimal Precio, string Categoria, int Meses, string Presentacion)[] lineas)
+		{
+			var skus = new string[lineas.Length];
+			var descripciones = new string[lineas.Length];
+			var cantidades = new int[lineas.Length];
+			var precios = new decimal[lineas.Length];
+			var categorias = new string[lineas.Length];
+			var meses = new int[lineas.Length];
+			var presentaciones = new string[lineas.Length];
+
+			for (int i = 0; i < lineas.Length; i++)
+			{
+				skus[i] = lineas[i].Sku;
+				descripciones[i] = lineas[i].Descripcion;
+				cantidades[i] = lineas[i].Cantidad;
+				precios[i] = lineas[i].Precio;
+				categorias[i] = lineas[i].Categoria;
+				meses[i] = lineas[i].Meses;
+				presentaciones[i] = lineas[i].Presentacion;
+			}
+
+			return new Compra(numero, fecha, skus, descripciones, cantidades, precios, categorias,
+				meses, presentaciones);
 		}
 
 		// ---- el rango: el contexto para elegir que pedir ----

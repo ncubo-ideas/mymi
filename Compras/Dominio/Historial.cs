@@ -207,6 +207,43 @@ namespace Compras.Dominio
 				: Coincide(item, termino);
 
 		/// <summary>
+		/// CÓMO LE CAMBIÓ EL PRECIO de algo a esta persona, comparando siempre por unidad
+		/// de medida. Total: un sku que nunca compró devuelve Ninguno.
+		/// </summary>
+		// Por SKU y no por texto: el precio de "leche" no significa nada si mezcla dos
+		// productos distintos. Quien pregunta resuelve primero el sku con el catalogo.
+		public PrecioEnElTiempo PrecioDe(string sku)
+		{
+			ArgumentNullException.ThrowIfNullOrWhiteSpace(sku);
+
+			if (!Catalogo.Tiene(sku)) return PrecioEnElTiempo.Ninguno(sku);
+
+			var observados = new List<PrecioObservado>();
+			foreach (Compra compra in Ordenadas())
+				foreach (Item item in compra.Items)
+				{
+					if (!string.Equals(item.Sku, sku, StringComparison.OrdinalIgnoreCase)) continue;
+
+					observados.Add(new PrecioObservado(compra.Fecha, compra.Numero, item.PrecioUnitario,
+						item.PrecioPorUnidadBase, item.Presentacion.Expresada));
+				}
+
+			return observados.Count == 0
+				? PrecioEnElTiempo.Ninguno(sku)
+				: PrecioEnElTiempo.De(Catalogo[sku], observados);
+		}
+
+		// Las compras por fecha. El journal las guarda en el orden en que ENTRARON, que no
+		// tiene por que ser el orden en que pasaron: el proveedor puede publicar un ticket
+		// viejo despues de uno nuevo. Cualquier lectura que dependa del tiempo ordena.
+		private IReadOnlyList<Compra> Ordenadas()
+		{
+			var ordenadas = new List<Compra>(compras);
+			ordenadas.Sort((una, otra) => una.Fecha.CompareTo(otra.Fecha));
+			return ordenadas;
+		}
+
+		/// <summary>
 		/// LO QUE NO ESTA: las categorias que se reponen cada tanto y hace demasiado que
 		/// no entran a la canasta. Es la pregunta que ninguna pantalla puede renderizar,
 		/// porque no es un dato del historial sino una conclusion sobre el historial mas
