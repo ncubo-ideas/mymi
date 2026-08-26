@@ -14,24 +14,29 @@ namespace Examenes.Dominio
 	// de porosidad que este dominio evita.
 	public sealed class ColorDeHeces : MagnitudNominal
 	{
-		public static readonly ColorDeHeces Chocolate = new ColorDeHeces("chocolate", true);
-		public static readonly ColorDeHeces Marron = new ColorDeHeces("marron", true);
-		public static readonly ColorDeHeces Verdoso = new ColorDeHeces("verdoso", true);
+		public static readonly ColorDeHeces Chocolate = new ColorDeHeces("chocolate", "chocolate", true);
+		public static readonly ColorDeHeces Marron = new ColorDeHeces("marron", "marrón", true);
+		public static readonly ColorDeHeces Verdoso = new ColorDeHeces("verdoso", "verdoso", true);
 
 		// Los dos que no son esperables, y lo son por razones distintas que el dominio no
 		// necesita explicar para saber que hay que mirarlos.
-		public static readonly ColorDeHeces Negro = new ColorDeHeces("negro", false);
-		public static readonly ColorDeHeces Palido = new ColorDeHeces("palido", false);
+		public static readonly ColorDeHeces Negro = new ColorDeHeces("negro", "negro", false);
+		public static readonly ColorDeHeces Palido = new ColorDeHeces("palido", "pálido", false);
 
 		public override string Nombre { get; }
 
-		public override string Expresado => Nombre;
+		// El nombre CON ACENTO, que es el que ve la persona. El canonico -sin acento- es
+		// la llave con la que llega del laboratorio y con la que se compara.
+		public string ParaMostrar { get; private set; }
+
+		public override string Expresado => ParaMostrar;
 
 		public bool EsEsperable { get; private set; }
 
-		private ColorDeHeces(string nombre, bool esEsperable)
+		private ColorDeHeces(string nombre, string paraMostrar, bool esEsperable)
 		{
 			Nombre = nombre;
+			ParaMostrar = paraMostrar;
 			EsEsperable = esEsperable;
 		}
 
@@ -39,12 +44,14 @@ namespace Examenes.Dominio
 		{
 			ArgumentNullException.ThrowIfNullOrWhiteSpace(nombre);
 
-			string normalizado = nombre.Trim().ToLowerInvariant();
-			if (normalizado == Chocolate.Nombre) return Chocolate;
-			if (normalizado == Marron.Nombre) return Marron;
-			if (normalizado == Verdoso.Nombre) return Verdoso;
-			if (normalizado == Negro.Nombre) return Negro;
-			if (normalizado == Palido.Nombre) return Palido;
+			// Tolerante a acentos y mayusculas, igual que Analito: el laboratorio escribe
+			// "MARRON", "Marrón" o "marron" y las tres son el mismo color.
+			string normalizado = NombreNormalizado.De(nombre);
+			if (NombreNormalizado.EsElMismo(normalizado, Chocolate.Nombre)) return Chocolate;
+			if (NombreNormalizado.EsElMismo(normalizado, Marron.Nombre)) return Marron;
+			if (NombreNormalizado.EsElMismo(normalizado, Verdoso.Nombre)) return Verdoso;
+			if (NombreNormalizado.EsElMismo(normalizado, Negro.Nombre)) return Negro;
+			if (NombreNormalizado.EsElMismo(normalizado, Palido.Nombre)) return Palido;
 
 			throw new ArgumentException(
 				$"'{nombre}' no es un color de heces que el laboratorio reporte.", nameof(nombre));

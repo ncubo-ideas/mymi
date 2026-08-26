@@ -53,7 +53,7 @@ namespace Examenes.Consola
 			// "conviene revisarlo"; el MISMO positivo en la orina no espera a la proxima
 			// cita. Misma forma de magnitud, distinta conducta, y la diferencia vive en el
 			// analito.
-			Heces(209, "2026-08-21T08:34:00", "chocolate", "positivo"),
+			Heces(209, "2026-08-21T08:34:00", "marrón", "positivo"),
 		};
 
 		private static SenalDeEvento Sangre(long id, string examen, string fecha, string valor, string unidad) =>

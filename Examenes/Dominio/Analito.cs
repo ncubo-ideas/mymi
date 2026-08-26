@@ -231,50 +231,9 @@ namespace Examenes.Dominio
 			return texto.ToString();
 		}
 
-		// La forma en que dos nombres se comparan: sin acentos, sin mayusculas y sin nada
-		// que no sea letra o digito.
-		//
-		// Los tres descartes salen de lo que traen los reportes de verdad: "Antígeno" con
-		// tilde y "Antigeno" sin ella; "HEMOGLOBINA" en versalitas y "Hemoglobina"; y
-		// "G. BLANCOS", "LDL-C" o "HDL / LDL" con puntos, guiones y barras en el medio del
-		// nombre. Comparar crudo trata a cada variante como un analito distinto.
-		//
-		// Los acentos se pliegan con una tabla explicita y no con String.Normalize a
-		// proposito. La tabla dice exactamente que caracteres importan -son los del
-		// espanol y son siete- y no depende de que los datos de globalizacion viajen en el
-		// publish, que en wasm es una decision que se puede cambiar sin pensar en esto.
-		private static string Normalizar(string nombre)
-		{
-			var limpio = new StringBuilder(nombre.Length);
-
-			foreach (char c in nombre)
-			{
-				char sinAcento = SinAcento(c);
-				if (char.IsLetterOrDigit(sinAcento))
-					limpio.Append(char.ToUpperInvariant(sinAcento));
-			}
-
-			return limpio.ToString();
-		}
-
-		private static char SinAcento(char c)
-		{
-			switch (c)
-			{
-				case 'á': case 'à': case 'ä': case 'â': return 'a';
-				case 'é': case 'è': case 'ë': case 'ê': return 'e';
-				case 'í': case 'ì': case 'ï': case 'î': return 'i';
-				case 'ó': case 'ò': case 'ö': case 'ô': return 'o';
-				case 'ú': case 'ù': case 'ü': case 'û': return 'u';
-				case 'ñ': return 'n';
-				case 'Á': case 'À': case 'Ä': case 'Â': return 'A';
-				case 'É': case 'È': case 'Ë': case 'Ê': return 'E';
-				case 'Í': case 'Ì': case 'Ï': case 'Î': return 'I';
-				case 'Ó': case 'Ò': case 'Ö': case 'Ô': return 'O';
-				case 'Ú': case 'Ù': case 'Ü': case 'Û': return 'U';
-				case 'Ñ': return 'N';
-				default: return c;
-			}
-		}
+		// El plegado vive en NombreNormalizado: la misma operacion hace falta tambien en
+		// los colores, y es mecanica, no significado. Que nombres acepta este conjunto y
+		// que significan sigue siendo de aca.
+		private static string Normalizar(string nombre) => NombreNormalizado.De(nombre);
 	}
 }

@@ -161,7 +161,7 @@ namespace Examenes.Consola
 
 			var orina = new ExamenDeOrina(Hoy, "ambar");
 			Igual("la orina no aporta serie", "False", orina.AportaSerie.ToString());
-			Igual("la orina informa un color", "ambar", orina.ResultadoExpresado);
+			Igual("la orina informa un color", "ámbar", orina.ResultadoExpresado);
 			Igual("el colesterol si aporta serie", "True",
 				new Colesterol(Hoy, 200m, "mg/dL").AportaSerie.ToString());
 			Revienta<ArgumentException>("color que el laboratorio no reporta",
@@ -263,7 +263,7 @@ namespace Examenes.Consola
 			Titulo("el urianalisis informa dos formas de magnitud distintas");
 
 			var completo = new ExamenDeOrina(Hoy, "ambar", "negativo");
-			Igual("dice las dos cosas", "ambar, nitritos negativo", completo.ResultadoExpresado);
+			Igual("dice las dos cosas", "ámbar, nitritos negativo", completo.ResultadoExpresado);
 			Igual("  el color es nominal", "True", (completo.Color is MagnitudNominal).ToString());
 			Igual("  los nitritos son binarios", "True", (completo.Nitritos is MagnitudBinaria).ToString());
 			Igual("  sin hallazgo", "False", completo.TieneHallazgo.ToString());
@@ -278,7 +278,7 @@ namespace Examenes.Consola
 			Igual("  no lo reporta como hallazgo", "False", sinTira.Nitritos.EsHallazgo.ToString());
 			Revienta<InvalidOperationException>("  preguntar el resultado de lo que no se midio",
 				() => { bool _ = sinTira.Nitritos.EsPositivo; });
-			Igual("  y la lista no menciona nitritos", "ambar", sinTira.ResultadoExpresado);
+			Igual("  y la lista no menciona nitritos", "ámbar", sinTira.ResultadoExpresado);
 
 			Revienta<ArgumentException>("un resultado de nitritos que no existe",
 				() => new ExamenDeOrina(Hoy, "ambar", "mas o menos"));
@@ -665,7 +665,7 @@ namespace Examenes.Consola
 				(Maximo(conOrina, c => c.Fila) + 1).ToString());
 			Igual("  al final, porque no forma serie", "False",
 				Celda(conOrina, 3, 3).AportaSerie.ToString());
-			Igual("  y su resultado no es un numero", "ambar", Celda(conOrina, 3, 3).Expresado);
+			Igual("  y su resultado no es un numero", "ámbar", Celda(conOrina, 3, 3).Expresado);
 
 			// Una remedicion el mismo dia no abre una columna nueva: gana la ultima.
 			var mismoDia = new Expediente(60);
@@ -773,6 +773,15 @@ namespace Examenes.Consola
 				conHeces.SeveridadMayor.Nombre);
 
 			// El examen dice la lectura; la pantalla no la compone.
+			// El color llega como lo escriba el laboratorio y se muestra con acento.
+			Igual("marron, MARRÓN y Marrón son el mismo color", "True",
+				(ColorDeHeces.PorNombre("marron") == ColorDeHeces.PorNombre("MARRÓN")
+					&& ColorDeHeces.PorNombre("Marrón") == ColorDeHeces.PorNombre("marron")).ToString());
+			Igual("  y se muestra con acento", "marrón",
+				ColorDeHeces.PorNombre("marron").Expresado);
+			Igual("  el de la orina tambien", "ámbar",
+				ColorDeOrina.PorNombre("ambar").Expresado);
+
 			Igual("el examen de heces dice lo suyo", "True",
 				new ExamenDeHeces(Hoy, "chocolate", "positivo").ParaSonia
 					.Contains("conviene revisarlo").ToString());
