@@ -56,6 +56,10 @@ namespace Examenes.Dominio
 		// EN RANGO se revisa cada cinco anos; FUERA, todos los anos. Es el ejemplo mas
 		// claro de por que esto no puede ser una constante: el mismo analito, la misma
 		// persona, y la respuesta cambia segun donde quedo el ultimo valor.
+		// El colesterol se mueve mucho mas que el antigeno con la dieta y con la vida, asi
+		// que el corte va mas arriba: triplicarse si es plausible en anos.
+		public override decimal MultiploQueNingunIntervaloJustifica => 4m;
+
 		public override int MesesHastaElProximo(int edad) => EsNormalPara(edad) ? 60 : 12;
 
 		// Lo que se puede contestar con UNA medicion: a donde tiene que llegar desde aca.

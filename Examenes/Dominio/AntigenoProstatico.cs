@@ -66,6 +66,11 @@ namespace Examenes.Dominio
 		//
 		// Y si la velocidad ya exige atencion, no hay periodicidad que valga: eso se mira
 		// ahora. Devolver 12 ahi seria decirle a alguien que espere un ano.
+		// TRIPLICARSE. Es el ejemplo textual de Alvaro -"de 1 a 10 ya se esta muerto"-
+		// puesto en un numero que no descarta hallazgos reales: un antigeno que se duplica
+		// es exactamente el caso que este dominio existe para detectar, y tiene que pasar.
+		public override decimal MultiploQueNingunIntervaloJustifica => 3m;
+
 		public override int MesesHastaElProximo(int edad) =>
 			edad >= 50 ? 12 : (EsNormalPara(edad) ? 24 : 12);
 

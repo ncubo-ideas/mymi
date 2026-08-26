@@ -119,7 +119,19 @@ namespace Examenes.Dominio
 				decimal cambioDelPaso = actual.Valor.DiferenciaDesde(anterior.Valor);
 				int diasDelPaso = Dias(anterior, actual);
 
-				if (Math.Abs(cambioDelPaso) / DiasParaLaTasa(diasDelPaso) > actual.CambioMaximoVerosimilPorDia)
+				// DOS formas de que un paso sea inverosimil, y hacen falta las dos:
+				//
+				//   por TASA      cambio demasiado para los dias que pasaron
+				//   por MULTIPLO  un salto que ningun intervalo justifica en ESTE analito
+				//
+				// La tasa sola no alcanza: con suficientes dias entre mediciones, cualquier
+				// salto pasa. El multiplo no depende del tiempo, y es el que atrapa el "de
+				// 1 a 10" del que hablaba Alvaro.
+				bool porTasa = Math.Abs(cambioDelPaso) / DiasParaLaTasa(diasDelPaso)
+					> actual.CambioMaximoVerosimilPorDia;
+				bool porMultiplo = EsSaltoDeMultiplo(anterior, actual);
+
+				if (porTasa || porMultiplo)
 					return new EvaluacionDeTendencia(Analito, Tendencia.SaltoInverosimil, mediciones.Count,
 						anterior.Valor, actual.Valor, diasDelPaso, cambioDelPaso);
 			}
@@ -186,6 +198,18 @@ namespace Examenes.Dominio
 		// calendario simple, sin bisiestos, para que la misma serie de fechas literales
 		// produzca siempre el mismo numero.
 		private const decimal DiasDelAno = 365m;
+
+		// Si el paso multiplica el valor mas alla de lo que ese analito admite. Se mira en
+		// las dos direcciones: caer a un tercio es tan implausible como triplicarse.
+		private static bool EsSaltoDeMultiplo(ExamenDeSangre anterior, ExamenDeSangre actual)
+		{
+			decimal antes = anterior.Valor.Valor;
+			decimal ahora = actual.Valor.Valor;
+			if (antes <= 0m || ahora <= 0m) return false;
+
+			decimal multiplo = ahora > antes ? ahora / antes : antes / ahora;
+			return multiplo > actual.MultiploQueNingunIntervaloJustifica;
+		}
 
 		private static int Dias(ExamenDeSangre desde, ExamenDeSangre hasta) =>
 			(int)(hasta.Fecha.Date - desde.Fecha.Date).TotalDays;

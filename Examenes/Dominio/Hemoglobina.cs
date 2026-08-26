@@ -40,6 +40,10 @@ namespace Examenes.Dominio
 
 		// Anual, y semestral si hay anemia: cuando el valor ya esta bajo, lo que importa
 		// es si sigue bajando, y eso no se ve esperando un ano.
+		// La hemoglobina se mueve POCO: su rango entero -de 2 a 25- es un factor de doce,
+		// y duplicarse ya es mucho. Es el analito con el corte mas bajo de los cuatro.
+		public override decimal MultiploQueNingunIntervaloJustifica => 2.5m;
+
 		public override int MesesHastaElProximo(int edad) =>
 			GradoDeAnemia().HayAnemia ? 6 : 12;
 

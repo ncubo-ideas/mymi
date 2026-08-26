@@ -50,6 +50,8 @@ namespace Examenes.Consola
 			ElAntigenoSeLeeContraLoTuyo();
 			ElColesterolSeLeeContraUnaMeta();
 			CadaSerieEsSuPropioTipo();
+			LoQueNingunaPersonaVivaPodriaTener();
+			ComputosPropiosDelAntigeno();
 
 			Console.WriteLine();
 			Console.WriteLine(fallas == 0
@@ -1071,6 +1073,149 @@ namespace Examenes.Consola
 			Igual("  y las tres se interpretan, cada una a su modo", "True",
 				(delAntigeno.Interpretar(60).NombreDelVeredicto
 					!= deLaHemoglobina.Interpretar(60).NombreDelVeredicto).ToString());
+		}
+
+
+		// ---- lo que ninguna persona viva podria tener ----
+		//
+		// §5 de la reunion. Alvaro: "si yo ahi pase de 1 a 10 — no senor, ya se esta
+		// muerto. Aqui me estan mandando una vaina de un cadaver. […] el sistema suyo
+		// deberia conocer esos: no solo valorar los examenes normales, sino que ese brinco
+		// no es racional en este examen."
+		//
+		// Son DOS guardas distintas y hacen falta las dos.
+		private static void LoQueNingunaPersonaVivaPodriaTener()
+		{
+			Titulo("lo que ninguna persona viva podria tener");
+
+			// UNO: el valor imposible. No es un hallazgo alto, es un dato malformado.
+			Revienta<ArgumentOutOfRangeException>("una hemoglobina de 40 no entra",
+				() => new Hemoglobina(Hoy, 40m, "g/dL"));
+			Revienta<ArgumentOutOfRangeException>("  ni un colesterol de 3",
+				() => new Colesterol(Hoy, 3m, "mg/dL"));
+
+			// Y lo que SI tiene que pasar: un hallazgo real, por feo que sea. Apretar la
+			// guarda de mas descartaria justamente lo que hay que detectar.
+			Igual("una hemoglobina de 6.0 SI entra, es anemia severa", "severa",
+				new Hemoglobina(Hoy, 6.0m, "g/dL").GradoDeAnemia().Nombre);
+			Igual("  y un antigeno de 80 tambien", "80 ng/mL",
+				new AntigenoProstatico(Hoy, 80m, "ng/mL").Valor.Expresado);
+
+			// La ruta lo DESCARTA en vez de reventar: un laboratorio que manda basura no
+			// puede impedir que la app se ponga al dia con el resto.
+			Igual("la ruta descarta el evento con valor imposible", "descartado",
+				AnalitoRuteado(new SenalDeEvento(920, "ExamenAgregado", @"{
+					""id"": 920, ""tipo"": ""ExamenAgregado"",
+					""examen"": ""Hemoglobina"",
+					""fecha"": ""2026-08-21T08:32:00"",
+					""valor"": 40, ""unidad"": ""g/dL""
+				}")));
+			Igual("  y el siguiente evento sigue entrando", "Hemoglobina",
+				AnalitoRuteado(new SenalDeEvento(921, "ExamenAgregado", @"{
+					""id"": 921, ""tipo"": ""ExamenAgregado"",
+					""examen"": ""Hemoglobina"",
+					""fecha"": ""2026-08-21T08:32:00"",
+					""valor"": 14.2, ""unidad"": ""g/dL""
+				}")));
+
+			// DOS: el salto que ningun intervalo justifica. Los dos valores son posibles y
+			// aun asi uno de los dos esta mal — y esto la regla de la TASA no lo puede
+			// decir, porque con suficientes dias cualquier salto pasa.
+			Interpretacion deUnoADiez = LeeElAntigeno(
+				(Hoy.AddDays(-3650), 1.0m), (Hoy, 10.0m));
+			Igual("de 1 a 10, aunque pasen diez años", "probable error de medicion",
+				deUnoADiez.NombreDelVeredicto);
+
+			// La tasa sola lo dejaba pasar: 9 ng/mL en 3650 dias son 0.0025 por dia, muy
+			// por debajo del 0.05 que el antigeno admite.
+			Igual("  la tasa sola no lo habria visto", "True",
+				(9m / 3650m < 0.05m).ToString());
+
+			// Y lo que NO se puede romper: duplicarse es exactamente el caso que este
+			// dominio existe para detectar, y tiene que llegar como hallazgo.
+			Interpretacion duplicarse = LeeElAntigeno(
+				(Hoy.AddDays(-1095), 2.5m), (Hoy.AddDays(-730), 2.6m),
+				(Hoy.AddDays(-365), 2.5m), (Hoy, 5.0m));
+			Igual("duplicarse SI es hallazgo, no error", "empeorando",
+				duplicarse.NombreDelVeredicto);
+		}
+
+
+		// ---- computos propios del antigeno: histograma y comparativo ----
+		//
+		// §6. Alvaro: "usted a eso le tiene que hacer un histograma, que tiene que hacer
+		// tal vez un comparativo con el ano pasado, deme la tendencia". Y que son: "NO SON
+		// PRINTS DE LA TABLA, SON COMPUTOS".
+		private static void ComputosPropiosDelAntigeno()
+		{
+			Titulo("computos propios del antigeno");
+
+			var expediente = new Expediente(60);
+			// Dos mediciones en 2024 y ningun examen en 2025: los dos casos que separan un
+			// comparativo interanual de la lista agrupada.
+			foreach ((DateTime f, decimal v) in new[] {
+				(new DateTime(2023, 3, 10), 2.0m),
+				(new DateTime(2024, 2, 5),  2.4m),
+				(new DateTime(2024, 11, 20), 2.2m),
+				(new DateTime(2026, 8, 21), 3.0m) })
+				expediente.Agregar(new AntigenoProstatico(f, v, "ng/mL"));
+
+			var serie = (SerieDeAntigenoProstatico)
+				expediente.SerieDe(Analito.AntigenoProstatico.Nombre);
+			IReadOnlyList<MedicionDelAno> porAno = serie.PorAno();
+
+			Igual("cuatro mediciones dan TRES anos", "3", porAno.Count.ToString());
+			Igual("  2024 tuvo dos mediciones", "2", porAno[1].Cuantas.ToString());
+			Igual("  y se toma la ULTIMA del ano, no el promedio", "2.2 ng/mL",
+				porAno[1].Valor.Expresado);
+			Igual("el primer ano no tiene con que comparar", "False",
+				porAno[0].HayConQueComparar.ToString());
+			Igual("  el segundo compara contra el primero", "0.2",
+				porAno[1].CambioContraElAnterior.Value.ToString());
+
+			// 2025 no existe y NO se rellena: interpolar un ano que nadie midio es inventar
+			// un dato, igual que una celda del cuadro.
+			Igual("el ano sin mediciones no aparece", "2026", porAno[2].Ano.ToString());
+			Igual("  y compara contra el ultimo ano CON mediciones", "0.8",
+				porAno[2].CambioContraElAnterior.Value.ToString());
+
+			// EL HISTOGRAMA: la linea base vista en vez de resumida.
+			IReadOnlyList<BandaDelHistograma> bandas = serie.Histograma(4);
+			Igual("el histograma devuelve las bandas pedidas", "4", bandas.Count.ToString());
+
+			int total = 0;
+			foreach (BandaDelHistograma banda in bandas) total += banda.Cuantas;
+			Igual("  y no pierde ni duplica mediciones", "4", total.ToString());
+
+			// Las bandas se arman sobre el rango REAL de la persona -2.0 a 3.0-, no sobre
+			// el techo de su edad.
+			// Todos los bordes con la misma precision, incluidos los extremos: dentro de un
+			// histograma no puede haber dos escalas.
+			Igual("arranca en su minimo", "2.00 ng/mL", bandas[0].Desde.Expresado);
+			Igual("  y termina en su maximo", "3.00 ng/mL", bandas[3].Hasta.Expresado);
+			Igual("  con los bordes pegados, sin huecos", "True",
+				(bandas[0].Hasta.Valor == bandas[1].Desde.Valor
+					&& bandas[1].Hasta.Valor == bandas[2].Desde.Valor).ToString());
+			Igual("  y senala donde cae la ultima", "True", bandas[3].CaeLaUltima.ToString());
+
+			// Sin dispersion no se inventa ancho.
+			var planas = new Expediente(60);
+			foreach (int dias in new[] { -730, -365, 0 })
+				planas.Agregar(new AntigenoProstatico(Hoy.AddDays(dias), 2.0m, "ng/mL"));
+			IReadOnlyList<BandaDelHistograma> unaSola =
+				((SerieDeAntigenoProstatico)planas.SerieDe(Analito.AntigenoProstatico.Nombre))
+					.Histograma(4);
+			Igual("tres mediciones iguales dan UNA banda", "1", unaSola.Count.ToString());
+
+			Revienta<ArgumentOutOfRangeException>("un histograma de cero bandas no existe",
+				() => serie.Histograma(0));
+
+			// Y lo que §4 garantiza: estos computos son del antigeno y de nadie mas.
+			var delColesterol = new Expediente(60);
+			delColesterol.Agregar(new Colesterol(Hoy, 200m, "mg/dL"));
+			Igual("la serie del colesterol no tiene histograma", "False",
+				(delColesterol.SerieDe(Analito.ColesterolTotal.Nombre)
+					.GetType().GetMethod("Histograma") != null).ToString());
 		}
 
 		private static void Titulo(string texto)

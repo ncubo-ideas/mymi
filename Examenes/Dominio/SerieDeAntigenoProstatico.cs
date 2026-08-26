@@ -149,6 +149,125 @@ namespace Examenes.Dominio
 			return !Ultima.EsCambioReal(hechos.Cambio);
 		}
 
+		// EL COMPARATIVO INTERANUAL. Un punto por ano, con el cambio contra el ano anterior
+		// CON MEDICIONES —no contra el ano calendario previo, que puede estar vacio—.
+		//
+		// Alvaro: "tiene que hacer tal vez un comparativo con el ano pasado". Y lo que es:
+		// "no son prints de la tabla, son computos". Esto no es la lista agrupada: puede
+		// tener menos puntos que mediciones, si hubo dos en el mismo ano, y huecos, si hubo
+		// un ano sin medir. Los huecos NO se rellenan.
+		//
+		// Se toma el ULTIMO valor de cada ano y no el promedio: es el estado en que quedo
+		// la persona al cerrar ese ano, no una mezcla.
+		public IReadOnlyList<MedicionDelAno> PorAno()
+		{
+			var anos = new List<int>();
+			var ultimaDelAno = new Dictionary<int, ExamenDeSangre>();
+			var cuantasDelAno = new Dictionary<int, int>();
+
+			foreach (ExamenDeSangre medicion in Mediciones)
+			{
+				int ano = medicion.Fecha.Year;
+				if (!ultimaDelAno.ContainsKey(ano)) { anos.Add(ano); cuantasDelAno[ano] = 0; }
+
+				// Las mediciones ya vienen ordenadas por fecha, asi que la ultima que se
+				// ve de cada ano es la ultima del ano.
+				ultimaDelAno[ano] = medicion;
+				cuantasDelAno[ano]++;
+			}
+
+			anos.Sort();
+
+			var comparativo = new List<MedicionDelAno>();
+			decimal? anterior = null;
+
+			foreach (int ano in anos)
+			{
+				Medicion valor = ultimaDelAno[ano].Valor;
+				decimal? cambio = anterior.HasValue ? valor.Valor - anterior.Value : (decimal?)null;
+
+				comparativo.Add(new MedicionDelAno(ano, valor, cuantasDelAno[ano], cambio));
+				anterior = valor.Valor;
+			}
+
+			return comparativo;
+		}
+
+		// EL HISTOGRAMA: en que tramos de valor cayo esta persona, y cuantas veces.
+		//
+		// Es la linea base VISTA en vez de resumida. Si cuatro de cinco mediciones caen en
+		// la misma banda, ese es su lugar, y la que se salio se ve sola. La mediana de
+		// NivelHabitual() dice lo mismo en un numero; esto lo dice en una forma.
+		//
+		// Las bandas se arman sobre el rango REAL de esta persona, no sobre el de la
+		// poblacion: alguien que vive entre 1.8 y 2.1 no necesita bandas que lleguen al
+		// techo de su edad. Se devuelven TODAS, incluidas las vacias, para que la pantalla
+		// pueda dibujar los huecos sin recalcular nada.
+		public IReadOnlyList<BandaDelHistograma> Histograma(int cuantasBandas)
+		{
+			if (cuantasBandas <= 0)
+				throw new ArgumentOutOfRangeException(nameof(cuantasBandas), cuantasBandas,
+					"Un histograma de cero bandas no es un histograma.");
+
+			var bandas = new List<BandaDelHistograma>();
+			if (Cantidad == 0) return bandas;
+
+			decimal minimo = Ultima.Valor.Valor, maximo = Ultima.Valor.Valor;
+			foreach (ExamenDeSangre medicion in Mediciones)
+			{
+				decimal v = medicion.Valor.Valor;
+				if (v < minimo) minimo = v;
+				if (v > maximo) maximo = v;
+			}
+
+			// Todas las mediciones en el mismo valor: una sola banda, y no se inventa
+			// ancho donde no hay dispersion.
+			if (maximo == minimo)
+			{
+				bandas.Add(new BandaDelHistograma(
+					new Medicion(Borde(minimo), Analito.Unidad),
+					new Medicion(Borde(maximo), Analito.Unidad),
+					Cantidad, true));
+				return bandas;
+			}
+
+			decimal ancho = (maximo - minimo) / cuantasBandas;
+
+			for (int i = 0; i < cuantasBandas; i++)
+			{
+				// TODOS los bordes pasan por el mismo redondeo, incluidos el minimo y el
+				// maximo. Si no, los calculados salen con la escala de la division -2.00-
+				// y los extremos conservan la del dato -2.0-, y el mismo histograma
+				// muestra dos precisiones distintas.
+				//
+				// El borde de una banda es el mismo numero que el de la siguiente por
+				// construccion, asi que redondear los dos igual no abre huecos.
+				decimal desde = Borde(minimo + ancho * i);
+				decimal hasta = i == cuantasBandas - 1 ? Borde(maximo) : Borde(minimo + ancho * (i + 1));
+
+				int cuantas = 0;
+				bool caeLaUltima = false;
+				foreach (ExamenDeSangre medicion in Mediciones)
+				{
+					decimal v = medicion.Valor.Valor;
+					// La ultima banda cierra por arriba; las demas no, para que ningun
+					// valor caiga en dos.
+					bool adentro = i == cuantasBandas - 1 ? v >= desde && v <= hasta
+						: v >= desde && v < hasta;
+					if (!adentro) continue;
+
+					cuantas++;
+					if (ReferenceEquals(medicion, Ultimo)) caeLaUltima = true;
+				}
+
+				bandas.Add(new BandaDelHistograma(
+					new Medicion(desde, Analito.Unidad), new Medicion(hasta, Analito.Unidad),
+					cuantas, caeLaUltima));
+			}
+
+			return bandas;
+		}
+
 		// ---------------------------------------------------------------- la lectura
 
 		public override Interpretacion Interpretar(int edad)
@@ -215,5 +334,14 @@ namespace Examenes.Dominio
 		}
 
 		private static string Formato(decimal valor) => valor.ToString("0.##");
+
+		// Dos decimales para todos los bordes del histograma, ni mas ni menos.
+		//
+		// El "+ 0.00m" no es adorno y hace falta: decimal.Round REDUCE la escala pero no la
+		// aumenta, asi que un 3.0 sigue saliendo "3.0" mientras un borde calculado sale
+		// "2.00", y el mismo histograma muestra dos precisiones. Sumar cero con escala dos
+		// la fuerza hacia arriba. Es la misma trampa de la escala del decimal que ya
+		// aparecio en el journal, en otro lugar.
+		private static decimal Borde(decimal valor) => decimal.Round(valor, 2) + 0.00m;
 	}
 }

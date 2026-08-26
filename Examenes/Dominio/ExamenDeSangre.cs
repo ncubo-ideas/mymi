@@ -56,6 +56,15 @@ namespace Examenes.Dominio
 					$"{analito.Nombre} se mide en {analito.Unidad.Simbolo}, y el evento lo trajo en {recibida.Simbolo}.",
 					nameof(simboloRecibido));
 
+			// Y la otra guarda de la frontera: un valor que ninguna persona viva podria
+			// tener no es un hallazgo, es un dato malformado. Revienta aca para que no
+			// entre nunca al expediente; la ruta lo atrapa antes y descarta el evento.
+			if (!analito.EsValorPosible(valor))
+				throw new ArgumentOutOfRangeException(nameof(valor), valor,
+					$"{valor} {analito.Unidad.Simbolo} no es un valor posible de "
+					+ $"{analito.Nombre}: lo posible va de {analito.ValorMinimoPosible} a "
+					+ $"{analito.ValorMaximoPosible}.");
+
 			return new Medicion(valor, analito.Unidad);
 		}
 
@@ -94,6 +103,22 @@ namespace Examenes.Dominio
 		// tendencia". Una medicion sola no puede interpretar una serie; lo hacia recibiendo
 		// la serie por parametro, que es la senal de que el metodo no era suyo.
 		public abstract SerieDeAnalito NuevaSerie();
+
+		// EL MULTIPLO QUE NINGUN INTERVALO JUSTIFICA. Es la otra mitad de lo que Alvaro
+		// planteo, y es distinta del rango posible:
+		//
+		//   un valor imposible   -> "esto no es de una persona viva"
+		//   un salto imposible   -> los dos valores pueden ser posibles, y aun asi uno de
+		//                           los dos esta mal
+		//
+		// Alvaro: "si yo ahi pase de 1 a 10 — no senor. Ese brinco no es racional en este
+		// examen." Un PSA de 10 existe y es real; llegar a 10 desde 1 sin que nada se
+		// viera en el medio, no. Y esto la regla de la tasa no lo puede decir: con
+		// suficientes dias entre mediciones, cualquier salto pasa.
+		//
+		// Se expresa como MULTIPLO y no como diferencia absoluta porque es proporcional:
+		// duplicarse desde 1 y duplicarse desde 100 son el mismo hecho clinico.
+		public abstract decimal MultiploQueNingunIntervaloJustifica { get; }
 
 		// CADA CUANTO conviene repetir ESTE analito, en meses.
 		//

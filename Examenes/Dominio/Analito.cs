@@ -46,30 +46,35 @@ namespace Examenes.Dominio
 			"Antigeno prostatico",
 			"Antígeno prostático",
 			UnidadDeMedida.NanogramosPorMililitro,
+			0m, 5000m,
 			"PSA", "APE", "antigeno prostatico especifico");
 
 		public static readonly Analito ColesterolTotal = new Analito(
 			"Colesterol total",
 			"Colesterol total",
 			UnidadDeMedida.MiligramosPorDecilitro,
+			20m, 1200m,
 			"colesterol", "CHOL", "colesterol serico");
 
 		public static readonly Analito ColesterolLdl = new Analito(
 			"Colesterol LDL",
 			"Colesterol LDL",
 			UnidadDeMedida.MiligramosPorDecilitro,
+			10m, 900m,
 			"LDL", "LDL-C", "lipoproteina de baja densidad");
 
 		public static readonly Analito ColesterolHdl = new Analito(
 			"Colesterol HDL",
 			"Colesterol HDL",
 			UnidadDeMedida.MiligramosPorDecilitro,
+			5m, 200m,
 			"HDL", "HDL-C", "lipoproteina de alta densidad");
 
 		public static readonly Analito Hemoglobina = new Analito(
 			"Hemoglobina",
 			"Hemoglobina",
 			UnidadDeMedida.GramosPorDecilitro,
+			2m, 25m,
 			"HGB", "HB");
 
 		private static readonly Analito[] todos =
@@ -87,14 +92,40 @@ namespace Examenes.Dominio
 
 		public UnidadDeMedida Unidad { get; }
 
+		// EL RANGO DE LO FISIOLOGICAMENTE POSIBLE, que NO es el rango de referencia.
+		//
+		// El de referencia dice que es NORMAL; este dice que es POSIBLE en una persona
+		// viva. Entre los dos hay lugar para valores altos y reales -una hemoglobina de 9
+		// es anemia, no un error- y afuera de este ya no hay hallazgo que interpretar: hay
+		// un dato malformado.
+		//
+		// Alvaro: "aqui me estan mandando una vaina de un cadaver". Una hemoglobina de 40
+		// no es una hemoglobina alta, es un numero que nadie midio en un paciente.
+		//
+		// Vive en el ANALITO y no en el examen porque hace falta ANTES de construirlo: la
+		// ruta necesita poder descartar el evento sin que reviente el comando.
+		//
+		// ⚠️ Los limites son deliberadamente ANCHOS y orientativos. La guarda existe para
+		// atajar basura, no para opinar de clinica: apretarlos de mas descartaria hallazgos
+		// reales, que es peor que dejar pasar uno raro. Antes de mostrarse fuera del equipo
+		// conviene que alguien de laboratorio los revise.
+		public decimal ValorMinimoPosible { get; }
+
+		public decimal ValorMaximoPosible { get; }
+
+		public bool EsValorPosible(decimal valor) =>
+			valor >= ValorMinimoPosible && valor <= ValorMaximoPosible;
+
 		private readonly string[] sinonimos;
 
 		private Analito(string nombre, string paraMostrar, UnidadDeMedida unidad,
-			params string[] sinonimos)
+			decimal minimoPosible, decimal maximoPosible, params string[] sinonimos)
 		{
 			Nombre = nombre;
 			ParaMostrar = paraMostrar;
 			Unidad = unidad;
+			ValorMinimoPosible = minimoPosible;
+			ValorMaximoPosible = maximoPosible;
 			this.sinonimos = sinonimos ?? new string[0];
 		}
 
