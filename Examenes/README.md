@@ -5,7 +5,8 @@ app con **su propio historial**, para que ella y su IA lean la **serie completa*
 último valor suelto.
 
 Sigue la convención de estructura acordada por el equipo: un directorio por negocio, cinco
-nodos adentro, nombres en español. Este README es **cómo se corre**.
+nodos adentro, nombres en español — [y eso incluye los tipos del dominio](#el-idioma-del-dominio-es-el-idioma-del-canon).
+Este README es **cómo se corre**.
 
 ---
 
@@ -229,6 +230,31 @@ GET expediente/1/perfil            -> 403
 ---
 
 ## El dominio
+
+### El idioma del dominio es el idioma del canon
+
+`Expediente`, `SerieDeAnalito`, `Magnitud`, `ColorDeOrina`, `ControlPendiente`. **En
+español, y también los `///` y los comentarios.** No `MedicalRecord`, no `AnalyteSeries`.
+
+No es preferencia estética. La guía de dominio pide nombrar con **la palabra que el equipo
+dice en voz alta**, y este equipo dice «analito», «hallazgo», «carátula». Un dominio en
+inglés con una UI en español obliga a traducir en cada frontera, y la traducción es donde
+el significado se pierde: «hallazgo» no es *finding*, «analito» no es *test*.
+
+**La regla no es «español»: es el idioma del canon.** El dominio de `Gnothi.Host` se queda
+en **inglés** por decisión de su equipo, y eso no la contradice — la confirma. Dos
+productos del mismo milestone pueden caer de lados distintos porque tienen canon distinto;
+lo que no se puede es que un mismo producto hable dos idiomas por dentro.
+
+Va en inglés lo que **no nombramos nosotros**: el tipo del commit (`feat`, `fix` — es el
+estándar, y lo verifica `.githooks/commit-msg`), la API de Puppeteer (`PerformCommand`,
+`Check`), las palabras del DSL (`print`, `foreach`) y C# con su BCL (`IReadOnlyList`).
+
+> Se escribe acá el 2026-08-26 porque no estaba escrito en ningún lado. Édgar y Jonathan
+> levantaron que en otro negocio la UI estaba en español y el dominio en inglés, y
+> preguntaron si el skill de diseño de dominio no decía nada al respecto. No decía: sus
+> ejemplos están todos en inglés, y «el canon manda» se leía como «usá la palabra del
+> canon», no «usá el idioma del canon».
 
 ### Dos jerarquías, y ninguna es decorativa
 
