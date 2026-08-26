@@ -82,6 +82,10 @@ else
                 @(presencia.PositivasSeguidas >= 2
                     ? $"· {presencia.PositivasSeguidas} seguidas al final"
                     : "")
+                @if (interpretacion.ReferenciaLegible.Length > 0)
+                {
+                    <text>· @interpretacion.ReferenciaLegible</text>
+                }
             </p>
 
             <PresenciaEnElTiempo Pruebas="pruebas"
@@ -91,7 +95,7 @@ else
 
         @if (interpretacion.PideAlgo)
         {
-            <div class="aviso @(interpretacion.Severidad == "atencion inmediata" ? "aviso--problema" : "aviso--atencion")" style="margin-top:22px">
+            <div class="aviso @(interpretacion.Severidad == "urgente" ? "aviso--problema" : "aviso--atencion")" style="margin-top:22px">
                 <strong>@interpretacion.Veredicto.</strong>
                 @interpretacion.ParaSonia. No es un diagnóstico: es la lectura de tu propia
                 serie. Lo que corresponde es <strong>@interpretacion.Accion</strong>.
@@ -136,6 +140,10 @@ else
         @if (lectura.Mediciones == 1)
         {
             <p class="cifra-par">@Valor(lectura.ValorFinal)<span class="unidad">@lectura.Unidad</span></p>
+            @if (interpretacion.ReferenciaLegible.Length > 0)
+            {
+                <p class="apunte">referencia: @interpretacion.ReferenciaLegible</p>
+            }
         }
     }
     else
@@ -151,6 +159,10 @@ else
             en @lectura.Dias @(lectura.Dias == 1 ? "día" : "días"),
             sobre @lectura.Mediciones mediciones
             @(lectura.Cambio >= 0 ? "· subió " : "· bajó ")@Valor(Math.Abs(lectura.Cambio)) @lectura.Unidad
+            @if (interpretacion.ReferenciaLegible.Length > 0)
+            {
+                <text>· referencia: @interpretacion.ReferenciaLegible</text>
+            }
         </p>
 
         @* LA FORMA, la misma que en la tarjeta y por la misma razón: el dominio dice cuál

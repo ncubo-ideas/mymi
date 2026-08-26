@@ -410,9 +410,9 @@ internal sealed class TendenciaDelAnalito
 	public string Veredicto { get; init; } = "";
 
 	[JsonPropertyName("severidad")]
-	[Description("Que tan urgente es: informativo, seguimiento, consulta medica o atencion "
-		+ "inmediata. Lo decide el analito, no el tamano del numero: dos hallazgos identicos en "
-		+ "forma pueden tener severidades distintas.")]
+	[Description("Que tan urgente es: informativo, vigilar, consulte pronto o urgente. Lo "
+		+ "decide el analito, no el tamano del numero: dos hallazgos identicos en forma "
+		+ "pueden tener severidades distintas.")]
 	public string Severidad { get; init; } = "";
 
 	[JsonPropertyName("lectura")]
@@ -514,7 +514,7 @@ internal sealed class PresenciaDelAnalito
 	public string Veredicto { get; init; } = "";
 
 	[JsonPropertyName("severidad")]
-	[Description("'informativo', 'seguimiento', 'consulta medica' o 'atencion inmediata'.")]
+	[Description("'informativo', 'vigilar', 'consulte pronto' o 'urgente'.")]
 	public string Severidad { get; init; } = "";
 
 	[JsonPropertyName("lectura")]
@@ -523,7 +523,8 @@ internal sealed class PresenciaDelAnalito
 	public string Lectura { get; init; } = "";
 
 	[JsonPropertyName("accion")]
-	[Description("Que corresponde hacer. Sale de un conjunto cerrado del dominio; vacio cuando "
+	[Description("Que corresponde hacer Y CUANDO, ya dicho entero: 'mostrále esto a tu médico "
+		+ "este mes'. Sale de un conjunto cerrado del dominio, siempre con plazo; vacio cuando "
 		+ "no hay nada que hacer, que es la mayoria de las veces.")]
 	public string Accion { get; init; } = "";
 
@@ -598,7 +599,7 @@ internal sealed class ControlVencido
 	public bool EstaVencido { get; init; }
 
 	[JsonPropertyName("severidad")]
-	[Description("informativo, seguimiento o consulta medica. Un control vencido NO es un "
+	[Description("informativo, vigilar o consulte pronto. Un control vencido NO es un "
 		+ "hallazgo clinico: no dice que haya nada mal, dice que hay algo que hacer.")]
 	public string Severidad { get; init; } = "";
 

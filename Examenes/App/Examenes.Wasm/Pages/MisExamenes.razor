@@ -273,15 +273,23 @@ else
         @foreach (TendenciaDeAnalito t in analitos)
         {
             <button class="serie" @key="@($"{t.Analito}-{redibujo}")" @onclick="() => VerSerie(t.Analito)">
+                @{ InterpretacionDeAnalito lectura = Lectura(t.Analito); }
                 <div class="serie-cabeza">
                     <div>
                         <span class="serie-nombre">@t.ParaMostrar</span>
                         <span class="chip @Insignia(t)">@t.Tendencia</span>
                         <div class="serie-relato">@Relato(t)</div>
                     </div>
-                    <div class="serie-valor">@Valor(t.ValorFinal) <span>@t.Unidad</span></div>
+                    <div>
+                        <div class="serie-valor">@Valor(t.ValorFinal) <span>@t.Unidad</span></div>
+                        @* NINGUN NUMERO SIN SU REFERENCIA. La escribe el dominio, no esta
+                           pantalla: sale del analito, que sabe que depende de la edad. *@
+                        @if (lectura.ReferenciaLegible.Length > 0)
+                        {
+                            <div class="serie-referencia">referencia: @lectura.ReferenciaLegible</div>
+                        }
+                    </div>
                 </div>
-                @{ InterpretacionDeAnalito lectura = Lectura(t.Analito); }
 
                 @* CADA ANALITO CON SU FORMA. El dominio dice cuál es -no la pantalla- y
                    acá solo se traduce a píxeles. Un antígeno se lee como trayectoria
@@ -336,15 +344,21 @@ else
     @foreach (PresenciaDeAnalito p in presencias)
     {
         <button class="serie" @key="@($"{p.Analito}-{redibujo}")" @onclick="() => VerSerie(p.Analito)">
+            @{ InterpretacionDeAnalito suya = Lectura(p.Analito); }
             <div class="serie-cabeza">
                 <div>
                     <span class="serie-nombre">@p.ParaMostrar</span>
                     <span class="chip @Insignia(p)">@p.Presencia</span>
                     <div class="serie-relato">@Relato(p)</div>
                 </div>
-                <div class="serie-valor">@p.UltimoResultado</div>
+                <div>
+                    <div class="serie-valor">@p.UltimoResultado</div>
+                    @if (suya.ReferenciaLegible.Length > 0)
+                    {
+                        <div class="serie-referencia">@suya.ReferenciaLegible</div>
+                    }
+                </div>
             </div>
-            @{ InterpretacionDeAnalito suya = Lectura(p.Analito); }
 
             @if (p.HaySerie)
             {
@@ -370,7 +384,7 @@ else
        cuanto tuvieron serie, que es donde tenían que estar desde el principio. *@
     @foreach (FilaDelCuadro hallazgo in Hallazgos())
     {
-        <div class="aviso @(hallazgo.Severidad == "atencion inmediata" ? "aviso--problema" : "aviso--atencion")" style="margin-top:26px">
+        <div class="aviso @(hallazgo.Severidad == "urgente" ? "aviso--problema" : "aviso--atencion")" style="margin-top:26px">
             <strong>@hallazgo.ParaMostrar.</strong> @hallazgo.ParaSonia.
         </div>
     }
@@ -447,10 +461,10 @@ else
     // salió de recorrer las series. Acá sólo se traduce a una clase de CSS.
     private string Tono() => urgente.Severidad switch
     {
-        "atencion inmediata" => "portada--problema",
-        "consulta medica"    => "portada--atencion",
-        "seguimiento"        => "portada--seguimiento",
-        _                    => "portada--calma",
+        "urgente"         => "portada--problema",
+        "consulte pronto" => "portada--atencion",
+        "vigilar"         => "portada--vigilar",
+        _                 => "portada--calma",
     };
 
     // Las series que piden LO MISMO que el expediente entero. Es una igualdad, no un

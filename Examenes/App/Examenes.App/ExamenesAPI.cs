@@ -321,10 +321,10 @@ namespace Examenes.App
 		public string LoMasUrgente() =>
 			app.Using(@"
 				{
-					severidad = expediente.SeveridadMayor;
-					print severidad.Nombre severidad,
-						severidad.QueHacer accion,
-						severidad.PideAlgo pideAlgo;
+					urgencia = expediente.LoMasUrgente;
+					print urgencia.NombreDeLaSeveridad severidad,
+						urgencia.AccionLegible accion,
+						urgencia.PideAlgo pideAlgo;
 				}
 			")
 			.PerformQuery();
@@ -439,7 +439,7 @@ namespace Examenes.App
 						control.DiasQueFaltan diasQueFaltan,
 						control.EstaVencido estaVencido,
 						control.NombreDeLaSeveridad severidad,
-						control.QueHacer accion,
+						control.AccionLegible accion,
 						control.ParaSonia paraSonia;
 				}
 			")
@@ -521,7 +521,8 @@ namespace Examenes.App
 						lectura.NombreDeLaSeveridad severidad,
 						lectura.NombreDeLaForma forma,
 						lectura.ParaSonia paraSonia,
-						lectura.Accion accion,
+						lectura.AccionLegible accion,
+						lectura.ReferenciaLegible referencia,
 						lectura.PideAlgo pideAlgo,
 						lectura.SugiereRepetirElExamen sugiereRepetirElExamen;
 				}

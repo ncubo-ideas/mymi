@@ -80,5 +80,15 @@ namespace Examenes.Dominio
 		// de la hemoglobina su piso y su techo. Nadie devuelve cero para rellenar, y una
 		// serie binaria no emite ninguna porque no hay linea que trazar sobre un positivo.
 		public abstract IReadOnlyList<ReferenciaDeLectura> Referencias(int edad);
+
+		// CONTRA QUE SE LEE el ultimo valor, en una frase corta: "hasta 4.5 ng/mL",
+		// "entre 13 y 17 g/dL", "lo esperable es negativo". Es la referencia que
+		// acompana a todo numero en pantalla —punto 5 de la §5 de las especificaciones—
+		// y la contesta la serie porque es quien sabe de que depende: la edad, el sexo
+		// y, en la hemoglobina, la altitud de residencia.
+		//
+		// Vacia cuando no hay mediciones: sin valor que acompanar no hay referencia que
+		// inventar.
+		public abstract string ReferenciaLegible(int edad);
 	}
 }

@@ -68,14 +68,15 @@ namespace Examenes.Dominio
 
 				return new Interpretacion(Veredicto.Indeterminado, unico.Severidad,
 					$"una sola medición ({Ultima.Valor.Expresado}): todavía no hay serie, pero ese "
-					+ $"valor ya indica anemia {unico.Nombre}", hechos);
+					+ $"valor ya indica anemia {unico.Nombre}", hechos, unico.Accion);
 			}
 
 			if (hechos.Tendencia.SugiereRepetirElExamen)
-				return new Interpretacion(Veredicto.ProbableErrorDeMedicion, Severidad.Seguimiento,
+				return new Interpretacion(Veredicto.ProbableErrorDeMedicion, Severidad.Vigilar,
 					$"cambió {Math.Abs(hechos.Cambio)} {hechos.Unidad} en "
 					+ $"{hechos.DiasTranscurridos} día{(hechos.DiasTranscurridos == 1 ? "" : "s")}, "
-					+ "que es demasiado para el tiempo transcurrido", hechos);
+					+ "que es demasiado para el tiempo transcurrido", hechos,
+					Accion.RepetirElExamen(Plazo.EstaSemana));
 
 			GradoDeAnemia grado = Ultima.GradoDeAnemia();
 
@@ -90,7 +91,8 @@ namespace Examenes.Dominio
 					? new Interpretacion(Veredicto.Estable, Severidad.Informativo,
 						$"se mantiene en {Ultima.Valor.Expresado}, dentro de lo normal", hechos)
 					: new Interpretacion(Veredicto.Estable, grado.Severidad,
-						$"lleva tiempo en {Ultima.Valor.Expresado}" + Coletilla(grado), hechos);
+						$"lleva tiempo en {Ultima.Valor.Expresado}" + Coletilla(grado), hechos,
+						grado.Accion);
 
 			if (ahoraEnRango)
 				return new Interpretacion(Veredicto.Mejorando, Severidad.Informativo,
@@ -98,7 +100,7 @@ namespace Examenes.Dominio
 
 			return new Interpretacion(Veredicto.Empeorando, grado.Severidad,
 				$"pasó de {hechos.ValorInicial} a {hechos.ValorFinal} {hechos.Unidad}"
-				+ Coletilla(grado), hechos);
+				+ Coletilla(grado), hechos, grado.Accion);
 		}
 
 		private static string Coletilla(GradoDeAnemia grado) =>

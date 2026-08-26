@@ -201,6 +201,15 @@ h1:focus, h1:focus-visible { outline: none; }
 }
 .serie-valor span { font-size: 12px; color: var(--tinta-2); font-weight: 400; }
 
+/* NINGUN NUMERO SIN SU REFERENCIA. Va pegada al valor y en voz baja: es el contexto del
+   dato, no un dato mas. La escribe el dominio; aca solo se ubica. */
+.serie-referencia {
+    font-family: var(--mono);
+    font-size: 11px; color: var(--tinta-3);
+    text-align: right; margin-top: 2px;
+    white-space: nowrap;
+}
+
 /* La consecuencia va abajo, separada por una línea: es una conclusión, no un dato más. */
 .serie-lectura {
     margin-top: 12px; padding-top: 11px;
@@ -549,7 +558,7 @@ code { font-family: var(--mono); font-size: .9em; color: var(--ambar); }
     margin-bottom: 18px;
 }
 .portada--calma        { border-left-color: var(--pino); }
-.portada--seguimiento  { border-left-color: var(--tinta-3); }
+.portada--vigilar      { border-left-color: var(--tinta-3); }
 .portada--atencion     { border-left-color: var(--ambar);  background: var(--ambar-suave); }
 .portada--problema     { border-left-color: var(--rojo);   background: var(--rojo-suave); }
 

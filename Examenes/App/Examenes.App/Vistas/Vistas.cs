@@ -94,10 +94,12 @@ namespace Examenes.App.Vistas
 	// dominio, no de una pantalla.
 	public sealed class LoMasUrgente
 	{
-		// "informativo", "seguimiento", "consulta medica", "atencion inmediata".
+		// "informativo", "vigilar", "consulte pronto", "urgente". Es el vocabulario del
+		// semáforo de la marca, unificado en el dominio.
 		public string Severidad { get; init; } = "";
 
-		// Qué hacer, del conjunto cerrado. Vacío cuando no hay nada que hacer.
+		// Qué hacer y cuándo, ya dicho entero: "mostrále esto a tu médico este mes".
+		// Del conjunto cerrado, con plazo. Vacío cuando no hay nada que hacer.
 		public string Accion { get; init; } = "";
 
 		public bool PideAlgo { get; init; }
@@ -175,8 +177,13 @@ namespace Examenes.App.Vistas
 		// La lectura en una linea, escrita por el analito.
 		public string ParaSonia { get; init; } = "";
 
-		// Que hacer. Vacio cuando no hay nada que hacer, que es la mayoria de las veces.
+		// Que hacer y cuando, ya dicho entero. Vacio cuando no hay nada que hacer, que
+		// es la mayoria de las veces.
 		public string Accion { get; init; } = "";
+
+		// Contra que se lee el valor: "hasta 4.5 ng/mL". Ningun numero va solo en
+		// pantalla, y la referencia la dice el analito, no la UI.
+		public string ReferenciaLegible { get; init; } = "";
 
 		public bool PideAlgo { get; init; }
 		public bool SugiereRepetirElExamen { get; init; }
