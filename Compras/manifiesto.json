@@ -29,7 +29,14 @@
       "titulo": "Cuanto he gastado",
       "soloLectura": true,
       "entrada": [],
-      "descripcion": "Cuanto gasto en total la persona en el supermercado, cuantas compras tiene registradas y hasta que evento del supermercado leyo su app. Los datos salen del registro que la app escribio en la carpeta de la persona, no de ningun servidor. Si hayDatos viene en false, la app nunca se abrio en esta computadora: hay que pedirle que la abra, no es un error."
+      "descripcion": "Cuanto gasto en total la persona en el supermercado, cuantas compras tiene registradas, y DESDE QUE MES HASTA QUE MES hay compras en su historial. Ese rango -primerMes, ultimoMes, mesesConCompras, en formato aaaa-mm- es el contexto para elegir que meses pedirle a las otras tools: pedir un mes fuera del rango devuelve vacio, y eso no significa que la persona no tenga datos. Devuelve tambien hasta que evento del supermercado leyo su app. Si hayDatos viene en false, la app nunca se abrio en esta computadora: hay que pedirle que la abra, no es un error."
+    },
+    {
+      "nombre": "como_viene_mi_canasta",
+      "titulo": "Como vengo",
+      "soloLectura": true,
+      "entrada": [],
+      "descripcion": "Como viene la canasta de la persona SIN TENER QUE ELEGIR MESES: compara el ultimo mes que tiene compras contra el mismo mes del anio anterior, que es la lectura que la app le muestra. Usala para preguntas generales como '¿como vengo?', '¿estoy comiendo peor que antes?' o '¿mi canasta empeoro?'. Preferila sobre comparar_canastas salvo que la persona nombre dos meses concretos. El veredicto lo produce el dominio (mejorando, empeorando, estable, indeterminado): en lo ocasional bajar es hacia donde conviene, asi que un cambio negativo es buena noticia aunque la proporcion siga alta. No lo vuelvas a interpretar por el signo."
     },
     {
       "nombre": "canasta_del_mes",
@@ -51,7 +58,7 @@
         { "nombre": "anioDespues", "tipo": "number", "descripcion": "El anio del mes a comparar." },
         { "nombre": "mesDespues", "tipo": "number", "descripcion": "El mes a comparar, de 1 a 12." }
       ],
-      "descripcion": "Como CAMBIO la canasta de la persona entre dos meses, y que significa ese cambio. El campo veredicto lo produce el dominio y puede ser mejorando, empeorando, estable o indeterminado: en lo ocasional bajar es hacia donde conviene, asi que un cambio negativo es una buena noticia aunque la proporcion siga alta. No lo vuelvas a interpretar por el signo. El campo paraSonia trae la lectura ya redactada. Es la pregunta que ningun ticket suelto contesta. Si hayComparacion viene en false, alguno de los dos meses no tiene compras de comida y no hay lectura que dar: decilo tal cual."
+      "descripcion": "Como cambio la canasta entre DOS MESES QUE LA PERSONA NOMBRE. Si no nombro meses concretos, usa como_viene_mi_canasta en vez de esta: los meses validos salen del rango que devuelve total_de_compras, y pedir un mes fuera de ese rango devuelve hayComparacion en false aunque la persona si tenga datos. El veredicto lo produce el dominio (mejorando, empeorando, estable, indeterminado): en lo ocasional bajar es hacia donde conviene, asi que un cambio negativo es buena noticia. No lo vuelvas a interpretar por el signo. El campo paraSonia trae la lectura ya redactada."
     },
     {
       "nombre": "garantia_de_producto",

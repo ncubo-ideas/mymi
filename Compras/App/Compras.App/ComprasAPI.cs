@@ -145,6 +145,19 @@ namespace Compras.App
 			}
 		}
 
+		// El rango del historial. Es lo que le permite a quien pregunta -sobre todo a la
+		// IA- saber que meses puede comparar, en vez de adivinar uno vacio.
+		public string RangoDelHistorial() =>
+			app.Using(@"
+				{
+					rango = compras.Rango;
+					print rango.MesesConCompras mesesConCompras,
+						rango.PrimerMesExpresado primerMes,
+						rango.UltimoMesExpresado ultimoMes;
+				}
+			")
+			.PerformQuery();
+
 		public string TokenGuardado() => Texto("bitacora.Token");
 
 		public string RefreshTokenGuardado() => Texto("bitacora.RefreshToken");
@@ -276,6 +289,31 @@ namespace Compras.App
 			})
 			.PerformQuery();
 
+		// La comparacion por defecto: el ultimo mes con compras contra el mismo mes del
+		// anio anterior. Que dos meses se comparan lo elige el DOMINIO, no la superficie.
+		public string ComparacionConElAnioPasado() =>
+			app.Using(@"
+				{
+					comparacion = compras.CompararConElAnioPasado();
+					print comparacion.HayComparacion hayComparacion,
+						comparacion.ProporcionOcasionalAntes proporcionAntes,
+						comparacion.ProporcionOcasionalDespues proporcionDespues,
+						comparacion.CambioEnProporcion cambio,
+						comparacion.NombreDelVeredicto veredicto,
+						comparacion.ParaSonia paraSonia,
+						comparacion.CrecioLoOcasional crecioLoOcasional,
+						comparacion.Antes.Anio anioAntes,
+						comparacion.Antes.Mes mesAntes,
+						comparacion.Antes.GastoOcasional gastoOcasionalAntes,
+						comparacion.Antes.GastoComestible gastoComestibleAntes,
+						comparacion.Despues.Anio anioDespues,
+						comparacion.Despues.Mes mesDespues,
+						comparacion.Despues.GastoOcasional gastoOcasionalDespues,
+						comparacion.Despues.GastoComestible gastoComestibleDespues;
+				}
+			")
+			.PerformQuery();
+
 		// La garantia de un producto, con su respaldo: en que compra fue, cuando, y si
 		// sigue vigente. La FECHA DE CONSULTA entra como parametro porque el dominio no
 		// lee el reloj: quien pregunta pone su "hoy".
@@ -394,6 +432,12 @@ namespace Compras.App
 
 		public CanastasComparadas Comparacion(int anioAntes, int mesAntes, int anioDespues, int mesDespues) =>
 			ProyeccionDeVistas.Comparacion(ComparacionDeCanastas(anioAntes, mesAntes, anioDespues, mesDespues));
+
+		public CanastasComparadas ComparacionConElAnioAnterior() =>
+			ProyeccionDeVistas.Comparacion(ComparacionConElAnioPasado());
+
+		public RangoDelHistorialVista Rango() =>
+			ProyeccionDeVistas.Rango(RangoDelHistorial());
 
 		public GarantiaDeProducto Garantia(string texto, DateTime fechaDeConsulta) =>
 			ProyeccionDeVistas.Garantia(GarantiaDe(texto, fechaDeConsulta));

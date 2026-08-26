@@ -320,13 +320,9 @@ else
         garantias = estado.GarantiasVigentes();
         pendientes = estado.AbastecimientosPendientes();
 
-        // La comparacion se ancla en la ULTIMA compra: su mes contra el mismo mes del
-        // anio anterior. Es decision de la caratula (el dominio compara lo que le pidan).
-        if (compras.Count > 0)
-        {
-            DateTime ultima = compras[compras.Count - 1].Fecha;
-            comparacion = estado.Comparacion(ultima.Year - 1, ultima.Month, ultima.Year, ultima.Month);
-        }
+        // Qué dos meses se comparan lo elige el DOMINIO, que conoce su propio rango.
+        // Antes lo decidía esta pantalla mirando la última fila de la tabla.
+        comparacion = estado.ComparacionPorDefecto();
     }
 
     private void VerDetalle(string numero) =>

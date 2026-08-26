@@ -101,6 +101,16 @@ namespace Compras.App.Vistas
 		public string ParaSonia { get; init; } = "";
 	}
 
+	// Desde cuando hasta cuando hay compras. Es el contexto que necesita quien pregunta
+	// para elegir que meses comparar; sin el, adivina un mes vacio y concluye que no hay
+	// datos cuando si hay.
+	public sealed class RangoDelHistorialVista
+	{
+		public int MesesConCompras { get; init; }
+		public string PrimerMes { get; init; } = "";
+		public string UltimoMes { get; init; } = "";
+	}
+
 	// LO QUE NO ESTA: una categoria que se repone cada tanto y hace demasiado que no
 	// entra. La pantalla no puede renderizar una ausencia que nadie le paso.
 	public sealed class AbastecimientoEnEspera

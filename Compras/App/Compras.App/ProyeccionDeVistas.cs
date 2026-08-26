@@ -149,6 +149,21 @@ namespace Compras.App
 			return garantias;
 		}
 
+		internal static RangoDelHistorialVista Rango(string json)
+		{
+			if (string.IsNullOrWhiteSpace(json)) return new RangoDelHistorialVista();
+
+			using JsonDocument documento = JsonDocument.Parse(json);
+			JsonElement raiz = documento.RootElement;
+
+			return new RangoDelHistorialVista
+			{
+				MesesConCompras = Entero(raiz, "mesesConCompras"),
+				PrimerMes = Texto(raiz, "primerMes"),
+				UltimoMes = Texto(raiz, "ultimoMes"),
+			};
+		}
+
 		internal static IReadOnlyList<AbastecimientoEnEspera> Abastecimientos(string json)
 		{
 			var pendientes = new List<AbastecimientoEnEspera>();

@@ -73,6 +73,45 @@ namespace Compras.Dominio
 			new ComparacionDeCanastas(CanastaDe(anioAntes, mesAntes), CanastaDe(anioDespues, mesDespues));
 
 		/// <summary>
+		/// Desde cuando hasta cuando hay compras, y cuantos meses tienen alguna. Es el
+		/// contexto que necesita quien pregunta para saber que meses puede comparar.
+		/// </summary>
+		public RangoDeCompras Rango
+		{
+			get
+			{
+				if (compras.Count == 0) return RangoDeCompras.Ninguno;
+
+				DateTime primera = DateTime.MaxValue;
+				DateTime ultima = DateTime.MinValue;
+				var meses = new HashSet<int>();
+
+				foreach (Compra compra in compras)
+				{
+					if (compra.Fecha < primera) primera = compra.Fecha;
+					if (compra.Fecha > ultima) ultima = compra.Fecha;
+					meses.Add(compra.Fecha.Year * 100 + compra.Fecha.Month);
+				}
+
+				return RangoDeCompras.De(primera, ultima, meses.Count);
+			}
+		}
+
+		/// <summary>
+		/// La comparacion por defecto: el ultimo mes con compras contra el mismo mes del
+		/// anio anterior. La elige el DOMINIO y no la superficie, porque elegir que dos
+		/// meses se comparan es parte de la pregunta y no de como se dibuja. Total: sin
+		/// compras devuelve una comparacion que contesta que no hay comparacion.
+		/// </summary>
+		public ComparacionDeCanastas CompararConElAnioPasado()
+		{
+			RangoDeCompras rango = Rango;
+			if (!rango.Existe()) return CompararCanastas(1900, 1, 1900, 2);
+
+			return CompararCanastas(rango.UltimoAnio - 1, rango.UltimoMes, rango.UltimoAnio, rango.UltimoMes);
+		}
+
+		/// <summary>
 		/// La garantia de un producto, buscada por sku o descripcion. Si se compro varias
 		/// veces gana la mas reciente, que es la cobertura que corre. La fecha de consulta
 		/// viene recibida: el dominio no lee el reloj.
