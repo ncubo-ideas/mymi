@@ -3,6 +3,10 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
+<!-- Sin esto, iOS detecta los telefonos de la barra y los pinta como links azules
+     sobre el navy: quedaban ilegibles. Los numeros son ficticios; no hay tel: que
+     perder. -->
+<meta name="format-detection" content="telephone=no">
 <title>Mis exámenes · Laboratorio Clínico Delfos</title>
 <meta name="description" content="Sus exámenes de laboratorio, instalados en su computadora. El expediente vive en una carpeta suya.">
 
@@ -104,6 +108,7 @@
      ficticios, como la marca, y calcan los del landing real. */
 
   .barra { background: var(--azul); color: #dfe9f4; font-size: 13px; }
+  .barra a { color: inherit; }
   .barra-adentro {
     display: flex; justify-content: space-between; gap: 18px;
     padding: 7px 0;
@@ -392,8 +397,14 @@
   /* ---------------------------------------------------------------- angosto */
 
   @media (max-width: 900px) {
+    .barra { font-size: 12px; }
     .barra-adentro span:last-child { display: none; }
     nav a:not(.boton) { display: none; }
+    nav .boton { font-size: 13px; padding: 9px 13px; }
+    .membrete { gap: 10px; padding: 12px 0; }
+    .sello { width: 36px; height: 36px; }
+    .marca-texto b { font-size: 16px; }
+    .marca-texto i { font-size: 11px; display: block; line-height: 1.35; }
     .portada { grid-template-columns: 1fr; gap: 44px; padding: 48px 0 48px; }
     .puntos { grid-template-columns: 1fr; gap: 16px; }
     .instalar { grid-template-columns: 1fr; gap: 28px; margin-top: 44px; }
@@ -422,7 +433,7 @@
     </div>
     <div class="marca-texto">
       <b>Laboratorio Clínico Delfos</b>
-      <i>Al servicio de su salud desde 1987</i>
+      <i>Al servicio de su salud desde&nbsp;1987</i>
     </div>
     <nav>
       <a href="#porque">Su aplicación</a>
