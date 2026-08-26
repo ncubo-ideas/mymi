@@ -345,7 +345,12 @@ else
             if (i > 0)
             {
                 decimal cambio = punto.Valor - puntos[i - 1].Valor;
-                int dias = (punto.Fecha - puntos[i - 1].Fecha).Days;
+                // TotalDays y NO .Days: el corelib recortado del runtime browser-wasm no
+                // trae TimeSpan.get_Days y el detalle reventaba SOLO publicado — con
+                // dotnet run andaba. MEDIDO: strings sobre System.Private.CoreLib.*.wasm
+                // encuentra get_TotalDays y no get_Days. El dominio ya usa TotalDays en
+                // todos lados, por eso el resto de la app no lo sufria.
+                int dias = (int)(punto.Fecha - puntos[i - 1].Fecha).TotalDays;
                 salto = $"{(cambio >= 0 ? "+" : "−")}{Valor(Math.Abs(cambio))} en {dias} {(dias == 1 ? "día" : "días")}";
             }
 
@@ -367,7 +372,8 @@ else
             string salto = "";
             if (i > 0)
             {
-                int dias = (prueba.Fecha - pruebas[i - 1].Fecha).Days;
+                // TotalDays por lo mismo que en Pasos(): get_Days no existe publicado.
+                int dias = (int)(prueba.Fecha - pruebas[i - 1].Fecha).TotalDays;
                 salto = $"{dias} {(dias == 1 ? "día" : "días")} después";
             }
 
