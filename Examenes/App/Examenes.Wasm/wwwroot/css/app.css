@@ -24,6 +24,28 @@
     --pino-cl:  #2e5c4a;
     --pino-suave: #e8efe9;
 
+    /* EL VERDE QUE SE PINTA, distinto del que se escribe.
+     *
+     * --pino es TINTA: es oscuro (L 19%) y poco saturado (S 35%), y sobre un papel casi
+     * blanco una dilucion suya no da un verde claro — da gris. Medido sobre el fondo de
+     * la tarjeta, antes de este cambio:
+     *
+     *     .dentro   pino al 22%   ->  S  6.4%   la zona SEGURA
+     *     .fuera    linea al 35%  ->  S 29.4%   la zona de afuera
+     *
+     * O sea que el lado seguro tenia MENOS color que el lado de afuera, y encima era mas
+     * oscuro, que se lee como "peor". La banda no decia "aca esta bien": decia "aca hay
+     * un rectangulo gris".
+     *
+     * Estos dos son COLORES PROPIOS y no diluciones, y por eso siguen siendo verdes
+     * cuando se aplican. Mismo tono que el pino (158°) para que sigan siendo la misma
+     * familia; lo que cambia es que la saturacion sobrevive.
+     *
+     * No le sacan trabajo al ambar: el ambar sigue siendo lo unico que dice "esto exige
+     * atencion", y estos dos solo dicen "esto esta bien". */
+    --pino-zona: #c8e4da;   /* donde es normal estar: las bandas */
+    --pino-vivo: #6bbd9f;   /* lo que ya se recorrio: el avance hacia la meta */
+
     --ambar:    #b4541a;
     --ambar-suave: #fdf0e4;
 
@@ -302,11 +324,13 @@ h1:focus, h1:focus-visible { outline: none; }
 
 /* La muestra de color del pie, para no repetir la leyenda en palabras. */
 .muestra { width: 10px; height: 10px; border-radius: 2px; display: inline-block; }
-.muestra--banda { background: var(--pino); opacity: .3; }
+/* La muestra tiene que ser EL MISMO color que la banda que nombra. Antes era pino al
+   30% y la banda pino al 16%: dos grises distintos para la misma cosa. */
+.muestra--banda { background: var(--pino-zona); }
 .muestra--techo { height: 0; border-top: 1.5px dashed var(--tinta-3); border-radius: 0; }
 
 /* --- trayectoria: la banda ES el fondo contra el que se lee todo lo demas --- */
-.forma--trayectoria .banda { fill: var(--pino); opacity: .16; }
+.forma--trayectoria .banda { fill: var(--pino-zona); }
 .forma--trayectoria .linea-base {
     stroke: var(--pino); stroke-width: 1.5; opacity: .55;
 }
@@ -323,7 +347,9 @@ h1:focus, h1:focus-visible { outline: none; }
 
 /* --- progreso: el eje es el VALOR, no el tiempo --- */
 .forma--progreso .pista { fill: var(--linea); opacity: .5; }
-.forma--progreso .avance { fill: var(--pino); opacity: .6; }
+/* Lo YA recorrido. Es lo unico de esta pantalla que se gana, asi que tiene color de
+   verdad y no una dilucion: la barra que avanza es la recompensa. */
+.forma--progreso .avance { fill: var(--pino-vivo); }
 /* Lo que falta, en ambar: es lo unico de esta forma que pide algo. */
 .forma--progreso .pendiente { fill: var(--ambar); opacity: .3; }
 .forma--progreso .hito-meta { stroke: var(--pino); stroke-width: 2; }
@@ -334,7 +360,7 @@ h1:focus, h1:focus-visible { outline: none; }
 /* El AFUERA casi no se pinta y el ADENTRO si: lo que tiene que saltar a la vista es
    donde es normal estar, no donde no. Con los dos en gris no se distinguian. */
 .forma--banda .fuera { fill: var(--linea); opacity: .35; }
-.forma--banda .dentro { fill: var(--pino); opacity: .22; }
+.forma--banda .dentro { fill: var(--pino-zona); }
 .forma--banda .aguja { stroke: var(--pino); stroke-width: 3; stroke-linecap: round; }
 .forma--banda .aguja--fuera { stroke: var(--ambar); }
 
