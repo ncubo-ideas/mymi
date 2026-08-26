@@ -98,6 +98,32 @@ namespace Examenes.App
 			return celdas;
 		}
 
+		internal static IReadOnlyList<ControlEnEspera> Controles(string json)
+		{
+			var controles = new List<ControlEnEspera>();
+			if (string.IsNullOrWhiteSpace(json)) return controles;
+
+			using JsonDocument documento = JsonDocument.Parse(json);
+			if (!documento.RootElement.TryGetProperty("control", out JsonElement arreglo)) return controles;
+
+			foreach (JsonElement elemento in Elementos(arreglo))
+				controles.Add(new ControlEnEspera
+				{
+					Analito = Texto(elemento, "analito"),
+					ParaMostrar = Texto(elemento, "paraMostrar"),
+					UltimaMedicion = Fecha(elemento, "ultimaMedicion"),
+					DiasDesdeLaUltima = Entero(elemento, "diasDesdeLaUltima"),
+					MesesRecomendados = Entero(elemento, "mesesRecomendados"),
+					DiasQueFaltan = Entero(elemento, "diasQueFaltan"),
+					EstaVencido = Booleano(elemento, "estaVencido"),
+					Severidad = Texto(elemento, "severidad"),
+					Accion = Texto(elemento, "accion"),
+					ParaSonia = Texto(elemento, "paraSonia"),
+				});
+
+			return controles;
+		}
+
 		internal static InterpretacionDeAnalito Interpretacion(string json)
 		{
 			if (string.IsNullOrWhiteSpace(json)) return new InterpretacionDeAnalito();

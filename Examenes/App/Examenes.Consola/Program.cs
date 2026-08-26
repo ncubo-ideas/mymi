@@ -147,6 +147,10 @@ namespace Examenes.Consola
 			ImprimirCuadro(api);
 
 			Console.WriteLine();
+			Console.WriteLine("-- lo que FALTA medir, que es lo que ninguna pantalla muestra --");
+			ImprimirControles(api);
+
+			Console.WriteLine();
 			Console.WriteLine("-- LA PREGUNTA QUE NINGUNA PANTALLA CONTESTA --");
 			foreach (string analito in api.Analitos()) ImprimirTendencia(api, analito);
 
@@ -196,6 +200,28 @@ namespace Examenes.Consola
 				Console.WriteLine();
 			}
 		}
+
+		// Lo que falta medir. Se imprime aca porque es la unica consulta del dominio que
+		// mira el hueco y no el dato, y porque verifica que la proyeccion del DSL trae algo:
+		// una lista vacia se ve igual que un proyector con la llave mal puesta.
+		//
+		// La fecha la pone ESTA caratula, no el dominio. Se usa una fija y no DateTime.Now
+		// para que la salida de `medir` siga siendo reproducible, igual que las fechas del
+		// guion.
+		private static void ImprimirControles(ExamenesAPI api)
+		{
+			IReadOnlyList<ControlEnEspera> controles = api.Controles(FechaDeCorte);
+			if (controles.Count == 0) { Console.WriteLine("  (sin analitos con historia)"); return; }
+
+			foreach (ControlEnEspera c in controles)
+				Console.WriteLine($"  {c.ParaMostrar,-22} {(c.EstaVencido ? "VENCIDO" : "al dia"),-8} "
+					+ $"ultima {c.UltimaMedicion:dd/MM/yyyy}, hace {c.DiasDesdeLaUltima} dias, "
+					+ $"cada {c.MesesRecomendados} meses");
+		}
+
+		// El "hoy" del arnes. Literal a proposito: con DateTime.Now la salida cambiaria
+		// todos los dias y dejaria de servir como criterio de aceptacion.
+		private static readonly DateTime FechaDeCorte = new DateTime(2026, 8, 21);
 
 		private static void ImprimirTendencia(ExamenesAPI api, string analito)
 		{

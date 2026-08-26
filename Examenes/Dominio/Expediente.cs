@@ -188,6 +188,44 @@ namespace Examenes.Dominio
 			}
 		}
 
+		// QUE FALTA MEDIR. Es la unica consulta de este expediente que mira el hueco y no
+		// el dato: cuanto hace que no se mide cada analito, y si eso ya es demasiado para
+		// EL -cada uno tiene su periodicidad, y varios la resuelven contra su ultimo
+		// valor-.
+		//
+		// LA FECHA ENTRA POR PARAMETRO. El dominio no lee el reloj: si lo hiciera, el
+		// mismo journal reproducido manana daria otra respuesta y dejaria de ser
+		// reproducible. Quien tiene derecho a saber que dia es hoy es la superficie.
+		//
+		// Solo aparecen los analitos CON SERIE. De uno que nunca se midio no se puede
+		// decir "te toca repetirlo": no hay nada que repetir, y el dominio no inventa una
+		// recomendacion sobre algo que nadie pidio.
+		public IReadOnlyList<ControlPendiente> ControlesPendientes(DateTime hoy)
+		{
+			var pendientes = new List<ControlPendiente>();
+
+			foreach (KeyValuePair<Analito, SerieDeAnalito> par in series)
+			{
+				ExamenDeSangre ultimo = par.Value.Ultimo;
+				if (ultimo == null) continue;
+
+				// Una medicion fechada DESPUES de la fecha de referencia cuenta como de
+				// hoy, no como dias negativos. Pasa de verdad: el guion tiene un examen
+				// del dia siguiente para demostrar el salto inverosimil, y en produccion
+				// pasaria con una zona horaria o un laboratorio que fecha la validacion.
+				// "Hace -1 dias que te lo hiciste" no es una respuesta.
+				int dias = Math.Max(0, (int)(hoy.Date - ultimo.Fecha.Date).TotalDays);
+
+				pendientes.Add(new ControlPendiente(
+					par.Key, ultimo.Fecha.Date, dias, ultimo.MesesHastaElProximo(Edad)));
+			}
+
+			// Lo mas vencido primero: es el orden en que conviene leerlos, y evita que la
+			// superficie tenga que decidirlo.
+			pendientes.Sort((uno, otro) => uno.DiasQueFaltan.CompareTo(otro.DiasQueFaltan));
+			return pendientes;
+		}
+
 		// EL CUADRO HISTORICO, plano y con indices. Ver CeldaDelCuadro para por que esto
 		// es una decision del dominio y no un acomodo de pantalla.
 		//

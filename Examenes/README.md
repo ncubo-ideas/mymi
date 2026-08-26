@@ -356,7 +356,23 @@ genérico, que convertiría todo en strings y desperdiciaría el schema por tool
 |---|---|---|
 | `evaluar_tendencia` | para dónde viene y si es creíble | sí, la app la muestra |
 | `velocidad_de` | **a qué ritmo, sobre el tramo reciente** | **no** |
-| `revisar_mis_analitos` | todos de una | sí |
+| `que_me_falta_medir` | **cuánto hace que no se mide cada analito, y si ya es demasiado** | **no, y no puede** |
+
+`que_me_falta_medir` reemplazó a `revisar_mis_analitos`, que recorría los analitos y
+devolvía la tendencia de cada uno — o sea, exactamente lo que la app renderiza. Su propia
+descripción tenía que aclarar que *«no es la lista que la app ya le muestra»*, y cuando una
+tool necesita defenderse de eso, ya se contestó sola.
+
+La que la reemplaza contesta lo único que una pantalla **no puede**: una **ausencia**. Una
+pantalla solo renderiza datos que tiene; *«hace cuatro años que no te medís el
+colesterol»* no es un dato del expediente, es una conclusión sobre el expediente **más el
+calendario más la periodicidad que cada analito define para sí mismo** — y esa
+periodicidad no es fija: un colesterol en rango se repite cada cinco años, uno alto todos
+los años.
+
+La fecha entra **por parámetro**. El dominio no lee el reloj: si lo hiciera, el mismo
+journal reproducido mañana daría otra respuesta. Saber qué día es hoy es derecho de la
+superficie, y el servidor MCP es quien lo pone.
 
 El argumento es un **enum**, no un string. Con un string la lista de valores válidos vivía
 en la descripción —prosa que la IA tiene que leer bien— y con un enum vive en el
@@ -410,7 +426,6 @@ antígeno.
 | # | Pendiente |
 |---|---|
 | 1 | **Versión del motor** con los tres commits de `wasm-replay`. Es una línea en `Directory.Build.props`. Es de Álvaro |
-| 3b | **`revisar_mis_analitos` devuelve lo que la lista de la app ya muestra.** Es el mismo reclamo que Álvaro le hizo al `total` de Jonathan: si la IA contesta algo que ya está en una pantalla, no probó nada. `velocidad_de` sí es exclusiva de la IA |
 | 3 | **Tras publicar de nuevo, hay que cerrar todas las pestañas del origen.** El service worker de Blazor no llama a `skipWaiting()`, así que la versión nueva se instala pero queda esperando hasta que no quede ninguna pestaña abierta de `localhost:8090`. Un cambio en el SW que "no se aplica" casi siempre es esto |
 | 4 | **El workload `wasm-tools-net9` no está instalado**, así que el publish sale sin optimizar (57 MB). Funciona; conviene instalarlo antes de mostrarlo |
 | 5 | **La marca ficticia** (*Laboratorios Sotavento*) es un placeholder. La definitiva la define el equipo. Vive solo en `PaginaDeDescarga/descarga/index.html` y en los assets de la carátula |

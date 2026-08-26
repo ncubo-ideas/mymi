@@ -44,6 +44,9 @@ namespace Examenes.Dominio
 
 		public override DireccionDeseable Direccion => DireccionDeseable.Bajar;
 
+		// Igual que el colesterol total: en rango cada cinco anos, fuera todos los anos.
+		public override int MesesHastaElProximo(int edad) => EsNormalPara(edad) ? 60 : 12;
+
 		// ---------------------------------------------------------------- lo suyo
 
 		// El HDL es el unico analito del demo donde ALTO es lo bueno, asi que su

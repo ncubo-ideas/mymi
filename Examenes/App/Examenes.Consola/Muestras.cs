@@ -30,6 +30,9 @@ namespace Examenes.Consola
 
 		internal static SenalDeEvento[] LaHistoria() => new[]
 		{
+			// --- un perfil lipidico viejo: lo que hace visible "que falta medir" ---
+			Fraccionado(200, "2022-11-01T08:30:00", "150", "38"),
+
 			// --- linea base del antigeno: tres anos de estabilidad ---
 			Sangre(201, "AntigenoProstatico", "2023-08-21T09:10:00", "3.0", "ng/mL"),
 			Sangre(202, "AntigenoProstatico", "2024-08-21T09:05:00", "3.1", "ng/mL"),
@@ -62,6 +65,15 @@ namespace Examenes.Consola
 				""unidad"": ""{unidad}""
 			}}");
 
+		private static SenalDeEvento Fraccionado(long id, string fecha, string ldl, string hdl) =>
+			new SenalDeEvento(id, "ExamenAgregado", $@"{{
+				""id"": {id}, ""tipo"": ""ExamenAgregado"",
+				""examen"": ""ColesterolDetallado"",
+				""fecha"": ""{fecha}"",
+				""valor"": {ldl}, ""valorSecundario"": {hdl},
+				""unidad"": ""mg/dL""
+			}}");
+
 		private static SenalDeEvento Heces(long id, string fecha, string color, string sangre) =>
 			new SenalDeEvento(id, "ExamenAgregado", $@"{{
 				""id"": {id}, ""tipo"": ""ExamenAgregado"",
@@ -81,7 +93,7 @@ namespace Examenes.Consola
 
 		// Lo que la historia tiene que dar. Son los criterios de la fase 1: si esto no
 		// sale asi, el dominio no esta contando la historia que la demo promete.
-		internal const int ExamenesEsperados = 9;
+		internal const int ExamenesEsperados = 10;
 		internal const string TendenciaEsperadaDelAntigeno = "en ascenso";
 		internal const string TendenciaEsperadaDelColesterol = "en ascenso";
 

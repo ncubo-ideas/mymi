@@ -65,6 +65,22 @@ namespace Examenes.App.Vistas
 		public string ParaSonia { get; init; } = "";
 	}
 
+	// CUANTO HACE que no se mide un analito, y si eso ya es demasiado para el. Ver
+	// ControlPendiente: es la unica vista que habla de lo que NO esta.
+	public sealed class ControlEnEspera
+	{
+		public string Analito { get; init; } = "";
+		public string ParaMostrar { get; init; } = "";
+		public DateTime UltimaMedicion { get; init; }
+		public int DiasDesdeLaUltima { get; init; }
+		public int MesesRecomendados { get; init; }
+		public int DiasQueFaltan { get; init; }
+		public bool EstaVencido { get; init; }
+		public string Severidad { get; init; } = "";
+		public string Accion { get; init; } = "";
+		public string ParaSonia { get; init; } = "";
+	}
+
 	// LO QUE EL ANALITO CONCLUYE. Vista aparte de TendenciaDeAnalito porque son dos capas
 	// distintas: aquella trae los HECHOS de la serie, esta trae la LECTURA de esos hechos
 	// hecha por el analito que sabe interpretarlos.

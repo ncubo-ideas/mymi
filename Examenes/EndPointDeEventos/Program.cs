@@ -304,6 +304,18 @@ sealed class AlmacenDeEventos
     // pantalla de resultados no.
     private static List<EventoDeExamen> Sembrar() => new()
     {
+        // UN PERFIL LIPIDICO VIEJO, y no es relleno: es lo que hace visible la consulta
+        // que mira el hueco. Todo el resto del guion cae el mismo dia, asi que sin esto
+        // nada aparece vencido nunca y la capacidad no se ve.
+        //
+        // Ademas ejercita ColesterolDetallado, que estaba modelado -con su HDL que se lee
+        // al reves que el LDL- y no aparecia en la historia.
+        new EventoDeExamen
+        {
+            Id = 200, Examen = "ColesterolDetallado", Fecha = new DateTime(2022, 11, 1, 8, 30, 0),
+            Valor = 150m, ValorSecundario = 38m, Unidad = "mg/dL",
+        },
+
         Sangre(201, "AntigenoProstatico", new DateTime(2023, 8, 21, 9, 10, 0), 3.0m, "ng/mL"),
         Sangre(202, "AntigenoProstatico", new DateTime(2024, 8, 21, 9, 5, 0), 3.1m, "ng/mL"),
         Sangre(203, "Colesterol", new DateTime(2025, 8, 21, 8, 40, 0), 200.0m, "mg/dL"),

@@ -103,6 +103,20 @@ namespace Examenes.Dominio
 		// esquivarlo.
 		public abstract Interpretacion Interpretar(SerieDeAnalito serie, int edad);
 
+		// CADA CUANTO conviene repetir ESTE analito, en meses.
+		//
+		// No es una constante: depende de la edad y, en varios analitos, de si el ultimo
+		// valor salio en rango. Un colesterol normal se revisa cada varios anos; uno alto,
+		// todos los anos. Por eso es un metodo y no un campo.
+		//
+		// Es lo que permite contestar QUE FALTA, que es distinto de todo lo demas que sabe
+		// este dominio: el resto interpreta lo que hay, esto mira lo que NO esta.
+		//
+		// ⚠️ Las periodicidades son de uso corriente y ORIENTATIVAS. Varian por
+		// antecedentes y criterio medico, y conviene que alguien del area las revise antes
+		// de mostrarlas fuera del equipo.
+		public abstract int MesesHastaElProximo(int edad);
+
 		public ClasificacionDeValor ClasificarPara(int edad) => RangoPara(edad).Clasificar(Valor);
 
 		// Si el valor se movio lo suficiente como para llamarlo cambio. Vive en la base

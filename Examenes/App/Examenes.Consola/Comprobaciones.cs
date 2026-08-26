@@ -46,6 +46,7 @@ namespace Examenes.Consola
 			LaLecturaEsDelAnalitoNoDeLaPantalla();
 			ElCuadroPoneLasFechasEnElEje();
 			DosBinariosIgualesPidenCosasDistintas();
+			LoQueFaltaMedirEsLoQueNingunaPantallaMuestra();
 
 			Console.WriteLine();
 			Console.WriteLine(fallas == 0
@@ -782,6 +783,82 @@ namespace Examenes.Consola
 				new ExamenDeOrina(Hoy, "ambar").Sangre.Expresado);
 			Igual("  y uno de tres tambien", "no realizado",
 				new ExamenDeOrina(Hoy, "ambar", "negativo").Sangre.Expresado);
+		}
+
+
+		// ---- lo que falta medir: la unica pregunta que mira el hueco ----
+		//
+		// Todo lo demas de este dominio interpreta lo que HAY. Esto mira lo que NO esta, y
+		// es lo unico que una pantalla no puede mostrar: solo renderiza datos que tiene.
+		//
+		// Reemplaza a la tool `revisar_mis_analitos`, que recorria los analitos y devolvia
+		// la tendencia de cada uno — o sea lo que la app ya renderiza. Es el mismo reclamo
+		// que Alvaro le hizo al `total` de Jonathan.
+		private static void LoQueFaltaMedirEsLoQueNingunaPantallaMuestra()
+		{
+			Titulo("lo que falta medir");
+
+			// LA PERIODICIDAD NO ES FIJA: el mismo analito contesta distinto segun donde
+			// quedo su ultimo valor. Es lo que la hace conocimiento y no configuracion.
+			Igual("un colesterol EN RANGO se repite cada 5 años", "60",
+				new Colesterol(Hoy, 180m, "mg/dL").MesesHastaElProximo(60).ToString());
+			Igual("  el mismo analito FUERA de rango, cada año", "12",
+				new Colesterol(Hoy, 280m, "mg/dL").MesesHastaElProximo(60).ToString());
+			Igual("una hemoglobina normal, cada año", "12",
+				new Hemoglobina(Hoy, 14.2m, "g/dL").MesesHastaElProximo(60).ToString());
+			Igual("  con anemia, cada seis meses", "6",
+				new Hemoglobina(Hoy, 9.5m, "g/dL").MesesHastaElProximo(60).ToString());
+
+			// El caso completo: un colesterol alto de hace cuatro anos.
+			var expediente = new Expediente(60);
+			expediente.Agregar(new Colesterol(Hoy.AddDays(-1460), 280m, "mg/dL"));
+			expediente.Agregar(new AntigenoProstatico(Hoy.AddDays(-30), 3.0m, "ng/mL"));
+
+			IReadOnlyList<ControlPendiente> pendientes = expediente.ControlesPendientes(Hoy);
+
+			Igual("aparecen los dos analitos con historia", "2", pendientes.Count.ToString());
+			Igual("  y lo mas vencido va primero", "Colesterol total", pendientes[0].Analito.Nombre);
+			Igual("  el colesterol de hace 4 años esta vencido", "True",
+				pendientes[0].EstaVencido.ToString());
+			Igual("  el antigeno de hace un mes no", "False", pendientes[1].EstaVencido.ToString());
+
+			// Al DOBLE del intervalo escala: ahi ya no es "se me paso", es que el analito
+			// dejo de tener serie util.
+			Igual("pasado el doble del intervalo, escala", "consulta medica",
+				pendientes[0].NombreDeLaSeveridad);
+
+			var apenasVencido = new Expediente(60);
+			apenasVencido.Agregar(new Colesterol(Hoy.AddDays(-400), 280m, "mg/dL"));
+			Igual("  apenas vencido, solo seguimiento", "seguimiento",
+				apenasVencido.ControlesPendientes(Hoy)[0].NombreDeLaSeveridad);
+
+			// Al dia no pide nada, y lo dice.
+			var alDia = new Expediente(60);
+			alDia.Agregar(new Colesterol(Hoy.AddDays(-100), 180m, "mg/dL"));
+			ControlPendiente sano = alDia.ControlesPendientes(Hoy)[0];
+			Igual("al dia no pide nada", "informativo", sano.NombreDeLaSeveridad);
+			Igual("  y lo dice sin inventar una accion", "", sano.QueHacer);
+			Igual("  la lectura la escribe el dominio", "True",
+				sano.ParaSonia.Contains("al día").ToString());
+
+			// De un analito que NUNCA se midio no se dice nada. No hay nada que repetir, y
+			// el dominio no inventa una recomendacion sobre algo que nadie pidio.
+			Igual("de lo que nunca se midio no se opina", "1",
+				alDia.ControlesPendientes(Hoy).Count.ToString());
+
+			// Una medicion fechada DESPUES de la referencia cuenta como de hoy. Pasa de
+			// verdad -el guion tiene un examen del dia siguiente- y "hace -1 dias" no es
+			// una respuesta.
+			var futuro = new Expediente(60);
+			futuro.Agregar(new Colesterol(Hoy.AddDays(1), 180m, "mg/dL"));
+			Igual("una medicion del futuro no da dias negativos", "0",
+				futuro.ControlesPendientes(Hoy)[0].DiasDesdeLaUltima.ToString());
+
+			// Y la respuesta depende de la fecha que se le pase, no del reloj: es lo que
+			// mantiene reproducible el dominio.
+			Igual("mañana el mismo expediente contesta distinto", "True",
+				(alDia.ControlesPendientes(Hoy.AddDays(2000))[0].EstaVencido
+					&& !alDia.ControlesPendientes(Hoy)[0].EstaVencido).ToString());
 		}
 
 		private static void Titulo(string texto)

@@ -60,6 +60,14 @@ namespace Examenes.Dominio
 
 		public override DireccionDeseable Direccion => DireccionDeseable.Bajar;
 
+		// Anual a partir de los 50, que es cuando el tamizaje empieza a tener sentido.
+		// Antes de esa edad, y con el valor en rango, cada dos anos alcanza.
+		//
+		// Y si la velocidad ya exige atencion, no hay periodicidad que valga: eso se mira
+		// ahora. Devolver 12 ahi seria decirle a alguien que espere un ano.
+		public override int MesesHastaElProximo(int edad) =>
+			edad >= 50 ? 12 : (EsNormalPara(edad) ? 24 : 12);
+
 		// ---------------------------------------------------------------- lo suyo
 
 		// LA capacidad de este analito. Es publica y con nombre porque es lo que la IA
