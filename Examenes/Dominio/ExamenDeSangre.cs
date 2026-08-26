@@ -112,7 +112,9 @@ namespace Examenes.Dominio
 		// lo mismo que el conjunto de examenes de antigeno prostatico evaluando su
 		// tendencia". Una medicion sola no puede interpretar una serie; lo hacia recibiendo
 		// la serie por parametro, que es la senal de que el metodo no era suyo.
-		public abstract SerieDeAnalito NuevaSerie();
+		// Devuelve la rama CONTINUA y no la raiz: un examen de sangre no puede producir
+		// una serie binaria, y decirlo en la firma evita tener que comprobarlo despues.
+		public abstract SerieContinua NuevaSerie();
 
 		// EL MULTIPLO QUE NINGUN INTERVALO JUSTIFICA. Es la otra mitad de lo que Alvaro
 		// planteo, y es distinta del rango posible:

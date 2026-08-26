@@ -9,7 +9,7 @@ namespace Examenes.Dominio
 	// Lo suyo es PeorGrado(): la anemia mas profunda que hubo en toda la serie. Un valor
 	// que hoy esta bien despues de haber estado en 8.0 no se lee igual que uno que nunca
 	// bajo, y eso no se puede preguntar mirando una medicion sola.
-	public sealed class SerieDeHemoglobina : SerieDeAnalito
+	public sealed class SerieDeHemoglobina : SerieContinua
 	{
 		public SerieDeHemoglobina() : base(Analito.Hemoglobina) { }
 

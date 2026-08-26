@@ -320,6 +320,13 @@ public sealed class EstadoDeLaApp : IAsyncDisposable
 	// LA consulta que justifica la app. No es el ultimo valor: es la lectura de la serie.
 	public TendenciaDeAnalito Tendencia(string analito) { Exigir(); return api!.Tendencia(analito); }
 
+	// LOS BINARIOS SE LEEN POR OTRA PUERTA. Un nitrito no tiene tendencia ni puntos con
+	// numero: tiene presencias en fechas. Son dos consultas y no una porque no devuelven
+	// lo mismo, igual que en el dominio.
+	public PresenciaDeAnalito Presencia(string analito) { Exigir(); return api!.Presencia(analito); }
+
+	public IReadOnlyList<PruebaEnSerie> Pruebas(string analito) { Exigir(); return api!.Pruebas(analito); }
+
 	public int Cantidad() { Exigir(); return api!.CantidadDeExamenes(); }
 
 	public int AnalitosFueraDeRango() { Exigir(); return api!.AnalitosFueraDeRango(); }

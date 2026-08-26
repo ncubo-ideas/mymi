@@ -72,6 +72,6 @@ namespace Examenes.Dominio
 		// al reves que el valor principal.
 		public bool HdlEsProtector => Hdl.Valor >= 40m;
 
-		public override SerieDeAnalito NuevaSerie() => new SerieDeColesterolLdl();
+		public override SerieContinua NuevaSerie() => new SerieDeColesterolLdl();
 	}
 }

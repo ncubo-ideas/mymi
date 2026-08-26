@@ -144,9 +144,12 @@ else
         </button>
         <span class="apunte mono">
             @cantidad @(cantidad == 1 ? "examen" : "exámenes") &middot;
+            @* «Con algo» y no «fuera de rango»: desde que los binarios tienen serie, el
+               conteo incluye una sangre oculta presente, que no tiene rango del que
+               salirse. Decir «fuera de rango» de un positivo sería inventarle una escala. *@
             @(fueraDeRango == 0
-                ? "todo dentro de rango"
-                : $"{fueraDeRango} fuera de rango") &middot;
+                ? "nada que mirar"
+                : $"{fueraDeRango} con algo que mirar") &middot;
             leído hasta el evento @ultimoEvento
         </span>
     </div>
@@ -278,9 +281,48 @@ else
         }
     }
 
+    @* LOS BINARIOS, con SU forma. Van en la misma sección y en tarjetas iguales porque
+       son lo mismo que los de arriba —la lectura de una serie— y se leen distinto porque
+       lo son: acá no hay «pasó de 200 a 280», hay «apareció en las 2 seguidas».
+
+       Que estén acá y no perdidos en el historial es lo que cambió: hasta ahora una
+       sangre oculta no tenía serie, así que sólo podía aparecer como una celda con un
+       positivo y un aviso suelto. *@
+    @foreach (PresenciaDeAnalito p in presencias)
+    {
+        <button class="serie" @onclick="() => VerSerie(p.Analito)">
+            <div class="serie-cabeza">
+                <div>
+                    <span class="serie-nombre">@p.ParaMostrar</span>
+                    <span class="chip @Insignia(p)">@p.Presencia</span>
+                    <div class="serie-relato">@Relato(p)</div>
+                </div>
+                <div class="serie-valor">@p.UltimoResultado</div>
+            </div>
+            @{ InterpretacionDeAnalito suya = Lectura(p.Analito); }
+
+            @if (p.HaySerie)
+            {
+                <PresenciaEnElTiempo Pruebas="Tira(p.Analito)"
+                                     Seguidas="p.PositivasSeguidas"
+                                     Descripcion="@suya.ParaSonia" />
+            }
+
+            @if (!string.IsNullOrEmpty(suya.ParaSonia))
+            {
+                <div class="serie-lectura@(suya.PideAlgo ? " serie-lectura--atencion" : "")">
+                    @suya.ParaSonia@(suya.PideAlgo ? ": " : ".")<b>@suya.Accion</b>
+                </div>
+            }
+        </button>
+    }
+
     @* Un hallazgo de un examen sin serie. Va acá arriba y no perdido en una celda:
        «apareció sangre» no es un dato de tabla. El texto y la urgencia los pone el
-       dominio — dos positivos de la misma forma pueden decir cosas muy distintas. *@
+       dominio — dos positivos de la misma forma pueden decir cosas muy distintas.
+
+       Hoy esto son sólo los COLORES. Los binarios subieron a sus propias tarjetas en
+       cuanto tuvieron serie, que es donde tenían que estar desde el principio. *@
     @foreach (FilaDelCuadro hallazgo in Hallazgos())
     {
         <div class="aviso @(hallazgo.Severidad == "atencion inmediata" ? "aviso--problema" : "aviso--atencion")" style="margin-top:26px">
@@ -474,16 +516,32 @@ else
 
         // Una lectura por analito con historia. Se piden de a uno porque cada una es una
         // consulta sobre el actor: la pantalla no recorre el dominio, le pregunta.
+        //
+        // Y SE PREGUNTA POR LA FORMA ANTES QUE POR LOS HECHOS. Un binario no tiene
+        // tendencia —el dominio contesta «no aplica»— ni puntos con número, así que
+        // pedírselos daría ceros. Cuál puerta usar lo decide la forma, que es dominio: la
+        // pantalla la lee, no la inventa.
         var hechos = new List<TendenciaDeAnalito>();
+        var presentes = new List<PresenciaDeAnalito>();
         var leidos = new Dictionary<string, InterpretacionDeAnalito>();
         foreach (string analito in estado.Analitos())
         {
+            InterpretacionDeAnalito lectura = estado.Interpretacion(analito);
+            leidos[analito] = lectura;
+
+            if (lectura.Forma == FormaDePresencia)
+            {
+                presentes.Add(estado.Presencia(analito));
+                pruebas[analito] = estado.Pruebas(analito);
+                continue;
+            }
+
             hechos.Add(estado.Tendencia(analito));
-            leidos[analito] = estado.Interpretacion(analito);
             puntos[analito] = estado.Puntos(analito);
             lineas[analito] = estado.Referencias(analito);
         }
         analitos = hechos;
+        presencias = presentes;
         interpretaciones = leidos;
         celdas = estado.Cuadro();
     }
@@ -497,6 +555,14 @@ else
     // Sin serie devuelve VACÍO y no una frase: esa la dice el analito en su ParaSonia, y
     // tenerla en los dos lados imprimía "todavía no hay serie" dos veces seguidas en la
     // misma tarjeta.
+    // Los HECHOS de una serie binaria, contados por la pantalla con lo que da el dominio.
+    // No hay de dónde sacar un consejo acá tampoco: son cuántas pruebas y cuántas dieron
+    // presente.
+    private static string Relato(PresenciaDeAnalito p) =>
+        p.HaySerie
+            ? $"{p.Positivas} de {p.Mediciones} pruebas en {p.Dias} {(p.Dias == 1 ? "día" : "días")}"
+            : "";
+
     private static string Relato(TendenciaDeAnalito t) =>
         t.HaySerie
             ? $"pasó de {Valor(t.ValorInicial)} a {Valor(t.ValorFinal)} {t.Unidad} "
@@ -589,6 +655,17 @@ else
         return hallazgos;
     }
 
+    // El nombre de la forma tal como lo dice el dominio. La pantalla hace un switch sobre
+    // esto y ese switch SÍ es presentación legítima: traduce una forma del dominio a
+    // píxeles. Lo que no puede es decidirla.
+    private const string FormaDePresencia = "presencia en el tiempo";
+
+    private List<PresenciaDeAnalito> presencias = new();
+    private Dictionary<string, IReadOnlyList<PruebaEnSerie>> pruebas = new();
+
+    private IReadOnlyList<PruebaEnSerie> Tira(string analito) =>
+        pruebas.TryGetValue(analito, out var p) ? p : new List<PruebaEnSerie>();
+
     private Dictionary<string, IReadOnlyList<PuntoDeSerie>> puntos = new();
     private Dictionary<string, IReadOnlyList<LineaDeReferencia>> lineas = new();
 
@@ -638,6 +715,14 @@ else
     //
     // El ambar sigue reservado para lo que exige atencion, y por eso "salto inverosimil"
     // NO lo usa: no es una alarma clinica, es "repeti el examen".
+    private string Insignia(PresenciaDeAnalito p)
+    {
+        InterpretacionDeAnalito lectura = Lectura(p.Analito);
+        if (lectura.PideAlgo) return "chip--atencion";
+        if (!p.HaySerie) return "chip--sinserie";
+        return "chip--estable";
+    }
+
     private string Insignia(TendenciaDeAnalito t)
     {
         InterpretacionDeAnalito lectura = Lectura(t.Analito);

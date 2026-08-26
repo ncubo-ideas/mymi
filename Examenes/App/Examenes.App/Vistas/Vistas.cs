@@ -48,6 +48,43 @@ namespace Examenes.App.Vistas
 		public bool HaySerie { get; init; }
 	}
 
+	// LOS HECHOS DE UNA SERIE BINARIA. Vista aparte de TendenciaDeAnalito porque no
+	// trae lo mismo: un binario no tiene valor inicial ni final ni cambio. Tiene CUANTAS
+	// veces aparecio y —la que cambia la conducta— cuantas SEGUIDAS.
+	//
+	// "Dos seguidas" es lo que hace que una sangre oculta en heces deje de leerse como
+	// "conviene repetir el examen". Ninguna medicion sola puede decirlo.
+	public sealed class PresenciaDeAnalito
+	{
+		public string Analito { get; init; } = "";
+		public string ParaMostrar { get; init; } = "";
+
+		// "apareció", "persiste", "nunca apareció", "no confirmado", "cedió".
+		public string Presencia { get; init; } = "";
+
+		public int Mediciones { get; init; }
+		public int Positivas { get; init; }
+		public int PositivasSeguidas { get; init; }
+		public int Dias { get; init; }
+
+		// El ultimo resultado con el vocabulario de SU analito: "positivo", y en una
+		// serologia seria "reactivo". Es la razon de que la magnitud no sea un bool.
+		public string UltimoResultado { get; init; } = "";
+
+		public bool EstaPresente { get; init; }
+		public bool HaySerie { get; init; }
+	}
+
+	// UNA PRUEBA BINARIA en una fecha: el punto de una tira de presencia. Es el par de
+	// PuntoDeSerie para la forma 5, y no tiene Valor porque no existe "mas positivo".
+	public sealed class PruebaEnSerie
+	{
+		public DateTime Fecha { get; init; }
+		public string Expresado { get; init; } = "";
+		public bool EsPositivo { get; init; }
+		public bool EsHallazgo { get; init; }
+	}
+
 	// UN PUNTO de la serie, con su NUMERO. Es lo que un grafico necesita y una celda del
 	// cuadro no da: aquella trae "3.0 ng/mL" ya dicho, esto trae 3.0.
 	public sealed class PuntoDeSerie

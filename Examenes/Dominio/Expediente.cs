@@ -29,6 +29,10 @@ namespace Examenes.Dominio
 		//
 		// Antes era un Dictionary<string,...> con OrdinalIgnoreCase, que resolvia las
 		// mayusculas y NADA mas: "HGB" y "Hemoglobina" seguian siendo dos series.
+		//
+		// El valor es la RAIZ de las series, no la rama continua: desde este cambio el
+		// diccionario tiene tambien series binarias —nitritos, las dos sangres ocultas— y
+		// el Expediente les pregunta lo mismo a todas sin saber cual tiene enfrente.
 		private readonly Dictionary<Analito, SerieDeAnalito> series =
 			new Dictionary<Analito, SerieDeAnalito>();
 
@@ -70,20 +74,39 @@ namespace Examenes.Dominio
 
 			examenes.Add(examen);
 
-			// Solo los cuantitativos forman serie. Un examen de orina entra a la lista
-			// y no a ninguna serie, y eso es correcto: no hay tendencia de un color.
+			// LOS CONTINUOS ENTRAN POR EL EXAMEN, y no por la lectura, porque su serie
+			// necesita mas que el numero: los umbrales, el rango por edad y la
+			// periodicidad viven en el examen, no en el resultado.
+			//
+			// La serie la crea EL ANALITO, no un switch aca. Cada uno sabe cual es "su
+			// plural": el antigeno devuelve SerieDeAntigenoProstatico, con sus metodos, y
+			// el colesterol devuelve la suya, con otros.
 			if (examen is ExamenDeSangre deSangre)
+				((SerieContinua)Nueva(deSangre.Analito, deSangre.NuevaSerie)).Agregar(deSangre);
+
+			// LOS BINARIOS ENTRAN POR LA LECTURA. Un urianalisis trae TRES cosas medidas y
+			// solo dos de ellas forman serie; el examen entero no es el punto de ninguna.
+			// Ahi el conocimiento clinico esta en la magnitud —el vocabulario, la
+			// polaridad, la severidad— y el examen no aporta mas que la fecha.
+			//
+			// Antes esto no ocurria en absoluto: un examen de orina entraba a la lista y a
+			// ninguna serie, asi que "cómo viene mi sangre en orina" no se podia preguntar.
+			foreach (LecturaDeExamen lectura in examen.Lecturas)
+				if (lectura.Resultado is MagnitudBinaria binaria)
+					((SerieBinaria)Nueva(lectura.Analito, binaria.NuevaSerie))
+						.Agregar(new PruebaBinaria(examen.Fecha, binaria));
+		}
+
+		// La serie de ese analito, creandola con SU propia fabrica la primera vez. El
+		// Expediente no sabe que clase es: se la pide a quien si lo sabe.
+		private SerieDeAnalito Nueva(Analito analito, Func<SerieDeAnalito> fabrica)
+		{
+			if (!series.TryGetValue(analito, out SerieDeAnalito serie))
 			{
-				if (!series.TryGetValue(deSangre.Analito, out SerieDeAnalito serie))
-				{
-					// La serie la crea EL ANALITO, no un switch aca. Cada uno sabe cual es
-					// "su plural": el antigeno devuelve SerieDeAntigenoProstatico, con sus
-					// metodos, y el colesterol devuelve la suya, con otros.
-					serie = deSangre.NuevaSerie();
-					series[deSangre.Analito] = serie;
-				}
-				serie.Agregar(deSangre);
+				serie = fabrica();
+				series[analito] = serie;
 			}
+			return serie;
 		}
 
 		// Las cuatro consultas de abajo reciben el analito COMO TEXTO porque asi llega: de
@@ -117,9 +140,21 @@ namespace Examenes.Dominio
 		{
 			Analito cual = Analito.PorNombre(analito);
 
-			return series.TryGetValue(cual, out SerieDeAnalito serie)
-				? serie.Evaluar()
-				: EvaluacionDeTendencia.SinSerie(cual, 0, null);
+			if (!series.TryGetValue(cual, out SerieDeAnalito serie))
+				return EvaluacionDeTendencia.SinSerie(cual, 0, null);
+
+			// LA TENDENCIA SOLO EXISTE EN LAS SERIES CONTINUAS. Un binario no asciende ni
+			// desciende: aparece. La consulta sigue siendo TOTAL —la superficie pregunta
+			// sin saber que forma tiene enfrente— y por eso la respuesta es NoAplica y no
+			// SinSerie: decirle "indeterminada" a un analito con cuatro pruebas seria
+			// decirle a la persona que le faltan examenes.
+			//
+			// Es la misma frontera que VelocidadDe, que ya estaba: "esta pregunta es
+			// general" contra "esta capacidad es de una forma sola". Para leer un binario
+			// esta InterpretarSerieDe, que si contesta para todos.
+			return serie is SerieContinua continua
+				? continua.Evaluar()
+				: EvaluacionDeTendencia.NoAplica(cual, serie.Cantidad);
 		}
 
 		// LO QUE EL ANALITO CONCLUYE de su propia serie: veredicto, severidad y la linea
@@ -148,17 +183,19 @@ namespace Examenes.Dominio
 				foreach (KeyValuePair<Analito, SerieDeAnalito> par in series)
 					mayor = Severidad.LaMayor(mayor, par.Value.Interpretar(Edad).Severidad);
 
-				// Los examenes que NO forman serie tambien pesan, y esto es justamente lo
-				// que el feedback pedia: lo mas urgente del expediente puede ser una
-				// sangre en la orina, que no tiene tendencia ninguna, y no el analito que
-				// mas se movio. Un modelo que solo mirara series se la perderia entera.
+				// Y lo que NO forma serie tambien pesa. Hoy eso son los NOMINALES: un
+				// color oscuro no tiene tendencia ninguna y sin embargo puede ser lo mas
+				// urgente del expediente. Un modelo que solo mirara series se lo perderia.
+				//
+				// Las sangres ocultas y los nitritos YA NO entran por aca, y esa es la
+				// diferencia que trae la serie binaria: su severidad la decide su historia
+				// y no el examen donde aparecieron. Sumar las dos cosas taparia el caso que
+				// mas importa —el positivo que no se confirmo, y que la serie baja a
+				// informativo mientras el examen suelto sigue diciendo lo maximo—.
 				foreach (Examen examen in examenes)
-				{
-					if (examen is ExamenDeOrina orina)
-						mayor = Severidad.LaMayor(mayor, orina.SeveridadDelExamen);
-					else if (examen is ExamenDeHeces heces)
-						mayor = Severidad.LaMayor(mayor, heces.SeveridadDelExamen);
-				}
+					foreach (LecturaDeExamen lectura in examen.Lecturas)
+						if (lectura.Resultado is MagnitudNominal nominal)
+							mayor = Severidad.LaMayor(mayor, nominal.SeveridadDelHallazgo);
 
 				return mayor;
 			}
@@ -209,24 +246,29 @@ namespace Examenes.Dominio
 		// Solo aparecen los analitos CON SERIE. De uno que nunca se midio no se puede
 		// decir "te toca repetirlo": no hay nada que repetir, y el dominio no inventa una
 		// recomendacion sobre algo que nadie pidio.
+		//
+		// DESDE QUE LOS BINARIOS TIENEN SERIE, esto cubre tambien la sangre oculta y los
+		// nitritos, que era el limite anotado en §7 bis: "que_me_falta_medir solo cubre
+		// analitos con serie, o sea solo sangre". Y la periodicidad la resuelve cada uno
+		// contra su ultimo resultado: una sangre oculta positiva no espera al ano.
 		public IReadOnlyList<ControlPendiente> ControlesPendientes(DateTime hoy)
 		{
 			var pendientes = new List<ControlPendiente>();
 
 			foreach (KeyValuePair<Analito, SerieDeAnalito> par in series)
 			{
-				ExamenDeSangre ultimo = par.Value.Ultimo;
-				if (ultimo == null) continue;
+				SerieDeAnalito serie = par.Value;
+				if (!serie.HayMediciones) continue;
 
 				// Una medicion fechada DESPUES de la fecha de referencia cuenta como de
 				// hoy, no como dias negativos. Pasa de verdad: el guion tiene un examen
 				// del dia siguiente para demostrar el salto inverosimil, y en produccion
 				// pasaria con una zona horaria o un laboratorio que fecha la validacion.
 				// "Hace -1 dias que te lo hiciste" no es una respuesta.
-				int dias = Math.Max(0, (int)(hoy.Date - ultimo.Fecha.Date).TotalDays);
+				int dias = Math.Max(0, (int)(hoy.Date - serie.FechaDeLaUltima.Date).TotalDays);
 
 				pendientes.Add(new ControlPendiente(
-					par.Key, ultimo.Fecha.Date, dias, ultimo.MesesHastaElProximo(Edad)));
+					par.Key, serie.FechaDeLaUltima.Date, dias, serie.MesesHastaElProximo(Edad)));
 			}
 
 			// Lo mas vencido primero: es el orden en que conviene leerlos, y evita que la
@@ -242,9 +284,35 @@ namespace Examenes.Dominio
 		{
 			Analito cual = Analito.PorNombre(analito);
 
-			return series.TryGetValue(cual, out SerieDeAnalito serie)
-				? serie.Mediciones
+			// Solo las continuas tienen puntos con NUMERO. Los de un binario son fechas
+			// con un si o un no, y van por PruebasDe.
+			return series.TryGetValue(cual, out SerieDeAnalito serie) && serie is SerieContinua continua
+				? continua.Mediciones
 				: new List<ExamenDeSangre>();
+		}
+
+		// LOS PUNTOS DE UNA SERIE BINARIA: fechas con un si o un no. Es el par de PuntosDe
+		// para la forma 5, y son dos consultas y no una porque no devuelven lo mismo — un
+		// nitrito no tiene ValorNumerico, y pedirselo seria la mentira de siempre.
+		public IReadOnlyList<PruebaBinaria> PruebasDe(string analito)
+		{
+			Analito cual = Analito.PorNombre(analito);
+
+			return series.TryGetValue(cual, out SerieDeAnalito serie) && serie is SerieBinaria binaria
+				? binaria.Pruebas
+				: new List<PruebaBinaria>();
+		}
+
+		// LOS HECHOS DE UNA SERIE BINARIA: aparecio, persiste, cedio, y sobre cuantas
+		// pruebas. Es el par de EvaluarTendenciaDe, y es total por la misma razon:
+		// preguntar por un analito real del que todavia no hay nada es legitimo.
+		public EvaluacionDePresencia EvaluarPresenciaDe(string analito)
+		{
+			Analito cual = Analito.PorNombre(analito);
+
+			return series.TryGetValue(cual, out SerieDeAnalito serie) && serie is SerieBinaria binaria
+				? binaria.Evaluar()
+				: EvaluacionDePresencia.SinSerie(cual, 0, "");
 		}
 
 		// COMO SE LEE ese analito. Total: de uno sin mediciones la respuesta es que no hay
@@ -311,19 +379,20 @@ namespace Examenes.Dominio
 				LecturaDeExamen lectura = par.Value.Lectura;
 				string llave = lectura.Analito.Nombre;
 
-				// La lectura viaja SOLO para los que no forman serie. Los otros la piden
-				// por separado, porque la suya necesita la serie completa.
+				// La lectura viaja SOLO para los que no forman serie, que desde este
+				// cambio son unicamente los NOMINALES: un color no tiene historia que
+				// consultar, asi que lo que se puede decir de el se dice mirando la celda.
+				//
+				// Antes viajaba la severidad del EXAMEN ENTERO, que mezclaba el color con
+				// los binarios que van al lado. Ahora esa mezcla seria incorrecta: la
+				// lectura de una sangre oculta ya no sale del examen donde aparecio, sale
+				// de su serie —y puede ser MENOR, cuando el positivo no se confirmo—.
 				string severidad = "";
 				string paraSonia = "";
-				if (examen is ExamenDeOrina orina)
+				if (lectura.Resultado is MagnitudNominal nominal)
 				{
-					severidad = orina.SeveridadDelExamen.Nombre;
-					paraSonia = orina.ParaSonia;
-				}
-				else if (examen is ExamenDeHeces heces)
-				{
-					severidad = heces.SeveridadDelExamen.Nombre;
-					paraSonia = heces.ParaSonia;
+					severidad = nominal.SeveridadDelHallazgo.Nombre;
+					paraSonia = nominal.ParaSonia;
 				}
 
 				celdas.Add(new CeldaDelCuadro(
@@ -333,7 +402,10 @@ namespace Examenes.Dominio
 					lectura.ParaMostrar,
 					examen.Fecha.Date,
 					lectura.Expresado,
-					examen.AportaSerie,
+					// LO CONTESTA LA LECTURA, no el examen que la contiene. Un urianalisis
+					// trae tres cosas medidas y solo dos forman serie: preguntarselo al
+					// examen le ponia la misma respuesta a las tres.
+					lectura.AportaSerie,
 					severidad,
 					paraSonia));
 			}
@@ -377,18 +449,19 @@ namespace Examenes.Dominio
 			return ordenados;
 		}
 
-		// Cuantos analitos estan hoy fuera de su rango de referencia para la edad del
-		// paciente. Es un conteo derivado, no un campo que pueda quedar desincronizado.
+		// Cuantos analitos tienen HOY algo que no deberia estar. Es un conteo derivado, no
+		// un campo que pueda quedar desincronizado.
+		//
+		// Se pregunta "es un hallazgo" y no "esta fuera de rango" porque un binario no
+		// tiene rango y sin embargo la pregunta es la misma. Antes esto solo miraba
+		// analitos de sangre, asi que una sangre en la orina no contaba para nada.
 		public int AnalitosFueraDeRango
 		{
 			get
 			{
 				int fuera = 0;
 				foreach (KeyValuePair<Analito, SerieDeAnalito> par in series)
-				{
-					ExamenDeSangre ultimo = par.Value.Ultimo;
-					if (ultimo != null && !ultimo.EsNormalPara(Edad)) fuera++;
-				}
+					if (par.Value.UltimaEsHallazgo(Edad)) fuera++;
 				return fuera;
 			}
 		}

@@ -5,7 +5,7 @@ namespace Examenes.Dominio
 {
 	// LA SERIE DEL COLESTEROL FRACCIONADO. La llave es el LDL; el HDL viaja al lado y se
 	// lee AL REVES, que es lo que ningun otro analito del demo hace.
-	public sealed class SerieDeColesterolLdl : SerieDeAnalito
+	public sealed class SerieDeColesterolLdl : SerieContinua
 	{
 		public SerieDeColesterolLdl() : base(Analito.ColesterolLdl) { }
 

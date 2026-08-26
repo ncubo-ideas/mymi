@@ -31,8 +31,19 @@ namespace Examenes.Dominio
 		public static readonly FormaDeLectura PosicionEnBanda =
 			new FormaDeLectura("posicion en banda");
 
-		// Un hecho, sin escala ni serie. Los binarios y los nominales: la orina, las heces.
-		// No se dibuja: se dice.
+		// UNA TIRA DE PRUEBAS EN EL TIEMPO: estuvo, no estuvo, volvio a estar. Los
+		// binarios — los nitritos, las dos sangres ocultas.
+		//
+		// No es una curva y no puede serlo: no hay eje vertical, porque no existe "mas
+		// positivo". Lo que se dibuja son las fechas y si en cada una habia o no habia. Y
+		// eso ES un dibujo, no una frase: ver tres pruebas seguidas marcadas dice algo que
+		// la ultima sola no dice.
+		public static readonly FormaDeLectura PresenciaEnElTiempo =
+			new FormaDeLectura("presencia en el tiempo");
+
+		// Un hecho, sin escala ni serie. Los nominales: el color de la orina, el de las
+		// heces. No se dibuja: se dice, porque un color no forma una serie que se pueda
+		// leer —preguntar si viene subiendo no es una pregunta—.
 		public static readonly FormaDeLectura Afirmacion = new FormaDeLectura("afirmacion");
 
 		public string Nombre { get; private set; }
@@ -44,5 +55,13 @@ namespace Examenes.Dominio
 
 		// Si esta forma se dibuja sobre una serie de puntos en el tiempo. La afirmacion no.
 		public bool NecesitaLaSerie => !ReferenceEquals(this, Afirmacion);
+
+		// Si los puntos que dibuja son NUMEROS. La presencia en el tiempo necesita la
+		// serie y sin embargo no tiene valores: sus puntos son fechas con un si o un no.
+		// Es la distincion que evita que la pantalla le pida ValorNumerico a un nitrito.
+		public bool SeDibujaConNumeros =>
+			ReferenceEquals(this, TrayectoriaConLineaBase)
+			|| ReferenceEquals(this, ProgresoHaciaMeta)
+			|| ReferenceEquals(this, PosicionEnBanda);
 	}
 }

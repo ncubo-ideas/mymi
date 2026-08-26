@@ -38,6 +38,15 @@ namespace Examenes.Dominio
 		// pasa. Lo que corresponde no es alarmarse, es repetir el examen.
 		public static readonly Tendencia SaltoInverosimil = new Tendencia("salto inverosimil");
 
+		// ESTE ANALITO NO ASCIENDE NI DESCIENDE. Es la respuesta para un binario: los
+		// nitritos no vienen subiendo, aparecen o no aparecen, y eso lo dice Presencia.
+		//
+		// No es Indeterminada. Aquella significa "faltan mediciones" y se arregla
+		// midiendo; esta significa que la pregunta no le corresponde a este analito, y no
+		// se arregla con nada. Confundirlas le diria a la persona que le falta un examen
+		// que no existe.
+		public static readonly Tendencia NoAplica = new Tendencia("no aplica");
+
 		public string Nombre { get; private set; }
 
 		private Tendencia(string nombre)

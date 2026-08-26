@@ -101,5 +101,8 @@ namespace Examenes.Dominio
 				$"'{nombre}' no es un resultado de nitritos. Los validos son: "
 				+ $"{Positivo.Etiqueta}, {Negativo.Etiqueta}, {NoRealizado.Etiqueta}.", nameof(nombre));
 		}
+
+		/// <summary>El plural de este analito. Ver <see cref="SerieDeNitritos"/>.</summary>
+		public override SerieBinaria NuevaSerie() => new SerieDeNitritos();
 	}
 }
