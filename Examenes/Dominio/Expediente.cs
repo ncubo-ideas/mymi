@@ -76,7 +76,10 @@ namespace Examenes.Dominio
 			{
 				if (!series.TryGetValue(deSangre.Analito, out SerieDeAnalito serie))
 				{
-					serie = new SerieDeAnalito(deSangre.Analito);
+					// La serie la crea EL ANALITO, no un switch aca. Cada uno sabe cual es
+					// "su plural": el antigeno devuelve SerieDeAntigenoProstatico, con sus
+					// metodos, y el colesterol devuelve la suya, con otros.
+					serie = deSangre.NuevaSerie();
 					series[deSangre.Analito] = serie;
 				}
 				serie.Agregar(deSangre);
@@ -167,8 +170,13 @@ namespace Examenes.Dominio
 		{
 			Analito cual = Analito.PorNombre(analito);
 
+			// LA VELOCIDAD SOLO EXISTE EN LA SERIE DEL ANTIGENO, y esta consulta sigue
+			// siendo TOTAL para que la superficie pueda preguntarle a cualquier analito sin
+			// saber cual la tiene. La prueba de tipo es la frontera entre "esta es una
+			// pregunta general" y "esta capacidad es de uno solo".
 			return series.TryGetValue(cual, out SerieDeAnalito serie)
-				? serie.Velocidad()
+					&& serie is SerieDeAntigenoProstatico antigeno
+				? antigeno.VelocidadDelTramo()
 				: Examenes.Dominio.Velocidad.NoAplica(cual, "", 0m);
 		}
 

@@ -58,48 +58,6 @@ namespace Examenes.Dominio
 		// al reves que el valor principal.
 		public bool HdlEsProtector => Hdl.Valor >= 40m;
 
-		// ---------------------------------------------------------------- la lectura
-
-		// Se lee por NIVEL del LDL, y el HDL modula: un LDL alto con HDL protector no es
-		// lo mismo que un LDL alto con HDL bajo. Esa combinacion es propia de este examen
-		// porque es el unico que trae dos fracciones.
-		public override Interpretacion Interpretar(SerieDeAnalito serie, int edad)
-		{
-			ArgumentNullException.ThrowIfNull(serie);
-
-			EvaluacionDeTendencia hechos = serie.Evaluar();
-			if (!hechos.HaySerie) return Interpretacion.SinSerie(hechos);
-
-			if (hechos.Tendencia.SugiereRepetirElExamen)
-				return new Interpretacion(Veredicto.ProbableErrorDeMedicion, Severidad.Seguimiento,
-					$"el LDL pasó de {hechos.ValorInicial} a {hechos.ValorFinal} {hechos.Unidad} "
-					+ $"en {hechos.DiasTranscurridos} día{(hechos.DiasTranscurridos == 1 ? "" : "s")}",
-					hechos);
-
-			bool enRango = EsNormalPara(edad);
-			string sobreElHdl = HdlEsProtector
-				? $", y tu HDL de {Hdl.Expresado} juega a favor"
-				: $", y tu HDL de {Hdl.Expresado} no alcanza para compensarlo";
-
-			if (!EsCambioReal(hechos.Cambio))
-				return enRango
-					? new Interpretacion(Veredicto.Estable, Severidad.Informativo,
-						$"el LDL se mantiene en {Ldl.Expresado}, dentro de lo deseable", hechos)
-					: new Interpretacion(Veredicto.Estable, Severidad.ConsultaMedica,
-						$"el LDL lleva tiempo en {Ldl.Expresado}" + sobreElHdl, hechos);
-
-			if (Direccion.EsFavorable(hechos.Cambio))
-				return new Interpretacion(Veredicto.Mejorando, Severidad.Informativo,
-					$"el LDL bajó de {hechos.ValorInicial} a {hechos.ValorFinal} {hechos.Unidad}",
-					hechos);
-
-			return enRango
-				? new Interpretacion(Veredicto.Empeorando, Severidad.Seguimiento,
-					$"el LDL subió de {hechos.ValorInicial} a {hechos.ValorFinal} {hechos.Unidad}, "
-					+ "todavía dentro de lo deseable", hechos)
-				: new Interpretacion(Veredicto.Empeorando, Severidad.ConsultaMedica,
-					$"el LDL subió de {hechos.ValorInicial} a {hechos.ValorFinal} {hechos.Unidad}"
-					+ sobreElHdl, hechos);
-		}
+		public override SerieDeAnalito NuevaSerie() => new SerieDeColesterolLdl();
 	}
 }

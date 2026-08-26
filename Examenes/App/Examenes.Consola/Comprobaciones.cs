@@ -49,6 +49,7 @@ namespace Examenes.Consola
 			LoQueFaltaMedirEsLoQueNingunaPantallaMuestra();
 			ElAntigenoSeLeeContraLoTuyo();
 			ElColesterolSeLeeContraUnaMeta();
+			CadaSerieEsSuPropioTipo();
 
 			Console.WriteLine();
 			Console.WriteLine(fallas == 0
@@ -919,18 +920,20 @@ namespace Examenes.Consola
 
 			// Previos: 2.0, 2.1, 1.9 y un pico de 8.0. La MEDIANA da 2.05; el promedio
 			// habria dado 3.5, arrastrado por el unico valor que no es de esta persona.
-			var ultimo = new AntigenoProstatico(Hoy, 2.0m, "ng/mL");
+			// Ahora se le pregunta A LA SERIE, que es de quien es: el metodo dejo de recibir
+			// la serie por parametro porque ES la serie.
+			var laSuya = (SerieDeAntigenoProstatico)
+				expediente.SerieDe(Analito.AntigenoProstatico.Nombre);
 			Igual("un pico no arrastra la linea base", "2.05 ng/mL",
-				ultimo.NivelHabitual(
-					expediente.SerieDe(Analito.AntigenoProstatico.Nombre)).Expresado);
+				laSuya.NivelHabitual().Expresado);
 
 			// Sin fondo suficiente no se inventa una linea base.
 			var corta = new Expediente(60);
 			corta.Agregar(new AntigenoProstatico(Hoy.AddDays(-365), 3.0m, "ng/mL"));
 			corta.Agregar(new AntigenoProstatico(Hoy, 3.2m, "ng/mL"));
 			Igual("con dos mediciones todavia no hay linea base", "True",
-				(new AntigenoProstatico(Hoy, 3.2m, "ng/mL").NivelHabitual(
-					corta.SerieDe(Analito.AntigenoProstatico.Nombre)) == null).ToString());
+				(((SerieDeAntigenoProstatico)corta.SerieDe(Analito.AntigenoProstatico.Nombre))
+					.NivelHabitual() == null).ToString());
 		}
 
 
@@ -962,13 +965,13 @@ namespace Examenes.Consola
 				(-1825, 180m), (-1460, 175m), (-730, 320m), (-365, 300m), (0, 280m) })
 				bajando.Agregar(new Colesterol(Hoy.AddDays(dias), v, "mg/dL"));
 
-			SerieDeAnalito serie = bajando.SerieDe(Analito.ColesterolTotal.Nombre);
-			var hoy280 = new Colesterol(Hoy, 280m, "mg/dL");
+			var laDelColesterol = (SerieDeColesterol)
+				bajando.SerieDe(Analito.ColesterolTotal.Nombre);
 
 			Igual("el episodio arranca en el pico, no en la primera medicion", "320 mg/dL",
-				hoy280.PartidaDelEpisodio(serie).Expresado);
+				laDelColesterol.PartidaDelEpisodio().Expresado);
 			Igual("  y el progreso se mide contra eso", "0.5",
-				hoy280.TrayectoriaHaciaMeta(serie).ToString());
+				laDelColesterol.TrayectoriaHaciaMeta().ToString());
 
 			// Fuera de rango y BAJANDO sigue siendo buena noticia, y ahora lo dice con la
 			// meta en vez de con el nivel habitual.
@@ -997,9 +1000,77 @@ namespace Examenes.Consola
 			foreach ((int dias, decimal v) in new[] {
 				(-1095, 2.0m), (-730, 2.1m), (-365, 1.9m), (0, 2.0m) })
 				suyaDelAntigeno.Agregar(new AntigenoProstatico(Hoy.AddDays(dias), v, "ng/mL"));
-			Igual("la linea base vive en el antigeno, no en el colesterol", "2.0 ng/mL",
-				new AntigenoProstatico(Hoy, 2.0m, "ng/mL").NivelHabitual(
-					suyaDelAntigeno.SerieDe(Analito.AntigenoProstatico.Nombre)).Expresado);
+			Igual("la linea base vive en la serie del antigeno", "2.0 ng/mL",
+				((SerieDeAntigenoProstatico)
+					suyaDelAntigeno.SerieDe(Analito.AntigenoProstatico.Nombre))
+					.NivelHabitual().Expresado);
+		}
+
+
+		// ---- cada serie es su propio tipo ----
+		//
+		// §4 de la reunion del 2026-08-26. Alvaro: "eso no es lo mismo que el conjunto de
+		// examenes de antigeno prostatico evaluando su tendencia. Ahi usted quizas tiene
+		// que hacer EL PLURAL antigeno prostatico, examenes plural, y a ese hacerle metodos
+		// especificos. […] si usted generaliza y lo pone en examenes, ya perdio la mitad
+		// del valor."
+		private static void CadaSerieEsSuPropioTipo()
+		{
+			Titulo("cada serie es su propio tipo");
+
+			var expediente = new Expediente(60);
+			expediente.Agregar(new AntigenoProstatico(Hoy.AddDays(-365), 3.0m, "ng/mL"));
+			expediente.Agregar(new AntigenoProstatico(Hoy, 5.2m, "ng/mL"));
+			expediente.Agregar(new Colesterol(Hoy.AddDays(-365), 200m, "mg/dL"));
+			expediente.Agregar(new Colesterol(Hoy, 280m, "mg/dL"));
+			expediente.Agregar(new Hemoglobina(Hoy.AddDays(-365), 9.0m, "g/dL"));
+			expediente.Agregar(new Hemoglobina(Hoy, 14.0m, "g/dL"));
+
+			// El analito decide cual es SU plural. El expediente no tiene ningun switch.
+			Igual("el antigeno arma la suya", "SerieDeAntigenoProstatico",
+				expediente.SerieDe(Analito.AntigenoProstatico.Nombre).GetType().Name);
+			Igual("  el colesterol la suya", "SerieDeColesterol",
+				expediente.SerieDe(Analito.ColesterolTotal.Nombre).GetType().Name);
+			Igual("  la hemoglobina la suya", "SerieDeHemoglobina",
+				expediente.SerieDe(Analito.Hemoglobina.Nombre).GetType().Name);
+
+			// Y NO COMPARTEN SUPERFICIE. Esto es lo que §4 compra: preguntarle la velocidad
+			// a la serie del colesterol no devuelve cero, NO COMPILA.
+			var delAntigeno = (SerieDeAntigenoProstatico)
+				expediente.SerieDe(Analito.AntigenoProstatico.Nombre);
+			var delColesterol = (SerieDeColesterol)
+				expediente.SerieDe(Analito.ColesterolTotal.Nombre);
+			var deLaHemoglobina = (SerieDeHemoglobina)
+				expediente.SerieDe(Analito.Hemoglobina.Nombre);
+
+			Igual("la velocidad es de la serie del antigeno", "True",
+				delAntigeno.VelocidadDelTramo().EsAplicable.ToString());
+			Igual("  la meta es de la del colesterol", "240 mg/dL",
+				delColesterol.Meta().Objetivo.Expresado);
+			Igual("  el peor grado de anemia es de la de hemoglobina", "moderada",
+				deLaHemoglobina.PeorGrado().Nombre);
+			Igual("  y esa serie sabe que se recupero", "True",
+				deLaHemoglobina.VieneRecuperandose().ToString());
+
+			// Ninguna de las tres tiene los metodos de las otras. Se comprueba contando la
+			// superficie propia, porque lo que NO compila no se puede escribir en un test.
+			Igual("la del antigeno no tiene Meta ni PeorGrado", "False",
+				(delAntigeno.GetType().GetMethod("Meta") != null
+					|| delAntigeno.GetType().GetMethod("PeorGrado") != null).ToString());
+			Igual("  la del colesterol no tiene VelocidadDelTramo", "False",
+				(delColesterol.GetType().GetMethod("VelocidadDelTramo") != null).ToString());
+			Igual("  la de hemoglobina no tiene ninguna de las dos", "False",
+				(deLaHemoglobina.GetType().GetMethod("Meta") != null
+					|| deLaHemoglobina.GetType().GetMethod("VelocidadDelTramo") != null).ToString());
+
+			// Lo comun sigue siendo comun, y es lo que de verdad vale para todas: los
+			// HECHOS de la serie y la unica operacion que todas contestan.
+			Igual("las tres saben ordenar y evaluar los hechos", "True",
+				(delAntigeno.Evaluar() != null && delColesterol.Evaluar() != null
+					&& deLaHemoglobina.Evaluar() != null).ToString());
+			Igual("  y las tres se interpretan, cada una a su modo", "True",
+				(delAntigeno.Interpretar(60).NombreDelVeredicto
+					!= deLaHemoglobina.Interpretar(60).NombreDelVeredicto).ToString());
 		}
 
 		private static void Titulo(string texto)

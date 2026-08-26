@@ -86,22 +86,14 @@ namespace Examenes.Dominio
 		// y no tenia como decir que lo bueno es quedarse quieto.
 		public abstract DireccionDeseable Direccion { get; }
 
-		// LA UNICA OPERACION QUE TODOS LOS ANALITOS TIENEN EN COMUN, y la razon de que la
-		// herencia aca no sea decorativa.
+		// QUE SERIE LEE A ESTE ANALITO. Es la fabrica de "el plural": cada analito dice
+		// cual es su serie, y con eso el Expediente arma la correcta sin un switch.
 		//
-		// No hay un algoritmo generico que reciba umbrales y devuelva el mismo veredicto
-		// para todos: cada analito lee SU serie con SU criterio. Un colesterol bajando
-		// desde un pico y un antigeno subiendo tienen la misma forma y conclusiones
-		// opuestas, y esa diferencia es conocimiento clinico, no configuracion.
-		//
-		// Todo lo demas que cada analito sabe hacer -la velocidad del antigeno, el nivel
-		// habitual del colesterol, el grado de anemia- vive SOLO en el analito que lo
-		// tiene, y no aparece aca. Si un metodo sirve para todos, esta en el nivel
-		// equivocado.
-		// Recibe la EDAD por la misma razon que RangoPara: un veredicto que mira el rango
-		// depende de ella, y el dominio no lee el reloj ni guarda un estado mutable para
-		// esquivarlo.
-		public abstract Interpretacion Interpretar(SerieDeAnalito serie, int edad);
+		// Interpretar() ESTABA ACA y se fue a la serie. La razon la dio Alvaro: "eso no es
+		// lo mismo que el conjunto de examenes de antigeno prostatico evaluando su
+		// tendencia". Una medicion sola no puede interpretar una serie; lo hacia recibiendo
+		// la serie por parametro, que es la senal de que el metodo no era suyo.
+		public abstract SerieDeAnalito NuevaSerie();
 
 		// CADA CUANTO conviene repetir ESTE analito, en meses.
 		//

@@ -57,60 +57,6 @@ namespace Examenes.Dominio
 			return Examenes.Dominio.GradoDeAnemia.Severa;
 		}
 
-		// ---------------------------------------------------------------- la lectura
-
-		// Se lee por NIVEL contra su rango, no por pendiente ni por velocidad. El grado
-		// de anemia manda sobre la tendencia: una hemoglobina que subio pero sigue en 9
-		// no es una buena noticia.
-		public override Interpretacion Interpretar(SerieDeAnalito serie, int edad)
-		{
-			ArgumentNullException.ThrowIfNull(serie);
-
-			EvaluacionDeTendencia hechos = serie.Evaluar();
-			if (!hechos.HaySerie)
-			{
-				// Con una sola medicion no hay tendencia, pero el NIVEL ya se puede leer.
-				// Es lo que distingue a este analito: no necesita serie para decir algo
-				// util, y sin embargo no inventa la serie que no tiene.
-				GradoDeAnemia unico = GradoDeAnemia();
-				if (!unico.HayAnemia) return Interpretacion.SinSerie(hechos);
-
-				return new Interpretacion(Veredicto.Indeterminado, unico.Severidad,
-					$"una sola medición ({Valor.Expresado}): todavía no hay serie, pero ese "
-					+ $"valor ya indica anemia {unico.Nombre}", hechos);
-			}
-
-			if (hechos.Tendencia.SugiereRepetirElExamen)
-				return new Interpretacion(Veredicto.ProbableErrorDeMedicion, Severidad.Seguimiento,
-					$"cambió {Math.Abs(hechos.Cambio)} {hechos.Unidad} en "
-					+ $"{hechos.DiasTranscurridos} día{(hechos.DiasTranscurridos == 1 ? "" : "s")}, "
-					+ "que es demasiado para el tiempo transcurrido", hechos);
-
-			GradoDeAnemia grado = GradoDeAnemia();
-
-			// Mantenerse no puede juzgar por el signo, asi que lo que decide es si el
-			// movimiento ACERCA o ALEJA del rango. Se pregunta contra el rango, que es lo
-			// que DireccionDeseable.Mantenerse no sabe hacer sola.
-			bool seMovio = EsCambioReal(hechos.Cambio);
-			bool ahoraEnRango = EsNormalPara(edad);
-
-			if (!seMovio)
-				return ahoraEnRango
-					? new Interpretacion(Veredicto.Estable, Severidad.Informativo,
-						$"se mantiene en {Valor.Expresado}, dentro de lo normal", hechos)
-					: new Interpretacion(Veredicto.Estable, grado.Severidad,
-						$"lleva tiempo en {Valor.Expresado}" + Coletilla(grado), hechos);
-
-			if (ahoraEnRango)
-				return new Interpretacion(Veredicto.Mejorando, Severidad.Informativo,
-					$"volvió a {Valor.Expresado}, dentro de lo normal", hechos);
-
-			return new Interpretacion(Veredicto.Empeorando, grado.Severidad,
-				$"pasó de {hechos.ValorInicial} a {hechos.ValorFinal} {hechos.Unidad}"
-				+ Coletilla(grado), hechos);
-		}
-
-		private static string Coletilla(GradoDeAnemia grado) =>
-			grado.HayAnemia ? $", que es anemia {grado.Nombre}" : ", fuera de lo normal";
+		public override SerieDeAnalito NuevaSerie() => new SerieDeHemoglobina();
 	}
 }
