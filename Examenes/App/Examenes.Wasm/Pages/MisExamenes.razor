@@ -7,8 +7,25 @@
 
 <PageTitle>Mis exámenes</PageTitle>
 
+@* EL BLOQUE DE MARCA. La gota por la muestra, el círculo por el oráculo; solo trazo,
+   nunca relleno, y el nombre va acá y no solo en el subtítulo: cuando alguien descarga
+   la app desde la página del laboratorio, lo que se abre debe reconocerse en un
+   segundo. El SVG es el mismo de la página, a 40 px. *@
+<div class="marca">
+    <svg viewBox="0 0 40 40" xmlns="http://www.w3.org/2000/svg"
+         fill="none" stroke="var(--azul)" stroke-width="2.4" aria-hidden="true">
+        <circle cx="20" cy="20" r="18" />
+        <path d="M20 9c4.4 5.4 6.8 9.3 6.8 12.4A6.8 6.8 0 0 1 20 28.2a6.8 6.8 0
+                 0 1-6.8-6.8C13.2 18.3 15.6 14.4 20 9z" />
+    </svg>
+    <div>
+        <div class="marca-nombre">Laboratorio Clínico Delfos</div>
+        <div class="marca-claim">Al servicio de su salud desde 1987</div>
+    </div>
+</div>
+
 <h1 class="titular">Mis exámenes</h1>
-<p class="membrete"><b>Laboratorios Sotavento</b> &middot; tu expediente, en tu computadora.</p>
+<p class="membrete">Tu expediente, en tu computadora.</p>
 
 @* UN solo lugar para los errores, y arriba. Antes habia dos bloques -uno adentro del
    arranque y otro al final de la pagina- asi que un mismo fallo se veia dos veces, y

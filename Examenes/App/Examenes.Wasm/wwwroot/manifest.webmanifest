@@ -1,5 +1,5 @@
 {
-  "name": "Mis exámenes · Laboratorios Sotavento",
+  "name": "Mis exámenes · Laboratorio Clínico Delfos",
   "short_name": "Mis exámenes",
   "description": "Tus exámenes de laboratorio, guardados en una carpeta tuya. Funciona sin conexion.",
   "id": "./",
@@ -7,7 +7,7 @@
   "scope": "./",
   "display": "standalone",
   "background_color": "#ffffff",
-  "theme_color": "#0b6b5e",
+  "theme_color": "#123f6d",
   "lang": "es",
   "prefer_related_applications": false,
   "icons": [
