@@ -25,7 +25,28 @@ namespace Examenes.Dominio
 	// continua. Que SIGNIFICA lo dice Interpretar(), que delega en el analito, porque un
 	// colesterol bajando y una hemoglobina bajando son el mismo hecho y conclusiones
 	// opuestas.
-	public class SerieDeAnalito
+	// ES ABSTRACTA, y esa es la correccion de la reunion del 2026-08-26.
+	//
+	// Alvaro, textual: "eso no es lo mismo que el conjunto de examenes de antigeno
+	// prostatico evaluando su tendencia. Ahi usted quizas tiene que hacer EL PLURAL
+	// antigeno prostatico, examenes plural, y a ese hacerle METODOS ESPECIFICOS de evaluar
+	// su tendencia. […] si usted generaliza 'voy a evaluar tendencias' y lo pone en
+	// examenes, ahi usted hace tendencias de orinas que no tienen ningun sentido."
+	//
+	// En la iteracion anterior hicimos polimorfico Interpretar() sobre el EXAMEN, y eso
+	// cerro aquel feedback. Pero esta clase seguia siendo UNA sola para todos los analitos,
+	// que es la misma generalizacion un piso mas abajo.
+	//
+	// LA SENAL QUE LO DELATABA: los metodos propios que fuimos agregando —VelocidadDe(serie),
+	// NivelHabitual(serie), PicoNoConfirmado(serie), PartidaDelEpisodio(serie)— recibian
+	// todos LA SERIE como parametro. Un metodo que necesita la serie entera para contestar
+	// no es de la medicion: es de la serie, disfrazada de metodo de la medicion. Ahora
+	// viven donde son, y las firmas quedan sin parametro.
+	//
+	// QUE SE QUEDA ACA. Solo los HECHOS que valen para cualquier magnitud continua: ordenar
+	// en el tiempo, medir el tramo, y Evaluar() —para donde fue, cuanto, en cuantos dias, y
+	// si algun paso es inverosimil—. Que SIGNIFICAN esos hechos lo contesta cada subclase.
+	public abstract class SerieDeAnalito
 	{
 		private readonly List<ExamenDeSangre> mediciones = new List<ExamenDeSangre>();
 
@@ -33,7 +54,7 @@ namespace Examenes.Dominio
 		// escriben "HEMOGLOBINA" y "HGB" caigan en ESTA serie y no en dos.
 		public Analito Analito { get; private set; }
 
-		public SerieDeAnalito(Analito analito)
+		protected SerieDeAnalito(Analito analito)
 		{
 			ArgumentNullException.ThrowIfNull(analito);
 			Analito = analito;
@@ -98,7 +119,19 @@ namespace Examenes.Dominio
 				decimal cambioDelPaso = actual.Valor.DiferenciaDesde(anterior.Valor);
 				int diasDelPaso = Dias(anterior, actual);
 
-				if (Math.Abs(cambioDelPaso) / DiasParaLaTasa(diasDelPaso) > actual.CambioMaximoVerosimilPorDia)
+				// DOS formas de que un paso sea inverosimil, y hacen falta las dos:
+				//
+				//   por TASA      cambio demasiado para los dias que pasaron
+				//   por MULTIPLO  un salto que ningun intervalo justifica en ESTE analito
+				//
+				// La tasa sola no alcanza: con suficientes dias entre mediciones, cualquier
+				// salto pasa. El multiplo no depende del tiempo, y es el que atrapa el "de
+				// 1 a 10" del que hablaba Alvaro.
+				bool porTasa = Math.Abs(cambioDelPaso) / DiasParaLaTasa(diasDelPaso)
+					> actual.CambioMaximoVerosimilPorDia;
+				bool porMultiplo = EsSaltoDeMultiplo(anterior, actual);
+
+				if (porTasa || porMultiplo)
 					return new EvaluacionDeTendencia(Analito, Tendencia.SaltoInverosimil, mediciones.Count,
 						anterior.Valor, actual.Valor, diasDelPaso, cambioDelPaso);
 			}
@@ -139,34 +172,20 @@ namespace Examenes.Dominio
 		// Dos mediciones el MISMO dia no dan una velocidad: un cociente sobre cero dias no
 		// es un ritmo anual, es una division por cero disfrazada. Ese caso ya lo atrapa
 		// Evaluar() como salto inverosimil, que es la lectura correcta.
-		// LA VELOCIDAD NO ES UNA CAPACIDAD DE TODO ANALITO. Antes lo parecia: la base
-		// declaraba VelocidadQueExigeAtencionPorAno y tres de los cuatro analitos
-		// devolvian cero para decir "a mi no me preguntes". Eso es exactamente el metodo
-		// que sirve para todos y esta en el nivel equivocado.
-		//
-		// Ahora existe solo en AntigenoProstatico, que es de quien es: "la glucosuria
-		// subio 1,5 cruces por ano" no es nada, y "el PSA subio 2,2 ng/mL por ano" es un
-		// criterio clinico. Esta consulta sigue siendo TOTAL para que la superficie pueda
-		// preguntarle a cualquier analito sin saber cual la tiene.
-		public Velocidad Velocidad()
-		{
-			ExamenDeSangre ultimo = Ultimo;
-			string unidad = ultimo == null ? "" : ultimo.Valor.Unidad.Simbolo;
+		// LO QUE ESTA SERIE CONCLUYE DE SI MISMA. Es lo unico comun, y cada subclase lo
+		// contesta con su criterio: el antigeno mira su linea base, el colesterol mira su
+		// meta, la hemoglobina mira el grado de anemia. No hay algoritmo generico que
+		// reciba umbrales y devuelva el mismo veredicto para todos.
+		public abstract Interpretacion Interpretar(int edad);
 
-			return ultimo is AntigenoProstatico antigeno
-				? antigeno.VelocidadDe(this)
-				: Examenes.Dominio.Velocidad.NoAplica(Analito, unidad, 0m);
-		}
+		// COMO SE LEE esta serie, y por lo tanto como se dibuja. Ver FormaDeLectura para
+		// por que la forma es dominio y no estilo.
+		public abstract FormaDeLectura Forma { get; }
 
-		// Lo que el ANALITO concluye de esta serie. La serie sabe ordenar y sabe los
-		// hechos; que significan es del analito, y por eso esto solo delega.
-		public Interpretacion Interpretar(int edad)
-		{
-			ExamenDeSangre ultimo = Ultimo;
-			return ultimo == null
-				? Interpretacion.SinSerie(Evaluar())
-				: ultimo.Interpretar(this, edad);
-		}
+		// LAS LINEAS QUE IMPORTAN para dibujar esa forma. Cada serie emite SOLO las que
+		// tiene: la del antigeno su linea base, la del colesterol su meta y su partida, la
+		// de la hemoglobina su piso y su techo. Nadie devuelve cero para rellenar.
+		public abstract IReadOnlyList<ReferenciaDeLectura> Referencias(int edad);
 
 		// El tramo mas reciente, en dias. Lo necesita el analito que calcula velocidad y
 		// no tiene por que rehacer la aritmetica de fechas de la serie.
@@ -188,6 +207,18 @@ namespace Examenes.Dominio
 		// calendario simple, sin bisiestos, para que la misma serie de fechas literales
 		// produzca siempre el mismo numero.
 		private const decimal DiasDelAno = 365m;
+
+		// Si el paso multiplica el valor mas alla de lo que ese analito admite. Se mira en
+		// las dos direcciones: caer a un tercio es tan implausible como triplicarse.
+		private static bool EsSaltoDeMultiplo(ExamenDeSangre anterior, ExamenDeSangre actual)
+		{
+			decimal antes = anterior.Valor.Valor;
+			decimal ahora = actual.Valor.Valor;
+			if (antes <= 0m || ahora <= 0m) return false;
+
+			decimal multiplo = ahora > antes ? ahora / antes : antes / ahora;
+			return multiplo > actual.MultiploQueNingunIntervaloJustifica;
+		}
 
 		private static int Dias(ExamenDeSangre desde, ExamenDeSangre hasta) =>
 			(int)(hasta.Fecha.Date - desde.Fecha.Date).TotalDays;

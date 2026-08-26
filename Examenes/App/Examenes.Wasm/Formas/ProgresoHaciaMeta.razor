@@ -1,0 +1,75 @@
+@using System.Globalization
+@using System.Linq
+@using Examenes.App.Vistas
+
+@*  LA FORMA DEL COLESTEROL: un progreso, no una serie.
+
+    Álvaro: «yo no ocupo ver esa historia». Lo que importa acá no es de dónde viene toda
+    la vida, es de dónde arrancó el episodio y cuánto falta. Por eso el eje NO es el
+    tiempo: es el valor, y va de la partida a la meta.
+
+    Dibujar esto como una línea de tiempo sería copiar la forma del antígeno en un
+    analito que no se lee así.                                                          *@
+
+<div class="forma forma--progreso">
+    <svg viewBox="0 0 320 52" role="img" aria-label="@Descripcion">
+        <rect x="12" y="20" width="296" height="12" rx="6" class="pista" />
+
+        @* LO RECORRIDO en verde y LO QUE FALTA en ámbar, siempre los dos. Sin el tramo
+           ámbar, alguien que todavía no empezó a bajar veía una pista gris vacía que no
+           decía nada; con él ve exactamente cuánto le falta. *@
+        @if (HayEpisodio)
+        {
+            <rect x="12" y="20" width="@Avance" height="12" rx="6" class="avance" />
+        }
+        @if (!YaLlego)
+        {
+            <rect x="@Ahora" y="20" width="@Falta" height="12" rx="6" class="pendiente" />
+        }
+
+        <line x1="308" y1="10" x2="308" y2="42" class="hito-meta" />
+        <circle cx="@Ahora" cy="26" r="7" class="@(YaLlego ? "marca marca--llego" : "marca")" />
+    </svg>
+
+    <div class="forma-pie forma-pie--extremos">
+        <span class="forma-nota">@(HayEpisodio ? $"venías de {Numero(Partida!.Valor)}" : "hoy")
+            <b>@Numero(Actual) @Unidad</b></span>
+        <span class="forma-nota forma-nota--der">meta <b>@Numero(Meta?.Valor ?? Actual) @Unidad</b></span>
+    </div>
+</div>
+
+@code {
+    [Parameter] public IReadOnlyList<PuntoDeSerie> Puntos { get; set; } = new List<PuntoDeSerie>();
+    [Parameter] public IReadOnlyList<LineaDeReferencia> Referencias { get; set; } = new List<LineaDeReferencia>();
+    [Parameter] public string Descripcion { get; set; } = "";
+
+    private LineaDeReferencia? Partida => Referencias.FirstOrDefault(r => r.Nombre == "partida");
+    private LineaDeReferencia? Meta => Referencias.FirstOrDefault(r => r.Nombre == "meta");
+
+    private decimal Actual => Puntos.Count == 0 ? 0m : Puntos[^1].Valor;
+    private string Unidad => Puntos.Count > 0 ? Puntos[0].Unidad : "";
+
+    private bool HayEpisodio => Partida is not null && Meta is not null && Partida.Valor > Meta.Valor;
+    private bool YaLlego => Meta is not null && Actual <= Meta.Valor;
+
+    // El eje va de la partida (izquierda, el peor momento) a la meta (derecha). Sin
+    // episodio no hay tramo que recorrer y la marca se muestra donde está, sin barra.
+    private double Proporcion
+    {
+        get
+        {
+            if (!HayEpisodio) return YaLlego ? 1.0 : 0.0;
+
+            decimal total = Partida!.Valor - Meta!.Valor;
+            decimal recorrido = Partida.Valor - Actual;
+            double p = (double)(recorrido / total);
+            return p < 0 ? 0 : p > 1 ? 1 : p;
+        }
+    }
+
+    private string Avance => (Proporcion * 296).ToString("0.#", CultureInfo.InvariantCulture);
+    private string Ahora => (12 + Proporcion * 296).ToString("0.#", CultureInfo.InvariantCulture);
+    private string Falta => ((1 - Proporcion) * 296).ToString("0.#", CultureInfo.InvariantCulture);
+
+    private static string Numero(decimal valor) => valor.ToString("0.##", CultureInfo.InvariantCulture);
+}

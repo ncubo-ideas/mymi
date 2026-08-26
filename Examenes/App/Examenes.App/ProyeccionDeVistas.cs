@@ -98,6 +98,45 @@ namespace Examenes.App
 			return celdas;
 		}
 
+		internal static IReadOnlyList<PuntoDeSerie> Puntos(string json)
+		{
+			var puntos = new List<PuntoDeSerie>();
+			if (string.IsNullOrWhiteSpace(json)) return puntos;
+
+			using JsonDocument documento = JsonDocument.Parse(json);
+			if (!documento.RootElement.TryGetProperty("punto", out JsonElement arreglo)) return puntos;
+
+			foreach (JsonElement elemento in Elementos(arreglo))
+				puntos.Add(new PuntoDeSerie
+				{
+					Fecha = Fecha(elemento, "fecha"),
+					Valor = Decimal(elemento, "valor"),
+					Unidad = Texto(elemento, "unidad"),
+				});
+
+			return puntos;
+		}
+
+		internal static IReadOnlyList<LineaDeReferencia> Referencias(string json)
+		{
+			var lineas = new List<LineaDeReferencia>();
+			if (string.IsNullOrWhiteSpace(json)) return lineas;
+
+			using JsonDocument documento = JsonDocument.Parse(json);
+			if (!documento.RootElement.TryGetProperty("referencia", out JsonElement arreglo)) return lineas;
+
+			foreach (JsonElement elemento in Elementos(arreglo))
+				lineas.Add(new LineaDeReferencia
+				{
+					Nombre = Texto(elemento, "nombre"),
+					Valor = Decimal(elemento, "valor"),
+					Unidad = Texto(elemento, "unidad"),
+					ParaSonia = Texto(elemento, "paraSonia"),
+				});
+
+			return lineas;
+		}
+
 		internal static IReadOnlyList<ControlEnEspera> Controles(string json)
 		{
 			var controles = new List<ControlEnEspera>();
@@ -137,6 +176,7 @@ namespace Examenes.App
 				ParaMostrar = Texto(raiz, "paraMostrar"),
 				Veredicto = Texto(raiz, "veredicto"),
 				Severidad = Texto(raiz, "severidad"),
+				Forma = Texto(raiz, "forma"),
 				ParaSonia = Texto(raiz, "paraSonia"),
 				Accion = Texto(raiz, "accion"),
 				PideAlgo = Booleano(raiz, "pideAlgo"),

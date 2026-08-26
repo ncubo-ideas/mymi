@@ -339,7 +339,7 @@ sealed class AlmacenDeEventos
         new EventoDeExamen
         {
             Id = 209, Examen = "Heces", Fecha = new DateTime(2026, 8, 21, 8, 34, 0),
-            Color = "chocolate", Sangre = "positivo",
+            Color = "marrón", Sangre = "positivo",
         },
     };
 

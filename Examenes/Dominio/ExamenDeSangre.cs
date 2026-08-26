@@ -56,6 +56,15 @@ namespace Examenes.Dominio
 					$"{analito.Nombre} se mide en {analito.Unidad.Simbolo}, y el evento lo trajo en {recibida.Simbolo}.",
 					nameof(simboloRecibido));
 
+			// Y la otra guarda de la frontera: un valor que ninguna persona viva podria
+			// tener no es un hallazgo, es un dato malformado. Revienta aca para que no
+			// entre nunca al expediente; la ruta lo atrapa antes y descarta el evento.
+			if (!analito.EsValorPosible(valor))
+				throw new ArgumentOutOfRangeException(nameof(valor), valor,
+					$"{valor} {analito.Unidad.Simbolo} no es un valor posible de "
+					+ $"{analito.Nombre}: lo posible va de {analito.ValorMinimoPosible} a "
+					+ $"{analito.ValorMaximoPosible}.");
+
 			return new Medicion(valor, analito.Unidad);
 		}
 
@@ -86,22 +95,30 @@ namespace Examenes.Dominio
 		// y no tenia como decir que lo bueno es quedarse quieto.
 		public abstract DireccionDeseable Direccion { get; }
 
-		// LA UNICA OPERACION QUE TODOS LOS ANALITOS TIENEN EN COMUN, y la razon de que la
-		// herencia aca no sea decorativa.
+		// QUE SERIE LEE A ESTE ANALITO. Es la fabrica de "el plural": cada analito dice
+		// cual es su serie, y con eso el Expediente arma la correcta sin un switch.
 		//
-		// No hay un algoritmo generico que reciba umbrales y devuelva el mismo veredicto
-		// para todos: cada analito lee SU serie con SU criterio. Un colesterol bajando
-		// desde un pico y un antigeno subiendo tienen la misma forma y conclusiones
-		// opuestas, y esa diferencia es conocimiento clinico, no configuracion.
+		// Interpretar() ESTABA ACA y se fue a la serie. La razon la dio Alvaro: "eso no es
+		// lo mismo que el conjunto de examenes de antigeno prostatico evaluando su
+		// tendencia". Una medicion sola no puede interpretar una serie; lo hacia recibiendo
+		// la serie por parametro, que es la senal de que el metodo no era suyo.
+		public abstract SerieDeAnalito NuevaSerie();
+
+		// EL MULTIPLO QUE NINGUN INTERVALO JUSTIFICA. Es la otra mitad de lo que Alvaro
+		// planteo, y es distinta del rango posible:
 		//
-		// Todo lo demas que cada analito sabe hacer -la velocidad del antigeno, el nivel
-		// habitual del colesterol, el grado de anemia- vive SOLO en el analito que lo
-		// tiene, y no aparece aca. Si un metodo sirve para todos, esta en el nivel
-		// equivocado.
-		// Recibe la EDAD por la misma razon que RangoPara: un veredicto que mira el rango
-		// depende de ella, y el dominio no lee el reloj ni guarda un estado mutable para
-		// esquivarlo.
-		public abstract Interpretacion Interpretar(SerieDeAnalito serie, int edad);
+		//   un valor imposible   -> "esto no es de una persona viva"
+		//   un salto imposible   -> los dos valores pueden ser posibles, y aun asi uno de
+		//                           los dos esta mal
+		//
+		// Alvaro: "si yo ahi pase de 1 a 10 — no senor. Ese brinco no es racional en este
+		// examen." Un PSA de 10 existe y es real; llegar a 10 desde 1 sin que nada se
+		// viera en el medio, no. Y esto la regla de la tasa no lo puede decir: con
+		// suficientes dias entre mediciones, cualquier salto pasa.
+		//
+		// Se expresa como MULTIPLO y no como diferencia absoluta porque es proporcional:
+		// duplicarse desde 1 y duplicarse desde 100 son el mismo hecho clinico.
+		public abstract decimal MultiploQueNingunIntervaloJustifica { get; }
 
 		// CADA CUANTO conviene repetir ESTE analito, en meses.
 		//
@@ -116,6 +133,12 @@ namespace Examenes.Dominio
 		// antecedentes y criterio medico, y conviene que alguien del area las revise antes
 		// de mostrarlas fuera del equipo.
 		public abstract int MesesHastaElProximo(int edad);
+
+		// Proyecciones planas para el print del DSL, que no navega dos niveles. Es lo que
+		// permite que un grafico reciba NUMEROS y no el texto "3.0 ng/mL".
+		public decimal ValorNumerico => Valor.Valor;
+
+		public string UnidadDelValor => Valor.Unidad.Simbolo;
 
 		public ClasificacionDeValor ClasificarPara(int edad) => RangoPara(edad).Clasificar(Valor);
 

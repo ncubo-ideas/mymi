@@ -46,30 +46,35 @@ namespace Examenes.Dominio
 			"Antigeno prostatico",
 			"Antígeno prostático",
 			UnidadDeMedida.NanogramosPorMililitro,
+			0m, 5000m,
 			"PSA", "APE", "antigeno prostatico especifico");
 
 		public static readonly Analito ColesterolTotal = new Analito(
 			"Colesterol total",
 			"Colesterol total",
 			UnidadDeMedida.MiligramosPorDecilitro,
+			20m, 1200m,
 			"colesterol", "CHOL", "colesterol serico");
 
 		public static readonly Analito ColesterolLdl = new Analito(
 			"Colesterol LDL",
 			"Colesterol LDL",
 			UnidadDeMedida.MiligramosPorDecilitro,
+			10m, 900m,
 			"LDL", "LDL-C", "lipoproteina de baja densidad");
 
 		public static readonly Analito ColesterolHdl = new Analito(
 			"Colesterol HDL",
 			"Colesterol HDL",
 			UnidadDeMedida.MiligramosPorDecilitro,
+			5m, 200m,
 			"HDL", "HDL-C", "lipoproteina de alta densidad");
 
 		public static readonly Analito Hemoglobina = new Analito(
 			"Hemoglobina",
 			"Hemoglobina",
 			UnidadDeMedida.GramosPorDecilitro,
+			2m, 25m,
 			"HGB", "HB");
 
 		private static readonly Analito[] todos =
@@ -87,14 +92,40 @@ namespace Examenes.Dominio
 
 		public UnidadDeMedida Unidad { get; }
 
+		// EL RANGO DE LO FISIOLOGICAMENTE POSIBLE, que NO es el rango de referencia.
+		//
+		// El de referencia dice que es NORMAL; este dice que es POSIBLE en una persona
+		// viva. Entre los dos hay lugar para valores altos y reales -una hemoglobina de 9
+		// es anemia, no un error- y afuera de este ya no hay hallazgo que interpretar: hay
+		// un dato malformado.
+		//
+		// Alvaro: "aqui me estan mandando una vaina de un cadaver". Una hemoglobina de 40
+		// no es una hemoglobina alta, es un numero que nadie midio en un paciente.
+		//
+		// Vive en el ANALITO y no en el examen porque hace falta ANTES de construirlo: la
+		// ruta necesita poder descartar el evento sin que reviente el comando.
+		//
+		// ⚠️ Los limites son deliberadamente ANCHOS y orientativos. La guarda existe para
+		// atajar basura, no para opinar de clinica: apretarlos de mas descartaria hallazgos
+		// reales, que es peor que dejar pasar uno raro. Antes de mostrarse fuera del equipo
+		// conviene que alguien de laboratorio los revise.
+		public decimal ValorMinimoPosible { get; }
+
+		public decimal ValorMaximoPosible { get; }
+
+		public bool EsValorPosible(decimal valor) =>
+			valor >= ValorMinimoPosible && valor <= ValorMaximoPosible;
+
 		private readonly string[] sinonimos;
 
 		private Analito(string nombre, string paraMostrar, UnidadDeMedida unidad,
-			params string[] sinonimos)
+			decimal minimoPosible, decimal maximoPosible, params string[] sinonimos)
 		{
 			Nombre = nombre;
 			ParaMostrar = paraMostrar;
 			Unidad = unidad;
+			ValorMinimoPosible = minimoPosible;
+			ValorMaximoPosible = maximoPosible;
 			this.sinonimos = sinonimos ?? new string[0];
 		}
 
@@ -200,50 +231,9 @@ namespace Examenes.Dominio
 			return texto.ToString();
 		}
 
-		// La forma en que dos nombres se comparan: sin acentos, sin mayusculas y sin nada
-		// que no sea letra o digito.
-		//
-		// Los tres descartes salen de lo que traen los reportes de verdad: "Antígeno" con
-		// tilde y "Antigeno" sin ella; "HEMOGLOBINA" en versalitas y "Hemoglobina"; y
-		// "G. BLANCOS", "LDL-C" o "HDL / LDL" con puntos, guiones y barras en el medio del
-		// nombre. Comparar crudo trata a cada variante como un analito distinto.
-		//
-		// Los acentos se pliegan con una tabla explicita y no con String.Normalize a
-		// proposito. La tabla dice exactamente que caracteres importan -son los del
-		// espanol y son siete- y no depende de que los datos de globalizacion viajen en el
-		// publish, que en wasm es una decision que se puede cambiar sin pensar en esto.
-		private static string Normalizar(string nombre)
-		{
-			var limpio = new StringBuilder(nombre.Length);
-
-			foreach (char c in nombre)
-			{
-				char sinAcento = SinAcento(c);
-				if (char.IsLetterOrDigit(sinAcento))
-					limpio.Append(char.ToUpperInvariant(sinAcento));
-			}
-
-			return limpio.ToString();
-		}
-
-		private static char SinAcento(char c)
-		{
-			switch (c)
-			{
-				case 'á': case 'à': case 'ä': case 'â': return 'a';
-				case 'é': case 'è': case 'ë': case 'ê': return 'e';
-				case 'í': case 'ì': case 'ï': case 'î': return 'i';
-				case 'ó': case 'ò': case 'ö': case 'ô': return 'o';
-				case 'ú': case 'ù': case 'ü': case 'û': return 'u';
-				case 'ñ': return 'n';
-				case 'Á': case 'À': case 'Ä': case 'Â': return 'A';
-				case 'É': case 'È': case 'Ë': case 'Ê': return 'E';
-				case 'Í': case 'Ì': case 'Ï': case 'Î': return 'I';
-				case 'Ó': case 'Ò': case 'Ö': case 'Ô': return 'O';
-				case 'Ú': case 'Ù': case 'Ü': case 'Û': return 'U';
-				case 'Ñ': return 'N';
-				default: return c;
-			}
-		}
+		// El plegado vive en NombreNormalizado: la misma operacion hace falta tambien en
+		// los colores, y es mecanica, no significado. Que nombres acepta este conjunto y
+		// que significan sigue siendo de aca.
+		private static string Normalizar(string nombre) => NombreNormalizado.De(nombre);
 	}
 }

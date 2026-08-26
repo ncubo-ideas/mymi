@@ -76,7 +76,10 @@ namespace Examenes.Dominio
 			{
 				if (!series.TryGetValue(deSangre.Analito, out SerieDeAnalito serie))
 				{
-					serie = new SerieDeAnalito(deSangre.Analito);
+					// La serie la crea EL ANALITO, no un switch aca. Cada uno sabe cual es
+					// "su plural": el antigeno devuelve SerieDeAntigenoProstatico, con sus
+					// metodos, y el colesterol devuelve la suya, con otros.
+					serie = deSangre.NuevaSerie();
 					series[deSangre.Analito] = serie;
 				}
 				serie.Agregar(deSangre);
@@ -129,8 +132,9 @@ namespace Examenes.Dominio
 			Analito cual = Analito.PorNombre(analito);
 
 			return series.TryGetValue(cual, out SerieDeAnalito serie)
-				? serie.Interpretar(Edad)
-				: Interpretacion.SinSerie(EvaluacionDeTendencia.SinSerie(cual, 0, null));
+				? serie.Interpretar(Edad).ConForma(serie.Forma)
+				: Interpretacion.SinSerie(EvaluacionDeTendencia.SinSerie(cual, 0, null))
+					.ConForma(FormaDeLectura.Afirmacion);
 		}
 
 		// LO MAS URGENTE de todo el expediente. Es una pregunta que ninguna pantalla
@@ -167,8 +171,13 @@ namespace Examenes.Dominio
 		{
 			Analito cual = Analito.PorNombre(analito);
 
+			// LA VELOCIDAD SOLO EXISTE EN LA SERIE DEL ANTIGENO, y esta consulta sigue
+			// siendo TOTAL para que la superficie pueda preguntarle a cualquier analito sin
+			// saber cual la tiene. La prueba de tipo es la frontera entre "esta es una
+			// pregunta general" y "esta capacidad es de uno solo".
 			return series.TryGetValue(cual, out SerieDeAnalito serie)
-				? serie.Velocidad()
+					&& serie is SerieDeAntigenoProstatico antigeno
+				? antigeno.VelocidadDelTramo()
 				: Examenes.Dominio.Velocidad.NoAplica(cual, "", 0m);
 		}
 
@@ -224,6 +233,39 @@ namespace Examenes.Dominio
 			// superficie tenga que decidirlo.
 			pendientes.Sort((uno, otro) => uno.DiasQueFaltan.CompareTo(otro.DiasQueFaltan));
 			return pendientes;
+		}
+
+		// LOS PUNTOS DE LA SERIE, con su valor NUMERICO. El cuadro los da ya convertidos a
+		// texto -"3.0 ng/mL"-, que sirve para una tabla y no para dibujar. Un grafico
+		// necesita numeros.
+		public IReadOnlyList<ExamenDeSangre> PuntosDe(string analito)
+		{
+			Analito cual = Analito.PorNombre(analito);
+
+			return series.TryGetValue(cual, out SerieDeAnalito serie)
+				? serie.Mediciones
+				: new List<ExamenDeSangre>();
+		}
+
+		// COMO SE LEE ese analito. Total: de uno sin mediciones la respuesta es que no hay
+		// nada que dibujar.
+		public string FormaDeLecturaDe(string analito)
+		{
+			Analito cual = Analito.PorNombre(analito);
+
+			return series.TryGetValue(cual, out SerieDeAnalito serie)
+				? serie.Forma.Nombre
+				: FormaDeLectura.Afirmacion.Nombre;
+		}
+
+		// LAS LINEAS que hay que dibujar junto a los puntos.
+		public IReadOnlyList<ReferenciaDeLectura> ReferenciasDe(string analito)
+		{
+			Analito cual = Analito.PorNombre(analito);
+
+			return series.TryGetValue(cual, out SerieDeAnalito serie)
+				? serie.Referencias(Edad)
+				: new List<ReferenciaDeLectura>();
 		}
 
 		// EL CUADRO HISTORICO, plano y con indices. Ver CeldaDelCuadro para por que esto

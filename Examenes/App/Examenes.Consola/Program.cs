@@ -151,6 +151,10 @@ namespace Examenes.Consola
 			ImprimirControles(api);
 
 			Console.WriteLine();
+			Console.WriteLine("-- lo que la pantalla necesita para DIBUJAR --");
+			ImprimirParaDibujar(api);
+
+			Console.WriteLine();
 			Console.WriteLine("-- LA PREGUNTA QUE NINGUNA PANTALLA CONTESTA --");
 			foreach (string analito in api.Analitos()) ImprimirTendencia(api, analito);
 
@@ -222,6 +226,28 @@ namespace Examenes.Consola
 		// El "hoy" del arnes. Literal a proposito: con DateTime.Now la salida cambiaria
 		// todos los dias y dejaria de servir como criterio de aceptacion.
 		private static readonly DateTime FechaDeCorte = new DateTime(2026, 8, 21);
+
+		// Los puntos con NUMERO y las lineas que los acompanan. Se imprime aca porque
+		// verifica que la proyeccion del DSL trae algo: una lista vacia se ve igual que un
+		// proyector con la llave mal puesta, y eso ya mordio una vez.
+		private static void ImprimirParaDibujar(ExamenesAPI api)
+		{
+			foreach (string analito in api.Analitos())
+			{
+				InterpretacionDeAnalito lectura = api.Interpretacion(analito);
+				IReadOnlyList<PuntoDeSerie> puntos = api.Puntos(analito);
+				IReadOnlyList<LineaDeReferencia> lineas = api.Referencias(analito);
+
+				var valores = new List<string>();
+				foreach (PuntoDeSerie p in puntos) valores.Add(Formato(p.Valor));
+
+				var refs = new List<string>();
+				foreach (LineaDeReferencia l in lineas) refs.Add($"{l.Nombre}={Formato(l.Valor)}");
+
+				Console.WriteLine($"  {lectura.ParaMostrar,-22} {lectura.Forma,-26} "
+					+ $"[{string.Join(" ", valores)}]  {string.Join(" ", refs)}");
+			}
+		}
 
 		private static void ImprimirTendencia(ExamenesAPI api, string analito)
 		{

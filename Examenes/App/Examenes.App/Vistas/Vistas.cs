@@ -48,6 +48,25 @@ namespace Examenes.App.Vistas
 		public bool HaySerie { get; init; }
 	}
 
+	// UN PUNTO de la serie, con su NUMERO. Es lo que un grafico necesita y una celda del
+	// cuadro no da: aquella trae "3.0 ng/mL" ya dicho, esto trae 3.0.
+	public sealed class PuntoDeSerie
+	{
+		public DateTime Fecha { get; init; }
+		public decimal Valor { get; init; }
+		public string Unidad { get; init; } = "";
+	}
+
+	// UNA LINEA que se dibuja junto a los puntos: la base del antígeno, la meta del
+	// colesterol, el piso de la hemoglobina. Cada analito emite solo las que tiene.
+	public sealed class LineaDeReferencia
+	{
+		public string Nombre { get; init; } = "";
+		public decimal Valor { get; init; }
+		public string Unidad { get; init; } = "";
+		public string ParaSonia { get; init; } = "";
+	}
+
 	// UNA CELDA del cuadro historico, con sus dos indices. Llega plana desde el dominio;
 	// la pantalla la ubica en la grilla y no decide nada. Ver CeldaDelCuadro.
 	public sealed class CeldaEnCuadro
@@ -93,6 +112,10 @@ namespace Examenes.App.Vistas
 		public string ParaMostrar { get; init; } = "";
 		public string Veredicto { get; init; } = "";
 		public string Severidad { get; init; } = "";
+
+		// COMO se dibuja esta lectura. La pantalla hace un switch sobre esto, y ese switch
+		// SI es presentación legítima: traduce una forma del dominio a píxeles.
+		public string Forma { get; init; } = "";
 
 		// La lectura en una linea, escrita por el analito.
 		public string ParaSonia { get; init; } = "";

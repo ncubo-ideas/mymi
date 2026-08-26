@@ -47,6 +47,11 @@ namespace Examenes.Consola
 			ElCuadroPoneLasFechasEnElEje();
 			DosBinariosIgualesPidenCosasDistintas();
 			LoQueFaltaMedirEsLoQueNingunaPantallaMuestra();
+			ElAntigenoSeLeeContraLoTuyo();
+			ElColesterolSeLeeContraUnaMeta();
+			CadaSerieEsSuPropioTipo();
+			LoQueNingunaPersonaVivaPodriaTener();
+			ComputosPropiosDelAntigeno();
 
 			Console.WriteLine();
 			Console.WriteLine(fallas == 0
@@ -156,7 +161,7 @@ namespace Examenes.Consola
 
 			var orina = new ExamenDeOrina(Hoy, "ambar");
 			Igual("la orina no aporta serie", "False", orina.AportaSerie.ToString());
-			Igual("la orina informa un color", "ambar", orina.ResultadoExpresado);
+			Igual("la orina informa un color", "ámbar", orina.ResultadoExpresado);
 			Igual("el colesterol si aporta serie", "True",
 				new Colesterol(Hoy, 200m, "mg/dL").AportaSerie.ToString());
 			Revienta<ArgumentException>("color que el laboratorio no reporta",
@@ -258,7 +263,7 @@ namespace Examenes.Consola
 			Titulo("el urianalisis informa dos formas de magnitud distintas");
 
 			var completo = new ExamenDeOrina(Hoy, "ambar", "negativo");
-			Igual("dice las dos cosas", "ambar, nitritos negativo", completo.ResultadoExpresado);
+			Igual("dice las dos cosas", "ámbar, nitritos negativo", completo.ResultadoExpresado);
 			Igual("  el color es nominal", "True", (completo.Color is MagnitudNominal).ToString());
 			Igual("  los nitritos son binarios", "True", (completo.Nitritos is MagnitudBinaria).ToString());
 			Igual("  sin hallazgo", "False", completo.TieneHallazgo.ToString());
@@ -273,7 +278,7 @@ namespace Examenes.Consola
 			Igual("  no lo reporta como hallazgo", "False", sinTira.Nitritos.EsHallazgo.ToString());
 			Revienta<InvalidOperationException>("  preguntar el resultado de lo que no se midio",
 				() => { bool _ = sinTira.Nitritos.EsPositivo; });
-			Igual("  y la lista no menciona nitritos", "ambar", sinTira.ResultadoExpresado);
+			Igual("  y la lista no menciona nitritos", "ámbar", sinTira.ResultadoExpresado);
 
 			Revienta<ArgumentException>("un resultado de nitritos que no existe",
 				() => new ExamenDeOrina(Hoy, "ambar", "mas o menos"));
@@ -533,13 +538,11 @@ namespace Examenes.Consola
 			Igual("el MISMO 280 subiendo desde 190", "empeorando", subiendo.NombreDelVeredicto);
 			Igual("  ese si va al medico", "consulta medica", subiendo.NombreDeLaSeveridad);
 
-			// El nivel habitual, que es lo que distingue un episodio de un fondo alto.
-			var conFondo = new Expediente(60);
-			foreach (decimal v in new[] { 180m, 175m, 185m, 320m, 280m })
-				conFondo.Agregar(new Colesterol(Hoy.AddDays(-400 + (int)(v % 7) * 10), v, "mg/dL"));
-			Igual("el colesterol sabe cual es tu nivel habitual", "True",
-				(new Colesterol(Hoy, 280m, "mg/dL")
-					.NivelHabitual(conFondo.SerieDe(Analito.ColesterolTotal.Nombre)) != null).ToString());
+			// El colesterol sabe A DONDE tiene que llegar. Antes esto comprobaba un
+			// NivelHabitual() que era el metodo del antigeno puesto en este analito; la
+			// reunion del 2026-08-26 lo corrigio: aca la historia larga no interesa.
+			Igual("el colesterol sabe a donde tiene que llegar", "240 mg/dL",
+				new Colesterol(Hoy, 280m, "mg/dL").Meta().Objetivo.Expresado);
 
 			// MEDIDO sobre un reporte real: 220 (2022) -> 234 (2026), 14 mg/dL en 1362
 			// dias. Parece un ascenso; esta por debajo de la variacion biologica del propio
@@ -662,7 +665,7 @@ namespace Examenes.Consola
 				(Maximo(conOrina, c => c.Fila) + 1).ToString());
 			Igual("  al final, porque no forma serie", "False",
 				Celda(conOrina, 3, 3).AportaSerie.ToString());
-			Igual("  y su resultado no es un numero", "ambar", Celda(conOrina, 3, 3).Expresado);
+			Igual("  y su resultado no es un numero", "ámbar", Celda(conOrina, 3, 3).Expresado);
 
 			// Una remedicion el mismo dia no abre una columna nueva: gana la ultima.
 			var mismoDia = new Expediente(60);
@@ -770,6 +773,15 @@ namespace Examenes.Consola
 				conHeces.SeveridadMayor.Nombre);
 
 			// El examen dice la lectura; la pantalla no la compone.
+			// El color llega como lo escriba el laboratorio y se muestra con acento.
+			Igual("marron, MARRÓN y Marrón son el mismo color", "True",
+				(ColorDeHeces.PorNombre("marron") == ColorDeHeces.PorNombre("MARRÓN")
+					&& ColorDeHeces.PorNombre("Marrón") == ColorDeHeces.PorNombre("marron")).ToString());
+			Igual("  y se muestra con acento", "marrón",
+				ColorDeHeces.PorNombre("marron").Expresado);
+			Igual("  el de la orina tambien", "ámbar",
+				ColorDeOrina.PorNombre("ambar").Expresado);
+
 			Igual("el examen de heces dice lo suyo", "True",
 				new ExamenDeHeces(Hoy, "chocolate", "positivo").ParaSonia
 					.Contains("conviene revisarlo").ToString());
@@ -859,6 +871,360 @@ namespace Examenes.Consola
 			Igual("mañana el mismo expediente contesta distinto", "True",
 				(alDia.ControlesPendientes(Hoy.AddDays(2000))[0].EstaVencido
 					&& !alDia.ControlesPendientes(Hoy)[0].EstaVencido).ToString());
+		}
+
+
+		// ---- el antigeno se lee contra LO TUYO, no contra la poblacion ----
+		//
+		// Reunion del 2026-08-26. Las dos lecturas que este analito exige y que un rango de
+		// referencia no puede dar.
+		private static void ElAntigenoSeLeeContraLoTuyo()
+		{
+			Titulo("el antigeno se lee contra lo tuyo");
+
+			// EL PICO QUE NO SE CONFIRMA. Alvaro: "paso de 3 a casi 4, y cuando lo vuelve a
+			// medir pasa otra vez a 3. Ahi al medico esa segunda lectura le sirve."
+			//
+			// ANTES esto daba "probable error de medicion": el dominio leia la vuelta a la
+			// normalidad COMO el error, que es la lectura exactamente opuesta.
+			Interpretacion pico = LeeElAntigeno(
+				(Hoy.AddDays(-730), 3.0m), (Hoy.AddDays(-365), 3.1m),
+				(Hoy.AddDays(-7), 3.9m), (Hoy, 3.0m));
+			Igual("el pico se repitio y no se confirmo", "pico no confirmado",
+				pico.NombreDelVeredicto);
+			Igual("  y por lo tanto no pide nada", "informativo", pico.NombreDeLaSeveridad);
+			Igual("  se lo dice como buena noticia", "True",
+				pico.ParaSonia.Contains("no se confirmó").ToString());
+
+			// La MISMA forma pero con un ano de por medio NO es una confirmacion: es el
+			// control siguiente, y ahi los dos valores cuentan.
+			Interpretacion controlSiguiente = LeeElAntigeno(
+				(Hoy.AddDays(-1095), 3.0m), (Hoy.AddDays(-730), 3.1m),
+				(Hoy.AddDays(-365), 3.9m), (Hoy, 3.0m));
+			Igual("a un ano ya no es repeticion del examen", "False",
+				controlSiguiente.NombreDelVeredicto.Equals("pico no confirmado").ToString());
+
+			// SALIRSE DE LO SUYO. Los dos terminan en 3.0 y estan bajo el techo de su edad
+			// (4.5 a los 60): el rango de referencia no los distingue, la linea base si.
+			Interpretacion vivioEnDos = LeeElAntigeno(
+				(Hoy.AddDays(-1825), 2.0m), (Hoy.AddDays(-1460), 2.1m),
+				(Hoy.AddDays(-1095), 1.8m), (Hoy, 3.0m));
+			Interpretacion vivioEnTres = LeeElAntigeno(
+				(Hoy.AddDays(-1825), 3.0m), (Hoy.AddDays(-1460), 3.1m),
+				(Hoy.AddDays(-1095), 2.9m), (Hoy, 3.0m));
+
+			Igual("el que vive en 2.0 y da 3.0 se salio de lo suyo", "empeorando",
+				vivioEnDos.NombreDelVeredicto);
+			Igual("  y el que SIEMPRE vivio en 3.0, no", "estable",
+				vivioEnTres.NombreDelVeredicto);
+			Igual("  mismo valor final, misma edad, mismo techo", "True",
+				(new AntigenoProstatico(Hoy, 3.0m, "ng/mL").EsNormalPara(60)).ToString());
+			Igual("  y la frase habla de SU nivel, no del rango", "True",
+				vivioEnDos.ParaSonia.Contains("se salió de lo tuyo").ToString());
+
+			// La linea base es la MEDIANA de lo previo, no el promedio: un pico no la
+			// arrastra, que es justo lo que se quiere medir contra ella.
+			var expediente = new Expediente(60);
+			foreach ((int dias, decimal v) in new[] {
+				(-1460, 2.0m), (-1095, 2.1m), (-730, 1.9m), (-365, 8.0m), (0, 2.0m) })
+				expediente.Agregar(new AntigenoProstatico(Hoy.AddDays(dias), v, "ng/mL"));
+
+			// Previos: 2.0, 2.1, 1.9 y un pico de 8.0. La MEDIANA da 2.05; el promedio
+			// habria dado 3.5, arrastrado por el unico valor que no es de esta persona.
+			// Ahora se le pregunta A LA SERIE, que es de quien es: el metodo dejo de recibir
+			// la serie por parametro porque ES la serie.
+			var laSuya = (SerieDeAntigenoProstatico)
+				expediente.SerieDe(Analito.AntigenoProstatico.Nombre);
+			Igual("un pico no arrastra la linea base", "2.05 ng/mL",
+				laSuya.NivelHabitual().Expresado);
+
+			// Sin fondo suficiente no se inventa una linea base.
+			var corta = new Expediente(60);
+			corta.Agregar(new AntigenoProstatico(Hoy.AddDays(-365), 3.0m, "ng/mL"));
+			corta.Agregar(new AntigenoProstatico(Hoy, 3.2m, "ng/mL"));
+			Igual("con dos mediciones todavia no hay linea base", "True",
+				(((SerieDeAntigenoProstatico)corta.SerieDe(Analito.AntigenoProstatico.Nombre))
+					.NivelHabitual() == null).ToString());
+		}
+
+
+		// ---- el colesterol se lee contra una META, no contra su historia ----
+		//
+		// Es la diferencia entera con el antigeno, y sale de la misma reunion:
+		//
+		//   antigeno    "usted no quiere perder la historia"
+		//   colesterol  "yo no ocupo ver esa historia"
+		private static void ElColesterolSeLeeContraUnaMeta()
+		{
+			Titulo("el colesterol se lee contra una meta");
+
+			// LA META ES EL ESCALON SIGUIENTE, no el techo de lo deseable. A alguien en 280
+			// no se le dice "llega a 200": no se ve alcanzable y deja de servir de meta.
+			Igual("280 apunta a 240", "240 mg/dL",
+				new Colesterol(Hoy, 280m, "mg/dL").Meta().Objetivo.Expresado);
+			Igual("  y cuando cruza, la meta se mueve sola", "200 mg/dL",
+				new Colesterol(Hoy, 230m, "mg/dL").Meta().Objetivo.Expresado);
+			Igual("  en 190 ya llego", "True",
+				new Colesterol(Hoy, 190m, "mg/dL").Meta().YaLlego.ToString());
+			Igual("  y dice cuanto falta", "40",
+				new Colesterol(Hoy, 280m, "mg/dL").Meta().CuantoFalta.ToString());
+
+			// EL PROGRESO se cuenta desde donde arranco el EPISODIO, no desde la primera
+			// medicion de la vida de la persona.
+			var bajando = new Expediente(60);
+			foreach ((int dias, decimal v) in new[] {
+				(-1825, 180m), (-1460, 175m), (-730, 320m), (-365, 300m), (0, 280m) })
+				bajando.Agregar(new Colesterol(Hoy.AddDays(dias), v, "mg/dL"));
+
+			var laDelColesterol = (SerieDeColesterol)
+				bajando.SerieDe(Analito.ColesterolTotal.Nombre);
+
+			Igual("el episodio arranca en el pico, no en la primera medicion", "320 mg/dL",
+				laDelColesterol.PartidaDelEpisodio().Expresado);
+			Igual("  y el progreso se mide contra eso", "0.5",
+				laDelColesterol.TrayectoriaHaciaMeta().ToString());
+
+			// Fuera de rango y BAJANDO sigue siendo buena noticia, y ahora lo dice con la
+			// meta en vez de con el nivel habitual.
+			Interpretacion mejora = bajando.InterpretarSerieDe(Analito.ColesterolTotal.Nombre);
+			Igual("bajando desde el pico", "mejorando", mejora.NombreDelVeredicto);
+			Igual("  y le dice a donde va", "True",
+				mejora.ParaSonia.Contains("te faltan 40 mg/dL").ToString());
+
+			// LA EDAD MODULA. Mismo valor, misma serie, dos lecturas: "a tu edad esto se
+			// corrige" contra "que lo vea tu medico".
+			var joven = new Expediente(35);
+			joven.Agregar(new Colesterol(Hoy.AddDays(-365), 190m, "mg/dL"));
+			joven.Agregar(new Colesterol(Hoy, 280m, "mg/dL"));
+			var mayor = new Expediente(60);
+			mayor.Agregar(new Colesterol(Hoy.AddDays(-365), 190m, "mg/dL"));
+			mayor.Agregar(new Colesterol(Hoy, 280m, "mg/dL"));
+
+			Igual("a los 35, fuera de rango se corrige", "seguimiento",
+				joven.InterpretarSerieDe(Analito.ColesterolTotal.Nombre).NombreDeLaSeveridad);
+			Igual("  a los 60, el mismo valor va al medico", "consulta medica",
+				mayor.InterpretarSerieDe(Analito.ColesterolTotal.Nombre).NombreDeLaSeveridad);
+
+			// Y donde vive ahora el metodo prestado: la linea base es del ANTIGENO, que es
+			// el que se lee contra su propia historia.
+			var suyaDelAntigeno = new Expediente(60);
+			foreach ((int dias, decimal v) in new[] {
+				(-1095, 2.0m), (-730, 2.1m), (-365, 1.9m), (0, 2.0m) })
+				suyaDelAntigeno.Agregar(new AntigenoProstatico(Hoy.AddDays(dias), v, "ng/mL"));
+			Igual("la linea base vive en la serie del antigeno", "2.0 ng/mL",
+				((SerieDeAntigenoProstatico)
+					suyaDelAntigeno.SerieDe(Analito.AntigenoProstatico.Nombre))
+					.NivelHabitual().Expresado);
+		}
+
+
+		// ---- cada serie es su propio tipo ----
+		//
+		// §4 de la reunion del 2026-08-26. Alvaro: "eso no es lo mismo que el conjunto de
+		// examenes de antigeno prostatico evaluando su tendencia. Ahi usted quizas tiene
+		// que hacer EL PLURAL antigeno prostatico, examenes plural, y a ese hacerle metodos
+		// especificos. […] si usted generaliza y lo pone en examenes, ya perdio la mitad
+		// del valor."
+		private static void CadaSerieEsSuPropioTipo()
+		{
+			Titulo("cada serie es su propio tipo");
+
+			var expediente = new Expediente(60);
+			expediente.Agregar(new AntigenoProstatico(Hoy.AddDays(-365), 3.0m, "ng/mL"));
+			expediente.Agregar(new AntigenoProstatico(Hoy, 5.2m, "ng/mL"));
+			expediente.Agregar(new Colesterol(Hoy.AddDays(-365), 200m, "mg/dL"));
+			expediente.Agregar(new Colesterol(Hoy, 280m, "mg/dL"));
+			expediente.Agregar(new Hemoglobina(Hoy.AddDays(-365), 9.0m, "g/dL"));
+			expediente.Agregar(new Hemoglobina(Hoy, 14.0m, "g/dL"));
+
+			// El analito decide cual es SU plural. El expediente no tiene ningun switch.
+			Igual("el antigeno arma la suya", "SerieDeAntigenoProstatico",
+				expediente.SerieDe(Analito.AntigenoProstatico.Nombre).GetType().Name);
+			Igual("  el colesterol la suya", "SerieDeColesterol",
+				expediente.SerieDe(Analito.ColesterolTotal.Nombre).GetType().Name);
+			Igual("  la hemoglobina la suya", "SerieDeHemoglobina",
+				expediente.SerieDe(Analito.Hemoglobina.Nombre).GetType().Name);
+
+			// Y NO COMPARTEN SUPERFICIE. Esto es lo que §4 compra: preguntarle la velocidad
+			// a la serie del colesterol no devuelve cero, NO COMPILA.
+			var delAntigeno = (SerieDeAntigenoProstatico)
+				expediente.SerieDe(Analito.AntigenoProstatico.Nombre);
+			var delColesterol = (SerieDeColesterol)
+				expediente.SerieDe(Analito.ColesterolTotal.Nombre);
+			var deLaHemoglobina = (SerieDeHemoglobina)
+				expediente.SerieDe(Analito.Hemoglobina.Nombre);
+
+			Igual("la velocidad es de la serie del antigeno", "True",
+				delAntigeno.VelocidadDelTramo().EsAplicable.ToString());
+			Igual("  la meta es de la del colesterol", "240 mg/dL",
+				delColesterol.Meta().Objetivo.Expresado);
+			Igual("  el peor grado de anemia es de la de hemoglobina", "moderada",
+				deLaHemoglobina.PeorGrado().Nombre);
+			Igual("  y esa serie sabe que se recupero", "True",
+				deLaHemoglobina.VieneRecuperandose().ToString());
+
+			// Ninguna de las tres tiene los metodos de las otras. Se comprueba contando la
+			// superficie propia, porque lo que NO compila no se puede escribir en un test.
+			Igual("la del antigeno no tiene Meta ni PeorGrado", "False",
+				(delAntigeno.GetType().GetMethod("Meta") != null
+					|| delAntigeno.GetType().GetMethod("PeorGrado") != null).ToString());
+			Igual("  la del colesterol no tiene VelocidadDelTramo", "False",
+				(delColesterol.GetType().GetMethod("VelocidadDelTramo") != null).ToString());
+			Igual("  la de hemoglobina no tiene ninguna de las dos", "False",
+				(deLaHemoglobina.GetType().GetMethod("Meta") != null
+					|| deLaHemoglobina.GetType().GetMethod("VelocidadDelTramo") != null).ToString());
+
+			// Lo comun sigue siendo comun, y es lo que de verdad vale para todas: los
+			// HECHOS de la serie y la unica operacion que todas contestan.
+			Igual("las tres saben ordenar y evaluar los hechos", "True",
+				(delAntigeno.Evaluar() != null && delColesterol.Evaluar() != null
+					&& deLaHemoglobina.Evaluar() != null).ToString());
+			Igual("  y las tres se interpretan, cada una a su modo", "True",
+				(delAntigeno.Interpretar(60).NombreDelVeredicto
+					!= deLaHemoglobina.Interpretar(60).NombreDelVeredicto).ToString());
+		}
+
+
+		// ---- lo que ninguna persona viva podria tener ----
+		//
+		// §5 de la reunion. Alvaro: "si yo ahi pase de 1 a 10 — no senor, ya se esta
+		// muerto. Aqui me estan mandando una vaina de un cadaver. […] el sistema suyo
+		// deberia conocer esos: no solo valorar los examenes normales, sino que ese brinco
+		// no es racional en este examen."
+		//
+		// Son DOS guardas distintas y hacen falta las dos.
+		private static void LoQueNingunaPersonaVivaPodriaTener()
+		{
+			Titulo("lo que ninguna persona viva podria tener");
+
+			// UNO: el valor imposible. No es un hallazgo alto, es un dato malformado.
+			Revienta<ArgumentOutOfRangeException>("una hemoglobina de 40 no entra",
+				() => new Hemoglobina(Hoy, 40m, "g/dL"));
+			Revienta<ArgumentOutOfRangeException>("  ni un colesterol de 3",
+				() => new Colesterol(Hoy, 3m, "mg/dL"));
+
+			// Y lo que SI tiene que pasar: un hallazgo real, por feo que sea. Apretar la
+			// guarda de mas descartaria justamente lo que hay que detectar.
+			Igual("una hemoglobina de 6.0 SI entra, es anemia severa", "severa",
+				new Hemoglobina(Hoy, 6.0m, "g/dL").GradoDeAnemia().Nombre);
+			Igual("  y un antigeno de 80 tambien", "80 ng/mL",
+				new AntigenoProstatico(Hoy, 80m, "ng/mL").Valor.Expresado);
+
+			// La ruta lo DESCARTA en vez de reventar: un laboratorio que manda basura no
+			// puede impedir que la app se ponga al dia con el resto.
+			Igual("la ruta descarta el evento con valor imposible", "descartado",
+				AnalitoRuteado(new SenalDeEvento(920, "ExamenAgregado", @"{
+					""id"": 920, ""tipo"": ""ExamenAgregado"",
+					""examen"": ""Hemoglobina"",
+					""fecha"": ""2026-08-21T08:32:00"",
+					""valor"": 40, ""unidad"": ""g/dL""
+				}")));
+			Igual("  y el siguiente evento sigue entrando", "Hemoglobina",
+				AnalitoRuteado(new SenalDeEvento(921, "ExamenAgregado", @"{
+					""id"": 921, ""tipo"": ""ExamenAgregado"",
+					""examen"": ""Hemoglobina"",
+					""fecha"": ""2026-08-21T08:32:00"",
+					""valor"": 14.2, ""unidad"": ""g/dL""
+				}")));
+
+			// DOS: el salto que ningun intervalo justifica. Los dos valores son posibles y
+			// aun asi uno de los dos esta mal — y esto la regla de la TASA no lo puede
+			// decir, porque con suficientes dias cualquier salto pasa.
+			Interpretacion deUnoADiez = LeeElAntigeno(
+				(Hoy.AddDays(-3650), 1.0m), (Hoy, 10.0m));
+			Igual("de 1 a 10, aunque pasen diez años", "probable error de medicion",
+				deUnoADiez.NombreDelVeredicto);
+
+			// La tasa sola lo dejaba pasar: 9 ng/mL en 3650 dias son 0.0025 por dia, muy
+			// por debajo del 0.05 que el antigeno admite.
+			Igual("  la tasa sola no lo habria visto", "True",
+				(9m / 3650m < 0.05m).ToString());
+
+			// Y lo que NO se puede romper: duplicarse es exactamente el caso que este
+			// dominio existe para detectar, y tiene que llegar como hallazgo.
+			Interpretacion duplicarse = LeeElAntigeno(
+				(Hoy.AddDays(-1095), 2.5m), (Hoy.AddDays(-730), 2.6m),
+				(Hoy.AddDays(-365), 2.5m), (Hoy, 5.0m));
+			Igual("duplicarse SI es hallazgo, no error", "empeorando",
+				duplicarse.NombreDelVeredicto);
+		}
+
+
+		// ---- computos propios del antigeno: histograma y comparativo ----
+		//
+		// §6. Alvaro: "usted a eso le tiene que hacer un histograma, que tiene que hacer
+		// tal vez un comparativo con el ano pasado, deme la tendencia". Y que son: "NO SON
+		// PRINTS DE LA TABLA, SON COMPUTOS".
+		private static void ComputosPropiosDelAntigeno()
+		{
+			Titulo("computos propios del antigeno");
+
+			var expediente = new Expediente(60);
+			// Dos mediciones en 2024 y ningun examen en 2025: los dos casos que separan un
+			// comparativo interanual de la lista agrupada.
+			foreach ((DateTime f, decimal v) in new[] {
+				(new DateTime(2023, 3, 10), 2.0m),
+				(new DateTime(2024, 2, 5),  2.4m),
+				(new DateTime(2024, 11, 20), 2.2m),
+				(new DateTime(2026, 8, 21), 3.0m) })
+				expediente.Agregar(new AntigenoProstatico(f, v, "ng/mL"));
+
+			var serie = (SerieDeAntigenoProstatico)
+				expediente.SerieDe(Analito.AntigenoProstatico.Nombre);
+			IReadOnlyList<MedicionDelAno> porAno = serie.PorAno();
+
+			Igual("cuatro mediciones dan TRES anos", "3", porAno.Count.ToString());
+			Igual("  2024 tuvo dos mediciones", "2", porAno[1].Cuantas.ToString());
+			Igual("  y se toma la ULTIMA del ano, no el promedio", "2.2 ng/mL",
+				porAno[1].Valor.Expresado);
+			Igual("el primer ano no tiene con que comparar", "False",
+				porAno[0].HayConQueComparar.ToString());
+			Igual("  el segundo compara contra el primero", "0.2",
+				porAno[1].CambioContraElAnterior.Value.ToString());
+
+			// 2025 no existe y NO se rellena: interpolar un ano que nadie midio es inventar
+			// un dato, igual que una celda del cuadro.
+			Igual("el ano sin mediciones no aparece", "2026", porAno[2].Ano.ToString());
+			Igual("  y compara contra el ultimo ano CON mediciones", "0.8",
+				porAno[2].CambioContraElAnterior.Value.ToString());
+
+			// EL HISTOGRAMA: la linea base vista en vez de resumida.
+			IReadOnlyList<BandaDelHistograma> bandas = serie.Histograma(4);
+			Igual("el histograma devuelve las bandas pedidas", "4", bandas.Count.ToString());
+
+			int total = 0;
+			foreach (BandaDelHistograma banda in bandas) total += banda.Cuantas;
+			Igual("  y no pierde ni duplica mediciones", "4", total.ToString());
+
+			// Las bandas se arman sobre el rango REAL de la persona -2.0 a 3.0-, no sobre
+			// el techo de su edad.
+			// Todos los bordes con la misma precision, incluidos los extremos: dentro de un
+			// histograma no puede haber dos escalas.
+			Igual("arranca en su minimo", "2.00 ng/mL", bandas[0].Desde.Expresado);
+			Igual("  y termina en su maximo", "3.00 ng/mL", bandas[3].Hasta.Expresado);
+			Igual("  con los bordes pegados, sin huecos", "True",
+				(bandas[0].Hasta.Valor == bandas[1].Desde.Valor
+					&& bandas[1].Hasta.Valor == bandas[2].Desde.Valor).ToString());
+			Igual("  y senala donde cae la ultima", "True", bandas[3].CaeLaUltima.ToString());
+
+			// Sin dispersion no se inventa ancho.
+			var planas = new Expediente(60);
+			foreach (int dias in new[] { -730, -365, 0 })
+				planas.Agregar(new AntigenoProstatico(Hoy.AddDays(dias), 2.0m, "ng/mL"));
+			IReadOnlyList<BandaDelHistograma> unaSola =
+				((SerieDeAntigenoProstatico)planas.SerieDe(Analito.AntigenoProstatico.Nombre))
+					.Histograma(4);
+			Igual("tres mediciones iguales dan UNA banda", "1", unaSola.Count.ToString());
+
+			Revienta<ArgumentOutOfRangeException>("un histograma de cero bandas no existe",
+				() => serie.Histograma(0));
+
+			// Y lo que §4 garantiza: estos computos son del antigeno y de nadie mas.
+			var delColesterol = new Expediente(60);
+			delColesterol.Agregar(new Colesterol(Hoy, 200m, "mg/dL"));
+			Igual("la serie del colesterol no tiene histograma", "False",
+				(delColesterol.SerieDe(Analito.ColesterolTotal.Nombre)
+					.GetType().GetMethod("Histograma") != null).ToString());
 		}
 
 		private static void Titulo(string texto)
