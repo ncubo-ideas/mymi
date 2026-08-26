@@ -314,6 +314,7 @@ h1:focus, h1:focus-visible { outline: none; }
 .chip--estable  { background: var(--bien-suave);  color: var(--bien);  border-color: var(--bien-borde); }
 .chip--atencion { background: var(--ambar-suave); color: var(--ambar); border-color: #f0d7c0; }
 .chip--repetir  { background: var(--suave); color: var(--tenue); border-color: var(--linea); }
+.chip--problema { background: var(--rojo-suave); color: var(--rojo); border-color: #f2c6c2; }
 .chip--sinserie { background: transparent; color: var(--tenue-2); border-color: var(--linea); }
 .chip--grande   { font-size: 12px; padding: 5px 12px; }
 
@@ -586,7 +587,6 @@ code { font-family: var(--mono); font-size: .9em; color: var(--ambar); }
     margin-bottom: 18px;
 }
 .portada--calma        { border-left-color: var(--bien); }
-.portada--vigilar      { border-left-color: var(--tenue-2); }
 .portada--atencion     { border-left-color: var(--ambar);  background: var(--ambar-suave); }
 .portada--problema     { border-left-color: var(--rojo);   background: var(--rojo-suave); }
 

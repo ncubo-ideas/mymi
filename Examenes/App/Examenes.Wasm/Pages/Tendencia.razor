@@ -310,6 +310,7 @@ else
     private string Insignia()
     {
         if (interpretacion.SugiereRepetirElExamen) return "chip--repetir";
+        if (interpretacion.Severidad == "urgente") return "chip--problema";
         if (interpretacion.PideAlgo) return "chip--atencion";
         return "chip--estable";
     }

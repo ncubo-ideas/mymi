@@ -475,12 +475,13 @@ else
     private int redibujo;
 
     // El tono de la portada lo decide el DOMINIO, no esta pantalla: es la severidad que
-    // salió de recorrer las series. Acá sólo se traduce a una clase de CSS.
+    // salió de recorrer las series, traducida con el mapeo del semáforo de la marca:
+    // verde informativo, ámbar para vigilar y consulte pronto, rojo reservado a urgente.
     private string Tono() => urgente.Severidad switch
     {
         "urgente"         => "portada--problema",
         "consulte pronto" => "portada--atencion",
-        "vigilar"         => "portada--vigilar",
+        "vigilar"         => "portada--atencion",
         _                 => "portada--calma",
     };
 
@@ -835,13 +836,15 @@ else
             ? l
             : new InterpretacionDeAnalito();
 
-    // El chip sale de la SEVERIDAD que decidio el analito, no de un bool generico.
+    // El chip sale de la SEVERIDAD que decidio el analito, con el mapeo del semáforo:
+    // rojo solo para "urgente", que el dominio reserva.
     //
-    // El ambar sigue reservado para lo que exige atencion, y por eso "salto inverosimil"
-    // NO lo usa: no es una alarma clinica, es "repeti el examen".
+    // El ambar sigue sin usarse para "salto inverosimil": no es una alarma clinica, es
+    // "repeti el examen", y el chip neutro lo dice sin gritar.
     private string Insignia(PresenciaDeAnalito p)
     {
         InterpretacionDeAnalito lectura = Lectura(p.Analito);
+        if (lectura.Severidad == "urgente") return "chip--problema";
         if (lectura.PideAlgo) return "chip--atencion";
         if (!p.HaySerie) return "chip--sinserie";
         return "chip--estable";
@@ -851,6 +854,7 @@ else
     {
         InterpretacionDeAnalito lectura = Lectura(t.Analito);
         if (lectura.SugiereRepetirElExamen) return "chip--repetir";
+        if (lectura.Severidad == "urgente") return "chip--problema";
         if (lectura.PideAlgo) return "chip--atencion";
         if (!t.HaySerie) return "chip--sinserie";
         return "chip--estable";
