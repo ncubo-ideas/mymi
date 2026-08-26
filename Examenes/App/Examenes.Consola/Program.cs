@@ -135,7 +135,17 @@ namespace Examenes.Consola
 			Console.WriteLine($"ultimo evento procesado     : {api.UltimoEventoProcesado()}");
 			Console.WriteLine($"cantidad de examenes        : {api.CantidadDeExamenes()}");
 			Console.WriteLine($"esperados                   : {Muestras.ExamenesEsperados}");
-			Console.WriteLine($"analitos fuera de rango     : {api.AnalitosFueraDeRango()}");
+			// Ya no es solo "fuera de rango": un binario no tiene rango del que salirse, y
+			// una sangre oculta presente cuenta igual. Ver Expediente.AnalitosFueraDeRango.
+			Console.WriteLine($"analitos con algo que mirar : {api.AnalitosFueraDeRango()}");
+
+			// LO MAS URGENTE DE TODO EL EXPEDIENTE. Se imprime aca por la misma razon que
+			// los controles: verifica que la proyeccion del DSL trae algo. Una llave mal
+			// puesta en el print devuelve vacio, y vacio se ve igual que "no hay nada que
+			// hacer" — que es justo la respuesta que no se puede confundir.
+			LoMasUrgente urgente = api.Urgente();
+			Console.WriteLine($"lo mas urgente              : {urgente.Severidad}"
+				+ (urgente.PideAlgo ? $" - {urgente.Accion}" : " (no pide nada)"));
 			Console.WriteLine($"token guardado              : [{api.TokenGuardado()}]");
 
 			Console.WriteLine();
@@ -241,6 +251,12 @@ namespace Examenes.Consola
 				var valores = new List<string>();
 				foreach (PuntoDeSerie p in puntos) valores.Add(Formato(p.Valor));
 
+				// LOS BINARIOS NO TIENEN NUMEROS QUE DIBUJAR: tienen presencias. Se piden
+				// por otra puerta -Pruebas en vez de Puntos- porque no devuelven lo mismo,
+				// y se pintan como lo que son: una tira de si y de no.
+				foreach (PruebaEnSerie prueba in api.Pruebas(analito))
+					valores.Add(prueba.EsPositivo ? "●" : "○");
+
 				var refs = new List<string>();
 				foreach (LineaDeReferencia l in lineas) refs.Add($"{l.Nombre}={Formato(l.Valor)}");
 
@@ -251,6 +267,15 @@ namespace Examenes.Consola
 
 		private static void ImprimirTendencia(ExamenesAPI api, string analito)
 		{
+			// UN BINARIO NO TIENE TENDENCIA, y preguntarsela devolveria "no aplica" con
+			// ceros. Se lee por su propia puerta: cuantas pruebas, cuantas dieron
+			// positivas y cuantas SEGUIDAS, que es lo que cambia la conducta.
+			if (api.Interpretacion(analito).Forma == FormaDePresencia)
+			{
+				ImprimirPresencia(api, analito);
+				return;
+			}
+
 			TendenciaDeAnalito t = api.Tendencia(analito);
 
 			// La frase la arma la SUPERFICIE con los hechos del dominio. El dominio no
@@ -280,6 +305,33 @@ namespace Examenes.Consola
 			Console.WriteLine($"  {"",-22} ritmo: {v.Expresada} (tramo de {v.Dias} dias, umbral {Formato(v.Umbral)})");
 			if (v.ExigeAtencion)
 				Console.WriteLine($"  {"",-22} ^ la VELOCIDAD sola ya exige atencion");
+		}
+
+		// El nombre de la forma tal como lo dice el dominio. Comparar contra este literal
+		// es traducir una forma del dominio a una decision de impresion, que es lo unico
+		// que esta caratula tiene derecho a decidir.
+		private const string FormaDePresencia = "presencia en el tiempo";
+
+		// La lectura de un binario. La tira -○ ○ ●- es el hecho que ninguna medicion sola
+		// puede mostrar, y es la razon de que estas series existan.
+		private static void ImprimirPresencia(ExamenesAPI api, string analito)
+		{
+			PresenciaDeAnalito p = api.Presencia(analito);
+
+			var tira = new List<string>();
+			foreach (PruebaEnSerie prueba in api.Pruebas(analito))
+				tira.Add(prueba.EsPositivo ? "●" : "○");
+
+			string relato = p.HaySerie
+				? $"{string.Join(" ", tira)}  sobre {p.Mediciones} pruebas en {p.Dias} dias"
+				: $"una sola prueba ({p.UltimoResultado}): todavia no hay serie";
+
+			Console.WriteLine($"  {p.ParaMostrar,-22} {p.Presencia,-20} {relato}");
+
+			InterpretacionDeAnalito lectura = api.Interpretacion(analito);
+			Console.WriteLine($"  {"",-22} {lectura.Veredicto}: {lectura.ParaSonia}");
+			if (lectura.PideAlgo)
+				Console.WriteLine($"  {"",-22} ^ {lectura.Severidad} - {lectura.Accion}");
 		}
 
 		private static string Formato(decimal valor) =>

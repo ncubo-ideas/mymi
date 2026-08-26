@@ -1,0 +1,85 @@
+@using System.Globalization
+@using System.Linq
+@using Examenes.App.Vistas
+
+@*  LA FORMA DE LOS BINARIOS: estuvo, no estuvo, volvió a estar.
+
+    No es una curva y no puede serlo — no hay eje vertical, porque no existe «más
+    positivo». Lo que se dibuja son las fechas y si en cada una había o no había.
+
+    Y ESO ES UN DIBUJO, no una frase. Ver tres pruebas seguidas marcadas dice algo que la
+    última sola no dice: que ya se repitió y volvió a salir. Ese es exactamente el hecho
+    que hace que una sangre oculta en heces deje de leerse como «conviene repetirlo».
+
+    Las que ESTÁN se pintan llenas y en ámbar; las que no, huecas. La racha final —lo que
+    el dominio llama persistencia— lleva el trazo grueso, porque es lo que cambia la
+    conducta.                                                                            *@
+
+<div class="forma forma--presencia">
+    <svg viewBox="0 0 320 46" role="img" aria-label="@Descripcion">
+        <line x1="12" y1="23" x2="308" y2="23" class="hilo" />
+
+        @* La racha del final, cuando la hay: dos o más seguidas es otra cosa que una. *@
+        @if (Seguidas >= 2)
+        {
+            <line x1="@X(Pruebas.Count - Seguidas)" y1="23" x2="@X(Pruebas.Count - 1)" y2="23"
+                  class="racha" />
+        }
+
+        @for (int i = 0; i < Pruebas.Count; i++)
+        {
+            <circle cx="@X(i)" cy="23" r="@(Pruebas[i].EsPositivo ? "6.5" : "5")"
+                    class="@(Pruebas[i].EsPositivo ? "prueba prueba--presente" : "prueba")" />
+        }
+    </svg>
+
+    <div class="forma-pie forma-pie--extremos">
+        <span class="forma-nota">@Fecha(Primera)</span>
+        <span class="forma-nota forma-nota--centro">@Conteo</span>
+        <span class="forma-nota forma-nota--der"><b>@Ultimo</b></span>
+    </div>
+</div>
+
+@code {
+    [Parameter] public IReadOnlyList<PruebaEnSerie> Pruebas { get; set; } = new List<PruebaEnSerie>();
+    [Parameter] public int Seguidas { get; set; }
+    [Parameter] public string Descripcion { get; set; } = "";
+
+    private static readonly System.Globalization.CultureInfo Cultura = new("es-CR");
+
+    private DateTime Primera => Pruebas.Count == 0 ? default : Pruebas[0].Fecha;
+    private string Ultimo => Pruebas.Count == 0 ? "" : Pruebas[^1].Expresado;
+
+    // CUÁNTAS Y DE CUÁNTAS. Es el hecho que la tira muestra y el número que lo dice; van
+    // juntos porque la tira sola no se cuenta de un vistazo cuando hay muchas.
+    private string Conteo
+    {
+        get
+        {
+            int presentes = Pruebas.Count(p => p.EsPositivo);
+            if (presentes == 0) return $"{Pruebas.Count} pruebas, ninguna";
+            return $"{presentes} de {Pruebas.Count}";
+        }
+    }
+
+    // Las pruebas se reparten POR FECHA y no en pasos iguales: dos seguidas con un año en
+    // medio y dos con un mes no cuentan lo mismo, y si el eje las espaciara igual el
+    // dibujo diría algo que no es.
+    //
+    // Cuando todas caen el mismo día —o hay una sola— no hay recorrido que repartir y se
+    // distribuyen parejas, que es lo único honesto que se puede hacer con eso.
+    private string X(int indice)
+    {
+        if (Pruebas.Count <= 1) return "160";
+
+        double recorrido = (Pruebas[^1].Fecha - Pruebas[0].Fecha).TotalDays;
+        double p = recorrido <= 0
+            ? indice / (double)(Pruebas.Count - 1)
+            : (Pruebas[indice].Fecha - Pruebas[0].Fecha).TotalDays / recorrido;
+
+        return (12 + p * 296).ToString("0.#", CultureInfo.InvariantCulture);
+    }
+
+    private static string Fecha(DateTime fecha) =>
+        fecha == default ? "" : fecha.ToString("MMM yyyy", Cultura);
+}

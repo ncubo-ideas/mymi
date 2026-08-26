@@ -48,6 +48,61 @@ namespace Examenes.App.Vistas
 		public bool HaySerie { get; init; }
 	}
 
+	// LOS HECHOS DE UNA SERIE BINARIA. Vista aparte de TendenciaDeAnalito porque no
+	// trae lo mismo: un binario no tiene valor inicial ni final ni cambio. Tiene CUANTAS
+	// veces aparecio y —la que cambia la conducta— cuantas SEGUIDAS.
+	//
+	// "Dos seguidas" es lo que hace que una sangre oculta en heces deje de leerse como
+	// "conviene repetir el examen". Ninguna medicion sola puede decirlo.
+	public sealed class PresenciaDeAnalito
+	{
+		public string Analito { get; init; } = "";
+		public string ParaMostrar { get; init; } = "";
+
+		// "apareció", "persiste", "nunca apareció", "no confirmado", "cedió".
+		public string Presencia { get; init; } = "";
+
+		public int Mediciones { get; init; }
+		public int Positivas { get; init; }
+		public int PositivasSeguidas { get; init; }
+		public int Dias { get; init; }
+
+		// El ultimo resultado con el vocabulario de SU analito: "positivo", y en una
+		// serologia seria "reactivo". Es la razon de que la magnitud no sea un bool.
+		public string UltimoResultado { get; init; } = "";
+
+		public bool EstaPresente { get; init; }
+		public bool HaySerie { get; init; }
+	}
+
+	// UNA PRUEBA BINARIA en una fecha: el punto de una tira de presencia. Es el par de
+	// PuntoDeSerie para la forma 5, y no tiene Valor porque no existe "mas positivo".
+	public sealed class PruebaEnSerie
+	{
+		public DateTime Fecha { get; init; }
+		public string Expresado { get; init; } = "";
+		public bool EsPositivo { get; init; }
+		public bool EsHallazgo { get; init; }
+	}
+
+	// LO MAS URGENTE DE TODO EL EXPEDIENTE, en una sola respuesta.
+	//
+	// Es la pregunta con la que una persona ABRE la app —«¿estoy bien?»— y hasta ahora
+	// ninguna carátula la hacía: el dominio la contestaba y nadie escuchaba. Componerla
+	// afuera no era una opción: exige recorrer cada serie, interpretarla con el criterio
+	// de SU analito y quedarse con la mayor, y ordenar severidades es conocimiento del
+	// dominio, no de una pantalla.
+	public sealed class LoMasUrgente
+	{
+		// "informativo", "seguimiento", "consulta medica", "atencion inmediata".
+		public string Severidad { get; init; } = "";
+
+		// Qué hacer, del conjunto cerrado. Vacío cuando no hay nada que hacer.
+		public string Accion { get; init; } = "";
+
+		public bool PideAlgo { get; init; }
+	}
+
 	// UN PUNTO de la serie, con su NUMERO. Es lo que un grafico necesita y una celda del
 	// cuadro no da: aquella trae "3.0 ng/mL" ya dicho, esto trae 3.0.
 	public sealed class PuntoDeSerie

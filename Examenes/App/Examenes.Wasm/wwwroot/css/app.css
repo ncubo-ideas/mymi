@@ -24,6 +24,28 @@
     --pino-cl:  #2e5c4a;
     --pino-suave: #e8efe9;
 
+    /* EL VERDE QUE SE PINTA, distinto del que se escribe.
+     *
+     * --pino es TINTA: es oscuro (L 19%) y poco saturado (S 35%), y sobre un papel casi
+     * blanco una dilucion suya no da un verde claro — da gris. Medido sobre el fondo de
+     * la tarjeta, antes de este cambio:
+     *
+     *     .dentro   pino al 22%   ->  S  6.4%   la zona SEGURA
+     *     .fuera    linea al 35%  ->  S 29.4%   la zona de afuera
+     *
+     * O sea que el lado seguro tenia MENOS color que el lado de afuera, y encima era mas
+     * oscuro, que se lee como "peor". La banda no decia "aca esta bien": decia "aca hay
+     * un rectangulo gris".
+     *
+     * Estos dos son COLORES PROPIOS y no diluciones, y por eso siguen siendo verdes
+     * cuando se aplican. Mismo tono que el pino (158°) para que sigan siendo la misma
+     * familia; lo que cambia es que la saturacion sobrevive.
+     *
+     * No le sacan trabajo al ambar: el ambar sigue siendo lo unico que dice "esto exige
+     * atencion", y estos dos solo dicen "esto esta bien". */
+    --pino-zona: #c8e4da;   /* donde es normal estar: las bandas */
+    --pino-vivo: #6bbd9f;   /* lo que ya se recorrio: el avance hacia la meta */
+
     --ambar:    #b4541a;
     --ambar-suave: #fdf0e4;
 
@@ -302,11 +324,13 @@ h1:focus, h1:focus-visible { outline: none; }
 
 /* La muestra de color del pie, para no repetir la leyenda en palabras. */
 .muestra { width: 10px; height: 10px; border-radius: 2px; display: inline-block; }
-.muestra--banda { background: var(--pino); opacity: .3; }
+/* La muestra tiene que ser EL MISMO color que la banda que nombra. Antes era pino al
+   30% y la banda pino al 16%: dos grises distintos para la misma cosa. */
+.muestra--banda { background: var(--pino-zona); }
 .muestra--techo { height: 0; border-top: 1.5px dashed var(--tinta-3); border-radius: 0; }
 
 /* --- trayectoria: la banda ES el fondo contra el que se lee todo lo demas --- */
-.forma--trayectoria .banda { fill: var(--pino); opacity: .16; }
+.forma--trayectoria .banda { fill: var(--pino-zona); }
 .forma--trayectoria .linea-base {
     stroke: var(--pino); stroke-width: 1.5; opacity: .55;
 }
@@ -323,7 +347,9 @@ h1:focus, h1:focus-visible { outline: none; }
 
 /* --- progreso: el eje es el VALOR, no el tiempo --- */
 .forma--progreso .pista { fill: var(--linea); opacity: .5; }
-.forma--progreso .avance { fill: var(--pino); opacity: .6; }
+/* Lo YA recorrido. Es lo unico de esta pantalla que se gana, asi que tiene color de
+   verdad y no una dilucion: la barra que avanza es la recompensa. */
+.forma--progreso .avance { fill: var(--pino-vivo); }
 /* Lo que falta, en ambar: es lo unico de esta forma que pide algo. */
 .forma--progreso .pendiente { fill: var(--ambar); opacity: .3; }
 .forma--progreso .hito-meta { stroke: var(--pino); stroke-width: 2; }
@@ -334,7 +360,7 @@ h1:focus, h1:focus-visible { outline: none; }
 /* El AFUERA casi no se pinta y el ADENTRO si: lo que tiene que saltar a la vista es
    donde es normal estar, no donde no. Con los dos en gris no se distinguian. */
 .forma--banda .fuera { fill: var(--linea); opacity: .35; }
-.forma--banda .dentro { fill: var(--pino); opacity: .22; }
+.forma--banda .dentro { fill: var(--pino-zona); }
 .forma--banda .aguja { stroke: var(--pino); stroke-width: 3; stroke-linecap: round; }
 .forma--banda .aguja--fuera { stroke: var(--ambar); }
 
@@ -371,6 +397,66 @@ h1:focus, h1:focus-visible { outline: none; }
 }
 
 /* ------------------------------------------------------------------ detalle */
+
+/* CADA MEDICION, UNA POR UNA — lo que la tarjeta de la lista no puede dar.
+
+   La tarjeta comprime la serie en «pasó de 3.0 a 5.2 en 1095 días», y esa frase esconde
+   lo unico que cambia como se lee: si el cambio fue parejo o fue un salto. Tres anos
+   planchados y un salto al final tienen los mismos extremos que una subida lenta.
+
+   Por eso la columna que importa es la del SALTO, y va en mono: es una cifra, no prosa.
+   La medicion mas vieja no lleva salto porque es el punto de partida. */
+
+.mediciones { list-style: none; margin: 4px 0 0; padding: 0; }
+.medicion {
+    display: flex; align-items: baseline; gap: 18px;
+    padding: 13px 0;
+    border-bottom: 1px solid var(--linea);
+}
+.medicion:last-child { border-bottom: 0; }
+
+/* La misma columna de fecha que el historial de visitas: es la misma clase de dato, y
+   dos anchos distintos para lo mismo se leen como dos cosas distintas. */
+.medicion-fecha {
+    flex: 0 0 4.5em;
+    font-family: var(--mono); line-height: 1.25;
+}
+.medicion-dia { display: block; font-size: 13px; color: var(--tinta); text-transform: lowercase; }
+.medicion-ano { display: block; font-size: 11px; color: var(--tinta-3); }
+
+.medicion-valor {
+    flex: 0 0 6.5em;
+    font-family: var(--mono); font-size: 16px; color: var(--tinta);
+}
+.medicion-valor span { font-size: 11.5px; color: var(--tinta-3); margin-left: 3px; }
+
+.medicion-salto {
+    flex: 1;
+    font-family: var(--mono); font-size: 12.5px; color: var(--tinta-2);
+    text-align: right;
+}
+
+/* Un positivo se marca en la fila, no en una columna aparte: en un binario el resultado
+   ES el dato. El ambar mantiene su unico significado. */
+.medicion--presente .medicion-valor { color: var(--ambar); }
+
+/* --- el ritmo del ultimo tramo, cuando el analito lo tiene --- */
+
+/* No es un aviso: es una cifra con su contexto. Va sin borde de color a la izquierda
+   para no competir con el bloque de veredicto, que es el que puede pedir algo. */
+.ritmo {
+    display: flex; flex-direction: column; gap: 3px;
+    margin: 22px 0 0; padding: 14px 16px;
+    background: var(--papel-2);
+    border: 1px solid var(--linea); border-radius: 8px;
+}
+.ritmo-rotulo {
+    font-size: 11px; letter-spacing: .07em; text-transform: uppercase;
+    color: var(--tinta-3);
+}
+.ritmo-cifra { font-family: var(--mono); font-size: 19px; color: var(--tinta); }
+.ritmo-nota { font-size: 12.5px; color: var(--tinta-2); }
+.ritmo--atencion .ritmo-cifra { color: var(--ambar); }
 
 .cifra-par {
     font-family: var(--mono);
@@ -427,4 +513,136 @@ code { font-family: var(--mono); font-size: .9em; color: var(--ambar); }
     .serie-cabeza { flex-direction: column; gap: 8px; }
     .serie-valor { text-align: left; }
     .tabla { font-size: 14px; }
+
+    /* En angosto el salto no cabe en la misma linea sin partirse, y partido deja de ser
+       una cifra. Baja debajo del valor, alineado con el, y la fecha se queda arriba. */
+    .medicion { flex-wrap: wrap; gap: 6px 14px; }
+    .medicion-fecha { flex: 0 0 100%; }
+    .medicion-valor { flex: 0 0 auto; }
+    .medicion-salto { text-align: left; }
+}
+
+/* PRESENCIA EN EL TIEMPO — la forma de los binarios.
+   El hilo es la linea del tiempo; los circulos, las pruebas. Los positivos van en ambar
+   y llenos porque son lo unico de esta forma que pide algo; los negativos, huecos.
+   La racha final lleva trazo grueso: dos seguidas es otra cosa que una, y ese es el
+   unico hecho que esta forma tiene para contar. */
+.forma--presencia .hilo { stroke: var(--linea); stroke-width: 2; stroke-linecap: round; }
+.forma--presencia .racha { stroke: var(--ambar); stroke-width: 4; stroke-linecap: round; opacity: .45; }
+.forma--presencia .prueba { fill: var(--papel-2); stroke: var(--tinta-3); stroke-width: 2; }
+.forma--presencia .prueba--presente { fill: var(--ambar); stroke: var(--papel); stroke-width: 2; }
+
+/* ---------------------------------------------------------------- la portada
+
+   LA PRIMERA PREGUNTA. Alguien abre esta app para saber si esta bien, y lo primero que
+   veia era un boton de Refresh y el numero de evento del journal.
+
+   El TONO lo decide el dominio -es la severidad mayor de todo el expediente- y aca solo
+   se traduce a color. El ambar sigue queriendo decir una sola cosa. */
+
+.portada {
+    background: var(--papel-2);
+    border: 1px solid var(--linea);
+    border-left: 4px solid var(--tinta-3);
+    border-radius: 3px;
+    padding: 22px 26px 20px;
+    margin-bottom: 18px;
+}
+.portada--calma        { border-left-color: var(--pino); }
+.portada--seguimiento  { border-left-color: var(--tinta-3); }
+.portada--atencion     { border-left-color: var(--ambar);  background: var(--ambar-suave); }
+.portada--problema     { border-left-color: var(--rojo);   background: var(--rojo-suave); }
+
+.portada-rotulo {
+    font-family: var(--mono); font-size: 10.5px; letter-spacing: .12em;
+    text-transform: uppercase; color: var(--tinta-3);
+    margin: 0 0 10px;
+}
+
+/* El titular es la frase del DOMINIO cuando hay algo que hacer. Va en serif y grande
+   porque es lo unico que alguien necesita leer si no lee nada mas. */
+.portada-titular {
+    font-family: var(--serif); font-weight: 400;
+    font-size: clamp(25px, 5vw, 34px); line-height: 1.1;
+    letter-spacing: -.01em; margin: 0; color: var(--tinta);
+    text-wrap: balance;
+}
+.portada--atencion .portada-titular { color: var(--ambar); }
+.portada--problema .portada-titular { color: var(--rojo); }
+
+/* SOBRE QUE. Son botones y no texto porque llevan a la serie: la pregunta siguiente
+   -"¿cual de todos?"- se contesta tocando. */
+.portada-cuales { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 16px; }
+.portada-cual {
+    font: inherit; font-size: 13.5px; font-weight: 500;
+    padding: 5px 12px; cursor: pointer;
+    background: var(--papel-2); color: var(--tinta);
+    border: 1px solid var(--linea-2, var(--linea)); border-radius: 999px;
+    transition: transform .12s ease, border-color .12s ease;
+}
+.portada-cual:hover { border-color: var(--tinta-3); transform: translateY(-1px); }
+.portada-cual:focus-visible { outline: 2px solid var(--pino-cl); outline-offset: 2px; }
+
+/* LO QUE SE VIENE JUNTANDO. No es adorno: "desde ago 2022" es lo que convierte una lista
+   de examenes en un historial, y es la razon por la que a alguien le importaria seguir
+   usando esto. */
+.portada-pie {
+    display: flex; flex-wrap: wrap; gap: 6px 20px; margin-top: 18px;
+    padding-top: 14px; border-top: 1px solid var(--linea);
+    font-family: var(--mono); font-size: 11.5px; color: var(--tinta-3);
+}
+.portada-pie b { color: var(--tinta); font-weight: 500; font-size: 13px; }
+
+/* ---------------------------------------------------------------- movimiento
+
+   POCO Y CON MOTIVO. Cada forma se dibuja como se LEE: la trayectoria se traza en el
+   tiempo, la barra de progreso crece desde su partida, la aguja de la banda se acomoda,
+   y la tira de presencia aparece prueba por prueba. Nada parpadea ni rebota.
+
+   Se dispara al montar, asi que un Refresh vuelve a dibujarlo todo — que es justo cuando
+   la persona quiere ver que algo paso. */
+
+@keyframes entra-desde-abajo { from { opacity: 0; transform: translateY(8px); } }
+@keyframes se-traza         { from { stroke-dashoffset: 1; } }
+@keyframes aparece          { from { opacity: 0; transform: scale(.4); } }
+@keyframes crece-de-izquierda { from { transform: scaleX(0); } }
+
+.portada { animation: entra-desde-abajo .45s ease-out both; }
+.serie   { animation: entra-desde-abajo .45s ease-out both; }
+
+/* El trazo se dibuja de la primera medicion a la ultima. pathLength="1" en el polyline
+   hace que la fraccion sea exacta sin adivinar el largo. */
+.forma--trayectoria .trazo {
+    stroke-dasharray: 1; stroke-dashoffset: 0;
+    animation: se-traza 1s ease-out both;
+}
+.forma--trayectoria .punto { animation: aparece .3s ease-out both .55s; }
+.forma--trayectoria .punto--final,
+.forma--trayectoria .punto--atencion { animation: aparece .4s ease-out both 1s; }
+
+/* La barra crece desde la partida del episodio, que es de donde se viene. */
+.forma--progreso .avance { transform-origin: left center; animation: crece-de-izquierda .8s ease-out both .15s; }
+.forma--progreso .marca  { animation: aparece .4s ease-out both .7s; }
+
+.forma--banda .aguja { animation: aparece .5s ease-out both .25s; }
+
+/* Prueba por prueba, en orden: ver aparecer la racha es el hecho que la forma cuenta. */
+.forma--presencia .prueba { animation: aparece .35s ease-out both; }
+.forma--presencia .prueba:nth-of-type(1) { animation-delay: .15s; }
+.forma--presencia .prueba:nth-of-type(2) { animation-delay: .3s; }
+.forma--presencia .prueba:nth-of-type(3) { animation-delay: .45s; }
+.forma--presencia .prueba:nth-of-type(4) { animation-delay: .6s; }
+.forma--presencia .prueba:nth-of-type(n+5) { animation-delay: .75s; }
+.forma--presencia .racha { transform-origin: left center; animation: crece-de-izquierda .5s ease-out both .55s; }
+
+/* Quien pidio que no se mueva, no se mueve. */
+@media (prefers-reduced-motion: reduce) {
+    .portada, .serie,
+    .forma--trayectoria .trazo, .forma--trayectoria .punto,
+    .forma--trayectoria .punto--final, .forma--trayectoria .punto--atencion,
+    .forma--progreso .avance, .forma--progreso .marca,
+    .forma--banda .aguja,
+    .forma--presencia .prueba, .forma--presencia .racha {
+        animation: none;
+    }
 }

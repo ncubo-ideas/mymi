@@ -110,9 +110,9 @@ else
     }
 
     @* LO QUE NINGUN TICKET DE PAPEL DICE, y por eso va PRIMERO: como cambio la canasta.
-       La frase se arma ACA con los hechos que devuelve el dominio (montos y proporciones);
-       el dominio no devuelve prosa, y por eso esta pantalla no puede mostrar un consejo
-       de plantilla: dice "tu canasta paso de 9% a 97% ocasional", no "compra menos helado". *@
+       EL VEREDICTO Y LA LINEA VIENEN DEL DOMINIO. Esta pantalla ya no decide si un cambio
+       es bueno: con un booleano "creció o no creció", una canasta que MEJORABA 29 puntos
+       se mostraba igual que una que no se movió — "estable", en verde. *@
     @if (comparacion is not null && comparacion.HayComparacion)
     {
         <h2 class="h5 mt-4">Tu canasta, comparada</h2>
@@ -121,8 +121,8 @@ else
                 <div class="d-flex justify-content-between align-items-start flex-wrap gap-2">
                     <div>
                         <strong>Gasto ocasional</strong>
-                        <span class="badge @(comparacion.CrecioLoOcasional ? "text-bg-warning" : "text-bg-success") ms-2">
-                            @(comparacion.CrecioLoOcasional ? "creció" : "estable")
+                        <span class="badge @InsigniaDelVeredicto(comparacion.Veredicto) ms-2">
+                            @comparacion.Veredicto
                         </span>
                         <div class="small text-muted mt-1">
                             azucarados, snacks y grasas, sobre lo comestible del mes
@@ -137,16 +137,30 @@ else
                         </div>
                     </div>
                 </div>
-                @if (comparacion.CrecioLoOcasional)
-                {
-                    <div class="small mt-2">
-                        En @Mes(comparacion.MesAntes)/@comparacion.AnioAntes gastaste @Colones(comparacion.GastoOcasionalAntes)
-                        de @Colones(comparacion.GastoComestibleAntes) en ocasionales; en
-                        @Mes(comparacion.MesDespues)/@comparacion.AnioDespues fueron @Colones(comparacion.GastoOcasionalDespues)
-                        de @Colones(comparacion.GastoComestibleDespues).
-                    </div>
-                }
+                <div class="small mt-2">@comparacion.ParaSonia</div>
             </div>
+        </div>
+    }
+
+    @* LO QUE NO ESTA. Una pantalla no puede renderizar una ausencia que nadie le pasó:
+       esto lo calcula el dominio con el historial, el calendario y la periodicidad de
+       cada categoría. *@
+    @if (pendientes.Count > 0)
+    {
+        <h2 class="h5">Lo que dejó de entrar</h2>
+        <div class="list-group mb-4">
+            @foreach (AbastecimientoEnEspera p in pendientes)
+            {
+                <div class="list-group-item d-flex justify-content-between align-items-center flex-wrap gap-2">
+                    <div>
+                        <strong>@p.Categoria</strong>
+                        <div class="small text-muted">@p.ParaSonia</div>
+                    </div>
+                    <span class="badge @(p.Severidad == "informativo" ? "text-bg-light text-dark" : "text-bg-secondary")">
+                        @p.DiasDesdeLaUltima días
+                    </span>
+                </div>
+            }
         </div>
     }
 
@@ -165,8 +179,14 @@ else
                             comprada el @g.FechaDeCompra.ToString("dd/MM/yyyy", CultureInfo.InvariantCulture)
                             (compra @g.NumeroDeCompra) &middot; @g.MesesDeCobertura meses
                         </div>
+                        @* La acción sale del conjunto cerrado del dominio: la pantalla no
+                           puede inventar una que el dominio no eligió. *@
+                        @if (g.QueHacer.Length > 0)
+                        {
+                            <div class="small mt-1"><strong>@g.QueHacer</strong></div>
+                        }
                     </div>
-                    <span class="badge text-bg-success">
+                    <span class="badge @(g.QueHacer.Length > 0 ? "text-bg-warning" : "text-bg-success")">
                         vence el @g.VenceEl.ToString("dd/MM/yyyy", CultureInfo.InvariantCulture)
                     </span>
                 </div>
@@ -213,6 +233,7 @@ else
 
     private IReadOnlyList<CompraEnLista> compras = new List<CompraEnLista>();
     private IReadOnlyList<GarantiaDeProducto> garantias = new List<GarantiaDeProducto>();
+    private IReadOnlyList<AbastecimientoEnEspera> pendientes = new List<AbastecimientoEnEspera>();
     private CanastasComparadas? comparacion;
     private int cantidad;
     private decimal total;
@@ -297,18 +318,24 @@ else
         total = estado.Total();
         ultimoEvento = estado.UltimoEvento();
         garantias = estado.GarantiasVigentes();
+        pendientes = estado.AbastecimientosPendientes();
 
-        // La comparacion se ancla en la ULTIMA compra: su mes contra el mismo mes del
-        // anio anterior. Es decision de la caratula (el dominio compara lo que le pidan).
-        if (compras.Count > 0)
-        {
-            DateTime ultima = compras[compras.Count - 1].Fecha;
-            comparacion = estado.Comparacion(ultima.Year - 1, ultima.Month, ultima.Year, ultima.Month);
-        }
+        // Qué dos meses se comparan lo elige el DOMINIO, que conoce su propio rango.
+        // Antes lo decidía esta pantalla mirando la última fila de la tabla.
+        comparacion = estado.ComparacionPorDefecto();
     }
 
     private void VerDetalle(string numero) =>
         navegacion.NavigateTo($"compra/{Uri.EscapeDataString(numero)}");
+
+    // El color sale del veredicto que eligió el dominio, no de un booleano de pantalla.
+    private static string InsigniaDelVeredicto(string veredicto) => veredicto switch
+    {
+        "mejorando" => "text-bg-success",
+        "empeorando" => "text-bg-warning",
+        "estable" => "text-bg-light text-dark",
+        _ => "text-bg-light text-dark",
+    };
 
     private static string Mes(int mes) =>
         CultureInfo.GetCultureInfo("es").DateTimeFormat.GetAbbreviatedMonthName(mes);

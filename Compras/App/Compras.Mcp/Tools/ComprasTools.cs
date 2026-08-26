@@ -32,26 +32,52 @@ internal sealed class ComprasTools
 	}
 
 	[McpServerTool(Name = "total_de_compras", UseStructuredContent = true)]
-	[Description("Cuanto gasto en total la persona en el supermercado, sumando todas las compras que "
-		+ "su app tiene registradas en esta computadora. Devuelve tambien cuantas compras son y "
-		+ "hasta que evento del supermercado leyo la app, que sirve para saber si esta al dia. "
-		+ "Los datos salen del registro que la app escribio en la carpeta de la persona, no de "
-		+ "ningun servidor.")]
+	[Description("Cuanto gasto en total la persona en el supermercado, cuantas compras tiene "
+		+ "registradas, y DESDE QUE MES HASTA QUE MES hay compras en su historial. Ese rango "
+		+ "-primerMes, ultimoMes, mesesConCompras, en formato aaaa-mm- es el contexto para elegir "
+		+ "que meses pedirle a las otras tools: pedir un mes fuera del rango devuelve vacio, y "
+		+ "eso no significa que la persona no tenga datos. Devuelve tambien hasta que evento del "
+		+ "supermercado leyo la app, que sirve para saber si esta al dia. Los datos salen del "
+		+ "registro que la app escribio en la carpeta de la persona, no de ningun servidor.")]
 	public TotalDeCompras Total()
 	{
 		if (!lector.HayJournal) return new TotalDeCompras { HayDatos = false, Carpeta = lector.Carpeta, Detalle = SinJournal };
 
-		// UNA sola rehidratacion para las tres preguntas: separarlas releeria el journal
-		// tres veces y podria mezclar dos estados si la app escribe en el medio.
-		return lector.Consultar(api => new TotalDeCompras
+		// UNA sola rehidratacion para todas las preguntas: separarlas releeria el journal
+		// varias veces y podria mezclar dos estados si la app escribe en el medio.
+		return lector.Consultar(api =>
 		{
-			HayDatos = true,
-			Total = api.TotalDeCompras(),
-			CantidadDeCompras = api.CantidadDeCompras(),
-			UltimoEventoLeido = api.UltimoEventoProcesado(),
-			Carpeta = lector.Carpeta,
-			Detalle = "",
+			RangoDelHistorialVista rango = api.Rango();
+			return new TotalDeCompras
+			{
+				HayDatos = true,
+				Total = api.TotalDeCompras(),
+				CantidadDeCompras = api.CantidadDeCompras(),
+				UltimoEventoLeido = api.UltimoEventoProcesado(),
+				PrimerMes = rango.PrimerMes,
+				UltimoMes = rango.UltimoMes,
+				MesesConCompras = rango.MesesConCompras,
+				Carpeta = lector.Carpeta,
+				Detalle = "",
+			};
 		});
+	}
+
+	[McpServerTool(Name = "como_viene_mi_canasta", UseStructuredContent = true)]
+	[Description("Como viene la canasta de la persona SIN TENER QUE ELEGIR MESES: compara el ultimo "
+		+ "mes que tiene compras contra el mismo mes del anio anterior, que es la lectura que la "
+		+ "app le muestra. Usala para preguntas generales como '¿como vengo?', '¿estoy comiendo "
+		+ "peor que antes?' o '¿mi canasta empeoro?'. Preferila sobre comparar_canastas salvo que "
+		+ "la persona nombre dos meses concretos. El campo veredicto lo produce el dominio y puede "
+		+ "ser mejorando, empeorando, estable o indeterminado: en lo ocasional bajar es hacia donde "
+		+ "conviene, asi que un cambio negativo es buena noticia aunque la proporcion siga alta. No "
+		+ "lo vuelvas a interpretar por el signo. Si hayComparacion viene en false, no hay dos meses "
+		+ "comparables todavia y hay que decirlo tal cual.")]
+	public CanastasComparadas ComoVieneMiCanasta()
+	{
+		if (!lector.HayJournal) return new CanastasComparadas();
+
+		return lector.Consultar(api => api.ComparacionConElAnioAnterior());
 	}
 
 	[McpServerTool(Name = "canasta_del_mes", UseStructuredContent = true)]
@@ -71,11 +97,13 @@ internal sealed class ComprasTools
 	}
 
 	[McpServerTool(Name = "comparar_canastas", UseStructuredContent = true)]
-	[Description("Como CAMBIO la canasta de la persona entre dos meses: la proporcion de gasto "
-		+ "ocasional (azucarados, snacks, grasas) antes y despues, y si crecio de verdad. Es la "
-		+ "pregunta que ningun ticket suelto contesta. Si hayComparacion viene en false, alguno "
-		+ "de los dos meses no tiene compras comestibles y no hay lectura que dar — decilo tal "
-		+ "cual, no lo inventes.")]
+	[Description("Como CAMBIO la canasta de la persona entre DOS MESES QUE ELLA NOMBRE. Si no "
+		+ "nombro meses concretos, usa como_viene_mi_canasta en vez de esta: los meses validos "
+		+ "salen del rango que devuelve total_de_compras, y pedir un mes fuera de ese rango "
+		+ "devuelve hayComparacion en false aunque la persona si tenga datos. El campo veredicto "
+		+ "lo produce el dominio (mejorando, empeorando, estable, indeterminado): en lo ocasional "
+		+ "bajar es hacia donde conviene, asi que un cambio negativo es buena noticia. No lo "
+		+ "vuelvas a interpretar por el signo.")]
 	public CanastasComparadas Comparar(
 		[Description("El anio del mes de referencia (antes).")] int anioAntes,
 		[Description("El mes de referencia (antes), de 1 a 12.")] int mesAntes,
@@ -90,9 +118,11 @@ internal sealed class ComprasTools
 	[McpServerTool(Name = "garantia_de_producto", UseStructuredContent = true)]
 	[Description("Cuando compro la persona un producto y hasta cuando tiene garantia. Busca por "
 		+ "nombre o sku (por ejemplo 'olla arrocera') en las compras registradas y devuelve el "
-		+ "respaldo completo: numero de compra, fecha, meses de cobertura, fecha de vencimiento "
-		+ "y si esta vigente HOY. Si encontrada viene en false, o el producto no esta en el "
-		+ "registro o no tiene garantia — son dos hechos legitimos, no un error.")]
+		+ "respaldo completo: numero de compra, fecha, meses de cobertura, fecha de vencimiento, "
+		+ "cuantos dias le quedan y si esta vigente HOY. Si encontrada viene en false, o el "
+		+ "producto no esta en el registro o no tiene garantia — son dos hechos legitimos, no un "
+		+ "error. El campo paraSonia trae la lectura ya redactada por el dominio; queHacer viene "
+		+ "vacio cuando no hay nada que hacer, y eso tambien es una respuesta.")]
 	public GarantiaDeProducto Garantia(
 		[Description("Nombre (o parte del nombre) o sku del producto, por ejemplo 'olla arrocera'.")] string producto)
 	{
@@ -100,6 +130,67 @@ internal sealed class ComprasTools
 
 		// El "hoy" lo pone la superficie: el dominio no lee el reloj.
 		return lector.Consultar(api => api.Garantia(producto, DateTime.Now));
+	}
+
+	// ---------------------------------------------------- lo que NO esta (el hueco)
+	//
+	// Las dos de aca son las que justifican conectar una IA a este modulo. Las cuatro de
+	// arriba contestan lo que la app YA muestra en pantalla: sirven de contexto, pero si
+	// la IA solo pudiera eso, el demo no probaria nada. Estas dos miran lo que la
+	// pantalla NO PUEDE renderizar, porque no es un dato del historial sino una
+	// conclusion sobre el historial mas el calendario.
+
+	[McpServerTool(Name = "que_dejaste_de_comprar", UseStructuredContent = true)]
+	[Description("Que categorias de las que la persona reponia con regularidad HACE DEMASIADO QUE "
+		+ "NO COMPRA — proteinas, frutas y verduras, lacteos, granos, limpieza — segun la "
+		+ "periodicidad propia de cada una y la fecha de hoy. Es lo que NO esta en su historial, "
+		+ "asi que no es la lista de compras que la app le muestra: ninguna pantalla puede "
+		+ "renderizar una ausencia. Usala cuando pregunte cosas como '¿que me esta faltando?', "
+		+ "'¿estoy comiendo peor?' o '¿que deje de comprar?'. Devuelve solo las atrasadas, de la "
+		+ "mas atrasada a la menos; una lista vacia significa que esta al dia con todo. Los "
+		+ "azucarados y los snacks NO se reportan aca a proposito: este modulo no le dice a nadie "
+		+ "que hace un mes que no compra helado.")]
+	public IReadOnlyList<AbastecimientoEnEspera> QueDejasteDeComprar()
+	{
+		if (!lector.HayJournal) return new List<AbastecimientoEnEspera>();
+
+		return lector.Consultar(api => api.AbastecimientosPendientes(DateTime.Now));
+	}
+
+	[McpServerTool(Name = "consumo_de", UseStructuredContent = true)]
+	[Description("CUANTO Y CUANDO entro algo a la canasta de la persona, MES A MES: unidades, gasto "
+		+ "y en cuantas compras, mas el mes mas alto y como cambio entre el primer mes y el ultimo. "
+		+ "Acepta una categoria del catalogo (Azucarados, Proteinas, FrutasYVerduras, LacteosYHuevos, "
+		+ "GranosYAbarrotes, AceitesYGrasas, Snacks, Limpieza, Electrohogar) o un texto de producto "
+		+ "('helado', 'soda', 'olla'). Es la serie completa, no un total: es lo que permite decir "
+		+ "DESDE QUE MES cambio un consumo, y ninguna pantalla lo muestra. Usala cuando la persona "
+		+ "pregunte por un producto o categoria a lo largo del tiempo, o cuando quiera relacionar "
+		+ "sus compras con algo mas que le este pasando -por ejemplo un resultado de laboratorio-: "
+		+ "ahi lo que sirve es la fecha, no el total. Si sePuedeJuzgar viene en false, entrega los "
+		+ "hechos y NO te apoyes en el veredicto: puede ser que haya un solo mes, o que la busqueda "
+		+ "cruce categorias con perfiles distintos. IMPORTANTE: esto dice que compro y cuando, NO "
+		+ "por que; la relacion con cualquier otra cosa la propone la persona o vos, con su permiso, "
+		+ "y siempre como una posibilidad a conversar con su medico, no como una causa.")]
+	public ConsumoEnElTiempo Consumo(
+		[Description("Una categoria del catalogo o un texto de producto, por ejemplo 'Azucarados' o 'helado'.")] string termino)
+	{
+		if (!lector.HayJournal) return new ConsumoEnElTiempo();
+
+		return lector.Consultar(api => api.Consumo(termino));
+	}
+
+	[McpServerTool(Name = "garantias_por_vencer", UseStructuredContent = true)]
+	[Description("Las garantias de la persona cuya VENTANA PARA RECLAMAR se esta cerrando, de la "
+		+ "mas urgente a la menos, con cuantos dias le quedan y que le conviene hacer. No es la "
+		+ "lista de garantias vigentes que la app muestra: son solo las que ya piden algo, y eso "
+		+ "sale del plazo de cada una contra la fecha de hoy. Usala cuando pregunte '¿se me vence "
+		+ "alguna garantia?', '¿tengo algo por reclamar?' o antes de que tire una factura. Una "
+		+ "lista vacia significa que ninguna esta cerca de vencer.")]
+	public IReadOnlyList<GarantiaDeProducto> GarantiasPorVencer()
+	{
+		if (!lector.HayJournal) return new List<GarantiaDeProducto>();
+
+		return lector.Consultar(api => api.GarantiasPorVencer(DateTime.Now));
 	}
 
 	private const string SinJournal =
@@ -127,6 +218,21 @@ internal sealed class TotalDeCompras
 	[Description("Hasta que evento del supermercado leyo la app. Si la persona aprieta Refresh y "
 		+ "entraron compras nuevas, este numero sube.")]
 	public long UltimoEventoLeido { get; init; }
+
+	[JsonPropertyName("primerMes")]
+	[Description("El mes mas viejo con compras, como aaaa-mm. Vacio si no hay ninguna.")]
+	public string PrimerMes { get; init; } = "";
+
+	[JsonPropertyName("ultimoMes")]
+	[Description("El mes mas reciente con compras, como aaaa-mm. Vacio si no hay ninguna. Pedir "
+		+ "meses fuera del rango primerMes..ultimoMes devuelve vacio, y eso no significa que la "
+		+ "persona no tenga datos.")]
+	public string UltimoMes { get; init; } = "";
+
+	[JsonPropertyName("mesesConCompras")]
+	[Description("Cuantos meses distintos tienen al menos una compra. Con menos de dos no hay dos "
+		+ "meses que comparar.")]
+	public int MesesConCompras { get; init; }
 
 	[JsonPropertyName("carpeta")]
 	[Description("La carpeta de la persona donde la app guarda su registro.")]

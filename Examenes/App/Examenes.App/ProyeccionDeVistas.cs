@@ -71,6 +71,63 @@ namespace Examenes.App
 			};
 		}
 
+		internal static PresenciaDeAnalito Presencia(string json)
+		{
+			if (string.IsNullOrWhiteSpace(json)) return new PresenciaDeAnalito();
+
+			using JsonDocument documento = JsonDocument.Parse(json);
+			JsonElement raiz = documento.RootElement;
+
+			return new PresenciaDeAnalito
+			{
+				Analito = Texto(raiz, "analito"),
+				ParaMostrar = Texto(raiz, "paraMostrar"),
+				Presencia = Texto(raiz, "presencia"),
+				Mediciones = Entero(raiz, "mediciones"),
+				Positivas = Entero(raiz, "positivas"),
+				PositivasSeguidas = Entero(raiz, "positivasSeguidas"),
+				Dias = Entero(raiz, "dias"),
+				UltimoResultado = Texto(raiz, "ultimoResultado"),
+				EstaPresente = Booleano(raiz, "estaPresente"),
+				HaySerie = Booleano(raiz, "haySerie"),
+			};
+		}
+
+		internal static IReadOnlyList<PruebaEnSerie> Pruebas(string json)
+		{
+			var pruebas = new List<PruebaEnSerie>();
+			if (string.IsNullOrWhiteSpace(json)) return pruebas;
+
+			using JsonDocument documento = JsonDocument.Parse(json);
+			if (!documento.RootElement.TryGetProperty("prueba", out JsonElement arreglo)) return pruebas;
+
+			foreach (JsonElement elemento in Elementos(arreglo))
+				pruebas.Add(new PruebaEnSerie
+				{
+					Fecha = Fecha(elemento, "fecha"),
+					Expresado = Texto(elemento, "expresado"),
+					EsPositivo = Booleano(elemento, "esPositivo"),
+					EsHallazgo = Booleano(elemento, "esHallazgo"),
+				});
+
+			return pruebas;
+		}
+
+		internal static LoMasUrgente Urgente(string json)
+		{
+			if (string.IsNullOrWhiteSpace(json)) return new LoMasUrgente();
+
+			using JsonDocument documento = JsonDocument.Parse(json);
+			JsonElement raiz = documento.RootElement;
+
+			return new LoMasUrgente
+			{
+				Severidad = Texto(raiz, "severidad"),
+				Accion = Texto(raiz, "accion"),
+				PideAlgo = Booleano(raiz, "pideAlgo"),
+			};
+		}
+
 		internal static IReadOnlyList<CeldaEnCuadro> Cuadro(string json)
 		{
 			var celdas = new List<CeldaEnCuadro>();

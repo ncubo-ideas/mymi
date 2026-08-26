@@ -28,7 +28,19 @@ namespace Examenes.Dominio
 
 		// El color es lo que un examen de orina informa, y algunos colores son un
 		// hallazgo. Que el propio color sepa si es esperable evita un switch afuera.
-		public bool EsEsperable { get; private set; }
+		public override bool EsEsperable { get; }
+
+		// Un color inesperado se mira, no se corre: el color solo no distingue una causa
+		// banal de una que no lo es. Que lo conteste el color y no el examen es lo que
+		// permite que su lectura viaje sola, sin la de los binarios que van al lado.
+		//
+		// ⚠️ Orientativo, igual que todos los umbrales de este dominio.
+		public override Severidad SeveridadDelHallazgo =>
+			EsEsperable ? Severidad.Informativo : Severidad.Seguimiento;
+
+		public override string ParaSonia => EsEsperable
+			? $"el color de la orina salió {ParaMostrar}, que es de lo esperable"
+			: $"el color de la orina salió {ParaMostrar}";
 
 		private ColorDeOrina(string nombre, string paraMostrar, bool esEsperable)
 		{

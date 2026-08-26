@@ -9,7 +9,7 @@ namespace Examenes.Dominio
 	//   colesterol  "yo no ocupo ver esa historia"        -> contra una meta
 	//
 	// Por eso son dos tipos y no uno con un parametro: no comparten ni la pregunta.
-	public sealed class SerieDeColesterol : SerieDeAnalito
+	public sealed class SerieDeColesterol : SerieContinua
 	{
 		public SerieDeColesterol() : base(Analito.ColesterolTotal) { }
 

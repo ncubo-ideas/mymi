@@ -37,6 +37,12 @@ namespace Examenes.Dominio
 			Resultado = resultado;
 		}
 
+		// SI ESTA COSA MEDIDA FORMA SERIE. Lo contesta el ANALITO, no el examen que la
+		// contiene, y esa es la correccion: un urianalisis trae tres lecturas y solo dos
+		// de ellas forman serie —los nitritos y la sangre si, el color no—. Preguntarselo
+		// al examen obligaba a una sola respuesta para las tres.
+		public bool AportaSerie => Analito.FormaSerie;
+
 		// Proyecciones planas, para que el print del DSL no navegue dos niveles.
 		public string Nombre => Analito.Nombre;
 		public string ParaMostrar => Analito.ParaMostrar;

@@ -34,6 +34,21 @@
   ruta, no una lista de excepciones.
 -->
 
+<!--
+  EL ICONO SE DECLARA, no se deja al default. Sin este link el browser pide
+  /favicon.ico por su cuenta, y en la raiz eso no existe: la pestaña de la cara de la
+  institución quedaba sin icono mientras la app en /app/ sí tenía el suyo.
+
+  MEDIDO: /favicon.ico daba 404 tanto por https://<ip>:8453 como por
+  http://<ip>:8090. Que fallara igual por http -sin TLS de por medio- es lo que
+  descarta el certificado como causa: era la ruta, no la conexión.
+
+  El apple-touch-icon es para el iPhone: es el icono que usa Safari en marcadores y al
+  agregar la página a la pantalla de inicio.
+-->
+<link rel="icon" type="image/png" href="/favicon.png">
+<link rel="apple-touch-icon" href="/apple-touch-icon.png">
+
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">

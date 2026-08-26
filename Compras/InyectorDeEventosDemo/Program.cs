@@ -29,6 +29,7 @@ try
     {
         case "listar":    await Listar(); break;
         case "inyectar":  await Inyectar(); break;
+        case "historia":  await Historia(); break;
         case "senuelo":   await Senuelo(); break;
         default:          Ayuda(); break;
     }
@@ -125,6 +126,109 @@ async Task Inyectar()
     Console.WriteLine($"agregada: {contenido}");
 }
 
+// EL GUION COMPLETO, de un tiro. Es lo que la caja no puede dar: armar seis tickets a
+// mano son veinte clicks, y antes de un demo lo que hace falta es dejar el escenario
+// puesto. Tambien sirve para sembrar OTRO cliente (--id 2) o para rehacer la historia en
+// un recurso limpio.
+//
+// Las fechas son LITERALES, igual que en el mock y en las muestras de la consola: con
+// fechas relativas al dia de hoy la canasta cambiaria de mes y la comparacion anual
+// dejaria de dar lo que la demo promete.
+async Task Historia()
+{
+    Console.WriteLine($"sembrando la historia en {recurso}/{id}...");
+
+    // Cuantos hay YA. El mock siembra su narrativa al arrancar -por clave recurso/id-,
+    // asi que lo normal es que esto no este vacio: avisarlo evita que alguien duplique
+    // los numeros de ticket sin darse cuenta. La app los rechazaria por numero repetido
+    // y el refresh saldria con rechazos, que es un ruido feo en medio de un demo.
+    int existentes = await CuantosEventos();
+    if (existentes > 0)
+        Console.WriteLine($"  OJO: {recurso}/{id} ya tiene {existentes} eventos. Los numeros de ticket "
+            + "que se repitan los va a rechazar la app, no el mock.");
+
+    (string numero, string fecha, string porque, string[] lineas)[] guion =
+    {
+        ("T-88101", "2025-08-05", "la canasta base: proteina, granos, lacteos y verdura",
+            new[] { "POLLO-KG,Pechuga de pollo kg,2,4200,Proteinas,0",
+                    "FRIJOL-900,Frijoles negros 900g,2,1150,GranosYAbarrotes,0",
+                    "LECHE-1L,Leche semidescremada 1L,6,950,LacteosYHuevos,0",
+                    "BROCOLI,Brocoli unidad,3,890,FrutasYVerduras,0" }),
+
+        ("T-88240", "2025-08-20", "el unico aceite del mes: de aca sale el 8,8% ocasional",
+            new[] { "ACEITE-GIR-1L,Aceite de girasol 1L,1,2890,AceitesYGrasas,0",
+                    "ARROZ-2KG,Arroz grano entero 2kg,1,2450,GranosYAbarrotes,0",
+                    "HUEVOS-30,Huevos carton 30,1,3300,LacteosYHuevos,0",
+                    "TILAPIA-KG,Filet de tilapia kg,1,5200,Proteinas,0" }),
+
+        ("T-91515", "2026-02-14", "empieza el deslizamiento: helado, sodas y galletas",
+            new[] { "HELADO-1L,Helado de vainilla 1L,2,3450,Azucarados,0",
+                    "SODA-2L,Soda cola 2L,4,1750,Azucarados,0",
+                    "GALLETA-CHOC,Galletas de chocolate,3,1250,Azucarados,0",
+                    "POLLO-KG,Pechuga de pollo kg,1,4350,Proteinas,0" }),
+
+        ("T-93872", "2026-05-10", "LA COMPRA DE LA GARANTIA: la olla arrocera, 12 meses",
+            new[] { "OLLA-ARR-18,Olla arrocera 1.8L,1,45900,Electrohogar,12",
+                    "ARROZ-2KG,Arroz grano entero 2kg,2,2520,GranosYAbarrotes,0",
+                    "MANTECA-500,Manteca de palma 500g,1,1980,AceitesYGrasas,0" }),
+
+        ("T-95104", "2026-07-03", "el ultimo mes con algo de limpieza: de aca sale el hueco",
+            new[] { "SODA-12PK,Soda cola lata 12-pack,2,5990,Azucarados,0",
+                    "HELADO-1L,Helado de vainilla 1L,2,3560,Azucarados,0",
+                    "PAPAS-FAM,Papas fritas familiar,3,2100,Snacks,0",
+                    "DETERG-5L,Detergente liquido 5L,1,6800,Limpieza,0" }),
+
+        ("T-96470", "2026-08-15", "la canasta ya se volteo: 97% ocasional",
+            new[] { "HELADO-1L,Helado de vainilla 1L,3,3680,Azucarados,0",
+                    "SODA-2L,Soda cola 2L,6,1790,Azucarados,0",
+                    "CHOC-BARRA,Chocolate de leche barra,4,1450,Azucarados,0",
+                    "MANTECA-500,Manteca de palma 500g,2,2050,AceitesYGrasas,0",
+                    "BROCOLI,Brocoli unidad,1,920,FrutasYVerduras,0" }),
+    };
+
+    foreach (var (numero, fecha, porque, lineas) in guion)
+    {
+        var partes = lineas.Select(l => l.Split(',')).ToArray();
+        var cuerpo = new
+        {
+            numero,
+            fecha,
+            skus = partes.Select(p => p[0].Trim()).ToArray(),
+            descripciones = partes.Select(p => p[1].Trim()).ToArray(),
+            cantidades = partes.Select(p => int.Parse(p[2], CultureInfo.InvariantCulture)).ToArray(),
+            preciosUnitarios = partes.Select(p => decimal.Parse(p[3], CultureInfo.InvariantCulture)).ToArray(),
+            categorias = partes.Select(p => p[4].Trim()).ToArray(),
+            mesesDeGarantia = partes.Select(p => int.Parse(p[5], CultureInfo.InvariantCulture)).ToArray(),
+        };
+
+        using var r = await http.PostAsJsonAsync($"{recurso}/{id}/events/compra", cuerpo);
+        Console.WriteLine($"  {fecha}  {numero,-10} {lineas.Length} lineas  HTTP {(int)r.StatusCode}   {porque}");
+    }
+
+    Console.WriteLine("listo. La app la trae con Refresh.");
+}
+
+// Cuantos eventos ve hoy la app. Se pide con su propio token, como cualquier device.
+async Task<int> CuantosEventos()
+{
+    try
+    {
+        string credencial = await Credencial();
+        using var pedido = new HttpRequestMessage(HttpMethod.Get, $"{recurso}/{id}/events?after=0");
+        pedido.Headers.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", credencial);
+
+        using var respuesta = await http.SendAsync(pedido);
+        if (!respuesta.IsSuccessStatusCode) return 0;
+
+        using JsonDocument doc = JsonDocument.Parse(await respuesta.Content.ReadAsStringAsync());
+        return doc.RootElement.GetProperty("events").GetArrayLength();
+    }
+    catch
+    {
+        return 0;
+    }
+}
+
 // El invariante, demostrado en vivo: el MISMO token que lee los eventos NO alcanza para
 // el perfil. 200 en /events y 403 en /perfil, con la credencial valida de la app.
 async Task Senuelo()
@@ -176,6 +280,7 @@ static void Ayuda()
     Console.WriteLine();
     Console.WriteLine("  listar                             que ve hoy la app (y desde donde sigue la numeracion)");
     Console.WriteLine("  inyectar --numero T-97001 [--fecha yyyy-MM-dd] --linea \"sku,descripcion,cantidad,precio,categoria,meses\" ...");
+    Console.WriteLine("  historia                           siembra el guion completo del demo, de un tiro");
     Console.WriteLine("  senuelo                            demuestra el 403 estructural del token de la app");
     Console.WriteLine();
     Console.WriteLine("  opciones: --url http://localhost:8101/  --recurso cliente  --id 1");

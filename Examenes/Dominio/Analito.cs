@@ -117,6 +117,15 @@ namespace Examenes.Dominio
 		public static readonly AnalitoBinario SangreEnLasHeces = new AnalitoBinario(
 			"Sangre en heces", "Sangre en heces", "sangre oculta en heces");
 
+		// SI ESTE ANALITO FORMA SERIE. Es la fila `EvaluarTendencia` de la tabla del brief
+		// §6.5: todas las formas menos la nominal.
+		//
+		// Un color NO la forma, y no es una limitacion pendiente: preguntar si el color de
+		// la orina "viene subiendo" no es una pregunta. Un binario SI, y esa es la
+		// correccion de este cambio — "negativo, negativo, positivo" es una serie legitima,
+		// y hasta ahora este dominio no la podia tener.
+		public abstract bool FormaSerie { get; }
+
 		private static readonly Analito[] todos =
 		{
 			AntigenoProstatico, ColesterolTotal, ColesterolLdl, ColesterolHdl, Hemoglobina,

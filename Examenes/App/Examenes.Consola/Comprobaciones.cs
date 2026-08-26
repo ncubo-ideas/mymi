@@ -53,6 +53,7 @@ namespace Examenes.Consola
 			LoQueNingunaPersonaVivaPodriaTener();
 			ComputosPropiosDelAntigeno();
 			TodoLoQueSeMideEsUnAnalito();
+			UnBinarioTambienTieneSerie();
 
 			Console.WriteLine();
 			Console.WriteLine(fallas == 0
@@ -138,7 +139,7 @@ namespace Examenes.Consola
 			Titulo("la direccion que preocupa es por analito");
 
 			Interpretacion baja = LeeLaHemoglobina((Hoy.AddDays(-365), 15.0m), (Hoy, 11.0m));
-			Igual("hemoglobina 15->11 en 1 ano", "en descenso", baja.Hechos.NombreDeLaTendencia);
+			Igual("hemoglobina 15->11 en 1 ano", "en descenso", baja.NombreDeLaLectura);
 			Igual("  el analito la lee como empeorando", "empeorando", baja.NombreDelVeredicto);
 			Igual("  y dice cuanta anemia hay", "seguimiento", baja.NombreDeLaSeveridad);
 
@@ -168,9 +169,12 @@ namespace Examenes.Consola
 			Revienta<ArgumentException>("color que el laboratorio no reporta",
 				() => new ExamenDeOrina(Hoy, "fucsia"));
 
+			// Una orina VIEJA -sin tira- no midio ni nitritos ni sangre, asi que no crea
+			// ninguna serie. Lo que el laboratorio no corrio no es un punto negativo.
 			var expediente = new Expediente(60);
 			expediente.Agregar(orina);
-			Igual("la orina no crea ninguna serie", "0", expediente.CantidadDeAnalitosConSerie.ToString());
+			Igual("una orina sin tira no crea ninguna serie", "0",
+				expediente.CantidadDeAnalitosConSerie.ToString());
 			Igual("  pero si entra a la lista", "1", expediente.Cantidad.ToString());
 		}
 
@@ -284,10 +288,16 @@ namespace Examenes.Consola
 			Revienta<ArgumentException>("un resultado de nitritos que no existe",
 				() => new ExamenDeOrina(Hoy, "ambar", "mas o menos"));
 
-			// Ni el color ni los nitritos entran a ninguna serie: la pregunta no existe.
+			// EL COLOR no entra a ninguna serie y LOS NITRITOS si, y eso es lo corregido:
+			// un urianalisis trae tres cosas medidas y no todas se leen igual. Preguntarle
+			// a un color si viene subiendo no es una pregunta; preguntarle a unos nitritos
+			// si volvieron a salir positivos, si.
 			var expediente = new Expediente(60);
 			expediente.Agregar(conHallazgo);
-			Igual("la orina no crea series", "0", expediente.CantidadDeAnalitosConSerie.ToString());
+			Igual("la orina crea serie de los nitritos, no del color", "1",
+				expediente.CantidadDeAnalitosConSerie.ToString());
+			Igual("  y la serie es la de los nitritos", Analito.NitritosEnOrina.Nombre,
+				expediente.Analitos[0]);
 			Igual("  pero si entra a la lista", "1", expediente.Cantidad.ToString());
 		}
 
@@ -1295,6 +1305,166 @@ namespace Examenes.Consola
 					""fecha"": ""2026-08-21T08:33:00"",
 					""valor"": 3.0, ""unidad"": ""ng/mL""
 				}")));
+		}
+
+		// ---- un binario tambien tiene serie ----
+		//
+		// La otra mitad de §7. `SerieDeAnalito` estaba tipada a `ExamenDeSangre`, asi que
+		// una serie de nitritos -negativo, negativo, positivo- no se podia tener, aunque
+		// §6.5 del brief la anticipa desde el principio.
+		//
+		// LO QUE LA SERIE APORTA, que es de lo unico que se trata: una magnitud binaria
+		// solo se ve a si misma, y por eso contesta lo mismo siempre. La serie mira la
+		// historia, y con la historia el MISMO positivo se lee distinto.
+		private static void UnBinarioTambienTieneSerie()
+		{
+			Titulo("un binario tambien tiene serie");
+
+			// LA FORMA SE ORDENA O NO SE ORDENA, y lo dice el analito. Es la tabla de
+			// §6.5 del brief: EvaluarTendencia vale en todas menos en la nominal.
+			Igual("un binario forma serie", "True", Analito.NitritosEnOrina.FormaSerie.ToString());
+			Igual("  un continuo tambien", "True", Analito.Hemoglobina.FormaSerie.ToString());
+			Igual("  un color NO", "False", Analito.ColorDeLaOrina.FormaSerie.ToString());
+
+			// EL CASO DEL BRIEF, textual: "negativo -> negativo -> 2+ es un empeoramiento
+			// perfectamente interpretable, y exige la serie completa igual que el PSA".
+			Expediente nitritos = ConOrinas(("negativo", -730), ("negativo", -365), ("positivo", 0));
+			Interpretacion lectura = nitritos.InterpretarSerieDe(Analito.NitritosEnOrina.Nombre);
+			Igual("negativo, negativo, positivo es una serie", "apareció", lectura.NombreDeLaLectura);
+			Igual("  y el analito la lee como empeorando", "empeorando", lectura.NombreDelVeredicto);
+			Igual("  con la severidad de SU hallazgo", "consulta medica", lectura.NombreDeLaSeveridad);
+
+			// EL CORAZON DE TODO ESTO. El mismo positivo, leido con y sin historia.
+			//
+			// Una sangre oculta en heces positiva UNA vez dice "conviene repetir el
+			// examen": la causa mas frecuente es local y banal. DOS VECES SEGUIDAS ya no,
+			// y esa distincion no la puede hacer ninguna medicion sola.
+			Expediente unaVez = ConHeces(("negativo", -365), ("positivo", 0));
+			Expediente dosVeces = ConHeces(("negativo", -730), ("positivo", -365), ("positivo", 0));
+
+			Igual("una sangre en heces positiva: repetir", "seguimiento",
+				unaVez.InterpretarSerieDe(Analito.SangreEnLasHeces.Nombre).NombreDeLaSeveridad);
+			Igual("  DOS SEGUIDAS: ya no alcanza con repetir", "consulta medica",
+				dosVeces.InterpretarSerieDe(Analito.SangreEnLasHeces.Nombre).NombreDeLaSeveridad);
+			Igual("  y la magnitud sola sigue diciendo lo mismo en los dos casos", "seguimiento",
+				SangreEnHeces.Positivo.SeveridadDelHallazgo.Nombre);
+
+			// LA SIMETRICA, que es la buena noticia: §2 de la reunion en version binaria.
+			// Sin serie, una sangre en la orina que aparecio una vez se lee para siempre
+			// como "buscá atención médica pronto".
+			Expediente pasajera = ConOrinasConSangre(("positivo", -365), ("negativo", 0));
+			Interpretacion descargo = pasajera.InterpretarSerieDe(Analito.SangreEnLaOrina.Nombre);
+			Igual("un positivo que no se repite no queda confirmado", "hallazgo no confirmado",
+				descargo.NombreDelVeredicto);
+			Igual("  y deja de pedir algo", "False", descargo.PideAlgo.ToString());
+			Igual("  cuando el mismo positivo solo pedia lo maximo", "atencion inmediata",
+				SangreEnOrina.Positivo.SeveridadDelHallazgo.Nombre);
+
+			// Y LA SEVERIDAD DEL EXPEDIENTE SE ENTERA. Antes lo mas urgente salia de sumar
+			// la severidad de cada EXAMEN, o sea del positivo suelto, y el descargo de la
+			// serie quedaba tapado: el expediente seguia gritando para siempre.
+			Igual("el descargo baja lo mas urgente del expediente", "informativo",
+				pasajera.SeveridadMayor.Nombre);
+
+			// Y la celda del color ya no arrastra la severidad de los binarios que van al
+			// lado. Un ámbar es informativo aunque en la misma tira haya un positivo.
+			Expediente conColor = ConOrinasConSangre(("positivo", 0));
+			foreach (CeldaDelCuadro celda in conColor.CeldasDelCuadro)
+				if (celda.Analito == Analito.ColorDeLaOrina.Nombre)
+					Igual("el color lleva SU lectura, no la del examen", "informativo",
+						celda.Severidad);
+
+			// CEDIO NO ES LO MISMO QUE NO CONFIRMADO. Ahi nunca se confirmo nada; aca
+			// estuvo de verdad -dos veces- y despues se apago.
+			Expediente cedio = ConOrinas(("positivo", -730), ("positivo", -365), ("negativo", 0));
+			Igual("dos positivos que se apagan cedieron", "mejorando",
+				cedio.InterpretarSerieDe(Analito.NitritosEnOrina.Nombre).NombreDelVeredicto);
+
+			// SEGUIDAS AL FINAL, no en total. Negativo, positivo, negativo, positivo son
+			// dos positivos y NO son una persistencia: nunca se repitio.
+			Expediente alternado = ConHeces(("negativo", -1095), ("positivo", -730),
+				("negativo", -365), ("positivo", 0));
+			Igual("dos positivos alternados no son persistencia", "seguimiento",
+				alternado.InterpretarSerieDe(Analito.SangreEnLasHeces.Nombre).NombreDeLaSeveridad);
+
+			// CON UNA SOLA PRUEBA no hay historia, y sin embargo el hallazgo esta. Las dos
+			// cosas son ciertas a la vez, y por eso el veredicto queda Indeterminado
+			// mientras la severidad la pone la magnitud.
+			Expediente sola = ConHeces(("positivo", 0));
+			Interpretacion unica = sola.InterpretarSerieDe(Analito.SangreEnLasHeces.Nombre);
+			Igual("una sola prueba no da veredicto", "indeterminado", unica.NombreDelVeredicto);
+			Igual("  pero el hallazgo sigue estando", "seguimiento", unica.NombreDeLaSeveridad);
+
+			// LO QUE NO SE LE PUEDE PREGUNTAR A UN BINARIO. La consulta es total, y la
+			// respuesta honesta no es "indeterminada" -eso significaria que le faltan
+			// examenes- sino que la pregunta no le corresponde.
+			EvaluacionDeTendencia sinTendencia =
+				dosVeces.EvaluarTendenciaDe(Analito.SangreEnLasHeces.Nombre);
+			Igual("un binario no tiene tendencia", "no aplica", sinTendencia.NombreDeLaTendencia);
+			Igual("  y no es que le falten mediciones", "3",
+				sinTendencia.CantidadDeMediciones.ToString());
+			Igual("  tampoco tiene velocidad", "False",
+				dosVeces.VelocidadDe(Analito.SangreEnLasHeces.Nombre).EsAplicable.ToString());
+			Igual("  ni lineas de referencia que dibujar", "0",
+				dosVeces.ReferenciasDe(Analito.SangreEnLasHeces.Nombre).Count.ToString());
+			Igual("  y su forma es la suya", "presencia en el tiempo",
+				dosVeces.FormaDeLecturaDe(Analito.SangreEnLasHeces.Nombre));
+
+			// QUE FALTA MEDIR ahora los cubre. Era el limite anotado en §7 bis: la
+			// consulta que mira el hueco solo llegaba a los analitos de sangre.
+			var pendientes = new List<string>();
+			foreach (ControlPendiente control in dosVeces.ControlesPendientes(Hoy))
+				pendientes.Add(control.Nombre);
+			Igual("la sangre en heces ya entra en lo que falta medir", "True",
+				pendientes.Contains(Analito.SangreEnLasHeces.Nombre).ToString());
+
+			// Y la periodicidad la resuelve el analito contra su ultimo resultado: una
+			// sangre oculta positiva no espera al ano que viene.
+			Igual("positiva se repite a los 3 meses", "3", MesesDe(dosVeces).ToString());
+			Igual("  y negativa, al ano", "12",
+				MesesDe(ConHeces(("negativo", -365), ("negativo", 0))).ToString());
+
+			// EL COLOR SIGUE SIN SERIE, y eso no es un pendiente: preguntarle a un color
+			// si viene subiendo no es una pregunta.
+			Igual("el color no crea serie", "1",
+				ConHeces(("negativo", -365), ("negativo", 0)).CantidadDeAnalitosConSerie.ToString());
+
+			// Una prueba que el laboratorio no corrio no es un punto negativo.
+			Revienta<ArgumentException>("una prueba no realizada no es un punto",
+				() => new PruebaBinaria(Hoy, Nitritos.NoRealizado));
+		}
+
+		private static int MesesDe(Expediente expediente)
+		{
+			foreach (ControlPendiente control in expediente.ControlesPendientes(Hoy))
+				if (control.Nombre == Analito.SangreEnLasHeces.Nombre) return control.MesesRecomendados;
+			return 0;
+		}
+
+		// Tres armadores, y son tres porque los examenes son tres muestras distintas. El
+		// dia se corre para que la serie tenga fechas separadas, que es lo que la ordena.
+		private static Expediente ConOrinas(params (string nitritos, int dias)[] pruebas)
+		{
+			var expediente = new Expediente(60);
+			foreach ((string nitritos, int dias) in pruebas)
+				expediente.Agregar(new ExamenDeOrina(Hoy.AddDays(dias), "ambar", nitritos));
+			return expediente;
+		}
+
+		private static Expediente ConOrinasConSangre(params (string sangre, int dias)[] pruebas)
+		{
+			var expediente = new Expediente(60);
+			foreach ((string sangre, int dias) in pruebas)
+				expediente.Agregar(new ExamenDeOrina(Hoy.AddDays(dias), "ambar", null, sangre));
+			return expediente;
+		}
+
+		private static Expediente ConHeces(params (string sangre, int dias)[] pruebas)
+		{
+			var expediente = new Expediente(60);
+			foreach ((string sangre, int dias) in pruebas)
+				expediente.Agregar(new ExamenDeHeces(Hoy.AddDays(dias), "marrón", sangre));
+			return expediente;
 		}
 
 		private static void Titulo(string texto)

@@ -60,12 +60,17 @@ namespace Compras.App.Vistas
 
 	// Como cambio la canasta entre dos meses. Es la vista del cruce: el asistente la
 	// pone al lado de la tendencia del colesterol y la relacion aparece sola.
+	//
+	// Veredicto y ParaSonia vienen del DOMINIO, no se arman aca: la pantalla no tiene de
+	// donde saber si un cambio de -29 puntos es bueno.
 	public sealed class CanastasComparadas
 	{
 		public bool HayComparacion { get; init; }
 		public decimal ProporcionAntes { get; init; }
 		public decimal ProporcionDespues { get; init; }
 		public decimal Cambio { get; init; }
+		public string Veredicto { get; init; } = "";
+		public string ParaSonia { get; init; } = "";
 		public bool CrecioLoOcasional { get; init; }
 		public int AnioAntes { get; init; }
 		public int MesAntes { get; init; }
@@ -90,5 +95,63 @@ namespace Compras.App.Vistas
 		public int MesesDeCobertura { get; init; }
 		public DateTime VenceEl { get; init; }
 		public bool Vigente { get; init; }
+		public int DiasParaVencer { get; init; }
+		public string Severidad { get; init; } = "";
+		public string QueHacer { get; init; } = "";
+		public string ParaSonia { get; init; } = "";
+	}
+
+	// CUANTO Y CUANDO entro algo, mes a mes. Es la serie que permite decir desde cuando
+	// cambio un consumo — lo que una lista de tickets no puede contar.
+	public sealed class ConsumoEnElTiempo
+	{
+		public string Termino { get; init; } = "";
+		public bool EsCategoria { get; init; }
+		public int MesesConConsumo { get; init; }
+		public decimal TotalGastado { get; init; }
+		public int TotalUnidades { get; init; }
+		public string PrimerMes { get; init; } = "";
+		public string UltimoMes { get; init; } = "";
+		public string MesDelPico { get; init; } = "";
+		public decimal GastoEnElPrimerMes { get; init; }
+		public decimal GastoEnElUltimoMes { get; init; }
+		public decimal CambioDeGasto { get; init; }
+		public bool SePuedeJuzgar { get; init; }
+		public string Veredicto { get; init; } = "";
+		public string ParaSonia { get; init; } = "";
+		public IReadOnlyList<MesDeConsumoVista> Meses { get; init; } = new List<MesDeConsumoVista>();
+
+		public bool Existe => MesesConConsumo > 0;
+	}
+
+	public sealed class MesDeConsumoVista
+	{
+		public string Mes { get; init; } = "";
+		public int Unidades { get; init; }
+		public decimal Gasto { get; init; }
+		public int Compras { get; init; }
+	}
+
+	// Desde cuando hasta cuando hay compras. Es el contexto que necesita quien pregunta
+	// para elegir que meses comparar; sin el, adivina un mes vacio y concluye que no hay
+	// datos cuando si hay.
+	public sealed class RangoDelHistorialVista
+	{
+		public int MesesConCompras { get; init; }
+		public string PrimerMes { get; init; } = "";
+		public string UltimoMes { get; init; } = "";
+	}
+
+	// LO QUE NO ESTA: una categoria que se repone cada tanto y hace demasiado que no
+	// entra. La pantalla no puede renderizar una ausencia que nadie le paso.
+	public sealed class AbastecimientoEnEspera
+	{
+		public string Categoria { get; init; } = "";
+		public DateTime UltimaCompra { get; init; }
+		public int DiasDesdeLaUltima { get; init; }
+		public int DiasEsperados { get; init; }
+		public bool EsRecomendado { get; init; }
+		public string Severidad { get; init; } = "";
+		public string ParaSonia { get; init; } = "";
 	}
 }

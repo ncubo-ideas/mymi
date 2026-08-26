@@ -51,7 +51,11 @@ namespace Examenes.Dominio
 
 		// Los hechos con los que se llego a esto, para que la superficie pueda mostrarlos
 		// sin volver a pedirlos y para que la conclusion sea auditable.
-		public EvaluacionDeTendencia Hechos { get; private set; }
+		// TIPADO A LA RAIZ, no a la evaluacion de tendencia. Una serie binaria concluye
+		// con EvaluacionDePresencia —"apareció, 2 seguidas sobre 3 pruebas"— y no tiene
+		// valor inicial, ni final, ni cambio. Dejar el campo tipado a la continua la
+		// habria obligado a mandar nulls y ceros.
+		public HechosDeLaSerie Hechos { get; private set; }
 
 		// COMO SE DIBUJA esta lectura. Viaja con la interpretacion porque llega junta: la
 		// superficie pide una vez y sabe que veredicto es Y que forma tiene.
@@ -64,7 +68,7 @@ namespace Examenes.Dominio
 		}
 
 		public Interpretacion(Veredicto veredicto, Severidad severidad, string paraSonia,
-			EvaluacionDeTendencia hechos)
+			HechosDeLaSerie hechos)
 		{
 			ArgumentNullException.ThrowIfNull(veredicto);
 			ArgumentNullException.ThrowIfNull(severidad);
@@ -80,7 +84,7 @@ namespace Examenes.Dominio
 		// El caso sin serie, que es identico para todos los analitos y por eso se arma
 		// una sola vez: con una medicion no se afirma tendencia. Preservarlo es explicito
 		// en el feedback.
-		public static Interpretacion SinSerie(EvaluacionDeTendencia hechos)
+		public static Interpretacion SinSerie(HechosDeLaSerie hechos)
 		{
 			ArgumentNullException.ThrowIfNull(hechos);
 
@@ -100,5 +104,11 @@ namespace Examenes.Dominio
 		public string NombreDeLaSeveridad => Severidad.Nombre;
 		public bool PideAlgo => Severidad.PideAlgo;
 		public bool SugiereRepetirElExamen => Veredicto.SugiereRepetirElExamen;
+
+		// COMO SE LLAMA LA LECTURA en una palabra: "en ascenso" en una continua,
+		// "apareció" en un binario. Sale de los hechos, que es donde vive el conjunto
+		// cerrado de cada forma, y es lo que la superficie puede pedir sin saber cual
+		// tiene enfrente.
+		public string NombreDeLaLectura => Hechos.NombreDeLaLectura;
 	}
 }
