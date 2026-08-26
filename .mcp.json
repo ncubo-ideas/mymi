@@ -26,6 +26,13 @@
         "Compras/App/Compras.Mcp/bin/Debug/net9.0/Compras.Mcp.dll",
         "C:\\Users\\Juan\\Compras-journal"
       ]
+    },
+    "concesionario": {
+      "command": "dotnet",
+      "args": [
+        "DealershipCar/App/DealershipCar.Mcp/bin/Debug/net9.0/DealershipCar.Mcp.dll",
+        "C:\\Users\\kmora\\DealershipCar-journal"
+      ]
     }
   }
 }
