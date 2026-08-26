@@ -2,10 +2,10 @@
 # esta carpeta, porque el mock no referencia nada del lab.
 FROM mcr.microsoft.com/dotnet/sdk:9.0 AS build
 WORKDIR /src
-COPY EventosMock.csproj .
-RUN dotnet restore EventosMock.csproj
+COPY Facturas.EventosMock.csproj .
+RUN dotnet restore Facturas.EventosMock.csproj
 COPY . .
-RUN dotnet publish EventosMock.csproj -c Release -o /app
+RUN dotnet publish Facturas.EventosMock.csproj -c Release -o /app
 
 FROM mcr.microsoft.com/dotnet/aspnet:9.0
 WORKDIR /app
