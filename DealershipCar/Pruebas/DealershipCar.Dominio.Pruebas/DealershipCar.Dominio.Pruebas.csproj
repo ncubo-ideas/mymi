@@ -44,6 +44,16 @@
          comprobar que el dominio NO arrastro dependencias, comparandolo con una app que si
          las tiene. -->
     <ProjectReference Include="..\..\App\DealershipCar.App\DealershipCar.App.csproj" />
+
+    <!-- La caratula MCP, desde T9. Lo que esta rebanada afirma de ella no lo puede comprobar
+         ninguna prueba del dominio ni de la puerta, porque son leyes de la caratula: que
+         ninguna pregunta de la IA escribe una entrada, que una carpeta donde la app nunca se
+         abrio contesta en vez de reventar, que las dos lecturas GUARDADAS no salen como error
+         del protocolo, y que la credencial de la persona no viaja en ninguna respuesta.
+
+         Es un Exe y se referencia igual: un Exe es un ensamblado como cualquier otro. Las
+         tools siguen internal y las pruebas entran por InternalsVisibleTo. -->
+    <ProjectReference Include="..\..\App\DealershipCar.Mcp\DealershipCar.Mcp.csproj" />
   </ItemGroup>
 
   <!-- El csproj del dominio viaja al output COMO DATO, para que la prueba de pureza lo lea

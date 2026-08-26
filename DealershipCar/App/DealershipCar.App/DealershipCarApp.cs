@@ -40,8 +40,27 @@ namespace DealershipCar.App
 		{
 			ArgumentException.ThrowIfNullOrWhiteSpace(vin);
 
-			return "maintenance-" + vin.Trim();
+			return ThePrefixOfEveryActor + vin.Trim();
 		}
+
+		// EL INVERSO, y vive pegado al directo a proposito: son una sola regla de nombres, y
+		// separarlas es como se desincronizan. Contesta "" -- no revienta -- cuando el nombre no es
+		// de los nuestros, porque quien pregunta esta MIRANDO UNA CARPETA sin saber todavia que hay
+		// adentro, y encontrarse una subcarpeta ajena es normal, no un defecto de quien llama.
+		//
+		// Lo necesita el servidor MCP de T9: para abrir el journal hace falta el nombre del actor, el
+		// nombre del actor lleva el VIN, y el VIN esta justamente adentro del journal que todavia no
+		// se abrio. Descubrirlo del nombre de la carpeta es como se sale de esa vuelta.
+		public static string TheVinOf(string actorName)
+		{
+			if (string.IsNullOrWhiteSpace(actorName)) return "";
+
+			if (!actorName.StartsWith(ThePrefixOfEveryActor, StringComparison.Ordinal)) return "";
+
+			return actorName.Substring(ThePrefixOfEveryActor.Length);
+		}
+
+		private const string ThePrefixOfEveryActor = "maintenance-";
 
 		protected override void OnHydrated()
 		{
