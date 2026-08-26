@@ -341,6 +341,36 @@ sealed class AlmacenDeEventos
             Id = 209, Examen = "Heces", Fecha = new DateTime(2026, 8, 21, 8, 34, 0),
             Color = "marrón", Sangre = "positivo",
         },
+
+        // LA HISTORIA DE LOS BINARIOS, y va con ids POSTERIORES aunque las fechas sean
+        // anteriores. No es un descuido: los ids son el orden del journal y no se
+        // reescriben, y ademas es el caso real de una carga atrasada, que el dominio
+        // ordena por fecha al armar la serie.
+        //
+        // POR QUE HACEN FALTA. Sin ellos, la sangre en heces del 209 es un positivo
+        // suelto y la app solo puede decir "conviene repetir el examen". Con la historia
+        // -negativo en 2024, positivo en 2025, positivo en 2026- ya se repitio y volvio a
+        // salir, y eso pide otra cosa. Ese salto es la capacidad entera de la serie
+        // binaria, y con un solo examen no se ve.
+        new EventoDeExamen
+        {
+            Id = 210, Examen = "Heces", Fecha = new DateTime(2024, 8, 21, 9, 15, 0),
+            Color = "marrón", Sangre = "negativo",
+        },
+        new EventoDeExamen
+        {
+            Id = 211, Examen = "Heces", Fecha = new DateTime(2025, 8, 21, 8, 45, 0),
+            Color = "marrón", Sangre = "positivo",
+        },
+
+        // Y la orina, que es el contraste: dos pruebas y ninguna aparicion. "En las dos
+        // veces que te lo hiciste nunca apareció" es informacion, y es lo que un solo
+        // examen no puede decir tampoco.
+        new EventoDeExamen
+        {
+            Id = 212, Examen = "Orina", Fecha = new DateTime(2025, 8, 21, 8, 44, 0),
+            Color = "amarillo palido", Nitritos = "negativo", Sangre = "negativo",
+        },
     };
 
     private static EventoDeExamen Sangre(long id, string examen, DateTime fecha, decimal valor, string unidad) =>

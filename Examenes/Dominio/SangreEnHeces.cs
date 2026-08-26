@@ -93,5 +93,8 @@ namespace Examenes.Dominio
 				$"'{nombre}' no es un resultado de sangre en heces. Los validos son: "
 				+ $"{Positivo.Etiqueta}, {Negativo.Etiqueta}, {NoRealizado.Etiqueta}.", nameof(nombre));
 		}
+
+		/// <summary>El plural de este analito. Ver <see cref="SerieDeSangreEnHeces"/>.</summary>
+		public override SerieBinaria NuevaSerie() => new SerieDeSangreEnHeces();
 	}
 }

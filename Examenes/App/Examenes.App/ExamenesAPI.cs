@@ -328,6 +328,58 @@ namespace Examenes.App
 			.PerformQuery();
 		}
 
+		// LAS PRUEBAS DE UNA SERIE BINARIA: fechas con un si o un no. Es el par de PuntosDe
+		// para la forma 5, y va aparte porque no devuelve lo mismo — un nitrito no tiene
+		// ValorNumerico, y pedirselo seria la mentira que este dominio evita en todos los
+		// otros pisos.
+		public string PruebasDe(string analito)
+		{
+			ArgumentNullException.ThrowIfNullOrWhiteSpace(analito);
+
+			return app.Using(@"
+				foreach (prueba in expediente.PruebasDe(@analito)) {
+					print prueba.Fecha fecha,
+						prueba.Expresado expresado,
+						prueba.EsPositivo esPositivo,
+						prueba.EsHallazgo esHallazgo;
+				}
+			")
+			.WithParameters(p => { p["analito", typeof(string)] = analito; })
+			.PerformQuery();
+		}
+
+		public IReadOnlyList<PruebaEnSerie> Pruebas(string analito) =>
+			ProyeccionDeVistas.Pruebas(PruebasDe(analito));
+
+		// LOS HECHOS DE UNA SERIE BINARIA. Es el par de TendenciaDe, y son dos consultas
+		// porque no contestan lo mismo: aquella trae extremos y cambio, esta trae cuantas
+		// veces aparecio y cuantas SEGUIDAS.
+		public string PresenciaDe(string analito)
+		{
+			ArgumentNullException.ThrowIfNullOrWhiteSpace(analito);
+
+			return app.Using(@"
+				{
+					presencia = expediente.EvaluarPresenciaDe(@analito);
+					print presencia.Analito analito,
+						presencia.AnalitoParaMostrar paraMostrar,
+						presencia.NombreDeLaPresencia presencia,
+						presencia.CantidadDeMediciones mediciones,
+						presencia.Positivas positivas,
+						presencia.PositivasSeguidas positivasSeguidas,
+						presencia.DiasTranscurridos dias,
+						presencia.UltimoResultado ultimoResultado,
+						presencia.EstaPresente estaPresente,
+						presencia.HaySerie haySerie;
+				}
+			")
+			.WithParameters(p => { p["analito", typeof(string)] = analito; })
+			.PerformQuery();
+		}
+
+		public PresenciaDeAnalito Presencia(string analito) =>
+			ProyeccionDeVistas.Presencia(PresenciaDe(analito));
+
 		// LAS LINEAS que se dibujan junto a los puntos, y COMO se dibujan. Cada analito
 		// emite solo las que tiene; ninguno devuelve cero para rellenar.
 		public string ReferenciasDe(string analito)

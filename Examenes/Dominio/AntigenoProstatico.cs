@@ -78,6 +78,6 @@ namespace Examenes.Dominio
 		// medicion se queda aca -su rango, sus umbrales, su direccion-; todo lo que
 		// necesita la historia -velocidad, linea base, confirmacion de un pico- vive en
 		// SerieDeAntigenoProstatico, que es "el plural" que pidio Alvaro.
-		public override SerieDeAnalito NuevaSerie() => new SerieDeAntigenoProstatico();
+		public override SerieContinua NuevaSerie() => new SerieDeAntigenoProstatico();
 	}
 }

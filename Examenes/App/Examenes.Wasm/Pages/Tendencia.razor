@@ -29,9 +29,63 @@ else if (error.Length > 0)
 }
 else
 {
-    <h1 class="titular">@lectura.ParaMostrar</h1>
+    <h1 class="titular">@(EsBinario ? presencia.ParaMostrar : lectura.ParaMostrar)</h1>
 
-    @if (!lectura.HaySerie)
+    @*  UN BINARIO SE CUENTA DISTINTO, porque es distinto. Acá no hay «de cuánto a
+        cuánto»: hay cuántas veces se buscó, cuántas apareció, y —lo único que cambia la
+        conducta— cuántas SEGUIDAS. La pantalla no elige cuál de las dos historias contar:
+        se lo pregunta a la forma, que la dice el dominio.                               *@
+    @if (EsBinario)
+    {
+        @if (!presencia.HaySerie)
+        {
+            <p class="apunte" style="margin-top:14px">
+                @(presencia.Mediciones == 0
+                    ? "Todavía no te hicieron esta prueba."
+                    : "Sólo hay una prueba. Con un solo resultado no se puede decir si esto "
+                      + "se repite: hace falta una segunda.")
+            </p>
+            @if (presencia.Mediciones == 1)
+            {
+                <p class="cifra-par">@presencia.UltimoResultado</p>
+            }
+        }
+        else
+        {
+            <p style="margin:10px 0 0"><span class="chip chip--grande @Insignia()">@presencia.Presencia</span></p>
+
+            <p class="cifra-par">
+                <span class="@(interpretacion.PideAlgo ? "final" : "")">@presencia.UltimoResultado</span>
+            </p>
+            <p class="apunte">
+                @presencia.Positivas de @presencia.Mediciones pruebas,
+                en @presencia.Dias @(presencia.Dias == 1 ? "día" : "días")
+                @(presencia.PositivasSeguidas >= 2
+                    ? $"· {presencia.PositivasSeguidas} seguidas al final"
+                    : "")
+            </p>
+
+            <PresenciaEnElTiempo Pruebas="pruebas"
+                                 Seguidas="presencia.PositivasSeguidas"
+                                 Descripcion="@interpretacion.ParaSonia" />
+        }
+
+        @if (interpretacion.PideAlgo)
+        {
+            <div class="aviso @(interpretacion.Severidad == "atencion inmediata" ? "aviso--problema" : "aviso--atencion")" style="margin-top:22px">
+                <strong>@interpretacion.Veredicto.</strong>
+                @interpretacion.ParaSonia. No es un diagnóstico: es la lectura de tu propia
+                serie. Lo que corresponde es <strong>@interpretacion.Accion</strong>.
+            </div>
+        }
+        else if (interpretacion.ParaSonia.Length > 0)
+        {
+            <div class="aviso" style="margin-top:22px;border-left-color:var(--pino)">
+                @interpretacion.ParaSonia.
+            </div>
+        }
+    }
+    else if (!lectura.HaySerie)
     {
         <p class="apunte" style="margin-top:14px">
             @(lectura.Mediciones == 0
@@ -78,8 +132,14 @@ else
         }
     }
 
+    @* Un binario NO tiene rango de referencia, así que decirle a la persona que «se
+       evalúan para 60 años» sería inventarle una escala que no existe. Lo que sí depende
+       de la edad en su caso es cada cuánto conviene repetirlo. *@
     <p class="apunte" style="margin-top:30px">
-        Los rangos de referencia se evalúan para @estado.EdadDelPaciente() años.
+        @if (!EsBinario)
+        {
+            <text>Los rangos de referencia se evalúan para @estado.EdadDelPaciente() años.</text>
+        }
         Leído hasta el evento @estado.UltimoEvento().
     </p>
 }
@@ -88,6 +148,13 @@ else
     [Parameter] public string Analito { get; set; } = "";
 
     private TendenciaDeAnalito lectura = new();
+
+    // Un binario no tiene tendencia ni puntos con número: tiene presencias en fechas. Se
+    // piden por su propia puerta, y cuál usar lo dice la forma.
+    private const string FormaDePresencia = "presencia en el tiempo";
+    private PresenciaDeAnalito presencia = new();
+    private IReadOnlyList<PruebaEnSerie> pruebas = new List<PruebaEnSerie>();
+    private bool EsBinario => interpretacion.Forma == FormaDePresencia;
 
     // Los HECHOS y la LECTURA son dos consultas distintas: aquella dice que paso, esta
     // dice que significa segun el analito. La pantalla no combina ni interpreta, muestra.
@@ -103,8 +170,17 @@ else
         // llega hasta acá: solo entra como argumento de un comando, dentro del refresh.
         try
         {
-            lectura = estado.Tendencia(Analito);
+            // La forma primero: es lo que decide qué se puede preguntar después.
             interpretacion = estado.Interpretacion(Analito);
+
+            if (interpretacion.Forma == FormaDePresencia)
+            {
+                presencia = estado.Presencia(Analito);
+                pruebas = estado.Pruebas(Analito);
+                return;
+            }
+
+            lectura = estado.Tendencia(Analito);
         }
         catch (Exception ex) { error = $"No se pudo leer la serie de {Analito}: {ex.Message}"; }
     }

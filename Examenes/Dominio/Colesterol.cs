@@ -67,6 +67,6 @@ namespace Examenes.Dominio
 		// SerieDeColesterol.
 		public MetaDeColesterol Meta() => MetaDeColesterol.Para(Valor);
 
-		public override SerieDeAnalito NuevaSerie() => new SerieDeColesterol();
+		public override SerieContinua NuevaSerie() => new SerieDeColesterol();
 	}
 }

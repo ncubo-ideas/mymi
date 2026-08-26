@@ -175,6 +175,82 @@ internal sealed class ExamenesTools
 		});
 	}
 
+	// LA MISMA PREGUNTA PARA LA OTRA FORMA, y va aparte porque no devuelve lo mismo.
+	//
+	// Un binario no tiene tendencia: no hay "mas positivo". Lo que su serie contesta es si
+	// el hallazgo APARECIO, si PERSISTE -o sea, si ya se repitio y volvio a salir- o si
+	// cedio. Y esa distincion cambia la conducta: una sangre oculta en heces positiva una
+	// vez pide repetir el examen, dos veces seguidas ya no.
+	//
+	// LA QUE MAS APORTA ES LA INVERSA. Un positivo que en la prueba siguiente no vuelve a
+	// aparecer NO quedo confirmado, y sin la serie eso no se puede decir: la hoja de
+	// laboratorio de aquel dia sigue diciendo "positivo" para siempre.
+	[McpServerTool(Name = "presencia_de", UseStructuredContent = true)]
+	[Description("Contesta como viene un analito que se informa como PRESENTE o AUSENTE — sangre "
+		+ "oculta, nitritos — mirando toda su historia y no la ultima prueba. Usala cuando "
+		+ "pregunte '¿me sigue saliendo sangre?', '¿la infeccion cedio?' o '¿esto ya me habia "
+		+ "pasado?'. Devuelve si aparecio, si PERSISTE (dos o mas pruebas positivas seguidas: ya "
+		+ "se repitio y volvio a salir), si no se confirmo (aparecio una vez y la siguiente dio "
+		+ "negativa) o si cedio. Es distinto de evaluar_tendencia, que solo sirve para analitos "
+		+ "con numero: un nitrito no viene subiendo. Presta atencion a positivasSeguidas: un "
+		+ "hallazgo confirmado y uno aislado NO piden lo mismo, y la accion correcta viene en "
+		+ "el campo accion.")]
+	public PresenciaDelAnalito Presencia(
+		[Description("Cual analito binario evaluar.")] AnalitoBinario analito)
+	{
+		if (!lector.HayJournal)
+			return new PresenciaDelAnalito
+			{
+				HayDatos = false, Carpeta = lector.Carpeta, Detalle = DetalleSinJournal,
+			};
+
+		string nombre = analito.Nombre();
+
+		return lector.Consultar(api =>
+		{
+			PresenciaDeAnalito p = api.Presencia(nombre);
+
+			// Sin pruebas no se inventa una lectura: no es lo mismo "nunca aparecio" que
+			// "nunca te lo midieron", y confundirlos es como una app termina diciendo que
+			// alguien esta bien cuando nadie lo midio.
+			if (p.Mediciones == 0)
+				return new PresenciaDelAnalito
+				{
+					HayDatos = true,
+					Analito = nombre,
+					Presencia = "sin pruebas",
+					Carpeta = lector.Carpeta,
+					UltimoEventoLeido = api.UltimoEventoProcesado(),
+					Detalle = $"El expediente todavia no tiene ninguna prueba de '{nombre}'. "
+						+ "Pedile que abra su app y apriete Refresh.",
+				};
+
+			InterpretacionDeAnalito i = api.Interpretacion(nombre);
+
+			return new PresenciaDelAnalito
+			{
+				HayDatos = true,
+				Analito = p.ParaMostrar,
+				Presencia = p.Presencia,
+				Pruebas = p.Mediciones,
+				Positivas = p.Positivas,
+				PositivasSeguidas = p.PositivasSeguidas,
+				DiasEntreLaPrimeraYLaUltima = p.Dias,
+				UltimoResultado = p.UltimoResultado,
+				EstaPresente = p.EstaPresente,
+				HaySerie = p.HaySerie,
+				Veredicto = i.Veredicto,
+				Severidad = i.Severidad,
+				Lectura = i.ParaSonia,
+				Accion = i.Accion,
+				PideAlgo = i.PideAlgo,
+				UltimoEventoLeido = api.UltimoEventoProcesado(),
+				Carpeta = lector.Carpeta,
+				Detalle = "",
+			};
+		});
+	}
+
 	// LA TOOL QUE MIRA EL HUECO, no el dato.
 	//
 	// Reemplaza a `revisar_mis_analitos`, que recorria los analitos y devolvia la tendencia
@@ -378,6 +454,89 @@ internal sealed class TendenciaDelAnalito
 
 	[JsonPropertyName("detalle")]
 	[Description("Vacio cuando todo esta bien; si no, que le conviene hacer a la persona.")]
+	public string Detalle { get; init; } = "";
+}
+
+// LO QUE CONCLUYE LA SERIE DE UN BINARIO. Tipo aparte de TendenciaDelAnalito porque no
+// trae lo mismo: no hay valor inicial ni final ni unidad. Hay cuantas veces se busco,
+// cuantas aparecio y cuantas SEGUIDAS, que es la unica que cambia la conducta.
+internal sealed class PresenciaDelAnalito
+{
+	[JsonPropertyName("hayDatos")]
+	[Description("false cuando la app todavia no registro nada; ahi el resto viene en cero.")]
+	public bool HayDatos { get; init; }
+
+	[JsonPropertyName("analito")]
+	[Description("El analito evaluado.")]
+	public string Analito { get; init; } = "";
+
+	[JsonPropertyName("presencia")]
+	[Description("La lectura de la serie: 'nunca apareció', 'apareció' (positiva la ultima y "
+		+ "negativa la anterior: todavia nadie lo confirmo), 'persiste' (dos o mas positivas "
+		+ "seguidas: ya se repitio y volvio a salir), 'no confirmado' (aparecio una vez y la "
+		+ "prueba siguiente dio negativa), 'cedió' (estuvo varias veces y ya no esta), "
+		+ "'indeterminada' (una sola prueba) o 'sin pruebas'.")]
+	public string Presencia { get; init; } = "";
+
+	[JsonPropertyName("pruebas")]
+	[Description("Cuantas veces se corrio la prueba. Las no realizadas no cuentan.")]
+	public int Pruebas { get; init; }
+
+	[JsonPropertyName("positivas")]
+	[Description("De esas, cuantas dieron positivas en total.")]
+	public int Positivas { get; init; }
+
+	[JsonPropertyName("positivasSeguidas")]
+	[Description("Cuantas positivas hay AL FINAL, una detras de otra. Es el numero que "
+		+ "distingue un hallazgo aislado de uno confirmado, y por lo tanto el que cambia que "
+		+ "hacer. Dos o mas significa que se repitio la prueba y volvio a salir.")]
+	public int PositivasSeguidas { get; init; }
+
+	[JsonPropertyName("diasEntreLaPrimeraYLaUltima")]
+	public int DiasEntreLaPrimeraYLaUltima { get; init; }
+
+	[JsonPropertyName("ultimoResultado")]
+	[Description("El resultado de la ultima prueba, con el vocabulario de ese analito: "
+		+ "'positivo', 'negativo'. En una serologia seria 'reactivo'.")]
+	public string UltimoResultado { get; init; } = "";
+
+	[JsonPropertyName("estaPresente")]
+	[Description("Si hoy el hallazgo esta. Es lo unico que se puede saber sin la historia.")]
+	public bool EstaPresente { get; init; }
+
+	[JsonPropertyName("haySerie")]
+	[Description("false con una sola prueba: ahi no se puede decir si esto se repite.")]
+	public bool HaySerie { get; init; }
+
+	[JsonPropertyName("veredicto")]
+	[Description("Que significa: 'empeorando', 'mejorando', 'estable', 'hallazgo no confirmado' "
+		+ "(aparecio y en la prueba siguiente ya no estaba) o 'indeterminado'.")]
+	public string Veredicto { get; init; } = "";
+
+	[JsonPropertyName("severidad")]
+	[Description("'informativo', 'seguimiento', 'consulta medica' o 'atencion inmediata'.")]
+	public string Severidad { get; init; } = "";
+
+	[JsonPropertyName("lectura")]
+	[Description("La lectura en una linea, escrita por el propio analito. Decila tal cual: no "
+		+ "la reemplaces por una frase generica.")]
+	public string Lectura { get; init; } = "";
+
+	[JsonPropertyName("accion")]
+	[Description("Que corresponde hacer. Sale de un conjunto cerrado del dominio; vacio cuando "
+		+ "no hay nada que hacer, que es la mayoria de las veces.")]
+	public string Accion { get; init; } = "";
+
+	[JsonPropertyName("pideAlgo")]
+	public bool PideAlgo { get; init; }
+
+	[JsonPropertyName("ultimoEventoLeido")]
+	public long UltimoEventoLeido { get; init; }
+
+	[JsonPropertyName("carpeta")]
+	public string Carpeta { get; init; } = "";
+
+	[JsonPropertyName("detalle")]
 	public string Detalle { get; init; } = "";
 }
 

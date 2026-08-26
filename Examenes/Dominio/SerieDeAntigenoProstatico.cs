@@ -11,7 +11,7 @@ namespace Examenes.Dominio
 	// Lo que vive aca y en ninguna otra: la VELOCIDAD -que para la hemoglobina no
 	// significa nada-, la LINEA BASE de esta persona, y la CONFIRMACION de un pico. Las
 	// tres necesitan la serie entera: por eso son de la serie y no de una medicion.
-	public sealed class SerieDeAntigenoProstatico : SerieDeAnalito
+	public sealed class SerieDeAntigenoProstatico : SerieContinua
 	{
 		public SerieDeAntigenoProstatico() : base(Analito.AntigenoProstatico) { }
 

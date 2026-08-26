@@ -428,3 +428,13 @@ code { font-family: var(--mono); font-size: .9em; color: var(--ambar); }
     .serie-valor { text-align: left; }
     .tabla { font-size: 14px; }
 }
+
+/* PRESENCIA EN EL TIEMPO — la forma de los binarios.
+   El hilo es la linea del tiempo; los circulos, las pruebas. Los positivos van en ambar
+   y llenos porque son lo unico de esta forma que pide algo; los negativos, huecos.
+   La racha final lleva trazo grueso: dos seguidas es otra cosa que una, y ese es el
+   unico hecho que esta forma tiene para contar. */
+.forma--presencia .hilo { stroke: var(--linea); stroke-width: 2; stroke-linecap: round; }
+.forma--presencia .racha { stroke: var(--ambar); stroke-width: 4; stroke-linecap: round; opacity: .45; }
+.forma--presencia .prueba { fill: var(--papel-2); stroke: var(--tinta-3); stroke-width: 2; }
+.forma--presencia .prueba--presente { fill: var(--ambar); stroke: var(--papel); stroke-width: 2; }

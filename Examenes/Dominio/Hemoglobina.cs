@@ -61,6 +61,6 @@ namespace Examenes.Dominio
 			return Examenes.Dominio.GradoDeAnemia.Severa;
 		}
 
-		public override SerieDeAnalito NuevaSerie() => new SerieDeHemoglobina();
+		public override SerieContinua NuevaSerie() => new SerieDeHemoglobina();
 	}
 }

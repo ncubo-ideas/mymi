@@ -119,6 +119,18 @@ namespace Examenes.Dominio
 		/// <summary>La lectura para la persona, escrita por el propio analito.</summary>
 		/// Una linea, no un consejo: el consejo sale de la severidad. Ver Interpretacion.
 		public abstract string ParaSonia { get; }
+
+		/// <summary>QUE SERIE LEE A ESTE ANALITO. La fabrica de "el plural" de la forma 5.</summary>
+		///
+		/// Vive aca, y no en <see cref="Analito"/>, por la misma regla que la pone en
+		/// <see cref="ExamenDeSangre"/> para la forma continua: <b>la declara la clase que
+		/// carga el conocimiento clinico del analito</b>. En un continuo esa clase es el
+		/// examen —ahi estan los rangos, los umbrales y la periodicidad—; en un binario es
+		/// esta, donde estan el vocabulario, la polaridad y la severidad del hallazgo.
+		///
+		/// Con esto el Expediente arma la serie correcta sin un switch: le pregunta al
+		/// resultado cual es la suya.
+		public abstract SerieBinaria NuevaSerie();
 	}
 
 	/// <summary>
@@ -132,5 +144,20 @@ namespace Examenes.Dominio
 	{
 		/// <summary>Como se llama esta categoria para el paciente.</summary>
 		public abstract string Nombre { get; }
+
+		/// <summary>Si esta categoria es de las que se esperan. Un ámbar si, un rojizo no.</summary>
+		public abstract bool EsEsperable { get; }
+
+		/// <summary>QUE HACER si esta categoria no es la esperada. Lo decide cada nominal.</summary>
+		///
+		/// Sube a esta raiz por la misma razon que <see cref="MagnitudBinaria.SeveridadDelHallazgo"/>:
+		/// es el nominal quien sabe leerse. Antes la severidad de un color la componia el
+		/// EXAMEN, mezclada con la de sus binarios, y desde que los binarios tienen serie
+		/// esa mezcla es incorrecta — la lectura de una sangre oculta ya no sale del examen
+		/// donde aparecio, sale de su historia.
+		public abstract Severidad SeveridadDelHallazgo { get; }
+
+		/// <summary>La lectura para la persona, escrita por la propia categoria.</summary>
+		public abstract string ParaSonia { get; }
 	}
 }
