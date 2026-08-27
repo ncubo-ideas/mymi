@@ -379,14 +379,20 @@ consecutivas para detectar lo imposible, y los extremos para la dirección.
 
 | Serie | Lectura |
 |---|---|
-| colesterol 200 → 280 en **un día** | `salto inverosimil` → repetir el examen |
-| colesterol 200 → 280 en **un año** | `en ascenso`, exige atención |
+| colesterol 212 → 360 en **un día** | `salto inverosimil` → repetir el examen |
+| colesterol 182 → 188 en **un año** | `estable`: 6 mg/dL no llegan al umbral del analito |
+| colesterol 182 → 212 en **dos años** | `en ascenso`, y a los 34 todavía en rango |
 | antígeno 3,0 → 3,1 en **dos años** | `estable` |
 | antígeno 3,0 → 5,2 en **un año** | `en ascenso`, exige atención |
 
-**`Velocidad()` — ¿a qué ritmo?** Es la lectura que el antígeno prostático exige, y se mide
-sobre el **tramo más reciente**, no sobre la serie entera. Con los datos del guion la
-diferencia decide el caso:
+Las dos primeras filas y las dos últimas son el mismo mecanismo mirado desde los dos lados:
+el umbral de cambio significativo lo pone **cada analito**, y por eso 6 mg/dL de colesterol
+no son un cambio y 2,2 ng/mL de antígeno sí. Los colesteroles son del guion; los antígenos
+son de las comprobaciones, porque el expediente de Sonia no trae ese examen.
+
+**`Velocidad()` — ¿a qué ritmo?** Es la lectura que el antígeno prostático exige —y el
+**único** analito que la tiene—, y se mide sobre el **tramo más reciente**, no sobre la
+serie entera. Sobre una serie de antígeno la diferencia decide el caso:
 
 | Tramo | Cálculo | Contra el umbral de 0,75 |
 |---|---|---|
@@ -508,26 +514,48 @@ dónde sacar *"bajá las grasas"*.
 
 ## Estado medido
 
-Medido el **26 ago 2026**, sobre `master`.
+Medido el **27 ago 2026**, sobre `feat/examenes-datos-de-sonia`.
 
 | Capa | Estado |
 |---|---|
-| Dominio | ✅ **356 comprobaciones** (`comprobar`), incluidas las cuatro lecturas del guion, la velocidad, la confirmación de un pico, la escalada de la serie binaria y los tres efectos del sexo |
+| Dominio | ✅ **362 comprobaciones** (`comprobar`), incluidas las cuatro lecturas del guion, la velocidad, la confirmación de un pico, la escalada de la serie binaria y los tres efectos del sexo |
 | Consola | ✅ ciclo completo: `comprobar`, `medir`, `estado`, `tendencia`, `velocidad`, `refrescar` |
-| EndPointDeEventos | ✅ **13 eventos**, rotación de token y señuelo 403 |
-| MCP | ✅ **medido por stdio**: las cuatro tools responden, `presencia_de(SangreEnHeces)` devuelve `positivasSeguidas: 2` con la acción correcta, y sobre un expediente de **mujer** `evaluar_tendencia(AntigenoProstatico)` contesta `noLeCorresponde: true` **sin devolver un valor** |
+| EndPointDeEventos | ✅ **11 eventos**, rotación de token y señuelo 403 |
+| MCP | ⚠️ **medido por stdio sobre el guion anterior**: las cuatro tools responden, `presencia_de(SangreEnHeces)` devolvía `positivasSeguidas: 2` con la acción correcta, y sobre un expediente de **mujer** `evaluar_tendencia(AntigenoProstatico)` contesta `noLeCorresponde: true` **sin devolver un valor**. Con el guion de Sonia las tres pruebas de sangre oculta salen negativas, así que esa tool hay que volver a medirla por stdio: el dominio ya contesta *«en las 3 pruebas que te hiciste nunca apareció»* por consola |
 | PaginaDeDescarga | ✅ levanta con `docker compose up`; sirve la descarga en `/` y la app en `/app/` |
 | Wasm | ✅ **corre completo** desde `3.0.0-beta.10029` — el bloqueo del motor se levantó |
 | Navegador | ⚠️ la **carpeta propia** es solo Chromium. Safari y Firefox degradan a OPFS o a export/import — la app no se queda sin persistir |
 
-El `medir` sobre el guion completo: **13 exámenes aplicados, 0 descartados, 0 rechazados**,
-último evento `212`, **3** analitos con algo que mirar.
+El `medir` sobre el guion completo: **11 exámenes aplicados, 0 descartados, 0 rechazados**,
+último evento `210`, **0** analitos con algo que mirar.
 
-Son 3 y no 4 desde que el sexo es una variable del dominio, y esa resta es el cambio
-entero en un número: el guion arranca con el sexo **desconocido**, y ahí el antígeno
-prostático no cuenta como hallazgo porque todavía no se sabe si le corresponde a esta
-persona. Declararlo lo devuelve a 4 —el mismo journal, sin recargar ni migrar nada— y es
-lo que la última sección de `medir` imprime paso a paso.
+### El guion es el expediente de Sonia
+
+Cero hallazgos no es un guion vacío: es el de ella. Sonia tiene 34 años, sus resultados son
+del **28 de abril de 2026** y su colesterol viene **182 → 188 → 212 mg/dL** en dos años. A
+los 34 el techo son 220, así que el 212 **subió de verdad y todavía está donde tiene que
+estar** — las dos cosas a la vez, que es exactamente lo que la landing promete y lo que un
+valor solo no puede decir. La portada cierra así:
+
+| | dice |
+|---|---|
+| lo que está en rango | *«Tus 6 valores están en su rango.»* |
+| lo que pide algo | `vigilar` → *«conversalo con tu médico en la próxima cita»*, porque *«subió de 182,0 a 212,0 mg/dL en 734 días, todavía dentro de lo deseable»* |
+
+Y esos **6** son 5 hasta que ella declara su sexo: la hemoglobina no está en su rango
+mientras el rango contra el que se compara depende de un dato que falta. El mismo journal,
+sin recargar ni migrar nada, y la última sección de `medir` lo imprime paso a paso.
+
+**No hay antígeno prostático en el guion**, y su ausencia es el dato: a Sonia no se lo
+hicieron. El caso *«este analito no te corresponde»* se sigue midiendo —lo contesta la
+identidad del analito, no la existencia de la serie— pero la **velocidad** no: vive en
+`SerieDeAntigenoProstatico` y no la tiene ningún otro analito, así que sobre este
+expediente `velocidad` contesta `esAplicable: false`. Para verla medir hay que inyectar
+una serie de antígeno y declarar hombre.
+
+El otro precio de un expediente limpio es que las **sangres ocultas salen negativas las
+tres veces** —que es información, y es lo que un examen solo no puede decir—. Para ver el
+otro lado alcanza cambiar **un** `"negativo"` por `"positivo"` en la semilla de URL2.
 
 ### El bloqueo del motor se levantó en `10029`
 

@@ -344,48 +344,64 @@ sealed class AlmacenDeEventos
     // literales a proposito: una demo con fechas relativas al dia de hoy deja de ser
     // reproducible, y las tendencias dependen de los dias transcurridos.
     //
-    // Los tres primeros antigenos son la LINEA BASE. Sin ellos el 5.2 del final es un
-    // numero cualquiera apenas arriba del techo; con ellos es un salto de 2.2 sobre un
-    // paciente que venia planchado tres anos, y eso es lo que la app puede decir y una
-    // pantalla de resultados no.
+    // ES EL EXPEDIENTE DE SONIA, la persona de la demo: 34 anos, y sus resultados del 28
+    // de abril de 2026. La landing de URL1 la saluda por su nombre y muestra dos
+    // veredictos -el conteo de lo que esta en rango, y el colesterol que subio un
+    // poquito-, asi que el laboratorio tiene que publicar los numeros con los que la app
+    // puede decir esas dos cosas.
+    //
+    // Los tres colesteroles son la SERIE: 182 y 188 son la linea base y el 212 es el
+    // hallazgo. Sin los dos primeros el 212 es un numero cualquiera bien adentro del
+    // rango; con ellos es un ascenso real que todavia no se sale, y eso es lo que la app
+    // puede decir y una hoja de resultados no.
+    //
+    // NO HAY ANTIGENO PROSTATICO en el guion, y esa ausencia es un dato: a Sonia no se lo
+    // hicieron. El endpoint lo sigue aceptando -esta en ExamenesConocidos- para poder
+    // inyectarlo en vivo y mostrar que la app lo esconde cuando la persona declara que es
+    // mujer.
     private static List<EventoDeExamen> Sembrar() => new()
     {
-        // UN PERFIL LIPIDICO VIEJO, y no es relleno: es lo que hace visible la consulta
-        // que mira el hueco. Todo el resto del guion cae el mismo dia, asi que sin esto
-        // nada aparece vencido nunca y la capacidad no se ve.
+        // EL PERFIL LIPIDICO DE 2021, y no es relleno: es lo UNICO que la app va a mostrar
+        // VENCIDO. El LDL salio en rango, asi que su control es cada 60 meses, y abril de
+        // 2021 los pasa. Todo el resto del guion cae entre 2024 y 2026, asi que sin esto
+        // nada aparece atrasado nunca y la consulta que mira el hueco no muestra nada.
         //
         // Ademas ejercita ColesterolDetallado, que estaba modelado -con su HDL que se lee
-        // al reves que el LDL- y no aparecia en la historia.
+        // al reves que el LDL, y con su piso que depende del sexo- y no aparecia en la
+        // historia.
         new EventoDeExamen
         {
-            Id = 200, Examen = "ColesterolDetallado", Fecha = new DateTime(2022, 11, 1, 8, 30, 0),
-            Valor = 150m, ValorSecundario = 38m, Unidad = "mg/dL",
+            Id = 200, Examen = "ColesterolDetallado", Fecha = new DateTime(2021, 4, 22, 8, 15, 0),
+            Valor = 118m, ValorSecundario = 58m, Unidad = "mg/dL",
         },
 
-        Sangre(201, "AntigenoProstatico", new DateTime(2023, 8, 21, 9, 10, 0), 3.0m, "ng/mL"),
-        Sangre(202, "AntigenoProstatico", new DateTime(2024, 8, 21, 9, 5, 0), 3.1m, "ng/mL"),
-        Sangre(203, "Colesterol", new DateTime(2025, 8, 21, 8, 40, 0), 200.0m, "mg/dL"),
-        Sangre(204, "AntigenoProstatico", new DateTime(2025, 8, 21, 8, 41, 0), 3.0m, "ng/mL"),
-        Sangre(205, "Colesterol", new DateTime(2026, 8, 21, 8, 30, 0), 280.0m, "mg/dL"),
-        Sangre(206, "AntigenoProstatico", new DateTime(2026, 8, 21, 8, 31, 0), 5.2m, "ng/mL"),
-        Sangre(207, "Hemoglobina", new DateTime(2026, 8, 21, 8, 32, 0), 14.2m, "g/dL"),
+        // Hace dos anos: la linea base del colesterol y la primera hemoglobina.
+        Sangre(201, "Colesterol", new DateTime(2024, 4, 24, 8, 20, 0), 182.0m, "mg/dL"),
+        Sangre(202, "Hemoglobina", new DateTime(2024, 4, 24, 8, 21, 0), 13.1m, "g/dL"),
+
+        // Hace un ano: subio 6 mg/dL, que para este analito NO llega a ser un cambio.
+        Sangre(203, "Colesterol", new DateTime(2025, 4, 26, 8, 30, 0), 188.0m, "mg/dL"),
+
+        // El 28 de abril, el dia que la landing muestra.
+        Sangre(204, "Colesterol", new DateTime(2026, 4, 28, 8, 40, 0), 212.0m, "mg/dL"),
+        Sangre(205, "Hemoglobina", new DateTime(2026, 4, 28, 8, 41, 0), 13.4m, "g/dL"),
         new EventoDeExamen
         {
-            Id = 208, Examen = "Orina", Fecha = new DateTime(2026, 8, 21, 8, 33, 0),
+            Id = 206, Examen = "Orina", Fecha = new DateTime(2026, 4, 28, 8, 42, 0),
             Color = "ambar", Nitritos = "negativo", Sangre = "negativo",
         },
 
-        // EL CONTRASTE DE ALVARO, en el guion. Una sangre oculta POSITIVA, y la app tiene
-        // que decir "conviene revisarlo" y no alarmar: la causa mas frecuente es local.
+        // EL EXPEDIENTE DE SONIA ESTA LIMPIO A PROPOSITO. La demo se abre con "todo esta
+        // bien" y un solo ambar, y un positivo de fabrica taparia justo ese veredicto.
         //
-        // El mismo positivo en el examen de ARRIBA -la orina- diria que hay que verlo
-        // pronto. Cambiar el "negativo" del 208 por "positivo" es la forma mas corta de
-        // ver la diferencia en pantalla, y no esta asi de fabrica porque el hallazgo que
-        // manda en esta demo es la velocidad del antigeno.
+        // Para ver el otro lado alcanza cambiar UN "negativo" por "positivo" aca: en las
+        // heces la app dice "conviene revisarlo" y no alarma -la causa mas frecuente es
+        // local-, y el MISMO positivo en la orina no espera a la proxima cita. Misma forma
+        // de magnitud, distinta conducta, y la diferencia vive en el analito.
         new EventoDeExamen
         {
-            Id = 209, Examen = "Heces", Fecha = new DateTime(2026, 8, 21, 8, 34, 0),
-            Color = "marrón", Sangre = "positivo",
+            Id = 207, Examen = "Heces", Fecha = new DateTime(2026, 4, 28, 8, 43, 0),
+            Color = "marrón", Sangre = "negativo",
         },
 
         // LA HISTORIA DE LOS BINARIOS, y va con ids POSTERIORES aunque las fechas sean
@@ -393,28 +409,25 @@ sealed class AlmacenDeEventos
         // reescriben, y ademas es el caso real de una carga atrasada, que el dominio
         // ordena por fecha al armar la serie.
         //
-        // POR QUE HACEN FALTA. Sin ellos, la sangre en heces del 209 es un positivo
-        // suelto y la app solo puede decir "conviene repetir el examen". Con la historia
-        // -negativo en 2024, positivo en 2025, positivo en 2026- ya se repitio y volvio a
-        // salir, y eso pide otra cosa. Ese salto es la capacidad entera de la serie
-        // binaria, y con un solo examen no se ve.
+        // POR QUE HACEN FALTA. Sin ellos, el negativo del 207 es un dato suelto y de
+        // "sangre en heces" no se puede decir mas que "una sola prueba, todavia no hay
+        // serie". Con las tres, la serie contesta que en las tres veces nunca aparecio —y
+        // eso es informacion que un examen solo no puede dar.
         new EventoDeExamen
         {
-            Id = 210, Examen = "Heces", Fecha = new DateTime(2024, 8, 21, 9, 15, 0),
+            Id = 208, Examen = "Heces", Fecha = new DateTime(2024, 4, 24, 8, 22, 0),
             Color = "marrón", Sangre = "negativo",
         },
         new EventoDeExamen
         {
-            Id = 211, Examen = "Heces", Fecha = new DateTime(2025, 8, 21, 8, 45, 0),
-            Color = "marrón", Sangre = "positivo",
+            Id = 209, Examen = "Heces", Fecha = new DateTime(2025, 4, 26, 8, 31, 0),
+            Color = "marrón", Sangre = "negativo",
         },
 
-        // Y la orina, que es el contraste: dos pruebas y ninguna aparicion. "En las dos
-        // veces que te lo hiciste nunca apareció" es informacion, y es lo que un solo
-        // examen no puede decir tampoco.
+        // Y la orina, con su segunda tira: dos pruebas y ninguna aparicion.
         new EventoDeExamen
         {
-            Id = 212, Examen = "Orina", Fecha = new DateTime(2025, 8, 21, 8, 44, 0),
+            Id = 210, Examen = "Orina", Fecha = new DateTime(2025, 4, 26, 8, 32, 0),
             Color = "amarillo palido", Nitritos = "negativo", Sangre = "negativo",
         },
     };
