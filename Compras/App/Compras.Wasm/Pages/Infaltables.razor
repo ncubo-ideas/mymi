@@ -1,0 +1,149 @@
+@page "/infaltables"
+@using Compras.App.Vistas
+@using Compras.Dominio
+@inject EstadoDeLaApp estado
+@inject NavigationManager navegacion
+
+@* LOS QUE NUNCA FALTAN: la pantalla completa de la firma, a la que lleva el "Ver todos →"
+   de la portada. La portada muestra un puñado; acá están todos, ordenados por constancia.
+
+   Es la pregunta "¿qué compro yo?" con espacio para contestarla. En la portada la misma
+   lectura tiene que caber en una tarjeta, y ahí lo que importa es reconocerse de un
+   vistazo; acá lo que importa es poder recorrer la lista y entrar a un producto. *@
+
+<PageTitle>Los que nunca faltan · La Guaria y vos</PageTitle>
+
+<h1>Los que nunca faltan</h1>
+<p class="text-body-secondary mb-4">
+    Esos productos que una y otra vez terminan en tu carrito.
+</p>
+
+@if (!estado.EstaArriba)
+{
+    <div class="aviso">
+        La app todavía no abrió en esta computadora.
+        <a href="">Andá a Inicio</a> y elegí tu carpeta.
+    </div>
+}
+else if (firma is null || !firma.Existe)
+{
+    @* LAS DOS FORMAS DE NO TENER RESPUESTA vienen distinguidas por el dominio, y acá se
+       imprime la línea que él escribió en vez de inventar una: "no hay compras todavía" no
+       es lo mismo que "no hay nada que se repita". *@
+    <p class="text-body-secondary">@(firma?.ParaSonia ?? "Todavía no hay compras.")</p>
+}
+else
+{
+    <p class="ritmo-rotulo mb-3">
+        Mirando tus últimas @firma.ComprasMiradas compras.
+    </p>
+
+    <div class="list-group mb-4">
+        @foreach (var habitual in firma.Habituales)
+        {
+            <button class="list-group-item list-group-item-action infaltable-fila"
+                    @onclick="() => VerProducto(habitual.Descripcion)">
+                @{ string foto = Foto(habitual.Sku); }
+                @if (foto.Length > 0)
+                {
+                    <img class="infaltable-fila-foto" src="@foto" alt="" />
+                }
+                else
+                {
+                    <span class="infaltable-fila-foto infaltable-sinfoto" aria-hidden="true">&#9634;</span>
+                }
+                <span class="infaltable-fila-que">
+                    <strong>@habitual.Descripcion</strong>
+                    <span class="ritmo-rotulo">
+                        en @habitual.ComprasEnQueAparece de @habitual.DeCuantas compras
+                    </span>
+                </span>
+                <span class="d-inline-flex align-items-center gap-2">
+                    <span class="puntos" aria-hidden="true">
+                        @for (int i = 0; i < habitual.DeCuantas; i++)
+                        {
+                            <span class="punto @(i < habitual.ComprasEnQueAparece ? "punto-lleno" : "")"></span>
+                        }
+                    </span>
+                    <span class="etiqueta etiqueta-verde">@habitual.Constancia</span>
+                </span>
+                <span class="recibo-flecha" aria-hidden="true">&rsaquo;</span>
+            </button>
+        }
+    </div>
+
+    @* "¿EN QUÉ SE LLENA TU CARRITO?" es la otra mitad de la pantalla en el diseño: los
+       habituales dicen QUÉ vuelve, y el mes dice en qué departamentos se va la plata. Son
+       dos cortes de la misma canasta. *@
+    @if (canasta is not null && canasta.HayCompras)
+    {
+        <h2>¿En qué se llena tu carrito?</h2>
+        <p class="ritmo-rotulo mb-2">
+            @Mes(canasta.Mes)/@canasta.Anio &middot; @Colones(canasta.GastoTotal)
+        </p>
+        <div class="list-group mb-4">
+            @foreach (var departamento in canasta.Departamentos)
+            {
+                <div class="list-group-item">
+                    <div class="d-flex justify-content-between align-items-center gap-2">
+                        @* El TÍTULO y nunca la llave: "FrutasYVerduras" no se le muestra a nadie. *@
+                        <span>@departamento.Titulo</span>
+                        <span class="numero">@Colones(departamento.Monto)</span>
+                    </div>
+                    <div class="momento-barra mt-2">
+                        <span style="width:@((int)(departamento.ProporcionDelTotal * 100))%"></span>
+                    </div>
+                </div>
+            }
+        </div>
+    }
+}
+
+@code {
+    private FirmaDeLaSemana? firma;
+    private CanastaDelMesVista? canasta;
+
+    protected override void OnInitialized()
+    {
+        if (!estado.EstaArriba) return;
+
+        firma = estado.Firma();
+        canasta = estado.CanastaDelUltimoMes();
+    }
+
+    // SE NAVEGA POR NOMBRE, no por sku: la ficha resuelve el producto igual que la tool del
+    // MCP, y una url con OLLA-ARR-18 adentro es la llave interna asomandose otra vez.
+    private void VerProducto(string descripcion) =>
+        navegacion.NavigateTo($"producto/{Uri.EscapeDataString(descripcion)}");
+
+    // El mismo mapa que la portada. Vive en la caratula porque una imagen es decision de
+    // pantalla; que este en dos paginas es la señal de que le toca un componente cuando
+    // aparezca la tercera.
+    private static readonly Dictionary<string, string> FotosPorSku = new()
+    {
+        ["LECHE-1L"] = "p-leche",
+        ["ARROZ-2KG"] = "p-arroz",
+        ["GALLETA-CHOC"] = "p-galletas",
+        ["HELADO-1L"] = "p-helado",
+        ["BANANO-KG"] = "p-banano",
+        ["TOMATE-KG"] = "p-tomate",
+        ["HUEVOS-30"] = "p-huevos",
+        ["QUESO-500"] = "p-queso",
+        ["QUESO-CREMA"] = "p-queso",
+        ["LECHUGA"] = "p-lechuga",
+        ["PAN-CUADRADO"] = "p-pan",
+        ["AGUA-6PK"] = "p-agua",
+        ["CHILE-DULCE"] = "p-chile",
+    };
+
+    private static string Foto(string sku) =>
+        FotosPorSku.TryGetValue(sku, out string nombre) ? $"assets/{nombre}.png" : "";
+
+    private static string Mes(int mes) => mes switch
+    {
+        1 => "ene", 2 => "feb", 3 => "mar", 4 => "abr", 5 => "may", 6 => "jun",
+        7 => "jul", 8 => "ago", 9 => "sep", 10 => "oct", 11 => "nov", _ => "dic",
+    };
+
+    private static string Colones(decimal monto) => Plata.Colones(monto);
+}

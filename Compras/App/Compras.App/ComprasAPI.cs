@@ -663,6 +663,9 @@ namespace Compras.App
 						consumo.GastoEnElPrimerMes gastoEnElPrimerMes,
 						consumo.GastoEnElUltimoMes gastoEnElUltimoMes,
 						consumo.CambioDeGasto cambioDeGasto,
+						consumo.TotalCompras totalCompras,
+						consumo.UltimaVezExpresada ultimaVez,
+						consumo.Constancia.ParaMostrar constancia,
 						consumo.HaySerie haySerie,
 						consumo.HayCambioReal hayCambioReal,
 						consumo.ParaSonia paraSonia;

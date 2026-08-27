@@ -239,7 +239,19 @@ namespace Compras.Dominio
 			var meses = new List<MesDeConsumo>();
 			foreach (int llave in orden) meses.Add(porMes[llave]);
 
-			return Consumo.De(termino, esCategoria, meses);
+			// LA ULTIMA VEZ y EL TOTAL DE COMPRAS los sabe el agregado, no la serie por mes:
+			// la serie agrupa, y agrupar pierde el dia exacto y no sabe cuantas compras hay
+			// en total. Se los pasa quien los tiene.
+			DateTime ultimaVez = DateTime.MinValue;
+			foreach (Compra compra in compras)
+				foreach (Item item in compra.Items)
+					if (Alcanza(item, termino, esCategoria) && compra.Fecha > ultimaVez)
+					{
+						ultimaVez = compra.Fecha;
+						break;
+					}
+
+			return Consumo.De(termino, esCategoria, meses, ultimaVez, compras.Count);
 		}
 
 		private static bool Alcanza(Item item, string termino, bool esCategoria) =>
