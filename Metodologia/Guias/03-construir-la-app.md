@@ -487,7 +487,119 @@ otro assembly**) y `PerformanceV2` sellado sin constructor de assembly.
 
 ---
 
+### 7.10 Un parámetro le puede robar el nombre a un tipo
+
+`@periodicidad` y `Periodicidad` son el mismo nombre para el resolutor del DSL, y **gana el
+parámetro**. Este script:
+
+```
+g = GastoDeLaPersona(@nombre, Periodicidad.PorNombre(@periodicidad));
+```
+
+falla con
+
+```
+Unknown property or method 'PorNombre' on type 'String'
+```
+
+Léelo dos veces: dice **`String`**. El resolutor tomó `Periodicidad` como el parámetro —que es un
+`string`— y el mensaje acusa al tipo equivocado, así que mandan a revisar la clase del dominio, que
+está perfecta.
+
+**La regla: ningún parámetro puede llamarse como un tipo del dominio**, ni siquiera con otra
+capitalización. Nombralos por su papel en la frase (`@cadaCuanto`, `@desdeCuando`) y no por su tipo.
+
+### 7.11 Un `static readonly` no se alcanza desde el DSL; un método estático sí
+
+Un conjunto cerrado suele exponerse así:
+
+```csharp
+internal static readonly Procedencia Institucion = new Procedencia("institucion");
+```
+
+Desde un script, `Procedencia.Institucion` **revienta**:
+
+```
+Unknown property or method 'Institucion' on type 'Object'
+```
+
+Un **método** estático sí resuelve. Y de ahí sale la consecuencia, que es más grande que el síntoma:
+
+> **Un conjunto cerrado sin resolutor total es inalcanzable desde un comando.**
+
+La guía de dominio ya pide ese resolutor —`Periodicidad.PorNombre('mensual')`, que revienta ante lo
+desconocido— por la **totalidad**. En este substrato es además la **única puerta de entrada**. Si tu
+conjunto cerrado no tiene uno, no es que quede feo: es que ningún comando lo puede nombrar.
+
+### 7.12 El ternario no unifica dos subclases a su base común
+
+```
+contra = @hay ? ContraUnaTasaAnual(@nombre, @tasa) : ContraSuPropiaHistoria();
+```
+
+```
+Binary operation TernaryAstExpression cannot combine
+ContraUnaTasaAnual and ContraSuPropiaHistoria
+```
+
+Las dos ramas tienen que dar **el mismo tipo**, aunque el parámetro que las recibe sea la base.
+
+**Elegí el texto del script en C#**, no la rama adentro del DSL. Y en un comando eso además es más
+honesto: el journal guarda **cuál se ejecutó de verdad**, en vez de una condición que hay que volver
+a evaluar en cada replay.
+
+### 7.13 El `print` proyecta un solo nivel
+
+`print v.Responsables` no cruza. `print r.Gasto.Nombre` tampoco. Lo que cruza es **un nivel de
+escalares**, y eso decide la forma de tus carriers antes de que escribas el primero:
+
+- **Un objeto adentro de un carrier** se aplana con un accesor: `NombreDelGasto`, `NombreDeLaSeveridad`.
+- **Una colección adentro de un carrier** no cruza: o se convierte en un escalar (`CuantosSinMarcar`)
+  o va en **una consulta aparte** con su propio `foreach`.
+- **Una colección de filas que a su vez tienen celdas** tampoco. Se aplana con índices —una fila por
+  celda, con su `fila` y su `columna`— y la superficie rearma la grilla sin volver a decidir nada.
+- **Un nullable viaja como bool más valor**, nunca como hueco. Si mandás sólo el número, quien lo
+  reciba no puede distinguir *"cero"* de *"no se sabe"*, y ésas son dos respuestas muy distintas.
+
+### 7.14 El dominio dice duraciones, no fechas
+
+Una lectura que arma el dominio **no formatea una fecha**. Dice *"lleva 15 días sin aparecer"*, no
+*"se esperaba el 05/07/2026"*.
+
+Hay una razón de forma y una de fondo.
+
+**De forma:** el `print` serializa las fechas en el formato del framework. Si tu frase formatea la
+misma fecha con otro, el payload sale con **dos versiones del mismo instante** y quien lo lea tiene
+que adivinar. Medido: el campo salía `07/05/2026` y la frase decía `05/07/2026` —los dos el 5 de
+julio— y un consumidor que leyera el campo como día/mes iba a reportar dos meses de atraso donde
+había quince días.
+
+**De fondo, y es la que importa:** *"se esperaba el 05/07/2026"* obliga a quien lo lea a hacer la
+resta. *"Lleva 15 días sin aparecer"* **ya es la lectura**, que es lo único que el objeto sabe decir
+mejor que nadie. La fecha sigue viajando en su campo como `DateTime`; formatearla es derecho de la
+superficie, que es la que sabe para quién escribe.
+
+Corolario práctico: decí las duraciones como las diría una persona — días hasta un par de meses,
+meses de ahí en adelante. Una app que informa *"lleva 437 días"* obliga a dividir.
+
+---
+
 ## 8. Sobre las pruebas
+
+> **Un dominio no está terminado hasta que un perform lo tocó.**
+>
+> Es la regla que más caro sale ignorar, y hay una medición detrás. Un dominio de veintidós clases
+> compiló limpio y pasó **31 comprobaciones** del modelo puro — y era **imposible de hospedar**: tres
+> de sus conjuntos cerrados no se podían nombrar desde un comando (§7.11), un parámetro tapaba a un
+> tipo (§7.10), y sus carriers tenían dos niveles donde el `print` proyecta uno (§7.13).
+>
+> Ninguna de las dos redes lo atrapa. El compilador no ve el DSL, que se resuelve por reflexión en
+> tiempo de ejecución; y las comprobaciones del dominio puro prueban las **leyes del negocio**, que
+> estaban bien. Cinco de los seis defectos aparecieron **en la primera corrida contra un journal**, y
+> ninguno antes.
+>
+> Traducido a orden de trabajo: no declares terminado el dominio para pasar a la carátula. Atalo a un
+> perform **mientras** lo escribís, aunque sea con una carátula de consola de veinte líneas.
 
 Tres niveles, cada uno probando lo que el anterior no puede ver.
 
@@ -514,9 +626,17 @@ rehidratación siguiente.
 - [ ] ¿Todos los tipos del dominio son `internal`? ¿El host no nombra ninguno?
 - [ ] ¿Ninguna parte del dominio lee el reloj ni genera azar?
 - [ ] ¿Las consultas de la fachada devuelven escalares, arreglos primitivos o proyecciones?
+- [ ] ¿Cada conjunto cerrado tiene su **resolutor total** desde primitivo? Sin él, ningún comando lo
+      puede nombrar (§7.11)
+- [ ] ¿Ningún carrier tiene un objeto o una colección adentro que la fachada exponga? (§7.13)
+- [ ] ¿Los nullable viajan como bool más valor, y no como hueco? (§7.13)
+- [ ] ¿Ninguna lectura que arma el dominio formatea una fecha? (§7.14)
 
 **El substrato**
 
+- [ ] ¿**Un perform tocó el dominio**, aunque sea desde una consola de veinte líneas? Compilar y
+      pasar las pruebas del modelo puro no alcanza — ver el recuadro de §8
+- [ ] ¿Ningún parámetro se llama como un tipo del dominio? (§7.10)
 - [ ] ¿El agregado se construye en un `upgrade`, como global raíz?
 - [ ] ¿Cada comando que el dominio pueda rechazar va detrás de un `Check`? (§7.1)
 - [ ] ¿Hay un predicado total por cada cosa que el `Check` necesita preguntar?
