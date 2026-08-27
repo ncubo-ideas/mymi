@@ -11,13 +11,13 @@ namespace DealershipCar.Mcp.Tools
 	/// lista en la prosa.
 	///
 	/// LOS NOMBRES SON LOS DEL DOMINIO, letra por letra, porque el nombre del miembro ES lo que
-	/// cruza la puerta (C25): DealershipCarAPI toma el NOMBRE del codigo, no el enum del dominio,
+	/// cruza la puerta: DealershipCarAPI toma el NOMBRE del codigo, no el enum del dominio,
 	/// que es internal y ninguna caratula puede nombrar. Asi que la traduccion es ToString() y no
 	/// hay tabla que se pueda desincronizar.
 	///
-	/// Que esto sea una segunda escritura del conjunto cerrado es real y es la mejora barata que
-	/// C25 dejo anotada: "un catalogo de nombres, no un segundo conjunto cerrado, mas una prueba
-	/// por reflexion que lo fije contra el enum del dominio miembro por miembro". Esa prueba es
+	/// Que esto sea una segunda escritura del conjunto cerrado es real, y lo que lo hace barato es
+	/// que sea un catalogo de nombres y no un segundo conjunto cerrado, mas una prueba por
+	/// reflexion que lo fije contra el enum del dominio miembro por miembro. Esa prueba es
 	/// TheClosedSetAtTheAssistantsEdgeIsTheDomainsOwn, y va roja si al dominio se le agrega,
 	/// se le quita o se le renombra una clase.
 	public enum MaintenanceOperation

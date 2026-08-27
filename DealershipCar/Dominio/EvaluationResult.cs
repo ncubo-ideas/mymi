@@ -5,7 +5,7 @@ namespace DealershipCar.Dominio
 	/// <summary>
 	/// Lo que una evaluacion de la agenda le hizo al conjunto: cuantas operaciones se movieron, si
 	/// alguna vencio y si alguna se paso de la gracia. Es la respuesta que el host actua; un
-	/// Evaluate mudo esconderia el hecho por el que se llamo (E9, E30).
+	/// Evaluate mudo esconderia el hecho por el que se llamo.
 	/// </summary>
 	internal sealed class EvaluationResult
 	{

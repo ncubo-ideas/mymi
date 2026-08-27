@@ -4,7 +4,7 @@ namespace DealershipCar.Dominio
 {
 	/// <summary>
 	/// La ley de intervalo que vence solo cuando se alcanzan LOS DOS limites. Alcanzar uno no
-	/// es vencer (ley L2, OINV-20).
+	/// es vencer.
 	/// </summary>
 	internal sealed class TimeAndDistance : IntervalRule
 	{
@@ -23,7 +23,7 @@ namespace DealershipCar.Dominio
 			_limitUnit = limitUnit;
 		}
 
-		/// <summary>Delega en <see cref="BothLimitsRequired"/>, donde la ley L2 tiene su nombre.</summary>
+		/// <summary>Delega en <see cref="BothLimitsRequired"/>, donde la ley tiene su nombre.</summary>
 		internal override DueAssessment Assess(
 			BasePoint from, DateTime asOf, UsableReading latestUsable, IntervalLengthFactor factor)
 		{
@@ -31,10 +31,10 @@ namespace DealershipCar.Dominio
 		}
 
 		/// <summary>
-		/// LEY L2 (OINV-20): la operacion vence solo cuando se alcanzan LOS DOS limites; alcanzar
+		/// La operacion vence solo cuando se alcanzan LOS DOS limites; alcanzar
 		/// uno no es vencer. Manda la menos avanzada, que es la que la retiene. Si la distancia no
 		/// se puede evaluar degrada al tiempo, porque contarla como "no llego" dejaria la
-		/// operacion NotDue para siempre (GAP G2).
+		/// operacion NotDue para siempre.
 		/// </summary>
 		internal DueAssessment BothLimitsRequired(
 			BasePoint from, DateTime asOf, UsableReading latestUsable, IntervalLengthFactor factor)
@@ -58,7 +58,7 @@ namespace DealershipCar.Dominio
 		}
 
 		/// <summary>
-		/// LEY L4: el ancla nueva son el instante y la lectura reales de la completacion, las dos,
+		/// El ancla nueva son el instante y la lectura reales de la completacion, las dos,
 		/// porque las dos dimensiones se miden desde ahi.
 		/// </summary>
 		internal override BasePoint NextOccurrenceFromActualCompletion(

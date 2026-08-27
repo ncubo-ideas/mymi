@@ -1,13 +1,5 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
-  <!-- Caratula de andamio. El MISMO actor y los MISMOS performs que va a usar el browser;
-       lo unico que cambia es como llegan las entradas y donde va la salida.
-
-       Existe para medir el dominio y el bucle de refresh contra un disco de verdad, sin el
-       sandbox del browser encima: ids de entrada del journal, conteo de bytes, corridas de
-       muestra deterministas. Y es donde se paga el reloj recibido — "adelanta seis meses"
-       es un parametro, no una espera. -->
-
   <PropertyGroup>
     <OutputType>Exe</OutputType>
     <TargetFramework>net9.0</TargetFramework>
@@ -18,22 +10,6 @@
     <AssemblyTitle>Maintenance schedule measuring console</AssemblyTitle>
     <Description>Scaffold shell: the same actor and the same performs as the browser, against a real disk, for measuring.</Description>
 
-    <!-- El analizador de Microsoft.VisualStudio.Threading llega con el paquete del motor y se
-         despierta en T8, cuando esta caratula se vuelve async para poder esperar al refresh.
-         Sus dos reglas aca no aplican y no se acatan a medias:
-
-           VSTHRD103  "Console.WriteLine bloquea; usa WriteLineAsync". Existe para no
-                      bloquear el hilo de UI de una extension de Visual Studio. Esto es una
-                      consola de medicion: bloquear en la salida estandar es lo que hace, y
-                      WriteLineAsync en cada linea de un reporte seria ruido puro.
-           VSTHRD200  "los metodos que devuelven un awaitable llevan sufijo Async". La
-                      convencion de nombres de este modulo esta escrita en CLAUDE.md y dice
-                      otra cosa; el sufijo tampoco compra nada donde no hay dos versiones
-                      del mismo metodo.
-
-         Se silencian ACA y no en el repo entero: es esta caratula la que decidio ser async.
-         Examenes.Consola convive con las mismas seis advertencias sin silenciarlas, y ese es
-         justo el estado que este modulo no quiere. -->
     <NoWarn>$(NoWarn);VSTHRD103;VSTHRD200</NoWarn>
   </PropertyGroup>
 

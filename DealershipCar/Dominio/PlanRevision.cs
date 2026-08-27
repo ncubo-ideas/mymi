@@ -4,8 +4,8 @@ namespace DealershipCar.Dominio
 {
 	/// <summary>
 	/// Una revision del plan del fabricante que esta agenda adopto: su codigo y cuando se adopto.
-	/// Es la procedencia del plan que la persona esta corriendo (OINV-19); las operaciones que la
-	/// revision trae entran despues, una por una, por la siembra (C5).
+	/// Es la procedencia del plan que la persona esta corriendo; las operaciones que la
+	/// revision trae entran despues, una por una, por la siembra.
 	/// </summary>
 	internal sealed class PlanRevision
 	{
@@ -16,7 +16,7 @@ namespace DealershipCar.Dominio
 				throw new DomainException(
 					"Una revision del plan sin codigo no se puede adoptar: el codigo es lo que "
 					+ "dice CUAL plan quedo rigiendo, y sin el la agenda no puede decir de donde "
-					+ "salieron sus operaciones (OINV-19).");
+					+ "salieron sus operaciones.");
 
 			Code = code;
 			AdoptedAt = adoptedAt;
