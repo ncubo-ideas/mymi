@@ -278,15 +278,21 @@ namespace Presupuesto.Dominio
 
 		// ------------------------------------------------------------ lo que quedo sin marcar
 
-		// Los candidatos a imprevisto del juicio 8: cargos que ningun gasto recurrente
-		// reconocio. "No estaba presupuestado" da los candidatos; la marca de la persona los
-		// agrupa en un evento.
+		// LOS CANDIDATOS A IMPREVISTO. Juicio 8.
 		//
-		// HUECO 7 - Y aca esta el hueco mas grande de todos. Preguntas.md usa "presupuestado"
-		// como si estuviera definido y NUNCA DICE COMO SE FIJA UN PRESUPUESTO: quien lo pone,
-		// por categoria o total, por mes o por ano. Sin eso, "lo no presupuestado" solo puede
-		// aproximarse por "lo que no reconocio ningun gasto recurrente", que es otra cosa.
-		// La app se llama Presupuesto y el archivo no define el presupuesto.
+		// Esto NO es una aproximacion: es la definicion. Se pregunto, y la respuesta fue que
+		// LO NO PRESUPUESTADO ES EL IMPREVISTO — en esta app no hay un presupuesto declarado,
+		// y no hace falta.
+		//
+		// La definicion no es circular porque las dos mitades las aporta gente distinta: los
+		// CANDIDATOS se deducen -un cargo que ningun gasto recurrente conocido reclama- y el
+		// EVENTO lo marca la persona, agrupando cargos. Asi que "presupuestado" acaba
+		// significando "atribuible a un gasto recurrente conocido".
+		//
+		// CUIDADO CON LA PALABRA, porque es de las que alguien "arregla" en seis meses: en
+		// esta app PRESUPUESTO SIGNIFICA EL TOTAL OBSERVADO, NO UN PLAN. El juicio 2 ya la usa
+		// asi. Declarar un presupuesto -"quiero gastar maximo 200 mil en comida"- es otra app,
+		// y ninguna de las cinco preguntas la pidio.
 		internal IReadOnlyList<Cargo> CargosQueNadieReconocio(int ano, int mes)
 		{
 			var lista = new List<Cargo>();

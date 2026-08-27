@@ -54,7 +54,7 @@ La parte que sí se enumera. Ninguno se deduce de los datos: existen porque algu
 | 5 | **Qué tan grave es una ausencia** | **La decide el compromiso, no el monto.** Un recibo de luz que no llegó es un aviso; una cuota de préstamo o un pago de tarjeta es **crítico** |
 | 6 | **Qué gasto es reducible** | Deducible para el consumo discrecional (el repertorio); **marcado por la persona** para todo lo demás |
 | 7 | **Contra qué se compara el rendimiento de un bien** | **Es parámetro de la persona.** A uno le basta con que se pague sola; otro la compara contra un certificado de depósito o contra cripto. **Piso fijo:** contra sus propios períodos anteriores, que siempre está disponible |
-| 8 | **Qué es un imprevisto** | Lo **no presupuestado** da los candidatos; la marca de la persona **agrupa** los cargos en un evento. La tasa para anticiparlos se calcula **sobre eventos, no sobre cargos** |
+| 8 | **Qué es un imprevisto** | **Lo no presupuestado ES el imprevisto** — no hay presupuesto declarado. Los **candidatos** se deducen: un cargo que ningún gasto recurrente conocido reclama. El **evento** lo marca la persona, agrupando cargos. La tasa se calcula **sobre eventos, no sobre cargos** |
 
 ### Por qué el 2 es distinto de lo que parecía
 
