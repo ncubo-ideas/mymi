@@ -51,6 +51,26 @@
     </div>
 </header>
 
+@* LAS DOS PESTAÑAS, y son UNA sola UI que se comporta distinto por resolucion — que es
+   lo que pidio Alvaro: "lo ideal es mantener una sola ui que mantenga a mobile y desktop,
+   quizas dependiendo de la resolucion se comporte distinto, en vez de dos uis separadas".
+
+   Arriba de 768 px van en linea, debajo de la barra de marca, como pestañas de escritorio.
+   Debajo, se van al PIE y quedan fijas, que es donde el pulgar alcanza. El markup es el
+   mismo; lo que cambia es el CSS. *@
+<nav class="pestanas">
+    <div class="pestanas-dentro">
+        <NavLink class="pestana" href="" Match="NavLinkMatch.All">
+            <span class="pestana-icono" aria-hidden="true">&#9737;</span>
+            Inicio
+        </NavLink>
+        <NavLink class="pestana" href="recibos">
+            <span class="pestana-icono" aria-hidden="true">&#9776;</span>
+            Compras
+        </NavLink>
+    </div>
+</nav>
+
 <main class="container py-4" style="max-width:56rem">
     @Body
 </main>

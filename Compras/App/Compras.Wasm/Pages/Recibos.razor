@@ -1,0 +1,148 @@
+@page "/recibos"
+@using System.Globalization
+@using Compras.App.Vistas
+@using Compras.Dominio
+@inject EstadoDeLaApp estado
+@inject NavigationManager navegacion
+
+@* LA PESTAÑA DE COMPRAS: encontrar UN recibo, que es otra pregunta que la de la portada.
+   La portada contesta "¿qué compro yo?"; acá se contesta "¿dónde está eso que llevé?".
+
+   Sigue el diseño de la app: una búsqueda arriba y los recibos AGRUPADOS POR FECHA, con
+   HOY separado del resto. Nadie recuerda el número de un ticket; recuerda cuándo fue. *@
+
+<PageTitle>Tus compras · La Guaria y vos</PageTitle>
+
+<h1>Encontrá eso que llevaste</h1>
+<p class="text-body-secondary mb-4">
+    Buscá un producto o recorré tus compras anteriores.
+</p>
+
+@if (!estado.EstaArriba)
+{
+    <div class="aviso">
+        La app todavía no abrió en esta computadora.
+        <a href="">Andá a Inicio</a> y elegí tu carpeta.
+    </div>
+}
+else
+{
+    <div class="buscador mb-4">
+        <span class="buscador-lupa" aria-hidden="true">&#8981;</span>
+        <input class="form-control" type="search" placeholder="Buscar leche, arroz, galletas…"
+               value="@termino" @oninput="Buscar" aria-label="Buscar en tus compras" />
+    </div>
+
+    @if (compras.Count == 0)
+    {
+        <p class="text-body-secondary">Todavía no hay compras. Apretá <em>Refresh</em> en Inicio.</p>
+    }
+    else if (Encontradas().Count == 0)
+    {
+        @* NO HAY RESULTADOS ES UNA RESPUESTA, no una pantalla vacía: se dice qué se buscó
+           y en cuántas compras, para que quien busca sepa que la app miró. *@
+        <p class="text-body-secondary">
+            No hay ninguna compra que coincida con <strong>«@termino»</strong>
+            entre tus @compras.Count compras.
+        </p>
+    }
+    else
+    {
+        @foreach (var grupo in PorFecha())
+        {
+            <div class="grupo-fecha">@grupo.Key</div>
+            <div class="list-group mb-3">
+                @foreach (CompraEnLista compra in grupo)
+                {
+                    <button class="list-group-item list-group-item-action recibo"
+                            @onclick="() => VerDetalle(compra.Numero)">
+                        <span class="recibo-dia">
+                            <span class="recibo-numero-dia">@compra.Fecha.Day</span>
+                            <span class="recibo-mes">@Mes(compra.Fecha.Month)</span>
+                        </span>
+                        <span class="recibo-que">
+                            <strong>@compra.Lineas @(compra.Lineas == 1 ? "producto" : "productos")</strong>
+                            <span class="small text-body-secondary">
+                                @compra.Fecha.ToString("HH:mm", CultureInfo.InvariantCulture)
+                                &middot; @compra.Numero
+                            </span>
+                        </span>
+                        <span class="recibo-total numero">@Colones(compra.Total)</span>
+                        <span class="recibo-flecha" aria-hidden="true">&rsaquo;</span>
+                    </button>
+                }
+            </div>
+        }
+
+        @if (termino.Length == 0 && compras.Count > RecibosQueSeMuestran)
+        {
+            <p class="small text-body-secondary">
+                Las @RecibosQueSeMuestran más recientes de @compras.Count.
+                Buscá arriba para encontrar una más vieja — y tu asistente las puede
+                consultar todas.
+            </p>
+        }
+    }
+}
+
+@code {
+    // CUANTOS SE PINTAN SIN BUSCAR. Con 87 compras la lista completa es una pared; doce son
+    // unos tres meses de compras semanales, que es lo que alguien recorre buscando un
+    // ticket reciente. Con un termino de busqueda NO se acota: quien busca quiere todo.
+    private const int RecibosQueSeMuestran = 12;
+
+    private IReadOnlyList<CompraEnLista> compras = new List<CompraEnLista>();
+    private string termino = "";
+
+    protected override void OnInitialized()
+    {
+        if (estado.EstaArriba) compras = estado.Compras();
+    }
+
+    private void Buscar(ChangeEventArgs e) => termino = (e.Value?.ToString() ?? "").Trim();
+
+    // LA BUSQUEDA ES POR NUMERO DE TICKET, no por producto — todavia. El detalle de cada
+    // compra tiene las lineas, pero esta pantalla solo tiene la lista, y bajar el detalle
+    // de las 87 para filtrar seria pedirle al dominio 87 consultas por tecla.
+    //
+    // Lo que falta es una lectura del dominio: "las compras donde entro este producto".
+    // El placeholder promete buscar "leche, arroz, galletas", asi que hasta que exista, la
+    // pantalla no cumple lo que ofrece. Queda dicho aca y en el README.
+    private IReadOnlyList<CompraEnLista> Encontradas()
+    {
+        if (termino.Length == 0)
+        {
+            var recientes = new List<CompraEnLista>();
+            for (int i = compras.Count - 1; i >= Math.Max(0, compras.Count - RecibosQueSeMuestran); i--)
+                recientes.Add(compras[i]);
+
+            return recientes;
+        }
+
+        var hallados = new List<CompraEnLista>();
+        for (int i = compras.Count - 1; i >= 0; i--)
+            if (compras[i].Numero.Contains(termino, StringComparison.OrdinalIgnoreCase))
+                hallados.Add(compras[i]);
+
+        return hallados;
+    }
+
+    // AGRUPADAS POR MES, con HOY aparte. Nadie recuerda el numero de un ticket; recuerda
+    // cuando fue, y "hoy" es la unica fecha que se busca por su nombre.
+    private IEnumerable<IGrouping<string, CompraEnLista>> PorFecha() =>
+        Encontradas().GroupBy(c =>
+            c.Fecha.Date == DateTime.Now.Date
+                ? "HOY"
+                : $"{Mes(c.Fecha.Month).ToUpperInvariant()} {c.Fecha.Year}");
+
+    private void VerDetalle(string numero) =>
+        navegacion.NavigateTo($"compra/{Uri.EscapeDataString(numero)}");
+
+    private static string Mes(int mes) => mes switch
+    {
+        1 => "ene", 2 => "feb", 3 => "mar", 4 => "abr", 5 => "may", 6 => "jun",
+        7 => "jul", 8 => "ago", 9 => "sep", 10 => "oct", 11 => "nov", _ => "dic",
+    };
+
+    private static string Colones(decimal monto) => Plata.Colones(monto);
+}
