@@ -154,17 +154,9 @@
     color: var(--mud-palette-text-secondary);
 }
 
-.defer {
-    display: flex;
-    gap: 8px;
-    align-items: center;
-    flex-wrap: wrap;
-}
-
-.defer__reason {
-    min-width: 152px;
-    max-width: 176px;
-}
+/* .defer y .defer__reason se fueron con la columna "What you can do": vestian el desplegable de
+   razon y el boton "Put off", y la app del dueno no aplaza nada -- el journal lo cambia el
+   concesionario. No quedan reglas para controles de la tabla porque no quedan controles. */
 
 .instrument {
     margin: 0;

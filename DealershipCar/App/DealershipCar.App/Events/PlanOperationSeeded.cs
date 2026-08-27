@@ -4,19 +4,6 @@ using Puppets.Portador;
 
 namespace DealershipCar.App.Events
 {
-	// EL FABRICANTE SIEMBRA UNA OPERACION DEL PLAN. Trae sus limites, sus dos clasificaciones y el
-	// ANCLA COMPLETA -- instante, lectura y la unidad de ESA lectura (C18) -- porque una operacion
-	// nunca completada se mide desde algun lado y el dominio no puede inventarlo.
-	//
-	// Es el mensaje mas ancho de los cinco, y por eso el que mas formas tiene de venir roto: diez
-	// campos, cuatro conjuntos cerrados y dos limites que solo valen segun la base declarada.
-	//
-	// LA COMBINACION BASE/LIMITES NO SE VALIDA ACA, y esta bien: la valida la puerta llamando a la
-	// guarda del dominio -- IntervalRule.BasisIsNeverInferred -- que es la misma y unica fuente de
-	// verdad, y corre ANTES de que el motor escriba la entrada. Duplicar la tabla aca seria una
-	// segunda fuente para una ley, que es justo lo que E32 y C2 argumentan en contra.
-	//
-	// Ver OdometerReported para por que los codigos se validan aca.
 	public sealed class PlanOperationSeeded : IMensajeDeEvento
 	{
 		public const string TheEventType = "PlanOperationSeeded";
@@ -71,10 +58,6 @@ namespace DealershipCar.App.Events
 					if (!WireName.NamesADistanceUnit(unit)) return null;
 					if (!WireName.NamesADistanceUnit(anchorUnit)) return null;
 
-					// LOS DOS LIMITES SE EXIGEN PRESENTES aunque valgan cero. Cero es "esta
-					// dimension no tiene limite" -- una afirmacion del plan, no un campo que falta
-					// -- y la guarda del dominio decide con los dos juntos si la base declarada se
-					// sostiene. Un evento que omite uno no esta diciendo cero: no esta diciendo.
 					int timeLimitDays;
 					if (!Payload.Whole(root, "timeLimitDays", out timeLimitDays)) return null;
 

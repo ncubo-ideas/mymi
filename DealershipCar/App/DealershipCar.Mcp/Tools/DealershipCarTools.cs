@@ -6,38 +6,6 @@ using Puppeteer;
 
 namespace DealershipCar.Mcp.Tools
 {
-	// LA SUPERFICIE QUE VE LA IA.
-	//
-	// Son intencionales en el sentido fuerte: las escribe el autor de la app, igual que un [HttpGet],
-	// y la app decide que expone. Deliberadamente NO existe una tool generica Query(puppet,
-	// operation, parameters): eso le daria a la IA una consola de DSL en vez de un dominio, tiraria a
-	// la basura el descubrimiento por schema, y expondria los puppets. La unidad descubrible es la
-	// aplicacion.
-	//
-	// EL [Description] NO ES DOCUMENTACION: ES la semantica que lee la IA, lo unico que tiene para
-	// decidir si esta tool contesta la pregunta de la persona. Por eso esta redactado como la pregunta
-	// que una persona se hace sobre sus propios datos, y no como el nombre de un metodo.
-	//
-	// EN INGLES, y es la decision 6 de T7 aplicada un piso mas arriba: ReadDueReason y cada nombre de
-	// DueState los compone EL DOMINIO en ingles (OUS-07 dice que componer el motivo es del dominio y
-	// no de la vista), asi que envolver esa carga util en prosa espanola seria ruido. Los comentarios
-	// siguen en espanol, como manda el modulo.
-	//
-	// LO QUE NO ESTA, Y NO ESTA A PROPOSITO:
-	//
-	//  - LOS TRES COMANDOS Y LAS TRES CREDENCIALES. StoredToken, StoredRefreshToken y StoredDeviceKey
-	//    son la credencial de la persona, guardada EN CLARO en el journal (deuda conocida y aceptada,
-	//    plan §8) en una carpeta que este proceso ademas lee. Publicarselas a un asistente seria un
-	//    agujero nuevo, no una funcionalidad.
-	//  - Evaluate, Apply, RegisterDevice, StoreCredential y los nueve comandos del dominio. Evaluate
-	//    parece una lectura y NO lo es: es un comando, transiciona estados y escribe. Ningun camino
-	//    desde estas tools llega a un PerformCommand.
-	//
-	// LAS TOOLS SON PREGUNTAS, NO LECTURAS SUELTAS, y la razon es de correccion y no de gusto: el
-	// lector se rehidrata en CADA consulta, asi que una tool por lectura de §4 haria que la IA
-	// compusiera una sola respuesta a partir de VARIOS estados del journal -- la app instalada escribe
-	// mientras este proceso vive. Cada tool contesta desde UNA rehidratacion. Ver CONTRADICTIONS.md
-	// C30; las ocho lecturas de §4 siguen todas alcanzables, y cual las contesta esta dicho ahi.
 	[McpServerToolType]
 	internal sealed class DealershipCarTools
 	{
@@ -50,10 +18,6 @@ namespace DealershipCar.Mcp.Tools
 			this.reader = reader;
 		}
 
-		// UseStructuredContent es el ultimo tramo de "sin strings en ninguna frontera semantica". Sin
-		// el, el SDK serializa el record a JSON y lo manda como un bloque de TEXTO: la IA recibe un
-		// string que tiene que volver a parsear. Con el, el resultado viaja en structuredContent y la
-		// tool publica un outputSchema, asi que un int llega como int.
 		[McpServerTool(Name = "review_my_maintenance", UseStructuredContent = true)]
 		[Description("Answers what this person's vehicle needs right now: which maintenance "
 			+ "operations are due, which are past their grace period, which count as missed, and what "
@@ -85,9 +49,6 @@ namespace DealershipCar.Mcp.Tools
 		public OperationStanding CheckOne(
 			[Description("Which maintenance operation to look up.")] MaintenanceOperation operation)
 		{
-			// La rama de "vino vacio" no existe, y no es un descuido: con un enum el cliente MCP no
-			// PUEDE mandar algo fuera del conjunto. Se borro porque es inalcanzable, que es justamente
-			// lo que se compra al tipar.
 			return reader.Read(
 				api => OneOperation(api, operation),
 				() => new OperationStanding
@@ -133,11 +94,6 @@ namespace DealershipCar.Mcp.Tools
 				});
 		}
 
-		// ------------------------------------------------------ lo que cada tool arma
-
-		// TODA LA AGENDA DESDE UNA SOLA REHIDRATACION. Las nueve clases se recorren aca adentro, con
-		// el mismo actor: partirlas en nueve consultas releeria el journal nueve veces y podria
-		// mezclar dos estados.
 		private MaintenanceReview TheWholeSchedule(DealershipCarAPI api)
 		{
 			var operations = new List<OperationStanding>();
@@ -195,27 +151,6 @@ namespace DealershipCar.Mcp.Tools
 			};
 		}
 
-		// EL PUNTO DE CONTROL PUEDE NO EXISTIR, y no es un defecto nuestro ni un journal roto: es un
-		// journal escrito por una version de la app ANTERIOR a la bitacora de eventos. Se encontro
-		// apuntando el servidor a una carpeta de verdad -- ~/DealershipCar-journal, escrita en T7 --
-		// y no lo podia encontrar ninguna prueba de las de aca, porque toda carpeta de prueba la
-		// escribe la app de hoy.
-		//
-		// UN LECTOR NO PUEDE MIGRAR, y ahi esta el nudo. upgrade('bitacora-de-eventos') se aplica en
-		// OnHydrated, y el OnHydrated de este host esta VACIO a proposito: crear la global que falta
-		// seria escribir en el journal de la persona, que es exactamente lo que T9 promete no hacer.
-		// Asi que la global sigue faltando por diseño hasta que la persona abra su app una vez.
-		//
-		// Y NO SE PUEDE CONTESTAR "no hay datos": la agenda SI esta -- upgrade('semilla') corrio hace
-		// tiempo -- y la agenda es justo lo que la persona pregunta. Negarle todo por un campo que le
-		// falta seria peor que decirle que ese campo le falta. Asi que se degrada de a una global.
-		//
-		// SE ATRAPA LANGUAGEEXCEPTION EN UNA SOLA LLAMADA, y eso es lo que lo separa de C28. Ahi la
-		// regla es que un LanguageException NO se traga en un contador de rechazos, porque seria
-		// nuestro propio error de tipeo del DSL disfrazado de hecho recibido. Aca el catch abraza UNA
-		// linea, cuyo script ejercitan EveryScriptOfTheDoorHasBeenRun y las pruebas de T8 contra un
-		// journal de verdad -- y la bandera se afirma en TRUE sobre un journal actual, asi que un
-		// tipeo que la dejara siempre en false se pone rojo.
 		private static bool TheEventCheckpoint(DealershipCarAPI api, out long lastEvent)
 		{
 			try
@@ -230,11 +165,6 @@ namespace DealershipCar.Mcp.Tools
 			}
 		}
 
-		// LAS DOS LECTURAS GUARDADAS, PREGUNTADAS CON SU GUARDA. ReadNextDueKind y LastEvaluatedAt
-		// tiran InvalidOperationException cuando no hay nada vencido / nunca se evaluo (E41, decision
-		// 6 de T6), y una tool que dejara escapar esa excepcion la convertiria en un error del
-		// PROTOCOLO: la IA veria "la herramienta fallo" donde el hecho es "no hay nada vencido". Se
-		// contesta el lado vacio -- "" -- y el [Description] del campo dice que significa.
 		private static string TheNextThingToDo(DealershipCarAPI api)
 		{
 			return api.HasAnythingDue() ? api.ReadNextDueKind() : "";
@@ -242,13 +172,9 @@ namespace DealershipCar.Mcp.Tools
 
 		private static string TheInstantItWasEvaluatedTo(DealershipCarAPI api)
 		{
-			// El "O" lleva la Z que C24 peleo: la puerta vuelve a estampar DateTimeKind.Utc al salir
-			// porque el journal lo borra, y perderla aca haria que la IA leyera un instante sin huso.
 			return api.HasBeenEvaluated() ? api.LastEvaluatedAt().ToString("O") : "";
 		}
 
-		// Lo que hay que decirle a la persona, si algo. Las dos advertencias se acumulan en vez de
-		// pisarse: las dos son ciertas a la vez y las dos cambian lo que corresponde contestar.
 		private string TheDetailWhen(bool theEventCheckpointIsKnown)
 		{
 			var says = new List<string>();
@@ -261,8 +187,6 @@ namespace DealershipCar.Mcp.Tools
 			return string.Join(" ", says);
 		}
 
-		// Con mas de un vehiculo en la carpeta se contesta por el primero y SE DICE. Callarlo haria
-		// que la persona leyera la agenda de otro auto creyendo que es la de este.
 		private string MoreThanOneVehicle()
 		{
 			return reader.HowManyVehicles > 1
@@ -284,8 +208,6 @@ namespace DealershipCar.Mcp.Tools
 			+ "it is not something you or the dealership can fix from here.";
 	}
 
-	// Tipos de retorno CON FORMA, no un string: el SDK genera el schema de salida desde esto y la IA
-	// recibe structuredContent con enteros de verdad.
 	internal sealed class OperationStanding
 	{
 		[JsonPropertyName("hasData")]

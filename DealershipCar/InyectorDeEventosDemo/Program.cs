@@ -2,23 +2,6 @@ using System.Globalization;
 using System.Net.Http.Json;
 using System.Text.Json;
 
-// Inyector de eventos de demo para URL2, el mock del concesionario.
-//
-// Herramienta de operacion: la usa quien monta la demo, no la persona usuaria. Le habla a URL2 por
-// HTTP igual que cualquier operador, sin referenciar ni el dominio ni la app.
-//
-// POR QUE EXISTE: los datos del demo se ORQUESTAN COMO TEST CASES. Un endpoint que agrega una
-// lectura de odometro aleatoria no sirve para contar una historia, porque CUANDO ALGO VENCE depende
-// de los valores y de los instantes. Con lecturas al azar no se puede demostrar que el filtro vence
-// justo despues de la revision del fabricante, que es toda la demo.
-//
-// LAS FECHAS SON LITERALES. Una demo con "hoy menos seis meses" deja de ser reproducible: los
-// vencimientos dependen de los dias transcurridos, y el mismo journal reproducido el ano que viene
-// contaria otra historia. Es la regla de C27 y aca vale igual que en el guion de la consola.
-//
-// Regla de la casa: se publica SOLO lo que la app va a mostrar. Si la historia son diecinueve
-// eventos, son diecinueve, no doscientos.
-
 string baseUrl = Arg(args, "--url", "http://localhost:8092/");
 string recurso = Arg(args, "--recurso", "vehicle");
 string id = Arg(args, "--id", "1HGCM82633A004352");
@@ -46,7 +29,6 @@ catch (Exception ex)
     return 2;
 }
 
-// Que ve hoy la app: sirve para saber desde donde sigue la numeracion.
 async Task Listar()
 {
     string credencial = await Credencial();
@@ -64,9 +46,6 @@ async Task Listar()
         Console.WriteLine($"  #{e.GetProperty("id")}  {e.GetProperty("tipo").GetString(),-26} {Resumen(e)}");
 }
 
-// Lo que se ve de cada evento en una linea. Los cinco tipos que la app consume dicen su hecho; los
-// que no consume se muestran igual, porque VERLOS es la mitad del punto: el concesionario publica
-// su narrativa entera y la app se queda con su rebanada.
 static string Resumen(JsonElement e)
 {
     string tipo = e.GetProperty("tipo").GetString();
@@ -88,9 +67,6 @@ static string Resumen(JsonElement e)
     };
 }
 
-// Un hecho CONCRETO, con sus valores exactos.
-//   inyectar --tipo OdometerReported --value 31000 --observedAt 2026-10-01 --source Telemetry
-//   inyectar --tipo OperationCompleted --kind FilterChange --completedAt 2026-10-02 --completionReading 31000
 async Task Inyectar()
 {
     string tipo = Arg(args, "--tipo", "");
@@ -129,13 +105,6 @@ async Task Inyectar()
     Console.WriteLine($"inyectado: {await respuesta.Content.ReadAsStringAsync()}");
 }
 
-// EL GUION COMPLETO de la demo, sembrado de una vez. ACA SE EDITA LA HISTORIA.
-//
-// URL2 ya arranca con esta misma historia sembrada, asi que esto sirve para re-sembrarla sobre otro
-// vehiculo o para agregarla despues de haber inyectado a mano.
-//
-// El PORQUE de cada linea viaja al lado: es lo que permite editar la historia sin volver a deducir
-// para que estaba cada hecho.
 async Task Historia()
 {
     Console.WriteLine($"sembrando la historia en {recurso}/{id}...");
@@ -189,8 +158,6 @@ async Task Historia()
     }
 }
 
-// El senuelo, para demostrarlo en vivo: con la credencial de la app, /customer da 403. No es
-// cortesia del mock - el scope del token es {recurso}.events.read y nada mas.
 async Task Senuelo()
 {
     string credencial = await Credencial();
@@ -216,8 +183,6 @@ async Task<string> Credencial()
     using JsonDocument doc = JsonDocument.Parse(await respuesta.Content.ReadAsStringAsync());
     return doc.RootElement.GetProperty("accessToken").GetString();
 }
-
-// ---------------------------------------------------------------- los cuerpos del guion
 
 static object Lectura(int valor, string observado, string fuente) => new
 {
@@ -257,8 +222,6 @@ static object Cita(string observado) => new
 {
     tipo = "AppointmentScheduled", observedAt = observado,
 };
-
-// ---------------------------------------------------------------- utilidades
 
 static string Texto(JsonElement e, string campo) =>
     e.TryGetProperty(campo, out JsonElement v) && v.ValueKind == JsonValueKind.String ? v.GetString() : "";
