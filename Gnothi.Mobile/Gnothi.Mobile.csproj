@@ -43,25 +43,16 @@
     <EmbedAssembliesIntoApk>true</EmbedAssembliesIntoApk>
   </PropertyGroup>
 
-  <ItemGroup>
-    <!-- The Host's core, as it is, with no copy and no fork. -->
-    <Compile Include="..\Gnothi.Host\Dispatcher.cs" />
-    <Compile Include="..\Gnothi.Host\ModuleCatalog.cs" />
-    <Compile Include="..\Gnothi.Host\Module.cs" />
-    <Compile Include="..\Gnothi.Host\Manifest.cs" />
-    <Compile Include="..\Gnothi.Host\Installation.cs" />
-    <Compile Include="..\Gnothi.Host\IShell.cs" />
-    <Compile Include="..\Gnothi.Host\InProcessShell.cs" />
-    <Compile Include="..\Gnothi.Host\ConsentWatch.cs" />
-    <Compile Include="..\Gnothi.Host\ToolIndex.cs" />
-
-    <!-- GATE 2. Same reason as the Host files: they are compiled in, not referenced, because
-         Gnothi.Assistant has a ProjectReference to Gnothi.Host and taking it would bring a
-         SECOND copy of the core types into this app. -->
-    <Compile Include="..\Gnothi.Assistant\IModel.cs" />
-    <Compile Include="..\Gnothi.Assistant\AgentLoop.cs" />
-    <Compile Include="..\Gnothi.Assistant\ModelClaude.cs" />
-    <Compile Include="..\Gnothi.Assistant\ModelOpenAiCompatible.cs" />
-  </ItemGroup>
-
+<ItemGroup>
+  <!-- El núcleo del Host, POR GLOB. Un .cs nuevo del núcleo entra solo; uno de Puerta 1 /
+       escritorio hay que excluirlo, y si no, rompe el build -- que es la señal correcta. -->
+  <Compile Include="..\Gnothi.Host\*.cs"
+           Exclude="..\Gnothi.Host\Program.cs;..\Gnothi.Host\ToolBridge.cs;..\Gnothi.Host\HostTools.cs;..\Gnothi.Host\ConsentWatcher.cs;..\Gnothi.Host\HostInstaller.cs;..\Gnothi.Host\QueryConsole.cs" />
+  <Compile Include="..\Gnothi.Assistant\*.cs" />
+</ItemGroup>
+<ItemGroup>
+  <PackageReference Include="Ncubo.Puppeteer" Version="$(VersionDelMotor)" />
+  <ProjectReference Include="..\Examenes\Mecanismo\Puppets.Portador\Puppets.Portador.csproj" />
+  <ProjectReference Include="..\Gnothi.Contract\Gnothi.Contract.csproj" />
+</ItemGroup>
 </Project>
