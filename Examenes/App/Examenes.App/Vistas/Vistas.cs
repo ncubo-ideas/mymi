@@ -200,6 +200,22 @@ namespace Examenes.App.Vistas
 		public bool RequiereElSexo { get; init; }
 	}
 
+	// LO QUE ESTA BIEN, ya contado y ya dicho. Es la contracara de LoMasUrgente y viene
+	// entero del dominio por la misma razon: la portada las muestra juntas, y una frase
+	// compuesta en la pantalla al lado de una escrita por el dominio se desincroniza sola.
+	public sealed class LoQueEstaBien
+	{
+		public int EnSuRango { get; init; }
+
+		// El denominador. Sale del mismo recorrido que el numerador.
+		public int Analitos { get; init; }
+
+		public bool HayAlgo { get; init; }
+
+		// La frase entera, escrita por el dominio. Vacia cuando no hay nada en rango.
+		public string ParaSonia { get; init; } = "";
+	}
+
 	// EL DATO QUE FALTA. Es lo que alimenta el bloque que insiste, y viene entero del
 	// dominio: el conteo sale de recorrer cada serie e interpretarla, y la frase de saber
 	// por que falta cada una.

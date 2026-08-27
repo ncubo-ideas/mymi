@@ -182,7 +182,12 @@ else
        apretar, y el foco de teclado se pierde en el reemplazo del nodo. Con el @key un
        nivel más abajo la cabecera sobrevive al redibujo —el foco se queda donde estaba— y
        el cuerpo se vuelve a animar exactamente igual que antes. *@
-    <section class="portada @Tono()">
+    @* LA PORTADA MUESTRA DOS COSAS A LA VEZ, como el telefono del landing: el verde que
+       dice cuantos valores estan donde tienen que estar, y aparte lo que pide atencion.
+       Antes era UNA tarjeta que cambiaba de tono entero, y eso tenia un costo: apenas un
+       analito pedia algo, la tranquilidad de los otros diecisiete desaparecia de la
+       pantalla. La severidad ya no pinta la tarjeta; pinta el bloque al que pertenece. *@
+    <section class="portada">
         @* ACTUALIZAR VIVE EN LA PORTADA, no en una fila suelta debajo. Es el botón que
            vuelve a contestar la pregunta que contesta esta tarjeta: si el rótulo dice
            «hoy», entonces «¿esto es de hoy?» pertenece acá y a ningún otro lado.
@@ -202,26 +207,80 @@ else
         </div>
 
         <div class="portada-cuerpo" @key="@($"portada-{redibujo}")">
-            @if (urgente.PideAlgo)
+            @* EL BLOQUE QUE TRANQUILIZA. No se dibuja cuando la severidad es «urgente»:
+               el rojo lo reserva el dominio para lo que no puede esperar, y poner un
+               «todo está bien» al lado de eso lo contradice. Fuera de ese caso el verde
+               convive con el ámbar, que es justo lo que hace el mock. *@
+            @if (enRango.HayAlgo && urgente.Severidad != "urgente")
             {
-                <p class="portada-titular">@Mayuscula(urgente.Accion).</p>
-                <div class="portada-cuales">
-                    @foreach (InterpretacionDeAnalito lectura in LosQuePiden())
-                    {
-                        <button class="portada-cual" @onclick="() => VerSerie(lectura.Analito)">
-                            @lectura.ParaMostrar
-                        </button>
-                    }
+                <div class="veredicto veredicto--bien">
+                    @* La carita del landing, tal cual: el círculo, los dos ojos y la
+                       boca. Es lo que hace que la pantalla se reconozca de un vistazo. *@
+                    <svg viewBox="0 0 24 24" aria-hidden="true">
+                        <circle cx="12" cy="12" r="10" fill="none" stroke-width="1.6" />
+                        <circle cx="8.5" cy="10" r="0.6" fill="currentColor" stroke="none" />
+                        <circle cx="15.5" cy="10" r="0.6" fill="currentColor" stroke="none" />
+                        <path d="M8 14.5c1 1.3 2.4 2 4 2s3-.7 4-2" fill="none"
+                              stroke-width="1.6" stroke-linecap="round" />
+                    </svg>
+                    <div>
+                        @* LA FRASE ES DEL DOMINIO, igual que la del ámbar de al lado. Acá
+                           se decide UNA cosa —si va de titular o de detalle— y eso sí es
+                           presentación: con algo pidiendo atención el conteo titula, porque
+                           «Todo está bien» encima de «mostrále esto a tu médico este mes»
+                           se contradice. Sin nada pidiendo, la afirmación se puede hacer y
+                           el conteo pasa debajo, que es el bloque del mock.
+
+                           El conteo TITULA BIEN porque se lee solo: es un hecho y no se
+                           apoya en nada que venga después. «El resto está bien» no podía —
+                           nombraba una excepción que todavía no se había dicho, y el verde
+                           va primero. *@
+                        <p class="veredicto-titulo">
+                            @(urgente.PideAlgo ? enRango.ParaSonia : "Todo está bien")
+                        </p>
+                        @if (!urgente.PideAlgo)
+                        {
+                            <p class="veredicto-detalle">@enRango.ParaSonia</p>
+                        }
+                    </div>
                 </div>
             }
-            else
+
+            @if (urgente.PideAlgo)
             {
-                <p class="portada-titular">Nada pide atención hoy.</p>
+                <div class="veredicto @TonoDeLoQuePide()">
+                    @* La misma cara, con la boca recta. La diferencia entre «bien» y
+                       «mirá esto» son dos paths, no dos dibujos. *@
+                    <svg viewBox="0 0 24 24" aria-hidden="true">
+                        <circle cx="12" cy="12" r="10" fill="none" stroke-width="1.6" />
+                        <circle cx="8.5" cy="10" r="0.6" fill="currentColor" stroke="none" />
+                        <circle cx="15.5" cy="10" r="0.6" fill="currentColor" stroke="none" />
+                        <path d="M8.5 15.5h7" fill="none" stroke-width="1.6" stroke-linecap="round" />
+                    </svg>
+                    <div>
+                        <p class="veredicto-titulo">@Mayuscula(urgente.Accion).</p>
+                        <div class="portada-cuales">
+                            @foreach (InterpretacionDeAnalito lectura in LosQuePiden())
+                            {
+                                <button class="portada-cual" @onclick="() => VerSerie(lectura.Analito)">
+                                    @lectura.ParaMostrar
+                                </button>
+                            }
+                        </div>
+                    </div>
+                </div>
+            }
+
+            @* NI VERDE NI ÁMBAR: no hay nada en rango que contar y nada que pida algo.
+               Es el expediente recién abierto, y decirlo es mejor que una tarjeta vacía. *@
+            @if (!enRango.HayAlgo && !urgente.PideAlgo)
+            {
+                <p class="veredicto-titulo">Todavía no hay nada que leer.</p>
             }
 
             <div class="portada-pie">
                 <span><b>@cantidad</b> @(cantidad == 1 ? "examen" : "exámenes")</span>
-                <span><b>@ConSerie()</b> @(ConSerie() == 1 ? "analito con historia" : "analitos con historia")</span>
+                <span><b>@enRango.Analitos</b> @(enRango.Analitos == 1 ? "analito con historia" : "analitos con historia")</span>
                 @if (Desde() is DateTime desde)
                 {
                     <span>desde <b>@desde.ToString("MMM yyyy", Cultura)</b></span>
@@ -234,6 +293,23 @@ else
                    evento de un journal. *@
                 <span>leído hasta el evento <b>@ultimoEvento</b></span>
             </div>
+
+            @* LA LÍNEA DEL CANDADO del landing. Allá vive en la pantalla del teléfono y
+               es lo último que se lee antes del botón; acá cierra la portada por la misma
+               razón: es la promesa desde la que alguien instaló esto.
+
+               Va en el tuteo del resto de la app y NO en el usted del landing. La frase
+               de Geaninna es «Sus datos permanecen en su dispositivo. Usted decide qué
+               compartir.», y entra tal cual el día que ella pase el copy de toda la app a
+               usted. Una sola línea de usted entre veinticinco de tuteo se lee como un
+               descuido, no como su voz. *@
+            <p class="portada-candado">
+                <svg viewBox="0 0 20 20" aria-hidden="true">
+                    <rect x="4" y="9" width="12" height="8" rx="1.5" fill="none" stroke-width="1.6" />
+                    <path d="M7 9V6.5a3 3 0 0 1 6 0V9" fill="none" stroke-width="1.6" />
+                </svg>
+                <span>Tus datos se quedan en tu dispositivo. Vos decidís qué compartir.</span>
+            </p>
         </div>
     </section>
 
@@ -567,6 +643,11 @@ else
     private IReadOnlyList<TendenciaDeAnalito> analitos = new List<TendenciaDeAnalito>();
     private int cantidad;
     private int fueraDeRango;
+
+    // LO QUE ESTÁ BIEN, ya contado y ya dicho por el dominio: el numerador, el
+    // denominador y la frase. Esta pantalla no cuenta ni compone — igual que con el
+    // pedido de sexo, pone el bloque y nada más.
+    private LoQueEstaBien enRango = new();
     private LoMasUrgente urgente = new();
 
     // EL DATO QUE FALTA. Viene entero del dominio: cuántos resultados quedan sin leer,
@@ -582,15 +663,16 @@ else
     // haber apretado Actualizar.
     private int redibujo;
 
-    // El tono de la portada lo decide el DOMINIO, no esta pantalla: es la severidad que
-    // salió de recorrer las series, traducida con el mapeo del semáforo de la marca:
-    // verde informativo, ámbar para vigilar y consulte pronto, rojo reservado a urgente.
-    private string Tono() => urgente.Severidad switch
+    // El tono lo decide el DOMINIO, no esta pantalla: es la severidad que salió de
+    // recorrer las series, traducida con el mapeo del semáforo de la marca. Ahora pinta
+    // EL BLOQUE que habla de lo que pide algo, no la tarjeta entera — el verde de al lado
+    // tiene el suyo y no depende de esto.
+    private string TonoDeLoQuePide() => urgente.Severidad switch
     {
-        "urgente"         => "portada--problema",
-        "consulte pronto" => "portada--atencion",
-        "vigilar"         => "portada--atencion",
-        _                 => "portada--calma",
+        "urgente"         => "veredicto--problema",
+        "consulte pronto" => "veredicto--atencion",
+        "vigilar"         => "veredicto--atencion",
+        _                 => "veredicto--atencion",
     };
 
     // Las series que piden LO MISMO que el expediente entero. Es una igualdad, no un
@@ -607,8 +689,6 @@ else
         cuales.Sort((a, b) => string.Compare(a.ParaMostrar, b.ParaMostrar, StringComparison.OrdinalIgnoreCase));
         return cuales;
     }
-
-    private int ConSerie() => analitos.Count + presencias.Count;
 
     // Desde cuándo hay registro. Es lo que convierte una lista de exámenes en un
     // historial: no es cuántos hay, es cuánto tiempo cubren.
@@ -757,6 +837,7 @@ else
         examenes = estado.Examenes();
         cantidad = estado.Cantidad();
         fueraDeRango = estado.AnalitosFueraDeRango();
+        enRango = estado.LoQueEstaEnRango();
         urgente = estado.Urgente();
         pedido = estado.PedidoDeSexo();
         sexo = estado.SexoDelPaciente();

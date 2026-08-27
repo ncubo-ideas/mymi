@@ -244,6 +244,22 @@ namespace Examenes.App
 			};
 		}
 
+		internal static LoQueEstaBien EstaEnRango(string json)
+		{
+			if (string.IsNullOrWhiteSpace(json)) return new LoQueEstaBien();
+
+			using JsonDocument documento = JsonDocument.Parse(json);
+			JsonElement raiz = documento.RootElement;
+
+			return new LoQueEstaBien
+			{
+				EnSuRango = Entero(raiz, "enSuRango"),
+				Analitos = Entero(raiz, "analitos"),
+				HayAlgo = Booleano(raiz, "hayAlgo"),
+				ParaSonia = Texto(raiz, "paraSonia"),
+			};
+		}
+
 		internal static FaltaElSexoDelPaciente PedidoDeSexo(string json)
 		{
 			if (string.IsNullOrWhiteSpace(json)) return new FaltaElSexoDelPaciente();
