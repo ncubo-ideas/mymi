@@ -2,8 +2,8 @@
 
 > Capítulo 3 de las [guías](README.md). El 0 dice dónde corre todo; el 4, qué modelar; éste, cómo se escribe.
 
-Receta de trabajo, derivada de construir una app completa de punta a punta: dominio puro, API REST y
-CLI, sobre un journal de file system.
+Receta de trabajo, derivada de construir dos apps completas de punta a punta: dominio puro, lógica,
+carátulas de consola y de IA, sobre un journal de file system.
 
 **Qué es esta guía y qué no.** No reemplaza a las guías de Puppeteer (`basics.md`, `parameters.md`,
 `control-flow.md`, `conventions.md`, `output-and-controller.md`, `hosting-and-environments.md`) ni a
@@ -19,36 +19,46 @@ prescripción**: generalizá la forma, no los nombres.
 
 ## 1. La forma de la solución
 
-Cuatro proyectos de producción y uno de pruebas por cada uno que valga la pena probar.
+**Un directorio por negocio, cinco nodos adentro, nombres en español.** Es la convención del equipo y
+la sostienen idéntica los negocios que ya existen. El capítulo 0 §7 la describe entera; acá va lo que
+manda al escribir.
 
 ```
-<Repo>.sln
-Directory.Build.props                 ← dónde vive Puppeteer
-
-src/
-  <App>.Domain/                       ← el modelo puro. NO referencia nada.
-  <App>.Hosting/                      ← el puppet: qué actor, qué journal, el seed
-  <App>.Api/                          ← una carátula (HTTP)
-  <App>.Cli/                          ← otra carátula (consola)
-
-tests/
-  <App>.Domain.Tests/                 ← el modelo, sin substrato
-  <App>.Api.Tests/                    ← cruzando el perform layer, journal real
-  <App>.Cli.Tests/                    ← la herramienta como la ve quien la invoca
+<Negocio>/
+├── Preguntas.md             lo que el negocio se compromete a contestar. NO es un nodo
+├── PaginaDeDescarga/        URL1 · nginx. No es un csproj
+├── EndPointDeEventos/       URL2 · eventos, token, rotación, señuelo 403
+├── InyectorDeEventosDemo/   siembra la historia en URL2. Valores elegidos, no aleatorios
+├── Mecanismo/               el Portador: refresh, token, checkpoint, puente de journal
+├── Dominio/                 el puppet. CERO dependencias
+└── App/                     una lógica y tres carátulas
+    ├── <Negocio>.App        la lógica: los PerformCommand y PerformQuery. No sabe dónde corre
+    ├── <Negocio>.Wasm       la app que instala la persona
+    ├── <Negocio>.Mcp        la superficie que ve la IA. SOLO LECTURA
+    └── <Negocio>.Consola    para medir el dominio y el refresh sin browser
 ```
 
-**Por qué esos cortes, y no otros.**
+**Quién puede nombrar a quién, que es lo que de verdad ordena los cortes:**
 
-| Proyecto | Referencia a | Razón |
+| Nodo | Referencia a | Razón |
 |---|---|---|
-| `Domain` | **nada** | El modelo es el activo durable. Si referencia el host, muere con él. |
-| `Hosting` | Puppeteer + Domain | El wiring es idéntico para toda carátula: mismo actor, mismo journal, mismo seed. |
-| `Api` | Hosting | Sólo sabe de HTTP y códigos de estado. |
-| `Cli` | Hosting | Sólo sabe de argv, stdout/stderr y códigos de salida. |
+| `Dominio` | **nada** | El modelo es el activo durable. Si referencia el host, muere con él |
+| `<N>.App` | Puppeteer, y el dominio **sólo como archivo** | Es la lógica, idéntica para toda carátula. **No nombra un tipo del dominio en C#**: los tipos van dentro de los scripts y los resuelve el motor por reflexión |
+| `<N>.Wasm`, `<N>.Mcp` | `<N>.App` | Sólo saben de su medio: pantalla, o tools y stdio |
+| `<N>.Consola` | `<N>.App`, y el dominio **de verdad** | Es la única excepción, porque además del ciclo corre el fixture que instancia el modelo directo. Necesita `InternalsVisibleTo` |
+| `EndPointDeEventos`, `InyectorDeEventosDemo` | **ni el dominio ni el journal** | *El proveedor no conoce el dominio de la persona.* Lo único que los conecta es HTTP |
 
-El error a evitar: que el CLI referencie al proyecto web para reusar el puppet. Eso arrastra ASP.NET
-a una consola y acopla dos carátulas que no se conocen. Extraé `Hosting` **antes** de escribir la
-segunda carátula, no después.
+Ese último es un **invariante falsable**, no una preferencia: el día que tu endpoint de eventos
+necesite referenciar tu dominio, algo se cruzó.
+
+**El error a evitar:** que una carátula referencie a otra para reusar el puppet. Extraé `<N>.App`
+**antes** de escribir la segunda carátula, no después.
+
+> **Y una advertencia sobre esta sección.** El árbol de arriba es el que tienen los negocios que
+> corren hoy. La recomendación del equipo sobre `internal` viene con uno distinto —`Superficie`,
+> `Cli`, `Tests`, `publicador-simulado`— y dice de sí misma que *"no es definitiva"*. Lo que **no**
+> depende de cuál gane es todo lo demás de este capítulo: el dominio puro y `internal`, la fachada, y
+> las reglas del substrato de §7.
 
 ---
 
@@ -56,13 +66,21 @@ segunda carátula, no después.
 
 El orden importa: cada fase deja verificado lo que la siguiente asume.
 
-1. **El dominio, con sus tests.** Sin framework, sin journal, sin host. Corre en milisegundos.
-2. **El hosting.** El puppet abre, hidrata y siembra. Verificalo con un spike desechable.
-3. **La primera carátula.** Con tests que cruzan el perform layer contra un journal de verdad.
-4. **La segunda carátula.** Si la primera dejó el wiring en su lugar, ésta es sólo entrada y salida.
+1. **El dominio, con sus comprobaciones.** Sin framework, sin journal, sin host. Corre en
+   milisegundos.
+2. **La lógica y la carátula de consola, juntas.** El puppet abre, hidrata y siembra; la consola es
+   el arnés que lo prueba. **No dejes esto para después** — ver el recuadro de §8: un dominio que
+   compila y pasa sus comprobaciones puede ser imposible de hospedar, y no hay forma de enterarse
+   hasta que un perform lo toca.
+3. **URL2 y el inyector.** Recién acá entran datos que no inventaste vos.
+4. **Las dos carátulas de afuera**: la que instala la persona y la que ve la IA. Si la lógica quedó
+   en su lugar, éstas son sólo entrada y salida.
 
 No saltes la 1. Un dominio que se escribe al mismo tiempo que el host termina contaminado de
 decisiones del host —fechas del reloj, formatos, DTOs— que después no se pueden sacar.
+
+Y no separes la 1 de la 2 más de lo necesario. Son dos preguntas distintas —*¿piensa bien?* y *¿se
+puede hospedar?*— y ninguna red atrapa lo de la otra.
 
 ---
 
@@ -115,11 +133,36 @@ enteramente `internal`. Lo único que ese archivo le pide al dominio en C# es un
 para el constructor — y hasta eso se evita:
 
 ```csharp
-: base(nombreDelActor, Assembly.Load(new AssemblyName("Laboratorio.Dominio")))
+: base(nombreDelActor, ElDominio.Assembly)     // ver abajo: LoadFrom, no Load
 ```
 
 Con eso se cae también el `using` del namespace del dominio. Ese `public` es **ergonomía**, no
 necesidad.
+
+> **Cuidado con `Assembly.Load` por nombre: no encuentra un DLL que está al lado.** Medido, y cuesta
+> caro porque el error apunta a otro lado —
+>
+> ```
+> FileNotFoundException: Could not load file or assembly 'Laboratorio.Dominio'
+> ```
+>
+> La carga por nombre simple se resuelve contra el **`deps.json`**, y un proyecto que no referencia
+> el dominio en compilación no lo tiene ahí — que es exactamente el caso que la cerca produce.
+> **Copiar el archivo no alcanza.** Hay que cargarlo por ruta:
+>
+> ```csharp
+> Assembly.LoadFrom(Path.Combine(AppContext.BaseDirectory, "Laboratorio.Dominio.dll"))
+> ```
+>
+> Y no es un parche: es más fiel a lo que va a pasar de verdad, porque en la arquitectura objetivo
+> **el Host carga el módulo como un archivo** que la persona bajó de la institución, no como una
+> dependencia de compilación.
+>
+> Dos cosas más, del mismo hallazgo. **El `content` no es transitivo**: que un proyecto copie el
+> dominio a su salida no lo pone en la salida de los que dependen de él — cada host que hospede un
+> actor lo declara. Y **cargalo una sola vez**: `LoadFrom` sobre la misma ruta devuelve el mismo
+> assembly, pero dos rutas distintas al mismo archivo dan dos assemblies, y el motor no reconoce los
+> tipos de uno en el otro.
 
 #### Por qué entonces insistir
 
@@ -235,7 +278,7 @@ public sealed class AppPuppet : PerformanceV2
     private readonly AppJournal _journal;
 
     public AppPuppet(AppJournal journal)
-        : base(Role, Assembly.Load(new AssemblyName("<App>.Domain")))
+        : base(Role, ElDominio.Assembly)          // LoadFrom por ruta — ver §3
     {
         _journal = journal;      // asignado ANTES de Start(), porque OnHydrated lo lee
     }
@@ -278,12 +321,17 @@ un día.
 
 ---
 
-## 5. Fase 3 — una carátula HTTP
+## 5. Fase 3 — la lógica, y de ahí las carátulas
 
-La regla: **el actor se construye una vez y se reusa**. Singleton de DI, abierto al arrancar para que
-ninguna petición corra contra la hidratación.
+La regla que vale para todas: **el actor se construye una vez y se reusa**. La carátula lo abre al
+arrancar y lo mantiene vivo; **un actor no se crea por request**.
 
-Cada endpoint son siempre los mismos tres pasos:
+> **Sobre el ejemplo de abajo.** Está escrito como un endpoint HTTP porque es la forma más corta de
+> enseñar los tres pasos, y esos tres pasos son idénticos en las tres carátulas. Pero **una app
+> clientecéntrica no tiene API REST propia**: sus carátulas son la que instala la persona, la que ve
+> la IA, y la de consola. Leé el `[HttpPost]` como *"acá entra una petición de afuera"*.
+
+Cada operación son siempre los mismos tres pasos:
 
 ```csharp
 [HttpPost("salary")]
@@ -434,6 +482,21 @@ el comando **sí se journaliza**. Medido:
 Para un servicio que arranca una vez, es nada. **Para un CLI invocado cincuenta veces al día, son
 cincuenta entradas.** Es el precio del idiom que prescribe la guía —y la alternativa
 (`OnFirstHydration`) rompe el versionado de upgrades. Sabelo y decidí.
+
+**Y hay una consecuencia peor, que muerde a la superficie de sólo lectura.** Si el servidor MCP usara
+la misma clase que la app, **cada pregunta de la IA escribiría una entrada en el journal de la
+persona** y rompería la invariante de un solo escritor. La solución es un actor gemelo: mismo nombre,
+mismo dominio, **`OnHydrated` vacío**. Capítulo 6 §6.6.
+
+**Un segundo `upgrade` no se comporta como el primero.** Reportado por el equipo con receta de
+reproducción: un `upgrade` agregado en un **segundo** `PerformCommand` **no asienta en la corrida que
+siembra el journal**, así que otro proceso que rehidrate ese mismo journal no encuentra el global y
+falla con algo que no parece culpa suya. Verificado en un journal real: los dos upgrades aparecían
+**dos veces cada uno**, o sea que la guarda de una-vez-por-actor tampoco estaba conteniendo lo que
+parecía.
+
+> Si alguna vez hace falta un `upgrade` nuevo, **probalo abriendo el journal desde cero con otro
+> proceso** —el MCP, por ejemplo— y no sólo con la app que lo sembró.
 
 ### 7.5 El framework escribe en stdout
 
@@ -622,7 +685,7 @@ rehidratación siguiente.
 
 **El modelo**
 
-- [ ] ¿El `.Domain` no referencia absolutamente nada?
+- [ ] ¿El `Dominio/` no referencia absolutamente nada?
 - [ ] ¿Todos los tipos del dominio son `internal`? ¿El host no nombra ninguno?
 - [ ] ¿Ninguna parte del dominio lee el reloj ni genera azar?
 - [ ] ¿Las consultas de la fachada devuelven escalares, arreglos primitivos o proyecciones?

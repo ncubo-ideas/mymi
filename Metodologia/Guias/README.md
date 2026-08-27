@@ -67,15 +67,8 @@ afirmación sin esa marca y tampoco está respaldada, es un error del documento.
 pregunta, las clases que fuerza, la decisión de diseño que fuerza, y lo que quedó afuera. Y hay que
 reescribirlo con **observables**, para que el paso 8 sea posible.
 
-**Capítulo 3 — la carátula HTTP.** Describe una carátula HTTP que la forma clientecéntrica no usa.
-La forma real está en el capítulo 0 §7 (*una lógica y tres carátulas*: Wasm, Mcp, Consola).
-
-**Capítulo 3 — falta la convención de estructura del equipo.** Un directorio por negocio, cinco
-nodos, nombres en español. Está en el capítulo 0 §7 y debería mandar en el 3.
-
-**Capítulo 3 §7 — una regla nueva del repo.** Un `upgrade` agregado en un segundo `PerformCommand`
-**no queda disponible para otro proceso que rehidrate ese mismo journal**. Un `upgrade` nuevo hay que
-probarlo **abriendo el journal desde cero desde el MCP**, no sólo con la app que lo sembró.
+Y nada más. Las tres del capítulo 3 —la carátula HTTP, la convención de estructura y la regla del
+`upgrade`— quedaron corregidas, igual que la del capítulo 6.
 
 ---
 
