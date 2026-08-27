@@ -17,12 +17,12 @@ namespace Presupuesto.Dominio
 	// Esa propiedad es tambien lo que justifica que sea una clase y no un gasto recurrente
 	// con una etiqueta. El criterio del capitulo: si no tiene algo que ninguna otra tenga,
 	// probablemente no necesitaba existir por separado.
-	public sealed class CuotaDePrestamo : GastoRecurrente
+	internal sealed class CuotaDePrestamo : GastoRecurrente
 	{
 		private readonly int cuotasTotales;
 		private readonly int cuotasPagadasAlEmpezar;
 
-		public CuotaDePrestamo(string nombre, int cuotasTotales, int cuotasPagadasAlEmpezar)
+		internal CuotaDePrestamo(string nombre, int cuotasTotales, int cuotasPagadasAlEmpezar)
 			: base(nombre)
 		{
 			if (cuotasTotales <= 0)
@@ -38,27 +38,27 @@ namespace Presupuesto.Dominio
 
 		// Preguntas.md no contempla prestamos que no sean mensuales, y no hay razon para
 		// inventar la variante: si aparece uno trimestral, esto se vuelve un parametro.
-		public override Periodicidad Periodicidad => Periodicidad.Mensual;
+		internal override Periodicidad Periodicidad => Periodicidad.Mensual;
 
-		public override Severidad SeveridadSiFalta => Severidad.Critico;
+		internal override Severidad SeveridadSiFalta => Severidad.Critico;
 
-		public override Reducibilidad Reducibilidad => Reducibilidad.Comprometido;
+		internal override Reducibilidad Reducibilidad => Reducibilidad.Comprometido;
 
 		// Mas estricto que los tres dias de rigor. La gracia existe para absorber un fin de
 		// semana en un recibo de servicio; en una cuota, esperar tres dias es esperar de mas.
-		public override int DiasDeGracia => 1;
+		internal override int DiasDeGracia => 1;
 
 		// ------------------------------------------------------------ lo suyo
 
-		public int CuotasPagadas => cuotasPagadasAlEmpezar + Cargos.Count;
+		internal int CuotasPagadas => cuotasPagadasAlEmpezar + Cargos.Count;
 
-		public int CuotasQueFaltan => Math.Max(0, cuotasTotales - CuotasPagadas);
+		internal int CuotasQueFaltan => Math.Max(0, cuotasTotales - CuotasPagadas);
 
-		public bool YaSeTermino => CuotasQueFaltan == 0;
+		internal bool YaSeTermino => CuotasQueFaltan == 0;
 
 		// Cuando se libera esta mensualidad. La fecha de referencia entra por parametro: el
 		// dominio no lee el reloj.
-		public DateTime SeLiberaEl(DateTime desde)
+		internal DateTime SeLiberaEl(DateTime desde)
 		{
 			if (YaSeTermino) return desde.Date;
 			return Periodicidad.ProximoDespuesDe(desde).AddMonths(CuotasQueFaltan - 1);

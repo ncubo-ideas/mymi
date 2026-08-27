@@ -15,7 +15,7 @@ namespace Presupuesto.Dominio
 	//   - Contra una alternativa -un certificado, cripto- solo si la persona la declaro Y
 	//     ademas se sabe cuanto vale el bien. Si falta cualquiera de las dos, se dice que no
 	//     esta disponible en vez de inventar un porcentaje.
-	public sealed class Rendimiento
+	internal sealed class Rendimiento
 	{
 		private Rendimiento(Bien bien, DateTime desde, DateTime hasta, decimal ingresos,
 			decimal gastos, PuntoDeComparacion contra, decimal? porcentajeAnual,
@@ -31,27 +31,27 @@ namespace Presupuesto.Dominio
 			RendimientoDeLaAlternativa = rendimientoDeLaAlternativa;
 		}
 
-		public Bien Bien { get; }
-		public DateTime Desde { get; }
-		public DateTime Hasta { get; }
-		public decimal Ingresos { get; }
-		public decimal Gastos { get; }
-		public decimal Neto => Ingresos - Gastos;
-		public PuntoDeComparacion Contra { get; }
+		internal Bien Bien { get; }
+		internal DateTime Desde { get; }
+		internal DateTime Hasta { get; }
+		internal decimal Ingresos { get; }
+		internal decimal Gastos { get; }
+		internal decimal Neto => Ingresos - Gastos;
+		internal PuntoDeComparacion Contra { get; }
 
 		// null cuando no se sabe cuanto vale el bien. Ver HUECO 6 en Bien.
-		public decimal? PorcentajeAnual { get; }
+		internal decimal? PorcentajeAnual { get; }
 
-		public decimal? RendimientoDeLaAlternativa { get; }
+		internal decimal? RendimientoDeLaAlternativa { get; }
 
-		public bool SePuedeComparar => PorcentajeAnual.HasValue && RendimientoDeLaAlternativa.HasValue;
+		internal bool SePuedeComparar => PorcentajeAnual.HasValue && RendimientoDeLaAlternativa.HasValue;
 
 		// El caso que la entrevista nombro primero: "para alguien podria ser rentable
 		// solamente con que le de para pagar los gastos". Se contesta sin saber cuanto vale
 		// el bien, y por eso vale la pena tenerlo aparte.
-		public bool SePagaSola => Neto >= 0;
+		internal bool SePagaSola => Neto >= 0;
 
-		public string Lectura
+		internal string Lectura
 		{
 			get
 			{
@@ -68,7 +68,7 @@ namespace Presupuesto.Dominio
 			}
 		}
 
-		public static Rendimiento De(Bien bien, DateTime desde, DateTime hasta, PuntoDeComparacion contra)
+		internal static Rendimiento De(Bien bien, DateTime desde, DateTime hasta, PuntoDeComparacion contra)
 		{
 			if (bien == null) throw new ArgumentNullException(nameof(bien));
 			if (contra == null) throw new ArgumentNullException(nameof(contra));

@@ -14,19 +14,19 @@ namespace Presupuesto.Dominio
 	//
 	// Con tres estados la respuesta puede decir "esto se puede recortar, esto no, y sobre
 	// esto otro necesito que me digas", que es la unica honesta.
-	public sealed class Reducibilidad
+	internal sealed class Reducibilidad
 	{
 		// Consumo discrecional. Sale del repertorio, sin preguntarle nada a la persona.
-		public static readonly Reducibilidad Discrecional =
+		internal static readonly Reducibilidad Discrecional =
 			new Reducibilidad("discrecional", "Se puede recortar.");
 
 		// Un compromiso adquirido. No es que cueste: es que no depende de la voluntad de
 		// este mes. Una cuota de prestamo no se paga a medias.
-		public static readonly Reducibilidad Comprometido =
+		internal static readonly Reducibilidad Comprometido =
 			new Reducibilidad("comprometido", "No se puede recortar: es un compromiso adquirido.");
 
 		// Ni el repertorio ni la clase de gasto alcanzan. Hay que preguntarle a la persona.
-		public static readonly Reducibilidad PorDefinir =
+		internal static readonly Reducibilidad PorDefinir =
 			new Reducibilidad("por definir", "Falta que la persona diga si esto se puede recortar.");
 
 		private Reducibilidad(string nombre, string lectura)
@@ -35,15 +35,15 @@ namespace Presupuesto.Dominio
 			Lectura = lectura;
 		}
 
-		public string Nombre { get; }
+		internal string Nombre { get; }
 
 		// La linea la arma el dominio; el CONSEJO no. Es la distincion del capitulo 0 §8:
 		// nombrar no es inventar.
-		public string Lectura { get; }
+		internal string Lectura { get; }
 
-		public bool SeSabe => this != PorDefinir;
+		internal bool SeSabe => this != PorDefinir;
 
-		public bool SePuedeRecortar => this == Discrecional;
+		internal bool SePuedeRecortar => this == Discrecional;
 
 		public override string ToString() => Nombre;
 	}

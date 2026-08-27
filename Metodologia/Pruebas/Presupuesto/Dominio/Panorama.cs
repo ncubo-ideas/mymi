@@ -12,7 +12,7 @@ namespace Presupuesto.Dominio
 	//
 	// La fecha SIEMPRE entra por parametro. Si el dominio leyera el reloj, el mismo journal
 	// reproducido manana daria otra respuesta.
-	public sealed class Panorama
+	internal sealed class Panorama
 	{
 		private readonly List<GastoRecurrente> gastos = new List<GastoRecurrente>();
 		private readonly List<Cargo> sueltos = new List<Cargo>();
@@ -22,7 +22,7 @@ namespace Presupuesto.Dominio
 
 		// El 10% del juicio 2. Entra al construir y no vive quemado: es del negocio, no del
 		// codigo.
-		public Panorama(decimal umbralDeVariacion)
+		internal Panorama(decimal umbralDeVariacion)
 		{
 			if (umbralDeVariacion <= 0 || umbralDeVariacion >= 1)
 				throw new ArgumentOutOfRangeException(nameof(umbralDeVariacion),
@@ -33,19 +33,19 @@ namespace Presupuesto.Dominio
 
 		// ------------------------------------------------------------ lo que entra
 
-		public void Reconoce(GastoRecurrente gasto)
+		internal void Reconoce(GastoRecurrente gasto)
 		{
 			if (gasto == null) throw new ArgumentNullException(nameof(gasto));
 			gastos.Add(gasto);
 		}
 
-		public void Tiene(Bien bien)
+		internal void Tiene(Bien bien)
 		{
 			if (bien == null) throw new ArgumentNullException(nameof(bien));
 			bienes.Add(bien);
 		}
 
-		public void Ocurrio(Imprevisto imprevisto)
+		internal void Ocurrio(Imprevisto imprevisto)
 		{
 			if (imprevisto == null) throw new ArgumentNullException(nameof(imprevisto));
 			imprevistos.Add(imprevisto);
@@ -55,7 +55,7 @@ namespace Presupuesto.Dominio
 		// reconoce, queda suelto. Quedar suelto NO es un error: es el estado honesto de un
 		// cargo que la persona todavia no marco, y es lo que alimenta los candidatos a
 		// imprevisto del juicio 8.
-		public bool Entra(Cargo cargo)
+		internal bool Entra(Cargo cargo)
 		{
 			if (cargo == null) throw new ArgumentNullException(nameof(cargo));
 
@@ -79,7 +79,7 @@ namespace Presupuesto.Dominio
 		// Aca NO se prorratea, que es lo que el archivo literalmente dice -"el presupuesto
 		// mensual"- y deja el falso positivo a la vista en vez de taparlo con una decision
 		// que nadie tomo.
-		public VarianciaDelMes VarianciaDe(int ano, int mes)
+		internal VarianciaDelMes VarianciaDe(int ano, int mes)
 		{
 			DateTime anterior = new DateTime(ano, mes, 1).AddMonths(-1);
 
@@ -103,7 +103,7 @@ namespace Presupuesto.Dominio
 		}
 
 		// EsConsumo es la guarda que evita contar dos veces cada compra con tarjeta.
-		public decimal TotalConsumidoEn(int ano, int mes)
+		internal decimal TotalConsumidoEn(int ano, int mes)
 		{
 			decimal total = 0m;
 
@@ -126,7 +126,7 @@ namespace Presupuesto.Dominio
 
 		// ------------------------------------------------------------ pregunta 2
 
-		public Rendimiento RendimientoDe(string nombreDelBien, DateTime desde, DateTime hasta,
+		internal Rendimiento RendimientoDe(string nombreDelBien, DateTime desde, DateTime hasta,
 			PuntoDeComparacion contra)
 		{
 			Bien bien = bienes.Find(b => b.Nombre == nombreDelBien);
@@ -148,7 +148,7 @@ namespace Presupuesto.Dominio
 		// reducir. .Se recorta el 100% del streaming? .El 30% de los restaurantes? Sin eso,
 		// esto NO puede contestar "si te alcanza": solo puede poner sobre la mesa cuanto hay
 		// en cada estado. Contestar mas seria inventar el juicio que falta.
-		public MargenParaRecortar MargenPara(decimal mensualidadNueva, int ano, int mes)
+		internal MargenParaRecortar MargenPara(decimal mensualidadNueva, int ano, int mes)
 		{
 			decimal discrecional = 0m, comprometido = 0m, porDefinir = 0m;
 			var sinMarcar = new List<GastoRecurrente>();
@@ -171,7 +171,7 @@ namespace Presupuesto.Dominio
 
 		// La ausencia. Lo mas vencido primero; lo que esta al dia igual aparece, para poder
 		// decirlo.
-		public IReadOnlyList<CargoAusente> QueNoMeCobraron(DateTime hoy)
+		internal IReadOnlyList<CargoAusente> QueNoMeCobraron(DateTime hoy)
 		{
 			var lista = new List<CargoAusente>();
 			foreach (GastoRecurrente g in gastos) lista.Add(g.EvaluarAusencia(hoy));
@@ -189,7 +189,7 @@ namespace Presupuesto.Dominio
 
 		// Cuanto apartar por mes. LA TASA SE CALCULA SOBRE EVENTOS, no sobre cargos: es lo
 		// unico que hace util la respuesta.
-		public TasaDeImprevistos CuantoApartarPorMes(DateTime desde, DateTime hasta)
+		internal TasaDeImprevistos CuantoApartarPorMes(DateTime desde, DateTime hasta)
 		{
 			decimal total = 0m;
 			int cuantos = 0;
@@ -212,7 +212,7 @@ namespace Presupuesto.Dominio
 		// por categoria o total, por mes o por ano. Sin eso, "lo no presupuestado" solo puede
 		// aproximarse por "lo que no reconocio ningun gasto recurrente", que es otra cosa.
 		// La app se llama Presupuesto y el archivo no define el presupuesto.
-		public IReadOnlyList<Cargo> CargosQueNadieReconocio(int ano, int mes)
+		internal IReadOnlyList<Cargo> CargosQueNadieReconocio(int ano, int mes)
 		{
 			var lista = new List<Cargo>();
 			foreach (Cargo c in sueltos)

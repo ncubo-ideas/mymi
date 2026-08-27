@@ -22,12 +22,12 @@ namespace Presupuesto.Dominio
 	// que es la mitad del juicio 7. La entrevista pidio esa comparacion y el archivo no
 	// alcanzo a darle con que. Aca el valor es opcional: cuando falta, el rendimiento se
 	// contesta en plata y se dice que la comparacion no esta disponible.
-	public sealed class Bien
+	internal sealed class Bien
 	{
 		private readonly List<Cargo> gastos = new List<Cargo>();
 		private readonly List<Cargo> ingresos = new List<Cargo>();
 
-		public Bien(string nombre, decimal valorEstimado)
+		internal Bien(string nombre, decimal valorEstimado)
 		{
 			if (string.IsNullOrWhiteSpace(nombre))
 				throw new ArgumentException("El bien necesita un nombre que la persona reconozca.", nameof(nombre));
@@ -39,32 +39,32 @@ namespace Presupuesto.Dominio
 			ValorEstimado = valorEstimado;
 		}
 
-		public string Nombre { get; }
+		internal string Nombre { get; }
 
 		// Cero significa "no se sabe", no "no vale nada". De eso depende si el rendimiento se
 		// puede expresar en porcentaje.
-		public decimal ValorEstimado { get; }
+		internal decimal ValorEstimado { get; }
 
-		public bool SeSabeCuantoVale => ValorEstimado > 0;
+		internal bool SeSabeCuantoVale => ValorEstimado > 0;
 
 		// La persona marca. El dominio no adivina.
-		public void SeLeAtribuye(Cargo gasto)
+		internal void SeLeAtribuye(Cargo gasto)
 		{
 			if (gasto == null) throw new ArgumentNullException(nameof(gasto));
 			gastos.Add(gasto);
 		}
 
-		public void Produce(Cargo ingreso)
+		internal void Produce(Cargo ingreso)
 		{
 			if (ingreso == null) throw new ArgumentNullException(nameof(ingreso));
 			ingresos.Add(ingreso);
 		}
 
-		public decimal GastosEntre(DateTime desde, DateTime hasta) => Sumar(gastos, desde, hasta);
+		internal decimal GastosEntre(DateTime desde, DateTime hasta) => Sumar(gastos, desde, hasta);
 
-		public decimal IngresosEntre(DateTime desde, DateTime hasta) => Sumar(ingresos, desde, hasta);
+		internal decimal IngresosEntre(DateTime desde, DateTime hasta) => Sumar(ingresos, desde, hasta);
 
-		public decimal NetoEntre(DateTime desde, DateTime hasta) =>
+		internal decimal NetoEntre(DateTime desde, DateTime hasta) =>
 			IngresosEntre(desde, hasta) - GastosEntre(desde, hasta);
 
 		private static decimal Sumar(List<Cargo> cargos, DateTime desde, DateTime hasta)

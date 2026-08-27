@@ -15,11 +15,11 @@ namespace Presupuesto.Dominio
 	// NO ES UN ENUM NI UN int DE MESES. Un entero admitiria 7 meses, 0 meses y -3 meses, y
 	// obligaria a validar en cada uso. Ademas, "sabe avanzar una fecha" es comportamiento
 	// que pertenece a la periodicidad y no a quien la consulta.
-	public sealed class Periodicidad
+	internal sealed class Periodicidad
 	{
-		public static readonly Periodicidad Mensual = new Periodicidad("mensual", 1);
-		public static readonly Periodicidad Trimestral = new Periodicidad("trimestral", 3);
-		public static readonly Periodicidad Anual = new Periodicidad("anual", 12);
+		internal static readonly Periodicidad Mensual = new Periodicidad("mensual", 1);
+		internal static readonly Periodicidad Trimestral = new Periodicidad("trimestral", 3);
+		internal static readonly Periodicidad Anual = new Periodicidad("anual", 12);
 
 		private Periodicidad(string nombre, int meses)
 		{
@@ -27,13 +27,13 @@ namespace Presupuesto.Dominio
 			Meses = meses;
 		}
 
-		public string Nombre { get; }
+		internal string Nombre { get; }
 
-		public int Meses { get; }
+		internal int Meses { get; }
 
 		// AddMonths ya resuelve el caso feo: un cargo del 31 de enero cae al 28 o 29 de
 		// febrero en vez de reventar o saltarse a marzo.
-		public DateTime ProximoDespuesDe(DateTime ultimo) => ultimo.AddMonths(Meses);
+		internal DateTime ProximoDespuesDe(DateTime ultimo) => ultimo.AddMonths(Meses);
 
 		// Cuantas veces aparece en un ano.
 		//
@@ -44,7 +44,7 @@ namespace Presupuesto.Dominio
 		// es lo que se gasto, es lo que se devengo- o el umbral tiene que saber distinguir.
 		// El archivo no lo decidio. Esta propiedad HABILITA el prorrateo; quien decide es
 		// PresupuestoMensual, y ahi esta marcado.
-		public decimal VecesPorAno => 12m / Meses;
+		internal decimal VecesPorAno => 12m / Meses;
 
 		public override string ToString() => Nombre;
 	}

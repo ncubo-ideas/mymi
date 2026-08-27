@@ -16,7 +16,7 @@ namespace Presupuesto.Dominio
 	//
 	// La LECTURA la arma este dominio; la ACCION no: sale de Severidad, que es un conjunto
 	// cerrado. Capitulo 0 §8 - nombrar no es inventar.
-	public sealed class CargoAusente
+	internal sealed class CargoAusente
 	{
 		private CargoAusente(GastoRecurrente gasto, DateTime esperado, int diasDeAtraso,
 			bool hayHistoria, bool vencido)
@@ -28,25 +28,25 @@ namespace Presupuesto.Dominio
 			EstaVencido = vencido;
 		}
 
-		public GastoRecurrente Gasto { get; }
+		internal GastoRecurrente Gasto { get; }
 
-		public DateTime Esperado { get; }
+		internal DateTime Esperado { get; }
 
-		public int DiasDeAtraso { get; }
+		internal int DiasDeAtraso { get; }
 
 		// De un gasto que nunca aparecio no hay nada que echar de menos. Es distinto de
 		// "esta al dia", y confundirlos haria que la app avise de cosas que nunca existieron.
-		public bool HayHistoria { get; }
+		internal bool HayHistoria { get; }
 
-		public bool EstaVencido { get; }
+		internal bool EstaVencido { get; }
 
 		// La severidad la decide el COMPROMISO, no el monto ni los dias. Juicio 5.
-		public Severidad Severidad =>
+		internal Severidad Severidad =>
 			EstaVencido ? Gasto.SeveridadSiFalta : Severidad.Informativo;
 
-		public string QueHacer => Severidad.QueHacer;
+		internal string QueHacer => Severidad.QueHacer;
 
-		public string Lectura
+		internal string Lectura
 		{
 			get
 			{

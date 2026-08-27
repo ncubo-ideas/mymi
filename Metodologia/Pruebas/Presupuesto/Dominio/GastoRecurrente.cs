@@ -26,7 +26,7 @@ namespace Presupuesto.Dominio
 	// Cada subclase carga lo que ESA clase de compromiso sabe de si misma: cada cuanto se
 	// espera, que tan grave es que falte, y si se puede reducir. Nada de eso es un campo
 	// suelto que todos arrastren.
-	public abstract class GastoRecurrente
+	internal abstract class GastoRecurrente
 	{
 		private readonly List<string> textos = new List<string>();
 		private readonly List<Cargo> cargos = new List<Cargo>();
@@ -40,35 +40,35 @@ namespace Presupuesto.Dominio
 		}
 
 		// Como lo llama la persona. Con acentos: es el que ella ve.
-		public string Nombre { get; }
+		internal string Nombre { get; }
 
 		// ------------------------------------------------------------ lo que cada clase sabe
 
 		// Juicio 3. Cada cuanto se espera que vuelva a aparecer.
-		public abstract Periodicidad Periodicidad { get; }
+		internal abstract Periodicidad Periodicidad { get; }
 
 		// Juicio 5. QUE TAN GRAVE es que este cargo no aparezca. La decide la clase de
 		// compromiso y NO el monto: por eso es abstracta y no un calculo sobre Dinero.
-		public abstract Severidad SeveridadSiFalta { get; }
+		internal abstract Severidad SeveridadSiFalta { get; }
 
 		// Juicio 6. Si se puede recortar. Tres estados y no un bool, porque "no se sabe" es
 		// distinto de "no": lo que no se deduce hay que preguntarlo, no asumirlo.
-		public abstract Reducibilidad Reducibilidad { get; }
+		internal abstract Reducibilidad Reducibilidad { get; }
 
 		// Juicio 4. Cuanto se espera despues de la fecha de pago antes de avisar. Tres dias
 		// por defecto -por fin de semana o feriado-, y una subclase puede ser mas estricta.
-		public virtual int DiasDeGracia => 3;
+		internal virtual int DiasDeGracia => 3;
 
 		// .Este gasto CONSUME, o solo mueve plata de un lado a otro? Casi todos consumen; el
 		// pago de la tarjeta no, y por eso la pregunta existe. Quien sume totales tiene que
 		// hacerla antes de sumar, o cada compra con tarjeta se cuenta dos veces. Ver
 		// PagoDeTarjetaDeCredito, donde ademas esta marcado que es una inferencia.
-		public virtual bool EsConsumo => true;
+		internal virtual bool EsConsumo => true;
 
 		// ------------------------------------------------------------ identidad
 
 		// El gasto RESPONDE a varios textos y sigue siendo uno solo.
-		public void RespondeTambienA(string textoDelBanco)
+		internal void RespondeTambienA(string textoDelBanco)
 		{
 			if (string.IsNullOrWhiteSpace(textoDelBanco))
 				throw new ArgumentException("Un texto vacio no identifica nada.", nameof(textoDelBanco));
@@ -77,7 +77,7 @@ namespace Presupuesto.Dominio
 			if (!textos.Contains(normalizado)) textos.Add(normalizado);
 		}
 
-		public bool Reconoce(string textoDelBanco) =>
+		internal bool Reconoce(string textoDelBanco) =>
 			!string.IsNullOrWhiteSpace(textoDelBanco) && textos.Contains(Normalizar(textoDelBanco));
 
 		// Mayusculas, espacios y puntos son ruido del emisor, no identidad. "CNFL S.A." y
@@ -93,18 +93,18 @@ namespace Presupuesto.Dominio
 
 		// ------------------------------------------------------------ la serie
 
-		public void Registrar(Cargo cargo)
+		internal void Registrar(Cargo cargo)
 		{
 			if (cargo == null) throw new ArgumentNullException(nameof(cargo));
 			cargos.Add(cargo);
 			cargos.Sort((a, b) => a.Fecha.CompareTo(b.Fecha));
 		}
 
-		public IReadOnlyList<Cargo> Cargos => cargos;
+		internal IReadOnlyList<Cargo> Cargos => cargos;
 
-		public bool HaySerie => cargos.Count >= 2;
+		internal bool HaySerie => cargos.Count >= 2;
 
-		public Cargo UltimoCargo => cargos.Count == 0 ? null : cargos[cargos.Count - 1];
+		internal Cargo UltimoCargo => cargos.Count == 0 ? null : cargos[cargos.Count - 1];
 
 		// ------------------------------------------------------------ la ausencia
 
@@ -113,7 +113,7 @@ namespace Presupuesto.Dominio
 		// LA FECHA ENTRA POR PARAMETRO. Si el dominio leyera el reloj, el mismo journal
 		// reproducido manana daria otra respuesta. Saber que dia es hoy es derecho de la
 		// superficie.
-		public CargoAusente EvaluarAusencia(DateTime hoy)
+		internal CargoAusente EvaluarAusencia(DateTime hoy)
 		{
 			if (UltimoCargo == null) return CargoAusente.SinHistoria(this);
 
