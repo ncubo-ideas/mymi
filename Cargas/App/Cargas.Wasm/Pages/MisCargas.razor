@@ -397,6 +397,25 @@ else
                                     @(carga.TieneKilometraje ? carga.Kilometraje : "sin kilometraje")
                                     @(carga.Tanque.Length > 0 ? $" · tanque {carga.Tanque}" : "")
                                 </span>
+                                @* LA FOTO DEL TABLERO, nivel 1: el input NO otorga
+                                   camara -el selector es del sistema y en movil ya
+                                   ofrece "tomar foto"-, asi que el sandbox del FAQ #5
+                                   queda intacto. El archivo va a la carpeta; el
+                                   journal guarda el nombre. *@
+                                <span class="visita-cuanto">
+                                    @if (carga.TieneFoto)
+                                    {
+                                        <span class="apunte">📷 foto guardada</span>
+                                    }
+                                    else if (estado.HayCarpeta)
+                                    {
+                                        <label class="boton boton--enlace" style="cursor:pointer">
+                                            📷 foto del tablero
+                                            <InputFile OnChange="e => GuardarFoto(carga.Transaccion, e)"
+                                                       accept="image/*" style="display:none" />
+                                        </label>
+                                    }
+                                </span>
                             </li>
                         </ul>
                     </li>
@@ -597,6 +616,27 @@ else
         if (rechazo.Length > 0) throw new InvalidOperationException(rechazo);
         Releer();
     });
+
+    // La foto entra entera a memoria antes de ir a la carpeta: una foto de tablero
+    // ronda los pocos MB y el tope evita que un archivo equivocado tumbe la pestana.
+    private Task GuardarFoto(string transaccion, InputFileChangeEventArgs e) =>
+        Intentar("guardar la foto del tablero", async () =>
+        {
+            const long topeDeBytes = 15 * 1024 * 1024;
+            IBrowserFile archivo = e.File;
+            if (archivo.Size > topeDeBytes)
+                throw new InvalidOperationException("La foto pesa más de 15 MB: elegí otra.");
+
+            using var memoria = new MemoryStream();
+            await archivo.OpenReadStream(topeDeBytes).CopyToAsync(memoria);
+
+            string extension = Path.GetExtension(archivo.Name);
+            if (extension.Length == 0) extension = ".jpg";
+
+            string rechazo = await estado.AdjuntarFoto(transaccion, extension, memoria.ToArray());
+            if (rechazo.Length > 0) throw new InvalidOperationException(rechazo);
+            Releer();
+        });
 
     private async Task Intentar(string paso, Func<Task> accion)
     {

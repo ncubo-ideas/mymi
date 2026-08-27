@@ -245,6 +245,20 @@ public sealed class PuenteDeJournal : IAsyncDisposable
 		return escritos;
 	}
 
+	// Guarda un archivo BINARIO directo en la carpeta de la persona, fuera de MEMFS:
+	// la foto del tablero no es parte del journal -el journal guarda su NOMBRE-, es el
+	// respaldo del dato. Devuelve "" si se guardo, o el motivo del rechazo.
+	public async ValueTask<string> GuardarArchivo(string ruta, byte[] contenido)
+	{
+		ArgumentNullException.ThrowIfNullOrWhiteSpace(ruta);
+		ArgumentNullException.ThrowIfNull(contenido);
+		if (!HayCarpeta) return "no hay carpeta donde guardar";
+
+		ResultadoDeEscritura resultado = await (await Modulo())
+			.InvokeAsync<ResultadoDeEscritura>("escribir", ruta, Convert.ToBase64String(contenido));
+		return resultado.Ok ? "" : resultado.Motivo;
+	}
+
 	// El permiso vigente sobre la carpeta, sin pedir nada. Sirve para avisar ANTES de
 	// aplicar comandos que no se van a poder guardar.
 	public async ValueTask<string> PermisoActual() =>

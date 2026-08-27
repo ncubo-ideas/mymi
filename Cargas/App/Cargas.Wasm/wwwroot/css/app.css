@@ -22,25 +22,29 @@
  */
 
 :root {
-    /* Institucional — «el laboratorio». Los valores vienen de las especificaciones. */
-    --azul:        #123f6d;   /* color de marca */
-    --azul-oscuro: #0b2c4e;
-    --azul-claro:  #1d5c9e;
-    --celeste:     #7db4e0;   /* acentos sobre oscuro: kickers, trazos, enlaces */
-    --logo:        #ffffff;   /* la gota y el círculo, sobre oscuro, van en blanco */
+    /* Institucional — «la estación». ⚠️ PALETA PROVISIONAL: teal petróleo + cobre,
+       el candidato del brief §3, a la espera de la especificación de Geaninna. Lo que
+       SÍ está fijado: el semáforo de abajo queda reservado a estados —por eso la marca
+       no puede ser verde ni ámbar— y el navy #123f6d ya es de Delfos. Cuando llegue la
+       spec, el cambio es este bloque y nada más. */
+    --azul:        #14586b;   /* color de marca (teal, nombre del token heredado) */
+    --azul-oscuro: #072832;
+    --azul-claro:  #1d7186;
+    --celeste:     #d9915e;   /* acentos sobre oscuro: kickers, trazos, enlaces (cobre claro) */
+    --logo:        #ffffff;   /* el faro, sobre oscuro, va en blanco */
 
-    /* El gradiente navy de la §6, y la tinta que se lee encima. */
-    --fondo:       #0e2f55;   /* el navy base; --app-navy de las especificaciones */
-    --fondo-hondo: #0a2140;   /* el final del gradiente */
-    --tinta:       #eef4fb;   /* texto principal sobre navy */
-    --tenue:       #a9bdd3;   /* texto secundario */
-    --tenue-2:     #7e95ae;   /* rotulitos y pies */
-    --carta:       rgba(125, 180, 224, .07);   /* paneles translúcidos, como el mock */
-    --suave:       rgba(125, 180, 224, .12);   /* hovers */
-    --linea:       rgba(125, 180, 224, .22);
+    /* El fondo teal petróleo, y la tinta que se lee encima. */
+    --fondo:       #0b3c49;   /* el teal base del brief */
+    --fondo-hondo: #062730;   /* el final del gradiente */
+    --tinta:       #edf6f6;   /* texto principal sobre teal */
+    --tenue:       #a8c4c9;   /* texto secundario */
+    --tenue-2:     #7fa0a7;   /* rotulitos y pies */
+    --carta:       rgba(126, 196, 207, .07);   /* paneles translúcidos */
+    --suave:       rgba(126, 196, 207, .12);   /* hovers */
+    --linea:       rgba(126, 196, 207, .22);
 
-    /* Aplicación — «la app es de hoy, la página es de 1987». */
-    --accion:      #1a6ff5;   /* color de acción: los botones que hacen algo */
+    /* Aplicación — el cobre del brief como color de acción. */
+    --accion:      #c2703d;   /* los botones que hacen algo */
 
     /* EL SEMÁFORO, con los valores EXACTOS de la §5 para fondo oscuro: trazo, fondo y
      * borde tal como los dio Geaninna. Es lo único que marcó como no negociable, y

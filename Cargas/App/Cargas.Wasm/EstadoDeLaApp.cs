@@ -327,6 +327,26 @@ public sealed class EstadoDeLaApp : IAsyncDisposable
 		return rechazo;
 	}
 
+	// LA FOTO DEL TABLERO, nivel 1 del §7.4: el archivo va a la carpeta de la persona
+	// (fotos/) y el journal guarda solo el nombre. Es el respaldo de un dato que, por
+	// ser aporte de Sonia, no tiene otra evidencia. La lectura del numero sigue siendo
+	// de ella: aca no hay OCR, y si algun dia lo hay, escribe solo tras su visto bueno.
+	public async ValueTask<string> AdjuntarFoto(string transaccion, string extension,
+		byte[] contenido)
+	{
+		Exigir();
+		if (!puente.HayCarpeta)
+			return "para guardar la foto hace falta una carpeta tuya";
+
+		string nombre = $"fotos/{transaccion}{extension}";
+		string motivo = await puente.GuardarArchivo(nombre, contenido);
+		if (motivo.Length > 0) return motivo;
+
+		string rechazo = api!.AdjuntarFoto(transaccion, nombre);
+		if (rechazo.Length == 0) await BajarADisco();
+		return rechazo;
+	}
+
 	// ---------------------------------------------------------------- consultas
 
 	public IReadOnlyList<VehiculoEnLista> Vehiculos() { Exigir(); return api!.Vehiculos(); }

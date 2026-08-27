@@ -1,13 +1,13 @@
 {
-  "name": "Mis exámenes · Laboratorio Clínico Delfos",
-  "short_name": "Mis exámenes",
-  "description": "Tus exámenes de laboratorio, guardados en una carpeta tuya. Funciona sin conexion.",
+  "name": "Mis cargas · Estaciones Faro",
+  "short_name": "Mis cargas",
+  "description": "Tus cargas de combustible, guardadas en una carpeta tuya. Funciona sin conexion.",
   "id": "./",
   "start_url": "./",
   "scope": "./",
   "display": "standalone",
-  "background_color": "#0e2f55",
-  "theme_color": "#0e2f55",
+  "background_color": "#0B3C49",
+  "theme_color": "#0B3C49",
   "lang": "es",
   "prefer_related_applications": false,
   "icons": [

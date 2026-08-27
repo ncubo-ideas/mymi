@@ -13,31 +13,37 @@ Se escribe el PNG a mano y no con una libreria porque esta maquina no tiene ning
 PIL, ni rsvg, ni ImageMagick- y agregar una dependencia de build para tres iconos que
 cambian una vez al ano no vale. zlib y struct vienen con Python.
 
-LA MARCA ES LA GOTA EN EL CIRCULO. La gota por la muestra, el circulo por el oraculo.
-Es el logo de Laboratorio Clinico Delfos, y el manual es explicito para el icono de
-aplicacion: gota y circulo BLANCOS, centrados, sobre #123f6d, sin texto. Solo trazo:
-nada se rellena, nada se degrada, y la gota no se separa del circulo.
+LA MARCA (⚠️ PROVISIONAL) ES EL FARO DE UN SOLO TRAZO: torre, linterna y haz, blancos
+sobre el teal petroleo del brief, sin texto y sin relleno. Un faro orienta a quien
+viaja, que es lo que la app hace con el carro de Sonia. Pendiente de la especificacion
+de Geaninna: cuando llegue, este archivo y los tokens de app.css son el cambio entero.
 
-El area libre pedida es media medida del diametro del circulo; a tamanos chicos el
-trazo engorda y el circulo crece, porque un icono no se escala linealmente.
+A tamanos chicos el trazo engorda y el dibujo crece, porque un icono no se escala
+linealmente.
 """
 
 import zlib
 import struct
 import math
 
-AZUL   = (18, 63, 109)     # #123f6d
+TEAL   = (11, 60, 73)      # #0B3C49, el teal petroleo provisional del brief
 BLANCO = (255, 255, 255)
 
 MUESTRAS = 3          # supersampling por eje: 9 muestras por pixel final
 
+# La geometria del faro, en el espacio de 40x40 del SVG de la marca (MisCargas.razor
+# y descarga/index.html usan el mismo trazo). Todo es contorno o segmento: nada se
+# rellena.
+TORRE = [(16.0, 34.0), (18.0, 12.0), (22.0, 12.0), (24.0, 34.0)]
+LINTERNA = [(17.5, 7.0), (22.5, 7.0), (22.5, 12.0), (17.5, 12.0)]
+HACES = [
+    ((26.0, 8.0), (32.5, 5.5)),
+    ((26.0, 11.0), (33.5, 11.0)),
+]
 
-def sdf_circulo(px, py, cx, cy, r):
-    return math.hypot(px - cx, py - cy) - r
 
-
-def sdf_triangulo(px, py, vertices):
-    """Distancia con signo a un triangulo (negativa adentro), sin importar el sentido.
+def sdf_poligono(px, py, vertices):
+    """Distancia con signo a un poligono (negativa adentro), sin importar el sentido.
 
     El adentro/afuera se decide por conteo de cruces (ray casting) y no por el signo
     de los productos cruzados, para no depender del orden de los vertices.
@@ -57,49 +63,43 @@ def sdf_triangulo(px, py, vertices):
     return -minima if adentro else minima
 
 
-def geometria(lado):
-    """El circulo, la gota y el grosor, en pixeles, con tamano optico."""
-    centro = lado / 2.0
+def distancia_a_segmento(px, py, a, b):
+    ax, ay = a
+    bx, by = b
+    ex, ey = bx - ax, by - ay
+    wx, wy = px - ax, py - ay
+    t = max(0.0, min(1.0, (wx * ex + wy * ey) / (ex * ex + ey * ey)))
+    return math.hypot(wx - t * ex, wy - t * ey)
 
-    # TAMANO OPTICO. A 512 se respeta el area libre del manual (media medida del
-    # diametro alrededor); a 32 un logo "correcto" desaparece, asi que crece.
+
+def geometria(lado):
+    """La escala del dibujo y el grosor del trazo, con tamano optico."""
     if lado <= 48:
-        radio = lado * 0.40
+        alto = lado * 0.86
         grosor = max(1.6, lado * 0.075)
     elif lado <= 192:
-        radio = lado * 0.33
-        grosor = lado * 0.055
+        alto = lado * 0.74
+        grosor = lado * 0.050
     else:
-        radio = lado * 0.25
-        grosor = lado * 0.042
+        alto = lado * 0.62
+        grosor = lado * 0.040
 
-    # La gota, a escala del SVG del manual (circulo r=18; apice en -11, cuenco en
-    # +1.4 con radio 6.8).
-    apice = (centro, centro - radio * (11.0 / 18.0))
-    cuenco = (centro, centro + radio * (1.4 / 18.0))
-    radio_cuenco = radio * (6.8 / 18.0)
-
-    return centro, radio, grosor, apice, cuenco, radio_cuenco
-
-
-def tangentes(apice, cuenco, r):
-    """Los dos puntos donde las rectas desde el apice tocan el cuenco."""
-    tx, ty = apice
-    bx, by = cuenco
-    d = math.hypot(tx - bx, ty - by)
-    beta = math.acos(min(1.0, r / d))
-    angulo = math.atan2(ty - by, tx - bx)
-    return [
-        (bx + r * math.cos(angulo - beta), by + r * math.sin(angulo - beta)),
-        (bx + r * math.cos(angulo + beta), by + r * math.sin(angulo + beta)),
-    ]
+    # El dibujo ocupa de y=5.5 a y=34 en el espacio de 40: se escala esa caja y se
+    # centra, con el faro apenas a la izquierda porque el haz pesa a la derecha.
+    escala = alto / 28.5
+    dx = lado / 2.0 - 23.0 * escala
+    dy = lado / 2.0 - 19.75 * escala
+    return escala, dx, dy, grosor
 
 
 def dibujar(lado):
     """Devuelve un bytearray RGB de lado*lado."""
-    centro, radio, grosor, apice, cuenco, radio_cuenco = geometria(lado)
-    p1, p2 = tangentes(apice, cuenco, radio_cuenco)
-    triangulo = [apice, p1, p2]
+    escala, dx, dy, grosor = geometria(lado)
+
+    torre = [(x * escala + dx, y * escala + dy) for x, y in TORRE]
+    linterna = [(x * escala + dx, y * escala + dy) for x, y in LINTERNA]
+    haces = [((a[0] * escala + dx, a[1] * escala + dy),
+              (b[0] * escala + dx, b[1] * escala + dy)) for a, b in HACES]
 
     mitad = grosor / 2.0
     paso = 1.0 / MUESTRAS
@@ -115,20 +115,19 @@ def dibujar(lado):
                 for sx in range(MUESTRAS):
                     px = x + (sx + 0.5) * paso
 
-                    # el anillo del circulo
-                    trazo = abs(sdf_circulo(px, py, centro, centro, radio)) <= mitad
-
-                    # el contorno de la gota: la union del cuenco y el triangulo
-                    # del apice, trazada. min() de los dos SDF es el SDF de la
-                    # union, y |union| <= mitad es su contorno.
+                    # los contornos de la torre y la linterna
+                    trazo = abs(sdf_poligono(px, py, torre)) <= mitad
                     if not trazo:
-                        gota = min(
-                            sdf_circulo(px, py, cuenco[0], cuenco[1], radio_cuenco),
-                            sdf_triangulo(px, py, triangulo),
-                        )
-                        trazo = abs(gota) <= mitad
+                        trazo = abs(sdf_poligono(px, py, linterna)) <= mitad
 
-                    color = BLANCO if trazo else AZUL
+                    # los haces, como segmentos con grosor
+                    if not trazo:
+                        for a, b in haces:
+                            if distancia_a_segmento(px, py, a, b) <= mitad:
+                                trazo = True
+                                break
+
+                    color = BLANCO if trazo else TEAL
                     acum_r += color[0]; acum_g += color[1]; acum_b += color[2]
 
             fila += bytes((acum_r // media, acum_g // media, acum_b // media))
