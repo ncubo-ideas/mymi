@@ -369,6 +369,8 @@ public sealed class EstadoDeLaApp : IAsyncDisposable
 
 	public int AnalitosFueraDeRango() { Exigir(); return api!.AnalitosFueraDeRango(); }
 
+	public LoQueEstaBien LoQueEstaEnRango() { Exigir(); return api!.LoQueEstaEnRango(); }
+
 	public int EdadDelPaciente() { Exigir(); return api!.EdadDelPaciente(); }
 
 	public long UltimoEvento() { Exigir(); return api!.UltimoEventoProcesado(); }
