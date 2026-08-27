@@ -228,6 +228,48 @@ namespace Compras.App
 			return productos;
 		}
 
+		internal static RitmoDeUnProducto Ritmo(string json)
+		{
+			if (string.IsNullOrWhiteSpace(json)) return new RitmoDeUnProducto();
+
+			using JsonDocument documento = JsonDocument.Parse(json);
+			JsonElement raiz = documento.RootElement;
+			JsonElement r = raiz.TryGetProperty("ritmo", out JsonElement uno) ? uno : raiz;
+
+			return new RitmoDeUnProducto
+			{
+				Sku = Texto(r, "sku"),
+				Descripcion = Texto(r, "descripcion"),
+				HayConQueComparar = Booleano(r, "hayConQueComparar"),
+				Cambio = Booleano(r, "cambio"),
+				Antes = Texto(r, "antes"),
+				Ahora = Texto(r, "ahora"),
+				ParaSonia = Texto(r, "paraSonia"),
+			};
+		}
+
+		internal static IReadOnlyList<RitmoQueCambio> RitmosQueCambiaron(string json)
+		{
+			var cambios = new List<RitmoQueCambio>();
+			if (string.IsNullOrWhiteSpace(json)) return cambios;
+
+			using JsonDocument documento = JsonDocument.Parse(json);
+			if (!documento.RootElement.TryGetProperty("ritmo", out JsonElement arreglo)) return cambios;
+
+			foreach (JsonElement elemento in Elementos(arreglo))
+				cambios.Add(new RitmoQueCambio
+				{
+					Sku = Texto(elemento, "sku"),
+					Descripcion = Texto(elemento, "descripcion"),
+					Antes = Texto(elemento, "antes"),
+					Ahora = Texto(elemento, "ahora"),
+					EsMasSeguido = Booleano(elemento, "esMasSeguido"),
+					ParaSonia = Texto(elemento, "paraSonia"),
+				});
+
+			return cambios;
+		}
+
 		internal static GarantiaDeProducto Garantia(string json)
 		{
 			if (string.IsNullOrWhiteSpace(json)) return new GarantiaDeProducto();

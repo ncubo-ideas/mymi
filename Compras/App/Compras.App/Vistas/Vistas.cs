@@ -168,6 +168,44 @@ namespace Compras.App.Vistas
 		public decimal Proporcion { get; init; }
 	}
 
+	// CADA CUANTO compra un producto, antes y ahora. Es la tarjeta "un cambio en tu
+	// rutina" del diseño de la app, y la respuesta de la S10 de la wiki.
+	public sealed class RitmoDeUnProducto
+	{
+		public string Sku { get; init; } = "";
+		public string Descripcion { get; init; } = "";
+
+		/// <summary>Si hay suficientes compras de los dos lados. Sin esto no se afirma nada.</summary>
+		public bool HayConQueComparar { get; init; }
+
+		public bool Cambio { get; init; }
+
+		/// <summary>La cadencia de antes, corta: "1 vez/mes". Vacía cuando no hay ritmo medido.</summary>
+		public string Antes { get; init; } = "";
+
+		/// <summary>La cadencia de ahora, corta: "1 vez/semana". Vacía cuando no hay ritmo medido.</summary>
+		public string Ahora { get; init; } = "";
+
+		/// <summary>La línea, escrita por el dominio: "X pasó de una vez al mes a todas las semanas".</summary>
+		public string ParaSonia { get; init; } = "";
+	}
+
+	// Un producto al que le cambio el ritmo. Viene de una lista YA FILTRADA por el dominio
+	// -solo los que tienen ritmo medido y cambiaron-, y por eso aca EsMasSeguido es un
+	// hecho y no una lectura guardada.
+	public sealed class RitmoQueCambio
+	{
+		public string Sku { get; init; } = "";
+		public string Descripcion { get; init; } = "";
+		public string Antes { get; init; } = "";
+		public string Ahora { get; init; } = "";
+
+		/// <summary>Si ahora lo compra más seguido que antes.</summary>
+		public bool EsMasSeguido { get; init; }
+
+		public string ParaSonia { get; init; } = "";
+	}
+
 	// El respaldo de una garantia: en que compra fue, cuando, cuanta cobertura y si
 	// esta vigente en la fecha que puso quien pregunto.
 	public sealed class GarantiaDeProducto

@@ -7,8 +7,8 @@ using ModelContextProtocol.Server;
 namespace Compras.Mcp.Tools;
 
 // LA SUPERFICIE QUE VE LA IA. El total, la firma de su semana, el mes en que la canasta
-// cambio, la canasta de un mes, la comparacion entre meses, el hueco, la serie de un
-// consumo y las garantias.
+// cambio, cada cuanto compra un producto y que cambio en su rutina, la canasta de un mes,
+// la comparacion entre meses, el hueco, la serie de un consumo y las garantias.
 //
 // Es intencional en el sentido fuerte: la escribe el autor de la app, igual que un
 // [HttpGet], y la app decide que expone. Deliberadamente NO existe una tool generica
@@ -120,6 +120,44 @@ internal sealed class ComprasTools
 		if (!lector.HayJournal) return new CambioDeLaCanasta();
 
 		return lector.Consultar(api => api.Cambio(corte, cuantasCompras));
+	}
+
+	[McpServerTool(Name = "cada_cuanto_compro", UseStructuredContent = true)]
+	[Description("CADA CUANTO compra la persona un producto, ANTES y DESPUES de una fecha. Es la "
+		+ "tool para '¿desde cuando compro tanto helado?', '¿cada cuanto compro leche?' o "
+		+ "'¿cambio algo en mi rutina?'. La respuesta viene en el lenguaje en que la gente habla "
+		+ "de sus habitos -'1 vez/mes', '1 vez/semana', 'de vez en cuando'- y no en dias, porque "
+		+ "'cada 6.5 dias' no es como habla nadie. Necesita al menos TRES compras del producto de "
+		+ "cada lado de la fecha: si hayConQueComparar viene en false, no hay ritmo que medir y NO "
+		+ "es un error. Y ojo con cambio en false: significa que el ritmo viene igual, que tambien "
+		+ "es una respuesta. Este modulo dice de que a que, nunca si esta mejor.")]
+	public RitmoDeUnProducto Ritmo(
+		[Description("El SKU del producto, como viene en las lineas de una compra. Usa detalle_de_compra o consumo_de para encontrarlo.")]
+		string sku,
+		[Description("La fecha de corte, en formato aaaa-mm-dd. Lo de antes se compara con lo de despues.")]
+		DateTime corte)
+	{
+		if (!lector.HayJournal) return new RitmoDeUnProducto();
+
+		return lector.Consultar(api => api.Ritmo(sku, corte));
+	}
+
+	[McpServerTool(Name = "que_cambio_en_mi_rutina", UseStructuredContent = true)]
+	[Description("LOS PRODUCTOS A LOS QUE LES CAMBIO EL RITMO, el mas notorio primero: cada uno con "
+		+ "cada cuanto se compraba antes y cada cuanto ahora. Usala para '¿que cambio en mi "
+		+ "rutina?', '¿que estoy comprando mas seguido?' o como CONTEXTO cuando la persona "
+		+ "relaciona sus compras con algo que le paso. Se ordena por cuanto salto la frecuencia y "
+		+ "no por plata: lo que cambia una rutina es cada cuanto, no cuanto cuesta — un producto "
+		+ "que paso de cada dos meses a todas las semanas dice mas que uno que subio de precio. "
+		+ "esMasSeguido distingue lo que entro de lo que se fue apagando. Una lista vacia significa "
+		+ "que ningun producto cambio de ritmo, que es una respuesta y no una falla.")]
+	public IReadOnlyList<RitmoQueCambio> RitmosQueCambiaron(
+		[Description("La fecha de corte, en formato aaaa-mm-dd. Lo de antes se compara con lo de despues.")]
+		DateTime corte)
+	{
+		if (!lector.HayJournal) return new List<RitmoQueCambio>();
+
+		return lector.Consultar(api => api.RitmosQueCambiaron(corte));
 	}
 
 	[McpServerTool(Name = "canasta_del_mes", UseStructuredContent = true)]
