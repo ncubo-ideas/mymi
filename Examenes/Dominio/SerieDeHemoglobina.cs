@@ -17,12 +17,12 @@ namespace Examenes.Dominio
 
 		// ---------------------------------------------------------------- lo suyo
 
-		public GradoDeAnemia PeorGrado()
+		public GradoDeAnemia PeorGrado(Paciente paciente)
 		{
 			GradoDeAnemia peor = GradoDeAnemia.Ninguna;
 			foreach (ExamenDeSangre medicion in Mediciones)
 			{
-				GradoDeAnemia grado = ((Hemoglobina)medicion).GradoDeAnemia();
+				GradoDeAnemia grado = ((Hemoglobina)medicion).GradoDeAnemia(paciente);
 				if (grado.EsPeorQue(peor)) peor = grado;
 			}
 			return peor;
@@ -30,21 +30,33 @@ namespace Examenes.Dominio
 
 		// Si hubo anemia antes y hoy ya no la hay. Es la unica forma de decir "te
 		// recuperaste", y necesita los dos extremos.
-		public bool VieneRecuperandose() =>
-			Cantidad >= 2 && PeorGrado().HayAnemia && !Ultima.GradoDeAnemia().HayAnemia;
+		public bool VieneRecuperandose(Paciente paciente) =>
+			Cantidad >= 2 && PeorGrado(paciente).HayAnemia && !Ultima.GradoDeAnemia(paciente).HayAnemia;
 
 		// ---------------------------------------------------------------- como se dibuja
 
 		public override FormaDeLectura Forma => FormaDeLectura.PosicionEnBanda;
 
+		// LA SERIE QUE NO SE PUEDE LEER SIN SEXO. Es una de las dos —la otra es el HDL, que
+		// viaja adentro del colesterol fraccionado— y la razon es concreta: 12.2 g/dL es
+		// anemia leve en un hombre y es normal en una mujer. No hay lectura intermedia que
+		// dar; hay que preguntar.
+		protected override bool SeSabeLeerPara(Paciente paciente) =>
+			Ultimo == null || Ultima.HayRangoPara(paciente);
+
 		// Piso Y techo: es el unico analito del demo donde alejarse es peor en las dos
 		// direcciones, y por eso su dibujo es una banda y no una linea.
-		public override IReadOnlyList<ReferenciaDeLectura> Referencias(int edad)
+		public override IReadOnlyList<ReferenciaDeLectura> Referencias(Paciente paciente)
 		{
 			var lineas = new List<ReferenciaDeLectura>();
 			if (Ultimo == null) return lineas;
 
-			RangoDeReferencia rango = Ultima.RangoPara(edad);
+			// SIN SEXO NO HAY BANDA QUE DIBUJAR. El piso y el techo son exactamente lo que
+			// depende del dato que falta, asi que dibujarlos con el rango masculino seria
+			// mostrarle a la persona una banda que quizas no es la suya. La lista vacia es
+			// la respuesta correcta, y la tarjeta muestra el valor sin el dibujo.
+			RangoDeReferencia rango = Ultima.RangoPara(paciente);
+			if (rango == null) return lineas;
 			lineas.Add(new ReferenciaDeLectura("piso", rango.Minimo,
 				$"por debajo de {rango.Minimo.Expresado} ya es anemia"));
 			lineas.Add(new ReferenciaDeLectura("techo", rango.Maximo,
@@ -55,7 +67,7 @@ namespace Examenes.Dominio
 
 		// ---------------------------------------------------------------- la lectura
 
-		public override Interpretacion Interpretar(int edad)
+		protected override Interpretacion Leer(Paciente paciente)
 		{
 			EvaluacionDeTendencia hechos = Evaluar();
 			if (!hechos.HaySerie)
@@ -63,7 +75,7 @@ namespace Examenes.Dominio
 				// Con una sola medicion no hay tendencia, pero el NIVEL ya se puede leer.
 				// Es lo que distingue a este analito: no necesita serie para decir algo
 				// util, y sin embargo no inventa la serie que no tiene.
-				GradoDeAnemia unico = Ultima.GradoDeAnemia();
+				GradoDeAnemia unico = Ultima.GradoDeAnemia(paciente);
 				if (!unico.HayAnemia) return Interpretacion.SinSerie(hechos);
 
 				return new Interpretacion(Veredicto.Indeterminado, unico.Severidad,
@@ -78,13 +90,13 @@ namespace Examenes.Dominio
 					+ "que es demasiado para el tiempo transcurrido", hechos,
 					Accion.RepetirElExamen(Plazo.EstaSemana));
 
-			GradoDeAnemia grado = Ultima.GradoDeAnemia();
+			GradoDeAnemia grado = Ultima.GradoDeAnemia(paciente);
 
 			// Mantenerse no puede juzgar por el signo, asi que lo que decide es si el
 			// movimiento ACERCA o ALEJA del rango. Se pregunta contra el rango, que es lo
 			// que DireccionDeseable.Mantenerse no sabe hacer sola.
 			bool seMovio = Ultima.EsCambioReal(hechos.Cambio);
-			bool ahoraEnRango = Ultima.EsNormalPara(edad);
+			bool ahoraEnRango = Ultima.EsNormalPara(paciente);
 
 			if (!seMovio)
 				return ahoraEnRango

@@ -32,17 +32,19 @@ namespace DealershipCar.Dominio.Pruebas
 				+ "la pantalla no es una fila que la persona nunca ve, sin ningun aviso.");
 		}
 
-		// EL PERFIL YA NO ES UN DESPLEGABLE -- T10 lo retiro de la pantalla por alcance -- pero la
-		// lista sigue cruzando la puerta desde el comando retenido, y el perfil DE ENTREGA cruza en
-		// cada apertura de un journal vacio, como argumento del constructor del agregado. Las dos
-		// cosas se fijan igual: un nombre que el canon no escribe revienta en la puerta.
+		// EL PERFIL NO ES UN DESPLEGABLE NI HAY YA COMANDO QUE LO MANDE DESDE LA CARATULA: la app del
+		// dueno es de SOLO LECTURA, asi que DeclareUsageProfileAsync se fue con esa regla igual que
+		// aplazar. La lista se queda por ESTA prueba -- es el unico punto del ensamblado que espeja
+		// UsageProfileCode miembro por miembro -- y el perfil DE ENTREGA si cruza de verdad, en cada
+		// apertura de un journal vacio, como argumento del constructor del agregado. Las dos cosas se
+		// fijan igual: un nombre que el canon no escribe revienta en la puerta.
 		[Test]
-		public void TheUsageProfilesTheBrowserCanSendAreExactlyTheDomainsProfiles()
+		public void TheUsageProfilesTheBrowserMirrorsAreExactlyTheDomainsProfiles()
 		{
 			Assert.That(AppState.TheFourProfiles, Is.EqualTo(Enum.GetNames(typeof(UsageProfileCode))),
-				"La lista de perfiles de la caratula se desincronizo del dominio. Un perfil que falta "
-				+ "es una declaracion que la persona no va a poder hacer cuando la pantalla la ofrezca "
-				+ "(L8), y uno de mas revienta en la puerta.");
+				"La lista de perfiles de la caratula se desincronizo del dominio. Ya no la manda "
+				+ "ninguna pantalla, y por eso esta prueba es lo unico que la sostiene: un miembro que "
+				+ "el dominio agregue y esta lista no no lo delata nadie mas.");
 		}
 
 		[Test]
@@ -54,21 +56,32 @@ namespace DealershipCar.Dominio.Pruebas
 				+ "un journal vacio, asi que un nombre mal escrito deja la app sin poder abrir.");
 		}
 
+		// LAS RAZONES TAMPOCO SON YA UN DESPLEGABLE, y por la misma regla que los perfiles: la app del
+		// dueno es de solo lectura, asi que el desplegable de razones y DeferOperationAsync se fueron
+		// juntos. La lista se queda por ESTA prueba -- es el unico punto del ensamblado que espeja
+		// DeferralReasonCode miembro por miembro -- y aca no hay una constante como TheProfileAtDelivery
+		// que cruce por otro camino: si esta lista se desincroniza, no lo delata nadie mas.
 		[Test]
-		public void TheDeferralReasonsTheScreenOffersAreExactlyTheDomainsReasons()
+		public void TheDeferralReasonsTheBrowserMirrorsAreExactlyTheDomainsReasons()
 		{
 			Assert.That(AppState.TheFiveDeferralReasons,
 				Is.EqualTo(Enum.GetNames(typeof(DeferralReasonCode))),
-				"El desplegable de razones se desincronizo del dominio. Una razon que falta es una que "
-				+ "la persona no puede dar al aplazar (L6).");
+				"La lista de razones de la caratula se desincronizo del dominio. Ya no la manda ninguna "
+				+ "pantalla, y por eso esta prueba es lo unico que la sostiene: una razon que el dominio "
+				+ "agregue y esta lista no no la delata nadie mas (L6).");
 		}
 
 		// LA VERSION CON DIENTES, y hace falta porque coincidir con Enum.GetNames no demuestra que la
 		// puerta acepte los nombres: es la misma disciplina que EveryScriptOfTheDoorHasBeenRun -- un
 		// nombre mal escrito se descubre en RUNTIME, no al compilar (S5). Se manda cada miembro de
-		// cada una de las tres listas por el comando de la puerta que la pantalla usa con ella.
+		// cada una de las tres listas por el comando de LA PUERTA que le corresponde.
+		//
+		// DE LAS TRES LISTAS, HOY LA PANTALLA SOLO MANDA UNA. Las nueve clases se leen en cada fila
+		// del tablero; los perfiles y las razones ya no salen de la caratula -- la app del dueno es de
+		// solo lectura y sus dos comandos se fueron. Se siguen mandando por la puerta igual, porque lo
+		// que esta prueba defiende es que el NOMBRE cruza, y la puerta no cambio.
 		[Test]
-		public void EveryNameTheScreenCanSendIsAcceptedByTheDoor()
+		public void EveryNameTheBrowserMirrorsIsAcceptedByTheDoor()
 		{
 			using (var journal = new AScheduleOnARealJournal(TheVin, "Standard"))
 			{
@@ -91,7 +104,7 @@ namespace DealershipCar.Dominio.Pruebas
 				foreach (string reason in AppState.TheFiveDeferralReasons)
 					Assert.DoesNotThrow(
 						() => journal.Api.DeferOperation("FluidChange", reason, at),
-						$"la puerta rechazo la razon '{reason}', que la pantalla ofrece.");
+						$"la puerta rechazo la razon '{reason}', que la lista de la caratula espeja.");
 
 				// Los cuatro perfiles, cada uno vigente DESPUES del anterior: OINV-15 dice que un
 				// perfil rige hacia adelante, asi que mandarlos todos al mismo instante seria una
@@ -102,7 +115,7 @@ namespace DealershipCar.Dominio.Pruebas
 					DateTime effectiveFrom = at.AddDays(++day);
 					Assert.DoesNotThrow(
 						() => journal.Api.DeclareUsageProfile(profile, effectiveFrom),
-						$"la puerta rechazo el perfil '{profile}', que la caratula puede mandar.");
+						$"la puerta rechazo el perfil '{profile}', que la lista de la caratula espeja.");
 				}
 			}
 

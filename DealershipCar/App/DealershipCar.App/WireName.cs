@@ -3,21 +3,6 @@ using DealershipCar.Dominio;
 
 namespace DealershipCar.App
 {
-	// LA PUERTA DE LOS CONJUNTOS CERRADOS. Un codigo del wire llega como el NOMBRE de un miembro
-	// -- "FluidChange", no 2 -- porque asi es como el motor deja pasar un enum: el parametro se
-	// declara typeof(Enum) y el motor lo resuelve al enum concreto en el sitio de la llamada
-	// (medido, SPIKES-OS2 S2).
-	//
-	// POR QUE SE VALIDA ACA Y NO ADENTRO. El agregado ya tiene su resolvedor total-con-throw, pero
-	// corre DESPUES de que el motor escribio la entrada. Un nombre que no existe llegaria al
-	// journal, reventaria al ejecutarse y dejaria una entrada permanente que hace loguear un fallo
-	// de rehidratacion en cada arranque futuro (medido, SPIKES-OS2 S5). Rechazarlo en la frontera
-	// es lo unico que evita esa cicatriz -- y es donde CONTRADICTIONS C3 pone las excepciones de
-	// argumento del BCL: guardan el WIRE, no el dominio.
-	//
-	// Se compara sin tolerancia de mayusculas a proposito. El motor si tolera, pero el canon manda
-	// en los nombres: "fluidchange" no es como se dice, y dejarlo pasar pondria en el journal una
-	// grafia que el canon no escribe.
 	internal static class WireName
 	{
 		internal static string OperationKind(string kind)
@@ -49,15 +34,6 @@ namespace DealershipCar.App
 		{
 			return AMemberOf(typeof(DeferralReasonCode), reason, "reason");
 		}
-
-		// LA MISMA PREGUNTA SIN REVENTAR, y hace falta porque la polaridad se invierte segun quien
-		// pregunta. En la puerta un codigo desconocido es un defecto de quien llama y revienta
-		// (E32). En un evento RECIBIDO no lo es: un concesionario publica lo que publica, y que
-		// mande una clase que esta rebanada no modela es normal. Ahi el evento se DESCARTA -- la
-		// ruta devuelve null -- y descartar no puede costar una excepcion.
-		//
-		// Es el mismo resolvedor, no un segundo: las dos mitades pasan por Enum.IsDefined sobre el
-		// enum del dominio, asi que no hay forma de que una acepte lo que la otra rechaza.
 
 		internal static bool NamesAnOperationKind(string kind)
 		{

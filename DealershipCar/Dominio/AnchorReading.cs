@@ -24,7 +24,7 @@ namespace DealershipCar.Dominio
 			if (unit == null)
 				throw new DomainException(
 					"Un punto base con lectura y sin unidad es un numero que se puede comparar "
-					+ "contra cualquier cosa (OINV-21).");
+					+ "contra cualquier cosa.");
 
 			return new AnAnchorReading(value, unit);
 		}
@@ -32,7 +32,7 @@ namespace DealershipCar.Dominio
 		/// <summary>Si el ancla tiene lectura. Total: contesta siempre.</summary>
 		internal abstract bool Exists();
 
-		/// <summary>La lectura. Revienta si no hay (E41): ausente no es cero.</summary>
+		/// <summary>La lectura. Revienta si no hay: ausente no es cero.</summary>
 		internal abstract int Value { get; }
 
 		/// <summary>La unidad de la lectura. Revienta si no hay.</summary>

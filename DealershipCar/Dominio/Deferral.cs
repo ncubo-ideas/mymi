@@ -5,7 +5,7 @@ namespace DealershipCar.Dominio
 	/// <summary>
 	/// Una decision de la persona de dejar una operacion para despues: por que, cuando la tomo y
 	/// hasta cuando la sostiene. La ventana se mide desde la decision recibida, no desde el
-	/// vencimiento (OINV-28).
+	/// vencimiento.
 	/// </summary>
 	internal sealed class Deferral
 	{
@@ -14,7 +14,7 @@ namespace DealershipCar.Dominio
 		{
 			if (reason == null)
 				throw new DomainException(
-					"Un aplazamiento sin motivo no se puede registrar: OINV-28 lo journaliza CON "
+					"Un aplazamiento sin motivo no se puede registrar: se journaliza CON "
 					+ "su DeferralReason, porque lo que la persona decidio es la mitad del hecho.");
 
 			Reason = reason;
@@ -28,7 +28,7 @@ namespace DealershipCar.Dominio
 		/// <summary>Cuando lo decidio.</summary>
 		internal DateTime DecidedAt { get; }
 
-		/// <summary>Hasta cuando lo sostiene, cumplida la ventana de la politica (ley L6).</summary>
+		/// <summary>Hasta cuando lo sostiene, cumplida la ventana de la politica.</summary>
 		internal DateTime WindowEndsAt { get; }
 
 		/// <summary>

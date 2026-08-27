@@ -14,7 +14,7 @@ namespace Examenes.Dominio
 	public sealed class AnalitoNominal : Analito
 	{
 		internal AnalitoNominal(string nombre, string paraMostrar, params string[] sinonimos)
-			: base(nombre, paraMostrar, sinonimos)
+			: base(nombre, paraMostrar, RequisitoAnatomico.Ninguno, sinonimos)
 		{
 		}
 

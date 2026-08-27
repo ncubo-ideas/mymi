@@ -105,6 +105,37 @@ namespace Examenes.Consola
 			Console.WriteLine($"NO dejo entrada             : {antes == despues}");
 			Console.WriteLine($"cantidad sin cambio         : {api.CantidadDeExamenes() == Muestras.ExamenesEsperados}");
 
+			// ---- criterio: el sexo cambia lo que el dominio PUEDE decir.
+			//
+			// Es la parte que ninguna otra medicion de este arnes cubre, y se mide sobre el
+			// MISMO journal: no se vuelve a cargar nada ni se migra ningun evento. El rango
+			// de referencia nunca se guardo con la medicion —se computa al consultar— asi
+			// que declarar el sexo reinterpreta el historial entero de una vez.
+			Console.WriteLine();
+			Console.WriteLine("-- el sexo cambia lo que el dominio PUEDE decir --");
+			ImprimirElSexo(api);
+
+			Console.WriteLine("  la persona declara HOMBRE:");
+			api.DeclararSexo("hombre");
+			ImprimirElSexo(api);
+
+			Console.WriteLine("  y ahora declara MUJER:");
+			api.DeclararSexo("mujer");
+			ImprimirElSexo(api);
+
+			// La otra fuente: la institucion publica lo contrario. Los dos quedan en el
+			// journal y para interpretar GANA lo que dijo la persona.
+			Console.WriteLine("  el laboratorio publica HOMBRE (procedencia INSTITUCION):");
+			diario.Aplicar(RutaDeExamenes.Rutear(Muestras.SexoPublicado(300, "hombre")));
+			Console.WriteLine($"    lo que dijo la persona    : {api.SexoDeclaradoPorLaPersona()}");
+			Console.WriteLine($"    lo que publico el lab     : {api.SexoPublicadoPorLaInstitucion()}");
+			Console.WriteLine($"    y para interpretar gana   : {api.SexoDelPaciente()}");
+			Console.WriteLine($"    un sexo no modelado se descarta: "
+				+ (RutaDeExamenes.Rutear(Muestras.SexoNoModelado()) == null));
+
+			// Se deja como estaba para que `estado` sobre esta misma carpeta se lea igual.
+			api.DeclararSexo("hombre");
+
 			// ---- criterio: el mismo salto, en un dia, se lee como error de medicion.
 			Console.WriteLine();
 			Console.WriteLine("-- el mismo salto en UN DIA es otra cosa --");
@@ -126,6 +157,29 @@ namespace Examenes.Consola
 			ImprimirEstado(app, new ExamenesAPI(app), conVeredicto: false);
 			app.Actor.GracefulExit();
 			return 0;
+		}
+
+		// QUE PUEDE DECIR EL DOMINIO CON EL SEXO QUE HAY. Las tres lineas que cambian, y
+		// las tres salen del dominio: el conteo de lo no interpretable, si el antigeno
+		// existe siquiera, y que veredicto tiene la hemoglobina.
+		private static void ImprimirElSexo(ExamenesAPI api)
+		{
+			FaltaElSexoDelPaciente pedido = api.PedidoDeSexo();
+			InterpretacionDeAnalito antigeno = api.Interpretacion(Muestras.AnalitoDelAntigeno);
+			InterpretacionDeAnalito hemoglobina = api.Interpretacion("Hemoglobina");
+
+			Console.WriteLine($"    sexo                      : {api.SexoDelPaciente()}");
+			Console.WriteLine($"    analitos con historia     : {string.Join(", ", api.Analitos())}");
+			Console.WriteLine($"    hay que insistir          : {pedido.HaceFalta}"
+				+ (pedido.HaceFalta
+					? $" ({pedido.SinInterpretar} de {pedido.Analitos}, severidad {pedido.Severidad})"
+					: ""));
+			if (pedido.HaceFalta) Console.WriteLine($"      dice                    : {pedido.ParaSonia}");
+			Console.WriteLine($"    antigeno prostatico       : {antigeno.Veredicto}"
+				+ $" — {antigeno.ParaSonia}");
+			Console.WriteLine($"    hemoglobina               : {hemoglobina.Veredicto}"
+				+ $" — referencia [{hemoglobina.ReferenciaLegible}]");
+			Console.WriteLine();
 		}
 
 		private static void ImprimirEstado(ExamenesApp app, ExamenesAPI api, bool conVeredicto)

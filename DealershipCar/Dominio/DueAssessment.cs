@@ -4,7 +4,7 @@ namespace DealershipCar.Dominio
 {
 	/// <summary>
 	/// La respuesta de una <see cref="IntervalRule"/>: en que estado queda la operacion, cual
-	/// dimension lo decidio, y si alguna no se pudo evaluar en vez de no haber llegado (GAP G2).
+	/// dimension lo decidio, y si alguna no se pudo evaluar en vez de no haber llegado.
 	/// </summary>
 	internal sealed class DueAssessment
 	{
@@ -42,20 +42,20 @@ namespace DealershipCar.Dominio
 
 		/// <summary>
 		/// Si pudo evaluarse al menos una dimension. Falso quiere decir que <see cref="State"/>
-		/// no es evidencia de nada (GAP G2).
+		/// no es evidencia de nada.
 		/// </summary>
 		internal bool CanBeEvaluated { get; }
 
 		/// <summary>
-		/// Si la ley mide distancia pero no se pudo evaluar. No es "todavia no llego" (GAP G2), y
-		/// se recalcula en cada evaluacion, asi que se cura sola (GAP G4).
+		/// Si la ley mide distancia pero no se pudo evaluar. No es "todavia no llego", y
+		/// se recalcula en cada evaluacion, asi que se cura sola.
 		/// </summary>
 		internal bool DistanceIsSuspended
 		{
 			get { return _distance.Applies && !_distance.CanBeEvaluated; }
 		}
 
-		/// <summary>Suspendida por unidades distintas (OINV-21, ley L7).</summary>
+		/// <summary>Suspendida por unidades distintas.</summary>
 		internal bool SuspendedByUnitMismatch
 		{
 			get { return _distance.SuspendedByUnitMismatch; }
@@ -97,7 +97,7 @@ namespace DealershipCar.Dominio
 
 		/// <summary>
 		/// La respuesta de ConditionOnly. Su NotDue es firme, a diferencia del de
-		/// <see cref="NothingCouldBeEvaluated"/>: solo la mueve un cruce recibido (ley L3).
+		/// <see cref="NothingCouldBeEvaluated"/>: solo la mueve un cruce recibido.
 		/// </summary>
 		internal static DueAssessment WaitingForAReceivedCrossing()
 		{
@@ -113,7 +113,7 @@ namespace DealershipCar.Dominio
 
 		/// <summary>
 		/// El motivo compuesto: el estado, que dimension lo decidio y con que monto, o por que no
-		/// se pudo evaluar. Es del dominio, no de la vista (OUS-07).
+		/// se pudo evaluar. Es del dominio, no de la vista.
 		/// </summary>
 		internal string Describe()
 		{

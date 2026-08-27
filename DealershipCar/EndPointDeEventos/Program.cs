@@ -2,30 +2,8 @@ using System.Collections.Concurrent;
 using System.Security.Cryptography;
 using System.Text.Json.Serialization;
 
-// Mock del servidor del concesionario. Happy path, estado en memoria.
-//
-// El diseno central: un token de device declara QUE puede hacer y SOBRE QUE recurso, y cada
-// endpoint declara que scope exige. La app solo consigue "{recurso}.events.read", asi que
-// cualquier otro endpoint la rechaza porque el token NO LO TIENE - no por un if contra una ruta.
-// Eso es lo que vuelve FALSABLE el invariante "la app no es cliente de los servicios generales del
-// concesionario": el senuelo /customer devuelve 403 estructuralmente, no por cortesia.
-//
-// Las rutas estan parametrizadas por recurso (/{recurso}/{id}/events), asi que este mismo mecanismo
-// sirve para el vehiculo de una persona igual que servia para el expediente de un paciente. Para
-// este negocio el juego de URLs es:
-//
-//   GET  /vehicle/{vin}/events?after=N      scope vehicle.events.read
-//   GET  /vehicle/{vin}/customer            scope vehicle.customer.read  -> 403, el senuelo
-//
-// EL SENUELO ES EL EXPEDIENTE DEL CLIENTE, y la eleccion no es decorativa: es exactamente el dato
-// que un concesionario tiene y que a esta app no le corresponde. El concesionario sirve EVENTOS del
-// vehiculo; quien es la persona, que compro y cuanto debe no entra por ningun lado.
-
 var builder = WebApplication.CreateBuilder(args);
 
-// Mock en localhost: cualquier origen. No usa cookies (el token viaja en el header Authorization),
-// asi que AllowAnyOrigin es valido y evita que el primer intento desde el browser muera en un
-// preflight.
 builder.Services.AddCors(o => o.AddDefaultPolicy(p => p
     .AllowAnyOrigin()
     .AllowAnyHeader()
@@ -38,11 +16,6 @@ app.UseCors();
 var almacen = new AlmacenDeEventos();
 var concesiones = new Concesiones();
 
-// ---------------------------------------------------------------- credenciales
-
-// El concesionario le da al DEVICE de la persona un access token corto y un refresh token durable y
-// rotatorio. El scope queda acotado a leer los eventos de UN vehiculo concreto: nada de otros
-// vehiculos, ni del expediente del cliente, ni de la agenda del taller.
 app.MapPost("/device/token", (PedidoDeToken pedido) =>
 {
     if (string.IsNullOrWhiteSpace(pedido?.DeviceKey)) return Results.BadRequest(new { error = "deviceKey requerido" });
@@ -64,10 +37,6 @@ app.MapPost("/device/refresh", (PedidoDeRefresh pedido) =>
         : Results.Ok(rotada.ComoRespuesta());
 });
 
-// ---------------------------------------------------------------- la narrativa
-
-// EL UNICO verbo de lectura que la app usa. Devuelve solo los eventos posteriores a `after`, que es
-// el punto de control que la app tiene journalizado.
 app.MapGet("/{recurso}/{id}/events", (string recurso, string id, long? after, HttpRequest pedido) =>
 {
     IResult negado = concesiones.Exigir(pedido, $"{recurso}.events.read", recurso, id);
@@ -83,9 +52,6 @@ app.MapGet("/{recurso}/{id}/events", (string recurso, string id, long? after, Ht
     });
 });
 
-// EL SENUELO. Existe para demostrar el invariante, no para servir a nadie: exige un scope que
-// ningun token de device tiene, asi que responde 403 con la credencial de la app. Es la
-// demostracion falsable de que la app no es cliente de los servicios generales del concesionario.
 app.MapGet("/{recurso}/{id}/customer", (string recurso, string id, HttpRequest pedido) =>
 {
     IResult negado = concesiones.Exigir(pedido, $"{recurso}.customer.read", recurso, id);
@@ -94,11 +60,6 @@ app.MapGet("/{recurso}/{id}/customer", (string recurso, string id, HttpRequest p
     return Results.Ok(new { nombre = "nunca deberia verse", recurso, id });
 });
 
-// ---------------------------------------------------------------- control del mock
-
-// Registra un hecho CONCRETO. Es lo que usa el inyector de eventos de demo: una demo se cuenta con
-// valores que uno eligio, porque las fechas de vencimiento dependen de los numeros y de los
-// instantes. Accion DEL CONCESIONARIO, no de la app: sin token.
 app.MapPost("/{recurso}/{id}/events/hecho", (string recurso, string id, HechoAInyectar pedido) =>
 {
     if (pedido is null || Vacio(pedido.Tipo))
@@ -108,10 +69,6 @@ app.MapPost("/{recurso}/{id}/events/hecho", (string recurso, string id, HechoAIn
     return Results.Ok(new { agregado = nuevo.Id, tipo = nuevo.Tipo, resumen = nuevo.Resumen() });
 });
 
-// Expira SOLO los access tokens y deja los refresh vivos. Es el caso que el diseno declara normal
-// - "access token corto, refresh token durable/rotatorio" - y sin una forma de provocarlo no hay
-// manera de demostrar que la app rota sola en vez de pedir una credencial nueva. Control del mock,
-// no del concesionario.
 app.MapPost("/device/expirar-access", () =>
 {
     int expirados = concesiones.ExpirarAccessTokens();
@@ -124,12 +81,10 @@ app.Run();
 
 static bool Vacio(string s) => string.IsNullOrWhiteSpace(s);
 
-// ---------------------------------------------------------------- credenciales
-
 sealed record Concesion(string DeviceKey, string Recurso, string Id, string Scope,
     string AccessToken, string RefreshToken, DateTime Expira)
 {
-    internal const int SegundosDeVida = 900;   // access token CORTO, y se hace cumplir
+    internal const int SegundosDeVida = 900;
 
     internal object ComoRespuesta() => new
     {
@@ -158,9 +113,6 @@ sealed class Concesiones
         return concesion;
     }
 
-    // Adelanta el vencimiento de todos los access tokens sin tocar los refresh. Deja la concesion en
-    // el indice para que Exigir la encuentre y responda "expirado" en vez de "desconocido": son dos
-    // rechazos distintos y la app reacciona distinto a cada uno.
     internal int ExpirarAccessTokens()
     {
         int expirados = 0;
@@ -176,7 +128,6 @@ sealed class Concesiones
         return expirados;
     }
 
-    // Durable y ROTATORIO: el refresh viejo se invalida y sale uno nuevo.
     internal Concesion Rotar(string refreshToken)
     {
         if (!porRefreshToken.TryRemove(refreshToken, out Concesion vieja)) return null;
@@ -185,10 +136,6 @@ sealed class Concesiones
         return Otorgar(vieja.DeviceKey, vieja.Recurso, vieja.Id);
     }
 
-    // Devuelve null si la credencial alcanza; si no, el resultado a responder.
-    //
-    // Tres razones de rechazo, y la tercera es la que importa: el token puede ser perfectamente
-    // valido y aun asi no servir, porque su scope no cubre lo que el endpoint pide.
     internal IResult Exigir(HttpRequest pedido, string scopeExigido, string recurso, string id)
     {
         string presentado = Bearer(pedido);
@@ -232,14 +179,6 @@ sealed class Concesiones
         prefijo + "_" + Convert.ToHexString(RandomNumberGenerator.GetBytes(16)).ToLowerInvariant();
 }
 
-// ---------------------------------------------------------------- los eventos
-
-// Un evento de la narrativa del concesionario. `id` y `tipo` son el SOBRE y los lee el mecanismo
-// compartido; todo lo demas es el payload de este negocio y lo interpreta el modulo.
-//
-// UN SOLO TIPO C# PARA LOS CINCO EVENTOS, y eso es del mock y no del contrato: el mock es un
-// diccionario en memoria, y darle cinco clases seria darle un modelo que no tiene. Los campos que
-// no aplican viajan en su valor neutro y el Interpretar de cada mensaje ya sabe cuales exige.
 sealed class EventoDelConcesionario
 {
     [JsonPropertyName("id")]                public long Id { get; init; }
@@ -282,8 +221,6 @@ sealed class EventoDelConcesionario
 
 sealed class AlmacenDeEventos
 {
-    // El VIN del vehiculo de la demo. Es el mismo que cuenta la consola en su historia de seis
-    // meses, para que las dos caratulas hablen del mismo auto.
     internal const string VinDelDemo = "1HGCM82633A004352";
 
     private const string UnitA = "UnitA";
@@ -300,21 +237,6 @@ sealed class AlmacenDeEventos
     private List<EventoDelConcesionario> Lista(string recurso, string id) =>
         porRecurso.GetOrAdd($"{recurso}/{id}", _ => Sembrar());
 
-    // LA HISTORIA SEMBRADA, la misma que siembra el inyector. Las fechas son literales a proposito:
-    // una demo con fechas relativas al dia de hoy deja de ser reproducible, y los vencimientos
-    // dependen de los dias transcurridos. Es la regla de C27, y vale para todo lo que tenga que
-    // reproducir una secuencia recibida.
-    //
-    // QUE CUENTA. El vehiculo se entrega el 1/9/2025 con 12000 unidades y el plan trae cuatro
-    // operaciones. Seis meses de odometro, que llegan DESORDENADAS respecto del instante observado.
-    // El taller informa un cruce de umbral y una operacion hecha de verdad, que re-ancla su
-    // sucesora. El fabricante emite una revision con un intervalo mas corto. Y dos lecturas mas al
-    // final, que son las que hacen vencer cosas.
-    //
-    // Y DOS EVENTOS QUE ESTA APP NO CONSUME, a proposito: un reclamo de garantia y una cita de
-    // taller. El concesionario publica su narrativa entera; este modulo modela una rebanada de ella
-    // y descarta el resto. Que se vean descartados en la consola es la mitad visible de
-    // "la interpretacion es del modulo".
     private static List<EventoDelConcesionario> Sembrar() => new()
     {
         Revision(101, "R1", "2025-09-01"),
@@ -412,7 +334,6 @@ sealed class AlmacenDeEventos
             return lista.Count == 0 ? 0 : lista.Max(e => e.Id);
     }
 
-    // El hecho que el operador de la demo eligio, con sus valores exactos.
     internal EventoDelConcesionario Agregar(string recurso, string id, HechoAInyectar pedido)
     {
         List<EventoDelConcesionario> lista = Lista(recurso, id);
@@ -451,8 +372,6 @@ sealed class AlmacenDeEventos
     private static bool Vacio(string s) => string.IsNullOrWhiteSpace(s);
 }
 
-// ---------------------------------------------------------------- cuerpos de pedido
-
 sealed class PedidoDeToken
 {
     [JsonPropertyName("deviceKey")] public string DeviceKey { get; set; }
@@ -465,7 +384,6 @@ sealed class PedidoDeRefresh
     [JsonPropertyName("refreshToken")] public string RefreshToken { get; set; }
 }
 
-// El cuerpo que manda el inyector de eventos de demo.
 sealed class HechoAInyectar
 {
     [JsonPropertyName("tipo")]              public string Tipo { get; set; }

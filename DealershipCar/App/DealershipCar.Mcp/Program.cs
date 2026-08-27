@@ -4,22 +4,6 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 
-// Servidor MCP de DealershipCar. Proceso local, SOLO LECTURA, sobre la misma carpeta de
-// journal que escribe la app instalada.
-//
-// Por que hace falta un proceso: una pagina en el browser no puede hospedar un servidor MCP,
-// porque no puede escuchar conexiones entrantes. No hay forma de evitarlo. Pero NO necesita
-// hablar con el browser: lee la misma carpeta, y el journal YA es el protocolo.
-
-// ---- LA LANDMINE. Con transporte stdio, STDOUT ES EL CANAL JSON-RPC.
-//
-// El replay de Puppeteer imprime su progreso con Console.Write ("1%2%3%...", y un
-// "Starting ...'s Actor" en cada arranque). Medido en T0 y vuelto a medir en T7. En una consola
-// eso es ruido; aca CORROMPE EL PROTOCOLO: esos bytes se meten entre los mensajes JSON-RPC y el
-// cliente no puede parsear la respuesta.
-//
-// Se desvia ANTES de tocar el motor y para todo el proceso. Es la primera linea a proposito.
-// stderr queda libre para diagnostico, que es donde el cliente MCP espera los logs.
 Console.SetOut(Console.Error);
 
 string folder = args.Length > 0 && args[0].Length > 0
@@ -27,10 +11,6 @@ string folder = args.Length > 0 && args[0].Length > 0
 	: Path.Combine(
 		Environment.GetFolderPath(Environment.SpecialFolder.UserProfile), "DealershipCar-journal");
 
-// EL VIN ES OPCIONAL Y NO SE PIDE SI NO HACE FALTA. El nombre del actor lo lleva, pero el VIN ya
-// esta adentro del journal: exigirlo en la configuracion seria una segunda fuente de verdad para
-// la identidad del vehiculo, y la que quedaria vieja es la de afuera. Sin el, se descubre de la
-// carpeta. Se acepta igual para el caso en que una carpeta tenga mas de un vehiculo.
 string vin = args.Length > 1 ? args[1] : "";
 
 var reader = new JournalReader(folder, vin);
@@ -47,16 +27,11 @@ builder.Services.AddMcpServer(options =>
 		Version = "0.1.0",
 	};
 
-	// Las instructions NO son el catalogo de tools: eso el cliente lo descubre solo con tools/list
-	// y sus schemas. Esto es el WORKFLOW -- lo que la IA no puede deducir de la firma de un metodo:
-	// de donde salen los datos, que significa un campo vacio, y que ella NO puede disparar un
-	// refresh.
 	options.ServerInstructions = Instructions(reader.Folder);
 })
 .WithStdioServerTransport()
 .WithTools<DealershipCarTools>();
 
-// Todo el logging a stderr. Un LogInformation que saliera por stdout romperia el canal.
 builder.Logging.ClearProviders();
 builder.Logging.AddConsole(o => o.LogToStandardErrorThreshold = LogLevel.Trace);
 

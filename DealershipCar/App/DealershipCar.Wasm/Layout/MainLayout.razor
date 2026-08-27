@@ -1,14 +1,5 @@
 @inherits LayoutComponentBase
 
-@* Sin sidebar, sin navegacion, sin barra "About" del template. La UI de esta app es una sola
-   cosa: la agenda de mantenimiento de un vehiculo, con lo que la persona puede decidir sobre
-   ella. Una app que le entregas a alguien para ver SUS datos no tiene por que traer el andamio
-   del framework con el que se hizo.
-
-   LA BARRA SUPERIOR NO ES NAVEGACION -- no hay a donde ir -- es la CARATULA: la marca del
-   concesionario que entrego la app, y de quien es el tablero que sigue abajo. Un MudDrawer aca
-   seria exactamente el andamio que el parrafo anterior rechaza. *@
-
 <MudThemeProvider @ref="themeProvider" Theme="@SotaventoTheme.Theme" @bind-IsDarkMode="dark" />
 <MudPopoverProvider />
 <MudDialogProvider />
@@ -43,9 +34,6 @@
 
     private bool dark;
 
-    // EL MODO ARRANCA POR EL DEL SISTEMA y despues la persona manda. Preguntarlo necesita JS, asi
-    // que no se puede hacer antes del primer render; por eso el primer pintado es claro y este
-    // corrige. Sin StateHasChanged el valor cambia y la pantalla se queda como estaba.
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
         if (!firstRender) return;

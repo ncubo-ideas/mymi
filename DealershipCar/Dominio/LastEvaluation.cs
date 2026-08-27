@@ -4,7 +4,7 @@ namespace DealershipCar.Dominio
 {
 	/// <summary>
 	/// El instante en que la agenda se evaluo por ultima vez, o la constancia de que todavia no se
-	/// evaluo ninguna vez. Es el punto de control monotono sobre el que C6 guarda la cadencia de
+	/// evaluo ninguna vez. Es el punto de control monotono sobre el que la guarda mide la cadencia de
 	/// <see cref="MaintenanceSchedule.Evaluate"/>.
 	/// </summary>
 	internal abstract class LastEvaluation
@@ -21,7 +21,7 @@ namespace DealershipCar.Dominio
 		/// <summary>Si la agenda se evaluo alguna vez. Total: contesta siempre.</summary>
 		internal abstract bool Exists();
 
-		/// <summary>Cuando. Revienta si nunca se evaluo (E41): ausente no es una fecha minima.</summary>
+		/// <summary>Cuando. Revienta si nunca se evaluo: ausente no es una fecha minima.</summary>
 		internal abstract DateTime Instant();
 
 		/// <summary>

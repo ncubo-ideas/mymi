@@ -5,7 +5,7 @@ namespace DealershipCar.Dominio
 	/// <summary>
 	/// Donde esta parado uno de los dos limites de un intervalo: si esa dimension aplica a la ley,
 	/// si se puede evaluar con los hechos que hay, y que estado implica por si sola. Es una
-	/// respuesta calculada en cada evaluacion, nunca estado guardado (GAP G4).
+	/// respuesta calculada en cada evaluacion, nunca estado guardado.
 	/// </summary>
 	internal abstract class LimitStanding
 	{
@@ -32,7 +32,7 @@ namespace DealershipCar.Dominio
 
 		/// <summary>
 		/// La dimension de distancia: lo recorrido desde el ancla hasta la ultima lectura usable,
-		/// contra el limite ya escalado. Aqui se decide si se puede evaluar (GAP G2), y el motivo
+		/// contra el limite ya escalado. Aqui se decide si se puede evaluar, y el motivo
 		/// se lee del tipo que sale.
 		/// </summary>
 		internal static LimitStanding OfDistance(
@@ -94,7 +94,7 @@ namespace DealershipCar.Dominio
 
 		/// <summary>
 		/// Si se puede evaluar con los hechos que hay. Falso es NO SE PUEDE SABER, distinto de
-		/// <see cref="DueState.NotDue"/> (GAP G2).
+		/// <see cref="DueState.NotDue"/>.
 		/// </summary>
 		internal virtual bool CanBeEvaluated
 		{
@@ -102,7 +102,7 @@ namespace DealershipCar.Dominio
 		}
 
 		/// <summary>
-		/// El estado que esta sola dimension implica. Revienta si no se pudo medir (E41): no hay
+		/// El estado que esta sola dimension implica. Revienta si no se pudo medir: no hay
 		/// un octavo <see cref="DueState"/> que diga "no lo se".
 		/// </summary>
 		internal virtual DueState State
@@ -112,7 +112,7 @@ namespace DealershipCar.Dominio
 				throw new DomainException(
 					"Esta dimension no se pudo evaluar, asi que no tiene estado: pregunte "
 					+ "CanBeEvaluated antes. Un NotDue devuelto aqui se leeria como que la "
-					+ "operacion esta al dia, que es exactamente lo que el GAP G2 impide.");
+					+ "operacion esta al dia, que es exactamente lo que no se puede decir.");
 			}
 		}
 
@@ -136,12 +136,12 @@ namespace DealershipCar.Dominio
 
 		/// <summary>
 		/// La clausula que esta dimension aporta al motivo: la dimension y el monto, o por que no
-		/// se pudo evaluar. Componerla es del dominio, no de la vista (OUS-07).
+		/// se pudo evaluar. Componerla es del dominio, no de la vista.
 		/// </summary>
 		internal abstract string Describe();
 
 		/// <summary>
-		/// Si llego mas lejos que la otra. Con ella se dice la ley L1: decide la mas avanzada.
+		/// Si llego mas lejos que la otra. Con ella se dice la ley: decide la mas avanzada.
 		/// </summary>
 		internal bool IsMoreAdvancedThan(LimitStanding other)
 		{
@@ -158,14 +158,14 @@ namespace DealershipCar.Dominio
 
 		/// <summary>
 		/// El rango de avance, solo para comparar dos dimensiones. Protegido para que nadie ordene
-		/// DueStates por el. Revienta si la dimension no se pudo medir (GAP G2).
+		/// DueStates por el. Revienta si la dimension no se pudo medir.
 		/// </summary>
 		protected virtual int Advancement()
 		{
 			throw new DomainException(
 				"Se comparo el avance de una dimension que no se puede evaluar. Lo inevaluable no "
 				+ "va en la misma escalera que lo medido: primero se pregunta CanBeEvaluated y se "
-				+ "degrada (GAP G2).");
+				+ "degrada.");
 		}
 
 		private static DueState StateFor(int travelled, int effectiveLimit, int courtesyLead, int grace)

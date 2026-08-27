@@ -274,7 +274,7 @@ namespace Examenes.Dominio
 
 		// La linea base y el techo de la edad. La base solo aparece cuando hay fondo: sin
 		// ella no se dibuja una banda inventada.
-		public override IReadOnlyList<ReferenciaDeLectura> Referencias(int edad)
+		public override IReadOnlyList<ReferenciaDeLectura> Referencias(Paciente paciente)
 		{
 			var lineas = new List<ReferenciaDeLectura>();
 			if (Ultimo == null) return lineas;
@@ -284,7 +284,7 @@ namespace Examenes.Dominio
 				lineas.Add(new ReferenciaDeLectura("habitual", habitual,
 					$"tu nivel de siempre ronda {habitual.Expresado}"));
 
-			RangoDeReferencia rango = Ultima.RangoPara(edad);
+			RangoDeReferencia rango = Ultima.RangoPara(paciente);
 			lineas.Add(new ReferenciaDeLectura("techo", rango.Maximo,
 				$"a tu edad, lo esperable llega hasta {rango.Maximo.Expresado}"));
 
@@ -293,7 +293,7 @@ namespace Examenes.Dominio
 
 		// ---------------------------------------------------------------- la lectura
 
-		public override Interpretacion Interpretar(int edad)
+		protected override Interpretacion Leer(Paciente paciente)
 		{
 			EvaluacionDeTendencia hechos = Evaluar();
 			if (!hechos.HaySerie) return Interpretacion.SinSerie(hechos);
@@ -343,7 +343,7 @@ namespace Examenes.Dominio
 				// Estable pero por encima del techo de su edad sigue siendo algo que un
 				// medico tiene que ver. Estable no significa bien — aunque, quieto, puede
 				// esperar a la cita que ya ibas a tener.
-				return Ultima.EsNormalPara(edad)
+				return Ultima.EsNormalPara(paciente)
 					? new Interpretacion(Veredicto.Estable, Severidad.Informativo,
 						$"se mantiene alrededor de {Ultima.Valor.Expresado} desde hace "
 						+ $"{hechos.DiasTranscurridos} días", hechos)

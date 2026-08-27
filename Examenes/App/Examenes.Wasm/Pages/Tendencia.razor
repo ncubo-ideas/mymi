@@ -50,12 +50,26 @@ else
 {
     <h1 class="titular">@(EsBinario ? presencia.ParaMostrar : lectura.ParaMostrar)</h1>
 
-    @*  UN BINARIO SE CUENTA DISTINTO, porque es distinto. Acá no hay «de cuánto a
-        cuánto»: hay cuántas veces se buscó, cuántas apareció, y —lo único que cambia la
-        conducta— cuántas SEGUIDAS. La pantalla no elige cuál de las dos historias contar:
-        se lo pregunta a la forma, que la dice el dominio.                               *@
-    @if (EsBinario)
+    @*  NO EXISTE PARA ESTA PERSONA, y va PRIMERO porque no es un caso de la serie: es
+        la pregunta la que no tiene sentido. Sin esta rama la pantalla caía en «no hay
+        ninguna medición todavía», que es confundir la APLICABILIDAD con la falta de
+        datos —justamente los dos efectos que este modelo separó—. Las mediciones están
+        en el journal y siguen ahí; lo que no aplica es leerlas.
+
+        La frase la escribe el dominio. La pantalla no sabe POR QUÉ un examen no
+        corresponde, y componerla acá sería el filtro de vista que esto vino a evitar. *@
+    @if (interpretacion.NoLeCorresponde)
     {
+        <div class="aviso aviso--neutro" style="margin-top:22px">
+            @interpretacion.ParaSonia.
+        </div>
+    }
+    else if (EsBinario)
+    {
+        @*  UN BINARIO SE CUENTA DISTINTO, porque es distinto. Acá no hay «de cuánto a
+            cuánto»: hay cuántas veces se buscó, cuántas apareció, y —lo único que cambia
+            la conducta— cuántas SEGUIDAS. La pantalla no elige cuál de las dos historias
+            contar: se lo pregunta a la forma, que la dice el dominio.                  *@
         @if (!presencia.HaySerie)
         {
             <p class="apunte" style="margin-top:14px">
@@ -168,7 +182,11 @@ else
         @* LA FORMA, la misma que en la tarjeta y por la misma razón: el dominio dice cuál
            le toca a este analito y acá sólo se traduce a píxeles. Que la tarjeta la
            tuviera y el detalle no era el bug: se perdía la forma justo al pedir más. *@
-        @switch (interpretacion.Forma)
+        @* SIN VEREDICTO NO HAY DIBUJO: las tres formas se trazan CONTRA una referencia
+           —la banda, la meta, el techo— y esa referencia es justamente lo que depende del
+           dato que falta. Los valores de arriba siguen estando; lo que se retiene es la
+           lectura. *@
+        @switch (interpretacion.RequiereElSexo ? "" : interpretacion.Forma)
         {
             case "trayectoria con linea base":
                 <TrayectoriaConLineaBase Puntos="puntos"
@@ -197,6 +215,17 @@ else
                 <strong>@interpretacion.Veredicto.</strong>
                 @interpretacion.ParaSonia. No es un diagnóstico: es la lectura de tu propia
                 serie. Lo que corresponde es <strong>@interpretacion.Accion</strong>.
+            </div>
+        }
+        else if (interpretacion.RequiereElSexo)
+        {
+            @* NI VERDE NI AMBAR. No se puede decir que esto esté bien —no se sabe— y
+               tampoco es un hallazgo. La frase la escribe el analito, que es el único que
+               sabe por qué no puede leerse. *@
+            <div class="aviso aviso--neutro" style="margin-top:22px">
+                <strong>Falta un dato tuyo.</strong> @interpretacion.ParaSonia.
+                Los valores de arriba son reales; lo que no hay todavía es la lectura.
+                <a href="">Decilo en tus exámenes</a> y esto se interpreta solo.
             </div>
         }
         else
@@ -245,19 +274,32 @@ else
         </ol>
     }
 
-    @* Un binario NO tiene rango de referencia, así que decirle a la persona que «se
-       evalúan para 60 años» sería inventarle una escala que no existe. Lo que sí depende
-       de la edad en su caso es cada cuánto conviene repetirlo. *@
+    @* DOS CASOS SIN ESCALA QUE PROMETER, y por la misma razón de fondo: decir «se
+       evalúan para 60 años» sería inventarle a la persona una escala que no existe.
+       Un binario no tiene rango de referencia —lo que sí depende de la edad en su caso
+       es cada cuánto conviene repetirlo—, y un analito que no le corresponde no tiene
+       contra qué compararse en ningún sexo ni a ninguna edad. *@
     <p class="apunte" style="margin-top:30px">
-        @if (!EsBinario)
+        @if (!EsBinario && !interpretacion.NoLeCorresponde)
         {
-            <text>Los rangos de referencia se evalúan para @estado.EdadDelPaciente() años.</text>
+            @* Los DOS parámetros clínicos con los que el dominio elige los rangos, dichos
+               juntos porque juntos deciden: 12.2 g/dL no significa lo mismo a los 30 que
+               a los 60, ni en un hombre que en una mujer. *@
+            <text>Los rangos de referencia se evalúan para @estado.EdadDelPaciente() años@(Sexo()).</text>
         }
         Leído hasta el evento @estado.UltimoEvento().
     </p>
 }
 
 @code {
+    // El sexo dicho como parte del pie, o nada cuando todavía no se sabe: ahí el bloque de
+    // la pantalla principal ya lo está pidiendo, y repetirlo acá sería insistir dos veces.
+    private string Sexo()
+    {
+        string cual = estado.SexoDelPaciente();
+        return cual.Length == 0 || cual == "desconocido" ? "" : $" y sexo {cual}";
+    }
+
     [Parameter] public string Analito { get; set; } = "";
 
     private TendenciaDeAnalito lectura = new();
