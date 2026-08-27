@@ -62,10 +62,10 @@
       "titulo": "Cada cuanto lo compro",
       "soloLectura": true,
       "entrada": [
-        { "nombre": "sku", "tipo": "string", "descripcion": "El SKU del producto, como viene en las lineas de una compra." },
+        { "nombre": "producto", "tipo": "string", "descripcion": "El producto como lo nombraria la persona: 'leche', 'helado'. Se busca por nombre o por parte del nombre; tambien acepta el codigo interno, pero no hace falta." },
         { "nombre": "corte", "tipo": "string", "descripcion": "La fecha de corte, en formato aaaa-mm-dd." }
       ],
-      "descripcion": "CADA CUANTO compra la persona un producto, ANTES y DESPUES de una fecha. La respuesta viene en el lenguaje en que la gente habla de sus habitos -'1 vez/mes', '1 vez/semana', 'de vez en cuando'- y no en dias. Necesita al menos TRES compras del producto de cada lado: si hayConQueComparar viene en false no hay ritmo que medir, y no es un error. cambio en false significa que el ritmo viene igual, que tambien es una respuesta."
+      "descripcion": "CADA CUANTO compra la persona un producto, ANTES y DESPUES de una fecha. El producto se NOMBRA, no se codifica: se resuelve por nombre o parte del nombre. La respuesta viene en el lenguaje en que la gente habla de sus habitos -'1 vez/mes', '1 vez/semana', 'de vez en cuando'- y no en dias. Necesita al menos TRES compras del producto de cada lado: si hayConQueComparar viene en false no hay ritmo que medir, y no es un error. cambio en false significa que el ritmo viene igual, que tambien es una respuesta."
     },
     {
       "nombre": "que_cambio_en_mi_rutina",

@@ -132,14 +132,14 @@ internal sealed class ComprasTools
 		+ "es un error. Y ojo con cambio en false: significa que el ritmo viene igual, que tambien "
 		+ "es una respuesta. Este modulo dice de que a que, nunca si esta mejor.")]
 	public RitmoDeUnProducto Ritmo(
-		[Description("El SKU del producto, como viene en las lineas de una compra. Usa detalle_de_compra o consumo_de para encontrarlo.")]
-		string sku,
+		[Description("El producto, como lo nombraria la persona: 'leche', 'helado'. Se busca por nombre o por parte del nombre; tambien acepta el codigo interno, pero no hace falta.")]
+		string producto,
 		[Description("La fecha de corte, en formato aaaa-mm-dd. Lo de antes se compara con lo de despues.")]
 		DateTime corte)
 	{
 		if (!lector.HayJournal) return new RitmoDeUnProducto();
 
-		return lector.Consultar(api => api.Ritmo(sku, corte));
+		return lector.Consultar(api => api.Ritmo(producto, corte));
 	}
 
 	[McpServerTool(Name = "que_cambio_en_mi_rutina", UseStructuredContent = true)]

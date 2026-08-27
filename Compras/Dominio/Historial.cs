@@ -541,9 +541,20 @@ namespace Compras.Dominio
 		/// cada cuánto lo compra después. Total: sin suficientes compras de un lado
 		/// devuelve el cambio Ninguno, que lo dice.
 		/// </summary>
-		public CambioDeRitmo RitmoDeUnProducto(string sku, DateTime corte)
+		// EL PRODUCTO SE NOMBRA, NO SE CODIFICA. Antes esto pedia un sku, y eso obligaba a
+		// quien pregunta -sobre todo a la IA- a conocer una llave interna: la especificacion
+		// de marca prohibe la palabra "SKU" en lo que ve la persona, y una tool que la EXIGE
+		// como argumento es la version peor de lo mismo.
+		//
+		// Se resuelve con el mismo criterio que BuscarGarantia -sku o parte de la
+		// descripcion-, que ya era el precedente del modulo. Y si no encuentra nada, el par
+		// total contesta con el texto que se busco, sin reventar.
+		public CambioDeRitmo RitmoDeUnProducto(string producto, DateTime corte)
 		{
-			ArgumentNullException.ThrowIfNullOrWhiteSpace(sku);
+			ArgumentNullException.ThrowIfNullOrWhiteSpace(producto);
+
+			string sku = SkuDe(producto);
+			if (sku.Length == 0) return CambioDeRitmo.Ninguno(producto, producto);
 
 			var antes = new List<DateTime>();
 			var despues = new List<DateTime>();
@@ -677,6 +688,31 @@ namespace Compras.Dominio
 				}
 
 			return vigentes;
+		}
+
+		/// <summary>
+		/// El sku de un producto nombrado por su sku o por parte de su descripción. Vacío
+		/// cuando no aparece en el historial: consulta total, no revienta.
+		/// </summary>
+		// GANA EL MAS RECIENTE cuando varios coinciden, igual que en BuscarGarantia: si
+		// alguien escribe "leche" y compro dos leches distintas, la que le interesa es la
+		// que lleva ahora.
+		public string SkuDe(string producto)
+		{
+			ArgumentNullException.ThrowIfNullOrWhiteSpace(producto);
+
+			string hallado = "";
+			DateTime masReciente = DateTime.MinValue;
+
+			foreach (Compra compra in compras)
+				foreach (Item item in compra.Items)
+					if (Coincide(item, producto) && compra.Fecha >= masReciente)
+					{
+						hallado = item.Sku;
+						masReciente = compra.Fecha;
+					}
+
+			return hallado;
 		}
 
 		private static bool Coincide(Item item, string texto) =>

@@ -447,13 +447,13 @@ namespace Compras.App
 		// Se proyectan las lecturas TOTALES: aca el producto puede no tener ritmo medido, y
 		// Antes/Ahora son guardadas. En una proyeccion plana un lector guardado no revienta
 		// el campo, revienta la consulta entera.
-		public string RitmoDeUnProducto(string sku, DateTime corte)
+		public string RitmoDeUnProducto(string producto, DateTime corte)
 		{
-			ArgumentNullException.ThrowIfNullOrWhiteSpace(sku);
+			ArgumentNullException.ThrowIfNullOrWhiteSpace(producto);
 
 			return app.Using(@"
 				{
-					ritmo = compras.RitmoDeUnProducto(@sku, @corte);
+					ritmo = compras.RitmoDeUnProducto(@producto, @corte);
 					print ritmo.Sku sku,
 						ritmo.Descripcion descripcion,
 						ritmo.HayConQueComparar hayConQueComparar,
@@ -464,8 +464,8 @@ namespace Compras.App
 				}
 			")
 			.WithParameters(p => {
-				p["sku",   typeof(string)]   = sku;
-				p["corte", typeof(DateTime)] = corte;
+				p["producto", typeof(string)]   = producto;
+				p["corte",    typeof(DateTime)] = corte;
 			})
 			.PerformQuery();
 		}
@@ -726,8 +726,8 @@ namespace Compras.App
 		public CambioDeLaCanasta Cambio(DateTime corte, int cuantasCompras = ComprasQueSeMiranParaLaFirma) =>
 			ProyeccionDeVistas.Cambio(CambioEnLaCanasta(corte, cuantasCompras));
 
-		public Vistas.RitmoDeUnProducto Ritmo(string sku, DateTime corte) =>
-			ProyeccionDeVistas.Ritmo(RitmoDeUnProducto(sku, corte));
+		public Vistas.RitmoDeUnProducto Ritmo(string producto, DateTime corte) =>
+			ProyeccionDeVistas.Ritmo(RitmoDeUnProducto(producto, corte));
 
 		public IReadOnlyList<RitmoQueCambio> RitmosQueCambiaron(DateTime corte) =>
 			ProyeccionDeVistas.RitmosQueCambiaron(CambiosDeRitmo(corte));

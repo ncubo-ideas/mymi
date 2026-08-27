@@ -1129,6 +1129,33 @@ namespace Compras.Consola
 			CambioDeRitmo leche = historial.RitmoDeUnProducto("LECHE-1L", corte);
 			Igual("la leche tambien salta", "True", leche.Cambio.ToString());
 
+			// EL PRODUCTO SE NOMBRA, NO SE CODIFICA. La especificacion de marca prohibe la
+			// palabra "SKU" en lo que ve la persona, y una tool que la EXIGE como argumento
+			// es la version peor de lo mismo: obliga a quien pregunta a conocer una llave
+			// interna. Se resuelve por nombre, por parte del nombre, o por el sku.
+			Igual("por nombre completo", "True",
+				historial.RitmoDeUnProducto("Helado de vainilla 1L", corte).HayConQueComparar.ToString());
+			Igual("por parte del nombre", "True",
+				historial.RitmoDeUnProducto("helado", corte).HayConQueComparar.ToString());
+			Igual("sin importar mayusculas", "True",
+				historial.RitmoDeUnProducto("HELADO", corte).HayConQueComparar.ToString());
+			Igual("y el sku sigue sirviendo", "True",
+				historial.RitmoDeUnProducto("HELADO-1L", corte).HayConQueComparar.ToString());
+			Igual("las cuatro formas dan el mismo ritmo", "True",
+				(historial.RitmoDeUnProducto("helado", corte).Ahora.ParaMostrar
+				 == historial.RitmoDeUnProducto("HELADO-1L", corte).Ahora.ParaMostrar).ToString());
+
+			// Un nombre que no existe: contesta con el texto buscado y no revienta.
+			CambioDeRitmo inventado = historial.RitmoDeUnProducto("caviar", corte);
+			Igual("un producto que nunca compro: no hay con que", "False",
+				inventado.HayConQueComparar.ToString());
+			Igual("  y la linea nombra lo que se busco", "True",
+				inventado.ParaSonia.Contains("caviar").ToString());
+
+			// El resolvedor, directo.
+			Igual("el resolvedor devuelve el sku", "HELADO-1L", historial.SkuDe("helado"));
+			Igual("y vacio cuando no hay", "", historial.SkuDe("caviar"));
+
 			// SIN SUFICIENTES COMPRAS DE UN LADO, lo dice y no inventa un ritmo.
 			var pocas = new Historial();
 			for (int i = 0; i < 5; i++)
