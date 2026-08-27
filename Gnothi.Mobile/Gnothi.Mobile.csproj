@@ -45,9 +45,15 @@
 
 <ItemGroup>
   <!-- El núcleo del Host, POR GLOB. Un .cs nuevo del núcleo entra solo; uno de Puerta 1 /
-       escritorio hay que excluirlo, y si no, rompe el build -- que es la señal correcta. -->
+       escritorio hay que excluirlo, y si no, rompe el build, que es la señal correcta.
+
+       StdioShell.cs se excluye por una razon distinta a Puerta 1: no habla MCP de mas, ES el
+       cliente MCP. En el telefono no puede existir (exec() bloqueado por W^X, sin dotnet CLI),
+       asi que este proyecto trae su propio StdioShellStub.cs con el MISMO nombre. Si el real
+       entrara por el glob, chocarian dos definiciones de StdioShell y ademas arrastraria el
+       SDK de MCP -las dos cosas que el stub existe para evitar. -->
   <Compile Include="..\Gnothi.Host\*.cs"
-           Exclude="..\Gnothi.Host\Program.cs;..\Gnothi.Host\ToolBridge.cs;..\Gnothi.Host\HostTools.cs;..\Gnothi.Host\ConsentWatcher.cs;..\Gnothi.Host\HostInstaller.cs;..\Gnothi.Host\QueryConsole.cs" />
+           Exclude="..\Gnothi.Host\Program.cs;..\Gnothi.Host\ToolBridge.cs;..\Gnothi.Host\HostTools.cs;..\Gnothi.Host\ConsentWatcher.cs;..\Gnothi.Host\HostInstaller.cs;..\Gnothi.Host\QueryConsole.cs;..\Gnothi.Host\StdioShell.cs" />
   <Compile Include="..\Gnothi.Assistant\*.cs" />
 </ItemGroup>
 <ItemGroup>
