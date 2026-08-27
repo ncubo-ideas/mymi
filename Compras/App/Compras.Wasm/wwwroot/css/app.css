@@ -22,15 +22,30 @@
  * SE MANTIENE BOOTSTRAP, con sus variables remapeadas a esta paleta: se gana el diseño sin
  * reescribir cada clase de las paginas. Examenes lo saco del todo; es un paso aparte.
  *
- * ⚠️ LA FUENTE ES UN PENDIENTE REAL, no un detalle. Plus Jakarta Sans es un WEBFONT y su
- * canvas lo trae de Google. Esta app promete funcionar "sin nosotros, y sin conexion" — y
- * una fuente que se baja de internet rompe esa promesa el dia que alguien abra la app sin
- * red: la tipografia cae al fallback y la app se ve distinta. Hay que SERVIRLA NOSOTROS
- * (woff2 en wwwroot), y hasta entonces la pila de abajo la deja caer con dignidad.
- *
  * LOS DOS ESTADOS, y el ambar tiene UN solo trabajo: marcar lo que cambio. El ROJO NO SE
  * USA: "un carrito no tiene urgencias". No esta definido aca a proposito.
  */
+
+/* LA FUENTE LA SERVIMOS NOSOTROS, y eso deja de ser un pendiente. Antes venia de Google
+   Fonts, y esta app promete funcionar "sin nosotros, y sin conexion": una fuente que se baja
+   de internet se cae el dia que alguien la abra sin red, y la tipografia salta al fallback.
+   No era una regla de estilo, era una promesa del producto.
+
+   UNA SOLA DESCARGA DE 26 KB. Es la fuente VARIABLE con el eje wght de 200 a 800, recortada
+   al latino, la puntuacion, la moneda -incluido el ₡- y los cuatro simbolos que las
+   pantallas usan. Con las estaticas serian cinco archivos de 92 KB, uno por peso.
+
+   font-display: swap — el texto se ve DESDE EL PRIMER FRAME con la fuente de sistema y
+   cambia cuando la propia llega. Con "block" la pantalla arranca en blanco, y esta app ya
+   hace esperar por el wasm: sumarle una espera por la tipografia es cobrar dos veces. */
+@font-face {
+    font-family: 'Plus Jakarta Sans';
+    src: url('../fuentes/PlusJakartaSans.woff2') format('woff2-variations'),
+         url('../fuentes/PlusJakartaSans.woff2') format('woff2');
+    font-weight: 200 800;
+    font-style: normal;
+    font-display: swap;
+}
 
 :root {
     /* --------------------------------------------------- la paleta de Fernanda */
@@ -338,8 +353,24 @@ main h2 {
     display: block;
 }
 /* Sin imagen, el hueco de 52 px se mantiene: si no, las fichas de la fila quedan de
-   alturas distintas y la rejilla se ve rota. */
-.infaltable-sinfoto { height: 52px; display: flex; align-items: center; font-size: 1.6rem; opacity: .35; }
+   alturas distintas y la rejilla se ve rota.
+
+   LA CAJA SE DIBUJA, no se escribe. Antes era el glifo ▢ (U+25A2), que Plus Jakarta Sans NO
+   TRAE: caia en otra tipografia y se veia de otra familia justo al lado de la que si carga.
+   Un borde punteado no depende de ningun glifo y dice lo mismo — "aca iria una foto". */
+.infaltable-sinfoto {
+    height: 52px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+.infaltable-sinfoto::before {
+    content: "";
+    width: 30px;
+    height: 30px;
+    border: 2px dashed var(--linea);
+    border-radius: 6px;
+}
 .infaltable-nombre {
     font-size: 13.5px;
     font-weight: 700;
@@ -399,6 +430,15 @@ main h2 {
 }
 /* Un dia de la semana no es un numero: en 1.85rem se desborda la ficha. */
 .ritmo-palabra { font-size: 1.35rem; text-transform: capitalize; }
+
+/* NI UN MONTO NI UNA FECHA. "₡186.020" y "29 ago 2026" tienen el triple de caracteres que
+   un conteo, y en 1.85rem se salian de la ficha o se partian en dos lineas. Bajan de
+   tamano y NO se parten: una cifra cortada a la mitad se lee mal dos veces. */
+.ritmo-numero-largo {
+    font-size: 1.25rem;
+    white-space: nowrap;
+    letter-spacing: -.01em;
+}
 .ritmo-rotulo { font-size: 11.5px; color: var(--tenue); line-height: 1.3; }
 
 /* LOS TRES MOMENTOS. La barra dice la proporcion sin un numero de mas, y el favorito se
@@ -541,6 +581,61 @@ main h2 {
     font-variant-numeric: tabular-nums;
 }
 .precio-ahora { font-weight: 700; font-variant-numeric: tabular-nums; }
+
+/* ------------------------------------------------- infaltables y ficha de producto */
+
+/* El "Ver todos" de la portada: verde de marca, 12.5 px y 700, como en su canvas. */
+.ver-todos {
+    font-size: 12.5px;
+    font-weight: 700;
+    color: var(--verde);
+    text-decoration: none;
+    white-space: nowrap;
+}
+.ver-todos:hover { color: var(--verde-hondo); text-decoration: underline; }
+
+/* Una fila de la pantalla completa de infaltables. Misma anatomia que un recibo -foto,
+   que, dato, flecha- para que las dos listas se recorran igual. */
+.infaltable-fila {
+    display: flex;
+    align-items: center;
+    gap: .9rem;
+    text-align: left;
+    width: 100%;
+}
+.infaltable-fila-foto {
+    flex: 0 0 40px;
+    width: 40px;
+    height: 40px;
+    object-fit: contain;
+}
+.infaltable-fila-que { display: flex; flex-direction: column; gap: 1px; flex: 1 1 auto; min-width: 0; }
+
+/* Las cuatro cifras de la ficha. Se acomodan solas: cuatro en escritorio, dos en telefono. */
+.cifras-producto {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(9rem, 1fr));
+    gap: .7rem;
+}
+
+/* Una fila del "como lo fuiste llevando": mes, barra, unidades y la plata en chico. */
+.mes-fila {
+    display: grid;
+    grid-template-columns: 4.6rem 1fr 2.6rem auto;
+    align-items: center;
+    gap: 10px;
+}
+.mes-nombre { font-size: 12.5px; color: var(--tenue); font-variant-numeric: tabular-nums; }
+.mes-unidades { font-weight: 700; text-align: right; }
+.mes-gasto { text-align: right; white-space: nowrap; }
+.mes-fila .momento-barra span { background: var(--verde-vivo); }
+
+@media (max-width: 449.98px) {
+    /* En pantallas angostas la plata sale de la fila: cuatro columnas en 320 px dejan la
+       barra en nada, y la barra es lo que hace legible la serie. */
+    .mes-fila { grid-template-columns: 4.2rem 1fr 2.4rem; }
+    .mes-gasto { display: none; }
+}
 
 /* ---------------------------------------------------------------- recibos */
 

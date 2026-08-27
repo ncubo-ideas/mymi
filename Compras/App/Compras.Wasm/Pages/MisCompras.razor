@@ -136,7 +136,13 @@ else
     {
         <div class="card border-success-subtle bg-success-subtle mb-3">
             <div class="card-body">
-                <div class="kicker text-success-emphasis mb-2">Los que siempre vuelven</div>
+                @* EL "VER TODOS" es del diseño de Fernanda, y la portada muestra un puñado
+                   a proposito: aca la pregunta es reconocerse de un vistazo, y la lista
+                   entera es otra pantalla. *@
+                <div class="d-flex justify-content-between align-items-baseline gap-2 mb-2">
+                    <div class="kicker text-success-emphasis">Los que siempre vuelven</div>
+                    <a class="ver-todos" href="infaltables">Ver todos &rarr;</a>
+                </div>
                 <div class="fs-5">@firma.ParaSonia</div>
 
                 @* Con UN solo habitual, repetir el nombre debajo de la frase que ya lo dice
@@ -164,7 +170,7 @@ else
                                 }
                                 else
                                 {
-                                    <span class="infaltable-sinfoto" aria-hidden="true">&#9634;</span>
+                                    <span class="infaltable-sinfoto" aria-hidden="true"></span>
                                 }
                                 <div class="infaltable-nombre">@Corto(habitual.Descripcion)</div>
                                 <div class="infaltable-veces">

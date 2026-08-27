@@ -171,6 +171,10 @@ namespace Compras.App.Vistas
 		public decimal Proporcion { get; init; }
 	}
 
+	// LA FICHA DE UN PRODUCTO, y de ahi los tres campos nuevos: en cuantas compras aparecio,
+	// cuando fue la ultima, y que tan fiel es dicho en palabras. Es la pantalla "uno de tus
+	// infaltables" del diseño de la app.
+
 	// COMO SE MOVIO EL PRECIO de un producto que si lleva. Es SU inflacion, producto por
 	// producto y por unidad de medida — no la del pais.
 	public sealed class PrecioQueCambio
@@ -304,6 +308,16 @@ namespace Compras.App.Vistas
 		public int MesesConConsumo { get; init; }
 		public decimal TotalGastado { get; init; }
 		public int TotalUnidades { get; init; }
+
+		/// <summary>En cuántas compras apareció. Es "compras en las que apareció" de la ficha.</summary>
+		public int TotalCompras { get; init; }
+
+		/// <summary>La última vez que lo llevó, en aaaa-mm-dd. Vacío cuando nunca.</summary>
+		public string UltimaVez { get; init; } = "";
+
+		/// <summary>Qué tan fiel es, en palabras: "casi nunca falta". Sobre TODO el historial.</summary>
+		public string Constancia { get; init; } = "";
+
 		public string PrimerMes { get; init; } = "";
 		public string UltimoMes { get; init; } = "";
 		public string MesDelPico { get; init; } = "";
