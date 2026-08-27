@@ -2,21 +2,24 @@ using System.Collections.Concurrent;
 using System.Security.Cryptography;
 using System.Text.Json.Serialization;
 
-// Mock del servidor del laboratorio. Happy path, estado en memoria.
+// Mock del servidor de la estacion de servicio. Happy path, estado en memoria.
+//
+// Lo que se simula no es "la estacion registra una venta" sino "UN SURTIDOR DESPACHA"
+// (§6.3.5 del brief): cada CargaRegistrada trae el surtidor con su precio de ese
+// momento y la forma de corte, que es la huella con la que la app puede inferir el
+// tanque lleno.
 //
 // El diseno central: un token de device declara QUE puede hacer y SOBRE QUE recurso, y
 // cada endpoint declara que scope exige. La app solo consigue "{recurso}.events.read",
 // asi que cualquier otro endpoint la rechaza porque el token NO LO TIENE - no por un if
 // contra una ruta. Eso es lo que vuelve falsable el invariante "la app no es cliente de
-// los servicios generales del laboratorio": el senuelo /perfil devuelve 403
+// los servicios generales de la estacion": el senuelo /perfil devuelve 403
 // estructuralmente, no por cortesia.
 //
-// Las rutas estan parametrizadas por recurso (/{recurso}/{id}/events), asi que este
-// mismo mecanismo sirve para el expediente de un paciente igual que servia para las
-// facturas de un cliente. Para este negocio el juego de URLs es:
+// Para este negocio el juego de URLs es:
 //
-//   GET  /expediente/{id}/events?after=N     scope expediente.events.read
-//   GET  /expediente/{id}/perfil             scope expediente.profile.read  -> 403, el senuelo
+//   GET  /cargas/{id}/events?after=N     scope cargas.events.read
+//   GET  /cargas/{id}/perfil             scope cargas.profile.read  -> 403, el senuelo
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -37,14 +40,14 @@ var concesiones = new Concesiones();
 
 // ---------------------------------------------------------------- credenciales
 
-// El laboratorio le da al DEVICE del usuario un access token corto y un refresh token
+// La estacion le da al DEVICE del usuario un access token corto y un refresh token
 // durable y rotatorio. El scope queda acotado a leer los eventos de UN recurso concreto:
-// nada de resultados de otros pacientes, ni perfil, ni agenda.
+// nada de cargas de otros clientes, ni perfil, ni facturacion.
 app.MapPost("/device/token", (PedidoDeToken pedido) =>
 {
     if (string.IsNullOrWhiteSpace(pedido?.DeviceKey)) return Results.BadRequest(new { error = "deviceKey requerido" });
 
-    string recurso = Vacio(pedido.Recurso) ? "expediente" : pedido.Recurso;
+    string recurso = Vacio(pedido.Recurso) ? "cargas" : pedido.Recurso;
     string id = Vacio(pedido.Id) ? "1" : pedido.Id;
 
     Concesion concesion = concesiones.Otorgar(pedido.DeviceKey, recurso, id);
@@ -71,11 +74,10 @@ app.MapGet("/{recurso}/{id}/events", (string recurso, string id, long? after, Ht
     if (negado != null) return negado;
 
     long desde = after ?? 0;
-    List<EventoDeExamen> eventos = almacen.Posteriores(recurso, id, desde);
 
     return Results.Ok(new
     {
-        events = eventos,
+        events = almacen.Posteriores(recurso, id, desde),
         last = almacen.UltimoNumero(recurso, id),
     });
 });
@@ -83,7 +85,7 @@ app.MapGet("/{recurso}/{id}/events", (string recurso, string id, long? after, Ht
 // EL SENUELO. Existe para demostrar el invariante, no para servir a nadie: exige un
 // scope de perfil que ningun token de device tiene, asi que responde 403 con la
 // credencial de la app. Es la demostracion falsable de que la app no es cliente de los
-// servicios generales del laboratorio.
+// servicios generales de la estacion.
 app.MapGet("/{recurso}/{id}/perfil", (string recurso, string id, HttpRequest pedido) =>
 {
     IResult negado = concesiones.Exigir(pedido, $"{recurso}.profile.read", recurso, id);
@@ -94,32 +96,46 @@ app.MapGet("/{recurso}/{id}/perfil", (string recurso, string id, HttpRequest ped
 
 // ---------------------------------------------------------------- control del mock
 
-// Registra un examen CONCRETO. Es lo que usa el inyector de eventos de demo: una demo
-// se cuenta con valores que uno eligio, porque la historia depende de los numeros.
-// Accion DEL LABORATORIO, no de la app: sin token.
-app.MapPost("/{recurso}/{id}/events/examen", (string recurso, string id, ExamenAInyectar pedido) =>
+// Un surtidor despacha una carga CONCRETA. Es lo que usa el inyector de demo: una demo
+// se cuenta con valores que uno eligio, porque los tramos dependen de los numeros.
+// Accion DE LA ESTACION, no de la app: sin token.
+app.MapPost("/{recurso}/{id}/events/carga", (string recurso, string id, CargaAInyectar pedido) =>
 {
-    if (pedido is null || Vacio(pedido.Examen))
-        return Results.BadRequest(new { error = "examen requerido" });
-    if (!AlmacenDeEventos.EsExamenConocido(pedido.Examen))
-        return Results.BadRequest(new
-        {
-            error = "examen desconocido",
-            conocidos = AlmacenDeEventos.CargasConocidos,
-        });
-    if (pedido.Examen == "Orina" && Vacio(pedido.Color))
-        return Results.BadRequest(new { error = "un examen de orina necesita color" });
-    if (pedido.Examen != "Orina" && Vacio(pedido.Unidad))
-        return Results.BadRequest(new { error = "un examen de sangre necesita unidad" });
+    if (pedido is null) return Results.BadRequest(new { error = "cuerpo requerido" });
+    if (Vacio(pedido.Placa)) return Results.BadRequest(new { error = "placa requerida" });
+    if (Vacio(pedido.NumeroDeTransaccion)) return Results.BadRequest(new { error = "numeroDeTransaccion requerido" });
+    if (pedido.VolumenValor <= 0) return Results.BadRequest(new { error = "volumenValor debe ser positivo" });
+    if (pedido.PrecioMonto <= 0 || pedido.TotalMonto <= 0)
+        return Results.BadRequest(new { error = "precioMonto y totalMonto deben ser positivos" });
 
-    EventoDeExamen nuevo = almacen.Agregar(recurso, id, pedido);
-    return Results.Ok(new { agregado = nuevo.Id, examen = nuevo.Examen, resultado = nuevo.Resultado() });
+    EventoDeCarga nuevo = almacen.AgregarCarga(recurso, id, pedido);
+    return Results.Ok(new { agregado = nuevo.Id, transaccion = nuevo.NumeroDeTransaccion, resultado = nuevo.Resultado() });
+});
+
+// La lealtad tambien es narrativa de la estacion: los puntos LLEGAN, la app no los
+// calcula. Si el programa cambia la tasa, el historico no se recalcula.
+app.MapPost("/{recurso}/{id}/events/puntos", (string recurso, string id, PuntosAInyectar pedido) =>
+{
+    if (pedido is null || pedido.Puntos <= 0)
+        return Results.BadRequest(new { error = "puntos debe ser positivo" });
+
+    EventoDePuntos nuevo = almacen.AgregarPuntos(recurso, id, pedido);
+    return Results.Ok(new { agregado = nuevo.Id, puntos = nuevo.Puntos });
+});
+
+app.MapPost("/{recurso}/{id}/events/nivel", (string recurso, string id, NivelAInyectar pedido) =>
+{
+    if (pedido is null || Vacio(pedido.Nivel))
+        return Results.BadRequest(new { error = "nivel requerido" });
+
+    EventoDeNivel nuevo = almacen.AgregarNivel(recurso, id, pedido);
+    return Results.Ok(new { agregado = nuevo.Id, nivel = nuevo.Nivel });
 });
 
 // Expira SOLO los access tokens y deja los refresh vivos. Es el caso que el diseno
 // declara normal - "access token corto, refresh token durable/rotatorio" - y sin una
 // forma de provocarlo no hay manera de demostrar que la app rota sola en vez de pedir
-// una credencial nueva. Control del mock, no del laboratorio.
+// una credencial nueva. Control del mock, no de la estacion.
 app.MapPost("/device/expirar-access", () =>
 {
     int expirados = concesiones.ExpirarAccessTokens();
@@ -243,177 +259,208 @@ sealed class Concesiones
 
 // ---------------------------------------------------------------- los eventos
 
-// Un evento de la narrativa del laboratorio. Un solo tipo de evento con un campo
-// `examen` que discrimina: el laboratorio dice "te registre un examen", y cual es un
-// dato. El que traduce ese campo a una clase del dominio es la app, en su frontera.
-sealed class EventoDeExamen
+// Tres tipos de evento con un campo `tipo` que discrimina, y el WIRE PLANO a proposito:
+// precioMonto/precioMoneda y no un objeto anidado, porque el serializador emite todos
+// los campos de un objeto aunque esten en cero y la app aprendio (en examenes, medido)
+// a validar por VALOR y no por presencia.
+abstract class EventoDeLaEstacion
 {
-    [JsonPropertyName("id")]              public long Id { get; init; }
-    [JsonPropertyName("tipo")]            public string Tipo { get; init; } = "ExamenAgregado";
-    [JsonPropertyName("examen")]          public string Examen { get; init; }
-    [JsonPropertyName("fecha")]           public DateTime Fecha { get; init; }
-    [JsonPropertyName("valor")]           public decimal Valor { get; init; }
-    [JsonPropertyName("valorSecundario")] public decimal ValorSecundario { get; init; }
-    [JsonPropertyName("unidad")]          public string Unidad { get; init; } = "";
-    [JsonPropertyName("color")]           public string Color { get; init; } = "";
+    [JsonPropertyName("id")]    public long Id { get; init; }
+    [JsonPropertyName("tipo")]  public abstract string Tipo { get; }
+    [JsonPropertyName("fecha")] public DateTime Fecha { get; init; }
+}
 
-    // El urianalisis informa DOS cosas de forma distinta: un color (categoria sin orden)
-    // y unos nitritos (presencia, sin escala). Que el mock las emita separadas es lo que
-    // le permite al dominio modelarlas como dos magnitudes distintas en vez de aplanar
-    // las dos a un string. Vacio significa que la prueba no se corrio, que NO es lo mismo
-    // que negativo.
-    [JsonPropertyName("nitritos")]        public string Nitritos { get; init; } = "";
+// Un surtidor despacho. Lo que la estacion SABE: el instrumento con su precio, el
+// volumen, el total autoritativo, la forma de corte y la placa que capturo. Lo que NO
+// viaja, porque no lo sabe: el kilometraje, si el tanque quedo lleno, que carro es.
+sealed class EventoDeCarga : EventoDeLaEstacion
+{
+    public override string Tipo => "CargaRegistrada";
 
-    // La sangre oculta. El mismo campo sirve para orina y para heces: en el wire es un
-    // binario con las mismas tres palabras. Lo que cambia -que una espere a la proxima
-    // cita y la otra no- lo decide la app, no este mock.
-    [JsonPropertyName("sangre")]          public string Sangre { get; init; } = "";
+    [JsonPropertyName("placa")]                  public string Placa { get; init; } = "";
+    [JsonPropertyName("tipoDeCombustible")]      public string TipoDeCombustible { get; init; } = "";
+    [JsonPropertyName("surtidorIdentificacion")] public string SurtidorIdentificacion { get; init; } = "";
+    [JsonPropertyName("surtidorEstacion")]       public string SurtidorEstacion { get; init; } = "";
+    [JsonPropertyName("precioMonto")]            public decimal PrecioMonto { get; init; }
+    [JsonPropertyName("precioMoneda")]           public string PrecioMoneda { get; init; } = "";
+    [JsonPropertyName("volumenValor")]           public decimal VolumenValor { get; init; }
+    [JsonPropertyName("volumenUnidad")]          public string VolumenUnidad { get; init; } = "";
+    [JsonPropertyName("totalMonto")]             public decimal TotalMonto { get; init; }
+    [JsonPropertyName("totalMoneda")]            public string TotalMoneda { get; init; } = "";
+    [JsonPropertyName("formaDeCorte")]           public string FormaDeCorte { get; init; } = "";
+    [JsonPropertyName("numeroDeTransaccion")]    public string NumeroDeTransaccion { get; init; } = "";
 
-    internal string Resultado()
-    {
-        if (Examen != "Orina" && Examen != "Heces") return $"{Valor} {Unidad}";
+    internal string Resultado() =>
+        $"{VolumenValor} {VolumenUnidad} de {TipoDeCombustible} en {SurtidorIdentificacion} "
+        + $"({FormaDeCorte}) = {TotalMonto} {TotalMoneda}";
+}
 
-        string texto = Color;
-        if (!string.IsNullOrWhiteSpace(Nitritos)) texto += $", nitritos {Nitritos}";
-        if (!string.IsNullOrWhiteSpace(Sangre)) texto += $", sangre {Sangre}";
-        return texto;
-    }
+sealed class EventoDePuntos : EventoDeLaEstacion
+{
+    public override string Tipo => "PuntosAcreditados";
+
+    [JsonPropertyName("puntos")] public int Puntos { get; init; }
+}
+
+sealed class EventoDeNivel : EventoDeLaEstacion
+{
+    public override string Tipo => "NivelActualizado";
+
+    [JsonPropertyName("nivel")] public string Nivel { get; init; } = "";
 }
 
 sealed class AlmacenDeEventos
 {
-    private readonly ConcurrentDictionary<string, List<EventoDeExamen>> porRecurso = new();
+    private readonly ConcurrentDictionary<string, List<EventoDeLaEstacion>> porRecurso = new();
     private readonly Lock candado = new();
 
-    internal static readonly string[] CargasConocidos =
-        { "Colesterol", "ColesterolDetallado", "AntigenoProstatico", "Hemoglobina", "Orina", "Heces" };
-
-    internal static bool EsExamenConocido(string examen) =>
-        Array.IndexOf(CargasConocidos, examen) >= 0;
-
-    private List<EventoDeExamen> Lista(string recurso, string id) =>
+    private List<EventoDeLaEstacion> Lista(string recurso, string id) =>
         porRecurso.GetOrAdd($"{recurso}/{id}", _ => Sembrar());
 
-    // LA HISTORIA sembrada, la misma que usa la consola para medir. Las fechas son
-    // literales a proposito: una demo con fechas relativas al dia de hoy deja de ser
-    // reproducible, y las tendencias dependen de los dias transcurridos.
+    // EL GUION sembrado, el mismo de Muestras.cs de la consola (§13 del brief, v2). Las
+    // fechas son literales a proposito: una demo con fechas relativas al dia de hoy deja
+    // de ser reproducible, y los tramos dependen de los dias transcurridos.
     //
-    // Los tres primeros antigenos son la LINEA BASE. Sin ellos el 5.2 del final es un
-    // numero cualquiera apenas arriba del techo; con ellos es un salto de 2.2 sobre un
-    // paciente que venia planchado tres anos, y eso es lo que la app puede decir y una
-    // pantalla de resultados no.
-    private static List<EventoDeExamen> Sembrar() => new()
+    // La historia: tres tramos parejos de 12.6 km/L (la linea base), la carga PRESETEADA
+    // de 20.000 L exactos (la inferencia dice "no fue lleno" y acierta), la caida que
+    // empieza en 11.7, la carga en OTRO SURTIDOR (el tramo no comparable), la carga a la
+    // que Sonia no le va a poner kilometraje, y el cierre de hoy que da 9.4.
+    //
+    // Los totales cuadran EXACTO con precio por volumen: el caso que no cuadra se
+    // demuestra inyectando, no de fabrica.
+    private static List<EventoDeLaEstacion> Sembrar() => new()
     {
-        // UN PERFIL LIPIDICO VIEJO, y no es relleno: es lo que hace visible la consulta
-        // que mira el hueco. Todo el resto del guion cae el mismo dia, asi que sin esto
-        // nada aparece vencido nunca y la capacidad no se ve.
-        //
-        // Ademas ejercita ColesterolDetallado, que estaba modelado -con su HDL que se lee
-        // al reves que el LDL- y no aparecia en la historia.
-        new EventoDeExamen
-        {
-            Id = 200, Examen = "ColesterolDetallado", Fecha = new DateTime(2022, 11, 1, 8, 30, 0),
-            Valor = 150m, ValorSecundario = 38m, Unidad = "mg/dL",
-        },
+        Carga(201, new DateTime(2025, 12, 15, 8, 10, 0), 40m, "A-3", 615m, 24600m, "automatico", "T-0201"),
+        Carga(202, new DateTime(2026, 1, 15, 9, 20, 0), 38m, "A-3", 620m, 23560m, "automatico", "T-0202"),
+        Carga(203, new DateTime(2026, 2, 15, 8, 45, 0), 39m, "A-3", 628m, 24492m, "automatico", "T-0203"),
+        Carga(204, new DateTime(2026, 3, 20, 17, 30, 0), 20m, "A-3", 634m, 12680m, "preseteado", "T-0204"),
+        Carga(205, new DateTime(2026, 3, 28, 8, 15, 0), 19m, "A-3", 634m, 12046m, "automatico", "T-0205"),
+        Carga(206, new DateTime(2026, 5, 20, 8, 50, 0), 41m, "A-3", 645m, 26445m, "automatico", "T-0206"),
+        Carga(207, new DateTime(2026, 6, 20, 9, 5, 0), 42m, "B-1", 652m, 27384m, "automatico", "T-0207"),
+        Carga(208, new DateTime(2026, 7, 25, 8, 30, 0), 43m, "A-3", 660m, 28380m, "automatico", "T-0208"),
+        Carga(209, new DateTime(2026, 8, 25, 8, 40, 0), 44m, "A-3", 668m, 29392m, "automatico", "T-0209"),
 
-        Sangre(201, "AntigenoProstatico", new DateTime(2023, 8, 21, 9, 10, 0), 3.0m, "ng/mL"),
-        Sangre(202, "AntigenoProstatico", new DateTime(2024, 8, 21, 9, 5, 0), 3.1m, "ng/mL"),
-        Sangre(203, "Colesterol", new DateTime(2025, 8, 21, 8, 40, 0), 200.0m, "mg/dL"),
-        Sangre(204, "AntigenoProstatico", new DateTime(2025, 8, 21, 8, 41, 0), 3.0m, "ng/mL"),
-        Sangre(205, "Colesterol", new DateTime(2026, 8, 21, 8, 30, 0), 280.0m, "mg/dL"),
-        Sangre(206, "AntigenoProstatico", new DateTime(2026, 8, 21, 8, 31, 0), 5.2m, "ng/mL"),
-        Sangre(207, "Hemoglobina", new DateTime(2026, 8, 21, 8, 32, 0), 14.2m, "g/dL"),
-        new EventoDeExamen
-        {
-            Id = 208, Examen = "Orina", Fecha = new DateTime(2026, 8, 21, 8, 33, 0),
-            Color = "ambar", Nitritos = "negativo", Sangre = "negativo",
-        },
-
-        // EL CONTRASTE DE ALVARO, en el guion. Una sangre oculta POSITIVA, y la app tiene
-        // que decir "conviene revisarlo" y no alarmar: la causa mas frecuente es local.
-        //
-        // El mismo positivo en el examen de ARRIBA -la orina- diria que hay que verlo
-        // pronto. Cambiar el "negativo" del 208 por "positivo" es la forma mas corta de
-        // ver la diferencia en pantalla, y no esta asi de fabrica porque el hallazgo que
-        // manda en esta demo es la velocidad del antigeno.
-        new EventoDeExamen
-        {
-            Id = 209, Examen = "Heces", Fecha = new DateTime(2026, 8, 21, 8, 34, 0),
-            Color = "marrón", Sangre = "positivo",
-        },
-
-        // LA HISTORIA DE LOS BINARIOS, y va con ids POSTERIORES aunque las fechas sean
-        // anteriores. No es un descuido: los ids son el orden del journal y no se
-        // reescriben, y ademas es el caso real de una carga atrasada, que el dominio
-        // ordena por fecha al armar la serie.
-        //
-        // POR QUE HACEN FALTA. Sin ellos, la sangre en heces del 209 es un positivo
-        // suelto y la app solo puede decir "conviene repetir el examen". Con la historia
-        // -negativo en 2024, positivo en 2025, positivo en 2026- ya se repitio y volvio a
-        // salir, y eso pide otra cosa. Ese salto es la capacidad entera de la serie
-        // binaria, y con un solo examen no se ve.
-        new EventoDeExamen
-        {
-            Id = 210, Examen = "Heces", Fecha = new DateTime(2024, 8, 21, 9, 15, 0),
-            Color = "marrón", Sangre = "negativo",
-        },
-        new EventoDeExamen
-        {
-            Id = 211, Examen = "Heces", Fecha = new DateTime(2025, 8, 21, 8, 45, 0),
-            Color = "marrón", Sangre = "positivo",
-        },
-
-        // Y la orina, que es el contraste: dos pruebas y ninguna aparicion. "En las dos
-        // veces que te lo hiciste nunca apareció" es informacion, y es lo que un solo
-        // examen no puede decir tampoco.
-        new EventoDeExamen
-        {
-            Id = 212, Examen = "Orina", Fecha = new DateTime(2025, 8, 21, 8, 44, 0),
-            Color = "amarillo palido", Nitritos = "negativo", Sangre = "negativo",
-        },
+        // La lealtad, discreta: un punto por litro entero (tasa del demo), y el nivel
+        // que la estacion decidio subir a mitad de la serie.
+        Puntos(210, new DateTime(2025, 12, 15, 8, 10, 5), 40),
+        Puntos(211, new DateTime(2026, 1, 15, 9, 20, 5), 38),
+        Puntos(212, new DateTime(2026, 2, 15, 8, 45, 5), 39),
+        Puntos(213, new DateTime(2026, 3, 20, 17, 30, 5), 20),
+        Puntos(214, new DateTime(2026, 3, 28, 8, 15, 5), 19),
+        Puntos(215, new DateTime(2026, 5, 20, 8, 50, 5), 41),
+        Puntos(216, new DateTime(2026, 6, 20, 9, 5, 5), 42),
+        new EventoDeNivel { Id = 217, Fecha = new DateTime(2026, 6, 20, 9, 5, 10), Nivel = "plata" },
+        Puntos(218, new DateTime(2026, 7, 25, 8, 30, 5), 43),
+        Puntos(219, new DateTime(2026, 8, 25, 8, 40, 5), 44),
     };
 
-    private static EventoDeExamen Sangre(long id, string examen, DateTime fecha, decimal valor, string unidad) =>
-        new EventoDeExamen { Id = id, Examen = examen, Fecha = fecha, Valor = valor, Unidad = unidad };
+    private static EventoDeCarga Carga(long id, DateTime fecha, decimal litros, string surtidor,
+        decimal precio, decimal total, string corte, string transaccion) =>
+        new EventoDeCarga
+        {
+            Id = id,
+            Fecha = fecha,
+            Placa = "ABC-123",
+            TipoDeCombustible = "regular",
+            SurtidorIdentificacion = surtidor,
+            SurtidorEstacion = "La Sabana",
+            PrecioMonto = precio,
+            PrecioMoneda = "CRC",
+            VolumenValor = litros,
+            VolumenUnidad = "L",
+            TotalMonto = total,
+            TotalMoneda = "CRC",
+            FormaDeCorte = corte,
+            NumeroDeTransaccion = transaccion,
+        };
 
-    internal List<EventoDeExamen> Posteriores(string recurso, string id, long after)
+    private static EventoDePuntos Puntos(long id, DateTime fecha, int puntos) =>
+        new EventoDePuntos { Id = id, Fecha = fecha, Puntos = puntos };
+
+    // La lista viaja como object para que el serializador emita el tipo CONCRETO de cada
+    // evento: declarada como base, un EventoDeCarga saldria sin sus campos.
+    internal List<object> Posteriores(string recurso, string id, long after)
     {
-        List<EventoDeExamen> lista = Lista(recurso, id);
+        List<EventoDeLaEstacion> lista = Lista(recurso, id);
         lock (candado)
-            return lista.Where(e => e.Id > after).OrderBy(e => e.Id).ToList();
+            return lista.Where(e => e.Id > after).OrderBy(e => e.Id).Cast<object>().ToList();
     }
 
     internal long UltimoNumero(string recurso, string id)
     {
-        List<EventoDeExamen> lista = Lista(recurso, id);
+        List<EventoDeLaEstacion> lista = Lista(recurso, id);
         lock (candado)
             return lista.Count == 0 ? 0 : lista.Max(e => e.Id);
     }
 
-    // El examen que el operador de la demo eligio, con sus valores exactos.
-    internal EventoDeExamen Agregar(string recurso, string id, ExamenAInyectar pedido)
+    internal EventoDeCarga AgregarCarga(string recurso, string id, CargaAInyectar pedido)
     {
-        List<EventoDeExamen> lista = Lista(recurso, id);
+        List<EventoDeLaEstacion> lista = Lista(recurso, id);
 
         lock (candado)
         {
-            long siguiente = (lista.Count == 0 ? 200 : lista.Max(e => e.Id)) + 1;
-            var evento = new EventoDeExamen
+            var evento = new EventoDeCarga
             {
-                Id = siguiente,
-                Examen = pedido.Examen,
+                Id = Siguiente(lista),
                 Fecha = pedido.Fecha == default ? DateTime.Now : pedido.Fecha,
-                Valor = pedido.Valor,
-                ValorSecundario = pedido.ValorSecundario,
-                Unidad = pedido.Unidad ?? "",
-                Color = pedido.Color ?? "",
-                Nitritos = pedido.Nitritos ?? "",
+                Placa = pedido.Placa,
+                TipoDeCombustible = ODefecto(pedido.TipoDeCombustible, "regular"),
+                SurtidorIdentificacion = ODefecto(pedido.Surtidor, "A-3"),
+                SurtidorEstacion = ODefecto(pedido.Estacion, "La Sabana"),
+                PrecioMonto = pedido.PrecioMonto,
+                PrecioMoneda = ODefecto(pedido.PrecioMoneda, "CRC"),
+                VolumenValor = pedido.VolumenValor,
+                VolumenUnidad = ODefecto(pedido.VolumenUnidad, "L"),
+                TotalMonto = pedido.TotalMonto,
+                TotalMoneda = ODefecto(pedido.TotalMoneda, "CRC"),
+                FormaDeCorte = ODefecto(pedido.FormaDeCorte, "automatico"),
+                NumeroDeTransaccion = pedido.NumeroDeTransaccion,
             };
 
             lista.Add(evento);
             return evento;
         }
     }
+
+    private static string ODefecto(string valor, string porDefecto) =>
+        string.IsNullOrWhiteSpace(valor) ? porDefecto : valor;
+
+    internal EventoDePuntos AgregarPuntos(string recurso, string id, PuntosAInyectar pedido)
+    {
+        List<EventoDeLaEstacion> lista = Lista(recurso, id);
+
+        lock (candado)
+        {
+            var evento = new EventoDePuntos
+            {
+                Id = Siguiente(lista),
+                Fecha = pedido.Fecha == default ? DateTime.Now : pedido.Fecha,
+                Puntos = pedido.Puntos,
+            };
+            lista.Add(evento);
+            return evento;
+        }
+    }
+
+    internal EventoDeNivel AgregarNivel(string recurso, string id, NivelAInyectar pedido)
+    {
+        List<EventoDeLaEstacion> lista = Lista(recurso, id);
+
+        lock (candado)
+        {
+            var evento = new EventoDeNivel
+            {
+                Id = Siguiente(lista),
+                Fecha = pedido.Fecha == default ? DateTime.Now : pedido.Fecha,
+                Nivel = pedido.Nivel,
+            };
+            lista.Add(evento);
+            return evento;
+        }
+    }
+
+    private static long Siguiente(List<EventoDeLaEstacion> lista) =>
+        (lista.Count == 0 ? 200 : lista.Max(e => e.Id)) + 1;
 }
 
 // ---------------------------------------------------------------- cuerpos de pedido
@@ -430,14 +477,32 @@ sealed class PedidoDeRefresh
     [JsonPropertyName("refreshToken")] public string RefreshToken { get; set; }
 }
 
-// El cuerpo que manda el inyector de eventos de demo.
-sealed class ExamenAInyectar
+// Los cuerpos que manda el inyector de eventos de demo.
+sealed class CargaAInyectar
 {
-    [JsonPropertyName("examen")]          public string Examen { get; set; }
-    [JsonPropertyName("nitritos")]        public string Nitritos { get; set; }
-    [JsonPropertyName("fecha")]           public DateTime Fecha { get; set; }
-    [JsonPropertyName("valor")]           public decimal Valor { get; set; }
-    [JsonPropertyName("valorSecundario")] public decimal ValorSecundario { get; set; }
-    [JsonPropertyName("unidad")]          public string Unidad { get; set; }
-    [JsonPropertyName("color")]           public string Color { get; set; }
+    [JsonPropertyName("fecha")]               public DateTime Fecha { get; set; }
+    [JsonPropertyName("placa")]               public string Placa { get; set; }
+    [JsonPropertyName("tipoDeCombustible")]   public string TipoDeCombustible { get; set; }
+    [JsonPropertyName("surtidor")]            public string Surtidor { get; set; }
+    [JsonPropertyName("estacion")]            public string Estacion { get; set; }
+    [JsonPropertyName("precioMonto")]         public decimal PrecioMonto { get; set; }
+    [JsonPropertyName("precioMoneda")]        public string PrecioMoneda { get; set; }
+    [JsonPropertyName("volumenValor")]        public decimal VolumenValor { get; set; }
+    [JsonPropertyName("volumenUnidad")]       public string VolumenUnidad { get; set; }
+    [JsonPropertyName("totalMonto")]          public decimal TotalMonto { get; set; }
+    [JsonPropertyName("totalMoneda")]         public string TotalMoneda { get; set; }
+    [JsonPropertyName("formaDeCorte")]        public string FormaDeCorte { get; set; }
+    [JsonPropertyName("numeroDeTransaccion")] public string NumeroDeTransaccion { get; set; }
+}
+
+sealed class PuntosAInyectar
+{
+    [JsonPropertyName("fecha")]  public DateTime Fecha { get; set; }
+    [JsonPropertyName("puntos")] public int Puntos { get; set; }
+}
+
+sealed class NivelAInyectar
+{
+    [JsonPropertyName("fecha")] public DateTime Fecha { get; set; }
+    [JsonPropertyName("nivel")] public string Nivel { get; set; }
 }

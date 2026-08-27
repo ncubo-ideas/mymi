@@ -8,15 +8,15 @@ using System.Text.Json;
 // a URL2 por HTTP igual que cualquier operador, sin referenciar ni el dominio ni la app.
 //
 // Por que existe: los datos del demo se ORQUESTAN como test cases. Un endpoint que
-// agrega un examen aleatorio no sirve para contar una historia, porque la TENDENCIA
-// depende de los valores y de las fechas. Con valores al azar no se puede demostrar que
-// el antigeno viene subiendo, que es toda la demo.
+// agrega una carga aleatoria no sirve para contar una historia, porque los TRAMOS
+// dependen de los litros y de las fechas. Con valores al azar no se puede demostrar que
+// el rendimiento viene cayendo, que es toda la demo.
 //
-// Regla de la casa: se publica SOLO lo que la app va a mostrar. Si la historia son ocho
-// cargas, son ocho eventos, no sesenta.
+// Regla de la casa: se publica SOLO lo que la app va a mostrar. Si la historia son
+// nueve cargas, son nueve eventos, no sesenta.
 
 string baseUrl = Arg(args, "--url", "http://localhost:8111/");
-string recurso = Arg(args, "--recurso", "expediente");
+string recurso = Arg(args, "--recurso", "cargas");
 string id = Arg(args, "--id", "1");
 
 using var http = new HttpClient { BaseAddress = new Uri(baseUrl) };
@@ -58,45 +58,64 @@ async Task Listar()
     Console.WriteLine($"{eventos.GetArrayLength()} eventos en {recurso}/{id}:");
     foreach (JsonElement e in eventos.EnumerateArray())
     {
-        string examen = e.GetProperty("examen").GetString();
+        string tipo = e.GetProperty("tipo").GetString();
         string fecha = e.GetProperty("fecha").GetDateTime().ToString("yyyy-MM-dd");
-        string resultado = examen == "Orina"
-            ? Orina(e)
-            : $"{e.GetProperty("valor").GetDecimal().ToString("0.##", CultureInfo.InvariantCulture)} "
-              + e.GetProperty("unidad").GetString();
-        Console.WriteLine($"  #{e.GetProperty("id")}  {fecha}  {examen,-20} {resultado}");
+        Console.WriteLine($"  #{e.GetProperty("id")}  {fecha}  {tipo,-18} {Resumen(e, tipo)}");
     }
 
-    // El urianalisis informa DOS cosas. Un evento sin el campo es una prueba que no se
-    // corrio, que no es lo mismo que un negativo, asi que no se dice nada de ella.
-    static string Orina(JsonElement e)
+    static string Resumen(JsonElement e, string tipo) => tipo switch
     {
-        string color = e.GetProperty("color").GetString();
-        string nitritos = e.TryGetProperty("nitritos", out JsonElement n) ? n.GetString() : "";
-        return string.IsNullOrWhiteSpace(nitritos) ? color : $"{color}, nitritos {nitritos}";
-    }
+        "CargaRegistrada" =>
+            $"{Numero(e, "volumenValor")} {Texto(e, "volumenUnidad")} en {Texto(e, "surtidorIdentificacion")} "
+            + $"({Texto(e, "formaDeCorte")}) = {Numero(e, "totalMonto")} {Texto(e, "totalMoneda")} "
+            + $"[{Texto(e, "numeroDeTransaccion")}]",
+        "PuntosAcreditados" => $"+{e.GetProperty("puntos").GetInt32()} puntos",
+        "NivelActualizado" => $"nivel {Texto(e, "nivel")}",
+        _ => "",
+    };
+
+    static string Texto(JsonElement e, string nombre) =>
+        e.TryGetProperty(nombre, out JsonElement p) ? p.GetString() : "";
+
+    static string Numero(JsonElement e, string nombre) =>
+        e.TryGetProperty(nombre, out JsonElement p)
+            ? p.GetDecimal().ToString("0.##", CultureInfo.InvariantCulture) : "";
 }
 
-// Un examen CONCRETO, con su fecha y su valor.
-//   inyectar --examen AntigenoProstatico --fecha 2026-08-21 --valor 5.2 --unidad ng/mL
-//   inyectar --examen Orina --fecha 2026-08-21 --color ambar --nitritos negativo
+// Una carga CONCRETA, con su fecha y sus numeros.
+//   inyectar --fecha 2026-08-26 --litros 42 --precio 668 --total 28056 \
+//            --surtidor A-3 --corte automatico --transaccion T-0210
 async Task Inyectar()
 {
-    string examen = Arg(args, "--examen", "");
-    if (examen.Length == 0) { Console.Error.WriteLine("Falta --examen"); return; }
+    decimal litros = Decimal(Arg(args, "--litros", "0"));
+    decimal precio = Decimal(Arg(args, "--precio", "0"));
+    if (litros <= 0 || precio <= 0)
+    {
+        Console.Error.WriteLine("Faltan --litros y --precio (y opcionalmente --total)");
+        return;
+    }
+
+    decimal total = Decimal(Arg(args, "--total", "0"));
+    if (total <= 0) total = litros * precio;
 
     var cuerpo = new
     {
-        examen,
         fecha = Arg(args, "--fecha", DateTime.Today.ToString("yyyy-MM-dd")),
-        valor = Decimal(Arg(args, "--valor", "0")),
-        valorSecundario = Decimal(Arg(args, "--valor-secundario", "0")),
-        unidad = Arg(args, "--unidad", ""),
-        color = Arg(args, "--color", ""),
-        nitritos = Arg(args, "--nitritos", ""),
+        placa = Arg(args, "--placa", "ABC-123"),
+        tipoDeCombustible = Arg(args, "--tipo", "regular"),
+        surtidor = Arg(args, "--surtidor", "A-3"),
+        estacion = Arg(args, "--estacion", "La Sabana"),
+        precioMonto = precio,
+        precioMoneda = Arg(args, "--moneda", "CRC"),
+        volumenValor = litros,
+        volumenUnidad = Arg(args, "--unidad", "L"),
+        totalMonto = total,
+        totalMoneda = Arg(args, "--moneda", "CRC"),
+        formaDeCorte = Arg(args, "--corte", "automatico"),
+        numeroDeTransaccion = Arg(args, "--transaccion", $"T-{DateTime.Now:HHmmss}"),
     };
 
-    using var respuesta = await http.PostAsJsonAsync($"{recurso}/{id}/events/examen", cuerpo);
+    using var respuesta = await http.PostAsJsonAsync($"{recurso}/{id}/events/carga", cuerpo);
     if (!respuesta.IsSuccessStatusCode)
     {
         Console.Error.WriteLine($"URL2 respondio {(int)respuesta.StatusCode}: "
@@ -109,35 +128,52 @@ async Task Inyectar()
 
 // EL GUION COMPLETO de la demo, sembrado de una vez. Aca se edita LA HISTORIA.
 //
-// URL2 ya arranca con esta misma historia sembrada, asi que esto sirve para re-sembrarla
-// sobre otro expediente o para agregarla despues de haber inyectado a mano.
+// URL2 ya arranca con esta misma historia sembrada, asi que esto sirve para
+// re-sembrarla sobre otra bitacora o para agregarla despues de inyectar a mano.
 //
-// Las fechas son literales. Una demo con "hoy menos tres anos" deja de ser reproducible:
-// las tendencias dependen de los dias transcurridos, y el mismo journal reproducido el
-// ano que viene contaria otra historia.
+// Las fechas son literales. Una demo con "hoy menos ocho meses" deja de ser
+// reproducible: los tramos dependen de los dias transcurridos, y el mismo journal
+// reproducido el ano que viene contaria otra historia.
 async Task Historia()
 {
     Console.WriteLine($"sembrando la historia en {recurso}/{id}...");
 
-    (string examen, string fecha, decimal valor, string unidad, string color, string nitritos, string porque)[] guion =
+    (string fecha, decimal litros, string surtidor, decimal precio, decimal total,
+        string corte, string transaccion, string porque)[] guion =
     {
-        ("AntigenoProstatico", "2023-08-21", 3.0m,   "ng/mL", "",      "", "linea base: de aca sale el 'venia estable'"),
-        ("AntigenoProstatico", "2024-08-21", 3.1m,   "ng/mL", "",      "", "sigue estable un ano despues"),
-        ("Colesterol",         "2025-08-21", 200.0m, "mg/dL", "",      "", "primer punto de la serie de colesterol"),
-        ("AntigenoProstatico", "2025-08-21", 3.0m,   "ng/mL", "",      "", "tercer ano planchado"),
-        ("Colesterol",         "2026-08-21", 280.0m, "mg/dL", "",      "", "el salto que cuenta la historia"),
-        ("AntigenoProstatico", "2026-08-21", 5.2m,   "ng/mL", "",      "", "el salto que exige atencion"),
-        ("Hemoglobina",        "2026-08-21", 14.2m,  "g/dL",  "",      "", "para que la lista tenga cuerpo"),
-        ("Orina",              "2026-08-21", 0m,     "",      "ambar", "negativo",
-            "un examen SIN serie, y con DOS formas de magnitud: un color y un binario"),
+        ("2025-12-15", 40m, "A-3", 615m, 24600m, "automatico", "T-0201", "linea base, sin rendimiento aun"),
+        ("2026-01-15", 38m, "A-3", 620m, 23560m, "automatico", "T-0202", "primer tramo: 12.6 km/L"),
+        ("2026-02-15", 39m, "A-3", 628m, 24492m, "automatico", "T-0203", "confirma la base"),
+        ("2026-03-20", 20m, "A-3", 634m, 12680m, "preseteado", "T-0204", "PRESETEADA: la inferencia dice 'no fue lleno'"),
+        ("2026-03-28", 19m, "A-3", 634m, 12046m, "automatico", "T-0205", "la parcial no rompe el tramo: 12.6"),
+        ("2026-05-20", 41m, "A-3", 645m, 26445m, "automatico", "T-0206", "empieza la caida: 11.7"),
+        ("2026-06-20", 42m, "B-1", 652m, 27384m, "automatico", "T-0207", "OTRO SURTIDOR: tramo no comparable"),
+        ("2026-07-25", 43m, "A-3", 660m, 28380m, "automatico", "T-0208", "a esta le va a faltar el kilometraje"),
+        ("2026-08-25", 44m, "A-3", 668m, 29392m, "automatico", "T-0209", "el tramo largo: 9.4, la anomalia"),
     };
 
-    foreach (var (examen, fecha, valor, unidad, color, nitritos, porque) in guion)
+    foreach (var (fecha, litros, surtidor, precio, total, corte, transaccion, porque) in guion)
     {
-        var cuerpo = new { examen, fecha, valor, valorSecundario = 0m, unidad, color, nitritos };
-        using var r = await http.PostAsJsonAsync($"{recurso}/{id}/events/examen", cuerpo);
-        Console.WriteLine($"  {fecha}  {examen,-20} HTTP {(int)r.StatusCode}   {porque}");
+        var cuerpo = new
+        {
+            fecha, placa = "ABC-123", tipoDeCombustible = "regular",
+            surtidor, estacion = "La Sabana",
+            precioMonto = precio, precioMoneda = "CRC",
+            volumenValor = litros, volumenUnidad = "L",
+            totalMonto = total, totalMoneda = "CRC",
+            formaDeCorte = corte, numeroDeTransaccion = transaccion,
+        };
+        using var r = await http.PostAsJsonAsync($"{recurso}/{id}/events/carga", cuerpo);
+        Console.WriteLine($"  {fecha}  {litros,5} L {surtidor,-4} HTTP {(int)r.StatusCode}   {porque}");
+
+        var puntos = new { fecha, puntos = (int)litros };
+        using var rp = await http.PostAsJsonAsync($"{recurso}/{id}/events/puntos", puntos);
+        Console.WriteLine($"  {fecha}  +{(int)litros} puntos       HTTP {(int)rp.StatusCode}");
     }
+
+    var nivel = new { fecha = "2026-06-20", nivel = "plata" };
+    using var rn = await http.PostAsJsonAsync($"{recurso}/{id}/events/nivel", nivel);
+    Console.WriteLine($"  2026-06-20  nivel plata      HTTP {(int)rn.StatusCode}");
 }
 
 // El senuelo, para demostrarlo en vivo: con la credencial de la app, /perfil da 403.
@@ -180,18 +216,21 @@ static string Arg(string[] args, string nombre, string porDefecto)
 
 static void Ayuda()
 {
-    Console.WriteLine("Inyector de eventos de demo para URL2 (laboratorio)");
+    Console.WriteLine("Inyector de eventos de demo para URL2 (la estacion)");
     Console.WriteLine();
     Console.WriteLine("  listar                        que eventos ve la app hoy");
-    Console.WriteLine("  historia                      siembra el guion completo de la demo");
+    Console.WriteLine("  historia                      siembra el guion completo de la demo (cargas + lealtad)");
     Console.WriteLine("  senuelo                       demuestra el 403 de /perfil con el token de la app");
-    Console.WriteLine("  inyectar --examen AntigenoProstatico --fecha 2026-08-21 --valor 5.2 --unidad ng/mL");
-    Console.WriteLine("  inyectar --examen Orina --fecha 2026-08-21 --color ambar --nitritos negativo");
-    Console.WriteLine("     nitritos: positivo | negativo | (vacio = no se corrio la prueba, que NO es negativo)");
-    Console.WriteLine("                                agrega UN examen concreto");
+    Console.WriteLine("  inyectar --litros 42 --precio 668 [--total 28056] [--fecha 2026-08-26]");
+    Console.WriteLine("           [--surtidor A-3] [--corte automatico|preseteado|indeterminado]");
+    Console.WriteLine("           [--tipo regular|super|diesel] [--unidad L|galUS|galImp] [--moneda CRC|PAB|USD]");
+    Console.WriteLine("           [--placa ABC-123] [--transaccion T-0210]");
+    Console.WriteLine("                                agrega UNA carga concreta");
     Console.WriteLine();
-    Console.WriteLine("  cargas: Colesterol, ColesterolDetallado, AntigenoProstatico, Hemoglobina, Orina, Heces");
+    Console.WriteLine("  Los kilometrajes y el tanque NO se inyectan: son aportes de Sonia y entran");
+    Console.WriteLine("  por su app (o por 'Cargas.Consola sembrar-aportes' sobre el journal).");
+    Console.WriteLine();
     Console.WriteLine("  --url      default http://localhost:8111/");
-    Console.WriteLine("  --recurso  default expediente");
+    Console.WriteLine("  --recurso  default cargas");
     Console.WriteLine("  --id       default 1");
 }
