@@ -71,7 +71,12 @@ namespace Presupuesto.Dominio
 		{
 			get
 			{
-				string tramo = $"entre {Desde:dd/MM/yyyy} y {Hasta:dd/MM/yyyy}";
+				// Duración, no fechas: el dominio no formatea un calendario. Las fechas
+				// viajan en Desde y Hasta, y quien las muestre decide cómo se escriben.
+				int meses = (int)Math.Round((Hasta - Desde).TotalDays / 30.44);
+				string tramo = meses >= 12 && meses % 12 == 0
+					? (meses == 12 ? "en un ano" : $"en {meses / 12} anos")
+					: $"en {meses} meses";
 				string plata = SePagaSola
 					? $"{Bien.Nombre} dejo {Neto} netos {tramo}"
 					: $"{Bien.Nombre} costo {-Neto} mas de lo que produjo {tramo}";

@@ -122,7 +122,7 @@ namespace Presupuesto.Dominio
 
 			return diasDeAtraso > DiasDeGracia
 				? CargoAusente.Vencido(this, esperado, diasDeAtraso)
-				: CargoAusente.AlDia(this, esperado);
+				: CargoAusente.AlDia(this, esperado, diasDeAtraso);
 		}
 
 		public override string ToString() => Nombre;
