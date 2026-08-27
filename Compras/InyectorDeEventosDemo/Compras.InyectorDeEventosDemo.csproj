@@ -12,6 +12,11 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <RootNamespace>Compras.InyectorDeEventosDemo</RootNamespace>
     <AssemblyName>Compras.InyectorDeEventosDemo</AssemblyName>
+
+    <Product>La Guaria - sistemas internos</Product>
+    <AssemblyTitle>La Guaria - caja y siembra del demo</AssemblyTitle>
+    <Description>Herramienta de operacion del demo: siembra el guion completo en el endpoint de eventos, publica una compra concreta y demuestra el senuelo. Le habla al servidor por HTTP y nada mas: no conoce el dominio de la persona ni toca su diario.</Description>
   </PropertyGroup>
 
 </Project>
+

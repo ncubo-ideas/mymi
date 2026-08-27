@@ -1,14 +1,3 @@
-@* LA MARCA DEL CONCESIONARIO.
-
-   ES EL MISMO TRAZO QUE favicon.png, icon-192.png y icon-512.png, redibujado en SVG: la barra
-   diagonal sobre el cuadrado de la marca. Que sea el mismo importa -- la pestana, el icono de la
-   app instalada y el encabezado tienen que ser reconociblemente la misma cosa -- y que sea SVG
-   tambien: escala a cualquier tamano, pesa nada y se puede invertir por parametro sin exportar
-   un segundo archivo.
-
-   VA COMO COMPONENTE Y NO COMO <img>: una imagen mas es una peticion mas al abrir, y esta app
-   tiene que abrir sin red. *@
-
 <svg class="sotavento-mark" viewBox="0 0 32 32" width="@Size" height="@Size"
      role="img" aria-label="Sotavento Motors" focusable="false">
     <rect width="32" height="32" rx="7" fill="@Tile" />
@@ -18,8 +7,6 @@
 @code {
     [Parameter] public int Size { get; set; } = 30;
 
-    // Por defecto la version invertida -- baldosa clara, barra de la marca -- que es la que se
-    // lee sobre la barra superior, que es oscura.
     [Parameter] public string Tile { get; set; } = "#FFFFFF";
 
     [Parameter] public string Slash { get; set; } = "#1F3A5F";

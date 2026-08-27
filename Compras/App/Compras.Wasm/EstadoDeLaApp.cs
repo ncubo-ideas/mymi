@@ -236,6 +236,27 @@ public sealed class EstadoDeLaApp : IAsyncDisposable
 
 	public CanastaDelMesVista Canasta(int anio, int mes) { Exigir(); return api!.Canasta(anio, mes); }
 
+	// LAS DOS LECTURAS DE LA PORTADA. Cuantas compras se miran para reconocer la firma lo
+	// decide la app (ComprasAPI), no esta caratula: es parte de la pregunta.
+	public FirmaDeLaSemana Firma() { Exigir(); return api!.Firma(); }
+
+	// EL CORTE ES EL 1 DE ENERO DE ESTE ANO, y antes era "hace un ano" — que con compras
+	// semanales resulto estar mal. Con 87 compras, "hace un ano" partia el historial en
+	// agosto y comparaba ocho semanas de 2025 contra otras ocho de 2025: dos ventanas del
+	// mismo lado del cambio, asi que la app decia "su canasta viene igual" y la tarjeta del
+	// quiebre no aparecia. Con seis compras el bug no se veia.
+	//
+	// El ano corriente tambien es mas facil de explicar -"lo que cambio este ano"- y es el
+	// mismo marco que la comparacion de canastas, que compara este mes contra el del ano
+	// pasado. El corte lo pone la caratula porque involucra el RELOJ y el dominio no lo lee.
+	//
+	// LO QUE FALTA, y es una lectura y no un ajuste: que el DOMINIO encuentre el mes del
+	// quiebre en vez de recibirlo. La especificacion pide "el quiebre de enero", no "el
+	// quiebre desde la fecha que le pases", y hoy si el cambio de una persona fue en
+	// setiembre esta pantalla no lo encuentra.
+	public CambioDeLaCanasta CambioDelUltimoAnio()
+	{ Exigir(); return api!.Cambio(new DateTime(DateTime.Now.Year, 1, 1)); }
+
 	// El "hoy" lo pone la caratula: el dominio no lee el reloj.
 	public IReadOnlyList<GarantiaDeProducto> GarantiasVigentes() { Exigir(); return api!.GarantiasVigentes(DateTime.Now); }
 

@@ -4,17 +4,6 @@ using Puppets.Portador;
 
 namespace DealershipCar.App.Events
 {
-	// EL FABRICANTE ABRE UNA REVISION DEL PLAN. Deja su codigo y su instante; las operaciones que
-	// la revision trae entran despues, una por una, como PlanOperationSeeded (C5). Ese es el unico
-	// camino por el que una operacion entra a la agenda.
-	//
-	// El codigo de revision es TEXTO LIBRE del fabricante y no un conjunto cerrado: "R1", "24-B",
-	// lo que el fabricante numere. Lo unico exigible es que venga y que no venga en blanco -- una
-	// revision sin codigo no se puede nombrar despues, y nombrarla es para lo que existe.
-	//
-	// Una revision fechada antes de la que rige revienta ADENTRO del comando (OINV-19) y deja una
-	// entrada permanente, por la misma razon que OperationCompleted: para saberlo hay que
-	// preguntarle a la agenda cual rige, y la fachada de §4 no proyecta esa pregunta (C22).
 	public sealed class PlanRevisionAdopted : IMensajeDeEvento
 	{
 		public const string TheEventType = "PlanRevisionAdopted";

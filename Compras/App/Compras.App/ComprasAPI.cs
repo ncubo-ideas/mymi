@@ -228,8 +228,9 @@ namespace Compras.App
 			.PerformQuery();
 		}
 
-		// La foto de un mes, sumada por perfil. Los HECHOS con los que la superficie o
-		// la IA arman la lectura; el dominio no devuelve prosa.
+		// La foto de un mes, sumada POR DEPARTAMENTO. Los HECHOS con los que la superficie
+		// o la IA arman la lectura; el dominio no devuelve prosa. La cabecera sale como
+		// "canasta" y cada pasillo como "departamento".
 		public string CanastaDelMes(int anio, int mes) =>
 			app.Using(@"
 				{
@@ -237,15 +238,17 @@ namespace Compras.App
 					print canasta.Anio anio,
 						canasta.Mes mes,
 						canasta.CantidadDeCompras cantidadDeCompras,
-						canasta.GastoRecomendado gastoRecomendado,
-						canasta.GastoNeutro gastoNeutro,
-						canasta.GastoOcasional gastoOcasional,
 						canasta.GastoNoComestible gastoNoComestible,
 						canasta.GastoComestible gastoComestible,
 						canasta.GastoTotal gastoTotal,
-						canasta.ProporcionOcasional proporcionOcasional,
 						canasta.HayComestible hayComestible,
 						canasta.HayCompras hayCompras;
+					foreach (departamento in canasta.Departamentos) {
+						print departamento.Categoria.Nombre categoria,
+							departamento.Titulo titulo,
+							departamento.Monto monto,
+							departamento.ProporcionDelTotal proporcionDelTotal;
+					}
 				}
 			")
 			.WithParameters(p => {
@@ -258,27 +261,40 @@ namespace Compras.App
 		// Es la pregunta que ningun ticket contesta, y la mitad "compras" del cruce con
 		// el colesterol que hace el asistente.
 		//
-		// El veredicto y la linea los produce el DOMINIO: la pantalla no puede decidir si
-		// un cambio de -29 puntos es bueno, y con un booleano lo mostraba como "estable".
+		// La linea la produce el DOMINIO, y lo que se proyecta son hechos: los dos totales
+		// y de que pasillos salio la diferencia. Sin veredicto — el super senala y se
+		// calla; el cruce con cualquier otra cosa de la persona es del asistente.
+		//
+		// La direccion va en el SIGNO del cambio y no en un booleano: Subio es una lectura
+		// guardada del dominio y en una proyeccion plana reventaria cuando no hay serie.
 		public string ComparacionDeCanastas(int anioAntes, int mesAntes, int anioDespues, int mesDespues) =>
 			app.Using(@"
 				{
 					comparacion = compras.CompararCanastas(@anioAntes, @mesAntes, @anioDespues, @mesDespues);
 					print comparacion.HayComparacion hayComparacion,
-						comparacion.ProporcionOcasionalAntes proporcionAntes,
-						comparacion.ProporcionOcasionalDespues proporcionDespues,
+						comparacion.GastoAntes gastoAntes,
+						comparacion.GastoDespues gastoDespues,
+						comparacion.CambioEnElTotal cambioEnElTotal,
 						comparacion.CambioEnProporcion cambio,
-						comparacion.NombreDelVeredicto veredicto,
+						comparacion.HayAlgoQueLoExplique hayAlgoQueLoExplique,
 						comparacion.ParaSonia paraSonia,
-						comparacion.CrecioLoOcasional crecioLoOcasional,
 						comparacion.Antes.Anio anioAntes,
 						comparacion.Antes.Mes mesAntes,
-						comparacion.Antes.GastoOcasional gastoOcasionalAntes,
 						comparacion.Antes.GastoComestible gastoComestibleAntes,
 						comparacion.Despues.Anio anioDespues,
 						comparacion.Despues.Mes mesDespues,
-						comparacion.Despues.GastoOcasional gastoOcasionalDespues,
 						comparacion.Despues.GastoComestible gastoComestibleDespues;
+					foreach (diferencia in comparacion.Diferencias) {
+						print diferencia.Categoria.Nombre categoria,
+							diferencia.Titulo titulo,
+							diferencia.MontoAntes montoAntes,
+							diferencia.MontoDespues montoDespues,
+							diferencia.Cambio cambioDelPasillo,
+							diferencia.Subio subio,
+							diferencia.EsNuevo esNuevo,
+							diferencia.Desaparecio desaparecio,
+							diferencia.CuentaEnElMovimiento explicaElCambio;
+					}
 				}
 			")
 			.WithParameters(p => {
@@ -296,22 +312,92 @@ namespace Compras.App
 				{
 					comparacion = compras.CompararConElAnioPasado();
 					print comparacion.HayComparacion hayComparacion,
-						comparacion.ProporcionOcasionalAntes proporcionAntes,
-						comparacion.ProporcionOcasionalDespues proporcionDespues,
+						comparacion.GastoAntes gastoAntes,
+						comparacion.GastoDespues gastoDespues,
+						comparacion.CambioEnElTotal cambioEnElTotal,
 						comparacion.CambioEnProporcion cambio,
-						comparacion.NombreDelVeredicto veredicto,
+						comparacion.HayAlgoQueLoExplique hayAlgoQueLoExplique,
 						comparacion.ParaSonia paraSonia,
-						comparacion.CrecioLoOcasional crecioLoOcasional,
 						comparacion.Antes.Anio anioAntes,
 						comparacion.Antes.Mes mesAntes,
-						comparacion.Antes.GastoOcasional gastoOcasionalAntes,
 						comparacion.Antes.GastoComestible gastoComestibleAntes,
 						comparacion.Despues.Anio anioDespues,
 						comparacion.Despues.Mes mesDespues,
-						comparacion.Despues.GastoOcasional gastoOcasionalDespues,
 						comparacion.Despues.GastoComestible gastoComestibleDespues;
+					foreach (diferencia in comparacion.Diferencias) {
+						print diferencia.Categoria.Nombre categoria,
+							diferencia.Titulo titulo,
+							diferencia.MontoAntes montoAntes,
+							diferencia.MontoDespues montoDespues,
+							diferencia.Cambio cambioDelPasillo,
+							diferencia.Subio subio,
+							diferencia.EsNuevo esNuevo,
+							diferencia.Desaparecio desaparecio,
+							diferencia.CuentaEnElMovimiento explicaElCambio;
+					}
 				}
 			")
+			.PerformQuery();
+
+		// LO QUE NO FALLA: los productos que vuelven compra tras compra. Es la lectura con
+		// la que la especificacion de marca pide que la app ABRA -"la pantalla abre con la
+		// firma de su semana... la lista de recibos existe, pero no es la portada"-.
+		//
+		// La cabecera sale como "firma" y cada producto como "habitual".
+		public string FirmaDeLaSemana(int cuantasCompras) =>
+			app.Using(@"
+				{
+					firma = compras.FirmaDeLasUltimas(@cuantas);
+					print firma.ComprasMiradas comprasMiradas,
+						firma.CuantosHabituales cuantosHabituales,
+						firma.ParaSonia paraSonia;
+					foreach (habitual in firma.Habituales) {
+						print habitual.Sku sku,
+							habitual.Descripcion descripcion,
+							habitual.ComprasEnQueAparece comprasEnQueAparece,
+							habitual.ComprasMiradas deCuantas,
+							habitual.Proporcion proporcion,
+							habitual.EstaEnTodas estaEnTodas;
+					}
+				}
+			")
+			.WithParameters(p => {
+				p["cuantas", typeof(int)] = cuantasCompras;
+			})
+			.PerformQuery();
+
+		// EL QUIEBRE, con fecha: que se volvio habitual y desde cuando, y que dejo de
+		// aparecer. La otra lectura de la portada.
+		//
+		// El MES del cambio no se proyecta: es una lectura guardada del dominio y en una
+		// proyeccion plana reventaria cuando no hay cambio. Sale del primer producto que
+		// entro, que ya viene ordenado por fecha.
+		public string CambioEnLaCanasta(DateTime corte, int cuantasCompras) =>
+			app.Using(@"
+				{
+					cambio = compras.CambioDesde(@corte, @cuantas);
+					print cambio.HayConQueComparar hayConQueComparar,
+						cambio.HayCambio hayCambio,
+						cambio.ParaSonia paraSonia;
+					foreach (entro in cambio.Entraron) {
+						print entro.Sku sku,
+							entro.Descripcion descripcion,
+							entro.DesdeExpresado desde,
+							entro.ComprasEnQueAparece comprasEnQueAparece,
+							entro.Proporcion proporcion;
+					}
+					foreach (salio in cambio.Salieron) {
+						print salio.Sku sku,
+							salio.Descripcion descripcion,
+							salio.ComprasEnQueAparece comprasEnQueAparece,
+							salio.Proporcion proporcion;
+					}
+				}
+			")
+			.WithParameters(p => {
+				p["corte",   typeof(DateTime)] = corte;
+				p["cuantas", typeof(int)] = cuantasCompras;
+			})
 			.PerformQuery();
 
 		// La garantia de un producto, con su respaldo: en que compra fue, cuando, y si
@@ -417,8 +503,8 @@ namespace Compras.App
 						consumo.GastoEnElPrimerMes gastoEnElPrimerMes,
 						consumo.GastoEnElUltimoMes gastoEnElUltimoMes,
 						consumo.CambioDeGasto cambioDeGasto,
-						consumo.SePuedeJuzgar sePuedeJuzgar,
-						consumo.NombreDelVeredicto veredicto,
+						consumo.HaySerie haySerie,
+						consumo.HayCambioReal hayCambioReal,
 						consumo.ParaSonia paraSonia;
 					foreach (mes in consumo.Meses) {
 						print mes.MesExpresado mes,
@@ -442,10 +528,12 @@ namespace Compras.App
 					pendientes = compras.AbastecimientosPendientes(@fecha);
 					foreach (pendiente in pendientes) {
 						print pendiente.NombreDeLaCategoria categoria,
+							pendiente.Categoria.Titulo titulo,
 							pendiente.UltimaCompra ultimaCompra,
 							pendiente.DiasDesdeLaUltima diasDesdeLaUltima,
 							pendiente.DiasEsperados diasEsperados,
-							pendiente.EsRecomendado esRecomendado,
+							pendiente.EsRitmoObservado esRitmoObservado,
+							pendiente.EsComestible esComestible,
 							pendiente.NombreDeLaSeveridad severidad,
 							pendiente.ParaSonia paraSonia;
 					}
@@ -466,6 +554,17 @@ namespace Compras.App
 
 		public CanastaDelMesVista Canasta(int anio, int mes) =>
 			ProyeccionDeVistas.Canasta(CanastaDelMes(anio, mes));
+
+		/// <summary>Cuántas compras se miran para reconocer la firma, si nadie dice otra cosa.</summary>
+		// Ocho son unas dos meses de compras semanales: alcanza para que "lo de siempre"
+		// se repita y es poco para que un cambio de habitos quede sepultado.
+		public const int ComprasQueSeMiranParaLaFirma = 8;
+
+		public FirmaDeLaSemana Firma(int cuantasCompras = ComprasQueSeMiranParaLaFirma) =>
+			ProyeccionDeVistas.Firma(FirmaDeLaSemana(cuantasCompras));
+
+		public CambioDeLaCanasta Cambio(DateTime corte, int cuantasCompras = ComprasQueSeMiranParaLaFirma) =>
+			ProyeccionDeVistas.Cambio(CambioEnLaCanasta(corte, cuantasCompras));
 
 		public CanastasComparadas Comparacion(int anioAntes, int mesAntes, int anioDespues, int mesDespues) =>
 			ProyeccionDeVistas.Comparacion(ComparacionDeCanastas(anioAntes, mesAntes, anioDespues, mesDespues));

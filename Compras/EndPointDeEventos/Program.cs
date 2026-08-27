@@ -1,5 +1,6 @@
 using System.Collections.Concurrent;
 using System.Security.Cryptography;
+using System.Text.Json;
 using System.Text.Json.Serialization;
 
 // Mock del servidor del supermercado. Happy path, estado en memoria.
@@ -312,6 +313,29 @@ static class Catalogo
         P("ACEITE-GIR-1L", "Aceite de girasol 1L", 2890, "AceitesYGrasas"),
         P("MANTECA-500", "Manteca de palma 500g", 2050, "AceitesYGrasas"),
 
+        // -- lacteos que SUBEN en 2026. El cruce del asistente los nombra: "en su carrito
+        //    tambien subieron el queso crema y la mantequilla".
+        P("QUESO-CREMA", "Queso crema 250g", 1980, "LacteosYHuevos"),
+        P("MANTEQUILLA-250", "Mantequilla 250g", 2650, "LacteosYHuevos"),
+
+        // -- embutidos. Departamento propio y no proteinas: la nutricionista le pide
+        //    "cambiar embutidos por proteina fresca", asi que para quien la aconseja son
+        //    dos cosas distintas.
+        P("JAMON-200", "Jamon de pierna 200g", 2350, "Embutidos"),
+        P("SALCHICHON-300", "Salchichon 300g", 2890, "Embutidos"),
+        P("SALCHICHA-PK", "Salchichas paquete 8u", 2100, "Embutidos"),
+        P("MORTADELA-250", "Mortadela 250g", 1650, "Embutidos"),
+
+        // -- comidas preparadas
+        P("POLLO-ROST", "Pollo rostizado entero", 6900, "ComidasPreparadas"),
+        P("LASAGNA-CONG", "Lasagna congelada familiar", 5450, "ComidasPreparadas"),
+        P("PIZZA-CONG", "Pizza congelada grande", 4200, "ComidasPreparadas"),
+        P("ENSALADA-PREP", "Ensalada preparada 400g", 2450, "ComidasPreparadas"),
+
+        // -- mascotas. El invariante 14 pone la comida de Luna en ₡25.000 al mes, y va en
+        //    una bolsa mensual: es un gasto del hogar que se repone, no un antojo.
+        P("PERRO-CROQ-10KG", "Alimento para perro 10kg", 25000, "Mascotas"),
+
         // -- azucarados
         P("HELADO-1L", "Helado de vainilla 1L", 3680, "Azucarados"),
         P("SODA-2L", "Soda cola 2L", 1790, "Azucarados"),
@@ -390,7 +414,8 @@ sealed class AlmacenDeEventos
     internal static readonly string[] CategoriasConocidas =
     {
         "Proteinas", "FrutasYVerduras", "LacteosYHuevos", "GranosYAbarrotes",
-        "AceitesYGrasas", "Azucarados", "Snacks", "Limpieza", "Electrohogar",
+        "AceitesYGrasas", "Azucarados", "Snacks", "Embutidos", "ComidasPreparadas",
+        "Mascotas", "Limpieza", "Electrohogar",
     };
 
     internal static bool EsCategoriaConocida(string categoria) =>
@@ -403,73 +428,36 @@ sealed class AlmacenDeEventos
     // literales a proposito: una demo con fechas relativas al dia de hoy deja de ser
     // reproducible, y la comparacion de canastas depende de en que mes cae cada compra.
     //
-    // El guion en una linea: en agosto 2025 la canasta es sana (9% ocasional); de
-    // febrero a agosto 2026 entran helado, sodas y snacks hasta voltearla (97%);
-    // en mayo 2026 entra la olla arrocera con su garantia de 12 meses. Es la mitad
-    // "compras" del cruce con el colesterol del laboratorio, preplanificada.
-    private static List<EventoDeCompra> Sembrar() => new()
+    // YA NO ESTA ESCRITA ACA. Vive en guion.json, y la genera generar-guion.py, que ADEMAS
+    // verifica los invariantes del ecosistema y se cae si uno no cierra. La razon es de
+    // tamaño y de responsabilidad: los invariantes piden compras SEMANALES durante veinte
+    // meses -87 tickets- con dos totales de agosto exactos al colon y cuentas de tickets
+    // que hay que poder comprobar. Eso a mano no se sostiene, y peor: nadie podria decir
+    // si los numeros cierran sin volver a sumarlos.
+    //
+    // El guion en una linea: en 2025 la canasta es de cocinar en casa -frescos todas las
+    // semanas, proteina fresca, helado una vez al mes-; en enero de 2026 entran embutidos
+    // y comidas preparadas, el helado pasa a semanal y los frescos bajan a quincenales. El
+    // total sube 11%, no 50%: lo que entra DESPLAZA a lo que sale. Es la mitad "compras"
+    // del cruce con el colesterol del laboratorio.
+    private static List<EventoDeCompra> Sembrar()
     {
-        new EventoDeCompra
-        {
-            Id = 301, Numero = "T-88101", Fecha = new DateTime(2025, 8, 5, 17, 20, 0),
-            Skus = new[] { "POLLO-KG", "FRIJOL-900", "LECHE-1L", "BROCOLI" },
-            Descripciones = new[] { "Pechuga de pollo kg", "Frijoles negros 900g", "Leche semidescremada 1L", "Brocoli unidad" },
-            Cantidades = new[] { 2, 2, 6, 3 },
-            PreciosUnitarios = new[] { 4200m, 1150m, 950m, 890m },
-            Categorias = new[] { "Proteinas", "GranosYAbarrotes", "LacteosYHuevos", "FrutasYVerduras" },
-            MesesDeGarantia = new[] { 0, 0, 0, 0 },
-        },
-        new EventoDeCompra
-        {
-            Id = 302, Numero = "T-88240", Fecha = new DateTime(2025, 8, 20, 18, 5, 0),
-            Skus = new[] { "ACEITE-GIR-1L", "ARROZ-2KG", "HUEVOS-30", "TILAPIA-KG" },
-            Descripciones = new[] { "Aceite de girasol 1L", "Arroz grano entero 2kg", "Huevos carton 30", "Filet de tilapia kg" },
-            Cantidades = new[] { 1, 1, 1, 1 },
-            PreciosUnitarios = new[] { 2890m, 2450m, 3300m, 5200m },
-            Categorias = new[] { "AceitesYGrasas", "GranosYAbarrotes", "LacteosYHuevos", "Proteinas" },
-            MesesDeGarantia = new[] { 0, 0, 0, 0 },
-        },
-        new EventoDeCompra
-        {
-            Id = 303, Numero = "T-91515", Fecha = new DateTime(2026, 2, 14, 19, 40, 0),
-            Skus = new[] { "HELADO-1L", "SODA-2L", "GALLETA-CHOC", "POLLO-KG" },
-            Descripciones = new[] { "Helado de vainilla 1L", "Soda cola 2L", "Galletas de chocolate", "Pechuga de pollo kg" },
-            Cantidades = new[] { 2, 4, 3, 1 },
-            PreciosUnitarios = new[] { 3450m, 1750m, 1250m, 4350m },
-            Categorias = new[] { "Azucarados", "Azucarados", "Azucarados", "Proteinas" },
-            MesesDeGarantia = new[] { 0, 0, 0, 0 },
-        },
-        new EventoDeCompra
-        {
-            Id = 304, Numero = "T-93872", Fecha = new DateTime(2026, 5, 10, 10, 15, 0),
-            Skus = new[] { "OLLA-ARR-18", "ARROZ-2KG", "MANTECA-500" },
-            Descripciones = new[] { "Olla arrocera 1.8L", "Arroz grano entero 2kg", "Manteca de palma 500g" },
-            Cantidades = new[] { 1, 2, 1 },
-            PreciosUnitarios = new[] { 45900m, 2520m, 1980m },
-            Categorias = new[] { "Electrohogar", "GranosYAbarrotes", "AceitesYGrasas" },
-            MesesDeGarantia = new[] { 12, 0, 0 },
-        },
-        new EventoDeCompra
-        {
-            Id = 305, Numero = "T-95104", Fecha = new DateTime(2026, 7, 3, 20, 10, 0),
-            Skus = new[] { "SODA-12PK", "HELADO-1L", "PAPAS-FAM", "DETERG-5L" },
-            Descripciones = new[] { "Soda cola lata 12-pack", "Helado de vainilla 1L", "Papas fritas familiar", "Detergente liquido 5L" },
-            Cantidades = new[] { 2, 2, 3, 1 },
-            PreciosUnitarios = new[] { 5990m, 3560m, 2100m, 6800m },
-            Categorias = new[] { "Azucarados", "Azucarados", "Snacks", "Limpieza" },
-            MesesDeGarantia = new[] { 0, 0, 0, 0 },
-        },
-        new EventoDeCompra
-        {
-            Id = 306, Numero = "T-96470", Fecha = new DateTime(2026, 8, 15, 18, 50, 0),
-            Skus = new[] { "HELADO-1L", "SODA-2L", "CHOC-BARRA", "MANTECA-500", "BROCOLI" },
-            Descripciones = new[] { "Helado de vainilla 1L", "Soda cola 2L", "Chocolate de leche barra", "Manteca de palma 500g", "Brocoli unidad" },
-            Cantidades = new[] { 3, 6, 4, 2, 1 },
-            PreciosUnitarios = new[] { 3680m, 1790m, 1450m, 2050m, 920m },
-            Categorias = new[] { "Azucarados", "Azucarados", "Azucarados", "AceitesYGrasas", "FrutasYVerduras" },
-            MesesDeGarantia = new[] { 0, 0, 0, 0, 0 },
-        },
-    };
+        // Al lado del ejecutable: el csproj lo copia a la salida.
+        string ruta = Path.Combine(AppContext.BaseDirectory, "guion.json");
+        if (!File.Exists(ruta))
+            throw new FileNotFoundException(
+                "No esta guion.json al lado del ejecutable. Se genera con "
+                + "'python generar-guion.py' en Compras/EndPointDeEventos.", ruta);
+
+        var opciones = new JsonSerializerOptions { PropertyNameCaseInsensitive = true };
+        List<EventoDeCompra> guion =
+            JsonSerializer.Deserialize<List<EventoDeCompra>>(File.ReadAllText(ruta), opciones);
+
+        if (guion is null || guion.Count == 0)
+            throw new InvalidOperationException("guion.json no trae ninguna compra.");
+
+        return guion;
+    }
 
     internal List<EventoDeCompra> Posteriores(string recurso, string id, long after)
     {
