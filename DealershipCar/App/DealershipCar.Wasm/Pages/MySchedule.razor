@@ -1,0 +1,569 @@
+@page "/"
+@inject AppState state
+@inject NavigationManager nav
+
+<PageTitle>My maintenance schedule</PageTitle>
+
+@if (error.Length > 0)
+{
+    <MudAlert Severity="Severity.Error" Variant="Variant.Filled" Class="mb-4" id="error">
+        <strong>@(state.IsUp ? "The operation could not be completed." : "The app could not be opened.")</strong>
+        <div class="mt-1">
+            This is a fault in the app, not something you did. The details name the step that failed.
+            <MudLink Typo="Typo.body2" Class="ml-1" id="show-error-detail"
+                     OnClick="@(() => errorDetail = !errorDetail)">
+                @(errorDetail ? "hide details" : "details")
+            </MudLink>
+        </div>
+        @if (errorDetail || showInstrument)
+        {
+            <pre class="alert-detail">@error</pre>
+        }
+    </MudAlert>
+}
+
+@if (destinationProblem.Length > 0)
+{
+    <MudAlert Severity="Severity.Error" Variant="Variant.Outlined" Class="mb-4" id="destination-problem">
+        <strong>The browser said no.</strong>
+        <div class="mt-1">@destinationProblem</div>
+    </MudAlert>
+}
+
+@if (!state.IsUp)
+{
+    <MudPaper Elevation="0" Outlined="true" Class="pa-6">
+        @if (state.NeedsRegrant)
+        {
+            <MudText Typo="Typo.h5" Class="mb-2">Welcome back</MudText>
+            <MudText Typo="Typo.body1">
+                Your folder is <strong>&laquo;@state.FolderName&raquo;</strong>. The browser asks you to
+                confirm write permission every time you reopen the app.
+            </MudText>
+
+            <div class="actions mt-4">
+                <MudButton Variant="Variant.Filled" Color="Color.Warning" id="regrant"
+                           StartIcon="@Icons.Material.Rounded.LockOpen" OnClick="RequestPermission">
+                    Grant permission to &laquo;@state.FolderName&raquo;
+                </MudButton>
+                <MudButton Variant="Variant.Outlined" Color="Color.Primary" id="choose-folder"
+                           StartIcon="@Icons.Material.Rounded.FolderOpen" OnClick="ConnectFolder"
+                           Disabled="@(pickerSupported == false)">
+                    Choose a different folder
+                </MudButton>
+                <MudButton Variant="Variant.Text" Color="Color.Default" id="forget-folder"
+                           OnClick="ForgetFolder">
+                    Forget this folder
+                </MudButton>
+            </div>
+        }
+        else
+        {
+            <MudText Typo="Typo.h5" Class="mb-1">My maintenance schedule</MudText>
+            <MudText Typo="Typo.body1" Class="mb-4">
+                This app keeps <strong>your</strong> maintenance record. Choose where.
+            </MudText>
+
+            @if (noStorage == "insecure")
+            {
+                <MudAlert Severity="Severity.Warning" Variant="Variant.Outlined" Class="mb-4">
+                    <strong>This page is not on a secure connection</strong>, so the browser will not let
+                    it save anything &mdash; any browser would do the same. Open it over
+                    <code>https</code>, or over <code>localhost</code>.
+                </MudAlert>
+            }
+            else if (noStorage == "browser")
+            {
+                <MudAlert Severity="Severity.Warning" Variant="Variant.Outlined" Class="mb-4">
+                    <strong>This browser cannot save anything for this app.</strong> It has neither a
+                    folder picker nor private storage. Opening the app in another browser is the way out.
+                </MudAlert>
+            }
+
+            <MudGrid Spacing="3">
+                @if (pickerSupported == true)
+                {
+                    <MudItem xs="12" md="6">
+                        <MudPaper Elevation="0" Outlined="true" Class="pa-4 h-100">
+                            <MudButton Variant="Variant.Filled" Color="Color.Primary" id="choose-folder"
+                                       StartIcon="@Icons.Material.Rounded.FolderOpen" OnClick="ConnectFolder">
+                                Choose a folder
+                            </MudButton>
+                            <MudText Typo="Typo.caption" HtmlTag="p" Class="mt-3 muted">
+                                The record lives in a folder of yours, and <strong>your assistant can read
+                                it</strong> &mdash; that is what the MCP server reads. This is the one that
+                                makes the app worth having.
+                            </MudText>
+                        </MudPaper>
+                    </MudItem>
+                }
+                @if (browserStorageSupported == true)
+                {
+                    <MudItem xs="12" md="6">
+                        <MudPaper Elevation="0" Outlined="true" Class="pa-4 h-100">
+                            <MudButton Variant="Variant.Outlined" Color="Color.Primary" id="use-browser-storage"
+                                       StartIcon="@Icons.Material.Rounded.Storage" OnClick="UseBrowserStorage">
+                                @(installedApp ? "Save inside this app" : "Save in this browser")
+                            </MudButton>
+                            <MudText Typo="Typo.caption" HtmlTag="p" Class="mt-3 muted">
+                                It survives closing, but it is <strong>not a folder of yours</strong> and your
+                                assistant <strong>cannot read it</strong>. The folder picker is desktop
+                                Chromium only, so this is the fallback, not an equal choice.
+                            </MudText>
+                        </MudPaper>
+                    </MudItem>
+                }
+            </MudGrid>
+        }
+
+        <div class="mt-4">
+            <MudButton Variant="Variant.Text" Color="Color.Default" id="open-without-saving"
+                       OnClick="Open">Open without saving anything</MudButton>
+        </div>
+    </MudPaper>
+}
+else
+{
+    <MudPaper Elevation="0" Outlined="true" Class="pa-4 mb-4 plate" id="vehicle">
+        <div class="plate__id">
+            <MudAvatar Color="Color.Primary" Variant="Variant.Filled" Rounded="true" Size="Size.Medium">
+                <MudIcon Icon="@Icons.Material.Rounded.DirectionsCar" />
+            </MudAvatar>
+            <div>
+                <MudText Typo="Typo.h6" Class="plate__title">My maintenance schedule</MudText>
+                <span class="mono muted">VIN @vin</span>
+                <span class="muted"> &middot; </span>
+                <span class="muted">
+                    @(evaluatedUpTo.Length > 0 ? $"as of {evaluatedUpTo}" : "not evaluated yet")
+                </span>
+            </div>
+        </div>
+
+        <div class="actions">
+            <MudButton Variant="Variant.Filled" Color="Color.Primary" id="refresh"
+                       StartIcon="@Icons.Material.Rounded.CloudSync" OnClick="Refresh" Disabled="@refreshing">
+                @(refreshing ? "Refreshing…" : "Refresh")
+            </MudButton>
+        </div>
+    </MudPaper>
+
+    @if (state.NeedsRegrant)
+    {
+        <MudAlert Severity="Severity.Error" Variant="Variant.Filled" Class="mb-4" id="needs-regrant">
+            <div class="alert-row">
+                <div>
+                    <strong>Your folder &laquo;@state.FolderName&raquo; is read-only for this app.</strong>
+                    The browser grants permission to <em>write</em> separately from letting you pick the
+                    folder, and it withdraws it when you reopen the app. Until you grant it again,
+                    <strong>nothing you do here is being saved</strong> and your assistant is reading an
+                    older version.
+                </div>
+                <MudButton Variant="Variant.Filled" Color="Color.Default" id="regrant"
+                           StartIcon="@Icons.Material.Rounded.LockOpen" OnClick="RequestPermission">
+                    Grant write access
+                </MudButton>
+            </div>
+        </MudAlert>
+    }
+    else if (!state.HasFolder)
+    {
+        <MudAlert Severity="Severity.Warning" Variant="Variant.Filled" Class="mb-4" id="not-saving">
+            <div class="alert-row">
+                <div>
+                    <strong>Nothing is being saved.</strong>
+                    No record of yours is kept &mdash; what you see is re-fetched every time you open
+                    the app.
+                </div>
+                @if (pickerSupported == true)
+                {
+                    <MudButton Variant="Variant.Filled" Color="Color.Default" id="choose-folder"
+                               StartIcon="@Icons.Material.Rounded.FolderOpen" OnClick="ConnectFolder">
+                        Choose a folder
+                    </MudButton>
+                }
+                else if (browserStorageSupported == true)
+                {
+                    <MudButton Variant="Variant.Filled" Color="Color.Default" id="use-browser-storage"
+                               StartIcon="@Icons.Material.Rounded.Storage" OnClick="UseBrowserStorage">
+                        Save in this browser
+                    </MudButton>
+                }
+                else
+                {
+                    <span>
+                        This browser offers neither a folder picker nor its own storage, so there is
+                        nothing to attach. Open this app in Chrome or Edge directly.
+                    </span>
+                }
+            </div>
+        </MudAlert>
+    }
+    else if (state.SavingIsFailing.Length > 0)
+    {
+        <MudAlert Severity="Severity.Error" Variant="Variant.Filled" Class="mb-4" id="saving-failing">
+            <div class="alert-row">
+                <div>
+                    <strong>The folder refused the write.</strong>
+                    What you see is <strong>not</strong> saved in &laquo;@state.FolderName&raquo;. It is usually
+                    the permission, which expires when you reopen the app.
+                    <div class="mono alert-detail mt-1">@state.SavingIsFailing</div>
+                </div>
+                <MudButton Variant="Variant.Filled" Color="Color.Default" id="regrant"
+                           StartIcon="@Icons.Material.Rounded.LockOpen" OnClick="RequestPermission">
+                    Grant permission again
+                </MudButton>
+            </div>
+        </MudAlert>
+    }
+    else if (state.InBrowserStorage)
+    {
+        <MudText Typo="Typo.caption" HtmlTag="p" Class="muted mb-4" id="in-browser-storage">
+            <MudIcon Icon="@Icons.Material.Rounded.Storage" Size="Size.Small" Class="inline-icon" />
+            @(installedApp ? "Saving inside this app" : "Saving in this browser") &mdash; your assistant
+            cannot read it.
+            <MudLink Typo="Typo.caption" Class="ml-1" id="why-browser-storage"
+                     OnClick="@(() => whyBrowserStorage = !whyBrowserStorage)">
+                @(whyBrowserStorage ? "hide" : "why?")
+            </MudLink>
+            @if (whyBrowserStorage)
+            {
+                <span class="disclosure">
+                    Your record survives closing, but it lives in this browser's private storage. Your
+                    assistant reads a <strong>folder of yours</strong>, from outside the browser, and
+                    @(installedApp ? "here" : "this browser") does not allow one.
+                </span>
+            }
+        </MudText>
+    }
+    else
+    {
+        <MudText Typo="Typo.caption" HtmlTag="p" Class="muted mb-4" id="in-own-folder">
+            <MudIcon Icon="@Icons.Material.Rounded.Check" Size="Size.Small" Class="inline-icon" />
+            Saved to &laquo;@state.FolderName&raquo; after every change.
+        </MudText>
+    }
+
+    @if (state.DealershipUnreachable.Length > 0)
+    {
+        <MudAlert Severity="Severity.Warning" Variant="Variant.Filled" Class="mb-4" id="dealership-unreachable">
+            <div class="alert-row">
+                <div>
+                    <strong>This is your own record, not today's news from the dealership.</strong>
+                    The app could not reach it when it opened, so anything the dealership sent since the
+                    last time is not here yet. Everything below is what your record already holds.
+                    <div class="mono alert-detail mt-1">@state.DealershipUnreachable</div>
+                </div>
+                <MudButton Variant="Variant.Filled" Color="Color.Default" id="retry-dealership"
+                           StartIcon="@Icons.Material.Rounded.Refresh" OnClick="Refresh">
+                    Try again
+                </MudButton>
+            </div>
+        </MudAlert>
+    }
+
+    @if (state.EvaluationSkipped.Length > 0)
+    {
+        <MudAlert Severity="Severity.Warning" Variant="Variant.Outlined" Class="mb-4" id="evaluation-skipped">
+            <strong>This is not today's reading.</strong> @state.EvaluationSkipped
+        </MudAlert>
+    }
+
+    <MudGrid Spacing="3" Class="mb-2">
+        <MudItem xs="12" md="6">
+            @if (nextDue.Length > 0)
+            {
+                <MudPaper Elevation="0" Outlined="true" Class="pa-4 verdict verdict--attention h-100" id="next-due">
+                    <MudText Typo="Typo.overline" Class="muted">Next due</MudText>
+                    <div class="verdict__line">
+                        <MudIcon Icon="@Icons.Material.Rounded.Schedule" Color="Color.Warning" Size="Size.Large" />
+                        <MudText Typo="Typo.h5">@Spaced(nextDue)</MudText>
+                    </div>
+                </MudPaper>
+            }
+            else
+            {
+                <MudPaper Elevation="0" Outlined="true" Class="pa-4 verdict h-100" id="next-due">
+                    <MudText Typo="Typo.overline" Class="muted">Next due</MudText>
+                    <div class="verdict__line">
+                        <MudIcon Icon="@Icons.Material.Rounded.CheckCircle" Color="Color.Success" Size="Size.Large" />
+                        <MudText Typo="Typo.h5">Nothing is due right now.</MudText>
+                    </div>
+                </MudPaper>
+            }
+        </MudItem>
+
+        <MudItem xs="4" md="2">
+            <MudPaper Elevation="0" Outlined="true" Class="pa-4 stat h-100" id="stat-overdue">
+                <div class="stat__value stat__value--error">@overdue</div>
+                <div class="stat__label">Overdue</div>
+            </MudPaper>
+        </MudItem>
+        <MudItem xs="4" md="2">
+            <MudPaper Elevation="0" Outlined="true" Class="pa-4 stat h-100" id="stat-due">
+                <div class="stat__value stat__value--warning">@due</div>
+                <div class="stat__label">Due</div>
+            </MudPaper>
+        </MudItem>
+        <MudItem xs="4" md="2">
+            <MudPaper Elevation="0" Outlined="true" Class="pa-4 stat h-100" id="stat-missed">
+                <div class="stat__value">@missed</div>
+                <div class="stat__label">Missed maintenance</div>
+            </MudPaper>
+        </MudItem>
+    </MudGrid>
+
+    <MudText Typo="Typo.caption" HtmlTag="p" Class="muted mono mb-6" id="summary">
+        @due due &middot; @overdue overdue &middot; @missed missed maintenance &middot;
+        read up to event @lastEvent
+    </MudText>
+
+    <div class="board-head">
+        <MudText Typo="Typo.h6">The nine operations</MudText>
+        <MudText Typo="Typo.caption" HtmlTag="p" Class="muted" id="who-keeps-this">
+            Your dealership keeps this record and is the only one who changes it. Here you read it.
+        </MudText>
+    </div>
+
+    <MudTable T="string" Items="@AppState.TheNineKinds" Hover="true" Elevation="0" Outlined="true"
+              Breakpoint="Breakpoint.Sm" Class="board" id="board">
+        <HeaderContent>
+            <MudTh>Operation</MudTh>
+            <MudTh>State</MudTh>
+            <MudTh>Why</MudTh>
+            <MudTh Style="width:96px">Times put off</MudTh>
+        </HeaderContent>
+        <RowTemplate Context="kind">
+            <MudTd DataLabel="Operation" id="@("row-" + kind)">
+                <span class="op-name">@Spaced(kind)</span>
+            </MudTd>
+            <MudTd DataLabel="State">
+                <MudChip T="string" Size="Size.Small" Variant="Variant.Text"
+                         Color="@SotaventoTheme.ColorOf(board[kind])"
+                         Icon="@SotaventoTheme.IconOf(board[kind])"
+                         Class="@("state state--" + board[kind].ToLowerInvariant())">
+                    @board[kind]
+                </MudChip>
+            </MudTd>
+            <MudTd DataLabel="Why" Class="reason">@reasons[kind]</MudTd>
+            <MudTd DataLabel="Times put off">
+                <span class="mono">@deferrals[kind]</span>
+            </MudTd>
+        </RowTemplate>
+    </MudTable>
+
+    @if (showInstrument)
+    {
+        <MudExpansionPanels Elevation="0" Class="mt-8" id="instrument">
+            <MudExpansionPanel Text="What this app is doing" Dense="true">
+                <ul class="mono instrument">
+                    <li id="i-entries">journal entries: @entries</li>
+                    <li id="i-memfs">memfs: @memfsFiles files, @memfsBytes bytes</li>
+                    <li id="i-mode">destination: @Destination()</li>
+                    <li id="i-permission">permission: @permission</li>
+                    <li id="i-dealership">dealership: @state.WhereTheDealershipIs</li>
+                    <li id="i-credential">credential stored: @hasCredential</li>
+                    <li id="i-message">last: @state.LastMessage</li>
+                </ul>
+            </MudExpansionPanel>
+        </MudExpansionPanels>
+    }
+}
+
+@code {
+    private bool? pickerSupported;
+    private bool? browserStorageSupported;
+    private string noStorage = "";
+    private bool installedApp;
+    private bool refreshing;
+
+    private bool whyBrowserStorage;
+    private bool showInstrument;
+
+    private bool errorDetail;
+
+    private string vin = "";
+    private string evaluatedUpTo = "";
+    private string nextDue = "";
+    private int due;
+    private int overdue;
+    private int missed;
+    private long lastEvent;
+    private long entries;
+    private int memfsFiles;
+    private long memfsBytes;
+    private string permission = "";
+    private bool hasCredential;
+
+    private Dictionary<string, string> board = Empty();
+    private Dictionary<string, string> reasons = Empty();
+    private Dictionary<string, int> deferrals = NoDeferralsYet();
+
+    private string error = "";
+    private string destinationProblem = "";
+
+    protected override async Task OnInitializedAsync()
+    {
+        pickerSupported = await state.PickerIsSupportedAsync();
+        browserStorageSupported = await state.BrowserStorageIsSupportedAsync();
+        installedApp = await state.RunsAsInstalledAppAsync();
+
+        showInstrument = new Uri(nav.Uri).Query.Contains("instrument", StringComparison.OrdinalIgnoreCase);
+
+        noStorage = await state.WhyThereIsNoStorageAsync() switch
+        {
+            "inseguro" => "insecure",
+            "navegador" => "browser",
+            _ => "",
+        };
+
+        if (state.IsUp) { await Reread(); return; }
+
+        if (await state.RememberedModeAsync() == "opfs" && browserStorageSupported == true)
+        {
+            if ((await state.UseBrowserStorageAsync()).Ok) { await Open(); return; }
+        }
+
+        if (pickerSupported != true) return;
+
+        FolderResult recovered = await state.RecoverFolderAsync();
+
+        if (recovered.Ok) await Open();
+    }
+
+    private Task ConnectFolder() => Try("choose a folder", async () =>
+        await OpenOrSay(await state.ConnectFolderAsync(), "choose that folder"));
+
+    private Task RequestPermission() => Try("grant permission to the folder", async () =>
+        await OpenOrSay(await state.RequestPermissionAsync(), "get write permission on that folder"));
+
+    private Task UseBrowserStorage() => Try("save in this browser", async () =>
+        await OpenOrSay(await state.UseBrowserStorageAsync(), "use this browser's storage"));
+
+    private async Task OpenOrSay(FolderResult result, string whatItWasTrying)
+    {
+        if (result.Ok)
+        {
+            destinationProblem = "";
+            await state.StartAsync();
+            await Reread();
+            return;
+        }
+
+        destinationProblem = result.Permission == "denied"
+            ? $"The browser refused to {whatItWasTrying}, without asking you. Two things do that, and "
+              + "they are fixed in different places. Either this site's file-editing permission is "
+              + "blocked — open the padlock next to the address, reset this site's permissions, reload, "
+              + "and pick the folder again — or this browser does not grant file editing at all, which "
+              + "is normal for an in-app or embedded browser. If there is no padlock to open, it is the "
+              + "second one: open this app in Chrome or Edge directly and the folder will work there."
+            : $"Could not {whatItWasTrying}. The browser said: "
+              + (result.Reason.Length > 0 ? result.Reason : result.Permission);
+    }
+
+    private Task ForgetFolder() => Try("forget the saved folder", async () =>
+    {
+        await state.ForgetTheFolderAsync();
+        destinationProblem = "";
+    });
+
+    private Task Open() => Try("open the app", async () =>
+    {
+        await state.StartAsync();
+        await Reread();
+    });
+
+    private Task Refresh() => Try("refresh against the dealership", async () =>
+    {
+        refreshing = true;
+        try { await state.RefreshAsync(); }
+        finally { refreshing = false; await Reread(); }
+    });
+
+    private async Task Try(string step, Func<Task> action)
+    {
+        error = "";
+
+        errorDetail = false;
+        try
+        {
+            await action();
+        }
+        catch (Exception ex)
+        {
+            var detail = new System.Text.StringBuilder($"Step: {step}\n{ex.GetType().FullName}: {ex.Message}");
+            for (Exception inner = ex.InnerException; inner is not null; inner = inner.InnerException)
+                detail.Append($"\n  cause: {inner.GetType().FullName}: {inner.Message}");
+            error = detail.ToString();
+        }
+        finally
+        {
+            StateHasChanged();
+        }
+    }
+
+    private async Task Reread()
+    {
+        vin = state.ReadVin();
+        due = state.CountDue();
+        overdue = state.CountOverdue();
+        missed = state.MissedCount();
+        lastEvent = state.LastEventApplied();
+        evaluatedUpTo = state.EvaluatedUpTo();
+        nextDue = state.NextDueKind();
+        entries = state.JournalEntries();
+        hasCredential = state.HasCredential();
+
+        var states = new Dictionary<string, string>();
+        var why = new Dictionary<string, string>();
+        var used = new Dictionary<string, int>();
+        foreach (string kind in AppState.TheNineKinds)
+        {
+            states[kind] = state.ReadDueState(kind);
+            why[kind] = state.ReadDueReason(kind);
+            used[kind] = state.DeferralsUsed(kind);
+        }
+        board = states;
+        reasons = why;
+        deferrals = used;
+
+        (memfsFiles, memfsBytes) = state.MemfsState();
+        permission = await state.CurrentPermissionAsync();
+    }
+
+    private string Destination() => state.Mode switch
+    {
+        "carpeta" => $"your folder ({state.FolderName})",
+        "opfs" => "this browser's storage",
+        _ => "none",
+    };
+
+    private static Dictionary<string, string> Empty() => EveryKindStartsAt("");
+
+    private static Dictionary<string, int> NoDeferralsYet()
+    {
+        var start = new Dictionary<string, int>();
+        foreach (string kind in AppState.TheNineKinds) start[kind] = 0;
+        return start;
+    }
+
+    private static Dictionary<string, string> EveryKindStartsAt(string value)
+    {
+        var start = new Dictionary<string, string>();
+        foreach (string kind in AppState.TheNineKinds) start[kind] = value;
+        return start;
+    }
+
+    private static string Spaced(string name)
+    {
+        if (name.Length == 0) return name;
+
+        var spaced = new System.Text.StringBuilder(name.Length + 4);
+        spaced.Append(name[0]);
+        for (int i = 1; i < name.Length; i++)
+        {
+            if (char.IsUpper(name[i])) spaced.Append(' ').Append(char.ToLowerInvariant(name[i]));
+            else spaced.Append(name[i]);
+        }
+        return spaced.ToString();
+    }
+}

@@ -76,7 +76,7 @@ namespace Examenes.Dominio
 
 		// De donde partio y a donde va. La partida solo aparece si hubo episodio: sin el,
 		// no hay barra de progreso que dibujar, hay un valor.
-		public override IReadOnlyList<ReferenciaDeLectura> Referencias(int edad)
+		public override IReadOnlyList<ReferenciaDeLectura> Referencias(Paciente paciente)
 		{
 			var lineas = new List<ReferenciaDeLectura>();
 			if (Ultimo == null) return lineas;
@@ -95,16 +95,17 @@ namespace Examenes.Dominio
 
 		// ---------------------------------------------------------------- la lectura
 
-		public override Interpretacion Interpretar(int edad)
+		protected override Interpretacion Leer(Paciente paciente)
 		{
 			EvaluacionDeTendencia hechos = Evaluar();
 			if (!hechos.HaySerie) return Interpretacion.SinSerie(hechos);
 
 			if (hechos.Tendencia.SugiereRepetirElExamen)
-				return new Interpretacion(Veredicto.ProbableErrorDeMedicion, Severidad.Seguimiento,
+				return new Interpretacion(Veredicto.ProbableErrorDeMedicion, Severidad.Vigilar,
 					$"pasó de {hechos.ValorInicial} a {hechos.ValorFinal} {hechos.Unidad} en "
 					+ $"{hechos.DiasTranscurridos} día{(hechos.DiasTranscurridos == 1 ? "" : "s")}, "
-					+ "que no es un cambio que el cuerpo pueda hacer en ese tiempo", hechos);
+					+ "que no es un cambio que el cuerpo pueda hacer en ese tiempo", hechos,
+					Accion.RepetirElExamen(Plazo.EstaSemana));
 
 			// EL CASO DE ALVARO, y va antes que la comparacion contra el rango a
 			// proposito: fuera de rango y malo son dos ejes distintos. Si esto estuviera
@@ -119,19 +120,21 @@ namespace Examenes.Dominio
 					$"{desde}vas bien: {meta.Expresada}", hechos);
 			}
 
-			bool enRango = Ultima.EsNormalPara(edad);
+			bool enRango = Ultima.EsNormalPara(paciente);
 
 			if (!Ultima.EsCambioReal(hechos.Cambio))
 				return enRango
 					? new Interpretacion(Veredicto.Estable, Severidad.Informativo,
 						$"se mantiene en {Ultima.Valor.Expresado}, dentro de lo deseable", hechos)
-					: new Interpretacion(Veredicto.Estable, Severidad.ConsultaMedica,
-						$"lleva tiempo en {Ultima.Valor.Expresado}, por encima de lo deseable", hechos);
+					: new Interpretacion(Veredicto.Estable, Severidad.ConsultePronto,
+						$"lleva tiempo en {Ultima.Valor.Expresado}, por encima de lo deseable", hechos,
+						Accion.MostrarleEstoATuMedico(Plazo.EsteMes));
 
 			if (enRango)
-				return new Interpretacion(Veredicto.Empeorando, Severidad.Seguimiento,
+				return new Interpretacion(Veredicto.Empeorando, Severidad.Vigilar,
 					$"subió de {hechos.ValorInicial} a {hechos.ValorFinal} {hechos.Unidad} en "
-					+ $"{hechos.DiasTranscurridos} días, todavía dentro de lo deseable", hechos);
+					+ $"{hechos.DiasTranscurridos} días, todavía dentro de lo deseable", hechos,
+					Accion.ConversarloConTuMedico(Plazo.EnLaProximaCita));
 
 			// LA EDAD MODULA, y es otra cosa que el rango solo no dice. Alvaro: "quizas a
 			// Pleitez, por la edad, hoy estas mal. Bueno, si, pero se le cura haciendo
@@ -142,13 +145,14 @@ namespace Examenes.Dominio
 			// alguien mayor. La historia previa buena no cambia ninguno de los dos.
 			MetaDeColesterol objetivo = Meta();
 
-			return edad < EdadEnQuePesaMas
-				? new Interpretacion(Veredicto.Empeorando, Severidad.Seguimiento,
+			return paciente.Edad < EdadEnQuePesaMas
+				? new Interpretacion(Veredicto.Empeorando, Severidad.Vigilar,
 					$"subió a {Ultima.Valor.Expresado}. A tu edad esto se corrige, y {objetivo.ComoObjetivo}",
-					hechos)
-				: new Interpretacion(Veredicto.Empeorando, Severidad.ConsultaMedica,
+					hechos, Accion.ConversarloConTuMedico(Plazo.EnLaProximaCita))
+				: new Interpretacion(Veredicto.Empeorando, Severidad.ConsultePronto,
 					$"subió de {hechos.ValorInicial} a {hechos.ValorFinal} {hechos.Unidad} en "
-					+ $"{hechos.DiasTranscurridos} días. {Mayuscula(objetivo.ComoObjetivo)}", hechos);
+					+ $"{hechos.DiasTranscurridos} días. {Mayuscula(objetivo.ComoObjetivo)}", hechos,
+					Accion.MostrarleEstoATuMedico(Plazo.EsteMes));
 		}
 
 		private static string Mayuscula(string frase) =>

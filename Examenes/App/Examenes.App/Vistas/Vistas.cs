@@ -94,10 +94,12 @@ namespace Examenes.App.Vistas
 	// dominio, no de una pantalla.
 	public sealed class LoMasUrgente
 	{
-		// "informativo", "seguimiento", "consulta medica", "atencion inmediata".
+		// "informativo", "vigilar", "consulte pronto", "urgente". Es el vocabulario del
+		// semáforo de la marca, unificado en el dominio.
 		public string Severidad { get; init; } = "";
 
-		// Qué hacer, del conjunto cerrado. Vacío cuando no hay nada que hacer.
+		// Qué hacer y cuándo, ya dicho entero: "mostrále esto a tu médico este mes".
+		// Del conjunto cerrado, con plazo. Vacío cuando no hay nada que hacer.
 		public string Accion { get; init; } = "";
 
 		public bool PideAlgo { get; init; }
@@ -175,11 +177,57 @@ namespace Examenes.App.Vistas
 		// La lectura en una linea, escrita por el analito.
 		public string ParaSonia { get; init; } = "";
 
-		// Que hacer. Vacio cuando no hay nada que hacer, que es la mayoria de las veces.
+		// Que hacer y cuando, ya dicho entero. Vacio cuando no hay nada que hacer, que
+		// es la mayoria de las veces.
 		public string Accion { get; init; } = "";
+
+		// Contra que se lee el valor: "hasta 4.5 ng/mL". Ningun numero va solo en
+		// pantalla, y la referencia la dice el analito, no la UI.
+		public string ReferenciaLegible { get; init; } = "";
 
 		public bool PideAlgo { get; init; }
 		public bool SugiereRepetirElExamen { get; init; }
+
+		// LOS DOS DE LA APLICABILIDAD, y son dos y no uno porque no se muestran igual:
+		//
+		//   NoLeCorresponde  la tarjeta NO EXISTE. Ni atenuada, ni con una nota.
+		//   RequiereElSexo   la tarjeta existe, con su valor y SIN veredicto.
+		//
+		// Que viajen como booleanos y no como una comparacion contra el nombre del
+		// veredicto es lo mismo que ya hace PideAlgo: la pantalla no compara cadenas
+		// contra vocabulario del dominio.
+		public bool NoLeCorresponde { get; init; }
+		public bool RequiereElSexo { get; init; }
+	}
+
+	// EL DATO QUE FALTA. Es lo que alimenta el bloque que insiste, y viene entero del
+	// dominio: el conteo sale de recorrer cada serie e interpretarla, y la frase de saber
+	// por que falta cada una.
+	//
+	// La pantalla pone los dos botones y nada mas. No compone el texto, no cuenta los
+	// resultados y no decide la severidad — que es informativo, siempre, porque esto no
+	// habla de la salud de nadie: habla de un dato que la app no tiene.
+	public sealed class FaltaElSexoDelPaciente
+	{
+		// Si hay que insistir. Falso cuando el sexo ya se sabe Y tambien cuando, sin
+		// saberse, no dejo ningun resultado sin leer: pedir un dato sin poder decir para
+		// que es el recordatorio generico que este diseno evita.
+		public bool HaceFalta { get; init; }
+
+		public int SinInterpretar { get; init; }
+
+		// El denominador: cuantos analitos con historia hay. "2 de tus 7".
+		public int Analitos { get; init; }
+
+		public string Severidad { get; init; } = "";
+
+		// La frase entera, escrita por el dominio.
+		public string ParaSonia { get; init; } = "";
+
+		// El porqué, en clave clínica. También viene del dominio: el encuadre del dato
+		// —parámetro clínico, no declaración de identidad— es una decisión suya, y dejarlo
+		// en un .razor lo pondría a un edit de distancia de convertirse en otra cosa.
+		public string PorQue { get; init; } = "";
 	}
 
 	// A QUE RITMO viene cambiando un analito. Vista aparte de TendenciaDeAnalito porque

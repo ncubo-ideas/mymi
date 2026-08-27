@@ -53,6 +53,32 @@ namespace Examenes.App
 			.PerformCommand();
 		}
 
+		// LO QUE LA PERSONA DICE DE SI MISMA. Procedencia TU, y por eso es un comando local
+		// y no un evento: nadie se lo publico, lo declaro ella.
+		//
+		// Es el comando que Alvaro pidio que la pantalla insista en conseguir, y con el
+		// pasa la cosa mas linda de todo este cambio: EN EL MOMENTO EN QUE ENTRA, TODO EL
+		// HISTORIAL SE VUELVE INTERPRETABLE. No hay que recalcular nada ni migrar eventos,
+		// porque el brief ya establecia que el rango de referencia NUNCA se guarda con la
+		// medicion —se calcula al consultar, porque depende de edad y sexo, que pueden
+		// cambiar—. Ocho tarjetas pasan de "requiere sexo" a un veredicto real, hacia atras
+		// en el tiempo, con un solo comando.
+		//
+		// Sin Check de idempotencia, y a proposito: esto NO viene de la narrativa del
+		// proveedor, viene de un boton. Volver a declarar el mismo sexo es una operacion
+		// legitima —la persona se corrige, cambia de opinion— y cada declaracion es un
+		// hecho fechado que el journal conserva.
+		public void DeclararSexo(string sexo)
+		{
+			ArgumentNullException.ThrowIfNullOrWhiteSpace(sexo);
+
+			app.Using("expediente.DeclararSexo(@sexo);")
+			.WithParameters(p => {
+				p["sexo", typeof(string)] = sexo;
+			})
+			.PerformCommand();
+		}
+
 		// Aplica UN evento como UN comando. Devuelve "" si entro, o el mensaje del Check
 		// si se rechazo.
 		//
@@ -131,6 +157,38 @@ namespace Examenes.App
 				p["unidad", typeof(string)]   = evento.Unidad;
 			})
 			.PerformCheckThenCommand();
+
+		// LO QUE PUBLICA EL LABORATORIO sobre el paciente. Procedencia INSTITUCION, y es un
+		// comando distinto de DeclararSexo porque es OTRO hecho: el journal guarda
+		// "expediente.PublicarSexo(...)" y al reproducirlo se sabe quien lo dijo sin
+		// desempaquetar nada. Los dos conviven y para interpretar gana la persona.
+		//
+		// Este SI lleva el Check de idempotencia y el checkpoint adentro del mismo comando,
+		// igual que los examenes: viene de la narrativa del proveedor y un redelivered no
+		// puede dejar entrada en el journal.
+		public string AplicarDatosDePaciente(DatosDePacienteActualizados evento)
+		{
+			ArgumentNullException.ThrowIfNull(evento);
+			if (evento.Evento <= 0)
+				throw new ArgumentOutOfRangeException(nameof(evento), evento.Evento,
+					"El numero de evento debe ser positivo.");
+
+			return app.Using(
+				scriptForChk: @"
+					Check(@evento > bitacora.UltimoEvento) Error 'evento ya procesado';
+				",
+				@"
+					{
+						expediente.PublicarSexo(@sexo);
+						bitacora.Avanzar(@evento);
+					}
+				")
+			.WithParameters(p => {
+				p["evento", typeof(long)]   = evento.Evento;
+				p["sexo",   typeof(string)] = evento.Sexo.Nombre;
+			})
+			.PerformCheckThenCommand();
+		}
 
 		// El colesterol fraccionado lleva DOS valores: LDL (el que forma la serie) y HDL.
 		private string ColesterolDetallado(ExamenAgregado evento) =>
@@ -253,6 +311,15 @@ namespace Examenes.App
 			}
 		}
 
+		// EL SEXO QUE GANA, y de donde salio cada afirmacion. Las tres viajan juntas porque
+		// la superficie las necesita juntas: para saber si insistir, para mostrar el estado
+		// actual, y para poder decir el conflicto en vez de esconderlo.
+		public string SexoDelPaciente() => Texto("expediente.Sexo.Nombre");
+
+		public string SexoDeclaradoPorLaPersona() => Texto("expediente.SexoDeclaradoPorLaPersona.Nombre");
+
+		public string SexoPublicadoPorLaInstitucion() => Texto("expediente.SexoPublicadoPorLaInstitucion.Nombre");
+
 		public long UltimoEventoProcesado()
 		{
 			using (RentedParameter alquilados = app.Actor.RentedParameters())
@@ -321,15 +388,34 @@ namespace Examenes.App
 		public string LoMasUrgente() =>
 			app.Using(@"
 				{
-					severidad = expediente.SeveridadMayor;
-					print severidad.Nombre severidad,
-						severidad.QueHacer accion,
-						severidad.PideAlgo pideAlgo;
+					urgencia = expediente.LoMasUrgente;
+					print urgencia.NombreDeLaSeveridad severidad,
+						urgencia.AccionLegible accion,
+						urgencia.PideAlgo pideAlgo;
 				}
 			")
 			.PerformQuery();
 
 		public LoMasUrgente Urgente() => ProyeccionDeVistas.Urgente(LoMasUrgente());
+
+		// EL DATO QUE FALTA, ya contado y ya dicho. Es lo que alimenta el bloque que
+		// insiste, y NO se puede armar en la pantalla: el conteo sale de recorrer cada
+		// serie e interpretarla, y la frase de saber por que falta cada una.
+		public string FaltaElSexo() =>
+			app.Using(@"
+				{
+					pedido = expediente.FaltaElSexo;
+					print pedido.HaceFalta haceFalta,
+						pedido.SinInterpretar sinInterpretar,
+						pedido.Analitos analitos,
+						pedido.NombreDeLaSeveridad severidad,
+						pedido.ParaSonia paraSonia,
+						pedido.ElPorQue porQue;
+				}
+			")
+			.PerformQuery();
+
+		public FaltaElSexoDelPaciente PedidoDeSexo() => ProyeccionDeVistas.PedidoDeSexo(FaltaElSexo());
 
 		// LOS PUNTOS DE LA SERIE, con su numero. Es lo que un grafico necesita y una tabla
 		// no: el cuadro historico los da ya convertidos a texto.
@@ -439,7 +525,7 @@ namespace Examenes.App
 						control.DiasQueFaltan diasQueFaltan,
 						control.EstaVencido estaVencido,
 						control.NombreDeLaSeveridad severidad,
-						control.QueHacer accion,
+						control.AccionLegible accion,
 						control.ParaSonia paraSonia;
 				}
 			")
@@ -521,9 +607,12 @@ namespace Examenes.App
 						lectura.NombreDeLaSeveridad severidad,
 						lectura.NombreDeLaForma forma,
 						lectura.ParaSonia paraSonia,
-						lectura.Accion accion,
+						lectura.AccionLegible accion,
+						lectura.ReferenciaLegible referencia,
 						lectura.PideAlgo pideAlgo,
-						lectura.SugiereRepetirElExamen sugiereRepetirElExamen;
+						lectura.SugiereRepetirElExamen sugiereRepetirElExamen,
+						lectura.NoLeCorresponde noLeCorresponde,
+						lectura.RequiereElSexo requiereElSexo;
 				}
 			")
 			.WithParameters(p => {
@@ -601,6 +690,7 @@ namespace Examenes.App
 			ArgumentNullException.ThrowIfNull(mensaje);
 
 			if (mensaje is ExamenAgregado agregado) return AplicarExamenAgregado(agregado);
+			if (mensaje is DatosDePacienteActualizados datos) return AplicarDatosDePaciente(datos);
 
 			throw new ArgumentException(
 				$"Esta app no tiene comando para un mensaje de tipo '{mensaje.Tipo}'. La ruta debio devolver null "

@@ -64,9 +64,11 @@ namespace Examenes.Dominio
 		public override DateTime FechaDeLaUltima => Ultima == null ? default : Ultima.Fecha;
 
 		// Para un binario, "hay algo que no deberia estar" es literal: que el hallazgo
-		// este presente hoy. No hace falta la edad, y eso esta bien: la firma es una sola
-		// para que el Expediente pregunte sin saber que forma tiene enfrente.
-		public override bool UltimaEsHallazgo(int edad) => Ultima != null && Ultima.EsHallazgo;
+		// este presente hoy. No hace falta nada de la persona —ni la edad ni el sexo— y eso
+		// esta bien: la firma es una sola para que el Expediente pregunte sin saber que
+		// forma tiene enfrente. Ninguno de los tres binarios del demo cambia con el sexo,
+		// y que el parametro llegue igual es lo que lo deja dicho.
+		public override bool UltimaEsHallazgo(Paciente paciente) => Ultima != null && Ultima.EsHallazgo;
 
 		// UNA TIRA DE PUNTOS EN EL TIEMPO, no una curva. Un binario no tiene eje vertical:
 		// tiene presencias y ausencias en fechas. Que sea su propia forma —y no la
@@ -78,8 +80,14 @@ namespace Examenes.Dominio
 		// meta, ni un piso. Devolver una lista vacia es la respuesta correcta, y es la
 		// razon de que las referencias sean una lista plana y no un record con campos que
 		// habria que llenar con ceros.
-		public override IReadOnlyList<ReferenciaDeLectura> Referencias(int edad) =>
+		public override IReadOnlyList<ReferenciaDeLectura> Referencias(Paciente paciente) =>
 			new List<ReferenciaDeLectura>();
+
+		// Un binario no tiene rango: su referencia es la polaridad. En los tres del demo
+		// lo esperable es negativo, y decirlo al lado del resultado es lo que le da a un
+		// "positivo" el mismo acompanamiento que la referencia le da a un 5.2.
+		public override string ReferenciaLegible(Paciente paciente) =>
+			Ultima == null ? "" : "lo esperable es negativo";
 
 		// LOS HECHOS DE LA SERIE. Cuantas pruebas, cuantas dieron positivas, y —la que
 		// importa— cuantas positivas hay SEGUIDAS al final.

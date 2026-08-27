@@ -236,8 +236,29 @@ namespace Examenes.App
 				Forma = Texto(raiz, "forma"),
 				ParaSonia = Texto(raiz, "paraSonia"),
 				Accion = Texto(raiz, "accion"),
+				ReferenciaLegible = Texto(raiz, "referencia"),
 				PideAlgo = Booleano(raiz, "pideAlgo"),
 				SugiereRepetirElExamen = Booleano(raiz, "sugiereRepetirElExamen"),
+				NoLeCorresponde = Booleano(raiz, "noLeCorresponde"),
+				RequiereElSexo = Booleano(raiz, "requiereElSexo"),
+			};
+		}
+
+		internal static FaltaElSexoDelPaciente PedidoDeSexo(string json)
+		{
+			if (string.IsNullOrWhiteSpace(json)) return new FaltaElSexoDelPaciente();
+
+			using JsonDocument documento = JsonDocument.Parse(json);
+			JsonElement raiz = documento.RootElement;
+
+			return new FaltaElSexoDelPaciente
+			{
+				HaceFalta = Booleano(raiz, "haceFalta"),
+				SinInterpretar = Entero(raiz, "sinInterpretar"),
+				Analitos = Entero(raiz, "analitos"),
+				Severidad = Texto(raiz, "severidad"),
+				ParaSonia = Texto(raiz, "paraSonia"),
+				PorQue = Texto(raiz, "porQue"),
 			};
 		}
 

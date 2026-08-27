@@ -57,11 +57,15 @@ namespace Examenes.Dominio
 	{
 		// Los sinonimos NO son adornos ni traducciones libres: son los encabezados con los
 		// que estos analitos aparecen impresos en reportes reales.
+		// EL UNICO CON REQUISITO ANATOMICO, y por eso el requisito entra por constructor:
+		// no es "si es hombre", es SI TIENE PROSTATA. Ver RequisitoAnatomico para por que
+		// el predicado correcto no es el sexo.
 		public static readonly AnalitoContinuo AntigenoProstatico = new AnalitoContinuo(
 			"Antigeno prostatico",
 			"Antígeno prostático",
 			UnidadDeMedida.NanogramosPorMililitro,
 			0m, 5000m,
+			RequisitoAnatomico.Prostata,
 			"PSA", "APE", "antigeno prostatico especifico");
 
 		public static readonly AnalitoContinuo ColesterolTotal = new AnalitoContinuo(
@@ -126,6 +130,28 @@ namespace Examenes.Dominio
 		// y hasta ahora este dominio no la podia tener.
 		public abstract bool FormaSerie { get; }
 
+		// QUE TIENE QUE TENER LA PERSONA para que este analito signifique algo. Ninguno
+		// para casi todos; el antigeno prostatico exige prostata.
+		//
+		// VIVE EN LA IDENTIDAD y no en el examen, y esa es la decision que hace que la
+		// correccion no sea un filtro de pantalla: la aplicabilidad es una propiedad de QUE
+		// SE MIDIO, independiente de que exista una medicion. Por eso la tool MCP puede
+		// contestar "este analito no te corresponde" de un antigeno del que ni siquiera hay
+		// serie, y por eso ninguna superficie puede olvidarse de preguntarlo.
+		public RequisitoAnatomico Requisito { get; private set; }
+
+		// SI ESTE ANALITO EXISTE PARA ESTA PERSONA. Tres respuestas y no dos: ver
+		// Aplicabilidad.
+		//
+		// El analito NO PREGUNTA POR EL SEXO —pregunta por su requisito, y el requisito
+		// pregunta por la anatomia—. Es lo que deja el modelo abierto a que la anatomia
+		// deje de derivarse del sexo sin tocar ningun analito.
+		public Aplicabilidad AplicaA(Paciente paciente)
+		{
+			ArgumentNullException.ThrowIfNull(paciente);
+			return Requisito.En(paciente);
+		}
+
 		private static readonly Analito[] todos =
 		{
 			AntigenoProstatico, ColesterolTotal, ColesterolLdl, ColesterolHdl, Hemoglobina,
@@ -143,10 +169,14 @@ namespace Examenes.Dominio
 
 		private readonly string[] sinonimos;
 
-		protected Analito(string nombre, string paraMostrar, string[] sinonimos)
+		protected Analito(string nombre, string paraMostrar, RequisitoAnatomico requisito,
+			string[] sinonimos)
 		{
+			ArgumentNullException.ThrowIfNull(requisito);
+
 			Nombre = nombre;
 			ParaMostrar = paraMostrar;
+			Requisito = requisito;
 			this.sinonimos = sinonimos ?? new string[0];
 		}
 

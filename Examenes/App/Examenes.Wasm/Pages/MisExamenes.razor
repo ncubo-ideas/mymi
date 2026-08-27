@@ -7,8 +7,26 @@
 
 <PageTitle>Mis exámenes</PageTitle>
 
+@* EL BLOQUE DE MARCA. La gota por la muestra, el círculo por el oráculo; solo trazo,
+   nunca relleno, y el nombre va acá y no solo en el subtítulo: cuando alguien descarga
+   la app desde la página del laboratorio, lo que se abre debe reconocerse en un
+   segundo. El SVG es el mismo de la página, a 40 px — sobre oscuro va en blanco, y el
+   blanco lo dice el token para que el manual viva en un solo lugar. *@
+<div class="marca">
+    <svg viewBox="0 0 40 40" xmlns="http://www.w3.org/2000/svg"
+         fill="none" stroke="var(--logo)" stroke-width="2.4" aria-hidden="true">
+        <circle cx="20" cy="20" r="18" />
+        <path d="M20 9c4.4 5.4 6.8 9.3 6.8 12.4A6.8 6.8 0 0 1 20 28.2a6.8 6.8 0
+                 0 1-6.8-6.8C13.2 18.3 15.6 14.4 20 9z" />
+    </svg>
+    <div>
+        <div class="marca-nombre">Laboratorio Clínico Delfos</div>
+        <div class="marca-claim">Al servicio de su salud desde 1987</div>
+    </div>
+</div>
+
 <h1 class="titular">Mis exámenes</h1>
-<p class="membrete"><b>Laboratorios Sotavento</b> &middot; tu expediente, en tu computadora.</p>
+<p class="membrete">Tu expediente, en tu computadora.</p>
 
 @* UN solo lugar para los errores, y arriba. Antes habia dos bloques -uno adentro del
    arranque y otro al final de la pagina- asi que un mismo fallo se veia dos veces, y
@@ -152,47 +170,72 @@ else
         oración que esta pantalla arme: sale del conjunto cerrado de `Severidad`, que es lo
         que impide que un .razor invente un consejo. Lo único que la pantalla escribe es el
         caso en que NO hay nada que hacer, y ahí no hay consejo que inventar.               *@
-    @* El @key sube en cada Releer y obliga a Blazor a RECREAR estos nodos. Sin él reusa
-       el mismo elemento, la animación de CSS no se vuelve a disparar, y apretar Refresh
+    @* EL @key VA EN EL CUERPO Y NO EN LA <section>, desde que Actualizar vive acá adentro.
+
+       El @key sube en cada Releer y obliga a Blazor a RECREAR estos nodos. Sin él reusa
+       el mismo elemento, la animación de CSS no se vuelve a disparar, y apretar Actualizar
        no produce ningún cambio visible cuando no entraron exámenes nuevos — o sea que el
        botón parecía no hacer nada. Medido: `getAnimations()[0].currentTime` se quedaba en
-       1000 y el nodo era idéntico. *@
-    <section class="portada @Tono()" @key="@($"portada-{redibujo}")">
-        <p class="portada-rotulo">tu expediente, hoy</p>
+       1000 y el nodo era idéntico.
 
-        @if (urgente.PideAlgo)
-        {
-            <p class="portada-titular">@Mayuscula(urgente.Accion).</p>
-            <div class="portada-cuales">
-                @foreach (InterpretacionDeAnalito lectura in LosQuePiden())
-                {
-                    <button class="portada-cual" @onclick="() => VerSerie(lectura.Analito)">
-                        @lectura.ParaMostrar
-                    </button>
-                }
-            </div>
-        }
-        else
-        {
-            <p class="portada-titular">Nada pide atención hoy.</p>
-        }
+       Pero si la sección ENTERA se recrea, también se recrea el botón que acabás de
+       apretar, y el foco de teclado se pierde en el reemplazo del nodo. Con el @key un
+       nivel más abajo la cabecera sobrevive al redibujo —el foco se queda donde estaba— y
+       el cuerpo se vuelve a animar exactamente igual que antes. *@
+    <section class="portada @Tono()">
+        @* ACTUALIZAR VIVE EN LA PORTADA, no en una fila suelta debajo. Es el botón que
+           vuelve a contestar la pregunta que contesta esta tarjeta: si el rótulo dice
+           «hoy», entonces «¿esto es de hoy?» pertenece acá y a ningún otro lado.
 
-        <div class="portada-pie">
-            <span><b>@cantidad</b> @(cantidad == 1 ? "examen" : "exámenes")</span>
-            <span><b>@ConSerie()</b> @(ConSerie() == 1 ? "analito con historia" : "analitos con historia")</span>
-            @if (Desde() is DateTime desde)
+           Suelto y en azul lleno tenía tres problemas: quedaba segundo en la pantalla sin
+           ser el segundo en importancia, le competía el ojo al titular —que es lo único
+           que alguien tiene que leer si no lee nada más—, y empujaba el aviso de que no se
+           está guardando nada a un tercer lugar que no le corresponde.
+
+           Lleva el trazo de contorno y no el de la acción principal porque no lo es: la
+           app se pone al día sola al abrir, así que esto es «volvé a chequear AHORA». *@
+        <div class="portada-cabeza">
+            <p class="portada-rotulo">tu expediente, hoy</p>
+            <button class="portada-releer" @onclick="Refrescar" disabled="@refrescando">
+                @(refrescando ? "Actualizando…" : "Actualizar")
+            </button>
+        </div>
+
+        <div class="portada-cuerpo" @key="@($"portada-{redibujo}")">
+            @if (urgente.PideAlgo)
             {
-                <span>desde <b>@desde.ToString("MMM yyyy", Cultura)</b></span>
+                <p class="portada-titular">@Mayuscula(urgente.Accion).</p>
+                <div class="portada-cuales">
+                    @foreach (InterpretacionDeAnalito lectura in LosQuePiden())
+                    {
+                        <button class="portada-cual" @onclick="() => VerSerie(lectura.Analito)">
+                            @lectura.ParaMostrar
+                        </button>
+                    }
+                </div>
             }
+            else
+            {
+                <p class="portada-titular">Nada pide atención hoy.</p>
+            }
+
+            <div class="portada-pie">
+                <span><b>@cantidad</b> @(cantidad == 1 ? "examen" : "exámenes")</span>
+                <span><b>@ConSerie()</b> @(ConSerie() == 1 ? "analito con historia" : "analitos con historia")</span>
+                @if (Desde() is DateTime desde)
+                {
+                    <span>desde <b>@desde.ToString("MMM yyyy", Cultura)</b></span>
+                }
+                @* «leído hasta el evento N» es el MISMO tipo de dato que el resto del pie
+                   —el registro de lo que se viene juntando— y por eso termina acá en vez
+                   de pegado al botón. Siguen relacionados donde importa: es el número que
+                   el botón mueve, está en la misma tarjeta, y ahora dejó de estar a la
+                   altura de los ojos, que es donde nunca tuvo que estar el número de
+                   evento de un journal. *@
+                <span>leído hasta el evento <b>@ultimoEvento</b></span>
+            </div>
         </div>
     </section>
-
-    <div class="fila" style="margin-bottom:18px">
-        <button class="boton" @onclick="Refrescar" disabled="@refrescando">
-            @(refrescando ? "Refrescando…" : "Refresh")
-        </button>
-        <span class="apunte mono">leído hasta el evento @ultimoEvento</span>
-    </div>
 
     @* Si la app no esta guardando, eso es lo MAS importante de la pantalla y va arriba,
        no en una nota al pie debajo de la tabla. Sin carpeta la app sigue funcionando
@@ -267,21 +310,74 @@ else
        Las frases se arman ACA, con los hechos que devuelve el dominio. El dominio no
        devuelve prosa, y por eso esta pantalla no puede mostrar un consejo de plantilla:
        dice "pasó de 200 a 280 mg/dL en 365 días", no "bajá las grasas". *@
+
+    @*  EL BLOQUE QUE INSISTE.
+
+        Álvaro: «la pantalla de la UI debería insistir que le diga el sexo cuando aún es
+        desconocido».
+
+        INSISTIR BIEN NO ES UN MODAL BLOQUEANTE en cada arranque. Es mostrar el valor
+        BLOQUEADO —igual que los tramos incompletos en el dominio de cargas—: la persona ve
+        qué se está perdiendo y el costo de no responder queda a la vista.
+
+        Tres cosas lo hacen funcionar mejor que un recordatorio, y las tres las trae el
+        DOMINIO, no esta pantalla:
+
+          1. es específico y cuantificado   «2 de tus 7 resultados», no «completá tu perfil»
+          2. explica el porqué en términos  la frase la escribe el dominio, que es el único
+             de ella                        que sabe por qué falta cada analito
+          3. se responde en un toque        acá sólo van los dos botones
+
+        SEVERIDAD INFORMATIVO: no es un hallazgo clínico y no se pinta de ámbar ni de rojo.
+        El semáforo está reservado para resultados. Va en neutro, arriba de «Cómo vienen
+        tus valores», y se puede COLAPSAR pero no descartar: eso es la insistencia.        *@
+    @if (pedido.HaceFalta)
+    {
+        <div class="pedido">
+            <div class="pedido-cabeza">
+                <span class="pedido-rotulo">falta un dato tuyo</span>
+                <button class="pedido-plegar" @onclick="() => pedidoPlegado = !pedidoPlegado">
+                    @(pedidoPlegado ? "Ver" : "Ocultar")
+                </button>
+            </div>
+
+            @if (!pedidoPlegado)
+            {
+                @* El texto NO se compone acá: sale entero del dominio, que es el único que
+                   sabe cuántos resultados quedan sin leer y por qué. *@
+                <p class="pedido-texto">@pedido.ParaSonia</p>
+                <p class="pedido-porque">@pedido.PorQue</p>
+                <div class="pedido-botones">
+                    <button class="boton" @onclick="@(() => Declarar("hombre"))">Soy hombre</button>
+                    <button class="boton" @onclick="@(() => Declarar("mujer"))">Soy mujer</button>
+                </div>
+            }
+        </div>
+    }
+
     @if (analitos.Count > 0)
     {
         <h2 class="seccion">Cómo vienen tus valores</h2>
         @foreach (TendenciaDeAnalito t in analitos)
         {
             <button class="serie" @key="@($"{t.Analito}-{redibujo}")" @onclick="() => VerSerie(t.Analito)">
+                @{ InterpretacionDeAnalito lectura = Lectura(t.Analito); }
                 <div class="serie-cabeza">
                     <div>
                         <span class="serie-nombre">@t.ParaMostrar</span>
                         <span class="chip @Insignia(t)">@t.Tendencia</span>
                         <div class="serie-relato">@Relato(t)</div>
                     </div>
-                    <div class="serie-valor">@Valor(t.ValorFinal) <span>@t.Unidad</span></div>
+                    <div>
+                        <div class="serie-valor">@Valor(t.ValorFinal) <span>@t.Unidad</span></div>
+                        @* NINGUN NUMERO SIN SU REFERENCIA. La escribe el dominio, no esta
+                           pantalla: sale del analito, que sabe que depende de la edad. *@
+                        @if (lectura.ReferenciaLegible.Length > 0)
+                        {
+                            <div class="serie-referencia">referencia: @lectura.ReferenciaLegible</div>
+                        }
+                    </div>
                 </div>
-                @{ InterpretacionDeAnalito lectura = Lectura(t.Analito); }
 
                 @* CADA ANALITO CON SU FORMA. El dominio dice cuál es -no la pantalla- y
                    acá solo se traduce a píxeles. Un antígeno se lee como trayectoria
@@ -290,7 +386,12 @@ else
                    tabla que Álvaro rechazó, un piso más arriba. *@
                 @* La trayectoria necesita serie; la meta y la banda se dibujan con un
                    solo punto, porque no hablan del tiempo sino de dónde estás parado. *@
-                @if (t.HaySerie || lectura.Forma != "trayectoria con linea base")
+                @* SIN VEREDICTO NO HAY DIBUJO. Las formas se dibujan CONTRA una referencia
+                   —la banda de la hemoglobina, el techo del antígeno— y esa referencia es
+                   justamente lo que depende del dato que falta. El valor sigue a la vista
+                   arriba; lo que se retiene es la lectura. *@
+                @if (!lectura.RequiereElSexo
+                     && (t.HaySerie || lectura.Forma != "trayectoria con linea base"))
                 {
                     @switch (lectura.Forma)
                     {
@@ -336,15 +437,21 @@ else
     @foreach (PresenciaDeAnalito p in presencias)
     {
         <button class="serie" @key="@($"{p.Analito}-{redibujo}")" @onclick="() => VerSerie(p.Analito)">
+            @{ InterpretacionDeAnalito suya = Lectura(p.Analito); }
             <div class="serie-cabeza">
                 <div>
                     <span class="serie-nombre">@p.ParaMostrar</span>
                     <span class="chip @Insignia(p)">@p.Presencia</span>
                     <div class="serie-relato">@Relato(p)</div>
                 </div>
-                <div class="serie-valor">@p.UltimoResultado</div>
+                <div>
+                    <div class="serie-valor">@p.UltimoResultado</div>
+                    @if (suya.ReferenciaLegible.Length > 0)
+                    {
+                        <div class="serie-referencia">@suya.ReferenciaLegible</div>
+                    }
+                </div>
             </div>
-            @{ InterpretacionDeAnalito suya = Lectura(p.Analito); }
 
             @if (p.HaySerie)
             {
@@ -370,7 +477,7 @@ else
        cuanto tuvieron serie, que es donde tenían que estar desde el principio. *@
     @foreach (FilaDelCuadro hallazgo in Hallazgos())
     {
-        <div class="aviso @(hallazgo.Severidad == "atencion inmediata" ? "aviso--problema" : "aviso--atencion")" style="margin-top:26px">
+        <div class="aviso @(hallazgo.Severidad == "urgente" ? "aviso--problema" : "aviso--atencion")" style="margin-top:26px">
             <strong>@hallazgo.ParaMostrar.</strong> @hallazgo.ParaSonia.
         </div>
     }
@@ -378,7 +485,7 @@ else
     <h2 class="seccion">Tu historial</h2>
     @if (examenes.Count == 0)
     {
-        <p class="apunte">Todavía no hay exámenes. Apretá <em>Refresh</em>.</p>
+        <p class="apunte">Todavía no hay exámenes. Apretá <em>Actualizar</em>.</p>
     }
     else
     {
@@ -414,6 +521,30 @@ else
         </ol>
     }
 
+    @*  EDITABLE DESPUÉS, sin fricción. §6.2 de la spec: una vez respondido, el bloque de
+        arriba desaparece y el dato tiene que seguir siendo corregible — y en clave
+        clínica, no de identidad.
+
+        Va al pie y en tono de apunte porque no es una acción de la app: es un ajuste. Con
+        el sexo todavía desconocido no aparece, porque de eso ya se ocupa el bloque que
+        insiste y dos pedidos del mismo dato en la misma pantalla se anulan.               *@
+    @if (!pedido.HaceFalta && sexo.Length > 0 && sexo != "desconocido")
+    {
+        <p class="apunte" style="margin-top:28px">
+            Tus resultados se comparan contra los rangos de <strong>@sexo</strong>.
+            @if (cambiandoSexo)
+            {
+                <button class="boton boton--enlace" @onclick="@(() => Declarar("hombre"))">hombre</button>
+                <text>·</text>
+                <button class="boton boton--enlace" @onclick="@(() => Declarar("mujer"))">mujer</button>
+            }
+            else
+            {
+                <button class="boton boton--enlace" @onclick="() => cambiandoSexo = true">Cambiar</button>
+            }
+        </p>
+    }
+
     @* La ventana de perdida se dice, porque esconderla seria vender durabilidad que no hay.
        El conteo de archivos y bytes de MEMFS era diagnostico mio, no informacion para el
        usuario, y se fue. *@
@@ -438,19 +569,28 @@ else
     private int fueraDeRango;
     private LoMasUrgente urgente = new();
 
+    // EL DATO QUE FALTA. Viene entero del dominio: cuántos resultados quedan sin leer,
+    // cuáles y la frase que lo explica. Esta pantalla decide UNA cosa —si está plegado— y
+    // eso sí es presentación.
+    private FaltaElSexoDelPaciente pedido = new();
+    private string sexo = "";
+    private bool pedidoPlegado;
+    private bool cambiandoSexo;
+
     // Sube en cada Releer. Es la llave que hace que Blazor recree las tarjetas en vez de
     // reusarlas, y con eso las formas se vuelven a dibujar: es la respuesta visible a
-    // haber apretado Refresh.
+    // haber apretado Actualizar.
     private int redibujo;
 
     // El tono de la portada lo decide el DOMINIO, no esta pantalla: es la severidad que
-    // salió de recorrer las series. Acá sólo se traduce a una clase de CSS.
+    // salió de recorrer las series, traducida con el mapeo del semáforo de la marca:
+    // verde informativo, ámbar para vigilar y consulte pronto, rojo reservado a urgente.
     private string Tono() => urgente.Severidad switch
     {
-        "atencion inmediata" => "portada--problema",
-        "consulta medica"    => "portada--atencion",
-        "seguimiento"        => "portada--seguimiento",
-        _                    => "portada--calma",
+        "urgente"         => "portada--problema",
+        "consulte pronto" => "portada--atencion",
+        "vigilar"         => "portada--atencion",
+        _                 => "portada--calma",
     };
 
     // Las series que piden LO MISMO que el expediente entero. Es una igualdad, no un
@@ -554,6 +694,20 @@ else
     });
 
 
+    // DECLARAR EL SEXO ES UN COMANDO, y por eso pasa por Intentar como cualquier otro: si
+    // la carpeta rechaza la escritura, la persona tiene que enterarse.
+    //
+    // Después del comando se relee TODO. No es exceso: al declararlo, el historial entero
+    // se vuelve interpretable de una vez —los rangos se computan al consultar, nunca se
+    // guardaron con la medición— así que cambian las tarjetas, el titular, el conteo y el
+    // historial. Releer parcialmente dejaría media pantalla del expediente viejo.
+    private Task Declarar(string cual) => Intentar("declarar tu sexo", async () =>
+    {
+        await estado.DeclararSexo(cual);
+        cambiandoSexo = false;
+        Releer();
+    });
+
     private Task Refrescar() => Intentar("refrescar contra el proveedor", async () =>
     {
         refrescando = true;
@@ -604,6 +758,8 @@ else
         cantidad = estado.Cantidad();
         fueraDeRango = estado.AnalitosFueraDeRango();
         urgente = estado.Urgente();
+        pedido = estado.PedidoDeSexo();
+        sexo = estado.SexoDelPaciente();
         redibujo++;
         ultimoEvento = estado.UltimoEvento();
 
@@ -804,13 +960,15 @@ else
             ? l
             : new InterpretacionDeAnalito();
 
-    // El chip sale de la SEVERIDAD que decidio el analito, no de un bool generico.
+    // El chip sale de la SEVERIDAD que decidio el analito, con el mapeo del semáforo:
+    // rojo solo para "urgente", que el dominio reserva.
     //
-    // El ambar sigue reservado para lo que exige atencion, y por eso "salto inverosimil"
-    // NO lo usa: no es una alarma clinica, es "repeti el examen".
+    // El ambar sigue sin usarse para "salto inverosimil": no es una alarma clinica, es
+    // "repeti el examen", y el chip neutro lo dice sin gritar.
     private string Insignia(PresenciaDeAnalito p)
     {
         InterpretacionDeAnalito lectura = Lectura(p.Analito);
+        if (lectura.Severidad == "urgente") return "chip--problema";
         if (lectura.PideAlgo) return "chip--atencion";
         if (!p.HaySerie) return "chip--sinserie";
         return "chip--estable";
@@ -820,6 +978,7 @@ else
     {
         InterpretacionDeAnalito lectura = Lectura(t.Analito);
         if (lectura.SugiereRepetirElExamen) return "chip--repetir";
+        if (lectura.Severidad == "urgente") return "chip--problema";
         if (lectura.PideAlgo) return "chip--atencion";
         if (!t.HaySerie) return "chip--sinserie";
         return "chip--estable";

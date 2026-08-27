@@ -13,6 +13,20 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <RootNamespace>EventosMock</RootNamespace>
     <AssemblyName>EventosMock</AssemblyName>
+
+    <!-- Este NO es el modulo: es el sistema del supermercado, del otro lado del HTTP. Se
+         distingue en el Product para que nadie lo confunda con la app de la persona. -->
+    <Product>La Guaria - sistemas internos</Product>
+    <AssemblyTitle>La Guaria - endpoint de eventos (mock)</AssemblyTitle>
+    <Description>Mock del servidor del supermercado: publica los eventos de compra del cliente, emite el token del device y lo rota, y expone el senuelo que devuelve 403 con el token valido de la app. Happy path, estado en memoria.</Description>
   </PropertyGroup>
 
+  <ItemGroup>
+    <!-- EL GUION VA AL LADO DEL EJECUTABLE. Lo genera generar-guion.py, que verifica los
+         invariantes del ecosistema antes de escribirlo; el mock solo lo lee. Va commiteado
+         a proposito: quien clona el repo tiene que poder correr la demo sin python. -->
+    <None Update="guion.json" CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
+
 </Project>
+

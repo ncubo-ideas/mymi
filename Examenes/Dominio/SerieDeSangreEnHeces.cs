@@ -5,10 +5,10 @@ namespace Examenes.Dominio
 	// LA SERIE DE LA SANGRE OCULTA EN HECES. Es la que justifica que los binarios tengan
 	// serie, porque es la unica del demo donde la HISTORIA cambia la conducta:
 	//
-	//   una vez positiva      -> Seguimiento      "conviene repetir el examen"
-	//   dos veces SEGUIDAS    -> ConsultaMedica   ya se repitio y volvio a salir
+	//   una vez positiva      -> Vigilar          "repetí el examen este mes"
+	//   dos veces SEGUIDAS    -> ConsultePronto   ya se repitio y volvio a salir
 	//
-	// SangreEnHeces.SeveridadDelHallazgo contesta Seguimiento siempre, y esta bien: una
+	// SangreEnHeces.SeveridadDelHallazgo contesta Vigilar siempre, y esta bien: una
 	// magnitud solo se ve a si misma. La que puede distinguir un dato suelto de un hecho
 	// confirmado es la serie, y no lo hace con un umbral generico sino con el criterio de
 	// ESTE analito: en otro, dos positivos no significarian lo mismo.
@@ -25,10 +25,10 @@ namespace Examenes.Dominio
 		//
 		// ⚠️ Orientativa. La periodicidad real depende de la edad y de los antecedentes,
 		// y conviene que la revise alguien con criterio de laboratorio.
-		public override int MesesHastaElProximo(int edad) =>
+		public override int MesesHastaElProximo(Paciente paciente) =>
 			Ultima != null && Ultima.EsHallazgo ? 3 : 12;
 
-		public override Interpretacion Interpretar(int edad)
+		protected override Interpretacion Leer(Paciente paciente)
 		{
 			EvaluacionDePresencia hechos = Evaluar();
 
@@ -39,7 +39,8 @@ namespace Examenes.Dominio
 			if (!HayMediciones) return Interpretacion.SinSerie(hechos);
 			if (!hechos.HaySerie)
 				return new Interpretacion(Veredicto.Indeterminado,
-					Ultima.Resultado.SeveridadDelHallazgo, Ultima.Resultado.ParaSonia, hechos);
+					Ultima.Resultado.SeveridadDelHallazgo, Ultima.Resultado.ParaSonia, hechos,
+					Ultima.Resultado.AccionDelHallazgo);
 
 			if (ReferenceEquals(hechos.Presencia, Presencia.NuncaAparecio))
 				return new Interpretacion(Veredicto.Estable, Severidad.Informativo,
@@ -47,14 +48,15 @@ namespace Examenes.Dominio
 					+ "apareció sangre en las heces", hechos);
 
 			if (ReferenceEquals(hechos.Presencia, Presencia.Persiste))
-				return new Interpretacion(Veredicto.Empeorando, Severidad.ConsultaMedica,
+				return new Interpretacion(Veredicto.Empeorando, Severidad.ConsultePronto,
 					$"la sangre en las heces apareció en las {hechos.PositivasSeguidas} pruebas "
-					+ "seguidas: ya no es un resultado suelto", hechos);
+					+ "seguidas: ya no es un resultado suelto", hechos,
+					Accion.MostrarleEstoATuMedico(Plazo.EsteMes));
 
 			if (ReferenceEquals(hechos.Presencia, Presencia.Aparecio))
-				return new Interpretacion(Veredicto.Empeorando, Severidad.Seguimiento,
+				return new Interpretacion(Veredicto.Empeorando, Severidad.Vigilar,
 					"apareció sangre en las heces por primera vez; muchas veces se debe a "
-					+ "algo común", hechos);
+					+ "algo común", hechos, Accion.RepetirElExamen(Plazo.EsteMes));
 
 			if (ReferenceEquals(hechos.Presencia, Presencia.NoConfirmado))
 				return new Interpretacion(Veredicto.HallazgoNoConfirmado, Severidad.Informativo,

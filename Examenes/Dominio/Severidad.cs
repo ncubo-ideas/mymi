@@ -2,68 +2,56 @@ using System;
 
 namespace Examenes.Dominio
 {
-	// QUE TIENE QUE HACER LA PERSONA. No que tan malo es el numero: que hacer.
+	// QUE TAN SERIO ES LO QUE SE VIO. Es el semaforo de la marca, con UN solo vocabulario.
 	//
-	// Es el pedido central del feedback de Alvaro, y el ejemplo con el que lo explico
-	// no deja lugar a dudas:
+	// Geaninna y Alvaro describieron LA MISMA COSA con nombres distintos -el documento de
+	// marca decia "vigilar" donde el brief decia "seguimiento"- y se adoptan los de ella:
+	// vienen del documento de marca y mapean directo a color.
 	//
 	//   sangre en las heces  -> puede ser algo comun, conviene revisarlo
 	//   sangre en la orina   -> hay que ver a un medico pronto
 	//
 	// Los dos hallazgos tienen la MISMA FORMA: un binario positivo, fuera de lo normal.
-	// Un modelo generico les pone la misma etiqueta y la misma frase. La accion que
-	// exigen es completamente distinta, y esa distincion es conocimiento clinico del
-	// analito, no una decision de pantalla.
+	// Un modelo generico les pone la misma etiqueta y la misma frase. Lo que exigen es
+	// completamente distinto, y esa distincion es conocimiento clinico del analito.
 	//
-	// POR QUE EL TEXTO DE LA ACCION VIVE ACA. La app decia "Conviene que lo vea tu
-	// medico" en la pantalla, con la frase escrita en el .razor, igual para el antigeno
-	// que para el colesterol. Eso es la receta ciega que Alvaro rechazo cuando hablo del
-	// carro: repetir la revision de frenos a los 10.000 km porque se hizo a los 5.000,
-	// sin mirar si hacia falta.
+	// LA REGLA DEL ROJO ES DE DOMINIO, no de diseno: Urgente esta RESERVADO para lo que
+	// de verdad no espera (una sangre en la orina). Si se usara para el colesterol,
+	// dejaria de significar algo — y por eso ningun analito continuo del demo lo produce.
 	//
-	// Poniendo la accion en el conjunto cerrado, la pantalla no puede inventarla: solo
-	// puede mostrar la que el analito eligio. Y no es prosa libre armada en cada llamada
-	// -eso si seria presentacion metida en el dominio-, son cuatro textos fijos, uno por
-	// inhabitante.
+	// QUE HACER ya no vive aca: vive en Accion, que ademas del que lleva el PLAZO, y el
+	// plazo depende del analito y de la magnitud del cambio, no solo de la severidad.
+	// Esta clase se queda con lo unico que es comun a todos: el orden.
 	//
 	// ORDENADA. Tiene peso porque hay que poder decir "lo mas urgente de todo el
 	// expediente", y comparar por peso es lo unico que permite ordenar cuatro cosas que
 	// no son numeros.
 	public sealed class Severidad
 	{
-		// Un dato. No hay nada que hacer con esto, y decir que si lo hay es ruido que
-		// entrena a la persona a ignorar los avisos que si importan.
-		public static readonly Severidad Informativo = new Severidad("informativo", 0, "");
+		// Un dato: valor en rango, o algo sin accion. Decir que hay algo que hacer con
+		// esto es ruido que entrena a la persona a ignorar los avisos que si importan.
+		public static readonly Severidad Informativo = new Severidad("informativo", 0);
 
-		// El hallazgo puede ser real o puede ser la medicion. Lo que corresponde es
-		// volver a medir, NO alarmarse: es la salida de la regla del intervalo corto.
-		public static readonly Severidad Seguimiento =
-			new Severidad("seguimiento", 1, "conviene repetir el examen");
+		// Fuera de rango o para mirar, sin urgencia. Cubre tambien el valor que hay que
+		// volver a medir: la salida de la regla del intervalo corto.
+		public static readonly Severidad Vigilar = new Severidad("vigilar", 1);
 
-		// Hay algo que un medico tiene que ver, y puede esperar a la proxima cita.
-		public static readonly Severidad ConsultaMedica =
-			new Severidad("consulta medica", 2, "mostráselo a tu médico en la próxima cita");
+		// Amerita cita, y la accion que acompana dice el plazo explicito.
+		public static readonly Severidad ConsultePronto = new Severidad("consulte pronto", 2);
 
-		// No espera a la proxima cita.
-		public static readonly Severidad AtencionInmediata =
-			new Severidad("atencion inmediata", 3, "buscá atención médica pronto");
+		// RESERVADO para lo que de verdad es urgente (ej. sangre en orina). Es el unico
+		// que la UI puede pintar de rojo.
+		public static readonly Severidad Urgente = new Severidad("urgente", 3);
 
+		// La etiqueta interna, sin acentos: con este texto se compara y se serializa, no
+		// se le habla a nadie — igual que Nombre en Tendencia.
 		public string Nombre { get; private set; }
-
-		// Que hacer, ya escrito como se le muestra a la persona -con acentos, como
-		// ParaMostrar en Analito-. Vacio en Informativo, y eso es una respuesta y no un
-		// faltante: la mayoria de los resultados no piden ninguna accion.
-		//
-		// Nombre, en cambio, es la etiqueta interna y va sin acentos, igual que en
-		// Tendencia: con ese texto se compara y se serializa, no se le habla a nadie.
-		public string QueHacer { get; private set; }
 
 		private readonly int peso;
 
-		private Severidad(string nombre, int peso, string queHacer)
+		private Severidad(string nombre, int peso)
 		{
 			Nombre = nombre;
-			QueHacer = queHacer;
 			this.peso = peso;
 		}
 

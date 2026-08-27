@@ -14,6 +14,9 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <RootNamespace>Compras.Mcp</RootNamespace>
     <AssemblyName>Compras.Mcp</AssemblyName>
+
+    <AssemblyTitle>Compras - la superficie que ve la IA</AssemblyTitle>
+    <Description>Servidor MCP de solo lectura sobre el diario de compras de la persona. Ocho consultas intencionales; las cuatro que importan miran lo que ninguna pantalla puede mostrar: lo que dejo de comprar, las garantias cuya ventana se cierra, la serie de un consumo mes a mes y su propia inflacion por unidad de medida. No escribe: nunca un comando, y ni siquiera la semilla.</Description>
   </PropertyGroup>
 
   <ItemGroup>
@@ -35,3 +38,4 @@
   </ItemGroup>
 
 </Project>
+

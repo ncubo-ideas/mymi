@@ -30,6 +30,31 @@ namespace Compras.Dominio
 			}
 		}
 
+		// La forma NUEVA: siete listas, con la presentacion de cada linea. Una compra que
+		// no dice como se vende cada cosa no puede contestar cuantos litros entraron.
+		public Compra(string numero, DateTime fecha, string[] skus, string[] descripciones,
+			int[] cantidades, decimal[] preciosUnitarios, string[] categorias, int[] mesesDeGarantia,
+			string[] presentaciones)
+			: this(numero, fecha, skus, descripciones, cantidades, preciosUnitarios, categorias, mesesDeGarantia)
+		{
+			ArgumentNullException.ThrowIfNull(presentaciones);
+			if (presentaciones.Length != skus.Length)
+				throw new ArgumentException(
+					$"Las presentaciones de la compra '{numero}' deben ser tantas como las lineas. "
+					+ $"skus={skus.Length}, presentaciones={presentaciones.Length}.",
+					nameof(presentaciones));
+
+			// Se rearman las lineas con su presentacion. El constructor viejo ya valido los
+			// largos y los valores, asi que aca solo falta lo que agrega esta forma.
+			items.Clear();
+			for (int i = 0; i < skus.Length; i++)
+				items.Add(new Item(skus[i], descripciones[i], cantidades[i], preciosUnitarios[i],
+					Categoria.Desde(categorias[i]), mesesDeGarantia[i], Presentacion.Desde(presentaciones[i])));
+		}
+
+		// La forma VIEJA, la que tienen los journals ya escritos. Se conserva a proposito:
+		// un historial escrito antes de que existiera la presentacion sigue reproduciendo
+		// igual, y sus lineas se leen como piezas sueltas.
 		public Compra(string numero, DateTime fecha, string[] skus, string[] descripciones,
 			int[] cantidades, decimal[] preciosUnitarios, string[] categorias, int[] mesesDeGarantia)
 		{

@@ -47,8 +47,14 @@ namespace Examenes.Dominio
 			new LecturaDeExamen(Examenes.Dominio.Analito.ColesterolHdl, Hdl),
 		};
 
-		public override RangoDeReferencia RangoPara(int edad) =>
-			RangoDeReferencia.HastaUnMaximoDe(edad >= 50 ? 100m : 130m, Suyo.Unidad);
+		// EL RANGO DEL LDL NO DEPENDE DEL SEXO. El de su HDL acompanante SI, y las dos
+		// cosas conviven en el mismo examen: ver PisoDelHdlPara, abajo. Es el ejemplo mas
+		// claro de que la regla no es plana ni siquiera dentro de un examen.
+		public override RangoDeReferencia RangoPara(Paciente paciente)
+		{
+			ArgumentNullException.ThrowIfNull(paciente);
+			return RangoDeReferencia.HastaUnMaximoDe(paciente.Edad >= 50 ? 100m : 130m, Suyo.Unidad);
+		}
 
 		public override decimal CambioMaximoVerosimilPorDia => 0.8m;
 
@@ -59,7 +65,8 @@ namespace Examenes.Dominio
 		// Igual que el colesterol total: en rango cada cinco anos, fuera todos los anos.
 		public override decimal MultiploQueNingunIntervaloJustifica => 4m;
 
-		public override int MesesHastaElProximo(int edad) => EsNormalPara(edad) ? 60 : 12;
+		public override int MesesHastaElProximo(Paciente paciente) =>
+			EsNormalPara(paciente) ? 60 : 12;
 
 		// ---------------------------------------------------------------- lo suyo
 
@@ -70,7 +77,37 @@ namespace Examenes.Dominio
 		// Es la DireccionDeseable.Subir del dominio hecha caso concreto, y el metodo que
 		// ningun otro analito tiene: nadie mas trae una fraccion acompanante que se lea
 		// al reves que el valor principal.
-		public bool HdlEsProtector => Hdl.Valor >= 40m;
+		//
+		// Y SU PISO DEPENDE DEL SEXO. Es el SEGUNDO analito con ese efecto —el otro es la
+		// hemoglobina— y el corte no es un detalle: un HDL de 45 protege en un hombre y no
+		// alcanza en una mujer. Mismo numero, lectura opuesta.
+		//
+		// Null cuando no se sabe el sexo, por la misma razon que el rango de la
+		// hemoglobina: dar el piso masculino "mientras tanto" le diria a la mitad de las
+		// personas que estan protegidas cuando no lo estan.
+		public decimal? PisoDelHdlPara(Paciente paciente)
+		{
+			ArgumentNullException.ThrowIfNull(paciente);
+
+			if (!paciente.SeSabeElSexo) return null;
+			return paciente.Sexo.EsElMismo(Sexo.Mujer) ? 50m : 40m;
+		}
+
+		// Si de esta persona se puede decir algo del HDL. Lo pregunta la serie antes de
+		// nombrarlo en su lectura: sin sexo, el LDL se sigue leyendo igual y lo unico que
+		// se calla es la coletilla sobre el acompanante.
+		public bool SeSabeSiElHdlAcompana(Paciente paciente) => PisoDelHdlPara(paciente) != null;
+
+		public bool HdlEsProtectorPara(Paciente paciente)
+		{
+			decimal? piso = PisoDelHdlPara(paciente);
+			if (piso == null)
+				throw new InvalidOperationException(
+					"El piso del HDL depende del sexo, y de esta persona no se sabe. Hay que "
+					+ "preguntar SeSabeSiElHdlAcompana antes de leer el acompanante.");
+
+			return Hdl.Valor >= piso.Value;
+		}
 
 		public override SerieContinua NuevaSerie() => new SerieDeColesterolLdl();
 	}

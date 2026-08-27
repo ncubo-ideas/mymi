@@ -36,7 +36,10 @@ namespace Examenes.Dominio
 		//
 		// ⚠️ Orientativo, igual que todos los umbrales de este dominio.
 		public override Severidad SeveridadDelHallazgo =>
-			EsEsperable ? Severidad.Informativo : Severidad.Seguimiento;
+			EsEsperable ? Severidad.Informativo : Severidad.Vigilar;
+
+		public override Accion AccionDelHallazgo =>
+			EsEsperable ? null : Accion.ConversarloConTuMedico(Plazo.EnLaProximaCita);
 
 		public override string ParaSonia => EsEsperable
 			? $"el color de la orina salió {ParaMostrar}, que es de lo esperable"

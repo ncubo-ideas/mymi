@@ -69,6 +69,27 @@ namespace Examenes.Dominio
 		public static readonly Veredicto HallazgoNoConfirmado =
 			new Veredicto("hallazgo no confirmado");
 
+		// ------------------------------------------------- los dos de la aplicabilidad
+		//
+		// Son los dos estados no-triviales de Aplicabilidad hechos veredicto, y NO son un
+		// "fuera de rango" mas: un antigeno prostatico en una mujer no es un valor anormal,
+		// es una pregunta sin sentido. Por eso tienen nombre propio y no reusan Indeterminado.
+
+		// ESTE ANALITO NO LE CORRESPONDE A ESTA PERSONA. La tarjeta no existe, y la tool
+		// MCP contesta esto en vez de un valor. Es lo que distingue esta correccion de un
+		// filtro de pantalla: si la tool devolviera el numero, el dominio no cambio.
+		public static readonly Veredicto NoAplica = new Veredicto("no aplica");
+
+		// NO SE PUEDE INTERPRETAR HASTA SABER EL SEXO. El valor medido se muestra igual
+		// —el laboratorio lo midio— y lo que se retiene es la lectura, porque es lo que el
+		// dominio honestamente no puede dar.
+		//
+		// Es hermano de Indeterminado, con una diferencia que cambia la conducta:
+		// Indeterminado ("una sola medicion") se resuelve esperando el proximo examen;
+		// este SE RESUELVE AHORA, en dos toques. Por eso la superficie insiste con uno y
+		// no con el otro.
+		public static readonly Veredicto RequiereSexo = new Veredicto("requiere sexo");
+
 		public string Nombre { get; private set; }
 
 		private Veredicto(string nombre)
@@ -80,7 +101,21 @@ namespace Examenes.Dominio
 
 		public bool EsEmpeorando => ReferenceEquals(this, Empeorando);
 
-		public bool HayLectura => !ReferenceEquals(this, Indeterminado);
+		// Si hay una lectura de verdad. Los tres que no la tienen no la tienen por razones
+		// distintas —faltan mediciones, falta un dato de la persona, o la pregunta no
+		// corresponde— y ninguno de los tres se puede presentar como una conclusion.
+		public bool HayLectura =>
+			!ReferenceEquals(this, Indeterminado)
+			&& !ReferenceEquals(this, RequiereSexo)
+			&& !ReferenceEquals(this, NoAplica);
+
+		// El analito no le corresponde a esta persona: no hay tarjeta, no hay valor, no hay
+		// nada que decir mas alla de eso.
+		public bool NoLeCorresponde => ReferenceEquals(this, NoAplica);
+
+		// Falta el sexo para poder leer esto. Lo pregunta la superficie para saber cuando
+		// mostrar el valor SIN veredicto, y para contar cuantos resultados estan asi.
+		public bool RequiereElSexo => ReferenceEquals(this, RequiereSexo);
 
 		public bool SugiereRepetirElExamen => ReferenceEquals(this, ProbableErrorDeMedicion);
 

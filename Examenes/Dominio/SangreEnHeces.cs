@@ -73,7 +73,12 @@ namespace Examenes.Dominio
 		/// que lo revise alguien con criterio medico antes de mostrarlo fuera del equipo.
 		/// </summary>
 		public override Severidad SeveridadDelHallazgo =>
-			EsHallazgo ? Severidad.Seguimiento : Severidad.Informativo;
+			EsHallazgo ? Severidad.Vigilar : Severidad.Informativo;
+
+		// Se repite, y no espera al tamizaje del ano que viene: lo que hay que saber es
+		// si vuelve a salir.
+		public override Accion AccionDelHallazgo =>
+			EsHallazgo ? Accion.RepetirElExamen(Plazo.EsteMes) : null;
 
 		public override string ParaSonia =>
 			!realizada ? "el laboratorio no corrió esta prueba"

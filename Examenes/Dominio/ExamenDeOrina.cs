@@ -117,7 +117,7 @@ namespace Examenes.Dominio
 		{
 			get
 			{
-				Severidad mayor = Color.EsEsperable ? Severidad.Informativo : Severidad.Seguimiento;
+				Severidad mayor = Color.EsEsperable ? Severidad.Informativo : Severidad.Vigilar;
 				mayor = Severidad.LaMayor(mayor, Nitritos.SeveridadDelHallazgo);
 				return Severidad.LaMayor(mayor, Sangre.SeveridadDelHallazgo);
 			}

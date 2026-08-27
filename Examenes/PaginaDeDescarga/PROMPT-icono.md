@@ -1,5 +1,11 @@
 # Prompt para rehacer el icono de la app
 
+> **Resuelto (2026-08-26).** El icono es la **gota dentro del círculo** de Laboratorio
+> Clínico Delfos —blanca, solo trazo, sobre `#123f6d`, sin texto—, tal como lo manda el
+> manual de marca (`docs/iteration/05-adopcion-marca-delfos.md` §3). Está implementado
+> en `generar-iconos.py`. Este prompt queda como registro del razonamiento: la dirección
+> ganadora («la gota») era una de las que propone abajo.
+
 Copiá todo lo que sigue a una sesión nueva de Claude Code, parada en la raíz del repo.
 
 ---
@@ -10,7 +16,7 @@ nada, leé por qué falló: la trampa está buena y es fácil volver a caer.
 ## Qué es la app
 
 `Examenes/App/Examenes.Wasm` — una app que un **laboratorio clínico ficticio**
-("Laboratorios Sotavento") le regala a su paciente. Se instala en la computadora de la
+("Laboratorio Clínico Delfos") le regala a su paciente. Se instala en la computadora de la
 persona como PWA y guarda su expediente de laboratorio en una carpeta suya.
 
 Lo que la app hace y que una hoja de resultados no puede: **leer la serie**. Un antígeno

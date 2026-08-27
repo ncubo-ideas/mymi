@@ -12,10 +12,22 @@
     <ImplicitUsings>disable</ImplicitUsings>
     <RootNamespace>Compras.Consola</RootNamespace>
     <AssemblyName>Compras.Consola</AssemblyName>
+
+    <AssemblyTitle>Compras - caratula de consola</AssemblyTitle>
+    <Description>El arnes del negocio: comprueba las reglas del dominio puro sin actor ni disco, mide los invariantes contra un diario real y ejercita el ciclo de refresh contra el servidor del supermercado.</Description>
   </PropertyGroup>
 
   <ItemGroup>
     <ProjectReference Include="..\Compras.App\Compras.App.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <!-- EL MISMO guion.json QUE SIRVE EL MOCK, enlazado. Aca se mide el dominio sin
+         levantar docker, y si el guion de medir difiere del que sirve el proveedor, uno de
+         los dos veredictos miente. El build lo copia; nadie lo sincroniza a mano. -->
+    <None Include="..\..\EndPointDeEventos\guion.json" Link="guion.json"
+          CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
+
 </Project>
+

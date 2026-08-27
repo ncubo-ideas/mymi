@@ -14,7 +14,7 @@ namespace Examenes.Dominio
 	//
 	// Y esa distincion es real: una hematuria transitoria suele tener causas banales, y
 	// la que se repite es la que se estudia. Con una sola medicion las dos se leen igual
-	// —AtencionInmediata— y la persona se queda con el susto. Es §2 de la reunion
+	// —Urgente— y la persona se queda con el susto. Es §2 de la reunion
 	// —"cuando lo vuelve a medir pasa otra vez a 3, ahi al medico esa segunda lectura le
 	// sirve"— en su version binaria.
 	public sealed class SerieDeSangreEnOrina : SerieBinaria
@@ -25,17 +25,18 @@ namespace Examenes.Dominio
 		// que averiguar es si fue pasajera y esa respuesta no espera.
 		//
 		// ⚠️ Orientativa, igual que todos los umbrales de este dominio.
-		public override int MesesHastaElProximo(int edad) =>
+		public override int MesesHastaElProximo(Paciente paciente) =>
 			Ultima != null && Ultima.EsHallazgo ? 1 : 12;
 
-		public override Interpretacion Interpretar(int edad)
+		protected override Interpretacion Leer(Paciente paciente)
 		{
 			EvaluacionDePresencia hechos = Evaluar();
 
 			if (!HayMediciones) return Interpretacion.SinSerie(hechos);
 			if (!hechos.HaySerie)
 				return new Interpretacion(Veredicto.Indeterminado,
-					Ultima.Resultado.SeveridadDelHallazgo, Ultima.Resultado.ParaSonia, hechos);
+					Ultima.Resultado.SeveridadDelHallazgo, Ultima.Resultado.ParaSonia, hechos,
+					Ultima.Resultado.AccionDelHallazgo);
 
 			if (ReferenceEquals(hechos.Presencia, Presencia.NuncaAparecio))
 				return new Interpretacion(Veredicto.Estable, Severidad.Informativo,
@@ -46,14 +47,15 @@ namespace Examenes.Dominio
 			// honesto que inventar un escalon que este dominio no tiene. Lo que cambia es
 			// la frase, y no es adorno: "no es pasajera" es la informacion.
 			if (ReferenceEquals(hechos.Presencia, Presencia.Persiste))
-				return new Interpretacion(Veredicto.Empeorando, Severidad.AtencionInmediata,
+				return new Interpretacion(Veredicto.Empeorando, Severidad.Urgente,
 					$"la sangre en la orina apareció en las {hechos.PositivasSeguidas} pruebas "
-					+ "seguidas: no fue algo pasajero", hechos);
+					+ "seguidas: no fue algo pasajero", hechos,
+					Accion.BuscarAtencionMedica(Plazo.Pronto));
 
 			if (ReferenceEquals(hechos.Presencia, Presencia.Aparecio))
-				return new Interpretacion(Veredicto.Empeorando, Severidad.AtencionInmediata,
+				return new Interpretacion(Veredicto.Empeorando, Severidad.Urgente,
 					"apareció sangre en la orina, y eso conviene que lo revise un médico "
-					+ "pronto", hechos);
+					+ "pronto", hechos, Accion.BuscarAtencionMedica(Plazo.Pronto));
 
 			// EL DESCARGO, y es la unica lectura de este analito que no pide nada. Sin la
 			// serie, este mismo expediente decia "buscá atención médica pronto".
@@ -64,9 +66,9 @@ namespace Examenes.Dominio
 
 			// Estuvo de verdad y despues se apago. No es lo mismo que no haber estado
 			// nunca: conviene confirmarlo con una prueba mas.
-			return new Interpretacion(Veredicto.Mejorando, Severidad.Seguimiento,
+			return new Interpretacion(Veredicto.Mejorando, Severidad.Vigilar,
 				$"la sangre en la orina apareció {hechos.Positivas} veces y en la última ya "
-				+ "no está", hechos);
+				+ "no está", hechos, Accion.RepetirElExamen(Plazo.EsteMes));
 		}
 	}
 }
