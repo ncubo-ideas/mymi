@@ -67,6 +67,8 @@ Lo único que sí conviene traer:
 
 ## 3. La entrevista
 
+> Para tener abierta durante la sesión, sin el desarrollo: [hoja-de-la-entrevista.md](hoja-de-la-entrevista.md).
+
 Es una conversación, no un formulario. El orden importa —cada bloque se apoya en el anterior— pero
 **no es de una sola dirección**: es normal que el bloque 3 haga aparecer una pregunta que pertenecía
 al 2, o que el 4 obligue a revisar una respuesta del 1. Cuando pase, se vuelve y se corrige. Un
