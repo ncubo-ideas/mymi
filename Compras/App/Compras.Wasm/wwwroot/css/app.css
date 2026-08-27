@@ -6,68 +6,76 @@
  *
  * EL PUNTO MÁS IMPORTANTE DEL DOCUMENTO es que esta app NO se parezca a la de Delfos. Si
  * las dos se ven iguales, quien las vea concluye "el mismo dueño" en vez de "dos
- * instituciones distintas", y el ecosistema pierde su argumento. De ahí que las
- * diferencias sean deliberadas y no gusto: verde y no azul clínico, sans y nunca serif
- * (la serif es la firma de Delfos), y BOTONES PASTILLA — que es la diferencia de forma
- * más visible entre las dos.
+ * instituciones distintas", y el ecosistema pierde su argumento.
  *
- * SE MANTIENE BOOTSTRAP, y es una decisión distinta a la de Exámenes, que lo sacó. Acá se
- * le remapean sus variables a esta paleta y se lo pone en tema oscuro: se gana la marca
- * sin reescribir cada clase de las páginas, y lo que se escriba encima sobrevive a un
- * cambio de layout. Sacarlo es un paso aparte, más grande, y no hace falta para que la
- * app se reconozca.
+ * VERDE Y BLANCO, y esto se corrigió mirando la pantalla. El primer intento puso la app
+ * sobre un gradiente verde oscuro, leyendo la §3 como si el fondo oscuro fuera obligatorio
+ * — y no lo es: la §7 lo lista entre las cosas que la app PUEDE cambiar, y la §3 dice que
+ * la página es blanca. Todo verde oscuro se leía clínico, que es exactamente el tono de
+ * Delfos y lo contrario del "cálido, de confianza cotidiana" que la §0 pide para acá.
  *
- * CERO WEBFONTS: Segoe UI es de sistema. Con un payload sin trimming, agregar descargas
- * de fuentes es una decisión que conviene no romper después "por diseño".
+ * Y hay un argumento más fuerte que el tono: Exámenes se fue a navy oscuro. Dos apps con
+ * gradiente oscuro se parecen entre sí; blanco con verde las separa de un vistazo, que es
+ * lo que el documento quiere. El verde entra como MASA en la barra superior y como acento
+ * en lo demás, no como fondo.
  *
- * LOS DOS ESTADOS, y el ámbar tiene un solo trabajo: marcar lo que cambió. NO es un
- * regaño — "que el helado pasara de mensual a semanal es un dato, no una falta". Y el
- * ROJO NO SE USA: "un carrito no tiene urgencias". No está definido acá a propósito, para
- * que nadie lo pinte por accidente.
+ * SE MANTIENE BOOTSTRAP, y es una decisión distinta a la de Exámenes, que lo sacó. Se le
+ * remapean sus variables a esta paleta: se gana la marca sin reescribir cada clase de las
+ * páginas, y lo escrito sobrevive a un cambio de layout. Sacarlo es un paso aparte, más
+ * grande, y no hace falta para que la app se reconozca.
+ *
+ * CERO WEBFONTS: Segoe UI es de sistema. Con un payload sin trimming, agregar descargas de
+ * fuentes es una decisión que conviene no romper después "por diseño".
+ *
+ * LOS DOS ESTADOS, y el ámbar tiene UN solo trabajo: marcar lo que cambió en la canasta.
+ * Los avisos de la app no son ámbar — gritaban igual que la portada y le robaban el
+ * significado al único lugar donde el color quiere decir algo. Y el ROJO NO SE USA: "un
+ * carrito no tiene urgencias". No está definido acá a propósito, para que nadie lo pinte
+ * por accidente.
  */
 
 :root {
     /* Institucional — "la tienda", desde 1992. Valores de la §3. */
     --gu-verde:        #2f6b3f;   /* EL color de la marca */
-    --gu-verde-oscuro: #1e4a2c;
-    --gu-verde-claro:  #3f8a52;
+    --gu-verde-oscuro: #1e4a2c;   /* titulares, barra superior, pie */
+    --gu-verde-claro:  #3f8a52;   /* hover, iconos, kickers, dato resaltado */
     --gu-morado:       #7b5ea7;   /* SOLO el logo y acentos mínimos. Es la flor, no un color de UI */
     --gu-morado-claro: #bda8d9;
     --gu-morado-hondo: #5f4288;
     --gu-corazon:      #f6e9a8;   /* el corazón amarillo del labelo */
+    --gu-tierra:       #b8763a;   /* detalles de la ilustración, y los avisos que piden algo */
 
     /* La app es de hoy: verde más brillante que el institucional (§3). */
     --app-verde:       #2f9e4f;
+    --app-verde-hover: #26833f;
 
-    /* Pantalla de la app, fondo oscuro (§3). */
-    --fondo:           #1a4229;
-    --fondo-hondo:     #12301d;
-    --tinta:           #eaf6ea;   /* texto principal */
-    --tenue:           #a8ccab;   /* texto secundario */
-    --tenue-carta:     #cfe6d0;   /* secundario dentro de tarjetas: la §3 lo distingue */
-    --linea:           rgba(168, 204, 171, .22);
+    /* SUPERFICIES. Blanco de fondo y verde de acento: los dos colores de un supermercado.
+       El gris-verde suave es para lo que tiene que separarse del papel sin pesar. */
+    --papel:           #ffffff;
+    --papel-suave:     #f5f8f2;   /* §3: fondo de sección alterna */
+    --tinta:           #23301f;   /* §3: texto principal */
+    --tenue:           #5f6b58;   /* §3: texto secundario */
+    --linea:           #dfe8d8;   /* §3: bordes y separadores */
 
-    /* La barra superior y el pie, en el verde oscuro institucional (§3). */
+    /* La barra superior y el pie, en el verde oscuro institucional (§3). Es la masa de
+       color que hace que la pantalla se lea como la app de una institución. */
     --barra-fondo:     var(--gu-verde-oscuro);
+    --barra-tinta:     #eaf6ea;
+    --barra-tenue:     #a8ccab;
 
-    /* LA SUPERFICIE DE LAS TARJETAS. Estaba al 7% y no se veía: las secciones quedaban
-       como texto suelto sobre el gradiente, sin ritmo. Un panel que se lee como panel es
-       lo que separa una lectura de la siguiente. */
-    --carta:           rgba(168, 204, 171, .10);
-    --carta-alta:      rgba(168, 204, 171, .14);   /* hover y filas alternas */
-
-    /* Los dos estados del carrito (§3), con los valores exactos de la especificación. */
+    /* LOS DOS ESTADOS DEL CARRITO (§3). Los rellenos y bordes son los valores del
+       documento; los colores de TEXTO son derivados, porque sobre papel blanco el
+       #6ee7a0 de la especificación no se lee. Si Geannina da los suyos, se cambian acá. */
     --estable-fondo:   rgba(110, 231, 160, 0.12);
     --estable-borde:   rgba(110, 231, 160, 0.32);
-    --estable-tinta:   #6ee7a0;
+    --estable-tinta:   var(--gu-verde-oscuro);
 
     --cambio-fondo:    rgba(251, 191, 36, 0.10);
     --cambio-borde:    rgba(251, 191, 36, 0.30);
-    --cambio-tinta:    #fbd06a;
+    --cambio-tinta:    #8a5a1f;
 
-    /* Una sola familia, y eso es intencional (§2). Nada de serif. */
+    /* Una sola familia, y eso es intencional (§2). Nada de serif: la serif es Delfos. */
     --sans: "Segoe UI", "Helvetica Neue", Arial, sans-serif;
-    --mono: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
 
     /* Formas (§4). La pastilla es lo que la distingue de Delfos. */
     --radio-carta:  14px;
@@ -75,11 +83,10 @@
     --radio-marco:  28px;
 }
 
-/* Bootstrap en tema oscuro, con SUS variables apuntando a esta paleta. Es lo que evita
-   tener que pelearle clase por clase. */
-:root,
-[data-bs-theme="dark"] {
-    --bs-body-bg:            var(--fondo-hondo);
+/* Bootstrap con SUS variables apuntando a esta paleta. Es lo que evita tener que pelearle
+   clase por clase. */
+:root {
+    --bs-body-bg:            var(--papel);
     --bs-body-color:         var(--tinta);
     --bs-secondary-color:    var(--tenue);
     --bs-tertiary-color:     var(--tenue);
@@ -93,8 +100,10 @@
 
     --bs-primary:            var(--app-verde);
     --bs-primary-rgb:        47, 158, 79;
-    --bs-link-color:         var(--tenue);
-    --bs-link-hover-color:   var(--tinta);
+    --bs-link-color:         var(--gu-verde);
+    --bs-link-hover-color:   var(--gu-verde-oscuro);
+
+    --bs-tertiary-bg:        var(--papel-suave);
 
     /* Los dos estados, servidos por las clases semánticas que ya usan las páginas. */
     --bs-success-bg-subtle:     var(--estable-fondo);
@@ -109,28 +118,29 @@
 html, body {
     font-family: var(--sans);
     color: var(--tinta);
-    /* El gradiente de la §3, fijo: la página hace scroll, el fondo no. */
-    background: linear-gradient(180deg, var(--fondo) 0%, var(--fondo-hondo) 100%) fixed;
+    background: var(--papel);
     min-height: 100vh;
 }
 
 h1:focus { outline: none; }
 
-/* Título de la app: §2 lo pone en 800, que es más pesado que cualquier otro titular. */
+/* Título de la app: §2 lo pone en 800, más pesado que cualquier otro titular. */
 h1 {
     font-size: clamp(1.7rem, 3.2vw, 2.4rem);
     font-weight: 800;
     letter-spacing: -.01em;
+    color: var(--gu-verde-oscuro);
 }
 
 h2, h3, h4, h5 { font-weight: 700; }
 
-/* LA BARRA SUPERIOR (§3: --gu-verde-oscuro va en "titulares, barra superior, pie"). Es
-   la masa de color que le da a la pantalla el tono "cálido, de confianza cotidiana" que
-   la §0 pide, en vez del contorno fino que se lee clínico. */
+/* ---------------------------------------------------------------- la barra superior */
+
+/* §3: --gu-verde-oscuro va en "titulares, barra superior, pie". Es el único lugar donde el
+   verde entra como masa, y es lo que le da a la pantalla el aire de supermercado. */
 .barra {
     background: var(--barra-fondo);
-    border-bottom: 1px solid rgba(0, 0, 0, .25);
+    color: var(--barra-tinta);
 }
 .barra-dentro {
     max-width: 56rem;
@@ -143,46 +153,43 @@ h2, h3, h4, h5 { font-weight: 700; }
 .marca-flor { width: 40px; height: 40px; flex: 0 0 40px; }   /* §1: 40 px en la app */
 .marca-texto { display: flex; flex-direction: column; gap: 1px; min-width: 0; }
 .marca-nombre { font-weight: 700; font-size: 1.12rem; line-height: 1.15; }   /* §1 */
-.marca-bajada { font-size: .74rem; color: var(--tenue); line-height: 1.25; }
-.barra-dentro .sello-demo { margin-left: auto; }
+.marca-bajada { font-size: .74rem; color: var(--barra-tenue); line-height: 1.25; }
+.barra-dentro .sello-demo {
+    margin-left: auto;
+    color: var(--barra-tenue);
+    border-color: rgba(234, 246, 234, .3);
+}
+
+/* ---------------------------------------------------------------- avisos y secciones */
 
 /* EL ÁMBAR TIENE UN SOLO TRABAJO: marcar lo que cambió en la canasta. Los avisos de la
    app —que no hay carpeta, que la escritura falló— NO son ámbar aunque Bootstrap los
-   pinte así por defecto: gritaban igual que la portada y le robaban el significado al
-   único lugar donde el color quiere decir algo.
-
-   Un aviso de la app es neutro; uno que pide acción usa el tierra de la ilustración
-   (§3), que es cálido y no compite con el ámbar. Rojo nunca. */
+   pinte así por defecto. Un aviso es neutro; uno que pide acción usa el tierra de la
+   ilustración (§3), que es cálido y no compite con el ámbar. Rojo nunca. */
 .aviso {
-    background: var(--carta);
+    background: var(--papel-suave);
     border: 1px solid var(--linea);
     border-radius: var(--radio-carta);
     padding: 1rem 1.1rem;
-    color: var(--tinta);
 }
 .aviso-fuerte {
-    background: rgba(184, 118, 58, .12);
-    border: 1px solid rgba(184, 118, 58, .38);
+    background: rgba(184, 118, 58, .08);
+    border: 1px solid rgba(184, 118, 58, .35);
     border-radius: var(--radio-carta);
     padding: 1rem 1.1rem;
-    color: var(--tinta);
 }
-.btn-aviso {
-    background: var(--gu-tierra);
-    border-color: var(--gu-tierra);
-    color: #fff;
-}
+.btn-aviso { background: var(--gu-tierra); border-color: var(--gu-tierra); color: #fff; }
 .btn-aviso:hover, .btn-aviso:focus { background: #a4682f; border-color: #a4682f; color: #fff; }
 
 /* SECCIONES. Cada lectura arranca con su rótulo, no con un titular: son etiquetas de
    sección, y el titular de la pantalla es uno solo. Es lo que le da ritmo a una columna
-   larga — antes eran cuatro h5 iguales sobre fondo transparente. */
+   larga — antes eran cuatro h5 iguales. */
 main h2 {
     font-size: .80rem;
     font-weight: 700;
     text-transform: uppercase;
     letter-spacing: .16em;
-    color: var(--gu-verde-claro);
+    color: var(--gu-verde);
     margin: 2.2rem 0 .8rem;
 }
 
@@ -194,7 +201,50 @@ main h2 {
     letter-spacing: 0.16em;
 }
 
-/* PASTILLA. La §6 la lista como herencia sin excepción. */
+/* ---------------------------------------------------------------- etiquetas */
+
+/* LAS ETIQUETAS de las filas. Bootstrap las pinta con su amarillo #ffc107, su gris y su
+   verde #198754 — tres colores que no son de esta marca y que se veian como pegotes al
+   lado de la paleta. Estas cuatro salen de los tokens.
+
+   El AMBAR marca lo que entro, que es la novedad. El que dejo de aparecer va NEUTRO a
+   proposito: los dos son cambios, pero pintar los dos de ambar convierte la fila en una
+   alarma, y esta app señala sin regañar. */
+.etiqueta {
+    display: inline-block;
+    font-size: .72rem;
+    font-weight: 600;
+    line-height: 1.2;
+    padding: .22rem .6rem;
+    border-radius: var(--radio-boton);
+    border: 1px solid transparent;
+    white-space: nowrap;
+}
+.etiqueta-cambio {
+    background: var(--cambio-fondo);
+    border-color: var(--cambio-borde);
+    color: var(--cambio-tinta);
+}
+.etiqueta-neutra {
+    background: var(--papel-suave);
+    border-color: var(--linea);
+    color: var(--tenue);
+}
+.etiqueta-verde {
+    background: var(--estable-fondo);
+    border-color: var(--estable-borde);
+    color: var(--estable-tinta);
+}
+.etiqueta-tierra {
+    background: rgba(184, 118, 58, .10);
+    border-color: rgba(184, 118, 58, .35);
+    color: #8a5a1f;
+}
+
+/* ---------------------------------------------------------------- formas */
+
+/* PASTILLA. La §6 la lista como herencia sin excepción, y es la diferencia de forma más
+   visible contra Delfos, que usa esquinas de 4 px. */
 .btn { border-radius: var(--radio-boton); font-weight: 600; }
 .btn-primary {
     color: #fff;
@@ -202,32 +252,35 @@ main h2 {
     border-color: var(--app-verde);
     box-shadow: 0 6px 18px rgba(47, 158, 79, 0.32);
 }
-.btn-primary:hover, .btn-primary:focus { background-color: #26833f; border-color: #26833f; }
-.btn-link { color: var(--tenue); text-decoration-color: var(--linea); }
-.btn-link:hover { color: var(--tinta); }
+.btn-primary:hover, .btn-primary:focus {
+    background-color: var(--app-verde-hover);
+    border-color: var(--app-verde-hover);
+}
+.btn-link { color: var(--gu-verde); }
+.btn-link:hover { color: var(--gu-verde-oscuro); }
 
 .btn:focus, .btn:active:focus, .btn-link.nav-link:focus, .form-control:focus, .form-check-input:focus {
-    box-shadow: 0 0 0 0.25rem rgba(47, 158, 79, .35);
+    box-shadow: 0 0 0 0.25rem rgba(47, 158, 79, .30);
 }
 
 /* Tarjetas: 14 px y sombra casi nula (§4). Sin borde superior de color — ese es Delfos. */
-.card, .list-group-item {
-    background-color: var(--carta);
+.card {
+    background-color: var(--papel);
     border-color: var(--linea);
-    color: var(--tinta);
+    border-radius: var(--radio-carta);
+    box-shadow: 0 1px 4px rgba(20, 51, 31, 0.05);
 }
-.card { border-radius: var(--radio-carta); box-shadow: 0 1px 4px rgba(20, 51, 31, 0.05); }
+.list-group-item { background-color: var(--papel); border-color: var(--linea); }
+.list-group-item:hover { background-color: var(--papel-suave); }
 
-/* Cifra destacada (§2). */
-.cifra { font-size: 1.85rem; font-weight: 800; }
-
-/* Los números se leen en columna: monoespaciados y alineados a la derecha. */
-.numero { font-variant-numeric: tabular-nums; font-family: var(--mono); }
+/* Los números se leen en columna: alineados y de ancho fijo, con la misma familia. */
+.numero, .table td, .table th { font-variant-numeric: tabular-nums; }
 
 .table { --bs-table-color: var(--tinta); --bs-table-border-color: var(--linea); }
-.table > :not(caption) > * > * { background-color: transparent; }
+.table > thead { color: var(--tenue); }
+.table > tbody > tr:hover > * { background-color: var(--papel-suave); }
 
-.badge.text-bg-light { background-color: var(--carta) !important; color: var(--tenue) !important; }
+.badge.text-bg-light { background-color: var(--papel-suave) !important; color: var(--tenue) !important; }
 
 .content { padding-top: 1.1rem; }
 
@@ -255,16 +308,16 @@ main h2 {
 /* ---- lo que la plantilla de Blazor necesita, vestido de esta marca ---- */
 
 .valid.modified:not([type=checkbox]) { outline: 1px solid var(--app-verde); }
-.invalid { outline: 1px solid var(--cambio-tinta); }
-.validation-message { color: var(--cambio-tinta); }
+.invalid { outline: 1px solid var(--gu-tierra); }
+.validation-message { color: var(--gu-tierra); }
 
 #blazor-error-ui {
-    color-scheme: dark only;
-    background: var(--fondo);
+    color-scheme: light only;
+    background: var(--papel-suave);
     color: var(--tinta);
-    border-top: 1px solid var(--cambio-borde);
+    border-top: 1px solid var(--gu-tierra);
     bottom: 0;
-    box-shadow: 0 -1px 2px rgba(0, 0, 0, 0.35);
+    box-shadow: 0 -1px 2px rgba(20, 51, 31, 0.15);
     box-sizing: border-box;
     display: none;
     left: 0;
@@ -282,8 +335,8 @@ main h2 {
     }
 
 .blazor-error-boundary {
-    background: var(--fondo);
-    border: 1px solid var(--cambio-borde);
+    background: rgba(184, 118, 58, .08);
+    border: 1px solid rgba(184, 118, 58, .35);
     border-radius: var(--radio-carta);
     padding: 1rem;
     color: var(--tinta);
@@ -323,4 +376,4 @@ main h2 {
 
     .loading-progress-text:after { content: var(--blazor-load-percentage-text, "Cargando"); }
 
-code { color: var(--gu-morado-claro); }
+code { color: var(--gu-morado-hondo); }

@@ -1,6 +1,7 @@
 @page "/"
 @using System.Globalization
 @using Compras.App.Vistas
+@using Compras.Dominio
 @using Puppets.Portador
 @inject EstadoDeLaApp estado
 @inject NavigationManager navegacion
@@ -121,19 +122,27 @@ else
             <div class="card-body">
                 <div class="kicker text-success-emphasis mb-2">Lo estable</div>
                 <div class="fs-5">@firma.ParaSonia</div>
-                <div class="small text-body-secondary mt-2">
-                    @foreach (var habitual in firma.Habituales)
-                    {
-                        <span class="me-3">
-                            @habitual.Descripcion
-                            <span class="text-body-tertiary">
-                                @(habitual.EstaEnTodas
-                                    ? "en todas"
-                                    : $"en {habitual.ComprasEnQueAparece} de {habitual.DeCuantas}")
+
+                @* Con UN solo habitual, repetir el nombre debajo de la frase que ya lo dice
+                   es ruido: alcanza la frecuencia. Con varios, las etiquetas dicen cual
+                   falla menos, que la frase no puede ordenar. *@
+                @if (firma.CuantosHabituales == 1)
+                {
+                    <div class="small text-body-secondary mt-2">
+                        @Frecuencia(firma.Habituales[0])
+                    </div>
+                }
+                else
+                {
+                    <div class="d-flex flex-wrap gap-2 mt-3">
+                        @foreach (var habitual in firma.Habituales)
+                        {
+                            <span class="etiqueta etiqueta-verde">
+                                @habitual.Descripcion &middot; @Frecuencia(habitual)
                             </span>
-                        </span>
-                    }
-                </div>
+                        }
+                    </div>
+                }
             </div>
         </div>
     }
@@ -149,7 +158,41 @@ else
                         <span class="text-body-secondary">· desde @cambio.MesDelCambio</span>
                     }
                 </div>
-                <div class="fs-5">@cambio.ParaSonia</div>
+
+                @* La frase del dominio (ParaSonia) esta escrita para que la LEA alguien: es
+                   la que contestan el MCP y la consola. En pantalla, con nueve productos, se
+                   volvia un parrafo de cuatro lineas que terminaba en "(y 4 mas)" — un
+                   volcado, no una lectura. Aca van los mismos hechos del dominio
+                   -Entraron y Salieron, cada uno con su mes- en dos filas que se recorren
+                   con la vista. *@
+                @if (cambio.Entraron.Count > 0)
+                {
+                    <div class="mb-2">
+                        <span class="small text-body-secondary me-2">entraron</span>
+                        <span class="d-inline-flex flex-wrap gap-2 align-middle">
+                            @foreach (var entro in cambio.Entraron)
+                            {
+                                <span class="etiqueta etiqueta-cambio">
+                                    @entro.Descripcion
+                                    <span class="opacity-75">&middot; @entro.Desde</span>
+                                </span>
+                            }
+                        </span>
+                    </div>
+                }
+
+                @if (cambio.Salieron.Count > 0)
+                {
+                    <div>
+                        <span class="small text-body-secondary me-2">dejó de aparecer</span>
+                        <span class="d-inline-flex flex-wrap gap-2 align-middle">
+                            @foreach (var salio in cambio.Salieron)
+                            {
+                                <span class="etiqueta etiqueta-neutra">@salio.Descripcion</span>
+                            }
+                        </span>
+                    </div>
+                }
             </div>
         </div>
     }
@@ -196,11 +239,11 @@ else
                             @diferencia.Titulo
                             @if (diferencia.EsNuevo)
                             {
-                                <span class="badge text-bg-warning ms-2">entró este año</span>
+                                <span class="etiqueta etiqueta-cambio ms-2">entró este año</span>
                             }
                             @if (diferencia.Desaparecio)
                             {
-                                <span class="badge text-bg-secondary ms-2">dejó de aparecer</span>
+                                <span class="etiqueta etiqueta-neutra ms-2">dejó de aparecer</span>
                             }
                         </div>
                         <div class="text-end small">
@@ -228,7 +271,7 @@ else
                         <strong>@p.Titulo</strong>
                         <div class="small text-body-secondary">@p.ParaSonia</div>
                     </div>
-                    <span class="badge @(p.Severidad == "informativo" ? "text-bg-light text-dark" : "text-bg-secondary")">
+                    <span class="etiqueta @(p.Severidad == "informativo" ? "etiqueta-neutra" : "etiqueta-tierra")">
                         @p.DiasDesdeLaUltima días
                     </span>
                 </div>
@@ -258,7 +301,7 @@ else
                             <div class="small mt-1"><strong>@g.QueHacer</strong></div>
                         }
                     </div>
-                    <span class="badge @(g.QueHacer.Length > 0 ? "text-bg-warning" : "text-bg-success")">
+                    <span class="etiqueta @(g.QueHacer.Length > 0 ? "etiqueta-tierra" : "etiqueta-verde")">
                         vence el @g.VenceEl.ToString("dd/MM/yyyy", CultureInfo.InvariantCulture)
                     </span>
                 </div>
@@ -415,6 +458,13 @@ else
         (proporcion * 100m).ToString("0.#", CultureInfo.InvariantCulture) + "%";
 
     // Formato explicito SIEMPRE (la escala del decimal no sobrevive el journal).
+    // "en todas" cuando no fallo ni una vez, y si no la cuenta cruda. La palabra la
+    // decide esta pantalla porque es una forma de decirlo, no un hecho nuevo.
+    private static string Frecuencia(ProductoQueVuelve habitual) =>
+        habitual.EstaEnTodas
+            ? "en todas"
+            : $"en {habitual.ComprasEnQueAparece} de {habitual.DeCuantas}";
+
     private static string Colones(decimal monto) =>
-        "₡" + monto.ToString("N0", CultureInfo.InvariantCulture);
+        Plata.Colones(monto);   @* la regla vive en el dominio, no en cada pantalla *@
 }

@@ -210,7 +210,7 @@ namespace Compras.Dominio
 			}
 
 			private static string Colones(decimal monto) =>
-				"₡" + monto.ToString("N0", CultureInfo.InvariantCulture);
+				Plata.Colones(monto);
 		}
 	}
 }

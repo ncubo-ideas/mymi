@@ -168,7 +168,7 @@ namespace Compras.Dominio
 			}
 
 			private static string Colones(decimal monto) =>
-				"₡" + monto.ToString("N0", CultureInfo.InvariantCulture);
+				Plata.Colones(monto);
 
 			private static string Porcentaje(decimal proporcion) =>
 				(proporcion * 100m).ToString("0.#", CultureInfo.InvariantCulture) + "%";
