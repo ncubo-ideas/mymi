@@ -21,5 +21,13 @@
     <ProjectReference Include="..\Compras.App\Compras.App.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <!-- EL MISMO guion.json QUE SIRVE EL MOCK, enlazado. Aca se mide el dominio sin
+         levantar docker, y si el guion de medir difiere del que sirve el proveedor, uno de
+         los dos veredictos miente. El build lo copia; nadie lo sincroniza a mano. -->
+    <None Include="..\..\EndPointDeEventos\guion.json" Link="guion.json"
+          CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
+
 </Project>
 

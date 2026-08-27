@@ -38,6 +38,31 @@ namespace Compras.Dominio
 			new Comestible("Azucarados", "dulces y postres", "algo dulce", diasDeReabastecimiento: 0);
 		public static readonly Categoria Snacks =
 			new Comestible("Snacks", "snacks", "un snack", diasDeReabastecimiento: 0);
+		// ENTRAN EN ENERO DE 2026, y por eso existen: el guion de la wiki dice que "embutidos
+		// y preparadas entran en ene 2026", y sin departamento propio el cambio se
+		// escondia dentro de proteinas. La nutricionista de Sonia le pide "cambiar
+		// embutidos por proteina fresca": son dos cosas distintas para quien la aconseja,
+		// asi que son dos departamentos.
+		//
+		// NINGUNO DE LOS DOS SE REABASTECE. Es la misma regla que los azucarados: la
+		// periodicidad existe para lo que se ACABA y hay que reponer, no para lo que
+		// alguien puede haber dejado de comprar a proposito. Decirle "hace un mes que no
+		// compra embutidos" seria justo el reclamo que este modulo no hace.
+		public static readonly Categoria Embutidos =
+			new Comestible("Embutidos", "embutidos", "un embutido", diasDeReabastecimiento: 0);
+		public static readonly Categoria ComidasPreparadas =
+			new Comestible("ComidasPreparadas", "comidas preparadas", "una comida preparada", diasDeReabastecimiento: 0);
+
+		// LA COMIDA DE LA PERRA NO ES COMESTIBLE, y la palabra engaña: EsComestible
+		// significa "comida de la persona", que es lo que sostiene el "de eso, comida" de
+		// la canasta. La comida de Luna es un gasto del hogar, no de la dieta de nadie.
+		//
+		// Y SI SE REABASTECE: Luna come todos los meses -₡25.000 en el carrito, dice el
+		// invariante 14- asi que un hueco aca es un hueco de verdad. Es lo contrario de los
+		// azucarados: nadie deja de comprarle comida al perro a proposito.
+		public static readonly Categoria Mascotas =
+			new NoComestible("Mascotas", "mascotas", "comida para la mascota", diasDeReabastecimiento: 30);
+
 		public static readonly Categoria Limpieza =
 			new NoComestible("Limpieza", "limpieza", "algo de limpieza", diasDeReabastecimiento: 45);
 		public static readonly Categoria Electrohogar =
@@ -115,7 +140,8 @@ namespace Compras.Dominio
 		public static readonly Categoria[] Todas =
 		{
 			Proteinas, FrutasYVerduras, LacteosYHuevos, GranosYAbarrotes,
-			AceitesYGrasas, Azucarados, Snacks, Limpieza, Electrohogar,
+			AceitesYGrasas, Azucarados, Snacks, Embutidos, ComidasPreparadas,
+			Mascotas, Limpieza, Electrohogar,
 		};
 
 		private sealed class Comestible : Categoria

@@ -89,9 +89,14 @@ namespace Compras.Consola
 				new[] { "A" }, new[] { "a" }, new[] { 1 },
 				new[] { -1m }, new[] { "Proteinas" }, new[] { 0 }));
 
+			// El nombre del ejemplo cambio, y vale contar por que: era "Mascotas", y el dia
+			// que mascotas paso a ser un departamento de verdad estas tres comprobaciones se
+			// pusieron rojas. Hicieron su trabajo. "Ferreteria" es un pasillo que existe en
+			// supermercados reales y que este modulo NO modela, asi que sirve de ejemplo sin
+			// quedar a merced del proximo departamento que agreguemos.
 			Revienta("categoria desconocida", () => new Compra("T-1", Hoy,
 				new[] { "A" }, new[] { "a" }, new[] { 1 },
-				new[] { 1m }, new[] { "Mascotas" }, new[] { 0 }));
+				new[] { 1m }, new[] { "Ferreteria" }, new[] { 0 }));
 
 			Compra valida = UnaCompra("T-1", Hoy, ("A", "a", 2, 3m, "Proteinas", 0));
 			Igual("el total se deriva de las lineas", "6", valida.Total.ToString());
@@ -115,8 +120,8 @@ namespace Compras.Consola
 			// El resolver de la frontera: mismo string -> LA instancia (referencia).
 			Igual("Desde resuelve a la instancia", "True",
 				ReferenceEquals(Categoria.Desde("azucarados"), Categoria.Azucarados).ToString());
-			Revienta("Desde con nombre desconocido", () => Categoria.Desde("Mascotas"));
-			Igual("Existe es la pareja total", "False", Categoria.Existe("Mascotas").ToString());
+			Revienta("Desde con nombre desconocido", () => Categoria.Desde("Ferreteria"));
+			Igual("Existe es la pareja total", "False", Categoria.Existe("Ferreteria").ToString());
 		}
 
 		private static void ElRepertorioNoValoraNada()

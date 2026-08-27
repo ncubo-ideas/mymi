@@ -270,18 +270,33 @@ namespace Compras.Dominio
 			return new CambioEnLaCanasta(
 				FirmaDe(Ultimas(antes, cuantasCompras)),
 				FirmaDe(Primeras(despues, cuantasCompras)),
-				PrimeraVezPorSku());
+				PrimeraVezPorSku(corte));
 		}
 
-		// La primera vez que cada producto entro al historial. Es lo que le pone FECHA al
-		// cambio: sin esto, "entraron cosas nuevas" no dice cuando.
-		private IReadOnlyDictionary<string, DateTime> PrimeraVezPorSku()
+		/// <summary>
+		/// La primera vez que cada producto apareció A PARTIR de una fecha. Es lo que le
+		/// pone FECHA al cambio.
+		/// </summary>
+		// SE MIRA DESDE EL CORTE, no desde el principio del historial, y la diferencia se
+		// vio con datos de verdad. El helado aparecia una vez al mes durante todo 2025 y
+		// paso a semanal en enero de 2026: con la primera vez ABSOLUTA, la app decia "desde
+		// 2025-01 entro el helado", que es cierto y no es la respuesta. Lo que cambio no fue
+		// que apareciera -aparecia- sino que se volviera habitual, y eso arranca en el
+		// periodo nuevo.
+		//
+		// Dicho de otra forma: la fecha que la persona reconoce es la del CAMBIO DE RITMO,
+		// no la de la primera vez que probo algo.
+		private IReadOnlyDictionary<string, DateTime> PrimeraVezPorSku(DateTime desde)
 		{
 			var primera = new Dictionary<string, DateTime>(StringComparer.OrdinalIgnoreCase);
 			foreach (Compra compra in Ordenadas())
+			{
+				if (compra.Fecha < desde) continue;
+
 				foreach (Item item in compra.Items)
 					if (!primera.TryGetValue(item.Sku, out DateTime cuando) || compra.Fecha < cuando)
 						primera[item.Sku] = compra.Fecha;
+			}
 
 			return primera;
 		}
