@@ -85,9 +85,9 @@ internal sealed class CargasTools
 				HayDatos = true,
 				HayVehiculo = true,
 				HayEstimacion = autonomia.Hay,
-				Kilometros = autonomia.Kilometros,
-				CapacidadEnLitros = autonomia.CapacidadEnLitros,
-				HabitualKmPorLitro = autonomia.HabitualKmPorLitro,
+				Kilometros = Math.Round(autonomia.Kilometros),
+				CapacidadEnLitros = Math.Round(autonomia.CapacidadEnLitros, 1),
+				HabitualKmPorLitro = Math.Round(autonomia.HabitualKmPorLitro, 2),
 				EsProyeccion = autonomia.EsProyeccion,
 			};
 		});
@@ -115,8 +115,8 @@ internal sealed class CargasTools
 				HayVehiculo = true,
 				Veredicto = lectura.Veredicto,
 				ParaLaPersona = lectura.ParaSonia,
-				ActualKmPorLitro = lectura.Actual,
-				HabitualKmPorLitro = lectura.Habitual,
+				ActualKmPorLitro = Math.Round(lectura.Actual, 2),
+				HabitualKmPorLitro = Math.Round(lectura.Habitual, 2),
 				CambioPorcentual = lectura.CambioPorcentual,
 				TramosCalculados = lectura.TramosCalculados,
 				TramosBloqueados = lectura.TramosBloqueados,
@@ -199,7 +199,7 @@ internal sealed class CargasTools
 				HayEstimacion = true,
 				DiasEstimados = (int)Math.Round(restantes / proyeccion.KilometrosPorDia),
 				KilometrosRestantes = Math.Round(restantes),
-				KilometrosPorDia = proyeccion.KilometrosPorDia,
+				KilometrosPorDia = Math.Round(proyeccion.KilometrosPorDia, 1),
 				EsProyeccion = true,
 			};
 		});
