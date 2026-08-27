@@ -99,13 +99,68 @@ Si no sale casi nada, no es que la entrevista falló: hay dominios donde este fi
 
 ---
 
+## Bloque 5 · La revisión
+
+**No es parte de la misma sentada.** Va **después de la primera pasada de modelado**, y son quince
+minutos. Una sola pasada nunca alcanza: modelar siempre destapa lo que la entrevista no preguntó.
+
+> ### La regla que gobierna este bloque
+>
+> **La persona contesta sobre el negocio. Quién se vuelve una clase lo decide quien modela.**
+>
+> La prueba: **¿podría contestarla alguien que nunca programó?** Si la pregunta dice *clase*, *tipo*,
+> *entidad*, *dominio* o *sustantivo*, está mal formada — reformulala antes de hacerla.
+
+### Tres cacerías
+
+**1 · Una palabra apareció en las preguntas y nadie la desarrolló.**
+
+> *¿Qué te preguntás sobre **X** que no te preguntás sobre **Y**?*
+> *Si te pregunto cuánto vas a recibir el mes que viene, ¿de qué estarías seguro y de qué no?*
+> *¿Cuáles llegan solos y cuáles hay que salir a buscarlos?*
+
+La primera es la más productiva de todas: es *"¿qué sabe esto que ninguna otra cosa sabe?"* dicho en
+idioma de negocio.
+
+**2 · Al modelar hizo falta un dato que nadie mencionó.**
+
+> *¿De dónde sale…?*
+> *¿Eso viene en lo que te manda la institución, o lo sabés vos?*
+
+**3 · Se tomó un juicio por obvio.**
+
+Todo lo que quien modela decidió solo, **se lee en voz alta como propuesta** y se deja corregir:
+
+> *Dejamos que un cargo que no llega se avise a los tres días. ¿Te suena bien, o depende de cuál?*
+
+No preguntes *"¿cuál es el umbral?"* — nadie tiene un umbral en la cabeza. Proponé uno y dejá que lo
+muevan.
+
+### Cómo se ven las dos formas
+
+| Mal formada | Bien formada |
+|---|---|
+| ¿Qué **clases** de ingreso hay? | *Si te pregunto cuánto vas a recibir el mes que viene, ¿de qué estarías seguro?* |
+| ¿Es el préstamo una **cosa del dominio**? | *¿Te preguntás cuánto te falta para terminar de pagar algo?* |
+| ¿Lo que se aparta **es algo** con saldo? | *Cuando te pasa un imprevisto, ¿de dónde sale la plata?* |
+| ¿Quién **fija** el presupuesto? | *Cuando decís que algo "no estaba presupuestado", ¿contra qué lo comparás?* |
+
+> **Y una advertencia.** Si contesta todo rápido y sin dudar, sospechá. **Una persona generosa
+> contesta igual una pregunta mal formada**, y eso esconde el defecto en vez de mostrarlo. Pasó en la
+> corrida donde se descubrió esta regla.
+
+---
+
 ## Cuando terminaste
 
 - [ ] ¿Tres a cinco preguntas, en la voz de la persona?
 - [ ] ¿Al menos una sobre una **ausencia**?
 - [ ] ¿Cada juicio contestado, o anotado con **quién** lo sabe?
 - [ ] ¿Está escrito lo que se **descartó**, y por qué?
+- [ ] ¿**Cada palabra** que aparece en las preguntas tiene algo detrás? *(la que se salta más)*
 - [ ] ¿Lo aprobó quien conoce el negocio, **sin que nadie le tradujera nada**?
+
+Y después de modelar, el bloque 5. **Nunca alcanza con una pasada.**
 
 El último es el que de verdad cierra: si hizo falta explicarle el archivo a quien lo va a aprobar, el
 archivo está mal escrito.

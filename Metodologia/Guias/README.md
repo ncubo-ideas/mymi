@@ -11,7 +11,7 @@ que sabe programar, menos que nadie.
 
 | | Paso | Qué produce | Capítulo |
 |---|---|---|---|
-| **1** | **Punto de partida** — llegás con una descripción funcional en prosa y salís con las preguntas | **`Preguntas.md`** | [Punto de partida](punto-de-partida.md) |
+| **1** | **Punto de partida** — llegás con una descripción funcional en prosa y salís con las preguntas. **Vuelve después del paso 5**: una sola pasada nunca alcanza | **`Preguntas.md`** | [Punto de partida](punto-de-partida.md) · [hoja](hoja-de-la-entrevista.md) |
 | **2** | **Escribir bien ese archivo** — la capacidad, los juicios, lo que se descarta | `Preguntas.md` terminado | [4](04-requerimientos-que-agregan-valor.md) |
 | **3** | **Preparar el escritorio** — y las tres fallas del feed privado, que se ven todas iguales | una máquina que compila | [1](01-preparar-el-escritorio.md) |
 | **4** | **Hello World** — algo que tocar y romper antes de lo propio | entendimiento | [2](#) *pendiente* |
