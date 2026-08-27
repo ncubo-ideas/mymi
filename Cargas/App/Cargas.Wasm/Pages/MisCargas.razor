@@ -333,15 +333,24 @@ else
                     <strong>@Mayuscula(faltante.ParaSonia).</strong>
                     @if (faltante.QueFalta == "el kilometraje")
                     {
+                        @* UN CAMPO POR CARGA, y no uno compartido. Con un solo campo para
+                           toda la lista, los nueve formularios mostraban el mismo número
+                           y el que se tecleaba para una carga aparecía en las otras ocho:
+                           es la invitación a apretar «Agregar» en la fila equivocada. El
+                           dominio lo rechazaría por monotonía, pero el error no debería
+                           llegar a existir. *@
                         <div class="fila" style="margin-top:10px">
                             <input class="boton boton--contorno mono" type="number" inputmode="numeric"
                                    style="max-width:11em"
-                                   @bind="kilometrajePorAnotar" />
+                                   value="@Kilometraje(faltante.Transaccion)"
+                                   @onchange="e => AnotarEnElCampo(faltante.Transaccion, e)" />
                             <button class="boton boton--atencion"
                                     @onclick="() => AgregarKilometraje(faltante.Transaccion)">
                                 Agregar kilometraje
                             </button>
-                            @if (propuesta.Hay)
+                            @* La sugerencia solo donde se puede proyectar: la carga mas
+                               reciente que espera kilometraje. Ver Releer(). *@
+                            @if (propuesta.Hay && faltante.Transaccion == transaccionConPropuesta)
                             {
                                 <span class="apunte crece">¿unos @Valor(propuesta.Kilometros) km? Es lo que da
                                     tu promedio de @Valor(propuesta.KilometrosPorDia) km por día.</span>
@@ -464,9 +473,23 @@ else
     private long ultimoEvento;
     private string error = "";
 
-    // El prellenado del formulario. Si Sonia manda este mismo numero, su origen es
-    // "confirmado" -miro la propuesta y dijo que si-; si lo edita, "observado".
-    private decimal kilometrajePorAnotar;
+    // El prellenado, UNO POR CARGA (llave: el numero de transaccion). Si Sonia manda la
+    // propuesta tal cual, su origen es "confirmado" -miro el numero y dijo que si-; si
+    // la edita, "observado".
+    private Dictionary<string, decimal> kilometrajePorAnotar = new();
+
+    private decimal Kilometraje(string transaccion) =>
+        kilometrajePorAnotar.TryGetValue(transaccion, out decimal km) ? km : 0m;
+
+    // La carga a la que se le propuso la proyeccion, si hay alguna. Vacio si no.
+    private string transaccionConPropuesta = "";
+
+    private void AnotarEnElCampo(string transaccion, ChangeEventArgs e)
+    {
+        kilometrajePorAnotar[transaccion] =
+            decimal.TryParse(e.Value?.ToString(), NumberStyles.Any, CultureInfo.InvariantCulture,
+                out decimal km) ? km : 0m;
+    }
 
     // El refuerzo del ingreso: lo que aparecio al cerrar un tramo.
     private string desbloqueado = "";
@@ -577,13 +600,14 @@ else
     // -miro el numero y dijo que si-; si lo edito, observado. Nunca entra solo.
     private Task AgregarKilometraje(string transaccion) => Intentar("anotar el kilometraje", async () =>
     {
-        if (kilometrajePorAnotar <= 0) return;
+        decimal kilometraje = Kilometraje(transaccion);
+        if (kilometraje <= 0) return;
 
         int tramosAntes = rendimiento.TramosCalculados;
-        string origen = propuesta.Hay && kilometrajePorAnotar == propuesta.Kilometros
+        string origen = propuesta.Hay && kilometraje == propuesta.Kilometros
             ? "confirmado" : "observado";
 
-        string rechazo = await estado.AnotarOdometro(transaccion, kilometrajePorAnotar, origen);
+        string rechazo = await estado.AnotarOdometro(transaccion, kilometraje, origen);
         if (rechazo.Length > 0)
             throw new InvalidOperationException(
                 "La app no anotó ese kilometraje: no es coherente con la serie (el "
@@ -696,8 +720,26 @@ else
         costos = estado.Costos(placa);
 
         // El "hoy" del prellenado lo pone esta caratula: el dominio no lee el reloj.
+        //
+        // La proyeccion se propone SOLO en la carga mas reciente que espera kilometraje:
+        // es la unica a la que se le puede proyectar desde hoy. Ponerla en todas seria
+        // sugerir el kilometraje de hoy para una carga de hace ocho meses.
         propuesta = estado.Odometro(placa, DateTime.Now);
-        if (propuesta.Hay && kilometrajePorAnotar == 0) kilometrajePorAnotar = propuesta.Kilometros;
+        transaccionConPropuesta = "";
+        if (propuesta.Hay)
+        {
+            FaltanteEnLista? ultima = null;
+            foreach (FaltanteEnLista faltante in faltantes)
+                if (faltante.QueFalta == "el kilometraje"
+                    && (ultima is null || faltante.Fecha > ultima.Fecha)) ultima = faltante;
+
+            if (ultima is not null)
+            {
+                transaccionConPropuesta = ultima.Transaccion;
+                if (!kilometrajePorAnotar.ContainsKey(ultima.Transaccion))
+                    kilometrajePorAnotar[ultima.Transaccion] = propuesta.Kilometros;
+            }
+        }
     }
 
     // Lo mas reciente primero: en un historial se mira para atras.
