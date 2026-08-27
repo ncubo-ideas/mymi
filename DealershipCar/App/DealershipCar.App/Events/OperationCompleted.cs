@@ -4,17 +4,6 @@ using Puppets.Portador;
 
 namespace DealershipCar.App.Events
 {
-	// EL TALLER HIZO LA OPERACION DE VERDAD. Re-ancla todo el futuro de esa clase: la sucesora se
-	// mide desde la completacion REAL y no desde donde el plan decia (ley L4). Por eso la lectura
-	// del odometro viaja con su unidad -- es la unidad del ancla de la sucesora, y fijarla haria
-	// medir a la sucesora contra una escala que nadie uso.
-	//
-	// ES EL MENSAJE QUE MAS CARO SALE CUANDO NO CALZA. Una completacion de una clase que esta
-	// agenda no tiene activa revienta ADENTRO del comando, y eso deja una entrada permanente
-	// (C22). Esta frontera no lo puede evitar: para saberlo hay que preguntarle a la agenda, y la
-	// fachada de §4 no proyecta esa pregunta. Lo que si hace es no dejar pasar nada MAS.
-	//
-	// Ver OdometerReported para por que los codigos se validan aca.
 	public sealed class OperationCompleted : IMensajeDeEvento
 	{
 		public const string TheEventType = "OperationCompleted";
