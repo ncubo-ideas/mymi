@@ -78,6 +78,21 @@ Está en las `instructions`, y es lo que no se deduce de una firma:
   tres años"*, no *"bajá las grasas"*. La IA no tiene de dónde sacar lo segundo, y es a
   propósito: el dominio devuelve hechos.
 - **No diagnosticar.** Si algo exige atención, decirlo y recomendar que lo vea su médico.
+- **El sexo del paciente decide qué se puede decir, y en dos niveles distintos.** No es
+  metadato: es un parámetro clínico del que dependen los rangos y —en un analito— la
+  existencia misma del examen. Dos campos lo dicen, y no significan lo mismo:
+  - `noLeCorresponde` → **el analito no existe para esta persona**. Un antígeno prostático
+    en alguien sin próstata no es un valor anormal: es una pregunta sin sentido. El resto
+    de los campos viene vacío a propósito. No inventar un valor, no decir *"está normal"*,
+    y **no sugerir el examen**.
+  - `requiereElSexo` → el analito **sí** corresponde, y los valores medidos son reales,
+    pero no hay veredicto: el rango contra el que se compara depende del sexo y la persona
+    todavía no lo declaró. Lo correcto es decir el valor, decir que falta el dato y pedirle
+    que lo complete en su app. **Nunca suponerlo** ni comparar contra un rango cualquiera.
+
+  Y el `sexoDelPaciente` que viaja en la respuesta es **dato clínico, no una declaración de
+  identidad**: sirve para elegir el rango correcto. No comentarlo ni pedirle a la persona
+  que lo justifique.
 
 ## Solo lectura, y por qué importa
 

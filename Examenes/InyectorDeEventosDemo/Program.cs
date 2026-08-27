@@ -30,6 +30,7 @@ try
         case "listar":    await Listar(); break;
         case "inyectar":  await Inyectar(); break;
         case "historia":  await Historia(); break;
+        case "sexo":      await Sexo(); break;
         case "senuelo":   await Senuelo(); break;
         default:          Ayuda(); break;
     }
@@ -58,8 +59,20 @@ async Task Listar()
     Console.WriteLine($"{eventos.GetArrayLength()} eventos en {recurso}/{id}:");
     foreach (JsonElement e in eventos.EnumerateArray())
     {
-        string examen = e.GetProperty("examen").GetString();
         string fecha = e.GetProperty("fecha").GetDateTime().ToString("yyyy-MM-dd");
+
+        // DOS TIPOS DE EVENTO desde que el laboratorio publica datos del paciente. Un
+        // evento de paciente no tiene `examen` ni `valor`, asi que pedirselos daria
+        // blancos: se pregunta por el tipo, que es lo que discrimina.
+        string tipo = e.TryGetProperty("tipo", out JsonElement t) ? t.GetString() : "ExamenAgregado";
+        if (tipo == "DatosDePacienteActualizados")
+        {
+            Console.WriteLine($"  #{e.GetProperty("id")}  {fecha}  {"(paciente)",-20} "
+                + $"sexo {e.GetProperty("sexo").GetString()}");
+            continue;
+        }
+
+        string examen = e.GetProperty("examen").GetString();
         string resultado = examen == "Orina"
             ? Orina(e)
             : $"{e.GetProperty("valor").GetDecimal().ToString("0.##", CultureInfo.InvariantCulture)} "
@@ -105,6 +118,38 @@ async Task Inyectar()
     }
 
     Console.WriteLine($"inyectado: {await respuesta.Content.ReadAsStringAsync()}");
+}
+
+// EL LABORATORIO PUBLICA EL SEXO DEL PACIENTE.
+//   sexo --sexo mujer
+//
+// Va aparte del guion sembrado a proposito. La demo tiene que poder mostrar los TRES
+// estados, y el orden importa:
+//
+//   1. se abre la app sin este evento    -> el sexo es DESCONOCIDO y el bloque insiste
+//   2. la persona aprieta "Soy hombre"   -> aparece el antigeno con su serie y su ritmo
+//   3. se corre esto con --sexo mujer    -> el laboratorio publica lo contrario, y como
+//                                           gana lo que dijo ella, NO cambia nada: eso es
+//                                           el "tú eres la autoridad final" en vivo
+//
+// Para ver el antigeno DESAPARECER hay que declarar mujer desde la app, que es la puerta
+// que manda. Este comando es la otra fuente, y esta para poder mostrar el conflicto.
+async Task Sexo()
+{
+    string sexo = Arg(args, "--sexo", "");
+    if (sexo.Length == 0) { Console.Error.WriteLine("Falta --sexo (hombre | mujer)"); return; }
+
+    using var respuesta = await http.PostAsJsonAsync($"{recurso}/{id}/events/paciente",
+        new { sexo, fecha = Arg(args, "--fecha", DateTime.Today.ToString("yyyy-MM-dd")) });
+
+    if (!respuesta.IsSuccessStatusCode)
+    {
+        Console.Error.WriteLine($"URL2 respondio {(int)respuesta.StatusCode}: "
+            + await respuesta.Content.ReadAsStringAsync());
+        return;
+    }
+
+    Console.WriteLine($"publicado: {await respuesta.Content.ReadAsStringAsync()}");
 }
 
 // EL GUION COMPLETO de la demo, sembrado de una vez. Aca se edita LA HISTORIA.
@@ -185,6 +230,9 @@ static void Ayuda()
     Console.WriteLine("  listar                        que eventos ve la app hoy");
     Console.WriteLine("  historia                      siembra el guion completo de la demo");
     Console.WriteLine("  senuelo                       demuestra el 403 de /perfil con el token de la app");
+    Console.WriteLine("  sexo --sexo mujer             el laboratorio publica el sexo del paciente");
+    Console.WriteLine("     (la app arranca en 'desconocido' a proposito: es lo que hace que el");
+    Console.WriteLine("      bloque que insiste se vea. Si la persona ya lo declaro, gana ella.)");
     Console.WriteLine("  inyectar --examen AntigenoProstatico --fecha 2026-08-21 --valor 5.2 --unidad ng/mL");
     Console.WriteLine("  inyectar --examen Orina --fecha 2026-08-21 --color ambar --nitritos negativo");
     Console.WriteLine("     nitritos: positivo | negativo | (vacio = no se corrio la prueba, que NO es negativo)");

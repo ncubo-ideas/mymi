@@ -116,6 +116,34 @@ app.MapPost("/{recurso}/{id}/events/examen", (string recurso, string id, ExamenA
     return Results.Ok(new { agregado = nuevo.Id, examen = nuevo.Examen, resultado = nuevo.Resultado() });
 });
 
+// PUBLICA UN DATO DEL PACIENTE. Accion DEL LABORATORIO, igual que registrar un examen:
+// sin token, porque no es la app la que lo hace.
+//
+// POR QUE EXISTE ESTE ENDPOINT. Un laboratorio real SABE el sexo del paciente —los rangos
+// de referencia van impresos en el reporte— asi que modelar solo la puerta por la que lo
+// declara la persona seria fingir que no lo sabe. Con este endpoint las dos fuentes
+// existen, y el caso interesante aparece solo: si la institucion publica una cosa y la
+// persona declara otra, la app guarda las dos con su procedencia y para interpretar gana
+// lo que dijo ella.
+//
+// NO ESTA EN LA HISTORIA SEMBRADA a proposito: el guion de la demo arranca con el sexo
+// DESCONOCIDO para que el bloque que insiste se vea, y eso ocurre porque el dato de verdad
+// falta, no porque se haya escondido.
+app.MapPost("/{recurso}/{id}/events/paciente", (string recurso, string id, DatoDePacienteAInyectar pedido) =>
+{
+    if (pedido is null || Vacio(pedido.Sexo))
+        return Results.BadRequest(new { error = "sexo requerido" });
+    if (!AlmacenDeEventos.EsSexoConocido(pedido.Sexo))
+        return Results.BadRequest(new
+        {
+            error = "sexo desconocido",
+            conocidos = AlmacenDeEventos.SexosConocidos,
+        });
+
+    EventoDeExamen nuevo = almacen.AgregarDatoDePaciente(recurso, id, pedido);
+    return Results.Ok(new { agregado = nuevo.Id, tipo = nuevo.Tipo, resultado = nuevo.Resultado() });
+});
+
 // Expira SOLO los access tokens y deja los refresh vivos. Es el caso que el diseno
 // declara normal - "access token corto, refresh token durable/rotatorio" - y sin una
 // forma de provocarlo no hay manera de demostrar que la app rota sola en vez de pedir
@@ -249,6 +277,11 @@ sealed class Concesiones
 sealed class EventoDeExamen
 {
     [JsonPropertyName("id")]              public long Id { get; init; }
+
+    // EL TIPO YA NO ES UNA CONSTANTE, y ese es el cambio: este laboratorio publica DOS
+    // narrativas. La de siempre —"te registre un examen"— y la de los datos del paciente,
+    // que un laboratorio real tiene porque los rangos de referencia van impresos en el
+    // reporte y para imprimirlos hay que saber el sexo.
     [JsonPropertyName("tipo")]            public string Tipo { get; init; } = "ExamenAgregado";
     [JsonPropertyName("examen")]          public string Examen { get; init; }
     [JsonPropertyName("fecha")]           public DateTime Fecha { get; init; }
@@ -269,8 +302,14 @@ sealed class EventoDeExamen
     // cita y la otra no- lo decide la app, no este mock.
     [JsonPropertyName("sangre")]          public string Sangre { get; init; } = "";
 
+    // SOLO EN LOS EVENTOS DE PACIENTE. Viaja en el mismo sobre porque este mock guarda una
+    // sola lista ordenada por id —que es lo que hace que el checkpoint de la app sea un
+    // solo numero— y no porque un examen tenga sexo.
+    [JsonPropertyName("sexo")]            public string Sexo { get; init; } = "";
+
     internal string Resultado()
     {
+        if (Tipo == "DatosDePacienteActualizados") return $"sexo {Sexo}";
         if (Examen != "Orina" && Examen != "Heces") return $"{Valor} {Unidad}";
 
         string texto = Color;
@@ -290,6 +329,13 @@ sealed class AlmacenDeEventos
 
     internal static bool EsExamenConocido(string examen) =>
         Array.IndexOf(ExamenesConocidos, examen) >= 0;
+
+    // Lo que este laboratorio sabe publicar. Es su vocabulario, no el del dominio de la
+    // app: la app lo resuelve en su frontera y acepta ademas las abreviaturas de un HL7.
+    internal static readonly string[] SexosConocidos = { "hombre", "mujer" };
+
+    internal static bool EsSexoConocido(string sexo) =>
+        Array.IndexOf(SexosConocidos, (sexo ?? "").Trim().ToLowerInvariant()) >= 0;
 
     private List<EventoDeExamen> Lista(string recurso, string id) =>
         porRecurso.GetOrAdd($"{recurso}/{id}", _ => Sembrar());
@@ -390,6 +436,29 @@ sealed class AlmacenDeEventos
             return lista.Count == 0 ? 0 : lista.Max(e => e.Id);
     }
 
+    // El dato del paciente que publica el laboratorio. Entra en la MISMA lista y con el
+    // mismo contador: es un evento mas de la narrativa, y por eso el checkpoint de la app
+    // sigue siendo un solo numero.
+    internal EventoDeExamen AgregarDatoDePaciente(string recurso, string id,
+        DatoDePacienteAInyectar pedido)
+    {
+        List<EventoDeExamen> lista = Lista(recurso, id);
+
+        lock (candado)
+        {
+            long siguiente = (lista.Count == 0 ? 200 : lista.Max(e => e.Id)) + 1;
+            var evento = new EventoDeExamen
+            {
+                Id = siguiente,
+                Tipo = "DatosDePacienteActualizados",
+                Fecha = pedido.Fecha == default ? DateTime.Now : pedido.Fecha,
+                Sexo = pedido.Sexo.Trim().ToLowerInvariant(),
+            };
+            lista.Add(evento);
+            return evento;
+        }
+    }
+
     // El examen que el operador de la demo eligio, con sus valores exactos.
     internal EventoDeExamen Agregar(string recurso, string id, ExamenAInyectar pedido)
     {
@@ -431,6 +500,12 @@ sealed class PedidoDeRefresh
 }
 
 // El cuerpo que manda el inyector de eventos de demo.
+sealed class DatoDePacienteAInyectar
+{
+    [JsonPropertyName("sexo")]  public string Sexo { get; set; }
+    [JsonPropertyName("fecha")] public DateTime Fecha { get; set; }
+}
+
 sealed class ExamenAInyectar
 {
     [JsonPropertyName("examen")]          public string Examen { get; set; }
