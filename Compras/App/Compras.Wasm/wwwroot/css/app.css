@@ -22,15 +22,30 @@
  * SE MANTIENE BOOTSTRAP, con sus variables remapeadas a esta paleta: se gana el diseño sin
  * reescribir cada clase de las paginas. Examenes lo saco del todo; es un paso aparte.
  *
- * ⚠️ LA FUENTE ES UN PENDIENTE REAL, no un detalle. Plus Jakarta Sans es un WEBFONT y su
- * canvas lo trae de Google. Esta app promete funcionar "sin nosotros, y sin conexion" — y
- * una fuente que se baja de internet rompe esa promesa el dia que alguien abra la app sin
- * red: la tipografia cae al fallback y la app se ve distinta. Hay que SERVIRLA NOSOTROS
- * (woff2 en wwwroot), y hasta entonces la pila de abajo la deja caer con dignidad.
- *
  * LOS DOS ESTADOS, y el ambar tiene UN solo trabajo: marcar lo que cambio. El ROJO NO SE
  * USA: "un carrito no tiene urgencias". No esta definido aca a proposito.
  */
+
+/* LA FUENTE LA SERVIMOS NOSOTROS, y eso deja de ser un pendiente. Antes venia de Google
+   Fonts, y esta app promete funcionar "sin nosotros, y sin conexion": una fuente que se baja
+   de internet se cae el dia que alguien la abra sin red, y la tipografia salta al fallback.
+   No era una regla de estilo, era una promesa del producto.
+
+   UNA SOLA DESCARGA DE 26 KB. Es la fuente VARIABLE con el eje wght de 200 a 800, recortada
+   al latino, la puntuacion, la moneda -incluido el ₡- y los cuatro simbolos que las
+   pantallas usan. Con las estaticas serian cinco archivos de 92 KB, uno por peso.
+
+   font-display: swap — el texto se ve DESDE EL PRIMER FRAME con la fuente de sistema y
+   cambia cuando la propia llega. Con "block" la pantalla arranca en blanco, y esta app ya
+   hace esperar por el wasm: sumarle una espera por la tipografia es cobrar dos veces. */
+@font-face {
+    font-family: 'Plus Jakarta Sans';
+    src: url('../fuentes/PlusJakartaSans.woff2') format('woff2-variations'),
+         url('../fuentes/PlusJakartaSans.woff2') format('woff2');
+    font-weight: 200 800;
+    font-style: normal;
+    font-display: swap;
+}
 
 :root {
     /* --------------------------------------------------- la paleta de Fernanda */
@@ -338,8 +353,24 @@ main h2 {
     display: block;
 }
 /* Sin imagen, el hueco de 52 px se mantiene: si no, las fichas de la fila quedan de
-   alturas distintas y la rejilla se ve rota. */
-.infaltable-sinfoto { height: 52px; display: flex; align-items: center; font-size: 1.6rem; opacity: .35; }
+   alturas distintas y la rejilla se ve rota.
+
+   LA CAJA SE DIBUJA, no se escribe. Antes era el glifo ▢ (U+25A2), que Plus Jakarta Sans NO
+   TRAE: caia en otra tipografia y se veia de otra familia justo al lado de la que si carga.
+   Un borde punteado no depende de ningun glifo y dice lo mismo — "aca iria una foto". */
+.infaltable-sinfoto {
+    height: 52px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+.infaltable-sinfoto::before {
+    content: "";
+    width: 30px;
+    height: 30px;
+    border: 2px dashed var(--linea);
+    border-radius: 6px;
+}
 .infaltable-nombre {
     font-size: 13.5px;
     font-weight: 700;
