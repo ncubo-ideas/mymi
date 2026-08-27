@@ -5,6 +5,8 @@
 
   "//lo-unico-por-persona": "El argumento es LA CARPETA que la persona eligio en la app al instalarla. Es el unico valor de este archivo que cambia de maquina en maquina — ajustalo antes de usarlo.",
 
+  "//O-NO-PONERLO": "Los cuatro servidores tratan ese argumento como OPCIONAL: si falta, arman la carpeta con SpecialFolder.UserProfile mas el nombre del negocio, asi que la linea vale igual en cualquier maquina. concesionario ya no lo trae, porque su ruta commiteada era exactamente ese default. Los otros tres lo conservan: su carpeta no coincide con el default y quitarselo los mandaria a leer otra. Lo decide quien mantiene cada uno.",
+
   "mcpServers": {
     "facturas": {
       "command": "dotnet",
@@ -30,8 +32,7 @@
     "concesionario": {
       "command": "dotnet",
       "args": [
-        "DealershipCar/App/DealershipCar.Mcp/bin/Debug/net9.0/DealershipCar.Mcp.dll",
-        "C:\\Users\\kmora\\DealershipCar-journal"
+        "DealershipCar/App/DealershipCar.Mcp/bin/Debug/net9.0/DealershipCar.Mcp.dll"
       ]
     }
   }
