@@ -168,7 +168,11 @@ else
         @* LA FORMA, la misma que en la tarjeta y por la misma razón: el dominio dice cuál
            le toca a este analito y acá sólo se traduce a píxeles. Que la tarjeta la
            tuviera y el detalle no era el bug: se perdía la forma justo al pedir más. *@
-        @switch (interpretacion.Forma)
+        @* SIN VEREDICTO NO HAY DIBUJO: las tres formas se trazan CONTRA una referencia
+           —la banda, la meta, el techo— y esa referencia es justamente lo que depende del
+           dato que falta. Los valores de arriba siguen estando; lo que se retiene es la
+           lectura. *@
+        @switch (interpretacion.RequiereElSexo ? "" : interpretacion.Forma)
         {
             case "trayectoria con linea base":
                 <TrayectoriaConLineaBase Puntos="puntos"
@@ -197,6 +201,17 @@ else
                 <strong>@interpretacion.Veredicto.</strong>
                 @interpretacion.ParaSonia. No es un diagnóstico: es la lectura de tu propia
                 serie. Lo que corresponde es <strong>@interpretacion.Accion</strong>.
+            </div>
+        }
+        else if (interpretacion.RequiereElSexo)
+        {
+            @* NI VERDE NI AMBAR. No se puede decir que esto esté bien —no se sabe— y
+               tampoco es un hallazgo. La frase la escribe el analito, que es el único que
+               sabe por qué no puede leerse. *@
+            <div class="aviso aviso--neutro" style="margin-top:22px">
+                <strong>Falta un dato tuyo.</strong> @interpretacion.ParaSonia.
+                Los valores de arriba son reales; lo que no hay todavía es la lectura.
+                <a href="">Decilo en tus exámenes</a> y esto se interpreta solo.
             </div>
         }
         else
@@ -251,13 +266,24 @@ else
     <p class="apunte" style="margin-top:30px">
         @if (!EsBinario)
         {
-            <text>Los rangos de referencia se evalúan para @estado.EdadDelPaciente() años.</text>
+            @* Los DOS parámetros clínicos con los que el dominio elige los rangos, dichos
+               juntos porque juntos deciden: 12.2 g/dL no significa lo mismo a los 30 que
+               a los 60, ni en un hombre que en una mujer. *@
+            <text>Los rangos de referencia se evalúan para @estado.EdadDelPaciente() años@Sexo().</text>
         }
         Leído hasta el evento @estado.UltimoEvento().
     </p>
 }
 
 @code {
+    // El sexo dicho como parte del pie, o nada cuando todavía no se sabe: ahí el bloque de
+    // la pantalla principal ya lo está pidiendo, y repetirlo acá sería insistir dos veces.
+    private string Sexo()
+    {
+        string cual = estado.SexoDelPaciente();
+        return cual.Length == 0 || cual == "desconocido" ? "" : $" y sexo {cual}";
+    }
+
     [Parameter] public string Analito { get; set; } = "";
 
     private TendenciaDeAnalito lectura = new();

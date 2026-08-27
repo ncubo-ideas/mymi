@@ -310,6 +310,51 @@ else
        Las frases se arman ACA, con los hechos que devuelve el dominio. El dominio no
        devuelve prosa, y por eso esta pantalla no puede mostrar un consejo de plantilla:
        dice "pasó de 200 a 280 mg/dL en 365 días", no "bajá las grasas". *@
+
+    @*  EL BLOQUE QUE INSISTE.
+
+        Álvaro: «la pantalla de la UI debería insistir que le diga el sexo cuando aún es
+        desconocido».
+
+        INSISTIR BIEN NO ES UN MODAL BLOQUEANTE en cada arranque. Es mostrar el valor
+        BLOQUEADO —igual que los tramos incompletos en el dominio de cargas—: la persona ve
+        qué se está perdiendo y el costo de no responder queda a la vista.
+
+        Tres cosas lo hacen funcionar mejor que un recordatorio, y las tres las trae el
+        DOMINIO, no esta pantalla:
+
+          1. es específico y cuantificado   «2 de tus 7 resultados», no «completá tu perfil»
+          2. explica el porqué en términos  la frase la escribe el dominio, que es el único
+             de ella                        que sabe por qué falta cada analito
+          3. se responde en un toque        acá sólo van los dos botones
+
+        SEVERIDAD INFORMATIVO: no es un hallazgo clínico y no se pinta de ámbar ni de rojo.
+        El semáforo está reservado para resultados. Va en neutro, arriba de «Cómo vienen
+        tus valores», y se puede COLAPSAR pero no descartar: eso es la insistencia.        *@
+    @if (pedido.HaceFalta)
+    {
+        <div class="pedido">
+            <div class="pedido-cabeza">
+                <span class="pedido-rotulo">falta un dato tuyo</span>
+                <button class="pedido-plegar" @onclick="() => pedidoPlegado = !pedidoPlegado">
+                    @(pedidoPlegado ? "Ver" : "Ocultar")
+                </button>
+            </div>
+
+            @if (!pedidoPlegado)
+            {
+                @* El texto NO se compone acá: sale entero del dominio, que es el único que
+                   sabe cuántos resultados quedan sin leer y por qué. *@
+                <p class="pedido-texto">@pedido.ParaSonia</p>
+                <p class="pedido-porque">@pedido.PorQue</p>
+                <div class="pedido-botones">
+                    <button class="boton" @onclick="@(() => Declarar("hombre"))">Soy hombre</button>
+                    <button class="boton" @onclick="@(() => Declarar("mujer"))">Soy mujer</button>
+                </div>
+            }
+        </div>
+    }
+
     @if (analitos.Count > 0)
     {
         <h2 class="seccion">Cómo vienen tus valores</h2>
@@ -341,7 +386,12 @@ else
                    tabla que Álvaro rechazó, un piso más arriba. *@
                 @* La trayectoria necesita serie; la meta y la banda se dibujan con un
                    solo punto, porque no hablan del tiempo sino de dónde estás parado. *@
-                @if (t.HaySerie || lectura.Forma != "trayectoria con linea base")
+                @* SIN VEREDICTO NO HAY DIBUJO. Las formas se dibujan CONTRA una referencia
+                   —la banda de la hemoglobina, el techo del antígeno— y esa referencia es
+                   justamente lo que depende del dato que falta. El valor sigue a la vista
+                   arriba; lo que se retiene es la lectura. *@
+                @if (!lectura.RequiereElSexo
+                     && (t.HaySerie || lectura.Forma != "trayectoria con linea base"))
                 {
                     @switch (lectura.Forma)
                     {
@@ -471,6 +521,30 @@ else
         </ol>
     }
 
+    @*  EDITABLE DESPUÉS, sin fricción. §6.2 de la spec: una vez respondido, el bloque de
+        arriba desaparece y el dato tiene que seguir siendo corregible — y en clave
+        clínica, no de identidad.
+
+        Va al pie y en tono de apunte porque no es una acción de la app: es un ajuste. Con
+        el sexo todavía desconocido no aparece, porque de eso ya se ocupa el bloque que
+        insiste y dos pedidos del mismo dato en la misma pantalla se anulan.               *@
+    @if (!pedido.HaceFalta && sexo.Length > 0 && sexo != "desconocido")
+    {
+        <p class="apunte" style="margin-top:28px">
+            Tus resultados se comparan contra los rangos de <strong>@sexo</strong>.
+            @if (cambiandoSexo)
+            {
+                <button class="boton boton--enlace" @onclick="@(() => Declarar("hombre"))">hombre</button>
+                <text>·</text>
+                <button class="boton boton--enlace" @onclick="@(() => Declarar("mujer"))">mujer</button>
+            }
+            else
+            {
+                <button class="boton boton--enlace" @onclick="() => cambiandoSexo = true">Cambiar</button>
+            }
+        </p>
+    }
+
     @* La ventana de perdida se dice, porque esconderla seria vender durabilidad que no hay.
        El conteo de archivos y bytes de MEMFS era diagnostico mio, no informacion para el
        usuario, y se fue. *@
@@ -494,6 +568,14 @@ else
     private int cantidad;
     private int fueraDeRango;
     private LoMasUrgente urgente = new();
+
+    // EL DATO QUE FALTA. Viene entero del dominio: cuántos resultados quedan sin leer,
+    // cuáles y la frase que lo explica. Esta pantalla decide UNA cosa —si está plegado— y
+    // eso sí es presentación.
+    private FaltaElSexoDelPaciente pedido = new();
+    private string sexo = "";
+    private bool pedidoPlegado;
+    private bool cambiandoSexo;
 
     // Sube en cada Releer. Es la llave que hace que Blazor recree las tarjetas en vez de
     // reusarlas, y con eso las formas se vuelven a dibujar: es la respuesta visible a
@@ -612,6 +694,20 @@ else
     });
 
 
+    // DECLARAR EL SEXO ES UN COMANDO, y por eso pasa por Intentar como cualquier otro: si
+    // la carpeta rechaza la escritura, la persona tiene que enterarse.
+    //
+    // Después del comando se relee TODO. No es exceso: al declararlo, el historial entero
+    // se vuelve interpretable de una vez —los rangos se computan al consultar, nunca se
+    // guardaron con la medición— así que cambian las tarjetas, el titular, el conteo y el
+    // historial. Releer parcialmente dejaría media pantalla del expediente viejo.
+    private Task Declarar(string cual) => Intentar("declarar tu sexo", async () =>
+    {
+        await estado.DeclararSexo(cual);
+        cambiandoSexo = false;
+        Releer();
+    });
+
     private Task Refrescar() => Intentar("refrescar contra el proveedor", async () =>
     {
         refrescando = true;
@@ -662,6 +758,8 @@ else
         cantidad = estado.Cantidad();
         fueraDeRango = estado.AnalitosFueraDeRango();
         urgente = estado.Urgente();
+        pedido = estado.PedidoDeSexo();
+        sexo = estado.SexoDelPaciente();
         redibujo++;
         ultimoEvento = estado.UltimoEvento();
 

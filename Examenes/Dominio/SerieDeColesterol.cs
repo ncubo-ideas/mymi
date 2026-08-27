@@ -76,7 +76,7 @@ namespace Examenes.Dominio
 
 		// De donde partio y a donde va. La partida solo aparece si hubo episodio: sin el,
 		// no hay barra de progreso que dibujar, hay un valor.
-		public override IReadOnlyList<ReferenciaDeLectura> Referencias(int edad)
+		public override IReadOnlyList<ReferenciaDeLectura> Referencias(Paciente paciente)
 		{
 			var lineas = new List<ReferenciaDeLectura>();
 			if (Ultimo == null) return lineas;
@@ -95,7 +95,7 @@ namespace Examenes.Dominio
 
 		// ---------------------------------------------------------------- la lectura
 
-		public override Interpretacion Interpretar(int edad)
+		protected override Interpretacion Leer(Paciente paciente)
 		{
 			EvaluacionDeTendencia hechos = Evaluar();
 			if (!hechos.HaySerie) return Interpretacion.SinSerie(hechos);
@@ -120,7 +120,7 @@ namespace Examenes.Dominio
 					$"{desde}vas bien: {meta.Expresada}", hechos);
 			}
 
-			bool enRango = Ultima.EsNormalPara(edad);
+			bool enRango = Ultima.EsNormalPara(paciente);
 
 			if (!Ultima.EsCambioReal(hechos.Cambio))
 				return enRango
@@ -145,7 +145,7 @@ namespace Examenes.Dominio
 			// alguien mayor. La historia previa buena no cambia ninguno de los dos.
 			MetaDeColesterol objetivo = Meta();
 
-			return edad < EdadEnQuePesaMas
+			return paciente.Edad < EdadEnQuePesaMas
 				? new Interpretacion(Veredicto.Empeorando, Severidad.Vigilar,
 					$"subió a {Ultima.Valor.Expresado}. A tu edad esto se corrige, y {objetivo.ComoObjetivo}",
 					hechos, Accion.ConversarloConTuMedico(Plazo.EnLaProximaCita))

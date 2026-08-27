@@ -265,7 +265,7 @@ ramas:
 
 ```
 Examen                        fecha + nombre. NO declara un valor numérico.
-├── ExamenDeSangre            mide UN analito: rango por edad, umbrales, dirección
+├── ExamenDeSangre            mide UN analito: rango POR PACIENTE, umbrales, dirección
 │   ├── Colesterol            total
 │   ├── ColesterolDetallado   LDL + HDL — el único de sangre que mide DOS
 │   ├── AntigenoProstatico
@@ -280,11 +280,19 @@ distinto: `HEMOGLOBINA`, `HGB` y `Hemoglobina` tienen que caer en **una** serie 
 puntos y no en tres de un punto:
 
 ```
-Analito                       identidad + sinónimos de reportes reales
+Analito                       identidad + sinónimos + REQUISITO ANATÓMICO
 ├── AnalitoContinuo           tiene unidad y rango posible   PSA, colesterol, hemoglobina
 ├── AnalitoBinario            sin unidad, forma serie        nitritos, las dos sangres
 └── AnalitoNominal            sin unidad, NO forma serie     los dos colores
 ```
+
+**El requisito anatómico vive acá, en la identidad, y no en el examen.** Es lo que hace
+que la dependencia del sexo no sea un filtro de pantalla: la aplicabilidad es una
+propiedad de *qué se midió*, independiente de que exista una medición, así que la tool MCP
+puede contestar *«este analito no te corresponde»* de un antígeno del que ni siquiera hay
+serie. Y el predicado **no es el sexo, es la anatomía** — `RequisitoAnatomico.Prostata`,
+no *«si es hombre»*— que es lo que deja el modelo abierto a los casos que un demo no
+necesita sin cambiar su forma después.
 
 La unidad vive en `AnalitoContinuo` y no en la raíz. Un color es algo que se midió —o sea,
 un analito— y no se mide en nada; exigirle unidad a la raíz era lo que hacía que
@@ -504,16 +512,22 @@ Medido el **26 ago 2026**, sobre `master`.
 
 | Capa | Estado |
 |---|---|
-| Dominio | ✅ **273 comprobaciones** (`comprobar`), incluidas las cuatro lecturas del guion, la velocidad, la confirmación de un pico y la escalada de la serie binaria |
+| Dominio | ✅ **356 comprobaciones** (`comprobar`), incluidas las cuatro lecturas del guion, la velocidad, la confirmación de un pico, la escalada de la serie binaria y los tres efectos del sexo |
 | Consola | ✅ ciclo completo: `comprobar`, `medir`, `estado`, `tendencia`, `velocidad`, `refrescar` |
 | EndPointDeEventos | ✅ **13 eventos**, rotación de token y señuelo 403 |
-| MCP | ✅ **medido por stdio**: las cuatro tools responden, y `presencia_de(SangreEnHeces)` devuelve `positivasSeguidas: 2` con la acción correcta |
+| MCP | ✅ **medido por stdio**: las cuatro tools responden, `presencia_de(SangreEnHeces)` devuelve `positivasSeguidas: 2` con la acción correcta, y sobre un expediente de **mujer** `evaluar_tendencia(AntigenoProstatico)` contesta `noLeCorresponde: true` **sin devolver un valor** |
 | PaginaDeDescarga | ✅ levanta con `docker compose up`; sirve la descarga en `/` y la app en `/app/` |
 | Wasm | ✅ **corre completo** desde `3.0.0-beta.10029` — el bloqueo del motor se levantó |
 | Navegador | ⚠️ la **carpeta propia** es solo Chromium. Safari y Firefox degradan a OPFS o a export/import — la app no se queda sin persistir |
 
 El `medir` sobre el guion completo: **13 exámenes aplicados, 0 descartados, 0 rechazados**,
-último evento `212`, 4 analitos con algo que mirar.
+último evento `212`, **3** analitos con algo que mirar.
+
+Son 3 y no 4 desde que el sexo es una variable del dominio, y esa resta es el cambio
+entero en un número: el guion arranca con el sexo **desconocido**, y ahí el antígeno
+prostático no cuenta como hallazgo porque todavía no se sabe si le corresponde a esta
+persona. Declararlo lo devuelve a 4 —el mismo journal, sin recargar ni migrar nada— y es
+lo que la última sección de `medir` imprime paso a paso.
 
 ### El bloqueo del motor se levantó en `10029`
 
@@ -548,4 +562,4 @@ la pantalla de detalle.
 | 4 | **El workload `wasm-tools-net9` no está instalado**, así que el publish sale sin optimizar (57 MB). Funciona; conviene instalarlo antes de mostrarlo |
 | 5 | **La marca ficticia** (*Laboratorio Clínico Delfos*) sigue siendo ficticia, pero ya no es un placeholder: sus especificaciones vienen del código real de `LaboratorioDelfos.module.css` en nCuboSite (ver `docs/iteration/05-adopcion-marca-delfos.md`). Vive solo en `PaginaDeDescarga/descarga/index.html` y en los assets de la carátula |
 | 6 | **El `--pino` a baja opacidad se lee gris** en las bandas de la hemoglobina y el antígeno: la «zona segura» no se siente segura. Cosmético, chico, y parte del #2 |
-| 7 | **El expediente sólo carga la edad.** Sin sexo, sin antecedentes, sin medicación. Todo rango que dependa de algo más que la edad hoy no se puede expresar — el más evidente es la hemoglobina. El dato tiene que entrar primero por el evento de URL2 |
+| 7 | ~~**El expediente sólo carga la edad.**~~ **Cerrado.** El expediente carga un `Paciente` —edad **y sexo**— y el sexo entra por dos puertas con su procedencia: el evento `DatosDePacienteActualizados` de URL2 (INSTITUCIÓN) y el comando `DeclararSexo` de la app (TÚ), y para interpretar gana ella. Ver `docs/iteration/06-spec-sexo-dominio-examenes.md`. Lo que **sigue** abierto son los antecedentes, la medicación y la altitud de residencia: los tres entrarían hoy por `Paciente`, sin tocar ninguna firma |
