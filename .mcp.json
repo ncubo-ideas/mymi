@@ -34,6 +34,13 @@
       "args": [
         "DealershipCar/App/DealershipCar.Mcp/bin/Debug/net9.0/DealershipCar.Mcp.dll"
       ]
+    },
+    "cargas": {
+      "command": "dotnet",
+      "args": [
+        "Cargas/App/Cargas.Mcp/bin/Debug/net9.0/Cargas.Mcp.dll",
+        "/Users/renandiazreyes/Documents/CargasMCP"
+      ]
     }
   }
 }
