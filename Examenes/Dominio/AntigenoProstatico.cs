@@ -43,13 +43,21 @@ namespace Examenes.Dominio
 
 		// El techo sube con la edad: la prostata crece, y 4.0 a los 70 no significa lo
 		// mismo que 4.0 a los 45. Este escalonado por decada es la razon concreta de que
-		// RangoPara reciba la edad en vez de ser una constante.
-		public override RangoDeReferencia RangoPara(int edad)
+		// RangoPara reciba a la persona en vez de ser una constante.
+		//
+		// EL SEXO NO ENTRA ACA, y es lo que prueba que los tres efectos estan separados: de
+		// este analito el sexo decide si el examen EXISTE —eso lo dice el requisito
+		// anatomico de su identidad— y no contra que se compara. Un antigeno de alguien con
+		// prostata se lee igual sea cual sea la etiqueta; uno de alguien sin prostata no se
+		// lee, no se lee "distinto".
+		public override RangoDeReferencia RangoPara(Paciente paciente)
 		{
+			ArgumentNullException.ThrowIfNull(paciente);
+
 			decimal techo;
-			if (edad < 50) techo = 2.5m;
-			else if (edad < 60) techo = 3.5m;
-			else if (edad < 70) techo = 4.5m;
+			if (paciente.Edad < 50) techo = 2.5m;
+			else if (paciente.Edad < 60) techo = 3.5m;
+			else if (paciente.Edad < 70) techo = 4.5m;
 			else techo = 6.5m;
 
 			return RangoDeReferencia.HastaUnMaximoDe(techo, Suyo.Unidad);
@@ -71,8 +79,8 @@ namespace Examenes.Dominio
 		// es exactamente el caso que este dominio existe para detectar, y tiene que pasar.
 		public override decimal MultiploQueNingunIntervaloJustifica => 3m;
 
-		public override int MesesHastaElProximo(int edad) =>
-			edad >= 50 ? 12 : (EsNormalPara(edad) ? 24 : 12);
+		public override int MesesHastaElProximo(Paciente paciente) =>
+			paciente.Edad >= 50 ? 12 : (EsNormalPara(paciente) ? 24 : 12);
 
 		// LA SERIE ES LA QUE SABE. Lo que este analito puede contestar mirando UNA
 		// medicion se queda aca -su rango, sus umbrales, su direccion-; todo lo que

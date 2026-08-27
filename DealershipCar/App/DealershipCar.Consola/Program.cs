@@ -17,32 +17,12 @@ using Puppets.Portador;
 
 namespace DealershipCar.Consola
 {
-	// LA CARATULA DE CONSOLA. El MISMO actor y los MISMOS performs que va a usar el browser: lo
-	// unico que cambia es como llegan las entradas -- argv en vez de clicks -- y donde va la salida.
-	//
-	// EXISTE PARA MEDIR EL DOMINIO CONTRA UN DISCO DE VERDAD, sin el sandbox del browser encima:
-	// ids de entrada del journal, conteo de bytes, y una corrida de muestra determinista.
-	//
-	// SE ENTRA POR LA PUERTA, siempre. Todo pasa por DealershipCarAPI. La UNICA excepcion es
-	// app.Actor.CurrentEntryId y leer los bytes de la carpeta, que son mediciones que la puerta no
-	// expone -- ni debe: son del sustrato, no del negocio.
-	//
-	// NO OFRECE LOS CUATRO COMANDOS QUE CICATRIZAN, y es a proposito. Un perfil retroactivo, una
-	// completacion de una clase no agendada, una lectura que va para atras y una revision anterior a
-	// la que rige revientan ADENTRO del comando, y el motor ya escribio la entrada antes de correr
-	// el cuerpo: la entrada queda para siempre y hace loguear un fallo de rehidratacion en cada
-	// arranque futuro (C22, medido en T6). Esta caratula es un instrumento de medicion y un guion,
-	// no un formulario de captura: no le da a nadie la forma de dejar esa cicatriz. El dia que haya
-	// entrada libre -- T8 la trae, con hechos que manda la agencia -- la guarda tiene que estar en
-	// la frontera, y eso necesita que la fachada proyecte lo que cada guarda mira. No es de aca.
 	internal static class Program
 	{
 		private static async Task<int> Main(string[] args)
 		{
 			try
 			{
-				// SIN ARGUMENTOS CUENTA LA HISTORIA. Es el criterio de §T7: "dotnet run imprime una
-				// historia de seis meses reproducible desde un journal vacio". La ayuda se pide.
 				switch (args.Length == 0 ? "historia" : args[0])
 				{
 					case "historia": return TheSixMonthStory(AFolder(args, 1));
@@ -61,8 +41,6 @@ namespace DealershipCar.Consola
 			}
 		}
 
-		// Abre el puppet sobre una carpeta real. Es el mismo par ConfigureStorage + Start que va a
-		// hacer la caratula del browser, solo que alla el path apunta a MEMFS.
 		private static DealershipCarApp Open(string folder)
 		{
 			Directory.CreateDirectory(folder);
@@ -73,8 +51,6 @@ namespace DealershipCar.Consola
 			return app;
 		}
 
-		// ---------------------------------------------------------------- la historia
-
 		private static int TheSixMonthStory(string folder)
 		{
 			Console.WriteLine("DealershipCar - la historia de seis meses, desde un journal vacio");
@@ -83,16 +59,6 @@ namespace DealershipCar.Consola
 			Console.WriteLine($"vin       : {Story.TheVin}");
 			Console.WriteLine($"actor     : {DealershipCarApp.TheActorFor(Story.TheVin)}");
 
-			// DESDE UN JOURNAL VACIO, literalmente: se borra el del vehiculo antes de abrirlo. Solo
-			// esa subcarpeta -- la que este proceso esta por escribir -- y nunca la carpeta entera,
-			// que es de quien la eligio. Se hace ANTES de abrir y en un proceso nuevo, que es la
-			// unica ventana en que se puede: Performance.Dispose() no suelta el archivo del journal
-			// mientras el proceso vive (medido en T6).
-			//
-			// SE INFORMA LA POSTCONDICION Y NO SI HABIA ALGO, y no es pudor: "habia uno anterior" es
-			// cierto en la segunda corrida y falso en la primera, asi que imprimirlo haria que dos
-			// corridas de la misma historia difirieran en una linea. Lo que la historia afirma es que
-			// arranca vacia, y eso es igual siempre.
 			EmptyTheJournalOfThisVehicle(folder);
 			Console.WriteLine("journal   : vaciado - esta historia SIEMPRE borra el journal de este");
 			Console.WriteLine("            vehiculo y arranca de cero, para poder ser reproducible");
@@ -106,18 +72,8 @@ namespace DealershipCar.Consola
 			Act(app, "1. llega el plan del fabricante, y la persona se agrega una operacion",
 				() => Story.ThePlanArrives(api));
 
-			// EL TABLERO ANTES DE QUE PASE NADA, y esta aca por dos razones. Cuenta mejor la
-			// historia -- se ve el plan como llego -- y es el unico momento en que las dos lecturas
-			// GUARDADAS contestan su lado vacio: HasBeenEvaluated es false y HasAnythingDue tambien.
-			// Sin este tablero, preguntarlas antes de ReadNextDueKind y de LastEvaluatedAt seria
-			// ceremonia que nada ejercita.
 			PrintTheBoard(api, TheBoard(api), null);
 
-			// SE IMPRIME EL ORDEN DE LLEGADA, y hay una razon para gastar seis lineas en el. El
-			// dominio contesta lo MISMO lleguen ordenadas o no -- ordena por instante observado
-			// (OINV-54) -- asi que si no se dice que se mando, que hayan llegado desordenadas no se
-			// ve en ninguna parte del tablero. Decirlo es lo unico que hace comprobable la unica
-			// afirmacion que esta caratula puede hacer al respecto.
 			Console.WriteLine("2. seis meses de odometro. LLEGAN DESORDENADAS: la de diciembre entra");
 			Console.WriteLine("   antes que la de noviembre, y la de marzo antes que la de febrero.");
 			foreach ((int value, string unit, DateTime observedAt, string source)
@@ -128,7 +84,6 @@ namespace DealershipCar.Consola
 			Act(app, "   aplicadas al dominio, que las ordena por instante observado",
 				() => Story.TheOdometerReportsForSixMonths(api));
 
-			// -------- la primera evaluacion
 			Console.WriteLine($"3. primera evaluacion, al {Day(Story.TheFirstEvaluation)}");
 			long beforeFirst = app.Actor.CurrentEntryId;
 			EvaluationOutcome first = api.Evaluate(Story.TheFirstEvaluation);
@@ -144,7 +99,6 @@ namespace DealershipCar.Consola
 			Act(app, "5. el taller informa un cruce de umbral en la Inspection",
 				() => Story.AConditionThresholdIsCrossed(api));
 
-			// -------- EL SALTO
 			Console.WriteLine("================================================================");
 			Console.WriteLine($"  SEIS MESES EN UN SOLO COMANDO: Evaluate({Day(Story.SixMonthsLater)})");
 			Console.WriteLine();
@@ -170,8 +124,6 @@ namespace DealershipCar.Consola
 			return 0;
 		}
 
-		// Un acto del guion, con la entrada del journal antes y despues: cuantas entradas costo se
-		// mide, no se supone.
 		private static void Act(DealershipCarApp app, string title, Action act)
 		{
 			long before = app.Actor.CurrentEntryId;
@@ -183,8 +135,6 @@ namespace DealershipCar.Consola
 			Console.WriteLine();
 		}
 
-		// Lo que la evaluacion contesto. WasEvaluated es el hecho que el dominio no puede saber: si
-		// la guarda de cadencia la dejo correr (C6).
 		private static void Report(EvaluationOutcome outcome)
 		{
 			if (!outcome.WasEvaluated)
@@ -198,8 +148,6 @@ namespace DealershipCar.Consola
 			Console.WriteLine($"   algo paso de la gracia      : {outcome.AnythingBecameOverdue}");
 		}
 
-		// ---------------------------------------------------------------- el tablero
-
 		private static Dictionary<string, string> TheBoard(DealershipCarAPI api)
 		{
 			var board = new Dictionary<string, string>();
@@ -209,8 +157,6 @@ namespace DealershipCar.Consola
 			return board;
 		}
 
-		// El tablero, y -- si se le pasa el anterior -- QUE SE MOVIO. El motivo lo compone el
-		// dominio y no esta vista (OUS-07): se imprime tal cual sale de ReadDueReason.
 		private static void PrintTheBoard(
 			DealershipCarAPI api, Dictionary<string, string> board, Dictionary<string, string> before)
 		{
@@ -222,8 +168,6 @@ namespace DealershipCar.Consola
 			{
 				string state = board[kind];
 
-				// Las clases que nadie agendo contestan NotDue -- una lectura TOTAL, no una ausencia
-				// (E41) -- y se saltean porque son cuatro de nueve y no cuentan nada.
 				if (!ItIsScheduled(api, kind)) continue;
 
 				string moved = before != null && before[kind] != state
@@ -245,24 +189,15 @@ namespace DealershipCar.Consola
 			Console.WriteLine($"   cuentan como no hechas   : {api.MissedCount()}");
 			Console.WriteLine($"   hay algo vencido         : {api.HasAnythingDue()}");
 
-			// GUARDADA: sin nada vencido revienta, y la que avisa es HasAnythingDue (E41).
 			Console.WriteLine($"   lo primero que hacer     : {(api.HasAnythingDue() ? api.ReadNextDueKind() : "nada")}");
 			Console.WriteLine();
 		}
 
-		// Una clase que el plan no trajo contesta con la frase que lo dice. Es la unica forma que
-		// tiene esta caratula de distinguir "no agendada" de "agendada y tranquila", porque el
-		// estado es NotDue en los dos casos -- que es E41 funcionando, no un hueco.
 		private static bool ItIsScheduled(DealershipCarAPI api, string kind)
 		{
 			return !api.ReadDueReason(kind).StartsWith("There is no scheduled", StringComparison.Ordinal);
 		}
 
-		// ---------------------------------------------------------------- mediciones
-
-		// Lo que solo se puede medir contra un disco de verdad. Tres de estas cuatro son criterios
-		// que ya defiende una prueba de nivel B; se vuelven a medir ACA porque una prueba corre en
-		// una carpeta temporal y esto corre donde la persona guarda su vehiculo.
 		private static void Measurements(DealershipCarApp app, DealershipCarAPI api, string folder)
 		{
 			Console.WriteLine("---- mediciones contra el disco -------------------------------");
@@ -281,10 +216,6 @@ namespace DealershipCar.Consola
 			Console.WriteLine($"  {"total",-24} {total,8} bytes");
 			Console.WriteLine();
 
-			// 1. RE-EVALUAR UN INSTANTE YA EVALUADO NO ESCRIBE. Es la cadencia de C6 y es lo unico
-			//    que hace barato abrir la app todos los dias. Aca "byte a byte" SI se sostiene, y es
-			//    la forma fuerte del criterio: se compara antes y despues de algo que no debe
-			//    escribir nada (C23).
 			string bytesBefore = TheTreeOf(actorFolder);
 			long entryBefore = app.Actor.CurrentEntryId;
 			EvaluationOutcome again = api.Evaluate(Story.SixMonthsLater);
@@ -296,9 +227,6 @@ namespace DealershipCar.Consola
 			Console.WriteLine($"  arbol byte a byte igual   : {TheTreeOf(actorFolder) == bytesBefore}");
 			Console.WriteLine();
 
-			// 2. UN CODIGO QUE NO NOMBRA NINGUN MIEMBRO SE RECHAZA EN LA PUERTA, antes de escribir.
-			//    Si llegara al script, el motor escribiria la entrada y RECIEN despues reventaria:
-			//    una cicatriz permanente por un dropdown mal escrito (C22, C25).
 			bytesBefore = TheTreeOf(actorFolder);
 			entryBefore = app.Actor.CurrentEntryId;
 			string refusal = WhatTheDoorSaysAbout(() => api.ReadDueState("fluidchange"));
@@ -309,12 +237,6 @@ namespace DealershipCar.Consola
 			Console.WriteLine($"  arbol byte a byte igual   : {TheTreeOf(actorFolder) == bytesBefore}");
 			Console.WriteLine();
 
-			// 3. EL OTRO LADO DE LA MISMA GUARDA: un instante POSTERIOR si pasa, y SI escribe. Esta
-			//    aca por dos motivos y el segundo pesa mas que el primero. Muestra que la guarda de
-			//    cadencia deja pasar lo que tiene que dejar pasar -- rechazar todo tambien daria
-			//    "no escribio" en las dos mediciones de arriba. Y sobre todo: es lo que hace
-			//    FALSIFICABLE a la comparacion de arbol. Un TheTreeOf que devolviera una constante
-			//    dejaria en verde para siempre las dos de arriba; esta se pone roja.
 			bytesBefore = TheTreeOf(actorFolder);
 			entryBefore = app.Actor.CurrentEntryId;
 			EvaluationOutcome later = api.Evaluate(Story.SixMonthsLater.AddDays(1));
@@ -325,10 +247,6 @@ namespace DealershipCar.Consola
 			Console.WriteLine($"  arbol byte a byte igual   : {TheTreeOf(actorFolder) == bytesBefore}   <- tiene que ser False");
 			Console.WriteLine();
 
-			// 4. CADA Start() DEJA LA ENTRADA DE LA SEMILLA, aunque el upgrade ya este aplicado y no
-			//    haga nada. Se mide aca porque es lo que obliga a T9 a dejar el OnHydrated del
-			//    servidor MCP vacio: con la semilla puesta, cada pregunta de la IA escribiria en el
-			//    journal de la persona.
 			Console.WriteLine("cerrar y reabrir sobre el mismo journal:");
 			Console.WriteLine($"  entrada antes de cerrar   : {app.Actor.CurrentEntryId}");
 			Console.WriteLine("  (la entrada despues de reabrir se mide con el subcomando 'estado',");
@@ -336,10 +254,6 @@ namespace DealershipCar.Consola
 			Console.WriteLine();
 		}
 
-		// ---------------------------------------------------------------- el replay
-
-		// Se corre en un proceso NUEVO. Todo lo que salga aca vino del journal: la agenda es una
-		// global de raiz del DSL, no un campo de C#, y un campo estaria vacio despues de rehidratar.
 		private static int TheBoardFromTheJournal(string folder)
 		{
 			Console.WriteLine("DealershipCar - el mismo journal, reabierto en un proceso nuevo");
@@ -360,18 +274,6 @@ namespace DealershipCar.Consola
 			return 0;
 		}
 
-		// ---------------------------------------------------------------- el bucle de refresh
-
-		// EL REFRESH DE VERDAD: los eventos del concesionario, aplicados de a uno por el mecanismo
-		// compartido. Cierra C26, que T7 dejo MEDIDO en vez de escrito.
-		//
-		// El flush sigue siendo null y sigue siendo lo correcto para esta caratula: existe para
-		// bajar de MEMFS a la carpeta del usuario en wasm, y aca el journal ya esta en disco.
-		//
-		// LA UNICA PIEZA QUE TOCA LA RED ES EL MECANISMO, y el HttpClient lo crea esta caratula --
-		// que es el invariante que §7 del plan pide poder grepear. FuenteHttpDeEventos arma UNA sola
-		// forma de URL y no tiene otro metodo: la app no es cliente de los servicios generales del
-		// concesionario, y el senuelo de mas abajo lo demuestra en vez de afirmarlo.
 		private static async Task<int> TheRefreshLoopAgainstTheDealership(string[] args)
 		{
 			string folder  = AFolder(args, 1);
@@ -413,9 +315,6 @@ namespace DealershipCar.Consola
 				Console.WriteLine($"   punto de control despues  : {api.LastEventApplied()}");
 				Console.WriteLine();
 
-				// EL CRITERIO 1 DE §T8: re-entregar el mismo bloque no deja NI UNA entrada. Aca "byte
-				// a byte" SI se sostiene, y es la forma fuerte de la afirmacion: se compara antes y
-				// despues de algo que no debe escribir nada (C23).
 				string bytesBefore = TheTreeOf(actorFolder);
 				entryBefore = app.Actor.CurrentEntryId;
 				ResultadoDeRefresh second = await loop.Ejecutar();
@@ -429,10 +328,6 @@ namespace DealershipCar.Consola
 				Console.WriteLine("    un Check, esta linea diria False y el journal habria crecido)");
 				Console.WriteLine();
 
-				// Y EL CRITERIO 1 EN SU FORMA COMPLETA: el bloque ENTERO, desde el evento cero,
-				// como si el proveedor hubiera olvidado el checkpoint y re-sirviera todo. El
-				// refresh de arriba solo vuelve a leer lo que hay despues del punto de control, asi
-				// que por si solo no demuestra lo que §T8 pide. Esto si.
 				bytesBefore = TheTreeOf(actorFolder);
 				entryBefore = app.Actor.CurrentEntryId;
 				Ingested whole = await TheWholeBlockAgainFromZero(api, http, resource, id);
@@ -443,9 +338,6 @@ namespace DealershipCar.Consola
 				Console.WriteLine($"   arbol byte a byte igual   : {TheTreeOf(actorFolder) == bytesBefore}");
 				Console.WriteLine();
 
-				// EL SALTO DE T7, ahora sobre hechos que llegaron por la red. El instante es un
-				// LITERAL: el dominio no lee un reloj, asi que evaluar seis meses despues es un
-				// argumento y no una espera.
 				EvaluationOutcome evaluated = api.Evaluate(TheInstantTheBoardIsRead);
 				Console.WriteLine($"-- evaluacion al {Day(TheInstantTheBoardIsRead)} --");
 				Report(evaluated);
@@ -453,10 +345,6 @@ namespace DealershipCar.Consola
 
 				PrintTheBoard(api, TheBoard(api), null);
 
-				// EL GUARDIAN DE LAS DOS COMPARACIONES DE ARRIBA, y tiene que dar False. Las dos
-				// afirman que el arbol NO cambio, asi que un TheTreeOf que devolviera una constante
-				// las dejaria verdes para siempre -- que es la leccion de T6 repitiendose, y en T7
-				// costo agregar exactamente esta linea. Evaluar un instante POSTERIOR si escribe.
 				bytesBefore = TheTreeOf(actorFolder);
 				entryBefore = app.Actor.CurrentEntryId;
 				api.Evaluate(TheInstantTheBoardIsRead.AddDays(1));
@@ -474,13 +362,6 @@ namespace DealershipCar.Consola
 			return 0;
 		}
 
-		// EL CORTE A MITAD DE BLOQUE, de verdad: se aplican los primeros N eventos y el proceso se
-		// MATA -- sin Dispose, sin GracefulExit, sin flush -- que es lo mas parecido a que se corte
-		// la luz que se puede escribir. El criterio 2 de §T8 se comprueba corriendo despues un
-		// 'refresco' sobre la misma carpeta: no tiene que duplicar ni saltear nada.
-		//
-		// El bloque se recorre a mano y no con BucleDeRefresh porque el bucle aplica el bloque
-		// entero: cortarlo es justo lo que hay que poder hacer. El cuerpo es identico al suyo.
 		private static async Task<int> ACrashInTheMiddleOfABlock(string[] args)
 		{
 			string folder  = AFolder(args, 1);
@@ -532,23 +413,10 @@ namespace DealershipCar.Consola
 				Console.Out.Flush();
 			}
 
-			// Environment.Exit y no un return: se salta todo cierre ordenado, que es el punto.
 			Environment.Exit(0);
 			return 0;
 		}
 
-		// LA MEDICION QUE T7 DEJO, contestada. Se pregunta por reflexion y no contra una lista
-		// escrita a mano: una lista se queda vieja en silencio y esto no puede.
-		//
-		// SE PREGUNTA POR EL MAPA DE LA INTERFAZ y no por un metodo publico con ese nombre, y eso es
-		// un cambio respecto de T7. Los tres miembros de IDiarioDeLaApp se implementan EXPLICITAMENTE
-		// -- la interfaz es del mecanismo compartido y sus nombres estan en espanol, los de este
-		// modulo en ingles (C29) -- asi que un GetMethod publico por nombre daria "NO ESTA" para
-		// siempre, midiendo la convencion de nombres en vez del cableado.
-		//
-		// EL CONTROL SIGUE ESTANDO y ahora es un NEGATIVO que tiene que quedar negativo: se le hace
-		// la misma pregunta a un tipo que seguro NO implementa la interfaz. Si ese renglon dijera que
-		// si, la reflexion estaria rota y las tres respuestas de arriba no probarian nada.
 		private static void WhatTheRefreshLoopNeededAndWhetherTheDoorAnswersItNow()
 		{
 			Console.WriteLine("BucleDeRefresh(diario, fuente, ruta, flush, renovarCredencial)");
@@ -586,8 +454,6 @@ namespace DealershipCar.Consola
 				: "NO implementa IDiarioDeLaApp";
 		}
 
-		// Que miembro de la puerta contesta cada miembro de la interfaz. El mapa lo da el runtime, y
-		// ve tambien las implementaciones explicitas, que es justo lo que hay que ver.
 		private static string WhatAnswers(MethodInfo required)
 		{
 			if (!typeof(IDiarioDeLaApp).IsAssignableFrom(typeof(DealershipCarAPI)))
@@ -602,9 +468,6 @@ namespace DealershipCar.Consola
 			return "NO ESTA en la puerta";
 		}
 
-		// EL BLOQUE ENTERO, PEDIDO DESDE CERO. Se recorre a mano y no con BucleDeRefresh porque el
-		// bucle pide desde el punto de control journalizado -- que es lo correcto y es justo lo que
-		// hay que puentear para poder afirmar el criterio. El cuerpo del foreach es el suyo.
 		private static async Task<Ingested> TheWholeBlockAgainFromZero(
 			DealershipCarAPI api, HttpClient http, string resource, string id)
 		{
@@ -640,9 +503,6 @@ namespace DealershipCar.Consola
 			}
 		}
 
-		// LA APP CONSIGUE SU CREDENCIAL SOLA, contra su clave de device. Ni la caratula ni la persona
-		// pegan un token: el concesionario lo emite para ESTA instalacion, y desde ahi vive en el
-		// journal.
 		private static async Task TheAppGetsItsOwnCredential(
 			DealershipCarAPI api, ProveedorDeToken tokens, string resource, string id)
 		{
@@ -657,17 +517,12 @@ namespace DealershipCar.Consola
 			api.StoreCredential(credential.AccessToken, credential.RefreshToken);
 		}
 
-		// Que hacer cuando el concesionario rechaza el access token: rotar con el refresh token, que
-		// es para lo que existe. El access es corto a proposito, asi que sin rotacion la app
-		// instalada se rompe sola al rato.
 		private static async Task<string> RenewTheCredential(
 			DealershipCarAPI api, ProveedorDeToken tokens, string resource, string id,
 			CancellationToken ct)
 		{
 			string refresh = api.StoredRefreshToken();
 
-			// Rotar devuelve null si el refresh ya no vale; ahi se pide una credencial nueva con la
-			// clave de device, que es lo que la instalacion siempre puede hacer.
 			Credencial renewed = refresh.Length > 0 ? await tokens.Rotar(refresh, ct) : null;
 			string how = renewed != null ? "rotada con el refresh token" : "nueva contra el device key";
 			if (renewed == null) renewed = await tokens.Pedir(api.StoredDeviceKey(), resource, id, ct);
@@ -677,10 +532,6 @@ namespace DealershipCar.Consola
 			return renewed.AccessToken;
 		}
 
-		// EL SENUELO, con la credencial DE LA APP. Lo pide esta caratula y no el mecanismo, y esa es
-		// la diferencia entera: FuenteHttpDeEventos no tiene con que pedir esto -- arma una sola forma
-		// de URL y no tiene otro metodo -- asi que hay que salirse de ella para intentarlo. El 403 no
-		// es cortesia del mock: el scope del token es {recurso}.events.read y el senuelo exige otro.
 		private static async Task TheDecoyAnswers403(
 			HttpClient http, DealershipCarAPI api, string resource, string id)
 		{
@@ -709,10 +560,6 @@ namespace DealershipCar.Consola
 			Console.WriteLine();
 		}
 
-		// ---------------------------------------------------------------- utilidades
-
-		// El motivo del rechazo viene envuelto -- {"EWI":[{"Error":"..."}]} -- y la puerta lo deja
-		// crudo a proposito: desenvolver es de la vista (medido, SPIKES-OS2 S3). Esta ES la vista.
 		private static string Unwrapped(string rejection)
 		{
 			if (string.IsNullOrEmpty(rejection)) return "(sin rechazo)";
@@ -729,15 +576,11 @@ namespace DealershipCar.Consola
 			}
 			catch (JsonException)
 			{
-				// Un sobre que no es el que S3 midio se muestra tal cual. Inventarle una forma seria
-				// esconder justo el caso que hay que ver.
 			}
 
 			return rejection;
 		}
 
-		// Lo que la puerta dice cuando rechaza. Se atrapa ArgumentException y no Exception: es la
-		// mitad "defecto de quien llama" de E32, en la frontera que C3 le asigno al BCL.
 		private static string WhatTheDoorSaysAbout(Action call)
 		{
 			try
@@ -759,7 +602,6 @@ namespace DealershipCar.Consola
 			return end < 0 ? message : message.Substring(0, end);
 		}
 
-		// Borra el journal DE ESTE VEHICULO, y nada mas. La carpeta que rodea es de quien la eligio.
 		private static bool EmptyTheJournalOfThisVehicle(string folder)
 		{
 			string actorFolder = Path.Combine(folder, DealershipCarApp.TheActorFor(Story.TheVin));
@@ -778,9 +620,6 @@ namespace DealershipCar.Consola
 			return files;
 		}
 
-		// El arbol entero reducido a nombre, largo y hash. El actor tiene el journal ABIERTO
-		// mientras vive, asi que hay que pedir el archivo compartido: cerrarlo para poder mirarlo
-		// cambiaria lo que se esta midiendo (medido en T6, Performance.Dispose no lo suelta).
 		private static string TheTreeOf(string folder)
 		{
 			var tree = new StringBuilder();
@@ -804,18 +643,11 @@ namespace DealershipCar.Consola
 			return tree.ToString();
 		}
 
-		// Con cultura INVARIANTE. Sin ella el calendario de la maquina decide el ano, y la misma
-		// historia impresa en otra PC dejaria de ser la misma historia -- que es justo lo unico que
-		// esta caratula promete.
 		private static string Day(DateTime instant)
 		{
 			return instant.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture);
 		}
 
-		// EL INSTANTE EN QUE SE LEE EL TABLERO DESPUES DEL REFRESH, y es un LITERAL. El dominio no lee
-		// un reloj: recibe el instante como parametro. Con DateTime.UtcNow aca, la misma narrativa
-		// aplicada manana daria otros vencimientos y esta caratula dejaria de ser reproducible -- y
-		// dos corridas del mismo dia NO lo notarian, que es exactamente C27.
 		private static readonly DateTime TheInstantTheBoardIsRead =
 			new DateTime(2026, 9, 1, 0, 0, 0, DateTimeKind.Utc);
 

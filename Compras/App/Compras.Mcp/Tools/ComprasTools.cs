@@ -6,8 +6,9 @@ using ModelContextProtocol.Server;
 
 namespace Compras.Mcp.Tools;
 
-// LA SUPERFICIE QUE VE LA IA. Cuatro tools: el total, la canasta de un mes, la
-// comparacion entre meses y la garantia de un producto.
+// LA SUPERFICIE QUE VE LA IA. El total, la firma de su semana, el mes en que la canasta
+// cambio, cada cuanto compra un producto y que cambio en su rutina, la canasta de un mes,
+// la comparacion entre meses, el hueco, la serie de un consumo y las garantias.
 //
 // Es intencional en el sentido fuerte: la escribe el autor de la app, igual que un
 // [HttpGet], y la app decide que expone. Deliberadamente NO existe una tool generica
@@ -66,13 +67,15 @@ internal sealed class ComprasTools
 	[McpServerTool(Name = "como_viene_mi_canasta", UseStructuredContent = true)]
 	[Description("Como viene la canasta de la persona SIN TENER QUE ELEGIR MESES: compara el ultimo "
 		+ "mes que tiene compras contra el mismo mes del anio anterior, que es la lectura que la "
-		+ "app le muestra. Usala para preguntas generales como '¿como vengo?', '¿estoy comiendo "
-		+ "peor que antes?' o '¿mi canasta empeoro?'. Preferila sobre comparar_canastas salvo que "
-		+ "la persona nombre dos meses concretos. El campo veredicto lo produce el dominio y puede "
-		+ "ser mejorando, empeorando, estable o indeterminado: en lo ocasional bajar es hacia donde "
-		+ "conviene, asi que un cambio negativo es buena noticia aunque la proporcion siga alta. No "
-		+ "lo vuelvas a interpretar por el signo. Si hayComparacion viene en false, no hay dos meses "
-		+ "comparables todavia y hay que decirlo tal cual.")]
+		+ "app le muestra. Usala para preguntas generales como '¿como vengo?', '¿en que se me va "
+		+ "la plata en el super?' o '¿que cambio en mis compras?'. Preferila sobre comparar_canastas "
+		+ "salvo que la persona nombre dos meses concretos. Trae los dos totales y, en diferencias, "
+		+ "DE DONDE sale el cambio pasillo por pasillo: mira las que tienen explicaElCambio en true, "
+		+ "que son las que de verdad mueven la aguja, y esNuevo para los pasillos que antes no "
+		+ "aparecian. Usa titulo y nunca categoria al hablarle a la persona. Este modulo reporta "
+		+ "hechos de compra y NO juzga la alimentacion: si la persona quiere saber que significan "
+		+ "para su salud, cruzalos vos con sus otras fuentes. Si hayComparacion viene en false, no "
+		+ "hay dos meses comparables todavia y hay que decirlo tal cual.")]
 	public CanastasComparadas ComoVieneMiCanasta()
 	{
 		if (!lector.HayJournal) return new CanastasComparadas();
@@ -80,13 +83,92 @@ internal sealed class ComprasTools
 		return lector.Consultar(api => api.ComparacionConElAnioAnterior());
 	}
 
+	[McpServerTool(Name = "la_firma_de_mi_canasta", UseStructuredContent = true)]
+	[Description("LO QUE NO FALLA en las compras de la persona: los productos que vuelven compra "
+		+ "tras compra. Usala para '¿que compro yo?', '¿que es lo mio?', '¿cual es mi canasta "
+		+ "tipica?' — y tambien como CONTEXTO antes de contestar cualquier otra cosa sobre sus "
+		+ "compras, porque dice de que esta hecha su rutina. Un producto entra si aparece en al "
+		+ "menos la MITAD de las compras miradas, y cada uno trae en cuantas de cuantas aparece; "
+		+ "estaEnTodas marca los que no fallaron ni una vez. Si existe viene en false, o no hay "
+		+ "compras todavia o no hay nada que se repita lo suficiente, y paraSonia lo dice tal "
+		+ "cual: son dos hechos distintos y ninguno es un error.")]
+	public FirmaDeLaSemana Firma(
+		[Description("Cuantas de sus ultimas compras mirar. Omitilo para usar el valor de la app (8).")]
+		int cuantasCompras = ComprasAPI.ComprasQueSeMiranParaLaFirma)
+	{
+		if (!lector.HayJournal) return new FirmaDeLaSemana();
+
+		return lector.Consultar(api => api.Firma(cuantasCompras));
+	}
+
+	[McpServerTool(Name = "que_cambio_en_mi_canasta", UseStructuredContent = true)]
+	[Description("QUE SE VOLVIO HABITUAL Y DESDE CUANDO, y que dejo de estar, comparando lo de "
+		+ "antes de una fecha con lo de despues. Es la tool que le pone FECHA a un cambio de "
+		+ "habitos: usala para '¿que cambio en mis compras?', '¿desde cuando compro tanto helado?' "
+		+ "o cuando la persona quiere relacionar sus compras con algo que le paso en un mes "
+		+ "concreto. Cada producto que entro trae el mes en que se lo vio por primera vez, en "
+		+ "formato aaaa-mm. Ojo: si hayConQueComparar viene en false NO hay cambio que reportar "
+		+ "-falta un lado de la comparacion- y es distinto de hayCambio en false, que significa "
+		+ "que la canasta viene igual. Este modulo dice QUE cambio y no si esta bien: el helado "
+		+ "que pasa de mensual a semanal es un dato, no una falta.")]
+	public CambioDeLaCanasta Cambio(
+		[Description("La fecha de corte, en formato aaaa-mm-dd. Lo de antes se compara con lo de despues.")]
+		DateTime corte,
+		[Description("Cuantas compras mirar de cada lado. Omitilo para usar el valor de la app (8).")]
+		int cuantasCompras = ComprasAPI.ComprasQueSeMiranParaLaFirma)
+	{
+		if (!lector.HayJournal) return new CambioDeLaCanasta();
+
+		return lector.Consultar(api => api.Cambio(corte, cuantasCompras));
+	}
+
+	[McpServerTool(Name = "cada_cuanto_compro", UseStructuredContent = true)]
+	[Description("CADA CUANTO compra la persona un producto, ANTES y DESPUES de una fecha. Es la "
+		+ "tool para '¿desde cuando compro tanto helado?', '¿cada cuanto compro leche?' o "
+		+ "'¿cambio algo en mi rutina?'. La respuesta viene en el lenguaje en que la gente habla "
+		+ "de sus habitos -'1 vez/mes', '1 vez/semana', 'de vez en cuando'- y no en dias, porque "
+		+ "'cada 6.5 dias' no es como habla nadie. Necesita al menos TRES compras del producto de "
+		+ "cada lado de la fecha: si hayConQueComparar viene en false, no hay ritmo que medir y NO "
+		+ "es un error. Y ojo con cambio en false: significa que el ritmo viene igual, que tambien "
+		+ "es una respuesta. Este modulo dice de que a que, nunca si esta mejor.")]
+	public RitmoDeUnProducto Ritmo(
+		[Description("El SKU del producto, como viene en las lineas de una compra. Usa detalle_de_compra o consumo_de para encontrarlo.")]
+		string sku,
+		[Description("La fecha de corte, en formato aaaa-mm-dd. Lo de antes se compara con lo de despues.")]
+		DateTime corte)
+	{
+		if (!lector.HayJournal) return new RitmoDeUnProducto();
+
+		return lector.Consultar(api => api.Ritmo(sku, corte));
+	}
+
+	[McpServerTool(Name = "que_cambio_en_mi_rutina", UseStructuredContent = true)]
+	[Description("LOS PRODUCTOS A LOS QUE LES CAMBIO EL RITMO, el mas notorio primero: cada uno con "
+		+ "cada cuanto se compraba antes y cada cuanto ahora. Usala para '¿que cambio en mi "
+		+ "rutina?', '¿que estoy comprando mas seguido?' o como CONTEXTO cuando la persona "
+		+ "relaciona sus compras con algo que le paso. Se ordena por cuanto salto la frecuencia y "
+		+ "no por plata: lo que cambia una rutina es cada cuanto, no cuanto cuesta — un producto "
+		+ "que paso de cada dos meses a todas las semanas dice mas que uno que subio de precio. "
+		+ "esMasSeguido distingue lo que entro de lo que se fue apagando. Una lista vacia significa "
+		+ "que ningun producto cambio de ritmo, que es una respuesta y no una falla.")]
+	public IReadOnlyList<RitmoQueCambio> RitmosQueCambiaron(
+		[Description("La fecha de corte, en formato aaaa-mm-dd. Lo de antes se compara con lo de despues.")]
+		DateTime corte)
+	{
+		if (!lector.HayJournal) return new List<RitmoQueCambio>();
+
+		return lector.Consultar(api => api.RitmosQueCambiaron(corte));
+	}
+
 	[McpServerTool(Name = "canasta_del_mes", UseStructuredContent = true)]
-	[Description("Como se compuso la canasta del supermercado de la persona en UN mes: cuanto gasto "
-		+ "en alimentos recomendados (proteinas, frutas y verduras), cuanto en neutros (granos, "
-		+ "lacteos) y cuanto en ocasionales (azucarados, snacks, aceites y grasas), mas lo no "
-		+ "comestible aparte. La proporcionOcasional va de 0 a 1 y se calcula SOLO sobre lo "
-		+ "comestible. Son hechos para razonar — por ejemplo, cruzarlos con examenes de salud si "
-		+ "la persona lo pide — no un juicio sobre la persona.")]
+	[Description("Como se compuso la canasta del supermercado de la persona en UN mes, DEPARTAMENTO "
+		+ "POR DEPARTAMENTO: cuanto entro de cada pasillo (proteinas, frutas y verduras, lacteos, "
+		+ "granos, aceites, dulces, snacks, limpieza, electrodomesticos), ordenados del que mas pesa "
+		+ "al que menos, con la proporcionDelTotal de cada uno entre 0 y 1. Trae aparte el gasto "
+		+ "comestible y el no comestible, para que un electrodomestico caro no se coma la lectura de "
+		+ "la comida. Usa titulo y nunca categoria al hablarle a la persona: categoria es una llave "
+		+ "tecnica. Son hechos de compra para razonar — cruzalos con otras fuentes si la persona lo "
+		+ "pide — y no un juicio sobre su alimentacion: eso el supermercado no lo emite.")]
 	public CanastaDelMesVista Canasta(
 		[Description("El anio, por ejemplo 2026.")] int anio,
 		[Description("El mes, de 1 a 12.")] int mes)
@@ -100,10 +182,10 @@ internal sealed class ComprasTools
 	[Description("Como CAMBIO la canasta de la persona entre DOS MESES QUE ELLA NOMBRE. Si no "
 		+ "nombro meses concretos, usa como_viene_mi_canasta en vez de esta: los meses validos "
 		+ "salen del rango que devuelve total_de_compras, y pedir un mes fuera de ese rango "
-		+ "devuelve hayComparacion en false aunque la persona si tenga datos. El campo veredicto "
-		+ "lo produce el dominio (mejorando, empeorando, estable, indeterminado): en lo ocasional "
-		+ "bajar es hacia donde conviene, asi que un cambio negativo es buena noticia. No lo "
-		+ "vuelvas a interpretar por el signo.")]
+		+ "devuelve hayComparacion en false aunque la persona si tenga datos. Devuelve los dos "
+		+ "totales y, en diferencias, que pasillos explican el cambio (mira explicaElCambio, "
+		+ "esNuevo y desaparecio). El cambio lleva la direccion en el SIGNO; no hay veredicto "
+		+ "porque el supermercado no opina sobre la alimentacion de nadie.")]
 	public CanastasComparadas Comparar(
 		[Description("El anio del mes de referencia (antes).")] int anioAntes,
 		[Description("El mes de referencia (antes), de 1 a 12.")] int mesAntes,

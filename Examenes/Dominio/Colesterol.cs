@@ -37,8 +37,14 @@ namespace Examenes.Dominio
 
 		// El techo de lo deseable baja con la edad: a los 60 el mismo 210 pesa mas que
 		// a los 30.
-		public override RangoDeReferencia RangoPara(int edad) =>
-			RangoDeReferencia.HastaUnMaximoDe(edad >= 50 ? 200m : 220m, Suyo.Unidad);
+		// NO DEPENDE DEL SEXO, y decirlo importa: la regla nueva no es plana. De los nueve
+		// analitos del expediente, uno cambia de aplicabilidad y dos cambian de rango; este
+		// y los otros seis se leen exactamente igual que antes.
+		public override RangoDeReferencia RangoPara(Paciente paciente)
+		{
+			ArgumentNullException.ThrowIfNull(paciente);
+			return RangoDeReferencia.HastaUnMaximoDe(paciente.Edad >= 50 ? 200m : 220m, Suyo.Unidad);
+		}
 
 		public override decimal CambioMaximoVerosimilPorDia => 1.0m;
 
@@ -60,7 +66,8 @@ namespace Examenes.Dominio
 		// que el corte va mas arriba: triplicarse si es plausible en anos.
 		public override decimal MultiploQueNingunIntervaloJustifica => 4m;
 
-		public override int MesesHastaElProximo(int edad) => EsNormalPara(edad) ? 60 : 12;
+		public override int MesesHastaElProximo(Paciente paciente) =>
+			EsNormalPara(paciente) ? 60 : 12;
 
 		// Lo que se puede contestar con UNA medicion: a donde tiene que llegar desde aca.
 		// La partida del episodio y el progreso necesitan la historia y viven en

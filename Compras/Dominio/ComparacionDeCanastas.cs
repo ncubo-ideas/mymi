@@ -1,20 +1,29 @@
 using System;
+using System.Collections.Generic;
 using System.Globalization;
 
 namespace Compras.Dominio
 {
 	/// <summary>
-	/// Como cambio la canasta entre dos meses: las dos proporciones de gasto ocasional,
-	/// el cambio con signo y — lo que ninguna pantalla puede decidir — que SIGNIFICA ese
-	/// cambio. Total: comparar contra un mes sin comestibles no revienta.
+	/// Como cambio la canasta entre dos meses, y — lo que ninguna pantalla puede armar —
+	/// QUE DEPARTAMENTOS EXPLICAN la diferencia. Total: comparar contra un mes sin compras
+	/// no revienta.
 	/// </summary>
+	// "Gasto 20.000 mas que el ano pasado" lo suma cualquiera. Lo que nadie tiene es de
+	// DONDE salieron esos 20.000, y eso solo se sabe cruzando los dos meses departamento
+	// por departamento.
+	//
+	// No hay veredicto: se dice cuanto y de donde, no si esta bien. La direccion deseable
+	// de una canasta de comida depende de cosas que el super no sabe -un resultado de
+	// laboratorio, una dieta, cuantos comen en la casa-, y quien las cruza es el asistente
+	// con permiso de la persona.
 	public class ComparacionDeCanastas
 	{
 		/// <summary>
-		/// Cuanto tiene que moverse la proporcion para llamarlo un cambio real, en
-		/// cualquiera de las dos direcciones. Cinco puntos es ruido de despensa.
+		/// Que parte del movimiento total tiene que mover un departamento para que valga
+		/// nombrarlo. Menos de un decimo es ruido de despensa y ensucia la lectura.
 		/// </summary>
-		public const decimal CambioQueCuentaComoReal = 0.05m;
+		public const decimal ParteDelMovimientoQueCuenta = 0.1m;
 
 		public Canasta Antes { get; private set; }
 		public Canasta Despues { get; private set; }
@@ -28,67 +37,173 @@ namespace Compras.Dominio
 			Despues = despues;
 		}
 
-		/// <summary>Solo hay comparacion si LOS DOS meses tienen comestibles; si no, se inventaria una lectura.</summary>
-		public bool HayComparacion => Antes.HayComestible && Despues.HayComestible;
+		/// <summary>Solo hay comparacion si LOS DOS meses tienen compras; si no, se inventaria una lectura.</summary>
+		public bool HayComparacion => Antes.HayCompras && Despues.HayCompras;
 
-		public decimal ProporcionOcasionalAntes => Antes.ProporcionOcasional;
+		public decimal GastoAntes => Antes.GastoTotal;
 
-		public decimal ProporcionOcasionalDespues => Despues.ProporcionOcasional;
+		public decimal GastoDespues => Despues.GastoTotal;
 
-		/// <summary>El HECHO, con signo: positivo si lo ocasional subio.</summary>
+		/// <summary>El HECHO, con signo: cuanto mas -o menos- se gasto en el mes de despues.</summary>
+		public decimal CambioEnElTotal => HayComparacion ? GastoDespues - GastoAntes : 0m;
+
+		/// <summary>El cambio del total en proporcion. 0,11 es un 11% mas que el mes de antes.</summary>
 		public decimal CambioEnProporcion =>
-			HayComparacion ? ProporcionOcasionalDespues - ProporcionOcasionalAntes : 0m;
+			HayComparacion && GastoAntes != 0m
+				? Math.Round(CambioEnElTotal / GastoAntes, 4)
+				: 0m;
 
 		/// <summary>
-		/// QUE SIGNIFICA el cambio. En lo ocasional la direccion deseable es bajar, asi
-		/// que un cambio negativo es Mejorando — y eso es lo que un booleano
-		/// "crecio o no crecio" no podia decir.
+		/// Departamento por departamento, del que mas movio la aguja al que menos. Total:
+		/// sin comparacion la lista viene vacia.
 		/// </summary>
-		public Veredicto Veredicto
+		public IReadOnlyList<DiferenciaDeDepartamento> Diferencias
 		{
 			get
 			{
-				if (!HayComparacion) return Veredicto.Indeterminado;
+				var diferencias = new List<DiferenciaDeDepartamento>();
+				if (!HayComparacion) return diferencias;
 
-				decimal cambio = CambioEnProporcion;
-				if (Math.Abs(cambio) < CambioQueCuentaComoReal) return Veredicto.Estable;
-				return cambio > 0m ? Veredicto.Empeorando : Veredicto.Mejorando;
+				decimal movimiento = 0m;
+				foreach (Categoria categoria in Categoria.Todas)
+					movimiento = movimiento + Math.Abs(Despues.GastoDe(categoria) - Antes.GastoDe(categoria));
+
+				foreach (Categoria categoria in Categoria.Todas)
+				{
+					decimal antes = Antes.GastoDe(categoria);
+					decimal despues = Despues.GastoDe(categoria);
+					if (antes == 0m && despues == 0m) continue;
+
+					diferencias.Add(new DiferenciaDeDepartamento(categoria, antes, despues, movimiento));
+				}
+
+				diferencias.Sort((uno, otro) => Math.Abs(otro.Cambio).CompareTo(Math.Abs(uno.Cambio)));
+				return diferencias;
 			}
 		}
 
-		public bool CrecioLoOcasional => Veredicto.EsEmpeorando;
+		/// <summary>Los departamentos que EXPLICAN la diferencia: los que movieron lo suficiente.</summary>
+		public IReadOnlyList<DiferenciaDeDepartamento> LasQueExplican
+		{
+			get
+			{
+				var explican = new List<DiferenciaDeDepartamento>();
+				foreach (DiferenciaDeDepartamento diferencia in Diferencias)
+					if (diferencia.CuentaEnElMovimiento) explican.Add(diferencia);
 
-		public string NombreDelVeredicto => Veredicto.Nombre;
+				return explican;
+			}
+		}
+
+		/// <summary>Consulta de presencia, total: si hay algun departamento que explique el cambio.</summary>
+		public bool HayAlgoQueLoExplique => LasQueExplican.Count > 0;
 
 		/// <summary>
-		/// La lectura en una linea, escrita por el dominio con SUS hechos. No es un
-		/// consejo: este modulo reporta como se movio la canasta, y que hacer con eso no
-		/// lo decide un supermercado.
+		/// La lectura en una linea, escrita por el dominio con SUS hechos: cuanto y de
+		/// donde. Lo que se haga con eso no lo decide un supermercado.
 		/// </summary>
 		public string ParaSonia
 		{
 			get
 			{
 				if (!HayComparacion)
-					return "todavía no hay dos meses con compras de comida para comparar";
+					return "todavía no hay dos meses con compras para comparar";
 
-				string antes = Porcentaje(ProporcionOcasionalAntes);
-				string despues = Porcentaje(ProporcionOcasionalDespues);
-				string puntos = Puntos(Math.Abs(CambioEnProporcion));
+				string totales = $"en {Despues.MesExpresado} lleva {Colones(GastoDespues)} y "
+					+ $"en {Antes.MesExpresado} fueron {Colones(GastoAntes)}";
 
-				if (Veredicto.EsEmpeorando)
-					return $"lo ocasional pasó de {antes} a {despues} de tu canasta de comida: subió {puntos}";
-				if (Veredicto.EsMejorando)
-					return $"lo ocasional pasó de {antes} a {despues} de tu canasta de comida: bajó {puntos}";
+				if (!HayAlgoQueLoExplique)
+					return $"{totales}: la diferencia está repartida, sin un pasillo que la explique";
 
-				return $"lo ocasional se mantuvo en torno a {despues} de tu canasta de comida";
+				var subieron = new List<DiferenciaDeDepartamento>();
+				var bajaron = new List<DiferenciaDeDepartamento>();
+				foreach (DiferenciaDeDepartamento diferencia in LasQueExplican)
+				{
+					if (diferencia.Subio) subieron.Add(diferencia);
+					else bajaron.Add(diferencia);
+				}
+
+				var partes = new List<string> { totales };
+
+				// Al pasillo que ENTRO se le marca ahi mismo, en vez de volver a nombrarlo
+				// en una frase aparte: repetirlo hacia que la linea dijera dos veces lo
+				// mismo.
+				if (subieron.Count > 0)
+					partes.Add($"la diferencia se explica sobre todo por {Titulos(subieron, marcarLosNuevos: true)}");
+
+				if (bajaron.Count > 0)
+					partes.Add($"en cambio {Titulos(bajaron, marcarLosNuevos: false)} "
+						+ (bajaron.Count == 1 ? "bajó" : "bajaron"));
+
+				return string.Join("; ", partes);
 			}
 		}
 
-		private static string Porcentaje(decimal proporcion) =>
-			(proporcion * 100m).ToString("0.#", CultureInfo.InvariantCulture) + "%";
+		private static string Titulos(IReadOnlyList<DiferenciaDeDepartamento> diferencias, bool marcarLosNuevos)
+		{
+			var titulos = new List<string>();
+			foreach (DiferenciaDeDepartamento diferencia in diferencias)
+				titulos.Add(marcarLosNuevos && diferencia.EsNuevo
+					? $"{diferencia.Titulo} (que no aparecía el otro mes)"
+					: diferencia.Titulo);
 
-		private static string Puntos(decimal proporcion) =>
-			(proporcion * 100m).ToString("0.#", CultureInfo.InvariantCulture) + " puntos";
+			return Lista(titulos);
+		}
+
+		// Tres alcanzan para explicar un cambio; mas que eso ya no explica, enumera.
+		private static string Lista(List<string> nombres)
+		{
+			int cuantos = Math.Min(3, nombres.Count);
+			var recortados = nombres.GetRange(0, cuantos);
+
+			return cuantos == 1
+				? recortados[0]
+				: string.Join(", ", recortados.GetRange(0, cuantos - 1)) + " y " + recortados[cuantos - 1];
+		}
+
+		private static string Colones(decimal monto) =>
+			Plata.Colones(monto);
+	}
+
+	/// <summary>
+	/// Cuanto movio UN departamento entre los dos meses: los dos montos, el cambio con
+	/// signo, y si es un pasillo que antes no aparecia.
+	/// </summary>
+	public class DiferenciaDeDepartamento
+	{
+		public Categoria Categoria { get; private set; }
+		public decimal MontoAntes { get; private set; }
+		public decimal MontoDespues { get; private set; }
+
+		private readonly decimal movimientoTotal;
+
+		internal DiferenciaDeDepartamento(Categoria categoria, decimal montoAntes, decimal montoDespues,
+			decimal movimientoTotal)
+		{
+			ArgumentNullException.ThrowIfNull(categoria);
+
+			Categoria = categoria;
+			MontoAntes = montoAntes;
+			MontoDespues = montoDespues;
+			this.movimientoTotal = movimientoTotal;
+		}
+
+		public string Titulo => Categoria.Titulo;
+
+		/// <summary>Con signo: positivo si en el mes de despues entro mas de este pasillo.</summary>
+		public decimal Cambio => MontoDespues - MontoAntes;
+
+		public bool Subio => Cambio > 0m;
+
+		/// <summary>Si el pasillo ENTRO: no aparecia en el mes de antes y ahora si.</summary>
+		public bool EsNuevo => MontoAntes == 0m && MontoDespues > 0m;
+
+		/// <summary>Si el pasillo SE FUE: aparecia en el mes de antes y ahora no.</summary>
+		public bool Desaparecio => MontoAntes > 0m && MontoDespues == 0m;
+
+		/// <summary>Si movio lo suficiente como para que valga nombrarlo al explicar el cambio.</summary>
+		public bool CuentaEnElMovimiento =>
+			movimientoTotal > 0m
+			&& Math.Abs(Cambio) / movimientoTotal >= ComparacionDeCanastas.ParteDelMovimientoQueCuenta;
 	}
 }

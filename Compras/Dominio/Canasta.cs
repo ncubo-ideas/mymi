@@ -1,37 +1,38 @@
 using System;
+using System.Collections.Generic;
 
 namespace Compras.Dominio
 {
 	/// <summary>
-	/// La foto de UN MES de compras, sumada por perfil de consumo: cuanto de lo
-	/// comestible fue recomendado, cuanto neutro y cuanto ocasional, con lo no comestible
-	/// aparte. Devuelve montos y una proporcion — hechos, no prosa.
+	/// La foto de UN MES de compras, sumada POR DEPARTAMENTO: cuanto entro de cada
+	/// pasillo, con lo comestible y lo no comestible separados. Devuelve montos y
+	/// proporciones — hechos, no prosa.
 	/// </summary>
+	// Suma por el departamento del super y no por una etiqueta de valor. Antes esta clase
+	// repartia el gasto en recomendado / neutro / ocasional, y eso era una lectura de
+	// salud que este modulo no tiene con que sostener: el super no sabe si la persona esta
+	// en una dieta, si son cinco en la casa, ni si el helado era de un cumpleanos. El
+	// departamento es un hecho de gondola y aguanta cualquier pregunta que venga despues.
 	public class Canasta
 	{
+		private readonly Dictionary<string, decimal> porDepartamento =
+			new Dictionary<string, decimal>(StringComparer.OrdinalIgnoreCase);
+
 		public int Anio { get; private set; }
 		public int Mes { get; private set; }
 		public int CantidadDeCompras { get; private set; }
 
-		public decimal GastoRecomendado { get; private set; }
-		public decimal GastoNeutro { get; private set; }
-		public decimal GastoOcasional { get; private set; }
+		public decimal GastoComestible { get; private set; }
 		public decimal GastoNoComestible { get; private set; }
 
-		public decimal GastoComestible => GastoRecomendado + GastoNeutro + GastoOcasional;
-
 		public decimal GastoTotal => GastoComestible + GastoNoComestible;
-
-		/// <summary>
-		/// Sobre lo COMESTIBLE, que es donde significa algo: una olla arrocera carisima no
-		/// puede diluir el helado. Total: sin comestibles es 0 y HayComestible lo dice.
-		/// </summary>
-		public decimal ProporcionOcasional =>
-			GastoComestible == 0m ? 0m : Math.Round(GastoOcasional / GastoComestible, 4);
 
 		public bool HayComestible => GastoComestible > 0m;
 
 		public bool HayCompras => CantidadDeCompras > 0;
+
+		/// <summary>El mes, como se escribe: 2026-03.</summary>
+		public string MesExpresado => $"{Anio:0000}-{Mes:00}";
 
 		internal Canasta(int anio, int mes)
 		{
@@ -50,19 +51,71 @@ namespace Compras.Dominio
 
 			foreach (Item item in compra.Items)
 			{
-				if (!item.Categoria.EsComestible)
-				{
-					GastoNoComestible = GastoNoComestible + item.Total;
-					continue;
-				}
+				string llave = item.Categoria.Nombre;
+				porDepartamento.TryGetValue(llave, out decimal acumulado);
+				porDepartamento[llave] = acumulado + item.Total;
 
-				PerfilDeConsumo perfil = item.Categoria.Perfil;
-				if (ReferenceEquals(perfil, PerfilDeConsumo.Recomendado)) GastoRecomendado = GastoRecomendado + item.Total;
-				else if (ReferenceEquals(perfil, PerfilDeConsumo.Neutro)) GastoNeutro = GastoNeutro + item.Total;
-				else GastoOcasional = GastoOcasional + item.Total;
+				if (item.Categoria.EsComestible) GastoComestible = GastoComestible + item.Total;
+				else GastoNoComestible = GastoNoComestible + item.Total;
 			}
 
 			CantidadDeCompras = CantidadDeCompras + 1;
 		}
+
+		/// <summary>Cuanto entro de un departamento. Total: uno que no aparecio es cero, no una ausencia.</summary>
+		public decimal GastoDe(Categoria categoria)
+		{
+			ArgumentNullException.ThrowIfNull(categoria);
+
+			porDepartamento.TryGetValue(categoria.Nombre, out decimal monto);
+			return monto;
+		}
+
+		/// <summary>Consulta de presencia, total: si este departamento entro en el mes.</summary>
+		public bool Tiene(Categoria categoria) => GastoDe(categoria) > 0m;
+
+		/// <summary>
+		/// Los departamentos que entraron, del que mas pesa al que menos. Total: un mes sin
+		/// compras devuelve la lista vacia, que ya es una respuesta.
+		/// </summary>
+		public IReadOnlyList<GastoDeDepartamento> Departamentos
+		{
+			get
+			{
+				var gastos = new List<GastoDeDepartamento>();
+
+				foreach (Categoria categoria in Categoria.Todas)
+				{
+					decimal monto = GastoDe(categoria);
+					if (monto > 0m) gastos.Add(new GastoDeDepartamento(categoria, monto, GastoTotal));
+				}
+
+				gastos.Sort((uno, otro) => otro.Monto.CompareTo(uno.Monto));
+				return gastos;
+			}
+		}
+	}
+
+	/// <summary>Cuanto entro de un departamento en un mes, y que parte del total fue.</summary>
+	public class GastoDeDepartamento
+	{
+		public Categoria Categoria { get; private set; }
+		public decimal Monto { get; private set; }
+
+		private readonly decimal total;
+
+		internal GastoDeDepartamento(Categoria categoria, decimal monto, decimal total)
+		{
+			ArgumentNullException.ThrowIfNull(categoria);
+
+			Categoria = categoria;
+			Monto = monto;
+			this.total = total;
+		}
+
+		public string Titulo => Categoria.Titulo;
+
+		/// <summary>Que parte del gasto del mes fue. 1 es todo el mes.</summary>
+		public decimal ProporcionDelTotal => total == 0m ? 0m : Math.Round(Monto / total, 4);
 	}
 }

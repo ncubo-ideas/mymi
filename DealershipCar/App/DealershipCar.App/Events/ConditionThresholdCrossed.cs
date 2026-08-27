@@ -4,14 +4,6 @@ using Puppets.Portador;
 
 namespace DealershipCar.App.Events
 {
-	// EL TALLER OBSERVO UN CRUCE DE UMBRAL. Es el unico hecho que mueve una operacion de base
-	// ConditionOnly, y solo la ADELANTA: nunca empuja un vencimiento hacia adelante (ley L3).
-	//
-	// Es el mas corto de los cinco -- una clase y un instante -- y aun asi tiene cuatro caminos
-	// distintos que devuelven null. Esa es la proporcion que la frontera tiene siempre: mucho mas
-	// codigo en descartar que en construir.
-	//
-	// Ver OdometerReported para por que los codigos se validan aca.
 	public sealed class ConditionThresholdCrossed : IMensajeDeEvento
 	{
 		public const string TheEventType = "ConditionThresholdCrossed";

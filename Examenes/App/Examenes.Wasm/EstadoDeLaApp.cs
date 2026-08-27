@@ -333,6 +333,31 @@ public sealed class EstadoDeLaApp : IAsyncDisposable
 	// La pregunta con la que se abre la app. Ver ExamenesAPI.LoMasUrgente.
 	public LoMasUrgente Urgente() { Exigir(); return api!.Urgente(); }
 
+	// ---------------------------------------------------------------- el sexo
+
+	// LO QUE LA PERSONA DICE DE SI MISMA. Es un COMANDO, no una preferencia de la
+	// pantalla: queda en su journal con procedencia TU, sobrevive al cierre, y lo lee su
+	// IA igual que todo lo demas. Guardar esto en un campo del componente —o en el
+	// localStorage— haria que la app mostrara una cosa y el servidor MCP otra.
+	//
+	// Baja a disco como cualquier otro comando: sin eso, el veredicto que se acaba de
+	// desbloquear en pantalla no estaria respaldado.
+	public async ValueTask DeclararSexo(string sexo)
+	{
+		Exigir();
+
+		api!.DeclararSexo(sexo);
+		if (puente.HayCarpeta) await BajarADisco();
+
+		UltimoMensaje = $"sexo declarado: {sexo}";
+	}
+
+	public string SexoDelPaciente() { Exigir(); return api!.SexoDelPaciente(); }
+
+	// EL DATO QUE FALTA, ya contado y ya dicho por el dominio. La pantalla pone los dos
+	// botones; el texto, el conteo y la severidad vienen de aca.
+	public FaltaElSexoDelPaciente PedidoDeSexo() { Exigir(); return api!.PedidoDeSexo(); }
+
 	// LOS BINARIOS SE LEEN POR OTRA PUERTA. Un nitrito no tiene tendencia ni puntos con
 	// numero: tiene presencias en fechas. Son dos consultas y no una porque no devuelven
 	// lo mismo, igual que en el dominio.
