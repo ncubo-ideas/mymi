@@ -46,6 +46,22 @@ namespace Presupuesto.Dominio
 
 		internal bool SePuedeComparar => PorcentajeAnual.HasValue && RendimientoDeLaAlternativa.HasValue;
 
+		// ------------------------------------------------------ lo que cruza el perform
+		//
+		// Los nullable NO cruzan como nullable: la superficie recibiria un hueco sin saber
+		// si es "cero" o "no se sabe". Por eso el bool viaja al lado del numero, y el
+		// numero es cero cuando el bool dice que no hay. Y el nombre del bien se aplana
+		// porque `rendimiento.Bien.Nombre` es un segundo nivel, y el print proyecta uno.
+		internal bool SeSabeElPorcentaje => PorcentajeAnual.HasValue;
+
+		internal decimal PorcentajeAnualODeCero => PorcentajeAnual ?? 0m;
+
+		internal decimal AlternativaODeCero => RendimientoDeLaAlternativa ?? 0m;
+
+		internal string NombreDelBien => Bien.Nombre;
+
+		internal string NombreDeLaComparacion => Contra.Nombre;
+
 		// El caso que la entrevista nombro primero: "para alguien podria ser rentable
 		// solamente con que le de para pagar los gastos". Se contesta sin saber cuanto vale
 		// el bien, y por eso vale la pena tenerlo aparte.

@@ -41,6 +41,27 @@ namespace Presupuesto.Dominio
 		// nombrar no es inventar.
 		internal string Lectura { get; }
 
+		// EL RESOLUTOR TOTAL desde primitivo. Igual que en Periodicidad, faltaba.
+		//
+		// Ojo con 'por definir': se puede NOMBRAR pero no se puede MARCAR. Resolverlo acá
+		// es legítimo —una consulta puede preguntar por él— y quien lo rechaza es
+		// GastoDeLaPersona.LaPersonaLoMarcoComo, porque marcar algo como "no sé" no es
+		// marcarlo. Las dos reglas viven donde corresponde y ninguna repite a la otra.
+		internal static Reducibilidad PorNombre(string nombre)
+		{
+			if (nombre != null)
+			{
+				string limpio = nombre.Trim().ToLowerInvariant();
+				if (limpio == Discrecional.Nombre) return Discrecional;
+				if (limpio == Comprometido.Nombre) return Comprometido;
+				if (limpio == PorDefinir.Nombre) return PorDefinir;
+			}
+
+			throw new ArgumentException(
+				$"'{nombre}' no es una reducibilidad de este dominio. Son: discrecional, comprometido, por definir.",
+				nameof(nombre));
+		}
+
 		internal bool SeSabe => this != PorDefinir;
 
 		internal bool SePuedeRecortar => this == Discrecional;

@@ -70,6 +70,81 @@ namespace Presupuesto.Dominio
 			return false;
 		}
 
+		// ------------------------------------------------------ ruteo desde primitivo
+		//
+		// Un comando NUEVO no puede tener en la mano un objeto que creó un comando
+		// ANTERIOR: cada perform es una invocación aparte y lo único que persiste son los
+		// globales. Los gastos, los bienes y los imprevistos viven ADENTRO de este
+		// agregado, así que la única forma de volver a tocarlos es nombrarlos.
+		//
+		// Ésa es la razón de fondo de "la fachada entra por primitivo": no es estética, es
+		// que del otro lado del journal no hay referencias, hay texto.
+		//
+		// Los cuatro REVIENTAN cuando el nombre no resuelve. Un comando que no encuentra a
+		// quién aplicarse no es un no-op: es un comando mal escrito, y tragárselo dejaría
+		// una entrada en el journal que al reproducirse no hace nada y nadie sabe por qué.
+
+		internal void QueTambienResponda(string nombreDelGasto, string textoDelBanco)
+		{
+			Buscar(nombreDelGasto).RespondeTambienA(textoDelBanco);
+		}
+
+		internal void MarcarComo(string nombreDelGasto, string reducibilidad)
+		{
+			GastoRecurrente gasto = Buscar(nombreDelGasto);
+
+			if (!(gasto is GastoDeLaPersona marcable))
+				throw new InvalidOperationException(
+					$"'{nombreDelGasto}' es un {gasto.GetType().Name}: su reducibilidad la decide su clase, "
+					+ "no la persona. Marcarla acá sería contradecir al dominio.");
+
+			marcable.LaPersonaLoMarcoComo(Reducibilidad.PorNombre(reducibilidad));
+		}
+
+		internal void SeLeAtribuyeAlBien(string nombreDelBien, DateTime fecha, decimal monto,
+			string descripcion)
+		{
+			BuscarBien(nombreDelBien).SeLeAtribuye(
+				new Cargo(fecha, monto, descripcion, "", Procedencia.Persona));
+		}
+
+		internal void ElBienProduce(string nombreDelBien, DateTime fecha, decimal monto,
+			string descripcion)
+		{
+			BuscarBien(nombreDelBien).Produce(
+				new Cargo(fecha, monto, descripcion, "", Procedencia.Institucion));
+		}
+
+		internal void LoCausoTambien(string quePaso, DateTime fecha, decimal monto,
+			string descripcion)
+		{
+			Imprevisto evento = imprevistos.Find(i => i.QuePaso == quePaso);
+			if (evento == null)
+				throw new ArgumentException(
+					$"No hay ningún imprevisto llamado '{quePaso}'. Se registra antes de agregarle cargos.",
+					nameof(quePaso));
+
+			evento.LoCausoTambien(new Cargo(fecha, monto, descripcion, "", Procedencia.Persona));
+		}
+
+		private GastoRecurrente Buscar(string nombre)
+		{
+			GastoRecurrente gasto = gastos.Find(g => g.Nombre == nombre);
+			if (gasto == null)
+				throw new ArgumentException(
+					$"No hay ningún gasto recurrente llamado '{nombre}'.", nameof(nombre));
+			return gasto;
+		}
+
+		private Bien BuscarBien(string nombre)
+		{
+			Bien bien = bienes.Find(b => b.Nombre == nombre);
+			if (bien == null)
+				throw new ArgumentException(
+					$"No hay ningún bien llamado '{nombre}'.", nameof(nombre));
+			return bien;
+		}
+
 		// ------------------------------------------------------------ pregunta 1
 
 		// El total se movio? Y si se movio, quienes lo explican.

@@ -43,6 +43,14 @@ namespace Presupuesto.Dominio
 
 		internal IReadOnlyList<GastoRecurrente> SinMarcar { get; }
 
+		// ------------------------------------------------------ lo que cruza el perform
+		//
+		// La lista NO cruza: una coleccion adentro de un carrier es el segundo nivel que
+		// el print no proyecta. Lo que cruza es CUANTOS son; los nombres, si hacen falta,
+		// son una consulta aparte con su propio foreach. Cero no significa "no hay":
+		// significa que no quedo nada sin marcar, que es la respuesta completa.
+		internal int CuantosSinMarcar => SinMarcar.Count;
+
 		// El techo optimista: todo lo discrecional a cero. No es una recomendacion -nadie
 		// vive recortando el 100% de su ocio- y por eso el nombre dice "techo".
 		internal decimal TechoDeLoConocido => Discrecional;

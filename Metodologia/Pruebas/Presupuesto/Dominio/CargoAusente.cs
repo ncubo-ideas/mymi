@@ -46,6 +46,18 @@ namespace Presupuesto.Dominio
 
 		internal string QueHacer => Severidad.QueHacer;
 
+		// ------------------------------------------------------ lo que cruza el perform
+		//
+		// El print PROYECTA UN SOLO NIVEL: `control.Gasto.Nombre` no cruza. Estos tres
+		// aplanan lo que arriba son objetos, para que el script pueda imprimirlos sin
+		// que la caratula reciba un tipo del dominio. Es la misma solucion que Examenes
+		// usa en CeldaDelCuadro con Fila y Columna.
+		internal string NombreDelGasto => Gasto.Nombre;
+
+		internal string NombreDeLaSeveridad => Severidad.Nombre;
+
+		internal int OrdenDeLaSeveridad => Severidad.Orden;
+
 		internal string Lectura
 		{
 			get

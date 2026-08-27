@@ -46,6 +46,28 @@ namespace Presupuesto.Dominio
 		// PresupuestoMensual, y ahi esta marcado.
 		internal decimal VecesPorAno => 12m / Meses;
 
+		// EL RESOLUTOR TOTAL desde primitivo, en el borde. Lo pide el capítulo 3 §3 para
+		// todo conjunto cerrado, y le faltaba: sin esto, un script del DSL no tiene cómo
+		// nombrar una periodicidad, porque el perform sólo transporta primitivos.
+		//
+		// REVIENTA ante lo desconocido, y eso es la mitad del valor. Una periodicidad que
+		// no existe no es un caso a ignorar: es un comando mal escrito, y conviene que
+		// falle al escribirlo y no seis meses después con una app que nunca avisó de nada.
+		internal static Periodicidad PorNombre(string nombre)
+		{
+			if (nombre != null)
+			{
+				string limpio = nombre.Trim().ToLowerInvariant();
+				if (limpio == Mensual.Nombre) return Mensual;
+				if (limpio == Trimestral.Nombre) return Trimestral;
+				if (limpio == Anual.Nombre) return Anual;
+			}
+
+			throw new ArgumentException(
+				$"'{nombre}' no es una periodicidad de este dominio. Son: mensual, trimestral, anual.",
+				nameof(nombre));
+		}
+
 		public override string ToString() => Nombre;
 	}
 }

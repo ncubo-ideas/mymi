@@ -39,6 +39,29 @@ namespace Presupuesto.Dominio
 		// NO, y de ahi sale que el respaldo de la carpeta deje de ser opcional.
 		internal bool SeRecuperaDelProveedor { get; }
 
+		// EL RESOLUTOR TOTAL, y acá se ve para qué existe de verdad.
+		//
+		// MEDIDO: desde un script del DSL, `Procedencia.Institucion` —un `static readonly`—
+		// NO resuelve: revienta con "Unknown property or method 'Institucion' on type
+		// 'Object'". Un MÉTODO estático sí. O sea que un conjunto cerrado sin resolutor es
+		// inalcanzable desde el DSL, y por lo tanto imposible de usar en un comando.
+		//
+		// La guía de dominio pide el resolutor por otra razón —la totalidad, que reviente
+		// ante lo desconocido— pero en este substrato es además la ÚNICA puerta de entrada.
+		internal static Procedencia PorNombre(string nombre)
+		{
+			if (nombre != null)
+			{
+				string limpio = nombre.Trim().ToLowerInvariant();
+				if (limpio == Institucion.Nombre) return Institucion;
+				if (limpio == Persona.Nombre) return Persona;
+			}
+
+			throw new ArgumentException(
+				$"'{nombre}' no es una procedencia. Un hecho lo emitió la institución o la persona; "
+				+ "no hay una tercera.", nameof(nombre));
+		}
+
 		public override string ToString() => Nombre;
 	}
 }

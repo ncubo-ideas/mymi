@@ -88,6 +88,9 @@ namespace Presupuesto.Dominio
 			internal GastoRecurrente Gasto { get; }
 			internal decimal Antes { get; }
 			internal decimal Ahora { get; }
+
+			// El print proyecta un solo nivel: `r.Gasto.Nombre` no cruza.
+			internal string NombreDelGasto => Gasto.Nombre;
 			internal decimal Cambio => Ahora - Antes;
 			internal decimal Proporcion => Antes > 0 ? Cambio / Antes : 0m;
 
