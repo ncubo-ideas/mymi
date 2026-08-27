@@ -11,6 +11,27 @@
    componer la razon es trabajo del dominio, no de la vista), asi que etiquetas en espanol
    alrededor de payload en ingles se leerian como ruido.
 
+   ESTA PANTALLA SOLO MUESTRA, y esa es la regla que manda sobre todas las demas. La app del dueno
+   es de SOLO LECTURA: quien cambia el journal es el CONCESIONARIO, no la persona. Aca no hay
+   ningun control que agende, aplace, complete ni descarte una operacion.
+
+   EL APLAZAMIENTO (L6) ES EL CASO QUE LO PRUEBA, y por eso se nombra: existe en el dominio, la
+   puerta lo ofrece, CanBeDeferred contesta por fila -- y aun asi esta pantalla NO lo ofrece. No se
+   saco por riesgoso ni por alcance, como el selector de perfil de mas abajo: se saco porque no le
+   corresponde a esta app. Lo unico que queda del aplazamiento es el CONTEO de los ya journalizados,
+   que es dato y no accion.
+
+   QUEDA UN SOLO BOTON QUE ESCRIBE, Y ES REFRESH, que aplica lo que MANDO el concesionario: el
+   hecho es de el y la app solo lo ingiere. "Re-evaluate now" estaba al lado y se fue con el
+   aplazamiento. La distincion que lo habria salvado -- correr la cadencia (C6) recalcula estados
+   contra el reloj y no decide nada sobre el mantenimiento -- es cierta y no alcanza: escribe, y la
+   apretaba la persona. La regla no admite grados, y una app de solo lectura con un boton que
+   journaliza es una app de solo lectura con una excepcion.
+
+   LA CADENCIA NO SE PERDIO AL SACAR EL BOTON, cambio de disparador: StartAsync evalua en CADA
+   apertura, que es la cadencia que C6 previo y la que el servidor MCP le cuenta a la IA. Lo que ya
+   no existe es una segunda forma, manual, de disparar lo mismo.
+
    ES UN TABLERO, y eso es una decision sobre el ORDEN, no sobre el contenido: primero el
    veredicto y los conteos que la persona vino a buscar, despues la tabla completa que los
    respalda. Tres cosas NO se movieron al reordenar, y son las que hacen que el tablero no
@@ -32,8 +53,9 @@
    largo -- fue si la linea le dice algo que no este ya dicho en otra parte de la pantalla:
 
      - un parrafo con las tres reglas del aplazamiento, ARRIBA de la tabla: duplicaba el tooltip
-       del boton de cada fila, que es donde la regla sirve. Fuera. Lo que lo justificaba -- que
-       Defer es un no-op MUDO cuando el dominio lo rechaza -- lo cierra CanBeDeferred por fila.
+       del boton de cada fila, que es donde la regla sirve. Fuera. Despues se fue tambien el
+       tooltip, con el control entero, cuando se fijo que esta app es de solo lectura: una regla
+       sobre una accion que la pantalla no ofrece no tiene a quien servirle.
      - la ventana de perdida, al pie: no es accionable y lo accionable ("se guarda despues de
        cada cambio") lo dice in-own-folder. Fuera, y sigue escrita en AppState.
      - el aviso de opfs: CIERTO y se queda, pero como una linea con su "why?" en vez de un banner
@@ -231,14 +253,24 @@ else
             </div>
         </div>
 
+        @* UN SOLO BOTON, Y ES EL QUE TRAE. "Re-evaluate now" estaba al lado y se fue: correr la
+           cadencia (C6) escribe -- transiciona estados y deja entrada -- y aunque no decida nada
+           sobre el mantenimiento, era la persona apretando algo que cambia su journal. La regla de
+           la cabecera no admite grados.
+
+           LA CADENCIA NO SE PERDIO, cambio de disparador: StartAsync sigue evaluando en CADA
+           apertura, que es la cadencia que C6 previo y la que el servidor MCP le cuenta a la IA
+           ("la app evalua cuando la persona la abre"). Lo que ya no hay es una segunda forma,
+           manual, de disparar lo mismo.
+
+           Y POR ESO EL "as of" DE ARRIBA IMPORTA MAS QUE ANTES: entre una apertura y la siguiente
+           el tablero se queda en el instante de la ultima evaluacion, y Refresh puede meter hechos
+           nuevos sin moverlo. La linea ya lo dice, con su instante, y decirlo dos veces seria la
+           prosa que esta pantalla se saco de encima. *@
         <div class="actions">
             <MudButton Variant="Variant.Filled" Color="Color.Primary" id="refresh"
                        StartIcon="@Icons.Material.Rounded.CloudSync" OnClick="Refresh" Disabled="@refreshing">
                 @(refreshing ? "Refreshing…" : "Refresh")
-            </MudButton>
-            <MudButton Variant="Variant.Outlined" Color="Color.Primary" id="evaluate"
-                       StartIcon="@Icons.Material.Rounded.Calculate" OnClick="Evaluate">
-                Re-evaluate now
             </MudButton>
         </div>
     </MudPaper>
@@ -449,13 +481,20 @@ else
         read up to event @lastEvent
     </MudText>
 
-    @* SIN PARRAFO DE INSTRUCCIONES ARRIBA DE LA TABLA. Decia las tres reglas del aplazamiento, y
-       las tres estaban ya en el tooltip del boton de cada fila: la misma leccion dos veces, una de
-       ellas lejos del control al que aplica. Lo que lo justificaba era que Defer es un no-op MUDO
-       cuando el dominio lo rechaza -- y eso ahora lo resuelve CanBeDeferred por fila, que es la
-       pregunta que la puerta proyecta justamente para esto. *@
+    @* SIN PARRAFO DE INSTRUCCIONES ARRIBA DE LA TABLA, y ahora por una razon mas simple que la
+       de antes: no hay nada que instruir. Decia las tres reglas del aplazamiento, que estaban ya
+       en el tooltip del boton de cada fila; con la columna de la accion fuera, ninguna de las dos
+       copias le aplica a nadie que este leyendo esto.
+
+       LO QUE SI HACE FALTA DECIR ES DE QUIEN ES EL REGISTRO, y esa linea es nueva. Una tabla de
+       nueve operaciones vencidas y ningun control se lee como una app rota -- "esto esta vencido y
+       no me deja hacer nada" -- salvo que diga quien lo lleva. Es la misma disciplina que el resto
+       de la pantalla: nombrar el estado en vez de dejar que se adivine. *@
     <div class="board-head">
         <MudText Typo="Typo.h6">The nine operations</MudText>
+        <MudText Typo="Typo.caption" HtmlTag="p" Class="muted" id="who-keeps-this">
+            Your dealership keeps this record and is the only one who changes it. Here you read it.
+        </MudText>
     </div>
 
     @* LA TABLA SE APILA EN TARJETAS en pantalla angosta, que es lo que hace que el tablero siga
@@ -464,20 +503,19 @@ else
 
        Sm Y NO Md, y esto se midio en pantalla: el umbral de MudTable es "apila hasta el
        breakpoint SIGUIENTE", asi que Md apilaba hasta 1280 px -- o sea, en la ventana de un
-       portatil normal la tabla salia apilada y las cinco columnas no se veian nunca. Con Sm la
-       tabla es tabla desde 960 px y se apila debajo, que es donde de verdad no entra. *@
+       portatil normal la tabla salia apilada y las columnas no se veian nunca. Con Sm la tabla es
+       tabla desde 960 px y se apila debajo, que es donde de verdad no entra. Se midio con cinco
+       columnas; ahora son cuatro y el umbral se deja donde estaba, que solo le sobra ancho. *@
     <MudTable T="string" Items="@AppState.TheNineKinds" Hover="true" Elevation="0" Outlined="true"
               Breakpoint="Breakpoint.Sm" Class="board" id="board">
         <HeaderContent>
             <MudTh>Operation</MudTh>
             <MudTh>State</MudTh>
             <MudTh>Why</MudTh>
+            @* EL CONTEO SE QUEDA, Y NO ES UN RESTO DEL CONTROL QUE SE FUE. Es un hecho del
+               registro -- cuantas veces se aplazo esta operacion -- y leerlo es justo lo que esta
+               app hace. Lo que se fue es la columna de al lado, la de la accion. *@
             <MudTh Style="width:96px">Times put off</MudTh>
-            @* LA COLUMNA DE LA ACCION SE RESERVA SU ANCHO. Sin esto la tabla se lo reparte por
-               contenido, la razon de una fila larga se lo come, y el desplegable y el boton
-               terminan uno encima del otro: dos controles apilados en una celda se leen como
-               dos acciones distintas, y son una sola. *@
-            <MudTh Style="width:296px">What you can do</MudTh>
         </HeaderContent>
         <RowTemplate Context="kind">
             <MudTd DataLabel="Operation" id="@("row-" + kind)">
@@ -495,58 +533,20 @@ else
             <MudTd DataLabel="Times put off">
                 <span class="mono">@deferrals[kind]</span>
             </MudTd>
-            <MudTd DataLabel="What you can do">
-                @* SE OFRECE SOLO CUANDO HARIA ALGO, y la pregunta la contesta EL DOMINIO.
-                   Antes se ofrecia siempre, con el argumento de que aplazar fuera de un
-                   estado vencido, en el tope o sobre una clasificada de seguridad es un
-                   no-op de L6 que NO tira: no arriesga una cicatriz en el journal. Cierto,
-                   y no alcanza -- es el mismo argumento con el que T10 dejo el boton de
-                   quitar de L9, y la razon por la que despues lo saco: que un control sea
-                   SEGURO no es razon para ponerlo en una pantalla. Apretarlo no hacia nada,
-                   sin decir nada, siete filas de nueve.
+            @* LA COLUMNA "WHAT YOU CAN DO" SE FUE ENTERA -- desplegable de razon, tooltip y boton
+               "Put off" -- y con ella el ultimo comando que la persona podia mandar desde esta
+               pantalla. No es un ajuste de tablero: es la regla de la cabecera. La agenda de un
+               vehiculo es el registro del CONCESIONARIO, y esta app es la ventana de la persona a
+               ese registro, no un formulario sobre el.
 
-                   Y NO SE DEDUCE DEL ESTADO. L6 tiene cuatro condiciones y el estado es una
-                   sola; las otras tres -- agendada, no clasificada de seguridad, por debajo
-                   del tope -- no se ven desde aca. Decidir con el estado solo habilitaria el
-                   control sobre TimedComponent en cuanto pase a DueSoon, que es la unica
-                   operacion de este plan que el dominio no aplaza NUNCA. Por eso la puerta
-                   proyecta la pregunta entera y esta vista solo la lee. *@
-                @* UNA RAZON POR FILA, y no un campo compartido por las nueve. Con un
-                   solo campo los nueve desplegables se movian juntos: la persona
-                   elegia "Timing" en una fila y las otras ocho cambiaban tambien, que
-                   es una pantalla mintiendo sobre que va a mandar. *@
-                <div class="defer">
-                    <MudSelect T="string" id="@("reason-" + kind)" Dense="true" Margin="Margin.Dense"
-                               Variant="Variant.Outlined" Value="@chosenReason[kind]"
-                               ValueChanged="@(chosen => chosenReason[kind] = chosen)"
-                               Disabled="@(!deferrable[kind])"
-                               Class="defer__reason">
-                        @foreach (string reason in AppState.TheFiveDeferralReasons)
-                        {
-                            <MudSelectItem T="string" Value="@reason">@Spaced(reason)</MudSelectItem>
-                        }
-                    </MudSelect>
-                    @* EL DESHABILITADO TIENE QUE DECIR POR QUE. Un control gris sin explicacion
-                       es la misma pantalla muda de antes, solo que ahora tampoco se puede
-                       apretar. No nombra la ley ni el numero del tope.
-                       Y ESTE TOOLTIP ES AHORA EL UNICO LUGAR DONDE VIVEN LAS TRES REGLAS. Estaban
-                       tambien en un parrafo arriba de la tabla, que se saco: era la misma leccion
-                       dos veces y la copia de alla estaba lejos del control al que aplica. Por eso
-                       la rama habilitada ya no las recita -- con el boton apagado cuando el dominio
-                       dice no, recitar los limites sobre una fila que SI se puede aplazar es
-                       explicar una regla que no la afecta. *@
-                    <MudTooltip Text="@(deferrable[kind]
-                        ? "Put this off for now, for the reason on the left. The postponement and its reason become part of your record."
-                        : "This one cannot be put off. The schedule only allows it while an operation is due, never for a safety operation, and only a limited number of times.")">
-                        <MudButton Variant="Variant.Outlined" Size="Size.Small" Color="Color.Primary"
-                                   id="@("defer-" + kind)" StartIcon="@Icons.Material.Rounded.Snooze"
-                                   Disabled="@(!deferrable[kind])"
-                                   OnClick="@(() => Defer(kind))">
-                            Put off
-                        </MudButton>
-                    </MudTooltip>
-                </div>
-            </MudTd>
+               NO SE DEJO DESHABILITADO, y esa era la otra salida posible. Un desplegable gris con
+               un boton apagado en las nueve filas es peor que no tener la columna: promete una
+               accion que no existe y deja a la persona buscando el permiso que la encienda. Si no
+               se puede hacer nunca, no se dibuja.
+
+               CanBeDeferred SIGUE EN LA PUERTA y sigue proyectada -- L6 no cambio, y el
+               concesionario la necesita -- pero esta vista ya no la pregunta: la unica razon por
+               la que la preguntaba era decidir si encender este control. *@
         </RowTemplate>
     </MudTable>
 
@@ -640,14 +640,10 @@ else
     private Dictionary<string, string> reasons = Empty();
     private Dictionary<string, int> deferrals = NoDeferralsYet();
 
-    // ARRANCA EN FALSO, LAS NUEVE, y las dos mitades importan. Las nueve claves por la misma razon
-    // que las tres de arriba: sin ellas el render revienta con KeyNotFoundException justo cuando el
-    // primer flush fallo, que es el caso para el que existe el aviso. Y en FALSO porque es el lado
-    // seguro de equivocarse: hasta que el dominio conteste, un control apagado no promete nada,
-    // mientras que uno encendido promete algo que puede no cumplir.
-    private Dictionary<string, bool> deferrable = NothingIsDeferrableYet();
-
-    private Dictionary<string, string> chosenReason = EveryKindStartsAt(AppState.TheFiveDeferralReasons[0]);
+    // NO HAY CAMPO DE APLAZAMIENTO, y los dos que habia se fueron con la columna: `deferrable`
+    // -- que leia CanBeDeferred por fila para decidir si encender el control -- y `chosenReason`,
+    // que guardaba la razon elegida en cada fila. Sin control que encender ni razon que mandar, los
+    // dos eran estado que esta pantalla mantenia para nada.
     private string error = "";
     private string destinationProblem = "";
 
@@ -770,17 +766,14 @@ else
         finally { refreshing = false; await Reread(); }
     });
 
-    private Task Evaluate() => Try("re-evaluate the schedule", async () =>
-    {
-        await state.EvaluateNowAsync();
-        await Reread();
-    });
-
-    private Task Defer(string kind) => Try($"defer {kind}", async () =>
-    {
-        await state.DeferOperationAsync(kind, chosenReason[kind]);
-        await Reread();
-    });
+    // NO HAY MANEJADOR DE APLAZAMIENTO NI DE EVALUACION, y los dos se fueron por la misma regla:
+    // esta app muestra el registro, no lo cambia. `Defer` mandaba un hecho del vehiculo decidido
+    // por la persona; `Evaluate` no decidia nada sobre el mantenimiento, pero escribia igual, y un
+    // boton que escribe es un boton que escribe.
+    //
+    // LOS DOS QUE QUEDAN ENTRAN POR OTRA PUERTA. Open arranca el actor -- y ahi adentro StartAsync
+    // corre la cadencia de C6, que es donde vive la evaluacion ahora -- y Refresh ingiere lo que
+    // MANDO el concesionario. Ninguno de los dos es la persona autorizando un hecho suyo.
 
     // Una app que no puede abrir tiene que DECIR por que. Sin esto, un fallo en el arranque deja
     // la pantalla igual que antes de apretar el boton y no hay forma de distinguirlo de un click
@@ -835,18 +828,15 @@ else
         var states = new Dictionary<string, string>();
         var why = new Dictionary<string, string>();
         var used = new Dictionary<string, int>();
-        var canDefer = new Dictionary<string, bool>();
         foreach (string kind in AppState.TheNineKinds)
         {
             states[kind] = state.ReadDueState(kind);
             why[kind] = state.ReadDueReason(kind);
             used[kind] = state.DeferralsUsed(kind);
-            canDefer[kind] = state.CanBeDeferred(kind);
         }
         board = states;
         reasons = why;
         deferrals = used;
-        deferrable = canDefer;
 
         (memfsFiles, memfsBytes) = state.MemfsState();
         permission = await state.CurrentPermissionAsync();
@@ -870,13 +860,6 @@ else
     {
         var start = new Dictionary<string, int>();
         foreach (string kind in AppState.TheNineKinds) start[kind] = 0;
-        return start;
-    }
-
-    private static Dictionary<string, bool> NothingIsDeferrableYet()
-    {
-        var start = new Dictionary<string, bool>();
-        foreach (string kind in AppState.TheNineKinds) start[kind] = false;
         return start;
     }
 

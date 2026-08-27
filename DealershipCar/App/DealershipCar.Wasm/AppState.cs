@@ -286,10 +286,16 @@ namespace DealershipCar.Wasm
 				LastMessage += " | " + DealershipUnreachable;
 			}
 
-			// EVALUAR AL ABRIR ES LA CADENCIA PREVISTA (C6). Evaluate es un COMANDO -- transiciona
-			// estados, asi que escribe -- y esta guardado sobre un punto de control monotono, asi
-			// que abrir dos veces en el mismo segundo rechaza la segunda BAJO EL READ LOCK y no deja
-			// entrada. Por eso se puede llamar en cada apertura sin engordar el journal.
+			// EVALUAR AL ABRIR ES LA CADENCIA PREVISTA (C6), Y AHORA ES LA UNICA. Evaluate es un
+			// COMANDO -- transiciona estados, asi que escribe -- y esta guardado sobre un punto de
+			// control monotono, asi que abrir dos veces en el mismo segundo rechaza la segunda BAJO
+			// EL READ LOCK y no deja entrada. Por eso se puede llamar en cada apertura sin engordar
+			// el journal.
+			//
+			// LA PANTALLA YA NO LO DISPARA. Habia un boton "Re-evaluate now" que llamaba a esto
+			// mismo y se saco: la app del dueno es de solo lectura y esto escribe. Esta llamada se
+			// queda porque no la hace la persona -- la hace la apertura -- y sin ella el tablero no
+			// podria mostrar nunca el estado de hoy.
 			try
 			{
 				await EvaluateNowAsync();
@@ -422,7 +428,12 @@ namespace DealershipCar.Wasm
 		// LA CADENCIA. Devuelve la razon del rechazo ya desenvuelta, o "" si la evaluacion corrio.
 		// Desenvolver el {"EWI":[{"Error":"..."}]} es trabajo de la vista (medido, S3): el door lo
 		// devuelve crudo a proposito.
-		public async ValueTask<string> EvaluateNowAsync()
+		//
+		// PRIVADA, Y ESO ES LA REGLA HECHA FIRMA. Era publica porque la pantalla la llamaba desde
+		// "Re-evaluate now"; sin ese boton el unico que la llama es StartAsync, y dejarla publica
+		// seria dejar abierta la puerta por la que la caratula volvia a escribir. Lo que la pantalla
+		// necesita saber de una evaluacion rechazada lo lee en EvaluationSkipped, que sigue publico.
+		private async ValueTask<string> EvaluateNowAsync()
 		{
 			Require();
 
@@ -452,16 +463,21 @@ namespace DealershipCar.Wasm
 			return "";
 		}
 
-		// LA PERSONA DEJA UNA OPERACION PARA DESPUES (L6). Fuera de un estado vencido, en el tope o
-		// sobre una de seguridad es un no-op del dominio y no tira: se puede ofrecer siempre.
-		public async ValueTask DeferOperationAsync(string kind, string reason)
-		{
-			Require();
-
-			api.DeferOperation(kind, reason, AnInstantThatDoesNotGoBackwards());
-			await FlushToDiskAsync();
-			LastMessage = $"deferred {kind} ({reason})";
-		}
+		// APLAZAR (L6) NO SE OFRECE, Y NO POR ALCANCE. Esta caratula tenia el comando -- mandaba
+		// DeferOperation con la razon elegida y bajaba a disco -- y se saco entero junto con la
+		// columna que lo disparaba, porque la app del dueno es de SOLO LECTURA: el journal de un
+		// vehiculo lo cambia el CONCESIONARIO, y esta app es la ventana de la persona a ese
+		// registro.
+		//
+		// ES DISTINTO DE LOS OTROS DOS QUE NO SE OFRECEN. El boton de quitar de L9 se fue porque no
+		// podia hacer nada nunca, y el selector de perfil de aca abajo se retiene porque es media
+		// capacidad suelta en esta rebanada. Este no: funciona, esta probado, y aun asi no le
+		// corresponde a esta app. Por eso no se retiene el metodo -- retenerlo seria dejar el
+		// unico camino por el que esta caratula puede journalizar una decision de la persona,
+		// esperando a que alguien le vuelva a colgar un boton.
+		//
+		// `DealershipCarAPI.DeferOperation` y `CanBeDeferred` siguen existiendo, igual que
+		// RemoveOwnerOperation: el dominio y la puerta no cambian, lo que se fue es la oferta.
 
 		// LA PERSONA DECLARA COMO USA EL VEHICULO (L8, OINV-15).
 		//
@@ -556,6 +572,11 @@ namespace DealershipCar.Wasm
 			"Standard", "SevereDuty", "LowDistance", "Commercial"
 		};
 
+		// LAS CINCO RAZONES YA NO LAS MANDA NADIE DESDE ACA -- se fueron con el desplegable y con
+		// DeferOperationAsync -- y la lista se queda igual, por lo que la prueba de conjuntos
+		// cerrados hace con ella: fija miembro por miembro contra DeferralReasonCode, que es un
+		// conjunto del dominio que ningun otro punto de este ensamblado espeja. Un miembro que el
+		// dominio agregue y esta lista no lo delata esa prueba, aunque la pantalla no lo ofrezca.
 		public static readonly string[] TheFiveDeferralReasons =
 		{
 			"Cost", "Timing", "SecondOpinion", "NotConvinced", "WillDoElsewhere"
@@ -567,12 +588,14 @@ namespace DealershipCar.Wasm
 
 		public string ReadDueReason(string kind) { Require(); return api.ReadDueReason(kind); }
 
+		// EL CONTEO SE QUEDA. Es un hecho del registro -- cuantas veces se aplazo esta operacion --
+		// y la pantalla lo muestra como muestra el estado y la razon. Que la persona ya no pueda
+		// aplazar no borra los aplazamientos que el registro tiene.
 		public int DeferralsUsed(string kind) { Require(); return api.DeferralsUsed(kind); }
 
-		// SI OFRECER EL APLAZAMIENTO. La pantalla no la deduce del estado: L6 tiene cuatro
-		// condiciones y el estado es una sola. Preguntarsela al dominio es lo que evita un control
-		// habilitado sobre una operacion clasificada de seguridad, que no se aplaza nunca.
-		public bool CanBeDeferred(string kind) { Require(); return api.CanBeDeferred(kind); }
+		// CanBeDeferred NO SE PROYECTA A ESTA CARATULA. La unica pregunta que contestaba era si
+		// encender el control de aplazar, y ese control no existe: proyectarla dejaria a la vista
+		// sabiendo algo que no puede usar para nada. Sigue en la puerta para quien si aplaza.
 
 		public int CountDue() { Require(); return api.CountDue(); }
 
