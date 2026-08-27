@@ -15,10 +15,19 @@ que sabe programar, menos que nadie.
 | **2** | **Escribir bien ese archivo** — la capacidad, los juicios, lo que se descarta | `Preguntas.md` terminado | [4](04-requerimientos-que-agregan-valor.md) |
 | **3** | **Preparar el escritorio** | una máquina que compila | [1](#) *pendiente* |
 | **4** | **Hello World** — algo que tocar y romper antes de lo propio | entendimiento | [2](#) *pendiente* |
-| **5** | **Construir** — dominio, hosting, carátulas | la app | [3](03-construir-la-app.md) |
-| **6** | **Traer los datos del proveedor** | URL2 alimentando el journal | [5](#) *pendiente* |
-| **7** | **Exponerla al CLI y a la IA** | la superficie | [6](06-cli-y-acceso-de-la-ia.md) |
+| **5** | **Construir** — el dominio, la lógica, y la carátula de **consola**, que es el arnés | `Dominio/` · `App/<N>.App` · `App/<N>.Consola` | [3](03-construir-la-app.md) |
+| **6** | **Traer los datos del proveedor** | `EndPointDeEventos/` · `InyectorDeEventosDemo/` | [5](#) *pendiente* |
+| **7** | **Exponerla** — las dos carátulas que miran **hacia afuera**: la que instala la persona y la que ve la IA | `App/<N>.Wasm` · `App/<N>.Mcp` | [6](06-cli-y-acceso-de-la-ia.md) |
 | **8** | **Auditar** contra `Preguntas.md` | el reporte de deriva | [Observables](observables.md) |
+| **9** | **Publicar** — la página de descarga, el compose y el README de cómo se corre | `PaginaDeDescarga/` · `docker-compose.yml` · `README.md` | *pendiente* |
+
+> **Por qué las carátulas se parten entre el 5 y el 7.** El capítulo 3 las llama a las tres
+> *"carátulas"* y podría parecer que van juntas. El corte no es arbitrario: la de **consola** es con la
+> que **vos** trabajás —mide el dominio sin el sandbox del browser encima— y por eso se construye
+> junto al dominio; la **Wasm** y la **Mcp** son con las que **te usan**, y no tienen sentido hasta que
+> hay datos de verdad corriendo por URL2. Es el orden que los negocios del repo ya siguen: *"el WASM
+> está bloqueado por el motor, así que se trabaja y se valida por Consola — es para lo que existe esa
+> carátula"*.
 
 Aparte del orden, y se lee cuando haga falta:
 
@@ -92,6 +101,12 @@ observables](observables.md), con cinco chequeos corridos contra los tres negoci
 correr, y uno quedó declarado **no observable** a propósito. Lo que todavía bloquea la auditoría
 completa es que **ningún negocio tiene su `Preguntas.md`**: sin la intención declarada, un agente
 puede leer el código pero no sabe contra qué compararlo.
+
+**9 (publicar). Sin capítulo, pero con material.** El paso existía en la práctica y no en este orden
+de trabajo: se descubrió comparando las fases contra la estructura de los negocios del repo, y
+`PaginaDeDescarga/` no tenía dónde caer. El capítulo 0 §9 ya trae la idea —*"dos deploys, y sólo uno
+es a un servidor"*— y los README de `Examenes` y `Compras` traen el detalle que cuesta caro
+redescubrir: el scope del service worker, el contexto seguro desde un teléfono, el workload de wasm.
 
 **A (compartir entre apps).** El capítulo 0 §6 fija el punto de partida: el cruce lo hace **el
 asistente**, sobre journals que la persona autorizó, no un canal entre módulos. Falta el caso en que
