@@ -17,7 +17,7 @@ cinco nodos adentro, nombres en español. Este README es **cómo se corre**.
 | `PaginaDeDescarga/` | **URL1** · nginx que sirve la app publicada. `8100` http, `8463` https. **No es un csproj** |
 | `EndPointDeEventos/` | **URL2** · `8101`. El GET de eventos, el token de device y su rotación, y el señuelo que devuelve 403 |
 | `InyectorDeEventosDemo/` | Siembra la historia en URL2. Valores y fechas **elegidos**, no aleatorios. Dos caras: el CLI (para guionar) y **la caja** en `ui/` (para mostrar) |
-| `Dominio/` | El puppet: `Historial`, `Compra`, `Item`, `Categoria`, `Garantia`, `Canasta`, `Veredicto`, `Severidad`, `AbastecimientoPendiente`, `Bitacora`. **Cero dependencias** |
+| `Dominio/` | El puppet: `Historial`, `Compra`, `Item`, `Categoria`, `Garantia`, `Canasta`, `FirmaDeLaCanasta`, `CambioEnLaCanasta`, `Severidad`, `AbastecimientoPendiente`, `Bitacora`. **Cero dependencias** |
 | `App/` | Una lógica y tres carátulas |
 | `manifiesto.json` | Lo que **el Host** lee para armar el catálogo sin arrancar el módulo: quién es, qué sustrato necesita, qué capacidades pide y sus tools |
 
@@ -26,7 +26,7 @@ Dentro de `App/`:
 | Proyecto | Qué es |
 |---|---|
 | `Compras.App` | La lógica: los `PerformCommand` y `PerformQuery`. No sabe dónde corre |
-| `Compras.Wasm` | La app que instala Sonia ("La Cosecha y vos"). Blazor WASM, PWA |
+| `Compras.Wasm` | La app que instala Sonia ("La Guaria y vos"). Blazor WASM, PWA |
 | `Compras.Mcp` | La superficie que ve la IA. **Solo lectura** sobre el journal |
 | `Compras.Consola` | Carátula de consola, para medir el dominio y el refresh sin browser |
 
@@ -73,14 +73,15 @@ dotnet run --project Compras/InyectorDeEventosDemo -- listar
 dotnet run --project Compras/App/Compras.Consola -- refrescar "/tmp/journal-compras" http://localhost:8101/ cliente 1
 ```
 
-Tiene que terminar en **6 compras**, evento **306**, total **172,630**, la comparación
-de canastas correcta y la garantía de la olla vigente (`CRITERIOS CORRECTOS : True`).
+Tiene que terminar en **87 compras**, evento **387**, total **₡3.222.336**, la
+comparación de canastas en **₡181.300 → ₡201.656** y la garantía de la olla vigente
+(`CRITERIOS CORRECTOS : True`).
 
 ```bash
 dotnet run --project Compras/App/Compras.Consola -- comprobar
 ```
 
-`comprobar` corre las **58 comprobaciones del dominio puro** — sin actor, sin journal y
+`comprobar` corre las **342 comprobaciones del dominio puro** — sin actor, sin journal y
 sin disco, así que cuando algo se rompe dice qué regla se rompió. `medir` aplica la
 historia y verifica los invariantes; `estado` abre el journal y reporta (correr en
 proceso nuevo: si las canastas siguen ahí, el replay rehidrató); `detalle` muestra un
@@ -113,7 +114,25 @@ cd Compras && ./PaginaDeDescarga/generar-certificado.sh && docker compose up -d
 
 Y queda en **`http://localhost:8100`** — la página de descarga de la institución — con
 la app colgando de **`/app/`** (la separación por el scope del service worker, medida
-por Exámenes; tras republicar hay que cerrar TODAS las pestañas del origen).
+por Exámenes).
+
+> **Tras republicar, la pantalla puede seguir mostrando la versión vieja, y hay TRES
+> cachés distintos.** El que muerde más no es el service worker: es el
+> `dotnet-resources-/app/` de Blazor y, encima, el caché HTTP del navegador. Cerrar las
+> pestañas no alcanza. Lo que sí funciona, en la consola del browser (F12):
+>
+> ```javascript
+> (async () => {
+>   for (const c of await caches.keys()) await caches.delete(c);
+>   for (const u of ['css/app.css', 'index.html']) await fetch('/app/' + u, {cache: 'reload'});
+>   location.reload();
+> })()
+> ```
+>
+> El primer bucle borra el caché de recursos de .NET; el `fetch` con `cache: 'reload'`
+> revalida el HTTP, que es el que dejaba el CSS viejo aunque el servidor ya sirviera el
+> nuevo. Verificado las dos veces que costó media hora entender por qué "no se aplicaba"
+> un cambio que sí estaba en disco.
 
 ### La caja: la demo en vivo
 
@@ -134,12 +153,12 @@ catálogo, **Registrar compra** → *"publicada como evento 307"*, y en la app d
 un **Refresh** la trae. Con la compra de salmón, espinaca y leche del ejemplo cambiaron
 tres cosas a la vez, y ninguna la escribió nadie a mano:
 
-- la proporción ocasional bajó de 68% a **61,9%**;
+- proteínas y lácteos y huevos aparecieron entre los pasillos del mes;
 - **proteínas y lácteos desaparecieron de "lo que dejó de entrar"** — el hueco se cerró
   porque acababa de entrar lo que faltaba;
 - la licuadora apareció en garantías vigentes, con vencimiento en 2028.
 
-El catálogo (`GET /catalogo`, 34 productos con precio, categoría y garantía) es **del
+El catálogo (`GET /catalogo`, 45 productos con precio, departamento y garantía) es **del
 supermercado**, no del dominio de la persona: la caja le pregunta a su propio sistema qué
 vende, en vez de llevarlo hardcodeado. Y el invariante se mantiene — la caja habla con
 URL2 por HTTP y nada más: no conoce el dominio, no toca el journal y no sabe qué es una
@@ -167,33 +186,102 @@ GET cliente/1/perfil            -> 403
 
 ---
 
+## El guion: 87 compras, y las verifica un script
+
+El guion **no se escribe a mano**. Lo genera `EndPointDeEventos/generar-guion.py`, que
+escribe `guion.json` y **verifica los diez invariantes del ecosistema antes de escribirlo**:
+si uno no cierra, el script se cae y no toca el archivo.
+
+```bash
+python Compras/EndPointDeEventos/generar-guion.py
+```
+
+```
+87 compras, de 2025-01-04 a 2026-08-29
+  cierre 2025-08: Pasta espagueti 500g x4 a 995 (lista 920) en T-88945
+  cierre 2026-08: Soda cola 2L x3 a 1942 (lista 1970) en T-90349
+
+invariantes:
+  ok   13 - agosto 2025 = 181.300 (dio 181300)
+  ok   13 - agosto 2026 = 201.656 (dio 201656)
+  ok   13 - 12 tickets con helado en 2025 (dio 12)
+  ok   13 - 34 tickets con helado en 2026 (dio 34)
+  ok   4 - ningun embutido antes de 2026 (hay 0)
+  ok   4 - ninguna preparada antes de 2026 (hay 0)
+  ok   4 - los embutidos entran en enero 2026 (entraron 2026-01-03)
+  ok   4 - frescos en TODAS las compras de 2025 (35 de 35)
+  ok   4 - frescos en la mitad de 2026 (18 de 35)
+  ok   14 - Luna a 25.000 en los 20 meses (fallan 0)
+```
+
+**Por qué se genera.** Antes eran seis compras escritas a mano, y con seis "la firma de su
+semana" no tenía de dónde salir: la app contestaba *"su semana tiene una firma: Helado de
+vainilla 1L"*, con 3 de 6. Los invariantes de `Ecosistema/Preguntas.md` piden compras
+**semanales durante veinte meses** con dos totales de agosto exactos al colón. Eso a mano
+no se sostiene, y peor: nadie podría decir si los números cierran sin volver a sumar 87
+tickets.
+
+**La regla del guion, en una línea.** En 2025 la canasta es de cocinar en casa —frescos
+todas las semanas, proteína fresca, helado una vez al mes—; en enero de 2026 entran
+embutidos y comidas preparadas, el helado pasa a semanal y los frescos bajan a
+quincenales. **El total sube 11%, no 50%**: lo que entra *desplaza* a lo que sale. La
+primera versión agregaba lo nuevo encima de lo viejo y daba ₡302.180 contra los ₡201.656
+del invariante.
+
+**Dos cosas que el script deja dichas en vez de esconder.** Los dos totales de agosto están
+fijados al colón y una canasta generada por reglas no cae ahí sola: el cierre ajusta la
+cantidad de un producto de relleno en la última compra del mes, buscando la que deje un
+precio **entero** y a menos del 18% del de lista — que es lo que pasa cuando algo está en
+promoción esa semana. Y dos tonos de verde del gráfico del landing son **derivados** de
+`--gu-verde`, no colores nuevos de marca.
+
+**Un guion, dos consumidores.** `guion.json` lo sirve el mock y lo lee también
+`Compras.Consola` para medir sin levantar Docker — el csproj lo enlaza y el build lo copia.
+Antes había una copia a mano en `Muestras.cs`, y como las mismas constantes validan los dos
+caminos, si los guiones diferían uno de los dos veredictos mentía.
+
+---
+
 ## El dominio
 
 ### El conocimiento viaja con los datos
 
 Una línea de ticket sin categoría es **muda**: "HELADO-1L x3" no dice nada. La
-`Categoria` (conjunto cerrado, 9 miembros) lleva el **perfil de consumo** —
-recomendado / neutro / ocasional — y eso es lo que vuelve la narrativa **analizable**:
+`Categoria` (conjunto cerrado, 9 miembros) es el **departamento** del supermercado, y eso
+es lo que vuelve la narrativa **analizable**. Cada uno lleva dos nombres: la **llave**,
+que es la que viaja en el evento y ya está escrita en los diarios, y el **título**, que es
+lo que lee una persona.
 
 ```
-Categoria
-├── Proteinas          recomendado      pollo, tilapia
-├── FrutasYVerduras    recomendado      brocoli
-├── LacteosYHuevos     neutro           leche, huevos
-├── GranosYAbarrotes   neutro           arroz, frijoles
-├── AceitesYGrasas     ocasional        aceite, manteca
-├── Azucarados         ocasional        helado, sodas, chocolate
-├── Snacks             ocasional        papas fritas
-├── Limpieza           NO comestible    detergente
-└── Electrohogar       NO comestible    la olla arrocera (con garantía)
+Categoria           título                  llave              ejemplos
+├── Proteinas       proteínas               (comestible)       pollo, tilapia
+├── FrutasYVerduras frutas y verduras       (comestible)       brocoli
+├── LacteosYHuevos  lácteos y huevos        (comestible)       leche, huevos
+├── GranosYAbarrotes granos y abarrotes     (comestible)       arroz, frijoles
+├── AceitesYGrasas  aceites y grasas        (comestible)       aceite, manteca
+├── Azucarados      dulces y postres        (comestible)       helado, sodas, chocolate
+├── Snacks          snacks                  (comestible)       papas fritas
+├── Limpieza        limpieza                NO comestible      detergente
+└── Electrohogar    electrodomésticos       NO comestible      la olla arrocera (con garantía)
 ```
+
+**El departamento no valora nada, y es deliberado.** Antes cada uno cargaba un *perfil de
+consumo* (recomendado / neutro / ocasional) que salió de una decisión nuestra, no de
+ninguna especificación. La de marca lo prohíbe con todas las letras — *"no inventar en la
+app conclusiones de salud: es la línea que separa lo honesto de lo que no"* — y con razón:
+el súper no sabe si la persona está en una dieta, si son cinco en la casa, ni si el helado
+era de un cumpleaños. "Azucarados" es un hecho de góndola; "ocasional" era un juicio.
+El cruce y el juicio son del **asistente**, con permiso de la persona. Hay una
+comprobación que revienta si alguien vuelve a colgarle una etiqueta de valor al
+repertorio.
 
 Tres decisiones que ordenan lo demás (las lecciones de Exámenes y la guía de dominio
 `puppeteer-domain-modeling` **v1.1.0**, aplicadas acá):
 
-- **Preguntarle el perfil a un detergente revienta**, no contesta "neutro": un perfil
-  inventado contaminaría las proporciones de la canasta. Quien suma pregunta
-  `EsComestible` antes (el mismo argumento por el que los nitritos no son un `bool`).
+- **La llave nunca se le muestra a nadie**: `FrutasYVerduras` es lo que viene en el evento
+  y no puede cambiar sin romper los diarios ya escritos; `Titulo` y `Mencion` son las dos
+  formas legibles ("frutas y verduras" para una lista, "una fruta o verdura" dentro de una
+  frase). La spec prohíbe la jerga de retail en lo que ve Sonia.
 - **La garantía no es un `int`**: sabe desde cuándo corre (la fecha de la compra) y
   contesta si está vigente en una fecha **recibida** — el dominio no lee el reloj.
 - **La ausencia tiene TIPO, no `null` (E45).** Lo que no trae cobertura porta
@@ -205,14 +293,20 @@ Tres decisiones que ordenan lo demás (las lecciones de Exámenes y la guía de 
 
 ### Las dos preguntas que ningún ticket contesta
 
-**`CanastaDe(anio, mes)` / `CompararCanastas(...)`** — la proporción de gasto ocasional
-se calcula **sobre lo comestible**: la olla arrocera de ₡45.900 no puede diluir el
-helado. Con el guion sembrado:
+**`CanastaDe(anio, mes)` / `CompararCanastas(...)`** — la canasta se suma **departamento
+por departamento**, con lo comestible y lo no comestible separados para que una olla
+arrocera de ₡45.900 no se coma la lectura de la comida. Y la comparación no da un
+veredicto: da **de dónde sale la diferencia**, que es la pregunta S14 de la wiki
+(*"¿en qué se me va la plata en el súper?"*). Con el guion sembrado:
 
-| Canasta | Ocasional | Lectura |
-|---|---|---|
-| agosto 2025 | 2.890 de 32.910 = **8,8%** | la canasta base |
-| agosto 2026 | 31.680 de 32.600 = **97,2%** | se volteó |
+```
+en 2026-08 lleva ₡32.600 y en 2025-08 fueron ₡32.910;
+la diferencia se explica sobre todo por dulces y postres (que no aparecía el otro mes);
+en cambio proteínas y lácteos y huevos bajaron
+```
+
+Un pasillo entra a esa frase solo si mueve al menos **un décimo** del movimiento total
+(`ParteDelMovimientoQueCuenta`); menos que eso es ruido de despensa y ensucia la lectura.
 
 Es la mitad "compras" del **cruce preplanificado** del milestone: el laboratorio
 siembra colesterol 200 (ago-2025) → 280 (ago-2026), y "el colesterol alto es por culpa
@@ -220,31 +314,33 @@ del helado" lo arma el **asistente**, que es el único que ve los dos negocios. 
 módulos no se hablan.
 
 **`BuscarGarantia(texto, fechaDeConsulta)`** — la respuesta a *"¿cuándo compré la olla
-arrocera y hasta cuándo tiene garantía?"*: compra T-93872, 2026-05-10, 12 meses, vence
+arrocera y hasta cuándo tiene garantía?"*: compra T-89917, 2026-05-09, 12 meses, vence
 2027-05-10. Total: lo que no está o no tiene garantía devuelve el registro **`Ausente`**
 (`Encontrada=false`), no una excepción. Si se recompró, gana la compra más reciente.
 
-### El veredicto no es el cambio
+### La app señala y se calla
 
-`CambioEnProporcion` es un **hecho neutro**: "bajó 29 puntos". El **`Veredicto`** dice
-qué significa: en lo ocasional bajar es hacia donde conviene, así que ese mismo hecho es
-*mejorando*.
+El dominio **redacta la lectura pero no la juzga**, y las dos mitades de esa frase
+importan.
 
-Existe porque sin él la pantalla tenía que decidirlo, **y decidía mal**: con un solo
-booleano (`CrecioLoOcasional`) una canasta que MEJORA 29 puntos se mostraba igual que una
-que no se movió — "estable", en verde. Es el mismo defecto que Exámenes tenía al poner
-"EN ASCENSO" al colesterol y al antígeno con el mismo texto: el signo solo no alcanza,
-hace falta saber hacia dónde conviene ir.
+Redacta: la línea (`ParaSonia`) la escribe el dominio, no la pantalla. La posición
+anterior — *"el dominio devuelve hechos, la frase la arma la superficie"* — sigue valiendo
+y los hechos siguen viajando al lado; lo que cambia es quién arma la oración, porque
+decidir qué pasillos merecen nombrarse ya es conocimiento del negocio. La **acción**
+(`Severidad.QueHacer`) sale de un conjunto cerrado para que la pantalla no pueda inventar
+una.
 
-La línea (`ParaSonia`) también la escribe el dominio. La posición anterior — *"el dominio
-devuelve hechos, la frase la arma la superficie"* — sigue valiendo y los hechos siguen
-viajando al lado; lo que cambia es quién redacta: una pantalla no tiene de dónde sacar si
--29 puntos es bueno. La **acción** (`Severidad.QueHacer`) sale de un conjunto cerrado
-para que la pantalla no pueda inventar una.
+No juzga: *"el ámbar no es un regaño. Que el helado pasara de mensual a semanal es un
+dato, no una falta. La app lo señala y se calla; el juicio no es suyo."* Por eso la
+dirección de un cambio vive en el **signo** (`Cambio`, `CambioEnElTotal`) y en un lector
+guardado (`Subio`, que revienta si no hay cambio real que leer), y no en un veredicto
+*mejorando / empeorando*. Hay comprobaciones que verifican que las líneas del dominio no
+contengan *peor, mejor, empeora, mejora, debería, conviene, cuidado* ni *mal*.
 
-Y las acciones de este negocio son **administrativas** (una garantía que se cierra),
-nunca consejos de salud: que la canasta se haya vuelto ocasional es un hecho que este
-módulo reporta, y qué hacer con eso no lo decide un supermercado.
+Las acciones de este negocio son **administrativas** (una garantía que se cierra), nunca
+consejos de salud. Y la lectura sale igual de rica: la firma de su semana, el mes en que
+la canasta cambió, de qué pasillos salió la diferencia y su propia inflación producto por
+producto son todas conclusiones — sobre la **compra**, que es lo que este módulo sí sabe.
 
 ### Lo que NO está
 
@@ -257,7 +353,7 @@ que no entra un lácteo" no es un dato del historial: es una conclusión sobre e
 más el calendario más la periodicidad propia de cada categoría (proteínas cada 10 días,
 granos cada 35, limpieza cada 45).
 
-Con una decisión de dominio deliberada: **lo ocasional no tiene periodicidad**.
+Con una decisión de dominio deliberada: **los antojos no tienen periodicidad**.
 Preguntarle a `Categoria.Azucarados` cada cuánto se repone **revienta**, y un año sin
 comprar helado no genera ningún pendiente. Este módulo no existe para decirle a nadie que
 hace un mes que no compra helado.
@@ -294,7 +390,7 @@ lea es un lector de facturas, no un lector de la historia.
 Lo que sí faltaba, y es distinto, es **cuándo**. `consumo_de` lo da:
 
 ```
-consumo_de('helado') -> 3 meses, ₡25.060 en total, empeorando
+consumo_de('helado') -> 3 meses, ₡25.060 en total, subió
    serie: 2026-02=₡6,900   2026-07=₡7,120   2026-08=₡11,040
    pico: 2026-08
 ```
@@ -305,10 +401,10 @@ contraparte de la `SerieDeAnalito` del laboratorio, del lado de las compras — 
 lo hace **el asistente en el dispositivo de ella**, nunca una institución consultando a
 la otra.
 
-El **veredicto sale del perfil, no del signo**: que los azucarados suban es *empeorando*
-y que las proteínas suban es *mejorando*. Y cuando no hay con qué juzgar — un solo mes, o
-una búsqueda por texto que cruza categorías con perfiles distintos — entrega los hechos y
-**no se pronuncia** (`sePuedeJuzgar: false`), en vez de inventar una lectura.
+La dirección es un **hecho**, no una valoración: `hayCambioReal` dice si se movió más de
+un quinto (menos que eso es variación de despensa) y el signo de `cambioDeGasto` dice para
+dónde. Un solo mes no tiene dirección y preguntarla revienta, en vez de inventar una
+lectura. Que subir helado sea bueno o malo **no lo contesta este módulo**.
 
 Verificado con un cliente stdio: `tools/list` devuelve las seis, y `tools/call` sobre
 `que_dejaste_de_comprar` trae los cuatro pendientes con su línea del dominio;
@@ -322,14 +418,15 @@ raíz.
 
 | Capa | Estado |
 |---|---|
-| Dominio | ✅ 138 comprobaciones (`comprobar`): las proporciones del guion, los límites de la garantía, la ausencia con tipo (E45), el veredicto en las dos direcciones, el hueco, el rango y la serie de consumo |
+| Dominio | ✅ **342 comprobaciones** (`comprobar`): los montos del guion, los límites de la garantía, la ausencia con tipo (E45), de qué pasillos sale la diferencia, la firma y el mes del cambio, que ninguna línea juzgue, el hueco, el rango y la serie de consumo |
 | Consola | ✅ ciclo completo: `comprobar`, `medir`, `estado`, `detalle`, `canasta`, `comparar`, `garantia`, `pendientes`, `porvencer`, `refrescar` |
 | Manifiesto | ✅ escrito contra el contrato de la rama `master_gnothiHost`; ⚠️ **no ejercitado con el Host**, que todavía no está en master |
-| EndPointDeEventos | ✅ 6 eventos sembrados, rotación de token (medida con `/device/expirar-access`) y señuelo 403 |
+| Guion | ✅ **87 compras semanales** de 2025-01-04 a 2026-08-29, con los **10 invariantes del ecosistema verificados** por `generar-guion.py` (agosto 2025 = ₡181.300 y agosto 2026 = ₡201.656, exactos) |
+| EndPointDeEventos | ✅ 87 eventos servidos desde `guion.json`, rotación de token (medida con `/device/expirar-access`) y señuelo 403 |
 | Inyector CLI | ✅ `listar`, `inyectar` (líneas con categoría y garantía), `senuelo` |
-| Caja (UI) | ✅ medida en browser: catálogo de 34 productos con filtros, ticket con cantidades y precios editables, **Registrar compra** publicando el evento 307, y la narrativa publicada a la derecha |
-| Catálogo | ✅ `GET /catalogo` con las 9 categorías y los 4 electrodomésticos que traen garantía |
-| MCP | ✅ medido con cliente stdio y **probado con Claude Code real**: las 8 tools en `tools/list` y `tools/call` con structuredContent tipado |
+| Caja (UI) | ✅ medida en browser: catálogo de 45 productos con filtros, ticket con cantidades y precios editables, **Registrar compra** publicando el evento 307, y la narrativa publicada a la derecha |
+| Catálogo | ✅ `GET /catalogo` con **45 productos en 12 departamentos** y los 4 electrodomésticos que traen garantía |
+| MCP | ✅ medido con cliente stdio y **probado con Claude Code real**: las **10 tools** en `tools/list` y `tools/call` con structuredContent tipado. Con el guion de 87 compras: **21 llamadas seguidas sin un error**, journal de 74 KB en 3 archivos y **~130 ms por consulta** incluyendo arranque del proceso y rehidratación completa — el diseño de rehidratar en cada consulta sigue siendo válido |
 | Wasm | ✅ **CORRE EN EL BROWSER** con el motor `10029` — ver abajo |
 | PaginaDeDescarga | ✅ landing servida y verificada; ⚠️ con **nginx/Docker sin probar** (daemon apagado): la prueba se hizo sirviendo el mismo webroot (landing en `/`, publish en `/app/`) con un estático |
 
@@ -339,7 +436,7 @@ Con `3.0.0-beta.10029` la app abre el actor y muestra todo: **8 compras**, el to
 canasta comparada, las dos garantías vigentes con su vencimiento, y el detalle de un
 ticket con la categoría de cada línea y el badge *con garantía*. Y el ciclo en vivo:
 inyectando una compra sana (salmón + espinaca) mientras la app estaba abierta, **Refresh**
-la trajo — evento 307 → 308, 7 → 8 compras — y la proporción ocasional **bajó de 97,5% a
+la trajo — evento 307 → 308, 7 → 8 compras — y los pasillos del mes cambiaron **de tres a
 68%**. El dominio reacciona al dato nuevo, que es exactamente lo que la demo promete.
 
 > **TRAMPA QUE COSTÓ UNA HORA, y no es del motor.** Con el `Directory.Build.props` ya en
@@ -363,11 +460,25 @@ la trajo — evento 307 → 308, 7 → 8 compras — y la proporción ocasional 
 |---|---|
 | 1 | **Probar URL1 con nginx/Docker** y el flujo de instalación de la PWA. El proxy `/app/eventos/` ya está en el `nginx.conf` (patrón de Renán: base relativa para que funcione desde un teléfono y por https), pero **sin Docker no se pudo ejercitar**: la prueba en browser se hizo con base absoluta al mock |
 | 2 | **`Puppets.Portador` a la raíz**: con dos negocios vivos ya aplica la convención. Acordar con Renán y el equipo, borrar las copias y referenciar la de la raíz |
-| 3 | **La marca ficticia** (*Supermercado La Cosecha* / *La Cosecha y vos*) es un placeholder; la definitiva la define el equipo. Vive solo en `PaginaDeDescarga/descarga/index.html` y en los assets de la carátula |
-| 4 | **Probar URL1 con Docker** (publish + certificados + compose) y el flujo de instalación de la PWA |
-| 5 | **La gasolinera**: Tareas.md la asigna también a Pleitez "de momento"; puede salir del ecosistema si no cuenta una historia interesante. Este negocio ya deja el molde para armarla rápido |
-| 6 | **Icons de la carátula** (favicon/icon-192/icon-512) siguen siendo los del template copiado de Exámenes |
-| 7 | **Bootstrap**: la carátula carga `bootstrap.min.css` (227 KB, el único de los 44 archivos del template que la página pide — el resto no se versionó). Exámenes lo quitó del todo y escribió su propio CSS; conviene alinearse cuando la UI la revise Fernanda |
+| 3 | **Los iconos PNG de la PWA** (`favicon`, `icon-192`, `icon-512`) siguen siendo los del template. La especificación pide la guaria morada sobre `#2f6b3f`; **existe `Examenes/PaginaDeDescarga/generar-iconos.py` para reusar** |
+| 4 | **`Compras/Preguntas.md`**: es el **paso 1** del orden de trabajo de `Metodologia/`, y no lo tenemos. La guía dice que sin él nadie puede auditar el negocio contra lo que prometió. Ningún negocio del repo lo tiene todavía |
+| 5 | **Observable 6 de la Metodología**: los argumentos de las tools son `string` y deberían ser `enum`, para que la lista de valores válidos viva en el `inputSchema` (un contrato) y no en la prosa de la descripción. Aplica sobre todo a `consumo_de`, que acepta un departamento del conjunto cerrado **o** texto libre |
+| 6 | **Que el DOMINIO encuentre el mes del quiebre** en vez de recibirlo. La especificación pide *"el quiebre de enero"*, no *"el quiebre desde la fecha que le pases"*: hoy la carátula corta el 1 de enero del año corriente, así que si el cambio de una persona fue en setiembre, esta pantalla no lo encuentra |
+| 7 | **Bootstrap**: la carátula lo mantiene con sus variables remapeadas a la paleta de La Guaria (`data-bs-theme` fuera, tema claro). Exámenes lo quitó del todo. Sacarlo es un paso aparte y no hace falta para que la app se reconozca; conviene decidirlo cuando el layout lo defina el boceto de escritorio |
 | 8 | **El `instalacion.json` es del Host**, no de este módulo (son dos autoridades: la institución declara qué ofrece, el Host decide cómo se lo ejecuta y qué carpeta le concede). Cuando el Host entre a master, quien lo opere debe crear `Modulos/compras/` con nuestro `manifiesto.json` y su propio `instalacion.json` apuntando a `Compras/App/Compras.Mcp/bin/.../Compras.Mcp.dll` y a la carpeta concedida — **la misma que se eligió en la app**, o el módulo reporta `hayDatos=false` |
-| 9 | **Nombres para mostrar**: `AbastecimientoPendiente` traduce la llave del repertorio (`FrutasYVerduras`) a algo legible con un `switch`. Exámenes resolvió lo mismo tipando el analito con un `ParaMostrar` propio; conviene mover eso a `Categoria` |
-| 10 | **El veredicto del consumo compara los extremos**, así que un valle en el medio no lo mueve: las proteínas del guion (13.600 → 4.350 → 12.800) salen *estable*, y es cierto entre extremos pero esconde el bajón de febrero. Exámenes resolvió lo análogo con dos lecturas — tendencia sobre la serie entera y velocidad sobre el tramo reciente. Conviene traer esa segunda lectura |
+| 9 | **La lectura del consumo compara los extremos**, así que un valle en el medio no lo mueve. Exámenes resolvió lo análogo con dos lecturas — tendencia sobre la serie entera y velocidad sobre el tramo reciente. Conviene traer esa segunda lectura |
+| 10 | **La gasolinera**: Tareas.md la asigna también a Pleitez "de momento"; puede salir del ecosistema si no cuenta una historia interesante. Este negocio ya deja el molde para armarla rápido |
+
+### Dos preguntas para el equipo, no pendientes nuestros
+
+**1 · "Los frescos" contra "proteínas".** La respuesta esperada de S14 dice *"los frescos,
+en cambio, bajaron"* y nuestra lectura nombra **proteínas**, porque es el departamento que
+más movió (−₡48.270 contra −₡5.000 de frutas y verduras). En un súper "los frescos" son la
+carnicería **y** la verdulería, y en nuestros datos bajaron las dos; el dominio nombra el
+que pesa. Si el equipo quiere que la app diga "frescos", eso es **agrupar dos departamentos
+en uno** para hablarle a la persona — decisión de ellos.
+
+**2 · El hueco quedó vacío, y es correcto.** Con compras semanales **nada está atrasado**,
+así que *"lo que dejó de entrar"* no se pinta. Es honesto, pero el demo pierde una lectura
+que era buen gancho. Hacerla aparecer es una línea en el generador —un mes sin lácteos—
+pero es **inventar un hueco**, así que no lo hicimos por cuenta propia.

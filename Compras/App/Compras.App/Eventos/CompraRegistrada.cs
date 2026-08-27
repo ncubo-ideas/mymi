@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Text.Json;
+using Compras.Dominio;
 using Puppets.Portador;
 
 namespace Compras.App.Eventos
@@ -23,15 +24,6 @@ namespace Compras.App.Eventos
 	public sealed class CompraRegistrada : IMensajeDeEvento
 	{
 		public const string TipoDeEvento = "CompraRegistrada";
-
-		// Las categorias que el dominio modela. Espejo de Categoria (el dominio es quien
-		// las posee); este listado existe para poder DESCARTAR en la frontera sin
-		// referenciar al dominio desde el wire.
-		private static readonly string[] CategoriasConocidas =
-		{
-			"Proteinas", "FrutasYVerduras", "LacteosYHuevos", "GranosYAbarrotes",
-			"AceitesYGrasas", "Azucarados", "Snacks", "Limpieza", "Electrohogar",
-		};
 
 		public long Evento { get; private set; }
 		public string Tipo => TipoDeEvento;
@@ -102,13 +94,16 @@ namespace Compras.App.Eventos
 			}
 		}
 
-		private static bool EsCategoriaConocida(string categoria)
-		{
-			foreach (string conocida in CategoriasConocidas)
-				if (string.Equals(conocida, categoria, StringComparison.OrdinalIgnoreCase))
-					return true;
-			return false;
-		}
+		// LO PREGUNTA AL DOMINIO, que es quien posee el conjunto. Aca habia una copia de
+		// los nueve nombres, con el argumento de "descartar en la frontera sin referenciar
+		// al dominio desde el wire" — y el argumento era falso: este ensamblado YA
+		// referencia Compras.Dominio, porque es el que consulta el historial.
+		//
+		// La copia se desincronizo y costo caro: al agregar mascotas, embutidos y comidas
+		// preparadas, el borde descarto 47 de 87 compras EN SILENCIO. Ni un error, ni un
+		// log: solo un historial que empezaba en 2026 sin que nada dijera por que. Una
+		// lista espejo mantenida a mano no falla haciendo ruido, falla callada.
+		private static bool EsCategoriaConocida(string categoria) => Categoria.Existe(categoria);
 
 		private static string Texto(JsonElement raiz, string nombre) =>
 			raiz.TryGetProperty(nombre, out JsonElement e) && e.ValueKind == JsonValueKind.String

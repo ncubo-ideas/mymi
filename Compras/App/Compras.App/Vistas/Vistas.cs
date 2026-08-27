@@ -38,48 +38,134 @@ namespace Compras.App.Vistas
 		public IReadOnlyList<LineaDeCompra> Lineas { get; init; } = new List<LineaDeCompra>();
 	}
 
-	// La foto de un mes sumada por perfil. Trae los HECHOS y no una frase: montos por
-	// perfil y la proporcion de lo ocasional sobre lo comestible. Con eso la IA o la UI
-	// arman "tu canasta de agosto fue 97% ocasional". Lo que no se puede armar con esto
-	// es un consejo de plantilla, y es a proposito.
+	// La foto de un mes sumada POR DEPARTAMENTO. Trae los HECHOS y no una frase: cuanto
+	// entro de cada pasillo y que parte del mes fue. Con eso la IA o la UI arman "en
+	// agosto la mitad se fue en dulces". Lo que no se puede armar con esto es un consejo
+	// de plantilla, y es a proposito.
 	public sealed class CanastaDelMesVista
 	{
 		public int Anio { get; init; }
 		public int Mes { get; init; }
 		public int CantidadDeCompras { get; init; }
-		public decimal GastoRecomendado { get; init; }
-		public decimal GastoNeutro { get; init; }
-		public decimal GastoOcasional { get; init; }
 		public decimal GastoNoComestible { get; init; }
 		public decimal GastoComestible { get; init; }
 		public decimal GastoTotal { get; init; }
-		public decimal ProporcionOcasional { get; init; }
 		public bool HayComestible { get; init; }
 		public bool HayCompras { get; init; }
+		public IReadOnlyList<GastoPorDepartamentoVista> Departamentos { get; init; } =
+			new List<GastoPorDepartamentoVista>();
 	}
 
-	// Como cambio la canasta entre dos meses. Es la vista del cruce: el asistente la
-	// pone al lado de la tendencia del colesterol y la relacion aparece sola.
+	public sealed class GastoPorDepartamentoVista
+	{
+		/// <summary>La llave del repertorio. No se le muestra a nadie: para eso esta Titulo.</summary>
+		public string Categoria { get; init; } = "";
+		public string Titulo { get; init; } = "";
+		public decimal Monto { get; init; }
+		public decimal ProporcionDelTotal { get; init; }
+	}
+
+	// Como cambio la canasta entre dos meses, y DE DONDE sale la diferencia. Es la vista
+	// del cruce: el asistente la pone al lado de la tendencia del colesterol y la relacion
+	// aparece sola — el juicio es de el, con permiso, no de esta app.
 	//
-	// Veredicto y ParaSonia vienen del DOMINIO, no se arman aca: la pantalla no tiene de
-	// donde saber si un cambio de -29 puntos es bueno.
+	// ParaSonia viene del DOMINIO, no se arma aca. Y no hay veredicto: la app senala y se
+	// calla.
 	public sealed class CanastasComparadas
 	{
 		public bool HayComparacion { get; init; }
-		public decimal ProporcionAntes { get; init; }
-		public decimal ProporcionDespues { get; init; }
+		public decimal GastoAntes { get; init; }
+		public decimal GastoDespues { get; init; }
+		public decimal CambioEnElTotal { get; init; }
 		public decimal Cambio { get; init; }
-		public string Veredicto { get; init; } = "";
+		public bool HayAlgoQueLoExplique { get; init; }
 		public string ParaSonia { get; init; } = "";
-		public bool CrecioLoOcasional { get; init; }
 		public int AnioAntes { get; init; }
 		public int MesAntes { get; init; }
-		public decimal GastoOcasionalAntes { get; init; }
 		public decimal GastoComestibleAntes { get; init; }
 		public int AnioDespues { get; init; }
 		public int MesDespues { get; init; }
-		public decimal GastoOcasionalDespues { get; init; }
 		public decimal GastoComestibleDespues { get; init; }
+		public IReadOnlyList<DiferenciaPorDepartamentoVista> Diferencias { get; init; } =
+			new List<DiferenciaPorDepartamentoVista>();
+	}
+
+	// Cuanto movio UN pasillo entre los dos meses. ExplicaElCambio dice si vale nombrarlo.
+	public sealed class DiferenciaPorDepartamentoVista
+	{
+		public string Categoria { get; init; } = "";
+		public string Titulo { get; init; } = "";
+		public decimal MontoAntes { get; init; }
+		public decimal MontoDespues { get; init; }
+		public decimal CambioDelPasillo { get; init; }
+		public bool Subio { get; init; }
+		public bool EsNuevo { get; init; }
+		public bool Desaparecio { get; init; }
+		public bool ExplicaElCambio { get; init; }
+	}
+
+	// LO QUE NO FALLA en su canasta. Es la lectura con la que la app abre: la
+	// especificacion de marca pide el PATRON y no una lista de facturas.
+	public sealed class FirmaDeLaSemana
+	{
+		public int ComprasMiradas { get; init; }
+		public int CuantosHabituales { get; init; }
+
+		// La linea de la portada, escrita por el dominio.
+		public string ParaSonia { get; init; } = "";
+
+		public IReadOnlyList<ProductoQueVuelve> Habituales { get; init; } =
+			new List<ProductoQueVuelve>();
+
+		public bool Existe => CuantosHabituales > 0;
+	}
+
+	// Un producto que vuelve compra tras compra.
+	public sealed class ProductoQueVuelve
+	{
+		public string Sku { get; init; } = "";
+		public string Descripcion { get; init; } = "";
+		public int ComprasEnQueAparece { get; init; }
+		public int DeCuantas { get; init; }
+		public decimal Proporcion { get; init; }
+
+		/// <summary>Si esta en TODAS las compras miradas. Lo que de verdad no falla.</summary>
+		public bool EstaEnTodas { get; init; }
+	}
+
+	// EL QUIEBRE, con fecha: lo que entro a la canasta y lo que dejo de estar. La otra
+	// lectura de la portada, y sin veredicto: dice que paso, no si esta bien.
+	public sealed class CambioDeLaCanasta
+	{
+		/// <summary>Si los dos lados tienen compras. Sin eso no se afirma nada.</summary>
+		public bool HayConQueComparar { get; init; }
+
+		public bool HayCambio { get; init; }
+
+		public string ParaSonia { get; init; } = "";
+
+		public IReadOnlyList<ProductoQueEntroVista> Entraron { get; init; } =
+			new List<ProductoQueEntroVista>();
+
+		public IReadOnlyList<ProductoQueVuelve> Salieron { get; init; } =
+			new List<ProductoQueVuelve>();
+
+		// El mes del quiebre sale del primer producto que entro, que el dominio ya
+		// entrega ordenado por fecha. Vacio cuando no hay cambio, y eso ya es respuesta.
+		public string MesDelCambio => Entraron.Count > 0 ? Entraron[0].Desde : "";
+	}
+
+	// Un producto que se volvio habitual, con el mes en que aparecio por primera vez.
+	public sealed class ProductoQueEntroVista
+	{
+		public string Sku { get; init; } = "";
+		public string Descripcion { get; init; } = "";
+
+		/// <summary>El mes en que se lo vio por primera vez: 2026-03.</summary>
+		public string Desde { get; init; } = "";
+
+		public int ComprasEnQueAparece { get; init; }
+		public decimal Proporcion { get; init; }
 	}
 
 	// El respaldo de una garantia: en que compra fue, cuando, cuanta cobertura y si
@@ -116,8 +202,8 @@ namespace Compras.App.Vistas
 		public decimal GastoEnElPrimerMes { get; init; }
 		public decimal GastoEnElUltimoMes { get; init; }
 		public decimal CambioDeGasto { get; init; }
-		public bool SePuedeJuzgar { get; init; }
-		public string Veredicto { get; init; } = "";
+		public bool HaySerie { get; init; }
+		public bool HayCambioReal { get; init; }
 		public string ParaSonia { get; init; } = "";
 		public IReadOnlyList<MesDeConsumoVista> Meses { get; init; } = new List<MesDeConsumoVista>();
 
@@ -146,11 +232,15 @@ namespace Compras.App.Vistas
 	// entra. La pantalla no puede renderizar una ausencia que nadie le paso.
 	public sealed class AbastecimientoEnEspera
 	{
+		/// <summary>La llave del repertorio. No se le muestra a nadie: para eso esta Titulo.</summary>
 		public string Categoria { get; init; } = "";
+		public string Titulo { get; init; } = "";
 		public DateTime UltimaCompra { get; init; }
 		public int DiasDesdeLaUltima { get; init; }
 		public int DiasEsperados { get; init; }
-		public bool EsRecomendado { get; init; }
+		/// <summary>Si los dias esperados se midieron en su historial o salen del catalogo.</summary>
+		public bool EsRitmoObservado { get; init; }
+		public bool EsComestible { get; init; }
 		public string Severidad { get; init; } = "";
 		public string ParaSonia { get; init; } = "";
 	}

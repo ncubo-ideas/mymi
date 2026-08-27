@@ -1,13 +1,18 @@
 using System;
+using System.Globalization;
 
 namespace Compras.Dominio
 {
 	/// <summary>
-	/// Una linea del ticket: que se compro, cuanto, a que precio, de que categoria y con
-	/// que garantia. El total se deriva de cantidad y precio, asi que no puede llegar
-	/// inconsistente. La garantia nunca es null: lo que no trae cobertura porta
-	/// Garantia.Ninguna, y TieneGarantia existe para preguntar antes de leer.
+	/// Una línea del ticket: qué se compró, cuánto, a qué precio, de qué categoría, cómo
+	/// se vende y — solo si el producto la trae — con qué garantía.
 	/// </summary>
+	// La CANTIDAD sola no dice nada: tres leches de 1 L y tres kilos de carne son el mismo
+	// "3". Con la presentacion, la linea sabe cuanto entro de verdad -6 L, 1 kg, 24 u- y
+	// cuanto costo la unidad de medida, que es lo unico con lo que se pueden comparar dos
+	// presentaciones del mismo producto.
+	//
+	// NO todo lo que se compra tiene garantia: el helado no la tiene y no la finge.
 	public class Item
 	{
 		public string Sku { get; private set; }
@@ -15,20 +20,47 @@ namespace Compras.Dominio
 		public int Cantidad { get; private set; }
 		public decimal PrecioUnitario { get; private set; }
 		public Categoria Categoria { get; private set; }
+		public Presentacion Presentacion { get; private set; }
 		public Garantia Garantia { get; private set; }
 
 		public decimal Total => Cantidad * PrecioUnitario;
 
 		public bool TieneGarantia => Garantia.Existe();
 
-		// mesesDeGarantia = 0 significa SIN garantia en el wire; aca se vuelve el tipo:
-		// Garantia.Ninguna o una cobertura de verdad.
+		/// <summary>Cuánto entró a la canasta en la unidad base: 6 L, 1 kg, 24 u.</summary>
+		public decimal TotalEnUnidadBase => Presentacion.TotalEnBase(Cantidad);
+
+		public UnidadDeVenta UnidadBase => Presentacion.UnidadBase;
+
+		/// <summary>
+		/// Cuánto cuesta la unidad de medida — el colón por litro o por kilo. Es lo único
+		/// con lo que se pueden comparar dos presentaciones del mismo producto: una leche
+		/// de 2 L a ₡1.800 es más barata que dos de 1 L a ₡950.
+		/// </summary>
+		public decimal PrecioPorUnidadBase
+		{
+			get
+			{
+				decimal enBase = TotalEnUnidadBase;
+				if (enBase == 0m)
+					throw new InvalidOperationException(
+						$"La linea '{Sku}' no tiene cantidad en su unidad base, asi que no tiene precio por unidad.");
+
+				return Total / enBase;
+			}
+		}
+
+		/// <summary>La cantidad ya dicha, con su unidad: "6 L", "1 kg", "3 u".</summary>
+		public string CantidadExpresada =>
+			$"{TotalEnUnidadBase.ToString("0.###", CultureInfo.InvariantCulture)} {UnidadBase.Simbolo}";
+
 		public Item(string sku, string descripcion, int cantidad, decimal precioUnitario,
-			Categoria categoria, int mesesDeGarantia)
+			Categoria categoria, int mesesDeGarantia, Presentacion presentacion)
 		{
 			ArgumentNullException.ThrowIfNullOrWhiteSpace(sku);
 			ArgumentNullException.ThrowIfNull(descripcion);
 			ArgumentNullException.ThrowIfNull(categoria);
+			ArgumentNullException.ThrowIfNull(presentacion);
 			if (cantidad <= 0)
 				throw new ArgumentOutOfRangeException(nameof(cantidad), cantidad,
 					"La cantidad de una linea debe ser mayor que cero.");
@@ -44,7 +76,19 @@ namespace Compras.Dominio
 			Cantidad = cantidad;
 			PrecioUnitario = precioUnitario;
 			Categoria = categoria;
+			Presentacion = presentacion;
 			Garantia = mesesDeGarantia == 0 ? Garantia.Ninguna : Garantia.De(mesesDeGarantia);
+		}
+
+		// Los journals ya escritos tienen la forma SIN presentacion. Este constructor se
+		// conserva a proposito para que un historial viejo siga reproduciendo igual: lo que
+		// entro sin decir como se vende se lee como piezas sueltas, que es lo que la app
+		// asumia cuando se escribio.
+		public Item(string sku, string descripcion, int cantidad, decimal precioUnitario,
+			Categoria categoria, int mesesDeGarantia)
+			: this(sku, descripcion, cantidad, precioUnitario, categoria, mesesDeGarantia,
+				Presentacion.PorUnidad)
+		{
 		}
 	}
 }
