@@ -19,7 +19,7 @@ else if (compra is null || compra.Numero.Length == 0)
 else
 {
     <h1 class="h4">Compra @compra.Numero</h1>
-    <p class="text-muted">
+    <p class="text-body-secondary">
         @compra.Fecha.ToString("dd/MM/yyyy HH:mm", CultureInfo.InvariantCulture) &middot;
         total @Colones(compra.Total)
     </p>
@@ -37,7 +37,7 @@ else
                 <tr>
                     <td>
                         @linea.Descripcion
-                        <div class="small text-muted">@linea.Sku</div>
+                        <div class="small text-body-secondary">@linea.Sku</div>
                         @if (linea.TieneGarantia)
                         {
                             <span class="badge text-bg-success">con garantía</span>

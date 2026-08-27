@@ -1,46 +1,207 @@
+/* La Guaria y vos — la carátula que la persona instala.
+ *
+ * LA MARCA ES SUPERMERCADO LA GUARIA, y las especificaciones salen del código real de su
+ * página (SuperGuaria.module.css en nCuboSite), no de un boceto: "la app y la página
+ * tienen que verse de la misma institución".
+ *
+ * EL PUNTO MÁS IMPORTANTE DEL DOCUMENTO es que esta app NO se parezca a la de Delfos. Si
+ * las dos se ven iguales, quien las vea concluye "el mismo dueño" en vez de "dos
+ * instituciones distintas", y el ecosistema pierde su argumento. De ahí que las
+ * diferencias sean deliberadas y no gusto: verde y no azul clínico, sans y nunca serif
+ * (la serif es la firma de Delfos), y BOTONES PASTILLA — que es la diferencia de forma
+ * más visible entre las dos.
+ *
+ * SE MANTIENE BOOTSTRAP, y es una decisión distinta a la de Exámenes, que lo sacó. Acá se
+ * le remapean sus variables a esta paleta y se lo pone en tema oscuro: se gana la marca
+ * sin reescribir cada clase de las páginas, y lo que se escriba encima sobrevive a un
+ * cambio de layout. Sacarlo es un paso aparte, más grande, y no hace falta para que la
+ * app se reconozca.
+ *
+ * CERO WEBFONTS: Segoe UI es de sistema. Con un payload sin trimming, agregar descargas
+ * de fuentes es una decisión que conviene no romper después "por diseño".
+ *
+ * LOS DOS ESTADOS, y el ámbar tiene un solo trabajo: marcar lo que cambió. NO es un
+ * regaño — "que el helado pasara de mensual a semanal es un dato, no una falta". Y el
+ * ROJO NO SE USA: "un carrito no tiene urgencias". No está definido acá a propósito, para
+ * que nadie lo pinte por accidente.
+ */
+
+:root {
+    /* Institucional — "la tienda", desde 1992. Valores de la §3. */
+    --gu-verde:        #2f6b3f;   /* EL color de la marca */
+    --gu-verde-oscuro: #1e4a2c;
+    --gu-verde-claro:  #3f8a52;
+    --gu-morado:       #7b5ea7;   /* SOLO el logo y acentos mínimos. Es la flor, no un color de UI */
+    --gu-morado-claro: #bda8d9;
+    --gu-morado-hondo: #5f4288;
+    --gu-corazon:      #f6e9a8;   /* el corazón amarillo del labelo */
+
+    /* La app es de hoy: verde más brillante que el institucional (§3). */
+    --app-verde:       #2f9e4f;
+
+    /* Pantalla de la app, fondo oscuro (§3). */
+    --fondo:           #1a4229;
+    --fondo-hondo:     #12301d;
+    --tinta:           #eaf6ea;   /* texto principal */
+    --tenue:           #a8ccab;   /* texto secundario */
+    --tenue-carta:     #cfe6d0;   /* secundario dentro de tarjetas: la §3 lo distingue */
+    --linea:           rgba(168, 204, 171, .22);
+    --carta:           rgba(168, 204, 171, .07);
+
+    /* Los dos estados del carrito (§3), con los valores exactos de la especificación. */
+    --estable-fondo:   rgba(110, 231, 160, 0.12);
+    --estable-borde:   rgba(110, 231, 160, 0.32);
+    --estable-tinta:   #6ee7a0;
+
+    --cambio-fondo:    rgba(251, 191, 36, 0.10);
+    --cambio-borde:    rgba(251, 191, 36, 0.30);
+    --cambio-tinta:    #fbd06a;
+
+    /* Una sola familia, y eso es intencional (§2). Nada de serif. */
+    --sans: "Segoe UI", "Helvetica Neue", Arial, sans-serif;
+    --mono: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+
+    /* Formas (§4). La pastilla es lo que la distingue de Delfos. */
+    --radio-carta:  14px;
+    --radio-boton:  999px;
+    --radio-marco:  28px;
+}
+
+/* Bootstrap en tema oscuro, con SUS variables apuntando a esta paleta. Es lo que evita
+   tener que pelearle clase por clase. */
+:root,
+[data-bs-theme="dark"] {
+    --bs-body-bg:            var(--fondo-hondo);
+    --bs-body-color:         var(--tinta);
+    --bs-secondary-color:    var(--tenue);
+    --bs-tertiary-color:     var(--tenue);
+    --bs-emphasis-color:     var(--tinta);
+    --bs-border-color:       var(--linea);
+    --bs-border-radius:      var(--radio-carta);
+    --bs-border-radius-sm:   10px;
+    --bs-border-radius-lg:   var(--radio-marco);
+    --bs-border-radius-pill: var(--radio-boton);
+    --bs-font-sans-serif:    var(--sans);
+
+    --bs-primary:            var(--app-verde);
+    --bs-primary-rgb:        47, 158, 79;
+    --bs-link-color:         var(--tenue);
+    --bs-link-hover-color:   var(--tinta);
+
+    /* Los dos estados, servidos por las clases semánticas que ya usan las páginas. */
+    --bs-success-bg-subtle:     var(--estable-fondo);
+    --bs-success-border-subtle: var(--estable-borde);
+    --bs-success-text-emphasis: var(--estable-tinta);
+
+    --bs-warning-bg-subtle:     var(--cambio-fondo);
+    --bs-warning-border-subtle: var(--cambio-borde);
+    --bs-warning-text-emphasis: var(--cambio-tinta);
+}
+
 html, body {
-    font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
+    font-family: var(--sans);
+    color: var(--tinta);
+    /* El gradiente de la §3, fijo: la página hace scroll, el fondo no. */
+    background: linear-gradient(180deg, var(--fondo) 0%, var(--fondo-hondo) 100%) fixed;
+    min-height: 100vh;
 }
 
-h1:focus {
-    outline: none;
+h1:focus { outline: none; }
+
+/* Título de la app: §2 lo pone en 800, que es más pesado que cualquier otro titular. */
+h1 {
+    font-size: clamp(1.7rem, 3.2vw, 2.4rem);
+    font-weight: 800;
+    letter-spacing: -.01em;
 }
 
-a, .btn-link {
-    color: #0071c1;
+h2, h3, h4, h5 { font-weight: 700; }
+
+/* El bloque de marca: la flor, el nombre y la bajada de 1992. */
+.marca { display: flex; align-items: center; gap: .7rem; }
+.marca svg { width: 40px; height: 40px; flex: 0 0 40px; }   /* §1: 40 px en la app */
+.marca .nombre { font-weight: 700; font-size: 1.12rem; line-height: 1.15; }
+.marca .bajada { font-size: .74rem; color: var(--tenue); line-height: 1.25; }
+
+/* Kicker (§2): el rotulito de "LO ESTABLE" y "LO QUE CAMBIÓ". */
+.kicker {
+    font-size: .80rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.16em;
 }
 
+/* PASTILLA. La §6 la lista como herencia sin excepción. */
+.btn { border-radius: var(--radio-boton); font-weight: 600; }
 .btn-primary {
     color: #fff;
-    background-color: #1b6ec2;
-    border-color: #1861ac;
+    background-color: var(--app-verde);
+    border-color: var(--app-verde);
+    box-shadow: 0 6px 18px rgba(47, 158, 79, 0.32);
 }
+.btn-primary:hover, .btn-primary:focus { background-color: #26833f; border-color: #26833f; }
+.btn-link { color: var(--tenue); text-decoration-color: var(--linea); }
+.btn-link:hover { color: var(--tinta); }
 
 .btn:focus, .btn:active:focus, .btn-link.nav-link:focus, .form-control:focus, .form-check-input:focus {
-  box-shadow: 0 0 0 0.1rem white, 0 0 0 0.25rem #258cfb;
+    box-shadow: 0 0 0 0.25rem rgba(47, 158, 79, .35);
 }
 
-.content {
-    padding-top: 1.1rem;
+/* Tarjetas: 14 px y sombra casi nula (§4). Sin borde superior de color — ese es Delfos. */
+.card, .list-group-item {
+    background-color: var(--carta);
+    border-color: var(--linea);
+    color: var(--tinta);
+}
+.card { border-radius: var(--radio-carta); box-shadow: 0 1px 4px rgba(20, 51, 31, 0.05); }
+
+/* Cifra destacada (§2). */
+.cifra { font-size: 1.85rem; font-weight: 800; }
+
+/* Los números se leen en columna: monoespaciados y alineados a la derecha. */
+.numero { font-variant-numeric: tabular-nums; font-family: var(--mono); }
+
+.table { --bs-table-color: var(--tinta); --bs-table-border-color: var(--linea); }
+.table > :not(caption) > * > * { background-color: transparent; }
+
+.badge.text-bg-light { background-color: var(--carta) !important; color: var(--tenue) !important; }
+
+.content { padding-top: 1.1rem; }
+
+/* El sello DEMO y la franja de privacidad: la §0 los lista como del MODELO y no de la
+   marca — los comparten todas las apps del ecosistema. */
+.sello-demo {
+    display: inline-block;
+    font-size: .68rem;
+    font-weight: 700;
+    letter-spacing: .12em;
+    text-transform: uppercase;
+    padding: .18rem .55rem;
+    border-radius: var(--radio-boton);
+    border: 1px solid var(--linea);
+    color: var(--tenue);
+}
+.franja-privacidad {
+    font-size: .8rem;
+    color: var(--tenue);
+    border-top: 1px solid var(--linea);
+    padding-top: .8rem;
+    margin-top: 2rem;
 }
 
-.valid.modified:not([type=checkbox]) {
-    outline: 1px solid #26b050;
-}
+/* ---- lo que la plantilla de Blazor necesita, vestido de esta marca ---- */
 
-.invalid {
-    outline: 1px solid red;
-}
-
-.validation-message {
-    color: red;
-}
+.valid.modified:not([type=checkbox]) { outline: 1px solid var(--app-verde); }
+.invalid { outline: 1px solid var(--cambio-tinta); }
+.validation-message { color: var(--cambio-tinta); }
 
 #blazor-error-ui {
-    color-scheme: light only;
-    background: lightyellow;
+    color-scheme: dark only;
+    background: var(--fondo);
+    color: var(--tinta);
+    border-top: 1px solid var(--cambio-borde);
     bottom: 0;
-    box-shadow: 0 -1px 2px rgba(0, 0, 0, 0.2);
+    box-shadow: 0 -1px 2px rgba(0, 0, 0, 0.35);
     box-sizing: border-box;
     display: none;
     left: 0;
@@ -58,14 +219,14 @@ a, .btn-link {
     }
 
 .blazor-error-boundary {
-    background: url(data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNTYiIGhlaWdodD0iNDkiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyIgeG1sbnM6eGxpbms9Imh0dHA6Ly93d3cudzMub3JnLzE5OTkveGxpbmsiIG92ZXJmbG93PSJoaWRkZW4iPjxkZWZzPjxjbGlwUGF0aCBpZD0iY2xpcDAiPjxyZWN0IHg9IjIzNSIgeT0iNTEiIHdpZHRoPSI1NiIgaGVpZ2h0PSI0OSIvPjwvY2xpcFBhdGg+PC9kZWZzPjxnIGNsaXAtcGF0aD0idXJsKCNjbGlwMCkiIHRyYW5zZm9ybT0idHJhbnNsYXRlKC0yMzUgLTUxKSI+PHBhdGggZD0iTTI2My41MDYgNTFDMjY0LjcxNyA1MSAyNjUuODEzIDUxLjQ4MzcgMjY2LjYwNiA1Mi4yNjU4TDI2Ny4wNTIgNTIuNzk4NyAyNjcuNTM5IDUzLjYyODMgMjkwLjE4NSA5Mi4xODMxIDI5MC41NDUgOTIuNzk1IDI5MC42NTYgOTIuOTk2QzI5MC44NzcgOTMuNTEzIDI5MSA5NC4wODE1IDI5MSA5NC42NzgyIDI5MSA5Ny4wNjUxIDI4OS4wMzggOTkgMjg2LjYxNyA5OUwyNDAuMzgzIDk5QzIzNy45NjMgOTkgMjM2IDk3LjA2NTEgMjM2IDk0LjY3ODIgMjM2IDk0LjM3OTkgMjM2LjAzMSA5NC4wODg2IDIzNi4wODkgOTMuODA3MkwyMzYuMzM4IDkzLjAxNjIgMjM2Ljg1OCA5Mi4xMzE0IDI1OS40NzMgNTMuNjI5NCAyNTkuOTYxIDUyLjc5ODUgMjYwLjQwNyA1Mi4yNjU4QzI2MS4yIDUxLjQ4MzcgMjYyLjI5NiA1MSAyNjMuNTA2IDUxWk0yNjMuNTg2IDY2LjAxODNDMjYwLjczNyA2Ni4wMTgzIDI1OS4zMTMgNjcuMTI0NSAyNTkuMzEzIDY5LjMzNyAyNTkuMzEzIDY5LjYxMDIgMjU5LjMzMiA2OS44NjA4IDI1OS4zNzEgNzAuMDg4N0wyNjEuNzk1IDg0LjAxNjEgMjY1LjM4IDg0LjAxNjEgMjY3LjgyMSA2OS43NDc1QzI2Ny44NiA2OS43MzA5IDI2Ny44NzkgNjkuNTg3NyAyNjcuODc5IDY5LjMxNzkgMjY3Ljg3OSA2Ny4xMTgyIDI2Ni40NDggNjYuMDE4MyAyNjMuNTg2IDY2LjAxODNaTTI2My41NzYgODYuMDU0N0MyNjEuMDQ5IDg2LjA1NDcgMjU5Ljc4NiA4Ny4zMDA1IDI1OS43ODYgODkuNzkyMSAyNTkuNzg2IDkyLjI4MzcgMjYxLjA0OSA5My41Mjk1IDI2My41NzYgOTMuNTI5NSAyNjYuMTE2IDkzLjUyOTUgMjY3LjM4NyA5Mi4yODM3IDI2Ny4zODcgODkuNzkyMSAyNjcuMzg3IDg3LjMwMDUgMjY2LjExNiA4Ni4wNTQ3IDI2My41NzYgODYuMDU0N1oiIGZpbGw9IiNGRkU1MDAiIGZpbGwtcnVsZT0iZXZlbm9kZCIvPjwvZz48L3N2Zz4=) no-repeat 1rem/1.8rem, #b32121;
-    padding: 1rem 1rem 1rem 3.7rem;
-    color: white;
+    background: var(--fondo);
+    border: 1px solid var(--cambio-borde);
+    border-radius: var(--radio-carta);
+    padding: 1rem;
+    color: var(--tinta);
 }
 
-    .blazor-error-boundary::after {
-        content: "An error has occurred."
-    }
+    .blazor-error-boundary::after { content: "Algo se rompió en esta parte de la pantalla." }
 
 .loading-progress {
     position: relative;
@@ -77,14 +238,14 @@ a, .btn-link {
 
     .loading-progress circle {
         fill: none;
-        stroke: #e0e0e0;
+        stroke: var(--linea);
         stroke-width: 0.6rem;
         transform-origin: 50% 50%;
         transform: rotate(-90deg);
     }
 
         .loading-progress circle:last-child {
-            stroke: #1b6ec2;
+            stroke: var(--app-verde);
             stroke-dasharray: calc(3.141 * var(--blazor-load-percentage, 0%) * 0.8), 500%;
             transition: stroke-dasharray 0.05s ease-in-out;
         }
@@ -93,22 +254,10 @@ a, .btn-link {
     position: absolute;
     text-align: center;
     font-weight: bold;
+    color: var(--tenue);
     inset: calc(20vh + 3.25rem) 0 auto 0.2rem;
 }
 
-    .loading-progress-text:after {
-        content: var(--blazor-load-percentage-text, "Loading");
-    }
+    .loading-progress-text:after { content: var(--blazor-load-percentage-text, "Cargando"); }
 
-code {
-    color: #c02d76;
-}
-
-.form-floating > .form-control-plaintext::placeholder, .form-floating > .form-control::placeholder {
-    color: var(--bs-secondary-color);
-    text-align: end;
-}
-
-.form-floating > .form-control-plaintext:focus::placeholder, .form-floating > .form-control:focus::placeholder {
-    text-align: start;
-}
+code { color: var(--gu-morado-claro); }
