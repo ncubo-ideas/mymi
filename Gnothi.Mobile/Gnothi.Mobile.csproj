@@ -33,6 +33,14 @@
     <RunAOTCompilation>false</RunAOTCompilation>
     <PublishTrimmed>false</PublishTrimmed>
     <AndroidLinkMode>None</AndroidLinkMode>
+
+    <!-- APK AUTOCONTENIDO. Por omision un build Debug usa Fast Deployment: los assemblies
+         NO viajan dentro del apk, se empujan aparte a files/.__override__/. Es mas rapido
+         para iterar y tiene una trampa: 'adb shell pm clear' borra ese directorio y la app
+         deja de arrancar con "No assemblies found ... Exiting". Medido.
+
+         Embebidos, el apk se basta solo: se puede pasar por chat e instalar. -->
+    <EmbedAssembliesIntoApk>true</EmbedAssembliesIntoApk>
   </PropertyGroup>
 
   <ItemGroup>
@@ -53,6 +61,7 @@
     <Compile Include="..\Gnothi.Assistant\IModel.cs" />
     <Compile Include="..\Gnothi.Assistant\AgentLoop.cs" />
     <Compile Include="..\Gnothi.Assistant\ModelClaude.cs" />
+    <Compile Include="..\Gnothi.Assistant\ModelOpenAiCompatible.cs" />
   </ItemGroup>
 
 </Project>

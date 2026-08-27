@@ -1,28 +1,46 @@
 using Android.App;
-using Android.Graphics;
 using Android.OS;
-using Android.Views;
-using Android.Widget;
+using Android.Webkit;
 using Gnothi.Assistant;
 using Gnothi.Host;
+using System.Text.Json;
 
 namespace Gnothi.Mobile;
 
 // THE GNOTHI HOST ON A PHONE, with a face.
 //
-// It shows the INSTALLED modules as cards -- each with its icon, who handed it over, and one
-// button per query. The point is not the aesthetics: it is that the person can SEE that they
-// have modules installed and whose they are, without reading a log.
+// The face is ONE html file in Assets, rendered by a WebView. Why not Blazor/MAUI, which was
+// the natural suggestion: real Blazor on Android needs the MAUI workload, which installs into
+// Program Files -- admin on this machine -- and rewrites the project. The WebView gives what
+// was wanted from it (web-grade UI, and the model's markdown rendered with real tables, which
+// native TextViews cannot do) while the Host code stays untouched.
 //
-// The Host code is THE SAME as the desktop one: Dispatcher, ModuleCatalog, Module,
-// InProcessShell, compiled in from ../Gnothi.Host. The only thing this app owns is the screen
-// and the lifecycle -- installing what was downloaded -- which 02-el-host.md makes the Host's
-// authority.
-[Activity(Label = "Gnothi", MainLauncher = true)]
+// THE BRIDGE IS window.prompt(). The page calls prompt('gnothi', json) and OnJsPrompt answers
+// synchronously; C# pushes back with EvaluateJavascript(gn.push(...)). Old-school on purpose:
+// no exported Java methods, no extra packages, works on every WebView.
+//
+// WHAT THIS FILE OWNS: the screen and the lifecycle (installing what was downloaded). The
+// catalog, the consent and the dispatch are the Host's -- the same files the desktop runs.
+[Activity(Label = "Gnothi", MainLauncher = true, Theme = "@android:style/Theme.Material.Light.NoActionBar")]
 public class MainActivity : Activity
 {
 	private Dispatcher? dispatcher;
-	private LinearLayout? rootView;
+	private ModuleCatalog? catalog;
+	private WebView? web;
+	private ConsentWatch? watch;
+	private readonly CancellationTokenSource stop = new();
+
+	// WHERE THE MODEL LIVES. Two constants, because switching provider must stay this cheap --
+	// that is the whole argument for IModel being an interface.
+	//
+	//   Groq        https://api.groq.com/openai/v1     free tier, no card asked
+	//   Cerebras    https://api.cerebras.ai/v1
+	//   OpenRouter  https://openrouter.ai/api/v1
+	//   LM Studio   http://<the machine's IP>:1234/v1  NO key -- nothing leaves the LAN
+	//
+	// 'localhost' does NOT work from the phone: on Android that is the phone itself.
+	private const string ModelUrl = "https://api.groq.com/openai/v1";
+	private const string ModelName = "openai/gpt-oss-120b";
 
 	// The icon per business. A small explicit map: a module that is not here falls to the
 	// generic box. It does NOT come from the manifest on purpose -- the icon is the Host's
@@ -39,75 +57,28 @@ public class MainActivity : Activity
 	{
 		base.OnCreate(savedInstanceState);
 
-		rootView = new LinearLayout(this) { Orientation = Orientation.Vertical };
-		rootView.SetPadding(28, 40, 28, 40);
-		var scroll = new ScrollView(this);
-		scroll.AddView(rootView);
-		SetContentView(scroll);
+		web = new WebView(this);
+		web.Settings.JavaScriptEnabled = true;
+		// The page detects the app by this mark and NEVER calls prompt() outside it: in a plain
+		// browser that dialog is modal and freezes the page -- measured in the preview pane.
+		web.Settings.UserAgentString += " GnothiHost";
+		web.SetBackgroundColor(Android.Graphics.Color.ParseColor("#F5F3FB"));
+		web.SetWebChromeClient(new Bridge(this));
 
-		Heading("Gnothi");
-		Note("The modules you installed on this phone");
+		// targetSdk 36 makes edge-to-edge MANDATORY: the page would extend under the status
+		// bar and the gesture bar, and the bottom nav ends up beneath the system's. The fix is
+		// native and in one place -- pad by the system bars -- BUT the padding goes on a
+		// CONTAINER, not on the WebView: a WebView ignores its own padding, which cost one
+		// screenshot to find out.
+		var frame = new Android.Widget.FrameLayout(this);
+		frame.SetBackgroundColor(Android.Graphics.Color.ParseColor("#F5F3FB"));
+		frame.AddView(web);
+		frame.SetOnApplyWindowInsetsListener(new Insets());
+
+		SetContentView(frame);
+		web.LoadUrl("file:///android_asset/ui.html");
 
 		_ = Task.Run(Start);
-	}
-
-	// GATE 2, ON THE SCREEN. The person asks in words; the loop decides which queries to run.
-	//
-	// This is the half of mobile the buttons below do NOT cover, and confusing the two is the
-	// mistake to avoid: on a phone TWO things fall at once and they have different answers --
-	// the external assistant falls (this), and the child process falls (InProcessShell). The
-	// buttons prove the second one. Only this proves the first.
-	private View Gate2()
-	{
-		var box = new LinearLayout(this) { Orientation = Orientation.Vertical };
-		box.SetPadding(0, 0, 0, 34);
-
-		var field = new EditText(this) { Hint = "Ask about your modules...", TextSize = 15f };
-		var ask = new Button(this) { Text = "ASK", TextSize = 14f };
-		var trace = new TextView(this) { Text = "", TextSize = 11f };
-		trace.SetPadding(0, 14, 0, 0);
-
-		ask.Click += async (_, _) =>
-		{
-			string question = field.Text?.Trim() ?? "";
-			if (question.Length == 0) return;
-
-			ask.Enabled = false;
-			var steps = new System.Text.StringBuilder();
-			void Step(string s) { steps.AppendLine(s); RunOnUiThread(() => trace.Text = steps.ToString()); }
-
-			try
-			{
-				// WHAT THE QUESTION WOULD COST, measured HERE, on the phone, before any key is
-				// involved. The catalog travels WHOLE on every single question -- even one that
-				// ends up using a single tool -- so with twenty modules installed this is
-				// thousands of tokens per question. Nobody had put it in numbers on a device.
-				IReadOnlyList<ToolForTheModel> catalogue = AgentLoop.CatalogFor(dispatcher!);
-				int chars = catalogue.Sum(t => t.Name.Length + t.Description.Length + t.SchemaJson.Length);
-				Step($"catalog: {catalogue.Count} tools, {chars:N0} chars would travel on this question");
-
-				// THE KEY IS NOT IN THE CODE AND NOT IN THE REPO. It is read from a file the
-				// person puts in the app's own area. If it is not there, ModelClaude throws --
-				// and that throw is the honest shape of the thing: on desktop the loop is Claude
-				// Desktop's and her subscription pays for it; here the loop is ours, so the key
-				// is ours to obtain, and WHOSE key it is has not been decided.
-				string keyFile = System.IO.Path.Combine(FilesDir!.AbsolutePath, "anthropic.key");
-				var loop = new AgentLoop(dispatcher!, new ModelClaude(keyFile));
-
-				Step("asking the model...");
-				string answer = await loop.Answer(question, Step, CancellationToken.None);
-
-				Step("");
-				Step(answer);
-			}
-			catch (System.Exception e) { Step($"{e.GetType().Name}: {e.Message}"); }
-			finally { RunOnUiThread(() => ask.Enabled = true); }
-		};
-
-		box.AddView(field);
-		box.AddView(ask);
-		box.AddView(trace);
-		return box;
 	}
 
 	private async Task Start()
@@ -117,6 +88,11 @@ public class MainActivity : Activity
 		string incoming = System.IO.Path.Combine(GetExternalFilesDir(null)!.AbsolutePath, "incoming");
 		string root = System.IO.Path.Combine(FilesDir!.AbsolutePath, "Modulos");
 		string journals = System.IO.Path.Combine(FilesDir!.AbsolutePath, "journals");
+
+		// Migration: the key used to live in one file for one hardcoded provider. If that old
+		// file is here and the per-provider one is not, it becomes the Groq key.
+		string old = System.IO.Path.Combine(FilesDir!.AbsolutePath, "model.key");
+		if (File.Exists(old) && !File.Exists(KeyPath)) File.Move(old, KeyPath);
 
 		int copied = 0;
 		if (System.IO.Directory.Exists(incoming))
@@ -128,54 +104,20 @@ public class MainActivity : Activity
 		}
 
 		// 2 - DISCOVER. The very same code the desktop Host runs.
-		var catalog = new ModuleCatalog(root);
+		catalog = new ModuleCatalog(root);
 		IReadOnlyList<string> warnings = catalog.Load();
 		dispatcher = new Dispatcher(catalog, new Meter());
 
-		RunOnUiThread(() =>
-		{
-			foreach (string w in warnings) Note($"warning: {w}");
+		foreach (string w in warnings) Log($"warning: {w}");
+		Log($"{catalog.Modules.Count} modules installed" + (copied > 0 ? $" - {copied} files this launch" : ""));
 
-			if (catalog.Modules.Count == 0)
-			{
-				Note("No modules installed yet.");
-				return;
-			}
+		PushState();
 
-			Note($"{catalog.Modules.Count} modules installed"
-				+ (copied > 0 ? $"  -  {copied} files installed on this launch" : ""));
-
-			rootView!.AddView(Gate2());
-
-			foreach (Module m in catalog.Modules) rootView!.AddView(Card(m));
-		});
-
-		// 3 - THE PERSON'S SWITCH, WATCHED. Without this the phone reads consent once and never
-		//     again: she switches a query off and the app keeps offering it until she kills it.
-		//     A switch you have to restart for is not a switch.
-		//
-		//     This is the SAME watch the desktop Host runs. What differs is only what happens
-		//     when it fires: there, a 'tools/list_changed' to the assistant; here, redrawing the
-		//     cards. That is why the watch lives in the core and the announcement does not.
-		watch = new ConsentWatch(dispatcher) { Changed = Redraw };
-		await watch.Run(s => global::Android.Util.Log.Info("GNOTHI", s), stop.Token);
-	}
-
-	private ConsentWatch? watch;
-	private readonly CancellationTokenSource stop = new();
-
-	private Task Redraw(IReadOnlyList<string> changes, CancellationToken ct)
-	{
-		RunOnUiThread(() =>
-		{
-			rootView!.RemoveAllViews();
-			Heading("Gnothi");
-			foreach (string c in changes) Note(c);
-
-			foreach (Module m in dispatcher!.Modules.Modules) rootView!.AddView(Card(m));
-		});
-
-		return Task.CompletedTask;
+		// 3 - THE PERSON'S SWITCH, WATCHED. The UI's switches write installation.json and this
+		//     is what makes them take effect; and an edit from OUTSIDE the app (adb, another
+		//     tool) repaints the screen through the same path. One source of truth: her file.
+		watch = new ConsentWatch(dispatcher) { Changed = (_, _) => { PushState(); return Task.CompletedTask; } };
+		await watch.Run(Log, stop.Token);
 	}
 
 	protected override void OnDestroy()
@@ -185,83 +127,286 @@ public class MainActivity : Activity
 		base.OnDestroy();
 	}
 
-	// ONE CARD PER MODULE: icon, who handed it over, and one button per query.
-	private View Card(Module m)
+	// THE BACK BUTTON asks the page first: a sheet closes, a detail goes home. Only when the
+	// page answers false -- already on home -- does the app step aside, to the BACKGROUND and
+	// not to death: finishing would throw away the loaded catalog for no reason.
+	//
+	// OnBackPressed is the deprecated path, and it is chosen on purpose: the modern
+	// OnBackInvokedCallback only takes over when the manifest opts in, which this app does not.
+	public override void OnBackPressed() =>
+		web!.EvaluateJavascript("gn.back()", new BackAnswer(this));
+
+	private sealed class BackAnswer : Java.Lang.Object, IValueCallback
 	{
-		var box = new LinearLayout(this) { Orientation = Orientation.Vertical };
-		box.SetPadding(28, 28, 28, 28);
-		var background = new Android.Graphics.Drawables.ShapeDrawable(new Android.Graphics.Drawables.Shapes.RectShape());
-		background.Paint!.Color = Color.ParseColor(m.Installation.Enabled ? "#E9EDEC" : "#F2E7E6");
-		box.Background = background;
+		private readonly MainActivity host;
+		public BackAnswer(MainActivity host) => this.host = host;
 
-		var row = new LinearLayout(this) { Orientation = Orientation.Horizontal };
-		row.AddView(new TextView(this) { Text = Icon(m.Name), TextSize = 34f });
-		var labels = new LinearLayout(this) { Orientation = Orientation.Vertical };
-		labels.SetPadding(20, 0, 0, 0);
-		labels.AddView(new TextView(this) { Text = m.Manifest.Title, TextSize = 18f, Typeface = Typeface.DefaultBold });
-		labels.AddView(new TextView(this) { Text = m.Manifest.Institution, TextSize = 12f });
-		labels.AddView(new TextView(this) { Text = m.Installation.Enabled ? "on" : "SWITCHED OFF by the person", TextSize = 11f });
-		row.AddView(labels);
-		box.AddView(row);
-
-		var output = new TextView(this) { Text = "", TextSize = 10f };
-		output.SetPadding(0, 16, 0, 0);
-
-		foreach (DeclaredTool t in m.EnabledTools())
+		public void OnReceiveValue(Java.Lang.Object? value)
 		{
-			var button = new Button(this) { Text = string.IsNullOrWhiteSpace(t.Title) ? t.Name : t.Title, TextSize = 13f };
-			DeclaredTool which = t;
-			button.Click += async (_, _) =>
-			{
-				output.Text = $"asking {which.Name}...";
-				try
-				{
-					// The parameters the manifest declares get filled with a sample value: this
-					// screen is a probe, not the final UI. The one who will decide the real
-					// arguments is the model, through Gate 2.
-					//
-					// 'analito' and 'AntigenoProstatico' stay in Spanish ON PURPOSE: the prose of
-					// the manifests was translated, but the parameter names and the enum values
-					// are the DOMAIN's contract, and that domain is Spanish.
-					Dictionary<string, object?>? args = null;
-					if (which.Input.Count > 0)
-					{
-						args = [];
-						foreach (DeclaredParameter p in which.Input)
-							args[p.Name] = p.Name == "analito" ? "AntigenoProstatico" : "1";
-					}
+			if (value?.ToString() == "true") return;   // the page went back by itself
+			host.MoveTaskToBack(true);
+		}
+	}
 
-					Response r = await dispatcher!.Serve(new Request(m.Name, which.Name, args), CancellationToken.None);
-					string text = r.Authorized
-						? System.Text.Json.JsonSerializer.Serialize(r.Content)
-						: "DENIED: " + r.Reason;
-					output.Text = text.Length > 700 ? text[..700] + "..." : text;
-				}
-				catch (System.Exception e) { output.Text = $"{e.GetType().Name}: {e.Message}"; }
+	private void Log(string s) => global::Android.Util.Log.Info("GNOTHI", s);
+
+	// ── what the page asks for ──────────────────────────────────────────────────────────
+
+	// The state as the UI needs it: modules, their prose, where each switch stands, and the
+	// journal's real weight -- measured from outside, which is the Host's own verb.
+	private string StateJson()
+	{
+		if (catalog is null) return "{\"loading\":true}";
+
+		var modules = catalog.Modules.Select(m =>
+		{
+			long bytes = 0; int files = 0;
+			try
+			{
+				foreach (FileInfo f in new DirectoryInfo(m.Installation.GrantedFolder)
+					.EnumerateFiles("*", SearchOption.AllDirectories))
+				{ bytes += f.Length; files++; }
+			}
+			catch { /* a module with no journal yet weighs nothing */ }
+
+			return new Dictionary<string, object?>
+			{
+				["name"] = m.Name,
+				["title"] = m.Manifest.Title,
+				["institution"] = m.Manifest.Institution,
+				["icon"] = Icon(m.Name),
+				["enabled"] = m.Installation.Enabled,
+				["journalBytes"] = bytes,
+				["journalFiles"] = files,
+				["tools"] = m.Manifest.Tools.Select(t => new Dictionary<string, object?>
+				{
+					["name"] = t.Name,
+					["title"] = t.Title,
+					["description"] = t.Description,
+					["enabled"] = !m.Installation.DisabledTools.Contains(t.Name),
+				}).ToArray(),
 			};
-			box.AddView(button);
+		}).ToArray();
+
+		return JsonSerializer.Serialize(new Dictionary<string, object?>
+		{
+			["modules"] = modules,
+			["settings"] = Settings(),
+		});
+	}
+
+	// THE SWITCH WRITES THE PERSON'S FILE. Not an in-memory flag: the same installation.json
+	// the desktop Host reads, the watcher watches, and the catalog reloads from. The UI has no
+	// state of its own -- it repaints from whatever the file says, which is why an external
+	// edit shows up on screen too.
+	private string SetConsent(string module, string? tool, bool enabled)
+	{
+		Module? m = catalog?.Modules.FirstOrDefault(x => x.Name == module);
+		if (m is null) return StateJson();
+
+		Installation updated;
+		if (tool is null)
+		{
+			updated = m.Installation with { Enabled = enabled };
+		}
+		else
+		{
+			List<string> off = [.. m.Installation.DisabledTools.Where(t => t != tool)];
+			if (!enabled) off.Add(tool);
+			updated = m.Installation with { DisabledTools = off };
 		}
 
-		box.AddView(output);
+		File.WriteAllText(
+			System.IO.Path.Combine(m.Directory, "installation.json"),
+			JsonSerializer.Serialize(updated, new JsonSerializerOptions { WriteIndented = true }));
 
-		var container = new LinearLayout(this) { Orientation = Orientation.Vertical };
-		container.SetPadding(0, 0, 0, 28);
-		container.AddView(box);
-		return container;
+		// Applied NOW, not when the watcher's 300ms burst settles: the switch the person just
+		// moved has to answer immediately. The watcher still fires -- ReloadConsent finds
+		// nothing further to change and stays quiet.
+		catalog!.ReloadConsent();
+		Log($"consent: {module}{(tool is null ? "" : "." + tool)} -> {(enabled ? "on" : "off")}");
+		return StateJson();
 	}
 
-	private void Heading(string s)
+	private Dictionary<string, object?> Settings()
 	{
-		var t = new TextView(this) { Text = s, TextSize = 30f, Typeface = Typeface.DefaultBold };
-		rootView!.AddView(t);
+		(string name, string url, string model) = Provider();
+		return new Dictionary<string, object?>
+		{
+			["name"] = name,
+			["provider"] = new Uri(url).Host,
+			["model"] = model,
+			// Whether there IS a key for THIS provider, never the key itself.
+			["keyPresent"] = File.Exists(KeyPath),
+			["root"] = catalog?.Root ?? "",
+		};
 	}
 
-	private void Note(string s)
+	// THE PROVIDER, CHOSEN BY THE PERSON. Every preset speaks the OpenAI shape, which is what
+	// ModelOpenAiCompatible talks -- so "use ChatGPT instead" is a file with a URL and a model
+	// name, not code. The constants above remain only as the default when nothing was chosen.
+	private string CfgPath => System.IO.Path.Combine(FilesDir!.AbsolutePath, "model.cfg");
+
+	private (string name, string url, string model) Provider()
 	{
-		var t = new TextView(this) { Text = s, TextSize = 12f };
-		t.SetPadding(0, 6, 0, 18);
-		rootView!.AddView(t);
-		global::Android.Util.Log.Info("GNOTHI", s);
+		try
+		{
+			if (File.Exists(CfgPath))
+			{
+				JsonElement e = JsonSerializer.Deserialize<JsonElement>(File.ReadAllText(CfgPath));
+				return (e.GetProperty("name").GetString() ?? "Groq",
+						e.GetProperty("url").GetString() ?? ModelUrl,
+						e.GetProperty("model").GetString() ?? ModelName);
+			}
+		}
+		catch { /* an unreadable choice falls back to the default */ }
+		return ("Groq", ModelUrl, ModelName);
+	}
+
+	private string SetProvider(string name, string url, string model)
+	{
+		File.WriteAllText(CfgPath, JsonSerializer.Serialize(new Dictionary<string, string>
+		{
+			["name"] = name, ["url"] = url, ["model"] = model,
+		}));
+		Log($"provider: {name} · {model}");
+		return StateJson();
+	}
+
+	// THE KEY, MANAGED BY THE PERSON. This is what makes BYOK real: until now the file was
+	// placed by a developer over a cable, which is not "bring your own key" -- it is bring
+	// MINE. Any key of the chosen provider works, free tier or paid: the file does not know
+	// the difference.
+	//
+	// PER PROVIDER, on purpose: a Groq key is not an OpenAI key. Switching provider switches
+	// which key file is read, so going to ChatGPT and back to Groq loses nothing.
+	//
+	// Three rules, enforced here: it lives ONLY in the app's private area, it is NEVER sent
+	// back to the page (StateJson carries a boolean, not the value), and the log records the
+	// event without the key.
+	private string KeyPath
+	{
+		get
+		{
+			string safe = new string(Provider().name.Where(char.IsLetterOrDigit).ToArray());
+			return System.IO.Path.Combine(FilesDir!.AbsolutePath, $"key-{safe}.key");
+		}
+	}
+
+	private string SetKey(string key)
+	{
+		key = key.Trim();
+		if (key.Length > 0)
+		{
+			File.WriteAllText(KeyPath, key);
+			Log($"model key: saved ({key.Length} chars)");
+		}
+		return StateJson();
+	}
+
+	private string ClearKey()
+	{
+		if (File.Exists(KeyPath)) File.Delete(KeyPath);
+		Log("model key: cleared");
+		return StateJson();
+	}
+
+	// ONE QUESTION, answered through Gate 2: same AgentLoop, same dispatcher, same key file.
+	// Runs detached; the trace and the answer land in the page as they happen.
+	private void Ask(string id, string question)
+	{
+		_ = Task.Run(async () =>
+		{
+			try
+			{
+				(_, string url, string model) = Provider();
+				var loop = new AgentLoop(dispatcher!, new ModelOpenAiCompatible(url, model, KeyPath));
+
+				string answer = await loop.Answer(question, line => Push("trace", id, line), stop.Token);
+				Push("answer", id, answer);
+			}
+			catch (Exception e)
+			{
+				Log($"ask failed: {e.GetType().Name}: {e.Message}");
+				Push("fail", id, $"{e.GetType().Name}: {e.Message}");
+			}
+		});
+	}
+
+	private void PushState() => Push("state", "", StateJson());
+
+	private void Push(string kind, string id, string payload) => RunOnUiThread(() =>
+		web?.EvaluateJavascript(
+			$"gn.push({JsonSerializer.Serialize(kind)},{JsonSerializer.Serialize(id)},{JsonSerializer.Serialize(payload)})",
+			null));
+
+	// ── the bridge itself ───────────────────────────────────────────────────────────────
+	//
+	// The page calls window.prompt('gnothi', json). Anything else is a real prompt and gets
+	// the default behaviour.
+	private sealed class Bridge : WebChromeClient
+	{
+		private readonly MainActivity host;
+		public Bridge(MainActivity host) => this.host = host;
+
+		public override bool OnJsPrompt(WebView? view, string? url, string? message, string? defaultValue, JsPromptResult? result)
+		{
+			if (message != "gnothi" || defaultValue is null || result is null)
+				return base.OnJsPrompt(view, url, message, defaultValue, result);
+
+			try
+			{
+				JsonElement req = JsonSerializer.Deserialize<JsonElement>(defaultValue);
+				string op = req.GetProperty("op").GetString() ?? "";
+				host.Log($"bridge: {op}");
+
+				string answer = op switch
+				{
+					"modules" => host.StateJson(),
+					"setTool" => host.SetConsent(
+						req.GetProperty("module").GetString() ?? "",
+						req.GetProperty("tool").GetString(),
+						req.GetProperty("enabled").GetBoolean()),
+					"setModule" => host.SetConsent(
+						req.GetProperty("module").GetString() ?? "",
+						null,
+						req.GetProperty("enabled").GetBoolean()),
+					"setProvider" => host.SetProvider(
+						req.GetProperty("name").GetString() ?? "",
+						req.GetProperty("url").GetString() ?? "",
+						req.GetProperty("model").GetString() ?? ""),
+					"setKey" => host.SetKey(req.GetProperty("key").GetString() ?? ""),
+					"clearKey" => host.ClearKey(),
+					"ask" => RunAsk(req),
+					_ => "{}",
+				};
+
+				result.Confirm(answer);
+			}
+			catch (Exception e)
+			{
+				host.Log($"bridge: {e.GetType().Name}: {e.Message}");
+				result.Confirm("{}");
+			}
+
+			return true;
+		}
+
+		private string RunAsk(JsonElement req)
+		{
+			host.Ask(req.GetProperty("id").GetString() ?? "", req.GetProperty("question").GetString() ?? "");
+			return "\"ok\"";
+		}
+	}
+
+	private sealed class Insets : Java.Lang.Object, Android.Views.View.IOnApplyWindowInsetsListener
+	{
+		public Android.Views.WindowInsets OnApplyWindowInsets(Android.Views.View v, Android.Views.WindowInsets insets)
+		{
+			var bars = insets.GetInsets(Android.Views.WindowInsets.Type.SystemBars());
+			v.SetPadding(bars.Left, bars.Top, bars.Right, bars.Bottom);
+			return Android.Views.WindowInsets.Consumed;
+		}
 	}
 
 	// Copy from the download area into the private one. Dumb on purpose: the Host does not

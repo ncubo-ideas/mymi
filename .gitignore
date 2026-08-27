@@ -42,3 +42,7 @@ docs/
 # Cache de Python: los generadores de datos dejan .pyc al importarse.
 __pycache__/
 *.pyc
+
+# El paquete de modulos para el telefono: 20 MB de salida de build.
+# Lo arma Gnothi.Mobile/armar-paquete.ps1 cuando hace falta.
+Gnothi.Mobile/paquete/
