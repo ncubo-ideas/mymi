@@ -6,7 +6,7 @@ namespace DealershipCar.Dominio
 	/// La ley de intervalo que no mide nada: vence cuando se recibe un cruce de umbral, y no
 	/// antes. Sin limite de tiempo ni de distancia, y por lo tanto sin punto de vencimiento
 	/// propio -- que es lo que hace que un cruce recibido solo pueda ADELANTAR una operacion y
-	/// nunca posponerla (ley L3, OHS-08).
+	/// nunca posponerla.
 	/// </summary>
 	internal sealed class ConditionOnly : IntervalRule
 	{
@@ -28,7 +28,7 @@ namespace DealershipCar.Dominio
 		/// <summary>
 		/// Contesta no vencida sin mirar el instante, el ancla ni las lecturas: esta ley no mide
 		/// desde ningun lado, asi que no tiene punto de vencimiento que empujar. Esa ausencia es
-		/// la mitad de la ley L3 que la regla sostiene.
+		/// la mitad de la ley que la regla sostiene.
 		/// </summary>
 		internal DueAssessment WaitsForAReceivedCrossing()
 		{
@@ -36,7 +36,7 @@ namespace DealershipCar.Dominio
 		}
 
 		/// <summary>
-		/// LEY L4: el ancla nueva es el instante real de la completacion y solo el. No hay
+		/// El ancla nueva es el instante real de la completacion y solo el. No hay
 		/// intervalo que medir desde ahi, asi que la lectura se descarta.
 		/// </summary>
 		internal override BasePoint NextOccurrenceFromActualCompletion(

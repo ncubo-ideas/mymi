@@ -15,7 +15,7 @@ namespace DealershipCar.Dominio
 		private string _refreshToken = "";
 
 		/// <summary>
-		/// El constructor ES la creacion (E20): una bitacora que no leyo nada todavia y no tiene con
+		/// El constructor ES la creacion: una bitacora que no leyo nada todavia y no tiene con
 		/// que leer. Las dos cosas llegan despues, cada una por su comando.
 		/// </summary>
 		internal Logbook()
@@ -53,7 +53,7 @@ namespace DealershipCar.Dominio
 
 		/// <summary>
 		/// La clave con que el concesionario conoce a ESTA instalacion. GUARDADA: sin registro no
-		/// hay clave vacia, hay ausencia de clave (E41).
+		/// hay clave vacia, hay ausencia de clave.
 		/// </summary>
 		internal string DeviceKey()
 		{

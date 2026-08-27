@@ -4,7 +4,7 @@ namespace DealershipCar.Dominio
 {
 	/// <summary>
 	/// La regla inmutable de una clase de operacion de mantenimiento: que es, cuando vence, si el
-	/// plan la manda y si esta clasificada de seguridad. Es la DEFINICION (E39); la ocurrencia que
+	/// plan la manda y si esta clasificada de seguridad. Es la DEFINICION; la ocurrencia que
 	/// la vive es <see cref="ScheduledOperation"/>.
 	/// </summary>
 	internal sealed class MaintenanceOperationDefinition
@@ -13,7 +13,7 @@ namespace DealershipCar.Dominio
 
 		/// <summary>
 		/// La clase, la ley de su intervalo y sus dos clasificaciones. Los tres primeros son
-		/// obligatorios: sin ley de vencimiento no hay operacion (OINV-19).
+		/// obligatorios: sin ley de vencimiento no hay operacion.
 		/// </summary>
 		internal MaintenanceOperationDefinition(
 			MaintenanceOperationKind kind, IntervalRule rule, bool isMandatory, bool isSafetyClassified)
@@ -24,8 +24,8 @@ namespace DealershipCar.Dominio
 
 			if (rule == null)
 				throw new DomainException(
-					"Una definicion de operacion sin regla de intervalo no vence nunca, y OINV-19 "
-					+ "dice que no hay operacion sin regla de cuando vence.");
+					"Una definicion de operacion sin regla de intervalo no vence nunca, y no hay "
+					+ "operacion sin regla de cuando vence.");
 
 			Kind = kind;
 			_rule = rule;
@@ -40,14 +40,13 @@ namespace DealershipCar.Dominio
 		internal bool IsMandatory { get; }
 
 		/// <summary>
-		/// Si esta clasificada de seguridad. Una de seguridad no se aplaza nunca (ley L6,
-		/// OINV-52).
+		/// Si esta clasificada de seguridad. Una de seguridad no se aplaza nunca.
 		/// </summary>
 		internal bool IsSafetyClassified { get; }
 
 		/// <summary>
 		/// Donde esta parada una ocurrencia suya, segun su ley de intervalo. La definicion no lee
-		/// un reloj: el instante se recibe (§7).
+		/// un reloj: el instante se recibe.
 		/// </summary>
 		internal DueAssessment Assess(
 			BasePoint from, DateTime asOf, UsableReading latestUsable, IntervalLengthFactor factor)
@@ -56,7 +55,7 @@ namespace DealershipCar.Dominio
 		}
 
 		/// <summary>
-		/// LEY L4: donde queda el ancla de la proxima ocurrencia, medida desde la completacion
+		/// Donde queda el ancla de la proxima ocurrencia, medida desde la completacion
 		/// real. Cada base ancla lo que su ley mide.
 		/// </summary>
 		internal BasePoint NextOccurrenceFromActualCompletion(

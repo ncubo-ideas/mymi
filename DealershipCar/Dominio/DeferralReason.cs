@@ -27,7 +27,7 @@ namespace DealershipCar.Dominio
 
 	/// <summary>
 	/// Por que la persona decidio dejar una operacion para despues. Conjunto cerrado de cinco
-	/// miembros. Ninguno cambia el tope ni la ventana de aplazamiento (ley L6).
+	/// miembros. Ninguno cambia el tope ni la ventana de aplazamiento.
 	/// </summary>
 	internal sealed class DeferralReason
 	{
@@ -58,7 +58,7 @@ namespace DealershipCar.Dominio
 
 		/// <summary>
 		/// Resuelve el codigo del wire al miembro. Total con excepcion: un codigo desconocido es un
-		/// defecto de quien llama y revienta (E32).
+		/// defecto de quien llama y revienta.
 		/// </summary>
 		internal static DeferralReason OfCode(DeferralReasonCode code)
 		{

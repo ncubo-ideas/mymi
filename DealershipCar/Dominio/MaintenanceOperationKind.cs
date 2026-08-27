@@ -75,7 +75,7 @@ namespace DealershipCar.Dominio
 
 		/// <summary>
 		/// El remedio de un llamado a revision del fabricante. Es la operacion que puede venir
-		/// clasificada como de seguridad, y una de seguridad no se aplaza nunca (L6).
+		/// clasificada como de seguridad, y una de seguridad no se aplaza nunca.
 		/// </summary>
 		internal static readonly MaintenanceOperationKind RecallRemedy =
 			new MaintenanceOperationKind("RecallRemedy");
@@ -89,7 +89,7 @@ namespace DealershipCar.Dominio
 			new MaintenanceOperationKind("Repair");
 
 		/// <summary>
-		/// El nombre. Es lo unico que sale del conjunto hacia afuera; el objeto no se entrega (E24).
+		/// El nombre. Es lo unico que sale del conjunto hacia afuera; el objeto no se entrega.
 		/// </summary>
 		internal string Name { get; }
 
@@ -100,7 +100,7 @@ namespace DealershipCar.Dominio
 
 		/// <summary>
 		/// Resuelve el codigo del wire al miembro, una sola vez al entrar. Total con excepcion: un
-		/// codigo desconocido es un defecto de quien llama y revienta (E32).
+		/// codigo desconocido es un defecto de quien llama y revienta.
 		/// </summary>
 		internal static MaintenanceOperationKind OfCode(OperationKindCode code)
 		{

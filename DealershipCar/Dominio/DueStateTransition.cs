@@ -5,8 +5,7 @@ namespace DealershipCar.Dominio
 	/// <summary>
 	/// Lo que una evaluacion le hizo a una operacion: si cambio de estado, si con eso vencio y si
 	/// ademas se paso de la gracia. Es lo que el agregado suma para su
-	/// <c>EvaluationResult</c>; un Evaluate sin respuesta esconderia el hecho que el host maneja
-	/// (E9, E30).
+	/// <c>EvaluationResult</c>; un Evaluate sin respuesta esconderia el hecho que el host maneja.
 	/// </summary>
 	internal sealed class DueStateTransition
 	{
@@ -35,7 +34,7 @@ namespace DealershipCar.Dominio
 
 		/// <summary>
 		/// El cambio entre dos estados. Una sola transicion aunque el camino del diagrama tenga
-		/// escalas: el aviso de cortesia no es una parada obligatoria (ley L10, OEX-06).
+		/// escalas: el aviso de cortesia no es una parada obligatoria.
 		/// </summary>
 		internal static DueStateTransition Between(DueState previous, DueState current)
 		{

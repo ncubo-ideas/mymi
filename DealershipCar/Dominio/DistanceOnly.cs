@@ -24,7 +24,7 @@ namespace DealershipCar.Dominio
 		/// <summary>
 		/// Mira solo la distancia recorrida desde el ancla. Es la unica base sin a donde degradar:
 		/// si su dimension no se puede evaluar contesta NotDue con
-		/// <see cref="DueAssessment.CanBeEvaluated"/> en falso (GAP G2).
+		/// <see cref="DueAssessment.CanBeEvaluated"/> en falso.
 		/// </summary>
 		internal override DueAssessment Assess(
 			BasePoint from, DateTime asOf, UsableReading latestUsable, IntervalLengthFactor factor)
@@ -42,7 +42,7 @@ namespace DealershipCar.Dominio
 		}
 
 		/// <summary>
-		/// LEY L4: el ancla nueva son el instante y la lectura reales de la completacion. El
+		/// El ancla nueva son el instante y la lectura reales de la completacion. El
 		/// instante viaja aunque esta ley no lo mida: la mitad opcional es la lectura, no el
 		/// instante.
 		/// </summary>
