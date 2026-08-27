@@ -46,7 +46,15 @@
     --tenue:           #a8ccab;   /* texto secundario */
     --tenue-carta:     #cfe6d0;   /* secundario dentro de tarjetas: la §3 lo distingue */
     --linea:           rgba(168, 204, 171, .22);
-    --carta:           rgba(168, 204, 171, .07);
+
+    /* La barra superior y el pie, en el verde oscuro institucional (§3). */
+    --barra-fondo:     var(--gu-verde-oscuro);
+
+    /* LA SUPERFICIE DE LAS TARJETAS. Estaba al 7% y no se veía: las secciones quedaban
+       como texto suelto sobre el gradiente, sin ritmo. Un panel que se lee como panel es
+       lo que separa una lectura de la siguiente. */
+    --carta:           rgba(168, 204, 171, .10);
+    --carta-alta:      rgba(168, 204, 171, .14);   /* hover y filas alternas */
 
     /* Los dos estados del carrito (§3), con los valores exactos de la especificación. */
     --estable-fondo:   rgba(110, 231, 160, 0.12);
@@ -117,11 +125,66 @@ h1 {
 
 h2, h3, h4, h5 { font-weight: 700; }
 
-/* El bloque de marca: la flor, el nombre y la bajada de 1992. */
-.marca { display: flex; align-items: center; gap: .7rem; }
-.marca svg { width: 40px; height: 40px; flex: 0 0 40px; }   /* §1: 40 px en la app */
-.marca .nombre { font-weight: 700; font-size: 1.12rem; line-height: 1.15; }
-.marca .bajada { font-size: .74rem; color: var(--tenue); line-height: 1.25; }
+/* LA BARRA SUPERIOR (§3: --gu-verde-oscuro va en "titulares, barra superior, pie"). Es
+   la masa de color que le da a la pantalla el tono "cálido, de confianza cotidiana" que
+   la §0 pide, en vez del contorno fino que se lee clínico. */
+.barra {
+    background: var(--barra-fondo);
+    border-bottom: 1px solid rgba(0, 0, 0, .25);
+}
+.barra-dentro {
+    max-width: 56rem;
+    margin: 0 auto;
+    padding: .85rem 1.5rem;
+    display: flex;
+    align-items: center;
+    gap: .75rem;
+}
+.marca-flor { width: 40px; height: 40px; flex: 0 0 40px; }   /* §1: 40 px en la app */
+.marca-texto { display: flex; flex-direction: column; gap: 1px; min-width: 0; }
+.marca-nombre { font-weight: 700; font-size: 1.12rem; line-height: 1.15; }   /* §1 */
+.marca-bajada { font-size: .74rem; color: var(--tenue); line-height: 1.25; }
+.barra-dentro .sello-demo { margin-left: auto; }
+
+/* EL ÁMBAR TIENE UN SOLO TRABAJO: marcar lo que cambió en la canasta. Los avisos de la
+   app —que no hay carpeta, que la escritura falló— NO son ámbar aunque Bootstrap los
+   pinte así por defecto: gritaban igual que la portada y le robaban el significado al
+   único lugar donde el color quiere decir algo.
+
+   Un aviso de la app es neutro; uno que pide acción usa el tierra de la ilustración
+   (§3), que es cálido y no compite con el ámbar. Rojo nunca. */
+.aviso {
+    background: var(--carta);
+    border: 1px solid var(--linea);
+    border-radius: var(--radio-carta);
+    padding: 1rem 1.1rem;
+    color: var(--tinta);
+}
+.aviso-fuerte {
+    background: rgba(184, 118, 58, .12);
+    border: 1px solid rgba(184, 118, 58, .38);
+    border-radius: var(--radio-carta);
+    padding: 1rem 1.1rem;
+    color: var(--tinta);
+}
+.btn-aviso {
+    background: var(--gu-tierra);
+    border-color: var(--gu-tierra);
+    color: #fff;
+}
+.btn-aviso:hover, .btn-aviso:focus { background: #a4682f; border-color: #a4682f; color: #fff; }
+
+/* SECCIONES. Cada lectura arranca con su rótulo, no con un titular: son etiquetas de
+   sección, y el titular de la pantalla es uno solo. Es lo que le da ritmo a una columna
+   larga — antes eran cuatro h5 iguales sobre fondo transparente. */
+main h2 {
+    font-size: .80rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: .16em;
+    color: var(--gu-verde-claro);
+    margin: 2.2rem 0 .8rem;
+}
 
 /* Kicker (§2): el rotulito de "LO ESTABLE" y "LO QUE CAMBIÓ". */
 .kicker {

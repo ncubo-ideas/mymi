@@ -1,9 +1,56 @@
 @inherits LayoutComponentBase
 
 @* Sin sidebar, sin navegacion, sin barra "About" del template. La UI de la app son cuatro
-   cosas y nada mas: el boton de refresh, la lista de examenes, la lectura de cada serie,
-   y el back para volver a la lista. Una app que le entregas a una persona para ver SUS datos
-   no tiene por que traer el andamio del framework con el que se hizo. *@
+   cosas y nada mas: el boton de refresh, la portada, las lecturas y el back para volver a
+   la lista. Una app que le entregas a una persona para ver SUS datos no tiene por que
+   traer el andamio del framework con el que se hizo.
+
+   LA BARRA SUPERIOR es de la especificacion, no un adorno: la §3 asigna --gu-verde-oscuro
+   a "titulares, barra superior, pie". Sin ella la pantalla era un fondo oscuro con texto
+   suelto, y el tono que la §0 pide para esta marca es "calido, de confianza cotidiana" —
+   lo contrario del "prudente, clinico" de Delfos. La masa de color es lo que hace que se
+   lea como la app de una institucion.
+
+   El BLOQUE DE MARCA vive aca y no en la pagina: es de toda la app, y repetirlo en cada
+   pantalla ademas competia con el titulo de la pantalla. *@
+<header class="barra">
+    <div class="barra-dentro">
+        @* LA GUARIA MORADA (Guarianthe skinneri), la flor nacional. Es una cattleya y se
+           dibuja con su anatomia real: un sepalo angosto arriba, dos petalos anchos a los
+           lados, dos sepalos bajos, y el labelo al frente.
+
+           Tres reglas, y las tres se aprendieron rompiendolas: RELLENO y no trazo (a linea
+           fina parecia un garabato, y el de Delfos es de trazo); FILETE de 0.9 entre
+           piezas, que sin el los dos petalos se fusionan en una mancha que parece mariposa;
+           y TRES TONOS del fondo al frente, que da profundidad sin sombras.
+
+           Sobre fondo oscuro el filete NO va en blanco: va del color del fondo. Lo pide la
+           §1, y por eso aca es --barra-fondo. *@
+        <svg class="marca-flor" viewBox="0 0 40 40" xmlns="http://www.w3.org/2000/svg" role="img"
+             aria-label="Supermercado La Guaria">
+            <g stroke="var(--barra-fondo)" stroke-width="0.9" paint-order="stroke fill">
+                <ellipse fill="var(--gu-morado-claro)" cx="20" cy="9.6" rx="2.9" ry="6.4"/>
+                <ellipse fill="var(--gu-morado-claro)" cx="11.8" cy="27.6" rx="6.2" ry="2.4"
+                         transform="rotate(40 11.8 27.6)"/>
+                <ellipse fill="var(--gu-morado-claro)" cx="28.2" cy="27.6" rx="6.2" ry="2.4"
+                         transform="rotate(-40 28.2 27.6)"/>
+                <ellipse fill="var(--gu-morado)" cx="11.2" cy="15.6" rx="6.4" ry="3.5"
+                         transform="rotate(-26 11.2 15.6)"/>
+                <ellipse fill="var(--gu-morado)" cx="28.8" cy="15.6" rx="6.4" ry="3.5"
+                         transform="rotate(26 28.8 15.6)"/>
+                <path fill="var(--gu-morado-hondo)" d="M20 19.6c4 0 6.4 2.8 6.4 6 0 2.6-1.8 4.4-4 4.8-.9-.9-1.5-1.4
+                         -2.4-1.4s-1.5.5-2.4 1.4c-2.2-.4-4-2.2-4-4.8 0-3.2 2.4-6 6.4-6z"/>
+            </g>
+            <circle fill="var(--gu-corazon)" cx="20" cy="19.2" r="2"/>
+        </svg>
+        <div class="marca-texto">
+            <div class="marca-nombre">Supermercado La Guaria</div>
+            <div class="marca-bajada">Su barrio, su despensa, desde 1992</div>
+        </div>
+        <span class="sello-demo">demo</span>
+    </div>
+</header>
+
 <main class="container py-4" style="max-width:56rem">
     @Body
 </main>
