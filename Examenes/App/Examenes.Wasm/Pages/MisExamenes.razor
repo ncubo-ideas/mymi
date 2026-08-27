@@ -170,47 +170,72 @@ else
         oración que esta pantalla arme: sale del conjunto cerrado de `Severidad`, que es lo
         que impide que un .razor invente un consejo. Lo único que la pantalla escribe es el
         caso en que NO hay nada que hacer, y ahí no hay consejo que inventar.               *@
-    @* El @key sube en cada Releer y obliga a Blazor a RECREAR estos nodos. Sin él reusa
-       el mismo elemento, la animación de CSS no se vuelve a disparar, y apretar Refresh
+    @* EL @key VA EN EL CUERPO Y NO EN LA <section>, desde que Actualizar vive acá adentro.
+
+       El @key sube en cada Releer y obliga a Blazor a RECREAR estos nodos. Sin él reusa
+       el mismo elemento, la animación de CSS no se vuelve a disparar, y apretar Actualizar
        no produce ningún cambio visible cuando no entraron exámenes nuevos — o sea que el
        botón parecía no hacer nada. Medido: `getAnimations()[0].currentTime` se quedaba en
-       1000 y el nodo era idéntico. *@
-    <section class="portada @Tono()" @key="@($"portada-{redibujo}")">
-        <p class="portada-rotulo">tu expediente, hoy</p>
+       1000 y el nodo era idéntico.
 
-        @if (urgente.PideAlgo)
-        {
-            <p class="portada-titular">@Mayuscula(urgente.Accion).</p>
-            <div class="portada-cuales">
-                @foreach (InterpretacionDeAnalito lectura in LosQuePiden())
-                {
-                    <button class="portada-cual" @onclick="() => VerSerie(lectura.Analito)">
-                        @lectura.ParaMostrar
-                    </button>
-                }
-            </div>
-        }
-        else
-        {
-            <p class="portada-titular">Nada pide atención hoy.</p>
-        }
+       Pero si la sección ENTERA se recrea, también se recrea el botón que acabás de
+       apretar, y el foco de teclado se pierde en el reemplazo del nodo. Con el @key un
+       nivel más abajo la cabecera sobrevive al redibujo —el foco se queda donde estaba— y
+       el cuerpo se vuelve a animar exactamente igual que antes. *@
+    <section class="portada @Tono()">
+        @* ACTUALIZAR VIVE EN LA PORTADA, no en una fila suelta debajo. Es el botón que
+           vuelve a contestar la pregunta que contesta esta tarjeta: si el rótulo dice
+           «hoy», entonces «¿esto es de hoy?» pertenece acá y a ningún otro lado.
 
-        <div class="portada-pie">
-            <span><b>@cantidad</b> @(cantidad == 1 ? "examen" : "exámenes")</span>
-            <span><b>@ConSerie()</b> @(ConSerie() == 1 ? "analito con historia" : "analitos con historia")</span>
-            @if (Desde() is DateTime desde)
+           Suelto y en azul lleno tenía tres problemas: quedaba segundo en la pantalla sin
+           ser el segundo en importancia, le competía el ojo al titular —que es lo único
+           que alguien tiene que leer si no lee nada más—, y empujaba el aviso de que no se
+           está guardando nada a un tercer lugar que no le corresponde.
+
+           Lleva el trazo de contorno y no el de la acción principal porque no lo es: la
+           app se pone al día sola al abrir, así que esto es «volvé a chequear AHORA». *@
+        <div class="portada-cabeza">
+            <p class="portada-rotulo">tu expediente, hoy</p>
+            <button class="portada-releer" @onclick="Refrescar" disabled="@refrescando">
+                @(refrescando ? "Actualizando…" : "Actualizar")
+            </button>
+        </div>
+
+        <div class="portada-cuerpo" @key="@($"portada-{redibujo}")">
+            @if (urgente.PideAlgo)
             {
-                <span>desde <b>@desde.ToString("MMM yyyy", Cultura)</b></span>
+                <p class="portada-titular">@Mayuscula(urgente.Accion).</p>
+                <div class="portada-cuales">
+                    @foreach (InterpretacionDeAnalito lectura in LosQuePiden())
+                    {
+                        <button class="portada-cual" @onclick="() => VerSerie(lectura.Analito)">
+                            @lectura.ParaMostrar
+                        </button>
+                    }
+                </div>
             }
+            else
+            {
+                <p class="portada-titular">Nada pide atención hoy.</p>
+            }
+
+            <div class="portada-pie">
+                <span><b>@cantidad</b> @(cantidad == 1 ? "examen" : "exámenes")</span>
+                <span><b>@ConSerie()</b> @(ConSerie() == 1 ? "analito con historia" : "analitos con historia")</span>
+                @if (Desde() is DateTime desde)
+                {
+                    <span>desde <b>@desde.ToString("MMM yyyy", Cultura)</b></span>
+                }
+                @* «leído hasta el evento N» es el MISMO tipo de dato que el resto del pie
+                   —el registro de lo que se viene juntando— y por eso termina acá en vez
+                   de pegado al botón. Siguen relacionados donde importa: es el número que
+                   el botón mueve, está en la misma tarjeta, y ahora dejó de estar a la
+                   altura de los ojos, que es donde nunca tuvo que estar el número de
+                   evento de un journal. *@
+                <span>leído hasta el evento <b>@ultimoEvento</b></span>
+            </div>
         </div>
     </section>
-
-    <div class="fila" style="margin-bottom:18px">
-        <button class="boton" @onclick="Refrescar" disabled="@refrescando">
-            @(refrescando ? "Refrescando…" : "Refresh")
-        </button>
-        <span class="apunte mono">leído hasta el evento @ultimoEvento</span>
-    </div>
 
     @* Si la app no esta guardando, eso es lo MAS importante de la pantalla y va arriba,
        no en una nota al pie debajo de la tabla. Sin carpeta la app sigue funcionando
@@ -410,7 +435,7 @@ else
     <h2 class="seccion">Tu historial</h2>
     @if (examenes.Count == 0)
     {
-        <p class="apunte">Todavía no hay exámenes. Apretá <em>Refresh</em>.</p>
+        <p class="apunte">Todavía no hay exámenes. Apretá <em>Actualizar</em>.</p>
     }
     else
     {
@@ -472,7 +497,7 @@ else
 
     // Sube en cada Releer. Es la llave que hace que Blazor recree las tarjetas en vez de
     // reusarlas, y con eso las formas se vuelven a dibujar: es la respuesta visible a
-    // haber apretado Refresh.
+    // haber apretado Actualizar.
     private int redibujo;
 
     // El tono de la portada lo decide el DOMINIO, no esta pantalla: es la severidad que

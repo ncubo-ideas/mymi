@@ -120,9 +120,9 @@ internal sealed class ExamenesTools
 					UltimoEventoLeido = api.UltimoEventoProcesado(),
 					// Ya no puede ser "el nombre esta mal": el enum lo impide. Si no hay
 					// mediciones es que la app todavia no las trajo, y eso se arregla con
-					// un Refresh.
+					// un Actualizar.
 					Detalle = $"El expediente todavia no tiene ninguna medicion de '{nombre}'. "
-						+ "Pedile que abra su app y apriete Refresh.",
+						+ "Pedile que abra su app y apriete Actualizar.",
 				};
 
 			return Armar(t, api.Interpretacion(nombre), api.UltimoEventoProcesado(), api.EdadDelPaciente());
@@ -222,7 +222,7 @@ internal sealed class ExamenesTools
 					Carpeta = lector.Carpeta,
 					UltimoEventoLeido = api.UltimoEventoProcesado(),
 					Detalle = $"El expediente todavia no tiene ninguna prueba de '{nombre}'. "
-						+ "Pedile que abra su app y apriete Refresh.",
+						+ "Pedile que abra su app y apriete Actualizar.",
 				};
 
 			InterpretacionDeAnalito i = api.Interpretacion(nombre);
@@ -349,7 +349,7 @@ internal sealed class ExamenesTools
 
 	private const string DetalleSinJournal =
 		"La app todavia no registro nada en esta carpeta. Pedile a la persona que abra su app de "
-		+ "examenes y apriete Refresh.";
+		+ "examenes y apriete Actualizar.";
 
 	private TendenciaDelAnalito SinJournal() =>
 		new TendenciaDelAnalito { HayDatos = false, Carpeta = lector.Carpeta, Detalle = DetalleSinJournal };
@@ -444,7 +444,7 @@ internal sealed class TendenciaDelAnalito
 	public int EdadDelPaciente { get; init; }
 
 	[JsonPropertyName("ultimoEventoLeido")]
-	[Description("Hasta que evento del laboratorio leyo la app. Si la persona apreta Refresh y "
+	[Description("Hasta que evento del laboratorio leyo la app. Si la persona apreta Actualizar y "
 		+ "entraron examenes nuevos, este numero sube.")]
 	public long UltimoEventoLeido { get; init; }
 

@@ -84,8 +84,8 @@ static string Instrucciones(string carpeta) => $"""
     atencion, decilo y recomenda que lo vea su medico; no diagnostiques.
 
     Como se actualiza. La app trae examenes nuevos del laboratorio cuando la persona la
-    abre o aprieta Refresh. Vos NO podes disparar eso. Si la persona espera ver algo
-    nuevo y no aparece, pedile que abra su app y apriete Refresh, y volve a consultar.
+    abre o aprieta Actualizar. Vos NO podes disparar eso. Si la persona espera ver algo
+    nuevo y no aparece, pedile que abra su app y apriete Actualizar, y volve a consultar.
     El campo ultimoEventoLeido te dice hasta donde leyo: si sube, entraron cosas nuevas.
 
     Si hayDatos viene en false, la app nunca se abrio en esta computadora. Decile que la
