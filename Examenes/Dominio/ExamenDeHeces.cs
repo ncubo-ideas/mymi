@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 
 namespace Examenes.Dominio
 {
@@ -49,6 +50,23 @@ namespace Examenes.Dominio
 			? $"{Color.Expresado}, sangre {Sangre.Expresado}"
 			: Color.Expresado;
 
+		public override IReadOnlyList<LecturaDeExamen> Lecturas
+		{
+			get
+			{
+				var lecturas = new List<LecturaDeExamen>
+				{
+					new LecturaDeExamen(Examenes.Dominio.Analito.ColorDeLasHeces, Color),
+				};
+
+				if (Sangre.FueRealizada)
+					lecturas.Add(new LecturaDeExamen(
+						Examenes.Dominio.Analito.SangreEnLasHeces, Sangre));
+
+				return lecturas;
+			}
+		}
+
 		public bool TieneHallazgo => !Color.EsEsperable || Sangre.EsHallazgo;
 
 		// LA COMPARACION QUE JUSTIFICA ESTA CLASE. Con una sangre positiva esto devuelve
@@ -58,7 +76,7 @@ namespace Examenes.Dominio
 		{
 			get
 			{
-				Severidad mayor = Color.EsEsperable ? Severidad.Informativo : Severidad.Seguimiento;
+				Severidad mayor = Color.EsEsperable ? Severidad.Informativo : Severidad.Vigilar;
 				return Severidad.LaMayor(mayor, Sangre.SeveridadDelHallazgo);
 			}
 		}

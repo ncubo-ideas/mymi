@@ -1,45 +1,81 @@
 /* Mis exámenes — la carátula que la persona instala.
  *
- * Mismo lenguaje visual que la página de descarga de URL1: es la misma institución, y si
- * la app se viera de otra forma la entrega se sentiría como dos productos.
+ * LA MARCA ES LABORATORIO CLÍNICO DELFOS, y las especificaciones vienen del código real
+ * de su página (LaboratorioDelfos.module.css en nCuboSite), no de un boceto: cuando
+ * Sonia descarga la app desde la página del laboratorio, lo que se abre debe
+ * reconocerse en un segundo.
  *
- * SIN BOOTSTRAP. La app tiene cuatro pantallas y nada de formularios; traer un framework
- * de CSS entero para eso costaba 30 KB y, sobre todo, hacía que se viera como un andamio
- * de plantilla en vez de como algo que un laboratorio te entrega.
+ * FONDO OSCURO, y la decisión la cerró el landing real: el teléfono con el que
+ * Geaninna vende la app la muestra en gradiente navy, con los colores de semáforo que
+ * las especificaciones dan PARA fondo oscuro — los únicos no negociables. La app tiene
+ * que parecerse a la promesa desde la que se instala, y con el fondo oscuro el
+ * semáforo deja de ser una variante inventada: es el de ella, exacto.
  *
- * El ámbar tiene UN solo trabajo, igual que en la página de descarga: marcar lo que exige
- * atención. Si aparece en otro lado deja de significar algo. Por eso "salto inverosímil"
- * NO es ámbar: no es una alarma clínica, es "repetí el examen".
+ * SIN BOOTSTRAP y CERO WEBFONTS. Georgia y Segoe UI son de sistema; con un payload sin
+ * trimming de ~35 MB, no agregar descargas de fuentes es una decisión que conviene no
+ * romper después «por diseño».
+ *
+ * El ámbar tiene UN solo trabajo: marcar lo que exige atención. Y el ROJO está
+ * RESERVADO — lo produce solo el dominio, con la severidad «urgente», y ningún
+ * colesterol llega ahí. Si el rojo se usara para el colesterol dejaría de significar
+ * algo: esa regla vive en el dominio y acá solo se pinta.
  */
 
 :root {
-    --papel:    #f6f3ec;
-    --papel-2:  #fffdf8;
-    --tinta:    #161c19;
-    --tinta-2:  #5d6660;
-    --tinta-3:  #8b938d;
-    --linea:    #ddd8cc;
+    /* Institucional — «el laboratorio». Los valores vienen de las especificaciones. */
+    --azul:        #123f6d;   /* color de marca */
+    --azul-oscuro: #0b2c4e;
+    --azul-claro:  #1d5c9e;
+    --celeste:     #7db4e0;   /* acentos sobre oscuro: kickers, trazos, enlaces */
+    --logo:        #ffffff;   /* la gota y el círculo, sobre oscuro, van en blanco */
 
-    --pino:     #1f4034;
-    --pino-cl:  #2e5c4a;
-    --pino-suave: #e8efe9;
+    /* El gradiente navy de la §6, y la tinta que se lee encima. */
+    --fondo:       #0e2f55;   /* el navy base; --app-navy de las especificaciones */
+    --fondo-hondo: #0a2140;   /* el final del gradiente */
+    --tinta:       #eef4fb;   /* texto principal sobre navy */
+    --tenue:       #a9bdd3;   /* texto secundario */
+    --tenue-2:     #7e95ae;   /* rotulitos y pies */
+    --carta:       rgba(125, 180, 224, .07);   /* paneles translúcidos, como el mock */
+    --suave:       rgba(125, 180, 224, .12);   /* hovers */
+    --linea:       rgba(125, 180, 224, .22);
 
-    --ambar:    #b4541a;
-    --ambar-suave: #fdf0e4;
+    /* Aplicación — «la app es de hoy, la página es de 1987». */
+    --accion:      #1a6ff5;   /* color de acción: los botones que hacen algo */
 
-    --rojo:     #9b2c2c;
-    --rojo-suave: #fbeaea;
+    /* EL SEMÁFORO, con los valores EXACTOS de la §5 para fondo oscuro: trazo, fondo y
+     * borde tal como los dio Geaninna. Es lo único que marcó como no negociable, y
+     * desde que la app es oscura ya no hay nada que inventar.
+     * ⚠️ Solo el ROJO sigue provisional: las especificaciones lo dejan «pendiente»
+     * porque está reservado, y este valor es derivado hasta que ella dé el suyo. */
+    --bien:        #6ee7a0;
+    --bien-suave:  rgba(74, 222, 128, .12);
+    --bien-borde:  rgba(74, 222, 128, .35);
+    --bien-zona:   rgba(74, 222, 128, .14);   /* donde es normal estar: las bandas */
+    --bien-vivo:   #4ade80;   /* lo que ya se recorrio: el avance hacia la meta */
 
-    --serif: "Instrument Serif", Georgia, "Times New Roman", serif;
-    --sans:  "IBM Plex Sans", ui-sans-serif, system-ui, sans-serif;
-    --mono:  "IBM Plex Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
+    --ambar:       #fbd06a;   /* vigilar / consulte pronto: lo que exige atención */
+    --ambar-suave: rgba(251, 191, 36, .10);
+    --ambar-borde: rgba(251, 191, 36, .30);
+
+    --rojo:        #f87171;   /* urgente — RESERVADO; ⚠️ provisional */
+    --rojo-suave:  rgba(248, 113, 113, .12);
+    --rojo-borde:  rgba(248, 113, 113, .35);
+
+    /* Serif para lo que se lee de un vistazo, sans para lo que se lee de verdad.
+       Ambas de sistema: cero webfonts. */
+    --serif: Georgia, "Times New Roman", serif;
+    --sans:  "Segoe UI", "Helvetica Neue", Arial, sans-serif;
+    --mono:  ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
 }
 
 * { box-sizing: border-box; }
 
-html, body {
+html { background: var(--fondo-hondo); }
+
+body {
     margin: 0;
-    background: var(--papel);
+    min-height: 100vh;
+    background: linear-gradient(180deg, var(--fondo) 0%, var(--fondo-hondo) 100%) fixed;
     color: var(--tinta);
     font-family: var(--sans);
     font-size: 16.5px;
@@ -56,30 +92,52 @@ h1:focus, h1:focus-visible { outline: none; }
 
 .titular {
     font-family: var(--serif);
-    font-weight: 400;
-    font-size: clamp(38px, 5.5vw, 54px);
-    line-height: 1.05;
+    font-weight: 700;
+    font-size: clamp(2rem, 4.2vw, 2.9rem);
+    line-height: 1.15;
     letter-spacing: -.015em;
+    color: #ffffff;
     margin: 0 0 6px;
 }
 
 .membrete {
-    color: var(--tinta-2);
+    color: var(--tenue);
     font-size: 14.5px;
     margin: 0 0 32px;
 }
 .membrete b { font-weight: 600; color: var(--tinta); }
 
+/* ------------------------------------------------------------- bloque de marca
+
+   Gota dentro de un circulo, 40 px, solo trazo — identico al de la pagina. El nombre va
+   ACA y no solo en el subtitulo: es lo que hace que la app se reconozca en un segundo. */
+
+.marca {
+    display: flex; align-items: center; gap: 12px;
+    margin: 0 0 26px;
+}
+.marca svg { width: 40px; height: 40px; flex: none; }
+.marca-nombre {
+    font-family: var(--serif);
+    font-weight: 700; font-size: 1.15rem; line-height: 1.2;
+    color: #ffffff;
+}
+.marca-claim {
+    font-size: 0.74rem; color: var(--tenue);
+    line-height: 1.35;
+}
+
 .seccion {
-    font-family: var(--mono);
-    font-size: 11.5px; letter-spacing: .15em; text-transform: uppercase;
-    color: var(--pino-cl);
+    font-family: var(--sans);
+    font-weight: 700;
+    font-size: 0.80rem; letter-spacing: .18em; text-transform: uppercase;
+    color: var(--celeste);
     display: flex; align-items: center; gap: 12px;
     margin: 40px 0 16px;
 }
 .seccion::after { content: ""; height: 1px; flex: 1; background: var(--linea); }
 
-.apunte { color: var(--tinta-2); font-size: 13.5px; }
+.apunte { color: var(--tenue); font-size: 13.5px; }
 .mono   { font-family: var(--mono); }
 
 /* ------------------------------------------------------------------ avisos */
@@ -87,8 +145,8 @@ h1:focus, h1:focus-visible { outline: none; }
 .aviso {
     border: 1px solid var(--linea);
     border-left-width: 3px;
-    border-radius: 3px;
-    background: var(--papel-2);
+    border-radius: 14px;
+    background: var(--carta);
     padding: 16px 18px;
     margin-bottom: 18px;
 }
@@ -96,9 +154,9 @@ h1:focus, h1:focus-visible { outline: none; }
 .aviso p:last-child  { margin-bottom: 0; }
 .aviso strong { font-weight: 600; }
 
-.aviso--neutro    { border-left-color: var(--tinta-3); }
-.aviso--atencion  { border-left-color: var(--ambar); background: var(--ambar-suave); }
-.aviso--problema  { border-left-color: var(--rojo);  background: var(--rojo-suave); color: #5f1d1d; }
+.aviso--neutro    { border-left-color: var(--tenue-2); }
+.aviso--atencion  { border-left-color: var(--ambar); background: var(--ambar-suave); border-color: var(--ambar-borde); }
+.aviso--problema  { border-left-color: var(--rojo);  background: var(--rojo-suave); border-color: var(--rojo-borde); }
 
 /* El detalle técnico de un error es para quien pueda hacer algo con él: se muestra, pero
    no compite con la frase que explica qué pasó. */
@@ -119,14 +177,14 @@ h1:focus, h1:focus-visible { outline: none; }
     font: inherit; font-weight: 500; font-size: 15px;
     padding: 11px 20px;
     border: 1px solid transparent;
-    border-radius: 2px;
+    border-radius: 10px;
     cursor: pointer;
-    background: var(--pino); color: var(--papel-2);
+    background: var(--accion); color: #ffffff;
     transition: filter .18s ease, background .18s ease;
 }
 .boton:hover:not(:disabled) { filter: brightness(1.12); }
 .boton:disabled { opacity: .45; cursor: not-allowed; }
-.boton:focus-visible { outline: 2px solid var(--pino-cl); outline-offset: 2px; }
+.boton:focus-visible { outline: 2px solid var(--celeste); outline-offset: 2px; }
 
 .boton--atencion { background: var(--ambar); }
 .boton--problema { background: var(--rojo); }
@@ -135,15 +193,15 @@ h1:focus, h1:focus-visible { outline: none; }
     background: transparent; color: var(--tinta);
     border-color: var(--linea);
 }
-.boton--contorno:hover:not(:disabled) { background: var(--papel-2); filter: none; }
+.boton--contorno:hover:not(:disabled) { background: var(--suave); filter: none; }
 
 .boton--enlace {
-    background: none; color: var(--pino-cl);
+    background: none; color: var(--celeste);
     padding: 0; border: 0;
     text-decoration: underline; text-underline-offset: 3px;
     font-size: 14.5px;
 }
-.boton--enlace:hover { color: var(--tinta); filter: none; }
+.boton--enlace:hover { color: #ffffff; filter: none; }
 
 /* ------------------------------------------------------------------ la serie */
 
@@ -153,37 +211,47 @@ h1:focus, h1:focus-visible { outline: none; }
 .serie {
     display: block; width: 100%; text-align: left;
     font: inherit; color: inherit;
-    background: var(--papel-2);
+    background: var(--carta);
     border: 1px solid var(--linea);
-    border-radius: 3px;
+    border-radius: 14px;
+    box-shadow: 0 1px 4px rgba(0, 0, 0, .22);
     padding: 18px 20px;
     margin-bottom: 10px;
     cursor: pointer;
     transition: border-color .18s ease, box-shadow .18s ease, transform .18s ease;
 }
 .serie:hover {
-    border-color: var(--pino-cl);
-    box-shadow: 0 6px 18px -12px rgba(22,28,25,.45);
+    border-color: var(--celeste);
+    box-shadow: 0 6px 18px -12px rgba(0,0,0,.6);
     transform: translateY(-1px);
 }
-.serie:focus-visible { outline: 2px solid var(--pino-cl); outline-offset: 2px; }
+.serie:focus-visible { outline: 2px solid var(--celeste); outline-offset: 2px; }
 
 .serie-cabeza { display: flex; justify-content: space-between; align-items: flex-start; gap: 16px; }
 .serie-nombre { font-weight: 600; font-size: 16px; }
-.serie-relato { color: var(--tinta-2); font-size: 13.5px; margin-top: 5px; }
+.serie-relato { color: var(--tenue); font-size: 13.5px; margin-top: 5px; }
 
 .serie-valor {
-    font-family: var(--mono);
-    font-size: 21px; font-weight: 500;
+    font-family: var(--serif);
+    font-size: 1.9rem; font-weight: 700; line-height: 1.1;
     white-space: nowrap; text-align: right;
 }
-.serie-valor span { font-size: 12px; color: var(--tinta-2); font-weight: 400; }
+.serie-valor span { font-family: var(--sans); font-size: 12px; color: var(--tenue); font-weight: 400; }
+
+/* NINGUN NUMERO SIN SU REFERENCIA. Va pegada al valor y en voz baja: es el contexto del
+   dato, no un dato mas. La escribe el dominio; aca solo se ubica. */
+.serie-referencia {
+    font-family: var(--mono);
+    font-size: 11px; color: var(--tenue-2);
+    text-align: right; margin-top: 2px;
+    white-space: nowrap;
+}
 
 /* La consecuencia va abajo, separada por una línea: es una conclusión, no un dato más. */
 .serie-lectura {
     margin-top: 12px; padding-top: 11px;
     border-top: 1px solid var(--linea);
-    font-size: 13.8px; color: var(--tinta-2);
+    font-size: 13.8px; color: var(--tenue);
 }
 .serie-lectura b { color: var(--tinta); font-weight: 600; }
 .serie-lectura--atencion { color: var(--ambar); }
@@ -200,48 +268,50 @@ h1:focus, h1:focus-visible { outline: none; }
     margin: 18px 0 4px;
 }
 .modo {
-    background: var(--papel-2);
+    background: var(--carta);
     border: 1px solid var(--linea);
-    border-radius: 3px;
+    border-radius: 14px;
+    box-shadow: 0 1px 4px rgba(0, 0, 0, .22);
     padding: 16px 17px;
     display: flex; flex-direction: column; gap: 10px;
 }
-.modo p { margin: 0; font-size: 13.6px; color: var(--tinta-2); flex: 1; }
+.modo p { margin: 0; font-size: 13.6px; color: var(--tenue); flex: 1; }
 .modo p strong { color: var(--tinta); font-weight: 600; }
 .modo .boton { align-self: flex-start; font-size: 14px; padding: 9px 16px; }
 
 .modo-titulo {
-    font-family: var(--mono);
-    font-size: 11px; letter-spacing: .11em; text-transform: uppercase;
-    color: var(--pino-cl);
+    font-family: var(--sans); font-weight: 700;
+    font-size: 11px; letter-spacing: .16em; text-transform: uppercase;
+    color: var(--celeste);
 }
 
 /* No disponible NO es lo mismo que deshabilitado: la opcion existe y en otro navegador
    funciona. Se atenua y se explica, no se esconde — esconderla haria parecer que la app
    solo sabe hacer una cosa. */
 .modo--nodisponible { background: transparent; border-style: dashed; }
-.modo--nodisponible .modo-titulo { color: var(--tinta-3); }
-.modo-nota { font-size: 12.8px; color: var(--tinta-3); }
+.modo--nodisponible .modo-titulo { color: var(--tenue-2); }
+.modo-nota { font-size: 12.8px; color: var(--tenue-2); }
 
 /* ------------------------------------------------------------------ permisos */
 
 .permiso {
     display: flex; align-items: center; gap: 18px;
-    background: var(--papel-2);
+    background: var(--carta);
     border: 1px solid var(--linea);
-    border-radius: 3px;
+    border-radius: 14px;
+    box-shadow: 0 1px 4px rgba(0, 0, 0, .22);
     padding: 16px 18px;
     margin-bottom: 10px;
 }
 .permiso-nombre { font-weight: 600; font-size: 15.5px; }
-.permiso-que-hace { margin: 4px 0 0; font-size: 13.5px; color: var(--tinta-2); }
+.permiso-que-hace { margin: 4px 0 0; font-size: 13.5px; color: var(--tenue); }
 .permiso .boton { flex: none; }
 
 /* Apagado se VE apagado. Que el estado se lea de un vistazo importa mas acá que en
    ningún otro lado: es la pantalla donde la persona decide qué sabe su IA de ella. */
 .permiso--apagado { background: transparent; border-style: dashed; }
-.permiso--apagado .permiso-nombre { color: var(--tinta-3); }
-.permiso--apagado .permiso-que-hace { color: var(--tinta-3); }
+.permiso--apagado .permiso-nombre { color: var(--tenue-2); }
+.permiso--apagado .permiso-que-hace { color: var(--tenue-2); }
 
 /* ------------------------------------------------------------------ chips */
 
@@ -253,10 +323,11 @@ h1:focus, h1:focus-visible { outline: none; }
     border: 1px solid transparent;
     white-space: nowrap;
 }
-.chip--estable  { background: var(--pino-suave);  color: var(--pino);  border-color: #cfe0d4; }
-.chip--atencion { background: var(--ambar-suave); color: var(--ambar); border-color: #f0d7c0; }
-.chip--repetir  { background: #eceeed; color: var(--tinta-2); border-color: var(--linea); }
-.chip--sinserie { background: transparent; color: var(--tinta-3); border-color: var(--linea); }
+.chip--estable  { background: var(--bien-suave);  color: var(--bien);  border-color: var(--bien-borde); }
+.chip--atencion { background: var(--ambar-suave); color: var(--ambar); border-color: var(--ambar-borde); }
+.chip--repetir  { background: var(--suave); color: var(--tenue); border-color: var(--linea); }
+.chip--problema { background: var(--rojo-suave); color: var(--rojo); border-color: var(--rojo-borde); }
+.chip--sinserie { background: transparent; color: var(--tenue-2); border-color: var(--linea); }
 .chip--grande   { font-size: 12px; padding: 5px 12px; }
 
 /* ------------------------------------------------------------------ tabla */
@@ -265,7 +336,7 @@ h1:focus, h1:focus-visible { outline: none; }
 .tabla th {
     font-family: var(--mono);
     font-size: 10.5px; letter-spacing: .1em; text-transform: uppercase;
-    color: var(--tinta-2); font-weight: 400;
+    color: var(--tenue); font-weight: 400;
     text-align: left; padding: 0 12px 9px 0;
     border-bottom: 1px solid var(--linea);
 }
@@ -274,44 +345,176 @@ h1:focus, h1:focus-visible { outline: none; }
 .tabla .der { text-align: right; padding-right: 0; }
 .tabla th.der { padding-right: 0; }
 .tabla .fecha, .tabla .resultado { font-family: var(--mono); font-size: 13.5px; }
-.tabla tbody tr:hover td { background: var(--papel-2); }
+.tabla tbody tr:hover td { background: var(--suave); }
 
-/* El cuadro historico: una fila por analito, una columna por fecha. Las columnas van
-   apretadas porque son muchas y lo que importa es leer la fila de corrido; la primera
-   columna no se parte, para que el barrido horizontal empiece siempre en el mismo lugar.
-   El contenedor scrollea solo: con diez fechas la tabla no entra en un telefono y lo que
-   NO puede pasar es que scrollee la pagina entera. */
-.tabla--cuadro th, .tabla--cuadro td { padding-left: 14px; white-space: nowrap; }
-.tabla--cuadro th:first-child, .tabla--cuadro td:first-child { padding-left: 0; }
-.tabla--cuadro td:first-child { white-space: normal; min-width: 9.5em; }
-.tabla--cuadro .resultado { font-size: 13px; }
+/* ---------------------------------------------------------------- las formas
 
-/* La tabla puede ser MAS ANCHA que su contenedor, y el contenedor scrollea. Con
-   width:100% pasa lo contrario: al no entrar, el navegador comprime las columnas y parte
-   "200.0 mg/dL" en dos lineas, que es justo lo que arruina el barrido horizontal. Con
-   varias fechas la tabla no entra en un telefono y lo correcto es que scrollee ELLA, no
-   que se deforme. */
-.tabla--cuadro { width: auto; min-width: 100%; }
+   UNA FORMA POR ANALITO, y no es decoracion: el dominio dice cual le toca a cada uno.
+   Un antigeno se lee como trayectoria contra su linea base, un colesterol como progreso
+   hacia una meta, una hemoglobina como posicion en una banda. Dibujarlos igual seria la
+   misma tabla que rechazamos en el dominio, un piso mas arriba.
 
-/* La primera columna se come el espacio sobrante. Sin esto la tabla reparte el ancho
-   entre todas y las fechas quedan desparramadas, con la ultima pegada al borde derecho y
-   un hueco en el medio que rompe el barrido horizontal. */
-.tabla--cuadro th:first-child, .tabla--cuadro td:first-child { width: 100%; }
+   El AMBAR sigue significando una sola cosa -esto exige atencion- y por eso aparece en
+   un solo lugar de cada forma: el punto final, y solo si el dominio lo pidio. */
 
-/* El indicador del final de la fila lo decide el dominio; aca solo se pinta. El ambar
-   sigue significando una sola cosa. */
-.tabla--cuadro td:last-child { font-size: 15px; padding-left: 16px; color: var(--tinta-3); }
+.forma { margin: 16px 0 4px; }
+.forma svg { display: block; width: 100%; height: auto; overflow: visible; }
+
+.forma-pie {
+    display: flex; gap: 18px; flex-wrap: wrap;
+    margin-top: 6px;
+    font-family: var(--mono); font-size: 11px; color: var(--tenue-2);
+}
+.forma-pie--extremos { justify-content: space-between; gap: 8px; }
+.forma-nota { display: inline-flex; align-items: center; gap: 5px; }
+.forma-nota b { color: var(--tinta); font-weight: 500; }
+.forma-nota--der { margin-left: auto; text-align: right; }
+.forma-nota--centro { flex: 1; text-align: center; }
+
+/* La muestra de color del pie, para no repetir la leyenda en palabras. */
+.muestra { width: 10px; height: 10px; border-radius: 2px; display: inline-block; }
+/* La muestra tiene que ser EL MISMO color que la banda que nombra. Antes era pino al
+   30% y la banda pino al 16%: dos grises distintos para la misma cosa. */
+.muestra--banda { background: var(--bien-zona); }
+.muestra--techo { height: 0; border-top: 1.5px dashed var(--tenue-2); border-radius: 0; }
+
+/* --- trayectoria: la banda ES el fondo contra el que se lee todo lo demas --- */
+.forma--trayectoria .banda { fill: var(--bien-zona); }
+.forma--trayectoria .linea-base {
+    stroke: var(--celeste); stroke-width: 1.5; opacity: .55;
+}
+.forma--trayectoria .linea-techo {
+    stroke: var(--tenue-2); stroke-width: 1; stroke-dasharray: 4 4; opacity: .7;
+}
+.forma--trayectoria .trazo {
+    fill: none; stroke: var(--celeste); stroke-width: 2;
+    stroke-linejoin: round; stroke-linecap: round;
+}
+.forma--trayectoria .punto { fill: var(--celeste); }
+.forma--trayectoria .punto--final { fill: var(--celeste); stroke: var(--fondo); stroke-width: 2; }
+.forma--trayectoria .punto--atencion { fill: var(--ambar); stroke: var(--fondo); stroke-width: 2; }
+
+/* --- progreso: el eje es el VALOR, no el tiempo --- */
+.forma--progreso .pista { fill: var(--linea); opacity: .5; }
+/* Lo YA recorrido. Es lo unico de esta pantalla que se gana, asi que tiene color de
+   verdad y no una dilucion: la barra que avanza es la recompensa. */
+.forma--progreso .avance { fill: var(--bien-vivo); }
+/* Lo que falta, en ambar: es lo unico de esta forma que pide algo. */
+.forma--progreso .pendiente { fill: var(--ambar); opacity: .3; }
+.forma--progreso .hito-meta { stroke: var(--celeste); stroke-width: 2; }
+.forma--progreso .marca { fill: var(--ambar); stroke: var(--fondo); stroke-width: 2.5; }
+.forma--progreso .marca--llego { fill: var(--bien); }
+
+/* --- banda: alejarse es peor en las DOS direcciones, por eso no hay flecha --- */
+/* El AFUERA casi no se pinta y el ADENTRO si: lo que tiene que saltar a la vista es
+   donde es normal estar, no donde no. Con los dos en gris no se distinguian. */
+.forma--banda .fuera { fill: var(--linea); opacity: .35; }
+.forma--banda .dentro { fill: var(--bien-zona); }
+.forma--banda .aguja { stroke: var(--celeste); stroke-width: 3; stroke-linecap: round; }
+.forma--banda .aguja--fuera { stroke: var(--ambar); }
+
+/* ---------------------------------------------------------------- el historial
+
+   UNA CRONOLOGIA DE VISITAS, no una tabla. Las trayectorias ya se ven arriba; lo que
+   esta seccion aporta es QUE PASO CADA DIA, que es como se recuerda una visita al
+   laboratorio: varios analitos juntos, no una grilla. */
+
+.visitas { list-style: none; margin: 4px 0 0; padding: 0; }
+.visita {
+    display: flex; gap: 18px;
+    padding: 14px 0;
+    border-bottom: 1px solid var(--linea);
+}
+.visita:last-child { border-bottom: 0; }
+
+.visita-fecha {
+    flex: 0 0 4.5em;
+    font-family: var(--mono); line-height: 1.25;
+}
+.visita-dia { display: block; font-size: 13px; color: var(--tinta); text-transform: lowercase; }
+.visita-ano { display: block; font-size: 11px; color: var(--tenue-2); }
+
+.visita-cosas { list-style: none; margin: 0; padding: 0; flex: 1; }
+.visita-cosa {
+    display: flex; justify-content: space-between; gap: 14px;
+    padding: 2px 0;
+}
+.visita-que { color: var(--tenue); font-size: 14px; }
+.visita-cuanto {
+    font-family: var(--mono); font-size: 13px; color: var(--tinta);
+    text-align: right;
+}
 
 /* ------------------------------------------------------------------ detalle */
 
+/* CADA MEDICION, UNA POR UNA — lo que la tarjeta de la lista no puede dar.
+
+   La tarjeta comprime la serie en «pasó de 3.0 a 5.2 en 1095 días», y esa frase esconde
+   lo unico que cambia como se lee: si el cambio fue parejo o fue un salto. Tres anos
+   planchados y un salto al final tienen los mismos extremos que una subida lenta.
+
+   Por eso la columna que importa es la del SALTO, y va en mono: es una cifra, no prosa.
+   La medicion mas vieja no lleva salto porque es el punto de partida. */
+
+.mediciones { list-style: none; margin: 4px 0 0; padding: 0; }
+.medicion {
+    display: flex; align-items: baseline; gap: 18px;
+    padding: 13px 0;
+    border-bottom: 1px solid var(--linea);
+}
+.medicion:last-child { border-bottom: 0; }
+
+/* La misma columna de fecha que el historial de visitas: es la misma clase de dato, y
+   dos anchos distintos para lo mismo se leen como dos cosas distintas. */
+.medicion-fecha {
+    flex: 0 0 4.5em;
+    font-family: var(--mono); line-height: 1.25;
+}
+.medicion-dia { display: block; font-size: 13px; color: var(--tinta); text-transform: lowercase; }
+.medicion-ano { display: block; font-size: 11px; color: var(--tenue-2); }
+
+.medicion-valor {
+    flex: 0 0 6.5em;
+    font-family: var(--mono); font-size: 16px; color: var(--tinta);
+}
+.medicion-valor span { font-size: 11.5px; color: var(--tenue-2); margin-left: 3px; }
+
+.medicion-salto {
+    flex: 1;
+    font-family: var(--mono); font-size: 12.5px; color: var(--tenue);
+    text-align: right;
+}
+
+/* Un positivo se marca en la fila, no en una columna aparte: en un binario el resultado
+   ES el dato. El ambar mantiene su unico significado. */
+.medicion--presente .medicion-valor { color: var(--ambar); }
+
+/* --- el ritmo del ultimo tramo, cuando el analito lo tiene --- */
+
+/* No es un aviso: es una cifra con su contexto. Va sin borde de color a la izquierda
+   para no competir con el bloque de veredicto, que es el que puede pedir algo. */
+.ritmo {
+    display: flex; flex-direction: column; gap: 3px;
+    margin: 22px 0 0; padding: 14px 16px;
+    background: var(--carta);
+    border: 1px solid var(--linea); border-radius: 14px;
+}
+.ritmo-rotulo {
+    font-size: 11px; letter-spacing: .07em; text-transform: uppercase;
+    color: var(--tenue-2);
+}
+.ritmo-cifra { font-family: var(--mono); font-size: 19px; color: var(--tinta); }
+.ritmo-nota { font-size: 12.5px; color: var(--tenue); }
+.ritmo--atencion .ritmo-cifra { color: var(--ambar); }
+
 .cifra-par {
-    font-family: var(--mono);
-    font-size: clamp(28px, 5vw, 38px); font-weight: 500;
+    font-family: var(--serif);
+    font-size: clamp(28px, 5vw, 38px); font-weight: 700;
     letter-spacing: -.01em;
     margin: 14px 0 6px;
 }
-.cifra-par .flecha { color: var(--tinta-3); margin: 0 10px; }
-.cifra-par .unidad { font-size: 15px; color: var(--tinta-2); font-weight: 400; margin-left: 8px; }
+.cifra-par .flecha { color: var(--tenue-2); margin: 0 10px; }
+.cifra-par .unidad { font-size: 15px; color: var(--tenue); font-weight: 400; margin-left: 8px; }
 .cifra-par .final  { color: var(--ambar); }
 
 /* ------------------------------------------------------------------ arranque */
@@ -326,20 +529,19 @@ h1:focus, h1:focus-visible { outline: none; }
     transform-origin: 50% 50%; transform: rotate(-90deg);
 }
 .loading-progress circle:last-child {
-    stroke: var(--pino);
+    stroke: var(--celeste);
     stroke-dasharray: calc(3.141 * var(--blazor-load-percentage, 0%) * 0.8), 500%;
     transition: stroke-dasharray .05s ease-in-out;
 }
 .loading-progress-text {
     position: absolute; text-align: center;
-    font-family: var(--mono); font-size: 13px; color: var(--tinta-2);
+    font-family: var(--mono); font-size: 13px; color: var(--tenue);
     inset: calc(22vh + 2.4rem) 0 auto 0;
 }
 .loading-progress-text:after { content: var(--blazor-load-percentage-text, "Cargando"); }
 
 #blazor-error-ui {
-    color-scheme: light only;
-    background: var(--rojo-suave); color: #5f1d1d;
+    background: #7f1d1d; color: #ffffff;
     border-top: 2px solid var(--rojo);
     bottom: 0; left: 0; width: 100%;
     box-sizing: border-box; display: none; position: fixed; z-index: 1000;
@@ -347,7 +549,7 @@ h1:focus, h1:focus-visible { outline: none; }
 }
 #blazor-error-ui .dismiss { cursor: pointer; position: absolute; right: .9rem; top: .6rem; }
 
-.blazor-error-boundary { background: var(--rojo); color: #fff; padding: 1rem 1.25rem; }
+.blazor-error-boundary { background: #7f1d1d; color: #fff; padding: 1rem 1.25rem; }
 .blazor-error-boundary::after { content: "Ocurrió un error."; }
 
 code { font-family: var(--mono); font-size: .9em; color: var(--ambar); }
@@ -359,4 +561,175 @@ code { font-family: var(--mono); font-size: .9em; color: var(--ambar); }
     .serie-cabeza { flex-direction: column; gap: 8px; }
     .serie-valor { text-align: left; }
     .tabla { font-size: 14px; }
+
+    /* En angosto el salto no cabe en la misma linea sin partirse, y partido deja de ser
+       una cifra. Baja debajo del valor, alineado con el, y la fecha se queda arriba. */
+    .medicion { flex-wrap: wrap; gap: 6px 14px; }
+    .medicion-fecha { flex: 0 0 100%; }
+    .medicion-valor { flex: 0 0 auto; }
+    .medicion-salto { text-align: left; }
+}
+
+/* PRESENCIA EN EL TIEMPO — la forma de los binarios.
+   El hilo es la linea del tiempo; los circulos, las pruebas. Los positivos van en ambar
+   y llenos porque son lo unico de esta forma que pide algo; los negativos, huecos.
+   La racha final lleva trazo grueso: dos seguidas es otra cosa que una, y ese es el
+   unico hecho que esta forma tiene para contar. */
+.forma--presencia .hilo { stroke: var(--linea); stroke-width: 2; stroke-linecap: round; }
+.forma--presencia .racha { stroke: var(--ambar); stroke-width: 4; stroke-linecap: round; opacity: .45; }
+.forma--presencia .prueba { fill: var(--fondo); stroke: var(--tenue-2); stroke-width: 2; }
+.forma--presencia .prueba--presente { fill: var(--ambar); stroke: var(--fondo); stroke-width: 2; }
+
+/* ---------------------------------------------------------------- la portada
+
+   LA PRIMERA PREGUNTA. Alguien abre esta app para saber si esta bien, y lo primero que
+   veia era un boton de Refresh y el numero de evento del journal.
+
+   Es LA TARJETA DE SEMAFORO del mock del landing: panel translucido con el borde y el
+   titular en el color de la severidad. El TONO lo decide el dominio -es la severidad
+   mayor de todo el expediente- y aca solo se traduce a color. */
+
+.portada {
+    background: var(--carta);
+    border: 1px solid var(--linea);
+    border-radius: 14px;
+    padding: 22px 26px 20px;
+    margin-bottom: 18px;
+}
+.portada--calma        { background: var(--bien-suave);  border-color: var(--bien-borde); }
+.portada--atencion     { background: var(--ambar-suave); border-color: var(--ambar-borde); }
+.portada--problema     { background: var(--rojo-suave);  border-color: var(--rojo-borde); }
+
+/* EL ROTULO Y ACTUALIZAR COMPARTEN RENGLON. El boton es lo que vuelve a contestar la
+   pregunta que contesta la tarjeta -si el rotulo dice "hoy", "esto es de hoy?" pertenece
+   aca-, asi que va en la misma linea y a la derecha, no en una fila suelta debajo de la
+   portada compitiendole el ojo al titular. */
+.portada-cabeza {
+    display: flex; align-items: center; justify-content: space-between;
+    flex-wrap: wrap; gap: 8px 12px;
+    margin-bottom: 10px;
+}
+
+.portada-rotulo {
+    font-family: var(--sans); font-weight: 700; font-size: 10.5px; letter-spacing: .18em;
+    text-transform: uppercase; color: var(--tenue);
+    margin: 0;
+}
+
+/* CONTORNO Y TENUE, NO EL AZUL DE ACCION: la app se pone al dia sola al abrir, asi que
+   apretar esto es "volve a chequear AHORA" y no el punto de partida de la pantalla.
+
+   Tiene clase propia y no `.portada-cual` -aunque el trazo se parezca- porque las cuales
+   son los analitos que piden algo. Dos pildoras idem en la misma tarjeta, una que navega
+   a una serie y otra que va a buscarle datos al proveedor, se leen como lo mismo. De ahi
+   que esta sea mas tenue, no levante en hover, y viva en el otro extremo del renglon.
+
+   SIN ICONO. Un "↻" delante decia el oficio del boton de un golpe, pero a 13px en la sans
+   se lee como una "u" torcida, y ademas seria el unico glifo de toda la UI: no hay ni uno
+   mas, ni en los avisos ni en el back. Lo que lo separa de las cuales es donde esta y su
+   peso, que ya alcanza. */
+.portada-releer {
+    font: inherit; font-size: 13px; font-weight: 500;
+    padding: 5px 13px; cursor: pointer; white-space: nowrap;
+    background: transparent; color: var(--tenue);
+    border: 1px solid var(--linea); border-radius: 999px;
+    transition: color .12s ease, border-color .12s ease;
+}
+.portada-releer:hover:not(:disabled) { color: var(--tinta); border-color: var(--celeste); }
+.portada-releer:focus-visible { outline: 2px solid var(--celeste); outline-offset: 2px; }
+.portada-releer:disabled { opacity: .5; cursor: progress; }
+
+/* El titular es la frase del DOMINIO cuando hay algo que hacer. Va en serif y grande
+   porque es lo unico que alguien necesita leer si no lee nada mas — y en el trazo del
+   semaforo, como el «Todo está bien» del mock. */
+.portada-titular {
+    font-family: var(--serif); font-weight: 700;
+    font-size: clamp(25px, 5vw, 34px); line-height: 1.1;
+    letter-spacing: -.01em; margin: 0; color: var(--tinta);
+    text-wrap: balance;
+}
+.portada--calma .portada-titular    { color: var(--bien); }
+.portada--atencion .portada-titular { color: var(--ambar); }
+.portada--problema .portada-titular { color: var(--rojo); }
+
+/* SOBRE QUE. Son botones y no texto porque llevan a la serie: la pregunta siguiente
+   -"¿cual de todos?"- se contesta tocando. */
+.portada-cuales { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 16px; }
+.portada-cual {
+    font: inherit; font-size: 13.5px; font-weight: 500;
+    padding: 5px 12px; cursor: pointer;
+    background: transparent; color: var(--tinta);
+    border: 1px solid var(--linea); border-radius: 999px;
+    transition: transform .12s ease, border-color .12s ease;
+}
+.portada-cual:hover { border-color: var(--celeste); transform: translateY(-1px); }
+.portada-cual:focus-visible { outline: 2px solid var(--celeste); outline-offset: 2px; }
+
+/* LO QUE SE VIENE JUNTANDO. No es adorno: "desde ago 2022" es lo que convierte una lista
+   de examenes en un historial, y es la razon por la que a alguien le importaria seguir
+   usando esto. */
+.portada-pie {
+    display: flex; flex-wrap: wrap; gap: 6px 20px; margin-top: 18px;
+    padding-top: 14px; border-top: 1px solid var(--linea);
+    font-family: var(--mono); font-size: 11.5px; color: var(--tenue-2);
+}
+.portada-pie b { color: var(--tinta); font-weight: 500; font-size: 13px; }
+
+/* ---------------------------------------------------------------- movimiento
+
+   POCO Y CON MOTIVO. Cada forma se dibuja como se LEE: la trayectoria se traza en el
+   tiempo, la barra de progreso crece desde su partida, la aguja de la banda se acomoda,
+   y la tira de presencia aparece prueba por prueba. Nada parpadea ni rebota.
+
+   Se dispara al montar, asi que Actualizar vuelve a dibujarlo todo — que es justo cuando
+   la persona quiere ver que algo paso. */
+
+@keyframes entra-desde-abajo { from { opacity: 0; transform: translateY(8px); } }
+@keyframes se-traza         { from { stroke-dashoffset: 1; } }
+@keyframes aparece          { from { opacity: 0; transform: scale(.4); } }
+@keyframes crece-de-izquierda { from { transform: scaleX(0); } }
+
+/* SE ANIMA EL CUERPO, NO LA TARJETA. El @key que fuerza el redibujo bajo un nivel para
+   que Actualizar no se recree con el click puesto encima y no se pierda el foco, y la
+   animacion lo siguio. Sale mejor de lo que era: la tarjeta es el marco y se queda
+   quieta, y lo que se vuelve a dibujar es el contenido — que es exactamente lo que el
+   boton acaba de cambiar. */
+.portada-cuerpo { animation: entra-desde-abajo .45s ease-out both; }
+.serie          { animation: entra-desde-abajo .45s ease-out both; }
+
+/* El trazo se dibuja de la primera medicion a la ultima. pathLength="1" en el polyline
+   hace que la fraccion sea exacta sin adivinar el largo. */
+.forma--trayectoria .trazo {
+    stroke-dasharray: 1; stroke-dashoffset: 0;
+    animation: se-traza 1s ease-out both;
+}
+.forma--trayectoria .punto { animation: aparece .3s ease-out both .55s; }
+.forma--trayectoria .punto--final,
+.forma--trayectoria .punto--atencion { animation: aparece .4s ease-out both 1s; }
+
+/* La barra crece desde la partida del episodio, que es de donde se viene. */
+.forma--progreso .avance { transform-origin: left center; animation: crece-de-izquierda .8s ease-out both .15s; }
+.forma--progreso .marca  { animation: aparece .4s ease-out both .7s; }
+
+.forma--banda .aguja { animation: aparece .5s ease-out both .25s; }
+
+/* Prueba por prueba, en orden: ver aparecer la racha es el hecho que la forma cuenta. */
+.forma--presencia .prueba { animation: aparece .35s ease-out both; }
+.forma--presencia .prueba:nth-of-type(1) { animation-delay: .15s; }
+.forma--presencia .prueba:nth-of-type(2) { animation-delay: .3s; }
+.forma--presencia .prueba:nth-of-type(3) { animation-delay: .45s; }
+.forma--presencia .prueba:nth-of-type(4) { animation-delay: .6s; }
+.forma--presencia .prueba:nth-of-type(n+5) { animation-delay: .75s; }
+.forma--presencia .racha { transform-origin: left center; animation: crece-de-izquierda .5s ease-out both .55s; }
+
+/* Quien pidio que no se mueva, no se mueve. */
+@media (prefers-reduced-motion: reduce) {
+    .portada-cuerpo, .serie,
+    .forma--trayectoria .trazo, .forma--trayectoria .punto,
+    .forma--trayectoria .punto--final, .forma--trayectoria .punto--atencion,
+    .forma--progreso .avance, .forma--progreso .marca,
+    .forma--banda .aguja,
+    .forma--presencia .prueba, .forma--presencia .racha {
+        animation: none;
+    }
 }

@@ -5,7 +5,8 @@ app con **su propio historial**, para que ella y su IA lean la **serie completa*
 último valor suelto.
 
 Sigue la convención de estructura acordada por el equipo: un directorio por negocio, cinco
-nodos adentro, nombres en español. Este README es **cómo se corre**.
+nodos adentro, nombres en español — [y eso incluye los tipos del dominio](#el-idioma-del-dominio-es-el-idioma-del-canon).
+Este README es **cómo se corre**.
 
 ---
 
@@ -16,7 +17,7 @@ nodos adentro, nombres en español. Este README es **cómo se corre**.
 | `PaginaDeDescarga/` | **URL1** · nginx que sirve la app publicada. `8090` http, `8453` https. **No es un csproj** |
 | `EndPointDeEventos/` | **URL2** · `8091`. El GET de eventos, el token de device y su rotación, y el señuelo que devuelve 403 |
 | `InyectorDeEventosDemo/` | Siembra la historia en URL2. Valores y fechas **elegidos**, no aleatorios |
-| `Dominio/` | El puppet: `Expediente`, `Examen`, `Magnitud`, `SerieDeAnalito`, `Bitacora`. **Cero dependencias** |
+| `Dominio/` | El puppet: `Expediente`, `Examen`, `Analito`, `Magnitud`, `SerieDeAnalito`, `Bitacora`. **Cero dependencias** |
 | `App/` | Una lógica y tres carátulas |
 
 Dentro de `App/`:
@@ -47,10 +48,12 @@ historias cruzadas lo necesitan.
 
 ## Correrlo
 
-### Lo que anda hoy: el ciclo por consola
+### El ciclo corto: por consola
 
-El WASM está bloqueado por el motor, así que **se trabaja y se valida por `Consola`** — es
-para lo que existe esa carátula. Esto no necesita Docker.
+El WASM ya corre —el bloqueo del motor se levantó en `3.0.0-beta.10029`—, pero el ciclo de
+trabajo sigue siendo **`Consola`**: mide el dominio en microsegundos, no necesita Docker ni
+browser, y cuando algo se rompe dice qué regla se rompió en vez de dejar una pantalla rara.
+Un cambio en el dominio no está listo hasta que sus comprobaciones pasan.
 
 **1 · URL2**
 
@@ -230,19 +233,63 @@ GET expediente/1/perfil            -> 403
 
 ## El dominio
 
-### Dos jerarquías, y ninguna es decorativa
+### El idioma del dominio es el idioma del canon
 
-**Por examen** — de dónde salió la muestra:
+`Expediente`, `SerieDeAnalito`, `Magnitud`, `ColorDeOrina`, `ControlPendiente`. **En
+español, y también los `///` y los comentarios.** No `MedicalRecord`, no `AnalyteSeries`.
+
+No es preferencia estética. La guía de dominio pide nombrar con **la palabra que el equipo
+dice en voz alta**, y este equipo dice «analito», «hallazgo», «carátula». Un dominio en
+inglés con una UI en español obliga a traducir en cada frontera, y la traducción es donde
+el significado se pierde: «hallazgo» no es *finding*, «analito» no es *test*.
+
+**La regla no es «español»: es el idioma del canon.** El dominio de `Gnothi.Host` se queda
+en **inglés** por decisión de su equipo, y eso no la contradice — la confirma. Dos
+productos del mismo milestone pueden caer de lados distintos porque tienen canon distinto;
+lo que no se puede es que un mismo producto hable dos idiomas por dentro.
+
+Va en inglés lo que **no nombramos nosotros**: el tipo del commit (`feat`, `fix` — es el
+estándar, y lo verifica `.githooks/commit-msg`), la API de Puppeteer (`PerformCommand`,
+`Check`), las palabras del DSL (`print`, `foreach`) y C# con su BCL (`IReadOnlyList`).
+
+> Se escribe acá el 2026-08-26 porque no estaba escrito en ningún lado. Édgar y Jonathan
+> levantaron que en otro negocio la UI estaba en español y el dominio en inglés, y
+> preguntaron si el skill de diseño de dominio no decía nada al respecto. No decía: sus
+> ejemplos están todos en inglés, y «el canon manda» se leía como «usá la palabra del
+> canon», no «usá el idioma del canon».
+
+### Cuatro jerarquías, y ninguna es decorativa
+
+**Por examen** — de dónde salió la muestra. Son tres muestras distintas, y por eso son tres
+ramas:
 
 ```
 Examen                        fecha + nombre. NO declara un valor numérico.
 ├── ExamenDeSangre            mide UN analito: rango por edad, umbrales, dirección
 │   ├── Colesterol            total
-│   ├── ColesterolDetallado   HDL / LDL
+│   ├── ColesterolDetallado   LDL + HDL — el único de sangre que mide DOS
 │   ├── AntigenoProstatico
 │   └── Hemoglobina           el único donde preocupa que BAJE
-└── ExamenDeOrina             informa un COLOR y unos NITRITOS. Ni serie ni número.
+├── ExamenDeOrina             color + nitritos + sangre oculta: TRES cosas medidas
+└── ExamenDeHeces             color + sangre oculta
 ```
+
+**Por analito** — *qué* se midió, como identidad y no como cadena. Un expediente real no
+viene de un laboratorio sino de todos por los que pasó la persona, y cada uno lo nombra
+distinto: `HEMOGLOBINA`, `HGB` y `Hemoglobina` tienen que caer en **una** serie de tres
+puntos y no en tres de un punto:
+
+```
+Analito                       identidad + sinónimos de reportes reales
+├── AnalitoContinuo           tiene unidad y rango posible   PSA, colesterol, hemoglobina
+├── AnalitoBinario            sin unidad, forma serie        nitritos, las dos sangres
+└── AnalitoNominal            sin unidad, NO forma serie     los dos colores
+```
+
+La unidad vive en `AnalitoContinuo` y no en la raíz. Un color es algo que se midió —o sea,
+un analito— y no se mide en nada; exigirle unidad a la raíz era lo que hacía que
+`Analito` fuera, en realidad, *«analito cuantitativo de sangre»* con un nombre general
+puesto encima.
 
 **Por magnitud** — qué forma tiene el resultado. Un laboratorio real reporta en **seis**
 formas, y el urianálisis solo usa cuatro:
@@ -253,16 +300,53 @@ Magnitud
 │                      forma 2 · sin unidad     identificada   pH, densidad relativa
 ├── MagnitudOrdinal    forma 3 · cruces         identificada   tira reactiva
 ├── MagnitudDeConteo   forma 4 · por campo      identificada   eritrocitos
-├── MagnitudBinaria    forma 5 · Nitritos       IMPLEMENTADA   positivo/negativo/no realizado
-└── MagnitudNominal    forma 6 · ColorDeOrina   IMPLEMENTADA   color, aspecto, olor
+├── MagnitudBinaria    forma 5                  IMPLEMENTADA   Nitritos, SangreEnOrina,
+│                                                              SangreEnHeces
+└── MagnitudNominal    forma 6                  IMPLEMENTADA   ColorDeOrina, ColorDeHeces
+```
+
+**Por serie** — cómo se lee la historia de ese analito. No todas las series se leen igual, y
+ese es el corte más reciente:
+
+```
+SerieDeAnalito                identidad + cuándo fue la última + cada cuánto repetirla
+├── SerieContinua             ordena, resta y divide por días  → EvaluacionDeTendencia
+│   ├── SerieDeAntigenoProstatico   velocidad, nivel habitual, confirmación de un pico
+│   ├── SerieDeColesterol           meta, partida del episodio, si viene bajando
+│   ├── SerieDeColesterolLdl        si el HDL acompaña
+│   └── SerieDeHemoglobina          el peor grado de anemia que hubo
+└── SerieBinaria              cuenta apariciones y rachas      → EvaluacionDePresencia
+    ├── SerieDeNitritos             si la infección cedió
+    ├── SerieDeSangreEnOrina        si fue pasajera
+    └── SerieDeSangreEnHeces        si se repitió y volvió a salir
 ```
 
 `Examen` **no declara un valor medido**, y ahí está la decisión que ordena todo lo demás. Si
 la base hubiera declarado un `decimal Valor`, cuatro de las seis formas tendrían que
-devolver cero y mentir.
+devolver cero y mentir. Lo mismo un piso más abajo: `SerieDeAnalito` no declara `Cambio`,
+porque un binario no tiene uno.
 
 Las formas 2, 3 y 4 están **nombradas y no construidas**, a propósito: el encargo fue
 modelar dos o tres analitos de verdad, no un sistema de laboratorio clínico.
+
+> **Esto cierra la pregunta de «por examen o por analito»**, que estuvo abierta con Álvaro
+> buena parte del milestone. La respuesta resultó ser que no era una disyuntiva: el examen
+> es **de dónde salió la muestra**, el analito es **qué se midió**, y la serie es **cómo se
+> lee su historia**. Son tres preguntas distintas y cada una tiene su jerarquía. Lo que sí
+> era un error era tener una sola y hacerla contestar las tres.
+
+### Un examen no mide una cosa: mide las que mide
+
+Un urianálisis informa **tres** analitos y el de heces **dos**. `Examen.Lecturas` los emite
+uno por uno —`LecturaDeExamen` es *qué* analito con *qué* resultado— y por eso el historial
+muestra una fila por cosa medida en vez de esto:
+
+```
+Examen general de orina    ámbar, nitritos negativo, sangre negativo
+```
+
+Tres cosas aplanadas en una fila y en un string. Una prueba que el laboratorio **no corrió**
+no emite lectura: no es un negativo, es una lectura que no existe.
 
 ### Por qué los nitritos no son un `bool`
 
@@ -277,10 +361,10 @@ negocio:
 - **Falta un tercer estado.** `NoRealizado` no es lo mismo que negativo. Preguntar el
   resultado de una prueba que no se corrió **revienta**, no contesta "no".
 
-### Las dos preguntas que ninguna pantalla contesta
+### Las tres preguntas que ninguna pantalla contesta
 
-`SerieDeAnalito` mira la **serie**, no el último valor, y contesta dos cosas distintas
-mirando **tramos distintos**:
+La serie mira la **historia**, no el último valor, y contesta tres cosas distintas mirando
+**tramos distintos**:
 
 **`Evaluar()` — ¿para dónde viene, y es creíble?** Mira paso a paso entre mediciones
 consecutivas para detectar lo imposible, y los extremos para la dirección.
@@ -303,6 +387,28 @@ diferencia decide el caso:
 
 Los tres años estables de antes no diluyen un salto de este año: lo hacen más notable.
 Promediar sobre toda la historia es exactamente como se pierde un cambio recién empezado.
+
+**`EvaluarPresencia()` — ¿apareció, persiste, o no se confirmó?** Es la de los binarios, y
+no es una tendencia con otro nombre: un nitrito no viene subiendo, porque no existe *«más
+positivo»*. Cuenta cuántas pruebas hubo, cuántas dieron positivas y —la que cambia la
+conducta— cuántas **seguidas** al final.
+
+| Serie de sangre oculta en heces | Lectura | Qué pide |
+|---|---|---|
+| negativo → **positivo** | `apareció` | repetir el examen |
+| negativo → positivo → **positivo** | `persiste` | **mostrárselo al médico** |
+| **positivo** → negativo | `no confirmado` | nada |
+
+Las dos primeras filas terminan en el **mismo** resultado —`positivo`— y piden cosas
+distintas. `SangreEnHeces.SeveridadDelHallazgo` contesta lo mismo en las dos, y está bien:
+una magnitud solo se ve a sí misma. La que distingue un dato suelto de un hecho confirmado
+es la serie.
+
+La tercera fila es la que más aporta y la menos obvia: **sin serie, un positivo aislado se
+lee igual para siempre**. La hoja de aquel día dice «positivo» y sólo la segunda prueba
+puede desmentirlo. En la sangre en orina eso significa bajar de *«buscá atención médica
+pronto»* a *«fue pasajera»*, que es la diferencia entre asustar a alguien un año y no
+hacerlo.
 
 ### Los permisos de la IA se fueron
 
@@ -349,20 +455,42 @@ de los eventos del laboratorio. Medido con `refrescar` contra el proveedor real.
 
 ### Lo que ve la IA
 
-Tres tools intencionales, una por pregunta — nunca un `Query(puppet, operacion, ...)`
+Cuatro tools intencionales, una por pregunta — nunca un `Query(puppet, operacion, ...)`
 genérico, que convertiría todo en strings y desperdiciaría el schema por tool:
 
 | Tool | Contesta | ¿Está en alguna pantalla? |
 |---|---|---|
 | `evaluar_tendencia` | para dónde viene y si es creíble | sí, la app la muestra |
 | `velocidad_de` | **a qué ritmo, sobre el tramo reciente** | **no** |
-| `revisar_mis_analitos` | todos de una | sí |
+| `presencia_de` | **si un hallazgo apareció, persiste o no se confirmó** | sí, desde que los binarios tienen serie |
+| `que_me_falta_medir` | **cuánto hace que no se mide cada analito, y si ya es demasiado** | **no, y no puede** |
+
+`que_me_falta_medir` reemplazó a `revisar_mis_analitos`, que recorría los analitos y
+devolvía la tendencia de cada uno — o sea, exactamente lo que la app renderiza. Su propia
+descripción tenía que aclarar que *«no es la lista que la app ya le muestra»*, y cuando una
+tool necesita defenderse de eso, ya se contestó sola.
+
+La que la reemplaza contesta lo único que una pantalla **no puede**: una **ausencia**. Una
+pantalla solo renderiza datos que tiene; *«hace cuatro años que no te medís el
+colesterol»* no es un dato del expediente, es una conclusión sobre el expediente **más el
+calendario más la periodicidad que cada analito define para sí mismo** — y esa
+periodicidad no es fija: un colesterol en rango se repite cada cinco años, uno alto todos
+los años.
+
+La fecha entra **por parámetro**. El dominio no lee el reloj: si lo hiciera, el mismo
+journal reproducido mañana daría otra respuesta. Saber qué día es hoy es derecho de la
+superficie, y el servidor MCP es quien lo pone.
 
 El argumento es un **enum**, no un string. Con un string la lista de valores válidos vivía
 en la descripción —prosa que la IA tiene que leer bien— y con un enum vive en el
 `inputSchema`, que es un contrato: el cliente no puede mandar un valor que no exista.
-**Medido**: `{"analito":"Nitritos"}` se rechaza en la frontera, y los llamados válidos que
+**Medido**: un analito inexistente se rechaza en la frontera, y los llamados válidos que
 viajan junto a él no se ven afectados.
+
+Y son **dos enums**, no uno: `Analito` para las tres primeras columnas de arriba y
+`AnalitoBinario` para `presencia_de`. Las preguntas no son las mismas — con un enum único
+la IA podría pedir `velocidad_de(SangreEnOrina)` y recibir una respuesta vacía que después
+tendría que interpretar. Separados, el schema lo impide.
 
 El dominio devuelve **hechos** —tendencia, extremos, unidad, días, ritmo— y nunca prosa. La
 frase la arma la superficie. Es lo que hace **imposible** el consejo de plantilla: no hay de
@@ -372,15 +500,20 @@ dónde sacar *"bajá las grasas"*.
 
 ## Estado medido
 
+Medido el **26 ago 2026**, sobre `master`.
+
 | Capa | Estado |
 |---|---|
-| Dominio | ✅ 60 comprobaciones (`comprobar`), incluidas las cuatro lecturas del guion y la velocidad |
+| Dominio | ✅ **273 comprobaciones** (`comprobar`), incluidas las cuatro lecturas del guion, la velocidad, la confirmación de un pico y la escalada de la serie binaria |
 | Consola | ✅ ciclo completo: `comprobar`, `medir`, `estado`, `tendencia`, `velocidad`, `refrescar` |
-| EndPointDeEventos | ✅ 8 eventos, rotación de token y señuelo 403 |
-| MCP | ✅ heredado del paquete, no se volvió a medir después de tocar el dominio |
-| PaginaDeDescarga | ⚠️ **no se pudo levantar**: Docker no está corriendo en esta máquina |
+| EndPointDeEventos | ✅ **13 eventos**, rotación de token y señuelo 403 |
+| MCP | ✅ **medido por stdio**: las cuatro tools responden, y `presencia_de(SangreEnHeces)` devuelve `positivasSeguidas: 2` con la acción correcta |
+| PaginaDeDescarga | ✅ levanta con `docker compose up`; sirve la descarga en `/` y la app en `/app/` |
 | Wasm | ✅ **corre completo** desde `3.0.0-beta.10029` — el bloqueo del motor se levantó |
 | Navegador | ⚠️ la **carpeta propia** es solo Chromium. Safari y Firefox degradan a OPFS o a export/import — la app no se queda sin persistir |
+
+El `medir` sobre el guion completo: **13 exámenes aplicados, 0 descartados, 0 rechazados**,
+último evento `212`, 4 analitos con algo que mirar.
 
 ### El bloqueo del motor se levantó en `10029`
 
@@ -399,9 +532,9 @@ Cómo se distinguió la versión que sí lo traía de la que no:
 tamaño exacto, 281 bytes de diferencia, que es el MVID y el timestamp del PE. `10029` es
 código nuevo, y la prueba en el browser lo confirma.
 
-**Medido corriendo**: la app abre el actor, se pone al día contra URL2, muestra los 9
-exámenes, las tres lecturas de serie, el cuadro histórico y la pantalla de detalle del
-antígeno.
+**Medido corriendo**: la app abre el actor, se pone al día contra URL2, muestra los 13
+exámenes, las siete lecturas de serie —cada una con su forma—, la cronología de visitas y
+la pantalla de detalle.
 
 ---
 
@@ -409,9 +542,10 @@ antígeno.
 
 | # | Pendiente |
 |---|---|
-| 1 | **Versión del motor** con los tres commits de `wasm-replay`. Es una línea en `Directory.Build.props`. Es de Álvaro |
-| 3b | **`revisar_mis_analitos` devuelve lo que la lista de la app ya muestra.** Es el mismo reclamo que Álvaro le hizo al `total` de Jonathan: si la IA contesta algo que ya está en una pantalla, no probó nada. `velocidad_de` sí es exclusiva de la IA |
+| 1 | **Ningún umbral clínico está revisado.** Velocidades, periodicidades, rangos posibles, grados de anemia, la meta de 240, las severidades de los binarios — 81 números, todos marcados con ⚠️ en el código, ninguno visto por alguien con criterio de laboratorio. **Es el único que no podemos cerrar nosotros**, y hay una hoja que los junta a todos para que se revisen de una pasada |
+| 2 | **Que la app enganche.** Álvaro pidió que *«hasta le entretenga»*. Lo que falta no son más gráficos: es **movimiento y recompensa** —ver la barra de meta avanzar, que el historial se sienta un logro—. Es conversación de producto con él mirando la pantalla |
 | 3 | **Tras publicar de nuevo, hay que cerrar todas las pestañas del origen.** El service worker de Blazor no llama a `skipWaiting()`, así que la versión nueva se instala pero queda esperando hasta que no quede ninguna pestaña abierta de `localhost:8090`. Un cambio en el SW que "no se aplica" casi siempre es esto |
 | 4 | **El workload `wasm-tools-net9` no está instalado**, así que el publish sale sin optimizar (57 MB). Funciona; conviene instalarlo antes de mostrarlo |
-| 5 | **La marca ficticia** (*Laboratorios Sotavento*) es un placeholder. La definitiva la define el equipo. Vive solo en `PaginaDeDescarga/descarga/index.html` y en los assets de la carátula |
-| 6 | **La jerarquía por examen vs. por analito** sigue sin decidirse con Álvaro. Este dominio cuelga del **examen**, que es lo que él pidió textualmente, y la taxonomía de `Magnitud` cubre buena parte de lo que motivaba la otra |
+| 5 | **La marca ficticia** (*Laboratorio Clínico Delfos*) sigue siendo ficticia, pero ya no es un placeholder: sus especificaciones vienen del código real de `LaboratorioDelfos.module.css` en nCuboSite (ver `docs/iteration/05-adopcion-marca-delfos.md`). Vive solo en `PaginaDeDescarga/descarga/index.html` y en los assets de la carátula |
+| 6 | **El `--pino` a baja opacidad se lee gris** en las bandas de la hemoglobina y el antígeno: la «zona segura» no se siente segura. Cosmético, chico, y parte del #2 |
+| 7 | **El expediente sólo carga la edad.** Sin sexo, sin antecedentes, sin medicación. Todo rango que dependa de algo más que la edad hoy no se puede expresar — el más evidente es la hemoglobina. El dato tiene que entrar primero por el evento de URL2 |

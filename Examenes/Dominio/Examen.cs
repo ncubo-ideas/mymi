@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 
 namespace Examenes.Dominio
 {
@@ -30,13 +31,33 @@ namespace Examenes.Dominio
 		// identidad en la lista.
 		public abstract string Nombre { get; }
 
-		// Si este examen aporta un punto a una serie historica. Los de sangre si; la
-		// orina no, porque un color no forma una serie que se pueda evaluar con las
-		// reglas de este dominio.
+		// Si este examen aporta un punto a una serie CON NUMEROS. Los de sangre si; la
+		// orina y las heces no, porque ni un color ni un positivo tienen valor que graficar.
+		//
+		// NO ES "si aporta serie", aunque se siga llamando asi en la proyeccion que ya
+		// viajo a la app. Desde que los binarios tienen serie, un urianalisis aporta dos
+		// —nitritos y sangre— y no aporta la tercera —el color—, asi que la pregunta dejo
+		// de tener una sola respuesta a nivel de examen. Quien la contesta bien es cada
+		// lectura: ver LecturaDeExamen.AportaSerie, que es la que usa el cuadro.
+		//
+		// Lo que este bool sigue diciendo con verdad es que el examen ENTERO sea un punto
+		// de una serie, y eso solo pasa cuando mide una sola cosa y esa cosa es un numero.
 		public abstract bool AportaSerie { get; }
 
 		// Lo que se le muestra al paciente como resultado, ya expresado. Un numero con
 		// unidad para los de sangre, un color para la orina.
+		//
+		// Sigue existiendo porque hay lugares que quieren UNA linea por examen -la lista
+		// de la caratula de consola-, pero no es lo que describe al examen: para eso estan
+		// las Lecturas.
 		public abstract string ResultadoExpresado { get; }
+
+		// QUE COSAS MIDIO ESTE EXAMEN, una por analito.
+		//
+		// Un examen no mide una cosa: mide las que mide. El de sangre informa un analito;
+		// el urianalisis TRES y el de heces DOS. Sin esto, las tres del urianalisis
+		// terminaban aplanadas en un solo string, que es la misma generalizacion que este
+		// dominio saco de todos lados menos de aca.
+		public abstract IReadOnlyList<LecturaDeExamen> Lecturas { get; }
 	}
 }

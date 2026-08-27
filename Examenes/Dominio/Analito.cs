@@ -38,43 +38,99 @@ namespace Examenes.Dominio
 	// La UNIDAD tambien vive aca. Antes cada subclase de ExamenDeSangre repetia su
 	// constante al llamar a Medida(); ahora la dice el analito, que es de quien es. Es
 	// §5.2 del brief: la unidad gobierna la conversion, el analito gobierna el significado.
-	public sealed class Analito
+	// YA NO ES SOLO DE SANGRE, y esa es la correccion. Hasta ahora Analito exigia una
+	// UnidadDeMedida -un conjunto cerrado de tres concentraciones masicas- asi que los
+	// unicos que podian existir eran los cuantitativos de sangre. El color de la orina es
+	// algo que se midio, y no podia ser un analito; la sangre oculta tampoco.
+	//
+	// O sea que "Analito" era, en realidad, "analito cuantitativo de sangre" con un nombre
+	// general puesto encima. La misma clase de cosa que el feedback viene senalando, en un
+	// lugar donde no la habiamos buscado.
+	//
+	// LA UNIDAD BAJA A DONDE VIVE. No es de todo analito: es de la FORMA CONTINUA, igual
+	// que en la taxonomia de Magnitud. Un color es un analito sin unidad, del mismo modo
+	// que es una magnitud sin unidad.
+	//
+	// La identidad, los sinonimos y la resolucion por nombre se quedan aca: son de TODO
+	// analito, y son la razon de que esta clase exista.
+	public abstract class Analito
 	{
 		// Los sinonimos NO son adornos ni traducciones libres: son los encabezados con los
 		// que estos analitos aparecen impresos en reportes reales.
-		public static readonly Analito AntigenoProstatico = new Analito(
+		public static readonly AnalitoContinuo AntigenoProstatico = new AnalitoContinuo(
 			"Antigeno prostatico",
 			"Antígeno prostático",
 			UnidadDeMedida.NanogramosPorMililitro,
+			0m, 5000m,
 			"PSA", "APE", "antigeno prostatico especifico");
 
-		public static readonly Analito ColesterolTotal = new Analito(
+		public static readonly AnalitoContinuo ColesterolTotal = new AnalitoContinuo(
 			"Colesterol total",
 			"Colesterol total",
 			UnidadDeMedida.MiligramosPorDecilitro,
+			20m, 1200m,
 			"colesterol", "CHOL", "colesterol serico");
 
-		public static readonly Analito ColesterolLdl = new Analito(
+		public static readonly AnalitoContinuo ColesterolLdl = new AnalitoContinuo(
 			"Colesterol LDL",
 			"Colesterol LDL",
 			UnidadDeMedida.MiligramosPorDecilitro,
+			10m, 900m,
 			"LDL", "LDL-C", "lipoproteina de baja densidad");
 
-		public static readonly Analito ColesterolHdl = new Analito(
+		public static readonly AnalitoContinuo ColesterolHdl = new AnalitoContinuo(
 			"Colesterol HDL",
 			"Colesterol HDL",
 			UnidadDeMedida.MiligramosPorDecilitro,
+			5m, 200m,
 			"HDL", "HDL-C", "lipoproteina de alta densidad");
 
-		public static readonly Analito Hemoglobina = new Analito(
+		public static readonly AnalitoContinuo Hemoglobina = new AnalitoContinuo(
 			"Hemoglobina",
 			"Hemoglobina",
 			UnidadDeMedida.GramosPorDecilitro,
+			2m, 25m,
 			"HGB", "HB");
+
+		// ---------------------------------------------------------- los que faltaban
+		//
+		// El urianalisis informa TRES cosas medidas y el de heces DOS. Hasta ahora ninguna
+		// era un analito, asi que las tres colapsaban en una fila del historial y en un
+		// string: "ambar, nitritos negativo, sangre negativo". Es la misma aplanadora que
+		// sacamos del dominio, sobreviviendo en la identidad.
+		//
+		// Los nombres NO chocan con las clases de magnitud -ColorDeOrina, Nitritos,
+		// SangreEnOrina- a proposito: aquellas son el RESULTADO, estas son QUE se midio.
+
+		public static readonly AnalitoNominal ColorDeLaOrina = new AnalitoNominal(
+			"Color de la orina", "Color de la orina", "color de orina", "aspecto de la orina");
+
+		public static readonly AnalitoBinario NitritosEnOrina = new AnalitoBinario(
+			"Nitritos", "Nitritos", "nitrito", "nitritos en orina");
+
+		public static readonly AnalitoBinario SangreEnLaOrina = new AnalitoBinario(
+			"Sangre en orina", "Sangre en orina", "hematuria", "sangre oculta en orina");
+
+		public static readonly AnalitoNominal ColorDeLasHeces = new AnalitoNominal(
+			"Color de las heces", "Color de las heces", "color de heces", "consistencia");
+
+		public static readonly AnalitoBinario SangreEnLasHeces = new AnalitoBinario(
+			"Sangre en heces", "Sangre en heces", "sangre oculta en heces");
+
+		// SI ESTE ANALITO FORMA SERIE. Es la fila `EvaluarTendencia` de la tabla del brief
+		// §6.5: todas las formas menos la nominal.
+		//
+		// Un color NO la forma, y no es una limitacion pendiente: preguntar si el color de
+		// la orina "viene subiendo" no es una pregunta. Un binario SI, y esa es la
+		// correccion de este cambio — "negativo, negativo, positivo" es una serie legitima,
+		// y hasta ahora este dominio no la podia tener.
+		public abstract bool FormaSerie { get; }
 
 		private static readonly Analito[] todos =
 		{
 			AntigenoProstatico, ColesterolTotal, ColesterolLdl, ColesterolHdl, Hemoglobina,
+			ColorDeLaOrina, NitritosEnOrina, SangreEnLaOrina,
+			ColorDeLasHeces, SangreEnLasHeces,
 		};
 
 		// Indice de TODOS los nombres -el canonico y los sinonimos- ya normalizados. Se
@@ -85,16 +141,12 @@ namespace Examenes.Dominio
 
 		public string ParaMostrar { get; }
 
-		public UnidadDeMedida Unidad { get; }
-
 		private readonly string[] sinonimos;
 
-		private Analito(string nombre, string paraMostrar, UnidadDeMedida unidad,
-			params string[] sinonimos)
+		protected Analito(string nombre, string paraMostrar, string[] sinonimos)
 		{
 			Nombre = nombre;
 			ParaMostrar = paraMostrar;
-			Unidad = unidad;
 			this.sinonimos = sinonimos ?? new string[0];
 		}
 
@@ -200,50 +252,9 @@ namespace Examenes.Dominio
 			return texto.ToString();
 		}
 
-		// La forma en que dos nombres se comparan: sin acentos, sin mayusculas y sin nada
-		// que no sea letra o digito.
-		//
-		// Los tres descartes salen de lo que traen los reportes de verdad: "Antígeno" con
-		// tilde y "Antigeno" sin ella; "HEMOGLOBINA" en versalitas y "Hemoglobina"; y
-		// "G. BLANCOS", "LDL-C" o "HDL / LDL" con puntos, guiones y barras en el medio del
-		// nombre. Comparar crudo trata a cada variante como un analito distinto.
-		//
-		// Los acentos se pliegan con una tabla explicita y no con String.Normalize a
-		// proposito. La tabla dice exactamente que caracteres importan -son los del
-		// espanol y son siete- y no depende de que los datos de globalizacion viajen en el
-		// publish, que en wasm es una decision que se puede cambiar sin pensar en esto.
-		private static string Normalizar(string nombre)
-		{
-			var limpio = new StringBuilder(nombre.Length);
-
-			foreach (char c in nombre)
-			{
-				char sinAcento = SinAcento(c);
-				if (char.IsLetterOrDigit(sinAcento))
-					limpio.Append(char.ToUpperInvariant(sinAcento));
-			}
-
-			return limpio.ToString();
-		}
-
-		private static char SinAcento(char c)
-		{
-			switch (c)
-			{
-				case 'á': case 'à': case 'ä': case 'â': return 'a';
-				case 'é': case 'è': case 'ë': case 'ê': return 'e';
-				case 'í': case 'ì': case 'ï': case 'î': return 'i';
-				case 'ó': case 'ò': case 'ö': case 'ô': return 'o';
-				case 'ú': case 'ù': case 'ü': case 'û': return 'u';
-				case 'ñ': return 'n';
-				case 'Á': case 'À': case 'Ä': case 'Â': return 'A';
-				case 'É': case 'È': case 'Ë': case 'Ê': return 'E';
-				case 'Í': case 'Ì': case 'Ï': case 'Î': return 'I';
-				case 'Ó': case 'Ò': case 'Ö': case 'Ô': return 'O';
-				case 'Ú': case 'Ù': case 'Ü': case 'Û': return 'U';
-				case 'Ñ': return 'N';
-				default: return c;
-			}
-		}
+		// El plegado vive en NombreNormalizado: la misma operacion hace falta tambien en
+		// los colores, y es mecanica, no significado. Que nombres acepta este conjunto y
+		// que significan sigue siendo de aca.
+		private static string Normalizar(string nombre) => NombreNormalizado.De(nombre);
 	}
 }

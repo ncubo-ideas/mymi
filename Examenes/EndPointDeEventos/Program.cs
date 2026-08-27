@@ -304,6 +304,18 @@ sealed class AlmacenDeEventos
     // pantalla de resultados no.
     private static List<EventoDeExamen> Sembrar() => new()
     {
+        // UN PERFIL LIPIDICO VIEJO, y no es relleno: es lo que hace visible la consulta
+        // que mira el hueco. Todo el resto del guion cae el mismo dia, asi que sin esto
+        // nada aparece vencido nunca y la capacidad no se ve.
+        //
+        // Ademas ejercita ColesterolDetallado, que estaba modelado -con su HDL que se lee
+        // al reves que el LDL- y no aparecia en la historia.
+        new EventoDeExamen
+        {
+            Id = 200, Examen = "ColesterolDetallado", Fecha = new DateTime(2022, 11, 1, 8, 30, 0),
+            Valor = 150m, ValorSecundario = 38m, Unidad = "mg/dL",
+        },
+
         Sangre(201, "AntigenoProstatico", new DateTime(2023, 8, 21, 9, 10, 0), 3.0m, "ng/mL"),
         Sangre(202, "AntigenoProstatico", new DateTime(2024, 8, 21, 9, 5, 0), 3.1m, "ng/mL"),
         Sangre(203, "Colesterol", new DateTime(2025, 8, 21, 8, 40, 0), 200.0m, "mg/dL"),
@@ -327,7 +339,37 @@ sealed class AlmacenDeEventos
         new EventoDeExamen
         {
             Id = 209, Examen = "Heces", Fecha = new DateTime(2026, 8, 21, 8, 34, 0),
-            Color = "chocolate", Sangre = "positivo",
+            Color = "marrón", Sangre = "positivo",
+        },
+
+        // LA HISTORIA DE LOS BINARIOS, y va con ids POSTERIORES aunque las fechas sean
+        // anteriores. No es un descuido: los ids son el orden del journal y no se
+        // reescriben, y ademas es el caso real de una carga atrasada, que el dominio
+        // ordena por fecha al armar la serie.
+        //
+        // POR QUE HACEN FALTA. Sin ellos, la sangre en heces del 209 es un positivo
+        // suelto y la app solo puede decir "conviene repetir el examen". Con la historia
+        // -negativo en 2024, positivo en 2025, positivo en 2026- ya se repitio y volvio a
+        // salir, y eso pide otra cosa. Ese salto es la capacidad entera de la serie
+        // binaria, y con un solo examen no se ve.
+        new EventoDeExamen
+        {
+            Id = 210, Examen = "Heces", Fecha = new DateTime(2024, 8, 21, 9, 15, 0),
+            Color = "marrón", Sangre = "negativo",
+        },
+        new EventoDeExamen
+        {
+            Id = 211, Examen = "Heces", Fecha = new DateTime(2025, 8, 21, 8, 45, 0),
+            Color = "marrón", Sangre = "positivo",
+        },
+
+        // Y la orina, que es el contraste: dos pruebas y ninguna aparicion. "En las dos
+        // veces que te lo hiciste nunca apareció" es informacion, y es lo que un solo
+        // examen no puede decir tampoco.
+        new EventoDeExamen
+        {
+            Id = 212, Examen = "Orina", Fecha = new DateTime(2025, 8, 21, 8, 44, 0),
+            Color = "amarillo palido", Nitritos = "negativo", Sangre = "negativo",
         },
     };
 

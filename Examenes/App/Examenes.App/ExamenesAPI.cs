@@ -311,6 +311,146 @@ namespace Examenes.App
 			")
 			.PerformQuery();
 
+		// LO MAS URGENTE DE TODO EL EXPEDIENTE. Es la unica consulta que mira el expediente
+		// ENTERO y no un analito, y la unica que contesta lo que la persona viene a
+		// preguntar cuando abre la app.
+		//
+		// Estaba en el dominio desde hace rato y no la consumia nadie. No se puede armar
+		// afuera: exige recorrer cada serie, interpretarla con el criterio de SU analito y
+		// quedarse con la mayor, y ordenar severidades es del dominio.
+		public string LoMasUrgente() =>
+			app.Using(@"
+				{
+					urgencia = expediente.LoMasUrgente;
+					print urgencia.NombreDeLaSeveridad severidad,
+						urgencia.AccionLegible accion,
+						urgencia.PideAlgo pideAlgo;
+				}
+			")
+			.PerformQuery();
+
+		public LoMasUrgente Urgente() => ProyeccionDeVistas.Urgente(LoMasUrgente());
+
+		// LOS PUNTOS DE LA SERIE, con su numero. Es lo que un grafico necesita y una tabla
+		// no: el cuadro historico los da ya convertidos a texto.
+		public string PuntosDe(string analito)
+		{
+			ArgumentNullException.ThrowIfNullOrWhiteSpace(analito);
+
+			return app.Using(@"
+				foreach (punto in expediente.PuntosDe(@analito)) {
+					print punto.Fecha fecha,
+						punto.ValorNumerico valor,
+						punto.UnidadDelValor unidad;
+				}
+			")
+			.WithParameters(p => { p["analito", typeof(string)] = analito; })
+			.PerformQuery();
+		}
+
+		// LAS PRUEBAS DE UNA SERIE BINARIA: fechas con un si o un no. Es el par de PuntosDe
+		// para la forma 5, y va aparte porque no devuelve lo mismo — un nitrito no tiene
+		// ValorNumerico, y pedirselo seria la mentira que este dominio evita en todos los
+		// otros pisos.
+		public string PruebasDe(string analito)
+		{
+			ArgumentNullException.ThrowIfNullOrWhiteSpace(analito);
+
+			return app.Using(@"
+				foreach (prueba in expediente.PruebasDe(@analito)) {
+					print prueba.Fecha fecha,
+						prueba.Expresado expresado,
+						prueba.EsPositivo esPositivo,
+						prueba.EsHallazgo esHallazgo;
+				}
+			")
+			.WithParameters(p => { p["analito", typeof(string)] = analito; })
+			.PerformQuery();
+		}
+
+		public IReadOnlyList<PruebaEnSerie> Pruebas(string analito) =>
+			ProyeccionDeVistas.Pruebas(PruebasDe(analito));
+
+		// LOS HECHOS DE UNA SERIE BINARIA. Es el par de TendenciaDe, y son dos consultas
+		// porque no contestan lo mismo: aquella trae extremos y cambio, esta trae cuantas
+		// veces aparecio y cuantas SEGUIDAS.
+		public string PresenciaDe(string analito)
+		{
+			ArgumentNullException.ThrowIfNullOrWhiteSpace(analito);
+
+			return app.Using(@"
+				{
+					presencia = expediente.EvaluarPresenciaDe(@analito);
+					print presencia.Analito analito,
+						presencia.AnalitoParaMostrar paraMostrar,
+						presencia.NombreDeLaPresencia presencia,
+						presencia.CantidadDeMediciones mediciones,
+						presencia.Positivas positivas,
+						presencia.PositivasSeguidas positivasSeguidas,
+						presencia.DiasTranscurridos dias,
+						presencia.UltimoResultado ultimoResultado,
+						presencia.EstaPresente estaPresente,
+						presencia.HaySerie haySerie;
+				}
+			")
+			.WithParameters(p => { p["analito", typeof(string)] = analito; })
+			.PerformQuery();
+		}
+
+		public PresenciaDeAnalito Presencia(string analito) =>
+			ProyeccionDeVistas.Presencia(PresenciaDe(analito));
+
+		// LAS LINEAS que se dibujan junto a los puntos, y COMO se dibujan. Cada analito
+		// emite solo las que tiene; ninguno devuelve cero para rellenar.
+		public string ReferenciasDe(string analito)
+		{
+			ArgumentNullException.ThrowIfNullOrWhiteSpace(analito);
+
+			return app.Using(@"
+				foreach (referencia in expediente.ReferenciasDe(@analito)) {
+					print referencia.Nombre nombre,
+						referencia.Numero valor,
+						referencia.Unidad unidad,
+						referencia.ParaSonia paraSonia;
+				}
+			")
+			.WithParameters(p => { p["analito", typeof(string)] = analito; })
+			.PerformQuery();
+		}
+
+		public IReadOnlyList<PuntoDeSerie> Puntos(string analito) =>
+			ProyeccionDeVistas.Puntos(PuntosDe(analito));
+
+		public IReadOnlyList<LineaDeReferencia> Referencias(string analito) =>
+			ProyeccionDeVistas.Referencias(ReferenciasDe(analito));
+
+		// QUE FALTA MEDIR. La consulta que ninguna pantalla puede contestar, porque una
+		// pantalla solo renderiza datos que tiene y esto es una AUSENCIA.
+		//
+		// `hoy` viaja como parametro y no lo lee el dominio: el modelo no toca el reloj.
+		public string ControlesPendientes(DateTime hoy) =>
+			app.Using(@"
+				foreach (control in expediente.ControlesPendientes(@hoy)) {
+					print control.Nombre analito,
+						control.ParaMostrar paraMostrar,
+						control.UltimaMedicion ultimaMedicion,
+						control.DiasDesdeLaUltima diasDesdeLaUltima,
+						control.MesesRecomendados mesesRecomendados,
+						control.DiasQueFaltan diasQueFaltan,
+						control.EstaVencido estaVencido,
+						control.NombreDeLaSeveridad severidad,
+						control.AccionLegible accion,
+						control.ParaSonia paraSonia;
+				}
+			")
+			.WithParameters(p => {
+				p["hoy", typeof(DateTime)] = hoy;
+			})
+			.PerformQuery();
+
+		public IReadOnlyList<ControlEnEspera> Controles(DateTime hoy) =>
+			ProyeccionDeVistas.Controles(ControlesPendientes(hoy));
+
 		// EL CUADRO HISTORICO, plano. Ver CeldaDelCuadro en el dominio para por que viaja
 		// asi: el print proyecta un solo nivel, y una coleccion de filas que a su vez
 		// tienen celdas no cruza. Los indices son los que dejan que la superficie rearme
@@ -379,8 +519,10 @@ namespace Examenes.App
 						lectura.AnalitoParaMostrar paraMostrar,
 						lectura.NombreDelVeredicto veredicto,
 						lectura.NombreDeLaSeveridad severidad,
+						lectura.NombreDeLaForma forma,
 						lectura.ParaSonia paraSonia,
-						lectura.Accion accion,
+						lectura.AccionLegible accion,
+						lectura.ReferenciaLegible referencia,
 						lectura.PideAlgo pideAlgo,
 						lectura.SugiereRepetirElExamen sugiereRepetirElExamen;
 				}

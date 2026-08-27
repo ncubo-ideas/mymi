@@ -19,15 +19,11 @@ namespace Examenes.Dominio
 	//
 	//   "Ningun texto de consejo se genera en la UI. Todos vienen del analito."
 	//
-	// La razon es concreta. La app tenia escrito "Conviene que lo vea tu medico" adentro
-	// del .razon, igual para el antigeno que para el colesterol, y una pantalla no tiene
-	// de donde sacar si un hallazgo espera a la proxima cita o no. Ese es el consejo de
-	// plantilla que habia que sacar.
-	//
 	// Las dos posiciones conviven porque el reparto es distinto del que parece:
 	//
-	//   Accion    NO se compone: sale de Severidad, que es un conjunto cerrado de cuatro
-	//             textos fijos. La pantalla no puede inventar una accion nueva.
+	//   Accion    NO se compone: es un que del conjunto cerrado de Accion mas un Plazo
+	//             del conjunto cerrado de Plazo. La pantalla no puede inventar ni una
+	//             accion nueva ni un consejo sin plazo.
 	//   ParaSonia SI la arma el analito, con SUS hechos y SU vocabulario. Es una linea,
 	//             no un consejo, y es lo unico que el analito puede decir mejor que nadie.
 	//
@@ -45,40 +41,86 @@ namespace Examenes.Dominio
 		// la persona tal cual.
 		public string ParaSonia { get; private set; }
 
-		// Que hacer. Sale de Severidad, no se escribe aca: es la garantia de que no hay
-		// una accion inventada por analito. Vacio cuando no hay nada que hacer.
-		public string Accion => Severidad.QueHacer;
+		// Que hacer y cuando, elegidas por el analito del conjunto cerrado. Null cuando
+		// no hay nada que hacer, que es la mayoria de las veces y es una respuesta.
+		public Accion Accion { get; private set; }
 
 		// Los hechos con los que se llego a esto, para que la superficie pueda mostrarlos
 		// sin volver a pedirlos y para que la conclusion sea auditable.
-		public EvaluacionDeTendencia Hechos { get; private set; }
+		// TIPADO A LA RAIZ, no a la evaluacion de tendencia. Una serie binaria concluye
+		// con EvaluacionDePresencia —"apareció, 2 seguidas sobre 3 pruebas"— y no tiene
+		// valor inicial, ni final, ni cambio. Dejar el campo tipado a la continua la
+		// habria obligado a mandar nulls y ceros.
+		public HechosDeLaSerie Hechos { get; private set; }
+
+		// COMO SE DIBUJA esta lectura. Viaja con la interpretacion porque llega junta: la
+		// superficie pide una vez y sabe que veredicto es Y que forma tiene.
+		public FormaDeLectura Forma { get; private set; }
+
+		// CONTRA QUE SE LEE el valor, ya dicho: "hasta 4.5 ng/mL", "entre 13 y 17 g/dL".
+		// Es el punto 5 de la §5 de las especificaciones —ningun numero sin su
+		// referencia— y NO la escribe la UI: sale del analito, que es quien sabe que
+		// depende de la edad, del sexo y, en la hemoglobina, de la altitud de residencia.
+		// Vacia cuando no hay valor que acompanar (un analito sin mediciones).
+		public string ReferenciaLegible { get; private set; } = "";
+
+		public Interpretacion ConForma(FormaDeLectura forma)
+		{
+			Forma = forma;
+			return this;
+		}
+
+		public Interpretacion ConReferencia(string referenciaLegible)
+		{
+			ReferenciaLegible = referenciaLegible ?? "";
+			return this;
+		}
 
 		public Interpretacion(Veredicto veredicto, Severidad severidad, string paraSonia,
-			EvaluacionDeTendencia hechos)
+			HechosDeLaSerie hechos, Accion accion = null)
 		{
 			ArgumentNullException.ThrowIfNull(veredicto);
 			ArgumentNullException.ThrowIfNull(severidad);
 			ArgumentNullException.ThrowIfNullOrWhiteSpace(paraSonia);
 			ArgumentNullException.ThrowIfNull(hechos);
 
+			// TODO CONSEJO CON PLAZO, y esta guarda es la que lo hace ley: una severidad
+			// que pide algo no puede viajar sin decir que y cuando. Es el criterio 8 de
+			// la adopcion de marca, cumplido por construccion y no por disciplina.
+			if (severidad.PideAlgo && accion == null)
+				throw new ArgumentNullException(nameof(accion),
+					$"Una severidad '{severidad.Nombre}' pide algo, y lo que pide "
+					+ "tiene que decirse con su plazo: falta la Accion.");
+
 			Veredicto = veredicto;
 			Severidad = severidad;
 			ParaSonia = paraSonia;
 			Hechos = hechos;
+			Accion = accion;
 		}
 
 		// El caso sin serie, que es identico para todos los analitos y por eso se arma
 		// una sola vez: con una medicion no se afirma tendencia. Preservarlo es explicito
 		// en el feedback.
-		public static Interpretacion SinSerie(EvaluacionDeTendencia hechos)
+		//
+		// CON UNA MEDICION HAY UNA ACCION, y tiene plazo aunque no corra: repetir el
+		// examen es lo unico que convierte un punto en una serie, y cuando conviene
+		// hacerlo lo dice el medico, no este dominio.
+		public static Interpretacion SinSerie(HechosDeLaSerie hechos)
 		{
 			ArgumentNullException.ThrowIfNull(hechos);
 
-			string texto = hechos.CantidadDeMediciones == 1
+			bool hayUna = hechos.CantidadDeMediciones == 1;
+			string texto = hayUna
 				? "una sola medición: todavía no hay serie para decir para dónde viene"
 				: "todavía no hay mediciones de este analito";
 
-			return new Interpretacion(Veredicto.Indeterminado, Severidad.Informativo, texto, hechos);
+			Accion accion = hayUna
+				? Accion.RepetirElExamen(Plazo.CuandoElMedicoLoIndique)
+				: null;
+
+			return new Interpretacion(Veredicto.Indeterminado, Severidad.Informativo, texto,
+				hechos, accion);
 		}
 
 		// Proyecciones escalares, para que el print del DSL no tenga que navegar dos
@@ -86,8 +128,19 @@ namespace Examenes.Dominio
 		public string Analito => Hechos.Analito;
 		public string AnalitoParaMostrar => Hechos.AnalitoParaMostrar;
 		public string NombreDelVeredicto => Veredicto.Nombre;
+		public string NombreDeLaForma => Forma == null ? "" : Forma.Nombre;
 		public string NombreDeLaSeveridad => Severidad.Nombre;
 		public bool PideAlgo => Severidad.PideAlgo;
 		public bool SugiereRepetirElExamen => Veredicto.SugiereRepetirElExamen;
+
+		// La accion dicha entera —"mostrále esto a tu médico este mes"— o vacia cuando no
+		// hay nada que hacer. Es lo unico que una pantalla imprime.
+		public string AccionLegible => Accion == null ? "" : Accion.Legible;
+
+		// COMO SE LLAMA LA LECTURA en una palabra: "en ascenso" en una continua,
+		// "apareció" en un binario. Sale de los hechos, que es donde vive el conjunto
+		// cerrado de cada forma, y es lo que la superficie puede pedir sin saber cual
+		// tiene enfrente.
+		public string NombreDeLaLectura => Hechos.NombreDeLaLectura;
 	}
 }

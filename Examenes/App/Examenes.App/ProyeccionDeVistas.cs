@@ -71,6 +71,63 @@ namespace Examenes.App
 			};
 		}
 
+		internal static PresenciaDeAnalito Presencia(string json)
+		{
+			if (string.IsNullOrWhiteSpace(json)) return new PresenciaDeAnalito();
+
+			using JsonDocument documento = JsonDocument.Parse(json);
+			JsonElement raiz = documento.RootElement;
+
+			return new PresenciaDeAnalito
+			{
+				Analito = Texto(raiz, "analito"),
+				ParaMostrar = Texto(raiz, "paraMostrar"),
+				Presencia = Texto(raiz, "presencia"),
+				Mediciones = Entero(raiz, "mediciones"),
+				Positivas = Entero(raiz, "positivas"),
+				PositivasSeguidas = Entero(raiz, "positivasSeguidas"),
+				Dias = Entero(raiz, "dias"),
+				UltimoResultado = Texto(raiz, "ultimoResultado"),
+				EstaPresente = Booleano(raiz, "estaPresente"),
+				HaySerie = Booleano(raiz, "haySerie"),
+			};
+		}
+
+		internal static IReadOnlyList<PruebaEnSerie> Pruebas(string json)
+		{
+			var pruebas = new List<PruebaEnSerie>();
+			if (string.IsNullOrWhiteSpace(json)) return pruebas;
+
+			using JsonDocument documento = JsonDocument.Parse(json);
+			if (!documento.RootElement.TryGetProperty("prueba", out JsonElement arreglo)) return pruebas;
+
+			foreach (JsonElement elemento in Elementos(arreglo))
+				pruebas.Add(new PruebaEnSerie
+				{
+					Fecha = Fecha(elemento, "fecha"),
+					Expresado = Texto(elemento, "expresado"),
+					EsPositivo = Booleano(elemento, "esPositivo"),
+					EsHallazgo = Booleano(elemento, "esHallazgo"),
+				});
+
+			return pruebas;
+		}
+
+		internal static LoMasUrgente Urgente(string json)
+		{
+			if (string.IsNullOrWhiteSpace(json)) return new LoMasUrgente();
+
+			using JsonDocument documento = JsonDocument.Parse(json);
+			JsonElement raiz = documento.RootElement;
+
+			return new LoMasUrgente
+			{
+				Severidad = Texto(raiz, "severidad"),
+				Accion = Texto(raiz, "accion"),
+				PideAlgo = Booleano(raiz, "pideAlgo"),
+			};
+		}
+
 		internal static IReadOnlyList<CeldaEnCuadro> Cuadro(string json)
 		{
 			var celdas = new List<CeldaEnCuadro>();
@@ -98,6 +155,71 @@ namespace Examenes.App
 			return celdas;
 		}
 
+		internal static IReadOnlyList<PuntoDeSerie> Puntos(string json)
+		{
+			var puntos = new List<PuntoDeSerie>();
+			if (string.IsNullOrWhiteSpace(json)) return puntos;
+
+			using JsonDocument documento = JsonDocument.Parse(json);
+			if (!documento.RootElement.TryGetProperty("punto", out JsonElement arreglo)) return puntos;
+
+			foreach (JsonElement elemento in Elementos(arreglo))
+				puntos.Add(new PuntoDeSerie
+				{
+					Fecha = Fecha(elemento, "fecha"),
+					Valor = Decimal(elemento, "valor"),
+					Unidad = Texto(elemento, "unidad"),
+				});
+
+			return puntos;
+		}
+
+		internal static IReadOnlyList<LineaDeReferencia> Referencias(string json)
+		{
+			var lineas = new List<LineaDeReferencia>();
+			if (string.IsNullOrWhiteSpace(json)) return lineas;
+
+			using JsonDocument documento = JsonDocument.Parse(json);
+			if (!documento.RootElement.TryGetProperty("referencia", out JsonElement arreglo)) return lineas;
+
+			foreach (JsonElement elemento in Elementos(arreglo))
+				lineas.Add(new LineaDeReferencia
+				{
+					Nombre = Texto(elemento, "nombre"),
+					Valor = Decimal(elemento, "valor"),
+					Unidad = Texto(elemento, "unidad"),
+					ParaSonia = Texto(elemento, "paraSonia"),
+				});
+
+			return lineas;
+		}
+
+		internal static IReadOnlyList<ControlEnEspera> Controles(string json)
+		{
+			var controles = new List<ControlEnEspera>();
+			if (string.IsNullOrWhiteSpace(json)) return controles;
+
+			using JsonDocument documento = JsonDocument.Parse(json);
+			if (!documento.RootElement.TryGetProperty("control", out JsonElement arreglo)) return controles;
+
+			foreach (JsonElement elemento in Elementos(arreglo))
+				controles.Add(new ControlEnEspera
+				{
+					Analito = Texto(elemento, "analito"),
+					ParaMostrar = Texto(elemento, "paraMostrar"),
+					UltimaMedicion = Fecha(elemento, "ultimaMedicion"),
+					DiasDesdeLaUltima = Entero(elemento, "diasDesdeLaUltima"),
+					MesesRecomendados = Entero(elemento, "mesesRecomendados"),
+					DiasQueFaltan = Entero(elemento, "diasQueFaltan"),
+					EstaVencido = Booleano(elemento, "estaVencido"),
+					Severidad = Texto(elemento, "severidad"),
+					Accion = Texto(elemento, "accion"),
+					ParaSonia = Texto(elemento, "paraSonia"),
+				});
+
+			return controles;
+		}
+
 		internal static InterpretacionDeAnalito Interpretacion(string json)
 		{
 			if (string.IsNullOrWhiteSpace(json)) return new InterpretacionDeAnalito();
@@ -111,8 +233,10 @@ namespace Examenes.App
 				ParaMostrar = Texto(raiz, "paraMostrar"),
 				Veredicto = Texto(raiz, "veredicto"),
 				Severidad = Texto(raiz, "severidad"),
+				Forma = Texto(raiz, "forma"),
 				ParaSonia = Texto(raiz, "paraSonia"),
 				Accion = Texto(raiz, "accion"),
+				ReferenciaLegible = Texto(raiz, "referencia"),
 				PideAlgo = Booleano(raiz, "pideAlgo"),
 				SugiereRepetirElExamen = Booleano(raiz, "sugiereRepetirElExamen"),
 			};

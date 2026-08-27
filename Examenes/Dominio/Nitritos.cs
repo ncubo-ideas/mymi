@@ -75,7 +75,14 @@ namespace Examenes.Dominio
 		/// en la misma tira y en el mismo examen, y sin embargo no espera.
 		/// </summary>
 		public override Severidad SeveridadDelHallazgo =>
-			EsHallazgo ? Severidad.ConsultaMedica : Severidad.Informativo;
+			EsHallazgo ? Severidad.ConsultePronto : Severidad.Informativo;
+
+		/// <summary>
+		/// ESTA SEMANA, no este mes: una infeccion urinaria amerita cita como el PSA que
+		/// se movio, pero no corre igual. El plazo es del analito, no de la severidad.
+		/// </summary>
+		public override Accion AccionDelHallazgo =>
+			EsHallazgo ? Accion.MostrarleEstoATuMedico(Plazo.EstaSemana) : null;
 
 		public override string ParaSonia =>
 			!realizada ? "el laboratorio no corrió esta prueba"
@@ -101,5 +108,8 @@ namespace Examenes.Dominio
 				$"'{nombre}' no es un resultado de nitritos. Los validos son: "
 				+ $"{Positivo.Etiqueta}, {Negativo.Etiqueta}, {NoRealizado.Etiqueta}.", nameof(nombre));
 		}
+
+		/// <summary>El plural de este analito. Ver <see cref="SerieDeNitritos"/>.</summary>
+		public override SerieBinaria NuevaSerie() => new SerieDeNitritos();
 	}
 }

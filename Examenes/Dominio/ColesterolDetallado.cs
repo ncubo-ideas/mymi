@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 
 namespace Examenes.Dominio
 {
@@ -14,11 +15,11 @@ namespace Examenes.Dominio
 	// modelar dos series en un examen seria mezclar dos cosas distintas en una.
 	public sealed class ColesterolDetallado : ExamenDeSangre
 	{
-		private static readonly Analito Suyo = Examenes.Dominio.Analito.ColesterolLdl;
+		private static readonly AnalitoContinuo Suyo = Examenes.Dominio.Analito.ColesterolLdl;
 
 		// El HDL es OTRO analito, y ahora se puede decir asi en vez de pasar su nombre
 		// suelto como texto: viaja en el examen, se muestra, y no es la llave de la serie.
-		private static readonly Analito ElDelHdl = Examenes.Dominio.Analito.ColesterolHdl;
+		private static readonly AnalitoContinuo ElDelHdl = Examenes.Dominio.Analito.ColesterolHdl;
 
 		public Medicion Hdl { get; private set; }
 
@@ -35,6 +36,17 @@ namespace Examenes.Dominio
 		// Se muestran los dos, porque el examen son los dos.
 		public override string ResultadoExpresado => $"LDL {Ldl.Expresado} / HDL {Hdl.Expresado}";
 
+		// DOS ANALITOS, no uno. Este examen trae el LDL y su HDL, y son dos cosas medidas
+		// distintas: una se lee hacia abajo y la otra hacia arriba. Sin este override
+		// heredaba el de ExamenDeSangre -que emite una sola lectura- y el HDL desaparecia
+		// del historial. Es el mismo aplanamiento que este cambio vino a sacar, en el
+		// unico examen de sangre que mide mas de una cosa.
+		public override IReadOnlyList<LecturaDeExamen> Lecturas => new[]
+		{
+			new LecturaDeExamen(Examenes.Dominio.Analito.ColesterolLdl, Ldl),
+			new LecturaDeExamen(Examenes.Dominio.Analito.ColesterolHdl, Hdl),
+		};
+
 		public override RangoDeReferencia RangoPara(int edad) =>
 			RangoDeReferencia.HastaUnMaximoDe(edad >= 50 ? 100m : 130m, Suyo.Unidad);
 
@@ -43,6 +55,11 @@ namespace Examenes.Dominio
 		public override decimal CambioMinimoSignificativo => 12m;
 
 		public override DireccionDeseable Direccion => DireccionDeseable.Bajar;
+
+		// Igual que el colesterol total: en rango cada cinco anos, fuera todos los anos.
+		public override decimal MultiploQueNingunIntervaloJustifica => 4m;
+
+		public override int MesesHastaElProximo(int edad) => EsNormalPara(edad) ? 60 : 12;
 
 		// ---------------------------------------------------------------- lo suyo
 
@@ -55,48 +72,6 @@ namespace Examenes.Dominio
 		// al reves que el valor principal.
 		public bool HdlEsProtector => Hdl.Valor >= 40m;
 
-		// ---------------------------------------------------------------- la lectura
-
-		// Se lee por NIVEL del LDL, y el HDL modula: un LDL alto con HDL protector no es
-		// lo mismo que un LDL alto con HDL bajo. Esa combinacion es propia de este examen
-		// porque es el unico que trae dos fracciones.
-		public override Interpretacion Interpretar(SerieDeAnalito serie, int edad)
-		{
-			ArgumentNullException.ThrowIfNull(serie);
-
-			EvaluacionDeTendencia hechos = serie.Evaluar();
-			if (!hechos.HaySerie) return Interpretacion.SinSerie(hechos);
-
-			if (hechos.Tendencia.SugiereRepetirElExamen)
-				return new Interpretacion(Veredicto.ProbableErrorDeMedicion, Severidad.Seguimiento,
-					$"el LDL pasó de {hechos.ValorInicial} a {hechos.ValorFinal} {hechos.Unidad} "
-					+ $"en {hechos.DiasTranscurridos} día{(hechos.DiasTranscurridos == 1 ? "" : "s")}",
-					hechos);
-
-			bool enRango = EsNormalPara(edad);
-			string sobreElHdl = HdlEsProtector
-				? $", y tu HDL de {Hdl.Expresado} juega a favor"
-				: $", y tu HDL de {Hdl.Expresado} no alcanza para compensarlo";
-
-			if (!EsCambioReal(hechos.Cambio))
-				return enRango
-					? new Interpretacion(Veredicto.Estable, Severidad.Informativo,
-						$"el LDL se mantiene en {Ldl.Expresado}, dentro de lo deseable", hechos)
-					: new Interpretacion(Veredicto.Estable, Severidad.ConsultaMedica,
-						$"el LDL lleva tiempo en {Ldl.Expresado}" + sobreElHdl, hechos);
-
-			if (Direccion.EsFavorable(hechos.Cambio))
-				return new Interpretacion(Veredicto.Mejorando, Severidad.Informativo,
-					$"el LDL bajó de {hechos.ValorInicial} a {hechos.ValorFinal} {hechos.Unidad}",
-					hechos);
-
-			return enRango
-				? new Interpretacion(Veredicto.Empeorando, Severidad.Seguimiento,
-					$"el LDL subió de {hechos.ValorInicial} a {hechos.ValorFinal} {hechos.Unidad}, "
-					+ "todavía dentro de lo deseable", hechos)
-				: new Interpretacion(Veredicto.Empeorando, Severidad.ConsultaMedica,
-					$"el LDL subió de {hechos.ValorInicial} a {hechos.ValorFinal} {hechos.Unidad}"
-					+ sobreElHdl, hechos);
-		}
+		public override SerieContinua NuevaSerie() => new SerieDeColesterolLdl();
 	}
 }

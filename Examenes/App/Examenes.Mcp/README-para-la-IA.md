@@ -32,7 +32,7 @@ tools/call  → structuredContent: {"hayDatos":true,"analito":"Antigeno prostati
 Los decimales llegan **como decimales** (`3.0`, `5.2`, `2.2`), no como texto: eso es
 `UseStructuredContent` más un tipo de retorno con forma.
 
-## La superficie: dos tools, y por qué pasan la prueba
+## La superficie: cuatro tools, y por qué pasan la prueba
 
 > La prueba, textual: **si la IA puede responder algo que ya está en una pantalla, el demo
 > no probó nada.**
@@ -43,7 +43,15 @@ Por eso acá no hay una tool `resumen_de_examenes`.
 | Tool | Qué contesta | Por qué ninguna pantalla lo trae |
 |---|---|---|
 | `evaluar_tendencia(analito)` | si ese analito viene subiendo, bajando o está estable | una hoja de laboratorio trae **un valor y una fecha**; esto es una conclusión sobre la serie |
-| `revisar_mis_analitos()` | la lectura de **todas** las series, marcando cuáles exigen atención | no es la lista de exámenes (esa sí está en pantalla): es la interpretación de cada historia |
+| `velocidad_de(analito)` | a qué **ritmo** viene cambiando, sobre el tramo más reciente | la tendencia mira la serie entera y la velocidad mira el último tramo: con los datos del guion la serie completa da 0,73/año y no alarmaría, el último tramo da 2,20 contra un umbral de 0,75 |
+| `presencia_de(analito)` | si un hallazgo binario apareció, **persiste** o no se confirmó | la hoja de aquel día dice «positivo» para siempre; que la prueba siguiente haya salido limpia sólo lo sabe la serie |
+| `que_me_falta_medir()` | qué analitos están vencidos y cada cuánto conviene repetirlos | una pantalla sólo renderiza datos que tiene; esto es una **ausencia** — el expediente más el calendario más la periodicidad que cada analito define para sí |
+
+Las dos primeras toman el enum `Analito` y la tercera toma `AnalitoBinario`, que es otro
+enum. Son dos y no uno a propósito: las preguntas no son las mismas. Un nitrito no viene
+subiendo ni tiene velocidad — aparece, persiste o cede — y con un enum único la IA podría
+pedir `velocidad_de(SangreEnOrina)` y recibir una respuesta vacía que tendría que
+interpretar. Separados, el schema lo impide.
 
 La pregunta que valida el dominio es del tipo *"¿mi antígeno prostático viene subiendo o
 está estable?"*. Exige la serie completa **y** una regla de interpretación que vive en el
@@ -95,7 +103,7 @@ Verificado acá: tres corridas del cliente dejaron `journal_000001.bin`, `meta.b
 
 ## Lo que la IA no puede hacer
 
-**No puede disparar un Refresh.** Traer exámenes nuevos del laboratorio es de la app, que
+**No puede disparar un Actualizar.** Traer exámenes nuevos del laboratorio es de la app, que
 lo hace al abrir o cuando la persona aprieta el botón. Si la persona espera ver algo nuevo
 y no aparece, la IA tiene que pedirle que abra su app y refresque. El campo
 `ultimoEventoLeido` es la señal: si subió, entraron cosas nuevas.

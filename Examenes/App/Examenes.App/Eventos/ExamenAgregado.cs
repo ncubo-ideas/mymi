@@ -143,6 +143,24 @@ namespace Examenes.App.Eventos
 				if (unidad.Length == 0) return null;
 				if (!TieneNumero(raiz, "valor")) return null;
 
+				// UN VALOR QUE NINGUNA PERSONA VIVA PODRIA TENER se descarta acá, y no
+				// revienta el comando. Alvaro: "aqui me estan mandando una vaina de un
+				// cadaver". Un laboratorio puede emitir basura -un decimal corrido, una
+				// unidad mal convertida del otro lado- y eso NO es motivo para que la app
+				// deje de ponerse al dia con el resto de los examenes.
+				//
+				// El dominio igual lo rechaza en el constructor: esto es la puerta, aquello
+				// es la invariante. La puerta descarta con elegancia, la invariante
+				// garantiza que no entre ni por otro camino.
+				// Y TIENE QUE SER CONTINUO. Ahora que el color de la orina tambien es un
+				// analito, un evento de sangre que nombre uno nominal o binario no es un
+				// examen que esta app sepa aplicar: se descarta como cualquier otro que no
+				// modela. Antes esta rama no podia existir porque ser analito EXIGIA tener
+				// unidad.
+				if (analito is not AnalitoContinuo continuo) return null;
+
+				if (!continuo.EsValorPosible(Decimal(raiz, "valor"))) return null;
+
 				// El LDL solo entra fraccionado, porque el dominio lo modela junto con su
 				// HDL en un mismo examen. Un LDL suelto no tiene donde aplicarse, asi que
 				// se descarta en vez de construir un examen a medias.

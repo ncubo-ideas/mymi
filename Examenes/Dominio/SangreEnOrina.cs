@@ -78,7 +78,11 @@ namespace Examenes.Dominio
 		/// con criterio medico revise el umbral.
 		/// </summary>
 		public override Severidad SeveridadDelHallazgo =>
-			EsHallazgo ? Severidad.AtencionInmediata : Severidad.Informativo;
+			EsHallazgo ? Severidad.Urgente : Severidad.Informativo;
+
+		// El plazo del rojo reservado: pronto, no "en la proxima cita".
+		public override Accion AccionDelHallazgo =>
+			EsHallazgo ? Accion.BuscarAtencionMedica(Plazo.Pronto) : null;
 
 		public override string ParaSonia =>
 			!realizada ? "el laboratorio no corrió esta prueba"
@@ -103,5 +107,8 @@ namespace Examenes.Dominio
 				$"'{nombre}' no es un resultado de sangre en orina. Los validos son: "
 				+ $"{Positivo.Etiqueta}, {Negativo.Etiqueta}, {NoRealizado.Etiqueta}.", nameof(nombre));
 		}
+
+		/// <summary>El plural de este analito. Ver <see cref="SerieDeSangreEnOrina"/>.</summary>
+		public override SerieBinaria NuevaSerie() => new SerieDeSangreEnOrina();
 	}
 }

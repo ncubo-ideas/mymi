@@ -46,10 +46,26 @@ namespace Examenes.Dominio
 		{
 			get
 			{
-				if (ReferenceEquals(this, Severa)) return Examenes.Dominio.Severidad.AtencionInmediata;
-				if (ReferenceEquals(this, Moderada)) return Examenes.Dominio.Severidad.ConsultaMedica;
-				if (ReferenceEquals(this, Leve)) return Examenes.Dominio.Severidad.Seguimiento;
+				if (ReferenceEquals(this, Severa)) return Examenes.Dominio.Severidad.Urgente;
+				if (ReferenceEquals(this, Moderada)) return Examenes.Dominio.Severidad.ConsultePronto;
+				if (ReferenceEquals(this, Leve)) return Examenes.Dominio.Severidad.Vigilar;
 				return Examenes.Dominio.Severidad.Informativo;
+			}
+		}
+
+		// Y la accion con su plazo, por la misma razon: cada grado dice que hacer y
+		// cuando, y agregar un grado obliga a decir las dos cosas.
+		public Accion Accion
+		{
+			get
+			{
+				if (ReferenceEquals(this, Severa))
+					return Examenes.Dominio.Accion.BuscarAtencionMedica(Plazo.Pronto);
+				if (ReferenceEquals(this, Moderada))
+					return Examenes.Dominio.Accion.MostrarleEstoATuMedico(Plazo.EsteMes);
+				if (ReferenceEquals(this, Leve))
+					return Examenes.Dominio.Accion.ConversarloConTuMedico(Plazo.EnLaProximaCita);
+				return null;
 			}
 		}
 	}

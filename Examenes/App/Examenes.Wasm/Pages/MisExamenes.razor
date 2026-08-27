@@ -7,8 +7,26 @@
 
 <PageTitle>Mis exámenes</PageTitle>
 
+@* EL BLOQUE DE MARCA. La gota por la muestra, el círculo por el oráculo; solo trazo,
+   nunca relleno, y el nombre va acá y no solo en el subtítulo: cuando alguien descarga
+   la app desde la página del laboratorio, lo que se abre debe reconocerse en un
+   segundo. El SVG es el mismo de la página, a 40 px — sobre oscuro va en blanco, y el
+   blanco lo dice el token para que el manual viva en un solo lugar. *@
+<div class="marca">
+    <svg viewBox="0 0 40 40" xmlns="http://www.w3.org/2000/svg"
+         fill="none" stroke="var(--logo)" stroke-width="2.4" aria-hidden="true">
+        <circle cx="20" cy="20" r="18" />
+        <path d="M20 9c4.4 5.4 6.8 9.3 6.8 12.4A6.8 6.8 0 0 1 20 28.2a6.8 6.8 0
+                 0 1-6.8-6.8C13.2 18.3 15.6 14.4 20 9z" />
+    </svg>
+    <div>
+        <div class="marca-nombre">Laboratorio Clínico Delfos</div>
+        <div class="marca-claim">Al servicio de su salud desde 1987</div>
+    </div>
+</div>
+
 <h1 class="titular">Mis exámenes</h1>
-<p class="membrete"><b>Laboratorios Sotavento</b> &middot; tu expediente, en tu computadora.</p>
+<p class="membrete">Tu expediente, en tu computadora.</p>
 
 @* UN solo lugar para los errores, y arriba. Antes habia dos bloques -uno adentro del
    arranque y otro al final de la pagina- asi que un mismo fallo se veia dos veces, y
@@ -138,18 +156,86 @@
 }
 else
 {
-    <div class="fila" style="margin-bottom:18px">
-        <button class="boton" @onclick="Refrescar" disabled="@refrescando">
-            @(refrescando ? "Refrescando…" : "Refresh")
-        </button>
-        <span class="apunte mono">
-            @cantidad @(cantidad == 1 ? "examen" : "exámenes") &middot;
-            @(fueraDeRango == 0
-                ? "todo dentro de rango"
-                : $"{fueraDeRango} fuera de rango") &middot;
-            leído hasta el evento @ultimoEvento
-        </span>
-    </div>
+    @*  LA PRIMERA PREGUNTA, y hasta ahora esta pantalla no la hacía.
+
+        Alguien abre esta app para saber una cosa: «¿estoy bien?». Lo que veía primero era
+        un botón de Refresh y «leído hasta el evento 212», y para contestarse tenía que
+        leer siete tarjetas y sintetizarlas por su cuenta.
+
+        El dominio ya sabía la respuesta —`Expediente.SeveridadMayor` recorre cada serie,
+        la interpreta con el criterio de SU analito y se queda con la mayor— y no la
+        consumía ninguna carátula.
+
+        CUANDO HAY ALGO QUE HACER, EL TITULAR ES LA FRASE DEL DOMINIO, literal. No es una
+        oración que esta pantalla arme: sale del conjunto cerrado de `Severidad`, que es lo
+        que impide que un .razor invente un consejo. Lo único que la pantalla escribe es el
+        caso en que NO hay nada que hacer, y ahí no hay consejo que inventar.               *@
+    @* EL @key VA EN EL CUERPO Y NO EN LA <section>, desde que Actualizar vive acá adentro.
+
+       El @key sube en cada Releer y obliga a Blazor a RECREAR estos nodos. Sin él reusa
+       el mismo elemento, la animación de CSS no se vuelve a disparar, y apretar Actualizar
+       no produce ningún cambio visible cuando no entraron exámenes nuevos — o sea que el
+       botón parecía no hacer nada. Medido: `getAnimations()[0].currentTime` se quedaba en
+       1000 y el nodo era idéntico.
+
+       Pero si la sección ENTERA se recrea, también se recrea el botón que acabás de
+       apretar, y el foco de teclado se pierde en el reemplazo del nodo. Con el @key un
+       nivel más abajo la cabecera sobrevive al redibujo —el foco se queda donde estaba— y
+       el cuerpo se vuelve a animar exactamente igual que antes. *@
+    <section class="portada @Tono()">
+        @* ACTUALIZAR VIVE EN LA PORTADA, no en una fila suelta debajo. Es el botón que
+           vuelve a contestar la pregunta que contesta esta tarjeta: si el rótulo dice
+           «hoy», entonces «¿esto es de hoy?» pertenece acá y a ningún otro lado.
+
+           Suelto y en azul lleno tenía tres problemas: quedaba segundo en la pantalla sin
+           ser el segundo en importancia, le competía el ojo al titular —que es lo único
+           que alguien tiene que leer si no lee nada más—, y empujaba el aviso de que no se
+           está guardando nada a un tercer lugar que no le corresponde.
+
+           Lleva el trazo de contorno y no el de la acción principal porque no lo es: la
+           app se pone al día sola al abrir, así que esto es «volvé a chequear AHORA». *@
+        <div class="portada-cabeza">
+            <p class="portada-rotulo">tu expediente, hoy</p>
+            <button class="portada-releer" @onclick="Refrescar" disabled="@refrescando">
+                @(refrescando ? "Actualizando…" : "Actualizar")
+            </button>
+        </div>
+
+        <div class="portada-cuerpo" @key="@($"portada-{redibujo}")">
+            @if (urgente.PideAlgo)
+            {
+                <p class="portada-titular">@Mayuscula(urgente.Accion).</p>
+                <div class="portada-cuales">
+                    @foreach (InterpretacionDeAnalito lectura in LosQuePiden())
+                    {
+                        <button class="portada-cual" @onclick="() => VerSerie(lectura.Analito)">
+                            @lectura.ParaMostrar
+                        </button>
+                    }
+                </div>
+            }
+            else
+            {
+                <p class="portada-titular">Nada pide atención hoy.</p>
+            }
+
+            <div class="portada-pie">
+                <span><b>@cantidad</b> @(cantidad == 1 ? "examen" : "exámenes")</span>
+                <span><b>@ConSerie()</b> @(ConSerie() == 1 ? "analito con historia" : "analitos con historia")</span>
+                @if (Desde() is DateTime desde)
+                {
+                    <span>desde <b>@desde.ToString("MMM yyyy", Cultura)</b></span>
+                }
+                @* «leído hasta el evento N» es el MISMO tipo de dato que el resto del pie
+                   —el registro de lo que se viene juntando— y por eso termina acá en vez
+                   de pegado al botón. Siguen relacionados donde importa: es el número que
+                   el botón mueve, está en la misma tarjeta, y ahora dejó de estar a la
+                   altura de los ojos, que es donde nunca tuvo que estar el número de
+                   evento de un journal. *@
+                <span>leído hasta el evento <b>@ultimoEvento</b></span>
+            </div>
+        </div>
+    </section>
 
     @* Si la app no esta guardando, eso es lo MAS importante de la pantalla y va arriba,
        no en una nota al pie debajo de la tabla. Sin carpeta la app sigue funcionando
@@ -193,7 +279,12 @@ else
             @* Que persista no alcanza: en este modo la mitad "tu IA lo lee" del producto NO
                funciona, porque el MCP corre afuera del browser y no ve este almacenamiento.
                Decirlo es la diferencia entre degradar y enganar. *@
-            <p class="aviso aviso--atencion">
+            @* NEUTRO Y NO AMBAR, desde que existe la portada. Esto no habla de tu salud:
+               habla de la app. Con los dos en ámbar quedaban dos bloques idénticos
+               seguidos y el clínico dejaba de destacar — el ámbar tiene UN trabajo, y
+               este aviso no es ese. Sigue siendo imposible de no ver: es el primer
+               bloque después de la portada y lo que importa va en negrita. *@
+            <p class="aviso aviso--neutro">
                 <strong>@(instalada ? "Se está guardando dentro de la app" : "Se está guardando en este navegador")</strong>,
                 así que tu expediente sobrevive al cerrar. Pero tu asistente
                 <strong>no lo puede leer</strong>: para eso hace falta una carpeta tuya, y
@@ -224,20 +315,58 @@ else
         <h2 class="seccion">Cómo vienen tus valores</h2>
         @foreach (TendenciaDeAnalito t in analitos)
         {
-            <button class="serie" @onclick="() => VerSerie(t.Analito)">
+            <button class="serie" @key="@($"{t.Analito}-{redibujo}")" @onclick="() => VerSerie(t.Analito)">
+                @{ InterpretacionDeAnalito lectura = Lectura(t.Analito); }
                 <div class="serie-cabeza">
                     <div>
                         <span class="serie-nombre">@t.ParaMostrar</span>
                         <span class="chip @Insignia(t)">@t.Tendencia</span>
                         <div class="serie-relato">@Relato(t)</div>
                     </div>
-                    <div class="serie-valor">@Valor(t.ValorFinal) <span>@t.Unidad</span></div>
+                    <div>
+                        <div class="serie-valor">@Valor(t.ValorFinal) <span>@t.Unidad</span></div>
+                        @* NINGUN NUMERO SIN SU REFERENCIA. La escribe el dominio, no esta
+                           pantalla: sale del analito, que sabe que depende de la edad. *@
+                        @if (lectura.ReferenciaLegible.Length > 0)
+                        {
+                            <div class="serie-referencia">referencia: @lectura.ReferenciaLegible</div>
+                        }
+                    </div>
                 </div>
-                @* La lectura y la accion salen del ANALITO. Esta pantalla ya no decide
-                   que decir: antes tenia escrito "Conviene que lo vea tu medico" acá
-                   adentro, igual para el antigeno que para el colesterol, y un .razor no
-                   tiene de donde saber si algo espera a la proxima cita. *@
-                @{ InterpretacionDeAnalito lectura = Lectura(t.Analito); }
+
+                @* CADA ANALITO CON SU FORMA. El dominio dice cuál es -no la pantalla- y
+                   acá solo se traduce a píxeles. Un antígeno se lee como trayectoria
+                   contra su línea base, un colesterol como progreso hacia una meta, una
+                   hemoglobina como posición en una banda. Dibujarlos igual sería la misma
+                   tabla que Álvaro rechazó, un piso más arriba. *@
+                @* La trayectoria necesita serie; la meta y la banda se dibujan con un
+                   solo punto, porque no hablan del tiempo sino de dónde estás parado. *@
+                @if (t.HaySerie || lectura.Forma != "trayectoria con linea base")
+                {
+                    @switch (lectura.Forma)
+                    {
+                        case "trayectoria con linea base":
+                            <TrayectoriaConLineaBase Puntos="Serie(t.Analito)"
+                                                     Referencias="Lineas(t.Analito)"
+                                                     PideAlgo="lectura.PideAlgo"
+                                                     Descripcion="@lectura.ParaSonia" />
+                            break;
+                        case "progreso hacia meta":
+                            <ProgresoHaciaMeta Puntos="Serie(t.Analito)"
+                                               Referencias="Lineas(t.Analito)"
+                                               Descripcion="@lectura.ParaSonia" />
+                            break;
+                        case "posicion en banda":
+                            <PosicionEnBanda Puntos="Serie(t.Analito)"
+                                             Referencias="Lineas(t.Analito)"
+                                             Descripcion="@lectura.ParaSonia" />
+                            break;
+                    }
+                }
+
+                @* La lectura y la acción salen del ANALITO. Esta pantalla ya no decide
+                   qué decir: antes tenía escrito "Conviene que lo vea tu médico" acá
+                   adentro, igual para el antígeno que para el colesterol. *@
                 @if (!string.IsNullOrEmpty(lectura.ParaSonia))
                 {
                     <div class="serie-lectura@(lectura.PideAlgo ? " serie-lectura--atencion" : "")">
@@ -248,66 +377,98 @@ else
         }
     }
 
+    @* LOS BINARIOS, con SU forma. Van en la misma sección y en tarjetas iguales porque
+       son lo mismo que los de arriba —la lectura de una serie— y se leen distinto porque
+       lo son: acá no hay «pasó de 200 a 280», hay «apareció en las 2 seguidas».
+
+       Que estén acá y no perdidos en el historial es lo que cambió: hasta ahora una
+       sangre oculta no tenía serie, así que sólo podía aparecer como una celda con un
+       positivo y un aviso suelto. *@
+    @foreach (PresenciaDeAnalito p in presencias)
+    {
+        <button class="serie" @key="@($"{p.Analito}-{redibujo}")" @onclick="() => VerSerie(p.Analito)">
+            @{ InterpretacionDeAnalito suya = Lectura(p.Analito); }
+            <div class="serie-cabeza">
+                <div>
+                    <span class="serie-nombre">@p.ParaMostrar</span>
+                    <span class="chip @Insignia(p)">@p.Presencia</span>
+                    <div class="serie-relato">@Relato(p)</div>
+                </div>
+                <div>
+                    <div class="serie-valor">@p.UltimoResultado</div>
+                    @if (suya.ReferenciaLegible.Length > 0)
+                    {
+                        <div class="serie-referencia">@suya.ReferenciaLegible</div>
+                    }
+                </div>
+            </div>
+
+            @if (p.HaySerie)
+            {
+                <PresenciaEnElTiempo Pruebas="Tira(p.Analito)"
+                                     Seguidas="p.PositivasSeguidas"
+                                     Descripcion="@suya.ParaSonia" />
+            }
+
+            @if (!string.IsNullOrEmpty(suya.ParaSonia))
+            {
+                <div class="serie-lectura@(suya.PideAlgo ? " serie-lectura--atencion" : "")">
+                    @suya.ParaSonia@(suya.PideAlgo ? ": " : ".")<b>@suya.Accion</b>
+                </div>
+            }
+        </button>
+    }
+
     @* Un hallazgo de un examen sin serie. Va acá arriba y no perdido en una celda:
        «apareció sangre» no es un dato de tabla. El texto y la urgencia los pone el
-       dominio — dos positivos de la misma forma pueden decir cosas muy distintas. *@
+       dominio — dos positivos de la misma forma pueden decir cosas muy distintas.
+
+       Hoy esto son sólo los COLORES. Los binarios subieron a sus propias tarjetas en
+       cuanto tuvieron serie, que es donde tenían que estar desde el principio. *@
     @foreach (FilaDelCuadro hallazgo in Hallazgos())
     {
-        <div class="aviso @(hallazgo.Severidad == "atencion inmediata" ? "aviso--problema" : "aviso--atencion")" style="margin-top:26px">
+        <div class="aviso @(hallazgo.Severidad == "urgente" ? "aviso--problema" : "aviso--atencion")" style="margin-top:26px">
             <strong>@hallazgo.ParaMostrar.</strong> @hallazgo.ParaSonia.
         </div>
     }
 
-    <h2 class="seccion">Tus exámenes</h2>
+    <h2 class="seccion">Tu historial</h2>
     @if (examenes.Count == 0)
     {
-        <p class="apunte">Todavía no hay exámenes. Apretá <em>Refresh</em>.</p>
+        <p class="apunte">Todavía no hay exámenes. Apretá <em>Actualizar</em>.</p>
     }
     else
     {
-        @* UNA FILA POR ANALITO Y UNA COLUMNA POR FECHA. Antes era una fila por medicion,
-           que repetia el nombre del analito y obligaba a leer salteado para reconstruir
-           una serie. Con las fechas en el eje, la serie se lee de un barrido horizontal,
-           que es el punto: la serie ES el dato.
+        @*  UNA LÍNEA DE TIEMPO DE VISITAS, no una tabla.
 
-           La pantalla NO arma la grilla: ubica cada celda por los dos indices que manda
-           el dominio. Que dos examenes del mismo dia sean una columna, y que una celda
-           vacia quede vacia en vez de arrastrar el valor anterior, ya se decidio alla. *@
-        <div style="overflow-x:auto">
-        <table class="tabla tabla--cuadro">
-            <thead>
-                <tr>
-                    <th>Analito</th>
-                    @foreach (DateTime fecha in ColumnasDelCuadro())
-                    {
-                        <th class="der fecha">@fecha.ToString("dd/MM/yy", CultureInfo.InvariantCulture)</th>
-                    }
-                    <th class="der"></th>
-                </tr>
-            </thead>
-            <tbody>
-                @foreach (FilaDelCuadro fila in FilasDelCuadro())
-                {
-                    <tr>
-                        <td>@fila.ParaMostrar</td>
-                        @for (int columna = 0; columna < ColumnasDelCuadro().Count; columna++)
+            La matriz que había acá era mejor que la lista plana, pero seguía siendo una
+            tabla genérica sobre analitos que no se parecen en nada — y las trayectorias
+            ya se ven arriba, cada una con su forma. Lo que esta sección aporta que las
+            tarjetas no: QUÉ PASÓ CADA DÍA. Una visita al laboratorio trae varios
+            analitos a la vez, y eso es una cronología, no una grilla.
+
+            Por eso también cambia el nombre. «Tus exámenes» describía una lista de
+            papeles; esto es el historial.                                              *@
+        <ol class="visitas">
+            @foreach (Visita visita in Visitas())
+            {
+                <li class="visita">
+                    <div class="visita-fecha">
+                        <span class="visita-dia">@visita.Fecha.ToString("dd MMM", Cultura)</span>
+                        <span class="visita-ano">@visita.Fecha.Year</span>
+                    </div>
+                    <ul class="visita-cosas">
+                        @foreach (CeldaEnCuadro celda in visita.Celdas)
                         {
-                            @* Celda vacía = ese analito NO se midió ese día. La raya se
-                               pone acá y no con un :empty en el CSS porque hay que verla:
-                               un hueco en blanco se lee como un error de la pantalla, y es
-                               justamente lo contrario — es el dominio negándose a
-                               interpolar un punto que nadie midió. *@
-                            <td class="der resultado">
-                                @(string.IsNullOrEmpty(fila.Celdas[columna])
-                                    ? "—" : fila.Celdas[columna])
-                            </td>
+                            <li class="visita-cosa">
+                                <span class="visita-que">@celda.ParaMostrar</span>
+                                <span class="visita-cuanto">@celda.Expresado</span>
+                            </li>
                         }
-                        <td class="der">@Marca(fila)</td>
-                    </tr>
-                }
-            </tbody>
-        </table>
-        </div>
+                    </ul>
+                </li>
+            }
+        </ol>
     }
 
     @* La ventana de perdida se dice, porque esconderla seria vender durabilidad que no hay.
@@ -332,6 +493,53 @@ else
     private IReadOnlyList<TendenciaDeAnalito> analitos = new List<TendenciaDeAnalito>();
     private int cantidad;
     private int fueraDeRango;
+    private LoMasUrgente urgente = new();
+
+    // Sube en cada Releer. Es la llave que hace que Blazor recree las tarjetas en vez de
+    // reusarlas, y con eso las formas se vuelven a dibujar: es la respuesta visible a
+    // haber apretado Actualizar.
+    private int redibujo;
+
+    // El tono de la portada lo decide el DOMINIO, no esta pantalla: es la severidad que
+    // salió de recorrer las series, traducida con el mapeo del semáforo de la marca:
+    // verde informativo, ámbar para vigilar y consulte pronto, rojo reservado a urgente.
+    private string Tono() => urgente.Severidad switch
+    {
+        "urgente"         => "portada--problema",
+        "consulte pronto" => "portada--atencion",
+        "vigilar"         => "portada--atencion",
+        _                 => "portada--calma",
+    };
+
+    // Las series que piden LO MISMO que el expediente entero. Es una igualdad, no un
+    // orden: ordenar severidades es del dominio, y acá no hace falta — la mayor ya vino
+    // resuelta y esto sólo busca cuáles la empatan.
+    private List<InterpretacionDeAnalito> LosQuePiden()
+    {
+        var cuales = new List<InterpretacionDeAnalito>();
+        if (!urgente.PideAlgo) return cuales;
+
+        foreach (KeyValuePair<string, InterpretacionDeAnalito> par in interpretaciones)
+            if (par.Value.Severidad == urgente.Severidad) cuales.Add(par.Value);
+
+        cuales.Sort((a, b) => string.Compare(a.ParaMostrar, b.ParaMostrar, StringComparison.OrdinalIgnoreCase));
+        return cuales;
+    }
+
+    private int ConSerie() => analitos.Count + presencias.Count;
+
+    // Desde cuándo hay registro. Es lo que convierte una lista de exámenes en un
+    // historial: no es cuántos hay, es cuánto tiempo cubren.
+    private DateTime? Desde()
+    {
+        DateTime? primera = null;
+        foreach (ExamenEnLista e in examenes)
+            if (primera is null || e.Fecha < primera) primera = e.Fecha;
+        return primera;
+    }
+
+    private static string Mayuscula(string frase) =>
+        frase.Length == 0 ? frase : char.ToUpperInvariant(frase[0]) + frase.Substring(1);
     private long ultimoEvento;
     private string error = "";
 
@@ -453,18 +661,38 @@ else
         examenes = estado.Examenes();
         cantidad = estado.Cantidad();
         fueraDeRango = estado.AnalitosFueraDeRango();
+        urgente = estado.Urgente();
+        redibujo++;
         ultimoEvento = estado.UltimoEvento();
 
         // Una lectura por analito con historia. Se piden de a uno porque cada una es una
         // consulta sobre el actor: la pantalla no recorre el dominio, le pregunta.
+        //
+        // Y SE PREGUNTA POR LA FORMA ANTES QUE POR LOS HECHOS. Un binario no tiene
+        // tendencia —el dominio contesta «no aplica»— ni puntos con número, así que
+        // pedírselos daría ceros. Cuál puerta usar lo decide la forma, que es dominio: la
+        // pantalla la lee, no la inventa.
         var hechos = new List<TendenciaDeAnalito>();
+        var presentes = new List<PresenciaDeAnalito>();
         var leidos = new Dictionary<string, InterpretacionDeAnalito>();
         foreach (string analito in estado.Analitos())
         {
+            InterpretacionDeAnalito lectura = estado.Interpretacion(analito);
+            leidos[analito] = lectura;
+
+            if (lectura.Forma == FormaDePresencia)
+            {
+                presentes.Add(estado.Presencia(analito));
+                pruebas[analito] = estado.Pruebas(analito);
+                continue;
+            }
+
             hechos.Add(estado.Tendencia(analito));
-            leidos[analito] = estado.Interpretacion(analito);
+            puntos[analito] = estado.Puntos(analito);
+            lineas[analito] = estado.Referencias(analito);
         }
         analitos = hechos;
+        presencias = presentes;
         interpretaciones = leidos;
         celdas = estado.Cuadro();
     }
@@ -478,6 +706,14 @@ else
     // Sin serie devuelve VACÍO y no una frase: esa la dice el analito en su ParaSonia, y
     // tenerla en los dos lados imprimía "todavía no hay serie" dos veces seguidas en la
     // misma tarjeta.
+    // Los HECHOS de una serie binaria, contados por la pantalla con lo que da el dominio.
+    // No hay de dónde sacar un consejo acá tampoco: son cuántas pruebas y cuántas dieron
+    // presente.
+    private static string Relato(PresenciaDeAnalito p) =>
+        p.HaySerie
+            ? $"{p.Positivas} de {p.Mediciones} pruebas en {p.Dias} {(p.Dias == 1 ? "día" : "días")}"
+            : "";
+
     private static string Relato(TendenciaDeAnalito t) =>
         t.HaySerie
             ? $"pasó de {Valor(t.ValorInicial)} a {Valor(t.ValorFinal)} {t.Unidad} "
@@ -570,6 +806,55 @@ else
         return hallazgos;
     }
 
+    // El nombre de la forma tal como lo dice el dominio. La pantalla hace un switch sobre
+    // esto y ese switch SÍ es presentación legítima: traduce una forma del dominio a
+    // píxeles. Lo que no puede es decidirla.
+    private const string FormaDePresencia = "presencia en el tiempo";
+
+    private List<PresenciaDeAnalito> presencias = new();
+    private Dictionary<string, IReadOnlyList<PruebaEnSerie>> pruebas = new();
+
+    private IReadOnlyList<PruebaEnSerie> Tira(string analito) =>
+        pruebas.TryGetValue(analito, out var p) ? p : new List<PruebaEnSerie>();
+
+    private Dictionary<string, IReadOnlyList<PuntoDeSerie>> puntos = new();
+    private Dictionary<string, IReadOnlyList<LineaDeReferencia>> lineas = new();
+
+    private IReadOnlyList<PuntoDeSerie> Serie(string analito) =>
+        puntos.TryGetValue(analito, out var p) ? p : new List<PuntoDeSerie>();
+
+    private IReadOnlyList<LineaDeReferencia> Lineas(string analito) =>
+        lineas.TryGetValue(analito, out var l) ? l : new List<LineaDeReferencia>();
+
+    private static readonly CultureInfo Cultura = new CultureInfo("es-ES");
+
+    // Una visita: todo lo que se midió el mismo día. Las celdas ya vienen del dominio
+    // agrupadas por columna, así que acá solo se dan vuelta las filas por las fechas.
+    private sealed class Visita
+    {
+        public DateTime Fecha { get; init; }
+        public List<CeldaEnCuadro> Celdas { get; } = new();
+    }
+
+    // Lo más reciente primero: en un historial se mira para atrás, no para adelante.
+    private List<Visita> Visitas()
+    {
+        var porFecha = new Dictionary<DateTime, Visita>();
+        foreach (CeldaEnCuadro celda in celdas)
+        {
+            if (!porFecha.TryGetValue(celda.Fecha, out Visita? visita))
+            {
+                visita = new Visita { Fecha = celda.Fecha };
+                porFecha[celda.Fecha] = visita;
+            }
+            visita.Celdas.Add(celda);
+        }
+
+        var visitas = porFecha.Values.ToList();
+        visitas.Sort((una, otra) => otra.Fecha.CompareTo(una.Fecha));
+        return visitas;
+    }
+
     private Dictionary<string, InterpretacionDeAnalito> interpretaciones = new();
 
     private InterpretacionDeAnalito Lectura(string analito) =>
@@ -577,14 +862,25 @@ else
             ? l
             : new InterpretacionDeAnalito();
 
-    // El chip sale de la SEVERIDAD que decidio el analito, no de un bool generico.
+    // El chip sale de la SEVERIDAD que decidio el analito, con el mapeo del semáforo:
+    // rojo solo para "urgente", que el dominio reserva.
     //
-    // El ambar sigue reservado para lo que exige atencion, y por eso "salto inverosimil"
-    // NO lo usa: no es una alarma clinica, es "repeti el examen".
+    // El ambar sigue sin usarse para "salto inverosimil": no es una alarma clinica, es
+    // "repeti el examen", y el chip neutro lo dice sin gritar.
+    private string Insignia(PresenciaDeAnalito p)
+    {
+        InterpretacionDeAnalito lectura = Lectura(p.Analito);
+        if (lectura.Severidad == "urgente") return "chip--problema";
+        if (lectura.PideAlgo) return "chip--atencion";
+        if (!p.HaySerie) return "chip--sinserie";
+        return "chip--estable";
+    }
+
     private string Insignia(TendenciaDeAnalito t)
     {
         InterpretacionDeAnalito lectura = Lectura(t.Analito);
         if (lectura.SugiereRepetirElExamen) return "chip--repetir";
+        if (lectura.Severidad == "urgente") return "chip--problema";
         if (lectura.PideAlgo) return "chip--atencion";
         if (!t.HaySerie) return "chip--sinserie";
         return "chip--estable";

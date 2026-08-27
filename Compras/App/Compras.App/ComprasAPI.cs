@@ -145,6 +145,19 @@ namespace Compras.App
 			}
 		}
 
+		// El rango del historial. Es lo que le permite a quien pregunta -sobre todo a la
+		// IA- saber que meses puede comparar, en vez de adivinar uno vacio.
+		public string RangoDelHistorial() =>
+			app.Using(@"
+				{
+					rango = compras.Rango;
+					print rango.MesesConCompras mesesConCompras,
+						rango.PrimerMesExpresado primerMes,
+						rango.UltimoMesExpresado ultimoMes;
+				}
+			")
+			.PerformQuery();
+
 		public string TokenGuardado() => Texto("bitacora.Token");
 
 		public string RefreshTokenGuardado() => Texto("bitacora.RefreshToken");
@@ -244,6 +257,9 @@ namespace Compras.App
 		// LA consulta que justifica el dominio: como cambio la canasta entre dos meses.
 		// Es la pregunta que ningun ticket contesta, y la mitad "compras" del cruce con
 		// el colesterol que hace el asistente.
+		//
+		// El veredicto y la linea los produce el DOMINIO: la pantalla no puede decidir si
+		// un cambio de -29 puntos es bueno, y con un booleano lo mostraba como "estable".
 		public string ComparacionDeCanastas(int anioAntes, int mesAntes, int anioDespues, int mesDespues) =>
 			app.Using(@"
 				{
@@ -252,6 +268,8 @@ namespace Compras.App
 						comparacion.ProporcionOcasionalAntes proporcionAntes,
 						comparacion.ProporcionOcasionalDespues proporcionDespues,
 						comparacion.CambioEnProporcion cambio,
+						comparacion.NombreDelVeredicto veredicto,
+						comparacion.ParaSonia paraSonia,
 						comparacion.CrecioLoOcasional crecioLoOcasional,
 						comparacion.Antes.Anio anioAntes,
 						comparacion.Antes.Mes mesAntes,
@@ -269,6 +287,31 @@ namespace Compras.App
 				p["anioDespues", typeof(int)] = anioDespues;
 				p["mesDespues",  typeof(int)] = mesDespues;
 			})
+			.PerformQuery();
+
+		// La comparacion por defecto: el ultimo mes con compras contra el mismo mes del
+		// anio anterior. Que dos meses se comparan lo elige el DOMINIO, no la superficie.
+		public string ComparacionConElAnioPasado() =>
+			app.Using(@"
+				{
+					comparacion = compras.CompararConElAnioPasado();
+					print comparacion.HayComparacion hayComparacion,
+						comparacion.ProporcionOcasionalAntes proporcionAntes,
+						comparacion.ProporcionOcasionalDespues proporcionDespues,
+						comparacion.CambioEnProporcion cambio,
+						comparacion.NombreDelVeredicto veredicto,
+						comparacion.ParaSonia paraSonia,
+						comparacion.CrecioLoOcasional crecioLoOcasional,
+						comparacion.Antes.Anio anioAntes,
+						comparacion.Antes.Mes mesAntes,
+						comparacion.Antes.GastoOcasional gastoOcasionalAntes,
+						comparacion.Antes.GastoComestible gastoComestibleAntes,
+						comparacion.Despues.Anio anioDespues,
+						comparacion.Despues.Mes mesDespues,
+						comparacion.Despues.GastoOcasional gastoOcasionalDespues,
+						comparacion.Despues.GastoComestible gastoComestibleDespues;
+				}
+			")
 			.PerformQuery();
 
 		// La garantia de un producto, con su respaldo: en que compra fue, cuando, y si
@@ -289,7 +332,11 @@ namespace Compras.App
 						registro.FechaDeCompra fechaDeCompra,
 						registro.MesesDeCobertura mesesDeCobertura,
 						registro.VenceEl venceEl,
-						registro.Vigente vigente;
+						registro.Vigente vigente,
+						registro.DiasParaVencer diasParaVencer,
+						registro.NombreDeLaSeveridad severidad,
+						registro.QueHacer queHacer,
+						registro.ParaSonia paraSonia;
 				}
 			")
 			.WithParameters(p => {
@@ -310,7 +357,97 @@ namespace Compras.App
 							registro.NumeroDeCompra numeroDeCompra,
 							registro.FechaDeCompra fechaDeCompra,
 							registro.MesesDeCobertura mesesDeCobertura,
-							registro.VenceEl venceEl;
+							registro.VenceEl venceEl,
+							registro.DiasParaVencer diasParaVencer,
+							registro.NombreDeLaSeveridad severidad,
+							registro.QueHacer queHacer,
+							registro.ParaSonia paraSonia;
+					}
+				}
+			")
+			.WithParameters(p => {
+				p["fecha", typeof(DateTime)] = fechaDeConsulta;
+			})
+			.PerformQuery();
+
+		// ---------------------------------------------------- lo que NO esta (el hueco)
+
+		// Las coberturas cuya ventana se esta cerrando. No es la lista de garantias que
+		// la app ya muestra: son las que piden algo, y eso sale del plazo de cada una
+		// contra la fecha de consulta.
+		public string GarantiasPorVencerEl(DateTime fechaDeConsulta) =>
+			app.Using(@"
+				{
+					porVencer = compras.GarantiasPorVencer(@fecha);
+					foreach (registro in porVencer) {
+						print registro.Sku sku,
+							registro.Descripcion descripcion,
+							registro.NumeroDeCompra numeroDeCompra,
+							registro.FechaDeCompra fechaDeCompra,
+							registro.VenceEl venceEl,
+							registro.DiasParaVencer diasParaVencer,
+							registro.NombreDeLaSeveridad severidad,
+							registro.QueHacer queHacer,
+							registro.ParaSonia paraSonia;
+					}
+				}
+			")
+			.WithParameters(p => {
+				p["fecha", typeof(DateTime)] = fechaDeConsulta;
+			})
+			.PerformQuery();
+
+		// CUANTO Y CUANDO entro algo, mes a mes. La cabecera y los meses se imprimen en
+		// el mismo bloque: la cabecera sale como "consumo" y cada mes como "mes".
+		public string ConsumoDe(string termino)
+		{
+			ArgumentNullException.ThrowIfNullOrWhiteSpace(termino);
+
+			return app.Using(@"
+				{
+					consumo = compras.ConsumoDe(@termino);
+					print consumo.Termino termino,
+						consumo.EsCategoria esCategoria,
+						consumo.MesesConConsumo mesesConConsumo,
+						consumo.TotalGastado totalGastado,
+						consumo.TotalUnidades totalUnidades,
+						consumo.PrimerMesExpresado primerMes,
+						consumo.UltimoMesExpresado ultimoMes,
+						consumo.MesDelPicoExpresado mesDelPico,
+						consumo.GastoEnElPrimerMes gastoEnElPrimerMes,
+						consumo.GastoEnElUltimoMes gastoEnElUltimoMes,
+						consumo.CambioDeGasto cambioDeGasto,
+						consumo.SePuedeJuzgar sePuedeJuzgar,
+						consumo.NombreDelVeredicto veredicto,
+						consumo.ParaSonia paraSonia;
+					foreach (mes in consumo.Meses) {
+						print mes.MesExpresado mes,
+							mes.Unidades unidades,
+							mes.Gasto gasto,
+							mes.Compras compras;
+					}
+				}
+			")
+			.WithParameters(p => {
+				p["termino", typeof(string)] = termino;
+			})
+			.PerformQuery();
+		}
+
+		// LA consulta que mira el hueco: que dejo de entrar a la canasta. Una pantalla no
+		// puede renderizar una ausencia que nadie le paso.
+		public string AbastecimientosPendientesEl(DateTime fechaDeConsulta) =>
+			app.Using(@"
+				{
+					pendientes = compras.AbastecimientosPendientes(@fecha);
+					foreach (pendiente in pendientes) {
+						print pendiente.NombreDeLaCategoria categoria,
+							pendiente.UltimaCompra ultimaCompra,
+							pendiente.DiasDesdeLaUltima diasDesdeLaUltima,
+							pendiente.DiasEsperados diasEsperados,
+							pendiente.EsRecomendado esRecomendado,
+							pendiente.NombreDeLaSeveridad severidad,
+							pendiente.ParaSonia paraSonia;
 					}
 				}
 			")
@@ -333,11 +470,26 @@ namespace Compras.App
 		public CanastasComparadas Comparacion(int anioAntes, int mesAntes, int anioDespues, int mesDespues) =>
 			ProyeccionDeVistas.Comparacion(ComparacionDeCanastas(anioAntes, mesAntes, anioDespues, mesDespues));
 
+		public CanastasComparadas ComparacionConElAnioAnterior() =>
+			ProyeccionDeVistas.Comparacion(ComparacionConElAnioPasado());
+
+		public RangoDelHistorialVista Rango() =>
+			ProyeccionDeVistas.Rango(RangoDelHistorial());
+
+		public ConsumoEnElTiempo Consumo(string termino) =>
+			ProyeccionDeVistas.Consumo(ConsumoDe(termino));
+
 		public GarantiaDeProducto Garantia(string texto, DateTime fechaDeConsulta) =>
 			ProyeccionDeVistas.Garantia(GarantiaDe(texto, fechaDeConsulta));
 
 		public IReadOnlyList<GarantiaDeProducto> GarantiasVigentes(DateTime fechaDeConsulta) =>
 			ProyeccionDeVistas.GarantiasVigentes(GarantiasVigentesEl(fechaDeConsulta));
+
+		public IReadOnlyList<GarantiaDeProducto> GarantiasPorVencer(DateTime fechaDeConsulta) =>
+			ProyeccionDeVistas.GarantiasVigentes(GarantiasPorVencerEl(fechaDeConsulta));
+
+		public IReadOnlyList<AbastecimientoEnEspera> AbastecimientosPendientes(DateTime fechaDeConsulta) =>
+			ProyeccionDeVistas.Abastecimientos(AbastecimientosPendientesEl(fechaDeConsulta));
 
 		// ------------------------------------------------- IDiarioDeLaApp (Portador)
 

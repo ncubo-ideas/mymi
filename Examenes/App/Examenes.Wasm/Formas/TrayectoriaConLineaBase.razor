@@ -1,0 +1,118 @@
+@using System.Globalization
+@using System.Linq
+@using Examenes.App.Vistas
+
+@*  LA FORMA DEL ANTÍGENO PROSTÁTICO: una trayectoria contra la línea base de la persona.
+
+    No es «un gráfico de la serie». Lo que hace legible este dibujo es la banda: el nivel
+    en el que esa persona vive. Un 3.0 pegado a la banda no dice nada; el mismo 3.0 lejos
+    de ella es el hallazgo. Sin la banda esto sería una línea que sube, que es justo lo
+    que una tabla ya decía.
+
+    El ámbar aparece solo si el dominio dijo que pide algo. Sigue significando una cosa.  *@
+
+<div class="forma forma--trayectoria">
+    <svg viewBox="0 0 320 96" role="img" aria-label="@Descripcion">
+        @if (Habitual is not null)
+        {
+            @* La banda de lo suyo. Es el fondo contra el que se lee todo lo demás. *@
+            <rect x="0" y="@Y(Habitual.Valor + Margen)" width="320"
+                  height="@AltoDeLaBanda" class="banda" />
+            <line x1="0" y1="@Y(Habitual.Valor)" x2="320" y2="@Y(Habitual.Valor)"
+                  class="linea-base" />
+        }
+        @if (Techo is not null)
+        {
+            <line x1="0" y1="@Y(Techo.Valor)" x2="320" y2="@Y(Techo.Valor)" class="linea-techo" />
+        }
+
+        @* pathLength="1" deja que el dibujado del trazo se anime con una fracción exacta y no
+           con una longitud adivinada: el navegador reescala el dasharray al largo real. *@
+        <polyline points="@Recorrido" class="trazo" pathLength="1" />
+
+        @for (int i = 0; i < Puntos.Count; i++)
+        {
+            bool ultimo = i == Puntos.Count - 1;
+            <circle cx="@X(i)" cy="@Y(Puntos[i].Valor)" r="@(ultimo ? "5" : "3")"
+                    class="@(ultimo ? (PideAlgo ? "punto punto--atencion" : "punto punto--final") : "punto")" />
+        }
+    </svg>
+
+    <div class="forma-pie">
+        @if (Habitual is not null)
+        {
+            <span class="forma-nota"><i class="muestra muestra--banda"></i>tu nivel de siempre, @Numero(Habitual.Valor) @Unidad</span>
+        }
+        @if (Techo is not null)
+        {
+            <span class="forma-nota"><i class="muestra muestra--techo"></i>esperable hasta @Numero(Techo.Valor) @Unidad</span>
+        }
+    </div>
+</div>
+
+@code {
+    [Parameter] public IReadOnlyList<PuntoDeSerie> Puntos { get; set; } = new List<PuntoDeSerie>();
+    [Parameter] public IReadOnlyList<LineaDeReferencia> Referencias { get; set; } = new List<LineaDeReferencia>();
+    [Parameter] public bool PideAlgo { get; set; }
+    [Parameter] public string Descripcion { get; set; } = "";
+
+    private LineaDeReferencia? Habitual => Referencias.FirstOrDefault(r => r.Nombre == "habitual");
+    private LineaDeReferencia? Techo => Referencias.FirstOrDefault(r => r.Nombre == "techo");
+    private string Unidad => Puntos.Count > 0 ? Puntos[0].Unidad : "";
+
+    // El grosor visual de la banda. NO sale del dominio porque no es un umbral clínico:
+    // es cuánto ancho hace falta para que se lea como una franja donde la persona vive.
+    // Con 6% quedaba una raya de un píxel y desaparecía justo lo que da sentido al resto.
+    private decimal Margen => (Maximo - Minimo) * 0.14m;
+
+    private decimal Minimo => Todos().Min() - Aire();
+    private decimal Maximo => Todos().Max() + Aire();
+
+    private IEnumerable<decimal> Todos()
+    {
+        foreach (PuntoDeSerie p in Puntos) yield return p.Valor;
+        foreach (LineaDeReferencia r in Referencias) yield return r.Valor;
+    }
+
+    // Aire arriba y abajo para que ni el punto ni las líneas queden pegados al borde.
+    private decimal Aire()
+    {
+        decimal recorrido = Todos().Max() - Todos().Min();
+        return recorrido == 0m ? 1m : recorrido * 0.18m;
+    }
+
+    private string X(int i) => Puntos.Count <= 1
+        ? "160"
+        : (20 + (280.0 * i / (Puntos.Count - 1))).ToString("0.#", CultureInfo.InvariantCulture);
+
+    private string Y(decimal valor) => Pixel(valor).ToString("0.#", CultureInfo.InvariantCulture);
+
+    private double Pixel(decimal valor)
+    {
+        decimal recorrido = Maximo - Minimo;
+        if (recorrido == 0m) return 48;
+
+        // El eje va al revés que el SVG: más valor, más arriba.
+        decimal proporcion = (valor - Minimo) / recorrido;
+        return 84 - (double)proporcion * 72;
+    }
+
+    // El alto en pixeles de la banda. Se calcula con numeros y no restando lo que
+    // devuelve Y(), que es texto listo para el atributo.
+    private string AltoDeLaBanda
+    {
+        get
+        {
+            if (Habitual is null) return "0";
+
+            double arriba = Pixel(Habitual.Valor + Margen);
+            double abajo = Pixel(Habitual.Valor - Margen);
+            return (abajo - arriba).ToString("0.#", CultureInfo.InvariantCulture);
+        }
+    }
+
+    private string Recorrido =>
+        string.Join(" ", Puntos.Select((p, i) => $"{X(i)},{Y(p.Valor)}"));
+
+    private static string Numero(decimal valor) => valor.ToString("0.##", CultureInfo.InvariantCulture);
+}

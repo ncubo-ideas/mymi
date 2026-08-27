@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 
 namespace Examenes.Dominio
 {
@@ -27,7 +28,7 @@ namespace Examenes.Dominio
 		// clase el identificador `Analito` es tambien la propiedad heredada, y calificarlo
 		// deja sin lugar a dudas que aca se habla del tipo. Las otras tres subclases hacen
 		// lo mismo por la misma razon.
-		private static readonly Analito Suyo = Examenes.Dominio.Analito.AntigenoProstatico;
+		private static readonly AnalitoContinuo Suyo = Examenes.Dominio.Analito.AntigenoProstatico;
 
 		// 0.75 ng/mL por ano. NO es un numero inventado para el demo: es el corte habitual
 		// de velocidad de PSA, y se usa incluso con el valor absoluto dentro del rango.
@@ -60,100 +61,23 @@ namespace Examenes.Dominio
 
 		public override DireccionDeseable Direccion => DireccionDeseable.Bajar;
 
-		// ---------------------------------------------------------------- lo suyo
-
-		// LA capacidad de este analito. Es publica y con nombre porque es lo que la IA
-		// pregunta y la pantalla no contesta.
+		// Anual a partir de los 50, que es cuando el tamizaje empieza a tener sentido.
+		// Antes de esa edad, y con el valor en rango, cada dos anos alcanza.
 		//
-		// EL TRAMO ES EL MAS RECIENTE, no la serie entera, y esa es la regla nombrada:
-		// los anos estables de antes no diluyen un salto de este ano, lo hacen mas
-		// notable. Con los numeros del guion la diferencia decide el caso:
-		//
-		//   serie entera   3.0 (2023) -> 5.2 (2026)   2.2 ng/mL en 1096 dias = 0.73/ano
-		//   tramo reciente 3.0 (2025) -> 5.2 (2026)   2.2 ng/mL en  365 dias = 2.20/ano
-		//
-		// Con el umbral en 0.75 la serie entera diria que NO exige atencion.
-		public Velocidad VelocidadDe(SerieDeAnalito serie)
-		{
-			ArgumentNullException.ThrowIfNull(serie);
+		// Y si la velocidad ya exige atencion, no hay periodicidad que valga: eso se mira
+		// ahora. Devolver 12 ahi seria decirle a alguien que espere un ano.
+		// TRIPLICARSE. Es el ejemplo textual de Alvaro -"de 1 a 10 ya se esta muerto"-
+		// puesto en un numero que no descarta hallazgos reales: un antigeno que se duplica
+		// es exactamente el caso que este dominio existe para detectar, y tiene que pasar.
+		public override decimal MultiploQueNingunIntervaloJustifica => 3m;
 
-			string unidad = Valor.Unidad.Simbolo;
-			int dias = serie.DiasDelUltimoTramo;
+		public override int MesesHastaElProximo(int edad) =>
+			edad >= 50 ? 12 : (EsNormalPara(edad) ? 24 : 12);
 
-			// Dos mediciones el MISMO dia no dan una velocidad: un cociente sobre cero
-			// dias no es un ritmo anual, es una division por cero disfrazada. Ese caso ya
-			// lo atrapa Evaluar() como salto inverosimil, que es la lectura correcta.
-			if (dias <= 0)
-				return Velocidad.NoAplica(Suyo, unidad, VelocidadQueExigeAtencionPorAno);
-
-			decimal porAno = serie.CambioDelUltimoTramo * SerieDeAnalito.DiasDeUnAno / dias;
-
-			return Velocidad.Medida(Suyo, porAno, unidad, dias, VelocidadQueExigeAtencionPorAno);
-		}
-
-		// Si el antigeno se mantuvo plano durante los ultimos anos. Es la otra pregunta
-		// propia: la linea base es lo que le da sentido al ultimo valor.
-		public bool EsEstableDurante(SerieDeAnalito serie, int anos)
-		{
-			ArgumentNullException.ThrowIfNull(serie);
-			if (anos <= 0)
-				throw new ArgumentOutOfRangeException(nameof(anos), anos,
-					"Preguntar por la estabilidad de cero anos no tiene respuesta.");
-
-			EvaluacionDeTendencia hechos = serie.Evaluar();
-			if (!hechos.HaySerie) return false;
-			if (hechos.DiasTranscurridos < anos * SerieDeAnalito.DiasDeUnAno) return false;
-
-			return !EsCambioReal(hechos.Cambio);
-		}
-
-		// ---------------------------------------------------------------- la lectura
-
-		// Se lee por VELOCIDAD antes que por nivel, que es lo contrario de los demas.
-		// Un 5.2 con techo 4.5 esta apenas arriba; lo que manda es que llego ahi en un
-		// ano viniendo de 3.0.
-		public override Interpretacion Interpretar(SerieDeAnalito serie, int edad)
-		{
-			ArgumentNullException.ThrowIfNull(serie);
-
-			EvaluacionDeTendencia hechos = serie.Evaluar();
-			if (!hechos.HaySerie) return Interpretacion.SinSerie(hechos);
-
-			if (hechos.Tendencia.SugiereRepetirElExamen)
-				return new Interpretacion(Veredicto.ProbableErrorDeMedicion, Severidad.Seguimiento,
-					$"cambió {Formato(hechos.Cambio)} {hechos.Unidad} en {hechos.DiasTranscurridos} días, "
-					+ "que es demasiado para el tiempo transcurrido", hechos);
-
-			// EL CASO DEL ANALITO: la velocidad sola alcanza, aunque el valor este en
-			// rango. Va primero por eso.
-			Velocidad velocidad = VelocidadDe(serie);
-			if (velocidad.ExigeAtencion)
-				return new Interpretacion(Veredicto.Empeorando, Severidad.ConsultaMedica,
-					$"viene subiendo a {velocidad.Expresada}, y por encima de "
-					+ $"{Formato(VelocidadQueExigeAtencionPorAno)} {hechos.Unidad} por año conviene mirarlo",
-					hechos);
-
-			if (!EsCambioReal(hechos.Cambio))
-			{
-				// Estable pero por encima del techo de su edad sigue siendo algo que un
-				// medico tiene que ver. Estable no significa bien.
-				return EsNormalPara(edad)
-					? new Interpretacion(Veredicto.Estable, Severidad.Informativo,
-						$"se mantiene alrededor de {Valor.Expresado} desde hace "
-						+ $"{hechos.DiasTranscurridos} días", hechos)
-					: new Interpretacion(Veredicto.Estable, Severidad.ConsultaMedica,
-						$"se mantiene estable, pero en {Valor.Expresado} está por encima de "
-						+ $"lo esperado a tu edad", hechos);
-			}
-
-			return Direccion.EsFavorable(hechos.Cambio)
-				? new Interpretacion(Veredicto.Mejorando, Severidad.Informativo,
-					$"bajó de {hechos.ValorInicial} a {hechos.ValorFinal} {hechos.Unidad}", hechos)
-				: new Interpretacion(Veredicto.Empeorando, Severidad.Seguimiento,
-					$"subió de {hechos.ValorInicial} a {hechos.ValorFinal} {hechos.Unidad} "
-					+ $"en {hechos.DiasTranscurridos} días", hechos);
-		}
-
-		private static string Formato(decimal valor) => valor.ToString("0.##");
+		// LA SERIE ES LA QUE SABE. Lo que este analito puede contestar mirando UNA
+		// medicion se queda aca -su rango, sus umbrales, su direccion-; todo lo que
+		// necesita la historia -velocidad, linea base, confirmacion de un pico- vive en
+		// SerieDeAntigenoProstatico, que es "el plural" que pidio Alvaro.
+		public override SerieContinua NuevaSerie() => new SerieDeAntigenoProstatico();
 	}
 }

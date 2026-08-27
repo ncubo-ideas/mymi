@@ -48,6 +48,82 @@ namespace Examenes.App.Vistas
 		public bool HaySerie { get; init; }
 	}
 
+	// LOS HECHOS DE UNA SERIE BINARIA. Vista aparte de TendenciaDeAnalito porque no
+	// trae lo mismo: un binario no tiene valor inicial ni final ni cambio. Tiene CUANTAS
+	// veces aparecio y —la que cambia la conducta— cuantas SEGUIDAS.
+	//
+	// "Dos seguidas" es lo que hace que una sangre oculta en heces deje de leerse como
+	// "conviene repetir el examen". Ninguna medicion sola puede decirlo.
+	public sealed class PresenciaDeAnalito
+	{
+		public string Analito { get; init; } = "";
+		public string ParaMostrar { get; init; } = "";
+
+		// "apareció", "persiste", "nunca apareció", "no confirmado", "cedió".
+		public string Presencia { get; init; } = "";
+
+		public int Mediciones { get; init; }
+		public int Positivas { get; init; }
+		public int PositivasSeguidas { get; init; }
+		public int Dias { get; init; }
+
+		// El ultimo resultado con el vocabulario de SU analito: "positivo", y en una
+		// serologia seria "reactivo". Es la razon de que la magnitud no sea un bool.
+		public string UltimoResultado { get; init; } = "";
+
+		public bool EstaPresente { get; init; }
+		public bool HaySerie { get; init; }
+	}
+
+	// UNA PRUEBA BINARIA en una fecha: el punto de una tira de presencia. Es el par de
+	// PuntoDeSerie para la forma 5, y no tiene Valor porque no existe "mas positivo".
+	public sealed class PruebaEnSerie
+	{
+		public DateTime Fecha { get; init; }
+		public string Expresado { get; init; } = "";
+		public bool EsPositivo { get; init; }
+		public bool EsHallazgo { get; init; }
+	}
+
+	// LO MAS URGENTE DE TODO EL EXPEDIENTE, en una sola respuesta.
+	//
+	// Es la pregunta con la que una persona ABRE la app —«¿estoy bien?»— y hasta ahora
+	// ninguna carátula la hacía: el dominio la contestaba y nadie escuchaba. Componerla
+	// afuera no era una opción: exige recorrer cada serie, interpretarla con el criterio
+	// de SU analito y quedarse con la mayor, y ordenar severidades es conocimiento del
+	// dominio, no de una pantalla.
+	public sealed class LoMasUrgente
+	{
+		// "informativo", "vigilar", "consulte pronto", "urgente". Es el vocabulario del
+		// semáforo de la marca, unificado en el dominio.
+		public string Severidad { get; init; } = "";
+
+		// Qué hacer y cuándo, ya dicho entero: "mostrále esto a tu médico este mes".
+		// Del conjunto cerrado, con plazo. Vacío cuando no hay nada que hacer.
+		public string Accion { get; init; } = "";
+
+		public bool PideAlgo { get; init; }
+	}
+
+	// UN PUNTO de la serie, con su NUMERO. Es lo que un grafico necesita y una celda del
+	// cuadro no da: aquella trae "3.0 ng/mL" ya dicho, esto trae 3.0.
+	public sealed class PuntoDeSerie
+	{
+		public DateTime Fecha { get; init; }
+		public decimal Valor { get; init; }
+		public string Unidad { get; init; } = "";
+	}
+
+	// UNA LINEA que se dibuja junto a los puntos: la base del antígeno, la meta del
+	// colesterol, el piso de la hemoglobina. Cada analito emite solo las que tiene.
+	public sealed class LineaDeReferencia
+	{
+		public string Nombre { get; init; } = "";
+		public decimal Valor { get; init; }
+		public string Unidad { get; init; } = "";
+		public string ParaSonia { get; init; } = "";
+	}
+
 	// UNA CELDA del cuadro historico, con sus dos indices. Llega plana desde el dominio;
 	// la pantalla la ubica en la grilla y no decide nada. Ver CeldaDelCuadro.
 	public sealed class CeldaEnCuadro
@@ -65,6 +141,22 @@ namespace Examenes.App.Vistas
 		public string ParaSonia { get; init; } = "";
 	}
 
+	// CUANTO HACE que no se mide un analito, y si eso ya es demasiado para el. Ver
+	// ControlPendiente: es la unica vista que habla de lo que NO esta.
+	public sealed class ControlEnEspera
+	{
+		public string Analito { get; init; } = "";
+		public string ParaMostrar { get; init; } = "";
+		public DateTime UltimaMedicion { get; init; }
+		public int DiasDesdeLaUltima { get; init; }
+		public int MesesRecomendados { get; init; }
+		public int DiasQueFaltan { get; init; }
+		public bool EstaVencido { get; init; }
+		public string Severidad { get; init; } = "";
+		public string Accion { get; init; } = "";
+		public string ParaSonia { get; init; } = "";
+	}
+
 	// LO QUE EL ANALITO CONCLUYE. Vista aparte de TendenciaDeAnalito porque son dos capas
 	// distintas: aquella trae los HECHOS de la serie, esta trae la LECTURA de esos hechos
 	// hecha por el analito que sabe interpretarlos.
@@ -78,11 +170,20 @@ namespace Examenes.App.Vistas
 		public string Veredicto { get; init; } = "";
 		public string Severidad { get; init; } = "";
 
+		// COMO se dibuja esta lectura. La pantalla hace un switch sobre esto, y ese switch
+		// SI es presentación legítima: traduce una forma del dominio a píxeles.
+		public string Forma { get; init; } = "";
+
 		// La lectura en una linea, escrita por el analito.
 		public string ParaSonia { get; init; } = "";
 
-		// Que hacer. Vacio cuando no hay nada que hacer, que es la mayoria de las veces.
+		// Que hacer y cuando, ya dicho entero. Vacio cuando no hay nada que hacer, que
+		// es la mayoria de las veces.
 		public string Accion { get; init; } = "";
+
+		// Contra que se lee el valor: "hasta 4.5 ng/mL". Ningun numero va solo en
+		// pantalla, y la referencia la dice el analito, no la UI.
+		public string ReferenciaLegible { get; init; } = "";
 
 		public bool PideAlgo { get; init; }
 		public bool SugiereRepetirElExamen { get; init; }

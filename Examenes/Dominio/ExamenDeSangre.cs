@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 
 namespace Examenes.Dominio
 {
@@ -31,9 +32,13 @@ namespace Examenes.Dominio
 		// `override string Analito` con una constante, y la subclase repetia ademas su
 		// UnidadDeMedida al armar la medicion: dos hechos sobre el mismo analito escritos
 		// en dos lugares, que podian contradecirse. Ahora los dice Analito, una vez.
-		public Analito Analito { get; private set; }
+		// TIPADO COMO CONTINUO, no como Analito a secas. Un examen de sangre mide un numero
+		// con unidad, y necesita la unidad para validar el evento y el rango posible para
+		// rechazar basura. El color de la orina es un analito y no tiene ninguna de las
+		// dos: por eso Analito dejo de exigirlas y ellas bajaron a la forma que si las usa.
+		public AnalitoContinuo Analito { get; private set; }
 
-		protected ExamenDeSangre(DateTime fecha, Analito analito, Medicion valor) : base(fecha)
+		protected ExamenDeSangre(DateTime fecha, AnalitoContinuo analito, Medicion valor) : base(fecha)
 		{
 			ArgumentNullException.ThrowIfNull(analito);
 			ArgumentNullException.ThrowIfNull(valor);
@@ -46,7 +51,7 @@ namespace Examenes.Dominio
 		// constructor a proposito: una llamada virtual desde el constructor de la base
 		// corre antes de que la subclase este inicializada, y funciona solo mientras
 		// nadie la haga depender de un campo. Este helper no tiene ese riesgo.
-		protected static Medicion Medida(decimal valor, string simboloRecibido, Analito analito)
+		protected static Medicion Medida(decimal valor, string simboloRecibido, AnalitoContinuo analito)
 		{
 			ArgumentNullException.ThrowIfNull(analito);
 
@@ -56,12 +61,26 @@ namespace Examenes.Dominio
 					$"{analito.Nombre} se mide en {analito.Unidad.Simbolo}, y el evento lo trajo en {recibida.Simbolo}.",
 					nameof(simboloRecibido));
 
+			// Y la otra guarda de la frontera: un valor que ninguna persona viva podria
+			// tener no es un hallazgo, es un dato malformado. Revienta aca para que no
+			// entre nunca al expediente; la ruta lo atrapa antes y descarta el evento.
+			if (!analito.EsValorPosible(valor))
+				throw new ArgumentOutOfRangeException(nameof(valor), valor,
+					$"{valor} {analito.Unidad.Simbolo} no es un valor posible de "
+					+ $"{analito.Nombre}: lo posible va de {analito.ValorMinimoPosible} a "
+					+ $"{analito.ValorMaximoPosible}.");
+
 			return new Medicion(valor, analito.Unidad);
 		}
 
 		public override bool AportaSerie => true;
 
 		public override string ResultadoExpresado => Valor.Expresado;
+
+		// Un examen de sangre mide UN analito. Es el caso simple, y es justamente por eso
+		// que la forma singular parecia alcanzar para todos.
+		public override IReadOnlyList<LecturaDeExamen> Lecturas =>
+			new[] { new LecturaDeExamen(Analito, Valor) };
 
 		// El rango normal para una edad. Es una funcion de la edad, no una constante:
 		// eso es lo que significa "los rangos por edad van en el codigo del dominio".
@@ -86,22 +105,52 @@ namespace Examenes.Dominio
 		// y no tenia como decir que lo bueno es quedarse quieto.
 		public abstract DireccionDeseable Direccion { get; }
 
-		// LA UNICA OPERACION QUE TODOS LOS ANALITOS TIENEN EN COMUN, y la razon de que la
-		// herencia aca no sea decorativa.
+		// QUE SERIE LEE A ESTE ANALITO. Es la fabrica de "el plural": cada analito dice
+		// cual es su serie, y con eso el Expediente arma la correcta sin un switch.
 		//
-		// No hay un algoritmo generico que reciba umbrales y devuelva el mismo veredicto
-		// para todos: cada analito lee SU serie con SU criterio. Un colesterol bajando
-		// desde un pico y un antigeno subiendo tienen la misma forma y conclusiones
-		// opuestas, y esa diferencia es conocimiento clinico, no configuracion.
+		// Interpretar() ESTABA ACA y se fue a la serie. La razon la dio Alvaro: "eso no es
+		// lo mismo que el conjunto de examenes de antigeno prostatico evaluando su
+		// tendencia". Una medicion sola no puede interpretar una serie; lo hacia recibiendo
+		// la serie por parametro, que es la senal de que el metodo no era suyo.
+		// Devuelve la rama CONTINUA y no la raiz: un examen de sangre no puede producir
+		// una serie binaria, y decirlo en la firma evita tener que comprobarlo despues.
+		public abstract SerieContinua NuevaSerie();
+
+		// EL MULTIPLO QUE NINGUN INTERVALO JUSTIFICA. Es la otra mitad de lo que Alvaro
+		// planteo, y es distinta del rango posible:
 		//
-		// Todo lo demas que cada analito sabe hacer -la velocidad del antigeno, el nivel
-		// habitual del colesterol, el grado de anemia- vive SOLO en el analito que lo
-		// tiene, y no aparece aca. Si un metodo sirve para todos, esta en el nivel
-		// equivocado.
-		// Recibe la EDAD por la misma razon que RangoPara: un veredicto que mira el rango
-		// depende de ella, y el dominio no lee el reloj ni guarda un estado mutable para
-		// esquivarlo.
-		public abstract Interpretacion Interpretar(SerieDeAnalito serie, int edad);
+		//   un valor imposible   -> "esto no es de una persona viva"
+		//   un salto imposible   -> los dos valores pueden ser posibles, y aun asi uno de
+		//                           los dos esta mal
+		//
+		// Alvaro: "si yo ahi pase de 1 a 10 — no senor. Ese brinco no es racional en este
+		// examen." Un PSA de 10 existe y es real; llegar a 10 desde 1 sin que nada se
+		// viera en el medio, no. Y esto la regla de la tasa no lo puede decir: con
+		// suficientes dias entre mediciones, cualquier salto pasa.
+		//
+		// Se expresa como MULTIPLO y no como diferencia absoluta porque es proporcional:
+		// duplicarse desde 1 y duplicarse desde 100 son el mismo hecho clinico.
+		public abstract decimal MultiploQueNingunIntervaloJustifica { get; }
+
+		// CADA CUANTO conviene repetir ESTE analito, en meses.
+		//
+		// No es una constante: depende de la edad y, en varios analitos, de si el ultimo
+		// valor salio en rango. Un colesterol normal se revisa cada varios anos; uno alto,
+		// todos los anos. Por eso es un metodo y no un campo.
+		//
+		// Es lo que permite contestar QUE FALTA, que es distinto de todo lo demas que sabe
+		// este dominio: el resto interpreta lo que hay, esto mira lo que NO esta.
+		//
+		// ⚠️ Las periodicidades son de uso corriente y ORIENTATIVAS. Varian por
+		// antecedentes y criterio medico, y conviene que alguien del area las revise antes
+		// de mostrarlas fuera del equipo.
+		public abstract int MesesHastaElProximo(int edad);
+
+		// Proyecciones planas para el print del DSL, que no navega dos niveles. Es lo que
+		// permite que un grafico reciba NUMEROS y no el texto "3.0 ng/mL".
+		public decimal ValorNumerico => Valor.Valor;
+
+		public string UnidadDelValor => Valor.Unidad.Simbolo;
 
 		public ClasificacionDeValor ClasificarPara(int edad) => RangoPara(edad).Clasificar(Valor);
 

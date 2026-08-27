@@ -1,0 +1,110 @@
+# Huecos — lo que `Preguntas.md` no alcanzó a decidir
+
+El dominio de este directorio se construyó **únicamente con `Preguntas.md` en la mano**, sin volver a
+preguntarle nada a nadie. Esa era la prueba: *¿alcanza el archivo para modelar?*
+
+**Alcanzó para cinco de los ocho juicios y para las cinco preguntas.** Los ocho huecos de abajo son lo
+que faltó. Cada uno está marcado también en el código, en el lugar donde muerde.
+
+Regla que se siguió al toparse con cada uno: **tomar la decisión mínima —la que no inventa un
+juicio— y dejarla a la vista.** Nunca rellenar con algo plausible.
+
+---
+
+## Los ocho
+
+| # | Qué falta | Dónde muerde | Qué se hizo mientras tanto |
+|---|---|---|---|
+| **1** | **Cómo se establece la identidad de un gasto recurrente.** Ya venía declarado PENDIENTE en el propio archivo | `GastoRecurrente.cs` | El gasto **recibe** los textos con los que responde; no los deduce. Es lo único que no inventa un juicio |
+| **2** | **Cómo entra al total mensual lo que no es mensual** | `Periodicidad.cs`, `Panorama.VarianciaDe` | No se prorratea, que es lo que el archivo literalmente dice. **Y eso rompe el juicio 2** |
+| **3** | **La moneda.** No aparece ni una vez en `Preguntas.md` | `Cargo.cs` | Un solo monto sin moneda |
+| **4** | **Para qué sirve el medio de pago.** Está listado como atributo y **ninguna de las cinco preguntas lo usa** | `Cargo.cs` | Se guarda, sin saber si es capacidad o ruido |
+| **5** | **Qué convierte a un gasto en "responsable"** del movimiento del total | `VarianciaDelMes.cs` | Se listan **todos** los que cambiaron, ordenados por monto absoluto |
+| **6** | **Cuánto vale un bien** | `Bien.cs` | Opcional. Sin valor se contesta en plata y **se dice** que el porcentaje no está disponible |
+| **7** | **Cómo se fija un presupuesto** | `Panorama.CargosQueNadieReconocio` | Se aproxima por "lo que ningún gasto recurrente reconoció", que **es otra cosa** |
+| **8** | **Cuánto se puede reducir** de un gasto reducible | `MargenParaRecortar.cs` | Se pone sobre la mesa cuánto hay en cada estado, sin decir si alcanza |
+
+---
+
+## Los tres que más duelen
+
+### 7 · La app se llama Presupuesto y el archivo no define el presupuesto
+
+Es el más grande y el más fácil de no ver. `Preguntas.md` usa la palabra *"presupuestado"* como si
+estuviera definida —el juicio 8 dice que un imprevisto es **lo no presupuestado**— y en ningún lado
+dice **quién fija un presupuesto, por categoría o total, por mes o por año**.
+
+Sin eso, *"lo no presupuestado"* sólo se puede aproximar por *"lo que ningún gasto recurrente
+reconoció"*, que no es lo mismo: un gasto conocido que este mes salió al doble **estaba**
+presupuestado y aun así se disparó.
+
+La entrevista nunca preguntó esto porque el bloque 2 va detrás de las **preguntas**, y "cómo se fija
+un presupuesto" es una **capacidad**. Cayó justo en el punto ciego del guion.
+
+### 2 · El juicio 2 se rompe solo, y de una forma que nadie va a diagnosticar
+
+El umbral del 10 % se vigila sobre el total mensual. Un seguro anual que cae entero en marzo dispara
+ese umbral **sin que haya pasado absolutamente nada**: es el pago de siempre, en su mes de siempre.
+
+O se prorratea —y entonces "el total mensual" deja de ser lo que se gastó y pasa a ser lo que se
+devengó, que es una decisión con consecuencias— o el umbral tiene que saber distinguir. El archivo no
+lo decidió, y el código deja el falso positivo **a la vista** en vez de taparlo con una decisión que
+nadie tomó.
+
+### 8 · La pregunta 3 no se puede contestar, sólo enmarcar
+
+*"Con esta mensualidad nueva, ¿qué gastos puedo reducir?"* necesita saber **cuánto** se recorta de
+cada gasto reducible. ¿El 100 % del streaming? ¿El 30 % de los restaurantes? Sin eso,
+`MargenParaRecortar` no puede decir *"te alcanza"*: sólo puede decir cuánto hay en cada estado y
+declarar que falta un dato.
+
+Se prefirió eso a inventar el número, porque el número inventado **no revienta nunca**: da una
+respuesta creíble y equivocada cada vez.
+
+---
+
+## Lo que sí alcanzó, y vale registrarlo
+
+Cinco de los ocho juicios pasaron a código sin consultar nada, y tres de ellos produjeron
+**estructura**, no configuración:
+
+- **El juicio 5** —la severidad la decide el compromiso, no el monto— es lo que hace que
+  `CuotaDePrestamo` y `PagoDeTarjetaDeCredito` sean clases y no etiquetas.
+- **El juicio 6** produjo `Reducibilidad` con **tres** estados y no un booleano. Sin el tercero, un
+  gasto sin marcar se contaría como no recortable y la pregunta 3 **subestimaría en silencio**.
+- **El juicio 8** —la tasa se cuenta sobre eventos, no sobre cargos— es toda la razón de que
+  `Imprevisto` exista como agregador.
+
+La estructura de tres partes del archivo se mapeó sola: la **capacidad** fue el esqueleto de tipos,
+los **juicios** fueron miembros de esos tipos, y la **UI** no hizo falta para nada, que es
+exactamente lo que la doctrina predice.
+
+---
+
+## Y tres hallazgos que no son del archivo sino de las guías
+
+**La raíz no se llama como el negocio, y ningún capítulo lo dice.** El primer intento nombró la raíz
+`Presupuesto` dentro del namespace `Presupuesto.Dominio` y chocó. En el repo la convención es
+uniforme y tácita: Exámenes tiene `Expediente`, Compras tiene `Historial`. Acá quedó `Panorama`. El
+capítulo 3 debería decirlo.
+
+**La pregunta 3 no tiene doctrina.** Es **hacia adelante y contrafáctica**, y el capítulo 4 está
+construido enteramente sobre leer la serie del pasado. No es que esté mal contestada: es que las
+guías no saben explicar esta clase de pregunta.
+
+**Un `override` faltante desactivó un invariante en silencio.** `EsConsumo` quedó como método que
+**oculta** en vez de sobrescribir, así que la guarda contra contar dos veces cada compra con tarjeta
+no habría funcionado: `Panorama` la consulta por la referencia base. El compilador lo avisó como
+warning y la comprobación lo habría cazado. Es el argumento más concreto que hay para que la carátula
+de consola exista desde el primer día.
+
+---
+
+## Cómo se corre
+
+```bash
+dotnet run --project Metodologia/Pruebas/Presupuesto/App/Presupuesto.Consola -- comprobar
+```
+
+**31 comprobaciones**, sin actor, sin journal y sin disco. Cuando una falla, lo que se rompió es una
+regla del negocio y no una tubería.

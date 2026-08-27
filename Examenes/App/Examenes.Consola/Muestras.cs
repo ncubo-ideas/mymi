@@ -30,6 +30,9 @@ namespace Examenes.Consola
 
 		internal static SenalDeEvento[] LaHistoria() => new[]
 		{
+			// --- un perfil lipidico viejo: lo que hace visible "que falta medir" ---
+			Fraccionado(200, "2022-11-01T08:30:00", "150", "38"),
+
 			// --- linea base del antigeno: tres anos de estabilidad ---
 			Sangre(201, "AntigenoProstatico", "2023-08-21T09:10:00", "3.0", "ng/mL"),
 			Sangre(202, "AntigenoProstatico", "2024-08-21T09:05:00", "3.1", "ng/mL"),
@@ -44,13 +47,23 @@ namespace Examenes.Consola
 
 			// --- relleno con modelo real, no adorno ---
 			Sangre(207, "Hemoglobina", "2026-08-21T08:32:00", "14.2", "g/dL"),
-			Orina(208, "2026-08-21T08:33:00", "ambar"),
+			Orina(208, "2026-08-21T08:33:00", "ambar", "negativo", "negativo"),
 
 			// EL CONTRASTE DE ALVARO. Una sangre oculta positiva en heces se lee
 			// "conviene revisarlo"; el MISMO positivo en la orina no espera a la proxima
 			// cita. Misma forma de magnitud, distinta conducta, y la diferencia vive en el
 			// analito.
-			Heces(209, "2026-08-21T08:34:00", "chocolate", "positivo"),
+			Heces(209, "2026-08-21T08:34:00", "marrón", "positivo"),
+
+			// LA HISTORIA DE LOS BINARIOS, con ids posteriores y fechas anteriores: es el
+			// caso de la carga atrasada, y el mismo orden con el que URL2 los siembra.
+			//
+			// Sin esto, el positivo del 209 es un dato suelto y lo unico que se puede
+			// decir es "conviene repetir el examen". Con negativo en 2024 y positivo en
+			// 2025, ya se repitio y volvio a salir — y eso pide otra cosa.
+			Heces(210, "2024-08-21T09:15:00", "marrón", "negativo"),
+			Heces(211, "2025-08-21T08:45:00", "marrón", "positivo"),
+			Orina(212, "2025-08-21T08:44:00", "amarillo palido", "negativo", "negativo"),
 		};
 
 		private static SenalDeEvento Sangre(long id, string examen, string fecha, string valor, string unidad) =>
@@ -62,6 +75,15 @@ namespace Examenes.Consola
 				""unidad"": ""{unidad}""
 			}}");
 
+		private static SenalDeEvento Fraccionado(long id, string fecha, string ldl, string hdl) =>
+			new SenalDeEvento(id, "ExamenAgregado", $@"{{
+				""id"": {id}, ""tipo"": ""ExamenAgregado"",
+				""examen"": ""ColesterolDetallado"",
+				""fecha"": ""{fecha}"",
+				""valor"": {ldl}, ""valorSecundario"": {hdl},
+				""unidad"": ""mg/dL""
+			}}");
+
 		private static SenalDeEvento Heces(long id, string fecha, string color, string sangre) =>
 			new SenalDeEvento(id, "ExamenAgregado", $@"{{
 				""id"": {id}, ""tipo"": ""ExamenAgregado"",
@@ -71,17 +93,23 @@ namespace Examenes.Consola
 				""sangre"": ""{sangre}""
 			}}");
 
-		private static SenalDeEvento Orina(long id, string fecha, string color) =>
+		// La tira ENTERA, igual que la emite URL2. Este arnes traia solo el color, y esa
+		// diferencia con el mock ya escondio un defecto una vez: lo que la consola no
+		// manda, la consola no puede medir.
+		private static SenalDeEvento Orina(long id, string fecha, string color,
+			string nitritos, string sangre) =>
 			new SenalDeEvento(id, "ExamenAgregado", $@"{{
 				""id"": {id}, ""tipo"": ""ExamenAgregado"",
 				""examen"": ""Orina"",
 				""fecha"": ""{fecha}"",
-				""color"": ""{color}""
+				""color"": ""{color}"",
+				""nitritos"": ""{nitritos}"",
+				""sangre"": ""{sangre}""
 			}}");
 
 		// Lo que la historia tiene que dar. Son los criterios de la fase 1: si esto no
 		// sale asi, el dominio no esta contando la historia que la demo promete.
-		internal const int ExamenesEsperados = 9;
+		internal const int ExamenesEsperados = 13;
 		internal const string TendenciaEsperadaDelAntigeno = "en ascenso";
 		internal const string TendenciaEsperadaDelColesterol = "en ascenso";
 

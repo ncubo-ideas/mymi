@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 
 namespace Examenes.Dominio
 {
@@ -74,6 +75,30 @@ namespace Examenes.Dominio
 			}
 		}
 
+		// TRES COSAS MEDIDAS, y cada una es un analito. Las que el laboratorio no corrio no
+		// aparecen: una prueba no realizada no es una lectura vacia, es una lectura que no
+		// existe. Es el mismo criterio que la celda vacia del historial.
+		public override IReadOnlyList<LecturaDeExamen> Lecturas
+		{
+			get
+			{
+				var lecturas = new List<LecturaDeExamen>
+				{
+					new LecturaDeExamen(Examenes.Dominio.Analito.ColorDeLaOrina, Color),
+				};
+
+				if (Nitritos.FueRealizada)
+					lecturas.Add(new LecturaDeExamen(
+						Examenes.Dominio.Analito.NitritosEnOrina, Nitritos));
+
+				if (Sangre.FueRealizada)
+					lecturas.Add(new LecturaDeExamen(
+						Examenes.Dominio.Analito.SangreEnLaOrina, Sangre));
+
+				return lecturas;
+			}
+		}
+
 		public bool ColorEsEsperable => Color.EsEsperable;
 
 		// Si este examen encontro algo que merece mirarse. Lo contesta preguntandole a
@@ -92,7 +117,7 @@ namespace Examenes.Dominio
 		{
 			get
 			{
-				Severidad mayor = Color.EsEsperable ? Severidad.Informativo : Severidad.Seguimiento;
+				Severidad mayor = Color.EsEsperable ? Severidad.Informativo : Severidad.Vigilar;
 				mayor = Severidad.LaMayor(mayor, Nitritos.SeveridadDelHallazgo);
 				return Severidad.LaMayor(mayor, Sangre.SeveridadDelHallazgo);
 			}

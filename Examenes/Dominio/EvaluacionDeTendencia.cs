@@ -2,8 +2,8 @@ using System;
 
 namespace Examenes.Dominio
 {
-	// El resultado de evaluar la serie de un analito: la conclusion mas los hechos con
-	// los que se llego a ella.
+	// El resultado de evaluar la serie de un analito CONTINUO: la conclusion mas los
+	// hechos con los que se llego a ella.
 	//
 	// Devuelve los HECHOS, no una frase armada. El dominio concluye "en ascenso, de 200
 	// a 280 mg/dL en 365 dias"; quien redacta la oracion es la superficie - la UI o la
@@ -11,21 +11,15 @@ namespace Examenes.Dominio
 	// colesterol subio de 200 a 280 en un ano" y no se puede decir "baje las grasas",
 	// porque el dominio no tiene de donde sacar eso.
 	//
+	// YA NO ES EL UNICO TIPO DE HECHOS. Cuelga de HechosDeLaSerie, y su hermano es
+	// EvaluacionDePresencia. Esta clase quedo con lo que es de una magnitud continua
+	// -primero, ultimo, dias, cambio- y de ahi para arriba solo subio lo que de verdad
+	// tiene cualquier serie. Un binario no tiene "cambio de 80"; tiene "apareció".
+	//
 	// Carrier por identidad: sin Equals, sin GetHashCode, no es llave de nada.
-	public class EvaluacionDeTendencia
+	public class EvaluacionDeTendencia : HechosDeLaSerie
 	{
-		// El nombre CANONICO del analito. Sigue siendo una cadena y no la identidad a
-		// proposito: esto es un carrier de proyeccion, cruza al DSL y de ahi a JSON, y del
-		// otro lado nadie puede comparar por referencia. La identidad vive en el dominio;
-		// lo que sale es su nombre.
-		public string Analito { get; private set; }
-
-		// El mismo analito escrito como se le muestra a la persona, con acentos. Va al
-		// lado del canonico y no en su lugar porque son dos cosas: uno es la llave con la
-		// que se pregunta, el otro es el texto que se lee.
-		public string AnalitoParaMostrar { get; private set; }
 		public Tendencia Tendencia { get; private set; }
-		public int CantidadDeMediciones { get; private set; }
 
 		// Null cuando no hay ninguna medicion.
 		public Medicion Primero { get; private set; }
@@ -43,14 +37,11 @@ namespace Examenes.Dominio
 		// Interpretacion, que la produce el analito.
 		public EvaluacionDeTendencia(Analito analito, Tendencia tendencia, int cantidadDeMediciones,
 			Medicion primero, Medicion ultimo, int diasTranscurridos, decimal cambio)
+			: base(analito, cantidadDeMediciones)
 		{
-			ArgumentNullException.ThrowIfNull(analito);
 			ArgumentNullException.ThrowIfNull(tendencia);
 
-			Analito = analito.Nombre;
-			AnalitoParaMostrar = analito.ParaMostrar;
 			Tendencia = tendencia;
-			CantidadDeMediciones = cantidadDeMediciones;
 			Primero = primero;
 			Ultimo = ultimo;
 			DiasTranscurridos = diasTranscurridos;
@@ -62,13 +53,24 @@ namespace Examenes.Dominio
 			new EvaluacionDeTendencia(analito, Tendencia.Indeterminada, cantidadDeMediciones,
 				unico, unico, 0, 0m);
 
+		// ESTE ANALITO NO SE LEE POR TENDENCIA. Es la respuesta para un binario, y no es
+		// lo mismo que SinSerie: ahi faltan mediciones, aca la pregunta no le corresponde
+		// a ese analito por mas mediciones que tenga.
+		//
+		// Existe porque EvaluarTendenciaDe es TOTAL -la superficie pregunta sin saber que
+		// forma tiene enfrente- y contestar "indeterminada" seria decirle que le faltan
+		// examenes. Es el mismo caso que Velocidad.NoAplica, que ya estaba.
+		public static EvaluacionDeTendencia NoAplica(Analito analito, int cantidadDeMediciones) =>
+			new EvaluacionDeTendencia(analito, Tendencia.NoAplica, cantidadDeMediciones,
+				null, null, 0, 0m);
+
 		// Proyecciones escalares, para que la superficie no tenga que abrir los objetos
 		// ni el print tenga que navegar dos niveles.
 		public string NombreDeLaTendencia => Tendencia.Nombre;
+		public override string NombreDeLaLectura => Tendencia.Nombre;
 		public decimal ValorInicial => Primero == null ? 0m : Primero.Valor;
 		public decimal ValorFinal => Ultimo == null ? 0m : Ultimo.Valor;
 		public string Unidad => Ultimo == null ? "" : Ultimo.Unidad.Simbolo;
-		public bool SugiereRepetirElExamen => Tendencia.SugiereRepetirElExamen;
-		public bool HaySerie => CantidadDeMediciones >= 2;
+		public override bool SugiereRepetirElExamen => Tendencia.SugiereRepetirElExamen;
 	}
 }

@@ -25,6 +25,25 @@ public enum Analito
 	Hemoglobina,
 }
 
+/// <summary>
+/// Los analitos BINARIOS: los que se informan como presencia o ausencia. Conjunto cerrado.
+/// </summary>
+///
+/// Es un enum aparte y no tres valores mas del otro, y esa separacion es el contrato: las
+/// preguntas que se les pueden hacer NO son las mismas. Un nitrito no viene subiendo ni
+/// tiene velocidad; aparece, persiste o cede. Poner los siete en un enum unico dejaria que
+/// la IA pidiera `velocidad_de(SangreEnOrina)` y recibiera una respuesta vacia que despues
+/// tendria que interpretar.
+///
+/// Con dos enums el schema mismo lo impide, que es el mismo argumento por el que estos
+/// valores no son strings: la restriccion vive en el contrato y no en la prosa.
+public enum AnalitoBinario
+{
+	Nitritos,
+	SangreEnOrina,
+	SangreEnHeces,
+}
+
 internal static class AnalitoDelDominio
 {
 	/// <summary>
@@ -51,5 +70,14 @@ internal static class AnalitoDelDominio
 		Analito.Hemoglobina        => Examenes.Dominio.Analito.Hemoglobina.Nombre,
 		_ => throw new ArgumentOutOfRangeException(nameof(analito), analito,
 			"Se agregó un analito al enum y no se lo mapeó al dominio."),
+	};
+
+	internal static string Nombre(this AnalitoBinario analito) => analito switch
+	{
+		AnalitoBinario.Nitritos      => Examenes.Dominio.Analito.NitritosEnOrina.Nombre,
+		AnalitoBinario.SangreEnOrina => Examenes.Dominio.Analito.SangreEnLaOrina.Nombre,
+		AnalitoBinario.SangreEnHeces => Examenes.Dominio.Analito.SangreEnLasHeces.Nombre,
+		_ => throw new ArgumentOutOfRangeException(nameof(analito), analito,
+			"Se agregó un analito binario al enum y no se lo mapeó al dominio."),
 	};
 }
