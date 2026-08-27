@@ -1,0 +1,238 @@
+using System;
+using System.Collections.Generic;
+
+namespace Cargas.Dominio
+{
+	/// <summary>
+	/// LA RAIZ AGREGADA: todo lo que Sonia ha cargado, con sus vehiculos y su lealtad.
+	/// Analoga al Expediente de examenes y al Facturario de facturas. La atribucion es
+	/// automatica: cada carga trae su placa, y el vehiculo se crea solo -con la placa
+	/// como unico dato- la primera vez que aparece.
+	/// </summary>
+	// Los indices se llavean por TEXTO normalizado (placa, transaccion), no por el
+	// objeto: los objetos de este dominio se comparan por identidad y no son llave de
+	// nada. Los conjuntos cerrados (Moneda) si pueden llavear, porque su identidad de
+	// referencia es unica por miembro.
+	public sealed class BitacoraDeCargas
+	{
+		private readonly Dictionary<string, Vehiculo> vehiculosPorPlaca =
+			new Dictionary<string, Vehiculo>();
+
+		private readonly Dictionary<string, Carga> cargasPorTransaccion =
+			new Dictionary<string, Carga>(StringComparer.OrdinalIgnoreCase);
+
+		// El orden de llegada de las placas, para que la lista de vehiculos sea estable.
+		private readonly List<Vehiculo> vehiculos = new List<Vehiculo>();
+
+		public ProgramaDeLealtad Lealtad { get; private set; }
+
+		public BitacoraDeCargas()
+		{
+			Lealtad = new ProgramaDeLealtad();
+		}
+
+		// ------------------------------------------------------ lo que publica la estacion
+
+		public void Agregar(Carga carga)
+		{
+			ArgumentNullException.ThrowIfNull(carga);
+
+			// Dos hechos con la misma transaccion son un defecto del emisor: la guarda
+			// del evento ya paro los reintentos, asi que esto no es un redelivery.
+			if (cargasPorTransaccion.ContainsKey(carga.Transaccion.Texto))
+				throw new ErrorDeDominio(
+					$"Ya hay una carga con la transaccion {carga.Transaccion.Texto}: "
+					+ "la institucion emitio dos hechos con la misma identidad.");
+
+			Vehiculo vehiculo = ObtenerOCrear(carga.Placa);
+			vehiculo.Agregar(carga);
+			cargasPorTransaccion[carga.Transaccion.Texto] = carga;
+		}
+
+		private Vehiculo ObtenerOCrear(Placa placa)
+		{
+			if (vehiculosPorPlaca.TryGetValue(placa.Texto, out Vehiculo existente))
+				return existente;
+
+			var vehiculo = new Vehiculo(placa);
+			vehiculosPorPlaca[placa.Texto] = vehiculo;
+			vehiculos.Add(vehiculo);
+			return vehiculo;
+		}
+
+		public void AcreditarPuntos(int puntos)
+		{
+			Lealtad.Acreditar(new Puntos(puntos));
+		}
+
+		public void ActualizarNivel(string nivel)
+		{
+			Lealtad.ActualizarNivel(NivelDeLealtad.PorNombre(nivel));
+		}
+
+		// ---------------------------------------------------------- los aportes de Sonia
+
+		// Las guardas de decision son totales -deciden sin reventar- porque alimentan el
+		// Check de un comando: un aporte rechazado no debe dejar entrada en el journal.
+		// Las operaciones si revientan ante lo imposible: son la segunda linea.
+
+		/// <summary>Si la transaccion existe. Total: la query de reconocimiento que
+		/// acompana a la lectura guardada (CargaDe).</summary>
+		public bool ConoceTransaccion(string transaccion) =>
+			!string.IsNullOrWhiteSpace(transaccion)
+			&& cargasPorTransaccion.ContainsKey(transaccion.Trim());
+
+		/// <summary>Revienta ante una transaccion desconocida: devolver "nada" mentiria,
+		/// porque confundiria "no existe la carga" con "no tiene aportes".</summary>
+		public Carga CargaDe(string transaccion)
+		{
+			ArgumentNullException.ThrowIfNullOrWhiteSpace(transaccion);
+			if (!cargasPorTransaccion.TryGetValue(transaccion.Trim(), out Carga carga))
+				throw new ErrorDeDominio(
+					$"No hay una carga con la transaccion {transaccion}: consultar antes "
+					+ "ConoceTransaccion.");
+			return carga;
+		}
+
+		/// <summary>La guarda del comando AnotarOdometro: la carga existe y el
+		/// kilometraje es coherente con la serie (el odometro no retrocede).</summary>
+		public bool PuedeAnotarOdometro(string transaccion, decimal kilometros, string unidad)
+		{
+			if (!ConoceTransaccion(transaccion)) return false;
+			if (kilometros <= 0m) return false;
+
+			Carga carga = CargaDe(transaccion);
+			decimal enKilometros = UnidadDeDistancia.PorSimbolo(unidad).EnKilometros(kilometros);
+			return VehiculoDe(carga.Placa.Texto).EsKilometrajeCoherente(carga, enKilometros);
+		}
+
+		public void AnotarOdometro(string transaccion, decimal kilometros, string unidad,
+			string origen)
+		{
+			Carga carga = CargaDe(transaccion);
+			VehiculoDe(carga.Placa.Texto).ExigirKilometrajeCoherente(carga,
+				UnidadDeDistancia.PorSimbolo(unidad).EnKilometros(kilometros));
+			carga.AnotarOdometro(kilometros, unidad, origen);
+		}
+
+		public void DeclararTanque(string transaccion, string estado)
+		{
+			CargaDe(transaccion).DeclararTanque(estado);
+		}
+
+		/// <summary>La guarda de ConfirmarTanque: hay una inferencia esperando.</summary>
+		public bool PuedeConfirmarTanque(string transaccion) =>
+			ConoceTransaccion(transaccion) && CargaDe(transaccion).TieneInferenciaSinConfirmar;
+
+		public void ConfirmarTanque(string transaccion)
+		{
+			CargaDe(transaccion).ConfirmarTanque();
+		}
+
+		public void AdjuntarFoto(string transaccion, string nombreDeArchivo)
+		{
+			CargaDe(transaccion).AdjuntarFoto(nombreDeArchivo);
+		}
+
+		/// <summary>La ficha entra con primitivos del wire y escala aca: el cero en el
+		/// rendimiento de fabrica es el "no lo se" del formulario, y se convierte en el
+		/// tipo de ausencia antes de tocar el dominio.</summary>
+		public void CompletarFicha(string placa, string alias, string marca, string modelo,
+			int anio, string color, decimal rendimientoDeFabricaKmPorLitro)
+		{
+			RendimientoDeFabrica deFabrica = rendimientoDeFabricaKmPorLitro > 0m
+				? RendimientoDeFabrica.Declarado(rendimientoDeFabricaKmPorLitro)
+				: RendimientoDeFabrica.SinDato;
+
+			VehiculoDe(new Placa(placa).Texto).CompletarFicha(
+				FichaDelVehiculo.Completada(alias, marca, modelo, anio, color, deFabrica));
+		}
+
+		// ------------------------------------------------------------------- consultas
+
+		public int Cantidad => cargasPorTransaccion.Count;
+		public int CantidadDeVehiculos => vehiculos.Count;
+
+		public IReadOnlyList<Vehiculo> Vehiculos => vehiculos;
+
+		/// <summary>Total: la query de reconocimiento que acompana a VehiculoDe.</summary>
+		public bool ConocePlaca(string placa) =>
+			!string.IsNullOrWhiteSpace(placa)
+			&& vehiculosPorPlaca.ContainsKey(new Placa(placa).Texto);
+
+		/// <summary>Revienta ante una placa desconocida: quien pregunta por un vehiculo
+		/// concreto tiene un defecto si no existe.</summary>
+		public Vehiculo VehiculoDe(string placa)
+		{
+			ArgumentNullException.ThrowIfNullOrWhiteSpace(placa);
+			string llave = new Placa(placa).Texto;
+			if (!vehiculosPorPlaca.TryGetValue(llave, out Vehiculo vehiculo))
+				throw new ErrorDeDominio(
+					$"No hay un vehiculo con la placa {llave}: consultar antes ConocePlaca.");
+			return vehiculo;
+		}
+
+		public IReadOnlyList<Carga> CargasDe(string placa) => VehiculoDe(placa).Cargas;
+
+		public IReadOnlyList<Tramo> TramosDe(string placa) => VehiculoDe(placa).Serie().Tramos;
+
+		public EvaluacionDeRendimiento EvaluarRendimientoDe(string placa) =>
+			VehiculoDe(placa).Evaluar();
+
+		public LineaBaseDeRendimiento LineaBaseDe(string placa) =>
+			VehiculoDe(placa).Serie().LineaBase;
+
+		public CapacidadEstimadaDeTanque CapacidadDe(string placa) =>
+			VehiculoDe(placa).Capacidad();
+
+		public AutonomiaEstimada AutonomiaDe(string placa) => VehiculoDe(placa).Autonomia();
+
+		public CompletitudDeDatos CompletitudDe(string placa) =>
+			VehiculoDe(placa).Completitud();
+
+		public IReadOnlyList<FaltanteDeDato> FaltantesDe(string placa) =>
+			VehiculoDe(placa).Faltantes();
+
+		public ProyeccionDeOdometro OdometroEstimadoDe(string placa, DateTime hoy) =>
+			VehiculoDe(placa).OdometroEstimado(hoy);
+
+		public IReadOnlyList<CostoPorDistanciaEnMoneda> CostoPorDistanciaDe(string placa) =>
+			VehiculoDe(placa).CostoPorDistancia();
+
+		public IReadOnlyList<PrecioEnElTiempo> PreciosDe(string placa) =>
+			VehiculoDe(placa).Precios();
+
+		/// <summary>El gasto de un mes, POR MONEDA y sobre todos los vehiculos: es la
+		/// pregunta de la billetera, no la del carro.</summary>
+		public IReadOnlyList<GastoEnMoneda> GastoDelPeriodo(int anio, int mes)
+		{
+			var montos = new Dictionary<Moneda, GastoAcumulado>();
+			foreach (Carga carga in cargasPorTransaccion.Values)
+			{
+				if (carga.Fecha.Year != anio || carga.Fecha.Month != mes) continue;
+
+				if (!montos.TryGetValue(carga.Total.Moneda, out GastoAcumulado acumulado))
+				{
+					acumulado = new GastoAcumulado();
+					montos[carga.Total.Moneda] = acumulado;
+				}
+				acumulado.Monto += carga.Total.Monto;
+				acumulado.Cargas++;
+				acumulado.Litros += carga.Volumen.EnLitros;
+			}
+
+			var filas = new List<GastoEnMoneda>();
+			foreach (KeyValuePair<Moneda, GastoAcumulado> par in montos)
+				filas.Add(new GastoEnMoneda(par.Key, par.Value.Monto, par.Value.Cargas,
+					par.Value.Litros));
+			return filas;
+		}
+
+		private sealed class GastoAcumulado
+		{
+			internal decimal Monto;
+			internal int Cargas;
+			internal decimal Litros;
+		}
+	}
+}

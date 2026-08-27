@@ -1,0 +1,132 @@
+{
+  "//": "EL MANIFIESTO DEL MODULO. En el modelo objetivo un modulo es dominio + repertorio + view + manifiesto (Metodologia/Guias/00-arquitectura-clientecentrica.md), y esta es la cuarta parte. Lo lee el Host Gnothi, no el browser: no confundir con App/Cargas.Wasm/wwwroot/manifest.webmanifest, que es el estandar PWA y lo lee el browser al instalar.",
+
+  "//hoy-no-tiene-lector": "NO HAY HOST TODAVIA. Nada en el repo lee este archivo, y por un rato es una DECLARACION, no una integracion. Se escribe igual porque es el lugar donde tiene que vivir lo que hoy esta disperso: las instrucciones enterradas en Cargas.Mcp/Program.cs, la ruta de URL2 dentro del Portador, y el catalogo de permisos de la IA.",
+
+  "//que-NO-va-aca": "Nada que el Host pueda enumerar solo. IActorIntrospection ya le da simbolos, clases, acciones en DSL canonico, pools de parametros, reacciones y entradas del journal, sin cooperacion del modulo. El manifiesto es lo que NO se deduce del DLL: intencion, politica y contexto.",
+
+  "id": "cr.faro.cargas",
+  "nombre": "Mis cargas",
+
+  "version": {
+    "//": "Dos versiones y no una: el repertorio cambia por otra razon que el codigo. La estacion actualiza una tasa de puntos y el dominio no se toca; separadas, el Host puede actualizar repertorio sin re-verificar el dominio.",
+    "dominio": "0.1.0",
+    "repertorio": "2026.08"
+  },
+
+  "institucion": {
+    "//": "El emisor del modulo. La marca es FICTICIA y PROVISIONAL —Faro es la propuesta del brief, pendiente de la especificacion de Geaninna— y por acuerdo de equipo vive solo en los assets y en PaginaDeDescarga; entra aca porque el Host tiene que poder decirle a la persona de quien es este modulo.",
+    "nombre": "Estaciones Faro",
+    "url1": "http://localhost:8110/"
+  },
+
+  "marca": {
+    "//": "Lo que hoy esta en manifest.webmanifest. ⚠️ PALETA PROVISIONAL: el teal petroleo y el cobre son el candidato del brief §3, a la espera de la pagina y la especificacion de Geaninna. La restriccion que si esta fijada: el semaforo verde/ambar/rojo queda reservado a estados, y el navy #123f6d ya es de Delfos.",
+    "shortName": "Mis cargas",
+    "lang": "es",
+    "themeColor": "#0B3C49",
+    "backgroundColor": "#0B3C49",
+    "iconos": ["icon-192.png", "icon-512.png"]
+  },
+
+  "journal": {
+    "//": "La arena de este modulo. Cada modulo tiene la suya y no se ven entre si.",
+    "carpetaPorDefecto": "CargasMCP",
+    "//carpeta": "Es un NOMBRE, no una ruta: la carpeta concreta la elige la persona al instalar. El MCP hoy cae a UserProfile/Cargas-journal si no le pasan una.",
+
+    "reconstruible": false,
+    "//reconstruible": "EL CAMPO QUE NO SE DEDUCE DEL CODIGO, y ESTE MODULO ES EL PRIMERO EN PONERLO EN FALSE. La mitad de cada carga viene de la institucion y vuelve con un Refresh; la otra mitad —el kilometraje, la confirmacion del tanque, la ficha del vehiculo— la aporto la persona y NO ESTA EN NINGUN OTRO LADO. Borrar esta carpeta pierde los aportes y con ellos todos los tramos: el Host no puede vaciar esta arena sin costo. Es exactamente el caso que el manifiesto de examenes anticipaba al declarar true.",
+
+    "bytesPorEvento": 150,
+    "//bytesPorEvento": "Declarado, no medido: una CargaRegistrada trae mas campos que un examen (surtidor, precio, corte, placa, transaccion). Sirve para que el Host compare contra lo real y detecte desviacion."
+  },
+
+  "red": {
+    "//": "LA RED ES DEL MECANISMO, NUNCA DEL DOMINIO. Hoy este GET lo hace Puppets.Portador detras de IFuenteDeEventos; en el modelo objetivo lo hace el Host. Sin estos campos el Host no puede reemplazar al Portador.",
+    "recurso": "cargas",
+    "id": "1",
+    "eventos": "{url2}/cargas/{id}/events?after={cursor}",
+    "cursor": "after",
+    "//cursor": "Lo lleva el modulo, en bitacora.UltimoEvento. Refrescar es barato y repetible: se pide desde donde quedo.",
+    "scope": "cargas.events.read",
+    "//scope": "Scope minimo y explicito. La app NO es cliente de los servicios generales de la estacion: lo unico que pide es su propia narrativa. URL2 lo hace falsable con un senuelo —GET cargas/{id}/perfil devuelve 403 con el token valido de la app, porque exige cargas.profile.read—, asi que un token robado del dispositivo sirve para leer las propias cargas y nada mas.",
+    "token": {
+      "obtener": "POST {url2}/device/token",
+      "rotar": "POST {url2}/device/refresh",
+      "//": "Access token corto (900 s, y se hace cumplir), refresh token durable y rotatorio, atado al device."
+    },
+    "//url2-en-desarrollo": "http://localhost:8111/. La app la resuelve como 'eventos/' RELATIVA al origen que la sirvio, a proposito: una URL absoluta con localhost adentro no funciona desde un telefono, y https no puede llamar a http."
+  },
+
+  "aporta": {
+    "//": "LO NUEVO DE ESTE MODULO respecto de examenes: la persona no solo lee, APORTA. La tesis del brief es que una carga tiene dos procedencias en el mismo hecho —la estacion sabe litros, precio y placa; solo la persona sabe el kilometraje y el tanque— y el rendimiento no se calcula sin las dos. Cada aporte lleva su procedencia (observado / estimado / confirmado) y un estimado jamas alimenta un calculo que se presente como medicion.",
+    "campos": [
+      { "nombre": "kilometraje", "porque": "sin el no hay tramos; la app propone el esperado y la persona confirma o corrige" },
+      { "nombre": "tanque", "porque": "la forma de corte lo infiere y la persona solo lo confirma (§6.3.3 del brief)" },
+      { "nombre": "fichaDelVehiculo", "porque": "la estacion captura la placa; que carro es ese solo lo sabe la persona" },
+      { "nombre": "fotoDelTablero", "porque": "el respaldo de un dato que no tiene otra evidencia; el binario vive en la carpeta, el journal guarda el nombre" }
+    ]
+  },
+
+  "dato": {
+    "//": "Para que el Host aplique politica por modulo y no una sola para todos.",
+    "categoria": "movilidad-y-dinero",
+    "permiteModeloRemoto": false,
+    "//permiteModeloRemoto": "Las cargas dicen donde estuvo la persona y cuando —la placa es rastreable (pregunta 11 del brief)—, asi que el modulo pide lo mismo que salud: sin relay que termine TLS."
+  },
+
+  "consultas": {
+    "//": "EL CATALOGO DE PERMISOS DE LA IA. El Host las apaga una por una y journaliza la decision.",
+    "//solo-lectura": "Las cinco son PerformQuery. Este modulo NO expone ninguna escritura a la IA: los aportes entran solo por la app de la persona, y el unico escritor del journal es ella.",
+    "//el-criterio": "Si la IA puede contestar algo que ya esta en una pantalla, el demo no probo nada. Por eso no hay una consulta 'dame las cargas': el historial lo muestra la app.",
+    "lista": [
+      { "nombre": "mis_cargas",                  "revela": "que vehiculos hay, con su placa y su completitud" },
+      { "nombre": "autonomia_estimada",          "revela": "capacidad estimada por rendimiento habitual: dos derivaciones combinadas" },
+      { "nombre": "rendimiento_vs_habitual",     "revela": "la serie de tramos contra la propia linea base, con veredicto semantico" },
+      { "nombre": "lo_que_falta_para_calcular",  "revela": "que dato falta y que calculo se desbloquea" },
+      { "nombre": "dias_hasta_la_proxima_carga", "revela": "la prediccion de la proxima carga, declarada como proyeccion" }
+    ]
+  },
+
+  "vista": {
+    "//": "La view declarativa que trae el modulo. El Host renderiza.",
+    "pantallas": [
+      { "ruta": "/", "nombre": "Mis cargas" }
+    ],
+    "formas": [
+      "TrayectoriaConLineaBase",
+      "TarjetaBloqueada",
+      "CintaDeCargas",
+      "MedidorDiscreto"
+    ]
+  },
+
+  "cruzaPor": ["tiempo", "placa", "dinero"],
+  "//cruzaPor": "Los modulos no se hablan: cruza el asistente, con permiso de la persona. LA PLACA ES LA LLAVE DEL CRUCE ESTRELLA con el modulo del concesionario —el manual dice 18 km/L, tus tramos dan 9; ningun modulo lo sabe solo— y por dinero cruza con presupuesto. Coordinar con el otro demo que las placas coincidan, o el cruce no se puede ensenar.",
+
+  "presupuesto": {
+    "//": "El Host mide y pone cupos. Comparar contra lo declarado convierte el cupo en algo diagnosticable.",
+    "latenciaDeConsultaMs": 50,
+    "eventosPorAno": 30,
+    "//eventosPorAno": "Una carga cada ~2 semanas mas sus puntos: del orden de 30 eventos de la institucion por ano, mas los aportes locales de la persona."
+  },
+
+  "instrucciones": {
+    "//": "LO QUE LA IA NO PUEDE DEDUCIR DE UNA FIRMA: que el veredicto es semantico y no se reinterpreta por el signo, que un dato sospechoso pide registrar la carga que falto y NO alarmar, que toda proyeccion se declara, que se compara contra la propia linea base y nunca contra un promedio nacional, y que el Refresh es de la persona.",
+    "archivo": "App/Cargas.Mcp/Program.cs#Instrucciones"
+  },
+
+  "advertencias": [
+    {
+      "//": "Va en el manifiesto y no en un README porque el Host y el asistente tienen que saberlo para hablar con la persona, y ningun DLL lo dice.",
+      "que": "Ningun umbral de este repertorio esta revisado",
+      "detalle": "Los numeros de UmbralesDeRendimiento (cambio minimo significativo 5%, multiplo implausible 1.5, tolerancia del total 1%), la tasa de puntos y los niveles de lealtad estan marcados con ⚠️ en el codigo y ninguno visto por alguien con criterio del negocio. Sirven para modelar la estructura y contar la historia del demo.",
+      "hasta": "que se revisen, este modulo es demostrativo"
+    },
+    {
+      "que": "La marca y la paleta son provisionales",
+      "detalle": "Faro y el teal petroleo son la propuesta del brief §3; la especificacion es de Geaninna y el flujo acordado es pagina primero, spec despues, app al final.",
+      "hasta": "que llegue la especificacion de marca"
+    }
+  ]
+}
