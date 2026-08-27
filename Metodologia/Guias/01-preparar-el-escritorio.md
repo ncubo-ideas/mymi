@@ -2,9 +2,13 @@
 
 Qué se instala, qué se configura una vez por clon, y cómo saber que quedó bien.
 
-> **De dónde sale este capítulo.** De preparar esta máquina y anotar dónde se rompió. Las versiones,
-> los mensajes de error y los diagnósticos de abajo están **medidos**, no recordados. Donde algo no se
-> pudo verificar acá, lo dice.
+> **De dónde sale este capítulo.** De preparar una máquina y anotar dónde se rompió. Las versiones,
+> los mensajes de error y los diagnósticos están **medidos**, no recordados — algunos reproduciendo la
+> falla a propósito. Donde algo se infirió y no se midió, la tabla lo marca.
+>
+> **Se escribió desde Windows.** Los requisitos son los mismos en Mac —el equipo ya está mezclado y
+> funciona— pero se tropieza en lugares distintos, y §9 dice en cuáles. Si estás en Mac, leé esa
+> sección **antes** de la §3.
 
 ---
 
@@ -47,13 +51,19 @@ checkouteada en un repo que no es parte del entregable, y se rompió de verdad c
 exactamente igual desde el error**, y se arreglan de tres maneras. Ésta es la tabla que hay que tener
 a mano:
 
-| El error dice | Lo que falta de verdad | Se arregla con |
-|---|---|---|
-| `NU1101 — no packages exist with this id` | Falta **declarar el feed** | Estar parado en el repo: su `NuGet.config` lo declara (§4) |
-| `NU1301 — 401` **y no existe** `~/.nuget/plugins` | Falta el **credential provider** | Instalar el Azure Artifacts Credential Provider |
-| `NU1301 — 401` **y sí existe** el plugin | **El token caducó** | `dotnet restore --interactive` (§4) |
+| El error dice | Lo que falta de verdad | Se arregla con | |
+|---|---|---|---|
+| `NU1101 — no packages exist with this id` | Falta **declarar el feed** | Estar parado en el repo: su `NuGet.config` lo declara (§4) | inferido |
+| `NU1301 — 401` **y no existe** `~/.nuget/plugins` | Falta el **credential provider** | Instalar el Azure Artifacts Credential Provider | **medido** |
+| `NU1301 — 401` **y sí existe** el plugin | El token cacheado está **rancio** | `dotnet restore --interactive`, **o borrar el token** (ver abajo) | visto en vivo |
 
-El del medio y el de abajo son el mismo mensaje:
+> **Un token que FALTA no es un problema; uno RANCIO sí.** Medido: con el credential provider en su
+> lugar y `SessionTokenCache.dat` **borrado**, el restore **funciona igual** — el provider consigue
+> uno nuevo en silencio. Así que borrar ese archivo no rompe nada y es un **arreglo** posible, no una
+> falla. Si tenés un 401 con el plugin presente, tenés dos salidas: `--interactive`, o borrar el
+> token y dejar que se renueve solo.
+
+Los dos últimos casos dan el mismo mensaje:
 
 ```
 error NU1301: Unable to load the service index for source
@@ -70,7 +80,27 @@ primera vez va a mirar el `csproj`, la red o el proxy, que es donde no está.
 ls ~/.nuget/plugins/netcore/
 ```
 
-Si aparece `CredentialProvider.Microsoft`, el plugin está y lo que caducó es el token.
+Si aparece `CredentialProvider.Microsoft`, el plugin está y lo que está rancio es el token.
+
+### Cómo probar la autenticación sin que el caché te engañe
+
+Hay una trampa al diagnosticar esto: **si el paquete ya está en tu caché global, `dotnet restore`
+resuelve desde ahí y ni consulta el feed.** Da verde y no probaste nada.
+
+El truco es **pedir una versión que no existe**, para forzar la consulta:
+
+```bash
+dotnet restore -p:VersionDelMotor=3.0.0-beta.99999 --no-cache
+```
+
+Ahora el resultado discrimina:
+
+| Devuelve | Significa |
+|---|---|
+| `NU1102` — *unable to find package version* | **La autenticación funciona.** Sólo falta esa versión, que es lo esperado |
+| `NU1301` + `401` | El problema es de credenciales, y la tabla de arriba dice cuál |
+
+Sirve igual para verificar que quedaste bien después de arreglarlo.
 
 ### Y hay una segunda trampa, adentro de la primera
 
@@ -200,7 +230,34 @@ git add -A --dry-run
 
 ---
 
-## 9. Antes de seguir
+## 9. Si estás en Mac
+
+**Los requisitos son los mismos, y no es una suposición: el equipo ya está mezclado y funciona.** El
+`.mcp.json` del repo tiene las rutas de la gente y se ven las dos familias — `C:\Users\...` de unos y
+`/Users/...` de otro. El negocio más completo del repo se desarrolla en un Mac.
+
+Lo que cambia es **dónde tropieza cada uno**:
+
+| | En Mac | En Windows |
+|---|---|---|
+| **El credential provider** | **Es más probable que falte.** Nadie lo instala por accidente | Suele llegar de arrastre con Visual Studio |
+| **El navegador** | **Es más probable que falle la carpeta propia**: Safari es el default y no tiene `showDirectoryPicker` (§7) | Edge y Chrome vienen de fábrica y los dos sirven |
+| `generar-certificado.sh` | corre nativo | necesita git-bash o WSL |
+| `dotnet workload install` | pide `sudo` | pide elevación de administrador |
+| Finales de línea | sin ruido | avisos de CRLF en cada commit |
+| **Docker** | corre dentro de una VM: el binding de puertos y `localhost` no se comportan idéntico | nativo |
+
+Las rutas de este capítulo se escriben con `~`, que resuelve igual en los dos. Lo único
+específicamente de Windows es la ubicación del token: `~/AppData/Local/MicrosoftCredentialProvider/`.
+
+**Y una advertencia que vale para el equipo entero, no para vos:** las dos filas de arriba se
+refuerzan. Un Mac es a la vez el sistema donde más probablemente falte el provider **y** donde el
+navegador por defecto no sirve para la demo. Quien prepare a alguien en Mac conviene que empiece por
+esas dos.
+
+---
+
+## 10. Antes de seguir
 
 - [ ] ¿`dotnet --version` empieza con `9.`?
 - [ ] ¿`git config core.hooksPath` devuelve `.githooks`?
