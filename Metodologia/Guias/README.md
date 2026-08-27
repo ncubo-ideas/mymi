@@ -50,7 +50,7 @@ Importa, porque estas guías se van a leer como si todo tuviera el mismo respald
 |---|---|
 | **Capítulo 0** | Cruzado contra las infografías del equipo **y contra el repo corriendo** (`Examenes`, `Compras`, `HolaMundo/Facturas`). Lo que es objetivo y no realidad está marcado como tal |
 | **Capítulo 3** | Construido y corrido de punta a punta en un ejercicio de presupuesto. Las reglas de §7 salieron de chocar con ellas, y hay pruebas que las fijan |
-| **Capítulo 4** | Doctrina, **confirmada** por los tres casos del equipo: los tres contestan una pregunta sobre la serie, ninguno lista datos |
+| **Capítulo 4** | Doctrina confirmada por los tres casos del equipo. Su **ejemplo trabajado** sigue una pregunta hasta el fondo en un dominio real, y el §6bis dice qué de este capítulo se puede auditar y qué **no** |
 | **Punto de partida** | **Corrido una vez**, sobre un dominio de presupuesto personal (2026-08-26). La corrida encontró seis defectos en el guion, y los seis están corregidos |
 | **Capítulo 1** | **Escrito preparando una máquina y anotando dónde se rompió.** Versiones, mensajes de error y diagnósticos medidos. Lo que no se pudo verificar —Docker, `wasm-tools`— lo dice |
 | **Capítulo 6, CLI** | Construido y corrido. 44 pruebas |
@@ -63,12 +63,9 @@ afirmación sin esa marca y tampoco está respaldada, es un error del documento.
 
 ## Correcciones pendientes en capítulos ya escritos
 
-**Capítulo 4 — le falta el ejemplo trabajado.** Está la doctrina y falta la demostración: una
-pregunta, las clases que fuerza, la decisión de diseño que fuerza, y lo que quedó afuera. Y hay que
-reescribirlo con **observables**, para que el paso 8 sea posible.
-
-Y nada más. Las tres del capítulo 3 —la carátula HTTP, la convención de estructura y la regla del
-`upgrade`— quedaron corregidas, igual que la del capítulo 6.
+**Ninguna.** Las cinco que había quedaron cerradas: la tool genérica del capítulo 6, las tres del
+capítulo 3 —la carátula HTTP, la convención de estructura y la regla del `upgrade`— y el ejemplo
+trabajado del capítulo 4.
 
 ---
 
