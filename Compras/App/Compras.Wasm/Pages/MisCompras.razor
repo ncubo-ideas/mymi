@@ -323,7 +323,7 @@ else
                 <tr><th>Compra</th><th>Fecha</th><th class="text-end">Líneas</th><th class="text-end">Total</th></tr>
             </thead>
             <tbody>
-                @foreach (CompraEnLista compra in compras)
+                @foreach (CompraEnLista compra in Recientes())
                 {
                     <tr style="cursor:pointer" @onclick="() => VerDetalle(compra.Numero)">
                         <td>@compra.Numero</td>
@@ -334,6 +334,14 @@ else
                 }
             </tbody>
         </table>
+
+        @if (compras.Count > RecibosQueSeMuestran)
+        {
+            <p class="small text-body-secondary">
+                Las @RecibosQueSeMuestran más recientes de @compras.Count.
+                Las demás siguen en tu carpeta, y tu asistente las puede consultar todas.
+            </p>
+        }
     }
 
     @if (!estado.HayCarpeta)
@@ -458,6 +466,22 @@ else
         (proporcion * 100m).ToString("0.#", CultureInfo.InvariantCulture) + "%";
 
     // Formato explicito SIEMPRE (la escala del decimal no sobrevive el journal).
+    // CUANTOS RECIBOS SE PINTAN. Con 87 compras semanales la tabla volcaba las 87 filas, y
+    // la especificacion es explicita en que "la lista de recibos existe, pero no es la
+    // portada": una pared de 87 filas la vuelve la portada por tamaño, aunque este al
+    // final. Doce son unos tres meses de compras semanales, que es lo que alguien recorre
+    // buscando un ticket que hizo hace poco.
+    //
+    // No se ESCONDE nada, y la linea de abajo lo dice: las demas siguen en su carpeta y su
+    // asistente las consulta todas. Acotar la pantalla no es acotar el dato.
+    private const int RecibosQueSeMuestran = 12;
+
+    private IEnumerable<CompraEnLista> Recientes()
+    {
+        int desde = Math.Max(0, compras.Count - RecibosQueSeMuestran);
+        for (int i = compras.Count - 1; i >= desde; i--) yield return compras[i];
+    }
+
     // "en todas" cuando no fallo ni una vez, y si no la cuenta cruda. La palabra la
     // decide esta pantalla porque es una forma de decirlo, no un hecho nuevo.
     private static string Frecuencia(ProductoQueVuelve habitual) =>
