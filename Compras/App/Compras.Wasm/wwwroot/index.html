@@ -24,8 +24,10 @@
     <link rel="icon" type="image/png" href="favicon.png" />
     <link href="Compras.Wasm.styles.css" rel="stylesheet" />
     <link href="manifest.webmanifest" rel="manifest" />
-    <link rel="apple-touch-icon" sizes="512x512" href="icon-512.png" />
-    <link rel="apple-touch-icon" sizes="192x192" href="icon-192.png" />
+    <!-- iOS NO respeta la transparencia -compone sobre negro- y aplica su propio redondeo,
+         asi que apple-touch-icon va PLENO y sin redondear. Apuntarlo al icono redondeado
+         dejaba las esquinas negras. -->
+    <link rel="apple-touch-icon" sizes="180x180" href="apple-touch-icon.png" />
 </head>
 
 <body>
