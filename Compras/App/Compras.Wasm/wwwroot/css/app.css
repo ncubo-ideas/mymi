@@ -191,8 +191,10 @@ h2, h3, h4, h5 { font-weight: 700; }
 .marca-texto { display: flex; flex-direction: column; gap: 1px; min-width: 0; }
 .marca-nombre { font-weight: 700; font-size: 1.12rem; line-height: 1.15; }   /* §1 */
 .marca-bajada { font-size: .74rem; color: var(--barra-tenue); line-height: 1.25; }
+/* El sello se queda JUNTO A LA MARCA y no en la esquina: dice de que es demo esta app, y
+   pegado al nombre se lee como parte de la identidad. La esquina derecha la necesitan las
+   pestañas, que es lo que la persona va a buscar ahi. */
 .barra-dentro .sello-demo {
-    margin-left: auto;
     color: var(--barra-tenue);
     border-color: rgba(234, 246, 234, .3);
 }
@@ -202,28 +204,46 @@ h2, h3, h4, h5 { font-weight: 700; }
 /* UNA SOLA UI QUE SE COMPORTA DISTINTO POR RESOLUCION, que es lo que pidio Alvaro. El
    markup de las pestañas es uno; lo que cambia es donde se paran.
 
-   ESCRITORIO: en linea, pegadas a la barra de marca, como las pestañas de un expediente.
+   ESCRITORIO: en la MISMA FILA que la marca, contra la esquina derecha.
    TELEFONO: al pie y fijas, que es donde llega el pulgar. Y el body gana un colchon abajo
    para que la barra no tape la ultima fila.
 
-   El corte es 768 px, el mismo que usa la §4 para el ancho de columna. */
+   El corte es 768 px, el mismo que usa la §4 para el ancho de columna.
+
+   POR QUE SE FUE LA BANDA PROPIA. Tenian una franja oscura para ellas solas debajo de la
+   marca, y era un error con tres caras:
+
+     EL VACIO. De los 885 px de la franja, 641 quedaban vacios: el 72 %. Su unico trabajo
+     era sostener dos elementos chicos, y una masa de color oscuro que no sostiene nada se
+     lee como un hueco, no como una barra.
+
+     EL CROMO. Dos franjas apiladas llegaban a 104 px antes de la primera linea de
+     contenido. En la misma fila son 67 y no se pierde nada: la marca mide 40 px de flor y
+     las pestañas caben adentro de ese alto.
+
+     Y EL EMPALME, que era el de verdad. La activa se pintaba de --papel para "continuar el
+     fondo de la pagina", pero lo que hay debajo es el hero, cuyo degradado ARRANCA en
+     --tinte-verde. O sea que la pestaña blanca tocaba verde claro, y justo en la esquina
+     donde el degradado esta mas verde. Una pestaña de expediente cuyo folio es de otro
+     color no se lee como pestaña: se lee como una pastilla flotando. Adentro de la barra el
+     problema no existe, porque ya no hay ningun folio con el que empalmar. */
 .pestanas {
     background: var(--barra-fondo);
-    border-bottom: 1px solid rgba(0, 0, 0, .2);
+    /* A la derecha de todo: la marca empuja desde la izquierda y este auto se come el hueco
+       que antes quedaba vacio. */
+    margin-left: auto;
 }
 .pestanas-dentro {
-    max-width: 56rem;
-    margin: 0 auto;
-    padding: 0 1.5rem;
     display: flex;
-    gap: .35rem;
+    gap: .15rem;
 }
 .pestana {
+    position: relative;
     display: inline-flex;
     align-items: center;
-    gap: .45rem;
-    padding: .6rem 1.05rem;
-    border-radius: var(--radio-boton) var(--radio-boton) 0 0;
+    gap: .4rem;
+    padding: .5rem .8rem;
+    border-radius: var(--radio-boton);
     color: var(--barra-tenue);
     text-decoration: none;
     font-weight: 600;
@@ -232,55 +252,93 @@ h2, h3, h4, h5 { font-weight: 700; }
 }
 .pestana:hover { color: var(--barra-tinta); background: rgba(234, 246, 234, .08); }
 
-/* La activa se despega del verde y se apoya en el papel DE LA PAGINA -no en el blanco de
-   una tarjeta-: la pestaña ES la pantalla, y tiene que continuar su fondo. */
-.pestana.active {
-    background: var(--papel);
-    color: var(--gu-verde-oscuro);
+/* LA ACTIVA SE MARCA CON UN SUBRAYADO Y NO CON UN RELLENO, y es el mismo recurso que en
+   telefono -alla la raya va en el canto de arriba, porque la barra esta al pie-. Que las
+   dos resoluciones usen el MISMO lenguaje visual y solo lo espejen es lo que hace que sea
+   una sola UI y no dos que se parecen.
+
+   Ademas el subrayado no tiene problema de contraste: la etiqueta queda en --barra-tinta
+   sobre --barra-fondo, que es 13:1. Un relleno verde vivo con texto claro encima daba 2,9
+   y no pasaba ni el AA. */
+.pestana.active { color: var(--barra-tinta); }
+.pestana.active::after {
+    content: "";
+    position: absolute;
+    left: .8rem;
+    right: .8rem;
+    bottom: -.15rem;
+    height: 3px;
+    border-radius: 3px 3px 0 0;
+    background: var(--verde-vivo);
 }
-.pestana-icono { font-size: 1.05rem; line-height: 1; }
+.pestana-icono {
+    width: 1.15rem;
+    height: 1.15rem;
+    flex: 0 0 auto;
+}
 
 @media (max-width: 767.98px) {
-    /* Al pie, fijas, y en dos mitades iguales. */
+    /* El sello VUELVE A LA ESQUINA. En escritorio se queda junto al nombre porque la
+       esquina la ocupan las pestañas; aca las pestañas se fueron al pie -son `fixed`, o
+       sea que no estan en esta fila- y la esquina queda libre. */
+    .barra-dentro .sello-demo { margin-left: auto; }
+
+    /* Al pie, fijas, y en dos mitades iguales. `fixed` las saca del flujo, asi que el
+       `margin-left: auto` del escritorio no aplica y no hace falta anularlo — pero se
+       anula igual, porque un margen auto en un elemento fijo con left y right puestos lo
+       centraria si algun dia se le quita uno de los dos. */
     .pestanas {
         position: fixed;
         left: 0;
         right: 0;
         bottom: 0;
+        margin-left: 0;
         z-index: 900;
-        border-bottom: 0;
         border-top: 1px solid rgba(0, 0, 0, .2);
         box-shadow: 0 -2px 12px rgba(20, 51, 31, .18);
         /* El area segura del telefono: sin esto la barra queda debajo del gesto de inicio. */
         padding-bottom: env(safe-area-inset-bottom, 0);
     }
-    .pestanas-dentro { padding: 0; gap: 0; }
+    .pestanas-dentro { gap: 0; }
     .pestana {
         flex: 1 1 0;
         flex-direction: column;
-        gap: .2rem;
+        gap: .25rem;
         justify-content: center;
         border-radius: 0;
         padding: .55rem .5rem .5rem;
         font-size: .74rem;
     }
-    .pestana.active { background: transparent; color: var(--barra-tinta); }
-    /* Y la activa se marca con una linea arriba, no con un fondo: sobre verde, un bloque
-       de papel al pie se lee como un error de render. */
-    .pestana.active .pestana-icono { color: #fff; }
-    .pestana.active::before {
-        content: "";
-        position: absolute;
-        top: 0;
-        width: 3.2rem;
-        height: 3px;
-        border-radius: 0 0 3px 3px;
-        background: var(--barra-tinta);
-    }
-    .pestana { position: relative; }
+    .pestana:hover { background: transparent; }
+    .pestana-icono { width: 1.35rem; height: 1.35rem; }
 
-    /* El colchon para que la barra fija no tape la ultima fila. */
-    main { padding-bottom: 5.5rem !important; }
+    /* LA MISMA RAYA, ESPEJADA. Aca la barra esta al pie, asi que su canto interior es el de
+       ARRIBA y la raya va ahi. Es el mismo `::after` del escritorio movido de borde: si
+       fueran dos pseudoelementos distintos, cambiar el color de la marca obligaria a
+       acordarse de los dos. */
+    .pestana.active::after {
+        top: 0;
+        bottom: auto;
+        left: 50%;
+        right: auto;
+        width: 2.6rem;
+        transform: translateX(-50%);
+        border-radius: 0 0 3px 3px;
+    }
+
+    /* EL COLCHON para que la barra fija no tape la ultima fila.
+
+       VA CON `main.container` Y NO CON `main`, y la diferencia no es cosmetica: este colchon
+       NUNCA FUNCIONO. El elemento es <main class="container py-4">, y la utilidad `.py-4` de
+       Bootstrap trae su propio `!important`. Entre dos declaraciones `!important` decide la
+       ESPECIFICIDAD, y una clase (0,1,0) le gana a un tipo (0,0,1) sin importar el orden de
+       las hojas — asi que el padding se quedaba en los 24 px de `.py-4`. `main.container` es
+       (0,1,1) y si gana.
+
+       MEDIDO EN EL FONDO DE LA PORTADA, a 375 px y con la pagina scrolleada hasta abajo:
+       antes el ultimo parrafo terminaba 15 px POR DEBAJO del canto de la barra -o sea que
+       su ultima linea quedaba tapada-; ahora termina 49 px por encima. */
+    main.container { padding-bottom: 5.5rem !important; }
 }
 
 /* ---------------------------------------------------------------- avisos y secciones */
@@ -490,8 +548,14 @@ main h2 {
     grid-template-columns: minmax(0, 1fr) minmax(0, 0.85fr);
     align-items: center;
     gap: 1rem;
-    margin: -1.5rem -1.5rem 1.5rem;
-    padding: 1.6rem 1.5rem 0;
+    /* EL SANGRADO ES EXACTAMENTE EL DEL CONTENEDOR, ni un pixel mas. Antes era -1.5rem, o
+       sea 24 px, contra los 12 px de gutter que pone .container: el hero se salia 12 px por
+       cada lado y la pagina ENTERA ganaba una barra de scroll horizontal cuando el viewport
+       andaba cerca del ancho de columna (56rem). Ahora el borde del hero cae justo sobre el
+       borde del contenedor, y el padding de abajo lo compensa para que el texto siga
+       alineado con las tarjetas. */
+    margin: -1.5rem -.75rem 1.5rem;
+    padding: 1.6rem .75rem 0;
     background: linear-gradient(160deg, var(--tinte-verde) 0%, var(--papel) 78%);
     border-radius: 0 0 var(--radio-marco) var(--radio-marco);
     overflow: hidden;
