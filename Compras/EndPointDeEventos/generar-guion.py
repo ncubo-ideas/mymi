@@ -310,8 +310,16 @@ def cerrar_agosto(guion, anio, mes, objetivo):
     objetivo: si se pasa, lo que esta mal es la canasta y hay que arreglarla ahi, no
     tapar la diferencia con un descuento inventado.
     """
+    # SE AJUSTA LA PRIMERA COMPRA DEL MES, NO LA ULTIMA, y el motivo lo destapo una
+    # pantalla. El cierre mueve el PRECIO de una linea, y la serie de precios de un
+    # producto se lee por su PRIMERA y su ULTIMA observacion: ajustando el ultimo ticket,
+    # la pasta aparecia subiendo 23% cuando su inflacion es 6%. El ajuste se disfrazaba de
+    # inflacion en la tarjeta "lo que cambio de precio".
+    #
+    # En la primera compra del mes el efecto desaparece: quedan tickets posteriores con el
+    # precio de lista, asi que la ultima observacion es limpia y la serie dice la verdad.
     tickets = del_mes(guion, anio, mes)
-    ultimo = tickets[-1]
+    ultimo = tickets[0]
 
     for sku in AJUSTE[(anio, mes)]:
         lista = precio(sku, fecha_de(ultimo).date())
@@ -403,6 +411,30 @@ def verificar(guion):
            % (manana, tarde, noche))
     exigir(tarde > manana and tarde > noche,
            "propio - la tarde es el momento mas comun (%d de %d)" % (tarde, len(guion)))
+
+    # EL CIERRE NO INVENTA INFLACION. Para cada producto de los que se usan como relleno,
+    # su ULTIMA observacion del guion tiene que estar al precio de lista -a menos del 3%-,
+    # o el ajuste se lee como una subida de precio que no ocurrio.
+    def ultima_observacion(sku):
+        for ticket in sorted(guion, key=fecha_de, reverse=True):
+            if sku in ticket["skus"]:
+                i = ticket["skus"].index(sku)
+                return ticket["preciosUnitarios"][i], fecha_de(ticket).date()
+        return None, None
+
+    sospechosos = []
+    for candidatos in AJUSTE.values():
+        for sku in candidatos:
+            visto, cuando = ultima_observacion(sku)
+            if visto is None:
+                continue
+            lista = precio(sku, cuando)
+            if abs(visto - lista) / lista > 0.03:
+                sospechosos.append("%s a %.0f (lista %.0f)" % (sku, visto, lista))
+
+    exigir(not sospechosos,
+           "propio - el cierre no deja inflacion inventada (%s)"
+           % ("; ".join(sospechosos) if sospechosos else "ninguno"))
 
     # Luna: 25.000 en cada mes del guion
     meses = sorted({(fecha_de(t).year, fecha_de(t).month) for t in guion})

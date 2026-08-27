@@ -8,10 +8,26 @@
 
 <PageTitle>La Guaria y vos</PageTitle>
 
-<h1>Tus compras</h1>
-<p class="text-body-secondary mb-4">
-    Todo lo que compraste, en tu computadora.
-</p>
+@* EL HERO, con la copia y la ilustración del diseño de Fernanda. Va antes que todo y en
+   los dos estados de la app —con carpeta o sin ella— porque es la presentación: lo que la
+   pantalla dice que es, antes de decir lo que sabe.
+
+   "Descubrí lo que siempre vuelve y cómo cambia tu carrito" es exactamente lo que el módulo
+   contesta, así que la promesa y el producto dicen lo mismo. Eso no siempre pasa: el landing
+   prometía un "% ocasional" que la app ya no calcula, y hubo que sacarlo. *@
+<header class="hero">
+    <div class="hero-dicho">
+        <p class="hero-saludo">¡Hola!</p>
+        <h1>Tu súper,<br />más cerca de vos</h1>
+        <p class="hero-bajada">
+            Descubrí lo que siempre vuelve y cómo cambia tu carrito.
+        </p>
+    </div>
+    @* La ilustración es DECORATIVA: alt vacío y aria-hidden. Lo que dice ya está en el
+       texto de al lado, y un lector de pantalla que la anuncie repite sin agregar. *@
+    <img class="hero-canasta" src="assets/hero-canasta.png" alt="" aria-hidden="true"
+         width="480" height="514" loading="eager" />
+</header>
 
 @* UN solo lugar para los errores, y arriba (la leccion de la pantalla de Examenes). *@
 @if (error.Length > 0)
@@ -160,6 +176,10 @@ else
                                         <span class="punto @(i < habitual.ComprasEnQueAparece ? "punto-lleno" : "")"></span>
                                     }
                                 </div>
+                                @* LA CONSTANCIA en palabras, que es lo que el diseño pone en la
+                                   ficha de producto: "casi nunca falta". Los puntos se ven de un
+                                   vistazo y esto se LEE — no es lo mismo, y por eso van los dos. *@
+                                <div class="infaltable-constancia">@habitual.Constancia</div>
                             </div>
                         }
                     </div>
@@ -241,6 +261,132 @@ else
                     </span>
                 </div>
             }
+        </div>
+    }
+
+    @* TU MES EN EL SÚPER. La cifra grande, cuántas compras la hicieron, cómo viene contra
+       el mes anterior, y la serie de las compras del mes.
+
+       El sparkline se dibuja con la lista que la pantalla YA tiene —cada compra trae fecha
+       y total—, así que no hace falta una lectura nueva del dominio para esto. Lo que sí
+       vino del dominio es QUÉ DOS MESES comparar: esta pantalla no sabe cuál es el último
+       mes con compras, y la aritmética de "el mes anterior" se resuelve mal en enero. *@
+    @if (mes is not null && mes.HayComparacion)
+    {
+        <h2>Tu mes en el súper</h2>
+        <div class="card mb-4">
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-start flex-wrap gap-2">
+                    <div>
+                        <div class="cifra-grande">@Colones(mes.GastoDespues)</div>
+                        <div class="ritmo-rotulo">
+                            en @ComprasDelMes().Count
+                            @(ComprasDelMes().Count == 1 ? "compra" : "compras")
+                            &middot; @Mes(mes.MesDespues)/@mes.AnioDespues
+                        </div>
+                    </div>
+                    @* El signo lo dice el DOMINIO (Cambio); acá solo se pinta. Y va neutro,
+                       no verde ni rojo: gastar menos no es un logro ni gastar más una falta.
+                       La app señala y se calla. *@
+                    <span class="etiqueta etiqueta-neutra">
+                        @(mes.Cambio >= 0 ? "▲" : "▼")
+                        @Porcentaje(mes.Cambio) vs. @Mes(mes.MesAntes)
+                    </span>
+                </div>
+
+                @{ var delMes = ComprasDelMes(); }
+                @if (delMes.Count > 1)
+                {
+                    <svg class="serie-mes" viewBox="0 0 300 60" preserveAspectRatio="none"
+                         role="img" aria-label="Las compras del mes, una por punto.">
+                        <polyline points="@Puntos(delMes)" />
+                        @for (int i = 0; i < delMes.Count; i++)
+                        {
+                            <circle cx="@Equis(i, delMes.Count)" cy="@Ye(delMes[i].Total, delMes)" r="3" />
+                        }
+                    </svg>
+                    <div class="d-flex justify-content-between ritmo-rotulo">
+                        <span>@delMes[0].Fecha.Day @Mes(delMes[0].Fecha.Month)</span>
+                        <span>@delMes[delMes.Count - 1].Fecha.Day @Mes(delMes[delMes.Count - 1].Fecha.Month)</span>
+                    </div>
+                }
+            </div>
+        </div>
+    }
+
+    @* LO QUE CAMBIÓ DE PRECIO, y sólo de los productos que sí lleva: es SU inflación, no la
+       del país. Cada precio va POR UNIDAD DE MEDIDA y con la unidad al lado — un precio sin
+       su referencia no se puede comparar, y esa es la mitad del dato. *@
+    @if (precios is not null && precios.Count > 0)
+    {
+        <h2>Lo que cambió de precio</h2>
+        <p class="ritmo-rotulo mb-2">De los productos que sí llevás.</p>
+        <div class="list-group mb-4">
+            @foreach (var precio in precios)
+            {
+                <div class="list-group-item d-flex justify-content-between align-items-center flex-wrap gap-2">
+                    <strong>@precio.Descripcion</strong>
+                    <span class="d-inline-flex align-items-center gap-2 flex-wrap">
+                        <span class="precio-antes">@Colones(precio.Antes)</span>
+                        <span class="text-body-secondary">&rarr;</span>
+                        <span class="precio-ahora">@Colones(precio.Ahora)</span>
+                        <span class="ritmo-rotulo">por @precio.Unidad</span>
+                        <span class="etiqueta @(precio.Subio ? "etiqueta-cambio" : "etiqueta-verde")">
+                            @(precio.Subio ? "▲" : "▼") @Porcentaje(precio.CambioEnProporcion)
+                        </span>
+                    </span>
+                </div>
+            }
+        </div>
+    }
+
+    @* TU RITMO. Es la pantalla "tu ritmo de súper" del diseño de la app — "hay días y
+       momentos que se repiten más de lo que parece" — y responde algo que la persona
+       probablemente no había notado, que es literalmente lo que ese diseño pregunta:
+       "¿lo habías notado?".
+
+       No juzga: ir los viernes de noche no es mejor ni peor que ir los martes en la
+       mañana. La línea la escribe el DOMINIO. *@
+    @if (ritmo is not null && ritmo.EsObservado)
+    {
+        <h2>Tu ritmo</h2>
+        <div class="card mb-4">
+            <div class="card-body">
+                <div class="fs-5 mb-3">@ritmo.ParaSonia</div>
+
+                <div class="ritmo-cifras">
+                    <div class="ritmo-cifra">
+                        <span class="ritmo-numero">@ritmo.DiasEntreCompras</span>
+                        <span class="ritmo-rotulo">días entre compras</span>
+                        <span class="etiqueta etiqueta-verde mt-1">@ritmo.CadenciaCompacta</span>
+                    </div>
+                    <div class="ritmo-cifra">
+                        <span class="ritmo-numero ritmo-palabra">@ritmo.DiaFavorito</span>
+                        <span class="ritmo-rotulo">
+                            el día que más compra&nbsp;&mdash;
+                            @ritmo.ComprasEnElDiaFavorito de @ritmo.ComprasMiradas
+                        </span>
+                    </div>
+                </div>
+
+                @* LOS TRES MOMENTOS vienen SIEMPRE, aunque alguno esté en cero: la fila se
+                   dibuja igual y no hay que preguntar antes. *@
+                <div class="ritmo-rotulo mt-3 mb-2">Cuándo suele comprar</div>
+                <div class="momentos">
+                    @foreach (var m in ritmo.PorMomento)
+                    {
+                        <div class="momento @(m.Momento == ritmo.MomentoFavorito ? "momento-favorito" : "")">
+                            <div class="momento-nombre">@m.Momento</div>
+                            <div class="momento-barra">
+                                <span style="width:@((int)(m.Proporcion * 100))%"></span>
+                            </div>
+                            <div class="momento-cuantas">
+                                @m.Cuantas @(m.Cuantas == 1 ? "compra" : "compras")
+                            </div>
+                        </div>
+                    }
+                </div>
+            </div>
         </div>
     }
 
@@ -383,6 +529,9 @@ else
     private FirmaDeLaSemana? firma;
     private CambioDeLaCanasta? cambio;
     private IReadOnlyList<RitmoQueCambio> ritmos = new List<RitmoQueCambio>();
+    private RitmoDelSuperVista? ritmo;
+    private CanastasComparadas? mes;
+    private IReadOnlyList<PrecioQueCambio> precios = new List<PrecioQueCambio>();
     private int cantidad;
     private decimal total;
     private long ultimoEvento;
@@ -476,6 +625,9 @@ else
         firma = estado.Firma();
         cambio = estado.CambioDelUltimoAnio();
         ritmos = estado.RitmosQueCambiaron();
+        ritmo = estado.Ritmo();
+        mes = estado.ComparacionConElMesAnterior();
+        precios = estado.Precios();
     }
 
     private void VerDetalle(string numero) =>
@@ -484,8 +636,10 @@ else
     private static string Mes(int mes) =>
         CultureInfo.GetCultureInfo("es").DateTimeFormat.GetAbbreviatedMonthName(mes);
 
+    // SIN SIGNO, a proposito: los dos lugares que lo usan ponen una flecha al lado, y un
+    // "-8%" junto a un ▼ dice la misma cosa dos veces.
     private static string Porcentaje(decimal proporcion) =>
-        (proporcion * 100m).ToString("0.#", CultureInfo.InvariantCulture) + "%";
+        Math.Abs(proporcion * 100m).ToString("0.#", CultureInfo.InvariantCulture) + "%";
 
     // Formato explicito SIEMPRE (la escala del decimal no sobrevive el journal).
     // CUANTOS RECIBOS SE PINTAN. Con 87 compras semanales la tabla volcaba las 87 filas, y
@@ -502,6 +656,56 @@ else
     {
         int desde = Math.Max(0, compras.Count - RecibosQueSeMuestran);
         for (int i = compras.Count - 1; i >= desde; i--) yield return compras[i];
+    }
+
+    // LAS COMPRAS DEL MES QUE LA TARJETA MUESTRA. Se filtra la lista que ya esta en
+    // memoria: pedirle al dominio una consulta nueva para esto seria pagar una
+    // rehidratacion por un filtro de calendario.
+    private IReadOnlyList<CompraEnLista> ComprasDelMes()
+    {
+        if (mes is null) return new List<CompraEnLista>();
+
+        var delMes = new List<CompraEnLista>();
+        foreach (CompraEnLista compra in compras)
+            if (compra.Fecha.Year == mes.AnioDespues && compra.Fecha.Month == mes.MesDespues)
+                delMes.Add(compra);
+
+        return delMes;
+    }
+
+    // EL SPARKLINE, a escala de SU propio mes y no de una escala fija: lo que la linea
+    // cuenta es la FORMA del mes -si arranco fuerte, si hubo un pico-, no como se compara
+    // con otro. Por eso el minimo y el maximo son los del mes.
+    //
+    // Con una sola compra no se dibuja: una linea de un punto no es una linea, y la
+    // pantalla ya lo pregunta antes de llamar aca.
+    private static string Puntos(IReadOnlyList<CompraEnLista> delMes)
+    {
+        var partes = new List<string>();
+        for (int i = 0; i < delMes.Count; i++)
+            partes.Add($"{Equis(i, delMes.Count)},{Ye(delMes[i].Total, delMes)}");
+
+        return string.Join(" ", partes);
+    }
+
+    private static string Equis(int i, int cuantos) =>
+        (cuantos <= 1 ? 150m : 6m + i * (288m / (cuantos - 1)))
+            .ToString("0.#", CultureInfo.InvariantCulture);
+
+    private static string Ye(decimal total, IReadOnlyList<CompraEnLista> delMes)
+    {
+        decimal menor = delMes[0].Total, mayor = delMes[0].Total;
+        foreach (CompraEnLista c in delMes)
+        {
+            if (c.Total < menor) menor = c.Total;
+            if (c.Total > mayor) mayor = c.Total;
+        }
+
+        // Todas iguales: la linea va al medio en vez de dividir por cero.
+        if (mayor == menor) return "30";
+
+        decimal alto = 6m + (1m - (total - menor) / (mayor - menor)) * 48m;
+        return alto.ToString("0.#", CultureInfo.InvariantCulture);
     }
 
     // LA FOTO DE UN PRODUCTO. El mapa vive ACA y no en el dominio ni en el catalogo del

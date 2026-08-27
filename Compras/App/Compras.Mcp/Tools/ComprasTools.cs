@@ -132,14 +132,14 @@ internal sealed class ComprasTools
 		+ "es un error. Y ojo con cambio en false: significa que el ritmo viene igual, que tambien "
 		+ "es una respuesta. Este modulo dice de que a que, nunca si esta mejor.")]
 	public RitmoDeUnProducto Ritmo(
-		[Description("El SKU del producto, como viene en las lineas de una compra. Usa detalle_de_compra o consumo_de para encontrarlo.")]
-		string sku,
+		[Description("El producto, como lo nombraria la persona: 'leche', 'helado'. Se busca por nombre o por parte del nombre; tambien acepta el codigo interno, pero no hace falta.")]
+		string producto,
 		[Description("La fecha de corte, en formato aaaa-mm-dd. Lo de antes se compara con lo de despues.")]
 		DateTime corte)
 	{
 		if (!lector.HayJournal) return new RitmoDeUnProducto();
 
-		return lector.Consultar(api => api.Ritmo(sku, corte));
+		return lector.Consultar(api => api.Ritmo(producto, corte));
 	}
 
 	[McpServerTool(Name = "que_cambio_en_mi_rutina", UseStructuredContent = true)]
@@ -158,6 +158,24 @@ internal sealed class ComprasTools
 		if (!lector.HayJournal) return new List<RitmoQueCambio>();
 
 		return lector.Consultar(api => api.RitmosQueCambiaron(corte));
+	}
+
+	[McpServerTool(Name = "mi_ritmo_de_super", UseStructuredContent = true)]
+	[Description("COMO VA AL SUPER esta persona: cada cuantos dias vuelve, que dia de la semana "
+		+ "suele comprar y en que momento del dia. Usala para '¿cada cuanto voy al super?', "
+		+ "'¿que dia compro?' o cuando la persona quiere entender su propia rutina — son cosas "
+		+ "que probablemente no habia notado. OJO CON LA CONFUSION: esto es cada cuanto VA AL "
+		+ "SUPER, no cada cuanto compra un producto (eso es cada_cuanto_compro) ni cada cuanto "
+		+ "entra un departamento (eso lo mira que_dejaste_de_comprar). Una persona puede ir todas "
+		+ "las semanas y comprar pollo cada tres. porMomento SIEMPRE trae los tres momentos del "
+		+ "dia -manana, tarde, noche- aunque alguno venga en cero. Si esObservado viene en false "
+		+ "no hay suficientes compras para medir un ritmo, y no es un error. Y esto no juzga: ir "
+		+ "los viernes de noche no es mejor ni peor que ir los martes en la mañana.")]
+	public RitmoDelSuperVista RitmoDelSuper()
+	{
+		if (!lector.HayJournal) return new RitmoDelSuperVista();
+
+		return lector.Consultar(api => api.Ritmo());
 	}
 
 	[McpServerTool(Name = "canasta_del_mes", UseStructuredContent = true)]

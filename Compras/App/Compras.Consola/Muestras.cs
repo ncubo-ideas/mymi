@@ -84,7 +84,14 @@ namespace Compras.Consola
 		// Lo que la historia tiene que dar. Son los criterios de la fase 1: si esto no
 		// sale asi, el dominio no esta contando la historia que la demo promete.
 		internal const int ComprasEsperadas = 87;
-		internal const string TotalEsperado = "3222336";
+		// UN DECIMAL Y NO UN STRING, y la diferencia importa: comparar por texto depende de
+		// la ESCALA del decimal, que a su vez depende de como se escribio el json. El guion
+		// trae los precios como 990.0, asi que la suma sale con escala 1 y "3222336.0" no es
+		// igual a "3222336" — aunque los dos numeros si lo sean.
+		//
+		// Es la misma trampa que el README ya advierte para el journal, mordiendo esta vez a
+		// la comprobacion en vez al dato. Un total se compara como numero.
+		internal const decimal TotalEsperado = 3222336m;
 		internal const string NumeroDeLaCompraDeLaGarantia = "T-89917";
 		internal const string ProductoConGarantia = "olla";
 

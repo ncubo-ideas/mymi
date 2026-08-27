@@ -137,5 +137,10 @@ namespace Compras.Dominio
 
 		/// <summary>Si está en TODAS las compras miradas. Lo que de verdad no falla.</summary>
 		public bool EstaEnTodas => ComprasEnQueAparece == ComprasMiradas;
+
+		/// <summary>Qué tan fiel es, dicho en palabras: "nunca falla", "casi nunca falta".</summary>
+		// Va aca y no en la pantalla porque es la MISMA respuesta para el MCP y para la UI, y
+		// porque el umbral -cuanto es "casi nunca falta"- es un juicio del dominio.
+		public Constancia Constancia => Constancia.Para(Proporcion);
 	}
 }
