@@ -27,10 +27,38 @@ namespace Examenes.Dominio
 		public override string Nombre => Suyo.ParaMostrar;
 
 		// Rango con piso Y techo, a diferencia del colesterol y el antigeno.
-		public override RangoDeReferencia RangoPara(int edad) =>
-			edad >= 60
+		//
+		// Y DEPENDE DEL SEXO, que es el SEGUNDO de los tres efectos: este analito aplica a
+		// cualquier persona —a diferencia del antigeno— y se compara contra otros umbrales.
+		// La diferencia no es cosmetica: una hemoglobina de 12.2 es anemia leve en un
+		// hombre y es normal en una mujer, y es exactamente el mismo numero.
+		//
+		// NULL CUANDO NO SE SABE EL SEXO, y no el rango masculino "mientras tanto". Ese
+		// default silencioso es el que produce el peor resultado posible: una clasificacion
+		// que se ve igual de firme que las demas, para la mitad de la poblacion, y esta mal.
+		// Lo que el dominio hace en cambio es decir que no puede (ver Veredicto.RequiereSexo).
+		//
+		// ⚠️ Los cortes son los de uso corriente en adultos y son ORIENTATIVOS. Varian
+		// ademas por embarazo y por altitud de residencia —el Valle Central esta por encima
+		// de los 1.000 m— y ese ajuste necesita un dato que hoy nadie aporta: queda nombrado
+		// y sin implementar, y entraria por Paciente igual que entro el sexo.
+		public override RangoDeReferencia RangoPara(Paciente paciente)
+		{
+			ArgumentNullException.ThrowIfNull(paciente);
+
+			if (!paciente.SeSabeElSexo) return null;
+
+			bool mayor = paciente.Edad >= 60;
+
+			if (paciente.Sexo.EsElMismo(Sexo.Mujer))
+				return mayor
+					? RangoDeReferencia.Entre(11.5m, 15.5m, Suyo.Unidad)
+					: RangoDeReferencia.Entre(12.0m, 16.0m, Suyo.Unidad);
+
+			return mayor
 				? RangoDeReferencia.Entre(12.5m, 16.5m, Suyo.Unidad)
 				: RangoDeReferencia.Entre(13.0m, 17.0m, Suyo.Unidad);
+		}
 
 		public override decimal CambioMaximoVerosimilPorDia => 0.1m;
 
@@ -44,18 +72,38 @@ namespace Examenes.Dominio
 		// y duplicarse ya es mucho. Es el analito con el corte mas bajo de los cuatro.
 		public override decimal MultiploQueNingunIntervaloJustifica => 2.5m;
 
-		public override int MesesHastaElProximo(int edad) =>
-			GradoDeAnemia().HayAnemia ? 6 : 12;
+		// Anual, y semestral SI SE SABE que hay anemia. Sin sexo no se sabe, y ahi la
+		// periodicidad es la normal: inventar un control semestral por las dudas seria
+		// decidir clinica con un dato que falta.
+		public override int MesesHastaElProximo(Paciente paciente) =>
+			HayRangoPara(paciente) && GradoDeAnemia(paciente).HayAnemia ? 6 : 12;
 
 		// ---------------------------------------------------------------- lo suyo
 
 		// CUANTA anemia hay, que es distinto de "esta bajo". El rango dice si cruzo el
 		// piso; esto dice cuanto, y de ahi sale que hacer.
-		public GradoDeAnemia GradoDeAnemia()
+		//
+		// EL PISO LO PONE EL RANGO, y ese es el cambio: hasta ahora habia un 13.0 escrito
+		// aca que era, sin decirlo, el piso masculino. O sea que el grado de anemia ya
+		// dependia del sexo —del sexo supuesto— y ademas discrepaba del propio rango, que a
+		// los 60 arranca en 12.5. Preguntandoselo al rango las dos cosas dicen lo mismo por
+		// construccion y la dependencia queda declarada en un solo lugar.
+		//
+		// Los GRADOS —leve, moderada, severa— siguen en valores absolutos: son la escala de
+		// profundidad de la anemia, no el umbral de que la haya, y esa gradacion gruesa no
+		// se corre con el sexo.
+		//
+		// EXIGE SABER EL SEXO. Se alcanza solo despues de que la serie descarto el caso
+		// "no se puede determinar"; ver SerieDeHemoglobina.
+		public GradoDeAnemia GradoDeAnemia(Paciente paciente)
 		{
-			decimal valor = Valor.Valor;
+			// Un valor por encima del techo no es anemia: es otra cosa, y llamarla
+			// "ninguna" es correcto porque de anemia no hay.
+			if (EsNormalPara(paciente)) return Examenes.Dominio.GradoDeAnemia.Ninguna;
 
-			if (valor >= 13.0m) return Examenes.Dominio.GradoDeAnemia.Ninguna;
+			decimal valor = Valor.Valor;
+			if (valor > RangoPara(paciente).Maximo.Valor) return Examenes.Dominio.GradoDeAnemia.Ninguna;
+
 			if (valor >= 11.0m) return Examenes.Dominio.GradoDeAnemia.Leve;
 			if (valor >= 8.0m) return Examenes.Dominio.GradoDeAnemia.Moderada;
 			return Examenes.Dominio.GradoDeAnemia.Severa;

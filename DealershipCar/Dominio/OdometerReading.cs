@@ -4,7 +4,7 @@ namespace DealershipCar.Dominio
 {
 	/// <summary>
 	/// Una lectura del odometro: el valor, su unidad, cuando se observo y de donde vino. La
-	/// unidad viaja siempre con el valor (OINV-21, ley L7).
+	/// unidad viaja siempre con el valor.
 	/// </summary>
 	internal sealed class OdometerReading
 	{
@@ -14,7 +14,7 @@ namespace DealershipCar.Dominio
 		/// <summary>La unidad del valor. Se compara por IDENTIDAD, nunca por nombre.</summary>
 		internal DistanceUnit Unit { get; }
 
-		/// <summary>Cuando se OBSERVO la lectura, que no es cuando llego (OINV-53).</summary>
+		/// <summary>Cuando se OBSERVO la lectura, que no es cuando llego.</summary>
 		internal DateTime ObservedAt { get; }
 
 		/// <summary>De donde vino, que es lo que determina cuanto se le cree.</summary>
@@ -32,7 +32,7 @@ namespace DealershipCar.Dominio
 			if (unit == null)
 				throw new DomainException(
 					"Una lectura sin unidad es un numero suelto, y un numero suelto se puede "
-					+ "comparar contra cualquier cosa. La unidad viaja con el valor (OINV-21).");
+					+ "comparar contra cualquier cosa. La unidad viaja con el valor.");
 
 			if (source == null)
 				throw new DomainException(

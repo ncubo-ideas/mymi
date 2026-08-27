@@ -10,11 +10,28 @@ namespace Examenes.Dominio
 	// negocio de facturas, con una diferencia importante: ademas de la coleccion,
 	// mantiene los INDICES que hacen posible la pregunta de la serie.
 	//
-	// La EDAD vive en el expediente y entra por constructor. No se calcula con la fecha
-	// de hoy a proposito: un dominio que lee el reloj deja de ser reproducible, y el
+	// EL PACIENTE vive en el expediente y entra por constructor. No se calcula con la
+	// fecha de hoy a proposito: un dominio que lee el reloj deja de ser reproducible, y el
 	// mismo journal reproducido el ano que viene daria otros rangos de referencia. Para
 	// el demo la edad esta quemada al construir el expediente; el dia que el proveedor
 	// mande la fecha de nacimiento, entra por el mismo lugar.
+	//
+	// EL SEXO ENTRA POR DOS PUERTAS, Y LAS DOS SE GUARDAN. Es la opcion C de la spec:
+	//
+	//   INSTITUCION  el laboratorio lo publica, porque lo tiene: los rangos de referencia
+	//                van impresos en el reporte, asi que su sistema sabe el dato.
+	//   TU           la persona lo declara o lo corrige desde su app.
+	//
+	// Conviven en el journal con su procedencia, y PARA INTERPRETAR GANA LO QUE DIJO LA
+	// PERSONA SOBRE SI MISMA. Eso no es una preferencia de implementacion: es "tú eres la
+	// autoridad final" demostrado en un caso concreto, y es la razon de que el conflicto
+	// —la institucion dice una cosa y la persona otra— sea un caso modelado y no un bug.
+	//
+	// 🚩 PENDIENTE DE CONFIRMAR con Alvaro (§12.1 de la spec). El pedido original asume
+	// que solo la persona lo aporta (opcion A), que haria que el bloque que insiste
+	// aparezca SIEMPRE al inicio de la demo. La C lo incluye —mientras el laboratorio no
+	// publique el dato, el estado sigue siendo Desconocido— asi que el guion de la demo
+	// funciona igual y ademas queda el caso del conflicto para mostrar.
 	public class Expediente
 	{
 		private readonly List<Examen> examenes = new List<Examen>();
@@ -36,8 +53,22 @@ namespace Examenes.Dominio
 		private readonly Dictionary<Analito, SerieDeAnalito> series =
 			new Dictionary<Analito, SerieDeAnalito>();
 
+		// Lo que dijo cada uno, por separado. Se guardan LOS DOS y no se pisan: el journal
+		// conserva las dos afirmaciones con su procedencia, y lo que sigue es solo quien
+		// gana al interpretar.
+		private Sexo declaradoPorLaPersona = Sexo.Desconocido;
+
+		private Sexo publicadoPorLaInstitucion = Sexo.Desconocido;
+
 		public int Edad { get; private set; }
 
+		// EL CONSTRUCTOR SIGUE RECIBIENDO SOLO LA EDAD, y eso no es pereza: la semilla del
+		// actor esta JOURNALIZADA como `expediente = Expediente(60)`. Cambiarle la firma
+		// haria que ningun expediente ya sembrado se pueda reproducir, que es exactamente
+		// lo que un dominio event-sourced no puede permitirse.
+		//
+		// Y ademas es el arranque correcto: un expediente nuevo NO sabe el sexo. Que ese
+		// sea el estado inicial —y no un default masculino— es la mitad del punto.
 		public Expediente(int edad)
 		{
 			if (edad <= 0 || edad > 120)
@@ -47,11 +78,59 @@ namespace Examenes.Dominio
 			Edad = edad;
 		}
 
+		// DE QUIEN ES ESTE EXPEDIENTE. Es lo que todo el dominio recibe para interpretar, y
+		// se arma cada vez en vez de guardarse: asi no puede quedar desincronizado de las
+		// dos afirmaciones de las que sale.
+		//
+		// GANA LA PERSONA. Si declaro su sexo, ese es; si no, el que publico la institucion;
+		// si ninguno, Desconocido.
+		public Paciente Paciente => new Paciente(Edad, SexoQueGana);
+
+		public Sexo Sexo => SexoQueGana;
+
+		private Sexo SexoQueGana =>
+			declaradoPorLaPersona.EsConocido ? declaradoPorLaPersona : publicadoPorLaInstitucion;
+
+		// Lo que dijo cada uno, para que la superficie pueda mostrar el conflicto en vez de
+		// esconderlo. Vacio -Desconocido- cuando esa fuente no dijo nada.
+		public Sexo SexoDeclaradoPorLaPersona => declaradoPorLaPersona;
+
+		public Sexo SexoPublicadoPorLaInstitucion => publicadoPorLaInstitucion;
+
+		// HAY CONFLICTO cuando las dos fuentes dijeron algo y no dijeron lo mismo. No es un
+		// error que haya que resolver: es un hecho del expediente, y el dominio ya sabe
+		// cual gana. Se expone para poder DECIRLO.
+		public bool HayConflictoDeSexo =>
+			declaradoPorLaPersona.EsConocido
+			&& publicadoPorLaInstitucion.EsConocido
+			&& !declaradoPorLaPersona.EsElMismo(publicadoPorLaInstitucion);
+
+		// LO QUE LA PERSONA DICE DE SI MISMA. Es el comando local, procedencia TU.
+		//
+		// El texto entra como cadena porque asi llega —de un boton de la pantalla, del
+		// journal al reproducir— y se resuelve a identidad en la frontera, igual que
+		// Analito.PorNombre. De aca para adentro nadie vuelve a mirar un string.
+		public void DeclararSexo(string sexo)
+		{
+			declaradoPorLaPersona = Sexo.PorNombre(sexo);
+		}
+
+		// LO QUE PUBLICA EL LABORATORIO, procedencia INSTITUCION. Entra por el mismo lugar
+		// y NO pisa lo que dijo la persona: los dos quedan, y para interpretar gana ella.
+		public void PublicarSexo(string sexo)
+		{
+			publicadoPorLaInstitucion = Sexo.PorNombre(sexo);
+		}
+
 		public IReadOnlyList<Examen> Lista => examenes;
 
 		public int Cantidad => examenes.Count;
 
-		public int CantidadDeAnalitosConSerie => series.Count;
+		// Los que TIENEN HISTORIA Y LE CORRESPONDEN a esta persona. Un antigeno prostatico
+		// con serie completa no cuenta si el expediente es de una mujer: para ella ese
+		// analito no existe, y contarlo aca lo dejaria asomando en el pie de la portada
+		// aunque su tarjeta no estuviera.
+		public int CantidadDeAnalitosConSerie => Visibles().Count;
 
 		// Indexador por posicion en la lista. Es lo que hace valido el DSL
 		// `expediente[@indice]` para el detalle: los examenes no tienen un numero de
@@ -121,8 +200,40 @@ namespace Examenes.Dominio
 		// Antes las dos daban "no hay datos de eso", asi que un nombre mal escrito se veia
 		// igual que un analito que la persona todavia no se hizo. Eran indistinguibles
 		// justo cuando importa distinguirlas: al agregar un sinonimo y equivocarse.
-		public bool TieneSerieDe(string analito) => series.ContainsKey(Analito.PorNombre(analito));
+		// LAS SERIES QUE LE CORRESPONDEN A ESTA PERSONA. Es el filtro por el que pasan TODAS
+		// las consultas de abajo, y por eso esta escrito una vez: si cada consulta decidiera
+		// por su cuenta, la que se olvidara dejaria el analito asomando —en el historial, en
+		// el titular, en el conteo— y la correccion volveria a ser un filtro de pantalla
+		// puesto en varios lados.
+		//
+		// LOS INDETERMINADOS ENTRAN. Mientras no se sepa el sexo el analito sigue estando:
+		// se muestra su valor y se retiene el veredicto. Esconderlo por las dudas seria
+		// decidir con un dato que falta, que es justamente lo que este cambio no hace.
+		private List<KeyValuePair<Analito, SerieDeAnalito>> Visibles()
+		{
+			Paciente paciente = Paciente;
+			var visibles = new List<KeyValuePair<Analito, SerieDeAnalito>>();
 
+			foreach (KeyValuePair<Analito, SerieDeAnalito> par in series)
+				if (par.Key.AplicaA(paciente).HayAlgoQueDecir) visibles.Add(par);
+
+			return visibles;
+		}
+
+		// La serie de ese analito SI le corresponde a esta persona; null si no. Es la
+		// version de una sola llave del filtro de arriba.
+		private SerieDeAnalito Visible(Analito analito)
+		{
+			if (!analito.AplicaA(Paciente).HayAlgoQueDecir) return null;
+			return series.TryGetValue(analito, out SerieDeAnalito serie) ? serie : null;
+		}
+
+		public bool TieneSerieDe(string analito) => Visible(Analito.PorNombre(analito)) != null;
+
+		// EL ACCESO CRUDO A LA SERIE, sin el filtro de aplicabilidad. Existe para las
+		// comprobaciones y para quien necesita los metodos propios de una serie concreta
+		// -la velocidad del antigeno, el histograma-; las consultas que la superficie
+		// consume son las de mas abajo, y esas si filtran.
 		public SerieDeAnalito SerieDe(string analito)
 		{
 			Analito cual = Analito.PorNombre(analito);
@@ -140,8 +251,14 @@ namespace Examenes.Dominio
 		{
 			Analito cual = Analito.PorNombre(analito);
 
-			if (!series.TryGetValue(cual, out SerieDeAnalito serie))
-				return EvaluacionDeTendencia.SinSerie(cual, 0, null);
+			// UN ANALITO QUE NO LE CORRESPONDE NO TIENE TENDENCIA, y la respuesta correcta
+			// es NoAplica y no SinSerie: "todavia no hay mediciones" invitaria a hacerse un
+			// examen que no corresponde.
+			SerieDeAnalito serie = Visible(cual);
+			if (serie == null)
+				return cual.AplicaA(Paciente).EsNoAplica
+					? EvaluacionDeTendencia.NoAplica(cual, 0)
+					: EvaluacionDeTendencia.SinSerie(cual, 0, null);
 
 			// LA TENDENCIA SOLO EXISTE EN LAS SERIES CONTINUAS. Un binario no asciende ni
 			// desciende: aparece. La consulta sigue siendo TOTAL —la superficie pregunta
@@ -165,13 +282,24 @@ namespace Examenes.Dominio
 		public Interpretacion InterpretarSerieDe(string analito)
 		{
 			Analito cual = Analito.PorNombre(analito);
+			Paciente paciente = Paciente;
+
+			// LA APLICABILIDAD SE CONTESTA AUNQUE NO HAYA SERIE, y eso es lo que distingue
+			// esta correccion de un filtro de pantalla. La tool MCP pregunta por el antigeno
+			// prostatico de una mujer y recibe "no corresponde a tu caso", no "todavia no
+			// hay mediciones" y muchisimo menos un valor. La aplicabilidad es propiedad de
+			// QUE SE MIDIO —vive en la identidad del analito— asi que se puede contestar sin
+			// una sola medicion.
+			if (cual.AplicaA(paciente).EsNoAplica)
+				return Interpretacion.NoAplica(EvaluacionDeTendencia.NoAplica(cual, 0))
+					.ConForma(FormaDeLectura.Afirmacion);
 
 			// La REFERENCIA viaja con la lectura, igual que la forma: la superficie pide
 			// una vez y sabe contra que se lee el valor. Se aplica aca —el unico punto de
 			// consulta— para que ningun numero salga sin ella.
 			return series.TryGetValue(cual, out SerieDeAnalito serie)
-				? serie.Interpretar(Edad).ConForma(serie.Forma)
-					.ConReferencia(serie.ReferenciaLegible(Edad))
+				? serie.Interpretar(paciente).ConForma(serie.Forma)
+					.ConReferencia(serie.ReferenciaLegible(paciente))
 				: Interpretacion.SinSerie(EvaluacionDeTendencia.SinSerie(cual, 0, null))
 					.ConForma(FormaDeLectura.Afirmacion);
 		}
@@ -187,9 +315,15 @@ namespace Examenes.Dominio
 				Severidad mayor = Severidad.Informativo;
 				Accion accion = null;
 
-				foreach (KeyValuePair<Analito, SerieDeAnalito> par in series)
+				Paciente paciente = Paciente;
+
+				// SOLO LOS QUE LE CORRESPONDEN. Un antigeno prostatico que exige atencion
+				// no puede poner "mostrále esto a tu médico" en el titular de una mujer:
+				// para ella ese examen no existe, y el titular es lo primero y a veces lo
+				// unico que alguien lee.
+				foreach (KeyValuePair<Analito, SerieDeAnalito> par in Visibles())
 				{
-					Interpretacion lectura = par.Value.Interpretar(Edad);
+					Interpretacion lectura = par.Value.Interpretar(paciente);
 					if (lectura.Severidad.EsMasUrgenteQue(mayor))
 					{
 						mayor = lectura.Severidad;
@@ -234,8 +368,10 @@ namespace Examenes.Dominio
 			// siendo TOTAL para que la superficie pueda preguntarle a cualquier analito sin
 			// saber cual la tiene. La prueba de tipo es la frontera entre "esta es una
 			// pregunta general" y "esta capacidad es de uno solo".
-			return series.TryGetValue(cual, out SerieDeAnalito serie)
-					&& serie is SerieDeAntigenoProstatico antigeno
+			// Y el antigeno es justamente el analito con requisito anatomico, asi que este
+			// es el camino por el que su ritmo podria salir en el expediente de alguien a
+			// quien no le corresponde. Visible() lo corta.
+			return Visible(cual) is SerieDeAntigenoProstatico antigeno
 				? antigeno.VelocidadDelTramo()
 				: Examenes.Dominio.Velocidad.NoAplica(cual, "", 0m);
 		}
@@ -248,8 +384,13 @@ namespace Examenes.Dominio
 		{
 			get
 			{
+				// LOS QUE LE CORRESPONDEN, y no todos los que tienen serie. Esta es la
+				// lista que la pantalla recorre para armar una tarjeta por analito y la que
+				// la IA usa para saber por que puede preguntar: si el antigeno saliera de
+				// aca en el expediente de una mujer, la tarjeta volveria a existir por la
+				// puerta de atras.
 				var nombres = new List<string>();
-				foreach (KeyValuePair<Analito, SerieDeAnalito> par in series)
+				foreach (KeyValuePair<Analito, SerieDeAnalito> par in Visibles())
 					nombres.Add(par.Key.Nombre);
 				nombres.Sort(StringComparer.OrdinalIgnoreCase);
 				return nombres;
@@ -276,8 +417,11 @@ namespace Examenes.Dominio
 		public IReadOnlyList<ControlPendiente> ControlesPendientes(DateTime hoy)
 		{
 			var pendientes = new List<ControlPendiente>();
+			Paciente paciente = Paciente;
 
-			foreach (KeyValuePair<Analito, SerieDeAnalito> par in series)
+			// Y SOLO LOS QUE LE CORRESPONDEN: decirle a una mujer que le toca repetirse el
+			// antigeno prostatico seria peor que mostrarle el valor viejo.
+			foreach (KeyValuePair<Analito, SerieDeAnalito> par in Visibles())
 			{
 				SerieDeAnalito serie = par.Value;
 				if (!serie.HayMediciones) continue;
@@ -290,7 +434,7 @@ namespace Examenes.Dominio
 				int dias = Math.Max(0, (int)(hoy.Date - serie.FechaDeLaUltima.Date).TotalDays);
 
 				pendientes.Add(new ControlPendiente(
-					par.Key, serie.FechaDeLaUltima.Date, dias, serie.MesesHastaElProximo(Edad)));
+					par.Key, serie.FechaDeLaUltima.Date, dias, serie.MesesHastaElProximo(paciente)));
 			}
 
 			// Lo mas vencido primero: es el orden en que conviene leerlos, y evita que la
@@ -308,7 +452,10 @@ namespace Examenes.Dominio
 
 			// Solo las continuas tienen puntos con NUMERO. Los de un binario son fechas
 			// con un si o un no, y van por PruebasDe.
-			return series.TryGetValue(cual, out SerieDeAnalito serie) && serie is SerieContinua continua
+			//
+			// Y solo las que le corresponden: un analito que no aplica no devuelve sus
+			// puntos, porque un grafico con datos es una forma de mostrar el valor.
+			return Visible(cual) is SerieContinua continua
 				? continua.Mediciones
 				: new List<ExamenDeSangre>();
 		}
@@ -320,7 +467,7 @@ namespace Examenes.Dominio
 		{
 			Analito cual = Analito.PorNombre(analito);
 
-			return series.TryGetValue(cual, out SerieDeAnalito serie) && serie is SerieBinaria binaria
+			return Visible(cual) is SerieBinaria binaria
 				? binaria.Pruebas
 				: new List<PruebaBinaria>();
 		}
@@ -332,7 +479,7 @@ namespace Examenes.Dominio
 		{
 			Analito cual = Analito.PorNombre(analito);
 
-			return series.TryGetValue(cual, out SerieDeAnalito serie) && serie is SerieBinaria binaria
+			return Visible(cual) is SerieBinaria binaria
 				? binaria.Evaluar()
 				: EvaluacionDePresencia.SinSerie(cual, 0, "");
 		}
@@ -343,9 +490,8 @@ namespace Examenes.Dominio
 		{
 			Analito cual = Analito.PorNombre(analito);
 
-			return series.TryGetValue(cual, out SerieDeAnalito serie)
-				? serie.Forma.Nombre
-				: FormaDeLectura.Afirmacion.Nombre;
+			SerieDeAnalito serie = Visible(cual);
+			return serie != null ? serie.Forma.Nombre : FormaDeLectura.Afirmacion.Nombre;
 		}
 
 		// LAS LINEAS que hay que dibujar junto a los puntos.
@@ -353,8 +499,9 @@ namespace Examenes.Dominio
 		{
 			Analito cual = Analito.PorNombre(analito);
 
-			return series.TryGetValue(cual, out SerieDeAnalito serie)
-				? serie.Referencias(Edad)
+			SerieDeAnalito serie = Visible(cual);
+			return serie != null
+				? serie.Referencias(Paciente)
 				: new List<ReferenciaDeLectura>();
 		}
 
@@ -383,11 +530,19 @@ namespace Examenes.Dominio
 			// UNA FILA POR ANALITO, no por examen. Un urianalisis trae tres cosas medidas y
 			// antes las tres caian en la misma fila, aplanadas en un string. Ahora cada
 			// lectura es su propia fila, con su nombre y su resultado.
+			// EL HISTORIAL TAMBIEN FILTRA. Es el ultimo lugar donde un analito que no
+			// corresponde podia seguir asomando: la tarjeta ya no existe, el titular ya no
+			// lo nombra, y la fila del historial seguiria mostrando "Antígeno prostático
+			// 5.2 ng/mL" con fecha. Criterio 1 de la spec: en NINGUNA parte.
+			Paciente delExpediente = Paciente;
+
 			var filas = new List<string>();
 			var porFila = new Dictionary<string, LecturaEnFecha>();
 			foreach (Examen examen in OrdenadosParaElCuadro())
 				foreach (LecturaDeExamen lectura in examen.Lecturas)
 				{
+					if (!lectura.Analito.AplicaA(delExpediente).HayAlgoQueDecir) continue;
+
 					string llave = lectura.Analito.Nombre;
 					if (!filas.Contains(llave)) filas.Add(llave);
 					porFila[llave + "|" + examen.Fecha.Date.Ticks] =
@@ -471,6 +626,48 @@ namespace Examenes.Dominio
 			return ordenados;
 		}
 
+		// CUANTOS RESULTADOS NO SE PUEDEN INTERPRETAR HASTA SABER EL SEXO.
+		//
+		// Es una consulta del DOMINIO y no una cuenta de la pantalla, y esa es la razon de
+		// que exista: el bloque que insiste dice "no puedo interpretar 2 de tus 7
+		// resultados", y ese 2 sale de recorrer cada serie e interpretarla, que es
+		// exactamente lo que una pantalla no puede hacer.
+		public int AnalitosNoInterpretables
+		{
+			get
+			{
+				int cuantos = 0;
+				Paciente paciente = Paciente;
+				foreach (KeyValuePair<Analito, SerieDeAnalito> par in Visibles())
+					if (par.Value.Interpretar(paciente).RequiereElSexo) cuantos++;
+				return cuantos;
+			}
+		}
+
+		// EL PEDIDO DEL DATO QUE FALTA, entero y ya dicho: cuantos resultados quedan sin
+		// leer, cuales, y la frase que lo explica en terminos de la persona.
+		//
+		// Va junto y no en tres consultas sueltas porque la superficie lo necesita junto y
+		// porque la FRASE la escribe el dominio: es el criterio 9 de la spec —ningun texto
+		// sobre el sexo se compone en la vista— y componerla afuera obligaria a la pantalla
+		// a saber por que cada analito no se puede leer.
+		public PedidoDeSexo FaltaElSexo
+		{
+			get
+			{
+				Paciente paciente = Paciente;
+				var sinLeer = new List<Analito>();
+
+				foreach (KeyValuePair<Analito, SerieDeAnalito> par in Visibles())
+					if (par.Value.Interpretar(paciente).RequiereElSexo) sinLeer.Add(par.Key);
+
+				sinLeer.Sort((uno, otro) => string.Compare(uno.ParaMostrar, otro.ParaMostrar,
+					StringComparison.OrdinalIgnoreCase));
+
+				return new PedidoDeSexo(paciente.Sexo, sinLeer, CantidadDeAnalitosConSerie);
+			}
+		}
+
 		// Cuantos analitos tienen HOY algo que no deberia estar. Es un conteo derivado, no
 		// un campo que pueda quedar desincronizado.
 		//
@@ -481,9 +678,16 @@ namespace Examenes.Dominio
 		{
 			get
 			{
+				// UN HALLAZGO EXIGE ESTAR SEGURO DE DOS COSAS: que el analito le corresponda
+				// a esta persona —no que "quizas"— y que su rango se pueda determinar. Con
+				// el sexo desconocido no se cumple ninguna de las dos en los analitos que
+				// dependen de el, y contarlos igual seria afirmar un hallazgo con el dato
+				// que falta. Lo que la persona ve en su lugar es el bloque que lo pide.
 				int fuera = 0;
-				foreach (KeyValuePair<Analito, SerieDeAnalito> par in series)
-					if (par.Value.UltimaEsHallazgo(Edad)) fuera++;
+				Paciente paciente = Paciente;
+				foreach (KeyValuePair<Analito, SerieDeAnalito> par in Visibles())
+					if (par.Key.AplicaA(paciente).EsAplica && par.Value.UltimaEsHallazgo(paciente))
+						fuera++;
 				return fuera;
 			}
 		}

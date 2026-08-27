@@ -9,10 +9,10 @@ namespace DealershipCar.Dominio
 	/// </summary>
 	internal enum IntervalBasisCode
 	{
-		/// <summary>Vence con la PRIMERA de las dos dimensiones que llegue (ley L1). Exige los dos limites.</summary>
+		/// <summary>Vence con la PRIMERA de las dos dimensiones que llegue. Exige los dos limites.</summary>
 		TimeOrDistance,
 
-		/// <summary>Vence solo cuando se alcanzan LAS DOS (ley L2). Exige los dos limites.</summary>
+		/// <summary>Vence solo cuando se alcanzan LAS DOS. Exige los dos limites.</summary>
 		TimeAndDistance,
 
 		/// <summary>Vence por tiempo cumplido. Exige limite de tiempo y NINGUN limite de distancia.</summary>
@@ -23,7 +23,7 @@ namespace DealershipCar.Dominio
 
 		/// <summary>
 		/// Vence cuando llega un cruce de umbral recibido, y solo puede ADELANTAR un
-		/// vencimiento, nunca empujarlo (ley L3). No lleva limite de tiempo ni de distancia.
+		/// vencimiento, nunca empujarlo. No lleva limite de tiempo ni de distancia.
 		/// </summary>
 		ConditionOnly,
 	}
@@ -31,22 +31,21 @@ namespace DealershipCar.Dominio
 	/// <summary>
 	/// La ley que decide cuando vence una operacion de mantenimiento. La base del intervalo ES el
 	/// subtipo, nunca un campo. Cada subtipo contesta dos preguntas: donde esta parada la
-	/// operacion (<see cref="Assess"/>, leyes L1 y L2) y donde queda el proximo punto base
-	/// (<see cref="NextOccurrenceFromActualCompletion"/>, ley L4).
+	/// operacion (<see cref="Assess"/>) y donde queda el proximo punto base
+	/// (<see cref="NextOccurrenceFromActualCompletion"/>).
 	/// </summary>
 	internal abstract class IntervalRule
 	{
 		/// <summary>
 		/// Donde esta parada la operacion, dados el ancla, el instante evaluado, la ultima lectura
 		/// usable y el escalamiento del perfil de uso. El instante SE RECIBE: el dominio no lee un
-		/// reloj (§7). Funcion pura, asi que una suspension se cura sola cuando llegan los hechos
-		/// (GAP G4).
+		/// reloj. Funcion pura, asi que una suspension se cura sola cuando llegan los hechos.
 		/// </summary>
 		internal abstract DueAssessment Assess(
 			BasePoint from, DateTime asOf, UsableReading latestUsable, IntervalLengthFactor factor);
 
 		/// <summary>
-		/// LEY L4 (OINV-26): la proxima ocurrencia se mide desde el instante y la lectura en que la
+		/// La proxima ocurrencia se mide desde el instante y la lectura en que la
 		/// operacion se completo DE VERDAD, nunca desde la grilla teorica en que estaba agendada.
 		/// Abstracta porque cada base ancla dimensiones distintas.
 		/// </summary>
@@ -56,7 +55,7 @@ namespace DealershipCar.Dominio
 		/// <summary>
 		/// Lo que toda evaluacion que mida algo exige: un ancla, un escalamiento, una respuesta
 		/// sobre la ultima lectura usable, y un instante no anterior al ancla. Los cuatro son
-		/// violaciones de contrato y revientan (E32). ConditionOnly no la llama: no mide nada.
+		/// violaciones de contrato y revientan. ConditionOnly no la llama: no mide nada.
 		/// </summary>
 		protected static void RequireAnAnchorAFactorAndAReading(
 			BasePoint from, DateTime asOf, UsableReading latestUsable, IntervalLengthFactor factor)
@@ -76,7 +75,7 @@ namespace DealershipCar.Dominio
 				throw new DomainException(
 					"Falta la respuesta sobre la ultima lectura usable. Que no haya ninguna se "
 					+ "dice con UsableReading.None, que contesta que no hay; un null no contesta "
-					+ "nada y obliga a cada llamador a acordarse solo (E45).");
+					+ "nada y obliga a cada llamador a acordarse solo.");
 
 			if (asOf < from.Instant)
 				throw new DomainException(
@@ -86,10 +85,10 @@ namespace DealershipCar.Dominio
 		}
 
 		/// <summary>
-		/// OINV-20: LA BASE NUNCA SE INFIERE. Rechaza los limites que no concuerdan con la base
+		/// LA BASE NUNCA SE INFIERE. Rechaza los limites que no concuerdan con la base
 		/// declarada -- las dos de dos dimensiones exigen los dos limites, TimeOnly solo el de
 		/// tiempo, DistanceOnly solo el de distancia, ConditionOnly ninguno. Un limite ausente se
-		/// expresa con cero; uno negativo es un defecto. Revienta (E32).
+		/// expresa con cero; uno negativo es un defecto. Revienta.
 		/// </summary>
 		internal static void BasisIsNeverInferred(
 			IntervalBasisCode basis, int timeLimitDays, int distanceLimit)
@@ -125,8 +124,8 @@ namespace DealershipCar.Dominio
 				case IntervalBasisCode.TimeOnly:
 					if (!hayTiempo)
 						throw new DomainException(
-							"TimeOnly exige un limite de tiempo: sin el no vence nunca, y OINV-19 "
-							+ "dice que no hay operacion sin regla de cuando vence.");
+							"TimeOnly exige un limite de tiempo: sin el no vence nunca, y no hay "
+							+ "operacion sin regla de cuando vence.");
 					if (hayDistancia)
 						throw new DomainException(
 							$"TimeOnly no admite limite de distancia, y llego {distanceLimit}. O la "
@@ -137,8 +136,7 @@ namespace DealershipCar.Dominio
 				case IntervalBasisCode.DistanceOnly:
 					if (!hayDistancia)
 						throw new DomainException(
-							"DistanceOnly exige un limite de distancia: sin el no vence nunca "
-							+ "(OINV-19).");
+							"DistanceOnly exige un limite de distancia: sin el no vence nunca.");
 					if (hayTiempo)
 						throw new DomainException(
 							$"DistanceOnly no admite limite de tiempo, y llego {timeLimitDays}. O la "
@@ -150,8 +148,7 @@ namespace DealershipCar.Dominio
 						throw new DomainException(
 							"ConditionOnly no lleva limite de tiempo ni de distancia, y llegaron "
 							+ $"tiempo={timeLimitDays} distancia={distanceLimit}. Vence cuando se "
-							+ "recibe un cruce de umbral, y solo puede adelantar un vencimiento "
-							+ "(ley L3).");
+							+ "recibe un cruce de umbral, y solo puede adelantar un vencimiento.");
 					return;
 			}
 
@@ -161,7 +158,7 @@ namespace DealershipCar.Dominio
 		}
 
 		/// <summary>
-		/// La unica fabrica de reglas, en la frontera: corre la guarda de OINV-20, resuelve la
+		/// La unica fabrica de reglas, en la frontera: corre la guarda de la base, resuelve la
 		/// unidad, y devuelve la regla de la base pedida. La guarda va primero, siempre. La unidad
 		/// se resuelve aunque la base no mida distancia, porque la firma del contrato es una sola.
 		/// </summary>

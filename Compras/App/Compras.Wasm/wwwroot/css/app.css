@@ -1,86 +1,103 @@
 /* La Guaria y vos — la carátula que la persona instala.
  *
- * LA MARCA ES SUPERMERCADO LA GUARIA, y las especificaciones salen del código real de su
- * página (SuperGuaria.module.css en nCuboSite), no de un boceto: "la app y la página
- * tienen que verse de la misma institución".
+ * LA PALETA Y LA TIPOGRAFIA SON LAS DEL DISEÑO DE FERNANDA, no las del documento de marca,
+ * y esa fue una decision del equipo: se le pregunto y contesto que sí, "más como lo que
+ * ella hizo en su html de ejemplo". Los valores salen medidos de su canvas, no adivinados
+ * de una captura.
  *
- * EL PUNTO MÁS IMPORTANTE DEL DOCUMENTO es que esta app NO se parezca a la de Delfos. Si
- * las dos se ven iguales, quien las vea concluye "el mismo dueño" en vez de "dos
- * instituciones distintas", y el ecosistema pierde su argumento.
+ * Difieren del documento de Geaninna en tres cosas, y quedan anotadas para que nadie las
+ * "corrija" despues creyendo que son un descuido:
  *
- * VERDE Y BLANCO, y esto se corrigió mirando la pantalla. El primer intento puso la app
- * sobre un gradiente verde oscuro, leyendo la §3 como si el fondo oscuro fuera obligatorio
- * — y no lo es: la §7 lo lista entre las cosas que la app PUEDE cambiar, y la §3 dice que
- * la página es blanca. Todo verde oscuro se leía clínico, que es exactamente el tono de
- * Delfos y lo contrario del "cálido, de confianza cotidiana" que la §0 pide para acá.
+ *   tinta    #16261c  (el documento dice #23301f — el suyo es mas oscuro)
+ *   marca    #1f7a43  (el documento dice #2f6b3f — el suyo es mas brillante)
+ *   fondo    #f7f5f0  (el documento dice #f5f8f2 — el suyo es CALIDO, hacia el crema)
  *
- * Y hay un argumento más fuerte que el tono: Exámenes se fue a navy oscuro. Dos apps con
- * gradiente oscuro se parecen entre sí; blanco con verde las separa de un vistazo, que es
- * lo que el documento quiere. El verde entra como MASA en la barra superior y como acento
- * en lo demás, no como fondo.
+ * El fondo es el que mas cambia el caracter, y su version es la que cumple mejor lo que el
+ * propio documento pide en la §0: tono "calido, de confianza cotidiana".
  *
- * SE MANTIENE BOOTSTRAP, y es una decisión distinta a la de Exámenes, que lo sacó. Se le
- * remapean sus variables a esta paleta: se gana la marca sin reescribir cada clase de las
- * páginas, y lo escrito sobrevive a un cambio de layout. Sacarlo es un paso aparte, más
- * grande, y no hace falta para que la app se reconozca.
+ * UNA SOLA UI QUE SE COMPORTA DISTINTO POR RESOLUCION, que es lo que pidio Alvaro: "lo
+ * ideal es mantener una sola ui que mantenga a mobile y desktop, quizas dependiendo de la
+ * resolucion se comporte distinto, en vez de dos uis separadas".
  *
- * CERO WEBFONTS: Segoe UI es de sistema. Con un payload sin trimming, agregar descargas de
- * fuentes es una decisión que conviene no romper después "por diseño".
+ * SE MANTIENE BOOTSTRAP, con sus variables remapeadas a esta paleta: se gana el diseño sin
+ * reescribir cada clase de las paginas. Examenes lo saco del todo; es un paso aparte.
  *
- * LOS DOS ESTADOS, y el ámbar tiene UN solo trabajo: marcar lo que cambió en la canasta.
- * Los avisos de la app no son ámbar — gritaban igual que la portada y le robaban el
- * significado al único lugar donde el color quiere decir algo. Y el ROJO NO SE USA: "un
- * carrito no tiene urgencias". No está definido acá a propósito, para que nadie lo pinte
- * por accidente.
+ * ⚠️ LA FUENTE ES UN PENDIENTE REAL, no un detalle. Plus Jakarta Sans es un WEBFONT y su
+ * canvas lo trae de Google. Esta app promete funcionar "sin nosotros, y sin conexion" — y
+ * una fuente que se baja de internet rompe esa promesa el dia que alguien abra la app sin
+ * red: la tipografia cae al fallback y la app se ve distinta. Hay que SERVIRLA NOSOTROS
+ * (woff2 en wwwroot), y hasta entonces la pila de abajo la deja caer con dignidad.
+ *
+ * LOS DOS ESTADOS, y el ambar tiene UN solo trabajo: marcar lo que cambio. El ROJO NO SE
+ * USA: "un carrito no tiene urgencias". No esta definido aca a proposito.
  */
 
 :root {
-    /* Institucional — "la tienda", desde 1992. Valores de la §3. */
-    --gu-verde:        #2f6b3f;   /* EL color de la marca */
-    --gu-verde-oscuro: #1e4a2c;   /* titulares, barra superior, pie */
-    --gu-verde-claro:  #3f8a52;   /* hover, iconos, kickers, dato resaltado */
-    --gu-morado:       #7b5ea7;   /* SOLO el logo y acentos mínimos. Es la flor, no un color de UI */
+    /* --------------------------------------------------- la paleta de Fernanda */
+
+    --tinta:           #16261c;   /* titulos y texto principal */
+    --tenue:           #6e8175;   /* texto secundario */
+    --tenue-2:         #8d9c8f;   /* rotulitos y pies */
+
+    --verde:           #1f7a43;   /* el verde de marca: enlaces, "ver todos" */
+    --verde-vivo:      #2e9e5b;   /* el acento: botones, puntos llenos */
+    --verde-hondo:     #16261c;   /* la barra superior y el pie */
+
+    --papel:           #f7f5f0;   /* el fondo de la pantalla: CALIDO, no verdoso */
+    --carta:           #ffffff;   /* las tarjetas */
+    --ficha:           #f6f8f3;   /* las fichas de producto, dentro de una tarjeta */
+    --linea:           #dde3da;   /* bordes, y los puntos vacios */
+    --tinte-verde:     #e9f4ec;   /* fondos tenidos de verde */
+    --tinte-crema:     #fdf1e0;   /* el fondo de "un cambio en tu rutina" */
+    --tierra:          #e8b775;   /* el acento calido de ese mismo bloque */
+
+    /* La flor de la marca. Es el unico lugar donde entra el morado. */
+    --gu-morado:       #7b5ea7;
     --gu-morado-claro: #bda8d9;
     --gu-morado-hondo: #5f4288;
-    --gu-corazon:      #f6e9a8;   /* el corazón amarillo del labelo */
-    --gu-tierra:       #b8763a;   /* detalles de la ilustración, y los avisos que piden algo */
+    --gu-corazon:      #f6e9a8;
 
-    /* La app es de hoy: verde más brillante que el institucional (§3). */
-    --app-verde:       #2f9e4f;
-    --app-verde-hover: #26833f;
+    --barra-fondo:     var(--verde-hondo);
+    --barra-tinta:     #eef6f0;
+    --barra-tenue:     #a0ada2;
 
-    /* SUPERFICIES. Blanco de fondo y verde de acento: los dos colores de un supermercado.
-       El gris-verde suave es para lo que tiene que separarse del papel sin pesar. */
-    --papel:           #ffffff;
-    --papel-suave:     #f5f8f2;   /* §3: fondo de sección alterna */
-    --tinta:           #23301f;   /* §3: texto principal */
-    --tenue:           #5f6b58;   /* §3: texto secundario */
-    --linea:           #dfe8d8;   /* §3: bordes y separadores */
+    /* LOS DOS ESTADOS. El verde tenido para lo estable, el crema para lo que cambio: son
+       los dos fondos que su diseño usa, y el crema es mas calido que el ambar que teniamos
+       — que es justo el tono que la §0 pide para esta marca. */
+    --estable-fondo:   var(--tinte-verde);
+    --estable-borde:   #cfe6d5;
+    --estable-tinta:   var(--verde);
 
-    /* La barra superior y el pie, en el verde oscuro institucional (§3). Es la masa de
-       color que hace que la pantalla se lea como la app de una institución. */
-    --barra-fondo:     var(--gu-verde-oscuro);
-    --barra-tinta:     #eaf6ea;
-    --barra-tenue:     #a8ccab;
-
-    /* LOS DOS ESTADOS DEL CARRITO (§3). Los rellenos y bordes son los valores del
-       documento; los colores de TEXTO son derivados, porque sobre papel blanco el
-       #6ee7a0 de la especificación no se lee. Si Geannina da los suyos, se cambian acá. */
-    --estable-fondo:   rgba(110, 231, 160, 0.12);
-    --estable-borde:   rgba(110, 231, 160, 0.32);
-    --estable-tinta:   var(--gu-verde-oscuro);
-
-    --cambio-fondo:    rgba(251, 191, 36, 0.10);
-    --cambio-borde:    rgba(251, 191, 36, 0.30);
+    --cambio-fondo:    var(--tinte-crema);
+    --cambio-borde:    #f3ddb8;
     --cambio-tinta:    #8a5a1f;
 
-    /* Una sola familia, y eso es intencional (§2). Nada de serif: la serif es Delfos. */
-    --sans: "Segoe UI", "Helvetica Neue", Arial, sans-serif;
+    /* --------------------------------------------------- tipografia y formas */
 
-    /* Formas (§4). La pastilla es lo que la distingue de Delfos. */
-    --radio-carta:  14px;
+    /* Plus Jakarta Sans es la de su diseño. La pila la deja caer en fuentes de sistema
+       mientras no la sirvamos nosotros — ver el aviso del encabezado. */
+    --sans: 'Plus Jakarta Sans', 'Segoe UI', 'Helvetica Neue', Arial, sans-serif;
+
+    /* Sus radios, medidos: 16 para tarjeta, 12 para ficha, 999 para pastilla. */
+    --radio-carta:  16px;
+    --radio-ficha:  12px;
     --radio-boton:  999px;
-    --radio-marco:  28px;
+    --radio-marco:  20px;
+
+    --sombra-carta: 0 3px 14px rgba(22, 38, 28, .05);
+}
+
+/* Alias: el resto de la hoja fue escrito con los nombres del documento de marca. Se
+   mantienen apuntando a la paleta de Fernanda para no reescribir cada regla, y porque un
+   rename masivo en una hoja que Fer va a retocar es pedirle un conflicto. */
+:root {
+    --papel-suave:     var(--ficha);
+    --gu-verde:        var(--verde);
+    --gu-verde-oscuro: var(--verde-hondo);
+    --gu-verde-claro:  var(--verde-vivo);
+    --gu-tierra:       #b8763a;
+    --app-verde:       var(--verde-vivo);
+    --app-verde-hover: var(--verde);
 }
 
 /* Bootstrap con SUS variables apuntando a esta paleta. Es lo que evita tener que pelearle
@@ -122,6 +139,11 @@ html, body {
     min-height: 100vh;
 }
 
+/* Las tarjetas van BLANCAS sobre el papel calido: es el contraste que su diseño usa para
+   separar una lectura de la siguiente sin una sola linea de borde. */
+.card, .list-group-item { background-color: var(--carta); }
+.card { box-shadow: var(--sombra-carta); border-color: transparent; }
+
 h1:focus { outline: none; }
 
 /* Título de la app: §2 lo pone en 800, más pesado que cualquier otro titular. */
@@ -158,6 +180,92 @@ h2, h3, h4, h5 { font-weight: 700; }
     margin-left: auto;
     color: var(--barra-tenue);
     border-color: rgba(234, 246, 234, .3);
+}
+
+/* ---------------------------------------------------------------- las pestañas */
+
+/* UNA SOLA UI QUE SE COMPORTA DISTINTO POR RESOLUCION, que es lo que pidio Alvaro. El
+   markup de las pestañas es uno; lo que cambia es donde se paran.
+
+   ESCRITORIO: en linea, pegadas a la barra de marca, como las pestañas de un expediente.
+   TELEFONO: al pie y fijas, que es donde llega el pulgar. Y el body gana un colchon abajo
+   para que la barra no tape la ultima fila.
+
+   El corte es 768 px, el mismo que usa la §4 para el ancho de columna. */
+.pestanas {
+    background: var(--barra-fondo);
+    border-bottom: 1px solid rgba(0, 0, 0, .2);
+}
+.pestanas-dentro {
+    max-width: 56rem;
+    margin: 0 auto;
+    padding: 0 1.5rem;
+    display: flex;
+    gap: .35rem;
+}
+.pestana {
+    display: inline-flex;
+    align-items: center;
+    gap: .45rem;
+    padding: .6rem 1.05rem;
+    border-radius: var(--radio-boton) var(--radio-boton) 0 0;
+    color: var(--barra-tenue);
+    text-decoration: none;
+    font-weight: 600;
+    font-size: .92rem;
+    line-height: 1;
+}
+.pestana:hover { color: var(--barra-tinta); background: rgba(234, 246, 234, .08); }
+
+/* La activa se despega del verde y se apoya en el papel DE LA PAGINA -no en el blanco de
+   una tarjeta-: la pestaña ES la pantalla, y tiene que continuar su fondo. */
+.pestana.active {
+    background: var(--papel);
+    color: var(--gu-verde-oscuro);
+}
+.pestana-icono { font-size: 1.05rem; line-height: 1; }
+
+@media (max-width: 767.98px) {
+    /* Al pie, fijas, y en dos mitades iguales. */
+    .pestanas {
+        position: fixed;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        z-index: 900;
+        border-bottom: 0;
+        border-top: 1px solid rgba(0, 0, 0, .2);
+        box-shadow: 0 -2px 12px rgba(20, 51, 31, .18);
+        /* El area segura del telefono: sin esto la barra queda debajo del gesto de inicio. */
+        padding-bottom: env(safe-area-inset-bottom, 0);
+    }
+    .pestanas-dentro { padding: 0; gap: 0; }
+    .pestana {
+        flex: 1 1 0;
+        flex-direction: column;
+        gap: .2rem;
+        justify-content: center;
+        border-radius: 0;
+        padding: .55rem .5rem .5rem;
+        font-size: .74rem;
+    }
+    .pestana.active { background: transparent; color: var(--barra-tinta); }
+    /* Y la activa se marca con una linea arriba, no con un fondo: sobre verde, un bloque
+       de papel al pie se lee como un error de render. */
+    .pestana.active .pestana-icono { color: #fff; }
+    .pestana.active::before {
+        content: "";
+        position: absolute;
+        top: 0;
+        width: 3.2rem;
+        height: 3px;
+        border-radius: 0 0 3px 3px;
+        background: var(--barra-tinta);
+    }
+    .pestana { position: relative; }
+
+    /* El colchon para que la barra fija no tape la ultima fila. */
+    main { padding-bottom: 5.5rem !important; }
 }
 
 /* ---------------------------------------------------------------- avisos y secciones */
@@ -200,6 +308,112 @@ main h2 {
     text-transform: uppercase;
     letter-spacing: 0.16em;
 }
+
+/* ---------------------------------------------------------------- infaltables */
+
+/* "Los que siempre vuelven", con los puntitos de frecuencia del diseño de la app. Un
+   "3 de 4" se lee; una fila de puntos se RECONOCE, y con doce habituales eso importa. */
+/* LA FICHA DE PRODUCTO, con los valores medidos del canvas de Fernanda: fondo #f6f8f3,
+   radio 12, la imagen a 52 px de alto, el nombre en 13.5/700 y la cuenta en 11.5 con el
+   numero destacado. La rejilla es de tres columnas en telefono y se estira en escritorio. */
+.infaltables {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(6.5rem, 1fr));
+    gap: 9px;
+    margin-top: 14px;
+}
+.infaltable {
+    background: var(--ficha);
+    border-radius: var(--radio-ficha);
+    padding: 12px 10px 13px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+.infaltable-foto {
+    height: 52px;
+    width: auto;
+    max-width: 100%;
+    object-fit: contain;
+    display: block;
+}
+/* Sin imagen, el hueco de 52 px se mantiene: si no, las fichas de la fila quedan de
+   alturas distintas y la rejilla se ve rota. */
+.infaltable-sinfoto { height: 52px; display: flex; align-items: center; font-size: 1.6rem; opacity: .35; }
+.infaltable-nombre {
+    font-size: 13.5px;
+    font-weight: 700;
+    color: var(--tinta);
+    margin-top: 10px;
+    align-self: flex-start;
+    line-height: 1.2;
+}
+.infaltable-veces {
+    font-size: 11.5px;
+    color: var(--tenue);
+    margin-top: 3px;
+    align-self: flex-start;
+    line-height: 1.3;
+    font-variant-numeric: tabular-nums;
+}
+.infaltable-veces b { color: var(--tinta); font-size: 13px; }
+.puntos { display: flex; gap: 4px; margin-top: 8px; align-self: flex-start; }
+.punto { width: 8px; height: 8px; border-radius: 50%; background: var(--linea); }
+.punto-lleno { background: var(--verde-vivo); }
+
+/* ---------------------------------------------------------------- recibos */
+
+/* El buscador, con la lupa adentro del campo. */
+.buscador { position: relative; }
+.buscador-lupa {
+    position: absolute;
+    left: 1rem;
+    top: 50%;
+    transform: translateY(-50%);
+    color: var(--tenue);
+    font-size: 1.1rem;
+    pointer-events: none;
+}
+.buscador .form-control {
+    padding-left: 2.6rem;
+    border-radius: var(--radio-boton);
+    background: var(--papel-suave);
+    border-color: var(--linea);
+}
+
+/* El rotulito del grupo: HOY, AGOSTO 2026. Es el kicker de la marca. */
+.grupo-fecha {
+    font-size: .74rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: .16em;
+    color: var(--tenue);
+    margin: 1.4rem 0 .5rem;
+}
+
+/* UNA FILA DE RECIBO. El dia grande a la izquierda es lo que se recorre con la vista
+   cuando alguien busca "el del sabado pasado". */
+.recibo {
+    display: flex;
+    align-items: center;
+    gap: .9rem;
+    text-align: left;
+    width: 100%;
+    border-color: var(--linea);
+}
+.recibo-dia {
+    flex: 0 0 2.9rem;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    line-height: 1;
+    color: var(--gu-verde-oscuro);
+}
+.recibo-numero-dia { font-size: 1.25rem; font-weight: 800; font-variant-numeric: tabular-nums; }
+.recibo-mes { font-size: .64rem; text-transform: uppercase; letter-spacing: .1em; color: var(--tenue); }
+.recibo-que { display: flex; flex-direction: column; gap: .1rem; flex: 1 1 auto; min-width: 0; }
+.recibo-total { font-weight: 700; white-space: nowrap; }
+.recibo-flecha { color: var(--tenue); font-size: 1.3rem; line-height: 1; }
 
 /* ---------------------------------------------------------------- etiquetas */
 
@@ -263,14 +477,17 @@ main h2 {
     box-shadow: 0 0 0 0.25rem rgba(47, 158, 79, .30);
 }
 
-/* Tarjetas: 14 px y sombra casi nula (§4). Sin borde superior de color — ese es Delfos. */
+/* TARJETAS BLANCAS SOBRE EL PAPEL CALIDO, que es el contraste con el que el diseño de
+   Fernanda separa una lectura de la siguiente. Ojo con el token: --papel es el fondo CREMA
+   de la pagina y --carta es el BLANCO de la tarjeta; esta regla decia --papel y las filas
+   quedaban del mismo color que el fondo, o sea invisibles. */
 .card {
-    background-color: var(--papel);
+    background-color: var(--carta);
     border-color: var(--linea);
     border-radius: var(--radio-carta);
     box-shadow: 0 1px 4px rgba(20, 51, 31, 0.05);
 }
-.list-group-item { background-color: var(--papel); border-color: var(--linea); }
+.list-group-item { background-color: var(--carta); border-color: var(--linea); }
 .list-group-item:hover { background-color: var(--papel-suave); }
 
 /* Los números se leen en columna: alineados y de ancho fijo, con la misma familia. */

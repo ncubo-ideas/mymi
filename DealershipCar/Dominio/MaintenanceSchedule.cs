@@ -6,7 +6,7 @@ namespace DealershipCar.Dominio
 	/// <summary>
 	/// La lista viva de lo que un vehiculo necesita: sus operaciones activas, las lecturas del
 	/// odometro ordenadas por observacion, el perfil de uso que rige y hasta cuando se evaluo. Es
-	/// el agregado (OAGG-03), uno por <see cref="Vin"/>, y la raiz global del DSL (E14).
+	/// el agregado, uno por <see cref="Vin"/>, y la raiz global del DSL.
 	/// </summary>
 	internal sealed class MaintenanceSchedule
 	{
@@ -23,9 +23,9 @@ namespace DealershipCar.Dominio
 		private LastEvaluation _lastEvaluation = LastEvaluation.None;
 
 		/// <summary>
-		/// El constructor ES la creacion (E20): el vehiculo y el perfil de uso con que arranca, y
+		/// El constructor ES la creacion: el vehiculo y el perfil de uso con que arranca, y
 		/// nada mas. El plan llega despues, por <see cref="SeedPlanOperation"/>, y cada operacion
-		/// trae su propia ancla (C18).
+		/// trae su propia ancla.
 		/// </summary>
 		internal MaintenanceSchedule(string vin, UsageProfileCode usageProfile)
 		{
@@ -35,8 +35,8 @@ namespace DealershipCar.Dominio
 
 		/// <summary>
 		/// Siembra una operacion del plan del fabricante con sus limites, sus clasificaciones y el
-		/// ancla desde la que se mide -- instante, lectura y la unidad de esa lectura (C18). Si la
-		/// clase ya tiene una operacion activa, la SUSTITUYE: eso es la ley L5.
+		/// ancla desde la que se mide -- instante, lectura y la unidad de esa lectura. Si la
+		/// clase ya tiene una operacion activa, la SUSTITUYE en vez de duplicarla.
 		/// </summary>
 		internal void SeedPlanOperation(
 			OperationKindCode kind, IntervalBasisCode basis,
@@ -56,7 +56,7 @@ namespace DealershipCar.Dominio
 
 		/// <summary>
 		/// ABRE una revision del plan: deja su codigo y su instante, y las operaciones que trae
-		/// entran despues, una por una, por <see cref="SeedPlanOperation"/> (C5). Una revision
+		/// entran despues, una por una, por <see cref="SeedPlanOperation"/>. Una revision
 		/// fechada antes de la que rige seria re-fechar el pasado y se rechaza.
 		/// </summary>
 		internal void AdoptPlanRevision(string revisionCode, DateTime adoptedAt)
@@ -81,7 +81,7 @@ namespace DealershipCar.Dominio
 		/// <summary>
 		/// Agrega una operacion que pidio la persona, con su propia ancla. Nunca es obligatoria ni
 		/// clasificada de seguridad: eso lo declara el fabricante. Sobre una clase que ya ocupa el
-		/// plan se rechaza (ley L9).
+		/// plan se rechaza.
 		/// </summary>
 		internal void AddOwnerOperation(
 			OperationKindCode kind, IntervalBasisCode basis,
@@ -102,7 +102,7 @@ namespace DealershipCar.Dominio
 
 		/// <summary>
 		/// La persona quita una operacion suya. Sobre una del plan se rechaza, y rechazar es un
-		/// hecho del negocio y no una excepcion (ley L9, OINV-31, E32).
+		/// hecho del negocio y no una excepcion.
 		/// </summary>
 		internal void RemoveOwnerOperation(OperationKindCode kind)
 		{
@@ -117,7 +117,7 @@ namespace DealershipCar.Dominio
 
 		/// <summary>
 		/// La persona declara como usa el vehiculo, desde cuando. Una fecha de vigencia
-		/// retroactiva se RECHAZA (OINV-15): re-escribiria lo que la ley ya decidio.
+		/// retroactiva se RECHAZA: re-escribiria lo que la ley ya decidio.
 		/// </summary>
 		internal void DeclareUsageProfile(UsageProfileCode profile, DateTime effectiveFrom)
 		{
@@ -128,12 +128,12 @@ namespace DealershipCar.Dominio
 				throw new DomainException(
 					$"Se declaro un perfil de uso vigente desde {effectiveFrom}, antes del que "
 					+ $"rige desde {_declarations[_declarations.Count - 1].EffectiveFrom}. "
-					+ "OINV-15: los cambios de perfil rigen hacia adelante.");
+					+ "Los cambios de perfil rigen hacia adelante.");
 
 			if (_lastEvaluation.IsAfter(effectiveFrom))
 				throw new DomainException(
 					$"Se declaro un perfil de uso vigente desde {effectiveFrom}, y esta agenda ya "
-					+ $"se evaluo hasta {_lastEvaluation.Instant()}. OINV-15: un perfil nuevo no "
+					+ $"se evaluo hasta {_lastEvaluation.Instant()}. Un perfil nuevo no "
 					+ "re-fecha lo que la ley ya decidio con el que regia entonces.");
 
 			_declarations.Add(new UsageProfileDeclaration(declared, effectiveFrom));
@@ -141,8 +141,8 @@ namespace DealershipCar.Dominio
 
 		/// <summary>
 		/// La persona deja una operacion para despues. Fuera de un estado vencido, en el tope o
-		/// sobre una clasificada de seguridad es un no-op, y la operacion se queda donde estaba
-		/// (ley L6). Sobre una clase que no esta agendada tampoco hace nada.
+		/// sobre una clasificada de seguridad es un no-op, y la operacion se queda donde estaba.
+		/// Sobre una clase que no esta agendada tampoco hace nada.
 		/// </summary>
 		internal void DeferOperation(
 			OperationKindCode kind, DeferralReasonCode reason, DateTime decidedAt)
@@ -158,7 +158,7 @@ namespace DealershipCar.Dominio
 
 		/// <summary>
 		/// Entra una lectura del odometro. Se guarda en la linea de tiempo de OBSERVACION y no en
-		/// la de llegada (OINV-54); dentro de un mismo instante manda el orden de llegada, que es
+		/// la de llegada; dentro de un mismo instante manda el orden de llegada, que es
 		/// el desempate que el journal conserva. Una lectura que no calza en la linea se rechaza.
 		/// </summary>
 		internal void RecordReading(
@@ -176,7 +176,7 @@ namespace DealershipCar.Dominio
 
 		/// <summary>
 		/// Entra un cruce de umbral observado para una clase. Solo ADELANTA la operacion de esa
-		/// clase (ley L3); sobre una clase que no esta agendada no hay nada que adelantar.
+		/// clase; sobre una clase que no esta agendada no hay nada que adelantar.
 		/// </summary>
 		internal void RecordConditionThreshold(OperationKindCode kind, DateTime observedAt)
 		{
@@ -189,8 +189,8 @@ namespace DealershipCar.Dominio
 
 		/// <summary>
 		/// La operacion se hizo de verdad. Termina esa ocurrencia y su SUCESORA ocupa la clase,
-		/// anclada en la completacion real (ley L4). Completar una clase que no esta agendada es
-		/// un defecto de quien llama: no produce sucesora y el hecho se perderia (E32).
+		/// anclada en la completacion real. Completar una clase que no esta agendada es
+		/// un defecto de quien llama: no produce sucesora y el hecho se perderia.
 		/// </summary>
 		internal void CompleteOperation(
 			OperationKindCode kind, DateTime completedAt, int completionReading,
@@ -211,8 +211,8 @@ namespace DealershipCar.Dominio
 
 		/// <summary>
 		/// Donde queda cada operacion en ese instante, y que se movio. El instante SE RECIBE: el
-		/// dominio no lee un reloj (§7, E30). No se re-evalua el pasado -- el punto de control es
-		/// monotono (C6).
+		/// dominio no lee un reloj. No se re-evalua el pasado -- el punto de control es
+		/// monotono.
 		/// </summary>
 		internal EvaluationResult Evaluate(DateTime asOf)
 		{
@@ -244,14 +244,14 @@ namespace DealershipCar.Dominio
 		}
 
 		/// <summary>
-		/// LEY L5 (OINV-25): a lo sumo UNA operacion no terminal por clase. Una revision del plan
+		/// A lo sumo UNA operacion no terminal por clase. Una revision del plan
 		/// SUSTITUYE y nunca duplica, asi que la reemplazante toma el lugar de la activa y queda
 		/// enlazada hacia atras. La cadena sigue solo entre operaciones del MISMO origen: el plan
 		/// que desplaza a un recordatorio de la persona termina esa ocurrencia y entra como
 		/// genesis suya, porque un reemplazo hereda el origen de la que sustituye y heredarlo
-		/// cruzado dejaria a la ley L9 protegiendo lo que no es. Devuelve la que quedo activa, como
+		/// cruzado dejaria a la ley protegiendo lo que no es. Devuelve la que quedo activa, como
 		/// <see cref="ScheduledOperation.Complete"/> devuelve la sucesora: es la punta de la
-		/// cadena, que es donde vive el historial (GAP G3).
+		/// cadena, que es donde vive el historial.
 		/// </summary>
 		internal ScheduledOperation OneActiveOperationPerKind(
 			OperationKindCode kind, MaintenanceOperationDefinition definition,
@@ -271,9 +271,9 @@ namespace DealershipCar.Dominio
 		}
 
 		/// <summary>
-		/// LEY L8 (OINV-22): el perfil de uso escala el LARGO de los intervalos por un factor
+		/// El perfil de uso escala el LARGO de los intervalos por un factor
 		/// declarado, y nunca cambia la base de una operacion ni la quita. Rige el perfil que
-		/// estaba declarado PARA ESE INSTANTE (OINV-15): una declaracion posterior no alcanza
+		/// estaba declarado PARA ESE INSTANTE: una declaracion posterior no alcanza
 		/// hacia atras.
 		/// </summary>
 		internal IntervalLengthFactor UsageAdjustsLengthNotBasis(DateTime asOf)
@@ -287,7 +287,7 @@ namespace DealershipCar.Dominio
 		}
 
 		/// <summary>
-		/// LEY L9 (OINV-31): la persona agrega y quita SUS operaciones; una del plan del
+		/// La persona agrega y quita SUS operaciones; una del plan del
 		/// fabricante se puede aplazar o declinar, pero nunca agregar, quitar ni re-fechar.
 		/// Contesta si esa clase esta ocupada por una del plan, que es lo que no es suyo de tocar.
 		/// Total: una clase sin operacion activa no es del plan.
@@ -304,9 +304,9 @@ namespace DealershipCar.Dominio
 		}
 
 		/// <summary>
-		/// Donde esta parada la operacion de esa clase. TOTAL (E41): una clase sin operacion
+		/// Donde esta parada la operacion de esa clase. TOTAL: una clase sin operacion
 		/// agendada no esta vencida, y esa ausencia es una respuesta legal. Sale como escalar; el
-		/// <see cref="DueState"/> no se entrega (E24).
+		/// <see cref="DueState"/> no se entrega.
 		/// </summary>
 		internal string ReadDueState(OperationKindCode kind)
 		{
@@ -344,7 +344,7 @@ namespace DealershipCar.Dominio
 
 		/// <summary>
 		/// Cuantos aplazamientos lleva usados esa clase. Total, y DERIVADO de los que se
-		/// admitieron (E35): una clase sin operacion agendada no uso ninguno.
+		/// admitieron: una clase sin operacion agendada no uso ninguno.
 		/// </summary>
 		internal int DeferralsUsed(OperationKindCode kind)
 		{
@@ -356,7 +356,7 @@ namespace DealershipCar.Dominio
 		}
 
 		/// <summary>
-		/// Si aplazar esa clase haria algo (ley L6). Total: una clase sin operacion agendada no se
+		/// Si aplazar esa clase haria algo. Total: una clase sin operacion agendada no se
 		/// puede aplazar, que es la misma respuesta que da el comando.
 		/// </summary>
 		internal bool CanBeDeferred(OperationKindCode kind)
@@ -370,7 +370,7 @@ namespace DealershipCar.Dominio
 
 		/// <summary>
 		/// Si hay algo vencido. Total: es la pregunta de presencia que se hace ANTES de
-		/// <see cref="ReadNextDueKind"/> (E41).
+		/// <see cref="ReadNextDueKind"/>.
 		/// </summary>
 		internal bool HasAnythingDue()
 		{
@@ -379,7 +379,7 @@ namespace DealershipCar.Dominio
 
 		/// <summary>
 		/// Que hay que hacer primero: la operacion mas avanzada, y entre iguales la que entro
-		/// antes a la agenda. GUARDADA (E41): sin nada vencido revienta, porque nada vencido es la
+		/// antes a la agenda. GUARDADA: sin nada vencido revienta, porque nada vencido es la
 		/// ausencia de la cosa que se pide y no una clase vacia.
 		/// </summary>
 		internal string ReadNextDueKind()
@@ -400,8 +400,7 @@ namespace DealershipCar.Dominio
 
 		/// <summary>
 		/// Por que esa clase esta donde esta, en una frase. Total: una clase que no esta agendada
-		/// lo dice con todas las letras. Componer el motivo es del dominio y no de la vista
-		/// (OUS-07).
+		/// lo dice con todas las letras. Componer el motivo es del dominio y no de la vista.
 		/// </summary>
 		internal string ReadDueReason(OperationKindCode kind)
 		{
@@ -416,7 +415,7 @@ namespace DealershipCar.Dominio
 
 		/// <summary>
 		/// Cuantas operaciones cuentan como mantenimiento no hecho. DERIVADO de donde estan
-		/// paradas (E35), asi que baja solo cuando la operacion se hace: un contador aparte
+		/// paradas, asi que baja solo cuando la operacion se hace: un contador aparte
 		/// arrastraria para siempre un mantenimiento ya hecho.
 		/// </summary>
 		internal int MissedCount()
@@ -436,8 +435,8 @@ namespace DealershipCar.Dominio
 		}
 
 		/// <summary>
-		/// Hasta cuando se evaluo. Revienta si nunca se evaluo (E41). Es el punto de control que
-		/// la guarda de cadencia de C6 mira antes de dejar pasar un Evaluate.
+		/// Hasta cuando se evaluo. Revienta si nunca se evaluo. Es el punto de control que
+		/// la guarda de cadencia mira antes de dejar pasar un Evaluate.
 		/// </summary>
 		internal DateTime LastEvaluatedAt()
 		{
@@ -512,7 +511,7 @@ namespace DealershipCar.Dominio
 						$"Llego una lectura de {arriving.Value} {arriving.Unit.Name} observada el "
 						+ $"{arriving.ObservedAt}, y el {_readings[earlier].ObservedAt} ya se "
 						+ $"habia observado {_readings[earlier].Value}. El odometro no va para "
-						+ "atras (OINV-54): no es una dimension suspendida, es un hecho "
+						+ "atras: no es una dimension suspendida, es un hecho "
 						+ "imposible.");
 
 			for (int later = place; later < _readings.Count; later++)
@@ -522,7 +521,7 @@ namespace DealershipCar.Dominio
 						$"Llego una lectura de {arriving.Value} {arriving.Unit.Name} observada el "
 						+ $"{arriving.ObservedAt}, y el {_readings[later].ObservedAt} -- despues "
 						+ $"-- se observo {_readings[later].Value}. Un relleno tardio vale si "
-						+ "calza en la linea de observacion (OINV-54); este no calza.");
+						+ "calza en la linea de observacion; este no calza.");
 		}
 	}
 }

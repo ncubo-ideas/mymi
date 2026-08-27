@@ -17,7 +17,7 @@ namespace DealershipCar.Dominio
 
 	/// <summary>
 	/// La unidad en que esta expresada una distancia. Conjunto cerrado de dos miembros,
-	/// comparados por identidad, que NUNCA se inter-convierten: esa ausencia es OINV-21 / ley L7,
+	/// comparados por identidad, que NUNCA se inter-convierten: esa ausencia es la invariante,
 	/// y un metodo de conversion aca es un defecto, no una comodidad.
 	/// </summary>
 	internal sealed class DistanceUnit
@@ -41,7 +41,7 @@ namespace DealershipCar.Dominio
 
 		/// <summary>
 		/// Resuelve el codigo del wire al miembro, una sola vez al entrar. Total con excepcion: un
-		/// codigo desconocido es un defecto de quien llama y revienta (E32).
+		/// codigo desconocido es un defecto de quien llama y revienta.
 		/// </summary>
 		internal static DistanceUnit OfCode(DistanceUnitCode code)
 		{

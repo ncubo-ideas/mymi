@@ -31,9 +31,20 @@ namespace Examenes.Dominio
 
 		public decimal ValorMaximoPosible { get; }
 
+		// El caso normal: un analito que se le mide a cualquier persona. La sobrecarga de
+		// abajo es para el unico que no —el antigeno prostatico— y el requisito va ANTES
+		// del params porque un params tiene que quedar ultimo.
 		internal AnalitoContinuo(string nombre, string paraMostrar, UnidadDeMedida unidad,
 			decimal minimoPosible, decimal maximoPosible, params string[] sinonimos)
-			: base(nombre, paraMostrar, sinonimos)
+			: this(nombre, paraMostrar, unidad, minimoPosible, maximoPosible,
+				RequisitoAnatomico.Ninguno, sinonimos)
+		{
+		}
+
+		internal AnalitoContinuo(string nombre, string paraMostrar, UnidadDeMedida unidad,
+			decimal minimoPosible, decimal maximoPosible, RequisitoAnatomico requisito,
+			params string[] sinonimos)
+			: base(nombre, paraMostrar, requisito, sinonimos)
 		{
 			Unidad = unidad;
 			ValorMinimoPosible = minimoPosible;

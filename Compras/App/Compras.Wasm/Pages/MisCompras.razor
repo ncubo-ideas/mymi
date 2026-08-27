@@ -120,7 +120,7 @@ else
     {
         <div class="card border-success-subtle bg-success-subtle mb-3">
             <div class="card-body">
-                <div class="kicker text-success-emphasis mb-2">Lo estable</div>
+                <div class="kicker text-success-emphasis mb-2">Los que siempre vuelven</div>
                 <div class="fs-5">@firma.ParaSonia</div>
 
                 @* Con UN solo habitual, repetir el nombre debajo de la frase que ya lo dice
@@ -134,12 +134,33 @@ else
                 }
                 else
                 {
-                    <div class="d-flex flex-wrap gap-2 mt-3">
+                    @* LOS PUNTITOS son del diseño de la app: "3 de 4 compras" con tres de
+                       cuatro puntos llenos. Un numero se lee; una fila de puntos se
+                       RECONOCE de un vistazo, y con doce habituales eso importa. *@
+                    <div class="infaltables">
                         @foreach (var habitual in firma.Habituales)
                         {
-                            <span class="etiqueta etiqueta-verde">
-                                @habitual.Descripcion &middot; @Frecuencia(habitual)
-                            </span>
+                            <div class="infaltable">
+                                @{ string foto = Foto(habitual.Sku); }
+                                @if (foto.Length > 0)
+                                {
+                                    <img class="infaltable-foto" src="@foto" alt="" />
+                                }
+                                else
+                                {
+                                    <span class="infaltable-sinfoto" aria-hidden="true">&#9634;</span>
+                                }
+                                <div class="infaltable-nombre">@Corto(habitual.Descripcion)</div>
+                                <div class="infaltable-veces">
+                                    <b>@habitual.ComprasEnQueAparece</b> de @habitual.DeCuantas<br />compras
+                                </div>
+                                <div class="puntos" aria-hidden="true">
+                                    @for (int i = 0; i < habitual.DeCuantas; i++)
+                                    {
+                                        <span class="punto @(i < habitual.ComprasEnQueAparece ? "punto-lleno" : "")"></span>
+                                    }
+                                </div>
+                            </div>
                         }
                     </div>
                 }
@@ -194,6 +215,32 @@ else
                     </div>
                 }
             </div>
+        </div>
+    }
+
+    @* CADA CUANTO, que es la otra cara del mismo quiebre: la tarjeta de arriba dice QUÉ
+       entró, esta dice si lo compra MÁS SEGUIDO. Es la tarjeta "un cambio en tu rutina"
+       del diseño de la app.
+
+       La cadencia se dice como habla la gente —"1 vez/mes → 1 vez/semana"— y no en días,
+       porque "cada 6,5 días" no es como habla nadie. Y sin veredicto: de qué a qué. *@
+    @if (ritmos is not null && ritmos.Count > 0)
+    {
+        <h2>Un cambio en tu rutina</h2>
+        <div class="list-group mb-4">
+            @foreach (var ritmo in ritmos)
+            {
+                <div class="list-group-item d-flex justify-content-between align-items-center flex-wrap gap-2">
+                    <strong>@ritmo.Descripcion</strong>
+                    <span class="d-inline-flex align-items-center gap-2">
+                        <span class="etiqueta etiqueta-neutra">@ritmo.Antes</span>
+                        <span class="text-body-secondary">&rarr;</span>
+                        <span class="etiqueta @(ritmo.EsMasSeguido ? "etiqueta-cambio" : "etiqueta-neutra")">
+                            @ritmo.Ahora
+                        </span>
+                    </span>
+                </div>
+            }
         </div>
     }
 
@@ -309,40 +356,13 @@ else
         </div>
     }
 
-    @* "Tus recibos" y no "Tus compras": el titular de la pantalla ya dice eso, y la
-       especificación es explícita en que esta lista NO es la portada. *@
-    <h2>Tus recibos</h2>
-    @if (compras.Count == 0)
-    {
-        <p class="text-body-secondary">Todavía no hay compras. Apretá <em>Refresh</em>.</p>
-    }
-    else
-    {
-        <table class="table table-hover align-middle">
-            <thead>
-                <tr><th>Compra</th><th>Fecha</th><th class="text-end">Líneas</th><th class="text-end">Total</th></tr>
-            </thead>
-            <tbody>
-                @foreach (CompraEnLista compra in Recientes())
-                {
-                    <tr style="cursor:pointer" @onclick="() => VerDetalle(compra.Numero)">
-                        <td>@compra.Numero</td>
-                        <td>@compra.Fecha.ToString("dd/MM/yyyy", CultureInfo.InvariantCulture)</td>
-                        <td class="text-end">@compra.Lineas</td>
-                        <td class="text-end">@Colones(compra.Total)</td>
-                    </tr>
-                }
-            </tbody>
-        </table>
-
-        @if (compras.Count > RecibosQueSeMuestran)
-        {
-            <p class="small text-body-secondary">
-                Las @RecibosQueSeMuestran más recientes de @compras.Count.
-                Las demás siguen en tu carpeta, y tu asistente las puede consultar todas.
-            </p>
-        }
-    }
+    @* LOS RECIBOS VIVEN EN SU PROPIA PESTAÑA, y no es solo orden: la especificación dice
+       que "la lista de recibos existe, pero no es la portada", y con 87 compras cualquier
+       forma de ponerla en la misma pantalla la vuelve la portada por tamaño. En una
+       pestaña aparte deja de competir, y quien la busca la encuentra donde espera. *@
+    <p class="small text-body-secondary mt-4">
+        Los recibos, uno por uno, están en <a href="recibos">Compras</a>.
+    </p>
 
     @if (!estado.HayCarpeta)
     {
@@ -362,6 +382,7 @@ else
     private CanastasComparadas? comparacion;
     private FirmaDeLaSemana? firma;
     private CambioDeLaCanasta? cambio;
+    private IReadOnlyList<RitmoQueCambio> ritmos = new List<RitmoQueCambio>();
     private int cantidad;
     private decimal total;
     private long ultimoEvento;
@@ -454,6 +475,7 @@ else
         // La portada: lo estable y lo que cambió.
         firma = estado.Firma();
         cambio = estado.CambioDelUltimoAnio();
+        ritmos = estado.RitmosQueCambiaron();
     }
 
     private void VerDetalle(string numero) =>
@@ -480,6 +502,50 @@ else
     {
         int desde = Math.Max(0, compras.Count - RecibosQueSeMuestran);
         for (int i = compras.Count - 1; i >= desde; i--) yield return compras[i];
+    }
+
+    // LA FOTO DE UN PRODUCTO. El mapa vive ACA y no en el dominio ni en el catalogo del
+    // proveedor, y es a proposito: una imagen es decision de PANTALLA. El dominio no sabe
+    // que existe una carpeta de assets, y el supermercado publica skus y precios, no arte.
+    //
+    // Las imagenes son las del diseño de Fernanda y son GENERICAS -"leche", "arroz"-,
+    // mientras nuestros skus son concretos -LECHE-1L, ARROZ-2KG-. El mapa cruza los dos
+    // vocabularios en un solo lugar.
+    //
+    // TOTAL: un sku sin foto devuelve vacio y la ficha dibuja un hueco del mismo alto, que
+    // es lo que mantiene la rejilla derecha. Con 45 productos en el catalogo y 12 imagenes,
+    // el caso sin foto es la mayoria, no la excepcion.
+    private static readonly Dictionary<string, string> FotosPorSku = new()
+    {
+        ["LECHE-1L"] = "p-leche",
+        ["ARROZ-2KG"] = "p-arroz",
+        ["GALLETA-CHOC"] = "p-galletas",
+        ["HELADO-1L"] = "p-helado",
+        ["BANANO-KG"] = "p-banano",
+        ["TOMATE-KG"] = "p-tomate",
+        ["HUEVOS-30"] = "p-huevos",
+        ["QUESO-500"] = "p-queso",
+        ["QUESO-CREMA"] = "p-queso",
+        ["LECHUGA"] = "p-lechuga",
+        ["PAN-CUADRADO"] = "p-pan",
+        ["AGUA-6PK"] = "p-agua",
+        ["CHILE-DULCE"] = "p-chile",
+    };
+
+    private static string Foto(string sku) =>
+        FotosPorSku.TryGetValue(sku, out string nombre) ? $"assets/{nombre}.png" : "";
+
+    // EL NOMBRE CORTO PARA LA FICHA. "Leche semidescremada 1L" en una ficha de 6,5 rem se
+    // parte en tres lineas y desalinea la rejilla; el diseño de Fernanda usa "Leche".
+    //
+    // Se corta por la PRIMERA palabra y no se inventa un diccionario de nombres cortos: un
+    // diccionario se desincroniza con el catalogo, y la primera palabra de la descripcion
+    // del supermercado es justamente lo que el producto ES. El nombre completo sigue en el
+    // detalle de la compra, donde hay espacio.
+    private static string Corto(string descripcion)
+    {
+        int espacio = descripcion.IndexOf(' ');
+        return espacio > 2 ? descripcion[..espacio] : descripcion;
     }
 
     // "en todas" cuando no fallo ni una vez, y si no la cuenta cruda. La palabra la

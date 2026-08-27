@@ -1,17 +1,5 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
-  <!-- EL PUPPET. CERO dependencias: ni Puppeteer, ni HTTP, ni wasm, ni MCP.
-
-       Que este csproj no tenga un solo PackageReference ni ProjectReference es la prueba
-       de que el dominio no cambia al cruzar a wasm (ARCHITECTURE 3.1). Si algun dia
-       necesita una, ESO ES EL HALLAZGO: se para y se reporta, no se agrega.
-
-       La prueba no es de honor: DealershipCar.Dominio.Pruebas la verifica
-       mecanicamente en cada corrida (ver TheDomainHasNoDependencies.cs).
-
-       InternalsVisibleTo NO es una referencia, es un atributo, asi que la invariante
-       sigue intacta. Vive en AssemblyInfo.cs, con el porque. -->
-
   <PropertyGroup>
     <TargetFramework>net9.0</TargetFramework>
     <Nullable>disable</Nullable>
@@ -19,27 +7,9 @@
     <RootNamespace>DealershipCar.Dominio</RootNamespace>
     <AssemblyName>DealershipCar.Dominio</AssemblyName>
 
-    <!-- AssemblyTitle y Description son propiedades, no referencias: la invariante de cero
-         dependencias sigue intacta. Lo demas de la identidad sale de ../Directory.Build.props.
-
-         OJO, MEDIDO: la propiedad es AssemblyTitle, NO Title. Title es del paquete NuGet y no
-         toca el ensamblado; con Title puesto, FileDescription salia "DealershipCar.Dominio",
-         que es el default $(AssemblyName). -->
     <AssemblyTitle>Maintenance schedule rules</AssemblyTitle>
     <Description>The maintenance schedule itself: due states, distance limits and deferral windows. Reads no clock and has no dependencies.</Description>
 
-    <!-- E21 exige /// en cada tipo y cada miembro expuesto.
-
-         OJO, MEDIDO EN T2: esto NO alcanza para hacerlo cumplir. CS1591 dice literalmente
-         "falta el comentario XML para el tipo o miembro VISIBLE PUBLICAMENTE", y este
-         dominio es internal de punta a punta (E2, spike S1). O sea que el warning nunca se
-         dispara: se puede escribir todo el dominio sin un solo /// y compilar en verde.
-
-         La bandera se queda igual, pero por otra razon: GENERA EL XML. El XML si lleva a
-         los miembros internal que tienen ///, asi que
-         Pruebas/EveryDomainTypeIsDocumented.cs lo lee y compara lo que el ensamblado
-         declara contra lo que quedo documentado. Ahi si hay quien lo haga cumplir, y se
-         falsifico a proposito para verlo rojo. -->
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
   </PropertyGroup>
 

@@ -733,3 +733,65 @@ code { font-family: var(--mono); font-size: .9em; color: var(--ambar); }
         animation: none;
     }
 }
+
+/* ============================================================ EL BLOQUE QUE INSISTE
+
+   Falta un dato de la persona -su sexo- y sin el hay resultados que el dominio no puede
+   interpretar. Alvaro pidio que la pantalla INSISTA.
+
+   NEUTRO, NO AMBAR. Esto no habla de la salud de nadie: habla de un dato que la app no
+   tiene. Severidad Informativo, y el dominio la manda dicha para que este archivo no
+   tenga que acordarse de la regla. El semaforo -ambar y rojo- esta reservado para
+   RESULTADOS; usarlo aca lo devaluaria justo donde tiene que significar algo.
+
+   Y NO ES UN MODAL. Se puede plegar y no se puede descartar: mientras el dato falte, el
+   bloque vuelve. Eso es la insistencia, y es la misma jugada que mostrar el valor
+   bloqueado en vez de esconderlo. */
+.pedido {
+    background: var(--carta);
+    border: 1px solid var(--linea);
+    /* El borde izquierdo lo distingue del resto de las tarjetas sin darle color de
+       alarma: es el mismo recurso que usan los avisos neutros. */
+    border-left: 3px solid var(--celeste);
+    border-radius: 12px;
+    padding: 16px 20px 18px;
+    margin: 26px 0 4px;
+}
+
+.pedido-cabeza {
+    display: flex; align-items: center; justify-content: space-between;
+    gap: 8px 12px;
+}
+
+.pedido-rotulo {
+    font-family: var(--sans); font-weight: 700; font-size: 10.5px; letter-spacing: .18em;
+    text-transform: uppercase; color: var(--celeste);
+}
+
+/* Plegar, no descartar. Es un enlace y no un boton con peso: cerrar esto no es una
+   accion de la app, es correr algo de la vista un rato. */
+.pedido-plegar {
+    background: none; border: 0; padding: 0; cursor: pointer;
+    font-family: var(--sans); font-size: 12.5px; color: var(--tenue-2);
+    text-decoration: underline; text-underline-offset: 3px;
+}
+.pedido-plegar:hover { color: var(--tinta); }
+
+/* La frase la escribe el DOMINIO. Acá sólo se le da tamaño: es lo que hay que leer. */
+.pedido-texto {
+    margin: 10px 0 0;
+    font-family: var(--serif); font-size: 16px; line-height: 1.5;
+    color: var(--tinta);
+}
+
+.pedido-porque {
+    margin: 6px 0 0;
+    font-family: var(--sans); font-size: 12.5px; color: var(--tenue-2);
+}
+
+/* DOS BOTONES Y NADA MAS: se responde en un toque, sin formulario. Que sean los dos
+   iguales es deliberado — ninguno es la respuesta por defecto. */
+.pedido-botones {
+    display: flex; flex-wrap: wrap; gap: 10px;
+    margin-top: 14px;
+}

@@ -40,8 +40,8 @@ namespace DealershipCar.App
 		}
 
 		/// <summary>
-		/// Empty on purpose: seeding here would make every question the AI asks leave a journal entry.
-		/// It is what separates this host from the app's. See CODE-NOTES.
+		/// Empty on purpose: seeding here would make every question the AI asks leave a journal entry
+		/// and break the single-writer invariant. It is what separates this host from the app's.
 		/// </summary>
 		protected override void OnHydrated()
 		{

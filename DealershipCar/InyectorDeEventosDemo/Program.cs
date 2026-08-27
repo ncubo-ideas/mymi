@@ -115,11 +115,11 @@ async Task Historia()
             "el plan con que se entrega el vehiculo"),
 
         (PlanOp("FluidChange", "TimeOrDistance", 365, 10000, true, false, "2025-09-01", 12000),
-            "tiempo O distancia: vence con la primera de las dos que llegue (ley L1)"),
+            "tiempo O distancia: vence con la primera de las dos que llegue"),
         (PlanOp("FilterChange", "DistanceOnly", 0, 15000, true, false, "2025-09-01", 12000),
             "solo distancia: sin lecturas no se mueve, y eso se ve"),
         (PlanOp("TimedComponent", "TimeOnly", 550, 0, true, true, "2025-09-01", 12000),
-            "solo tiempo, y DE SEGURIDAD: la ley L6 no la deja aplazar"),
+            "solo tiempo, y DE SEGURIDAD: la ley no la deja aplazar"),
         (PlanOp("Inspection", "ConditionOnly", 0, 0, true, false, "2025-09-01", 12000),
             "solo condicion: no la mueve el tiempo ni la distancia, solo un cruce observado"),
 
@@ -134,15 +134,15 @@ async Task Historia()
         (Lectura(18600, "2026-02-01", "CustomerDeclared"), "y febrero calza entre las dos"),
 
         (Cruce("Inspection", "2026-04-01"),
-            "el taller informa el cruce: es lo unico que mueve una ConditionOnly (ley L3)"),
+            "el taller informa el cruce: es lo unico que mueve una ConditionOnly"),
 
         (Completacion("FluidChange", "2026-03-05", 20000),
-            "la operacion se hizo DE VERDAD: su sucesora se ancla ahi y no donde el plan decia (ley L4)"),
+            "la operacion se hizo DE VERDAD: su sucesora se ancla ahi y no donde el plan decia"),
 
         (Revision("R2", "2026-06-01"),
             "el fabricante emite una revision del plan"),
         (PlanOp("FluidChange", "TimeOrDistance", 300, 8000, true, false, "2026-06-01", 20000),
-            "y su reemplazo SUSTITUYE al activo, no duplica (ley L5): intervalo mas corto"),
+            "y su reemplazo SUSTITUYE al activo, no duplica: intervalo mas corto"),
 
         (Lectura(27000, "2026-07-01", "Telemetry"), "julio: el filtro llega a su limite"),
         (Lectura(29500, "2026-08-15", "Telemetry"), "agosto: y el fluido pasa el suyo, por distancia"),

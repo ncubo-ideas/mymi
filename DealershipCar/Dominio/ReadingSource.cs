@@ -31,7 +31,7 @@ namespace DealershipCar.Dominio
 	/// </summary>
 	internal sealed class ReadingSource
 	{
-		/// <summary>La persona escribio el numero en la app (OUS-09).</summary>
+		/// <summary>La persona escribio el numero en la app.</summary>
 		internal static readonly ReadingSource HumanEntry = new ReadingSource("HumanEntry");
 
 		/// <summary>El vehiculo lo reporto solo.</summary>
@@ -57,7 +57,7 @@ namespace DealershipCar.Dominio
 
 		/// <summary>
 		/// Resuelve el codigo del wire al miembro. Total con excepcion: un codigo desconocido es un
-		/// defecto de quien llama y revienta (E32).
+		/// defecto de quien llama y revienta.
 		/// </summary>
 		internal static ReadingSource OfCode(ReadingSourceCode code)
 		{

@@ -257,6 +257,12 @@ public sealed class EstadoDeLaApp : IAsyncDisposable
 	public CambioDeLaCanasta CambioDelUltimoAnio()
 	{ Exigir(); return api!.Cambio(new DateTime(DateTime.Now.Year, 1, 1)); }
 
+	// LOS PRODUCTOS A LOS QUE LES CAMBIO EL RITMO, el mas notorio primero. Mismo corte que
+	// el cambio de la canasta -"este ano"- porque las dos tarjetas cuentan el mismo quiebre
+	// desde angulos distintos: una dice QUE entro, la otra CADA CUANTO.
+	public IReadOnlyList<RitmoQueCambio> RitmosQueCambiaron()
+	{ Exigir(); return api!.RitmosQueCambiaron(new DateTime(DateTime.Now.Year, 1, 1)); }
+
 	// El "hoy" lo pone la caratula: el dominio no lee el reloj.
 	public IReadOnlyList<GarantiaDeProducto> GarantiasVigentes() { Exigir(); return api!.GarantiasVigentes(DateTime.Now); }
 
