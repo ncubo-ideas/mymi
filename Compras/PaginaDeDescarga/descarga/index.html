@@ -507,6 +507,48 @@
       <li><p><b>Elija la carpeta</b> <span>donde quiere guardar su historial, y toque <b>Refresh</b>.</span></p></li>
     </ol>
   </section>
+
+  <!-- PARA SU ASISTENTE. El camino opcional que la app sola no necesita: bajar Gnothi (una
+       vez) y el módulo, para que su IA lea el mismo historial que la app dejó en su carpeta.
+       Reusa las clases de la página (.instalar, .pasos, .boton) para no romper la marca. -->
+  <style>
+    .descargas-super { display: flex; gap: 12px; flex-wrap: wrap; margin-top: 20px; }
+    .boton--suave { background: transparent; color: var(--gu-verde); box-shadow: none;
+      border: 1px solid var(--gu-border); }
+    .boton--suave:hover { background: var(--gu-soft); color: var(--gu-verde-oscuro); }
+    .pasos code { font-family: "IBM Plex Mono", ui-monospace, Consolas, monospace;
+      font-size: 13px; background: var(--gu-soft); border: 1px solid var(--gu-border);
+      border-radius: 5px; padding: 2px 6px; }
+  </style>
+  <section class="envoltura instalar" id="asistente">
+    <div>
+      <h2>Para su asistente</h2>
+      <p>Opcional. La aplicación de arriba ya funciona sola. Esto es solo si quiere preguntarle
+         a su IA sobre sus compras — todo se queda en su computadora.</p>
+      <div class="descargas-super">
+        <a class="boton" href="descargas/gnothi/Gnothi.Host.zip" download>
+          Descargar Gnothi
+          <svg width="15" height="15" viewBox="0 0 15 15" fill="none" aria-hidden="true">
+            <path d="M7.5 1v10M3.4 7.2l4.1 4.1 4.1-4.1M1.6 13.6h11.8" stroke="currentColor"
+                  stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+        </a>
+        <a class="boton boton--suave" href="descargas/compras.gmod" download>Descargar el módulo</a>
+      </div>
+    </div>
+    <ol class="pasos">
+      <li><p><b>Instale Gnothi una vez.</b> <span>Es el programa que le presta el motor a
+          cualquier módulo. Descomprímalo en <code>C:\Gnothi</code>.</span></p></li>
+      <li><p><b>Regístrelo con su asistente.</b> <span>Corra
+          <code>Gnothi.Host.exe --install</code> — le pregunta antes de tocar nada y hace un
+          respaldo.</span></p></li>
+      <li><p><b>Sume el módulo del súper.</b> <span>Corra
+          <code>Gnothi.Host.exe --install-module compras.gmod</code>, o impórtelo desde la
+          ventana de Gnothi.</span></p></li>
+      <li><p><b>Listo.</b> <span>Reinicie su asistente y pregúntele por sus compras. Lee la
+          misma carpeta que la aplicación de arriba.</span></p></li>
+    </ol>
+  </section>
 </main>
 
 <footer>

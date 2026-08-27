@@ -6,7 +6,7 @@ Cómo probar, de punta a punta, lo que hay hoy en la rama `master_gnothiHostDesk
 2. **La ventana** de escritorio que lista tus módulos.
 3. **Registrar** Gnothi con el asistente (`--install`).
 4. **La PWA por fuera**: la app del laboratorio (Delfos) corriendo sola en el navegador.
-5. **El supermercado — Súper El Triunfo**: la misma idea con marca propia (página + PWA
+5. **El supermercado — Súper La Guaria**: la misma idea con marca propia (página + PWA
    branded), y una página que ofrece **los dos caminos** — la app sola, y el del asistente
    (bajar Gnothi + el módulo).
 
@@ -234,77 +234,78 @@ docker compose -f Examenes\docker-compose.yml down
 
 ---
 
-## Parte 5 · Súper El Triunfo — el supermercado, con los dos caminos
+## Parte 5 · Súper La Guaria — el supermercado, con los dos caminos
 
 Lo mismo que la Parte 4 (una app que corre sola en el navegador), pero para el súper, y con
 una diferencia clave que Delfos no tiene: la página ofrece **también** el camino del
-asistente — bajar Gnothi y el módulo. Es el negocio de **Facturas** (`HolaMundo\Facturas`),
-con la marca ficticia **Súper El Triunfo**.
+asistente — bajar Gnothi y el módulo. Es el negocio de **Compras**, con la marca ficticia
+**Súper La Guaria**.
+
+> Corre en puertos propios (`8100` la página/app, `8101` URL2), así que puede convivir con la
+> Parte 4 (examenes, `8090/8091`) sin chocar.
 
 ### 5.1 · Publicar la PWA y generar certs
 
 ```powershell
-dotnet publish HolaMundo\Facturas\App\Facturas.Wasm -c Release -o HolaMundo\Facturas\PaginaDeDescarga\publicado
-cd HolaMundo\Facturas\PaginaDeDescarga\certs
+dotnet publish Compras\App\Compras.Wasm -c Release -o Compras\PaginaDeDescarga\publicado
+cd Compras\PaginaDeDescarga\certs
 & "C:\Program Files\Git\usr\bin\openssl.exe" req -x509 -newkey rsa:2048 -sha256 -days 365 -nodes `
   -keyout localhost.key -out localhost.crt -subj "/CN=localhost" `
   -addext "subjectAltName=DNS:localhost,IP:127.0.0.1"
-cd ..\..\..\..
+cd ..\..\..
 ```
 
 ### 5.2 · Los descargables de la página (el módulo + Gnothi)
 
-Los dos botones de "Para tu asistente" ya sirven archivos reales, generados en
-`HolaMundo\Facturas\PaginaDeDescarga\descarga\descargas\`. **No hace falta regenerarlos para
-probar.** Si querés reconstruirlos:
+Los dos botones de "Para su asistente" ya sirven archivos reales, generados en
+`Compras\PaginaDeDescarga\descarga\descargas\`. **No hace falta regenerarlos para probar.**
+Si querés reconstruirlos:
 
 ```powershell
-# --- el módulo (facturas.gmod = 2 DLLs + manifest + view) ---
-$bin = "HolaMundo\Facturas\App\Facturas.App\bin\Debug\net9.0"
-$src = "$env:TEMP\facturas-src"
+# --- el módulo (compras.gmod = 2 DLLs + manifest + view) ---
+$bin = "Compras\App\Compras.App\bin\Debug\net9.0"
+$src = "$env:TEMP\compras-src"
 New-Item -ItemType Directory -Force "$src\dominio" | Out-Null
-Copy-Item "$bin\Facturas.App.dll","$bin\Facturas.Dominio.dll" "$src\dominio\"
+Copy-Item "$bin\Compras.App.dll","$bin\Compras.Dominio.dll" "$src\dominio\"
 @'
 {
-  "manifest": "1.0", "module": "facturas", "title": "Mis facturas", "institution": "Súper El Triunfo",
+  "manifest": "1.0", "module": "compras", "title": "Mis compras", "institution": "Supermercado La Guaria",
   "substrate": { "range": ">=3.0.0 <4.0.0" }, "capabilities": { "network": false, "folder": "own" },
-  "view": "view.json", "load": { "entry": "dominio/Facturas.App.dll" },
+  "view": "view.json", "load": { "entry": "dominio/Compras.App.dll" },
   "tools": [
     { "name": "resumen", "title": "Resumen", "readOnly": true, "input": [] },
-    { "name": "lista_de_facturas", "title": "Mis facturas", "readOnly": true, "input": [] }
+    { "name": "lista_de_compras", "title": "Mis compras", "readOnly": true, "input": [] }
   ]
 }
 '@ | Set-Content -Encoding utf8 "$src\manifest.json"
-'{ "view": "1.0", "initialScreen": "list", "screens": [ { "name": "list", "title": "Mis facturas", "blocks": [ { "type": "table", "query": "lista_de_facturas", "rows": "facturas" } ] } ] }' | Set-Content -Encoding utf8 "$src\view.json"
-dotnet run --project Gnothi.Host -- --pack $src HolaMundo\Facturas\PaginaDeDescarga\descarga\descargas\facturas.gmod
+'{ "view": "1.0", "initialScreen": "list", "screens": [ { "name": "list", "title": "Mis compras", "blocks": [ { "type": "table", "query": "lista_de_compras", "rows": "compras" } ] } ] }' | Set-Content -Encoding utf8 "$src\view.json"
+dotnet run --project Gnothi.Host -- --pack $src Compras\PaginaDeDescarga\descarga\descargas\compras.gmod
 
-# --- Gnothi: publicar y comprimir ---
+# --- Gnothi: publicar y comprimir (agnóstico del dominio, sirve para cualquier módulo) ---
 dotnet publish Gnothi.Host -c Release -o $env:TEMP\gnothi-dist
-Compress-Archive $env:TEMP\gnothi-dist\* HolaMundo\Facturas\PaginaDeDescarga\descarga\descargas\gnothi\Gnothi.Host.zip -Force
+Compress-Archive $env:TEMP\gnothi-dist\* Compras\PaginaDeDescarga\descarga\descargas\gnothi\Gnothi.Host.zip -Force
 ```
 
 ### 5.3 · Levantar y sembrar
 
 ```powershell
-docker compose -f HolaMundo\Facturas\docker-compose.yml up -d --build
-dotnet run --project HolaMundo\Facturas\InyectorDeEventosDemo -- historia --url http://localhost:8081/
+docker compose -f Compras\docker-compose.yml up -d --build
+dotnet run --project Compras\InyectorDeEventosDemo -- historia --url http://localhost:8101/
 ```
 
-**Tenés que ver** dos contenedores (`app1-wasm-host`, `app1-eventos-api`) y tres `HTTP 200`
-al sembrar.
+**Tenés que ver** los contenedores `compras-wasm-host` y `compras-eventos-api` arriba (más
+`compras-caja`, la UI del inyector, en `8102`), y las líneas `HTTP 200` al sembrar.
 
 ### 5.4 · Usarla
 
-Abrí **http://localhost:8080** — la página de **Súper El Triunfo** (héroe, la ficha de la
-canasta, y abajo la sección **"¿Querés que tu asistente lea tus compras?"**).
+Abrí **http://localhost:8100** — la página de **Súper La Guaria** (héroe, la ficha de la
+canasta comparada, y abajo la sección **"Para su asistente"**).
 
-- **Instalar la aplicación** → `http://localhost:8080/app/`: la PWA. Elegí una carpeta y
-  tocá **Refresh** → baja las facturas de URL2 y las muestra.
-  **Tenés que ver** la app con la marca de Súper El Triunfo, no el Bootstrap por defecto:
-  encabezado con la cinta verde, el logo de bolsa y el nombre en serif; y los botones, los
-  títulos y los encabezados de la tabla (lista y detalle) en verde, con la fila resaltando en
-  menta al pasar el mouse.
-- **Descargar el módulo** → baja `facturas.gmod` (17 KB, dos DLLs adentro).
+- **Instalar la aplicación** → `http://localhost:8100/app/`: la PWA. Elegí una carpeta y
+  tocá **Refresh** → baja las compras de URL2 y las muestra.
+  **Tenés que ver** la app con la marca de La Guaria (verde y blanco), no el Bootstrap por
+  defecto: la portada abre con la firma de la semana y el quiebre del mes.
+- **Descargar el módulo** → baja `compras.gmod` (~54 KB, dos DLLs adentro).
 - **Descargar Gnothi** → baja `Gnothi.Host.zip`.
 
 ### 5.5 · El camino del asistente, de punta a punta
@@ -313,39 +314,40 @@ Es la Parte 3 disparada desde la página. Descomprimí `Gnothi.Host.zip` en `C:\
 
 ```powershell
 C:\Gnothi\Gnothi.Host.exe --install
-C:\Gnothi\Gnothi.Host.exe --install-module <ruta-a>\facturas.gmod C:\Gnothi\Modulos
+C:\Gnothi\Gnothi.Host.exe --install-module <ruta-a>\compras.gmod C:\Gnothi\Modulos
 ```
 
-**El módulo recién instalado concede una carpeta vacía** (`Documents\Gnothi\facturas`), así
+**El módulo recién instalado concede una carpeta vacía** (`Documents\Gnothi\compras`), así
 que una consulta ahí daría "sin datos" — es el estado correcto de una instalación nueva. Hay
 dos formas de que tenga datos:
 
-- **La real:** en el paso 5.4, al usar la app, elegí como carpeta `Documents\Gnothi\facturas`.
+- **La real:** en el paso 5.4, al usar la app, elegí como carpeta `Documents\Gnothi\compras`.
   Lo que la app escriba ahí es lo que el asistente lee. Es el punto entero: **la app y la IA
   leen el mismo journal.**
-- **La rápida, para probar sin la app:** sembrala con la consola.
+- **La rápida, para probar sin la app:** sembrala con la consola (en una carpeta vacía, para
+  que el número dé exacto).
 
 ```powershell
-dotnet run --project HolaMundo\Facturas\App\Facturas.Consola -- medir "$env:USERPROFILE\Documents\Gnothi\facturas"
+dotnet run --project Compras\App\Compras.Consola -- medir "$env:USERPROFILE\Documents\Gnothi\compras"
 ```
 
 Ahora consultá el módulo:
 
 ```powershell
-C:\Gnothi\Gnothi.Host.exe --query C:\Gnothi\Modulos facturas resumen
+C:\Gnothi\Gnothi.Host.exe --query C:\Gnothi\Modulos compras resumen
 ```
 
 **Tenés que ver** el resumen con datos reales, servido desde las 2 DLLs con el motor prestado
 por el Host:
 
 ```json
-{ "hayDatos": true, "total": 19321.5, "cantidadDeFacturas": 3, "ultimoEventoLeido": 103 }
+{ "hayDatos": true, "totalGastado": 3174606, "cantidadDeCompras": 87, "ultimoEventoLeido": 387 }
 ```
 
 ### 5.6 · Bajar
 
 ```powershell
-docker compose -f HolaMundo\Facturas\docker-compose.yml down
+docker compose -f Compras\docker-compose.yml down
 ```
 
 ---
@@ -358,6 +360,6 @@ docker compose -f HolaMundo\Facturas\docker-compose.yml down
 | 2 | la persona **ve y usa** sus módulos en una ventana de escritorio, sin asistente |
 | 3 | el asistente alcanza los módulos porque Gnothi se **registra** como su servidor MCP |
 | 4 | la app del laboratorio corre **sola en el navegador**, escribe su journal en una carpeta de la persona, y ese journal es lo que Gnothi lee |
-| 5 | el súper (**Súper El Triunfo**) hace lo mismo, y su página ofrece **los dos caminos**: la PWA sola, y el del asistente (bajar Gnothi + el módulo) — el paso que Delfos no muestra |
+| 5 | el súper (**Súper La Guaria**) hace lo mismo, y su página ofrece **los dos caminos**: la PWA sola, y el del asistente (bajar Gnothi + el módulo) — el paso que Delfos no muestra |
 
 Todo sobre la superficie pública del Host: el test de eliminabilidad (`Gnothi.Assistant.Tests`) sigue pasando, así que nada de esto ató el Host a una cara ni a un asistente.
