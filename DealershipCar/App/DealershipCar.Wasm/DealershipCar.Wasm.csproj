@@ -6,8 +6,6 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <ServiceWorkerAssetsManifest>service-worker-assets.js</ServiceWorkerAssetsManifest>
 
-    <!-- Igual que name y description del manifest.webmanifest, a proposito: es la misma app y
-         la persona no tiene por que ver dos nombres segun donde mire. -->
     <AssemblyTitle>My maintenance schedule</AssemblyTitle>
     <Description>Your vehicle's maintenance schedule, kept in a folder of yours. Works offline.</Description>
   </PropertyGroup>
@@ -16,34 +14,6 @@
     <PackageReference Include="Microsoft.AspNetCore.Components.WebAssembly" Version="9.0.19" />
     <PackageReference Include="Microsoft.AspNetCore.Components.WebAssembly.DevServer" Version="9.0.19" PrivateAssets="all" />
 
-    <!-- LA BIBLIOTECA DE COMPONENTES, y va SOLO en la caratula. El dominio sigue con cero
-         referencias (C1) y DealershipCar.App tampoco la nombra: una biblioteca de UI es un
-         detalle del shell, y si algun dia esta app se dibuja de otra forma, lo unico que se
-         tira es este proyecto.
-
-         MudBlazor corre en wasm sin nada especial: es C# con un solo .js estatico, no
-         necesita prerender ni un servidor, y sus assets viajan como _content/MudBlazor/*.
-
-         EL COSTO DE PAYLOAD ESTA MEDIDO, no supuesto. Dos publish Release limpios, mismo
-         comando, misma maquina:
-
-                                          sin MudBlazor   con MudBlazor      delta
-           archivos en wwwroot                      219             246        +27
-           bytes en disco                    19 902 255      22 864 165  +2 962 kb
-           bytes sin .br/.gz                 11 744 403      13 753 487  +2 009 kb
-           BYTES QUE SE BAJAN                 4 560 537       5 097 987    +537 kb
-
-         LA ULTIMA FILA ES LA QUE IMPORTA y es la que casi nadie mide: nginx sirve con
-         gzip_static, asi que lo que cruza la red es el .gz de cada archivo, no el archivo.
-         Sumar los tres tamanos del disco cuenta tres veces la misma cosa y da un +14,9%
-         que no le pasa a nadie. Sobre lo que se baja de verdad son 525 kb, +11,8%, una
-         sola vez, y despues el service worker lo cachea.
-
-         Las dos piezas grandes, con el .gz que es lo que nginx entrega: MudBlazor.wasm
-         778 517 b -> 285 123, y MudBlazor.min.css 624 511 b -> 66 562. La hoja comprime a
-         menos de una decima parte, que es por lo que el numero de disco asusta y el de red
-         no. -->
-
     <PackageReference Include="MudBlazor" Version="9.9.0" />
   </ItemGroup>
 
@@ -51,72 +21,14 @@
     <ServiceWorker Include="wwwroot\service-worker.js" PublishedContent="wwwroot\service-worker.published.js" />
   </ItemGroup>
 
-  <!-- LA CARATULA REFERENCIA DealershipCar.App Y NADA MAS. No nombra Dominio: el dominio es
-       internal (C1/S1), AssemblyInfo.cs declara exactamente dos amigos, y una caratula no es
-       uno de ellos. Es la misma puerta que usan la consola y el servidor MCP, asi que la
-       persona y su IA ven lo mismo.
-
-       NO PONER InvariantGlobalization ni recortar los datos de globalizacion: MEDIDO que el
-       ctor estatico del Parser de Puppeteer pide la cultura en-us y tira
-       CultureNotFoundException si no esta. Es justo el flag que uno agrega para bajar el
-       payload, asi que es facil de reintroducir sin querer. -->
   <ItemGroup>
     <ProjectReference Include="..\DealershipCar.App\DealershipCar.App.csproj" />
   </ItemGroup>
 
-  <!-- EL DOMINIO SE SALVA DEL TRIMMER A MANO, y es la unica pieza de este csproj que no sale
-       de la implementacion de referencia. Alla el agregado es public y el compilador deja un
-       rastro estatico que el trimmer sigue; aca no hay ninguno. Ningun .cs escribe
-       "MaintenanceSchedule": el DSL lo nombra en TEXTO y el motor lo resuelve por reflexion
-       contra typeof(MaintenanceSchedule).Assembly, asi que para el trimmer la clase es
-       basura alcanzable por nadie, y un tipo internal alcanzado solo por reflexion es
-       exactamente lo que saca.
-
-       <assembly fullname> sin hijos <type> preserva el ensamblado ENTERO. Es a proposito:
-       rootear por API publica no serviria, porque el dominio no tiene API publica.
-       TrimmerRootAssembly tampoco: parte de los puntos de entrada publicos.
-
-       MEDIDO, no razonado (plan §T10). Sin este ItemGroup el publish Release compila igual y
-       la app abre; el actor revienta al hidratar con
-       "Class 'MaintenanceSchedule' is not registered in the actor's library". Con el, el
-       mismo publish trimmeado abre el actor y muestra la agenda.
-
-       LA CONDICION EXISTE PARA QUE LA MEDICION SE PUEDA REPETIR, no para apagar el rooteo en
-       ningun escenario real:
-
-         dotnet publish ... -p:RootTheDomain=false
-
-       vuelve a producir el fallo. Sin ella, comprobar la afirmacion obliga a editar este
-       archivo, y una afirmacion que hay que editar codigo para verificar es la que nadie
-       vuelve a verificar. -->
   <ItemGroup Condition="'$(RootTheDomain)' != 'false'">
     <TrimmerRootDescriptor Include="ILLink.Descriptors.xml" />
   </ItemGroup>
 
-  <!-- EL SEGUNDO KNOB, y existe porque el primero solo no alcanzaba para MEDIR nada.
-       Medido, en este orden:
-
-         publish Release por defecto        DealershipCar.Dominio.wasm = 55 061 b, la app abre
-         idem con -p:RootTheDomain=false    55 061 b IDENTICOS, la app abre igual
-
-       O sea: en el modo de trimming por defecto de Blazor el descriptor NO hace nada. ILLink
-       recorta a nivel de MIEMBRO solo los ensamblados marcados trimmable, y el nuestro no lo
-       esta: lo copia entero. La defensa era, hasta aca, para un caso que no pasaba.
-
-         idem con -p:TrimMode=full          DealershipCar.Dominio.wasm DESAPARECE, App cae de
-                                            37 653 a 3 861 b, el payload de 20 a 14.8 MB
-
-       Pero 'full' tambien se lleva los constructores de los componentes de Blazor: la app ni
-       renderiza, muere en "CtorNotLocated, MainLayout", asi que rompe demasiado para aislar la
-       pregunta del dominio.
-
-       Marcar trimmable SOLO el dominio si la aisla, y se puede hacer desde ACA sin tocar
-       DealershipCar.Dominio.csproj, que tiene que seguir declarando cero de todo:
-
-         dotnet publish ... -p:TrimTheDomain=true -p:RootTheDomain=false   -> el fallo
-         dotnet publish ... -p:TrimTheDomain=true                          -> el arreglo
-
-       Es el par que convierte al descriptor en defensa medida en vez de supuesta. -->
   <ItemGroup Condition="'$(TrimTheDomain)' == 'true'">
     <TrimmableAssembly Include="DealershipCar.Dominio" />
   </ItemGroup>

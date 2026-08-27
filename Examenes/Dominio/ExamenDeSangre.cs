@@ -82,9 +82,20 @@ namespace Examenes.Dominio
 		public override IReadOnlyList<LecturaDeExamen> Lecturas =>
 			new[] { new LecturaDeExamen(Analito, Valor) };
 
-		// El rango normal para una edad. Es una funcion de la edad, no una constante:
-		// eso es lo que significa "los rangos por edad van en el codigo del dominio".
-		public abstract RangoDeReferencia RangoPara(int edad);
+		// El rango normal PARA ESTA PERSONA. Es una funcion de la persona, no una
+		// constante: eso es lo que significa "los rangos van en el codigo del dominio".
+		//
+		// RECIBE AL PACIENTE Y NO LA EDAD, y ese es el segundo de los tres efectos del
+		// sexo: hay analitos que aplican igual y se comparan contra otros umbrales —la
+		// hemoglobina, el HDL—. Mientras la edad era el unico parametro clinico, un int
+		// alcanzaba; con dos, pasar la lista de atributos seria arrastrar una tupla sin
+		// nombre. Ver Paciente.
+		//
+		// DEVUELVE NULL cuando no se puede determinar, y eso es deliberado: devolver el
+		// rango masculino "mientras tanto" es PEOR que no devolver nada, porque produce una
+		// clasificacion que se ve igual de firme que las demas y esta mal. Quien lo llame
+		// tiene que decidir que hacer con el hueco; lo que el dominio hace es decirlo.
+		public abstract RangoDeReferencia RangoPara(Paciente paciente);
 
 		// Cuanto puede moverse este analito por dia sin que el cambio sea biologicamente
 		// inverosimil. Es el umbral que convierte "subio 80" en "subio 80 EN UN DIA, o
@@ -144,7 +155,7 @@ namespace Examenes.Dominio
 		// ⚠️ Las periodicidades son de uso corriente y ORIENTATIVAS. Varian por
 		// antecedentes y criterio medico, y conviene que alguien del area las revise antes
 		// de mostrarlas fuera del equipo.
-		public abstract int MesesHastaElProximo(int edad);
+		public abstract int MesesHastaElProximo(Paciente paciente);
 
 		// Proyecciones planas para el print del DSL, que no navega dos niveles. Es lo que
 		// permite que un grafico reciba NUMEROS y no el texto "3.0 ng/mL".
@@ -152,7 +163,8 @@ namespace Examenes.Dominio
 
 		public string UnidadDelValor => Valor.Unidad.Simbolo;
 
-		public ClasificacionDeValor ClasificarPara(int edad) => RangoPara(edad).Clasificar(Valor);
+		public ClasificacionDeValor ClasificarPara(Paciente paciente) =>
+			Exigido(paciente).Clasificar(Valor);
 
 		// Si el valor se movio lo suficiente como para llamarlo cambio. Vive en la base
 		// porque la comparacion es la misma para todos; el UMBRAL, que es lo que cambia
@@ -160,6 +172,26 @@ namespace Examenes.Dominio
 		public bool EsCambioReal(decimal cambio) =>
 			Math.Abs(cambio) >= CambioMinimoSignificativo;
 
-		public bool EsNormalPara(int edad) => RangoPara(edad).Contiene(Valor);
+		public bool EsNormalPara(Paciente paciente) => Exigido(paciente).Contiene(Valor);
+
+		// Si de esta persona se sabe lo suficiente como para que este analito tenga rango.
+		// Lo pregunta quien no puede fallar —el conteo de hallazgos, la serie que decide si
+		// hay veredicto— antes de comparar contra nada.
+		public bool HayRangoPara(Paciente paciente) => RangoPara(paciente) != null;
+
+		// El rango, exigiendolo. Las dos operaciones que comparan contra el rango solo se
+		// alcanzan DESPUES de que la serie descarto el caso "no se puede determinar" (ver
+		// SerieDeAnalito.Interpretar), asi que llegar aca sin rango es un defecto de quien
+		// pregunta y no un estado del paciente: revienta con la causa en vez de inventar un
+		// rango por defecto.
+		private RangoDeReferencia Exigido(Paciente paciente)
+		{
+			RangoDeReferencia rango = RangoPara(paciente);
+			if (rango != null) return rango;
+
+			throw new InvalidOperationException(
+				$"El rango de {Analito.Nombre} depende del sexo, y de esta persona no se sabe. "
+				+ "Hay que preguntar HayRangoPara antes de comparar contra el rango.");
+		}
 	}
 }

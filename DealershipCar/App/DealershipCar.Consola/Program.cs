@@ -443,7 +443,7 @@ namespace DealershipCar.Consola
 			Console.WriteLine("  tras una caida -- y TokenGuardado de una credencial journalizada. Las dos");
 			Console.WriteLine("  viven en Logbook, una SEGUNDA global de raiz al lado de la agenda y nunca");
 			Console.WriteLine("  adentro: ni el punto de control ni la credencial son hechos de");
-			Console.WriteLine("  mantenimiento. MaintenanceSchedule no cambio. Es C26, cerrado.");
+			Console.WriteLine("  mantenimiento. MaintenanceSchedule no cambio.");
 			Console.WriteLine();
 		}
 
@@ -682,7 +682,7 @@ namespace DealershipCar.Consola
 			Console.WriteLine("url2    por defecto: http://localhost:8092/  (recurso 'vehicle', id = el VIN)");
 			Console.WriteLine();
 			Console.WriteLine("Las clases de operacion cruzan como el NOMBRE de su miembro, no como enum:");
-			Console.WriteLine("esta caratula no referencia el dominio y no puede nombrar sus tipos (C25).");
+			Console.WriteLine("esta caratula no referencia el dominio y no puede nombrar sus tipos.");
 			Console.WriteLine($"  {string.Join(", ", Story.TheNineKinds)}");
 		}
 	}

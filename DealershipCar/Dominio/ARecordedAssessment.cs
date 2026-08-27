@@ -13,7 +13,7 @@ namespace DealershipCar.Dominio
 			_assessment = assessment;
 		}
 
-		/// <summary>El motivo que compuso la ley (OUS-07).</summary>
+		/// <summary>El motivo que compuso la ley.</summary>
 		internal override string Describe()
 		{
 			return _assessment.Describe();

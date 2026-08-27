@@ -3,9 +3,8 @@ using System;
 namespace DealershipCar.Dominio
 {
 	/// <summary>
-	/// El escalamiento que un <see cref="UsageProfile"/> aplica al LARGO de un intervalo (ley
-	/// L8, OINV-22). Nunca cambia la base de una operacion ni la quita: no expone nada con que
-	/// hacerlo.
+	/// El escalamiento que un <see cref="UsageProfile"/> aplica al LARGO de un intervalo.
+	/// Nunca cambia la base de una operacion ni la quita: no expone nada con que hacerlo.
 	/// </summary>
 	internal sealed class IntervalLengthFactor
 	{
@@ -22,19 +21,19 @@ namespace DealershipCar.Dominio
 		}
 
 		/// <summary>
-		/// El perfil del que sale. OHS-07 exige poder mostrar cual aplico, asi que el factor no se
+		/// El perfil del que sale. Hay que poder mostrar cual aplico, asi que el factor no se
 		/// separa nunca de su perfil.
 		/// </summary>
 		internal UsageProfile Profile { get; }
 
 		/// <summary>
-		/// Si este perfil ignora los limites de distancia (§6, LowDistance). Es una pregunta y no
+		/// Si este perfil ignora los limites de distancia (LowDistance). Es una pregunta y no
 		/// un numero: ignorar no es escalar por cero, que venceria en el acto.
 		/// </summary>
 		internal bool DistanceIsIgnored { get; }
 
 		/// <summary>
-		/// El escalamiento del perfil declarado. Los que §6 no nombra no escalan nada.
+		/// El escalamiento del perfil declarado. Los que la politica no nombra no escalan nada.
 		/// </summary>
 		internal static IntervalLengthFactor For(UsageProfile profile)
 		{
@@ -71,7 +70,7 @@ namespace DealershipCar.Dominio
 
 		/// <summary>
 		/// La distancia que queda del limite declarado tras escalarlo, en la unidad del limite: no
-		/// la convierte (OINV-21). No se usa cuando <see cref="DistanceIsIgnored"/>.
+		/// la convierte. No se usa cuando <see cref="DistanceIsIgnored"/>.
 		/// </summary>
 		internal int ApplyToDistanceLimit(int declaredDistanceLimit)
 		{

@@ -79,20 +79,33 @@ namespace Examenes.Dominio
 
 		// La periodicidad la sabe el ANALITO, no la serie: es conocimiento clinico y ya
 		// vivia en la medicion, que la resuelve contra su propio valor y la edad.
-		public override int MesesHastaElProximo(int edad) => Ultimo.MesesHastaElProximo(edad);
+		public override int MesesHastaElProximo(Paciente paciente) =>
+			Ultimo.MesesHastaElProximo(paciente);
 
 		// Para una continua, "hay algo que no deberia estar" es salirse del rango.
-		public override bool UltimaEsHallazgo(int edad) => Ultimo != null && !Ultimo.EsNormalPara(edad);
+		//
+		// SIN RANGO NO HAY HALLAZGO, y eso no es "esta bien": es que no se puede afirmar
+		// que este mal. Contar una hemoglobina de sexo desconocido como fuera de rango
+		// seria inventar un hallazgo; no contarla es lo unico honesto, y lo que la persona
+		// ve en su lugar es el bloque que pide el dato.
+		public override bool UltimaEsHallazgo(Paciente paciente) =>
+			Ultimo != null && Ultimo.HayRangoPara(paciente) && !Ultimo.EsNormalPara(paciente);
 
 		// La referencia contra la que se lee el ultimo valor, ya dicha. Sale del rango
 		// del propio examen —que es donde vive el conocimiento por edad— y se dice como
 		// se lee: un rango que arranca en cero es un techo ("hasta 4.5 ng/mL"), uno con
 		// piso real es una banda ("entre 13 y 17 g/dL").
-		public override string ReferenciaLegible(int edad)
+		public override string ReferenciaLegible(Paciente paciente)
 		{
 			if (Ultimo == null) return "";
 
-			RangoDeReferencia rango = Ultimo.RangoPara(edad);
+			RangoDeReferencia rango = Ultimo.RangoPara(paciente);
+
+			// Sin rango la referencia NO es vacia: es "depende de tu sexo". Es la unica
+			// frase honesta al lado de un numero que no se puede juzgar, y la escribe el
+			// dominio —igual que todas las demas— para que la pantalla no la componga.
+			if (rango == null) return "depende de tu sexo";
+
 			return rango.Minimo.Valor == 0m
 				? $"hasta {rango.Maximo.Expresado}"
 				: $"entre {rango.Minimo.Expresado} y {rango.Maximo.Expresado}";

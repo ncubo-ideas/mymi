@@ -222,6 +222,30 @@ def canasta_de(dia, indice):
     return lineas
 
 
+# LA HORA DE LA COMPRA, y antes eran las 17:40 en las 87. Parecia inofensivo -el dominio no
+# usaba la hora para nada- hasta que la app pidio "en que momento del dia suele comprar", y
+# con una hora fija esa lectura contesta "el 100% en la tarde": correcta, inutil y falsa
+# como retrato de una persona.
+#
+# El patron es de una familia que trabaja: casi siempre la tarde del sabado, a veces la
+# mañana cuando hay que hacer mercado temprano, y de vez en cuando la noche. Los numeros no
+# son azar -el guion tiene que ser reproducible- sino un ciclo por indice.
+HORAS = [
+    (17, 40),  # la tarde, la mas comun
+    (16, 15),
+    (10, 30),  # la mañana del sabado
+    (18, 5),
+    (17, 20),
+    (11, 45),
+    (19, 30),  # la noche, la menos comun
+    (16, 50),
+]
+
+
+def hora_de(indice):
+    return HORAS[indice % len(HORAS)]
+
+
 def armar():
     guion, numero, evento = [], 88000, 300
     for indice, dia in enumerate(sabados()):
@@ -239,7 +263,7 @@ def armar():
         guion.append({
             "id": evento,
             "numero": "T-%d" % numero,
-            "fecha": datetime(dia.year, dia.month, dia.day, 17, 40).isoformat(),
+            "fecha": datetime(dia.year, dia.month, dia.day, *hora_de(indice)).isoformat(),
             "skus": [sku for sku, _ in lineas],
             "descripciones": [CATALOGO[sku][0] for sku, _ in lineas],
             "cantidades": [cantidad for _, cantidad in lineas],
@@ -366,6 +390,19 @@ def verificar(guion):
     c26, t26 = semanas_con_frescos(2026, 8)
     exigir(c25 == t25, "4 - frescos en TODAS las compras de 2025 (%d de %d)" % (c25, t25))
     exigir(abs(c26 / t26 - 0.5) < 0.08, "4 - frescos en la mitad de 2026 (%d de %d)" % (c26, t26))
+
+    # LOS TRES MOMENTOS DEL DIA tienen que existir, si no la lectura "en que momento suele
+    # comprar" no tiene nada que contar. No es un invariante de la wiki: es nuestro, y sale
+    # de que la app tiene una pantalla que lo pregunta.
+    horas = [fecha_de(t).hour for t in guion]
+    manana = sum(1 for h in horas if h < 13)
+    tarde = sum(1 for h in horas if 13 <= h < 19)
+    noche = sum(1 for h in horas if h >= 19)
+    exigir(manana > 0 and tarde > 0 and noche > 0,
+           "propio - los tres momentos del dia aparecen (manana %d, tarde %d, noche %d)"
+           % (manana, tarde, noche))
+    exigir(tarde > manana and tarde > noche,
+           "propio - la tarde es el momento mas comun (%d de %d)" % (tarde, len(guion)))
 
     # Luna: 25.000 en cada mes del guion
     meses = sorted({(fecha_de(t).year, fecha_de(t).month) for t in guion})

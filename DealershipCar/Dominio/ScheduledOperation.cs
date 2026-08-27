@@ -6,8 +6,8 @@ namespace DealershipCar.Dominio
 	/// <summary>
 	/// Una operacion de mantenimiento concreta en la agenda de un vehiculo: su definicion, el ancla
 	/// desde la que se mide, donde esta parada, los aplazamientos que la persona uso y de que
-	/// ocurrencia terminal salio. Es la OCURRENCIA (E39); Completed y Superseded la terminan y la
-	/// siguiente es otra (E29, GAP G3).
+	/// ocurrencia terminal salio. Es la OCURRENCIA; Completed y Superseded la terminan y la
+	/// siguiente es otra.
 	/// </summary>
 	internal sealed class ScheduledOperation
 	{
@@ -30,7 +30,7 @@ namespace DealershipCar.Dominio
 			if (definition == null)
 				throw new DomainException(
 					"Una operacion agendada sin definicion no sabe que hay que hacer ni cuando "
-					+ "vence (OINV-19).");
+					+ "vence.");
 
 			if (anchoredAt == null)
 				throw new DomainException(
@@ -51,7 +51,7 @@ namespace DealershipCar.Dominio
 			return new ScheduledOperation(definition, anchoredAt, false, Predecessor.None);
 		}
 
-		/// <summary>La operacion que pidio la persona. Solo estas se pueden quitar (ley L9).</summary>
+		/// <summary>La operacion que pidio la persona. Solo estas se pueden quitar.</summary>
 		internal static ScheduledOperation RequestedByTheOwner(
 			MaintenanceOperationDefinition definition, BasePoint anchoredAt)
 		{
@@ -64,14 +64,14 @@ namespace DealershipCar.Dominio
 			get { return _definition.Kind; }
 		}
 
-		/// <summary>Donde esta parada. Sale del agregado como escalar, nunca como objeto (E24).</summary>
+		/// <summary>Donde esta parada. Sale del agregado como escalar, nunca como objeto.</summary>
 		internal DueState State
 		{
 			get { return _state; }
 		}
 
 		/// <summary>
-		/// Cuantos aplazamientos lleva usados. DERIVADO de los que se admitieron (E35): un contador
+		/// Cuantos aplazamientos lleva usados. DERIVADO de los que se admitieron: un contador
 		/// aparte se desincroniza el dia que alguien sume antes de mirar el tope.
 		/// </summary>
 		internal int DeferralsUsed
@@ -79,7 +79,7 @@ namespace DealershipCar.Dominio
 			get { return _deferrals.Count; }
 		}
 
-		/// <summary>Si la pidio la persona en vez de mandarla el plan (ley L9).</summary>
+		/// <summary>Si la pidio la persona en vez de mandarla el plan.</summary>
 		internal bool WasRequestedByTheOwner()
 		{
 			return _requestedByTheOwner;
@@ -91,7 +91,7 @@ namespace DealershipCar.Dominio
 			return _precededBy.Exists();
 		}
 
-		/// <summary>La ocurrencia de la que salio. Revienta si es la genesis (E41).</summary>
+		/// <summary>La ocurrencia de la que salio. Revienta si es la genesis.</summary>
 		internal ScheduledOperation PrecededBy()
 		{
 			return _precededBy.Occurrence();
@@ -99,7 +99,7 @@ namespace DealershipCar.Dominio
 
 		/// <summary>
 		/// Si ya termino. Completed y Superseded son terminales: la instancia solto su identidad y
-		/// no vuelve a moverse (E29).
+		/// no vuelve a moverse.
 		/// </summary>
 		internal bool HasEnded()
 		{
@@ -107,9 +107,9 @@ namespace DealershipCar.Dominio
 		}
 
 		/// <summary>
-		/// Si cuenta como mantenimiento no hecho. DERIVADO del estado (E35), asi que se apaga solo
+		/// Si cuenta como mantenimiento no hecho. DERIVADO del estado, asi que se apaga solo
 		/// cuando la operacion se hace. Una aplazada sigue contando si la ley dice que se paso de
-		/// la gracia: aplazar es la decision de la persona y no la saca de la cuenta (OINV-28).
+		/// la gracia: aplazar es la decision de la persona y no la saca de la cuenta.
 		/// </summary>
 		internal bool CountsAsMissedMaintenance()
 		{
@@ -120,9 +120,9 @@ namespace DealershipCar.Dominio
 		}
 
 		/// <summary>
-		/// LEY L7 (OINV-21): si la ultima evaluacion no pudo comparar la distancia porque el limite
+		/// Si la ultima evaluacion no pudo comparar la distancia porque el limite
 		/// y las mediciones estan en unidades distintas, la operacion cae a solo-tiempo y LO DICE.
-		/// Derivada de esa evaluacion y no guardada, asi que se cura sola (GAP G4).
+		/// Derivada de esa evaluacion y no guardada, asi que se cura sola.
 		/// </summary>
 		internal bool UnitMismatchSuspendsDistance()
 		{
@@ -130,7 +130,7 @@ namespace DealershipCar.Dominio
 		}
 
 		/// <summary>
-		/// Por que esta parada donde esta, en una frase. Es del dominio y no de la vista (OUS-07):
+		/// Por que esta parada donde esta, en una frase. Es del dominio y no de la vista:
 		/// lo que la persona necesita saber es la dimension, el monto y, si no se pudo evaluar, el
 		/// motivo.
 		/// </summary>
@@ -149,8 +149,8 @@ namespace DealershipCar.Dominio
 
 		/// <summary>
 		/// Donde queda la operacion en ese instante, con los hechos que el agregado le pasa. El
-		/// instante SE RECIBE: el dominio no lee un reloj (§7, E30). La respuesta es lo que el host
-		/// cuenta; un Evaluate mudo esconderia el hecho que maneja (E9).
+		/// instante SE RECIBE: el dominio no lee un reloj. La respuesta es lo que el host
+		/// cuenta; un Evaluate mudo esconderia el hecho que maneja.
 		/// </summary>
 		internal DueStateTransition Evaluate(
 			DateTime asOf, UsableReading latestUsable, IntervalLengthFactor factor)
@@ -168,20 +168,20 @@ namespace DealershipCar.Dominio
 
 		/// <summary>
 		/// La persona deja la operacion para despues. Delega en
-		/// <see cref="DeferralCapAndWindow"/>, donde la ley L6 tiene su nombre.
+		/// <see cref="DeferralCapAndWindow"/>, donde la ley tiene su nombre.
 		/// </summary>
 		internal void Defer(DeferralReason reason, DateTime decidedAt)
 		{
 			if (reason == null)
 				throw new DomainException(
 					"Un aplazamiento sin motivo no se puede registrar: la decision se journaliza "
-					+ "CON su motivo (OINV-28).");
+					+ "CON su motivo.");
 
 			DeferralCapAndWindow(reason, decidedAt);
 		}
 
 		/// <summary>
-		/// Si un aplazamiento haria algo. Es la forma PREGUNTA de la ley L6, y la forma comando la
+		/// Si un aplazamiento haria algo. Es la forma PREGUNTA de la ley, y la forma comando la
 		/// usa: quien ofrece la accion pregunta lo mismo que la ley decide.
 		/// </summary>
 		internal bool CanBeDeferred()
@@ -192,11 +192,11 @@ namespace DealershipCar.Dominio
 		}
 
 		/// <summary>
-		/// LEY L6 (OINV-27, OINV-52): la operacion se aplaza como maximo
+		/// La operacion se aplaza como maximo
 		/// <see cref="SchedulePolicy.MaxDeferralsPerOperation"/> veces, cada una por
 		/// <see cref="SchedulePolicy.DeferralWindowDays"/> dias, y una clasificada de seguridad no
-		/// se aplaza nunca. Los tres rechazos son ESTADO, no excepcion (E32): la operacion se queda
-		/// donde estaba. Fuera de un estado vencido es un no-op (E36).
+		/// se aplaza nunca. Los tres rechazos son ESTADO, no excepcion: la operacion se queda
+		/// donde estaba. Fuera de un estado vencido es un no-op.
 		/// </summary>
 		internal void DeferralCapAndWindow(DeferralReason reason, DateTime decidedAt)
 		{
@@ -229,7 +229,7 @@ namespace DealershipCar.Dominio
 		}
 
 		/// <summary>
-		/// LEY L3 (OINV-22, OHS-08): un cruce de umbral recibido solo ADELANTA. Lleva la operacion a
+		/// Un cruce de umbral recibido solo ADELANTA. Lleva la operacion a
 		/// Due y nunca la baja de Overdue: el intervalo es el piso y un cruce no empuja un
 		/// vencimiento hacia afuera.
 		/// </summary>
@@ -242,7 +242,7 @@ namespace DealershipCar.Dominio
 		}
 
 		/// <summary>
-		/// LEY L10 (OINV-23, OEX-06): el aviso de cortesia nunca es una parada obligatoria. La
+		/// El aviso de cortesia nunca es una parada obligatoria. La
 		/// operacion se mueve DIRECTO al estado que la ley decidio -- UNA transicion -- aunque el
 		/// camino del diagrama pase por DueSoon.
 		/// </summary>
@@ -256,7 +256,7 @@ namespace DealershipCar.Dominio
 
 		/// <summary>
 		/// La operacion se hizo de verdad. Termina esta instancia y devuelve la siguiente ocurrencia,
-		/// anclada en la completacion real (ley L4) y enlazada hacia atras. Completar una que ya
+		/// anclada en la completacion real y enlazada hacia atras. Completar una que ya
 		/// termino es un defecto de quien llama: bifurcaria la cadena, que es donde vive el
 		/// historial.
 		/// </summary>
@@ -271,7 +271,7 @@ namespace DealershipCar.Dominio
 
 			if (unit == null)
 				throw new DomainException(
-					"Una lectura de completacion sin unidad es un numero suelto (OINV-21).");
+					"Una lectura de completacion sin unidad es un numero suelto.");
 
 			if (completionReading < 0)
 				throw new DomainException(
@@ -294,7 +294,7 @@ namespace DealershipCar.Dominio
 
 		/// <summary>
 		/// La operacion deja de estar activa sin haberse hecho: la sustituye una revision del plan
-		/// (ley L5) o la quita la persona (ley L9). Terminal.
+		/// o la quita la persona. Terminal.
 		/// </summary>
 		internal void Supersede()
 		{
@@ -309,7 +309,7 @@ namespace DealershipCar.Dominio
 		/// <summary>
 		/// Una revision del plan la sustituye por otra. La reemplazante es una ocurrencia NUEVA
 		/// enlazada hacia atras, asi que nace en NotDue y sin aplazamientos por ser nueva y no
-		/// porque alguien la limpio (OEX-10).
+		/// porque alguien la limpio.
 		/// </summary>
 		internal ScheduledOperation SupersededBy(
 			MaintenanceOperationDefinition replacement, BasePoint anchoredAt)

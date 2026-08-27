@@ -18,10 +18,10 @@ namespace Examenes.Dominio
 		// cuando corresponde comprobar que la infeccion cedio.
 		//
 		// ⚠️ Orientativa.
-		public override int MesesHastaElProximo(int edad) =>
+		public override int MesesHastaElProximo(Paciente paciente) =>
 			Ultima != null && Ultima.EsHallazgo ? 1 : 12;
 
-		public override Interpretacion Interpretar(int edad)
+		protected override Interpretacion Leer(Paciente paciente)
 		{
 			EvaluacionDePresencia hechos = Evaluar();
 

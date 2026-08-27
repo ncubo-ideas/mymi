@@ -123,6 +123,39 @@ namespace Examenes.Dominio
 				hechos, accion);
 		}
 
+		// ESTE ANALITO NO LE CORRESPONDE A ESTA PERSONA. Severidad Informativo y sin
+		// accion: no es un hallazgo clinico y no hay nada que hacer con el.
+		//
+		// La frase la escribe el dominio, como todas: la superficie no tiene de donde
+		// sacar por que un examen no corresponde, y componerla afuera seria exactamente el
+		// filtro de pantalla que esta correccion vino a evitar.
+		public static Interpretacion NoAplica(HechosDeLaSerie hechos)
+		{
+			ArgumentNullException.ThrowIfNull(hechos);
+
+			return new Interpretacion(Veredicto.NoAplica, Severidad.Informativo,
+				$"el {hechos.AnalitoParaMostrar.ToLowerInvariant()} no corresponde a tu caso",
+				hechos);
+		}
+
+		// NO SE PUEDE LEER HASTA SABER EL SEXO. El valor sigue a la vista —lo midio el
+		// laboratorio— y lo que se retiene es la interpretacion.
+		//
+		// `porQue` lo escribe cada analito con SU vocabulario, porque no falta lo mismo en
+		// todos: en la hemoglobina falta contra que rango comparar; en el antigeno falta
+		// saber si el examen le corresponde. Decir lo mismo en los dos seria la tabla plana
+		// otra vez.
+		//
+		// Severidad Informativo, siempre: no es un hallazgo clinico y no debe pintarse de
+		// ambar ni de rojo. El semaforo esta reservado para resultados.
+		public static Interpretacion RequiereSexo(HechosDeLaSerie hechos, string porQue)
+		{
+			ArgumentNullException.ThrowIfNull(hechos);
+			ArgumentNullException.ThrowIfNullOrWhiteSpace(porQue);
+
+			return new Interpretacion(Veredicto.RequiereSexo, Severidad.Informativo, porQue, hechos);
+		}
+
 		// Proyecciones escalares, para que el print del DSL no tenga que navegar dos
 		// niveles y la superficie no tenga que abrir los objetos.
 		public string Analito => Hechos.Analito;
@@ -132,6 +165,17 @@ namespace Examenes.Dominio
 		public string NombreDeLaSeveridad => Severidad.Nombre;
 		public bool PideAlgo => Severidad.PideAlgo;
 		public bool SugiereRepetirElExamen => Veredicto.SugiereRepetirElExamen;
+
+		// Los dos de la aplicabilidad, proyectados para que la pantalla y la tool MCP no
+		// tengan que comparar cadenas contra el nombre del veredicto.
+		// Si hay una lectura de verdad detras de esto. Falso en los tres casos que no la
+		// tienen —faltan mediciones, falta el sexo, o el analito no corresponde— y es lo que
+		// una superficie pregunta cuando quiere saber si tiene algo que decir.
+		public bool HayLectura => Veredicto.HayLectura;
+
+		public bool NoLeCorresponde => Veredicto.NoLeCorresponde;
+
+		public bool RequiereElSexo => Veredicto.RequiereElSexo;
 
 		// La accion dicha entera —"mostrále esto a tu médico este mes"— o vacia cuando no
 		// hay nada que hacer. Es lo unico que una pantalla imprime.

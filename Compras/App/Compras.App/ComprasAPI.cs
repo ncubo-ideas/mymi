@@ -400,6 +400,61 @@ namespace Compras.App
 			})
 			.PerformQuery();
 
+		// CADA CUANTO COMPRA UN PRODUCTO, antes y despues del corte. Es la lectura que la
+		// wiki pide por su nombre -"el helado paso de 1 vez al mes a casi todas las
+		// semanas"- y la tarjeta "un cambio en tu rutina" del diseño de la app.
+		//
+		// Se proyectan las lecturas TOTALES: aca el producto puede no tener ritmo medido, y
+		// Antes/Ahora son guardadas. En una proyeccion plana un lector guardado no revienta
+		// el campo, revienta la consulta entera.
+		public string RitmoDeUnProducto(string sku, DateTime corte)
+		{
+			ArgumentNullException.ThrowIfNullOrWhiteSpace(sku);
+
+			return app.Using(@"
+				{
+					ritmo = compras.RitmoDeUnProducto(@sku, @corte);
+					print ritmo.Sku sku,
+						ritmo.Descripcion descripcion,
+						ritmo.HayConQueComparar hayConQueComparar,
+						ritmo.Cambio cambio,
+						ritmo.AntesCompacto antes,
+						ritmo.AhoraCompacto ahora,
+						ritmo.ParaSonia paraSonia;
+				}
+			")
+			.WithParameters(p => {
+				p["sku",   typeof(string)]   = sku;
+				p["corte", typeof(DateTime)] = corte;
+			})
+			.PerformQuery();
+		}
+
+		// LOS PRODUCTOS A LOS QUE LES CAMBIO EL RITMO, el mas notorio primero.
+		//
+		// ACA SI se proyecta EsMasSeguido, que es guardada, y no es una inconsistencia: el
+		// dominio devuelve esta lista YA FILTRADA -solo los que tienen ritmo medido y
+		// cambiaron-, asi que dentro de la lista ninguna guarda puede saltar. La diferencia
+		// con la consulta de arriba es de quien garantiza la precondicion.
+		public string CambiosDeRitmo(DateTime corte) =>
+			app.Using(@"
+				{
+					cambios = compras.CambiosDeRitmo(@corte);
+					foreach (ritmo in cambios) {
+						print ritmo.Sku sku,
+							ritmo.Descripcion descripcion,
+							ritmo.AntesCompacto antes,
+							ritmo.AhoraCompacto ahora,
+							ritmo.EsMasSeguido esMasSeguido,
+							ritmo.ParaSonia paraSonia;
+					}
+				}
+			")
+			.WithParameters(p => {
+				p["corte", typeof(DateTime)] = corte;
+			})
+			.PerformQuery();
+
 		// La garantia de un producto, con su respaldo: en que compra fue, cuando, y si
 		// sigue vigente. La FECHA DE CONSULTA entra como parametro porque el dominio no
 		// lee el reloj: quien pregunta pone su "hoy".
@@ -565,6 +620,12 @@ namespace Compras.App
 
 		public CambioDeLaCanasta Cambio(DateTime corte, int cuantasCompras = ComprasQueSeMiranParaLaFirma) =>
 			ProyeccionDeVistas.Cambio(CambioEnLaCanasta(corte, cuantasCompras));
+
+		public Vistas.RitmoDeUnProducto Ritmo(string sku, DateTime corte) =>
+			ProyeccionDeVistas.Ritmo(RitmoDeUnProducto(sku, corte));
+
+		public IReadOnlyList<RitmoQueCambio> RitmosQueCambiaron(DateTime corte) =>
+			ProyeccionDeVistas.RitmosQueCambiaron(CambiosDeRitmo(corte));
 
 		public CanastasComparadas Comparacion(int anioAntes, int mesAntes, int anioDespues, int mesDespues) =>
 			ProyeccionDeVistas.Comparacion(ComparacionDeCanastas(anioAntes, mesAntes, anioDespues, mesDespues));

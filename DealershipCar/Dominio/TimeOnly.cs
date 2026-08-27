@@ -33,7 +33,7 @@ namespace DealershipCar.Dominio
 		}
 
 		/// <summary>
-		/// LEY L4: el ancla nueva es el instante real de la completacion y solo el. La lectura se
+		/// El ancla nueva es el instante real de la completacion y solo el. La lectura se
 		/// descarta: guardarla haria creer que la distancia cuenta para esta operacion.
 		/// </summary>
 		internal override BasePoint NextOccurrenceFromActualCompletion(

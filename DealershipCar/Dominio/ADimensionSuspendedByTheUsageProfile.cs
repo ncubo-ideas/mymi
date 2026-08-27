@@ -4,13 +4,13 @@ namespace DealershipCar.Dominio
 {
 	/// <summary>
 	/// La dimension de distancia suspendida porque el perfil de uso declarado ignora los limites
-	/// de distancia (§6, LowDistance). Es una decision declarada, no una falta de datos.
+	/// de distancia (LowDistance). Es una decision declarada, no una falta de datos.
 	/// </summary>
 	internal sealed class ADimensionSuspendedByTheUsageProfile : LimitStanding
 	{
 		private readonly string _profileName;
 
-		/// <summary>El perfil que declaro la decision. OHS-07 exige poder mostrar cual aplico.</summary>
+		/// <summary>El perfil que declaro la decision, para poder mostrar cual aplico.</summary>
 		internal ADimensionSuspendedByTheUsageProfile(string profileName)
 		{
 			_profileName = profileName;

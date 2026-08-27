@@ -462,6 +462,116 @@ namespace Compras.Dominio
 				: RitmoDeCompra.De(categoria, intervalos);
 		}
 
+		/// <summary>
+		/// CÓMO VA AL SÚPER: cada cuántos días vuelve, qué día suele ir y en qué momento.
+		/// Total: sin suficientes compras devuelve el ritmo Ninguno, que lo dice.
+		/// </summary>
+		public RitmoDelSuper RitmoDelSuper()
+		{
+			IReadOnlyList<Compra> ordenadas = Ordenadas();
+			if (ordenadas.Count < Compras.Dominio.RitmoDelSuper.ComprasQueHacenFalta)
+				return Compras.Dominio.RitmoDelSuper.Ninguno(ordenadas.Count);
+
+			var fechas = new List<DateTime>();
+			foreach (Compra compra in ordenadas) fechas.Add(compra.Fecha);
+
+			// Todas el mismo dia no da intervalo, y eso no es un ritmo: la lectura lo dice
+			// en vez de reventar.
+			var distintos = new HashSet<DateTime>();
+			foreach (DateTime fecha in fechas) distintos.Add(fecha.Date);
+			if (distintos.Count < 2) return Compras.Dominio.RitmoDelSuper.Ninguno(ordenadas.Count);
+
+			return Compras.Dominio.RitmoDelSuper.De(fechas);
+		}
+
+		/// <summary>
+		/// CÓMO CAMBIÓ EL RITMO de un producto: cada cuánto lo compraba antes del corte y
+		/// cada cuánto lo compra después. Total: sin suficientes compras de un lado
+		/// devuelve el cambio Ninguno, que lo dice.
+		/// </summary>
+		public CambioDeRitmo RitmoDeUnProducto(string sku, DateTime corte)
+		{
+			ArgumentNullException.ThrowIfNullOrWhiteSpace(sku);
+
+			var antes = new List<DateTime>();
+			var despues = new List<DateTime>();
+
+			foreach (Compra compra in Ordenadas())
+				foreach (Item item in compra.Items)
+					if (string.Equals(item.Sku, sku, StringComparison.OrdinalIgnoreCase))
+					{
+						List<DateTime> lado = compra.Fecha < corte ? antes : despues;
+
+						// Un producto puede venir en varias lineas del mismo ticket, y eso
+						// es UNA compra: un intervalo de cero dias no es un ritmo.
+						if (lado.Count == 0 || lado[lado.Count - 1].Date != compra.Fecha.Date)
+							lado.Add(compra.Fecha);
+						break;
+					}
+
+			string descripcion = Catalogo.Tiene(sku) ? Catalogo[sku].Descripcion : sku;
+
+			if (antes.Count < CambioDeRitmo.ComprasQueHacenFaltaDeCadaLado
+				|| despues.Count < CambioDeRitmo.ComprasQueHacenFaltaDeCadaLado)
+				return CambioDeRitmo.Ninguno(sku, descripcion);
+
+			IReadOnlyList<int> intervalosDeAntes = Intervalos(antes);
+			IReadOnlyList<int> intervalosDeAhora = Intervalos(despues);
+
+			return intervalosDeAntes.Count == 0 || intervalosDeAhora.Count == 0
+				? CambioDeRitmo.Ninguno(sku, descripcion)
+				: CambioDeRitmo.De(sku, descripcion, intervalosDeAntes, intervalosDeAhora);
+		}
+
+		/// <summary>
+		/// Los productos a los que les cambió el ritmo, el más notorio primero. Es la
+		/// lectura con la que la app abre su tarjeta de "un cambio en tu rutina".
+		/// </summary>
+		// SE ORDENA POR CUANTO SALTO LA CADENCIA, no por plata ni por cantidad: la tarjeta
+		// contesta "¿que cambio en mi rutina?", y lo que cambia una rutina es la
+		// frecuencia. Un producto que paso de una vez cada dos meses a todas las semanas
+		// dice mas que uno que subio de precio.
+		public IReadOnlyList<CambioDeRitmo> CambiosDeRitmo(DateTime corte)
+		{
+			var cambios = new List<CambioDeRitmo>();
+			foreach (Producto producto in Catalogo.Lista)
+			{
+				CambioDeRitmo cambio = RitmoDeUnProducto(producto.Sku, corte);
+				if (cambio.HayConQueComparar && cambio.Cambio) cambios.Add(cambio);
+			}
+
+			cambios.Sort((uno, otro) => Salto(otro).CompareTo(Salto(uno)));
+			return cambios;
+		}
+
+		// Cuantos escalones del conjunto cerrado salto la cadencia. Es la unica forma de
+		// ordenar sin volver a los dias: el conjunto ya esta ordenado y esa es su ventaja.
+		private static int Salto(CambioDeRitmo cambio)
+		{
+			int Peso(Cadencia cadencia)
+			{
+				for (int i = 0; i < Cadencia.Todas.Length; i++)
+					if (ReferenceEquals(Cadencia.Todas[i], cadencia)) return i;
+
+				return 0;
+			}
+
+			return Math.Abs(Peso(cambio.Antes) - Peso(cambio.Ahora));
+		}
+
+		// Los dias entre fechas consecutivas. Compartido por las dos lecturas de ritmo.
+		private static IReadOnlyList<int> Intervalos(IReadOnlyList<DateTime> fechas)
+		{
+			var intervalos = new List<int>();
+			for (int i = 1; i < fechas.Count; i++)
+			{
+				int dias = (int)(fechas[i].Date - fechas[i - 1].Date).TotalDays;
+				if (dias > 0) intervalos.Add(dias);
+			}
+
+			return intervalos;
+		}
+
 		private bool AlgunaVezEntro(Categoria categoria)
 		{
 			foreach (Compra compra in compras)

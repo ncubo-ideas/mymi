@@ -25,10 +25,10 @@ namespace Examenes.Dominio
 		// que averiguar es si fue pasajera y esa respuesta no espera.
 		//
 		// ⚠️ Orientativa, igual que todos los umbrales de este dominio.
-		public override int MesesHastaElProximo(int edad) =>
+		public override int MesesHastaElProximo(Paciente paciente) =>
 			Ultima != null && Ultima.EsHallazgo ? 1 : 12;
 
-		public override Interpretacion Interpretar(int edad)
+		protected override Interpretacion Leer(Paciente paciente)
 		{
 			EvaluacionDePresencia hechos = Evaluar();
 

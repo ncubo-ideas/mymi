@@ -25,7 +25,7 @@ namespace DealershipCar.Dominio
 	/// <summary>
 	/// Como se usa el vehiculo. Conjunto cerrado de cuatro miembros comparados por identidad.
 	/// Solo escala el LARGO de los intervalos por un factor declarado: nunca cambia la base de
-	/// una operacion ni la quita del plan (OINV-22, ley L8).
+	/// una operacion ni la quita del plan.
 	/// </summary>
 	internal sealed class UsageProfile
 	{
@@ -47,7 +47,7 @@ namespace DealershipCar.Dominio
 		/// <summary>Uso comercial: el vehiculo es herramienta de trabajo, no transporte personal.</summary>
 		internal static readonly UsageProfile Commercial = new UsageProfile("Commercial");
 
-		/// <summary>El nombre, para proyectar cual perfil aplico (OHS-07).</summary>
+		/// <summary>El nombre, para proyectar cual perfil aplico.</summary>
 		internal string Name { get; }
 
 		private UsageProfile(string name)
@@ -57,7 +57,7 @@ namespace DealershipCar.Dominio
 
 		/// <summary>
 		/// Resuelve el codigo del wire al miembro. Total con excepcion: un codigo desconocido es un
-		/// defecto de quien llama y revienta (E32).
+		/// defecto de quien llama y revienta.
 		/// </summary>
 		internal static UsageProfile OfCode(UsageProfileCode code)
 		{
@@ -71,7 +71,7 @@ namespace DealershipCar.Dominio
 
 			throw new DomainException(
 				$"'{code}' no nombra ningun perfil de uso. Hay exactamente cuatro, y son el unico "
-				+ "ajuste permitido sobre el plan del fabricante (OHS-07).");
+				+ "ajuste permitido sobre el plan del fabricante.");
 		}
 	}
 }

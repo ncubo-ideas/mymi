@@ -29,7 +29,7 @@ namespace DealershipCar.Dominio
 		/// <summary>Si hay lectura usable. Total: contesta siempre.</summary>
 		internal abstract bool Exists();
 
-		/// <summary>La lectura. Revienta si no hay (E41): ausente no es cero.</summary>
+		/// <summary>La lectura. Revienta si no hay: ausente no es cero.</summary>
 		internal abstract OdometerReading Reading();
 	}
 }

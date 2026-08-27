@@ -59,6 +59,14 @@ internal sealed class VelocidadDelAnalito
 	[Description("El ritmo ya dicho, por ejemplo '2.20 ng/mL por ano'.")]
 	[JsonPropertyName("expresada")] public string Expresada { get; init; } = "";
 
+	[Description("true cuando este analito NO APLICA a esta persona. No es un ritmo de cero: es "
+		+ "que la pregunta no corresponde. No inventes una lectura ni sugieras el examen.")]
+	[JsonPropertyName("noLeCorresponde")] public bool NoLeCorresponde { get; init; }
+
+	[Description("true cuando no se puede leer sin saber el sexo de la persona. Pedile que lo "
+		+ "complete en su app; no lo supongas.")]
+	[JsonPropertyName("requiereElSexo")] public bool RequiereElSexo { get; init; }
+
 	[JsonPropertyName("carpeta")] public string Carpeta { get; init; } = "";
 
 	[Description("Hasta que evento leyo la app. Si no sube, no entro nada nuevo.")]
@@ -106,6 +114,35 @@ internal sealed class ExamenesTools
 
 		return lector.Consultar(api =>
 		{
+			InterpretacionDeAnalito lectura = api.Interpretacion(nombre);
+
+			// LA APLICABILIDAD SE CONTESTA PRIMERO, y ANTES que el conteo de mediciones.
+			//
+			// Es el criterio que distingue esta correccion de un filtro de pantalla: si
+			// esta tool devolviera el valor de un antigeno prostatico de alguien sin
+			// prostata, el dominio no habria cambiado — la tarjeta estaria escondida y la
+			// IA seguiria hablando de un analito que no corresponde.
+			//
+			// Va antes que `Mediciones == 0` porque son dos respuestas distintas: "todavia
+			// no te lo mediste" invita a hacerse el examen, y este NO hay que hacerselo.
+			if (lectura.NoLeCorresponde)
+				return new TendenciaDelAnalito
+				{
+					HayDatos = true,
+					Analito = lectura.ParaMostrar,
+					Tendencia = "no aplica",
+					Veredicto = lectura.Veredicto,
+					Severidad = lectura.Severidad,
+					Lectura = lectura.ParaSonia,
+					NoLeCorresponde = true,
+					SexoDelPaciente = api.SexoDelPaciente(),
+					EdadDelPaciente = api.EdadDelPaciente(),
+					Carpeta = lector.Carpeta,
+					UltimoEventoLeido = api.UltimoEventoProcesado(),
+					Detalle = "Este analito no le corresponde a esta persona. No hay valor que "
+						+ "reportar y no hay que sugerir el examen.",
+				};
+
 			TendenciaDeAnalito t = api.Tendencia(nombre);
 
 			// Sin mediciones no se inventa una tendencia: se dice que no hay datos de ese
@@ -121,11 +158,13 @@ internal sealed class ExamenesTools
 					// Ya no puede ser "el nombre esta mal": el enum lo impide. Si no hay
 					// mediciones es que la app todavia no las trajo, y eso se arregla con
 					// un Actualizar.
+					SexoDelPaciente = api.SexoDelPaciente(),
 					Detalle = $"El expediente todavia no tiene ninguna medicion de '{nombre}'. "
 						+ "Pedile que abra su app y apriete Actualizar.",
 				};
 
-			return Armar(t, api.Interpretacion(nombre), api.UltimoEventoProcesado(), api.EdadDelPaciente());
+			return Armar(t, lectura, api.UltimoEventoProcesado(), api.EdadDelPaciente(),
+				api.SexoDelPaciente());
 		});
 	}
 
@@ -156,11 +195,29 @@ internal sealed class ExamenesTools
 
 		return lector.Consultar(api =>
 		{
+			// La misma guarda que en la tendencia, y por la misma razon: el antigeno
+			// prostatico es justamente el analito que tiene velocidad Y requisito
+			// anatomico, asi que esta es la otra puerta por la que su ritmo podria salir.
+			InterpretacionDeAnalito lectura = api.Interpretacion(nombre);
+			if (lectura.NoLeCorresponde)
+				return new VelocidadDelAnalito
+				{
+					HayDatos = true,
+					Analito = nombre,
+					Expresada = lectura.ParaSonia,
+					EsAplicable = false,
+					NoLeCorresponde = true,
+					Carpeta = lector.Carpeta,
+					UltimoEventoLeido = api.UltimoEventoProcesado(),
+				};
+
 			VelocidadDeAnalito v = api.Velocidad(nombre);
 
 			return new VelocidadDelAnalito
 			{
 				HayDatos = true,
+				NoLeCorresponde = false,
+				RequiereElSexo = lectura.RequiereElSexo,
 				Analito = nombre,
 				PorAno = v.PorAno,
 				Unidad = v.Unidad,
@@ -322,7 +379,7 @@ internal sealed class ExamenesTools
 	}
 
 	private TendenciaDelAnalito Armar(TendenciaDeAnalito t, InterpretacionDeAnalito i,
-		long ultimoEvento, int edad) =>
+		long ultimoEvento, int edad, string sexo) =>
 		new TendenciaDelAnalito
 		{
 			HayDatos = true,
@@ -341,10 +398,18 @@ internal sealed class ExamenesTools
 			PideAlgo = i.PideAlgo,
 			SugiereRepetirElExamen = t.SugiereRepetirElExamen,
 			HaySerie = t.HaySerie,
+			NoLeCorresponde = i.NoLeCorresponde,
+			RequiereElSexo = i.RequiereElSexo,
 			EdadDelPaciente = edad,
+			SexoDelPaciente = sexo,
 			UltimoEventoLeido = ultimoEvento,
 			Carpeta = lector.Carpeta,
-			Detalle = "",
+			// Con el sexo sin declarar, el valor es real y el veredicto no existe. Decirlo
+			// aca evita que la IA lo lea como "no hay datos" y le pida un examen nuevo.
+			Detalle = i.RequiereElSexo
+				? "Los valores son reales, pero no hay veredicto: el rango de este analito "
+					+ "depende del sexo y la persona todavia no lo declaro en su app."
+				: "",
 		};
 
 	private const string DetalleSinJournal =
@@ -442,6 +507,28 @@ internal sealed class TendenciaDelAnalito
 	[Description("La edad con la que el dominio elige los rangos de referencia: lo normal a los 60 "
 		+ "no es lo normal a los 30.")]
 	public int EdadDelPaciente { get; init; }
+
+	[JsonPropertyName("sexoDelPaciente")]
+	[Description("'hombre', 'mujer' o 'desconocido'. Es el OTRO parametro con el que el dominio "
+		+ "elige los rangos, y en algunos analitos decide si el examen le corresponde siquiera a "
+		+ "la persona. Es un dato clinico, no una declaracion de identidad: no lo comentes ni le "
+		+ "pidas a la persona que lo justifique.")]
+	public string SexoDelPaciente { get; init; } = "";
+
+	[JsonPropertyName("noLeCorresponde")]
+	[Description("true cuando este analito NO APLICA a esta persona — un antigeno prostatico en "
+		+ "alguien sin prostata. NO es un valor anormal: es una pregunta sin sentido, y por eso el "
+		+ "resto de los campos viene VACIO. No inventes un valor, no digas 'esta normal', y no "
+		+ "sugieras hacerse el examen. Deci lo que dice `lectura` y nada mas.")]
+	public bool NoLeCorresponde { get; init; }
+
+	[JsonPropertyName("requiereElSexo")]
+	[Description("true cuando el analito SI le corresponde pero no se puede interpretar sin saber "
+		+ "el sexo de la persona. Los valores medidos son reales y se pueden decir; lo que NO hay "
+		+ "es veredicto, porque el rango contra el que se compara depende del sexo. Lo correcto es "
+		+ "decir el valor, decir que falta el dato y pedirle que lo complete en su app — nunca "
+		+ "suponerlo ni comparar contra un rango cualquiera.")]
+	public bool RequiereElSexo { get; init; }
 
 	[JsonPropertyName("ultimoEventoLeido")]
 	[Description("Hasta que evento del laboratorio leyo la app. Si la persona apreta Actualizar y "

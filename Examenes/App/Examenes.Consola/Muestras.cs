@@ -128,6 +128,29 @@ namespace Examenes.Consola
 				""valor"": 2.1, ""unidad"": ""mg/dL""
 			}");
 
+		// EL LABORATORIO PUBLICANDO EL SEXO. Es el segundo tipo de evento de esta narrativa,
+		// y NO va en LaHistoria() a proposito: el guion arranca con el sexo DESCONOCIDO
+		// para que se vea lo que el dominio puede y no puede decir sin ese dato.
+		//
+		// Sirve para medir la otra mitad: que la procedencia INSTITUCION entra por la ruta
+		// como cualquier evento, con su Check de idempotencia y su checkpoint.
+		internal static SenalDeEvento SexoPublicado(long id, string sexo) =>
+			new SenalDeEvento(id, "DatosDePacienteActualizados", $@"{{
+				""id"": {id}, ""tipo"": ""DatosDePacienteActualizados"",
+				""fecha"": ""2026-08-21T08:00:00"",
+				""sexo"": ""{sexo}""
+			}}");
+
+		// Un sexo que este dominio no modela. Se DESCARTA, como cualquier otro evento que
+		// la app no sabe aplicar: un laboratorio puede publicar categorias que esta app no
+		// tiene, y eso no puede impedirle ponerse al dia con el resto.
+		internal static SenalDeEvento SexoNoModelado() =>
+			new SenalDeEvento(304, "DatosDePacienteActualizados", @"{
+				""id"": 304, ""tipo"": ""DatosDePacienteActualizados"",
+				""fecha"": ""2026-08-21T08:00:00"",
+				""sexo"": ""no lo dice""
+			}");
+
 		// Un colesterol que salta 80 mg/dL en UN DIA respecto del de hoy. Sirve para
 		// demostrar que el dominio distingue un error de medicion de un cambio real:
 		// mismo salto que 203->205, pero en un dia.

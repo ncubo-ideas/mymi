@@ -25,10 +25,10 @@ namespace Examenes.Dominio
 		//
 		// ⚠️ Orientativa. La periodicidad real depende de la edad y de los antecedentes,
 		// y conviene que la revise alguien con criterio de laboratorio.
-		public override int MesesHastaElProximo(int edad) =>
+		public override int MesesHastaElProximo(Paciente paciente) =>
 			Ultima != null && Ultima.EsHallazgo ? 3 : 12;
 
-		public override Interpretacion Interpretar(int edad)
+		protected override Interpretacion Leer(Paciente paciente)
 		{
 			EvaluacionDePresencia hechos = Evaluar();
 
