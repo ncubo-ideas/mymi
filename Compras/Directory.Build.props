@@ -1,0 +1,50 @@
+<Project>
+
+  <!-- LO QUE EL HOST PUEDE LEER SIN ARRANCAR EL MODULO, y sin que el modulo colabore.
+
+       Pedido de Alvaro: los dll de .NET llevan informacion de manifiesto en sus atributos
+       -compania, version, descripcion- y Gnothi la puede mostrar al lado de las
+       estadisticas de la app. Son los atributos estandar (AssemblyCompany,
+       AssemblyProduct, AssemblyDescription, AssemblyFileVersion...), asi que cualquier
+       lector los encuentra: FileVersionInfo, reflexion, o `dotnet-ildasm`.
+
+       Es la MISMA idea que el manifiesto.json, por otra puerta: el json lo escribe la
+       institucion y se puede editar sin recompilar; esto viaja dentro del binario y no se
+       puede cambiar sin volver a compilarlo. Los dos se pueden contrastar, y eso es una
+       ventaja: si el json dice una cosa y el dll otra, alguien tocó uno de los dos.
+
+       VA EN UN PROPS DEL NEGOCIO y no en cada csproj: son ocho proyectos y repetir la
+       compania en cada uno es garantia de que algun dia digan cosas distintas. -->
+
+  <!-- ENCADENA CON EL PROPS DE LA RAIZ, y este Import es obligatorio: MSBuild se detiene
+       en el PRIMER Directory.Build.props que encuentra subiendo desde el csproj. Sin esta
+       linea, VersionDelMotor -que vive en el de la raiz- desaparece y el restore falla con
+       NU1101 sin decir por que. -->
+  <Import Project="$([MSBuild]::GetPathOfFileAbove($(MSBuildThisFile), $(MSBuildThisFileDirectory)..))" />
+
+  <!-- El Portador queda AFUERA a proposito: es el mecanismo compartido del sustrato, no
+       algo que publique esta institucion. Ponerle la compania del supermercado seria
+       decir que es suyo. -->
+  <PropertyGroup Condition="'$(MSBuildProjectName)' != 'Puppets.Portador'">
+
+    <!-- QUIEN PUBLICA EL MODULO. Es la institucion, no nosotros: eso es lo que el Host
+         tiene que poder mostrarle a la persona cuando le pregunte de donde salio esta app.
+
+         MARCA FICTICIA del demo (especificacion de Fernanda). Si el equipo confirma otro
+         nombre de cara al cliente -en la tabla de instituciones de la wiki este negocio
+         figura como "Automercado y vos"-, cambia aca y en los assets de la caratula. -->
+    <Company>Supermercado La Guaria</Company>
+    <Authors>Supermercado La Guaria</Authors>
+    <Product>La Guaria Market</Product>
+
+    <!-- Se declara que la marca es ficticia DENTRO del binario, no solo en la pagina: el
+         dll puede viajar solo, y quien lo inspeccione tiene que poder saber que no
+         corresponde a ninguna empresa real. -->
+    <Copyright>Marca ficticia del demo Gnothi. No corresponde a ninguna empresa real.</Copyright>
+
+    <Version>1.0.0</Version>
+    <InformationalVersion>1.0.0 · modulo compras del milestone Gnothi</InformationalVersion>
+
+  </PropertyGroup>
+
+</Project>

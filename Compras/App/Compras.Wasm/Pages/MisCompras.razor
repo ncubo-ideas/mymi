@@ -1,21 +1,22 @@
 @page "/"
 @using System.Globalization
 @using Compras.App.Vistas
+@using Compras.Dominio
 @using Puppets.Portador
 @inject EstadoDeLaApp estado
 @inject NavigationManager navegacion
 
-<PageTitle>La Cosecha y vos</PageTitle>
+<PageTitle>La Guaria y vos</PageTitle>
 
-<h1>La Cosecha y vos</h1>
-<p class="text-muted mb-4">
-    Supermercado La Cosecha &middot; tus compras, en tu computadora.
+<h1>Tus compras</h1>
+<p class="text-body-secondary mb-4">
+    Todo lo que compraste, en tu computadora.
 </p>
 
 @* UN solo lugar para los errores, y arriba (la leccion de la pantalla de Examenes). *@
 @if (error.Length > 0)
 {
-    <div class="alert alert-danger">
+    <div class="aviso-fuerte mb-3">
         <strong>@(estado.EstaArriba ? "No se pudo completar la operación." : "No se pudo abrir la app.")</strong>
         <pre class="mb-0 mt-2 small" style="white-space:pre-wrap">@error</pre>
     </div>
@@ -23,7 +24,7 @@
 
 @if (!estado.EstaArriba)
 {
-    <div class="alert alert-secondary">
+    <div class="aviso mb-3">
         @if (estado.FaltaReotorgarPermiso)
         {
             <p class="mb-2">
@@ -31,7 +32,7 @@
                 confirmar el permiso de escritura cada vez que volvés a abrir la app.
             </p>
             <div class="d-flex flex-wrap gap-2">
-                <button class="btn btn-warning" @onclick="PedirPermiso">
+                <button class="btn btn-aviso" @onclick="PedirPermiso">
                     Dar permiso a &laquo;@estado.NombreDeLaCarpeta&raquo;
                 </button>
                 <button class="btn btn-primary" @onclick="ConectarCarpeta"
@@ -72,7 +73,7 @@ else
         <button class="btn btn-primary" @onclick="Refrescar" disabled="@refrescando">
             @(refrescando ? "Refrescando…" : "Refresh")
         </button>
-        <span class="text-muted">
+        <span class="text-body-secondary">
             @cantidad @(cantidad == 1 ? "compra" : "compras") &middot;
             @Colones(total) en total &middot;
             leído hasta el evento @ultimoEvento
@@ -81,64 +82,176 @@ else
 
     @if (!estado.HayCarpeta)
     {
-        <div class="alert alert-warning d-flex align-items-center flex-wrap gap-2">
+        <div class="aviso d-flex align-items-center flex-wrap gap-2 mb-3">
             <div class="flex-grow-1">
                 <strong>No se está guardando nada.</strong>
                 Esta app está funcionando sin carpeta: lo que ves lo vuelve a pedir al proveedor
                 cada vez que abrís, y no queda registro tuyo en disco.
             </div>
-            <button class="btn btn-warning" @onclick="ConectarCarpeta">Elegir carpeta</button>
+            <button class="btn btn-aviso" @onclick="ConectarCarpeta">Elegir carpeta</button>
         </div>
     }
     else if (estado.GuardadoFallando.Length > 0)
     {
-        <div class="alert alert-danger d-flex align-items-center flex-wrap gap-2">
+        <div class="aviso-fuerte d-flex align-items-center flex-wrap gap-2 mb-3">
             <div class="flex-grow-1">
                 <strong>La carpeta rechazó la escritura.</strong>
                 Lo que ves en pantalla no está guardado en &laquo;@estado.NombreDeLaCarpeta&raquo;.
                 Suele ser el permiso, que caduca al reabrir.
                 <div class="small mt-1">@estado.GuardadoFallando</div>
             </div>
-            <button class="btn btn-danger" @onclick="PedirPermiso">Volver a dar permiso</button>
+            <button class="btn btn-aviso" @onclick="PedirPermiso">Volver a dar permiso</button>
         </div>
     }
     else
     {
-        <p class="small text-muted">
+        <p class="small text-body-secondary">
             Se guarda en &laquo;@estado.NombreDeLaCarpeta&raquo; después de cada cambio.
         </p>
     }
 
-    @* LO QUE NINGUN TICKET DE PAPEL DICE, y por eso va PRIMERO: como cambio la canasta.
-       EL VEREDICTO Y LA LINEA VIENEN DEL DOMINIO. Esta pantalla ya no decide si un cambio
-       es bueno: con un booleano "creció o no creció", una canasta que MEJORABA 29 puntos
-       se mostraba igual que una que no se movió — "estable", en verde. *@
+    @* LA PORTADA, y va antes que todo lo demás porque la especificación de marca lo pide
+       así: "la pantalla abre con la firma de su semana y con el quiebre de enero. La lista
+       de recibos existe, pero no es la portada."
+
+       Son los dos estados de la marca: VERDE lo estable, ÁMBAR lo que cambió. Rojo nunca
+       —"un carrito no tiene urgencias"—. Y el ámbar no es un regaño: señala y se calla. *@
+    @if (firma is not null && firma.Existe)
+    {
+        <div class="card border-success-subtle bg-success-subtle mb-3">
+            <div class="card-body">
+                <div class="kicker text-success-emphasis mb-2">Lo estable</div>
+                <div class="fs-5">@firma.ParaSonia</div>
+
+                @* Con UN solo habitual, repetir el nombre debajo de la frase que ya lo dice
+                   es ruido: alcanza la frecuencia. Con varios, las etiquetas dicen cual
+                   falla menos, que la frase no puede ordenar. *@
+                @if (firma.CuantosHabituales == 1)
+                {
+                    <div class="small text-body-secondary mt-2">
+                        @Frecuencia(firma.Habituales[0])
+                    </div>
+                }
+                else
+                {
+                    <div class="d-flex flex-wrap gap-2 mt-3">
+                        @foreach (var habitual in firma.Habituales)
+                        {
+                            <span class="etiqueta etiqueta-verde">
+                                @habitual.Descripcion &middot; @Frecuencia(habitual)
+                            </span>
+                        }
+                    </div>
+                }
+            </div>
+        </div>
+    }
+
+    @if (cambio is not null && cambio.HayCambio)
+    {
+        <div class="card border-warning-subtle bg-warning-subtle mb-4">
+            <div class="card-body">
+                <div class="kicker text-warning-emphasis mb-2">
+                    Lo que cambió
+                    @if (cambio.MesDelCambio.Length > 0)
+                    {
+                        <span class="text-body-secondary">· desde @cambio.MesDelCambio</span>
+                    }
+                </div>
+
+                @* La frase del dominio (ParaSonia) esta escrita para que la LEA alguien: es
+                   la que contestan el MCP y la consola. En pantalla, con nueve productos, se
+                   volvia un parrafo de cuatro lineas que terminaba en "(y 4 mas)" — un
+                   volcado, no una lectura. Aca van los mismos hechos del dominio
+                   -Entraron y Salieron, cada uno con su mes- en dos filas que se recorren
+                   con la vista. *@
+                @if (cambio.Entraron.Count > 0)
+                {
+                    <div class="mb-2">
+                        <span class="small text-body-secondary me-2">entraron</span>
+                        <span class="d-inline-flex flex-wrap gap-2 align-middle">
+                            @foreach (var entro in cambio.Entraron)
+                            {
+                                <span class="etiqueta etiqueta-cambio">
+                                    @entro.Descripcion
+                                    <span class="opacity-75">&middot; @entro.Desde</span>
+                                </span>
+                            }
+                        </span>
+                    </div>
+                }
+
+                @if (cambio.Salieron.Count > 0)
+                {
+                    <div>
+                        <span class="small text-body-secondary me-2">dejó de aparecer</span>
+                        <span class="d-inline-flex flex-wrap gap-2 align-middle">
+                            @foreach (var salio in cambio.Salieron)
+                            {
+                                <span class="etiqueta etiqueta-neutra">@salio.Descripcion</span>
+                            }
+                        </span>
+                    </div>
+                }
+            </div>
+        </div>
+    }
+
+    @* LO QUE NINGUN TICKET DE PAPEL DICE: los dos totales y DE DONDE
+       sale la diferencia, pasillo por pasillo. La línea la escribe el DOMINIO.
+
+       No hay veredicto, y es una decisión: "que el helado pasara de mensual a semanal es un
+       dato, no una falta. La app lo señala y se calla; el juicio no es suyo." Se muestra el
+       pasillo con su título legible; la llave del repertorio no se le enseña a nadie. *@
     @if (comparacion is not null && comparacion.HayComparacion)
     {
-        <h2 class="h5 mt-4">Tu canasta, comparada</h2>
+        <h2>Tu canasta, comparada</h2>
         <div class="list-group mb-4">
             <div class="list-group-item">
                 <div class="d-flex justify-content-between align-items-start flex-wrap gap-2">
                     <div>
-                        <strong>Gasto ocasional</strong>
-                        <span class="badge @InsigniaDelVeredicto(comparacion.Veredicto) ms-2">
-                            @comparacion.Veredicto
-                        </span>
-                        <div class="small text-muted mt-1">
-                            azucarados, snacks y grasas, sobre lo comestible del mes
+                        <strong>Lo que gastaste</strong>
+                        <div class="small text-body-secondary mt-1">
+                            @Mes(comparacion.MesAntes)/@comparacion.AnioAntes vs @Mes(comparacion.MesDespues)/@comparacion.AnioDespues
                         </div>
                     </div>
                     <div class="text-end">
                         <div class="fs-5">
-                            @Porcentaje(comparacion.ProporcionAntes) &rarr; @Porcentaje(comparacion.ProporcionDespues)
+                            @Colones(comparacion.GastoAntes) &rarr; @Colones(comparacion.GastoDespues)
                         </div>
-                        <div class="small text-muted">
-                            @Mes(comparacion.MesAntes)/@comparacion.AnioAntes vs @Mes(comparacion.MesDespues)/@comparacion.AnioDespues
+                        <div class="small text-body-secondary">
+                            @(comparacion.CambioEnElTotal >= 0 ? "+" : "")@Colones(comparacion.CambioEnElTotal)
                         </div>
                     </div>
                 </div>
                 <div class="small mt-2">@comparacion.ParaSonia</div>
             </div>
+
+            @foreach (var diferencia in comparacion.Diferencias)
+            {
+                @* Solo los pasillos que de verdad mueven la aguja: quien decide cuáles
+                   cuentan es el dominio, no esta pantalla. *@
+                if (!diferencia.ExplicaElCambio) { continue; }
+
+                <div class="list-group-item">
+                    <div class="d-flex justify-content-between align-items-center flex-wrap gap-2">
+                        <div>
+                            @diferencia.Titulo
+                            @if (diferencia.EsNuevo)
+                            {
+                                <span class="etiqueta etiqueta-cambio ms-2">entró este año</span>
+                            }
+                            @if (diferencia.Desaparecio)
+                            {
+                                <span class="etiqueta etiqueta-neutra ms-2">dejó de aparecer</span>
+                            }
+                        </div>
+                        <div class="text-end small">
+                            @Colones(diferencia.MontoAntes) &rarr; @Colones(diferencia.MontoDespues)
+                        </div>
+                    </div>
+                </div>
+            }
         </div>
     }
 
@@ -147,16 +260,18 @@ else
        cada categoría. *@
     @if (pendientes.Count > 0)
     {
-        <h2 class="h5">Lo que dejó de entrar</h2>
+        <h2>Lo que dejó de entrar</h2>
         <div class="list-group mb-4">
             @foreach (AbastecimientoEnEspera p in pendientes)
             {
                 <div class="list-group-item d-flex justify-content-between align-items-center flex-wrap gap-2">
+                    @* El titulo, nunca la llave: "LacteosYHuevos" es lo que viene en el
+                       evento y no se le muestra a nadie. *@
                     <div>
-                        <strong>@p.Categoria</strong>
-                        <div class="small text-muted">@p.ParaSonia</div>
+                        <strong>@p.Titulo</strong>
+                        <div class="small text-body-secondary">@p.ParaSonia</div>
                     </div>
-                    <span class="badge @(p.Severidad == "informativo" ? "text-bg-light text-dark" : "text-bg-secondary")">
+                    <span class="etiqueta @(p.Severidad == "informativo" ? "etiqueta-neutra" : "etiqueta-tierra")">
                         @p.DiasDesdeLaUltima días
                     </span>
                 </div>
@@ -168,14 +283,14 @@ else
        buscar tickets de papel. *@
     @if (garantias.Count > 0)
     {
-        <h2 class="h5">Garantías vigentes</h2>
+        <h2>Garantías vigentes</h2>
         <div class="list-group mb-4">
             @foreach (GarantiaDeProducto g in garantias)
             {
                 <div class="list-group-item d-flex justify-content-between align-items-center flex-wrap gap-2">
                     <div>
                         <strong>@g.Descripcion</strong>
-                        <div class="small text-muted">
+                        <div class="small text-body-secondary">
                             comprada el @g.FechaDeCompra.ToString("dd/MM/yyyy", CultureInfo.InvariantCulture)
                             (compra @g.NumeroDeCompra) &middot; @g.MesesDeCobertura meses
                         </div>
@@ -186,7 +301,7 @@ else
                             <div class="small mt-1"><strong>@g.QueHacer</strong></div>
                         }
                     </div>
-                    <span class="badge @(g.QueHacer.Length > 0 ? "text-bg-warning" : "text-bg-success")">
+                    <span class="etiqueta @(g.QueHacer.Length > 0 ? "etiqueta-tierra" : "etiqueta-verde")">
                         vence el @g.VenceEl.ToString("dd/MM/yyyy", CultureInfo.InvariantCulture)
                     </span>
                 </div>
@@ -194,10 +309,12 @@ else
         </div>
     }
 
-    <h2 class="h5">Tus compras</h2>
+    @* "Tus recibos" y no "Tus compras": el titular de la pantalla ya dice eso, y la
+       especificación es explícita en que esta lista NO es la portada. *@
+    <h2>Tus recibos</h2>
     @if (compras.Count == 0)
     {
-        <p class="text-muted">Todavía no hay compras. Apretá <em>Refresh</em>.</p>
+        <p class="text-body-secondary">Todavía no hay compras. Apretá <em>Refresh</em>.</p>
     }
     else
     {
@@ -206,7 +323,7 @@ else
                 <tr><th>Compra</th><th>Fecha</th><th class="text-end">Líneas</th><th class="text-end">Total</th></tr>
             </thead>
             <tbody>
-                @foreach (CompraEnLista compra in compras)
+                @foreach (CompraEnLista compra in Recientes())
                 {
                     <tr style="cursor:pointer" @onclick="() => VerDetalle(compra.Numero)">
                         <td>@compra.Numero</td>
@@ -217,11 +334,19 @@ else
                 }
             </tbody>
         </table>
+
+        @if (compras.Count > RecibosQueSeMuestran)
+        {
+            <p class="small text-body-secondary">
+                Las @RecibosQueSeMuestran más recientes de @compras.Count.
+                Las demás siguen en tu carpeta, y tu asistente las puede consultar todas.
+            </p>
+        }
     }
 
     @if (!estado.HayCarpeta)
     {
-        <p class="small text-muted mt-4">
+        <p class="small text-body-secondary mt-4">
             <strong>Sin carpeta:</strong> el registro vive solo en memoria y se pierde al cerrar.
         </p>
     }
@@ -235,6 +360,8 @@ else
     private IReadOnlyList<GarantiaDeProducto> garantias = new List<GarantiaDeProducto>();
     private IReadOnlyList<AbastecimientoEnEspera> pendientes = new List<AbastecimientoEnEspera>();
     private CanastasComparadas? comparacion;
+    private FirmaDeLaSemana? firma;
+    private CambioDeLaCanasta? cambio;
     private int cantidad;
     private decimal total;
     private long ultimoEvento;
@@ -323,19 +450,14 @@ else
         // Qué dos meses se comparan lo elige el DOMINIO, que conoce su propio rango.
         // Antes lo decidía esta pantalla mirando la última fila de la tabla.
         comparacion = estado.ComparacionPorDefecto();
+
+        // La portada: lo estable y lo que cambió.
+        firma = estado.Firma();
+        cambio = estado.CambioDelUltimoAnio();
     }
 
     private void VerDetalle(string numero) =>
         navegacion.NavigateTo($"compra/{Uri.EscapeDataString(numero)}");
-
-    // El color sale del veredicto que eligió el dominio, no de un booleano de pantalla.
-    private static string InsigniaDelVeredicto(string veredicto) => veredicto switch
-    {
-        "mejorando" => "text-bg-success",
-        "empeorando" => "text-bg-warning",
-        "estable" => "text-bg-light text-dark",
-        _ => "text-bg-light text-dark",
-    };
 
     private static string Mes(int mes) =>
         CultureInfo.GetCultureInfo("es").DateTimeFormat.GetAbbreviatedMonthName(mes);
@@ -344,6 +466,29 @@ else
         (proporcion * 100m).ToString("0.#", CultureInfo.InvariantCulture) + "%";
 
     // Formato explicito SIEMPRE (la escala del decimal no sobrevive el journal).
+    // CUANTOS RECIBOS SE PINTAN. Con 87 compras semanales la tabla volcaba las 87 filas, y
+    // la especificacion es explicita en que "la lista de recibos existe, pero no es la
+    // portada": una pared de 87 filas la vuelve la portada por tamaño, aunque este al
+    // final. Doce son unos tres meses de compras semanales, que es lo que alguien recorre
+    // buscando un ticket que hizo hace poco.
+    //
+    // No se ESCONDE nada, y la linea de abajo lo dice: las demas siguen en su carpeta y su
+    // asistente las consulta todas. Acotar la pantalla no es acotar el dato.
+    private const int RecibosQueSeMuestran = 12;
+
+    private IEnumerable<CompraEnLista> Recientes()
+    {
+        int desde = Math.Max(0, compras.Count - RecibosQueSeMuestran);
+        for (int i = compras.Count - 1; i >= desde; i--) yield return compras[i];
+    }
+
+    // "en todas" cuando no fallo ni una vez, y si no la cuenta cruda. La palabra la
+    // decide esta pantalla porque es una forma de decirlo, no un hecho nuevo.
+    private static string Frecuencia(ProductoQueVuelve habitual) =>
+        habitual.EstaEnTodas
+            ? "en todas"
+            : $"en {habitual.ComprasEnQueAparece} de {habitual.DeCuantas}";
+
     private static string Colones(decimal monto) =>
-        "₡" + monto.ToString("N0", CultureInfo.InvariantCulture);
+        Plata.Colones(monto);   @* la regla vive en el dominio, no en cada pantalla *@
 }

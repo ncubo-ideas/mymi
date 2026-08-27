@@ -38,3 +38,7 @@ CONTRIBUTING.md
 # docs/ son transcripciones, feedback y analisis previos al codigo. Misma razon que
 # arriba, mas una: algunos se derivan de examenes de laboratorio reales de una persona.
 docs/
+
+# Cache de Python: los generadores de datos dejan .pyc al importarse.
+__pycache__/
+*.pyc

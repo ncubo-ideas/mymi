@@ -2,17 +2,8 @@ using MudBlazor;
 
 namespace DealershipCar.Wasm.Layout
 {
-	// EL TEMA DE LA MARCA, en un solo lugar. Los colores son los que ya tenia css/app.css como
-	// variables -- la marca no cambio al cambiar de biblioteca de componentes -- solo que ahora
-	// viven donde MudBlazor los lee y los propaga a cada componente.
-	//
-	// LA TIPOGRAFIA ES LA DEL SISTEMA, no Roboto. La guia de MudBlazor enlaza la fuente desde
-	// Google; esta app es una PWA que promete abrir sin red, y una fuente que se pide por red es
-	// justo lo que no se puede prometer. index.html dice lo mismo del lado del HTML.
 	public static class SotaventoTheme
 	{
-		// LOS COLORES DE LA HOJA ANTERIOR, con el mismo nombre que tenian ahi para que la
-		// correspondencia se pueda seguir: marca, atencion, problema, bien.
 		private const string Marca = "#1F3A5F";
 		private const string MarcaOscura = "#16273F";
 		private const string Tinta = "#16202C";
@@ -45,11 +36,6 @@ namespace DealershipCar.Wasm.Layout
 				TableLines = Borde,
 			},
 
-			// EL MODO OSCURO NO ES ADORNO: esta app se abre en un telefono tanto como en un
-			// escritorio, y un tablero blanco de noche es el que la persona cierra. Los estados
-			// no se pintan con estos colores directamente -- se piden por nombre semantico
-			// (Error, Warning, Success), asi que el tablero se lee igual en los dos modos sin
-			// una segunda tabla de colores que mantener.
 			PaletteDark = new PaletteDark
 			{
 				Primary = "#7FA6D9",
@@ -84,15 +70,6 @@ namespace DealershipCar.Wasm.Layout
 			},
 		};
 
-		// EL ESTADO SE PINTA POR EL NOMBRE QUE COMPONE EL DOMINIO, y lo que no reconoce cae al
-		// color neutro. Es la misma propiedad que tenia la hoja de CSS -- ahi eran clases
-		// `.state--notdue`, `.state--overdue` -- y existe por la misma razon: si el dominio agrega
-		// un estado, la pantalla lo muestra apagado en vez de romperse.
-		//
-		// LOS DOS QUE SE PARECEN Y NO SON LO MISMO: DueSoon es un aviso de cortesia y NUNCA una
-		// parada obligatoria, Overdue si. Por eso DueSoon sale Info y no Warning: pintarlo del
-		// mismo color que Due convertiria una cortesia en una obligacion, que es exactamente el
-		// error que el dominio se toma el trabajo de distinguir.
 		public static Color ColorOf(string dueState) => dueState switch
 		{
 			"Overdue" => Color.Error,
@@ -102,8 +79,6 @@ namespace DealershipCar.Wasm.Layout
 			_ => Color.Default,
 		};
 
-		// El icono acompana al color por la misma razon por la que el color acompana al nombre:
-		// un tablero que solo distingue por color no lo distingue para quien no ve el color.
 		public static string IconOf(string dueState) => dueState switch
 		{
 			"Overdue" => Icons.Material.Rounded.Error,

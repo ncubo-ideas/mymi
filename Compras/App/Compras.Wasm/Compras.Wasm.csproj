@@ -1,10 +1,13 @@
-<Project Sdk="Microsoft.NET.Sdk.BlazorWebAssembly">
+﻿<Project Sdk="Microsoft.NET.Sdk.BlazorWebAssembly">
 
   <PropertyGroup>
     <TargetFramework>net9.0</TargetFramework>
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
     <ServiceWorkerAssetsManifest>service-worker-assets.js</ServiceWorkerAssetsManifest>
+
+    <AssemblyTitle>La Guaria Market</AssemblyTitle>
+    <Description>La app que instala la persona: sus compras del supermercado, guardadas en una carpeta suya. Muestra su canasta comparada con la del ano pasado, lo que dejo de entrar y las garantias vigentes con su respaldo.</Description>
   </PropertyGroup>
 
   <ItemGroup>
@@ -28,3 +31,4 @@
   </ItemGroup>
 
 </Project>
+

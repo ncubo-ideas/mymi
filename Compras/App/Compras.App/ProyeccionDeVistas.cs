@@ -83,20 +83,32 @@ namespace Compras.App
 			using JsonDocument documento = JsonDocument.Parse(json);
 			JsonElement raiz = documento.RootElement;
 
+			// La cabecera sale como "canasta" y cada pasillo como "departamento": son dos
+			// print distintos del mismo bloque.
+			JsonElement cabecera = raiz.TryGetProperty("canasta", out JsonElement c) ? c : raiz;
+
+			var departamentos = new List<GastoPorDepartamentoVista>();
+			if (raiz.TryGetProperty("departamento", out JsonElement arreglo))
+				foreach (JsonElement elemento in Elementos(arreglo))
+					departamentos.Add(new GastoPorDepartamentoVista
+					{
+						Categoria = Texto(elemento, "categoria"),
+						Titulo = Texto(elemento, "titulo"),
+						Monto = Decimal(elemento, "monto"),
+						ProporcionDelTotal = Decimal(elemento, "proporcionDelTotal"),
+					});
+
 			return new CanastaDelMesVista
 			{
-				Anio = Entero(raiz, "anio"),
-				Mes = Entero(raiz, "mes"),
-				CantidadDeCompras = Entero(raiz, "cantidadDeCompras"),
-				GastoRecomendado = Decimal(raiz, "gastoRecomendado"),
-				GastoNeutro = Decimal(raiz, "gastoNeutro"),
-				GastoOcasional = Decimal(raiz, "gastoOcasional"),
-				GastoNoComestible = Decimal(raiz, "gastoNoComestible"),
-				GastoComestible = Decimal(raiz, "gastoComestible"),
-				GastoTotal = Decimal(raiz, "gastoTotal"),
-				ProporcionOcasional = Decimal(raiz, "proporcionOcasional"),
-				HayComestible = Booleano(raiz, "hayComestible"),
-				HayCompras = Booleano(raiz, "hayCompras"),
+				Anio = Entero(cabecera, "anio"),
+				Mes = Entero(cabecera, "mes"),
+				CantidadDeCompras = Entero(cabecera, "cantidadDeCompras"),
+				GastoNoComestible = Decimal(cabecera, "gastoNoComestible"),
+				GastoComestible = Decimal(cabecera, "gastoComestible"),
+				GastoTotal = Decimal(cabecera, "gastoTotal"),
+				HayComestible = Booleano(cabecera, "hayComestible"),
+				HayCompras = Booleano(cabecera, "hayCompras"),
+				Departamentos = departamentos,
 			};
 		}
 
@@ -107,24 +119,113 @@ namespace Compras.App
 			using JsonDocument documento = JsonDocument.Parse(json);
 			JsonElement raiz = documento.RootElement;
 
+			JsonElement cabecera = raiz.TryGetProperty("comparacion", out JsonElement c) ? c : raiz;
+
+			var diferencias = new List<DiferenciaPorDepartamentoVista>();
+			if (raiz.TryGetProperty("diferencia", out JsonElement arreglo))
+				foreach (JsonElement elemento in Elementos(arreglo))
+					diferencias.Add(new DiferenciaPorDepartamentoVista
+					{
+						Categoria = Texto(elemento, "categoria"),
+						Titulo = Texto(elemento, "titulo"),
+						MontoAntes = Decimal(elemento, "montoAntes"),
+						MontoDespues = Decimal(elemento, "montoDespues"),
+						CambioDelPasillo = Decimal(elemento, "cambioDelPasillo"),
+						Subio = Booleano(elemento, "subio"),
+						EsNuevo = Booleano(elemento, "esNuevo"),
+						Desaparecio = Booleano(elemento, "desaparecio"),
+						ExplicaElCambio = Booleano(elemento, "explicaElCambio"),
+					});
+
 			return new CanastasComparadas
 			{
-				HayComparacion = Booleano(raiz, "hayComparacion"),
-				ProporcionAntes = Decimal(raiz, "proporcionAntes"),
-				ProporcionDespues = Decimal(raiz, "proporcionDespues"),
-				Cambio = Decimal(raiz, "cambio"),
-				Veredicto = Texto(raiz, "veredicto"),
-				ParaSonia = Texto(raiz, "paraSonia"),
-				CrecioLoOcasional = Booleano(raiz, "crecioLoOcasional"),
-				AnioAntes = Entero(raiz, "anioAntes"),
-				MesAntes = Entero(raiz, "mesAntes"),
-				GastoOcasionalAntes = Decimal(raiz, "gastoOcasionalAntes"),
-				GastoComestibleAntes = Decimal(raiz, "gastoComestibleAntes"),
-				AnioDespues = Entero(raiz, "anioDespues"),
-				MesDespues = Entero(raiz, "mesDespues"),
-				GastoOcasionalDespues = Decimal(raiz, "gastoOcasionalDespues"),
-				GastoComestibleDespues = Decimal(raiz, "gastoComestibleDespues"),
+				HayComparacion = Booleano(cabecera, "hayComparacion"),
+				GastoAntes = Decimal(cabecera, "gastoAntes"),
+				GastoDespues = Decimal(cabecera, "gastoDespues"),
+				CambioEnElTotal = Decimal(cabecera, "cambioEnElTotal"),
+				Cambio = Decimal(cabecera, "cambio"),
+				HayAlgoQueLoExplique = Booleano(cabecera, "hayAlgoQueLoExplique"),
+				ParaSonia = Texto(cabecera, "paraSonia"),
+				AnioAntes = Entero(cabecera, "anioAntes"),
+				MesAntes = Entero(cabecera, "mesAntes"),
+				GastoComestibleAntes = Decimal(cabecera, "gastoComestibleAntes"),
+				AnioDespues = Entero(cabecera, "anioDespues"),
+				MesDespues = Entero(cabecera, "mesDespues"),
+				GastoComestibleDespues = Decimal(cabecera, "gastoComestibleDespues"),
+				Diferencias = diferencias,
 			};
+		}
+
+		internal static FirmaDeLaSemana Firma(string json)
+		{
+			if (string.IsNullOrWhiteSpace(json)) return new FirmaDeLaSemana();
+
+			using JsonDocument documento = JsonDocument.Parse(json);
+			JsonElement raiz = documento.RootElement;
+
+			// La cabecera sale como "firma" y cada producto como "habitual": son dos print
+			// distintos del mismo bloque.
+			JsonElement cabecera = raiz.TryGetProperty("firma", out JsonElement f) ? f : raiz;
+
+			return new FirmaDeLaSemana
+			{
+				ComprasMiradas = Entero(cabecera, "comprasMiradas"),
+				CuantosHabituales = Entero(cabecera, "cuantosHabituales"),
+				ParaSonia = Texto(cabecera, "paraSonia"),
+				Habituales = Habituales(raiz, "habitual"),
+			};
+		}
+
+		internal static CambioDeLaCanasta Cambio(string json)
+		{
+			if (string.IsNullOrWhiteSpace(json)) return new CambioDeLaCanasta();
+
+			using JsonDocument documento = JsonDocument.Parse(json);
+			JsonElement raiz = documento.RootElement;
+
+			JsonElement cabecera = raiz.TryGetProperty("cambio", out JsonElement c) ? c : raiz;
+
+			var entraron = new List<ProductoQueEntroVista>();
+			if (raiz.TryGetProperty("entro", out JsonElement arreglo))
+				foreach (JsonElement elemento in Elementos(arreglo))
+					entraron.Add(new ProductoQueEntroVista
+					{
+						Sku = Texto(elemento, "sku"),
+						Descripcion = Texto(elemento, "descripcion"),
+						Desde = Texto(elemento, "desde"),
+						ComprasEnQueAparece = Entero(elemento, "comprasEnQueAparece"),
+						Proporcion = Decimal(elemento, "proporcion"),
+					});
+
+			return new CambioDeLaCanasta
+			{
+				HayConQueComparar = Booleano(cabecera, "hayConQueComparar"),
+				HayCambio = Booleano(cabecera, "hayCambio"),
+				ParaSonia = Texto(cabecera, "paraSonia"),
+				Entraron = entraron,
+				Salieron = Habituales(raiz, "salio"),
+			};
+		}
+
+		// Los que vuelven, en las dos lecturas: la firma los llama "habitual" y el cambio
+		// llama "salio" a los que se cayeron. Misma forma, mismo lector.
+		private static IReadOnlyList<ProductoQueVuelve> Habituales(JsonElement raiz, string llave)
+		{
+			var productos = new List<ProductoQueVuelve>();
+			if (!raiz.TryGetProperty(llave, out JsonElement arreglo)) return productos;
+
+			foreach (JsonElement elemento in Elementos(arreglo))
+				productos.Add(new ProductoQueVuelve
+				{
+					Sku = Texto(elemento, "sku"),
+					Descripcion = Texto(elemento, "descripcion"),
+					ComprasEnQueAparece = Entero(elemento, "comprasEnQueAparece"),
+					DeCuantas = Entero(elemento, "deCuantas"),
+					Proporcion = Decimal(elemento, "proporcion"),
+					EstaEnTodas = Booleano(elemento, "estaEnTodas"),
+				});
+
+			return productos;
 		}
 
 		internal static GarantiaDeProducto Garantia(string json)
@@ -184,8 +285,8 @@ namespace Compras.App
 				GastoEnElPrimerMes = Decimal(cabecera, "gastoEnElPrimerMes"),
 				GastoEnElUltimoMes = Decimal(cabecera, "gastoEnElUltimoMes"),
 				CambioDeGasto = Decimal(cabecera, "cambioDeGasto"),
-				SePuedeJuzgar = Booleano(cabecera, "sePuedeJuzgar"),
-				Veredicto = Texto(cabecera, "veredicto"),
+				HaySerie = Booleano(cabecera, "haySerie"),
+				HayCambioReal = Booleano(cabecera, "hayCambioReal"),
 				ParaSonia = Texto(cabecera, "paraSonia"),
 				Meses = meses,
 			};
@@ -218,10 +319,12 @@ namespace Compras.App
 				pendientes.Add(new AbastecimientoEnEspera
 				{
 					Categoria = Texto(elemento, "categoria"),
+					Titulo = Texto(elemento, "titulo"),
 					UltimaCompra = Fecha(elemento, "ultimaCompra"),
 					DiasDesdeLaUltima = Entero(elemento, "diasDesdeLaUltima"),
 					DiasEsperados = Entero(elemento, "diasEsperados"),
-					EsRecomendado = Booleano(elemento, "esRecomendado"),
+					EsRitmoObservado = Booleano(elemento, "esRitmoObservado"),
+					EsComestible = Booleano(elemento, "esComestible"),
 					Severidad = Texto(elemento, "severidad"),
 					ParaSonia = Texto(elemento, "paraSonia"),
 				});

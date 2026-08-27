@@ -132,6 +132,12 @@ namespace Compras.Consola
 			Console.WriteLine($"gasto total registrado      : {Formato(api.TotalDeCompras())}");
 			Console.WriteLine($"token guardado              : [{api.TokenGuardado()}]");
 
+			// LA PORTADA, y va primero por eso: la especificacion de marca pide que la app
+			// abra con la firma y con el quiebre, no con la lista de recibos.
+			Console.WriteLine();
+			Console.WriteLine("-- LA PORTADA: lo estable y lo que cambio --");
+			ImprimirPortada(api, new DateTime(2026, 1, 1));
+
 			Console.WriteLine();
 			Console.WriteLine("-- lista (print, formatter JSON) --");
 			Console.WriteLine(api.ListaDeCompras());
@@ -154,30 +160,52 @@ namespace Compras.Consola
 			if (!conVeredicto) return;
 
 			bool totalOk = api.TotalDeCompras().ToString(CultureInfo.InvariantCulture) == Muestras.TotalEsperado;
-			bool comparacionOk = api.Comparacion(2025, 8, 2026, 8).CrecioLoOcasional;
+			bool comparacionOk = api.Comparacion(2025, 8, 2026, 8).HayAlgoQueLoExplique;
 			bool garantiaOk = api.Garantia(Muestras.ProductoConGarantia, DateTime.Now).Encontrada;
 			Console.WriteLine();
 			Console.WriteLine($"CRITERIOS CORRECTOS         : {totalOk && comparacionOk && garantiaOk}");
+		}
+
+		// Las dos lecturas de la portada. Las lineas las escribe el DOMINIO, incluidos los
+		// dos casos de "no hay respuesta todavia": aca no se decide nada, se imprime.
+		private static void ImprimirPortada(ComprasAPI api, DateTime corte)
+		{
+			FirmaDeLaSemana firma = api.Firma();
+			Console.WriteLine($"  {firma.ParaSonia}");
+			foreach (ProductoQueVuelve p in firma.Habituales)
+				Console.WriteLine($"    {p.Descripcion,-28} en {p.ComprasEnQueAparece} de {p.DeCuantas}"
+					+ $"{(p.EstaEnTodas ? "  (en todas)" : "")}");
+
+			CambioDeLaCanasta cambio = api.Cambio(corte);
+			Console.WriteLine($"  {cambio.ParaSonia}");
+			foreach (ProductoQueEntroVista p in cambio.Entraron)
+				Console.WriteLine($"    entro  {p.Descripcion,-28} desde {p.Desde}");
+			foreach (ProductoQueVuelve p in cambio.Salieron)
+				Console.WriteLine($"    salio  {p.Descripcion}");
 		}
 
 		private static void ImprimirComparacion(ComprasAPI api, int anioAntes, int mesAntes, int anioDespues, int mesDespues)
 		{
 			CanastasComparadas c = api.Comparacion(anioAntes, mesAntes, anioDespues, mesDespues);
 
-			// El VEREDICTO y la linea vienen del dominio: una pantalla no tiene de donde
-			// saber si un cambio de -29 puntos es bueno, y con un booleano lo mostraba
-			// como "estable".
+			// La linea viene del dominio, incluido el caso "no hay con que comparar". Aca no
+			// se decide nada: se imprime.
 			if (!c.HayComparacion)
 			{
 				Console.WriteLine($"  {c.ParaSonia}");
 				return;
 			}
 
-			Console.WriteLine($"  canasta {mesAntes}/{anioAntes}: {Porcentaje(c.ProporcionAntes)} ocasional "
-				+ $"({Formato(c.GastoOcasionalAntes)} de {Formato(c.GastoComestibleAntes)} comestible)");
-			Console.WriteLine($"  canasta {mesDespues}/{anioDespues}: {Porcentaje(c.ProporcionDespues)} ocasional "
-				+ $"({Formato(c.GastoOcasionalDespues)} de {Formato(c.GastoComestibleDespues)} comestible)");
-			Console.WriteLine($"  veredicto: {c.Veredicto.ToUpperInvariant()} — {c.ParaSonia}");
+			Console.WriteLine($"  canasta {mesAntes}/{anioAntes}: {Formato(c.GastoAntes)}");
+			Console.WriteLine($"  canasta {mesDespues}/{anioDespues}: {Formato(c.GastoDespues)} "
+				+ $"({(c.CambioEnElTotal >= 0m ? "+" : "")}{Formato(c.CambioEnElTotal)})");
+
+			foreach (DiferenciaPorDepartamentoVista d in c.Diferencias)
+				if (d.ExplicaElCambio)
+					Console.WriteLine($"    {d.Titulo}: {Formato(d.MontoAntes)} -> {Formato(d.MontoDespues)}"
+						+ $"{(d.EsNuevo ? "  (entro este mes)" : "")}{(d.Desaparecio ? "  (dejo de aparecer)" : "")}");
+
+			Console.WriteLine($"  {c.ParaSonia}");
 		}
 
 		private static void ImprimirGarantia(ComprasAPI api, string texto, DateTime fechaDeConsulta)
@@ -230,11 +258,10 @@ namespace Compras.Consola
 
 			CanastaDelMesVista canasta = api.Canasta(anio, mes);
 			Console.WriteLine($"canasta {mes}/{anio} — {canasta.CantidadDeCompras} compras");
-			Console.WriteLine($"  recomendado   : {Formato(canasta.GastoRecomendado)}");
-			Console.WriteLine($"  neutro        : {Formato(canasta.GastoNeutro)}");
-			Console.WriteLine($"  ocasional     : {Formato(canasta.GastoOcasional)}");
-			Console.WriteLine($"  no comestible : {Formato(canasta.GastoNoComestible)}");
-			Console.WriteLine($"  proporcion ocasional (sobre comestible): {Porcentaje(canasta.ProporcionOcasional)}");
+			foreach (GastoPorDepartamentoVista d in canasta.Departamentos)
+				Console.WriteLine($"  {d.Titulo,-22}: {Formato(d.Monto),12}  {Porcentaje(d.ProporcionDelTotal)}");
+			Console.WriteLine($"  {"total",-22}: {Formato(canasta.GastoTotal),12}");
+			Console.WriteLine($"    de eso, comida: {Formato(canasta.GastoComestible)}");
 
 			Console.WriteLine();
 			Console.WriteLine("-- crudo (print, formatter JSON) --");
@@ -425,7 +452,7 @@ namespace Compras.Consola
 			Console.WriteLine("  medir     [carpeta]                             aplica la historia y mide los criterios de fase 1");
 			Console.WriteLine("  estado    [carpeta]                             abre el journal y reporta (correr en proceso nuevo)");
 			Console.WriteLine("  detalle   [carpeta] [numero]                    el ticket completo, linea por linea");
-			Console.WriteLine("  canasta   [carpeta] [anio] [mes]                la foto de un mes, sumada por perfil");
+			Console.WriteLine("  canasta   [carpeta] [anio] [mes]                la foto de un mes, pasillo por pasillo");
 			Console.WriteLine("  comparar  [carpeta] [a1] [m1] [a2] [m2]         como cambio la canasta entre dos meses");
 			Console.WriteLine("  garantia  [carpeta] [texto] [yyyy-MM-dd]        la garantia de un producto, con su respaldo");
 			Console.WriteLine("  pendientes [carpeta] [yyyy-MM-dd]              LO QUE NO ESTA: que dejo de entrar a la canasta");

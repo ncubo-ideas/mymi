@@ -3,50 +3,86 @@ using System;
 namespace Compras.Dominio
 {
 	/// <summary>
-	/// La categoria de un producto del supermercado: el conocimiento que convierte una
+	/// El departamento de un producto del supermercado: el conocimiento que convierte una
 	/// linea de ticket en algo analizable. Conjunto cerrado, comparado por referencia;
 	/// el string del proveedor se resuelve UNA vez en la frontera con Desde().
 	/// </summary>
-	// Dos preguntas que NO contesta todo el conjunto, y por eso son guardadas:
+	// Es un hecho de gondola, no una valoracion: Azucarados existe porque el super tiene
+	// ese pasillo. Lo que un departamento SIGNIFIQUE para la salud de la persona no se
+	// decide aca -ni en ninguna parte de este modulo-: el super no sabe nada del
+	// colesterol, y el cruce es del asistente.
 	//
-	//   Perfil                 solo lo comestible lo tiene. Un detergente no tiene perfil
-	//                          de consumo, y devolver "neutro" mentiria en las
-	//                          proporciones de la canasta.
-	//   DiasDeReabastecimiento solo lo que se repone con regularidad. Lo ocasional NO
-	//                          tiene periodicidad esperada A PROPOSITO: este modulo no
+	// Nombre es la LLAVE -la que viene en el evento y ya esta escrita en los diarios- y
+	// Titulo es lo que lee una persona. Son distintos a proposito: la llave no puede
+	// cambiar sin romper lo ya escrito, y "FrutasYVerduras" no se le muestra a nadie.
+	//
+	// Una pregunta que NO contesta todo el conjunto, y por eso es guardada:
+	//
+	//   DiasDeReabastecimiento solo lo que se repone con regularidad. Los antojos NO
+	//                          tienen periodicidad esperada A PROPOSITO: este modulo no
 	//                          existe para decirle a nadie que hace un mes que no compra
 	//                          helado. Y un electrodomestico no se reabastece.
 	public abstract class Categoria
 	{
 		public static readonly Categoria Proteinas =
-			new Comestible("Proteinas", PerfilDeConsumo.Recomendado, diasDeReabastecimiento: 10);
+			new Comestible("Proteinas", "proteínas", "una proteína", diasDeReabastecimiento: 10);
 		public static readonly Categoria FrutasYVerduras =
-			new Comestible("FrutasYVerduras", PerfilDeConsumo.Recomendado, diasDeReabastecimiento: 10);
+			new Comestible("FrutasYVerduras", "frutas y verduras", "una fruta o verdura", diasDeReabastecimiento: 10);
 		public static readonly Categoria LacteosYHuevos =
-			new Comestible("LacteosYHuevos", PerfilDeConsumo.Neutro, diasDeReabastecimiento: 12);
+			new Comestible("LacteosYHuevos", "lácteos y huevos", "un lácteo", diasDeReabastecimiento: 12);
 		public static readonly Categoria GranosYAbarrotes =
-			new Comestible("GranosYAbarrotes", PerfilDeConsumo.Neutro, diasDeReabastecimiento: 35);
+			new Comestible("GranosYAbarrotes", "granos y abarrotes", "un grano o abarrote", diasDeReabastecimiento: 35);
 		public static readonly Categoria AceitesYGrasas =
-			new Comestible("AceitesYGrasas", PerfilDeConsumo.Ocasional, diasDeReabastecimiento: 0);
+			new Comestible("AceitesYGrasas", "aceites y grasas", "un aceite o una grasa", diasDeReabastecimiento: 0);
 		public static readonly Categoria Azucarados =
-			new Comestible("Azucarados", PerfilDeConsumo.Ocasional, diasDeReabastecimiento: 0);
+			new Comestible("Azucarados", "dulces y postres", "algo dulce", diasDeReabastecimiento: 0);
 		public static readonly Categoria Snacks =
-			new Comestible("Snacks", PerfilDeConsumo.Ocasional, diasDeReabastecimiento: 0);
+			new Comestible("Snacks", "snacks", "un snack", diasDeReabastecimiento: 0);
+		// ENTRAN EN ENERO DE 2026, y por eso existen: el guion de la wiki dice que "embutidos
+		// y preparadas entran en ene 2026", y sin departamento propio el cambio se
+		// escondia dentro de proteinas. La nutricionista de Sonia le pide "cambiar
+		// embutidos por proteina fresca": son dos cosas distintas para quien la aconseja,
+		// asi que son dos departamentos.
+		//
+		// NINGUNO DE LOS DOS SE REABASTECE. Es la misma regla que los azucarados: la
+		// periodicidad existe para lo que se ACABA y hay que reponer, no para lo que
+		// alguien puede haber dejado de comprar a proposito. Decirle "hace un mes que no
+		// compra embutidos" seria justo el reclamo que este modulo no hace.
+		public static readonly Categoria Embutidos =
+			new Comestible("Embutidos", "embutidos", "un embutido", diasDeReabastecimiento: 0);
+		public static readonly Categoria ComidasPreparadas =
+			new Comestible("ComidasPreparadas", "comidas preparadas", "una comida preparada", diasDeReabastecimiento: 0);
+
+		// LA COMIDA DE LA PERRA NO ES COMESTIBLE, y la palabra engaña: EsComestible
+		// significa "comida de la persona", que es lo que sostiene el "de eso, comida" de
+		// la canasta. La comida de Luna es un gasto del hogar, no de la dieta de nadie.
+		//
+		// Y SI SE REABASTECE: Luna come todos los meses -₡25.000 en el carrito, dice el
+		// invariante 14- asi que un hueco aca es un hueco de verdad. Es lo contrario de los
+		// azucarados: nadie deja de comprarle comida al perro a proposito.
+		public static readonly Categoria Mascotas =
+			new NoComestible("Mascotas", "mascotas", "comida para la mascota", diasDeReabastecimiento: 30);
+
 		public static readonly Categoria Limpieza =
-			new NoComestible("Limpieza", diasDeReabastecimiento: 45);
+			new NoComestible("Limpieza", "limpieza", "algo de limpieza", diasDeReabastecimiento: 45);
 		public static readonly Categoria Electrohogar =
-			new NoComestible("Electrohogar", diasDeReabastecimiento: 0);
+			new NoComestible("Electrohogar", "electrodomésticos", "un electrodoméstico", diasDeReabastecimiento: 0);
 
 		private readonly int diasDeReabastecimiento;
 
+		/// <summary>La LLAVE del departamento, la que viaja en el evento. No se le muestra a nadie.</summary>
 		public string Nombre { get; private set; }
 
+		/// <summary>El nombre del departamento como lo lee una persona: "frutas y verduras".</summary>
+		public string Titulo { get; private set; }
+
+		/// <summary>Como se menciona UNO de sus productos dentro de una frase: "una fruta o verdura".</summary>
+		public string Mencion { get; private set; }
+
+		/// <summary>Si el departamento es de comida. Es donde esta la gondola, no un juicio.</summary>
 		public abstract bool EsComestible { get; }
 
-		/// <summary>El papel en la canasta. Solo lo comestible lo tiene: preguntar EsComestible primero.</summary>
-		public abstract PerfilDeConsumo Perfil { get; }
-
-		/// <summary>Consulta de presencia, total: si esta categoria espera reponerse cada tanto.</summary>
+		/// <summary>Consulta de presencia, total: si este departamento espera reponerse cada tanto.</summary>
 		public bool SeReabastece => diasDeReabastecimiento > 0;
 
 		/// <summary>Cada cuantos dias se repone normalmente. Preguntar SeReabastece primero.</summary>
@@ -56,20 +92,24 @@ namespace Compras.Dominio
 			{
 				if (!SeReabastece)
 					throw new InvalidOperationException(
-						$"La categoria '{Nombre}' no tiene periodicidad de reabastecimiento. "
+						$"El departamento '{Nombre}' no tiene periodicidad de reabastecimiento. "
 						+ "Preguntar SeReabastece antes.");
 				return diasDeReabastecimiento;
 			}
 		}
 
-		private Categoria(string nombre, int diasDeReabastecimiento)
+		private Categoria(string nombre, string titulo, string mencion, int diasDeReabastecimiento)
 		{
 			ArgumentNullException.ThrowIfNullOrWhiteSpace(nombre);
+			ArgumentNullException.ThrowIfNullOrWhiteSpace(titulo);
+			ArgumentNullException.ThrowIfNullOrWhiteSpace(mencion);
 			if (diasDeReabastecimiento < 0)
 				throw new ArgumentOutOfRangeException(nameof(diasDeReabastecimiento), diasDeReabastecimiento,
 					"Los dias de reabastecimiento no pueden ser negativos; cero significa que no se reabastece.");
 
 			Nombre = nombre;
+			Titulo = titulo;
+			Mencion = mencion;
 			this.diasDeReabastecimiento = diasDeReabastecimiento;
 		}
 
@@ -82,7 +122,7 @@ namespace Compras.Dominio
 				if (string.Equals(categoria.Nombre, nombre, StringComparison.OrdinalIgnoreCase))
 					return categoria;
 
-			throw new ArgumentException($"No existe la categoria '{nombre}'.", nameof(nombre));
+			throw new ArgumentException($"No existe el departamento '{nombre}'.", nameof(nombre));
 		}
 
 		/// <summary>Reconocimiento total: la pareja de Desde, para poder preguntar sin reventar.</summary>
@@ -100,36 +140,24 @@ namespace Compras.Dominio
 		public static readonly Categoria[] Todas =
 		{
 			Proteinas, FrutasYVerduras, LacteosYHuevos, GranosYAbarrotes,
-			AceitesYGrasas, Azucarados, Snacks, Limpieza, Electrohogar,
+			AceitesYGrasas, Azucarados, Snacks, Embutidos, ComidasPreparadas,
+			Mascotas, Limpieza, Electrohogar,
 		};
 
 		private sealed class Comestible : Categoria
 		{
-			private readonly PerfilDeConsumo perfil;
-
-			internal Comestible(string nombre, PerfilDeConsumo perfil, int diasDeReabastecimiento)
-				: base(nombre, diasDeReabastecimiento)
-			{
-				ArgumentNullException.ThrowIfNull(perfil);
-				this.perfil = perfil;
-			}
+			internal Comestible(string nombre, string titulo, string mencion, int diasDeReabastecimiento)
+				: base(nombre, titulo, mencion, diasDeReabastecimiento) { }
 
 			public override bool EsComestible => true;
-
-			public override PerfilDeConsumo Perfil => perfil;
 		}
 
 		private sealed class NoComestible : Categoria
 		{
-			internal NoComestible(string nombre, int diasDeReabastecimiento)
-				: base(nombre, diasDeReabastecimiento) { }
+			internal NoComestible(string nombre, string titulo, string mencion, int diasDeReabastecimiento)
+				: base(nombre, titulo, mencion, diasDeReabastecimiento) { }
 
 			public override bool EsComestible => false;
-
-			public override PerfilDeConsumo Perfil =>
-				throw new InvalidOperationException(
-					$"La categoria '{Nombre}' no es comestible: no tiene perfil de consumo. "
-					+ "Preguntar EsComestible antes de preguntar el perfil.");
 		}
 	}
 }
