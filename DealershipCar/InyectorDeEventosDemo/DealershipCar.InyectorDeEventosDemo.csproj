@@ -1,0 +1,25 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!-- Herramienta de OPERACION, no parte del producto: la usa quien monta la demo para
+       sembrar la historia que se va a contar.
+
+       Por que existe aparte y no como endpoint de URL2: los datos del demo se orquestan
+       COMO TEST CASES. Con un endpoint que inyecta una lectura de odometro ALEATORIA no se
+       puede predecir cuando algo queda Due, y sin eso no hay historia que contar. Con esto
+       se inyecta la lectura QUE HACE FALTA, y la fecha en que algo vence sale calculable de
+       antemano.
+
+       Cero dependencias del negocio: le habla a URL2 por HTTP como cualquier operador.
+
+       Se llena en T8. -->
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net9.0</TargetFramework>
+    <Nullable>disable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <RootNamespace>DealershipCar.InyectorDeEventosDemo</RootNamespace>
+    <AssemblyName>DealershipCar.InyectorDeEventosDemo</AssemblyName>
+  </PropertyGroup>
+
+</Project>

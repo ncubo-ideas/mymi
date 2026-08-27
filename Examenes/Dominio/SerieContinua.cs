@@ -84,6 +84,20 @@ namespace Examenes.Dominio
 		// Para una continua, "hay algo que no deberia estar" es salirse del rango.
 		public override bool UltimaEsHallazgo(int edad) => Ultimo != null && !Ultimo.EsNormalPara(edad);
 
+		// La referencia contra la que se lee el ultimo valor, ya dicha. Sale del rango
+		// del propio examen —que es donde vive el conocimiento por edad— y se dice como
+		// se lee: un rango que arranca en cero es un techo ("hasta 4.5 ng/mL"), uno con
+		// piso real es una banda ("entre 13 y 17 g/dL").
+		public override string ReferenciaLegible(int edad)
+		{
+			if (Ultimo == null) return "";
+
+			RangoDeReferencia rango = Ultimo.RangoPara(edad);
+			return rango.Minimo.Valor == 0m
+				? $"hasta {rango.Maximo.Expresado}"
+				: $"entre {rango.Minimo.Expresado} y {rango.Maximo.Expresado}";
+		}
+
 		// LA operacion del dominio. Evalua la serie completa, no el ultimo valor.
 		//
 		// Son dos preguntas distintas sobre la misma serie, y se contestan mirando cosas

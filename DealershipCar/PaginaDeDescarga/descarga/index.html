@@ -1,0 +1,166 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Your maintenance schedule · Sotavento Motors</title>
+<meta name="description" content="Your vehicle's maintenance schedule, installed on your computer. The record lives in a folder of yours.">
+
+<!--
+  La cara del concesionario en URL1.
+
+  Es un archivo estatico porque URL1 es nginx y NO es un csproj. No hay proceso que renderice
+  nada: la marca esta escrita aca y en los assets de la caratula, que es donde la convencion dice
+  que vive -- el arbol de codigo nunca nombra a una institucion.
+
+  "Sotavento Motors" es FICTICIO, y es la misma marca que trae la caratula wasm en su index.html y
+  su manifest. Es un placeholder: la marca definitiva la define el equipo.
+
+  ESTA PAGINA VIVE EN LA RAIZ, y la app cuelga de /app/. No es cosmetico: el service worker de la
+  PWA toma scope del directorio donde se registra y contesta TODA navegacion de ese scope con su
+  index.html cacheado. Con la app en / esta pagina seria inalcanzable en cuanto alguien la
+  instalara -- nginx la sirve perfecto y el browser mostraria igual el 404 del router de Blazor,
+  porque la respuesta nunca llega a pedirse.
+
+  Con la app en /app/ el scope es /app/ y la raiz queda afuera. La separacion la hace la ruta, no
+  una lista de excepciones. Es tambien la comprobacion mas barata de que el nginx.conf esta bien:
+  si esta pagina sigue apareciendo despues de instalar la app, el scope quedo donde tenia que
+  quedar.
+
+  Sin dependencias externas: la demo tiene que poder correr sin red.
+-->
+
+<style>
+:root {
+    --tinta: #16202c;
+    --tinta-suave: #55637a;
+    --papel: #eef1f5;
+    --tarjeta: #ffffff;
+    --borde: #d7dee8;
+    --marca: #1f3a5f;
+    --alerta: #97231f;
+}
+
+* { box-sizing: border-box; }
+
+body {
+    margin: 0;
+    background: var(--papel);
+    color: var(--tinta);
+    font-family: "Segoe UI", system-ui, -apple-system, sans-serif;
+    line-height: 1.6;
+}
+
+header {
+    background: var(--marca);
+    color: #fff;
+    padding: 20px 24px;
+}
+
+header .marca { font-size: 19px; font-weight: 600; letter-spacing: 0.01em; }
+header .apunte { opacity: 0.75; font-size: 14px; }
+
+main { max-width: 780px; margin: 0 auto; padding: 40px 24px 72px; }
+
+h1 { font-size: 34px; line-height: 1.2; margin: 0 0 12px; letter-spacing: -0.02em; }
+.entrada { font-size: 18px; color: var(--tinta-suave); margin: 0 0 32px; }
+
+.tarjeta {
+    background: var(--tarjeta);
+    border: 1px solid var(--borde);
+    border-radius: 10px;
+    padding: 24px;
+    margin: 0 0 22px;
+}
+
+.tarjeta h2 { font-size: 17px; margin: 0 0 10px; }
+.tarjeta p:last-child { margin-bottom: 0; }
+
+.boton {
+    display: inline-block;
+    background: var(--marca);
+    color: #fff;
+    text-decoration: none;
+    padding: 12px 22px;
+    border-radius: 7px;
+    font-weight: 600;
+}
+
+.rejilla { display: flex; gap: 22px; flex-wrap: wrap; }
+.rejilla > div { flex: 1 1 300px; }
+
+ul { padding-left: 20px; margin: 0; }
+li { margin-bottom: 6px; }
+
+.mono { font-family: "Cascadia Mono", Consolas, "SF Mono", monospace; font-size: 13px; }
+.suave { color: var(--tinta-suave); font-size: 14px; }
+.aviso { border-left: 4px solid var(--alerta); padding-left: 14px; }
+
+footer { max-width: 780px; margin: 0 auto; padding: 0 24px 56px; }
+</style>
+</head>
+
+<body>
+
+<header>
+    <div class="marca">Sotavento Motors</div>
+    <div class="apunte">Service &amp; Maintenance</div>
+</header>
+
+<main>
+    <h1>Your car's maintenance schedule, on your own computer.</h1>
+    <p class="entrada">
+        Not on ours. The app installs on your machine, keeps your vehicle's record in a folder you
+        pick, and works with the network off.
+    </p>
+
+    <div class="tarjeta">
+        <h2>Install it</h2>
+        <p>
+            <a class="boton" href="/app/">Open the app</a>
+        </p>
+        <p class="suave">
+            It opens in your browser and offers to install itself. The first time it asks you for a
+            folder &mdash; that folder is where your record lives, and it is yours.
+        </p>
+    </div>
+
+    <div class="rejilla">
+        <div class="tarjeta">
+            <h2>What it keeps</h2>
+            <ul>
+                <li>Every scheduled operation and where it stands.</li>
+                <li>Why it stands there, in the schedule's own words.</li>
+                <li>Your odometer readings, your deferrals, your usage profile.</li>
+            </ul>
+        </div>
+        <div class="tarjeta">
+            <h2>Who can read it</h2>
+            <ul>
+                <li>You, from the app.</li>
+                <li><strong>Your own AI assistant</strong>, which reads that folder directly.</li>
+                <li>Nobody else. The record never leaves your machine.</li>
+            </ul>
+        </div>
+    </div>
+
+    <div class="tarjeta">
+        <h2>What it does not do</h2>
+        <p class="aviso">
+            It does not ask us anything about you, and it cannot. The app reads one thing from us
+            &mdash; the service events for <em>your</em> vehicle &mdash; with a credential scoped to
+            exactly that. Anything else we hold about you answers <span class="mono">403</span> to
+            this app, by construction rather than by promise.
+        </p>
+    </div>
+</main>
+
+<footer>
+    <p class="suave">
+        Sotavento Motors is a fictional dealership. This page and the app it links to are a working
+        prototype.
+    </p>
+</footer>
+
+</body>
+</html>

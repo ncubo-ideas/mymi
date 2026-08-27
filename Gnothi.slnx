@@ -14,4 +14,14 @@
   <Project Path="Examenes/EndPointDeEventos/Examenes.EventosMock.csproj" />
   <Project Path="Examenes/InyectorDeEventosDemo/Examenes.InyectorDeEventosDemo.csproj" />
   <Project Path="Examenes/Mecanismo/Puppets.Portador/Puppets.Portador.csproj" />
+
+  <Project Path="DealershipCar/App/DealershipCar.App/DealershipCar.App.csproj" />
+  <Project Path="DealershipCar/App/DealershipCar.Consola/DealershipCar.Consola.csproj" />
+  <Project Path="DealershipCar/App/DealershipCar.Mcp/DealershipCar.Mcp.csproj" />
+  <Project Path="DealershipCar/App/DealershipCar.Wasm/DealershipCar.Wasm.csproj" />
+  <Project Path="DealershipCar/Dominio/DealershipCar.Dominio.csproj" />
+  <Project Path="DealershipCar/EndPointDeEventos/DealershipCar.EventosMock.csproj" />
+  <Project Path="DealershipCar/InyectorDeEventosDemo/DealershipCar.InyectorDeEventosDemo.csproj" />
+  <Project Path="DealershipCar/Pruebas/DealershipCar.Dominio.Pruebas/DealershipCar.Dominio.Pruebas.csproj" />
+
 </Solution>

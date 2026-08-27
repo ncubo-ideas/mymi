@@ -41,10 +41,10 @@ namespace Examenes.Dominio
 			if (!hechos.HaySerie) return Interpretacion.SinSerie(hechos);
 
 			if (hechos.Tendencia.SugiereRepetirElExamen)
-				return new Interpretacion(Veredicto.ProbableErrorDeMedicion, Severidad.Seguimiento,
+				return new Interpretacion(Veredicto.ProbableErrorDeMedicion, Severidad.Vigilar,
 					$"el LDL pasó de {hechos.ValorInicial} a {hechos.ValorFinal} {hechos.Unidad} "
 					+ $"en {hechos.DiasTranscurridos} día{(hechos.DiasTranscurridos == 1 ? "" : "s")}",
-					hechos);
+					hechos, Accion.RepetirElExamen(Plazo.EstaSemana));
 
 			bool enRango = Ultima.EsNormalPara(edad);
 			string sobreElHdl = Ultima.HdlEsProtector
@@ -55,8 +55,9 @@ namespace Examenes.Dominio
 				return enRango
 					? new Interpretacion(Veredicto.Estable, Severidad.Informativo,
 						$"el LDL se mantiene en {Ultima.Ldl.Expresado}, dentro de lo deseable", hechos)
-					: new Interpretacion(Veredicto.Estable, Severidad.ConsultaMedica,
-						$"el LDL lleva tiempo en {Ultima.Ldl.Expresado}" + sobreElHdl, hechos);
+					: new Interpretacion(Veredicto.Estable, Severidad.ConsultePronto,
+						$"el LDL lleva tiempo en {Ultima.Ldl.Expresado}" + sobreElHdl, hechos,
+						Accion.MostrarleEstoATuMedico(Plazo.EsteMes));
 
 			if (Ultima.Direccion.EsFavorable(hechos.Cambio))
 				return new Interpretacion(Veredicto.Mejorando, Severidad.Informativo,
@@ -64,12 +65,13 @@ namespace Examenes.Dominio
 					hechos);
 
 			return enRango
-				? new Interpretacion(Veredicto.Empeorando, Severidad.Seguimiento,
+				? new Interpretacion(Veredicto.Empeorando, Severidad.Vigilar,
 					$"el LDL subió de {hechos.ValorInicial} a {hechos.ValorFinal} {hechos.Unidad}, "
-					+ "todavía dentro de lo deseable", hechos)
-				: new Interpretacion(Veredicto.Empeorando, Severidad.ConsultaMedica,
+					+ "todavía dentro de lo deseable", hechos,
+					Accion.ConversarloConTuMedico(Plazo.EnLaProximaCita))
+				: new Interpretacion(Veredicto.Empeorando, Severidad.ConsultePronto,
 					$"el LDL subió de {hechos.ValorInicial} a {hechos.ValorFinal} {hechos.Unidad}"
-					+ sobreElHdl, hechos);
+					+ sobreElHdl, hechos, Accion.MostrarleEstoATuMedico(Plazo.EsteMes));
 		}
 	}
 }

@@ -236,6 +236,7 @@ namespace Examenes.App
 				Forma = Texto(raiz, "forma"),
 				ParaSonia = Texto(raiz, "paraSonia"),
 				Accion = Texto(raiz, "accion"),
+				ReferenciaLegible = Texto(raiz, "referencia"),
 				PideAlgo = Booleano(raiz, "pideAlgo"),
 				SugiereRepetirElExamen = Booleano(raiz, "sugiereRepetirElExamen"),
 			};

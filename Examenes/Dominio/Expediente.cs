@@ -166,22 +166,36 @@ namespace Examenes.Dominio
 		{
 			Analito cual = Analito.PorNombre(analito);
 
+			// La REFERENCIA viaja con la lectura, igual que la forma: la superficie pide
+			// una vez y sabe contra que se lee el valor. Se aplica aca —el unico punto de
+			// consulta— para que ningun numero salga sin ella.
 			return series.TryGetValue(cual, out SerieDeAnalito serie)
 				? serie.Interpretar(Edad).ConForma(serie.Forma)
+					.ConReferencia(serie.ReferenciaLegible(Edad))
 				: Interpretacion.SinSerie(EvaluacionDeTendencia.SinSerie(cual, 0, null))
 					.ConForma(FormaDeLectura.Afirmacion);
 		}
 
-		// LO MAS URGENTE de todo el expediente. Es una pregunta que ninguna pantalla
-		// contesta hoy y que no se puede armar afuera: exige recorrer cada serie,
-		// interpretarla con el criterio de SU analito y quedarse con la mayor.
-		public Severidad SeveridadMayor
+		// LO MAS URGENTE de todo el expediente, con su accion. No se puede armar afuera:
+		// exige recorrer cada serie, interpretarla con el criterio de SU analito y
+		// quedarse con la mayor — y desde que la accion lleva plazo, quedarse tambien con
+		// LA ACCION del que gano, porque la severidad sola ya no sabe decir que hacer.
+		public UrgenciaDelExpediente LoMasUrgente
 		{
 			get
 			{
 				Severidad mayor = Severidad.Informativo;
+				Accion accion = null;
+
 				foreach (KeyValuePair<Analito, SerieDeAnalito> par in series)
-					mayor = Severidad.LaMayor(mayor, par.Value.Interpretar(Edad).Severidad);
+				{
+					Interpretacion lectura = par.Value.Interpretar(Edad);
+					if (lectura.Severidad.EsMasUrgenteQue(mayor))
+					{
+						mayor = lectura.Severidad;
+						accion = lectura.Accion;
+					}
+				}
 
 				// Y lo que NO forma serie tambien pesa. Hoy eso son los NOMINALES: un
 				// color oscuro no tiene tendencia ninguna y sin embargo puede ser lo mas
@@ -194,12 +208,20 @@ namespace Examenes.Dominio
 				// informativo mientras el examen suelto sigue diciendo lo maximo—.
 				foreach (Examen examen in examenes)
 					foreach (LecturaDeExamen lectura in examen.Lecturas)
-						if (lectura.Resultado is MagnitudNominal nominal)
-							mayor = Severidad.LaMayor(mayor, nominal.SeveridadDelHallazgo);
+						if (lectura.Resultado is MagnitudNominal nominal
+							&& nominal.SeveridadDelHallazgo.EsMasUrgenteQue(mayor))
+						{
+							mayor = nominal.SeveridadDelHallazgo;
+							accion = nominal.AccionDelHallazgo;
+						}
 
-				return mayor;
+				return new UrgenciaDelExpediente(mayor, accion);
 			}
 		}
+
+		// La severidad sola, para quien no necesita la accion: el conteo, las
+		// comprobaciones, la IA que pregunta "que tan grave".
+		public Severidad SeveridadMayor => LoMasUrgente.Severidad;
 
 		// A que ritmo viene cambiando un analito. Total por la misma razon que
 		// EvaluarTendenciaDe: preguntar por un analito del que no hay nada es legitimo, y
