@@ -103,7 +103,7 @@ Verificado acá: tres corridas del cliente dejaron `journal_000001.bin`, `meta.b
 
 ## Lo que la IA no puede hacer
 
-**No puede disparar un Refresh.** Traer exámenes nuevos del laboratorio es de la app, que
+**No puede disparar un Actualizar.** Traer exámenes nuevos del laboratorio es de la app, que
 lo hace al abrir o cuando la persona aprieta el botón. Si la persona espera ver algo nuevo
 y no aparece, la IA tiene que pedirle que abra su app y refresque. El campo
 `ultimoEventoLeido` es la señal: si subió, entraron cosas nuevas.

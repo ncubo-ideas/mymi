@@ -40,7 +40,7 @@
     --linea:       rgba(125, 180, 224, .22);
 
     /* Aplicación — «la app es de hoy, la página es de 1987». */
-    --accion:      #1a6ff5;   /* color de acción: Refresh, Exportar */
+    --accion:      #1a6ff5;   /* color de acción: los botones que hacen algo */
 
     /* EL SEMÁFORO, con los valores EXACTOS de la §5 para fondo oscuro: trazo, fondo y
      * borde tal como los dio Geaninna. Es lo único que marcó como no negociable, y
@@ -600,11 +600,44 @@ code { font-family: var(--mono); font-size: .9em; color: var(--ambar); }
 .portada--atencion     { background: var(--ambar-suave); border-color: var(--ambar-borde); }
 .portada--problema     { background: var(--rojo-suave);  border-color: var(--rojo-borde); }
 
+/* EL ROTULO Y ACTUALIZAR COMPARTEN RENGLON. El boton es lo que vuelve a contestar la
+   pregunta que contesta la tarjeta -si el rotulo dice "hoy", "esto es de hoy?" pertenece
+   aca-, asi que va en la misma linea y a la derecha, no en una fila suelta debajo de la
+   portada compitiendole el ojo al titular. */
+.portada-cabeza {
+    display: flex; align-items: center; justify-content: space-between;
+    flex-wrap: wrap; gap: 8px 12px;
+    margin-bottom: 10px;
+}
+
 .portada-rotulo {
     font-family: var(--sans); font-weight: 700; font-size: 10.5px; letter-spacing: .18em;
     text-transform: uppercase; color: var(--tenue);
-    margin: 0 0 10px;
+    margin: 0;
 }
+
+/* CONTORNO Y TENUE, NO EL AZUL DE ACCION: la app se pone al dia sola al abrir, asi que
+   apretar esto es "volve a chequear AHORA" y no el punto de partida de la pantalla.
+
+   Tiene clase propia y no `.portada-cual` -aunque el trazo se parezca- porque las cuales
+   son los analitos que piden algo. Dos pildoras idem en la misma tarjeta, una que navega
+   a una serie y otra que va a buscarle datos al proveedor, se leen como lo mismo. De ahi
+   que esta sea mas tenue, no levante en hover, y viva en el otro extremo del renglon.
+
+   SIN ICONO. Un "↻" delante decia el oficio del boton de un golpe, pero a 13px en la sans
+   se lee como una "u" torcida, y ademas seria el unico glifo de toda la UI: no hay ni uno
+   mas, ni en los avisos ni en el back. Lo que lo separa de las cuales es donde esta y su
+   peso, que ya alcanza. */
+.portada-releer {
+    font: inherit; font-size: 13px; font-weight: 500;
+    padding: 5px 13px; cursor: pointer; white-space: nowrap;
+    background: transparent; color: var(--tenue);
+    border: 1px solid var(--linea); border-radius: 999px;
+    transition: color .12s ease, border-color .12s ease;
+}
+.portada-releer:hover:not(:disabled) { color: var(--tinta); border-color: var(--celeste); }
+.portada-releer:focus-visible { outline: 2px solid var(--celeste); outline-offset: 2px; }
+.portada-releer:disabled { opacity: .5; cursor: progress; }
 
 /* El titular es la frase del DOMINIO cuando hay algo que hacer. Va en serif y grande
    porque es lo unico que alguien necesita leer si no lee nada mas — y en el trazo del
@@ -648,7 +681,7 @@ code { font-family: var(--mono); font-size: .9em; color: var(--ambar); }
    tiempo, la barra de progreso crece desde su partida, la aguja de la banda se acomoda,
    y la tira de presencia aparece prueba por prueba. Nada parpadea ni rebota.
 
-   Se dispara al montar, asi que un Refresh vuelve a dibujarlo todo — que es justo cuando
+   Se dispara al montar, asi que Actualizar vuelve a dibujarlo todo — que es justo cuando
    la persona quiere ver que algo paso. */
 
 @keyframes entra-desde-abajo { from { opacity: 0; transform: translateY(8px); } }
@@ -656,8 +689,13 @@ code { font-family: var(--mono); font-size: .9em; color: var(--ambar); }
 @keyframes aparece          { from { opacity: 0; transform: scale(.4); } }
 @keyframes crece-de-izquierda { from { transform: scaleX(0); } }
 
-.portada { animation: entra-desde-abajo .45s ease-out both; }
-.serie   { animation: entra-desde-abajo .45s ease-out both; }
+/* SE ANIMA EL CUERPO, NO LA TARJETA. El @key que fuerza el redibujo bajo un nivel para
+   que Actualizar no se recree con el click puesto encima y no se pierda el foco, y la
+   animacion lo siguio. Sale mejor de lo que era: la tarjeta es el marco y se queda
+   quieta, y lo que se vuelve a dibujar es el contenido — que es exactamente lo que el
+   boton acaba de cambiar. */
+.portada-cuerpo { animation: entra-desde-abajo .45s ease-out both; }
+.serie          { animation: entra-desde-abajo .45s ease-out both; }
 
 /* El trazo se dibuja de la primera medicion a la ultima. pathLength="1" en el polyline
    hace que la fraccion sea exacta sin adivinar el largo. */
@@ -686,7 +724,7 @@ code { font-family: var(--mono); font-size: .9em; color: var(--ambar); }
 
 /* Quien pidio que no se mueva, no se mueve. */
 @media (prefers-reduced-motion: reduce) {
-    .portada, .serie,
+    .portada-cuerpo, .serie,
     .forma--trayectoria .trazo, .forma--trayectoria .punto,
     .forma--trayectoria .punto--final, .forma--trayectoria .punto--atencion,
     .forma--progreso .avance, .forma--progreso .marca,
