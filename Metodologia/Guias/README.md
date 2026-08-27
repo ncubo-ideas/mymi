@@ -13,7 +13,7 @@ que sabe programar, menos que nadie.
 |---|---|---|---|
 | **1** | **Punto de partida** — llegás con una descripción funcional en prosa y salís con las preguntas | **`Preguntas.md`** | [Punto de partida](punto-de-partida.md) |
 | **2** | **Escribir bien ese archivo** — la capacidad, los juicios, lo que se descarta | `Preguntas.md` terminado | [4](04-requerimientos-que-agregan-valor.md) |
-| **3** | **Preparar el escritorio** | una máquina que compila | [1](#) *pendiente* |
+| **3** | **Preparar el escritorio** — y las tres fallas del feed privado, que se ven todas iguales | una máquina que compila | [1](01-preparar-el-escritorio.md) |
 | **4** | **Hello World** — algo que tocar y romper antes de lo propio | entendimiento | [2](#) *pendiente* |
 | **5** | **Construir** — el dominio, la lógica, y la carátula de **consola**, que es el arnés | `Dominio/` · `App/<N>.App` · `App/<N>.Consola` | [3](03-construir-la-app.md) |
 | **6** | **Traer los datos del proveedor** | `EndPointDeEventos/` · `InyectorDeEventosDemo/` | [5](#) *pendiente* |
@@ -51,7 +51,8 @@ Importa, porque estas guías se van a leer como si todo tuviera el mismo respald
 | **Capítulo 0** | Cruzado contra las infografías del equipo **y contra el repo corriendo** (`Examenes`, `Compras`, `HolaMundo/Facturas`). Lo que es objetivo y no realidad está marcado como tal |
 | **Capítulo 3** | Construido y corrido de punta a punta en un ejercicio de presupuesto. Las reglas de §7 salieron de chocar con ellas, y hay pruebas que las fijan |
 | **Capítulo 4** | Doctrina, **confirmada** por los tres casos del equipo: los tres contestan una pregunta sobre la serie, ninguno lista datos |
-| **Punto de partida** | **Corrido una vez**, sobre un dominio de presupuesto personal (2026-08-26). La corrida encontró seis defectos en el guion, y los seis están corregidos. Falta probar si el `Preguntas.md` que produce alcanza para modelar |
+| **Punto de partida** | **Corrido una vez**, sobre un dominio de presupuesto personal (2026-08-26). La corrida encontró seis defectos en el guion, y los seis están corregidos |
+| **Capítulo 1** | **Escrito preparando una máquina y anotando dónde se rompió.** Versiones, mensajes de error y diagnósticos medidos. Lo que no se pudo verificar —Docker, `wasm-tools`— lo dice |
 | **Capítulo 6, CLI** | Construido y corrido. 44 pruebas |
 | **Capítulo 6, MCP** | **Contradicho por el repo.** Ver abajo |
 
@@ -88,10 +89,13 @@ probarlo **abriendo el journal desde cero desde el MCP**, no sólo con la app qu
 
 ## Lo que bloquea a los capítulos pendientes
 
-**3 y 4 del orden de trabajo (escritorio y Hello World). Desbloqueados.** El repo ya tiene tres
-negocios corriendo con sus READMEs de "cómo se corre", `docker-compose` por negocio, `.mcp.json` y
-`NuGet.config`. Se pueden escribir mirando. Ojo: los ejemplos **de la Metodología** son propios y chiquitos;
-los negocios del repo se citan, no se adoptan.
+**3 (escritorio). Escrito**, y con la parte cara medida: las tres fallas del feed privado que se ven
+todas iguales desde el error, y la trampa de que el mismo comando funciona o falla según desde dónde
+se corra.
+
+**4 (Hello World). Desbloqueado.** El repo ya tiene tres negocios corriendo con sus READMEs de "cómo
+se corre", `docker-compose` por negocio y `.mcp.json`. Se puede escribir mirando. Ojo: los ejemplos
+**de la Metodología** son propios y chiquitos; los negocios del repo se citan, no se adoptan.
 
 **6 (datos del proveedor).** Sigue bloqueado: falta el lado del proveedor y no hay ningún motor SQL
 corriendo contra el cual probar una receta.
