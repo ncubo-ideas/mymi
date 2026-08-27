@@ -2,15 +2,17 @@ using Puppets.Portador;
 
 namespace Cargas.App.Eventos
 {
-	// La costura de routing de este negocio. Forma de InputRouting: senal cruda ->
-	// mensaje tipado, y null DESCARTA.
-	//
-	// Es el punto de extension cuando el laboratorio empiece a emitir mas tipos: se
-	// agrega un caso, y los tipos que esta app no consume siguen devolviendo null sin
-	// tocar lo que ya funciona.
+	// La ruta de esta app: de una senal cruda al mensaje tipado que un comando sabe
+	// aplicar. Tres tipos de evento, un Interpretar cada uno; null DESCARTA.
 	public static class RutaDeCargas
 	{
-		public static IMensajeDeEvento Rutear(SenalDeEvento senal) =>
-			ExamenAgregado.Interpretar(senal);
+		public static IMensajeDeEvento Rutear(SenalDeEvento senal)
+		{
+			if (senal.Tipo == CargaRegistrada.TipoDeEvento) return CargaRegistrada.Interpretar(senal);
+			if (senal.Tipo == PuntosAcreditados.TipoDeEvento) return PuntosAcreditados.Interpretar(senal);
+			if (senal.Tipo == NivelActualizado.TipoDeEvento) return NivelActualizado.Interpretar(senal);
+
+			return null;
+		}
 	}
 }

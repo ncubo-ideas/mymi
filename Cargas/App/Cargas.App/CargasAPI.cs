@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using Choreography.Theater;
 using Cargas.App.Eventos;
 using Cargas.App.Vistas;
-using Cargas.Dominio;
 using Puppeteer;
 using Puppets.Portador;
 
@@ -24,12 +23,11 @@ namespace Cargas.App
 			this.app = app;
 		}
 
-		// ---------------------------------------------------------------- comandos
+		// -------------------------------------------------- comandos de la credencial
 
 		// La clave de ESTA instalacion ante el proveedor. Se genera en C# y entra como
-		// parametro, no dentro del DSL: asi el valor queda journalizado y el replay lo
-		// reusa. Un Guid.NewGuid() en codigo de dominio daria una clave distinta en cada
-		// replay y la app perderia su identidad ante el proveedor.
+		// parametro, no dentro del DSL: un Guid.NewGuid() en codigo de dominio daria una
+		// clave distinta en cada replay y la app perderia su identidad ante el proveedor.
 		public void RegistrarDevice(string deviceKey)
 		{
 			ArgumentNullException.ThrowIfNullOrWhiteSpace(deviceKey);
@@ -53,158 +51,217 @@ namespace Cargas.App
 			.PerformCommand();
 		}
 
+		// ------------------------------------------- comandos: eventos de la estacion
+
 		// Aplica UN evento como UN comando. Devuelve "" si entro, o el mensaje del Check
 		// si se rechazo.
 		//
-		// El switch por tipo de examen vive ACA, en la frontera, y es lo unico que
-		// traduce el string del wire a una clase del dominio. De este punto para adentro
-		// no hay discriminadores: cada rama construye el tipo concreto y el dominio
-		// trabaja con Colesterol, AntigenoProstatico o ExamenDeOrina, no con "examen".
-		//
-		// Cada rama es un comando distinto porque cada constructor del dominio es
-		// distinto - y eso es una ventaja, no repeticion: el texto que queda en el
-		// journal dice QUE examen entro, y se puede leer sin desempaquetar un JSON.
-		public string AplicarExamenAgregado(ExamenAgregado evento)
+		// El checkpoint (bitacora.Avanzar) va DENTRO del mismo comando que inserta la
+		// carga: o entraron los dos o no entro ninguno. El Check es la idempotencia: un
+		// evento redelivered se rechaza bajo el read lock y NO deja entrada en el
+		// journal - por eso es un Check y no un if en el cuerpo.
+		public string AplicarCargaRegistrada(CargaRegistrada evento)
 		{
 			ArgumentNullException.ThrowIfNull(evento);
 			if (evento.Evento <= 0)
 				throw new ArgumentOutOfRangeException(nameof(evento), evento.Evento,
 					"El numero de evento debe ser positivo.");
 
-			if (evento.EsDeOrina) return Orina(evento);
-			if (evento.EsDeHeces) return Heces(evento);
-			if (evento.TraeFraccionamiento) return ColesterolDetallado(evento);
-
-			return UnValor(evento, ClaseDelDominio(evento.Analito));
+			return app.Using(
+				scriptForChk: @"
+					Check(@evento > bitacora.UltimoEvento) Error 'evento ya procesado';
+				",
+				@"
+					{
+						carga = Carga(@fecha, @estacion, @surtidor, @tipo,
+							@volumenValor, @volumenUnidad, @precioMonto, @precioMoneda,
+							@totalMonto, @totalMoneda, @corte, @placa, @transaccion);
+						bitacoraDeCargas.Agregar(carga);
+						bitacora.Avanzar(@evento);
+					}
+				")
+			.WithParameters(p => {
+				p["evento",        typeof(long)]     = evento.Evento;
+				p["fecha",         typeof(DateTime)] = evento.Fecha;
+				p["estacion",      typeof(string)]   = evento.SurtidorEstacion;
+				p["surtidor",      typeof(string)]   = evento.SurtidorIdentificacion;
+				p["tipo",          typeof(string)]   = evento.TipoDeCombustible;
+				p["volumenValor",  typeof(decimal)]  = evento.VolumenValor;
+				p["volumenUnidad", typeof(string)]   = evento.VolumenUnidad;
+				p["precioMonto",   typeof(decimal)]  = evento.PrecioMonto;
+				p["precioMoneda",  typeof(string)]   = evento.PrecioMoneda;
+				p["totalMonto",    typeof(decimal)]  = evento.TotalMonto;
+				p["totalMoneda",   typeof(string)]   = evento.TotalMoneda;
+				p["corte",         typeof(string)]   = evento.FormaDeCorte;
+				p["placa",         typeof(string)]   = evento.Placa;
+				p["transaccion",   typeof(string)]   = evento.NumeroDeTransaccion;
+			})
+			.PerformCheckThenCommand();
 		}
 
-		// La ULTIMA traduccion que queda: de la identidad del analito al nombre de la clase
-		// que el comando construye. Vive aca y no en el dominio porque es un detalle del
-		// DSL -el journal guarda texto y ese texto nombra una clase-, no conocimiento
-		// clinico.
-		//
-		// Se compara por identidad y no por cadena: da igual como haya escrito el
-		// laboratorio el nombre, para cuando llega aca ya se resolvio.
-		private static string ClaseDelDominio(Analito analito)
+		public string AplicarPuntosAcreditados(PuntosAcreditados evento)
 		{
-			if (analito.EsElMismo(Analito.ColesterolTotal)) return "Colesterol";
-			if (analito.EsElMismo(Analito.AntigenoProstatico)) return "AntigenoProstatico";
-			if (analito.EsElMismo(Analito.Hemoglobina)) return "Hemoglobina";
+			ArgumentNullException.ThrowIfNull(evento);
 
-			// El conjunto de analitos es mas grande que el de cargas construibles: el
-			// LDL entra fraccionado y el HDL no entra solo, y las dos cosas ya las filtro
-			// la ruta. Llegar aca significa que se agrego un analito y no su comando.
-			throw new ArgumentException(
-				$"Esta app no tiene comando para construir un examen de '{analito.Nombre}'. "
-				+ "La ruta debio devolver null para descartarlo.", nameof(analito));
+			return app.Using(
+				scriptForChk: @"
+					Check(@evento > bitacora.UltimoEvento) Error 'evento ya procesado';
+				",
+				@"
+					{
+						bitacoraDeCargas.AcreditarPuntos(@puntos);
+						bitacora.Avanzar(@evento);
+					}
+				")
+			.WithParameters(p => {
+				p["evento", typeof(long)] = evento.Evento;
+				p["puntos", typeof(int)]  = evento.Puntos;
+			})
+			.PerformCheckThenCommand();
 		}
 
-		// Los tres analitos que se construyen igual: fecha, valor y unidad. El nombre de
-		// la clase entra en el TEXTO del comando, no como parametro, porque es parte de
-		// que comando es: el journal guarda "AntigenoProstatico(...)" y al reproducirlo
-		// construye esa clase.
-		//
-		// El checkpoint (bitacora.Avanzar) va DENTRO del mismo comando que inserta el
-		// examen: eso es lo que hace exacto el resume tras una caida. O entraron los dos
-		// o no entro ninguno; no existe el estado "guarde el examen pero no avance el
-		// checkpoint", que seria el que duplica al reintentar.
-		//
-		// El Check es la idempotencia. Un evento redelivered se rechaza bajo el read lock
-		// y NO deja entrada en el journal - por eso es un Check y no un if en el cuerpo,
-		// que si persistiria una entrada no-op por cada reintento.
-		private string UnValor(ExamenAgregado evento, string claseDelDominio) =>
-			app.Using(
-				scriptForChk: @"
-					Check(@evento > bitacora.UltimoEvento) Error 'evento ya procesado';
-				",
-				@"
-					{
-						examen = " + claseDelDominio + @"(@fecha, @valor, @unidad);
-						expediente.Agregar(examen);
-						bitacora.Avanzar(@evento);
-					}
-				")
-			.WithParameters(p => {
-				p["evento", typeof(long)]     = evento.Evento;
-				p["fecha",  typeof(DateTime)] = evento.Fecha;
-				p["valor",  typeof(decimal)]  = evento.Valor;
-				p["unidad", typeof(string)]   = evento.Unidad;
-			})
-			.PerformCheckThenCommand();
+		public string AplicarNivelActualizado(NivelActualizado evento)
+		{
+			ArgumentNullException.ThrowIfNull(evento);
 
-		// El colesterol fraccionado lleva DOS valores: LDL (el que forma la serie) y HDL.
-		private string ColesterolDetallado(ExamenAgregado evento) =>
-			app.Using(
+			return app.Using(
 				scriptForChk: @"
 					Check(@evento > bitacora.UltimoEvento) Error 'evento ya procesado';
 				",
 				@"
 					{
-						examen = ColesterolDetallado(@fecha, @ldl, @hdl, @unidad);
-						expediente.Agregar(examen);
+						bitacoraDeCargas.ActualizarNivel(@nivel);
 						bitacora.Avanzar(@evento);
 					}
 				")
 			.WithParameters(p => {
-				p["evento", typeof(long)]     = evento.Evento;
-				p["fecha",  typeof(DateTime)] = evento.Fecha;
-				p["ldl",    typeof(decimal)]  = evento.Valor;
-				p["hdl",    typeof(decimal)]  = evento.ValorSecundario;
-				p["unidad", typeof(string)]   = evento.Unidad;
+				p["evento", typeof(long)]   = evento.Evento;
+				p["nivel",  typeof(string)] = evento.Nivel;
 			})
 			.PerformCheckThenCommand();
+		}
 
-		// La orina no tiene valor ni unidad: informa un COLOR y unos NITRITOS, que son dos
-		// formas de magnitud distintas y ninguna de las dos es un numero. El comando es
-		// distinto porque el examen es distinto, y eso es exactamente lo que la jerarquia
-		// del dominio esta diciendo.
+		// --------------------------------------------- comandos: los aportes de Sonia
+
+		// Los aportes NO llevan numero de evento: no vienen de URL2 y la idempotencia
+		// del checkpoint no les aplica. Cada uno lleva SU guarda -la carga existe, el
+		// odometro no retrocede- y un aporte rechazado no deja entrada en el journal.
 		//
-		// Los journals ya escritos tienen la forma de DOS argumentos. El dominio conserva
-		// ese constructor a proposito (ver ExamenDeOrina), asi que un expediente viejo
-		// sigue reproduciendo igual; lo que entra de ahora en adelante lleva los tres.
-		private string Orina(ExamenAgregado evento) =>
-			app.Using(
-				scriptForChk: @"
-					Check(@evento > bitacora.UltimoEvento) Error 'evento ya procesado';
-				",
-				@"
-					{
-						examen = ExamenDeOrina(@fecha, @color, @nitritos, @sangre);
-						expediente.Agregar(examen);
-						bitacora.Avanzar(@evento);
-					}
-				")
-			.WithParameters(p => {
-				p["evento",   typeof(long)]     = evento.Evento;
-				p["fecha",    typeof(DateTime)] = evento.Fecha;
-				p["color",    typeof(string)]   = evento.Color;
-				p["nitritos", typeof(string)]   = evento.Nitritos ?? "";
-				p["sangre",   typeof(string)]   = evento.Sangre ?? "";
-			})
-			.PerformCheckThenCommand();
+		// Estos comandos son la razon de que journal.reconstruible sea false en el
+		// manifiesto: borrar la carpeta y refrescar recupera lo de la institucion, pero
+		// esto solo vive aca.
 
-		// El examen de heces. Es su propio comando y no un parametro del de orina porque
-		// construye OTRA clase del dominio: el journal guarda "ExamenDeHeces(...)" y al
-		// reproducirlo arma esa, con su propia sangre que no se lee igual que la de orina.
-		private string Heces(ExamenAgregado evento) =>
-			app.Using(
+		/// Devuelve "" si entro, o el mensaje del Check si se rechazo (por ejemplo, un
+		/// odometro que retrocede: error de captura, no se escribe).
+		public string AnotarOdometro(string transaccion, decimal kilometros, string unidad,
+			string origen)
+		{
+			ArgumentNullException.ThrowIfNullOrWhiteSpace(transaccion);
+
+			return app.Using(
 				scriptForChk: @"
-					Check(@evento > bitacora.UltimoEvento) Error 'evento ya procesado';
+					Check(bitacoraDeCargas.PuedeAnotarOdometro(@transaccion, @kilometros, @unidad))
+						Error 'el kilometraje no es coherente con la serie o la carga no existe';
 				",
 				@"
-					{
-						examen = ExamenDeHeces(@fecha, @color, @sangre);
-						expediente.Agregar(examen);
-						bitacora.Avanzar(@evento);
-					}
+					bitacoraDeCargas.AnotarOdometro(@transaccion, @kilometros, @unidad, @origen);
 				")
 			.WithParameters(p => {
-				p["evento", typeof(long)]     = evento.Evento;
-				p["fecha",  typeof(DateTime)] = evento.Fecha;
-				p["color",  typeof(string)]   = evento.Color;
-				p["sangre", typeof(string)]   = evento.Sangre ?? "";
+				p["transaccion", typeof(string)]  = transaccion;
+				p["kilometros",  typeof(decimal)] = kilometros;
+				p["unidad",      typeof(string)]  = unidad;
+				p["origen",      typeof(string)]  = origen;
 			})
 			.PerformCheckThenCommand();
+		}
+
+		public string DeclararTanque(string transaccion, string estado)
+		{
+			ArgumentNullException.ThrowIfNullOrWhiteSpace(transaccion);
+
+			return app.Using(
+				scriptForChk: @"
+					Check(bitacoraDeCargas.ConoceTransaccion(@transaccion))
+						Error 'no hay una carga con esa transaccion';
+				",
+				@"
+					bitacoraDeCargas.DeclararTanque(@transaccion, @estado);
+				")
+			.WithParameters(p => {
+				p["transaccion", typeof(string)] = transaccion;
+				p["estado",      typeof(string)] = estado;
+			})
+			.PerformCheckThenCommand();
+		}
+
+		// El visto bueno a la inferencia de la forma de corte: el estimado pasa a
+		// confirmado y recien ahi puede abrir o cerrar tramos.
+		public string ConfirmarTanque(string transaccion)
+		{
+			ArgumentNullException.ThrowIfNullOrWhiteSpace(transaccion);
+
+			return app.Using(
+				scriptForChk: @"
+					Check(bitacoraDeCargas.PuedeConfirmarTanque(@transaccion))
+						Error 'no hay una inferencia de tanque esperando confirmacion';
+				",
+				@"
+					bitacoraDeCargas.ConfirmarTanque(@transaccion);
+				")
+			.WithParameters(p => {
+				p["transaccion", typeof(string)] = transaccion;
+			})
+			.PerformCheckThenCommand();
+		}
+
+		public string AdjuntarFoto(string transaccion, string nombreDeArchivo)
+		{
+			ArgumentNullException.ThrowIfNullOrWhiteSpace(transaccion);
+			ArgumentNullException.ThrowIfNullOrWhiteSpace(nombreDeArchivo);
+
+			return app.Using(
+				scriptForChk: @"
+					Check(bitacoraDeCargas.ConoceTransaccion(@transaccion))
+						Error 'no hay una carga con esa transaccion';
+				",
+				@"
+					bitacoraDeCargas.AdjuntarFoto(@transaccion, @nombre);
+				")
+			.WithParameters(p => {
+				p["transaccion", typeof(string)] = transaccion;
+				p["nombre",      typeof(string)] = nombreDeArchivo;
+			})
+			.PerformCheckThenCommand();
+		}
+
+		// El cero en el rendimiento de fabrica es el "no lo se" del formulario; la
+		// bitacora lo escala al tipo de ausencia antes de tocar el dominio.
+		public string CompletarFicha(string placa, string alias, string marca, string modelo,
+			int anio, string color, decimal rendimientoDeFabricaKmPorLitro)
+		{
+			ArgumentNullException.ThrowIfNullOrWhiteSpace(placa);
+			ArgumentNullException.ThrowIfNullOrWhiteSpace(alias);
+
+			return app.Using(
+				scriptForChk: @"
+					Check(bitacoraDeCargas.ConocePlaca(@placa))
+						Error 'no hay un vehiculo con esa placa';
+				",
+				@"
+					bitacoraDeCargas.CompletarFicha(@placa, @alias, @marca, @modelo,
+						@anio, @color, @rendimientoDeFabrica);
+				")
+			.WithParameters(p => {
+				p["placa",                typeof(string)]  = placa;
+				p["alias",                typeof(string)]  = alias;
+				p["marca",                typeof(string)]  = marca ?? "";
+				p["modelo",               typeof(string)]  = modelo ?? "";
+				p["anio",                 typeof(int)]     = anio;
+				p["color",                typeof(string)]  = color ?? "";
+				p["rendimientoDeFabrica", typeof(decimal)] = rendimientoDeFabricaKmPorLitro;
+			})
+			.PerformCheckThenCommand();
+		}
 
 		// ---------------------------------------------------------------- consultas
 
@@ -215,7 +272,7 @@ namespace Cargas.App
 		{
 			using (RentedParameter alquilados = app.Actor.RentedParameters())
 			{
-				app.Actor.Using("@cantidad = expediente.Cantidad;")
+				app.Actor.Using("@cantidad = bitacoraDeCargas.Cantidad;")
 				.WithParameters(alquilados, p => {
 					p[Parameter.Out, "cantidad", typeof(int)] = default;
 				})
@@ -225,31 +282,17 @@ namespace Cargas.App
 			}
 		}
 
-		public int AnalitosFueraDeRango()
+		public int CantidadDeVehiculos()
 		{
 			using (RentedParameter alquilados = app.Actor.RentedParameters())
 			{
-				app.Actor.Using("@fuera = expediente.AnalitosFueraDeRango;")
+				app.Actor.Using("@cantidad = bitacoraDeCargas.CantidadDeVehiculos;")
 				.WithParameters(alquilados, p => {
-					p[Parameter.Out, "fuera", typeof(int)] = default;
+					p[Parameter.Out, "cantidad", typeof(int)] = default;
 				})
 				.PerformQuery();
 
-				return alquilados["fuera"].GetValue<int>();
-			}
-		}
-
-		public int EdadDelPaciente()
-		{
-			using (RentedParameter alquilados = app.Actor.RentedParameters())
-			{
-				app.Actor.Using("@edad = expediente.Edad;")
-				.WithParameters(alquilados, p => {
-					p[Parameter.Out, "edad", typeof(int)] = default;
-				})
-				.PerformQuery();
-
-				return alquilados["edad"].GetValue<int>();
+				return alquilados["cantidad"].GetValue<int>();
 			}
 		}
 
@@ -287,313 +330,292 @@ namespace Cargas.App
 			}
 		}
 
-		// La lista de cargas. Devuelve la emision del print tal cual - con el formatter
-		// JSON eso YA es el JSON serializado, asi que no hay DTO ni re-serializacion en
-		// el medio.
-		//
-		// La proyeccion se AUTORA aca, hoja por hoja. No se puede hacer
-		// `print expediente.Lista`: el motor lo rechaza porque una coleccion de objetos
-		// de dominio es material, no un valor, y decidir que se ve de ella es del actor,
-		// no del material.
-		//
-		// Notar que la lista imprime ResultadoExpresado y no un decimal: es lo que
-		// permite que un colesterol ("280 mg/dL") y una orina ("ambar") convivan en la
-		// misma lista sin que ninguno tenga que mentir sobre su forma. La jerarquia del
-		// dominio se paga aca.
-		public string ListaDeCargas() =>
+		// Los vehiculos que la bitacora conoce. La IA y la UI lo usan para saber por que
+		// placa pueden preguntar sin adivinar.
+		public string ListaDeVehiculos() =>
 			app.Using(@"
-				foreach (examen in expediente.Lista) {
-					print examen.Nombre nombre,
-						examen.Fecha fecha,
-						examen.ResultadoExpresado resultado,
-						examen.AportaSerie aportaSerie;
+				foreach (vehiculo in bitacoraDeCargas.Vehiculos) {
+					print vehiculo.TextoDeLaPlaca placa,
+						vehiculo.NombreParaMostrar nombre,
+						vehiculo.TieneFicha tieneFicha,
+						vehiculo.CantidadDeCargas cargas;
 				}
 			")
 			.PerformQuery();
 
-		// LO MAS URGENTE DE TODO EL EXPEDIENTE. Es la unica consulta que mira el expediente
-		// ENTERO y no un analito, y la unica que contesta lo que la persona viene a
-		// preguntar cuando abre la app.
-		//
-		// Estaba en el dominio desde hace rato y no la consumia nadie. No se puede armar
-		// afuera: exige recorrer cada serie, interpretarla con el criterio de SU analito y
-		// quedarse con la mayor, y ordenar severidades es del dominio.
-		public string LoMasUrgente() =>
-			app.Using(@"
-				{
-					urgencia = expediente.LoMasUrgente;
-					print urgencia.NombreDeLaSeveridad severidad,
-						urgencia.AccionLegible accion,
-						urgencia.PideAlgo pideAlgo;
-				}
-			")
-			.PerformQuery();
+		public IReadOnlyList<VehiculoEnLista> Vehiculos() =>
+			ProyeccionDeVistas.Vehiculos(ListaDeVehiculos());
 
-		public LoMasUrgente Urgente() => ProyeccionDeVistas.Urgente(LoMasUrgente());
-
-		// LOS PUNTOS DE LA SERIE, con su numero. Es lo que un grafico necesita y una tabla
-		// no: el cuadro historico los da ya convertidos a texto.
-		public string PuntosDe(string analito)
+		// El historial de un vehiculo. La proyeccion se AUTORA aca, hoja por hoja: no se
+		// puede hacer `print bitacoraDeCargas.CargasDe(...)` porque una coleccion de
+		// objetos de dominio es material, no un valor.
+		public string ListaDeCargas(string placa)
 		{
-			ArgumentNullException.ThrowIfNullOrWhiteSpace(analito);
+			ArgumentNullException.ThrowIfNullOrWhiteSpace(placa);
 
 			return app.Using(@"
-				foreach (punto in expediente.PuntosDe(@analito)) {
-					print punto.Fecha fecha,
-						punto.ValorNumerico valor,
-						punto.UnidadDelValor unidad;
+				foreach (carga in bitacoraDeCargas.CargasDe(@placa)) {
+					print carga.Fecha fecha,
+						carga.NombreDeLaEstacion estacion,
+						carga.IdentificacionDelSurtidor surtidor,
+						carga.NombreDelTipo tipo,
+						carga.Litros litros,
+						carga.VolumenExpresado volumen,
+						carga.PrecioPorUnidad precio,
+						carga.MontoDelTotal total,
+						carga.MonedaDelTotal moneda,
+						carga.NombreDelCorte corte,
+						carga.KilometrajeExpresado kilometraje,
+						carga.TanqueExpresado tanque,
+						carga.NumeroDeLaTransaccion transaccion,
+						carga.TieneKilometraje tieneKilometraje,
+						carga.TieneFoto tieneFoto;
 				}
 			")
-			.WithParameters(p => { p["analito", typeof(string)] = analito; })
+			.WithParameters(p => { p["placa", typeof(string)] = placa; })
 			.PerformQuery();
 		}
 
-		// LAS PRUEBAS DE UNA SERIE BINARIA: fechas con un si o un no. Es el par de PuntosDe
-		// para la forma 5, y va aparte porque no devuelve lo mismo — un nitrito no tiene
-		// ValorNumerico, y pedirselo seria la mentira que este dominio evita en todos los
-		// otros pisos.
-		public string PruebasDe(string analito)
+		public IReadOnlyList<CargaEnLista> Cargas(string placa) =>
+			ProyeccionDeVistas.Cargas(ListaDeCargas(placa));
+
+		// LOS TRAMOS: los calculados con su rendimiento y los bloqueados con lo que les
+		// falta, en la misma lista. Es la consulta que ninguna pantalla de la estacion
+		// puede dar, porque exige el aporte de Sonia.
+		public string ListaDeTramos(string placa)
 		{
-			ArgumentNullException.ThrowIfNullOrWhiteSpace(analito);
+			ArgumentNullException.ThrowIfNullOrWhiteSpace(placa);
 
 			return app.Using(@"
-				foreach (prueba in expediente.PruebasDe(@analito)) {
-					print prueba.Fecha fecha,
-						prueba.Expresado expresado,
-						prueba.EsPositivo esPositivo,
-						prueba.EsHallazgo esHallazgo;
+				foreach (tramo in bitacoraDeCargas.TramosDe(@placa)) {
+					print tramo.Desde desde,
+						tramo.Hasta hasta,
+						tramo.EstaCalculado estaCalculado,
+						tramo.Kilometros kilometros,
+						tramo.Litros litros,
+						tramo.RendimientoEnKmPorLitro rendimiento,
+						tramo.EsComparable esComparable,
+						tramo.MotivoDeReserva motivoDeReserva,
+						tramo.EsSospechoso esSospechoso,
+						tramo.QueFalta queFalta,
+						tramo.Expresado expresado;
 				}
 			")
-			.WithParameters(p => { p["analito", typeof(string)] = analito; })
+			.WithParameters(p => { p["placa", typeof(string)] = placa; })
 			.PerformQuery();
 		}
 
-		public IReadOnlyList<PruebaEnSerie> Pruebas(string analito) =>
-			ProyeccionDeVistas.Pruebas(PruebasDe(analito));
+		public IReadOnlyList<TramoEnLista> Tramos(string placa) =>
+			ProyeccionDeVistas.Tramos(ListaDeTramos(placa));
 
-		// LOS HECHOS DE UNA SERIE BINARIA. Es el par de TendenciaDe, y son dos consultas
-		// porque no contestan lo mismo: aquella trae extremos y cambio, esta trae cuantas
-		// veces aparecio y cuantas SEGUIDAS.
-		public string PresenciaDe(string analito)
+		// LA consulta que justifica el dominio: la lectura de la serie entera, con su
+		// veredicto semantico.
+		//
+		// El bloque mantiene `evaluacion` local: en una consulta una asignacion de
+		// primer nivel seria escritura de global, prohibida en contexto read-only.
+		public string EvaluacionDeRendimiento(string placa)
 		{
-			ArgumentNullException.ThrowIfNullOrWhiteSpace(analito);
+			ArgumentNullException.ThrowIfNullOrWhiteSpace(placa);
 
 			return app.Using(@"
 				{
-					presencia = expediente.EvaluarPresenciaDe(@analito);
-					print presencia.Analito analito,
-						presencia.AnalitoParaMostrar paraMostrar,
-						presencia.NombreDeLaPresencia presencia,
-						presencia.CantidadDeMediciones mediciones,
-						presencia.Positivas positivas,
-						presencia.PositivasSeguidas positivasSeguidas,
-						presencia.DiasTranscurridos dias,
-						presencia.UltimoResultado ultimoResultado,
-						presencia.EstaPresente estaPresente,
-						presencia.HaySerie haySerie;
+					evaluacion = bitacoraDeCargas.EvaluarRendimientoDe(@placa);
+					print evaluacion.NombreDelVeredicto veredicto,
+						evaluacion.NombreDeLaSeveridad severidad,
+						evaluacion.ParaSonia paraSonia,
+						evaluacion.AccionLegible accion,
+						evaluacion.PideAlgo pideAlgo,
+						evaluacion.ActualKmPorLitro actual,
+						evaluacion.HabitualKmPorLitro habitual,
+						evaluacion.CambioProporcional cambioProporcional,
+						evaluacion.CambioPorcentual cambioPorcentual,
+						evaluacion.TramosCalculados tramosCalculados,
+						evaluacion.TramosBloqueados tramosBloqueados,
+						evaluacion.HaySerie haySerie,
+						evaluacion.QueFalta queFalta,
+						evaluacion.MotivoDeReserva motivoDeReserva,
+						evaluacion.EstaMejorando estaMejorando,
+						evaluacion.EstaEmpeorando estaEmpeorando,
+						evaluacion.SugiereRegistrarLaCargaQueFalto sugiereRegistrarLaCargaQueFalto;
 				}
 			")
-			.WithParameters(p => { p["analito", typeof(string)] = analito; })
+			.WithParameters(p => { p["placa", typeof(string)] = placa; })
 			.PerformQuery();
 		}
 
-		public PresenciaDeAnalito Presencia(string analito) =>
-			ProyeccionDeVistas.Presencia(PresenciaDe(analito));
+		public RendimientoDelVehiculo Rendimiento(string placa) =>
+			ProyeccionDeVistas.Rendimiento(EvaluacionDeRendimiento(placa));
 
-		// LAS LINEAS que se dibujan junto a los puntos, y COMO se dibujan. Cada analito
-		// emite solo las que tiene; ninguno devuelve cero para rellenar.
-		public string ReferenciasDe(string analito)
+		// LA AUTONOMIA: capacidad estimada por rendimiento habitual. Combina dos
+		// derivaciones; no esta en ninguna pantalla; siempre es proyeccion.
+		public string AutonomiaEstimada(string placa)
 		{
-			ArgumentNullException.ThrowIfNullOrWhiteSpace(analito);
+			ArgumentNullException.ThrowIfNullOrWhiteSpace(placa);
 
 			return app.Using(@"
-				foreach (referencia in expediente.ReferenciasDe(@analito)) {
-					print referencia.Nombre nombre,
-						referencia.Numero valor,
-						referencia.Unidad unidad,
-						referencia.ParaSonia paraSonia;
+				{
+					autonomia = bitacoraDeCargas.AutonomiaDe(@placa);
+					print autonomia.Hay hay,
+						autonomia.Kilometros kilometros,
+						autonomia.CapacidadEnLitros capacidad,
+						autonomia.HabitualKmPorLitro habitual,
+						autonomia.EsProyeccion esProyeccion;
 				}
 			")
-			.WithParameters(p => { p["analito", typeof(string)] = analito; })
+			.WithParameters(p => { p["placa", typeof(string)] = placa; })
 			.PerformQuery();
 		}
 
-		public IReadOnlyList<PuntoDeSerie> Puntos(string analito) =>
-			ProyeccionDeVistas.Puntos(PuntosDe(analito));
+		public AutonomiaDelVehiculo Autonomia(string placa) =>
+			ProyeccionDeVistas.Autonomia(AutonomiaEstimada(placa));
 
-		public IReadOnlyList<LineaDeReferencia> Referencias(string analito) =>
-			ProyeccionDeVistas.Referencias(ReferenciasDe(analito));
+		// Cuanto del aporte de Sonia ya esta: la linea discreta, nunca el reproche.
+		public string CompletitudDeDatos(string placa)
+		{
+			ArgumentNullException.ThrowIfNullOrWhiteSpace(placa);
 
-		// QUE FALTA MEDIR. La consulta que ninguna pantalla puede contestar, porque una
+			return app.Using(@"
+				{
+					completitud = bitacoraDeCargas.CompletitudDe(@placa);
+					print completitud.CargasConKilometraje cargasConKilometraje,
+						completitud.TotalDeCargas totalDeCargas,
+						completitud.TramosCalculados tramosCalculados,
+						completitud.TramosBloqueados tramosBloqueados,
+						completitud.Expresada expresada;
+				}
+			")
+			.WithParameters(p => { p["placa", typeof(string)] = placa; })
+			.PerformQuery();
+		}
+
+		public CompletitudDelVehiculo Completitud(string placa) =>
+			ProyeccionDeVistas.Completitud(CompletitudDeDatos(placa));
+
+		// QUE FALTA. La consulta que ninguna pantalla puede contestar, porque una
 		// pantalla solo renderiza datos que tiene y esto es una AUSENCIA.
-		//
-		// `hoy` viaja como parametro y no lo lee el dominio: el modelo no toca el reloj.
-		public string ControlesPendientes(DateTime hoy) =>
-			app.Using(@"
-				foreach (control in expediente.ControlesPendientes(@hoy)) {
-					print control.Nombre analito,
-						control.ParaMostrar paraMostrar,
-						control.UltimaMedicion ultimaMedicion,
-						control.DiasDesdeLaUltima diasDesdeLaUltima,
-						control.MesesRecomendados mesesRecomendados,
-						control.DiasQueFaltan diasQueFaltan,
-						control.EstaVencido estaVencido,
-						control.NombreDeLaSeveridad severidad,
-						control.AccionLegible accion,
-						control.ParaSonia paraSonia;
-				}
-			")
-			.WithParameters(p => {
-				p["hoy", typeof(DateTime)] = hoy;
-			})
-			.PerformQuery();
-
-		public IReadOnlyList<ControlEnEspera> Controles(DateTime hoy) =>
-			ProyeccionDeVistas.Controles(ControlesPendientes(hoy));
-
-		// EL CUADRO HISTORICO, plano. Ver CeldaDelCuadro en el dominio para por que viaja
-		// asi: el print proyecta un solo nivel, y una coleccion de filas que a su vez
-		// tienen celdas no cruza. Los indices son los que dejan que la superficie rearme
-		// la grilla SIN volver a decidir que va donde.
-		public string CuadroHistorico() =>
-			app.Using(@"
-				foreach (celda in expediente.CeldasDelCuadro) {
-					print celda.Fila fila,
-						celda.Columna columna,
-						celda.Analito analito,
-						celda.ParaMostrar paraMostrar,
-						celda.Fecha fecha,
-						celda.Expresado expresado,
-						celda.AportaSerie aportaSerie,
-						celda.Severidad severidad,
-						celda.ParaSonia paraSonia;
-				}
-			")
-			.PerformQuery();
-
-		// LA consulta que justifica el dominio. Evalua la SERIE de un analito, no su
-		// ultimo valor.
-		//
-		// El bloque mantiene `evaluacion` local: en una consulta una asignacion de primer
-		// nivel seria escritura de global, prohibida en contexto read-only.
-		public string TendenciaDe(string analito)
+		public string LoQueFaltaParaCalcular(string placa)
 		{
-			ArgumentNullException.ThrowIfNullOrWhiteSpace(analito);
+			ArgumentNullException.ThrowIfNullOrWhiteSpace(placa);
+
+			return app.Using(@"
+				foreach (faltante in bitacoraDeCargas.FaltantesDe(@placa)) {
+					print faltante.FechaDeLaCarga fecha,
+						faltante.NumeroDeLaTransaccion transaccion,
+						faltante.QueFalta queFalta,
+						faltante.QueDesbloquea queDesbloquea,
+						faltante.ParaSonia paraSonia;
+				}
+			")
+			.WithParameters(p => { p["placa", typeof(string)] = placa; })
+			.PerformQuery();
+		}
+
+		public IReadOnlyList<FaltanteEnLista> Faltantes(string placa) =>
+			ProyeccionDeVistas.Faltantes(LoQueFaltaParaCalcular(placa));
+
+		// El kilometraje esperado para el prellenado. `hoy` viaja como parametro y no lo
+		// lee el dominio: el modelo no toca el reloj.
+		public string OdometroEstimado(string placa, DateTime hoy)
+		{
+			ArgumentNullException.ThrowIfNullOrWhiteSpace(placa);
 
 			return app.Using(@"
 				{
-					evaluacion = expediente.EvaluarTendenciaDe(@analito);
-					print evaluacion.Analito analito,
-						evaluacion.AnalitoParaMostrar paraMostrar,
-						evaluacion.NombreDeLaTendencia tendencia,
-						evaluacion.CantidadDeMediciones mediciones,
-						evaluacion.ValorInicial valorInicial,
-						evaluacion.ValorFinal valorFinal,
-						evaluacion.Unidad unidad,
-						evaluacion.DiasTranscurridos dias,
-						evaluacion.Cambio cambio,
-						evaluacion.SugiereRepetirElExamen sugiereRepetirElExamen,
-						evaluacion.HaySerie haySerie;
+					proyeccion = bitacoraDeCargas.OdometroEstimadoDe(@placa, @hoy);
+					print proyeccion.Hay hay,
+						proyeccion.Kilometros kilometros,
+						proyeccion.KilometrosPorDia kilometrosPorDia,
+						proyeccion.DiasDesdeLaUltimaLectura diasDesdeLaUltimaLectura,
+						proyeccion.Origen origen;
 				}
 			")
 			.WithParameters(p => {
-				p["analito", typeof(string)] = analito;
+				p["placa", typeof(string)]  = placa;
+				p["hoy",   typeof(DateTime)] = hoy;
 			})
 			.PerformQuery();
 		}
 
-		// LO QUE EL ANALITO CONCLUYE de su serie: veredicto, severidad, la linea para la
-		// persona y que hacer.
-		//
-		// Es la consulta que reemplaza al "exige atencion" generico. Aquella salia de un
-		// bool por analito y le ponia la misma etiqueta al antigeno subiendo y al
-		// colesterol bajando desde un pico; esta la produce cada analito con su criterio.
-		public string InterpretacionDe(string analito)
+		public OdometroPropuesto Odometro(string placa, DateTime hoy) =>
+			ProyeccionDeVistas.Odometro(OdometroEstimado(placa, hoy));
+
+		// Lo que le importa a la billetera, POR MONEDA: el dominio no convierte dinero.
+		public string CostoPorDistancia(string placa)
 		{
-			ArgumentNullException.ThrowIfNullOrWhiteSpace(analito);
+			ArgumentNullException.ThrowIfNullOrWhiteSpace(placa);
 
 			return app.Using(@"
-				{
-					lectura = expediente.InterpretarSerieDe(@analito);
-					print lectura.Analito analito,
-						lectura.AnalitoParaMostrar paraMostrar,
-						lectura.NombreDelVeredicto veredicto,
-						lectura.NombreDeLaSeveridad severidad,
-						lectura.NombreDeLaForma forma,
-						lectura.ParaSonia paraSonia,
-						lectura.AccionLegible accion,
-						lectura.ReferenciaLegible referencia,
-						lectura.PideAlgo pideAlgo,
-						lectura.SugiereRepetirElExamen sugiereRepetirElExamen;
+				foreach (costo in bitacoraDeCargas.CostoPorDistanciaDe(@placa)) {
+					print costo.CodigoDeMoneda moneda,
+						costo.MontoPorKilometro montoPorKilometro,
+						costo.Kilometros kilometros,
+						costo.Expresado expresado;
+				}
+			")
+			.WithParameters(p => { p["placa", typeof(string)] = placa; })
+			.PerformQuery();
+		}
+
+		public IReadOnlyList<CostoEnLista> Costos(string placa) =>
+			ProyeccionDeVistas.Costos(CostoPorDistancia(placa));
+
+		// Como evoluciono lo que paga por litro, POR SURTIDOR: el precio es estado del
+		// instrumento, no un numero suelto.
+		public string PrecioPagadoEnElTiempo(string placa)
+		{
+			ArgumentNullException.ThrowIfNullOrWhiteSpace(placa);
+
+			return app.Using(@"
+				foreach (precio in bitacoraDeCargas.PreciosDe(@placa)) {
+					print precio.Fecha fecha,
+						precio.PrecioPorLitro precioPorLitro,
+						precio.CodigoDeMoneda moneda,
+						precio.Surtidor surtidor;
+				}
+			")
+			.WithParameters(p => { p["placa", typeof(string)] = placa; })
+			.PerformQuery();
+		}
+
+		public IReadOnlyList<PrecioEnLista> Precios(string placa) =>
+			ProyeccionDeVistas.Precios(PrecioPagadoEnElTiempo(placa));
+
+		// El gasto de un mes, POR MONEDA y sobre todos los vehiculos.
+		public string GastoDelPeriodo(int anio, int mes)
+		{
+			return app.Using(@"
+				foreach (gasto in bitacoraDeCargas.GastoDelPeriodo(@anio, @mes)) {
+					print gasto.CodigoDeMoneda moneda,
+						gasto.Monto monto,
+						gasto.CantidadDeCargas cargas,
+						gasto.Litros litros,
+						gasto.Expresado expresado;
 				}
 			")
 			.WithParameters(p => {
-				p["analito", typeof(string)] = analito;
+				p["anio", typeof(int)] = anio;
+				p["mes",  typeof(int)] = mes;
 			})
 			.PerformQuery();
 		}
 
-		public InterpretacionDeAnalito Interpretacion(string analito) =>
-			ProyeccionDeVistas.Interpretacion(InterpretacionDe(analito));
+		public IReadOnlyList<GastoEnLista> Gastos(int anio, int mes) =>
+			ProyeccionDeVistas.Gastos(GastoDelPeriodo(anio, mes));
 
-		// A QUE RITMO viene cambiando un analito. Es la segunda pregunta que exige la serie
-		// completa, y para el antigeno prostatico es LA pregunta: la practica clinica no
-		// decide por el valor absoluto sino por el cambio por ano.
-		//
-		// Va aparte de TendenciaDe y no como dos campos mas de la misma respuesta porque
-		// son dos preguntas distintas sobre tramos distintos: la tendencia mira la serie
-		// entera, la velocidad mira el tramo mas reciente. Fusionarlas obligaria a una de
-		// las dos a mentir sobre que miro.
-		public string VelocidadDe(string analito)
-		{
-			ArgumentNullException.ThrowIfNullOrWhiteSpace(analito);
-
-			return app.Using(@"
-				{
-					velocidad = expediente.VelocidadDe(@analito);
-					print velocidad.Analito analito,
-						velocidad.AnalitoParaMostrar paraMostrar,
-						velocidad.PorAno porAno,
-						velocidad.Unidad unidad,
-						velocidad.DiasDelTramo dias,
-						velocidad.UmbralPorAno umbral,
-						velocidad.EsAplicable esAplicable,
-						velocidad.ExigeAtencion exigeAtencion,
-						velocidad.Expresada expresada;
-				}
-			")
-			.WithParameters(p => {
-				p["analito", typeof(string)] = analito;
-			})
-			.PerformQuery();
-		}
-
-		// Los analitos de los que hay historia. La IA lo usa para saber por que puede
-		// preguntar sin adivinar nombres.
-		public string AnalitosConHistoria() =>
+		// La lealtad, discreta: presente para que se sienta real, no es el foco.
+		public string EstadoDeLealtad() =>
 			app.Using(@"
-				foreach (analito in expediente.Analitos) {
-					print analito nombre;
+				{
+					lealtad = bitacoraDeCargas.Lealtad;
+					print lealtad.PuntosDelSaldo saldo,
+						lealtad.NombreDelNivel nivel,
+						lealtad.PuntosParaElSiguienteNivel paraElSiguiente;
 				}
 			")
 			.PerformQuery();
 
-		// Las mismas vistas, ya tipadas. Es lo que consumen la UI y las tools MCP; las
-		// variantes que devuelven el string crudo quedan para diagnostico.
-		public IReadOnlyList<ExamenEnLista> Cargas() =>
-			ProyeccionDeVistas.Lista(ListaDeCargas());
-
-		public IReadOnlyList<CeldaEnCuadro> Cuadro() =>
-			ProyeccionDeVistas.Cuadro(CuadroHistorico());
-
-		public TendenciaDeAnalito Tendencia(string analito) =>
-			ProyeccionDeVistas.Tendencia(TendenciaDe(analito));
-
-		public VelocidadDeAnalito Velocidad(string analito) =>
-			ProyeccionDeVistas.Velocidad(VelocidadDe(analito));
-
-		public IReadOnlyList<string> Analitos() =>
-			ProyeccionDeVistas.Analitos(AnalitosConHistoria());
+		public EstadoDeLealtad Lealtad() =>
+			ProyeccionDeVistas.Lealtad(EstadoDeLealtad());
 
 		// ------------------------------------------------- IDiarioDeLaApp (Portador)
 
@@ -601,7 +623,9 @@ namespace Cargas.App
 		{
 			ArgumentNullException.ThrowIfNull(mensaje);
 
-			if (mensaje is ExamenAgregado agregado) return AplicarExamenAgregado(agregado);
+			if (mensaje is CargaRegistrada carga) return AplicarCargaRegistrada(carga);
+			if (mensaje is PuntosAcreditados puntos) return AplicarPuntosAcreditados(puntos);
+			if (mensaje is NivelActualizado nivel) return AplicarNivelActualizado(nivel);
 
 			throw new ArgumentException(
 				$"Esta app no tiene comando para un mensaje de tipo '{mensaje.Tipo}'. La ruta debio devolver null "
