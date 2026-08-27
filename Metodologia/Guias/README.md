@@ -116,6 +116,28 @@ un módulo necesita un dato de otro **sin** una IA en el medio.
 
 ## Preguntas abiertas
 
-Ninguna. Las tres que había quedaron resueltas: la forma de app que sirven las guías (la
-clientecéntrica, y sólo esa), el acceso al MVP (los tres negocios están en este repo) y dónde viven
-las guías (acá).
+Las tres originales quedaron resueltas: la forma de app que sirven las guías (la clientecéntrica, y
+sólo esa), el acceso al MVP (los tres negocios están en este repo) y dónde viven las guías (acá).
+
+Queda una nueva, y es de estructura.
+
+**¿Cuál es la estructura de nodos que documentan estas guías?** La recomendación del equipo sobre
+`internal` (2026-08-26) viene con un árbol que **no es el que tienen los negocios del repo**:
+
+| En la recomendación | En `Examenes/` y `Compras/` hoy |
+|---|---|
+| `<N>.Dominio` | `Dominio/` |
+| `<N>.Superficie` — endpoints y tools | `App/<N>.App` + `App/<N>.Mcp` |
+| `<N>.Cli` — carátula de desarrollo | `App/<N>.Consola` |
+| `<N>.Tests` — fixture y journals dorados | **no existe**: el fixture vive dentro de `.Consola` |
+| `publicador-simulado` | `InyectorDeEventosDemo/` + `EndPointDeEventos/` |
+| — | `App/<N>.Wasm` y `PaginaDeDescarga/`, que ahí no aparecen |
+
+Aparece además `personas/`, un árbol de recursos de desarrollo con un journal por persona y por
+institución, que ninguna guía menciona.
+
+El capítulo 0 §7 documenta **la del repo**, porque es la que se puede verificar corriendo. La
+recomendación dice de sí misma que *"no es definitiva: la estructura de proyectos puede cambiar
+conforme avancemos"*, así que adivinar cuál gana sería inventar doctrina. **Lo que sí es
+independiente del milestone —y ya está en el capítulo 3— son las dos razones de diseño por las que el
+dominio va `internal`.**

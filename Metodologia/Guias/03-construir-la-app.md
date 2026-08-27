@@ -70,8 +70,8 @@ decisiones del host —fechas del reloj, formatos, DTOs— que después no se pu
 
 Esto lo gobierna `domain-guide.md`. Lo que hay que retener al empezar:
 
-- **Todo `internal`.** El perform llega por reflexión; no necesita más. El host jamás nombra un tipo
-  del dominio.
+- **Todo `internal`**, y en su propio csproj. Es la regla que más se rompe y la que más cuesta:
+  tiene su propia sección abajo.
 - **Entidades con identidad, nunca value objects.** Sin `Equals`/`GetHashCode`/`record`, sin
   colecciones llaveadas por valor. Llaveá por primitivo (un folio, un ordinal de mes).
 - **La operación es lo primario, no el estado.** `presupuesto.PuedeLiquidar(folio, moneda)`, no
@@ -82,6 +82,115 @@ Esto lo gobierna `domain-guide.md`. Lo que hay que retener al empezar:
   como parámetro. Es lo que hace que replayar el journal dé exactamente el mismo estado.
 - **Nombrá la ley.** No dejes que una regla viva sólo como aritmética. La provisión mensual de un
   gasto anual es una ley con nombre, no un `/12` suelto.
+
+### El dominio va `internal`, y el csproj separado es lo que lo hace cierto
+
+Es la regla que más se rompe, casi siempre con la misma justificación —*"el motor necesita que sea
+`public`"*— y esa justificación es falsa. Vale desarmarla entera, porque el argumento de verdad no es
+el que uno espera.
+
+**El motor nunca pidió `public`.** Tres hechos sobre su fuente:
+
+| | |
+|---|---|
+| El registro de tipos usa **`assembly.GetTypes()`**, no `GetExportedTypes()` | Un dominio entero `internal` entra al registro sin excepción |
+| Su único filtro es **`!t.IsNestedPrivate`** | Entra `internal` top-level, `internal` anidado, `protected`. Sólo quedan afuera las clases que el compilador emite para closures |
+| **`BindingFlags.NonPublic`** en toda la ruta del intérprete | Ningún método ni field necesita ser público. Un método `internal` —o `private`— se invoca igual desde un script |
+
+**Y el perform tampoco.** Acá está el malentendido que más se repite: *"el perform alcanza los
+`internal` porque comparte assembly con el dominio"*. **El perform no alcanza internals ni
+compartiendo assembly: entrega una cadena.**
+
+```csharp
+Using(@"
+    upgrade('semilla') {
+        facturas = Facturario();
+    }
+").PerformCommand();
+```
+
+`Facturario` aparece **dentro de un string**. Quien lo resuelve es el motor, por reflexión, y **la
+reflexión no tiene frontera de assembly**: eso funciona idéntico con el dominio en otro csproj y
+enteramente `internal`. Lo único que ese archivo le pide al dominio en C# es un `typeof(X).Assembly`
+para el constructor — y hasta eso se evita:
+
+```csharp
+: base(nombreDelActor, Assembly.Load(new AssemblyName("Laboratorio.Dominio")))
+```
+
+Con eso se cae también el `using` del namespace del dominio. Ese `public` es **ergonomía**, no
+necesidad.
+
+#### Por qué entonces insistir
+
+Porque `public` no es sólo innecesario: **es dañino**, y por dos razones que no dependen de dónde
+corra la app.
+
+**Uno · los DTOs se van de paseo al dominio.** Con el dominio `public`, la superficie puede pasarle un
+DTO a la lógica de negocio, y lo va a hacer: es el atajo más corto que existe. Lo que se pierde ahí no
+es elegancia — es que **la interpretación del dato ocurre afuera del actor**. Qué significa, cómo se
+coacciona, qué default toma cuando viene vacío: nada de eso queda en el journal. El journal deja de
+ser el registro del acto y pasa a ser el registro de un acto **ya interpretado por alguien más**, cuya
+interpretación no se puede replayar ni auditar.
+
+**Dos · la lógica de negocio se muda a la superficie.** Si la superficie puede declarar una variable
+de tipo dominio, la declara. Y con un objeto de dominio en la mano, la primera decisión "chiquita" se
+escribe ahí mismo: un `if` sobre un estado, un cálculo, un default. Eso es lógica que quedó **fuera
+del actor**: no se journaliza, no se replaya, no se rehidrata. Al reiniciar, el estado reconstruido no
+la incluye, porque nunca fue un acto. Y el drenaje es silencioso — nadie escribe *"voy a mover el
+dominio a la superficie"*; se escriben cinco `if` en seis meses, cada uno razonable por sí solo.
+
+Con el dominio `internal`, **las dos cosas no compilan.**
+
+#### Y por eso es csproj separado, no "disciplina"
+
+Ésta es la parte que se pierde, y es toda la diferencia:
+
+- **`internal` dentro del mismo assembly que la superficie no es una cerca.** La superficie está del
+  lado de adentro y alcanza todo. La disciplina queda a cargo de la memoria del autor, y la memoria
+  del autor no sobrevive a un sprint apretado.
+- **`internal` en su propio assembly es una cerca que sostiene el compilador.** El atajo deja de ser
+  de mal gusto y pasa a ser un **error de compilación**.
+
+No es una cerca de seguridad: `internal` no defiende de nadie, cualquiera con reflexión pasa. Es una
+**cerca contra el lenguaje anfitrión**: el DSL entra, C# no.
+
+#### La única excepción, y cómo se pide
+
+Un fixture que instancia el modelo directo, sin pasar por scripts. Ése es el único código C# fuera del
+dominio que legítimamente nombra tipos del dominio, y **tampoco fuerza `public`**:
+
+```xml
+<ItemGroup>
+  <InternalsVisibleTo Include="Laboratorio.Tests" />
+</ItemGroup>
+```
+
+Sin `PublicKey` si nada está firmado. Por qué esto no rompe la cerca: es un permiso **explícito,
+nominal y auditable**. Se ve en el diff, se justifica en la revisión, y se le puede pedir cuentas a
+quien quiera agregar el segundo. `public` no le pide permiso a nadie ni deja rastro.
+
+#### Si te toca hacer el barrido
+
+1. Cambiar los tipos a `internal`.
+2. Buscar cada nombre de tipo del dominio en todos los nodos de afuera.
+3. Clasificar: **dentro de un string** (DSL) no es acoplamiento y se queda; **`typeof(X).Assembly`**
+   es reemplazable; **declaración, `new`, cast, `is`, parámetro o retorno en C#** es acoplamiento real
+   — se elimina o recibe su `InternalsVisibleTo` con justificación.
+4. Compilar. **Lo que no compila es el mapa exacto de los atajos que la cerca estaba dejando pasar.**
+   Cada error es un lugar donde el dominio se estaba filtrando, no una molestia.
+
+Tres falsos positivos que el grep levanta y no son referencias a tipos: **constantes string** con el
+nombre del tipo, **propiedades de DTOs propios** que se llaman parecido, y **métodos o records de
+vista homónimos**. Revisá a mano.
+
+> **Una precaución para WASM y WASI, no medida.** `typeof(X).Assembly` deja una referencia IL dura al
+> assembly del dominio; `Assembly.Load(new AssemblyName(...))` no —el único vínculo es una cadena— y
+> el trimmer que Blazor activa en `publish` Release podría sacarlo del output. El síntoma sería un
+> `dotnet run` que anda y un publish que revienta. La respuesta es `<TrimmerRootAssembly>`, y conviene
+> saber que **ese riesgo ya existe con el `typeof`**: ancla el tipo, no los miembros que el DSL
+> resuelve por reflexión. Un dominio descubierto por reflexión y un trimmer agresivo son incompatibles
+> por naturaleza.
 
 ### La fachada es lo que el perform bindea
 
