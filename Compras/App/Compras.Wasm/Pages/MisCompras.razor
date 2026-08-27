@@ -160,6 +160,10 @@ else
                                         <span class="punto @(i < habitual.ComprasEnQueAparece ? "punto-lleno" : "")"></span>
                                     }
                                 </div>
+                                @* LA CONSTANCIA en palabras, que es lo que el diseño pone en la
+                                   ficha de producto: "casi nunca falta". Los puntos se ven de un
+                                   vistazo y esto se LEE — no es lo mismo, y por eso van los dos. *@
+                                <div class="infaltable-constancia">@habitual.Constancia</div>
                             </div>
                         }
                     </div>
@@ -241,6 +245,56 @@ else
                     </span>
                 </div>
             }
+        </div>
+    }
+
+    @* TU RITMO. Es la pantalla "tu ritmo de súper" del diseño de la app — "hay días y
+       momentos que se repiten más de lo que parece" — y responde algo que la persona
+       probablemente no había notado, que es literalmente lo que ese diseño pregunta:
+       "¿lo habías notado?".
+
+       No juzga: ir los viernes de noche no es mejor ni peor que ir los martes en la
+       mañana. La línea la escribe el DOMINIO. *@
+    @if (ritmo is not null && ritmo.EsObservado)
+    {
+        <h2>Tu ritmo</h2>
+        <div class="card mb-4">
+            <div class="card-body">
+                <div class="fs-5 mb-3">@ritmo.ParaSonia</div>
+
+                <div class="ritmo-cifras">
+                    <div class="ritmo-cifra">
+                        <span class="ritmo-numero">@ritmo.DiasEntreCompras</span>
+                        <span class="ritmo-rotulo">días entre compras</span>
+                        <span class="etiqueta etiqueta-verde mt-1">@ritmo.CadenciaCompacta</span>
+                    </div>
+                    <div class="ritmo-cifra">
+                        <span class="ritmo-numero ritmo-palabra">@ritmo.DiaFavorito</span>
+                        <span class="ritmo-rotulo">
+                            el día que más compra&nbsp;&mdash;
+                            @ritmo.ComprasEnElDiaFavorito de @ritmo.ComprasMiradas
+                        </span>
+                    </div>
+                </div>
+
+                @* LOS TRES MOMENTOS vienen SIEMPRE, aunque alguno esté en cero: la fila se
+                   dibuja igual y no hay que preguntar antes. *@
+                <div class="ritmo-rotulo mt-3 mb-2">Cuándo suele comprar</div>
+                <div class="momentos">
+                    @foreach (var m in ritmo.PorMomento)
+                    {
+                        <div class="momento @(m.Momento == ritmo.MomentoFavorito ? "momento-favorito" : "")">
+                            <div class="momento-nombre">@m.Momento</div>
+                            <div class="momento-barra">
+                                <span style="width:@((int)(m.Proporcion * 100))%"></span>
+                            </div>
+                            <div class="momento-cuantas">
+                                @m.Cuantas @(m.Cuantas == 1 ? "compra" : "compras")
+                            </div>
+                        </div>
+                    }
+                </div>
+            </div>
         </div>
     }
 
@@ -383,6 +437,7 @@ else
     private FirmaDeLaSemana? firma;
     private CambioDeLaCanasta? cambio;
     private IReadOnlyList<RitmoQueCambio> ritmos = new List<RitmoQueCambio>();
+    private RitmoDelSuperVista? ritmo;
     private int cantidad;
     private decimal total;
     private long ultimoEvento;
@@ -476,6 +531,7 @@ else
         firma = estado.Firma();
         cambio = estado.CambioDelUltimoAnio();
         ritmos = estado.RitmosQueCambiaron();
+        ritmo = estado.Ritmo();
     }
 
     private void VerDetalle(string numero) =>

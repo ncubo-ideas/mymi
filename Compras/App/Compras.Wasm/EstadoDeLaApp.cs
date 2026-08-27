@@ -260,6 +260,10 @@ public sealed class EstadoDeLaApp : IAsyncDisposable
 	// LOS PRODUCTOS A LOS QUE LES CAMBIO EL RITMO, el mas notorio primero. Mismo corte que
 	// el cambio de la canasta -"este ano"- porque las dos tarjetas cuentan el mismo quiebre
 	// desde angulos distintos: una dice QUE entro, la otra CADA CUANTO.
+	// CADA CUANTO VA AL SUPER, que dia y en que momento. No lleva parametros: el dominio lo
+	// mide sobre todo el historial, y no hay reloj de por medio.
+	public RitmoDelSuperVista Ritmo() { Exigir(); return api!.Ritmo(); }
+
 	public IReadOnlyList<RitmoQueCambio> RitmosQueCambiaron()
 	{ Exigir(); return api!.RitmosQueCambiaron(new DateTime(DateTime.Now.Year, 1, 1)); }
 

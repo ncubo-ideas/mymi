@@ -131,6 +131,9 @@ namespace Compras.App.Vistas
 
 		/// <summary>Si esta en TODAS las compras miradas. Lo que de verdad no falla.</summary>
 		public bool EstaEnTodas { get; init; }
+
+		/// <summary>Qué tan fiel es, en palabras: "nunca falla", "casi nunca falta".</summary>
+		public string Constancia { get; init; } = "";
 	}
 
 	// EL QUIEBRE, con fecha: lo que entro a la canasta y lo que dejo de estar. La otra
@@ -166,6 +169,51 @@ namespace Compras.App.Vistas
 
 		public int ComprasEnQueAparece { get; init; }
 		public decimal Proporcion { get; init; }
+	}
+
+	// COMO VA AL SUPER: cada cuantos dias vuelve, que dia y en que momento. Es la pantalla
+	// "tu ritmo de super" del diseño de la app — "hay dias y momentos que se repiten mas de
+	// lo que parece"— con las tres facetas juntas.
+	public sealed class RitmoDelSuperVista
+	{
+		public int ComprasMiradas { get; init; }
+
+		/// <summary>Si el ritmo se pudo medir. Sin esto los demas campos vienen vacios.</summary>
+		public bool EsObservado { get; init; }
+
+		/// <summary>Cada cuántos días vuelve. Cero cuando no hay ritmo.</summary>
+		public int DiasEntreCompras { get; init; }
+
+		/// <summary>"todas las semanas". Vacío cuando no hay ritmo.</summary>
+		public string Cadencia { get; init; } = "";
+
+		/// <summary>"1 vez/semana", para una pastilla. Vacío cuando no hay ritmo.</summary>
+		public string CadenciaCompacta { get; init; } = "";
+
+		/// <summary>"sábado". Vacío cuando no hay ritmo.</summary>
+		public string DiaFavorito { get; init; } = "";
+
+		public int ComprasEnElDiaFavorito { get; init; }
+
+		/// <summary>"tarde". Vacío cuando no hay ritmo.</summary>
+		public string MomentoFavorito { get; init; } = "";
+
+		public string ParaSonia { get; init; } = "";
+
+		/// <summary>Los TRES momentos, siempre los tres y en orden del día.</summary>
+		public IReadOnlyList<ComprasEnUnMomentoVista> PorMomento { get; init; } =
+			new List<ComprasEnUnMomentoVista>();
+	}
+
+	// Cuantas compras cayeron en un momento del dia. Vienen los tres siempre, asi que una
+	// pantalla puede dibujar la fila sin preguntar.
+	public sealed class ComprasEnUnMomentoVista
+	{
+		public string Momento { get; init; } = "";
+		public int Cuantas { get; init; }
+		public int DeCuantas { get; init; }
+		public decimal Proporcion { get; init; }
+		public string ParaMostrar { get; init; } = "";
 	}
 
 	// CADA CUANTO compra un producto, antes y ahora. Es la tarjeta "un cambio en tu

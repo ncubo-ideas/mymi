@@ -77,6 +77,13 @@
       "descripcion": "LOS PRODUCTOS A LOS QUE LES CAMBIO EL RITMO, el mas notorio primero, cada uno con cada cuanto se compraba antes y cada cuanto ahora. Se ordena por cuanto salto la frecuencia y no por plata: lo que cambia una rutina es cada cuanto, no cuanto cuesta. esMasSeguido distingue lo que entro de lo que se fue apagando. Una lista vacia significa que ningun producto cambio de ritmo, que es una respuesta y no una falla."
     },
     {
+      "nombre": "mi_ritmo_de_super",
+      "titulo": "Mi ritmo de super",
+      "soloLectura": true,
+      "entrada": [],
+      "descripcion": "COMO VA AL SUPER esta persona: cada cuantos dias vuelve, que dia de la semana suele comprar y en que momento del dia. Usala para '¿cada cuanto voy al super?' o cuando la persona quiere entender su propia rutina. OJO: esto es cada cuanto VA AL SUPER, no cada cuanto compra un producto (cada_cuanto_compro) ni cada cuanto entra un departamento (que_dejaste_de_comprar). porMomento siempre trae los tres momentos del dia aunque alguno venga en cero. Si esObservado viene en false, no hay suficientes compras para medir un ritmo, y no es un error."
+    },
+    {
       "nombre": "canasta_del_mes",
       "titulo": "Como fue mi canasta",
       "soloLectura": true,

@@ -357,7 +357,8 @@ namespace Compras.App
 							habitual.ComprasEnQueAparece comprasEnQueAparece,
 							habitual.ComprasMiradas deCuantas,
 							habitual.Proporcion proporcion,
-							habitual.EstaEnTodas estaEnTodas;
+							habitual.EstaEnTodas estaEnTodas,
+							habitual.Constancia.ParaMostrar constancia;
 					}
 				}
 			")
@@ -429,6 +430,43 @@ namespace Compras.App
 			})
 			.PerformQuery();
 		}
+
+		// COMO VA AL SUPER: cada cuantos dias vuelve, que dia y en que momento. Es la
+		// pantalla "tu ritmo de super" del diseño de la app, con las tres facetas juntas.
+		//
+		// Se proyectan las lecturas TOTALES -DiasEntreCompras, CadenciaLegible,
+		// MomentoFavoritoExpresado- porque sin suficientes compras las tipadas son
+		// guardadas, y en una proyeccion plana eso revienta la consulta entera. Los tres
+		// momentos SI vienen siempre, asi que su foreach no necesita guarda.
+		//
+		// DE CADA MOMENTO SE PROYECTA ParaMostrar Y NO Nombre. Nombre es la etiqueta interna
+		// sin acentos, que existe para comparar y serializar: en pantalla se leia "Manana",
+		// y peor, el favorito se compara contra MomentoFavoritoExpresado -que SI trae
+		// acento-, asi que la mañana nunca se marcaba como favorita. Tarde y noche
+		// funcionaban de casualidad, por no tener tilde.
+		public string RitmoDelSuper() =>
+			app.Using(@"
+				{
+					ritmo = compras.RitmoDelSuper();
+					print ritmo.ComprasMiradas comprasMiradas,
+						ritmo.EsObservado esObservado,
+						ritmo.DiasEntreCompras diasEntreCompras,
+						ritmo.CadenciaLegible cadencia,
+						ritmo.CadenciaCompacta cadenciaCompacta,
+						ritmo.DiaFavoritoExpresado diaFavorito,
+						ritmo.ComprasEnElDiaFavorito comprasEnElDiaFavorito,
+						ritmo.MomentoFavoritoExpresado momentoFavorito,
+						ritmo.ParaSonia paraSonia;
+					foreach (momento in ritmo.PorMomento) {
+						print momento.Momento.ParaMostrar nombre,
+							momento.Cuantas cuantas,
+							momento.DeCuantas deCuantas,
+							momento.Proporcion proporcion,
+							momento.ParaMostrar paraMostrar;
+					}
+				}
+			")
+			.PerformQuery();
 
 		// LOS PRODUCTOS A LOS QUE LES CAMBIO EL RITMO, el mas notorio primero.
 		//
@@ -626,6 +664,9 @@ namespace Compras.App
 
 		public IReadOnlyList<RitmoQueCambio> RitmosQueCambiaron(DateTime corte) =>
 			ProyeccionDeVistas.RitmosQueCambiaron(CambiosDeRitmo(corte));
+
+		public RitmoDelSuperVista Ritmo() =>
+			ProyeccionDeVistas.RitmoDelSuper(RitmoDelSuper());
 
 		public CanastasComparadas Comparacion(int anioAntes, int mesAntes, int anioDespues, int mesDespues) =>
 			ProyeccionDeVistas.Comparacion(ComparacionDeCanastas(anioAntes, mesAntes, anioDespues, mesDespues));

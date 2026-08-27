@@ -361,6 +361,82 @@ main h2 {
 .punto { width: 8px; height: 8px; border-radius: 50%; background: var(--linea); }
 .punto-lleno { background: var(--verde-vivo); }
 
+/* ---------------------------------------------------------------- tu ritmo */
+
+/* La constancia en palabras, en la ficha de producto. Los puntos se ven de un vistazo y
+   esto se LEE: no es lo mismo, y por eso van los dos. */
+.infaltable-constancia {
+    font-size: 10.5px;
+    color: var(--verde);
+    font-weight: 600;
+    margin-top: 6px;
+    align-self: flex-start;
+    line-height: 1.2;
+}
+
+/* LAS CIFRAS DEL RITMO. Dos columnas en escritorio, una en telefono: son dos hechos
+   independientes -cada cuantos dias y que dia- y apilarlos no pierde nada. */
+.ritmo-cifras {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(11rem, 1fr));
+    gap: 1rem;
+}
+.ritmo-cifra {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 2px;
+    background: var(--ficha);
+    border-radius: var(--radio-ficha);
+    padding: 12px 14px 14px;
+}
+.ritmo-numero {
+    font-size: 1.85rem;
+    font-weight: 800;
+    line-height: 1;
+    color: var(--tinta);
+    font-variant-numeric: tabular-nums;
+}
+/* Un dia de la semana no es un numero: en 1.85rem se desborda la ficha. */
+.ritmo-palabra { font-size: 1.35rem; text-transform: capitalize; }
+.ritmo-rotulo { font-size: 11.5px; color: var(--tenue); line-height: 1.3; }
+
+/* LOS TRES MOMENTOS. La barra dice la proporcion sin un numero de mas, y el favorito se
+   marca con el verde vivo — no con negrita, que sobre 11 px no se distingue. */
+.momentos { display: flex; flex-direction: column; gap: 7px; }
+.momento {
+    display: grid;
+    grid-template-columns: 4.2rem 1fr auto;
+    align-items: center;
+    gap: 10px;
+}
+.momento-nombre {
+    font-size: 12.5px;
+    color: var(--tenue);
+    text-transform: capitalize;
+}
+.momento-barra {
+    height: 8px;
+    border-radius: var(--radio-boton);
+    background: var(--linea);
+    overflow: hidden;
+}
+.momento-barra span {
+    display: block;
+    height: 100%;
+    background: var(--tenue-2);
+    border-radius: var(--radio-boton);
+}
+.momento-cuantas {
+    font-size: 11.5px;
+    color: var(--tenue);
+    white-space: nowrap;
+    font-variant-numeric: tabular-nums;
+}
+.momento-favorito .momento-nombre { color: var(--tinta); font-weight: 700; }
+.momento-favorito .momento-barra span { background: var(--verde-vivo); }
+.momento-favorito .momento-cuantas { color: var(--tinta); font-weight: 600; }
+
 /* ---------------------------------------------------------------- recibos */
 
 /* El buscador, con la lupa adentro del campo. */

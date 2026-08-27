@@ -223,9 +223,45 @@ namespace Compras.App
 					DeCuantas = Entero(elemento, "deCuantas"),
 					Proporcion = Decimal(elemento, "proporcion"),
 					EstaEnTodas = Booleano(elemento, "estaEnTodas"),
+					Constancia = Texto(elemento, "constancia"),
 				});
 
 			return productos;
+		}
+
+		internal static RitmoDelSuperVista RitmoDelSuper(string json)
+		{
+			if (string.IsNullOrWhiteSpace(json)) return new RitmoDelSuperVista();
+
+			using JsonDocument documento = JsonDocument.Parse(json);
+			JsonElement raiz = documento.RootElement;
+			JsonElement r = raiz.TryGetProperty("ritmo", out JsonElement uno) ? uno : raiz;
+
+			var momentos = new List<ComprasEnUnMomentoVista>();
+			if (raiz.TryGetProperty("momento", out JsonElement arreglo))
+				foreach (JsonElement elemento in Elementos(arreglo))
+					momentos.Add(new ComprasEnUnMomentoVista
+					{
+						Momento = Texto(elemento, "nombre"),
+						Cuantas = Entero(elemento, "cuantas"),
+						DeCuantas = Entero(elemento, "deCuantas"),
+						Proporcion = Decimal(elemento, "proporcion"),
+						ParaMostrar = Texto(elemento, "paraMostrar"),
+					});
+
+			return new RitmoDelSuperVista
+			{
+				ComprasMiradas = Entero(r, "comprasMiradas"),
+				EsObservado = Booleano(r, "esObservado"),
+				DiasEntreCompras = Entero(r, "diasEntreCompras"),
+				Cadencia = Texto(r, "cadencia"),
+				CadenciaCompacta = Texto(r, "cadenciaCompacta"),
+				DiaFavorito = Texto(r, "diaFavorito"),
+				ComprasEnElDiaFavorito = Entero(r, "comprasEnElDiaFavorito"),
+				MomentoFavorito = Texto(r, "momentoFavorito"),
+				ParaSonia = Texto(r, "paraSonia"),
+				PorMomento = momentos,
+			};
 		}
 
 		internal static RitmoDeUnProducto Ritmo(string json)
