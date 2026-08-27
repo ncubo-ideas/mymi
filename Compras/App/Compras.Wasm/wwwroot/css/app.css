@@ -437,6 +437,70 @@ main h2 {
 .momento-favorito .momento-barra span { background: var(--verde-vivo); }
 .momento-favorito .momento-cuantas { color: var(--tinta); font-weight: 600; }
 
+/* ---------------------------------------------------------------- el hero */
+
+/* EL HERO. En escritorio el texto y la canasta van lado a lado; en telefono la canasta baja
+   y se recorta, que es como se ve en el diseño de Fernanda. La rejilla es la misma: lo que
+   cambia es el numero de columnas.
+
+   EL DEGRADADO VERDE ES LO QUE SEPARA EL HERO DEL RESTO sin una linea: arranca en el tinte
+   verde y se apaga en el papel calido, asi que la primera tarjeta parece nacer del fondo. */
+.hero {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 0.85fr);
+    align-items: center;
+    gap: 1rem;
+    margin: -1.5rem -1.5rem 1.5rem;
+    padding: 1.6rem 1.5rem 0;
+    background: linear-gradient(160deg, var(--tinte-verde) 0%, var(--papel) 78%);
+    border-radius: 0 0 var(--radio-marco) var(--radio-marco);
+    overflow: hidden;
+}
+.hero-dicho { min-width: 0; }
+.hero-saludo {
+    font-size: .95rem;
+    font-weight: 600;
+    color: var(--verde);
+    margin: 0 0 .1rem;
+}
+.hero h1 { margin: 0 0 .5rem; line-height: 1.12; }
+.hero-bajada {
+    font-size: .88rem;
+    color: var(--tenue);
+    margin: 0 0 1.4rem;
+    max-width: 26ch;
+    line-height: 1.45;
+}
+
+/* La canasta se apoya en el borde de abajo: es una ilustracion, no una foto en una caja, y
+   dejarla flotar en el centro la vuelve un adorno. */
+.hero-canasta {
+    display: block;
+    width: 100%;
+    height: auto;
+    max-width: 15rem;
+    margin: 0 auto -0.4rem;
+    align-self: end;
+}
+
+@media (max-width: 575.98px) {
+    /* En telefono el texto manda y la canasta pasa a ser un fondo: se recuesta a la
+       derecha, se recorta con el overflow del hero y baja la opacidad para que el titular
+       se lea encima sin pelearle. */
+    .hero { grid-template-columns: 1fr; position: relative; padding-bottom: .4rem; }
+    .hero-dicho { position: relative; z-index: 1; }
+    .hero-canasta {
+        position: absolute;
+        right: -2.2rem;
+        bottom: -1rem;
+        width: 11rem;
+        max-width: none;
+        margin: 0;
+        opacity: .5;
+    }
+    .hero-bajada { max-width: 20ch; margin-bottom: .9rem; }
+}
+
 /* ---------------------------------------------------------------- tu mes */
 
 /* La cifra del mes, que es lo primero que se lee de la tarjeta. §2 la pone en 800. */

@@ -8,10 +8,26 @@
 
 <PageTitle>La Guaria y vos</PageTitle>
 
-<h1>Tus compras</h1>
-<p class="text-body-secondary mb-4">
-    Todo lo que compraste, en tu computadora.
-</p>
+@* EL HERO, con la copia y la ilustración del diseño de Fernanda. Va antes que todo y en
+   los dos estados de la app —con carpeta o sin ella— porque es la presentación: lo que la
+   pantalla dice que es, antes de decir lo que sabe.
+
+   "Descubrí lo que siempre vuelve y cómo cambia tu carrito" es exactamente lo que el módulo
+   contesta, así que la promesa y el producto dicen lo mismo. Eso no siempre pasa: el landing
+   prometía un "% ocasional" que la app ya no calcula, y hubo que sacarlo. *@
+<header class="hero">
+    <div class="hero-dicho">
+        <p class="hero-saludo">¡Hola!</p>
+        <h1>Tu súper,<br />más cerca de vos</h1>
+        <p class="hero-bajada">
+            Descubrí lo que siempre vuelve y cómo cambia tu carrito.
+        </p>
+    </div>
+    @* La ilustración es DECORATIVA: alt vacío y aria-hidden. Lo que dice ya está en el
+       texto de al lado, y un lector de pantalla que la anuncie repite sin agregar. *@
+    <img class="hero-canasta" src="assets/hero-canasta.png" alt="" aria-hidden="true"
+         width="480" height="514" loading="eager" />
+</header>
 
 @* UN solo lugar para los errores, y arriba (la leccion de la pantalla de Examenes). *@
 @if (error.Length > 0)
