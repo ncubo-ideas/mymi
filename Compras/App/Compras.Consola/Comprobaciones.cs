@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Globalization;
 using Compras.Dominio;
 
@@ -60,6 +61,10 @@ namespace Compras.Consola
 			ElRitmoEsElDeElla();
 			LaFirmaEsLoQueNoFalla();
 			ElCambioLePoneFechaAlQuiebre();
+			LaCadenciaSeDiceComoHablaLaGente();
+			ElRitmoDeUnProductoCambia();
+			ElRitmoDelSuperTieneTresCaras();
+			LaConstanciaSeDiceEnPalabras();
 
 			Console.WriteLine();
 			Console.WriteLine(fallas == 0
@@ -1040,6 +1045,237 @@ namespace Compras.Consola
 
 		// El mismo guion de Muestras, construido directo sobre el dominio: aca se
 		// comprueban las reglas; alla, que el wire las alimente igual.
+		// LA CADENCIA. Un numero de dias no es una respuesta: la pregunta que la persona se
+		// hace es "cada cuanto compro yo esto", y lo que reconoce es "todas las semanas".
+		private static void LaCadenciaSeDiceComoHablaLaGente()
+		{
+			Titulo("la cadencia se dice como habla la gente");
+
+			Igual("7 dias es todas las semanas", "todas las semanas", Cadencia.Para(7).ParaMostrar);
+			Igual("14 dias es cada dos semanas", "cada dos semanas", Cadencia.Para(14).ParaMostrar);
+			Igual("30 dias es una vez al mes", "una vez al mes", Cadencia.Para(30).ParaMostrar);
+			Igual("120 dias es de vez en cuando", "de vez en cuando", Cadencia.Para(120).ParaMostrar);
+
+			// LA HOLGURA ES A PROPOSITO: un habito no es un reloj. Una compra semanal que se
+			// corrio dos dias sigue siendo semanal, y si no, la app anunciaria un cambio de
+			// rutina cada vez que alguien fue al super un lunes en vez de un sabado.
+			Igual("9 dias todavia es semanal", "todas las semanas", Cadencia.Para(9).ParaMostrar);
+			Igual("10 dias ya no", "cada dos semanas", Cadencia.Para(10).ParaMostrar);
+
+			// Conjunto cerrado comparado por REFERENCIA, como Categoria y Severidad.
+			Igual("dos intervalos semanales dan LA misma cadencia", "True",
+				ReferenceEquals(Cadencia.Para(6), Cadencia.Para(8)).ToString());
+
+			Igual("lo semanal es mas seguido que lo mensual", "True",
+				Cadencia.TodasLasSemanas.EsMasSeguidaQue(Cadencia.UnaVezAlMes).ToString());
+			Igual("y no al reves", "False",
+				Cadencia.UnaVezAlMes.EsMasSeguidaQue(Cadencia.TodasLasSemanas).ToString());
+
+			// La forma corta, que es la que pide la pastilla del diseño de la app.
+			Igual("la compacta es para una pastilla", "1 vez/semana", Cadencia.TodasLasSemanas.Compacta);
+
+			Revienta("cero dias no es una cadencia", () => Cadencia.Para(0));
+			Revienta("dias negativos tampoco", () => Cadencia.Para(-3));
+
+			// TOTAL: cualquier cantidad de dias cae en una, porque la ultima no tiene techo.
+			foreach (int dias in new[] { 1, 5, 9, 10, 18, 19, 45, 46, 75, 76, 9999 })
+				Igual($"  {dias} dias tiene cadencia", "True", (Cadencia.Para(dias) != null).ToString());
+		}
+
+		// EL RITMO DE UN PRODUCTO, en dos epocas. Es la lectura que la wiki pide por su
+		// nombre: la respuesta esperada de S10 dice que el helado "paso de 1 vez al mes a
+		// casi todas las semanas".
+		private static void ElRitmoDeUnProductoCambia()
+		{
+			Titulo("el ritmo de un producto cambia");
+
+			// Helado una vez al mes durante cuatro meses, y desde marzo todas las semanas.
+			// La leche va semanal todo el tiempo: tiene que salir SIN cambio.
+			var historial = new Historial();
+			for (int mes = 1; mes <= 4; mes++)
+				historial.Agregar(UnaCompra($"M-{mes}", new DateTime(2025, mes, 6),
+					("HELADO-1L", "Helado de vainilla 1L", 1, 3680m, "Azucarados", 0),
+					("LECHE-1L", "Leche 1L", 2, 950m, "LacteosYHuevos", 0)));
+
+			for (int i = 0; i < 8; i++)
+				historial.Agregar(UnaCompra($"S-{i}", new DateTime(2025, 6, 7).AddDays(i * 7),
+					("HELADO-1L", "Helado de vainilla 1L", 1, 3680m, "Azucarados", 0),
+					("LECHE-1L", "Leche 1L", 2, 950m, "LacteosYHuevos", 0)));
+
+			var corte = new DateTime(2025, 6, 1);
+
+			CambioDeRitmo helado = historial.RitmoDeUnProducto("HELADO-1L", corte);
+			Igual("hay con que comparar", "True", helado.HayConQueComparar.ToString());
+			Igual("  antes: una vez al mes", "una vez al mes", helado.Antes.ParaMostrar);
+			Igual("  ahora: todas las semanas", "todas las semanas", helado.Ahora.ParaMostrar);
+			Igual("  cambio", "True", helado.Cambio.ToString());
+			Igual("  y es mas seguido", "True", helado.EsMasSeguido.ToString());
+			Igual("  la linea dice de que a que", "True",
+				(helado.ParaSonia.Contains("una vez al mes")
+				 && helado.ParaSonia.Contains("todas las semanas")).ToString());
+
+			// Y NO JUZGA. "Que el helado pasara de mensual a semanal es un dato, no una
+			// falta": la app lo señala y se calla.
+			foreach (string juicio in new[] { "peor", "mejor", "debería", "conviene", "cuidado", "mal" })
+				Igual($"  la linea no dice '{juicio}'", "False",
+					helado.ParaSonia.Contains(juicio).ToString());
+
+			// LO QUE NO CAMBIO NO SE ANUNCIA. La leche fue semanal de los dos lados... pero
+			// del lado de antes fueron compras MENSUALES, asi que su cadencia de antes es
+			// mensual igual que la del helado: las dos entraron en las mismas cuatro
+			// compras. Es correcto y conviene tenerlo escrito, porque revela que el ritmo
+			// se mide sobre las compras EN LAS QUE APARECE el producto y no sobre el
+			// calendario.
+			CambioDeRitmo leche = historial.RitmoDeUnProducto("LECHE-1L", corte);
+			Igual("la leche tambien salta", "True", leche.Cambio.ToString());
+
+			// SIN SUFICIENTES COMPRAS DE UN LADO, lo dice y no inventa un ritmo.
+			var pocas = new Historial();
+			for (int i = 0; i < 5; i++)
+				pocas.Agregar(UnaCompra($"P-{i}", new DateTime(2026, 5, 2).AddDays(i * 7),
+					("HELADO-1L", "Helado de vainilla 1L", 1, 3680m, "Azucarados", 0)));
+
+			CambioDeRitmo sinAntes = pocas.RitmoDeUnProducto("HELADO-1L", new DateTime(2026, 5, 1));
+			Igual("sin compras antes: no hay con que comparar", "False",
+				sinAntes.HayConQueComparar.ToString());
+			Igual("  y no afirma un cambio", "False", sinAntes.Cambio.ToString());
+			Igual("  y lo dice", "True",
+				sinAntes.ParaSonia.Contains("todavía no hay suficientes").ToString());
+			Revienta("  y la cadencia de antes revienta", () => sinAntes.Antes);
+			Revienta("  y lo de mas seguido tambien", () => sinAntes.EsMasSeguido);
+
+			// UN PRODUCTO QUE NUNCA ENTRO: la misma respuesta, sin reventar.
+			CambioDeRitmo nunca = historial.RitmoDeUnProducto("NO-EXISTE", corte);
+			Igual("un sku que nunca entro: no hay con que", "False", nunca.HayConQueComparar.ToString());
+
+			// EL MAS NOTORIO PRIMERO, que es el que la app pinta en su tarjeta.
+			IReadOnlyList<CambioDeRitmo> cambios = historial.CambiosDeRitmo(corte);
+			Igual("hay cambios de ritmo", "True", (cambios.Count > 0).ToString());
+			Igual("  todos cambiaron de verdad", "True",
+				cambios.All(c => c.Cambio).ToString());
+
+			// De 6 a 7 dias NO es un cambio: las dos son "todas las semanas". Si esto
+			// fallara, la app anunciaria un cambio de rutina cada semana corrida.
+			var corridas = new Historial();
+			int[] dias = { 0, 7, 14, 21, 27, 33, 40, 46 };
+			for (int i = 0; i < dias.Length; i++)
+				corridas.Agregar(UnaCompra($"C-{i}", new DateTime(2026, 2, 7).AddDays(dias[i]),
+					("CAFE-500", "Café molido 500g", 1, 3200m, "GranosYAbarrotes", 0)));
+
+			CambioDeRitmo cafe = corridas.RitmoDeUnProducto("CAFE-500", new DateTime(2026, 3, 7));
+			Igual("una semana corrida no es un cambio", "False", cafe.Cambio.ToString());
+			Igual("  y la linea dice que sigue igual", "True",
+				cafe.ParaSonia.Contains("sigue").ToString());
+		}
+
+		// CADA CUANTO VA AL SUPER, que dia y a que hora. Es la pantalla "tu ritmo de super"
+		// del diseño de la app: "hay dias y momentos que se repiten mas de lo que parece".
+		private static void ElRitmoDelSuperTieneTresCaras()
+		{
+			Titulo("el ritmo del super tiene tres caras");
+
+			// Ocho sabados seguidos: seis por la tarde, uno en la mañana, uno de noche.
+			var historial = new Historial();
+			var horas = new[] { 17, 16, 10, 18, 17, 11, 20, 16 };
+			for (int i = 0; i < horas.Length; i++)
+				historial.Agregar(UnaCompra($"S-{i}",
+					new DateTime(2026, 2, 7).AddDays(i * 7).AddHours(horas[i]),
+					("LECHE-1L", "Leche 1L", 2, 950m, "LacteosYHuevos", 0)));
+
+			RitmoDelSuper ritmo = historial.RitmoDelSuper();
+			Igual("el ritmo se midio", "True", ritmo.EsObservado.ToString());
+			Igual("  vuelve cada 7 dias", "7", ritmo.DiasTipicos.ToString());
+			Igual("  o sea todas las semanas", "todas las semanas", ritmo.Cadencia.ParaMostrar);
+			Igual("  y el dia es el sabado", "sábado", ritmo.DiaFavoritoExpresado);
+			Igual("  las 8 cayeron sabado", "8", ritmo.ComprasEnElDiaFavorito.ToString());
+			Igual("  el momento es la tarde", "tarde", ritmo.MomentoFavorito.Nombre);
+			Igual("  la linea dice cada cuanto, que dia y cuando", "True",
+				(ritmo.ParaSonia.Contains("cada 7 días")
+				 && ritmo.ParaSonia.Contains("sábado")
+				 && ritmo.ParaSonia.Contains("tarde")).ToString());
+
+			// LOS TRES MOMENTOS SIEMPRE VIENEN, y en orden del dia: la pantalla dibuja la
+			// fila sin preguntar, que es de lo que sirve una lectura total.
+			Igual("vienen los tres momentos", "3", ritmo.PorMomento.Count.ToString());
+			Igual("  en orden: manana primero", "manana", ritmo.PorMomento[0].Momento.Nombre);
+			Igual("  y noche al final", "noche", ritmo.PorMomento[2].Momento.Nombre);
+			Igual("  manana: 2 de 8", "2", ritmo.PorMomento[0].Cuantas.ToString());
+			Igual("  tarde: 5 de 8", "5", ritmo.PorMomento[1].Cuantas.ToString());
+			Igual("  noche: 1 de 8", "1", ritmo.PorMomento[2].Cuantas.ToString());
+			Igual("  y la fila se lee sola", "tarde · 5 compras", ritmo.PorMomento[1].ParaMostrar);
+
+			// LOS CORTES DEL DIA son un juicio y estan a la vista.
+			Igual("las 12:59 son mañana", "manana",
+				MomentoDelDia.De(new DateTime(2026, 1, 1, 12, 59, 0)).Nombre);
+			Igual("la 1 de la tarde ya es tarde", "tarde",
+				MomentoDelDia.De(new DateTime(2026, 1, 1, 13, 0, 0)).Nombre);
+			Igual("las 7 de la noche ya es noche", "noche",
+				MomentoDelDia.De(new DateTime(2026, 1, 1, 19, 0, 0)).Nombre);
+
+			// SIN SUFICIENTES COMPRAS, lo dice y no inventa un ritmo.
+			var pocas = new Historial();
+			pocas.Agregar(UnaCompra("U-1", new DateTime(2026, 3, 7),
+				("LECHE-1L", "Leche 1L", 1, 950m, "LacteosYHuevos", 0)));
+
+			RitmoDelSuper sinRitmo = pocas.RitmoDelSuper();
+			Igual("con una compra no hay ritmo", "False", sinRitmo.EsObservado.ToString());
+			Igual("  pero dice cuantas miro", "1", sinRitmo.ComprasMiradas.ToString());
+			Igual("  y lo dice", "True", sinRitmo.ParaSonia.Contains("todavía no alcanza").ToString());
+			Igual("  los tres momentos vienen en cero", "3", sinRitmo.PorMomento.Count.ToString());
+			Igual("  el primero en cero", "0", sinRitmo.PorMomento[0].Cuantas.ToString());
+			Igual("  y el dia expresado va vacio", "", sinRitmo.DiaFavoritoExpresado);
+			Revienta("  los dias tipicos revientan", () => sinRitmo.DiasTipicos);
+			Revienta("  y el dia favorito tambien", () => sinRitmo.DiaFavorito);
+
+			// TRES COMPRAS EL MISMO DIA no dan intervalo, y eso no es un ritmo.
+			var mismoDia = new Historial();
+			for (int i = 0; i < 3; i++)
+				mismoDia.Agregar(UnaCompra($"M-{i}", new DateTime(2026, 3, 7).AddHours(i),
+					("LECHE-1L", "Leche 1L", 1, 950m, "LacteosYHuevos", 0)));
+
+			Igual("tres compras el mismo dia no dan ritmo", "False",
+				mismoDia.RitmoDelSuper().EsObservado.ToString());
+
+			// Un historial vacio: la otra forma de no tener respuesta.
+			Igual("sin compras lo dice distinto", "True",
+				new Historial().RitmoDelSuper().ParaSonia.Contains("todavía no hay compras").ToString());
+		}
+
+		// LA CONSTANCIA. Una proporcion no es una respuesta: "0,875" es correcto y no se lo
+		// dice nadie. La ficha de producto del diseño lo pide como "casi nunca falta".
+		private static void LaConstanciaSeDiceEnPalabras()
+		{
+			Titulo("la constancia se dice en palabras");
+
+			Igual("en todas: nunca falla", "nunca falla", Constancia.Para(1.0m).ParaMostrar);
+			Igual("en 7 de 8: casi nunca falta", "casi nunca falta", Constancia.Para(0.875m).ParaMostrar);
+			Igual("en la mitad: va y viene", "va y viene", Constancia.Para(0.5m).ParaMostrar);
+			Igual("en 1 de 8: de vez en cuando", "de vez en cuando", Constancia.Para(0.125m).ParaMostrar);
+			Igual("en ninguna: de vez en cuando", "de vez en cuando", Constancia.Para(0m).ParaMostrar);
+
+			Igual("nunca falla es mas fiel que va y viene", "True",
+				Constancia.NuncaFalla.EsMasFielQue(Constancia.VaYViene).ToString());
+			Igual("y no al reves", "False",
+				Constancia.VaYViene.EsMasFielQue(Constancia.NuncaFalla).ToString());
+
+			Igual("conjunto cerrado por referencia", "True",
+				ReferenceEquals(Constancia.Para(0.9m), Constancia.Para(0.8m)).ToString());
+
+			Revienta("una proporcion mayor que 1 revienta", () => Constancia.Para(1.5m));
+			Revienta("y una negativa tambien", () => Constancia.Para(-0.1m));
+
+			// NO JUZGA: "va y viene" describe, no reprocha.
+			foreach (Constancia c in Constancia.Todas)
+				foreach (string juicio in new[] { "peor", "mejor", "debería", "mal" })
+					Igual($"  '{c.Nombre}' no dice '{juicio}'", "False",
+						c.ParaMostrar.Contains(juicio).ToString());
+
+			// TOTAL: cualquier proporcion valida cae en una.
+			for (int i = 0; i <= 10; i++)
+				Igual($"  {i * 10}% tiene constancia", "True",
+					(Constancia.Para(i / 10m) != null).ToString());
+		}
+
 		private static Historial ElGuion()
 		{
 			var historial = new Historial();

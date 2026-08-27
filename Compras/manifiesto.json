@@ -58,6 +58,25 @@
       "descripcion": "QUE SE VOLVIO HABITUAL Y DESDE CUANDO, y que dejo de estar. Es la otra lectura de la portada, y la que le pone FECHA a un cambio de habitos: usala para '¿que cambio en mis compras?', '¿desde cuando compro tanto helado?' o cuando la persona quiere relacionar sus compras con algo que le paso en un mes concreto. Cada producto que entro trae el mes de su primera aparicion, en formato aaaa-mm. Ojo: hayConQueComparar en false significa que falta un lado de la comparacion, y es distinto de hayCambio en false, que significa que la canasta viene igual. Dice QUE cambio y no si esta bien."
     },
     {
+      "nombre": "cada_cuanto_compro",
+      "titulo": "Cada cuanto lo compro",
+      "soloLectura": true,
+      "entrada": [
+        { "nombre": "sku", "tipo": "string", "descripcion": "El SKU del producto, como viene en las lineas de una compra." },
+        { "nombre": "corte", "tipo": "string", "descripcion": "La fecha de corte, en formato aaaa-mm-dd." }
+      ],
+      "descripcion": "CADA CUANTO compra la persona un producto, ANTES y DESPUES de una fecha. La respuesta viene en el lenguaje en que la gente habla de sus habitos -'1 vez/mes', '1 vez/semana', 'de vez en cuando'- y no en dias. Necesita al menos TRES compras del producto de cada lado: si hayConQueComparar viene en false no hay ritmo que medir, y no es un error. cambio en false significa que el ritmo viene igual, que tambien es una respuesta."
+    },
+    {
+      "nombre": "que_cambio_en_mi_rutina",
+      "titulo": "Que cambio en mi rutina",
+      "soloLectura": true,
+      "entrada": [
+        { "nombre": "corte", "tipo": "string", "descripcion": "La fecha de corte, en formato aaaa-mm-dd." }
+      ],
+      "descripcion": "LOS PRODUCTOS A LOS QUE LES CAMBIO EL RITMO, el mas notorio primero, cada uno con cada cuanto se compraba antes y cada cuanto ahora. Se ordena por cuanto salto la frecuencia y no por plata: lo que cambia una rutina es cada cuanto, no cuanto cuesta. esMasSeguido distingue lo que entro de lo que se fue apagando. Una lista vacia significa que ningun producto cambio de ritmo, que es una respuesta y no una falla."
+    },
+    {
       "nombre": "canasta_del_mes",
       "titulo": "Como fue mi canasta",
       "soloLectura": true,

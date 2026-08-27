@@ -182,6 +182,20 @@ namespace Compras.Consola
 				Console.WriteLine($"    entro  {p.Descripcion,-28} desde {p.Desde}");
 			foreach (ProductoQueVuelve p in cambio.Salieron)
 				Console.WriteLine($"    salio  {p.Descripcion}");
+
+			// CADA CUANTO, que es la otra cara del mismo quiebre: la tarjeta de arriba dice
+			// QUE entro, esta dice si lo compra mas seguido.
+			IReadOnlyList<RitmoQueCambio> ritmos = api.RitmosQueCambiaron(corte);
+			if (ritmos.Count == 0)
+			{
+				Console.WriteLine("  ningun producto cambio de ritmo");
+				return;
+			}
+
+			Console.WriteLine("  cambio el ritmo de:");
+			foreach (RitmoQueCambio r in ritmos)
+				Console.WriteLine($"    {r.Descripcion,-28} {r.Antes,-15} -> {r.Ahora,-16}"
+					+ $"{(r.EsMasSeguido ? "mas seguido" : "menos seguido")}");
 		}
 
 		private static void ImprimirComparacion(ComprasAPI api, int anioAntes, int mesAntes, int anioDespues, int mesDespues)

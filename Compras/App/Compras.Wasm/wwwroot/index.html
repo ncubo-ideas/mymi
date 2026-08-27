@@ -10,6 +10,15 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>La Guaria y vos · Supermercado La Guaria</title>
     <base href="/app/" />
+    <!-- PLUS JAKARTA SANS, la tipografia del diseño de Fernanda.
+
+         ⚠️ VIENE DE GOOGLE, y eso es un pendiente y no una solucion: esta app promete
+         funcionar "sin nosotros, y sin conexion", asi que una fuente que se baja de
+         internet se cae el dia que alguien la abra sin red. Hay que servir el woff2 desde
+         wwwroot. Mientras tanto, la pila de css/app.css cae en Segoe UI. -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="lib/bootstrap/dist/css/bootstrap.min.css" />
     <link rel="stylesheet" href="css/app.css" />
     <link rel="icon" type="image/png" href="favicon.png" />
