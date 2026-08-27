@@ -54,7 +54,7 @@ Importa, porque estas guías se van a leer como si todo tuviera el mismo respald
 | **Punto de partida** | **Corrido una vez**, sobre un dominio de presupuesto personal (2026-08-26). La corrida encontró seis defectos en el guion, y los seis están corregidos |
 | **Capítulo 1** | **Escrito preparando una máquina y anotando dónde se rompió.** Versiones, mensajes de error y diagnósticos medidos. Lo que no se pudo verificar —Docker, `wasm-tools`— lo dice |
 | **Capítulo 6, CLI** | Construido y corrido. 44 pruebas |
-| **Capítulo 6, MCP** | **Contradicho por el repo.** Ver abajo |
+| **Capítulo 6, MCP** | **Corregido.** Se construyó un servidor y se le habló por stdio; esa corrida desmintió la versión anterior. Falta enchufarlo a un cliente real |
 
 Cuando un capítulo dice algo que no verificó, lo dice en el lugar donde lo dice. Si encontrás una
 afirmación sin esa marca y tampoco está respaldada, es un error del documento.
@@ -62,14 +62,6 @@ afirmación sin esa marca y tampoco está respaldada, es un error del documento.
 ---
 
 ## Correcciones pendientes en capítulos ya escritos
-
-**Capítulo 6 — la tool genérica está mal.** El capítulo describe una superficie MCP con un
-`Query(puppet, operacion, parametros)` genérico. El repo hace lo contrario y lo argumenta: *"tres
-tools intencionales, una por pregunta — nunca un `Query(puppet, operacion, ...)` genérico, que
-convertiría todo en strings y desperdiciaría el schema por tool"*. Hay más: el argumento va como
-**enum, no como string**, para que la lista de valores válidos viva en el `inputSchema` (un contrato)
-y no en la descripción (prosa que la IA tiene que leer bien). Y las `ServerInstructions` **no son el
-catálogo** —eso el cliente lo descubre con `tools/list`— sino el *workflow*.
 
 **Capítulo 4 — le falta el ejemplo trabajado.** Está la doctrina y falta la demostración: una
 pregunta, las clases que fuerza, la decisión de diseño que fuerza, y lo que quedó afuera. Y hay que
