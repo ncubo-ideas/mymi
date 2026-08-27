@@ -1,0 +1,65 @@
+@using System.Globalization
+@using System.Linq
+@using Cargas.App.Vistas
+
+@*  LA FORMA DE LA HEMOGLOBINA: dónde caés dentro de una banda con piso Y techo.
+
+    Es el único analito del demo al que le conviene quedarse quieto: alejarse es peor en
+    las dos direcciones. Por eso su dibujo no es una flecha ni un progreso — es una
+    posición.                                                                            *@
+
+<div class="forma forma--banda">
+    <svg viewBox="0 0 320 52" role="img" aria-label="@Descripcion">
+        <rect x="12" y="18" width="296" height="16" rx="3" class="fuera" />
+        <rect x="@Izquierda" y="18" width="@Ancho" height="16" rx="3" class="dentro" />
+
+        <line x1="@Marca" y1="10" x2="@Marca" y2="42"
+              class="@(Dentro ? "aguja" : "aguja aguja--fuera")" />
+    </svg>
+
+    <div class="forma-pie forma-pie--extremos">
+        <span class="forma-nota">@Numero(Piso?.Valor ?? 0) @Unidad</span>
+        <span class="forma-nota forma-nota--centro"><b>@Numero(Actual) @Unidad</b></span>
+        <span class="forma-nota forma-nota--der">@Numero(Techo?.Valor ?? 0) @Unidad</span>
+    </div>
+</div>
+
+@code {
+    [Parameter] public IReadOnlyList<PuntoDeSerie> Puntos { get; set; } = new List<PuntoDeSerie>();
+    [Parameter] public IReadOnlyList<LineaDeReferencia> Referencias { get; set; } = new List<LineaDeReferencia>();
+    [Parameter] public string Descripcion { get; set; } = "";
+
+    private LineaDeReferencia? Piso => Referencias.FirstOrDefault(r => r.Nombre == "piso");
+    private LineaDeReferencia? Techo => Referencias.FirstOrDefault(r => r.Nombre == "techo");
+
+    private decimal Actual => Puntos.Count == 0 ? 0m : Puntos[^1].Valor;
+    private string Unidad => Puntos.Count > 0 ? Puntos[0].Unidad : "";
+
+    private bool Dentro => Piso is not null && Techo is not null
+        && Actual >= Piso.Valor && Actual <= Techo.Valor;
+
+    // El eje muestra la banda con aire a los lados, para que un valor por fuera se vea
+    // FUERA y no pegado al borde.
+    private decimal Minimo => (Piso?.Valor ?? Actual) - Aire;
+    private decimal Maximo => (Techo?.Valor ?? Actual) + Aire;
+    private decimal Aire => Piso is null || Techo is null ? 1m : (Techo.Valor - Piso.Valor) * 0.35m;
+
+    private string Izquierda => Posicion(Piso?.Valor ?? Minimo);
+    private string Ancho =>
+        (double.Parse(Posicion(Techo?.Valor ?? Maximo), CultureInfo.InvariantCulture)
+            - double.Parse(Izquierda, CultureInfo.InvariantCulture))
+        .ToString("0.#", CultureInfo.InvariantCulture);
+    private string Marca => Posicion(Actual);
+
+    private string Posicion(decimal valor)
+    {
+        decimal recorrido = Maximo - Minimo;
+        if (recorrido == 0m) return "160";
+
+        double p = (double)((valor - Minimo) / recorrido);
+        p = p < 0 ? 0 : p > 1 ? 1 : p;
+        return (12 + p * 296).ToString("0.#", CultureInfo.InvariantCulture);
+    }
+
+    private static string Numero(decimal valor) => valor.ToString("0.##", CultureInfo.InvariantCulture);
+}
