@@ -6,7 +6,7 @@ namespace Presupuesto.App
 	// EL PUPPET HOSPEDADO. La carátula —consola, browser, servidor MCP— construye ESTO una
 	// sola vez y lo mantiene vivo. Un actor no se crea por request.
 	//
-	// EL ASSEMBLY SE PIDE POR NOMBRE, no con typeof. Ésa es la línea que mantiene el
+	// EL DOMINIO SE CARGA POR ARCHIVO, no con typeof. Ésa es la pieza que mantiene el
 	// dominio entero `internal`: si dijera `typeof(Panorama).Assembly`, este proyecto
 	// tendría que nombrar un tipo del dominio y el modelo tendría que abrirse. No hace
 	// falta — el motor resuelve los tipos por reflexión desde el texto del script, y la
@@ -27,7 +27,7 @@ namespace Presupuesto.App
 		public const string UmbralDeVariacion = "0.10";
 
 		public PresupuestoApp(string nombreDelActor)
-			: base(nombreDelActor, Assembly.Load(new AssemblyName("Presupuesto.Dominio")))
+			: base(nombreDelActor, ElDominio.Assembly)
 		{
 		}
 

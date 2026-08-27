@@ -1,0 +1,47 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!-- LA SUPERFICIE QUE VE LA IA: un proceso local, SOLO LECTURA, sobre la misma carpeta
+       de journal que escribe la app instalada.
+
+       No le habla al browser ni el browser le habla a él. Los dos comparten la carpeta, y
+       el journal YA es el protocolo: no hay que inventar uno.
+
+       Por qué hace falta un proceso aparte: una página en el browser no puede hospedar un
+       servidor MCP, porque no puede escuchar conexiones entrantes. No hay forma de
+       evitarlo. Pero no necesita hablar con el browser — lee la misma carpeta. -->
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net9.0</TargetFramework>
+    <Nullable>disable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <RootNamespace>Presupuesto.Mcp</RootNamespace>
+    <AssemblyName>Presupuesto.Mcp</AssemblyName>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="ModelContextProtocol" Version="2.2.0" />
+
+    <!-- El host genérico. Se declara acá a propósito: al consumir el motor por NuGet y
+         quedarse sólo con el core, el FrameworkReference de ASP.NET Core deja de llegar
+         transitivamente. Quien usa un host genérico lo declara, en vez de heredarlo de una
+         dependencia que no tiene nada que ver. -->
+    <PackageReference Include="Microsoft.Extensions.Hosting" Version="9.0.0" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Presupuesto.App\Presupuesto.App.csproj" />
+  </ItemGroup>
+
+  <!-- El dominio NO se referencia en compilación —es internal a propósito— pero tiene que
+       estar junto al ejecutable, porque se carga por archivo. Y hay que declararlo acá
+       aunque Presupuesto.App ya lo copie a la suya: sin referencia de compilación, ese
+       "content" NO fluye a la salida de los proyectos de más abajo. Ver ElDominio. -->
+  <ItemGroup>
+    <ProjectReference Include="..\..\Dominio\Presupuesto.Dominio.csproj"
+                      ReferenceOutputAssembly="false"
+                      OutputItemType="Content"
+                      CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
+
+</Project>

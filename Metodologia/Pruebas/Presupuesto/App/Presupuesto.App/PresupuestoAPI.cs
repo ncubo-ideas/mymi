@@ -256,14 +256,14 @@ namespace Presupuesto.App
 			app.Using(@"
 				{
 					v = panorama.VarianciaDe(@ano, @mes);
-					foreach (r in v.Responsables) {
-						print r.NombreDelGasto gasto,
-							r.Antes antes,
-							r.Ahora ahora,
-							r.Cambio cambio,
-							r.Proporcion proporcion,
-							r.EsVariacionNormalDeSuClase esVariacionNormal,
-							r.Lectura lectura;
+					foreach (responsable in v.Responsables) {
+						print responsable.NombreDelGasto gasto,
+							responsable.Antes antes,
+							responsable.Ahora ahora,
+							responsable.Cambio cambio,
+							responsable.Proporcion proporcion,
+							responsable.EsVariacionNormalDeSuClase esVariacionNormal,
+							responsable.Lectura lectura;
 					}
 				}
 			")
@@ -351,16 +351,16 @@ namespace Presupuesto.App
 		// `hoy` viaja como parametro y no lo lee el dominio: el modelo no toca el reloj.
 		public string QueNoMeCobraron(DateTime hoy) =>
 			app.Using(@"
-				foreach (a in panorama.QueNoMeCobraron(@hoy)) {
-					print a.NombreDelGasto gasto,
-						a.HayHistoria hayHistoria,
-						a.EstaVencido estaVencido,
-						a.Esperado esperado,
-						a.DiasDeAtraso diasDeAtraso,
-						a.NombreDeLaSeveridad severidad,
-						a.OrdenDeLaSeveridad ordenDeLaSeveridad,
-						a.QueHacer accion,
-						a.Lectura lectura;
+				foreach (pendiente in panorama.QueNoMeCobraron(@hoy)) {
+					print pendiente.NombreDelGasto gasto,
+						pendiente.HayHistoria hayHistoria,
+						pendiente.EstaVencido estaVencido,
+						pendiente.Esperado esperado,
+						pendiente.DiasDeAtraso diasDeAtraso,
+						pendiente.NombreDeLaSeveridad severidad,
+						pendiente.OrdenDeLaSeveridad ordenDeLaSeveridad,
+						pendiente.QueHacer accion,
+						pendiente.Lectura lectura;
 				}
 			")
 			.WithParameters(p => {
