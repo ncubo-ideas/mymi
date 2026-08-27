@@ -285,66 +285,79 @@ public sealed class EstadoDeLaApp : IAsyncDisposable
 		return resultado;
 	}
 
+	// ------------------------------------------------------- los aportes de Sonia
+
+	// Los aportes son los UNICOS comandos que dispara la pantalla, y cada uno baja a
+	// disco al terminar: el flush es por comando, no por timer, igual que en el bucle
+	// de refresh. Devuelven el mensaje del Check ("" si entro): un kilometraje que
+	// retrocede se rechaza sin dejar entrada, y la pantalla lo dice.
+
+	public async ValueTask<string> AnotarOdometro(string transaccion, decimal kilometros,
+		string origen)
+	{
+		Exigir();
+		string rechazo = api!.AnotarOdometro(transaccion, kilometros, "km", origen);
+		if (rechazo.Length == 0) await BajarADisco();
+		return rechazo;
+	}
+
+	public async ValueTask<string> ConfirmarTanque(string transaccion)
+	{
+		Exigir();
+		string rechazo = api!.ConfirmarTanque(transaccion);
+		if (rechazo.Length == 0) await BajarADisco();
+		return rechazo;
+	}
+
+	public async ValueTask<string> DeclararTanque(string transaccion, string estado)
+	{
+		Exigir();
+		string rechazo = api!.DeclararTanque(transaccion, estado);
+		if (rechazo.Length == 0) await BajarADisco();
+		return rechazo;
+	}
+
+	public async ValueTask<string> CompletarFicha(string placa, string alias, string marca,
+		string modelo, int anio, string color, decimal rendimientoDeFabrica)
+	{
+		Exigir();
+		string rechazo = api!.CompletarFicha(placa, alias, marca, modelo, anio, color,
+			rendimientoDeFabrica);
+		if (rechazo.Length == 0) await BajarADisco();
+		return rechazo;
+	}
+
 	// ---------------------------------------------------------------- consultas
 
-	public IReadOnlyList<ExamenEnLista> Cargas() { Exigir(); return api!.Cargas(); }
+	public IReadOnlyList<VehiculoEnLista> Vehiculos() { Exigir(); return api!.Vehiculos(); }
 
-	// Los analitos de los que hay historia. Es lo que la pantalla recorre para mostrar
-	// una lectura por serie, sin conocer las clases del dominio.
-	public IReadOnlyList<string> Analitos() { Exigir(); return api!.Analitos(); }
+	public IReadOnlyList<CargaEnLista> Cargas(string placa) { Exigir(); return api!.Cargas(placa); }
 
-	// LOS PUNTOS de la serie, con su numero, y LAS LINEAS que los acompanan. Es lo que un
-	// grafico necesita y el cuadro no da: aquel trae "3.0 ng/mL" ya dicho.
-	public IReadOnlyList<PuntoDeSerie> Puntos(string analito)
-	{
-		Exigir();
-		return api!.Puntos(analito);
-	}
+	public IReadOnlyList<TramoEnLista> Tramos(string placa) { Exigir(); return api!.Tramos(placa); }
 
-	public IReadOnlyList<LineaDeReferencia> Referencias(string analito)
-	{
-		Exigir();
-		return api!.Referencias(analito);
-	}
+	// LA consulta que justifica la app: la lectura de la serie de tramos, con su
+	// veredicto semantico y su accion.
+	public RendimientoDelVehiculo Rendimiento(string placa) { Exigir(); return api!.Rendimiento(placa); }
 
-	// EL CUADRO HISTORICO, plano. La pantalla lo rearma; el dominio decidio que va donde.
-	public IReadOnlyList<CeldaEnCuadro> Cuadro() { Exigir(); return api!.Cuadro(); }
+	public AutonomiaDelVehiculo Autonomia(string placa) { Exigir(); return api!.Autonomia(placa); }
 
-	// LO QUE EL ANALITO CONCLUYE. La pantalla ya no arma el consejo: lo pide.
-	public InterpretacionDeAnalito Interpretacion(string analito)
-	{
-		Exigir();
-		return api!.Interpretacion(analito);
-	}
+	public CompletitudDelVehiculo Completitud(string placa) { Exigir(); return api!.Completitud(placa); }
 
-	// LA consulta que justifica la app. No es el ultimo valor: es la lectura de la serie.
-	public TendenciaDeAnalito Tendencia(string analito) { Exigir(); return api!.Tendencia(analito); }
+	public IReadOnlyList<FaltanteEnLista> Faltantes(string placa) { Exigir(); return api!.Faltantes(placa); }
 
-	// A QUE RITMO viene cambiando. Es otra pregunta que la tendencia y mira otro tramo: la
-	// tendencia mira la serie entera, la velocidad mira el mas reciente. Estaba tipada en
-	// la API y no la alcanzaba ninguna caratula del browser, asi que el dominio contestaba
-	// y nadie escuchaba.
-	//
-	// La consulta es TOTAL: se le puede preguntar a cualquier analito y contesta "no
-	// aplica" donde no corresponde -hoy la velocidad solo existe en el antigeno-, asi que
-	// la pantalla no tiene que saber cual la tiene.
-	public VelocidadDeAnalito Velocidad(string analito) { Exigir(); return api!.Velocidad(analito); }
+	// El prellenado del formulario de kilometraje. El "hoy" lo pone ESTA caratula: el
+	// dominio no lee el reloj.
+	public OdometroPropuesto Odometro(string placa, DateTime hoy) { Exigir(); return api!.Odometro(placa, hoy); }
 
-	// La pregunta con la que se abre la app. Ver CargasAPI.LoMasUrgente.
-	public LoMasUrgente Urgente() { Exigir(); return api!.Urgente(); }
+	public IReadOnlyList<CostoEnLista> Costos(string placa) { Exigir(); return api!.Costos(placa); }
 
-	// LOS BINARIOS SE LEEN POR OTRA PUERTA. Un nitrito no tiene tendencia ni puntos con
-	// numero: tiene presencias en fechas. Son dos consultas y no una porque no devuelven
-	// lo mismo, igual que en el dominio.
-	public PresenciaDeAnalito Presencia(string analito) { Exigir(); return api!.Presencia(analito); }
+	public IReadOnlyList<PrecioEnLista> Precios(string placa) { Exigir(); return api!.Precios(placa); }
 
-	public IReadOnlyList<PruebaEnSerie> Pruebas(string analito) { Exigir(); return api!.Pruebas(analito); }
+	public IReadOnlyList<GastoEnLista> Gastos(int anio, int mes) { Exigir(); return api!.Gastos(anio, mes); }
+
+	public EstadoDeLealtad Lealtad() { Exigir(); return api!.Lealtad(); }
 
 	public int Cantidad() { Exigir(); return api!.CantidadDeCargas(); }
-
-	public int AnalitosFueraDeRango() { Exigir(); return api!.AnalitosFueraDeRango(); }
-
-	public int EdadDelPaciente() { Exigir(); return api!.EdadDelPaciente(); }
 
 	public long UltimoEvento() { Exigir(); return api!.UltimoEventoProcesado(); }
 
@@ -369,6 +382,6 @@ public sealed class ConfiguracionDelProveedor
 	// El juego de URLs de este negocio. Otro negocio es otro recurso sobre el mismo
 	// mecanismo: cambiar estos tres valores y su dominio, nada mas.
 	public string BaseUrl { get; set; } = "eventos/";
-	public string Recurso { get; set; } = "expediente";
+	public string Recurso { get; set; } = "cargas";
 	public string Id { get; set; } = "1";
 }

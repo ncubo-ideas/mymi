@@ -65,7 +65,7 @@ internal sealed class LectorDelJournal
 	private sealed class SoloLectura : PerformanceV2
 	{
 		internal SoloLectura(string nombreDelActor)
-			: base(nombreDelActor, typeof(Expediente).Assembly)
+			: base(nombreDelActor, typeof(BitacoraDeCargas).Assembly)
 		{
 		}
 

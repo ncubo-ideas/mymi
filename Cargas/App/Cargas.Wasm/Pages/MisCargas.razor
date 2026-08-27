@@ -3,34 +3,31 @@
 @using Cargas.App.Vistas
 @using Puppets.Portador
 @inject EstadoDeLaApp estado
-@inject NavigationManager navegacion
 
-<PageTitle>Mis exámenes</PageTitle>
+<PageTitle>Mis cargas</PageTitle>
 
-@* EL BLOQUE DE MARCA. La gota por la muestra, el círculo por el oráculo; solo trazo,
-   nunca relleno, y el nombre va acá y no solo en el subtítulo: cuando alguien descarga
-   la app desde la página del laboratorio, lo que se abre debe reconocerse en un
-   segundo. El SVG es el mismo de la página, a 40 px — sobre oscuro va en blanco, y el
-   blanco lo dice el token para que el manual viva en un solo lugar. *@
+@* EL BLOQUE DE MARCA. Un faro de un solo trazo -torre y haz-, nunca relleno, legible a
+   24 px: el patron heredado de Delfos. ⚠️ MARCA PROVISIONAL: el nombre y la paleta
+   esperan la especificacion de Geaninna; lo que no espera es la estructura, y por eso
+   el bloque existe y el manual va a vivir en los tokens de app.css. *@
 <div class="marca">
     <svg viewBox="0 0 40 40" xmlns="http://www.w3.org/2000/svg"
          fill="none" stroke="var(--logo)" stroke-width="2.4" aria-hidden="true">
-        <circle cx="20" cy="20" r="18" />
-        <path d="M20 9c4.4 5.4 6.8 9.3 6.8 12.4A6.8 6.8 0 0 1 20 28.2a6.8 6.8 0
-                 0 1-6.8-6.8C13.2 18.3 15.6 14.4 20 9z" />
+        <path d="M16 34 L18 12 h4 L24 34 z" />
+        <path d="M15 12 h10 M17 7 h6 M18 12 V7 M22 12 V7" />
+        <path d="M26 8 l6 -2.5 M26 11 l7 0" />
     </svg>
     <div>
-        <div class="marca-nombre">Laboratorio Clínico Delfos</div>
-        <div class="marca-claim">Al servicio de su salud desde 1987</div>
+        <div class="marca-nombre">Estaciones Faro</div>
+        <div class="marca-claim">Tu camino, claro</div>
     </div>
 </div>
 
-<h1 class="titular">Mis exámenes</h1>
-<p class="membrete">Tu expediente, en tu computadora.</p>
+<h1 class="titular">Mis cargas</h1>
+<p class="membrete">Tus cargas de combustible, en tu computadora.</p>
 
-@* UN solo lugar para los errores, y arriba. Antes habia dos bloques -uno adentro del
-   arranque y otro al final de la pagina- asi que un mismo fallo se veia dos veces, y
-   estando abajo quedaba fuera de pantalla: la app parecia no reaccionar al click. *@
+@* UN solo lugar para los errores, y arriba: un fallo abajo queda fuera de pantalla y
+   la app parece no reaccionar al click. *@
 @if (error.Length > 0)
 {
     <div class="aviso aviso--problema">
@@ -43,9 +40,7 @@
 {
     <div class="aviso aviso--neutro">
         @* Cuando el handle volvio de IndexedDB pero el permiso caduco, la accion correcta
-           es RE-OTORGAR, no volver a elegir la carpeta. Ofrecer "Elegir carpeta" como
-           primaria hacia que la persona reabriera el picker y volviera a navegar hasta la
-           misma carpeta cada vez. *@
+           es RE-OTORGAR, no volver a elegir la carpeta. *@
         @if (estado.FaltaReotorgarPermiso)
         {
             <p>
@@ -56,9 +51,6 @@
                 <button class="boton boton--atencion" @onclick="PedirPermiso">
                     Dar permiso a &laquo;@estado.NombreDeLaCarpeta&raquo;
                 </button>
-                @* Elegir carpeta es una accion de primera clase, siempre. Estaba como
-                   outline-secondary y se leia deshabilitada, asi que la opcion de elegir
-                   OTRA carpeta parecia no estar disponible. *@
                 <button class="boton" @onclick="ConectarCarpeta"
                         disabled="@(soportado == false)">
                     Elegir carpeta
@@ -67,10 +59,8 @@
         }
         else
         {
-            <p>Esta app guarda <strong>tus</strong> exámenes. Elegí dónde.</p>
+            <p>Esta app guarda <strong>tus</strong> cargas. Elegí dónde.</p>
 
-            @* Cuando NINGUN modo de guardado esta disponible, la causa importa: se
-               arreglan distinto y una de las dos no es culpa del navegador. *@
             @if (sinAlmacenamiento == "inseguro")
             {
                 <p class="aviso aviso--atencion">
@@ -82,22 +72,21 @@
             else if (sinAlmacenamiento == "navegador")
             {
                 <p class="aviso aviso--atencion">
-                    <strong>@(instalada ? "Acá no se puede guardar el expediente." : "Este navegador no puede guardar el expediente.")</strong>
+                    <strong>@(instalada ? "Acá no se puede guardar la bitácora." : "Este navegador no puede guardar la bitácora.")</strong>
                     Podés usar la app igual, pero lo que veas se pierde al cerrar. Para que
                     quede guardado, @(instalada ? "instalala" : "abrila") desde
                     <strong>Chrome</strong> o <strong>Edge</strong>.
                 </p>
             }
 
-            @* TRES MODOS, y los tres se dicen con lo que dan y lo que no. Ofrecer solo la
-               carpeta y fallar donde no hay picker es lo que hacia antes: en Safari,
-               Firefox y movil la app andaba pero no persistia nada, y la unica forma de
-               enterarse era cerrarla y perder todo. *@
+            @* TRES MODOS, y los tres se dicen con lo que dan y lo que no. En 'opfs' la
+               bitacora sobrevive al cierre pero NO la puede leer tu asistente, y
+               callarlo seria vender algo que no hay. *@
             <div class="modos">
                 <div class="modo @(soportado == true ? "" : "modo--nodisponible")">
                     <div class="modo-titulo">Una carpeta tuya</div>
-                    <p>El expediente queda en la carpeta que elijas, en tu disco.
-                       <strong>Es el único modo en el que tu asistente lo puede leer.</strong></p>
+                    <p>La bitácora queda en la carpeta que elijas, en tu disco.
+                       <strong>Es el único modo en el que tu asistente la puede leer.</strong></p>
                     @if (soportado == true)
                     {
                         <button class="boton" @onclick="ConectarCarpeta">Elegir carpeta</button>
@@ -114,10 +103,6 @@
                     }
                 </div>
 
-                @* Instalada, la app NO es "un navegador" para quien la usa: es una ventana
-                   con su nombre y su icono, y hablarle de navegadores ahi suena a que se
-                   refiere a otra cosa. El almacenamiento es el mismo; cambia como se
-                   llama delante de la persona. *@
                 <div class="modo @(opfs == true ? "" : "modo--nodisponible")">
                     <div class="modo-titulo">@(instalada ? "Dentro de la app" : "En este navegador")</div>
                     <p>Se guarda igual y sobrevive al cerrar, pero
@@ -139,16 +124,13 @@
 
                 <div class="modo">
                     <div class="modo-titulo">Un archivo</div>
-                    <p>Traé un expediente que exportaste antes, desde esta u otra computadora.
+                    <p>Traé una bitácora que exportaste antes, desde esta u otra computadora.
                        Funciona en cualquier navegador.</p>
                     <button class="boton boton--contorno" @onclick="Importar">Importar</button>
                 </div>
             </div>
         }
 
-        @* Abrir sin guardar es la salida de emergencia, no una alternativa pareja: la app
-           anda pero no deja registro tuyo. Va aparte y como enlace, para que se note que
-           es otra cosa. *@
         <div style="margin-top:16px">
             <button class="boton boton--enlace" @onclick="Arrancar">Abrir sin guardar nada</button>
         </div>
@@ -156,99 +138,63 @@
 }
 else
 {
-    @*  LA PRIMERA PREGUNTA, y hasta ahora esta pantalla no la hacía.
+    @* LA PRIMERA PREGUNTA: «¿cómo viene mi carro?». El titular es la frase del DOMINIO,
+       armada con los hechos de Sonia -"venías rindiendo 12.6 y el último tramo dio
+       9.4"-, nunca un consejo de plantilla que esta pantalla no tiene de dónde sacar.
 
-        Alguien abre esta app para saber una cosa: «¿estoy bien?». Lo que veía primero era
-        un botón de Refresh y «leído hasta el evento 212», y para contestarse tenía que
-        leer siete tarjetas y sintetizarlas por su cuenta.
-
-        El dominio ya sabía la respuesta —`Expediente.SeveridadMayor` recorre cada serie,
-        la interpreta con el criterio de SU analito y se queda con la mayor— y no la
-        consumía ninguna carátula.
-
-        CUANDO HAY ALGO QUE HACER, EL TITULAR ES LA FRASE DEL DOMINIO, literal. No es una
-        oración que esta pantalla arme: sale del conjunto cerrado de `Severidad`, que es lo
-        que impide que un .razor invente un consejo. Lo único que la pantalla escribe es el
-        caso en que NO hay nada que hacer, y ahí no hay consejo que inventar.               *@
-    @* EL @key VA EN EL CUERPO Y NO EN LA <section>, desde que Actualizar vive acá adentro.
-
-       El @key sube en cada Releer y obliga a Blazor a RECREAR estos nodos. Sin él reusa
-       el mismo elemento, la animación de CSS no se vuelve a disparar, y apretar Actualizar
-       no produce ningún cambio visible cuando no entraron exámenes nuevos — o sea que el
-       botón parecía no hacer nada. Medido: `getAnimations()[0].currentTime` se quedaba en
-       1000 y el nodo era idéntico.
-
-       Pero si la sección ENTERA se recrea, también se recrea el botón que acabás de
-       apretar, y el foco de teclado se pierde en el reemplazo del nodo. Con el @key un
-       nivel más abajo la cabecera sobrevive al redibujo —el foco se queda donde estaba— y
-       el cuerpo se vuelve a animar exactamente igual que antes. *@
+       EL @key VA EN EL CUERPO Y NO EN LA <section>: sube en cada Releer y obliga a
+       Blazor a recrear los nodos -sin él, Actualizar parecía no hacer nada-, pero si
+       la sección entera se recrea, el foco del botón recién apretado se pierde. *@
     <section class="portada @Tono()">
-        @* ACTUALIZAR VIVE EN LA PORTADA, no en una fila suelta debajo. Es el botón que
-           vuelve a contestar la pregunta que contesta esta tarjeta: si el rótulo dice
-           «hoy», entonces «¿esto es de hoy?» pertenece acá y a ningún otro lado.
-
-           Suelto y en azul lleno tenía tres problemas: quedaba segundo en la pantalla sin
-           ser el segundo en importancia, le competía el ojo al titular —que es lo único
-           que alguien tiene que leer si no lee nada más—, y empujaba el aviso de que no se
-           está guardando nada a un tercer lugar que no le corresponde.
-
-           Lleva el trazo de contorno y no el de la acción principal porque no lo es: la
-           app se pone al día sola al abrir, así que esto es «volvé a chequear AHORA». *@
         <div class="portada-cabeza">
-            <p class="portada-rotulo">tu expediente, hoy</p>
+            <p class="portada-rotulo">tu carro, hoy</p>
             <button class="portada-releer" @onclick="Refrescar" disabled="@refrescando">
                 @(refrescando ? "Actualizando…" : "Actualizar")
             </button>
         </div>
 
         <div class="portada-cuerpo" @key="@($"portada-{redibujo}")">
-            @if (urgente.PideAlgo)
+            @if (rendimiento.ParaSonia.Length > 0)
             {
-                <p class="portada-titular">@Mayuscula(urgente.Accion).</p>
-                <div class="portada-cuales">
-                    @foreach (InterpretacionDeAnalito lectura in LosQuePiden())
-                    {
-                        <button class="portada-cual" @onclick="() => VerSerie(lectura.Analito)">
-                            @lectura.ParaMostrar
-                        </button>
-                    }
-                </div>
+                <p class="portada-titular">@Mayuscula(rendimiento.ParaSonia).</p>
+                @if (rendimiento.PideAlgo)
+                {
+                    <div class="portada-cuales">
+                        <span class="portada-cual">@Mayuscula(rendimiento.Accion)</span>
+                    </div>
+                }
             }
             else
             {
-                <p class="portada-titular">Nada pide atención hoy.</p>
+                <p class="portada-titular">Todavía no hay cargas. Apretá <em>Actualizar</em>.</p>
             }
 
             <div class="portada-pie">
-                <span><b>@cantidad</b> @(cantidad == 1 ? "examen" : "exámenes")</span>
-                <span><b>@ConSerie()</b> @(ConSerie() == 1 ? "analito con historia" : "analitos con historia")</span>
+                <span><b>@cantidad</b> @(cantidad == 1 ? "carga" : "cargas")</span>
                 @if (Desde() is DateTime desde)
                 {
                     <span>desde <b>@desde.ToString("MMM yyyy", Cultura)</b></span>
                 }
-                @* «leído hasta el evento N» es el MISMO tipo de dato que el resto del pie
-                   —el registro de lo que se viene juntando— y por eso termina acá en vez
-                   de pegado al botón. Siguen relacionados donde importa: es el número que
-                   el botón mueve, está en la misma tarjeta, y ahora dejó de estar a la
-                   altura de los ojos, que es donde nunca tuvo que estar el número de
-                   evento de un journal. *@
+                @if (completitud.TotalDeCargas > 0)
+                {
+                    <span>@completitud.Expresada</span>
+                }
                 <span>leído hasta el evento <b>@ultimoEvento</b></span>
             </div>
         </div>
     </section>
 
-    @* Si la app no esta guardando, eso es lo MAS importante de la pantalla y va arriba,
-       no en una nota al pie debajo de la tabla. Sin carpeta la app sigue funcionando
-       -se pone al dia contra el proveedor en cada apertura- asi que se ve completa y
-       correcta, y no hay forma de notar que no persiste salvo que se diga. Es la
-       degradacion silenciosa que hizo que el servidor MCP leyera un estado viejo. *@
+    @* Si la app no esta guardando, eso es lo MAS importante de la pantalla y va arriba:
+       sin destino se ve completa y correcta, y no hay forma de notar que no persiste
+       salvo que se diga. *@
     @if (!estado.HayCarpeta)
     {
         <div class="aviso aviso--atencion fila">
             <div class="crece">
                 <strong>No se está guardando nada.</strong>
-                Esta app está funcionando sin destino: lo que ves lo vuelve a pedir al proveedor
-                cada vez que abrís, y no queda registro tuyo.
+                Esta app está funcionando sin destino: lo que la estación publicó se vuelve a
+                pedir al abrir, pero <strong>tus kilometrajes y confirmaciones se pierden</strong>
+                — esos no los sabe nadie más que vos.
             </div>
             @if (soportado == true)
             {
@@ -276,18 +222,10 @@ else
     {
         @if (estado.EnAlmacenamientoDelNavegador)
         {
-            @* Que persista no alcanza: en este modo la mitad "tu IA lo lee" del producto NO
-               funciona, porque el MCP corre afuera del browser y no ve este almacenamiento.
-               Decirlo es la diferencia entre degradar y enganar. *@
-            @* NEUTRO Y NO AMBAR, desde que existe la portada. Esto no habla de tu salud:
-               habla de la app. Con los dos en ámbar quedaban dos bloques idénticos
-               seguidos y el clínico dejaba de destacar — el ámbar tiene UN trabajo, y
-               este aviso no es ese. Sigue siendo imposible de no ver: es el primer
-               bloque después de la portada y lo que importa va en negrita. *@
             <p class="aviso aviso--neutro">
                 <strong>@(instalada ? "Se está guardando dentro de la app" : "Se está guardando en este navegador")</strong>,
-                así que tu expediente sobrevive al cerrar. Pero tu asistente
-                <strong>no lo puede leer</strong>: para eso hace falta una carpeta tuya, y
+                así que tu bitácora sobrevive al cerrar. Pero tu asistente
+                <strong>no la puede leer</strong>: para eso hace falta una carpeta tuya, y
                 @(instalada ? "acá" : "este navegador") no las permite.
                 <button class="boton boton--enlace" @onclick="Exportar">Exportar a un archivo</button>
             </p>
@@ -301,183 +239,187 @@ else
         }
     }
 
-    @* El web token ya no se pega: la app se lo pide al proveedor contra el device key de
-       esta instalacion, y las tres piezas de la credencial viven en el journal. Por eso
-       esta pantalla tiene lo que tiene que tener y nada mas. *@
-    @* LO QUE NINGUNA HOJA DE LABORATORIO TRAE, y por eso va PRIMERO: la lectura de cada
-       serie. Una hoja de resultados trae un valor y una fecha; esto dice para donde viene.
-
-       Las frases se arman ACA, con los hechos que devuelve el dominio. El dominio no
-       devuelve prosa, y por eso esta pantalla no puede mostrar un consejo de plantilla:
-       dice "pasó de 200 a 280 mg/dL en 365 días", no "bajá las grasas". *@
-    @if (analitos.Count > 0)
+    @foreach (VehiculoEnLista vehiculo in vehiculos)
     {
-        <h2 class="seccion">Cómo vienen tus valores</h2>
-        @foreach (TendenciaDeAnalito t in analitos)
-        {
-            <button class="serie" @key="@($"{t.Analito}-{redibujo}")" @onclick="() => VerSerie(t.Analito)">
-                @{ InterpretacionDeAnalito lectura = Lectura(t.Analito); }
-                <div class="serie-cabeza">
-                    <div>
-                        <span class="serie-nombre">@t.ParaMostrar</span>
-                        <span class="chip @Insignia(t)">@t.Tendencia</span>
-                        <div class="serie-relato">@Relato(t)</div>
-                    </div>
-                    <div>
-                        <div class="serie-valor">@Valor(t.ValorFinal) <span>@t.Unidad</span></div>
-                        @* NINGUN NUMERO SIN SU REFERENCIA. La escribe el dominio, no esta
-                           pantalla: sale del analito, que sabe que depende de la edad. *@
-                        @if (lectura.ReferenciaLegible.Length > 0)
-                        {
-                            <div class="serie-referencia">referencia: @lectura.ReferenciaLegible</div>
-                        }
-                    </div>
-                </div>
+        <h2 class="seccion">Cómo viene @(vehiculo.TieneFicha ? vehiculo.Nombre : $"tu carro ({vehiculo.Nombre})")</h2>
 
-                @* CADA ANALITO CON SU FORMA. El dominio dice cuál es -no la pantalla- y
-                   acá solo se traduce a píxeles. Un antígeno se lee como trayectoria
-                   contra su línea base, un colesterol como progreso hacia una meta, una
-                   hemoglobina como posición en una banda. Dibujarlos igual sería la misma
-                   tabla que Álvaro rechazó, un piso más arriba. *@
-                @* La trayectoria necesita serie; la meta y la banda se dibujan con un
-                   solo punto, porque no hablan del tiempo sino de dónde estás parado. *@
-                @if (t.HaySerie || lectura.Forma != "trayectoria con linea base")
-                {
-                    @switch (lectura.Forma)
-                    {
-                        case "trayectoria con linea base":
-                            <TrayectoriaConLineaBase Puntos="Serie(t.Analito)"
-                                                     Referencias="Lineas(t.Analito)"
-                                                     PideAlgo="lectura.PideAlgo"
-                                                     Descripcion="@lectura.ParaSonia" />
-                            break;
-                        case "progreso hacia meta":
-                            <ProgresoHaciaMeta Puntos="Serie(t.Analito)"
-                                               Referencias="Lineas(t.Analito)"
-                                               Descripcion="@lectura.ParaSonia" />
-                            break;
-                        case "posicion en banda":
-                            <PosicionEnBanda Puntos="Serie(t.Analito)"
-                                             Referencias="Lineas(t.Analito)"
-                                             Descripcion="@lectura.ParaSonia" />
-                            break;
-                    }
-                }
-
-                @* La lectura y la acción salen del ANALITO. Esta pantalla ya no decide
-                   qué decir: antes tenía escrito "Conviene que lo vea tu médico" acá
-                   adentro, igual para el antígeno que para el colesterol. *@
-                @if (!string.IsNullOrEmpty(lectura.ParaSonia))
-                {
-                    <div class="serie-lectura@(lectura.PideAlgo ? " serie-lectura--atencion" : "")">
-                        @lectura.ParaSonia@(lectura.PideAlgo ? ": " : ".")<b>@lectura.Accion</b>
-                    </div>
-                }
-            </button>
-        }
-    }
-
-    @* LOS BINARIOS, con SU forma. Van en la misma sección y en tarjetas iguales porque
-       son lo mismo que los de arriba —la lectura de una serie— y se leen distinto porque
-       lo son: acá no hay «pasó de 200 a 280», hay «apareció en las 2 seguidas».
-
-       Que estén acá y no perdidos en el historial es lo que cambió: hasta ahora una
-       sangre oculta no tenía serie, así que sólo podía aparecer como una celda con un
-       positivo y un aviso suelto. *@
-    @foreach (PresenciaDeAnalito p in presencias)
-    {
-        <button class="serie" @key="@($"{p.Analito}-{redibujo}")" @onclick="() => VerSerie(p.Analito)">
-            @{ InterpretacionDeAnalito suya = Lectura(p.Analito); }
+        @* LA TARJETA DEL RENDIMIENTO. Cuando hay tramo, el gráfico contra la banda del
+           nivel de siempre; cuando no, la TARJETA BLOQUEADA que dice qué falta y qué se
+           desbloquea — mostrar el valor bloqueado, no pedir el dato. *@
+        <div class="serie" @key="@($"rendimiento-{vehiculo.Placa}-{redibujo}")">
             <div class="serie-cabeza">
                 <div>
-                    <span class="serie-nombre">@p.ParaMostrar</span>
-                    <span class="chip @Insignia(p)">@p.Presencia</span>
-                    <div class="serie-relato">@Relato(p)</div>
+                    <span class="serie-nombre">Rendimiento</span>
+                    <span class="chip @Insignia(rendimiento)">@rendimiento.Veredicto</span>
+                    @if (rendimiento.HaySerie)
+                    {
+                        <div class="serie-relato">sobre @rendimiento.TramosCalculados tramos entre tanques llenos</div>
+                    }
                 </div>
                 <div>
-                    <div class="serie-valor">@p.UltimoResultado</div>
-                    @if (suya.ReferenciaLegible.Length > 0)
+                    @if (rendimiento.Actual > 0)
                     {
-                        <div class="serie-referencia">@suya.ReferenciaLegible</div>
+                        <div class="serie-valor">@Valor(rendimiento.Actual) <span>km/L</span></div>
+                        @if (rendimiento.HaySerie)
+                        {
+                            <div class="serie-referencia">tu nivel de siempre: @Valor(rendimiento.Habitual) km/L</div>
+                        }
                     }
                 </div>
             </div>
 
-            @if (p.HaySerie)
+            @if (rendimiento.TramosCalculados > 0)
             {
-                <PresenciaEnElTiempo Pruebas="Tira(p.Analito)"
-                                     Seguidas="p.PositivasSeguidas"
-                                     Descripcion="@suya.ParaSonia" />
+                <TrayectoriaDeTramos Tramos="tramos"
+                                     Habitual="rendimiento.Habitual"
+                                     PideAlgo="rendimiento.PideAlgo"
+                                     Descripcion="@rendimiento.ParaSonia" />
             }
 
-            @if (!string.IsNullOrEmpty(suya.ParaSonia))
+            @if (rendimiento.ParaSonia.Length > 0)
             {
-                <div class="serie-lectura@(suya.PideAlgo ? " serie-lectura--atencion" : "")">
-                    @suya.ParaSonia@(suya.PideAlgo ? ": " : ".")<b>@suya.Accion</b>
+                <div class="serie-lectura@(rendimiento.PideAlgo ? " serie-lectura--atencion" : "")">
+                    @Mayuscula(rendimiento.ParaSonia)@(rendimiento.PideAlgo ? ": " : ".")<b>@rendimiento.Accion</b>
                 </div>
             }
-        </button>
-    }
-
-    @* Un hallazgo de un examen sin serie. Va acá arriba y no perdido en una celda:
-       «apareció sangre» no es un dato de tabla. El texto y la urgencia los pone el
-       dominio — dos positivos de la misma forma pueden decir cosas muy distintas.
-
-       Hoy esto son sólo los COLORES. Los binarios subieron a sus propias tarjetas en
-       cuanto tuvieron serie, que es donde tenían que estar desde el principio. *@
-    @foreach (FilaDelCuadro hallazgo in Hallazgos())
-    {
-        <div class="aviso @(hallazgo.Severidad == "urgente" ? "aviso--problema" : "aviso--atencion")" style="margin-top:26px">
-            <strong>@hallazgo.ParaMostrar.</strong> @hallazgo.ParaSonia.
         </div>
-    }
 
-    <h2 class="seccion">Tu historial</h2>
-    @if (cargas.Count == 0)
-    {
-        <p class="apunte">Todavía no hay exámenes. Apretá <em>Actualizar</em>.</p>
-    }
-    else
-    {
-        @*  UNA LÍNEA DE TIEMPO DE VISITAS, no una tabla.
-
-            La matriz que había acá era mejor que la lista plana, pero seguía siendo una
-            tabla genérica sobre analitos que no se parecen en nada — y las trayectorias
-            ya se ven arriba, cada una con su forma. Lo que esta sección aporta que las
-            tarjetas no: QUÉ PASÓ CADA DÍA. Una visita al laboratorio trae varios
-            analitos a la vez, y eso es una cronología, no una grilla.
-
-            Por eso también cambia el nombre. «Tus exámenes» describía una lista de
-            papeles; esto es el historial.                                              *@
-        <ol class="visitas">
-            @foreach (Visita visita in Visitas())
-            {
-                <li class="visita">
-                    <div class="visita-fecha">
-                        <span class="visita-dia">@visita.Fecha.ToString("dd MMM", Cultura)</span>
-                        <span class="visita-ano">@visita.Fecha.Year</span>
+        @* LO DERIVADO: la tercera procedencia, siempre declarada como estimación. *@
+        @if (autonomia.Hay)
+        {
+            <div class="serie" @key="@($"autonomia-{vehiculo.Placa}-{redibujo}")">
+                <div class="serie-cabeza">
+                    <div>
+                        <span class="serie-nombre">Autonomía estimada</span>
+                        <span class="chip chip--sinserie">proyección</span>
+                        <div class="serie-relato">
+                            @Valor(autonomia.CapacidadEnLitros) L de tanque (tu carga máxima)
+                            × @Valor(autonomia.HabitualKmPorLitro) km/L de siempre
+                        </div>
                     </div>
-                    <ul class="visita-cosas">
-                        @foreach (CeldaEnCuadro celda in visita.Celdas)
-                        {
-                            <li class="visita-cosa">
-                                <span class="visita-que">@celda.ParaMostrar</span>
-                                <span class="visita-cuanto">@celda.Expresado</span>
-                            </li>
-                        }
-                    </ul>
-                </li>
+                    <div>
+                        <div class="serie-valor">~@Valor(autonomia.Kilometros) <span>km</span></div>
+                        <div class="serie-referencia">con el tanque lleno</div>
+                    </div>
+                </div>
+            </div>
+        }
+
+        @foreach (CostoEnLista costo in costos)
+        {
+            <div class="serie" @key="@($"costo-{costo.Moneda}-{redibujo}")">
+                <div class="serie-cabeza">
+                    <div>
+                        <span class="serie-nombre">Costo por kilómetro</span>
+                        <div class="serie-relato">sobre @Valor(costo.Kilometros) km con kilometraje anotado</div>
+                    </div>
+                    <div>
+                        <div class="serie-valor">@Simbolo(costo.Moneda)@Valor(costo.MontoPorKilometro) <span>por km</span></div>
+                    </div>
+                </div>
+            </div>
+        }
+
+        @* LO QUE FALTA, con acción concreta: la consulta que motiva el ingreso. El
+           kilometraje llega PRELLENADO con la proyección -«¿unos 42 900?»- para que
+           confirmar sea más fácil que recordar y teclear. Si Sonia lo acepta tal cual
+           entra confirmado; si lo edita, observado. Nunca se escribe solo. *@
+        @if (faltantes.Count > 0)
+        {
+            <h2 class="seccion">Lo que falta</h2>
+            @foreach (FaltanteEnLista faltante in faltantes)
+            {
+                <div class="aviso aviso--neutro" @key="@($"faltante-{faltante.Transaccion}-{faltante.QueFalta}-{redibujo}")">
+                    <strong>@Mayuscula(faltante.ParaSonia).</strong>
+                    @if (faltante.QueFalta == "el kilometraje")
+                    {
+                        <div class="fila" style="margin-top:10px">
+                            <input class="boton boton--contorno mono" type="number" inputmode="numeric"
+                                   style="max-width:11em"
+                                   @bind="kilometrajePorAnotar" />
+                            <button class="boton boton--atencion"
+                                    @onclick="() => AgregarKilometraje(faltante.Transaccion)">
+                                Agregar kilometraje
+                            </button>
+                            @if (propuesta.Hay)
+                            {
+                                <span class="apunte crece">¿unos @Valor(propuesta.Kilometros) km? Es lo que da
+                                    tu promedio de @Valor(propuesta.KilometrosPorDia) km por día.</span>
+                            }
+                        </div>
+                    }
+                    else if (faltante.QueFalta == "la confirmación del tanque")
+                    {
+                        <div class="fila" style="margin-top:10px">
+                            <button class="boton boton--atencion"
+                                    @onclick="() => ConfirmarTanque(faltante.Transaccion)">
+                                Sí, quedó así
+                            </button>
+                            <button class="boton boton--contorno"
+                                    @onclick="() => CorregirTanque(faltante.Transaccion)">
+                                No, era al revés
+                            </button>
+                        </div>
+                    }
+                </div>
             }
-        </ol>
+        }
+
+        @* EL REFUERZO: al cerrar un tramo se muestra lo que se DESBLOQUEO, no una
+           insignia. El premio es informacion sobre su carro. *@
+        @if (desbloqueado.Length > 0)
+        {
+            <div class="aviso aviso--neutro"><strong>Se desbloqueó:</strong> @desbloqueado</div>
+        }
+
+        <h2 class="seccion">Tus cargas</h2>
+        @if (cargas.Count == 0)
+        {
+            <p class="apunte">Todavía no hay cargas. Apretá <em>Actualizar</em>.</p>
+        }
+        else
+        {
+            <ol class="visitas">
+                @foreach (CargaEnLista carga in Recientes())
+                {
+                    <li class="visita" @key="@($"carga-{carga.Transaccion}-{redibujo}")">
+                        <div class="visita-fecha">
+                            <span class="visita-dia">@carga.Fecha.ToString("dd MMM", Cultura)</span>
+                            <span class="visita-ano">@carga.Fecha.Year</span>
+                        </div>
+                        <ul class="visita-cosas">
+                            <li class="visita-cosa">
+                                <span class="visita-que">@Valor(carga.Litros) L de @carga.Tipo · surtidor @carga.Surtidor</span>
+                                <span class="visita-cuanto">@Simbolo(carga.Moneda)@Valor(carga.Total)</span>
+                            </li>
+                            <li class="visita-cosa">
+                                <span class="visita-que">
+                                    @(carga.TieneKilometraje ? carga.Kilometraje : "sin kilometraje")
+                                    @(carga.Tanque.Length > 0 ? $" · tanque {carga.Tanque}" : "")
+                                </span>
+                            </li>
+                        </ul>
+                    </li>
+                }
+            </ol>
+        }
     }
 
-    @* La ventana de perdida se dice, porque esconderla seria vender durabilidad que no hay.
-       El conteo de archivos y bytes de MEMFS era diagnostico mio, no informacion para el
-       usuario, y se fue. *@
+    @* LA LEALTAD, discreta: presente para que se sienta real, no es el foco. *@
+    @if (lealtad.Nivel.Length > 0)
+    {
+        <p class="apunte" style="margin-top:20px">
+            Lealtad: <b>@lealtad.Saldo</b> puntos, nivel <b>@lealtad.Nivel</b>@(
+                lealtad.PuntosParaElSiguienteNivel > 0
+                    ? $" · faltan {lealtad.PuntosParaElSiguienteNivel} para el siguiente"
+                    : "").
+        </p>
+    }
+
     @if (!estado.HayCarpeta)
     {
         <p class="apunte" style="margin-top:28px">
-            <strong>Sin carpeta:</strong> el registro vive solo en memoria y se pierde al cerrar.
+            <strong>Sin carpeta:</strong> la bitácora vive solo en memoria y se pierde al cerrar.
         </p>
     }
 }
@@ -489,21 +431,34 @@ else
     private bool instalada;
     private bool refrescando;
 
-    private IReadOnlyList<ExamenEnLista> cargas = new List<ExamenEnLista>();
-    private IReadOnlyList<TendenciaDeAnalito> analitos = new List<TendenciaDeAnalito>();
+    private IReadOnlyList<VehiculoEnLista> vehiculos = new List<VehiculoEnLista>();
+    private IReadOnlyList<CargaEnLista> cargas = new List<CargaEnLista>();
+    private IReadOnlyList<TramoEnLista> tramos = new List<TramoEnLista>();
+    private IReadOnlyList<FaltanteEnLista> faltantes = new List<FaltanteEnLista>();
+    private IReadOnlyList<CostoEnLista> costos = new List<CostoEnLista>();
+    private RendimientoDelVehiculo rendimiento = new();
+    private AutonomiaDelVehiculo autonomia = new();
+    private CompletitudDelVehiculo completitud = new();
+    private OdometroPropuesto propuesta = new();
+    private EstadoDeLealtad lealtad = new();
     private int cantidad;
-    private int fueraDeRango;
-    private LoMasUrgente urgente = new();
+    private long ultimoEvento;
+    private string error = "";
 
-    // Sube en cada Releer. Es la llave que hace que Blazor recree las tarjetas en vez de
-    // reusarlas, y con eso las formas se vuelven a dibujar: es la respuesta visible a
-    // haber apretado Actualizar.
+    // El prellenado del formulario. Si Sonia manda este mismo numero, su origen es
+    // "confirmado" -miro la propuesta y dijo que si-; si lo edita, "observado".
+    private decimal kilometrajePorAnotar;
+
+    // El refuerzo del ingreso: lo que aparecio al cerrar un tramo.
+    private string desbloqueado = "";
+
+    // Sube en cada Releer: es la llave que hace que Blazor recree las tarjetas en vez
+    // de reusarlas, y la respuesta visible a haber apretado Actualizar.
     private int redibujo;
 
-    // El tono de la portada lo decide el DOMINIO, no esta pantalla: es la severidad que
-    // salió de recorrer las series, traducida con el mapeo del semáforo de la marca:
-    // verde informativo, ámbar para vigilar y consulte pronto, rojo reservado a urgente.
-    private string Tono() => urgente.Severidad switch
+    // El tono de la portada lo decide el DOMINIO: la severidad del veredicto, traducida
+    // con el semáforo de la marca. El rojo queda reservado y hoy nadie lo produce.
+    private string Tono() => rendimiento.Severidad switch
     {
         "urgente"         => "portada--problema",
         "consulte pronto" => "portada--atencion",
@@ -511,37 +466,25 @@ else
         _                 => "portada--calma",
     };
 
-    // Las series que piden LO MISMO que el expediente entero. Es una igualdad, no un
-    // orden: ordenar severidades es del dominio, y acá no hace falta — la mayor ya vino
-    // resuelta y esto sólo busca cuáles la empatan.
-    private List<InterpretacionDeAnalito> LosQuePiden()
+    private string Insignia(RendimientoDelVehiculo lectura)
     {
-        var cuales = new List<InterpretacionDeAnalito>();
-        if (!urgente.PideAlgo) return cuales;
-
-        foreach (KeyValuePair<string, InterpretacionDeAnalito> par in interpretaciones)
-            if (par.Value.Severidad == urgente.Severidad) cuales.Add(par.Value);
-
-        cuales.Sort((a, b) => string.Compare(a.ParaMostrar, b.ParaMostrar, StringComparison.OrdinalIgnoreCase));
-        return cuales;
+        if (lectura.SugiereRegistrarLaCargaQueFalto) return "chip--repetir";
+        if (lectura.Severidad == "urgente") return "chip--problema";
+        if (lectura.PideAlgo) return "chip--atencion";
+        if (!lectura.HaySerie) return "chip--sinserie";
+        return "chip--estable";
     }
 
-    private int ConSerie() => analitos.Count + presencias.Count;
-
-    // Desde cuándo hay registro. Es lo que convierte una lista de exámenes en un
-    // historial: no es cuántos hay, es cuánto tiempo cubren.
     private DateTime? Desde()
     {
         DateTime? primera = null;
-        foreach (ExamenEnLista e in cargas)
-            if (primera is null || e.Fecha < primera) primera = e.Fecha;
+        foreach (CargaEnLista carga in cargas)
+            if (primera is null || carga.Fecha < primera) primera = carga.Fecha;
         return primera;
     }
 
     private static string Mayuscula(string frase) =>
         frase.Length == 0 ? frase : char.ToUpperInvariant(frase[0]) + frase.Substring(1);
-    private long ultimoEvento;
-    private string error = "";
 
     protected override async Task OnInitializedAsync()
     {
@@ -553,13 +496,8 @@ else
         instalada = await estado.EstaInstalada();
         if (soportado != true) return;
 
-        // Recuperar el handle NO necesita gesto; volver a otorgar el permiso SI. Por eso
-        // acá solo se consulta, y si quedó en 'prompt' la UI ofrece el botón.
+        // Recuperar el handle NO necesita gesto; volver a otorgar el permiso SI.
         ResultadoDeCarpeta recuperada = await estado.RecuperarCarpeta();
-        // el estado del permiso lo lleva el puente; la pantalla lo consulta
-
-        // Con permiso ya otorgado se abre solo: el usuario no tiene que apretar nada
-        // para ver sus propios cargas.
         if (recuperada.Ok) await Arrancar();
     }
 
@@ -590,15 +528,13 @@ else
         }
     });
 
-    private Task Exportar() => Intentar("exportar el expediente", async () =>
+    private Task Exportar() => Intentar("exportar la bitácora", async () =>
     {
         ResultadoDeExportacion resultado = await estado.Exportar();
         if (!resultado.Ok) throw new InvalidOperationException(resultado.Motivo);
     });
 
-    // Importar reemplaza el expediente y rearranca el actor, asi que despues hay que
-    // releer TODO de la app: los campos del componente quedaron del expediente viejo.
-    private Task Importar() => Intentar("importar un expediente", async () =>
+    private Task Importar() => Intentar("importar una bitácora", async () =>
     {
         string motivo = await estado.Importar();
         if (motivo.Length > 0) throw new InvalidOperationException(motivo);
@@ -611,20 +547,57 @@ else
         Releer();
     });
 
-
-    private Task Refrescar() => Intentar("refrescar contra el proveedor", async () =>
+    private Task Refrescar() => Intentar("refrescar contra la estación", async () =>
     {
         refrescando = true;
         try { await estado.Refrescar(); }
         finally { refrescando = false; Releer(); }
     });
 
-    // Una app que no puede abrir tiene que DECIR por que. Sin esto, un fallo en el
-    // arranque deja la pantalla igual que antes de apretar el boton y no hay forma de
-    // distinguirlo de un click perdido.
-    // El mensaje del error solo no alcanza: "no se encontró el archivo" puede venir de
-    // leer la carpeta, de escribirla o de la base de handles, y cada una se arregla
-    // distinto. Cada paso se nombra, así el próximo fallo dice DÓNDE ocurrió.
+    // EL APORTE DE SONIA. Si mando la propuesta sin tocarla, su origen es confirmado
+    // -miro el numero y dijo que si-; si lo edito, observado. Nunca entra solo.
+    private Task AgregarKilometraje(string transaccion) => Intentar("anotar el kilometraje", async () =>
+    {
+        if (kilometrajePorAnotar <= 0) return;
+
+        int tramosAntes = rendimiento.TramosCalculados;
+        string origen = propuesta.Hay && kilometrajePorAnotar == propuesta.Kilometros
+            ? "confirmado" : "observado";
+
+        string rechazo = await estado.AnotarOdometro(transaccion, kilometrajePorAnotar, origen);
+        if (rechazo.Length > 0)
+            throw new InvalidOperationException(
+                "La app no anotó ese kilometraje: no es coherente con la serie (el "
+                + "odómetro solo crece). Revisá el número.");
+
+        Releer();
+        if (rendimiento.TramosCalculados > tramosAntes && rendimiento.Actual > 0)
+            desbloqueado = $"el rendimiento de ese tramo: {Valor(rendimiento.Actual)} km/L."
+                + (autonomia.Hay ? $" Y tu autonomía estimada: ~{Valor(autonomia.Kilometros)} km." : "");
+    });
+
+    private Task ConfirmarTanque(string transaccion) => Intentar("confirmar el tanque", async () =>
+    {
+        string rechazo = await estado.ConfirmarTanque(transaccion);
+        if (rechazo.Length > 0) throw new InvalidOperationException(rechazo);
+        Releer();
+    });
+
+    // "Era al reves": lo que la inferencia propuso no era. Se declara lo contrario, con
+    // la palabra de Sonia (origen observado).
+    private Task CorregirTanque(string transaccion) => Intentar("corregir el tanque", async () =>
+    {
+        CargaEnLista? carga = null;
+        foreach (CargaEnLista candidata in cargas)
+            if (candidata.Transaccion == transaccion) { carga = candidata; break; }
+        if (carga is null) return;
+
+        string contrario = carga.Tanque.StartsWith("lleno") ? "parcial" : "lleno";
+        string rechazo = await estado.DeclararTanque(transaccion, contrario);
+        if (rechazo.Length > 0) throw new InvalidOperationException(rechazo);
+        Releer();
+    });
+
     private async Task Intentar(string paso, Func<Task> accion)
     {
         error = "";
@@ -641,253 +614,72 @@ else
         }
         finally
         {
-            // Repintar SIEMPRE, en cualquier salida.
-            //
-            // Casi todo lo que decide esta pantalla -si hay carpeta, si falta re-otorgar
-            // el permiso, si la app ya arranco- vive en EstadoDeLaApp, que es un servicio
-            // inyectado. Blazor no observa objetos ajenos al componente: solo repinta por
-            // sus propios campos y por el ciclo del evento. Al elegir carpeta el estado
-            // cambiaba de verdad, pero la pantalla seguia mostrando el boton, y recien el
-            // click siguiente -aunque se cancelara el dialogo sin elegir nada- disparaba
-            // el render que mostraba lo correcto. Se veia como "hay que apretar dos veces".
+            // Repintar SIEMPRE: casi todo lo que decide esta pantalla vive en
+            // EstadoDeLaApp, y Blazor no observa servicios inyectados. Sin esto, "hay
+            // que apretar dos veces".
             StateHasChanged();
         }
     }
 
-    // TODO lo que se ve sale de consultar al actor. El payload del proveedor nunca llega
-    // hasta acá: solo entra como argumento de un comando, dentro del bucle de refresh.
+    // TODO lo que se ve sale de consultar al actor. El payload de la estacion nunca
+    // llega hasta aca: solo entra como argumento de un comando, dentro del bucle.
     private void Releer()
     {
-        cargas = estado.Cargas();
+        vehiculos = estado.Vehiculos();
         cantidad = estado.Cantidad();
-        fueraDeRango = estado.AnalitosFueraDeRango();
-        urgente = estado.Urgente();
-        redibujo++;
         ultimoEvento = estado.UltimoEvento();
+        lealtad = estado.Lealtad();
+        redibujo++;
 
-        // Una lectura por analito con historia. Se piden de a uno porque cada una es una
-        // consulta sobre el actor: la pantalla no recorre el dominio, le pregunta.
-        //
-        // Y SE PREGUNTA POR LA FORMA ANTES QUE POR LOS HECHOS. Un binario no tiene
-        // tendencia —el dominio contesta «no aplica»— ni puntos con número, así que
-        // pedírselos daría ceros. Cuál puerta usar lo decide la forma, que es dominio: la
-        // pantalla la lee, no la inventa.
-        var hechos = new List<TendenciaDeAnalito>();
-        var presentes = new List<PresenciaDeAnalito>();
-        var leidos = new Dictionary<string, InterpretacionDeAnalito>();
-        foreach (string analito in estado.Analitos())
+        // El demo es de un vehiculo; el modelo contempla varios y esta pantalla, por
+        // ahora, muestra el primero con toda su historia.
+        if (vehiculos.Count == 0)
         {
-            InterpretacionDeAnalito lectura = estado.Interpretacion(analito);
-            leidos[analito] = lectura;
-
-            if (lectura.Forma == FormaDePresencia)
-            {
-                presentes.Add(estado.Presencia(analito));
-                pruebas[analito] = estado.Pruebas(analito);
-                continue;
-            }
-
-            hechos.Add(estado.Tendencia(analito));
-            puntos[analito] = estado.Puntos(analito);
-            lineas[analito] = estado.Referencias(analito);
-        }
-        analitos = hechos;
-        presencias = presentes;
-        interpretaciones = leidos;
-        celdas = estado.Cuadro();
-    }
-
-    private void VerSerie(string analito) =>
-        navegacion.NavigateTo($"analito/{Uri.EscapeDataString(analito)}");
-
-    // Los HECHOS de la serie, contados por la pantalla. Es lo que hace imposible el
-    // consejo de plantilla: acá no hay de dónde sacar "bajá las grasas".
-    //
-    // Sin serie devuelve VACÍO y no una frase: esa la dice el analito en su ParaSonia, y
-    // tenerla en los dos lados imprimía "todavía no hay serie" dos veces seguidas en la
-    // misma tarjeta.
-    // Los HECHOS de una serie binaria, contados por la pantalla con lo que da el dominio.
-    // No hay de dónde sacar un consejo acá tampoco: son cuántas pruebas y cuántas dieron
-    // presente.
-    private static string Relato(PresenciaDeAnalito p) =>
-        p.HaySerie
-            ? $"{p.Positivas} de {p.Mediciones} pruebas en {p.Dias} {(p.Dias == 1 ? "día" : "días")}"
-            : "";
-
-    private static string Relato(TendenciaDeAnalito t) =>
-        t.HaySerie
-            ? $"pasó de {Valor(t.ValorInicial)} a {Valor(t.ValorFinal)} {t.Unidad} "
-              + $"en {t.Dias} {(t.Dias == 1 ? "día" : "días")}, sobre {t.Mediciones} mediciones"
-            : "";
-
-    private IReadOnlyList<CeldaEnCuadro> celdas = new List<CeldaEnCuadro>();
-
-    private sealed class FilaDelCuadro
-    {
-        public string Analito { get; init; } = "";
-        public string ParaMostrar { get; init; } = "";
-        public bool AportaSerie { get; init; }
-        public string[] Celdas { get; init; } = new string[0];
-
-        // Las filas sin serie traen su lectura en la celda; las de serie la piden aparte.
-        public string Severidad { get; init; } = "";
-        public string ParaSonia { get; init; } = "";
-    }
-
-    // Las columnas salen de las celdas: el dominio manda la fecha en cada una, ya
-    // colapsada por dia, asi que reconstruirlas es juntar las distintas en orden. No es
-    // una decision, es un desarmado.
-    private List<DateTime> ColumnasDelCuadro()
-    {
-        var fechas = new List<DateTime>();
-        foreach (CeldaEnCuadro celda in celdas)
-        {
-            while (fechas.Count <= celda.Columna) fechas.Add(default);
-            fechas[celda.Columna] = celda.Fecha;
-        }
-        return fechas;
-    }
-
-    private List<FilaDelCuadro> FilasDelCuadro()
-    {
-        int columnas = ColumnasDelCuadro().Count;
-        var porFila = new Dictionary<int, FilaDelCuadro>();
-
-        foreach (CeldaEnCuadro celda in celdas)
-        {
-            if (!porFila.TryGetValue(celda.Fila, out FilaDelCuadro fila))
-            {
-                fila = new FilaDelCuadro
-                {
-                    Analito = celda.Analito,
-                    ParaMostrar = celda.ParaMostrar,
-                    AportaSerie = celda.AportaSerie,
-                    Severidad = celda.Severidad,
-                    ParaSonia = celda.ParaSonia,
-                    // Vacias por defecto: lo que el dominio no mando, no se midio.
-                    Celdas = new string[columnas],
-                };
-                for (int i = 0; i < columnas; i++) fila.Celdas[i] = "";
-                porFila[celda.Fila] = fila;
-            }
-            fila.Celdas[celda.Columna] = celda.Expresado;
+            cargas = new List<CargaEnLista>();
+            tramos = new List<TramoEnLista>();
+            faltantes = new List<FaltanteEnLista>();
+            costos = new List<CostoEnLista>();
+            rendimiento = new RendimientoDelVehiculo();
+            autonomia = new AutonomiaDelVehiculo();
+            completitud = new CompletitudDelVehiculo();
+            propuesta = new OdometroPropuesto();
+            return;
         }
 
-        var ordenadas = new List<FilaDelCuadro>();
-        for (int i = 0; i < porFila.Count; i++)
-            if (porFila.TryGetValue(i, out FilaDelCuadro fila)) ordenadas.Add(fila);
-        return ordenadas;
+        string placa = vehiculos[0].Placa;
+        cargas = estado.Cargas(placa);
+        tramos = estado.Tramos(placa);
+        rendimiento = estado.Rendimiento(placa);
+        autonomia = estado.Autonomia(placa);
+        completitud = estado.Completitud(placa);
+        faltantes = estado.Faltantes(placa);
+        costos = estado.Costos(placa);
+
+        // El "hoy" del prellenado lo pone esta caratula: el dominio no lee el reloj.
+        propuesta = estado.Odometro(placa, DateTime.Now);
+        if (propuesta.Hay && kilometrajePorAnotar == 0) kilometrajePorAnotar = propuesta.Kilometros;
     }
 
-    // El indicador del final de la fila. Lo provee el DOMINIO: es la severidad que
-    // decidio el analito. Una fila que no forma serie -la orina- no lleva ninguno, y eso
-    // no es un hueco: es que no hay veredicto que dar sobre un color.
-    private string Marca(FilaDelCuadro fila)
+    // Lo mas reciente primero: en un historial se mira para atras.
+    private List<CargaEnLista> Recientes()
     {
-        // Las filas sin serie traen su severidad en la celda: una orina o unas heces se
-        // leen de un solo punto. Las de serie la piden a su Interpretación.
-        if (!fila.AportaSerie)
-            return fila.Severidad == "informativo" || fila.Severidad == "" ? "·" : "⚠";
-
-        InterpretacionDeAnalito lectura = Lectura(fila.Analito);
-        if (lectura.SugiereRepetirElExamen) return "↻";
-        return lectura.PideAlgo ? "⚠" : "·";
+        var recientes = new List<CargaEnLista>(cargas);
+        recientes.Sort((una, otra) => otra.Fecha.CompareTo(una.Fecha));
+        return recientes;
     }
 
-    // Los hallazgos de los exámenes que no forman serie. No entran en «Cómo vienen tus
-    // valores» porque no vienen de ningún lado: son de un solo punto. Pero un positivo
-    // no puede quedar escondido en una celda de tabla.
-    private List<FilaDelCuadro> Hallazgos()
+    private static string Simbolo(string moneda) => moneda switch
     {
-        var hallazgos = new List<FilaDelCuadro>();
-        foreach (FilaDelCuadro fila in FilasDelCuadro())
-            if (!fila.AportaSerie && fila.Severidad != "" && fila.Severidad != "informativo")
-                hallazgos.Add(fila);
-        return hallazgos;
-    }
-
-    // El nombre de la forma tal como lo dice el dominio. La pantalla hace un switch sobre
-    // esto y ese switch SÍ es presentación legítima: traduce una forma del dominio a
-    // píxeles. Lo que no puede es decidirla.
-    private const string FormaDePresencia = "presencia en el tiempo";
-
-    private List<PresenciaDeAnalito> presencias = new();
-    private Dictionary<string, IReadOnlyList<PruebaEnSerie>> pruebas = new();
-
-    private IReadOnlyList<PruebaEnSerie> Tira(string analito) =>
-        pruebas.TryGetValue(analito, out var p) ? p : new List<PruebaEnSerie>();
-
-    private Dictionary<string, IReadOnlyList<PuntoDeSerie>> puntos = new();
-    private Dictionary<string, IReadOnlyList<LineaDeReferencia>> lineas = new();
-
-    private IReadOnlyList<PuntoDeSerie> Serie(string analito) =>
-        puntos.TryGetValue(analito, out var p) ? p : new List<PuntoDeSerie>();
-
-    private IReadOnlyList<LineaDeReferencia> Lineas(string analito) =>
-        lineas.TryGetValue(analito, out var l) ? l : new List<LineaDeReferencia>();
+        "CRC" => "₡",
+        "PAB" => "B/.",
+        "USD" => "$",
+        _ => moneda + " ",
+    };
 
     private static readonly CultureInfo Cultura = new CultureInfo("es-ES");
 
-    // Una visita: todo lo que se midió el mismo día. Las celdas ya vienen del dominio
-    // agrupadas por columna, así que acá solo se dan vuelta las filas por las fechas.
-    private sealed class Visita
-    {
-        public DateTime Fecha { get; init; }
-        public List<CeldaEnCuadro> Celdas { get; } = new();
-    }
-
-    // Lo más reciente primero: en un historial se mira para atrás, no para adelante.
-    private List<Visita> Visitas()
-    {
-        var porFecha = new Dictionary<DateTime, Visita>();
-        foreach (CeldaEnCuadro celda in celdas)
-        {
-            if (!porFecha.TryGetValue(celda.Fecha, out Visita? visita))
-            {
-                visita = new Visita { Fecha = celda.Fecha };
-                porFecha[celda.Fecha] = visita;
-            }
-            visita.Celdas.Add(celda);
-        }
-
-        var visitas = porFecha.Values.ToList();
-        visitas.Sort((una, otra) => otra.Fecha.CompareTo(una.Fecha));
-        return visitas;
-    }
-
-    private Dictionary<string, InterpretacionDeAnalito> interpretaciones = new();
-
-    private InterpretacionDeAnalito Lectura(string analito) =>
-        interpretaciones.TryGetValue(analito, out InterpretacionDeAnalito l)
-            ? l
-            : new InterpretacionDeAnalito();
-
-    // El chip sale de la SEVERIDAD que decidio el analito, con el mapeo del semáforo:
-    // rojo solo para "urgente", que el dominio reserva.
-    //
-    // El ambar sigue sin usarse para "salto inverosimil": no es una alarma clinica, es
-    // "repeti el examen", y el chip neutro lo dice sin gritar.
-    private string Insignia(PresenciaDeAnalito p)
-    {
-        InterpretacionDeAnalito lectura = Lectura(p.Analito);
-        if (lectura.Severidad == "urgente") return "chip--problema";
-        if (lectura.PideAlgo) return "chip--atencion";
-        if (!p.HaySerie) return "chip--sinserie";
-        return "chip--estable";
-    }
-
-    private string Insignia(TendenciaDeAnalito t)
-    {
-        InterpretacionDeAnalito lectura = Lectura(t.Analito);
-        if (lectura.SugiereRepetirElExamen) return "chip--repetir";
-        if (lectura.Severidad == "urgente") return "chip--problema";
-        if (lectura.PideAlgo) return "chip--atencion";
-        if (!t.HaySerie) return "chip--sinserie";
-        return "chip--estable";
-    }
-
-    // Formato explícito SIEMPRE. Medido en el negocio de facturas: la escala del decimal
-    // no sobrevive el journal (5571.50 entra, 5571.5 sale del replay), así que un
-    // ToString() pelado mostraría valores distintos antes y después de reabrir la app.
+    // Formato explícito SIEMPRE: la escala del decimal no sobrevive el journal
+    // (5571.50 entra, 5571.5 sale del replay), así que un ToString() pelado mostraría
+    // valores distintos antes y después de reabrir la app.
     private static string Valor(decimal medido) => medido.ToString("0.##", CultureInfo.InvariantCulture);
 }
