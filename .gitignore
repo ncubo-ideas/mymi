@@ -38,3 +38,7 @@ CONTRIBUTING.md
 # docs/ son transcripciones, feedback y analisis previos al codigo. Misma razon que
 # arriba, mas una: algunos se derivan de examenes de laboratorio reales de una persona.
 docs/
+
+# El paquete de modulos para el telefono: 20 MB de salida de build.
+# Lo arma Gnothi.Mobile/armar-paquete.ps1 cuando hace falta.
+Gnothi.Mobile/paquete/

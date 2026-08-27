@@ -31,22 +31,119 @@ que ser en proceso.
 
 ---
 
-## Correrlo
+## Correrlo desde cero
 
-Hace falta el workload de Android (`dotnet workload install android`) y un teléfono con
-depuración USB. **Son dos pasos, y el segundo no es opcional:** el APK viaja vacío, sin
-módulos.
+Escrito para alguien que **no tiene nada** de Android instalado. Verificado de punta a punta
+el 2026-08-26 sobre un Galaxy A54, borrando los datos de la app antes de empezar.
+
+### 1 · Lo que hace falta, y lo que NO
+
+**No hace falta MAUI.** Este proyecto **no es MAUI**: es `net9.0-android` pelado, con
+`Activity` y `LinearLayout` directos. Si ya tenés MAUI instalado no molesta, pero no es lo
+que se necesita.
+
+| | Qué | Cómo |
+|---|---|---|
+| 1 | El SDK de .NET | ya lo tenés si compilás el repo |
+| 2 | El **workload de Android** | `dotnet workload install android` |
+| 3 | Un **JDK 17** y el **SDK de Android** | el comando de abajo los baja solos |
+
+Verificá lo que tenés:
+
+```bash
+dotnet workload list
+```
+
+Si en la lista aparece `android`, el paso 2 ya está. Lo que corrió esto en agosto de 2026 fue
+.NET SDK `10.0.203`, workload `android 36.1.43`, OpenJDK `17.0.18` y Android SDK con
+`platform-tools` y `build-tools 36.0.0`.
+
+### 2 · Bajar el JDK y el SDK de Android sin instalar Visual Studio
+
+El propio workload los descarga. Un solo comando, desde `Gnothi.Mobile/`:
+
+```bash
+dotnet build -t:InstallAndroidDependencies -f net9.0-android -p:AcceptAndroidSDKLicenses=True
+```
+
+Acepta las licencias de Google **en tu nombre** —por eso la bandera es explícita— y deja todo
+en las rutas por omisión. Si preferís elegirlas, agregá `-p:AndroidSdkDirectory=...` y
+`-p:JavaSdkDirectory=...`.
+
+Si ya tenés Visual Studio con *"Desarrollo de aplicaciones móviles con .NET"*, ya está todo y
+podés saltear este paso.
+
+**`ANDROID_HOME` no hace falta**: el workload encuentra el SDK solo. Está medido — el build
+funciona con la variable sin definir.
+
+### 3 · El teléfono
+
+Depuración USB activada (Ajustes → Acerca del teléfono → tocá *Número de compilación* siete
+veces → Opciones de desarrollador → Depuración por USB). Conectalo y aceptá el diálogo de
+autorización que aparece en la pantalla.
+
+`adb` viene con el SDK, en `platform-tools`, y **normalmente no queda en el PATH**. En
+Windows suele estar en:
+
+```
+C:\Program Files (x86)\Android\android-sdk\platform-tools\adb.exe
+```
+
+Comprobá que el teléfono se ve:
+
+```bash
+adb devices
+```
+
+### 4 · Instalar la app
 
 ```bash
 dotnet build -t:Install -c Debug
 ```
 
+### 5 · Armar y empujar los módulos
+
+**El APK viaja vacío, y esto no es opcional.** Sin módulos vas a ver la app en blanco.
+
 ```bash
-adb push paquete/Modulos  /sdcard/Android/data/com.ncubo.gnothi.host/files/incoming/Modulos
+pwsh ./armar-paquete.ps1
 ```
 
-Después relanzá la app. El primer arranque copia lo que encuentre en `incoming/` al área
-privada y **ahí recién** descubre los módulos.
+El script publica los tres módulos del POC con todas sus dependencias, les escribe un
+`installation.json` con rutas del teléfono, y les copia el journal desde `C:\Gnothi`. Si tus
+journals están en otro lado: `pwsh ./armar-paquete.ps1 -Journals D:\loquesea`.
+
+Salida esperada: **183 archivos, 19,7 MB**.
+
+```bash
+adb push paquete/Modulos /sdcard/Android/data/com.ncubo.gnothi.host/files/incoming/Modulos
+```
+
+```bash
+adb push paquete/journals /sdcard/Android/data/com.ncubo.gnothi.host/files/incoming/journals
+```
+
+### 6 · Abrirla
+
+Abrila desde el cajón de aplicaciones, o:
+
+```bash
+adb shell monkey -p com.ncubo.gnothi.host -c android.intent.category.LAUNCHER 1
+```
+
+**Lo que tenés que ver**, y es lo que salió en la corrida verificada:
+
+```
+Gnothi
+The modules you installed on this phone
+3 modules installed  -  183 files installed on this launch
+```
+
+Una caja **ASK** arriba, y tres tarjetas con icono —🩺 exámenes, 🧾 facturas, 🛒 compras— con
+ocho botones entre todas. Tocá cualquiera: devuelve JSON leído del journal **del teléfono**.
+
+`ASK` es la Puerta 2 y **se va a frenar en `no model key`**. Es correcto, no está roto: ver la
+sección *"Lo que todavía no"* más abajo.
 
 ### Por qué dos pasos, y por qué `incoming/`
 
@@ -55,8 +152,47 @@ cualquiera de afuera instalaría un módulo. `incoming/` es el área de descarga
 navegador o una tienda pueden tocar— y **el Host es el que instala desde ahí**. Ese ciclo de
 vida es autoridad del Host, no del sistema operativo.
 
-Es la misma forma en la que un módulo va a llegar en el producto real: alguien lo descarga,
-y el Host lo adopta.
+Es la misma forma en la que un módulo va a llegar en el producto real: alguien lo descarga, y
+el Host lo adopta.
+
+---
+
+## Si algo sale mal
+
+Todo esto lo pisamos nosotros, no son hipótesis.
+
+**`error XA0010: No available device`.** El teléfono se desconectó o el demonio de adb se
+reinició. `adb devices` para confirmar; suele volver solo.
+
+**`adb: error: cannot stat '/c/Users/...'`.** Estás en Git Bash y adb no entiende rutas de
+MSYS. Usá rutas de Windows: `C:/Users/...`.
+
+**El publish falla con `MSB3021` / `MSB3027`, "being used by another process".** No es el
+código: si tenés Claude Code o Claude Desktop abiertos, ellos ya levantaron los servidores MCP
+de `.mcp.json` y esos procesos **tienen tomados los dll**. Cerralos, o:
+
+```bash
+Get-CimInstance Win32_Process -Filter "Name='dotnet.exe'" | Where-Object { $_.CommandLine -match 'Mcp.dll' } | ForEach-Object { Stop-Process -Id $_.ProcessId -Force }
+```
+
+**La app abre y se cierra sola, sin log.** Buscá en `adb logcat` la línea
+`No assemblies found ... Exiting`. Pasa si corriste `adb shell pm clear`: en Debug, .NET
+Android usa *Fast Deployment* y los assemblies viven fuera del APK, en
+`files/.__override__/`, que `pm clear` borra. Reinstalá con `dotnet build -t:Install`. Este
+proyecto ya trae `EmbedAssembliesIntoApk` para que no pase.
+
+**`am start` no hace nada.** El nombre de la Activity lleva un hash que **cambia en cada
+recompilación** (`crc64a35e2aa9284b3252.MainActivity`). No lo copies: resolvelo cada vez.
+
+```bash
+adb shell cmd package resolve-activity --brief com.ncubo.gnothi.host
+```
+
+**Ver qué está pasando adentro:**
+
+```bash
+adb logcat -s GNOTHI:I
+```
 
 ---
 
