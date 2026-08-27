@@ -260,6 +260,15 @@ public sealed class EstadoDeLaApp : IAsyncDisposable
 	// LOS PRODUCTOS A LOS QUE LES CAMBIO EL RITMO, el mas notorio primero. Mismo corte que
 	// el cambio de la canasta -"este ano"- porque las dos tarjetas cuentan el mismo quiebre
 	// desde angulos distintos: una dice QUE entro, la otra CADA CUANTO.
+	// EL ULTIMO MES CONTRA EL ANTERIOR. Que dos meses se comparan lo elige el DOMINIO, que
+	// conoce su propio rango: esta pantalla no sabe cual es el ultimo mes con compras, y la
+	// aritmetica de "el mes anterior" se resuelve mal en enero.
+	public CanastasComparadas ComparacionConElMesAnterior()
+	{ Exigir(); return api!.ComparacionConElMesAnterior(); }
+
+	// SU PROPIA INFLACION, solo de los productos que si lleva.
+	public IReadOnlyList<PrecioQueCambio> Precios() { Exigir(); return api!.Precios(); }
+
 	// CADA CUANTO VA AL SUPER, que dia y en que momento. No lleva parametros: el dominio lo
 	// mide sobre todo el historial, y no hay reloj de por medio.
 	public RitmoDelSuperVista Ritmo() { Exigir(); return api!.Ritmo(); }

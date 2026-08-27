@@ -437,6 +437,47 @@ main h2 {
 .momento-favorito .momento-barra span { background: var(--verde-vivo); }
 .momento-favorito .momento-cuantas { color: var(--tinta); font-weight: 600; }
 
+/* ---------------------------------------------------------------- tu mes */
+
+/* La cifra del mes, que es lo primero que se lee de la tarjeta. §2 la pone en 800. */
+.cifra-grande {
+    font-size: 1.85rem;
+    font-weight: 800;
+    line-height: 1.1;
+    color: var(--tinta);
+    font-variant-numeric: tabular-nums;
+}
+
+/* EL SPARKLINE. Sin ejes y sin numeros: lo que cuenta es la FORMA del mes. Un eje en
+   60 px de alto es tinta que no dice nada. */
+.serie-mes {
+    display: block;
+    width: 100%;
+    height: 60px;
+    margin: 14px 0 4px;
+    overflow: visible;
+}
+.serie-mes polyline {
+    fill: none;
+    stroke: var(--verde-vivo);
+    stroke-width: 2;
+    stroke-linejoin: round;
+    stroke-linecap: round;
+    /* preserveAspectRatio="none" estira el trazo: sin esto la linea se ve mas gruesa en
+       horizontal que en vertical. */
+    vector-effect: non-scaling-stroke;
+}
+.serie-mes circle { fill: var(--carta); stroke: var(--verde-vivo); stroke-width: 2; }
+
+/* Los precios: el de antes tachado y el de ahora firme. Es la forma en que un super
+   escribe una rebaja, y se lee sin leyenda. */
+.precio-antes {
+    color: var(--tenue);
+    text-decoration: line-through;
+    font-variant-numeric: tabular-nums;
+}
+.precio-ahora { font-weight: 700; font-variant-numeric: tabular-nums; }
+
 /* ---------------------------------------------------------------- recibos */
 
 /* El buscador, con la lupa adentro del campo. */

@@ -339,6 +339,45 @@ namespace Compras.App
 			")
 			.PerformQuery();
 
+		// EL ULTIMO MES CONTRA EL MES ANTERIOR, que es otra pregunta: contra el año pasado se
+		// ve si la canasta cambio de fondo -las estaciones y los habitos ya dieron la
+		// vuelta-, y contra el mes anterior se ve si ESTE mes viene distinto, que es lo que
+		// alguien pregunta cuando abre la app un martes.
+		//
+		// La aritmetica del mes anterior la hace el DOMINIO: una superficie que la resuelva
+		// sola la va a resolver mal en enero.
+		public string ComparacionConElMesPasado() =>
+			app.Using(@"
+				{
+					comparacion = compras.CompararConElMesAnterior();
+					print comparacion.HayComparacion hayComparacion,
+						comparacion.GastoAntes gastoAntes,
+						comparacion.GastoDespues gastoDespues,
+						comparacion.CambioEnElTotal cambioEnElTotal,
+						comparacion.CambioEnProporcion cambio,
+						comparacion.HayAlgoQueLoExplique hayAlgoQueLoExplique,
+						comparacion.ParaSonia paraSonia,
+						comparacion.Antes.Anio anioAntes,
+						comparacion.Antes.Mes mesAntes,
+						comparacion.Antes.GastoComestible gastoComestibleAntes,
+						comparacion.Despues.Anio anioDespues,
+						comparacion.Despues.Mes mesDespues,
+						comparacion.Despues.GastoComestible gastoComestibleDespues;
+					foreach (diferencia in comparacion.Diferencias) {
+						print diferencia.Categoria.Nombre categoria,
+							diferencia.Titulo titulo,
+							diferencia.MontoAntes montoAntes,
+							diferencia.MontoDespues montoDespues,
+							diferencia.Cambio cambioDelPasillo,
+							diferencia.Subio subio,
+							diferencia.EsNuevo esNuevo,
+							diferencia.Desaparecio desaparecio,
+							diferencia.CuentaEnElMovimiento explicaElCambio;
+					}
+				}
+			")
+			.PerformQuery();
+
 		// LO QUE NO FALLA: los productos que vuelven compra tras compra. Es la lectura con
 		// la que la especificacion de marca pide que la app ABRA -"la pantalla abre con la
 		// firma de su semana... la lista de recibos existe, pero no es la portada"-.
@@ -490,6 +529,34 @@ namespace Compras.App
 			")
 			.WithParameters(p => {
 				p["corte", typeof(DateTime)] = corte;
+			})
+			.PerformQuery();
+
+		// COMO SE MOVIERON LOS PRECIOS de los productos que si lleva. Es "lo que cambio de
+		// precio - de los productos que si llevas" del diseño de la app, y es SU propia
+		// inflacion: el dato que ninguna app de super da hoy.
+		//
+		// El dominio devuelve la lista YA FILTRADA -solo los que tienen serie y cambio
+		// real-, asi que dentro del foreach ninguna guarda puede saltar.
+		public string PreciosDeLosHabituales(int cuantasCompras) =>
+			app.Using(@"
+				{
+					precios = compras.PreciosDeLosHabituales(@cuantas);
+					foreach (precio in precios) {
+						print precio.Sku sku,
+							precio.Descripcion descripcion,
+							precio.PrimerPrecioPorUnidad antes,
+							precio.UltimoPrecioPorUnidad ahora,
+							precio.UnidadDeReferencia unidad,
+							precio.CambioEnProporcion cambioEnProporcion,
+							precio.Subio subio,
+							precio.VecesQueLoCompro vecesQueLoCompro,
+							precio.ParaSonia paraSonia;
+					}
+				}
+			")
+			.WithParameters(p => {
+				p["cuantas", typeof(int)] = cuantasCompras;
 			})
 			.PerformQuery();
 
@@ -668,8 +735,14 @@ namespace Compras.App
 		public RitmoDelSuperVista Ritmo() =>
 			ProyeccionDeVistas.RitmoDelSuper(RitmoDelSuper());
 
+		public IReadOnlyList<PrecioQueCambio> Precios(int cuantasCompras = ComprasQueSeMiranParaLaFirma) =>
+			ProyeccionDeVistas.Precios(PreciosDeLosHabituales(cuantasCompras));
+
 		public CanastasComparadas Comparacion(int anioAntes, int mesAntes, int anioDespues, int mesDespues) =>
 			ProyeccionDeVistas.Comparacion(ComparacionDeCanastas(anioAntes, mesAntes, anioDespues, mesDespues));
+
+		public CanastasComparadas ComparacionConElMesAnterior() =>
+			ProyeccionDeVistas.Comparacion(ComparacionConElMesPasado());
 
 		public CanastasComparadas ComparacionConElAnioAnterior() =>
 			ProyeccionDeVistas.Comparacion(ComparacionConElAnioPasado());

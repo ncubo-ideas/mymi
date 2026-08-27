@@ -171,6 +171,28 @@ namespace Compras.App.Vistas
 		public decimal Proporcion { get; init; }
 	}
 
+	// COMO SE MOVIO EL PRECIO de un producto que si lleva. Es SU inflacion, producto por
+	// producto y por unidad de medida — no la del pais.
+	public sealed class PrecioQueCambio
+	{
+		public string Sku { get; init; } = "";
+		public string Descripcion { get; init; } = "";
+
+		/// <summary>El precio por unidad de medida la primera vez que lo compró.</summary>
+		public decimal Antes { get; init; }
+
+		/// <summary>El precio por unidad de medida la última vez.</summary>
+		public decimal Ahora { get; init; }
+
+		/// <summary>Contra qué unidad se lee: "L", "kg", "u". Ningún precio va solo.</summary>
+		public string Unidad { get; init; } = "";
+
+		public decimal CambioEnProporcion { get; init; }
+		public bool Subio { get; init; }
+		public int VecesQueLoCompro { get; init; }
+		public string ParaSonia { get; init; } = "";
+	}
+
 	// COMO VA AL SUPER: cada cuantos dias vuelve, que dia y en que momento. Es la pantalla
 	// "tu ritmo de super" del diseño de la app — "hay dias y momentos que se repiten mas de
 	// lo que parece"— con las tres facetas juntas.

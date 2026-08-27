@@ -229,6 +229,31 @@ namespace Compras.App
 			return productos;
 		}
 
+		internal static IReadOnlyList<PrecioQueCambio> Precios(string json)
+		{
+			var precios = new List<PrecioQueCambio>();
+			if (string.IsNullOrWhiteSpace(json)) return precios;
+
+			using JsonDocument documento = JsonDocument.Parse(json);
+			if (!documento.RootElement.TryGetProperty("precio", out JsonElement arreglo)) return precios;
+
+			foreach (JsonElement elemento in Elementos(arreglo))
+				precios.Add(new PrecioQueCambio
+				{
+					Sku = Texto(elemento, "sku"),
+					Descripcion = Texto(elemento, "descripcion"),
+					Antes = Decimal(elemento, "antes"),
+					Ahora = Decimal(elemento, "ahora"),
+					Unidad = Texto(elemento, "unidad"),
+					CambioEnProporcion = Decimal(elemento, "cambioEnProporcion"),
+					Subio = Booleano(elemento, "subio"),
+					VecesQueLoCompro = Entero(elemento, "vecesQueLoCompro"),
+					ParaSonia = Texto(elemento, "paraSonia"),
+				});
+
+			return precios;
+		}
+
 		internal static RitmoDelSuperVista RitmoDelSuper(string json)
 		{
 			if (string.IsNullOrWhiteSpace(json)) return new RitmoDelSuperVista();
