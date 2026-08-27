@@ -17,9 +17,28 @@ namespace Examenes.App
 	// todavia no manda fecha de nacimiento. El dia que la mande, entra por el mismo
 	// lugar y queda journalizada como cualquier otro dato.
 	//
-	// ⚠️ CAMBIAR ESTA EDAD NO ALCANZA PARA UN JOURNAL QUE YA EXISTE. upgrade('semilla') es
-	// una-vez-por-actor: un expediente ya sembrado se queda con la edad con la que nacio.
-	// Para que la demo muestre la edad nueva hay que sembrar una carpeta desde cero.
+	// ⚠️ CAMBIAR EL CUERPO DE ESTA SEMILLA ROMPE UN JOURNAL QUE YA EXISTE, y no en
+	// silencio: la app NO ABRE. Medido en el browser al pasar la edad de 60 a 34, con el
+	// journal viejo en el almacenamiento:
+	//
+	//   Puppeteer.LanguageException: Upgrade 'semilla' differs from the one previously
+	//   applied to this actor. To change the logic of an already-applied upgrade, give it
+	//   a new name (e.g. 'semilla_v2').
+	//     Applied:             { expediente = Expediente(60); bitacora = Bitacora();}
+	//     Attempting to apply: { expediente = Expediente(34); bitacora = Bitacora();}
+	//
+	// O sea que el motor NO deja que dos actores con el mismo nombre de upgrade tengan
+	// cuerpos distintos, y hace bien: el journal se reproduce con el cuerpo que se
+	// journalizo, no con el que hay en el codigo hoy.
+	//
+	// QUE HACER: borrar el journal —es un demo, no hay dato de nadie que preservar—. Para
+	// la carpeta del disco es un rm; para el browser, limpiar el almacenamiento del sitio,
+	// o abrir con "Abrir sin guardar nada", que arranca un actor nuevo cada vez.
+	//
+	// LO QUE NO HAY QUE HACER es renombrarla a 'semilla_v2' para esquivar el error. Sobre
+	// un journal existente eso aplica un upgrade NUEVO que reasigna los dos globales, o
+	// sea que tira el expediente y el checkpoint que ya estaban; y ademas es exactamente
+	// el mecanismo del que habla la nota de abajo, que ya dio problemas al Host.
 	public sealed class ExamenesApp : PerformanceV2
 	{
 		// La edad de Sonia, la persona de la demo. Los rangos de referencia del dominio

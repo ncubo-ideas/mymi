@@ -557,6 +557,26 @@ El otro precio de un expediente limpio es que las **sangres ocultas salen negati
 tres veces** —que es información, y es lo que un examen solo no puede decir—. Para ver el
 otro lado alcanza cambiar **un** `"negativo"` por `"positivo"` en la semilla de URL2.
 
+#### ⚠️ Un journal viejo no arranca con la semilla nueva
+
+Cambiar el cuerpo del `upgrade('semilla')` —la edad entra por ahí— **rompe un journal que
+ya existe, y la app no abre**. Medido en el browser al pasar de 60 a 34 con el journal
+viejo en el almacenamiento:
+
+```
+Puppeteer.LanguageException: Upgrade 'semilla' differs from the one previously applied
+to this actor. To change the logic of an already-applied upgrade, give it a new name.
+  Applied:             { expediente = Expediente(60); bitacora = Bitacora();}
+  Attempting to apply: { expediente = Expediente(34); bitacora = Bitacora();}
+```
+
+Es correcto: el journal se reproduce con el cuerpo que se journalizó, no con el que hay en
+el código hoy. **Antes de mostrar la demo hay que borrar el journal** —es un demo, no hay
+dato de nadie que preservar—: `rm -rf` la carpeta en disco, y en el browser limpiar el
+almacenamiento del sitio o abrir con *«Abrir sin guardar nada»*. Renombrarla a
+`semilla_v2` **no** es la salida: sobre un journal existente reasigna los dos globales y
+tira el expediente y el checkpoint que ya estaban.
+
 ### El bloqueo del motor se levantó en `10029`
 
 Durante todo el desarrollo la carátula cargaba, renderizaba y moría al abrir el actor con
