@@ -1,0 +1,51 @@
+<Project Sdk="Microsoft.NET.Sdk.Razor">
+
+  <!-- THE GNOTHI DESKTOP WINDOW. The same face the Android app (Gnothi.Mobile) already has,
+       on the desktop: the installed modules as cards, whose they are, on/off state, and one
+       button per query.
+
+       ═══ WHY A SEPARATE PROJECT, NOT A MODE OF THE HOST ═══
+
+       Because Gnothi.Host must stay net9.0 and cross-platform. Turning it into net9.0-windows
+       to fit a window would break the confinement test that runs on Linux/Docker. The Host is
+       the core; this window is one more face, like the MCP front end or the phone.
+
+       ═══ WHY IT IS NOT IN Gnothi.slnx ═══
+
+       Same reason the Android app is left out: net9.0-windows only builds on Windows and would
+       break `dotnet build` for anyone without that target (CI, Linux). It is built on its own,
+       on Windows. The core stays buildable everywhere.
+
+       ═══ BLAZOR HYBRID, NOT BLAZOR WASM ═══
+
+       The C# runs NATIVE, in this process. The WebView only paints the DOM. So: no second
+       runtime, no open port, no HTTP -the components call the Dispatcher in C# directly- and
+       no wasm payload.
+
+       ═══ IT USES ONLY THE HOST'S PUBLIC SURFACE ═══
+
+       ProjectReference, not <Compile Include>, and it names only public types: ModuleCatalog,
+       Dispatcher, Module, Request, Response, Meter. Exactly like Gnothi.Assistant. If this
+       ever needs an internal type, that is the signal the public seam is missing something -
+       the fix is to widen the seam in the Host, never to reach through it. -->
+
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>net9.0-windows</TargetFramework>
+    <UseWindowsForms>true</UseWindowsForms>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <RootNamespace>Gnothi.Desktop</RootNamespace>
+    <AssemblyName>Gnothi.Desktop</AssemblyName>
+    <ApplicationManifest>app.manifest</ApplicationManifest>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.AspNetCore.Components.WebView.WindowsForms" Version="9.*" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Gnothi.Host\Gnothi.Host.csproj" />
+  </ItemGroup>
+
+</Project>

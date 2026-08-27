@@ -16,6 +16,14 @@
   <ItemGroup>
     <ProjectReference Include="..\..\Dominio\Examenes.Dominio.csproj" />
     <ProjectReference Include="..\..\Mecanismo\Puppets.Portador\Puppets.Portador.csproj" />
+
+    <!-- THE CARGO CONTRACT, compiled against but NOT copied (ExcludeAssets=runtime). The
+         surface class wears [ModuleSurface]/[Query] from here; at run time the Host lends its
+         copy, so the module package does not carry it. Private=false keeps it out of the
+         packages of the OTHER consumers (Mcp, Wasm, Consola) too -they do not use the surface,
+         and its attributes resolve lazily, so a missing copy never bites them. -->
+    <ProjectReference Include="..\..\..\Gnothi.Contract\Gnothi.Contract.csproj"
+                      ExcludeAssets="runtime" Private="false" />
   </ItemGroup>
 
   <!-- Solo el core. Los tres paquetes de adapters (Adapters, Adapters.Sql,

@@ -1,13 +1,13 @@
 {
-  "name": "Mis facturas",
-  "short_name": "Mis facturas",
-  "description": "Tus facturas de compra, guardadas en una carpeta tuya. Funciona sin conexion.",
+  "name": "Mis compras · Súper El Triunfo",
+  "short_name": "El Triunfo",
+  "description": "Tus compras de Súper El Triunfo, guardadas en una carpeta tuya. Funciona sin conexion.",
   "id": "./",
   "start_url": "./",
   "scope": "./",
   "display": "standalone",
   "background_color": "#ffffff",
-  "theme_color": "#03173d",
+  "theme_color": "#1a7a3c",
   "lang": "es",
   "prefer_related_applications": false,
   "icons": [

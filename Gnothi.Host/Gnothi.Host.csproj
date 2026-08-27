@@ -25,4 +25,23 @@
     <PackageReference Include="Microsoft.Extensions.Hosting" Version="9.0.0" />
   </ItemGroup>
 
+  <!-- THE SUBSTRATE THE HOST LENDS (decision A1). Until now the Host referenced no engine on
+       purpose; a cargo module that carries only its two small DLLs needs SOMEBODY to provide
+       Puppeteer/Choreography, and that somebody is the Host, once, for every module. The
+       loan is automatic: InProcessShell.Resolving already asks the Host's Default context
+       FIRST, so a module that does not carry these resolves them here.
+
+       Note the trade this buys: the Host is now coupled to the engine version (pinned in
+       Directory.Build.props). The old property "the Host understands nothing of the engine"
+       is what was spent for the two-DLL module shape. Modules that still bring their own
+       engine keep working -the loan only kicks in for what they do NOT carry.
+
+       Gnothi.Contract is the tiny label a cargo surface wears instead of the MCP attributes;
+       the Host lends it the same way. -->
+  <ItemGroup>
+    <PackageReference Include="Ncubo.Puppeteer" Version="$(VersionDelMotor)" />
+    <ProjectReference Include="..\Examenes\Mecanismo\Puppets.Portador\Puppets.Portador.csproj" />
+    <ProjectReference Include="..\Gnothi.Contract\Gnothi.Contract.csproj" />
+  </ItemGroup>
+
 </Project>

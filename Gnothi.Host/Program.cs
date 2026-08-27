@@ -7,10 +7,31 @@ using ModelContextProtocol.Server;
 //
 // Usage:  Gnothi.Host <modules-directory>
 //
+// THE CONSOLE COMMANDS RUN FIRST, before stdout is touched. They are NOT the MCP server, and
+// they manage their own output: --install writes only to stderr, and --query needs REAL stdout
+// for its json result. If the redirect below ran first, --query's result would land on stderr.
+//
+// GNOTHI PRESENTS ITSELF TO THE ASSISTANT. Registers this executable in the assistant's config
+// -reading, adding one key, backing up- and returns. --instalar accepted too, as the team typed.
+if (args.Length > 0 && (args[0] is "--install" or "--instalar"))
+	return HostInstaller.Install(args[1..]);
+
+// QUERY A MODULE FROM THE CONSOLE, no assistant. The only way to check that a module answers
+// the same through any shell, and for the person to read their data with no AI in the middle.
+if (args.Length > 0 && (args[0] is "--query" or "--consultar"))
+	return await QueryConsole.Run(args[1..]);
+
+// PACK a cargo module into a .gmod (publisher-side helper), and INSTALL one. Install is also
+// what the desktop window calls; the CLI exists so the whole loop is testable without a UI.
+if (args.Length > 0 && args[0] is "--pack")
+	return ModuleInstaller.Pack(args[1..]);
+if (args.Length > 0 && (args[0] is "--install-module" or "--instalar-modulo"))
+	return ModuleInstaller.InstallFromCli(args[1..]);
+
 // WITH THE STDIO TRANSPORT, STDOUT IS THE JSON-RPC CHANNEL. Any Console.Write of our own -or of
 // a library's- corrupts the protocol, and worse than breaking it: if it does not close the
 // line, those characters get glued in front of the next message and the client desynchronizes
-// without a clear error. stdout is redirected to stderr BEFORE touching anything else.
+// without a clear error. stdout is redirected to stderr before the server path touches anything.
 Console.SetOut(Console.Error);
 
 string modulesRoot = args.Length > 0
@@ -87,3 +108,8 @@ await using (catalog)
 {
 	await host.RunAsync();
 }
+
+// EOF on stdin is the assistant saying "we are done": RunAsync returns and we exit 0. The
+// explicit return is here because the --install branch above returns an int, so every path of
+// the entry point must.
+return 0;

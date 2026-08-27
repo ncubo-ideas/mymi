@@ -14,6 +14,7 @@
   <Project Path="Examenes/EndPointDeEventos/Examenes.EventosMock.csproj" />
   <Project Path="Examenes/InyectorDeEventosDemo/Examenes.InyectorDeEventosDemo.csproj" />
   <Project Path="Examenes/Mecanismo/Puppets.Portador/Puppets.Portador.csproj" />
+  <Project Path="Gnothi.Contract/Gnothi.Contract.csproj" />
   <Project Path="Gnothi.Host/Gnothi.Host.csproj" />
 
   <!-- Gate 2: our own agent loop, in its own projects BECAUSE it is designed to be

@@ -24,6 +24,20 @@ public sealed record Manifest
 	[JsonPropertyName("capabilities")] public Capabilities? Capabilities { get; init; }
 	[JsonPropertyName("tools")] public IReadOnlyList<DeclaredTool> Tools { get; init; } = [];
 
+	// THE DECLARATIVE VIEW, optional. The name of a json file, shipped inside the module, that
+	// describes the screen the institution designed for the PERSON -not for the assistant. The
+	// module describes; the Host renders. A module with no view is legitimate: it just answers
+	// queries and has no screen of its own. It is a file name, not the view itself, because the
+	// catalog is built from manifests alone and must not pay to parse every screen up front.
+	[JsonPropertyName("view")] public string View { get; init; } = "";
+
+	// HOW A CARGO MODULE IS LOADED. Present only for cargo modules (two small DLLs + the Host
+	// lends the engine); absent for stdio ones, which carry their own server. It says which
+	// assembly holds the surface -the Host loads that one and finds the [ModuleSurface] class in
+	// it, resolving the domain next door. It belongs to the manifest because "which DLL is me"
+	// is identity, declared by the institution, not something the Host grants.
+	[JsonPropertyName("load")] public Load? Load { get; init; }
+
 	public static Manifest Read(string path)
 	{
 		Manifest? m = JsonSerializer.Deserialize<Manifest>(File.ReadAllText(path), JsonOptions);
@@ -46,6 +60,14 @@ public sealed record Manifest
 public sealed record Substrate
 {
 	[JsonPropertyName("range")] public string Range { get; init; } = "";
+}
+
+// WHERE THE CARGO MODULE'S SURFACE LIVES. A path relative to the module's own folder, e.g.
+// "dominio/Examenes.App.dll". The Host loads exactly this assembly; its dependencies -the
+// domain- are resolved next to it, and the engine is lent by the Host.
+public sealed record Load
+{
+	[JsonPropertyName("entry")] public string Entry { get; init; } = "";
 }
 
 // What the module DECLARES it needs. The value of this is not informational: it is that the

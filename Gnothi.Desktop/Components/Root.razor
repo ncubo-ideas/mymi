@@ -1,0 +1,30 @@
+@inject HostState State
+
+@*
+    THE ROOT. Two places to be: the list of modules, or one module's screen. The name of the
+    open module is the whole navigation state -a string, not the Module object, because the
+    catalog can be reloaded and the object replaced underneath.
+*@
+
+<header>
+    <span class="brand">Gnothi</span>
+    <span class="path">@State.Root</span>
+</header>
+
+<main>
+    @if (open is null)
+    {
+        <ModuleList Open="@(name => open = name)" />
+    }
+    else
+    {
+        <p class="crumb">
+            <button @onclick="() => open = null">&larr; All your modules</button>
+        </p>
+        <ModuleScreen Name="@open" />
+    }
+</main>
+
+@code {
+    private string? open;
+}

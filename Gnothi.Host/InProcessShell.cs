@@ -14,12 +14,15 @@ namespace Gnothi.Host;
 // modules. Also measured: it does NOT contain the failures stdio does -- see
 // NotasGnothiHost/10.
 //
-// IT DOES NOT REFERENCE THE MCP SDK. The attributes are read BY NAME, so the day a module
-// carries a Gnothi-owned label instead of an MCP one, this file does not change.
+// IT DOES NOT REFERENCE THE MCP SDK. The attributes are read BY NAME, so a module can carry a
+// Gnothi-owned label instead of an MCP one and this file does not change -- that day arrived:
+// both are recognized now. A cargo module wears [ModuleSurface]/[Query] from Gnothi.Contract
+// (tiny, no SDK) and an MCP-style module wears [McpServerToolType]/[McpServerTool]; the shell
+// matches either, so the SAME loader serves both without knowing which it is.
 internal sealed class InProcessShell : IShell
 {
-	private const string ClassMark = "McpServerToolTypeAttribute";
-	private const string ToolMark = "McpServerToolAttribute";
+	private static readonly string[] ClassMarks = ["McpServerToolTypeAttribute", "ModuleSurfaceAttribute"];
+	private static readonly string[] ToolMarks = ["McpServerToolAttribute", "QueryAttribute"];
 
 	private readonly string name;
 	private readonly string path;
@@ -92,10 +95,11 @@ internal sealed class InProcessShell : IShell
 
 			// GetTypes and not GetExportedTypes: the modules' tool classes are internal.
 			Type? found = asm.GetTypes().FirstOrDefault(t =>
-				t.GetCustomAttributes(false).Any(a => a.GetType().Name == ClassMark));
+				t.GetCustomAttributes(false).Any(a => ClassMarks.Contains(a.GetType().Name)));
 
 			if (found is null)
-				throw new InvalidOperationException($"'{Path.GetFileName(path)}' has no class marked with [{ClassMark}]");
+				throw new InvalidOperationException(
+					$"'{Path.GetFileName(path)}' has no class marked with [{string.Join("] or [", ClassMarks)}]");
 
 			context = ctx;
 			marked = found;
@@ -152,8 +156,10 @@ internal sealed class InProcessShell : IShell
 
 	private static string? DeclaredName(MethodInfo m)
 	{
-		object? mark = m.GetCustomAttributes(false).FirstOrDefault(a => a.GetType().Name == ToolMark);
+		object? mark = m.GetCustomAttributes(false).FirstOrDefault(a => ToolMarks.Contains(a.GetType().Name));
 		if (mark is null) return null;
+		// Both marks carry a 'Name'. McpServerTool may leave it null (then the method name is
+		// used); Query always has one.
 		return mark.GetType().GetProperty("Name")?.GetValue(mark) as string ?? m.Name;
 	}
 
