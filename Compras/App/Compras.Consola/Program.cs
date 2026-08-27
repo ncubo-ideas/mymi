@@ -132,6 +132,12 @@ namespace Compras.Consola
 			Console.WriteLine($"gasto total registrado      : {Formato(api.TotalDeCompras())}");
 			Console.WriteLine($"token guardado              : [{api.TokenGuardado()}]");
 
+			// LA PORTADA, y va primero por eso: la especificacion de marca pide que la app
+			// abra con la firma y con el quiebre, no con la lista de recibos.
+			Console.WriteLine();
+			Console.WriteLine("-- LA PORTADA: lo estable y lo que cambio --");
+			ImprimirPortada(api, new DateTime(2026, 1, 1));
+
 			Console.WriteLine();
 			Console.WriteLine("-- lista (print, formatter JSON) --");
 			Console.WriteLine(api.ListaDeCompras());
@@ -158,6 +164,24 @@ namespace Compras.Consola
 			bool garantiaOk = api.Garantia(Muestras.ProductoConGarantia, DateTime.Now).Encontrada;
 			Console.WriteLine();
 			Console.WriteLine($"CRITERIOS CORRECTOS         : {totalOk && comparacionOk && garantiaOk}");
+		}
+
+		// Las dos lecturas de la portada. Las lineas las escribe el DOMINIO, incluidos los
+		// dos casos de "no hay respuesta todavia": aca no se decide nada, se imprime.
+		private static void ImprimirPortada(ComprasAPI api, DateTime corte)
+		{
+			FirmaDeLaSemana firma = api.Firma();
+			Console.WriteLine($"  {firma.ParaSonia}");
+			foreach (ProductoQueVuelve p in firma.Habituales)
+				Console.WriteLine($"    {p.Descripcion,-28} en {p.ComprasEnQueAparece} de {p.DeCuantas}"
+					+ $"{(p.EstaEnTodas ? "  (en todas)" : "")}");
+
+			CambioDeLaCanasta cambio = api.Cambio(corte);
+			Console.WriteLine($"  {cambio.ParaSonia}");
+			foreach (ProductoQueEntroVista p in cambio.Entraron)
+				Console.WriteLine($"    entro  {p.Descripcion,-28} desde {p.Desde}");
+			foreach (ProductoQueVuelve p in cambio.Salieron)
+				Console.WriteLine($"    salio  {p.Descripcion}");
 		}
 
 		private static void ImprimirComparacion(ComprasAPI api, int anioAntes, int mesAntes, int anioDespues, int mesDespues)

@@ -39,6 +39,25 @@
       "descripcion": "Como viene la canasta de la persona SIN TENER QUE ELEGIR MESES: compara el ultimo mes que tiene compras contra el mismo mes del anio anterior, que es la lectura que la app le muestra. Usala para preguntas generales como '¿como vengo?', '¿en que se me va la plata en el super?' o '¿que cambio en mis compras?'. Preferila sobre comparar_canastas salvo que la persona nombre dos meses concretos. Trae los dos totales y, en diferencias, DE DONDE sale el cambio pasillo por pasillo: mira las que tienen explicaElCambio en true y esNuevo para los pasillos que antes no aparecian. Usa titulo y nunca categoria al hablarle a la persona. Este modulo reporta hechos de compra y NO juzga la alimentacion de nadie: el cruce con cualquier otra fuente es del asistente, con permiso de la persona."
     },
     {
+      "nombre": "la_firma_de_mi_canasta",
+      "titulo": "Lo que no falla",
+      "soloLectura": true,
+      "entrada": [
+        { "nombre": "cuantasCompras", "tipo": "number", "descripcion": "Cuantas de sus ultimas compras mirar. Omitilo para usar el valor de la app (8)." }
+      ],
+      "descripcion": "LO QUE NO FALLA en las compras de la persona: los productos que vuelven compra tras compra. Es una de las dos lecturas con las que la app ABRE. Usala para '¿que compro yo?', '¿cual es mi canasta tipica?' y como contexto antes de contestar cualquier otra cosa sobre sus compras. Un producto entra si aparece en al menos la MITAD de las compras miradas, y cada uno trae en cuantas de cuantas aparece; estaEnTodas marca los que no fallaron ni una vez. Si existe viene en false, o no hay compras todavia o no hay nada que se repita lo suficiente, y paraSonia lo dice tal cual."
+    },
+    {
+      "nombre": "que_cambio_en_mi_canasta",
+      "titulo": "Que cambio, y desde cuando",
+      "soloLectura": true,
+      "entrada": [
+        { "nombre": "corte", "tipo": "string", "descripcion": "La fecha de corte, en formato aaaa-mm-dd. Lo de antes se compara con lo de despues." },
+        { "nombre": "cuantasCompras", "tipo": "number", "descripcion": "Cuantas compras mirar de cada lado. Omitilo para usar el valor de la app (8)." }
+      ],
+      "descripcion": "QUE SE VOLVIO HABITUAL Y DESDE CUANDO, y que dejo de estar. Es la otra lectura de la portada, y la que le pone FECHA a un cambio de habitos: usala para '¿que cambio en mis compras?', '¿desde cuando compro tanto helado?' o cuando la persona quiere relacionar sus compras con algo que le paso en un mes concreto. Cada producto que entro trae el mes de su primera aparicion, en formato aaaa-mm. Ojo: hayConQueComparar en false significa que falta un lado de la comparacion, y es distinto de hayCambio en false, que significa que la canasta viene igual. Dice QUE cambio y no si esta bien."
+    },
+    {
       "nombre": "canasta_del_mes",
       "titulo": "Como fue mi canasta",
       "soloLectura": true,

@@ -156,6 +156,78 @@ namespace Compras.App
 			};
 		}
 
+		internal static FirmaDeLaSemana Firma(string json)
+		{
+			if (string.IsNullOrWhiteSpace(json)) return new FirmaDeLaSemana();
+
+			using JsonDocument documento = JsonDocument.Parse(json);
+			JsonElement raiz = documento.RootElement;
+
+			// La cabecera sale como "firma" y cada producto como "habitual": son dos print
+			// distintos del mismo bloque.
+			JsonElement cabecera = raiz.TryGetProperty("firma", out JsonElement f) ? f : raiz;
+
+			return new FirmaDeLaSemana
+			{
+				ComprasMiradas = Entero(cabecera, "comprasMiradas"),
+				CuantosHabituales = Entero(cabecera, "cuantosHabituales"),
+				ParaSonia = Texto(cabecera, "paraSonia"),
+				Habituales = Habituales(raiz, "habitual"),
+			};
+		}
+
+		internal static CambioDeLaCanasta Cambio(string json)
+		{
+			if (string.IsNullOrWhiteSpace(json)) return new CambioDeLaCanasta();
+
+			using JsonDocument documento = JsonDocument.Parse(json);
+			JsonElement raiz = documento.RootElement;
+
+			JsonElement cabecera = raiz.TryGetProperty("cambio", out JsonElement c) ? c : raiz;
+
+			var entraron = new List<ProductoQueEntroVista>();
+			if (raiz.TryGetProperty("entro", out JsonElement arreglo))
+				foreach (JsonElement elemento in Elementos(arreglo))
+					entraron.Add(new ProductoQueEntroVista
+					{
+						Sku = Texto(elemento, "sku"),
+						Descripcion = Texto(elemento, "descripcion"),
+						Desde = Texto(elemento, "desde"),
+						ComprasEnQueAparece = Entero(elemento, "comprasEnQueAparece"),
+						Proporcion = Decimal(elemento, "proporcion"),
+					});
+
+			return new CambioDeLaCanasta
+			{
+				HayConQueComparar = Booleano(cabecera, "hayConQueComparar"),
+				HayCambio = Booleano(cabecera, "hayCambio"),
+				ParaSonia = Texto(cabecera, "paraSonia"),
+				Entraron = entraron,
+				Salieron = Habituales(raiz, "salio"),
+			};
+		}
+
+		// Los que vuelven, en las dos lecturas: la firma los llama "habitual" y el cambio
+		// llama "salio" a los que se cayeron. Misma forma, mismo lector.
+		private static IReadOnlyList<ProductoQueVuelve> Habituales(JsonElement raiz, string llave)
+		{
+			var productos = new List<ProductoQueVuelve>();
+			if (!raiz.TryGetProperty(llave, out JsonElement arreglo)) return productos;
+
+			foreach (JsonElement elemento in Elementos(arreglo))
+				productos.Add(new ProductoQueVuelve
+				{
+					Sku = Texto(elemento, "sku"),
+					Descripcion = Texto(elemento, "descripcion"),
+					ComprasEnQueAparece = Entero(elemento, "comprasEnQueAparece"),
+					DeCuantas = Entero(elemento, "deCuantas"),
+					Proporcion = Decimal(elemento, "proporcion"),
+					EstaEnTodas = Booleano(elemento, "estaEnTodas"),
+				});
+
+			return productos;
+		}
+
 		internal static GarantiaDeProducto Garantia(string json)
 		{
 			if (string.IsNullOrWhiteSpace(json)) return new GarantiaDeProducto();

@@ -6,8 +6,9 @@ using ModelContextProtocol.Server;
 
 namespace Compras.Mcp.Tools;
 
-// LA SUPERFICIE QUE VE LA IA. Cuatro tools: el total, la canasta de un mes, la
-// comparacion entre meses y la garantia de un producto.
+// LA SUPERFICIE QUE VE LA IA. El total, la firma de su semana, el mes en que la canasta
+// cambio, la canasta de un mes, la comparacion entre meses, el hueco, la serie de un
+// consumo y las garantias.
 //
 // Es intencional en el sentido fuerte: la escribe el autor de la app, igual que un
 // [HttpGet], y la app decide que expone. Deliberadamente NO existe una tool generica
@@ -80,6 +81,45 @@ internal sealed class ComprasTools
 		if (!lector.HayJournal) return new CanastasComparadas();
 
 		return lector.Consultar(api => api.ComparacionConElAnioAnterior());
+	}
+
+	[McpServerTool(Name = "la_firma_de_mi_canasta", UseStructuredContent = true)]
+	[Description("LO QUE NO FALLA en las compras de la persona: los productos que vuelven compra "
+		+ "tras compra. Usala para '¿que compro yo?', '¿que es lo mio?', '¿cual es mi canasta "
+		+ "tipica?' — y tambien como CONTEXTO antes de contestar cualquier otra cosa sobre sus "
+		+ "compras, porque dice de que esta hecha su rutina. Un producto entra si aparece en al "
+		+ "menos la MITAD de las compras miradas, y cada uno trae en cuantas de cuantas aparece; "
+		+ "estaEnTodas marca los que no fallaron ni una vez. Si existe viene en false, o no hay "
+		+ "compras todavia o no hay nada que se repita lo suficiente, y paraSonia lo dice tal "
+		+ "cual: son dos hechos distintos y ninguno es un error.")]
+	public FirmaDeLaSemana Firma(
+		[Description("Cuantas de sus ultimas compras mirar. Omitilo para usar el valor de la app (8).")]
+		int cuantasCompras = ComprasAPI.ComprasQueSeMiranParaLaFirma)
+	{
+		if (!lector.HayJournal) return new FirmaDeLaSemana();
+
+		return lector.Consultar(api => api.Firma(cuantasCompras));
+	}
+
+	[McpServerTool(Name = "que_cambio_en_mi_canasta", UseStructuredContent = true)]
+	[Description("QUE SE VOLVIO HABITUAL Y DESDE CUANDO, y que dejo de estar, comparando lo de "
+		+ "antes de una fecha con lo de despues. Es la tool que le pone FECHA a un cambio de "
+		+ "habitos: usala para '¿que cambio en mis compras?', '¿desde cuando compro tanto helado?' "
+		+ "o cuando la persona quiere relacionar sus compras con algo que le paso en un mes "
+		+ "concreto. Cada producto que entro trae el mes en que se lo vio por primera vez, en "
+		+ "formato aaaa-mm. Ojo: si hayConQueComparar viene en false NO hay cambio que reportar "
+		+ "-falta un lado de la comparacion- y es distinto de hayCambio en false, que significa "
+		+ "que la canasta viene igual. Este modulo dice QUE cambio y no si esta bien: el helado "
+		+ "que pasa de mensual a semanal es un dato, no una falta.")]
+	public CambioDeLaCanasta Cambio(
+		[Description("La fecha de corte, en formato aaaa-mm-dd. Lo de antes se compara con lo de despues.")]
+		DateTime corte,
+		[Description("Cuantas compras mirar de cada lado. Omitilo para usar el valor de la app (8).")]
+		int cuantasCompras = ComprasAPI.ComprasQueSeMiranParaLaFirma)
+	{
+		if (!lector.HayJournal) return new CambioDeLaCanasta();
+
+		return lector.Consultar(api => api.Cambio(corte, cuantasCompras));
 	}
 
 	[McpServerTool(Name = "canasta_del_mes", UseStructuredContent = true)]

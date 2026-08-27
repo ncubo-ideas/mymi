@@ -236,6 +236,15 @@ public sealed class EstadoDeLaApp : IAsyncDisposable
 
 	public CanastaDelMesVista Canasta(int anio, int mes) { Exigir(); return api!.Canasta(anio, mes); }
 
+	// LAS DOS LECTURAS DE LA PORTADA. Cuantas compras se miran para reconocer la firma lo
+	// decide la app (ComprasAPI), no esta caratula: es parte de la pregunta.
+	public FirmaDeLaSemana Firma() { Exigir(); return api!.Firma(); }
+
+	// El corte lo pone la caratula porque involucra el RELOJ, y el dominio no lo lee: se
+	// compara lo del ultimo ano contra lo de antes.
+	public CambioDeLaCanasta CambioDelUltimoAnio()
+	{ Exigir(); return api!.Cambio(DateTime.Now.AddYears(-1)); }
+
 	// El "hoy" lo pone la caratula: el dominio no lee el reloj.
 	public IReadOnlyList<GarantiaDeProducto> GarantiasVigentes() { Exigir(); return api!.GarantiasVigentes(DateTime.Now); }
 

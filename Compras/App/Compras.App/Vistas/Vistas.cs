@@ -104,6 +104,70 @@ namespace Compras.App.Vistas
 		public bool ExplicaElCambio { get; init; }
 	}
 
+	// LO QUE NO FALLA en su canasta. Es la lectura con la que la app abre: la
+	// especificacion de marca pide el PATRON y no una lista de facturas.
+	public sealed class FirmaDeLaSemana
+	{
+		public int ComprasMiradas { get; init; }
+		public int CuantosHabituales { get; init; }
+
+		// La linea de la portada, escrita por el dominio.
+		public string ParaSonia { get; init; } = "";
+
+		public IReadOnlyList<ProductoQueVuelve> Habituales { get; init; } =
+			new List<ProductoQueVuelve>();
+
+		public bool Existe => CuantosHabituales > 0;
+	}
+
+	// Un producto que vuelve compra tras compra.
+	public sealed class ProductoQueVuelve
+	{
+		public string Sku { get; init; } = "";
+		public string Descripcion { get; init; } = "";
+		public int ComprasEnQueAparece { get; init; }
+		public int DeCuantas { get; init; }
+		public decimal Proporcion { get; init; }
+
+		/// <summary>Si esta en TODAS las compras miradas. Lo que de verdad no falla.</summary>
+		public bool EstaEnTodas { get; init; }
+	}
+
+	// EL QUIEBRE, con fecha: lo que entro a la canasta y lo que dejo de estar. La otra
+	// lectura de la portada, y sin veredicto: dice que paso, no si esta bien.
+	public sealed class CambioDeLaCanasta
+	{
+		/// <summary>Si los dos lados tienen compras. Sin eso no se afirma nada.</summary>
+		public bool HayConQueComparar { get; init; }
+
+		public bool HayCambio { get; init; }
+
+		public string ParaSonia { get; init; } = "";
+
+		public IReadOnlyList<ProductoQueEntroVista> Entraron { get; init; } =
+			new List<ProductoQueEntroVista>();
+
+		public IReadOnlyList<ProductoQueVuelve> Salieron { get; init; } =
+			new List<ProductoQueVuelve>();
+
+		// El mes del quiebre sale del primer producto que entro, que el dominio ya
+		// entrega ordenado por fecha. Vacio cuando no hay cambio, y eso ya es respuesta.
+		public string MesDelCambio => Entraron.Count > 0 ? Entraron[0].Desde : "";
+	}
+
+	// Un producto que se volvio habitual, con el mes en que aparecio por primera vez.
+	public sealed class ProductoQueEntroVista
+	{
+		public string Sku { get; init; } = "";
+		public string Descripcion { get; init; } = "";
+
+		/// <summary>El mes en que se lo vio por primera vez: 2026-03.</summary>
+		public string Desde { get; init; } = "";
+
+		public int ComprasEnQueAparece { get; init; }
+		public decimal Proporcion { get; init; }
+	}
+
 	// El respaldo de una garantia: en que compra fue, cuando, cuanta cobertura y si
 	// esta vigente en la fecha que puso quien pregunto.
 	public sealed class GarantiaDeProducto

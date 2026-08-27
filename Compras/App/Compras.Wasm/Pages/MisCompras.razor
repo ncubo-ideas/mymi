@@ -109,7 +109,52 @@ else
         </p>
     }
 
-    @* LO QUE NINGUN TICKET DE PAPEL DICE, y por eso va PRIMERO: los dos totales y DE DONDE
+    @* LA PORTADA, y va antes que todo lo demás porque la especificación de marca lo pide
+       así: "la pantalla abre con la firma de su semana y con el quiebre de enero. La lista
+       de recibos existe, pero no es la portada."
+
+       Son los dos estados de la marca: VERDE lo estable, ÁMBAR lo que cambió. Rojo nunca
+       —"un carrito no tiene urgencias"—. Y el ámbar no es un regaño: señala y se calla. *@
+    @if (firma is not null && firma.Existe)
+    {
+        <div class="card border-success-subtle bg-success-subtle mb-3">
+            <div class="card-body">
+                <div class="text-uppercase small fw-bold text-success-emphasis mb-1">Lo estable</div>
+                <div class="fs-5">@firma.ParaSonia</div>
+                <div class="small text-muted mt-2">
+                    @foreach (var habitual in firma.Habituales)
+                    {
+                        <span class="me-3">
+                            @habitual.Descripcion
+                            <span class="text-body-tertiary">
+                                @(habitual.EstaEnTodas
+                                    ? "en todas"
+                                    : $"en {habitual.ComprasEnQueAparece} de {habitual.DeCuantas}")
+                            </span>
+                        </span>
+                    }
+                </div>
+            </div>
+        </div>
+    }
+
+    @if (cambio is not null && cambio.HayCambio)
+    {
+        <div class="card border-warning-subtle bg-warning-subtle mb-4">
+            <div class="card-body">
+                <div class="text-uppercase small fw-bold text-warning-emphasis mb-1">
+                    Lo que cambió
+                    @if (cambio.MesDelCambio.Length > 0)
+                    {
+                        <span class="text-body-secondary">· desde @cambio.MesDelCambio</span>
+                    }
+                </div>
+                <div class="fs-5">@cambio.ParaSonia</div>
+            </div>
+        </div>
+    }
+
+    @* LO QUE NINGUN TICKET DE PAPEL DICE: los dos totales y DE DONDE
        sale la diferencia, pasillo por pasillo. La línea la escribe el DOMINIO.
 
        No hay veredicto, y es una decisión: "que el helado pasara de mensual a semanal es un
@@ -262,6 +307,8 @@ else
     private IReadOnlyList<GarantiaDeProducto> garantias = new List<GarantiaDeProducto>();
     private IReadOnlyList<AbastecimientoEnEspera> pendientes = new List<AbastecimientoEnEspera>();
     private CanastasComparadas? comparacion;
+    private FirmaDeLaSemana? firma;
+    private CambioDeLaCanasta? cambio;
     private int cantidad;
     private decimal total;
     private long ultimoEvento;
@@ -350,6 +397,10 @@ else
         // Qué dos meses se comparan lo elige el DOMINIO, que conoce su propio rango.
         // Antes lo decidía esta pantalla mirando la última fila de la tabla.
         comparacion = estado.ComparacionPorDefecto();
+
+        // La portada: lo estable y lo que cambió.
+        firma = estado.Firma();
+        cambio = estado.CambioDelUltimoAnio();
     }
 
     private void VerDetalle(string numero) =>
