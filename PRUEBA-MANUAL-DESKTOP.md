@@ -182,6 +182,7 @@ dotnet publish Examenes\App\Examenes.Wasm -c Release -o Examenes\PaginaDeDescarg
 Los certs (solo para que nginx arranque su listener https; usaremos http):
 
 ```powershell
+New-Item -ItemType Directory -Force Examenes\PaginaDeDescarga\certs | Out-Null
 cd Examenes\PaginaDeDescarga\certs
 & "C:\Program Files\Git\usr\bin\openssl.exe" req -x509 -newkey rsa:2048 -sha256 -days 365 -nodes `
   -keyout localhost.key -out cadena.crt -subj "/CN=localhost" `
@@ -248,6 +249,7 @@ asistente — bajar Gnothi y el módulo. Es el negocio de **Compras**, con la ma
 
 ```powershell
 dotnet publish Compras\App\Compras.Wasm -c Release -o Compras\PaginaDeDescarga\publicado
+New-Item -ItemType Directory -Force Compras\PaginaDeDescarga\certs | Out-Null
 cd Compras\PaginaDeDescarga\certs
 & "C:\Program Files\Git\usr\bin\openssl.exe" req -x509 -newkey rsa:2048 -sha256 -days 365 -nodes `
   -keyout localhost.key -out localhost.crt -subj "/CN=localhost" `
