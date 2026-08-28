@@ -20,7 +20,7 @@ internal sealed class StdioShell : IShell
 
 	public bool IsRunning => false;
 
-	public Task<object> Invoke(string tool, IReadOnlyDictionary<string, object?>? arguments, CancellationToken ct)
+	public Task<object> Invoke(string tool, IReadOnlyDictionary<string, object?>? arguments, Accepts accepts, CancellationToken ct)
 		=> throw new PlatformNotSupportedException(Why);
 
 	public Task<IReadOnlyList<string>> ActualTools(CancellationToken ct)

@@ -47,7 +47,11 @@ IReadOnlyList<string> warnings = catalog.Load();
 Console.Error.WriteLine($"[gnothi] modules in {modulesRoot}: {catalog.Modules.Count}");
 foreach (string w in warnings) Console.Error.WriteLine($"[gnothi] warning: {w}");
 
-var dispatcher = new Dispatcher(catalog, new Meter());
+// THIS GATE ACCEPTS JSON AND NOTHING ELSE, and that is not a limitation we chose: MCP carries
+// structured output, so what leaves here has to be parseable by the client, not a text
+// projection. Declaring it explicitly instead of relying on the default is the point of the
+// hint -- the next person to read this line learns that the format was decided, not forgotten.
+var dispatcher = new Dispatcher(catalog, new Meter(), Accepts.JsonOnly);
 
 foreach ((Module m, DeclaredTool t) in dispatcher.Catalog())
 	Console.Error.WriteLine($"[gnothi] publishing: {Module.PublicName(m.Name, t.Name)}");

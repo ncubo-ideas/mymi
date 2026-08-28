@@ -25,15 +25,20 @@ public sealed class Dispatcher
 	private readonly Meter meter;
 	private readonly HostTools host;
 
-	public Dispatcher(ModuleCatalog catalog, Meter meter)
+	// The gate declares what it accepts ONCE, when it builds the dispatcher: that is the
+	// "negotiation per session". Optional, and the default is JSON only, so a gate that has no
+	// opinion behaves exactly as it did before this existed.
+	public Dispatcher(ModuleCatalog catalog, Meter meter, Accepts? accepts = null)
 	{
 		this.catalog = catalog;
 		this.meter = meter;
+		Accepts = accepts ?? Accepts.JsonOnly;
 		host = new HostTools(this);
 	}
 
 	public ModuleCatalog Modules => catalog;
 	public Meter Meter => meter;
+	public Accepts Accepts { get; }
 
 	// THE CATALOG. The same list for any caller; the front end does not build it.
 	// It comes from the MANIFEST, not from asking the module: building the catalog wakes
@@ -69,7 +74,7 @@ public sealed class Dispatcher
 
 		try
 		{
-			object content = await m.Invoke(r.Tool, r.Arguments, ct);
+			object content = await m.Invoke(r.Tool, r.Arguments, Accepts, ct);
 			return Response.Ok(content);
 		}
 		catch (Exception e)
@@ -82,6 +87,40 @@ public sealed class Dispatcher
 }
 
 public sealed record Request(string Module, string Tool, IReadOnlyDictionary<string, object?>? Arguments);
+
+// WHAT THE GATE ACCEPTS. Negotiated per SESSION, chosen per CALL.
+//
+// The split is deliberate and it is not ours: the gate declares the MENU and the module picks
+// from it, because the best format depends on the SHAPE of each answer -- TOON wins on uniform
+// arrays of objects (ten years of a series), minified JSON usually wins on nested or non-uniform
+// structures (one lab test's record). Whoever knows that shape is the module, not the gate, and
+// it only knows it at the moment it is about to answer.
+//
+// Negotiating on every tool call would be pure overhead; hardcoding one format for the whole
+// session would throw away the win. Hence: a list up front, a choice per answer.
+//
+// The output format is a PROJECTION, never a fact of Sonia's life, and it does not enter the
+// journal -- same criterion as cursors and tokens.
+public sealed record Accepts(IReadOnlyList<string> Formats)
+{
+	public const string Json = "json";
+	public const string Toon = "toon";
+
+	// JSON IS MANDATORY in every module: it is the baseline that guarantees interoperability,
+	// and it is why this -and not an empty list- is the default. A gate that says nothing gets
+	// the behaviour it had before this existed.
+	public static readonly Accepts JsonOnly = new([Json]);
+
+	// What a gate that pays for its own tokens declares. On a phone the key is Sonia's, so this
+	// is exactly where the difference is felt.
+	public static readonly Accepts JsonOrToon = new([Json, Toon]);
+
+	// The name the hint travels under towards the module. Reserved: an assistant cannot set it
+	// by sending an argument with this name -- see InProcessShell.Bind.
+	public const string ParameterName = "accepts";
+
+	public override string ToString() => string.Join(",", Formats);
+}
 
 // The content travels OPAQUE on purpose. The dispatcher does not look at it, does not parse it
 // and does not reformat it: if it did, it would have to understand the domain, and that is

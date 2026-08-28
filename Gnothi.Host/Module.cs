@@ -82,8 +82,8 @@ public sealed class Module : IAsyncDisposable
 		=> Installation.Enabled && !Installation.DisabledTools.Contains(tool);
 
 	public Task<object> Invoke(
-		string tool, IReadOnlyDictionary<string, object?>? args, CancellationToken ct)
-		=> shell.Invoke(tool, args, ct);
+		string tool, IReadOnlyDictionary<string, object?>? args, Accepts accepts, CancellationToken ct)
+		=> shell.Invoke(tool, args, accepts, ct);
 
 	// For the declared-against-real verification.
 	public Task<IReadOnlyList<string>> ActualToolNames(CancellationToken ct)

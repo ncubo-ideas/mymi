@@ -110,8 +110,18 @@ internal sealed class StdioShell : IShell
 	//
 	// And it happens to be right for another reason too: N live modules on a device is real
 	// RAM, and the module starts nothing on its own, so there is nothing to keep awake.
+	// `accepts` ARRIVES AND DOES NOT TRAVEL FURTHER, on purpose.
+	//
+	// Over MCP there is no standard slot for this hint: sending it as one more argument would
+	// put it in the module's declared schema -- so the assistant would see it, could set it, and
+	// a strict server would reject the call as an undeclared parameter. Inventing a private slot
+	// would be inventing protocol, which is exactly what the shell exists to avoid.
+	//
+	// So the negotiation is real on the in-process path -where the engine offers
+	// FormatterContext.Push per call- and is a no-op here. That asymmetry is the honest state:
+	// a module reached over stdio answers in JSON, which is the mandatory baseline anyway.
 	public async Task<object> Invoke(
-		string tool, IReadOnlyDictionary<string, object?>? arguments, CancellationToken ct)
+		string tool, IReadOnlyDictionary<string, object?>? arguments, Accepts accepts, CancellationToken ct)
 	{
 		try
 		{

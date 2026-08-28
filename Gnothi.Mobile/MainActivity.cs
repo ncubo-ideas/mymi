@@ -106,7 +106,11 @@ public class MainActivity : Activity
 		// 2 - DISCOVER. The very same code the desktop Host runs.
 		catalog = new ModuleCatalog(root);
 		IReadOnlyList<string> warnings = catalog.Load();
-		dispatcher = new Dispatcher(catalog, new Meter());
+		// THIS GATE PAYS FOR ITS OWN TOKENS. The key is Sonia's, so every character the module
+		// wraps its facts in comes out of her pocket -- which is why this is the gate that
+		// declares it can also read TOON. What it does not do is DEMAND it: a module answers in
+		// whichever of the two suits the shape of that particular answer, and JSON stays valid.
+		dispatcher = new Dispatcher(catalog, new Meter(), Accepts.JsonOrToon);
 
 		foreach (string w in warnings) Log($"warning: {w}");
 		Log($"{catalog.Modules.Count} modules installed" + (copied > 0 ? $" - {copied} files this launch" : ""));

@@ -122,7 +122,7 @@ internal sealed class InProcessShell : IShell
 		finally { Evict(); }
 	}
 
-	public Task<object> Invoke(string tool, IReadOnlyDictionary<string, object?>? arguments, CancellationToken ct)
+	public Task<object> Invoke(string tool, IReadOnlyDictionary<string, object?>? arguments, Accepts accepts, CancellationToken ct)
 	{
 		try
 		{
@@ -134,7 +134,7 @@ internal sealed class InProcessShell : IShell
 			if (method is null) throw new InvalidOperationException($"module '{name}' does not expose '{tool}'");
 
 			object? instance = method.IsStatic ? null : Build(t, 0);
-			object?[] values = [.. method.GetParameters().Select(p => Bind(p, arguments))];
+			object?[] values = [.. method.GetParameters().Select(p => Bind(p, arguments, accepts))];
 
 			object? raw;
 			try { raw = method.Invoke(instance, values); }
@@ -186,8 +186,23 @@ internal sealed class InProcessShell : IShell
 	}
 
 	// The enum is resolved FROM THE TYPE. That is what the manifest cannot express.
-	private static object? Bind(ParameterInfo p, IReadOnlyDictionary<string, object?>? arguments)
+	private static object? Bind(ParameterInfo p, IReadOnlyDictionary<string, object?>? arguments, Accepts accepts)
 	{
+		// THE RESERVED PARAMETER. A module surface that wants to choose its output format
+		// declares a parameter called 'accepts' and the HOST fills it -- never the assistant.
+		//
+		// Checked BEFORE reading `arguments`, and that order is the whole point: if the
+		// assistant's dictionary were read first, a question carrying accepts="toon" would
+		// pick its own wrapper, and the format is not the question's to choose. A module that
+		// does not declare this parameter never learns it exists, which is the same
+		// indistinguishability the rest of the design relies on.
+		if (string.Equals(p.Name, Accepts.ParameterName, StringComparison.Ordinal))
+			return p.ParameterType == typeof(string)
+				? accepts.ToString()
+				: p.ParameterType.IsAssignableFrom(typeof(string[]))
+					? accepts.Formats.ToArray()
+					: accepts;
+
 		object? raw = null;
 		arguments?.TryGetValue(p.Name ?? "", out raw);
 

@@ -15,7 +15,12 @@ internal interface IShell : IAsyncDisposable
 	// The content comes back OPAQUE. The stdio shell returns the module's CallToolResult as
 	// it is; the in-process shell returns the projection of whatever the method returned.
 	// The Host looks at neither: it forwards them.
-	Task<object> Invoke(string tool, IReadOnlyDictionary<string, object?>? arguments, CancellationToken ct);
+	//
+	// `accepts` is the HINT, not an order: the gate says which formats it can read and the
+	// module picks one per answer. It travels here and not in `arguments` because it is not the
+	// assistant's to set -- it is the Host's, and mixing the two would let a question choose its
+	// own wrapper.
+	Task<object> Invoke(string tool, IReadOnlyDictionary<string, object?>? arguments, Accepts accepts, CancellationToken ct);
 
 	// The NAMES of what the module actually exposes, for the declared-versus-actual check.
 	// Names and not protocol objects: names are the only thing being compared.
