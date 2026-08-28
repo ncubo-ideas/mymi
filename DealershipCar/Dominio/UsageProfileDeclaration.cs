@@ -4,7 +4,7 @@ namespace DealershipCar.Dominio
 {
 	/// <summary>
 	/// Un perfil de uso declarado y desde cuando rige. La vigencia va HACIA ADELANTE: antes de su
-	/// instante manda el que regia entonces (OINV-15).
+	/// instante manda el que regia entonces.
 	/// </summary>
 	internal sealed class UsageProfileDeclaration
 	{
@@ -26,7 +26,7 @@ namespace DealershipCar.Dominio
 		/// <summary>Desde cuando rige.</summary>
 		internal DateTime EffectiveFrom { get; }
 
-		/// <summary>Si ya rige en ese instante. Inclusiva, como los demas umbrales (C16).</summary>
+		/// <summary>Si ya rige en ese instante. Inclusiva, como los demas umbrales.</summary>
 		internal bool TakesEffectBy(DateTime asOf)
 		{
 			return asOf >= EffectiveFrom;

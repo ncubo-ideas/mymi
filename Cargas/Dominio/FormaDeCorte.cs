@@ -1,0 +1,66 @@
+using System;
+
+namespace Cargas.Dominio
+{
+	/// <summary>
+	/// COMO SE DETUVO EL SURTIDOR. Un surtidor se detiene de dos maneras: por corte
+	/// AUTOMATICO cuando el tanque se llena, o porque alguien lo PRESETEO a un monto o
+	/// a un volumen ("deme cinco mil colones"). La huella queda en los datos, y es lo
+	/// que permite a la institucion INFERIR el tanque lleno sin que Sonia diga nada:
+	/// el hallazgo del §6.3.3 del brief.
+	/// </summary>
+	// Gracias a esta inferencia, de los dos aportes de Sonia el tanque pasa de "hay que
+	// convencerla" a "que lo confirme", y el odometro queda como el unico campo que de
+	// verdad depende de ella.
+	public sealed class FormaDeCorte
+	{
+		public static readonly FormaDeCorte Automatico = new FormaDeCorte("automatico");
+		public static readonly FormaDeCorte Preseteado = new FormaDeCorte("preseteado");
+		public static readonly FormaDeCorte Indeterminado = new FormaDeCorte("indeterminado");
+
+		public string Nombre { get; private set; }
+
+		private FormaDeCorte(string nombre)
+		{
+			Nombre = nombre;
+		}
+
+		// La query de reconocimiento para la frontera: decide sin reventar.
+		public static bool EsConocida(string nombre)
+		{
+			if (string.IsNullOrWhiteSpace(nombre)) return false;
+			string normalizado = nombre.Trim().ToLowerInvariant();
+			return normalizado == Automatico.Nombre || normalizado == Preseteado.Nombre
+				|| normalizado == Indeterminado.Nombre;
+		}
+
+		public static FormaDeCorte PorNombre(string nombre)
+		{
+			ArgumentNullException.ThrowIfNullOrWhiteSpace(nombre);
+
+			string normalizado = nombre.Trim().ToLowerInvariant();
+			if (normalizado == Automatico.Nombre) return Automatico;
+			if (normalizado == Preseteado.Nombre) return Preseteado;
+			if (normalizado == Indeterminado.Nombre) return Indeterminado;
+
+			throw new ErrorDeDominio(
+				$"'{nombre}' no es una forma de corte conocida. Las validas son: "
+				+ $"{Automatico.Nombre}, {Preseteado.Nombre}, {Indeterminado.Nombre}.");
+		}
+
+		/// <summary>La inferencia inicial del tanque para una carga con este corte. Corte
+		/// automatico: casi seguro quedo lleno. Preseteado: casi seguro no. Indeterminado:
+		/// no se infiere nada. Lo inferido entra con origen Estimado -el mismo mecanismo
+		/// de procedencia del odometro- y NUNCA cierra un tramo: prellenar el switch para
+		/// que Sonia confirme es todo su poder.</summary>
+		public DeclaracionDeTanque Inferencia()
+		{
+			if (ReferenceEquals(this, Automatico))
+				return DeclaracionDeTanque.De(EstadoDelTanque.Lleno, OrigenDeLectura.Estimado);
+			if (ReferenceEquals(this, Preseteado))
+				return DeclaracionDeTanque.De(EstadoDelTanque.Parcial, OrigenDeLectura.Estimado);
+
+			return DeclaracionDeTanque.Ninguna;
+		}
+	}
+}

@@ -22,15 +22,30 @@
  * SE MANTIENE BOOTSTRAP, con sus variables remapeadas a esta paleta: se gana el diseño sin
  * reescribir cada clase de las paginas. Examenes lo saco del todo; es un paso aparte.
  *
- * ⚠️ LA FUENTE ES UN PENDIENTE REAL, no un detalle. Plus Jakarta Sans es un WEBFONT y su
- * canvas lo trae de Google. Esta app promete funcionar "sin nosotros, y sin conexion" — y
- * una fuente que se baja de internet rompe esa promesa el dia que alguien abra la app sin
- * red: la tipografia cae al fallback y la app se ve distinta. Hay que SERVIRLA NOSOTROS
- * (woff2 en wwwroot), y hasta entonces la pila de abajo la deja caer con dignidad.
- *
  * LOS DOS ESTADOS, y el ambar tiene UN solo trabajo: marcar lo que cambio. El ROJO NO SE
  * USA: "un carrito no tiene urgencias". No esta definido aca a proposito.
  */
+
+/* LA FUENTE LA SERVIMOS NOSOTROS, y eso deja de ser un pendiente. Antes venia de Google
+   Fonts, y esta app promete funcionar "sin nosotros, y sin conexion": una fuente que se baja
+   de internet se cae el dia que alguien la abra sin red, y la tipografia salta al fallback.
+   No era una regla de estilo, era una promesa del producto.
+
+   UNA SOLA DESCARGA DE 26 KB. Es la fuente VARIABLE con el eje wght de 200 a 800, recortada
+   al latino, la puntuacion, la moneda -incluido el ₡- y los cuatro simbolos que las
+   pantallas usan. Con las estaticas serian cinco archivos de 92 KB, uno por peso.
+
+   font-display: swap — el texto se ve DESDE EL PRIMER FRAME con la fuente de sistema y
+   cambia cuando la propia llega. Con "block" la pantalla arranca en blanco, y esta app ya
+   hace esperar por el wasm: sumarle una espera por la tipografia es cobrar dos veces. */
+@font-face {
+    font-family: 'Plus Jakarta Sans';
+    src: url('../fuentes/PlusJakartaSans.woff2') format('woff2-variations'),
+         url('../fuentes/PlusJakartaSans.woff2') format('woff2');
+    font-weight: 200 800;
+    font-style: normal;
+    font-display: swap;
+}
 
 :root {
     /* --------------------------------------------------- la paleta de Fernanda */
@@ -176,8 +191,10 @@ h2, h3, h4, h5 { font-weight: 700; }
 .marca-texto { display: flex; flex-direction: column; gap: 1px; min-width: 0; }
 .marca-nombre { font-weight: 700; font-size: 1.12rem; line-height: 1.15; }   /* §1 */
 .marca-bajada { font-size: .74rem; color: var(--barra-tenue); line-height: 1.25; }
+/* El sello se queda JUNTO A LA MARCA y no en la esquina: dice de que es demo esta app, y
+   pegado al nombre se lee como parte de la identidad. La esquina derecha la necesitan las
+   pestañas, que es lo que la persona va a buscar ahi. */
 .barra-dentro .sello-demo {
-    margin-left: auto;
     color: var(--barra-tenue);
     border-color: rgba(234, 246, 234, .3);
 }
@@ -187,28 +204,46 @@ h2, h3, h4, h5 { font-weight: 700; }
 /* UNA SOLA UI QUE SE COMPORTA DISTINTO POR RESOLUCION, que es lo que pidio Alvaro. El
    markup de las pestañas es uno; lo que cambia es donde se paran.
 
-   ESCRITORIO: en linea, pegadas a la barra de marca, como las pestañas de un expediente.
+   ESCRITORIO: en la MISMA FILA que la marca, contra la esquina derecha.
    TELEFONO: al pie y fijas, que es donde llega el pulgar. Y el body gana un colchon abajo
    para que la barra no tape la ultima fila.
 
-   El corte es 768 px, el mismo que usa la §4 para el ancho de columna. */
+   El corte es 768 px, el mismo que usa la §4 para el ancho de columna.
+
+   POR QUE SE FUE LA BANDA PROPIA. Tenian una franja oscura para ellas solas debajo de la
+   marca, y era un error con tres caras:
+
+     EL VACIO. De los 885 px de la franja, 641 quedaban vacios: el 72 %. Su unico trabajo
+     era sostener dos elementos chicos, y una masa de color oscuro que no sostiene nada se
+     lee como un hueco, no como una barra.
+
+     EL CROMO. Dos franjas apiladas llegaban a 104 px antes de la primera linea de
+     contenido. En la misma fila son 67 y no se pierde nada: la marca mide 40 px de flor y
+     las pestañas caben adentro de ese alto.
+
+     Y EL EMPALME, que era el de verdad. La activa se pintaba de --papel para "continuar el
+     fondo de la pagina", pero lo que hay debajo es el hero, cuyo degradado ARRANCA en
+     --tinte-verde. O sea que la pestaña blanca tocaba verde claro, y justo en la esquina
+     donde el degradado esta mas verde. Una pestaña de expediente cuyo folio es de otro
+     color no se lee como pestaña: se lee como una pastilla flotando. Adentro de la barra el
+     problema no existe, porque ya no hay ningun folio con el que empalmar. */
 .pestanas {
     background: var(--barra-fondo);
-    border-bottom: 1px solid rgba(0, 0, 0, .2);
+    /* A la derecha de todo: la marca empuja desde la izquierda y este auto se come el hueco
+       que antes quedaba vacio. */
+    margin-left: auto;
 }
 .pestanas-dentro {
-    max-width: 56rem;
-    margin: 0 auto;
-    padding: 0 1.5rem;
     display: flex;
-    gap: .35rem;
+    gap: .15rem;
 }
 .pestana {
+    position: relative;
     display: inline-flex;
     align-items: center;
-    gap: .45rem;
-    padding: .6rem 1.05rem;
-    border-radius: var(--radio-boton) var(--radio-boton) 0 0;
+    gap: .4rem;
+    padding: .5rem .8rem;
+    border-radius: var(--radio-boton);
     color: var(--barra-tenue);
     text-decoration: none;
     font-weight: 600;
@@ -217,55 +252,93 @@ h2, h3, h4, h5 { font-weight: 700; }
 }
 .pestana:hover { color: var(--barra-tinta); background: rgba(234, 246, 234, .08); }
 
-/* La activa se despega del verde y se apoya en el papel DE LA PAGINA -no en el blanco de
-   una tarjeta-: la pestaña ES la pantalla, y tiene que continuar su fondo. */
-.pestana.active {
-    background: var(--papel);
-    color: var(--gu-verde-oscuro);
+/* LA ACTIVA SE MARCA CON UN SUBRAYADO Y NO CON UN RELLENO, y es el mismo recurso que en
+   telefono -alla la raya va en el canto de arriba, porque la barra esta al pie-. Que las
+   dos resoluciones usen el MISMO lenguaje visual y solo lo espejen es lo que hace que sea
+   una sola UI y no dos que se parecen.
+
+   Ademas el subrayado no tiene problema de contraste: la etiqueta queda en --barra-tinta
+   sobre --barra-fondo, que es 13:1. Un relleno verde vivo con texto claro encima daba 2,9
+   y no pasaba ni el AA. */
+.pestana.active { color: var(--barra-tinta); }
+.pestana.active::after {
+    content: "";
+    position: absolute;
+    left: .8rem;
+    right: .8rem;
+    bottom: -.15rem;
+    height: 3px;
+    border-radius: 3px 3px 0 0;
+    background: var(--verde-vivo);
 }
-.pestana-icono { font-size: 1.05rem; line-height: 1; }
+.pestana-icono {
+    width: 1.15rem;
+    height: 1.15rem;
+    flex: 0 0 auto;
+}
 
 @media (max-width: 767.98px) {
-    /* Al pie, fijas, y en dos mitades iguales. */
+    /* El sello VUELVE A LA ESQUINA. En escritorio se queda junto al nombre porque la
+       esquina la ocupan las pestañas; aca las pestañas se fueron al pie -son `fixed`, o
+       sea que no estan en esta fila- y la esquina queda libre. */
+    .barra-dentro .sello-demo { margin-left: auto; }
+
+    /* Al pie, fijas, y en dos mitades iguales. `fixed` las saca del flujo, asi que el
+       `margin-left: auto` del escritorio no aplica y no hace falta anularlo — pero se
+       anula igual, porque un margen auto en un elemento fijo con left y right puestos lo
+       centraria si algun dia se le quita uno de los dos. */
     .pestanas {
         position: fixed;
         left: 0;
         right: 0;
         bottom: 0;
+        margin-left: 0;
         z-index: 900;
-        border-bottom: 0;
         border-top: 1px solid rgba(0, 0, 0, .2);
         box-shadow: 0 -2px 12px rgba(20, 51, 31, .18);
         /* El area segura del telefono: sin esto la barra queda debajo del gesto de inicio. */
         padding-bottom: env(safe-area-inset-bottom, 0);
     }
-    .pestanas-dentro { padding: 0; gap: 0; }
+    .pestanas-dentro { gap: 0; }
     .pestana {
         flex: 1 1 0;
         flex-direction: column;
-        gap: .2rem;
+        gap: .25rem;
         justify-content: center;
         border-radius: 0;
         padding: .55rem .5rem .5rem;
         font-size: .74rem;
     }
-    .pestana.active { background: transparent; color: var(--barra-tinta); }
-    /* Y la activa se marca con una linea arriba, no con un fondo: sobre verde, un bloque
-       de papel al pie se lee como un error de render. */
-    .pestana.active .pestana-icono { color: #fff; }
-    .pestana.active::before {
-        content: "";
-        position: absolute;
-        top: 0;
-        width: 3.2rem;
-        height: 3px;
-        border-radius: 0 0 3px 3px;
-        background: var(--barra-tinta);
-    }
-    .pestana { position: relative; }
+    .pestana:hover { background: transparent; }
+    .pestana-icono { width: 1.35rem; height: 1.35rem; }
 
-    /* El colchon para que la barra fija no tape la ultima fila. */
-    main { padding-bottom: 5.5rem !important; }
+    /* LA MISMA RAYA, ESPEJADA. Aca la barra esta al pie, asi que su canto interior es el de
+       ARRIBA y la raya va ahi. Es el mismo `::after` del escritorio movido de borde: si
+       fueran dos pseudoelementos distintos, cambiar el color de la marca obligaria a
+       acordarse de los dos. */
+    .pestana.active::after {
+        top: 0;
+        bottom: auto;
+        left: 50%;
+        right: auto;
+        width: 2.6rem;
+        transform: translateX(-50%);
+        border-radius: 0 0 3px 3px;
+    }
+
+    /* EL COLCHON para que la barra fija no tape la ultima fila.
+
+       VA CON `main.container` Y NO CON `main`, y la diferencia no es cosmetica: este colchon
+       NUNCA FUNCIONO. El elemento es <main class="container py-4">, y la utilidad `.py-4` de
+       Bootstrap trae su propio `!important`. Entre dos declaraciones `!important` decide la
+       ESPECIFICIDAD, y una clase (0,1,0) le gana a un tipo (0,0,1) sin importar el orden de
+       las hojas — asi que el padding se quedaba en los 24 px de `.py-4`. `main.container` es
+       (0,1,1) y si gana.
+
+       MEDIDO EN EL FONDO DE LA PORTADA, a 375 px y con la pagina scrolleada hasta abajo:
+       antes el ultimo parrafo terminaba 15 px POR DEBAJO del canto de la barra -o sea que
+       su ultima linea quedaba tapada-; ahora termina 49 px por encima. */
+    main.container { padding-bottom: 5.5rem !important; }
 }
 
 /* ---------------------------------------------------------------- avisos y secciones */
@@ -338,8 +411,24 @@ main h2 {
     display: block;
 }
 /* Sin imagen, el hueco de 52 px se mantiene: si no, las fichas de la fila quedan de
-   alturas distintas y la rejilla se ve rota. */
-.infaltable-sinfoto { height: 52px; display: flex; align-items: center; font-size: 1.6rem; opacity: .35; }
+   alturas distintas y la rejilla se ve rota.
+
+   LA CAJA SE DIBUJA, no se escribe. Antes era el glifo ▢ (U+25A2), que Plus Jakarta Sans NO
+   TRAE: caia en otra tipografia y se veia de otra familia justo al lado de la que si carga.
+   Un borde punteado no depende de ningun glifo y dice lo mismo — "aca iria una foto". */
+.infaltable-sinfoto {
+    height: 52px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+.infaltable-sinfoto::before {
+    content: "";
+    width: 30px;
+    height: 30px;
+    border: 2px dashed var(--linea);
+    border-radius: 6px;
+}
 .infaltable-nombre {
     font-size: 13.5px;
     font-weight: 700;
@@ -360,6 +449,257 @@ main h2 {
 .puntos { display: flex; gap: 4px; margin-top: 8px; align-self: flex-start; }
 .punto { width: 8px; height: 8px; border-radius: 50%; background: var(--linea); }
 .punto-lleno { background: var(--verde-vivo); }
+
+/* ---------------------------------------------------------------- tu ritmo */
+
+/* La constancia en palabras, en la ficha de producto. Los puntos se ven de un vistazo y
+   esto se LEE: no es lo mismo, y por eso van los dos. */
+.infaltable-constancia {
+    font-size: 10.5px;
+    color: var(--verde);
+    font-weight: 600;
+    margin-top: 6px;
+    align-self: flex-start;
+    line-height: 1.2;
+}
+
+/* LAS CIFRAS DEL RITMO. Dos columnas en escritorio, una en telefono: son dos hechos
+   independientes -cada cuantos dias y que dia- y apilarlos no pierde nada. */
+.ritmo-cifras {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(11rem, 1fr));
+    gap: 1rem;
+}
+.ritmo-cifra {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 2px;
+    background: var(--ficha);
+    border-radius: var(--radio-ficha);
+    padding: 12px 14px 14px;
+}
+.ritmo-numero {
+    font-size: 1.85rem;
+    font-weight: 800;
+    line-height: 1;
+    color: var(--tinta);
+    font-variant-numeric: tabular-nums;
+}
+/* Un dia de la semana no es un numero: en 1.85rem se desborda la ficha. */
+.ritmo-palabra { font-size: 1.35rem; text-transform: capitalize; }
+
+/* NI UN MONTO NI UNA FECHA. "₡186.020" y "29 ago 2026" tienen el triple de caracteres que
+   un conteo, y en 1.85rem se salian de la ficha o se partian en dos lineas. Bajan de
+   tamano y NO se parten: una cifra cortada a la mitad se lee mal dos veces. */
+.ritmo-numero-largo {
+    font-size: 1.25rem;
+    white-space: nowrap;
+    letter-spacing: -.01em;
+}
+.ritmo-rotulo { font-size: 11.5px; color: var(--tenue); line-height: 1.3; }
+
+/* LOS TRES MOMENTOS. La barra dice la proporcion sin un numero de mas, y el favorito se
+   marca con el verde vivo — no con negrita, que sobre 11 px no se distingue. */
+.momentos { display: flex; flex-direction: column; gap: 7px; }
+.momento {
+    display: grid;
+    grid-template-columns: 4.2rem 1fr auto;
+    align-items: center;
+    gap: 10px;
+}
+.momento-nombre {
+    font-size: 12.5px;
+    color: var(--tenue);
+    text-transform: capitalize;
+}
+.momento-barra {
+    height: 8px;
+    border-radius: var(--radio-boton);
+    background: var(--linea);
+    overflow: hidden;
+}
+.momento-barra span {
+    display: block;
+    height: 100%;
+    background: var(--tenue-2);
+    border-radius: var(--radio-boton);
+}
+.momento-cuantas {
+    font-size: 11.5px;
+    color: var(--tenue);
+    white-space: nowrap;
+    font-variant-numeric: tabular-nums;
+}
+.momento-favorito .momento-nombre { color: var(--tinta); font-weight: 700; }
+.momento-favorito .momento-barra span { background: var(--verde-vivo); }
+.momento-favorito .momento-cuantas { color: var(--tinta); font-weight: 600; }
+
+/* ---------------------------------------------------------------- el hero */
+
+/* EL HERO. En escritorio el texto y la canasta van lado a lado; en telefono la canasta baja
+   y se recorta, que es como se ve en el diseño de Fernanda. La rejilla es la misma: lo que
+   cambia es el numero de columnas.
+
+   EL DEGRADADO VERDE ES LO QUE SEPARA EL HERO DEL RESTO sin una linea: arranca en el tinte
+   verde y se apaga en el papel calido, asi que la primera tarjeta parece nacer del fondo. */
+.hero {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 0.85fr);
+    align-items: center;
+    gap: 1rem;
+    /* EL SANGRADO ES EXACTAMENTE EL DEL CONTENEDOR, ni un pixel mas. Antes era -1.5rem, o
+       sea 24 px, contra los 12 px de gutter que pone .container: el hero se salia 12 px por
+       cada lado y la pagina ENTERA ganaba una barra de scroll horizontal cuando el viewport
+       andaba cerca del ancho de columna (56rem). Ahora el borde del hero cae justo sobre el
+       borde del contenedor, y el padding de abajo lo compensa para que el texto siga
+       alineado con las tarjetas. */
+    margin: -1.5rem -.75rem 1.5rem;
+    padding: 1.6rem .75rem 0;
+    background: linear-gradient(160deg, var(--tinte-verde) 0%, var(--papel) 78%);
+    border-radius: 0 0 var(--radio-marco) var(--radio-marco);
+    overflow: hidden;
+}
+.hero-dicho { min-width: 0; }
+.hero-saludo {
+    font-size: .95rem;
+    font-weight: 600;
+    color: var(--verde);
+    margin: 0 0 .1rem;
+}
+.hero h1 { margin: 0 0 .5rem; line-height: 1.12; }
+.hero-bajada {
+    font-size: .88rem;
+    color: var(--tenue);
+    margin: 0 0 1.4rem;
+    max-width: 26ch;
+    line-height: 1.45;
+}
+
+/* La canasta se apoya en el borde de abajo: es una ilustracion, no una foto en una caja, y
+   dejarla flotar en el centro la vuelve un adorno. */
+.hero-canasta {
+    display: block;
+    width: 100%;
+    height: auto;
+    max-width: 15rem;
+    margin: 0 auto -0.4rem;
+    align-self: end;
+}
+
+@media (max-width: 575.98px) {
+    /* En telefono el texto manda y la canasta pasa a ser un fondo: se recuesta a la
+       derecha, se recorta con el overflow del hero y baja la opacidad para que el titular
+       se lea encima sin pelearle. */
+    .hero { grid-template-columns: 1fr; position: relative; padding-bottom: .4rem; }
+    .hero-dicho { position: relative; z-index: 1; }
+    .hero-canasta {
+        position: absolute;
+        right: -2.2rem;
+        bottom: -1rem;
+        width: 11rem;
+        max-width: none;
+        margin: 0;
+        opacity: .5;
+    }
+    .hero-bajada { max-width: 20ch; margin-bottom: .9rem; }
+}
+
+/* ---------------------------------------------------------------- tu mes */
+
+/* La cifra del mes, que es lo primero que se lee de la tarjeta. §2 la pone en 800. */
+.cifra-grande {
+    font-size: 1.85rem;
+    font-weight: 800;
+    line-height: 1.1;
+    color: var(--tinta);
+    font-variant-numeric: tabular-nums;
+}
+
+/* EL SPARKLINE. Sin ejes y sin numeros: lo que cuenta es la FORMA del mes. Un eje en
+   60 px de alto es tinta que no dice nada. */
+.serie-mes {
+    display: block;
+    width: 100%;
+    height: 60px;
+    margin: 14px 0 4px;
+    overflow: visible;
+}
+.serie-mes polyline {
+    fill: none;
+    stroke: var(--verde-vivo);
+    stroke-width: 2;
+    stroke-linejoin: round;
+    stroke-linecap: round;
+    /* preserveAspectRatio="none" estira el trazo: sin esto la linea se ve mas gruesa en
+       horizontal que en vertical. */
+    vector-effect: non-scaling-stroke;
+}
+.serie-mes circle { fill: var(--carta); stroke: var(--verde-vivo); stroke-width: 2; }
+
+/* Los precios: el de antes tachado y el de ahora firme. Es la forma en que un super
+   escribe una rebaja, y se lee sin leyenda. */
+.precio-antes {
+    color: var(--tenue);
+    text-decoration: line-through;
+    font-variant-numeric: tabular-nums;
+}
+.precio-ahora { font-weight: 700; font-variant-numeric: tabular-nums; }
+
+/* ------------------------------------------------- infaltables y ficha de producto */
+
+/* El "Ver todos" de la portada: verde de marca, 12.5 px y 700, como en su canvas. */
+.ver-todos {
+    font-size: 12.5px;
+    font-weight: 700;
+    color: var(--verde);
+    text-decoration: none;
+    white-space: nowrap;
+}
+.ver-todos:hover { color: var(--verde-hondo); text-decoration: underline; }
+
+/* Una fila de la pantalla completa de infaltables. Misma anatomia que un recibo -foto,
+   que, dato, flecha- para que las dos listas se recorran igual. */
+.infaltable-fila {
+    display: flex;
+    align-items: center;
+    gap: .9rem;
+    text-align: left;
+    width: 100%;
+}
+.infaltable-fila-foto {
+    flex: 0 0 40px;
+    width: 40px;
+    height: 40px;
+    object-fit: contain;
+}
+.infaltable-fila-que { display: flex; flex-direction: column; gap: 1px; flex: 1 1 auto; min-width: 0; }
+
+/* Las cuatro cifras de la ficha. Se acomodan solas: cuatro en escritorio, dos en telefono. */
+.cifras-producto {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(9rem, 1fr));
+    gap: .7rem;
+}
+
+/* Una fila del "como lo fuiste llevando": mes, barra, unidades y la plata en chico. */
+.mes-fila {
+    display: grid;
+    grid-template-columns: 4.6rem 1fr 2.6rem auto;
+    align-items: center;
+    gap: 10px;
+}
+.mes-nombre { font-size: 12.5px; color: var(--tenue); font-variant-numeric: tabular-nums; }
+.mes-unidades { font-weight: 700; text-align: right; }
+.mes-gasto { text-align: right; white-space: nowrap; }
+.mes-fila .momento-barra span { background: var(--verde-vivo); }
+
+@media (max-width: 449.98px) {
+    /* En pantallas angostas la plata sale de la fila: cuatro columnas en 320 px dejan la
+       barra en nada, y la barra es lo que hace legible la serie. */
+    .mes-fila { grid-template-columns: 4.2rem 1fr 2.4rem; }
+    .mes-gasto { display: none; }
+}
 
 /* ---------------------------------------------------------------- recibos */
 

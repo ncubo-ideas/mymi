@@ -4,7 +4,7 @@ namespace DealershipCar.Dominio
 {
 	/// <summary>
 	/// La dimension de distancia suspendida porque el limite y las mediciones estan en unidades
-	/// distintas (OINV-21, ley L7). No se convierte: se deja de comparar y se dice cual contra
+	/// distintas. No se convierte: se deja de comparar y se dice cual contra
 	/// cual.
 	/// </summary>
 	internal sealed class ADimensionSuspendedByAUnitMismatch : LimitStanding

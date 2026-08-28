@@ -1,0 +1,14 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!-- El puppet. CERO dependencias: ni Puppeteer, ni HTTP, ni wasm, ni MCP.
+       Que este csproj no tenga un solo PackageReference ni ProjectReference es
+       la prueba de que el dominio no cambia al cruzar a wasm. Si algun dia
+       necesita una, eso es el hallazgo. -->
+
+  <PropertyGroup>
+    <TargetFramework>net9.0</TargetFramework>
+    <Nullable>disable</Nullable>
+    <ImplicitUsings>disable</ImplicitUsings>
+  </PropertyGroup>
+
+</Project>

@@ -29,7 +29,7 @@ namespace DealershipCar.Dominio
 			get { return _reading.Exists(); }
 		}
 
-		/// <summary>La lectura del ancla. Revienta si no hay (E41): ausente no es cero.</summary>
+		/// <summary>La lectura del ancla. Revienta si no hay: ausente no es cero.</summary>
 		internal int Reading
 		{
 			get { return _reading.Value; }
@@ -43,7 +43,7 @@ namespace DealershipCar.Dominio
 
 		/// <summary>
 		/// El ancla completa, la que deja una completacion real de una operacion que mide
-		/// distancia (ley L4). Las guardas viven en <see cref="AnchorReading.Of"/>.
+		/// distancia. Las guardas viven en <see cref="AnchorReading.Of"/>.
 		/// </summary>
 		internal static BasePoint At(DateTime instant, int reading, DistanceUnit unit)
 		{

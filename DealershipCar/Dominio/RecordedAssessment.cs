@@ -29,14 +29,14 @@ namespace DealershipCar.Dominio
 		internal abstract string Describe();
 
 		/// <summary>
-		/// Si la distancia quedo suspendida por unidades distintas (ley L7). Total, y derivada de
-		/// esta respuesta y no de un latch: por eso se cura sola (GAP G4).
+		/// Si la distancia quedo suspendida por unidades distintas. Total, y derivada de
+		/// esta respuesta y no de un latch: por eso se cura sola.
 		/// </summary>
 		internal abstract bool SuspendsDistanceByAUnitMismatch();
 
 		/// <summary>
 		/// Si la ley dice que la operacion se paso de la gracia. Total. Es lo que deja contar como
-		/// no hecha a una operacion aplazada (OINV-28).
+		/// no hecha a una operacion aplazada.
 		/// </summary>
 		internal abstract bool SaysTheOperationIsOverdue();
 	}

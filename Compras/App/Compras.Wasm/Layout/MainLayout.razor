@@ -48,28 +48,54 @@
             <div class="marca-bajada">Su barrio, su despensa, desde 1992</div>
         </div>
         <span class="sello-demo">demo</span>
+
+        @* LAS DOS PESTAÑAS, y son UNA sola UI que se comporta distinto por resolucion — que
+           es lo que pidio Alvaro: "lo ideal es mantener una sola ui que mantenga a mobile y
+           desktop, quizas dependiendo de la resolucion se comporte distinto, en vez de dos
+           uis separadas".
+
+           VIVEN DENTRO DE LA BARRA DE MARCA, y antes tenian una banda propia debajo. La
+           banda se fue por tres razones que eran la misma: de sus 885 px, 641 estaban
+           VACIOS -el 72 %- porque su unico trabajo era sostener dos elementos chicos;
+           sumaba una segunda franja oscura hasta los 104 px de cromo antes de la primera
+           linea de contenido; y obligaba a la pestaña activa a empalmar con el fondo de la
+           pagina, que es lo que no cerraba (ver el CSS).
+
+           EN TELEFONO SIGUEN AL PIE Y FIJAS, que es donde llega el pulgar. `position:
+           fixed` las saca del flujo, asi que estar adentro de la barra no las ata a ella:
+           el markup es uno solo y el CSS decide donde se paran. *@
+        <nav class="pestanas">
+            <div class="pestanas-dentro">
+                <NavLink class="pestana" href="" Match="NavLinkMatch.All">
+                    @* LOS ICONOS SE DIBUJAN, no se escriben. Antes eran dos glifos -☉ y ☰-
+                       y la fuente recortada NO LOS TRAE: caian en otra familia, con otro
+                       peso y otras metricas, justo al lado de la etiqueta que si carga. Es
+                       el mismo problema que el cuadro del "sin foto", y se arregla igual.
+
+                       Y el ☰ ademas mentia: un hamburguesa significa "menu", no "compras".
+                       Este es un RECIBO, que es a donde lleva la pestaña y lo que la
+                       canasta del hero trae adentro. *@
+                    <svg class="pestana-icono" viewBox="0 0 20 20" fill="none"
+                         stroke="currentColor" stroke-width="1.7" stroke-linecap="round"
+                         stroke-linejoin="round" aria-hidden="true">
+                        <path d="M2.9 9.2 10 3.4l7.1 5.8v7.4H2.9z"/>
+                        <path d="M7.8 16.6v-4.7h4.4v4.7"/>
+                    </svg>
+                    Inicio
+                </NavLink>
+                <NavLink class="pestana" href="recibos">
+                    <svg class="pestana-icono" viewBox="0 0 20 20" fill="none"
+                         stroke="currentColor" stroke-width="1.7" stroke-linecap="round"
+                         stroke-linejoin="round" aria-hidden="true">
+                        <path d="M5.2 3.2h9.6v13.6l-2.4-1.5-2.4 1.5-2.4-1.5-2.4 1.5z"/>
+                        <path d="M7.9 7.1h4.2M7.9 10.3h4.2"/>
+                    </svg>
+                    Compras
+                </NavLink>
+            </div>
+        </nav>
     </div>
 </header>
-
-@* LAS DOS PESTAÑAS, y son UNA sola UI que se comporta distinto por resolucion — que es
-   lo que pidio Alvaro: "lo ideal es mantener una sola ui que mantenga a mobile y desktop,
-   quizas dependiendo de la resolucion se comporte distinto, en vez de dos uis separadas".
-
-   Arriba de 768 px van en linea, debajo de la barra de marca, como pestañas de escritorio.
-   Debajo, se van al PIE y quedan fijas, que es donde el pulgar alcanza. El markup es el
-   mismo; lo que cambia es el CSS. *@
-<nav class="pestanas">
-    <div class="pestanas-dentro">
-        <NavLink class="pestana" href="" Match="NavLinkMatch.All">
-            <span class="pestana-icono" aria-hidden="true">&#9737;</span>
-            Inicio
-        </NavLink>
-        <NavLink class="pestana" href="recibos">
-            <span class="pestana-icono" aria-hidden="true">&#9776;</span>
-            Compras
-        </NavLink>
-    </div>
-</nav>
 
 <main class="container py-4" style="max-width:56rem">
     @Body

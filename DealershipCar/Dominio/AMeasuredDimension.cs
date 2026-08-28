@@ -12,7 +12,7 @@ namespace DealershipCar.Dominio
 		private readonly int _travelled;
 		private readonly int _effectiveLimit;
 
-		/// <summary>El estado, lo recorrido y el limite ya escalado por el perfil (ley L8).</summary>
+		/// <summary>El estado, lo recorrido y el limite ya escalado por el perfil.</summary>
 		protected AMeasuredDimension(DueState state, int travelled, int effectiveLimit)
 		{
 			_state = state;
@@ -61,7 +61,7 @@ namespace DealershipCar.Dominio
 		/// <summary>Como se dice una cantidad de esta dimension.</summary>
 		protected abstract string Amount(int quantity);
 
-		/// <summary>El rango de avance. Solo lo medido entra en esta escalera (GAP G2).</summary>
+		/// <summary>El rango de avance. Solo lo medido entra en esta escalera.</summary>
 		protected override int Advancement()
 		{
 			if (_state == DueState.Overdue) return 3;

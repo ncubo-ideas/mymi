@@ -38,7 +38,15 @@ else
                 <tr>
                     <td>
                         @linea.Descripcion
-                        <div class="small text-body-secondary">@linea.Sku</div>
+                        @* EL SKU NO SE PINTA. La especificacion de marca lo prohibe con nombre
+                           propio: "nada de «SKU», «ticket promedio» ni «categorias de consumo» en
+                           lo que ve Sonia". Es la llave con la que el supermercado identifica un
+                           producto en SU inventario, y no le dice nada a quien compro.
+
+                           Sigue viva adentro -es la identidad del producto en el catalogo y lo
+                           que cruza sus compras entre si- y sigue viajando en las vistas para
+                           que la pantalla pueda pedir su foto. Lo que no hace es salir a
+                           pantalla. *@
                         @if (linea.TieneGarantia)
                         {
                             <span class="etiqueta etiqueta-verde">con garantía</span>

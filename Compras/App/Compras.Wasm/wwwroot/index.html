@@ -10,22 +10,18 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>La Guaria y vos · Supermercado La Guaria</title>
     <base href="/app/" />
-    <!-- PLUS JAKARTA SANS, la tipografia del diseño de Fernanda.
-
-         ⚠️ VIENE DE GOOGLE, y eso es un pendiente y no una solucion: esta app promete
-         funcionar "sin nosotros, y sin conexion", asi que una fuente que se baja de
-         internet se cae el dia que alguien la abra sin red. Hay que servir el woff2 desde
-         wwwroot. Mientras tanto, la pila de css/app.css cae en Segoe UI. -->
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <!-- LA FUENTE VA EN css/app.css con su @font-face y la servimos nosotros: 26 KB de
+         woff2 variable, sin una sola peticion a Google. Esta app promete funcionar sin
+         conexion, y una fuente que se baja de internet rompe esa promesa. -->
     <link rel="stylesheet" href="lib/bootstrap/dist/css/bootstrap.min.css" />
     <link rel="stylesheet" href="css/app.css" />
     <link rel="icon" type="image/png" href="favicon.png" />
     <link href="Compras.Wasm.styles.css" rel="stylesheet" />
     <link href="manifest.webmanifest" rel="manifest" />
-    <link rel="apple-touch-icon" sizes="512x512" href="icon-512.png" />
-    <link rel="apple-touch-icon" sizes="192x192" href="icon-192.png" />
+    <!-- iOS NO respeta la transparencia -compone sobre negro- y aplica su propio redondeo,
+         asi que apple-touch-icon va PLENO y sin redondear. Apuntarlo al icono redondeado
+         dejaba las esquinas negras. -->
+    <link rel="apple-touch-icon" sizes="180x180" href="apple-touch-icon.png" />
 </head>
 
 <body>

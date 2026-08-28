@@ -124,6 +124,58 @@ namespace Compras.Dominio
 		}
 
 		/// <summary>
+		/// El último mes con compras contra el mes INMEDIATAMENTE ANTERIOR. Total: sin
+		/// compras devuelve una comparación que contesta que no hay comparación.
+		/// </summary>
+		// ES OTRA PREGUNTA QUE CompararConElAnioPasado, y las dos hacen falta. Contra el año
+		// pasado se ve si la canasta cambio de fondo -las estaciones y los habitos ya
+		// dieron la vuelta-; contra el mes anterior se ve si ESTE mes viene distinto, que es
+		// lo que alguien pregunta cuando abre la app un martes.
+		//
+		// La aritmetica del mes anterior vive ACA y no en la pantalla: que enero venga
+		// despues de diciembre del año pasado es del calendario, y una superficie que lo
+		// resuelva sola lo va a resolver mal en enero.
+		public ComparacionDeCanastas CompararConElMesAnterior()
+		{
+			RangoDeCompras rango = Rango;
+			if (!rango.Existe()) return CompararCanastas(1900, 1, 1900, 2);
+
+			int anioAntes = rango.UltimoMes == 1 ? rango.UltimoAnio - 1 : rango.UltimoAnio;
+			int mesAntes = rango.UltimoMes == 1 ? 12 : rango.UltimoMes - 1;
+
+			return CompararCanastas(anioAntes, mesAntes, rango.UltimoAnio, rango.UltimoMes);
+		}
+
+		/// <summary>
+		/// CÓMO SE MOVIERON LOS PRECIOS de los productos que sí lleva: los habituales, cada
+		/// uno con su serie. El que más subió primero.
+		/// </summary>
+		// "DE LOS PRODUCTOS QUE SI LLEVAS", que es lo que el diseño de la app promete y lo
+		// que hace util a esta lectura. Una lista de los 45 precios del catalogo es un
+		// boletin de inflacion; la de SUS doce habituales es su propia inflacion, que es el
+		// dato que ninguna app de super da.
+		//
+		// Se cruza la firma con la serie de precios en el DOMINIO y no en la pantalla: una
+		// superficie que lo hiciera tendria que pedir doce series por separado, y peor,
+		// tendria que decidir cuales doce — que es justo el juicio que la firma ya tomo.
+		public IReadOnlyList<PrecioEnElTiempo> PreciosDeLosHabituales(int cuantasCompras)
+		{
+			FirmaDeLaCanasta firma = FirmaDeLasUltimas(cuantasCompras);
+
+			var series = new List<PrecioEnElTiempo>();
+			foreach (ProductoHabitual habitual in firma.Habituales)
+			{
+				PrecioEnElTiempo serie = PrecioDe(habitual.Sku);
+				if (serie.Existe() && serie.HaySerie && serie.HayCambioReal) series.Add(serie);
+			}
+
+			// El que mas movio primero, en valor absoluto: una bajada de 300 dice tanto como
+			// una subida de 300, y quien lee decide que hacer con el signo.
+			series.Sort((uno, otro) => Math.Abs(otro.CambioEnProporcion).CompareTo(Math.Abs(uno.CambioEnProporcion)));
+			return series;
+		}
+
+		/// <summary>
 		/// La garantia de un producto, buscada por sku o descripcion. Si se compro varias
 		/// veces gana la mas reciente, que es la cobertura que corre. La fecha de consulta
 		/// viene recibida: el dominio no lee el reloj.
@@ -187,7 +239,19 @@ namespace Compras.Dominio
 			var meses = new List<MesDeConsumo>();
 			foreach (int llave in orden) meses.Add(porMes[llave]);
 
-			return Consumo.De(termino, esCategoria, meses);
+			// LA ULTIMA VEZ y EL TOTAL DE COMPRAS los sabe el agregado, no la serie por mes:
+			// la serie agrupa, y agrupar pierde el dia exacto y no sabe cuantas compras hay
+			// en total. Se los pasa quien los tiene.
+			DateTime ultimaVez = DateTime.MinValue;
+			foreach (Compra compra in compras)
+				foreach (Item item in compra.Items)
+					if (Alcanza(item, termino, esCategoria) && compra.Fecha > ultimaVez)
+					{
+						ultimaVez = compra.Fecha;
+						break;
+					}
+
+			return Consumo.De(termino, esCategoria, meses, ultimaVez, compras.Count);
 		}
 
 		private static bool Alcanza(Item item, string termino, bool esCategoria) =>
@@ -489,9 +553,20 @@ namespace Compras.Dominio
 		/// cada cuánto lo compra después. Total: sin suficientes compras de un lado
 		/// devuelve el cambio Ninguno, que lo dice.
 		/// </summary>
-		public CambioDeRitmo RitmoDeUnProducto(string sku, DateTime corte)
+		// EL PRODUCTO SE NOMBRA, NO SE CODIFICA. Antes esto pedia un sku, y eso obligaba a
+		// quien pregunta -sobre todo a la IA- a conocer una llave interna: la especificacion
+		// de marca prohibe la palabra "SKU" en lo que ve la persona, y una tool que la EXIGE
+		// como argumento es la version peor de lo mismo.
+		//
+		// Se resuelve con el mismo criterio que BuscarGarantia -sku o parte de la
+		// descripcion-, que ya era el precedente del modulo. Y si no encuentra nada, el par
+		// total contesta con el texto que se busco, sin reventar.
+		public CambioDeRitmo RitmoDeUnProducto(string producto, DateTime corte)
 		{
-			ArgumentNullException.ThrowIfNullOrWhiteSpace(sku);
+			ArgumentNullException.ThrowIfNullOrWhiteSpace(producto);
+
+			string sku = SkuDe(producto);
+			if (sku.Length == 0) return CambioDeRitmo.Ninguno(producto, producto);
 
 			var antes = new List<DateTime>();
 			var despues = new List<DateTime>();
@@ -625,6 +700,31 @@ namespace Compras.Dominio
 				}
 
 			return vigentes;
+		}
+
+		/// <summary>
+		/// El sku de un producto nombrado por su sku o por parte de su descripción. Vacío
+		/// cuando no aparece en el historial: consulta total, no revienta.
+		/// </summary>
+		// GANA EL MAS RECIENTE cuando varios coinciden, igual que en BuscarGarantia: si
+		// alguien escribe "leche" y compro dos leches distintas, la que le interesa es la
+		// que lleva ahora.
+		public string SkuDe(string producto)
+		{
+			ArgumentNullException.ThrowIfNullOrWhiteSpace(producto);
+
+			string hallado = "";
+			DateTime masReciente = DateTime.MinValue;
+
+			foreach (Compra compra in compras)
+				foreach (Item item in compra.Items)
+					if (Coincide(item, producto) && compra.Fecha >= masReciente)
+					{
+						hallado = item.Sku;
+						masReciente = compra.Fecha;
+					}
+
+			return hallado;
 		}
 
 		private static bool Coincide(Item item, string texto) =>

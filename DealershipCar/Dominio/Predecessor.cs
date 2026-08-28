@@ -4,7 +4,7 @@ namespace DealershipCar.Dominio
 {
 	/// <summary>
 	/// La ocurrencia terminal de la que salio esta, o la constancia de que esta es la primera. La
-	/// cadena hacia atras ES el historial de la operacion (GAP G3).
+	/// cadena hacia atras ES el historial de la operacion.
 	/// </summary>
 	internal abstract class Predecessor
 	{
@@ -29,7 +29,7 @@ namespace DealershipCar.Dominio
 		/// <summary>Si hay ocurrencia anterior. Total: contesta siempre.</summary>
 		internal abstract bool Exists();
 
-		/// <summary>La ocurrencia anterior. Revienta si no hay (E41).</summary>
+		/// <summary>La ocurrencia anterior. Revienta si no hay.</summary>
 		internal abstract ScheduledOperation Occurrence();
 	}
 }
