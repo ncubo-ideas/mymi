@@ -3,9 +3,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Security.Cryptography;
 using System.Text;
-using DealershipCar.App;
 using NUnit.Framework;
-using Puppeteer;
 
 namespace DealershipCar.Dominio.Pruebas
 {
@@ -15,10 +13,12 @@ namespace DealershipCar.Dominio.Pruebas
 	// despues del replay, que el instante llegue truncado, que el codigo cruce como NOMBRE, y que un
 	// rechazo cueste o no cueste una entrada.
 	//
-	// TODAS LAS OBSERVACIONES SE HACEN CONTRA EL ACTOR, no contra la puerta, y eso es a proposito:
-	// T5 construye los once comandos de publicacion y NINGUNA lectura de la especificacion -- esas
-	// son de T6. Los scripts de lectura de aca son los que T6 va a poner en la puerta; correrlos aca
-	// es lo unico que hace observable lo que T5 escribio.
+	// LAS OBSERVACIONES SE HACEN POR LA PUERTA. Mientras T5 tenia los once comandos de publicacion y
+	// NINGUNA lectura de la especificacion, se hacian contra el actor, con los scripts que T6 iba a
+	// construir; ahora que existen, entran por Api. Lo que se mide es entonces lo mismo que
+	// observaria una caratula, que es la unica forma de ver la mitad NORMALIZADA: el journal repite
+	// por su cuenta cada normalizacion de la frontera, asi que compararlo consigo mismo la deja
+	// invisible, y lo que la delata es una respuesta viva contra la misma respuesta reproducida.
 	[TestFixture]
 	public sealed class ASpecificationIsPublishedThroughTheDoor
 	{
@@ -181,7 +181,7 @@ namespace DealershipCar.Dominio.Pruebas
 			journal.Api.PublishCoveredSystem(TheRevision, "POWERTRAIN", 0, 0, "UnitA");
 			journal.Api.SealRevision(TheRevision);
 
-			string scope = TheClauseFor("@clause = specification.DescribeCoverageSummary();");
+			string scope = journal.Api.DescribeCoverageSummary();
 
 			Assert.That(scope, Does.Contain("'POWERTRAIN' is inside the published scope"));
 			Assert.That(scope, Does.Not.Contain("with its own limits"),
@@ -245,7 +245,7 @@ namespace DealershipCar.Dominio.Pruebas
 			journal.Api.SealRevision(TheRevision);
 
 			Assert.That(
-				TheClauseFor("@clause = specification.DescribeCoverageSummary();"),
+				journal.Api.DescribeCoverageSummary(),
 				Does.Contain("'Powertrain-Hybrid' is inside the published scope"),
 				"Recortado en los extremos, y nada mas: tal como lo publicaron.");
 
@@ -453,61 +453,17 @@ namespace DealershipCar.Dominio.Pruebas
 			on.Api.SealRevision(TheRevision);
 		}
 
-		// LA LECTURA QUE T6 VA A PONER EN LA PUERTA, hecha aca a mano: T5 construye los comandos y
-		// ninguna lectura, y sin una lectura no hay forma de ver lo que los comandos escribieron.
+		// LA LECTURA DE LA PUERTA. Mientras T5 tenia los once comandos y ninguna lectura, estas tres
+		// se hacian a mano contra el actor; T6 las construyo, asi que ahora entran por Api como todo
+		// lo demas, y lo que se observa es exactamente lo que un shell observaria.
 		private string TheFluidClause(string kind)
 		{
-			DealershipCarApp app = journal.TheHostUnderTheDoor;
-
-			using (RentedParameter rented = app.Actor.RentedParameters())
-			{
-				app.Actor.Using("@clause = specification.DescribeFluid(@kind);")
-				.WithParameters(rented, p => {
-					p[Parameter.Out, "clause", typeof(string)] = default;
-					p["kind", typeof(Enum)] = kind;
-				})
-				.PerformQuery();
-
-				return rented["clause"].GetValue<string>();
-			}
+			return journal.Api.DescribeFluid(kind);
 		}
 
 		private string ThePriceClauseAsOf(DateTime asOf)
 		{
-			DealershipCarApp app = journal.TheHostUnderTheDoor;
-
-			using (RentedParameter rented = app.Actor.RentedParameters())
-			{
-				app.Actor.Using(@"
-					@clause = specification.DescribeServicePrice(@kind, @distance, @unit, @asOf);
-				")
-				.WithParameters(rented, p => {
-					p[Parameter.Out, "clause", typeof(string)] = default;
-					p["kind",     typeof(Enum)]     = "FluidChange";
-					p["distance", typeof(int)]      = 10000;
-					p["unit",     typeof(Enum)]     = "UnitA";
-					p["asOf",     typeof(DateTime)] = asOf;
-				})
-				.PerformQuery();
-
-				return rented["clause"].GetValue<string>();
-			}
-		}
-
-		private string TheClauseFor(string script)
-		{
-			DealershipCarApp app = journal.TheHostUnderTheDoor;
-
-			using (RentedParameter rented = app.Actor.RentedParameters())
-			{
-				app.Actor.Using(script)
-				.WithParameters(rented, p => {
-					p[Parameter.Out, "clause", typeof(string)] = default;
-				})
-				.PerformQuery();
-
-				return rented["clause"].GetValue<string>();
-			}
+			return journal.Api.DescribeServicePrice("FluidChange", 10000, "UnitA", asOf);
 		}
 
 		// El arbol entero del journal reducido a una cadena: nombre relativo mas hash del contenido,

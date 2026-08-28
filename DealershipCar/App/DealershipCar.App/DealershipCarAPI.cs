@@ -547,6 +547,413 @@ namespace DealershipCar.App
 				: "";
 		}
 
+		/// <summary>De que modelo es la especificacion que este journal lleva.</summary>
+		public string ReadModel()
+		{
+			return AText("@model = specification.ReadModel();", "model", p => { });
+		}
+
+		/// <summary>
+		/// Si hay algo publicado sobre esa clase de fluido. TOTAL: una clase que ninguna revision
+		/// sellada publico contesta que no, y eso es una respuesta.
+		/// </summary>
+		public bool IsFluidPublished(string kind)
+		{
+			return ATruth("@published = specification.IsFluidPublished(@kind);", "published", p => {
+				p["kind", typeof(Enum)] = WireName.FluidKind(kind);
+			});
+		}
+
+		/// <summary>
+		/// Que fluido de esa clase lleva el modelo, en una frase con la revision adentro. La compone
+		/// el dominio: decir el porque es conocimiento del dominio y no de quien muestra.
+		/// </summary>
+		public string DescribeFluid(string kind)
+		{
+			return AText("@clause = specification.DescribeFluid(@kind);", "clause", p => {
+				p["kind", typeof(Enum)] = WireName.FluidKind(kind);
+			});
+		}
+
+		/// <summary>
+		/// De que revision salio la respuesta de esa clase de fluido. Lo no publicado contesta
+		/// vacio, que no se confunde con una revision porque ninguna tiene el codigo en blanco.
+		/// </summary>
+		public string ReadFluidRevision(string kind)
+		{
+			return AText("@revision = specification.ReadFluidRevision(@kind);", "revision", p => {
+				p["kind", typeof(Enum)] = WireName.FluidKind(kind);
+			});
+		}
+
+		/// <summary>Si hay algo publicado sobre la llanta de esa posicion. TOTAL.</summary>
+		public bool IsTyrePublished(string position)
+		{
+			return ATruth("@published = specification.IsTyrePublished(@position);", "published", p => {
+				p["position", typeof(Enum)] = WireName.TyrePosition(position);
+			});
+		}
+
+		/// <summary>
+		/// Que llanta lleva el modelo en esa posicion, con la presion en la unidad en que se
+		/// publico. Aca no se convierte ninguna unidad a ninguna otra.
+		/// </summary>
+		public string DescribeTyre(string position)
+		{
+			return AText("@clause = specification.DescribeTyre(@position);", "clause", p => {
+				p["position", typeof(Enum)] = WireName.TyrePosition(position);
+			});
+		}
+
+		/// <summary>De que revision salio la respuesta de esa posicion. TOTAL.</summary>
+		public string ReadTyreRevision(string position)
+		{
+			return AText("@revision = specification.ReadTyreRevision(@position);", "revision", p => {
+				p["position", typeof(Enum)] = WireName.TyrePosition(position);
+			});
+		}
+
+		/// <summary>Si hay algo publicado sobre el combustible. TOTAL.</summary>
+		public bool IsFuelPublished()
+		{
+			return ATruth("@published = specification.IsFuelPublished();", "published", p => { });
+		}
+
+		/// <summary>
+		/// Que combustible acepta el modelo: los grados publicados con su postura, con la revision
+		/// adentro. TOTAL.
+		/// </summary>
+		public string DescribeFuel()
+		{
+			return AText("@clause = specification.DescribeFuel();", "clause", p => { });
+		}
+
+		/// <summary>
+		/// El grado minimo publicado, suelto, que es como se pide en una bomba. TOTAL: contesta
+		/// vacio sin combustible publicado y tambien cuando lo publicado no marco ningun minimo. Un
+		/// grado publicado nunca esta en blanco, asi que el vacio no se confunde con uno.
+		/// </summary>
+		public string ReadMinimumFuelGrade()
+		{
+			return AText("@grade = specification.ReadMinimumFuelGrade();", "grade", p => { });
+		}
+
+		/// <summary>
+		/// Los grados publicados como permitidos. TOTAL: una lista vacia dice que no hay ninguno
+		/// permitido, que no es lo mismo que decir que cualquiera lo esta.
+		/// </summary>
+		public string[] PermittedFuelGrades()
+		{
+			return ATextList("@grades = specification.PermittedFuelGrades();", "grades", p => { });
+		}
+
+		/// <summary>
+		/// Los grados publicados como prohibidos. TOTAL, y es la lista que mas importa que salga
+		/// entera: un prohibido callado es un motor danado.
+		/// </summary>
+		public string[] ProhibitedFuelGrades()
+		{
+			return ATextList("@grades = specification.ProhibitedFuelGrades();", "grades", p => { });
+		}
+
+		/// <summary>De que revision salio la respuesta del combustible. TOTAL.</summary>
+		public string ReadFuelRevision()
+		{
+			return AText("@revision = specification.ReadFuelRevision();", "revision", p => { });
+		}
+
+		/// <summary>Si hay publicado un intervalo para esa operacion. TOTAL.</summary>
+		public bool IsServiceIntervalPublished(string kind)
+		{
+			return ATruth(
+				"@published = specification.IsServiceIntervalPublished(@kind);", "published", p => {
+					p["kind", typeof(Enum)] = WireName.OperationKind(kind);
+				});
+		}
+
+		/// <summary>
+		/// Cada cuanto publica el fabricante que se hace esa operacion Y donde queda este vehiculo
+		/// contra ese intervalo. Las dos mitades, o es un folleto: la distancia que le queda llega
+		/// como parametro con su unidad, porque esta especificacion no guarda nada de ningun carro.
+		/// </summary>
+		public string DescribeServiceInterval(
+			string kind, int distanceRemaining, string remainingUnit)
+		{
+			return AText(@"
+				@clause = specification.DescribeServiceInterval(
+					@kind, @distanceRemaining, @remainingUnit);
+			", "clause", p => {
+				p["kind",              typeof(Enum)] = WireName.OperationKind(kind);
+				p["distanceRemaining", typeof(int)]  = distanceRemaining;
+				p["remainingUnit",     typeof(Enum)] =
+					WireName.DistanceUnit(remainingUnit, nameof(remainingUnit));
+			});
+		}
+
+		/// <summary>De que revision salio el intervalo de esa operacion. TOTAL.</summary>
+		public string ReadServiceIntervalRevision(string kind)
+		{
+			return AText(
+				"@revision = specification.ReadServiceIntervalRevision(@kind);", "revision", p => {
+					p["kind", typeof(Enum)] = WireName.OperationKind(kind);
+				});
+		}
+
+		/// <summary>
+		/// Si hay publicado un precio para esa operacion en ese hito. TOTAL: una distancia de hito
+		/// que no es positiva no nombra ningun hito, asi que ahi tampoco hay nada publicado.
+		/// </summary>
+		public bool IsServicePricePublished(
+			string kind, int milestoneDistance, string milestoneUnit)
+		{
+			return ATruth(@"
+				@published = specification.IsServicePricePublished(
+					@kind, @milestoneDistance, @milestoneUnit);
+			", "published", p => {
+				p["kind",              typeof(Enum)] = WireName.OperationKind(kind);
+				p["milestoneDistance", typeof(int)]  = milestoneDistance;
+				p["milestoneUnit",     typeof(Enum)] =
+					WireName.DistanceUnit(milestoneUnit, nameof(milestoneUnit));
+			});
+		}
+
+		/// <summary>
+		/// Cuanto cuesta esa operacion en ese hito, con su moneda, su vigencia y si esa vigencia
+		/// rige en el instante recibido. Sin instante no hay forma de decir "vencido" respecto a
+		/// nada, y un precio viejo mostrado como vigente es una promesa que el taller no hizo.
+		/// </summary>
+		public string DescribeServicePrice(
+			string kind, int milestoneDistance, string milestoneUnit, DateTime asOf)
+		{
+			return AText(@"
+				@clause = specification.DescribeServicePrice(
+					@kind, @milestoneDistance, @milestoneUnit, @asOf);
+			", "clause", p => {
+				p["kind",              typeof(Enum)]     = WireName.OperationKind(kind);
+				p["milestoneDistance", typeof(int)]      = milestoneDistance;
+				p["milestoneUnit",     typeof(Enum)]     =
+					WireName.DistanceUnit(milestoneUnit, nameof(milestoneUnit));
+				p["asOf",              typeof(DateTime)] = InUtc(asOf);
+			});
+		}
+
+		/// <summary>De que revision salio el precio de esa operacion en ese hito. TOTAL.</summary>
+		public string ReadServicePriceRevision(
+			string kind, int milestoneDistance, string milestoneUnit)
+		{
+			return AText(@"
+				@revision = specification.ReadServicePriceRevision(
+					@kind, @milestoneDistance, @milestoneUnit);
+			", "revision", p => {
+				p["kind",              typeof(Enum)] = WireName.OperationKind(kind);
+				p["milestoneDistance", typeof(int)]  = milestoneDistance;
+				p["milestoneUnit",     typeof(Enum)] =
+					WireName.DistanceUnit(milestoneUnit, nameof(milestoneUnit));
+			});
+		}
+
+		/// <summary>Si hay alcance de garantia publicado. TOTAL.</summary>
+		public bool IsCoveragePublished()
+		{
+			return ATruth("@published = specification.IsCoveragePublished();", "published", p => { });
+		}
+
+		/// <summary>
+		/// El alcance publicado en una frase: los sistemas que declara adentro y las exclusiones,
+		/// con la revision. Dice alcance; nunca dice que una reclamacion se vaya a pagar.
+		/// </summary>
+		public string DescribeCoverageSummary()
+		{
+			return AText("@clause = specification.DescribeCoverageSummary();", "clause", p => { });
+		}
+
+		/// <summary>De que revision salio el alcance publicado. TOTAL.</summary>
+		public string ReadCoverageRevision()
+		{
+			return AText("@revision = specification.ReadCoverageRevision();", "revision", p => { });
+		}
+
+		/// <summary>
+		/// Los codigos de los sistemas que el alcance declara adentro. Salen como CODIGOS porque son
+		/// de lo que la persona elige al preguntar por uno. TOTAL: sin alcance publicado, vacio.
+		/// </summary>
+		public string[] CoveredSystems()
+		{
+			return ATextList("@systems = specification.CoveredSystems();", "systems", p => { });
+		}
+
+		/// <summary>
+		/// Las exclusiones publicadas, cada una con su texto y su condicion. Salen como clausulas y
+		/// no como codigos: un codigo no dice que esta excluido ni cuando.
+		/// </summary>
+		public string[] CoverageExclusions()
+		{
+			return ATextList(
+				"@exclusions = specification.CoverageExclusions();", "exclusions", p => { });
+		}
+
+		/// <summary>
+		/// Si el catalogo publicado conoce ese codigo de sistema. Consulta TOTAL de reconocimiento:
+		/// el vocabulario es del fabricante, asi que un codigo desconocido es una respuesta.
+		/// </summary>
+		public bool TheVocabularyIsTheManufacturers(string systemCode)
+		{
+			return ATruth(
+				"@known = specification.TheVocabularyIsTheManufacturers(@systemCode);",
+				"known", p => {
+					p["systemCode", typeof(string)] = TheText(systemCode, nameof(systemCode));
+				});
+		}
+
+		/// <summary>
+		/// Si la pregunta de cobertura se puede decidir con lo que hay. TOTAL, y es la que hay que
+		/// hacer antes de leer donde esta parado: da que no cuando el limite que rige y el odometro
+		/// llegaron en unidades distintas, porque aca no se convierte nada.
+		/// </summary>
+		public bool CanCoverageBeEvaluated(
+			string systemCode, int envelopeMonths, int envelopeDistance, string envelopeUnit,
+			DateTime deliveredAt, int deliveryReading, int currentReading, string currentUnit,
+			DateTime asOf)
+		{
+			return ATruth(@"
+				@can = specification.CanCoverageBeEvaluated(
+					@systemCode, @envelopeMonths, @envelopeDistance, @envelopeUnit,
+					@deliveredAt, @deliveryReading, @currentReading, @currentUnit, @asOf);
+			", "can", TheFactsTheCoverageQuestionNeeds(
+				systemCode, envelopeMonths, envelopeDistance, envelopeUnit,
+				deliveredAt, deliveryReading, currentReading, currentUnit, asOf));
+		}
+
+		/// <summary>
+		/// Donde esta parado ese sistema, por el nombre de la respuesta. Lectura GUARDADA: hay que
+		/// preguntar antes si se puede evaluar, porque cualquiera de las respuestas devuelta aca se
+		/// leeria como una medicion que nunca se hizo.
+		/// </summary>
+		public string ReadCoverageStanding(
+			string systemCode, int envelopeMonths, int envelopeDistance, string envelopeUnit,
+			DateTime deliveredAt, int deliveryReading, int currentReading, string currentUnit,
+			DateTime asOf)
+		{
+			if (!CanCoverageBeEvaluated(
+				systemCode, envelopeMonths, envelopeDistance, envelopeUnit,
+				deliveredAt, deliveryReading, currentReading, currentUnit, asOf))
+				throw new InvalidOperationException(
+					"La cobertura de ese sistema no se pudo evaluar con lo que llego: pregunte "
+					+ "CanCoverageBeEvaluated antes. Ninguna de las respuestas posibles significa 'no "
+					+ "se pudo medir', asi que devolver una aca la convertiria en un hecho medido.");
+
+			return AText(@"
+				@standing = specification.ReadCoverageStanding(
+					@systemCode, @envelopeMonths, @envelopeDistance, @envelopeUnit,
+					@deliveredAt, @deliveryReading, @currentReading, @currentUnit, @asOf);
+			", "standing", TheFactsTheCoverageQuestionNeeds(
+				systemCode, envelopeMonths, envelopeDistance, envelopeUnit,
+				deliveredAt, deliveryReading, currentReading, currentUnit, asOf));
+		}
+
+		/// <summary>
+		/// La respuesta de cobertura en una frase: donde esta parado o por que no se pudo decidir,
+		/// contra que limites se midio, las exclusiones publicadas que haya, y la revision. TOTAL, y
+		/// es la lectura primaria: la frase es la que dice la ley, no el nombre suelto.
+		/// </summary>
+		public string DescribeCoverage(
+			string systemCode, int envelopeMonths, int envelopeDistance, string envelopeUnit,
+			DateTime deliveredAt, int deliveryReading, int currentReading, string currentUnit,
+			DateTime asOf)
+		{
+			return AText(@"
+				@clause = specification.DescribeCoverage(
+					@systemCode, @envelopeMonths, @envelopeDistance, @envelopeUnit,
+					@deliveredAt, @deliveryReading, @currentReading, @currentUnit, @asOf);
+			", "clause", TheFactsTheCoverageQuestionNeeds(
+				systemCode, envelopeMonths, envelopeDistance, envelopeUnit,
+				deliveredAt, deliveryReading, currentReading, currentUnit, asOf));
+		}
+
+		/// <summary>Si hay publicada una regla de servicio en otro taller. TOTAL.</summary>
+		public bool IsServicingPolicyPublished()
+		{
+			return ATruth(
+				"@published = specification.IsServicingPolicyPublished();", "published", p => { });
+		}
+
+		/// <summary>
+		/// La regla publicada sobre servicio en otro taller Y donde queda este vehiculo frente a
+		/// ella, con los conteos tal como llegaron. Dice el alcance y la posicion; no dice que
+		/// ninguna reclamacion se vaya a pagar.
+		/// </summary>
+		public string DescribeServicingElsewhereRule(
+			int externalServicesWithEvidence, int externalServicesWithoutEvidence,
+			int missedMaintenanceCount)
+		{
+			return AText(@"
+				@clause = specification.DescribeServicingElsewhereRule(
+					@withEvidence, @withoutEvidence, @missed);
+			", "clause", p => {
+				p["withEvidence",    typeof(int)] = externalServicesWithEvidence;
+				p["withoutEvidence", typeof(int)] = externalServicesWithoutEvidence;
+				p["missed",          typeof(int)] = missedMaintenanceCount;
+			});
+		}
+
+		/// <summary>De que revision salio la regla de servicio en otro taller. TOTAL.</summary>
+		public string ReadServicingPolicyRevision()
+		{
+			return AText(
+				"@revision = specification.ReadServicingPolicyRevision();", "revision", p => { });
+		}
+
+		/// <summary>
+		/// Si alguna revision sellada puede contestar. TOTAL, y es la que hay que hacer antes de
+		/// pedir el codigo o el instante de la vigente.
+		/// </summary>
+		public bool HasASealedRevision()
+		{
+			return ATruth("@sealed = specification.HasASealedRevision();", "sealed", p => { });
+		}
+
+		/// <summary>
+		/// El codigo de la revision vigente, que es la sellada mas reciente. Lectura GUARDADA: sin
+		/// ninguna sellada no hay codigo que dar.
+		/// </summary>
+		public string ReadCurrentRevisionCode()
+		{
+			if (!HasASealedRevision())
+				throw new InvalidOperationException(
+					"Esta especificacion no tiene ninguna revision sellada: pregunte "
+					+ "HasASealedRevision antes. Un codigo vacio aca nombraria una publicacion que "
+					+ "nadie hizo.");
+
+			return AText("@code = specification.ReadCurrentRevisionCode();", "code", p => { });
+		}
+
+		/// <summary>
+		/// El instante en que el fabricante publico la revision vigente. Lectura GUARDADA por lo
+		/// mismo, y sale en UTC igual que entro.
+		/// </summary>
+		public DateTime ReadCurrentRevisionPublishedAt()
+		{
+			if (!HasASealedRevision())
+				throw new InvalidOperationException(
+					"Esta especificacion no tiene ninguna revision sellada: pregunte "
+					+ "HasASealedRevision antes. Un DateTime.MinValue aca seria un centinela magico "
+					+ "-- un instante que parece un instante y no lo es.");
+
+			return AnInstant("@at = specification.ReadCurrentRevisionPublishedAt();", "at", p => { });
+		}
+
+		/// <summary>
+		/// Donde esta parada esa revision, por su nombre. El codigo nombra una entrada del registro
+		/// y no un punto de un rango, asi que uno que no esta REVIENTA: contestar un estado ahi
+		/// inventaria una revision que nadie abrio.
+		/// </summary>
+		public string ReadRevisionState(string revisionCode)
+		{
+			return AText("@state = specification.ReadRevisionState(@revisionCode);", "state", p => {
+				p["revisionCode", typeof(string)] = TheText(revisionCode, nameof(revisionCode));
+			});
+		}
+
 		public string Apply(IMensajeDeEvento message)
 		{
 			ArgumentNullException.ThrowIfNull(message);
@@ -767,6 +1174,52 @@ namespace DealershipCar.App
 
 				return rented[name].GetValue<bool>();
 			}
+		}
+
+		/// <summary>
+		/// Una lista de textos de vuelta desde el actor. Un arreglo de primitivos SI cruza la
+		/// frontera del parametro y vuelve tipado, asi que la lista sale como lista y nadie tiene
+		/// que partir una frase para recuperarla.
+		/// </summary>
+		private string[] ATextList(string script, string name, Action<Parameters> arguments)
+		{
+			using (RentedParameter rented = app.Actor.RentedParameters())
+			{
+				app.Actor.Using(script)
+				.WithParameters(rented, p => {
+					p[Parameter.Out, name, typeof(string[])] = default;
+					arguments(p);
+				})
+				.PerformQuery();
+
+				return rented[name].GetValue<string[]>();
+			}
+		}
+
+		/// <summary>
+		/// Los nueve hechos que la pregunta de cobertura necesita, atados una sola vez para las tres
+		/// lecturas que la hacen. Van los nueve tal como llegaron: la resta entre el limite y el
+		/// odometro es donde se compara la unidad, y precalcularla afuera se llevaria esa
+		/// comparacion fuera del dominio.
+		/// </summary>
+		private static Action<Parameters> TheFactsTheCoverageQuestionNeeds(
+			string systemCode, int envelopeMonths, int envelopeDistance, string envelopeUnit,
+			DateTime deliveredAt, int deliveryReading, int currentReading, string currentUnit,
+			DateTime asOf)
+		{
+			return p => {
+				p["systemCode",       typeof(string)]   = TheText(systemCode, nameof(systemCode));
+				p["envelopeMonths",   typeof(int)]      = envelopeMonths;
+				p["envelopeDistance", typeof(int)]      = envelopeDistance;
+				p["envelopeUnit",     typeof(Enum)]     =
+					WireName.DistanceUnit(envelopeUnit, nameof(envelopeUnit));
+				p["deliveredAt",      typeof(DateTime)] = InUtc(deliveredAt);
+				p["deliveryReading",  typeof(int)]      = deliveryReading;
+				p["currentReading",   typeof(int)]      = currentReading;
+				p["currentUnit",      typeof(Enum)]     =
+					WireName.DistanceUnit(currentUnit, nameof(currentUnit));
+				p["asOf",             typeof(DateTime)] = InUtc(asOf);
+			};
 		}
 
 		private DateTime AnInstant(string script, string name, Action<Parameters> arguments)

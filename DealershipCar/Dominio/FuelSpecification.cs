@@ -56,6 +56,37 @@ namespace DealershipCar.Dominio
 		}
 
 		/// <summary>
+		/// El grado MINIMO que se publico, o vacio si ninguno de los que entraron lleva esa
+		/// postura. El vacio no se puede confundir con un grado: uno en blanco se rechaza al
+		/// publicarlo, asi que ningun grado publicado se dice asi.
+		///
+		/// Si se publicaron dos minimos contesta el primero. Elegir entre ellos seria decidir cual
+		/// de los dos quiso decir el fabricante, y eso no se decide aca.
+		/// </summary>
+		internal string TheMinimumGradePublished()
+		{
+			foreach (FuelGrade grade in _grades)
+				if (grade.ItStands(FuelGradeStanding.Minimum)) return grade.Text;
+
+			return "";
+		}
+
+		/// <summary>
+		/// Los textos de los grados que llevan esa postura, en el orden en que se publicaron. TOTAL:
+		/// una lista vacia dice que ninguno la lleva, y una lista no se puede confundir con un
+		/// grado.
+		/// </summary>
+		internal string[] TheGradesPublishedAs(FuelGradeStanding standing)
+		{
+			List<string> texts = new List<string>();
+
+			foreach (FuelGrade grade in _grades)
+				if (grade.ItStands(standing)) texts.Add(grade.Text);
+
+			return texts.ToArray();
+		}
+
+		/// <summary>
 		/// La clausula del combustible: todos los grados publicados, cada uno con su postura, en el
 		/// orden en que se publicaron. Ninguna postura se omite y ninguna se resume.
 		/// </summary>

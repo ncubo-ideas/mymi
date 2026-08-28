@@ -534,6 +534,44 @@ namespace DealershipCar.Dominio
 			return ARevisionAppliesForward().Describe();
 		}
 
+		/// <summary>
+		/// El grado MINIMO publicado, suelto y sin su postura, que es como se pide en una bomba.
+		/// TOTAL en las dos ausencias que existen: sin combustible publicado contesta vacio, y con
+		/// combustible publicado en el que nadie marco un minimo tambien. El vacio no se confunde
+		/// con un grado porque uno en blanco no se deja publicar, y cual de las dos ausencias es la
+		/// contesta la lectura de presencia.
+		/// </summary>
+		internal string ReadMinimumFuelGrade()
+		{
+			if (!ARevisionAnswersAboutFuel()) return "";
+
+			return TheRevisionThatAnswersAboutFuel().TheMinimumFuelGradePublished();
+		}
+
+		/// <summary>
+		/// Los grados publicados como PERMITIDOS, cada uno con su texto tal como se publico. TOTAL:
+		/// sin combustible publicado, vacio -- y una lista vacia dice que no hay ninguno permitido,
+		/// que es distinto de decir que cualquiera lo esta.
+		/// </summary>
+		internal string[] PermittedFuelGrades()
+		{
+			if (!ARevisionAnswersAboutFuel()) return new string[0];
+
+			return TheRevisionThatAnswersAboutFuel().ThePermittedFuelGradesPublished();
+		}
+
+		/// <summary>
+		/// Los grados publicados como PROHIBIDOS. TOTAL, y es la lista que mas importa que salga
+		/// entera: un prohibido callado es un motor danado. Vacio quiere decir que ninguno se
+		/// publico como prohibido, no que ninguno lo sea.
+		/// </summary>
+		internal string[] ProhibitedFuelGrades()
+		{
+			if (!ARevisionAnswersAboutFuel()) return new string[0];
+
+			return TheRevisionThatAnswersAboutFuel().TheProhibitedFuelGradesPublished();
+		}
+
 		/// <summary>De que revision salio la respuesta del combustible. TOTAL.</summary>
 		internal string ReadFuelRevision()
 		{
@@ -791,6 +829,72 @@ namespace DealershipCar.Dominio
 				ARevisionAppliesForward(
 					systemCode, envelopeMonths, envelopeDistance, envelopeUnit,
 					deliveredAt, deliveryReading, currentReading, currentUnit, asOf));
+		}
+
+		/// <summary>
+		/// Si alguna revision sellada puede contestar. TOTAL, y es la pregunta que hay que hacer
+		/// antes de pedir el codigo o el instante de la vigente: una especificacion recien creada, o
+		/// una en la que todo sigue en borrador, contesta que no.
+		/// </summary>
+		internal bool HasASealedRevision()
+		{
+			for (int revision = _order.Count - 1; revision >= 0; revision--)
+				if (OnlyASealedRevisionAnswers(_order[revision])) return true;
+
+			return false;
+		}
+
+		/// <summary>
+		/// El codigo de la revision sellada mas reciente, que es la que contesta. Accesor GUARDADO:
+		/// sin ninguna sellada no hay codigo que dar, y un vacio aca se leeria como una revision sin
+		/// nombre en vez de como la ausencia de revision.
+		/// </summary>
+		internal string ReadCurrentRevisionCode()
+		{
+			return TheCurrentSealedRevision().Code;
+		}
+
+		/// <summary>
+		/// El instante en que el fabricante publico la revision vigente, tal como llego. Accesor
+		/// GUARDADO por lo mismo: un instante minimo se parece a un instante y no lo es.
+		/// </summary>
+		internal DateTime ReadCurrentRevisionPublishedAt()
+		{
+			return TheCurrentSealedRevision().PublishedAt;
+		}
+
+		private PublishedRevision TheCurrentSealedRevision()
+		{
+			for (int revision = _order.Count - 1; revision >= 0; revision--)
+				if (OnlyASealedRevisionAnswers(_order[revision])) return _order[revision];
+
+			throw new DomainException(
+				"Esta especificacion no tiene ninguna revision sellada. Hay que preguntar primero si "
+				+ "hay alguna: una respuesta en blanco aca nombraria una publicacion que nadie hizo.");
+		}
+
+		private bool ARevisionAnswersAboutFuel()
+		{
+			for (int revision = _order.Count - 1; revision >= 0; revision--)
+				if (ItAnswersAboutFuel(_order[revision])) return true;
+
+			return false;
+		}
+
+		private PublishedRevision TheRevisionThatAnswersAboutFuel()
+		{
+			for (int revision = _order.Count - 1; revision >= 0; revision--)
+				if (ItAnswersAboutFuel(_order[revision])) return _order[revision];
+
+			throw new DomainException(
+				"Ninguna revision sellada de esta especificacion publico grados de combustible: hay "
+				+ "que preguntar primero si hay alguna. Una lista vacia fabricada aca se leeria como "
+				+ "que el fabricante dijo que no hay ningun combustible prohibido.");
+		}
+
+		private bool ItAnswersAboutFuel(PublishedRevision candidate)
+		{
+			return OnlyASealedRevisionAnswers(candidate) && candidate.HasAFuelSpecification();
 		}
 
 		private static string WithTheScopeAlwaysSaid(SpecificationAnswer answer)

@@ -1,4 +1,8 @@
 using System;
+using System.Collections.Generic;
+using System.IO;
+using System.Security.Cryptography;
+using System.Text;
 using DealershipCar.App;
 using NUnit.Framework;
 
@@ -10,16 +14,18 @@ namespace DealershipCar.Dominio.Pruebas
 	// aunque el estado siga siendo correcto.
 	//
 	// Asi que ninguna linea de DSL de DealershipCarAPI puede llegar al journal de una persona sin
-	// haberse ejecutado antes aca. Esta prueba corre CADA UNA de las cuarenta operaciones de la
-	// puerta al menos una vez -- las veintiuna de T6, las siete que trajo T8 (los dos comandos de
-	// la bitacora, sus cuatro lecturas, y el Apply de la ingesta), CanBeDeferred, y los once
-	// comandos de publicacion que trajo T5.
+	// haberse ejecutado antes aca. Esta prueba corre CADA UNA de las SETENTA Y CINCO operaciones de
+	// la puerta al menos una vez -- las veintiuna de la agenda (OS2/T6), las siete de la ingesta
+	// (OS2/T8: los dos comandos de la bitacora, sus cuatro lecturas, y el Apply), CanBeDeferred, los
+	// once comandos de publicacion de la especificacion (T5), y las TREINTA Y CINCO lecturas de la
+	// especificacion (T6).
 	// No mira reglas de negocio -- de eso se ocupan las otras pruebas del nivel B -- mira que el
 	// script exista, parsee, ate sus parametros y devuelva lo que dijo que devolvia.
 	[TestFixture]
 	public sealed class EveryScriptOfTheDoorHasBeenRun
 	{
 		private const string TheVin = "1HGCM82633A004352";
+		private const string TheRevision = "R1";
 		private const int TwelveMonthsInDays = 365;
 		private const int TenThousandUnits = 10000;
 
@@ -258,6 +264,298 @@ namespace DealershipCar.Dominio.Pruebas
 			Assert.That(journal.Api.DeferralsUsed("RecallRemedy"), Is.EqualTo(0));
 			Assert.That(journal.Api.ReadDueReason("RecallRemedy"), Does.Contain("no scheduled"));
 			Assert.That(journal.Api.CanBeDeferred("RecallRemedy"), Is.False);
+		}
+
+		// LAS TREINTA Y CINCO LECTURAS DE LA ESPECIFICACION, contra una hoja sellada, cada una una
+		// vez. Lo que se afirma es la forma -- que el script parsee, ate sus parametros y vuelva
+		// TIPADO -- y no la regla: de las leyes se ocupan OnlyAJournaledSealedRevisionAnswers,
+		// AJournaledRevisionAppliesForward y AJournaledCoverageAnswersWithItsStandingAndItsExclusion.
+		//
+		// Las cuatro lecturas de LISTA son las que no se podrian haber escrito antes de T0/S1: un
+		// arreglo de primitivos cruza el parametro de vuelta y GetValue lo comprueba de tipo, asi que
+		// no hay que partir ninguna frase para recuperar la lista.
+		[Test]
+		public void EverySpecificationReadOfTheDoorParsesBindsAndComesBackTyped()
+		{
+			ASealedSpecSheet();
+
+			EveryOneOfThemAgainstASealedSheet();
+		}
+
+		private void EveryOneOfThemAgainstASealedSheet()
+		{
+			Assert.That(
+				journal.Api.ReadModel(), Is.EqualTo(AScheduleOnARealJournal.TheModelAtDelivery));
+
+			Assert.That(journal.Api.IsFluidPublished("EngineOil"), Is.True);
+			Assert.That(journal.Api.DescribeFluid("EngineOil"), Does.Contain("5W-30"));
+			Assert.That(journal.Api.ReadFluidRevision("EngineOil"), Is.EqualTo(TheRevision));
+
+			Assert.That(journal.Api.IsTyrePublished("Front"), Is.True);
+			Assert.That(journal.Api.DescribeTyre("Front"), Does.Contain("205/55R16"));
+			Assert.That(journal.Api.ReadTyreRevision("Front"), Is.EqualTo(TheRevision));
+
+			Assert.That(journal.Api.IsFuelPublished(), Is.True);
+			Assert.That(journal.Api.DescribeFuel(), Does.Contain("91 RON regular"));
+			Assert.That(journal.Api.ReadMinimumFuelGrade(), Is.EqualTo("91 RON regular"));
+			Assert.That(
+				journal.Api.PermittedFuelGrades(), Is.EqualTo(new[] { "95 RON Premium" }));
+			Assert.That(journal.Api.ProhibitedFuelGrades(), Is.EqualTo(new[] { "E85 Flex" }));
+			Assert.That(journal.Api.ReadFuelRevision(), Is.EqualTo(TheRevision));
+
+			Assert.That(journal.Api.IsServiceIntervalPublished("FluidChange"), Is.True);
+			Assert.That(
+				journal.Api.DescribeServiceInterval("FluidChange", 8400, "UnitA"),
+				Does.Contain("8400"));
+			Assert.That(
+				journal.Api.ReadServiceIntervalRevision("FluidChange"), Is.EqualTo(TheRevision));
+
+			Assert.That(
+				journal.Api.IsServicePricePublished("FluidChange", TenThousandUnits, "UnitA"),
+				Is.True);
+			Assert.That(
+				journal.Api.DescribeServicePrice(
+					"FluidChange", TenThousandUnits, "UnitA", ThePublication),
+				Does.Contain("USD"));
+			Assert.That(
+				journal.Api.ReadServicePriceRevision("FluidChange", TenThousandUnits, "UnitA"),
+				Is.EqualTo(TheRevision));
+
+			Assert.That(journal.Api.IsCoveragePublished(), Is.True);
+			Assert.That(journal.Api.DescribeCoverageSummary(), Does.Contain("POWERTRAIN"));
+			Assert.That(journal.Api.ReadCoverageRevision(), Is.EqualTo(TheRevision));
+			Assert.That(journal.Api.CoveredSystems(), Is.EqualTo(new[] { "POWERTRAIN" }));
+			Assert.That(journal.Api.CoverageExclusions().Length, Is.EqualTo(1));
+			Assert.That(journal.Api.TheVocabularyIsTheManufacturers("POWERTRAIN"), Is.True);
+
+			Assert.That(TheCoverageOf("POWERTRAIN", journal.Api.CanCoverageBeEvaluated), Is.True);
+			Assert.That(
+				TheCoverageOf("POWERTRAIN", journal.Api.ReadCoverageStanding),
+				Is.EqualTo("CoveredWithExclusion"));
+			Assert.That(
+				TheCoverageOf("POWERTRAIN", journal.Api.DescribeCoverage),
+				Does.Contain("wear parts"));
+
+			Assert.That(journal.Api.IsServicingPolicyPublished(), Is.True);
+			Assert.That(
+				journal.Api.DescribeServicingElsewhereRule(2, 0, 0), Does.Contain("service anywhere"));
+			Assert.That(journal.Api.ReadServicingPolicyRevision(), Is.EqualTo(TheRevision));
+
+			Assert.That(journal.Api.HasASealedRevision(), Is.True);
+			Assert.That(journal.Api.ReadCurrentRevisionCode(), Is.EqualTo(TheRevision));
+			Assert.That(
+				journal.Api.ReadCurrentRevisionPublishedAt(), Is.EqualTo(ThePublication));
+			Assert.That(journal.Api.ReadRevisionState(TheRevision), Is.EqualTo("Sealed"));
+		}
+
+		// Y LAS MISMAS TREINTA Y CINCO SIN NADA SELLADO, que es el otro camino de cada script. Cada
+		// lectura total contesta -- presencia que no, procedencia vacia, la frase diciendolo con
+		// palabras, y las listas VACIAS -- y las guardadas revientan.
+		//
+		// Las listas vacias son la mitad que no se podia dar por sabida: T0/S1 midio un arreglo de
+		// tres elementos, no uno de cero, y un GetValue que no supiera devolver el vacio se
+		// descubriria en la caratula y no aca.
+		[Test]
+		public void EverySpecificationReadStillAnswersWhenNothingIsSealed()
+		{
+			Assert.That(journal.Api.HasASealedRevision(), Is.False);
+
+			Assert.That(journal.Api.IsFluidPublished("EngineOil"), Is.False);
+			Assert.That(journal.Api.DescribeFluid("EngineOil"), Does.Contain("not published"));
+			Assert.That(journal.Api.ReadFluidRevision("EngineOil"), Is.EqualTo(""));
+
+			Assert.That(journal.Api.IsTyrePublished("Front"), Is.False);
+			Assert.That(journal.Api.DescribeTyre("Front"), Does.Contain("not published"));
+			Assert.That(journal.Api.ReadTyreRevision("Front"), Is.EqualTo(""));
+
+			Assert.That(journal.Api.IsFuelPublished(), Is.False);
+			Assert.That(journal.Api.DescribeFuel(), Does.Contain("not published"));
+			Assert.That(journal.Api.ReadMinimumFuelGrade(), Is.EqualTo(""));
+			Assert.That(journal.Api.PermittedFuelGrades(), Is.Empty);
+			Assert.That(journal.Api.ProhibitedFuelGrades(), Is.Empty);
+			Assert.That(journal.Api.ReadFuelRevision(), Is.EqualTo(""));
+
+			Assert.That(journal.Api.IsServiceIntervalPublished("FluidChange"), Is.False);
+			Assert.That(
+				journal.Api.DescribeServiceInterval("FluidChange", 8400, "UnitA"),
+				Does.Contain("not published"));
+			Assert.That(journal.Api.ReadServiceIntervalRevision("FluidChange"), Is.EqualTo(""));
+
+			Assert.That(
+				journal.Api.IsServicePricePublished("FluidChange", TenThousandUnits, "UnitA"),
+				Is.False);
+			Assert.That(
+				journal.Api.DescribeServicePrice(
+					"FluidChange", TenThousandUnits, "UnitA", ThePublication),
+				Does.Contain("not published"));
+			Assert.That(
+				journal.Api.ReadServicePriceRevision("FluidChange", TenThousandUnits, "UnitA"),
+				Is.EqualTo(""));
+
+			Assert.That(journal.Api.IsCoveragePublished(), Is.False);
+			Assert.That(journal.Api.DescribeCoverageSummary(), Does.Contain("not published"));
+			Assert.That(journal.Api.ReadCoverageRevision(), Is.EqualTo(""));
+			Assert.That(journal.Api.CoveredSystems(), Is.Empty);
+			Assert.That(journal.Api.CoverageExclusions(), Is.Empty);
+			Assert.That(journal.Api.TheVocabularyIsTheManufacturers("POWERTRAIN"), Is.False);
+
+			// Sin nada publicado la pregunta SI se puede contestar, y la respuesta es que no se
+			// publico: "no nos lo dijeron" es una de las cinco, y no es "no esta cubierto".
+			Assert.That(TheCoverageOf("POWERTRAIN", journal.Api.CanCoverageBeEvaluated), Is.True);
+			Assert.That(
+				TheCoverageOf("POWERTRAIN", journal.Api.ReadCoverageStanding),
+				Is.EqualTo("NotPublished"));
+			Assert.That(
+				TheCoverageOf("POWERTRAIN", journal.Api.DescribeCoverage),
+				Does.Contain("not published"));
+
+			Assert.That(journal.Api.IsServicingPolicyPublished(), Is.False);
+			Assert.That(
+				journal.Api.DescribeServicingElsewhereRule(2, 0, 0), Does.Contain("not published"));
+			Assert.That(journal.Api.ReadServicingPolicyRevision(), Is.EqualTo(""));
+		}
+
+		// LAS DOS LECTURAS GUARDADAS QUE TRAJO T6, del lado del wire, y la tercera polaridad que se
+		// les parece y no es la misma.
+		//
+		// La revision vigente se guarda en HasASealedRevision; la posicion de cobertura se guarda en
+		// CanCoverageBeEvaluated. Las dos revientan con InvalidOperationException, que es lo que una
+		// caratula puede nombrar -- el DomainException del dominio es internal.
+		//
+		// ReadRevisionState NO es de estas: su clave es una IDENTIDAD del registro, no un item, asi
+		// que un codigo que nadie abrio es un defecto de quien llama y el dominio revienta adentro,
+		// igual que en los comandos. Contestar Draft ahi inventaria una revision.
+		[Test]
+		public void TheGuardedSpecificationReadsThrowInsteadOfInventingAnAnswer()
+		{
+			Assert.That(journal.Api.HasASealedRevision(), Is.False);
+			Assert.Throws<InvalidOperationException>(
+				() => journal.Api.ReadCurrentRevisionCode());
+			Assert.Throws<InvalidOperationException>(
+				() => journal.Api.ReadCurrentRevisionPublishedAt());
+
+			Assert.Throws<DomainException>(() => journal.Api.ReadRevisionState("R-QUE-NO-EXISTE"));
+
+			ASealedSpecSheet();
+
+			// La presion se publico en UnitA y el odometro llega en UnitB: no hay nada que comparar,
+			// y aca no se convierte. La respuesta no esta entre las cinco.
+			Assert.That(
+				journal.Api.CanCoverageBeEvaluated(
+					"POWERTRAIN", 60, 100000, "UnitA",
+					Delivery, OdometerAtDelivery, OdometerAtDelivery + 5000, "UnitB", ThePublication),
+				Is.False);
+
+			Assert.Throws<InvalidOperationException>(
+				() => journal.Api.ReadCoverageStanding(
+					"POWERTRAIN", 60, 100000, "UnitA",
+					Delivery, OdometerAtDelivery, OdometerAtDelivery + 5000, "UnitB", ThePublication));
+
+			Assert.That(
+				journal.Api.DescribeCoverage(
+					"POWERTRAIN", 60, 100000, "UnitA",
+					Delivery, OdometerAtDelivery, OdometerAtDelivery + 5000, "UnitB", ThePublication),
+				Is.Not.Empty,
+				"Pero la FRASE si contesta: lo que no se pudo evaluar tambien se dice con palabras.");
+		}
+
+		// NINGUNA DE LAS TREINTA Y CINCO ESCRIBE UNA ENTRADA. Son consultas, no comandos, y el error
+		// que esta prueba existe para atrapar es de una sola letra: PerformCommand donde iba
+		// PerformQuery. Una lectura que escribe le agrega una entrada al journal de la persona cada
+		// vez que abre la app, para siempre, y el estado sigue siendo correcto -- asi que ninguna
+		// otra prueba se pondria roja.
+		[Test]
+		public void NoSpecificationReadOfTheDoorWritesAnEntry()
+		{
+			ASealedSpecSheet();
+
+			string before = TheBytesOf(journal.Folder);
+
+			EveryOneOfThemAgainstASealedSheet();
+
+			Assert.That(TheBytesOf(journal.Folder), Is.EqualTo(before),
+				"El journal quedo byte a byte como estaba.");
+		}
+
+		// Una hoja sellada con los seis items, publicada por la puerta. Los tres grados de
+		// combustible llevan las TRES posturas: sin las tres, dos de las listas contestarian vacio
+		// por una razon que no es la que la prueba cree.
+		private void ASealedSpecSheet()
+		{
+			journal.Api.OpenRevision(TheRevision, ThePublication);
+
+			journal.Api.PublishFluidSpecification(
+				TheRevision, "EngineOil", "5W-30", 2.40m, "UnitA", TenThousandUnits, "UnitA",
+				TwelveMonthsInDays);
+
+			journal.Api.PublishTyreSpecification(
+				TheRevision, "Front", "205/55R16", 2.4m, "UnitA", "94V");
+
+			// El minimo NO se publica primero, y los tres llevan minusculas. Las dos cosas son a
+			// proposito: con el minimo primero, una lectura que devolviera "el primer grado" en vez
+			// del que lleva esa postura acertaria por casualidad; y con los tres en mayusculas, una
+			// que le pasara el texto por ToUpper contestaria igual.
+			journal.Api.PublishFuelGrade(TheRevision, "95 RON Premium", "Permitted");
+			journal.Api.PublishFuelGrade(TheRevision, "91 RON regular", "Minimum");
+			journal.Api.PublishFuelGrade(TheRevision, "E85 Flex", "Prohibited");
+
+			journal.Api.PublishServiceInterval(
+				TheRevision, "FluidChange", TenThousandUnits, "UnitA", TwelveMonthsInDays);
+
+			journal.Api.PublishServicePrice(
+				TheRevision, "FluidChange", TenThousandUnits, "UnitA", 75.50m, "USD",
+				ThePublication, ThePublication.AddYears(1));
+
+			journal.Api.PublishCoveredSystem(TheRevision, "POWERTRAIN", 0, 0, "UnitA");
+
+			journal.Api.PublishCoverageExclusion(
+				TheRevision, "POWERTRAIN", "wear parts", "when the part is consumable");
+
+			journal.Api.PublishServicingPolicy(
+				TheRevision, "service anywhere", "keep the receipts");
+
+			journal.Api.SealRevision(TheRevision);
+		}
+
+		// Los nueve hechos de la pregunta de cobertura, atados una vez para las tres lecturas que la
+		// hacen. Van los nueve: la resta entre el limite y el odometro es donde se compara la
+		// unidad, y precalcularla aca se llevaria esa comparacion fuera del dominio.
+		private static T TheCoverageOf<T>(
+			string systemCode,
+			Func<string, int, int, string, DateTime, int, int, string, DateTime, T> read)
+		{
+			return read(
+				systemCode, 60, 100000, "UnitA",
+				Delivery, OdometerAtDelivery, OdometerAtDelivery + 5000, "UnitA", ThePublication);
+		}
+
+		// El arbol entero del journal reducido a una cadena: nombre relativo mas hash del contenido,
+		// en orden. Repetido a proposito -- cada fixture de esta suite es dueño de su aparejo.
+		private static string TheBytesOf(string folder)
+		{
+			List<string> files = new List<string>(
+				Directory.GetFiles(folder, "*", SearchOption.AllDirectories));
+			files.Sort(StringComparer.Ordinal);
+
+			StringBuilder tree = new StringBuilder();
+
+			foreach (string file in files)
+			{
+				using (FileStream open = new FileStream(
+					file, FileMode.Open, FileAccess.Read, FileShare.ReadWrite | FileShare.Delete))
+				{
+					byte[] content = new byte[open.Length];
+					open.ReadExactly(content, 0, content.Length);
+
+					tree.Append(Path.GetRelativePath(folder, file).Replace('\\', '/'));
+					tree.Append(' ');
+					tree.Append(content.Length);
+					tree.Append(' ');
+					tree.AppendLine(Convert.ToHexString(MD5.HashData(content)));
+				}
+			}
+
+			return tree.ToString();
 		}
 	}
 }

@@ -222,12 +222,37 @@ namespace DealershipCar.Dominio
 		/// </summary>
 		internal string DescribeFuelSpecification()
 		{
-			if (!HasAFuelSpecification())
-				throw new DomainException(
-					$"La revision '{Code}' no publico ningun grado de combustible. Hay que preguntar "
-					+ "primero si lo publico.");
+			RefuseFuelUnlessItWasPublished();
 
 			return _fuel.Describe();
+		}
+
+		/// <summary>
+		/// El grado minimo que esta revision publico, o vacio si no publico ninguno con esa postura.
+		/// Accesor GUARDADO por la misma razon que la clausula: preguntarselo a una revision que no
+		/// hablo de combustible es un defecto de quien llama.
+		/// </summary>
+		internal string TheMinimumFuelGradePublished()
+		{
+			RefuseFuelUnlessItWasPublished();
+
+			return _fuel.TheMinimumGradePublished();
+		}
+
+		/// <summary>Los grados que esta revision publico como permitidos. Accesor GUARDADO.</summary>
+		internal string[] ThePermittedFuelGradesPublished()
+		{
+			RefuseFuelUnlessItWasPublished();
+
+			return _fuel.TheGradesPublishedAs(FuelGradeStanding.Permitted);
+		}
+
+		/// <summary>Los grados que esta revision publico como prohibidos. Accesor GUARDADO.</summary>
+		internal string[] TheProhibitedFuelGradesPublished()
+		{
+			RefuseFuelUnlessItWasPublished();
+
+			return _fuel.TheGradesPublishedAs(FuelGradeStanding.Prohibited);
 		}
 
 		/// <summary>
@@ -527,6 +552,14 @@ namespace DealershipCar.Dominio
 
 			_state = RevisionState.Superseded;
 			_supersededByCode = supersedingRevision.Code;
+		}
+
+		private void RefuseFuelUnlessItWasPublished()
+		{
+			if (!HasAFuelSpecification())
+				throw new DomainException(
+					$"La revision '{Code}' no publico ningun grado de combustible. Hay que preguntar "
+					+ "primero si lo publico.");
 		}
 
 		private void RefuseCoverageUnlessItWasPublished()

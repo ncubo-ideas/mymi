@@ -35,6 +35,29 @@ namespace DealershipCar.Dominio
 		}
 
 		/// <summary>
+		/// El texto del grado tal como se publico, sin la postura. Es lo que una persona pide en
+		/// una bomba, y por eso sale suelto ademas de dentro de la frase.
+		/// </summary>
+		internal string Text
+		{
+			get { return _grade; }
+		}
+
+		/// <summary>
+		/// Si el fabricante le puso ESA postura a este grado. Compara por identidad, que es la
+		/// unica comparacion que admite un conjunto cerrado.
+		/// </summary>
+		internal bool ItStands(FuelGradeStanding standing)
+		{
+			if (standing == null)
+				throw new DomainException(
+					"Se pregunto por la postura de un grado de combustible sin decir cual. Sin la "
+					+ "postura no hay nada contra que compararlo.");
+
+			return ReferenceEquals(_standing, standing);
+		}
+
+		/// <summary>
 		/// Si los dos hablan del mismo grado publicado, comparando el texto tal cual. Es la
 		/// comparacion con nombre que deja corregir la postura de un grado antes de sellar, sin
 		/// escribir ninguna igualdad.

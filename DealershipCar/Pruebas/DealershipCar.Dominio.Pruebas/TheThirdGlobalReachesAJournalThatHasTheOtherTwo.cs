@@ -217,21 +217,13 @@ namespace DealershipCar.Dominio.Pruebas
 			return app;
 		}
 
-		// LA LECTURA QUE T6 VA A CONSTRUIR EN LA PUERTA, hecha aca a mano porque T5 construye los
-		// once comandos de la especificacion y ninguna lectura de ella. Es tambien la unica forma de
-		// medir la AUSENCIA de la global, que es el falsificador de este fixture.
+		// LA LECTURA DE LA PUERTA, que T6 construyo: la misma que se hacia a mano contra el actor
+		// mientras la especificacion no tenia ninguna. Es tambien la unica forma de medir la
+		// AUSENCIA de la global, que es el falsificador de este fixture -- y por eso se le pasa la
+		// app VIEJA tambien, que es un PerformanceV2 cualquiera y no un DealershipCarApp.
 		private static string TheModelTheJournalAnswers(PerformanceV2 app)
 		{
-			using (RentedParameter rented = app.Actor.RentedParameters())
-			{
-				app.Actor.Using("@model = specification.ReadModel();")
-				.WithParameters(rented, p => {
-					p[Parameter.Out, "model", typeof(string)] = default;
-				})
-				.PerformQuery();
-
-				return rented["model"].GetValue<string>();
-			}
+			return new DealershipCarAPI(app).ReadModel();
 		}
 
 		// La app tal como era antes de T5: dos globales de raiz. Existe SOLO para que la migracion
