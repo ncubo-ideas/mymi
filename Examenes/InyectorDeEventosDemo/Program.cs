@@ -10,10 +10,10 @@ using System.Text.Json;
 // Por que existe: los datos del demo se ORQUESTAN como test cases. Un endpoint que
 // agrega un examen aleatorio no sirve para contar una historia, porque la TENDENCIA
 // depende de los valores y de las fechas. Con valores al azar no se puede demostrar que
-// el antigeno viene subiendo, que es toda la demo.
+// el colesterol de Sonia viene subiendo, que es toda la demo.
 //
-// Regla de la casa: se publica SOLO lo que la app va a mostrar. Si la historia son ocho
-// examenes, son ocho eventos, no sesenta.
+// Regla de la casa: se publica SOLO lo que la app va a mostrar. Si la historia son once
+// examenes, son once eventos, no sesenta.
 
 string baseUrl = Arg(args, "--url", "http://localhost:8091/");
 string recurso = Arg(args, "--recurso", "expediente");
@@ -91,8 +91,8 @@ async Task Listar()
 }
 
 // Un examen CONCRETO, con su fecha y su valor.
-//   inyectar --examen AntigenoProstatico --fecha 2026-08-21 --valor 5.2 --unidad ng/mL
-//   inyectar --examen Orina --fecha 2026-08-21 --color ambar --nitritos negativo
+//   inyectar --examen Colesterol --fecha 2026-04-28 --valor 212 --unidad mg/dL
+//   inyectar --examen Orina --fecha 2026-04-28 --color ambar --nitritos negativo
 async Task Inyectar()
 {
     string examen = Arg(args, "--examen", "");
@@ -127,13 +127,16 @@ async Task Inyectar()
 // estados, y el orden importa:
 //
 //   1. se abre la app sin este evento    -> el sexo es DESCONOCIDO y el bloque insiste
-//   2. la persona aprieta "Soy hombre"   -> aparece el antigeno con su serie y su ritmo
-//   3. se corre esto con --sexo mujer    -> el laboratorio publica lo contrario, y como
+//   2. Sonia aprieta "Soy mujer"         -> la hemoglobina y el HDL consiguen su rango y
+//                                           el expediente entero queda interpretado
+//   3. se corre esto con --sexo hombre   -> el laboratorio publica lo contrario, y como
 //                                           gana lo que dijo ella, NO cambia nada: eso es
 //                                           el "tú eres la autoridad final" en vivo
 //
-// Para ver el antigeno DESAPARECER hay que declarar mujer desde la app, que es la puerta
-// que manda. Este comando es la otra fuente, y esta para poder mostrar el conflicto.
+// El guion de Sonia no trae antigeno prostatico porque a ella no se lo hicieron. Para ver
+// el caso "este analito no te corresponde" con una serie de verdad, se inyecta uno a mano
+// y se declara mujer desde la app: la tarjeta desaparece. Este comando es la otra fuente,
+// y esta para poder mostrar el conflicto.
 async Task Sexo()
 {
     string sexo = Arg(args, "--sexo", "");
@@ -160,26 +163,41 @@ async Task Sexo()
 // Las fechas son literales. Una demo con "hoy menos tres anos" deja de ser reproducible:
 // las tendencias dependen de los dias transcurridos, y el mismo journal reproducido el
 // ano que viene contaria otra historia.
+//
+// ES EL EXPEDIENTE DE SONIA: 34 anos, y sus resultados del 28 de abril de 2026. Los tres
+// colesteroles son la serie -182 y 188 de linea base, 212 de hallazgo- y son lo que la
+// portada de la app titula.
+//
+// EL VALOR SECUNDARIO VIAJA EN EL GUION porque el perfil lipidico son DOS analitos: el
+// LDL y su HDL. Mandarlo en cero hacia que la app descartara el evento —cero mg/dL de HDL
+// no es un valor que una persona viva pueda tener— y el primer punto de la historia se
+// perdia en silencio.
+//
+// LO QUE ESTE COMANDO NO PUEDE SEMBRAR: el examen de heces y la sangre de la orina. El
+// endpoint de inyeccion no tiene campo `sangre`, asi que las tres pruebas de sangre oculta
+// del guion viven solo en la semilla de URL2. Con esto se re-siembra la parte cuantitativa
+// del expediente, no el expediente entero.
 async Task Historia()
 {
     Console.WriteLine($"sembrando la historia en {recurso}/{id}...");
 
-    (string examen, string fecha, decimal valor, string unidad, string color, string nitritos, string porque)[] guion =
+    (string examen, string fecha, decimal valor, decimal secundario, string unidad, string color, string nitritos, string porque)[] guion =
     {
-        ("AntigenoProstatico", "2023-08-21", 3.0m,   "ng/mL", "",      "", "linea base: de aca sale el 'venia estable'"),
-        ("AntigenoProstatico", "2024-08-21", 3.1m,   "ng/mL", "",      "", "sigue estable un ano despues"),
-        ("Colesterol",         "2025-08-21", 200.0m, "mg/dL", "",      "", "primer punto de la serie de colesterol"),
-        ("AntigenoProstatico", "2025-08-21", 3.0m,   "ng/mL", "",      "", "tercer ano planchado"),
-        ("Colesterol",         "2026-08-21", 280.0m, "mg/dL", "",      "", "el salto que cuenta la historia"),
-        ("AntigenoProstatico", "2026-08-21", 5.2m,   "ng/mL", "",      "", "el salto que exige atencion"),
-        ("Hemoglobina",        "2026-08-21", 14.2m,  "g/dL",  "",      "", "para que la lista tenga cuerpo"),
-        ("Orina",              "2026-08-21", 0m,     "",      "ambar", "negativo",
-            "un examen SIN serie, y con DOS formas de magnitud: un color y un binario"),
+        ("ColesterolDetallado", "2021-04-22", 118.0m, 58.0m, "mg/dL", "",      "", "el perfil lipidico viejo: es lo unico que sale VENCIDO"),
+        ("Colesterol",          "2024-04-24", 182.0m, 0m,    "mg/dL", "",      "", "linea base: de aca sale el 'venia bien'"),
+        ("Hemoglobina",         "2024-04-24", 13.1m,  0m,    "g/dL",  "",      "", "primer punto del analito cuyo rango depende del sexo"),
+        ("Colesterol",          "2025-04-26", 188.0m, 0m,    "mg/dL", "",      "", "subio 6 mg/dL, que NO llega a ser un cambio"),
+        ("Colesterol",          "2026-04-28", 212.0m, 0m,    "mg/dL", "",      "", "el ascenso que cuenta la historia, y sigue en rango a los 34"),
+        ("Hemoglobina",         "2026-04-28", 13.4m,  0m,    "g/dL",  "",      "", "estable"),
+        ("Orina",               "2026-04-28", 0m,     0m,    "",      "ambar", "negativo",
+            "un examen con DOS formas de magnitud: un color y un binario"),
+        ("Orina",               "2025-04-26", 0m,     0m,    "",      "amarillo palido", "negativo",
+            "la segunda tira: con dos, la serie puede decir que nunca aparecio"),
     };
 
-    foreach (var (examen, fecha, valor, unidad, color, nitritos, porque) in guion)
+    foreach (var (examen, fecha, valor, secundario, unidad, color, nitritos, porque) in guion)
     {
-        var cuerpo = new { examen, fecha, valor, valorSecundario = 0m, unidad, color, nitritos };
+        var cuerpo = new { examen, fecha, valor, valorSecundario = secundario, unidad, color, nitritos };
         using var r = await http.PostAsJsonAsync($"{recurso}/{id}/events/examen", cuerpo);
         Console.WriteLine($"  {fecha}  {examen,-20} HTTP {(int)r.StatusCode}   {porque}");
     }
@@ -233,8 +251,8 @@ static void Ayuda()
     Console.WriteLine("  sexo --sexo mujer             el laboratorio publica el sexo del paciente");
     Console.WriteLine("     (la app arranca en 'desconocido' a proposito: es lo que hace que el");
     Console.WriteLine("      bloque que insiste se vea. Si la persona ya lo declaro, gana ella.)");
-    Console.WriteLine("  inyectar --examen AntigenoProstatico --fecha 2026-08-21 --valor 5.2 --unidad ng/mL");
-    Console.WriteLine("  inyectar --examen Orina --fecha 2026-08-21 --color ambar --nitritos negativo");
+    Console.WriteLine("  inyectar --examen Colesterol --fecha 2026-04-28 --valor 212 --unidad mg/dL");
+    Console.WriteLine("  inyectar --examen Orina --fecha 2026-04-28 --color ambar --nitritos negativo");
     Console.WriteLine("     nitritos: positivo | negativo | (vacio = no se corrio la prueba, que NO es negativo)");
     Console.WriteLine("                                agrega UN examen concreto");
     Console.WriteLine();
