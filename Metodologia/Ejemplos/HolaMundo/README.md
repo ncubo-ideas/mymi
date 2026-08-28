@@ -1,14 +1,18 @@
-# Hola Mundo
+# Capítulo 2 · Hola Mundo
 
-Una app clientecéntrica del tamaño más chico que sigue siendo honesta. Está para
-**tocarla y romperla** antes de construir la tuya.
+**El paso 4 del [orden de trabajo](../../Guias/README.md).** Una app clientecéntrica del tamaño más
+chico que sigue siendo honesta, para **tocarla y romperla** antes de construir la tuya.
 
 Son **siete archivos de código**. Se lee de una sentada.
 
-> **Es nuestro, y es de mentira.** No es un negocio: es material de enseñanza de la
-> Metodología. Los negocios de verdad —`Examenes`, `Compras`, `Cargas`,
-> `DealershipCar`— están en la raíz del repo, son de sus equipos, y son entre 15 y 30
-> veces más grandes. Cuando quieras ver cómo se ve esto en serio, andá ahí.
+> **Éste es el único capítulo que no vive en `Guias/`**, y es a propósito: es el único que **es** un
+> código. Un capítulo que explicara archivos de otra carpeta se desincronizaría; acá el texto y lo
+> que describe se rompen juntos, y eso se nota.
+
+> **Es nuestro, y es de mentira.** No es un negocio: es material de enseñanza. Los negocios de
+> verdad —`Examenes`, `Compras`, `Cargas`, `DealershipCar`— están en la raíz del repo, son de sus
+> equipos, y son entre 15 y 30 veces más grandes. Cuando quieras ver cómo se ve esto en serio, andá
+> ahí.
 
 ---
 

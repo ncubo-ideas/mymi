@@ -14,7 +14,7 @@ que sabe programar, menos que nadie.
 | **1** | **Punto de partida** — llegás con una descripción funcional en prosa y salís con las preguntas. **Vuelve después del paso 5**: una sola pasada nunca alcanza | **`Preguntas.md`** | [Punto de partida](punto-de-partida.md) · [hoja](hoja-de-la-entrevista.md) |
 | **2** | **Escribir bien ese archivo** — la capacidad, los juicios, lo que se descarta | `Preguntas.md` terminado | [4](04-requerimientos-que-agregan-valor.md) |
 | **3** | **Preparar el escritorio** — y las tres fallas del feed privado, que se ven todas iguales | una máquina que compila | [1](01-preparar-el-escritorio.md) |
-| **4** | **Hello World** — algo que tocar y romper antes de lo propio | entendimiento | [El ejemplo](../Ejemplos/HolaMundo/README.md) · capítulo [2](#) *pendiente* |
+| **4** | **Hello World** — algo que tocar y romper antes de lo propio | entendimiento | [2 · Hola Mundo](../Ejemplos/HolaMundo/README.md) |
 | **5** | **Construir** — el dominio, la lógica, y la carátula de **consola**, que es el arnés | `Dominio/` · `App/<N>.App` · `App/<N>.Consola` | [3](03-construir-la-app.md) |
 | **6** | **Traer los datos del proveedor** | `EndPointDeEventos/` · `InyectorDeEventosDemo/` | [5](#) *pendiente* |
 | **7** | **Exponerla** — las dos carátulas que miran **hacia afuera**: la que instala la persona y la que ve la IA | `App/<N>.Wasm` · `App/<N>.Mcp` | [6](06-cli-y-acceso-de-la-ia.md) |
@@ -29,6 +29,12 @@ que sabe programar, menos que nadie.
 > hay datos de verdad corriendo por URL2. Es el orden que los negocios del repo ya siguen: *"el WASM
 > está bloqueado por el motor, así que se trabaja y se valida por Consola — es para lo que existe esa
 > carátula"*.
+
+> **Por qué el capítulo 2 no vive en esta carpeta.** Porque es el único que **es** un código, y un
+> capítulo que explica archivos de otra carpeta se desincroniza — el mismo problema que ya medimos
+> con los manifiestos. Vive al lado de lo que describe, en
+> [`Ejemplos/HolaMundo/`](../Ejemplos/HolaMundo/README.md), donde no puede quedar viejo sin que se
+> note.
 
 Aparte del orden, y se lee cuando haga falta:
 
@@ -51,6 +57,7 @@ Importa, porque estas guías se van a leer como si todo tuviera el mismo respald
 | | |
 |---|---|
 | **Capítulo 0** | Cruzado contra las infografías del equipo **y contra el repo corriendo** (`Examenes`, `Compras`, `HolaMundo/Facturas`). Lo que es objetivo y no realidad está marcado como tal |
+| **Capítulo 2** | **Construido y corrido.** 12 comprobaciones del dominio puro, y el ciclo con journal dos veces sobre la misma carpeta para ver el replay. Las reglas 15 y 16 del substrato salieron de escribirlo |
 | **Capítulo 3** | Construido y corrido de punta a punta en un ejercicio de presupuesto. Las [reglas del substrato](reglas-del-substrato.md) salieron de chocar con ellas, y hay pruebas que las fijan |
 | **Capítulo 4** | Doctrina confirmada por los tres casos del equipo. Su **ejemplo trabajado** sigue una pregunta hasta el fondo en un dominio real, y el §6bis dice qué de este capítulo se puede auditar y qué **no** |
 | **Punto de partida** | **Corrido una vez**, sobre un dominio de presupuesto personal (2026-08-26). La corrida encontró seis defectos en el guion, y los seis están corregidos |
@@ -85,11 +92,6 @@ lo describe en su §6; el capítulo 6 debería tenerlo también.
 **3 (escritorio). Escrito**, y con la parte cara medida: las tres fallas del feed privado que se ven
 todas iguales desde el error, y la trampa de que el mismo comando funciona o falla según desde dónde
 se corra.
-
-**4 (Hello World). El ejemplo ya existe**: [`Ejemplos/HolaMundo/`](../Ejemplos/HolaMundo/README.md),
-siete archivos, propio y corriendo —12 comprobaciones del dominio puro y el ciclo con journal—. Su
-README ya hace de guía: qué leer en qué orden y cuatro cosas para romper. **Falta decidir si el
-capítulo se escribe aparte o si ese README es el capítulo.**
 
 **6 (datos del proveedor).** Sigue bloqueado: falta el lado del proveedor y no hay ningún motor SQL
 corriendo contra el cual probar una receta.
