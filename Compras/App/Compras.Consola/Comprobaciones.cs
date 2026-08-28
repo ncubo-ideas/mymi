@@ -65,6 +65,7 @@ namespace Compras.Consola
 			ElRitmoDeUnProductoCambia();
 			ElRitmoDelSuperTieneTresCaras();
 			LaConstanciaSeDiceEnPalabras();
+			LaBusquedaEncuentraPorProducto();
 
 			Console.WriteLine();
 			Console.WriteLine(fallas == 0
@@ -1301,6 +1302,75 @@ namespace Compras.Consola
 			for (int i = 0; i <= 10; i++)
 				Igual($"  {i * 10}% tiene constancia", "True",
 					(Constancia.Para(i / 10m) != null).ToString());
+		}
+
+		// ---- en cuales compras aparecio esto ----
+		private static void LaBusquedaEncuentraPorProducto()
+		{
+			Titulo("la busqueda encuentra por producto, no por numero de ticket");
+
+			Historial guion = ElGuion();
+
+			ComprasConElProducto helado = guion.ComprasCon("Helado");
+			Igual("«Helado»: aparece", "True", helado.Existe().ToString());
+			Igual("  en cuantas compras", "3", helado.CuantasCompras.ToString());
+			Igual("  cuantas unidades en total", "7", helado.TotalUnidades.ToString());
+			Igual("  cuanto se gasto", "25060", helado.TotalGastado.ToString("0"));
+			Igual("  un solo producto coincide", "1", helado.Productos.Count.ToString());
+
+			// DE LA MAS RECIENTE A LA MAS VIEJA, que es como se busca un ticket.
+			Igual("  la primera es la ultima que hizo", "T-96470", helado.Compras[0].Numero);
+			Igual("  y la ultima es la mas vieja", "T-91515", helado.Compras[2].Numero);
+
+			// LAS DOS ESCALAS: lo del producto y lo de la compra entera.
+			Igual("  en esa compra llevo 3 helados", "3", helado.Compras[0].Unidades.ToString());
+			Igual("  y gasto 11040 EN HELADO", "11040", helado.Compras[0].Gasto.ToString("0"));
+			Igual("  mientras la compra entera tiene 5 lineas", "5",
+				helado.Compras[0].LineasDeLaCompra.ToString());
+			Igual("  y suma bastante mas", "True",
+				(helado.Compras[0].TotalDeLaCompra > helado.Compras[0].Gasto).ToString());
+
+			// UN DEPARTAMENTO TAMBIEN SE BUSCA, porque el criterio es el mismo que el del
+			// consumo. Es lo que permite preguntar por un pasillo entero.
+			ComprasConElProducto dulces = guion.ComprasCon("Azucarados");
+			Igual("«Azucarados» es un departamento y tambien se encuentra", "True",
+				dulces.Existe().ToString());
+			Igual("  en 3 compras", "3", dulces.CuantasCompras.ToString());
+			Igual("  con cinco productos distintos", "5", dulces.Productos.Count.ToString());
+			Igual("  y 26 unidades", "26", dulces.TotalUnidades.ToString());
+
+			// UN TEXTO QUE ALCANZA A DOS PRODUCTOS los nombra a los dos, para que quien
+			// pregunta sepa que la app junto dos cosas.
+			ComprasConElProducto soda = guion.ComprasCon("soda");
+			Igual("«soda» alcanza a dos productos", "2", soda.Productos.Count.ToString());
+			Igual("  y suma las dos", "12", soda.TotalUnidades.ToString());
+
+			// TOTAL: buscar algo que nunca se llevo no revienta ni miente.
+			ComprasConElProducto nada = guion.ComprasCon("caviar");
+			Igual("«caviar»: no aparece", "False", nada.Existe().ToString());
+			Igual("  y no hay compras que mostrar", "0", nada.Compras.Count.ToString());
+			Igual("  el contador para el cable da 0", "0", nada.CuantasCompras.ToString());
+			Igual("  se dice con el termino adentro", "True",
+				nada.ParaSonia.Contains("caviar").ToString());
+
+			// TOTAL DE VERDAD, sin lectores guardados: de algo que nunca se compro se
+			// llevaron cero unidades y se gastaron cero colones, y las dos son VERDAD. Es
+			// lo que permite que una consulta del DSL las imprima planas sin preguntar
+			// Existe() antes — un lector que revienta no blanquea la columna, mata la
+			// consulta entera.
+			Igual("  cero unidades, y no revienta", "0", nada.TotalUnidades.ToString());
+			Igual("  cero gastado, y no revienta", "0", nada.TotalGastado.ToString("0"));
+
+			// Y un historial sin compras es el mismo par, no un caso aparte.
+			ComprasConElProducto vacio = new Historial().ComprasCon("leche");
+			Igual("historial vacio: no aparece", "False", vacio.Existe().ToString());
+
+			// LA FRASE NOMBRA EL PRODUCTO ENCONTRADO, no lo que se escribio: quien busco
+			// "helado" tiene que poder confirmar que la app entendio cual.
+			Igual("la frase nombra el producto hallado", "True",
+				helado.ParaSonia.Contains("Helado de vainilla 1L").ToString());
+			Igual("  y con varios dice cuantos coinciden", "True",
+				dulces.ParaSonia.Contains("5 productos").ToString());
 		}
 
 		private static Historial ElGuion()

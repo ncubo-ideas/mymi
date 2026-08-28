@@ -257,6 +257,12 @@ public sealed class EstadoDeLaApp : IAsyncDisposable
 	public ConsumoEnElTiempo ConsumoDe(string producto)
 	{ Exigir(); return api!.Consumo(producto); }
 
+	// EN CUALES COMPRAS APARECIO ESTO. La busca el DOMINIO y no la pantalla: la pantalla
+	// solo tiene la lista de compras -numero, fecha, lineas, total-, sin las lineas, asi que
+	// filtrar aca obligaria a bajar el detalle de las 87 en cada tecla.
+	public ComprasHalladas Halladas(string termino)
+	{ Exigir(); return api!.Halladas(termino); }
+
 	// EL CORTE ES EL 1 DE ENERO DE ESTE ANO, y antes era "hace un ano" — que con compras
 	// semanales resulto estar mal. Con 87 compras, "hace un ano" partia el historial en
 	// agosto y comparaba ocho semanas de 2025 contra otras ocho de 2025: dos ventanas del

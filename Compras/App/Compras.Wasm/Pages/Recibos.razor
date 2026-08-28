@@ -37,37 +37,64 @@ else
     {
         <p class="text-body-secondary">Todavía no hay compras. Apretá <em>Refresh</em> en Inicio.</p>
     }
-    else if (Encontradas().Count == 0)
+    else if (Filas().Count == 0)
     {
-        @* NO HAY RESULTADOS ES UNA RESPUESTA, no una pantalla vacía: se dice qué se buscó
-           y en cuántas compras, para que quien busca sepa que la app miró. *@
+        @* NO HAY RESULTADOS ES UNA RESPUESTA, no una pantalla vacía: la frase la escribe el
+           dominio, que es el que sabe qué se buscó. *@
         <p class="text-body-secondary">
-            No hay ninguna compra que coincida con <strong>«@termino»</strong>
-            entre tus @compras.Count compras.
+            @(hallazgo is null ? "" : hallazgo.ParaSonia)
+            Probá con otro producto, o con un pasillo entero — <em>limpieza</em>, <em>proteinas</em>.
         </p>
     }
     else
     {
+        @* QUÉ ENTENDIÓ LA APP. Buscar "queso" puede alcanzar a dos productos, y quien busca
+           tiene derecho a saberlo ANTES de leer los totales — si no, un número que suma dos
+           cosas se lee como si fuera de una. *@
+        @if (hallazgo is not null && hallazgo.Existe)
+        {
+            <p class="hallazgo-dicho">
+                <strong>@Junta(hallazgo.Productos)</strong>
+                &middot; @hallazgo.CuantasCompras @(hallazgo.CuantasCompras == 1 ? "compra" : "compras")
+                &middot; @hallazgo.TotalUnidades u
+                &middot; @Colones(hallazgo.TotalGastado)
+            </p>
+        }
+
         @foreach (var grupo in PorFecha())
         {
             <div class="grupo-fecha">@grupo.Key</div>
             <div class="list-group mb-3">
-                @foreach (CompraEnLista compra in grupo)
+                @foreach (Fila fila in grupo)
                 {
                     <button class="list-group-item list-group-item-action recibo"
-                            @onclick="() => VerDetalle(compra.Numero)">
+                            @onclick="() => VerDetalle(fila.Numero)">
                         <span class="recibo-dia">
-                            <span class="recibo-numero-dia">@compra.Fecha.Day</span>
-                            <span class="recibo-mes">@Mes(compra.Fecha.Month)</span>
+                            <span class="recibo-numero-dia">@fila.Fecha.Day</span>
+                            <span class="recibo-mes">@Mes(fila.Fecha.Month)</span>
                         </span>
                         <span class="recibo-que">
-                            <strong>@compra.Lineas @(compra.Lineas == 1 ? "producto" : "productos")</strong>
-                            <span class="small text-body-secondary">
-                                @compra.Fecha.ToString("HH:mm", CultureInfo.InvariantCulture)
-                                &middot; @compra.Numero
-                            </span>
+                            @* BUSCANDO, LA FILA DICE POR QUÉ APARECIÓ: cuánto de lo buscado
+                               entró en esa compra. Sin eso el resultado es indistinguible de
+                               la lista y no se entiende qué hizo la búsqueda. *@
+                            @if (fila.EsHallazgo)
+                            {
+                                <strong>@fila.Unidades u &middot; @Colones(fila.Gasto)</strong>
+                                <span class="small text-body-secondary">
+                                    de @fila.Lineas @(fila.Lineas == 1 ? "producto" : "productos")
+                                    &middot; @fila.Numero
+                                </span>
+                            }
+                            else
+                            {
+                                <strong>@fila.Lineas @(fila.Lineas == 1 ? "producto" : "productos")</strong>
+                                <span class="small text-body-secondary">
+                                    @fila.Fecha.ToString("HH:mm", CultureInfo.InvariantCulture)
+                                    &middot; @fila.Numero
+                                </span>
+                            }
                         </span>
-                        <span class="recibo-total numero">@Colones(compra.Total)</span>
+                        <span class="recibo-total numero">@Colones(fila.Total)</span>
                         <span class="recibo-flecha" aria-hidden="true">&rsaquo;</span>
                     </button>
                 }
@@ -82,16 +109,34 @@ else
                 consultar todas.
             </p>
         }
+        else if (hallazgo is not null && hallazgo.CuantasCompras > ResultadosQueSeMuestran)
+        {
+            <p class="small text-body-secondary">
+                Las @ResultadosQueSeMuestran más recientes de @hallazgo.CuantasCompras.
+                Los totales de arriba sí son de todas — y tu asistente las puede consultar una
+                por una.
+            </p>
+        }
     }
 }
 
 @code {
     // CUANTOS SE PINTAN SIN BUSCAR. Con 87 compras la lista completa es una pared; doce son
     // unos tres meses de compras semanales, que es lo que alguien recorre buscando un
-    // ticket reciente. Con un termino de busqueda NO se acota: quien busca quiere todo.
+    // ticket reciente.
     private const int RecibosQueSeMuestran = 12;
 
+    // Y CUANTOS BUSCANDO. Antes no habia tope -"quien busca quiere todo"- y eso solo era
+    // cierto porque la busqueda no encontraba nada: miraba el numero del ticket. Ahora que
+    // encuentra de verdad, "leche" devuelve LAS 87, porque es un habitual semanal y esta en
+    // todas. Veinticinco es medio ano de compras semanales.
+    //
+    // EL TOPE ES SOLO DE LA LISTA: la cabecera de arriba cuenta TODAS, asi que el numero
+    // que se lee nunca es el numero recortado.
+    private const int ResultadosQueSeMuestran = 25;
+
     private IReadOnlyList<CompraEnLista> compras = new List<CompraEnLista>();
+    private ComprasHalladas? hallazgo;
     private string termino = "";
 
     protected override void OnInitialized()
@@ -99,44 +144,73 @@ else
         if (estado.EstaArriba) compras = estado.Compras();
     }
 
-    private void Buscar(ChangeEventArgs e) => termino = (e.Value?.ToString() ?? "").Trim();
-
-    // LA BUSQUEDA ES POR NUMERO DE TICKET, no por producto — todavia. El detalle de cada
-    // compra tiene las lineas, pero esta pantalla solo tiene la lista, y bajar el detalle
-    // de las 87 para filtrar seria pedirle al dominio 87 consultas por tecla.
-    //
-    // Lo que falta es una lectura del dominio: "las compras donde entro este producto".
-    // El placeholder promete buscar "leche, arroz, galletas", asi que hasta que exista, la
-    // pantalla no cumple lo que ofrece. Queda dicho aca y en el README.
-    private IReadOnlyList<CompraEnLista> Encontradas()
+    // LA BUSQUEDA LA HACE EL DOMINIO, no esta pantalla, y ese es el arreglo de fondo. La
+    // pantalla solo tiene la lista -numero, fecha, lineas, total-, SIN las lineas, asi que
+    // lo unico que podia filtrar era el numero del ticket. Por eso el placeholder prometia
+    // "leche, arroz, galletas" y escribir "leche" no devolvia nada, mientras "T-" devolvia
+    // las 87: todos los numeros empiezan igual.
+    private void Buscar(ChangeEventArgs e)
     {
-        if (termino.Length == 0)
-        {
-            var recientes = new List<CompraEnLista>();
-            for (int i = compras.Count - 1; i >= Math.Max(0, compras.Count - RecibosQueSeMuestran); i--)
-                recientes.Add(compras[i]);
+        termino = (e.Value?.ToString() ?? "").Trim();
+        hallazgo = termino.Length == 0 || !estado.EstaArriba ? null : estado.Halladas(termino);
+    }
 
-            return recientes;
+    // UNA SOLA FORMA DE FILA para los dos modos. Buscando trae ademas cuanto de lo buscado
+    // entro en esa compra; sin buscar esos dos campos no se pintan. Que la fila sea una es
+    // lo que hace que el resultado de una busqueda se lea como parte de la misma lista y no
+    // como otra pantalla.
+    private sealed record Fila(
+        string Numero, DateTime Fecha, int Lineas, decimal Total,
+        int Unidades, decimal Gasto, bool EsHallazgo);
+
+    private IReadOnlyList<Fila> Filas()
+    {
+        if (hallazgo is not null)
+        {
+            var halladas = new List<Fila>();
+            foreach (CompraHallada compra in hallazgo.Compras)
+            {
+                if (halladas.Count == ResultadosQueSeMuestran) break;
+
+                halladas.Add(new Fila(compra.Numero, Fecha(compra.Fecha),
+                    compra.LineasDeLaCompra, compra.TotalDeLaCompra,
+                    compra.Unidades, compra.Gasto, true));
+            }
+
+            return halladas;
         }
 
-        var hallados = new List<CompraEnLista>();
-        for (int i = compras.Count - 1; i >= 0; i--)
-            if (compras[i].Numero.Contains(termino, StringComparison.OrdinalIgnoreCase))
-                hallados.Add(compras[i]);
+        var recientes = new List<Fila>();
+        for (int i = compras.Count - 1; i >= Math.Max(0, compras.Count - RecibosQueSeMuestran); i--)
+            recientes.Add(new Fila(compras[i].Numero, compras[i].Fecha,
+                compras[i].Lineas, compras[i].Total, 0, 0m, false));
 
-        return hallados;
+        return recientes;
     }
 
     // AGRUPADAS POR MES, con HOY aparte. Nadie recuerda el numero de un ticket; recuerda
     // cuando fue, y "hoy" es la unica fecha que se busca por su nombre.
-    private IEnumerable<IGrouping<string, CompraEnLista>> PorFecha() =>
-        Encontradas().GroupBy(c =>
-            c.Fecha.Date == DateTime.Now.Date
+    private IEnumerable<IGrouping<string, Fila>> PorFecha() =>
+        Filas().GroupBy(f =>
+            f.Fecha.Date == DateTime.Now.Date
                 ? "HOY"
-                : $"{Mes(c.Fecha.Month).ToUpperInvariant()} {c.Fecha.Year}");
+                : $"{Mes(f.Fecha.Month).ToUpperInvariant()} {f.Fecha.Year}");
 
     private void VerDetalle(string numero) =>
         navegacion.NavigateTo($"compra/{Uri.EscapeDataString(numero)}");
+
+    // El dominio manda la fecha como aaaa-mm-dd, que es la forma en que viaja. Aca se
+    // vuelve DateTime para poder agrupar por mes con la misma cuenta que la otra rama.
+    private static DateTime Fecha(string aaaaMmDd) =>
+        DateTime.TryParse(aaaaMmDd, CultureInfo.InvariantCulture, DateTimeStyles.None, out DateTime cuando)
+            ? cuando
+            : DateTime.MinValue;
+
+    // Los productos que coincidieron, en una linea. Con uno solo se nombra; con varios se
+    // nombran TODOS y no "3 productos": quien busca tiene que poder ver si la app junto
+    // dos cosas que el no queria juntar.
+    private static string Junta(IReadOnlyList<string> productos) =>
+        string.Join(" · ", productos);
 
     private static string Mes(int mes) => mes switch
     {

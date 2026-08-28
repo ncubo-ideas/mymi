@@ -366,4 +366,43 @@ namespace Compras.App.Vistas
 		public string Severidad { get; init; } = "";
 		public string ParaSonia { get; init; } = "";
 	}
+
+	// EN CUALES COMPRAS APARECIO ALGO. La respuesta del buscador de recibos, y la unica
+	// pantalla donde una lista se acorta por la PREGUNTA y no por un tope: buscar "leche"
+	// devuelve las compras con leche, no las primeras N de todas.
+	public sealed class ComprasHalladas
+	{
+		public string Buscado { get; init; } = "";
+		public bool Existe { get; init; }
+
+		/// <summary>En cuántas compras apareció. Cero cuando en ninguna.</summary>
+		public int CuantasCompras { get; init; }
+
+		public int TotalUnidades { get; init; }
+		public decimal TotalGastado { get; init; }
+
+		/// <summary>
+		/// Las descripciones distintas que coincidieron. Buscar "queso" puede alcanzar a
+		/// dos productos, y la pantalla lo dice antes de mostrar los totales.
+		/// </summary>
+		public IReadOnlyList<string> Productos { get; init; } = new List<string>();
+
+		/// <summary>De la más reciente a la más vieja. Vacía cuando no hay ninguna.</summary>
+		public IReadOnlyList<CompraHallada> Compras { get; init; } = new List<CompraHallada>();
+
+		public string ParaSonia { get; init; } = "";
+	}
+
+	// Una compra donde aparecio lo buscado. Lleva LAS DOS ESCALAS -lo del producto y lo de
+	// la compra entera- para que la fila se pueda pintar igual que las de la lista y ademas
+	// diga por que aparecio.
+	public sealed class CompraHallada
+	{
+		public string Numero { get; init; } = "";
+		public string Fecha { get; init; } = "";
+		public int Unidades { get; init; }
+		public decimal Gasto { get; init; }
+		public int LineasDeLaCompra { get; init; }
+		public decimal TotalDeLaCompra { get; init; }
+	}
 }

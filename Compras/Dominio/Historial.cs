@@ -254,6 +254,53 @@ namespace Compras.Dominio
 			return Consumo.De(termino, esCategoria, meses, ultimaVez, compras.Count);
 		}
 
+		/// <summary>
+		/// EN CUÁLES COMPRAS APARECIÓ ESTO, de la más reciente a la más vieja. El término
+		/// puede ser un producto o un departamento entero.
+		/// </summary>
+		// USA EL MISMO CRITERIO QUE EL CONSUMO -Alcanza- y no uno propio, que es lo que
+		// hace que "Limpieza" encuentre el pasillo y "leche" el producto. Dos criterios de
+		// busqueda distintos en la misma app es como se llega a que una pantalla encuentre
+		// algo que la otra no.
+		//
+		// TOTAL: un termino que nunca se llevo devuelve Ninguna, no una lista vacia. La
+		// diferencia importa porque la pantalla dice cosas distintas -"no hay ninguna
+		// compra con «X»" no es lo mismo que "todavia no hay compras"- y una lista vacia no
+		// sabe cual de las dos es.
+		public ComprasConElProducto ComprasCon(string termino)
+		{
+			ArgumentNullException.ThrowIfNullOrWhiteSpace(termino);
+
+			bool esCategoria = Categoria.Existe(termino);
+			var halladas = new List<CompraConElProducto>();
+			var productos = new List<string>();
+
+			// DE LA MAS RECIENTE A LA MAS VIEJA, y el orden se arma al recorrer y no
+			// ordenando despues: la lista ya viene en orden de llegada, asi que basta con
+			// leerla al reves. Ordenar seria pagar dos veces por algo que ya esta.
+			for (int i = compras.Count - 1; i >= 0; i--)
+			{
+				Compra compra = compras[i];
+				CompraConElProducto hallada = null;
+
+				foreach (Item item in compra.Items)
+				{
+					if (!Alcanza(item, termino, esCategoria)) continue;
+
+					hallada ??= new CompraConElProducto(compra);
+					hallada.Sumar(item.Cantidad, item.Total);
+
+					if (!productos.Contains(item.Descripcion)) productos.Add(item.Descripcion);
+				}
+
+				if (hallada is not null) halladas.Add(hallada);
+			}
+
+			return halladas.Count == 0
+				? ComprasConElProducto.Ninguna(termino)
+				: ComprasConElProducto.De(termino, halladas, productos);
+		}
+
 		private static bool Alcanza(Item item, string termino, bool esCategoria) =>
 			esCategoria
 				? string.Equals(item.Categoria.Nombre, termino, StringComparison.OrdinalIgnoreCase)

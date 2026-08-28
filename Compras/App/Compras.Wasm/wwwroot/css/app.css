@@ -721,6 +721,18 @@ main h2 {
     border-color: var(--linea);
 }
 
+/* QUE ENTENDIO LA APP al buscar: el producto -o los productos- que coincidieron, y los
+   totales de TODAS las compras, no de las que se alcanzan a pintar. Va sobre el tinte verde
+   para que se lea como una respuesta y no como una fila mas de la lista. */
+.hallazgo-dicho {
+    background: var(--tinte-verde);
+    border-radius: var(--radio-ficha);
+    padding: .7rem .9rem;
+    margin-bottom: .25rem;
+    font-size: .88rem;
+    color: var(--tinta);
+}
+
 /* El rotulito del grupo: HOY, AGOSTO 2026. Es el kicker de la marca. */
 .grupo-fecha {
     font-size: .74rem;

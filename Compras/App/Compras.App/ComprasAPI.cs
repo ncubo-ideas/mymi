@@ -683,6 +683,46 @@ namespace Compras.App
 			.PerformQuery();
 		}
 
+		// EN CUALES COMPRAS APARECIO ESTO. La cabecera y las compras salen en el mismo
+		// bloque, igual que el consumo: la cabecera como "busqueda" y cada compra como
+		// "compra".
+		//
+		// TODOS LOS CAMPOS DE LA CABECERA SON TOTALES, y eso no es suerte: un print plano
+		// no puede preguntar Existe() antes de imprimir, y un lector guardado no le
+		// blanquea la columna — le mata la consulta entera. Buscar algo que no existe tiene
+		// que devolver la cabecera en cero, no un error.
+		public string ComprasCon(string termino)
+		{
+			ArgumentNullException.ThrowIfNullOrWhiteSpace(termino);
+
+			return app.Using(@"
+				{
+					busqueda = compras.ComprasCon(@termino);
+					print busqueda.Buscado buscado,
+						busqueda.Existe() existe,
+						busqueda.CuantasCompras cuantasCompras,
+						busqueda.TotalUnidades totalUnidades,
+						busqueda.TotalGastado totalGastado,
+						busqueda.ParaSonia paraSonia;
+					foreach (producto in busqueda.Productos) {
+						print producto nombre;
+					}
+					foreach (compra in busqueda.Compras) {
+						print compra.Numero numero,
+							compra.FechaExpresada fecha,
+							compra.Unidades unidades,
+							compra.Gasto gasto,
+							compra.LineasDeLaCompra lineasDeLaCompra,
+							compra.TotalDeLaCompra totalDeLaCompra;
+					}
+				}
+			")
+			.WithParameters(p => {
+				p["termino", typeof(string)] = termino;
+			})
+			.PerformQuery();
+		}
+
 		// LA consulta que mira el hueco: que dejo de entrar a la canasta. Una pantalla no
 		// puede renderizar una ausencia que nadie le paso.
 		public string AbastecimientosPendientesEl(DateTime fechaDeConsulta) =>
@@ -755,6 +795,9 @@ namespace Compras.App
 
 		public ConsumoEnElTiempo Consumo(string termino) =>
 			ProyeccionDeVistas.Consumo(ConsumoDe(termino));
+
+		public ComprasHalladas Halladas(string termino) =>
+			ProyeccionDeVistas.Halladas(ComprasCon(termino));
 
 		public GarantiaDeProducto Garantia(string texto, DateTime fechaDeConsulta) =>
 			ProyeccionDeVistas.Garantia(GarantiaDe(texto, fechaDeConsulta));

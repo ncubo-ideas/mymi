@@ -279,6 +279,26 @@ internal sealed class ComprasTools
 		return lector.Consultar(api => api.Consumo(termino));
 	}
 
+	[McpServerTool(Name = "en_cuales_compras", UseStructuredContent = true)]
+	[Description("EN CUALES COMPRAS aparecio un producto o un pasillo entero, de la mas reciente a "
+		+ "la mas vieja, con el NUMERO DE TICKET de cada una y cuanto de eso entro ahi. Acepta un "
+		+ "texto de producto ('leche', 'helado', 'olla') o una categoria del catalogo (Azucarados, "
+		+ "Proteinas, FrutasYVerduras, LacteosYHuevos, GranosYAbarrotes, AceitesYGrasas, Embutidos, "
+		+ "ComidasPreparadas, Snacks, Limpieza, Mascotas, Electrohogar). NO ES consumo_de: aquella "
+		+ "agrupa por mes y contesta 'cuanto y cuando'; esta devuelve los TICKETS, y su numero es lo "
+		+ "que despues le podes pasar a detalle_de_compra para ver la compra entera. Usala cuando la "
+		+ "persona pregunte '¿cuando compre esto?', '¿en que compra estaba?' o quiera llegar a un "
+		+ "recibo puntual. El campo productos dice que descripciones coincidieron: si trae mas de "
+		+ "una, el texto alcanzo a varios productos y conviene decirselo antes de dar los totales. "
+		+ "Con cuantasCompras en 0 no hay ninguna, y eso es una respuesta valida, no un error.")]
+	public ComprasHalladas EnCualesCompras(
+		[Description("Un texto de producto o una categoria del catalogo, por ejemplo 'leche' o 'Limpieza'.")] string termino)
+	{
+		if (!lector.HayJournal) return new ComprasHalladas();
+
+		return lector.Consultar(api => api.Halladas(termino));
+	}
+
 	[McpServerTool(Name = "garantias_por_vencer", UseStructuredContent = true)]
 	[Description("Las garantias de la persona cuya VENTANA PARA RECLAMAR se esta cerrando, de la "
 		+ "mas urgente a la menos, con cuantos dias le quedan y que le conviene hacer. No es la "

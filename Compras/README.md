@@ -86,7 +86,8 @@ sin disco, así que cuando algo se rompe dice qué regla se rompió. `medir` apl
 historia y verifica los invariantes; `estado` abre el journal y reporta (correr en
 proceso nuevo: si las canastas siguen ahí, el replay rehidrató); `detalle` muestra un
 ticket línea por línea; `canasta` y `comparar` son las lecturas del mes; `garantia`
-busca un producto con su respaldo.
+busca un producto con su respaldo; `buscar` dice **en cuáles compras apareció** un
+producto o un pasillo entero.
 
 ```bash
 dotnet run --project Compras/App/Compras.Consola -- garantia "/tmp/journal-compras" "olla arrocera"
@@ -460,14 +461,29 @@ la trajo — evento 307 → 308, 7 → 8 compras — y los pasillos del mes camb
 |---|---|
 | 1 | **Probar URL1 con nginx/Docker** y el flujo de instalación de la PWA. El proxy `/app/eventos/` ya está en el `nginx.conf` (patrón de Renán: base relativa para que funcione desde un teléfono y por https), pero **sin Docker no se pudo ejercitar**: la prueba en browser se hizo con base absoluta al mock |
 | 2 | **`Puppets.Portador` a la raíz**: con dos negocios vivos ya aplica la convención. Acordar con Renán y el equipo, borrar las copias y referenciar la de la raíz |
-| 3 | **Los iconos PNG de la PWA** (`favicon`, `icon-192`, `icon-512`) siguen siendo los del template. La especificación pide la guaria morada sobre `#2f6b3f`; **existe `Examenes/PaginaDeDescarga/generar-iconos.py` para reusar** |
-| 4 | **`Compras/Preguntas.md`**: es el **paso 1** del orden de trabajo de `Metodologia/`, y no lo tenemos. La guía dice que sin él nadie puede auditar el negocio contra lo que prometió. Ningún negocio del repo lo tiene todavía |
+| 3 | ~~Los iconos PNG de la PWA~~ **hecho**: `PaginaDeDescarga/generar-iconos.py` compone la guaria sobre `#2f6b3f` con la zona segura de un icono maskable |
+| 4 | ~~`Compras/Preguntas.md`~~ **escrito**, y Compras es el primer negocio del repo que lo tiene. Pero se escribió DESPUÉS del código, así que la auditoría de deriva del paso 8 casi no vale contra él: lo que sí desbloquea es la aprobación. **Catorce de sus dieciséis juicios están marcados como propuesta y nadie del negocio los ha visto** |
 | 5 | **Observable 6 de la Metodología**: los argumentos de las tools son `string` y deberían ser `enum`, para que la lista de valores válidos viva en el `inputSchema` (un contrato) y no en la prosa de la descripción. Aplica sobre todo a `consumo_de`, que acepta un departamento del conjunto cerrado **o** texto libre |
 | 6 | **Que el DOMINIO encuentre el mes del quiebre** en vez de recibirlo. La especificación pide *"el quiebre de enero"*, no *"el quiebre desde la fecha que le pases"*: hoy la carátula corta el 1 de enero del año corriente, así que si el cambio de una persona fue en setiembre, esta pantalla no lo encuentra |
 | 7 | **Bootstrap**: la carátula lo mantiene con sus variables remapeadas a la paleta de La Guaria (`data-bs-theme` fuera, tema claro). Exámenes lo quitó del todo. Sacarlo es un paso aparte y no hace falta para que la app se reconozca; conviene decidirlo cuando el layout lo defina el boceto de escritorio |
 | 8 | **El `instalacion.json` es del Host**, no de este módulo (son dos autoridades: la institución declara qué ofrece, el Host decide cómo se lo ejecuta y qué carpeta le concede). Cuando el Host entre a master, quien lo opere debe crear `Modulos/compras/` con nuestro `manifiesto.json` y su propio `instalacion.json` apuntando a `Compras/App/Compras.Mcp/bin/.../Compras.Mcp.dll` y a la carpeta concedida — **la misma que se eligió en la app**, o el módulo reporta `hayDatos=false` |
 | 9 | **La lectura del consumo compara los extremos**, así que un valle en el medio no lo mueve. Exámenes resolvió lo análogo con dos lecturas — tendencia sobre la serie entera y velocidad sobre el tramo reciente. Conviene traer esa segunda lectura |
 | 10 | **La gasolinera**: Tareas.md la asigna también a Pleitez "de momento"; puede salir del ecosistema si no cuenta una historia interesante. Este negocio ya deja el molde para armarla rápido |
+
+### La búsqueda de recibos, y por qué el tope no era el problema
+
+El buscador de la pantalla de compras prometía *"leche, arroz, galletas"* y sólo miraba
+el **número del ticket**, que es justo lo que nadie recuerda: escribir `leche` no devolvía
+nada y escribir `T-` devolvía las 87, porque todos los números empiezan igual. Ahora la
+busca el dominio (`Historial.ComprasCon`), con el **mismo criterio que el consumo**, así que
+un departamento entero -`Limpieza`- también encuentra.
+
+Y una corrección de algo que dimos por sentado: **encontrar de verdad no acotó la lista.**
+Contra el guion de 87 compras, `leche` devuelve **las 87** —es un habitual semanal, está en
+todas—, `Azucarados` 64, `helado` 46, `Limpieza` 43. Una pregunta específica no da una
+respuesta corta cuando lo que se pregunta es justamente lo que nunca falta. La pantalla
+corta en 25, **pero los totales de la cabecera son de todas**, así que el número que se lee
+nunca es el número recortado.
 
 ### Dos preguntas para el equipo, no pendientes nuestros
 
