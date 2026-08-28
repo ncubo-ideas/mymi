@@ -73,6 +73,43 @@ public sealed class PuenteDeJournal : IAsyncDisposable
 		PermisoOtorgado = false;
 	}
 
+	// ---------------------------------------------------------------- OPFS
+	//
+	// EL MODO DEGRADADO, y no es un extra: el briefing §6.2 lo pide -"no hagas que la app
+	// falle donde no hay picker: degrada a OPFS"-. "Carpeta real elegida por el usuario" es
+	// hoy desktop Chromium; en Safari, Firefox y CUALQUIER telefono no hay picker, asi que
+	// sin esto la app se quedaba en memoria y perdia el registro al cerrar. Justo donde el
+	// diseño de Fernanda esta pensado para vivir.
+	//
+	// Sale barato porque OPFS devuelve un FileSystemDirectoryHandle, el MISMO tipo que el
+	// picker: precargar/listar/leer/escribir no distinguen uno del otro.
+
+	public async ValueTask<bool> OpfsSoportado() =>
+		await (await Modulo()).InvokeAsync<bool>("opfsSoportado");
+
+	// '' si hay algun almacenamiento; 'navegador' o 'inseguro' si no hay ninguno. Son dos
+	// causas que se arreglan distinto y la deteccion cruda las confunde en un solo false.
+	public async ValueTask<string> MotivoSinAlmacenamiento() =>
+		await (await Modulo()).InvokeAsync<string>("motivoSinAlmacenamiento");
+
+	// Si corre como app instalada y no como pestaña. No cambia nada del mecanismo: cambia
+	// como se le habla a la persona.
+	public async ValueTask<bool> EstaInstalada() =>
+		await (await Modulo()).InvokeAsync<bool>("estaInstalada");
+
+	// Entra por el MISMO Pedir que la carpeta, asi que deja el estado del puente coherente
+	// -NombreDeLaCarpeta y PermisoOtorgado- sin una segunda ruta que mantener.
+	public async ValueTask<ResultadoDeCarpeta> UsarOpfs() => await Pedir("usarOpfs");
+
+	// 'carpeta', 'opfs' o 'ninguno'.
+	public async ValueTask<string> ModoActual() =>
+		await (await Modulo()).InvokeAsync<string>("modoActual");
+
+	// Que modo eligio la persona la vez pasada. Se consulta al arrancar: si ya opto por
+	// OPFS, se reengancha sola y sin pedirle un gesto.
+	public async ValueTask<string> ModoRecordado() =>
+		await (await Modulo()).InvokeAsync<string>("modoRecordado");
+
 	// El nombre se conserva siempre que el browser lo haya devuelto, tenga o no permiso.
 	// Solo se limpia cuando de verdad no hay handle.
 	private async ValueTask<ResultadoDeCarpeta> Pedir(string funcion)

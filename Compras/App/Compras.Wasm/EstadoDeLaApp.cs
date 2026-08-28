@@ -70,6 +70,7 @@ public sealed class EstadoDeLaApp : IAsyncDisposable
 	public async ValueTask<ResultadoDeCarpeta> RecuperarCarpeta()
 	{
 		ResultadoDeCarpeta resultado = await puente.RecuperarCarpeta();
+		Modo = await puente.ModoActual();
 		UltimoMensaje = $"recuperar carpeta: {resultado}";
 		return resultado;
 	}
@@ -78,6 +79,7 @@ public sealed class EstadoDeLaApp : IAsyncDisposable
 	public async ValueTask<ResultadoDeCarpeta> ConectarCarpeta()
 	{
 		ResultadoDeCarpeta resultado = await puente.ElegirCarpeta();
+		Modo = await puente.ModoActual();
 		UltimoMensaje = $"conectar carpeta: {resultado}";
 		return resultado;
 	}
@@ -88,6 +90,51 @@ public sealed class EstadoDeLaApp : IAsyncDisposable
 		ResultadoDeCarpeta resultado = await puente.PedirPermiso();
 		UltimoMensaje = $"pedir permiso: {resultado}";
 		return resultado;
+	}
+
+	// ---------------------------------------------------------------- el modo degradado
+
+	// DONDE NO HAY PICKER. El briefing §6.2 lo pide con todas las letras: "no hagas que la
+	// app falle donde no hay picker, degrada a OPFS". showDirectoryPicker es hoy desktop
+	// Chromium; en Safari, Firefox y CUALQUIER telefono no existe, y sin esto la app se
+	// quedaba en memoria y perdia el registro al cerrar la pestaña.
+
+	public ValueTask<bool> OpfsSoportado() => puente.OpfsSoportado();
+
+	// '' si hay algun almacenamiento; 'navegador' o 'inseguro' si no hay ninguno.
+	public ValueTask<string> MotivoSinAlmacenamiento() => puente.MotivoSinAlmacenamiento();
+
+	public ValueTask<bool> EstaInstalada() => puente.EstaInstalada();
+
+	/// <summary>'carpeta', 'opfs' o 'ninguno'.</summary>
+	public string Modo { get; private set; } = "ninguno";
+
+	public bool EnAlmacenamientoDelNavegador => Modo == "opfs";
+
+	// NO EXIGE GESTO: el origen ya es dueño de su propio almacenamiento.
+	public async ValueTask<ResultadoDeCarpeta> UsarAlmacenamientoDelNavegador()
+	{
+		ResultadoDeCarpeta resultado = await puente.UsarOpfs();
+		Modo = await puente.ModoActual();
+		UltimoMensaje = $"almacenamiento del navegador: {resultado}";
+		return resultado;
+	}
+
+	// SE REENGANCHA SOLA al modo de la vez pasada, y por eso existe. Sin esto, quien abre
+	// la app en un telefono tiene que apretar "guardar en este navegador" CADA VEZ, y el
+	// modo recordado no sirve de nada: se guarda y nadie lo lee.
+	//
+	// Solo reengancha OPFS. La carpeta no se puede reenganchar sola aunque el handle este
+	// guardado: el browser puede haber degradado el permiso a 'prompt', y volver a pedirlo
+	// exige un gesto — por eso ese camino pasa por RecuperarCarpeta y, si hace falta, por
+	// el boton.
+	public async ValueTask<bool> ReengancharModo()
+	{
+		if (await puente.ModoRecordado() != "opfs") return false;
+
+		bool ok = (await puente.UsarOpfs()).Ok;
+		Modo = await puente.ModoActual();
+		return ok;
 	}
 
 	// ---------------------------------------------------------------- arranque

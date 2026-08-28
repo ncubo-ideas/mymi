@@ -64,18 +64,63 @@
                 Elegí la carpeta y la app escribe su registro ahí; nadie más la lee.
             </p>
 
-            @if (soportado == false)
+            @* DOS MODOS, Y SE DICE QUE DA CADA UNO. El briefing §6.2 pide que la app no
+               falle donde no hay picker — y donde no lo hay es en Safari, en Firefox y en
+               CUALQUIER teléfono, que es justo donde el diseño de Fernanda vive.
+
+               No se ofrece el segundo como si fuera lo mismo: en el navegador el registro
+               PERSISTE, pero vive en el sandbox del origen y el servidor MCP no lo ve. La
+               mitad "tu IA lo consulta" no funciona ahí, y callarlo sería vender de más. *@
+            <div class="modos">
+                <div class="modo @(soportado == false ? "modo--nodisponible" : "")">
+                    <div class="modo-que">Una carpeta tuya</div>
+                    <div class="modo-da">
+                        Queda en tu disco, y <strong>tu asistente la puede consultar</strong>.
+                        @if (soportado == false)
+                        {
+                            <span class="modo-falta">Este navegador no tiene el selector de carpetas.</span>
+                        }
+                    </div>
+                    <button class="btn btn-primary" @onclick="ConectarCarpeta" disabled="@(soportado == false)">
+                        Elegir carpeta
+                    </button>
+                </div>
+
+                <div class="modo @(opfs == false ? "modo--nodisponible" : "")">
+                    <div class="modo-que">@(instalada == true ? "En esta app" : "En este navegador")</div>
+                    <div class="modo-da">
+                        También se guarda y sobrevive al cierre, pero lo administra el navegador:
+                        <strong>tu asistente no lo puede leer</strong>.
+                        @if (opfs == false)
+                        {
+                            <span class="modo-falta">No disponible acá.</span>
+                        }
+                    </div>
+                    <button class="btn btn-secundario" @onclick="UsarNavegador" disabled="@(opfs == false)">
+                        Guardar acá
+                    </button>
+                </div>
+            </div>
+
+            @* NO HAY NINGUNO: se dice POR QUÉ, que no es lo mismo que decir QUE no hay. Las
+               dos APIs exigen contexto seguro, así que entrar por la IP de la máquina las
+               apaga igual que un navegador viejo — y mandar a esa persona a buscar otro
+               browser es culpar al equipo equivocado. *@
+            @if (sinAlmacenamiento == "inseguro")
             {
-                <p class="text-danger mb-2">
-                    Este browser no tiene <code>showDirectoryPicker</code>, así que no puede escribir en
-                    una carpeta tuya. La app funciona igual, pero el registro vive solo en memoria y se
-                    pierde al cerrar.
+                <p class="text-danger mt-3 mb-0">
+                    Esta página no es un <strong>contexto seguro</strong>, y el navegador apaga las
+                    dos formas de guardar. Entrá por <code>https</code> o por <code>localhost</code>
+                    y aparecen las dos. No es tu navegador.
                 </p>
             }
-
-            <button class="btn btn-primary" @onclick="ConectarCarpeta" disabled="@(soportado == false)">
-                Elegir carpeta
-            </button>
+            else if (sinAlmacenamiento == "navegador")
+            {
+                <p class="text-danger mt-3 mb-0">
+                    Este navegador no puede guardar nada de forma permanente. La app funciona igual,
+                    pero el registro vive solo en memoria y se pierde al cerrar.
+                </p>
+            }
         }
 
         <div class="mt-3">
@@ -104,7 +149,30 @@ else
                 Esta app está funcionando sin carpeta: lo que ves lo vuelve a pedir al proveedor
                 cada vez que abrís, y no queda registro tuyo en disco.
             </div>
-            <button class="btn btn-aviso" @onclick="ConectarCarpeta">Elegir carpeta</button>
+            <button class="btn btn-aviso" @onclick="ConectarCarpeta"
+                    disabled="@(soportado == false)">Elegir carpeta</button>
+            @if (opfs == true)
+            {
+                <button class="btn btn-aviso" @onclick="UsarNavegador">Guardar en este navegador</button>
+            }
+        </div>
+    }
+    @* GUARDANDO EN EL NAVEGADOR: persiste, pero el MCP no lo ve. Se dice SIEMPRE y no solo
+       al elegirlo, porque es la mitad del producto que ahí no funciona y nadie se acuerda
+       de una advertencia que vio una vez. *@
+    else if (estado.EnAlmacenamientoDelNavegador)
+    {
+        <div class="aviso d-flex align-items-center flex-wrap gap-2 mb-3">
+            <div class="flex-grow-1">
+                <strong>Guardado @(instalada == true ? "en esta app" : "en este navegador").</strong>
+                Tus compras sobreviven al cierre, pero viven donde el navegador las administra:
+                <strong>tu asistente no las puede consultar</strong>. Para eso hace falta una
+                carpeta tuya.
+            </div>
+            @if (soportado == true)
+            {
+                <button class="btn btn-aviso" @onclick="ConectarCarpeta">Elegir una carpeta</button>
+            }
         </div>
     }
     else if (estado.GuardadoFallando.Length > 0)
@@ -526,6 +594,9 @@ else
 
 @code {
     private bool? soportado;
+    private bool? opfs;
+    private bool? instalada;
+    private string sinAlmacenamiento = "";
     private bool refrescando;
 
     private IReadOnlyList<CompraEnLista> compras = new List<CompraEnLista>();
@@ -547,7 +618,22 @@ else
     {
         if (estado.EstaArriba) { Releer(); return; }
 
+        // SE PREGUNTA TODO ANTES DE DECIDIR NADA. Antes esto hacia
+        // `if (soportado != true) return;` y se iba: en un telefono -donde no hay picker-
+        // la pantalla no averiguaba ni si habia OPFS, asi que no podia ofrecerlo.
         soportado = await estado.EstaSoportado();
+        opfs = await estado.OpfsSoportado();
+        sinAlmacenamiento = await estado.MotivoSinAlmacenamiento();
+        instalada = await estado.EstaInstalada();
+
+        // SE REENGANCHA AL MODO DE LA VEZ PASADA, y sin gesto. Es lo que hace que en un
+        // telefono la app se abra sola con sus datos en vez de pedir el boton cada vez.
+        if (await estado.ReengancharModo())
+        {
+            await Arrancar();
+            return;
+        }
+
         if (soportado != true) return;
 
         // Recuperar el handle NO necesita gesto; volver a otorgar el permiso SI.
@@ -561,6 +647,18 @@ else
     private Task ConectarCarpeta() => Intentar("elegir carpeta", async () =>
     {
         if ((await estado.ConectarCarpeta()).Ok)
+        {
+            await estado.Arrancar();
+            Releer();
+        }
+    });
+
+    // GUARDAR EN EL NAVEGADOR. No pide gesto al browser -el origen es dueño de su propio
+    // almacenamiento- pero SI sale de un click: es una decision de la persona sobre donde
+    // van sus datos, y esas no se toman solas.
+    private Task UsarNavegador() => Intentar("guardar en este navegador", async () =>
+    {
+        if ((await estado.UsarAlmacenamientoDelNavegador()).Ok)
         {
             await estado.Arrancar();
             Releer();

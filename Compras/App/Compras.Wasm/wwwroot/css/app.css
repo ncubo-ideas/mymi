@@ -721,6 +721,55 @@ main h2 {
     border-color: var(--linea);
 }
 
+/* ---------------------------------------------------------------- donde se guarda
+
+   LAS DOS FORMAS DE GUARDAR, lado a lado. Van en tarjetas y no en una lista de radios
+   porque no son la misma cosa con distinto nombre: una deja el registro en el disco de la
+   persona y su asistente lo puede consultar; la otra lo deja donde el navegador manda y el
+   MCP no lo ve. Cada tarjeta dice QUE DA, y esa frase es la eleccion. */
+.modos {
+    display: grid;
+    gap: .9rem;
+    grid-template-columns: repeat(auto-fit, minmax(15rem, 1fr));
+    margin: 1.1rem 0 .25rem;
+}
+.modo {
+    background: var(--carta);
+    border: 1px solid var(--linea);
+    border-radius: var(--radio-ficha);
+    padding: 1rem 1.05rem;
+    display: flex;
+    flex-direction: column;
+    gap: .6rem;
+}
+.modo-que {
+    font-weight: 700;
+    font-size: .74rem;
+    letter-spacing: .16em;
+    text-transform: uppercase;
+    color: var(--verde);
+}
+.modo-da { font-size: .86rem; color: var(--tenue); flex: 1; line-height: 1.45; }
+.modo-da strong { color: var(--tinta); font-weight: 600; }
+.modo .btn { align-self: flex-start; }
+
+/* NO DISPONIBLE NO ES LO MISMO QUE DESHABILITADO: la opcion existe y en otro navegador
+   funciona. Se atenua y se explica, no se esconde — esconderla haria parecer que la app
+   solo sabe hacer una cosa, y quien la abra en su telefono no sabria que en la compu
+   puede mas. */
+.modo--nodisponible { background: transparent; border-style: dashed; }
+.modo--nodisponible .modo-que { color: var(--tenue-2); }
+.modo-falta { display: block; margin-top: .35rem; color: var(--tenue-2); font-size: .8rem; }
+
+/* El segundo modo NO compite visualmente con el primero: la carpeta es el caso estrella
+   y el navegador es el degradado, asi que su boton es de contorno y no relleno. */
+.btn-secundario {
+    background: transparent;
+    border: 1px solid var(--verde);
+    color: var(--verde);
+}
+.btn-secundario:hover { background: var(--tinte-verde); color: var(--verde); }
+
 /* QUE ENTENDIO LA APP al buscar: el producto -o los productos- que coincidieron, y los
    totales de TODAS las compras, no de las que se alcanzan a pintar. Va sobre el tinte verde
    para que se lea como una respuesta y no como una fila mas de la lista. */
