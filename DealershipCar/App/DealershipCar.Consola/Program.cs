@@ -45,7 +45,8 @@ namespace DealershipCar.Consola
 		{
 			Directory.CreateDirectory(folder);
 
-			var app = new DealershipCarApp(Story.TheVin, Story.TheProfileAtDelivery);
+			var app = new DealershipCarApp(
+				Story.TheVin, Story.TheProfileAtDelivery, Story.TheModelAtDelivery);
 			app.ConfigureStorage(DatabaseType.FileSystem, "path=" + folder);
 			app.Start();
 			return app;

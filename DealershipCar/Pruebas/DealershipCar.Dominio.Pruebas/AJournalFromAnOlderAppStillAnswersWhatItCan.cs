@@ -142,7 +142,8 @@ namespace DealershipCar.Dominio.Pruebas
 
 			Assert.That(tools.Review().LastEventKnown, Is.False);
 
-			var current = new DealershipCarApp(TheVin, "Standard");
+			var current = new DealershipCarApp(
+				TheVin, "Standard", AScheduleOnARealJournal.TheModelAtDelivery);
 			current.ConfigureStorage(DatabaseType.FileSystem, "path=" + folder);
 			current.Start();
 			current.Dispose();

@@ -11,6 +11,8 @@ namespace DealershipCar.Wasm
 	{
 		public const string TheProfileAtDelivery = "Standard";
 
+		public const string TheModelAtDelivery = "SM-SEDAN-2025";
+
 		private readonly JournalBridge bridge;
 		private readonly HttpClient http;
 		private readonly DealershipSettings dealership;
@@ -132,7 +134,8 @@ namespace DealershipCar.Wasm
 
 			int preloaded = bridge.HasFolder ? await bridge.PreloadIntoMemfsAsync() : 0;
 
-			var started = new DealershipCarApp(dealership.Vin, TheProfileAtDelivery);
+			var started = new DealershipCarApp(
+				dealership.Vin, TheProfileAtDelivery, TheModelAtDelivery);
 			started.ConfigureStorage(DatabaseType.FileSystem, "path=" + JournalBridge.RootInMemfs);
 			started.Start();
 

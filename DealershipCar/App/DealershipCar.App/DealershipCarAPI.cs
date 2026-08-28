@@ -1,4 +1,5 @@
 using System;
+using System.Globalization;
 using Choreography.Theater;
 using DealershipCar.App.Events;
 using DealershipCar.Dominio;
@@ -168,6 +169,239 @@ namespace DealershipCar.App
 			.WithParameters(p => {
 				p["token",   typeof(string)] = token;
 				p["refresh", typeof(string)] = refreshToken ?? "";
+			})
+			.PerformCommand();
+		}
+
+		/// <summary>
+		/// ABRE una revision de la especificacion del modelo, con el codigo y el instante en que el
+		/// fabricante la publico. Nace borrador, invisible a toda lectura, y el contenido entra
+		/// despues por los comandos de publicacion.
+		/// </summary>
+		public void OpenRevision(string revisionCode, DateTime publishedAt)
+		{
+			app.Using("specification.OpenRevision(@revisionCode, @publishedAt);")
+			.WithParameters(p => {
+				p["revisionCode", typeof(string)]   = TheText(revisionCode, nameof(revisionCode));
+				p["publishedAt",  typeof(DateTime)] = InUtc(publishedAt);
+			})
+			.PerformCommand();
+		}
+
+		/// <summary>
+		/// Publica dentro de una revision que fluido de una clase lleva el modelo: el grado, la
+		/// capacidad con su unidad, y cada cuanto se cambia.
+		/// </summary>
+		public void PublishFluidSpecification(
+			string revisionCode, string kind, string grade,
+			decimal capacity, string capacityUnit,
+			int intervalDistance, string intervalUnit, int intervalDays)
+		{
+			app.Using(@"
+				specification.PublishFluidSpecification(
+					@revisionCode, @kind, @grade,
+					@capacity, @capacityUnit,
+					@intervalDistance, @intervalUnit, @intervalDays);
+			")
+			.WithParameters(p => {
+				p["revisionCode",     typeof(string)]  = TheText(revisionCode, nameof(revisionCode));
+				p["kind",             typeof(Enum)]    = WireName.FluidKind(kind);
+				p["grade",            typeof(string)]  = TheText(grade, nameof(grade));
+				p["capacity",         typeof(decimal)] = Normalized(capacity);
+				p["capacityUnit",     typeof(Enum)]    =
+					WireName.VolumeUnit(capacityUnit, nameof(capacityUnit));
+				p["intervalDistance", typeof(int)]     = intervalDistance;
+				p["intervalUnit",     typeof(Enum)]    =
+					WireName.DistanceUnit(intervalUnit, nameof(intervalUnit));
+				p["intervalDays",     typeof(int)]     = intervalDays;
+			})
+			.PerformCommand();
+		}
+
+		/// <summary>
+		/// Publica dentro de una revision que llanta lleva el modelo en una posicion. La presion
+		/// viaja con la unidad en que se publico y se contesta en esa.
+		/// </summary>
+		public void PublishTyreSpecification(
+			string revisionCode, string position, string size,
+			decimal coldPressure, string pressureUnit, string ratings)
+		{
+			app.Using(@"
+				specification.PublishTyreSpecification(
+					@revisionCode, @position, @size,
+					@coldPressure, @pressureUnit, @ratings);
+			")
+			.WithParameters(p => {
+				p["revisionCode", typeof(string)]  = TheText(revisionCode, nameof(revisionCode));
+				p["position",     typeof(Enum)]    = WireName.TyrePosition(position);
+				p["size",         typeof(string)]  = TheText(size, nameof(size));
+				p["coldPressure", typeof(decimal)] = Normalized(coldPressure);
+				p["pressureUnit", typeof(Enum)]    =
+					WireName.PressureUnit(pressureUnit, nameof(pressureUnit));
+				p["ratings",      typeof(string)]  = TheText(ratings, nameof(ratings));
+			})
+			.PerformCommand();
+		}
+
+		/// <summary>
+		/// Publica dentro de una revision un grado de combustible con su postura. La especificacion
+		/// de combustible se arma grado a grado y contesta entera.
+		/// </summary>
+		public void PublishFuelGrade(string revisionCode, string grade, string standing)
+		{
+			app.Using("specification.PublishFuelGrade(@revisionCode, @grade, @standing);")
+			.WithParameters(p => {
+				p["revisionCode", typeof(string)] = TheText(revisionCode, nameof(revisionCode));
+				p["grade",        typeof(string)] = TheText(grade, nameof(grade));
+				p["standing",     typeof(Enum)]   = WireName.FuelGradeStanding(standing);
+			})
+			.PerformCommand();
+		}
+
+		/// <summary>
+		/// Publica dentro de una revision un sistema que el fabricante declara dentro del alcance de
+		/// la garantia. UN CERO EN LAS DOS MITADES DEL LIMITE PROPIO es como el wire dice que el
+		/// sistema no publico limites propios, y esa traduccion es del dominio: aca no se toca. La
+		/// unidad viaja igual, porque una distancia sin unidad no se puede leer.
+		/// </summary>
+		public void PublishCoveredSystem(
+			string revisionCode, string systemCode,
+			int ownLimitMonths, int ownLimitDistance, string ownLimitUnit)
+		{
+			app.Using(@"
+				specification.PublishCoveredSystem(
+					@revisionCode, @systemCode,
+					@ownLimitMonths, @ownLimitDistance, @ownLimitUnit);
+			")
+			.WithParameters(p => {
+				p["revisionCode",     typeof(string)] = TheText(revisionCode, nameof(revisionCode));
+				p["systemCode",       typeof(string)] = TheText(systemCode, nameof(systemCode));
+				p["ownLimitMonths",   typeof(int)]    = ownLimitMonths;
+				p["ownLimitDistance", typeof(int)]    = ownLimitDistance;
+				p["ownLimitUnit",     typeof(Enum)]   =
+					WireName.DistanceUnit(ownLimitUnit, nameof(ownLimitUnit));
+			})
+			.PerformCommand();
+		}
+
+		/// <summary>
+		/// Publica dentro de una revision algo que el alcance no cubre, con la condicion bajo la
+		/// cual muerde. La condicion es texto publicado: nadie decide aca si se cumple.
+		/// </summary>
+		public void PublishCoverageExclusion(
+			string revisionCode, string systemCode, string exclusion, string condition)
+		{
+			app.Using(@"
+				specification.PublishCoverageExclusion(
+					@revisionCode, @systemCode, @exclusion, @condition);
+			")
+			.WithParameters(p => {
+				p["revisionCode", typeof(string)] = TheText(revisionCode, nameof(revisionCode));
+				p["systemCode",   typeof(string)] = TheText(systemCode, nameof(systemCode));
+				p["exclusion",    typeof(string)] = TheText(exclusion, nameof(exclusion));
+				p["condition",    typeof(string)] = TheText(condition, nameof(condition));
+			})
+			.PerformCommand();
+		}
+
+		/// <summary>
+		/// Publica dentro de una revision cada cuanto dice el fabricante que se hace una operacion.
+		/// Es el numero publicado y nombra su revision; la copia por vehiculo que la agenda usa para
+		/// medir sigue siendo la base de la medicion.
+		/// </summary>
+		public void PublishServiceInterval(
+			string revisionCode, string kind,
+			int intervalDistance, string intervalUnit, int intervalDays)
+		{
+			app.Using(@"
+				specification.PublishServiceInterval(
+					@revisionCode, @kind,
+					@intervalDistance, @intervalUnit, @intervalDays);
+			")
+			.WithParameters(p => {
+				p["revisionCode",     typeof(string)] = TheText(revisionCode, nameof(revisionCode));
+				p["kind",             typeof(Enum)]   = WireName.OperationKind(kind);
+				p["intervalDistance", typeof(int)]    = intervalDistance;
+				p["intervalUnit",     typeof(Enum)]   =
+					WireName.DistanceUnit(intervalUnit, nameof(intervalUnit));
+				p["intervalDays",     typeof(int)]    = intervalDays;
+			})
+			.PerformCommand();
+		}
+
+		/// <summary>
+		/// Publica dentro de una revision el precio de una operacion en un hito, con su moneda y su
+		/// vigencia. El monto entra tal como se publico y no se convierte a ninguna otra moneda.
+		/// </summary>
+		public void PublishServicePrice(
+			string revisionCode, string kind,
+			int milestoneDistance, string milestoneUnit,
+			decimal amount, string currency, DateTime validFrom, DateTime validUntil)
+		{
+			app.Using(@"
+				specification.PublishServicePrice(
+					@revisionCode, @kind,
+					@milestoneDistance, @milestoneUnit,
+					@amount, @currency, @validFrom, @validUntil);
+			")
+			.WithParameters(p => {
+				p["revisionCode",      typeof(string)]   = TheText(revisionCode, nameof(revisionCode));
+				p["kind",              typeof(Enum)]     = WireName.OperationKind(kind);
+				p["milestoneDistance", typeof(int)]      = milestoneDistance;
+				p["milestoneUnit",     typeof(Enum)]     =
+					WireName.DistanceUnit(milestoneUnit, nameof(milestoneUnit));
+				p["amount",            typeof(decimal)]  = Normalized(amount);
+				p["currency",          typeof(string)]   = TheText(currency, nameof(currency));
+				p["validFrom",         typeof(DateTime)] = InUtc(validFrom);
+				p["validUntil",        typeof(DateTime)] = InUtc(validUntil);
+			})
+			.PerformCommand();
+		}
+
+		/// <summary>
+		/// Publica dentro de una revision la regla del fabricante sobre servicio en otro taller y
+		/// que conserva la cobertura. Los dos textos se guardan como se publicaron.
+		/// </summary>
+		public void PublishServicingPolicy(
+			string revisionCode, string rule, string whatPreservesCover)
+		{
+			app.Using(@"
+				specification.PublishServicingPolicy(
+					@revisionCode, @rule, @whatPreservesCover);
+			")
+			.WithParameters(p => {
+				p["revisionCode",       typeof(string)] = TheText(revisionCode, nameof(revisionCode));
+				p["rule",               typeof(string)] = TheText(rule, nameof(rule));
+				p["whatPreservesCover", typeof(string)] =
+					TheText(whatPreservesCover, nameof(whatPreservesCover));
+			})
+			.PerformCommand();
+		}
+
+		/// <summary>
+		/// SELLA una revision, que es lo unico que la hace contestar. Una revision sin contenido no
+		/// se sella: sellada quiere decir citable.
+		/// </summary>
+		public void SealRevision(string revisionCode)
+		{
+			app.Using("specification.SealRevision(@revisionCode);")
+			.WithParameters(p => {
+				p["revisionCode", typeof(string)] = TheText(revisionCode, nameof(revisionCode));
+			})
+			.PerformCommand();
+		}
+
+		/// <summary>
+		/// SUSTITUYE una revision por otra, que queda nombrada como la que la reemplazo. Lo que la
+		/// sucesora no volvio a publicar se retira con ella.
+		/// </summary>
+		public void SupersedeRevision(string revisionCode, string supersededByCode)
+		{
+			app.Using("specification.SupersedeRevision(@revisionCode, @supersededByCode);")
+			.WithParameters(p => {
+				p["revisionCode",     typeof(string)] = TheText(revisionCode, nameof(revisionCode));
+				p["supersededByCode", typeof(string)] =
+					TheText(supersededByCode, nameof(supersededByCode));
 			})
 			.PerformCommand();
 		}
@@ -566,6 +800,40 @@ namespace DealershipCar.App
 
 			return new DateTime(
 				utc.Ticks - utc.Ticks % TimeSpan.TicksPerSecond, DateTimeKind.Utc);
+		}
+
+		/// <summary>
+		/// Le da al decimal la MISMA forma que va a tener despues de pasar por el journal, para que
+		/// el valor vivo y el reproducido sean el mismo valor y no dos que apenas comparan iguales.
+		/// El valor nunca cambia; lo que cambia es como se dice, y decirlo distinto antes y despues
+		/// de reabrir romperia la promesa de que una respuesta ya dada no cambia sola.
+		/// </summary>
+		private static decimal Normalized(decimal value)
+		{
+			return decimal.Parse(
+				value.ToString(TheShapeTheJournalWrites, CultureInfo.InvariantCulture),
+				NumberStyles.Number,
+				CultureInfo.InvariantCulture);
+		}
+
+		/// <summary>
+		/// Como escribe el journal un decimal: sin los ceros que sobran a la derecha y con veintidos
+		/// decimales como maximo. Es la forma que hay que darle antes de mandarlo.
+		/// </summary>
+		private const string TheShapeTheJournalWrites = "0.######################";
+
+		/// <summary>
+		/// Una cadena que la especificacion necesita para poder contestar: se exige aca, donde el
+		/// rechazo no cuesta ninguna entrada, y se recorta por los extremos, que es lo que hace que
+		/// quien publica y quien pregunta nombren la misma cosa. Lo de adentro no se toca -- ni la
+		/// caja ni los espacios interiores -- porque el vocabulario es del fabricante y aca no se le
+		/// arregla la ortografia a nadie.
+		/// </summary>
+		private static string TheText(string text, string parameterName)
+		{
+			ArgumentException.ThrowIfNullOrWhiteSpace(text, parameterName);
+
+			return text.Trim();
 		}
 	}
 }

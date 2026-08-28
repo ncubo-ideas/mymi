@@ -10,9 +10,10 @@ namespace DealershipCar.Dominio.Pruebas
 	// aunque el estado siga siendo correcto.
 	//
 	// Asi que ninguna linea de DSL de DealershipCarAPI puede llegar al journal de una persona sin
-	// haberse ejecutado antes aca. Esta prueba corre CADA UNA de las veintinueve operaciones de la
+	// haberse ejecutado antes aca. Esta prueba corre CADA UNA de las cuarenta operaciones de la
 	// puerta al menos una vez -- las veintiuna de T6, las siete que trajo T8 (los dos comandos de
-	// la bitacora, sus cuatro lecturas, y el Apply de la ingesta) y CanBeDeferred.
+	// la bitacora, sus cuatro lecturas, y el Apply de la ingesta), CanBeDeferred, y los once
+	// comandos de publicacion que trajo T5.
 	// No mira reglas de negocio -- de eso se ocupan las otras pruebas del nivel B -- mira que el
 	// script exista, parsee, ate sus parametros y devuelva lo que dijo que devolvia.
 	[TestFixture]
@@ -24,6 +25,9 @@ namespace DealershipCar.Dominio.Pruebas
 
 		private static readonly DateTime Delivery = new DateTime(2025, 6, 1, 0, 0, 0, DateTimeKind.Utc);
 		private const int OdometerAtDelivery = 30000;
+
+		private static readonly DateTime ThePublication =
+			new DateTime(2026, 1, 15, 0, 0, 0, DateTimeKind.Utc);
 
 		private AScheduleOnARealJournal journal;
 
@@ -128,6 +132,51 @@ namespace DealershipCar.Dominio.Pruebas
 
 			Assert.That(journal.Api.HasBeenEvaluated(), Is.False);
 			Assert.Throws<InvalidOperationException>(() => journal.Api.LastEvaluatedAt());
+		}
+
+		// LOS ONCE COMANDOS DE PUBLICACION QUE TRAJO T5, cada uno una vez, contra la tercera global
+		// de raiz. Se abren DOS revisiones porque sustituir necesita una sucesora sellada: sin eso,
+		// SupersedeRevision seria el unico script de la puerta que nunca corrio.
+		//
+		// El fluido va con un decimal con cero a la derecha y el precio con centavos: los dos
+		// caminos que pasan por la normalizacion de la frontera.
+		[Test]
+		public void EveryPublishCommandOfTheDoorParsesBindsAndRuns()
+		{
+			journal.Api.OpenRevision("R1", ThePublication);
+
+			journal.Api.PublishFluidSpecification(
+				"R1", "EngineOil", "5W-30", 2.40m, "UnitA", TenThousandUnits, "UnitA",
+				TwelveMonthsInDays);
+
+			journal.Api.PublishTyreSpecification(
+				"R1", "Front", "205/55R16", 2.4m, "UnitA", "94V");
+
+			journal.Api.PublishFuelGrade("R1", "91 RON", "Minimum");
+
+			journal.Api.PublishServiceInterval(
+				"R1", "FluidChange", TenThousandUnits, "UnitA", TwelveMonthsInDays);
+
+			journal.Api.PublishServicePrice(
+				"R1", "FluidChange", TenThousandUnits, "UnitA", 75.50m, "USD",
+				ThePublication, ThePublication.AddYears(1));
+
+			// Un cero en las DOS mitades es como el wire dice que el sistema no publico limites
+			// propios, y la traduccion es del dominio: la puerta lo manda tal cual.
+			journal.Api.PublishCoveredSystem("R1", "POWERTRAIN", 0, 0, "UnitA");
+
+			journal.Api.PublishCoverageExclusion(
+				"R1", "POWERTRAIN", "wear parts", "when the part is consumable");
+
+			journal.Api.PublishServicingPolicy("R1", "service anywhere", "keep the receipts");
+
+			journal.Api.SealRevision("R1");
+
+			journal.Api.OpenRevision("R2", ThePublication.AddMonths(6));
+			journal.Api.PublishFuelGrade("R2", "95 RON", "Permitted");
+			journal.Api.SealRevision("R2");
+
+			journal.Api.SupersedeRevision("R1", "R2");
 		}
 
 		// LOS NUEVE SCRIPTS DE LA BITACORA: dos comandos y siete lecturas. Son siete y no cuatro

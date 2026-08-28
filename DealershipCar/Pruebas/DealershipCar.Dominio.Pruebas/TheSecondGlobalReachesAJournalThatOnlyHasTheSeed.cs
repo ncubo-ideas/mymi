@@ -78,7 +78,8 @@ namespace DealershipCar.Dominio.Pruebas
 			older.Dispose();
 
 			// La app de verdad, sobre el MISMO journal.
-			DealershipCarApp current = new DealershipCarApp(TheVin, "Standard");
+			DealershipCarApp current = new DealershipCarApp(
+				TheVin, "Standard", AScheduleOnARealJournal.TheModelAtDelivery);
 			current.ConfigureStorage(DatabaseType.FileSystem, "path=" + folder);
 			current.Start();
 
@@ -105,14 +106,16 @@ namespace DealershipCar.Dominio.Pruebas
 		[Test]
 		public void TheSeedStillCostsExactlyOneEntryPerOpening()
 		{
-			DealershipCarApp app = new DealershipCarApp(TheVin, "Standard");
+			DealershipCarApp app = new DealershipCarApp(
+				TheVin, "Standard", AScheduleOnARealJournal.TheModelAtDelivery);
 			app.ConfigureStorage(DatabaseType.FileSystem, "path=" + folder);
 			app.Start();
 
 			long afterFirstOpening = app.Actor.CurrentEntryId;
 			app.Dispose();
 
-			DealershipCarApp again = new DealershipCarApp(TheVin, "Standard");
+			DealershipCarApp again = new DealershipCarApp(
+				TheVin, "Standard", AScheduleOnARealJournal.TheModelAtDelivery);
 			again.ConfigureStorage(DatabaseType.FileSystem, "path=" + folder);
 			again.Start();
 

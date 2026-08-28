@@ -40,6 +40,11 @@ namespace DealershipCar.Dominio.Pruebas
 			Open();
 		}
 
+		// El modelo con el que este aparejo siembra la tercera global de raiz. Es un hecho de la
+		// PRIMERA apertura -- el cuerpo de un upgrade no vuelve a correr -- asi que una prueba que
+		// necesite otro modelo abre su propio host, no este.
+		internal const string TheModelAtDelivery = "SM-SEDAN-2025";
+
 		// Donde viven todas las carpetas temporales del nivel B. Una sola raiz, para que barrerlas
 		// sea una sola operacion -- ver TheTemporaryJournalsDoNotOutliveTheNextRun.
 		internal static string TheRootOfEveryTemporaryJournal
@@ -49,6 +54,15 @@ namespace DealershipCar.Dominio.Pruebas
 
 		// La unica puerta. Las pruebas no ven el actor.
 		internal DealershipCarAPI Api { get; private set; }
+
+		// SOLO PARA OBSERVAR LO QUE TODAVIA NO TIENE LECTURA EN LA PUERTA. T5 construye los once
+		// comandos de la especificacion y NINGUNA lectura de ella -- esas son de T6 -- asi que para
+		// ver lo que esos comandos escribieron hay que preguntarle al actor directo. Cuando T6
+		// agregue las lecturas esto deja de hacer falta, y todo lo demas sigue entrando por Api.
+		internal DealershipCarApp TheHostUnderTheDoor
+		{
+			get { return app; }
+		}
 
 		// Donde quedo el journal, para las pruebas que lo miran como bytes.
 		internal string Folder
@@ -115,7 +129,7 @@ namespace DealershipCar.Dominio.Pruebas
 		{
 			Directory.CreateDirectory(folder);
 
-			app = new DealershipCarApp(vin, usageProfile);
+			app = new DealershipCarApp(vin, usageProfile, TheModelAtDelivery);
 			app.ConfigureStorage(DatabaseType.FileSystem, "path=" + folder);
 			app.Start();
 
