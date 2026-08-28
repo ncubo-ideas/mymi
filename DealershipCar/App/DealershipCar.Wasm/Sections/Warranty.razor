@@ -82,16 +82,16 @@
                 <span class="mono muted">@Provenance(Sheet.ServicingRule.Revision)</span>
             </div>
 
+            <MudText Typo="Typo.body2" id="servicing-rule-says"
+                     Class="@(Sheet.ServicingRule.Published ? "sheet-says" : "sheet-says muted")">
+                @Sheet.ServicingRule.Says
+            </MudText>
+
             @if (Sheet.ServicingRule.Published)
             {
-                <MudText Typo="Typo.body2" Class="sheet-says" id="servicing-rule-unquotable">
-                    @TheOwnerIsTold.TheServicingRuleIsPublishedButNotQuotable
-                </MudText>
-            }
-            else
-            {
-                <MudText Typo="Typo.body2" Class="sheet-says muted" id="servicing-rule-unpublished">
-                    @TheOwnerIsTold.NoServicingRuleWasPublished
+                <MudText Typo="Typo.caption" Class="muted d-block mt-1"
+                         id="servicing-rule-standing">
+                    @TheOwnerIsTold.TheServicingRuleStandingIsNotInThisRecord
                 </MudText>
             }
         </ChildContent>

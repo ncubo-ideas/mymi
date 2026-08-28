@@ -289,11 +289,11 @@ namespace DealershipCar.Dominio.Pruebas
 			Assert.That(wrongMilestone.Detail, Does.Not.Contain("No milestone was named"));
 		}
 
-		// EL INTERVALO PUBLICADO SE ANUNCIA Y SE DICE QUE NO SE PUEDE CITAR, que es la otra mitad de la
-		// decision de T8: la frase del intervalo empareja lo publicado con la distancia que le queda a
-		// ESTE vehiculo, y este registro no guarda el odometro.
+		// EL INTERVALO PUBLICADO SE CITA ENTERO, Y LA POSICION DE ESTE VEHICULO NO. Es la decision de
+		// T8 corregida por la ley L7b: lo que faltaba no era el permiso de decir el intervalo, era
+		// una lectura que lo dijera sin pedir la distancia que le queda al carro. Ahora existe.
 		[Test]
-		public void ThePublishedIntervalIsAnnouncedWithItsRevisionAndSaidToBeUnquotable()
+		public void ThePublishedIntervalIsQuotedAndTheVehiclesStandingIsNot()
 		{
 			journal.Api.OpenRevision(TheFirstRevision, TheFirstPublication);
 			journal.Api.PublishServiceInterval(
@@ -305,16 +305,24 @@ namespace DealershipCar.Dominio.Pruebas
 
 			Assert.That(pricing.IntervalPublished, Is.True);
 			Assert.That(pricing.IntervalRevision, Is.EqualTo(TheFirstRevision));
-			Assert.That(pricing.Detail, Does.Contain("A service interval was published"));
+
+			// LA FRASE PUBLICADA LLEGA, con su procedencia adentro.
+			Assert.That(pricing.IntervalSays, Does.Contain("serviced every"));
+			Assert.That(pricing.IntervalSays, Does.Contain("365 days"));
+			Assert.That(pricing.IntervalSays, Does.Contain(TheFirstRevision));
+
+			Assert.That(pricing.Detail, Does.Contain("service interval is in this answer"));
 			Assert.That(pricing.Detail, Does.Contain("does not keep the odometer"));
 
-			// Y NO SE FILTRA LA FRASE por ningun campo, que es lo que separa "no se puede citar" de
-			// "se cito igual".
-			Assert.That(JsonSerializer.Serialize(pricing), Does.Not.Contain("serviced every"));
-			Assert.That(JsonSerializer.Serialize(pricing), Does.Not.Contain("365 days"));
+			// Y LA MITAD RECIBIDA NO LLEGA POR NINGUN CAMPO. El discriminador es la frase con la que
+			// el DOMINIO abre la mitad recibida -- "This vehicle has <n> km to go against it" -- y no
+			// el "to go" suelto: detail habla de esa distancia para decir que NO esta, asi que un
+			// barrido por las tres palabras se pone rojo con el texto correcto adentro. Es C60 sobre
+			// una frase en vez de sobre una lectura, y ya paso una vez en este mismo archivo.
+			Assert.That(JsonSerializer.Serialize(pricing), Does.Not.Contain("This vehicle has"));
 
-			// EL CONTROL: la puerta SI compone la frase cuando le llega la mitad del vehiculo. Lo que
-			// falta no es la lectura, es de donde sacar la distancia que le queda.
+			// EL CONTROL: la puerta SI compone la frase emparejada cuando le llega la mitad del
+			// vehiculo, asi que el renglon de arriba mira una diferencia real.
 			Assert.That(
 				journal.Api.DescribeServiceInterval("FluidChange", 2000, "UnitA"),
 				Does.Contain("2000 km to go"));

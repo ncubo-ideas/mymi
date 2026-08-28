@@ -36,23 +36,12 @@ namespace DealershipCar.Wasm
 			+ "different thing and worth asking your dealership about rather than assuming.";
 
 		/// <summary>
-		/// Que hay regla de servicio en otro taller publicada y que su texto no se puede citar sin
-		/// los conteos de este vehiculo, que este registro no lleva.
+		/// Que la regla de servicio en otro taller esta dicha entera y que donde queda este vehiculo
+		/// frente a ella no. Los tres conteos que decidirian eso van nombrados, y quien los pone.
 		/// </summary>
-		public const string TheServicingRuleIsPublishedButNotQuotable =
-			"The manufacturer also published a rule about having the car serviced elsewhere and "
-			+ "what keeps the cover. Its text is not shown here: the rule is stated against how "
-			+ "many services this car has had elsewhere, with and without paperwork, and this "
-			+ "record does not count them.";
-
-		/// <summary>
-		/// Que no hay regla de servicio en otro taller publicada. Es la unica ausencia que la
-		/// pantalla dice con palabras propias: la unica lectura que compone esa frase pide los tres
-		/// conteos del vehiculo, y mandarlos en cero para que el dominio los ignore seria escribir
-		/// la invencion igual y confiar en que no se lea.
-		/// </summary>
-		public const string NoServicingRuleWasPublished =
-			"The manufacturer published no rule about having this model serviced elsewhere, so "
-			+ "there is nothing to quote and no revision to name.";
+		public const string TheServicingRuleStandingIsNotInThisRecord =
+			"That is the rule as published, not where your car stands against it. Saying that needs "
+			+ "how many services this car has had elsewhere, how many of those have paperwork, and "
+			+ "how much scheduled maintenance was missed. Your dealership is who puts them here.";
 	}
 }

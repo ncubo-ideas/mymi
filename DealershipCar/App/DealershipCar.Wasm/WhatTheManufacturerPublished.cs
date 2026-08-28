@@ -37,7 +37,7 @@ namespace DealershipCar.Wasm
 		/// <summary>El alcance de garantia publicado, sin ninguna posicion de este vehiculo.</summary>
 		public PublishedCoverage Coverage { get; init; } = new PublishedCoverage();
 
-		/// <summary>Si hay regla de servicio en otro taller publicada, y de que revision.</summary>
+		/// <summary>La regla de servicio en otro taller publicada, con su frase y su revision.</summary>
 		public PublishedServicingRule ServicingRule { get; init; } = new PublishedServicingRule();
 
 		/// <summary>
@@ -101,6 +101,7 @@ namespace DealershipCar.Wasm
 				ServicingRule = new PublishedServicingRule
 				{
 					Published = api.IsServicingPolicyPublished(),
+					Says = api.DescribePublishedServicingElsewhereRule(),
 					Revision = api.ReadServicingPolicyRevision(),
 				},
 			};
@@ -192,13 +193,20 @@ namespace DealershipCar.Wasm
 	}
 
 	/// <summary>
-	/// Que hay regla de servicio en otro taller publicada y de que revision. El texto no viene: la
-	/// regla se dice contra los conteos de este vehiculo y este registro no los lleva.
+	/// La regla de servicio en otro taller que publico el fabricante, con su revision. Es la mitad
+	/// publicada sola: donde queda este vehiculo frente a ella pide tres conteos que este registro
+	/// no lleva, y esa mitad no esta aca ni se estima.
 	/// </summary>
 	public sealed class PublishedServicingRule
 	{
 		/// <summary>Si alguna revision sellada publico una regla.</summary>
 		public bool Published { get; init; }
+
+		/// <summary>
+		/// Lo que dice la regla, o que no hay ninguna publicada. La frase la compone el dominio en
+		/// los dos casos.
+		/// </summary>
+		public string Says { get; init; } = "";
 
 		/// <summary>De que revision salio, o vacio si no hay ninguna que nombrar.</summary>
 		public string Revision { get; init; } = "";

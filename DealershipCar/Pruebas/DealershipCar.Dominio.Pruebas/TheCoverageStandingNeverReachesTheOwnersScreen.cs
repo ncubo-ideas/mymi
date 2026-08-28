@@ -120,50 +120,59 @@ namespace DealershipCar.Dominio.Pruebas
 				"No leyo ninguna procedencia.");
 		}
 
-		// NI EL TEXTO DE LA REGLA NI NINGUN CONTEO LLEGAN. Se anuncia que hay regla y de que
-		// revision, y nada mas. Si alguien hiciera la lectura con los tres conteos en cero para
-		// sacarle la frase al dominio, el texto publicado Y la frase de los conteos saldrian los
-		// dos, y los dos renglones de abajo se ponen rojos.
+		// EL TEXTO DE LA REGLA SI LLEGA AHORA, Y NINGUN CONTEO. Es el cambio que trajo la ley L7b y
+		// es la mitad exacta que se movio: la frase publicada la compone el dominio y viaja entera;
+		// donde queda ESTE vehiculo frente a ella sigue sin viajar, porque dos de sus tres conteos
+		// no existen en ninguna lectura del modulo.
+		//
+		// SI ALGUIEN HICIERA LA LECTURA EMPAREJADA CON LOS TRES CONTEOS EN CERO para sacarle la
+		// frase al dominio, el texto saldria igual -- y el segundo renglon del barrido se pone rojo,
+		// que es lo que separa "se cito lo publicado" de "se invento la posicion".
 		[Test]
-		public void TheServicingRuleIsAnnouncedAndNeitherItsTextNorAnyCountIsOnTheSheet()
+		public void TheServicingRuleTextIsOnTheSheetAndNoCountIs()
 		{
 			WhatTheManufacturerPublished sheet = TheSheetTheScreenShows();
 
 			Assert.That(sheet.ServicingRule.Published, Is.True);
 			Assert.That(sheet.ServicingRule.Revision, Is.EqualTo(TheRevision));
 
+			Assert.That(sheet.ServicingRule.Says, Does.Contain(TheRuleAsPublished),
+				"La mitad publicada tiene que llegar entera: es la que la pantalla dejo de poder "
+				+ "mostrar cuando la unica lectura que la componia pedia los tres conteos.");
+			Assert.That(sheet.ServicingRule.Says, Does.Contain(TheRevision),
+				"Y con su procedencia adentro, que es la ley L1 y es lo que la separa de un folleto.");
+
 			List<string> words = EveryWordTheSheetCarries(sheet);
 
 			foreach (string said in words)
-			{
-				Assert.That(said, Does.Not.Contain(TheRuleAsPublished),
-					"El texto de la regla llego a la pantalla. Citarlo pide los tres conteos de "
-					+ "este vehiculo, y el registro solo lleva uno de los tres.");
 				Assert.That(said, Does.Not.Contain("external services with evidence"),
 					"Un conteo llego a la pantalla. Dos de los tres no existen en ninguna lectura, "
 					+ "asi que un numero ahi lo invento alguien.");
-			}
 
-			// EL CONTROL: la puerta SI compone la frase entera cuando le llegan los tres conteos.
-			// Lo que falta no es la lectura, es de donde sacar dos de sus tres numeros.
+			// EL CONTROL: la puerta SI compone la frase CON los conteos cuando se los mandan, asi
+			// que el barrido de arriba esta mirando una diferencia real y no una imposibilidad.
 			string whole = journal.Api.DescribeServicingElsewhereRule(2, 1, 0);
 
 			Assert.That(whole, Does.Contain(TheRuleAsPublished));
 			Assert.That(whole, Does.Contain("external services with evidence 2"));
+			Assert.That(sheet.ServicingRule.Says, Is.Not.EqualTo(whole),
+				"Y las dos frases son distintas. Si fueran iguales, la hoja estaria trayendo la "
+				+ "emparejada y el barrido no tendria nada que encontrar.");
 		}
 
-		// Y LA FORMA DEL PORTADOR LO SOSTIENE: la regla viaja como presencia y procedencia, sin sitio
-		// donde meter una frase. Un campo nuevo ahi es la puerta por la que entrarian los conteos, y
-		// esta prueba obliga a abrirla a proposito.
+		// Y LA FORMA DEL PORTADOR LO SIGUE SOSTENIENDO. Antes el argumento era que no habia sitio
+		// para NINGUNA frase; ahora hay sitio para UNA, la publicada, y sigue sin haberlo para un
+		// conteo. Un cuarto campo aca es la puerta por la que entrarian, y esta prueba obliga a
+		// abrirla a proposito -- que es exactamente lo que L7b hizo con el tercero.
 		[Test]
-		public void TheServicingRuleCarrierHasNowhereToPutASentence()
+		public void TheServicingRuleCarrierHasRoomForTheSentenceAndNoneForACount()
 		{
 			var names = new List<string>();
 
 			foreach (PropertyInfo each in typeof(PublishedServicingRule).GetProperties())
 				names.Add(each.Name);
 
-			Assert.That(names, Is.EquivalentTo(new[] { "Published", "Revision" }));
+			Assert.That(names, Is.EquivalentTo(new[] { "Published", "Says", "Revision" }));
 		}
 
 		// Y SIN REGLA PUBLICADA NO SE ANUNCIA NADA. Sin esto, el anuncio de arriba podria ser una
@@ -190,7 +199,12 @@ namespace DealershipCar.Dominio.Pruebas
 		{
 			List<string> said = EveryWordTheScreenAddsOfItsOwn();
 
-			Assert.That(said, Has.Count.EqualTo(5),
+			// SE MIRO DE NUEVO, que es lo que este renglon pide. Eran cinco y son CUATRO: la ley L7b
+			// puso la mitad publicada en la puerta, asi que las dos frases sobre la regla de servicio
+			// en otro taller -- la que decia que su texto no se podia citar y la que decia que no
+			// habia ninguna publicada -- las dice ahora el dominio, y sobraba tenerlas aca. Entro una
+			// sola en su lugar: que el TEXTO esta y la POSICION no.
+			Assert.That(said, Has.Count.EqualTo(4),
 				"Si TheOwnerIsTold gana o pierde una frase, este barrido se vuelve a mirar en vez de "
 				+ "seguir contando las de antes.");
 
@@ -226,9 +240,24 @@ namespace DealershipCar.Dominio.Pruebas
 				"Y quien los pone, dicho entero: es la mitad accionable, y es la que se pierde si "
 				+ "esto solo comprobara que la palabra 'dealership' aparece en alguna parte.");
 
+			// LA REGLA DE SERVICIO EN OTRO TALLER CAMBIO DE MITAD FALTANTE, no de si le falta una.
+			// Antes faltaba el TEXTO -- la unica lectura que lo componia pedia los tres conteos --
+			// y la pantalla decia eso con palabras propias. Con la mitad publicada en la puerta
+			// (ley L7b) el texto lo dice el dominio, y lo que sigue faltando es la POSICION. La
+			// frase de la pantalla se movio con el hecho, y sigue nombrando los tres conteos como
+			// LO QUE DECIDIRIA la posicion y no como una lista de palabras sueltas.
 			Assert.That(
-				TheOwnerIsTold.TheServicingRuleIsPublishedButNotQuotable,
-				Does.Contain("does not count them"));
+				TheOwnerIsTold.TheServicingRuleStandingIsNotInThisRecord,
+				Does.Contain("not where your car stands against it"));
+			Assert.That(
+				TheOwnerIsTold.TheServicingRuleStandingIsNotInThisRecord,
+				Does.Contain("how many services this car has had elsewhere, how many of those have "
+					+ "paperwork, and how much scheduled maintenance was missed"),
+				"Los tres conteos, dichos enteros. Con solo la palabra 'services' adentro, una frase "
+				+ "que dijera que los servicios de afuera no importan pasaria igual.");
+			Assert.That(
+				TheOwnerIsTold.TheServicingRuleStandingIsNotInThisRecord,
+				Does.Contain("Your dealership is who puts them here"));
 
 			// Y QUE UN SISTEMA QUE LA LISTA NO NOMBRA NO ES UNO QUE EL ALCANCE DEJE AFUERA. En una
 			// pantalla sin buscador esa distincion no la puede hacer un control: solo la frase.

@@ -164,17 +164,32 @@ namespace DealershipCar.Dominio.Pruebas
 			Assert.That(scope.Detail, Does.Contain("Do not estimate it"));
 		}
 
-		// LA REGLA DE SERVICIO EN OTRO TALLER TIENE LA MISMA FORMA Y SE DICE IGUAL: hay regla
-		// publicada, y su texto no se puede citar sin los conteos de este vehiculo, que tampoco estan.
+		// LA REGLA DE SERVICIO EN OTRO TALLER TIENE LA MISMA FORMA Y SE MOVIO IGUAL: su texto SI se
+		// cita ahora -- ley L7b, la mitad publicada tiene lectura propia -- y lo que sigue sin
+		// viajar es la posicion, porque dos de sus tres conteos no existen en ninguna lectura.
 		[Test]
-		public void ThePublishedServicingRuleIsAnnouncedAndSaidToBeUnquotable()
+		public void ThePublishedServicingRuleIsQuotedAndTheVehiclesStandingIsNot()
 		{
 			WarrantyScope scope = TheAssistantAsksAbout(TheSystemInside);
 
 			Assert.That(scope.ServicingPolicyPublished, Is.True);
 			Assert.That(scope.ServicingPolicyRevision, Is.EqualTo(TheRevision));
-			Assert.That(scope.Detail, Does.Contain("servicing elsewhere"));
-			Assert.That(scope.Detail, Does.Contain("does not keep that count"));
+
+			Assert.That(
+				scope.ServicingPolicySays,
+				Does.Contain("service may be done at any qualified workshop"));
+			Assert.That(
+				scope.ServicingPolicySays,
+				Does.Contain("keep the invoices and the parts records"));
+			Assert.That(scope.ServicingPolicySays, Does.Contain(TheRevision));
+
+			Assert.That(scope.Detail, Does.Contain("servicing-elsewhere rule is in this answer"));
+			Assert.That(scope.Detail, Does.Contain("keeps only the last of the three"));
+
+			// Y NINGUN CONTEO LLEGA POR NINGUN CAMPO.
+			Assert.That(
+				JsonSerializer.Serialize(scope),
+				Does.Not.Contain("external services with evidence"));
 		}
 
 		// Y CUANDO NO HAY REGLA PUBLICADA NO SE ANUNCIA NADA. Sin esto, la frase de arriba podria ser

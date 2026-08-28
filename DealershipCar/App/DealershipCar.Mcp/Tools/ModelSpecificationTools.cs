@@ -220,12 +220,13 @@ namespace DealershipCar.Mcp.Tools
 				CoveredSystems = api.CoveredSystems(),
 				Exclusions = api.CoverageExclusions(),
 				ServicingPolicyPublished = servicingPolicyPublished,
+				ServicingPolicySays = api.DescribePublishedServicingElsewhereRule(),
 				ServicingPolicyRevision = api.ReadServicingPolicyRevision(),
 				Folder = reader.Folder,
 				Detail = TheAssistantIsTold.EverythingWorthSaying(
 					TheDetailWhen(true),
 					TheStandingIsNotInThisRecord,
-					servicingPolicyPublished ? TheServicingRuleIsPublishedButNotQuotable : ""),
+					servicingPolicyPublished ? TheServicingRuleStandingIsNotInThisRecord : ""),
 			};
 		}
 
@@ -273,6 +274,7 @@ namespace DealershipCar.Mcp.Tools
 				CurrentRevision = TheCurrentRevisionCode(api),
 				Operation = kind,
 				IntervalPublished = intervalPublished,
+				IntervalSays = api.DescribePublishedServiceInterval(kind),
 				IntervalRevision = api.ReadServiceIntervalRevision(kind),
 				MilestoneAsked = milestoneDistance,
 				Prices = prices,
@@ -281,7 +283,7 @@ namespace DealershipCar.Mcp.Tools
 				Detail = TheAssistantIsTold.EverythingWorthSaying(
 					TheDetailWhen(true),
 					TheWordOnThePrices(milestoneDistance, prices.Count),
-					intervalPublished ? TheIntervalIsPublishedButNotQuotable : ""),
+					intervalPublished ? TheIntervalStandingIsNotInThisRecord : ""),
 			};
 		}
 
@@ -357,16 +359,18 @@ namespace DealershipCar.Mcp.Tools
 			+ "covers and say that where this car stands is not in it. Do not estimate it, and do not "
 			+ "report a system that is inside the scope as a claim that will be paid.";
 
-		private const string TheServicingRuleIsPublishedButNotQuotable =
-			"The manufacturer also published a rule about servicing elsewhere and what preserves "
-			+ "cover, and its text is not in this answer: stating it means pairing it with how many "
-			+ "services this vehicle has had elsewhere, and this record does not keep that count.";
+		private const string TheServicingRuleStandingIsNotInThisRecord =
+			"The servicing-elsewhere rule is in this answer as the manufacturer published it. Where "
+			+ "this vehicle stands against it is not: that needs how many services it has had "
+			+ "elsewhere, how many of those carry evidence, and its missed-maintenance count, and this "
+			+ "record keeps only the last of the three. Quote the rule and say the standing is not "
+			+ "here; do not infer compliance from silence.";
 
-		private const string TheIntervalIsPublishedButNotQuotable =
-			"A service interval was published for this operation and its numbers are not in this "
-			+ "answer: stating them means pairing them with how far this vehicle still has to go, and "
-			+ "this record does not keep the odometer. Say that an interval exists and which revision "
-			+ "it came from, not what it says.";
+		private const string TheIntervalStandingIsNotInThisRecord =
+			"The service interval is in this answer as the manufacturer published it. How far this "
+			+ "vehicle still has to go against it is not: this record does not keep the odometer. "
+			+ "Quote the interval and say that where the car stands against it is not here - the "
+			+ "maintenance tools answer when the next service is due.";
 
 		private const string NoMilestoneWasNamed =
 			"No milestone was named, so no price was looked up. Ask the person which service they "
@@ -599,8 +603,14 @@ namespace DealershipCar.Mcp.Tools
 
 		[JsonPropertyName("servicingPolicyPublished")]
 		[Description("true when the manufacturer published a rule about servicing elsewhere and what "
-			+ "preserves cover. Its text is not in this answer - read detail.")]
+			+ "preserves cover.")]
 		public bool ServicingPolicyPublished { get; init; }
+
+		[JsonPropertyName("servicingPolicySays")]
+		[Description("The rule as the manufacturer published it, with the revision it came from - or "
+			+ "that none is published. Say this sentence; it is the answer, not a summary of one. "
+			+ "Where THIS vehicle stands against the rule is not here - read detail.")]
+		public string ServicingPolicySays { get; init; } = "";
 
 		[JsonPropertyName("servicingPolicyRevision")]
 		[Description("The revision that rule came from. EMPTY means none is published.")]
@@ -645,9 +655,15 @@ namespace DealershipCar.Mcp.Tools
 		public string Operation { get; init; } = "";
 
 		[JsonPropertyName("intervalPublished")]
-		[Description("true when the manufacturer published how often this operation is done. Its "
-			+ "numbers are not in this answer - read detail.")]
+		[Description("true when the manufacturer published how often this operation is done.")]
 		public bool IntervalPublished { get; init; }
+
+		[JsonPropertyName("intervalSays")]
+		[Description("How often the manufacturer publishes that this operation is done, with the "
+			+ "revision it came from - or that no interval is published. Say this sentence; it is the "
+			+ "answer, not a summary of one. How far THIS vehicle still has to go is not here - read "
+			+ "detail.")]
+		public string IntervalSays { get; init; } = "";
 
 		[JsonPropertyName("intervalRevision")]
 		[Description("The revision that interval came from. EMPTY means none is published.")]
