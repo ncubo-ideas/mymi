@@ -13,10 +13,12 @@ namespace DealershipCar.Dominio.Pruebas
 	// elige adentro y no tiene enum de frontera.
 	//
 	// "El contenido se acumula" es lo que hace testeable la guarda de sello vacio de la ley
-	// L12, y es la unica parte del contenido que esta tarea construye: los items publicados --
-	// fluidos, llantas, combustible, cobertura, precios, politica de servicio -- llegan
-	// despues, cada uno con su propio camino de publicacion. Lo que se afirma aca es la
-	// maquina, no los items.
+	// L12. En T1 el contenido era un CONTADOR y AcceptAPublication era la unica forma de
+	// hacerlo subir, porque los items publicados todavia no existian. En T2 entro el primero de
+	// verdad -- la especificacion de fluido -- asi que el contador desaparecio adentro del
+	// camino de publicacion real y HasContent() lee los items. Este archivo se reescribio en
+	// esa entrega, no se borro: la maquina que afirma es la misma. Los otros cinco items llegan
+	// en T3 por el mismo camino.
 	//
 	// Y EL INSTANTE SE RECIBE (E44, §8 del brief): la revision llega con su instante de
 	// publicacion, no lo lee de ningun reloj. El dominio no decide cuando una revision empieza
@@ -78,7 +80,7 @@ namespace DealershipCar.Dominio.Pruebas
 		[Test]
 		public void PublishingIntoADraftLeavesItADraftAndGivesItContent()
 		{
-			revision.AcceptAPublication();
+			TheEngineOilEntersInto(revision);
 
 			Assert.That(revision.ReadState(), Is.EqualTo("Draft"),
 				"§10: cualquier publish sobre un Draft devuelve Draft. Sellar es un comando aparte, "
@@ -86,17 +88,32 @@ namespace DealershipCar.Dominio.Pruebas
 			Assert.That(revision.HasContent(), Is.True);
 		}
 
+		// Acumular quiere decir que la revision se queda con TODO lo que entro, no solo con lo
+		// ultimo. Con clases distintas se ve; con la misma clase tres veces no se veria, porque
+		// ahi manda la ultima -- que es una correccion antes de sellar y no una acumulacion.
 		[Test]
 		public void PublicationsAccumulate()
 		{
-			revision.AcceptAPublication();
-			revision.AcceptAPublication();
-			revision.AcceptAPublication();
+			TheEngineOilEntersInto(revision);
+			TheBrakeFluidEntersInto(revision);
 
 			Assert.That(revision.ReadState(), Is.EqualTo("Draft"));
-			Assert.That(revision.HasContent(), Is.True,
-				"El contenido se ACUMULA en la revision: publicar dos veces no reemplaza la "
-				+ "primera publicacion por la segunda.");
+			Assert.That(revision.HasContent(), Is.True);
+			Assert.That(revision.HasAFluidSpecification(FluidKindCode.EngineOil), Is.True);
+			Assert.That(revision.HasAFluidSpecification(FluidKindCode.BrakeFluid), Is.True,
+				"El contenido se ACUMULA en la revision: publicar lo segundo no reemplaza lo "
+				+ "primero.");
+		}
+
+		// Y lo que no entro no esta. La pregunta por clase es TOTAL: una clase que esta revision
+		// no publico contesta que no, sin reventar, porque una revision publica lo que publica y
+		// no tiene por que traer las seis.
+		[Test]
+		public void AKindTheRevisionDidNotPublishSimplySaysSo()
+		{
+			TheEngineOilEntersInto(revision);
+
+			Assert.That(revision.HasAFluidSpecification(FluidKindCode.Coolant), Is.False);
 		}
 
 		// La revision se abre con el instante que le dan, incluso uno anterior a otro que ya
@@ -114,6 +131,24 @@ namespace DealershipCar.Dominio.Pruebas
 			Assert.That(anterior.ReadState(), Is.EqualTo("Draft"),
 				"Una revision con un instante anterior sigue naciendo Draft. La revision no ordena "
 				+ "revisiones: eso lo hace el agregado, donde vive L11.");
+		}
+
+		private static void TheEngineOilEntersInto(PublishedRevision draft)
+		{
+			draft.PublishAFluidSpecification(
+				FluidKindCode.EngineOil,
+				new FluidSpecification(
+					FluidKind.EngineOil, "5W-30", 4.6m, VolumeUnit.UnitA,
+					new PublishedInterval(15000, DistanceUnit.UnitA, 365)));
+		}
+
+		private static void TheBrakeFluidEntersInto(PublishedRevision draft)
+		{
+			draft.PublishAFluidSpecification(
+				FluidKindCode.BrakeFluid,
+				new FluidSpecification(
+					FluidKind.BrakeFluid, "DOT 4", 1.0m, VolumeUnit.UnitA,
+					new PublishedInterval(0, DistanceUnit.UnitA, 730)));
 		}
 	}
 }

@@ -1,4 +1,7 @@
 using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Reflection;
 using NUnit.Framework;
 
 namespace DealershipCar.Dominio.Pruebas
@@ -54,6 +57,85 @@ namespace DealershipCar.Dominio.Pruebas
 				+ "indexar por objeto de dominio, que se rompe en silencio despues de una "
 				+ "rehidratacion.");
 			Assert.That(ReferenceEquals(uno, otro), Is.False);
+		}
+
+		// EL CONSTRUCTOR ES LA CREACION (E20): no hay operacion de creacion aparte, y lo que
+		// recibe es el codigo del modelo y nada mas. Todo lo demas -- revisiones, items
+		// publicados -- llega despues por sus propios comandos.
+		[Test]
+		public void TheConstructorIsCreationAndItTakesTheModelCode()
+		{
+			ModelSpecification specification = new ModelSpecification(TheModel);
+
+			Assert.That(specification.ReadModel(), Is.EqualTo(TheModel));
+		}
+
+		[Test]
+		public void ASpecificationWithoutAModelCannotBeOpenedEither()
+		{
+			Assert.Throws<DomainException>(() => new ModelSpecification(null));
+			Assert.Throws<DomainException>(() => new ModelSpecification(""));
+			Assert.Throws<DomainException>(() => new ModelSpecification("   "));
+		}
+
+		// LO QUE MANTIENE AL AGREGADO COMPARTIBLE, mecanizado en vez de prometido (§8 del brief):
+		// no guarda NADA de ningun vehiculo en particular. Un solo campo de vehiculo aca y la
+		// especificacion deja de poder ser una por modelo -- pasaria a ser una por carro, que es
+		// justo lo que la decision de topologia evito.
+		//
+		// Los hechos del vehiculo que las lecturas necesitan (L7) LLEGAN COMO PARAMETROS y se van
+		// con la respuesta; nunca se quedan. Por eso la prueba mira los campos, y no las firmas:
+		// recibir un odometro esta bien, guardarlo no.
+		[Test]
+		public void TheSpecificationHoldsNothingAboutAnyParticularCar()
+		{
+			List<string> delVehiculo = typeof(ModelSpecification)
+				.GetFields(BindingFlags.Instance | BindingFlags.Static | BindingFlags.Public
+					| BindingFlags.NonPublic | BindingFlags.DeclaredOnly)
+				.Where(campo => EsDelVehiculo(campo.FieldType))
+				.Select(campo => campo.Name + " : " + campo.FieldType.Name)
+				.ToList();
+
+			Assert.That(delVehiculo, Is.Empty,
+				"La especificacion guarda hechos de un vehiculo: " + string.Join(", ", delVehiculo)
+				+ ". Sabe lo que un MODELO requiere y no sabe nada de ningun carro: eso es lo que "
+				+ "deja que muchos vehiculos compartan una sola.");
+		}
+
+		// Y tampoco lo guarda con el nombre puesto en un string. Un 'vin' de tipo string pasaria
+		// la prueba de arriba sin problema, y seria exactamente el mismo estado por vehiculo.
+		[Test]
+		public void NoMemberOfTheSpecificationIsNamedAfterAVehicle()
+		{
+			string[] palabrasDelVehiculo = { "Vin", "Vehicle", "Odometer", "Reading", "Owner" };
+
+			List<string> sospechosos = typeof(ModelSpecification)
+				.GetMembers(BindingFlags.Instance | BindingFlags.Static | BindingFlags.Public
+					| BindingFlags.NonPublic | BindingFlags.DeclaredOnly)
+				.Select(miembro => miembro.Name)
+				.Where(nombre => palabrasDelVehiculo.Any(
+					palabra => nombre.IndexOf(palabra, StringComparison.OrdinalIgnoreCase) >= 0))
+				.Distinct()
+				.ToList();
+
+			Assert.That(sospechosos, Is.Empty,
+				"Miembros que nombran un vehiculo: " + string.Join(", ", sospechosos) + ". "
+				+ "Si un hecho del carro tiene que entrar, entra como PARAMETRO de la lectura y "
+				+ "sale con la respuesta.");
+		}
+
+		private static bool EsDelVehiculo(Type tipo)
+		{
+			Type[] delVehiculo =
+			{
+				typeof(Vin), typeof(OdometerReading), typeof(MaintenanceSchedule),
+				typeof(ScheduledOperation), typeof(Logbook), typeof(UsableReading),
+				typeof(AnchorReading),
+			};
+
+			if (delVehiculo.Contains(tipo)) return true;
+
+			return tipo.IsGenericType && tipo.GetGenericArguments().Any(EsDelVehiculo);
 		}
 	}
 }

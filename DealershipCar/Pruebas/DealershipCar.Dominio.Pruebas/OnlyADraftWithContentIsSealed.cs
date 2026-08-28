@@ -63,7 +63,7 @@ namespace DealershipCar.Dominio.Pruebas
 		[Test]
 		public void ADraftWithContentIsSealed()
 		{
-			revision.AcceptAPublication();
+			TheEngineOilEntersInto(revision);
 
 			revision.Seal();
 
@@ -77,7 +77,7 @@ namespace DealershipCar.Dominio.Pruebas
 		[Test]
 		public void SealingTwiceIsRefused()
 		{
-			revision.AcceptAPublication();
+			TheEngineOilEntersInto(revision);
 			revision.Seal();
 
 			DomainException error = Assert.Throws<DomainException>(() => revision.Seal());
@@ -97,7 +97,7 @@ namespace DealershipCar.Dominio.Pruebas
 		public void ASupersededRevisionCannotBeSealedAgain()
 		{
 			PublishedRevision sucesora = ASealedRevision(TheNextRevision);
-			revision.AcceptAPublication();
+			TheEngineOilEntersInto(revision);
 			revision.Seal();
 			revision.SupersededBy(sucesora);
 
@@ -111,10 +111,22 @@ namespace DealershipCar.Dominio.Pruebas
 		private static PublishedRevision ASealedRevision(string code)
 		{
 			PublishedRevision sellada = new PublishedRevision(code, PublishedAt.AddDays(30));
-			sellada.AcceptAPublication();
+			TheEngineOilEntersInto(sellada);
 			sellada.Seal();
 
 			return sellada;
+		}
+
+		// El contenido que llega a una revision es un ITEM PUBLICADO, desde T2. Hasta T1 era un
+		// contador, porque no habia items todavia; el camino de verdad lo reemplazo y esta ayuda
+		// es lo que quedo de aquel.
+		private static void TheEngineOilEntersInto(PublishedRevision draft)
+		{
+			draft.PublishAFluidSpecification(
+				FluidKindCode.EngineOil,
+				new FluidSpecification(
+					FluidKind.EngineOil, "5W-30", 4.6m, VolumeUnit.UnitA,
+					new PublishedInterval(15000, DistanceUnit.UnitA, 365)));
 		}
 	}
 }

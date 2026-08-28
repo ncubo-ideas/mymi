@@ -33,8 +33,13 @@ namespace DealershipCar.Dominio.Pruebas
 		private static readonly DateTime PublishedAt = new DateTime(2025, 3, 14, 10, 0, 0);
 
 		// La lista blanca de PublishedRevision: la identidad y el instante que recibio, la
-		// proyeccion del estado, las tres preguntas totales, el accesor guardado del sucesor, y
-		// las dos transiciones mas el camino por el que entra contenido. Nada que reabra.
+		// proyeccion del estado, las tres preguntas totales, el accesor guardado del sucesor, las
+		// dos transiciones, y el camino por el que entra contenido con su par de lectura. Nada
+		// que reabra.
+		//
+		// EN T2 CRECIO, y va a crecer de nuevo en T3 con los otros cinco items: AcceptAPublication
+		// -- el contador de T1 -- salio, y entro el camino de publicacion de verdad. Cada miembro
+		// nuevo se lee contra esta ley PRIMERO y se agrega DESPUES.
 		private static readonly string[] LoQueUnaRevisionPuedeExponer =
 		{
 			".ctor",
@@ -45,7 +50,9 @@ namespace DealershipCar.Dominio.Pruebas
 			"HasContent",
 			"HasBeenSuperseded",
 			"SupersededByCode",
-			"AcceptAPublication",
+			"PublishAFluidSpecification",
+			"HasAFluidSpecification",
+			"DescribeFluidSpecification",
 			"Seal",
 			"SupersededBy",
 		};
@@ -56,20 +63,23 @@ namespace DealershipCar.Dominio.Pruebas
 		public void Setup()
 		{
 			revision = new PublishedRevision(TheRevision, PublishedAt);
-			revision.AcceptAPublication();
+			TheEngineOilEntersInto(revision);
 			revision.Seal();
 		}
 
 		[Test]
 		public void PublishingIntoASealedRevisionIsRefused()
 		{
-			DomainException error =
-				Assert.Throws<DomainException>(() => revision.AcceptAPublication());
+			DomainException error = Assert.Throws<DomainException>(
+				() => TheBrakeFluidEntersInto(revision));
 
 			Assert.That(error.Message, Does.Contain("Sealed"),
 				"El mensaje nombra el estado que rechazo la publicacion.");
 			Assert.That(revision.ReadState(), Is.EqualTo("Sealed"),
 				"Y el rechazo es inerte: la revision sigue sellada, con el contenido que tenia.");
+			Assert.That(revision.HasAFluidSpecification(FluidKindCode.BrakeFluid), Is.False,
+				"Inerte de verdad: lo que se quiso colar no entro. Si hubiera entrado y solo se "
+				+ "hubiera reventado despues, la revision ya diria algo distinto de lo que dijo.");
 		}
 
 		[Test]
@@ -77,11 +87,34 @@ namespace DealershipCar.Dominio.Pruebas
 		{
 			revision.SupersededBy(ASealedRevision(TheNextRevision));
 
-			DomainException error =
-				Assert.Throws<DomainException>(() => revision.AcceptAPublication());
+			DomainException error = Assert.Throws<DomainException>(
+				() => TheBrakeFluidEntersInto(revision));
 
 			Assert.That(error.Message, Does.Contain("Superseded"));
 			Assert.That(revision.ReadState(), Is.EqualTo("Superseded"));
+		}
+
+		// Y lo que la revision publico ANTES de sellarse sigue ahi y se puede leer: cerrada
+		// quiere decir que no entra nada nuevo, no que deje de contestar. Una revision sellada
+		// que perdiera su contenido seria la unica que puede contestar contestando nada.
+		[Test]
+		public void ASealedRevisionStillAnswersForWhatItPublishedBeforeSealing()
+		{
+			Assert.That(revision.HasAFluidSpecification(FluidKindCode.EngineOil), Is.True);
+			Assert.That(revision.DescribeFluidSpecification(FluidKindCode.EngineOil),
+				Does.Contain("5W-30"));
+		}
+
+		// El par de E41 sobre el contenido: la pregunta de presencia es TOTAL y el accesor esta
+		// GUARDADO. Pedir la clausula de un fluido que esta revision no publico es un defecto de
+		// quien llama -- una clausula vacia se leeria como una especificacion sin grado.
+		[Test]
+		public void TheClauseOfAKindTheRevisionDidNotPublishCannotBeRead()
+		{
+			Assert.That(revision.HasAFluidSpecification(FluidKindCode.Coolant), Is.False);
+
+			Assert.Throws<DomainException>(
+				() => revision.DescribeFluidSpecification(FluidKindCode.Coolant));
 		}
 
 		[Test]
@@ -128,10 +161,28 @@ namespace DealershipCar.Dominio.Pruebas
 		private static PublishedRevision ASealedRevision(string code)
 		{
 			PublishedRevision sellada = new PublishedRevision(code, PublishedAt.AddDays(30));
-			sellada.AcceptAPublication();
+			TheEngineOilEntersInto(sellada);
 			sellada.Seal();
 
 			return sellada;
+		}
+
+		private static void TheEngineOilEntersInto(PublishedRevision draft)
+		{
+			draft.PublishAFluidSpecification(
+				FluidKindCode.EngineOil,
+				new FluidSpecification(
+					FluidKind.EngineOil, "5W-30", 4.6m, VolumeUnit.UnitA,
+					new PublishedInterval(15000, DistanceUnit.UnitA, 365)));
+		}
+
+		private static void TheBrakeFluidEntersInto(PublishedRevision draft)
+		{
+			draft.PublishAFluidSpecification(
+				FluidKindCode.BrakeFluid,
+				new FluidSpecification(
+					FluidKind.BrakeFluid, "DOT 4", 1.0m, VolumeUnit.UnitA,
+					new PublishedInterval(0, DistanceUnit.UnitA, 730)));
 		}
 
 		private static Type TipoQueDevuelve(MemberInfo miembro)

@@ -40,7 +40,7 @@ namespace DealershipCar.Dominio.Pruebas
 		public void Setup()
 		{
 			revision = new PublishedRevision(TheRevision, PublishedAt);
-			revision.AcceptAPublication();
+			TheEngineOilEntersInto(revision);
 			revision.Seal();
 		}
 
@@ -87,7 +87,7 @@ namespace DealershipCar.Dominio.Pruebas
 		{
 			PublishedRevision sucesoraSinSellar =
 				new PublishedRevision(TheNextRevision, PublishedAt.AddDays(30));
-			sucesoraSinSellar.AcceptAPublication();
+			TheEngineOilEntersInto(sucesoraSinSellar);
 
 			DomainException error = Assert.Throws<DomainException>(
 				() => revision.SupersededBy(sucesoraSinSellar));
@@ -155,10 +155,19 @@ namespace DealershipCar.Dominio.Pruebas
 		private static PublishedRevision ASealedRevision(string code)
 		{
 			PublishedRevision sellada = new PublishedRevision(code, PublishedAt.AddDays(30));
-			sellada.AcceptAPublication();
+			TheEngineOilEntersInto(sellada);
 			sellada.Seal();
 
 			return sellada;
+		}
+
+		private static void TheEngineOilEntersInto(PublishedRevision draft)
+		{
+			draft.PublishAFluidSpecification(
+				FluidKindCode.EngineOil,
+				new FluidSpecification(
+					FluidKind.EngineOil, "5W-30", 4.6m, VolumeUnit.UnitA,
+					new PublishedInterval(15000, DistanceUnit.UnitA, 365)));
 		}
 	}
 }

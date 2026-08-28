@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 
 namespace DealershipCar.Dominio
 {
@@ -10,8 +11,10 @@ namespace DealershipCar.Dominio
 	/// </summary>
 	internal sealed class PublishedRevision
 	{
+		private readonly Dictionary<FluidKindCode, FluidSpecification> _fluids =
+			new Dictionary<FluidKindCode, FluidSpecification>();
+
 		private RevisionState _state = RevisionState.Draft;
-		private int _publications;
 		private string _supersededByCode = string.Empty;
 
 		/// <summary>
@@ -66,7 +69,7 @@ namespace DealershipCar.Dominio
 		/// </summary>
 		internal bool HasContent()
 		{
-			return _publications > 0;
+			return _fluids.Count > 0;
 		}
 
 		/// <summary>
@@ -94,19 +97,45 @@ namespace DealershipCar.Dominio
 		}
 
 		/// <summary>
-		/// Entra una publicacion a la revision. Es el unico camino por el que la revision gana
-		/// contenido, y solo un borrador lo acepta: publicar en una revision que ya contesta
-		/// cambiaria lo que dijo sin que nadie la sustituyera.
+		/// Entra a la revision el fluido que el modelo lleva de esa clase. Solo un borrador lo
+		/// acepta: publicar en una revision que ya contesta cambiaria lo que dijo sin que nadie la
+		/// sustituyera. Dentro de un mismo borrador, la ultima publicacion de una clase es la que
+		/// queda -- es una correccion antes de sellar, y el borrador todavia no contesto nada.
 		/// </summary>
-		internal void AcceptAPublication()
+		internal void PublishAFluidSpecification(FluidKindCode kind, FluidSpecification fluid)
 		{
-			if (_state != RevisionState.Draft)
+			if (fluid == null)
 				throw new DomainException(
-					$"Se pidio publicar en la revision '{Code}', que esta {_state.Name}. Una "
-					+ "revision deja de aceptar contenido cuando se sella, porque desde ese momento "
-					+ "ya contesta y toda respuesta que dio la nombra.");
+					$"Se pidio publicar un fluido en la revision '{Code}' sin decir cual. Publicar "
+					+ "nada le daria contenido a la revision sin darle nada que contestar.");
 
-			_publications++;
+			RefuseContentUnlessItIsStillADraft();
+
+			_fluids[kind] = fluid;
+		}
+
+		/// <summary>
+		/// Si esta revision publico algo sobre esa clase de fluido. TOTAL: una revision publica lo
+		/// que publica y no tiene por que traer las seis clases.
+		/// </summary>
+		internal bool HasAFluidSpecification(FluidKindCode kind)
+		{
+			return _fluids.ContainsKey(kind);
+		}
+
+		/// <summary>
+		/// La clausula que compuso el fluido de esa clase. Accesor GUARDADO: pedirla de una clase
+		/// que esta revision no publico es un defecto de quien llama, no una clausula vacia -- una
+		/// clausula vacia se leeria como una especificacion sin grado y sin capacidad.
+		/// </summary>
+		internal string DescribeFluidSpecification(FluidKindCode kind)
+		{
+			if (!HasAFluidSpecification(kind))
+				throw new DomainException(
+					$"La revision '{Code}' no publico nada sobre {FluidKind.OfCode(kind).Name}. Hay "
+					+ "que preguntar primero si lo publico.");
+
+			return _fluids[kind].Describe();
 		}
 
 		/// <summary>
@@ -163,6 +192,15 @@ namespace DealershipCar.Dominio
 
 			_state = RevisionState.Superseded;
 			_supersededByCode = supersedingRevision.Code;
+		}
+
+		private void RefuseContentUnlessItIsStillADraft()
+		{
+			if (_state != RevisionState.Draft)
+				throw new DomainException(
+					$"Se pidio publicar en la revision '{Code}', que esta {_state.Name}. Una "
+					+ "revision deja de aceptar contenido cuando se sella, porque desde ese momento "
+					+ "ya contesta y toda respuesta que dio la nombra.");
 		}
 	}
 }
