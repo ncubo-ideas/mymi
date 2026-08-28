@@ -113,7 +113,7 @@ h1:focus, h1:focus-visible { outline: none; }
 
 /* ------------------------------------------------------------------- estructura */
 
-.tablero { max-width: 74rem; margin: 0 auto; padding: 28px 22px 72px; }
+.tablero { max-width: 74rem; margin: 0 auto; padding: 22px 22px 72px; }
 
 /* Versalita espaciada: el rótulo de un instrumento no compite con su cifra. */
 .rotulo {
@@ -144,10 +144,19 @@ h1:focus, h1:focus-visible { outline: none; }
    empieza el parabrisas — todo el alto que se gaste acá se lo quita a los
    instrumentos. */
 
+/* DE ANCHO COMPLETO, con el contenido en la misma columna que los instrumentos. El capó
+   se subió al layout cuando entraron las pestañas: la marca es de toda la app, y
+   repetirla en cada pantalla además competía con el título de la pantalla.
+
+   El par `.capo` / `.capo-dentro` es el patrón de la casa: el de afuera pone el color y
+   el borde de punta a punta, el de adentro respeta el ancho de lectura. */
 .capo {
-    display: flex; align-items: center; flex-wrap: wrap; gap: 14px;
-    padding-bottom: 16px; margin-bottom: 18px;
     border-bottom: 1px solid var(--bisel);
+    background: var(--fondo);
+}
+.capo-dentro {
+    max-width: 74rem; margin: 0 auto; padding: 14px 22px;
+    display: flex; align-items: center; flex-wrap: wrap; gap: 14px;
 }
 
 .marca { display: flex; align-items: center; gap: 10px; }
@@ -169,6 +178,52 @@ h1:focus, h1:focus-visible { outline: none; }
 }
 .placa .apodo {
     font-family: var(--sans); letter-spacing: 0; font-size: 13px; color: var(--tenue);
+}
+
+/* ------------------------------------------------------------------ las pestañas
+
+   UNA SOLA UI que se comporta distinto por resolución: pestañas a la derecha del capó en
+   escritorio, barra fija al pie en teléfono. El marcado es uno solo y esto decide dónde se
+   paran. Es el patrón de Compras, y se sigue textual porque ya resolvió sus problemas.
+
+   LA ACTIVA SE MARCA CON UN SUBRAYADO Y NO CON UN RELLENO: con relleno, la etiqueta encima
+   del color de marca no llegaba ni al AA; con subrayado, el texto se queda en --tinta sobre
+   el fondo y el contraste es el de siempre. */
+
+.pestanas { margin-left: auto; }
+.pestanas-dentro { display: flex; gap: 2px; }
+
+.pestana {
+    position: relative;
+    display: inline-flex; align-items: center; gap: 7px;
+    padding: 8px 13px; border-radius: 7px;
+    color: var(--tenue); text-decoration: none;
+    font-size: 13.5px; font-weight: 600; line-height: 1;
+    transition: color .12s ease;
+}
+.pestana:hover { color: var(--tinta); background: rgba(126, 196, 207, .08); }
+.pestana:focus-visible { outline: 2px solid var(--cobre); outline-offset: 2px; }
+
+/* La clase `active` la pone NavLink de Blazor; no hay modificador propio. */
+.pestana.active { color: var(--tinta); }
+.pestana.active::after {
+    content: "";
+    position: absolute; left: 13px; right: 13px; bottom: -15px;
+    height: 3px; border-radius: 3px 3px 0 0;
+    background: var(--cobre);
+}
+
+.pestana-icono { width: 1.15rem; height: 1.15rem; flex: 0 0 auto; }
+
+/* EL BADGE DE LOS TRAMOS BLOQUEADOS. Va en ámbar porque es exactamente lo que el ámbar
+   significa en esta app -algo que espera un dato tuyo- y nunca en rojo, que está reservado
+   a la severidad «urgente» del dominio. */
+.pestana-badge {
+    display: inline-flex; align-items: center; justify-content: center;
+    min-width: 17px; height: 17px; padding: 0 5px; border-radius: 9px;
+    background: var(--ambar); color: #26200a;
+    font-family: var(--cifras); font-variant-numeric: tabular-nums;
+    font-size: 11px; font-weight: 700; line-height: 1;
 }
 
 /* ------------------------------------------------------------------ la franja
@@ -566,13 +621,50 @@ code { font-family: var(--cifras); font-size: .9em; color: var(--cobre); }
     .instrumento--medidor { grid-row: span 2; }
 }
 
+/* EL BREAKPOINT DE LAS PESTAÑAS es el mismo de Compras: por debajo, la barra se va al pie,
+   que es donde llega el pulgar. `position: fixed` la saca del flujo, así que estar dentro
+   del capó no la ata a él — el marcado es uno solo y esto decide dónde se para. */
+@media (max-width: 767.98px) {
+    .pestanas {
+        position: fixed; left: 0; right: 0; bottom: 0; z-index: 900;
+        margin-left: 0;
+        background: var(--cara);
+        border-top: 1px solid var(--bisel-vivo);
+        box-shadow: 0 -2px 14px rgba(0, 0, 0, .35);
+        /* El área segura del teléfono, o la barra queda debajo del indicador de inicio. */
+        padding-bottom: env(safe-area-inset-bottom, 0);
+    }
+    .pestanas-dentro { gap: 0; }
+    .pestana {
+        flex: 1 1 0; flex-direction: column; gap: 4px;
+        justify-content: center; border-radius: 0;
+        padding: 9px 4px 8px; font-size: 11px; letter-spacing: .01em;
+    }
+    .pestana:hover { background: transparent; }
+    .pestana-icono { width: 1.35rem; height: 1.35rem; }
+
+    /* LA MISMA RAYA, ESPEJADA: la barra está al pie, así que su canto interior es el de
+       arriba. */
+    .pestana.active::after {
+        top: 0; bottom: auto; left: 50%; right: auto;
+        width: 2.4rem; transform: translateX(-50%);
+        border-radius: 0 0 3px 3px;
+    }
+
+    /* El badge no cabe al lado de la etiqueta en columna: va sobre el icono. */
+    .pestana-badge { position: absolute; top: 4px; left: 50%; margin-left: 6px; }
+
+    /* EL COLCHÓN para que la barra fija no tape la última fila de la ruta. */
+    .tablero { padding-bottom: 6rem; }
+}
+
 @media (max-width: 600px) {
-    .tablero { padding: 20px 15px 56px; }
+    .tablero { padding: 20px 15px 6rem; }
+    .capo-dentro { padding: 12px 15px; gap: 10px; }
     .instrumento, .instrumento--medidor, .instrumento--ancho, .instrumento--medio {
         grid-column: span 6; grid-row: auto;
     }
-    .capo { gap: 10px; }
-    .tecla--releer { margin-left: 0; }
+    .tecla--releer { margin-left: auto; }
     .eslabon { grid-template-columns: 18px minmax(0, 1fr); gap: 0 10px; }
     .eslabon-riel::before { left: 8px; }
     .parada-punto { left: 3px; }

@@ -1,0 +1,55 @@
+@page "/lealtad"
+@inherits PantallaDeCargas
+@using Cargas.App.Vistas
+
+<PageTitle>Lealtad · Estaciones Faro</PageTitle>
+
+<h1 class="solo-para-lectores">Mi lealtad</h1>
+
+@* LA PESTAÑA DE LEALTAD, todavia con lo que hay. Los puntos y el nivel LLEGAN como eventos
+   de la estacion y nunca se calculan aca: la tasa de canje es una regla del programa que
+   puede cambiar, y una app que la derivara discreparia con la estacion el dia que cambie.
+
+   Falta lo que la hace valer la pena -el carnet con el QR y los boletos de tombola-, y eso
+   es la fase E del plan: dos eventos nuevos desde la estacion, porque el sorteo se rifa
+   sobre numeros y un boleto fabricado aca no sirve para reclamar nada. *@
+@if (Error.Length > 0)
+{
+    <div class="parte parte--problema"><pre>@Error</pre></div>
+}
+
+<div class="cuadro">
+    <div class="instrumento instrumento--medio @(lealtad.Nivel.Length > 0 ? "" : "instrumento--apagado")">
+        <span class="rotulo">Puntos</span>
+        <div class="cifra">@Entero(lealtad.Saldo)</div>
+        <div class="cifra-pie">
+            @if (lealtad.Nivel.Length > 0)
+            {
+                <text>nivel <b>@lealtad.Nivel</b></text>
+                @if (lealtad.PuntosParaElSiguienteNivel > 0)
+                {
+                    <text> &middot; faltan <b>@Entero(lealtad.PuntosParaElSiguienteNivel)</b> para el siguiente</text>
+                }
+            }
+            else
+            {
+                <text>Todavía no entró ningún punto de la estación.</text>
+            }
+        </div>
+    </div>
+
+    <div class="instrumento instrumento--medio instrumento--apagado">
+        <span class="rotulo">Boletos de tómbola</span>
+        <div class="cifra cifra--chica">—</div>
+        <div class="cifra-pie">
+            Un boleto por cada ₡10 000 de una carga, y el resto no se acumula. Todavía no
+            llegan: los emite la estación.
+        </div>
+    </div>
+</div>
+
+@code {
+    private EstadoDeLealtad lealtad = new();
+
+    protected override void Releer() => lealtad = Estado.Lealtad();
+}

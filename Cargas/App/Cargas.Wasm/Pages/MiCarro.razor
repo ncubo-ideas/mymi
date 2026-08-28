@@ -1,0 +1,78 @@
+@page "/mi-carro"
+@inherits PantallaDeCargas
+@using Cargas.App.Vistas
+
+<PageTitle>Mi carro · Estaciones Faro</PageTitle>
+
+<h1 class="solo-para-lectores">Mi carro y mis ajustes</h1>
+
+@* LA PESTAÑA DE AJUSTES: el carro, las unidades y donde vive la bitacora.
+   La ficha y el selector de unidades entran en las fases C y D del plan. *@
+@if (Error.Length > 0)
+{
+    <div class="parte parte--problema"><pre>@Error</pre></div>
+}
+
+<div class="cuadro">
+    @foreach (VehiculoEnLista vehiculo in vehiculos)
+    {
+        <div class="instrumento instrumento--medio" @key="@vehiculo.Placa">
+            <span class="rotulo">@(vehiculo.TieneFicha ? vehiculo.Nombre : "Tu carro")</span>
+            <div class="cifra cifra--chica">@vehiculo.Placa</div>
+            <div class="cifra-pie">
+                <b>@vehiculo.Cargas</b> @(vehiculo.Cargas == 1 ? "carga" : "cargas")
+                @if (!vehiculo.TieneFicha)
+                {
+                    <text> &middot; todavía no tiene nombre</text>
+                }
+            </div>
+        </div>
+    }
+    @if (vehiculos.Count == 0)
+    {
+        <div class="instrumento instrumento--medio instrumento--apagado">
+            <span class="rotulo">Tu carro</span>
+            <div class="cifra cifra--chica">—</div>
+            <div class="cifra-pie">Todavía no entró ninguna carga.</div>
+        </div>
+    }
+</div>
+
+<h2 class="rotulo" style="margin:26px 0 10px">Dónde vive tu bitácora</h2>
+
+@if (Estado.HayCarpeta && !Estado.EnAlmacenamientoDelNavegador)
+{
+    <p class="apunte">
+        En la carpeta &laquo;@Estado.NombreDeLaCarpeta&raquo;, y se guarda después de cada
+        cambio. <b>Es el único modo en el que tu asistente la puede leer.</b>
+    </p>
+}
+else if (Estado.EnAlmacenamientoDelNavegador)
+{
+    <p class="apunte">
+        En este navegador. Sobrevive al cerrar, pero <b>tu asistente no la puede leer</b>:
+        para eso hace falta una carpeta tuya.
+    </p>
+}
+else
+{
+    <p class="apunte">
+        <strong>En ningún lado.</strong> La bitácora vive solo en memoria y se pierde al cerrar.
+    </p>
+}
+
+<div class="fila" style="margin-top:12px">
+    <button class="tecla tecla--contorno" @onclick="Exportar">Exportar a un archivo</button>
+</div>
+
+@code {
+    private IReadOnlyList<VehiculoEnLista> vehiculos = new List<VehiculoEnLista>();
+
+    protected override void Releer() => vehiculos = Estado.Vehiculos();
+
+    private Task Exportar() => Intentar("exportar la bitácora", async () =>
+    {
+        ResultadoDeExportacion resultado = await Estado.Exportar();
+        if (!resultado.Ok) throw new InvalidOperationException(resultado.Motivo);
+    });
+}

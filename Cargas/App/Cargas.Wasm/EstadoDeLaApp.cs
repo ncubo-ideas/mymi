@@ -48,6 +48,29 @@ public sealed class EstadoDeLaApp : IAsyncDisposable
 
 	public bool EstaArriba => app is not null;
 
+	/// <summary>SE DISPARA CUANDO EL ACTOR CAMBIO y las pantallas tienen que releer.
+	///
+	/// Existe por las pestañas: el boton de Actualizar vive en el layout y lo que hay que
+	/// releer vive en la pagina, asi que no alcanza con que quien aprieta repinte. Blazor
+	/// no observa servicios inyectados, y este singleton es lo unico que las cuatro
+	/// pantallas comparten.
+	///
+	/// Lo dispara TODO lo que cambia el estado del actor -arrancar, refrescar y cada
+	/// aporte-, y no solo el refresh: si un aporte hecho en la Ruta desbloquea un tramo,
+	/// el Tablero tiene que enterarse aunque nadie lo haya tocado.</summary>
+	/// <summary>Cuantas veces se fue a buscar datos. Es la llave que hace que el cuadro de
+	/// instrumentos se recree y vuelva a entrar animado.
+	///
+	/// La animacion se dispara al MONTAR, asi que lo que decide cuando corre no es el CSS:
+	/// es que el nodo se recree, y eso lo decide el @key. Sube SOLO acá y no en cada
+	/// lectura, para que anotar un kilometraje no haga entrar de nuevo a los seis
+	/// instrumentos: eso es respuesta a "fui a buscar y volvi", no a teclear un numero.</summary>
+	public int Refrescos { get; private set; }
+
+	public event Action? Cambio;
+
+	private void Avisar() => Cambio?.Invoke();
+
 	public bool HayCarpeta => puente.HayCarpeta;
 
 	public bool FaltaReotorgarPermiso => puente.FaltaReotorgarPermiso;
@@ -85,6 +108,12 @@ public sealed class EstadoDeLaApp : IAsyncDisposable
 
 
 	public ValueTask<string> ModoRecordado() => puente.ModoRecordado();
+
+	// Las preferencias de pantalla, tal cual salen del puente. Ver PuenteDeJournal.
+	public ValueTask<string> Preferencia(string nombre) => puente.Preferencia(nombre);
+
+	public ValueTask RecordarPreferencia(string nombre, string valor) =>
+		puente.RecordarPreferencia(nombre, valor);
 
 	public async ValueTask<ResultadoDeCarpeta> UsarAlmacenamientoDelNavegador()
 	{
@@ -186,6 +215,10 @@ public sealed class EstadoDeLaApp : IAsyncDisposable
 			UltimoMensaje += $" | al abrir no se pudo poner al dia ({ex.GetType().Name}: {ex.Message}). "
 			               + "Lo que ya estaba registrado se muestra igual.";
 		}
+
+		// Avisa aunque el refresh haya fallado: el actor esta arriba y hay journal que
+		// mostrar, que es de lo que sirve tener el dato propio.
+		Avisar();
 	}
 
 	// El unico camino por el que la app baja a disco. Recuerda si fallo, para que la
@@ -282,6 +315,8 @@ public sealed class EstadoDeLaApp : IAsyncDisposable
 
 		ResultadoDeRefresh resultado = await bucle!.Ejecutar(ct);
 		UltimoMensaje = $"refresh: {resultado}";
+		Refrescos++;
+		Avisar();
 		return resultado;
 	}
 
@@ -297,7 +332,7 @@ public sealed class EstadoDeLaApp : IAsyncDisposable
 	{
 		Exigir();
 		string rechazo = api!.AnotarOdometro(transaccion, kilometros, "km", origen);
-		if (rechazo.Length == 0) await BajarADisco();
+		if (rechazo.Length == 0) { await BajarADisco(); Avisar(); }
 		return rechazo;
 	}
 
@@ -305,7 +340,7 @@ public sealed class EstadoDeLaApp : IAsyncDisposable
 	{
 		Exigir();
 		string rechazo = api!.ConfirmarTanque(transaccion);
-		if (rechazo.Length == 0) await BajarADisco();
+		if (rechazo.Length == 0) { await BajarADisco(); Avisar(); }
 		return rechazo;
 	}
 
@@ -313,7 +348,7 @@ public sealed class EstadoDeLaApp : IAsyncDisposable
 	{
 		Exigir();
 		string rechazo = api!.DeclararTanque(transaccion, estado);
-		if (rechazo.Length == 0) await BajarADisco();
+		if (rechazo.Length == 0) { await BajarADisco(); Avisar(); }
 		return rechazo;
 	}
 
@@ -323,7 +358,7 @@ public sealed class EstadoDeLaApp : IAsyncDisposable
 		Exigir();
 		string rechazo = api!.CompletarFicha(placa, alias, marca, modelo, anio, color,
 			rendimientoDeFabrica);
-		if (rechazo.Length == 0) await BajarADisco();
+		if (rechazo.Length == 0) { await BajarADisco(); Avisar(); }
 		return rechazo;
 	}
 
@@ -343,7 +378,7 @@ public sealed class EstadoDeLaApp : IAsyncDisposable
 		if (motivo.Length > 0) return motivo;
 
 		string rechazo = api!.AdjuntarFoto(transaccion, nombre);
-		if (rechazo.Length == 0) await BajarADisco();
+		if (rechazo.Length == 0) { await BajarADisco(); Avisar(); }
 		return rechazo;
 	}
 

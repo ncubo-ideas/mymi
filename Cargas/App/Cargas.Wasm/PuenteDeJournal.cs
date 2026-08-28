@@ -129,6 +129,21 @@ public sealed class PuenteDeJournal : IAsyncDisposable
 	public async ValueTask<string> ModoRecordado() =>
 		await (await Modulo()).InvokeAsync<string>("modoRecordado");
 
+	// LAS PREFERENCIAS DE PANTALLA. Que pestaña quedo abierta y que carro se estaba
+	// mirando: son de este browser y no del expediente, asi que viven en IndexedDB al
+	// lado del handle de la carpeta y NO en el journal.
+	//
+	// La unidad de rendimiento NO usa esto: esa va al journal, porque cambia lo que la IA
+	// dice y no solo lo que se ve.
+	//
+	// Devuelve "" si no hay nada guardado o si IndexedDB fallo. Una preferencia ilegible
+	// no puede tumbar el arranque: la pantalla cae a su default.
+	public async ValueTask<string> Preferencia(string nombre) =>
+		await (await Modulo()).InvokeAsync<string>("preferencia", nombre);
+
+	public async ValueTask RecordarPreferencia(string nombre, string valor) =>
+		await (await Modulo()).InvokeAsync<bool>("recordarPreferencia", nombre, valor);
+
 	// El tercer modo: un archivo que la persona se lleva. No depende de ninguna API de
 	// almacenamiento, asi que funciona en cualquier navegador.
 	public async ValueTask<ResultadoDeExportacion> Exportar() =>

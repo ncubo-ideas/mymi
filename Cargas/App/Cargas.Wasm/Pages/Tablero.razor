@@ -1,0 +1,313 @@
+@page "/"
+@inherits PantallaDeCargas
+@using Cargas.App.Vistas
+
+<PageTitle>Mi tablero · Estaciones Faro</PageTitle>
+
+@* El h1 existe para los lectores de pantalla y para el FocusOnNavigate del router. No se
+   dibuja: en un tablero el titulo es la marca del capo, y un titular grande arriba le
+   comeria el alto a los instrumentos. *@
+<h1 class="solo-para-lectores">Mi tablero</h1>
+
+@if (Error.Length > 0)
+{
+    <div class="parte parte--problema"><pre>@Error</pre></div>
+}
+
+@* LA FRANJA. Lo primero de la pantalla es la frase del DOMINIO -«venías rindiendo
+   12.6 y el último tramo dio 9.4»-, armada con los hechos de ella y nunca un consejo
+   de plantilla que esta pantalla no tiene de dónde sacar. El color de la luz lo
+   decide la severidad del dominio; acá solo se pinta.
+
+   EL @key VA EN EL CUERPO Y NO EN LA FRANJA: sube en cada Releer y obliga a Blazor a
+   recrear los nodos -sin él, Actualizar parecía no hacer nada-, pero si el bloque
+   entero se recrea, el foco del botón recién apretado se pierde. *@
+<div class="franja @Tono()">
+    <span class="franja-luz"></span>
+    <div class="franja-texto" @key="@($"franja-{Estado.Refrescos}")">
+        @if (rendimiento.ParaSonia.Length > 0)
+        {
+            <p class="franja-frase">@Mayuscula(rendimiento.ParaSonia).</p>
+            @if (rendimiento.PideAlgo && rendimiento.Accion.Length > 0)
+            {
+                <p class="franja-accion">@Mayuscula(rendimiento.Accion).</p>
+            }
+        }
+        else
+        {
+            <p class="franja-frase">Todavía no hay cargas. Apretá <em>Actualizar</em>.</p>
+        }
+    </div>
+</div>
+
+@* ------------------------------------------------------------- EL CUADRO
+
+   Los instrumentos, en el orden en que se preguntan: cuánto me queda, cómo viene
+   rindiendo, cuándo tengo que cargar, cuánto me cuesta andar. *@
+<div class="cuadro" @key="@($"cuadro-{Estado.Refrescos}")">
+
+    <div class="instrumento instrumento--medidor">
+        <span class="rotulo">Autonomía</span>
+        @if (autonomia.Hay)
+        {
+            <MedidorDeAutonomia Fraccion="proxima.FraccionRestante"
+                                Descripcion="@DescripcionDelMedidor()" />
+            <div class="cifra">
+                ~@Entero(proxima.Hay ? proxima.KilometrosRestantes : autonomia.Kilometros)<span class="unidad">km</span>
+            </div>
+            <div class="cifra-pie">
+                @if (proxima.Hay)
+                {
+                    <text>lo que queda, estimado &middot; con el tanque lleno son
+                    <b>~@Entero(autonomia.Kilometros) km</b></text>
+                }
+                else
+                {
+                    <text>con el tanque lleno &middot; @Cifra(autonomia.CapacidadEnLitros) L
+                    a <b>@Cifra(autonomia.HabitualKmPorLitro) km/L</b></text>
+                }
+            </div>
+        }
+        else
+        {
+            <div class="cifra">—</div>
+            <div class="cifra-pie">
+                Hace falta un tramo cerrado entre dos tanques llenos para saber cuánto
+                rinde, y de ahí sale la autonomía.
+            </div>
+        }
+    </div>
+
+    <div class="instrumento instrumento--ancho">
+        <div class="fila">
+            <span class="rotulo crece">Rendimiento</span>
+            @if (rendimiento.Veredicto.Length > 0)
+            {
+                <span class="sello @Sello()">@rendimiento.Veredicto</span>
+            }
+        </div>
+
+        @if (rendimiento.Actual > 0)
+        {
+            <div class="fila">
+                <span class="cifra">@Cifra(rendimiento.Actual)<span class="unidad">km/L</span></span>
+                @if (rendimiento.HaySerie && rendimiento.CambioPorcentual != 0)
+                {
+                    @* La flecha y el signo son de la PRESENTACIÓN: en km/L más es
+                       mejor, en L/100km menos, y esa inversión no toca el veredicto.
+                       Por eso la clase la decide EstaMejorando y no el signo. *@
+                    <span class="delta @(rendimiento.EstaMejorando ? "delta--mejor"
+                        : rendimiento.EstaEmpeorando ? "delta--peor" : "delta--igual")">
+                        @(rendimiento.EstaMejorando ? "▲" : rendimiento.EstaEmpeorando ? "▼" : "=")
+                        @Math.Abs(rendimiento.CambioPorcentual)%
+                    </span>
+                }
+            </div>
+
+            @if (rendimiento.TramosCalculados > 0)
+            {
+                <ChispaDeTramos Tramos="tramos" Habitual="rendimiento.Habitual"
+                                PideAlgo="rendimiento.PideAlgo"
+                                Descripcion="@rendimiento.ParaSonia" />
+            }
+
+            <div class="cifra-pie">
+                @if (rendimiento.Habitual > 0)
+                {
+                    <text>tu nivel de siempre: <b>@Cifra(rendimiento.Habitual) km/L</b> &middot; </text>
+                }
+                sobre @rendimiento.TramosCalculados @(rendimiento.TramosCalculados == 1 ? "tramo" : "tramos")
+                entre tanques llenos@(rendimiento.TramosBloqueados > 0
+                    ? $", {rendimiento.TramosBloqueados} sin calcular" : "")
+            </div>
+        }
+        else
+        {
+            <div class="cifra">—</div>
+            <div class="cifra-pie">
+                @(rendimiento.QueFalta.Length > 0
+                    ? Mayuscula(rendimiento.QueFalta) + "."
+                    : "Todavía no hay un tramo cerrado entre dos tanques llenos.")
+            </div>
+        }
+    </div>
+
+    <div class="instrumento @(proxima.Hay ? "" : "instrumento--apagado")">
+        <span class="rotulo">Próxima carga</span>
+        @if (proxima.Hay)
+        {
+            <div class="cifra cifra--chica">
+                en ~@proxima.DiasEstimados<span class="unidad">@(proxima.DiasEstimados == 1 ? "día" : "días")</span>
+            </div>
+            <div class="cifra-pie">
+                estimado &middot; te quedan <b>~@Entero(proxima.KilometrosRestantes) km</b>
+                y andás <b>@Cifra(proxima.KilometrosPorDia) km</b> por día
+            </div>
+        }
+        else
+        {
+            <div class="cifra cifra--chica">—</div>
+            <div class="cifra-pie">Hace falta la autonomía y tu promedio diario.</div>
+        }
+    </div>
+
+    @* UN INSTRUMENTO POR MONEDA, y no el primero de la lista. El dominio reparte el
+       costo por moneda porque sumar colones con dólares no significa nada, y quedarse
+       con costos[0] escondía la otra sin decirlo: la pantalla se veía completa y
+       correcta, que es la peor forma de perder un dato. *@
+    @foreach (CostoEnLista costo in costos)
+    {
+        <div class="instrumento" @key="@($"costo-{costo.Moneda}")">
+            <span class="rotulo">Costo por kilómetro</span>
+            <div class="cifra cifra--chica">
+                @Simbolo(costo.Moneda)@Plata(costo.MontoPorKilometro)<span class="unidad">por km</span>
+            </div>
+            <div class="cifra-pie">
+                sobre <b>@Entero(costo.Kilometros) km</b> con kilometraje anotado
+            </div>
+        </div>
+    }
+    @if (costos.Count == 0)
+    {
+        <div class="instrumento instrumento--apagado">
+            <span class="rotulo">Costo por kilómetro</span>
+            <div class="cifra cifra--chica">—</div>
+            <div class="cifra-pie">Hace falta kilometraje anotado para repartir el gasto.</div>
+        </div>
+    }
+
+    <div class="instrumento instrumento--medio @(propuesta.Hay ? "" : "instrumento--apagado")">
+        <span class="rotulo">Odómetro</span>
+        @if (propuesta.Hay)
+        {
+            <TiraDeOdometro Kilometros="propuesta.Kilometros"
+                            Descripcion="@($"{Entero(propuesta.Kilometros)} kilómetros, estimado para hoy")" />
+            <div class="cifra-pie">
+                hoy, estimado &middot; <b>@Cifra(propuesta.KilometrosPorDia) km</b> por día
+                desde tu última lectura, hace
+                <b>@propuesta.DiasDesdeLaUltimaLectura</b> @(propuesta.DiasDesdeLaUltimaLectura == 1 ? "día" : "días")
+            </div>
+        }
+        else
+        {
+            <TiraDeOdometro Kilometros="0" Descripcion="sin lecturas de odómetro" />
+            <div class="cifra-pie">
+                Nadie sabe el kilometraje de tu carro salvo vos. Anotalo en una carga
+                de la ruta y este contador arranca.
+            </div>
+        }
+    </div>
+
+    @* Mismo criterio que el costo: el gasto del período viene repartido por moneda. *@
+    @foreach (GastoEnLista gasto in gastos)
+    {
+        <div class="instrumento instrumento--medio" @key="@($"gasto-{gasto.Moneda}")">
+            <span class="rotulo">Gasto @MesDelGasto()</span>
+            <div class="cifra cifra--chica">@Simbolo(gasto.Moneda)@Plata(gasto.Monto)</div>
+            <div class="cifra-pie">
+                <b>@gasto.Cargas</b> @(gasto.Cargas == 1 ? "carga" : "cargas") &middot;
+                <b>@Cifra(gasto.Litros) L</b>
+            </div>
+        </div>
+    }
+    @if (gastos.Count == 0)
+    {
+        <div class="instrumento instrumento--medio instrumento--apagado">
+            <span class="rotulo">Gasto</span>
+            <div class="cifra cifra--chica">—</div>
+            <div class="cifra-pie">Todavía no entró ninguna carga.</div>
+        </div>
+    }
+</div>
+
+@code {
+    private IReadOnlyList<VehiculoEnLista> vehiculos = new List<VehiculoEnLista>();
+    private IReadOnlyList<TramoEnLista> tramos = new List<TramoEnLista>();
+    private IReadOnlyList<CostoEnLista> costos = new List<CostoEnLista>();
+    private IReadOnlyList<GastoEnLista> gastos = new List<GastoEnLista>();
+    private RendimientoDelVehiculo rendimiento = new();
+    private AutonomiaDelVehiculo autonomia = new();
+    private ProximaCargaDelVehiculo proxima = new();
+    private CompletitudDelVehiculo completitud = new();
+    private OdometroPropuesto propuesta = new();
+    private DateTime mesDelGasto;
+
+    // ------------------------------------------------------------------ presentacion
+
+    // El tono de la franja lo decide el DOMINIO: la severidad del veredicto, traducida al
+    // semaforo de la marca. El rojo queda reservado y hoy nadie lo produce.
+    private string Tono() => rendimiento.Severidad switch
+    {
+        "urgente"         => "franja--problema",
+        "consulte pronto" => "franja--atencion",
+        "vigilar"         => "franja--atencion",
+        _                 => "",
+    };
+
+    private string Sello()
+    {
+        if (rendimiento.SugiereRegistrarLaCargaQueFalto) return "sello--dudoso";
+        if (rendimiento.Severidad == "urgente") return "sello--problema";
+        if (rendimiento.PideAlgo) return "sello--atencion";
+        if (!rendimiento.HaySerie) return "";
+        return "sello--bien";
+    }
+
+    private string DescripcionDelMedidor() => proxima.Hay
+        ? $"Te quedan unos {Entero(proxima.KilometrosRestantes)} kilometros de los "
+          + $"{Entero(autonomia.Kilometros)} de un tanque lleno"
+        : $"Con el tanque lleno te alcanza para unos {Entero(autonomia.Kilometros)} kilometros";
+
+    // CON EL ANIO. El periodo es el mes de la ULTIMA CARGA, no el del calendario: si esa
+    // carga es de hace un anio, "gasto de agosto" se lee como el agosto de este anio y el
+    // rotulo miente por omision.
+    private string MesDelGasto() => mesDelGasto == default
+        ? "" : "de " + mesDelGasto.ToString("MMMM yyyy", Cultura);
+
+    // ------------------------------------------------------------------ la lectura
+
+    // TODO lo que se ve sale de consultar al actor. El payload de la estacion nunca llega
+    // hasta aca: solo entra como argumento de un comando, dentro del bucle.
+    protected override void Releer()
+    {
+        vehiculos = Estado.Vehiculos();
+
+        // El demo es de un vehiculo; el modelo contempla varios y este tablero, por ahora,
+        // es el del primero con toda su historia.
+        if (vehiculos.Count == 0)
+        {
+            tramos = new List<TramoEnLista>();
+            costos = new List<CostoEnLista>();
+            gastos = new List<GastoEnLista>();
+            rendimiento = new RendimientoDelVehiculo();
+            autonomia = new AutonomiaDelVehiculo();
+            proxima = new ProximaCargaDelVehiculo();
+            completitud = new CompletitudDelVehiculo();
+            propuesta = new OdometroPropuesto();
+            mesDelGasto = default;
+            return;
+        }
+
+        string placa = vehiculos[0].Placa;
+        tramos = Estado.Tramos(placa);
+        rendimiento = Estado.Rendimiento(placa);
+        autonomia = Estado.Autonomia(placa);
+        completitud = Estado.Completitud(placa);
+        costos = Estado.Costos(placa);
+
+        // El "hoy" de la proyeccion lo pone ESTA caratula: el dominio no lee el reloj. Si
+        // lo hiciera, el mismo journal reproducido manana daria otra respuesta.
+        propuesta = Estado.Odometro(placa, DateTime.Now);
+        proxima = Estado.ProximaCarga(placa, DateTime.Now);
+
+        // EL GASTO DEL MES DE LA ULTIMA CARGA, no el del mes del calendario. Con el mes
+        // corriente el instrumento aparece vacio en cuanto pasan treinta dias sin cargar, y
+        // "0" no es la respuesta: la respuesta es cuanto llevaba gastado la ultima vez.
+        gastos = new List<GastoEnLista>();
+        mesDelGasto = default;
+        foreach (CargaEnLista carga in Estado.Cargas(placa))
+            if (carga.Fecha > mesDelGasto) mesDelGasto = carga.Fecha;
+        if (mesDelGasto != default)
+            gastos = Estado.Gastos(mesDelGasto.Year, mesDelGasto.Month);
+    }
+}
