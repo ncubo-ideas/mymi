@@ -1,0 +1,32 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!-- LA SUPERFICIE. Acá viven los performs: los comandos que escriben y las consultas
+       que leen. La consola llama a `HolaMundoAPI`, nunca al actor crudo. En una app de
+       verdad el browser y el asistente entran por la MISMA puerta — y que la lógica sea
+       una sola es lo que hace que la persona y la IA vean lo mismo.
+
+       NO REFERENCIA AL DOMINIO, y no es un olvido. El dominio es `internal`: este nodo
+       no nombra ni un tipo suyo en C#. Los nombres viajan DENTRO de los scripts y los
+       resuelve el motor por reflexión, que no tiene frontera de assembly. -->
+
+  <PropertyGroup>
+    <TargetFramework>net9.0</TargetFramework>
+    <Nullable>disable</Nullable>
+    <ImplicitUsings>disable</ImplicitUsings>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Ncubo.Puppeteer" Version="$(VersionDelMotor)" />
+  </ItemGroup>
+
+  <!-- El dominio no se referencia, pero tiene que ESTAR junto al ejecutable: el motor lo
+       carga en tiempo de ejecución. Esto lo copia sin crear una referencia de
+       compilación, que es justo lo que mantiene la cerca en pie. -->
+  <ItemGroup>
+    <ProjectReference Include="..\..\Dominio\HolaMundo.Dominio.csproj"
+                      ReferenceOutputAssembly="false"
+                      OutputItemType="Content"
+                      CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
+
+</Project>
