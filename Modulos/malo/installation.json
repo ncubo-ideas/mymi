@@ -1,0 +1,13 @@
+{
+  "//": "FIXTURE DE PRUEBAS, en el scratchpad a proposito. NO va al repo.",
+  "shell": {
+    "type": "stdio",
+    "command": "dotnet",
+    "arguments": [
+      "C:/Users/edgar/AppData/Local/Temp/claude/C--Users-edgar-Documents-Game-Gnothi/c527887f-8761-483b-a052-f36e20ce3580/Modulo.Malo/bin/Debug/net9.0/Modulo.Malo.dll"
+    ]
+  },
+  "grantedFolder": "C:/Gnothi/nada",
+  "enabled": false,
+  "disabledTools": []
+}

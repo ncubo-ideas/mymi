@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    package="com.ncubo.lab.octopus">
+
+    <uses-sdk android:minSdkVersion="34" android:targetSdkVersion="36" />
+
+    <!-- Sin esto, bindService a Gnothi devuelve false EN SILENCIO. Es la trampa de package
+         visibility de Android 11+, y ya nos costo una vez. -->
+    <queries>
+        <package android:name="com.ncubo.gnothi.host" />
+    </queries>
+
+    <application
+        android:label="Gnothi Puente"
+        android:allowBackup="false">
+
+        <!-- DESCUBRIMIENTO. Claude hace queryIntentContentProviders con esta accion, y luego
+             consulta content://<authority>/tools esperando UNA fila con UNA columna "tools". -->
+        <provider
+            android:name=".ToolsProvider"
+            android:authorities="com.ncubo.lab.octopus.tools"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="com.anthropic.claude.tool.DISCOVER_TOOLS" />
+            </intent-filter>
+        </provider>
+
+        <!-- EJECUCION. Claude bindea con esta accion y setPackage al nuestro, y manda
+             transaccion 1 con (toolName, argsJson, callback). -->
+        <service
+            android:name=".ToolExecService"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="com.anthropic.claude.tool.EXECUTE_TOOL" />
+            </intent-filter>
+        </service>
+        <activity android:name=".SelfTestActivity" android:exported="true">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity>
+
+    </application>
+</manifest>

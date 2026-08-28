@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<appfunctions>
+    <appfunction>
+        <id>com.ncubo.lab.caratula#facturas_total_de_facturas</id>
+        <functionId>com.ncubo.lab.caratula#facturas_total_de_facturas</functionId>
+        <packageName>com.ncubo.lab.caratula</packageName>
+        <enabledByDefault>true</enabledByDefault>
+        <restrictCallersWithExecuteAppFunctions>false</restrictCallersWithExecuteAppFunctions>
+        <description>Devuelve cuanto gasto en total la persona, sumando todas las facturas de compra que su propia app registro en la carpeta de ella en este telefono. Devuelve tambien cuantas facturas son y hasta que evento del proveedor leyo la app, que indica si esta al dia. El dato sale del registro propio de la persona guardado en el dispositivo, no de ningun servidor. Usala cuando pregunten por el total de sus facturas, cuanto llevan gastado o cuantas facturas tienen.</description>
+        <schemaCategory>utils</schemaCategory>
+        <schemaName>total_de_facturas</schemaName>
+        <schemaVersion>1</schemaVersion>
+        <response>
+            <id>unused</id>
+            <valueType>
+                <id>unused</id>
+                <isNullable>false</isNullable>
+                <type>8</type>
+            </valueType>
+            <description>El total en JSON: hayDatos, total, cantidadDeFacturas, ultimoEventoLeido.</description>
+        </response>
+    </appfunction>
+</appfunctions>
