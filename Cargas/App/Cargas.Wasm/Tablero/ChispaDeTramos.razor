@@ -1,0 +1,119 @@
+@using System.Globalization
+@using Cargas.App.Vistas
+
+@* LA TRAYECTORIA CONTRA LA LÍNEA BASE — FormaDeLectura.TrayectoriaConLineaBase, al
+   tamaño de un instrumento.
+
+   POR QUÉ CHICA. En un expediente de laboratorio la serie ES la lectura: la pregunta
+   «¿viene subiendo?» solo la contesta la curva, y por eso allá el gráfico es el héroe
+   de la pantalla. Acá la lectura es el VEREDICTO —«venías rindiendo 12.6 y el último
+   tramo dio 9.4»— y la curva es lo que lo respalda. Un gráfico grande le robaría el
+   primer plano a la frase que sí contesta la pregunta.
+
+   SOLO LOS TRAMOS CALCULADOS. Un tramo bloqueado no tiene número que poner, y su lugar
+   en la pantalla es el bache de la ruta, no un hueco mudo en la curva. Los calculados
+   pero NO comparables se dibujan huecos: están, pero no se leen contra la banda. *@
+
+@if (Calculados().Count > 0)
+{
+    <svg class="chispa" viewBox="0 0 300 46" preserveAspectRatio="none"
+         role="img" aria-label="@Descripcion">
+        @if (Habitual > 0)
+        {
+            <line class="linea-base" x1="4" y1="@N(Y((double)Habitual))"
+                  x2="296" y2="@N(Y((double)Habitual))" stroke-width="1" />
+        }
+
+        @if (Comparables().Count > 1)
+        {
+            <polyline class="@(PideAlgo ? "trazo trazo--atencion" : "trazo")"
+                      points="@Trazo()" pathLength="1" />
+        }
+
+        @foreach ((double x, double y, bool comparable) in Puntos())
+        {
+            <circle class="@Clase(comparable)" cx="@N(x)" cy="@N(y)" r="3" />
+        }
+    </svg>
+}
+
+@code {
+    [Parameter] public IReadOnlyList<TramoEnLista> Tramos { get; set; } = new List<TramoEnLista>();
+    [Parameter] public decimal Habitual { get; set; }
+    [Parameter] public bool PideAlgo { get; set; }
+    [Parameter] public string Descripcion { get; set; } = "";
+
+    private string Clase(bool comparable) =>
+        !comparable ? "punto punto--hueco" : PideAlgo ? "punto punto--atencion" : "punto";
+
+    private List<TramoEnLista> Calculados()
+    {
+        var calculados = new List<TramoEnLista>();
+        foreach (TramoEnLista tramo in Tramos)
+            if (tramo.EstaCalculado) calculados.Add(tramo);
+        return calculados;
+    }
+
+    private List<TramoEnLista> Comparables()
+    {
+        var comparables = new List<TramoEnLista>();
+        foreach (TramoEnLista tramo in Calculados())
+            if (tramo.EsComparable) comparables.Add(tramo);
+        return comparables;
+    }
+
+    // La escala sale de los datos que hay, con aire arriba y abajo: un rendimiento no
+    // arranca en cero porque la banda quedaría pegada al techo y la variación —que es
+    // lo único que esta forma tiene para contar— se aplastaría contra el borde.
+    private (double minimo, double maximo) Escala()
+    {
+        double minimo = double.MaxValue, maximo = double.MinValue;
+        foreach (TramoEnLista tramo in Calculados())
+        {
+            minimo = Math.Min(minimo, (double)tramo.Rendimiento);
+            maximo = Math.Max(maximo, (double)tramo.Rendimiento);
+        }
+        if (Habitual > 0)
+        {
+            minimo = Math.Min(minimo, (double)Habitual);
+            maximo = Math.Max(maximo, (double)Habitual);
+        }
+        double aire = Math.Max((maximo - minimo) * 0.2, 0.5);
+        return (minimo - aire, maximo + aire);
+    }
+
+    private double Y(double rendimiento)
+    {
+        (double minimo, double maximo) = Escala();
+        double proporcion = (rendimiento - minimo) / (maximo - minimo);
+        return 42 - proporcion * 38;
+    }
+
+    private List<(double x, double y, bool comparable)> Puntos()
+    {
+        List<TramoEnLista> calculados = Calculados();
+        var puntos = new List<(double, double, bool)>();
+        if (calculados.Count == 0) return puntos;
+
+        double paso = calculados.Count > 1 ? 292.0 / (calculados.Count - 1) : 0;
+        for (int i = 0; i < calculados.Count; i++)
+            puntos.Add((4 + paso * i, Y((double)calculados[i].Rendimiento), calculados[i].EsComparable));
+        return puntos;
+    }
+
+    // El trazo une solo los COMPARABLES: el punto hueco se ve, pero no tuerce la curva
+    // que se lee contra la banda.
+    private string Trazo()
+    {
+        var trazo = new System.Text.StringBuilder();
+        foreach ((double x, double y, bool comparable) in Puntos())
+        {
+            if (!comparable) continue;
+            if (trazo.Length > 0) trazo.Append(' ');
+            trazo.Append(N(x)).Append(',').Append(N(y));
+        }
+        return trazo.ToString();
+    }
+
+    private static string N(double valor) => valor.ToString("0.#", CultureInfo.InvariantCulture);
+}

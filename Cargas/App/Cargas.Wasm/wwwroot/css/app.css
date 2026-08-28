@@ -1,552 +1,545 @@
-/* Mis exámenes — la carátula que la persona instala.
+/* EL TABLERO — la carátula que la persona instala.
  *
- * LA MARCA ES LABORATORIO CLÍNICO DELFOS, y las especificaciones vienen del código real
- * de su página (LaboratorioDelfos.module.css en nCuboSite), no de un boceto: cuando
- * Sonia descarga la app desde la página del laboratorio, lo que se abre debe
- * reconocerse en un segundo.
+ * DE DÓNDE VIENE ESTA HOJA. La anterior era la de Delfos con otros colores: mismo
+ * vocabulario de clases (.hoja, .portada, .serie, .visita, .chip), mismo ritmo de
+ * columna única, mismo titular en serif. Funcionaba, pero contaba el objeto equivocado.
+ * En un laboratorio la fila es «un analito y su serie» y la pantalla es un expediente:
+ * un papel que se lee de arriba abajo. Acá el objeto es OTRO —el tramo entre dos
+ * tanques llenos, y el hueco que lo bloquea— y la pregunta se contesta de un vistazo.
  *
- * FONDO OSCURO, y la decisión la cerró el landing real: el teléfono con el que
- * Geaninna vende la app la muestra en gradiente navy, con los colores de semáforo que
- * las especificaciones dan PARA fondo oscuro — los únicos no negociables. La app tiene
- * que parecerse a la promesa desde la que se instala, y con el fondo oscuro el
- * semáforo deja de ser una variante inventada: es el de ella, exacto.
+ * LA FORMA ES UN TABLERO. No una metáfora decorativa: un tablero es exactamente lo que
+ * hace esta app. Muestra el estado de un vehículo con instrumentos que se leen sin
+ * leerlos, y debajo la ruta que los explica. De ahí sale todo lo demás:
  *
- * SIN BOOTSTRAP y CERO WEBFONTS. Georgia y Segoe UI son de sistema; con un payload sin
- * trimming de ~35 MB, no agregar descargas de fuentes es una decisión que conviene no
- * romper después «por diseño».
+ *   - CERO SERIF. La serif es el gesto del documento, y era lo primero que delataba el
+ *     origen. Acá no hay ni una: rótulos en versalita espaciada, cifras en mono.
+ *   - CIFRAS TABULARES en todo número. En un instrumento los dígitos no pueden bailar
+ *     de ancho entre un refresh y el siguiente; con tabular-nums la aguja se mueve y el
+ *     número se queda quieto.
+ *   - REJILLA ANCHA, no columna. Los instrumentos se comparan entre sí, y comparar pide
+ *     que estén al lado. En angosto colapsan a uno por fila.
+ *   - CARAS HUNDIDAS, no tarjetas flotando. Cada instrumento es más oscuro que la
+ *     página y lleva un filo de luz arriba: se lee como algo empotrado, no como un
+ *     papel encima de un fondo.
  *
- * El ámbar tiene UN solo trabajo: marcar lo que exige atención. Y el ROJO está
- * RESERVADO — lo produce solo el dominio, con la severidad «urgente», y ningún
- * colesterol llega ahí. Si el rojo se usara para el colesterol dejaría de significar
- * algo: esa regla vive en el dominio y acá solo se pinta.
+ * SIN BOOTSTRAP Y CERO WEBFONTS, igual que antes y por la misma razón medida: con un
+ * payload sin trimming de ~35 MB, no agregar descargas de fuentes es una decisión que
+ * conviene no romper después «por diseño».
+ *
+ * EL ÁMBAR TIENE UN SOLO TRABAJO: marcar lo que exige atención. El ROJO está RESERVADO
+ * y lo produce solo el dominio con la severidad «urgente». Y el semáforo NO pinta la
+ * aguja de la autonomía por más que un medidor de gasolina rojo sea idioma universal:
+ * la autonomía es una proyección que el dominio no juzgó, y pintarla de semáforo sería
+ * inventarle un veredicto. Va en cobre, como todo lo que es lectura y no juicio.
  */
 
 :root {
-    /* Institucional — «la estación». ⚠️ PALETA PROVISIONAL: teal petróleo + cobre,
-       el candidato del brief §3, a la espera de la especificación de Geaninna. Lo que
-       SÍ está fijado: el semáforo de abajo queda reservado a estados —por eso la marca
-       no puede ser verde ni ámbar— y el navy #123f6d ya es de Delfos. Cuando llegue la
+    /* ⚠️ PALETA PROVISIONAL: teal petróleo + cobre, el candidato del brief §3, a la
+       espera de la especificación de Geaninna. Se conservan los valores que ya estaban
+       —lo provisional no es lo que había que rediseñar— y los nombres se enderezaron:
+       el token de marca se llamaba «--azul» y hace rato que no lo es. Cuando llegue la
        spec, el cambio es este bloque y nada más. */
-    --azul:        #14586b;   /* color de marca (teal, nombre del token heredado) */
-    --azul-oscuro: #072832;
-    --azul-claro:  #1d7186;
-    --celeste:     #d9915e;   /* acentos sobre oscuro: kickers, trazos, enlaces (cobre claro) */
-    --logo:        #ffffff;   /* el faro, sobre oscuro, va en blanco */
+    --marca:       #14586b;   /* teal petróleo: el color institucional */
+    --marca-viva:  #1d7186;
+    --cobre:       #d9915e;   /* acentos: rótulos vivos, trazos, agujas, enlaces */
+    --logo:        #ffffff;
 
-    /* El fondo teal petróleo, y la tinta que se lee encima. */
-    --fondo:       #0b3c49;   /* el teal base del brief */
-    --fondo-hondo: #062730;   /* el final del gradiente */
-    --tinta:       #edf6f6;   /* texto principal sobre teal */
-    --tenue:       #a8c4c9;   /* texto secundario */
-    --tenue-2:     #7fa0a7;   /* rotulitos y pies */
-    --carta:       rgba(126, 196, 207, .07);   /* paneles translúcidos */
-    --suave:       rgba(126, 196, 207, .12);   /* hovers */
-    --linea:       rgba(126, 196, 207, .22);
+    /* LA SUPERFICIE. El tablero es más oscuro que el fondo de Delfos a propósito: un
+       instrumento se lee por contraste, y el teal claro de la marca no da esa base. */
+    --fondo:       #04171d;   /* la página, detrás de todo */
+    --cara:        #08262f;   /* la cara de un instrumento: hundida, no flotando */
+    --cara-honda:  #041c23;   /* dentro de un instrumento: la ventanilla del odómetro */
+    --bisel:       rgba(126, 196, 207, .17);   /* el filo de cada cara */
+    /* El riel del camino va MAS FUERTE que un filo: con el valor del bisel la ruta
+       desaparecia y las paradas quedaban como puntos sueltos en el aire. El riel es la
+       metafora, no un adorno, y tiene que leerse de lejos. MEDIDO mirandolo. */
+    --riel:        rgba(126, 196, 207, .32);
+    --bisel-vivo:  rgba(126, 196, 207, .34);
+    --brillo:      rgba(226, 246, 250, .16);   /* la luz que corre por el filo de arriba */
 
-    /* Aplicación — el cobre del brief como color de acción. */
-    --accion:      #c2703d;   /* los botones que hacen algo */
+    --tinta:       #e8f4f6;   /* texto principal */
+    --tenue:       #9dbcc3;   /* texto secundario */
+    --tenue-2:     #6f9199;   /* rótulos, pies, unidades */
 
-    /* EL SEMÁFORO, con los valores EXACTOS de la §5 para fondo oscuro: trazo, fondo y
-     * borde tal como los dio Geaninna. Es lo único que marcó como no negociable, y
-     * desde que la app es oscura ya no hay nada que inventar.
-     * ⚠️ Solo el ROJO sigue provisional: las especificaciones lo dejan «pendiente»
-     * porque está reservado, y este valor es derivado hasta que ella dé el suyo. */
+    /* La acción: el cobre del brief. Un tablero tiene pocas teclas y todas hacen algo. */
+    --accion:      #c2703d;
+    --accion-viva: #d9814a;
+
+    /* EL SEMÁFORO, con los valores exactos de la §5 para fondo oscuro. Es lo único que
+       Geaninna marcó como no negociable, y sigue igual: lo que cambió es la forma, no
+       lo que el dominio tiene derecho a decir.
+       ⚠️ Solo el ROJO sigue provisional: la spec lo deja «pendiente» porque está
+       reservado, y este valor es derivado hasta que ella dé el suyo. */
     --bien:        #6ee7a0;
     --bien-suave:  rgba(74, 222, 128, .12);
     --bien-borde:  rgba(74, 222, 128, .35);
-    --bien-zona:   rgba(74, 222, 128, .14);   /* donde es normal estar: las bandas */
-    --bien-vivo:   #4ade80;   /* lo que ya se recorrio: el avance hacia la meta */
 
-    --ambar:       #fbd06a;   /* vigilar / consulte pronto: lo que exige atención */
+    --ambar:       #fbd06a;
     --ambar-suave: rgba(251, 191, 36, .10);
-    --ambar-borde: rgba(251, 191, 36, .30);
+    --ambar-borde: rgba(251, 191, 36, .32);
 
     --rojo:        #f87171;   /* urgente — RESERVADO; ⚠️ provisional */
     --rojo-suave:  rgba(248, 113, 113, .12);
     --rojo-borde:  rgba(248, 113, 113, .35);
 
-    /* Serif para lo que se lee de un vistazo, sans para lo que se lee de verdad.
-       Ambas de sistema: cero webfonts. */
-    --serif: Georgia, "Times New Roman", serif;
-    --sans:  "Segoe UI", "Helvetica Neue", Arial, sans-serif;
-    --mono:  ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    /* DOS FAMILIAS Y NINGUNA SERIF. La sans para lo que se lee, la mono para todo
+       número: en un tablero las cifras son el contenido, no una anotación. */
+    --sans:   "Segoe UI", -apple-system, "Helvetica Neue", Arial, sans-serif;
+    --cifras: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
 }
 
 * { box-sizing: border-box; }
 
-html { background: var(--fondo-hondo); }
+html { background: var(--fondo); }
 
+/* EL RESPLANDOR DETRÁS DEL CUADRO, no un degradado de arriba abajo. La luz sale de
+   donde están los instrumentos, como la retroiluminación de un tablero real; el
+   degradado vertical era el gesto del otro producto. */
 body {
     margin: 0;
     min-height: 100vh;
-    background: linear-gradient(180deg, var(--fondo) 0%, var(--fondo-hondo) 100%) fixed;
+    background:
+        radial-gradient(115% 65% at 50% -8%, rgba(29, 113, 134, .40), transparent 62%),
+        var(--fondo);
+    background-attachment: fixed;
     color: var(--tinta);
     font-family: var(--sans);
-    font-size: 16.5px;
-    line-height: 1.6;
+    font-size: 16px;
+    line-height: 1.55;
     -webkit-font-smoothing: antialiased;
-    text-rendering: optimizeLegibility;
 }
 
 h1:focus, h1:focus-visible { outline: none; }
 
-/* ------------------------------------------------------------------ estructura */
+/* ------------------------------------------------------------------- estructura */
 
-.hoja { max-width: 54rem; margin: 0 auto; padding: 44px 26px 80px; }
+.tablero { max-width: 74rem; margin: 0 auto; padding: 28px 22px 72px; }
 
-.titular {
-    font-family: var(--serif);
-    font-weight: 700;
-    font-size: clamp(2rem, 4.2vw, 2.9rem);
-    line-height: 1.15;
-    letter-spacing: -.015em;
-    color: #ffffff;
-    margin: 0 0 6px;
-}
-
-.membrete {
-    color: var(--tenue);
-    font-size: 14.5px;
-    margin: 0 0 32px;
-}
-.membrete b { font-weight: 600; color: var(--tinta); }
-
-/* ------------------------------------------------------------- bloque de marca
-
-   Gota dentro de un circulo, 40 px, solo trazo — identico al de la pagina. El nombre va
-   ACA y no solo en el subtitulo: es lo que hace que la app se reconozca en un segundo. */
-
-.marca {
-    display: flex; align-items: center; gap: 12px;
-    margin: 0 0 26px;
-}
-.marca svg { width: 40px; height: 40px; flex: none; }
-.marca-nombre {
-    font-family: var(--serif);
-    font-weight: 700; font-size: 1.15rem; line-height: 1.2;
-    color: #ffffff;
-}
-.marca-claim {
-    font-size: 0.74rem; color: var(--tenue);
-    line-height: 1.35;
-}
-
-.seccion {
-    font-family: var(--sans);
-    font-weight: 700;
-    font-size: 0.80rem; letter-spacing: .18em; text-transform: uppercase;
-    color: var(--celeste);
-    display: flex; align-items: center; gap: 12px;
-    margin: 40px 0 16px;
-}
-.seccion::after { content: ""; height: 1px; flex: 1; background: var(--linea); }
-
-.apunte { color: var(--tenue); font-size: 13.5px; }
-.mono   { font-family: var(--mono); }
-
-/* ------------------------------------------------------------------ avisos */
-
-.aviso {
-    border: 1px solid var(--linea);
-    border-left-width: 3px;
-    border-radius: 14px;
-    background: var(--carta);
-    padding: 16px 18px;
-    margin-bottom: 18px;
-}
-.aviso p:first-child { margin-top: 0; }
-.aviso p:last-child  { margin-bottom: 0; }
-.aviso strong { font-weight: 600; }
-
-.aviso--neutro    { border-left-color: var(--tenue-2); }
-.aviso--atencion  { border-left-color: var(--ambar); background: var(--ambar-suave); border-color: var(--ambar-borde); }
-.aviso--problema  { border-left-color: var(--rojo);  background: var(--rojo-suave); border-color: var(--rojo-borde); }
-
-/* El detalle técnico de un error es para quien pueda hacer algo con él: se muestra, pero
-   no compite con la frase que explica qué pasó. */
-.aviso pre {
-    font-family: var(--mono);
-    font-size: 12.5px; line-height: 1.5;
-    white-space: pre-wrap;
-    margin: 10px 0 0;
-    color: inherit; opacity: .85;
-}
-
-.fila { display: flex; align-items: center; flex-wrap: wrap; gap: 12px; }
-.crece { flex: 1 1 16rem; }
-
-/* ------------------------------------------------------------------ botones */
-
-.boton {
-    font: inherit; font-weight: 500; font-size: 15px;
-    padding: 11px 20px;
-    border: 1px solid transparent;
-    border-radius: 10px;
-    cursor: pointer;
-    background: var(--accion); color: #ffffff;
-    transition: filter .18s ease, background .18s ease;
-}
-.boton:hover:not(:disabled) { filter: brightness(1.12); }
-.boton:disabled { opacity: .45; cursor: not-allowed; }
-.boton:focus-visible { outline: 2px solid var(--celeste); outline-offset: 2px; }
-
-.boton--atencion { background: var(--ambar); }
-.boton--problema { background: var(--rojo); }
-
-.boton--contorno {
-    background: transparent; color: var(--tinta);
-    border-color: var(--linea);
-}
-.boton--contorno:hover:not(:disabled) { background: var(--suave); filter: none; }
-
-.boton--enlace {
-    background: none; color: var(--celeste);
-    padding: 0; border: 0;
-    text-decoration: underline; text-underline-offset: 3px;
-    font-size: 14.5px;
-}
-.boton--enlace:hover { color: #ffffff; filter: none; }
-
-/* ------------------------------------------------------------------ la serie */
-
-/* La lectura de cada analito. Es lo que ninguna hoja de laboratorio trae, así que se ve
-   como una ficha de laboratorio -borde recto, cifras monoespaciadas- y no como una fila
-   más de una lista. */
-.serie {
-    display: block; width: 100%; text-align: left;
-    font: inherit; color: inherit;
-    background: var(--carta);
-    border: 1px solid var(--linea);
-    border-radius: 14px;
-    box-shadow: 0 1px 4px rgba(0, 0, 0, .22);
-    padding: 18px 20px;
-    margin-bottom: 10px;
-    cursor: pointer;
-    transition: border-color .18s ease, box-shadow .18s ease, transform .18s ease;
-}
-.serie:hover {
-    border-color: var(--celeste);
-    box-shadow: 0 6px 18px -12px rgba(0,0,0,.6);
-    transform: translateY(-1px);
-}
-.serie:focus-visible { outline: 2px solid var(--celeste); outline-offset: 2px; }
-
-.serie-cabeza { display: flex; justify-content: space-between; align-items: flex-start; gap: 16px; }
-.serie-nombre { font-weight: 600; font-size: 16px; }
-.serie-relato { color: var(--tenue); font-size: 13.5px; margin-top: 5px; }
-
-.serie-valor {
-    font-family: var(--serif);
-    font-size: 1.9rem; font-weight: 700; line-height: 1.1;
-    white-space: nowrap; text-align: right;
-}
-.serie-valor span { font-family: var(--sans); font-size: 12px; color: var(--tenue); font-weight: 400; }
-
-/* NINGUN NUMERO SIN SU REFERENCIA. Va pegada al valor y en voz baja: es el contexto del
-   dato, no un dato mas. La escribe el dominio; aca solo se ubica. */
-.serie-referencia {
-    font-family: var(--mono);
-    font-size: 11px; color: var(--tenue-2);
-    text-align: right; margin-top: 2px;
-    white-space: nowrap;
-}
-
-/* La consecuencia va abajo, separada por una línea: es una conclusión, no un dato más. */
-.serie-lectura {
-    margin-top: 12px; padding-top: 11px;
-    border-top: 1px solid var(--linea);
-    font-size: 13.8px; color: var(--tenue);
-}
-.serie-lectura b { color: var(--tinta); font-weight: 600; }
-.serie-lectura--atencion { color: var(--ambar); }
-.serie-lectura--atencion b { color: var(--ambar); }
-
-/* ------------------------------------------------------------------ los modos */
-
-/* Las tres formas de guardar, lado a lado. Van en tarjetas y no en una lista de botones
-   porque cada una tiene una CONSECUENCIA distinta que hay que leer antes de elegir: la
-   diferencia entre ellas no es de comodidad, es si tu IA va a poder leer el expediente. */
-.modos {
-    display: grid; gap: 14px;
-    grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
-    margin: 18px 0 4px;
-}
-.modo {
-    background: var(--carta);
-    border: 1px solid var(--linea);
-    border-radius: 14px;
-    box-shadow: 0 1px 4px rgba(0, 0, 0, .22);
-    padding: 16px 17px;
-    display: flex; flex-direction: column; gap: 10px;
-}
-.modo p { margin: 0; font-size: 13.6px; color: var(--tenue); flex: 1; }
-.modo p strong { color: var(--tinta); font-weight: 600; }
-.modo .boton { align-self: flex-start; font-size: 14px; padding: 9px 16px; }
-
-.modo-titulo {
-    font-family: var(--sans); font-weight: 700;
-    font-size: 11px; letter-spacing: .16em; text-transform: uppercase;
-    color: var(--celeste);
-}
-
-/* No disponible NO es lo mismo que deshabilitado: la opcion existe y en otro navegador
-   funciona. Se atenua y se explica, no se esconde — esconderla haria parecer que la app
-   solo sabe hacer una cosa. */
-.modo--nodisponible { background: transparent; border-style: dashed; }
-.modo--nodisponible .modo-titulo { color: var(--tenue-2); }
-.modo-nota { font-size: 12.8px; color: var(--tenue-2); }
-
-/* ------------------------------------------------------------------ permisos */
-
-.permiso {
-    display: flex; align-items: center; gap: 18px;
-    background: var(--carta);
-    border: 1px solid var(--linea);
-    border-radius: 14px;
-    box-shadow: 0 1px 4px rgba(0, 0, 0, .22);
-    padding: 16px 18px;
-    margin-bottom: 10px;
-}
-.permiso-nombre { font-weight: 600; font-size: 15.5px; }
-.permiso-que-hace { margin: 4px 0 0; font-size: 13.5px; color: var(--tenue); }
-.permiso .boton { flex: none; }
-
-/* Apagado se VE apagado. Que el estado se lea de un vistazo importa mas acá que en
-   ningún otro lado: es la pantalla donde la persona decide qué sabe su IA de ella. */
-.permiso--apagado { background: transparent; border-style: dashed; }
-.permiso--apagado .permiso-nombre { color: var(--tenue-2); }
-.permiso--apagado .permiso-que-hace { color: var(--tenue-2); }
-
-/* ------------------------------------------------------------------ chips */
-
-.chip {
-    display: inline-block; vertical-align: 2px;
-    font-family: var(--mono);
-    font-size: 10.5px; letter-spacing: .07em; text-transform: uppercase;
-    padding: 3px 9px; border-radius: 2px;
-    border: 1px solid transparent;
-    white-space: nowrap;
-}
-.chip--estable  { background: var(--bien-suave);  color: var(--bien);  border-color: var(--bien-borde); }
-.chip--atencion { background: var(--ambar-suave); color: var(--ambar); border-color: var(--ambar-borde); }
-.chip--repetir  { background: var(--suave); color: var(--tenue); border-color: var(--linea); }
-.chip--problema { background: var(--rojo-suave); color: var(--rojo); border-color: var(--rojo-borde); }
-.chip--sinserie { background: transparent; color: var(--tenue-2); border-color: var(--linea); }
-.chip--grande   { font-size: 12px; padding: 5px 12px; }
-
-/* ------------------------------------------------------------------ tabla */
-
-.tabla { width: 100%; border-collapse: collapse; font-size: 15px; }
-.tabla th {
-    font-family: var(--mono);
-    font-size: 10.5px; letter-spacing: .1em; text-transform: uppercase;
-    color: var(--tenue); font-weight: 400;
-    text-align: left; padding: 0 12px 9px 0;
-    border-bottom: 1px solid var(--linea);
-}
-.tabla td { padding: 11px 12px 11px 0; border-bottom: 1px solid var(--linea); }
-.tabla tr:last-child td { border-bottom: 0; }
-.tabla .der { text-align: right; padding-right: 0; }
-.tabla th.der { padding-right: 0; }
-.tabla .fecha, .tabla .resultado { font-family: var(--mono); font-size: 13.5px; }
-.tabla tbody tr:hover td { background: var(--suave); }
-
-/* ---------------------------------------------------------------- las formas
-
-   UNA FORMA POR ANALITO, y no es decoracion: el dominio dice cual le toca a cada uno.
-   Un antigeno se lee como trayectoria contra su linea base, un colesterol como progreso
-   hacia una meta, una hemoglobina como posicion en una banda. Dibujarlos igual seria la
-   misma tabla que rechazamos en el dominio, un piso mas arriba.
-
-   El AMBAR sigue significando una sola cosa -esto exige atencion- y por eso aparece en
-   un solo lugar de cada forma: el punto final, y solo si el dominio lo pidio. */
-
-.forma { margin: 16px 0 4px; }
-.forma svg { display: block; width: 100%; height: auto; overflow: visible; }
-
-.forma-pie {
-    display: flex; gap: 18px; flex-wrap: wrap;
-    margin-top: 6px;
-    font-family: var(--mono); font-size: 11px; color: var(--tenue-2);
-}
-.forma-pie--extremos { justify-content: space-between; gap: 8px; }
-.forma-nota { display: inline-flex; align-items: center; gap: 5px; }
-.forma-nota b { color: var(--tinta); font-weight: 500; }
-.forma-nota--der { margin-left: auto; text-align: right; }
-.forma-nota--centro { flex: 1; text-align: center; }
-
-/* La muestra de color del pie, para no repetir la leyenda en palabras. */
-.muestra { width: 10px; height: 10px; border-radius: 2px; display: inline-block; }
-/* La muestra tiene que ser EL MISMO color que la banda que nombra. Antes era pino al
-   30% y la banda pino al 16%: dos grises distintos para la misma cosa. */
-.muestra--banda { background: var(--bien-zona); }
-.muestra--techo { height: 0; border-top: 1.5px dashed var(--tenue-2); border-radius: 0; }
-
-/* --- trayectoria: la banda ES el fondo contra el que se lee todo lo demas --- */
-.forma--trayectoria .banda { fill: var(--bien-zona); }
-.forma--trayectoria .linea-base {
-    stroke: var(--celeste); stroke-width: 1.5; opacity: .55;
-}
-.forma--trayectoria .linea-techo {
-    stroke: var(--tenue-2); stroke-width: 1; stroke-dasharray: 4 4; opacity: .7;
-}
-.forma--trayectoria .trazo {
-    fill: none; stroke: var(--celeste); stroke-width: 2;
-    stroke-linejoin: round; stroke-linecap: round;
-}
-.forma--trayectoria .punto { fill: var(--celeste); }
-.forma--trayectoria .punto--final { fill: var(--celeste); stroke: var(--fondo); stroke-width: 2; }
-.forma--trayectoria .punto--atencion { fill: var(--ambar); stroke: var(--fondo); stroke-width: 2; }
-
-/* --- progreso: el eje es el VALOR, no el tiempo --- */
-.forma--progreso .pista { fill: var(--linea); opacity: .5; }
-/* Lo YA recorrido. Es lo unico de esta pantalla que se gana, asi que tiene color de
-   verdad y no una dilucion: la barra que avanza es la recompensa. */
-.forma--progreso .avance { fill: var(--bien-vivo); }
-/* Lo que falta, en ambar: es lo unico de esta forma que pide algo. */
-.forma--progreso .pendiente { fill: var(--ambar); opacity: .3; }
-.forma--progreso .hito-meta { stroke: var(--celeste); stroke-width: 2; }
-.forma--progreso .marca { fill: var(--ambar); stroke: var(--fondo); stroke-width: 2.5; }
-.forma--progreso .marca--llego { fill: var(--bien); }
-
-/* --- banda: alejarse es peor en las DOS direcciones, por eso no hay flecha --- */
-/* El AFUERA casi no se pinta y el ADENTRO si: lo que tiene que saltar a la vista es
-   donde es normal estar, no donde no. Con los dos en gris no se distinguian. */
-.forma--banda .fuera { fill: var(--linea); opacity: .35; }
-.forma--banda .dentro { fill: var(--bien-zona); }
-.forma--banda .aguja { stroke: var(--celeste); stroke-width: 3; stroke-linecap: round; }
-.forma--banda .aguja--fuera { stroke: var(--ambar); }
-
-/* ---------------------------------------------------------------- el historial
-
-   UNA CRONOLOGIA DE VISITAS, no una tabla. Las trayectorias ya se ven arriba; lo que
-   esta seccion aporta es QUE PASO CADA DIA, que es como se recuerda una visita al
-   laboratorio: varios analitos juntos, no una grilla. */
-
-.visitas { list-style: none; margin: 4px 0 0; padding: 0; }
-.visita {
-    display: flex; gap: 18px;
-    padding: 14px 0;
-    border-bottom: 1px solid var(--linea);
-}
-.visita:last-child { border-bottom: 0; }
-
-.visita-fecha {
-    flex: 0 0 4.5em;
-    font-family: var(--mono); line-height: 1.25;
-}
-.visita-dia { display: block; font-size: 13px; color: var(--tinta); text-transform: lowercase; }
-.visita-ano { display: block; font-size: 11px; color: var(--tenue-2); }
-
-.visita-cosas { list-style: none; margin: 0; padding: 0; flex: 1; }
-.visita-cosa {
-    display: flex; justify-content: space-between; gap: 14px;
-    padding: 2px 0;
-}
-.visita-que { color: var(--tenue); font-size: 14px; }
-.visita-cuanto {
-    font-family: var(--mono); font-size: 13px; color: var(--tinta);
-    text-align: right;
-}
-
-/* ------------------------------------------------------------------ detalle */
-
-/* CADA MEDICION, UNA POR UNA — lo que la tarjeta de la lista no puede dar.
-
-   La tarjeta comprime la serie en «pasó de 3.0 a 5.2 en 1095 días», y esa frase esconde
-   lo unico que cambia como se lee: si el cambio fue parejo o fue un salto. Tres anos
-   planchados y un salto al final tienen los mismos extremos que una subida lenta.
-
-   Por eso la columna que importa es la del SALTO, y va en mono: es una cifra, no prosa.
-   La medicion mas vieja no lleva salto porque es el punto de partida. */
-
-.mediciones { list-style: none; margin: 4px 0 0; padding: 0; }
-.medicion {
-    display: flex; align-items: baseline; gap: 18px;
-    padding: 13px 0;
-    border-bottom: 1px solid var(--linea);
-}
-.medicion:last-child { border-bottom: 0; }
-
-/* La misma columna de fecha que el historial de visitas: es la misma clase de dato, y
-   dos anchos distintos para lo mismo se leen como dos cosas distintas. */
-.medicion-fecha {
-    flex: 0 0 4.5em;
-    font-family: var(--mono); line-height: 1.25;
-}
-.medicion-dia { display: block; font-size: 13px; color: var(--tinta); text-transform: lowercase; }
-.medicion-ano { display: block; font-size: 11px; color: var(--tenue-2); }
-
-.medicion-valor {
-    flex: 0 0 6.5em;
-    font-family: var(--mono); font-size: 16px; color: var(--tinta);
-}
-.medicion-valor span { font-size: 11.5px; color: var(--tenue-2); margin-left: 3px; }
-
-.medicion-salto {
-    flex: 1;
-    font-family: var(--mono); font-size: 12.5px; color: var(--tenue);
-    text-align: right;
-}
-
-/* Un positivo se marca en la fila, no en una columna aparte: en un binario el resultado
-   ES el dato. El ambar mantiene su unico significado. */
-.medicion--presente .medicion-valor { color: var(--ambar); }
-
-/* --- el ritmo del ultimo tramo, cuando el analito lo tiene --- */
-
-/* No es un aviso: es una cifra con su contexto. Va sin borde de color a la izquierda
-   para no competir con el bloque de veredicto, que es el que puede pedir algo. */
-.ritmo {
-    display: flex; flex-direction: column; gap: 3px;
-    margin: 22px 0 0; padding: 14px 16px;
-    background: var(--carta);
-    border: 1px solid var(--linea); border-radius: 14px;
-}
-.ritmo-rotulo {
-    font-size: 11px; letter-spacing: .07em; text-transform: uppercase;
+/* Versalita espaciada: el rótulo de un instrumento no compite con su cifra. */
+.rotulo {
+    display: block;
+    font-size: 10.5px; font-weight: 600;
+    text-transform: uppercase; letter-spacing: .155em;
     color: var(--tenue-2);
 }
-.ritmo-cifra { font-family: var(--mono); font-size: 19px; color: var(--tinta); }
-.ritmo-nota { font-size: 12.5px; color: var(--tenue); }
-.ritmo--atencion .ritmo-cifra { color: var(--ambar); }
 
-.cifra-par {
-    font-family: var(--serif);
-    font-size: clamp(28px, 5vw, 38px); font-weight: 700;
-    letter-spacing: -.01em;
-    margin: 14px 0 6px;
+/* El h1 de la página existe para los lectores de pantalla y para el FocusOnNavigate del
+   router, pero no se dibuja: en un tablero el título es la marca del capó, y un titular
+   grande arriba le comería el alto a los instrumentos. */
+.solo-para-lectores {
+    position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px;
+    overflow: hidden; clip-path: inset(50%); white-space: nowrap; border: 0;
 }
-.cifra-par .flecha { color: var(--tenue-2); margin: 0 10px; }
-.cifra-par .unidad { font-size: 15px; color: var(--tenue); font-weight: 400; margin-left: 8px; }
-.cifra-par .final  { color: var(--ambar); }
 
-/* ------------------------------------------------------------------ arranque */
+.apunte { color: var(--tenue); font-size: 13.5px; }
+.apunte b { color: var(--tinta); font-weight: 600; }
+.mono { font-family: var(--cifras); font-variant-numeric: tabular-nums; }
+.fila { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; }
+.crece { flex: 1 1 14rem; }
+
+/* --------------------------------------------------------------------- el capó
+
+   La barra de arriba: la marca, de qué carro es el tablero, y la única tecla que va a
+   buscar datos. Es una barra y no un bloque apilado porque un tablero empieza donde
+   empieza el parabrisas — todo el alto que se gaste acá se lo quita a los
+   instrumentos. */
+
+.capo {
+    display: flex; align-items: center; flex-wrap: wrap; gap: 14px;
+    padding-bottom: 16px; margin-bottom: 18px;
+    border-bottom: 1px solid var(--bisel);
+}
+
+.marca { display: flex; align-items: center; gap: 10px; }
+.marca svg { width: 30px; height: 30px; flex: none; }
+.marca-nombre {
+    font-size: 14.5px; font-weight: 600; letter-spacing: .02em; color: var(--tinta);
+    line-height: 1.2;
+}
+.marca-claim { font-size: 11px; color: var(--tenue-2); letter-spacing: .06em; }
+
+/* LA PLACA, con forma de placa. Es el «de quién es este tablero» y no hacía falta
+   inventarle un rótulo: la matrícula ya es el objeto que la identifica. */
+.placa {
+    display: inline-flex; align-items: baseline; gap: 8px;
+    padding: 4px 11px; border-radius: 5px;
+    background: var(--cara-honda); border: 1px solid var(--bisel-vivo);
+    font-family: var(--cifras); font-variant-numeric: tabular-nums;
+    font-size: 13px; letter-spacing: .09em; color: var(--tinta);
+}
+.placa .apodo {
+    font-family: var(--sans); letter-spacing: 0; font-size: 13px; color: var(--tenue);
+}
+
+/* ------------------------------------------------------------------ la franja
+
+   EL CENTRO DE MENSAJES. Lo primero de la pantalla es la frase del dominio, y en un
+   tablero eso es una franja con una luz encendida, no una tarjeta con titular. La luz
+   toma el color de la SEVERIDAD, que decide el dominio; acá solo se pinta. */
+
+.franja {
+    display: flex; align-items: flex-start; gap: 14px;
+    padding: 15px 18px; margin-bottom: 18px;
+    border-radius: 10px; border: 1px solid var(--bisel);
+    background: var(--cara);
+}
+.franja-luz {
+    flex: none; width: 10px; height: 10px; margin-top: 7px; border-radius: 50%;
+    background: var(--bien); box-shadow: 0 0 0 4px var(--bien-suave);
+}
+.franja-texto { flex: 1 1 16rem; }
+.franja-frase { margin: 0; font-size: 17.5px; line-height: 1.35; color: var(--tinta); text-wrap: balance; }
+.franja-accion { margin: 6px 0 0; font-size: 14px; color: var(--tenue); }
+
+.franja--atencion { border-color: var(--ambar-borde); background: var(--ambar-suave); }
+.franja--atencion .franja-luz { background: var(--ambar); box-shadow: 0 0 0 4px var(--ambar-suave); }
+.franja--atencion .franja-accion { color: var(--ambar); }
+
+.franja--problema { border-color: var(--rojo-borde); background: var(--rojo-suave); }
+.franja--problema .franja-luz { background: var(--rojo); box-shadow: 0 0 0 4px var(--rojo-suave); }
+.franja--problema .franja-accion { color: var(--rojo); }
+
+/* ------------------------------------------------------------------- el cuadro
+
+   LA REJILLA DE INSTRUMENTOS. Seis columnas porque permite tres tamaños que caen justo
+   —2, 3 y 6— y con eso alcanza: el medidor grande ocupa dos columnas y dos filas, los
+   discretos dos, y los que necesitan ancho para una cifra larga o una curva, tres. */
+
+.cuadro {
+    display: grid;
+    grid-template-columns: repeat(6, minmax(0, 1fr));
+    gap: 12px;
+    margin-bottom: 26px;
+}
+
+.instrumento {
+    position: relative; overflow: hidden;
+    grid-column: span 2;
+    display: flex; flex-direction: column; gap: 10px;
+    padding: 15px 17px 17px;
+    border-radius: 12px;
+    background: var(--cara);
+    border: 1px solid var(--bisel);
+}
+
+/* EL FILO DE LUZ. Un pixel de brillo arriba y la cara se lee empotrada en el tablero en
+   vez de pegada encima. Es todo el relieve que hay: nada de sombras largas. */
+.instrumento::before {
+    content: ""; position: absolute; inset: 0 0 auto 0; height: 1px;
+    background: linear-gradient(90deg, transparent, var(--brillo), transparent);
+}
+
+.instrumento--medidor { grid-column: span 2; grid-row: span 2; }
+.instrumento--ancho   { grid-column: span 4; }
+.instrumento--medio   { grid-column: span 3; }
+
+/* Un instrumento sin dato no se esconde: se muestra APAGADO y dice qué le falta. Un
+   hueco en la rejilla parecería que la app no lo tiene; apagado dice que sí lo tiene y
+   está esperando. */
+.instrumento--apagado { background: transparent; border-style: dashed; }
+.instrumento--apagado .cifra { color: var(--tenue-2); }
+
+/* --------------------------------------------------------------------- cifras */
+
+.cifra {
+    font-family: var(--cifras); font-variant-numeric: tabular-nums;
+    font-size: clamp(27px, 3.6vw, 36px); font-weight: 600;
+    line-height: 1; letter-spacing: -.02em; color: #ffffff;
+}
+.cifra .unidad {
+    font-size: .42em; font-weight: 500; letter-spacing: .04em;
+    color: var(--tenue); margin-left: .35em;
+}
+.cifra--chica { font-size: clamp(21px, 2.5vw, 26px); }
+.cifra-pie { font-size: 12.5px; color: var(--tenue-2); line-height: 1.4; margin-top: -2px; }
+.cifra-pie b { color: var(--tenue); font-weight: 600; }
+
+/* EL DELTA contra el nivel de siempre. La flecha y el signo son de la PRESENTACIÓN y se
+   invierten con la unidad (en km/L más es mejor; en L/100km, menos); el veredicto no.
+   Por eso las clases se llaman «mejor» y «peor» y no «sube» y «baja»: quien decide es
+   el dominio, y así el CSS no puede contradecirlo al cambiar de unidad. */
+.delta {
+    display: inline-flex; align-items: center; gap: 5px;
+    font-family: var(--cifras); font-variant-numeric: tabular-nums;
+    font-size: 13px; font-weight: 600;
+}
+.delta--mejor { color: var(--bien); }
+.delta--peor  { color: var(--ambar); }
+.delta--igual { color: var(--tenue-2); }
+
+/* EL SELLO: el veredicto semántico, en palabras. No es una píldora de color suelta —
+   lleva el texto que el dominio eligió, y el color solo lo acompaña. */
+.sello {
+    display: inline-block; padding: 2px 9px; border-radius: 4px;
+    font-size: 11px; font-weight: 600; letter-spacing: .07em; text-transform: uppercase;
+    border: 1px solid var(--bisel-vivo); color: var(--tenue); background: transparent;
+}
+.sello--bien     { color: var(--bien);  border-color: var(--bien-borde);  background: var(--bien-suave); }
+.sello--atencion { color: var(--ambar); border-color: var(--ambar-borde); background: var(--ambar-suave); }
+.sello--problema { color: var(--rojo);  border-color: var(--rojo-borde);  background: var(--rojo-suave); }
+.sello--dudoso   { color: var(--cobre); border-color: var(--bisel-vivo); }
+
+/* ------------------------------------------------------------------- el medidor
+
+   LA AGUJA DE LA AUTONOMÍA. Un arco de 240°, E a F, con la aguja donde está el tanque.
+   Va en COBRE y no en semáforo: es una proyección que el dominio no juzgó (ver el
+   encabezado). La cifra grande vive dentro del arco, que es donde la busca el ojo. */
+
+.medidor { display: block; width: 100%; max-width: 210px; margin: 2px auto 0; }
+.medidor .pista  { stroke: var(--bisel); }
+.medidor .carga  { stroke: var(--cobre); }
+.medidor .aguja  { stroke: var(--cobre); }
+.medidor .eje    { fill: var(--cara); stroke: var(--cobre); }
+.medidor .marca-e, .medidor .marca-f {
+    fill: var(--tenue-2); font-family: var(--sans);
+    font-size: 9px; font-weight: 700; letter-spacing: .1em;
+}
+
+/* --------------------------------------------------------------- el odómetro
+
+   LA TIRA DE DÍGITOS. Cada cifra en su ventanilla, como el contador mecánico: es la
+   pieza que hace que el instrumento se lea como el de un carro y no como un número
+   cualquiera. Es proyección declarada, y el pie lo dice. */
+
+.tira { display: flex; gap: 3px; }
+.tira-digito {
+    min-width: 1.05em; padding: 5px 2px;
+    background: var(--cara-honda); border: 1px solid var(--bisel);
+    border-radius: 3px; text-align: center;
+    font-family: var(--cifras); font-variant-numeric: tabular-nums;
+    font-size: clamp(19px, 2.4vw, 24px); font-weight: 600; color: #ffffff;
+}
+.tira-digito--tenue { color: var(--tenue-2); }
+
+/* ---------------------------------------------------------------- la chispa
+
+   LA TRAYECTORIA CONTRA LA LÍNEA BASE, del tamaño de un instrumento. En el laboratorio
+   esta curva era el héroe de la pantalla porque la serie ES la lectura; acá la lectura
+   es el veredicto y la curva solo lo respalda, así que va chica y al pie de su cifra. */
+
+.chispa { display: block; width: 100%; height: 46px; }
+.chispa .linea-base { stroke: var(--bisel-vivo); stroke-dasharray: 3 3; }
+.chispa .trazo { stroke: var(--cobre); fill: none; stroke-width: 2; stroke-linejoin: round; stroke-linecap: round; }
+.chispa .trazo--atencion { stroke: var(--ambar); }
+.chispa .punto { fill: var(--cobre); }
+.chispa .punto--atencion { fill: var(--ambar); }
+/* Los no comparables están, pero no se leen contra la banda: huecos. */
+.chispa .punto--hueco { fill: var(--cara); stroke: var(--tenue-2); stroke-width: 1.5; }
+
+/* ------------------------------------------------------------------- la ruta
+
+   EL CUERPO DE LA APP. El objeto de este negocio es el TRAMO entre dos tanques llenos,
+   así que la pantalla lo dibuja como lo que es: un camino de paradas con trechos en el
+   medio. Cada parada es una carga; cada trecho, el rendimiento de lo que se recorrió
+   entre las dos.
+
+   Y EL HUECO ES PARTE DEL CAMINO. Un tramo bloqueado no desaparece ni se manda a una
+   sección aparte de «lo que falta»: se dibuja como un bache, con el riel punteado y el
+   dato que lo destraba ahí mismo. Esa era la crítica de fondo al diseño anterior — lo
+   propio de este dominio (la ausencia que bloquea un cálculo) estaba subordinado a un
+   layout que venía de otro. */
+
+.ruta-cabeza {
+    display: flex; align-items: baseline; flex-wrap: wrap; gap: 6px 16px;
+    margin: 0 0 14px;
+}
+.ruta { list-style: none; margin: 0; padding: 0; }
+
+.eslabon { display: grid; grid-template-columns: 22px minmax(0, 1fr); gap: 0 14px; }
+.eslabon-riel { position: relative; }
+.eslabon-riel::before {
+    content: ""; position: absolute; left: 10px; top: 0; bottom: 0;
+    border-left: 2px solid var(--riel);
+}
+/* El camino empieza y termina en una parada, no en el aire. */
+.eslabon:first-child .eslabon-riel::before { top: 12px; }
+.eslabon:last-child  .eslabon-riel::before { bottom: calc(100% - 12px); }
+
+/* LA PARADA: una carga. */
+.parada .eslabon-cuerpo { padding: 0 0 4px; }
+.parada-punto {
+    position: absolute; left: 5px; top: 6px; z-index: 1;
+    width: 12px; height: 12px; border-radius: 50%;
+    background: var(--fondo); border: 2px solid var(--cobre);
+}
+.parada--pendiente .parada-punto { border-color: var(--ambar); }
+
+.parada-cabeza { display: flex; align-items: baseline; flex-wrap: wrap; gap: 4px 10px; }
+.parada-fecha {
+    font-family: var(--cifras); font-variant-numeric: tabular-nums;
+    font-size: 14.5px; font-weight: 600; color: var(--tinta); letter-spacing: .01em;
+}
+.parada-tanque {
+    font-size: 11px; font-weight: 600; letter-spacing: .09em; text-transform: uppercase;
+    color: var(--tenue-2);
+}
+.parada-datos {
+    display: flex; flex-wrap: wrap; gap: 2px 14px; margin-top: 3px;
+    font-size: 13.5px; color: var(--tenue);
+}
+.parada-datos .n {
+    font-family: var(--cifras); font-variant-numeric: tabular-nums; color: var(--tinta);
+}
+
+/* EL TRECHO: lo que se recorrió entre dos paradas, que es el objeto de todo esto. La
+   cifra que manda es km/L; los kilómetros y el costo la acompañan. */
+.trecho .eslabon-cuerpo { padding: 12px 0 16px; }
+.trecho-cifras {
+    display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 16px;
+    font-size: 13.5px; color: var(--tenue-2);
+}
+.trecho-rinde {
+    font-family: var(--cifras); font-variant-numeric: tabular-nums;
+    font-size: 19px; font-weight: 600; color: var(--tinta);
+}
+.trecho-rinde .unidad { font-size: 12px; color: var(--tenue-2); margin-left: 4px; }
+.trecho-dato { font-family: var(--cifras); font-variant-numeric: tabular-nums; color: var(--tenue); }
+
+/* LA BARRA CONTRA EL NIVEL DE SIEMPRE. Un trecho no significa nada solo: significa
+   contra la línea base de ESTE carro, nunca contra un promedio nacional. La muesca es
+   el nivel habitual y la barra, este trecho. */
+.trecho-barra {
+    position: relative; height: 4px; margin-top: 8px; max-width: 22rem;
+    background: var(--bisel); border-radius: 2px; overflow: hidden;
+}
+.trecho-barra .relleno { position: absolute; inset: 0 auto 0 0; background: var(--cobre); border-radius: 2px; }
+.trecho-barra .muesca  { position: absolute; top: -3px; bottom: -3px; width: 2px; background: var(--tinta); }
+.trecho--atencion .trecho-barra .relleno { background: var(--ambar); }
+
+/* Un trecho no comparable está dibujado pero atenuado: existe, no se lee contra la
+   banda, y el motivo se dice con palabras. */
+.trecho--reservado { opacity: .62; }
+
+/* EL BACHE: el tramo que existe pero está bloqueado. Riel punteado — el camino sigue,
+   pero ese pedazo no se puede medir. */
+.bache .eslabon-riel::before { border-left-style: dashed; border-color: var(--ambar-borde); }
+.bache .eslabon-cuerpo { padding: 12px 0 16px; }
+.bache-caja {
+    padding: 12px 15px; border-radius: 9px;
+    border: 1px dashed var(--ambar-borde); background: var(--ambar-suave);
+}
+.bache-que { font-size: 14px; color: var(--tinta); margin: 0; }
+.bache-que b { color: var(--ambar); font-weight: 600; }
+.bache-desbloquea { margin: 4px 0 0; font-size: 12.5px; color: var(--tenue); }
+
+/* LO QUE FALTA, con el control ahí mismo. El campo llega PRELLENADO con la proyección
+   —«¿unos 42 900?»— para que confirmar sea más fácil que recordar y teclear. Un campo
+   POR CARGA y nunca uno compartido: con uno solo, los nueve formularios mostraban el
+   mismo número y el que se tecleaba para una carga aparecía en las otras ocho. */
+.falta { margin-top: 10px; }
+.campo {
+    font-family: var(--cifras); font-variant-numeric: tabular-nums;
+    font-size: 15px; max-width: 9em; padding: 7px 10px;
+    background: var(--cara-honda); color: var(--tinta);
+    border: 1px solid var(--bisel-vivo); border-radius: 6px;
+}
+.campo:focus-visible { outline: 2px solid var(--cobre); outline-offset: 1px; }
+
+/* ----------------------------------------------------------------- las teclas
+
+   Un tablero tiene pocas teclas y todas hacen algo. Cobre lleno la que actúa, contorno
+   la secundaria, y sin caja la que es un enlace disfrazado. */
+
+.tecla {
+    font: inherit; font-size: 14px; font-weight: 600;
+    padding: 8px 16px; border-radius: 7px; cursor: pointer;
+    background: var(--accion); color: #ffffff; border: 1px solid transparent;
+    transition: background .12s ease, border-color .12s ease, color .12s ease;
+}
+.tecla:hover:not(:disabled) { background: var(--accion-viva); }
+.tecla:focus-visible { outline: 2px solid var(--cobre); outline-offset: 2px; }
+.tecla:disabled { opacity: .5; cursor: progress; }
+
+.tecla--contorno { background: transparent; color: var(--tinta); border-color: var(--bisel-vivo); }
+.tecla--contorno:hover:not(:disabled) { background: transparent; border-color: var(--cobre); }
+
+.tecla--texto {
+    background: transparent; border-color: transparent; color: var(--cobre);
+    padding: 2px 0; text-decoration: underline; text-underline-offset: 3px;
+}
+.tecla--texto:hover:not(:disabled) { background: transparent; color: var(--accion-viva); }
+
+.tecla--alerta { background: var(--ambar); color: #26200a; }
+.tecla--alerta:hover:not(:disabled) { background: #ffdd85; }
+
+.tecla--problema { background: var(--rojo); color: #2b0d0d; }
+
+/* LA TECLA DE REFRESCAR es tenue y vive al otro extremo del capó: la app se pone al día
+   sola al abrir, así que esto es «volvé a chequear AHORA» y no el punto de partida de
+   la pantalla. */
+.tecla--releer {
+    margin-left: auto;
+    background: transparent; color: var(--tenue); border-color: var(--bisel);
+    font-size: 13px; font-weight: 500; padding: 6px 14px; border-radius: 999px;
+}
+.tecla--releer:hover:not(:disabled) { background: transparent; color: var(--tinta); border-color: var(--cobre); }
+
+/* ------------------------------------------------------------------ los partes
+
+   Avisos de la app sobre SÍ MISMA: dónde está guardando, qué permiso caducó, qué falló.
+   Van con filo a la izquierda y no como tarjeta, para que nunca se confundan con un
+   instrumento: un instrumento habla del carro, un parte habla de la app. */
+
+.parte {
+    padding: 13px 16px; margin: 0 0 14px;
+    border-radius: 8px; border: 1px solid var(--bisel); border-left-width: 3px;
+    background: var(--cara); font-size: 14.5px; color: var(--tinta);
+}
+.parte p { margin: 0 0 8px; }
+.parte p:last-child { margin-bottom: 0; }
+.parte pre {
+    font-family: var(--cifras); font-size: 12px; color: var(--tenue);
+    white-space: pre-wrap; word-break: break-word; margin: 8px 0 0;
+}
+.parte--atencion { border-color: var(--ambar-borde); border-left-color: var(--ambar); background: var(--ambar-suave); }
+.parte--problema { border-color: var(--rojo-borde);  border-left-color: var(--rojo);  background: var(--rojo-suave); }
+.parte--neutro   { border-left-color: var(--bisel-vivo); }
+
+/* ----------------------------------------------------------------- los destinos
+
+   LOS TRES MODOS DE GUARDAR, y los tres se dicen con lo que dan y lo que NO. En el modo
+   del navegador la bitácora sobrevive al cierre pero su asistente no la puede leer, y
+   callarlo sería vender algo que no hay. */
+
+.destinos {
+    display: grid; grid-template-columns: repeat(auto-fit, minmax(15rem, 1fr));
+    gap: 12px; margin: 14px 0 4px;
+}
+.destino {
+    display: flex; flex-direction: column; gap: 8px; align-items: flex-start;
+    padding: 15px 16px; border-radius: 10px;
+    background: var(--cara); border: 1px solid var(--bisel);
+}
+.destino p { margin: 0; font-size: 13.5px; color: var(--tenue); }
+.destino p b { color: var(--tinta); font-weight: 600; }
+.destino-titulo { font-size: 15px; font-weight: 600; color: var(--tinta); }
+.destino--nodisponible { opacity: .55; }
+.destino-nota { font-size: 12.5px; color: var(--tenue-2); }
+
+/* ------------------------------------------------------------------- arranque */
 
 .loading-progress {
-    position: relative; display: block;
-    width: 6rem; height: 6rem;
+    position: relative; display: block; width: 5.5rem; height: 5.5rem;
     margin: 22vh auto 1rem auto;
 }
 .loading-progress circle {
-    fill: none; stroke: var(--linea); stroke-width: .4rem;
+    fill: none; stroke: var(--bisel); stroke-width: .35rem;
     transform-origin: 50% 50%; transform: rotate(-90deg);
 }
 .loading-progress circle:last-child {
-    stroke: var(--celeste);
+    stroke: var(--cobre);
     stroke-dasharray: calc(3.141 * var(--blazor-load-percentage, 0%) * 0.8), 500%;
     transition: stroke-dasharray .05s ease-in-out;
 }
 .loading-progress-text {
     position: absolute; text-align: center;
-    font-family: var(--mono); font-size: 13px; color: var(--tenue);
-    inset: calc(22vh + 2.4rem) 0 auto 0;
+    font-family: var(--cifras); font-size: 12.5px; letter-spacing: .1em; color: var(--tenue-2);
+    inset: calc(22vh + 2.2rem) 0 auto 0;
 }
 .loading-progress-text:after { content: var(--blazor-load-percentage-text, "Cargando"); }
 
 #blazor-error-ui {
-    background: #7f1d1d; color: #ffffff;
-    border-top: 2px solid var(--rojo);
+    background: #7f1d1d; color: #ffffff; border-top: 2px solid var(--rojo);
     bottom: 0; left: 0; width: 100%;
     box-sizing: border-box; display: none; position: fixed; z-index: 1000;
     padding: .7rem 1.25rem; font-size: 14px;
@@ -556,184 +549,58 @@ h1:focus, h1:focus-visible { outline: none; }
 .blazor-error-boundary { background: #7f1d1d; color: #fff; padding: 1rem 1.25rem; }
 .blazor-error-boundary::after { content: "Ocurrió un error."; }
 
-code { font-family: var(--mono); font-size: .9em; color: var(--ambar); }
+code { font-family: var(--cifras); font-size: .9em; color: var(--cobre); }
 
-/* ------------------------------------------------------------------ angosto */
+/* -------------------------------------------------------------------- angosto
 
-@media (max-width: 640px) {
-    .hoja { padding: 30px 18px 60px; }
-    .serie-cabeza { flex-direction: column; gap: 8px; }
-    .serie-valor { text-align: left; }
-    .tabla { font-size: 14px; }
+   En un teléfono no hay rejilla que valga: los instrumentos se apilan. Lo que NO cambia
+   es el orden — el medidor sigue primero, porque la pregunta sigue siendo la misma. */
 
-    /* En angosto el salto no cabe en la misma linea sin partirse, y partido deja de ser
-       una cifra. Baja debajo del valor, alineado con el, y la fecha se queda arriba. */
-    .medicion { flex-wrap: wrap; gap: 6px 14px; }
-    .medicion-fecha { flex: 0 0 100%; }
-    .medicion-valor { flex: 0 0 auto; }
-    .medicion-salto { text-align: left; }
+@media (max-width: 900px) {
+    .instrumento, .instrumento--medidor, .instrumento--ancho, .instrumento--medio {
+        grid-column: span 3;
+    }
+    .instrumento--medidor { grid-row: span 2; }
 }
 
-/* PRESENCIA EN EL TIEMPO — la forma de los binarios.
-   El hilo es la linea del tiempo; los circulos, las pruebas. Los positivos van en ambar
-   y llenos porque son lo unico de esta forma que pide algo; los negativos, huecos.
-   La racha final lleva trazo grueso: dos seguidas es otra cosa que una, y ese es el
-   unico hecho que esta forma tiene para contar. */
-.forma--presencia .hilo { stroke: var(--linea); stroke-width: 2; stroke-linecap: round; }
-.forma--presencia .racha { stroke: var(--ambar); stroke-width: 4; stroke-linecap: round; opacity: .45; }
-.forma--presencia .prueba { fill: var(--fondo); stroke: var(--tenue-2); stroke-width: 2; }
-.forma--presencia .prueba--presente { fill: var(--ambar); stroke: var(--fondo); stroke-width: 2; }
-
-/* ---------------------------------------------------------------- la portada
-
-   LA PRIMERA PREGUNTA. Alguien abre esta app para saber si esta bien, y lo primero que
-   veia era un boton de Refresh y el numero de evento del journal.
-
-   Es LA TARJETA DE SEMAFORO del mock del landing: panel translucido con el borde y el
-   titular en el color de la severidad. El TONO lo decide el dominio -es la severidad
-   mayor de todo el expediente- y aca solo se traduce a color. */
-
-.portada {
-    background: var(--carta);
-    border: 1px solid var(--linea);
-    border-radius: 14px;
-    padding: 22px 26px 20px;
-    margin-bottom: 18px;
-}
-.portada--calma        { background: var(--bien-suave);  border-color: var(--bien-borde); }
-.portada--atencion     { background: var(--ambar-suave); border-color: var(--ambar-borde); }
-.portada--problema     { background: var(--rojo-suave);  border-color: var(--rojo-borde); }
-
-/* EL ROTULO Y ACTUALIZAR COMPARTEN RENGLON. El boton es lo que vuelve a contestar la
-   pregunta que contesta la tarjeta -si el rotulo dice "hoy", "esto es de hoy?" pertenece
-   aca-, asi que va en la misma linea y a la derecha, no en una fila suelta debajo de la
-   portada compitiendole el ojo al titular. */
-.portada-cabeza {
-    display: flex; align-items: center; justify-content: space-between;
-    flex-wrap: wrap; gap: 8px 12px;
-    margin-bottom: 10px;
+@media (max-width: 600px) {
+    .tablero { padding: 20px 15px 56px; }
+    .instrumento, .instrumento--medidor, .instrumento--ancho, .instrumento--medio {
+        grid-column: span 6; grid-row: auto;
+    }
+    .capo { gap: 10px; }
+    .tecla--releer { margin-left: 0; }
+    .eslabon { grid-template-columns: 18px minmax(0, 1fr); gap: 0 10px; }
+    .eslabon-riel::before { left: 8px; }
+    .parada-punto { left: 3px; }
 }
 
-.portada-rotulo {
-    font-family: var(--sans); font-weight: 700; font-size: 10.5px; letter-spacing: .18em;
-    text-transform: uppercase; color: var(--tenue);
-    margin: 0;
-}
+/* ----------------------------------------------------------------- movimiento
 
-/* CONTORNO Y TENUE, NO EL AZUL DE ACCION: la app se pone al dia sola al abrir, asi que
-   apretar esto es "volve a chequear AHORA" y no el punto de partida de la pantalla.
+   POCO Y CON MOTIVO, y cada cosa se mueve como se LEE: la aguja barre hasta su valor,
+   la trayectoria se traza en el tiempo, la barra del trecho crece desde su partida.
+   Nada parpadea ni rebota.
 
-   Tiene clase propia y no `.portada-cual` -aunque el trazo se parezca- porque las cuales
-   son los analitos que piden algo. Dos pildoras idem en la misma tarjeta, una que navega
-   a una serie y otra que va a buscarle datos al proveedor, se leen como lo mismo. De ahi
-   que esta sea mas tenue, no levante en hover, y viva en el otro extremo del renglon.
+   Se dispara al montar, así que Actualizar vuelve a dibujarlo todo — que es justo
+   cuando la persona quiere ver que algo pasó. */
 
-   SIN ICONO. Un "↻" delante decia el oficio del boton de un golpe, pero a 13px en la sans
-   se lee como una "u" torcida, y ademas seria el unico glifo de toda la UI: no hay ni uno
-   mas, ni en los avisos ni en el back. Lo que lo separa de las cuales es donde esta y su
-   peso, que ya alcanza. */
-.portada-releer {
-    font: inherit; font-size: 13px; font-weight: 500;
-    padding: 5px 13px; cursor: pointer; white-space: nowrap;
-    background: transparent; color: var(--tenue);
-    border: 1px solid var(--linea); border-radius: 999px;
-    transition: color .12s ease, border-color .12s ease;
-}
-.portada-releer:hover:not(:disabled) { color: var(--tinta); border-color: var(--celeste); }
-.portada-releer:focus-visible { outline: 2px solid var(--celeste); outline-offset: 2px; }
-.portada-releer:disabled { opacity: .5; cursor: progress; }
+@keyframes entra      { from { opacity: 0; transform: translateY(6px); } }
+@keyframes se-traza   { from { stroke-dashoffset: 1; } }
+@keyframes aparece    { from { opacity: 0; transform: scale(.4); } }
+@keyframes crece      { from { transform: scaleX(0); } }
+@keyframes barre      { from { transform: rotate(-120deg); } }
 
-/* El titular es la frase del DOMINIO cuando hay algo que hacer. Va en serif y grande
-   porque es lo unico que alguien necesita leer si no lee nada mas — y en el trazo del
-   semaforo, como el «Todo está bien» del mock. */
-.portada-titular {
-    font-family: var(--serif); font-weight: 700;
-    font-size: clamp(25px, 5vw, 34px); line-height: 1.1;
-    letter-spacing: -.01em; margin: 0; color: var(--tinta);
-    text-wrap: balance;
-}
-.portada--calma .portada-titular    { color: var(--bien); }
-.portada--atencion .portada-titular { color: var(--ambar); }
-.portada--problema .portada-titular { color: var(--rojo); }
+.instrumento { animation: entra .4s ease-out both; }
+.medidor .aguja { transform-origin: 60px 54px; animation: barre .9s cubic-bezier(.2,.8,.3,1) both; }
+.medidor .carga { stroke-dasharray: 1; animation: se-traza .9s cubic-bezier(.2,.8,.3,1) both; }
+.chispa .trazo { stroke-dasharray: 1; animation: se-traza .9s ease-out both; }
+.chispa .punto { animation: aparece .3s ease-out both .5s; }
+.trecho-barra .relleno { transform-origin: left center; animation: crece .7s ease-out both .1s; }
 
-/* SOBRE QUE. Son botones y no texto porque llevan a la serie: la pregunta siguiente
-   -"¿cual de todos?"- se contesta tocando. */
-.portada-cuales { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 16px; }
-.portada-cual {
-    font: inherit; font-size: 13.5px; font-weight: 500;
-    padding: 5px 12px; cursor: pointer;
-    background: transparent; color: var(--tinta);
-    border: 1px solid var(--linea); border-radius: 999px;
-    transition: transform .12s ease, border-color .12s ease;
-}
-.portada-cual:hover { border-color: var(--celeste); transform: translateY(-1px); }
-.portada-cual:focus-visible { outline: 2px solid var(--celeste); outline-offset: 2px; }
-
-/* LO QUE SE VIENE JUNTANDO. No es adorno: "desde ago 2022" es lo que convierte una lista
-   de examenes en un historial, y es la razon por la que a alguien le importaria seguir
-   usando esto. */
-.portada-pie {
-    display: flex; flex-wrap: wrap; gap: 6px 20px; margin-top: 18px;
-    padding-top: 14px; border-top: 1px solid var(--linea);
-    font-family: var(--mono); font-size: 11.5px; color: var(--tenue-2);
-}
-.portada-pie b { color: var(--tinta); font-weight: 500; font-size: 13px; }
-
-/* ---------------------------------------------------------------- movimiento
-
-   POCO Y CON MOTIVO. Cada forma se dibuja como se LEE: la trayectoria se traza en el
-   tiempo, la barra de progreso crece desde su partida, la aguja de la banda se acomoda,
-   y la tira de presencia aparece prueba por prueba. Nada parpadea ni rebota.
-
-   Se dispara al montar, asi que Actualizar vuelve a dibujarlo todo — que es justo cuando
-   la persona quiere ver que algo paso. */
-
-@keyframes entra-desde-abajo { from { opacity: 0; transform: translateY(8px); } }
-@keyframes se-traza         { from { stroke-dashoffset: 1; } }
-@keyframes aparece          { from { opacity: 0; transform: scale(.4); } }
-@keyframes crece-de-izquierda { from { transform: scaleX(0); } }
-
-/* SE ANIMA EL CUERPO, NO LA TARJETA. El @key que fuerza el redibujo bajo un nivel para
-   que Actualizar no se recree con el click puesto encima y no se pierda el foco, y la
-   animacion lo siguio. Sale mejor de lo que era: la tarjeta es el marco y se queda
-   quieta, y lo que se vuelve a dibujar es el contenido — que es exactamente lo que el
-   boton acaba de cambiar. */
-.portada-cuerpo { animation: entra-desde-abajo .45s ease-out both; }
-.serie          { animation: entra-desde-abajo .45s ease-out both; }
-
-/* El trazo se dibuja de la primera medicion a la ultima. pathLength="1" en el polyline
-   hace que la fraccion sea exacta sin adivinar el largo. */
-.forma--trayectoria .trazo {
-    stroke-dasharray: 1; stroke-dashoffset: 0;
-    animation: se-traza 1s ease-out both;
-}
-.forma--trayectoria .punto { animation: aparece .3s ease-out both .55s; }
-.forma--trayectoria .punto--final,
-.forma--trayectoria .punto--atencion { animation: aparece .4s ease-out both 1s; }
-
-/* La barra crece desde la partida del episodio, que es de donde se viene. */
-.forma--progreso .avance { transform-origin: left center; animation: crece-de-izquierda .8s ease-out both .15s; }
-.forma--progreso .marca  { animation: aparece .4s ease-out both .7s; }
-
-.forma--banda .aguja { animation: aparece .5s ease-out both .25s; }
-
-/* Prueba por prueba, en orden: ver aparecer la racha es el hecho que la forma cuenta. */
-.forma--presencia .prueba { animation: aparece .35s ease-out both; }
-.forma--presencia .prueba:nth-of-type(1) { animation-delay: .15s; }
-.forma--presencia .prueba:nth-of-type(2) { animation-delay: .3s; }
-.forma--presencia .prueba:nth-of-type(3) { animation-delay: .45s; }
-.forma--presencia .prueba:nth-of-type(4) { animation-delay: .6s; }
-.forma--presencia .prueba:nth-of-type(n+5) { animation-delay: .75s; }
-.forma--presencia .racha { transform-origin: left center; animation: crece-de-izquierda .5s ease-out both .55s; }
-
-/* Quien pidio que no se mueva, no se mueve. */
+/* Quien pidió que no se mueva, no se mueve. */
 @media (prefers-reduced-motion: reduce) {
-    .portada-cuerpo, .serie,
-    .forma--trayectoria .trazo, .forma--trayectoria .punto,
-    .forma--trayectoria .punto--final, .forma--trayectoria .punto--atencion,
-    .forma--progreso .avance, .forma--progreso .marca,
-    .forma--banda .aguja,
-    .forma--presencia .prueba, .forma--presencia .racha {
+    .instrumento, .medidor .aguja, .medidor .carga,
+    .chispa .trazo, .chispa .punto, .trecho-barra .relleno {
         animation: none;
     }
 }

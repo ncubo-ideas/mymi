@@ -1,0 +1,72 @@
+@using System.Globalization
+
+@* LA AGUJA DE LA AUTONOMÍA — la FormaDeLectura.MedidorDiscreto del dominio, dibujada
+   como lo que todo el mundo ya sabe leer: un medidor de gasolina de E a F.
+
+   POR QUÉ UNA AGUJA Y NO UN NÚMERO PELADO. La autonomía no se consulta, se ojea. Un
+   arco con una aguja contesta «¿me alcanza?» antes de que alguien lea la cifra, y la
+   cifra queda adentro para cuando sí quiera el número.
+
+   VA EN COBRE, NUNCA EN SEMÁFORO. Un medidor de gasolina en rojo es idioma universal,
+   pero acá el rojo lo produce SOLO el dominio con la severidad «urgente», y esto es una
+   proyección que el dominio no juzgó: son dos derivaciones multiplicadas, no una
+   medición. Pintarla de semáforo sería inventarle un veredicto que nadie emitió.
+
+   SIN FRACCIÓN NO HAY AGUJA. Cuando no se puede estimar cuánto queda, el arco se
+   dibuja lleno y la lectura pasa a ser «el tanque lleno da ~X km»: eso sí se sabe. *@
+
+<svg class="medidor" viewBox="0 0 120 86" role="img" aria-label="@Descripcion">
+    <path class="pista" d="@Arco(0, 1)" fill="none" stroke-width="7" stroke-linecap="round" />
+
+    @if (Nivel() > 0)
+    {
+        <path class="carga" d="@Arco(0, Nivel())" fill="none" stroke-width="7"
+              stroke-linecap="round" pathLength="1" />
+    }
+
+    <text class="marca-e" x="20" y="84" text-anchor="middle">E</text>
+    <text class="marca-f" x="100" y="84" text-anchor="middle">F</text>
+
+    <line class="aguja" x1="60" y1="54" x2="@N(Xr(Nivel(), 31))" y2="@N(Yr(Nivel(), 31))"
+          stroke-width="2.5" stroke-linecap="round" />
+    <circle class="eje" cx="60" cy="54" r="4" stroke-width="2" />
+</svg>
+
+@code {
+    /// <summary>La fracción de tanque que queda, de 0 a 1. Cero significa «no se pudo
+    /// estimar», y entonces la aguja se va a F: la lectura pasa a ser la del tanque
+    /// lleno, que es lo único que se sabe.</summary>
+    [Parameter] public decimal Fraccion { get; set; }
+
+    [Parameter] public string Descripcion { get; set; } = "";
+
+    private double Nivel()
+    {
+        if (Fraccion <= 0m) return 1;
+        return Math.Min(1, (double)Fraccion);
+    }
+
+    // El arco barre 240°: de 150° (abajo a la izquierda, la E) a 390° (abajo a la
+    // derecha, la F). En SVG el ángulo crece en el sentido del reloj porque la y va
+    // para abajo, así que el barrido es el natural de un medidor.
+    private const double Inicio = 150, Barrido = 240, Cx = 60, Cy = 54, Radio = 40;
+
+    private static double Rad(double grados) => grados * Math.PI / 180.0;
+
+    private double Xr(double fraccion, double radio) =>
+        Cx + radio * Math.Cos(Rad(Inicio + Barrido * fraccion));
+
+    private double Yr(double fraccion, double radio) =>
+        Cy + radio * Math.Sin(Rad(Inicio + Barrido * fraccion));
+
+    private string Arco(double desde, double hasta)
+    {
+        // El flag de arco largo depende del barrido, no del radio: por encima de media
+        // vuelta el path tiene que decirlo o SVG dibuja el complemento.
+        int largo = (hasta - desde) * Barrido > 180 ? 1 : 0;
+        return $"M {N(Xr(desde, Radio))} {N(Yr(desde, Radio))} "
+             + $"A {N(Radio)} {N(Radio)} 0 {largo} 1 {N(Xr(hasta, Radio))} {N(Yr(hasta, Radio))}";
+    }
+
+    private static string N(double valor) => valor.ToString("0.##", CultureInfo.InvariantCulture);
+}
