@@ -167,7 +167,7 @@ else
        entero se recrea, el foco del botón recién apretado se pierde. *@
     <div class="franja @Tono()">
         <span class="franja-luz"></span>
-        <div class="franja-texto" @key="@($"franja-{redibujo}")">
+        <div class="franja-texto" @key="@($"franja-{refresco}")">
             @if (rendimiento.ParaSonia.Length > 0)
             {
                 <p class="franja-frase">@Mayuscula(rendimiento.ParaSonia).</p>
@@ -232,7 +232,7 @@ else
 
        Los instrumentos, en el orden en que se preguntan: cuánto me queda, cómo viene
        rindiendo, cuándo tengo que cargar, cuánto me cuesta andar. *@
-    <div class="cuadro" @key="@($"cuadro-{redibujo}")">
+    <div class="cuadro" @key="@($"cuadro-{refresco}")">
 
         <div class="instrumento instrumento--medidor">
             <span class="rotulo">Autonomía</span>
@@ -345,7 +345,7 @@ else
            correcta, que es la peor forma de perder un dato. *@
         @foreach (CostoEnLista costo in costos)
         {
-            <div class="instrumento" @key="@($"costo-{costo.Moneda}-{redibujo}")">
+            <div class="instrumento" @key="@($"costo-{costo.Moneda}")">
                 <span class="rotulo">Costo por kilómetro</span>
                 <div class="cifra cifra--chica">
                     @Simbolo(costo.Moneda)@Plata(costo.MontoPorKilometro)<span class="unidad">por km</span>
@@ -389,7 +389,7 @@ else
         @* Mismo criterio que el costo: el gasto del período viene repartido por moneda. *@
         @foreach (GastoEnLista gasto in gastos)
         {
-            <div class="instrumento instrumento--medio" @key="@($"gasto-{gasto.Moneda}-{redibujo}")">
+            <div class="instrumento instrumento--medio" @key="@($"gasto-{gasto.Moneda}")">
                 <span class="rotulo">Gasto @MesDelGasto()</span>
                 <div class="cifra cifra--chica">@Simbolo(gasto.Moneda)@Plata(gasto.Monto)</div>
                 <div class="cifra-pie">
@@ -446,7 +446,7 @@ else
                 List<FaltanteEnLista> pendientes = FaltantesDe(parada.Transaccion);
 
                 <li class="eslabon parada @(pendientes.Count > 0 ? "parada--pendiente" : "")"
-                    @key="@($"parada-{parada.Transaccion}-{redibujo}")">
+                    @key="@($"parada-{parada.Transaccion}")">
                     <div class="eslabon-riel"><span class="parada-punto"></span></div>
                     <div class="eslabon-cuerpo">
                         <div class="parada-cabeza">
@@ -499,7 +499,7 @@ else
                            la invitación a apretar «Agregar» en la fila equivocada. *@
                         @foreach (FaltanteEnLista pendiente in pendientes)
                         {
-                            <div class="falta" @key="@($"falta-{pendiente.Transaccion}-{pendiente.QueFalta}-{redibujo}")">
+                            <div class="falta" @key="@($"falta-{pendiente.Transaccion}-{pendiente.QueFalta}")">
                                 @if (pendiente.QueFalta == "el kilometraje")
                                 {
                                     <div class="fila">
@@ -558,7 +558,7 @@ else
                     {
                         <li class="eslabon trecho @(tramo.EsComparable ? "" : "trecho--reservado")
                                    @(tramo.EsSospechoso ? "trecho--atencion" : "")"
-                            @key="@($"trecho-{tramo.Desde:O}-{redibujo}")">
+                            @key="@($"trecho-{tramo.Desde:O}")">
                             <div class="eslabon-riel"></div>
                             <div class="eslabon-cuerpo">
                                 <div class="trecho-cifras">
@@ -593,7 +593,7 @@ else
                     }
                     else
                     {
-                        <li class="eslabon bache" @key="@($"bache-{tramo.Desde:O}-{redibujo}")">
+                        <li class="eslabon bache" @key="@($"bache-{tramo.Desde:O}")">
                             <div class="eslabon-riel"></div>
                             <div class="eslabon-cuerpo">
                                 <div class="bache-caja">
@@ -684,9 +684,21 @@ else
     // El refuerzo del ingreso: lo que aparecio al cerrar un tramo.
     private string desbloqueado = "";
 
-    // Sube en cada Releer: es la llave que hace que Blazor recree el cuadro y la ruta en
-    // vez de reusarlos, y la respuesta visible a haber apretado Actualizar.
-    private int redibujo;
+    // SUBE SOLO EN ACTUALIZAR, y es la llave del cuadro y de la franja. La animacion de
+    // entrada se dispara al MONTAR, asi que lo que decide cuando corre no es el CSS: es
+    // que el nodo se recree, y eso lo decide el @key.
+    //
+    // Con un contador que subia en cada Releer, los seis instrumentos volvian a entrar
+    // deslizandose cada vez que se anotaba un kilometraje. La animacion tiene sentido
+    // como respuesta a "fui a buscar datos y volvi"; como respuesta a teclear un numero
+    // es ruido, y encima tapa lo unico que ahi importa, que es el aviso de lo que se
+    // desbloqueo.
+    //
+    // Todo lo demas se actualiza por diffing, con la llave puesta en la IDENTIDAD de
+    // cada cosa -la transaccion, la moneda, la fecha del tramo-. Ademas de no re-animar,
+    // una llave estable deja de destruir el <input> del kilometraje en cada Releer, que
+    // era lo que le robaba el foco a quien estaba escribiendo.
+    private int refresco;
 
     // ------------------------------------------------------------------ presentacion
 
@@ -714,8 +726,11 @@ else
           + $"{Entero(autonomia.Kilometros)} de un tanque lleno"
         : $"Con el tanque lleno te alcanza para unos {Entero(autonomia.Kilometros)} kilometros";
 
+    // CON EL ANIO. El periodo es el mes de la ULTIMA CARGA, no el del calendario: si esa
+    // carga es de hace un anio, "gasto de agosto" se lee como el agosto de este anio y el
+    // rotulo miente por omision.
     private string MesDelGasto() => mesDelGasto == default
-        ? "" : "de " + mesDelGasto.ToString("MMMM", Cultura);
+        ? "" : "de " + mesDelGasto.ToString("MMMM yyyy", Cultura);
 
     // EL ANCHO DE LA BARRA DEL TRECHO. El nivel de siempre se planta en el 60% para que
     // un tramo mejor que el habitual tenga hacia donde crecer: con el habitual al 100%
@@ -734,20 +749,22 @@ else
     // va de un tanque lleno al siguiente y en el medio puede haber una carga PARCIAL que
     // no lo cierra. Con adyacencia no aparecia ninguno de los que saltan una parcial, que
     // en el guion de la demo son justo los interesantes.
-    private TramoEnLista? TramoQueCierraEn(DateTime hasta)
-    {
-        foreach (TramoEnLista tramo in tramos)
-            if (tramo.Hasta == hasta) return tramo;
-        return null;
-    }
+    //
+    // POR DICCIONARIO Y NO RECORRIENDO LA LISTA: esto se llama una vez por parada, asi
+    // que un barrido adentro convierte el dibujo de la ruta en cuadratico. Con nueve
+    // cargas no se nota; una bitacora de tres anios son unas 130 000 comparaciones cada
+    // vez que se repinta, y esto corre en wasm de un solo hilo.
+    private Dictionary<DateTime, TramoEnLista> tramoPorCierre = new();
+    private Dictionary<string, List<FaltanteEnLista>> faltantesPorCarga = new();
 
-    private List<FaltanteEnLista> FaltantesDe(string transaccion)
-    {
-        var pendientes = new List<FaltanteEnLista>();
-        foreach (FaltanteEnLista faltante in faltantes)
-            if (faltante.Transaccion == transaccion) pendientes.Add(faltante);
-        return pendientes;
-    }
+    private static readonly List<FaltanteEnLista> SinPendientes = new();
+
+    private TramoEnLista? TramoQueCierraEn(DateTime hasta) =>
+        tramoPorCierre.TryGetValue(hasta, out TramoEnLista? tramo) ? tramo : null;
+
+    private List<FaltanteEnLista> FaltantesDe(string transaccion) =>
+        faltantesPorCarga.TryGetValue(transaccion, out List<FaltanteEnLista>? pendientes)
+            ? pendientes : SinPendientes;
 
     // Lo mas reciente arriba: la ruta desciende hacia el pasado, que es como se mira un
     // historial y como se lee un tablero -lo de ahora primero.
@@ -871,7 +888,16 @@ else
     {
         refrescando = true;
         try { await estado.Refrescar(); }
-        finally { refrescando = false; Releer(); }
+        finally
+        {
+            refrescando = false;
+
+            // Sube ANTES de releer: es lo que recrea el cuadro y hace que los
+            // instrumentos vuelvan a entrar. Es la respuesta visible a haber apretado
+            // Actualizar, incluso cuando no vino nada nuevo.
+            refresco++;
+            Releer();
+        }
     });
 
     // EL APORTE DE ELLA. Si mando la propuesta sin tocarla, su origen es confirmado
@@ -970,7 +996,6 @@ else
         vehiculos = estado.Vehiculos();
         ultimoEvento = estado.UltimoEvento();
         lealtad = estado.Lealtad();
-        redibujo++;
 
         // El demo es de un vehiculo; el modelo contempla varios y este tablero, por
         // ahora, es el del primero con toda su historia.
@@ -980,6 +1005,8 @@ else
             tramos = new List<TramoEnLista>();
             faltantes = new List<FaltanteEnLista>();
             costos = new List<CostoEnLista>();
+            tramoPorCierre = new Dictionary<DateTime, TramoEnLista>();
+            faltantesPorCarga = new Dictionary<string, List<FaltanteEnLista>>();
             rendimiento = new RendimientoDelVehiculo();
             autonomia = new AutonomiaDelVehiculo();
             proxima = new ProximaCargaDelVehiculo();
@@ -998,6 +1025,20 @@ else
         completitud = estado.Completitud(placa);
         faltantes = estado.Faltantes(placa);
         costos = estado.Costos(placa);
+
+        // Los indices de la ruta, armados una sola vez por lectura. Un tramo lo cierra
+        // una carga y solo una, asi que TryAdd alcanza y ademas deja el primero si el
+        // dominio alguna vez devolviera dos con el mismo cierre.
+        tramoPorCierre = new Dictionary<DateTime, TramoEnLista>();
+        foreach (TramoEnLista tramo in tramos) tramoPorCierre.TryAdd(tramo.Hasta, tramo);
+
+        faltantesPorCarga = new Dictionary<string, List<FaltanteEnLista>>();
+        foreach (FaltanteEnLista faltante in faltantes)
+        {
+            if (!faltantesPorCarga.TryGetValue(faltante.Transaccion, out List<FaltanteEnLista>? pendientes))
+                faltantesPorCarga[faltante.Transaccion] = pendientes = new List<FaltanteEnLista>();
+            pendientes.Add(faltante);
+        }
 
         // El "hoy" del prellenado y de la proyeccion lo pone ESTA caratula: el dominio no
         // lee el reloj. Si lo hiciera, el mismo journal reproducido manana daria otra
