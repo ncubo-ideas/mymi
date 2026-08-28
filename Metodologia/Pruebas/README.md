@@ -28,7 +28,7 @@ tiran.
 
 | | Qué prueba | Estado |
 |---|---|---|
-| [`Presupuesto/`](Presupuesto/) | La cadena completa del orden de trabajo, de punta a punta | Tiene su `Preguntas.md`. **Falta construir** |
+| [`Presupuesto/`](Presupuesto/) | La cadena completa del orden de trabajo, de punta a punta | **Construido.** `Preguntas.md` → dominio → consola → MCP. 31 comprobaciones |
 
 ### Por qué Presupuesto
 
@@ -44,10 +44,25 @@ Es un dominio que **rompe el molde de los otros tres**, y por eso vale como prue
 
 Si las guías sobreviven a este dominio, sobreviven a bastante.
 
-## Qué se está probando exactamente
+## Qué se probó exactamente, y qué contestó
 
-El eslabón que todavía no se probó: **¿alcanza el `Preguntas.md` para modelar sin volver a preguntar?**
+El eslabón era: **¿alcanza el `Preguntas.md` para modelar sin volver a preguntar?**
 
-Si se puede construir el dominio entero con ese archivo en la mano, el método se sostiene. Si a la
-primera hora hay que ir a consultar tres juicios que faltaban, el archivo está incompleto — y
-sabremos exactamente en qué, que es igual de útil.
+**No alcanzó, y ése es el hallazgo.** El dominio se construyó entero con el archivo en la mano, pero
+aparecieron **ocho huecos** — cosas que había que decidir y que nadie había decidido. Están en
+[`HUECOS.md`](Presupuesto/HUECOS.md), cada uno con la decisión que se tomó para seguir.
+
+Que hayan aparecido no invalida el método: **los ocho se descubrieron modelando, no discutiendo**, y
+eso era justamente lo que se quería saber. Dos merecen atención especial:
+
+- **El hueco 2 rompe un juicio declarado.** Lo que no es mensual no se prorratea, y el juicio 2 decía
+  vigilar el total mensual. Un juicio del archivo era **inconsistente con otro del mismo archivo**, y
+  eso no se ve leyendo: se ve al escribir la clase.
+- **El hueco 7 se cerró por borrado**, no por relleno. La respuesta fue que la pregunta sobraba.
+
+Uno cerrado, siete abiertos. **Que sigan abiertos es correcto:** son decisiones de negocio, y el
+sujeto de prueba no tiene dueño de negocio que las tome.
+
+> **Lo que esto le agregó al método.** La entrevista tenía cuatro bloques y una sola pasada. Ahora
+> tiene un quinto que **vuelve** sobre las respuestas después del primer intento de modelar — porque
+> ocho huecos en un dominio chico dicen que una pasada nunca alcanza.
