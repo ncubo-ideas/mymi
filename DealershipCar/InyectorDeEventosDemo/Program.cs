@@ -227,9 +227,13 @@ async Task Ficha()
 {
     string primera = Arg(args, "--revision", "MY2025-R1");
     string segunda = Arg(args, "--revision2", "MY2025-R2");
+    bool sustituye = !args.Contains("--sin-sustituir");
 
     Console.WriteLine($"publicando la ficha del fabricante en {recurso}/{id}...");
     Console.WriteLine($"  revisiones: {primera} y {segunda}");
+    Console.WriteLine(sustituye
+        ? $"  y al final SUSTITUYE {primera}: despues de eso solo contesta el aceite"
+        : $"  SIN sustituir: {primera} sigue contestando, asi que la hoja queda entera");
     Console.WriteLine();
 
     (object cuerpo, string porque)[] guion =
@@ -277,13 +281,22 @@ async Task Ficha()
             "SUSTITUYE la primera: lo que la sucesora no republico se retira con ella"),
     };
 
-    foreach ((object cuerpo, string porque) in guion)
+    foreach ((object cuerpo, string porque) in sustituye ? guion : guion[..^1])
     {
         using var r = await http.PostAsJsonAsync($"{recurso}/{id}/events/hecho", cuerpo);
         Console.WriteLine($"  HTTP {(int)r.StatusCode}   {porque}");
     }
 
     Console.WriteLine();
+    if (!sustituye)
+    {
+        Console.WriteLine("NO se posteo la sustitucion. Una revision que corrige un item no borra los");
+        Console.WriteLine($"que no republico, asi que el aceite sale de {segunda} y todo lo demas sigue");
+        Console.WriteLine($"saliendo de {primera} -- que es lo que la columna de revision esta ahi para");
+        Console.WriteLine("mostrar. Con la sustitucion, en cambio, se retira lo que la sucesora no");
+        Console.WriteLine("volvio a publicar y la hoja queda en una sola linea.");
+        Console.WriteLine();
+    }
     Console.WriteLine("UN CODIGO DE REVISION SE TOMA UNA SOLA VEZ Y PARA SIEMPRE. Correr esto dos");
     Console.WriteLine("veces contra el mismo journal hace que el segundo OpenRevision se rechace:");
     Console.WriteLine("la app pierde ese hecho, sigue con el siguiente, y deja una marca. Para una");
@@ -458,6 +471,8 @@ static void Ayuda()
     Console.WriteLine("  historia                      siembra el guion completo de la demo");
     Console.WriteLine("  ficha                         publica la ficha del fabricante en dos revisiones");
     Console.WriteLine("                                --revision --revision2 (default MY2025-R1 y -R2)");
+    Console.WriteLine("                                --sin-sustituir salta la sustitucion final, y esa");
+    Console.WriteLine("                                es la unica forma de ver la hoja entera en pantalla");
     Console.WriteLine("  senuelo                       demuestra el 403 de /customer con el token de la app");
     Console.WriteLine("  inyectar --tipo <tipo> ...    agrega UN hecho concreto");
     Console.WriteLine();
