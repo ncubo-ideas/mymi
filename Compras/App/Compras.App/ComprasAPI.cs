@@ -675,6 +675,13 @@ namespace Compras.App
 							mes.Gasto gasto,
 							mes.Compras compras;
 					}
+					foreach (anio in consumo.Anios) {
+						print anio.AnioExpresado anio,
+							anio.Unidades unidades,
+							anio.Gasto gasto,
+							anio.Compras compras,
+							anio.MesesConCompras mesesConCompras;
+					}
 				}
 			")
 			.WithParameters(p => {

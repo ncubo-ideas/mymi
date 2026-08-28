@@ -329,6 +329,9 @@ namespace Compras.App.Vistas
 		public string ParaSonia { get; init; } = "";
 		public IReadOnlyList<MesDeConsumoVista> Meses { get; init; } = new List<MesDeConsumoVista>();
 
+		/// <summary>La misma serie por año. Vacía cuando no hay consumo.</summary>
+		public IReadOnlyList<AnioDeConsumoVista> Anios { get; init; } = new List<AnioDeConsumoVista>();
+
 		public bool Existe => MesesConConsumo > 0;
 	}
 
@@ -370,6 +373,19 @@ namespace Compras.App.Vistas
 	// EN CUALES COMPRAS APARECIO ALGO. La respuesta del buscador de recibos, y la unica
 	// pantalla donde una lista se acorta por la PREGUNTA y no por un tope: buscar "leche"
 	// devuelve las compras con leche, no las primeras N de todas.
+	// UN AÑO DE LA SERIE. Existe porque la serie mensual crece doce filas por año y esta
+	// crece una: la ficha pinta el año mas reciente mes a mes y los anteriores de a una
+	// fila. mesesConCompras es lo que impide comparar un año a medias con uno entero como
+	// si midieran lo mismo.
+	public sealed class AnioDeConsumoVista
+	{
+		public string Anio { get; init; } = "";
+		public int Unidades { get; init; }
+		public decimal Gasto { get; init; }
+		public int Compras { get; init; }
+		public int MesesConCompras { get; init; }
+	}
+
 	public sealed class ComprasHalladas
 	{
 		public string Buscado { get; init; } = "";

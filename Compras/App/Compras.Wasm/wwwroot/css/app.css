@@ -733,6 +733,15 @@ main h2 {
     color: var(--tinta);
 }
 
+/* CUANTOS MESES TUVO UN AÑO, debajo de su gasto. Va en chico y en su propia linea porque
+   no es una cifra que se compare: es la advertencia de que ese año puede estar a medias y
+   que sus 31 unidades no se leen igual que las 48 de uno entero. */
+.anio-meses {
+    display: block;
+    font-size: .72rem;
+    opacity: .75;
+}
+
 /* El rotulito del grupo: HOY, AGOSTO 2026. Es el kicker de la marca. */
 .grupo-fecha {
     font-size: .74rem;

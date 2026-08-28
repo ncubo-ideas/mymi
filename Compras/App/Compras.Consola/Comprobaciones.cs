@@ -65,6 +65,7 @@ namespace Compras.Consola
 			ElRitmoDeUnProductoCambia();
 			ElRitmoDelSuperTieneTresCaras();
 			LaConstanciaSeDiceEnPalabras();
+			LaSerieSeAgrupaPorAnio();
 			LaBusquedaEncuentraPorProducto();
 
 			Console.WriteLine();
@@ -1302,6 +1303,60 @@ namespace Compras.Consola
 			for (int i = 0; i <= 10; i++)
 				Igual($"  {i * 10}% tiene constancia", "True",
 					(Constancia.Para(i / 10m) != null).ToString());
+		}
+
+		// ---- la serie tambien se lee por año ----
+		private static void LaSerieSeAgrupaPorAnio()
+		{
+			Titulo("la serie tambien se lee por año");
+
+			Historial guion = ElGuion();
+
+			// El guion tiene azucarados en 2026-02, 2026-07 y 2026-08: un solo año.
+			Consumo dulces = guion.ConsumoDe("Azucarados");
+			Igual("azucarados: 3 meses", "3", dulces.Meses.Count.ToString());
+			Igual("  y un solo año", "1", dulces.Anios.Count.ToString());
+			Igual("  que es 2026", "2026", dulces.Anios[0].AnioExpresado);
+			Igual("  con los 3 meses adentro", "3", dulces.Anios[0].MesesConCompras.ToString());
+
+			// EL AÑO SUMA LO MISMO QUE SUS MESES. Es la comprobacion que importa: si el
+			// agrupado no cuadra con la serie, la pantalla muestra dos verdades distintas.
+			int unidadesDeLosMeses = 0;
+			decimal gastoDeLosMeses = 0m;
+			foreach (MesDeConsumo mes in dulces.Meses)
+			{
+				unidadesDeLosMeses = unidadesDeLosMeses + mes.Unidades;
+				gastoDeLosMeses = gastoDeLosMeses + mes.Gasto;
+			}
+			Igual("  las unidades del año son las de sus meses", unidadesDeLosMeses.ToString(),
+				dulces.Anios[0].Unidades.ToString());
+			Igual("  y el gasto tambien", gastoDeLosMeses.ToString("0.##"),
+				dulces.Anios[0].Gasto.ToString("0.##"));
+			Igual("  y el total del consumo cierra igual", dulces.TotalUnidades.ToString(),
+				dulces.Anios[0].Unidades.ToString());
+
+			// EL POLLO CRUZA DOS AÑOS: 2025-08 (2 u) y 2026-02 (1 u).
+			Consumo pollo = guion.ConsumoDe("POLLO-KG");
+			Igual("pollo: dos años", "2", pollo.Anios.Count.ToString());
+			Igual("  el primero es el mas viejo", "2025", pollo.Anios[0].AnioExpresado);
+			Igual("  y el ultimo el mas nuevo", "2026", pollo.Anios[1].AnioExpresado);
+			Igual("  2025 llevo 2 unidades", "2", pollo.Anios[0].Unidades.ToString());
+			Igual("  2026 llevo 1", "1", pollo.Anios[1].Unidades.ToString());
+			// UN AÑO A MEDIAS SE DELATA por sus meses, que es lo que impide compararlo con
+			// uno entero como si midieran lo mismo.
+			Igual("  y cada uno tuvo un solo mes con compra", "1,1",
+				$"{pollo.Anios[0].MesesConCompras},{pollo.Anios[1].MesesConCompras}");
+
+			// TOTAL: sin consumo la serie anual es vacia, no revienta ni trae un año cero.
+			Consumo nada = guion.ConsumoDe("caviar");
+			Igual("caviar: no existe", "False", nada.Existe().ToString());
+			Igual("  y no tiene años", "0", nada.Anios.Count.ToString());
+			Igual("historial vacio: tampoco", "0",
+				new Historial().ConsumoDe("leche").Anios.Count.ToString());
+
+			// EL AÑO CERO no se puede comprobar desde aca y esta bien: el constructor de
+			// AnioDeConsumo es internal, asi que nadie de afuera puede armar uno mudo. La
+			// guarda se queda igual, defendiendo del error de adentro.
 		}
 
 		// ---- en cuales compras aparecio esto ----

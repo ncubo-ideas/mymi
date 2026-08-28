@@ -485,6 +485,23 @@ respuesta corta cuando lo que se pregunta es justamente lo que nunca falta. La p
 corta en 25, **pero los totales de la cabecera son de todas**, así que el número que se lee
 nunca es el número recortado.
 
+### La serie de un producto, y por qué no se paginó
+
+La ficha de un producto pintaba **una fila por mes**, y eso crece doce filas por año:
+con los datos de hoy la leche ya iba en **20 filas**, y en cinco años serían sesenta.
+
+Paginar era la salida obvia y **rompe la serie**: lo que una serie de tiempo sirve para
+ver es enero contra enero, y eso no sobrevive a que caigan en páginas distintas. Ahora
+el **año más reciente se abre mes a mes** y los anteriores van **una fila cada uno**, así
+que la lista pasa de crecer 12 por año a crecer **1**. Medido: 20 filas → **9**, y la página
+de 1.546 px a 970.
+
+No hay umbral que aprobar — es estructural, no un número elegido. Y **dos detalles que no
+son cosméticos**: los años van en su propio bloque con **su propia escala**, porque un año
+suma doce meses y en una escala compartida su barra deja las mensuales en nada; y cada
+año dice **cuántos meses tuvo compra**, que es lo que impide leer un año a medias (31
+unidades en ocho meses) como uno entero (48 en doce).
+
 ### Dos preguntas para el equipo, no pendientes nuestros
 
 **1 · "Los frescos" contra "proteínas".** La respuesta esperada de S14 dice *"los frescos,

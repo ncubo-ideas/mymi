@@ -41,6 +41,17 @@ namespace Compras.Dominio
 
 		public abstract IReadOnlyList<MesDeConsumo> Meses { get; }
 
+		/// <summary>
+		/// La misma serie un escalón más arriba, un punto por año. Vacía cuando no hay
+		/// consumo.
+		/// </summary>
+		// LA SERIE MENSUAL CRECE PARA SIEMPRE -doce filas por año- y la anual crece UNA. La
+		// pantalla pinta el año mas reciente mes a mes y los anteriores de a una fila, asi
+		// que pasa de crecer 12 por año a crecer 1. Las dos conviven a proposito: quien
+		// pregunta por una fecha -una IA cruzando un resultado de laboratorio- necesita el
+		// mes, y quien mira la pantalla necesita poder recorrerla.
+		public abstract IReadOnlyList<AnioDeConsumo> Anios { get; }
+
 		public abstract int MesesConConsumo { get; }
 		public abstract decimal TotalGastado { get; }
 		public abstract int TotalUnidades { get; }
@@ -95,6 +106,7 @@ namespace Compras.Dominio
 			public override bool Existe() => false;
 			public override bool EsCategoria => false;
 			public override IReadOnlyList<MesDeConsumo> Meses => Array.Empty<MesDeConsumo>();
+			public override IReadOnlyList<AnioDeConsumo> Anios => Array.Empty<AnioDeConsumo>();
 			public override int MesesConConsumo => 0;
 			public override decimal TotalGastado => 0m;
 			public override int TotalUnidades => 0;
@@ -154,6 +166,35 @@ namespace Compras.Dominio
 			public override bool Existe() => true;
 			public override bool EsCategoria => esCategoria;
 			public override IReadOnlyList<MesDeConsumo> Meses => meses;
+
+			// SE ARMA AL LEERLA y no en el constructor, igual que los totales de esta clase:
+			// la mayoria de las consultas no la pide, y recorrer veinte meses para armar dos
+			// filas que nadie va a mirar se paga en cada consulta.
+			//
+			// LOS MESES YA VIENEN ORDENADOS -quien los arma los ordena por llave aaaamm-, asi
+			// que basta con recorrerlos: el año cambia cuando cambia, y no hace falta ni
+			// diccionario ni ordenar de nuevo.
+			public override IReadOnlyList<AnioDeConsumo> Anios
+			{
+				get
+				{
+					var anios = new List<AnioDeConsumo>();
+					AnioDeConsumo actual = null;
+
+					foreach (MesDeConsumo mes in meses)
+					{
+						if (actual is null || actual.Anio != mes.Anio)
+						{
+							actual = new AnioDeConsumo(mes.Anio);
+							anios.Add(actual);
+						}
+
+						actual.Sumar(mes);
+					}
+
+					return anios;
+				}
+			}
 			public override int MesesConConsumo => meses.Count;
 
 			public override decimal TotalGastado

@@ -422,9 +422,25 @@ namespace Compras.App
 						Compras = Entero(elemento, "compras"),
 					});
 
+			// LA CLAVE ES LA VARIABLE DEL FOREACH, no el alias del print: `foreach (anio in
+			// ...)` sale como "anio":[{...}]. Leer mal la clave no falla — deja la lista
+			// vacia y la pantalla pinta de menos, que es peor que un error.
+			var anios = new List<AnioDeConsumoVista>();
+			if (raiz.TryGetProperty("anio", out JsonElement porAnio))
+				foreach (JsonElement elemento in Elementos(porAnio))
+					anios.Add(new AnioDeConsumoVista
+					{
+						Anio = Texto(elemento, "anio"),
+						Unidades = Entero(elemento, "unidades"),
+						Gasto = Decimal(elemento, "gasto"),
+						Compras = Entero(elemento, "compras"),
+						MesesConCompras = Entero(elemento, "mesesConCompras"),
+					});
+
 			return new ConsumoEnElTiempo
 			{
 				Termino = Texto(cabecera, "termino"),
+				Anios = anios,
 				EsCategoria = Booleano(cabecera, "esCategoria"),
 				MesesConConsumo = Entero(cabecera, "mesesConConsumo"),
 				TotalGastado = Decimal(cabecera, "totalGastado"),
