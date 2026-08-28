@@ -14,15 +14,16 @@ namespace DealershipCar.Dominio.Pruebas
 	// aunque el estado siga siendo correcto.
 	//
 	// Asi que ninguna linea de DSL de DealershipCarAPI puede llegar al journal de una persona sin
-	// haberse ejecutado antes aca. Esta prueba corre CADA UNA de las SETENTA Y CINCO operaciones de
+	// haberse ejecutado antes aca. Esta prueba corre CADA UNA de las SETENTA Y SIETE operaciones de
 	// la puerta al menos una vez -- las veintiuna de la agenda (OS2/T6), las siete de la ingesta
 	// (OS2/T8: los dos comandos de la bitacora, sus cuatro lecturas, y el Apply), CanBeDeferred, los
-	// once comandos de publicacion de la especificacion (T5), y las TREINTA Y CINCO lecturas de la
-	// especificacion (T6).
+	// once comandos de publicacion de la especificacion (T5), y las TREINTA Y SIETE lecturas de la
+	// especificacion (T6, mas las dos mitades publicadas que agrego
+	// PLAN-ModelSpecification-AmendmentMigrations B1 por la ley L7b).
 	// No mira reglas de negocio -- de eso se ocupan las otras pruebas del nivel B -- mira que el
 	// script exista, parsee, ate sus parametros y devuelva lo que dijo que devolvia.
 	//
-	// LAS OPERACIONES SON SETENTA Y CINCO Y LOS SCRIPTS SON MAS, y T9 es donde la diferencia se
+	// LAS OPERACIONES SON SETENTA Y SIETE Y LOS SCRIPTS SON MAS, y T9 es donde la diferencia se
 	// vuelve grande: Apply es UNA operacion de la puerta y tiene DIECISIETE scripts detras -- uno
 	// por cada tipo de hecho recibido, mas el comando suelto que avanza el punto de control cuando
 	// el dominio rechaza el hecho. T9 sumo once de esos diecisiete y no sumo ninguna operacion.
@@ -420,6 +421,9 @@ namespace DealershipCar.Dominio.Pruebas
 			Assert.That(
 				journal.Api.DescribeServiceInterval("FluidChange", 8400, "UnitA"),
 				Does.Contain("not published"));
+			Assert.That(
+				journal.Api.DescribePublishedServiceInterval("FluidChange"),
+				Does.Contain("not published"));
 			Assert.That(journal.Api.ReadServiceIntervalRevision("FluidChange"), Is.EqualTo(""));
 
 			Assert.That(
@@ -453,6 +457,9 @@ namespace DealershipCar.Dominio.Pruebas
 			Assert.That(journal.Api.IsServicingPolicyPublished(), Is.False);
 			Assert.That(
 				journal.Api.DescribeServicingElsewhereRule(2, 0, 0), Does.Contain("not published"));
+			Assert.That(
+				journal.Api.DescribePublishedServicingElsewhereRule(),
+				Does.Contain("not published"));
 			Assert.That(journal.Api.ReadServicingPolicyRevision(), Is.EqualTo(""));
 		}
 

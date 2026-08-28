@@ -690,6 +690,20 @@ namespace DealershipCar.App
 			});
 		}
 
+		/// <summary>
+		/// Cada cuanto publica el fabricante que se hace esa operacion, con su mitad publicada nada
+		/// mas. No pregunta por ningun vehiculo, asi que la contesta cualquiera que no tenga los
+		/// hechos de ninguno. TOTAL.
+		/// </summary>
+		public string DescribePublishedServiceInterval(string kind)
+		{
+			return AText(@"
+				@clause = specification.DescribePublishedServiceInterval(@kind);
+			", "clause", p => {
+				p["kind", typeof(Enum)] = WireName.OperationKind(kind);
+			});
+		}
+
 		/// <summary>De que revision salio el intervalo de esa operacion. TOTAL.</summary>
 		public string ReadServiceIntervalRevision(string kind)
 		{
@@ -894,6 +908,18 @@ namespace DealershipCar.App
 				p["withoutEvidence", typeof(int)] = externalServicesWithoutEvidence;
 				p["missed",          typeof(int)] = missedMaintenanceCount;
 			});
+		}
+
+		/// <summary>
+		/// La regla publicada sobre servicio en otro taller, con su mitad publicada nada mas. No
+		/// pregunta por ningun vehiculo, asi que la contesta cualquiera que no tenga los conteos de
+		/// ninguno. TOTAL.
+		/// </summary>
+		public string DescribePublishedServicingElsewhereRule()
+		{
+			return AText(
+				"@clause = specification.DescribePublishedServicingElsewhereRule();",
+				"clause", p => { });
 		}
 
 		/// <summary>De que revision salio la regla de servicio en otro taller. TOTAL.</summary>

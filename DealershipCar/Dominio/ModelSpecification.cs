@@ -595,6 +595,16 @@ namespace DealershipCar.Dominio
 			return ARevisionAppliesForward(kind, distanceRemaining, remainingUnit).Describe();
 		}
 
+		/// <summary>
+		/// Cada cuanto publica el fabricante que se hace esa operacion, con su mitad publicada nada
+		/// mas. No pregunta por ningun vehiculo, asi que la contesta tambien quien no tenga ningun
+		/// hecho de ninguno. TOTAL: lo no publicado se dice.
+		/// </summary>
+		internal string DescribePublishedServiceInterval(OperationKindCode kind)
+		{
+			return ARevisionAppliesForward(kind).Describe();
+		}
+
 		/// <summary>De que revision salio el intervalo de esa operacion. TOTAL.</summary>
 		internal string ReadServiceIntervalRevision(OperationKindCode kind)
 		{
@@ -659,6 +669,16 @@ namespace DealershipCar.Dominio
 			return ARevisionAppliesForwardToTheServicingPolicy(
 				externalServicesWithEvidence, externalServicesWithoutEvidence,
 				missedMaintenanceCount).Describe();
+		}
+
+		/// <summary>
+		/// La regla publicada sobre servicio en otro taller, con su mitad publicada nada mas. No
+		/// pregunta por ningun vehiculo, asi que la contesta tambien quien no lleve los conteos de
+		/// ninguno. TOTAL: lo no publicado se dice.
+		/// </summary>
+		internal string DescribePublishedServicingElsewhereRule()
+		{
+			return ARevisionAppliesForwardToTheServicingPolicy().Describe();
 		}
 
 		/// <summary>De que revision salio la regla de servicio en otro taller. TOTAL.</summary>

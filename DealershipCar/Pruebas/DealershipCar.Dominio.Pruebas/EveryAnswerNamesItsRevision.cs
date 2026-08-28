@@ -63,7 +63,20 @@ namespace DealershipCar.Dominio.Pruebas
 			new[] { "DescribeServicingElsewhereRule", "ReadServicingPolicyRevision" },
 			new[] { "DescribeCoverageSummary", "ReadCoverageRevision" },
 			new[] { "DescribeCoverage", "ReadCoverageRevision" },
+			new[] { "DescribePublishedServiceInterval", "ReadServiceIntervalRevision" },
+			new[] { "DescribePublishedServicingElsewhereRule", "ReadServicingPolicyRevision" },
 		};
+
+		// LAS DOS QUE ENTRARON CON LA LEY L7b son el mismo caso que las dos de T4 y por eso la
+		// tabla ya sabia contestarlas: la mitad publicada y la emparejada son DOS FRASES DEL MISMO
+		// ITEM, asi que salen de UNA sola procedencia -- la que ya estaba declarada. Nombrar
+		// revisiones distintas seria una de las dos mintiendo, que es literalmente el argumento con
+		// que DescribeCoverageSummary y DescribeCoverage comparten ReadCoverageRevision.
+		//
+		// Y notese lo que esto dice de la ley: la procedencia NUNCA estuvo fundida. Solo la frase
+		// lo estaba. Las lecturas de presencia y de procedencia ya contestaban sin un solo hecho
+		// del vehiculo -- las dos pasan por la sobrecarga sin parametros recibidos -- asi que lo
+		// que L7b agrego a la superficie fue la tercera lectura del trio, no un trio nuevo.
 
 		[Test]
 		public void EveryDescribeReadOfTheFacadeIsPairedWithARevisionRead()
