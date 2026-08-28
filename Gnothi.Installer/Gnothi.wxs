@@ -1,0 +1,128 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<!-- ═══════════════════════════════════════════════════════════════════════════════════════
+     INSTALADOR DE GNOTHI (el Host) — MSI, per-usuario, sin admin.
+
+     QUE HACE EN LA MAQUINA (y por que cada cosa):
+       1. Copia los binarios publicados de Gnothi.Desktop + Gnothi.Host a
+          %LocalAppData%\Programs\Gnothi. Per-usuario => NO pide UAC. Los DATOS del usuario
+          (jornales, carpetas otorgadas) NO viven aca: van a Documents\Gnothi\<modulo>, que
+          escribe el Host cuando instala un modulo. Binarios y datos, separados.
+       2. Crea la subcarpeta Modulos\ al lado del exe. Es el "installed layout" que
+          Gnothi.Desktop busca (Directory.Exists(BaseDirectory\Modulos)); sin ella, la ventana
+          caeria al layout de DESARROLLO (cuatro niveles arriba) y no encontraria nada.
+       3. Escribe LA MARCA DE DESCUBRIMIENTO en HKCU\Software\Ncubo\Gnothi. El instalador de
+          una app de comercio lee ModulesPath de aca para saber DONDE soltar su .gmod, y si la
+          llave no existe, sabe que Gnothi no esta instalado y manda a la pagina. Esta es la
+          pieza que hoy NO existe: HostInstaller solo registra el MCP en Claude, no deja rastro
+          de si mismo.
+       4. Deja accesos directos (Menu Inicio + Escritorio) que abren Gnothi.Desktop.exe.
+
+     QUE NO HACE: no toca HKLM, no toca startup, no se pone como default de nada. El registro
+     del MCP en Claude (lo que hace el comando `install` del Host) se deja para el primer
+     arranque de la ventana, no para una accion de consola escondida en el MSI.
+
+     DEMO: sin firmar. Al correrlo Windows mostrara SmartScreen ("Mas informacion" ->
+     "Ejecutar de todas formas") y, por ser per-usuario, NO pide elevacion.
+     ═══════════════════════════════════════════════════════════════════════════════════════ -->
+
+<Wix xmlns="http://wixtoolset.org/schemas/v4/wxs"
+     xmlns:ui="http://wixtoolset.org/schemas/v4/wxs/ui">
+
+  <Package
+      Name="Gnothi"
+      Manufacturer="Ncubo"
+      Version="0.1.0"
+      UpgradeCode="7B3C1E42-9A6D-4F2B-8E15-2C9A7D4E1F30"
+      Scope="perUser"
+      Compressed="yes">
+
+    <!-- Reinstalar reemplaza limpio; una version mas vieja se rechaza. AllowSameVersionUpgrades
+         hace que instalar la MISMA version quite la anterior (mismo UpgradeCode) en vez de dejar
+         dos entradas en Agregar/quitar programas: cada `wix build` genera un ProductCode nuevo,
+         y sin esto cada reinstalacion se acumulaba. -->
+    <MajorUpgrade AllowSameVersionUpgrades="yes"
+                  DowngradeErrorMessage="Ya hay una version mas nueva de Gnothi instalada." />
+    <MediaTemplate EmbedCab="yes" />
+
+    <!-- ═══ UI INTERACTIVA ═══
+         WixUI_InstallDir es el asistente con paso de SELECCION DE CARPETA: Bienvenida ->
+         Licencia -> Carpeta (con "Examinar...") -> Confirmar -> Progreso -> Fin. La ruta que
+         el usuario elija reemplaza INSTALLFOLDER, y como Modulos\ y la marca de descubrimiento
+         cuelgan de el, TODO queda relativo a la carpeta elegida sin tocar nada mas.
+         WIXUI_INSTALLDIR le dice al dialogo cual directorio editar. -->
+    <Property Id="WIXUI_INSTALLDIR" Value="INSTALLFOLDER" />
+    <ui:WixUI Id="WixUI_InstallDir" />
+    <WixVariable Id="WixUILicenseRtf" Value="license.rtf" />
+
+    <!-- Per-usuario, sin admin: %LocalAppData%\Programs\Gnothi -->
+    <StandardDirectory Id="LocalAppDataFolder">
+      <Directory Id="ProgramsFolder" Name="Programs">
+        <Directory Id="INSTALLFOLDER" Name="Gnothi">
+          <Directory Id="MODULESFOLDER" Name="Modulos" />
+        </Directory>
+      </Directory>
+    </StandardDirectory>
+
+    <!-- LOS BINARIOS PUBLICADOS, cosechados del stage. <Files> recrea la estructura de
+         subcarpetas (incluye wwwroot\, que Gnothi.Desktop usa como HostPage). -->
+    <ComponentGroup Id="AppFiles" Directory="INSTALLFOLDER">
+      <Files Include="stage\gnothi\**" />
+    </ComponentGroup>
+
+    <!-- Carpeta Modulos\ vacia. Un directorio vacio necesita un componente que lo cree; su
+         keypath va en HKCU porque el paquete es per-usuario. -->
+    <Component Id="ModulesFolderCreate" Directory="MODULESFOLDER">
+      <CreateFolder />
+      <RegistryValue Root="HKCU" Key="Software\Ncubo\Gnothi"
+                     Name="modulesFolderCreated" Type="integer" Value="1" KeyPath="yes" />
+    </Component>
+
+    <!-- LA MARCA DE DESCUBRIMIENTO. El instalador del comercio lee ModulesPath de aca. -->
+    <Component Id="DiscoveryMarker" Directory="INSTALLFOLDER">
+      <RegistryKey Root="HKCU" Key="Software\Ncubo\Gnothi">
+        <RegistryValue Name="InstallPath" Type="string" Value="[INSTALLFOLDER]" KeyPath="yes" />
+        <!-- Sin backslash final a proposito: el instalador del comercio pasa este valor entre
+             comillas al comando install-module de Gnothi.Host, y un backslash al cierre
+             escaparia la comilla. -->
+        <RegistryValue Name="ModulesPath" Type="string" Value="[INSTALLFOLDER]Modulos" />
+        <RegistryValue Name="DesktopExe" Type="string" Value="[INSTALLFOLDER]Gnothi.Desktop.exe" />
+        <RegistryValue Name="HostExe"    Type="string" Value="[INSTALLFOLDER]Gnothi.Host.exe" />
+        <RegistryValue Name="Version"    Type="string" Value="0.1.0" />
+      </RegistryKey>
+    </Component>
+
+    <!-- Acceso directo en el Menu Inicio. -->
+    <StandardDirectory Id="ProgramMenuFolder">
+      <Component Id="StartMenuShortcut">
+        <Shortcut Id="StartGnothi" Name="Gnothi"
+                  Description="Abrir Gnothi"
+                  Target="[INSTALLFOLDER]Gnothi.Desktop.exe"
+                  WorkingDirectory="INSTALLFOLDER" />
+        <RegistryValue Root="HKCU" Key="Software\Ncubo\Gnothi"
+                       Name="startMenu" Type="integer" Value="1" KeyPath="yes" />
+      </Component>
+    </StandardDirectory>
+
+    <!-- Acceso directo en el Escritorio. -->
+    <StandardDirectory Id="DesktopFolder">
+      <Component Id="DesktopShortcut">
+        <Shortcut Id="DeskGnothi" Name="Gnothi"
+                  Description="Abrir Gnothi"
+                  Target="[INSTALLFOLDER]Gnothi.Desktop.exe"
+                  WorkingDirectory="INSTALLFOLDER" />
+        <RegistryValue Root="HKCU" Key="Software\Ncubo\Gnothi"
+                       Name="desktop" Type="integer" Value="1" KeyPath="yes" />
+      </Component>
+    </StandardDirectory>
+
+    <Feature Id="Main" Title="Gnothi" Level="1">
+      <ComponentGroupRef Id="AppFiles" />
+      <ComponentRef Id="ModulesFolderCreate" />
+      <ComponentRef Id="DiscoveryMarker" />
+      <ComponentRef Id="StartMenuShortcut" />
+      <ComponentRef Id="DesktopShortcut" />
+    </Feature>
+
+  </Package>
+</Wix>

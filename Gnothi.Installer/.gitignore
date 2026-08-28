@@ -1,0 +1,16 @@
+# Artefactos de build del instalador (WiX + publish). Lo unico versionado en esta carpeta es la
+# FUENTE: Gnothi.wxs, LaGuaria.wxs y license.rtf. Todo lo de abajo se regenera con:
+#   dotnet publish ...  ->  stage/
+#   wix build *.wxs ...  ->  *.msi (+ *.wixpdb intermedios)
+
+# El stage de publish (binarios de Gnothi.Desktop / Comercio.Shell + PWA + .gmod copiados)
+stage/
+
+# Los instaladores y sus intermedios
+*.msi
+*.wixpdb
+*.wixobj
+*.cab
+
+# Logs de instalacion/desinstalacion
+*.log
