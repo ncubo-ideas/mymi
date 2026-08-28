@@ -721,6 +721,110 @@ main h2 {
     border-color: var(--linea);
 }
 
+/* --------------------------------------------------------- las paginas de un recibo
+
+   SOLO EN ESCRITORIO: en telefono el pie es un boton que expande, y el markup de estos
+   controles ni siquiera se renderiza. La razon no es el espacio sino el dedo — un numero de
+   pagina es un objetivo de 32 px, y volver de la 3 a la 1 en una pantalla angosta hace
+   perder donde estabas.
+
+   Los numeros son BOTONES y no enlaces: no cambian la url ni el historial. Que el back del
+   browser saltara entre paginas de un mismo recibo en vez de volver a la lista seria la
+   sorpresa mas fea de esta pantalla. */
+.paginas {
+    display: flex;
+    align-items: center;
+    gap: .3rem;
+    flex-wrap: wrap;
+    margin-top: .3rem;
+}
+.pagina-numero,
+.pagina-salto {
+    min-width: 2rem;
+    height: 2rem;
+    padding: 0 .5rem;
+    border: 1px solid var(--linea);
+    border-radius: var(--radio-ficha);
+    background: var(--carta);
+    color: var(--tinta);
+    font-size: .88rem;
+    line-height: 1;
+}
+.pagina-numero:hover:not(.pagina-actual),
+.pagina-salto:hover:not(:disabled) { background: var(--tinte-verde); border-color: var(--verde); }
+
+.pagina-actual {
+    background: var(--verde);
+    border-color: var(--verde);
+    color: #fff;
+    font-weight: 700;
+}
+.pagina-salto:disabled { opacity: .4; }
+
+/* CUANTAS LINEAS SE ESTAN VIENDO DE CUANTAS, al final de la fila. Con tres paginas los
+   numeros ya lo dicen; con once no caben todos y esta cuenta es lo unico que orienta. */
+.paginas-cuenta {
+    margin-left: .5rem;
+    font-size: .82rem;
+    color: var(--tenue);
+}
+
+/* ------------------------------------------------- las lineas de una compra
+
+   EN TELEFONO LA TABLA SE APILA. Medido: su ancho minimo es 566 px -cinco columnas, y la
+   descripcion de un producto no baja de unas 150-, asi que en una pantalla de 375 se salia
+   191 px. Y no habia ningun contenedor con overflow, de modo que el desborde se lo comia la
+   PAGINA: barra de scroll horizontal en toda la pantalla, no en la tabla.
+
+   Se descarto envolverla en un overflow-x. Scrollear una tabla de lado en un telefono es
+   incomodo y ademas esconde columnas que no se sabe que estan; el resto de la app ya
+   resuelve lo mismo con filas apiladas -los recibos, los infaltables- y esto se parece a
+   eso en vez de inventar un gesto nuevo. */
+@media (max-width: 767.98px) {
+    /* El encabezado no sirve apilado: cada celda lleva su rotulo. */
+    .lineas thead { display: none; }
+    .lineas, .lineas tbody, .lineas tr, .lineas td { display: block; width: auto; }
+
+    .lineas tr {
+        border-bottom: 1px solid var(--linea);
+        padding: .75rem 0;
+    }
+    .lineas tr:last-child { border-bottom: 0; }
+
+    .lineas td {
+        border: 0;
+        padding: 0;
+        text-align: left !important;
+    }
+
+    /* La primera celda es el producto: va sola y en negrita, como el nombre de una fila. */
+    .lineas td:first-child { font-weight: 600; margin-bottom: .3rem; }
+
+    /* Las tres cifras vuelven a una sola linea, cada una con su rotulo delante. Sin el
+       rotulo, "1 · ₡4.350 · ₡4.350" no dice cual es cual. */
+    .lineas td[data-rotulo="Cantidad"],
+    .lineas td[data-rotulo="Precio"],
+    .lineas td[data-rotulo="Total"] {
+        display: inline-block;
+        margin-right: .9rem;
+        font-size: .86rem;
+        color: var(--tenue);
+    }
+    .lineas td[data-rotulo]::before {
+        content: attr(data-rotulo) " ";
+        color: var(--tenue-2);
+        font-size: .74rem;
+        text-transform: uppercase;
+        letter-spacing: .08em;
+    }
+    /* El departamento es una etiqueta y ya se explica sola: no lleva rotulo. */
+    .lineas td[data-rotulo="Departamento"] { margin-bottom: .35rem; }
+    .lineas td[data-rotulo="Departamento"]::before { content: ""; }
+
+    /* El total de la linea es la cifra que se busca: se lee como cifra, no como nota. */
+    .lineas td[data-rotulo="Total"] { color: var(--tinta); font-weight: 600; }
+}
+
 /* ---------------------------------------------------------------- donde se guarda
 
    LAS DOS FORMAS DE GUARDAR, lado a lado. Van en tarjetas y no en una lista de radios

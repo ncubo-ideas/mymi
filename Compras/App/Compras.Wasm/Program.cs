@@ -30,6 +30,7 @@ builder.Services.AddSingleton(_ => new HttpClient
 });
 
 builder.Services.AddSingleton<PuenteDeJournal>(sp => new PuenteDeJournal(sp.GetRequiredService<IJSRuntime>()));
+builder.Services.AddSingleton<Pantalla>(sp => new Pantalla(sp.GetRequiredService<IJSRuntime>()));
 
 // SINGLETON a proposito: el actor NO se crea por pantalla. Owna estado persistente, se
 // construye una vez y se mantiene alcanzable mientras la app vive.

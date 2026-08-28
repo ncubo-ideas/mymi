@@ -2,8 +2,11 @@
 @using System.Globalization
 @using Compras.App.Vistas
 @using Compras.Dominio
+@using Microsoft.JSInterop
 @inject EstadoDeLaApp estado
 @inject NavigationManager navegacion
+@inject Pantalla pantalla
+@implements IDisposable
 
 <PageTitle>Compra @Numero</PageTitle>
 
@@ -25,15 +28,20 @@ else
         total @Colones(compra.Total)
     </p>
 
-    <table class="table align-middle">
+    @* LA TABLA SE VUELVE FILAS EN TELÉFONO, y no es cosmético: medida, su ancho mínimo es
+       566 px, así que en una pantalla de 375 se salía 191 px y arrastraba la página entera
+       con una barra de scroll horizontal. Nada la contenía. El CSS la apila debajo de 768;
+       el markup es el mismo, y cada celda lleva su rótulo para que apilada se siga
+       entendiendo sin el encabezado. *@
+    <table class="table align-middle lineas">
         <thead>
             <tr>
-                <th>Producto</th><th>Categoría</th>
+                <th>Producto</th><th>Departamento</th>
                 <th class="text-end">Cantidad</th><th class="text-end">Precio</th><th class="text-end">Total</th>
             </tr>
         </thead>
         <tbody>
-            @foreach (LineaDeCompra linea in compra.Lineas)
+            @foreach (LineaDeCompra linea in Visibles())
             {
                 <tr>
                     <td>
@@ -52,20 +60,96 @@ else
                             <span class="etiqueta etiqueta-verde">con garantía</span>
                         }
                     </td>
-                    <td><span class="etiqueta etiqueta-neutra">@linea.Categoria</span></td>
-                    <td class="text-end">@linea.Cantidad</td>
-                    <td class="text-end">@Colones(linea.PrecioUnitario)</td>
-                    <td class="text-end">@Colones(linea.Total)</td>
+                    @* EL TÍTULO Y NUNCA LA LLAVE. Acá se pintaba @linea.Categoria, o sea
+                       "LacteosYHuevos" — y justo debajo del comentario que explica que el
+                       sku no sale a pantalla porque la spec prohíbe la jerga. La llave
+                       sigue viajando en la vista para comparar; lo que sale es el título. *@
+                    <td data-rotulo="Departamento">
+                        <span class="etiqueta etiqueta-neutra">@linea.Titulo</span>
+                    </td>
+                    <td class="text-end" data-rotulo="Cantidad">@linea.Cantidad</td>
+                    <td class="text-end" data-rotulo="Precio">@Colones(linea.PrecioUnitario)</td>
+                    <td class="text-end" data-rotulo="Total">@Colones(linea.Total)</td>
                 </tr>
             }
         </tbody>
     </table>
+
+    @* DOS COMPORTAMIENTOS, uno por resolución, y es lo que Juan pidió.
+
+       EN ESCRITORIO PAGINA: hay espacio para los controles y saltar a la página 3 es un
+       gesto que ahí se entiende. EN TELÉFONO EXPANDE: los controles de página son objetivos
+       chicos para un pulgar, y volver de la página 3 a la 1 en una pantalla angosta hace
+       perder dónde estabas — abrir el resto en el lugar no.
+
+       Es lo único de esta app donde la resolución cambia QUÉ SE RENDERIZA y no sólo cómo se
+       ve, así que es lo único que necesita saber el ancho desde C#. Ver Pantalla.cs. *@
+    @if (Paginas() > 1)
+    {
+        @if (angosta)
+        {
+            @if (!todas)
+            {
+                <button class="btn btn-link p-0" @onclick="() => todas = true">
+                    Ver las @(compra.Lineas.Count - LineasQueSeMuestran) líneas restantes
+                </button>
+            }
+            else
+            {
+                <button class="btn btn-link p-0" @onclick="() => todas = false">
+                    Mostrar solo las primeras @LineasQueSeMuestran
+                </button>
+            }
+        }
+        else
+        {
+            <nav class="paginas" aria-label="Páginas de esta compra">
+                <button class="pagina-salto" @onclick="Anterior" disabled="@(pagina == 0)"
+                        aria-label="Página anterior">&lsaquo;</button>
+                @for (int i = 0; i < Paginas(); i++)
+                {
+                    int destino = i;
+                    <button class="pagina-numero @(i == pagina ? "pagina-actual" : "")"
+                            @onclick="() => pagina = destino"
+                            aria-current="@(i == pagina ? "page" : null)">@(i + 1)</button>
+                }
+                <button class="pagina-salto" @onclick="Siguiente" disabled="@(pagina >= Paginas() - 1)"
+                        aria-label="Página siguiente">&rsaquo;</button>
+                @* CUÁNTAS SON EN TOTAL, siempre. Un "3 de 3" con los números al lado suena
+                   redundante hasta que el recibo tiene once páginas y los números no caben
+                   todos en la fila. *@
+                <span class="paginas-cuenta">
+                    @Desde()–@Hasta() de @compra.Lineas.Count líneas
+                </span>
+            </nav>
+        }
+    }
 }
 
 @code {
+    // CUANTAS LINEAS SE PINTAN DE ENTRADA. Medido sobre las 87 compras del guion: la
+    // mediana es 10 y la mas grande tiene 17, asi que con quince el 93 % de los recibos se
+    // ve ENTERO y el boton solo aparece en los seis que de verdad son largos. Con doce
+    // habria salido en un tercio de las compras, y un boton que aparece siempre es ruido.
+    //
+    // El tope existe por el telefono, no por el escritorio: apilada, una linea mide 109 px,
+    // asi que un ticket de 45 son 5.221 px — SEIS PANTALLAS Y MEDIA de scroll. Un recibo
+    // esta acotado por lo que cabe en un carrito, pero "acotado" no es lo mismo que "corto".
+    private const int LineasQueSeMuestran = 15;
+
     [Parameter] public string Numero { get; set; } = "";
 
     private CompraDetallada? compra;
+
+    // EL ESTADO ES UNO POR MODO y no se comparte: en telefono "esta abierto o no", en
+    // escritorio "en que pagina voy". Meter los dos en un solo campo obligaria a traducir
+    // -pagina 0 = plegado?- y a decidir que pasa al rotar el telefono con la pagina 3
+    // abierta. Separados, cruzar el corte deja cada uno como estaba.
+    private bool todas;
+    private int pagina;
+
+    private bool angosta;
+    private DotNetObjectReference<Detalle>? yo;
 
     protected override void OnParametersSet()
     {
@@ -73,8 +157,79 @@ else
         // existe el DSL revienta con KeyNotFound; se muestra "no hay" en vez de un error.
         if (!estado.EstaArriba) return;
 
+        // El desplegado se reinicia al cambiar de compra: si no, abrir un ticket largo y
+        // despues uno corto dejaria el boton en un estado que no es de ese recibo.
+        todas = false;
+        pagina = 0;
+
         try { compra = estado.Detalle(Numero); }
         catch { compra = new CompraDetallada(); }
+    }
+
+    // EL ANCHO SE PREGUNTA DESPUES DE PINTAR, porque antes no hay JS con quien hablar. El
+    // primer render sale con angosta=false -o sea paginado- y se corrige en cuanto se sabe;
+    // en un telefono eso es un parpadeo de un frame, y la alternativa seria no pintar nada
+    // hasta saberlo, que se ve peor.
+    protected override async Task OnAfterRenderAsync(bool primerRender)
+    {
+        if (!primerRender) return;
+
+        angosta = await pantalla.EsAngosta();
+        yo = DotNetObjectReference.Create(this);
+        await pantalla.Observar(yo);
+        StateHasChanged();
+    }
+
+    [JSInvokable]
+    public Task CambioElAncho(bool ahoraEsAngosta)
+    {
+        angosta = ahoraEsAngosta;
+        StateHasChanged();
+        return Task.CompletedTask;
+    }
+
+    public void Dispose() => yo?.Dispose();
+
+    // ---------------------------------------------------------------- que se pinta
+
+    private int Paginas()
+    {
+        if (compra is null || compra.Lineas.Count == 0) return 0;
+
+        return (compra.Lineas.Count + LineasQueSeMuestran - 1) / LineasQueSeMuestran;
+    }
+
+    private int Desde() => pagina * LineasQueSeMuestran + 1;
+
+    private int Hasta() =>
+        Math.Min((pagina + 1) * LineasQueSeMuestran, compra?.Lineas.Count ?? 0);
+
+    private void Anterior() { if (pagina > 0) pagina--; }
+
+    private void Siguiente() { if (pagina < Paginas() - 1) pagina++; }
+
+    private IReadOnlyList<LineaDeCompra> Visibles()
+    {
+        if (compra is null) return new List<LineaDeCompra>();
+        if (compra.Lineas.Count <= LineasQueSeMuestran) return compra.Lineas;
+
+        // Telefono: las primeras, o todas si esta desplegado.
+        if (angosta)
+        {
+            if (todas) return compra.Lineas;
+
+            var primeras = new List<LineaDeCompra>();
+            for (int i = 0; i < LineasQueSeMuestran; i++) primeras.Add(compra.Lineas[i]);
+
+            return primeras;
+        }
+
+        // Escritorio: la pagina en la que va. Se recorta contra el largo real porque la
+        // ultima pagina casi nunca esta completa.
+        var deLaPagina = new List<LineaDeCompra>();
+        for (int i = Desde() - 1; i < Hasta(); i++) deLaPagina.Add(compra.Lineas[i]);
+
+        return deLaPagina;
     }
 
     private void Volver() => navegacion.NavigateTo("");

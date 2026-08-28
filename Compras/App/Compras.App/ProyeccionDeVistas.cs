@@ -64,6 +64,7 @@ namespace Compras.App
 						PrecioUnitario = Decimal(elemento, "precioUnitario"),
 						Total = Decimal(elemento, "totalDeLinea"),
 						Categoria = Texto(elemento, "categoria"),
+						Titulo = Texto(elemento, "titulo"),
 						TieneGarantia = Booleano(elemento, "tieneGarantia"),
 					});
 

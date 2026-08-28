@@ -21,6 +21,12 @@ namespace Compras.App.Vistas
 
 	public sealed class LineaDeCompra
 	{
+		/// <summary>El departamento legible: "lácteos y huevos". Es lo que se pinta.</summary>
+		// LA LLAVE Y EL TITULO VIAJAN LOS DOS, y no es redundancia: la llave es con lo que el
+		// codigo compara y lo que sigue igual en los diarios ya escritos; el titulo es lo
+		// unico que puede salir a pantalla.
+		public string Titulo { get; init; } = "";
+
 		public string Sku { get; init; } = "";
 		public string Descripcion { get; init; } = "";
 		public int Cantidad { get; init; }

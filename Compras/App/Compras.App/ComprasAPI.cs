@@ -218,6 +218,7 @@ namespace Compras.App
 							item.PrecioUnitario precioUnitario,
 							item.Total totalDeLinea,
 							item.Categoria.Nombre categoria,
+							item.Categoria.Titulo titulo,
 							item.TieneGarantia tieneGarantia;
 					}
 				}
