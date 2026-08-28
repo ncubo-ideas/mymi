@@ -31,6 +31,10 @@ namespace Cargas.App.Vistas
 		public string Transaccion { get; init; } = "";
 		public bool TieneKilometraje { get; init; }
 		public bool TieneFoto { get; init; }
+
+		// El nombre del archivo dentro de la carpeta, para poder volver a mostrarla. Vacio
+		// si no hay foto.
+		public string Foto { get; init; } = "";
 	}
 
 	// UN TRAMO, calculado o bloqueado en la misma lista: el bloqueado no es la ausencia
@@ -126,6 +130,12 @@ namespace Cargas.App.Vistas
 		public string QueFalta { get; init; } = "";
 		public string QueDesbloquea { get; init; } = "";
 		public string ParaSonia { get; init; } = "";
+
+		// LA SUPOSICION, para poder enunciarla antes de preguntar y para que los botones
+		// digan que es "así". Vacias cuando el faltante no nace de una inferencia.
+		public string LoQueSeSupone { get; init; } = "";
+		public string LaSuposicion { get; init; } = "";
+		public bool NaceDeUnaSuposicion { get; init; }
 	}
 
 	// El kilometraje PROPUESTO para el prellenado. Nunca se escribe solo: si Sonia lo

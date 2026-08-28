@@ -366,6 +366,9 @@ public sealed class EstadoDeLaApp : IAsyncDisposable
 	// (fotos/) y el journal guarda solo el nombre. Es el respaldo de un dato que, por
 	// ser aporte de Sonia, no tiene otra evidencia. La lectura del numero sigue siendo
 	// de ella: aca no hay OCR, y si algun dia lo hay, escribe solo tras su visto bueno.
+	/// <summary>La foto del tablero, de vuelta de la carpeta, en base64. "" si no se pudo.</summary>
+	public ValueTask<string> LeerFoto(string nombreDeArchivo) => puente.LeerArchivo(nombreDeArchivo);
+
 	public async ValueTask<string> AdjuntarFoto(string transaccion, string extension,
 		byte[] contenido)
 	{

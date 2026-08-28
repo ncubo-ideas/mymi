@@ -72,16 +72,31 @@ else
                         }
                     </div>
 
-                    @* LA FOTO DEL TABLERO, nivel 1: el input NO otorga cámara -el
-                       selector es del sistema y en móvil ya ofrece «tomar foto»-, así
-                       que el sandbox del FAQ #5 queda intacto. El archivo va a la
-                       carpeta; el journal guarda el nombre. *@
+                    @* LA FOTO DEL TABLERO. El input NO otorga cámara -el selector es del
+                       sistema y en móvil ya ofrece «tomar foto»-, así que el sandbox del
+                       FAQ #5 queda intacto. El archivo va a la carpeta; el journal guarda
+                       el nombre.
+
+                       Y AHORA SE PUEDE VOLVER A MIRAR, que es lo que la hacía servir para
+                       algo. Antes decía «foto guardada» y ahí terminaba: la foto no
+                       llenaba nada y no había forma de verla. El valor real es partir el
+                       trabajo en dos —sacás la foto en la bomba, anotás el número después,
+                       en el sillón—, y para eso la foto tiene que estar ahí cuando te
+                       sentás. Se lee bajo demanda y no al abrir: son varios MB cada una.
+
+                       NO HAY OCR, y el spike recomendó descartarlo: 4/6 en el caso más
+                       fácil, con fallos de un dígito. Un dígito de más plausible entra en
+                       silencio y envenena la línea base. La foto no reemplaza a la persona:
+                       le quita la necesidad de acordarse. *@
                     <div class="parada-datos">
-                        @if (parada.TieneFoto)
+                        @if (parada.TieneFoto && !fotoPorCarga.ContainsKey(parada.Transaccion))
                         {
-                            <span>📷 foto guardada</span>
+                            <button class="tecla tecla--texto"
+                                    @onclick="() => VerLaFoto(parada.Transaccion, parada.Foto)">
+                                📷 ver la foto del tablero
+                            </button>
                         }
-                        else if (Estado.HayCarpeta)
+                        else if (!parada.TieneFoto && Estado.HayCarpeta)
                         {
                             <label class="tecla tecla--texto" style="cursor:pointer">
                                 📷 foto del tablero
@@ -90,6 +105,17 @@ else
                             </label>
                         }
                     </div>
+
+                    @if (fotoPorCarga.TryGetValue(parada.Transaccion, out string? laFoto))
+                    {
+                        <figure class="foto">
+                            <img src="@laFoto" alt="El tablero de tu carro en la carga del @parada.Fecha.ToString("dd MMM yyyy", Cultura)" />
+                            @if (!parada.TieneKilometraje)
+                            {
+                                <figcaption>Leé el odómetro acá y anotalo abajo.</figcaption>
+                            }
+                        </figure>
+                    }
 
                     @* LO QUE FALTA, en la carga que lo debe. El kilometraje llega
                        PRELLENADO con la proyección -«¿unos 42 900?»- para que
@@ -129,15 +155,32 @@ else
                             }
                             else if (pendiente.QueFalta == "la confirmación del tanque")
                             {
-                                <p class="apunte">@Mayuscula(pendiente.ParaSonia).</p>
+                                @* ENUNCIAR, Y DESPUÉS PREGUNTAR. Acá se pedía confirmar una
+                                   afirmación que nunca se decía —«necesito la confirmación
+                                   del tanque de tu carga del 25/08/2026 para calcular el
+                                   tramo que esta carga abre o cierra»— y se ofrecía «Sí,
+                                   quedó así» sin decir qué era «así». Encima los dos botones
+                                   eran los mismos tanto si la inferencia decía lleno como
+                                   parcial, así que ni siquiera podían derivarse.
+
+                                   La suposición la hace el dominio (FormaDeCorte), así que la
+                                   frase viene de ahí y los rótulos salen de LO QUE SE SUPONE,
+                                   no escritos fijos. *@
+                                <p class="suposicion">@Mayuscula(pendiente.LaSuposicion).</p>
+                                @if (pendiente.QueDesbloquea.Length > 0)
+                                {
+                                    <p class="bache-desbloquea">
+                                        Si es así, podemos calcular @pendiente.QueDesbloquea.
+                                    </p>
+                                }
                                 <div class="fila">
                                     <button class="tecla tecla--alerta"
                                             @onclick="() => ConfirmarTanque(pendiente.Transaccion)">
-                                        Sí, quedó así
+                                        @(SuponeLleno(pendiente) ? "Sí, quedó lleno" : "Así fue, cargué un monto")
                                     </button>
                                     <button class="tecla tecla--contorno"
                                             @onclick="() => CorregirTanque(pendiente.Transaccion)">
-                                        No, era al revés
+                                        @(SuponeLleno(pendiente) ? "No, cargué solo un poco" : "No, lo llené")
                                     </button>
                                 </div>
                             }
@@ -250,6 +293,35 @@ else
     // El refuerzo del ingreso: lo que aparecio al cerrar un tramo.
     private string desbloqueado = "";
 
+    // LAS FOTOS QUE SE ESTAN MIRANDO, por transaccion, ya como data URL. Se cargan bajo
+    // demanda y no al abrir: una foto de tablero ronda los pocos MB y esta pantalla puede
+    // tener nueve. La que se acaba de sacar entra sin releer nada, porque sus bytes ya
+    // pasaron por aca.
+    private Dictionary<string, string> fotoPorCarga = new();
+
+    private Task VerLaFoto(string transaccion, string nombreDeArchivo) =>
+        Intentar("abrir la foto del tablero", async () =>
+        {
+            string base64 = await Estado.LeerFoto(nombreDeArchivo);
+            if (base64.Length == 0)
+                throw new InvalidOperationException(
+                    $"No se pudo leer «{nombreDeArchivo}» de tu carpeta. ¿Sigue ahí?");
+
+            fotoPorCarga[transaccion] = $"data:{TipoDeImagen(nombreDeArchivo)};base64,{base64}";
+        });
+
+    // El tipo sale de la extension y no de los bytes: el archivo lo guardo esta misma app,
+    // con la extension que traia el que ella eligio.
+    private static string TipoDeImagen(string nombreDeArchivo) =>
+        Path.GetExtension(nombreDeArchivo).ToLowerInvariant() switch
+        {
+            ".png"  => "image/png",
+            ".webp" => "image/webp",
+            ".heic" => "image/heic",
+            ".heif" => "image/heif",
+            _       => "image/jpeg",
+        };
+
     // ------------------------------------------------------------------ el camino
 
     // EL ANCHO DE LA BARRA DEL TRECHO. El nivel de siempre se planta en el 60% para que un
@@ -283,6 +355,12 @@ else
     private List<FaltanteEnLista> FaltantesDe(string transaccion) =>
         faltantesPorCarga.TryGetValue(transaccion, out List<FaltanteEnLista>? pendientes)
             ? pendientes : SinPendientes;
+
+    // Los dos botones salen de lo que el DOMINIO supuso, no de dos rotulos fijos: con
+    // corte automatico se supone lleno y con preseteado, parcial, y la pregunta correcta
+    // es la contraria en cada caso.
+    private static bool SuponeLleno(FaltanteEnLista faltante) =>
+        faltante.LoQueSeSupone == "lleno";
 
     // Lo mas reciente arriba: la ruta desciende hacia el pasado, que es como se mira un
     // historial y como se lee un tablero -lo de ahora primero.
@@ -353,8 +431,15 @@ else
             string extension = Path.GetExtension(archivo.Name);
             if (extension.Length == 0) extension = ".jpg";
 
-            string rechazo = await Estado.AdjuntarFoto(transaccion, extension, memoria.ToArray());
+            byte[] contenido = memoria.ToArray();
+            string rechazo = await Estado.AdjuntarFoto(transaccion, extension, contenido);
             if (rechazo.Length > 0) throw new InvalidOperationException(rechazo);
+
+            // Se muestra en el acto y sin volver a leer la carpeta: los bytes ya están
+            // acá. Es el momento en que la persona la sacó y el número que busca está en
+            // pantalla, así que el campo de abajo es el paso siguiente natural.
+            fotoPorCarga[transaccion] = $"data:{TipoDeImagen(extension)};base64,"
+                + Convert.ToBase64String(contenido);
         });
 
     // ------------------------------------------------------------------ la lectura

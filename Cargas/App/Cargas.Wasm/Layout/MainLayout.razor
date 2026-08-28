@@ -139,11 +139,11 @@
 
     @if (!estado.EstaArriba)
     {
-        <div class="parte parte--neutro">
-            @* Cuando el handle volvió de IndexedDB pero el permiso caducó, la acción correcta
-               es RE-OTORGAR, no volver a elegir la carpeta. *@
-            @if (estado.FaltaReotorgarPermiso)
-            {
+        @* Cuando el handle volvió de IndexedDB pero el permiso caducó, la acción correcta
+           es RE-OTORGAR, no volver a elegir la carpeta. *@
+        @if (estado.FaltaReotorgarPermiso)
+        {
+            <div class="parte parte--neutro">
                 <p>
                     Tu carpeta es <strong>&laquo;@estado.NombreDeLaCarpeta&raquo;</strong>. El browser pide
                     confirmar el permiso de escritura cada vez que volvés a abrir la app.
@@ -154,17 +154,31 @@
                     </button>
                     <button class="tecla tecla--contorno" @onclick="ConectarCarpeta"
                             disabled="@(soportado == false)">
-                        Elegir carpeta
+                        Elegir otra carpeta
                     </button>
                 </div>
-            }
-            else
-            {
-                <p>Esta app guarda <strong>tus</strong> cargas. Elegí dónde.</p>
+            </div>
+        }
+        else
+        {
+            @* LA PRIMERA VUELTA DE LLAVE, y no un diálogo de configuración.
+
+               Acá había tres tarjetas del mismo tamaño y el mismo peso, así que las tres se
+               leían como igual de válidas. No lo son: una es la recomendada y las otras dos
+               son salidas de emergencia. Ahora hay UNA acción primaria y el resto se pliega.
+
+               Y el diferenciador que de verdad decide —«¿tu asistente la puede leer?»— era
+               una frase en negrita adentro de un párrafo. Es una comparación, así que se
+               muestra como una: tres filas que se leen de un vistazo y donde la respuesta
+               correcta se ve sola, sin que la pantalla tenga que insistir.
+
+               LO QUE NO CAMBIA: cada modo sigue diciendo lo que NO da. Eso no es adorno. *@
+            <div class="arranque">
+                <p class="arranque-promesa">Esta app guarda <strong>tus</strong> cargas. Elegí dónde.</p>
 
                 @if (sinAlmacenamiento == "inseguro")
                 {
-                    <p>
+                    <p class="parte parte--atencion">
                         <strong>Esta página no está en una conexión segura</strong>, y por eso el
                         navegador no le deja guardar nada — en cualquier navegador pasaría lo mismo.
                         Entrá por <strong>https</strong> y las opciones de guardado aparecen.
@@ -172,7 +186,7 @@
                 }
                 else if (sinAlmacenamiento == "navegador")
                 {
-                    <p>
+                    <p class="parte parte--atencion">
                         <strong>@(instalada ? "Acá no se puede guardar la bitácora." : "Este navegador no puede guardar la bitácora.")</strong>
                         Podés usar la app igual, pero lo que veas se pierde al cerrar. Para que
                         quede guardado, @(instalada ? "instalala" : "abrila") desde
@@ -180,60 +194,96 @@
                     </p>
                 }
 
-                @* TRES MODOS, y los tres se dicen con lo que dan y lo que no. En 'opfs' la
-                   bitácora sobrevive al cierre pero NO la puede leer su asistente, y callarlo
-                   sería vender algo que no hay. *@
-                <div class="destinos">
-                    <div class="destino @(soportado == true ? "" : "destino--nodisponible")">
-                        <div class="destino-titulo">Una carpeta tuya</div>
-                        <p>La bitácora queda en la carpeta que elijas, en tu disco.
-                           <b>Es el único modo en el que tu asistente la puede leer.</b></p>
-                        @if (soportado == true)
-                        {
-                            <button class="tecla" @onclick="ConectarCarpeta">Elegir carpeta</button>
-                        }
-                        else
-                        {
-                            <p class="destino-nota">
-                                @(sinAlmacenamiento == "inseguro"
-                                    ? "Hace falta una conexión segura (https)."
-                                    : instalada
-                                        ? "Acá no está disponible. Para usarlo, instalá la app desde Chrome o Edge."
-                                        : "Este navegador no lo permite. Para usarlo, abrí la app en Chrome o Edge.")
-                            </p>
-                        }
-                    </div>
+                @* LA ÚNICA ACCIÓN PRIMARIA, y cuál es depende de qué se puede: si la carpeta
+                   no está disponible, la recomendada pasa a ser el navegador. La pantalla no
+                   puede empujar hacia una puerta cerrada. *@
+                @if (soportado == true)
+                {
+                    <button class="tecla tecla--grande" @onclick="ConectarCarpeta">Elegir una carpeta tuya</button>
+                    <p class="arranque-porque">
+                        La bitácora queda en tu disco, donde vos la pusiste.
+                        <b>Es el único modo en el que tu asistente la puede leer.</b>
+                    </p>
+                }
+                else if (opfs == true)
+                {
+                    <button class="tecla tecla--grande" @onclick="UsarNavegador">
+                        Guardar @(instalada ? "dentro de la app" : "en este navegador")
+                    </button>
+                    <p class="arranque-porque">
+                        Sobrevive al cerrar, pero <b>tu asistente no la va a poder leer</b>: para eso
+                        hace falta una carpeta tuya, y @(instalada ? "acá" : "este navegador") no las permite.
+                    </p>
+                }
 
-                    <div class="destino @(opfs == true ? "" : "destino--nodisponible")">
-                        <div class="destino-titulo">@(instalada ? "Dentro de la app" : "En este navegador")</div>
-                        <p>Se guarda igual y sobrevive al cerrar, pero
-                           @(instalada ? "queda dentro de la app" : "lo administra el navegador"):
-                           <b>no es una carpeta tuya y tu asistente no lo puede leer.</b></p>
-                        @if (opfs == true)
-                        {
-                            <button class="tecla tecla--contorno" @onclick="UsarNavegador">Guardar acá</button>
-                        }
-                        else
-                        {
-                            <p class="destino-nota">
-                                @(sinAlmacenamiento == "inseguro"
-                                    ? "También hace falta una conexión segura (https)."
-                                    : "Acá tampoco está disponible.")
-                            </p>
-                        }
-                    </div>
+                @* LA COMPARACIÓN. Tres filas, y la de abajo es la que decide. *@
+                <table class="comparacion">
+                    <thead>
+                        <tr>
+                            <th scope="col"><span class="solo-para-lectores">Qué da cada modo</span></th>
+                            <th scope="col">Una carpeta tuya</th>
+                            <th scope="col">@(instalada ? "Dentro de la app" : "Este navegador")</th>
+                            <th scope="col">Sin guardar</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <th scope="row">Sobrevive al cerrar</th>
+                            <td class="si">sí</td><td class="si">sí</td><td class="no">no</td>
+                        </tr>
+                        <tr>
+                            <th scope="row">Es una carpeta tuya</th>
+                            <td class="si">sí</td><td class="no">no</td><td class="no">no</td>
+                        </tr>
+                        <tr>
+                            <th scope="row">Tu asistente la puede leer</th>
+                            <td class="si">sí</td><td class="no">no</td><td class="no">no</td>
+                        </tr>
+                    </tbody>
+                </table>
 
-                    <div class="destino">
-                        <div class="destino-titulo">Un archivo</div>
-                        <p>Traé una bitácora que exportaste antes, desde esta u otra computadora.
+                @if (soportado != true)
+                {
+                    <p class="arranque-nota">
+                        @(sinAlmacenamiento == "inseguro"
+                            ? "La carpeta necesita una conexión segura (https), así que acá no está disponible."
+                            : instalada
+                                ? "La carpeta acá no está disponible. Para usarla, instalá la app desde Chrome o Edge."
+                                : "Este navegador no permite elegir una carpeta. Para usarla, abrí la app en Chrome o Edge.")
+                    </p>
+                }
+
+                @* Las salidas de emergencia, plegadas: siguen a un toque, pero dejan de
+                   competir con la recomendada. *@
+                <details class="otras">
+                    <summary>Otras formas de empezar</summary>
+
+                    @if (soportado == true && opfs == true)
+                    {
+                        <div class="otra">
+                            <button class="tecla tecla--contorno" @onclick="UsarNavegador">
+                                Guardar @(instalada ? "dentro de la app" : "en este navegador")
+                            </button>
+                            <p>Se guarda igual y sobrevive al cerrar, pero
+                               @(instalada ? "queda dentro de la app" : "lo administra el navegador"):
+                               <b>no es una carpeta tuya y tu asistente no lo puede leer.</b></p>
+                        </div>
+                    }
+
+                    <div class="otra">
+                        <button class="tecla tecla--contorno" @onclick="Importar">Importar una bitácora</button>
+                        <p>Traé una que exportaste antes, desde esta u otra computadora.
                            Funciona en cualquier navegador.</p>
-                        <button class="tecla tecla--contorno" @onclick="Importar">Importar</button>
                     </div>
-                </div>
 
-                <p><button class="tecla tecla--texto" @onclick="Arrancar">Abrir sin guardar nada</button></p>
-            }
-        </div>
+                    <div class="otra">
+                        <button class="tecla tecla--texto" @onclick="Arrancar">Abrir sin guardar nada</button>
+                        <p>Para mirar nomás. Lo que la estación publicó se vuelve a pedir al abrir,
+                           pero <b>tus kilometrajes y confirmaciones se pierden</b>.</p>
+                    </div>
+                </details>
+            </div>
+        }
     }
     else
     {

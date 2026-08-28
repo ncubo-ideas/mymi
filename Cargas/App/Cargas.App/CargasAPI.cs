@@ -380,7 +380,8 @@ namespace Cargas.App
 						carga.TanqueExpresado tanque,
 						carga.NumeroDeLaTransaccion transaccion,
 						carga.TieneKilometraje tieneKilometraje,
-						carga.TieneFoto tieneFoto;
+						carga.TieneFoto tieneFoto,
+						carga.NombreDeLaFoto foto;
 				}
 			")
 			.WithParameters(p => { p["placa", typeof(string)] = placa; })
@@ -554,7 +555,10 @@ namespace Cargas.App
 						faltante.NumeroDeLaTransaccion transaccion,
 						faltante.QueFalta queFalta,
 						faltante.QueDesbloquea queDesbloquea,
-						faltante.ParaSonia paraSonia;
+						faltante.ParaSonia paraSonia,
+						faltante.LoQueSeSupone loQueSeSupone,
+						faltante.LaSuposicion laSuposicion,
+						faltante.NaceDeUnaSuposicion naceDeUnaSuposicion;
 				}
 			")
 			.WithParameters(p => { p["placa", typeof(string)] = placa; })

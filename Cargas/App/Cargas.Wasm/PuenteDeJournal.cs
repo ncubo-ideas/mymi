@@ -263,6 +263,22 @@ public sealed class PuenteDeJournal : IAsyncDisposable
 	// Guarda un archivo BINARIO directo en la carpeta de la persona, fuera de MEMFS:
 	// la foto del tablero no es parte del journal -el journal guarda su NOMBRE-, es el
 	// respaldo del dato. Devuelve "" si se guardo, o el motivo del rechazo.
+	/// <summary>Lee un archivo de la carpeta y lo devuelve en base64, o "" si no se pudo.
+	///
+	/// Es la vuelta de GuardarArchivo, y existe para la foto del tablero: sacar la foto en
+	/// la bomba y anotar el kilometraje despues, en el sillon, solo sirve si la foto se
+	/// puede volver a mirar. Devuelve "" en vez de reventar porque una foto ilegible -la
+	/// borraron de la carpeta, cambio el permiso- no puede tumbar la pantalla entera.</summary>
+	public async ValueTask<string> LeerArchivo(string ruta)
+	{
+		ArgumentNullException.ThrowIfNullOrWhiteSpace(ruta);
+
+		ResultadoDeLectura leido = await (await Modulo())
+			.InvokeAsync<ResultadoDeLectura>("leer", ruta);
+
+		return leido.Ok ? leido.Contenido : "";
+	}
+
 	public async ValueTask<string> GuardarArchivo(string ruta, byte[] contenido)
 	{
 		ArgumentNullException.ThrowIfNullOrWhiteSpace(ruta);

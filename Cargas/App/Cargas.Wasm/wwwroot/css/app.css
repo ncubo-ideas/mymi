@@ -480,6 +480,25 @@ h1:focus, h1:focus-visible { outline: none; }
 .bache-que b { color: var(--ambar); font-weight: 600; }
 .bache-desbloquea { margin: 4px 0 0; font-size: 12.5px; color: var(--tenue); }
 
+/* LA FOTO DEL TABLERO, cuando se está mirando. Grande de verdad: existe para que se lea
+   un odómetro de seis dígitos sacado de noche en una bomba, y una miniatura no sirve para
+   eso. El tope en vh y no en px es para que en el teléfono siga entrando con su campo. */
+.foto { margin: 10px 0 0; }
+.foto img {
+    display: block; width: 100%; max-width: 30rem; max-height: 46vh;
+    object-fit: contain;
+    border-radius: 9px; border: 1px solid var(--bisel-vivo);
+    background: var(--cara-honda);
+}
+.foto figcaption {
+    margin-top: 6px; font-size: 12.5px; color: var(--cobre);
+}
+
+/* LA SUPOSICIÓN que se pide confirmar. Va con el peso de una afirmación y no de un apunte
+   tenue: es lo que la persona tiene que leer para poder contestar, y si se lee como una
+   nota al pie, los dos botones de abajo vuelven a quedar sin referente. */
+.suposicion { margin: 0; font-size: 14.5px; color: var(--tinta); }
+
 /* LO QUE FALTA, con el control ahí mismo. El campo llega PRELLENADO con la proyección
    —«¿unos 42 900?»— para que confirmar sea más fácil que recordar y teclear. Un campo
    POR CARGA y nunca uno compartido: con uno solo, los nueve formularios mostraban el
@@ -553,26 +572,66 @@ h1:focus, h1:focus-visible { outline: none; }
 .parte--problema { border-color: var(--rojo-borde);  border-left-color: var(--rojo);  background: var(--rojo-suave); }
 .parte--neutro   { border-left-color: var(--bisel-vivo); }
 
-/* ----------------------------------------------------------------- los destinos
+/* --------------------------------------------------------------- la primera llave
 
-   LOS TRES MODOS DE GUARDAR, y los tres se dicen con lo que dan y lo que NO. En el modo
-   del navegador la bitácora sobrevive al cierre pero su asistente no la puede leer, y
-   callarlo sería vender algo que no hay. */
+   LA PANTALLA QUE ELIGE DÓNDE VIVE LA BITÁCORA, y es la primera que ve cualquiera.
 
-.destinos {
-    display: grid; grid-template-columns: repeat(auto-fit, minmax(15rem, 1fr));
-    gap: 12px; margin: 14px 0 4px;
+   Antes eran tres tarjetas del mismo tamaño y el mismo peso, así que se leía como un
+   diálogo de configuración: tres opciones igual de válidas y ninguna recomendada. No es
+   eso — una es la buena y las otras dos son salidas de emergencia. Acá eso se dice con
+   jerarquía visual: una sola acción grande, la comparación debajo, y el resto plegado. */
+
+.arranque {
+    max-width: 40rem; margin: 8vh auto 0;
+    display: flex; flex-direction: column; align-items: flex-start; gap: 14px;
 }
-.destino {
-    display: flex; flex-direction: column; gap: 8px; align-items: flex-start;
-    padding: 15px 16px; border-radius: 10px;
-    background: var(--cara); border: 1px solid var(--bisel);
+.arranque-promesa {
+    margin: 0; font-size: clamp(20px, 3.4vw, 26px); line-height: 1.25;
+    color: var(--tinta); text-wrap: balance;
 }
-.destino p { margin: 0; font-size: 13.5px; color: var(--tenue); }
-.destino p b { color: var(--tinta); font-weight: 600; }
-.destino-titulo { font-size: 15px; font-weight: 600; color: var(--tinta); }
-.destino--nodisponible { opacity: .55; }
-.destino-nota { font-size: 12.5px; color: var(--tenue-2); }
+.arranque-porque { margin: -4px 0 0; font-size: 14.5px; color: var(--tenue); }
+.arranque-porque b { color: var(--tinta); font-weight: 600; }
+.arranque-nota { margin: -4px 0 0; font-size: 13px; color: var(--tenue-2); }
+.arranque .parte { align-self: stretch; }
+
+/* LA TECLA GRANDE: hay una sola en toda la app y es ésta. Su tamaño ES el mensaje —
+   dice cuál es la recomendada sin que ningún texto tenga que insistir. */
+.tecla--grande { font-size: 16px; padding: 13px 24px; border-radius: 9px; }
+
+/* LA COMPARACIÓN. El diferenciador que de verdad decide —«¿tu asistente la puede
+   leer?»— era una frase en negrita adentro de un párrafo. Es una comparación, así que
+   se muestra como una, y la fila que decide es la última: la que se lee al final. */
+.comparacion {
+    align-self: stretch;
+    border-collapse: collapse; width: 100%;
+    font-size: 13.5px;
+}
+.comparacion th, .comparacion td {
+    padding: 9px 10px; text-align: center;
+    border-bottom: 1px solid var(--bisel);
+}
+.comparacion thead th {
+    font-size: 11px; font-weight: 600; letter-spacing: .06em; text-transform: uppercase;
+    color: var(--tenue-2); vertical-align: bottom;
+}
+.comparacion tbody th {
+    text-align: left; font-weight: 400; color: var(--tenue);
+}
+.comparacion tbody tr:last-child { font-weight: 600; }
+.comparacion tbody tr:last-child th { color: var(--tinta); }
+.comparacion .si { color: var(--bien); font-weight: 600; }
+.comparacion .no { color: var(--tenue-2); }
+
+/* Las salidas de emergencia, plegadas: a un toque, pero sin competir. */
+.otras { align-self: stretch; }
+.otras summary {
+    cursor: pointer; padding: 8px 0;
+    font-size: 13.5px; color: var(--cobre);
+}
+.otras summary:focus-visible { outline: 2px solid var(--cobre); outline-offset: 3px; }
+.otra { padding: 12px 0; border-top: 1px solid var(--bisel); }
+.otra p { margin: 8px 0 0; font-size: 13.5px; color: var(--tenue); }
+.otra p b { color: var(--tinta); font-weight: 600; }
 
 /* ------------------------------------------------------------------- arranque */
 

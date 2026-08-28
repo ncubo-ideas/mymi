@@ -33,6 +33,7 @@ namespace Cargas.Consola
 			ElGuionParteEnLosTramosDelBrief();
 			LaParcialNoRompeElTramoLoAplaza();
 			UnKilometrajeFaltanteRompeDosTramosYDejaElLargo();
+			LaSuposicionDelTanqueSeEnunciaAntesDePreguntar();
 			OtroSurtidorNoSeComparaConLaSerie();
 			ElVeredictoDelGuionEsEmpeoro();
 			CambiarLaUnidadInvierteLaFlechaPeroNoElVeredicto();
@@ -238,6 +239,67 @@ namespace Cargas.Consola
 				Formato(calculados[2].Litros, "0.#"));
 			Igual("  y sigue siendo un solo tramo", "490",
 				Formato(calculados[2].Kilometros, "0"));
+		}
+
+		// LO QUE SE PIDE CONFIRMAR HAY QUE DECIRLO PRIMERO. La pantalla pedia "la
+		// confirmacion del tanque" y ofrecia "si, quedo asi" sin decir nunca que era
+		// "asi", con los mismos dos botones tanto si la inferencia decia lleno como
+		// parcial. La suposicion es del dominio -la hace FormaDeCorte- asi que la frase
+		// que la enuncia tambien.
+		private static void LaSuposicionDelTanqueSeEnunciaAntesDePreguntar()
+		{
+			Titulo("lo que se pide confirmar se enuncia antes de preguntar");
+
+			var bitacora = new BitacoraDeCargas();
+
+			// Corte automatico: se supone que quedo lleno.
+			bitacora.Agregar(new Carga(new DateTime(2026, 1, 10), "La Sabana", "A-3",
+				"regular", 40m, "L", 615m, "CRC", 24600m, "CRC", "automatico",
+				"ABC-123", "T-9001"));
+
+			// Corte preseteado: se supone que NO quedo lleno.
+			bitacora.Agregar(new Carga(new DateTime(2026, 2, 10), "La Sabana", "A-3",
+				"regular", 20m, "L", 615m, "CRC", 12300m, "CRC", "preseteado",
+				"ABC-123", "T-9002"));
+
+			FaltanteDeDato delLleno = null, delParcial = null;
+			foreach (FaltanteDeDato faltante in bitacora.FaltantesDe("ABC-123"))
+			{
+				if (faltante.QueFalta != "la confirmación del tanque") continue;
+				if (faltante.NumeroDeLaTransaccion == "T-9001") delLleno = faltante;
+				if (faltante.NumeroDeLaTransaccion == "T-9002") delParcial = faltante;
+			}
+
+			Igual("el faltante del tanque nace de una suposicion", "True",
+				(delLleno != null && delLleno.NaceDeUnaSuposicion).ToString());
+
+			Igual("y dice QUE se supone", "lleno", delLleno.LoQueSeSupone);
+			Igual("y POR QUE lo supone",
+				"el surtidor cortó solo, así que suponemos que el tanque quedó lleno",
+				delLleno.LaSuposicion);
+
+			// La simetrica: el mismo mecanismo tiene que decir lo contrario, o los dos
+			// botones de la pantalla vuelven a ser genericos.
+			Igual("con corte preseteado se supone lo contrario", "parcial",
+				delParcial.LoQueSeSupone);
+			Igual("y lo dice con sus palabras",
+				"cargaste un monto fijo, así que suponemos que el tanque no quedó lleno",
+				delParcial.LaSuposicion);
+
+			// "tramo" es vocabulario del modelo y no tiene por que llegar a la pantalla.
+			Igual("la frase no le habla de tramos", "False",
+				delLleno.ParaSonia.Contains("tramo").ToString());
+
+			// El kilometraje NO se infiere de nada: no hay suposicion que enunciar, y su
+			// frase sigue siendo el pedido de siempre.
+			FaltanteDeDato delKilometraje = null;
+			foreach (FaltanteDeDato faltante in bitacora.FaltantesDe("ABC-123"))
+				if (faltante.QueFalta == "el kilometraje") { delKilometraje = faltante; break; }
+
+			Igual("el kilometraje no nace de una suposicion", "False",
+				delKilometraje.NaceDeUnaSuposicion.ToString());
+			Igual("y su frase sigue siendo el pedido", "True",
+				delKilometraje.ParaSonia.StartsWith("necesito el kilometraje").ToString());
 		}
 
 		private static void UnKilometrajeFaltanteRompeDosTramosYDejaElLargo()

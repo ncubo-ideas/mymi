@@ -143,5 +143,19 @@ namespace Cargas.Dominio
 		internal string TanqueExpresado => Tanque.Expresada;
 		internal bool TieneKilometraje => Odometro.Existe;
 		internal bool TieneFoto => Foto.Existe;
+
+		/// <summary>Que estado se SUPONE, para poder enunciarlo antes de preguntar. Vacio
+		/// si no hay inferencia pendiente: no hay nada que suponer.</summary>
+		internal string EstadoQueSeSupone => !TieneInferenciaSinConfirmar
+			? ""
+			: (Tanque.EsLleno ? EstadoDelTanque.Lleno.Nombre : EstadoDelTanque.Parcial.Nombre);
+
+		/// <summary>De donde sale esa suposicion, dicho para la persona.</summary>
+		internal string ComoSeDetuvoElSurtidor => Corte.ComoSeDetuvo();
+
+		/// <summary>El nombre del archivo de la foto, o "" si no hay. Total a proposito:
+		/// FotoDelTablero.NombreDeArchivo revienta cuando no existe -y hace bien, devolver
+		/// algo mentiria- pero una proyeccion plana para el print no puede reventar.</summary>
+		internal string NombreDeLaFoto => Foto.Existe ? Foto.NombreDeArchivo : "";
 	}
 }

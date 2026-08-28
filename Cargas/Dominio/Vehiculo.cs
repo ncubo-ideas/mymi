@@ -305,10 +305,15 @@ namespace Cargas.Dominio
 					faltantes.Add(new FaltanteDeDato(carga.Fecha, carga.Transaccion.Texto,
 						"el kilometraje", DesbloqueoDelKilometraje(carga)));
 
+				// LA SUPOSICION VIAJA CON EL FALTANTE. Sin ella la pantalla pedia
+				// confirmar algo que no enunciaba, y "el tramo que esta carga abre o
+				// cierra" era vocabulario del modelo filtrado a la pantalla: nadie que
+				// no haya leido este codigo sabe que es un tramo.
 				if (carga.TieneInferenciaSinConfirmar)
 					faltantes.Add(new FaltanteDeDato(carga.Fecha, carga.Transaccion.Texto,
 						"la confirmación del tanque",
-						"el tramo que esta carga abre o cierra"));
+						"cuánto rindió tu carro entre esta carga y la siguiente",
+						carga.EstadoQueSeSupone, carga.ComoSeDetuvoElSurtidor));
 			}
 			return faltantes;
 		}

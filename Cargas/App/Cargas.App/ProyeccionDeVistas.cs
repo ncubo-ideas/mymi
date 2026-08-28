@@ -55,6 +55,7 @@ namespace Cargas.App
 					Transaccion = Texto(elemento, "transaccion"),
 					TieneKilometraje = Booleano(elemento, "tieneKilometraje"),
 					TieneFoto = Booleano(elemento, "tieneFoto"),
+					Foto = Texto(elemento, "foto"),
 				});
 			return cargas;
 		}
@@ -154,6 +155,9 @@ namespace Cargas.App
 					QueFalta = Texto(elemento, "queFalta"),
 					QueDesbloquea = Texto(elemento, "queDesbloquea"),
 					ParaSonia = Texto(elemento, "paraSonia"),
+					LoQueSeSupone = Texto(elemento, "loQueSeSupone"),
+					LaSuposicion = Texto(elemento, "laSuposicion"),
+					NaceDeUnaSuposicion = Booleano(elemento, "naceDeUnaSuposicion"),
 				});
 			return faltantes;
 		}
