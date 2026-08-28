@@ -46,7 +46,19 @@ namespace DealershipCar.Dominio.Pruebas
 		// LOS DOS "DescribeAgainst..." SON LA MITAD RECIBIDA de la ley L7: componen lo que ESTE
 		// vehiculo trae contra lo publicado. Entran aca porque la comparacion necesita la unidad
 		// publicada, que solo la revision tiene a mano -- y salen sin guardar nada.
-
+		//
+		// EN T4 CRECIO CON LOS OCHO DE LA GARANTIA, y son de las mismas tres formas: dos entradas
+		// que solo un borrador acepta, una pregunta de presencia total, y cinco accesores
+		// guardados que solo leen. La diferencia con los items de T2 y T3 es que el alcance
+		// ACUMULA dentro de la revision en vez de estar indexado por una clave -- se publica de a
+		// un sistema y de a una exclusion --, lo que no cambia nada de esta ley: lo que la ley
+		// mira es si algo puede entrar DESPUES DEL SELLO, y las dos entradas pasan por la misma
+		// guarda de borrador que todas las demas.
+		//
+		// TheCoverageStandingFor RECIBE los hechos del vehiculo y no guarda ninguno. Es la unica
+		// de la lista que devuelve una respuesta compuesta en vez de una frase, porque es la unica
+		// que puede quedar sin poder evaluarse -- y eso se dice con un tipo, no con un miembro
+		// benigno del conjunto de respuestas.
 		private static readonly string[] LoQueUnaRevisionPuedeExponer =
 		{
 			".ctor",
@@ -77,7 +89,14 @@ namespace DealershipCar.Dominio.Pruebas
 			"HasAServicingPolicy",
 			"DescribeServicingPolicy",
 			"DescribeAgainstTheServicingPolicy",
-
+			"PublishACoveredSystem",
+			"PublishACoverageExclusion",
+			"HasWarrantyCoverage",
+			"DescribeWarrantyCoverage",
+			"TheCoveredSystemsPublished",
+			"TheCoverageExclusionsPublished",
+			"TheVocabularyIsTheManufacturers",
+			"TheCoverageStandingFor",
 			"Seal",
 			"SupersededBy",
 		};

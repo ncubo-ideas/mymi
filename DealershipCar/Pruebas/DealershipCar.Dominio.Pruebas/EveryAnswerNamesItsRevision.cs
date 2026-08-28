@@ -47,7 +47,12 @@ namespace DealershipCar.Dominio.Pruebas
 		// emparejar: DescribeServicingElsewhereRule sale de ReadServicingPolicyRevision, y
 		// DescribeServicePrice de ReadServicePriceRevision -- ninguna regla de nombre habria
 		// llegado a la primera.
-
+		//
+		// EN T4 ENTRARON DOS FRASES QUE COMPARTEN UNA SOLA PROCEDENCIA, que es el caso que
+		// termina de justificar la tabla: DescribeCoverageSummary y DescribeCoverage salen las
+		// dos de ReadCoverageRevision, porque el alcance de garantia es UN item publicado y las
+		// dos frases lo leen -- el resumen entero y la situacion de un sistema contra el. Si las
+		// dos nombraran revisiones distintas, una de las dos estaria mintiendo.
 		private static readonly string[][] CadaFraseConSuProcedencia =
 		{
 			new[] { "DescribeFluid", "ReadFluidRevision" },
@@ -56,7 +61,8 @@ namespace DealershipCar.Dominio.Pruebas
 			new[] { "DescribeServiceInterval", "ReadServiceIntervalRevision" },
 			new[] { "DescribeServicePrice", "ReadServicePriceRevision" },
 			new[] { "DescribeServicingElsewhereRule", "ReadServicingPolicyRevision" },
-
+			new[] { "DescribeCoverageSummary", "ReadCoverageRevision" },
+			new[] { "DescribeCoverage", "ReadCoverageRevision" },
 		};
 
 		[Test]

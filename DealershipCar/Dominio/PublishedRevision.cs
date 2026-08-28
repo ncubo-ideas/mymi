@@ -19,6 +19,7 @@ namespace DealershipCar.Dominio
 			new Dictionary<OperationKindCode, ServiceIntervalEntry>();
 		private readonly List<ServicePriceEntry> _servicePrices = new List<ServicePriceEntry>();
 		private readonly FuelSpecification _fuel = new FuelSpecification();
+		private readonly WarrantyCoverage _coverage = new WarrantyCoverage();
 
 		private ServicingPolicy _servicingPolicy = ServicingPolicy.None;
 		private RevisionState _state = RevisionState.Draft;
@@ -81,7 +82,8 @@ namespace DealershipCar.Dominio
 				|| _fuel.HasAGrade()
 				|| _serviceIntervals.Count > 0
 				|| _servicePrices.Count > 0
-				|| _servicingPolicy.Exists();
+				|| _servicingPolicy.Exists()
+				|| _coverage.HasAnythingPublished();
 		}
 
 		/// <summary>
@@ -377,6 +379,101 @@ namespace DealershipCar.Dominio
 		}
 
 		/// <summary>
+		/// Entra al alcance de garantia de la revision un sistema que el fabricante declara
+		/// adentro. Solo un borrador lo acepta. El alcance ACUMULA dentro de la revision en vez de
+		/// estar indexado por una clave, asi que esto agrega, y republicar un codigo lo corrige.
+		/// </summary>
+		internal void PublishACoveredSystem(CoveredSystem system)
+		{
+			RefuseContentUnlessItIsStillADraft();
+
+			_coverage.PublishACoveredSystem(system);
+		}
+
+		/// <summary>
+		/// Entra al alcance de garantia de la revision una exclusion publicada. Solo un borrador
+		/// la acepta, y republicar la misma la corrige en vez de duplicarla.
+		/// </summary>
+		internal void PublishACoverageExclusion(CoverageExclusion exclusion)
+		{
+			RefuseContentUnlessItIsStillADraft();
+
+			_coverage.PublishAnExclusion(exclusion);
+		}
+
+		/// <summary>
+		/// Si esta revision publico alcance de garantia. TOTAL: una revision publica lo que
+		/// publica, y una que no habla de garantia no tiene por que hacerlo.
+		/// </summary>
+		internal bool HasWarrantyCoverage()
+		{
+			return _coverage.HasAnythingPublished();
+		}
+
+		/// <summary>
+		/// El alcance publicado en una frase. Accesor GUARDADO: pedirlo de una revision que no
+		/// publico alcance se leeria como un alcance vacio, o sea como que el fabricante dijo que
+		/// no cubre nada.
+		/// </summary>
+		internal string DescribeWarrantyCoverage()
+		{
+			RefuseCoverageUnlessItWasPublished();
+
+			return _coverage.DescribeTheScope();
+		}
+
+		/// <summary>
+		/// Los codigos de los sistemas que esta revision declara dentro del alcance. Accesor
+		/// GUARDADO, por la misma razon que la frase.
+		/// </summary>
+		internal string[] TheCoveredSystemsPublished()
+		{
+			RefuseCoverageUnlessItWasPublished();
+
+			return _coverage.TheCoveredSystemsPublished();
+		}
+
+		/// <summary>
+		/// Las exclusiones que esta revision publico, con su texto y su condicion. Accesor
+		/// GUARDADO.
+		/// </summary>
+		internal string[] TheCoverageExclusionsPublished()
+		{
+			RefuseCoverageUnlessItWasPublished();
+
+			return _coverage.TheExclusionsPublished();
+		}
+
+		/// <summary>
+		/// Si el catalogo de esta revision conoce ese codigo de sistema, como cubierto o nombrado
+		/// por una exclusion. Accesor GUARDADO por la revision, y TOTAL sobre el codigo: quien
+		/// llega aca ya pregunto si la revision publico alcance.
+		/// </summary>
+		internal bool TheVocabularyIsTheManufacturers(string systemCode)
+		{
+			RefuseCoverageUnlessItWasPublished();
+
+			return _coverage.TheVocabularyIsTheManufacturers(systemCode);
+		}
+
+		/// <summary>
+		/// Donde esta parado un sistema respecto del alcance que esta revision publico, contra los
+		/// hechos del vehiculo que la lectura recibio. Accesor GUARDADO, y nada de lo recibido se
+		/// guarda: esta revision no sabe nada de ningun carro despues de contestar.
+		/// </summary>
+		internal CoverageAnswer TheCoverageStandingFor(
+			string systemCode, SystemLimits vehicleEnvelope,
+			DateTime deliveredAt, int deliveryReading, int currentReading,
+			DistanceUnit odometerUnit, DateTime asOf)
+		{
+			RefuseCoverageUnlessItWasPublished();
+
+			return _coverage.TheStandingFor(
+				systemCode, vehicleEnvelope, deliveredAt, deliveryReading, currentReading,
+				odometerUnit, asOf);
+		}
+
+		/// <summary>
 		/// La revision queda sellada y desde ahi contesta. Solo un borrador se sella, y solo uno
 		/// con contenido: sellar dos veces o sellar una vacia es un defecto de quien publica.
 		/// </summary>
@@ -430,6 +527,15 @@ namespace DealershipCar.Dominio
 
 			_state = RevisionState.Superseded;
 			_supersededByCode = supersedingRevision.Code;
+		}
+
+		private void RefuseCoverageUnlessItWasPublished()
+		{
+			if (!HasWarrantyCoverage())
+				throw new DomainException(
+					$"La revision '{Code}' no publico nada sobre el alcance de la garantia. Hay que "
+					+ "preguntar primero si lo publico: un alcance vacio se leeria como que el "
+					+ "fabricante dijo que no cubre nada.");
 		}
 
 		private void RefuseAnIntervalThisRevisionNeverPublished(OperationKindCode kind)

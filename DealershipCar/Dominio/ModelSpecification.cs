@@ -157,6 +157,41 @@ namespace DealershipCar.Dominio
 		}
 
 		/// <summary>
+		/// Publica dentro de una revision un sistema que el fabricante declara dentro del alcance
+		/// de la garantia, con sus limites propios si los publico. Un cero en las dos mitades es
+		/// como el wire dice que NO tiene limites propios, y esa traduccion pasa aca: un cero
+		/// tomado como limite dejaria al sistema fuera de su sobre el dia de la entrega.
+		/// </summary>
+		internal void PublishCoveredSystem(
+			string revisionCode, string systemCode,
+			int ownLimitMonths, int ownLimitDistance, DistanceUnitCode ownLimitUnit)
+		{
+			PublishedRevision revision = TheRevisionNamed(revisionCode);
+
+			CoveredSystem published = new CoveredSystem(
+				systemCode,
+				SystemLimits.OfTheSystemsOwn(
+					ownLimitMonths, ownLimitDistance, DistanceUnit.OfCode(ownLimitUnit)));
+
+			revision.PublishACoveredSystem(published);
+		}
+
+		/// <summary>
+		/// Publica dentro de una revision algo que el alcance NO cubre, con la condicion bajo la
+		/// cual muerde. La condicion viaja como texto publicado: este modulo la nombra y no decide
+		/// si se cumple.
+		/// </summary>
+		internal void PublishCoverageExclusion(
+			string revisionCode, string systemCode, string exclusion, string condition)
+		{
+			PublishedRevision revision = TheRevisionNamed(revisionCode);
+
+			CoverageExclusion published = new CoverageExclusion(systemCode, exclusion, condition);
+
+			revision.PublishACoverageExclusion(published);
+		}
+
+		/// <summary>
 		/// SELLA una revision, que es lo unico que la hace contestar. Resuelve el codigo y deja
 		/// que la revision decida: las guardas del sello son suyas y no se repiten aca.
 		/// </summary>
@@ -602,6 +637,246 @@ namespace DealershipCar.Dominio
 		internal string ReadRevisionState(string revisionCode)
 		{
 			return TheRevisionNamed(revisionCode).ReadState();
+		}
+
+		/// <summary>
+		/// Elige, para la pregunta de cobertura sobre un sistema, la ULTIMA revision sellada que
+		/// publico alcance, y compone su respuesta con la procedencia adentro. El alcance es UN
+		/// item: una revision que lo republica lo reemplaza entero, y una que solo corrige otra
+		/// cosa no lo toca.
+		/// </summary>
+		internal SpecificationAnswer ARevisionAppliesForward(
+			string systemCode, int envelopeMonths, int envelopeDistance,
+			DistanceUnitCode envelopeUnit, DateTime deliveredAt, int deliveryReading,
+			int currentReading, DistanceUnitCode currentUnit, DateTime asOf)
+		{
+			RefuseReceivedFactsThatCannotBeTrue(
+				deliveredAt, deliveryReading, currentReading, asOf);
+
+			if (!ARevisionAnswersAboutCoverage())
+				return UnpublishedIsAnAnswer(
+					WarrantyCoverage.TheCoverageQuestionAbout(systemCode));
+
+			PublishedRevision answering = TheRevisionThatAnswersAboutCoverage();
+
+			return SpecificationAnswer.EveryAnswerNamesItsRevision(
+				answering,
+				TheStandingAccordingTo(
+					answering, systemCode, envelopeMonths, envelopeDistance, envelopeUnit,
+					deliveredAt, deliveryReading, currentReading, currentUnit, asOf).Describe());
+		}
+
+		/// <summary>
+		/// Elige la ULTIMA revision sellada que publico alcance de garantia y compone el resumen
+		/// del alcance con su procedencia. Lleva el nombre largo porque el alcance no tiene clave
+		/// -- se pregunta por el entero -- y una sobrecarga sin parametros ya la ocupa otro item
+		/// que tampoco la tiene.
+		/// </summary>
+		internal SpecificationAnswer ARevisionAppliesForwardToTheWarrantyScope()
+		{
+			if (!ARevisionAnswersAboutCoverage())
+				return UnpublishedIsAnAnswer("Warranty coverage");
+
+			PublishedRevision answering = TheRevisionThatAnswersAboutCoverage();
+
+			return SpecificationAnswer.EveryAnswerNamesItsRevision(
+				answering, answering.DescribeWarrantyCoverage());
+		}
+
+		/// <summary>
+		/// Si hay alcance de garantia publicado. TOTAL: un modelo del que nadie publico garantia
+		/// contesta que no, y eso es una respuesta legal.
+		/// </summary>
+		internal bool IsCoveragePublished()
+		{
+			return ARevisionAppliesForwardToTheWarrantyScope().IsPublished();
+		}
+
+		/// <summary>
+		/// El alcance publicado en una frase -- los sistemas que declara adentro y las exclusiones
+		/// --, con la revision adentro. TOTAL: lo no publicado tambien se dice.
+		/// </summary>
+		internal string DescribeCoverageSummary()
+		{
+			return WithTheScopeAlwaysSaid(ARevisionAppliesForwardToTheWarrantyScope());
+		}
+
+		/// <summary>
+		/// De que revision salio el alcance publicado. TOTAL: lo no publicado contesta vacio.
+		/// </summary>
+		internal string ReadCoverageRevision()
+		{
+			return ARevisionAppliesForwardToTheWarrantyScope().RevisionCode();
+		}
+
+		/// <summary>
+		/// Los codigos de los sistemas que el alcance declara adentro. Salen como CODIGOS porque
+		/// son de lo que la persona elige al preguntar. TOTAL: sin alcance publicado, vacio.
+		/// </summary>
+		internal string[] CoveredSystems()
+		{
+			if (!ARevisionAnswersAboutCoverage()) return new string[0];
+
+			return TheRevisionThatAnswersAboutCoverage().TheCoveredSystemsPublished();
+		}
+
+		/// <summary>
+		/// Las exclusiones publicadas, cada una con su texto y su condicion -- no como codigos,
+		/// porque un codigo no dice que esta excluido. TOTAL: sin alcance publicado, vacio.
+		/// </summary>
+		internal string[] CoverageExclusions()
+		{
+			if (!ARevisionAnswersAboutCoverage()) return new string[0];
+
+			return TheRevisionThatAnswersAboutCoverage().TheCoverageExclusionsPublished();
+		}
+
+		/// <summary>
+		/// Si el catalogo publicado conoce ese codigo de sistema, sea porque lo declara adentro o
+		/// porque una exclusion lo nombra. Consulta TOTAL de reconocimiento: el vocabulario es del
+		/// fabricante, asi que un codigo desconocido es una respuesta y no un defecto de quien
+		/// pregunta.
+		/// </summary>
+		internal bool TheVocabularyIsTheManufacturers(string systemCode)
+		{
+			if (!ARevisionAnswersAboutCoverage()) return false;
+
+			return TheRevisionThatAnswersAboutCoverage()
+				.TheVocabularyIsTheManufacturers(systemCode);
+		}
+
+		/// <summary>
+		/// Si la pregunta de cobertura se puede decidir con lo que hay. TOTAL, y es la que hay que
+		/// hacer antes de leer el resultado: da que no cuando el limite que rige y el odometro
+		/// estan en unidades distintas, porque aca no se convierte nada.
+		/// </summary>
+		internal bool CanCoverageBeEvaluated(
+			string systemCode, int envelopeMonths, int envelopeDistance,
+			DistanceUnitCode envelopeUnit, DateTime deliveredAt, int deliveryReading,
+			int currentReading, DistanceUnitCode currentUnit, DateTime asOf)
+		{
+			return TheCoverageAnswerFor(
+				systemCode, envelopeMonths, envelopeDistance, envelopeUnit,
+				deliveredAt, deliveryReading, currentReading, currentUnit, asOf).CanBeEvaluated();
+		}
+
+		/// <summary>
+		/// Donde esta parado ese sistema, por el nombre de la respuesta. Accesor GUARDADO, y es el
+		/// unico del alcance de lectura de este modulo: si no se pudo evaluar no hay respuesta que
+		/// dar, y cualquiera de las posibles devuelta aca se leeria como un hecho medido.
+		/// </summary>
+		internal string ReadCoverageStanding(
+			string systemCode, int envelopeMonths, int envelopeDistance,
+			DistanceUnitCode envelopeUnit, DateTime deliveredAt, int deliveryReading,
+			int currentReading, DistanceUnitCode currentUnit, DateTime asOf)
+		{
+			return TheCoverageAnswerFor(
+					systemCode, envelopeMonths, envelopeDistance, envelopeUnit,
+					deliveredAt, deliveryReading, currentReading, currentUnit, asOf)
+				.Standing()
+				.Name;
+		}
+
+		/// <summary>
+		/// La respuesta de cobertura en una frase: donde esta parado o por que no se pudo decidir,
+		/// contra que limites se midio, las exclusiones publicadas que haya, y la revision. TOTAL:
+		/// lo que no se pudo evaluar tambien se dice con palabras.
+		/// </summary>
+		internal string DescribeCoverage(
+			string systemCode, int envelopeMonths, int envelopeDistance,
+			DistanceUnitCode envelopeUnit, DateTime deliveredAt, int deliveryReading,
+			int currentReading, DistanceUnitCode currentUnit, DateTime asOf)
+		{
+			return WithTheScopeAlwaysSaid(
+				ARevisionAppliesForward(
+					systemCode, envelopeMonths, envelopeDistance, envelopeUnit,
+					deliveredAt, deliveryReading, currentReading, currentUnit, asOf));
+		}
+
+		private static string WithTheScopeAlwaysSaid(SpecificationAnswer answer)
+		{
+			if (answer.IsPublished()) return answer.Describe();
+
+			return answer.Describe() + " " + WarrantyCoverage.ScopeIsNotAdjudication();
+		}
+
+		private static void RefuseReceivedFactsThatCannotBeTrue(
+			DateTime deliveredAt, int deliveryReading, int currentReading, DateTime asOf)
+		{
+			if (deliveryReading < 0 || currentReading < 0)
+				throw new DomainException(
+					$"Llegaron lecturas de odometro de {deliveryReading} y {currentReading}. Un "
+					+ "odometro no cuenta para atras de cero, asi que no es una dimension que no se "
+					+ "pueda medir: es un hecho imposible.");
+
+			if (currentReading < deliveryReading)
+				throw new DomainException(
+					$"La lectura actual es {currentReading} y la de la entrega es {deliveryReading}, "
+					+ "en la misma unidad: el odometro fue para atras. Cual de las dos esta mal no lo "
+					+ "decide esta especificacion.");
+
+			if (asOf < deliveredAt)
+				throw new DomainException(
+					"Se pregunto por la cobertura en un instante anterior a la entrega del vehiculo. "
+					+ "Antes de la entrega no hay plazo que contar, y contestar igual seria medir un "
+					+ "tiempo que no transcurrio.");
+		}
+
+		private CoverageAnswer TheCoverageAnswerFor(
+			string systemCode, int envelopeMonths, int envelopeDistance,
+			DistanceUnitCode envelopeUnit, DateTime deliveredAt, int deliveryReading,
+			int currentReading, DistanceUnitCode currentUnit, DateTime asOf)
+		{
+			RefuseReceivedFactsThatCannotBeTrue(
+				deliveredAt, deliveryReading, currentReading, asOf);
+
+			if (!ARevisionAnswersAboutCoverage())
+				return new ASettledCoverageAnswer(
+					WarrantyCoverage.TheCoverageQuestionAbout(systemCode),
+					CoverageStanding.NotPublished,
+					WarrantyCoverage.ScopeIsNotAdjudication());
+
+			return TheStandingAccordingTo(
+				TheRevisionThatAnswersAboutCoverage(), systemCode, envelopeMonths,
+				envelopeDistance, envelopeUnit, deliveredAt, deliveryReading, currentReading,
+				currentUnit, asOf);
+		}
+
+		private static CoverageAnswer TheStandingAccordingTo(
+			PublishedRevision answering, string systemCode, int envelopeMonths,
+			int envelopeDistance, DistanceUnitCode envelopeUnit, DateTime deliveredAt,
+			int deliveryReading, int currentReading, DistanceUnitCode currentUnit, DateTime asOf)
+		{
+			return answering.TheCoverageStandingFor(
+				systemCode,
+				SystemLimits.OfTheVehicleEnvelope(
+					envelopeMonths, envelopeDistance, DistanceUnit.OfCode(envelopeUnit)),
+				deliveredAt, deliveryReading, currentReading,
+				DistanceUnit.OfCode(currentUnit), asOf);
+		}
+
+		private bool ARevisionAnswersAboutCoverage()
+		{
+			for (int revision = _order.Count - 1; revision >= 0; revision--)
+				if (ItAnswersAboutCoverage(_order[revision])) return true;
+
+			return false;
+		}
+
+		private PublishedRevision TheRevisionThatAnswersAboutCoverage()
+		{
+			for (int revision = _order.Count - 1; revision >= 0; revision--)
+				if (ItAnswersAboutCoverage(_order[revision])) return _order[revision];
+
+			throw new DomainException(
+				"Ninguna revision sellada de esta especificacion publico alcance de garantia: hay "
+				+ "que preguntar primero si hay alguna. Fabricar un alcance vacio aca se leeria como "
+				+ "que el fabricante dijo que no cubre nada.");
+		}
+
+		private bool ItAnswersAboutCoverage(PublishedRevision candidate)
+		{
+			return OnlyASealedRevisionAnswers(candidate) && candidate.HasWarrantyCoverage();
 		}
 
 		private const string TheSubjectOfTheFuel = "Fuel grades";
