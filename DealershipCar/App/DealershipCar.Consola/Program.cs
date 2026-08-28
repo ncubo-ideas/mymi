@@ -27,6 +27,7 @@ namespace DealershipCar.Consola
 				{
 					case "historia": return TheSixMonthStory(AFolder(args, 1));
 					case "estado":   return TheBoardFromTheJournal(AFolder(args, 1));
+					case "ficha":    return TheSpecSheetPublishedAndReadBack(AFolder(args, 1));
 					case "refresco": return await TheRefreshLoopAgainstTheDealership(args);
 					case "corte":    return await ACrashInTheMiddleOfABlock(args);
 					default:         Help(); return 1;
@@ -273,6 +274,276 @@ namespace DealershipCar.Consola
 
 			app.Dispose();
 			return 0;
+		}
+
+		private static int TheSpecSheetPublishedAndReadBack(string folder)
+		{
+			Console.WriteLine("DealershipCar - la ficha del fabricante, publicada y leida de vuelta");
+			Console.WriteLine();
+			Console.WriteLine($"folder    : {folder}");
+			Console.WriteLine($"vin       : {Story.TheVin}");
+			Console.WriteLine($"actor     : {DealershipCarApp.TheActorFor(Story.TheVin)}");
+
+			EmptyTheJournalOfThisVehicle(folder);
+			Console.WriteLine("journal   : vaciado - esta corrida SIEMPRE borra el journal de este");
+			Console.WriteLine("            vehiculo, porque un codigo de revision se toma una sola vez");
+
+			DealershipCarApp app = Open(folder);
+			var api = new DealershipCarAPI(app);
+
+			Console.WriteLine($"modelo    : {api.ReadModel()}");
+			Console.WriteLine($"entrada 0 : {app.Actor.CurrentEntryId}  (la semilla, que deja OnHydrated)");
+			Console.WriteLine();
+
+			Act(app, $"1. el fabricante abre {SpecSheet.TheFirstRevision} y publica adentro los siete items",
+				() => SpecSheet.TheWholeSheetIsPublishedIntoTheFirstRevision(api));
+
+			PrintTheSheet(api, "LA FICHA ENTERA, ADENTRO DE UN BORRADOR", TheFirstOnly);
+
+			Console.WriteLine("   Los diez comandos de publicacion ya escribieron sus entradas y la ficha");
+			Console.WriteLine("   esta en el disco. Ninguna lectura la deja salir: una revision sin sellar");
+			Console.WriteLine("   se esta armando, y media hoja cargada no se puede citar. El grado del");
+			Console.WriteLine("   aceite tampoco se filtra por la frase.");
+			Console.WriteLine();
+
+			Act(app, $"2. el fabricante SELLA {SpecSheet.TheFirstRevision}",
+				() => SpecSheet.TheFirstRevisionIsSealed(api));
+
+			PrintTheSheet(api, "LA MISMA FICHA, YA CITABLE", TheFirstOnly);
+
+			Act(app, $"3. abre {SpecSheet.TheSecondRevision}, republica SOLO el aceite y la sella",
+				() => SpecSheet.TheSecondRevisionChangesTheOilGrade(api));
+
+			PrintTheSheet(api, "DOS REVISIONES SELLADAS, Y CADA ITEM DICE DE CUAL SALE", TheBoth);
+
+			Console.WriteLine("   Una revision aplica desde su instante HACIA ADELANTE y no llega para atras:");
+			Console.WriteLine("   el aceite pasa a salir de la segunda, y lo que ella no toco sigue saliendo");
+			Console.WriteLine("   de la primera. Corregir un item no borra los demas.");
+			Console.WriteLine();
+
+			Act(app, $"4. SUSTITUYE {SpecSheet.TheFirstRevision} por {SpecSheet.TheSecondRevision}",
+				() => SpecSheet.TheFirstRevisionIsSuperseded(api));
+
+			string actorFolder = Path.Combine(folder, DealershipCarApp.TheActorFor(Story.TheVin));
+			string bytesBeforeReading = TheTreeOf(actorFolder);
+			long entryBeforeReading = app.Actor.CurrentEntryId;
+
+			PrintTheSheet(api, "SUSTITUIDA LA PRIMERA: SOLO CONTESTA LO QUE LA SEGUNDA REPUBLICO", TheBoth);
+
+			Console.WriteLine("   Y esta es la otra mitad: sustituida la primera, lo que la sucesora no");
+			Console.WriteLine("   volvio a publicar se retira con ella. No queda en blanco por un error de");
+			Console.WriteLine("   lectura -- se dice que no hay nada publicado, que es una respuesta.");
+			Console.WriteLine();
+
+			Console.WriteLine("---- mediciones contra el disco -------------------------------");
+			Console.WriteLine();
+			Console.WriteLine("la ficha de arriba, leida entera:");
+			Console.WriteLine(
+				$"  entrada del journal       : {entryBeforeReading} -> {app.Actor.CurrentEntryId}");
+			Console.WriteLine($"  arbol byte a byte igual   : {TheTreeOf(actorFolder) == bytesBeforeReading}");
+			Console.WriteLine("  (las lecturas son consultas y no comandos: no dejan entrada. Con un");
+			Console.WriteLine("   PerformCommand donde va PerformQuery, esta linea diria False y el");
+			Console.WriteLine("   journal de la persona creceria en cada apertura de la app)");
+			Console.WriteLine();
+
+			string oil = api.DescribeFluid(SpecSheet.TheFluidKind);
+			string current = TheCurrentRevisionCodeOf(api);
+			string firstState = api.ReadRevisionState(SpecSheet.TheFirstRevision);
+
+			app.Dispose();
+
+			TheSameAnswersAfterReopening(folder, oil, current, firstState);
+			return 0;
+		}
+
+		private static readonly string[] TheFirstOnly = { SpecSheet.TheFirstRevision };
+
+		private static readonly string[] TheBoth =
+			{ SpecSheet.TheFirstRevision, SpecSheet.TheSecondRevision };
+
+		private static void PrintTheSheet(
+			DealershipCarAPI api, string moment, string[] revisionsOpenedSoFar)
+		{
+			Console.WriteLine("================================================================");
+			Console.WriteLine($"  {moment}");
+			Console.WriteLine("================================================================");
+			Console.WriteLine();
+
+			Console.WriteLine($"   modelo                   : {api.ReadModel()}");
+			Console.WriteLine($"   hay revision sellada     : {api.HasASealedRevision()}");
+
+			if (api.HasASealedRevision())
+			{
+				Console.WriteLine($"   revision vigente         : {api.ReadCurrentRevisionCode()}");
+				Console.WriteLine(
+					$"   publicada el             : {Day(api.ReadCurrentRevisionPublishedAt())}");
+			}
+			else
+			{
+				Console.WriteLine("   revision vigente         : ninguna - pedir su codigo o su instante");
+				Console.WriteLine("                              aca REVIENTA, y por eso se pregunta antes");
+			}
+
+			foreach (string revision in revisionsOpenedSoFar)
+				Console.WriteLine($"   {revision,-24} : {api.ReadRevisionState(revision)}");
+
+			Console.WriteLine();
+
+			TheFluid(api);
+			TheTyre(api);
+			TheFuel(api);
+			TheServiceInterval(api);
+			TheServicePrice(api);
+			TheCoverage(api);
+			TheServicingPolicy(api);
+		}
+
+		private static void TheFluid(DealershipCarAPI api)
+		{
+			AnAnswer(
+				"aceite de motor",
+				api.IsFluidPublished(SpecSheet.TheFluidKind),
+				api.ReadFluidRevision(SpecSheet.TheFluidKind),
+				api.DescribeFluid(SpecSheet.TheFluidKind));
+		}
+
+		private static void TheTyre(DealershipCarAPI api)
+		{
+			AnAnswer(
+				"llanta delantera",
+				api.IsTyrePublished(SpecSheet.TheTyrePosition),
+				api.ReadTyreRevision(SpecSheet.TheTyrePosition),
+				api.DescribeTyre(SpecSheet.TheTyrePosition));
+		}
+
+		private static void TheFuel(DealershipCarAPI api)
+		{
+			AnAnswer("combustible", api.IsFuelPublished(), api.ReadFuelRevision(), api.DescribeFuel());
+
+			AListOfIts("grado minimo", TheOneOrNone(api.ReadMinimumFuelGrade()));
+			AListOfIts("permitidos", api.PermittedFuelGrades());
+			AListOfIts("prohibidos", api.ProhibitedFuelGrades());
+			Console.WriteLine();
+		}
+
+		private static void TheServiceInterval(DealershipCarAPI api)
+		{
+			AnAnswer(
+				"intervalo de servicio",
+				api.IsServiceIntervalPublished(SpecSheet.TheOperation),
+				api.ReadServiceIntervalRevision(SpecSheet.TheOperation),
+				api.DescribeServiceInterval(
+					SpecSheet.TheOperation, SpecSheet.TheDistanceRemaining, SpecSheet.UnitA));
+		}
+
+		private static void TheServicePrice(DealershipCarAPI api)
+		{
+			AnAnswer(
+				"precio del servicio",
+				api.IsServicePricePublished(
+					SpecSheet.TheOperation, SpecSheet.TheMilestone, SpecSheet.UnitA),
+				api.ReadServicePriceRevision(
+					SpecSheet.TheOperation, SpecSheet.TheMilestone, SpecSheet.UnitA),
+				api.DescribeServicePrice(
+					SpecSheet.TheOperation, SpecSheet.TheMilestone, SpecSheet.UnitA,
+					SpecSheet.TheDayTheVehicleAsks));
+		}
+
+		private static void TheCoverage(DealershipCarAPI api)
+		{
+			AnAnswer(
+				"garantia - el alcance",
+				api.IsCoveragePublished(),
+				api.ReadCoverageRevision(),
+				api.DescribeCoverageSummary());
+
+			AListOfIts("sistemas adentro", api.CoveredSystems());
+			AListOfIts("exclusiones", api.CoverageExclusions());
+			Console.WriteLine(
+				$"   {"lo conoce el catalogo",-24} : "
+				+ $"{api.TheVocabularyIsTheManufacturers(SpecSheet.TheSystem)}");
+
+			bool canBeEvaluated = TheCoverageOfTheSystem(api.CanCoverageBeEvaluated);
+
+			Console.WriteLine($"   {"se puede evaluar",-24} : {canBeEvaluated}");
+			Console.WriteLine(
+				$"   {"donde esta parado",-24} : "
+				+ (canBeEvaluated
+					? TheCoverageOfTheSystem(api.ReadCoverageStanding)
+					: "no se pudo evaluar - pedir la postura aca REVIENTA"));
+
+			Console.WriteLine($"     {TheCoverageOfTheSystem(api.DescribeCoverage)}");
+			Console.WriteLine();
+		}
+
+		private static void TheServicingPolicy(DealershipCarAPI api)
+		{
+			AnAnswer(
+				"servicio en otro taller",
+				api.IsServicingPolicyPublished(),
+				api.ReadServicingPolicyRevision(),
+				api.DescribeServicingElsewhereRule(
+					SpecSheet.TheExternalServicesWithEvidence,
+					SpecSheet.TheExternalServicesWithoutEvidence,
+					SpecSheet.TheMissedMaintenance));
+		}
+
+		private static T TheCoverageOfTheSystem<T>(
+			Func<string, int, int, string, DateTime, int, int, string, DateTime, T> read)
+		{
+			return read(
+				SpecSheet.TheSystem,
+				SpecSheet.TheEnvelopeMonths, SpecSheet.TheEnvelopeDistance, SpecSheet.UnitA,
+				Story.Delivery, Story.OdometerAtDelivery,
+				SpecSheet.TheOdometerToday, SpecSheet.UnitA,
+				SpecSheet.TheDayTheVehicleAsks);
+		}
+
+		private static void AnAnswer(string label, bool published, string revision, string sentence)
+		{
+			Console.WriteLine($"   {label,-24} : {(published ? "publicado" : "no publicado"),-13}"
+				+ (revision.Length > 0 ? "de la revision " + revision : "sin revision que nombrar"));
+			Console.WriteLine($"     {sentence}");
+			Console.WriteLine();
+		}
+
+		private static void AListOfIts(string label, string[] values)
+		{
+			Console.WriteLine($"   {label,-24} : "
+				+ (values.Length == 0 ? "(lista vacia)" : string.Join(" | ", values)));
+		}
+
+		private static string[] TheOneOrNone(string value)
+		{
+			return value.Length == 0 ? new string[0] : new[] { value };
+		}
+
+		private static string TheCurrentRevisionCodeOf(DealershipCarAPI api)
+		{
+			return api.HasASealedRevision() ? api.ReadCurrentRevisionCode() : "ninguna";
+		}
+
+		private static void TheSameAnswersAfterReopening(
+			string folder, string oil, string current, string firstState)
+		{
+			DealershipCarApp reopened = Open(folder);
+			var again = new DealershipCarAPI(reopened);
+
+			Console.WriteLine("reabrir el journal y volver a preguntar lo mismo:");
+			Console.WriteLine($"  entrada del journal       : {reopened.Actor.CurrentEntryId}"
+				+ "  (crecio una: OnHydrated deja la semilla en CADA arranque)");
+			Console.WriteLine($"  revision vigente          : {TheCurrentRevisionCodeOf(again)}"
+				+ $"  (antes {current})");
+			Console.WriteLine($"  {SpecSheet.TheFirstRevision,-24}  : "
+				+ $"{again.ReadRevisionState(SpecSheet.TheFirstRevision)}  (antes {firstState})");
+			Console.WriteLine($"  la frase del aceite igual : "
+				+ $"{again.DescribeFluid(SpecSheet.TheFluidKind) == oil}  <- letra por letra");
+			Console.WriteLine();
+			Console.WriteLine("  La procedencia no es un campo de C#: sale del journal, y la linea de");
+			Console.WriteLine("  publicacion se vuelve a armar corriendo otra vez los mismos comandos.");
+			Console.WriteLine();
+
+			reopened.Dispose();
 		}
 
 		private static async Task<int> TheRefreshLoopAgainstTheDealership(string[] args)
@@ -673,6 +944,9 @@ namespace DealershipCar.Consola
 			Console.WriteLine("  historia [carpeta]   la historia de seis meses, desde un journal vacio");
 			Console.WriteLine("                       (es lo que corre 'dotnet run' sin argumentos)");
 			Console.WriteLine("  estado   [carpeta]   reabre ese journal y reporta - correr en proceso NUEVO");
+			Console.WriteLine("  ficha    [carpeta]   publica la ficha del fabricante en dos revisiones y la");
+			Console.WriteLine("                       lee de vuelta, cada respuesta con su procedencia");
+			Console.WriteLine("                       (TAMBIEN borra el journal de este vehiculo)");
 			Console.WriteLine("  refresco [carpeta] [url] [recurso] [id]");
 			Console.WriteLine("                       trae los eventos del concesionario y los aplica de a uno");
 			Console.WriteLine("  corte    [carpeta] [url] [recurso] [id] [n]");
