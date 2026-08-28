@@ -35,6 +35,7 @@ Aparte del orden, y se lee cuando haga falta:
 | Capítulo | Qué es |
 |---|---|
 | [0 · La arquitectura clientecéntrica](00-arquitectura-clientecentrica.md) | Dónde corre todo, de quién es el journal, el Host y los módulos. **Contexto, no requisito**: se puede hacer el paso 1 sin haberlo leído |
+| [Las reglas del substrato](reglas-del-substrato.md) | Las 14 cosas que el motor hace y ninguna documentación dice. **Referencia, no tutorial**: si ya sabés lo que hacés, entrás por acá y no por el paso 5 |
 | A · Compartir información entre apps | **pendiente**, con punto de partida en el cap. 0 §6 |
 
 > **Los números son identificadores, no orden.** Vienen de cuando las guías se escribieron en otra
@@ -50,7 +51,7 @@ Importa, porque estas guías se van a leer como si todo tuviera el mismo respald
 | | |
 |---|---|
 | **Capítulo 0** | Cruzado contra las infografías del equipo **y contra el repo corriendo** (`Examenes`, `Compras`, `HolaMundo/Facturas`). Lo que es objetivo y no realidad está marcado como tal |
-| **Capítulo 3** | Construido y corrido de punta a punta en un ejercicio de presupuesto. Las reglas de §7 salieron de chocar con ellas, y hay pruebas que las fijan |
+| **Capítulo 3** | Construido y corrido de punta a punta en un ejercicio de presupuesto. Las [reglas del substrato](reglas-del-substrato.md) salieron de chocar con ellas, y hay pruebas que las fijan |
 | **Capítulo 4** | Doctrina confirmada por los tres casos del equipo. Su **ejemplo trabajado** sigue una pregunta hasta el fondo en un dominio real, y el §6bis dice qué de este capítulo se puede auditar y qué **no** |
 | **Punto de partida** | **Corrido una vez**, sobre un dominio de presupuesto personal (2026-08-26). La corrida encontró seis defectos en el guion, y los seis están corregidos |
 | **Capítulo 1** | **Escrito preparando una máquina y anotando dónde se rompió.** Versiones, mensajes de error y diagnósticos medidos. Lo que no se pudo verificar —Docker, `wasm-tools`— lo dice |
@@ -95,7 +96,9 @@ corriendo contra el cual probar una receta.
 **8 (auditar). Parcialmente desbloqueado.** Ya existe el instrumento: [la tabla de
 observables](observables.md), con cinco chequeos corridos contra los tres negocios. Faltan cinco por
 correr, y uno quedó declarado **no observable** a propósito. Lo que todavía bloquea la auditoría
-completa es que **ningún negocio tiene su `Preguntas.md`**: sin la intención declarada, un agente
+completa es que **sólo `Compras` tiene su `Preguntas.md`** —lo escribió el equipo el 2026-08-27, y
+encontró tres defectos en un negocio con 461 comprobaciones en verde—. Sin la intención declarada,
+un agente
 puede leer el código pero no sabe contra qué compararlo.
 
 **9 (publicar). Sin capítulo, pero con material.** El paso existía en la práctica y no en este orden

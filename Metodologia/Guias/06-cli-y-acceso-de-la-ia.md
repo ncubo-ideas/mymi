@@ -118,7 +118,7 @@ AI-first, no AI-tolerada.
 **stdout lleva sólo la respuesta.** Todo lo demás —el ruido del framework, avisos, fallas— va a
 stderr. Esto no es cosmético: el framework escribe en stdout por su cuenta, incluidas marcas de
 progreso **sin salto de línea** que se pegan al principio de la línea siguiente. Si no lo capturás y
-lo redirigís, la salida deja de ser parseable. (Capítulo 3 §7.5.)
+lo redirigís, la salida deja de ser parseable. (regla 5 de [las reglas del substrato](reglas-del-substrato.md))
 
 **Los códigos de salida distinguen de quién es la culpa:**
 
@@ -216,7 +216,7 @@ no puede disparar eso y que le toca pedirlo.
 **El `stdout` es el canal.** Con transporte stdio, cualquier cosa que el proceso escriba en `stdout`
 se mete entre los mensajes JSON-RPC y el cliente no puede parsear. El motor imprime su progreso con
 `Console.Write`, así que hay que desviar `stdout` a `stderr` **antes** de tocarlo, y mandar todo el
-logging a `stderr` también. Ver capítulo 3 §7.5.
+logging a `stderr` también. Ver la [regla 5 del substrato](reglas-del-substrato.md).
 
 **Las fechas del `print` no parsean.** Salen en `MM/dd/yyyy` y `System.Text.Json` espera ISO 8601, así
 que deserializar la salida de una consulta revienta con un error que **no menciona el formato** y
@@ -266,7 +266,7 @@ el journal ya es el protocolo.** No hay que inventar uno.
 - [ ] ¿stdout lleva sólo la respuesta, con el ruido del framework mandado a stderr?
 - [ ] ¿Los códigos de salida distinguen "la invocación estaba mal" de "el modelo dijo que no"?
 - [ ] ¿El contrato máquina es **plano**, unido por nombre?
-- [ ] ¿Cada comando que escribe está detrás de un `Check`? (capítulo 3 §7.1)
+- [ ] ¿Cada comando que escribe está detrás de un `Check`? ([regla 1 del substrato](reglas-del-substrato.md))
 - [ ] ¿Una opción desconocida se rechaza nombrándola, en vez de ignorarse?
 
 **El MCP**
