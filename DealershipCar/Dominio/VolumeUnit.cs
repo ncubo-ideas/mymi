@@ -22,15 +22,15 @@ namespace DealershipCar.Dominio
 	/// </summary>
 	internal sealed class VolumeUnit
 	{
-		/// <summary>Una de las dos. Abstracta: el dominio no necesita saber cual es.</summary>
-		internal static readonly VolumeUnit UnitA = new VolumeUnit("UnitA");
+		/// <summary>Una de las dos, que se dice «L». Incomparable con <see cref="UnitB"/>.</summary>
+		internal static readonly VolumeUnit UnitA = new VolumeUnit("L");
 
-		/// <summary>La otra. Incomparable con <see cref="UnitA"/> por definicion.</summary>
-		internal static readonly VolumeUnit UnitB = new VolumeUnit("UnitB");
+		/// <summary>La otra, que se dice «gal». Incomparable con <see cref="UnitA"/>.</summary>
+		internal static readonly VolumeUnit UnitB = new VolumeUnit("gal");
 
 		/// <summary>
-		/// El nombre, para proyectarlo en la respuesta y diagnosticar. NO es clave de comparacion:
-		/// dos unidades se comparan por identidad.
+		/// Como se dice esta unidad en la frase que alguien lee. NO es clave de comparacion: dos
+		/// unidades se comparan por identidad.
 		/// </summary>
 		internal string Name { get; }
 

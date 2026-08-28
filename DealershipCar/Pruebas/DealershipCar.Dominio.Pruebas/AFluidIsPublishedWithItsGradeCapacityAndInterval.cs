@@ -51,7 +51,7 @@ namespace DealershipCar.Dominio.Pruebas
 			specification.SealRevision(TheRevision);
 
 			Assert.That(specification.DescribeFluid(FluidKindCode.EngineOil), Is.EqualTo(
-				"EngineOil: grade 5W-30, capacity 4.6 UnitA, changed every 15000 UnitA or 365 "
+				"EngineOil: grade 5W-30, capacity 4.6 L, changed every 15000 km or 365 "
 				+ "days. Published in revision REV-2025-01."));
 		}
 
@@ -68,7 +68,7 @@ namespace DealershipCar.Dominio.Pruebas
 			specification.SealRevision(TheRevision);
 
 			Assert.That(specification.DescribeFluid(FluidKindCode.Coolant),
-				Does.Contain("changed every 60000 UnitA."));
+				Does.Contain("changed every 60000 km."));
 			Assert.That(specification.DescribeFluid(FluidKindCode.Coolant),
 				Does.Not.Contain("days"));
 		}
@@ -98,8 +98,8 @@ namespace DealershipCar.Dominio.Pruebas
 
 			string answer = specification.DescribeFluid(FluidKindCode.TransmissionFluid);
 
-			Assert.That(answer, Does.Contain("capacity 7.5 UnitB"));
-			Assert.That(answer, Does.Contain("every 90000 UnitB"));
+			Assert.That(answer, Does.Contain("capacity 7.5 gal"));
+			Assert.That(answer, Does.Contain("every 90000 mi"));
 		}
 
 		[Test]

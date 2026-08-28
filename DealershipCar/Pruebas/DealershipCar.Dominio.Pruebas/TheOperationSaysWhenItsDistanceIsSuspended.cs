@@ -69,8 +69,8 @@ namespace DealershipCar.Dominio.Pruebas
 			string reason = operation.Describe();
 
 			Assert.That(reason, Does.Contain("cannot be evaluated"));
-			Assert.That(reason, Does.Contain("UnitA"));
-			Assert.That(reason, Does.Contain("UnitB"));
+			Assert.That(reason, Does.Contain("the limit is in km"));
+			Assert.That(reason, Does.Contain("the measurements are in mi"));
 			Assert.That(reason, Does.Contain("never converted"),
 				"OUS-07: la persona quiere saber POR QUE, no solo QUE. Un 'no vencio' a secas "
 				+ "sobre una dimension que el sistema no puede mirar es una operacion que "

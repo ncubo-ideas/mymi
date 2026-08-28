@@ -59,7 +59,7 @@ namespace DealershipCar.Dominio.Pruebas
 				specification.DescribeServicePrice(
 					OperationKindCode.Inspection, 10000, DistanceUnitCode.UnitA, WhileItIsInForce),
 				Is.EqualTo(
-					"Inspection at 10000 UnitA: 120.50 CRC, valid from 2025-01-01 to 2025-12-31. "
+					"Inspection at 10000 km: 120.50 CRC, valid from 2025-01-01 to 2025-12-31. "
 					+ "As of 2025-06-15 that validity is in force. "
 					+ "Published in revision REV-2025-01."));
 		}

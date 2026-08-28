@@ -44,7 +44,7 @@ namespace DealershipCar.Dominio.Pruebas
 			specification.SealRevision(TheRevision);
 
 			Assert.That(specification.DescribeTyre(TyrePositionCode.Front), Is.EqualTo(
-				"Front: size 205/55R16, cold pressure 2.4 UnitA, ratings 91V. "
+				"Front: size 205/55R16, cold pressure 2.4 bar, ratings 91V. "
 				+ "Published in revision REV-2025-01."));
 		}
 
@@ -60,8 +60,8 @@ namespace DealershipCar.Dominio.Pruebas
 
 			string answer = specification.DescribeTyre(TyrePositionCode.Rear);
 
-			Assert.That(answer, Does.Contain("cold pressure 2.6 UnitB"));
-			Assert.That(answer, Does.Not.Contain("UnitA"),
+			Assert.That(answer, Does.Contain("cold pressure 2.6 psi"));
+			Assert.That(answer, Does.Not.Contain("bar"),
 				"Ley L8: la unidad publicada es la que sale. Si apareciera la otra, alguien "
 				+ "convirtio -- y una presion convertida es alguien inflando una llanta al numero "
 				+ "equivocado.");
@@ -81,9 +81,9 @@ namespace DealershipCar.Dominio.Pruebas
 			specification.SealRevision(TheRevision);
 
 			Assert.That(specification.DescribeTyre(TyrePositionCode.Front),
-				Does.Contain("2.4 UnitA"));
+				Does.Contain("2.4 bar"));
 			Assert.That(specification.DescribeTyre(TyrePositionCode.Spare),
-				Does.Contain("4.2 UnitA"));
+				Does.Contain("4.2 bar"));
 			Assert.That(specification.DescribeTyre(TyrePositionCode.Front),
 				Does.Not.Contain("4.2"),
 				"La respuesta de una posicion no puede llevar el numero de otra.");
@@ -167,7 +167,7 @@ namespace DealershipCar.Dominio.Pruebas
 			specification.SealRevision(TheRevision);
 
 			Assert.That(specification.DescribeTyre(TyrePositionCode.Front),
-				Does.Contain("2.5 UnitA"));
+				Does.Contain("2.5 bar"));
 			Assert.That(specification.DescribeTyre(TyrePositionCode.Front),
 				Does.Not.Contain("2.4"));
 		}
@@ -208,7 +208,7 @@ namespace DealershipCar.Dominio.Pruebas
 			Assert.That(specification.ReadTyreRevision(TyrePositionCode.Front),
 				Is.EqualTo(TheNextRevision));
 			Assert.That(specification.DescribeTyre(TyrePositionCode.Front),
-				Does.Contain("2.5 UnitA"));
+				Does.Contain("2.5 bar"));
 			Assert.That(specification.ReadTyreRevision(TyrePositionCode.Rear),
 				Is.EqualTo(TheRevision),
 				"La revision 2 no hablo de las de atras, asi que esas siguen contestando desde la "

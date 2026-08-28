@@ -45,8 +45,8 @@ namespace DealershipCar.Dominio.Pruebas
 				specification.DescribeServiceInterval(
 					OperationKindCode.FluidChange, 8400, DistanceUnitCode.UnitA),
 				Is.EqualTo(
-					"FluidChange: serviced every 10000 UnitA or 365 days. This vehicle has 8400 "
-					+ "UnitA to go against it. Published in revision REV-2025-01."));
+					"FluidChange: serviced every 10000 km or 365 days. This vehicle has 8400 "
+					+ "km to go against it. Published in revision REV-2025-01."));
 		}
 
 		// Las dos mitades del intervalo se dicen por separado y NUNCA se colapsan en un numero. Un
@@ -61,7 +61,7 @@ namespace DealershipCar.Dominio.Pruebas
 			string answer = specification.DescribeServiceInterval(
 				OperationKindCode.FluidChange, 8400, DistanceUnitCode.UnitA);
 
-			Assert.That(answer, Does.Contain("every 10000 UnitA"));
+			Assert.That(answer, Does.Contain("every 10000 km"));
 			Assert.That(answer, Does.Contain("365 days"));
 		}
 
@@ -128,7 +128,7 @@ namespace DealershipCar.Dominio.Pruebas
 			Assert.That(
 				specification.DescribeServiceInterval(
 					OperationKindCode.Inspection, 8400, DistanceUnitCode.UnitA),
-				Does.Contain("every 20000 UnitA"));
+				Does.Contain("every 20000 km"));
 			Assert.That(
 				specification.DescribeServiceInterval(
 					OperationKindCode.FluidChange, 8400, DistanceUnitCode.UnitA),
@@ -146,7 +146,7 @@ namespace DealershipCar.Dominio.Pruebas
 			string answer = specification.DescribeServiceInterval(
 				OperationKindCode.FluidChange, 8400, DistanceUnitCode.UnitA);
 
-			Assert.That(answer, Does.Contain("every 12000 UnitA"));
+			Assert.That(answer, Does.Contain("every 12000 km"));
 			Assert.That(answer, Does.Not.Contain("10000"));
 		}
 

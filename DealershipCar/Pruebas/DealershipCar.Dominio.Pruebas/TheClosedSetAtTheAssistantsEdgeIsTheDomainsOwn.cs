@@ -187,7 +187,14 @@ namespace DealershipCar.Dominio.Pruebas
 				Assert.That(pricing.Prices[0].MilestoneUnit, Is.EqualTo("UnitB"),
 					"La unidad vuelve tal como se publico. Contestar UnitA aca seria haber "
 					+ "convertido, que es lo unico que este dominio nunca hace.");
-				Assert.That(pricing.Prices[0].Says, Does.Contain("UnitB"));
+
+				// LA CLAVE Y LA FRASE HABLAN DOS VOCABULARIOS, a proposito: la clave es la del wire
+				// -- el nombre del miembro del enum, que es lo que viaja y lo que el journal guarda
+				// -- y la frase es la que lee una persona. Son la MISMA unidad dicha dos veces, y
+				// que una diga UnitB y la otra mi es lo que hay que ver aca: si la frase dijera km,
+				// alguien convirtio.
+				Assert.That(pricing.Prices[0].Says, Does.Contain("6000 mi"));
+				Assert.That(pricing.Prices[0].Says, Does.Not.Contain("km"));
 				Assert.That(pricing.Prices[0].Revision, Is.EqualTo("MY2025-R1"));
 			}
 		}

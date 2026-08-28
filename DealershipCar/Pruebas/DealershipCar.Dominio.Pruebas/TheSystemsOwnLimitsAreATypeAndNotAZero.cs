@@ -44,7 +44,7 @@ namespace DealershipCar.Dominio.Pruebas
 
 			Assert.That(limits.Exists(), Is.True);
 			Assert.That(limits.Describe(), Does.Contain("36 months"));
-			Assert.That(limits.Describe(), Does.Contain("60000 UnitA"));
+			Assert.That(limits.Describe(), Does.Contain("60000 km"));
 		}
 
 		// EL CERO DEL WIRE NO PASA. Publicar un sistema sin limites propios da la ausencia, no un
@@ -81,7 +81,7 @@ namespace DealershipCar.Dominio.Pruebas
 				specification.DescribeCoverage(
 					TheSystem, 36, 100000, DistanceUnitCode.UnitA,
 					DeliveredAt, 10, 11, DistanceUnitCode.UnitA, TheDayAfterDelivery),
-				Does.Contain("36 months or 100000 UnitA"),
+				Does.Contain("36 months or 100000 km"),
 				"Y los limites que la respuesta nombra son los del SOBRE, no unos ceros: si el cero "
 				+ "hubiera entrado como limite propio, la frase diria contra que se midio y seria un "
 				+ "limite que nadie publico.");

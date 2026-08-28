@@ -180,7 +180,7 @@ namespace DealershipCar.Dominio.Pruebas
 			Apply(ADealershipNarrative.RevisionSealed(3, "R1"));
 
 			Assert.That(journal.Api.DescribeFluid("EngineOil"),
-				Does.Contain("capacity 4.2 UnitB").And.Contain("every 10000 UnitA"),
+				Does.Contain("capacity 4.2 gal").And.Contain("every 10000 km"),
 				"La capacidad sale en la unidad de volumen en que se publico y el intervalo en la de "
 				+ "distancia en que se publico. Cruzadas, las dos mitades dirian lo contrario y las "
 				+ "dos seguirian siendo nombres legales.");
@@ -196,7 +196,7 @@ namespace DealershipCar.Dominio.Pruebas
 			Apply(ADealershipNarrative.RevisionSealed(3, "R1"));
 
 			Assert.That(journal.Api.DescribeTyre("Front"),
-				Does.Contain("cold pressure 2.4 UnitB"),
+				Does.Contain("cold pressure 2.4 psi"),
 				"Quien la lee la va a marcar en un manometro: la unidad no es un adorno de la frase.");
 		}
 
@@ -235,7 +235,7 @@ namespace DealershipCar.Dominio.Pruebas
 					"POWERTRAIN", 36, 60000, "UnitA",
 					new DateTime(2025, 6, 1, 0, 0, 0, DateTimeKind.Utc), 30000, 35000, "UnitA",
 					new DateTime(2026, 9, 1, 0, 0, 0, DateTimeKind.Utc)),
-				Does.Contain("60 months or 100000 UnitA"),
+				Does.Contain("60 months or 100000 km"),
 				"Y son los limites PROPIOS del sistema los que rigen sobre el sobre del vehiculo, "
 				+ "que llego con 36 y 60000: mas especifico manda.");
 		}
@@ -280,7 +280,7 @@ namespace DealershipCar.Dominio.Pruebas
 
 			Assert.That(
 				journal.Api.DescribeServiceInterval("FluidChange", 2000, "UnitA"),
-				Does.Contain("every 10000 UnitA or 365 days"));
+				Does.Contain("every 10000 km or 365 days"));
 		}
 
 		// LO QUE UNA EXCLUSION EXCLUYE Y LA CONDICION BAJO LA CUAL MUERDE SON DOS TEXTOS. Cruzados, la
@@ -381,9 +381,9 @@ namespace DealershipCar.Dominio.Pruebas
 
 			(string Where, string Says, Func<string> Read)[] normalized =
 			{
-				("la capacidad del fluido", "capacity 4.2 UnitA",
+				("la capacidad del fluido", "capacity 4.2 L",
 					() => journal.Api.DescribeFluid("EngineOil")),
-				("la presion de la llanta", "cold pressure 2.4 UnitA",
+				("la presion de la llanta", "cold pressure 2.4 bar",
 					() => journal.Api.DescribeTyre("Front")),
 				("el monto del precio", "89.9 USD",
 					() => journal.Api.DescribeServicePrice(

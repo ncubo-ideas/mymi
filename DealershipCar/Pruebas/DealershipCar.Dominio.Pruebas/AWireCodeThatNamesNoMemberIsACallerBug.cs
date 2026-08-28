@@ -181,11 +181,16 @@ namespace DealershipCar.Dominio.Pruebas
 		// El Name que el conjunto proyecta es el nombre del miembro, no una etiqueta aparte.
 		// Es lo unico que sale hacia afuera (E24), y si dijera otra cosa el journal y la
 		// respuesta hablarian de dos vocabularios distintos.
+		//
+		// LAS TRES UNIDADES QUEDAN FUERA A PROPOSITO, y son el unico caso del modulo: su
+		// miembro se llama UnitA y su Name dice km, L o bar. Ahi los dos vocabularios SI son
+		// distintos, porque la identidad real de una unidad es cosa de quien la muestra
+		// (DEALERSHIP-DOMAIN §6, la fila de DistanceUnit) y una persona no lee "UnitA".
+		// La ley que las cubre a ellas es TheUnitsAreSaidInTheirRealWorldNames, que fija los
+		// seis nombres uno por uno y vuelve a atar el wire al nombre del miembro.
 		[TestCase(typeof(FluidKind))]
 		[TestCase(typeof(TyrePosition))]
 		[TestCase(typeof(FuelGradeStanding))]
-		[TestCase(typeof(PressureUnit))]
-		[TestCase(typeof(VolumeUnit))]
 		public void TheProjectedNameIsTheMembersOwnName(Type conjunto)
 		{
 			foreach (FieldInfo campo in MiembrosDe(conjunto))

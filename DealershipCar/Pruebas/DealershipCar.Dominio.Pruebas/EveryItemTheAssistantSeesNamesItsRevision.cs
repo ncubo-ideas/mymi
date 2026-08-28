@@ -317,7 +317,7 @@ namespace DealershipCar.Dominio.Pruebas
 			// falta no es la lectura, es de donde sacar la distancia que le queda.
 			Assert.That(
 				journal.Api.DescribeServiceInterval("FluidChange", 2000, "UnitA"),
-				Does.Contain("2000 UnitA to go"));
+				Does.Contain("2000 km to go"));
 		}
 
 		// Y CUANDO NO HAY INTERVALO PUBLICADO NO SE ANUNCIA NADA. Sin esto, la frase de arriba podria

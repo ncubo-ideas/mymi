@@ -59,7 +59,7 @@ namespace DealershipCar.Dominio.Pruebas
 
 			string live = TheFluidClause("EngineOil");
 
-			Assert.That(live, Does.Contain("capacity 2.4 UnitA"),
+			Assert.That(live, Does.Contain("capacity 2.4 L"),
 				"Con la forma que va a tener despues del journal, desde la primera lectura.");
 			Assert.That(live, Does.Not.Contain("2.40"),
 				"Y no con la que el editorial escribio, porque esa no sobrevive al replay. El "

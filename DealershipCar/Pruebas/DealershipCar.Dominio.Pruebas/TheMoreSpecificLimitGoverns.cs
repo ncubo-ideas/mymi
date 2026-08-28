@@ -51,7 +51,7 @@ namespace DealershipCar.Dominio.Pruebas
 			Assert.That(TheSentenceAt(FiveYearsLater, 40000), Does.Contain("84 months"),
 				"Test 10 de §11: la respuesta nombra los limites que rigen. Un 'Covered' sin decir "
 				+ "contra que se midio no se puede verificar.");
-			Assert.That(TheSentenceAt(FiveYearsLater, 40000), Does.Contain("160000 UnitA"));
+			Assert.That(TheSentenceAt(FiveYearsLater, 40000), Does.Contain("160000 km"));
 		}
 
 		// TEST 12 DE §11. Pasado de los limites propios, dentro del sobre del vehiculo.

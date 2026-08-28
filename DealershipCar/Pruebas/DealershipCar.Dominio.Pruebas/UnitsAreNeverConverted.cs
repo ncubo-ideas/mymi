@@ -73,8 +73,8 @@ namespace DealershipCar.Dominio.Pruebas
 
 			string answer = specification.DescribeTyre(TyrePositionCode.Front);
 
-			Assert.That(answer, Does.Contain("2.4 UnitA"));
-			Assert.That(answer, Does.Not.Contain("UnitB"));
+			Assert.That(answer, Does.Contain("2.4 bar"));
+			Assert.That(answer, Does.Not.Contain("psi"));
 		}
 
 		// SEGUNDA MITAD DEL TEST 9, Y LA QUE IMPORTA. El intervalo se publico en UnitA y la
@@ -91,8 +91,8 @@ namespace DealershipCar.Dominio.Pruebas
 				OperationKindCode.FluidChange, 8400, DistanceUnitCode.UnitB);
 
 			Assert.That(answer, Does.Contain("cannot be evaluated"));
-			Assert.That(answer, Does.Contain("UnitA"));
-			Assert.That(answer, Does.Contain("UnitB"),
+			Assert.That(answer, Does.Contain("published in km"));
+			Assert.That(answer, Does.Contain("8400 mi"),
 				"Se nombran las DOS unidades. 'No se puede evaluar' sin decir cual contra cual "
 				+ "obliga a adivinar donde esta el problema.");
 			Assert.That(answer, Does.Contain("never converted"));
@@ -131,7 +131,7 @@ namespace DealershipCar.Dominio.Pruebas
 			string answer = specification.DescribeServiceInterval(
 				OperationKindCode.FluidChange, 8400, DistanceUnitCode.UnitA);
 
-			Assert.That(answer, Does.Contain("8400 UnitA"));
+			Assert.That(answer, Does.Contain("8400 km"));
 			Assert.That(answer, Does.Not.Contain("cannot be evaluated"));
 		}
 

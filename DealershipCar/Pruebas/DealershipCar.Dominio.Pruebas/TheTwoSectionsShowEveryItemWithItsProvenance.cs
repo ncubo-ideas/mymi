@@ -157,7 +157,7 @@ namespace DealershipCar.Dominio.Pruebas
 			Assert.That(front.Revision, Is.EqualTo(TheFirstRevision));
 			Assert.That(front.Says, Does.StartWith("Front:"));
 			Assert.That(front.Says, Does.Contain(TheFrontTyre));
-			Assert.That(front.Says, Does.Contain("2.4 UnitA"));
+			Assert.That(front.Says, Does.Contain("2.4 bar"));
 
 			PublishedTyre rear = TheTyreRow(sheet, "Rear");
 
@@ -165,7 +165,7 @@ namespace DealershipCar.Dominio.Pruebas
 			Assert.That(rear.Revision, Is.EqualTo(TheSecondRevision));
 			Assert.That(rear.Says, Does.StartWith("Rear:"));
 			Assert.That(rear.Says, Does.Contain(TheRearTyre));
-			Assert.That(rear.Says, Does.Contain("33 UnitB"),
+			Assert.That(rear.Says, Does.Contain("33 psi"),
 				"La trasera se publico en la otra unidad de presion y sale en ella. Si saliera en la "
 				+ "de la delantera, alguien convirtio -- y una presion convertida es la que la "
 				+ "persona le pone al carro.");
