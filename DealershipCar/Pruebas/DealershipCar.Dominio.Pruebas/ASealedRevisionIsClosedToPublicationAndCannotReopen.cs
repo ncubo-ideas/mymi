@@ -37,9 +37,16 @@ namespace DealershipCar.Dominio.Pruebas
 		// dos transiciones, y el camino por el que entra contenido con su par de lectura. Nada
 		// que reabra.
 		//
-		// EN T2 CRECIO, y va a crecer de nuevo en T3 con los otros cinco items: AcceptAPublication
-		// -- el contador de T1 -- salio, y entro el camino de publicacion de verdad. Cada miembro
-		// nuevo se lee contra esta ley PRIMERO y se agrega DESPUES.
+		// EN T2 CRECIO y EN T3 CRECIO OTRA VEZ, con los otros cinco items. Cada miembro nuevo se
+		// leyo contra esta ley PRIMERO y se agrego DESPUES, y los diecisiete de T3 son de tres
+		// formas y nada mas: un camino de entrada que solo un borrador acepta, una pregunta de
+		// presencia total, y un accesor guardado que compone una clausula. Ninguna de las tres
+		// puede devolver una revision sellada a borrador, que es lo unico que esta lista defiende.
+		//
+		// LOS DOS "DescribeAgainst..." SON LA MITAD RECIBIDA de la ley L7: componen lo que ESTE
+		// vehiculo trae contra lo publicado. Entran aca porque la comparacion necesita la unidad
+		// publicada, que solo la revision tiene a mano -- y salen sin guardar nada.
+
 		private static readonly string[] LoQueUnaRevisionPuedeExponer =
 		{
 			".ctor",
@@ -53,6 +60,24 @@ namespace DealershipCar.Dominio.Pruebas
 			"PublishAFluidSpecification",
 			"HasAFluidSpecification",
 			"DescribeFluidSpecification",
+			"PublishATyreSpecification",
+			"HasATyreSpecification",
+			"DescribeTyreSpecification",
+			"PublishAFuelGrade",
+			"HasAFuelSpecification",
+			"DescribeFuelSpecification",
+			"PublishAServiceInterval",
+			"HasAServiceInterval",
+			"DescribeServiceInterval",
+			"DescribeAgainstTheServiceInterval",
+			"PublishAServicePrice",
+			"HasAServicePrice",
+			"DescribeServicePrice",
+			"PublishAServicingPolicy",
+			"HasAServicingPolicy",
+			"DescribeServicingPolicy",
+			"DescribeAgainstTheServicingPolicy",
+
 			"Seal",
 			"SupersededBy",
 		};

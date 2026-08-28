@@ -42,9 +42,21 @@ namespace DealershipCar.Dominio.Pruebas
 		// Cada frase de la fachada con la lectura que dice de que revision salio. Crece con cada
 		// item publicado que entra en T3 y T4: primero se decide cual es su procedencia, despues
 		// se agrega la fila.
+		//
+		// EN T3 ENTRARON CINCO, y dos de ellas son justo las que la tabla existe para poder
+		// emparejar: DescribeServicingElsewhereRule sale de ReadServicingPolicyRevision, y
+		// DescribeServicePrice de ReadServicePriceRevision -- ninguna regla de nombre habria
+		// llegado a la primera.
+
 		private static readonly string[][] CadaFraseConSuProcedencia =
 		{
 			new[] { "DescribeFluid", "ReadFluidRevision" },
+			new[] { "DescribeTyre", "ReadTyreRevision" },
+			new[] { "DescribeFuel", "ReadFuelRevision" },
+			new[] { "DescribeServiceInterval", "ReadServiceIntervalRevision" },
+			new[] { "DescribeServicePrice", "ReadServicePriceRevision" },
+			new[] { "DescribeServicingElsewhereRule", "ReadServicingPolicyRevision" },
+
 		};
 
 		[Test]

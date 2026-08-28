@@ -57,5 +57,35 @@ namespace DealershipCar.Dominio
 
 			return byDistance + " or " + _days + " days";
 		}
+
+		/// <summary>
+		/// Donde queda una distancia RECIBIDA frente a este intervalo. Es el unico sitio del modulo
+		/// donde un numero publicado y uno recibido se ponen uno al lado del otro, y por eso es
+		/// donde vive la regla: si vienen en unidades distintas NO SE CONVIERTE NINGUNA -- se dice
+		/// que no se puede evaluar y se nombran las dos, para que quien lea sepa por que. Un
+		/// intervalo publicado solo como plazo tampoco se puede comparar con una distancia: no hay
+		/// mitad de distancia contra la cual pararse, e inventarla seria publicar por el fabricante.
+		/// La distancia recibida se dice tal como llego, en su propia unidad, siempre.
+		/// </summary>
+		internal string UnitsAreNeverConverted(int distanceRemaining, DistanceUnit remainingUnit)
+		{
+			if (remainingUnit == null)
+				throw new DomainException(
+					"Se pregunto por una distancia sin decir en que unidad esta. Sin unidad no hay "
+					+ "nada que comparar ni nada que decir que no se puede comparar.");
+
+			if (_distance == 0)
+				return "This vehicle has " + distanceRemaining + " " + remainingUnit.Name
+					+ " to go, which cannot be evaluated against an interval published as a term "
+					+ "and no distance.";
+
+			if (_unit != remainingUnit)
+				return "This vehicle's remaining distance is " + distanceRemaining + " "
+					+ remainingUnit.Name + ", which cannot be evaluated against an interval "
+					+ "published in " + _unit.Name + ": these units are never converted.";
+
+			return "This vehicle has " + distanceRemaining + " " + remainingUnit.Name
+				+ " to go against it.";
+		}
 	}
 }
