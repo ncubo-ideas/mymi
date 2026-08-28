@@ -257,26 +257,29 @@ public sealed class EstadoDeLaApp : IAsyncDisposable
 	public ConsumoEnElTiempo ConsumoDe(string producto)
 	{ Exigir(); return api!.Consumo(producto); }
 
-	// EL CORTE ES EL 1 DE ENERO DE ESTE ANO, y antes era "hace un ano" — que con compras
-	// semanales resulto estar mal. Con 87 compras, "hace un ano" partia el historial en
-	// agosto y comparaba ocho semanas de 2025 contra otras ocho de 2025: dos ventanas del
-	// mismo lado del cambio, asi que la app decia "su canasta viene igual" y la tarjeta del
-	// quiebre no aparecia. Con seis compras el bug no se veia.
-	//
-	// El ano corriente tambien es mas facil de explicar -"lo que cambio este ano"- y es el
-	// mismo marco que la comparacion de canastas, que compara este mes contra el del ano
-	// pasado. El corte lo pone la caratula porque involucra el RELOJ y el dominio no lo lee.
-	//
-	// LO QUE FALTA, y es una lectura y no un ajuste: que el DOMINIO encuentre el mes del
-	// quiebre en vez de recibirlo. La especificacion pide "el quiebre de enero", no "el
-	// quiebre desde la fecha que le pases", y hoy si el cambio de una persona fue en
-	// setiembre esta pantalla no lo encuentra.
-	public CambioDeLaCanasta CambioDelUltimoAnio()
-	{ Exigir(); return api!.Cambio(new DateTime(DateTime.Now.Year, 1, 1)); }
+	// EN CUALES COMPRAS APARECIO ESTO. La busca el DOMINIO y no la pantalla: la pantalla
+	// solo tiene la lista de compras -numero, fecha, lineas, total-, sin las lineas, asi que
+	// filtrar aca obligaria a bajar el detalle de las 87 en cada tecla.
+	public ComprasHalladas Halladas(string termino)
+	{ Exigir(); return api!.Halladas(termino); }
 
-	// LOS PRODUCTOS A LOS QUE LES CAMBIO EL RITMO, el mas notorio primero. Mismo corte que
-	// el cambio de la canasta -"este ano"- porque las dos tarjetas cuentan el mismo quiebre
-	// desde angulos distintos: una dice QUE entro, la otra CADA CUANTO.
+	// EL QUIEBRE LO ENCUENTRA EL DOMINIO, y esta pantalla ya no elige una fecha.
+	//
+	// Antes cortaba el 1 de enero del ano corriente, y funcionaba POR SUERTE: el guion de la
+	// demo quiebra en enero. A una persona que cambio en setiembre le decia "su canasta
+	// viene igual", que es una respuesta FALSA y no un hueco visible — el peor de los dos
+	// errores, porque nadie va a ir a buscar lo que la app ya contesto.
+	//
+	// Y no es solo por acertar: elegir cuando partir la historia es un JUICIO, y un juicio
+	// que vive en una caratula no lo audita nadie. Ahora la pantalla pide "el cambio" y el
+	// dominio dice cual y desde cuando.
+	public CambioDeLaCanasta CambioDelUltimoAnio()
+	{ Exigir(); return api!.CambioDelQuiebre(); }
+
+	// LOS PRODUCTOS A LOS QUE LES CAMBIO EL RITMO, el mas notorio primero. EL MISMO quiebre
+	// que la tarjeta de arriba, y ahora lo garantiza el dominio: las dos cuentan el mismo
+	// cambio desde angulos distintos -una dice QUE entro, la otra CADA CUANTO-, y antes esa
+	// coordinacion era que las dos llamadas de aca pasaran la misma fecha.
 	// EL ULTIMO MES CONTRA EL ANTERIOR. Que dos meses se comparan lo elige el DOMINIO, que
 	// conoce su propio rango: esta pantalla no sabe cual es el ultimo mes con compras, y la
 	// aritmetica de "el mes anterior" se resuelve mal en enero.
@@ -291,7 +294,7 @@ public sealed class EstadoDeLaApp : IAsyncDisposable
 	public RitmoDelSuperVista Ritmo() { Exigir(); return api!.Ritmo(); }
 
 	public IReadOnlyList<RitmoQueCambio> RitmosQueCambiaron()
-	{ Exigir(); return api!.RitmosQueCambiaron(new DateTime(DateTime.Now.Year, 1, 1)); }
+	{ Exigir(); return api!.RitmosDelQuiebre(); }
 
 	// El "hoy" lo pone la caratula: el dominio no lee el reloj.
 	public IReadOnlyList<GarantiaDeProducto> GarantiasVigentes() { Exigir(); return api!.GarantiasVigentes(DateTime.Now); }

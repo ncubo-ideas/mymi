@@ -140,6 +140,16 @@ namespace Compras.App.Vistas
 	// lectura de la portada, y sin veredicto: dice que paso, no si esta bien.
 	public sealed class CambioDeLaCanasta
 	{
+		/// <summary>
+		/// El mes por el que se partió el historial, como aaaa-mm. Vacío cuando no hay con
+		/// qué comparar.
+		/// </summary>
+		// NO ES MesDelCambio: aquel es el mes más viejo entre los productos que entraron -un
+		// hecho de los datos-, y éste es dónde se partió la historia para mirarlos. Desde que
+		// el dominio ENCUENTRA el corte, los dos suelen coincidir; cuando no, la diferencia
+		// dice que lo nuevo tardó en aparecer.
+		public string Corte { get; init; } = "";
+
 		/// <summary>Si los dos lados tienen compras. Sin eso no se afirma nada.</summary>
 		public bool HayConQueComparar { get; init; }
 
@@ -329,6 +339,9 @@ namespace Compras.App.Vistas
 		public string ParaSonia { get; init; } = "";
 		public IReadOnlyList<MesDeConsumoVista> Meses { get; init; } = new List<MesDeConsumoVista>();
 
+		/// <summary>La misma serie por año. Vacía cuando no hay consumo.</summary>
+		public IReadOnlyList<AnioDeConsumoVista> Anios { get; init; } = new List<AnioDeConsumoVista>();
+
 		public bool Existe => MesesConConsumo > 0;
 	}
 
@@ -365,5 +378,57 @@ namespace Compras.App.Vistas
 		public bool EsComestible { get; init; }
 		public string Severidad { get; init; } = "";
 		public string ParaSonia { get; init; } = "";
+	}
+
+	// EN CUALES COMPRAS APARECIO ALGO. La respuesta del buscador de recibos, y la unica
+	// pantalla donde una lista se acorta por la PREGUNTA y no por un tope: buscar "leche"
+	// devuelve las compras con leche, no las primeras N de todas.
+	// UN AÑO DE LA SERIE. Existe porque la serie mensual crece doce filas por año y esta
+	// crece una: la ficha pinta el año mas reciente mes a mes y los anteriores de a una
+	// fila. mesesConCompras es lo que impide comparar un año a medias con uno entero como
+	// si midieran lo mismo.
+	public sealed class AnioDeConsumoVista
+	{
+		public string Anio { get; init; } = "";
+		public int Unidades { get; init; }
+		public decimal Gasto { get; init; }
+		public int Compras { get; init; }
+		public int MesesConCompras { get; init; }
+	}
+
+	public sealed class ComprasHalladas
+	{
+		public string Buscado { get; init; } = "";
+		public bool Existe { get; init; }
+
+		/// <summary>En cuántas compras apareció. Cero cuando en ninguna.</summary>
+		public int CuantasCompras { get; init; }
+
+		public int TotalUnidades { get; init; }
+		public decimal TotalGastado { get; init; }
+
+		/// <summary>
+		/// Las descripciones distintas que coincidieron. Buscar "queso" puede alcanzar a
+		/// dos productos, y la pantalla lo dice antes de mostrar los totales.
+		/// </summary>
+		public IReadOnlyList<string> Productos { get; init; } = new List<string>();
+
+		/// <summary>De la más reciente a la más vieja. Vacía cuando no hay ninguna.</summary>
+		public IReadOnlyList<CompraHallada> Compras { get; init; } = new List<CompraHallada>();
+
+		public string ParaSonia { get; init; } = "";
+	}
+
+	// Una compra donde aparecio lo buscado. Lleva LAS DOS ESCALAS -lo del producto y lo de
+	// la compra entera- para que la fila se pueda pintar igual que las de la lista y ademas
+	// diga por que aparecio.
+	public sealed class CompraHallada
+	{
+		public string Numero { get; init; } = "";
+		public string Fecha { get; init; } = "";
+		public int Unidades { get; init; }
+		public decimal Gasto { get; init; }
+		public int LineasDeLaCompra { get; init; }
+		public decimal TotalDeLaCompra { get; init; }
 	}
 }

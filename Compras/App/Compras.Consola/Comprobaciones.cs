@@ -65,6 +65,9 @@ namespace Compras.Consola
 			ElRitmoDeUnProductoCambia();
 			ElRitmoDelSuperTieneTresCaras();
 			LaConstanciaSeDiceEnPalabras();
+			ElDominioEncuentraElQuiebre();
+			LaSerieSeAgrupaPorAnio();
+			LaBusquedaEncuentraPorProducto();
 
 			Console.WriteLine();
 			Console.WriteLine(fallas == 0
@@ -1301,6 +1304,224 @@ namespace Compras.Consola
 			for (int i = 0; i <= 10; i++)
 				Igual($"  {i * 10}% tiene constancia", "True",
 					(Constancia.Para(i / 10m) != null).ToString());
+		}
+
+		// ---- el dominio ENCUENTRA el mes del quiebre ----
+		private static void ElDominioEncuentraElQuiebre()
+		{
+			Titulo("el dominio encuentra el mes del quiebre");
+
+			// UN GUION QUE QUIEBRA EN SETIEMBRE, a proposito: el de la demo quiebra en
+			// enero, y una caratula que corta el 1 de enero acertaba POR SUERTE. Si el
+			// buscador solo supiera encontrar eneros, este caso lo delata.
+			Historial cambio = QuiebreEnSetiembre();
+			CambioEnLaCanasta hallado = cambio.CambioEncontrado(4);
+			Igual("hay con que comparar", "True", hallado.HayConQueComparar.ToString());
+			Igual("  y hay cambio", "True", hallado.HayCambio.ToString());
+			Igual("  el corte que encontro es setiembre", "2026-09", hallado.CorteExpresado);
+			Igual("  entraron 2 productos", "2", hallado.Entraron.Count.ToString());
+			Igual("  y salieron 2", "2", hallado.Salieron.Count.ToString());
+
+			// LO QUE HACIA LA CARATULA: cortar el 1 de enero. Con este historial no
+			// encuentra el quiebre, y esa es exactamente la falla que esto arregla.
+			CambioEnLaCanasta porEnero = cambio.CambioDesde(new DateTime(2026, 1, 1), 4);
+			Igual("cortando el 1 de enero, como hacia la caratula: no hay cambio", "False",
+				porEnero.HayCambio.ToString());
+
+			// EL CORTE NO ES LO MISMO QUE EL MES DEL CAMBIO, y los dos se pueden leer.
+			Igual("el mes del cambio sale de los datos", "2026-09", hallado.MesDelCambioExpresado);
+
+			// UNA CANASTA QUE NO CAMBIA no inventa un quiebre.
+			Historial igual = SiempreLoMismo();
+			CambioEnLaCanasta sinQuiebre = igual.CambioEncontrado(4);
+			Igual("canasta que viene igual: no hay cambio", "False", sinQuiebre.HayCambio.ToString());
+			Igual("  y no expresa un corte", "", sinQuiebre.CorteExpresado);
+
+			// TOTAL: sin historia suficiente tampoco revienta, y lo dice distinto.
+			Historial corto = new Historial();
+			corto.Agregar(UnaCompra("T-1", new DateTime(2026, 1, 3),
+				("LECHE-1L", "Leche semidescremada 1L", 1, 950m, "LacteosYHuevos", 0)));
+			CambioEnLaCanasta sinHistoria = corto.CambioEncontrado(4);
+			Igual("una sola compra: no hay con que comparar", "False",
+				sinHistoria.HayConQueComparar.ToString());
+			Revienta("  y preguntarle el corte revienta", () => sinHistoria.Corte);
+
+			Igual("historial vacio: tampoco", "False",
+				new Historial().CambioEncontrado(4).HayConQueComparar.ToString());
+			Revienta("mirar cero compras revienta", () => new Historial().CambioEncontrado(0));
+		}
+
+		// Ocho compras: cuatro con una canasta y cuatro con otra, y el corte cae en
+		// setiembre. La leche sigue de los dos lados para que el cambio no sea "cambio todo".
+		private static Historial QuiebreEnSetiembre()
+		{
+			var historial = new Historial();
+			int numero = 1;
+
+			void Semana(DateTime cuando, params (string, string, string)[] productos)
+			{
+				var lineas = new (string, string, int, decimal, string, int)[productos.Length];
+				for (int i = 0; i < productos.Length; i++)
+					lineas[i] = (productos[i].Item1, productos[i].Item2, 1, 1000m, productos[i].Item3, 0);
+
+				historial.Agregar(UnaCompra($"T-{numero++}", cuando, lineas));
+			}
+
+			foreach (int dia in new[] { 4, 11, 18, 25 })
+				Semana(new DateTime(2026, 7, dia),
+					("LECHE-1L", "Leche semidescremada 1L", "LacteosYHuevos"),
+					("PAN-CUADRADO", "Pan cuadrado", "GranosYAbarrotes"),
+					("BROCOLI", "Brocoli unidad", "FrutasYVerduras"));
+
+			foreach (int dia in new[] { 5, 12, 19, 26 })
+				Semana(new DateTime(2026, 9, dia),
+					("LECHE-1L", "Leche semidescremada 1L", "LacteosYHuevos"),
+					("HELADO-1L", "Helado de vainilla 1L", "Azucarados"),
+					("SODA-2L", "Soda cola 2L", "Azucarados"));
+
+			return historial;
+		}
+
+		private static Historial SiempreLoMismo()
+		{
+			var historial = new Historial();
+			int numero = 1;
+
+			foreach (var cuando in new[]
+			{
+				new DateTime(2026, 6, 6), new DateTime(2026, 6, 20),
+				new DateTime(2026, 7, 4), new DateTime(2026, 7, 18),
+				new DateTime(2026, 8, 1), new DateTime(2026, 8, 15),
+				new DateTime(2026, 9, 5), new DateTime(2026, 9, 19),
+			})
+				historial.Agregar(UnaCompra($"T-{numero++}", cuando,
+					("LECHE-1L", "Leche semidescremada 1L", 1, 950m, "LacteosYHuevos", 0),
+					("PAN-CUADRADO", "Pan cuadrado", 1, 1200m, "GranosYAbarrotes", 0)));
+
+			return historial;
+		}
+
+		// ---- la serie tambien se lee por año ----
+		private static void LaSerieSeAgrupaPorAnio()
+		{
+			Titulo("la serie tambien se lee por año");
+
+			Historial guion = ElGuion();
+
+			// El guion tiene azucarados en 2026-02, 2026-07 y 2026-08: un solo año.
+			Consumo dulces = guion.ConsumoDe("Azucarados");
+			Igual("azucarados: 3 meses", "3", dulces.Meses.Count.ToString());
+			Igual("  y un solo año", "1", dulces.Anios.Count.ToString());
+			Igual("  que es 2026", "2026", dulces.Anios[0].AnioExpresado);
+			Igual("  con los 3 meses adentro", "3", dulces.Anios[0].MesesConCompras.ToString());
+
+			// EL AÑO SUMA LO MISMO QUE SUS MESES. Es la comprobacion que importa: si el
+			// agrupado no cuadra con la serie, la pantalla muestra dos verdades distintas.
+			int unidadesDeLosMeses = 0;
+			decimal gastoDeLosMeses = 0m;
+			foreach (MesDeConsumo mes in dulces.Meses)
+			{
+				unidadesDeLosMeses = unidadesDeLosMeses + mes.Unidades;
+				gastoDeLosMeses = gastoDeLosMeses + mes.Gasto;
+			}
+			Igual("  las unidades del año son las de sus meses", unidadesDeLosMeses.ToString(),
+				dulces.Anios[0].Unidades.ToString());
+			Igual("  y el gasto tambien", gastoDeLosMeses.ToString("0.##"),
+				dulces.Anios[0].Gasto.ToString("0.##"));
+			Igual("  y el total del consumo cierra igual", dulces.TotalUnidades.ToString(),
+				dulces.Anios[0].Unidades.ToString());
+
+			// EL POLLO CRUZA DOS AÑOS: 2025-08 (2 u) y 2026-02 (1 u).
+			Consumo pollo = guion.ConsumoDe("POLLO-KG");
+			Igual("pollo: dos años", "2", pollo.Anios.Count.ToString());
+			Igual("  el primero es el mas viejo", "2025", pollo.Anios[0].AnioExpresado);
+			Igual("  y el ultimo el mas nuevo", "2026", pollo.Anios[1].AnioExpresado);
+			Igual("  2025 llevo 2 unidades", "2", pollo.Anios[0].Unidades.ToString());
+			Igual("  2026 llevo 1", "1", pollo.Anios[1].Unidades.ToString());
+			// UN AÑO A MEDIAS SE DELATA por sus meses, que es lo que impide compararlo con
+			// uno entero como si midieran lo mismo.
+			Igual("  y cada uno tuvo un solo mes con compra", "1,1",
+				$"{pollo.Anios[0].MesesConCompras},{pollo.Anios[1].MesesConCompras}");
+
+			// TOTAL: sin consumo la serie anual es vacia, no revienta ni trae un año cero.
+			Consumo nada = guion.ConsumoDe("caviar");
+			Igual("caviar: no existe", "False", nada.Existe().ToString());
+			Igual("  y no tiene años", "0", nada.Anios.Count.ToString());
+			Igual("historial vacio: tampoco", "0",
+				new Historial().ConsumoDe("leche").Anios.Count.ToString());
+
+			// EL AÑO CERO no se puede comprobar desde aca y esta bien: el constructor de
+			// AnioDeConsumo es internal, asi que nadie de afuera puede armar uno mudo. La
+			// guarda se queda igual, defendiendo del error de adentro.
+		}
+
+		// ---- en cuales compras aparecio esto ----
+		private static void LaBusquedaEncuentraPorProducto()
+		{
+			Titulo("la busqueda encuentra por producto, no por numero de ticket");
+
+			Historial guion = ElGuion();
+
+			ComprasConElProducto helado = guion.ComprasCon("Helado");
+			Igual("«Helado»: aparece", "True", helado.Existe().ToString());
+			Igual("  en cuantas compras", "3", helado.CuantasCompras.ToString());
+			Igual("  cuantas unidades en total", "7", helado.TotalUnidades.ToString());
+			Igual("  cuanto se gasto", "25060", helado.TotalGastado.ToString("0"));
+			Igual("  un solo producto coincide", "1", helado.Productos.Count.ToString());
+
+			// DE LA MAS RECIENTE A LA MAS VIEJA, que es como se busca un ticket.
+			Igual("  la primera es la ultima que hizo", "T-96470", helado.Compras[0].Numero);
+			Igual("  y la ultima es la mas vieja", "T-91515", helado.Compras[2].Numero);
+
+			// LAS DOS ESCALAS: lo del producto y lo de la compra entera.
+			Igual("  en esa compra llevo 3 helados", "3", helado.Compras[0].Unidades.ToString());
+			Igual("  y gasto 11040 EN HELADO", "11040", helado.Compras[0].Gasto.ToString("0"));
+			Igual("  mientras la compra entera tiene 5 lineas", "5",
+				helado.Compras[0].LineasDeLaCompra.ToString());
+			Igual("  y suma bastante mas", "True",
+				(helado.Compras[0].TotalDeLaCompra > helado.Compras[0].Gasto).ToString());
+
+			// UN DEPARTAMENTO TAMBIEN SE BUSCA, porque el criterio es el mismo que el del
+			// consumo. Es lo que permite preguntar por un pasillo entero.
+			ComprasConElProducto dulces = guion.ComprasCon("Azucarados");
+			Igual("«Azucarados» es un departamento y tambien se encuentra", "True",
+				dulces.Existe().ToString());
+			Igual("  en 3 compras", "3", dulces.CuantasCompras.ToString());
+			Igual("  con cinco productos distintos", "5", dulces.Productos.Count.ToString());
+			Igual("  y 26 unidades", "26", dulces.TotalUnidades.ToString());
+
+			// UN TEXTO QUE ALCANZA A DOS PRODUCTOS los nombra a los dos, para que quien
+			// pregunta sepa que la app junto dos cosas.
+			ComprasConElProducto soda = guion.ComprasCon("soda");
+			Igual("«soda» alcanza a dos productos", "2", soda.Productos.Count.ToString());
+			Igual("  y suma las dos", "12", soda.TotalUnidades.ToString());
+
+			// TOTAL: buscar algo que nunca se llevo no revienta ni miente.
+			ComprasConElProducto nada = guion.ComprasCon("caviar");
+			Igual("«caviar»: no aparece", "False", nada.Existe().ToString());
+			Igual("  y no hay compras que mostrar", "0", nada.Compras.Count.ToString());
+			Igual("  el contador para el cable da 0", "0", nada.CuantasCompras.ToString());
+			Igual("  se dice con el termino adentro", "True",
+				nada.ParaSonia.Contains("caviar").ToString());
+
+			// TOTAL DE VERDAD, sin lectores guardados: de algo que nunca se compro se
+			// llevaron cero unidades y se gastaron cero colones, y las dos son VERDAD. Es
+			// lo que permite que una consulta del DSL las imprima planas sin preguntar
+			// Existe() antes — un lector que revienta no blanquea la columna, mata la
+			// consulta entera.
+			Igual("  cero unidades, y no revienta", "0", nada.TotalUnidades.ToString());
+			Igual("  cero gastado, y no revienta", "0", nada.TotalGastado.ToString("0"));
+
+			// Y un historial sin compras es el mismo par, no un caso aparte.
+			ComprasConElProducto vacio = new Historial().ComprasCon("leche");
+			Igual("historial vacio: no aparece", "False", vacio.Existe().ToString());
+
+			// LA FRASE NOMBRA EL PRODUCTO ENCONTRADO, no lo que se escribio: quien busco
+			// "helado" tiene que poder confirmar que la app entendio cual.
+			Igual("la frase nombra el producto hallado", "True",
+				helado.ParaSonia.Contains("Helado de vainilla 1L").ToString());
+			Igual("  y con varios dice cuantos coinciden", "True",
+				dulces.ParaSonia.Contains("5 productos").ToString());
 		}
 
 		private static Historial ElGuion()

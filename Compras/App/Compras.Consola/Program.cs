@@ -7,6 +7,7 @@ using System.Threading.Tasks;
 using Compras.App;
 using Compras.App.Eventos;
 using Compras.App.Vistas;
+using Compras.Dominio;
 using Puppeteer;
 using Puppets.Portador;
 
@@ -32,6 +33,8 @@ namespace Compras.Consola
 					case "canasta":   return CanastaDe(args);
 					case "comparar":  return Comparar(args);
 					case "garantia":  return GarantiaDe(args);
+					case "buscar":    return Buscar(args);
+					case "quiebre":   return Quiebre(args);
 					// Los dos que miran el hueco: lo que la pantalla no puede renderizar.
 					case "pendientes": return Pendientes(args);
 					case "porvencer":  return PorVencer(args);
@@ -335,6 +338,68 @@ namespace Compras.Consola
 			return 0;
 		}
 
+		// EN CUALES COMPRAS APARECIO ESTO. Existe sobre todo para probar la CONSULTA, que es
+		// donde vive la trampa: un print plano no puede preguntar Existe() antes de imprimir
+		// un campo, y un lector guardado no le blanquea la columna — le mata la consulta
+		// entera. Buscar algo que no existe tiene que dar cabecera en cero, no un error.
+		private static int Buscar(string[] args)
+		{
+			string carpeta = Carpeta(args, 1);
+			string termino = Opcional(args, 2, "leche");
+
+			ComprasApp app = Abrir(carpeta);
+			var api = new ComprasAPI(app);
+
+			ComprasHalladas halladas = api.Halladas(termino);
+			Console.WriteLine(halladas.ParaSonia);
+			if (halladas.Productos.Count > 0)
+				Console.WriteLine($"  coinciden: {string.Join(", ", halladas.Productos)}");
+			Console.WriteLine();
+			foreach (CompraHallada compra in halladas.Compras)
+				Console.WriteLine($"  {compra.Fecha}  {compra.Numero,-10} "
+					+ $"{compra.Unidades,3} u  {Plata.Colones(compra.Gasto),12}"
+					+ $"   (de {compra.LineasDeLaCompra} lineas, {Plata.Colones(compra.TotalDeLaCompra)})");
+
+			Console.WriteLine();
+			Console.WriteLine("-- crudo (print, formatter JSON) --");
+			Console.WriteLine(api.ComprasCon(termino));
+
+			app.Actor.GracefulExit();
+			return 0;
+		}
+
+		// EL MES DEL QUIEBRE, encontrado por el dominio. Existe para poder CONTRASTARLO con
+		// el corte que la caratula inventaba: imprime los dos, el que el dominio elige y el
+		// 1 de enero que se usaba antes.
+		private static int Quiebre(string[] args)
+		{
+			string carpeta = Carpeta(args, 1);
+
+			ComprasApp app = Abrir(carpeta);
+			var api = new ComprasAPI(app);
+
+			CambioDeLaCanasta encontrado = api.CambioDelQuiebre();
+			Console.WriteLine("EL DOMINIO ENCUENTRA");
+			Console.WriteLine($"  corte      : {(encontrado.Corte.Length > 0 ? encontrado.Corte : "(ninguno)")}" );
+			Console.WriteLine($"  hay cambio : {encontrado.HayCambio}");
+			Console.WriteLine($"  {encontrado.ParaSonia}");
+
+			DateTime enero = new DateTime(DateTime.Now.Year, 1, 1);
+			CambioDeLaCanasta porEnero = api.Cambio(enero);
+			Console.WriteLine();
+			Console.WriteLine($"CORTANDO EL {enero:yyyy-MM-dd}, como hacia la caratula");
+			Console.WriteLine($"  hay cambio : {porEnero.HayCambio}");
+			Console.WriteLine($"  {porEnero.ParaSonia}");
+
+			Console.WriteLine();
+			Console.WriteLine("LOS RITMOS DEL MISMO QUIEBRE");
+			foreach (RitmoQueCambio ritmo in api.RitmosDelQuiebre())
+				Console.WriteLine($"  {ritmo.Descripcion,-32} {ritmo.Antes} -> {ritmo.Ahora}");
+
+			app.Actor.GracefulExit();
+			return 0;
+		}
+
 		// ---------------------------------------------------- lo que NO esta (el hueco)
 
 		private static int Pendientes(string[] args)
@@ -478,6 +543,8 @@ namespace Compras.Consola
 			Console.WriteLine("  canasta   [carpeta] [anio] [mes]                la foto de un mes, pasillo por pasillo");
 			Console.WriteLine("  comparar  [carpeta] [a1] [m1] [a2] [m2]         como cambio la canasta entre dos meses");
 			Console.WriteLine("  garantia  [carpeta] [texto] [yyyy-MM-dd]        la garantia de un producto, con su respaldo");
+			Console.WriteLine("  buscar    [carpeta] [texto]                     en cuales compras aparecio un producto o un pasillo");
+			Console.WriteLine("  quiebre   [carpeta]                             el mes del quiebre que ENCUENTRA el dominio, contra el corte viejo");
 			Console.WriteLine("  pendientes [carpeta] [yyyy-MM-dd]              LO QUE NO ESTA: que dejo de entrar a la canasta");
 			Console.WriteLine("  porvencer  [carpeta] [yyyy-MM-dd]              las garantias cuya ventana se esta cerrando");
 			Console.WriteLine("  refrescar [carpeta] [baseUrl] [recurso] [id]    trae eventos del supermercado y los aplica de a uno");

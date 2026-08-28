@@ -201,6 +201,7 @@ namespace Compras.App
 			{
 				HayConQueComparar = Booleano(cabecera, "hayConQueComparar"),
 				HayCambio = Booleano(cabecera, "hayCambio"),
+				Corte = Texto(cabecera, "corte"),
 				ParaSonia = Texto(cabecera, "paraSonia"),
 				Entraron = entraron,
 				Salieron = Habituales(raiz, "salio"),
@@ -353,6 +354,53 @@ namespace Compras.App
 			return garantias;
 		}
 
+		// EN CUALES COMPRAS APARECIO ALGO. Tres print del mismo bloque: la cabecera sale
+		// como "busqueda", cada producto que coincidio como "nombre" y cada compra como
+		// "compra".
+		internal static ComprasHalladas Halladas(string json)
+		{
+			if (string.IsNullOrWhiteSpace(json)) return new ComprasHalladas();
+
+			using JsonDocument documento = JsonDocument.Parse(json);
+			JsonElement raiz = documento.RootElement;
+			JsonElement cabecera = raiz.TryGetProperty("busqueda", out JsonElement c) ? c : raiz;
+
+			// LA CLAVE DEL ARREGLO ES EL NOMBRE DE LA VARIABLE DEL FOREACH, no el alias del
+			// print: `foreach (producto in ...) { print producto nombre; }` sale como
+			// "producto":[{"nombre":"..."}]. Leer "nombre" en la raiz no encuentra nada y
+			// -esto es lo peor- no falla: la lista queda vacia y la pantalla pinta la
+			// cabecera sin el producto, como paso.
+			var productos = new List<string>();
+			if (raiz.TryGetProperty("producto", out JsonElement nombres))
+				foreach (JsonElement elemento in Elementos(nombres))
+					productos.Add(Texto(elemento, "nombre"));
+
+			var halladas = new List<CompraHallada>();
+			if (raiz.TryGetProperty("compra", out JsonElement arreglo))
+				foreach (JsonElement elemento in Elementos(arreglo))
+					halladas.Add(new CompraHallada
+					{
+						Numero = Texto(elemento, "numero"),
+						Fecha = Texto(elemento, "fecha"),
+						Unidades = Entero(elemento, "unidades"),
+						Gasto = Decimal(elemento, "gasto"),
+						LineasDeLaCompra = Entero(elemento, "lineasDeLaCompra"),
+						TotalDeLaCompra = Decimal(elemento, "totalDeLaCompra"),
+					});
+
+			return new ComprasHalladas
+			{
+				Buscado = Texto(cabecera, "buscado"),
+				Existe = Booleano(cabecera, "existe"),
+				CuantasCompras = Entero(cabecera, "cuantasCompras"),
+				TotalUnidades = Entero(cabecera, "totalUnidades"),
+				TotalGastado = Decimal(cabecera, "totalGastado"),
+				Productos = productos,
+				Compras = halladas,
+				ParaSonia = Texto(cabecera, "paraSonia"),
+			};
+		}
+
 		internal static ConsumoEnElTiempo Consumo(string json)
 		{
 			if (string.IsNullOrWhiteSpace(json)) return new ConsumoEnElTiempo();
@@ -375,9 +423,25 @@ namespace Compras.App
 						Compras = Entero(elemento, "compras"),
 					});
 
+			// LA CLAVE ES LA VARIABLE DEL FOREACH, no el alias del print: `foreach (anio in
+			// ...)` sale como "anio":[{...}]. Leer mal la clave no falla — deja la lista
+			// vacia y la pantalla pinta de menos, que es peor que un error.
+			var anios = new List<AnioDeConsumoVista>();
+			if (raiz.TryGetProperty("anio", out JsonElement porAnio))
+				foreach (JsonElement elemento in Elementos(porAnio))
+					anios.Add(new AnioDeConsumoVista
+					{
+						Anio = Texto(elemento, "anio"),
+						Unidades = Entero(elemento, "unidades"),
+						Gasto = Decimal(elemento, "gasto"),
+						Compras = Entero(elemento, "compras"),
+						MesesConCompras = Entero(elemento, "mesesConCompras"),
+					});
+
 			return new ConsumoEnElTiempo
 			{
 				Termino = Texto(cabecera, "termino"),
+				Anios = anios,
 				EsCategoria = Booleano(cabecera, "esCategoria"),
 				MesesConConsumo = Entero(cabecera, "mesesConConsumo"),
 				TotalGastado = Decimal(cabecera, "totalGastado"),
