@@ -1,6 +1,6 @@
 # Las reglas del substrato
 
-Catorce cosas que el motor hace y ninguna documentación dice. **Todas se descubrieron a los
+Dieciséis cosas que el motor hace y ninguna documentación dice. **Todas se descubrieron a los
 golpes**, escribiendo un dominio y viéndolo fallar.
 
 > **Esto es una referencia, no un tutorial.** Si estás construyendo tu primera app, el
@@ -28,9 +28,14 @@ como *§7.5*.
 | **12** | [El ternario no unifica dos subclases](#12--el-ternario-no-unifica-dos-subclases-a-su-base-común) | Al devolver una u otra rama |
 | **13** | [El `print` proyecta un solo nivel](#13--el-print-proyecta-un-solo-nivel) | Con carriers anidados o nullables |
 | **14** | [El dominio dice duraciones, no fechas](#14--el-dominio-dice-duraciones-no-fechas) | Es de diseño, no del motor |
+| **15** | [El `print` de varios campos lleva alias sin comillas](#15--el-print-de-varios-campos-lleva-alias-sin-comillas-separados-por-coma) | Al armar cualquier vista |
+| **16** | [Un escalar tipado sale por parámetro `out`](#16--un-escalar-tipado-sale-por-parámetro-out-no-parseando-el-print) | Al querer un número y no un texto |
 
 > La **14** es la única que no es una limitación del motor: es una decisión de diseño que se
 > descubrió al chocar con el `print`. Se quedó acá porque se aprende en el mismo lugar.
+>
+> Las **15** y **16** son las más nuevas: salieron de construir el
+> [Hola Mundo](../Ejemplos/HolaMundo/README.md), y la **2** se corrigió en la misma corrida.
 
 ---
 
@@ -78,8 +83,17 @@ Medido, no supuesto:
 | **rechazado** | `{"EWI":[{"Error":"…"}]}` (JSON) · `EWI:\n  - Error: "…"` (TOON) | **no avanzan** |
 | **aceptado** | lo que el `print` produjo | avanzan |
 
-El marcador es que el documento **empieza con `EWI`**. No alcanza con "retorno no vacío", porque un
-comando aceptado que imprime algo también devuelve texto.
+El marcador es la **propiedad `EWI` en la raíz del documento** — y con el formatter JSON eso **no** es
+lo mismo que "el texto empieza con `EWI`", porque empieza con `{`. Escribir `salida.StartsWith("EWI")`
+compila, corre, y **nunca da verdadero**: se lee como que el `Check` no funciona cuando en realidad
+funciona perfecto. Es un falso negativo silencioso, y costó una tarde.
+
+```csharp
+using JsonDocument documento = JsonDocument.Parse(salida);
+bool rechazado = documento.RootElement.TryGetProperty("EWI", out JsonElement ewi);
+```
+
+Y no alcanza con "retorno no vacío": un comando aceptado que imprime algo también devuelve texto.
 
 ## 3 · El dominio se resuelve por el assembly del actor
 
@@ -273,3 +287,79 @@ superficie, que es la que sabe para quién escribe.
 Corolario práctico: decí las duraciones como las diría una persona — días hasta un par de meses,
 meses de ahí en adelante. Una app que informa *"lleva 437 días"* obliga a dividir.
 
+
+---
+
+## 15 · El `print` de varios campos lleva alias sin comillas, separados por coma
+
+La sintaxis no se adivina, y equivocarla falla en el **parser** — o sea, en tiempo de ejecución y
+con un mensaje que no menciona las comillas:
+
+```
+Expected token type 'semicolon' at line 3, column 30, but found value 'f' of type 'id'.
+```
+
+Lo que el motor espera es **expresión, alias, coma**. El alias es un identificador desnudo:
+
+```
+foreach (factura in libro.Facturas) {
+    print factura.Numero numero,
+        factura.Fecha fecha,
+        factura.CantidadDeLineas lineas,
+        factura.Total total;
+}
+```
+
+**Tres formas de escribirlo mal**, y las tres fallan distinto:
+
+| Se escribe | Qué pasa |
+|---|---|
+| `print f.Numero 'numero' f.Total 'total';` | Falla el parser: las comillas no son un alias |
+| `print f.Numero f.Total;` | Falla el parser: espera alias después de la primera expresión |
+| `print facturas.Cantidad;` | *"Expected an alias for the 'print' expression"* — hasta un campo solo lo necesita |
+
+El alias es lo que nombra la propiedad en el JSON de salida, así que sin él el motor no tiene cómo
+armar el documento. Y el nombre del alias **es** la llave que después vas a leer:
+
+```json
+{"factura":[{"numero":"F-001","fecha":"03/01/2026","lineas":2,"total":9900.0}]}
+```
+
+Fijate que la llave del arreglo es el nombre de la **variable del `foreach`** (`factura`), no el de la
+colección. Si renombrás la variable, cambiás el JSON.
+
+---
+
+## 16 · Un escalar tipado sale por parámetro `out`, no parseando el `print`
+
+Son dos canales distintos y confundirlos es el error que más se repite.
+
+| | Para qué | Cómo |
+|---|---|---|
+| **Parámetro `Out`** | Un **escalar** que la app necesita tipado | `@total = libro.Total;` con `Parameter.Out` |
+| **`print`** | Una **vista**: varias filas, varios campos | `foreach` + alias, y devolvés el JSON tal cual |
+
+Un escalar se pide así, y volvés con un `decimal` de verdad:
+
+```csharp
+using (RentedParameter alquilados = app.Actor.RentedParameters())
+{
+    app.Actor.Using("@total = libro.Total;")
+    .WithParameters(alquilados, p => {
+        p[Parameter.Out, "total", typeof(decimal)] = default;
+    })
+    .PerformQuery();
+
+    return alquilados["total"].GetValue<decimal>();
+}
+```
+
+**Por qué importa y no es preferencia de estilo.** Parsear el `print` para sacar un número te obliga
+a adivinar el formato —separador decimal, cultura, cuántos ceros—, y eso es re-derivar en C# algo que
+el actor **ya calculó**. Con `Out` el tipo lo declara quien pregunta. Es lo que le permite a una UI
+hacer aritmética sin adivinar, y a una tool del asistente devolver un `decimal` en su
+`structuredContent` en vez de una cadena.
+
+> **Lo que NO es el antipatrón.** Leer el JSON de una **vista** para armar tus records de pantalla es
+> correcto: ahí el `print` con formatter JSON es el canal declarado y ya hizo el trabajo de
+> serializar. El antipatrón es usar ese canal para un **escalar**.

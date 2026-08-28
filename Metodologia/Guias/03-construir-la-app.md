@@ -412,7 +412,7 @@ cualquier parser.
 
 **Se mudaron a su propio documento: [Las reglas del substrato](reglas-del-substrato.md).**
 
-Son catorce cosas que el motor hace y ninguna documentación dice, todas descubiertas a los golpes.
+Son dieciséis cosas que el motor hace y ninguna documentación dice, todas descubiertas a los golpes.
 Salieron de acá porque **no se leen igual que el resto del capítulo**: esto es un how-to que se
 recorre una vez, y ésas son una referencia que se consulta cada semana. **Conservan su numeración**:
 la *regla 5* de allá es la que hasta hoy se citaba como *§7.5*, acá y en commits viejos.

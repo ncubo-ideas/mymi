@@ -14,7 +14,7 @@ que sabe programar, menos que nadie.
 | **1** | **Punto de partida** — llegás con una descripción funcional en prosa y salís con las preguntas. **Vuelve después del paso 5**: una sola pasada nunca alcanza | **`Preguntas.md`** | [Punto de partida](punto-de-partida.md) · [hoja](hoja-de-la-entrevista.md) |
 | **2** | **Escribir bien ese archivo** — la capacidad, los juicios, lo que se descarta | `Preguntas.md` terminado | [4](04-requerimientos-que-agregan-valor.md) |
 | **3** | **Preparar el escritorio** — y las tres fallas del feed privado, que se ven todas iguales | una máquina que compila | [1](01-preparar-el-escritorio.md) |
-| **4** | **Hello World** — algo que tocar y romper antes de lo propio | entendimiento | [2](#) *pendiente* |
+| **4** | **Hello World** — algo que tocar y romper antes de lo propio | entendimiento | [El ejemplo](../Ejemplos/HolaMundo/README.md) · capítulo [2](#) *pendiente* |
 | **5** | **Construir** — el dominio, la lógica, y la carátula de **consola**, que es el arnés | `Dominio/` · `App/<N>.App` · `App/<N>.Consola` | [3](03-construir-la-app.md) |
 | **6** | **Traer los datos del proveedor** | `EndPointDeEventos/` · `InyectorDeEventosDemo/` | [5](#) *pendiente* |
 | **7** | **Exponerla** — las dos carátulas que miran **hacia afuera**: la que instala la persona y la que ve la IA | `App/<N>.Wasm` · `App/<N>.Mcp` | [6](06-cli-y-acceso-de-la-ia.md) |
@@ -86,9 +86,10 @@ lo describe en su §6; el capítulo 6 debería tenerlo también.
 todas iguales desde el error, y la trampa de que el mismo comando funciona o falla según desde dónde
 se corra.
 
-**4 (Hello World). Desbloqueado.** El repo ya tiene tres negocios corriendo con sus READMEs de "cómo
-se corre", `docker-compose` por negocio y `.mcp.json`. Se puede escribir mirando. Ojo: los ejemplos
-**de la Metodología** son propios y chiquitos; los negocios del repo se citan, no se adoptan.
+**4 (Hello World). El ejemplo ya existe**: [`Ejemplos/HolaMundo/`](../Ejemplos/HolaMundo/README.md),
+siete archivos, propio y corriendo —12 comprobaciones del dominio puro y el ciclo con journal—. Su
+README ya hace de guía: qué leer en qué orden y cuatro cosas para romper. **Falta decidir si el
+capítulo se escribe aparte o si ese README es el capítulo.**
 
 **6 (datos del proveedor).** Sigue bloqueado: falta el lado del proveedor y no hay ningún motor SQL
 corriendo contra el cual probar una receta.
