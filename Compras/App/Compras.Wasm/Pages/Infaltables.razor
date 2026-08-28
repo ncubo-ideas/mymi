@@ -116,28 +116,7 @@ else
     private void VerProducto(string descripcion) =>
         navegacion.NavigateTo($"producto/{Uri.EscapeDataString(descripcion)}");
 
-    // El mismo mapa que la portada. Vive en la caratula porque una imagen es decision de
-    // pantalla; que este en dos paginas es la señal de que le toca un componente cuando
-    // aparezca la tercera.
-    private static readonly Dictionary<string, string> FotosPorSku = new()
-    {
-        ["LECHE-1L"] = "p-leche",
-        ["ARROZ-2KG"] = "p-arroz",
-        ["GALLETA-CHOC"] = "p-galletas",
-        ["HELADO-1L"] = "p-helado",
-        ["BANANO-KG"] = "p-banano",
-        ["TOMATE-KG"] = "p-tomate",
-        ["HUEVOS-30"] = "p-huevos",
-        ["QUESO-500"] = "p-queso",
-        ["QUESO-CREMA"] = "p-queso",
-        ["LECHUGA"] = "p-lechuga",
-        ["PAN-CUADRADO"] = "p-pan",
-        ["AGUA-6PK"] = "p-agua",
-        ["CHILE-DULCE"] = "p-chile",
-    };
-
-    private static string Foto(string sku) =>
-        FotosPorSku.TryGetValue(sku, out string nombre) ? $"assets/{nombre}.png" : "";
+    private static string Foto(string sku) => Compras.Wasm.Fotos.De(sku);
 
     private static string Mes(int mes) => mes switch
     {
