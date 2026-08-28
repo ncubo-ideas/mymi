@@ -108,7 +108,7 @@ public sealed class AgentLoop
 			return new Returned(call.Id, $"there is no query called '{call.PublicName}'", Failed: true);
 		}
 
-		Response r = await host.Serve(new Request(e.Module.Name, e.Tool.Name, call.Arguments), ct);
+		Response r = await host.Serve(new Request(e.ModuleName, e.Tool.Name, call.Arguments), ct);
 
 		if (!r.Authorized)
 		{

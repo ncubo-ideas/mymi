@@ -16,13 +16,20 @@ namespace Gnothi.Host;
 // -> modules. Never the other way around, never sideways.
 public sealed class Dispatcher
 {
+	// THE NAME THE HOST PUBLISHES ITS OWN TOOLS UNDER. Reserved: ModuleCatalog refuses to load
+	// an institution's module called like this, because it would shadow the Host's own answers
+	// about itself -- and those are the ones the person uses to check up on everybody else.
+	public const string HostModule = "gnothi";
+
 	private readonly ModuleCatalog catalog;
 	private readonly Meter meter;
+	private readonly HostTools host;
 
 	public Dispatcher(ModuleCatalog catalog, Meter meter)
 	{
 		this.catalog = catalog;
 		this.meter = meter;
+		host = new HostTools(this);
 	}
 
 	public ModuleCatalog Modules => catalog;
@@ -37,6 +44,18 @@ public sealed class Dispatcher
 	// SERVE. The only execution path, for any front end.
 	public async Task<Response> Serve(Request r, CancellationToken ct)
 	{
+		// THE HOST ANSWERING ABOUT ITSELF goes through here like anything else, so it is
+		// metered like anything else and no gate needs a second path for it. What it does NOT
+		// go through is the consent check: there is nothing to consent to -- these tools read
+		// what the Host already knows, and the person cannot be asked to authorise the Host
+		// against itself.
+		if (string.Equals(r.Module, HostModule, StringComparison.OrdinalIgnoreCase))
+		{
+			meter.Count(HostModule, r.Tool);
+			try { return Response.Ok(await host.Invoke(r.Tool, r.Arguments, ct)); }
+			catch (Exception e) { return Response.Denied($"the Host failed: {e.GetType().Name}: {e.Message}"); }
+		}
+
 		Module? m = catalog.Find(r.Module);
 		if (m is null) return Response.Denied($"there is no installed module called '{r.Module}'");
 

@@ -61,6 +61,20 @@ public sealed class ModuleCatalog : IAsyncDisposable
 					continue;
 				}
 
+				// AND IT MAY NOT BE THE HOST'S OWN NAME. The Host publishes its tools under
+				// 'gnothi': how many modules there are, how much each takes up, how often the
+				// assistant asked them. Those are the answers the person uses to check up on
+				// the modules, so a module able to publish under that name could answer FOR
+				// the Host about itself. Rejected at load, which is the only moment it can
+				// still be rejected loudly.
+				if (string.Equals(m.Module, Dispatcher.HostModule, StringComparison.OrdinalIgnoreCase))
+				{
+					warnings.Add(
+						$"{m.Module}: '{Dispatcher.HostModule}' is reserved for the Host's own tools -- " +
+						"a module cannot publish under it. Skipped");
+					continue;
+				}
+
 				Installation i = Installation.Read(installationPath);
 				modules.Add(new Module(m, i, dir));
 

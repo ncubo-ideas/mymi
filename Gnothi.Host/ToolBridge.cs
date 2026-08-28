@@ -74,7 +74,7 @@ internal static class ToolBridge
 			throw new McpProtocolException($"Unknown tool: '{name}'");
 
 		Response r = await dispatcher.Serve(
-			new Request(e.Module.Name, e.Tool.Name, Arguments(request.Params)), ct);
+			new Request(e.ModuleName, e.Tool.Name, Arguments(request.Params)), ct);
 
 		if (!r.Authorized)
 			return new CallToolResult

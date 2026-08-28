@@ -18,7 +18,11 @@ public sealed class ToolIndex
 {
 	// The pair, kept together from the moment the public name is composed, which is the only
 	// moment it is known without ambiguity.
-	public readonly record struct Entry(string PublicName, Module Module, DeclaredTool Tool);
+	//
+	// ModuleName and not Module.Name because the Host publishes tools of its own and those
+	// have no Module behind them. Every gate resolves through this field and none of them had
+	// to learn the difference: what they need in order to call Serve is the NAME.
+	public readonly record struct Entry(string PublicName, string ModuleName, Module? Module, DeclaredTool Tool);
 
 	private readonly Dictionary<string, Entry> byPublicName;
 
@@ -31,7 +35,24 @@ public sealed class ToolIndex
 		foreach ((Module m, DeclaredTool t) in dispatcher.Catalog())
 		{
 			string publicName = Module.PublicName(m.Name, t.Name);
-			index[publicName] = new Entry(publicName, m, t);
+			index[publicName] = new Entry(publicName, m.Name, m, t);
+		}
+
+		// THE HOST'S OWN TOOLS, published like anybody else's.
+		//
+		// They go in here and not in Dispatcher.Catalog() because that method means "what the
+		// modules contribute", and it is read by things that are counting modules. The index
+		// means "what is published", which is a different question and the one the gates ask.
+		//
+		// Added LAST and without overwriting: if an institution ever managed to install a
+		// module under the reserved name, its tools would already be in the dictionary and the
+		// Host's would silently take their place. ModuleCatalog rejects that name at load, so
+		// this is the second lock on the same door.
+		foreach (DeclaredTool t in HostTools.Declared)
+		{
+			string publicName = Module.PublicName(Dispatcher.HostModule, t.Name);
+			if (!index.ContainsKey(publicName))
+				index[publicName] = new Entry(publicName, Dispatcher.HostModule, null, t);
 		}
 
 		return new ToolIndex(index);

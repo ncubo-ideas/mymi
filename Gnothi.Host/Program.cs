@@ -89,7 +89,14 @@ builder.Services.AddMcpServer(options =>
 	options.Capabilities.Tools.ListChanged = true;
 })
 	.WithStdioServerTransport()
-	.WithTools<HostTools>()      // the Host's own, with a signature known at compile time
+	// The Host's own tools USED TO BE REGISTERED HERE, with .WithTools<HostTools>(), because
+	// their signature is known at compile time. That was convenient and it tied the fourth verb
+	// to this gate: on the phone the class could not even be compiled -- it dragged in the MCP
+	// SDK -- so the assistant there could not ask what Gnothi knows about itself.
+	//
+	// They are now declared below the seam and travel through the same index as everybody
+	// else's, so ToolBridge picks them up along with the modules' and every gate inherits them.
+	//
 	// The modules' tools are answered BY HAND. The input schema comes from the manifest, which
 	// is a piece of data: synthesizing a delegate would tie the tool to a signature the Host
 	// cannot know, and that is why the previous version skipped the ones that had parameters.

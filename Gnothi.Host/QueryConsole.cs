@@ -34,22 +34,43 @@ internal static class QueryConsole
 
 		await using (catalog)
 		{
-			Module? module = catalog.Modules.FirstOrDefault(
-				m => string.Equals(m.Name, moduleName, StringComparison.OrdinalIgnoreCase));
+			// THE HOST ANSWERING ABOUT ITSELF is asked for by name like anything else, and there
+			// is no Module behind it: no shell, no granted folder, nothing to look up. Without
+			// this branch the console would say "no module called 'gnothi' is installed", which
+			// is true and useless -- the tools ARE published, just not by a module.
+			bool isHost = string.Equals(moduleName, Dispatcher.HostModule, StringComparison.OrdinalIgnoreCase);
 
-			if (module is null)
+			Module? module = isHost
+				? null
+				: catalog.Modules.FirstOrDefault(
+					m => string.Equals(m.Name, moduleName, StringComparison.OrdinalIgnoreCase));
+
+			if (!isHost && module is null)
 			{
 				Console.Error.WriteLine($"[gnothi] no module called '{moduleName}' is installed.");
 				Console.Error.WriteLine($"[gnothi] installed: {string.Join(", ", catalog.Modules.Select(m => m.Name))}");
+				Console.Error.WriteLine($"[gnothi] the Host answers about itself under '{Dispatcher.HostModule}'.");
 				return 1;
 			}
 
-			Console.Error.WriteLine($"[gnothi] module : {module.Name}");
-			Console.Error.WriteLine($"[gnothi] shell  : {module.Installation.Shell.Type}");
-			Console.Error.WriteLine($"[gnothi] folder : {module.Installation.GrantedFolder}");
+			if (module is null)
+				Console.Error.WriteLine("[gnothi] module : the Host, about itself");
+			else
+			{
+				Console.Error.WriteLine($"[gnothi] module : {module.Name}");
+				Console.Error.WriteLine($"[gnothi] shell  : {module.Installation.Shell.Type}");
+				Console.Error.WriteLine($"[gnothi] folder : {module.Installation.GrantedFolder}");
+			}
 
-			// The declared-against-real check, runnable by hand.
-			if (query is "--tools")
+			// The declared-against-real check, runnable by hand. It asks the MODULE what it
+			// really exposes, so it makes no sense for the Host: there is no shell to ask.
+			if (query is "--tools" && module is null)
+			{
+				Console.Error.WriteLine("[gnothi] --tools asks a module over its shell; the Host has none.");
+				return 2;
+			}
+
+			if (query is "--tools" && module is not null)
 			{
 				IReadOnlyList<string> real = await module.ActualToolNames(CancellationToken.None);
 				Console.WriteLine($"queries the module HAS ({real.Count}):");
@@ -80,7 +101,7 @@ internal static class QueryConsole
 			// problem: it gets the Response object, never stdout.)
 			TextWriter stdout = Console.Out;
 			Console.SetOut(Console.Error);
-			Response r = await dispatcher.Serve(new Request(module.Name, query, arguments), CancellationToken.None);
+			Response r = await dispatcher.Serve(new Request(module?.Name ?? Dispatcher.HostModule, query, arguments), CancellationToken.None);
 
 			if (!r.Authorized)
 			{
