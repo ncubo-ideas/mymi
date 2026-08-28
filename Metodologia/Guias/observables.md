@@ -59,6 +59,7 @@ antes de reportar un hallazgo, se mira la línea.
 | 8 | El MCP no corrompe su propio canal | `Program.cs` del `.Mcp` | Redirige `stdout` antes de tocar el motor — con transporte stdio, `stdout` **es** el canal JSON-RPC | por correr |
 | 9 | La app no es cliente de los servicios generales | URL2 | Hay un señuelo que devuelve **403 con el token válido** de la app | por correr |
 | 10 | Cada clase justifica existir | Las clases del dominio | Cada una tiene al menos un miembro que ninguna otra tiene | **no es observable** — requiere juicio |
+| 11 | **Lo declarado coincide con lo que el módulo expone** | `manifest.json` vs. las tools reales | La lista de `tools[].name` y la que el módulo responde en `tools/list` son la misma: ni de más ni de menos | por correr |
 
 ### Sobre el 5, que es el único que discriminó
 
@@ -68,6 +69,15 @@ cada tool. Una tool que duplica una pantalla no hace daño; simplemente no es la
 
 Por eso el observable es de **existencia** (*"al menos una"*) y no de pureza (*"ninguna duplica"*).
 Escrito como pureza marcaría cosas legítimas.
+
+### Sobre el 11, que no lo inventamos nosotros
+
+El Host ya lo trae hecho: `gnothi_verify_module` le pide al módulo su `tools/list`, lo cruza contra el
+manifiesto y reporta `undeclared` y `declaredButMissing`. Entra igual a esta tabla por dos razones.
+La primera es que **corre sin el Host**: un manifiesto que nadie lee y que deriva en silencio es peor
+que no tenerlo, y hoy los del lado del módulo no los lee nadie. La segunda es que este chequeo mide
+algo que ninguna guía puede sostener por doctrina — una lista copiada **siempre** deriva; lo único que
+la salva es compararla. Ver [El manifiesto y la instalación](el-manifiesto-y-la-instalacion.md) §4.
 
 ### Sobre el 10, que se cayó al escribirlo
 

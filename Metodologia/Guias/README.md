@@ -20,6 +20,7 @@ que sabe programar, menos que nadie.
 | **7** | **Exponerla** — las dos carátulas que miran **hacia afuera**: la que instala la persona y la que ve la IA | `App/<N>.Wasm` · `App/<N>.Mcp` | [6](06-cli-y-acceso-de-la-ia.md) |
 | **8** | **Auditar** contra `Preguntas.md` | el reporte de deriva | [Observables](observables.md) |
 | **9** | **Publicar** — la página de descarga, el compose y el README de cómo se corre | `PaginaDeDescarga/` · `docker-compose.yml` · `README.md` | *pendiente* |
+| **10** | **Declarar el módulo** — para que el Host lo catalogue, le conceda y lo verifique **sin arrancarlo** | `manifest.json` | [El manifiesto y la instalación](el-manifiesto-y-la-instalacion.md) |
 
 > **Por qué las carátulas se parten entre el 5 y el 7.** El capítulo 3 las llama a las tres
 > *"carátulas"* y podría parecer que van juntas. El corte no es arbitrario: la de **consola** es con la
@@ -53,6 +54,7 @@ Importa, porque estas guías se van a leer como si todo tuviera el mismo respald
 | **Capítulo 4** | Doctrina confirmada por los tres casos del equipo. Su **ejemplo trabajado** sigue una pregunta hasta el fondo en un dominio real, y el §6bis dice qué de este capítulo se puede auditar y qué **no** |
 | **Punto de partida** | **Corrido una vez**, sobre un dominio de presupuesto personal (2026-08-26). La corrida encontró seis defectos en el guion, y los seis están corregidos |
 | **Capítulo 1** | **Escrito preparando una máquina y anotando dónde se rompió.** Versiones, mensajes de error y diagnósticos medidos. Lo que no se pudo verificar —Docker, `wasm-tools`— lo dice |
+| **El manifiesto** | **Leído del Host que lo valida** (`Gnothi.Host/Manifest.cs`, rama `master_gnothiHostDesktop`), no propuesto. Pero el Host se diseña **en paralelo**: §8 dice qué sigue abierto |
 | **Capítulo 6, CLI** | Construido y corrido. 44 pruebas |
 | **Capítulo 6, MCP** | **Corregido.** Se construyó un servidor y se le habló por stdio; esa corrida desmintió la versión anterior. Falta enchufarlo a un cliente real |
 
@@ -63,9 +65,17 @@ afirmación sin esa marca y tampoco está respaldada, es un error del documento.
 
 ## Correcciones pendientes en capítulos ya escritos
 
-**Ninguna.** Las cinco que había quedaron cerradas: la tool genérica del capítulo 6, las tres del
-capítulo 3 —la carátula HTTP, la convención de estructura y la regla del `upgrade`— y el ejemplo
-trabajado del capítulo 4.
+Las cinco que había quedaron cerradas: la tool genérica del capítulo 6, las tres del capítulo 3 —la
+carátula HTTP, la convención de estructura y la regla del `upgrade`— y el ejemplo trabajado del
+capítulo 4.
+
+Y apareció una nueva al mirar el Host:
+
+**Capítulo 6 — sólo conoce la forma `stdio`.** El equipo está construyendo también la forma **cargo**:
+dos DLL chicos, sin el SDK de MCP, con `[ModuleSurface]` y `[Query]` de `Gnothi.Contract` y el motor
+prestado por el Host. Los tres negocios ya tienen su clase `*Surface`. Quien siga el capítulo 6 hoy
+escribe un servidor MCP completo donde puede hacer falta **una clase con dos atributos**. El manifiesto
+lo describe en su §6; el capítulo 6 debería tenerlo también.
 
 ---
 
@@ -83,7 +93,7 @@ se corre", `docker-compose` por negocio y `.mcp.json`. Se puede escribir mirando
 corriendo contra el cual probar una receta.
 
 **8 (auditar). Parcialmente desbloqueado.** Ya existe el instrumento: [la tabla de
-observables](observables.md), con cinco chequeos corridos contra los tres negocios. Faltan cuatro por
+observables](observables.md), con cinco chequeos corridos contra los tres negocios. Faltan cinco por
 correr, y uno quedó declarado **no observable** a propósito. Lo que todavía bloquea la auditoría
 completa es que **ningún negocio tiene su `Preguntas.md`**: sin la intención declarada, un agente
 puede leer el código pero no sabe contra qué compararlo.
