@@ -159,10 +159,19 @@ namespace Compras.Consola
 
 			if (!conVeredicto) return;
 
-			bool totalOk = api.TotalDeCompras().ToString(CultureInfo.InvariantCulture) == Muestras.TotalEsperado;
+			// LOS TRES CRITERIOS, UNO POR LINEA. Antes esto era un solo booleano, y un "False"
+			// sin decir cual de los tres fallo obliga a adivinar: la primera vez que fallo
+			// costo tres corridas descubrir que era el total. Un veredicto que no dice donde
+			// no sirve de veredicto.
+			decimal total = api.TotalDeCompras();
+			bool totalOk = total == Muestras.TotalEsperado;
 			bool comparacionOk = api.Comparacion(2025, 8, 2026, 8).HayAlgoQueLoExplique;
 			bool garantiaOk = api.Garantia(Muestras.ProductoConGarantia, DateTime.Now).Encontrada;
+
 			Console.WriteLine();
+			Console.WriteLine($"  total        : {(totalOk ? "ok" : $"MAL (esperado [{Muestras.TotalEsperado}], obtenido [{total}])")}");
+			Console.WriteLine($"  comparacion  : {(comparacionOk ? "ok" : "MAL (no hay pasillo que explique la diferencia)")}");
+			Console.WriteLine($"  garantia     : {(garantiaOk ? "ok" : $"MAL (no se encontro '{Muestras.ProductoConGarantia}')")}");
 			Console.WriteLine($"CRITERIOS CORRECTOS         : {totalOk && comparacionOk && garantiaOk}");
 		}
 

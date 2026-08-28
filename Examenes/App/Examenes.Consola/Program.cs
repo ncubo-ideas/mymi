@@ -133,8 +133,10 @@ namespace Examenes.Consola
 			Console.WriteLine($"    un sexo no modelado se descarta: "
 				+ (RutaDeExamenes.Rutear(Muestras.SexoNoModelado()) == null));
 
-			// Se deja como estaba para que `estado` sobre esta misma carpeta se lea igual.
-			api.DeclararSexo("hombre");
+			// Queda declarado MUJER, que es lo que Sonia es: asi `estado` sobre esta misma
+			// carpeta lee el expediente interpretado entero, que es el estado con el que se
+			// muestra la demo.
+			api.DeclararSexo("mujer");
 
 			// ---- criterio: el mismo salto, en un dia, se lee como error de medicion.
 			Console.WriteLine();
@@ -162,14 +164,28 @@ namespace Examenes.Consola
 		// QUE PUEDE DECIR EL DOMINIO CON EL SEXO QUE HAY. Las tres lineas que cambian, y
 		// las tres salen del dominio: el conteo de lo no interpretable, si el antigeno
 		// existe siquiera, y que veredicto tiene la hemoglobina.
+		//
+		// EL ANTIGENO NO ESTA EN EL GUION DE SONIA —a ella no se lo hicieron— y se consulta
+		// igual a proposito: es la prueba de que "no te corresponde" lo contesta la
+		// identidad del analito y no la existencia de la serie. Con el sexo desconocido la
+		// respuesta es otra, y las dos son distintas de "no hay datos de eso".
 		private static void ImprimirElSexo(ExamenesAPI api)
 		{
 			FaltaElSexoDelPaciente pedido = api.PedidoDeSexo();
 			InterpretacionDeAnalito antigeno = api.Interpretacion(Muestras.AnalitoDelAntigeno);
 			InterpretacionDeAnalito hemoglobina = api.Interpretacion("Hemoglobina");
 
+			LoQueEstaBien enRango = api.LoQueEstaEnRango();
+
 			Console.WriteLine($"    sexo                      : {api.SexoDelPaciente()}");
 			Console.WriteLine($"    analitos con historia     : {string.Join(", ", api.Analitos())}");
+
+			// EL CONTEO DE LA PORTADA TAMBIEN SE MUEVE, y es la linea que faltaba: un
+			// analito cuyo rango depende del sexo no esta en su rango mientras el sexo no
+			// se sepa —no se sabe—, asi que declararlo no cambia solo una tarjeta: cambia
+			// el titular con el que se abre la app.
+			Console.WriteLine($"    lo que esta en rango      : {enRango.EnSuRango} de {enRango.Analitos}"
+				+ (enRango.HayAlgo ? $" - {enRango.ParaSonia}" : " (nada que afirmar todavia)"));
 			Console.WriteLine($"    hay que insistir          : {pedido.HaceFalta}"
 				+ (pedido.HaceFalta
 					? $" ({pedido.SinInterpretar} de {pedido.Analitos}, severidad {pedido.Severidad})"
@@ -200,6 +216,14 @@ namespace Examenes.Consola
 			LoMasUrgente urgente = api.Urgente();
 			Console.WriteLine($"lo mas urgente              : {urgente.Severidad}"
 				+ (urgente.PideAlgo ? $" - {urgente.Accion}" : " (no pide nada)"));
+
+			// LOS DOS VEREDICTOS DE LA PORTADA, juntos y por consola. Es lo que la landing
+			// promete —el conteo de lo que esta en rango arriba, y lo que pide algo al
+			// lado— y hasta ahora solo se podia mirar en el browser. Van pegados porque se
+			// leen juntos: cada uno solo dice media cosa.
+			LoQueEstaBien enRango = api.LoQueEstaEnRango();
+			Console.WriteLine($"lo que esta en rango        : {enRango.EnSuRango} de {enRango.Analitos}"
+				+ (enRango.HayAlgo ? $" - {enRango.ParaSonia}" : " (nada que afirmar todavia)"));
 			Console.WriteLine($"token guardado              : [{api.TokenGuardado()}]");
 
 			Console.WriteLine();
@@ -224,11 +248,14 @@ namespace Examenes.Consola
 
 			if (!conVeredicto) return;
 
-			bool antigenoOk = api.Tendencia(Muestras.AnalitoDelAntigeno).Tendencia
-				== Muestras.TendenciaEsperadaDelAntigeno;
+			// UNA QUE SE MOVIO Y UNA QUE NO. El colesterol de Sonia sube 30 mg/dL en dos
+			// anos y la hemoglobina se mueve 0.3 g/dL en el mismo tramo: si las dos dieran
+			// "en ascenso", el umbral por analito no estaria haciendo nada.
 			bool colesterolOk = api.Tendencia(Muestras.AnalitoDelColesterol).Tendencia
 				== Muestras.TendenciaEsperadaDelColesterol;
-			Console.WriteLine($"TENDENCIAS CORRECTAS        : {antigenoOk && colesterolOk}");
+			bool hemoglobinaOk = api.Tendencia(Muestras.AnalitoDeLaHemoglobina).Tendencia
+				== Muestras.TendenciaEsperadaDeLaHemoglobina;
+			Console.WriteLine($"TENDENCIAS CORRECTAS        : {colesterolOk && hemoglobinaOk}");
 		}
 
 		// El cuadro rearmado, que es exactamente lo que hace la pantalla: ubicar cada
@@ -289,7 +316,11 @@ namespace Examenes.Consola
 
 		// El "hoy" del arnes. Literal a proposito: con DateTime.Now la salida cambiaria
 		// todos los dias y dejaria de servir como criterio de aceptacion.
-		private static readonly DateTime FechaDeCorte = new DateTime(2026, 8, 21);
+		//
+		// Cae cuatro meses despues de los resultados de Sonia, y esa distancia es la que
+		// hace que el perfil lipidico de 2021 pase de los 60 meses y salga VENCIDO. Movida
+		// hacia atras, "lo que falta medir" no tendria nada que mostrar.
+		private static readonly DateTime FechaDeCorte = new DateTime(2026, 8, 27);
 
 		// Los puntos con NUMERO y las lineas que los acompanan. Se imprime aca porque
 		// verifica que la proyeccion del DSL trae algo: una lista vacia se ve igual que un
@@ -395,7 +426,7 @@ namespace Examenes.Consola
 		private static int TendenciaDe(string[] args)
 		{
 			string carpeta = Carpeta(args, 1);
-			string analito = Opcional(args, 2, Muestras.AnalitoDelAntigeno);
+			string analito = Opcional(args, 2, Muestras.AnalitoDelColesterol);
 
 			ExamenesApp app = Abrir(carpeta);
 			var api = new ExamenesAPI(app);
@@ -410,12 +441,19 @@ namespace Examenes.Consola
 			return 0;
 		}
 
-		// A que ritmo viene cambiando un analito. Es la consulta del antigeno prostatico:
-		// la que no se puede contestar con el ultimo valor ni con una pantalla.
+		// A que ritmo viene cambiando un analito: la consulta que no se puede contestar con
+		// el ultimo valor ni con una pantalla.
+		//
+		// ⚠️ LA VELOCIDAD ES DEL ANTIGENO PROSTATICO Y DE NADIE MAS —vive en
+		// SerieDeAntigenoProstatico— asi que sobre el expediente de Sonia esta consulta
+		// contesta "no se interpreta por velocidad", con esAplicable en false. Esa NO es una
+		// falla: es el dominio negandose a leer un colesterol con la regla de otro analito.
+		// Para verla medir hay que inyectar una serie de antigeno y declarar hombre; el
+		// razonamiento con numeros esta en las comprobaciones y en el README.
 		private static int VelocidadDe(string[] args)
 		{
 			string carpeta = Carpeta(args, 1);
-			string analito = Opcional(args, 2, Muestras.AnalitoDelAntigeno);
+			string analito = Opcional(args, 2, Muestras.AnalitoDelColesterol);
 
 			ExamenesApp app = Abrir(carpeta);
 			var api = new ExamenesAPI(app);

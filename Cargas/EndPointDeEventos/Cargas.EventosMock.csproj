@@ -1,0 +1,18 @@
+<Project Sdk="Microsoft.NET.Sdk.Web">
+
+  <!-- Mock del servidor del proveedor (URL2). Happy path, estado en memoria, cero
+       dependencias externas.
+
+       No pretende ser el server de verdad. Su unico trabajo es hacer FALSABLES los
+       invariantes del MVP: que la app solo pueda leer su propia narrativa y que el
+       token no le sirva para nada mas. -->
+
+  <PropertyGroup>
+    <TargetFramework>net9.0</TargetFramework>
+    <Nullable>disable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <RootNamespace>EventosMock</RootNamespace>
+    <AssemblyName>EventosMock</AssemblyName>
+  </PropertyGroup>
+
+</Project>

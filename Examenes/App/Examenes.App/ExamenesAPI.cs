@@ -398,6 +398,23 @@ namespace Examenes.App
 
 		public LoMasUrgente Urgente() => ProyeccionDeVistas.Urgente(LoMasUrgente());
 
+		// LO QUE ESTA BIEN, ya contado y ya dicho. Igual que el pedido de sexo, NO se puede
+		// armar en la pantalla: la cuenta exige recorrer cada serie y saber cual se puede
+		// interpretar, y la frase exige decidir si va la fraccion o el total.
+		public string EstaEnRango() =>
+			app.Using(@"
+				{
+					tranquilidad = expediente.LoQueEstaEnRango;
+					print tranquilidad.EnSuRango enSuRango,
+						tranquilidad.Analitos analitos,
+						tranquilidad.HayAlgoEnRango hayAlgo,
+						tranquilidad.ParaSonia paraSonia;
+				}
+			")
+			.PerformQuery();
+
+		public LoQueEstaBien LoQueEstaEnRango() => ProyeccionDeVistas.EstaEnRango(EstaEnRango());
+
 		// EL DATO QUE FALTA, ya contado y ya dicho. Es lo que alimenta el bloque que
 		// insiste, y NO se puede armar en la pantalla: el conteo sale de recorrer cada
 		// serie e interpretarla, y la frase de saber por que falta cada una.

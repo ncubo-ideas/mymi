@@ -29,13 +29,27 @@
   página si la app viviera en /).
 -->
 
-<!-- SIN WEBFONTS, y no es una optimización: la §2 de las especificaciones pide "fuentes de
-     sistema: cero descargas", y esta página tiene que abrir en el equipo de la clienta sin
-     depender de Google. Antes cargaba tres familias de ahí, una de ellas SERIF — y la
-     serif es la firma de Delfos: usarla acá borraba la diferencia entre las dos
-     instituciones, que es lo que el documento llama su punto más importante. -->
+<!-- LA TIPOGRAFÍA ES LA DEL DISEÑO DE FERNANDA, Y LA SERVIMOS NOSOTROS. Un woff2 variable
+     de 26 KB desde esta misma página: cero peticiones a Google.
+
+     El documento de marca pedía "fuentes de sistema: cero descargas" (§2), y esta cumple el
+     espíritu de esa regla —que la página abra sin depender de nadie— sin renunciar a la
+     tipografía que el equipo eligió. Lo que la §2 quería evitar es una página que se cae si
+     un tercero se cae, no una familia en particular.
+
+     Antes cargaba TRES familias de Google, una de ellas SERIF — y la serif es la firma de
+     Delfos: usarla acá borraba la diferencia entre las dos instituciones. -->
 
 <style>
+  @font-face {
+    font-family: 'Plus Jakarta Sans';
+    src: url('fuentes/PlusJakartaSans.woff2') format('woff2-variations'),
+         url('fuentes/PlusJakartaSans.woff2') format('woff2');
+    font-weight: 200 800;
+    font-style: normal;
+    font-display: swap;
+  }
+
   :root {
     /* LA PALETA INSTITUCIONAL de la §3. La página es blanca; el fondo oscuro es de la app
        ("la tienda es de 1992, la app es de hoy"). */
@@ -65,7 +79,7 @@
 
     /* Una sola familia (§2), de sistema. Los números llevan tabular-nums en vez de una
        mono aparte: la especificación pide UNA familia y eso incluye las cifras. */
-    --sans: "Segoe UI", "Helvetica Neue", Arial, sans-serif;
+    --sans: 'Plus Jakarta Sans', "Segoe UI", "Helvetica Neue", Arial, sans-serif;
   }
 
   * { box-sizing: border-box; }

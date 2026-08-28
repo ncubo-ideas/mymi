@@ -21,8 +21,9 @@ namespace Compras.Dominio
 		/// <summary>Lo que no se encontro: nunca null.</summary>
 		internal static Consumo Ninguno(string termino) => new SinConsumo(termino);
 
-		internal static Consumo De(string termino, bool esCategoria, IReadOnlyList<MesDeConsumo> meses) =>
-			new Serie(termino, esCategoria, meses);
+		internal static Consumo De(string termino, bool esCategoria, IReadOnlyList<MesDeConsumo> meses,
+			DateTime ultimaVez, int comprasDelHistorial) =>
+			new Serie(termino, esCategoria, meses, ultimaVez, comprasDelHistorial);
 
 		public string Termino { get; private set; }
 
@@ -68,6 +69,25 @@ namespace Compras.Dominio
 		/// <summary>La linea, escrita por el dominio con SUS hechos. Nunca un consejo.</summary>
 		public abstract string ParaSonia { get; }
 
+		// LO QUE LA FICHA DE UN PRODUCTO NECESITA, y que la serie por mes no contesta sola.
+		//
+		// EN CUANTAS COMPRAS APARECIO: se suma por mes, y sumarlo aca en vez de en cada
+		// pantalla evita que dos superficies cuenten distinto -una contando lineas y otra
+		// tickets- sobre el mismo producto.
+		public abstract int TotalCompras { get; }
+
+		/// <summary>La última vez que lo llevó. Preguntar Existe primero.</summary>
+		public abstract DateTime UltimaVez { get; }
+
+		/// <summary>La última vez, en aaaa-mm-dd. Vacío cuando no lo compró nunca.</summary>
+		public abstract string UltimaVezExpresada { get; }
+
+		// QUE TAN FIEL ES, sobre TODO el historial y no sobre una ventana de ocho compras:
+		// la ficha de un producto contesta "¿que tanto llevo esto?", y para eso la respuesta
+		// honesta se mide contra todas sus compras. La firma de la portada usa una ventana
+		// porque ahi la pregunta es otra -"que estoy llevando AHORA"-.
+		public abstract Constancia Constancia { get; }
+
 		private sealed class SinConsumo : Consumo
 		{
 			internal SinConsumo(string termino) : base(termino) { }
@@ -78,6 +98,16 @@ namespace Compras.Dominio
 			public override int MesesConConsumo => 0;
 			public override decimal TotalGastado => 0m;
 			public override int TotalUnidades => 0;
+			public override int TotalCompras => 0;
+
+			public override DateTime UltimaVez =>
+				throw new InvalidOperationException(
+					$"'{Termino}' no aparece en ninguna compra, asi que no hay una ultima vez. "
+					+ "Preguntar Existe antes.");
+
+			public override string UltimaVezExpresada => "";
+			public override Constancia Constancia => Constancia.DeVezEnCuando;
+
 			public override string PrimerMesExpresado => "";
 			public override string UltimoMesExpresado => "";
 			public override string MesDelPicoExpresado => "";
@@ -103,11 +133,16 @@ namespace Compras.Dominio
 
 			private readonly bool esCategoria;
 			private readonly IReadOnlyList<MesDeConsumo> meses;
+			private readonly DateTime ultimaVez;
+			private readonly int comprasDelHistorial;
 
-			internal Serie(string termino, bool esCategoria, IReadOnlyList<MesDeConsumo> meses)
+			internal Serie(string termino, bool esCategoria, IReadOnlyList<MesDeConsumo> meses,
+				DateTime ultimaVez, int comprasDelHistorial)
 				: base(termino)
 			{
 				ArgumentNullException.ThrowIfNull(meses);
+				this.ultimaVez = ultimaVez;
+				this.comprasDelHistorial = comprasDelHistorial;
 				if (meses.Count == 0)
 					throw new ArgumentException("Una serie sin meses no es una serie; eso es Consumo.Ninguno.",
 						nameof(meses));
@@ -140,6 +175,26 @@ namespace Compras.Dominio
 					return total;
 				}
 			}
+
+			public override int TotalCompras
+			{
+				get
+				{
+					int cuantas = 0;
+					foreach (MesDeConsumo mes in meses) cuantas += mes.Compras;
+					return cuantas;
+				}
+			}
+
+			public override DateTime UltimaVez => ultimaVez;
+			public override string UltimaVezExpresada => ultimaVez.ToString("yyyy-MM-dd");
+
+			// SOBRE TODAS SUS COMPRAS, no sobre una ventana. Si el historial viniera en cero
+			// -imposible si hay meses, pero la division no se arriesga- cae en la constancia
+			// mas baja, que es la respuesta honesta cuando no hay con que medir.
+			public override Constancia Constancia => comprasDelHistorial <= 0
+				? Constancia.DeVezEnCuando
+				: Constancia.Para(Math.Min(1m, (decimal)TotalCompras / comprasDelHistorial));
 
 			public override string PrimerMesExpresado => meses[0].MesExpresado;
 			public override string UltimoMesExpresado => meses[meses.Count - 1].MesExpresado;

@@ -240,6 +240,23 @@ public sealed class EstadoDeLaApp : IAsyncDisposable
 	// decide la app (ComprasAPI), no esta caratula: es parte de la pregunta.
 	public FirmaDeLaSemana Firma() { Exigir(); return api!.Firma(); }
 
+	// LA CANASTA DEL ULTIMO MES CON COMPRAS. Cual es ese mes lo sabe el DOMINIO por su
+	// rango; esta pantalla no tiene por que adivinarlo ni pedirle a la persona que elija.
+	public CanastaDelMesVista CanastaDelUltimoMes()
+	{
+		Exigir();
+		RangoDelHistorialVista rango = api!.Rango();
+		if (rango.MesesConCompras == 0) return new CanastaDelMesVista();
+
+		// El rango lo entrega como aaaa-mm, que es la forma en que viaja: se parte aca.
+		string[] partes = rango.UltimoMes.Split('-');
+		return api.Canasta(int.Parse(partes[0]), int.Parse(partes[1]));
+	}
+
+	// EL PRODUCTO SE NOMBRA. El dominio resuelve el texto igual que para la tool del MCP.
+	public ConsumoEnElTiempo ConsumoDe(string producto)
+	{ Exigir(); return api!.Consumo(producto); }
+
 	// EL CORTE ES EL 1 DE ENERO DE ESTE ANO, y antes era "hace un ano" — que con compras
 	// semanales resulto estar mal. Con 87 compras, "hace un ano" partia el historial en
 	// agosto y comparaba ocho semanas de 2025 contra otras ocho de 2025: dos ventanas del
@@ -260,6 +277,19 @@ public sealed class EstadoDeLaApp : IAsyncDisposable
 	// LOS PRODUCTOS A LOS QUE LES CAMBIO EL RITMO, el mas notorio primero. Mismo corte que
 	// el cambio de la canasta -"este ano"- porque las dos tarjetas cuentan el mismo quiebre
 	// desde angulos distintos: una dice QUE entro, la otra CADA CUANTO.
+	// EL ULTIMO MES CONTRA EL ANTERIOR. Que dos meses se comparan lo elige el DOMINIO, que
+	// conoce su propio rango: esta pantalla no sabe cual es el ultimo mes con compras, y la
+	// aritmetica de "el mes anterior" se resuelve mal en enero.
+	public CanastasComparadas ComparacionConElMesAnterior()
+	{ Exigir(); return api!.ComparacionConElMesAnterior(); }
+
+	// SU PROPIA INFLACION, solo de los productos que si lleva.
+	public IReadOnlyList<PrecioQueCambio> Precios() { Exigir(); return api!.Precios(); }
+
+	// CADA CUANTO VA AL SUPER, que dia y en que momento. No lleva parametros: el dominio lo
+	// mide sobre todo el historial, y no hay reloj de por medio.
+	public RitmoDelSuperVista Ritmo() { Exigir(); return api!.Ritmo(); }
+
 	public IReadOnlyList<RitmoQueCambio> RitmosQueCambiaron()
 	{ Exigir(); return api!.RitmosQueCambiaron(new DateTime(DateTime.Now.Year, 1, 1)); }
 

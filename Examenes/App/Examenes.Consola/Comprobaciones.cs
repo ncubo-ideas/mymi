@@ -1752,6 +1752,38 @@ namespace Examenes.Consola
 				(ConUnaHemoglobinaDe(Sexo.Hombre, 14.2m)
 					> ConUnaHemoglobinaDe(Sexo.Desconocido, 14.2m)).ToString());
 
+			// LO QUE ESTA EN RANGO ES UNA CUENTA, NO UNA RESTA. La portada muestra "N de M
+			// valores estan en su rango" al lado de lo que pide atencion, y ese N lo cuenta
+			// el dominio en una sola pasada. Restarle afuera al total los hallazgos y los
+			// que esperan el sexo da lo mismo hoy y se rompe en silencio manana.
+			//
+			// LO QUE ESPERA EL SEXO NO ES SANO. Es el mismo criterio que el conteo de
+			// hallazgos, del otro lado: si un valor no se puede juzgar, no cuenta ni como
+			// hallazgo ni como "en su rango". Un analito que sale de las dos cuentas hace
+			// que el numerador BAJE contra el mismo expediente con el sexo sabido.
+			Igual("sin sexo, la hemoglobina no cuenta como en su rango", "True",
+				(ConLaHistoria(Sexo.Desconocido).LoQueEstaEnRango.EnSuRango
+					< ConLaHistoria(Sexo.Hombre).LoQueEstaEnRango.EnSuRango).ToString());
+			Igual("  y el denominador NO se mueve: los analitos con serie son los mismos", "True",
+				(sinSaber.LoQueEstaEnRango.Analitos
+					== ConLaHistoria(Sexo.Hombre).LoQueEstaEnRango.Analitos).ToString());
+			Igual("  el numerador nunca pasa al denominador", "True",
+				(sinSaber.LoQueEstaEnRango.EnSuRango
+					<= sinSaber.LoQueEstaEnRango.Analitos).ToString());
+
+			// LA FRASE LA ESCRIBE EL DOMINIO, y decide sola si va la fraccion o el total:
+			// con todo en rango "M de M" es ruido, la fraccion existe para contar los que
+			// NO estan. La pantalla solo la pinta.
+			var todoBien = new Expediente(60);
+			todoBien.Agregar(new Colesterol(Hoy, 180m, "mg/dL"));
+			Igual("con todo en rango no se dice la fraccion", "Tus 1 valor está en su rango.",
+				todoBien.LoQueEstaEnRango.ParaSonia);
+			todoBien.Agregar(new Colesterol(Hoy.AddDays(1), 280m, "mg/dL"));
+			Igual("  y sin nada en rango la frase es vacia, no un cero", "",
+				todoBien.LoQueEstaEnRango.ParaSonia);
+			Igual("  que es lo que la portada lee para no dibujar el bloque", "False",
+				todoBien.LoQueEstaEnRango.HayAlgoEnRango.ToString());
+
 			// ---- criterio 6: la regla NO es plana ----
 			Igual("el colesterol total se lee igual sin sexo", "estable",
 				sinSaber.InterpretarSerieDe(Analito.ColesterolTotal.Nombre).NombreDelVeredicto);

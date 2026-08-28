@@ -1,4 +1,5 @@
 {
+  "//": "El theme_color era #7a4b12, la terracota de la primera version del landing, de antes de que el equipo confirmara la marca. Ahora es el verde institucional: es el color con el que el sistema pinta la barra del telefono, o sea lo primero que se ve al abrir.",
   "name": "La Guaria y vos · Supermercado La Guaria",
   "short_name": "La Guaria y vos",
   "description": "Tus compras del supermercado, guardadas en una carpeta tuya. Funciona sin conexion.",
@@ -6,13 +7,16 @@
   "start_url": "./",
   "scope": "./",
   "display": "standalone",
-  "background_color": "#ffffff",
-  "theme_color": "#7a4b12",
+  "background_color": "#f7f5f0",
+  "theme_color": "#2f6b3f",
   "lang": "es",
   "prefer_related_applications": false,
+
+  "//icons": "DOS FAMILIAS, y el error que habia era declarar UN SOLO archivo para los dos propositos. Los 'any' llevan las esquinas redondeadas que diseño Fernanda y se usan en la pestaña y en el dialogo de instalar. Los 'maskable' van CUADRADOS PLENOS y con la flor mas chica, porque Android aplica su propia mascara -circulo, squircle o gota segun el telefono- y a un icono ya redondeado le come las esquinas. La zona segura es un circulo del 80% del lado, asi que la flor entra al 56%.",
   "icons": [
-    { "src": "icon-192.png", "type": "image/png", "sizes": "192x192" },
-    { "src": "icon-512.png", "type": "image/png", "sizes": "512x512" },
-    { "src": "icon-512.png", "type": "image/png", "sizes": "512x512", "purpose": "maskable" }
+    { "src": "icon-192.png", "type": "image/png", "sizes": "192x192", "purpose": "any" },
+    { "src": "icon-512.png", "type": "image/png", "sizes": "512x512", "purpose": "any" },
+    { "src": "icon-192-maskable.png", "type": "image/png", "sizes": "192x192", "purpose": "maskable" },
+    { "src": "icon-512-maskable.png", "type": "image/png", "sizes": "512x512", "purpose": "maskable" }
   ]
 }

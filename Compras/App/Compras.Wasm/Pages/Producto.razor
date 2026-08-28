@@ -1,0 +1,132 @@
+@page "/producto/{Nombre}"
+@using System.Globalization
+@using Compras.App.Vistas
+@using Compras.Dominio
+@inject EstadoDeLaApp estado
+@inject NavigationManager navegacion
+
+@* LA FICHA DE UN PRODUCTO: "uno de tus infaltables". Cuatro cifras, la serie de cómo lo fue
+   llevando, y la constancia en palabras.
+
+   EL PRODUCTO SE NOMBRA, no se codifica: la url lleva "Leche semidescremada 1L" y no
+   LECHE-1L, y el dominio lo resuelve igual que la tool del MCP. Una url con la llave
+   interna adentro es el sku asomándose por la puerta de atrás. *@
+
+<PageTitle>@Nombre · La Guaria y vos</PageTitle>
+
+@if (!estado.EstaArriba)
+{
+    <div class="aviso">
+        La app todavía no abrió en esta computadora.
+        <a href="">Andá a Inicio</a> y elegí tu carpeta.
+    </div>
+}
+else if (consumo is null || !consumo.Existe)
+{
+    <h1>@Nombre</h1>
+    <p class="text-body-secondary">
+        No hay ninguna compra tuya con <strong>«@Nombre»</strong>.
+    </p>
+    <a class="btn btn-primary" href="infaltables">Ver los que nunca faltan</a>
+}
+else
+{
+    <p class="ritmo-rotulo mb-1">Uno de tus infaltables</p>
+    <h1>@Nombre</h1>
+    <p class="mb-4">
+        <span class="etiqueta etiqueta-verde">@consumo.Constancia</span>
+    </p>
+
+    @* LAS CUATRO CIFRAS del diseño. Cada una es un hecho, y ninguna lleva veredicto: no
+       dice si son muchas unidades o si gastó de más. *@
+    <div class="cifras-producto mb-4">
+        <div class="ritmo-cifra">
+            <span class="ritmo-numero">@consumo.TotalCompras</span>
+            <span class="ritmo-rotulo">compras en las que apareció</span>
+        </div>
+        <div class="ritmo-cifra">
+            <span class="ritmo-numero">@consumo.TotalUnidades</span>
+            <span class="ritmo-rotulo">unidades llevadas</span>
+        </div>
+        <div class="ritmo-cifra">
+            <span class="ritmo-numero ritmo-numero-largo">@Colones(consumo.TotalGastado)</span>
+            <span class="ritmo-rotulo">gastado en este producto</span>
+        </div>
+        <div class="ritmo-cifra">
+            <span class="ritmo-numero ritmo-numero-largo">@Fecha(consumo.UltimaVez)</span>
+            <span class="ritmo-rotulo">última vez que lo llevaste</span>
+        </div>
+    </div>
+
+    @* CÓMO LO FUISTE LLEVANDO. La barra por mes, en UNIDADES y no en plata: la pregunta de
+       esta pantalla es cuánto lleva, y el precio se mueve por su cuenta. La plata va al
+       lado, en chico, para quien la quiera. *@
+    <h2>Cómo lo fuiste llevando</h2>
+    <p class="ritmo-rotulo mb-2">Unidades por mes.</p>
+    <div class="list-group mb-4">
+        @foreach (var mes in consumo.Meses)
+        {
+            <div class="list-group-item mes-fila">
+                <span class="mes-nombre">@mes.Mes</span>
+                <span class="momento-barra">
+                    <span style="width:@Ancho(mes.Unidades)%"></span>
+                </span>
+                <span class="mes-unidades numero">@mes.Unidades</span>
+                <span class="ritmo-rotulo mes-gasto">@Colones(mes.Gasto)</span>
+            </div>
+        }
+    </div>
+
+    <p class="mb-0">@consumo.ParaSonia</p>
+
+    <p class="mt-4">
+        <a class="btn btn-primary" href="infaltables">&larr; Los que nunca faltan</a>
+    </p>
+}
+
+@code {
+    [Parameter] public string Nombre { get; set; } = "";
+
+    private ConsumoEnElTiempo? consumo;
+
+    protected override void OnParametersSet()
+    {
+        if (!estado.EstaArriba) return;
+
+        consumo = estado.ConsumoDe(Nombre);
+    }
+
+    // LA BARRA SE ESCALA AL MES MAS ALTO DE ESTE PRODUCTO, no a una escala fija: lo que la
+    // fila cuenta es en que meses llevo mas y en cuales menos, y contra una escala global
+    // un producto barato quedaria siempre en cero.
+    private int Ancho(int unidades)
+    {
+        if (consumo is null || consumo.Meses.Count == 0) return 0;
+
+        int mayor = 0;
+        foreach (MesDeConsumoVista mes in consumo.Meses)
+            if (mes.Unidades > mayor) mayor = mes.Unidades;
+
+        return mayor == 0 ? 0 : (int)(unidades * 100L / mayor);
+    }
+
+    private static string Colones(decimal monto) => Plata.Colones(monto);
+
+    // "29 ago 2026" y no "2026-08-29". El aaaa-mm-dd es la forma en que la fecha VIAJA -y
+    // asi la devuelve la tool del MCP, que es lo correcto para una maquina-; en la ficha se
+    // lee, y ademas el guion la partia en dos lineas.
+    private static string Fecha(string aaaaMmDd)
+    {
+        if (!DateTime.TryParse(aaaaMmDd, CultureInfo.InvariantCulture,
+                DateTimeStyles.None, out DateTime cuando))
+            return aaaaMmDd;
+
+        return $"{cuando.Day} {Mes(cuando.Month)} {cuando.Year}";
+    }
+
+    private static string Mes(int mes) => mes switch
+    {
+        1 => "ene", 2 => "feb", 3 => "mar", 4 => "abr", 5 => "may", 6 => "jun",
+        7 => "jul", 8 => "ago", 9 => "sep", 10 => "oct", 11 => "nov", _ => "dic",
+    };
+}

@@ -1,0 +1,202 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Estaciones Faro — Tus cargas</title>
+    <link rel="icon" type="image/png" href="/favicon.png" />
+    <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+    <meta name="theme-color" content="#0B3C49" />
+    <!-- LA PAGINA DE LA INSTITUCION (URL1). Estatica, autocontenida, sin dependencias
+         externas. ⚠️ MARCA PROVISIONAL: Faro y su paleta son el candidato del brief §3,
+         a la espera de la especificacion de Geaninna. El flujo acordado con Delfos fue
+         pagina real -> especificacion derivada del CSS -> app, y conviene repetirlo:
+         esta pagina existe para que la spec tenga de donde salir. -->
+    <style>
+        :root {
+            --teal:        #0B3C49;
+            --teal-hondo:  #062730;
+            --teal-claro:  #14586B;
+            --cobre:       #C2703D;
+            --cobre-claro: #D9915E;
+            --tinta:       #edf6f6;
+            --tenue:       #a8c4c9;
+            --carta:       rgba(126, 196, 207, .08);
+            --linea:       rgba(126, 196, 207, .22);
+            --bien:        #6ee7a0;
+            --serif: Georgia, "Times New Roman", serif;
+            --sans:  "Segoe UI", "Helvetica Neue", Arial, sans-serif;
+        }
+        * { box-sizing: border-box; margin: 0; }
+        body {
+            background: linear-gradient(180deg, var(--teal) 0%, var(--teal-hondo) 100%);
+            color: var(--tinta);
+            font-family: var(--sans);
+            line-height: 1.55;
+            min-height: 100vh;
+        }
+        a { color: var(--cobre-claro); }
+
+        .barra {
+            display: flex; justify-content: space-between; gap: 16px;
+            padding: 8px 24px; font-size: .82rem; color: var(--tenue);
+            border-bottom: 1px solid var(--linea);
+        }
+
+        .membrete {
+            display: flex; align-items: center; gap: 14px; flex-wrap: wrap;
+            padding: 18px 24px; max-width: 980px; margin: 0 auto;
+        }
+        .membrete svg { width: 44px; height: 44px; flex: none; }
+        .nombre { font-family: var(--serif); font-size: 1.35rem; letter-spacing: .02em; }
+        .claim { font-size: .82rem; color: var(--tenue); }
+        .membrete .empuja { flex: 1; }
+
+        .boton {
+            display: inline-block; background: var(--cobre); color: #fff;
+            padding: 10px 22px; border-radius: 8px; text-decoration: none;
+            font-weight: 600; border: none; font-size: 1rem;
+        }
+        .boton:hover { background: var(--cobre-claro); }
+
+        main { max-width: 980px; margin: 0 auto; padding: 24px; }
+
+        .heroe { display: grid; grid-template-columns: 1.1fr 1fr; gap: 36px;
+                 align-items: center; padding: 36px 0 20px; }
+        @media (max-width: 760px) { .heroe { grid-template-columns: 1fr; } }
+        .heroe h1 { font-family: var(--serif); font-size: 2.1rem; line-height: 1.2;
+                    margin-bottom: 14px; }
+        .heroe p { color: var(--tenue); margin-bottom: 12px; }
+        .heroe strong { color: var(--tinta); }
+
+        .grafico {
+            background: var(--carta); border: 1px solid var(--linea);
+            border-radius: 12px; padding: 18px;
+        }
+        .grafico h2 { font-size: .82rem; text-transform: uppercase;
+                      letter-spacing: .08em; color: var(--tenue); margin-bottom: 8px; }
+        .grafico p { font-size: .82rem; color: var(--tenue); margin-top: 8px; }
+
+        .tres { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px;
+                margin: 36px 0; }
+        @media (max-width: 760px) { .tres { grid-template-columns: 1fr; } }
+        .paso { background: var(--carta); border: 1px solid var(--linea);
+                border-radius: 12px; padding: 18px; }
+        .paso b { display: block; margin-bottom: 6px; font-family: var(--serif);
+                  font-size: 1.05rem; }
+        .paso p { font-size: .9rem; color: var(--tenue); }
+
+        .promesa { border-left: 3px solid var(--cobre); padding: 4px 0 4px 16px;
+                   margin: 28px 0; color: var(--tenue); }
+        .promesa b { color: var(--tinta); }
+
+        footer { border-top: 1px solid var(--linea); margin-top: 40px;
+                 padding: 18px 24px; font-size: .8rem; color: var(--tenue);
+                 text-align: center; }
+    </style>
+</head>
+<body>
+    <div class="barra">
+        <span>Estaciones Faro · combustible y lealtad</span>
+        <span>Atención 24/7 · 2555-0100</span>
+    </div>
+
+    <header class="membrete">
+        <!-- El faro de un solo trazo, el mismo de la app y de los iconos. -->
+        <svg viewBox="0 0 40 40" xmlns="http://www.w3.org/2000/svg"
+             fill="none" stroke="#ffffff" stroke-width="2.4" aria-hidden="true">
+            <path d="M16 34 L18 12 h4 L24 34 z" />
+            <path d="M15 12 h10 M17 7 h6 M18 12 V7 M22 12 V7" />
+            <path d="M26 8 l6 -2.5 M26 11 l7 0" />
+        </svg>
+        <div>
+            <div class="nombre">Estaciones Faro</div>
+            <div class="claim">Tu camino, claro</div>
+        </div>
+        <div class="empuja"></div>
+        <a class="boton" href="/app/">Entrá a Mis cargas</a>
+    </header>
+
+    <main>
+        <section class="heroe">
+            <div>
+                <h1>Tus cargas dicen más de tu carro que cualquier taller.</h1>
+                <p>
+                    Cada vez que cargás, el surtidor sabe los litros, el precio y tu placa.
+                    <strong>Lo que solo vos sabés es el kilometraje.</strong> Con las dos
+                    mitades, <em>Mis cargas</em> calcula cuánto rinde tu carro de verdad
+                    —tramo por tramo, contra tu propio nivel de siempre— y te avisa cuando
+                    algo cambia.
+                </p>
+                <p>
+                    La bitácora vive <strong>en una carpeta tuya, en tu computadora</strong>.
+                    Faro te publica tus cargas; leerlas, cruzarlas y entenderlas es tuyo.
+                </p>
+                <p style="margin-top:18px"><a class="boton" href="/app/">Instalar Mis cargas</a></p>
+            </div>
+
+            <!-- EL ARGUMENTO, MOSTRADO: la serie real del demo a escala (12.6, 12.6,
+                 12.6, 11.7 y 9.4 km/L contra la banda del nivel de siempre; el punto
+                 hueco es el tramo de otro surtidor, que no se compara). La pagina no
+                 explica el producto: lo ensena. -->
+            <div class="grafico">
+                <h2>El rendimiento de un carro real, por tramo</h2>
+                <svg viewBox="0 0 320 130" xmlns="http://www.w3.org/2000/svg" role="img"
+                     aria-label="Serie de rendimiento cayendo de 12.6 a 9.4 km/L">
+                    <line x1="10" y1="38" x2="310" y2="38"
+                          stroke="rgba(110,231,160,.5)" stroke-width="1" stroke-dasharray="4 4" />
+                    <text x="12" y="30" fill="#6ee7a0" font-size="10"
+                          font-family="Georgia, serif">tu nivel de siempre · 12.6 km/L</text>
+                    <polyline points="20,36 78,38 136,38 194,60"
+                              fill="none" stroke="#D9915E" stroke-width="2.5"
+                              stroke-linecap="round" stroke-linejoin="round" />
+                    <polyline points="194,60 300,104"
+                              fill="none" stroke="#D9915E" stroke-width="2.5"
+                              stroke-linecap="round" stroke-dasharray="1 6" />
+                    <circle cx="20"  cy="36"  r="4.5" fill="#D9915E" />
+                    <circle cx="78"  cy="38"  r="4.5" fill="#D9915E" />
+                    <circle cx="136" cy="38"  r="4.5" fill="#D9915E" />
+                    <circle cx="194" cy="60"  r="4.5" fill="#D9915E" />
+                    <circle cx="247" cy="82"  r="4.5" fill="none" stroke="#a8c4c9" stroke-width="2" />
+                    <circle cx="300" cy="104" r="4.5" fill="#D9915E" />
+                    <text x="296" y="122" fill="#edf6f6" font-size="11" text-anchor="end"
+                          font-family="Georgia, serif">último tramo · 9.4 km/L</text>
+                </svg>
+                <p>Un 25% menos que su nivel de siempre. Ninguna factura suelta puede decirlo.</p>
+            </div>
+        </section>
+
+        <section class="tres">
+            <div class="paso">
+                <b>1 · Instalás la app</b>
+                <p>Elegís una carpeta tuya. Ahí vive tu bitácora: no en nuestros
+                   servidores, no en la nube de nadie.</p>
+            </div>
+            <div class="paso">
+                <b>2 · Faro te publica tus cargas</b>
+                <p>Litros, precio, surtidor y forma de corte, con un token que solo
+                   puede leer <em>tus</em> eventos. Nada más: está construido para que
+                   no pueda pedir otra cosa.</p>
+            </div>
+            <div class="paso">
+                <b>3 · Vos ponés el kilometraje</b>
+                <p>Es el dato que solo vos tenés, y el que desbloquea todo: rendimiento
+                   por tramo, autonomía estimada, costo por kilómetro. La app te propone
+                   el número y vos solo confirmás.</p>
+            </div>
+        </section>
+
+        <div class="promesa">
+            <b>La promesa:</b> la app no es cliente de los sistemas de Faro. Su credencial
+            alcanza para leer tus propias cargas y nada más — pedirle otra cosa al servidor
+            devuelve 403, y eso se puede comprobar. Tu asistente de IA puede leer tu
+            bitácora <em>en tu máquina</em>, con tu permiso, consulta por consulta.
+        </div>
+    </main>
+
+    <footer>
+        Estaciones Faro es una marca ficticia y provisional para la demo de Gnothi ·
+        Los umbrales del módulo no están revisados y el módulo es demostrativo
+    </footer>
+</body>
+</html>

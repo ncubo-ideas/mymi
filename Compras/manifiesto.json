@@ -62,10 +62,10 @@
       "titulo": "Cada cuanto lo compro",
       "soloLectura": true,
       "entrada": [
-        { "nombre": "sku", "tipo": "string", "descripcion": "El SKU del producto, como viene en las lineas de una compra." },
+        { "nombre": "producto", "tipo": "string", "descripcion": "El producto como lo nombraria la persona: 'leche', 'helado'. Se busca por nombre o por parte del nombre; tambien acepta el codigo interno, pero no hace falta." },
         { "nombre": "corte", "tipo": "string", "descripcion": "La fecha de corte, en formato aaaa-mm-dd." }
       ],
-      "descripcion": "CADA CUANTO compra la persona un producto, ANTES y DESPUES de una fecha. La respuesta viene en el lenguaje en que la gente habla de sus habitos -'1 vez/mes', '1 vez/semana', 'de vez en cuando'- y no en dias. Necesita al menos TRES compras del producto de cada lado: si hayConQueComparar viene en false no hay ritmo que medir, y no es un error. cambio en false significa que el ritmo viene igual, que tambien es una respuesta."
+      "descripcion": "CADA CUANTO compra la persona un producto, ANTES y DESPUES de una fecha. El producto se NOMBRA, no se codifica: se resuelve por nombre o parte del nombre. La respuesta viene en el lenguaje en que la gente habla de sus habitos -'1 vez/mes', '1 vez/semana', 'de vez en cuando'- y no en dias. Necesita al menos TRES compras del producto de cada lado: si hayConQueComparar viene en false no hay ritmo que medir, y no es un error. cambio en false significa que el ritmo viene igual, que tambien es una respuesta."
     },
     {
       "nombre": "que_cambio_en_mi_rutina",
@@ -75,6 +75,13 @@
         { "nombre": "corte", "tipo": "string", "descripcion": "La fecha de corte, en formato aaaa-mm-dd." }
       ],
       "descripcion": "LOS PRODUCTOS A LOS QUE LES CAMBIO EL RITMO, el mas notorio primero, cada uno con cada cuanto se compraba antes y cada cuanto ahora. Se ordena por cuanto salto la frecuencia y no por plata: lo que cambia una rutina es cada cuanto, no cuanto cuesta. esMasSeguido distingue lo que entro de lo que se fue apagando. Una lista vacia significa que ningun producto cambio de ritmo, que es una respuesta y no una falla."
+    },
+    {
+      "nombre": "mi_ritmo_de_super",
+      "titulo": "Mi ritmo de super",
+      "soloLectura": true,
+      "entrada": [],
+      "descripcion": "COMO VA AL SUPER esta persona: cada cuantos dias vuelve, que dia de la semana suele comprar y en que momento del dia. Usala para '¿cada cuanto voy al super?' o cuando la persona quiere entender su propia rutina. OJO: esto es cada cuanto VA AL SUPER, no cada cuanto compra un producto (cada_cuanto_compro) ni cada cuanto entra un departamento (que_dejaste_de_comprar). porMomento siempre trae los tres momentos del dia aunque alguno venga en cero. Si esObservado viene en false, no hay suficientes compras para medir un ritmo, y no es un error."
     },
     {
       "nombre": "canasta_del_mes",
