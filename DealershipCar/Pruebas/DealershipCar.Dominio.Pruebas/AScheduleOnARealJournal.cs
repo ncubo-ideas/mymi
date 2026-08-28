@@ -1,5 +1,6 @@
 using System;
 using System.IO;
+using System.Text;
 using DealershipCar.App;
 using Puppeteer;
 
@@ -115,6 +116,90 @@ namespace DealershipCar.Dominio.Pruebas
 
 			return everything;
 		}
+
+		// LA FICHA ENTERA, leida por la puerta, en una sola cadena comparable. Es a la especificacion
+		// lo que EveryDueStateItCanAnswer es a la agenda, y existe para comparar dos caminos que
+		// tienen que dejar la misma hoja: la ficha publicada por la puerta y la MISMA ficha llegada
+		// como feed de hechos sueltos.
+		//
+		// BARRE TODOS LOS MIEMBROS de cada conjunto cerrado y NOMBRA EL MIEMBRO en cada renglon, las
+		// dos cosas a proposito. Una lectura que contestara siempre por el aceite dejaria las seis
+		// clases con la misma frase, y una comparacion que solo mirara que la frase no viene vacia no
+		// podria verlo -- es el defecto que T8 midio dos veces (C60). Con el miembro escrito al lado
+		// de su respuesta, cualquier cruce cambia la cadena.
+		internal string EverySpecificationAnswerItCanGive()
+		{
+			StringBuilder sheet = new StringBuilder();
+
+			sheet.Append("model=").Append(Api.ReadModel());
+			sheet.Append("\nsealedRevision=").Append(Api.HasASealedRevision());
+
+			if (Api.HasASealedRevision())
+				sheet.Append("\ncurrent=").Append(Api.ReadCurrentRevisionCode())
+					.Append(" published=").Append(Api.ReadCurrentRevisionPublishedAt().ToString("O"));
+
+			foreach (string kind in Enum.GetNames(typeof(FluidKindCode)))
+				sheet.Append("\nfluid ").Append(kind)
+					.Append(" : ").Append(Api.IsFluidPublished(kind))
+					.Append(" | ").Append(Api.ReadFluidRevision(kind))
+					.Append(" | ").Append(Api.DescribeFluid(kind));
+
+			foreach (string position in Enum.GetNames(typeof(TyrePositionCode)))
+				sheet.Append("\ntyre ").Append(position)
+					.Append(" : ").Append(Api.IsTyrePublished(position))
+					.Append(" | ").Append(Api.ReadTyreRevision(position))
+					.Append(" | ").Append(Api.DescribeTyre(position));
+
+			sheet.Append("\nfuel : ").Append(Api.IsFuelPublished())
+				.Append(" | ").Append(Api.ReadFuelRevision())
+				.Append(" | minimum=").Append(Api.ReadMinimumFuelGrade())
+				.Append(" | permitted=").Append(string.Join(",", Api.PermittedFuelGrades()))
+				.Append(" | prohibited=").Append(string.Join(",", Api.ProhibitedFuelGrades()))
+				.Append(" | ").Append(Api.DescribeFuel());
+
+			foreach (string kind in Enum.GetNames(typeof(OperationKindCode)))
+			{
+				sheet.Append("\ninterval ").Append(kind)
+					.Append(" : ").Append(Api.IsServiceIntervalPublished(kind))
+					.Append(" | ").Append(Api.ReadServiceIntervalRevision(kind))
+					.Append(" | ").Append(
+						Api.DescribeServiceInterval(kind, TheDistanceRemaining, TheUnitItAsksIn));
+
+				sheet.Append("\nprice ").Append(kind)
+					.Append(" : ").Append(
+						Api.IsServicePricePublished(kind, TheMilestone, TheUnitItAsksIn))
+					.Append(" | ").Append(
+						Api.ReadServicePriceRevision(kind, TheMilestone, TheUnitItAsksIn))
+					.Append(" | ").Append(Api.DescribeServicePrice(
+						kind, TheMilestone, TheUnitItAsksIn, TheDayItAsks));
+			}
+
+			sheet.Append("\ncoverage : ").Append(Api.IsCoveragePublished())
+				.Append(" | ").Append(Api.ReadCoverageRevision())
+				.Append(" | systems=").Append(string.Join(",", Api.CoveredSystems()))
+				.Append(" | exclusions=").Append(string.Join(" / ", Api.CoverageExclusions()))
+				.Append(" | ").Append(Api.DescribeCoverageSummary());
+
+			foreach (string systemCode in new[] { "POWERTRAIN", "SUSPENSION" })
+				sheet.Append("\nvocabulary ").Append(systemCode)
+					.Append(" : ").Append(Api.TheVocabularyIsTheManufacturers(systemCode));
+
+			sheet.Append("\nservicingPolicy : ").Append(Api.IsServicingPolicyPublished())
+				.Append(" | ").Append(Api.ReadServicingPolicyRevision())
+				.Append(" | ").Append(Api.DescribeServicingElsewhereRule(2, 1, 0));
+
+			return sheet.ToString();
+		}
+
+		// Los tres valores del vehiculo con que la ficha de arriba hace sus preguntas. LITERALES y no
+		// calculados: una hoja leida contra el reloj daria otra vigencia manana, y lo que estas
+		// comparaciones afirman es que dos caminos dejan la misma hoja (C27).
+		internal const int TheMilestone = 10000;
+		internal const int TheDistanceRemaining = 2000;
+		internal const string TheUnitItAsksIn = "UnitA";
+
+		internal static readonly DateTime TheDayItAsks =
+			new DateTime(2026, 9, 1, 0, 0, 0, DateTimeKind.Utc);
 
 		private void Open()
 		{

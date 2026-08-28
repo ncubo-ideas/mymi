@@ -21,6 +21,13 @@ namespace DealershipCar.Dominio.Pruebas
 	// especificacion (T6).
 	// No mira reglas de negocio -- de eso se ocupan las otras pruebas del nivel B -- mira que el
 	// script exista, parsee, ate sus parametros y devuelva lo que dijo que devolvia.
+	//
+	// LAS OPERACIONES SON SETENTA Y CINCO Y LOS SCRIPTS SON MAS, y T9 es donde la diferencia se
+	// vuelve grande: Apply es UNA operacion de la puerta y tiene DIECISIETE scripts detras -- uno
+	// por cada tipo de hecho recibido, mas el comando suelto que avanza el punto de control cuando
+	// el dominio rechaza el hecho. T9 sumo once de esos diecisiete y no sumo ninguna operacion.
+	// Contar operaciones y contar scripts son dos cuentas distintas, y la que S5 obliga a hacer es
+	// la de los scripts.
 	[TestFixture]
 	public sealed class EveryScriptOfTheDoorHasBeenRun
 	{
@@ -205,8 +212,42 @@ namespace DealershipCar.Dominio.Pruebas
 			Assert.That(journal.Api.StoredRefreshToken(), Is.EqualTo("rt_5678"));
 		}
 
-		// Y LOS SEIS DE LA INGESTA: los cinco comandos con Check de cada tipo de hecho recibido, mas
-		// el comando suelto que avanza el punto de control cuando el dominio rechaza el hecho.
+		// LOS ONCE SCRIPTS DE INGESTA QUE TRAJO T9, uno por comando de publicacion de la
+		// especificacion. Se barre la ficha entera en vez de escribir once llamadas a mano: la lista
+		// trae uno de cada tipo en el orden en que un feed los manda, y el conteo de tipos DISTINTOS
+		// es lo que impide que el barrido se acorte sin que nadie lo note (C57).
+		//
+		// Lo que se afirma es la FORMA -- que el script parsee, ate sus parametros y no sea rechazado
+		// -- y no que cada campo caiga en su casillero: de eso se ocupa
+		// TheIngestedFactKeepsEveryPartOfWhatWasReceived, y de que la hoja resultante sea la misma
+		// que deja la puerta se ocupa ASpecificationRevisionArrivesAsAFeedOfSeparateFacts.
+		[Test]
+		public void EverySpecificationIngestionScriptOfTheDoorParsesBindsAndRuns()
+		{
+			HashSet<string> ran = new HashSet<string>();
+
+			foreach (Puppets.Portador.SenalDeEvento signal in ADealershipNarrative.TheWholeSpecSheet())
+			{
+				Assert.That(Apply(signal), Is.EqualTo(""),
+					"El script de " + signal.Tipo + " tenia que correr sin rechazo.");
+
+				ran.Add(signal.Tipo);
+			}
+
+			Assert.That(ran.Count, Is.EqualTo(11),
+				"Son ONCE scripts de ingesta de la especificacion, uno por comando de publicacion.");
+
+			Assert.That(journal.Api.LastEventApplied(),
+				Is.EqualTo(ADealershipNarrative.TheLastSpecificationEvent),
+				"Y los once avanzan el punto de control en el MISMO comando que el hecho.");
+
+			Assert.That(journal.Api.HasASealedRevision(), Is.True,
+				"La hoja quedo sellada, asi que los scripts no solo parsearon: publicaron.");
+		}
+
+		// Y LOS SEIS DE LA INGESTA QUE TRAJO T8: los cinco comandos con Check de cada tipo de hecho
+		// recibido, mas el comando suelto que avanza el punto de control cuando el dominio rechaza el
+		// hecho.
 		[Test]
 		public void EveryIngestionScriptOfTheDoorParsesBindsAndRuns()
 		{

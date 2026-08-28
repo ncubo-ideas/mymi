@@ -966,6 +966,29 @@ namespace DealershipCar.App
 				if (message is PlanOperationSeeded seeded) return ApplyPlanOperationSeeded(seeded);
 				if (message is PlanRevisionAdopted revision) return ApplyPlanRevisionAdopted(revision);
 
+				if (message is SpecificationRevisionOpened opened)
+					return ApplySpecificationRevisionOpened(opened);
+				if (message is FluidSpecificationPublished fluid)
+					return ApplyFluidSpecificationPublished(fluid);
+				if (message is TyreSpecificationPublished tyre)
+					return ApplyTyreSpecificationPublished(tyre);
+				if (message is FuelGradePublished fuel)
+					return ApplyFuelGradePublished(fuel);
+				if (message is ServiceIntervalPublished interval)
+					return ApplyServiceIntervalPublished(interval);
+				if (message is ServicePricePublished price)
+					return ApplyServicePricePublished(price);
+				if (message is CoveredSystemPublished system)
+					return ApplyCoveredSystemPublished(system);
+				if (message is CoverageExclusionPublished exclusion)
+					return ApplyCoverageExclusionPublished(exclusion);
+				if (message is ServicingPolicyPublished policy)
+					return ApplyServicingPolicyPublished(policy);
+				if (message is SpecificationRevisionSealed sealing)
+					return ApplySpecificationRevisionSealed(sealing);
+				if (message is SpecificationRevisionSuperseded superseding)
+					return ApplySpecificationRevisionSuperseded(superseding);
+
 				throw new ArgumentException(
 					$"Esta app no tiene comando para un mensaje de tipo '{message.Tipo}'. La ruta "
 					+ "debio devolver null para descartarlo.", nameof(message));
@@ -1081,6 +1104,263 @@ namespace DealershipCar.App
 				p["event",        typeof(long)]     = message.EventNumber;
 				p["revisionCode", typeof(string)]   = message.RevisionCode;
 				p["adoptedAt",    typeof(DateTime)] = InUtc(message.AdoptedAt);
+			})
+			.PerformCheckThenCommand();
+		}
+
+		private string ApplySpecificationRevisionOpened(SpecificationRevisionOpened message)
+		{
+			return app.Using(
+				scriptForChk: TheEventIsNew,
+				@"
+					{
+						specification.OpenRevision(@revisionCode, @publishedAt);
+						logbook.Advance(@event);
+					}
+				")
+			.WithParameters(p => {
+				p["event",        typeof(long)]     = message.EventNumber;
+				p["revisionCode", typeof(string)]   =
+					TheText(message.RevisionCode, "revisionCode");
+				p["publishedAt",  typeof(DateTime)] = InUtc(message.PublishedAt);
+			})
+			.PerformCheckThenCommand();
+		}
+
+		private string ApplyFluidSpecificationPublished(FluidSpecificationPublished message)
+		{
+			return app.Using(
+				scriptForChk: TheEventIsNew,
+				@"
+					{
+						specification.PublishFluidSpecification(
+							@revisionCode, @kind, @grade,
+							@capacity, @capacityUnit,
+							@intervalDistance, @intervalUnit, @intervalDays);
+						logbook.Advance(@event);
+					}
+				")
+			.WithParameters(p => {
+				p["event",            typeof(long)]    = message.EventNumber;
+				p["revisionCode",     typeof(string)]  =
+					TheText(message.RevisionCode, "revisionCode");
+				p["kind",             typeof(Enum)]    = WireName.FluidKind(message.Kind);
+				p["grade",            typeof(string)]  = TheText(message.Grade, "grade");
+				p["capacity",         typeof(decimal)] = Normalized(message.Capacity);
+				p["capacityUnit",     typeof(Enum)]    =
+					WireName.VolumeUnit(message.CapacityUnit, "capacityUnit");
+				p["intervalDistance", typeof(int)]     = message.IntervalDistance;
+				p["intervalUnit",     typeof(Enum)]    =
+					WireName.DistanceUnit(message.IntervalUnit, "intervalUnit");
+				p["intervalDays",     typeof(int)]     = message.IntervalDays;
+			})
+			.PerformCheckThenCommand();
+		}
+
+		private string ApplyTyreSpecificationPublished(TyreSpecificationPublished message)
+		{
+			return app.Using(
+				scriptForChk: TheEventIsNew,
+				@"
+					{
+						specification.PublishTyreSpecification(
+							@revisionCode, @position, @size,
+							@coldPressure, @pressureUnit, @ratings);
+						logbook.Advance(@event);
+					}
+				")
+			.WithParameters(p => {
+				p["event",        typeof(long)]    = message.EventNumber;
+				p["revisionCode", typeof(string)]  =
+					TheText(message.RevisionCode, "revisionCode");
+				p["position",     typeof(Enum)]    = WireName.TyrePosition(message.Position);
+				p["size",         typeof(string)]  = TheText(message.Size, "size");
+				p["coldPressure", typeof(decimal)] = Normalized(message.ColdPressure);
+				p["pressureUnit", typeof(Enum)]    =
+					WireName.PressureUnit(message.PressureUnit, "pressureUnit");
+				p["ratings",      typeof(string)]  = TheText(message.Ratings, "ratings");
+			})
+			.PerformCheckThenCommand();
+		}
+
+		private string ApplyFuelGradePublished(FuelGradePublished message)
+		{
+			return app.Using(
+				scriptForChk: TheEventIsNew,
+				@"
+					{
+						specification.PublishFuelGrade(@revisionCode, @grade, @standing);
+						logbook.Advance(@event);
+					}
+				")
+			.WithParameters(p => {
+				p["event",        typeof(long)]   = message.EventNumber;
+				p["revisionCode", typeof(string)] =
+					TheText(message.RevisionCode, "revisionCode");
+				p["grade",        typeof(string)] = TheText(message.Grade, "grade");
+				p["standing",     typeof(Enum)]   = WireName.FuelGradeStanding(message.Standing);
+			})
+			.PerformCheckThenCommand();
+		}
+
+		private string ApplyServiceIntervalPublished(ServiceIntervalPublished message)
+		{
+			return app.Using(
+				scriptForChk: TheEventIsNew,
+				@"
+					{
+						specification.PublishServiceInterval(
+							@revisionCode, @kind,
+							@intervalDistance, @intervalUnit, @intervalDays);
+						logbook.Advance(@event);
+					}
+				")
+			.WithParameters(p => {
+				p["event",            typeof(long)]   = message.EventNumber;
+				p["revisionCode",     typeof(string)] =
+					TheText(message.RevisionCode, "revisionCode");
+				p["kind",             typeof(Enum)]   = WireName.OperationKind(message.Kind);
+				p["intervalDistance", typeof(int)]    = message.IntervalDistance;
+				p["intervalUnit",     typeof(Enum)]   =
+					WireName.DistanceUnit(message.IntervalUnit, "intervalUnit");
+				p["intervalDays",     typeof(int)]    = message.IntervalDays;
+			})
+			.PerformCheckThenCommand();
+		}
+
+		private string ApplyServicePricePublished(ServicePricePublished message)
+		{
+			return app.Using(
+				scriptForChk: TheEventIsNew,
+				@"
+					{
+						specification.PublishServicePrice(
+							@revisionCode, @kind,
+							@milestoneDistance, @milestoneUnit,
+							@amount, @currency, @validFrom, @validUntil);
+						logbook.Advance(@event);
+					}
+				")
+			.WithParameters(p => {
+				p["event",             typeof(long)]     = message.EventNumber;
+				p["revisionCode",      typeof(string)]   =
+					TheText(message.RevisionCode, "revisionCode");
+				p["kind",              typeof(Enum)]     = WireName.OperationKind(message.Kind);
+				p["milestoneDistance", typeof(int)]      = message.MilestoneDistance;
+				p["milestoneUnit",     typeof(Enum)]     =
+					WireName.DistanceUnit(message.MilestoneUnit, "milestoneUnit");
+				p["amount",            typeof(decimal)]  = Normalized(message.Amount);
+				p["currency",          typeof(string)]   = TheText(message.Currency, "currency");
+				p["validFrom",         typeof(DateTime)] = InUtc(message.ValidFrom);
+				p["validUntil",        typeof(DateTime)] = InUtc(message.ValidUntil);
+			})
+			.PerformCheckThenCommand();
+		}
+
+		private string ApplyCoveredSystemPublished(CoveredSystemPublished message)
+		{
+			return app.Using(
+				scriptForChk: TheEventIsNew,
+				@"
+					{
+						specification.PublishCoveredSystem(
+							@revisionCode, @systemCode,
+							@ownLimitMonths, @ownLimitDistance, @ownLimitUnit);
+						logbook.Advance(@event);
+					}
+				")
+			.WithParameters(p => {
+				p["event",            typeof(long)]   = message.EventNumber;
+				p["revisionCode",     typeof(string)] =
+					TheText(message.RevisionCode, "revisionCode");
+				p["systemCode",       typeof(string)] = TheText(message.SystemCode, "systemCode");
+				p["ownLimitMonths",   typeof(int)]    = message.OwnLimitMonths;
+				p["ownLimitDistance", typeof(int)]    = message.OwnLimitDistance;
+				p["ownLimitUnit",     typeof(Enum)]   =
+					WireName.DistanceUnit(message.OwnLimitUnit, "ownLimitUnit");
+			})
+			.PerformCheckThenCommand();
+		}
+
+		private string ApplyCoverageExclusionPublished(CoverageExclusionPublished message)
+		{
+			return app.Using(
+				scriptForChk: TheEventIsNew,
+				@"
+					{
+						specification.PublishCoverageExclusion(
+							@revisionCode, @systemCode, @exclusion, @condition);
+						logbook.Advance(@event);
+					}
+				")
+			.WithParameters(p => {
+				p["event",        typeof(long)]   = message.EventNumber;
+				p["revisionCode", typeof(string)] =
+					TheText(message.RevisionCode, "revisionCode");
+				p["systemCode",   typeof(string)] = TheText(message.SystemCode, "systemCode");
+				p["exclusion",    typeof(string)] = TheText(message.Exclusion, "exclusion");
+				p["condition",    typeof(string)] = TheText(message.Condition, "condition");
+			})
+			.PerformCheckThenCommand();
+		}
+
+		private string ApplyServicingPolicyPublished(ServicingPolicyPublished message)
+		{
+			return app.Using(
+				scriptForChk: TheEventIsNew,
+				@"
+					{
+						specification.PublishServicingPolicy(
+							@revisionCode, @rule, @whatPreservesCover);
+						logbook.Advance(@event);
+					}
+				")
+			.WithParameters(p => {
+				p["event",              typeof(long)]   = message.EventNumber;
+				p["revisionCode",       typeof(string)] =
+					TheText(message.RevisionCode, "revisionCode");
+				p["rule",               typeof(string)] = TheText(message.Rule, "rule");
+				p["whatPreservesCover", typeof(string)] =
+					TheText(message.WhatPreservesCover, "whatPreservesCover");
+			})
+			.PerformCheckThenCommand();
+		}
+
+		private string ApplySpecificationRevisionSealed(SpecificationRevisionSealed message)
+		{
+			return app.Using(
+				scriptForChk: TheEventIsNew,
+				@"
+					{
+						specification.SealRevision(@revisionCode);
+						logbook.Advance(@event);
+					}
+				")
+			.WithParameters(p => {
+				p["event",        typeof(long)]   = message.EventNumber;
+				p["revisionCode", typeof(string)] =
+					TheText(message.RevisionCode, "revisionCode");
+			})
+			.PerformCheckThenCommand();
+		}
+
+		private string ApplySpecificationRevisionSuperseded(
+			SpecificationRevisionSuperseded message)
+		{
+			return app.Using(
+				scriptForChk: TheEventIsNew,
+				@"
+					{
+						specification.SupersedeRevision(@revisionCode, @supersededByCode);
+						logbook.Advance(@event);
+					}
+				")
+			.WithParameters(p => {
+				p["event",            typeof(long)]   = message.EventNumber;
+				p["revisionCode",     typeof(string)] =
+					TheText(message.RevisionCode, "revisionCode");
+				p["supersededByCode", typeof(string)] =
+					TheText(message.SupersededByCode, "supersededByCode");
 			})
 			.PerformCheckThenCommand();
 		}

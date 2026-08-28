@@ -610,6 +610,8 @@ namespace DealershipCar.Consola
 				Console.WriteLine($"   arbol byte a byte igual   : {TheTreeOf(actorFolder) == bytesBefore}");
 				Console.WriteLine();
 
+				WhatTheFeedPublishedAboutTheModel(api);
+
 				EvaluationOutcome evaluated = api.Evaluate(TheInstantTheBoardIsRead);
 				Console.WriteLine($"-- evaluacion al {Day(TheInstantTheBoardIsRead)} --");
 				Report(evaluated);
@@ -687,6 +689,48 @@ namespace DealershipCar.Consola
 
 			Environment.Exit(0);
 			return 0;
+		}
+
+		private static void WhatTheFeedPublishedAboutTheModel(DealershipCarAPI api)
+		{
+			Console.WriteLine("-- la ficha del fabricante, tal como la dejo el feed --");
+			Console.WriteLine();
+			Console.WriteLine($"   {"modelo",-24} : {api.ReadModel()}");
+			Console.WriteLine($"   {"hay revision sellada",-24} : {api.HasASealedRevision()}");
+
+			if (!api.HasASealedRevision())
+			{
+				Console.WriteLine();
+				Console.WriteLine("   Este feed no publico ninguna revision, o publico una sin sellar.");
+				Console.WriteLine("   Para que llegue una: dotnet run --project InyectorDeEventosDemo");
+				Console.WriteLine("   -- ficha, y despues este mismo refresco otra vez.");
+				Console.WriteLine();
+				return;
+			}
+
+			Console.WriteLine($"   {"revision vigente",-24} : {api.ReadCurrentRevisionCode()}");
+			Console.WriteLine(
+				$"   {"publicada el",-24} : {Day(api.ReadCurrentRevisionPublishedAt())}");
+			Console.WriteLine();
+
+			TheFluid(api);
+			TheTyre(api);
+			TheFuel(api);
+			TheServiceInterval(api);
+			TheServicePrice(api);
+			TheServicingPolicy(api);
+
+			Console.WriteLine("   La garantia NO se imprime aca, y se dice en vez de omitirla en");
+			Console.WriteLine("   silencio: su lectura toma nueve hechos de ESTE vehiculo -- el sobre,");
+			Console.WriteLine("   la entrega, el odometro -- y esta caratula no tiene ninguno. Los que");
+			Console.WriteLine("   usa 'ficha' son del escenario que ella misma monta, y ponerlos aca");
+			Console.WriteLine("   seria afirmar hechos inventados sobre este carro.");
+			Console.WriteLine();
+			Console.WriteLine("   Los once comandos de publicacion los corrio la INGESTA, no un script");
+			Console.WriteLine("   nuestro: cada hecho de la ficha llego como su propia senal, con su");
+			Console.WriteLine("   propio numero de evento, y avanzo el punto de control en el mismo");
+			Console.WriteLine("   comando que lo aplico.");
+			Console.WriteLine();
 		}
 
 		private static void WhatTheRefreshLoopNeededAndWhetherTheDoorAnswersItNow()

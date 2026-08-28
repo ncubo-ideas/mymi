@@ -208,6 +208,41 @@ sealed class EventoDelConcesionario
 
     [JsonPropertyName("claim")]             public string Claim { get; init; } = "";
 
+    [JsonPropertyName("publishedAt")]        public DateTime PublishedAt { get; init; }
+    [JsonPropertyName("supersededByCode")]   public string SupersededByCode { get; init; } = "";
+
+    [JsonPropertyName("grade")]              public string Grade { get; init; } = "";
+    [JsonPropertyName("capacity")]           public decimal Capacity { get; init; }
+    [JsonPropertyName("capacityUnit")]       public string CapacityUnit { get; init; } = "";
+    [JsonPropertyName("intervalDistance")]   public int IntervalDistance { get; init; }
+    [JsonPropertyName("intervalUnit")]       public string IntervalUnit { get; init; } = "";
+    [JsonPropertyName("intervalDays")]       public int IntervalDays { get; init; }
+
+    [JsonPropertyName("position")]           public string Position { get; init; } = "";
+    [JsonPropertyName("size")]               public string Size { get; init; } = "";
+    [JsonPropertyName("coldPressure")]       public decimal ColdPressure { get; init; }
+    [JsonPropertyName("pressureUnit")]       public string PressureUnit { get; init; } = "";
+    [JsonPropertyName("ratings")]            public string Ratings { get; init; } = "";
+
+    [JsonPropertyName("standing")]           public string Standing { get; init; } = "";
+
+    [JsonPropertyName("milestoneDistance")]  public int MilestoneDistance { get; init; }
+    [JsonPropertyName("milestoneUnit")]      public string MilestoneUnit { get; init; } = "";
+    [JsonPropertyName("amount")]             public decimal Amount { get; init; }
+    [JsonPropertyName("currency")]           public string Currency { get; init; } = "";
+    [JsonPropertyName("validFrom")]          public DateTime ValidFrom { get; init; }
+    [JsonPropertyName("validUntil")]         public DateTime ValidUntil { get; init; }
+
+    [JsonPropertyName("systemCode")]         public string SystemCode { get; init; } = "";
+    [JsonPropertyName("ownLimitMonths")]     public int OwnLimitMonths { get; init; }
+    [JsonPropertyName("ownLimitDistance")]   public int OwnLimitDistance { get; init; }
+    [JsonPropertyName("ownLimitUnit")]       public string OwnLimitUnit { get; init; } = "";
+    [JsonPropertyName("exclusion")]          public string Exclusion { get; init; } = "";
+    [JsonPropertyName("condition")]          public string Condition { get; init; } = "";
+
+    [JsonPropertyName("rule")]               public string Rule { get; init; } = "";
+    [JsonPropertyName("whatPreservesCover")] public string WhatPreservesCover { get; init; } = "";
+
     internal string Resumen() => Tipo switch
     {
         "OdometerReported" => $"{Value} {Unit} observado el {ObservedAt:yyyy-MM-dd} ({Source})",
@@ -215,6 +250,25 @@ sealed class EventoDelConcesionario
         "OperationCompleted" => $"{Kind} hecho el {CompletedAt:yyyy-MM-dd} con {CompletionReading} {Unit}",
         "PlanOperationSeeded" => $"{Kind} {Basis} {TimeLimitDays}d/{DistanceLimit}{Unit}",
         "PlanRevisionAdopted" => $"revision {RevisionCode} del {AdoptedAt:yyyy-MM-dd}",
+
+        "SpecificationRevisionOpened" => $"abre {RevisionCode}, publicada el {PublishedAt:yyyy-MM-dd}",
+        "SpecificationRevisionSealed" => $"sella {RevisionCode}",
+        "SpecificationRevisionSuperseded" => $"{RevisionCode} sustituida por {SupersededByCode}",
+        "FluidSpecificationPublished" =>
+            $"{RevisionCode}: {Kind} grado {Grade}, {Capacity} {CapacityUnit}, cada {IntervalDistance} {IntervalUnit} o {IntervalDays} dias",
+        "TyreSpecificationPublished" =>
+            $"{RevisionCode}: llanta {Position} {Size}, {ColdPressure} {PressureUnit}, {Ratings}",
+        "FuelGradePublished" => $"{RevisionCode}: combustible {Grade} ({Standing})",
+        "ServiceIntervalPublished" =>
+            $"{RevisionCode}: {Kind} cada {IntervalDistance} {IntervalUnit} o {IntervalDays} dias",
+        "ServicePricePublished" =>
+            $"{RevisionCode}: {Kind} en {MilestoneDistance} {MilestoneUnit} cuesta {Amount} {Currency}, vigente {ValidFrom:yyyy-MM-dd} a {ValidUntil:yyyy-MM-dd}",
+        "CoveredSystemPublished" =>
+            $"{RevisionCode}: cubre '{SystemCode}', limites propios {OwnLimitMonths} meses / {OwnLimitDistance} {OwnLimitUnit}",
+        "CoverageExclusionPublished" =>
+            $"{RevisionCode}: excluye '{Exclusion}' de '{SystemCode}' cuando {Condition}",
+        "ServicingPolicyPublished" => $"{RevisionCode}: servicio en otro taller -- {Rule}",
+
         _ => Tipo,
     };
 }
@@ -232,6 +286,12 @@ sealed class AlmacenDeEventos
     {
         "OdometerReported", "ConditionThresholdCrossed", "OperationCompleted",
         "PlanOperationSeeded", "PlanRevisionAdopted",
+
+        "SpecificationRevisionOpened", "FluidSpecificationPublished",
+        "TyreSpecificationPublished", "FuelGradePublished", "ServiceIntervalPublished",
+        "ServicePricePublished", "CoveredSystemPublished", "CoverageExclusionPublished",
+        "ServicingPolicyPublished", "SpecificationRevisionSealed",
+        "SpecificationRevisionSuperseded",
     };
 
     private List<EventoDelConcesionario> Lista(string recurso, string id) =>
@@ -362,6 +422,34 @@ sealed class AlmacenDeEventos
                 AnchorUnit = Vacio(pedido.AnchorUnit) ? UnitA : pedido.AnchorUnit,
                 RevisionCode = pedido.RevisionCode ?? "",
                 AdoptedAt = pedido.AdoptedAt,
+                PublishedAt = pedido.PublishedAt,
+                SupersededByCode = pedido.SupersededByCode ?? "",
+                Grade = pedido.Grade ?? "",
+                Capacity = pedido.Capacity,
+                CapacityUnit = Vacio(pedido.CapacityUnit) ? UnitA : pedido.CapacityUnit,
+                IntervalDistance = pedido.IntervalDistance,
+                IntervalUnit = Vacio(pedido.IntervalUnit) ? UnitA : pedido.IntervalUnit,
+                IntervalDays = pedido.IntervalDays,
+                Position = pedido.Position ?? "",
+                Size = pedido.Size ?? "",
+                ColdPressure = pedido.ColdPressure,
+                PressureUnit = Vacio(pedido.PressureUnit) ? UnitA : pedido.PressureUnit,
+                Ratings = pedido.Ratings ?? "",
+                Standing = pedido.Standing ?? "",
+                MilestoneDistance = pedido.MilestoneDistance,
+                MilestoneUnit = Vacio(pedido.MilestoneUnit) ? UnitA : pedido.MilestoneUnit,
+                Amount = pedido.Amount,
+                Currency = pedido.Currency ?? "",
+                ValidFrom = pedido.ValidFrom,
+                ValidUntil = pedido.ValidUntil,
+                SystemCode = pedido.SystemCode ?? "",
+                OwnLimitMonths = pedido.OwnLimitMonths,
+                OwnLimitDistance = pedido.OwnLimitDistance,
+                OwnLimitUnit = Vacio(pedido.OwnLimitUnit) ? UnitA : pedido.OwnLimitUnit,
+                Exclusion = pedido.Exclusion ?? "",
+                Condition = pedido.Condition ?? "",
+                Rule = pedido.Rule ?? "",
+                WhatPreservesCover = pedido.WhatPreservesCover ?? "",
             };
 
             lista.Add(evento);
@@ -409,4 +497,39 @@ sealed class HechoAInyectar
 
     [JsonPropertyName("revisionCode")]      public string RevisionCode { get; set; }
     [JsonPropertyName("adoptedAt")]         public DateTime AdoptedAt { get; set; }
+
+    [JsonPropertyName("publishedAt")]        public DateTime PublishedAt { get; set; }
+    [JsonPropertyName("supersededByCode")]   public string SupersededByCode { get; set; }
+
+    [JsonPropertyName("grade")]              public string Grade { get; set; }
+    [JsonPropertyName("capacity")]           public decimal Capacity { get; set; }
+    [JsonPropertyName("capacityUnit")]       public string CapacityUnit { get; set; }
+    [JsonPropertyName("intervalDistance")]   public int IntervalDistance { get; set; }
+    [JsonPropertyName("intervalUnit")]       public string IntervalUnit { get; set; }
+    [JsonPropertyName("intervalDays")]       public int IntervalDays { get; set; }
+
+    [JsonPropertyName("position")]           public string Position { get; set; }
+    [JsonPropertyName("size")]               public string Size { get; set; }
+    [JsonPropertyName("coldPressure")]       public decimal ColdPressure { get; set; }
+    [JsonPropertyName("pressureUnit")]       public string PressureUnit { get; set; }
+    [JsonPropertyName("ratings")]            public string Ratings { get; set; }
+
+    [JsonPropertyName("standing")]           public string Standing { get; set; }
+
+    [JsonPropertyName("milestoneDistance")]  public int MilestoneDistance { get; set; }
+    [JsonPropertyName("milestoneUnit")]      public string MilestoneUnit { get; set; }
+    [JsonPropertyName("amount")]             public decimal Amount { get; set; }
+    [JsonPropertyName("currency")]           public string Currency { get; set; }
+    [JsonPropertyName("validFrom")]          public DateTime ValidFrom { get; set; }
+    [JsonPropertyName("validUntil")]         public DateTime ValidUntil { get; set; }
+
+    [JsonPropertyName("systemCode")]         public string SystemCode { get; set; }
+    [JsonPropertyName("ownLimitMonths")]     public int OwnLimitMonths { get; set; }
+    [JsonPropertyName("ownLimitDistance")]   public int OwnLimitDistance { get; set; }
+    [JsonPropertyName("ownLimitUnit")]       public string OwnLimitUnit { get; set; }
+    [JsonPropertyName("exclusion")]          public string Exclusion { get; set; }
+    [JsonPropertyName("condition")]          public string Condition { get; set; }
+
+    [JsonPropertyName("rule")]               public string Rule { get; set; }
+    [JsonPropertyName("whatPreservesCover")] public string WhatPreservesCover { get; set; }
 }
