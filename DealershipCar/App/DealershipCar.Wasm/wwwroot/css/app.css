@@ -125,6 +125,42 @@
     color: var(--mud-palette-text-secondary);
 }
 
+.sheet-head {
+    display: flex;
+    gap: 12px;
+    align-items: baseline;
+    justify-content: space-between;
+    margin-bottom: 8px;
+}
+
+.sheet-says {
+    max-width: 720px;
+    line-height: 1.5;
+}
+
+.grades {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+    flex-wrap: wrap;
+    margin-top: 10px;
+}
+
+.grades__label {
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--mud-palette-text-secondary);
+    min-width: 92px;
+}
+
+.exclusions {
+    margin: 0;
+    padding-left: 18px;
+    max-width: 720px;
+    line-height: 1.5;
+}
+
 .instrument {
     margin: 0;
     padding-left: 18px;

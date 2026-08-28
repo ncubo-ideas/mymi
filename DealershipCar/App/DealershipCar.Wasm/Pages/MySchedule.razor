@@ -276,7 +276,7 @@ else
                     <MudText Typo="Typo.overline" Class="muted">Next due</MudText>
                     <div class="verdict__line">
                         <MudIcon Icon="@Icons.Material.Rounded.Schedule" Color="Color.Warning" Size="Size.Large" />
-                        <MudText Typo="Typo.h5">@Spaced(nextDue)</MudText>
+                        <MudText Typo="Typo.h5">@AppState.Spaced(nextDue)</MudText>
                     </div>
                 </MudPaper>
             }
@@ -334,7 +334,7 @@ else
         </HeaderContent>
         <RowTemplate Context="kind">
             <MudTd DataLabel="Operation" id="@("row-" + kind)">
-                <span class="op-name">@Spaced(kind)</span>
+                <span class="op-name">@AppState.Spaced(kind)</span>
             </MudTd>
             <MudTd DataLabel="State">
                 <MudChip T="string" Size="Size.Small" Variant="Variant.Text"
@@ -350,6 +350,12 @@ else
             </MudTd>
         </RowTemplate>
     </MudTable>
+
+    @if (sheet is not null)
+    {
+        <MyVehicle Sheet="@sheet" />
+        <Warranty Sheet="@sheet" />
+    }
 
     @if (showInstrument)
     {
@@ -397,6 +403,8 @@ else
     private Dictionary<string, string> board = Empty();
     private Dictionary<string, string> reasons = Empty();
     private Dictionary<string, int> deferrals = NoDeferralsYet();
+
+    private WhatTheManufacturerPublished sheet;
 
     private string error = "";
     private string destinationProblem = "";
@@ -526,6 +534,8 @@ else
         reasons = why;
         deferrals = used;
 
+        sheet = state.ReadTheSpecification();
+
         (memfsFiles, memfsBytes) = state.MemfsState();
         permission = await state.CurrentPermissionAsync();
     }
@@ -551,19 +561,5 @@ else
         var start = new Dictionary<string, string>();
         foreach (string kind in AppState.TheNineKinds) start[kind] = value;
         return start;
-    }
-
-    private static string Spaced(string name)
-    {
-        if (name.Length == 0) return name;
-
-        var spaced = new System.Text.StringBuilder(name.Length + 4);
-        spaced.Append(name[0]);
-        for (int i = 1; i < name.Length; i++)
-        {
-            if (char.IsUpper(name[i])) spaced.Append(' ').Append(char.ToLowerInvariant(name[i]));
-            else spaced.Append(name[i]);
-        }
-        return spaced.ToString();
     }
 }

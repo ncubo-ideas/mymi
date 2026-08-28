@@ -322,6 +322,36 @@ namespace DealershipCar.Wasm
 			"Cost", "Timing", "SecondOpinion", "NotConvinced", "WillDoElsewhere"
 		};
 
+		public static readonly string[] TheSixFluidKinds =
+		{
+			"EngineOil", "BrakeFluid", "Coolant", "TransmissionFluid", "PowerSteeringFluid",
+			"WasherFluid"
+		};
+
+		public static readonly string[] TheThreeTyrePositions =
+		{
+			"Front", "Rear", "Spare"
+		};
+
+		/// <summary>
+		/// Un nombre del canon escrito como lo lee una persona: se separa en cada mayuscula y solo
+		/// la primera queda en alta. Es etiqueta, no identidad -- lo que cruza la puerta sigue
+		/// siendo el nombre tal cual.
+		/// </summary>
+		public static string Spaced(string name)
+		{
+			if (string.IsNullOrEmpty(name)) return name;
+
+			var spaced = new System.Text.StringBuilder(name.Length + 4);
+			spaced.Append(name[0]);
+			for (int i = 1; i < name.Length; i++)
+			{
+				if (char.IsUpper(name[i])) spaced.Append(' ').Append(char.ToLowerInvariant(name[i]));
+				else spaced.Append(name[i]);
+			}
+			return spaced.ToString();
+		}
+
 		public string ReadVin() { Require(); return api.ReadVin(); }
 
 		public string ReadDueState(string kind) { Require(); return api.ReadDueState(kind); }
@@ -349,6 +379,16 @@ namespace DealershipCar.Wasm
 		}
 
 		public long LastEventApplied() { Require(); return api.LastEventApplied(); }
+
+		/// <summary>
+		/// La ficha del fabricante entera, leida en un solo momento para que las dos secciones que
+		/// la muestran nombren la misma revision de la que salieron sus frases.
+		/// </summary>
+		public WhatTheManufacturerPublished ReadTheSpecification()
+		{
+			Require();
+			return WhatTheManufacturerPublished.ReadThrough(api);
+		}
 
 		public bool HasCredential() { Require(); return api.StoredToken().Length > 0; }
 

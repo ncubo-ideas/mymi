@@ -81,4 +81,22 @@
           CopyToOutputDirectory="PreserveNewest" />
   </ItemGroup>
 
+  <!-- Y EL MARKUP DE LAS DOS SECCIONES DE T10, tambien COMO DATO, por la misma razon que el csproj
+       de arriba: el chequeo obvio no alcanza. Un componente Blazor compilado no se puede inspeccionar
+       sin un banco de pruebas de componentes, y en este repo no hay ninguno; lo que si se puede leer
+       es el markup, y ahi estan las dos cosas que ninguna otra prueba ve — que la pagina de verdad
+       renderiza las secciones, y que las secciones no leen nada por su cuenta.
+
+       Va por GLOB y no archivo por archivo: una seccion nueva entra sola al barrido. Con una lista
+       escrita a mano, la tercera seccion que alguien agregue no la mira nadie. -->
+  <ItemGroup>
+    <None Include="..\..\App\DealershipCar.Wasm\Sections\*.razor"
+          LinkBase="SeccionesComoDato"
+          CopyToOutputDirectory="PreserveNewest" />
+
+    <None Include="..\..\App\DealershipCar.Wasm\Pages\MySchedule.razor"
+          Link="MySchedule.razor.dato"
+          CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
+
 </Project>
