@@ -30,7 +30,8 @@ builder.Services.AddMcpServer(options =>
 	options.ServerInstructions = Instructions(reader.Folder);
 })
 .WithStdioServerTransport()
-.WithTools<DealershipCarTools>();
+.WithTools<DealershipCarTools>()
+.WithTools<ModelSpecificationTools>();
 
 builder.Logging.ClearProviders();
 builder.Logging.AddConsole(o => o.LogToStandardErrorThreshold = LogLevel.Trace);
@@ -63,6 +64,27 @@ static string Instructions(string folder) => $"""
 	present it as one. Overdue means past the grace period, and that is the one worth raising.
 	An operation this vehicle never had scheduled reads NotDue as well, and its reason says so in
 	plain words; that is not a gap in the data, it is a car that does not have that part.
+
+	TWO KINDS OF QUESTION, TWO FAMILIES OF TOOL. review_my_maintenance, check_one_operation and
+	how_up_to_date_is_this answer where THIS VEHICLE stands. what_my_car_takes,
+	does_the_warranty_cover and what_the_service_costs answer what the MANUFACTURER PUBLISHED
+	about this model - the fluids, the tyres, the fuel, the warranty's scope, the price of a
+	service. Every published answer names the revision of the spec sheet it came from: say that
+	revision, because the manufacturer can publish a new one and an answer without a provenance is
+	a rumour. An item that is not published says so in words, and that is an answer - never fill
+	it from a similar model or a previous model year.
+
+	The warranty tool states SCOPE and never adjudicates a claim: whether a repair gets paid is
+	the manufacturer's to decide. It also cannot say whether this vehicle is still inside its
+	warranty - that needs the envelope, the delivery date and the odometer, and this record keeps
+	none of them. And "we were never told about that system" is not "the scope leaves it out":
+	they are different answers and collapsing them is how someone gets sent away from a repair
+	they were entitled to ask about.
+
+	If specificationKnown comes back false, this record was written by a version of their app
+	older than the manufacturer's spec sheet, so there is nothing published in it at all. Their
+	maintenance schedule is unaffected and complete. Ask them to open their app once; this server
+	cannot fix it, because fixing it would mean writing to their record.
 
 	Distances carry a unit and the schedule never converts between them. Say the value with its
 	unit, exactly as it comes.

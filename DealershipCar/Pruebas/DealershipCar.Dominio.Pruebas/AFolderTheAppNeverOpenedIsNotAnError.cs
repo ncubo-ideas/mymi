@@ -43,24 +43,45 @@ namespace DealershipCar.Dominio.Pruebas
 		public void EveryToolAnswersThatThereIsNoDataYetInsteadOfThrowing()
 		{
 			var tools = new DealershipCarTools(new JournalReader(folder, ""));
+			var sheet = new ModelSpecificationTools(new JournalReader(folder, ""));
 
 			MaintenanceReview review = tools.Review();
 			OperationStanding one = tools.CheckOne(MaintenanceOperation.FluidChange);
 			ReadingFreshness fresh = tools.HowUpToDate();
+			SpecificationSheet takes = sheet.WhatMyCarTakes();
+			WarrantyScope scope = sheet.DoesTheWarrantyCover("POWERTRAIN");
+			ServicePricing pricing =
+				sheet.WhatTheServiceCosts(MaintenanceOperation.FluidChange, 10000);
 
 			Assert.That(review.HasData, Is.False);
 			Assert.That(one.HasData, Is.False);
 			Assert.That(fresh.HasData, Is.False);
+			Assert.That(takes.HasData, Is.False);
+			Assert.That(scope.HasData, Is.False);
+			Assert.That(pricing.HasData, Is.False);
 
 			// Y LO DICE, en vez de devolver ceros mudos: un tablero en cero es indistinguible de un
 			// vehiculo al dia, que es la lectura equivocada mas cara que este servidor puede inducir.
 			Assert.That(review.Detail, Does.Contain("has not been opened"));
 			Assert.That(one.Detail, Does.Contain("has not been opened"));
 			Assert.That(fresh.Detail, Does.Contain("has not been opened"));
+			Assert.That(takes.Detail, Does.Contain("has not been opened"));
+			Assert.That(scope.Detail, Does.Contain("has not been opened"));
+			Assert.That(pricing.Detail, Does.Contain("has not been opened"));
 
-			// La clase que se pregunto vuelve igual, para que el asistente sepa de que estaba
-			// hablando aunque no haya datos.
+			// Y NINGUNA LISTA VACIA SE LEE COMO UNA RESPUESTA: sin datos no hay seis fluidos que
+			// contestaron que no, hay una carpeta que nadie abrio.
+			Assert.That(takes.Fluids, Is.Empty);
+			Assert.That(takes.Tyres, Is.Empty);
+			Assert.That(scope.CoveredSystems, Is.Empty);
+			Assert.That(pricing.Prices, Is.Empty);
+
+			// Lo que se pregunto vuelve igual, para que el asistente sepa de que estaba hablando
+			// aunque no haya datos.
 			Assert.That(one.Operation, Is.EqualTo("FluidChange"));
+			Assert.That(scope.System, Is.EqualTo("POWERTRAIN"));
+			Assert.That(pricing.Operation, Is.EqualTo("FluidChange"));
+			Assert.That(pricing.MilestoneAsked, Is.EqualTo(10000));
 		}
 
 		// LA PREGUNTA VA ANTES DE ABRIR EL ACTOR, Y ESTA ES LA MEDICION QUE LO OBLIGA. Start() sobre
@@ -116,10 +137,16 @@ namespace DealershipCar.Dominio.Pruebas
 				"La carpeta ya existe, asi que la primera guarda deja pasar.");
 
 			var tools = new DealershipCarTools(new JournalReader(folder, ""));
+			var sheet = new ModelSpecificationTools(new JournalReader(folder, ""));
 
 			Assert.That(tools.Review().HasData, Is.False);
 			Assert.That(tools.CheckOne(MaintenanceOperation.Inspection).HasData, Is.False);
 			Assert.That(tools.HowUpToDate().HasData, Is.False);
+			Assert.That(sheet.WhatMyCarTakes().HasData, Is.False);
+			Assert.That(sheet.DoesTheWarrantyCover("POWERTRAIN").HasData, Is.False);
+			Assert.That(
+				sheet.WhatTheServiceCosts(MaintenanceOperation.FluidChange, 10000).HasData,
+				Is.False);
 		}
 
 		// EL VEHICULO SE DESCUBRE DE LA CARPETA. Pedirle tambien el VIN al archivo de configuracion

@@ -177,23 +177,9 @@ namespace DealershipCar.Mcp.Tools
 
 		private string TheDetailWhen(bool theEventCheckpointIsKnown)
 		{
-			var says = new List<string>();
-
-			if (!theEventCheckpointIsKnown) says.Add(TheAppIsOlderThanTheLogbook);
-
-			string many = MoreThanOneVehicle();
-			if (many.Length > 0) says.Add(many);
-
-			return string.Join(" ", says);
-		}
-
-		private string MoreThanOneVehicle()
-		{
-			return reader.HowManyVehicles > 1
-				? $"There are {reader.HowManyVehicles} vehicles in this folder. This answer is about "
-					+ "the first one; say which VIN it is so the person can tell you if they meant "
-					+ "another."
-				: "";
+			return TheAssistantIsTold.EverythingWorthSaying(
+				theEventCheckpointIsKnown ? "" : TheAppIsOlderThanTheLogbook,
+				TheAssistantIsTold.MoreThanOneVehicle(reader));
 		}
 
 		private const string TheAppIsOlderThanTheLogbook =
@@ -202,10 +188,7 @@ namespace DealershipCar.Mcp.Tools
 			+ "maintenance schedule below is complete and current. Ask the person to open their app "
 			+ "once and it will start keeping that count; nothing is lost, and it is not an error.";
 
-		private const string TheAppHasNotBeenOpened =
-			"The app has not been opened on this machine yet, so there is nothing recorded in this "
-			+ "folder. Ask the person to open their DealershipCar app once; it is not an error, and "
-			+ "it is not something you or the dealership can fix from here.";
+		private const string TheAppHasNotBeenOpened = TheAssistantIsTold.TheAppHasNotBeenOpened;
 	}
 
 	internal sealed class OperationStanding
