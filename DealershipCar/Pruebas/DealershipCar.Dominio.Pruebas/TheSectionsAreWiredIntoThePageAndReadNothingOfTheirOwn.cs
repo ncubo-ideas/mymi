@@ -83,7 +83,7 @@ namespace DealershipCar.Dominio.Pruebas
 
 		private static string ThePageAsItIsWritten()
 		{
-			string path = Path.Combine(AppContext.BaseDirectory, "MySchedule.razor.dato");
+			string path = Path.Combine(AppContext.BaseDirectory, "MyCar.razor.dato");
 
 			Assert.That(File.Exists(path), Is.True,
 				"La pagina no llego al output. La prueba no puede pasar por no haber leido nada.");

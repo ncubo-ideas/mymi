@@ -94,8 +94,8 @@
           LinkBase="SeccionesComoDato"
           CopyToOutputDirectory="PreserveNewest" />
 
-    <None Include="..\..\App\DealershipCar.Wasm\Pages\MySchedule.razor"
-          Link="MySchedule.razor.dato"
+    <None Include="..\..\App\DealershipCar.Wasm\Pages\MyCar.razor"
+          Link="MyCar.razor.dato"
           CopyToOutputDirectory="PreserveNewest" />
   </ItemGroup>
 

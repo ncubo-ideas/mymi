@@ -1,94 +1,102 @@
-<div class="board-head mt-8" id="warranty">
-    <MudText Typo="Typo.h6">Warranty</MudText>
-    <MudText Typo="Typo.caption" HtmlTag="p" Class="muted" id="warranty-provenance">
-        The scope the manufacturer published for model <span class="mono">@Sheet.Model</span>.
-        It says what is inside the scope; it never says a repair will be paid for.
-    </MudText>
-</div>
+<MudExpansionPanels Elevation="0" Class="mb-6" id="warranty">
+    <MudExpansionPanel Dense="true">
+        <TitleContent>
+            <div class="section-head">
+                <MudText Typo="Typo.subtitle1" Class="section-head__name">Warranty</MudText>
+                <span class="mono muted" id="warranty-provenance">
+                    @(Sheet.Coverage.Published ? "scope · " + Provenance(Sheet.Coverage.Revision)
+                                               : "no scope published")
+                </span>
+            </div>
+        </TitleContent>
+        <ChildContent>
+            <MudText Typo="Typo.caption" HtmlTag="p" Class="muted mb-4" id="warranty-scope-note">
+                The scope the manufacturer published for model <span class="mono">@Sheet.Model</span>.
+                It says what is inside the scope; it never says a repair will be paid for.
+            </MudText>
 
-@if (!Sheet.Coverage.Published)
-{
-    <MudAlert Severity="Severity.Info" Variant="Variant.Outlined" Class="mb-4" id="no-scope">
-        @Sheet.Coverage.Says
-    </MudAlert>
-}
-else
-{
-    <MudPaper Elevation="0" Outlined="true" Class="pa-4 mb-4" id="warranty-scope">
-        <div class="sheet-head">
-            <MudText Typo="Typo.subtitle2">What the scope says</MudText>
-            <span class="mono muted">@Provenance(Sheet.Coverage.Revision)</span>
-        </div>
-
-        <MudText Typo="Typo.body2" Class="sheet-says" id="scope-says">@Sheet.Coverage.Says</MudText>
-
-        <div class="grades" id="covered-systems">
-            <span class="grades__label">Declared inside</span>
-            @if (Sheet.Coverage.CoveredSystems.Length == 0)
+            @if (!Sheet.Coverage.Published)
             {
-                <span class="muted">no system was published as being inside the scope</span>
+                <MudAlert Severity="Severity.Info" Variant="Variant.Outlined" Class="mb-4" id="no-scope">
+                    @Sheet.Coverage.Says
+                </MudAlert>
             }
             else
             {
-                @foreach (string system in Sheet.Coverage.CoveredSystems)
-                {
-                    <MudChip T="string" Size="Size.Small" Variant="Variant.Text" Color="Color.Info">
-                        @system
-                    </MudChip>
-                }
+                <div class="sheet-head">
+                    <MudText Typo="Typo.subtitle2">What the scope says</MudText>
+                    <span class="mono muted">@Provenance(Sheet.Coverage.Revision)</span>
+                </div>
+
+                <MudText Typo="Typo.body2" Class="sheet-says mb-2" id="scope-says">@Sheet.Coverage.Says</MudText>
+
+                <div class="grades" id="covered-systems">
+                    <span class="grades__label">Declared inside</span>
+                    @if (Sheet.Coverage.CoveredSystems.Length == 0)
+                    {
+                        <span class="muted">no system was published as being inside the scope</span>
+                    }
+                    else
+                    {
+                        @foreach (string system in Sheet.Coverage.CoveredSystems)
+                        {
+                            <MudChip T="string" Size="Size.Small" Variant="Variant.Text" Color="Color.Info">
+                                @system
+                            </MudChip>
+                        }
+                    }
+                </div>
+
+                <MudText Typo="Typo.caption" HtmlTag="p" Class="muted mt-2" id="silence-is-not-a-denial">
+                    @TheOwnerIsTold.ASystemThatIsNotListedWasNotRuledOut
+                </MudText>
+
+                <div class="mt-4" id="exclusions">
+                    <MudText Typo="Typo.subtitle2" Class="mb-1">What it leaves out</MudText>
+                    @if (Sheet.Coverage.Exclusions.Length == 0)
+                    {
+                        <MudText Typo="Typo.body2" Class="muted">
+                            No exclusion was published with this scope.
+                        </MudText>
+                    }
+                    else
+                    {
+                        <ul class="exclusions">
+                            @foreach (string exclusion in Sheet.Coverage.Exclusions)
+                            {
+                                <li>@exclusion</li>
+                            }
+                        </ul>
+                    }
+                </div>
+
+                <MudAlert Severity="Severity.Warning" Variant="Variant.Outlined" Class="mt-4"
+                          id="warranty-standing">
+                    <strong>Where your car stands is not here.</strong>
+                    <div class="mt-1">@TheOwnerIsTold.TheStandingIsNotInThisRecord</div>
+                </MudAlert>
             }
-        </div>
 
-        <MudText Typo="Typo.caption" HtmlTag="p" Class="muted mt-2" id="silence-is-not-a-denial">
-            @TheOwnerIsTold.ASystemThatIsNotListedWasNotRuledOut
-        </MudText>
+            <div class="sheet-head mt-6" id="servicing-rule">
+                <MudText Typo="Typo.subtitle2">Servicing elsewhere</MudText>
+                <span class="mono muted">@Provenance(Sheet.ServicingRule.Revision)</span>
+            </div>
 
-        <div class="mt-4" id="exclusions">
-            <MudText Typo="Typo.subtitle2" Class="mb-1">What it leaves out</MudText>
-            @if (Sheet.Coverage.Exclusions.Length == 0)
+            @if (Sheet.ServicingRule.Published)
             {
-                <MudText Typo="Typo.body2" Class="muted">
-                    No exclusion was published with this scope.
+                <MudText Typo="Typo.body2" Class="sheet-says" id="servicing-rule-unquotable">
+                    @TheOwnerIsTold.TheServicingRuleIsPublishedButNotQuotable
                 </MudText>
             }
             else
             {
-                <ul class="exclusions">
-                    @foreach (string exclusion in Sheet.Coverage.Exclusions)
-                    {
-                        <li>@exclusion</li>
-                    }
-                </ul>
+                <MudText Typo="Typo.body2" Class="sheet-says muted" id="servicing-rule-unpublished">
+                    @TheOwnerIsTold.NoServicingRuleWasPublished
+                </MudText>
             }
-        </div>
-    </MudPaper>
-
-    <MudAlert Severity="Severity.Warning" Variant="Variant.Outlined" Class="mb-4"
-              id="warranty-standing">
-        <strong>Where your car stands is not here.</strong>
-        <div class="mt-1">@TheOwnerIsTold.TheStandingIsNotInThisRecord</div>
-    </MudAlert>
-}
-
-<MudPaper Elevation="0" Outlined="true" Class="pa-4 mb-6" id="servicing-rule">
-    <div class="sheet-head">
-        <MudText Typo="Typo.subtitle2">Servicing elsewhere</MudText>
-        <span class="mono muted">@Provenance(Sheet.ServicingRule.Revision)</span>
-    </div>
-
-    @if (Sheet.ServicingRule.Published)
-    {
-        <MudText Typo="Typo.body2" Class="sheet-says" id="servicing-rule-unquotable">
-            @TheOwnerIsTold.TheServicingRuleIsPublishedButNotQuotable
-        </MudText>
-    }
-    else
-    {
-        <MudText Typo="Typo.body2" Class="sheet-says muted" id="servicing-rule-unpublished">
-            @TheOwnerIsTold.NoServicingRuleWasPublished
-        </MudText>
-    }
-</MudPaper>
+        </ChildContent>
+    </MudExpansionPanel>
+</MudExpansionPanels>
 
 @code {
     /// <summary>La ficha leida en un solo momento. La seccion no lee nada por su cuenta.</summary>

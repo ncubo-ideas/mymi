@@ -1,141 +1,233 @@
-<div class="board-head mt-8" id="my-vehicle">
-    <MudText Typo="Typo.h6">My vehicle</MudText>
-    <MudText Typo="Typo.caption" HtmlTag="p" Class="muted" id="my-vehicle-provenance">
-        What the manufacturer published for model <span class="mono">@Sheet.Model</span>.
-        @if (Sheet.HasASealedRevision)
-        {
-            <span>
-                The current sheet is revision <span class="mono">@Sheet.CurrentRevision</span>,
-                published @Sheet.CurrentRevisionPublishedAt. Each line below names the revision it
-                came from, which is not always this one.
-            </span>
-        }
-    </MudText>
-</div>
+<MudExpansionPanels Elevation="0" Class="mt-8 mb-3" id="my-vehicle">
+    <MudExpansionPanel Dense="true">
+        <TitleContent>
+            <div class="section-head">
+                <MudText Typo="Typo.subtitle1" Class="section-head__name">My vehicle</MudText>
+                <span class="mono muted" id="my-vehicle-provenance">
+                    @Sheet.Model@(Sheet.HasASealedRevision ? " · " + Sheet.CurrentRevision : "")
+                </span>
+            </div>
+        </TitleContent>
+        <ChildContent>
+            @{
+                RenderFragment<Line> Row = line =>
+                    @<div class="item" id="@(line.Anchor)">
+                        <div class="item__head">
+                            <span class="op-name">@line.Label</span>
+                            <span class="mono muted">@Provenance(line.Revision)</span>
+                        </div>
+                        <div class="@(line.Published ? "item__says" : "item__says muted")">@line.Says</div>
+                    </div>;
+            }
 
-@if (!Sheet.HasASealedRevision)
-{
-    <MudAlert Severity="Severity.Info" Variant="Variant.Outlined" Class="mb-4" id="nothing-published">
-        @TheOwnerIsTold.NothingHasBeenPublishedYet
-    </MudAlert>
-}
-else
-{
-    <MudTable T="PublishedFluid" Items="@Sheet.Fluids" Hover="true" Elevation="0" Outlined="true"
-              Breakpoint="Breakpoint.Sm" Class="board mb-6" id="fluids">
-        <ToolBarContent>
-            <MudText Typo="Typo.subtitle2">Fluids</MudText>
-        </ToolBarContent>
-        <HeaderContent>
-            <MudTh>Fluid</MudTh>
-            <MudTh>What it takes</MudTh>
-            <MudTh Style="width:130px">Revision</MudTh>
-        </HeaderContent>
-        <RowTemplate Context="fluid">
-            <MudTd DataLabel="Fluid" id="@("fluid-" + fluid.Kind)">
-                <span class="op-name">@AppState.Spaced(fluid.Kind)</span>
-            </MudTd>
-            <MudTd DataLabel="What it takes" Class="@Sentence(fluid.Published)">@fluid.Says</MudTd>
-            <MudTd DataLabel="Revision">
-                <span class="mono">@Provenance(fluid.Revision)</span>
-            </MudTd>
-        </RowTemplate>
-    </MudTable>
-
-    <MudTable T="PublishedTyre" Items="@Sheet.Tyres" Hover="true" Elevation="0" Outlined="true"
-              Breakpoint="Breakpoint.Sm" Class="board mb-6" id="tyres">
-        <ToolBarContent>
-            <MudText Typo="Typo.subtitle2">Tyres</MudText>
-        </ToolBarContent>
-        <HeaderContent>
-            <MudTh>Position</MudTh>
-            <MudTh>Size and cold pressure</MudTh>
-            <MudTh Style="width:130px">Revision</MudTh>
-        </HeaderContent>
-        <RowTemplate Context="tyre">
-            <MudTd DataLabel="Position" id="@("tyre-" + tyre.Position)">
-                <span class="op-name">@AppState.Spaced(tyre.Position)</span>
-            </MudTd>
-            <MudTd DataLabel="Size and cold pressure" Class="@Sentence(tyre.Published)">
-                @tyre.Says
-            </MudTd>
-            <MudTd DataLabel="Revision">
-                <span class="mono">@Provenance(tyre.Revision)</span>
-            </MudTd>
-        </RowTemplate>
-    </MudTable>
-
-    <MudPaper Elevation="0" Outlined="true" Class="pa-4 mb-6" id="fuel">
-        <div class="sheet-head">
-            <MudText Typo="Typo.subtitle2">Fuel</MudText>
-            <span class="mono muted">@Provenance(Sheet.Fuel.Revision)</span>
-        </div>
-
-        <MudText Typo="Typo.body2" Class="@Sentence(Sheet.Fuel.Published)" id="fuel-says">
-            @Sheet.Fuel.Says
-        </MudText>
-
-        @if (Sheet.Fuel.Published)
-        {
-            <div class="grades" id="fuel-prohibited">
-                <span class="grades__label">Never put in</span>
-                @if (Sheet.Fuel.ProhibitedGrades.Length == 0)
+            <MudText Typo="Typo.caption" HtmlTag="p" Class="muted mb-4" id="my-vehicle-scope">
+                What the manufacturer published for model <span class="mono">@Sheet.Model</span>.
+                @if (Sheet.HasASealedRevision)
                 {
-                    <span class="muted">nothing was published as prohibited</span>
+                    <span>
+                        The current sheet is revision <span class="mono">@Sheet.CurrentRevision</span>,
+                        published @Sheet.CurrentRevisionPublishedAt. Each line below names the revision
+                        it came from, which is not always this one.
+                    </span>
                 }
-                else
-                {
-                    @foreach (string grade in Sheet.Fuel.ProhibitedGrades)
+            </MudText>
+
+            @if (!Sheet.HasASealedRevision)
+            {
+                <MudAlert Severity="Severity.Info" Variant="Variant.Outlined" id="nothing-published">
+                    @TheOwnerIsTold.NothingHasBeenPublishedYet
+                </MudAlert>
+            }
+            else
+            {
+                <MudText Typo="Typo.subtitle2" Class="mb-1">Fluids</MudText>
+
+                <div class="board mb-2" id="fluids">
+                    @foreach (Line line in publishedFluids)
                     {
-                        <MudChip T="string" Size="Size.Small" Variant="Variant.Filled"
-                                 Color="Color.Error" Icon="@Icons.Material.Rounded.Block">
-                            @grade
-                        </MudChip>
+                        @Row(line)
                     }
-                }
-            </div>
+                </div>
 
-            <div class="grades" id="fuel-minimum">
-                <span class="grades__label">At least</span>
-                @if (Sheet.Fuel.MinimumGrade.Length == 0)
+                @if (unpublishedFluids.Count > 0)
                 {
-                    <span class="muted">no minimum grade was published</span>
+                    <MudExpansionPanels Elevation="0" Class="mb-6" id="fluids-unpublished">
+                        <MudExpansionPanel Dense="true"
+                                           Text="@Absences(unpublishedFluids.Count, Sheet.Fluids.Count, "fluids")">
+                            <div class="board">
+                                @foreach (Line line in unpublishedFluids)
+                                {
+                                    @Row(line)
+                                }
+                            </div>
+                        </MudExpansionPanel>
+                    </MudExpansionPanels>
                 }
-                else
-                {
-                    <MudChip T="string" Size="Size.Small" Variant="Variant.Text" Color="Color.Info">
-                        @Sheet.Fuel.MinimumGrade
-                    </MudChip>
-                }
-            </div>
 
-            <div class="grades" id="fuel-permitted">
-                <span class="grades__label">Also allowed</span>
-                @if (Sheet.Fuel.PermittedGrades.Length == 0)
-                {
-                    <span class="muted">nothing else was published as permitted</span>
-                }
-                else
-                {
-                    @foreach (string grade in Sheet.Fuel.PermittedGrades)
+                <MudText Typo="Typo.subtitle2" Class="mb-1">Tyres</MudText>
+
+                <div class="board mb-2" id="tyres">
+                    @foreach (Line line in publishedTyres)
                     {
-                        <MudChip T="string" Size="Size.Small" Variant="Variant.Text"
-                                 Color="Color.Default">
-                            @grade
-                        </MudChip>
+                        @Row(line)
                     }
+                </div>
+
+                @if (unpublishedTyres.Count > 0)
+                {
+                    <MudExpansionPanels Elevation="0" Class="mb-6" id="tyres-unpublished">
+                        <MudExpansionPanel Dense="true"
+                                           Text="@Absences(unpublishedTyres.Count, Sheet.Tyres.Count, "tyre positions")">
+                            <div class="board">
+                                @foreach (Line line in unpublishedTyres)
+                                {
+                                    @Row(line)
+                                }
+                            </div>
+                        </MudExpansionPanel>
+                    </MudExpansionPanels>
                 }
-            </div>
-        }
-    </MudPaper>
-}
+
+                <div class="sheet-head">
+                    <MudText Typo="Typo.subtitle2">Fuel</MudText>
+                    <span class="mono muted">@Provenance(Sheet.Fuel.Revision)</span>
+                </div>
+
+                <MudText Typo="Typo.body2" Class="@Sentence(Sheet.Fuel.Published)" id="fuel-says">
+                    @Sheet.Fuel.Says
+                </MudText>
+
+                @if (Sheet.Fuel.Published)
+                {
+                    <div class="grades" id="fuel-prohibited">
+                        <span class="grades__label">Never put in</span>
+                        @if (Sheet.Fuel.ProhibitedGrades.Length == 0)
+                        {
+                            <span class="muted">nothing was published as prohibited</span>
+                        }
+                        else
+                        {
+                            @foreach (string grade in Sheet.Fuel.ProhibitedGrades)
+                            {
+                                <MudChip T="string" Size="Size.Small" Variant="Variant.Filled"
+                                         Color="Color.Error" Icon="@Icons.Material.Rounded.Block">
+                                    @grade
+                                </MudChip>
+                            }
+                        }
+                    </div>
+
+                    <div class="grades" id="fuel-minimum">
+                        <span class="grades__label">At least</span>
+                        @if (Sheet.Fuel.MinimumGrade.Length == 0)
+                        {
+                            <span class="muted">no minimum grade was published</span>
+                        }
+                        else
+                        {
+                            <MudChip T="string" Size="Size.Small" Variant="Variant.Text" Color="Color.Info">
+                                @Sheet.Fuel.MinimumGrade
+                            </MudChip>
+                        }
+                    </div>
+
+                    <div class="grades" id="fuel-permitted">
+                        <span class="grades__label">Also allowed</span>
+                        @if (Sheet.Fuel.PermittedGrades.Length == 0)
+                        {
+                            <span class="muted">nothing else was published as permitted</span>
+                        }
+                        else
+                        {
+                            @foreach (string grade in Sheet.Fuel.PermittedGrades)
+                            {
+                                <MudChip T="string" Size="Size.Small" Variant="Variant.Text"
+                                         Color="Color.Default">
+                                    @grade
+                                </MudChip>
+                            }
+                        }
+                    </div>
+                }
+            }
+        </ChildContent>
+    </MudExpansionPanel>
+</MudExpansionPanels>
 
 @code {
     /// <summary>La ficha leida en un solo momento. La seccion no lee nada por su cuenta.</summary>
     [Parameter, EditorRequired]
     public WhatTheManufacturerPublished Sheet { get; set; }
 
+    /// <summary>
+    /// Un item de la ficha listo para pintar: su etiqueta, la frase que compuso el dominio y la
+    /// revision de la que salio. Existe para que fluidos y llantas se pinten con una sola forma;
+    /// no compone nada.
+    /// </summary>
+    private sealed class Line
+    {
+        public string Anchor { get; init; } = "";
+
+        public string Label { get; init; } = "";
+
+        public string Says { get; init; } = "";
+
+        public string Revision { get; init; } = "";
+
+        public bool Published { get; init; }
+    }
+
+    private List<Line> publishedFluids = new List<Line>();
+    private List<Line> unpublishedFluids = new List<Line>();
+    private List<Line> publishedTyres = new List<Line>();
+    private List<Line> unpublishedTyres = new List<Line>();
+
+    protected override void OnParametersSet()
+    {
+        var fluidsIn = new List<Line>();
+        var fluidsOut = new List<Line>();
+
+        foreach (PublishedFluid fluid in Sheet.Fluids)
+        {
+            var line = new Line
+            {
+                Anchor = "fluid-" + fluid.Kind,
+                Label = AppState.Spaced(fluid.Kind),
+                Says = fluid.Says,
+                Revision = fluid.Revision,
+                Published = fluid.Published,
+            };
+
+            if (fluid.Published) fluidsIn.Add(line); else fluidsOut.Add(line);
+        }
+
+        var tyresIn = new List<Line>();
+        var tyresOut = new List<Line>();
+
+        foreach (PublishedTyre tyre in Sheet.Tyres)
+        {
+            var line = new Line
+            {
+                Anchor = "tyre-" + tyre.Position,
+                Label = AppState.Spaced(tyre.Position),
+                Says = tyre.Says,
+                Revision = tyre.Revision,
+                Published = tyre.Published,
+            };
+
+            if (tyre.Published) tyresIn.Add(line); else tyresOut.Add(line);
+        }
+
+        publishedFluids = fluidsIn;
+        unpublishedFluids = fluidsOut;
+        publishedTyres = tyresIn;
+        unpublishedTyres = tyresOut;
+    }
+
     private static string Sentence(bool published) => published ? "sheet-says" : "sheet-says muted";
 
     private static string Provenance(string revision) => revision.Length > 0 ? revision : "--";
+
+    private static string Absences(int absent, int total, string subject) =>
+        $"{absent} of the {total} {subject} — not published for this model";
 }
