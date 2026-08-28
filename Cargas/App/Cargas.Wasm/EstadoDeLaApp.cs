@@ -361,6 +361,10 @@ public sealed class EstadoDeLaApp : IAsyncDisposable
 
 	public AutonomiaDelVehiculo Autonomia(string placa) { Exigir(); return api!.Autonomia(placa); }
 
+	// El "hoy" lo pone la caratula, como en Odometro(): el dominio no lee el reloj.
+	public ProximaCargaDelVehiculo ProximaCarga(string placa, DateTime hoy)
+	{ Exigir(); return api!.ProximaCarga(placa, hoy); }
+
 	public CompletitudDelVehiculo Completitud(string placa) { Exigir(); return api!.Completitud(placa); }
 
 	public IReadOnlyList<FaltanteEnLista> Faltantes(string placa) { Exigir(); return api!.Faltantes(placa); }

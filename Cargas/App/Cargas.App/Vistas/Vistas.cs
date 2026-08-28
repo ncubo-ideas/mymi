@@ -87,6 +87,28 @@ namespace Cargas.App.Vistas
 		public bool EsProyeccion { get; init; }
 	}
 
+	// EN CUANTOS DIAS VA A TENER QUE CARGAR. Se compone de dos derivaciones que ya
+	// existen -la autonomia del tanque lleno y la proyeccion del odometro-, y por eso
+	// vive ACA y no en una caratula: la calculaba el servidor MCP para su tool, y el
+	// tablero necesitaba la misma cifra. Dos derivaciones separadas es como la IA y la
+	// persona terminan diciendo numeros distintos del mismo carro.
+	//
+	// SIEMPRE es proyeccion, y ademas una aproximacion sobre otra: la ultima lectura de
+	// odometro no siempre coincide con la ultima carga llena.
+	public sealed class ProximaCargaDelVehiculo
+	{
+		public bool Hay { get; init; }
+		public int DiasEstimados { get; init; }
+		public decimal KilometrosRestantes { get; init; }
+		public decimal KilometrosDeTanqueLleno { get; init; }
+		public decimal KilometrosPorDia { get; init; }
+		public bool EsProyeccion { get; init; }
+
+		// La fraccion del tanque que queda, de 0 a 1: lo que mueve la aguja del medidor.
+		// Es derivada y no un dato: si no hay estimacion, no hay aguja que mover.
+		public decimal FraccionRestante { get; init; }
+	}
+
 	public sealed class CompletitudDelVehiculo
 	{
 		public int CargasConKilometraje { get; init; }

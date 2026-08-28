@@ -480,6 +480,46 @@ namespace Cargas.App
 		public AutonomiaDelVehiculo Autonomia(string placa) =>
 			ProyeccionDeVistas.Autonomia(AutonomiaEstimada(placa));
 
+		// EN CUANTOS DIAS VA A TENER QUE CARGAR. No hay un PerformQuery propio: es la
+		// COMPOSICION de dos consultas que ya existen, y por eso es un metodo de la App
+		// y no un verbo del dominio. Lo unico que agrega es la resta, y la resta no es
+		// una regla de negocio: es aritmetica sobre dos derivaciones ya juzgadas.
+		//
+		// HOY LO PONE EL LLAMADOR. El dominio no lee el reloj -si lo hiciera, el mismo
+		// journal reproducido manana daria otra respuesta-, asi que la caratula pasa su
+		// "hoy" igual que se lo pasa a Odometro().
+		//
+		// Estaba en la tool del MCP y se subio aca cuando el tablero pidio la misma
+		// cifra: dos derivaciones separadas es como la IA y la persona terminan diciendo
+		// numeros distintos del mismo carro.
+		public ProximaCargaDelVehiculo ProximaCarga(string placa, DateTime hoy)
+		{
+			ArgumentNullException.ThrowIfNullOrWhiteSpace(placa);
+
+			AutonomiaDelVehiculo autonomia = Autonomia(placa);
+			OdometroPropuesto proyeccion = Odometro(placa, hoy);
+			if (!autonomia.Hay || !proyeccion.Hay || proyeccion.KilometrosPorDia <= 0m
+				|| autonomia.Kilometros <= 0m)
+				return new ProximaCargaDelVehiculo();
+
+			// Lo recorrido desde la ultima lectura, proyectado con su promedio; lo que
+			// queda es la autonomia menos eso. Aproximacion declarada: la ultima lectura
+			// no siempre coincide con la ultima carga llena.
+			decimal recorridos = proyeccion.KilometrosPorDia * proyeccion.DiasDesdeLaUltimaLectura;
+			decimal restantes = Math.Max(0m, autonomia.Kilometros - recorridos);
+
+			return new ProximaCargaDelVehiculo
+			{
+				Hay = true,
+				DiasEstimados = (int)Math.Round(restantes / proyeccion.KilometrosPorDia),
+				KilometrosRestantes = Math.Round(restantes),
+				KilometrosDeTanqueLleno = Math.Round(autonomia.Kilometros),
+				KilometrosPorDia = Math.Round(proyeccion.KilometrosPorDia, 1),
+				EsProyeccion = true,
+				FraccionRestante = restantes / autonomia.Kilometros,
+			};
+		}
+
 		// Cuanto del aporte de Sonia ya esta: la linea discreta, nunca el reproche.
 		public string CompletitudDeDatos(string placa)
 		{

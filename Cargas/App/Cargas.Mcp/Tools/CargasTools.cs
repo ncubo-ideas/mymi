@@ -181,26 +181,23 @@ internal sealed class CargasTools
 			if (!ConocePlaca(api, placa))
 				return new ProximaCarga { HayDatos = true, HayVehiculo = false };
 
-			AutonomiaDelVehiculo autonomia = api.Autonomia(placa);
-			OdometroPropuesto proyeccion = api.Odometro(placa, hoy);
-			if (!autonomia.Hay || !proyeccion.Hay || proyeccion.KilometrosPorDia <= 0m)
+			// LA MISMA COMPOSICION QUE MIRA LA PERSONA. La resta vivia aca; se subio a
+			// CargasAPI cuando el tablero pidio la cifra, porque calcularla dos veces es
+			// como la IA y la persona terminan diciendo numeros distintos del mismo
+			// carro. Esta tool ya solo la viste de DTO.
+			ProximaCargaDelVehiculo proxima = api.ProximaCarga(placa, hoy);
+			if (!proxima.Hay)
 				return new ProximaCarga { HayDatos = true, HayVehiculo = true, HayEstimacion = false };
-
-			// Lo recorrido desde la ultima lectura, proyectado con su promedio; lo que
-			// queda es autonomia menos eso. Aproximacion declarada: la ultima lectura
-			// no siempre coincide con la ultima carga llena.
-			decimal recorridos = proyeccion.KilometrosPorDia * proyeccion.DiasDesdeLaUltimaLectura;
-			decimal restantes = Math.Max(0m, autonomia.Kilometros - recorridos);
 
 			return new ProximaCarga
 			{
 				HayDatos = true,
 				HayVehiculo = true,
 				HayEstimacion = true,
-				DiasEstimados = (int)Math.Round(restantes / proyeccion.KilometrosPorDia),
-				KilometrosRestantes = Math.Round(restantes),
-				KilometrosPorDia = Math.Round(proyeccion.KilometrosPorDia, 1),
-				EsProyeccion = true,
+				DiasEstimados = proxima.DiasEstimados,
+				KilometrosRestantes = proxima.KilometrosRestantes,
+				KilometrosPorDia = proxima.KilometrosPorDia,
+				EsProyeccion = proxima.EsProyeccion,
 			};
 		});
 	}
