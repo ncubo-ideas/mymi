@@ -109,17 +109,20 @@ internal sealed class ComprasTools
 		+ "concreto. Cada producto que entro trae el mes en que se lo vio por primera vez, en "
 		+ "formato aaaa-mm. Ojo: si hayConQueComparar viene en false NO hay cambio que reportar "
 		+ "-falta un lado de la comparacion- y es distinto de hayCambio en false, que significa "
-		+ "que la canasta viene igual. Este modulo dice QUE cambio y no si esta bien: el helado "
+		+ "que la canasta viene igual. El campo corte dice POR QUE MES se partio la historia: si no "
+		+ "pasaste fecha, es el que el dominio encontro, y conviene nombrarselo a la persona. Este modulo dice QUE cambio y no si esta bien: el helado "
 		+ "que pasa de mensual a semanal es un dato, no una falta.")]
 	public CambioDeLaCanasta Cambio(
-		[Description("La fecha de corte, en formato aaaa-mm-dd. Lo de antes se compara con lo de despues.")]
-		DateTime corte,
+		[Description("OPCIONAL, en formato aaaa-mm-dd. Omitilo y el dominio busca solo el mes del quiebre, que es lo normal; pasalo unicamente si la persona nombro una fecha suya.")]
+		DateTime corte = default,
 		[Description("Cuantas compras mirar de cada lado. Omitilo para usar el valor de la app (8).")]
 		int cuantasCompras = ComprasAPI.ComprasQueSeMiranParaLaFirma)
 	{
 		if (!lector.HayJournal) return new CambioDeLaCanasta();
 
-		return lector.Consultar(api => api.Cambio(corte, cuantasCompras));
+		// SIN FECHA, LA BUSCA EL DOMINIO, y el campo corte de la respuesta dice cual eligio.
+		return lector.Consultar(api =>
+			corte == default ? api.CambioDelQuiebre(cuantasCompras) : api.Cambio(corte, cuantasCompras));
 	}
 
 	[McpServerTool(Name = "cada_cuanto_compro", UseStructuredContent = true)]
@@ -152,12 +155,16 @@ internal sealed class ComprasTools
 		+ "esMasSeguido distingue lo que entro de lo que se fue apagando. Una lista vacia significa "
 		+ "que ningun producto cambio de ritmo, que es una respuesta y no una falla.")]
 	public IReadOnlyList<RitmoQueCambio> RitmosQueCambiaron(
-		[Description("La fecha de corte, en formato aaaa-mm-dd. Lo de antes se compara con lo de despues.")]
-		DateTime corte)
+		[Description("OPCIONAL, en formato aaaa-mm-dd. Omitilo y el dominio busca solo el mes del quiebre, que es lo normal; pasalo unicamente si la persona nombro una fecha suya.")]
+		DateTime corte = default)
 	{
 		if (!lector.HayJournal) return new List<RitmoQueCambio>();
 
-		return lector.Consultar(api => api.RitmosQueCambiaron(corte));
+		// SIN FECHA, LA BUSCA EL DOMINIO. Es lo correcto por defecto: quien pregunta -sobre
+		// todo una IA- no tiene forma de saber cuando cambio esta canasta, y una fecha
+		// adivinada devuelve "no cambio nada", que se lee como un hecho y no como un fallo.
+		return lector.Consultar(api =>
+			corte == default ? api.RitmosDelQuiebre() : api.RitmosQueCambiaron(corte));
 	}
 
 	[McpServerTool(Name = "mi_ritmo_de_super", UseStructuredContent = true)]

@@ -464,7 +464,7 @@ la trajo — evento 307 → 308, 7 → 8 compras — y los pasillos del mes camb
 | 3 | ~~Los iconos PNG de la PWA~~ **hecho**: `PaginaDeDescarga/generar-iconos.py` compone la guaria sobre `#2f6b3f` con la zona segura de un icono maskable |
 | 4 | ~~`Compras/Preguntas.md`~~ **escrito**, y Compras es el primer negocio del repo que lo tiene. Pero se escribió DESPUÉS del código, así que la auditoría de deriva del paso 8 casi no vale contra él: lo que sí desbloquea es la aprobación. **Catorce de sus dieciséis juicios están marcados como propuesta y nadie del negocio los ha visto** |
 | 5 | **Observable 6 de la Metodología**: los argumentos de las tools son `string` y deberían ser `enum`, para que la lista de valores válidos viva en el `inputSchema` (un contrato) y no en la prosa de la descripción. Aplica sobre todo a `consumo_de`, que acepta un departamento del conjunto cerrado **o** texto libre |
-| 6 | **Que el DOMINIO encuentre el mes del quiebre** en vez de recibirlo. La especificación pide *"el quiebre de enero"*, no *"el quiebre desde la fecha que le pases"*: hoy la carátula corta el 1 de enero del año corriente, así que si el cambio de una persona fue en setiembre, esta pantalla no lo encuentra |
+| 6 | ~~Que el DOMINIO encuentre el mes del quiebre~~ **hecho**: `Historial.CambioEncontrado` prueba la primera compra de cada mes y se queda con el corte donde más productos entran y salen. La carátula ya no elige una fecha, y las dos tarjetas del quiebre parten por la misma porque lo garantiza el dominio |
 | 7 | **Bootstrap**: la carátula lo mantiene con sus variables remapeadas a la paleta de La Guaria (`data-bs-theme` fuera, tema claro). Exámenes lo quitó del todo. Sacarlo es un paso aparte y no hace falta para que la app se reconozca; conviene decidirlo cuando el layout lo defina el boceto de escritorio |
 | 8 | **El `instalacion.json` es del Host**, no de este módulo (son dos autoridades: la institución declara qué ofrece, el Host decide cómo se lo ejecuta y qué carpeta le concede). Cuando el Host entre a master, quien lo opere debe crear `Modulos/compras/` con nuestro `manifiesto.json` y su propio `instalacion.json` apuntando a `Compras/App/Compras.Mcp/bin/.../Compras.Mcp.dll` y a la carpeta concedida — **la misma que se eligió en la app**, o el módulo reporta `hayDatos=false` |
 | 9 | **La lectura del consumo compara los extremos**, así que un valle en el medio no lo mueve. Exámenes resolvió lo análogo con dos lecturas — tendencia sobre la serie entera y velocidad sobre el tramo reciente. Conviene traer esa segunda lectura |
@@ -501,6 +501,29 @@ son cosméticos**: los años van en su propio bloque con **su propia escala**, p
 suma doce meses y en una escala compartida su barra deja las mensuales en nada; y cada
 año dice **cuántos meses tuvo compra**, que es lo que impide leer un año a medias (31
 unidades en ocho meses) como uno entero (48 en doce).
+
+### El mes del quiebre, y un error que se leía como un hecho
+
+La carátula cortaba el **1 de enero del año corriente** y funcionaba — pero **por
+suerte**: el guion de la demo quiebra en enero. A una persona que cambió en setiembre,
+esa pantalla le decía *"su canasta viene igual"*.
+
+Ese es el peor de los dos errores posibles. No dejaba un hueco visible: **daba una
+respuesta falsa**, y nadie va a ir a buscar lo que la app ya contestó.
+
+Ahora lo busca el dominio: prueba **la primera compra de cada mes** y se queda con el
+corte donde más productos entran y salen. Que el máximo caiga en el mes correcto no es
+casualidad del criterio — si la canasta cambió en enero y se quedó así, cortar en
+febrero deja lo nuevo de enero **de los dos lados** y la diferencia se achica.
+
+Los candidatos son **fechas de compra y no primeros de mes**, y eso salió de probarlo:
+con un historial que compra en julio y en setiembre y **nada en agosto**, cortar el 1 de
+agosto y el 1 de setiembre parten igual, empatan, y ganaba el más viejo — la app decía
+*"cambió desde 2026-08"*, un mes en el que la persona no pisó el súper.
+
+Contra los datos de la demo encuentra **2026-01** sola, o sea la misma lectura de antes.
+Y en el MCP el `corte` pasó a ser **opcional**: una IA no tiene cómo saber cuándo cambió
+esta canasta, y una fecha adivinada devuelve "no cambió nada".
 
 ### Dos preguntas para el equipo, no pendientes nuestros
 

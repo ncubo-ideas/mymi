@@ -140,6 +140,16 @@ namespace Compras.App.Vistas
 	// lectura de la portada, y sin veredicto: dice que paso, no si esta bien.
 	public sealed class CambioDeLaCanasta
 	{
+		/// <summary>
+		/// El mes por el que se partió el historial, como aaaa-mm. Vacío cuando no hay con
+		/// qué comparar.
+		/// </summary>
+		// NO ES MesDelCambio: aquel es el mes más viejo entre los productos que entraron -un
+		// hecho de los datos-, y éste es dónde se partió la historia para mirarlos. Desde que
+		// el dominio ENCUENTRA el corte, los dos suelen coincidir; cuando no, la diferencia
+		// dice que lo nuevo tardó en aparecer.
+		public string Corte { get; init; } = "";
+
 		/// <summary>Si los dos lados tienen compras. Sin eso no se afirma nada.</summary>
 		public bool HayConQueComparar { get; init; }
 

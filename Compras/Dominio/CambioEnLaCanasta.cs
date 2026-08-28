@@ -25,8 +25,36 @@ namespace Compras.Dominio
 		public FirmaDeLaCanasta FirmaAntes { get; private set; }
 		public FirmaDeLaCanasta FirmaDespues { get; private set; }
 
+		private readonly DateTime corte;
+
+		/// <summary>
+		/// La fecha por la que se partió el historial para comparar. Preguntar
+		/// HayConQueComparar primero.
+		/// </summary>
+		// NO ES LO MISMO QUE MesDelCambioExpresado, y conviene no confundirlos: el CORTE es
+		// donde se partio la historia -lo elige quien pregunta, o lo encuentra el dominio-;
+		// el MES DEL CAMBIO es el mes mas viejo entre los productos que entraron, o sea un
+		// hecho de los datos. Suelen caer juntos o pegados, y cuando no, la diferencia es
+		// informacion: quiere decir que lo nuevo tardo en aparecer despues del corte.
+		public DateTime Corte
+		{
+			get
+			{
+				if (!HayConQueComparar)
+					throw new InvalidOperationException(
+						"No hay dos lados que comparar, asi que no hubo corte que valga. "
+						+ "Preguntar HayConQueComparar primero.");
+
+				return corte;
+			}
+		}
+
+		/// <summary>El corte como aaaa-mm. Vacío cuando no hay con qué comparar: lectura total para el cable.</summary>
+		public string CorteExpresado =>
+			HayConQueComparar ? $"{corte.Year:0000}-{corte.Month:00}" : "";
+
 		internal CambioEnLaCanasta(FirmaDeLaCanasta antes, FirmaDeLaCanasta despues,
-			IReadOnlyDictionary<string, DateTime> primeraVezPorSku)
+			IReadOnlyDictionary<string, DateTime> primeraVezPorSku, DateTime corte)
 		{
 			ArgumentNullException.ThrowIfNull(antes);
 			ArgumentNullException.ThrowIfNull(despues);
@@ -34,6 +62,7 @@ namespace Compras.Dominio
 
 			FirmaAntes = antes;
 			FirmaDespues = despues;
+			this.corte = corte;
 
 			var eranHabituales = new Dictionary<string, ProductoHabitual>(StringComparer.OrdinalIgnoreCase);
 			foreach (ProductoHabitual habitual in antes.Habituales) eranHabituales[habitual.Sku] = habitual;

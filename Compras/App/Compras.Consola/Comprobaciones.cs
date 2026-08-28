@@ -65,6 +65,7 @@ namespace Compras.Consola
 			ElRitmoDeUnProductoCambia();
 			ElRitmoDelSuperTieneTresCaras();
 			LaConstanciaSeDiceEnPalabras();
+			ElDominioEncuentraElQuiebre();
 			LaSerieSeAgrupaPorAnio();
 			LaBusquedaEncuentraPorProducto();
 
@@ -1303,6 +1304,101 @@ namespace Compras.Consola
 			for (int i = 0; i <= 10; i++)
 				Igual($"  {i * 10}% tiene constancia", "True",
 					(Constancia.Para(i / 10m) != null).ToString());
+		}
+
+		// ---- el dominio ENCUENTRA el mes del quiebre ----
+		private static void ElDominioEncuentraElQuiebre()
+		{
+			Titulo("el dominio encuentra el mes del quiebre");
+
+			// UN GUION QUE QUIEBRA EN SETIEMBRE, a proposito: el de la demo quiebra en
+			// enero, y una caratula que corta el 1 de enero acertaba POR SUERTE. Si el
+			// buscador solo supiera encontrar eneros, este caso lo delata.
+			Historial cambio = QuiebreEnSetiembre();
+			CambioEnLaCanasta hallado = cambio.CambioEncontrado(4);
+			Igual("hay con que comparar", "True", hallado.HayConQueComparar.ToString());
+			Igual("  y hay cambio", "True", hallado.HayCambio.ToString());
+			Igual("  el corte que encontro es setiembre", "2026-09", hallado.CorteExpresado);
+			Igual("  entraron 2 productos", "2", hallado.Entraron.Count.ToString());
+			Igual("  y salieron 2", "2", hallado.Salieron.Count.ToString());
+
+			// LO QUE HACIA LA CARATULA: cortar el 1 de enero. Con este historial no
+			// encuentra el quiebre, y esa es exactamente la falla que esto arregla.
+			CambioEnLaCanasta porEnero = cambio.CambioDesde(new DateTime(2026, 1, 1), 4);
+			Igual("cortando el 1 de enero, como hacia la caratula: no hay cambio", "False",
+				porEnero.HayCambio.ToString());
+
+			// EL CORTE NO ES LO MISMO QUE EL MES DEL CAMBIO, y los dos se pueden leer.
+			Igual("el mes del cambio sale de los datos", "2026-09", hallado.MesDelCambioExpresado);
+
+			// UNA CANASTA QUE NO CAMBIA no inventa un quiebre.
+			Historial igual = SiempreLoMismo();
+			CambioEnLaCanasta sinQuiebre = igual.CambioEncontrado(4);
+			Igual("canasta que viene igual: no hay cambio", "False", sinQuiebre.HayCambio.ToString());
+			Igual("  y no expresa un corte", "", sinQuiebre.CorteExpresado);
+
+			// TOTAL: sin historia suficiente tampoco revienta, y lo dice distinto.
+			Historial corto = new Historial();
+			corto.Agregar(UnaCompra("T-1", new DateTime(2026, 1, 3),
+				("LECHE-1L", "Leche semidescremada 1L", 1, 950m, "LacteosYHuevos", 0)));
+			CambioEnLaCanasta sinHistoria = corto.CambioEncontrado(4);
+			Igual("una sola compra: no hay con que comparar", "False",
+				sinHistoria.HayConQueComparar.ToString());
+			Revienta("  y preguntarle el corte revienta", () => sinHistoria.Corte);
+
+			Igual("historial vacio: tampoco", "False",
+				new Historial().CambioEncontrado(4).HayConQueComparar.ToString());
+			Revienta("mirar cero compras revienta", () => new Historial().CambioEncontrado(0));
+		}
+
+		// Ocho compras: cuatro con una canasta y cuatro con otra, y el corte cae en
+		// setiembre. La leche sigue de los dos lados para que el cambio no sea "cambio todo".
+		private static Historial QuiebreEnSetiembre()
+		{
+			var historial = new Historial();
+			int numero = 1;
+
+			void Semana(DateTime cuando, params (string, string, string)[] productos)
+			{
+				var lineas = new (string, string, int, decimal, string, int)[productos.Length];
+				for (int i = 0; i < productos.Length; i++)
+					lineas[i] = (productos[i].Item1, productos[i].Item2, 1, 1000m, productos[i].Item3, 0);
+
+				historial.Agregar(UnaCompra($"T-{numero++}", cuando, lineas));
+			}
+
+			foreach (int dia in new[] { 4, 11, 18, 25 })
+				Semana(new DateTime(2026, 7, dia),
+					("LECHE-1L", "Leche semidescremada 1L", "LacteosYHuevos"),
+					("PAN-CUADRADO", "Pan cuadrado", "GranosYAbarrotes"),
+					("BROCOLI", "Brocoli unidad", "FrutasYVerduras"));
+
+			foreach (int dia in new[] { 5, 12, 19, 26 })
+				Semana(new DateTime(2026, 9, dia),
+					("LECHE-1L", "Leche semidescremada 1L", "LacteosYHuevos"),
+					("HELADO-1L", "Helado de vainilla 1L", "Azucarados"),
+					("SODA-2L", "Soda cola 2L", "Azucarados"));
+
+			return historial;
+		}
+
+		private static Historial SiempreLoMismo()
+		{
+			var historial = new Historial();
+			int numero = 1;
+
+			foreach (var cuando in new[]
+			{
+				new DateTime(2026, 6, 6), new DateTime(2026, 6, 20),
+				new DateTime(2026, 7, 4), new DateTime(2026, 7, 18),
+				new DateTime(2026, 8, 1), new DateTime(2026, 8, 15),
+				new DateTime(2026, 9, 5), new DateTime(2026, 9, 19),
+			})
+				historial.Agregar(UnaCompra($"T-{numero++}", cuando,
+					("LECHE-1L", "Leche semidescremada 1L", 1, 950m, "LacteosYHuevos", 0),
+					("PAN-CUADRADO", "Pan cuadrado", 1, 1200m, "GranosYAbarrotes", 0)));
+
+			return historial;
 		}
 
 		// ---- la serie tambien se lee por año ----

@@ -201,6 +201,7 @@ namespace Compras.App
 			{
 				HayConQueComparar = Booleano(cabecera, "hayConQueComparar"),
 				HayCambio = Booleano(cabecera, "hayCambio"),
+				Corte = Texto(cabecera, "corte"),
 				ParaSonia = Texto(cabecera, "paraSonia"),
 				Entraron = entraron,
 				Salieron = Habituales(raiz, "salio"),

@@ -440,6 +440,40 @@ namespace Compras.App
 			})
 			.PerformQuery();
 
+		// EL MISMO CAMBIO, PERO EL QUIEBRE LO ENCUENTRA EL DOMINIO. Es la que usa la portada.
+		//
+		// SE PROYECTA CorteExpresado Y NO Corte: la lectura tipada es GUARDADA -revienta
+		// cuando no hay dos lados que comparar- y en un print plano eso no blanquea la
+		// columna, mata la consulta entera. CorteExpresado es su pareja total y devuelve
+		// vacio, que es justo lo que la pantalla necesita para no dibujar nada.
+		public string CambioEncontrado(int cuantasCompras) =>
+			app.Using(@"
+				{
+					cambio = compras.CambioEncontrado(@cuantas);
+					print cambio.HayConQueComparar hayConQueComparar,
+						cambio.HayCambio hayCambio,
+						cambio.CorteExpresado corte,
+						cambio.ParaSonia paraSonia;
+					foreach (entro in cambio.Entraron) {
+						print entro.Sku sku,
+							entro.Descripcion descripcion,
+							entro.DesdeExpresado desde,
+							entro.ComprasEnQueAparece comprasEnQueAparece,
+							entro.Proporcion proporcion;
+					}
+					foreach (salio in cambio.Salieron) {
+						print salio.Sku sku,
+							salio.Descripcion descripcion,
+							salio.ComprasEnQueAparece comprasEnQueAparece,
+							salio.Proporcion proporcion;
+					}
+				}
+			")
+			.WithParameters(p => {
+				p["cuantas", typeof(int)] = cuantasCompras;
+			})
+			.PerformQuery();
+
 		// CADA CUANTO COMPRA UN PRODUCTO, antes y despues del corte. Es la lectura que la
 		// wiki pide por su nombre -"el helado paso de 1 vez al mes a casi todas las
 		// semanas"- y la tarjeta "un cambio en tu rutina" del diseño de la app.
@@ -529,6 +563,29 @@ namespace Compras.App
 			")
 			.WithParameters(p => {
 				p["corte", typeof(DateTime)] = corte;
+			})
+			.PerformQuery();
+
+		// LOS MISMOS RITMOS, contra el quiebre que encuentra el dominio. Las dos tarjetas de
+		// la portada cuentan EL MISMO quiebre desde angulos distintos -una dice QUE entro, la
+		// otra CADA CUANTO-, asi que tienen que partir por la misma fecha, y quien garantiza
+		// eso es el dominio y no la coincidencia de que la pantalla les pase lo mismo.
+		public string CambiosDeRitmoDelQuiebre(int cuantasCompras) =>
+			app.Using(@"
+				{
+					cambios = compras.CambiosDeRitmoDelQuiebre(@cuantas);
+					foreach (ritmo in cambios) {
+						print ritmo.Sku sku,
+							ritmo.Descripcion descripcion,
+							ritmo.AntesCompacto antes,
+							ritmo.AhoraCompacto ahora,
+							ritmo.EsMasSeguido esMasSeguido,
+							ritmo.ParaSonia paraSonia;
+					}
+				}
+			")
+			.WithParameters(p => {
+				p["cuantas", typeof(int)] = cuantasCompras;
 			})
 			.PerformQuery();
 
@@ -775,6 +832,14 @@ namespace Compras.App
 
 		public CambioDeLaCanasta Cambio(DateTime corte, int cuantasCompras = ComprasQueSeMiranParaLaFirma) =>
 			ProyeccionDeVistas.Cambio(CambioEnLaCanasta(corte, cuantasCompras));
+
+		// LAS DOS DEL QUIEBRE QUE ENCUENTRA EL DOMINIO. Son las que usa la portada; las
+		// que reciben el corte se quedan para quien quiera preguntar por una fecha suya.
+		public CambioDeLaCanasta CambioDelQuiebre(int cuantasCompras = ComprasQueSeMiranParaLaFirma) =>
+			ProyeccionDeVistas.Cambio(CambioEncontrado(cuantasCompras));
+
+		public IReadOnlyList<RitmoQueCambio> RitmosDelQuiebre(int cuantasCompras = ComprasQueSeMiranParaLaFirma) =>
+			ProyeccionDeVistas.RitmosQueCambiaron(CambiosDeRitmoDelQuiebre(cuantasCompras));
 
 		public Vistas.RitmoDeUnProducto Ritmo(string producto, DateTime corte) =>
 			ProyeccionDeVistas.Ritmo(RitmoDeUnProducto(producto, corte));
