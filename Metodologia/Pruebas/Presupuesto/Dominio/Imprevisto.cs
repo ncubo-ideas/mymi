@@ -19,11 +19,11 @@ namespace Presupuesto.Dominio
 	// Las dos mitades hacen cosas distintas: "no estaba presupuestado" da los CANDIDATOS, y
 	// la marca de la persona dice A QUE EVENTO pertenecen. La segunda es una AGRUPACION, no
 	// una clasificacion, y es la cuarta forma que toma el patron de marcar.
-	public sealed class Imprevisto
+	internal sealed class Imprevisto
 	{
 		private readonly List<Cargo> cargos = new List<Cargo>();
 
-		public Imprevisto(string quePaso, DateTime cuando)
+		internal Imprevisto(string quePaso, DateTime cuando)
 		{
 			if (string.IsNullOrWhiteSpace(quePaso))
 				throw new ArgumentException(
@@ -36,19 +36,19 @@ namespace Presupuesto.Dominio
 
 		// "Hospitalizacion de mama", "se quemo la refrigeradora". Lo escribe la persona: el
 		// dominio no tiene de donde sacarlo.
-		public string QuePaso { get; }
+		internal string QuePaso { get; }
 
-		public DateTime Cuando { get; }
+		internal DateTime Cuando { get; }
 
-		public IReadOnlyList<Cargo> Cargos => cargos;
+		internal IReadOnlyList<Cargo> Cargos => cargos;
 
-		public void LoCausoTambien(Cargo cargo)
+		internal void LoCausoTambien(Cargo cargo)
 		{
 			if (cargo == null) throw new ArgumentNullException(nameof(cargo));
 			cargos.Add(cargo);
 		}
 
-		public decimal Total
+		internal decimal Total
 		{
 			get
 			{
@@ -58,10 +58,10 @@ namespace Presupuesto.Dominio
 			}
 		}
 
-		public bool OcurrioEntre(DateTime desde, DateTime hasta) =>
+		internal bool OcurrioEntre(DateTime desde, DateTime hasta) =>
 			Cuando >= desde.Date && Cuando <= hasta.Date;
 
-		public string Lectura =>
+		internal string Lectura =>
 			cargos.Count == 1
 				? $"{QuePaso}: {Total}."
 				: $"{QuePaso}: {Total} en {cargos.Count} cargos.";

@@ -9,6 +9,14 @@ que faltó. Cada uno está marcado también en el código, en el lugar donde mue
 Regla que se siguió al toparse con cada uno: **tomar la decisión mínima —la que no inventa un
 juicio— y dejarla a la vista.** Nunca rellenar con algo plausible.
 
+> **Y ésa era la regla equivocada.** Un hueco no debería producir *una decisión con un comentario*:
+> debería producir **una pregunta para una persona**. Este archivo fue el artefacto correcto para un
+> experimento —medir si `Preguntas.md` alcanzaba— pero en trabajo real es una lista que nadie lee.
+>
+> De ahí salió el **bloque 5** de la entrevista: los huecos vuelven a quien sabe del negocio, en una
+> conversación corta después de la primera pasada de modelado. **El hueco 7 se cerró así, y en un solo
+> intercambio.**
+
 ---
 
 ## Los ocho
@@ -21,25 +29,47 @@ juicio— y dejarla a la vista.** Nunca rellenar con algo plausible.
 | **4** | **Para qué sirve el medio de pago.** Está listado como atributo y **ninguna de las cinco preguntas lo usa** | `Cargo.cs` | Se guarda, sin saber si es capacidad o ruido |
 | **5** | **Qué convierte a un gasto en "responsable"** del movimiento del total | `VarianciaDelMes.cs` | Se listan **todos** los que cambiaron, ordenados por monto absoluto |
 | **6** | **Cuánto vale un bien** | `Bien.cs` | Opcional. Sin valor se contesta en plata y **se dice** que el porcentaje no está disponible |
-| **7** | **Cómo se fija un presupuesto** | `Panorama.CargosQueNadieReconocio` | Se aproxima por "lo que ningún gasto recurrente reconoció", que **es otra cosa** |
+| **7** | ~~Cómo se fija un presupuesto~~ | `Panorama.CargosQueNadieReconocio` | ✅ **CERRADO.** No hay presupuesto declarado: *lo no presupuestado* **es** el imprevisto |
 | **8** | **Cuánto se puede reducir** de un gasto reducible | `MargenParaRecortar.cs` | Se pone sobre la mesa cuánto hay en cada estado, sin decir si alcanza |
 
 ---
 
 ## Los tres que más duelen
 
-### 7 · La app se llama Presupuesto y el archivo no define el presupuesto
+### 7 · ~~La app se llama Presupuesto y el archivo no define el presupuesto~~ · CERRADO
 
-Es el más grande y el más fácil de no ver. `Preguntas.md` usa la palabra *"presupuestado"* como si
-estuviera definida —el juicio 8 dice que un imprevisto es **lo no presupuestado**— y en ningún lado
-dice **quién fija un presupuesto, por categoría o total, por mes o por año**.
+Era el más grande, y se cerró **por borrado, no por relleno**: el concepto no faltaba, sobraba.
 
-Sin eso, *"lo no presupuestado"* sólo se puede aproximar por *"lo que ningún gasto recurrente
-reconoció"*, que no es lo mismo: un gasto conocido que este mes salió al doble **estaba**
-presupuestado y aun así se disparó.
+`Preguntas.md` usaba *"presupuestado"* como si estuviera definida —el juicio 8 dice que un imprevisto
+es **lo no presupuestado**— y no decía quién fija un presupuesto. Lo que faltaba era preguntarlo, y la
+respuesta fue:
 
-La entrevista nunca preguntó esto porque el bloque 2 va detrás de las **preguntas**, y "cómo se fija
-un presupuesto" es una **capacidad**. Cayó justo en el punto ciego del guion.
+> **Lo no presupuestado es lo mismo que un gasto imprevisto.**
+
+O sea que **no hay un presupuesto declarado**, y no hace falta. La definición no es circular porque
+las dos mitades las aportan cosas distintas:
+
+| | |
+|---|---|
+| **Los candidatos** se deducen | Un cargo que **ningún gasto recurrente conocido reclama** |
+| **El evento** lo marca la persona | *"Estos tres son la hospitalización"* |
+
+O sea que *"presupuestado"* acaba significando **"atribuible a un gasto recurrente conocido"**, que es
+una definición trabajable y que el modelo ya implementaba — sólo que describiéndose a sí mismo como
+una aproximación.
+
+> **Y una consecuencia que hay que dejar escrita**, porque es de las que alguien "arregla" en seis
+> meses sin preguntar: en esta app, **"presupuesto" significa el total observado, no un plan**. El
+> juicio 2 ya lo usaba así —*"el presupuesto mensual varió más de un 10 %"* es sobre lo que
+> efectivamente se gastó—. Quien lea la palabra esperando un plan declarado va a creer que falta algo.
+>
+> Declarar un presupuesto —*"quiero gastar máximo 200 mil en comida"*— es una app distinta, y ninguna
+> de las cinco preguntas la pidió. Agregarla sería modelar desde un diagrama en vez de desde las
+> preguntas.
+
+**Cómo apareció, y por qué importa para el método.** La entrevista no preguntó esto porque su bloque 2
+va detrás de las **preguntas**, y *"cómo se fija un presupuesto"* es **vocabulario**. Cayó en el punto
+ciego del guion — el mismo que dejó al dominio sin ningún tipo de ingreso. De ahí salió el **bloque 5**.
 
 ### 2 · El juicio 2 se rompe solo, y de una forma que nadie va a diagnosticar
 

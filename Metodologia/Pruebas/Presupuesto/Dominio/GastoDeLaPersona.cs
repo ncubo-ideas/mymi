@@ -15,31 +15,31 @@ namespace Presupuesto.Dominio
 	// La marca es un HECHO con procedencia Persona, no configuracion. Va al journal como
 	// comando, y por eso este dominio no la puede inventar cuando falta: cuando nadie marco,
 	// contesta PorDefinir, que es lo unico cierto.
-	public sealed class GastoDeLaPersona : GastoRecurrente
+	internal sealed class GastoDeLaPersona : GastoRecurrente
 	{
 		private readonly Periodicidad periodicidad;
 		private Reducibilidad reducibilidadMarcada;
 
-		public GastoDeLaPersona(string nombre, Periodicidad periodicidad) : base(nombre)
+		internal GastoDeLaPersona(string nombre, Periodicidad periodicidad) : base(nombre)
 		{
 			this.periodicidad = periodicidad ?? throw new ArgumentNullException(nameof(periodicidad));
 			reducibilidadMarcada = null;
 		}
 
-		public override Periodicidad Periodicidad => periodicidad;
+		internal override Periodicidad Periodicidad => periodicidad;
 
 		// Sin saber que clase de compromiso es, no hay como afirmar que sea critico. Decir
 		// "informativo" aca no es tibieza: es no inventar una urgencia que nadie declaro.
-		public override Severidad SeveridadSiFalta => Severidad.Informativo;
+		internal override Severidad SeveridadSiFalta => Severidad.Informativo;
 
 		// Mientras nadie marque, PorDefinir. Ese es el estado que la pregunta 3 necesita para
 		// poder decir "sobre esto otro necesito que me digas" en vez de subestimar en silencio.
-		public override Reducibilidad Reducibilidad =>
+		internal override Reducibilidad Reducibilidad =>
 			reducibilidadMarcada ?? Reducibilidad.PorDefinir;
 
 		// ------------------------------------------------------------ lo suyo
 
-		public void LaPersonaLoMarcoComo(Reducibilidad reducibilidad)
+		internal void LaPersonaLoMarcoComo(Reducibilidad reducibilidad)
 		{
 			if (reducibilidad == null) throw new ArgumentNullException(nameof(reducibilidad));
 			if (reducibilidad == Reducibilidad.PorDefinir)
@@ -50,6 +50,6 @@ namespace Presupuesto.Dominio
 			reducibilidadMarcada = reducibilidad;
 		}
 
-		public bool AlguienLoMarco => reducibilidadMarcada != null;
+		internal bool AlguienLoMarco => reducibilidadMarcada != null;
 	}
 }

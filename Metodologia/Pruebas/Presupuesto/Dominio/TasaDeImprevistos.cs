@@ -14,7 +14,7 @@ namespace Presupuesto.Dominio
 	// El dominio devuelve el HECHO -cuantos, cuanto, en cuanto tiempo, cuanto por mes- y no
 	// dice "aparta esto". Que la persona decida apartar mas o menos que su propio historial
 	// es una decision suya, y este dominio no da consejo financiero.
-	public sealed class TasaDeImprevistos
+	internal sealed class TasaDeImprevistos
 	{
 		internal TasaDeImprevistos(int cuantos, decimal total, decimal meses)
 		{
@@ -24,24 +24,24 @@ namespace Presupuesto.Dominio
 		}
 
 		// EVENTOS, no cargos.
-		public int Cuantos { get; }
+		internal int Cuantos { get; }
 
-		public decimal Total { get; }
+		internal decimal Total { get; }
 
-		public decimal Meses { get; }
+		internal decimal Meses { get; }
 
 		// Con un solo imprevisto en la historia no hay tasa: hay una anecdota. Dos es el
 		// minimo para hablar de con que frecuencia pasan las cosas, igual que dos mediciones
 		// son el minimo para hablar de tendencia.
-		public bool HayTasa => Cuantos >= 2 && Meses > 0;
+		internal bool HayTasa => Cuantos >= 2 && Meses > 0;
 
-		public decimal PorMes => HayTasa ? Total / Meses : 0m;
+		internal decimal PorMes => HayTasa ? Total / Meses : 0m;
 
 		// Cada cuantos meses ocurre uno. Sirve para decir "te pasa algo asi como cada ocho
 		// meses", que es mas facil de creer que un promedio mensual.
-		public decimal CadaCuantosMeses => HayTasa ? Meses / Cuantos : 0m;
+		internal decimal CadaCuantosMeses => HayTasa ? Meses / Cuantos : 0m;
 
-		public string Lectura
+		internal string Lectura
 		{
 			get
 			{

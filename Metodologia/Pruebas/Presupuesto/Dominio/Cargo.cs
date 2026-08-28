@@ -18,9 +18,9 @@ namespace Presupuesto.Dominio
 	// lo usa. Se guarda porque el archivo lo pide, pero sin saber si es capacidad o ruido: no
 	// hay juicio que lo mencione. Vale preguntarlo antes de que alguien construya una pantalla
 	// encima.
-	public sealed class Cargo
+	internal sealed class Cargo
 	{
-		public Cargo(DateTime fecha, decimal monto, string descripcionDelBanco,
+		internal Cargo(DateTime fecha, decimal monto, string descripcionDelBanco,
 			string medioDePago, Procedencia procedencia)
 		{
 			if (monto <= 0)
@@ -34,20 +34,20 @@ namespace Presupuesto.Dominio
 			Procedencia = procedencia ?? throw new ArgumentNullException(nameof(procedencia));
 		}
 
-		public DateTime Fecha { get; }
+		internal DateTime Fecha { get; }
 
-		public decimal Monto { get; }
+		internal decimal Monto { get; }
 
 		// El texto tal como lo mando el emisor. NO es la identidad del gasto: es la evidencia
 		// con la que se resuelve. Se guarda crudo porque cuando una marca falle, esto es lo
 		// que hay que mirar.
-		public string DescripcionDelBanco { get; }
+		internal string DescripcionDelBanco { get; }
 
-		public string MedioDePago { get; }
+		internal string MedioDePago { get; }
 
-		public Procedencia Procedencia { get; }
+		internal Procedencia Procedencia { get; }
 
-		public bool EstaEn(int ano, int mes) => Fecha.Year == ano && Fecha.Month == mes;
+		internal bool EstaEn(int ano, int mes) => Fecha.Year == ano && Fecha.Month == mes;
 
 		public override string ToString() => $"{Fecha:yyyy-MM-dd} {Monto}";
 	}

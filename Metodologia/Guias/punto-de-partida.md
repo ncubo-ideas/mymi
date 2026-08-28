@@ -67,6 +67,12 @@ Lo único que sí conviene traer:
 
 ## 3. La entrevista
 
+> Para tener abierta durante la sesión, sin el desarrollo: [hoja-de-la-entrevista.md](hoja-de-la-entrevista.md).
+
+**Cinco bloques, y el quinto no es del mismo día**: los cuatro primeros son la entrevista, y el
+quinto se hace **después de la primera pasada de modelado**. Ese corte no es logística — es que hasta
+que alguien no intenta construir la respuesta, no se ve qué falta para poder darla.
+
 Es una conversación, no un formulario. El orden importa —cada bloque se apoya en el anterior— pero
 **no es de una sola dirección**: es normal que el bloque 3 haga aparecer una pregunta que pertenecía
 al 2, o que el 4 obligue a revisar una respuesta del 1. Cuando pase, se vuelve y se corrige. Un
@@ -178,6 +184,76 @@ El caso canónico: el **precio del examen**. Es real, está en la factura, y no 
 Pero no sobra — **pertenece a otro dominio**, y en Presupuesto Personal es de los datos más
 relevantes. Va a la lista de candidatos a cruce, no a la basura.
 
+### Bloque 5 · La revisión, después de modelar
+
+**Una sola pasada nunca alcanza.** Modelar siempre destapa lo que la entrevista no preguntó — y no
+porque la entrevista esté mal hecha: es que hasta que alguien no intenta construir la respuesta, no se
+ve qué falta para poder darla.
+
+Va **después de la primera pasada de modelado**, y son quince minutos, no otra entrevista.
+
+> **La regla que gobierna este bloque, y es la que más fácil se rompe:**
+>
+> **La persona contesta sobre el negocio. Quién se vuelve una clase lo decide quien modela.**
+>
+> La prueba es literal: **¿podría contestarla alguien que nunca programó?** Si la pregunta contiene
+> *clase*, *tipo*, *entidad*, *dominio* o *sustantivo*, está mal formada.
+
+#### Por qué esto se rompe tan fácil
+
+Porque para este punto **quien modela ya sabe qué le falta**, y lo que le falta tiene forma de
+decisión de diseño. La tentación es preguntarla tal cual — *"¿el préstamo es una entidad?"*— y suena
+razonable de este lado del escritorio.
+
+| Mal formada | Bien formada |
+|---|---|
+| ¿Qué **clases** de ingreso hay y qué sabe cada una? | *Si te pregunto cuánto vas a recibir el mes que viene, **¿de qué estarías seguro y de qué no?** ¿Cuáles llegan solos y cuáles hay que salir a buscarlos?* |
+| ¿Es el préstamo una **cosa del dominio**, o alcanza con su cuota? | *¿Te preguntás alguna vez cuánto te falta para terminar de pagar algo? ¿Te importa cuánto llevás pagado de intereses?* |
+| ¿Lo que se aparta **es algo** con saldo, o sólo un número? | *Cuando te pasa un imprevisto, **¿de dónde sale la plata?*** |
+| ¿Quién **fija** el presupuesto, por categoría o total? | *Cuando decís que un gasto "no estaba presupuestado", **¿contra qué lo estás comparando?*** |
+
+Las de la derecha se contestan sin saber nada técnico, y **de sus respuestas se deduce lo mismo** —
+esa es la prueba de que la de la izquierda era innecesaria.
+
+#### Las tres cacerías
+
+**1 · Una palabra apareció en las preguntas y nadie la desarrolló.**
+
+Es la que más rinde, y se detecta mecánicamente: recorrer las preguntas y marcar cada sustantivo que
+no tiene nada detrás. En un dominio de presupuesto personal, *"el alquiler que recibo"* estaba en la
+pregunta 2 desde el primer día y **no había ningún tipo de ingreso en todo el modelo** — porque las
+preguntas dirigieron los juicios, y nadie preguntó por el vocabulario.
+
+> *¿Qué te preguntás sobre **X** que no te preguntás sobre **Y**?*
+
+Ésa es *"¿qué sabe esto que ninguna otra cosa sabe?"* dicho en idioma de negocio, y es la más
+productiva de la sesión.
+
+**2 · Al modelar hizo falta un dato que nadie mencionó.**
+
+> *¿De dónde sale…? ¿Eso viene en lo que te manda la institución, o lo sabés vos?*
+
+Hay un barrido barato que conviene hacer antes de preguntar: **mirar qué manda realmente la
+institución.** Un estado de cuenta bancario trae débitos **y créditos**; si el modelo sólo tiene
+gastos, le falta la mitad de lo que ya está entrando, y eso no requiere entrevistar a nadie para
+verlo.
+
+**3 · Se tomó un juicio por obvio.**
+
+Todo lo que quien modela decidió solo se **lee en voz alta como propuesta**, y se deja corregir:
+
+> *Dejamos que un cargo que no llega se avise a los tres días. ¿Te suena bien, o depende de cuál?*
+
+No preguntes *"¿cuál es el umbral?"*: nadie tiene un umbral en la cabeza. **Proponé uno y dejá que lo
+muevan** — corregir es mucho más fácil que inventar, y lo que corrijan es información.
+
+#### Y una advertencia sobre el entrevistado
+
+**Si contesta todo rápido y sin dudar, sospechá.** Una persona generosa contesta igual una pregunta
+mal formada — deduce qué le quisiste preguntar y responde a eso. El resultado es que **la pregunta
+mal formada parece funcionar**, y el defecto queda escondido hasta que le toque a alguien menos
+paciente.
+
 ---
 
 ## 4. Qué sale
@@ -209,10 +285,16 @@ El capítulo 4 desarrolla cómo se escribe cada parte, y trae el ejemplo trabaja
       apellido** de quién la tiene?
 - [ ] ¿Está escrito lo que se **descartó**, y por qué?
 - [ ] ¿Los candidatos a cruce quedaron anotados en vez de forzados adentro?
+- [ ] ¿**Cada palabra** que aparece en las preguntas tiene algo detrás? Es el que más se salta, y el
+      que dejó a un dominio de presupuesto **sin ningún tipo de ingreso** teniendo *"el alquiler que
+      recibo"* escrito en una de sus preguntas
 - [ ] ¿Lo leyó y lo aprobó quien conoce el negocio, sin necesidad de que nadie le tradujera nada?
 
 Ese último es el que de verdad cierra el paso. Si hizo falta explicarle el archivo a la persona que
 lo va a aprobar, el archivo está mal escrito.
+
+Y ninguno de estos cierra el **paso**, sólo la primera pasada: falta el bloque 5, que se hace cuando
+alguien ya intentó modelar con este archivo en la mano.
 
 ---
 

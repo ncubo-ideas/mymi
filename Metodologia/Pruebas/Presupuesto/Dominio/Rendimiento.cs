@@ -15,7 +15,7 @@ namespace Presupuesto.Dominio
 	//   - Contra una alternativa -un certificado, cripto- solo si la persona la declaro Y
 	//     ademas se sabe cuanto vale el bien. Si falta cualquiera de las dos, se dice que no
 	//     esta disponible en vez de inventar un porcentaje.
-	public sealed class Rendimiento
+	internal sealed class Rendimiento
 	{
 		private Rendimiento(Bien bien, DateTime desde, DateTime hasta, decimal ingresos,
 			decimal gastos, PuntoDeComparacion contra, decimal? porcentajeAnual,
@@ -31,31 +31,52 @@ namespace Presupuesto.Dominio
 			RendimientoDeLaAlternativa = rendimientoDeLaAlternativa;
 		}
 
-		public Bien Bien { get; }
-		public DateTime Desde { get; }
-		public DateTime Hasta { get; }
-		public decimal Ingresos { get; }
-		public decimal Gastos { get; }
-		public decimal Neto => Ingresos - Gastos;
-		public PuntoDeComparacion Contra { get; }
+		internal Bien Bien { get; }
+		internal DateTime Desde { get; }
+		internal DateTime Hasta { get; }
+		internal decimal Ingresos { get; }
+		internal decimal Gastos { get; }
+		internal decimal Neto => Ingresos - Gastos;
+		internal PuntoDeComparacion Contra { get; }
 
 		// null cuando no se sabe cuanto vale el bien. Ver HUECO 6 en Bien.
-		public decimal? PorcentajeAnual { get; }
+		internal decimal? PorcentajeAnual { get; }
 
-		public decimal? RendimientoDeLaAlternativa { get; }
+		internal decimal? RendimientoDeLaAlternativa { get; }
 
-		public bool SePuedeComparar => PorcentajeAnual.HasValue && RendimientoDeLaAlternativa.HasValue;
+		internal bool SePuedeComparar => PorcentajeAnual.HasValue && RendimientoDeLaAlternativa.HasValue;
+
+		// ------------------------------------------------------ lo que cruza el perform
+		//
+		// Los nullable NO cruzan como nullable: la superficie recibiria un hueco sin saber
+		// si es "cero" o "no se sabe". Por eso el bool viaja al lado del numero, y el
+		// numero es cero cuando el bool dice que no hay. Y el nombre del bien se aplana
+		// porque `rendimiento.Bien.Nombre` es un segundo nivel, y el print proyecta uno.
+		internal bool SeSabeElPorcentaje => PorcentajeAnual.HasValue;
+
+		internal decimal PorcentajeAnualODeCero => PorcentajeAnual ?? 0m;
+
+		internal decimal AlternativaODeCero => RendimientoDeLaAlternativa ?? 0m;
+
+		internal string NombreDelBien => Bien.Nombre;
+
+		internal string NombreDeLaComparacion => Contra.Nombre;
 
 		// El caso que la entrevista nombro primero: "para alguien podria ser rentable
 		// solamente con que le de para pagar los gastos". Se contesta sin saber cuanto vale
 		// el bien, y por eso vale la pena tenerlo aparte.
-		public bool SePagaSola => Neto >= 0;
+		internal bool SePagaSola => Neto >= 0;
 
-		public string Lectura
+		internal string Lectura
 		{
 			get
 			{
-				string tramo = $"entre {Desde:dd/MM/yyyy} y {Hasta:dd/MM/yyyy}";
+				// Duración, no fechas: el dominio no formatea un calendario. Las fechas
+				// viajan en Desde y Hasta, y quien las muestre decide cómo se escriben.
+				int meses = (int)Math.Round((Hasta - Desde).TotalDays / 30.44);
+				string tramo = meses >= 12 && meses % 12 == 0
+					? (meses == 12 ? "en un ano" : $"en {meses / 12} anos")
+					: $"en {meses} meses";
 				string plata = SePagaSola
 					? $"{Bien.Nombre} dejo {Neto} netos {tramo}"
 					: $"{Bien.Nombre} costo {-Neto} mas de lo que produjo {tramo}";
@@ -68,7 +89,7 @@ namespace Presupuesto.Dominio
 			}
 		}
 
-		public static Rendimiento De(Bien bien, DateTime desde, DateTime hasta, PuntoDeComparacion contra)
+		internal static Rendimiento De(Bien bien, DateTime desde, DateTime hasta, PuntoDeComparacion contra)
 		{
 			if (bien == null) throw new ArgumentNullException(nameof(bien));
 			if (contra == null) throw new ArgumentNullException(nameof(contra));
