@@ -16,8 +16,11 @@
 
 @if (Calculados().Count > 0)
 {
-    <svg class="chispa" viewBox="0 0 300 46" preserveAspectRatio="none"
-         role="img" aria-label="@Descripcion">
+    @* SIN preserveAspectRatio="none". Estirar el viewBox al ancho real deformaba lo
+       dibujado: el trazo de 2 px quedaba de grosor desigual y los puntos, que son
+       circulos, se renderizaban como elipses. Con el escalado uniforme -y height:auto en
+       el CSS- la chispa crece proporcional y no hay nada que corregir. *@
+    <svg class="chispa" viewBox="0 0 300 46" role="img" aria-label="@Descripcion">
         @if (Habitual > 0)
         {
             <line class="linea-base" x1="4" y1="@N(Y((double)Habitual))"

@@ -317,7 +317,10 @@ h1:focus, h1:focus-visible { outline: none; }
    esta curva era el héroe de la pantalla porque la serie ES la lectura; acá la lectura
    es el veredicto y la curva solo lo respalda, así que va chica y al pie de su cifra. */
 
-.chispa { display: block; width: 100%; height: 46px; }
+/* height:auto y no una altura fija: con el alto clavado el SVG tendria una proporcion
+   distinta a la de su viewBox y habria que estirarlo -o dejar franjas vacias-. Asi la
+   caja toma la proporcion del dibujo y el escalado es uniforme. */
+.chispa { display: block; width: 100%; height: auto; }
 .chispa .linea-base { stroke: var(--bisel-vivo); stroke-dasharray: 3 3; }
 .chispa .trazo { stroke: var(--cobre); fill: none; stroke-width: 2; stroke-linejoin: round; stroke-linecap: round; }
 .chispa .trazo--atencion { stroke: var(--ambar); }

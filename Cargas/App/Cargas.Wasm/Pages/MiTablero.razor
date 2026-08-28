@@ -241,18 +241,18 @@ else
                 <MedidorDeAutonomia Fraccion="proxima.FraccionRestante"
                                     Descripcion="@DescripcionDelMedidor()" />
                 <div class="cifra">
-                    ~@Valor(proxima.Hay ? proxima.KilometrosRestantes : autonomia.Kilometros)<span class="unidad">km</span>
+                    ~@Entero(proxima.Hay ? proxima.KilometrosRestantes : autonomia.Kilometros)<span class="unidad">km</span>
                 </div>
                 <div class="cifra-pie">
                     @if (proxima.Hay)
                     {
                         <text>lo que queda, estimado &middot; con el tanque lleno son
-                        <b>~@Valor(autonomia.Kilometros) km</b></text>
+                        <b>~@Entero(autonomia.Kilometros) km</b></text>
                     }
                     else
                     {
-                        <text>con el tanque lleno &middot; @Valor(autonomia.CapacidadEnLitros) L
-                        a <b>@Valor(autonomia.HabitualKmPorLitro) km/L</b></text>
+                        <text>con el tanque lleno &middot; @Cifra(autonomia.CapacidadEnLitros) L
+                        a <b>@Cifra(autonomia.HabitualKmPorLitro) km/L</b></text>
                     }
                 </div>
             }
@@ -278,7 +278,7 @@ else
             @if (rendimiento.Actual > 0)
             {
                 <div class="fila">
-                    <span class="cifra">@Valor(rendimiento.Actual)<span class="unidad">km/L</span></span>
+                    <span class="cifra">@Cifra(rendimiento.Actual)<span class="unidad">km/L</span></span>
                     @if (rendimiento.HaySerie && rendimiento.CambioPorcentual != 0)
                     {
                         @* La flecha y el signo son de la PRESENTACIÓN: en km/L más es
@@ -302,7 +302,7 @@ else
                 <div class="cifra-pie">
                     @if (rendimiento.Habitual > 0)
                     {
-                        <text>tu nivel de siempre: <b>@Valor(rendimiento.Habitual) km/L</b> &middot; </text>
+                        <text>tu nivel de siempre: <b>@Cifra(rendimiento.Habitual) km/L</b> &middot; </text>
                     }
                     sobre @rendimiento.TramosCalculados @(rendimiento.TramosCalculados == 1 ? "tramo" : "tramos")
                     entre tanques llenos@(rendimiento.TramosBloqueados > 0
@@ -328,8 +328,8 @@ else
                     en ~@proxima.DiasEstimados<span class="unidad">@(proxima.DiasEstimados == 1 ? "día" : "días")</span>
                 </div>
                 <div class="cifra-pie">
-                    estimado &middot; te quedan <b>~@Valor(proxima.KilometrosRestantes) km</b>
-                    y andás <b>@Valor(proxima.KilometrosPorDia) km</b> por día
+                    estimado &middot; te quedan <b>~@Entero(proxima.KilometrosRestantes) km</b>
+                    y andás <b>@Cifra(proxima.KilometrosPorDia) km</b> por día
                 </div>
             }
             else
@@ -339,35 +339,39 @@ else
             }
         </div>
 
-        @{
-            CostoEnLista? costo = costos.Count > 0 ? costos[0] : null;
-        }
-        <div class="instrumento @(costo is null ? "instrumento--apagado" : "")">
-            <span class="rotulo">Costo por kilómetro</span>
-            @if (costo is not null)
-            {
+        @* UN INSTRUMENTO POR MONEDA, y no el primero de la lista. El dominio reparte el
+           costo por moneda porque sumar colones con dólares no significa nada, y quedarse
+           con costos[0] escondía la otra sin decirlo: la pantalla se veía completa y
+           correcta, que es la peor forma de perder un dato. *@
+        @foreach (CostoEnLista costo in costos)
+        {
+            <div class="instrumento" @key="@($"costo-{costo.Moneda}-{redibujo}")">
+                <span class="rotulo">Costo por kilómetro</span>
                 <div class="cifra cifra--chica">
-                    @Simbolo(costo.Moneda)@Valor(costo.MontoPorKilometro)<span class="unidad">por km</span>
+                    @Simbolo(costo.Moneda)@Plata(costo.MontoPorKilometro)<span class="unidad">por km</span>
                 </div>
                 <div class="cifra-pie">
-                    sobre <b>@Valor(costo.Kilometros) km</b> con kilometraje anotado
+                    sobre <b>@Entero(costo.Kilometros) km</b> con kilometraje anotado
                 </div>
-            }
-            else
-            {
+            </div>
+        }
+        @if (costos.Count == 0)
+        {
+            <div class="instrumento instrumento--apagado">
+                <span class="rotulo">Costo por kilómetro</span>
                 <div class="cifra cifra--chica">—</div>
                 <div class="cifra-pie">Hace falta kilometraje anotado para repartir el gasto.</div>
-            }
-        </div>
+            </div>
+        }
 
         <div class="instrumento instrumento--medio @(propuesta.Hay ? "" : "instrumento--apagado")">
             <span class="rotulo">Odómetro</span>
             @if (propuesta.Hay)
             {
                 <TiraDeOdometro Kilometros="propuesta.Kilometros"
-                                Descripcion="@($"{Valor(propuesta.Kilometros)} kilómetros, estimado para hoy")" />
+                                Descripcion="@($"{Entero(propuesta.Kilometros)} kilómetros, estimado para hoy")" />
                 <div class="cifra-pie">
-                    hoy, estimado &middot; <b>@Valor(propuesta.KilometrosPorDia) km</b> por día
+                    hoy, estimado &middot; <b>@Cifra(propuesta.KilometrosPorDia) km</b> por día
                     desde tu última lectura, hace
                     <b>@propuesta.DiasDesdeLaUltimaLectura</b> @(propuesta.DiasDesdeLaUltimaLectura == 1 ? "día" : "días")
                 </div>
@@ -382,22 +386,26 @@ else
             }
         </div>
 
-        <div class="instrumento instrumento--medio @(gasto is null ? "instrumento--apagado" : "")">
-            <span class="rotulo">Gasto @(gasto is null ? "" : MesDelGasto())</span>
-            @if (gasto is not null)
-            {
-                <div class="cifra cifra--chica">@Simbolo(gasto.Moneda)@Valor(gasto.Monto)</div>
+        @* Mismo criterio que el costo: el gasto del período viene repartido por moneda. *@
+        @foreach (GastoEnLista gasto in gastos)
+        {
+            <div class="instrumento instrumento--medio" @key="@($"gasto-{gasto.Moneda}-{redibujo}")">
+                <span class="rotulo">Gasto @MesDelGasto()</span>
+                <div class="cifra cifra--chica">@Simbolo(gasto.Moneda)@Plata(gasto.Monto)</div>
                 <div class="cifra-pie">
                     <b>@gasto.Cargas</b> @(gasto.Cargas == 1 ? "carga" : "cargas") &middot;
-                    <b>@Valor(gasto.Litros) L</b>
+                    <b>@Cifra(gasto.Litros) L</b>
                 </div>
-            }
-            else
-            {
+            </div>
+        }
+        @if (gastos.Count == 0)
+        {
+            <div class="instrumento instrumento--medio instrumento--apagado">
+                <span class="rotulo">Gasto</span>
                 <div class="cifra cifra--chica">—</div>
                 <div class="cifra-pie">Todavía no entró ninguna carga.</div>
-            }
-        </div>
+            </div>
+        }
     </div>
 
     @* EL REFUERZO: al cerrar un tramo se muestra lo que se DESBLOQUEÓ, no una insignia.
@@ -450,10 +458,10 @@ else
                         </div>
 
                         <div class="parada-datos">
-                            <span><span class="n">@Valor(parada.Litros) L</span> de @parada.Tipo</span>
+                            <span><span class="n">@parada.Volumen</span> de @parada.Tipo</span>
                             <span>surtidor @parada.Surtidor</span>
-                            <span class="n">@Simbolo(parada.Moneda)@Valor(parada.Total)</span>
-                            <span class="n">@Simbolo(parada.Moneda)@Valor(parada.Precio)/L</span>
+                            <span class="n">@Simbolo(parada.Moneda)@Plata(parada.Total)</span>
+                            <span class="n">@Simbolo(parada.Moneda)@Plata(parada.Precio)/L</span>
                             @if (parada.TieneKilometraje)
                             {
                                 <span class="n">@parada.Kilometraje</span>
@@ -510,8 +518,8 @@ else
                                            meses. *@
                                         @if (propuesta.Hay && pendiente.Transaccion == transaccionConPropuesta)
                                         {
-                                            <span class="apunte crece">¿unos @Valor(propuesta.Kilometros) km?
-                                                Es lo que da tu promedio de @Valor(propuesta.KilometrosPorDia) km por día.</span>
+                                            <span class="apunte crece">¿unos @Entero(propuesta.Kilometros) km?
+                                                Es lo que da tu promedio de @Cifra(propuesta.KilometrosPorDia) km por día.</span>
                                         }
                                     </div>
                                 }
@@ -554,9 +562,9 @@ else
                             <div class="eslabon-riel"></div>
                             <div class="eslabon-cuerpo">
                                 <div class="trecho-cifras">
-                                    <span class="trecho-rinde">@Valor(tramo.Rendimiento)<span class="unidad">km/L</span></span>
-                                    <span class="trecho-dato">@Valor(tramo.Kilometros) km</span>
-                                    <span class="trecho-dato">@Valor(tramo.Litros) L</span>
+                                    <span class="trecho-rinde">@Cifra(tramo.Rendimiento)<span class="unidad">km/L</span></span>
+                                    <span class="trecho-dato">@Entero(tramo.Kilometros) km</span>
+                                    <span class="trecho-dato">@Cifra(tramo.Litros) L</span>
                                     <span>desde el @tramo.Desde.ToString("dd MMM", Cultura)</span>
                                     @if (tramo.EsSospechoso)
                                     {
@@ -570,7 +578,7 @@ else
                                        un promedio nacional: un trecho solo no significa
                                        nada, significa contra su propia línea base. *@
                                     <div class="trecho-barra" role="img"
-                                         aria-label="@Valor(tramo.Rendimiento) km/L contra tu nivel de siempre de @Valor(rendimiento.Habitual) km/L">
+                                         aria-label="@Cifra(tramo.Rendimiento) km/L contra tu nivel de siempre de @Cifra(rendimiento.Habitual) km/L">
                                         <span class="relleno" style="width:@Ancho(tramo.Rendimiento)%"></span>
                                         <span class="muesca" style="left:60%"></span>
                                     </div>
@@ -650,7 +658,7 @@ else
     private CompletitudDelVehiculo completitud = new();
     private OdometroPropuesto propuesta = new();
     private EstadoDeLealtad lealtad = new();
-    private GastoEnLista? gasto;
+    private IReadOnlyList<GastoEnLista> gastos = new List<GastoEnLista>();
     private DateTime mesDelGasto;
     private long ultimoEvento;
     private string error = "";
@@ -702,9 +710,9 @@ else
     }
 
     private string DescripcionDelMedidor() => proxima.Hay
-        ? $"Te quedan unos {Valor(proxima.KilometrosRestantes)} kilometros de los "
-          + $"{Valor(autonomia.Kilometros)} de un tanque lleno"
-        : $"Con el tanque lleno te alcanza para unos {Valor(autonomia.Kilometros)} kilometros";
+        ? $"Te quedan unos {Entero(proxima.KilometrosRestantes)} kilometros de los "
+          + $"{Entero(autonomia.Kilometros)} de un tanque lleno"
+        : $"Con el tanque lleno te alcanza para unos {Entero(autonomia.Kilometros)} kilometros";
 
     private string MesDelGasto() => mesDelGasto == default
         ? "" : "de " + mesDelGasto.ToString("MMMM", Cultura);
@@ -770,15 +778,31 @@ else
     // CON SEPARADOR DE MILES, y es del tablero: acá la cifra es el contenido, y "29392"
     // hay que contarlo con el dedo. El separador es un espacio fino -el mismo que ya usa
     // el dominio cuando expresa un kilometraje, "42 380 km"- y el decimal sigue siendo el
-    // punto, así que 12.6 km/L se sigue leyendo igual y no hay dos convenciones en la
-    // misma pantalla.
+    // punto, así que no hay dos convenciones en la misma pantalla.
     private static readonly NumberFormatInfo Miles = new NumberFormatInfo
     {
         NumberGroupSeparator = "\u202f",
         NumberDecimalSeparator = ".",
     };
 
-    private static string Valor(decimal medido) => medido.ToString("#,0.##", Miles);
+    // TRES FORMATOS, Y LOS TRES SON DEL DOMINIO. Había uno solo -"0.##" para todo- y eso
+    // ponía a la pantalla a contradecirse consigo misma: el instrumento decía «9.43 km/L»
+    // mientras la frase del dominio, tres centímetros más arriba, decía «el último tramo
+    // dio 9.4». La misma cifra con dos redondeos en la misma pantalla se lee como dos
+    // mediciones distintas.
+    //
+    // La precisión de cada magnitud ya estaba decidida, y no acá: Rendimiento.Expresado
+    // es "0.#", Dinero.Expresado es "0.##", y Tramo.Expresado da los kilómetros enteros.
+    // Estos tres son esos, con el separador de miles encima.
+
+    /// <summary>Una decimal: rendimiento, litros, ritmos. El formato de Rendimiento.</summary>
+    private static string Cifra(decimal medido) => medido.ToString("#,0.#", Miles);
+
+    /// <summary>Kilómetros. El dominio los expresa enteros y la pantalla también.</summary>
+    private static string Entero(decimal medido) => medido.ToString("#,0", Miles);
+
+    /// <summary>Dinero, dos decimales. El formato de Dinero.Expresado.</summary>
+    private static string Plata(decimal monto) => monto.ToString("#,0.##", Miles);
 
     // ------------------------------------------------------------------ el ciclo
 
@@ -869,8 +893,8 @@ else
 
         Releer();
         if (rendimiento.TramosCalculados > tramosAntes && rendimiento.Actual > 0)
-            desbloqueado = $"el rendimiento de ese tramo: {Valor(rendimiento.Actual)} km/L."
-                + (autonomia.Hay ? $" Y tu autonomía estimada: ~{Valor(autonomia.Kilometros)} km." : "");
+            desbloqueado = $"el rendimiento de ese tramo: {Cifra(rendimiento.Actual)} km/L."
+                + (autonomia.Hay ? $" Y tu autonomía estimada: ~{Entero(autonomia.Kilometros)} km." : "");
     });
 
     private Task ConfirmarTanque(string transaccion) => Intentar("confirmar el tanque", async () =>
@@ -961,7 +985,7 @@ else
             proxima = new ProximaCargaDelVehiculo();
             completitud = new CompletitudDelVehiculo();
             propuesta = new OdometroPropuesto();
-            gasto = null;
+            gastos = new List<GastoEnLista>();
             mesDelGasto = default;
             return;
         }
@@ -985,15 +1009,12 @@ else
         // corriente el instrumento aparece vacio en cuanto pasan treinta dias sin cargar,
         // y "0" no es la respuesta: la respuesta es cuanto llevaba gastado la ultima vez
         // que cargo.
-        gasto = null;
+        gastos = new List<GastoEnLista>();
         mesDelGasto = default;
         foreach (CargaEnLista carga in cargas)
             if (carga.Fecha > mesDelGasto) mesDelGasto = carga.Fecha;
         if (mesDelGasto != default)
-        {
-            IReadOnlyList<GastoEnLista> gastos = estado.Gastos(mesDelGasto.Year, mesDelGasto.Month);
-            if (gastos.Count > 0) gasto = gastos[0];
-        }
+            gastos = estado.Gastos(mesDelGasto.Year, mesDelGasto.Month);
 
         // LA PROYECCION SE PROPONE SOLO EN LA ULTIMA CARGA DE TODAS, y solo si es ella la
         // que espera kilometraje. La proyeccion es "cuanto marca el odometro HOY", asi
