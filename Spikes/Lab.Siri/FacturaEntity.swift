@@ -32,16 +32,20 @@ struct FacturaEntity: AppEntity, IndexedEntity {
 
     static let typeDisplayRepresentation: TypeDisplayRepresentation = "Factura"
 
-    // Defaults on every stored property so the memberwise-free `FacturaEntity()` init
-    // exists -- with @Property wrappers in play, that is the only way Facturas.swift can
-    // build one field by field.
+    // `FacturaEntity()` has to exist so Facturas.swift can build one field by field.
+    //
+    // The @Property ones carry NO default, and that is not a style choice: EntityProperty
+    // publishes no init(wrappedValue:) alongside indexingKey:, so `var comercio: String = ""`
+    // does not compile at all. Swift initialises the backing storage from the attribute's
+    // own arguments and leaves those properties out of the memberwise init -- which is
+    // exactly what we want, since whoever builds the invoice assigns them before use.
     var id: String = ""
 
     @Property(indexingKey: \.displayName)
-    var comercio: String = ""
+    var comercio: String
 
     @Property(indexingKey: \.contentDescription)
-    var detalle: String = ""
+    var detalle: String
 
     // Not indexed: Spotlight has no numeric attribute that means "amount", and forcing one
     // would be inventing meaning. The amount travels inside `detalle` as text, which is what

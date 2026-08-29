@@ -42,14 +42,27 @@ struct GnothiShortcuts: AppShortcutsProvider {
             systemImageName: "doc.text.magnifyingglass"
         )
 
-        // WITH A PARAMETER. Tests something the total cannot: whether Siri pulls a value out
-        // of the sentence and hands it to us. If this works, the assistant is not just
-        // matching a fixed string -- it is parsing.
+        // WHAT WE WANTED HERE, AND WHAT iOS ALLOWS. Worth writing down: it is a finding,
+        // not a detail.
+        //
+        // The intent below takes free text, and the plan was to interpolate it into the
+        // phrase -- "Buscá <texto> en Gnothi" -- to measure whether Siri pulls a value out of
+        // the sentence instead of just matching a fixed string.
+        //
+        // It does NOT compile: "AppEntity and AppEnum are the only allowed types for texto".
+        // A phrase can only carry a parameter drawn from a CLOSED set the app declares, so
+        // free text spoken into a phrase does not exist on iOS. That is a wall, not a mistake
+        // in how we wrote it, and it belongs in the report.
+        //
+        // The phrase therefore stays parameterless: it fires the intent and Siri then ASKS
+        // for the value. Measuring parsing would mean typing the parameter as FacturaEntity
+        // and letting FacturaQuery.entities(matching:) resolve it -- a different experiment,
+        // and one that overlaps the ceiling this spike already measures through the index.
         AppShortcut(
             intent: BuscarFacturasIntent(),
             phrases: [
-                "Buscá \(\.$texto) en \(.applicationName)",
-                "Buscar \(\.$texto) en mis facturas de \(.applicationName)"
+                "Buscá algo en mis facturas de \(.applicationName)",
+                "Buscar en las facturas de \(.applicationName)"
             ],
             shortTitle: "Buscar facturas",
             systemImageName: "magnifyingglass"
