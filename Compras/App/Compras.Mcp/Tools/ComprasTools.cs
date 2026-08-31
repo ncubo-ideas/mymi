@@ -289,6 +289,26 @@ internal sealed class ComprasTools
 		return lector.Consultar(api => api.Consumo(termino));
 	}
 
+	[McpServerTool(Name = "para_mi_proxima_compra", UseStructuredContent = true)]
+	[Description("LA LISTA DE LO QUE LE VA A FALTAR a la persona, armada con el RITMO de cada "
+		+ "producto: cada cuanto suele volver y cuanto hace que no entra. Del mas atrasado al que "
+		+ "menos falta. Usala para '¿que tengo que comprar?', '¿que me esta faltando?' o cuando "
+		+ "arme una lista antes de ir al super. Cada producto trae toca -si ya paso su tiempo-, "
+		+ "diasTipicos, diasDesdeLaUltima y diasDeMas, que es negativo cuando todavia no toca: "
+		+ "los que NO tocan tambien vienen, por si quiere adelantarse. NO ES que_dejaste_de_comprar: "
+		+ "aquella mira lo que salio de la rutina, y esta EXCLUYE justamente eso — un producto que "
+		+ "lleva mas de tres ciclos sin entrar ya no cuenta como falta, cuenta como abandonado. "
+		+ "IMPORTANTE: es una lista de lo probable, no de lo necesario. La persona puede tener el "
+		+ "producto en su casa y esta app no lo sabe, asi que presentala como una sugerencia para "
+		+ "confirmar y nunca como una orden. Con cuantosTocan en 0 viene al dia, y eso es una "
+		+ "respuesta.")]
+	public ListaDeLaProximaCompra ParaMiProximaCompra()
+	{
+		if (!lector.HayJournal) return new ListaDeLaProximaCompra();
+
+		return lector.Consultar(api => api.Lista(DateTime.Now));
+	}
+
 	[McpServerTool(Name = "en_cuales_compras", UseStructuredContent = true)]
 	[Description("EN CUALES COMPRAS aparecio un producto o un pasillo entero, de la mas reciente a "
 		+ "la mas vieja, con el NUMERO DE TICKET de cada una y cuanto de eso entro ahi. Acepta un "

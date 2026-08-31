@@ -402,6 +402,44 @@ namespace Compras.App.Vistas
 		public int MesesConCompras { get; init; }
 	}
 
+	// LO QUE VA A FALTAR EN LA PROXIMA COMPRA. Cada fila trae SU RAZON -cada cuanto vuelve y
+	// cuanto hace que no entra- porque sin eso una lista sugerida es la app diciendole a
+	// alguien lo que tiene que comprar.
+	public sealed class ListaDeLaProximaCompra
+	{
+		public bool Existe { get; init; }
+
+		/// <summary>Cuántos ya pasaron su tiempo. Cero cuando ninguno, y es verdad.</summary>
+		public int CuantosTocan { get; init; }
+
+		/// <summary>Todos los que tienen ritmo medido, del más atrasado al que menos falta.</summary>
+		public IReadOnlyList<ProductoPorCaer> Productos { get; init; } = new List<ProductoPorCaer>();
+
+		public string ParaSonia { get; init; } = "";
+	}
+
+	public sealed class ProductoPorCaer
+	{
+		public string Sku { get; init; } = "";
+		public string Descripcion { get; init; } = "";
+
+		/// <summary>"todas las semanas". Es lo que se pinta.</summary>
+		public string Cadencia { get; init; } = "";
+
+		/// <summary>"1 vez/semana", para cuando el espacio es poco.</summary>
+		public string CadenciaCompacta { get; init; } = "";
+
+		public int DiasTipicos { get; init; }
+		public string UltimaVez { get; init; } = "";
+		public int DiasDesdeLaUltima { get; init; }
+
+        /// <summary>Días de más desde que tocaba; negativo cuando todavía no toca.</summary>
+		public int DiasDeMas { get; init; }
+
+		public bool Toca { get; init; }
+		public string ParaSonia { get; init; } = "";
+	}
+
 	public sealed class ComprasHalladas
 	{
 		public string Buscado { get; init; } = "";

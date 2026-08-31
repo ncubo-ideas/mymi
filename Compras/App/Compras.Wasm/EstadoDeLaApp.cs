@@ -304,6 +304,12 @@ public sealed class EstadoDeLaApp : IAsyncDisposable
 	public ConsumoEnElTiempo ConsumoDe(string producto)
 	{ Exigir(); return api!.Consumo(producto); }
 
+	// LO QUE VA A FALTAR EN LA PROXIMA COMPRA. El "hoy" lo pone la caratula porque involucra
+	// el RELOJ, y el dominio no lo lee: si lo leyera, esta lectura daria distinto en cada
+	// replay del journal y dejaria de ser reproducible.
+	public ListaDeLaProximaCompra Lista()
+	{ Exigir(); return api!.Lista(DateTime.Now); }
+
 	// EN CUALES COMPRAS APARECIO ESTO. La busca el DOMINIO y no la pantalla: la pantalla
 	// solo tiene la lista de compras -numero, fecha, lineas, total-, sin las lineas, asi que
 	// filtrar aca obligaria a bajar el detalle de las 87 en cada tecla.

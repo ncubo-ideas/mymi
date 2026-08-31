@@ -66,6 +66,7 @@ namespace Compras.Consola
 			ElRitmoDelSuperTieneTresCaras();
 			LaConstanciaSeDiceEnPalabras();
 			ElDominioEncuentraElQuiebre();
+			LaListaDiceQueVaAFaltar();
 			LaSerieSeAgrupaPorAnio();
 			LaBusquedaEncuentraPorProducto();
 
@@ -1304,6 +1305,141 @@ namespace Compras.Consola
 			for (int i = 0; i <= 10; i++)
 				Igual($"  {i * 10}% tiene constancia", "True",
 					(Constancia.Para(i / 10m) != null).ToString());
+		}
+
+		// ---- lo que va a faltar en la proxima compra ----
+		private static void LaListaDiceQueVaAFaltar()
+		{
+			Titulo("la lista dice que va a faltar, y por que");
+
+			// UN GUION PROPIO con ritmos que se saben de memoria: la leche cada 7 dias, el
+			// arroz cada 30, y una olla que se compro UNA vez. Con el guion general los
+			// numeros habria que derivarlos, y una comprobacion cuyo esperado se calcula con
+			// la misma cuenta que el codigo no comprueba nada.
+			Historial ritmos = RitmosConocidos();
+
+			// A los 9 dias de la ultima compra: la leche lleva 9 sobre 7 -atrasada 2- y el
+			// arroz 9 sobre 30, que todavia no toca.
+			ListaParaLaProximaCompra lista = ritmos.LoQueVaAFaltar(new DateTime(2026, 3, 1));
+			Igual("hay lista", "True", lista.Existe().ToString());
+
+			// LA OLLA NO ENTRA: se compro una sola vez, asi que no tiene ritmo que medir.
+			Igual("solo entran los que tienen ritmo", "2", lista.Productos.Count.ToString());
+			Igual("  y la olla no esta", "False",
+				lista.Productos[0].Descripcion.Contains("Olla").ToString());
+
+			Igual("toca uno solo", "1", lista.CuantosTocan.ToString());
+			ProductoQueVaAFaltar leche = lista.LosQueTocan[0];
+			Igual("  y es la leche", "Leche semidescremada 1L", leche.Descripcion);
+			Igual("  suele volver cada 7 dias", "7", leche.DiasTipicos.ToString());
+			Igual("  y hace 9 que no entra", "9", leche.DiasDesdeLaUltima.ToString());
+			Igual("  o sea 2 de mas", "2", leche.DiasDeMas.ToString());
+			Igual("  dicho como habla la gente", "todas las semanas", leche.Cadencia.ParaMostrar);
+
+			// EL QUE NO TOCA DICE CUANTO FALTA, con el mismo numero y el signo al reves.
+			ProductoQueVaAFaltar arroz = lista.Productos[1];
+			Igual("el arroz no toca", "False", arroz.Toca.ToString());
+			Igual("  y le faltan 21 dias", "-21", arroz.DiasDeMas.ToString());
+			Igual("  su linea lo dice asi", "True", arroz.ParaSonia.Contains("faltan 21").ToString());
+
+			// LA LINEA DE LA LECHE TRAE SU RAZON, que es lo que la hace util: sin el porque,
+			// una lista sugerida es la app diciendole a alguien lo que tiene que comprar.
+			Igual("la linea del que toca trae el ritmo", "True",
+				leche.ParaSonia.Contains("todas las semanas").ToString());
+			Igual("  y cuanto hace", "True", leche.ParaSonia.Contains("9 días").ToString());
+			// Y NO ORDENA. "Compra leche" seria un imperativo sobre una canasta que esta app
+			// no ve entera: puede tener dos litros en la heladera.
+			foreach (string orden in new[] { "comprá", "compra ", "tenés que", "deberías" })
+				Igual($"  no dice '{orden.Trim()}'", "False",
+					leche.ParaSonia.Contains(orden, StringComparison.OrdinalIgnoreCase).ToString());
+
+			// A LOS 54 DIAS LOS DOS PRODUCTOS TOMARON CAMINOS DISTINTOS, y es justo el caso
+			// que separa las dos preguntas: la leche lleva casi ocho ciclos sin entrar -o sea
+			// que se dejo de comprar- y el arroz apenas uno y medio.
+			ListaParaLaProximaCompra despues = ritmos.LoQueVaAFaltar(new DateTime(2026, 4, 15));
+			Igual("a los 54 dias queda uno solo", "1", despues.Productos.Count.ToString());
+			Igual("  y es el arroz, que solo lleva ciclo y medio", "Arroz grano entero 2kg",
+				despues.Productos[0].Descripcion);
+			Igual("  atrasado 24 dias sobre sus 30", "24", despues.Productos[0].DiasDeMas.ToString());
+
+			// NINGUNO ATRASADO ES UNA RESPUESTA, no una lista vacia.
+			ListaParaLaProximaCompra alDia = ritmos.LoQueVaAFaltar(new DateTime(2026, 2, 21));
+			Igual("recien comprado: no toca nada", "0", alDia.CuantosTocan.ToString());
+			Igual("  y se dice que viene al dia", "True",
+				alDia.ParaSonia.Contains("no hay nada atrasado").ToString());
+
+			// LOS ANTOJOS ENTRAN, y es a proposito: esta lista la ABRE la persona, no la
+			// levanta la app sola. Sacarle el helado seria editarle la canasta.
+			Historial conHelado = ElGuion();
+			ListaParaLaProximaCompra delGuion = conHelado.LoQueVaAFaltar(new DateTime(2026, 9, 30));
+			bool hayAzucarado = false;
+			foreach (ProductoQueVaAFaltar p in delGuion.Productos)
+				if (p.Descripcion.Contains("Helado") || p.Descripcion.Contains("Soda")) hayAzucarado = true;
+			Igual("los azucarados entran en la lista que se pide", "True", hayAzucarado.ToString());
+
+			// LO ABANDONADO NO ES LO QUE FALTA. Sin este corte la lista encabezaba con
+			// productos de 266 dias sobre un ritmo mensual -nueve ciclos-, o sea cosas que
+			// la persona dejo de comprar. Esa es otra pregunta, y tiene su propia lectura.
+			//
+			// La leche vuelve cada 7: a los 21 dias sigue en la lista (tres ciclos justos) y
+			// a los 22 ya no.
+			ListaParaLaProximaCompra alBorde = ritmos.LoQueVaAFaltar(new DateTime(2026, 3, 13));
+			bool hayLecheAlBorde = false;
+            foreach (ProductoQueVaAFaltar p in alBorde.Productos)
+				if (p.Descripcion.Contains("Leche")) hayLecheAlBorde = true;
+			Igual("a los 21 dias -tres ciclos- la leche sigue en la lista", "True",
+				hayLecheAlBorde.ToString());
+
+			ListaParaLaProximaCompra pasado = ritmos.LoQueVaAFaltar(new DateTime(2026, 3, 14));
+			bool hayLecheDespues = false;
+			foreach (ProductoQueVaAFaltar p in pasado.Productos)
+				if (p.Descripcion.Contains("Leche")) hayLecheDespues = true;
+			Igual("a los 22 ya no: eso es 'lo dejaste', no 'te falta'", "False",
+				hayLecheDespues.ToString());
+
+			// Y EL CORTE ES POR CICLOS, NO POR DIAS: a esa misma fecha el arroz -que vuelve
+			// cada 30- lleva 22 dias y sigue, porque ni siquiera cumplio un ciclo.
+			bool hayArrozDespues = false;
+			foreach (ProductoQueVaAFaltar p in pasado.Productos)
+				if (p.Descripcion.Contains("Arroz")) hayArrozDespues = true;
+			Igual("  y el arroz con los mismos 22 dias sigue, porque su ciclo es de 30", "True",
+				hayArrozDespues.ToString());
+
+			// TOTAL: sin historia no revienta ni inventa.
+			Igual("historial vacio: no hay lista", "False",
+				new Historial().LoQueVaAFaltar(Hoy).Existe().ToString());
+			Igual("  y no tiene productos", "0",
+				new Historial().LoQueVaAFaltar(Hoy).Productos.Count.ToString());
+			Igual("  lo dice con palabras", "True",
+				new Historial().LoQueVaAFaltar(Hoy).ParaSonia.Contains("no hay compras suficientes").ToString());
+		}
+
+		// Leche cada 7 dias (4 compras), arroz cada 30 (3 compras), olla UNA vez. La ultima
+		// compra de todos es el 2026-02-20, asi que la aritmetica contra cualquier "hoy" se
+		// hace de cabeza.
+		private static Historial RitmosConocidos()
+		{
+			var historial = new Historial();
+			int numero = 1;
+
+			void Compra(DateTime cuando, params (string, string, int, decimal, string, int)[] lineas) =>
+				historial.Agregar(UnaCompra($"T-{numero++}", cuando, lineas));
+
+			var leche = ("LECHE-1L", "Leche semidescremada 1L", 1, 950m, "LacteosYHuevos", 0);
+			var arroz = ("ARROZ-2KG", "Arroz grano entero 2kg", 1, 2450m, "GranosYAbarrotes", 0);
+
+			// arroz: 22-dic, 21-ene, 20-feb  -> intervalos de 30 y 30
+			Compra(new DateTime(2025, 12, 22), arroz,
+				("OLLA-ARR-18", "Olla arrocera 1.8L", 1, 45900m, "Electrohogar", 12));
+			Compra(new DateTime(2026, 1, 21), arroz);
+
+			// leche: 30-ene, 6-feb, 13-feb, 20-feb -> intervalos de 7, 7 y 7
+			Compra(new DateTime(2026, 1, 30), leche);
+			Compra(new DateTime(2026, 2, 6), leche);
+			Compra(new DateTime(2026, 2, 13), leche);
+			Compra(new DateTime(2026, 2, 20), leche, arroz);
+
+			return historial;
 		}
 
 		// ---- el dominio ENCUENTRA el mes del quiebre ----

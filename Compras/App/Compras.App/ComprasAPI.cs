@@ -788,6 +788,38 @@ namespace Compras.App
 			.PerformQuery();
 		}
 
+		// LO QUE VA A FALTAR EN LA PROXIMA COMPRA. La cabecera y los productos salen en el
+		// mismo bloque: la cabecera como "lista" y cada producto como "producto".
+		//
+		// SE PROYECTAN TODOS y no solo los que tocan: el filtro es de la pantalla -que muestra
+		// los atrasados- y de la IA, que a veces quiere saber que esta por caer. Recortar aca
+		// obligaria a dos consultas para dos lecturas de la misma lista.
+		public string LoQueVaAFaltar(DateTime hoy) =>
+			app.Using(@"
+				{
+					lista = compras.LoQueVaAFaltar(@hoy);
+					print lista.Existe() existe,
+						lista.CuantosTocan cuantosTocan,
+						lista.ParaSonia paraSonia;
+					foreach (producto in lista.Productos) {
+						print producto.Sku sku,
+							producto.Descripcion descripcion,
+							producto.Cadencia.ParaMostrar cadencia,
+							producto.Cadencia.Compacta cadenciaCompacta,
+							producto.DiasTipicos diasTipicos,
+							producto.UltimaVezExpresada ultimaVez,
+							producto.DiasDesdeLaUltima diasDesdeLaUltima,
+							producto.DiasDeMas diasDeMas,
+							producto.Toca toca,
+							producto.ParaSonia paraSonia;
+					}
+				}
+			")
+			.WithParameters(p => {
+				p["hoy", typeof(DateTime)] = hoy;
+			})
+			.PerformQuery();
+
 		// LA consulta que mira el hueco: que dejo de entrar a la canasta. Una pantalla no
 		// puede renderizar una ausencia que nadie le paso.
 		public string AbastecimientosPendientesEl(DateTime fechaDeConsulta) =>
@@ -871,6 +903,9 @@ namespace Compras.App
 
 		public ComprasHalladas Halladas(string termino) =>
 			ProyeccionDeVistas.Halladas(ComprasCon(termino));
+
+		public ListaDeLaProximaCompra Lista(DateTime hoy) =>
+			ProyeccionDeVistas.LaProximaCompra(LoQueVaAFaltar(hoy));
 
 		public GarantiaDeProducto Garantia(string texto, DateTime fechaDeConsulta) =>
 			ProyeccionDeVistas.Garantia(GarantiaDe(texto, fechaDeConsulta));

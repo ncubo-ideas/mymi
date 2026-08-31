@@ -145,6 +145,13 @@
       "descripcion": "EN CUALES COMPRAS aparecio un producto o un pasillo entero, de la mas reciente a la mas vieja, con el NUMERO DE TICKET de cada una y cuanto de eso entro ahi. NO es consumo_de: aquella agrupa por mes y contesta 'cuanto y cuando'; esta devuelve los TICKETS, y su numero es lo que despues se le pasa a detalle_de_compra para ver la compra entera. Usala cuando la persona pregunte 'cuando compre esto', 'en que compra estaba' o quiera llegar a un recibo puntual. El campo productos dice que descripciones coincidieron: si trae mas de una, el texto alcanzo a varios productos y conviene decirselo antes de dar los totales. Con cuantasCompras en 0 no hay ninguna, y eso es una respuesta valida, no un error."
     },
     {
+      "nombre": "para_mi_proxima_compra",
+      "titulo": "Que tengo que comprar",
+      "soloLectura": true,
+      "entrada": [],
+      "descripcion": "LA LISTA DE LO QUE LE VA A FALTAR, armada con el RITMO de cada producto: cada cuanto suele volver y cuanto hace que no entra, del mas atrasado al que menos falta. Cada uno trae toca, diasTipicos, diasDesdeLaUltima y diasDeMas -negativo cuando todavia no toca-. No es que_dejaste_de_comprar: esta EXCLUYE lo abandonado, porque un producto con mas de tres ciclos sin entrar ya no es una falta sino un cambio de habito. Es una lista de lo PROBABLE y no de lo necesario: la persona puede tener el producto en su casa y la app no lo sabe, asi que se presenta como sugerencia para confirmar, nunca como una orden."
+    },
+    {
       "nombre": "que_dejaste_de_comprar",
       "titulo": "Que me esta faltando",
       "soloLectura": true,

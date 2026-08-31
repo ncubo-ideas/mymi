@@ -35,6 +35,7 @@ namespace Compras.Consola
 					case "garantia":  return GarantiaDe(args);
 					case "buscar":    return Buscar(args);
 					case "quiebre":   return Quiebre(args);
+					case "lista":     return Lista(args);
 					// Los dos que miran el hueco: lo que la pantalla no puede renderizar.
 					case "pendientes": return Pendientes(args);
 					case "porvencer":  return PorVencer(args);
@@ -400,6 +401,33 @@ namespace Compras.Consola
 			return 0;
 		}
 
+		// LO QUE VA A FALTAR EN LA PROXIMA COMPRA. Existe sobre todo para probar la CONSULTA
+		// contra datos de verdad: las comprobaciones del dominio no la tocan, y el print
+		// plano es donde se rompen estas cosas.
+		private static int Lista(string[] args)
+		{
+			string carpeta = Carpeta(args, 1);
+			DateTime hoy = FechaOpcional(args, 2, DateTime.Now);
+
+			ComprasApp app = Abrir(carpeta);
+			var api = new ComprasAPI(app);
+
+			ListaDeLaProximaCompra lista = api.Lista(hoy);
+			Console.WriteLine($"al {hoy:yyyy-MM-dd}: {lista.ParaSonia}");
+			Console.WriteLine();
+			foreach (ProductoPorCaer p in lista.Productos)
+				Console.WriteLine($"  {(p.Toca ? "TOCA" : "    ")}  {p.Descripcion,-32} "
+					+ $"{p.CadenciaCompacta,-16} hace {p.DiasDesdeLaUltima,3}d  "
+					+ $"({(p.DiasDeMas >= 0 ? "+" : "")}{p.DiasDeMas}d)");
+
+			Console.WriteLine();
+			Console.WriteLine("-- crudo (print, formatter JSON) --");
+			Console.WriteLine(api.LoQueVaAFaltar(hoy));
+
+			app.Actor.GracefulExit();
+			return 0;
+		}
+
 		// ---------------------------------------------------- lo que NO esta (el hueco)
 
 		private static int Pendientes(string[] args)
@@ -545,6 +573,7 @@ namespace Compras.Consola
 			Console.WriteLine("  garantia  [carpeta] [texto] [yyyy-MM-dd]        la garantia de un producto, con su respaldo");
 			Console.WriteLine("  buscar    [carpeta] [texto]                     en cuales compras aparecio un producto o un pasillo");
 			Console.WriteLine("  quiebre   [carpeta]                             el mes del quiebre que ENCUENTRA el dominio, contra el corte viejo");
+			Console.WriteLine("  lista     [carpeta] [yyyy-MM-dd]                lo que va a faltar en la proxima compra, y por que");
 			Console.WriteLine("  pendientes [carpeta] [yyyy-MM-dd]              LO QUE NO ESTA: que dejo de entrar a la canasta");
 			Console.WriteLine("  porvencer  [carpeta] [yyyy-MM-dd]              las garantias cuya ventana se esta cerrando");
 			Console.WriteLine("  refrescar [carpeta] [baseUrl] [recurso] [id]    trae eventos del supermercado y los aplica de a uno");

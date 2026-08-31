@@ -358,6 +358,42 @@ namespace Compras.App
 		// EN CUALES COMPRAS APARECIO ALGO. Tres print del mismo bloque: la cabecera sale
 		// como "busqueda", cada producto que coincidio como "nombre" y cada compra como
 		// "compra".
+		// LO QUE VA A FALTAR. La clave del arreglo es el nombre de la variable del foreach
+		// -"producto"-, no el alias del print.
+		internal static ListaDeLaProximaCompra LaProximaCompra(string json)
+		{
+			if (string.IsNullOrWhiteSpace(json)) return new ListaDeLaProximaCompra();
+
+			using JsonDocument documento = JsonDocument.Parse(json);
+			JsonElement raiz = documento.RootElement;
+			JsonElement cabecera = raiz.TryGetProperty("lista", out JsonElement c) ? c : raiz;
+
+			var productos = new List<ProductoPorCaer>();
+			if (raiz.TryGetProperty("producto", out JsonElement arreglo))
+				foreach (JsonElement elemento in Elementos(arreglo))
+					productos.Add(new ProductoPorCaer
+					{
+						Sku = Texto(elemento, "sku"),
+						Descripcion = Texto(elemento, "descripcion"),
+						Cadencia = Texto(elemento, "cadencia"),
+						CadenciaCompacta = Texto(elemento, "cadenciaCompacta"),
+						DiasTipicos = Entero(elemento, "diasTipicos"),
+						UltimaVez = Texto(elemento, "ultimaVez"),
+						DiasDesdeLaUltima = Entero(elemento, "diasDesdeLaUltima"),
+						DiasDeMas = Entero(elemento, "diasDeMas"),
+						Toca = Booleano(elemento, "toca"),
+						ParaSonia = Texto(elemento, "paraSonia"),
+					});
+
+			return new ListaDeLaProximaCompra
+			{
+				Existe = Booleano(cabecera, "existe"),
+				CuantosTocan = Entero(cabecera, "cuantosTocan"),
+				Productos = productos,
+				ParaSonia = Texto(cabecera, "paraSonia"),
+			};
+		}
+
 		internal static ComprasHalladas Halladas(string json)
 		{
 			if (string.IsNullOrWhiteSpace(json)) return new ComprasHalladas();

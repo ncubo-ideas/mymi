@@ -200,6 +200,48 @@ else
 
        Son los dos estados de la marca: VERDE lo estable, ÁMBAR lo que cambió. Rojo nunca
        —"un carrito no tiene urgencias"—. Y el ámbar no es un regaño: señala y se calla. *@
+    @* PARA LA PROXIMA COMPRA. Va PRIMERA porque es lo unico accionable de la portada: el
+       resto cuenta lo que ya paso, y esto dice que hacer hoy.
+
+       ES UN RESUMEN Y NO LA LISTA ENTERA, que es lo que el equipo pidio para la app: se
+       nombran unos pocos y se dice cuantos son. El detalle completo -cada producto con su
+       ritmo y sus dias- lo da la tool del MCP, que es donde el detalle no estorba. *@
+    @if (porCaer is not null && porCaer.CuantosTocan > 0)
+    {
+        <div class="card border-warning-subtle bg-warning-subtle mb-3">
+            <div class="card-body">
+                <div class="kicker text-warning-emphasis mb-2">Para tu próxima compra</div>
+                <div class="fs-5">
+                    @porCaer.CuantosTocan @(porCaer.CuantosTocan == 1 ? "cosa" : "cosas")
+                    de las que solés llevar ya pasaron su tiempo.
+                </div>
+
+                @* CADA UNA CON SU RAZON. Sin el "hace 9 días" es la app diciendote que
+                   compres leche; con él es un hecho tuyo que podés confirmar o descartar
+                   —podés tener dos litros en la heladera y esta app no lo sabe—. *@
+                <div class="por-caer mt-3">
+                    @foreach (var producto in Faltantes())
+                    {
+                        <span class="falta">
+                            <strong>@producto.Descripcion</strong>
+                            <span class="falta-razon">
+                                @producto.CadenciaCompacta &middot; hace @producto.DiasDesdeLaUltima d
+                            </span>
+                        </span>
+                    }
+                </div>
+
+                @if (porCaer.CuantosTocan > FaltantesQueSeMuestran)
+                {
+                    <div class="small text-body-secondary mt-2">
+                        Y @(porCaer.CuantosTocan - FaltantesQueSeMuestran) más.
+                        Tu asistente te puede dar la lista completa.
+                    </div>
+                }
+            </div>
+        </div>
+    }
+
     @if (firma is not null && firma.Existe)
     {
         <div class="card border-success-subtle bg-success-subtle mb-3">
@@ -593,6 +635,12 @@ else
 }
 
 @code {
+    // CUANTOS SE NOMBRAN EN LA PORTADA. La app resume; el MCP detalla. Con compras
+    // semanales el dia de ir al super "tocan" casi todos los habituales -medido: 16 de 22-,
+    // y una carta con dieciseis nombres deja de ser un resumen.
+    private const int FaltantesQueSeMuestran = 6;
+
+    private ListaDeLaProximaCompra? porCaer;
     private bool? soportado;
     private bool? opfs;
     private bool? instalada;
@@ -726,6 +774,7 @@ else
         comparacion = estado.ComparacionPorDefecto();
 
         // La portada: lo estable y lo que cambió.
+        porCaer = estado.Lista();
         firma = estado.Firma();
         cambio = estado.CambioDelUltimoAnio();
         ritmos = estado.RitmosQueCambiaron();
@@ -841,6 +890,28 @@ else
         habitual.EstaEnTodas
             ? "en todas"
             : $"en {habitual.ComprasEnQueAparece} de {habitual.DeCuantas}";
+
+    // LOS QUE SE PINTAN: solo los atrasados, y unos pocos. El dia de ir al super casi todos
+    // los habituales "tocan" -medido con los datos reales: 16 de 22-, y una carta con
+    // dieciseis nombres deja de ser el resumen que la app tiene que dar.
+    //
+    // Se corta en el PRIMERO QUE NO TOCA y no se filtra la lista entera: viene ordenada del
+    // mas atrasado al que menos falta, asi que despues del primero que no toca no hay
+    // ninguno que si.
+    private IReadOnlyList<ProductoPorCaer> Faltantes()
+    {
+        if (porCaer is null) return new List<ProductoPorCaer>();
+
+        var pocos = new List<ProductoPorCaer>();
+        foreach (ProductoPorCaer producto in porCaer.Productos)
+        {
+            if (!producto.Toca || pocos.Count == FaltantesQueSeMuestran) break;
+
+            pocos.Add(producto);
+        }
+
+        return pocos;
+    }
 
     private static string Colones(decimal monto) =>
         Plata.Colones(monto);   @* la regla vive en el dominio, no en cada pantalla *@
