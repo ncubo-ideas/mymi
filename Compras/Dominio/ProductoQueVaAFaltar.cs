@@ -69,7 +69,7 @@ namespace Compras.Dominio
 		// NO DICE "COMPRA LECHE". Dice cada cuanto vuelve y cuanto hace que no entra, y la
 		// decision es de quien lee: puede tener dos litros en la heladera y esta app no lo
 		// sabe. Una lista que ordena en vez de informar se equivoca seguido y molesta siempre.
-		public string ParaSonia =>
+		public string ParaElAsistente =>
 			Toca
 				? $"{Descripcion}: suele volver {Cadencia.ParaMostrar} y hace {DiasDesdeLaUltima} días que no entra"
 				: $"{Descripcion}: suele volver {Cadencia.ParaMostrar}, le faltan {-DiasDeMas} días";

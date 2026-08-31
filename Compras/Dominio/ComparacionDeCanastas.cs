@@ -102,7 +102,7 @@ namespace Compras.Dominio
 		/// La lectura en una linea, escrita por el dominio con SUS hechos: cuanto y de
 		/// donde. Lo que se haga con eso no lo decide un supermercado.
 		/// </summary>
-		public string ParaSonia
+		public string ParaElAsistente
 		{
 			get
 			{

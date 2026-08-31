@@ -78,7 +78,7 @@ namespace Compras.Dominio
 		public abstract bool Subio { get; }
 
 		/// <summary>La linea, escrita por el dominio con SUS hechos. Nunca un consejo.</summary>
-		public abstract string ParaSonia { get; }
+		public abstract string ParaElAsistente { get; }
 
 		// LO QUE LA FICHA DE UN PRODUCTO NECESITA, y que la serie por mes no contesta sola.
 		//
@@ -133,7 +133,7 @@ namespace Compras.Dominio
 				throw new InvalidOperationException(
 					$"No hay compras de «{Termino}»: no hay direccion que dar. Preguntar HayCambioReal antes.");
 
-			public override string ParaSonia =>
+			public override string ParaElAsistente =>
 				$"no hay compras de «{Termino}» en el historial";
 		}
 
@@ -284,7 +284,7 @@ namespace Compras.Dominio
 				}
 			}
 
-			public override string ParaSonia
+			public override string ParaElAsistente
 			{
 				get
 				{

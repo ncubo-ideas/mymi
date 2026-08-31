@@ -121,7 +121,7 @@ namespace Compras.Dominio
 		}
 
 		/// <summary>La línea de la portada. Dice qué pasó y se calla: el juicio no es del súper.</summary>
-		public string ParaSonia
+		public string ParaElAsistente
 		{
 			get
 			{

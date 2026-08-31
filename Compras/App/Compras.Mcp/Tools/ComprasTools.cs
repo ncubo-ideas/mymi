@@ -90,7 +90,7 @@ internal sealed class ComprasTools
 		+ "compras, porque dice de que esta hecha su rutina. Un producto entra si aparece en al "
 		+ "menos la MITAD de las compras miradas, y cada uno trae en cuantas de cuantas aparece; "
 		+ "estaEnTodas marca los que no fallaron ni una vez. Si existe viene en false, o no hay "
-		+ "compras todavia o no hay nada que se repita lo suficiente, y paraSonia lo dice tal "
+		+ "compras todavia o no hay nada que se repita lo suficiente, y paraElAsistente lo dice tal "
 		+ "cual: son dos hechos distintos y ninguno es un error.")]
 	public FirmaDeLaSemana Firma(
 		[Description("Cuantas de sus ultimas compras mirar. Omitilo para usar el valor de la app (8).")]
@@ -228,7 +228,7 @@ internal sealed class ComprasTools
 		+ "respaldo completo: numero de compra, fecha, meses de cobertura, fecha de vencimiento, "
 		+ "cuantos dias le quedan y si esta vigente HOY. Si encontrada viene en false, o el "
 		+ "producto no esta en el registro o no tiene garantia — son dos hechos legitimos, no un "
-		+ "error. El campo paraSonia trae la lectura ya redactada por el dominio; queHacer viene "
+		+ "error. El campo paraElAsistente trae la lectura ya redactada por el dominio; queHacer viene "
 		+ "vacio cuando no hay nada que hacer, y eso tambien es una respuesta.")]
 	public GarantiaDeProducto Garantia(
 		[Description("Nombre (o parte del nombre) o sku del producto, por ejemplo 'olla arrocera'.")] string producto)

@@ -61,7 +61,7 @@ namespace Compras.Dominio
 		/// <summary>Cuántas compras cayeron en cada momento del día. Total: siempre trae los tres.</summary>
 		public abstract IReadOnlyList<ComprasEnUnMomento> PorMomento { get; }
 
-		public abstract string ParaSonia { get; }
+		public abstract string ParaElAsistente { get; }
 
 		// LAS LECTURAS PARA LA FRONTERA, sin guarda: cero y vacio cuando no hay ritmo. Es el
 		// mismo par que RegistroDeGarantia y CambioDeRitmo -la tipada para el codigo, la
@@ -130,7 +130,7 @@ namespace Compras.Dominio
 			public override string CadenciaCompacta => "";
 			public override string MomentoFavoritoExpresado => "";
 
-			public override string ParaSonia => compras == 0
+			public override string ParaElAsistente => compras == 0
 				? "todavía no hay compras suyas con las que ver cada cuánto va al súper"
 				: $"con {compras} compras todavía no alcanza para decir cada cuánto va al súper";
 		}
@@ -218,7 +218,7 @@ namespace Compras.Dominio
 			public override string CadenciaCompacta => cadencia.Compacta;
 			public override string MomentoFavoritoExpresado => momentoFavorito.ParaMostrar;
 
-			public override string ParaSonia =>
+			public override string ParaElAsistente =>
 				$"suele ir al súper cada {diasTipicos} días, y casi siempre un "
 				+ $"{DiaFavoritoExpresado} por la {momentoFavorito.ParaMostrar}";
 

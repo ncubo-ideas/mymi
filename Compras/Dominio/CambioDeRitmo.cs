@@ -64,7 +64,7 @@ namespace Compras.Dominio
 		/// <summary>Si ahora lo compra más seguido que antes. Preguntar Cambio primero.</summary>
 		public abstract bool EsMasSeguido { get; }
 
-		public abstract string ParaSonia { get; }
+		public abstract string ParaElAsistente { get; }
 
 		// LAS DOS CADENCIAS, en la forma corta y SIN GUARDA: vacias cuando no hay ritmo
 		// medido. Existen para la frontera, que proyecta plano y no puede preguntar antes:
@@ -99,7 +99,7 @@ namespace Compras.Dominio
 			public override string AntesCompacto => "";
 			public override string AhoraCompacto => "";
 
-			public override string ParaSonia =>
+			public override string ParaElAsistente =>
 				$"todavía no hay suficientes compras de {Descripcion} de los dos lados "
 				+ "como para decir si cambió el ritmo";
 		}
@@ -137,7 +137,7 @@ namespace Compras.Dominio
 			public override string AntesCompacto => antes.Compacta;
 			public override string AhoraCompacto => ahora.Compacta;
 
-			public override string ParaSonia => Cambio
+			public override string ParaElAsistente => Cambio
 				? $"{Descripcion} pasó de {antes.ParaMostrar} a {ahora.ParaMostrar}"
 				: $"{Descripcion} sigue {ahora.ParaMostrar}";
 

@@ -85,7 +85,7 @@ namespace Compras.Dominio
 		public bool EsComestible => Categoria.EsComestible;
 
 		/// <summary>La línea, escrita por el dominio con SUS hechos. No es un consejo: es lo que pasó.</summary>
-		public string ParaSonia
+		public string ParaElAsistente
 		{
 			get
 			{

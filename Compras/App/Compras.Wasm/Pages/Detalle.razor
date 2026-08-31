@@ -8,7 +8,11 @@
 @inject Pantalla pantalla
 @implements IDisposable
 
-<PageTitle>Compra @Numero</PageTitle>
+@* Hasta el titulo de la pestaña: decia "Compra T-90349". Si alguien guarda esto en
+   favoritos, lo que tiene que reconocer es la fecha. *@
+<PageTitle>@(compra is null || compra.Numero.Length == 0
+    ? "Una compra · La Guaria y vos"
+    : $"{Dia(compra.Fecha)} {compra.Fecha.Day} de {MesLargo(compra.Fecha.Month)} · La Guaria y vos")</PageTitle>
 
 <button class="btn btn-link p-0 mb-3" @onclick="Volver">&larr; Mis compras</button>
 
@@ -22,10 +26,13 @@ else if (compra is null || compra.Numero.Length == 0)
 }
 else
 {
-    <h1 class="h4">Compra @compra.Numero</h1>
+    @* LA FECHA ES EL TITULO, no el numero de ticket. Decia "Compra T-90349": ese numero es
+       como el super identifica ese papel en SU sistema, y encabezar con el convierte la
+       pantalla en una factura. Lo que ella recuerda de una compra es CUANDO fue. *@
+    <h1 class="h4">@Dia(compra.Fecha) @compra.Fecha.Day de @MesLargo(compra.Fecha.Month)</h1>
     <p class="text-body-secondary">
-        @compra.Fecha.ToString("dd/MM/yyyy HH:mm", CultureInfo.InvariantCulture) &middot;
-        total @Colones(compra.Total)
+        @compra.Lineas.Count @(compra.Lineas.Count == 1 ? "cosa" : "cosas") &middot;
+        @Colones(compra.Total) &middot; a las @Hora(compra.Fecha)
     </p>
 
     @* LA TABLA SE VUELVE FILAS EN TELÉFONO, y no es cosmético: medida, su ancho mínimo es
@@ -35,9 +42,17 @@ else
        entendiendo sin el encabezado. *@
     <table class="table align-middle lineas">
         <thead>
+            @* TRES COLUMNAS Y NO CINCO. Se fueron "Departamento" y "Precio" unitario, que
+               son columnas de FACTURA: el departamento es la taxonomia de pasillos del
+               super -util para sumar la canasta, no para recordar una compra- y el precio
+               unitario tiene su propia lectura en "lo que cambio de precio".
+
+               Queda lo que una persona recuerda de una compra: QUE llevo, CUANTO y QUE
+               costo. Los otros dos siguen viajando en la vista y el asistente los tiene
+               enteros por sus tools, que es donde el detalle no estorba. *@
             <tr>
-                <th>Producto</th><th>Departamento</th>
-                <th class="text-end">Cantidad</th><th class="text-end">Precio</th><th class="text-end">Total</th>
+                <th>Lo que llevaste</th>
+                <th class="text-end">Cantidad</th><th class="text-end">Precio</th>
             </tr>
         </thead>
         <tbody>
@@ -60,16 +75,8 @@ else
                             <span class="etiqueta etiqueta-verde">con garantía</span>
                         }
                     </td>
-                    @* EL TÍTULO Y NUNCA LA LLAVE. Acá se pintaba @linea.Categoria, o sea
-                       "LacteosYHuevos" — y justo debajo del comentario que explica que el
-                       sku no sale a pantalla porque la spec prohíbe la jerga. La llave
-                       sigue viajando en la vista para comparar; lo que sale es el título. *@
-                    <td data-rotulo="Departamento">
-                        <span class="etiqueta etiqueta-neutra">@linea.Titulo</span>
-                    </td>
                     <td class="text-end" data-rotulo="Cantidad">@linea.Cantidad</td>
-                    <td class="text-end" data-rotulo="Precio">@Colones(linea.PrecioUnitario)</td>
-                    <td class="text-end" data-rotulo="Total">@Colones(linea.Total)</td>
+                    <td class="text-end" data-rotulo="Precio">@Colones(linea.Total)</td>
                 </tr>
             }
         </tbody>
@@ -84,6 +91,14 @@ else
 
        Es lo único de esta app donde la resolución cambia QUÉ SE RENDERIZA y no sólo cómo se
        ve, así que es lo único que necesita saber el ancho desde C#. Ver Pantalla.cs. *@
+    @* EL NUMERO SIGUE ESTANDO, y abajo, dicho por lo que le sirve A ELLA. No es dato
+       interno -es lo que le van a pedir en el mostrador si va a reclamar algo, y la tarjeta
+       de garantias ya lo nombra-, pero encabezar con el es hablarle en el idioma del
+       sistema. Abajo y con su para-que, es una herramienta suya. *@
+    <p class="small text-body-secondary numero-de-compra">
+        Si tenés que reclamar algo de esta compra, el número es <strong>@compra.Numero</strong>.
+    </p>
+
     @if (Paginas() > 1)
     {
         @if (angosta)
@@ -233,6 +248,35 @@ else
     }
 
     private void Volver() => navegacion.NavigateTo("");
+
+    // Los nombres van a mano: en wasm la globalizacion viene recortada y pedirle a la
+    // cultura los dias o los meses devuelve los ingleses o vacio.
+    private static string Dia(DateTime cuando) => cuando.DayOfWeek switch
+    {
+        DayOfWeek.Monday => "Lunes",
+        DayOfWeek.Tuesday => "Martes",
+        DayOfWeek.Wednesday => "Miércoles",
+        DayOfWeek.Thursday => "Jueves",
+        DayOfWeek.Friday => "Viernes",
+        DayOfWeek.Saturday => "Sábado",
+        _ => "Domingo",
+    };
+
+    private static string MesLargo(int mes) => mes switch
+    {
+        1 => "enero", 2 => "febrero", 3 => "marzo", 4 => "abril", 5 => "mayo", 6 => "junio",
+        7 => "julio", 8 => "agosto", 9 => "setiembre", 10 => "octubre", 11 => "noviembre",
+        _ => "diciembre",
+    };
+
+    // "7:30 p.m." y no "19:30": nadie dice que fue al super a las diecinueve treinta.
+    private static string Hora(DateTime cuando)
+    {
+        int hora = cuando.Hour % 12;
+        if (hora == 0) hora = 12;
+
+        return $"{hora}:{cuando.Minute:00} {(cuando.Hour < 12 ? "a.m." : "p.m.")}";
+    }
 
     private static string Colones(decimal monto) =>
         Plata.Colones(monto);   @* la regla vive en el dominio, no en cada pantalla *@

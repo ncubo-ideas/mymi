@@ -159,7 +159,7 @@ namespace Compras.Consola
 			Console.WriteLine();
 			Console.WriteLine("-- lo que NO esta (el hueco) --");
 			foreach (AbastecimientoEnEspera p in api.AbastecimientosPendientes(DateTime.Now))
-				Console.WriteLine($"  {p.ParaSonia}  [{p.Severidad}]");
+				Console.WriteLine($"  {p.ParaElAsistente}  [{p.Severidad}]");
 
 			if (!conVeredicto) return;
 
@@ -184,13 +184,13 @@ namespace Compras.Consola
 		private static void ImprimirPortada(ComprasAPI api, DateTime corte)
 		{
 			FirmaDeLaSemana firma = api.Firma();
-			Console.WriteLine($"  {firma.ParaSonia}");
+			Console.WriteLine($"  {firma.ParaElAsistente}");
 			foreach (ProductoQueVuelve p in firma.Habituales)
 				Console.WriteLine($"    {p.Descripcion,-28} en {p.ComprasEnQueAparece} de {p.DeCuantas}"
 					+ $"{(p.EstaEnTodas ? "  (en todas)" : "")}");
 
 			CambioDeLaCanasta cambio = api.Cambio(corte);
-			Console.WriteLine($"  {cambio.ParaSonia}");
+			Console.WriteLine($"  {cambio.ParaElAsistente}");
 			foreach (ProductoQueEntroVista p in cambio.Entraron)
 				Console.WriteLine($"    entro  {p.Descripcion,-28} desde {p.Desde}");
 			foreach (ProductoQueVuelve p in cambio.Salieron)
@@ -219,7 +219,7 @@ namespace Compras.Consola
 			// se decide nada: se imprime.
 			if (!c.HayComparacion)
 			{
-				Console.WriteLine($"  {c.ParaSonia}");
+				Console.WriteLine($"  {c.ParaElAsistente}");
 				return;
 			}
 
@@ -232,7 +232,7 @@ namespace Compras.Consola
 					Console.WriteLine($"    {d.Titulo}: {Formato(d.MontoAntes)} -> {Formato(d.MontoDespues)}"
 						+ $"{(d.EsNuevo ? "  (entro este mes)" : "")}{(d.Desaparecio ? "  (dejo de aparecer)" : "")}");
 
-			Console.WriteLine($"  {c.ParaSonia}");
+			Console.WriteLine($"  {c.ParaElAsistente}");
 		}
 
 		private static void ImprimirGarantia(ComprasAPI api, string texto, DateTime fechaDeConsulta)
@@ -240,7 +240,7 @@ namespace Compras.Consola
 			GarantiaDeProducto g = api.Garantia(texto, fechaDeConsulta);
 
 			// La linea sale del dominio, incluido el caso "no encontrada".
-			Console.WriteLine($"  {g.ParaSonia}");
+			Console.WriteLine($"  {g.ParaElAsistente}");
 			if (!g.Encontrada) return;
 
 			Console.WriteLine($"  {g.Descripcion} ({g.Sku})");
@@ -352,7 +352,7 @@ namespace Compras.Consola
 			var api = new ComprasAPI(app);
 
 			ComprasHalladas halladas = api.Halladas(termino);
-			Console.WriteLine(halladas.ParaSonia);
+			Console.WriteLine(halladas.ParaElAsistente);
 			if (halladas.Productos.Count > 0)
 				Console.WriteLine($"  coinciden: {string.Join(", ", halladas.Productos)}");
 			Console.WriteLine();
@@ -383,14 +383,14 @@ namespace Compras.Consola
 			Console.WriteLine("EL DOMINIO ENCUENTRA");
 			Console.WriteLine($"  corte      : {(encontrado.Corte.Length > 0 ? encontrado.Corte : "(ninguno)")}" );
 			Console.WriteLine($"  hay cambio : {encontrado.HayCambio}");
-			Console.WriteLine($"  {encontrado.ParaSonia}");
+			Console.WriteLine($"  {encontrado.ParaElAsistente}");
 
 			DateTime enero = new DateTime(DateTime.Now.Year, 1, 1);
 			CambioDeLaCanasta porEnero = api.Cambio(enero);
 			Console.WriteLine();
 			Console.WriteLine($"CORTANDO EL {enero:yyyy-MM-dd}, como hacia la caratula");
 			Console.WriteLine($"  hay cambio : {porEnero.HayCambio}");
-			Console.WriteLine($"  {porEnero.ParaSonia}");
+			Console.WriteLine($"  {porEnero.ParaElAsistente}");
 
 			Console.WriteLine();
 			Console.WriteLine("LOS RITMOS DEL MISMO QUIEBRE");
@@ -413,7 +413,7 @@ namespace Compras.Consola
 			var api = new ComprasAPI(app);
 
 			ListaDeLaProximaCompra lista = api.Lista(hoy);
-			Console.WriteLine($"al {hoy:yyyy-MM-dd}: {lista.ParaSonia}");
+			Console.WriteLine($"al {hoy:yyyy-MM-dd}: {lista.ParaElAsistente}");
 			Console.WriteLine();
 			foreach (ProductoPorCaer p in lista.Productos)
 				Console.WriteLine($"  {(p.Toca ? "TOCA" : "    ")}  {p.Descripcion,-32} "
@@ -445,7 +445,7 @@ namespace Compras.Consola
 			{
 				Console.WriteLine($"  {p.Categoria,-18} {p.DiasDesdeLaUltima,4} dias (se repone cada {p.DiasEsperados})"
 					+ $"  [{p.Severidad}]");
-				Console.WriteLine($"  {"",-18} {p.ParaSonia}");
+				Console.WriteLine($"  {"",-18} {p.ParaElAsistente}");
 			}
 			if (pendientes.Count == 0) Console.WriteLine("  (al dia con todo lo que se repone)");
 
@@ -467,7 +467,7 @@ namespace Compras.Consola
 			foreach (GarantiaDeProducto g in porVencer)
 			{
 				Console.WriteLine($"  {g.Descripcion,-22} quedan {g.DiasParaVencer,4} dias  [{g.Severidad}]");
-				Console.WriteLine($"  {"",-22} {g.ParaSonia}");
+				Console.WriteLine($"  {"",-22} {g.ParaElAsistente}");
 				if (g.QueHacer.Length > 0) Console.WriteLine($"  {"",-22} -> {g.QueHacer}");
 			}
 			if (porVencer.Count == 0)

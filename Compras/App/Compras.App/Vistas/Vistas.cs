@@ -75,7 +75,7 @@ namespace Compras.App.Vistas
 	// del cruce: el asistente la pone al lado de la tendencia del colesterol y la relacion
 	// aparece sola — el juicio es de el, con permiso, no de esta app.
 	//
-	// ParaSonia viene del DOMINIO, no se arma aca. Y no hay veredicto: la app senala y se
+	// ParaElAsistente viene del DOMINIO, no se arma aca. Y no hay veredicto: la app senala y se
 	// calla.
 	public sealed class CanastasComparadas
 	{
@@ -85,7 +85,7 @@ namespace Compras.App.Vistas
 		public decimal CambioEnElTotal { get; init; }
 		public decimal Cambio { get; init; }
 		public bool HayAlgoQueLoExplique { get; init; }
-		public string ParaSonia { get; init; } = "";
+		public string ParaElAsistente { get; init; } = "";
 		public int AnioAntes { get; init; }
 		public int MesAntes { get; init; }
 		public decimal GastoComestibleAntes { get; init; }
@@ -118,7 +118,7 @@ namespace Compras.App.Vistas
 		public int CuantosHabituales { get; init; }
 
 		// La linea de la portada, escrita por el dominio.
-		public string ParaSonia { get; init; } = "";
+		public string ParaElAsistente { get; init; } = "";
 
 		public IReadOnlyList<ProductoQueVuelve> Habituales { get; init; } =
 			new List<ProductoQueVuelve>();
@@ -161,7 +161,7 @@ namespace Compras.App.Vistas
 
 		public bool HayCambio { get; init; }
 
-		public string ParaSonia { get; init; } = "";
+		public string ParaElAsistente { get; init; } = "";
 
 		public IReadOnlyList<ProductoQueEntroVista> Entraron { get; init; } =
 			new List<ProductoQueEntroVista>();
@@ -210,7 +210,7 @@ namespace Compras.App.Vistas
 		public decimal CambioEnProporcion { get; init; }
 		public bool Subio { get; init; }
 		public int VecesQueLoCompro { get; init; }
-		public string ParaSonia { get; init; } = "";
+		public string ParaElAsistente { get; init; } = "";
 	}
 
 	// COMO VA AL SUPER: cada cuantos dias vuelve, que dia y en que momento. Es la pantalla
@@ -240,7 +240,7 @@ namespace Compras.App.Vistas
 		/// <summary>"tarde". Vacío cuando no hay ritmo.</summary>
 		public string MomentoFavorito { get; init; } = "";
 
-		public string ParaSonia { get; init; } = "";
+		public string ParaElAsistente { get; init; } = "";
 
 		/// <summary>Los TRES momentos, siempre los tres y en orden del día.</summary>
 		public IReadOnlyList<ComprasEnUnMomentoVista> PorMomento { get; init; } =
@@ -277,7 +277,7 @@ namespace Compras.App.Vistas
 		public string Ahora { get; init; } = "";
 
 		/// <summary>La línea, escrita por el dominio: "X pasó de una vez al mes a todas las semanas".</summary>
-		public string ParaSonia { get; init; } = "";
+		public string ParaElAsistente { get; init; } = "";
 	}
 
 	// Un producto al que le cambio el ritmo. Viene de una lista YA FILTRADA por el dominio
@@ -293,7 +293,7 @@ namespace Compras.App.Vistas
 		/// <summary>Si ahora lo compra más seguido que antes.</summary>
 		public bool EsMasSeguido { get; init; }
 
-		public string ParaSonia { get; init; } = "";
+		public string ParaElAsistente { get; init; } = "";
 	}
 
 	// El respaldo de una garantia: en que compra fue, cuando, cuanta cobertura y si
@@ -312,7 +312,7 @@ namespace Compras.App.Vistas
 		public int DiasParaVencer { get; init; }
 		public string Severidad { get; init; } = "";
 		public string QueHacer { get; init; } = "";
-		public string ParaSonia { get; init; } = "";
+		public string ParaElAsistente { get; init; } = "";
 	}
 
 	// CUANTO Y CUANDO entro algo, mes a mes. Es la serie que permite decir desde cuando
@@ -342,7 +342,7 @@ namespace Compras.App.Vistas
 		public decimal CambioDeGasto { get; init; }
 		public bool HaySerie { get; init; }
 		public bool HayCambioReal { get; init; }
-		public string ParaSonia { get; init; } = "";
+		public string ParaElAsistente { get; init; } = "";
 		public IReadOnlyList<MesDeConsumoVista> Meses { get; init; } = new List<MesDeConsumoVista>();
 
 		/// <summary>La misma serie por año. Vacía cuando no hay consumo.</summary>
@@ -383,7 +383,7 @@ namespace Compras.App.Vistas
 		public bool EsRitmoObservado { get; init; }
 		public bool EsComestible { get; init; }
 		public string Severidad { get; init; } = "";
-		public string ParaSonia { get; init; } = "";
+		public string ParaElAsistente { get; init; } = "";
 	}
 
 	// EN CUALES COMPRAS APARECIO ALGO. La respuesta del buscador de recibos, y la unica
@@ -415,7 +415,7 @@ namespace Compras.App.Vistas
 		/// <summary>Todos los que tienen ritmo medido, del más atrasado al que menos falta.</summary>
 		public IReadOnlyList<ProductoPorCaer> Productos { get; init; } = new List<ProductoPorCaer>();
 
-		public string ParaSonia { get; init; } = "";
+		public string ParaElAsistente { get; init; } = "";
 	}
 
 	public sealed class ProductoPorCaer
@@ -437,7 +437,7 @@ namespace Compras.App.Vistas
 		public int DiasDeMas { get; init; }
 
 		public bool Toca { get; init; }
-		public string ParaSonia { get; init; } = "";
+		public string ParaElAsistente { get; init; } = "";
 	}
 
 	public sealed class ComprasHalladas
@@ -460,7 +460,7 @@ namespace Compras.App.Vistas
 		/// <summary>De la más reciente a la más vieja. Vacía cuando no hay ninguna.</summary>
 		public IReadOnlyList<CompraHallada> Compras { get; init; } = new List<CompraHallada>();
 
-		public string ParaSonia { get; init; } = "";
+		public string ParaElAsistente { get; init; } = "";
 	}
 
 	// Una compra donde aparecio lo buscado. Lleva LAS DOS ESCALAS -lo del producto y lo de

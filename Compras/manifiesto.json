@@ -45,7 +45,7 @@
       "entrada": [
         { "nombre": "cuantasCompras", "tipo": "number", "descripcion": "Cuantas de sus ultimas compras mirar. Omitilo para usar el valor de la app (8)." }
       ],
-      "descripcion": "LO QUE NO FALLA en las compras de la persona: los productos que vuelven compra tras compra. Es una de las dos lecturas con las que la app ABRE. Usala para '¿que compro yo?', '¿cual es mi canasta tipica?' y como contexto antes de contestar cualquier otra cosa sobre sus compras. Un producto entra si aparece en al menos la MITAD de las compras miradas, y cada uno trae en cuantas de cuantas aparece; estaEnTodas marca los que no fallaron ni una vez. Si existe viene en false, o no hay compras todavia o no hay nada que se repita lo suficiente, y paraSonia lo dice tal cual."
+      "descripcion": "LO QUE NO FALLA en las compras de la persona: los productos que vuelven compra tras compra. Es una de las dos lecturas con las que la app ABRE. Usala para '¿que compro yo?', '¿cual es mi canasta tipica?' y como contexto antes de contestar cualquier otra cosa sobre sus compras. Un producto entra si aparece en al menos la MITAD de las compras miradas, y cada uno trae en cuantas de cuantas aparece; estaEnTodas marca los que no fallaron ni una vez. Si existe viene en false, o no hay compras todavia o no hay nada que se repita lo suficiente, y paraElAsistente lo dice tal cual."
     },
     {
       "nombre": "que_cambio_en_mi_canasta",
@@ -103,7 +103,7 @@
         { "nombre": "anioDespues", "tipo": "number", "descripcion": "El anio del mes a comparar." },
         { "nombre": "mesDespues", "tipo": "number", "descripcion": "El mes a comparar, de 1 a 12." }
       ],
-      "descripcion": "Como cambio la canasta entre DOS MESES QUE LA PERSONA NOMBRE. Si no nombro meses concretos, usa como_viene_mi_canasta en vez de esta: los meses validos salen del rango que devuelve total_de_compras, y pedir un mes fuera de ese rango devuelve hayComparacion en false aunque la persona si tenga datos. Devuelve los dos totales y, en diferencias, que pasillos explican el cambio (mira explicaElCambio, esNuevo y desaparecio). La direccion va en el SIGNO del cambio; no hay veredicto porque el supermercado no opina sobre la alimentacion de nadie. El campo paraSonia trae la lectura ya redactada."
+      "descripcion": "Como cambio la canasta entre DOS MESES QUE LA PERSONA NOMBRE. Si no nombro meses concretos, usa como_viene_mi_canasta en vez de esta: los meses validos salen del rango que devuelve total_de_compras, y pedir un mes fuera de ese rango devuelve hayComparacion en false aunque la persona si tenga datos. Devuelve los dos totales y, en diferencias, que pasillos explican el cambio (mira explicaElCambio, esNuevo y desaparecio). La direccion va en el SIGNO del cambio; no hay veredicto porque el supermercado no opina sobre la alimentacion de nadie. El campo paraElAsistente trae la lectura ya redactada."
     },
     {
       "nombre": "garantia_de_producto",

@@ -324,7 +324,7 @@ arrocera y hasta cuándo tiene garantía?"*: compra T-89917, 2026-05-09, 12 mese
 El dominio **redacta la lectura pero no la juzga**, y las dos mitades de esa frase
 importan.
 
-Redacta: la línea (`ParaSonia`) la escribe el dominio, no la pantalla. La posición
+Redacta: la línea (`ParaElAsistente`) la escribe el dominio, no la pantalla. La posición
 anterior — *"el dominio devuelve hechos, la frase la arma la superficie"* — sigue valiendo
 y los hechos siguen viajando al lado; lo que cambia es quién arma la oración, porque
 decidir qué pasillos merecen nombrarse ya es conocimiento del negocio. La **acción**

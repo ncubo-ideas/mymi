@@ -74,7 +74,7 @@ namespace Compras.Dominio
 		/// <summary>Cuántos ya pasaron su tiempo. Cero cuando ninguno, y es verdad.</summary>
 		public abstract int CuantosTocan { get; }
 
-		public abstract string ParaSonia { get; }
+		public abstract string ParaElAsistente { get; }
 
 		private sealed class SinLista : ListaParaLaProximaCompra
 		{
@@ -88,7 +88,7 @@ namespace Compras.Dominio
 
 			public override int CuantosTocan => 0;
 
-			public override string ParaSonia =>
+			public override string ParaElAsistente =>
 				"todavía no hay compras suficientes para saber cada cuánto vuelve cada cosa";
 		}
 
@@ -118,7 +118,7 @@ namespace Compras.Dominio
 
 			// NINGUNO ATRASADO ES UNA RESPUESTA, no una lista vacia: quiere decir que viene al
 			// dia, y decirlo es mas util que no decir nada.
-			public override string ParaSonia
+			public override string ParaElAsistente
 			{
 				get
 				{
