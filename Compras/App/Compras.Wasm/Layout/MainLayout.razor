@@ -1,4 +1,5 @@
 @inherits LayoutComponentBase
+@inject EstadoDeLaApp estado
 
 @* Sin sidebar, sin navegacion, sin barra "About" del template. La UI de la app son cuatro
    cosas y nada mas: el boton de refresh, la portada, las lecturas y el back para volver a
@@ -97,6 +98,71 @@
     </div>
 </header>
 
+@* EL CUERPO NO SE PINTA HASTA SABER SI LA APP ABRE, y esa espera es el arreglo de un bug
+   real. Abrir la app es asincrono; las paginas leen `estado.EstaArriba` cuando se
+   inicializan, que es ANTES de que el await de abajo termine. Asi que se renderizaban con
+   la app cerrada, mostraban "la app todavia no abrio" y nadie les volvia a avisar: quedaban
+   con ese cartel para siempre aunque la app hubiera abierto un instante despues.
+
+   La alternativa era un evento en EstadoDeLaApp al que se suscriban las cinco pantallas.
+   Esto es una linea y no deja a nadie afuera por olvido. *@
 <main class="container py-4" style="max-width:56rem">
-    @Body
+    @if (loIntento)
+    {
+        @Body
+    }
+    else
+    {
+        <p class="text-body-secondary">Abriendo tus compras…</p>
+    }
 </main>
+
+@code {
+    // LA APP SE ABRE SOLA DESDE CUALQUIER RUTA, y por eso esto vive en el layout y no en la
+    // portada.
+    //
+    // ANTES VIVIA EN MisCompras.OnInitializedAsync, asi que solo se abria entrando por la
+    // raiz. Con el servidor estatico de desarrollo eso no se notaba porque una ruta profunda
+    // daba 404 y nunca se llegaba a la pantalla; servida por nginx —que SI tiene el fallback
+    // de SPA— la ruta resuelve, Blazor rutea bien, y la pagina aparece diciendo "la app
+    // todavia no abrio, volve a la lista y abrila ahi".
+    //
+    // O sea que un bookmark a un recibo, un enlace compartido o un simple F5 sobre el
+    // detalle caian en un callejon sin salida, teniendo el modo de guardado recordado y todo
+    // lo necesario para abrirse. Lo encontro la primera corrida con Docker.
+    //
+    // SOLO REENGANCHA LO QUE NO PIDE GESTO: el almacenamiento del navegador se reengancha
+    // solo, y la carpeta solo si el permiso sigue otorgado. Cuando el browser lo degrado a
+    // 'prompt' hace falta un click, y ese boton lo ofrece la portada — que es donde se
+    // explica lo que esta pasando.
+    private bool loIntento;
+
+    protected override async Task OnInitializedAsync()
+    {
+        if (estado.EstaArriba) { loIntento = true; return; }
+
+        try
+        {
+            if (!await estado.ReengancharModo())
+            {
+                if (!await estado.EstaSoportado()) return;
+                if (!(await estado.RecuperarCarpeta()).Ok) return;
+            }
+
+            await estado.Arrancar();
+        }
+        catch
+        {
+            // Abrir sola es una comodidad, no el camino obligado: si falla, cada pantalla
+            // muestra su aviso y la portada tiene los botones. Tirar aca dejaria la app
+            // entera en blanco por algo que se resuelve con un click.
+        }
+        finally
+        {
+            // PASE LO QUE PASE se pinta el cuerpo. Si esto quedara dentro del try, un fallo
+            // al abrir dejaria "Abriendo tus compras…" para siempre — un cartel de espera
+            // que no espera nada es peor que el aviso que la pantalla sabe dar.
+            loIntento = true;
+        }
+    }
+}
