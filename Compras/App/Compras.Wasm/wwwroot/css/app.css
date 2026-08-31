@@ -721,6 +721,92 @@ main h2 {
     border-color: var(--linea);
 }
 
+/* ---------------------------------------------------------------- el pie
+
+   §3 asigna --gu-verde-oscuro a "titulares, barra superior, PIE", asi que el pie cierra con
+   la misma masa de color con la que la barra abre. Es lo que hace que la pantalla se lea
+   como una pieza y no como contenido suelto sobre un fondo. */
+.pie {
+    background: var(--barra-fondo);
+    color: var(--barra-tenue);
+    margin-top: 2.5rem;
+    padding: 1.4rem 0 1.6rem;
+}
+.pie-dentro {
+    max-width: 56rem;
+    margin: 0 auto;
+    padding: 0 1.5rem;
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: .6rem 1.4rem;
+    font-size: .88rem;
+}
+/* El bloque de marca del pie: la misma flor y las mismas dos lineas de la barra, un punto
+   mas chicas. Abrir y cerrar con la misma cara es lo que hace que la pagina se sienta una
+   pieza. */
+.pie-marca { display: flex; align-items: center; gap: .7rem; }
+.pie-flor { width: 34px; height: 34px; flex: 0 0 34px; }
+.pie-textos { display: flex; flex-direction: column; gap: 1px; }
+.pie-quien { color: var(--barra-tinta); font-weight: 700; font-size: .95rem; line-height: 1.2; }
+.pie-bajada { font-size: .72rem; color: var(--barra-tenue); }
+
+/* Los enlaces a la derecha en escritorio; debajo, y a la izquierda, en telefono. El
+   margin-left auto se apaga solo cuando el flex envuelve. */
+.pie-enlaces {
+    margin-left: auto;
+    display: flex;
+    flex-wrap: wrap;
+    gap: .6rem;
+}
+
+/* BOTONES, no texto subrayado: "el sitio" y "el WhatsApp" son cosas que se tocan, y sobre
+   el verde oscuro una pastilla translucida con su icono se lee como boton sin gritar. */
+.pie-boton {
+    display: inline-flex;
+    align-items: center;
+    gap: .45rem;
+    padding: .5rem .95rem;
+    border-radius: var(--radio-boton);
+    background: rgba(234, 246, 234, .08);
+    border: 1px solid rgba(234, 246, 234, .18);
+    color: var(--barra-tinta);
+    text-decoration: none;
+    font-size: .86rem;
+    font-weight: 600;
+    transition: background-color .15s ease, border-color .15s ease;
+}
+.pie-boton svg { width: 17px; height: 17px; }
+.pie-boton:hover {
+    background: rgba(46, 158, 91, .28);
+    border-color: var(--verde-vivo);
+    color: #fff;
+}
+
+/* El de WhatsApp lleva SU verde en el icono: es la unica marca ajena del pie, y el color
+   es lo que la vuelve reconocible de un vistazo. Solo el icono — el boton sigue siendo
+   nuestro. */
+.pie-boton--whatsapp svg { color: #4fce5d; }
+.pie-boton--whatsapp:hover { border-color: #4fce5d; background: rgba(79, 206, 93, .16); }
+
+.pie-numero { color: var(--barra-tenue); font-weight: 400; }
+
+/* La nota de la frontera: mas chica, y separada de los enlaces por su propia linea. */
+.pie-nota {
+    margin-top: .9rem;
+    padding-top: .9rem;
+    border-top: 1px solid rgba(234, 246, 234, .12);
+    font-size: .78rem;
+    color: var(--barra-tenue);
+}
+
+@media (max-width: 767.98px) {
+    /* La barra de pestañas esta FIJA al pie, asi que el pie de verdad necesita quedar por
+       encima de ella o queda tapado por los mismos px que la barra mide. */
+    .pie { margin-bottom: 4rem; }
+    .pie-enlaces { margin-left: 0; }
+}
+
 /* --------------------------------------------------- lo que va a faltar
 
    CADA COSA CON SU RAZON debajo. Sin el "hace 9 d" la carta es la app diciendote que

@@ -287,6 +287,10 @@ public sealed class EstadoDeLaApp : IAsyncDisposable
 	// decide la app (ComprasAPI), no esta caratula: es parte de la pregunta.
 	public FirmaDeLaSemana Firma() { Exigir(); return api!.Firma(); }
 
+	// DESDE CUANDO HASTA CUANDO hay compras. La pantalla lo usa para decir "87 compras desde
+	// enero de 2025" en vez de un numero suelto.
+	public RangoDelHistorialVista Rango() { Exigir(); return api!.Rango(); }
+
 	// LA CANASTA DEL ULTIMO MES CON COMPRAS. Cual es ese mes lo sabe el DOMINIO por su
 	// rango; esta pantalla no tiene por que adivinarlo ni pedirle a la persona que elija.
 	public CanastaDelMesVista CanastaDelUltimoMes()
@@ -376,6 +380,35 @@ public sealed class EstadoDeLaApp : IAsyncDisposable
 		app?.Actor.GracefulExit();
 		await puente.DisposeAsync();
 	}
+}
+
+/// <summary>Cómo se llega al súper: su sitio y su WhatsApp.</summary>
+// VA EN LA CONFIGURACION Y NO EN EL CODIGO porque son datos DE LA INSTITUCION, no de la
+// app: un numero de telefono cambia, y cambiarlo no puede exigir recompilar. Es la misma
+// razon por la que el proveedor tampoco esta compilado.
+//
+// TODOS VACIOS POR DEFECTO, y el pie no se dibuja si no hay ninguno. Un supermercado que
+// despliegue esto sin WhatsApp no tiene que ver un boton roto ni tocar nuestro codigo:
+// deja el campo afuera del appsettings y el pie se ajusta solo.
+public sealed class ConfiguracionDeLaInstitucion
+{
+	/// <summary>El sitio del súper. Vacío si no tiene.</summary>
+	public string Sitio { get; set; } = "";
+
+	/// <summary>El número en formato internacional sin signos: 50622001100.</summary>
+	// SE GUARDA EL NUMERO Y NO LA URL para que quien configure no tenga que saber que
+	// wa.me existe ni como se arma. La app compone el enlace.
+	public string WhatsApp { get; set; } = "";
+
+	/// <summary>Lo que se le muestra a la persona del número: "2200-1100".</summary>
+	public string TelefonoParaMostrar { get; set; } = "";
+
+	public bool HaySitio => Sitio.Length > 0;
+	public bool HayWhatsApp => WhatsApp.Length > 0;
+	public bool HayAlguno => HaySitio || HayWhatsApp;
+
+	/// <summary>El enlace de WhatsApp, armado. Vacío cuando no hay número.</summary>
+	public string EnlaceDeWhatsApp => HayWhatsApp ? $"https://wa.me/{WhatsApp}" : "";
 }
 
 public sealed class ConfiguracionDelProveedor

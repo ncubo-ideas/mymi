@@ -15,6 +15,12 @@ var proveedor = new ConfiguracionDelProveedor();
 builder.Configuration.GetSection("Proveedor").Bind(proveedor);
 builder.Services.AddSingleton(proveedor);
 
+// Como se llega al super: su sitio y su WhatsApp. Van en la config por la misma razon que
+// el proveedor — son datos de la institucion, y un telefono cambia.
+var institucion = new ConfiguracionDeLaInstitucion();
+builder.Configuration.GetSection("Institucion").Bind(institucion);
+builder.Services.AddSingleton(institucion);
+
 // UN SOLO HttpClient, apuntado al proveedor. La app no es cliente de sus servicios
 // generales: la unica lectura que hace es su propia narrativa, y esa la arma
 // FuenteHttpDeEventos con una sola forma de URL.
