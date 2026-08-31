@@ -807,27 +807,176 @@ main h2 {
     .pie-enlaces { margin-left: 0; }
 }
 
+/* ------------------------------------------------- la anatomia de una seccion
+
+   TODA SECCION ABRE IGUAL: un chip con su icono y el titulo en kicker. Es lo que vuelve la
+   portada un SISTEMA en vez de una pila de bloques — antes convivian cartas con kicker y
+   <h2> pelados, y esa mezcla era lo que se sentia improvisado.
+
+   El chip tiene dos estados y son los DOS de la marca: verde lo estable, crema lo que
+   cambio. El neutro va tenido de verde clarito, que es el fondo de ficha que ya existe. */
+.seccion-cabeza {
+    display: flex;
+    align-items: center;
+    gap: .65rem;
+    margin: 0 0 .85rem;
+}
+/* Cuando la cabeza esta SUELTA (las secciones que no van dentro de una carta tenida),
+   lleva mas aire arriba: es lo que separa una seccion de la anterior. */
+main > .seccion-cabeza, main .seccion-cabeza:not(.card-body .seccion-cabeza) { margin-top: 1.9rem; }
+.card-body > .seccion-cabeza { margin-top: 0; }
+
+.seccion-icono {
+    width: 34px;
+    height: 34px;
+    flex: 0 0 34px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 10px;
+    background: var(--ficha);
+    color: var(--verde);
+    box-shadow: inset 0 0 0 1px var(--linea);
+}
+.seccion-icono svg { width: 19px; height: 19px; }
+
+/* El titulo: el kicker que ya existia, pero ahora es EL unico estilo de titulo de seccion.
+   Los <h2> lo llevan como clase para conservar la semantica sin conservar el tamaño. */
+h2.kicker { font-size: .74rem; margin: 0; }
+.seccion-cabeza .kicker { margin: 0; color: var(--gu-verde-oscuro); }
+.seccion-desde { color: var(--tenue); font-weight: 600; letter-spacing: .04em; }
+
+.seccion-cabeza--estable .seccion-icono {
+    background: var(--estable-fondo);
+    color: var(--estable-tinta);
+    box-shadow: inset 0 0 0 1px var(--estable-borde);
+}
+.seccion-cabeza--cambio .seccion-icono {
+    background: #fff;
+    color: var(--cambio-tinta);
+    box-shadow: inset 0 0 0 1px var(--cambio-borde);
+}
+.seccion-cabeza--cambio .kicker { color: var(--cambio-tinta); }
+.seccion-cabeza .ver-todos { margin-left: auto; }
+
+/* ------------------------------------------------- el pulido de los componentes */
+
+/* Las listas se leen como CARTAS: la misma sombra suave y el mismo radio que .card, para
+   que una seccion con lista y una con carta pesen igual en la pagina. */
+.list-group { box-shadow: var(--sombra-carta); border-radius: var(--radio-carta); }
+.list-group-item { border-color: var(--linea); padding-top: .85rem; padding-bottom: .85rem; }
+
+/* Las filas que LLEVAN a algun lado lo dicen con la mano y con un tinte al pasar; las que
+   no, no reaccionan. Que solo reaccione lo clickeable es parte de sentirse componente. */
+.list-group-item-action { transition: background-color .15s ease; }
+.list-group-item-action:hover { background-color: var(--tinte-verde); }
+
+/* Las barras se llenan con un degradado del verde al vivo y ANIMAN su ancho: una barra que
+   crece hasta su valor se entiende como medida; una que aparece llena, como decoracion. */
+.momento-barra span {
+    background: linear-gradient(90deg, var(--verde), var(--verde-vivo));
+    transition: width .5s ease;
+}
+
+/* Botones y pestañas responden al toque sin saltar: color y sombra, no tamaño. */
+.btn { transition: background-color .15s ease, box-shadow .15s ease; }
+.btn-primary:hover { box-shadow: 0 2px 10px rgba(46, 158, 91, .35); }
+
+/* El foco del teclado se ve, y en el color de la marca. */
+:focus-visible { outline: 2px solid var(--verde-vivo); outline-offset: 2px; }
+
+/* Quien pidio menos movimiento, lo tiene: las transiciones son cortesia, no contenido. */
+@media (prefers-reduced-motion: reduce) {
+    .momento-barra span, .btn, .list-group-item-action { transition: none; }
+}
+
 /* --------------------------------------------------- lo que va a faltar
 
-   CADA COSA CON SU RAZON debajo. Sin el "hace 9 d" la carta es la app diciendote que
-   compres leche; con el es un hecho tuyo, que podes confirmar o descartar de un vistazo —
-   porque podes tener dos litros en la heladera y esta app no lo sabe. */
-.por-caer {
-    display: flex;
-    flex-wrap: wrap;
-    gap: .5rem;
+   FILAS DE LISTA sobre la carta crema, con la foto del producto. Dos columnas cuando el
+   ancho da -seis productos son tres filas y la carta no se estira- y una en telefono.
+
+   La antiguedad va en PASTILLA a la derecha, que es el mismo gesto del "vence el" de las
+   garantias: en toda la app, el dato que decide se lee en el mismo lugar y con la misma
+   forma. */
+.lista-proxima {
+    display: grid;
+    /* 20rem de minimo = DOS columnas en el ancho de la app, no tres: con tres, "Pechuga
+       de pollo kg" quedaba en "Pechuga d…" y la pastilla empujaba la razon a dos lineas.
+       Una lista donde no se lee que falta no es una lista. */
+    grid-template-columns: repeat(auto-fill, minmax(20rem, 1fr));
+    gap: .6rem;
 }
-.falta {
+.proxima-fila {
     display: flex;
-    flex-direction: column;
-    gap: .1rem;
+    align-items: center;
+    gap: .75rem;
     background: var(--carta);
     border: 1px solid var(--cambio-borde);
     border-radius: var(--radio-ficha);
-    padding: .5rem .7rem;
-    font-size: .9rem;
+    padding: .6rem .75rem;
+    box-shadow: 0 1px 4px rgba(138, 90, 31, .07);
 }
-.falta-razon { font-size: .76rem; color: var(--tenue); }
+
+/* La foto en un plato redondo tenido: es lo que las vuelve producto y no icono suelto.
+   El circulo ademas empareja fotos de proporciones distintas — una botella alta y un
+   paquete ancho ocupan el mismo lugar. */
+.proxima-foto {
+    width: 44px;
+    height: 44px;
+    flex: 0 0 44px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    background: var(--ficha);
+    box-shadow: inset 0 0 0 1px var(--linea);
+}
+.proxima-foto img { max-width: 30px; max-height: 32px; }
+.proxima-foto--sin::before {
+    content: "";
+    width: 20px;
+    height: 20px;
+    border: 2px dashed var(--linea);
+    border-radius: 6px;
+}
+
+.proxima-que {
+    display: flex;
+    flex-direction: column;
+    gap: .05rem;
+    min-width: 0;
+    flex: 1 1 auto;
+}
+.proxima-que strong {
+    font-size: .92rem;
+    line-height: 1.25;
+    /* Un nombre largo no rompe la fila: se corta con puntos y el completo vive en la
+       ficha del producto. */
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+.proxima-razon { font-size: .76rem; color: var(--tenue); }
+
+.proxima-hace {
+    flex: 0 0 auto;
+    font-size: .74rem;
+    font-weight: 600;
+    color: var(--cambio-tinta);
+    background: var(--cambio-fondo);
+    border: 1px solid var(--cambio-borde);
+    border-radius: var(--radio-boton);
+    padding: .22rem .6rem;
+    white-space: nowrap;
+}
+
+/* El numero de la compra, al pie y en chico: es una herramienta suya para reclamar, no el
+   encabezado de una factura. */
+.numero-de-compra {
+    margin-top: 1rem;
+    padding-top: .8rem;
+    border-top: 1px solid var(--linea);
+}
 
 /* --------------------------------------------------------- las paginas de un recibo
 
