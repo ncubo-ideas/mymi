@@ -42,7 +42,7 @@ else
         @* NO HAY RESULTADOS ES UNA RESPUESTA, no una pantalla vacía: la frase la escribe el
            dominio, que es el que sabe qué se buscó. *@
         <p class="text-body-secondary">
-            @(hallazgo is null ? "" : hallazgo.ParaSonia)
+            @(hallazgo is null ? "" : hallazgo.ParaElAsistente)
             Probá con otro producto, o con un pasillo entero — <em>limpieza</em>, <em>proteinas</em>.
         </p>
     }
@@ -82,15 +82,22 @@ else
                                 <strong>@fila.Unidades u &middot; @Colones(fila.Gasto)</strong>
                                 <span class="small text-body-secondary">
                                     de @fila.Lineas @(fila.Lineas == 1 ? "producto" : "productos")
-                                    &middot; @fila.Numero
                                 </span>
                             }
                             else
                             {
                                 <strong>@fila.Lineas @(fila.Lineas == 1 ? "producto" : "productos")</strong>
+                                @* EL DIA DE LA SEMANA Y LA HORA, no el numero del ticket.
+                                   "T-90349" es como el super identifica ese papel en SU
+                                   sistema; nadie recuerda una compra por ese numero. Lo que
+                                   se recuerda es "el sabado por la tarde", y eso ademas
+                                   engancha con la tarjeta de "asi vas al super", que cuenta
+                                   justo esos dos datos.
+
+                                   El numero no se pierde: sigue en la compra, y ahi se
+                                   explica PARA QUE sirve — reclamar. *@
                                 <span class="small text-body-secondary">
-                                    @fila.Fecha.ToString("HH:mm", CultureInfo.InvariantCulture)
-                                    &middot; @fila.Numero
+                                    @Dia(fila.Fecha), @Hora(fila.Fecha)
                                 </span>
                             }
                         </span>
@@ -211,6 +218,30 @@ else
     // dos cosas que el no queria juntar.
     private static string Junta(IReadOnlyList<string> productos) =>
         string.Join(" · ", productos);
+
+    // EL DIA DE LA SEMANA, escrito a mano. En wasm la globalizacion viene recortada y
+    // pedirle a la cultura los nombres de los dias devuelve los ingleses o vacio, que es el
+    // mismo motivo por el que Plata arma el separador de miles sin cultura.
+    private static string Dia(DateTime cuando) => cuando.DayOfWeek switch
+    {
+        DayOfWeek.Monday => "lunes",
+        DayOfWeek.Tuesday => "martes",
+        DayOfWeek.Wednesday => "miércoles",
+        DayOfWeek.Thursday => "jueves",
+        DayOfWeek.Friday => "viernes",
+        DayOfWeek.Saturday => "sábado",
+        _ => "domingo",
+    };
+
+    // "7:30 p.m." y no "19:30". El reloj de 24 horas es de horario de sistema; nadie dice
+    // "fui al super a las diecinueve treinta".
+    private static string Hora(DateTime cuando)
+    {
+        int hora = cuando.Hour % 12;
+        if (hora == 0) hora = 12;
+
+        return $"{hora}:{cuando.Minute:00} {(cuando.Hour < 12 ? "a.m." : "p.m.")}";
+    }
 
     private static string Mes(int mes) => mes switch
     {

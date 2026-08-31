@@ -218,6 +218,7 @@ namespace Compras.App
 							item.PrecioUnitario precioUnitario,
 							item.Total totalDeLinea,
 							item.Categoria.Nombre categoria,
+							item.Categoria.Titulo titulo,
 							item.TieneGarantia tieneGarantia;
 					}
 				}
@@ -277,7 +278,7 @@ namespace Compras.App
 						comparacion.CambioEnElTotal cambioEnElTotal,
 						comparacion.CambioEnProporcion cambio,
 						comparacion.HayAlgoQueLoExplique hayAlgoQueLoExplique,
-						comparacion.ParaSonia paraSonia,
+						comparacion.ParaElAsistente paraElAsistente,
 						comparacion.Antes.Anio anioAntes,
 						comparacion.Antes.Mes mesAntes,
 						comparacion.Antes.GastoComestible gastoComestibleAntes,
@@ -317,7 +318,7 @@ namespace Compras.App
 						comparacion.CambioEnElTotal cambioEnElTotal,
 						comparacion.CambioEnProporcion cambio,
 						comparacion.HayAlgoQueLoExplique hayAlgoQueLoExplique,
-						comparacion.ParaSonia paraSonia,
+						comparacion.ParaElAsistente paraElAsistente,
 						comparacion.Antes.Anio anioAntes,
 						comparacion.Antes.Mes mesAntes,
 						comparacion.Antes.GastoComestible gastoComestibleAntes,
@@ -356,7 +357,7 @@ namespace Compras.App
 						comparacion.CambioEnElTotal cambioEnElTotal,
 						comparacion.CambioEnProporcion cambio,
 						comparacion.HayAlgoQueLoExplique hayAlgoQueLoExplique,
-						comparacion.ParaSonia paraSonia,
+						comparacion.ParaElAsistente paraElAsistente,
 						comparacion.Antes.Anio anioAntes,
 						comparacion.Antes.Mes mesAntes,
 						comparacion.Antes.GastoComestible gastoComestibleAntes,
@@ -389,7 +390,7 @@ namespace Compras.App
 					firma = compras.FirmaDeLasUltimas(@cuantas);
 					print firma.ComprasMiradas comprasMiradas,
 						firma.CuantosHabituales cuantosHabituales,
-						firma.ParaSonia paraSonia;
+						firma.ParaElAsistente paraElAsistente;
 					foreach (habitual in firma.Habituales) {
 						print habitual.Sku sku,
 							habitual.Descripcion descripcion,
@@ -418,7 +419,7 @@ namespace Compras.App
 					cambio = compras.CambioDesde(@corte, @cuantas);
 					print cambio.HayConQueComparar hayConQueComparar,
 						cambio.HayCambio hayCambio,
-						cambio.ParaSonia paraSonia;
+						cambio.ParaElAsistente paraElAsistente;
 					foreach (entro in cambio.Entraron) {
 						print entro.Sku sku,
 							entro.Descripcion descripcion,
@@ -453,7 +454,7 @@ namespace Compras.App
 					print cambio.HayConQueComparar hayConQueComparar,
 						cambio.HayCambio hayCambio,
 						cambio.CorteExpresado corte,
-						cambio.ParaSonia paraSonia;
+						cambio.ParaElAsistente paraElAsistente;
 					foreach (entro in cambio.Entraron) {
 						print entro.Sku sku,
 							entro.Descripcion descripcion,
@@ -494,7 +495,7 @@ namespace Compras.App
 						ritmo.Cambio cambio,
 						ritmo.AntesCompacto antes,
 						ritmo.AhoraCompacto ahora,
-						ritmo.ParaSonia paraSonia;
+						ritmo.ParaElAsistente paraElAsistente;
 				}
 			")
 			.WithParameters(p => {
@@ -529,7 +530,7 @@ namespace Compras.App
 						ritmo.DiaFavoritoExpresado diaFavorito,
 						ritmo.ComprasEnElDiaFavorito comprasEnElDiaFavorito,
 						ritmo.MomentoFavoritoExpresado momentoFavorito,
-						ritmo.ParaSonia paraSonia;
+						ritmo.ParaElAsistente paraElAsistente;
 					foreach (momento in ritmo.PorMomento) {
 						print momento.Momento.ParaMostrar nombre,
 							momento.Cuantas cuantas,
@@ -557,7 +558,7 @@ namespace Compras.App
 							ritmo.AntesCompacto antes,
 							ritmo.AhoraCompacto ahora,
 							ritmo.EsMasSeguido esMasSeguido,
-							ritmo.ParaSonia paraSonia;
+							ritmo.ParaElAsistente paraElAsistente;
 					}
 				}
 			")
@@ -580,7 +581,7 @@ namespace Compras.App
 							ritmo.AntesCompacto antes,
 							ritmo.AhoraCompacto ahora,
 							ritmo.EsMasSeguido esMasSeguido,
-							ritmo.ParaSonia paraSonia;
+							ritmo.ParaElAsistente paraElAsistente;
 					}
 				}
 			")
@@ -608,7 +609,7 @@ namespace Compras.App
 							precio.CambioEnProporcion cambioEnProporcion,
 							precio.Subio subio,
 							precio.VecesQueLoCompro vecesQueLoCompro,
-							precio.ParaSonia paraSonia;
+							precio.ParaElAsistente paraElAsistente;
 					}
 				}
 			")
@@ -639,7 +640,7 @@ namespace Compras.App
 						registro.DiasParaVencer diasParaVencer,
 						registro.NombreDeLaSeveridad severidad,
 						registro.QueHacer queHacer,
-						registro.ParaSonia paraSonia;
+						registro.ParaElAsistente paraElAsistente;
 				}
 			")
 			.WithParameters(p => {
@@ -664,7 +665,7 @@ namespace Compras.App
 							registro.DiasParaVencer diasParaVencer,
 							registro.NombreDeLaSeveridad severidad,
 							registro.QueHacer queHacer,
-							registro.ParaSonia paraSonia;
+							registro.ParaElAsistente paraElAsistente;
 					}
 				}
 			")
@@ -691,7 +692,7 @@ namespace Compras.App
 							registro.DiasParaVencer diasParaVencer,
 							registro.NombreDeLaSeveridad severidad,
 							registro.QueHacer queHacer,
-							registro.ParaSonia paraSonia;
+							registro.ParaElAsistente paraElAsistente;
 					}
 				}
 			")
@@ -725,7 +726,7 @@ namespace Compras.App
 						consumo.Constancia.ParaMostrar constancia,
 						consumo.HaySerie haySerie,
 						consumo.HayCambioReal hayCambioReal,
-						consumo.ParaSonia paraSonia;
+						consumo.ParaElAsistente paraElAsistente;
 					foreach (mes in consumo.Meses) {
 						print mes.MesExpresado mes,
 							mes.Unidades unidades,
@@ -767,7 +768,7 @@ namespace Compras.App
 						busqueda.CuantasCompras cuantasCompras,
 						busqueda.TotalUnidades totalUnidades,
 						busqueda.TotalGastado totalGastado,
-						busqueda.ParaSonia paraSonia;
+						busqueda.ParaElAsistente paraElAsistente;
 					foreach (producto in busqueda.Productos) {
 						print producto nombre;
 					}
@@ -787,6 +788,38 @@ namespace Compras.App
 			.PerformQuery();
 		}
 
+		// LO QUE VA A FALTAR EN LA PROXIMA COMPRA. La cabecera y los productos salen en el
+		// mismo bloque: la cabecera como "lista" y cada producto como "producto".
+		//
+		// SE PROYECTAN TODOS y no solo los que tocan: el filtro es de la pantalla -que muestra
+		// los atrasados- y de la IA, que a veces quiere saber que esta por caer. Recortar aca
+		// obligaria a dos consultas para dos lecturas de la misma lista.
+		public string LoQueVaAFaltar(DateTime hoy) =>
+			app.Using(@"
+				{
+					lista = compras.LoQueVaAFaltar(@hoy);
+					print lista.Existe() existe,
+						lista.CuantosTocan cuantosTocan,
+						lista.ParaElAsistente paraElAsistente;
+					foreach (producto in lista.Productos) {
+						print producto.Sku sku,
+							producto.Descripcion descripcion,
+							producto.Cadencia.ParaMostrar cadencia,
+							producto.Cadencia.Compacta cadenciaCompacta,
+							producto.DiasTipicos diasTipicos,
+							producto.UltimaVezExpresada ultimaVez,
+							producto.DiasDesdeLaUltima diasDesdeLaUltima,
+							producto.DiasDeMas diasDeMas,
+							producto.Toca toca,
+							producto.ParaElAsistente paraElAsistente;
+					}
+				}
+			")
+			.WithParameters(p => {
+				p["hoy", typeof(DateTime)] = hoy;
+			})
+			.PerformQuery();
+
 		// LA consulta que mira el hueco: que dejo de entrar a la canasta. Una pantalla no
 		// puede renderizar una ausencia que nadie le paso.
 		public string AbastecimientosPendientesEl(DateTime fechaDeConsulta) =>
@@ -802,7 +835,7 @@ namespace Compras.App
 							pendiente.EsRitmoObservado esRitmoObservado,
 							pendiente.EsComestible esComestible,
 							pendiente.NombreDeLaSeveridad severidad,
-							pendiente.ParaSonia paraSonia;
+							pendiente.ParaElAsistente paraElAsistente;
 					}
 				}
 			")
@@ -870,6 +903,9 @@ namespace Compras.App
 
 		public ComprasHalladas Halladas(string termino) =>
 			ProyeccionDeVistas.Halladas(ComprasCon(termino));
+
+		public ListaDeLaProximaCompra Lista(DateTime hoy) =>
+			ProyeccionDeVistas.LaProximaCompra(LoQueVaAFaltar(hoy));
 
 		public GarantiaDeProducto Garantia(string texto, DateTime fechaDeConsulta) =>
 			ProyeccionDeVistas.Garantia(GarantiaDe(texto, fechaDeConsulta));

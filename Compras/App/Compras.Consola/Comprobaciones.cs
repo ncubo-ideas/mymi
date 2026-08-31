@@ -66,6 +66,7 @@ namespace Compras.Consola
 			ElRitmoDelSuperTieneTresCaras();
 			LaConstanciaSeDiceEnPalabras();
 			ElDominioEncuentraElQuiebre();
+			LaListaDiceQueVaAFaltar();
 			LaSerieSeAgrupaPorAnio();
 			LaBusquedaEncuentraPorProducto();
 
@@ -290,7 +291,7 @@ namespace Compras.Consola
 			Igual("no inventa pasillos", "0", sinDatos.Diferencias.Count.ToString());
 			Igual("y no hay nada que lo explique", "False", sinDatos.HayAlgoQueLoExplique.ToString());
 			Igual("lo dice sin rodeos", "True",
-				sinDatos.ParaSonia.Contains("todavía no hay dos meses").ToString());
+				sinDatos.ParaElAsistente.Contains("todavía no hay dos meses").ToString());
 		}
 
 		// ---- la garantia con su respaldo ----
@@ -374,7 +375,7 @@ namespace Compras.Consola
 			Igual("  asi que no explica nada", "False",
 				comparacion.Diferencias[2].CuentaEnElMovimiento.ToString());
 
-			string linea = comparacion.ParaSonia;
+			string linea = comparacion.ParaElAsistente;
 			Igual("la linea da los dos totales", "True", linea.Contains("₡").ToString());
 			Igual("  nombra el pasillo que entro", "True", linea.Contains("dulces y postres").ToString());
 			Igual("  y dice que el otro bajo", "True", linea.Contains("bajó").ToString());
@@ -448,7 +449,7 @@ namespace Compras.Consola
 			Igual("los granos ya no figuran", "139",
 				ElGuion().RitmoDe(Categoria.GranosYAbarrotes).DiasTipicos.ToString());
 			Igual("  con su severidad", "conviene revisar", pendientes[0].Severidad.Nombre);
-			Igual("  y su linea del dominio", "True", pendientes[0].ParaSonia.Contains("lácteo").ToString());
+			Igual("  y su linea del dominio", "True", pendientes[0].ParaElAsistente.Contains("lácteo").ToString());
 
 			bool frutasAlDia = true;
             foreach (AbastecimientoPendiente p in pendientes)
@@ -666,13 +667,13 @@ namespace Compras.Consola
 				(leche.Observados[1].PrecioDeLinea > leche.Observados[0].PrecioDeLinea).ToString());
 			Igual("  pero el del litro BAJO", "True", (leche.Cambio < 0m).ToString());
 			Igual("  y por litro no subio", "False", leche.Subio.ToString());
-			Igual("  la linea lo dice como bajada", "True", leche.ParaSonia.Contains("bajó").ToString());
+			Igual("  la linea lo dice como bajada", "True", leche.ParaElAsistente.Contains("bajó").ToString());
 			Igual("  y la unidad de referencia es el litro", "L", leche.UnidadDeReferencia);
 
 			// Un aumento de verdad: la manteca de 1.980 a 2.050 el medio kilo.
             PrecioEnElTiempo manteca = ElGuion().PrecioDe("MANTECA-500");
 			Igual("la manteca subio", "True", manteca.Subio.ToString());
-			Igual("  y lo dice con el porcentaje", "True", manteca.ParaSonia.Contains("subió").ToString());
+			Igual("  y lo dice con el porcentaje", "True", manteca.ParaElAsistente.Contains("subió").ToString());
 
 			// Una sola compra no es una serie de precios, y se dice.
 			PrecioEnElTiempo olla = ElGuion().PrecioDe("OLLA-ARR-18");
@@ -683,7 +684,7 @@ namespace Compras.Consola
 			// Total: un sku que nunca se compro.
 			PrecioEnElTiempo nada = ElGuion().PrecioDe("CAVIAR");
 			Igual("lo que nunca compro: no existe", "False", nada.Existe().ToString());
-			Igual("  y lo dice", "True", nada.ParaSonia.Contains("no hay compras").ToString());
+			Igual("  y lo dice", "True", nada.ParaElAsistente.Contains("no hay compras").ToString());
 
 			// El orden lo pone la FECHA, no el orden en que entraron al journal: el
 			// proveedor puede publicar un ticket viejo despues de uno nuevo.
@@ -727,7 +728,7 @@ namespace Compras.Consola
 			Igual("a los 20 dias si", "1", pendientes.Count.ToString());
 			Igual("  y dice que el ritmo es suyo", "True", pendientes[0].EsRitmoObservado.ToString());
 			Igual("  la linea lo dice en segunda persona", "True",
-				pendientes[0].ParaSonia.Contains("vos lo comprás").ToString());
+				pendientes[0].ParaElAsistente.Contains("vos lo comprás").ToString());
 
 			// La MEDIANA y no el promedio: una compra de reserva no corre el ritmo tipico.
 			var conReserva = new Historial();
@@ -746,7 +747,7 @@ namespace Compras.Consola
 			RitmoDeCompra sinRitmo = unaSola.RitmoDe(Categoria.Proteinas);
 			Igual("una sola compra: no hay ritmo", "False", sinRitmo.EsObservado.ToString());
 			Igual("  se cae al catalogo", "10", sinRitmo.DiasParaLeerElHueco.ToString());
-			Igual("  y lo dice", "True", sinRitmo.ParaSonia.Contains("del catálogo").ToString());
+			Igual("  y lo dice", "True", sinRitmo.ParaElAsistente.Contains("del catálogo").ToString());
 			Revienta("preguntarle el tipico revienta", () => sinRitmo.DiasTipicos);
 
 			// Dos lineas de la misma categoria en UN ticket son una compra, no dos.
@@ -786,15 +787,15 @@ namespace Compras.Consola
 			Igual("  el que mas vuelve primero", "True",
 				(firma.Habituales[0].EstaEnTodas).ToString());
 			Igual("  y la linea los nombra", "True",
-				firma.ParaSonia.Contains("su semana tiene una firma").ToString());
-			Igual("  con el pan adentro", "True", firma.ParaSonia.Contains("Pan integral").ToString());
-			Igual("  y el helado AFUERA", "False", firma.ParaSonia.Contains("Helado").ToString());
+				firma.ParaElAsistente.Contains("su semana tiene una firma").ToString());
+			Igual("  con el pan adentro", "True", firma.ParaElAsistente.Contains("Pan integral").ToString());
+			Igual("  y el helado AFUERA", "False", firma.ParaElAsistente.Contains("Helado").ToString());
 
 			// Sin compras no se inventa un patron.
 			Igual("historial vacio: no hay firma", "False",
 				new Historial().FirmaDeLasUltimas(4).Existe().ToString());
 			Igual("  y lo dice", "True",
-				new Historial().FirmaDeLasUltimas(4).ParaSonia.Contains("todavía no hay compras").ToString());
+				new Historial().FirmaDeLasUltimas(4).ParaElAsistente.Contains("todavía no hay compras").ToString());
 
 			// Compras sin nada en comun tampoco: la firma no es "lo que compro alguna vez".
 			var dispares = new Historial();
@@ -836,13 +837,13 @@ namespace Compras.Consola
 			Igual("  y es el banano", "Banano kg", cambio.Salieron[0].Descripcion);
 			Igual("  siguen dos", "2", cambio.Siguen.Count.ToString());
 			Igual("  la linea dice cuando y que", "True",
-				(cambio.ParaSonia.Contains("2026-03") && cambio.ParaSonia.Contains("Helado")).ToString());
+				(cambio.ParaElAsistente.Contains("2026-03") && cambio.ParaElAsistente.Contains("Helado")).ToString());
 
 			// Y NO JUZGA: la especificacion de marca es explicita -"la app lo senala y se
 			// calla; el juicio no es suyo"-. Nada de mejor, peor, deberia ni conviene.
 			foreach (string juicio in new[] { "peor", "mejor", "debería", "conviene", "cuidado", "mal" })
 				Igual($"  la linea no dice '{juicio}'", "False",
-					cambio.ParaSonia.Contains(juicio).ToString());
+					cambio.ParaElAsistente.Contains(juicio).ToString());
 
 			// Sin quiebre lo dice sin inventar uno.
 			var estable = new Historial();
@@ -854,7 +855,7 @@ namespace Compras.Consola
 			CambioEnLaCanasta sinCambio = estable.CambioDesde(new DateTime(2026, 1, 26), 3);
 			Igual("canasta igual: hay con que comparar", "True", sinCambio.HayConQueComparar.ToString());
 			Igual("  y no hay cambio", "False", sinCambio.HayCambio.ToString());
-			Igual("  y lo dice", "True", sinCambio.ParaSonia.Contains("viene igual").ToString());
+			Igual("  y lo dice", "True", sinCambio.ParaElAsistente.Contains("viene igual").ToString());
 			Revienta("y no hay mes de cambio que dar", () => sinCambio.MesDelCambioExpresado);
 
 			// Y si de un lado no hay compras, eso NO es que la canasta cambio: es que no
@@ -863,7 +864,7 @@ namespace Compras.Consola
 			Igual("sin compras despues: no hay con que comparar", "False", sinLado.HayConQueComparar.ToString());
 			Igual("  y NO se afirma un cambio", "False", sinLado.HayCambio.ToString());
 			Igual("  la linea lo dice", "True",
-				sinLado.ParaSonia.Contains("los dos lados").ToString());
+				sinLado.ParaElAsistente.Contains("los dos lados").ToString());
 		}
 
 		// Una compra con presentacion por linea (la forma nueva).
@@ -931,7 +932,7 @@ namespace Compras.Consola
 			Igual("compara el ultimo mes con el del ano pasado", "8/2025 vs 8/2026",
 				$"{porDefecto.Antes.Mes}/{porDefecto.Antes.Anio} vs {porDefecto.Despues.Mes}/{porDefecto.Despues.Anio}");
 			Igual("  y da la misma lectura que pidiendola a mano", "True",
-				(porDefecto.ParaSonia == ElGuion().CompararCanastas(2025, 8, 2026, 8).ParaSonia).ToString());
+				(porDefecto.ParaElAsistente == ElGuion().CompararCanastas(2025, 8, 2026, 8).ParaElAsistente).ToString());
 
 			// Total: sin compras no revienta, contesta que no hay comparacion.
 			ComparacionDeCanastas sinNada = new Historial().CompararConElAnioPasado();
@@ -960,7 +961,7 @@ namespace Compras.Consola
 			Igual("  el mes mas alto", "2026-08", azucarados.MesDelPicoExpresado);
 			Igual("  el cambio tiene signo positivo", "True", (azucarados.CambioDeGasto > 0m).ToString());
 			Igual("  y la linea nombra los dos extremos", "True",
-				(azucarados.ParaSonia.Contains("2026-02") && azucarados.ParaSonia.Contains("2026-08")).ToString());
+				(azucarados.ParaElAsistente.Contains("2026-02") && azucarados.ParaElAsistente.Contains("2026-08")).ToString());
 
 			// Por TEXTO de producto, no por categoria: el helado solo.
 			Consumo helado = ElGuion().ConsumoDe("helado");
@@ -974,7 +975,7 @@ namespace Compras.Consola
 			Consumo nada = ElGuion().ConsumoDe("langosta");
 			Igual("lo que no se compro: no existe", "False", nada.Existe().ToString());
 			Igual("  sin meses", "0", nada.MesesConConsumo.ToString());
-			Igual("  y lo dice", "True", nada.ParaSonia.Contains("no hay compras").ToString());
+			Igual("  y lo dice", "True", nada.ParaElAsistente.Contains("no hay compras").ToString());
 			Igual("  no hay cambio que leer", "False", nada.HayCambioReal.ToString());
 			Revienta("  y darle direccion revienta", () => nada.Subio);
 		}
@@ -1029,7 +1030,7 @@ namespace Compras.Consola
 			string[] juicios = { "peor", "mejor", "empeora", "mejora", "debería", "conviene", "cuidado" };
 			foreach (string juicio in juicios)
 				Igual($"la linea no dice '{juicio}'", "False",
-					dulces.ParaSonia.ToLowerInvariant().Contains(juicio).ToString());
+					dulces.ParaElAsistente.ToLowerInvariant().Contains(juicio).ToString());
 		}
 
 		// Dos meses, cada uno con sus lineas, comparados.
@@ -1114,14 +1115,14 @@ namespace Compras.Consola
 			Igual("  cambio", "True", helado.Cambio.ToString());
 			Igual("  y es mas seguido", "True", helado.EsMasSeguido.ToString());
 			Igual("  la linea dice de que a que", "True",
-				(helado.ParaSonia.Contains("una vez al mes")
-				 && helado.ParaSonia.Contains("todas las semanas")).ToString());
+				(helado.ParaElAsistente.Contains("una vez al mes")
+				 && helado.ParaElAsistente.Contains("todas las semanas")).ToString());
 
 			// Y NO JUZGA. "Que el helado pasara de mensual a semanal es un dato, no una
 			// falta": la app lo señala y se calla.
 			foreach (string juicio in new[] { "peor", "mejor", "debería", "conviene", "cuidado", "mal" })
 				Igual($"  la linea no dice '{juicio}'", "False",
-					helado.ParaSonia.Contains(juicio).ToString());
+					helado.ParaElAsistente.Contains(juicio).ToString());
 
 			// LO QUE NO CAMBIO NO SE ANUNCIA. La leche fue semanal de los dos lados... pero
 			// del lado de antes fueron compras MENSUALES, asi que su cadencia de antes es
@@ -1153,7 +1154,7 @@ namespace Compras.Consola
 			Igual("un producto que nunca compro: no hay con que", "False",
 				inventado.HayConQueComparar.ToString());
 			Igual("  y la linea nombra lo que se busco", "True",
-				inventado.ParaSonia.Contains("caviar").ToString());
+				inventado.ParaElAsistente.Contains("caviar").ToString());
 
 			// El resolvedor, directo.
 			Igual("el resolvedor devuelve el sku", "HELADO-1L", historial.SkuDe("helado"));
@@ -1170,7 +1171,7 @@ namespace Compras.Consola
 				sinAntes.HayConQueComparar.ToString());
 			Igual("  y no afirma un cambio", "False", sinAntes.Cambio.ToString());
 			Igual("  y lo dice", "True",
-				sinAntes.ParaSonia.Contains("todavía no hay suficientes").ToString());
+				sinAntes.ParaElAsistente.Contains("todavía no hay suficientes").ToString());
 			Revienta("  y la cadencia de antes revienta", () => sinAntes.Antes);
 			Revienta("  y lo de mas seguido tambien", () => sinAntes.EsMasSeguido);
 
@@ -1195,7 +1196,7 @@ namespace Compras.Consola
 			CambioDeRitmo cafe = corridas.RitmoDeUnProducto("CAFE-500", new DateTime(2026, 3, 7));
 			Igual("una semana corrida no es un cambio", "False", cafe.Cambio.ToString());
 			Igual("  y la linea dice que sigue igual", "True",
-				cafe.ParaSonia.Contains("sigue").ToString());
+				cafe.ParaElAsistente.Contains("sigue").ToString());
 		}
 
 		// CADA CUANTO VA AL SUPER, que dia y a que hora. Es la pantalla "tu ritmo de super"
@@ -1220,9 +1221,9 @@ namespace Compras.Consola
 			Igual("  las 8 cayeron sabado", "8", ritmo.ComprasEnElDiaFavorito.ToString());
 			Igual("  el momento es la tarde", "tarde", ritmo.MomentoFavorito.Nombre);
 			Igual("  la linea dice cada cuanto, que dia y cuando", "True",
-				(ritmo.ParaSonia.Contains("cada 7 días")
-				 && ritmo.ParaSonia.Contains("sábado")
-				 && ritmo.ParaSonia.Contains("tarde")).ToString());
+				(ritmo.ParaElAsistente.Contains("cada 7 días")
+				 && ritmo.ParaElAsistente.Contains("sábado")
+				 && ritmo.ParaElAsistente.Contains("tarde")).ToString());
 
 			// LOS TRES MOMENTOS SIEMPRE VIENEN, y en orden del dia: la pantalla dibuja la
 			// fila sin preguntar, que es de lo que sirve una lectura total.
@@ -1250,7 +1251,7 @@ namespace Compras.Consola
 			RitmoDelSuper sinRitmo = pocas.RitmoDelSuper();
 			Igual("con una compra no hay ritmo", "False", sinRitmo.EsObservado.ToString());
 			Igual("  pero dice cuantas miro", "1", sinRitmo.ComprasMiradas.ToString());
-			Igual("  y lo dice", "True", sinRitmo.ParaSonia.Contains("todavía no alcanza").ToString());
+			Igual("  y lo dice", "True", sinRitmo.ParaElAsistente.Contains("todavía no alcanza").ToString());
 			Igual("  los tres momentos vienen en cero", "3", sinRitmo.PorMomento.Count.ToString());
 			Igual("  el primero en cero", "0", sinRitmo.PorMomento[0].Cuantas.ToString());
 			Igual("  y el dia expresado va vacio", "", sinRitmo.DiaFavoritoExpresado);
@@ -1268,7 +1269,7 @@ namespace Compras.Consola
 
 			// Un historial vacio: la otra forma de no tener respuesta.
 			Igual("sin compras lo dice distinto", "True",
-				new Historial().RitmoDelSuper().ParaSonia.Contains("todavía no hay compras").ToString());
+				new Historial().RitmoDelSuper().ParaElAsistente.Contains("todavía no hay compras").ToString());
 		}
 
 		// LA CONSTANCIA. Una proporcion no es una respuesta: "0,875" es correcto y no se lo
@@ -1304,6 +1305,141 @@ namespace Compras.Consola
 			for (int i = 0; i <= 10; i++)
 				Igual($"  {i * 10}% tiene constancia", "True",
 					(Constancia.Para(i / 10m) != null).ToString());
+		}
+
+		// ---- lo que va a faltar en la proxima compra ----
+		private static void LaListaDiceQueVaAFaltar()
+		{
+			Titulo("la lista dice que va a faltar, y por que");
+
+			// UN GUION PROPIO con ritmos que se saben de memoria: la leche cada 7 dias, el
+			// arroz cada 30, y una olla que se compro UNA vez. Con el guion general los
+			// numeros habria que derivarlos, y una comprobacion cuyo esperado se calcula con
+			// la misma cuenta que el codigo no comprueba nada.
+			Historial ritmos = RitmosConocidos();
+
+			// A los 9 dias de la ultima compra: la leche lleva 9 sobre 7 -atrasada 2- y el
+			// arroz 9 sobre 30, que todavia no toca.
+			ListaParaLaProximaCompra lista = ritmos.LoQueVaAFaltar(new DateTime(2026, 3, 1));
+			Igual("hay lista", "True", lista.Existe().ToString());
+
+			// LA OLLA NO ENTRA: se compro una sola vez, asi que no tiene ritmo que medir.
+			Igual("solo entran los que tienen ritmo", "2", lista.Productos.Count.ToString());
+			Igual("  y la olla no esta", "False",
+				lista.Productos[0].Descripcion.Contains("Olla").ToString());
+
+			Igual("toca uno solo", "1", lista.CuantosTocan.ToString());
+			ProductoQueVaAFaltar leche = lista.LosQueTocan[0];
+			Igual("  y es la leche", "Leche semidescremada 1L", leche.Descripcion);
+			Igual("  suele volver cada 7 dias", "7", leche.DiasTipicos.ToString());
+			Igual("  y hace 9 que no entra", "9", leche.DiasDesdeLaUltima.ToString());
+			Igual("  o sea 2 de mas", "2", leche.DiasDeMas.ToString());
+			Igual("  dicho como habla la gente", "todas las semanas", leche.Cadencia.ParaMostrar);
+
+			// EL QUE NO TOCA DICE CUANTO FALTA, con el mismo numero y el signo al reves.
+			ProductoQueVaAFaltar arroz = lista.Productos[1];
+			Igual("el arroz no toca", "False", arroz.Toca.ToString());
+			Igual("  y le faltan 21 dias", "-21", arroz.DiasDeMas.ToString());
+			Igual("  su linea lo dice asi", "True", arroz.ParaElAsistente.Contains("faltan 21").ToString());
+
+			// LA LINEA DE LA LECHE TRAE SU RAZON, que es lo que la hace util: sin el porque,
+			// una lista sugerida es la app diciendole a alguien lo que tiene que comprar.
+			Igual("la linea del que toca trae el ritmo", "True",
+				leche.ParaElAsistente.Contains("todas las semanas").ToString());
+			Igual("  y cuanto hace", "True", leche.ParaElAsistente.Contains("9 días").ToString());
+			// Y NO ORDENA. "Compra leche" seria un imperativo sobre una canasta que esta app
+			// no ve entera: puede tener dos litros en la heladera.
+			foreach (string orden in new[] { "comprá", "compra ", "tenés que", "deberías" })
+				Igual($"  no dice '{orden.Trim()}'", "False",
+					leche.ParaElAsistente.Contains(orden, StringComparison.OrdinalIgnoreCase).ToString());
+
+			// A LOS 54 DIAS LOS DOS PRODUCTOS TOMARON CAMINOS DISTINTOS, y es justo el caso
+			// que separa las dos preguntas: la leche lleva casi ocho ciclos sin entrar -o sea
+			// que se dejo de comprar- y el arroz apenas uno y medio.
+			ListaParaLaProximaCompra despues = ritmos.LoQueVaAFaltar(new DateTime(2026, 4, 15));
+			Igual("a los 54 dias queda uno solo", "1", despues.Productos.Count.ToString());
+			Igual("  y es el arroz, que solo lleva ciclo y medio", "Arroz grano entero 2kg",
+				despues.Productos[0].Descripcion);
+			Igual("  atrasado 24 dias sobre sus 30", "24", despues.Productos[0].DiasDeMas.ToString());
+
+			// NINGUNO ATRASADO ES UNA RESPUESTA, no una lista vacia.
+			ListaParaLaProximaCompra alDia = ritmos.LoQueVaAFaltar(new DateTime(2026, 2, 21));
+			Igual("recien comprado: no toca nada", "0", alDia.CuantosTocan.ToString());
+			Igual("  y se dice que viene al dia", "True",
+				alDia.ParaElAsistente.Contains("no hay nada atrasado").ToString());
+
+			// LOS ANTOJOS ENTRAN, y es a proposito: esta lista la ABRE la persona, no la
+			// levanta la app sola. Sacarle el helado seria editarle la canasta.
+			Historial conHelado = ElGuion();
+			ListaParaLaProximaCompra delGuion = conHelado.LoQueVaAFaltar(new DateTime(2026, 9, 30));
+			bool hayAzucarado = false;
+			foreach (ProductoQueVaAFaltar p in delGuion.Productos)
+				if (p.Descripcion.Contains("Helado") || p.Descripcion.Contains("Soda")) hayAzucarado = true;
+			Igual("los azucarados entran en la lista que se pide", "True", hayAzucarado.ToString());
+
+			// LO ABANDONADO NO ES LO QUE FALTA. Sin este corte la lista encabezaba con
+			// productos de 266 dias sobre un ritmo mensual -nueve ciclos-, o sea cosas que
+			// la persona dejo de comprar. Esa es otra pregunta, y tiene su propia lectura.
+			//
+			// La leche vuelve cada 7: a los 21 dias sigue en la lista (tres ciclos justos) y
+			// a los 22 ya no.
+			ListaParaLaProximaCompra alBorde = ritmos.LoQueVaAFaltar(new DateTime(2026, 3, 13));
+			bool hayLecheAlBorde = false;
+            foreach (ProductoQueVaAFaltar p in alBorde.Productos)
+				if (p.Descripcion.Contains("Leche")) hayLecheAlBorde = true;
+			Igual("a los 21 dias -tres ciclos- la leche sigue en la lista", "True",
+				hayLecheAlBorde.ToString());
+
+			ListaParaLaProximaCompra pasado = ritmos.LoQueVaAFaltar(new DateTime(2026, 3, 14));
+			bool hayLecheDespues = false;
+			foreach (ProductoQueVaAFaltar p in pasado.Productos)
+				if (p.Descripcion.Contains("Leche")) hayLecheDespues = true;
+			Igual("a los 22 ya no: eso es 'lo dejaste', no 'te falta'", "False",
+				hayLecheDespues.ToString());
+
+			// Y EL CORTE ES POR CICLOS, NO POR DIAS: a esa misma fecha el arroz -que vuelve
+			// cada 30- lleva 22 dias y sigue, porque ni siquiera cumplio un ciclo.
+			bool hayArrozDespues = false;
+			foreach (ProductoQueVaAFaltar p in pasado.Productos)
+				if (p.Descripcion.Contains("Arroz")) hayArrozDespues = true;
+			Igual("  y el arroz con los mismos 22 dias sigue, porque su ciclo es de 30", "True",
+				hayArrozDespues.ToString());
+
+			// TOTAL: sin historia no revienta ni inventa.
+			Igual("historial vacio: no hay lista", "False",
+				new Historial().LoQueVaAFaltar(Hoy).Existe().ToString());
+			Igual("  y no tiene productos", "0",
+				new Historial().LoQueVaAFaltar(Hoy).Productos.Count.ToString());
+			Igual("  lo dice con palabras", "True",
+				new Historial().LoQueVaAFaltar(Hoy).ParaElAsistente.Contains("no hay compras suficientes").ToString());
+		}
+
+		// Leche cada 7 dias (4 compras), arroz cada 30 (3 compras), olla UNA vez. La ultima
+		// compra de todos es el 2026-02-20, asi que la aritmetica contra cualquier "hoy" se
+		// hace de cabeza.
+		private static Historial RitmosConocidos()
+		{
+			var historial = new Historial();
+			int numero = 1;
+
+			void Compra(DateTime cuando, params (string, string, int, decimal, string, int)[] lineas) =>
+				historial.Agregar(UnaCompra($"T-{numero++}", cuando, lineas));
+
+			var leche = ("LECHE-1L", "Leche semidescremada 1L", 1, 950m, "LacteosYHuevos", 0);
+			var arroz = ("ARROZ-2KG", "Arroz grano entero 2kg", 1, 2450m, "GranosYAbarrotes", 0);
+
+			// arroz: 22-dic, 21-ene, 20-feb  -> intervalos de 30 y 30
+			Compra(new DateTime(2025, 12, 22), arroz,
+				("OLLA-ARR-18", "Olla arrocera 1.8L", 1, 45900m, "Electrohogar", 12));
+			Compra(new DateTime(2026, 1, 21), arroz);
+
+			// leche: 30-ene, 6-feb, 13-feb, 20-feb -> intervalos de 7, 7 y 7
+			Compra(new DateTime(2026, 1, 30), leche);
+			Compra(new DateTime(2026, 2, 6), leche);
+			Compra(new DateTime(2026, 2, 13), leche);
+			Compra(new DateTime(2026, 2, 20), leche, arroz);
+
+			return historial;
 		}
 
 		// ---- el dominio ENCUENTRA el mes del quiebre ----
@@ -1502,7 +1638,7 @@ namespace Compras.Consola
 			Igual("  y no hay compras que mostrar", "0", nada.Compras.Count.ToString());
 			Igual("  el contador para el cable da 0", "0", nada.CuantasCompras.ToString());
 			Igual("  se dice con el termino adentro", "True",
-				nada.ParaSonia.Contains("caviar").ToString());
+				nada.ParaElAsistente.Contains("caviar").ToString());
 
 			// TOTAL DE VERDAD, sin lectores guardados: de algo que nunca se compro se
 			// llevaron cero unidades y se gastaron cero colones, y las dos son VERDAD. Es
@@ -1519,9 +1655,9 @@ namespace Compras.Consola
 			// LA FRASE NOMBRA EL PRODUCTO ENCONTRADO, no lo que se escribio: quien busco
 			// "helado" tiene que poder confirmar que la app entendio cual.
 			Igual("la frase nombra el producto hallado", "True",
-				helado.ParaSonia.Contains("Helado de vainilla 1L").ToString());
+				helado.ParaElAsistente.Contains("Helado de vainilla 1L").ToString());
 			Igual("  y con varios dice cuantos coinciden", "True",
-				dulces.ParaSonia.Contains("5 productos").ToString());
+				dulces.ParaElAsistente.Contains("5 productos").ToString());
 		}
 
 		private static Historial ElGuion()

@@ -90,7 +90,7 @@ internal sealed class ComprasTools
 		+ "compras, porque dice de que esta hecha su rutina. Un producto entra si aparece en al "
 		+ "menos la MITAD de las compras miradas, y cada uno trae en cuantas de cuantas aparece; "
 		+ "estaEnTodas marca los que no fallaron ni una vez. Si existe viene en false, o no hay "
-		+ "compras todavia o no hay nada que se repita lo suficiente, y paraSonia lo dice tal "
+		+ "compras todavia o no hay nada que se repita lo suficiente, y paraElAsistente lo dice tal "
 		+ "cual: son dos hechos distintos y ninguno es un error.")]
 	public FirmaDeLaSemana Firma(
 		[Description("Cuantas de sus ultimas compras mirar. Omitilo para usar el valor de la app (8).")]
@@ -228,7 +228,7 @@ internal sealed class ComprasTools
 		+ "respaldo completo: numero de compra, fecha, meses de cobertura, fecha de vencimiento, "
 		+ "cuantos dias le quedan y si esta vigente HOY. Si encontrada viene en false, o el "
 		+ "producto no esta en el registro o no tiene garantia — son dos hechos legitimos, no un "
-		+ "error. El campo paraSonia trae la lectura ya redactada por el dominio; queHacer viene "
+		+ "error. El campo paraElAsistente trae la lectura ya redactada por el dominio; queHacer viene "
 		+ "vacio cuando no hay nada que hacer, y eso tambien es una respuesta.")]
 	public GarantiaDeProducto Garantia(
 		[Description("Nombre (o parte del nombre) o sku del producto, por ejemplo 'olla arrocera'.")] string producto)
@@ -287,6 +287,26 @@ internal sealed class ComprasTools
 		if (!lector.HayJournal) return new ConsumoEnElTiempo();
 
 		return lector.Consultar(api => api.Consumo(termino));
+	}
+
+	[McpServerTool(Name = "para_mi_proxima_compra", UseStructuredContent = true)]
+	[Description("LA LISTA DE LO QUE LE VA A FALTAR a la persona, armada con el RITMO de cada "
+		+ "producto: cada cuanto suele volver y cuanto hace que no entra. Del mas atrasado al que "
+		+ "menos falta. Usala para '¿que tengo que comprar?', '¿que me esta faltando?' o cuando "
+		+ "arme una lista antes de ir al super. Cada producto trae toca -si ya paso su tiempo-, "
+		+ "diasTipicos, diasDesdeLaUltima y diasDeMas, que es negativo cuando todavia no toca: "
+		+ "los que NO tocan tambien vienen, por si quiere adelantarse. NO ES que_dejaste_de_comprar: "
+		+ "aquella mira lo que salio de la rutina, y esta EXCLUYE justamente eso — un producto que "
+		+ "lleva mas de tres ciclos sin entrar ya no cuenta como falta, cuenta como abandonado. "
+		+ "IMPORTANTE: es una lista de lo probable, no de lo necesario. La persona puede tener el "
+		+ "producto en su casa y esta app no lo sabe, asi que presentala como una sugerencia para "
+		+ "confirmar y nunca como una orden. Con cuantosTocan en 0 viene al dia, y eso es una "
+		+ "respuesta.")]
+	public ListaDeLaProximaCompra ParaMiProximaCompra()
+	{
+		if (!lector.HayJournal) return new ListaDeLaProximaCompra();
+
+		return lector.Consultar(api => api.Lista(DateTime.Now));
 	}
 
 	[McpServerTool(Name = "en_cuales_compras", UseStructuredContent = true)]

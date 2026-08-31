@@ -57,7 +57,7 @@ namespace Compras.Dominio
 		public abstract bool Subio { get; }
 
 		/// <summary>La lectura en una línea, escrita por el dominio con SUS hechos.</summary>
-		public abstract string ParaSonia { get; }
+		public abstract string ParaElAsistente { get; }
 
 		private sealed class SinPrecios : PrecioEnElTiempo
 		{
@@ -79,7 +79,7 @@ namespace Compras.Dominio
 				throw new InvalidOperationException(
 					$"No hay compras de «{Sku}»: no hay dirección que dar. Preguntar HayCambioReal antes.");
 
-			public override string ParaSonia => $"no hay compras de «{Sku}» en el historial";
+			public override string ParaElAsistente => $"no hay compras de «{Sku}» en el historial";
 		}
 
 		private sealed class Serie : PrecioEnElTiempo
@@ -143,7 +143,7 @@ namespace Compras.Dominio
 				}
 			}
 
-			public override string ParaSonia
+			public override string ParaElAsistente
 			{
 				get
 				{

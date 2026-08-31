@@ -64,6 +64,7 @@ namespace Compras.App
 						PrecioUnitario = Decimal(elemento, "precioUnitario"),
 						Total = Decimal(elemento, "totalDeLinea"),
 						Categoria = Texto(elemento, "categoria"),
+						Titulo = Texto(elemento, "titulo"),
 						TieneGarantia = Booleano(elemento, "tieneGarantia"),
 					});
 
@@ -145,7 +146,7 @@ namespace Compras.App
 				CambioEnElTotal = Decimal(cabecera, "cambioEnElTotal"),
 				Cambio = Decimal(cabecera, "cambio"),
 				HayAlgoQueLoExplique = Booleano(cabecera, "hayAlgoQueLoExplique"),
-				ParaSonia = Texto(cabecera, "paraSonia"),
+				ParaElAsistente = Texto(cabecera, "paraElAsistente"),
 				AnioAntes = Entero(cabecera, "anioAntes"),
 				MesAntes = Entero(cabecera, "mesAntes"),
 				GastoComestibleAntes = Decimal(cabecera, "gastoComestibleAntes"),
@@ -171,7 +172,7 @@ namespace Compras.App
 			{
 				ComprasMiradas = Entero(cabecera, "comprasMiradas"),
 				CuantosHabituales = Entero(cabecera, "cuantosHabituales"),
-				ParaSonia = Texto(cabecera, "paraSonia"),
+				ParaElAsistente = Texto(cabecera, "paraElAsistente"),
 				Habituales = Habituales(raiz, "habitual"),
 			};
 		}
@@ -202,7 +203,7 @@ namespace Compras.App
 				HayConQueComparar = Booleano(cabecera, "hayConQueComparar"),
 				HayCambio = Booleano(cabecera, "hayCambio"),
 				Corte = Texto(cabecera, "corte"),
-				ParaSonia = Texto(cabecera, "paraSonia"),
+				ParaElAsistente = Texto(cabecera, "paraElAsistente"),
 				Entraron = entraron,
 				Salieron = Habituales(raiz, "salio"),
 			};
@@ -249,7 +250,7 @@ namespace Compras.App
 					CambioEnProporcion = Decimal(elemento, "cambioEnProporcion"),
 					Subio = Booleano(elemento, "subio"),
 					VecesQueLoCompro = Entero(elemento, "vecesQueLoCompro"),
-					ParaSonia = Texto(elemento, "paraSonia"),
+					ParaElAsistente = Texto(elemento, "paraElAsistente"),
 				});
 
 			return precios;
@@ -285,7 +286,7 @@ namespace Compras.App
 				DiaFavorito = Texto(r, "diaFavorito"),
 				ComprasEnElDiaFavorito = Entero(r, "comprasEnElDiaFavorito"),
 				MomentoFavorito = Texto(r, "momentoFavorito"),
-				ParaSonia = Texto(r, "paraSonia"),
+				ParaElAsistente = Texto(r, "paraElAsistente"),
 				PorMomento = momentos,
 			};
 		}
@@ -306,7 +307,7 @@ namespace Compras.App
 				Cambio = Booleano(r, "cambio"),
 				Antes = Texto(r, "antes"),
 				Ahora = Texto(r, "ahora"),
-				ParaSonia = Texto(r, "paraSonia"),
+				ParaElAsistente = Texto(r, "paraElAsistente"),
 			};
 		}
 
@@ -326,7 +327,7 @@ namespace Compras.App
 					Antes = Texto(elemento, "antes"),
 					Ahora = Texto(elemento, "ahora"),
 					EsMasSeguido = Booleano(elemento, "esMasSeguido"),
-					ParaSonia = Texto(elemento, "paraSonia"),
+					ParaElAsistente = Texto(elemento, "paraElAsistente"),
 				});
 
 			return cambios;
@@ -357,6 +358,42 @@ namespace Compras.App
 		// EN CUALES COMPRAS APARECIO ALGO. Tres print del mismo bloque: la cabecera sale
 		// como "busqueda", cada producto que coincidio como "nombre" y cada compra como
 		// "compra".
+		// LO QUE VA A FALTAR. La clave del arreglo es el nombre de la variable del foreach
+		// -"producto"-, no el alias del print.
+		internal static ListaDeLaProximaCompra LaProximaCompra(string json)
+		{
+			if (string.IsNullOrWhiteSpace(json)) return new ListaDeLaProximaCompra();
+
+			using JsonDocument documento = JsonDocument.Parse(json);
+			JsonElement raiz = documento.RootElement;
+			JsonElement cabecera = raiz.TryGetProperty("lista", out JsonElement c) ? c : raiz;
+
+			var productos = new List<ProductoPorCaer>();
+			if (raiz.TryGetProperty("producto", out JsonElement arreglo))
+				foreach (JsonElement elemento in Elementos(arreglo))
+					productos.Add(new ProductoPorCaer
+					{
+						Sku = Texto(elemento, "sku"),
+						Descripcion = Texto(elemento, "descripcion"),
+						Cadencia = Texto(elemento, "cadencia"),
+						CadenciaCompacta = Texto(elemento, "cadenciaCompacta"),
+						DiasTipicos = Entero(elemento, "diasTipicos"),
+						UltimaVez = Texto(elemento, "ultimaVez"),
+						DiasDesdeLaUltima = Entero(elemento, "diasDesdeLaUltima"),
+						DiasDeMas = Entero(elemento, "diasDeMas"),
+						Toca = Booleano(elemento, "toca"),
+						ParaElAsistente = Texto(elemento, "paraElAsistente"),
+					});
+
+			return new ListaDeLaProximaCompra
+			{
+				Existe = Booleano(cabecera, "existe"),
+				CuantosTocan = Entero(cabecera, "cuantosTocan"),
+				Productos = productos,
+				ParaElAsistente = Texto(cabecera, "paraElAsistente"),
+			};
+		}
+
 		internal static ComprasHalladas Halladas(string json)
 		{
 			if (string.IsNullOrWhiteSpace(json)) return new ComprasHalladas();
@@ -397,7 +434,7 @@ namespace Compras.App
 				TotalGastado = Decimal(cabecera, "totalGastado"),
 				Productos = productos,
 				Compras = halladas,
-				ParaSonia = Texto(cabecera, "paraSonia"),
+				ParaElAsistente = Texto(cabecera, "paraElAsistente"),
 			};
 		}
 
@@ -457,7 +494,7 @@ namespace Compras.App
 				CambioDeGasto = Decimal(cabecera, "cambioDeGasto"),
 				HaySerie = Booleano(cabecera, "haySerie"),
 				HayCambioReal = Booleano(cabecera, "hayCambioReal"),
-				ParaSonia = Texto(cabecera, "paraSonia"),
+				ParaElAsistente = Texto(cabecera, "paraElAsistente"),
 				Meses = meses,
 			};
 		}
@@ -496,7 +533,7 @@ namespace Compras.App
 					EsRitmoObservado = Booleano(elemento, "esRitmoObservado"),
 					EsComestible = Booleano(elemento, "esComestible"),
 					Severidad = Texto(elemento, "severidad"),
-					ParaSonia = Texto(elemento, "paraSonia"),
+					ParaElAsistente = Texto(elemento, "paraElAsistente"),
 				});
 
 			return pendientes;
@@ -523,7 +560,7 @@ namespace Compras.App
 				DiasParaVencer = Entero(elemento, "diasParaVencer"),
 				Severidad = Texto(elemento, "severidad"),
 				QueHacer = Texto(elemento, "queHacer"),
-				ParaSonia = Texto(elemento, "paraSonia"),
+				ParaElAsistente = Texto(elemento, "paraElAsistente"),
 			};
 
 		// Un solo print emite un objeto; varios emiten un arreglo. Tratar los dos casos

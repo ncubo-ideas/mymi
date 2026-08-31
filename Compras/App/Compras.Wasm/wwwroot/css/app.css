@@ -721,6 +721,416 @@ main h2 {
     border-color: var(--linea);
 }
 
+/* ---------------------------------------------------------------- el pie
+
+   §3 asigna --gu-verde-oscuro a "titulares, barra superior, PIE", asi que el pie cierra con
+   la misma masa de color con la que la barra abre. Es lo que hace que la pantalla se lea
+   como una pieza y no como contenido suelto sobre un fondo. */
+.pie {
+    background: var(--barra-fondo);
+    color: var(--barra-tenue);
+    margin-top: 2.5rem;
+    padding: 1.4rem 0 1.6rem;
+}
+.pie-dentro {
+    max-width: 56rem;
+    margin: 0 auto;
+    padding: 0 1.5rem;
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: .6rem 1.4rem;
+    font-size: .88rem;
+}
+/* El bloque de marca del pie: la misma flor y las mismas dos lineas de la barra, un punto
+   mas chicas. Abrir y cerrar con la misma cara es lo que hace que la pagina se sienta una
+   pieza. */
+.pie-marca { display: flex; align-items: center; gap: .7rem; }
+.pie-flor { width: 34px; height: 34px; flex: 0 0 34px; }
+.pie-textos { display: flex; flex-direction: column; gap: 1px; }
+.pie-quien { color: var(--barra-tinta); font-weight: 700; font-size: .95rem; line-height: 1.2; }
+.pie-bajada { font-size: .72rem; color: var(--barra-tenue); }
+
+/* Los enlaces a la derecha en escritorio; debajo, y a la izquierda, en telefono. El
+   margin-left auto se apaga solo cuando el flex envuelve. */
+.pie-enlaces {
+    margin-left: auto;
+    display: flex;
+    flex-wrap: wrap;
+    gap: .6rem;
+}
+
+/* BOTONES, no texto subrayado: "el sitio" y "el WhatsApp" son cosas que se tocan, y sobre
+   el verde oscuro una pastilla translucida con su icono se lee como boton sin gritar. */
+.pie-boton {
+    display: inline-flex;
+    align-items: center;
+    gap: .45rem;
+    padding: .5rem .95rem;
+    border-radius: var(--radio-boton);
+    background: rgba(234, 246, 234, .08);
+    border: 1px solid rgba(234, 246, 234, .18);
+    color: var(--barra-tinta);
+    text-decoration: none;
+    font-size: .86rem;
+    font-weight: 600;
+    transition: background-color .15s ease, border-color .15s ease;
+}
+.pie-boton svg { width: 17px; height: 17px; }
+.pie-boton:hover {
+    background: rgba(46, 158, 91, .28);
+    border-color: var(--verde-vivo);
+    color: #fff;
+}
+
+/* El de WhatsApp lleva SU verde en el icono: es la unica marca ajena del pie, y el color
+   es lo que la vuelve reconocible de un vistazo. Solo el icono — el boton sigue siendo
+   nuestro. */
+.pie-boton--whatsapp svg { color: #4fce5d; }
+.pie-boton--whatsapp:hover { border-color: #4fce5d; background: rgba(79, 206, 93, .16); }
+
+.pie-numero { color: var(--barra-tenue); font-weight: 400; }
+
+/* La nota de la frontera: mas chica, y separada de los enlaces por su propia linea. */
+.pie-nota {
+    margin-top: .9rem;
+    padding-top: .9rem;
+    border-top: 1px solid rgba(234, 246, 234, .12);
+    font-size: .78rem;
+    color: var(--barra-tenue);
+}
+
+@media (max-width: 767.98px) {
+    /* La barra de pestañas esta FIJA al pie, asi que el pie de verdad necesita quedar por
+       encima de ella o queda tapado por los mismos px que la barra mide. */
+    .pie { margin-bottom: 4rem; }
+    .pie-enlaces { margin-left: 0; }
+}
+
+/* ------------------------------------------------- la anatomia de una seccion
+
+   TODA SECCION ABRE IGUAL: un chip con su icono y el titulo en kicker. Es lo que vuelve la
+   portada un SISTEMA en vez de una pila de bloques — antes convivian cartas con kicker y
+   <h2> pelados, y esa mezcla era lo que se sentia improvisado.
+
+   El chip tiene dos estados y son los DOS de la marca: verde lo estable, crema lo que
+   cambio. El neutro va tenido de verde clarito, que es el fondo de ficha que ya existe. */
+.seccion-cabeza {
+    display: flex;
+    align-items: center;
+    gap: .65rem;
+    margin: 0 0 .85rem;
+}
+/* Cuando la cabeza esta SUELTA (las secciones que no van dentro de una carta tenida),
+   lleva mas aire arriba: es lo que separa una seccion de la anterior. */
+main > .seccion-cabeza, main .seccion-cabeza:not(.card-body .seccion-cabeza) { margin-top: 1.9rem; }
+.card-body > .seccion-cabeza { margin-top: 0; }
+
+.seccion-icono {
+    width: 34px;
+    height: 34px;
+    flex: 0 0 34px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 10px;
+    background: var(--ficha);
+    color: var(--verde);
+    box-shadow: inset 0 0 0 1px var(--linea);
+}
+.seccion-icono svg { width: 19px; height: 19px; }
+
+/* El titulo: el kicker que ya existia, pero ahora es EL unico estilo de titulo de seccion.
+   Los <h2> lo llevan como clase para conservar la semantica sin conservar el tamaño. */
+h2.kicker { font-size: .74rem; margin: 0; }
+.seccion-cabeza .kicker { margin: 0; color: var(--gu-verde-oscuro); }
+.seccion-desde { color: var(--tenue); font-weight: 600; letter-spacing: .04em; }
+
+.seccion-cabeza--estable .seccion-icono {
+    background: var(--estable-fondo);
+    color: var(--estable-tinta);
+    box-shadow: inset 0 0 0 1px var(--estable-borde);
+}
+.seccion-cabeza--cambio .seccion-icono {
+    background: #fff;
+    color: var(--cambio-tinta);
+    box-shadow: inset 0 0 0 1px var(--cambio-borde);
+}
+.seccion-cabeza--cambio .kicker { color: var(--cambio-tinta); }
+.seccion-cabeza .ver-todos { margin-left: auto; }
+
+/* ------------------------------------------------- el pulido de los componentes */
+
+/* Las listas se leen como CARTAS: la misma sombra suave y el mismo radio que .card, para
+   que una seccion con lista y una con carta pesen igual en la pagina. */
+.list-group { box-shadow: var(--sombra-carta); border-radius: var(--radio-carta); }
+.list-group-item { border-color: var(--linea); padding-top: .85rem; padding-bottom: .85rem; }
+
+/* Las filas que LLEVAN a algun lado lo dicen con la mano y con un tinte al pasar; las que
+   no, no reaccionan. Que solo reaccione lo clickeable es parte de sentirse componente. */
+.list-group-item-action { transition: background-color .15s ease; }
+.list-group-item-action:hover { background-color: var(--tinte-verde); }
+
+/* Las barras se llenan con un degradado del verde al vivo y ANIMAN su ancho: una barra que
+   crece hasta su valor se entiende como medida; una que aparece llena, como decoracion. */
+.momento-barra span {
+    background: linear-gradient(90deg, var(--verde), var(--verde-vivo));
+    transition: width .5s ease;
+}
+
+/* Botones y pestañas responden al toque sin saltar: color y sombra, no tamaño. */
+.btn { transition: background-color .15s ease, box-shadow .15s ease; }
+.btn-primary:hover { box-shadow: 0 2px 10px rgba(46, 158, 91, .35); }
+
+/* El foco del teclado se ve, y en el color de la marca. */
+:focus-visible { outline: 2px solid var(--verde-vivo); outline-offset: 2px; }
+
+/* Quien pidio menos movimiento, lo tiene: las transiciones son cortesia, no contenido. */
+@media (prefers-reduced-motion: reduce) {
+    .momento-barra span, .btn, .list-group-item-action { transition: none; }
+}
+
+/* --------------------------------------------------- lo que va a faltar
+
+   FILAS DE LISTA sobre la carta crema, con la foto del producto. Dos columnas cuando el
+   ancho da -seis productos son tres filas y la carta no se estira- y una en telefono.
+
+   La antiguedad va en PASTILLA a la derecha, que es el mismo gesto del "vence el" de las
+   garantias: en toda la app, el dato que decide se lee en el mismo lugar y con la misma
+   forma. */
+.lista-proxima {
+    display: grid;
+    /* 20rem de minimo = DOS columnas en el ancho de la app, no tres: con tres, "Pechuga
+       de pollo kg" quedaba en "Pechuga d…" y la pastilla empujaba la razon a dos lineas.
+       Una lista donde no se lee que falta no es una lista. */
+    grid-template-columns: repeat(auto-fill, minmax(20rem, 1fr));
+    gap: .6rem;
+}
+.proxima-fila {
+    display: flex;
+    align-items: center;
+    gap: .75rem;
+    background: var(--carta);
+    border: 1px solid var(--cambio-borde);
+    border-radius: var(--radio-ficha);
+    padding: .6rem .75rem;
+    box-shadow: 0 1px 4px rgba(138, 90, 31, .07);
+}
+
+/* La foto en un plato redondo tenido: es lo que las vuelve producto y no icono suelto.
+   El circulo ademas empareja fotos de proporciones distintas — una botella alta y un
+   paquete ancho ocupan el mismo lugar. */
+.proxima-foto {
+    width: 44px;
+    height: 44px;
+    flex: 0 0 44px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    background: var(--ficha);
+    box-shadow: inset 0 0 0 1px var(--linea);
+}
+.proxima-foto img { max-width: 30px; max-height: 32px; }
+.proxima-foto--sin::before {
+    content: "";
+    width: 20px;
+    height: 20px;
+    border: 2px dashed var(--linea);
+    border-radius: 6px;
+}
+
+.proxima-que {
+    display: flex;
+    flex-direction: column;
+    gap: .05rem;
+    min-width: 0;
+    flex: 1 1 auto;
+}
+.proxima-que strong {
+    font-size: .92rem;
+    line-height: 1.25;
+    /* Un nombre largo no rompe la fila: se corta con puntos y el completo vive en la
+       ficha del producto. */
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+.proxima-razon { font-size: .76rem; color: var(--tenue); }
+
+.proxima-hace {
+    flex: 0 0 auto;
+    font-size: .74rem;
+    font-weight: 600;
+    color: var(--cambio-tinta);
+    background: var(--cambio-fondo);
+    border: 1px solid var(--cambio-borde);
+    border-radius: var(--radio-boton);
+    padding: .22rem .6rem;
+    white-space: nowrap;
+}
+
+/* El numero de la compra, al pie y en chico: es una herramienta suya para reclamar, no el
+   encabezado de una factura. */
+.numero-de-compra {
+    margin-top: 1rem;
+    padding-top: .8rem;
+    border-top: 1px solid var(--linea);
+}
+
+/* --------------------------------------------------------- las paginas de un recibo
+
+   SOLO EN ESCRITORIO: en telefono el pie es un boton que expande, y el markup de estos
+   controles ni siquiera se renderiza. La razon no es el espacio sino el dedo — un numero de
+   pagina es un objetivo de 32 px, y volver de la 3 a la 1 en una pantalla angosta hace
+   perder donde estabas.
+
+   Los numeros son BOTONES y no enlaces: no cambian la url ni el historial. Que el back del
+   browser saltara entre paginas de un mismo recibo en vez de volver a la lista seria la
+   sorpresa mas fea de esta pantalla. */
+.paginas {
+    display: flex;
+    align-items: center;
+    gap: .3rem;
+    flex-wrap: wrap;
+    margin-top: .3rem;
+}
+.pagina-numero,
+.pagina-salto {
+    min-width: 2rem;
+    height: 2rem;
+    padding: 0 .5rem;
+    border: 1px solid var(--linea);
+    border-radius: var(--radio-ficha);
+    background: var(--carta);
+    color: var(--tinta);
+    font-size: .88rem;
+    line-height: 1;
+}
+.pagina-numero:hover:not(.pagina-actual),
+.pagina-salto:hover:not(:disabled) { background: var(--tinte-verde); border-color: var(--verde); }
+
+.pagina-actual {
+    background: var(--verde);
+    border-color: var(--verde);
+    color: #fff;
+    font-weight: 700;
+}
+.pagina-salto:disabled { opacity: .4; }
+
+/* CUANTAS LINEAS SE ESTAN VIENDO DE CUANTAS, al final de la fila. Con tres paginas los
+   numeros ya lo dicen; con once no caben todos y esta cuenta es lo unico que orienta. */
+.paginas-cuenta {
+    margin-left: .5rem;
+    font-size: .82rem;
+    color: var(--tenue);
+}
+
+/* ------------------------------------------------- las lineas de una compra
+
+   EN TELEFONO LA TABLA SE APILA. Medido: su ancho minimo es 566 px -cinco columnas, y la
+   descripcion de un producto no baja de unas 150-, asi que en una pantalla de 375 se salia
+   191 px. Y no habia ningun contenedor con overflow, de modo que el desborde se lo comia la
+   PAGINA: barra de scroll horizontal en toda la pantalla, no en la tabla.
+
+   Se descarto envolverla en un overflow-x. Scrollear una tabla de lado en un telefono es
+   incomodo y ademas esconde columnas que no se sabe que estan; el resto de la app ya
+   resuelve lo mismo con filas apiladas -los recibos, los infaltables- y esto se parece a
+   eso en vez de inventar un gesto nuevo. */
+@media (max-width: 767.98px) {
+    /* El encabezado no sirve apilado: cada celda lleva su rotulo. */
+    .lineas thead { display: none; }
+    .lineas, .lineas tbody, .lineas tr, .lineas td { display: block; width: auto; }
+
+    .lineas tr {
+        border-bottom: 1px solid var(--linea);
+        padding: .75rem 0;
+    }
+    .lineas tr:last-child { border-bottom: 0; }
+
+    .lineas td {
+        border: 0;
+        padding: 0;
+        text-align: left !important;
+    }
+
+    /* La primera celda es el producto: va sola y en negrita, como el nombre de una fila. */
+    .lineas td:first-child { font-weight: 600; margin-bottom: .3rem; }
+
+    /* Las tres cifras vuelven a una sola linea, cada una con su rotulo delante. Sin el
+       rotulo, "1 · ₡4.350 · ₡4.350" no dice cual es cual. */
+    .lineas td[data-rotulo="Cantidad"],
+    .lineas td[data-rotulo="Precio"],
+    .lineas td[data-rotulo="Total"] {
+        display: inline-block;
+        margin-right: .9rem;
+        font-size: .86rem;
+        color: var(--tenue);
+    }
+    .lineas td[data-rotulo]::before {
+        content: attr(data-rotulo) " ";
+        color: var(--tenue-2);
+        font-size: .74rem;
+        text-transform: uppercase;
+        letter-spacing: .08em;
+    }
+    /* El departamento es una etiqueta y ya se explica sola: no lleva rotulo. */
+    .lineas td[data-rotulo="Departamento"] { margin-bottom: .35rem; }
+    .lineas td[data-rotulo="Departamento"]::before { content: ""; }
+
+    /* El total de la linea es la cifra que se busca: se lee como cifra, no como nota. */
+    .lineas td[data-rotulo="Total"] { color: var(--tinta); font-weight: 600; }
+}
+
+/* ---------------------------------------------------------------- donde se guarda
+
+   LAS DOS FORMAS DE GUARDAR, lado a lado. Van en tarjetas y no en una lista de radios
+   porque no son la misma cosa con distinto nombre: una deja el registro en el disco de la
+   persona y su asistente lo puede consultar; la otra lo deja donde el navegador manda y el
+   MCP no lo ve. Cada tarjeta dice QUE DA, y esa frase es la eleccion. */
+.modos {
+    display: grid;
+    gap: .9rem;
+    grid-template-columns: repeat(auto-fit, minmax(15rem, 1fr));
+    margin: 1.1rem 0 .25rem;
+}
+.modo {
+    background: var(--carta);
+    border: 1px solid var(--linea);
+    border-radius: var(--radio-ficha);
+    padding: 1rem 1.05rem;
+    display: flex;
+    flex-direction: column;
+    gap: .6rem;
+}
+.modo-que {
+    font-weight: 700;
+    font-size: .74rem;
+    letter-spacing: .16em;
+    text-transform: uppercase;
+    color: var(--verde);
+}
+.modo-da { font-size: .86rem; color: var(--tenue); flex: 1; line-height: 1.45; }
+.modo-da strong { color: var(--tinta); font-weight: 600; }
+.modo .btn { align-self: flex-start; }
+
+/* NO DISPONIBLE NO ES LO MISMO QUE DESHABILITADO: la opcion existe y en otro navegador
+   funciona. Se atenua y se explica, no se esconde — esconderla haria parecer que la app
+   solo sabe hacer una cosa, y quien la abra en su telefono no sabria que en la compu
+   puede mas. */
+.modo--nodisponible { background: transparent; border-style: dashed; }
+.modo--nodisponible .modo-que { color: var(--tenue-2); }
+.modo-falta { display: block; margin-top: .35rem; color: var(--tenue-2); font-size: .8rem; }
+
+/* El segundo modo NO compite visualmente con el primero: la carpeta es el caso estrella
+   y el navegador es el degradado, asi que su boton es de contorno y no relleno. */
+.btn-secundario {
+    background: transparent;
+    border: 1px solid var(--verde);
+    color: var(--verde);
+}
+.btn-secundario:hover { background: var(--tinte-verde); color: var(--verde); }
+
 /* QUE ENTENDIO LA APP al buscar: el producto -o los productos- que coincidieron, y los
    totales de TODAS las compras, no de las que se alcanzan a pintar. Va sobre el tinte verde
    para que se lea como una respuesta y no como una fila mas de la lista. */

@@ -789,6 +789,100 @@ namespace Compras.Dominio
 		}
 
 		// Los dias entre fechas consecutivas. Compartido por las dos lecturas de ritmo.
+		/// <summary>
+		/// LO QUE PROBABLEMENTE LE VA A FALTAR: los productos con ritmo conocido, medidos
+		/// contra cuánto hace que no entran. Del más atrasado al que menos falta.
+		/// </summary>
+		// LA FECHA DE HOY VIENE RECIBIDA, como en todas las lecturas que miran el calendario:
+		// el dominio no lee el reloj. Sin eso, esta lectura daria distinto en cada replay del
+		// journal y dejaria de ser reproducible.
+		//
+		// SE RECORRE EL HISTORIAL UNA VEZ Y SE AGRUPA POR SKU. La alternativa -pedirle a
+		// RitmoDeUnProducto el ritmo de cada producto del catalogo- recorreria las 87 compras
+		// una vez por producto: con 29 productos son 29 pasadas para armar una lista.
+		public ListaParaLaProximaCompra LoQueVaAFaltar(DateTime hoy)
+		{
+			// Las fechas de compra de cada producto, en orden y sin repetir el mismo dia: un
+			// producto en dos lineas del mismo ticket es UNA compra, y un intervalo de cero
+			// dias no es un ritmo.
+			var fechasPorSku = new Dictionary<string, List<DateTime>>(StringComparer.OrdinalIgnoreCase);
+
+			foreach (Compra compra in Ordenadas())
+			{
+				var vistos = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+				foreach (Item item in compra.Items)
+				{
+					if (!vistos.Add(item.Sku)) continue;
+
+					if (!fechasPorSku.TryGetValue(item.Sku, out List<DateTime> fechas))
+					{
+						fechas = new List<DateTime>();
+						fechasPorSku[item.Sku] = fechas;
+					}
+
+					if (fechas.Count == 0 || fechas[fechas.Count - 1].Date != compra.Fecha.Date)
+						fechas.Add(compra.Fecha);
+				}
+			}
+
+			var productos = new List<ProductoQueVaAFaltar>();
+			foreach (KeyValuePair<string, List<DateTime>> par in fechasPorSku)
+			{
+				if (par.Value.Count < ListaParaLaProximaCompra.ComprasQueHacenFaltaParaSaberElRitmo)
+					continue;
+
+				IReadOnlyList<int> intervalos = Intervalos(par.Value);
+				if (intervalos.Count == 0) continue;
+
+				DateTime ultima = par.Value[par.Value.Count - 1];
+				int desde = (int)(hoy.Date - ultima.Date).TotalDays;
+				// Una compra con fecha posterior a "hoy" no es un error de datos que valga
+				// reventar: se cuenta como recien comprada.
+				if (desde < 0) desde = 0;
+
+				// LO QUE SE ABANDONO NO ES LO QUE FALTA. Pasados tantos ciclos sin entrar, el
+				// producto salio de la rutina y ponerlo en la lista de la proxima compra seria
+				// sugerirle a alguien algo que decidio dejar. Esa otra pregunta -"que dejaste
+				// de comprar"- la contesta AbastecimientosPendientes.
+				int tipicos = Mediana(intervalos);
+				if (desde > tipicos * ListaParaLaProximaCompra.CiclosDespuesDeLosCualesYaNoEsFalta)
+					continue;
+
+				productos.Add(new ProductoQueVaAFaltar(
+					par.Key,
+					Catalogo.Tiene(par.Key) ? Catalogo[par.Key].Descripcion : par.Key,
+					tipicos,
+					ultima,
+					desde));
+			}
+
+			if (productos.Count == 0) return ListaParaLaProximaCompra.Ninguna;
+
+			// DEL MAS ATRASADO AL QUE MENOS FALTA. A igual atraso gana el de ritmo mas corto:
+			// dos dias de mas sobre algo semanal aprieta mas que dos sobre algo mensual.
+			productos.Sort((uno, otro) =>
+			{
+				int porAtraso = otro.DiasDeMas.CompareTo(uno.DiasDeMas);
+				return porAtraso != 0 ? porAtraso : uno.DiasTipicos.CompareTo(otro.DiasTipicos);
+			});
+
+			return ListaParaLaProximaCompra.De(productos);
+		}
+
+		// La mediana de los intervalos, que es lo que resiste una compra corrida. Vive aca
+		// porque la usan dos lecturas -el cambio de ritmo y esta lista- y las dos tienen que
+		// medir el ritmo igual.
+		private static int Mediana(IReadOnlyList<int> valores)
+		{
+			var ordenados = new List<int>(valores);
+			ordenados.Sort();
+
+			int medio = ordenados.Count / 2;
+			return ordenados.Count % 2 == 1
+				? ordenados[medio]
+				: (ordenados[medio - 1] + ordenados[medio]) / 2;
+		}
+
 		private static IReadOnlyList<int> Intervalos(IReadOnlyList<DateTime> fechas)
 		{
 			var intervalos = new List<int>();

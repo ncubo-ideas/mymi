@@ -64,18 +64,63 @@
                 Elegí la carpeta y la app escribe su registro ahí; nadie más la lee.
             </p>
 
-            @if (soportado == false)
+            @* DOS MODOS, Y SE DICE QUE DA CADA UNO. El briefing §6.2 pide que la app no
+               falle donde no hay picker — y donde no lo hay es en Safari, en Firefox y en
+               CUALQUIER teléfono, que es justo donde el diseño de Fernanda vive.
+
+               No se ofrece el segundo como si fuera lo mismo: en el navegador el registro
+               PERSISTE, pero vive en el sandbox del origen y el servidor MCP no lo ve. La
+               mitad "tu IA lo consulta" no funciona ahí, y callarlo sería vender de más. *@
+            <div class="modos">
+                <div class="modo @(soportado == false ? "modo--nodisponible" : "")">
+                    <div class="modo-que">Una carpeta tuya</div>
+                    <div class="modo-da">
+                        Queda en tu disco, y <strong>tu asistente la puede consultar</strong>.
+                        @if (soportado == false)
+                        {
+                            <span class="modo-falta">Este navegador no tiene el selector de carpetas.</span>
+                        }
+                    </div>
+                    <button class="btn btn-primary" @onclick="ConectarCarpeta" disabled="@(soportado == false)">
+                        Elegir carpeta
+                    </button>
+                </div>
+
+                <div class="modo @(opfs == false ? "modo--nodisponible" : "")">
+                    <div class="modo-que">@(instalada == true ? "En esta app" : "En este navegador")</div>
+                    <div class="modo-da">
+                        También se guarda y sobrevive al cierre, pero lo administra el navegador:
+                        <strong>tu asistente no lo puede leer</strong>.
+                        @if (opfs == false)
+                        {
+                            <span class="modo-falta">No disponible acá.</span>
+                        }
+                    </div>
+                    <button class="btn btn-secundario" @onclick="UsarNavegador" disabled="@(opfs == false)">
+                        Guardar acá
+                    </button>
+                </div>
+            </div>
+
+            @* NO HAY NINGUNO: se dice POR QUÉ, que no es lo mismo que decir QUE no hay. Las
+               dos APIs exigen contexto seguro, así que entrar por la IP de la máquina las
+               apaga igual que un navegador viejo — y mandar a esa persona a buscar otro
+               browser es culpar al equipo equivocado. *@
+            @if (sinAlmacenamiento == "inseguro")
             {
-                <p class="text-danger mb-2">
-                    Este browser no tiene <code>showDirectoryPicker</code>, así que no puede escribir en
-                    una carpeta tuya. La app funciona igual, pero el registro vive solo en memoria y se
-                    pierde al cerrar.
+                <p class="text-danger mt-3 mb-0">
+                    Esta página no es un <strong>contexto seguro</strong>, y el navegador apaga las
+                    dos formas de guardar. Entrá por <code>https</code> o por <code>localhost</code>
+                    y aparecen las dos. No es tu navegador.
                 </p>
             }
-
-            <button class="btn btn-primary" @onclick="ConectarCarpeta" disabled="@(soportado == false)">
-                Elegir carpeta
-            </button>
+            else if (sinAlmacenamiento == "navegador")
+            {
+                <p class="text-danger mt-3 mb-0">
+                    Este navegador no puede guardar nada de forma permanente. La app funciona igual,
+                    pero el registro vive solo en memoria y se pierde al cerrar.
+                </p>
+            }
         }
 
         <div class="mt-3">
@@ -85,14 +130,25 @@
 }
 else
 {
+    @* LA FRANJA DE ARRIBA, en el idioma de ella y no en el del sistema. Decia:
+       "Refresh · 87 compras · ₡3.222.336 en total · leído hasta el evento 387".
+
+       "Refresh" es un verbo de programa. "leído hasta el evento 387" es el checkpoint
+       INTERNO de la bitacora, o sea la app hablando de si misma en la primera linea de la
+       pantalla: no le dice nada a quien compra, y le dice que esto es un sistema. Sigue
+       existiendo donde sirve —la tool total_de_compras lo devuelve, porque para saber si la
+       app esta al dia SI hace falta— pero eso lo mira el asistente, no ella. *@
     <div class="d-flex align-items-center flex-wrap gap-2 mb-3">
         <button class="btn btn-primary" @onclick="Refrescar" disabled="@refrescando">
-            @(refrescando ? "Refrescando…" : "Refresh")
+            @(refrescando ? "Buscando…" : "Buscar compras nuevas")
         </button>
         <span class="text-body-secondary">
-            @cantidad @(cantidad == 1 ? "compra" : "compras") &middot;
-            @Colones(total) en total &middot;
-            leído hasta el evento @ultimoEvento
+            @cantidad @(cantidad == 1 ? "compra tuya" : "compras tuyas")
+            @if (desdeCuando.Length > 0)
+            {
+                @: desde @desdeCuando
+            }
+            &middot; @Colones(total)
         </span>
     </div>
 
@@ -104,7 +160,30 @@ else
                 Esta app está funcionando sin carpeta: lo que ves lo vuelve a pedir al proveedor
                 cada vez que abrís, y no queda registro tuyo en disco.
             </div>
-            <button class="btn btn-aviso" @onclick="ConectarCarpeta">Elegir carpeta</button>
+            <button class="btn btn-aviso" @onclick="ConectarCarpeta"
+                    disabled="@(soportado == false)">Elegir carpeta</button>
+            @if (opfs == true)
+            {
+                <button class="btn btn-aviso" @onclick="UsarNavegador">Guardar en este navegador</button>
+            }
+        </div>
+    }
+    @* GUARDANDO EN EL NAVEGADOR: persiste, pero el MCP no lo ve. Se dice SIEMPRE y no solo
+       al elegirlo, porque es la mitad del producto que ahí no funciona y nadie se acuerda
+       de una advertencia que vio una vez. *@
+    else if (estado.EnAlmacenamientoDelNavegador)
+    {
+        <div class="aviso d-flex align-items-center flex-wrap gap-2 mb-3">
+            <div class="flex-grow-1">
+                <strong>Guardado @(instalada == true ? "en esta app" : "en este navegador").</strong>
+                Tus compras sobreviven al cierre, pero viven donde el navegador las administra:
+                <strong>tu asistente no las puede consultar</strong>. Para eso hace falta una
+                carpeta tuya.
+            </div>
+            @if (soportado == true)
+            {
+                <button class="btn btn-aviso" @onclick="ConectarCarpeta">Elegir una carpeta</button>
+            }
         </div>
     }
     else if (estado.GuardadoFallando.Length > 0)
@@ -132,6 +211,72 @@ else
 
        Son los dos estados de la marca: VERDE lo estable, ÁMBAR lo que cambió. Rojo nunca
        —"un carrito no tiene urgencias"—. Y el ámbar no es un regaño: señala y se calla. *@
+    @* PARA LA PROXIMA COMPRA. Va PRIMERA porque es lo unico accionable de la portada: el
+       resto cuenta lo que ya paso, y esto dice que hacer hoy.
+
+       ES UN RESUMEN Y NO LA LISTA ENTERA, que es lo que el equipo pidio para la app: se
+       nombran unos pocos y se dice cuantos son. El detalle completo -cada producto con su
+       ritmo y sus dias- lo da la tool del MCP, que es donde el detalle no estorba. *@
+    @if (porCaer is not null && porCaer.CuantosTocan > 0)
+    {
+        <div class="card border-warning-subtle bg-warning-subtle mb-3">
+            <div class="card-body">
+        @* UNA SOLA ANATOMIA DE SECCION para toda la portada. Antes convivian dos: tres
+           cartas con kicker y siete <h2> pelados con el contenido suelto — y esa mezcla es
+           lo que hacia que la pagina no se sintiera un sistema. Ahora toda seccion abre
+           igual: un chip con su icono y el titulo en kicker. Los iconos son SVG inline por
+           lo mismo que los de las pestañas: la fuente recortada no trae glifos decorativos,
+           y un emoji renderiza distinto en cada sistema. *@
+                <div class="seccion-cabeza seccion-cabeza--cambio">
+                    <span class="seccion-icono" aria-hidden="true"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M3.5 8h13l-1.4 7.5H4.9z"/><path d="M7 8l3-4.5L13 8"/></svg></span>
+                    <span class="kicker">Para tu próxima compra</span>
+                </div>
+                <div class="fs-5">
+                    @porCaer.CuantosTocan @(porCaer.CuantosTocan == 1 ? "cosa" : "cosas")
+                    de las que solés llevar ya pasaron su tiempo.
+                </div>
+
+                @* UNA LISTA DE VERDAD, no chips. Cada fila con la FOTO del producto -las
+                   mismas que ya usan las fichas-, el nombre, y su razon debajo: sin el
+                   "hace 16 días" seria la app diciendote que compres pollo; con el es un
+                   hecho tuyo que podes confirmar o descartar — podes tener dos en el
+                   congelador y esta app no lo sabe.
+
+                   La antiguedad va en una pastilla a la derecha, como el "vence el" de las
+                   garantias: mismo gesto para "el dato que decide" en toda la app. *@
+                <div class="lista-proxima mt-3">
+                    @foreach (var producto in Faltantes())
+                    {
+                        <div class="proxima-fila">
+                            @{ string foto = Foto(producto.Sku); }
+                            @if (foto.Length > 0)
+                            {
+                                <span class="proxima-foto"><img src="@foto" alt="" /></span>
+                            }
+                            else
+                            {
+                                <span class="proxima-foto proxima-foto--sin" aria-hidden="true"></span>
+                            }
+                            <span class="proxima-que">
+                                <strong>@producto.Descripcion</strong>
+                                <span class="proxima-razon">@producto.CadenciaCompacta en tu carrito</span>
+                            </span>
+                            <span class="proxima-hace">hace @producto.DiasDesdeLaUltima días</span>
+                        </div>
+                    }
+                </div>
+
+                @if (porCaer.CuantosTocan > FaltantesQueSeMuestran)
+                {
+                    <div class="small text-body-secondary mt-2">
+                        Y @(porCaer.CuantosTocan - FaltantesQueSeMuestran) más.
+                        Tu asistente te puede dar la lista completa.
+                    </div>
+                }
+            </div>
+        </div>
+    }
+
     @if (firma is not null && firma.Existe)
     {
         <div class="card border-success-subtle bg-success-subtle mb-3">
@@ -139,11 +284,21 @@ else
                 @* EL "VER TODOS" es del diseño de Fernanda, y la portada muestra un puñado
                    a proposito: aca la pregunta es reconocerse de un vistazo, y la lista
                    entera es otra pantalla. *@
-                <div class="d-flex justify-content-between align-items-baseline gap-2 mb-2">
-                    <div class="kicker text-success-emphasis">Los que siempre vuelven</div>
+                <div class="seccion-cabeza seccion-cabeza--estable">
+                    <span class="seccion-icono" aria-hidden="true"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M4.5 10a5.5 5.5 0 0 1 9.3-4"/><path d="M13.9 3.2v3.2h-3.2"/><path d="M15.5 10a5.5 5.5 0 0 1-9.3 4"/><path d="M6.1 16.8v-3.2h3.2"/></svg></span>
+                    <span class="kicker">Los que siempre vuelven</span>
                     <a class="ver-todos" href="infaltables">Ver todos &rarr;</a>
                 </div>
-                <div class="fs-5">@firma.ParaSonia</div>
+                @* NO SE PINTA LA FRASE DEL DOMINIO. Decia "su semana tiene una firma:
+                   Leche…" — en TERCERA PERSONA, porque esas frases estan escritas para que
+                   se las LEA el asistente, no para esta pantalla. Toda la app la tutea y esa
+                   linea hablaba SOBRE ella, como un reporte sobre una clienta.
+
+                   Por eso ese miembro dejo de llamarse ParaSonia y se llama ParaElAsistente:
+                   el nombre viejo invitaba a pintarlo. *@
+                <div class="fs-5">
+                    Esto es lo que no te falla. Lo llevás casi cada vez que vas.
+                </div>
 
                 @* Con UN solo habitual, repetir el nombre debajo de la frase que ya lo dice
                    es ruido: alcanza la frecuencia. Con varios, las etiquetas dicen cual
@@ -173,18 +328,19 @@ else
                                     <span class="infaltable-sinfoto" aria-hidden="true"></span>
                                 }
                                 <div class="infaltable-nombre">@Corto(habitual.Descripcion)</div>
-                                <div class="infaltable-veces">
-                                    <b>@habitual.ComprasEnQueAparece</b> de @habitual.DeCuantas<br />compras
-                                </div>
+                                @* SE FUE EL "8 de 8 compras". Es la FRACCION con la que el
+                                   dominio decide quien entra a la firma — un dato del
+                                   mecanismo, no de ella: nadie piensa "llevo la leche en 8 de
+                                   mis ultimas 8 compras". Los puntos ya dibujan esa misma
+                                   proporcion para quien la quiera de un vistazo, y la
+                                   constancia la dice como se dice: "nunca falla". La cuenta
+                                   exacta la sigue dando la tool la_firma_de_mi_canasta. *@
                                 <div class="puntos" aria-hidden="true">
                                     @for (int i = 0; i < habitual.DeCuantas; i++)
                                     {
                                         <span class="punto @(i < habitual.ComprasEnQueAparece ? "punto-lleno" : "")"></span>
                                     }
                                 </div>
-                                @* LA CONSTANCIA en palabras, que es lo que el diseño pone en la
-                                   ficha de producto: "casi nunca falta". Los puntos se ven de un
-                                   vistazo y esto se LEE — no es lo mismo, y por eso van los dos. *@
                                 <div class="infaltable-constancia">@habitual.Constancia</div>
                             </div>
                         }
@@ -198,15 +354,18 @@ else
     {
         <div class="card border-warning-subtle bg-warning-subtle mb-4">
             <div class="card-body">
-                <div class="kicker text-warning-emphasis mb-2">
-                    Lo que cambió
-                    @if (cambio.MesDelCambio.Length > 0)
-                    {
-                        <span class="text-body-secondary">· desde @cambio.MesDelCambio</span>
-                    }
+                <div class="seccion-cabeza seccion-cabeza--cambio">
+                    <span class="seccion-icono" aria-hidden="true"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M10 3.5l1.5 4.2 4.2 1.5-4.2 1.5L10 14.9l-1.5-4.2-4.2-1.5 4.2-1.5z"/><path d="M15.7 13.9l.6 1.7 1.7.6-1.7.6-.6 1.7-.6-1.7-1.7-.6 1.7-.6z"/></svg></span>
+                    <span class="kicker">
+                        Lo que cambió
+                        @if (cambio.MesDelCambio.Length > 0)
+                        {
+                            <span class="seccion-desde">· desde @cambio.MesDelCambio</span>
+                        }
+                    </span>
                 </div>
 
-                @* La frase del dominio (ParaSonia) esta escrita para que la LEA alguien: es
+                @* La frase del dominio (ParaElAsistente) esta escrita para que la LEA alguien: es
                    la que contestan el MCP y la consola. En pantalla, con nueve productos, se
                    volvia un parrafo de cuatro lineas que terminaba en "(y 4 mas)" — un
                    volcado, no una lectura. Aca van los mismos hechos del dominio
@@ -252,7 +411,10 @@ else
        porque "cada 6,5 días" no es como habla nadie. Y sin veredicto: de qué a qué. *@
     @if (ritmos is not null && ritmos.Count > 0)
     {
-        <h2>Un cambio en tu rutina</h2>
+        <div class="seccion-cabeza">
+            <span class="seccion-icono" aria-hidden="true"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M10 6.3v4l2.6 1.6"/><circle cx="10" cy="10" r="6.6"/></svg></span>
+            <h2 class="kicker">Un cambio en tu rutina</h2>
+        </div>
         <div class="list-group mb-4">
             @foreach (var ritmo in ritmos)
             {
@@ -279,7 +441,10 @@ else
        mes con compras, y la aritmética de "el mes anterior" se resuelve mal en enero. *@
     @if (mes is not null && mes.HayComparacion)
     {
-        <h2>Tu mes en el súper</h2>
+        <div class="seccion-cabeza">
+            <span class="seccion-icono" aria-hidden="true"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M3.5 8.4h13"/><path d="M7 3.2v2.6"/><path d="M13 3.2v2.6"/><rect x="3.5" y="4.5" width="13" height="12" rx="2.2"/></svg></span>
+            <h2 class="kicker">Tu mes en el súper</h2>
+        </div>
         <div class="card mb-4">
             <div class="card-body">
                 <div class="d-flex justify-content-between align-items-start flex-wrap gap-2">
@@ -325,7 +490,10 @@ else
        su referencia no se puede comparar, y esa es la mitad del dato. *@
     @if (precios is not null && precios.Count > 0)
     {
-        <h2>Lo que cambió de precio</h2>
+        <div class="seccion-cabeza">
+            <span class="seccion-icono" aria-hidden="true"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M3.5 10.3V4.7a1.2 1.2 0 0 1 1.2-1.2h5.6l6.2 6.2-6.8 6.8z"/><circle cx="7.2" cy="7.2" r="1.15"/></svg></span>
+            <h2 class="kicker">Lo que cambió de precio</h2>
+        </div>
         <p class="ritmo-rotulo mb-2">De los productos que sí llevás.</p>
         <div class="list-group mb-4">
             @foreach (var precio in precios)
@@ -355,10 +523,15 @@ else
        mañana. La línea la escribe el DOMINIO. *@
     @if (ritmo is not null && ritmo.EsObservado)
     {
-        <h2>Tu ritmo</h2>
+        <div class="seccion-cabeza">
+            <span class="seccion-icono" aria-hidden="true"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M2.8 11h3l2-5 3.6 8 2-5h3.8"/></svg></span>
+            <h2 class="kicker">Tu ritmo</h2>
+        </div>
         <div class="card mb-4">
             <div class="card-body">
-                <div class="fs-5 mb-3">@ritmo.ParaSonia</div>
+                @* Igual que arriba: la frase del dominio es para el asistente. Aca las
+                   cifras de abajo ya lo dicen, asi que alcanza con nombrar la pregunta. *@
+                <div class="fs-5 mb-3">Así vas al súper.</div>
 
                 <div class="ritmo-cifras">
                     <div class="ritmo-cifra">
@@ -404,7 +577,10 @@ else
        pasillo con su título legible; la llave del repertorio no se le enseña a nadie. *@
     @if (comparacion is not null && comparacion.HayComparacion)
     {
-        <h2>Tu canasta, comparada</h2>
+        <div class="seccion-cabeza">
+            <span class="seccion-icono" aria-hidden="true"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M4.6 16.3v-4.6"/><path d="M10 16.3V6.5"/><path d="M15.4 16.3v-6.8"/><path d="M3 16.3h14"/></svg></span>
+            <h2 class="kicker">Tu canasta, comparada</h2>
+        </div>
         <div class="list-group mb-4">
             <div class="list-group-item">
                 <div class="d-flex justify-content-between align-items-start flex-wrap gap-2">
@@ -423,7 +599,11 @@ else
                         </div>
                     </div>
                 </div>
-                <div class="small mt-2">@comparacion.ParaSonia</div>
+                @* La comparacion es la unica cuya frase SI vale en pantalla: dice de que
+                   pasillos sale la diferencia, y eso no se arma desde las cifras de al lado.
+                   Se la tutea al pintarla en vez de reescribir el dominio, que la necesita
+                   asi para el asistente. *@
+                <div class="small mt-2">@Tuteada(comparacion.ParaElAsistente)</div>
             </div>
 
             @foreach (var diferencia in comparacion.Diferencias)
@@ -459,7 +639,10 @@ else
        cada categoría. *@
     @if (pendientes.Count > 0)
     {
-        <h2>Lo que dejó de entrar</h2>
+        <div class="seccion-cabeza">
+            <span class="seccion-icono" aria-hidden="true"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="4" width="12" height="12" rx="3" stroke-dasharray="3 2.6"/></svg></span>
+            <h2 class="kicker">Lo que dejó de entrar</h2>
+        </div>
         <div class="list-group mb-4">
             @foreach (AbastecimientoEnEspera p in pendientes)
             {
@@ -468,7 +651,7 @@ else
                        evento y no se le muestra a nadie. *@
                     <div>
                         <strong>@p.Titulo</strong>
-                        <div class="small text-body-secondary">@p.ParaSonia</div>
+                        <div class="small text-body-secondary">@p.ParaElAsistente</div>
                     </div>
                     <span class="etiqueta @(p.Severidad == "informativo" ? "etiqueta-neutra" : "etiqueta-tierra")">
                         @p.DiasDesdeLaUltima días
@@ -482,26 +665,36 @@ else
        buscar tickets de papel. *@
     @if (garantias.Count > 0)
     {
-        <h2>Garantías vigentes</h2>
+        <div class="seccion-cabeza">
+            <span class="seccion-icono" aria-hidden="true"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M10 3l6 2.1v4.7c0 3.4-2.4 5.7-6 7-3.6-1.3-6-3.6-6-7V5.1z"/><path d="M7.6 9.9l1.7 1.7 3.1-3.3"/></svg></span>
+            <h2 class="kicker">Tus garantías</h2>
+        </div>
         <div class="list-group mb-4">
             @foreach (GarantiaDeProducto g in garantias)
             {
                 <div class="list-group-item d-flex justify-content-between align-items-center flex-wrap gap-2">
                     <div>
                         <strong>@g.Descripcion</strong>
+                        @* SIN "(compra T-89917)" EN EL MEDIO de la frase: el numero es del
+                           sistema del super, y va donde sirve — junto al reclamo, que es lo
+                           unico para lo que ella lo necesita. Y las fechas se leen ("9 de
+                           mayo"), no dd/MM/yyyy, que es formato de formulario. *@
                         <div class="small text-body-secondary">
-                            comprada el @g.FechaDeCompra.ToString("dd/MM/yyyy", CultureInfo.InvariantCulture)
-                            (compra @g.NumeroDeCompra) &middot; @g.MesesDeCobertura meses
+                            la compraste el @Fecha(g.FechaDeCompra) &middot;
+                            @g.MesesDeCobertura meses de garantía
                         </div>
                         @* La acción sale del conjunto cerrado del dominio: la pantalla no
                            puede inventar una que el dominio no eligió. *@
                         @if (g.QueHacer.Length > 0)
                         {
-                            <div class="small mt-1"><strong>@g.QueHacer</strong></div>
+                            <div class="small mt-1">
+                                <strong>@g.QueHacer</strong> &middot;
+                                el número para el reclamo es @g.NumeroDeCompra
+                            </div>
                         }
                     </div>
                     <span class="etiqueta @(g.QueHacer.Length > 0 ? "etiqueta-tierra" : "etiqueta-verde")">
-                        vence el @g.VenceEl.ToString("dd/MM/yyyy", CultureInfo.InvariantCulture)
+                        te cubre hasta el @Fecha(g.VenceEl)
                     </span>
                 </div>
             }
@@ -525,7 +718,20 @@ else
 }
 
 @code {
+    // CUANTOS SE NOMBRAN EN LA PORTADA. La app resume; el MCP detalla. Con compras
+    // semanales el dia de ir al super "tocan" casi todos los habituales -medido: 16 de 22-,
+    // y una carta con dieciseis nombres deja de ser un resumen.
+    private const int FaltantesQueSeMuestran = 6;
+
+    // DESDE CUANDO COMPRA ACA, en palabras. "87 compras" solo es un numero; "87 compras
+    // desde enero de 2025" es su historia con este super, que es lo que ella reconoce.
+    private string desdeCuando = "";
+
+    private ListaDeLaProximaCompra? porCaer;
     private bool? soportado;
+    private bool? opfs;
+    private bool? instalada;
+    private string sinAlmacenamiento = "";
     private bool refrescando;
 
     private IReadOnlyList<CompraEnLista> compras = new List<CompraEnLista>();
@@ -547,7 +753,22 @@ else
     {
         if (estado.EstaArriba) { Releer(); return; }
 
+        // SE PREGUNTA TODO ANTES DE DECIDIR NADA. Antes esto hacia
+        // `if (soportado != true) return;` y se iba: en un telefono -donde no hay picker-
+        // la pantalla no averiguaba ni si habia OPFS, asi que no podia ofrecerlo.
         soportado = await estado.EstaSoportado();
+        opfs = await estado.OpfsSoportado();
+        sinAlmacenamiento = await estado.MotivoSinAlmacenamiento();
+        instalada = await estado.EstaInstalada();
+
+        // SE REENGANCHA AL MODO DE LA VEZ PASADA, y sin gesto. Es lo que hace que en un
+        // telefono la app se abra sola con sus datos en vez de pedir el boton cada vez.
+        if (await estado.ReengancharModo())
+        {
+            await Arrancar();
+            return;
+        }
+
         if (soportado != true) return;
 
         // Recuperar el handle NO necesita gesto; volver a otorgar el permiso SI.
@@ -561,6 +782,18 @@ else
     private Task ConectarCarpeta() => Intentar("elegir carpeta", async () =>
     {
         if ((await estado.ConectarCarpeta()).Ok)
+        {
+            await estado.Arrancar();
+            Releer();
+        }
+    });
+
+    // GUARDAR EN EL NAVEGADOR. No pide gesto al browser -el origen es dueño de su propio
+    // almacenamiento- pero SI sale de un click: es una decision de la persona sobre donde
+    // van sus datos, y esas no se toman solas.
+    private Task UsarNavegador() => Intentar("guardar en este navegador", async () =>
+    {
+        if ((await estado.UsarAlmacenamientoDelNavegador()).Ok)
         {
             await estado.Arrancar();
             Releer();
@@ -628,6 +861,8 @@ else
         comparacion = estado.ComparacionPorDefecto();
 
         // La portada: lo estable y lo que cambió.
+        desdeCuando = DesdeCuando(estado.Rango());
+        porCaer = estado.Lista();
         firma = estado.Firma();
         cambio = estado.CambioDelUltimoAnio();
         ritmos = estado.RitmosQueCambiaron();
@@ -737,12 +972,80 @@ else
         return espacio > 2 ? descripcion[..espacio] : descripcion;
     }
 
-    // "en todas" cuando no fallo ni una vez, y si no la cuenta cruda. La palabra la
-    // decide esta pantalla porque es una forma de decirlo, no un hecho nuevo.
+    // La frecuencia dicha como se dice, no la fraccion del mecanismo. La cuenta exacta la
+    // da la tool la_firma_de_mi_canasta, que es quien la necesita.
     private static string Frecuencia(ProductoQueVuelve habitual) =>
         habitual.EstaEnTodas
-            ? "en todas"
-            : $"en {habitual.ComprasEnQueAparece} de {habitual.DeCuantas}";
+            ? "lo llevás cada vez que vas"
+            : "lo llevás casi cada vez que vas";
+
+    // LOS QUE SE PINTAN: solo los atrasados, y unos pocos. El dia de ir al super casi todos
+    // los habituales "tocan" -medido con los datos reales: 16 de 22-, y una carta con
+    // dieciseis nombres deja de ser el resumen que la app tiene que dar.
+    //
+    // Se corta en el PRIMERO QUE NO TOCA y no se filtra la lista entera: viene ordenada del
+    // mas atrasado al que menos falta, asi que despues del primero que no toca no hay
+    // ninguno que si.
+    private IReadOnlyList<ProductoPorCaer> Faltantes()
+    {
+        if (porCaer is null) return new List<ProductoPorCaer>();
+
+        var pocos = new List<ProductoPorCaer>();
+        foreach (ProductoPorCaer producto in porCaer.Productos)
+        {
+            if (!producto.Toca || pocos.Count == FaltantesQueSeMuestran) break;
+
+            pocos.Add(producto);
+        }
+
+        return pocos;
+    }
+
+    // TUTEAR UNA FRASE ESCRITA PARA EL ASISTENTE. Es un parche honesto y acotado: el
+    // dominio escribe "su canasta", "compro", "lleva" porque esas lineas las lee la IA
+    // hablando DE ella; en pantalla hay que hablarle A ella.
+    //
+    // Solo se usa donde la frase aporta algo que las cifras de al lado no dicen. Donde no
+    // aporta, la pantalla escribe la suya y listo — que es lo que se hizo en las otras tres.
+    // "9 de mayo de 2026": la fecha como se dice. Los meses van a mano por la globalizacion
+    // recortada de wasm, igual que en todas las pantallas.
+    private static string Fecha(DateTime cuando)
+    {
+        string[] meses = { "enero", "febrero", "marzo", "abril", "mayo", "junio",
+            "julio", "agosto", "setiembre", "octubre", "noviembre", "diciembre" };
+
+        return $"{cuando.Day} de {meses[cuando.Month - 1]} de {cuando.Year}";
+    }
+
+    // "enero de 2025" desde el aaaa-mm que devuelve el dominio. El formato con guion es
+    // como la fecha VIAJA -y asi la da la tool del MCP, que es lo correcto para una
+    // maquina-; en pantalla se lee.
+    private static string DesdeCuando(RangoDelHistorialVista rango)
+    {
+        if (rango is null || rango.PrimerMes.Length < 7) return "";
+
+        string[] partes = rango.PrimerMes.Split('-');
+        if (partes.Length < 2 || !int.TryParse(partes[1], out int mes) || mes < 1 || mes > 12) return "";
+
+        string[] meses = { "enero", "febrero", "marzo", "abril", "mayo", "junio",
+            "julio", "agosto", "setiembre", "octubre", "noviembre", "diciembre" };
+
+        return $"{meses[mes - 1]} de {partes[0]}";
+    }
+
+    private static string Tuteada(string frase)
+    {
+        if (frase.Length == 0) return frase;
+
+        string tuya = frase
+            .Replace("su canasta", "tu canasta")
+            .Replace("Su canasta", "Tu canasta")
+            .Replace("su semana", "tu semana")
+            .Replace(" compro ", " compraste ")
+            .Replace(" lleva ", " llevás ");
+
+        return char.ToUpperInvariant(tuya[0]) + tuya.Substring(1);
+    }
 
     private static string Colones(decimal monto) =>
         Plata.Colones(monto);   @* la regla vive en el dominio, no en cada pantalla *@

@@ -70,7 +70,7 @@ namespace Compras.Dominio
 		// y un campo es mas barato de proyectar que contar una lista.
 		public abstract int CuantasCompras { get; }
 
-		public abstract string ParaSonia { get; }
+		public abstract string ParaElAsistente { get; }
 
 		private sealed class SinCoincidencias : ComprasConElProducto
 		{
@@ -94,7 +94,7 @@ namespace Compras.Dominio
 
 			public override int CuantasCompras => 0;
 
-			public override string ParaSonia => $"No hay ninguna compra con «{buscado}».";
+			public override string ParaElAsistente => $"No hay ninguna compra con «{buscado}».";
 		}
 
 		private sealed class Hallazgos : ComprasConElProducto
@@ -152,7 +152,7 @@ namespace Compras.Dominio
 			// SE NOMBRA EL PRODUCTO ENCONTRADO Y NO LO ESCRITO cuando son distintos: quien
 			// busco "leche" tiene que poder confirmar que la app entendio "Leche
 			// semidescremada 1L" y no otra cosa. Con varios, se dice cuantos.
-			public override string ParaSonia
+			public override string ParaElAsistente
 			{
 				get
 				{
