@@ -1,0 +1,127 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!-- EL HOST DE GNOTHI EN UN iPHONE. El espejo de Gnothi.Mobile, a proposito.
+
+       Los dos proyectos incluyen EXACTAMENTE los mismos globs, con las mismas exclusiones, y
+       la misma Assets/ui.html -que no se copia: se enlaza el mismo archivo. Si algo entra al
+       nucleo, entra en los dos. Si divergen, es un bug.
+
+           Gnothi.Host/*.cs        el nucleo          identico
+           Gnothi.Assistant/*.cs   la Puerta 2        identico
+           Gnothi.Movil/*.cs       la cascara         identico
+           Assets/ui.html          la cara            EL MISMO ARCHIVO
+           ════════════════
+           MainActivity.cs         WebView Android    ~120 lineas
+           ViewController.cs       WKWebView iOS      ~120 lineas
+
+       POR QUE NO MAUI. Ver el comentario largo en Gnothi.Movil/Shell.cs. En resumen: la cara
+       de Gnothi ya es un HTML, asi que la UI YA ESTA compartida; MAUI compartiria su propio
+       framework -que no usamos- y NO compartiria el puente del WebView, que es API nativa de
+       cada plataforma igual. -->
+
+  <PropertyGroup>
+    <TargetFramework>net9.0-ios</TargetFramework>
+    <OutputType>Exe</OutputType>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <SupportedOSPlatformVersion>16.0</SupportedOSPlatformVersion>
+    <RootNamespace>Gnothi.iOS</RootNamespace>
+
+    <ApplicationId>com.ncubo.gnothi.host</ApplicationId>
+    <ApplicationTitle>Gnothi</ApplicationTitle>
+    <ApplicationDisplayVersion>1.0</ApplicationDisplayVersion>
+    <ApplicationVersion>1</ApplicationVersion>
+  </PropertyGroup>
+
+  <!-- ═══ AOT: LA PARTE QUE HAY QUE LEER ANTES DE TOCAR ═══════════════════════════════
+
+       Android puede escribir esto, y lo escribe:
+
+           <RunAOTCompilation>false</RunAOTCompilation>
+           <AndroidLinkMode>None</AndroidLinkMode>
+
+       con el comentario «No AOT and no linker: reflection IS the mechanism, not a detail».
+
+       EN iOS ESA LINEA NO EXISTE. Apple prohibe generar codigo nativo en el aparato, asi que
+       .NET compila AOT y punto. Medido en Spikes/Lab.Aot: el nucleo pasa limpio -Dispatcher,
+       ModuleCatalog, Module, ToolIndex, HostTools, ConsentWatch, IShell, cero warnings- y los
+       37 que salen son 28 de JsonSerializer y 9 de InProcessShell, que es el cargador
+       dinamico de modulos.
+
+       LO QUE LOS TAPA, y no es lo mismo para cada uno:
+
+           IL3050  RequiresDynamicCode        -> el INTERPRETE de Mono
+           IL2026  RequiresUnreferencedCode   -> el LINKER (MtouchLink)
+           IL2070/IL2075  reflexion            -> idem linker
+
+       Detalle completo, con fuentes: NotasGnothiHost/32. -->
+
+  <PropertyGroup>
+    <!-- NUNCA NativeAOT. El interprete de Mono NO es compatible con el, y prenderlo apagaria
+         la unica salida que tenemos para cargar un modulo que llega despues. Esta linea esta
+         puesta para que alguien que quiera "que ande mas rapido" tropiece con el comentario
+         antes que con el bug. -->
+    <PublishAot>false</PublishAot>
+  </PropertyGroup>
+
+  <PropertyGroup Condition="'$(Configuration)' == 'Debug'">
+    <!-- Sin linker: en Debug queremos MEDIR si la reflexion anda, no pelear con lo que el
+         trimmer borro. El interprete ya viene encendido por omision en Debug. -->
+    <MtouchLink>None</MtouchLink>
+  </PropertyGroup>
+
+  <PropertyGroup Condition="'$(Configuration)' == 'Release'">
+    <!-- «AOT compile all assemblies, while still allowing the interpreter to perform dynamic
+         code generation» · es textual de la doc de Microsoft, y es la combinacion que nos
+         sirve: el rendimiento del AOT para todo lo que ya viene adentro, y el interprete
+         disponible para lo que llegue despues.
+
+         SdkOnly y no Full: el linker toca las bibliotecas del SDK y deja NUESTRO codigo en
+         paz, que es donde vive la reflexion. -->
+    <MtouchInterpreter>-all</MtouchInterpreter>
+    <MtouchLink>SdkOnly</MtouchLink>
+  </PropertyGroup>
+
+  <!-- ═══ EL MISMO CODIGO QUE ANDROID ═════════════════════════════════════════════════ -->
+
+  <ItemGroup>
+    <!-- EL MISMO GLOB Y LAS MISMAS EXCLUSIONES QUE Gnothi.Mobile.csproj. Si estas dos listas
+         dejan de coincidir, las dos plataformas dejan de correr el mismo Host · que es
+         justamente lo que la suite de conformance existe para impedir. -->
+    <Compile Include="..\Gnothi.Host\*.cs"
+             Exclude="..\Gnothi.Host\Program.cs;..\Gnothi.Host\ToolBridge.cs;..\Gnothi.Host\ConsentWatcher.cs;..\Gnothi.Host\HostInstaller.cs;..\Gnothi.Host\QueryConsole.cs;..\Gnothi.Host\StdioShell.cs" />
+
+    <!-- El stub del shell de stdio se REUSA, no se copia, y la razon de fondo es la misma en
+         las dos plataformas: no hay exec() desde la carpeta de datos y no hay dotnet CLI. El
+         dia que esa explicacion cambie, cambia en un solo lugar. -->
+    <Compile Include="..\Gnothi.Mobile\StdioShellStub.cs" />
+
+    <Compile Include="..\Gnothi.Assistant\*.cs" />
+    <Compile Include="..\Gnothi.Movil\*.cs" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- LA CARA, Y ES EL MISMO ARCHIVO. No una copia: el mismo ui.html que renderiza Android.
+         Esa es la mitad de la respuesta a «que se vea igual». -->
+    <BundleResource Include="..\Gnothi.Mobile\Assets\ui.html" Link="Assets\ui.html" LogicalName="Assets/ui.html" />
+
+    <!-- EL PAQUETE, SI YA SE ARMO. Es lo mismo que armar-paquete.ps1 le empuja al Android por
+         adb: los journals y los modulos. Va condicionado porque paquete/ esta gitignoreado
+         -es salida de build, no fuente- y un clon limpio no lo tiene.
+
+         Va dentro del bundle solo como SEMILLA: ViewController lo copia a Documents/incoming
+         la primera vez y despues no lo vuelve a tocar. Lo que la persona deje ahi por la app
+         Archivos manda sobre esto. -->
+    <BundleResource Include="..\Gnothi.Mobile\paquete\**\*"
+                    Link="paquete\%(RecursiveDir)%(Filename)%(Extension)"
+                    LogicalName="paquete/%(RecursiveDir)%(Filename)%(Extension)"
+                    Condition="Exists('..\Gnothi.Mobile\paquete')" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Ncubo.Puppeteer" Version="$(VersionDelMotor)" />
+    <ProjectReference Include="..\Examenes\Mecanismo\Puppets.Portador\Puppets.Portador.csproj" />
+    <ProjectReference Include="..\Gnothi.Contract\Gnothi.Contract.csproj" />
+  </ItemGroup>
+
+</Project>
