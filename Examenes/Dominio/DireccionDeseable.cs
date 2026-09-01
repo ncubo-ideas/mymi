@@ -22,27 +22,27 @@ namespace Examenes.Dominio
 	// para el antigeno que suba. Antes eso era un bool en ExamenDeSangre
 	// (DireccionPreocupanteEsAscenso) que solo sabia contestar "asciende o desciende", y
 	// no tenia como decir que a un analito le da lo mismo, ni que depende.
-	public sealed class DireccionDeseable
+	internal sealed class DireccionDeseable
 	{
 		// Colesterol, LDL, antigeno prostatico: mas bajo es mejor.
-		public static readonly DireccionDeseable Bajar = new DireccionDeseable("bajar", -1);
+		internal static readonly DireccionDeseable Bajar = new DireccionDeseable("bajar", -1);
 
 		// HDL: mas alto es mejor. Es el unico del demo, y existe justamente para que
 		// "alto" no signifique "malo" en todo el dominio.
-		public static readonly DireccionDeseable Subir = new DireccionDeseable("subir", 1);
+		internal static readonly DireccionDeseable Subir = new DireccionDeseable("subir", 1);
 
 		// Hemoglobina, sodio: lo bueno es quedarse adentro del rango. Alejarse es peor
 		// en cualquiera de las dos direcciones, asi que ningun signo es favorable por si
 		// mismo.
-		public static readonly DireccionDeseable Mantenerse = new DireccionDeseable("mantenerse", 0);
+		internal static readonly DireccionDeseable Mantenerse = new DireccionDeseable("mantenerse", 0);
 
 		// Existe de verdad y hay que poder decirlo: el mismo movimiento se lee distinto
 		// segun algo que el numero no trae. Ningun analito del demo la usa todavia; esta
 		// nombrada para que el dia que entre no obligue a reabrir el conjunto.
-		public static readonly DireccionDeseable DependeDelContexto =
+		internal static readonly DireccionDeseable DependeDelContexto =
 			new DireccionDeseable("depende del contexto", 0);
 
-		public string Nombre { get; private set; }
+		internal string Nombre { get; private set; }
 
 		private readonly int favorable;
 
@@ -55,7 +55,7 @@ namespace Examenes.Dominio
 		// Si esta direccion puede juzgar un cambio ella sola. Mantenerse necesita saber
 		// donde esta el rango, y DependeDelContexto necesita el contexto: preguntarles
 		// por el signo no tiene respuesta.
-		public bool JuzgaPorElSigno =>
+		internal bool JuzgaPorElSigno =>
 			ReferenceEquals(this, Bajar) || ReferenceEquals(this, Subir);
 
 		// Si un cambio CON SIGNO va hacia donde conviene.
@@ -64,7 +64,7 @@ namespace Examenes.Dominio
 		// decision que Nitritos.EsPositivo cuando la prueba no se corrio: un false ahi
 		// diria "no es favorable", que es una afirmacion que esta direccion no puede
 		// hacer, y el que pregunta no tendria como notar la diferencia.
-		public bool EsFavorable(decimal cambio)
+		internal bool EsFavorable(decimal cambio)
 		{
 			if (!JuzgaPorElSigno)
 				throw new InvalidOperationException(
@@ -76,6 +76,6 @@ namespace Examenes.Dominio
 
 		// Un cambio de cero no es favorable ni desfavorable en ninguna direccion, y en
 		// Mantenerse es justamente lo mejor que puede pasar.
-		public bool EsQuedarseQuieto(decimal cambio) => cambio == 0m;
+		internal bool EsQuedarseQuieto(decimal cambio) => cambio == 0m;
 	}
 }

@@ -22,7 +22,7 @@ namespace Examenes.Dominio
 	//
 	// Ninguna pantalla puede contestar "viene subiendo o esta estable". Eso es lo que
 	// hace que la tool MCP sobre este analito no sea una repeticion de la UI.
-	public sealed class AntigenoProstatico : ExamenDeSangre
+	internal sealed class AntigenoProstatico : ExamenDeSangre
 	{
 		// Se nombra el analito UNA vez y con el namespace por delante. Dentro de esta
 		// clase el identificador `Analito` es tambien la propiedad heredada, y calificarlo
@@ -32,14 +32,14 @@ namespace Examenes.Dominio
 
 		// 0.75 ng/mL por ano. NO es un numero inventado para el demo: es el corte habitual
 		// de velocidad de PSA, y se usa incluso con el valor absoluto dentro del rango.
-		public const decimal VelocidadQueExigeAtencionPorAno = 0.75m;
+		internal const decimal VelocidadQueExigeAtencionPorAno = 0.75m;
 
-		public AntigenoProstatico(DateTime fecha, decimal valor, string unidad)
+		internal AntigenoProstatico(DateTime fecha, decimal valor, string unidad)
 			: base(fecha, Suyo, Medida(valor, unidad, Suyo))
 		{
 		}
 
-		public override string Nombre => Suyo.ParaMostrar;
+		internal override string Nombre => Suyo.ParaMostrar;
 
 		// El techo sube con la edad: la prostata crece, y 4.0 a los 70 no significa lo
 		// mismo que 4.0 a los 45. Este escalonado por decada es la razon concreta de que
@@ -50,7 +50,7 @@ namespace Examenes.Dominio
 		// anatomico de su identidad— y no contra que se compara. Un antigeno de alguien con
 		// prostata se lee igual sea cual sea la etiqueta; uno de alguien sin prostata no se
 		// lee, no se lee "distinto".
-		public override RangoDeReferencia RangoPara(Paciente paciente)
+		internal override RangoDeReferencia RangoPara(Paciente paciente)
 		{
 			ArgumentNullException.ThrowIfNull(paciente);
 
@@ -63,11 +63,11 @@ namespace Examenes.Dominio
 			return RangoDeReferencia.HastaUnMaximoDe(techo, Suyo.Unidad);
 		}
 
-		public override decimal CambioMaximoVerosimilPorDia => 0.05m;
+		internal override decimal CambioMaximoVerosimilPorDia => 0.05m;
 
-		public override decimal CambioMinimoSignificativo => 0.75m;
+		internal override decimal CambioMinimoSignificativo => 0.75m;
 
-		public override DireccionDeseable Direccion => DireccionDeseable.Bajar;
+		internal override DireccionDeseable Direccion => DireccionDeseable.Bajar;
 
 		// Anual a partir de los 50, que es cuando el tamizaje empieza a tener sentido.
 		// Antes de esa edad, y con el valor en rango, cada dos anos alcanza.
@@ -77,15 +77,15 @@ namespace Examenes.Dominio
 		// TRIPLICARSE. Es el ejemplo textual de Alvaro -"de 1 a 10 ya se esta muerto"-
 		// puesto en un numero que no descarta hallazgos reales: un antigeno que se duplica
 		// es exactamente el caso que este dominio existe para detectar, y tiene que pasar.
-		public override decimal MultiploQueNingunIntervaloJustifica => 3m;
+		internal override decimal MultiploQueNingunIntervaloJustifica => 3m;
 
-		public override int MesesHastaElProximo(Paciente paciente) =>
+		internal override int MesesHastaElProximo(Paciente paciente) =>
 			paciente.Edad >= 50 ? 12 : (EsNormalPara(paciente) ? 24 : 12);
 
 		// LA SERIE ES LA QUE SABE. Lo que este analito puede contestar mirando UNA
 		// medicion se queda aca -su rango, sus umbrales, su direccion-; todo lo que
 		// necesita la historia -velocidad, linea base, confirmacion de un pico- vive en
 		// SerieDeAntigenoProstatico, que es "el plural" que pidio Alvaro.
-		public override SerieContinua NuevaSerie() => new SerieDeAntigenoProstatico();
+		internal override SerieContinua NuevaSerie() => new SerieDeAntigenoProstatico();
 	}
 }

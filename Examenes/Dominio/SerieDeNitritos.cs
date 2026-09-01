@@ -10,15 +10,15 @@ namespace Examenes.Dominio
 	// urinaria y se tratan; la pregunta que importa despues es si la prueba siguiente
 	// volvio a salir negativa. Un solo punto no puede contestarla, y es la unica pregunta
 	// que la persona de verdad tiene despues del tratamiento.
-	public sealed class SerieDeNitritos : SerieBinaria
+	internal sealed class SerieDeNitritos : SerieBinaria
 	{
-		public SerieDeNitritos() : base(Analito.NitritosEnOrina) { }
+		internal SerieDeNitritos() : base(Analito.NitritosEnOrina) { }
 
 		// Anual dentro del urianalisis de rutina; al mes si salieron positivos, que es
 		// cuando corresponde comprobar que la infeccion cedio.
 		//
 		// ⚠️ Orientativa.
-		public override int MesesHastaElProximo(Paciente paciente) =>
+		internal override int MesesHastaElProximo(Paciente paciente) =>
 			Ultima != null && Ultima.EsHallazgo ? 1 : 12;
 
 		protected override Interpretacion Leer(Paciente paciente)

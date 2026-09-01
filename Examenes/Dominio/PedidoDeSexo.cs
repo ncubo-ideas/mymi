@@ -30,16 +30,16 @@ namespace Examenes.Dominio
 	// Desconocido y lo dice con honestidad, que ya esta cubierto por el resto del diseno.
 	//
 	// Carrier por identidad: sin Equals, sin GetHashCode, no es llave de nada.
-	public sealed class PedidoDeSexo
+	internal sealed class PedidoDeSexo
 	{
 		private readonly List<Analito> sinLeer;
 
-		public Sexo Sexo { get; private set; }
+		internal Sexo Sexo { get; private set; }
 
 		// Cuantos analitos con historia tiene el expediente. Es el denominador de la frase.
-		public int Analitos { get; private set; }
+		internal int Analitos { get; private set; }
 
-		public PedidoDeSexo(Sexo sexo, IReadOnlyList<Analito> sinLeer, int analitos)
+		internal PedidoDeSexo(Sexo sexo, IReadOnlyList<Analito> sinLeer, int analitos)
 		{
 			ArgumentNullException.ThrowIfNull(sexo);
 			ArgumentNullException.ThrowIfNull(sinLeer);
@@ -54,21 +54,21 @@ namespace Examenes.Dominio
 		// ejemplo— el bloque no tiene nada que reclamar, y pedirle un dato a alguien sin
 		// poder decirle para que es exactamente el recordatorio generico que este diseno
 		// evita.
-		public bool HaceFalta => !Sexo.EsConocido && sinLeer.Count > 0;
+		internal bool HaceFalta => !Sexo.EsConocido && sinLeer.Count > 0;
 
-		public int SinInterpretar => sinLeer.Count;
+		internal int SinInterpretar => sinLeer.Count;
 
 		// La severidad, dicha: es SIEMPRE informativo. Viaja para que la superficie use el
 		// mismo vocabulario que en todo lo demas y no tenga que acordarse de la regla.
-		public Severidad Severidad => Severidad.Informativo;
+		internal Severidad Severidad => Severidad.Informativo;
 
-		public string NombreDeLaSeveridad => Severidad.Nombre;
+		internal string NombreDeLaSeveridad => Severidad.Nombre;
 
 		// LA FRASE. La escribe el dominio porque solo el dominio sabe por que falta cada
 		// uno: en la hemoglobina falta contra que rango comparar, en el antigeno falta
 		// saber si el examen corresponde. Son dos motivos distintos y la frase los dice
 		// distinto, que es lo que una plantilla no podria hacer.
-		public string ParaSonia
+		internal string ParaSonia
 		{
 			get
 			{
@@ -96,7 +96,7 @@ namespace Examenes.Dominio
 		//
 		// No es una Accion del conjunto cerrado y no lleva plazo, porque no es un consejo
 		// clinico: es un dato que falta.
-		public string ElPorQue =>
+		internal string ElPorQue =>
 			HaceFalta ? "Es para comparar tus resultados contra los rangos correctos." : "";
 
 		// Los que quedan sin leer porque SU RANGO depende del sexo. Es el segundo efecto.

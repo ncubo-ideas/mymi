@@ -13,19 +13,19 @@ namespace Examenes.Dominio
 	// persona, y el histograma es esa linea base VISTA: si cuatro de cinco mediciones
 	// caen en la misma banda, ese es su lugar, y el que se salio se ve solo. Es la misma
 	// idea que la mediana de NivelHabitual, mostrada en vez de resumida.
-	public sealed class BandaDelHistograma
+	internal sealed class BandaDelHistograma
 	{
-		public Medicion Desde { get; private set; }
+		internal Medicion Desde { get; private set; }
 
-		public Medicion Hasta { get; private set; }
+		internal Medicion Hasta { get; private set; }
 
-		public int Cuantas { get; private set; }
+		internal int Cuantas { get; private set; }
 
 		// Si en esta banda cae la ultima medicion. Es lo que le permite a la pantalla
 		// senalar donde esta parada la persona hoy sin recalcular nada.
-		public bool CaeLaUltima { get; private set; }
+		internal bool CaeLaUltima { get; private set; }
 
-		public BandaDelHistograma(Medicion desde, Medicion hasta, int cuantas, bool caeLaUltima)
+		internal BandaDelHistograma(Medicion desde, Medicion hasta, int cuantas, bool caeLaUltima)
 		{
 			ArgumentNullException.ThrowIfNull(desde);
 			ArgumentNullException.ThrowIfNull(hasta);
@@ -36,8 +36,8 @@ namespace Examenes.Dominio
 			CaeLaUltima = caeLaUltima;
 		}
 
-		public bool EstaVacia => Cuantas == 0;
+		internal bool EstaVacia => Cuantas == 0;
 
-		public string Expresado => $"{Desde.Valor}–{Hasta.Valor} {Desde.Unidad.Simbolo}: {Cuantas}";
+		internal string Expresado => $"{Desde.Valor}–{Hasta.Valor} {Desde.Unidad.Simbolo}: {Cuantas}";
 	}
 }

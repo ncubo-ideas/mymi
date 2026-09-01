@@ -42,7 +42,7 @@ namespace Examenes.Dominio
 	// todos LA SERIE como parametro. Un metodo que necesita la serie entera para contestar
 	// no es de la medicion: es de la serie, disfrazada de metodo de la medicion. Ahora
 	// viven donde son, y las firmas quedan sin parametro.
-	public abstract class SerieContinua : SerieDeAnalito
+	internal abstract class SerieContinua : SerieDeAnalito
 	{
 		private readonly List<ExamenDeSangre> mediciones = new List<ExamenDeSangre>();
 
@@ -50,14 +50,14 @@ namespace Examenes.Dominio
 		{
 		}
 
-		public IReadOnlyList<ExamenDeSangre> Mediciones => mediciones;
+		internal IReadOnlyList<ExamenDeSangre> Mediciones => mediciones;
 
-		public override int Cantidad => mediciones.Count;
+		internal override int Cantidad => mediciones.Count;
 
 		// Se inserta manteniendo el orden por fecha. El proveedor podria emitir un
 		// examen viejo despues de uno nuevo (una carga atrasada), y una serie
 		// desordenada daria una tendencia al reves.
-		public void Agregar(ExamenDeSangre examen)
+		internal void Agregar(ExamenDeSangre examen)
 		{
 			ArgumentNullException.ThrowIfNull(examen);
 			if (!examen.Analito.EsElMismo(Analito))
@@ -71,15 +71,15 @@ namespace Examenes.Dominio
 			mediciones.Insert(posicion, examen);
 		}
 
-		public ExamenDeSangre Primero => mediciones.Count == 0 ? null : mediciones[0];
+		internal ExamenDeSangre Primero => mediciones.Count == 0 ? null : mediciones[0];
 
-		public ExamenDeSangre Ultimo => mediciones.Count == 0 ? null : mediciones[mediciones.Count - 1];
+		internal ExamenDeSangre Ultimo => mediciones.Count == 0 ? null : mediciones[mediciones.Count - 1];
 
-		public override DateTime FechaDeLaUltima => Ultimo == null ? default : Ultimo.Fecha;
+		internal override DateTime FechaDeLaUltima => Ultimo == null ? default : Ultimo.Fecha;
 
 		// La periodicidad la sabe el ANALITO, no la serie: es conocimiento clinico y ya
 		// vivia en la medicion, que la resuelve contra su propio valor y la edad.
-		public override int MesesHastaElProximo(Paciente paciente) =>
+		internal override int MesesHastaElProximo(Paciente paciente) =>
 			Ultimo.MesesHastaElProximo(paciente);
 
 		// Para una continua, "hay algo que no deberia estar" es salirse del rango.
@@ -88,14 +88,14 @@ namespace Examenes.Dominio
 		// que este mal. Contar una hemoglobina de sexo desconocido como fuera de rango
 		// seria inventar un hallazgo; no contarla es lo unico honesto, y lo que la persona
 		// ve en su lugar es el bloque que pide el dato.
-		public override bool UltimaEsHallazgo(Paciente paciente) =>
+		internal override bool UltimaEsHallazgo(Paciente paciente) =>
 			Ultimo != null && Ultimo.HayRangoPara(paciente) && !Ultimo.EsNormalPara(paciente);
 
 		// La referencia contra la que se lee el ultimo valor, ya dicha. Sale del rango
 		// del propio examen —que es donde vive el conocimiento por edad— y se dice como
 		// se lee: un rango que arranca en cero es un techo ("hasta 4.5 ng/mL"), uno con
 		// piso real es una banda ("entre 13 y 17 g/dL").
-		public override string ReferenciaLegible(Paciente paciente)
+		internal override string ReferenciaLegible(Paciente paciente)
 		{
 			if (Ultimo == null) return "";
 
@@ -130,7 +130,7 @@ namespace Examenes.Dominio
 		// PASO y no los extremos: el hecho accionable es "de 280 a 360 en un dia", que es
 		// lo que le permite a la superficie decir "conviene repetir el examen". Para
 		// cualquier otra tendencia, Primero/Ultimo son los extremos de la serie.
-		public EvaluacionDeTendencia Evaluar()
+		internal EvaluacionDeTendencia Evaluar()
 		{
 			if (mediciones.Count < 2)
 				return EvaluacionDeTendencia.SinSerie(Analito, mediciones.Count,
@@ -201,18 +201,18 @@ namespace Examenes.Dominio
 
 		// El tramo mas reciente, en dias. Lo necesita el analito que calcula velocidad y
 		// no tiene por que rehacer la aritmetica de fechas de la serie.
-		public int DiasDelUltimoTramo =>
+		internal int DiasDelUltimoTramo =>
 			mediciones.Count < 2 ? 0 : Dias(mediciones[mediciones.Count - 2], Ultimo);
 
 		// El cambio con signo del tramo mas reciente.
-		public decimal CambioDelUltimoTramo =>
+		internal decimal CambioDelUltimoTramo =>
 			mediciones.Count < 2
 				? 0m
 				: Ultimo.Valor.DiferenciaDesde(mediciones[mediciones.Count - 2].Valor);
 
 		// El ano que usa el dominio para anualizar, expuesto para el analito que lo
 		// necesita. Ver la nota de abajo sobre por que es una constante nombrada.
-		public static decimal DiasDeUnAno => DiasDelAno;
+		internal static decimal DiasDeUnAno => DiasDelAno;
 
 		// El ano que usa el dominio para anualizar. Es una constante nombrada y no un 365
 		// suelto adentro de la formula, porque es una decision del modelo: se usa el ano

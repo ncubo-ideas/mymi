@@ -15,16 +15,16 @@ namespace Examenes.Dominio
 	//
 	// LO QUE ESTE ANALITO SABE Y NINGUN OTRO: el GRADO de anemia. No existe el grado de
 	// anemia de un colesterol.
-	public sealed class Hemoglobina : ExamenDeSangre
+	internal sealed class Hemoglobina : ExamenDeSangre
 	{
 		private static readonly AnalitoContinuo Suyo = Examenes.Dominio.Analito.Hemoglobina;
 
-		public Hemoglobina(DateTime fecha, decimal valor, string unidad)
+		internal Hemoglobina(DateTime fecha, decimal valor, string unidad)
 			: base(fecha, Suyo, Medida(valor, unidad, Suyo))
 		{
 		}
 
-		public override string Nombre => Suyo.ParaMostrar;
+		internal override string Nombre => Suyo.ParaMostrar;
 
 		// Rango con piso Y techo, a diferencia del colesterol y el antigeno.
 		//
@@ -42,7 +42,7 @@ namespace Examenes.Dominio
 		// ademas por embarazo y por altitud de residencia —el Valle Central esta por encima
 		// de los 1.000 m— y ese ajuste necesita un dato que hoy nadie aporta: queda nombrado
 		// y sin implementar, y entraria por Paciente igual que entro el sexo.
-		public override RangoDeReferencia RangoPara(Paciente paciente)
+		internal override RangoDeReferencia RangoPara(Paciente paciente)
 		{
 			ArgumentNullException.ThrowIfNull(paciente);
 
@@ -60,22 +60,22 @@ namespace Examenes.Dominio
 				: RangoDeReferencia.Entre(13.0m, 17.0m, Suyo.Unidad);
 		}
 
-		public override decimal CambioMaximoVerosimilPorDia => 0.1m;
+		internal override decimal CambioMaximoVerosimilPorDia => 0.1m;
 
-		public override decimal CambioMinimoSignificativo => 1.0m;
+		internal override decimal CambioMinimoSignificativo => 1.0m;
 
-		public override DireccionDeseable Direccion => DireccionDeseable.Mantenerse;
+		internal override DireccionDeseable Direccion => DireccionDeseable.Mantenerse;
 
 		// Anual, y semestral si hay anemia: cuando el valor ya esta bajo, lo que importa
 		// es si sigue bajando, y eso no se ve esperando un ano.
 		// La hemoglobina se mueve POCO: su rango entero -de 2 a 25- es un factor de doce,
 		// y duplicarse ya es mucho. Es el analito con el corte mas bajo de los cuatro.
-		public override decimal MultiploQueNingunIntervaloJustifica => 2.5m;
+		internal override decimal MultiploQueNingunIntervaloJustifica => 2.5m;
 
 		// Anual, y semestral SI SE SABE que hay anemia. Sin sexo no se sabe, y ahi la
 		// periodicidad es la normal: inventar un control semestral por las dudas seria
 		// decidir clinica con un dato que falta.
-		public override int MesesHastaElProximo(Paciente paciente) =>
+		internal override int MesesHastaElProximo(Paciente paciente) =>
 			HayRangoPara(paciente) && GradoDeAnemia(paciente).HayAnemia ? 6 : 12;
 
 		// ---------------------------------------------------------------- lo suyo
@@ -95,7 +95,7 @@ namespace Examenes.Dominio
 		//
 		// EXIGE SABER EL SEXO. Se alcanza solo despues de que la serie descarto el caso
 		// "no se puede determinar"; ver SerieDeHemoglobina.
-		public GradoDeAnemia GradoDeAnemia(Paciente paciente)
+		internal GradoDeAnemia GradoDeAnemia(Paciente paciente)
 		{
 			// Un valor por encima del techo no es anemia: es otra cosa, y llamarla
 			// "ninguna" es correcto porque de anemia no hay.
@@ -109,6 +109,6 @@ namespace Examenes.Dominio
 			return Examenes.Dominio.GradoDeAnemia.Severa;
 		}
 
-		public override SerieContinua NuevaSerie() => new SerieDeHemoglobina();
+		internal override SerieContinua NuevaSerie() => new SerieDeHemoglobina();
 	}
 }

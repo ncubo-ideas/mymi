@@ -8,6 +8,10 @@
 
   <Project Path="Examenes/App/Examenes.App/Examenes.App.csproj" />
   <Project Path="Examenes/App/Examenes.Consola/Examenes.Consola.csproj" />
+  <!-- La frontera de entrada, en su propio csproj: es el unico ensamblado de produccion
+       que ve el dominio por dentro, y separarlo es lo que mantiene a Examenes.App cercada
+       por el compilador. Ver el InternalsVisibleTo de Examenes.Dominio. -->
+  <Project Path="Examenes/App/Examenes.Eventos/Examenes.Eventos.csproj" />
   <Project Path="Examenes/App/Examenes.Mcp/Examenes.Mcp.csproj" />
   <Project Path="Examenes/App/Examenes.Wasm/Examenes.Wasm.csproj" />
   <Project Path="Examenes/Dominio/Examenes.Dominio.csproj" />

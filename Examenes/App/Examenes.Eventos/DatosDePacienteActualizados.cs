@@ -34,10 +34,14 @@ namespace Examenes.App.Eventos
 
 		public DateTime Fecha { get; private set; }
 
-		// YA RESUELTO A IDENTIDAD en la frontera, igual que el analito de un examen: el
-		// laboratorio escribe "M", "masculino" o "Hombre" segun de donde salga el dato, y
-		// de aca para adentro nadie vuelve a mirar una cadena.
-		public Sexo Sexo { get; private set; }
+		// YA RESUELTO A IDENTIDAD en la frontera -el laboratorio escribe "M", "masculino" o
+		// "Hombre" segun de donde salga el dato- y transportado como el NOMBRE CANONICO.
+		//
+		// ES UN string Y NO UN Sexo, por lo mismo que el analito de un examen: este tipo es
+		// un DTO de la Superficie, y un objeto del dominio cargado en un DTO viaja por
+		// codigo C# ALREDEDOR del actor. La coercion la hace el call site del script,
+		// adentro del actor y journalizada con el acto.
+		public string Sexo { get; private set; }
 
 		private DatosDePacienteActualizados() { }
 
@@ -64,7 +68,7 @@ namespace Examenes.App.Eventos
 				// Y un valor que este dominio no conoce se DESCARTA, no revienta: un
 				// laboratorio puede publicar categorias que esta app no modela, y eso no es
 				// motivo para que la app deje de ponerse al dia con el resto.
-				if (!Sexo.EsConocidoElNombre(sexo)) return null;
+				if (!Dominio.Sexo.EsConocidoElNombre(sexo)) return null;
 
 				// Sin fecha se usa la del evento igual: a diferencia de un examen, este dato
 				// no se ordena en una serie. Lo que ordena es el numero de evento.
@@ -75,7 +79,7 @@ namespace Examenes.App.Eventos
 				{
 					Evento = senal.Numero,
 					Fecha = fecha,
-					Sexo = Sexo.PorNombre(sexo),
+					Sexo = Dominio.Sexo.PorNombre(sexo).Nombre,
 				};
 			}
 			catch (JsonException)

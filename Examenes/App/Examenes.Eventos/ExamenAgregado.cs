@@ -49,9 +49,17 @@ namespace Examenes.App.Eventos
 		public long Evento { get; private set; }
 		public string Tipo => TipoDeEvento;
 
-		// QUE se midio, ya resuelto a identidad. Null cuando el examen es de orina, que es
-		// el unico caso en que no hay un analito detras.
-		public Analito Analito { get; private set; }
+		// QUE se midio, ya resuelto a identidad, como el NOMBRE CANONICO del analito.
+		// Vacio cuando el examen es de orina o heces, que es cuando no hay analito detras.
+		//
+		// ES UN string Y NO UN Analito, y esa es la correccion de fondo. Este tipo es un DTO
+		// de la Superficie: si carga un objeto del dominio, ese objeto viaja por codigo C#
+		// ALREDEDOR del actor y la interpretacion de que significa el dato ocurre afuera,
+		// donde no se journaliza y no se puede replayar. El plano de parametros del motor
+		// rechaza un tipo de dominio como parametro por exactamente esta razon. Con el
+		// nombre canonico, lo que cruza la frontera es un primitivo y la coercion la hace el
+		// call site del script, adentro del actor y journalizada con el acto.
+		public string Analito { get; private set; }
 
 		// Que MUESTRA es, cuando no hay analito detras. Vacio para los de sangre.
 		public string Muestra { get; private set; }
@@ -60,7 +68,7 @@ namespace Examenes.App.Eventos
 
 		public bool EsDeHeces => Muestra == Heces;
 
-		public bool EsDeSangre => Analito != null;
+		public bool EsDeSangre => !string.IsNullOrEmpty(Analito);
 
 		// Si el examen trajo DOS valores: el del analito y su fraccion acompanante. Es la
 		// forma del payload y no la identidad de lo medido, y por eso viaja aparte en vez
@@ -133,7 +141,7 @@ namespace Examenes.App.Eventos
 					return Armar(senal, null, false, raiz, fecha, unidad, color, muestra);
 				}
 
-				Analito analito = Resolver(queSeMidio, ref traeFraccionamiento);
+				Dominio.Analito analito = Resolver(queSeMidio, ref traeFraccionamiento);
 
 				// Descarta, no revienta. Un laboratorio publica el perfil que se le pidio y
 				// esta app modela cinco analitos: recibir uno que no modela es lo normal,
@@ -157,18 +165,18 @@ namespace Examenes.App.Eventos
 				// examen que esta app sepa aplicar: se descarta como cualquier otro que no
 				// modela. Antes esta rama no podia existir porque ser analito EXIGIA tener
 				// unidad.
-				if (analito is not AnalitoContinuo continuo) return null;
+				if (analito is not Dominio.AnalitoContinuo continuo) return null;
 
 				if (!continuo.EsValorPosible(Decimal(raiz, "valor"))) return null;
 
 				// El LDL solo entra fraccionado, porque el dominio lo modela junto con su
 				// HDL en un mismo examen. Un LDL suelto no tiene donde aplicarse, asi que
 				// se descarta en vez de construir un examen a medias.
-				if (analito.EsElMismo(Analito.ColesterolLdl) && !traeFraccionamiento) return null;
+				if (analito.EsElMismo(Dominio.Analito.ColesterolLdl) && !traeFraccionamiento) return null;
 
 				// Y el HDL no forma serie por su cuenta: viaja como acompanante del LDL.
 				// Llegar solo es un evento que esta app no sabe aplicar.
-				if (analito.EsElMismo(Analito.ColesterolHdl)) return null;
+				if (analito.EsElMismo(Dominio.Analito.ColesterolHdl)) return null;
 
 				return Armar(senal, analito, traeFraccionamiento, raiz, fecha, unidad, color, "");
 			}
@@ -180,29 +188,29 @@ namespace Examenes.App.Eventos
 
 		// La traduccion del campo `examen` a identidad, con el unico token de forma que
 		// queda. Devuelve null para lo que esta app no modela.
-		private static Analito Resolver(string queSeMidio, ref bool traeFraccionamiento)
+		private static Dominio.Analito Resolver(string queSeMidio, ref bool traeFraccionamiento)
 		{
 			if (string.Equals(queSeMidio, TokenDeColesterolFraccionado,
 				StringComparison.OrdinalIgnoreCase))
 			{
 				traeFraccionamiento = true;
-				return Analito.ColesterolLdl;
+				return Dominio.Analito.ColesterolLdl;
 			}
 
 			// EsConocido y no PorNombre: aca un nombre que no resuelve NO es un defecto.
 			// PorNombre revienta, que es lo correcto cuando alguien PREGUNTA por un analito
 			// -es un error de quien pregunta- y es lo incorrecto cuando un laboratorio
 			// PUBLICA uno que esta app no modela, que es lo esperable.
-			return Analito.EsConocido(queSeMidio) ? Analito.PorNombre(queSeMidio) : null;
+			return Dominio.Analito.EsConocido(queSeMidio) ? Dominio.Analito.PorNombre(queSeMidio) : null;
 		}
 
-		private static ExamenAgregado Armar(SenalDeEvento senal, Analito analito,
+		private static ExamenAgregado Armar(SenalDeEvento senal, Dominio.Analito analito,
 			bool traeFraccionamiento, JsonElement raiz, DateTime fecha, string unidad, string color,
 			string muestra) =>
 			new ExamenAgregado
 			{
 				Evento = senal.Numero,
-				Analito = analito,
+				Analito = analito == null ? "" : analito.Nombre,
 				Muestra = muestra,
 				TraeFraccionamiento = traeFraccionamiento,
 				Fecha = fecha,

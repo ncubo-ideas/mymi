@@ -25,22 +25,22 @@ namespace Examenes.Dominio
 	// reproducido el ano que viene daria otra respuesta. Que sea un argumento explicito lo
 	// mantiene como una funcion de sus entradas. Quien tiene derecho a saber que dia es
 	// hoy es la superficie -el servidor MCP-, no el modelo.
-	public sealed class ControlPendiente
+	internal sealed class ControlPendiente
 	{
-		public Analito Analito { get; private set; }
+		internal Analito Analito { get; private set; }
 
 		// Cuando fue la ultima vez que se midio. Siempre hay una: un analito sin ninguna
 		// medicion no tiene serie, y sin serie no hay control que este pendiente — no se
 		// puede decir "te toca repetirlo" de algo que nunca se hizo.
-		public DateTime UltimaMedicion { get; private set; }
+		internal DateTime UltimaMedicion { get; private set; }
 
-		public int DiasDesdeLaUltima { get; private set; }
+		internal int DiasDesdeLaUltima { get; private set; }
 
 		// Lo que ESTE analito considera su periodicidad, ya resuelta contra su ultimo
 		// valor y la edad. El colesterol contesta 60 o 12 segun donde quedo.
-		public int MesesRecomendados { get; private set; }
+		internal int MesesRecomendados { get; private set; }
 
-		public ControlPendiente(Analito analito, DateTime ultimaMedicion, int diasDesdeLaUltima,
+		internal ControlPendiente(Analito analito, DateTime ultimaMedicion, int diasDesdeLaUltima,
 			int mesesRecomendados)
 		{
 			ArgumentNullException.ThrowIfNull(analito);
@@ -59,12 +59,12 @@ namespace Examenes.Dominio
 		// respuesta no dependa de en que mes cae la ultima medicion.
 		private const int DiasDelMes = 30;
 
-		public int DiasRecomendados => MesesRecomendados * DiasDelMes;
+		internal int DiasRecomendados => MesesRecomendados * DiasDelMes;
 
-		public bool EstaVencido => DiasDesdeLaUltima > DiasRecomendados;
+		internal bool EstaVencido => DiasDesdeLaUltima > DiasRecomendados;
 
 		// Cuanto falta, o cuanto hace que se paso. Con signo: negativo si ya vencio.
-		public int DiasQueFaltan => DiasRecomendados - DiasDesdeLaUltima;
+		internal int DiasQueFaltan => DiasRecomendados - DiasDesdeLaUltima;
 
 		// Que tan urgente es ponerse al dia. Un control vencido no es un hallazgo clinico
 		// -no dice que haya nada mal- pero tampoco es informativo: es algo que hacer.
@@ -72,7 +72,7 @@ namespace Examenes.Dominio
 		// Al DOBLE del intervalo escala, porque ahi ya no es "se me paso", es que el
 		// analito dejo de tener serie util: entre dos puntos demasiado separados no se
 		// puede leer una tendencia.
-		public Severidad Severidad
+		internal Severidad Severidad
 		{
 			get
 			{
@@ -86,7 +86,7 @@ namespace Examenes.Dominio
 		// Que hacer con el control vencido, con su plazo. Apenas vencido puede esperar
 		// al mes; al doble del intervalo la serie dejo de ser util y ya no conviene
 		// seguir empujando la fecha.
-		public Accion Accion
+		internal Accion Accion
 		{
 			get
 			{
@@ -98,12 +98,12 @@ namespace Examenes.Dominio
 		}
 
 		// Proyecciones planas, para que el print del DSL no tenga que navegar dos niveles.
-		public string Nombre => Analito.Nombre;
-		public string ParaMostrar => Analito.ParaMostrar;
-		public string NombreDeLaSeveridad => Severidad.Nombre;
-		public string AccionLegible => Accion == null ? "" : Accion.Legible;
+		internal string Nombre => Analito.Nombre;
+		internal string ParaMostrar => Analito.ParaMostrar;
+		internal string NombreDeLaSeveridad => Severidad.Nombre;
+		internal string AccionLegible => Accion == null ? "" : Accion.Legible;
 
-		public string ParaSonia
+		internal string ParaSonia
 		{
 			get
 			{

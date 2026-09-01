@@ -16,12 +16,12 @@ namespace Examenes.Dominio
 	// Es la FORMA 1 de la taxonomia de Magnitud: continua CON unidad. Que herede de
 	// MagnitudContinua y no de Magnitud a secas es lo que le da acceso a la serie y a la
 	// velocidad, y lo que se lo niega al color de la orina y a los nitritos.
-	public class Medicion : MagnitudContinua
+	internal class Medicion : MagnitudContinua
 	{
-		public override decimal Valor { get; }
-		public UnidadDeMedida Unidad { get; private set; }
+		internal override decimal Valor { get; }
+		internal UnidadDeMedida Unidad { get; private set; }
 
-		public Medicion(decimal valor, UnidadDeMedida unidad)
+		internal Medicion(decimal valor, UnidadDeMedida unidad)
 		{
 			ArgumentNullException.ThrowIfNull(unidad);
 			if (valor < 0)
@@ -35,9 +35,9 @@ namespace Examenes.Dominio
 		// El texto que se muestra. No es un ToString de volcado de estado: es la forma
 		// en que el dominio dice un valor medido, con unidad, que es la unica forma
 		// completa de decirlo.
-		public override string Expresado => $"{Valor} {Unidad.Simbolo}";
+		internal override string Expresado => $"{Valor} {Unidad.Simbolo}";
 
-		public bool MismaUnidadQue(Medicion otra)
+		internal bool MismaUnidadQue(Medicion otra)
 		{
 			ArgumentNullException.ThrowIfNull(otra);
 			return Unidad.EsLaMisma(otra.Unidad);
@@ -48,7 +48,7 @@ namespace Examenes.Dominio
 		// Exigir la misma unidad es el punto de toda la clase. Si alguna vez el
 		// proveedor cambia la unidad de un analito a mitad de la serie, esto lo
 		// descubre en vez de reportar una tendencia falsa.
-		public decimal DiferenciaDesde(Medicion anterior)
+		internal decimal DiferenciaDesde(Medicion anterior)
 		{
 			ArgumentNullException.ThrowIfNull(anterior);
 			if (!MismaUnidadQue(anterior))
@@ -58,7 +58,7 @@ namespace Examenes.Dominio
 			return Valor - anterior.Valor;
 		}
 
-		public bool EsMayorQue(Medicion otra)
+		internal bool EsMayorQue(Medicion otra)
 		{
 			ArgumentNullException.ThrowIfNull(otra);
 			if (!MismaUnidadQue(otra))

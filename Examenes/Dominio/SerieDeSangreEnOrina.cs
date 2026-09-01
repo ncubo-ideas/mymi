@@ -17,15 +17,15 @@ namespace Examenes.Dominio
 	// —Urgente— y la persona se queda con el susto. Es §2 de la reunion
 	// —"cuando lo vuelve a medir pasa otra vez a 3, ahi al medico esa segunda lectura le
 	// sirve"— en su version binaria.
-	public sealed class SerieDeSangreEnOrina : SerieBinaria
+	internal sealed class SerieDeSangreEnOrina : SerieBinaria
 	{
-		public SerieDeSangreEnOrina() : base(Analito.SangreEnLaOrina) { }
+		internal SerieDeSangreEnOrina() : base(Analito.SangreEnLaOrina) { }
 
 		// Anual dentro del urianalisis de rutina; al MES si aparecio, porque lo que hay
 		// que averiguar es si fue pasajera y esa respuesta no espera.
 		//
 		// ⚠️ Orientativa, igual que todos los umbrales de este dominio.
-		public override int MesesHastaElProximo(Paciente paciente) =>
+		internal override int MesesHastaElProximo(Paciente paciente) =>
 			Ultima != null && Ultima.EsHallazgo ? 1 : 12;
 
 		protected override Interpretacion Leer(Paciente paciente)

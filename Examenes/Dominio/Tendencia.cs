@@ -23,20 +23,20 @@ namespace Examenes.Dominio
 	// para el antigeno, pero lo que preocupa en la hemoglobina es que BAJE. Eso lo
 	// contesta cada analito (ExamenDeSangre.DireccionPreocupanteEsAscenso) y lo resuelve
 	// la serie al evaluar.
-	public sealed class Tendencia
+	internal sealed class Tendencia
 	{
 		// Menos de dos mediciones: no hay serie, y decir "estable" seria mentir.
-		public static readonly Tendencia Indeterminada = new Tendencia("indeterminada");
+		internal static readonly Tendencia Indeterminada = new Tendencia("indeterminada");
 
 		// Hubo cambio, pero no llego al umbral que este analito considera significativo.
-		public static readonly Tendencia Estable = new Tendencia("estable");
+		internal static readonly Tendencia Estable = new Tendencia("estable");
 
-		public static readonly Tendencia EnAscenso = new Tendencia("en ascenso");
-		public static readonly Tendencia EnDescenso = new Tendencia("en descenso");
+		internal static readonly Tendencia EnAscenso = new Tendencia("en ascenso");
+		internal static readonly Tendencia EnDescenso = new Tendencia("en descenso");
 
 		// El cambio es demasiado grande para el tiempo transcurrido: biologicamente no
 		// pasa. Lo que corresponde no es alarmarse, es repetir el examen.
-		public static readonly Tendencia SaltoInverosimil = new Tendencia("salto inverosimil");
+		internal static readonly Tendencia SaltoInverosimil = new Tendencia("salto inverosimil");
 
 		// ESTE ANALITO NO ASCIENDE NI DESCIENDE. Es la respuesta para un binario: los
 		// nitritos no vienen subiendo, aparecen o no aparecen, y eso lo dice Presencia.
@@ -45,19 +45,19 @@ namespace Examenes.Dominio
 		// midiendo; esta significa que la pregunta no le corresponde a este analito, y no
 		// se arregla con nada. Confundirlas le diria a la persona que le falta un examen
 		// que no existe.
-		public static readonly Tendencia NoAplica = new Tendencia("no aplica");
+		internal static readonly Tendencia NoAplica = new Tendencia("no aplica");
 
-		public string Nombre { get; private set; }
+		internal string Nombre { get; private set; }
 
 		private Tendencia(string nombre)
 		{
 			Nombre = nombre;
 		}
 
-		public bool EsAscenso => ReferenceEquals(this, EnAscenso);
+		internal bool EsAscenso => ReferenceEquals(this, EnAscenso);
 
-		public bool EsDescenso => ReferenceEquals(this, EnDescenso);
+		internal bool EsDescenso => ReferenceEquals(this, EnDescenso);
 
-		public bool SugiereRepetirElExamen => ReferenceEquals(this, SaltoInverosimil);
+		internal bool SugiereRepetirElExamen => ReferenceEquals(this, SaltoInverosimil);
 	}
 }

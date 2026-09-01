@@ -21,16 +21,16 @@ namespace Examenes.Dominio
 	// puertas.
 	//
 	// Carrier por identidad: sin Equals, sin GetHashCode, no es llave de nada.
-	public sealed class TranquilidadDelExpediente
+	internal sealed class TranquilidadDelExpediente
 	{
 		// Cuantos analitos con serie tienen su ultima lectura donde corresponde.
-		public int EnSuRango { get; private set; }
+		internal int EnSuRango { get; private set; }
 
 		// El denominador: cuantos analitos con serie hay. Sale del MISMO recorrido, asi
 		// que "N de M" no puede mezclar dos universos.
-		public int Analitos { get; private set; }
+		internal int Analitos { get; private set; }
 
-		public TranquilidadDelExpediente(int enSuRango, int analitos)
+		internal TranquilidadDelExpediente(int enSuRango, int analitos)
 		{
 			if (enSuRango < 0)
 				throw new ArgumentOutOfRangeException(nameof(enSuRango),
@@ -45,7 +45,7 @@ namespace Examenes.Dominio
 			Analitos = analitos;
 		}
 
-		public bool HayAlgoEnRango => EnSuRango > 0;
+		internal bool HayAlgoEnRango => EnSuRango > 0;
 
 		// LA FRASE ENTERA, escrita aca. Se lee sola: es lo primero de la portada y no
 		// puede apoyarse en nada que venga despues. "El resto esta bien" nombraba una
@@ -53,7 +53,7 @@ namespace Examenes.Dominio
 		//
 		// Con todo en rango no se dice "M de M": la fraccion existe para contar los que NO
 		// estan, y sin ninguno afuera es ruido.
-		public string ParaSonia
+		internal string ParaSonia
 		{
 			get
 			{

@@ -9,9 +9,9 @@ namespace Examenes.Dominio
 	//   colesterol  "yo no ocupo ver esa historia"        -> contra una meta
 	//
 	// Por eso son dos tipos y no uno con un parametro: no comparten ni la pregunta.
-	public sealed class SerieDeColesterol : SerieContinua
+	internal sealed class SerieDeColesterol : SerieContinua
 	{
-		public SerieDeColesterol() : base(Analito.ColesterolTotal) { }
+		internal SerieDeColesterol() : base(Analito.ColesterolTotal) { }
 
 		private Colesterol Ultima => (Colesterol)Ultimo;
 
@@ -28,14 +28,14 @@ namespace Examenes.Dominio
 		// historia larga ES el dato, aca estorba. Este analito tenia NivelHabitual() sobre
 		// la mediana de toda la serie y se saco: era el metodo del otro analito puesto en
 		// este.
-		public MetaDeColesterol Meta() => Ultima.Meta();
+		internal MetaDeColesterol Meta() => Ultima.Meta();
 
 		// DONDE EMPEZO EL EPISODIO: el pico desde el que viene bajando. Es el punto de
 		// partida contra el que se mide el progreso, y no es la primera medicion de la
 		// serie — "la historia no es de todos los examenes que el se ha hecho".
 		//
 		// Null cuando no hubo episodio, o sea cuando nunca subio.
-		public Medicion PartidaDelEpisodio()
+		internal Medicion PartidaDelEpisodio()
 		{
 			if (Cantidad < 2) return null;
 
@@ -51,13 +51,13 @@ namespace Examenes.Dominio
 
 		// CUANTO LLEVA RECORRIDO hacia la meta, de cero a uno. Es lo que una barra de
 		// progreso puede pintar sin decidir nada.
-		public decimal TrayectoriaHaciaMeta() =>
+		internal decimal TrayectoriaHaciaMeta() =>
 			Meta().ProgresoDesde(PartidaDelEpisodio());
 
 		// Si el valor viene BAJANDO desde un pico anterior. Es la pregunta que convierte
 		// un fuera de rango en buena noticia, y no existe para ningun otro analito del
 		// demo porque ninguno tiene un "episodio" del que se vuelve.
-		public bool VieneBajandoDesdeSuPico()
+		internal bool VieneBajandoDesdeSuPico()
 		{
 			if (Cantidad < 2) return false;
 
@@ -72,11 +72,11 @@ namespace Examenes.Dominio
 
 		// ---------------------------------------------------------------- como se dibuja
 
-		public override FormaDeLectura Forma => FormaDeLectura.ProgresoHaciaMeta;
+		internal override FormaDeLectura Forma => FormaDeLectura.ProgresoHaciaMeta;
 
 		// De donde partio y a donde va. La partida solo aparece si hubo episodio: sin el,
 		// no hay barra de progreso que dibujar, hay un valor.
-		public override IReadOnlyList<ReferenciaDeLectura> Referencias(Paciente paciente)
+		internal override IReadOnlyList<ReferenciaDeLectura> Referencias(Paciente paciente)
 		{
 			var lineas = new List<ReferenciaDeLectura>();
 			if (Ultimo == null) return lineas;

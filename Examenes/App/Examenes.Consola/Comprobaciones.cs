@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using Examenes.App;
 using Examenes.App.Eventos;
 using Examenes.Dominio;
 using Puppets.Portador;
@@ -80,6 +81,7 @@ namespace Examenes.Consola
 			TodoConsejoConPlazo();
 			ElRojoEstaReservado();
 			ElSexoEsUnaVariableDelDominio();
+			LosNombresDeLaFronteraSonLosDelDominio();
 
 			Console.WriteLine();
 			Console.WriteLine(fallas == 0
@@ -475,10 +477,10 @@ namespace Examenes.Consola
 			ExamenAgregado porToken = Ruteado(Fraccionado("ColesterolDetallado"));
 			ExamenAgregado porNombre = Ruteado(Fraccionado("LDL"));
 			Igual("el token de forma que emite URL2 sigue entrando", "Colesterol LDL",
-				porToken.Analito.Nombre);
+				porToken.Analito);
 			Igual("  y trae su fraccionamiento", "True", porToken.TraeFraccionamiento.ToString());
 			Igual("un emisor que manda 'LDL' con su HDL da lo mismo", "Colesterol LDL",
-				porNombre.Analito.Nombre);
+				porNombre.Analito);
 			Igual("  y tambien trae fraccionamiento", "True", porNombre.TraeFraccionamiento.ToString());
 
 			// MEDIDO contra el emisor real: URL2 serializa `valorSecundario` en TODOS los
@@ -529,7 +531,7 @@ namespace Examenes.Consola
 		{
 			ExamenAgregado mensaje = Ruteado(senal);
 			if (mensaje == null) return "descartado";
-			return mensaje.EsDeOrina ? "orina" : mensaje.Analito.Nombre;
+			return mensaje.EsDeOrina ? "orina" : mensaje.Analito;
 		}
 
 		private static SenalDeEvento Sangre(string examen, string valor, string unidad) =>
@@ -1589,12 +1591,48 @@ namespace Examenes.Consola
 					"sube", new HechosDePrueba()));
 		}
 
+		// ---- la copia que la cerca obligo, amarrada ----
+		//
+		// Desde que el dominio es enteramente `internal`, ni la Superficie ni las tools del
+		// MCP pueden nombrar un Analito, asi que Examenes.App publica los nombres canonicos
+		// como texto en NombresDeAnalito. Una copia sin prueba se desincroniza y falla
+		// callada: el MCP contestaria "sin mediciones" para un analito que si existe.
+		//
+		// Este fixture es el UNICO lugar del repo que ve los dos lados -- el dominio por
+		// InternalsVisibleTo y la App por referencia normal-- asi que es el unico que puede
+		// obligarlos a coincidir.
+		private static void LosNombresDeLaFronteraSonLosDelDominio()
+		{
+			Titulo("los nombres que publica la App son los del dominio, uno por uno");
+
+			Igual("antigeno prostatico", Examenes.Dominio.Analito.AntigenoProstatico.Nombre,
+				NombresDeAnalito.AntigenoProstatico);
+			Igual("colesterol total", Examenes.Dominio.Analito.ColesterolTotal.Nombre,
+				NombresDeAnalito.ColesterolTotal);
+			Igual("colesterol LDL", Examenes.Dominio.Analito.ColesterolLdl.Nombre,
+				NombresDeAnalito.ColesterolLdl);
+			Igual("colesterol HDL", Examenes.Dominio.Analito.ColesterolHdl.Nombre,
+				NombresDeAnalito.ColesterolHdl);
+			Igual("hemoglobina", Examenes.Dominio.Analito.Hemoglobina.Nombre,
+				NombresDeAnalito.Hemoglobina);
+			Igual("color de la orina", Examenes.Dominio.Analito.ColorDeLaOrina.Nombre,
+				NombresDeAnalito.ColorDeLaOrina);
+			Igual("nitritos", Examenes.Dominio.Analito.NitritosEnOrina.Nombre,
+				NombresDeAnalito.NitritosEnOrina);
+			Igual("sangre en orina", Examenes.Dominio.Analito.SangreEnLaOrina.Nombre,
+				NombresDeAnalito.SangreEnLaOrina);
+			Igual("color de las heces", Examenes.Dominio.Analito.ColorDeLasHeces.Nombre,
+				NombresDeAnalito.ColorDeLasHeces);
+			Igual("sangre en heces", Examenes.Dominio.Analito.SangreEnLasHeces.Nombre,
+				NombresDeAnalito.SangreEnLasHeces);
+		}
+
 		// Hechos minimos para comprobar la guarda del constructor sin armar una serie.
 		private sealed class HechosDePrueba : HechosDeLaSerie
 		{
 			internal HechosDePrueba() : base(Examenes.Dominio.Analito.ColesterolTotal, 2) { }
-			public override string NombreDeLaLectura => "en ascenso";
-			public override bool SugiereRepetirElExamen => false;
+			internal override string NombreDeLaLectura => "en ascenso";
+			internal override bool SugiereRepetirElExamen => false;
 		}
 
 		// ---- el rojo esta reservado ----

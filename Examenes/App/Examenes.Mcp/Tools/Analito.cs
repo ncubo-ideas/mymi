@@ -1,4 +1,4 @@
-using Examenes.Dominio;
+using Examenes.App;
 
 namespace Examenes.Mcp.Tools;
 
@@ -60,23 +60,25 @@ internal static class AnalitoDelDominio
 	/// que la rama imposible no se escribe. Eso es exactamente lo que se gana al tipar.
 	internal static string Nombre(this Analito analito) => analito switch
 	{
-		// El namespace por delante no es ruido: en este archivo `Analito` a secas es el
-		// enum de la frontera, y el de la derecha es el conjunto cerrado del dominio. Son
-		// dos cosas distintas con el mismo nombre, y esta es justamente la linea donde se
-		// traduce una a la otra.
-		Analito.AntigenoProstatico => Examenes.Dominio.Analito.AntigenoProstatico.Nombre,
-		Analito.ColesterolTotal    => Examenes.Dominio.Analito.ColesterolTotal.Nombre,
-		Analito.ColesterolLdl      => Examenes.Dominio.Analito.ColesterolLdl.Nombre,
-		Analito.Hemoglobina        => Examenes.Dominio.Analito.Hemoglobina.Nombre,
+		// A la izquierda el enum de ESTA frontera; a la derecha el nombre canonico con el
+		// que el dominio conoce al analito, como texto. Antes la derecha leia el conjunto
+		// cerrado del dominio directo, y eso obligaba a este ensamblado -un servidor MCP,
+		// que no es ni la Superficie- a nombrar un tipo del dominio, y al dominio entero a
+		// ser public. Los nombres los publica ahora Examenes.App, y Comprobaciones los
+		// amarra uno a uno contra el dominio: si un analito se renombra, el fixture lo dice.
+		Analito.AntigenoProstatico => NombresDeAnalito.AntigenoProstatico,
+		Analito.ColesterolTotal    => NombresDeAnalito.ColesterolTotal,
+		Analito.ColesterolLdl      => NombresDeAnalito.ColesterolLdl,
+		Analito.Hemoglobina        => NombresDeAnalito.Hemoglobina,
 		_ => throw new ArgumentOutOfRangeException(nameof(analito), analito,
 			"Se agregó un analito al enum y no se lo mapeó al dominio."),
 	};
 
 	internal static string Nombre(this AnalitoBinario analito) => analito switch
 	{
-		AnalitoBinario.Nitritos      => Examenes.Dominio.Analito.NitritosEnOrina.Nombre,
-		AnalitoBinario.SangreEnOrina => Examenes.Dominio.Analito.SangreEnLaOrina.Nombre,
-		AnalitoBinario.SangreEnHeces => Examenes.Dominio.Analito.SangreEnLasHeces.Nombre,
+		AnalitoBinario.Nitritos      => NombresDeAnalito.NitritosEnOrina,
+		AnalitoBinario.SangreEnOrina => NombresDeAnalito.SangreEnLaOrina,
+		AnalitoBinario.SangreEnHeces => NombresDeAnalito.SangreEnLasHeces,
 		_ => throw new ArgumentOutOfRangeException(nameof(analito), analito,
 			"Se agregó un analito binario al enum y no se lo mapeó al dominio."),
 	};

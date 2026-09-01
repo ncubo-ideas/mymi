@@ -22,14 +22,14 @@ namespace Examenes.Dominio
 	/// error que hace que una app le diga a alguien que esta bien cuando nadie lo midio.
 	///
 	/// Se comparan por referencia: hay una sola instancia de cada uno y no hay Equals.
-	public sealed class Nitritos : MagnitudBinaria
+	internal sealed class Nitritos : MagnitudBinaria
 	{
-		public static readonly Nitritos Positivo = new Nitritos("positivo", realizada: true, positivo: true);
-		public static readonly Nitritos Negativo = new Nitritos("negativo", realizada: true, positivo: false);
-		public static readonly Nitritos NoRealizado = new Nitritos("no realizado", realizada: false, positivo: false);
+		internal static readonly Nitritos Positivo = new Nitritos("positivo", realizada: true, positivo: true);
+		internal static readonly Nitritos Negativo = new Nitritos("negativo", realizada: true, positivo: false);
+		internal static readonly Nitritos NoRealizado = new Nitritos("no realizado", realizada: false, positivo: false);
 
 		/// <summary>El vocabulario de ESTE analito. Los nitritos son positivo/negativo — una serologia seria reactivo/no reactivo.</summary>
-		public string Etiqueta { get; }
+		internal string Etiqueta { get; }
 
 		private readonly bool realizada;
 		private readonly bool positivo;
@@ -41,11 +41,11 @@ namespace Examenes.Dominio
 			this.positivo = positivo;
 		}
 
-		public override string Expresado => Etiqueta;
+		internal override string Expresado => Etiqueta;
 
-		public override bool FueRealizada => realizada;
+		internal override bool FueRealizada => realizada;
 
-		public override bool EsPositivo
+		internal override bool EsPositivo
 		{
 			get
 			{
@@ -67,24 +67,24 @@ namespace Examenes.Dominio
 		/// lo que permite que otro binario —un factor Rh, donde positivo es lo comun— viva
 		/// en la misma jerarquia sin un if afuera.
 		/// </summary>
-		public override bool EsHallazgo => realizada && positivo;
+		internal override bool EsHallazgo => realizada && positivo;
 
 		/// <summary>
 		/// Unos nitritos positivos sugieren infeccion urinaria: hay que verlo, y puede
 		/// esperar a una consulta. NO es lo mismo que sangre en la orina, que esta al lado
 		/// en la misma tira y en el mismo examen, y sin embargo no espera.
 		/// </summary>
-		public override Severidad SeveridadDelHallazgo =>
+		internal override Severidad SeveridadDelHallazgo =>
 			EsHallazgo ? Severidad.ConsultePronto : Severidad.Informativo;
 
 		/// <summary>
 		/// ESTA SEMANA, no este mes: una infeccion urinaria amerita cita como el PSA que
 		/// se movio, pero no corre igual. El plazo es del analito, no de la severidad.
 		/// </summary>
-		public override Accion AccionDelHallazgo =>
+		internal override Accion AccionDelHallazgo =>
 			EsHallazgo ? Accion.MostrarleEstoATuMedico(Plazo.EstaSemana) : null;
 
-		public override string ParaSonia =>
+		internal override string ParaSonia =>
 			!realizada ? "el laboratorio no corrió esta prueba"
 			: positivo ? "los nitritos salieron positivos, que suele indicar una infección urinaria"
 			: "los nitritos salieron negativos, que es lo esperable";
@@ -95,7 +95,7 @@ namespace Examenes.Dominio
 		/// estado legitimo; un texto que no es ninguno de los tres es un evento mal formado y
 		/// revienta, no se inventa un cuarto inhabitante.
 		/// </summary>
-		public static Nitritos PorNombre(string nombre)
+		internal static Nitritos PorNombre(string nombre)
 		{
 			if (string.IsNullOrWhiteSpace(nombre)) return NoRealizado;
 
@@ -110,6 +110,6 @@ namespace Examenes.Dominio
 		}
 
 		/// <summary>El plural de este analito. Ver <see cref="SerieDeNitritos"/>.</summary>
-		public override SerieBinaria NuevaSerie() => new SerieDeNitritos();
+		internal override SerieBinaria NuevaSerie() => new SerieDeNitritos();
 	}
 }

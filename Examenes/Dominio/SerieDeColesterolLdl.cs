@@ -5,9 +5,9 @@ namespace Examenes.Dominio
 {
 	// LA SERIE DEL COLESTEROL FRACCIONADO. La llave es el LDL; el HDL viaja al lado y se
 	// lee AL REVES, que es lo que ningun otro analito del demo hace.
-	public sealed class SerieDeColesterolLdl : SerieContinua
+	internal sealed class SerieDeColesterolLdl : SerieContinua
 	{
-		public SerieDeColesterolLdl() : base(Analito.ColesterolLdl) { }
+		internal SerieDeColesterolLdl() : base(Analito.ColesterolLdl) { }
 
 		private ColesterolDetallado Ultima => (ColesterolDetallado)Ultimo;
 
@@ -21,9 +21,9 @@ namespace Examenes.Dominio
 		// depende del sexo: por eso esta serie SI se puede leer sin el dato y lo unico que
 		// se calla es la coletilla del acompanante. Es la diferencia entre "no puedo
 		// interpretar esto" y "puedo interpretarlo, con una frase menos".
-		public bool SeSabeSiElHdlAcompana(Paciente paciente) => Ultima.SeSabeSiElHdlAcompana(paciente);
+		internal bool SeSabeSiElHdlAcompana(Paciente paciente) => Ultima.SeSabeSiElHdlAcompana(paciente);
 
-		public bool HdlAcompana(Paciente paciente) => Ultima.HdlEsProtectorPara(paciente);
+		internal bool HdlAcompana(Paciente paciente) => Ultima.HdlEsProtectorPara(paciente);
 
 		// Las dos van juntas y en ese orden: preguntar la segunda sin la primera revienta,
 		// que es lo correcto —devolver false "mientras tanto" diria que el HDL no protege
@@ -31,9 +31,9 @@ namespace Examenes.Dominio
 
 		// ---------------------------------------------------------------- como se dibuja
 
-		public override FormaDeLectura Forma => FormaDeLectura.ProgresoHaciaMeta;
+		internal override FormaDeLectura Forma => FormaDeLectura.ProgresoHaciaMeta;
 
-		public override IReadOnlyList<ReferenciaDeLectura> Referencias(Paciente paciente)
+		internal override IReadOnlyList<ReferenciaDeLectura> Referencias(Paciente paciente)
 		{
 			var lineas = new List<ReferenciaDeLectura>();
 			if (Ultimo == null) return lineas;

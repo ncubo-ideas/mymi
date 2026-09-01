@@ -31,19 +31,19 @@ namespace Examenes.Dominio
 	// otra cosa con ellos si hace falta. La interpretacion no los reemplaza.
 	//
 	// Carrier por identidad: sin Equals, sin GetHashCode, no es llave de nada.
-	public sealed class Interpretacion
+	internal sealed class Interpretacion
 	{
-		public Veredicto Veredicto { get; private set; }
+		internal Veredicto Veredicto { get; private set; }
 
-		public Severidad Severidad { get; private set; }
+		internal Severidad Severidad { get; private set; }
 
 		// La lectura en una linea, escrita por el analito. Con acentos: se le muestra a
 		// la persona tal cual.
-		public string ParaSonia { get; private set; }
+		internal string ParaSonia { get; private set; }
 
 		// Que hacer y cuando, elegidas por el analito del conjunto cerrado. Null cuando
 		// no hay nada que hacer, que es la mayoria de las veces y es una respuesta.
-		public Accion Accion { get; private set; }
+		internal Accion Accion { get; private set; }
 
 		// Los hechos con los que se llego a esto, para que la superficie pueda mostrarlos
 		// sin volver a pedirlos y para que la conclusion sea auditable.
@@ -51,32 +51,32 @@ namespace Examenes.Dominio
 		// con EvaluacionDePresencia —"apareció, 2 seguidas sobre 3 pruebas"— y no tiene
 		// valor inicial, ni final, ni cambio. Dejar el campo tipado a la continua la
 		// habria obligado a mandar nulls y ceros.
-		public HechosDeLaSerie Hechos { get; private set; }
+		internal HechosDeLaSerie Hechos { get; private set; }
 
 		// COMO SE DIBUJA esta lectura. Viaja con la interpretacion porque llega junta: la
 		// superficie pide una vez y sabe que veredicto es Y que forma tiene.
-		public FormaDeLectura Forma { get; private set; }
+		internal FormaDeLectura Forma { get; private set; }
 
 		// CONTRA QUE SE LEE el valor, ya dicho: "hasta 4.5 ng/mL", "entre 13 y 17 g/dL".
 		// Es el punto 5 de la §5 de las especificaciones —ningun numero sin su
 		// referencia— y NO la escribe la UI: sale del analito, que es quien sabe que
 		// depende de la edad, del sexo y, en la hemoglobina, de la altitud de residencia.
 		// Vacia cuando no hay valor que acompanar (un analito sin mediciones).
-		public string ReferenciaLegible { get; private set; } = "";
+		internal string ReferenciaLegible { get; private set; } = "";
 
-		public Interpretacion ConForma(FormaDeLectura forma)
+		internal Interpretacion ConForma(FormaDeLectura forma)
 		{
 			Forma = forma;
 			return this;
 		}
 
-		public Interpretacion ConReferencia(string referenciaLegible)
+		internal Interpretacion ConReferencia(string referenciaLegible)
 		{
 			ReferenciaLegible = referenciaLegible ?? "";
 			return this;
 		}
 
-		public Interpretacion(Veredicto veredicto, Severidad severidad, string paraSonia,
+		internal Interpretacion(Veredicto veredicto, Severidad severidad, string paraSonia,
 			HechosDeLaSerie hechos, Accion accion = null)
 		{
 			ArgumentNullException.ThrowIfNull(veredicto);
@@ -106,7 +106,7 @@ namespace Examenes.Dominio
 		// CON UNA MEDICION HAY UNA ACCION, y tiene plazo aunque no corra: repetir el
 		// examen es lo unico que convierte un punto en una serie, y cuando conviene
 		// hacerlo lo dice el medico, no este dominio.
-		public static Interpretacion SinSerie(HechosDeLaSerie hechos)
+		internal static Interpretacion SinSerie(HechosDeLaSerie hechos)
 		{
 			ArgumentNullException.ThrowIfNull(hechos);
 
@@ -129,7 +129,7 @@ namespace Examenes.Dominio
 		// La frase la escribe el dominio, como todas: la superficie no tiene de donde
 		// sacar por que un examen no corresponde, y componerla afuera seria exactamente el
 		// filtro de pantalla que esta correccion vino a evitar.
-		public static Interpretacion NoAplica(HechosDeLaSerie hechos)
+		internal static Interpretacion NoAplica(HechosDeLaSerie hechos)
 		{
 			ArgumentNullException.ThrowIfNull(hechos);
 
@@ -148,7 +148,7 @@ namespace Examenes.Dominio
 		//
 		// Severidad Informativo, siempre: no es un hallazgo clinico y no debe pintarse de
 		// ambar ni de rojo. El semaforo esta reservado para resultados.
-		public static Interpretacion RequiereSexo(HechosDeLaSerie hechos, string porQue)
+		internal static Interpretacion RequiereSexo(HechosDeLaSerie hechos, string porQue)
 		{
 			ArgumentNullException.ThrowIfNull(hechos);
 			ArgumentNullException.ThrowIfNullOrWhiteSpace(porQue);
@@ -158,33 +158,33 @@ namespace Examenes.Dominio
 
 		// Proyecciones escalares, para que el print del DSL no tenga que navegar dos
 		// niveles y la superficie no tenga que abrir los objetos.
-		public string Analito => Hechos.Analito;
-		public string AnalitoParaMostrar => Hechos.AnalitoParaMostrar;
-		public string NombreDelVeredicto => Veredicto.Nombre;
-		public string NombreDeLaForma => Forma == null ? "" : Forma.Nombre;
-		public string NombreDeLaSeveridad => Severidad.Nombre;
-		public bool PideAlgo => Severidad.PideAlgo;
-		public bool SugiereRepetirElExamen => Veredicto.SugiereRepetirElExamen;
+		internal string Analito => Hechos.Analito;
+		internal string AnalitoParaMostrar => Hechos.AnalitoParaMostrar;
+		internal string NombreDelVeredicto => Veredicto.Nombre;
+		internal string NombreDeLaForma => Forma == null ? "" : Forma.Nombre;
+		internal string NombreDeLaSeveridad => Severidad.Nombre;
+		internal bool PideAlgo => Severidad.PideAlgo;
+		internal bool SugiereRepetirElExamen => Veredicto.SugiereRepetirElExamen;
 
 		// Los dos de la aplicabilidad, proyectados para que la pantalla y la tool MCP no
 		// tengan que comparar cadenas contra el nombre del veredicto.
 		// Si hay una lectura de verdad detras de esto. Falso en los tres casos que no la
 		// tienen —faltan mediciones, falta el sexo, o el analito no corresponde— y es lo que
 		// una superficie pregunta cuando quiere saber si tiene algo que decir.
-		public bool HayLectura => Veredicto.HayLectura;
+		internal bool HayLectura => Veredicto.HayLectura;
 
-		public bool NoLeCorresponde => Veredicto.NoLeCorresponde;
+		internal bool NoLeCorresponde => Veredicto.NoLeCorresponde;
 
-		public bool RequiereElSexo => Veredicto.RequiereElSexo;
+		internal bool RequiereElSexo => Veredicto.RequiereElSexo;
 
 		// La accion dicha entera —"mostrále esto a tu médico este mes"— o vacia cuando no
 		// hay nada que hacer. Es lo unico que una pantalla imprime.
-		public string AccionLegible => Accion == null ? "" : Accion.Legible;
+		internal string AccionLegible => Accion == null ? "" : Accion.Legible;
 
 		// COMO SE LLAMA LA LECTURA en una palabra: "en ascenso" en una continua,
 		// "apareció" en un binario. Sale de los hechos, que es donde vive el conjunto
 		// cerrado de cada forma, y es lo que la superficie puede pedir sin saber cual
 		// tiene enfrente.
-		public string NombreDeLaLectura => Hechos.NombreDeLaLectura;
+		internal string NombreDeLaLectura => Hechos.NombreDeLaLectura;
 	}
 }

@@ -32,7 +32,7 @@ namespace Examenes.Dominio
 	// aparezca SIEMPRE al inicio de la demo. La C lo incluye —mientras el laboratorio no
 	// publique el dato, el estado sigue siendo Desconocido— asi que el guion de la demo
 	// funciona igual y ademas queda el caso del conflicto para mostrar.
-	public class Expediente
+	internal class Expediente
 	{
 		private readonly List<Examen> examenes = new List<Examen>();
 
@@ -60,7 +60,7 @@ namespace Examenes.Dominio
 
 		private Sexo publicadoPorLaInstitucion = Sexo.Desconocido;
 
-		public int Edad { get; private set; }
+		internal int Edad { get; private set; }
 
 		// EL CONSTRUCTOR SIGUE RECIBIENDO SOLO LA EDAD, y eso no es pereza: la semilla del
 		// actor esta JOURNALIZADA como `expediente = Expediente(60)`. Cambiarle la firma
@@ -69,7 +69,7 @@ namespace Examenes.Dominio
 		//
 		// Y ademas es el arranque correcto: un expediente nuevo NO sabe el sexo. Que ese
 		// sea el estado inicial —y no un default masculino— es la mitad del punto.
-		public Expediente(int edad)
+		internal Expediente(int edad)
 		{
 			if (edad <= 0 || edad > 120)
 				throw new ArgumentOutOfRangeException(nameof(edad), edad,
@@ -84,23 +84,23 @@ namespace Examenes.Dominio
 		//
 		// GANA LA PERSONA. Si declaro su sexo, ese es; si no, el que publico la institucion;
 		// si ninguno, Desconocido.
-		public Paciente Paciente => new Paciente(Edad, SexoQueGana);
+		internal Paciente Paciente => new Paciente(Edad, SexoQueGana);
 
-		public Sexo Sexo => SexoQueGana;
+		internal Sexo Sexo => SexoQueGana;
 
 		private Sexo SexoQueGana =>
 			declaradoPorLaPersona.EsConocido ? declaradoPorLaPersona : publicadoPorLaInstitucion;
 
 		// Lo que dijo cada uno, para que la superficie pueda mostrar el conflicto en vez de
 		// esconderlo. Vacio -Desconocido- cuando esa fuente no dijo nada.
-		public Sexo SexoDeclaradoPorLaPersona => declaradoPorLaPersona;
+		internal Sexo SexoDeclaradoPorLaPersona => declaradoPorLaPersona;
 
-		public Sexo SexoPublicadoPorLaInstitucion => publicadoPorLaInstitucion;
+		internal Sexo SexoPublicadoPorLaInstitucion => publicadoPorLaInstitucion;
 
 		// HAY CONFLICTO cuando las dos fuentes dijeron algo y no dijeron lo mismo. No es un
 		// error que haya que resolver: es un hecho del expediente, y el dominio ya sabe
 		// cual gana. Se expone para poder DECIRLO.
-		public bool HayConflictoDeSexo =>
+		internal bool HayConflictoDeSexo =>
 			declaradoPorLaPersona.EsConocido
 			&& publicadoPorLaInstitucion.EsConocido
 			&& !declaradoPorLaPersona.EsElMismo(publicadoPorLaInstitucion);
@@ -110,33 +110,33 @@ namespace Examenes.Dominio
 		// El texto entra como cadena porque asi llega —de un boton de la pantalla, del
 		// journal al reproducir— y se resuelve a identidad en la frontera, igual que
 		// Analito.PorNombre. De aca para adentro nadie vuelve a mirar un string.
-		public void DeclararSexo(string sexo)
+		internal void DeclararSexo(string sexo)
 		{
 			declaradoPorLaPersona = Sexo.PorNombre(sexo);
 		}
 
 		// LO QUE PUBLICA EL LABORATORIO, procedencia INSTITUCION. Entra por el mismo lugar
 		// y NO pisa lo que dijo la persona: los dos quedan, y para interpretar gana ella.
-		public void PublicarSexo(string sexo)
+		internal void PublicarSexo(string sexo)
 		{
 			publicadoPorLaInstitucion = Sexo.PorNombre(sexo);
 		}
 
-		public IReadOnlyList<Examen> Lista => examenes;
+		internal IReadOnlyList<Examen> Lista => examenes;
 
-		public int Cantidad => examenes.Count;
+		internal int Cantidad => examenes.Count;
 
 		// Los que TIENEN HISTORIA Y LE CORRESPONDEN a esta persona. Un antigeno prostatico
 		// con serie completa no cuenta si el expediente es de una mujer: para ella ese
 		// analito no existe, y contarlo aca lo dejaria asomando en el pie de la portada
 		// aunque su tarjeta no estuviera.
-		public int CantidadDeAnalitosConSerie => Visibles().Count;
+		internal int CantidadDeAnalitosConSerie => Visibles().Count;
 
 		// Indexador por posicion en la lista. Es lo que hace valido el DSL
 		// `expediente[@indice]` para el detalle: los examenes no tienen un numero de
 		// documento como las facturas, asi que la posicion es la unica llave estable
 		// que el journal reproduce igual.
-		public Examen this[int indice]
+		internal Examen this[int indice]
 		{
 			get
 			{
@@ -147,7 +147,7 @@ namespace Examenes.Dominio
 			}
 		}
 
-		public void Agregar(Examen examen)
+		internal void Agregar(Examen examen)
 		{
 			ArgumentNullException.ThrowIfNull(examen);
 
@@ -228,13 +228,13 @@ namespace Examenes.Dominio
 			return series.TryGetValue(analito, out SerieDeAnalito serie) ? serie : null;
 		}
 
-		public bool TieneSerieDe(string analito) => Visible(Analito.PorNombre(analito)) != null;
+		internal bool TieneSerieDe(string analito) => Visible(Analito.PorNombre(analito)) != null;
 
 		// EL ACCESO CRUDO A LA SERIE, sin el filtro de aplicabilidad. Existe para las
 		// comprobaciones y para quien necesita los metodos propios de una serie concreta
 		// -la velocidad del antigeno, el histograma-; las consultas que la superficie
 		// consume son las de mas abajo, y esas si filtran.
-		public SerieDeAnalito SerieDe(string analito)
+		internal SerieDeAnalito SerieDe(string analito)
 		{
 			Analito cual = Analito.PorNombre(analito);
 			if (!series.TryGetValue(cual, out SerieDeAnalito serie))
@@ -247,7 +247,7 @@ namespace Examenes.Dominio
 		// La pregunta que ninguna pantalla contesta. Es total: un analito sin
 		// mediciones devuelve Indeterminada en vez de reventar, porque "no tengo datos
 		// de eso" es una respuesta legitima para quien pregunta.
-		public EvaluacionDeTendencia EvaluarTendenciaDe(string analito)
+		internal EvaluacionDeTendencia EvaluarTendenciaDe(string analito)
 		{
 			Analito cual = Analito.PorNombre(analito);
 
@@ -279,7 +279,7 @@ namespace Examenes.Dominio
 		//
 		// Total por la misma razon que EvaluarTendenciaDe: preguntar por un analito real
 		// del que todavia no hay nada es legitimo, y la respuesta es "no hay serie".
-		public Interpretacion InterpretarSerieDe(string analito)
+		internal Interpretacion InterpretarSerieDe(string analito)
 		{
 			Analito cual = Analito.PorNombre(analito);
 			Paciente paciente = Paciente;
@@ -308,7 +308,7 @@ namespace Examenes.Dominio
 		// exige recorrer cada serie, interpretarla con el criterio de SU analito y
 		// quedarse con la mayor — y desde que la accion lleva plazo, quedarse tambien con
 		// LA ACCION del que gano, porque la severidad sola ya no sabe decir que hacer.
-		public UrgenciaDelExpediente LoMasUrgente
+		internal UrgenciaDelExpediente LoMasUrgente
 		{
 			get
 			{
@@ -355,12 +355,12 @@ namespace Examenes.Dominio
 
 		// La severidad sola, para quien no necesita la accion: el conteo, las
 		// comprobaciones, la IA que pregunta "que tan grave".
-		public Severidad SeveridadMayor => LoMasUrgente.Severidad;
+		internal Severidad SeveridadMayor => LoMasUrgente.Severidad;
 
 		// A que ritmo viene cambiando un analito. Total por la misma razon que
 		// EvaluarTendenciaDe: preguntar por un analito del que no hay nada es legitimo, y
 		// la respuesta es "no hay velocidad que dar", no una excepcion.
-		public Velocidad VelocidadDe(string analito)
+		internal Velocidad VelocidadDe(string analito)
 		{
 			Analito cual = Analito.PorNombre(analito);
 
@@ -380,7 +380,7 @@ namespace Examenes.Dominio
 		// sin conocer la lista de clases del dominio.
 		// Salen los nombres CANONICOS: es con esos que se vuelve a preguntar, y son los
 		// que el enum del MCP conoce. El nombre para mostrar viaja en cada evaluacion.
-		public IReadOnlyList<string> Analitos
+		internal IReadOnlyList<string> Analitos
 		{
 			get
 			{
@@ -414,7 +414,7 @@ namespace Examenes.Dominio
 		// nitritos, que era el limite anotado en §7 bis: "que_me_falta_medir solo cubre
 		// analitos con serie, o sea solo sangre". Y la periodicidad la resuelve cada uno
 		// contra su ultimo resultado: una sangre oculta positiva no espera al ano.
-		public IReadOnlyList<ControlPendiente> ControlesPendientes(DateTime hoy)
+		internal IReadOnlyList<ControlPendiente> ControlesPendientes(DateTime hoy)
 		{
 			var pendientes = new List<ControlPendiente>();
 			Paciente paciente = Paciente;
@@ -446,7 +446,7 @@ namespace Examenes.Dominio
 		// LOS PUNTOS DE LA SERIE, con su valor NUMERICO. El cuadro los da ya convertidos a
 		// texto -"3.0 ng/mL"-, que sirve para una tabla y no para dibujar. Un grafico
 		// necesita numeros.
-		public IReadOnlyList<ExamenDeSangre> PuntosDe(string analito)
+		internal IReadOnlyList<ExamenDeSangre> PuntosDe(string analito)
 		{
 			Analito cual = Analito.PorNombre(analito);
 
@@ -463,7 +463,7 @@ namespace Examenes.Dominio
 		// LOS PUNTOS DE UNA SERIE BINARIA: fechas con un si o un no. Es el par de PuntosDe
 		// para la forma 5, y son dos consultas y no una porque no devuelven lo mismo — un
 		// nitrito no tiene ValorNumerico, y pedirselo seria la mentira de siempre.
-		public IReadOnlyList<PruebaBinaria> PruebasDe(string analito)
+		internal IReadOnlyList<PruebaBinaria> PruebasDe(string analito)
 		{
 			Analito cual = Analito.PorNombre(analito);
 
@@ -475,7 +475,7 @@ namespace Examenes.Dominio
 		// LOS HECHOS DE UNA SERIE BINARIA: aparecio, persiste, cedio, y sobre cuantas
 		// pruebas. Es el par de EvaluarTendenciaDe, y es total por la misma razon:
 		// preguntar por un analito real del que todavia no hay nada es legitimo.
-		public EvaluacionDePresencia EvaluarPresenciaDe(string analito)
+		internal EvaluacionDePresencia EvaluarPresenciaDe(string analito)
 		{
 			Analito cual = Analito.PorNombre(analito);
 
@@ -486,7 +486,7 @@ namespace Examenes.Dominio
 
 		// COMO SE LEE ese analito. Total: de uno sin mediciones la respuesta es que no hay
 		// nada que dibujar.
-		public string FormaDeLecturaDe(string analito)
+		internal string FormaDeLecturaDe(string analito)
 		{
 			Analito cual = Analito.PorNombre(analito);
 
@@ -495,7 +495,7 @@ namespace Examenes.Dominio
 		}
 
 		// LAS LINEAS que hay que dibujar junto a los puntos.
-		public IReadOnlyList<ReferenciaDeLectura> ReferenciasDe(string analito)
+		internal IReadOnlyList<ReferenciaDeLectura> ReferenciasDe(string analito)
 		{
 			Analito cual = Analito.PorNombre(analito);
 
@@ -518,7 +518,7 @@ namespace Examenes.Dominio
 		//
 		// Dos mediciones del mismo analito el mismo dia colapsan en una celda y gana la
 		// ULTIMA por hora: es una remedicion, no dos columnas.
-		public IReadOnlyList<CeldaDelCuadro> CeldasDelCuadro
+		internal IReadOnlyList<CeldaDelCuadro> CeldasDelCuadro
 		{
 			get
 			{
@@ -632,7 +632,7 @@ namespace Examenes.Dominio
 		// que exista: el bloque que insiste dice "no puedo interpretar 2 de tus 7
 		// resultados", y ese 2 sale de recorrer cada serie e interpretarla, que es
 		// exactamente lo que una pantalla no puede hacer.
-		public int AnalitosNoInterpretables
+		internal int AnalitosNoInterpretables
 		{
 			get
 			{
@@ -651,7 +651,7 @@ namespace Examenes.Dominio
 		// porque la FRASE la escribe el dominio: es el criterio 9 de la spec —ningun texto
 		// sobre el sexo se compone en la vista— y componerla afuera obligaria a la pantalla
 		// a saber por que cada analito no se puede leer.
-		public PedidoDeSexo FaltaElSexo
+		internal PedidoDeSexo FaltaElSexo
 		{
 			get
 			{
@@ -675,7 +675,7 @@ namespace Examenes.Dominio
 		// determinar —si depende del sexo y el sexo no se sabe, no se puede— y cuando su
 		// ultima lectura no es un hallazgo. Las tres condiciones en una sola pasada: es
 		// una cuenta, no una resta entre escalares publicados por separado.
-		public TranquilidadDelExpediente LoQueEstaEnRango
+		internal TranquilidadDelExpediente LoQueEstaEnRango
 		{
 			get
 			{
@@ -704,7 +704,7 @@ namespace Examenes.Dominio
 		// Se pregunta "es un hallazgo" y no "esta fuera de rango" porque un binario no
 		// tiene rango y sin embargo la pregunta es la misma. Antes esto solo miraba
 		// analitos de sangre, asi que una sangre en la orina no contaba para nada.
-		public int AnalitosFueraDeRango
+		internal int AnalitosFueraDeRango
 		{
 			get
 			{

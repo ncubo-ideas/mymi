@@ -23,17 +23,17 @@ namespace Examenes.Dominio
 	///
 	/// Vive en el urianalisis, al lado del color y de los nitritos: TRES formas de magnitud
 	/// en un solo examen, y ahora dos binarios distintos que no se leen igual.
-	public sealed class SangreEnOrina : MagnitudBinaria
+	internal sealed class SangreEnOrina : MagnitudBinaria
 	{
-		public static readonly SangreEnOrina Positivo =
+		internal static readonly SangreEnOrina Positivo =
 			new SangreEnOrina("positivo", realizada: true, positivo: true);
-		public static readonly SangreEnOrina Negativo =
+		internal static readonly SangreEnOrina Negativo =
 			new SangreEnOrina("negativo", realizada: true, positivo: false);
-		public static readonly SangreEnOrina NoRealizado =
+		internal static readonly SangreEnOrina NoRealizado =
 			new SangreEnOrina("no realizado", realizada: false, positivo: false);
 
 		/// <summary>El vocabulario de ESTE analito. La tira reporta positivo/negativo.</summary>
-		public string Etiqueta { get; }
+		internal string Etiqueta { get; }
 
 		private readonly bool realizada;
 		private readonly bool positivo;
@@ -45,11 +45,11 @@ namespace Examenes.Dominio
 			this.positivo = positivo;
 		}
 
-		public override string Expresado => Etiqueta;
+		internal override string Expresado => Etiqueta;
 
-		public override bool FueRealizada => realizada;
+		internal override bool FueRealizada => realizada;
 
-		public override bool EsPositivo
+		internal override bool EsPositivo
 		{
 			get
 			{
@@ -62,7 +62,7 @@ namespace Examenes.Dominio
 			}
 		}
 
-		public override bool EsHallazgo => realizada && positivo;
+		internal override bool EsHallazgo => realizada && positivo;
 
 		/// <summary>
 		/// NO ESPERA A LA PROXIMA CITA. Sangre en la orina puede venir de causas banales,
@@ -77,14 +77,14 @@ namespace Examenes.Dominio
 		/// modelar la estructura. Antes de mostrarse fuera del equipo conviene que alguien
 		/// con criterio medico revise el umbral.
 		/// </summary>
-		public override Severidad SeveridadDelHallazgo =>
+		internal override Severidad SeveridadDelHallazgo =>
 			EsHallazgo ? Severidad.Urgente : Severidad.Informativo;
 
 		// El plazo del rojo reservado: pronto, no "en la proxima cita".
-		public override Accion AccionDelHallazgo =>
+		internal override Accion AccionDelHallazgo =>
 			EsHallazgo ? Accion.BuscarAtencionMedica(Plazo.Pronto) : null;
 
-		public override string ParaSonia =>
+		internal override string ParaSonia =>
 			!realizada ? "el laboratorio no corrió esta prueba"
 			: positivo ? "apareció sangre en la orina, y eso conviene que lo revise un médico pronto"
 			: "no apareció sangre en la orina, que es lo esperable";
@@ -94,7 +94,7 @@ namespace Examenes.Dominio
 		/// estado legitimo—; un texto que no es ninguno de los tres es un evento mal formado
 		/// y revienta, no se inventa un cuarto inhabitante.
 		/// </summary>
-		public static SangreEnOrina PorNombre(string nombre)
+		internal static SangreEnOrina PorNombre(string nombre)
 		{
 			if (string.IsNullOrWhiteSpace(nombre)) return NoRealizado;
 
@@ -109,6 +109,6 @@ namespace Examenes.Dominio
 		}
 
 		/// <summary>El plural de este analito. Ver <see cref="SerieDeSangreEnOrina"/>.</summary>
-		public override SerieBinaria NuevaSerie() => new SerieDeSangreEnOrina();
+		internal override SerieBinaria NuevaSerie() => new SerieDeSangreEnOrina();
 	}
 }

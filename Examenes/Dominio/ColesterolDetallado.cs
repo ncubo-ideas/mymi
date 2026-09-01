@@ -13,7 +13,7 @@ namespace Examenes.Dominio
 	// La serie la forma el LDL, que es la fraccion que decide la conducta clinica. El
 	// HDL viaja como dato del examen y se muestra, pero no es la llave de la serie:
 	// modelar dos series en un examen seria mezclar dos cosas distintas en una.
-	public sealed class ColesterolDetallado : ExamenDeSangre
+	internal sealed class ColesterolDetallado : ExamenDeSangre
 	{
 		private static readonly AnalitoContinuo Suyo = Examenes.Dominio.Analito.ColesterolLdl;
 
@@ -21,27 +21,27 @@ namespace Examenes.Dominio
 		// suelto como texto: viaja en el examen, se muestra, y no es la llave de la serie.
 		private static readonly AnalitoContinuo ElDelHdl = Examenes.Dominio.Analito.ColesterolHdl;
 
-		public Medicion Hdl { get; private set; }
+		internal Medicion Hdl { get; private set; }
 
-		public ColesterolDetallado(DateTime fecha, decimal ldl, decimal hdl, string unidad)
+		internal ColesterolDetallado(DateTime fecha, decimal ldl, decimal hdl, string unidad)
 			: base(fecha, Suyo, Medida(ldl, unidad, Suyo))
 		{
 			Hdl = Medida(hdl, unidad, ElDelHdl);
 		}
 
-		public override string Nombre => "Colesterol HDL/LDL";
+		internal override string Nombre => "Colesterol HDL/LDL";
 
-		public Medicion Ldl => Valor;
+		internal Medicion Ldl => Valor;
 
 		// Se muestran los dos, porque el examen son los dos.
-		public override string ResultadoExpresado => $"LDL {Ldl.Expresado} / HDL {Hdl.Expresado}";
+		internal override string ResultadoExpresado => $"LDL {Ldl.Expresado} / HDL {Hdl.Expresado}";
 
 		// DOS ANALITOS, no uno. Este examen trae el LDL y su HDL, y son dos cosas medidas
 		// distintas: una se lee hacia abajo y la otra hacia arriba. Sin este override
 		// heredaba el de ExamenDeSangre -que emite una sola lectura- y el HDL desaparecia
 		// del historial. Es el mismo aplanamiento que este cambio vino a sacar, en el
 		// unico examen de sangre que mide mas de una cosa.
-		public override IReadOnlyList<LecturaDeExamen> Lecturas => new[]
+		internal override IReadOnlyList<LecturaDeExamen> Lecturas => new[]
 		{
 			new LecturaDeExamen(Examenes.Dominio.Analito.ColesterolLdl, Ldl),
 			new LecturaDeExamen(Examenes.Dominio.Analito.ColesterolHdl, Hdl),
@@ -50,22 +50,22 @@ namespace Examenes.Dominio
 		// EL RANGO DEL LDL NO DEPENDE DEL SEXO. El de su HDL acompanante SI, y las dos
 		// cosas conviven en el mismo examen: ver PisoDelHdlPara, abajo. Es el ejemplo mas
 		// claro de que la regla no es plana ni siquiera dentro de un examen.
-		public override RangoDeReferencia RangoPara(Paciente paciente)
+		internal override RangoDeReferencia RangoPara(Paciente paciente)
 		{
 			ArgumentNullException.ThrowIfNull(paciente);
 			return RangoDeReferencia.HastaUnMaximoDe(paciente.Edad >= 50 ? 100m : 130m, Suyo.Unidad);
 		}
 
-		public override decimal CambioMaximoVerosimilPorDia => 0.8m;
+		internal override decimal CambioMaximoVerosimilPorDia => 0.8m;
 
-		public override decimal CambioMinimoSignificativo => 12m;
+		internal override decimal CambioMinimoSignificativo => 12m;
 
-		public override DireccionDeseable Direccion => DireccionDeseable.Bajar;
+		internal override DireccionDeseable Direccion => DireccionDeseable.Bajar;
 
 		// Igual que el colesterol total: en rango cada cinco anos, fuera todos los anos.
-		public override decimal MultiploQueNingunIntervaloJustifica => 4m;
+		internal override decimal MultiploQueNingunIntervaloJustifica => 4m;
 
-		public override int MesesHastaElProximo(Paciente paciente) =>
+		internal override int MesesHastaElProximo(Paciente paciente) =>
 			EsNormalPara(paciente) ? 60 : 12;
 
 		// ---------------------------------------------------------------- lo suyo
@@ -85,7 +85,7 @@ namespace Examenes.Dominio
 		// Null cuando no se sabe el sexo, por la misma razon que el rango de la
 		// hemoglobina: dar el piso masculino "mientras tanto" le diria a la mitad de las
 		// personas que estan protegidas cuando no lo estan.
-		public decimal? PisoDelHdlPara(Paciente paciente)
+		internal decimal? PisoDelHdlPara(Paciente paciente)
 		{
 			ArgumentNullException.ThrowIfNull(paciente);
 
@@ -96,9 +96,9 @@ namespace Examenes.Dominio
 		// Si de esta persona se puede decir algo del HDL. Lo pregunta la serie antes de
 		// nombrarlo en su lectura: sin sexo, el LDL se sigue leyendo igual y lo unico que
 		// se calla es la coletilla sobre el acompanante.
-		public bool SeSabeSiElHdlAcompana(Paciente paciente) => PisoDelHdlPara(paciente) != null;
+		internal bool SeSabeSiElHdlAcompana(Paciente paciente) => PisoDelHdlPara(paciente) != null;
 
-		public bool HdlEsProtectorPara(Paciente paciente)
+		internal bool HdlEsProtectorPara(Paciente paciente)
 		{
 			decimal? piso = PisoDelHdlPara(paciente);
 			if (piso == null)
@@ -109,6 +109,6 @@ namespace Examenes.Dominio
 			return Hdl.Valor >= piso.Value;
 		}
 
-		public override SerieContinua NuevaSerie() => new SerieDeColesterolLdl();
+		internal override SerieContinua NuevaSerie() => new SerieDeColesterolLdl();
 	}
 }

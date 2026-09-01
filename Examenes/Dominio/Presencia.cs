@@ -22,36 +22,36 @@ namespace Examenes.Dominio
 	// vuelve a aparecer NO ES un hallazgo confirmado. Es el mismo argumento de §2 de la
 	// reunion -"cuando lo vuelve a medir pasa otra vez a 3, ahi al medico esa segunda
 	// lectura le sirve"- trasladado a los binarios.
-	public sealed class Presencia
+	internal sealed class Presencia
 	{
 		// Menos de dos mediciones realizadas: no hay serie, y decir "nunca apareció"
 		// con una sola prueba seria afirmar mas de lo que se midio.
-		public static readonly Presencia Indeterminada = new Presencia("indeterminada");
+		internal static readonly Presencia Indeterminada = new Presencia("indeterminada");
 
 		// Todas las pruebas dieron negativas. Es una respuesta, no un vacio: "en las
 		// cuatro veces que te lo hicieron nunca apareció" es informacion.
-		public static readonly Presencia NuncaAparecio = new Presencia("nunca apareció");
+		internal static readonly Presencia NuncaAparecio = new Presencia("nunca apareció");
 
 		// La ultima dio positiva y la anterior no. Todavia NADIE lo confirmo, y por eso
 		// lo primero que pide es repetirse.
-		public static readonly Presencia Aparecio = new Presencia("apareció");
+		internal static readonly Presencia Aparecio = new Presencia("apareció");
 
 		// Dos o mas positivas SEGUIDAS al final de la serie. Ya se repitio y volvio a
 		// salir: dejo de ser un dato suelto. Es el inhabitante que justifica que los
 		// binarios tengan serie.
-		public static readonly Presencia Persiste = new Presencia("persiste");
+		internal static readonly Presencia Persiste = new Presencia("persiste");
 
 		// Hubo UN positivo aislado y la prueba siguiente dio negativa. El hallazgo NO
 		// ERA, y eso es buena noticia — el par binario de PicoNoConfirmado.
-		public static readonly Presencia NoConfirmado = new Presencia("no confirmado");
+		internal static readonly Presencia NoConfirmado = new Presencia("no confirmado");
 
 		// Estuvo presente de verdad -dos o mas veces- y despues dejo de estarlo. NO es lo
 		// mismo que NoConfirmado: ahi nunca se confirmo nada, aca se confirmo y cedio.
 		// Son dos por la misma razon que ProbableErrorDeMedicion y PicoNoConfirmado son
 		// dos veredictos: la persona lee cosas distintas.
-		public static readonly Presencia Cedio = new Presencia("cedió");
+		internal static readonly Presencia Cedio = new Presencia("cedió");
 
-		public string Nombre { get; private set; }
+		internal string Nombre { get; private set; }
 
 		private Presencia(string nombre)
 		{
@@ -60,19 +60,19 @@ namespace Examenes.Dominio
 
 		// Si HOY el hallazgo esta presente. Es lo unico que se puede preguntar sin mirar
 		// la historia, y por eso es lo unico que la magnitud sola sabia contestar.
-		public bool EstaPresente =>
+		internal bool EstaPresente =>
 			ReferenceEquals(this, Aparecio) || ReferenceEquals(this, Persiste);
 
 		// Si se repitio y volvio a salir. Es lo que separa un dato de un hecho.
-		public bool EstaConfirmado => ReferenceEquals(this, Persiste);
+		internal bool EstaConfirmado => ReferenceEquals(this, Persiste);
 
 		// Un positivo que todavia nadie confirmo pide, antes que nada, repetirse. No es
 		// la conducta completa -esa la decide cada analito- pero si es un hecho de la
 		// serie: con un solo punto positivo no hay nada que confirmar.
-		public bool SugiereRepetirElExamen => ReferenceEquals(this, Aparecio);
+		internal bool SugiereRepetirElExamen => ReferenceEquals(this, Aparecio);
 
 		// Se movio hacia donde conviene: dejo de aparecer.
-		public bool EsMejora =>
+		internal bool EsMejora =>
 			ReferenceEquals(this, NoConfirmado) || ReferenceEquals(this, Cedio);
 	}
 }
