@@ -56,9 +56,18 @@ enum Facturas {
         """
     }
 
-    /// Los hechos con su marco. Es lo que va hacia un modelo dentro de un atajo.
-    static func paraUnModelo() -> String {
-        "\(encuadre)\n\n\(totalComoDatos())"
+    /// Los hechos con su marco Y con la superficie donde va a caer la respuesta.
+    ///
+    /// LA SUPERFICIE NO LA PONE EL MODULO, y esa division es el hallazgo. `encuadre` dice QUE
+    /// SON estos datos y vale igual por las tres puertas. Donde se va a MOSTRAR la respuesta
+    /// depende de por cual puerta entro la pregunta -- un chat renderiza markdown, la alerta
+    /// de Atajos no, Siri ni siquiera muestra: habla-- y el Dispatcher no sabe quien llamo.
+    /// Por eso la superficie la agrega la PUERTA, como parametro, y no viaja en el modulo.
+    ///
+    /// Medido: sin esta linea Claude devolvio una tabla de markdown y la alerta de Atajos la
+    /// mostro en crudo, con los pipes y los guiones a la vista.
+    static func paraUnModelo(superficie: String) -> String {
+        "\(encuadre)\n\n\(superficie)\n\n\(totalComoDatos())"
     }
 
     /// Same facts as data, for the Shortcuts path. A shortcut chaining this into "Ask Claude"

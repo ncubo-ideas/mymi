@@ -58,7 +58,9 @@ struct ContentView: View {
         ("c4", "¿El encuadre arregla la respuesta?",
          "Repetir c2. Antes Claude contestaba «the math checks out… what do you want done with it?» porque recibía JSON pelado. Ahora los datos viajan con su marco: ¿contesta sobre las facturas, y en español?"),
         ("c5", "La persona pregunta lo suyo",
-         "Atajo: 1) Gnothi «Preguntar sobre mis facturas» escribiendo «¿en qué gasté más?» 2) «Ask Claude». La pregunta va al final, que es lo que un modelo pesa más.")
+         "Atajo: 1) Gnothi «Preguntar sobre mis facturas» escribiendo «¿en qué gasté más?» 2) «Ask Claude». La pregunta va al final, que es lo que un modelo pesa más."),
+        ("c6", "¿Se acabaron las tablas en crudo?",
+         "Repetir c4. En la corrida anterior Claude armó una tabla de markdown y la alerta la mostró con los pipes a la vista. Ahora va la superficie pegada: ¿contesta en prosa, sin | ni ---?")
     ]
 
     var body: some View {

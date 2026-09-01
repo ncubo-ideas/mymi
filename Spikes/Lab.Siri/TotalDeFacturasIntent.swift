@@ -1,5 +1,25 @@
 import AppIntents
 
+// LO QUE APORTA LA PUERTA, y solo la puerta.
+//
+// En la Puerta 1 el encuadre viaja en el handshake de MCP y el destino es un chat que
+// renderiza markdown. Aca el destino es una ALERTA DE TEXTO PLANO de la app Atajos, y eso
+// el modulo no tiene como saberlo: `Facturas.encuadre` dice que son los datos, no donde
+// van a terminar dibujados.
+//
+// Es la misma propiedad que la R14 nombra del otro lado: `Dispatcher.Serve` no sabe quien
+// lo llamo. Justamente por eso lo que depende del llamante lo tiene que poner la puerta.
+enum Superficie {
+
+    /// Lo que se le dice al modelo cuando la respuesta cae en la app Atajos.
+    static let atajo = """
+        Tu respuesta se va a mostrar en una alerta de texto plano del telefono, que NO \
+        dibuja markdown. No uses tablas, ni pipes, ni asteriscos, ni encabezados: eso sale \
+        en crudo y se lee peor. Escribi en prosa corta; si tenes que enumerar, usa lineas \
+        sueltas. Se breve, que la pantalla es chica.
+        """
+}
+
 // THE iOS GATE. This is the App Intents equivalent of what Lab.Caratula declared in
 // gnothi_app_function_service.xml on Android -- one tool, described well enough that an
 // assistant can decide to call it from the description alone.
@@ -69,7 +89,7 @@ struct FacturasComoDatosIntent: AppIntent {
     // el modelo del otro lado del atajo lee una estructura de datos y ofrece escribir tipos.
     // Medido en el telefono del companero.
     func perform() async throws -> some IntentResult & ReturnsValue<String> {
-        .result(value: Facturas.paraUnModelo())
+        .result(value: Facturas.paraUnModelo(superficie: Superficie.atajo))
     }
 }
 
@@ -107,8 +127,17 @@ struct PreguntarSobreMisFacturasIntent: AppIntent {
     func perform() async throws -> some IntentResult & ReturnsValue<String> {
         // El orden importa: primero el marco, despues los hechos, y la pregunta AL FINAL.
         // Un modelo pesa mas lo ultimo que lee, y lo ultimo tiene que ser lo que se le pide.
+        //
+        // Cuatro piezas y CADA UNA TIENE DUEÑO DISTINTO -- por eso vale la pena verlas juntas:
+        //
+        //   encuadre    el MODULO   que son estos datos      igual por las tres puertas
+        //   superficie  la PUERTA   donde se va a mostrar    cambia con el llamante
+        //   hechos      el MODULO   los numeros              igual por las tres puertas
+        //   pregunta    la PERSONA  que quiere saber         la trae ella
         let armado = """
         \(Facturas.encuadre)
+
+        \(Superficie.atajo)
 
         \(Facturas.totalComoDatos())
 
