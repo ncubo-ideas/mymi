@@ -394,6 +394,30 @@ namespace Compras.App
 			};
 		}
 
+		// La clave del arreglo es el nombre de la variable del foreach: "promocion".
+		internal static IReadOnlyList<PromocionVista> Promociones(string json)
+		{
+			var promociones = new List<PromocionVista>();
+			if (string.IsNullOrWhiteSpace(json)) return promociones;
+
+			using JsonDocument documento = JsonDocument.Parse(json);
+			if (!documento.RootElement.TryGetProperty("promocion", out JsonElement arreglo))
+				return promociones;
+
+			foreach (JsonElement elemento in Elementos(arreglo))
+				promociones.Add(new PromocionVista
+				{
+					Gancho = Texto(elemento, "gancho"),
+					Detalle = Texto(elemento, "detalle"),
+					Sku = Texto(elemento, "sku"),
+					ValidaHasta = Texto(elemento, "validaHasta"),
+					DiasQueQuedan = Entero(elemento, "diasQueQuedan"),
+					ParaElAsistente = Texto(elemento, "paraElAsistente"),
+				});
+
+			return promociones;
+		}
+
 		internal static ComprasHalladas Halladas(string json)
 		{
 			if (string.IsNullOrWhiteSpace(json)) return new ComprasHalladas();

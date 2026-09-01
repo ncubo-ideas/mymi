@@ -314,6 +314,11 @@ public sealed class EstadoDeLaApp : IAsyncDisposable
 	public ListaDeLaProximaCompra Lista()
 	{ Exigir(); return api!.Lista(DateTime.Now); }
 
+	// LAS PROMOCIONES VIGENTES. El "hoy" lo pone la caratula: vigente-o-no depende de
+	// cuando se mira, y el dominio no lee el reloj.
+	public IReadOnlyList<PromocionVista> Promociones()
+	{ Exigir(); return api!.Promociones(DateTime.Now); }
+
 	// EN CUALES COMPRAS APARECIO ESTO. La busca el DOMINIO y no la pantalla: la pantalla
 	// solo tiene la lista de compras -numero, fecha, lineas, total-, sin las lineas, asi que
 	// filtrar aca obligaria a bajar el detalle de las 87 en cada tecla.

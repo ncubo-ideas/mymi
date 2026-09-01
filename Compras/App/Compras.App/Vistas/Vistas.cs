@@ -440,6 +440,25 @@ namespace Compras.App.Vistas
 		public string ParaElAsistente { get; init; } = "";
 	}
 
+	// UNA PROMOCION VIGENTE. Contenido de la institucion que llego como evento al journal:
+	// la app la muestra y el super no se entera de cuales vio.
+	public sealed class PromocionVista
+	{
+		public string Gancho { get; init; } = "";
+		public string Detalle { get; init; } = "";
+
+		/// <summary>El sku al que apunta, o vacío si es general. La pantalla saca la foto de acá.</summary>
+		public string Sku { get; init; } = "";
+
+		/// <summary>Como aaaa-mm-dd, que es la forma en que la fecha viaja.</summary>
+		public string ValidaHasta { get; init; } = "";
+
+		/// <summary>Cero el último día. Es lo que ordena la urgencia del cartel.</summary>
+		public int DiasQueQuedan { get; init; }
+
+		public string ParaElAsistente { get; init; } = "";
+	}
+
 	public sealed class ComprasHalladas
 	{
 		public string Buscado { get; init; } = "";

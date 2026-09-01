@@ -289,6 +289,22 @@ internal sealed class ComprasTools
 		return lector.Consultar(api => api.Consumo(termino));
 	}
 
+	[McpServerTool(Name = "promociones_vigentes", UseStructuredContent = true)]
+	[Description("LAS PROMOCIONES DEL SUPER vigentes hoy, la que vence antes primero: el gancho "
+		+ "('2 x 1'), el detalle, hasta cuando vale y cuantos dias quedan (cero = ultimo dia). "
+		+ "IMPORTANTE sobre su origen: llegaron como EVENTOS al journal de la persona, igual que "
+		+ "sus compras — son contenido DE LA INSTITUCION, publicado a todos por igual, NO elegido "
+		+ "con los datos de ella, y el super no se entera de cuales vio. Usala cuando pregunte "
+		+ "'¿hay ofertas?', '¿que promociones tiene el super?' o al armarle la lista de compras, "
+		+ "para avisarle si algo que le falta esta en promocion. Una lista vacia significa que no "
+		+ "hay ninguna vigente, y es una respuesta.")]
+	public IReadOnlyList<PromocionVista> PromocionesVigentes()
+	{
+		if (!lector.HayJournal) return new List<PromocionVista>();
+
+		return lector.Consultar(api => api.Promociones(DateTime.Now));
+	}
+
 	[McpServerTool(Name = "para_mi_proxima_compra", UseStructuredContent = true)]
 	[Description("LA LISTA DE LO QUE LE VA A FALTAR a la persona, armada con el RITMO de cada "
 		+ "producto: cada cuanto suele volver y cuanto hace que no entra. Del mas atrasado al que "

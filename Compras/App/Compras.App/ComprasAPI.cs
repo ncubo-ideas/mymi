@@ -98,6 +98,37 @@ namespace Compras.App
 			.PerformCheckThenCommand();
 		}
 
+		// El segundo evento: una promocion del super. MISMO esquema de idempotencia que la
+		// compra -Check contra la bitacora, checkpoint DENTRO del mismo comando- porque
+		// viajan por el mismo stream numerado: o entran los dos o no entra ninguno.
+		public string AplicarPromocionPublicada(PromocionPublicada evento)
+		{
+			ArgumentNullException.ThrowIfNull(evento);
+			if (evento.Evento <= 0)
+				throw new ArgumentOutOfRangeException(nameof(evento), evento.Evento,
+					"El numero de evento debe ser positivo.");
+
+			return app.Using(
+				scriptForChk: @"
+					Check(@evento > bitacora.UltimoEvento) Error 'evento ya procesado';
+				",
+				@"
+					{
+						promocion = Promocion(@gancho, @detalle, @sku, @validaHasta);
+						cartelera.Colgar(promocion);
+						bitacora.Avanzar(@evento);
+					}
+				")
+			.WithParameters(p => {
+				p["evento",      typeof(long)]     = evento.Evento;
+				p["gancho",      typeof(string)]   = evento.Gancho;
+				p["detalle",     typeof(string)]   = evento.Detalle;
+				p["sku",         typeof(string)]   = evento.Sku ?? "";
+				p["validaHasta", typeof(DateTime)] = evento.ValidaHasta;
+			})
+			.PerformCheckThenCommand();
+		}
+
 		// ---------------------------------------------------------------- consultas
 
 		// Valores TIPADOS, no texto parseado: es lo que le permite a las tools MCP
@@ -820,6 +851,26 @@ namespace Compras.App
 			})
 			.PerformQuery();
 
+		// LAS PROMOCIONES VIGENTES a una fecha. El "hoy" viene recibido: el dominio no lee
+		// el reloj, y una promocion vigente-o-no depende de cuando se pregunta.
+		public string PromocionesVigentesEl(DateTime fecha) =>
+			app.Using(@"
+				{
+					foreach (promocion in cartelera.VigentesEl(@fecha)) {
+						print promocion.Gancho gancho,
+							promocion.Detalle detalle,
+							promocion.Sku sku,
+							promocion.ValidaHastaExpresada validaHasta,
+							promocion.DiasQueQuedanEl(@fecha) diasQueQuedan,
+							promocion.ParaElAsistente paraElAsistente;
+					}
+				}
+			")
+			.WithParameters(p => {
+				p["fecha", typeof(DateTime)] = fecha;
+			})
+			.PerformQuery();
+
 		// LA consulta que mira el hueco: que dejo de entrar a la canasta. Una pantalla no
 		// puede renderizar una ausencia que nadie le paso.
 		public string AbastecimientosPendientesEl(DateTime fechaDeConsulta) =>
@@ -907,6 +958,9 @@ namespace Compras.App
 		public ListaDeLaProximaCompra Lista(DateTime hoy) =>
 			ProyeccionDeVistas.LaProximaCompra(LoQueVaAFaltar(hoy));
 
+		public IReadOnlyList<PromocionVista> Promociones(DateTime fecha) =>
+			ProyeccionDeVistas.Promociones(PromocionesVigentesEl(fecha));
+
 		public GarantiaDeProducto Garantia(string texto, DateTime fechaDeConsulta) =>
 			ProyeccionDeVistas.Garantia(GarantiaDe(texto, fechaDeConsulta));
 
@@ -926,6 +980,7 @@ namespace Compras.App
 			ArgumentNullException.ThrowIfNull(mensaje);
 
 			if (mensaje is CompraRegistrada registrada) return AplicarCompraRegistrada(registrada);
+			if (mensaje is PromocionPublicada promocion) return AplicarPromocionPublicada(promocion);
 
 			throw new ArgumentException(
 				$"Esta app no tiene comando para un mensaje de tipo '{mensaje.Tipo}'. La ruta debio devolver null "

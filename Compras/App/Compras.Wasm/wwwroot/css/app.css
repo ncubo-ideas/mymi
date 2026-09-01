@@ -828,7 +828,7 @@ main h2 {
     .pie-enlaces { margin-left: 0; }
 }
 
-/* --------------------------------------------------------- las promociones (maqueta)
+/* --------------------------------------------------------- las promociones
 
    TRES CARTELES EN TIRA: grid de tres en escritorio, carrusel con scroll y snap en
    telefono — que es como toda app de super los muestra, y el snap hace que cada cartel
@@ -838,18 +838,6 @@ main h2 {
    raro- y la foto grande sangrando del borde. El "valida hasta" va en pastilla, el mismo
    gesto del dato-que-decide en toda la app. */
 .promos { margin-bottom: 1.6rem; }
-
-.promo-sello {
-    margin-left: auto;
-    font-size: .66rem;
-    font-weight: 700;
-    letter-spacing: .12em;
-    text-transform: uppercase;
-    color: var(--tenue-2);
-    border: 1px dashed var(--linea);
-    border-radius: var(--radio-boton);
-    padding: .15rem .55rem;
-}
 
 .promo-tira {
     display: grid;

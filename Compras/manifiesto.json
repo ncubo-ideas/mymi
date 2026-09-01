@@ -145,6 +145,13 @@
       "descripcion": "EN CUALES COMPRAS aparecio un producto o un pasillo entero, de la mas reciente a la mas vieja, con el NUMERO DE TICKET de cada una y cuanto de eso entro ahi. NO es consumo_de: aquella agrupa por mes y contesta 'cuanto y cuando'; esta devuelve los TICKETS, y su numero es lo que despues se le pasa a detalle_de_compra para ver la compra entera. Usala cuando la persona pregunte 'cuando compre esto', 'en que compra estaba' o quiera llegar a un recibo puntual. El campo productos dice que descripciones coincidieron: si trae mas de una, el texto alcanzo a varios productos y conviene decirselo antes de dar los totales. Con cuantasCompras en 0 no hay ninguna, y eso es una respuesta valida, no un error."
     },
     {
+      "nombre": "promociones_vigentes",
+      "titulo": "Las promociones del super",
+      "soloLectura": true,
+      "entrada": [],
+      "descripcion": "Las promociones del super vigentes hoy, la que vence antes primero: gancho, detalle, hasta cuando vale y cuantos dias quedan (cero = ultimo dia). Llegaron como EVENTOS al journal, igual que las compras: son contenido de la institucion publicado a todos por igual, no elegido con los datos de la persona, y el super no se entera de cuales vio. Sirve para '¿hay ofertas?' y para avisar, al armar la lista de compras, si algo que falta esta en promocion. Una lista vacia significa que no hay ninguna vigente."
+    },
+    {
       "nombre": "para_mi_proxima_compra",
       "titulo": "Que tengo que comprar",
       "soloLectura": true,

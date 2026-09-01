@@ -66,6 +66,7 @@ namespace Compras.Consola
 			ElRitmoDelSuperTieneTresCaras();
 			LaConstanciaSeDiceEnPalabras();
 			ElDominioEncuentraElQuiebre();
+			LaCarteleraCuelgaYRetiraSola();
 			LaListaDiceQueVaAFaltar();
 			LaSerieSeAgrupaPorAnio();
 			LaBusquedaEncuentraPorProducto();
@@ -1305,6 +1306,60 @@ namespace Compras.Consola
 			for (int i = 0; i <= 10; i++)
 				Igual($"  {i * 10}% tiene constancia", "True",
 					(Constancia.Para(i / 10m) != null).ToString());
+		}
+
+		// ---- la cartelera del super ----
+		private static void LaCarteleraCuelgaYRetiraSola()
+		{
+			Titulo("la cartelera cuelga promociones y las retira sola al vencer");
+
+			var cartelera = new Cartelera();
+			Igual("recien colgado el corcho esta vacio", "0", cartelera.Cantidad.ToString());
+			Igual("  y las vigentes son cero, no un error", "0",
+				cartelera.VigentesEl(Hoy).Count.ToString());
+
+			// Tres carteles con vencimientos distintos, colgados en desorden a proposito.
+			cartelera.Colgar(new Promocion("Rifa de setiembre", "una canasta llena",
+				"", new DateTime(2026, 9, 30)));
+			cartelera.Colgar(new Promocion("2 x 1", "en Helado de vainilla 1L",
+				"HELADO-1L", new DateTime(2026, 9, 5)));
+			cartelera.Colgar(new Promocion("15% menos", "en el pasillo de limpieza",
+				"DETERG-5L", new DateTime(2026, 9, 7)));
+
+			IReadOnlyList<Promocion> vigentes = cartelera.VigentesEl(new DateTime(2026, 9, 1));
+			Igual("el 1 de setiembre hay tres vigentes", "3", vigentes.Count.ToString());
+			Igual("  y la que vence antes va primera", "2 x 1", vigentes[0].Gancho);
+			Igual("  la rifa va ultima", "Rifa de setiembre", vigentes[2].Gancho);
+
+			// EL DIA DEL VENCIMIENTO INCLUIDO: "valida hasta el viernes" incluye el viernes.
+			Igual("el 5 el 2x1 sigue vigente: hasta-incluye", "3",
+				cartelera.VigentesEl(new DateTime(2026, 9, 5)).Count.ToString());
+			Igual("  y ese dia le quedan 0 dias", "0",
+				vigentes[0].DiasQueQuedanEl(new DateTime(2026, 9, 5)).ToString());
+
+			// El 6 ya no: se retiro solo, sin que nadie lo borre.
+			IReadOnlyList<Promocion> elSeis = cartelera.VigentesEl(new DateTime(2026, 9, 6));
+			Igual("el 6 quedan dos", "2", elSeis.Count.ToString());
+			Igual("  y el corcho GUARDA la vencida: el journal no olvida", "3",
+				cartelera.Cantidad.ToString());
+
+			// A IGUAL VENCIMIENTO gana el orden de llegada, y esta comprobado porque
+			// List.Sort no es estable: sin el desempate explicito este orden podria
+			// cambiar entre corridas.
+			var empate = new Cartelera();
+			empate.Colgar(new Promocion("primera", "llego antes", "", new DateTime(2026, 9, 10)));
+			empate.Colgar(new Promocion("segunda", "llego despues", "", new DateTime(2026, 9, 10)));
+			Igual("a igual vencimiento, la que llego primero", "primera",
+				empate.VigentesEl(Hoy).Count > 0 ? empate.VigentesEl(new DateTime(2026, 9, 1))[0].Gancho : "?");
+
+			// La promo sin sku es legitima (una rifa, un pasillo); sin gancho no.
+			Igual("sin sku es valida", "True",
+				(new Promocion("Rifa", "de una canasta", "", Hoy).Sku == "").ToString());
+			Revienta("sin gancho revienta", () => new Promocion("", "detalle", "", Hoy));
+
+			// La frase para el asistente lleva la fecha en la forma en que viaja.
+			Igual("la frase dice hasta cuando", "True",
+				vigentes[0].ParaElAsistente.Contains("2026-09-05").ToString());
 		}
 
 		// ---- lo que va a faltar en la proxima compra ----
