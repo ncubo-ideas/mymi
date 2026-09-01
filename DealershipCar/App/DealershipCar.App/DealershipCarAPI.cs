@@ -1020,6 +1020,149 @@ namespace DealershipCar.App
 			});
 		}
 
+		/// <summary>
+		/// Si la agencia publico un sobre de garantia para este vehiculo. TOTAL, y es la que hay que
+		/// hacer antes de pedir el instante de publicacion.
+		/// </summary>
+		public bool IsWarrantyEnvelopePublished()
+		{
+			return ATruth(
+				"@published = profile.IsWarrantyEnvelopePublished();", "published", p => { });
+		}
+
+		/// <summary>
+		/// El sobre publicado en palabras -- sus dos limites, su unidad y cuando se publico -- SIN
+		/// ningun hecho de ningun vehiculo. TOTAL, tambien sin sobre: es la que puede citar quien no
+		/// tiene el odometro de nadie, y no tenerla haria que faltar un dato personal volviera
+		/// incitable lo que la agencia publico.
+		/// </summary>
+		public string DescribePublishedWarrantyEnvelope()
+		{
+			return AText(
+				"@clause = profile.DescribePublishedWarrantyEnvelope();", "clause", p => { });
+		}
+
+		/// <summary>
+		/// Cuando la agencia publico el sobre que rige. Lectura GUARDADA: sin sobre no hay instante
+		/// de publicacion, y sale en UTC igual que entro.
+		/// </summary>
+		public DateTime ReadEnvelopePublishedAt()
+		{
+			if (!IsWarrantyEnvelopePublished())
+				throw new InvalidOperationException(
+					"La agencia no publico ningun sobre de garantia para este vehiculo: pregunte "
+					+ "IsWarrantyEnvelopePublished antes. Un DateTime.MinValue aca seria un centinela "
+					+ "magico -- un instante que parece un instante y no lo es.");
+
+			return AnInstant("@at = profile.ReadEnvelopePublishedAt();", "at", p => { });
+		}
+
+		/// <summary>
+		/// Si la agencia registro la entrega de este vehiculo. TOTAL, y es la que hay que hacer antes
+		/// de pedir cualquiera de los tres datos de la entrega.
+		/// </summary>
+		public bool HasDeliveryBeenRecorded()
+		{
+			return ATruth("@recorded = profile.HasDeliveryBeenRecorded();", "recorded", p => { });
+		}
+
+		/// <summary>
+		/// Cuando se entrego el carro. Lectura GUARDADA por lo mismo, y sale en UTC igual que entro.
+		/// </summary>
+		public DateTime ReadDeliveredAt()
+		{
+			ADeliveryHasToHaveBeenRecorded(
+				"Un DateTime.MinValue aca seria un centinela magico -- un instante que parece un "
+				+ "instante y no lo es.");
+
+			return AnInstant("@at = profile.ReadDeliveredAt();", "at", p => { });
+		}
+
+		/// <summary>
+		/// El odometro del dia de la entrega, que es el ancla desde donde se cuenta lo recorrido bajo
+		/// garantia. Lectura GUARDADA.
+		/// </summary>
+		public int ReadDeliveryReading()
+		{
+			ADeliveryHasToHaveBeenRecorded(
+				"Un cero aca seria una medicion que nadie tomo, y contra el limite de distancia se "
+				+ "leeria como un carro entregado nuevo.");
+
+			return ACount("@reading = profile.ReadDeliveryReading();", "reading", p => { });
+		}
+
+		/// <summary>
+		/// La unidad en que se leyo ese odometro, dicha como la lee una persona. Lectura GUARDADA.
+		/// </summary>
+		public string ReadDeliveryUnit()
+		{
+			ADeliveryHasToHaveBeenRecorded(
+				"Una unidad vacia aca no nombra ninguna de las dos que hay, y aca no se convierte "
+				+ "ninguna en la otra.");
+
+			return AText("@unit = profile.ReadDeliveryUnit();", "unit", p => { });
+		}
+
+		/// <summary>
+		/// Si hay una lectura del odometro que sirva para ese instante. TOTAL: un vehiculo cuyo feed
+		/// no trajo nada contesta que no, y esa ausencia es una respuesta legal. Es la que hay que
+		/// hacer antes de las tres de abajo, y con EL MISMO instante.
+		/// </summary>
+		public bool HasAnOdometerReading(DateTime asOf)
+		{
+			return ATruth("@has = schedule.HasAnOdometerReading(@asOf);", "has", p => {
+				p["asOf", typeof(DateTime)] = InUtc(asOf);
+			});
+		}
+
+		/// <summary>
+		/// El odometro con que esta agenda mediria a ese instante, que es el MISMO numero que Evaluate
+		/// usa al mismo instante. Lectura GUARDADA. Una lectura observada despues del instante
+		/// preguntado no cuenta para ninguno de los dos.
+		/// </summary>
+		public int ReadOdometer(DateTime asOf)
+		{
+			AnOdometerReadingHasToExistAt(
+				asOf,
+				"Un cero aca seria una medicion que nadie tomo, y contra un limite de distancia se "
+				+ "leeria como un vehiculo que no ha recorrido nada.");
+
+			return ACount("@value = schedule.ReadOdometer(@asOf);", "value", p => {
+				p["asOf", typeof(DateTime)] = InUtc(asOf);
+			});
+		}
+
+		/// <summary>
+		/// La unidad de esa lectura, dicha como la lee una persona. Lectura GUARDADA.
+		/// </summary>
+		public string ReadOdometerUnit(DateTime asOf)
+		{
+			AnOdometerReadingHasToExistAt(
+				asOf,
+				"Una unidad vacia aca no nombra ninguna de las dos que hay, y es la que decide si el "
+				+ "limite del sobre y el odometro se pueden comparar.");
+
+			return AText("@unit = schedule.ReadOdometerUnit(@asOf);", "unit", p => {
+				p["asOf", typeof(DateTime)] = InUtc(asOf);
+			});
+		}
+
+		/// <summary>
+		/// Cuando se OBSERVO esa lectura, que no es el instante preguntado. Lectura GUARDADA: sin
+		/// esto, una frase compuesta con una lectura de marzo se leeria como tomada hoy.
+		/// </summary>
+		public DateTime ReadOdometerObservedAt(DateTime asOf)
+		{
+			AnOdometerReadingHasToExistAt(
+				asOf,
+				"Un DateTime.MinValue aca seria un centinela magico -- un instante que parece un "
+				+ "instante y no lo es.");
+
+			return AnInstant("@at = schedule.ReadOdometerObservedAt(@asOf);", "at", p => {
+				p["asOf", typeof(DateTime)] = InUtc(asOf);
+			});
+		}
+
 		public string Apply(IMensajeDeEvento message)
 		{
 			ArgumentNullException.ThrowIfNull(message);
@@ -1624,6 +1767,36 @@ namespace DealershipCar.App
 				nameof(reading),
 				$"El odometro del dia de la entrega no puede ser negativo, y llego {reading}. Es la "
 				+ "lectura desde la que se cuenta todo lo que el vehiculo recorrio bajo garantia.");
+		}
+
+		/// <summary>
+		/// Que la entrega este registrada antes de dar cualquiera de sus tres datos. La guarda se
+		/// hace ACA y no se deja reventar al dominio porque la excepcion del dominio es interna y
+		/// ninguna caratula la puede nombrar: quien lee tiene que poder atrapar el rechazo por tipo.
+		/// </summary>
+		private void ADeliveryHasToHaveBeenRecorded(string whyAnEmptyAnswerWouldLie)
+		{
+			if (HasDeliveryBeenRecorded()) return;
+
+			throw new InvalidOperationException(
+				"La agencia no registro la entrega de este vehiculo: pregunte "
+				+ "HasDeliveryBeenRecorded antes. " + whyAnEmptyAnswerWouldLie);
+		}
+
+		/// <summary>
+		/// Que haya una lectura del odometro observada a ese instante o antes. Se pregunta con EL
+		/// MISMO instante que la lectura de abajo va a usar, que es lo que hace que las dos hablen de
+		/// un solo numero. Mismo motivo que arriba para que la guarda viva en la puerta.
+		/// </summary>
+		private void AnOdometerReadingHasToExistAt(
+			DateTime asOf, string whyAnEmptyAnswerWouldLie)
+		{
+			if (HasAnOdometerReading(asOf)) return;
+
+			throw new InvalidOperationException(
+				$"Este vehiculo no tiene ninguna lectura del odometro observada al {InUtc(asOf):O} "
+				+ "ni antes: pregunte HasAnOdometerReading con ese mismo instante antes. "
+				+ whyAnEmptyAnswerWouldLie);
 		}
 
 		private static DateTime InUtc(DateTime instant)

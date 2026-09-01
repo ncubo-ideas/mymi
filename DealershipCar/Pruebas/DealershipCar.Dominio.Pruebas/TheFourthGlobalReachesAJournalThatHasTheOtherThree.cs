@@ -26,6 +26,13 @@ namespace DealershipCar.Dominio.Pruebas
 	// SPIKES-WarrantyEnvelope S2, fila 3. Sin ese renglon todo lo de abajo estaria verde aunque
 	// 'semilla' hubiera creado las cuatro globales desde el principio.
 	//
+	// Y SE QUEDA EN ReadVin AUNQUE T5 YA PUSO ONCE LECTURAS DEL PERFIL EN LA PUERTA. El falsificador
+	// y las afirmaciones positivas de mas abajo tienen que nombrar EL MISMO miembro, o el
+	// falsificador mide la ausencia de algo que la mitad positiva nunca lee. Y ReadVin del perfil es
+	// la unica lectura de la cuarta global que contesta algo PROPIO de este vehiculo: con ella, una
+	// siembra que creara el perfil del carro equivocado se pone roja; con una lectura de presencia
+	// -- que antes revienta y despues contesta que no -- ese defecto pasaria verde.
+	//
 	// LOS CUATRO UPGRADES VIAJAN EN UN SOLO SCRIPT. El costo por apertura lo mide
 	// TheSeedStillCostsExactlyOneEntryPerOpening, que sigue en UNA entrada y se pone rojo en DOS el
 	// dia que alguien parta el script en dos PerformCommand -- por eso aca no se copia: la que ya
@@ -281,11 +288,12 @@ namespace DealershipCar.Dominio.Pruebas
 		// perfil recien creado contesta las dos preguntas de presencia sin reventar
 		// (AProfileToldNothingStillAnswers); lo que no puede afirmar es que un perfil SEMBRADO POR EL
 		// upgrade, sobre disco, rehidratado desde el journal, conteste igual. Eso es lo unico que se
-		// agrega aca, y va en este fixture porque es el unico que ya tiene por que leer sin puerta.
+		// agrega aca.
 		//
-		// LA VERSION DE NIVEL B COMPLETA -- por la puerta, miembro por miembro -- es de T5: hoy la
-		// puerta no tiene ni una lectura del perfil, y escribirla contra un script crudo afirmaria
-		// contra un camino que ningun llamador va a tomar nunca.
+		// SE LEE POR LA PUERTA DESDE T5. Cuando esto se escribio, la puerta no tenia ni una lectura
+		// del perfil y las tres salian por un script crudo; hoy las tres tienen su miembro y este es
+		// el camino que un llamador de verdad toma. La version completa -- las once, miembro por
+		// miembro y estado por estado -- es AProfileIsReadBackThroughTheDoor.
 		[Test]
 		public void AProfileToldNothingStillAnswersOnAMigratedJournal()
 		{
@@ -296,15 +304,15 @@ namespace DealershipCar.Dominio.Pruebas
 
 			DealershipCarApp migrated = AJournalTheCurrentAppOpened();
 
-			Assert.That(
-				AProfileReadWithoutTheDoor.IsWarrantyEnvelopePublished(migrated), Is.False,
+			DealershipCarAPI after = new DealershipCarAPI(migrated);
+
+			Assert.That(after.IsWarrantyEnvelopePublished(), Is.False,
 				"La agencia no publico sobre. Es una respuesta legal del primer dia, no un error.");
-			Assert.That(
-				AProfileReadWithoutTheDoor.HasDeliveryBeenRecorded(migrated), Is.False,
+			Assert.That(after.HasDeliveryBeenRecorded(), Is.False,
 				"Ni registro la entrega.");
 
 			Assert.That(
-				AProfileReadWithoutTheDoor.DescribePublishedWarrantyEnvelope(migrated),
+				after.DescribePublishedWarrantyEnvelope(),
 				Does.Contain("not published"),
 				"Y la mitad publicada contesta con palabras igual, que es la ley L7: que a este "
 				+ "vehiculo le falte todo no vuelve incitable lo que la agencia publico -- o no "

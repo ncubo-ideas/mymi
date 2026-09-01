@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Reflection;
 using System.Security.Cryptography;
 using System.Text;
 using DealershipCar.App;
@@ -14,23 +15,35 @@ namespace DealershipCar.Dominio.Pruebas
 	// aunque el estado siga siendo correcto.
 	//
 	// Asi que ninguna linea de DSL de DealershipCarAPI puede llegar al journal de una persona sin
-	// haberse ejecutado antes aca. Esta prueba corre CADA UNA de las SETENTA Y NUEVE operaciones de
+	// haberse ejecutado antes aca. Esta prueba corre CADA UNA de las NOVENTA operaciones de
 	// la puerta al menos una vez -- las veintiuna de la agenda (OS2/T6), las siete de la ingesta
 	// (OS2/T8: los dos comandos de la bitacora, sus cuatro lecturas, y el Apply), CanBeDeferred, los
 	// once comandos de publicacion de la especificacion (T5), las TREINTA Y SIETE lecturas de la
 	// especificacion (T6, mas las dos mitades publicadas que agrego
-	// PLAN-ModelSpecification-AmendmentMigrations B1 por la ley L7b), y los DOS comandos del perfil
-	// del vehiculo (WarrantyEnvelope/T4).
+	// PLAN-ModelSpecification-AmendmentMigrations B1 por la ley L7b), los DOS comandos del perfil
+	// del vehiculo (WarrantyEnvelope/T4) y las ONCE lecturas sin componer del perfil y del odometro
+	// (WarrantyEnvelope/T5).
 	// No mira reglas de negocio -- de eso se ocupan las otras pruebas del nivel B -- mira que el
 	// script exista, parsee, ate sus parametros y devuelva lo que dijo que devolvia.
 	//
-	// LA CUENTA DE ARRIBA SE RE-DERIVO CONTRA LA PUERTA y no se copio: decia setenta y siete, que
-	// era cierto antes de T4 y dejo de serlo sin que este fixture se pusiera rojo, porque la lista de
-	// llamadas esta escrita a mano. Es C57 -- una lista de permitidos que crece en silencio -- y el
-	// cruce que lo arreglaria de raiz (contar los miembros void de la puerta por reflexion y exigir
-	// que cada uno se corra aca) sigue sin escribirse.
+	// LA CUENTA DE ARRIBA SE RE-DERIVO CONTRA LA PUERTA y no se copio. Decia setenta y siete, que era
+	// cierto antes de T4 y dejo de serlo SIN QUE ESTE FIXTURE SE PUSIERA ROJO, porque la lista de
+	// llamadas esta escrita a mano: C57 exactamente, una lista de permitidos que crece en silencio.
 	//
-	// LAS OPERACIONES SON SETENTA Y NUEVE Y LOS SCRIPTS SON MAS, y T9 es donde la diferencia se
+	// T5 LE PUSO EL CRUCE QUE FALTABA, y no es el que T4 dejo anotado. T4 propuso cruzar los
+	// miembros VOID; la puerta gano once LECTURAS y ninguna escritura, asi que un cruce del lado
+	// void habria vuelto a quedarse verde. El cruce es sobre TODOS los miembros declarados --
+	// TheDoorRunsExactlyTheseOperationsAndNothingElseWasAddedWithoutBeingRun -- y es igualdad de
+	// conjuntos contra la reflexion, no una lista de permitidos.
+	//
+	// LO QUE ESE CRUCE PRUEBA Y LO QUE NO, dicho y no disimulado. Prueba que nadie agrego ni quito un
+	// miembro de la puerta sin tocar este fixture, que es la mitad que fallo en T4. NO prueba que el
+	// script de ese miembro se haya corrido: quien agregue el nombre a la lista sin escribir la
+	// llamada rompe la obligacion S5 igual, solo que ahora tiene que hacerlo a proposito y por
+	// escrito. Es la misma forma que el censo de escrituras de
+	// TheOwnerIsNeverASourceOfAFactAboutTheirOwnVehicle, con el mismo limite.
+	//
+	// LAS OPERACIONES SON NOVENTA Y LOS SCRIPTS SON MAS, y T9 es donde la diferencia se
 	// vuelve grande: Apply es UNA operacion de la puerta y tiene DIECISIETE scripts detras -- uno
 	// por cada tipo de hecho recibido, mas el comando suelto que avanza el punto de control cuando
 	// el dominio rechaza el hecho. T9 sumo once de esos diecisiete y no sumo ninguna operacion.
@@ -62,6 +75,77 @@ namespace DealershipCar.Dominio.Pruebas
 		public void TearDown()
 		{
 			journal.Dispose();
+		}
+
+		// ===== EL CRUCE QUE T4 DEJO ANOTADO ===============================================
+
+		// TODA OPERACION DECLARADA DE LA PUERTA, ENUMERADA, Y COMO IGUALDAD DE CONJUNTOS contra la
+		// reflexion. Es lo que este fixture no tenia cuando T4 le agrego dos comandos a la puerta y
+		// se quedo verde afirmando de una puerta mas chica que la que hay.
+		//
+		// SE ENUMERAN TODAS Y NO SOLO LAS QUE ESCRIBEN. T4 anoto el cruce del lado void; T5 le agrego
+		// a la puerta once LECTURAS y ninguna escritura, asi que ese cruce habria vuelto a quedarse
+		// verde. Lo que S5 obliga a correr es cada SCRIPT, y una lectura tiene script igual que un
+		// comando.
+		//
+		// Y NO ES UNA LISTA DE PERMITIDOS: es igualdad, asi que tambien se pone rojo si alguien BORRA
+		// una operacion, y el rojo dice cual. Su limite esta escrito arriba -- fuerza a que nadie
+		// crezca la puerta sin tocar este archivo; no puede comprobar que la llamada se haya escrito.
+		private static readonly string[] EveryOperationThisFixtureRuns =
+		{
+			"AddOwnerOperation", "AdoptPlanRevision", "Apply", "CanBeDeferred",
+			"CanCoverageBeEvaluated", "CompleteOperation", "CountDue", "CountOverdue",
+			"CoverageExclusions", "CoveredSystems", "DeclareUsageProfile", "DeferOperation",
+			"DeferralsUsed", "DescribeCoverage", "DescribeCoverageSummary", "DescribeFluid",
+			"DescribeFuel", "DescribePublishedServiceInterval",
+			"DescribePublishedServicingElsewhereRule", "DescribePublishedWarrantyEnvelope",
+			"DescribeServiceInterval", "DescribeServicePrice", "DescribeServicingElsewhereRule",
+			"DescribeTyre", "Evaluate", "HasASealedRevision", "HasAnOdometerReading",
+			"HasAnythingDue", "HasBeenEvaluated", "HasDeliveryBeenRecorded", "IsCoveragePublished",
+			"IsFluidPublished", "IsFuelPublished", "IsServiceIntervalPublished",
+			"IsServicePricePublished", "IsServicingPolicyPublished", "IsTyrePublished",
+			"IsWarrantyEnvelopePublished", "LastEvaluatedAt", "LastEventApplied", "MissedCount",
+			"OpenRevision", "PermittedFuelGrades", "ProhibitedFuelGrades",
+			"PublishCoverageExclusion", "PublishCoveredSystem", "PublishFluidSpecification",
+			"PublishFuelGrade", "PublishServiceInterval", "PublishServicePrice",
+			"PublishServicingPolicy", "PublishTyreSpecification", "PublishWarrantyEnvelope",
+			"ReadCoverageRevision", "ReadCoverageStanding", "ReadCurrentRevisionCode",
+			"ReadCurrentRevisionPublishedAt", "ReadDeliveredAt", "ReadDeliveryReading",
+			"ReadDeliveryUnit", "ReadDueReason", "ReadDueState", "ReadEnvelopePublishedAt",
+			"ReadFluidRevision", "ReadFuelRevision", "ReadMinimumFuelGrade", "ReadModel",
+			"ReadNextDueKind", "ReadOdometer", "ReadOdometerObservedAt", "ReadOdometerUnit",
+			"ReadRevisionState", "ReadServiceIntervalRevision", "ReadServicePriceRevision",
+			"ReadServicingPolicyRevision", "ReadTyreRevision", "ReadVin",
+			"RecordConditionThreshold", "RecordDelivery", "RecordReading", "RegisterDevice",
+			"RemoveOwnerOperation", "SealRevision", "SeedPlanOperation", "StoreCredential",
+			"StoredDeviceKey", "StoredRefreshToken", "StoredToken", "SupersedeRevision",
+			"TheVocabularyIsTheManufacturers",
+		};
+
+		[Test]
+		public void TheDoorRunsExactlyTheseOperationsAndNothingElseWasAddedWithoutBeingRun()
+		{
+			var declared = new List<string>();
+
+			foreach (MethodInfo each in typeof(DealershipCarAPI).GetMethods(
+				BindingFlags.Instance | BindingFlags.Public | BindingFlags.DeclaredOnly))
+				declared.Add(each.Name);
+
+			Assert.That(declared, Is.EquivalentTo(EveryOperationThisFixtureRuns),
+				"La puerta gano o perdio una operacion y esta prueba no se entero. Un script de DSL "
+				+ "que nunca se ejecuto se descubre al correrlo, y si eso pasa en el journal de una "
+				+ "persona la entrada queda ahi haciendo loguear un fallo de rehidratacion en cada "
+				+ "arranque futuro. Agregue la operacion nueva a esta lista Y escriba la llamada que "
+				+ "corre su script.");
+		}
+
+		// Y LA CUENTA DE LA PROSA SE RE-DERIVA CONTRA LA LISTA, no se copia. Es el mismo defecto que
+		// dejo escrito "setenta y siete" cuando la puerta ya tenia setenta y nueve: una cuenta
+		// afirmada en prosa envejece en silencio, y esta afirmada al lado de lo que cuenta.
+		[Test]
+		public void TheOperationsAreNinety()
+		{
+			Assert.That(EveryOperationThisFixtureRuns, Has.Length.EqualTo(90));
 		}
 
 		// La semilla corre en OnHydrated, asi que para cuando la prueba arranca la agenda ya
@@ -232,6 +316,42 @@ namespace DealershipCar.Dominio.Pruebas
 
 			Assert.DoesNotThrow(() => journal.Api.RecordDelivery(
 				Delivery.AddDays(30), OdometerAtDelivery + 100, "UnitB"));
+		}
+
+		// LAS ONCE LECTURAS SIN COMPONER QUE TRAJO T5, cada una una vez, contra un registro que tiene
+		// los tres hechos: el sobre publicado, la entrega registrada y una lectura del odometro. Es
+		// el unico estado en que corren los ONCE scripts -- una guardada sin su hecho rechaza en la
+		// puerta y su script no llega a ejecutarse nunca.
+		//
+		// Lo que se afirma es la FORMA: que el script parsee, ate su parametro y vuelva TIPADO. De
+		// que cada una conteste lo suyo se ocupa AProfileIsReadBackThroughTheDoor, y de la polaridad
+		// EveryGuardedProfileReadRefusesInsteadOfInventing.
+		[Test]
+		public void EveryProfileAndOdometerReadOfTheDoorParsesBindsAndComesBackTyped()
+		{
+			journal.Api.PublishWarrantyEnvelope(36, 60000, "UnitB", ThePublication);
+			journal.Api.RecordDelivery(Delivery, OdometerAtDelivery, "UnitB");
+			journal.Api.RecordReading(
+				40000, "UnitB", new DateTime(2026, 1, 20, 0, 0, 0, DateTimeKind.Utc), "Telemetry");
+
+			DateTime asked = new DateTime(2026, 2, 1, 0, 0, 0, DateTimeKind.Utc);
+
+			Assert.That(journal.Api.IsWarrantyEnvelopePublished(), Is.True);
+			Assert.That(
+				journal.Api.DescribePublishedWarrantyEnvelope(), Does.Contain("60000 mi"));
+			Assert.That(journal.Api.ReadEnvelopePublishedAt(), Is.EqualTo(ThePublication));
+
+			Assert.That(journal.Api.HasDeliveryBeenRecorded(), Is.True);
+			Assert.That(journal.Api.ReadDeliveredAt(), Is.EqualTo(Delivery));
+			Assert.That(journal.Api.ReadDeliveryReading(), Is.EqualTo(OdometerAtDelivery));
+			Assert.That(journal.Api.ReadDeliveryUnit(), Is.EqualTo("mi"));
+
+			Assert.That(journal.Api.HasAnOdometerReading(asked), Is.True);
+			Assert.That(journal.Api.ReadOdometer(asked), Is.EqualTo(40000));
+			Assert.That(journal.Api.ReadOdometerUnit(asked), Is.EqualTo("mi"));
+			Assert.That(
+				journal.Api.ReadOdometerObservedAt(asked),
+				Is.EqualTo(new DateTime(2026, 1, 20, 0, 0, 0, DateTimeKind.Utc)));
 		}
 
 		// LOS NUEVE SCRIPTS DE LA BITACORA: dos comandos y siete lecturas. Son siete y no cuatro

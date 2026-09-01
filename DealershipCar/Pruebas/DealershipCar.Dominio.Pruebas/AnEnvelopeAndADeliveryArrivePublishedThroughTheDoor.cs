@@ -25,9 +25,10 @@ namespace DealershipCar.Dominio.Pruebas
 	// estaria verde sin haber medido nada. El caso UnitA vive aparte, como espejo.
 	//
 	// ESTE FIXTURE ABRE SU PROPIA APP y no usa AScheduleOnARealJournal, por una razon y no por
-	// gusto: T4 no le agrega a la puerta ni una lectura del perfil -- las once sin componer son de
-	// T5 -- asi que lo unico que puede observar que los comandos entraron es un script crudo, y el
-	// aparejo del nivel B no entrega el host. Ver AProfileReadWithoutTheDoor.
+	// gusto. T5 le puso a la puerta las once lecturas sin componer, asi que casi todo lo de abajo se
+	// lee ya por la puerta; lo que sigue sin tener miembro es la RESPUESTA COMPUESTA -- esa es de T6
+	// -- y observarla necesita un script crudo contra el actor, que el aparejo del nivel B no
+	// entrega. Ver AProfileReadWithoutTheDoor, que se quedo en dos miembros por esto mismo.
 	[TestFixture]
 	public sealed class AnEnvelopeAndADeliveryArrivePublishedThroughTheDoor
 	{
@@ -90,19 +91,19 @@ namespace DealershipCar.Dominio.Pruebas
 			door.PublishWarrantyEnvelope(
 				ThirtySixMonths, SixtyThousand, TheUnitTheLimitIsIn, TheDayItWasPublished);
 
-			Assert.That(AProfileReadWithoutTheDoor.IsWarrantyEnvelopePublished(app), Is.True);
-			Assert.That(AProfileReadWithoutTheDoor.EnvelopeMonths(app), Is.EqualTo(ThirtySixMonths));
-			Assert.That(AProfileReadWithoutTheDoor.EnvelopeDistance(app), Is.EqualTo(SixtyThousand));
+			Assert.That(door.IsWarrantyEnvelopePublished(), Is.True);
 			Assert.That(
-				AProfileReadWithoutTheDoor.ReadEnvelopePublishedAt(app),
+				door.ReadEnvelopePublishedAt(),
 				Is.EqualTo(TheDayItWasPublished),
 				"El instante llega al segundo y en UTC. El journal trunca a segundos enteros y borra "
 				+ "el Kind, asi que la puerta le da esa forma ANTES de mandarlo y la respuesta viva y "
 				+ "la reproducida son el mismo valor.");
 
-			string published = AProfileReadWithoutTheDoor.DescribePublishedWarrantyEnvelope(app);
+			// LOS DOS LIMITES SE AFIRMAN DENTRO DE LA FRASE y no como escalares, porque es la unica
+			// forma en que llegan a un llamador: la puerta no los da sueltos a proposito.
+			string published = door.DescribePublishedWarrantyEnvelope();
 
-			Assert.That(published, Does.Contain("36"));
+			Assert.That(published, Does.Contain("36 months"));
 			Assert.That(published, Does.Contain("60000"));
 			Assert.That(published, Does.Contain("mi"),
 				"Y la unidad es la que se publico, dicha como la lee una persona. 'mi' es UnitB: si "
@@ -116,14 +117,10 @@ namespace DealershipCar.Dominio.Pruebas
 		{
 			door.RecordDelivery(TheDayItWasHandedOver, TheOdometerAtDelivery, TheUnitTheLimitIsIn);
 
-			Assert.That(AProfileReadWithoutTheDoor.HasDeliveryBeenRecorded(app), Is.True);
-			Assert.That(
-				AProfileReadWithoutTheDoor.ReadDeliveredAt(app),
-				Is.EqualTo(TheDayItWasHandedOver));
-			Assert.That(
-				AProfileReadWithoutTheDoor.ReadDeliveryReading(app),
-				Is.EqualTo(TheOdometerAtDelivery));
-			Assert.That(AProfileReadWithoutTheDoor.ReadDeliveryUnit(app), Is.EqualTo("mi"),
+			Assert.That(door.HasDeliveryBeenRecorded(), Is.True);
+			Assert.That(door.ReadDeliveredAt(), Is.EqualTo(TheDayItWasHandedOver));
+			Assert.That(door.ReadDeliveryReading(), Is.EqualTo(TheOdometerAtDelivery));
+			Assert.That(door.ReadDeliveryUnit(), Is.EqualTo("mi"),
 				"UnitB, no el primer miembro del conjunto.");
 		}
 
@@ -194,12 +191,8 @@ namespace DealershipCar.Dominio.Pruebas
 			door.PublishWarrantyEnvelope(
 				ThirtySixMonths, SixtyThousand, "UnitA", TheDayItWasPublished);
 
-			Assert.That(
-				AProfileReadWithoutTheDoor.DescribePublishedWarrantyEnvelope(app),
-				Does.Contain("km"));
-			Assert.That(
-				AProfileReadWithoutTheDoor.DescribePublishedWarrantyEnvelope(app),
-				Does.Not.Contain("mi"));
+			Assert.That(door.DescribePublishedWarrantyEnvelope(), Does.Contain("km"));
+			Assert.That(door.DescribePublishedWarrantyEnvelope(), Does.Not.Contain("mi"));
 		}
 
 		// ===== D6 Y L10 POR LA PUERTA ======================================================
@@ -217,9 +210,8 @@ namespace DealershipCar.Dominio.Pruebas
 
 			Assert.DoesNotThrow(() => door.RecordDelivery(corrected, 31, TheUnitTheLimitIsIn));
 
-			Assert.That(AProfileReadWithoutTheDoor.ReadDeliveredAt(app), Is.EqualTo(corrected),
-				"Gana la ultima.");
-			Assert.That(AProfileReadWithoutTheDoor.ReadDeliveryReading(app), Is.EqualTo(31),
+			Assert.That(door.ReadDeliveredAt(), Is.EqualTo(corrected), "Gana la ultima.");
+			Assert.That(door.ReadDeliveryReading(), Is.EqualTo(31),
 				"Entera: la entrega se reemplaza como un objeto y no campo por campo.");
 		}
 
@@ -236,12 +228,14 @@ namespace DealershipCar.Dominio.Pruebas
 			Assert.DoesNotThrow(
 				() => door.PublishWarrantyEnvelope(12, 20000, TheUnitTheLimitIsIn, earlier));
 
-			Assert.That(AProfileReadWithoutTheDoor.EnvelopeMonths(app), Is.EqualTo(ThirtySixMonths),
+			Assert.That(door.DescribePublishedWarrantyEnvelope(), Does.Contain("36 months"),
 				"Sigue rigiendo el que se publico despues.");
-			Assert.That(AProfileReadWithoutTheDoor.EnvelopeDistance(app), Is.EqualTo(SixtyThousand));
 			Assert.That(
-				AProfileReadWithoutTheDoor.ReadEnvelopePublishedAt(app),
-				Is.EqualTo(TheDayItWasPublished));
+				door.DescribePublishedWarrantyEnvelope(), Does.Contain("60000 mi"));
+			Assert.That(
+				door.DescribePublishedWarrantyEnvelope(), Does.Not.Contain("20000"),
+				"Y el que llego fechado antes no dejo ni un numero en la frase.");
+			Assert.That(door.ReadEnvelopePublishedAt(), Is.EqualTo(TheDayItWasPublished));
 		}
 
 		// ===== D12: UNA MITAD EN CERO SE RECHAZA EN LA PUERTA Y NO CUESTA NADA =============
@@ -281,8 +275,7 @@ namespace DealershipCar.Dominio.Pruebas
 				+ "antes de performar. Si la guarda estuviera solo en el dominio, la entrada del "
 				+ "comando ya estaria escrita y el journal habria crecido tres veces.");
 
-			Assert.That(
-				AProfileReadWithoutTheDoor.IsWarrantyEnvelopePublished(app), Is.False,
+			Assert.That(door.IsWarrantyEnvelopePublished(), Is.False,
 				"Y no hay sobre: nada entro a medias.");
 		}
 
@@ -295,7 +288,7 @@ namespace DealershipCar.Dominio.Pruebas
 				() => door.RecordDelivery(TheDayItWasHandedOver, -1, TheUnitTheLimitIsIn));
 
 			Assert.That(TheBytesOf(folder), Is.EqualTo(before));
-			Assert.That(AProfileReadWithoutTheDoor.HasDeliveryBeenRecorded(app), Is.False);
+			Assert.That(door.HasDeliveryBeenRecorded(), Is.False);
 		}
 
 		// UN CERO EN LA LECTURA DE LA ENTREGA SI ES LEGAL, y va escrito para que el renglon de arriba
@@ -307,7 +300,7 @@ namespace DealershipCar.Dominio.Pruebas
 			Assert.DoesNotThrow(
 				() => door.RecordDelivery(TheDayItWasHandedOver, 0, TheUnitTheLimitIsIn));
 
-			Assert.That(AProfileReadWithoutTheDoor.ReadDeliveryReading(app), Is.EqualTo(0));
+			Assert.That(door.ReadDeliveryReading(), Is.EqualTo(0));
 		}
 
 		// Y UN NOMBRE DE UNIDAD QUE NO ES DE NINGUN MIEMBRO tampoco cuesta nada: lo rechaza WireName
@@ -328,20 +321,17 @@ namespace DealershipCar.Dominio.Pruebas
 		}
 
 		// Todo lo que el perfil puede contestar hoy, en una sola cadena comparable. Es lo que la
-		// prueba del replay compara entre antes y despues de rehidratar.
+		// prueba del replay compara entre antes y despues de rehidratar. Los dos limites van dentro
+		// de la frase publicada, que es donde llegan a un llamador.
 		private string Everything()
 		{
-			return "envelope=" + AProfileReadWithoutTheDoor.IsWarrantyEnvelopePublished(app)
-				+ " months=" + AProfileReadWithoutTheDoor.EnvelopeMonths(app)
-				+ " distance=" + AProfileReadWithoutTheDoor.EnvelopeDistance(app)
-				+ " publishedAt="
-				+ AProfileReadWithoutTheDoor.ReadEnvelopePublishedAt(app).ToString("O")
-				+ "\npublished="
-				+ AProfileReadWithoutTheDoor.DescribePublishedWarrantyEnvelope(app)
-				+ "\ndelivery=" + AProfileReadWithoutTheDoor.HasDeliveryBeenRecorded(app)
-				+ " deliveredAt=" + AProfileReadWithoutTheDoor.ReadDeliveredAt(app).ToString("O")
-				+ " reading=" + AProfileReadWithoutTheDoor.ReadDeliveryReading(app)
-				+ " unit=" + AProfileReadWithoutTheDoor.ReadDeliveryUnit(app)
+			return "envelope=" + door.IsWarrantyEnvelopePublished()
+				+ " publishedAt=" + door.ReadEnvelopePublishedAt().ToString("O")
+				+ "\npublished=" + door.DescribePublishedWarrantyEnvelope()
+				+ "\ndelivery=" + door.HasDeliveryBeenRecorded()
+				+ " deliveredAt=" + door.ReadDeliveredAt().ToString("O")
+				+ " reading=" + door.ReadDeliveryReading()
+				+ " unit=" + door.ReadDeliveryUnit()
 				+ "\nstanding="
 				+ AProfileReadWithoutTheDoor.DescribeWarrantyEnvelopeWithNoOdometer(
 					app, TwoYearsLater);
