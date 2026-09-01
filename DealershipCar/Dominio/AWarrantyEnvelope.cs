@@ -79,6 +79,32 @@ namespace DealershipCar.Dominio
 		}
 
 		/// <summary>
+		/// El plazo menos los meses ENTEROS cumplidos desde la entrega. Cero es el aniversario
+		/// exacto y negativo es cuanto se paso; las dos son respuestas.
+		/// </summary>
+		internal override int MonthsLeftAsOf(DateTime deliveredAt, DateTime asOf)
+		{
+			return _months - WholeMonthsBetween(deliveredAt, asOf);
+		}
+
+		/// <summary>
+		/// El limite menos lo recorrido desde la entrega. Un odometro por debajo de la lectura de la
+		/// entrega es un hecho imposible y revienta: cual de las dos lecturas esta mal lo decide
+		/// quien ordena las lecturas, no el sobre.
+		/// </summary>
+		internal override int DistanceLeftFrom(int deliveryReading, int currentReading)
+		{
+			if (currentReading < deliveryReading)
+				throw new DomainException(
+					$"El odometro de este vehiculo dice {currentReading} y la lectura de su entrega "
+					+ $"dice {deliveryReading}, en la misma unidad: el odometro fue para atras. Eso "
+					+ "no es una mitad que no se pudo medir, es un hecho imposible, y cual de las dos "
+					+ "esta mal lo decide quien ordena las lecturas.");
+
+			return _distance - (currentReading - deliveryReading);
+		}
+
+		/// <summary>
 		/// Las dos mitades y la fecha en que se publicaron. Las dos van siempre: "36 meses" sin la
 		/// distancia, o al reves, no le dice nada a quien no sabe cuanto maneja.
 		/// </summary>
@@ -91,6 +117,15 @@ namespace DealershipCar.Dominio
 		private static string TheDay(DateTime instant)
 		{
 			return instant.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture);
+		}
+
+		private static int WholeMonthsBetween(DateTime from, DateTime to)
+		{
+			int months = ((to.Year - from.Year) * 12) + (to.Month - from.Month);
+
+			if (to.Day < from.Day) months--;
+
+			return months;
 		}
 	}
 }

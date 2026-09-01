@@ -60,6 +60,22 @@ namespace DealershipCar.Dominio
 			throw NothingWasPublished();
 		}
 
+		/// <summary>Revienta: sin plazo publicado no hay meses que queden.</summary>
+		internal override int MonthsLeftAsOf(DateTime deliveredAt, DateTime asOf)
+		{
+			throw NothingWasPublished();
+		}
+
+		/// <summary>
+		/// Revienta: sin distancia publicada no hay distancia que quede. Un cero aqui dejaria al
+		/// vehiculo alcanzado el mismo dia de la entrega, y el limite entero lo dejaria adentro para
+		/// siempre.
+		/// </summary>
+		internal override int DistanceLeftFrom(int deliveryReading, int currentReading)
+		{
+			throw NothingWasPublished();
+		}
+
 		/// <summary>
 		/// La UNICA que contesta, y contesta con palabras. Que no hayan publicado sobre es la
 		/// respuesta, y es la que puede citar quien no tiene ni un dato de ningun vehiculo: un

@@ -80,6 +80,21 @@ namespace DealershipCar.Dominio
 		internal abstract bool MeasuresDistanceIn(DistanceUnit unit);
 
 		/// <summary>
+		/// Los meses que quedan del plazo entre la entrega y el instante preguntado. Se calcula cada
+		/// vez y no se guarda. Los meses se cuentan ENTEROS: el dia anterior al aniversario todavia
+		/// esta adentro. Revienta si no hay sobre publicado.
+		/// </summary>
+		internal abstract int MonthsLeftAsOf(DateTime deliveredAt, DateTime asOf);
+
+		/// <summary>
+		/// La distancia que queda del limite, contando lo recorrido desde la lectura de la entrega
+		/// hasta la de hoy. Se mide desde la entrega y no desde cero. Revienta si no hay sobre
+		/// publicado, y tambien si el odometro fue para atras: eso no es una mitad que no se pudo
+		/// medir, es un hecho imposible.
+		/// </summary>
+		internal abstract int DistanceLeftFrom(int deliveryReading, int currentReading);
+
+		/// <summary>
 		/// El sobre en palabras: las dos mitades, su unidad y cuando se publico, sin ningun hecho
 		/// del vehiculo adentro. TOTAL, tambien cuando no hay sobre -- que no hayan publicado
 		/// ninguno tambien es una respuesta, y es la que puede citar quien no tiene ni un dato de
