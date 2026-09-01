@@ -69,21 +69,50 @@
     <PublishAot>false</PublishAot>
   </PropertyGroup>
 
+  <!-- EL INTERPRETE, EN LAS DOS CONFIGURACIONES, Y NO ES UNA PRECAUCION: ESTA MEDIDO.
+
+       «AOT compile all assemblies, while still allowing the interpreter to perform dynamic code
+       generation» · es textual de la doc de Microsoft, y es la combinacion que nos sirve: el
+       rendimiento del AOT para todo lo que ya viene adentro, y el interprete disponible para lo
+       que llegue despues.
+
+       ESTABA SOLO EN RELEASE, con un comentario en Debug que decia «el interprete ya viene
+       encendido por omision en Debug». ES FALSO EN EL APARATO. Medido en un iPhone 13 Pro el
+       2026-09-01, compilando Debug tal cual estaba:
+
+           IsDynamicCodeSupported = False
+           IsDynamicCodeCompiled  = False
+           1) AssemblyLoadContext(isCollectible: true) .... OK
+           2) AssemblyDependencyResolver .... FALLA PlatformNotSupportedException
+           error: Failed to load AOT module 'Examenes.App.dll.dylib' in aot-only mode.
+           Got a SIGABRT while executing native code.  ->  App terminated due to signal 6.
+
+       Muere en el paso 3, y ni siquiera con el ExecutionEngineException que uno esperaria: con
+       SIGABRT en load_aot_module, antes de llegar a ejecutar nada. Con esta linea puesta, los
+       cinco pasos pasan y las banderas dan Supported=True / Compiled=False, que es exactamente
+       el interprete haciendo su trabajo bajo el AOT obligatorio de Apple.
+
+       Por eso sube aca y deja de ser exclusiva de Release: quien compile Debug para probar que
+       un modulo carga se comia el SIGABRT y concluia que el mecanismo no funciona, cuando lo
+       unico que faltaba era la bandera.
+
+       El detalle completo, con los dos logs, esta en Spikes/Lab.Siri/HALLAZGOS.md. -->
+  <PropertyGroup>
+    <MtouchInterpreter>-all</MtouchInterpreter>
+  </PropertyGroup>
+
   <PropertyGroup Condition="'$(Configuration)' == 'Debug'">
     <!-- Sin linker: en Debug queremos MEDIR si la reflexion anda, no pelear con lo que el
-         trimmer borro. El interprete ya viene encendido por omision en Debug. -->
+         trimmer borro. -->
     <MtouchLink>None</MtouchLink>
   </PropertyGroup>
 
   <PropertyGroup Condition="'$(Configuration)' == 'Release'">
-    <!-- «AOT compile all assemblies, while still allowing the interpreter to perform dynamic
-         code generation» · es textual de la doc de Microsoft, y es la combinacion que nos
-         sirve: el rendimiento del AOT para todo lo que ya viene adentro, y el interprete
-         disponible para lo que llegue despues.
+    <!-- SdkOnly y no Full: el linker toca las bibliotecas del SDK y deja NUESTRO codigo en
+         paz, que es donde vive la reflexion.
 
-         SdkOnly y no Full: el linker toca las bibliotecas del SDK y deja NUESTRO codigo en
-         paz, que es donde vive la reflexion. -->
-    <MtouchInterpreter>-all</MtouchInterpreter>
+         El MtouchInterpreter que estaba aca subio al PropertyGroup sin condicion de arriba;
+         Release lo sigue heredando igual. -->
     <MtouchLink>SdkOnly</MtouchLink>
   </PropertyGroup>
 
