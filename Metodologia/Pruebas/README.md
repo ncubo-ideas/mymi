@@ -29,6 +29,23 @@ tiran.
 | | Qué prueba | Estado |
 |---|---|---|
 | [`Presupuesto/`](Presupuesto/) | La cadena completa del orden de trabajo, de punta a punta | **Construido.** `Preguntas.md` → dominio → consola → MCP. 31 comprobaciones |
+| [`Gimnasio/`](Gimnasio/) | **El punto de partida corrido con un peer del equipo** — la primera vez que la entrevista se usa con alguien que no la escribió | Tiene su `Preguntas.md`. **Falta construir** |
+
+### Por qué Gimnasio
+
+Presupuesto probó si el `Preguntas.md` alcanza para modelar. **Gimnasio prueba algo distinto: si la
+entrevista funciona con alguien que no la escribió.** Corrida el 2026-08-28, con un peer del equipo.
+
+Y el dominio, además, es el **complemento exacto** de Presupuesto:
+
+| | Presupuesto | Gimnasio |
+|---|---|---|
+| La institución | manda una parte | **manda todo** |
+| La persona | aporta lo que el banco no sabe | **no aporta nada, por decisión de producto** |
+| El journal | **no** es reconstruible | **sí** lo es |
+
+Que los dos extremos estén cubiertos es lo que hace que las guías se puedan falsar en las dos
+direcciones.
 
 ### Por qué Presupuesto
 
