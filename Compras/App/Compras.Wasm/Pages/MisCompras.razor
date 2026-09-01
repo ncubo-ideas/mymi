@@ -29,6 +29,61 @@
          width="480" height="514" loading="eager" />
 </header>
 
+@* ============================== MAQUETA: LOS BANNERS ==============================
+   SOLO PARA VERLO. El equipo pidio "banner de publicidad, descuentos/rifas, promociones
+   esta semana, validas hasta tal fecha" y esto es el ejemplo visual para decidir: los
+   datos son INVENTADOS y estan escritos aca mismo.
+
+   El canal real esta pendiente de decision del equipo: la propuesta es que las
+   promociones viajen como EVENTOS por URL2 al journal, igual que las compras — asi son
+   copia de ella, funcionan sin conexion y el super nunca se entera de cuales vio. Un
+   banner que llama a un servidor en vivo seria lo contrario del producto.
+
+   Cuando se decida, esta seccion se alimenta de una lectura del dominio y esta maqueta
+   se borra. *@
+<section class="promos" aria-label="Promociones de la semana">
+    <div class="seccion-cabeza">
+        <span class="seccion-icono" aria-hidden="true">
+            <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6"
+                 stroke-linecap="round" stroke-linejoin="round">
+                <path d="M3 8.5v3l9 4V4.5z"/><path d="M12 6.5c2 .6 3.2 1.9 3.2 3.5S14 12.9 12 13.5"/>
+                <path d="M5.2 12.2l.8 3.6c.1.5.5.7 1 .7h.9"/>
+            </svg>
+        </span>
+        <h2 class="kicker">Promociones de la semana</h2>
+        <span class="promo-sello">maqueta</span>
+    </div>
+
+    <div class="promo-tira">
+        <article class="promo promo--verde">
+            <div class="promo-dicho">
+                <span class="promo-gancho">2 &times; 1</span>
+                <span class="promo-que">en Helado de vainilla 1L</span>
+                <span class="promo-vence">válida hasta el viernes 5</span>
+            </div>
+            <img class="promo-foto" src="assets/p-helado.png" alt="" aria-hidden="true" />
+        </article>
+
+        <article class="promo promo--crema">
+            <div class="promo-dicho">
+                <span class="promo-gancho">15% menos</span>
+                <span class="promo-que">en todo el pasillo de limpieza</span>
+                <span class="promo-vence">solo esta semana</span>
+            </div>
+            <img class="promo-foto" src="assets/p-detergente.png" alt="" aria-hidden="true" />
+        </article>
+
+        <article class="promo promo--morado">
+            <div class="promo-dicho">
+                <span class="promo-gancho">Rifa de setiembre</span>
+                <span class="promo-que">una canasta llena por comprar este mes</span>
+                <span class="promo-vence">se sortea el 30 de setiembre</span>
+            </div>
+            <img class="promo-foto" src="assets/hero-canasta.png" alt="" aria-hidden="true" />
+        </article>
+    </div>
+</section>
+
 @* UN solo lugar para los errores, y arriba (la leccion de la pantalla de Examenes). *@
 @if (error.Length > 0)
 {

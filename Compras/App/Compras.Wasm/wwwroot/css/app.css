@@ -807,6 +807,94 @@ main h2 {
     .pie-enlaces { margin-left: 0; }
 }
 
+/* --------------------------------------------------------- las promociones (maqueta)
+
+   TRES CARTELES EN TIRA: grid de tres en escritorio, carrusel con scroll y snap en
+   telefono — que es como toda app de super los muestra, y el snap hace que cada cartel
+   quede entero en pantalla en vez de cortado a la mitad.
+
+   Cada uno con SU tinte de la paleta -verde, crema, y el morado de la flor como acento
+   raro- y la foto grande sangrando del borde. El "valida hasta" va en pastilla, el mismo
+   gesto del dato-que-decide en toda la app. */
+.promos { margin-bottom: 1.6rem; }
+
+.promo-sello {
+    margin-left: auto;
+    font-size: .66rem;
+    font-weight: 700;
+    letter-spacing: .12em;
+    text-transform: uppercase;
+    color: var(--tenue-2);
+    border: 1px dashed var(--linea);
+    border-radius: var(--radio-boton);
+    padding: .15rem .55rem;
+}
+
+.promo-tira {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: .8rem;
+}
+@media (max-width: 767.98px) {
+    .promo-tira {
+        display: flex;
+        overflow-x: auto;
+        scroll-snap-type: x mandatory;
+        padding-bottom: .4rem;
+    }
+    .promo-tira .promo { flex: 0 0 82%; scroll-snap-align: start; }
+}
+
+.promo {
+    position: relative;
+    display: flex;
+    align-items: center;
+    border-radius: var(--radio-marco);
+    padding: 1rem 0 1rem 1.1rem;
+    overflow: hidden;
+    box-shadow: var(--sombra-carta);
+    min-height: 7.2rem;
+}
+.promo--verde  { background: linear-gradient(120deg, var(--tinte-verde) 0%, #f2faf4 100%); border: 1px solid var(--estable-borde); }
+.promo--crema  { background: linear-gradient(120deg, var(--tinte-crema) 0%, #fdf7ec 100%); border: 1px solid var(--cambio-borde); }
+.promo--morado { background: linear-gradient(120deg, #f0eaf8 0%, #f8f5fc 100%); border: 1px solid #e0d5ef; }
+
+.promo-dicho {
+    display: flex;
+    flex-direction: column;
+    gap: .15rem;
+    min-width: 0;
+    flex: 1 1 auto;
+    z-index: 1;
+}
+.promo-gancho { font-size: 1.25rem; font-weight: 800; letter-spacing: -.01em; line-height: 1.1; }
+.promo--verde  .promo-gancho { color: var(--verde); }
+.promo--crema  .promo-gancho { color: var(--cambio-tinta); }
+.promo--morado .promo-gancho { color: var(--gu-morado-hondo); }
+.promo-que { font-size: .84rem; color: var(--tinta); line-height: 1.3; }
+.promo-vence {
+    margin-top: .45rem;
+    align-self: flex-start;
+    font-size: .7rem;
+    font-weight: 600;
+    color: var(--tenue);
+    background: rgba(255, 255, 255, .75);
+    border: 1px solid var(--linea);
+    border-radius: var(--radio-boton);
+    padding: .18rem .55rem;
+}
+
+/* La foto sangra del borde derecho: es lo que vuelve el cartel un CARTEL y no una ficha.
+   El overflow:hidden del promo la recorta limpio contra el radio. */
+.promo-foto {
+    flex: 0 0 auto;
+    width: 96px;
+    height: 96px;
+    object-fit: contain;
+    margin-right: -14px;
+    filter: drop-shadow(0 4px 8px rgba(22, 38, 28, .12));
+}
+
 /* ------------------------------------------------- la anatomia de una seccion
 
    TODA SECCION ABRE IGUAL: un chip con su icono y el titulo en kicker. Es lo que vuelve la
