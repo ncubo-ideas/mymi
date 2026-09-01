@@ -79,6 +79,19 @@ struct GnothiShortcuts: AppShortcutsProvider {
             shortTitle: "Facturas en datos",
             systemImageName: "curlybraces"
         )
+
+        // LA QUE COMPONE PREGUNTA + HECHOS. Lleva una frase generica y SIN el parametro
+        // adentro: interpolar un String en una frase no compila -- «AppEntity and AppEnum are
+        // the only allowed types»-- asi que la frase dispara la intent y Siri pide la pregunta
+        // aparte. Dentro de Atajos el parametro se escribe normal, que es su uso principal.
+        AppShortcut(
+            intent: PreguntarSobreMisFacturasIntent(),
+            phrases: [
+                "Preguntar sobre mis facturas en \(.applicationName)"
+            ],
+            shortTitle: "Preguntar sobre mis facturas",
+            systemImageName: "text.bubble"
+        )
     }
 
     // NOTE: AppShortcutsProvider also exposes `shortcutTileColor` for the tile in the

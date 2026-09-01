@@ -64,7 +64,56 @@ struct FacturasComoDatosIntent: AppIntent {
 
     // No ProvidesDialog on purpose: nobody wants json read out loud. This one is a
     // building block, not an answer.
+    //
+    // DEVUELVE LOS HECHOS CON SU ENCUADRE, no el json pelado. Ver Facturas.encuadre: sin eso,
+    // el modelo del otro lado del atajo lee una estructura de datos y ofrece escribir tipos.
+    // Medido en el telefono del companero.
     func perform() async throws -> some IntentResult & ReturnsValue<String> {
-        .result(value: Facturas.totalComoDatos())
+        .result(value: Facturas.paraUnModelo())
+    }
+}
+
+// LA TERCERA FORMA — la persona pregunta, nosotros componemos.
+//
+// Las otras dos dejan al atajo con una mitad: `TotalDeFacturas` da una frase ya redactada
+// (buena para el oido, cerrada para razonar encima) y `FacturasComoDatos` da los hechos
+// (buenos para razonar, mudos sobre que se quiere saber).
+//
+// Esta toma la PREGUNTA de la persona y devuelve pregunta + marco + hechos, listo para
+// entrar a un `Ask Claude` o a un `Use Model`. La persona escribe lo suyo y no tiene que
+// saber armar un prompt.
+//
+// POR QUE UN PARAMETRO String SI PUEDE ACA. El companero midio que interpolar un String en
+// una FRASE de Siri no compila -- «AppEntity and AppEnum are the only allowed types». Ese
+// muro es de las frases habladas. Dentro de la app Atajos un parametro String es normal, y
+// por eso esta intent NO declara frase: se usa arrastrandola a un atajo.
+struct PreguntarSobreMisFacturasIntent: AppIntent {
+
+    static let title: LocalizedStringResource = "Preguntar sobre mis facturas"
+
+    static let description = IntentDescription(
+        "Arma la pregunta de la persona junto con sus facturas, lista para pasarle a un modelo dentro de un atajo."
+    )
+
+    static let openAppWhenRun = false
+
+    @Parameter(title: "Qué querés saber")
+    var pregunta: String
+
+    static var parameterSummary: some ParameterSummary {
+        Summary("Preguntar \(\.$pregunta) sobre mis facturas")
+    }
+
+    func perform() async throws -> some IntentResult & ReturnsValue<String> {
+        // El orden importa: primero el marco, despues los hechos, y la pregunta AL FINAL.
+        // Un modelo pesa mas lo ultimo que lee, y lo ultimo tiene que ser lo que se le pide.
+        let armado = """
+        \(Facturas.encuadre)
+
+        \(Facturas.totalComoDatos())
+
+        La persona pregunta: \(pregunta)
+        """
+        return .result(value: armado)
     }
 }

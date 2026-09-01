@@ -33,6 +33,34 @@ enum Facturas {
         return "Tenés \(f.count) facturas registradas, por un total de \(FacturaEntity.plata(suma))."
     }
 
+    /// EL ENCUADRE, y es lo que faltaba.
+    ///
+    /// La Puerta 1 le manda al asistente un `ServerInstructions` en el handshake de MCP: le
+    /// explica que es la IA personal de la persona, que Gnothi lee lo que ya esta en el
+    /// aparato, y que no le pregunta nada a ninguna empresa. Todo lo que viene despues se lee
+    /// con ese marco puesto.
+    ///
+    /// EN UN ATAJO NO HAY HANDSHAKE. El modelo recibe lo que el paso anterior le paso y nada
+    /// mas. Medido: pasandole el json pelado, Claude contesto «the math checks out... what do
+    /// you want done with it? Types, a FacturasResponse interface...» -- leyo una estructura
+    /// de datos y ofrecio escribir tipos, porque no tenia forma de saber que era.
+    ///
+    /// Asi que el marco viaja PEGADO AL DATO. Es el mismo principio que ya usamos al escribir
+    /// las descripciones de las tools: redactado para alguien que no sabe que esta leyendo.
+    static var encuadre: String {
+        """
+        Estos son datos de la persona que te esta preguntando, leidos de su propio registro \
+        de facturas guardado en su telefono. No vienen de ningun servidor ni de ninguna \
+        empresa: se los entrego su comercio y viven en su aparato. Contestale sobre SUS \
+        numeros, en su idioma, sin explicarle la estructura del json.
+        """
+    }
+
+    /// Los hechos con su marco. Es lo que va hacia un modelo dentro de un atajo.
+    static func paraUnModelo() -> String {
+        "\(encuadre)\n\n\(totalComoDatos())"
+    }
+
     /// Same facts as data, for the Shortcuts path. A shortcut chaining this into "Ask Claude"
     /// wants something a model can parse, not a sentence.
     static func totalComoDatos() -> String {

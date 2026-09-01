@@ -54,7 +54,11 @@ struct ContentView: View {
         ("c2", "Encadenar hacia Claude",
          "Atajo: 1) Gnothi «Facturas en datos» 2) «Ask Claude» con ese resultado."),
         ("c3", "Encadenar sin que salga nada",
-         "El mismo atajo pero con «Use Model» → On Device. ¿Contesta sin red?")
+         "El mismo atajo pero con «Use Model» → On Device. ¿Contesta sin red?"),
+        ("c4", "¿El encuadre arregla la respuesta?",
+         "Repetir c2. Antes Claude contestaba «the math checks out… what do you want done with it?» porque recibía JSON pelado. Ahora los datos viajan con su marco: ¿contesta sobre las facturas, y en español?"),
+        ("c5", "La persona pregunta lo suyo",
+         "Atajo: 1) Gnothi «Preguntar sobre mis facturas» escribiendo «¿en qué gasté más?» 2) «Ask Claude». La pregunta va al final, que es lo que un modelo pesa más.")
     ]
 
     var body: some View {
