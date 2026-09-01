@@ -32,6 +32,16 @@ namespace Gimnasio.Dominio
 			}
 		}
 
+
+		// Predicado total que acompana al resolutor. Sin el, un Check no puede preguntar
+		// si el genero es valido antes de que PorNombre reviente adentro del comando.
+		internal static bool EsUnNombreConocido(string nombre)
+		{
+			if (string.IsNullOrWhiteSpace(nombre)) return false;
+			string n = nombre.Trim().ToLowerInvariant();
+			return n == "femenino" || n == "masculino";
+		}
+
 		internal bool Es(Genero otro)
 		{
 			return otro != null && otro.nombre == nombre;

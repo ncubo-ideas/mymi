@@ -14,6 +14,17 @@ namespace Gimnasio.Consola
 
 		private static int Main(string[] args)
 		{
+			string comando = args.Length > 0 ? args[0] : "comprobar";
+			if (comando == "medir")
+				return Medir.Correr(args.Length > 1
+					? args[1]
+					: System.IO.Path.Combine(System.IO.Path.GetTempPath(), "gimnasio"));
+			if (comando != "comprobar")
+			{
+				Console.WriteLine("Comandos:  comprobar  |  medir <carpeta>");
+				return 1;
+			}
+
 			Console.WriteLine("El dominio del gimnasio, sin actor y sin disco:");
 			Console.WriteLine();
 

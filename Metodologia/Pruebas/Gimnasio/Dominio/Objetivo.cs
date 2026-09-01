@@ -32,6 +32,16 @@ namespace Gimnasio.Dominio
 			return medida != null && porMedida.ContainsKey(medida.Nombre);
 		}
 
+
+		// PREDICADO TOTAL POR NOMBRE. El de arriba recibe una Medida, y un Check solo
+		// tiene el nombre que vino como parametro. Sin esta sobrecarga el Check no puede
+		// preguntar lo que el comando va a rechazar -y eso envenena el journal-.
+		internal bool YaTieneMetaPara(string nombreDeLaMedida)
+		{
+			return !string.IsNullOrWhiteSpace(nombreDeLaMedida)
+				&& porMedida.ContainsKey(nombreDeLaMedida);
+		}
+
 		internal Meta MetaDe(Medida medida)
 		{
 			ArgumentNullException.ThrowIfNull(medida);

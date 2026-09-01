@@ -202,6 +202,129 @@ namespace Gimnasio.Dominio
 			return sinMedir;
 		}
 
+
+		// ------------------------------------------- lo que pidio el perform y no estaba
+
+		// El Check llega a la raiz, no al objetivo. Sin este paso intermedio el
+		// predicado existe y es inalcanzable desde un comando.
+		internal bool SePuedeAgregarMetaPara(string nombreDeLaMedida)
+		{
+			return TieneObjetivo && !Objetivo.YaTieneMetaPara(nombreDeLaMedida);
+		}
+
+		// EL PLAN NECESITA UN NOMBRE. En C# alcanzaba con la referencia al objeto; desde
+		// un script hay que poder decir CUAL plan, y el gimnasio no le pone identificador
+		// al papel. Se usa la fecha de inicio, que es lo unico que lo distingue hoy.
+		// Ver el hueco 10: si dos planes empezaran el mismo dia, esto se cae.
+		internal bool TienePlanQueEmpezo(DateTime inicio)
+		{
+			foreach (Plan p in planes)
+				if (p.Inicio.Date == inicio.Date) return true;
+			return false;
+		}
+
+		internal Plan PlanQueEmpezo(DateTime inicio)
+		{
+			foreach (Plan p in planes)
+				if (p.Inicio.Date == inicio.Date) return p;
+			throw new KeyNotFoundException(
+				"No hay ningun plan que empiece ese dia. Preguntar TienePlanQueEmpezo antes.");
+		}
+
+		// Predicado total para el Check de terminar: junta las dos razones por las que
+		// terminar fallaria, para que el comando no se escriba y despues reviente.
+		internal bool SePuedeTerminarElPlanQueEmpezo(DateTime inicio)
+		{
+			foreach (Plan p in planes)
+				if (p.Inicio.Date == inicio.Date) return !p.Termino;
+			return false;
+		}
+
+		// LA HOJA SE ABRE AL LLEGAR SU PRIMERA MEDIDA. El gimnasio manda una hoja, pero
+		// los eventos llegan medida por medida: la primera abre la hoja y las demas se
+		// suman a la misma fecha. Sin esto haria falta un comando de "abrir hoja" que el
+		// proveedor nunca va a mandar.
+		internal Medicion AbrirMedicionDe(DateTime fecha)
+		{
+			foreach (Medicion m in mediciones)
+				if (m.Fecha.Date == fecha.Date) return m;
+			Medicion nueva = new Medicion(fecha);
+			mediciones.Add(nueva);
+			return nueva;
+		}
+
+
+		// ------------------------------------- UN PREDICADO POR COMANDO: "esto va a entrar?"
+		//
+		// Esta seccion entera la pidio el perform, y me costo tres journals envenenados
+		// antes de ver el patron.
+		//
+		// La regla 1 del substrato dice "guarda con un Check todo comando que el dominio
+		// pueda rechazar". Lo que no dice, y es lo que muerde, es que EL CHECK TIENE QUE
+		// PREGUNTAR EXACTAMENTE LO QUE EL DOMINIO VA A RECHAZAR. Un Check que pregunta
+		// otra cosa -aunque sea razonable- deja pasar el comando, el dominio revienta a
+		// mitad de la escritura, y esa entrada se replaya en cada arranque para siempre.
+		//
+		// De ahi la simetria: por cada comando, un predicado TOTAL en la raiz que junta
+		// todas las razones por las que ese comando fallaria.
+
+
+		// EL COMANDO QUE NO PODIA FALLAR, Y ERA EL PEOR.
+		//
+		// Asistio no rechaza nada: agrega un dia a una lista. Por eso no le puse Check.
+		// Y en la segunda corrida conto los mismos 30 dias otra vez: 60 asistencias,
+		// incumplimiento cero, "cumplio: true". NO FALLO — dio una respuesta creible y
+		// equivocada, que es peor que reventar.
+		//
+		// Un comando que no puede fallar igual necesita idempotencia si el mismo hecho
+		// puede volver a llegar. Y siempre puede: un replay es exactamente eso.
+		internal bool PuedeRegistrarAsistencia(DateTime dia)
+		{
+			foreach (DateTime ya in asistencias)
+				if (ya.Date == dia.Date) return false;
+			return true;
+		}
+
+		internal bool PuedeDeclararPerfil(string genero, int edad, decimal altura)
+		{
+			return !TienePerfil
+				&& Dominio.Genero.EsUnNombreConocido(genero)
+				&& edad > 0
+				&& altura > 0;
+		}
+
+		internal bool PuedeRegistrarPlan(DateTime inicio, int diasPorSemana)
+		{
+			return !TienePlanQueEmpezo(inicio)
+				&& diasPorSemana >= 1 && diasPorSemana <= 7;
+		}
+
+		internal bool PuedePrescribir(DateTime inicioDelPlan, string nombreDelEjercicio, decimal peso)
+		{
+			if (!TienePlanQueEmpezo(inicioDelPlan)) return false;
+			if (string.IsNullOrWhiteSpace(nombreDelEjercicio)) return false;
+			if (peso < 0) return false;
+			return !PlanQueEmpezo(inicioDelPlan).Prescribe(nombreDelEjercicio);
+		}
+
+		internal bool PuedeTerminarPlan(DateTime inicioDelPlan, DateTime fin)
+		{
+			if (!TienePlanQueEmpezo(inicioDelPlan)) return false;
+			Plan p = PlanQueEmpezo(inicioDelPlan);
+			return !p.Termino && fin.Date >= p.Inicio.Date;
+		}
+
+		internal bool PuedeRegistrarMedida(DateTime fecha, string queSeMidio, decimal valor)
+		{
+			if (!Medida.EsUnNombreConocido(queSeMidio)) return false;
+			if (valor <= 0) return false;
+			if (string.Equals(queSeMidio, "grasa", StringComparison.OrdinalIgnoreCase) && valor >= 100m)
+				return false;
+			foreach (Medicion m in mediciones)
+				if (m.Fecha.Date == fecha.Date) return !m.Trae(queSeMidio);
+			return true;
+		}
+
 		// ------------------------------------------------------------------ internos
 
 		private void ExigirPerfil()

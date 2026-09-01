@@ -29,7 +29,7 @@ tiran.
 | | Qué prueba | Estado |
 |---|---|---|
 | [`Presupuesto/`](Presupuesto/) | La cadena completa del orden de trabajo, de punta a punta | **Construido.** `Preguntas.md` → dominio → consola → MCP. 31 comprobaciones |
-| [`Gimnasio/`](Gimnasio/) | **El punto de partida corrido con un peer del equipo** — la primera vez que la entrevista se usa con alguien que no la escribió | **Dominio construido.** 19 clases, 46 comprobaciones. [9 huecos](Gimnasio/HUECOS.md) |
+| [`Gimnasio/`](Gimnasio/) | **El punto de partida corrido con un peer del equipo** — la primera vez que la entrevista se usa con alguien que no la escribió | **Construido y atado al perform.** 19 clases, 46 comprobaciones, el ciclo con journal. [11 huecos](Gimnasio/HUECOS.md) |
 
 ### Por qué Gimnasio
 

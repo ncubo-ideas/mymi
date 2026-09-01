@@ -63,5 +63,44 @@ namespace Gimnasio.Dominio
 		{
 			return otra != null && otra.Nombre == Nombre;
 		}
+
+		// RESOLUTOR TOTAL DEL CONJUNTO CERRADO DE MEDIDAS.
+		//
+		// No estaba, y lo pidio el perform. En C# se construye la subclase directo
+		// -new Cintura(88)-; desde un script no se puede: un ternario no unifica dos
+		// subclases a su base comun (regla 12) y un conjunto cerrado sin resolutor es
+		// inalcanzable desde un comando (regla 11).
+		//
+		// Que las cuatro medidas eran un conjunto cerrado estaba a la vista desde el
+		// principio. Que hacia falta esta puerta, no: aparecio al atarlo al perform.
+		internal static Medida Crear(string nombre, decimal valor)
+		{
+			ArgumentException.ThrowIfNullOrWhiteSpace(nombre);
+			switch (nombre.Trim().ToLowerInvariant())
+			{
+				case "peso": return new Peso(valor);
+				case "grasa": return new PorcentajeDeGrasa(valor);
+				case "cintura": return new Cintura(valor);
+				case "masa-muscular": return new MasaMuscular(valor);
+				default:
+					throw new ArgumentOutOfRangeException(nameof(nombre), nombre,
+						"Medida desconocida. Las que existen son: peso, grasa, cintura, masa-muscular.");
+			}
+		}
+
+		// El predicado total que acompana al resolutor: es lo que permite preguntar
+		// desde un Check antes de escribir, en vez de reventar a mitad del comando.
+		internal static bool EsUnNombreConocido(string nombre)
+		{
+			if (string.IsNullOrWhiteSpace(nombre)) return false;
+			switch (nombre.Trim().ToLowerInvariant())
+			{
+				case "peso":
+				case "grasa":
+				case "cintura":
+				case "masa-muscular": return true;
+				default: return false;
+			}
+		}
 	}
 }

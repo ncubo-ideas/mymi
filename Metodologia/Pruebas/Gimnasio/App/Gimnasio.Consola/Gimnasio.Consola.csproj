@@ -17,6 +17,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\..\Dominio\Gimnasio.Dominio.csproj" />
+    <ProjectReference Include="..\Gimnasio.App\Gimnasio.App.csproj" />
   </ItemGroup>
 
 </Project>
