@@ -1,0 +1,3 @@
+# Los scripts de la Mac tienen que llegar con LF: un retorno de carro (CR) en el shebang
+# da "bad interpreter" y el script ni arranca.
+*.sh text eol=lf
