@@ -81,7 +81,7 @@ public sealed class ModelOpenAiCompatible : IModel
 				{
 					["name"] = t.Name,
 					["description"] = t.Description,
-					["parameters"] = JsonSerializer.Deserialize<JsonElement>(t.SchemaJson),
+					["parameters"] = Json.Parse(t.SchemaJson),
 				},
 			}).ToArray(),
 			["messages"] = Messages(conversation),
@@ -121,7 +121,7 @@ public sealed class ModelOpenAiCompatible : IModel
 								["name"] = c.PublicName,
 								// The arguments go as a STRING, not as an object. It is the
 								// shape the API defines, however odd it reads.
-								["arguments"] = JsonSerializer.Serialize(c.Arguments),
+								["arguments"] = Json.Write(c.Arguments),
 							},
 						}).ToArray();
 
@@ -175,7 +175,7 @@ public sealed class ModelOpenAiCompatible : IModel
 				if (fn.TryGetProperty("arguments", out JsonElement a) && a.ValueKind == JsonValueKind.String)
 					try
 					{
-						JsonElement parsed = JsonSerializer.Deserialize<JsonElement>(a.GetString() ?? "{}");
+						JsonElement parsed = Json.Parse(a.GetString() ?? "{}");
 						if (parsed.ValueKind == JsonValueKind.Object)
 							foreach (JsonProperty p in parsed.EnumerateObject())
 								args[p.Name] = p.Value.ValueKind == JsonValueKind.String
@@ -201,7 +201,7 @@ public sealed class ModelOpenAiCompatible : IModel
 		// servers reject a request that was fine.
 		if (key is not null) request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", key);
 
-		request.Content = new StringContent(JsonSerializer.Serialize(body), Encoding.UTF8);
+		request.Content = new StringContent(Json.Write(body), Encoding.UTF8);
 		request.Content.Headers.ContentType = new MediaTypeHeaderValue("application/json");
 
 		using HttpResponseMessage res = await http.SendAsync(request, ct);
@@ -210,6 +210,6 @@ public sealed class ModelOpenAiCompatible : IModel
 		if (!res.IsSuccessStatusCode)
 			throw new InvalidOperationException($"the API answered {(int)res.StatusCode}: {text}");
 
-		return JsonSerializer.Deserialize<JsonElement>(text);
+		return Json.Parse(text);
 	}
 }

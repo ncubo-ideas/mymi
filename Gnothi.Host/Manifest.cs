@@ -40,7 +40,7 @@ public sealed record Manifest
 
 	public static Manifest Read(string path)
 	{
-		Manifest? m = JsonSerializer.Deserialize<Manifest>(File.ReadAllText(path), JsonOptions);
+		Manifest? m = JsonSerializer.Deserialize(File.ReadAllText(path), HostJson.Default.Manifest);
 		if (m is null) throw new InvalidDataException($"empty or unreadable manifest: {path}");
 		if (string.IsNullOrWhiteSpace(m.Module))
 			throw new InvalidDataException($"the manifest does not declare 'module': {path}");

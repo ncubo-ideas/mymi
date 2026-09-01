@@ -152,7 +152,7 @@ public static class ModuleInstaller
 		try
 		{
 			using var reader = new StreamReader(manifestEntry.Open());
-			Manifest? m = JsonSerializer.Deserialize<Manifest>(reader.ReadToEnd(), Manifest.JsonOptions);
+			Manifest? m = JsonSerializer.Deserialize(reader.ReadToEnd(), HostJson.Default.Manifest);
 			if (m is null || string.IsNullOrWhiteSpace(m.Module))
 				return (false, "the manifest is unreadable or declares no 'module'. Not installed.");
 			manifest = m;
@@ -247,7 +247,8 @@ public static class ModuleInstaller
 			DisabledTools = disabledTools,
 		};
 
-		File.WriteAllText(installationPath, JsonSerializer.Serialize(installation, Indented));
+		// Legible y no Default: este archivo lo abre la persona con un editor.
+		File.WriteAllText(installationPath, JsonSerializer.Serialize(installation, HostJson.Legible.Installation));
 
 		var line = new System.Text.StringBuilder();
 		line.Append($"installed '{manifest.Module}' ({manifest.Title})");

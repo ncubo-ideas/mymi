@@ -68,6 +68,12 @@
     <Compile Include="..\..\Gnothi.Mobile\StdioShellStub.cs" />
 
     <Compile Include="..\..\Gnothi.Assistant\*.cs" />
+
+    <!-- LA CASCARA, que faltaba y era un hueco de la medicion. Gnothi.Movil/Shell.cs se
+         compila DENTRO de las dos apps de telefono, asi que su reflexion cuenta igual que la
+         del nucleo. Mientras no estuvo aca, la linea base decia 37 cuando en realidad habia
+         mas. Una medicion que no mide todo lo que embarca miente por omision. -->
+    <Compile Include="..\..\Gnothi.Movil\*.cs" />
   </ItemGroup>
 
   <ItemGroup>

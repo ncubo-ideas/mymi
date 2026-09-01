@@ -43,8 +43,10 @@ public sealed record Installation
 	// never open.
 	[JsonPropertyName("caratula")] public Caratula? Caratula { get; init; }
 
+	// Por HostJson y no por Deserialize<T>: el lector se genera al compilar, sin reflexion.
+	// Ver HostJson.cs -- de eso depende que el Host pueda embeberse bajo NativeAOT.
 	public static Installation Read(string path)
-		=> JsonSerializer.Deserialize<Installation>(File.ReadAllText(path), Manifest.JsonOptions)
+		=> JsonSerializer.Deserialize(File.ReadAllText(path), HostJson.Default.Installation)
 		   ?? throw new InvalidDataException($"empty or unreadable installation: {path}");
 }
 

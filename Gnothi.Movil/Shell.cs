@@ -166,7 +166,7 @@ public sealed class Shell : IDisposable
 	{
 		try
 		{
-			JsonElement req = JsonSerializer.Deserialize<JsonElement>(json);
+			JsonElement req = Json.Parse(json);
 			string op = req.GetProperty("op").GetString() ?? "";
 			log($"bridge: {op}");
 
@@ -242,7 +242,7 @@ public sealed class Shell : IDisposable
 			};
 		}).ToArray();
 
-		return JsonSerializer.Serialize(new Dictionary<string, object?>
+		return Json.Write(new Dictionary<string, object?>
 		{
 			["modules"] = modules,
 			["settings"] = Settings(),
@@ -272,7 +272,7 @@ public sealed class Shell : IDisposable
 
 		File.WriteAllText(
 			Path.Combine(m.Directory, "installation.json"),
-			JsonSerializer.Serialize(updated, new JsonSerializerOptions { WriteIndented = true }));
+			JsonSerializer.Serialize(updated, HostJson.Legible.Installation));
 
 		// Aplicado YA, no cuando se calme la rafaga de 300ms del watcher: el switch que la
 		// persona acaba de mover tiene que contestar de inmediato. El watcher dispara igual --
@@ -308,7 +308,7 @@ public sealed class Shell : IDisposable
 		{
 			if (File.Exists(CfgPath))
 			{
-				JsonElement e = JsonSerializer.Deserialize<JsonElement>(File.ReadAllText(CfgPath));
+				JsonElement e = Json.Parse(File.ReadAllText(CfgPath));
 				return (e.GetProperty("name").GetString() ?? "Groq",
 						e.GetProperty("url").GetString() ?? ModelUrl,
 						e.GetProperty("model").GetString() ?? ModelName);
@@ -320,7 +320,7 @@ public sealed class Shell : IDisposable
 
 	private string SetProvider(string name, string url, string model)
 	{
-		File.WriteAllText(CfgPath, JsonSerializer.Serialize(new Dictionary<string, string>
+		File.WriteAllText(CfgPath, Json.Write(new Dictionary<string, string>
 		{
 			["name"] = name, ["url"] = url, ["model"] = model,
 		}));
@@ -397,7 +397,7 @@ public sealed class Shell : IDisposable
 	/// Se arma aca -y no en cada plataforma- porque el que serializa mal las comillas rompe
 	/// la pagina sin un error visible en ningun lado.
 	public static string PushScript(string kind, string id, string payload) =>
-		$"gn.push({JsonSerializer.Serialize(kind)},{JsonSerializer.Serialize(id)},{JsonSerializer.Serialize(payload)})";
+		$"gn.push({Json.Write(kind)},{Json.Write(id)},{Json.Write(payload)})";
 
 	// HACER LOCALES LAS RUTAS DEL installation.json. Solo donde la plataforma lo pide.
 	//
@@ -433,7 +433,7 @@ public sealed class Shell : IDisposable
 			try
 			{
 				string negocio = Path.GetFileName(dir);
-				Installation vieja = JsonSerializer.Deserialize<Installation>(File.ReadAllText(file))!;
+				Installation vieja = JsonSerializer.Deserialize(File.ReadAllText(file), HostJson.Default.Installation)!;
 
 				// El nombre del dll es lo unico que se rescata de la ruta vieja: cual dll se
 				// carga lo decidio quien armo el paquete, y eso no cambia por mudarse de
@@ -447,7 +447,7 @@ public sealed class Shell : IDisposable
 					GrantedFolder = Path.Combine(journals, negocio),
 				};
 
-				File.WriteAllText(file, JsonSerializer.Serialize(nueva, new JsonSerializerOptions { WriteIndented = true }));
+				File.WriteAllText(file, JsonSerializer.Serialize(nueva, HostJson.Legible.Installation));
 				log($"localizar: {negocio} -> {nueva.GrantedFolder}");
 			}
 			catch (Exception e)
