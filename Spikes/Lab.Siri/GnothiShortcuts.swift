@@ -147,6 +147,22 @@ struct GnothiShortcuts: AppShortcutsProvider {
             shortTitle: "Preguntar sobre mis exámenes",
             systemImageName: "text.bubble.fill"
         )
+
+        // LA UNICA QUE NO TIENE LOS DATOS QUEMADOS. Todas las de arriba contestan con numeros
+        // escritos en Swift, y eso fue correcto para medir si el canal existe. Esta lee la foto
+        // que el Host de .NET dejo en el contenedor compartido -- o sea, las facturas y los
+        // examenes DE VERDAD de la persona.
+        //
+        // Van 9 de las 10 que iOS permite. Queda una sola libre.
+        AppShortcut(
+            intent: HechosRealesIntent(),
+            phrases: [
+                "Qué tiene \(.applicationName) de verdad",
+                "Mis datos reales en \(.applicationName)"
+            ],
+            shortTitle: "Lo que Gnothi tiene de verdad",
+            systemImageName: "externaldrive.badge.checkmark"
+        )
     }
 
     // NOTE: AppShortcutsProvider also exposes `shortcutTileColor` for the tile in the

@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<!-- EL CONTENEDOR COMPARTIDO CON EL HOST.
+	     Esta app tiene los App Intents; el Host de .NET (Gnothi.iOS) tiene los journals. No se
+	     pueden llamar -- los App Intents solo existen en Swift, y el issue dotnet/macios#24863
+	     sigue abierto -- asi que el Host deja una foto aca y esta app la lee. Ver
+	     Instantanea.swift.
+
+	     TIENE QUE SER EL MISMO STRING que en Gnothi.iOS/Entitlements.plist. Si difieren en una
+	     letra, cada app ve su propio contenedor vacio y nadie avisa.
+
+	     Y NO ALCANZA CON ESTE ARCHIVO: hay que habilitar el App Group en el portal de Apple
+	     para los DOS app IDs (com.ncubo.gnothi.spike-siri y com.ncubo.gnothi.host) y volver a
+	     firmar. Con firma automatica Xcode lo suele hacer solo la primera vez que compila con
+	     este entitlement puesto. -->
+	<key>com.apple.security.application-groups</key>
+	<array>
+		<string>group.com.ncubo.gnothi</string>
+	</array>
+</dict>
+</plist>

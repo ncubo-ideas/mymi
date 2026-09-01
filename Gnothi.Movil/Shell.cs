@@ -59,7 +59,22 @@ public sealed class Shell : IDisposable
 	/// INSTALACION. No hay ninguna ruta que se pueda dejar escrita de antemano: la unica que
 	/// existe es la que el proceso averigua cuando ya esta corriendo.
 	/// </param>
-	public sealed record Paths(string Files, string Incoming, bool ReescribirRutas = false);
+	/// <param name="Instantaneas">
+	/// El contenedor COMPARTIDO donde el Host le deja la foto a la caratula, o null si esta
+	/// plataforma no la necesita.
+	///
+	/// ANDROID: null. Alla la caratula es un APK aparte que llama al Host EN VIVO por binder,
+	/// con la compuerta de identidad de por medio. No hay nada que dejar escrito.
+	///
+	/// iOS: el contenedor del App Group. Alla los App Intents solo existen en Swift y el Host
+	/// esta en .NET, asi que no se tocan: el Host deja la foto y la caratula la lee. Ver
+	/// Instantanea.cs.
+	/// </param>
+	public sealed record Paths(
+		string Files,
+		string Incoming,
+		bool ReescribirRutas = false,
+		string? Instantaneas = null);
 
 	private readonly Paths paths;
 	private readonly Action<string> log;
@@ -142,13 +157,30 @@ public sealed class Shell : IDisposable
 		log($"{catalog.Modules.Count} modules installed" + (copied > 0 ? $" - {copied} files this launch" : ""));
 
 		PushState();
+		await Fotografiar();
 
 		// 3 - EL INTERRUPTOR DE LA PERSONA, VIGILADO. Los switches de la UI escriben
 		//     installation.json y esto es lo que los hace efectivos; y una edicion de AFUERA
 		//     (adb, otra herramienta) repinta la pantalla por el mismo camino. Una sola
 		//     fuente de verdad: su archivo.
-		watch = new ConsentWatch(dispatcher) { Changed = (_, _) => { PushState(); return Task.CompletedTask; } };
+		//
+		//     LA FOTO SE REHACE ACA TAMBIEN, y es lo que cierra el agujero de consentimiento:
+		//     si la persona apaga un modulo, la foto se reescribe SIN el, asi que la caratula
+		//     deja de poder contestar por ese modulo. Sin esta linea quedaria una foto vieja
+		//     contestando algo que ella ya revoco.
+		watch = new ConsentWatch(dispatcher)
+		{
+			Changed = async (_, _) => { PushState(); await Fotografiar(); },
+		};
 		await watch.Run(log, stop.Token);
+	}
+
+	/// La foto para la caratula, si esta plataforma la pide. Android pasa null y esto no hace
+	/// nada -- alla la caratula pregunta en vivo.
+	private async Task Fotografiar()
+	{
+		if (paths.Instantaneas is null || dispatcher is null) return;
+		await Instantanea.Escribir(dispatcher, paths.Instantaneas, log, stop.Token);
 	}
 
 	public void Dispose()

@@ -77,6 +77,27 @@ struct ContentView: View {
          "Atajo: 1) Gnothi «Preguntar sobre mis exámenes» escribiendo «¿tengo algo de qué preocuparme?» 2) «Ask Claude». La pregunta que más invita a diagnosticar.")
     ]
 
+    // EL PUENTE · lo unico de este spike que NO tiene los datos quemados.
+    //
+    // Todo lo de arriba contesta con numeros escritos en Swift, y estuvo bien: la pregunta era
+    // si iOS deja que un asistente alcance una tool nuestra. Ya sabemos que si.
+    //
+    // Estas tres miden la siguiente: si puede contestar con las facturas y los examenes DE
+    // VERDAD, los que el modulo leyo del journal de la persona. El Host es una app aparte, en
+    // .NET, y no se pueden llamar -- asi que se dejan un archivo en el contenedor compartido.
+    //
+    // r3 ES LA IMPORTANTE Y LA QUE MAS FACIL SE OLVIDA: una foto vieja podria seguir
+    // contestando por un modulo que la persona ya apago. Si eso pasa, el consentimiento tiene
+    // un agujero y no sirve de nada que la compuerta funcione en las otras dos puertas.
+    private let real: [(String, String, String)] = [
+        ("r1", "¿Existe el contenedor compartido?",
+         "Corré el atajo «Lo que Gnothi tiene de verdad» SIN abrir la app del Host. Tiene que decir si falta el App Group o si solo falta la foto. Los dos mensajes son distintos a propósito."),
+        ("r2", "Los números de verdad",
+         "Abrí la app del Host de Gnothi una vez, volvé y repetí r1. ¿Salen las facturas reales del journal, con la fecha de actualización?"),
+        ("r3", "Apagar un módulo lo saca de la foto",
+         "En la app del Host, apagá el switch de facturas. Sin tocar nada más, repetí r1. Facturas NO puede aparecer. Si aparece, el consentimiento tiene un agujero.")
+    ]
+
     var body: some View {
         NavigationStack {
             List {
@@ -102,6 +123,10 @@ struct ContentView: View {
                 grupo("LA CADENA · la persona lo arma",
                       "Mide si Gnothi sirve de pieza para que ella lo combine con la IA que quiera.",
                       cadena)
+
+                grupo("EL PUENTE · datos de verdad",
+                      "Necesita la OTRA app: Gnothi.iOS, el Host de .NET. Sin ella instalada y corrida al menos una vez, estas tres no miden nada.",
+                      real)
 
                 Section {
                     Text("Las de EL PISO y LA CADENA andan en cualquier iPhone con iOS 18. Las de EL TECHO dependen del índice semántico, y ahí sí puede pesar tener Apple Intelligence (15 Pro o 16+).")

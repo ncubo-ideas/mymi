@@ -77,7 +77,11 @@ public sealed class ViewController : UIViewController
 			// con rutas absolutas de Android, que alla se saben de antemano. El contenedor de
 			// iOS lleva un GUID que cambia en cada instalacion, asi que la unica ruta valida es
 			// la que este proceso acaba de averiguar.
-			new Shell.Paths(Files: files, Incoming: incoming, ReescribirRutas: true),
+			new Shell.Paths(
+				Files: files,
+				Incoming: incoming,
+				ReescribirRutas: true,
+				Instantaneas: Compartido()),
 			Log,
 			(kind, id, payload) => InvokeOnMainThread(() =>
 				web?.EvaluateJavaScript(Shell.PushScript(kind, id, payload), (_, _) => { })));
@@ -126,6 +130,32 @@ public sealed class ViewController : UIViewController
 
 	private static string Home(NSSearchPathDirectory which) =>
 		NSSearchPath.GetDirectories(which, NSSearchPathDomain.User, true)[0];
+
+	/// EL CONTENEDOR COMPARTIDO CON LA CARATULA, o null si no esta aprovisionado.
+	///
+	/// Es la unica forma en que el Host de .NET y los App Intents de Swift se pueden pasar algo:
+	/// no se llaman, se dejan un archivo. Y funciona porque las dos apps son NUESTRAS -- App
+	/// Groups exige el mismo Team ID, que es tambien la razon por la que esto no serviria para
+	/// que una institucion de terceros entregue su propia caratula.
+	///
+	/// DEVUELVE NULL SI FALTA APROVISIONAR, y hay que leer el log para saberlo: el App Group
+	/// tiene que estar habilitado en el portal de Apple para los DOS app IDs y venir en el
+	/// perfil de aprovisionamiento. Si falta, esto no tira excepcion -- devuelve null en
+	/// silencio, que es la clase de falla que cuesta una tarde si no esta dicha en algun lado.
+	private static string? Compartido()
+	{
+		const string grupo = "group.com.ncubo.gnothi";
+		string? ruta = NSFileManager.DefaultManager.GetContainerUrl(grupo)?.Path;
+
+		if (ruta is null)
+			Log($"NO hay contenedor para '{grupo}': la caratula no va a tener foto que leer. " +
+				"Revisar que el App Group este habilitado en el portal de Apple para esta app " +
+				"y para la del spike, y que el perfil de aprovisionamiento lo traiga.");
+		else
+			Log($"contenedor compartido: {ruta}");
+
+		return ruta;
+	}
 
 	// Sale por el log de Xcode y por `log stream` de la Mac. El equivalente del
 	// `adb logcat -s GNOTHI` de Android es:

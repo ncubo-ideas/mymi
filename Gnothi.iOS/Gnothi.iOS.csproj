@@ -31,6 +31,11 @@
     <ApplicationTitle>Gnothi</ApplicationTitle>
     <ApplicationDisplayVersion>1.0</ApplicationDisplayVersion>
     <ApplicationVersion>1</ApplicationVersion>
+
+    <!-- El App Group, sin el cual la caratula de Swift no tiene donde leer la foto.
+         Ver Entitlements.plist: el archivo solo no alcanza, hay que habilitarlo en el portal
+         de Apple para los dos app IDs. -->
+    <CodesignEntitlements>Entitlements.plist</CodesignEntitlements>
   </PropertyGroup>
 
   <!-- ═══ AOT: LA PARTE QUE HAY QUE LEER ANTES DE TOCAR ═══════════════════════════════

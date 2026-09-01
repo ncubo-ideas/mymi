@@ -92,6 +92,25 @@ igual pero **sin módulos**, y la sonda no puede correr los pasos 1-5 — que so
 > contenedor de iOS lleva un GUID que cambia en cada instalación, así que **no existe** una
 > ruta que se pueda dejar escrita de antemano. En el log vas a ver `localizar: facturas -> ...`.
 
+### 2b · El App Group — sin esto Siri no ve nada
+
+Las dos apps de iOS se pasan los datos por un **contenedor compartido**: el Host deja una foto
+y la carátula de Swift la lee. Hay que habilitarlo en el portal de Apple **para los dos app
+IDs**:
+
+```
+group.com.ncubo.gnothi
+
+  com.ncubo.gnothi.host         ← esta app (Gnothi.iOS)
+  com.ncubo.gnothi.spike-siri   ← la del spike (Lab.Siri)
+```
+
+Los dos `.entitlements` ya están en el repo. Con firma automática Xcode suele resolverlo solo
+la primera vez que compila con el entitlement puesto.
+
+> **Si falta, `GetContainerUrl` devuelve `null` EN SILENCIO.** Por eso el `ViewController` lo
+> escribe en el log al arrancar: buscá `contenedor compartido:` o el mensaje de que no hay.
+
 ### 3 · Compilar y correr
 
 ```bash
