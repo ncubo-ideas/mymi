@@ -12,13 +12,13 @@ namespace Cargas.Dominio
 	// Gracias a esta inferencia, de los dos aportes de Sonia el tanque pasa de "hay que
 	// convencerla" a "que lo confirme", y el odometro queda como el unico campo que de
 	// verdad depende de ella.
-	public sealed class FormaDeCorte
+	internal sealed class FormaDeCorte
 	{
-		public static readonly FormaDeCorte Automatico = new FormaDeCorte("automatico");
-		public static readonly FormaDeCorte Preseteado = new FormaDeCorte("preseteado");
-		public static readonly FormaDeCorte Indeterminado = new FormaDeCorte("indeterminado");
+		internal static readonly FormaDeCorte Automatico = new FormaDeCorte("automatico");
+		internal static readonly FormaDeCorte Preseteado = new FormaDeCorte("preseteado");
+		internal static readonly FormaDeCorte Indeterminado = new FormaDeCorte("indeterminado");
 
-		public string Nombre { get; private set; }
+		internal string Nombre { get; private set; }
 
 		private FormaDeCorte(string nombre)
 		{
@@ -26,7 +26,7 @@ namespace Cargas.Dominio
 		}
 
 		// La query de reconocimiento para la frontera: decide sin reventar.
-		public static bool EsConocida(string nombre)
+		internal static bool EsConocida(string nombre)
 		{
 			if (string.IsNullOrWhiteSpace(nombre)) return false;
 			string normalizado = nombre.Trim().ToLowerInvariant();
@@ -34,7 +34,7 @@ namespace Cargas.Dominio
 				|| normalizado == Indeterminado.Nombre;
 		}
 
-		public static FormaDeCorte PorNombre(string nombre)
+		internal static FormaDeCorte PorNombre(string nombre)
 		{
 			ArgumentNullException.ThrowIfNullOrWhiteSpace(nombre);
 
@@ -53,7 +53,7 @@ namespace Cargas.Dominio
 		/// no se infiere nada. Lo inferido entra con origen Estimado -el mismo mecanismo
 		/// de procedencia del odometro- y NUNCA cierra un tramo: prellenar el switch para
 		/// que Sonia confirme es todo su poder.</summary>
-		public DeclaracionDeTanque Inferencia()
+		internal DeclaracionDeTanque Inferencia()
 		{
 			if (ReferenceEquals(this, Automatico))
 				return DeclaracionDeTanque.De(EstadoDelTanque.Lleno, OrigenDeLectura.Estimado);

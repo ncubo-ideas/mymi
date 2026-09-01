@@ -67,9 +67,19 @@ namespace Cargas.App
 				throw new ArgumentOutOfRangeException(nameof(evento), evento.Evento,
 					"El numero de evento debe ser positivo.");
 
+			// EL RECONOCIMIENTO DE LOS CONJUNTOS CERRADOS VIVE ACA, no en la frontera.
+			// Los nombres de los tipos van DENTRO del script: el motor los resuelve por
+			// reflexion -que no tiene frontera de assembly- asi que el dominio se queda
+			// entero `internal` y este proyecto no nombra un solo tipo suyo en C#.
+			// Rechazar por Check no deja entrada en el journal, igual que la idempotencia.
 			return app.Using(
 				scriptForChk: @"
 					Check(@evento > bitacora.UltimoEvento) Error 'evento ya procesado';
+					Check(TipoDeCombustible.EsConocido(@tipo)) Error 'tipo de combustible no modelado';
+					Check(UnidadDeVolumen.EsConocida(@volumenUnidad)) Error 'unidad de volumen no modelada';
+					Check(Moneda.EsConocida(@precioMoneda)) Error 'moneda del precio no modelada';
+					Check(Moneda.EsConocida(@totalMoneda)) Error 'moneda del total no modelada';
+					Check(FormaDeCorte.EsConocida(@corte)) Error 'forma de corte no modelada';
 				",
 				@"
 					{
@@ -127,6 +137,7 @@ namespace Cargas.App
 			return app.Using(
 				scriptForChk: @"
 					Check(@evento > bitacora.UltimoEvento) Error 'evento ya procesado';
+					Check(NivelDeLealtad.EsConocido(@nivel)) Error 'nivel de lealtad no modelado';
 				",
 				@"
 					{

@@ -7,17 +7,17 @@ namespace Cargas.Dominio
 	/// precios de referencia estan fuera de alcance; lo unico que el dominio necesita
 	/// es poder decir DONDE cargo Sonia.
 	/// </summary>
-	public sealed class Estacion
+	internal sealed class Estacion
 	{
-		public string Nombre { get; private set; }
+		internal string Nombre { get; private set; }
 
-		public Estacion(string nombre)
+		internal Estacion(string nombre)
 		{
 			ArgumentNullException.ThrowIfNullOrWhiteSpace(nombre);
 			Nombre = nombre.Trim();
 		}
 
-		public bool EsLaMisma(Estacion otra)
+		internal bool EsLaMisma(Estacion otra)
 		{
 			ArgumentNullException.ThrowIfNull(otra);
 			return string.Equals(Nombre, otra.Nombre, StringComparison.OrdinalIgnoreCase);

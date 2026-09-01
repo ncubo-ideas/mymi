@@ -8,9 +8,9 @@ namespace Cargas.Dominio
 	/// distintas). Un desenlace ESPERADO del negocio -un tramo que todavia no se puede
 	/// calcular- nunca es una excepcion: es un veredicto o un estado.
 	/// </summary>
-	public sealed class ErrorDeDominio : Exception
+	internal sealed class ErrorDeDominio : Exception
 	{
-		public ErrorDeDominio(string mensaje) : base(mensaje)
+		internal ErrorDeDominio(string mensaje) : base(mensaje)
 		{
 		}
 	}

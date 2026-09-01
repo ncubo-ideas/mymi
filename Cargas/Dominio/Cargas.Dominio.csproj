@@ -11,4 +11,18 @@
     <ImplicitUsings>disable</ImplicitUsings>
   </PropertyGroup>
 
+  <!-- LA UNICA EXCEPCION LEGITIMA. El fixture instancia el modelo directo, sin pasar por
+       scripts, y es el unico codigo C# fuera del dominio que nombra tipos del dominio.
+       Un grant NOMINAL: explicito, auditable, y se le puede pedir cuentas a quien agregue
+       el segundo. `public` no le pide permiso a nadie ni deja rastro.
+       Sin PublicKey porque nada de este ecosistema esta firmado.
+
+       Cargas.App NO esta en esta lista, y eso es el invariante: la Superficie no puede
+       declarar una variable del dominio ni recibirla como parametro, asi que la logica de
+       negocio no se le puede mudar y los DTOs no se le pueden pasar al dominio. Los tipos
+       viajan DENTRO de los scripts del DSL, que el motor resuelve por reflexion. -->
+  <ItemGroup>
+    <InternalsVisibleTo Include="Cargas.Consola" />
+  </ItemGroup>
+
 </Project>

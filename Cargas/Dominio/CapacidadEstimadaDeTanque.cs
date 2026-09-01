@@ -7,18 +7,18 @@ namespace Cargas.Dominio
 	/// con tanque lleno. Es la tercera procedencia -ni de Sonia ni de la estacion- y por
 	/// eso se declara siempre como estimacion, nunca como dato. Habilita la autonomia.
 	/// </summary>
-	public sealed class CapacidadEstimadaDeTanque
+	internal sealed class CapacidadEstimadaDeTanque
 	{
-		public static readonly CapacidadEstimadaDeTanque SinEstimacion =
+		internal static readonly CapacidadEstimadaDeTanque SinEstimacion =
 			new CapacidadEstimadaDeTanque(0m, default);
 
 		internal static CapacidadEstimadaDeTanque De(decimal litros, DateTime fechaDeLaCarga) =>
 			new CapacidadEstimadaDeTanque(litros, fechaDeLaCarga);
 
-		public decimal Litros { get; private set; }
+		internal decimal Litros { get; private set; }
 
 		/// <summary>La carga que la fijo: la estimacion tiene respaldo, no aparece sola.</summary>
-		public DateTime FechaDeLaCargaQueLaFijo { get; private set; }
+		internal DateTime FechaDeLaCargaQueLaFijo { get; private set; }
 
 		private CapacidadEstimadaDeTanque(decimal litros, DateTime fecha)
 		{
@@ -26,6 +26,6 @@ namespace Cargas.Dominio
 			FechaDeLaCargaQueLaFijo = fecha;
 		}
 
-		public bool Hay => Litros > 0m;
+		internal bool Hay => Litros > 0m;
 	}
 }

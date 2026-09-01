@@ -9,9 +9,9 @@ namespace Cargas.Dominio
 	/// </summary>
 	// La ausencia es parte del tipo: con menos de dos tramos comparables no hay nivel
 	// de siempre, y decirlo es informacion, no un error.
-	public sealed class LineaBaseDeRendimiento
+	internal sealed class LineaBaseDeRendimiento
 	{
-		public static readonly LineaBaseDeRendimiento SinBase =
+		internal static readonly LineaBaseDeRendimiento SinBase =
 			new LineaBaseDeRendimiento(null, 0);
 
 		internal static LineaBaseDeRendimiento De(Rendimiento mediana, int tramosQueLaSustentan) =>
@@ -19,7 +19,7 @@ namespace Cargas.Dominio
 
 		private readonly Rendimiento mediana;
 
-		public int TramosQueLaSustentan { get; private set; }
+		internal int TramosQueLaSustentan { get; private set; }
 
 		private LineaBaseDeRendimiento(Rendimiento mediana, int tramosQueLaSustentan)
 		{
@@ -27,15 +27,15 @@ namespace Cargas.Dominio
 			TramosQueLaSustentan = tramosQueLaSustentan;
 		}
 
-		public bool Hay => mediana != null;
+		internal bool Hay => mediana != null;
 
 		/// <summary>Revienta si no hay base: consultar antes Hay.</summary>
-		public Rendimiento Rendimiento =>
+		internal Rendimiento Rendimiento =>
 			mediana ?? throw new ErrorDeDominio(
 				"Todavia no hay linea base: hacen falta al menos dos tramos comparables. "
 				+ "Consultar antes Hay.");
 
 		/// <summary>Total, para el print: cero cuando no hay base.</summary>
-		public decimal KilometrosPorLitro => mediana == null ? 0m : mediana.KilometrosPorLitro;
+		internal decimal KilometrosPorLitro => mediana == null ? 0m : mediana.KilometrosPorLitro;
 	}
 }

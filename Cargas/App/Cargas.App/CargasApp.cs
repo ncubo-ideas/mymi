@@ -1,5 +1,4 @@
 using Choreography.Theater;
-using Cargas.Dominio;
 
 namespace Cargas.App
 {
@@ -12,7 +11,7 @@ namespace Cargas.App
 	public sealed class CargasApp : PerformanceV2
 	{
 		public CargasApp(string nombreDelActor)
-			: base(nombreDelActor, typeof(BitacoraDeCargas).Assembly)
+			: base(nombreDelActor, ElDominio.Assembly)
 		{
 		}
 
