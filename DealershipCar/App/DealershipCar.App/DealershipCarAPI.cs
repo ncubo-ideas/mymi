@@ -1163,6 +1163,135 @@ namespace DealershipCar.App
 			});
 		}
 
+		/// <summary>
+		/// Si la pregunta del sobre se puede decidir con lo que el registro tiene a ese instante.
+		/// TOTAL, y es la que hay que hacer antes de leer donde esta parado el vehiculo. El odometro
+		/// sale del registro y no se le pide a quien pregunta; sin lectura, la mitad de tiempo se
+		/// mide igual.
+		/// </summary>
+		public bool CanTheEnvelopeBeEvaluated(DateTime asOf)
+		{
+			return ATruth(@"
+				if (schedule.HasAnOdometerReading(@asOf)) {
+					@can = profile.CanTheEnvelopeBeEvaluated(
+						schedule.ReadOdometer(@asOf), schedule.OdometerUnit(@asOf),
+						schedule.ReadOdometerObservedAt(@asOf), @asOf);
+				} else {
+					@can = profile.CanTheEnvelopeBeEvaluatedWithNoOdometer(@asOf);
+				}
+			", "can", p => {
+				p["asOf", typeof(DateTime)] = InUtc(asOf);
+			});
+		}
+
+		/// <summary>
+		/// Donde esta parado este vehiculo contra su sobre, por el nombre de la respuesta. Lectura
+		/// GUARDADA: hay que preguntar antes si se puede evaluar, con el mismo instante.
+		/// </summary>
+		public string ReadEnvelopeStanding(DateTime asOf)
+		{
+			if (!CanTheEnvelopeBeEvaluated(asOf))
+				throw new InvalidOperationException(
+					"No se pudo decidir donde esta parado este vehiculo contra su sobre a ese "
+					+ "instante: pregunte CanTheEnvelopeBeEvaluated con el mismo instante antes. "
+					+ "Ninguno de los nombres posibles quiere decir 'no se pudo medir', asi que "
+					+ "devolver uno aca lo convertiria en una medicion que nadie hizo. La frase de "
+					+ "DescribeWarrantyEnvelope si contesta, y dice con palabras que hecho falta.");
+
+			return AText(@"
+				if (schedule.HasAnOdometerReading(@asOf)) {
+					@standing = profile.ReadEnvelopeStanding(
+						schedule.ReadOdometer(@asOf), schedule.OdometerUnit(@asOf),
+						schedule.ReadOdometerObservedAt(@asOf), @asOf);
+				} else {
+					@standing = profile.ReadEnvelopeStandingWithNoOdometer(@asOf);
+				}
+			", "standing", p => {
+				p["asOf", typeof(DateTime)] = InUtc(asOf);
+			});
+		}
+
+		/// <summary>
+		/// La respuesta del sobre en una frase: donde esta parado, sus dos mitades, cual llega
+		/// primero, contra que odometro se midio y cuando se observo -- o el motivo con nombre por
+		/// el que no se pudo decidir. TOTAL, y es la lectura primaria: la frase la compone el
+		/// dominio, no quien la lee.
+		/// </summary>
+		public string DescribeWarrantyEnvelope(DateTime asOf)
+		{
+			return AText(@"
+				if (schedule.HasAnOdometerReading(@asOf)) {
+					@clause = profile.DescribeWarrantyEnvelope(
+						schedule.ReadOdometer(@asOf), schedule.OdometerUnit(@asOf),
+						schedule.ReadOdometerObservedAt(@asOf), @asOf);
+				} else {
+					@clause = profile.DescribeWarrantyEnvelopeWithNoOdometer(@asOf);
+				}
+			", "clause", p => {
+				p["asOf", typeof(DateTime)] = InUtc(asOf);
+			});
+		}
+
+		/// <summary>
+		/// Si la cobertura de ese sistema se puede decidir para ESTE vehiculo a ese instante. TOTAL:
+		/// da que no cuando al registro le falta alguno de los tres hechos, y tambien cuando el
+		/// limite que rige y el odometro llegaron en unidades distintas.
+		/// </summary>
+		public bool CanCoverageBeEvaluatedForThisVehicle(string systemCode, DateTime asOf)
+		{
+			if (!TheRecordHoldsWhatTheCoverageQuestionNeeds(asOf)) return false;
+
+			return ATruth(@"
+				@can = specification.CanCoverageBeEvaluated(
+					@systemCode, profile.EnvelopeMonths(), profile.EnvelopeDistance(),
+					profile.EnvelopeUnit(), profile.ReadDeliveredAt(),
+					profile.ReadDeliveryReading(), schedule.ReadOdometer(@asOf),
+					schedule.OdometerUnit(@asOf), @asOf);
+			", "can", TheSystemAndTheInstant(systemCode, asOf));
+		}
+
+		/// <summary>
+		/// Donde esta parado ese sistema para ESTE vehiculo, por el nombre de la respuesta. Lectura
+		/// GUARDADA: hay que preguntar antes si se puede evaluar, con el mismo sistema y el mismo
+		/// instante.
+		/// </summary>
+		public string ReadCoverageStandingForThisVehicle(string systemCode, DateTime asOf)
+		{
+			if (!CanCoverageBeEvaluatedForThisVehicle(systemCode, asOf))
+				throw new InvalidOperationException(
+					"La cobertura de ese sistema no se pudo evaluar para este vehiculo a ese "
+					+ "instante: pregunte CanCoverageBeEvaluatedForThisVehicle con el mismo sistema "
+					+ "y el mismo instante antes. Ninguna de las respuestas posibles significa 'no "
+					+ "se pudo medir', asi que devolver una aca la convertiria en un hecho medido.");
+
+			return AText(@"
+				@standing = specification.ReadCoverageStanding(
+					@systemCode, profile.EnvelopeMonths(), profile.EnvelopeDistance(),
+					profile.EnvelopeUnit(), profile.ReadDeliveredAt(),
+					profile.ReadDeliveryReading(), schedule.ReadOdometer(@asOf),
+					schedule.OdometerUnit(@asOf), @asOf);
+			", "standing", TheSystemAndTheInstant(systemCode, asOf));
+		}
+
+		/// <summary>
+		/// La respuesta de cobertura de ese sistema para ESTE vehiculo, en una frase. Contesta
+		/// siempre que el registro tenga los tres hechos -- tambien lo que no se pudo evaluar, con
+		/// palabras -- y RECHAZA cuando alguno falta, porque la frase que los nombra la compone el
+		/// catalogo del fabricante y el catalogo no sabe que le falta a un vehiculo.
+		/// </summary>
+		public string DescribeCoverageForThisVehicle(string systemCode, DateTime asOf)
+		{
+			TheRecordHasToHoldWhatTheCoverageQuestionNeeds(asOf);
+
+			return AText(@"
+				@clause = specification.DescribeCoverage(
+					@systemCode, profile.EnvelopeMonths(), profile.EnvelopeDistance(),
+					profile.EnvelopeUnit(), profile.ReadDeliveredAt(),
+					profile.ReadDeliveryReading(), schedule.ReadOdometer(@asOf),
+					schedule.OdometerUnit(@asOf), @asOf);
+			", "clause", TheSystemAndTheInstant(systemCode, asOf));
+		}
+
 		public string Apply(IMensajeDeEvento message)
 		{
 			ArgumentNullException.ThrowIfNull(message);
@@ -1797,6 +1926,50 @@ namespace DealershipCar.App
 				$"Este vehiculo no tiene ninguna lectura del odometro observada al {InUtc(asOf):O} "
 				+ "ni antes: pregunte HasAnOdometerReading con ese mismo instante antes. "
 				+ whyAnEmptyAnswerWouldLie);
+		}
+
+		/// <summary>
+		/// Si el registro de este vehiculo tiene los TRES hechos que la pregunta de cobertura
+		/// necesita a ese instante. Las tres presencias se preguntan con el MISMO instante que la
+		/// lectura compuesta va a usar, que es lo que hace que hablen de un solo odometro.
+		/// </summary>
+		private bool TheRecordHoldsWhatTheCoverageQuestionNeeds(DateTime asOf)
+		{
+			return IsWarrantyEnvelopePublished()
+				&& HasDeliveryBeenRecorded()
+				&& HasAnOdometerReading(asOf);
+		}
+
+		/// <summary>
+		/// Que esten los tres antes de componer la frase de cobertura. Se rechaza ACA y no se deja
+		/// reventar al dominio porque la excepcion del dominio es interna y ninguna caratula la
+		/// puede nombrar.
+		/// </summary>
+		private void TheRecordHasToHoldWhatTheCoverageQuestionNeeds(DateTime asOf)
+		{
+			if (TheRecordHoldsWhatTheCoverageQuestionNeeds(asOf)) return;
+
+			throw new InvalidOperationException(
+				"El registro de este vehiculo no tiene los tres hechos que la pregunta de cobertura "
+				+ "necesita a ese instante -- el sobre publicado, la entrega registrada y una lectura "
+				+ "del odometro observada a ese instante o antes: pregunte "
+				+ "IsWarrantyEnvelopePublished, HasDeliveryBeenRecorded y HasAnOdometerReading con "
+				+ "ese mismo instante antes. Componer la frase con un cero o con la lectura de la "
+				+ "entrega diria como medido algo que nadie midio. El alcance publicado lo contesta "
+				+ "DescribeCoverageSummary sin ningun hecho de ningun vehiculo, y cual de los tres "
+				+ "hechos falta lo dice DescribeWarrantyEnvelope con palabras.");
+		}
+
+		/// <summary>
+		/// Los DOS argumentos que las tres lecturas compuestas de cobertura toman, atados una sola
+		/// vez. Los otros siete hechos no vienen de aqui: los saca el script del registro.
+		/// </summary>
+		private static Action<Parameters> TheSystemAndTheInstant(string systemCode, DateTime asOf)
+		{
+			return p => {
+				p["systemCode", typeof(string)]   = TheText(systemCode, nameof(systemCode));
+				p["asOf",       typeof(DateTime)] = InUtc(asOf);
+			};
 		}
 
 		private static DateTime InUtc(DateTime instant)

@@ -346,6 +346,124 @@ namespace DealershipCar.Dominio.Pruebas
 			}
 		}
 
+		// ===== PRUEBA 19 DE §11 DEL BRIEF: LAS LECTURAS COMPUESTAS ========================
+
+		// LAS SEIS COMPUESTAS CONTESTAN LO MISMO EN DOS CORRIDAS DE LA MISMA SECUENCIA. Es la misma
+		// promesa que las de arriba y sobre una superficie mas ancha: cada una junta hechos de DOS o
+		// TRES globales de raiz en un solo script, asi que un valor que se hubiera generado en C# --
+		// un reloj, un default -- saldria justo aca y en ninguna otra parte.
+		[Test]
+		public void TwoRunsOfTheSameStoryAgreeOnEveryComposedAnswer()
+		{
+			using (AScheduleOnARealJournal first = AJournalThatLivedTheWholeStory())
+			using (AScheduleOnARealJournal second = AJournalThatLivedTheWholeStory())
+			{
+				Assert.That(
+					EveryComposedAnswerOf(second), Is.EqualTo(EveryComposedAnswerOf(first)));
+			}
+		}
+
+		// Y REPRODUCIDAS DESDE EL JOURNAL, lo mismo. Los siete hechos que las compuestas usan estan
+		// repartidos entre tres globales de raiz; si alguno viviera en un campo de C# en vez de en el
+		// journal, la primera lectura despues de rehidratar contestaria otra cosa.
+		[Test]
+		public void TheComposedAnswersReplayedFromTheJournalAreExactlyTheSame()
+		{
+			using (AScheduleOnARealJournal journal = AJournalThatLivedTheWholeStory())
+			{
+				string live = EveryComposedAnswerOf(journal);
+
+				journal.CloseAndReopenFromTheJournal();
+
+				Assert.That(EveryComposedAnswerOf(journal), Is.EqualTo(live));
+			}
+		}
+
+		// EL INSTANTE DE UNA LECTURA NO ES MONOTONO, y esto lo mide. Dos preguntas separadas por un
+		// segundo contestan las dos: una consulta no escribe ninguna entrada, asi que no hay nada que
+		// marcar ni nada que proteger, y una guarda de monotonia aqui rechazaria una pregunta
+		// legitima. Es la obligacion CONTRARIA a la del instante de un comando, y las dos salen del
+		// mismo reloj.
+		[Test]
+		public void TwoComposedReadsASecondApartBothAnswer()
+		{
+			using (AScheduleOnARealJournal journal = AJournalThatLivedTheWholeStory())
+			{
+				DateTime asked = TheLastEvaluation.AddDays(10);
+
+				string first = journal.Api.DescribeWarrantyEnvelope(asked);
+
+				Assert.That(first, Is.Not.Empty);
+				Assert.That(journal.Api.DescribeWarrantyEnvelope(asked.AddSeconds(1)), Is.Not.Empty);
+
+				Assert.That(
+					journal.Api.DescribeWarrantyEnvelope(asked), Is.EqualTo(first),
+					"Y OTRA VEZ EL PRIMERO, DESPUES DEL POSTERIOR, Y CONTESTA LO MISMO. Una guarda de "
+					+ "monotonia colada aqui dejaria pasar los dos primeros y rechazaria este; un "
+					+ "punto de control movido por una consulta lo haria contestar otra cosa.");
+
+				Assert.That(
+					journal.Api.DescribeWarrantyEnvelope(asked.AddSeconds(-1)), Is.Not.Empty,
+					"Y un instante ANTERIOR a todos los ya preguntados tambien contesta.");
+			}
+		}
+
+		// Y LAS COMPUESTAS NO ESCRIBEN NINGUNA ENTRADA, medido sobre la narrativa entera. Es lo que
+		// hace comparables a las dos pruebas de arriba: si preguntaran escribiendo, la segunda
+		// corrida partiria de un journal distinto de la primera.
+		[Test]
+		public void AskingEveryComposedQuestionLeavesTheJournalByteIdentical()
+		{
+			using (AScheduleOnARealJournal journal = AJournalThatLivedTheWholeStory())
+			{
+				string before = TheBytesOf(journal.Folder);
+
+				EveryComposedAnswerOf(journal);
+
+				Assert.That(TheBytesOf(journal.Folder), Is.EqualTo(before));
+			}
+		}
+
+		// Las seis compuestas en una sola cadena comparable, con el nombre de cada una al lado de su
+		// respuesta (C60): una lectura que contestara siempre lo mismo dejaria seis renglones
+		// iguales, y una comparacion que solo mirara que la cadena no viene vacia no podria verlo.
+		//
+		// LAS GUARDADAS SE PREGUNTAN DETRAS DE SU PRESENCIA, que es justo lo que una caratula tiene
+		// que hacer: la cadena guarda el rechazo como respuesta en vez de reventar, para que los dos
+		// lados de la comparacion se puedan construir siempre.
+		//
+		// EN ESTA NARRATIVA EL SOBRE ESTA EN UnitB Y LAS LECTURAS EN UnitA, asi que la respuesta del
+		// sobre queda SUSPENDIDA por desajuste de unidades -- y eso es lo que hace fuerte a esta
+		// comparacion en vez de debil: la suspension existe PORQUE el codigo de la unidad cruzo de
+		// una global de raiz a otra como valor tipado. Si dejara de cruzar, las dos unidades
+		// calzarian, la frase traeria un numero y las dos corridas dejarian de coincidir con lo
+		// reproducido.
+		private static string EveryComposedAnswerOf(AScheduleOnARealJournal journal)
+		{
+			DateTime asked = TheLastEvaluation.AddDays(10);
+
+			bool theRecordHasTheThreeFacts = journal.Api.IsWarrantyEnvelopePublished()
+				&& journal.Api.HasDeliveryBeenRecorded()
+				&& journal.Api.HasAnOdometerReading(asked);
+
+			return "canTheEnvelope=" + journal.Api.CanTheEnvelopeBeEvaluated(asked)
+				+ "\nenvelopeStanding="
+				+ (journal.Api.CanTheEnvelopeBeEvaluated(asked)
+					? journal.Api.ReadEnvelopeStanding(asked)
+					: "refused")
+				+ "\nenvelope=" + journal.Api.DescribeWarrantyEnvelope(asked)
+				+ "\ncanCoverage="
+				+ journal.Api.CanCoverageBeEvaluatedForThisVehicle("POWERTRAIN", asked)
+				+ "\ncoverageStanding="
+				+ (journal.Api.CanCoverageBeEvaluatedForThisVehicle("POWERTRAIN", asked)
+					? journal.Api.ReadCoverageStandingForThisVehicle("POWERTRAIN", asked)
+					: "refused")
+				+ "\ncoverage="
+				+ (theRecordHasTheThreeFacts
+					? journal.Api.DescribeCoverageForThisVehicle("POWERTRAIN", asked)
+					: "refused");
+		}
+
 		private static AScheduleOnARealJournal AJournalThatLivedTheWholeStory()
 		{
 			AScheduleOnARealJournal journal = new AScheduleOnARealJournal(TheVin, "Standard");

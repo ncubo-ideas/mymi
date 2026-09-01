@@ -83,6 +83,44 @@ namespace DealershipCar.Dominio.Pruebas
 				+ "porque no hay excepcion ni aviso (SPIKES-OS2 S4).");
 		}
 
+		// Y LA LECTURA COMPUESTA CONVIERTE SU INSTANTE TAMBIEN, con la misma forma que la de arriba:
+		// un instante en hora local nombra el mismo momento que su UTC. Es lo que T7 va a necesitar
+		// -- la consola tiene DateTime.Now a mano, que es Local -- y ademas es la UNICA mitad de la
+		// normalizacion de una lectura que se puede observar: truncar al segundo un instante que ya
+		// viene en segundos enteros no cambia ninguna respuesta, porque se compara siempre contra
+		// otro que paso por el mismo truncado.
+		//
+		// LA LECTURA DEL ODOMETRO ESTA PUESTA DENTRO DE LA VENTANA DEL DESPLAZAMIENTO -- dos horas
+		// despues del valor de reloj -- para que la comparacion discrimine: sin convertir, la
+		// pregunta cae del otro lado de esa lectura y la frase pasa a ser la de "no hay lectura".
+		//
+		// SU LIMITE, DICHO Y NO DISIMULADO: el desplazamiento es el de la maquina que corre la
+		// prueba. En una maquina en UTC no hay ninguno, las dos llamadas son la misma y esta prueba
+		// no mide nada. Es la misma condicion que ALocalInstantNamesTheSameMomentAsItsUtc, que es el
+		// precedente de la casa para el lado de los comandos.
+		[Test]
+		public void AComposedReadTakesALocalInstantAsTheSameMomentAsItsUtc()
+		{
+			journal.Api.PublishWarrantyEnvelope(
+				36, 60000, "UnitB", new DateTime(2023, 11, 15, 0, 0, 0, DateTimeKind.Utc));
+			journal.Api.RecordDelivery(Delivery, OdometerAtDelivery, "UnitB");
+			journal.Api.RecordReading(
+				40000, "UnitB", new DateTime(2026, 1, 20, 10, 0, 0, DateTimeKind.Utc), "Telemetry");
+
+			DateTime local = new DateTime(2026, 1, 20, 8, 0, 0, DateTimeKind.Local);
+
+			Assert.That(
+				journal.Api.DescribeWarrantyEnvelope(local),
+				Is.EqualTo(journal.Api.DescribeWarrantyEnvelope(local.ToUniversalTime())),
+				"El mismo momento, dicho de dos maneras, es una sola respuesta. Sin convertir en la "
+				+ "frontera, la seccion de garantia leeria las 8:00 de una zona como las 8:00 UTC y "
+				+ "preguntaria por un momento distinto del que la persona quiso.");
+
+			Assert.That(
+				journal.Api.CanTheEnvelopeBeEvaluated(local),
+				Is.EqualTo(journal.Api.CanTheEnvelopeBeEvaluated(local.ToUniversalTime())));
+		}
+
 		// La consecuencia de truncar, dicha en voz alta: dos instantes del mismo segundo son EL
 		// MISMO instante para esta app, asi que el segundo se rechaza por la cadencia de C6. Mejor
 		// que se vea aca que en el journal de alguien.

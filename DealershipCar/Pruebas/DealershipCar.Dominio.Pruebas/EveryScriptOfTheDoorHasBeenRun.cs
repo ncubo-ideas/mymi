@@ -15,16 +15,22 @@ namespace DealershipCar.Dominio.Pruebas
 	// aunque el estado siga siendo correcto.
 	//
 	// Asi que ninguna linea de DSL de DealershipCarAPI puede llegar al journal de una persona sin
-	// haberse ejecutado antes aca. Esta prueba corre CADA UNA de las NOVENTA operaciones de
+	// haberse ejecutado antes aca. Esta prueba corre CADA UNA de las NOVENTA Y SEIS operaciones de
 	// la puerta al menos una vez -- las veintiuna de la agenda (OS2/T6), las siete de la ingesta
 	// (OS2/T8: los dos comandos de la bitacora, sus cuatro lecturas, y el Apply), CanBeDeferred, los
 	// once comandos de publicacion de la especificacion (T5), las TREINTA Y SIETE lecturas de la
 	// especificacion (T6, mas las dos mitades publicadas que agrego
 	// PLAN-ModelSpecification-AmendmentMigrations B1 por la ley L7b), los DOS comandos del perfil
-	// del vehiculo (WarrantyEnvelope/T4) y las ONCE lecturas sin componer del perfil y del odometro
-	// (WarrantyEnvelope/T5).
+	// del vehiculo (WarrantyEnvelope/T4), las ONCE lecturas sin componer del perfil y del odometro
+	// (WarrantyEnvelope/T5) y las SEIS COMPUESTAS (WarrantyEnvelope/T6).
 	// No mira reglas de negocio -- de eso se ocupan las otras pruebas del nivel B -- mira que el
 	// script exista, parsee, ate sus parametros y devuelva lo que dijo que devolvia.
+	//
+	// LAS SEIS DE T6 SON EL CASO MAS CARO DE ESTA OBLIGACION Y POR ESO SE DICE APARTE. Tres de
+	// ellas llevan un IF dentro del script, asi que cada una tiene DOS caminos y correrla una vez
+	// deja el otro sin ejecutar; y las tres de cobertura nombran TRES globales de raiz en una sola
+	// llamada, que es la linea de DSL mas larga del modulo. Los dos caminos de cada if se corren
+	// abajo, en dos estados distintos del registro.
 	//
 	// LA CUENTA DE ARRIBA SE RE-DERIVO CONTRA LA PUERTA y no se copio. Decia setenta y siete, que era
 	// cierto antes de T4 y dejo de serlo SIN QUE ESTE FIXTURE SE PUSIERA ROJO, porque la lista de
@@ -94,13 +100,16 @@ namespace DealershipCar.Dominio.Pruebas
 		private static readonly string[] EveryOperationThisFixtureRuns =
 		{
 			"AddOwnerOperation", "AdoptPlanRevision", "Apply", "CanBeDeferred",
-			"CanCoverageBeEvaluated", "CompleteOperation", "CountDue", "CountOverdue",
+			"CanCoverageBeEvaluated", "CanCoverageBeEvaluatedForThisVehicle",
+			"CanTheEnvelopeBeEvaluated", "CompleteOperation", "CountDue", "CountOverdue",
 			"CoverageExclusions", "CoveredSystems", "DeclareUsageProfile", "DeferOperation",
-			"DeferralsUsed", "DescribeCoverage", "DescribeCoverageSummary", "DescribeFluid",
+			"DeferralsUsed", "DescribeCoverage", "DescribeCoverageForThisVehicle",
+			"DescribeCoverageSummary", "DescribeFluid",
 			"DescribeFuel", "DescribePublishedServiceInterval",
 			"DescribePublishedServicingElsewhereRule", "DescribePublishedWarrantyEnvelope",
 			"DescribeServiceInterval", "DescribeServicePrice", "DescribeServicingElsewhereRule",
-			"DescribeTyre", "Evaluate", "HasASealedRevision", "HasAnOdometerReading",
+			"DescribeTyre", "DescribeWarrantyEnvelope",
+			"Evaluate", "HasASealedRevision", "HasAnOdometerReading",
 			"HasAnythingDue", "HasBeenEvaluated", "HasDeliveryBeenRecorded", "IsCoveragePublished",
 			"IsFluidPublished", "IsFuelPublished", "IsServiceIntervalPublished",
 			"IsServicePricePublished", "IsServicingPolicyPublished", "IsTyrePublished",
@@ -109,9 +118,11 @@ namespace DealershipCar.Dominio.Pruebas
 			"PublishCoverageExclusion", "PublishCoveredSystem", "PublishFluidSpecification",
 			"PublishFuelGrade", "PublishServiceInterval", "PublishServicePrice",
 			"PublishServicingPolicy", "PublishTyreSpecification", "PublishWarrantyEnvelope",
-			"ReadCoverageRevision", "ReadCoverageStanding", "ReadCurrentRevisionCode",
+			"ReadCoverageRevision", "ReadCoverageStanding",
+			"ReadCoverageStandingForThisVehicle", "ReadCurrentRevisionCode",
 			"ReadCurrentRevisionPublishedAt", "ReadDeliveredAt", "ReadDeliveryReading",
 			"ReadDeliveryUnit", "ReadDueReason", "ReadDueState", "ReadEnvelopePublishedAt",
+			"ReadEnvelopeStanding",
 			"ReadFluidRevision", "ReadFuelRevision", "ReadMinimumFuelGrade", "ReadModel",
 			"ReadNextDueKind", "ReadOdometer", "ReadOdometerObservedAt", "ReadOdometerUnit",
 			"ReadRevisionState", "ReadServiceIntervalRevision", "ReadServicePriceRevision",
@@ -143,9 +154,9 @@ namespace DealershipCar.Dominio.Pruebas
 		// dejo escrito "setenta y siete" cuando la puerta ya tenia setenta y nueve: una cuenta
 		// afirmada en prosa envejece en silencio, y esta afirmada al lado de lo que cuenta.
 		[Test]
-		public void TheOperationsAreNinety()
+		public void TheOperationsAreNinetySix()
 		{
-			Assert.That(EveryOperationThisFixtureRuns, Has.Length.EqualTo(90));
+			Assert.That(EveryOperationThisFixtureRuns, Has.Length.EqualTo(96));
 		}
 
 		// La semilla corre en OnHydrated, asi que para cuando la prueba arranca la agenda ya
@@ -352,6 +363,93 @@ namespace DealershipCar.Dominio.Pruebas
 			Assert.That(
 				journal.Api.ReadOdometerObservedAt(asked),
 				Is.EqualTo(new DateTime(2026, 1, 20, 0, 0, 0, DateTimeKind.Utc)));
+		}
+
+		// LAS SEIS COMPUESTAS QUE TRAJO T6, LOS DOS CAMINOS DE CADA UNA. Tres de los seis scripts
+		// llevan un if adentro, asi que un solo estado del registro deja la otra rama sin correr --
+		// y una rama de DSL que nunca se ejecuto se descubre igual de tarde que un script entero.
+		//
+		// SE CORREN EN DOS ESTADOS: sin lectura del odometro (rama else de las tres del sobre, y las
+		// tres de cobertura rechazando en la puerta) y con lectura (rama then de las tres del sobre,
+		// y las tres de cobertura llegando al script de tres globales).
+		//
+		// Lo que se afirma es la FORMA. De que la frase compuesta sea la misma que la de nueve
+		// argumentos se ocupa TheDoorComposedTheAnswerInsteadOfInventingIt, y de las polaridades en
+		// los cuatro estados del registro ThreeAbsencesAreThreeDifferentAnswersThroughTheDoor.
+		[Test]
+		public void EveryComposedReadOfTheDoorParsesBindsAndRunsOnBothOfItsPaths()
+		{
+			ASealedSpecSheet();
+
+			journal.Api.PublishWarrantyEnvelope(36, 60000, "UnitA", ThePublication);
+			journal.Api.RecordDelivery(Delivery, OdometerAtDelivery, "UnitA");
+
+			DateTime asked = new DateTime(2026, 2, 1, 0, 0, 0, DateTimeKind.Utc);
+
+			// SIN LECTURA: la rama else de las tres del sobre, y las tres de cobertura rechazadas
+			// antes de performar.
+			Assert.That(journal.Api.HasAnOdometerReading(asked), Is.False);
+
+			Assert.That(journal.Api.CanTheEnvelopeBeEvaluated(asked), Is.False);
+			Assert.Throws<InvalidOperationException>(
+				() => journal.Api.ReadEnvelopeStanding(asked));
+			Assert.That(
+				journal.Api.DescribeWarrantyEnvelope(asked), Does.Contain("no odometer reading"));
+
+			Assert.That(
+				journal.Api.CanCoverageBeEvaluatedForThisVehicle("POWERTRAIN", asked), Is.False);
+			Assert.Throws<InvalidOperationException>(
+				() => journal.Api.ReadCoverageStandingForThisVehicle("POWERTRAIN", asked));
+			Assert.Throws<InvalidOperationException>(
+				() => journal.Api.DescribeCoverageForThisVehicle("POWERTRAIN", asked));
+
+			// CON LECTURA: la rama then de las tres del sobre, y el script de TRES globales de las
+			// tres de cobertura.
+			journal.Api.RecordReading(
+				40000, "UnitA", new DateTime(2026, 1, 20, 0, 0, 0, DateTimeKind.Utc), "Telemetry");
+
+			Assert.That(journal.Api.CanTheEnvelopeBeEvaluated(asked), Is.True);
+			Assert.That(journal.Api.ReadEnvelopeStanding(asked), Is.EqualTo("Inside"));
+			Assert.That(
+				journal.Api.DescribeWarrantyEnvelope(asked), Does.Contain("40000 km"));
+
+			Assert.That(
+				journal.Api.CanCoverageBeEvaluatedForThisVehicle("POWERTRAIN", asked), Is.True);
+			Assert.That(
+				journal.Api.ReadCoverageStandingForThisVehicle("POWERTRAIN", asked),
+				Is.EqualTo("CoveredWithExclusion"));
+			Assert.That(
+				journal.Api.DescribeCoverageForThisVehicle("POWERTRAIN", asked),
+				Does.Contain("wear parts"));
+		}
+
+		// Y NINGUNA DE LAS SEIS ESCRIBE UNA ENTRADA. Mismo defecto de una sola letra que la de las
+		// lecturas de la especificacion, y aca importa mas: tres de las seis las va a llamar la
+		// pantalla en cada apertura de la app.
+		[Test]
+		public void NoComposedReadOfTheDoorWritesAnEntry()
+		{
+			journal.Api.PublishWarrantyEnvelope(36, 60000, "UnitA", ThePublication);
+			journal.Api.RecordDelivery(Delivery, OdometerAtDelivery, "UnitA");
+			journal.Api.RecordReading(
+				40000, "UnitA", new DateTime(2026, 1, 20, 0, 0, 0, DateTimeKind.Utc), "Telemetry");
+			ASealedSpecSheet();
+
+			DateTime asked = new DateTime(2026, 2, 1, 0, 0, 0, DateTimeKind.Utc);
+
+			string before = TheBytesOf(journal.Folder);
+
+			journal.Api.CanTheEnvelopeBeEvaluated(asked);
+			journal.Api.ReadEnvelopeStanding(asked);
+			journal.Api.DescribeWarrantyEnvelope(asked);
+			journal.Api.CanCoverageBeEvaluatedForThisVehicle("POWERTRAIN", asked);
+			journal.Api.ReadCoverageStandingForThisVehicle("POWERTRAIN", asked);
+			journal.Api.DescribeCoverageForThisVehicle("POWERTRAIN", asked);
+
+			Assert.That(TheBytesOf(journal.Folder), Is.EqualTo(before),
+				"El journal quedo byte a byte como estaba. Una lectura que escribe le agrega una "
+				+ "entrada al journal de la persona cada vez que abre la app, para siempre, y el "
+				+ "estado sigue siendo correcto -- asi que ninguna otra prueba se pondria roja.");
 		}
 
 		// LOS NUEVE SCRIPTS DE LA BITACORA: dos comandos y siete lecturas. Son siete y no cuatro

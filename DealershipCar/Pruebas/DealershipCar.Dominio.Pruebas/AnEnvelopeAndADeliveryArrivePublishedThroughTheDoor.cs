@@ -3,10 +3,8 @@ using System.Collections.Generic;
 using System.IO;
 using System.Security.Cryptography;
 using System.Text;
-using Choreography.Theater;
 using DealershipCar.App;
 using NUnit.Framework;
-using Puppeteer;
 
 namespace DealershipCar.Dominio.Pruebas
 {
@@ -24,16 +22,16 @@ namespace DealershipCar.Dominio.Pruebas
 	// que una ranura que el motor hubiera dejado por defecto daria la MISMA respuesta y la prueba
 	// estaria verde sin haber medido nada. El caso UnitA vive aparte, como espejo.
 	//
-	// ESTE FIXTURE ABRE SU PROPIA APP y no usa AScheduleOnARealJournal, por una razon y no por
-	// gusto. T5 le puso a la puerta las once lecturas sin componer, asi que casi todo lo de abajo se
-	// lee ya por la puerta; lo que sigue sin tener miembro es la RESPUESTA COMPUESTA -- esa es de T6
-	// -- y observarla necesita un script crudo contra el actor, que el aparejo del nivel B no
-	// entrega. Ver AProfileReadWithoutTheDoor, que se quedo en dos miembros por esto mismo.
+	// DESDE T6 TODO LO DE ABAJO SE LEE POR LA PUERTA, y el aparejo pasa a ser el compartido. T4 y T5
+	// abrian su propia app aqui porque la RESPUESTA COMPUESTA no tenia miembro en la puerta y
+	// observarla necesitaba un script crudo contra el actor. T6 le puso el miembro; el script crudo
+	// se fue con el, y con el la unica razon que este fixture tenia para no usar
+	// AScheduleOnARealJournal. Ver AProfileReadWithoutTheDoor, que se quedo en UN miembro por esto
+	// mismo.
 	[TestFixture]
 	public sealed class AnEnvelopeAndADeliveryArrivePublishedThroughTheDoor
 	{
 		private const string TheVin = "1HGCM82633A004352";
-		private const string TheModel = "SM-SEDAN-2025";
 
 		private const int ThirtySixMonths = 36;
 		private const int SixtyThousand = 60000;
@@ -50,37 +48,20 @@ namespace DealershipCar.Dominio.Pruebas
 		private static readonly DateTime TwoYearsLater =
 			new DateTime(2026, 1, 1, 0, 0, 0, DateTimeKind.Utc);
 
-		private string folder;
-		private DealershipCarApp app;
+		private AScheduleOnARealJournal journal;
 		private DealershipCarAPI door;
 
 		[SetUp]
 		public void Setup()
 		{
-			folder = Path.Combine(
-				AScheduleOnARealJournal.TheRootOfEveryTemporaryJournal,
-				Guid.NewGuid().ToString("N"));
-
-			Directory.CreateDirectory(folder);
-
-			Open();
+			journal = new AScheduleOnARealJournal(TheVin, "Standard");
+			door = journal.Api;
 		}
 
 		[TearDown]
 		public void TearDown()
 		{
-			Close();
-
-			try
-			{
-				if (Directory.Exists(folder)) Directory.Delete(folder, true);
-			}
-			catch (IOException)
-			{
-			}
-			catch (UnauthorizedAccessException)
-			{
-			}
+			journal.Dispose();
 		}
 
 		// ===== LOS DOS COMANDOS ENTRAN Y EL PERFIL LOS CONTESTA ============================
@@ -129,22 +110,25 @@ namespace DealershipCar.Dominio.Pruebas
 		//
 		// SE COMPARAN LAS TRES ENTRE SI y no solo se comprueba que ninguna venga vacia (C60): una
 		// lectura que contestara siempre lo mismo pasaria un Is.Not.Empty tres veces.
+		//
+		// SE LEE POR LA PUERTA DESDE T6. T4 y T5 la leian con un script crudo contra el actor, porque
+		// la respuesta compuesta no tenia miembro en la puerta. Ahora lo tiene, y como este vehiculo
+		// no tiene ninguna lectura del odometro, DescribeWarrantyEnvelope contesta con esta misma
+		// frase: es la rama que su script elige cuando no hay lectura. Dejar el script crudo al lado
+		// de una lectura de la puerta que contesta lo mismo seria una segunda superficie de lectura.
 		[Test]
 		public void TheComposedAnswerMovesWithEachOfTheTwoCommands()
 		{
-			string toldNothing =
-				AProfileReadWithoutTheDoor.DescribeWarrantyEnvelopeWithNoOdometer(app, TwoYearsLater);
+			string toldNothing = door.DescribeWarrantyEnvelope(TwoYearsLater);
 
 			door.PublishWarrantyEnvelope(
 				ThirtySixMonths, SixtyThousand, TheUnitTheLimitIsIn, TheDayItWasPublished);
 
-			string withTheEnvelope =
-				AProfileReadWithoutTheDoor.DescribeWarrantyEnvelopeWithNoOdometer(app, TwoYearsLater);
+			string withTheEnvelope = door.DescribeWarrantyEnvelope(TwoYearsLater);
 
 			door.RecordDelivery(TheDayItWasHandedOver, TheOdometerAtDelivery, TheUnitTheLimitIsIn);
 
-			string withBoth =
-				AProfileReadWithoutTheDoor.DescribeWarrantyEnvelopeWithNoOdometer(app, TwoYearsLater);
+			string withBoth = door.DescribeWarrantyEnvelope(TwoYearsLater);
 
 			Assert.That(toldNothing, Does.Contain("not published"));
 
@@ -175,8 +159,8 @@ namespace DealershipCar.Dominio.Pruebas
 
 			string live = Everything();
 
-			Close();
-			Open();
+			journal.CloseAndReopenFromTheJournal();
+			door = journal.Api;
 
 			Assert.That(Everything(), Is.EqualTo(live),
 				"Lo mismo, palabra por palabra y numero por numero. Lo que se reproduce sale del "
@@ -256,7 +240,7 @@ namespace DealershipCar.Dominio.Pruebas
 		[Test]
 		public void AnEnvelopeMissingOneOfItsHalvesIsRefusedAtTheDoorAndCostsNoEntry()
 		{
-			string before = TheBytesOf(folder);
+			string before = TheBytesOf(journal.Folder);
 
 			Assert.Throws<ArgumentOutOfRangeException>(
 				() => door.PublishWarrantyEnvelope(
@@ -270,7 +254,7 @@ namespace DealershipCar.Dominio.Pruebas
 				() => door.PublishWarrantyEnvelope(
 					-1, SixtyThousand, TheUnitTheLimitIsIn, TheDayItWasPublished));
 
-			Assert.That(TheBytesOf(folder), Is.EqualTo(before),
+			Assert.That(TheBytesOf(journal.Folder), Is.EqualTo(before),
 				"BYTE POR BYTE IGUAL, que es lo unico que este renglon afirma: el rechazo ocurrio "
 				+ "antes de performar. Si la guarda estuviera solo en el dominio, la entrada del "
 				+ "comando ya estaria escrita y el journal habria crecido tres veces.");
@@ -282,12 +266,12 @@ namespace DealershipCar.Dominio.Pruebas
 		[Test]
 		public void ANegativeOdometerAtDeliveryIsRefusedAtTheDoorAndCostsNoEntry()
 		{
-			string before = TheBytesOf(folder);
+			string before = TheBytesOf(journal.Folder);
 
 			Assert.Throws<ArgumentOutOfRangeException>(
 				() => door.RecordDelivery(TheDayItWasHandedOver, -1, TheUnitTheLimitIsIn));
 
-			Assert.That(TheBytesOf(folder), Is.EqualTo(before));
+			Assert.That(TheBytesOf(journal.Folder), Is.EqualTo(before));
 			Assert.That(door.HasDeliveryBeenRecorded(), Is.False);
 		}
 
@@ -308,7 +292,7 @@ namespace DealershipCar.Dominio.Pruebas
 		[Test]
 		public void AUnitThatNamesNoMemberIsRefusedAtTheDoorOnBothCommands()
 		{
-			string before = TheBytesOf(folder);
+			string before = TheBytesOf(journal.Folder);
 
 			Assert.Throws<ArgumentException>(
 				() => door.PublishWarrantyEnvelope(
@@ -317,7 +301,7 @@ namespace DealershipCar.Dominio.Pruebas
 			Assert.Throws<ArgumentException>(
 				() => door.RecordDelivery(TheDayItWasHandedOver, TheOdometerAtDelivery, "  "));
 
-			Assert.That(TheBytesOf(folder), Is.EqualTo(before));
+			Assert.That(TheBytesOf(journal.Folder), Is.EqualTo(before));
 		}
 
 		// Todo lo que el perfil puede contestar hoy, en una sola cadena comparable. Es lo que la
@@ -332,27 +316,7 @@ namespace DealershipCar.Dominio.Pruebas
 				+ " deliveredAt=" + door.ReadDeliveredAt().ToString("O")
 				+ " reading=" + door.ReadDeliveryReading()
 				+ " unit=" + door.ReadDeliveryUnit()
-				+ "\nstanding="
-				+ AProfileReadWithoutTheDoor.DescribeWarrantyEnvelopeWithNoOdometer(
-					app, TwoYearsLater);
-		}
-
-		private void Open()
-		{
-			app = new DealershipCarApp(TheVin, "Standard", TheModel);
-			app.ConfigureStorage(DatabaseType.FileSystem, "path=" + folder);
-			app.Start();
-
-			door = new DealershipCarAPI(app);
-		}
-
-		private void Close()
-		{
-			if (app == null) return;
-
-			app.Dispose();
-			app = null;
-			door = null;
+				+ "\nstanding=" + door.DescribeWarrantyEnvelope(TwoYearsLater);
 		}
 
 		// El journal como bytes, para las pruebas que afirman que un rechazo no escribio nada. Es la
