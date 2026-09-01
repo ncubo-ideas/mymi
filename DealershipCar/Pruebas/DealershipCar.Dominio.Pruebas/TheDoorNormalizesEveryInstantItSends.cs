@@ -84,8 +84,10 @@ namespace DealershipCar.Dominio.Pruebas
 		}
 
 		// Y LA LECTURA COMPUESTA CONVIERTE SU INSTANTE TAMBIEN, con la misma forma que la de arriba:
-		// un instante en hora local nombra el mismo momento que su UTC. Es lo que T7 va a necesitar
-		// -- la consola tiene DateTime.Now a mano, que es Local -- y ademas es la UNICA mitad de la
+		// un instante en hora local nombra el mismo momento que su UTC. Es lo que van a necesitar el
+		// navegador y el asistente, que SI leen un reloj y lo leen en Local (T8, T10). NO la consola:
+		// T7 llego y no lee ninguno -- sus instantes son constantes escritas en UTC, que es la
+		// tercera forma del instante recibido. Es ademas la UNICA mitad de la
 		// normalizacion de una lectura que se puede observar: truncar al segundo un instante que ya
 		// viene en segundos enteros no cambia ninguna respuesta, porque se compara siempre contra
 		// otro que paso por el mismo truncado.
@@ -138,9 +140,10 @@ namespace DealershipCar.Dominio.Pruebas
 				+ "dejarlos pasar journalizaria dos evaluaciones del mismo instante.");
 		}
 
-		// Un instante en hora local nombra el mismo momento que su UTC. La caratula de consola
-		// (T7) va a tener DateTime.Now a mano, que es Local: si la frontera no convirtiera, la
-		// agenda leeria las 14:00 de Costa Rica como las 14:00 UTC y todo se correria seis horas.
+		// Un instante en hora local nombra el mismo momento que su UTC. El navegador y el asistente
+		// tienen DateTime.Now a mano, que es Local: si la frontera no convirtiera, la agenda leeria
+		// las 14:00 de Costa Rica como las 14:00 UTC y todo se correria seis horas. La consola de T7
+		// NO es uno de esos casos y por eso no aparece nombrada aca: no lee ningun reloj.
 		[Test]
 		public void ALocalInstantNamesTheSameMomentAsItsUtc()
 		{
