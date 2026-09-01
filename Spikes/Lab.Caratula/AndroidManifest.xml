@@ -1,0 +1,58 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    package="com.ncubo.lab.caratula">
+
+    <uses-sdk android:minSdkVersion="36" android:targetSdkVersion="36" />
+
+    <!-- Sin esto, bindService a Gnothi devuelve false EN SILENCIO. Package visibility de
+         Android 11+, y ya nos costo una hora. -->
+    <queries>
+        <package android:name="com.ncubo.gnothi.host" />
+    </queries>
+
+    <application android:label="Gnothi Caratula" android:allowBackup="false">
+
+        <uses-library android:name="com.android.extensions.appfunctions" android:required="false" />
+
+        <!-- FORMATO v2. El primer intento copiaba el de Samsung Reminder, que es el v1:
+             una sola property "android.app.appfunctions" y sin descripcion de ningun tipo.
+             El v2 se leyo del APK de la app de Google, que lo trae en produccion:
+             assets/app_functions_schema.xsd + assets/robinkit_app_function_service.xml.
+
+             Lo que el v1 NO tenia y esto si:
+               - <description> por funcion: el texto que un modelo lee para elegir
+               - app_metadata a nivel <application>: que hace la app entera, con patrones
+                 de uso y restricciones -->
+        <property
+            android:name="android.app.appfunctions.app_metadata"
+            android:resource="@xml/app_metadata" />
+
+        <service
+            android:name=".LabFunctionsService"
+            android:exported="true"
+            android:permission="android.permission.BIND_APP_FUNCTION_SERVICE">
+
+            <property
+                android:name="android.app.appfunctions.schema"
+                android:value="app_functions_schema.xsd" />
+            <property
+                android:name="android.app.appfunctions.v2"
+                android:value="gnothi_app_function_service.xml" />
+
+            <intent-filter>
+                <action android:name="android.app.appfunctions.AppFunctionService" />
+            </intent-filter>
+            <intent-filter>
+                <action android:name="android.app.appsearch.functions.AppFunctionService" />
+            </intent-filter>
+        </service>
+
+        <activity android:name=".SelfTestActivity" android:exported="true">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity>
+
+    </application>
+</manifest>
