@@ -92,24 +92,31 @@ igual pero **sin módulos**, y la sonda no puede correr los pasos 1-5 — que so
 > contenedor de iOS lleva un GUID que cambia en cada instalación, así que **no existe** una
 > ruta que se pueda dejar escrita de antemano. En el log vas a ver `localizar: facturas -> ...`.
 
-### 2b · El App Group — sin esto Siri no ve nada
+### 2b · El App Group — y por qué en el simulador no hay que hacer nada
 
 Las dos apps de iOS se pasan los datos por un **contenedor compartido**: el Host deja una foto
-y la carátula de Swift la lee. Hay que habilitarlo en el portal de Apple **para los dos app
-IDs**:
+y la carátula de Swift la lee. El grupo es `group.com.ncubo.gnothi` y **los dos
+`.entitlements` ya están en el repo.**
 
-```
-group.com.ncubo.gnothi
+**En el simulador, con eso alcanza.** El simulador no valida los entitlements contra un perfil
+de aprovisionamiento: toma el grupo del archivo y crea la carpeta. Nada que configurar, nada que
+habilitar. **Probá ahí primero.**
 
-  com.ncubo.gnothi.host         ← esta app (Gnothi.iOS)
-  com.ncubo.gnothi.spike-siri   ← la del spike (Lab.Siri)
-```
+Lo único que importa: **las dos apps en el MISMO simulador.** La de Swift desde Xcode; ésta con
+el `dotnet build -t:Run` de abajo, que por omisión también va al simulador.
 
-Los dos `.entitlements` ya están en el repo. Con firma automática Xcode suele resolverlo solo
-la primera vez que compila con el entitlement puesto.
+**En un iPhone de verdad es otra historia**, y hay que saberla antes de intentarlo:
+
+- El App Group hay que habilitarlo en el portal de Apple para **los dos** app IDs
+  (`com.ncubo.gnothi.host` y `com.ncubo.gnothi.spike-siri`), y el perfil lo tiene que traer.
+- **App Groups es una capability del programa PAGO.** Con una cuenta gratis se firma para el
+  propio aparato por 7 días, pero App Groups no está disponible. Eso se iba a chocar igual
+  para cualquier demo en un aparato real; no es un costo de este mecanismo en particular.
 
 > **Si falta, `GetContainerUrl` devuelve `null` EN SILENCIO.** Por eso el `ViewController` lo
-> escribe en el log al arrancar: buscá `contenedor compartido:` o el mensaje de que no hay.
+> escribe en el log al arrancar: buscá `contenedor compartido:` o el mensaje de que no hay. Y
+> el atajo distingue los dos casos: «no hay contenedor» es esto; «no hay foto todavía» es que
+> falta abrir el Host una vez.
 
 ### 3 · Compilar y correr
 
