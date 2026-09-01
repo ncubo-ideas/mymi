@@ -23,9 +23,21 @@ struct ProbarDesdeNetIntent: AppIntent {
     static let openAppWhenRun = false
 
     func perform() async throws -> some IntentResult & ProvidesDialog & ReturnsValue<String> {
+        // LO QUE 6b PRUEBA, Y ES MAS QUE "HOLA": que la intent de Swift LEE lo que el C# de la
+        // MISMA app escribio al arrancar. Ese es exactamente el camino que Gnothi.iOS usaria
+        // -- el Host deja la foto, la intent la lee -- pero sin App Group, porque ya no son dos
+        // apps: es un archivo en la carpeta propia.
+        //
+        // Si esto sale con el texto del C#, el puente .NET -> Swift dentro de UNA app esta
+        // probado, y lo que queda para Gnothi es cambiar "desde-net.txt" por la foto.
+        let carpeta = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask)[0]
+        let archivo = carpeta.appendingPathComponent("desde-net.txt")
+        let desdeNet = (try? String(contentsOf: archivo, encoding: .utf8))
+            ?? "(NO encontre desde-net.txt en \(carpeta.path): el C# no lo escribio, o Swift busca en otra carpeta)"
+
         // Un texto que no se puede confundir con nada del sistema, para que si Siri lo dice no
         // haya duda de que salio de aca.
-        let dicho = "Hola desde Swift, adentro de una app de .NET. La metadata entro."
+        let dicho = "Hola desde Swift, adentro de una app de .NET. La metadata entro. Y el C# me dejo escrito: \(desdeNet)"
         return .result(value: dicho, dialog: IntentDialog(stringLiteral: dicho))
     }
 }

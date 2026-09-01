@@ -165,14 +165,22 @@ cat <<'EOF'
               modulo o del tipo no coincide con lo que quedo en el binario.
 
   b) Si aparece: agregarla a un atajo y CORRERLA.
-     ¿Sale «Hola desde Swift, adentro de una app de .NET. La metadata entro.»?
+     ¿Sale «Hola desde Swift, adentro de una app de .NET. La metadata entro.
+     Y el C# me dejo escrito: escrito por C# el <fecha>, proceso <n>»?
 
-        SI  → el runtime resolvio el tipo Swift dentro del Mach-O de .NET.
-              UNA SOLA APP EN iOS ES POSIBLE, con Mono y carga dinamica.
+        SI, con la fecha  → el runtime resolvio el tipo Swift dentro del
+              Mach-O de .NET, Y la intent leyo un archivo que el C# de la
+              misma app escribio. UNA SOLA APP EN iOS ES POSIBLE, con Mono
+              y carga dinamica, y el camino .NET -> Swift esta probado: para
+              Gnothi solo cambia "desde-net.txt" por la foto de Instantanea.
+        SI, pero dice «NO encontre desde-net.txt»  → la intent corre pero
+              no ve la carpeta del C#. Reportar la ruta que imprime: dice
+              donde busco Swift, y el log GNOTHI: dice donde escribio C#.
         NO  → Atajos la ve pero no la puede instanciar. Es la incognita que
               quedaba: si el runtime busca el tipo solo en el ejecutable
               principal (que aca ES donde esta, por el enlace estatico) o
               en otro lado. Reportar el error exacto que muestre Atajos.
 
-  Reportar: el veredicto del paso 3, el del 4, y los dos SI/NO de aca.
+  Reportar: el veredicto del paso 3, el del 4, y los dos SI/NO de aca --
+  para 6b, el texto COMPLETO que dijo.
 EOF
