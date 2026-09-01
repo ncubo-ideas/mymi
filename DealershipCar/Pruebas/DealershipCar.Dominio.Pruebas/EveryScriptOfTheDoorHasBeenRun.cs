@@ -14,16 +14,23 @@ namespace DealershipCar.Dominio.Pruebas
 	// aunque el estado siga siendo correcto.
 	//
 	// Asi que ninguna linea de DSL de DealershipCarAPI puede llegar al journal de una persona sin
-	// haberse ejecutado antes aca. Esta prueba corre CADA UNA de las SETENTA Y SIETE operaciones de
+	// haberse ejecutado antes aca. Esta prueba corre CADA UNA de las SETENTA Y NUEVE operaciones de
 	// la puerta al menos una vez -- las veintiuna de la agenda (OS2/T6), las siete de la ingesta
 	// (OS2/T8: los dos comandos de la bitacora, sus cuatro lecturas, y el Apply), CanBeDeferred, los
-	// once comandos de publicacion de la especificacion (T5), y las TREINTA Y SIETE lecturas de la
+	// once comandos de publicacion de la especificacion (T5), las TREINTA Y SIETE lecturas de la
 	// especificacion (T6, mas las dos mitades publicadas que agrego
-	// PLAN-ModelSpecification-AmendmentMigrations B1 por la ley L7b).
+	// PLAN-ModelSpecification-AmendmentMigrations B1 por la ley L7b), y los DOS comandos del perfil
+	// del vehiculo (WarrantyEnvelope/T4).
 	// No mira reglas de negocio -- de eso se ocupan las otras pruebas del nivel B -- mira que el
 	// script exista, parsee, ate sus parametros y devuelva lo que dijo que devolvia.
 	//
-	// LAS OPERACIONES SON SETENTA Y SIETE Y LOS SCRIPTS SON MAS, y T9 es donde la diferencia se
+	// LA CUENTA DE ARRIBA SE RE-DERIVO CONTRA LA PUERTA y no se copio: decia setenta y siete, que
+	// era cierto antes de T4 y dejo de serlo sin que este fixture se pusiera rojo, porque la lista de
+	// llamadas esta escrita a mano. Es C57 -- una lista de permitidos que crece en silencio -- y el
+	// cruce que lo arreglaria de raiz (contar los miembros void de la puerta por reflexion y exigir
+	// que cada uno se corra aca) sigue sin escribirse.
+	//
+	// LAS OPERACIONES SON SETENTA Y NUEVE Y LOS SCRIPTS SON MAS, y T9 es donde la diferencia se
 	// vuelve grande: Apply es UNA operacion de la puerta y tiene DIECISIETE scripts detras -- uno
 	// por cada tipo de hecho recibido, mas el comando suelto que avanza el punto de control cuando
 	// el dominio rechaza el hecho. T9 sumo once de esos diecisiete y no sumo ninguna operacion.
@@ -191,6 +198,40 @@ namespace DealershipCar.Dominio.Pruebas
 			journal.Api.SealRevision("R2");
 
 			journal.Api.SupersedeRevision("R1", "R2");
+		}
+
+		// LOS DOS SCRIPTS DEL PERFIL QUE TRAJO T4, y estan aca por lo que este fixture defiende y no
+		// por simetria: cada uno es una linea de DSL que ninguna prueba del nivel A puede ejecutar, y
+		// S5 midio que un tipeo en una de ellas se descubre en el journal de una persona.
+		//
+		// ESTE FIXTURE ESTABA CORTO Y T4 LO DESTAPO. La lista de llamadas esta escrita a mano, asi
+		// que dos comandos nuevos en la puerta no lo ponen rojo: se queda verde afirmando de una
+		// puerta mas chica que la que hay. Es C57 exactamente -- una lista de permitidos que crece en
+		// silencio -- y el arreglo estructural (cruzar lo que este fixture corre contra los miembros
+		// void de la puerta, por reflexion) no cabe en T4. Lo que si cabe es no dejar los dos scripts
+		// de T4 sin correr, que es lo que este metodo hace.
+		//
+		// SOLO SE AFIRMA LA FORMA. Que el script parsee, ate sus parametros y no sea rechazado; que
+		// los dos hechos se puedan volver a leer es de
+		// AnEnvelopeAndADeliveryArrivePublishedThroughTheDoor, porque T4 no le agrega a la puerta
+		// ninguna lectura del perfil con que mirarlos desde aca.
+		[Test]
+		public void BothProfileCommandsOfTheDoorParseBindAndRun()
+		{
+			Assert.DoesNotThrow(() => journal.Api.PublishWarrantyEnvelope(
+				36, 60000, "UnitB", ThePublication));
+
+			Assert.DoesNotThrow(() => journal.Api.RecordDelivery(
+				Delivery, OdometerAtDelivery, "UnitB"));
+
+			// Y OTRA VEZ, que es el camino que ninguna primera llamada toca: el sobre re-publicado
+			// pasa por la comparacion de instantes y la entrega re-registrada por el reemplazo
+			// entero. Los dos son scripts ya corridos, pero cuerpos del dominio que no.
+			Assert.DoesNotThrow(() => journal.Api.PublishWarrantyEnvelope(
+				24, 40000, "UnitB", ThePublication.AddMonths(6)));
+
+			Assert.DoesNotThrow(() => journal.Api.RecordDelivery(
+				Delivery.AddDays(30), OdometerAtDelivery + 100, "UnitB"));
 		}
 
 		// LOS NUEVE SCRIPTS DE LA BITACORA: dos comandos y siete lecturas. Son siete y no cuatro

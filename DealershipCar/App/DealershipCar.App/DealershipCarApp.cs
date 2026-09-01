@@ -5,8 +5,8 @@ using DealershipCar.Dominio;
 namespace DealershipCar.App
 {
 	/// <summary>
-	/// El host de escritura de un vehiculo: un actor por Vin, con su journal, y las tres globales
-	/// de raiz que la app necesita. Cada una llega bajo su propio nombre de upgrade, y los tres
+	/// El host de escritura de un vehiculo: un actor por Vin, con su journal, y las cuatro globales
+	/// de raiz que la app necesita. Cada una llega bajo su propio nombre de upgrade, y los cuatro
 	/// viajan en un solo comando porque cada comando deja una entrada en CADA apertura.
 	/// </summary>
 	public sealed class DealershipCarApp : PerformanceV2
@@ -60,6 +60,9 @@ namespace DealershipCar.App
 				}
 				upgrade('especificacion-del-modelo') {
 					specification = ModelSpecification(@model);
+				}
+				upgrade('perfil-del-vehiculo') {
+					profile = VehicleProfile(@vin);
 				}
 			")
 			.WithParameters(p => {

@@ -319,6 +319,25 @@ namespace DealershipCar.Dominio.Pruebas
 					+ "reinterpretar una entrada ya escrita.");
 				Assert.That(program, Does.Not.Contain("FluidChange,"),
 					"Y no aparece suelto en el texto de ninguna sentencia: eso seria interpolacion.");
+				Assert.That(
+					program,
+					Does.Contain(
+						"profile.PublishWarrantyEnvelope(months, distance, unit, publishedAt)"),
+					"El sobre tambien quedo como sentencia con PARAMETROS FORMALES: los dos limites "
+					+ "son datos y no texto de la sentencia.");
+				Assert.That(
+					program,
+					Does.Contain("profile.RecordDelivery(deliveredAt, reading, unit)"),
+					"Y la entrega igual.");
+				Assert.That(program, Does.Contain("36,60000,'UnitB'"),
+					"Los dos limites viajan APARTE, como argumentos, y la unidad del sobre cruza como "
+					+ "NOMBRE. Va en UnitB a proposito: UnitA es el primer miembro del enum, asi que "
+					+ "un codigo que no cruzara daria el mismo texto que uno que si.");
+				Assert.That(program, Does.Not.Contain("PublishWarrantyEnvelope(36"),
+					"Y ningun limite aparece dentro del texto de la sentencia: eso seria "
+					+ "interpolacion, y renumerar o reformatear el valor reinterpretaria una entrada "
+					+ "ya escrita.");
+
 				Assert.That(program, Does.Contain("'Telemetry'"),
 					"La PROCEDENCIA de cada lectura tambien queda escrita. Ninguna ley de este "
 					+ "slice la consulta -- la confianza por procedencia es de OINV-54 y vive en "
@@ -367,6 +386,18 @@ namespace DealershipCar.Dominio.Pruebas
 			journal.Api.AdoptPlanRevision(
 				"R2", new DateTime(2026, 2, 20, 0, 0, 0, DateTimeKind.Utc));
 			journal.Api.Evaluate(TheLastEvaluation);
+
+			// LOS DOS COMANDOS DEL PERFIL, que T4 agrego. Entran a la narrativa por lo que este
+			// fixture defiende: que dos corridas de la MISMA secuencia escriban el MISMO programa, y
+			// que ningun valor viaje interpolado en el texto de una sentencia.
+			//
+			// EN UnitB Y NO EN UnitA (C60), aunque toda la agenda de arriba este en UnitA: UnitA es el
+			// primer miembro del enum, y un codigo que no cruzara -- o que cruzara como cero -- daria
+			// el mismo texto. Con UnitB, el programa dice 'UnitB' o el renglon de abajo se pone rojo.
+			journal.Api.PublishWarrantyEnvelope(
+				36, 60000, "UnitB", new DateTime(2023, 11, 15, 0, 0, 0, DateTimeKind.Utc));
+
+			journal.Api.RecordDelivery(Delivery, OdometerAtDelivery, "UnitB");
 
 			return journal;
 		}

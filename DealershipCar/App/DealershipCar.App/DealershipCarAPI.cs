@@ -406,6 +406,46 @@ namespace DealershipCar.App
 			.PerformCommand();
 		}
 
+		/// <summary>
+		/// Registra la entrega de ESTE vehiculo: cuando se entrego, en que odometro estaba ese dia y
+		/// en que unidad se leyo. Es el ancla desde donde se miden las dos mitades del sobre.
+		/// Registrarla de nuevo la CORRIGE -- gana la ultima -- porque es un hecho historico y no una
+		/// regla con vigencia.
+		/// </summary>
+		public void RecordDelivery(DateTime deliveredAt, int reading, string unit)
+		{
+			TheOdometerAtDeliveryIsNotNegative(reading);
+
+			app.Using("profile.RecordDelivery(@deliveredAt, @reading, @unit);")
+			.WithParameters(p => {
+				p["deliveredAt", typeof(DateTime)] = InUtc(deliveredAt);
+				p["reading",     typeof(int)]      = reading;
+				p["unit",        typeof(Enum)]     = WireName.DistanceUnit(unit, nameof(unit));
+			})
+			.PerformCommand();
+		}
+
+		/// <summary>
+		/// Publica el sobre de garantia de ESTE vehiculo: su plazo en meses, su distancia con la
+		/// unidad en que se midio, y cuando la agencia lo publico. Rige desde su instante de
+		/// publicacion hacia adelante, asi que uno fechado antes del que rige no lo desplaza y
+		/// tampoco se rechaza.
+		/// </summary>
+		public void PublishWarrantyEnvelope(
+			int months, int distance, string unit, DateTime publishedAt)
+		{
+			TheEnvelopeCarriesBothOfItsHalves(months, distance);
+
+			app.Using("profile.PublishWarrantyEnvelope(@months, @distance, @unit, @publishedAt);")
+			.WithParameters(p => {
+				p["months",      typeof(int)]      = months;
+				p["distance",    typeof(int)]      = distance;
+				p["unit",        typeof(Enum)]     = WireName.DistanceUnit(unit, nameof(unit));
+				p["publishedAt", typeof(DateTime)] = InUtc(publishedAt);
+			})
+			.PerformCommand();
+		}
+
 		public EvaluationOutcome Evaluate(DateTime asOf)
 		{
 			using (RentedParameter rented = app.Actor.RentedParameters())
@@ -1551,6 +1591,39 @@ namespace DealershipCar.App
 					typeof(IntervalBasisCode), WireName.IntervalBasis(basis)),
 				timeLimitDays,
 				distanceLimit);
+		}
+
+		/// <summary>
+		/// Que el sobre traiga sus DOS mitades. El dominio lo exige tambien, y esto no lo reemplaza:
+		/// se exige aca ADEMAS porque para cuando la guarda del dominio corre, la entrada del comando
+		/// ya se escribio, y el rechazo queda en el journal de la persona haciendo loguear un fallo
+		/// de rehidratacion en cada arranque futuro. Aca no cuesta ninguna entrada.
+		/// </summary>
+		private static void TheEnvelopeCarriesBothOfItsHalves(int months, int distance)
+		{
+			if (months > 0 && distance > 0) return;
+
+			throw new ArgumentOutOfRangeException(
+				months <= 0 ? nameof(months) : nameof(distance),
+				$"Se quiso publicar un sobre de {months} meses y {distance} de distancia. El sobre de "
+				+ "un vehiculo lleva sus dos mitades siempre: una en cero se leeria como un limite ya "
+				+ "cumplido el mismo dia de la entrega, y una en negativo como uno que no se puede "
+				+ "cumplir nunca.");
+		}
+
+		/// <summary>
+		/// Que el odometro del dia de la entrega sea una lectura y no cualquier numero. Mismo motivo
+		/// que arriba: el dominio lo exige, y rechazarlo aca es lo que evita que exigirlo cueste una
+		/// entrada permanente.
+		/// </summary>
+		private static void TheOdometerAtDeliveryIsNotNegative(int reading)
+		{
+			if (reading >= 0) return;
+
+			throw new ArgumentOutOfRangeException(
+				nameof(reading),
+				$"El odometro del dia de la entrega no puede ser negativo, y llego {reading}. Es la "
+				+ "lectura desde la que se cuenta todo lo que el vehiculo recorrio bajo garantia.");
 		}
 
 		private static DateTime InUtc(DateTime instant)
