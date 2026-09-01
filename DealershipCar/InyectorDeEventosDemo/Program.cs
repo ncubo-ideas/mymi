@@ -18,6 +18,7 @@ try
         case "inyectar":  await Inyectar(); break;
         case "historia":  await Historia(); break;
         case "ficha":     await Ficha(); break;
+        case "garantia":  await Garantia(); break;
         case "senuelo":   await Senuelo(); break;
         default:          Ayuda(); break;
     }
@@ -99,6 +100,13 @@ static string Resumen(JsonElement e)
         "ServicingPolicyPublished" =>
             $"{Texto(e, "revisionCode")}: servicio en otro taller -- {Texto(e, "rule")}",
 
+        "VehicleDelivered" =>
+            $"entregado el {Dia(e, "deliveredAt")} con {Numero(e, "reading")} "
+            + $"{Texto(e, "unit")} de odometro",
+        "WarrantyEnvelopePublished" =>
+            $"sobre de {Numero(e, "months")} meses o {Numero(e, "distance")} "
+            + $"{Texto(e, "unit")}, publicado el {Dia(e, "publishedAt")}",
+
         _ => "(un tipo que la app NO consume: lo descarta)",
     };
 }
@@ -157,6 +165,11 @@ async Task Inyectar()
         condition = Arg(args, "--condition", ""),
         rule = Arg(args, "--rule", ""),
         whatPreservesCover = Arg(args, "--whatPreservesCover", ""),
+
+        deliveredAt = Arg(args, "--deliveredAt", "2026-09-01"),
+        reading = Entero(Arg(args, "--reading", "0")),
+        months = Entero(Arg(args, "--months", "0")),
+        distance = Entero(Arg(args, "--distance", "0")),
     };
 
     using var respuesta = await http.PostAsJsonAsync($"{recurso}/{id}/events/hecho", cuerpo);
@@ -189,7 +202,7 @@ async Task Historia()
             "solo condicion: no la mueve el tiempo ni la distancia, solo un cruce observado"),
 
         (Lectura(13200, "2025-10-01", "Telemetry"), "primer mes"),
-        (Garantia("W-9912", "2025-11-15"),
+        (Reclamo("W-9912", "2025-11-15"),
             "UN TIPO QUE LA APP NO CONSUME: se descarta, no se inventa un comando para tragarlo"),
         (Lectura(16000, "2025-12-01", "Telemetry"),
             "llega ANTES que la de noviembre: el orden de llegada no es el de observacion"),
@@ -303,6 +316,70 @@ async Task Ficha()
     Console.WriteLine("segunda corrida hay que pasar --revision y --revision2 con codigos nuevos.");
 }
 
+async Task Garantia()
+{
+    string unidad = Arg(args, "--unit", "UnitB");
+
+    Console.WriteLine($"publicando la entrega y el sobre de garantia en {recurso}/{id}...");
+    Console.WriteLine($"  todo en {unidad}, que es la unidad en que la agencia leyo este carro");
+    Console.WriteLine();
+
+    (object cuerpo, string porque)[] guion =
+    {
+        (Entrega("2025-03-01", 120, unidad),
+            "la ENTREGA: cuando se entrego y en que odometro estaba ese dia. Es el ancla desde "
+            + "donde se miden las dos mitades del sobre"),
+
+        (Sobre(36, 60000, "2025-03-01", unidad),
+            "el SOBRE: 36 meses o 60000 de distancia, publicado el dia de la entrega"),
+
+        (LecturaEn(6000, "2025-10-01", unidad),
+            "una lectura del odometro EN LA MISMA UNIDAD que las dos de arriba, que es lo que hace "
+            + "falta para que la mitad de distancia se pueda medir"),
+
+        (Sobre(48, 80000, "2026-11-01", unidad),
+            "y el sobre RE-PUBLICADO, mas largo: rige desde su instante de publicacion hacia "
+            + "adelante, y la frase nombra cual de los dos contesto"),
+
+        (Sobre(24, 40000, "2024-01-01", unidad),
+            "un sobre publicado ANTES que el que rige, llegando DESPUES: entra y NO gobierna. El "
+            + "orden de llegada no es el de vigencia"),
+
+        (Entrega("2025-02-15", 100, unidad),
+            "y la entrega CORREGIDA: gana la ultima que llego, aunque sea la mas vieja de las dos. "
+            + "Un hecho historico tiene una sola version"),
+    };
+
+    foreach ((object cuerpo, string porque) in guion)
+    {
+        using var r = await http.PostAsJsonAsync($"{recurso}/{id}/events/hecho", cuerpo);
+        Console.WriteLine($"  HTTP {(int)r.StatusCode}   {porque}");
+    }
+
+    Console.WriteLine();
+    Console.WriteLine("LOS DOS DESORDENES ESTAN A PROPOSITO Y NO SE ORDENAN IGUAL. El sobre aplica por");
+    Console.WriteLine("instante de PUBLICACION, asi que el de 2024 entra y no desplaza a nada; la");
+    Console.WriteLine("entrega es CORRECTIVA, asi que la del 15 de febrero si reemplaza a la del 1 de");
+    Console.WriteLine("marzo. Dos ordenamientos sobre un solo cable, y los dos son correctos.");
+    Console.WriteLine();
+    Console.WriteLine("ESTO SE PUEDE VOLVER A CORRER contra el mismo journal: ninguno de los dos hechos");
+    Console.WriteLine("toma una clave que no se pueda volver a tomar, asi que no hay nada que se gaste.");
+    Console.WriteLine("Lo unico que hace falta es que los numeros de evento sigan avanzando, y de eso se");
+    Console.WriteLine("encarga el mock.");
+    Console.WriteLine();
+    Console.WriteLine("Y SOBRE LA NARRATIVA QUE EL MOCK YA TRAE, LA MITAD DE DISTANCIA QUEDA SUSPENDIDA,");
+    Console.WriteLine("que es la ley y no un defecto. Esa narrativa mide en UnitA, este guion en UnitB, y");
+    Console.WriteLine("las unidades no se convierten -- asi que la respuesta contesta el plazo, dice con");
+    Console.WriteLine("palabras que la distancia no se pudo medir, y nombra las dos unidades que no");
+    Console.WriteLine("calzaron.");
+    Console.WriteLine();
+    Console.WriteLine("SON TRES UNIDADES LAS QUE TIENEN QUE CALZAR, no dos: la del limite del sobre, la");
+    Console.WriteLine("de la lectura del dia de la entrega, y la del odometro de hoy. Cambiar solo la del");
+    Console.WriteLine("sobre mueve el desajuste de una pareja a la otra en vez de resolverlo. Para verlo");
+    Console.WriteLine("entero hay que correr TODO este guion en la unidad de la narrativa:");
+    Console.WriteLine("  garantia --unit UnitA");
+}
+
 async Task Senuelo()
 {
     string credencial = await Credencial();
@@ -332,6 +409,23 @@ async Task<string> Credencial()
 static object Lectura(int valor, string observado, string fuente) => new
 {
     tipo = "OdometerReported", value = valor, unit = "UnitA", observedAt = observado, source = fuente,
+};
+
+static object LecturaEn(int valor, string observado, string unidad) => new
+{
+    tipo = "OdometerReported", value = valor, unit = unidad, observedAt = observado,
+    source = "Telemetry",
+};
+
+static object Entrega(string entregado, int lectura, string unidad) => new
+{
+    tipo = "VehicleDelivered", deliveredAt = entregado, reading = lectura, unit = unidad,
+};
+
+static object Sobre(int meses, int distancia, string publicado, string unidad) => new
+{
+    tipo = "WarrantyEnvelopePublished", months = meses, distance = distancia, unit = unidad,
+    publishedAt = publicado,
 };
 
 static object Cruce(string kind, string observado) => new
@@ -425,7 +519,7 @@ static object Regla(string codigo, string regla, string conserva) => new
     rule = regla, whatPreservesCover = conserva,
 };
 
-static object Garantia(string reclamo, string observado) => new
+static object Reclamo(string reclamo, string observado) => new
 {
     tipo = "WarrantyClaimFiled", observedAt = observado, revisionCode = reclamo,
 };
@@ -473,6 +567,13 @@ static void Ayuda()
     Console.WriteLine("                                --revision --revision2 (default MY2025-R1 y -R2)");
     Console.WriteLine("                                --sin-sustituir salta la sustitucion final, y esa");
     Console.WriteLine("                                es la unica forma de ver la hoja entera en pantalla");
+    Console.WriteLine("  garantia                      publica la entrega y el sobre de garantia de este");
+    Console.WriteLine("                                vehiculo, con los DOS desordenes a proposito: un sobre");
+    Console.WriteLine("                                viejo que llega tarde no gobierna, y una entrega vieja");
+    Console.WriteLine("                                que llega tarde SI reemplaza. Se puede repetir");
+    Console.WriteLine("                                --unit (default UnitB) manda las TRES unidades del");
+    Console.WriteLine("                                guion; con UnitA calza con la narrativa del mock y la");
+    Console.WriteLine("                                mitad de distancia se puede medir");
     Console.WriteLine("  senuelo                       demuestra el 403 de /customer con el token de la app");
     Console.WriteLine("  inyectar --tipo <tipo> ...    agrega UN hecho concreto");
     Console.WriteLine();
@@ -503,6 +604,13 @@ static void Ayuda()
     Console.WriteLine("    SpecificationRevisionSealed      (solo --revisionCode)");
     Console.WriteLine("    SpecificationRevisionSuperseded  --supersededByCode");
     Console.WriteLine();
+    Console.WriteLine("  y los DOS del perfil de ESTE vehiculo, uno por comando de la agencia. No llevan");
+    Console.WriteLine("  --revisionCode: no son del catalogo del modelo, son de este carro. Ninguno de los");
+    Console.WriteLine("  dos toma una clave que se gaste, asi que los dos se pueden repetir.");
+    Console.WriteLine();
+    Console.WriteLine("    VehicleDelivered                 --deliveredAt --reading --unit");
+    Console.WriteLine("    WarrantyEnvelopePublished        --months --distance --unit --publishedAt");
+    Console.WriteLine();
     Console.WriteLine("  cualquier otro --tipo se acepta y la app lo DESCARTA, que es lo normal:");
     Console.WriteLine("  el concesionario publica su narrativa entera y este modulo modela una rebanada.");
     Console.WriteLine();
@@ -513,6 +621,9 @@ static void Ayuda()
     Console.WriteLine("    inyectar --tipo FluidSpecificationPublished --revisionCode MY2026-R1 --kind BrakeFluid");
     Console.WriteLine("             --grade \"DOT 4\" --capacity 0.5 --intervalDistance 20000 --intervalDays 730");
     Console.WriteLine("    inyectar --tipo SpecificationRevisionSealed --revisionCode MY2026-R1");
+    Console.WriteLine("    inyectar --tipo VehicleDelivered --deliveredAt 2025-03-01 --reading 120 --unit UnitB");
+    Console.WriteLine("    inyectar --tipo WarrantyEnvelopePublished --months 36 --distance 60000");
+    Console.WriteLine("             --unit UnitB --publishedAt 2025-03-01");
     Console.WriteLine();
     Console.WriteLine("  --url      default http://localhost:8092/");
     Console.WriteLine("  --recurso  default vehicle");

@@ -352,5 +352,73 @@ namespace DealershipCar.Dominio.Pruebas
 				+ ",\"rule\":\"" + rule + "\""
 				+ ",\"whatPreservesCover\":\"" + whatPreservesCover + "\"}");
 		}
+
+		// ------------------------------------- la entrega y el sobre de este vehiculo, como feed
+		//
+		// LA TERCERA LISTA, y son tres porque el feed le escribe a tres globales de raiz: la agenda
+		// (TheWholeStory), la ficha del fabricante (TheWholeSpecSheet) y el perfil de este vehiculo
+		// (esta). Meter estos dos tipos en cualquiera de las otras dos listas haria que el barrido que
+		// cuenta ONCE tipos de la especificacion contara trece, y contarlos es lo que impide que ese
+		// barrido se acorte sin que nadie lo note.
+		//
+		// HAY DOS SOBRES Y UNA SOLA ENTREGA, y la pluralidad es del sobre a proposito: un registro con
+		// un solo sobre no puede mostrar que la ley del sobre sea por instante de PUBLICACION, porque
+		// no hay contra que compararlo. La segunda publicacion recorta las dos mitades, asi que cual
+		// de las dos rige se ve en la frase.
+		//
+		// TODO VIAJA EN UnitB -- millas -- y la agenda de arriba mide en UnitA. Son dos hechos
+		// distintos con dos unidades distintas, y una historia en la que siempre coinciden no puede
+		// mostrar que la unidad haya cruzado el cable: 'mi' en la frase es la prueba.
+		internal const string TheDeliveryInstant = "2025-03-01T00:00:00Z";
+		internal const int TheOdometerAtDelivery = 120;
+		internal const string TheEnvelopeUnit = "UnitB";
+
+		internal const int TheFirstTerm = 36;
+		internal const int TheFirstDistance = 60000;
+		internal const string TheFirstEnvelopePublication = "2025-03-01T00:00:00Z";
+
+		internal const int TheSecondTerm = 24;
+		internal const int TheSecondDistance = 40000;
+		internal const string TheSecondEnvelopePublication = "2026-01-01T00:00:00Z";
+
+		// Cuantas senales del perfil se aplican, y hasta donde queda la bitacora cuando entro entero.
+		// Escritas aparte para que una prueba pueda afirmarlas sin contar la lista a mano.
+		internal const int ProfileSignalsThatApply = 3;
+		internal const long TheLastProfileEvent = 29;
+
+		internal static IReadOnlyList<SenalDeEvento> TheDeliveryAndTheEnvelope()
+		{
+			return new List<SenalDeEvento>
+			{
+				Delivered(27, TheDeliveryInstant, TheOdometerAtDelivery, TheEnvelopeUnit),
+
+				Envelope(28, TheFirstTerm, TheFirstDistance, TheEnvelopeUnit,
+					TheFirstEnvelopePublication),
+
+				Envelope(29, TheSecondTerm, TheSecondDistance, TheEnvelopeUnit,
+					TheSecondEnvelopePublication),
+			};
+		}
+
+		internal static SenalDeEvento Delivered(
+			long number, string deliveredAt, int reading, string unit)
+		{
+			return new SenalDeEvento(number, "VehicleDelivered",
+				"{\"id\":" + number + ",\"tipo\":\"VehicleDelivered\""
+				+ ",\"deliveredAt\":\"" + deliveredAt + "\""
+				+ ",\"reading\":" + reading
+				+ ",\"unit\":\"" + unit + "\"}");
+		}
+
+		internal static SenalDeEvento Envelope(
+			long number, int months, int distance, string unit, string publishedAt)
+		{
+			return new SenalDeEvento(number, "WarrantyEnvelopePublished",
+				"{\"id\":" + number + ",\"tipo\":\"WarrantyEnvelopePublished\""
+				+ ",\"months\":" + months
+				+ ",\"distance\":" + distance
+				+ ",\"unit\":\"" + unit + "\""
+				+ ",\"publishedAt\":\"" + publishedAt + "\"}");
+		}
 	}
 }

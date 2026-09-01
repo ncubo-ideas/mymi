@@ -528,6 +528,95 @@ namespace DealershipCar.Dominio.Pruebas
 			Assert.That(empty, Does.Not.Contain("'Telemetry'"));
 		}
 
+		// ------------------------ los dos hechos del perfil del vehiculo, campo por campo
+
+		// LA UNIDAD DEL SOBRE Y LA DE LA ENTREGA SON DOS COSAS, igual que las dos del fluido. Las dos
+		// son DistanceUnit, asi que al wire llegan como el mismo par de nombres y cruzarlas es un cruce
+		// entre dos hechos y no entre dos conjuntos.
+		//
+		// SE PUBLICAN DISTINTAS a proposito -- el sobre en millas y la entrega en kilometros -- porque
+		// con las dos iguales cruzarlas no cambiaria nada. Y el resultado de la ley es que la mitad de
+		// distancia queda SUSPENDIDA por desajuste de unidades, que es la ley funcionando: aca lo que
+		// se afirma es de donde salio cada nombre.
+		[Test]
+		public void TheEnvelopesUnitAndTheDeliverysUnitAreTwoDifferentThings()
+		{
+			Apply(ADealershipNarrative.Envelope(1, 36, 60000, "UnitB", ThePublication));
+			Apply(ADealershipNarrative.Delivered(2, "2025-03-01T00:00:00Z", 120, "UnitA"));
+
+			Assert.That(journal.Api.DescribePublishedWarrantyEnvelope(),
+				Does.Contain("60000 mi"),
+				"La distancia del sobre sale en la unidad en que se publico el SOBRE.");
+
+			Assert.That(journal.Api.ReadDeliveryUnit(), Is.EqualTo("km"),
+				"Y la de la entrega en la que se leyo LA ENTREGA. Cruzadas, las dos seguirian siendo "
+				+ "nombres legales y la mitad de distancia dejaria de estar suspendida -- o empezaria a "
+				+ "estarlo -- sin que nada revente.");
+		}
+
+		// LAS DOS MITADES DEL SOBRE NO SON INTERCAMBIABLES. Un plazo de 36 y una distancia de 60000 no
+		// se pueden cruzar sin que la frase lo diga, y con 36/60000 el cruce daria un sobre de 60000
+		// meses -- que es un numero perfectamente legal.
+		[Test]
+		public void TheEnvelopesTermAndItsDistanceDoNotCross()
+		{
+			Apply(ADealershipNarrative.Envelope(1, 36, 60000, "UnitB", ThePublication));
+
+			Assert.That(journal.Api.DescribePublishedWarrantyEnvelope(),
+				Does.Contain("36 months").And.Contains("60000 mi"));
+		}
+
+		// LOS DOS INSTANTES DE ESTE PAR TAMPOCO. El de la entrega y el de la publicacion del sobre son
+		// dos hechos distintos que a menudo caen el mismo dia -- por eso la narrativa los pone
+		// distintos: con los dos iguales, cruzarlos no cambiaria nada.
+		[Test]
+		public void TheDeliveryInstantAndThePublicationInstantAreTwoDifferentThings()
+		{
+			Apply(ADealershipNarrative.Delivered(1, "2025-03-01T00:00:00Z", 120, "UnitB"));
+			Apply(ADealershipNarrative.Envelope(2, 36, 60000, "UnitB", "2026-01-01T00:00:00Z"));
+
+			Assert.That(journal.Api.ReadDeliveredAt(),
+				Is.EqualTo(new DateTime(2025, 3, 1, 0, 0, 0, DateTimeKind.Utc)));
+
+			Assert.That(journal.Api.ReadEnvelopePublishedAt(),
+				Is.EqualTo(new DateTime(2026, 1, 1, 0, 0, 0, DateTimeKind.Utc)));
+		}
+
+		// Y LOS DOS INSTANTES SE NORMALIZAN TAMBIEN POR ESTOS DOS SCRIPTS. Mismo motivo y mismo limite
+		// que el renglon de la lectura de arriba: cada script arma sus parametros por separado, asi que
+		// el testigo de uno no cubre al otro.
+		[Test]
+		public void TheTwoVehicleRecordInstantsAreJournalizedInUtcToo()
+		{
+			const string DeliveredWithAnOffset = "2025-03-01T20:30:45.987-06:00";
+			const string PublishedWithAnOffset = "2026-01-01T20:30:45.987-06:00";
+
+			Apply(ADealershipNarrative.Delivered(1, DeliveredWithAnOffset, 120, "UnitB"));
+			Apply(ADealershipNarrative.Envelope(2, 36, 60000, "UnitB", PublishedWithAnOffset));
+
+			string secondProgram = TheSecondProgramOf(journal.Folder);
+
+			Assert.That(secondProgram, Does.Contain(AsTheJournalWritesIt(DeliveredWithAnOffset)),
+				"El instante de la entrega, ya en UTC y ya truncado al segundo.");
+
+			Assert.That(secondProgram, Does.Contain(AsTheJournalWritesIt(PublishedWithAnOffset)),
+				"Y el de la publicacion del sobre. Sin la normalizacion en cada uno de los dos scripts "
+				+ "el journal guardaria la hora local, y un sobre publicado a las 20:30 locales quedaria "
+				+ "seis horas antes de donde esta.");
+		}
+
+		private static string AsTheJournalWritesIt(string withAnOffset)
+		{
+			DateTime inUtc = DateTime.Parse(
+				withAnOffset, System.Globalization.CultureInfo.InvariantCulture).ToUniversalTime();
+
+			DateTime toTheWholeSecond = new DateTime(
+				inUtc.Ticks - inUtc.Ticks % TimeSpan.TicksPerSecond, DateTimeKind.Utc);
+
+			return toTheWholeSecond.ToString(
+				"MM/dd/yyyy HH:mm:ss", System.Globalization.CultureInfo.InvariantCulture);
+		}
+
 		private void Apply(SenalDeEvento signal)
 		{
 			Assert.That(journal.Api.Apply(DealershipEventRoute.Route(signal)), Is.EqualTo(""),

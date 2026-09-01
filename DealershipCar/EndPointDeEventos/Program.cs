@@ -243,6 +243,11 @@ sealed class EventoDelConcesionario
     [JsonPropertyName("rule")]               public string Rule { get; init; } = "";
     [JsonPropertyName("whatPreservesCover")] public string WhatPreservesCover { get; init; } = "";
 
+    [JsonPropertyName("deliveredAt")]        public DateTime DeliveredAt { get; init; }
+    [JsonPropertyName("reading")]            public int Reading { get; init; }
+    [JsonPropertyName("months")]             public int Months { get; init; }
+    [JsonPropertyName("distance")]           public int Distance { get; init; }
+
     internal string Resumen() => Tipo switch
     {
         "OdometerReported" => $"{Value} {Unit} observado el {ObservedAt:yyyy-MM-dd} ({Source})",
@@ -269,6 +274,11 @@ sealed class EventoDelConcesionario
             $"{RevisionCode}: excluye '{Exclusion}' de '{SystemCode}' cuando {Condition}",
         "ServicingPolicyPublished" => $"{RevisionCode}: servicio en otro taller -- {Rule}",
 
+        "VehicleDelivered" =>
+            $"entregado el {DeliveredAt:yyyy-MM-dd} con {Reading} {Unit} de odometro",
+        "WarrantyEnvelopePublished" =>
+            $"sobre de {Months} meses o {Distance} {Unit}, publicado el {PublishedAt:yyyy-MM-dd}",
+
         _ => Tipo,
     };
 }
@@ -292,6 +302,8 @@ sealed class AlmacenDeEventos
         "ServicePricePublished", "CoveredSystemPublished", "CoverageExclusionPublished",
         "ServicingPolicyPublished", "SpecificationRevisionSealed",
         "SpecificationRevisionSuperseded",
+
+        "VehicleDelivered", "WarrantyEnvelopePublished",
     };
 
     private List<EventoDelConcesionario> Lista(string recurso, string id) =>
@@ -450,6 +462,10 @@ sealed class AlmacenDeEventos
                 Condition = pedido.Condition ?? "",
                 Rule = pedido.Rule ?? "",
                 WhatPreservesCover = pedido.WhatPreservesCover ?? "",
+                DeliveredAt = pedido.DeliveredAt,
+                Reading = pedido.Reading,
+                Months = pedido.Months,
+                Distance = pedido.Distance,
             };
 
             lista.Add(evento);
@@ -532,4 +548,9 @@ sealed class HechoAInyectar
 
     [JsonPropertyName("rule")]               public string Rule { get; set; }
     [JsonPropertyName("whatPreservesCover")] public string WhatPreservesCover { get; set; }
+
+    [JsonPropertyName("deliveredAt")]        public DateTime DeliveredAt { get; set; }
+    [JsonPropertyName("reading")]            public int Reading { get; set; }
+    [JsonPropertyName("months")]             public int Months { get; set; }
+    [JsonPropertyName("distance")]           public int Distance { get; set; }
 }

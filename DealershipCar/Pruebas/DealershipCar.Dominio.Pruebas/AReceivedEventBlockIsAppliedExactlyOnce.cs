@@ -180,15 +180,24 @@ namespace DealershipCar.Dominio.Pruebas
 		}
 
 		// CADA HECHO QUE ENTRA DEJA EL PUNTO DE CONTROL EN SU PROPIO NUMERO DE EVENTO, y son
-		// DIECISEIS scripts los que lo prometen: cinco de la agenda y once de la especificacion. Es
-		// la promesa que hace exacto el resume, y no se hereda de un script al siguiente.
+		// DIECIOCHO scripts los que lo prometen: cinco de la agenda, once de la especificacion y dos
+		// del perfil de este vehiculo. Es la promesa que hace exacto el resume, y no se hereda de un
+		// script al siguiente.
 		//
-		// ESTA PRUEBA EXISTE POR LA PASADA DE FALSIFICACION DE T9. Quitarle logbook.Advance al script
-		// del fluido -- y al del intervalo de servicio -- dejo la suite EN VERDE, porque el
-		// checkpoint solo se atrasaba UNO y el hecho siguiente traia un numero mas alto de todas
-		// formas. El sello y la sustitucion si se veian, y por una razon que no se generaliza: el
-		// dominio los rechaza al repetirse, mientras que publicar dos veces en un borrador es
-		// idempotente por contenido. Asi que la mitad de los scripts tenia testigo por accidente.
+		// ESTA PRUEBA EXISTE POR LA PASADA DE FALSIFICACION DE LA INGESTA DE LA FICHA. Quitarle
+		// logbook.Advance al script del fluido -- y al del intervalo de servicio -- dejo la suite EN
+		// VERDE, porque el checkpoint solo se atrasaba UNO y el hecho siguiente traia un numero mas
+		// alto de todas formas. El sello y la sustitucion si se veian, y por una razon que no se
+		// generaliza: el dominio los rechaza al repetirse, mientras que publicar dos veces en un
+		// borrador es idempotente por contenido. Asi que la mitad de los scripts tenia testigo por
+		// accidente.
+		//
+		// Y PASO OTRA VEZ, EXACTO, CON EL SCRIPT DE LA ENTREGA. La falsificacion de la ingesta del
+		// perfil quito logbook.Advance del script de la ENTREGA y la suite quedo EN VERDE, mientras
+		// que quitarlo del script del SOBRE puso cuatro en rojo -- porque la entrega es el primero de
+		// los tres hechos de su lista y los dos sobres de atras avanzan el checkpoint igual. La misma
+		// asimetria, un agregado mas alla, y el arreglo es el mismo: barrer LA TERCERA LISTA tambien.
+		// Es la razon por la que este barrido es por script y no por bloque.
 		//
 		// LO QUE SE PIERDE SIN ESTO. Una caida entre el hecho y el flush deja el checkpoint atras del
 		// hecho, el proveedor re-sirve, y el hecho vuelve a ejecutarse. Para un publish en borrador
@@ -203,6 +212,7 @@ namespace DealershipCar.Dominio.Pruebas
 
 			everything.AddRange(ADealershipNarrative.TheWholeStory());
 			everything.AddRange(ADealershipNarrative.TheWholeSpecSheet());
+			everything.AddRange(ADealershipNarrative.TheDeliveryAndTheEnvelope());
 
 			foreach (SenalDeEvento signal in everything)
 			{
@@ -226,10 +236,11 @@ namespace DealershipCar.Dominio.Pruebas
 				swept.Add(signal.Tipo);
 			}
 
-			Assert.That(swept.Count, Is.EqualTo(16),
-				"Son DIECISEIS scripts de ingesta con hecho -- cinco de la agenda y once de la "
-				+ "especificacion -- mas el comando suelto que avanza el punto de control cuando el "
-				+ "dominio rechaza uno, que es el diecisiete y no tiene hecho que aplicar.");
+			Assert.That(swept.Count, Is.EqualTo(18),
+				"Son DIECIOCHO scripts de ingesta con hecho -- cinco de la agenda, once de la "
+				+ "especificacion y dos del perfil del vehiculo -- mas el comando suelto que avanza el "
+				+ "punto de control cuando el dominio rechaza uno, que es el diecinueve y no tiene "
+				+ "hecho que aplicar.");
 		}
 
 		// LAS DOS PROMESAS VUELVEN A MEDIRSE SOBRE LOS ONCE HECHOS DE LA ESPECIFICACION, y hace falta

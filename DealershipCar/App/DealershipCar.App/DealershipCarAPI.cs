@@ -1327,6 +1327,10 @@ namespace DealershipCar.App
 				if (message is SpecificationRevisionSuperseded superseding)
 					return ApplySpecificationRevisionSuperseded(superseding);
 
+				if (message is VehicleDelivered delivery) return ApplyVehicleDelivered(delivery);
+				if (message is WarrantyEnvelopePublished envelope)
+					return ApplyWarrantyEnvelopePublished(envelope);
+
 				throw new ArgumentException(
 					$"Esta app no tiene comando para un mensaje de tipo '{message.Tipo}'. La ruta "
 					+ "debio devolver null para descartarlo.", nameof(message));
@@ -1699,6 +1703,45 @@ namespace DealershipCar.App
 					TheText(message.RevisionCode, "revisionCode");
 				p["supersededByCode", typeof(string)] =
 					TheText(message.SupersededByCode, "supersededByCode");
+			})
+			.PerformCheckThenCommand();
+		}
+
+		private string ApplyVehicleDelivered(VehicleDelivered message)
+		{
+			return app.Using(
+				scriptForChk: TheEventIsNew,
+				@"
+					{
+						profile.RecordDelivery(@deliveredAt, @reading, @unit);
+						logbook.Advance(@event);
+					}
+				")
+			.WithParameters(p => {
+				p["event",       typeof(long)]     = message.EventNumber;
+				p["deliveredAt", typeof(DateTime)] = InUtc(message.DeliveredAt);
+				p["reading",     typeof(int)]      = message.Reading;
+				p["unit",        typeof(Enum)]     = WireName.DistanceUnit(message.Unit, "unit");
+			})
+			.PerformCheckThenCommand();
+		}
+
+		private string ApplyWarrantyEnvelopePublished(WarrantyEnvelopePublished message)
+		{
+			return app.Using(
+				scriptForChk: TheEventIsNew,
+				@"
+					{
+						profile.PublishWarrantyEnvelope(@months, @distance, @unit, @publishedAt);
+						logbook.Advance(@event);
+					}
+				")
+			.WithParameters(p => {
+				p["event",       typeof(long)]     = message.EventNumber;
+				p["months",      typeof(int)]      = message.Months;
+				p["distance",    typeof(int)]      = message.Distance;
+				p["unit",        typeof(Enum)]     = WireName.DistanceUnit(message.Unit, "unit");
+				p["publishedAt", typeof(DateTime)] = InUtc(message.PublishedAt);
 			})
 			.PerformCheckThenCommand();
 		}

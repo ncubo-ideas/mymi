@@ -268,12 +268,34 @@ namespace DealershipCar.Dominio.Pruebas
 				"Son ONCE tipos de hecho de la especificacion, uno por comando de publicacion de la "
 				+ "puerta. Si este numero baja, la ficha de la narrativa dejo de traer uno de cada "
 				+ "tipo y el barrido de arriba mide menos de lo que dice.");
+
+			// Y LOS DOS DEL PERFIL DE ESTE VEHICULO SE CUENTAN APARTE, no adentro de los once. Son
+			// hechos de OTRO global de raiz -- este carro, no el modelo -- y meterlos en la cuenta de
+			// arriba haria que ese once dejara de decir lo que dice.
+			HashSet<string> ofThisVehicle = new HashSet<string>();
+
+			foreach (SenalDeEvento signal in ADealershipNarrative.TheDeliveryAndTheEnvelope())
+			{
+				IMensajeDeEvento message = DealershipEventRoute.Route(signal);
+
+				Assert.That(message, Is.Not.Null,
+					"La ruta no reconoce " + signal.Tipo + ", asi que un feed que lo mande lo "
+					+ "descartaria en silencio.");
+				Assert.That(message.Tipo, Is.EqualTo(signal.Tipo),
+					"Y lo reconoce como lo que es, no como el tipo de al lado.");
+
+				ofThisVehicle.Add(signal.Tipo);
+			}
+
+			Assert.That(ofThisVehicle.Count, Is.EqualTo(2),
+				"Son DOS tipos de hecho del perfil del vehiculo, uno por comando de la agencia: la "
+				+ "entrega y el sobre.");
 		}
 
 		// EL TAG DE CADA MENSAJE ES SU PROPIO NOMBRE DE TIPO, y esto se enumera POR REFLEXION y no
 		// contra una lista escrita a mano: la lista de la narrativa no puede ver un tipo de mensaje
 		// que nadie ruteo y que nadie le agrego. Enumerar los tipos es enumerar los sitios donde la
-		// regla se decide (C57), y son DIECISEIS.
+		// regla se decide (C57), y son DIECIOCHO.
 		//
 		// POR QUE IMPORTA EL NOMBRE. El tag viaja por tres sitios mas: la ruta lo compara, el mock lo
 		// lista en TiposConocidos, y el inyector lo escribe en el guion. Ninguno de esos tres tiene
@@ -288,10 +310,11 @@ namespace DealershipCar.Dominio.Pruebas
 				if (typeof(IMensajeDeEvento).IsAssignableFrom(candidate) && !candidate.IsInterface)
 					messages.Add(candidate);
 
-			Assert.That(messages.Count, Is.EqualTo(16),
-				"Son DIECISEIS tipos de mensaje: cinco de la agenda y once de la especificacion. Si "
-				+ "este numero sube, hay un tipo nuevo -- y los barridos que se apoyan en la lista de "
-				+ "la narrativa no lo van a ver hasta que alguien lo agregue ahi.");
+			Assert.That(messages.Count, Is.EqualTo(18),
+				"Son DIECIOCHO tipos de mensaje: cinco de la agenda, once de la especificacion y DOS "
+				+ "del perfil de este vehiculo. Si este numero sube, hay un tipo nuevo -- y los "
+				+ "barridos que se apoyan en la lista de la narrativa no lo van a ver hasta que "
+				+ "alguien lo agregue ahi.");
 
 			Assert.Multiple(() =>
 			{
@@ -316,14 +339,18 @@ namespace DealershipCar.Dominio.Pruebas
 				}
 			});
 
-			// Y LOS DIECISEIS ESTAN EN LA NARRATIVA, que es lo que hace que los barridos de las otras
-			// pruebas midan los dieciseis y no quince.
+			// Y LOS DIECIOCHO ESTAN EN LA NARRATIVA, que es lo que hace que los barridos de las otras
+			// pruebas midan los dieciocho y no diecisiete. Son TRES listas porque el feed le escribe a
+			// tres globales de raiz, y el union de las tres es lo que esta prueba mira.
 			HashSet<string> inTheNarrative = new HashSet<string>();
 
 			foreach (SenalDeEvento signal in ADealershipNarrative.TheWholeStory())
 				inTheNarrative.Add(signal.Tipo);
 
 			foreach (SenalDeEvento signal in ADealershipNarrative.TheWholeSpecSheet())
+				inTheNarrative.Add(signal.Tipo);
+
+			foreach (SenalDeEvento signal in ADealershipNarrative.TheDeliveryAndTheEnvelope())
 				inTheNarrative.Add(signal.Tipo);
 
 			Assert.Multiple(() =>
@@ -626,7 +653,234 @@ namespace DealershipCar.Dominio.Pruebas
 			});
 		}
 
+		// ------------------------------- la frontera de los dos hechos del perfil del vehiculo
+		//
+		// LA MISMA POLARIDAD Y LA MISMA LINEA, sobre los dos tipos que trajo T9. Se descarta lo que no
+		// se puede DECIR -- un instante ausente, un numero ausente, un nombre que no es de ningun
+		// miembro, un negativo en una escala que no los tiene -- y se le deja al dominio lo que es una
+		// LEY sobre valores que si se pueden decir.
+		//
+		// EL BARRIDO ES POR SITIO DE VALIDACION (C57): dos clases de mensaje tienen DOS instantes
+		// obligatorios, TRES numeros obligatorios y DOS nombres de conjunto cerrado, porque el sobre
+		// trae dos numeros y una unidad y la entrega uno de cada.
+
+		[Test]
+		public void EveryRequiredNumberOfAVehicleRecordFactMustBePresent()
+		{
+			(string Where, SenalDeEvento Signal)[] missing =
+			{
+				("delivered.reading",  Without(ADelivery(), "reading")),
+				("envelope.months",    Without(AnEnvelope(), "months")),
+				("envelope.distance",  Without(AnEnvelope(), "distance")),
+			};
+
+			Assert.That(missing.Length, Is.EqualTo(3),
+				"Son TRES numeros obligatorios: la lectura de la entrega y las dos mitades del sobre.");
+
+			Assert.Multiple(() =>
+			{
+				foreach ((string where, SenalDeEvento signal) in missing)
+					Assert.That(DealershipEventRoute.Route(signal), Is.Null,
+						"Un " + where + " ausente tiene que DESCARTAR la senal, no entrar como cero. En "
+						+ "estos tres el cero SIGNIFICA algo -- un carro nuevo, un limite ya cumplido -- "
+						+ "asi que fabricarlo aca seria afirmar una de esas dos cosas.");
+			});
+		}
+
+		[Test]
+		public void EveryRequiredInstantOfAVehicleRecordFactMustBePresent()
+		{
+			(string Where, SenalDeEvento Signal)[] missing =
+			{
+				("delivered.deliveredAt", Without(ADelivery(), "deliveredAt")),
+				("envelope.publishedAt",  Without(AnEnvelope(), "publishedAt")),
+			};
+
+			Assert.That(missing.Length, Is.EqualTo(2),
+				"Son DOS instantes obligatorios: el de la entrega y el de la publicacion del sobre.");
+
+			Assert.Multiple(() =>
+			{
+				foreach ((string where, SenalDeEvento signal) in missing)
+					Assert.That(DealershipEventRoute.Route(signal), Is.Null,
+						"Un " + where + " ausente tiene que DESCARTAR la senal: sin el instante de la "
+						+ "entrega no hay ancla desde donde medir, y sin el de la publicacion un sobre "
+						+ "viejo no se puede ver viejo. " + where);
+			});
+		}
+
+		[Test]
+		public void EveryClosedSetNameOfAVehicleRecordFactMustNameAMember()
+		{
+			(string Where, SenalDeEvento Signal)[] notAMember =
+			{
+				("delivered.unit", Named(ADelivery(), "unit", "Miles")),
+				("envelope.unit",  Named(AnEnvelope(), "unit", "Miles")),
+			};
+
+			Assert.That(notAMember.Length, Is.EqualTo(2),
+				"Son DOS unidades de distancia: la en que se leyo el odometro el dia de la entrega y la "
+				+ "en que se publico la distancia del sobre. Son dos hechos y no uno.");
+
+			Assert.Multiple(() =>
+			{
+				foreach ((string where, SenalDeEvento signal) in notAMember)
+					Assert.That(DealershipEventRoute.Route(signal), Is.Null,
+						"Un nombre que el canon no escribe en " + where + " tiene que DESCARTAR la "
+						+ "senal, no reventar adentro del comando.");
+			});
+		}
+
+		// Y ES ESTRICTA CON LAS MAYUSCULAS, igual que la puerta.
+		[Test]
+		public void AVehicleRecordFactWhoseUnitIsMiscasedIsDiscarded()
+		{
+			Assert.That(DealershipEventRoute.Route(Named(ADelivery(), "unit", "unitb")), Is.Null);
+			Assert.That(DealershipEventRoute.Route(Named(AnEnvelope(), "unit", "UNITB")), Is.Null);
+		}
+
+		[Test]
+		public void ANegativeWhereAVehicleRecordScaleHasNoNegativesIsDiscarded()
+		{
+			(string Where, SenalDeEvento Signal)[] negative =
+			{
+				("delivered.reading", Named(ADelivery(), "reading", "-120")),
+				("envelope.months",   Named(AnEnvelope(), "months", "-36")),
+				("envelope.distance", Named(AnEnvelope(), "distance", "-60000")),
+			};
+
+			Assert.That(negative.Length, Is.EqualTo(3),
+				"Son las MISMAS tres posiciones numericas de arriba: cada una se exige presente Y se "
+				+ "exige no negativa, que son dos guardias y no uno.");
+
+			Assert.Multiple(() =>
+			{
+				foreach ((string where, SenalDeEvento signal) in negative)
+					Assert.That(DealershipEventRoute.Route(signal), Is.Null,
+						"Un " + where + " negativo tiene que DESCARTAR la senal: un odometro no cuenta "
+						+ "hacia atras y un plazo negativo es un limite que no se puede cumplir nunca.");
+			});
+		}
+
+		[Test]
+		public void AVehicleRecordFactWhoseNumberArrivesAsTextIsDiscarded()
+		{
+			(string Where, SenalDeEvento Signal)[] asText =
+			{
+				("delivered.reading", AsText(ADelivery(), "reading")),
+				("envelope.months",   AsText(AnEnvelope(), "months")),
+				("envelope.distance", AsText(AnEnvelope(), "distance")),
+			};
+
+			Assert.Multiple(() =>
+			{
+				foreach ((string where, SenalDeEvento signal) in asText)
+				{
+					Assert.That(signal.Contenido, Does.Contain("\"" + where.Split('.')[1] + "\":\""),
+						"La cirugia tiene que dejar un JSON VALIDO con el numero entre comillas: si deja "
+						+ "un JSON roto, lo descarta el catch del parseo y este renglon mide otra cosa.");
+
+					Assert.That(DealershipEventRoute.Route(signal), Is.Null,
+						"Un numero que llega entre comillas en " + where + " tiene que DESCARTAR la "
+						+ "senal, no entrar como cero.");
+				}
+			});
+		}
+
+		// LOS DOS SI ACEPTAN UN CERO, y decirlo es la otra mitad de la linea: lo que la frontera
+		// descarta es lo que NO SE PUEDE DECIR, y cero se puede decir. Que una lectura en cero sea un
+		// carro nuevo, y que una mitad del sobre en cero sea un limite ya cumplido el dia de la
+		// entrega, son dos leyes de dos agregados -- y copiarlas aca seria una segunda fuente de
+		// verdad para cada una. Lo que el dominio hace con cada cero esta en
+		// AFactTheDomainRefusesDoesNotBlockTheNarrative.
+		[Test]
+		public void AZeroIsSayableInBothOfThemAndTheBoundaryLetsItThrough()
+		{
+			Assert.That(
+				DealershipEventRoute.Route(Named(ADelivery(), "reading", "0")),
+				Is.InstanceOf<VehicleDelivered>(),
+				"Un carro entregado con el odometro en cero es un carro NUEVO, que es el caso normal.");
+
+			Assert.That(
+				DealershipEventRoute.Route(Named(AnEnvelope(), "months", "0")),
+				Is.InstanceOf<WarrantyEnvelopePublished>(),
+				"Y una mitad del sobre en cero pasa la frontera para que la refuse EL SOBRE, con sus "
+				+ "palabras. Un cero en un limite es un valor publicado legitimo en este mismo feed un "
+				+ "tipo de mensaje mas alla -- asi dice el wire que un sistema cubierto no publico "
+				+ "limites propios -- asi que la frontera no puede decidir por el.");
+		}
+
+		// LOS TRES DESCARTES QUE TODO HECHO COMPARTE, sobre los dos nuevos. Mismo barrido que el de
+		// los once, y hace falta aparte por lo mismo: ninguno de los tres puede quedar cubierto por
+		// casualidad en uno de los dos.
+		[Test]
+		public void EveryVehicleRecordFactChecksItsTagItsEventNumberAndItsPayload()
+		{
+			Assert.Multiple(() =>
+			{
+				foreach (SenalDeEvento signal in ADealershipNarrative.TheDeliveryAndTheEnvelope())
+				{
+					Assert.That(
+						DealershipEventRoute.Route(
+							new SenalDeEvento(signal.Numero, "TelemetryPing", signal.Contenido)),
+						Is.Null,
+						"El payload de " + signal.Tipo + " calza campo por campo y aun asi no es ese "
+						+ "hecho: lo que dice QUE hecho es, es el tag.");
+
+					Assert.That(
+						DealershipEventRoute.Route(
+							new SenalDeEvento(0, signal.Tipo, signal.Contenido)),
+						Is.Null,
+						"Un numero de evento que no avanza desde cero no se puede journalizar como "
+						+ "punto de control: " + signal.Tipo);
+
+					Assert.That(
+						DealershipEventRoute.Route(new SenalDeEvento(signal.Numero, signal.Tipo, "")),
+						Is.Null,
+						"Sin payload no hay hecho: " + signal.Tipo);
+
+					Assert.That(
+						DealershipEventRoute.Route(
+							new SenalDeEvento(signal.Numero, signal.Tipo, "no soy json")),
+						Is.Null,
+						"Y un payload que no parsea se descarta en vez de reventar: " + signal.Tipo);
+				}
+			});
+		}
+
+		// Y LOS DOS PAYLOADS NO SON INTERCAMBIABLES ENTRE SI, que es el hueco que el barrido del tag
+		// de arriba no ve: ahi el tag ajeno es de un tipo que la app no consume, asi que descartarlo
+		// no prueba que estos dos se distingan ENTRE ELLOS. Los dos traen unit y un instante, asi que
+		// se parecen mas de lo que ningun otro par de esta app se parece.
+		[Test]
+		public void TheTwoVehicleRecordFactsDoNotAnswerToEachOthersPayload()
+		{
+			Assert.That(
+				DealershipEventRoute.Route(new SenalDeEvento(
+					1, WarrantyEnvelopePublished.TheEventType, ADelivery().Contenido)),
+				Is.Null,
+				"El payload de la entrega con el tag del sobre no trae months ni distance ni "
+				+ "publishedAt: no es un sobre.");
+
+			Assert.That(
+				DealershipEventRoute.Route(new SenalDeEvento(
+					1, VehicleDelivered.TheEventType, AnEnvelope().Contenido)),
+				Is.Null,
+				"Y el payload del sobre con el tag de la entrega no trae reading ni deliveredAt: no es "
+				+ "una entrega.");
+		}
+
 		// ------------------------------------------------------ el aparejo
+
+		private static SenalDeEvento ADelivery()
+		{
+			return ADealershipNarrative.Delivered(1, TheInstant, 120, "UnitB");
+		}
+
+		private static SenalDeEvento AnEnvelope()
+		{
+			return ADealershipNarrative.Envelope(1, 36, 60000, "UnitB", TheInstant);
+		}
 
 		private static SenalDeEvento AnOpening()
 		{

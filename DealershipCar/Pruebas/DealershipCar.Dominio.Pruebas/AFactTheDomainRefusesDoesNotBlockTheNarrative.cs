@@ -242,6 +242,54 @@ namespace DealershipCar.Dominio.Pruebas
 				+ "descarta: esas no llegan a haber comando y no hay entrada que reventar.");
 		}
 
+		// Y LAS DOS MITADES DEL SOBRE SON LA MISMA TERCERA CATEGORIA, un agregado mas alla. Se dicen
+		// aparte de las cinco de arriba porque son de OTRO agregado y porque las cinco son las cinco:
+		// una cuenta que crece cada vez que llega un tipo de mensaje nuevo no dice de que es la cuenta.
+		//
+		// LA LEY ES LA MISMA: las dos guardas son una funcion pura de la senal -- meses en cero,
+		// distancia en cero -- viven en el CONSTRUCTOR del sobre, y alcanzarlas desde la frontera
+		// significaria armar el sobre ahi. Asi que las dos cicatrizan, y solo un predicado estatico del
+		// dominio las moveria.
+		//
+		// LA PUERTA SI TIENE SU COPIA -- TheEnvelopeCarriesBothOfItsHalves -- y la ingesta NO LA LLAMA,
+		// a proposito: revienta con ArgumentOutOfRangeException, que no es DomainException, asi que
+		// saldria de Apply sin que nadie la atrape y se llevaria el bloque de refresh entero. Para un
+		// hecho RECIBIDO eso es estrictamente peor que la cicatriz, porque despues del hecho malo
+		// vienen los buenos.
+		[Test]
+		public void AndBothHalvesOfTheEnvelopeAreThatSameThirdCategoryOneAggregateOver()
+		{
+			(string Guard, SenalDeEvento Signal, string Says)[] refused =
+			{
+				("un plazo en cero",
+					ADealershipNarrative.Envelope(4, 0, 60000, "UnitB", ThePublication),
+					"lleva sus dos mitades siempre"),
+
+				("una distancia en cero",
+					ADealershipNarrative.Envelope(5, 36, 0, "UnitB", ThePublication),
+					"lleva sus dos mitades siempre"),
+			};
+
+			Assert.That(refused.Length, Is.EqualTo(2),
+				"Son DOS leyes del sobre que son una funcion pura de la senal y viven en un "
+				+ "constructor.");
+
+			foreach ((string guard, SenalDeEvento signal, string says) in refused)
+				Assert.That(Apply(signal), Does.Contain(says), guard);
+
+			Assert.That(journal.Api.LastEventApplied(), Is.EqualTo(5L),
+				"Y la narrativa avanzo por las dos: se pierde el hecho, no el registro.");
+
+			Assert.That(journal.Api.IsWarrantyEnvelopePublished(), Is.False,
+				"Y no quedo medio escrito: un sobre refusado no publica nada.");
+
+			Assert.That(WhatTheEngineSaysWhenItReopens(),
+				Does.Contain("Rehydration execution failed"),
+				"Las dos dejaron entrada. Es lo que las separa de las dos guardas de la ENTREGA, que la "
+				+ "frontera si descarta -- una lectura negativa y una unidad que no nombra ningun "
+				+ "miembro son las dos cosas que no se pueden DECIR.");
+		}
+
 		// EL CONTROL DE LAS DOS DE ARRIBA, y sin el las dos podrian estar midiendo lo que no dicen: lo
 		// que la frontera SI descarta no deja cicatriz ninguna, ni la primera vez.
 		[Test]

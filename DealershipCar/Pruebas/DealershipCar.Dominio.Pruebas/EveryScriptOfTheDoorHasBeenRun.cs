@@ -49,12 +49,18 @@ namespace DealershipCar.Dominio.Pruebas
 	// escrito. Es la misma forma que el censo de escrituras de
 	// TheOwnerIsNeverASourceOfAFactAboutTheirOwnVehicle, con el mismo limite.
 	//
-	// LAS OPERACIONES SON NOVENTA Y LOS SCRIPTS SON MAS, y T9 es donde la diferencia se
-	// vuelve grande: Apply es UNA operacion de la puerta y tiene DIECISIETE scripts detras -- uno
+	// LAS OPERACIONES SON NOVENTA Y SEIS Y LOS SCRIPTS SON MAS, y la ingesta es donde la diferencia
+	// se vuelve grande: Apply es UNA operacion de la puerta y tiene DIECINUEVE scripts detras -- uno
 	// por cada tipo de hecho recibido, mas el comando suelto que avanza el punto de control cuando
-	// el dominio rechaza el hecho. T9 sumo once de esos diecisiete y no sumo ninguna operacion.
-	// Contar operaciones y contar scripts son dos cuentas distintas, y la que S5 obliga a hacer es
-	// la de los scripts.
+	// el dominio rechaza el hecho. Contar operaciones y contar scripts son dos cuentas distintas, y
+	// la que S5 obliga a hacer es la de los scripts.
+	//
+	// ESTE PARRAFO DECIA NOVENTA CUANDO LA PUERTA YA TENIA NOVENTA Y SEIS, y el de arriba decia
+	// noventa y seis: dos cuentas de la misma cosa en el mismo encabezado, una de ellas vieja. Es el
+	// mismo defecto que dejo escrito "setenta y siete" cuando la puerta tenia setenta y nueve, y es
+	// la tercera vez que aparece en este archivo. Una cuenta afirmada en prosa envejece en silencio,
+	// asi que la que manda es TheOperationsAreNinetySix, que la afirma al lado de la lista que
+	// cuenta.
 	[TestFixture]
 	public sealed class EveryScriptOfTheDoorHasBeenRun
 	{
@@ -503,6 +509,57 @@ namespace DealershipCar.Dominio.Pruebas
 
 			Assert.That(journal.Api.HasASealedRevision(), Is.True,
 				"La hoja quedo sellada, asi que los scripts no solo parsearon: publicaron.");
+		}
+
+		// LOS DOS SCRIPTS DE INGESTA DEL PERFIL DEL VEHICULO: la entrega y el sobre, que aplican por
+		// los DOS comandos que la puerta ya tenia y no agregan ninguna operacion.
+		//
+		// LA DISCRIMINACION ES LO CARO DE ESTA PRUEBA, y sin ella se quedaria verde con los dos
+		// scripts escribiendo en el global equivocado: correr los dos y afirmar que nada revento no
+		// distingue un script que publica de uno que no. Asi que cada hecho se vuelve a leer por LA
+		// LECTURA DE LA PUERTA QUE CONTESTARIA DISTINTO -- la frase del sobre trae sus dos mitades con
+		// su unidad, y los tres datos de la entrega salen uno por uno.
+		//
+		// TODO EN UnitB -- millas -- porque 'mi' en la frase es la unica prueba visible de que la
+		// unidad cruzo el cable y no se fabrico del otro lado.
+		[Test]
+		public void BothProfileIngestionScriptsOfTheDoorParseBindAndRun()
+		{
+			Assert.That(journal.Api.IsWarrantyEnvelopePublished(), Is.False,
+				"Antes de nada no hay sobre: sin esto los renglones de abajo podrian estar mirando un "
+				+ "sobre que puso otra prueba.");
+			Assert.That(journal.Api.HasDeliveryBeenRecorded(), Is.False);
+
+			foreach (Puppets.Portador.SenalDeEvento signal
+				in ADealershipNarrative.TheDeliveryAndTheEnvelope())
+			{
+				Assert.That(Apply(signal), Is.EqualTo(""),
+					"El script de " + signal.Tipo + " tenia que correr sin rechazo.");
+			}
+
+			Assert.That(journal.Api.LastEventApplied(),
+				Is.EqualTo(ADealershipNarrative.TheLastProfileEvent),
+				"Y los tres avanzan el punto de control en el MISMO comando que el hecho.");
+
+			// LA ENTREGA, dato por dato: si el script cruzara la lectura con el instante, o tomara la
+			// unidad de otro lado, cada uno de estos tres renglones lo dice por separado.
+			Assert.That(journal.Api.HasDeliveryBeenRecorded(), Is.True);
+			Assert.That(journal.Api.ReadDeliveredAt(),
+				Is.EqualTo(new DateTime(2025, 3, 1, 0, 0, 0, DateTimeKind.Utc)));
+			Assert.That(journal.Api.ReadDeliveryReading(),
+				Is.EqualTo(ADealershipNarrative.TheOdometerAtDelivery));
+			Assert.That(journal.Api.ReadDeliveryUnit(), Is.EqualTo("mi"));
+
+			// EL SOBRE, y el que rige es el SEGUNDO: la narrativa publica dos y la ley del sobre es por
+			// instante de publicacion, asi que leer las mitades de la segunda es lo que prueba que el
+			// segundo script corrio y no solo el primero.
+			Assert.That(journal.Api.IsWarrantyEnvelopePublished(), Is.True);
+			Assert.That(journal.Api.DescribePublishedWarrantyEnvelope(),
+				Does.Contain("24 months").And.Contains("40000 mi"),
+				"Las dos mitades del sobre que rige, con su unidad. Cruzar meses con distancia, o "
+				+ "quedarse con la primera publicacion, cambia esta frase.");
+			Assert.That(journal.Api.ReadEnvelopePublishedAt(),
+				Is.EqualTo(new DateTime(2026, 1, 1, 0, 0, 0, DateTimeKind.Utc)));
 		}
 
 		// Y LOS SEIS DE LA INGESTA QUE TRAJO T8: los cinco comandos con Check de cada tipo de hecho

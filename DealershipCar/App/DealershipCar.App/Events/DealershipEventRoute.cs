@@ -21,7 +21,10 @@ namespace DealershipCar.App.Events
 			IMensajeDeEvento planRevision = PlanRevisionAdopted.Interpret(signal);
 			if (planRevision != null) return planRevision;
 
-			return ASpecificationFact(signal);
+			IMensajeDeEvento sheet = ASpecificationFact(signal);
+			if (sheet != null) return sheet;
+
+			return AVehicleRecordFact(signal);
 		}
 
 		private static IMensajeDeEvento ASpecificationFact(SenalDeEvento signal)
@@ -57,6 +60,14 @@ namespace DealershipCar.App.Events
 			if (sealing != null) return sealing;
 
 			return SpecificationRevisionSuperseded.Interpret(signal);
+		}
+
+		private static IMensajeDeEvento AVehicleRecordFact(SenalDeEvento signal)
+		{
+			IMensajeDeEvento delivery = VehicleDelivered.Interpret(signal);
+			if (delivery != null) return delivery;
+
+			return WarrantyEnvelopePublished.Interpret(signal);
 		}
 	}
 }
