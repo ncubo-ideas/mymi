@@ -31,7 +31,8 @@ builder.Services.AddMcpServer(options =>
 })
 .WithStdioServerTransport()
 .WithTools<DealershipCarTools>()
-.WithTools<ModelSpecificationTools>();
+.WithTools<ModelSpecificationTools>()
+.WithTools<WarrantyEnvelopeTools>();
 
 builder.Logging.ClearProviders();
 builder.Logging.AddConsole(o => o.LogToStandardErrorThreshold = LogLevel.Trace);
@@ -65,26 +66,47 @@ static string Instructions(string folder) => $"""
 	An operation this vehicle never had scheduled reads NotDue as well, and its reason says so in
 	plain words; that is not a gap in the data, it is a car that does not have that part.
 
-	TWO KINDS OF QUESTION, TWO FAMILIES OF TOOL. review_my_maintenance, check_one_operation and
-	how_up_to_date_is_this answer where THIS VEHICLE stands. what_my_car_takes,
-	does_the_warranty_cover and what_the_service_costs answer what the MANUFACTURER PUBLISHED
-	about this model - the fluids, the tyres, the fuel, the warranty's scope, the price of a
-	service. Every published answer names the revision of the spec sheet it came from: say that
-	revision, because the manufacturer can publish a new one and an answer without a provenance is
-	a rumour. An item that is not published says so in words, and that is an answer - never fill
-	it from a similar model or a previous model year.
+	TWO KINDS OF QUESTION. review_my_maintenance, check_one_operation, how_up_to_date_is_this and
+	is_my_car_still_under_warranty answer where THIS VEHICLE stands. what_my_car_takes and
+	what_the_service_costs answer what the MANUFACTURER PUBLISHED about this model - the fluids,
+	the tyres, the fuel, the price of a service. does_the_warranty_cover answers both at once:
+	the published scope, and where this vehicle stands against it. Every published answer names
+	the revision of the spec sheet it came from: say that revision, because the manufacturer can
+	publish a new one and an answer without a provenance is a rumour. An item that is not
+	published says so in words, and that is an answer - never fill it from a similar model or a
+	previous model year.
 
-	The warranty tool states SCOPE and never adjudicates a claim: whether a repair gets paid is
-	the manufacturer's to decide. It also cannot say whether this vehicle is still inside its
-	warranty - that needs the envelope, the delivery date and the odometer, and this record keeps
-	none of them. And "we were never told about that system" is not "the scope leaves it out":
-	they are different answers and collapsing them is how someone gets sent away from a repair
-	they were entitled to ask about.
+	The two warranty tools state SCOPE and STANDING and never adjudicate a claim: whether a repair
+	gets paid is the manufacturer's to decide, so a system inside the scope and a vehicle inside
+	its envelope still are not "you are covered". And "we were never told about that system" is
+	not "the scope leaves it out": they are different answers and collapsing them is how someone
+	gets sent away from a repair they were entitled to ask about.
+
+	THE VEHICLE'S OWN WARRANTY FACTS COME OUT OF THE RECORD, NEVER OUT OF YOU OR THEM. The
+	envelope the dealership published, the date the car was handed over, the odometer taken that
+	day and the latest one the feed brought are all in the person's record, and the tools read
+	them. Never ask the person for a mileage or a delivery date to answer a warranty question, and
+	never accept one they volunteer as an input: a figure that did not come from the record would
+	come back to them as a measurement nobody made. When one of those facts is missing the answer
+	says so in words and names who records it, and that is the answer - not something to fill in.
+	An envelope that is not recorded is not a car without a warranty.
+
+	An envelope has TWO HALVES, a term in months and a distance, and cover ends when the first of
+	the two runs out. Say both. Which one will arrive first is deliberately not predicted, because
+	predicting it would need a rate this record does not have.
+
+	If recordContradictsItself comes back true, two facts the dealership recorded about the car
+	cannot both be true - the odometer today below the one taken at delivery, or a delivery date
+	that has not happened yet. Nothing about the vehicle could be measured, and it is nobody's
+	mistake but the record's. Tell them to raise it with their dealership; do not guess which of
+	the two facts is wrong and do not estimate around it.
 
 	If specificationKnown comes back false, this record was written by a version of their app
-	older than the manufacturer's spec sheet, so there is nothing published in it at all. Their
-	maintenance schedule is unaffected and complete. Ask them to open their app once; this server
-	cannot fix it, because fixing it would mean writing to their record.
+	older than the manufacturer's spec sheet, so there is nothing published in it at all. If
+	envelopeKnown comes back false, it is older than what the dealership records about their own
+	car, so its warranty standing is not in it. Either way their maintenance schedule is
+	unaffected and complete. Ask them to open their app once; this server cannot fix it, because
+	fixing it would mean writing to their record.
 
 	Distances carry a unit and the schedule never converts between them. Say the value with its
 	unit, exactly as it comes.

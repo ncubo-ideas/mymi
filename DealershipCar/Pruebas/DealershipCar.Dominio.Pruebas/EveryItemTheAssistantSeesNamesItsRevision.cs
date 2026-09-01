@@ -312,7 +312,16 @@ namespace DealershipCar.Dominio.Pruebas
 			Assert.That(pricing.IntervalSays, Does.Contain(TheFirstRevision));
 
 			Assert.That(pricing.Detail, Does.Contain("service interval is in this answer"));
-			Assert.That(pricing.Detail, Does.Contain("does not keep the odometer"));
+
+			// ESTA LINEA AFIRMABA "does not keep the odometer" Y ERA FALSA DESDE QUE EL ODOMETRO SE
+			// PUSO EN LA PUERTA. El registro SI lo lleva; lo que no hay es la distancia que le falta
+			// a este vehiculo CONTRA ESE INTERVALO, que no es lo mismo. La frase vieja estaba en una
+			// cadena que el programa le entrega a un modelo, y esta prueba la sostenia: una prosa
+			// vencida fijada por una afirmacion se vuelve carga y deja de poder corregirse sola.
+			Assert.That(pricing.Detail, Does.Contain("holds the odometer"));
+			Assert.That(
+				pricing.Detail,
+				Does.Contain("distance still to go against this interval is not a figure"));
 
 			// Y LA MITAD RECIBIDA NO LLEGA POR NINGUN CAMPO. El discriminador es la frase con la que
 			// el DOMINIO abre la mitad recibida -- "This vehicle has <n> km to go against it" -- y no

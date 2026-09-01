@@ -43,9 +43,11 @@ namespace DealershipCar.Dominio.Pruebas
 
 				ModelSpecificationTools sheet = TheAssistantsSheetToolsOver(journal.Folder);
 
-				// LAS SEIS tools, varias veces, que es como pregunta un asistente de verdad. Las tres
-				// de la ficha van en la misma vuelta que las tres de la agenda: la promesa es de la
-				// carpeta entera y no de una familia de preguntas.
+				WarrantyEnvelopeTools envelope = TheAssistantsEnvelopeToolsOver(journal.Folder);
+
+				// LAS SIETE tools, varias veces, que es como pregunta un asistente de verdad. Las de
+				// las tres clases van en la misma vuelta: la promesa es de la carpeta entera y no de
+				// una familia de preguntas.
 				for (int round = 0; round < 4; round++)
 				{
 					tools.Review();
@@ -53,6 +55,7 @@ namespace DealershipCar.Dominio.Pruebas
 					sheet.WhatMyCarTakes();
 					sheet.DoesTheWarrantyCover("POWERTRAIN");
 					sheet.WhatTheServiceCosts(MaintenanceOperation.FluidChange, 10000);
+					envelope.IsMyCarStillUnderWarranty();
 
 					foreach (MaintenanceOperation each in TheOperationKind.All)
 						tools.CheckOne(each);
@@ -79,11 +82,13 @@ namespace DealershipCar.Dominio.Pruebas
 
 				DealershipCarTools tools = TheAssistantsToolsOver(journal.Folder);
 				ModelSpecificationTools sheet = TheAssistantsSheetToolsOver(journal.Folder);
+				WarrantyEnvelopeTools envelope = TheAssistantsEnvelopeToolsOver(journal.Folder);
 
 				for (int round = 0; round < 12; round++)
 				{
 					tools.Review();
 					sheet.WhatMyCarTakes();
+					envelope.IsMyCarStillUnderWarranty();
 				}
 
 				Assert.That(TheSecondProgramOf(journal.Folder), Is.EqualTo(before),
@@ -131,6 +136,7 @@ namespace DealershipCar.Dominio.Pruebas
 
 				DealershipCarTools tools = TheAssistantsToolsOver(journal.Folder);
 				ModelSpecificationTools sheet = TheAssistantsSheetToolsOver(journal.Folder);
+				WarrantyEnvelopeTools envelope = TheAssistantsEnvelopeToolsOver(journal.Folder);
 
 				var everything = new StringBuilder();
 				everything.Append(JsonSerializer.Serialize(tools.Review()));
@@ -139,6 +145,7 @@ namespace DealershipCar.Dominio.Pruebas
 				everything.Append(JsonSerializer.Serialize(sheet.DoesTheWarrantyCover("POWERTRAIN")));
 				everything.Append(JsonSerializer.Serialize(
 					sheet.WhatTheServiceCosts(MaintenanceOperation.FluidChange, 10000)));
+				everything.Append(JsonSerializer.Serialize(envelope.IsMyCarStillUnderWarranty()));
 				foreach (MaintenanceOperation each in TheOperationKind.All)
 					everything.Append(JsonSerializer.Serialize(tools.CheckOne(each)));
 
@@ -214,17 +221,17 @@ namespace DealershipCar.Dominio.Pruebas
 		// LO QUE SE LE OFRECE A LA IA ES UNA LISTA CERRADA DE PREGUNTAS, no una consola de DSL.
 		//
 		// SE BARRE EL ENSAMBLADO Y NO UNA CLASE. Con typeof(DealershipCarTools).GetMethods() la lista
-		// solo veia las tools de esa clase, y T8 agrego una segunda clase de tools: un barrido por la
-		// clase que uno se acuerda de escribir habria reportado tres y dejado tres afuera. Es C57 en
-		// esta frontera -- se enumera el sitio donde la regla se decide, no el sustantivo del que
-		// habla.
+		// solo veia las tools de esa clase, y despues llegaron una segunda y una tercera: un barrido
+		// por la clase que uno se acuerda de escribir habria reportado tres y dejado cuatro afuera. Es
+		// C57 en esta frontera -- se enumera el sitio donde la regla se decide, no el sustantivo del
+		// que habla.
 		//
-		// LO QUE ESTE BARRIDO NO PUEDE VER, dicho en vez de omitido: que Program.cs REGISTRE las dos
+		// LO QUE ESTE BARRIDO NO PUEDE VER, dicho en vez de omitido: que Program.cs REGISTRE las tres
 		// clases. Una clase con [McpServerToolType] que nadie pasa a .WithTools sale igual en esta
 		// lista y no llega a ningun asistente. Program.cs son sentencias de nivel superior de un Exe
 		// y armar aca su contenedor seria copiarlo, no probarlo.
 		[Test]
-		public void TheAssistantIsOfferedSixToolsAndNoneOfThemIsACommand()
+		public void TheAssistantIsOfferedSevenToolsAndNoneOfThemIsACommand()
 		{
 			var offered = new List<string>();
 
@@ -240,16 +247,17 @@ namespace DealershipCar.Dominio.Pruebas
 			Assert.That(offered, Is.EqualTo(new[]
 			{
 				"check_one_operation", "does_the_warranty_cover", "how_up_to_date_is_this",
-				"review_my_maintenance", "what_my_car_takes", "what_the_service_costs",
+				"is_my_car_still_under_warranty", "review_my_maintenance", "what_my_car_takes",
+				"what_the_service_costs",
 			}), "Una tool que se agrega sin pensarla es como entra un comando a una superficie de "
 				+ "solo lectura. La lista se escribe aca para que agregar una obligue a mirarla.");
 		}
 
-		// Y LAS CLASES QUE LAS LLEVAN TAMBIEN SE ESCRIBEN, por la misma razon: son los dos sitios que
-		// Program.cs tiene que registrar, y una tercera que aparezca sin que nadie la registre queda
+		// Y LAS CLASES QUE LAS LLEVAN TAMBIEN SE ESCRIBEN, por la misma razon: son los tres sitios que
+		// Program.cs tiene que registrar, y una cuarta que aparezca sin que nadie la registre queda
 		// invisible para la prueba de arriba y para el asistente.
 		[Test]
-		public void TheToolsLiveInExactlyTwoClassesAndBothAreAboutReading()
+		public void TheToolsLiveInExactlyThreeClassesAndAllOfThemAreAboutReading()
 		{
 			var named = new List<string>();
 
@@ -259,7 +267,7 @@ namespace DealershipCar.Dominio.Pruebas
 
 			Assert.That(named, Is.EqualTo(new[]
 			{
-				"DealershipCarTools", "ModelSpecificationTools",
+				"DealershipCarTools", "ModelSpecificationTools", "WarrantyEnvelopeTools",
 			}), "Una clase de tools nueva tiene que pasar por aca, porque tiene que pasar tambien "
 				+ "por el .WithTools de Program.cs y esto es lo unico que lo recuerda.");
 		}
@@ -288,6 +296,11 @@ namespace DealershipCar.Dominio.Pruebas
 			return new ModelSpecificationTools(new JournalReader(folder, ""));
 		}
 
+		private static WarrantyEnvelopeTools TheAssistantsEnvelopeToolsOver(string folder)
+		{
+			return new WarrantyEnvelopeTools(new JournalReader(folder, ""));
+		}
+
 		private static AScheduleOnARealJournal AVehicleWithAPlanAndAnEvaluation()
 		{
 			var journal = new AScheduleOnARealJournal(TheVin, "Standard");
@@ -306,6 +319,14 @@ namespace DealershipCar.Dominio.Pruebas
 			// publicado. Sobre una ficha vacia todas ellas cortan temprano y la promesa de que leer no
 			// escribe se estaria comprobando sobre los recorridos que nunca se hacen.
 			ARevisionWithSomethingInEveryPlaceTheSheetToolsLook(journal);
+
+			// Y EL SOBRE DE ESTE VEHICULO, POR LO MISMO. Sin sobre y sin entrega, la tool de garantia
+			// no llega a ninguna de sus lecturas guardadas ni a las compuestas, y la promesa se
+			// estaria comprobando sobre el camino corto.
+			journal.Api.PublishWarrantyEnvelope(
+				240, 100000, "UnitA", new DateTime(2025, 8, 15, 0, 0, 0, DateTimeKind.Utc));
+			journal.Api.RecordDelivery(
+				new DateTime(2025, 9, 1, 0, 0, 0, DateTimeKind.Utc), 12000, "UnitA");
 
 			return journal;
 		}
