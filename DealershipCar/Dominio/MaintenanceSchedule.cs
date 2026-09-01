@@ -443,6 +443,54 @@ namespace DealershipCar.Dominio
 			return _lastEvaluation.Instant();
 		}
 
+		/// <summary>
+		/// Si hay una lectura del odometro que sirva para ese instante. Total: un vehiculo cuyo
+		/// feed no trajo nada contesta que no hay, y esa ausencia es una respuesta legal. Es la
+		/// pregunta de presencia que se hace ANTES de las cuatro de abajo.
+		/// </summary>
+		internal bool HasAnOdometerReading(DateTime asOf)
+		{
+			return TheLatestUsableReadingAsOf(asOf).Exists();
+		}
+
+		/// <summary>
+		/// El odometro con que esta agenda mediria a ese instante. Es el MISMO numero que
+		/// <see cref="Evaluate"/> usa al mismo instante, porque los dos lo resuelven por el mismo
+		/// lugar: una lectura observada despues no cuenta para ninguno de los dos. Accesor
+		/// GUARDADO.
+		/// </summary>
+		internal int ReadOdometer(DateTime asOf)
+		{
+			return TheOdometerReadingAsOf(asOf).Value;
+		}
+
+		/// <summary>
+		/// La unidad de esa lectura, por su nombre, para quien la lea. Accesor GUARDADO.
+		/// </summary>
+		internal string ReadOdometerUnit(DateTime asOf)
+		{
+			return TheOdometerReadingAsOf(asOf).Unit.Name;
+		}
+
+		/// <summary>
+		/// Esa misma unidad, dicha con su CODIGO para que un script pueda pasarla como argumento al
+		/// metodo de otro agregado. Accesor GUARDADO. No sale hacia ninguna vista: el valor va
+		/// directo a otro metodo de dominio adentro del mismo script.
+		/// </summary>
+		internal DistanceUnitCode OdometerUnit(DateTime asOf)
+		{
+			return TheOdometerReadingAsOf(asOf).TheCodeOfItsUnit;
+		}
+
+		/// <summary>
+		/// Cuando se OBSERVO esa lectura, que no es el instante preguntado. Accesor GUARDADO. Sin
+		/// esto, una frase compuesta con una lectura de marzo se leeria como tomada hoy.
+		/// </summary>
+		internal DateTime ReadOdometerObservedAt(DateTime asOf)
+		{
+			return TheOdometerReadingAsOf(asOf).ObservedAt;
+		}
+
 		private static BasePoint TheAnchor(
 			DateTime anchoredAt, int anchorReading, DistanceUnitCode anchorUnit)
 		{
@@ -482,6 +530,20 @@ namespace DealershipCar.Dominio
 		{
 			_operations.Remove(kind);
 			_order.Remove(kind);
+		}
+
+		private OdometerReading TheOdometerReadingAsOf(DateTime asOf)
+		{
+			UsableReading usable = TheLatestUsableReadingAsOf(asOf);
+
+			if (!usable.Exists())
+				throw new DomainException(
+					$"Esta agenda no tiene ninguna lectura del odometro observada al {asOf} ni "
+					+ "antes: pregunte HasAnOdometerReading antes. Devolver cero seria una "
+					+ "medicion que nadie tomo, y contra un limite de distancia se leeria como un "
+					+ "vehiculo que no ha recorrido nada.");
+
+			return usable.Reading();
 		}
 
 		private UsableReading TheLatestUsableReadingAsOf(DateTime asOf)

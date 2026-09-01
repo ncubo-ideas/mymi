@@ -45,6 +45,25 @@ namespace DealershipCar.Dominio
 			Source = source;
 		}
 
+		/// <summary>
+		/// Esa misma unidad, dicha con su codigo, para que un script pueda pasarla como argumento
+		/// al metodo de otro agregado. Total con excepcion: una unidad que este mapeo no nombre
+		/// revienta en vez de caer en la primera, porque caer en la primera mediria contra una
+		/// unidad distinta de la que la frase nombra y nada se veria mal.
+		/// </summary>
+		internal DistanceUnitCode TheCodeOfItsUnit
+		{
+			get
+			{
+				if (Unit == DistanceUnit.UnitA) return DistanceUnitCode.UnitA;
+				if (Unit == DistanceUnit.UnitB) return DistanceUnitCode.UnitB;
+
+				throw new DomainException(
+					$"La unidad '{Unit.Name}' de esta lectura no tiene codigo con que cruzar hacia "
+					+ "otro agregado. Entro una unidad de distancia que este mapeo no nombra.");
+			}
+		}
+
 		/// <summary>Si esta expresada en esa unidad. Por IDENTIDAD, nunca por nombre.</summary>
 		internal bool IsExpressedIn(DistanceUnit unit)
 		{
