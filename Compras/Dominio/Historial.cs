@@ -8,7 +8,7 @@ namespace Compras.Dominio
 	/// tickets, y quien contesta las preguntas que exigen la historia completa — la
 	/// canasta de un mes, su comparacion con otro, y la garantia con su respaldo.
 	/// </summary>
-	public class Historial
+	internal class Historial
 	{
 		private readonly List<Compra> compras = new List<Compra>();
 		private readonly Dictionary<string, Compra> porNumero =
@@ -18,13 +18,13 @@ namespace Compras.Dominio
 		/// Los productos que esta persona conoce, armados desde sus propias compras. Es lo
 		/// que mantiene coherente el historial: la categoría es del producto, no del ticket.
 		/// </summary>
-		public Catalogo Catalogo { get; private set; } = new Catalogo();
+		internal Catalogo Catalogo { get; private set; } = new Catalogo();
 
-		public IReadOnlyList<Compra> Lista => compras;
+		internal IReadOnlyList<Compra> Lista => compras;
 
-		public int Cantidad => compras.Count;
+		internal int Cantidad => compras.Count;
 
-		public decimal Total
+		internal decimal Total
 		{
 			get
 			{
@@ -35,7 +35,7 @@ namespace Compras.Dominio
 		}
 
 		/// <summary>Lectura por numero de ticket: un numero que no existe es un error de quien llama.</summary>
-		public Compra this[string numero]
+		internal Compra this[string numero]
 		{
 			get
 			{
@@ -47,13 +47,13 @@ namespace Compras.Dominio
 		}
 
 		/// <summary>Reconocimiento total: la pareja del indexador, para preguntar sin reventar.</summary>
-		public bool Tiene(string numero)
+		internal bool Tiene(string numero)
 		{
 			ArgumentNullException.ThrowIfNullOrWhiteSpace(numero);
 			return porNumero.ContainsKey(numero);
 		}
 
-		public void Agregar(Compra compra)
+		internal void Agregar(Compra compra)
 		{
 			ArgumentNullException.ThrowIfNull(compra);
 			if (porNumero.ContainsKey(compra.Numero))
@@ -70,7 +70,7 @@ namespace Compras.Dominio
 		}
 
 		/// <summary>La foto de un mes. Total: un mes sin compras devuelve una canasta vacia.</summary>
-		public Canasta CanastaDe(int anio, int mes)
+		internal Canasta CanastaDe(int anio, int mes)
 		{
 			var canasta = new Canasta(anio, mes);
 			foreach (Compra compra in compras)
@@ -81,14 +81,14 @@ namespace Compras.Dominio
 		}
 
 		/// <summary>Como cambio la canasta entre dos meses: la pregunta que ningun ticket contesta.</summary>
-		public ComparacionDeCanastas CompararCanastas(int anioAntes, int mesAntes, int anioDespues, int mesDespues) =>
+		internal ComparacionDeCanastas CompararCanastas(int anioAntes, int mesAntes, int anioDespues, int mesDespues) =>
 			new ComparacionDeCanastas(CanastaDe(anioAntes, mesAntes), CanastaDe(anioDespues, mesDespues));
 
 		/// <summary>
 		/// Desde cuando hasta cuando hay compras, y cuantos meses tienen alguna. Es el
 		/// contexto que necesita quien pregunta para saber que meses puede comparar.
 		/// </summary>
-		public RangoDeCompras Rango
+		internal RangoDeCompras Rango
 		{
 			get
 			{
@@ -115,7 +115,7 @@ namespace Compras.Dominio
 		/// meses se comparan es parte de la pregunta y no de como se dibuja. Total: sin
 		/// compras devuelve una comparacion que contesta que no hay comparacion.
 		/// </summary>
-		public ComparacionDeCanastas CompararConElAnioPasado()
+		internal ComparacionDeCanastas CompararConElAnioPasado()
 		{
 			RangoDeCompras rango = Rango;
 			if (!rango.Existe()) return CompararCanastas(1900, 1, 1900, 2);
@@ -135,7 +135,7 @@ namespace Compras.Dominio
 		// La aritmetica del mes anterior vive ACA y no en la pantalla: que enero venga
 		// despues de diciembre del año pasado es del calendario, y una superficie que lo
 		// resuelva sola lo va a resolver mal en enero.
-		public ComparacionDeCanastas CompararConElMesAnterior()
+		internal ComparacionDeCanastas CompararConElMesAnterior()
 		{
 			RangoDeCompras rango = Rango;
 			if (!rango.Existe()) return CompararCanastas(1900, 1, 1900, 2);
@@ -158,7 +158,7 @@ namespace Compras.Dominio
 		// Se cruza la firma con la serie de precios en el DOMINIO y no en la pantalla: una
 		// superficie que lo hiciera tendria que pedir doce series por separado, y peor,
 		// tendria que decidir cuales doce — que es justo el juicio que la firma ya tomo.
-		public IReadOnlyList<PrecioEnElTiempo> PreciosDeLosHabituales(int cuantasCompras)
+		internal IReadOnlyList<PrecioEnElTiempo> PreciosDeLosHabituales(int cuantasCompras)
 		{
 			FirmaDeLaCanasta firma = FirmaDeLasUltimas(cuantasCompras);
 
@@ -185,7 +185,7 @@ namespace Compras.Dominio
 		// sin observacion tan vieja queda AFUERA de la suma -no hay con que compararlo- y
 		// uno sin compras desde el corte compara su ultima contra si misma y suma cero,
 		// que es verdad: su precio, para ella, no se ha movido.
-		public CanastaFrenteAlPasado CanastaFrenteA(DateTime hoy, int mesesAtras, int cuantasCompras)
+		internal CanastaFrenteAlPasado CanastaFrenteA(DateTime hoy, int mesesAtras, int cuantasCompras)
 		{
 			if (mesesAtras <= 0)
 				throw new ArgumentOutOfRangeException(nameof(mesesAtras), mesesAtras,
@@ -241,7 +241,7 @@ namespace Compras.Dominio
 		// sabe de precios que ella pago. Cuenta solo si es POSTERIOR a la compra mirada,
 		// y solo si la bajada es real (el mismo umbral del 3% de la serie de precios:
 		// menos que eso es redondeo de gondola, no noticia).
-		public RebajaDesdeLaCompra RebajaDesde(string numeroDeCompra)
+		internal RebajaDesdeLaCompra RebajaDesde(string numeroDeCompra)
 		{
 			ArgumentNullException.ThrowIfNullOrWhiteSpace(numeroDeCompra);
 
@@ -286,7 +286,7 @@ namespace Compras.Dominio
 		/// veces gana la mas reciente, que es la cobertura que corre. La fecha de consulta
 		/// viene recibida: el dominio no lee el reloj.
 		/// </summary>
-		public RegistroDeGarantia BuscarGarantia(string texto, DateTime fechaDeConsulta)
+		internal RegistroDeGarantia BuscarGarantia(string texto, DateTime fechaDeConsulta)
 		{
 			ArgumentNullException.ThrowIfNullOrWhiteSpace(texto);
 
@@ -311,7 +311,7 @@ namespace Compras.Dominio
 		/// </summary>
 		// Es la serie que hace posible decir DESDE CUANDO cambio un consumo. Sin la
 		// fecha, una relacion con cualquier otra cosa de la persona no es creible.
-		public Consumo ConsumoDe(string termino)
+		internal Consumo ConsumoDe(string termino)
 		{
 			ArgumentNullException.ThrowIfNullOrWhiteSpace(termino);
 
@@ -373,7 +373,7 @@ namespace Compras.Dominio
 		// diferencia importa porque la pantalla dice cosas distintas -"no hay ninguna
 		// compra con «X»" no es lo mismo que "todavia no hay compras"- y una lista vacia no
 		// sabe cual de las dos es.
-		public ComprasConElProducto ComprasCon(string termino)
+		internal ComprasConElProducto ComprasCon(string termino)
 		{
 			ArgumentNullException.ThrowIfNullOrWhiteSpace(termino);
 
@@ -419,7 +419,7 @@ namespace Compras.Dominio
 		// Se mira una cantidad de COMPRAS y no un rango de fechas: la firma es "lo de
 		// siempre", y lo de siempre se reconoce en las ultimas veces que fue al super, no
 		// en un mes del calendario.
-		public FirmaDeLaCanasta FirmaDeLasUltimas(int cuantasCompras)
+		internal FirmaDeLaCanasta FirmaDeLasUltimas(int cuantasCompras)
 		{
 			if (cuantasCompras <= 0)
 				throw new ArgumentOutOfRangeException(nameof(cuantasCompras), cuantasCompras,
@@ -473,7 +473,7 @@ namespace Compras.Dominio
 		/// QUÉ CAMBIÓ en la canasta: los productos que entraron y se quedaron, con el mes
 		/// en que aparecieron, y los que dejaron de estar. Total: si no cambió nada, lo dice.
 		/// </summary>
-		public CambioEnLaCanasta CambioDesde(DateTime corte, int cuantasCompras)
+		internal CambioEnLaCanasta CambioDesde(DateTime corte, int cuantasCompras)
 		{
 			if (cuantasCompras <= 0)
 				throw new ArgumentOutOfRangeException(nameof(cuantasCompras), cuantasCompras,
@@ -514,7 +514,7 @@ namespace Compras.Dominio
 		//
 		// EMPATE: gana el mas viejo. Si dos meses explican el cambio igual de bien, el que
 		// la persona reconoce es cuando EMPEZO.
-		public CambioEnLaCanasta CambioEncontrado(int cuantasCompras)
+		internal CambioEnLaCanasta CambioEncontrado(int cuantasCompras)
 		{
 			if (cuantasCompras <= 0)
 				throw new ArgumentOutOfRangeException(nameof(cuantasCompras), cuantasCompras,
@@ -674,7 +674,7 @@ namespace Compras.Dominio
 		/// </summary>
 		// Por SKU y no por texto: el precio de "leche" no significa nada si mezcla dos
 		// productos distintos. Quien pregunta resuelve primero el sku con el catalogo.
-		public PrecioEnElTiempo PrecioDe(string sku)
+		internal PrecioEnElTiempo PrecioDe(string sku)
 		{
 			ArgumentNullException.ThrowIfNullOrWhiteSpace(sku);
 
@@ -711,7 +711,7 @@ namespace Compras.Dominio
 		/// porque no es un dato del historial sino una conclusion sobre el historial mas
 		/// el calendario. Devuelve solo las vencidas, de la mas atrasada a la menos.
 		/// </summary>
-		public IReadOnlyList<AbastecimientoPendiente> AbastecimientosPendientes(DateTime fechaDeConsulta)
+		internal IReadOnlyList<AbastecimientoPendiente> AbastecimientosPendientes(DateTime fechaDeConsulta)
 		{
 			var pendientes = new List<AbastecimientoPendiente>();
 
@@ -739,7 +739,7 @@ namespace Compras.Dominio
 		/// CADA CUÁNTO compra ella esta categoría, medido en su propio historial. Total:
 		/// sin dos compras devuelve el ritmo Ninguno, que remite al catálogo.
 		/// </summary>
-		public RitmoDeCompra RitmoDe(Categoria categoria)
+		internal RitmoDeCompra RitmoDe(Categoria categoria)
 		{
 			ArgumentNullException.ThrowIfNull(categoria);
 
@@ -773,7 +773,7 @@ namespace Compras.Dominio
 		/// CÓMO VA AL SÚPER: cada cuántos días vuelve, qué día suele ir y en qué momento.
 		/// Total: sin suficientes compras devuelve el ritmo Ninguno, que lo dice.
 		/// </summary>
-		public RitmoDelSuper RitmoDelSuper()
+		internal RitmoDelSuper RitmoDelSuper()
 		{
 			IReadOnlyList<Compra> ordenadas = Ordenadas();
 			if (ordenadas.Count < Compras.Dominio.RitmoDelSuper.ComprasQueHacenFalta)
@@ -804,7 +804,7 @@ namespace Compras.Dominio
 		// Se resuelve con el mismo criterio que BuscarGarantia -sku o parte de la
 		// descripcion-, que ya era el precedente del modulo. Y si no encuentra nada, el par
 		// total contesta con el texto que se busco, sin reventar.
-		public CambioDeRitmo RitmoDeUnProducto(string producto, DateTime corte)
+		internal CambioDeRitmo RitmoDeUnProducto(string producto, DateTime corte)
 		{
 			ArgumentNullException.ThrowIfNullOrWhiteSpace(producto);
 
@@ -857,7 +857,7 @@ namespace Compras.Dominio
 		// la caratula les pasaba el 1 de enero a las dos, y esa coordinacion vivia en la
 		// pantalla: bastaba con que alguien cambiara una llamada para que las dos tarjetas
 		// hablaran de meses distintos sin que nada fallara.
-		public IReadOnlyList<CambioDeRitmo> CambiosDeRitmoDelQuiebre(int cuantasCompras)
+		internal IReadOnlyList<CambioDeRitmo> CambiosDeRitmoDelQuiebre(int cuantasCompras)
 		{
 			CambioEnLaCanasta quiebre = CambioEncontrado(cuantasCompras);
 
@@ -866,7 +866,7 @@ namespace Compras.Dominio
 				: Array.Empty<CambioDeRitmo>();
 		}
 
-		public IReadOnlyList<CambioDeRitmo> CambiosDeRitmo(DateTime corte)
+		internal IReadOnlyList<CambioDeRitmo> CambiosDeRitmo(DateTime corte)
 		{
 			var cambios = new List<CambioDeRitmo>();
 			foreach (Producto producto in Catalogo.Lista)
@@ -906,7 +906,7 @@ namespace Compras.Dominio
 		// SE RECORRE EL HISTORIAL UNA VEZ Y SE AGRUPA POR SKU. La alternativa -pedirle a
 		// RitmoDeUnProducto el ritmo de cada producto del catalogo- recorreria las 87 compras
 		// una vez por producto: con 29 productos son 29 pasadas para armar una lista.
-		public ListaParaLaProximaCompra LoQueVaAFaltar(DateTime hoy)
+		internal ListaParaLaProximaCompra LoQueVaAFaltar(DateTime hoy)
 		{
 			// Las fechas de compra de cada producto, en orden y sin repetir el mismo dia: un
 			// producto en dos lineas del mismo ticket es UNA compra, y un intervalo de cero
@@ -1030,7 +1030,7 @@ namespace Compras.Dominio
 		/// Las coberturas cuya ventana se esta cerrando: vigentes hoy y con la severidad
 		/// que su propio plazo determina, de la mas urgente a la menos.
 		/// </summary>
-		public IReadOnlyList<RegistroDeGarantia> GarantiasPorVencer(DateTime fechaDeConsulta)
+		internal IReadOnlyList<RegistroDeGarantia> GarantiasPorVencer(DateTime fechaDeConsulta)
 		{
 			var porVencer = new List<RegistroDeGarantia>();
 			foreach (RegistroDeGarantia registro in GarantiasVigentes(fechaDeConsulta))
@@ -1041,7 +1041,7 @@ namespace Compras.Dominio
 		}
 
 		/// <summary>Las coberturas que siguen corriendo en la fecha de consulta, con su respaldo.</summary>
-		public IReadOnlyList<RegistroDeGarantia> GarantiasVigentes(DateTime fechaDeConsulta)
+		internal IReadOnlyList<RegistroDeGarantia> GarantiasVigentes(DateTime fechaDeConsulta)
 		{
 			var vigentes = new List<RegistroDeGarantia>();
 			foreach (Compra compra in compras)
@@ -1071,7 +1071,7 @@ namespace Compras.Dominio
 		// aparece en tres". Las compras sin sucursal quedan AFUERA del conteo -contarlas
 		// de un lado seria inventar el dato- pero se cuentan aparte para que la lectura
 		// diga que hay tiquetes que callan.
-		public RecorridoDeSucursales Sucursales()
+		internal RecorridoDeSucursales Sucursales()
 		{
 			var rastro = new Dictionary<string, (int Compras, DateTime Primera, DateTime Ultima, int Llegada)>(
 				StringComparer.OrdinalIgnoreCase);
@@ -1122,7 +1122,7 @@ namespace Compras.Dominio
 		// Geannina lo dijo mejor que el codigo: "el banco le dice cuanto gasto; nadie le
 		// dice que el MISMO producto le subio". La serie estaba construida y solo la leian
 		// las comprobaciones; este es el punto por el que sale.
-		public PrecioEnElTiempo PrecioBuscado(string producto)
+		internal PrecioEnElTiempo PrecioBuscado(string producto)
 		{
 			ArgumentNullException.ThrowIfNullOrWhiteSpace(producto);
 
@@ -1130,7 +1130,7 @@ namespace Compras.Dominio
 			return sku.Length == 0 ? PrecioEnElTiempo.Ninguno(producto) : PrecioDe(sku);
 		}
 
-		public string SkuDe(string producto)
+		internal string SkuDe(string producto)
 		{
 			ArgumentNullException.ThrowIfNullOrWhiteSpace(producto);
 

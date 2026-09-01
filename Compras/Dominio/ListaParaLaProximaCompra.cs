@@ -27,7 +27,7 @@ namespace Compras.Dominio
 	//   nueve dias que no entra, sacarlo de SU lista seria la app editando su canasta por
 	//   ella. Omitir es tambien una conclusion sobre el cuerpo, y del lado malo de la
 	//   frontera: "de que a que" es nuestro, "que deberia comer" no.
-	public abstract class ListaParaLaProximaCompra
+	internal abstract class ListaParaLaProximaCompra
 	{
 		/// <summary>
 		/// Cuántos ciclos puede pasar sin entrar antes de que deje de ser "te falta" y pase
@@ -46,7 +46,7 @@ namespace Compras.Dominio
 		// El corte es POR CICLOS Y NO POR DIAS a proposito: 60 dias sin comprar leche es
 		// abandono y 60 sin comprar comida de perro es normal. Un numero de dias fijo
 		// trataria igual a los dos.
-		public const int CiclosDespuesDeLosCualesYaNoEsFalta = 3;
+		internal const int CiclosDespuesDeLosCualesYaNoEsFalta = 3;
 
 		/// <summary>Cuántas compras del producto hacen falta para saber su ritmo.</summary>
 		// Dos compras dan UN intervalo, y un intervalo no es un habito: puede ser la semana
@@ -54,41 +54,41 @@ namespace Compras.Dominio
 		// Es el mismo numero que usa CambioDeRitmo, y a proposito: dos criterios distintos
 		// de "ya se le puede medir el ritmo" es como se llega a que una pantalla muestre un
 		// producto que la otra dice que no tiene ritmo.
-		public const int ComprasQueHacenFaltaParaSaberElRitmo = CambioDeRitmo.ComprasQueHacenFaltaDeCadaLado;
+		internal const int ComprasQueHacenFaltaParaSaberElRitmo = CambioDeRitmo.ComprasQueHacenFaltaDeCadaLado;
 
 		/// <summary>Ausencia con nombre: sin historial suficiente porta esto, nunca null.</summary>
-		public static readonly ListaParaLaProximaCompra Ninguna = new SinLista();
+		internal static readonly ListaParaLaProximaCompra Ninguna = new SinLista();
 
 		internal static ListaParaLaProximaCompra De(IReadOnlyList<ProductoQueVaAFaltar> productos) =>
 			new Armada(productos);
 
 		/// <summary>Consulta de presencia, total.</summary>
-		public abstract bool Existe();
+		internal abstract bool Existe();
 
 		/// <summary>Todos los que tienen ritmo medido, del más atrasado al que menos falta.</summary>
-		public abstract IReadOnlyList<ProductoQueVaAFaltar> Productos { get; }
+		internal abstract IReadOnlyList<ProductoQueVaAFaltar> Productos { get; }
 
 		/// <summary>Solo los que ya pasaron su tiempo. Es la lista corta, la de la pantalla.</summary>
-		public abstract IReadOnlyList<ProductoQueVaAFaltar> LosQueTocan { get; }
+		internal abstract IReadOnlyList<ProductoQueVaAFaltar> LosQueTocan { get; }
 
 		/// <summary>Cuántos ya pasaron su tiempo. Cero cuando ninguno, y es verdad.</summary>
-		public abstract int CuantosTocan { get; }
+		internal abstract int CuantosTocan { get; }
 
-		public abstract string ParaElAsistente { get; }
+		internal abstract string ParaElAsistente { get; }
 
 		private sealed class SinLista : ListaParaLaProximaCompra
 		{
-			public override bool Existe() => false;
+			internal override bool Existe() => false;
 
-			public override IReadOnlyList<ProductoQueVaAFaltar> Productos =>
+			internal override IReadOnlyList<ProductoQueVaAFaltar> Productos =>
 				Array.Empty<ProductoQueVaAFaltar>();
 
-			public override IReadOnlyList<ProductoQueVaAFaltar> LosQueTocan =>
+			internal override IReadOnlyList<ProductoQueVaAFaltar> LosQueTocan =>
 				Array.Empty<ProductoQueVaAFaltar>();
 
-			public override int CuantosTocan => 0;
+			internal override int CuantosTocan => 0;
 
-			public override string ParaElAsistente =>
+			internal override string ParaElAsistente =>
 				"todavía no hay compras suficientes para saber cada cuánto vuelve cada cosa";
 		}
 
@@ -110,15 +110,15 @@ namespace Compras.Dominio
 					if (producto.Toca) tocan.Add(producto);
 			}
 
-			public override bool Existe() => true;
+			internal override bool Existe() => true;
 
-			public override IReadOnlyList<ProductoQueVaAFaltar> Productos => productos;
-			public override IReadOnlyList<ProductoQueVaAFaltar> LosQueTocan => tocan;
-			public override int CuantosTocan => tocan.Count;
+			internal override IReadOnlyList<ProductoQueVaAFaltar> Productos => productos;
+			internal override IReadOnlyList<ProductoQueVaAFaltar> LosQueTocan => tocan;
+			internal override int CuantosTocan => tocan.Count;
 
 			// NINGUNO ATRASADO ES UNA RESPUESTA, no una lista vacia: quiere decir que viene al
 			// dia, y decirlo es mas util que no decir nada.
-			public override string ParaElAsistente
+			internal override string ParaElAsistente
 			{
 				get
 				{

@@ -11,24 +11,24 @@ namespace Compras.Dominio
 	// en claro en una carpeta del usuario que tambien lee el proceso MCP. El access token
 	// expira pronto, pero el refresh es DURABLE: quien lea esa carpeta puede seguir
 	// leyendo los eventos hasta que el proveedor lo revoque. Para el MVP se acepta.
-	public class Bitacora
+	internal class Bitacora
 	{
-		public long UltimoEvento { get; private set; }
+		internal long UltimoEvento { get; private set; }
 
-		public string DeviceKey { get; private set; } = "";
+		internal string DeviceKey { get; private set; } = "";
 
-		public string Token { get; private set; } = "";
+		internal string Token { get; private set; } = "";
 
-		public string RefreshToken { get; private set; } = "";
+		internal string RefreshToken { get; private set; } = "";
 
-		public bool TieneDevice => DeviceKey.Length > 0;
+		internal bool TieneDevice => DeviceKey.Length > 0;
 
-		public bool TieneToken => Token.Length > 0;
+		internal bool TieneToken => Token.Length > 0;
 
-		public bool PuedeRotar => RefreshToken.Length > 0;
+		internal bool PuedeRotar => RefreshToken.Length > 0;
 
 		/// <summary>Solo hacia adelante. La guarda Check del comando ya rechaza el repetido; esta es la segunda linea.</summary>
-		public void Avanzar(long evento)
+		internal void Avanzar(long evento)
 		{
 			if (evento <= UltimoEvento)
 				throw new InvalidOperationException(
@@ -38,7 +38,7 @@ namespace Compras.Dominio
 		}
 
 		/// <summary>Una sola vez por instalacion: re-registrar dejaria huerfana la credencial vieja.</summary>
-		public void RegistrarDevice(string deviceKey)
+		internal void RegistrarDevice(string deviceKey)
 		{
 			ArgumentNullException.ThrowIfNullOrWhiteSpace(deviceKey);
 			if (DeviceKey.Length > 0 && DeviceKey != deviceKey)
@@ -48,7 +48,7 @@ namespace Compras.Dominio
 			DeviceKey = deviceKey;
 		}
 
-		public void GuardarCredencial(string token, string refreshToken)
+		internal void GuardarCredencial(string token, string refreshToken)
 		{
 			ArgumentNullException.ThrowIfNullOrWhiteSpace(token);
 			// Vacio es legitimo: hay proveedores que solo dan el access token.

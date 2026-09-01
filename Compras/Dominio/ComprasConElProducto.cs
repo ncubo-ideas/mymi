@@ -34,7 +34,7 @@ namespace Compras.Dominio
 	// El par se queda igual por las dos cosas que si separa: la frase -"no hay ninguna
 	// compra con «X»" no se puede componer desde una lista vacia- y el invariante de que
 	// un hallazgo con cero compras no existe.
-	public abstract class ComprasConElProducto
+	internal abstract class ComprasConElProducto
 	{
 		/// <summary>Ausencia con nombre: buscar algo que nunca se llevó porta esto, nunca null.</summary>
 		internal static ComprasConElProducto Ninguna(string buscado) => new SinCoincidencias(buscado);
@@ -45,32 +45,32 @@ namespace Compras.Dominio
 			IReadOnlyList<string> productos) => new Hallazgos(buscado, compras, productos);
 
 		/// <summary>Consulta de presencia, total.</summary>
-		public abstract bool Existe();
+		internal abstract bool Existe();
 
 		/// <summary>Lo que se escribió, tal cual. Siempre disponible: es lo que se preguntó.</summary>
-		public abstract string Buscado { get; }
+		internal abstract string Buscado { get; }
 
 		/// <summary>Las compras, de la más reciente a la más vieja. Vacía cuando no hay ninguna.</summary>
-		public abstract IReadOnlyList<CompraConElProducto> Compras { get; }
+		internal abstract IReadOnlyList<CompraConElProducto> Compras { get; }
 
 		/// <summary>
 		/// Las descripciones distintas que coincidieron. Buscar "queso" puede alcanzar a dos
 		/// productos, y quien pregunta tiene derecho a saber cuáles antes de leer los totales.
 		/// </summary>
-		public abstract IReadOnlyList<string> Productos { get; }
+		internal abstract IReadOnlyList<string> Productos { get; }
 
 		/// <summary>Cero cuando no apareció, y es verdad: no se llevó ninguna.</summary>
-		public abstract int TotalUnidades { get; }
+		internal abstract int TotalUnidades { get; }
 
 		/// <summary>Cero cuando no apareció, y es verdad: no se gastó nada en eso.</summary>
-		public abstract decimal TotalGastado { get; }
+		internal abstract decimal TotalGastado { get; }
 
 		/// <summary>En cuántas compras apareció. Cero cuando no apareció en ninguna.</summary>
 		// Existe aparte de Compras.Count porque una consulta del DSL imprime campos planos,
 		// y un campo es mas barato de proyectar que contar una lista.
-		public abstract int CuantasCompras { get; }
+		internal abstract int CuantasCompras { get; }
 
-		public abstract string ParaElAsistente { get; }
+		internal abstract string ParaElAsistente { get; }
 
 		private sealed class SinCoincidencias : ComprasConElProducto
 		{
@@ -82,19 +82,19 @@ namespace Compras.Dominio
 				this.buscado = buscado;
 			}
 
-			public override bool Existe() => false;
+			internal override bool Existe() => false;
 
-			public override string Buscado => buscado;
+			internal override string Buscado => buscado;
 
-			public override IReadOnlyList<CompraConElProducto> Compras => Array.Empty<CompraConElProducto>();
-			public override IReadOnlyList<string> Productos => Array.Empty<string>();
+			internal override IReadOnlyList<CompraConElProducto> Compras => Array.Empty<CompraConElProducto>();
+			internal override IReadOnlyList<string> Productos => Array.Empty<string>();
 
-			public override int TotalUnidades => 0;
-			public override decimal TotalGastado => 0m;
+			internal override int TotalUnidades => 0;
+			internal override decimal TotalGastado => 0m;
 
-			public override int CuantasCompras => 0;
+			internal override int CuantasCompras => 0;
 
-			public override string ParaElAsistente => $"No hay ninguna compra con «{buscado}».";
+			internal override string ParaElAsistente => $"No hay ninguna compra con «{buscado}».";
 		}
 
 		private sealed class Hallazgos : ComprasConElProducto
@@ -121,13 +121,13 @@ namespace Compras.Dominio
 				this.productos = productos;
 			}
 
-			public override bool Existe() => true;
+			internal override bool Existe() => true;
 
-			public override string Buscado => buscado;
-			public override IReadOnlyList<CompraConElProducto> Compras => compras;
-			public override IReadOnlyList<string> Productos => productos;
+			internal override string Buscado => buscado;
+			internal override IReadOnlyList<CompraConElProducto> Compras => compras;
+			internal override IReadOnlyList<string> Productos => productos;
 
-			public override int TotalUnidades
+			internal override int TotalUnidades
 			{
 				get
 				{
@@ -137,7 +137,7 @@ namespace Compras.Dominio
 				}
 			}
 
-			public override decimal TotalGastado
+			internal override decimal TotalGastado
 			{
 				get
 				{
@@ -147,12 +147,12 @@ namespace Compras.Dominio
 				}
 			}
 
-			public override int CuantasCompras => compras.Count;
+			internal override int CuantasCompras => compras.Count;
 
 			// SE NOMBRA EL PRODUCTO ENCONTRADO Y NO LO ESCRITO cuando son distintos: quien
 			// busco "leche" tiene que poder confirmar que la app entendio "Leche
 			// semidescremada 1L" y no otra cosa. Con varios, se dice cuantos.
-			public override string ParaElAsistente
+			internal override string ParaElAsistente
 			{
 				get
 				{

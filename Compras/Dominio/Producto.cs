@@ -13,18 +13,18 @@ namespace Compras.Dominio
 	//
 	// Identidad por SKU. Dos lineas del mismo sku son el mismo producto, aunque su
 	// descripcion o su precio cambien.
-	public class Producto
+	internal class Producto
 	{
-		public string Sku { get; private set; }
-		public Categoria Categoria { get; private set; }
-		public Presentacion Presentacion { get; private set; }
+		internal string Sku { get; private set; }
+		internal Categoria Categoria { get; private set; }
+		internal Presentacion Presentacion { get; private set; }
 
 		/// <summary>
 		/// Como lo nombra el supermercado. Puede AFINARSE con el tiempo -"Leche 1L" pasa a
 		/// "Leche semidescremada 1L"- y eso no es un conflicto: es el mismo producto mejor
 		/// descrito, y gana la ultima forma en que se lo nombro.
 		/// </summary>
-		public string Descripcion { get; private set; }
+		internal string Descripcion { get; private set; }
 
 		internal Producto(string sku, string descripcion, Categoria categoria, Presentacion presentacion)
 		{
@@ -39,7 +39,7 @@ namespace Compras.Dominio
 			Presentacion = presentacion;
 		}
 
-		public bool EsElMismo(string sku)
+		internal bool EsElMismo(string sku)
 		{
 			ArgumentNullException.ThrowIfNullOrWhiteSpace(sku);
 			return string.Equals(Sku, sku, StringComparison.OrdinalIgnoreCase);

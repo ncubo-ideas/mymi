@@ -19,13 +19,13 @@ namespace Compras.Dominio
 	//
 	// Y NO JUZGA. Dice de que a que, no si esta mejor. "Que el helado pasara de mensual a
 	// semanal es un dato, no una falta": la app lo señala y se calla.
-	public abstract class CambioDeRitmo
+	internal abstract class CambioDeRitmo
 	{
 		/// <summary>Cuántas compras del producto hacen falta en un lado para medirle un ritmo.</summary>
 		// Dos compras dan UN intervalo, y un intervalo solo no es un habito: puede ser la
 		// semana que se acabo antes. Con tres hay dos intervalos y ya se puede tomar una
 		// mediana que aguante una casualidad.
-		public const int ComprasQueHacenFaltaDeCadaLado = 3;
+		internal const int ComprasQueHacenFaltaDeCadaLado = 3;
 
 		internal static CambioDeRitmo Ninguno(string sku, string descripcion) =>
 			new SinRitmo(sku, descripcion);
@@ -34,8 +34,8 @@ namespace Compras.Dominio
 			IReadOnlyList<int> antes, IReadOnlyList<int> despues) =>
 			new Medido(sku, descripcion, antes, despues);
 
-		public string Sku { get; private set; }
-		public string Descripcion { get; private set; }
+		internal string Sku { get; private set; }
+		internal string Descripcion { get; private set; }
 
 		private CambioDeRitmo(string sku, string descripcion)
 		{
@@ -50,21 +50,21 @@ namespace Compras.Dominio
 		/// Si los DOS lados tienen suficientes compras para medirles un ritmo. Consulta de
 		/// presencia, total: sin esto no se afirma nada.
 		/// </summary>
-		public abstract bool HayConQueComparar { get; }
+		internal abstract bool HayConQueComparar { get; }
 
 		/// <summary>La cadencia de antes del corte. Preguntar HayConQueComparar primero.</summary>
-		public abstract Cadencia Antes { get; }
+		internal abstract Cadencia Antes { get; }
 
 		/// <summary>La cadencia de después del corte. Preguntar HayConQueComparar primero.</summary>
-		public abstract Cadencia Ahora { get; }
+		internal abstract Cadencia Ahora { get; }
 
 		/// <summary>Si la cadencia cambió de nombre. Total: en false, viene igual.</summary>
-		public abstract bool Cambio { get; }
+		internal abstract bool Cambio { get; }
 
 		/// <summary>Si ahora lo compra más seguido que antes. Preguntar Cambio primero.</summary>
-		public abstract bool EsMasSeguido { get; }
+		internal abstract bool EsMasSeguido { get; }
 
-		public abstract string ParaElAsistente { get; }
+		internal abstract string ParaElAsistente { get; }
 
 		// LAS DOS CADENCIAS, en la forma corta y SIN GUARDA: vacias cuando no hay ritmo
 		// medido. Existen para la frontera, que proyecta plano y no puede preguntar antes:
@@ -74,32 +74,32 @@ namespace Compras.Dominio
 		// total para el wire-, y la razon de que no sea una sola: quien tiene el objeto en
 		// la mano debe recibir un Cadencia, no un string, o el conjunto cerrado no sirve
 		// de nada.
-		public abstract string AntesCompacto { get; }
-		public abstract string AhoraCompacto { get; }
+		internal abstract string AntesCompacto { get; }
+		internal abstract string AhoraCompacto { get; }
 
 		private sealed class SinRitmo : CambioDeRitmo
 		{
 			internal SinRitmo(string sku, string descripcion) : base(sku, descripcion) { }
 
-			public override bool HayConQueComparar => false;
+			internal override bool HayConQueComparar => false;
 
-			public override Cadencia Antes =>
+			internal override Cadencia Antes =>
 				throw new InvalidOperationException(
 					$"No hay {ComprasQueHacenFaltaDeCadaLado} compras de '{Descripcion}' de cada lado "
 					+ "del corte con las que medir un ritmo. Preguntar HayConQueComparar antes.");
 
-			public override Cadencia Ahora => Antes;
-			public override bool Cambio => false;
+			internal override Cadencia Ahora => Antes;
+			internal override bool Cambio => false;
 
-			public override bool EsMasSeguido =>
+			internal override bool EsMasSeguido =>
 				throw new InvalidOperationException(
 					$"No hay ritmo medido para '{Descripcion}', asi que no hay nada que sea "
 					+ "mas seguido. Preguntar HayConQueComparar antes.");
 
-			public override string AntesCompacto => "";
-			public override string AhoraCompacto => "";
+			internal override string AntesCompacto => "";
+			internal override string AhoraCompacto => "";
 
-			public override string ParaElAsistente =>
+			internal override string ParaElAsistente =>
 				$"todavía no hay suficientes compras de {Descripcion} de los dos lados "
 				+ "como para decir si cambió el ritmo";
 		}
@@ -123,21 +123,21 @@ namespace Compras.Dominio
 				ahora = Cadencia.Para(Mediana(intervalosDeAhora));
 			}
 
-			public override bool HayConQueComparar => true;
-			public override Cadencia Antes => antes;
-			public override Cadencia Ahora => ahora;
+			internal override bool HayConQueComparar => true;
+			internal override Cadencia Antes => antes;
+			internal override Cadencia Ahora => ahora;
 
 			// Se comparan las CADENCIAS y no los dias: de 7 a 6 dias no es un cambio de
 			// habito, es la semana que se corrio. Las dos siguen siendo "todas las semanas",
 			// y decir que cambio seria inventar una noticia.
-			public override bool Cambio => !ReferenceEquals(antes, ahora);
+			internal override bool Cambio => !ReferenceEquals(antes, ahora);
 
-			public override bool EsMasSeguido => ahora.EsMasSeguidaQue(antes);
+			internal override bool EsMasSeguido => ahora.EsMasSeguidaQue(antes);
 
-			public override string AntesCompacto => antes.Compacta;
-			public override string AhoraCompacto => ahora.Compacta;
+			internal override string AntesCompacto => antes.Compacta;
+			internal override string AhoraCompacto => ahora.Compacta;
 
-			public override string ParaElAsistente => Cambio
+			internal override string ParaElAsistente => Cambio
 				? $"{Descripcion} pasó de {antes.ParaMostrar} a {ahora.ParaMostrar}"
 				: $"{Descripcion} sigue {ahora.ParaMostrar}";
 

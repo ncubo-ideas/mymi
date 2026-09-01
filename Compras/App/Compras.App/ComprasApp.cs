@@ -1,5 +1,4 @@
 using Choreography.Theater;
-using Compras.Dominio;
 
 namespace Compras.App
 {
@@ -13,7 +12,7 @@ namespace Compras.App
 	public sealed class ComprasApp : PerformanceV2
 	{
 		public ComprasApp(string nombreDelActor)
-			: base(nombreDelActor, typeof(Historial).Assembly)
+			: base(nombreDelActor, ElDominio.Assembly)
 		{
 		}
 

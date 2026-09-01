@@ -6,13 +6,13 @@ namespace Compras.Dominio
 	/// Cuanto entro de algo en UN mes: unidades, gasto y en cuantas compras. Es el punto
 	/// de la serie que hace posible decir CUANDO cambio un consumo, no solo cuanto.
 	/// </summary>
-	public class MesDeConsumo
+	internal class MesDeConsumo
 	{
-		public int Anio { get; private set; }
-		public int Mes { get; private set; }
-		public int Unidades { get; private set; }
-		public decimal Gasto { get; private set; }
-		public int Compras { get; private set; }
+		internal int Anio { get; private set; }
+		internal int Mes { get; private set; }
+		internal int Unidades { get; private set; }
+		internal decimal Gasto { get; private set; }
+		internal int Compras { get; private set; }
 
 		internal MesDeConsumo(int anio, int mes)
 		{
@@ -24,7 +24,7 @@ namespace Compras.Dominio
 		}
 
 		/// <summary>Como aaaa-mm, que es la forma en que se le dice a quien pregunta.</summary>
-		public string MesExpresado => $"{Anio:0000}-{Mes:00}";
+		internal string MesExpresado => $"{Anio:0000}-{Mes:00}";
 
 		internal void Sumar(int unidades, decimal gasto)
 		{

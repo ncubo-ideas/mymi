@@ -19,10 +19,10 @@ namespace Compras.Dominio
 	//
 	// Y NO JUZGA. La firma dice que compra, nunca si esta bien: el juicio no es de un
 	// supermercado.
-	public abstract class FirmaDeLaCanasta
+	internal abstract class FirmaDeLaCanasta
 	{
 		/// <summary>La proporción de compras en que un producto tiene que aparecer para ser habitual.</summary>
-		public const decimal ProporcionQueLoVuelveHabitual = 0.5m;
+		internal const decimal ProporcionQueLoVuelveHabitual = 0.5m;
 
 		internal static FirmaDeLaCanasta Ninguna(int comprasMiradas) => new SinFirma(comprasMiradas);
 
@@ -30,7 +30,7 @@ namespace Compras.Dominio
 			new Firma(comprasMiradas, habituales);
 
 		/// <summary>Cuántas compras se miraron para sacarla.</summary>
-		public int ComprasMiradas { get; private set; }
+		internal int ComprasMiradas { get; private set; }
 
 		private FirmaDeLaCanasta(int comprasMiradas)
 		{
@@ -42,24 +42,24 @@ namespace Compras.Dominio
 		}
 
 		/// <summary>Consulta de presencia, total: si hay al menos un producto habitual.</summary>
-		public abstract bool Existe();
+		internal abstract bool Existe();
 
-		public abstract IReadOnlyList<ProductoHabitual> Habituales { get; }
+		internal abstract IReadOnlyList<ProductoHabitual> Habituales { get; }
 
-		public abstract int CuantosHabituales { get; }
+		internal abstract int CuantosHabituales { get; }
 
 		/// <summary>La línea de la portada, escrita por el dominio. Sin jerga: ni sku ni categorías.</summary>
-		public abstract string ParaElAsistente { get; }
+		internal abstract string ParaElAsistente { get; }
 
 		private sealed class SinFirma : FirmaDeLaCanasta
 		{
 			internal SinFirma(int comprasMiradas) : base(comprasMiradas) { }
 
-			public override bool Existe() => false;
-			public override IReadOnlyList<ProductoHabitual> Habituales => Array.Empty<ProductoHabitual>();
-			public override int CuantosHabituales => 0;
+			internal override bool Existe() => false;
+			internal override IReadOnlyList<ProductoHabitual> Habituales => Array.Empty<ProductoHabitual>();
+			internal override int CuantosHabituales => 0;
 
-			public override string ParaElAsistente => ComprasMiradas == 0
+			internal override string ParaElAsistente => ComprasMiradas == 0
 				? "todavía no hay compras suyas con las que ver un patrón"
 				: $"en sus últimas {ComprasMiradas} compras no hay nada que se repita lo suficiente "
 					+ "como para llamarlo su firma";
@@ -80,14 +80,14 @@ namespace Compras.Dominio
 				this.habituales = habituales;
 			}
 
-			public override bool Existe() => true;
-			public override IReadOnlyList<ProductoHabitual> Habituales => habituales;
-			public override int CuantosHabituales => habituales.Count;
+			internal override bool Existe() => true;
+			internal override IReadOnlyList<ProductoHabitual> Habituales => habituales;
+			internal override int CuantosHabituales => habituales.Count;
 
 			// Se nombran los productos como los nombra el supermercado, en una lista que
 			// una persona lee de corrido. Cinco alcanzan para reconocerse; mas es un
 			// inventario, y un inventario no es una firma.
-			public override string ParaElAsistente
+			internal override string ParaElAsistente
 			{
 				get
 				{
@@ -108,13 +108,13 @@ namespace Compras.Dominio
 	/// <summary>
 	/// Un producto que vuelve: en cuántas de sus compras apareció, y cuál fue la última.
 	/// </summary>
-	public class ProductoHabitual
+	internal class ProductoHabitual
 	{
-		public string Sku { get; private set; }
-		public string Descripcion { get; private set; }
-		public int ComprasEnQueAparece { get; private set; }
-		public int ComprasMiradas { get; private set; }
-		public DateTime UltimaVez { get; private set; }
+		internal string Sku { get; private set; }
+		internal string Descripcion { get; private set; }
+		internal int ComprasEnQueAparece { get; private set; }
+		internal int ComprasMiradas { get; private set; }
+		internal DateTime UltimaVez { get; private set; }
 
 		internal ProductoHabitual(string sku, string descripcion, int comprasEnQueAparece,
 			int comprasMiradas, DateTime ultimaVez)
@@ -133,14 +133,14 @@ namespace Compras.Dominio
 		}
 
 		/// <summary>En qué proporción de las compras aparece. 1 es en todas.</summary>
-		public decimal Proporcion => Math.Round((decimal)ComprasEnQueAparece / ComprasMiradas, 4);
+		internal decimal Proporcion => Math.Round((decimal)ComprasEnQueAparece / ComprasMiradas, 4);
 
 		/// <summary>Si está en TODAS las compras miradas. Lo que de verdad no falla.</summary>
-		public bool EstaEnTodas => ComprasEnQueAparece == ComprasMiradas;
+		internal bool EstaEnTodas => ComprasEnQueAparece == ComprasMiradas;
 
 		/// <summary>Qué tan fiel es, dicho en palabras: "nunca falla", "casi nunca falta".</summary>
 		// Va aca y no en la pantalla porque es la MISMA respuesta para el MCP y para la UI, y
 		// porque el umbral -cuanto es "casi nunca falta"- es un juicio del dominio.
-		public Constancia Constancia => Constancia.Para(Proporcion);
+		internal Constancia Constancia => Constancia.Para(Proporcion);
 	}
 }

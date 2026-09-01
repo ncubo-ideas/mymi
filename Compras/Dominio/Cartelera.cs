@@ -17,15 +17,15 @@ namespace Compras.Dominio
 	// el: borrar una promocion vencida seria fingir que el evento no llego. Ademas una
 	// vencida no es basura — "que me ofrecieron el mes pasado" es una pregunta legitima
 	// para el asistente, aunque ninguna pantalla la muestre.
-	public class Cartelera
+	internal class Cartelera
 	{
 		private readonly List<Promocion> promociones = new List<Promocion>();
 
-		public IReadOnlyList<Promocion> Todas => promociones;
+		internal IReadOnlyList<Promocion> Todas => promociones;
 
-		public int Cantidad => promociones.Count;
+		internal int Cantidad => promociones.Count;
 
-		public void Colgar(Promocion promocion)
+		internal void Colgar(Promocion promocion)
 		{
 			ArgumentNullException.ThrowIfNull(promocion);
 			promociones.Add(promocion);
@@ -40,7 +40,7 @@ namespace Compras.Dominio
 		// igual vencimiento, la que llego primero — el orden del corcho. El desempate va
 		// EXPLICITO en la comparacion porque List.Sort no es estable: sin el, dos carteles
 		// que vencen el mismo dia saldrian en un orden que puede cambiar entre corridas.
-		public IReadOnlyList<Promocion> VigentesEl(DateTime fecha)
+		internal IReadOnlyList<Promocion> VigentesEl(DateTime fecha)
 		{
 			var vigentes = new List<(Promocion Promocion, int Llegada)>();
 			for (int i = 0; i < promociones.Count; i++)
