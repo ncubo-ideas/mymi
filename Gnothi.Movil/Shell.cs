@@ -46,7 +46,20 @@ public sealed class Shell : IDisposable
 	// En iOS son Library/Application Support y Documents/incoming -- y ahi hay una ventaja
 	// que Android no tiene: Documents/ SE VE en la app Archivos, asi que la persona puede
 	// dejar el paquete ella misma, sin cable y sin adb.
-	public sealed record Paths(string Files, string Incoming);
+	/// <param name="ReescribirRutas">
+	/// Si el installation.json que viene en Incoming trae rutas de OTRA maquina y hay que
+	/// hacerlas locales al copiarlo.
+	///
+	/// ANDROID: false. armar-paquete.ps1 ya escribio las rutas buenas, porque en Android el
+	/// area privada de una app es predecible: /data/user/0/&lt;applicationId&gt;/files. Se sabe
+	/// al armar el paquete.
+	///
+	/// iOS: true, y no es un capricho. El contenedor es
+	/// /var/mobile/Containers/Data/Application/&lt;GUID&gt;/... y ESE GUID CAMBIA EN CADA
+	/// INSTALACION. No hay ninguna ruta que se pueda dejar escrita de antemano: la unica que
+	/// existe es la que el proceso averigua cuando ya esta corriendo.
+	/// </param>
+	public sealed record Paths(string Files, string Incoming, bool ReescribirRutas = false);
 
 	private readonly Paths paths;
 	private readonly Action<string> log;
@@ -112,6 +125,8 @@ public sealed class Shell : IDisposable
 			string journalsIn = Path.Combine(paths.Incoming, "journals");
 			if (Directory.Exists(modulesIn)) copied += Copy(modulesIn, root);
 			if (Directory.Exists(journalsIn)) copied += Copy(journalsIn, journals);
+
+			if (paths.ReescribirRutas) Localizar(root, journals);
 		}
 
 		// 2 - DESCUBRIR. El mismisimo codigo que corre el Host de escritorio.
@@ -383,6 +398,66 @@ public sealed class Shell : IDisposable
 	/// la pagina sin un error visible en ningun lado.
 	public static string PushScript(string kind, string id, string payload) =>
 		$"gn.push({JsonSerializer.Serialize(kind)},{JsonSerializer.Serialize(id)},{JsonSerializer.Serialize(payload)})";
+
+	// HACER LOCALES LAS RUTAS DEL installation.json. Solo donde la plataforma lo pide.
+	//
+	// EL PROBLEMA, y es de iOS nada mas: armar-paquete.ps1 escribe rutas absolutas de Android
+	// -/data/user/0/com.ncubo.gnothi.host/files/...- porque ahi se pueden saber al armar el
+	// paquete. En iOS el contenedor lleva un GUID que CAMBIA EN CADA INSTALACION, asi que no
+	// existe ninguna ruta que se pueda dejar escrita: la unica valida es la que el proceso
+	// averigua ya corriendo.
+	//
+	// SE TOCAN DOS CAMPOS Y NADA MAS, y los dos son del Host, no del modulo:
+	//
+	//   shell.arguments[0]   donde esta el dll        se conserva el NOMBRE del archivo
+	//   grantedFolder        que carpeta se le otorga  se conserva el negocio
+	//
+	// El manifiesto NO se toca nunca: eso es lo que declara la institucion. Y de la instalacion
+	// se toca solo lo que es una direccion de esta maquina; el interruptor, las tools apagadas
+	// y la caratula quedan exactamente como venian, porque esas son decisiones de la persona.
+	//
+	// SERIA MEJOR QUE ESTO NO EXISTIERA. La solucion de fondo es que installation.json admita
+	// rutas RELATIVAS y que el Host las resuelva contra la carpeta del modulo -- ahi el archivo
+	// de la persona deja de tener adentro una direccion de una maquina, que es una propiedad
+	// que vale en las tres plataformas. Se dejo para despues a proposito: cambia el nucleo, y
+	// el nucleo hay que volver a correrlo en el A54 antes de darlo por bueno.
+	private void Localizar(string root, string journals)
+	{
+		if (!Directory.Exists(root)) return;
+
+		foreach (string dir in Directory.GetDirectories(root))
+		{
+			string file = Path.Combine(dir, "installation.json");
+			if (!File.Exists(file)) continue;
+
+			try
+			{
+				string negocio = Path.GetFileName(dir);
+				Installation vieja = JsonSerializer.Deserialize<Installation>(File.ReadAllText(file))!;
+
+				// El nombre del dll es lo unico que se rescata de la ruta vieja: cual dll se
+				// carga lo decidio quien armo el paquete, y eso no cambia por mudarse de
+				// aparato. Donde esta, si.
+				string dll = vieja.Shell.Arguments.Count > 0 ? Path.GetFileName(vieja.Shell.Arguments[0]) : "";
+				if (dll.Length == 0) { log($"localizar: {negocio} no declara dll; se deja como esta"); continue; }
+
+				Installation nueva = vieja with
+				{
+					Shell = vieja.Shell with { Arguments = [Path.Combine(dir, "bin", dll)] },
+					GrantedFolder = Path.Combine(journals, negocio),
+				};
+
+				File.WriteAllText(file, JsonSerializer.Serialize(nueva, new JsonSerializerOptions { WriteIndented = true }));
+				log($"localizar: {negocio} -> {nueva.GrantedFolder}");
+			}
+			catch (Exception e)
+			{
+				// Un modulo que no se pudo localizar va a contestar "no hay datos", y eso se ve
+				// en pantalla. Tumbar el arranque entero por uno solo seria peor.
+				log($"localizar: {Path.GetFileName(dir)} FALLO {e.GetType().Name}: {e.Message}");
+			}
+		}
+	}
 
 	// Copiar del area de descarga a la privada. Tonto a proposito: el Host no interpreta nada
 	// de lo que copia.

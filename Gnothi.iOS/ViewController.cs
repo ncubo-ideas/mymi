@@ -73,7 +73,11 @@ public sealed class ViewController : UIViewController
 		SembrarDesdeElBundle(incoming);
 
 		shell = new Shell(
-			new Shell.Paths(Files: files, Incoming: incoming),
+			// ReescribirRutas: true, y es obligatorio aca. El paquete lo arma armar-paquete.ps1
+			// con rutas absolutas de Android, que alla se saben de antemano. El contenedor de
+			// iOS lleva un GUID que cambia en cada instalacion, asi que la unica ruta valida es
+			// la que este proceso acaba de averiguar.
+			new Shell.Paths(Files: files, Incoming: incoming, ReescribirRutas: true),
 			Log,
 			(kind, id, payload) => InvokeOnMainThread(() =>
 				web?.EvaluateJavaScript(Shell.PushScript(kind, id, payload), (_, _) => { })));

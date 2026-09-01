@@ -25,22 +25,66 @@ API nativa de cada plataforma igual. Costo alto por compartir lo que ya estaba c
 La decisión original está escrita en `Gnothi.Mobile/MainActivity.cs`, de cuando se evaluó
 Blazor para Android.
 
-## Cómo correrlo
+## PARA CORRERLO
 
-**Hace falta una Mac con Xcode.** En Windows compila el C# (útil para verificar que no se
-rompió nada), pero el empaquetado del `.app` es de Xcode.
+### 1 · Lo que hace falta antes
 
-```bash
-cd Gnothi.iOS && dotnet build -f net9.0-ios -c Debug
+```
+Mac con Xcode            (el mismo del spike de Siri)
+.NET 9 SDK               https://dotnet.microsoft.com/download/dotnet/9.0
+workload de iOS          dotnet workload install ios
+acceso al feed privado   <- ESTE es el que sorprende, ver abajo
 ```
 
-Para el simulador o el aparato, desde la Mac:
+**El feed privado es el bloqueo real.** El proyecto referencia `Ncubo.Puppeteer`, que no está
+en nuget.org: vive en Azure Artifacts de la organización. Sin el credential provider, el
+`restore` falla con `NU1101: Unable to find package Ncubo.Puppeteer` — y **ese error no dice
+que falta autenticación**, así que se pierde media hora buscándolo en el `.csproj`.
+
+El instalador oficial de Microsoft para macOS:
 
 ```bash
-dotnet build -t:Run -f net9.0-ios
+sh -c "$(curl -fsSL https://aka.ms/install-artifacts-credprovider.sh)"
 ```
 
-### Los logs
+Instala en `~/.nuget/plugins`. La primera vez que corras `dotnet restore` te va a pedir que
+abras una URL y pegues un código de dispositivo — con la cuenta de ncubo. Si preferís ver el
+script antes de correrlo, bajalo con `curl -O` y leelo; es el mismo que documenta Microsoft.
+
+### 2 · El paquete — te lo tiene que pasar Edgar
+
+`Gnothi.Mobile/paquete/` **no está en git**: es salida de build, y además los journals viven
+en la máquina de él. Te va a mandar un zip. Descomprimilo ahí:
+
+```
+Gnothi/
+  Gnothi.Mobile/
+    paquete/          <- acá
+      Modulos/
+      journals/
+```
+
+Si está cuando compilás, viaja adentro de la app y se siembra solo. Si no, la app arranca
+igual pero **sin módulos**, y la sonda no puede correr los pasos 1-5 — que son el punto.
+
+> **Ojo con las rutas.** El `installation.json` del paquete trae rutas absolutas de Android
+> (`/data/user/0/...`). No las corrijas a mano: la app las reescribe al arrancar. El
+> contenedor de iOS lleva un GUID que cambia en cada instalación, así que **no existe** una
+> ruta que se pueda dejar escrita de antemano. En el log vas a ver `localizar: facturas -> ...`.
+
+### 3 · Compilar y correr
+
+```bash
+cd Gnothi/Gnothi.iOS && dotnet build -t:Run -f net9.0-ios
+```
+
+Para elegir simulador o aparato:
+
+```bash
+dotnet build -t:Run -f net9.0-ios -p:RuntimeIdentifier=ios-arm64
+```
+
+### 4 · Los logs — acá está el resultado
 
 El equivalente de `adb logcat -s GNOTHI`:
 
@@ -48,13 +92,24 @@ El equivalente de `adb logcat -s GNOTHI`:
 log stream --predicate 'processImagePath CONTAINS "Gnothi"' --style compact
 ```
 
-### Cómo entran los journals y los módulos
+**Todo lo que importa sale por ahí, con el prefijo `GNOTHI:`.** La pantalla es secundaria.
+
+### 5 · Qué reportar
+
+Lo de la sección «la sonda de AOT», abajo — **las dos banderas y los cinco pasos, textuales**.
+Con eso alcanza; no hace falta interpretarlo.
+
+Y aparte, dos sí/no:
+
+- ¿pintó la pantalla, o salió en blanco? (si salió en blanco, el log dice `NO se encontro ...`)
+- ¿aparecen los módulos con sus switches, como en Android?
+
+## Cómo entran los journals y los módulos
 
 Dos caminos, y el segundo es mejor que cualquier cosa que tenga Android:
 
-1. **Desde el bundle.** Si `Gnothi.Mobile/paquete/` existe cuando se compila (lo arma
-   `armar-paquete.ps1`), viaja adentro de la app y se siembra en `Documents/incoming` la
-   primera vez.
+1. **Desde el bundle.** Si `Gnothi.Mobile/paquete/` existe cuando se compila, viaja adentro de
+   la app y se siembra en `Documents/incoming` la primera vez.
 2. **Desde la app Archivos.** `Info.plist` declara `UIFileSharingEnabled` y
    `LSSupportsOpeningDocumentsInPlace`, así que la carpeta de la app **aparece en Archivos** y
    la persona deja el paquete ella misma. Sin cable, sin `adb`, sin un desarrollador al lado.
