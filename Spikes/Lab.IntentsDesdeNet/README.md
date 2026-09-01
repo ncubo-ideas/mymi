@@ -1,5 +1,14 @@
 # Lab.IntentsDesdeNet — ¿puede una app de .NET llevar App Intents adentro?
 
+> **CORRER ESTO SOLO SI `Gnothi.iOS/armar-intents.sh` FALLA EN 6b.**
+>
+> El mismo mecanismo ya está montado directo en `Gnothi.iOS`, leyendo la foto real. Este spike
+> es el **diagnóstico de respaldo**: una app que no tiene Host, ni módulos, ni Mono cargando
+> nada, ni WebView — solo una intent y un archivo. Si acá funciona y en `Gnothi.iOS` no, algo
+> del proceso de Gnothi interfiere. Si acá tampoco, el mecanismo no anda y da igual dónde viva.
+>
+> Si `Gnothi.iOS` pasa, esto no hace falta correrlo.
+
 **Medido, no leído.** Toda una tarde tratamos `dotnet/macios#24863` como si cerrara la pregunta.
 No la cierra: es **un** reporte, abierto desde marzo de 2026, sin respuesta de los mantenedores,
 que vio el síntoma y nunca buscó la causa.

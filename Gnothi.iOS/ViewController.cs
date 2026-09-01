@@ -81,7 +81,11 @@ public sealed class ViewController : UIViewController
 				Files: files,
 				Incoming: incoming,
 				ReescribirRutas: true,
-				Instantaneas: Compartido()),
+				Instantaneas: Compartido(),
+				// La foto local es la que lee Intents/GnothiIntents.swift, la intent que vive
+				// DENTRO de esta app. No depende del App Group: si Compartido() da null, esta
+				// se escribe igual.
+				FotoLocal: true),
 			Log,
 			(kind, id, payload) => InvokeOnMainThread(() =>
 				web?.EvaluateJavaScript(Shell.PushScript(kind, id, payload), (_, _) => { })));

@@ -25,6 +25,37 @@ API nativa de cada plataforma igual. Costo alto por compartir lo que ya estaba c
 La decisión original está escrita en `Gnothi.Mobile/MainActivity.cs`, de cuando se evaluó
 Blazor para Android.
 
+## Los App Intents, ADENTRO de esta app — `armar-intents.sh`
+
+`Intents/GnothiIntents.swift` es **el único archivo de esta app que no es C#**, porque App Intents
+tiene que ser Swift. Vive acá para que **Gnothi sea una sola app**: el Host de .NET bajo Mono
+—carga dinámica de módulos incluida— con la intent de Swift adentro leyendo la foto que el Host
+escribe en su propia carpeta. **Sin App Group, sin entitlement, sin portal.**
+
+Lo que `dotnet build` no hace, y por eso existe el script: generar `Metadata.appintents` con
+`appintentsmetadataprocessor` y meterla al bundle. Es el paso que `dotnet/macios#24863` nunca
+diagnosticó. Bazel lo hace en producción fuera de Xcode; nosotros igual.
+
+```bash
+cd Gnothi.iOS && ./armar-intents.sh
+```
+
+Seis pasos con veredicto; el primero que falla es la respuesta. **Reportar cuatro líneas:**
+
+```
+paso 3   ¿dotnet build dejó Metadata.appintents?          SI / NO   (se espera NO)
+paso 4   ¿se generó e inyectó extract.actionsdata?         SI / NO
+6a       ¿Atajos muestra «Lo que Gnothi tiene»?            SI / NO
+6b       ¿al correrla dice el encuadre + las facturas REALES con fecha?   TEXTO COMPLETO
+```
+
+**Si 6a y 6b pasan, `Lab.Siri` y el App Group dejan de hacer falta** — la foto local reemplaza
+a la compartida. Si 6b falla, correr `Spikes/Lab.IntentsDesdeNet`, que es el mismo mecanismo
+sin nada de Gnothi alrededor, para separar «no anda» de «algo interfiere».
+
+Nada de esto toca la sonda ni la Puerta 2: la `NativeReference` está condicionada a que exista
+la `.a`, así que `dotnet build -t:Run` a secas sigue dando la app de siempre.
+
 ## Siri no ve los tools de los módulos, y no es algo que falte configurar
 
 Si viniste buscando por qué el asistente del sistema no encuentra `revisar_mis_analitos` ni

@@ -124,6 +124,34 @@
   </ItemGroup>
 
   <ItemGroup>
+    <!-- LOS APP INTENTS, EN SWIFT, ADENTRO DE ESTA APP. Ver Intents/GnothiIntents.swift.
+
+         La libreria la produce armar-intents.sh con swiftc directo, y el mismo script genera
+         Metadata.appintents con appintentsmetadataprocessor y la mete al bundle: ese es el
+         paso que el build de .NET no hace, y la razon de que dotnet/macios#24863 diga que
+         "no funciona". Bazel lo hace en produccion fuera de Xcode; nosotros igual.
+
+         ForceLoad: una conformance a AppIntent no la llama nadie por codigo · solo la lee la
+         metadata · asi que sin esto el linker la borra como codigo muerto.
+
+         Frameworks=AppIntents: el ejecutable tiene que cargar AppIntents.framework o el
+         runtime ni mira la metadata. La libreria estatica no lo arrastra sola.
+
+         Estatico y no framework: en Xcode puro las intents dentro de un framework dinamico
+         tampoco se descubren (AppIntentCounter2). Estatico deja el tipo Swift en el mismo
+         Mach-O que la app.
+
+         Condicionado a que la .a exista: en Windows compila el C# igual, y la sonda y la
+         Puerta 2 no dependen de esto. En la Mac, armar-intents.sh aborta si falta. -->
+    <NativeReference Include="Intents\out\libGnothiIntents.a" Condition="Exists('Intents\out\libGnothiIntents.a')">
+      <Kind>Static</Kind>
+      <ForceLoad>True</ForceLoad>
+      <SmartLink>False</SmartLink>
+      <Frameworks>AppIntents Foundation</Frameworks>
+    </NativeReference>
+  </ItemGroup>
+
+  <ItemGroup>
     <PackageReference Include="Ncubo.Puppeteer" Version="$(VersionDelMotor)" />
     <ProjectReference Include="..\Examenes\Mecanismo\Puppets.Portador\Puppets.Portador.csproj" />
     <ProjectReference Include="..\Gnothi.Contract\Gnothi.Contract.csproj" />

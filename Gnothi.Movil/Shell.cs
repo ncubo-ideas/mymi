@@ -70,11 +70,19 @@ public sealed class Shell : IDisposable
 	/// esta en .NET, asi que no se tocan: el Host deja la foto y la caratula la lee. Ver
 	/// Instantanea.cs.
 	/// </param>
+	/// <param name="FotoLocal">
+	/// Si ademas hay que dejar la foto en la carpeta PROPIA de la app, en Files/instantanea/.
+	///
+	/// Es para una intent que viva DENTRO de esta misma app (Gnothi.iOS/Intents/): ahi no hace
+	/// falta App Group, ni entitlement, ni portal de Apple · es un archivo en la carpeta de uno.
+	/// Android lo deja en false: alla la caratula es un APK aparte que pregunta en vivo.
+	/// </param>
 	public sealed record Paths(
 		string Files,
 		string Incoming,
 		bool ReescribirRutas = false,
-		string? Instantaneas = null);
+		string? Instantaneas = null,
+		bool FotoLocal = false);
 
 	private readonly Paths paths;
 	private readonly Action<string> log;
@@ -179,8 +187,17 @@ public sealed class Shell : IDisposable
 	/// nada -- alla la caratula pregunta en vivo.
 	private async Task Fotografiar()
 	{
-		if (paths.Instantaneas is null || dispatcher is null) return;
-		await Instantanea.Escribir(dispatcher, paths.Instantaneas, log, stop.Token);
+		if (dispatcher is null) return;
+
+		// LOCAL: para la intent que vive dentro de esta app. Sin App Group. La ruta tiene que
+		// coincidir con FotoLocal.ruta en Intents/GnothiIntents.swift.
+		if (paths.FotoLocal)
+			await Instantanea.Escribir(dispatcher, Path.Combine(paths.Files, "instantanea"), log, stop.Token);
+
+		// COMPARTIDA: para una app hermana (el spike de Swift). Puede no existir si el App Group
+		// no esta aprovisionado, y eso no impide la local.
+		if (paths.Instantaneas is not null)
+			await Instantanea.Escribir(dispatcher, paths.Instantaneas, log, stop.Token);
 	}
 
 	public void Dispose()
