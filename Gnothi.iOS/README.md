@@ -25,6 +25,26 @@ API nativa de cada plataforma igual. Costo alto por compartir lo que ya estaba c
 La decisión original está escrita en `Gnothi.Mobile/MainActivity.cs`, de cuando se evaluó
 Blazor para Android.
 
+## Siri no ve los tools de los módulos, y no es algo que falte configurar
+
+Si viniste buscando por qué el asistente del sistema no encuentra `revisar_mis_analitos` ni
+ningún otro tool de un módulo: **está medido y está cerrado.** El detalle, con la evidencia,
+está en [`Spikes/Lab.Siri/HALLAZGOS.md`](../Spikes/Lab.Siri/HALLAZGOS.md), hallazgo 7.
+
+En corto. Las App Intents se extraen **en tiempo de compilación** a
+`Metadata.appintents/extract.actionsdata`, que viaja dentro del bundle **firmado**. Los tools de
+un módulo llegan por `Documents/incoming` **después** de instalar, cuando el bundle ya está
+sellado. Es el espejo de lo que bloqueó en Android: allá la curaduría de Gemini, acá la firma de
+código. Y hay un tope duro de 10 AppShortcut por app.
+
+Lo que sí se puede, y el spike ya lo tiene andando: **una intent genérica compilada acá**, cuyo
+`perform()` haga `ToolIndex.Of(dispatcher)` y despache — la forma es fija, el ruteo se resuelve
+en runtime, y un módulo que llegue después queda alcanzable sin recompilar. Más un `AppEntity`
+por negocio para el índice de Spotlight.
+
+Lo que **no** hay que prometer en una demo: «cada tool de cada módulo aparece como una acción de
+Siri».
+
 ## PARA CORRERLO
 
 ### 1 · Lo que hace falta antes
