@@ -188,9 +188,19 @@ namespace DealershipCar.Dominio.Pruebas
 		// (DEALERSHIP-DOMAIN §6, la fila de DistanceUnit) y una persona no lee "UnitA".
 		// La ley que las cubre a ellas es TheUnitsAreSaidInTheirRealWorldNames, que fija los
 		// seis nombres uno por uno y vuelve a atar el wire al nombre del miembro.
+		//
+		// LA LISTA SE COMPLETO EN T1 DE WarrantyEnvelope, y estaba corta por lo que dice C57: el
+		// archivo enumeraba SU sujeto -- los conjuntos que se eligen desde el wire -- mientras que
+		// esta ley de aca arriba habla de TODOS ("son el unico caso del modulo"). RevisionState,
+		// CoverageStanding y el nuevo EnvelopeStanding se eligen adentro y proyectan su nombre
+		// igual, asi que caen bajo la misma ley y faltaban. Los tres pasaban ya; lo que faltaba
+		// era que la barrida lo dijera.
 		[TestCase(typeof(FluidKind))]
 		[TestCase(typeof(TyrePosition))]
 		[TestCase(typeof(FuelGradeStanding))]
+		[TestCase(typeof(RevisionState))]
+		[TestCase(typeof(CoverageStanding))]
+		[TestCase(typeof(EnvelopeStanding))]
 		public void TheProjectedNameIsTheMembersOwnName(Type conjunto)
 		{
 			foreach (FieldInfo campo in MiembrosDe(conjunto))

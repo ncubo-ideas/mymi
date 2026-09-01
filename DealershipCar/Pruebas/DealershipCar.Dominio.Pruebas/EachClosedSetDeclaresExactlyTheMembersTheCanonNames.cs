@@ -6,9 +6,15 @@ using NUnit.Framework;
 
 namespace DealershipCar.Dominio.Pruebas
 {
-	// LOS SIETE CONJUNTOS CERRADOS DE ModelSpecification (§5 del brief, tabla §3.1 del plan),
-	// y lo unico que los vuelve CERRADOS: exactamente los miembros que el canon nombra, cada
-	// uno una instancia distinta, y un constructor privado para que nadie fabrique un octavo.
+	// LOS SIETE CONJUNTOS CERRADOS DE ModelSpecification (§5 del brief, tabla §3.1 del plan) MAS
+	// EnvelopeStanding, el primero de WarrantyEnvelope (§3.1 de su plan, T1), y lo unico que los
+	// vuelve CERRADOS: exactamente los miembros que el canon nombra, cada uno una instancia
+	// distinta, y un constructor privado para que nadie fabrique uno de mas.
+	//
+	// ENVELOPE STANDING TIENE TRES Y NO CUATRO, y el cuarto que falta es la decision D1 del plan
+	// de su slice: "no se puede saber" NO es miembro -- es una de las tres variantes suspendidas
+	// de EnvelopeAnswer (E47). Lo que si es miembro es NotPublished, exactamente como en
+	// CoverageStanding, porque "nadie publico un sobre" el registro lo decide con certeza.
 	//
 	// Ni uno de mas -- un miembro que el canon no nombra es vocabulario inventado, y en este
 	// modulo inventar vocabulario es inventar un hecho del fabricante (§7 del brief) -- ni dos
@@ -27,6 +33,7 @@ namespace DealershipCar.Dominio.Pruebas
 		[TestCase(typeof(VolumeUnit), 2)]
 		[TestCase(typeof(RevisionState), 3)]
 		[TestCase(typeof(CoverageStanding), 5)]
+		[TestCase(typeof(EnvelopeStanding), 3)]
 		public void ItDeclaresExactlyItsMembers(Type conjunto, int cuantos)
 		{
 			List<object> miembros = MiembrosDe(conjunto);
@@ -54,6 +61,7 @@ namespace DealershipCar.Dominio.Pruebas
 		[TestCase(typeof(VolumeUnit))]
 		[TestCase(typeof(RevisionState))]
 		[TestCase(typeof(CoverageStanding))]
+		[TestCase(typeof(EnvelopeStanding))]
 		public void ItCannotBeInstantiatedFromOutside(Type conjunto)
 		{
 			ConstructorInfo[] ctores = conjunto.GetConstructors(
@@ -79,6 +87,7 @@ namespace DealershipCar.Dominio.Pruebas
 		[TestCase(typeof(VolumeUnit))]
 		[TestCase(typeof(RevisionState))]
 		[TestCase(typeof(CoverageStanding))]
+		[TestCase(typeof(EnvelopeStanding))]
 		public void ItIsSealedBecauseNothingExtendsAClosedSet(Type conjunto)
 		{
 			Assert.That(conjunto.IsSealed, Is.True,
@@ -96,6 +105,7 @@ namespace DealershipCar.Dominio.Pruebas
 		[TestCase(typeof(VolumeUnit))]
 		[TestCase(typeof(RevisionState))]
 		[TestCase(typeof(CoverageStanding))]
+		[TestCase(typeof(EnvelopeStanding))]
 		public void ItIsInternalLikeTheRestOfTheDomain(Type conjunto)
 		{
 			Assert.That(conjunto.IsPublic, Is.False,

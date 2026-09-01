@@ -7,7 +7,12 @@ using NUnit.Framework;
 namespace DealershipCar.Dominio.Pruebas
 {
 	// LOS DOS CONJUNTOS CERRADOS DE ModelSpecification QUE **NO** SE ELIGEN DESDE EL WIRE
-	// (tabla §3.1 del plan): RevisionState y CoverageStanding.
+	// (tabla §3.1 del plan): RevisionState y CoverageStanding. Y desde T1 de WarrantyEnvelope,
+	// EnvelopeStanding, que es interno POR LA MISMA RAZON QUE CoverageStanding: es una RESPUESTA
+	// -- donde esta parado el vehiculo contra el sobre que la agencia publico -- y nunca una
+	// entrada. Un codigo de frontera que lo nombrara dejaria que alguien de afuera DIJERA que un
+	// carro esta todavia en garantia, que es lo que la ley L11 de ese slice prohibe: este modulo
+	// dice donde esta parado el vehiculo, no adjudica.
 	//
 	// La tabla los marca "internally selected", y no tener enum de frontera ni OfCode es LA
 	// DECISION, no un olvido. Una ausencia no se puede afirmar con una llamada, asi que se
@@ -29,6 +34,7 @@ namespace DealershipCar.Dominio.Pruebas
 	{
 		[TestCase(typeof(RevisionState), "RevisionStateCode")]
 		[TestCase(typeof(CoverageStanding), "CoverageStandingCode")]
+		[TestCase(typeof(EnvelopeStanding), "EnvelopeStandingCode")]
 		public void ItHasNoResolverAndNoBoundaryEnum(Type conjunto, string enumQueNoDebeExistir)
 		{
 			Assert.That(conjunto.GetMethod("OfCode",
