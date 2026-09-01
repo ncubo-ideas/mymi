@@ -17,7 +17,7 @@ que sabe programar, menos que nadie.
 | **4** | **Hello World** — algo que tocar y romper antes de lo propio | entendimiento | [2 · Hola Mundo](../Ejemplos/HolaMundo/README.md) |
 | **5** | **Construir** — el dominio, la lógica, y la carátula de **consola**, que es el arnés | `Dominio/` · `App/<N>.App` · `App/<N>.Consola` | [3](03-construir-la-app.md) |
 | **6** | **Traer los datos del proveedor** | `EndPointDeEventos/` · `InyectorDeEventosDemo/` | [5](#) *pendiente* |
-| **7** | **Exponerla** — las dos carátulas que miran **hacia afuera**: la que instala la persona y la que ve la IA | `App/<N>.Wasm` · `App/<N>.Mcp` | [6](06-cli-y-acceso-de-la-ia.md) |
+| **7** | **Exponerla** — las dos carátulas que miran **hacia afuera**: la que instala la persona y la que ve la IA | `App/<N>.Wasm` · `App/<N>.Mcp` | [6](06-cli-y-acceso-de-la-ia.md) · [7 · las puertas](07-las-puertas-de-la-ia.md) |
 | **8** | **Auditar** contra `Preguntas.md` | el reporte de deriva | [Observables](observables.md) |
 | **9** | **Publicar** — la página de descarga, el compose y el README de cómo se corre | `PaginaDeDescarga/` · `docker-compose.yml` · `README.md` | *pendiente* |
 | **10** | **Declarar el módulo** — para que el Host lo catalogue, le conceda y lo verifique **sin arrancarlo** | `manifest.json` | [El manifiesto y la instalación](el-manifiesto-y-la-instalacion.md) |
@@ -41,7 +41,8 @@ Aparte del orden, y se lee cuando haga falta:
 | Capítulo | Qué es |
 |---|---|
 | [0 · La arquitectura clientecéntrica](00-arquitectura-clientecentrica.md) | Dónde corre todo, de quién es el journal, el Host y los módulos. **Contexto, no requisito**: se puede hacer el paso 1 sin haberlo leído |
-| [Las reglas del substrato](reglas-del-substrato.md) | Las 14 cosas que el motor hace y ninguna documentación dice. **Referencia, no tutorial**: si ya sabés lo que hacés, entrás por acá y no por el paso 5 |
+| [Las reglas del substrato](reglas-del-substrato.md) | Las 16 cosas que el motor hace y ninguna documentación dice. **Referencia, no tutorial**: si ya sabés lo que hacés, entrás por acá y no por el paso 5 |
+| El teléfono | **pendiente, y desbloqueado.** `Gnothi.Mobile` corre el núcleo del Host adentro de una app Android, medido en un Galaxy A54 físico. Por qué la cáscara **tiene** que ser en proceso, que no es MAUI, y qué significa que sea "el mismo código" |
 | A · Compartir información entre apps | **pendiente**, con punto de partida en el cap. 0 §6 |
 
 > **Los números son identificadores, no orden.** Vienen de cuando las guías se escribieron en otra
@@ -63,6 +64,7 @@ Importa, porque estas guías se van a leer como si todo tuviera el mismo respald
 | **Punto de partida** | **Corrido una vez**, sobre un dominio de presupuesto personal (2026-08-26). La corrida encontró seis defectos en el guion, y los seis están corregidos |
 | **Capítulo 1** | **Escrito preparando una máquina y anotando dónde se rompió.** Versiones, mensajes de error y diagnósticos medidos. Lo que no se pudo verificar —Docker, `wasm-tools`— lo dice |
 | **El manifiesto** | **Leído del Host que lo valida** (`Gnothi.Host/Manifest.cs`, rama `master_gnothiHostDesktop`), no propuesto. Pero el Host se diseña **en paralelo**: §8 dice qué sigue abierto |
+| **Capítulo 7** | **Leído del código que corre** —`Gnothi.Assistant`, y el Host medido en un Galaxy A54—. La tercera puerta es un **spike de 8 de 9 pruebas** y está marcada como tal; de Android no se afirma nada porque su medición no está en el repo |
 | **Capítulo 6, CLI** | Construido y corrido. 44 pruebas |
 | **Capítulo 6, MCP** | **Corregido.** Se construyó un servidor y se le habló por stdio; esa corrida desmintió la versión anterior. Falta enchufarlo a un cliente real |
 
@@ -97,12 +99,18 @@ se corra.
 corriendo contra el cual probar una receta.
 
 **8 (auditar). Parcialmente desbloqueado.** Ya existe el instrumento: [la tabla de
-observables](observables.md), con cinco chequeos corridos contra los tres negocios. Faltan cinco por
+observables](observables.md), con cinco chequeos corridos contra los tres negocios. Faltan seis por
 correr, y uno quedó declarado **no observable** a propósito. Lo que todavía bloquea la auditoría
 completa es que **sólo `Compras` tiene su `Preguntas.md`** —lo escribió el equipo el 2026-08-27, y
-encontró tres defectos en un negocio con 461 comprobaciones en verde—. Sin la intención declarada,
-un agente
-puede leer el código pero no sabe contra qué compararlo.
+encontró tres defectos en un negocio con 461 comprobaciones en verde—. Sin la intención declarada, un
+agente puede leer el código pero no sabe contra qué compararlo.
+
+
+**El teléfono. Desbloqueado, y con la parte cara medida.** `Gnothi.Mobile` compila el núcleo del Host
+adentro de una app Android —**no es MAUI**— y corrió en un Galaxy A54 físico: 3 módulos, 8 consultas,
+0 procesos hijos. El hallazgo que hace falta escribir: en un teléfono la cáscara **tiene** que ser en
+proceso, porque una app con `targetSdk >= 29` no puede `exec()` archivos de su directorio de datos.
+No es una preferencia de diseño, es el sistema operativo.
 
 **9 (publicar). Sin capítulo, pero con material.** El paso existía en la práctica y no en este orden
 de trabajo: se descubrió comparando las fases contra la estructura de los negocios del repo, y

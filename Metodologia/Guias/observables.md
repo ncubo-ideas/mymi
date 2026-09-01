@@ -60,6 +60,7 @@ antes de reportar un hallazgo, se mira la línea.
 | 9 | La app no es cliente de los servicios generales | URL2 | Hay un señuelo que devuelve **403 con el token válido** de la app | por correr |
 | 10 | Cada clase justifica existir | Las clases del dominio | Cada una tiene al menos un miembro que ninguna otra tiene | **no es observable** — requiere juicio |
 | 11 | **Lo declarado coincide con lo que el módulo expone** | `manifest.json` vs. las tools reales | La lista de `tools[].name` y la que el módulo responde en `tools/list` son la misma: ni de más ni de menos | por correr |
+| 12 | **El costo fijo de una pregunta se puede medir sin llave** | El catálogo que la Puerta 2 le muestra al modelo | Existe una forma de contarlo **sin un modelo del otro lado**. Medido en el POC: ~1.364 tokens, de los cuales el 86 % es el catálogo | por correr |
 
 ### Sobre el 5, que es el único que discriminó
 
@@ -78,6 +79,16 @@ La primera es que **corre sin el Host**: un manifiesto que nadie lee y que deriv
 que no tenerlo, y hoy los del lado del módulo no los lee nadie. La segunda es que este chequeo mide
 algo que ninguna guía puede sostener por doctrina — una lista copiada **siempre** deriva; lo único que
 la salva es compararla. Ver [El manifiesto y la instalación](el-manifiesto-y-la-instalacion.md) §4.
+
+### Sobre el 12, que mide plata y no diseño
+
+Es el primero de esta tabla que no vigila una decisión de modelado sino **una factura**. Entra porque
+cumple la regla: es contrastable sin juicio, y **no cuesta nada correrlo** — el catálogo se puede
+proyectar sin un modelo del otro lado, que es justo lo que lo vuelve un chequeo y no una estimación.
+
+Lo que vigila es una deriva silenciosa: cada tool que se agrega engorda el catálogo, el catálogo viaja
+en **cada** pregunta, y nadie lo nota hasta que llega la cuenta. Ver
+[las puertas de la IA](07-las-puertas-de-la-ia.md) §4.7.
 
 ### Sobre el 10, que se cayó al escribirlo
 

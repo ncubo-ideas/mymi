@@ -254,6 +254,12 @@ persona registraría algo y la IA seguiría viendo lo viejo.
 Un servidor MCP no le habla al browser ni el browser le habla a él: **los dos comparten la carpeta, y
 el journal ya es el protocolo.** No hay que inventar uno.
 
+> **Y este capítulo cubre una sola de las tres vías por las que una IA llega a la app.** El servidor
+> MCP es la **Puerta 1**: un asistente externo, y sólo en escritorio. Hay otras dos —nuestro propio
+> lazo de agente, que es la única que existe en un teléfono, y el asistente del sistema, que tiene un
+> techo medido— y elegir mal cuesta semanas. Están en
+> [Las puertas de la IA](07-las-puertas-de-la-ia.md).
+
 ---
 
 ## 7. Antes de dar la superficie por terminada
