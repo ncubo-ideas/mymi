@@ -11,6 +11,15 @@
        It does not reference Puppeteer. The Host does not need the engine in order to act as a
        proxy, and not having it is how the compiler guarantees no semantics crept in. -->
 
+  <!-- THE CONFORMANCE SUITE NEEDS TO SEE ToolBridge, which is internal and has to stay
+       internal: it is Door 1's projection and nobody outside the Host should build one.
+       The suite is the exception because its whole job is to compare that projection against
+       what the other doors return. Alvaro's 08: "corre la misma tool call por las tres
+       puertas y afirma resultado identico". -->
+  <ItemGroup>
+    <InternalsVisibleTo Include="Gnothi.Assistant.Tests" />
+  </ItemGroup>
+
   <PropertyGroup>
     <OutputType>Exe</OutputType>
     <TargetFramework>net9.0</TargetFramework>
