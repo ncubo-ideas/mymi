@@ -34,7 +34,9 @@ struct ContentView: View {
         ("p1", "Siri contesta en voz alta",
          "«Cuánto gasté en Gnothi». Tiene que CONTESTAR, no abrir la app."),
         ("p2", "Lo mismo escrito",
-         "Mantené el botón lateral y escribí la misma frase.")
+         "Mantené el botón lateral y escribí la misma frase."),
+        ("p3", "Lo mismo, pero exámenes",
+         "«Cómo salieron mis exámenes en Gnothi». Si p1 pasa y esta falla, el problema es del dato y no del canal.")
     ]
 
     private let techo: [(String, String, String)] = [
@@ -45,7 +47,15 @@ struct ContentView: View {
         ("t3", "Spotlight encuentra una factura",
          "Deslizá abajo en inicio y buscá «Automercado». ¿Aparece la factura, no solo la app?"),
         ("t4", "Spotlight por concepto",
-         "Buscá «combustible». ¿Sale la de la gasolinera?")
+         "Buscá «combustible». ¿Sale la de la gasolinera? MEDIDO: no sale, aunque esa palabra esté impresa en el subtítulo del propio resultado."),
+        ("t5", "Spotlight por analito",
+         "Buscá «colesterol». Está en el título del examen, así que por lo medido en t3 DEBERÍA salir."),
+        ("t6", "Spotlight por veredicto",
+         "Buscá «vigilar» o «subió». Está en el veredicto, no en el título: por lo medido en t4 NO debería salir. Este par confirma el hallazgo en una segunda entidad."),
+        ("t7", "Dos negocios, un índice",
+         "Buscá «Gnothi» en Spotlight. ¿Aparecen facturas Y exámenes sin confundirse? Mide si el mecanismo escala a un aparato con varios negocios."),
+        ("t8", "Sin nombrar la app, exámenes",
+         "«¿Cómo salió mi colesterol?» — sin decir Gnothi. Es el techo de exámenes, y acá el analito SÍ es lo que la persona diría.")
     ]
 
     private let cadena: [(String, String, String)] = [
@@ -60,7 +70,11 @@ struct ContentView: View {
         ("c5", "La persona pregunta lo suyo",
          "Atajo: 1) Gnothi «Preguntar sobre mis facturas» escribiendo «¿en qué gasté más?» 2) «Ask Claude». La pregunta va al final, que es lo que un modelo pesa más."),
         ("c6", "¿Se acabaron las tablas en crudo?",
-         "Repetir c4. En la corrida anterior Claude armó una tabla de markdown y la alerta la mostró con los pipes a la vista. Ahora va la superficie pegada: ¿contesta en prosa, sin | ni ---?")
+         "Repetir c4. En la corrida anterior Claude armó una tabla de markdown y la alerta la mostró con los pipes a la vista. Ahora va la superficie pegada: ¿contesta en prosa, sin | ni ---?"),
+        ("c7", "Exámenes hacia Claude",
+         "Atajo: 1) Gnothi «Exámenes en datos» 2) «Ask Claude». Lo que se mide NO es si contesta: es si RESPETA el veredicto del expediente en vez de diagnosticar por su cuenta."),
+        ("c8", "Preguntar sobre mis exámenes",
+         "Atajo: 1) Gnothi «Preguntar sobre mis exámenes» escribiendo «¿tengo algo de qué preocuparme?» 2) «Ask Claude». La pregunta que más invita a diagnosticar.")
     ]
 
     var body: some View {
@@ -69,6 +83,7 @@ struct ContentView: View {
                 Section {
                     VStack(alignment: .leading, spacing: 6) {
                         Text(Facturas.total()).font(.headline)
+                        Text(Examenes.estado()).font(.headline)
                         Text(indexado).font(.caption).foregroundStyle(.secondary)
                     }
                     .padding(.vertical, 2)
@@ -107,8 +122,16 @@ struct ContentView: View {
             // our process and Siri has nothing to match against -- every "sin nombrar la
             // app" test would fail for a reason that has nothing to do with the question.
             do {
+                // DOS TIPOS DE ENTIDAD, DOS LLAMADAS. No hay una version que tome entidades
+                // mezcladas: indexAppEntities es generico sobre UN tipo, asi que van dos.
+                //
+                // Que las dos entren al mismo indice es en si una prueba (t7): si Spotlight
+                // devuelve facturas y examenes sin confundirlos, el mecanismo escala a un
+                // aparato con varios negocios adentro, que es como Gnothi va a vivir.
                 try await CSSearchableIndex.default().indexAppEntities(Facturas.todas())
-                indexado = "\(Facturas.todas().count) facturas entregadas al índice de Spotlight."
+                try await CSSearchableIndex.default().indexAppEntities(Examenes.todos())
+                indexado = "\(Facturas.todas().count) facturas y \(Examenes.todos().count) "
+                         + "exámenes entregados al índice de Spotlight."
             } catch {
                 indexado = "NO se pudo indexar: \(error.localizedDescription)"
             }

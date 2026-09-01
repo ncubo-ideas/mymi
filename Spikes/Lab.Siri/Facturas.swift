@@ -53,6 +53,10 @@ enum Facturas {
         de facturas guardado en su telefono. No vienen de ningun servidor ni de ninguna \
         empresa: se los entrego su comercio y viven en su aparato. Contestale sobre SUS \
         numeros, en su idioma, sin explicarle la estructura del json.
+
+        Contesta en prosa corrida, sin markdown: nada de tablas, vinetas, asteriscos ni \
+        encabezados. Tu respuesta puede terminar leida en voz alta o mostrada como texto \
+        plano, donde un `|---|` no se ve como una tabla sino como basura.
         """
     }
 

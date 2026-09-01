@@ -12,6 +12,9 @@
 		1A0000000000000000000023 /* TotalDeFacturasIntent.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1A0000000000000000000013 /* TotalDeFacturasIntent.swift */; };
 		1A0000000000000000000024 /* GnothiShortcuts.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1A0000000000000000000014 /* GnothiShortcuts.swift */; };
 		1A0000000000000000000025 /* GnothiSpikeApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1A0000000000000000000015 /* GnothiSpikeApp.swift */; };
+		1A0000000000000000000026 /* Examenes.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1A0000000000000000000016 /* Examenes.swift */; };
+		1A0000000000000000000027 /* ExamenEntity.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1A0000000000000000000017 /* ExamenEntity.swift */; };
+		1A0000000000000000000028 /* ExamenesIntents.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1A0000000000000000000018 /* ExamenesIntents.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -21,6 +24,9 @@
 		1A0000000000000000000013 /* TotalDeFacturasIntent.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TotalDeFacturasIntent.swift; sourceTree = "<group>"; };
 		1A0000000000000000000014 /* GnothiShortcuts.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GnothiShortcuts.swift; sourceTree = "<group>"; };
 		1A0000000000000000000015 /* GnothiSpikeApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GnothiSpikeApp.swift; sourceTree = "<group>"; };
+		1A0000000000000000000016 /* Examenes.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Examenes.swift; sourceTree = "<group>"; };
+		1A0000000000000000000017 /* ExamenEntity.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ExamenEntity.swift; sourceTree = "<group>"; };
+		1A0000000000000000000018 /* ExamenesIntents.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ExamenesIntents.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -40,6 +46,9 @@
 				1A0000000000000000000015 /* GnothiSpikeApp.swift */,
 				1A0000000000000000000011 /* Facturas.swift */,
 				1A0000000000000000000012 /* FacturaEntity.swift */,
+				1A0000000000000000000016 /* Examenes.swift */,
+				1A0000000000000000000017 /* ExamenEntity.swift */,
+				1A0000000000000000000018 /* ExamenesIntents.swift */,
 				1A0000000000000000000013 /* TotalDeFacturasIntent.swift */,
 				1A0000000000000000000014 /* GnothiShortcuts.swift */,
 				1A0000000000000000000003 /* Products */,
@@ -124,6 +133,9 @@
 			files = (
 				1A0000000000000000000025 /* GnothiSpikeApp.swift in Sources */,
 				1A0000000000000000000021 /* Facturas.swift in Sources */,
+				1A0000000000000000000026 /* Examenes.swift in Sources */,
+				1A0000000000000000000027 /* ExamenEntity.swift in Sources */,
+				1A0000000000000000000028 /* ExamenesIntents.swift in Sources */,
 				1A0000000000000000000022 /* FacturaEntity.swift in Sources */,
 				1A0000000000000000000023 /* TotalDeFacturasIntent.swift in Sources */,
 				1A0000000000000000000024 /* GnothiShortcuts.swift in Sources */,
@@ -187,6 +199,7 @@
 		1A000000000000000000000D /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = "";
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
@@ -214,6 +227,7 @@
 		1A000000000000000000000E /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = "";
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;

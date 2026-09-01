@@ -92,6 +92,61 @@ struct GnothiShortcuts: AppShortcutsProvider {
             shortTitle: "Preguntar sobre mis facturas",
             systemImageName: "text.bubble"
         )
+
+        // ─────────────────────────────────────────────────────────────────────────────────
+        // EXAMENES. Las mismas cuatro rutas, espejadas, para que los resultados se puedan
+        // comparar con los de facturas sin discutir si la diferencia fue como escribimos la
+        // intent. Ver ExamenesIntents.swift.
+        //
+        // CUIDADO AL AGREGAR MAS: Apple admite hasta 10 AppShortcut por app. Con estas van 8.
+        // Al pasarse, el sistema no da error -- deja de registrar las que sobran, y la que
+        // desaparece no es necesariamente la ultima.
+
+        AppShortcut(
+            intent: EstadoDeExamenesIntent(),
+
+            // Cinco frases, como en el total de facturas, y por la misma razon: mide cuanta
+            // holgura da Siri. Notar que ninguna dice "examenes de sangre" -- la persona
+            // pregunta por el resultado, no por el procedimiento.
+            phrases: [
+                "Cómo salieron mis exámenes en \(.applicationName)",
+                "Cómo van mis exámenes en \(.applicationName)",
+                "Mis exámenes en \(.applicationName)",
+                "Qué dicen mis exámenes en \(.applicationName)",
+                "Preguntale a \(.applicationName) por mis exámenes"
+            ],
+
+            shortTitle: "Cómo salieron",
+            systemImageName: "heart.text.square"
+        )
+
+        AppShortcut(
+            intent: BuscarExamenesIntent(),
+            phrases: [
+                "Buscá algo en mis exámenes de \(.applicationName)",
+                "Buscar en los exámenes de \(.applicationName)"
+            ],
+            shortTitle: "Buscar exámenes",
+            systemImageName: "magnifyingglass.circle"
+        )
+
+        AppShortcut(
+            intent: ExamenesComoDatosIntent(),
+            phrases: [
+                "Datos de exámenes de \(.applicationName)"
+            ],
+            shortTitle: "Exámenes en datos",
+            systemImageName: "curlybraces.square"
+        )
+
+        AppShortcut(
+            intent: PreguntarSobreMisExamenesIntent(),
+            phrases: [
+                "Preguntar sobre mis exámenes en \(.applicationName)"
+            ],
+            shortTitle: "Preguntar sobre mis exámenes",
+            systemImageName: "text.bubble.fill"
+        )
     }
 
     // NOTE: AppShortcutsProvider also exposes `shortcutTileColor` for the tile in the
