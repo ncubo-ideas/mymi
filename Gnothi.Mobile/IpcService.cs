@@ -1,28 +1,28 @@
 using Android.App;
 using Android.Content;
+using Android.Content.PM;
 using Android.OS;
 using Gnothi.Host;
 using System.Text.Json;
 
 namespace Gnothi.Mobile;
 
-// SPIKE 2 (Puerta 3) -- THE JUMP INTO GNOTHI FROM ANOTHER APP. Uncommitted spike code.
+// GATE 3'S DOOR INTO GNOTHI, from another app on the same phone.
 //
-// This is the half of Puerta 3 that Alvaro's 08 calls "lo riesgoso": an adapter APK owned by
-// a module has to reach Dispatcher.Serve ACROSS PROCESSES, with Gnothi CLOSED, and we have to
-// measure what that costs and what identity Gnothi sees. Until now the phone app had NO
-// server surface at all -- everything MCP was deliberately left out of the APK. This service
-// is the smallest possible surface: a bound Messenger service.
+// This is the half of Gate 3 that Alvaro's 08 calls "lo riesgoso": an adapter APK owned by a
+// module -the "caratula"- reaches Dispatcher.Serve ACROSS PROCESSES, with Gnothi CLOSED. It
+// is the only server surface the phone app has; everything MCP is deliberately left out of
+// the APK.
 //
 // WHY MESSENGER and not AIDL: same cross-process semantics, no codegen, and the caller
 // identity still arrives (Message.SendingUid -- NOT Binder.CallingUid, which by the time the
-// Handler runs would report ourselves; that gotcha is exactly the kind of thing the spike
-// exists to surface).
+// Handler runs would report ourselves; that gotcha cost a measurement to find).
 //
-// WHAT THE SPIKE DELIBERATELY LEAVES OUT (and the real design adds): the identity CHECK.
-// Alvaro's R13 gates the IPC on publisher+module-id+release-id+tool-schema-hash. Here we
-// only MEASURE what the caller looks like; we do not yet reject anyone. Exported and
-// unguarded -- spike-grade, not product-grade.
+// THE IDENTITY CHECK IS NOW HERE, in Authorize below. It was not, and while it was not this
+// service was exported and unguarded: any app on the phone could bind and read Sonia's
+// journal. What changed is only the door -- Dispatcher.Serve still does not know who called,
+// which is the property R14 asks for and what keeps the gates interchangeable.
+//
 // Name= is NOT decoration: it fixes the generated JAVA class name. Without it the class is
 // a crc64 hash, and a manifest entry naming this type resolves to nothing -- measured:
 // "Not found; no service started".
@@ -71,8 +71,9 @@ public sealed class IpcService : Service
 
 		public override void HandleMessage(Message msg)
 		{
-			// THE IDENTITY, measured -- Alvaro's fourth spike result. SendingUid, because by
-			// the time a Messenger handler runs, Binder.CallingUid is already ourselves.
+			// THE IDENTITY. SendingUid, because by the time a Messenger handler runs,
+			// Binder.CallingUid already reports ourselves -- measured, and exactly the kind of
+			// gotcha the spike existed to surface.
 			int uid = msg.SendingUid;
 			string[] pkgs = host.PackageManager?.GetPackagesForUid(uid) ?? [];
 			host.Log($"call from uid={uid} packages=[{string.Join(",", pkgs)}]");
@@ -85,6 +86,37 @@ public sealed class IpcService : Service
 			Bundle reply = new();
 			try
 			{
+				// THE GATE, AND IT LIVES HERE ON PURPOSE.
+				//
+				// Alvaro's R14 says it plainly: "Dispatcher.Serve no sabe quien lo llamo".
+				// That ignorance is what makes the gates interchangeable -- the same request
+				// answered the same way whichever door it came through. So the caller check
+				// belongs to the DOOR and must not leak past it. Nothing below this block
+				// tells the core who was on the other side.
+				//
+				// What is checked, in order of how hard it is to fake:
+				//   1. the module names a caratula at all      (absent => nobody may enter)
+				//   2. the calling package matches it          (a name; anyone can claim one)
+				//   3. its SIGNATURE matches                   (this is the real gate)
+				//
+				// The signature is looked up BY US from the uid the kernel gave us. It is
+				// never read from the message: a caller that could state its own identity
+				// would not be a gate, it would be a form.
+				string denial = Authorize(module, uid, pkgs);
+				if (denial.Length > 0)
+				{
+					host.Log($"DENIED {module}.{tool} from uid={uid}: {denial}");
+					reply.PutBoolean("authorized", false);
+					// The caller is told it was refused and NOT why: whether the module exists,
+					// whether it has a caratula, and which signature was expected are all
+					// facts about Sonia's device that an impostor would happily enumerate.
+					reply.PutString("json", "not authorized");
+					reply.PutLong("serveMs", 0);
+					reply.PutLong("catalogMs", coldCatalogMs);
+					Answer(msg, reply);
+					return;
+				}
+
 				Response r = host.Core()
 					.Serve(new Request(module, tool, null), CancellationToken.None)
 					.GetAwaiter().GetResult();
@@ -103,12 +135,77 @@ public sealed class IpcService : Service
 			reply.PutLong("catalogMs", coldCatalogMs);
 			host.Log($"{module}.{tool} served in {clock.ElapsedMilliseconds} ms");
 
+			Answer(msg, reply);
+		}
+
+		private static void Answer(Message msg, Bundle reply)
+		{
 			Messenger? back = msg.ReplyTo;
-			if (back is not null)
+			if (back is null) return;
+			Message answer = Message.Obtain()!;
+			answer.Data = reply;
+			back.Send(answer);
+		}
+
+		// Returns "" when the caller may proceed, or the reason it may not -- for OUR log, not
+		// for the caller. Everything here is derived from the uid the kernel handed us; the
+		// message contributes only the module NAME, which is a request, not a claim.
+		private string Authorize(string module, int uid, string[] pkgs)
+		{
+			Module? m = host.Core().Modules.Modules
+				.FirstOrDefault(x => string.Equals(x.Name, module, StringComparison.OrdinalIgnoreCase));
+
+			if (m is null) return $"no module named '{module}'";
+
+			Caratula? declared = m.Installation.Caratula;
+			if (declared is null || !declared.IsDeclared)
+				return "the module declares no caratula, so nobody may speak for it";
+
+			// A uid can host several packages when they share a sharedUserId. Any of them
+			// matching is enough -- they are the same trust domain by the OS's own rules.
+			bool nameMatched = false;
+			foreach (string pkg in pkgs)
 			{
-				Message answer = Message.Obtain()!;
-				answer.Data = reply;
-				back.Send(answer);
+				if (string.Equals(pkg, declared.Package, StringComparison.Ordinal)) nameMatched = true;
+				string sig = SignatureOf(pkg);
+				if (sig.Length == 0) continue;
+				if (declared.Accepts(pkg, sig)) return "";
+			}
+
+			// The two refusals are told apart ON PURPOSE, and only in OUR log. Measured: when
+			// both said the same thing, a real denial read as
+			// "none of [x] matches the declared caratula 'x'" -- the same name on both sides,
+			// which looks like a bug and is in fact the gate doing its job on the signature.
+			return nameMatched
+				? $"'{declared.Package}' is declared, but its signature is not the declared one"
+				: $"none of [{string.Join(",", pkgs)}] is the declared caratula '{declared.Package}'";
+		}
+
+		// SHA-256 of the caller's signing certificate, hex uppercase. "" when it cannot be
+		// determined, and an empty answer NEVER passes the check.
+		//
+		// GetSigningCertificates is the flag that matters: the older GetSignatures reports the
+		// ORIGINAL signer of a rotated key, which would keep accepting a certificate the
+		// institution has already retired.
+		private string SignatureOf(string package)
+		{
+			try
+			{
+				PackageManager pm = host.PackageManager!;
+				PackageInfo? info = pm.GetPackageInfo(package, PackageInfoFlags.SigningCertificates);
+				Android.Content.PM.Signature[]? signers = info?.SigningInfo?.GetApkContentsSigners();
+				if (signers is null || signers.Length == 0) return "";
+
+				// More than one signer means the APK carries a certificate chain; the contents
+				// signer we compare against is the first, which is what apksigner prints.
+				byte[] der = signers[0].ToByteArray()!;
+				byte[] hash = System.Security.Cryptography.SHA256.HashData(der);
+				return Convert.ToHexString(hash);
+			}
+			catch (Exception e)
+			{
+				host.Log($"could not read the signature of {package}: {e.GetType().Name}");
+				return "";
 			}
 		}
 	}
