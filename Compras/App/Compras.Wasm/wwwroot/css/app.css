@@ -936,6 +936,11 @@ main h2 {
     filter: drop-shadow(0 4px 8px rgba(22, 38, 28, .12));
 }
 
+/* El volver de las pantallas de profundidad: arriba, en el verde de marca, y con area de
+   toque decente en telefono. */
+.volver { font-weight: 600; color: var(--verde); text-decoration: none; }
+.volver:hover { color: var(--gu-verde-oscuro); }
+
 /* --------------------------------------------- las piezas del patron teaser
 
    LA FILA DE LA FIRMA: tres fotitos solapadas y tres nombres. Es el resumen de la grilla

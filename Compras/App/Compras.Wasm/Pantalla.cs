@@ -31,6 +31,10 @@ public sealed class Pantalla : IAsyncDisposable
 	public async ValueTask<bool> EsAngosta() =>
 		await (await Modulo()).InvokeAsync<bool>("esAngosta");
 
+	/// <summary>Vuelve a donde se estaba; al respaldo si se entró en frío y no hay historia.</summary>
+	public async ValueTask Volver(string respaldo) =>
+		await (await Modulo()).InvokeVoidAsync("volver", respaldo);
+
 	/// <summary>Avisa cuando se CRUZA el corte, no en cada pixel que se arrastra.</summary>
 	// La referencia la crea y la suelta QUIEN OBSERVA, no esto: si la creara aca, habria que
 	// llevar la cuenta de cuantos componentes estan escuchando para saber cuando soltarla, y

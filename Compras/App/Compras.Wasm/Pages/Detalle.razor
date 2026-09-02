@@ -14,7 +14,10 @@
     ? "Una compra · La Guaria y vos"
     : $"{Dia(compra.Fecha)} {compra.Fecha.Day} de {MesLargo(compra.Fecha.Month)} · La Guaria y vos")</PageTitle>
 
-<button class="btn btn-link p-0 mb-3" @onclick="Volver">&larr; Mis compras</button>
+@* Decia "← Mis compras" y navegaba a la PORTADA con destino fijo — pero a un recibo se
+   llega desde recibos, desde la portada y desde la busqueda, y ese boton acertaba solo en
+   uno de los tres. El componente vuelve a donde se estaba. *@
+<Volver Respaldo="recibos" />
 
 @if (!estado.EstaArriba)
 {
@@ -246,8 +249,6 @@ else
 
         return deLaPagina;
     }
-
-    private void Volver() => navegacion.NavigateTo("");
 
     // Los nombres van a mano: en wasm la globalizacion viene recortada y pedirle a la
     // cultura los dias o los meses devuelve los ingleses o vacio.
