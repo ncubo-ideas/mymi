@@ -72,6 +72,9 @@ namespace Compras.Consola
 			LaBusquedaEncuentraPorProducto();
 			LaCanastaSeMideContraSuPasado();
 			LaRebajaEsLaBuenaNoticiaDelRecibo();
+			LaSerieSaleBuscadaPorTexto();
+			LaCompraSabeDondeFue();
+			ElRecorridoDiceDesdeCuandoSeMueve();
 
 			Console.WriteLine();
 			Console.WriteLine(fallas == 0
@@ -1851,6 +1854,106 @@ namespace Compras.Consola
 				deNadie.ParaElAsistente.Contains("nada de la compra").ToString());
 
 			Revienta("un numero vacio revienta", () => precios.RebajaDesde(" "));
+		}
+
+		// ---- la serie de precios sale buscada por texto ----
+		private static void LaSerieSaleBuscadaPorTexto()
+		{
+			Titulo("la serie de precios sale buscada por texto");
+
+			Historial precios = PreciosQueSeMueven();
+
+			// Por texto y sin distinguir mayusculas: es la puerta por la que entra el
+			// asistente ("el helado", no "HELADO-1L").
+			PrecioEnElTiempo serie = precios.PrecioBuscado("aceite");
+			Igual("por texto encuentra", "True", serie.Existe().ToString());
+			Igual("  y es el aceite", "ACEITE", serie.Sku);
+			Igual("  con sus dos observaciones", "2", serie.VecesQueLoCompro.ToString());
+
+			Igual("por sku tambien", "GALLETAS", precios.PrecioBuscado("galletas").Sku);
+
+			// TOTAL: lo que no aparece contesta Ninguno con su frase, no revienta.
+			PrecioEnElTiempo nada = precios.PrecioBuscado("caviar");
+			Igual("lo que no esta: Ninguno", "False", nada.Existe().ToString());
+			Igual("  y la frase lo dice", "True",
+				nada.ParaElAsistente.Contains("no hay compras").ToString());
+
+			Revienta("un texto vacio revienta", () => precios.PrecioBuscado(" "));
+		}
+
+		// ---- la compra sabe donde fue ----
+		private static void LaCompraSabeDondeFue()
+		{
+			Titulo("la compra sabe donde fue");
+
+			var compra = UnaCompra("T-1", Hoy,
+				("LECHE-1L", "Leche semidescremada 1L", 1, 950m, "LacteosYHuevos", 0));
+
+			// LA FORMA VIEJA NO DICE SUCURSAL, y eso es un valor y no un hueco: vacio.
+			Igual("sin situar, la sucursal es vacia", "", compra.Sucursal);
+
+			// EL WITHER DEVUELVE OTRA COMPRA, situada; la original no se toca. Es una
+			// copia y no un set porque una compra ya agregada no debe cambiar por debajo.
+			Compra situada = compra.EnSucursal("La Guaria Centro");
+			Igual("la situada dice donde", "La Guaria Centro", situada.Sucursal);
+			Igual("  y la original sigue callada", "", compra.Sucursal);
+			Igual("  con las mismas lineas", "True", (situada.Total == compra.Total).ToString());
+
+			Revienta("situar en vacio revienta", () => compra.EnSucursal(" "));
+		}
+
+		// ---- el recorrido dice desde cuando se mueve ----
+		private static void ElRecorridoDiceDesdeCuandoSeMueve()
+		{
+			Titulo("el recorrido dice desde cuando se mueve");
+
+			// EL ARCO DE SONIA en miniatura: tres compras en la de siempre, y desde
+			// febrero aparece en dos mas. La compra VIEJA (sin sucursal) va primera:
+			// queda afuera del conteo pero contada aparte.
+			var historial = new Historial();
+			historial.Agregar(UnaCompra("T-0", new DateTime(2025, 11, 1),
+				("LECHE-1L", "Leche semidescremada 1L", 1, 950m, "LacteosYHuevos", 0)));
+
+			void EnSucursal(string numero, DateTime cuando, string sucursal) =>
+				historial.Agregar(UnaCompra(numero, cuando,
+					("LECHE-1L", "Leche semidescremada 1L", 1, 950m, "LacteosYHuevos", 0))
+					.EnSucursal(sucursal));
+
+			EnSucursal("T-1", new DateTime(2025, 12, 6), "La Guaria Centro");
+			EnSucursal("T-2", new DateTime(2025, 12, 13), "La Guaria Centro");
+			EnSucursal("T-3", new DateTime(2026, 1, 10), "La Guaria Centro");
+			EnSucursal("T-4", new DateTime(2026, 2, 7), "La Guaria Zapote");
+			EnSucursal("T-5", new DateTime(2026, 2, 21), "La Guaria Del Este");
+
+			RecorridoDeSucursales recorrido = historial.Sucursales();
+			Igual("hay datos", "True", recorrido.HayDatos.ToString());
+			Igual("  tres distintas", "3", recorrido.CuantasDistintas.ToString());
+			Igual("  la de siempre es la mas frecuentada", "La Guaria Centro",
+				recorrido.LaDeSiempre.Nombre);
+			Igual("  se mueve desde febrero", "2026-02", recorrido.SeMueveDesdeExpresado);
+			Igual("  y la compra vieja se cuenta aparte", "1",
+				recorrido.ComprasSinSucursal.ToString());
+			Igual("  la frase cuenta el arco", "True",
+				recorrido.ParaElAsistente.Contains("desde 2026-02").ToString());
+
+			// A IGUAL CANTIDAD gana la conocida primero: Zapote llego antes que Del Este.
+			Igual("a igual cantidad, la conocida primero", "La Guaria Zapote",
+				recorrido.Sucursales[1].Nombre);
+
+			// TOTAL: un historial de journals viejos -todo sin sucursal- contesta
+			// SinDatos, dice cuantas callan, y la de siempre esta GUARDADA.
+			var viejo = new Historial();
+			viejo.Agregar(UnaCompra("T-9", Hoy,
+				("LECHE-1L", "Leche semidescremada 1L", 1, 950m, "LacteosYHuevos", 0)));
+			RecorridoDeSucursales sinDatos = viejo.Sucursales();
+			Igual("journals viejos: sin datos", "False", sinDatos.HayDatos.ToString());
+			Igual("  pero dice que 1 calla", "1", sinDatos.ComprasSinSucursal.ToString());
+			Igual("  y la frase lo explica", "True",
+				sinDatos.ParaElAsistente.Contains("no traían el dato").ToString());
+			Revienta("  preguntarle la de siempre revienta", () => sinDatos.LaDeSiempre);
+
+			Igual("historial vacio: tampoco revienta", "False",
+				new Historial().Sucursales().HayDatos.ToString());
 		}
 
 		// Cuatro compras con precios que se mueven de las tres maneras: las galletas suben

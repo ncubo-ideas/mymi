@@ -1063,6 +1063,73 @@ namespace Compras.Dominio
 		// GANA EL MAS RECIENTE cuando varios coinciden, igual que en BuscarGarantia: si
 		// alguien escribe "leche" y compro dos leches distintas, la que le interesa es la
 		// que lleva ahora.
+		/// <summary>
+		/// EN QUÉ SUCURSALES compra, y desde cuándo se mueve. Total: un historial sin
+		/// el dato (journals viejos) contesta SinDatos y dice cuántas compras callan.
+		/// </summary>
+		// La propuesta de Geannina: "antes compraba siempre en la misma; desde enero
+		// aparece en tres". Las compras sin sucursal quedan AFUERA del conteo -contarlas
+		// de un lado seria inventar el dato- pero se cuentan aparte para que la lectura
+		// diga que hay tiquetes que callan.
+		public RecorridoDeSucursales Sucursales()
+		{
+			var rastro = new Dictionary<string, (int Compras, DateTime Primera, DateTime Ultima, int Llegada)>(
+				StringComparer.OrdinalIgnoreCase);
+			var nombres = new List<string>();
+			int sinSucursal = 0;
+
+			foreach (Compra compra in Ordenadas())
+			{
+				if (compra.Sucursal.Length == 0)
+				{
+					sinSucursal++;
+					continue;
+				}
+
+				if (rastro.TryGetValue(compra.Sucursal, out var visto))
+					rastro[compra.Sucursal] = (visto.Compras + 1, visto.Primera, compra.Fecha, visto.Llegada);
+				else
+				{
+					rastro[compra.Sucursal] = (1, compra.Fecha, compra.Fecha, nombres.Count);
+					nombres.Add(compra.Sucursal);
+				}
+			}
+
+			if (nombres.Count == 0) return RecorridoDeSucursales.SinDatos(sinSucursal);
+
+			// La mas frecuentada primero; a igual cantidad, la conocida primero. El
+			// desempate explicito porque List.Sort no es estable.
+			nombres.Sort((uno, otro) =>
+			{
+				int porCompras = rastro[otro].Compras.CompareTo(rastro[uno].Compras);
+				return porCompras != 0 ? porCompras : rastro[uno].Llegada.CompareTo(rastro[otro].Llegada);
+			});
+
+			var sucursales = new List<SucursalFrecuentada>();
+			foreach (string nombre in nombres)
+			{
+				(int compras, DateTime primera, DateTime ultima, _) = rastro[nombre];
+				sucursales.Add(new SucursalFrecuentada(nombre, compras, primera, ultima));
+			}
+
+			return RecorridoDeSucursales.De(sucursales, sinSucursal);
+		}
+
+		/// <summary>
+		/// LA SERIE DE PRECIOS de un producto nombrado por texto. Total: lo que no
+		/// aparece en el historial devuelve Ninguno, no una excepción.
+		/// </summary>
+		// Geannina lo dijo mejor que el codigo: "el banco le dice cuanto gasto; nadie le
+		// dice que el MISMO producto le subio". La serie estaba construida y solo la leian
+		// las comprobaciones; este es el punto por el que sale.
+		public PrecioEnElTiempo PrecioBuscado(string producto)
+		{
+			ArgumentNullException.ThrowIfNullOrWhiteSpace(producto);
+
+			string sku = SkuDe(producto);
+			return sku.Length == 0 ? PrecioEnElTiempo.Ninguno(producto) : PrecioDe(sku);
+		}
+
 		public string SkuDe(string producto)
 		{
 			ArgumentNullException.ThrowIfNullOrWhiteSpace(producto);
