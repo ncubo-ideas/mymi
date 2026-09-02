@@ -51,7 +51,7 @@ convierte este spike en una decisión de arquitectura y no en una curiosidad.
 | | c6 · ¿prosa o markdown? | ⬜ pendiente |
 | | c7 · exámenes hacia Claude | ⬜ pendiente |
 | | c8 · ¿respeta el veredicto o diagnostica? | ⬜ pendiente |
-| | t9 · encadenar sin que salga nada | ⬜ bloqueado en Atajos — ver §8 |
+| | t9 · encadenar sin que salga nada | ⬜ medible en app sobre 26.5 — ver §8 |
 
 ---
 
@@ -235,45 +235,67 @@ quede escrito antes de que alguien lo dé por hecho en una demo.
 
 ---
 
-## 8. `availability` dice «available» en el simulador, y no sirve como compuerta
+## 8. Foundation Models **sí genera** en el simulador — pero lo decide el runtime
 
 Medido el **2026-09-02** con una sonda propia sobre `SystemLanguageModel.default`, corrida de dos
 formas —binario pelado con `simctl spawn`, y dentro de una app instalada y lanzada— para descartar
 que el acceso a los servicios del modelo dependiera del contenedor. No dependía: da lo mismo.
 **Esto es simulador, no aparato.**
 
-`FoundationModels.framework` **está** en el SDK y dentro del runtime de iOS 26.2 y 26.5: enlaza y
-responde.
+`FoundationModels.framework` **está** en el SDK y dentro del runtime de iOS 26.2 y 26.5.
 
 | runtime | `availability` | generar texto |
 |---|---|---|
-| iOS 26.2 | `available` | ❌ `ModelManagerError 1026` — 5/5 y 5/5, en dos prompts |
-| iOS 26.5 | `available` | ✅ `OK -> 4` — una corrida, con techo de 180 s |
-| Mac nativo (control) | `available` | ✅ `OK -> 4` |
+| Mac nativo (control) | `available` | ✅ contesta |
+| simulador iOS **26.5** | `available` | ✅ **3 de 3** |
+| simulador iOS **26.2** | `available` | ❌ `ModelManagerError 1026` — **3 de 3**, y antes 5/5 en dos prompts |
 
-**La consecuencia práctica: no condicionar nada a `isAvailable`.** En 26.2 da `true` y la
-generación falla igual. Código que lo use como compuerta pasa el simulador y se rompe donde
-importa.
+**Mismo Mac, mismo Xcode 26.6, distinto runtime, resultado opuesto.** Ésa es la variable, y es la
+que hace que la pregunta «¿funciona Apple Intelligence en el simulador?» tenga dos respuestas
+verdaderas según dónde se pruebe. El Mac se corrió como control para descartar la explicación
+fácil —que el modelo no estuviera descargado—: sí lo está.
 
-**El contraste 26.2 contra 26.5 se corrió una vez de cada lado y quedó sin repetir.** La serie de
-repeticiones se lanzó y no llegó a devolver, así que «26.5 genera» es **una corrida, no una
-medición**. Lo que sí quedó firme cinco veces de cinco es el fallo en 26.2. El Mac se corrió como
-control justamente para descartar la explicación fácil —que el modelo no estuviera descargado—: sí
-lo está, y el simulador de 26.2 falla igual.
+**Y `availability` no sirve como compuerta.** En 26.2 devuelve `available` y la generación falla
+igual. Código que lo use para decidir si hay modelo pasa el simulador y se rompe donde importa.
 
-**El clasificador de guardrail corre de verdad**, y es lo otro que el simulador deja medir: un
-prompt puntual devuelve `guardrailViolation` 8 de 8 veces, sin llegar al modelo.
+**La primera generación puede tardar más de 90 s.** Con techo de 90 s parece un fallo; con 180 s
+contesta. Un timeout corto acá se lee como «no funciona», y fue parte de lo que confundió la
+primera medición.
 
-**Dos hipótesis que se cayeron**, y van escritas para que no queden flotando: que el rechazo fuera
-por el tema médico, y que fuera por el idioma. Las dos son falsas — *«mi colesterol total es 220
-mg/dL, ¿está alto?»* pasa el guardrail, y *«hola, cómo estás»* también. Un prompt específico lo
-dispara siempre y no se pudo derivar la regla. **No hay base acá para concluir nada sobre política
-de guardrails en temas de salud**; eso pide un aparato, donde la generación corra sin dudas.
+### Lo que se retiró de este hallazgo, y por qué
 
-**Qué corrige esto de este mismo archivo.** Acá decía que sin el interruptor de *Apple
-Intelligence* `SystemLanguageModel` «nunca queda disponible». No es lo que pasa: queda disponible.
-Que Atajos deshabilite `Use Model` sigue siendo lo observado, pero la causa que este archivo le
-atribuía era falsa, y pasa a ser pregunta abierta.
+Una versión anterior de esta sección afirmaba que **el clasificador de guardrail corre de verdad**,
+apoyada en un prompt que devolvía `guardrailViolation` 8 de 8 veces. **Está retirado.** Ese prompt
+se volvió a correr sobre 26.5 y **contesta normal**: no había clasificador rechazando nada, era el
+runtime roto de 26.2 fallando de otra forma. Las dos hipótesis que se habían levantado encima —que
+el rechazo fuera por el tema médico o por el idioma— quedan sin objeto.
+
+Vale como recordatorio de método: **ocho repeticiones sobre un entorno roto son ocho veces el mismo
+artefacto**, no una medición. Lo que faltaba no era repetir, era variar el entorno.
+
+### La primera señal de calidad del modelo, y no es buena
+
+Con la generación andando en 26.5, la pregunta *«¿qué es un analito?»* devolvió:
+
+> «Un analito es un componente esencial en una computadora que procesa información.»
+
+Alucinación plana sobre **la palabra central del negocio de exámenes**. En cambio *«mi colesterol
+total es 220 mg/dL, ¿está alto?»* contesta bien: *«Sí, un colesterol total de 220 mg/dL se
+considera alto.»*
+
+No es anecdótico para el producto: es exactamente el terreno donde `Examenes.encuadre` tiene que
+aguantar. El modelo de 3B no sabe el vocabulario del dominio, así que **todo lo que el asistente
+diga bien va a venir del dato que le pasamos, no de lo que el modelo sepa** — que es la tesis del
+encuadre, ahora con evidencia en contra del camino opuesto.
+
+### Qué corrige esto de este mismo archivo
+
+Acá decía que sin el interruptor de *Apple Intelligence* `SystemLanguageModel` «nunca queda
+disponible». No es lo que pasa: queda disponible, y en 26.5 además genera. Que Atajos deshabilite
+`Use Model` sigue siendo lo observado, pero la causa que este archivo le atribuía era falsa, y
+pasa a ser pregunta abierta.
+
+**Y desbloquea t9 y c8**: son medibles en el simulador sobre 26.5, sin teléfono prestado.
 
 ---
 
