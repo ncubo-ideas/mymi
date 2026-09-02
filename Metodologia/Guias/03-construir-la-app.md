@@ -102,6 +102,11 @@ Esto lo gobierna `domain-guide.md`. Lo que hay que retener al empezar:
   como parámetro. Es lo que hace que replayar el journal dé exactamente el mismo estado.
 - **Nombrá la ley.** No dejes que una regla viva sólo como aritmética. La provisión mensual de un
   gasto anual es una ley con nombre, no un `/12` suelto.
+- **La raíz no se llama como el negocio.** El agregado raíz nombra **lo que contiene**, no el dominio:
+  Exámenes tiene `Expediente`, Compras tiene `Historial`, el gimnasio tiene `Trayectoria`, el Hola
+  Mundo tiene `Libro`. Llamarla `Presupuesto` dentro de `Presupuesto.Dominio` choca, y además tapa la
+  pregunta útil —*¿qué es esto, una colección de qué?*—, que es la que da el buen nombre. La
+  convención era uniforme en el repo y **tácita**; costó un choque descubrirla.
 - **Un juicio sin firmar no tiene valor por defecto.** Tiene su propia sección abajo.
 
 ### Un juicio sin firmar no tiene valor por defecto
@@ -495,6 +500,59 @@ rehidratación siguiente.
 
 ---
 
+## 8 bis. El `HUECOS.md`, que se escribe mientras modelás
+
+**Modelar destapa decisiones que nadie tomó.** No es un defecto de la entrevista: hasta que alguien no
+intenta construir la respuesta, no se ve qué falta para poder darla. En los dos dominios donde se midió
+aparecieron **ocho y once**, en dominios chicos.
+
+Esas decisiones se anotan **en el momento**, en un `HUECOS.md` al lado del `Preguntas.md`. Es un
+registro por dominio: `Compras` tiene el suyo, `Gimnasio` el suyo, y no se parecen.
+
+### Una sola tabla, con la columna de origen
+
+Lo no decidido llega por dos caminos, y conviene distinguirlos porque se cierran distinto:
+
+| Origen | Qué es | Quién lo cierra |
+|---|---|---|
+| **declarado** | Salió de la entrevista y quedó ⚠️ sin firmar — un umbral, una cadencia | Quien sabe del negocio, asincrónico |
+| **descubierto** | No lo previó nadie. Apareció al escribir la clase | El bloque 5, leyéndolo como propuesta |
+
+Son dos columnas de la misma tabla, **no dos archivos**. Los dos son *"cosas que la app todavía no
+sabe"*, y tener dos registros de eso es exactamente la deriva que estas guías persiguen en otros
+lados.
+
+| # | Qué falta | Origen | Dónde muerde | Qué se decidió para seguir |
+|---|---|---|---|---|
+| 1 | Cómo se agrupan las edades | descubierto | `PorcentajeDeGrasa` | La clave lleva la edad exacta — feo a propósito |
+| 2 | Qué variación es ruido | declarado | `Referencia` | Valor propuesto, ⚠️ sin firmar |
+
+### Qué NO va acá
+
+**Los hallazgos sobre el método o sobre el motor.** Que un `Check` tenga que preguntar exactamente lo
+que el dominio rechaza no es un hueco de tu negocio: es una [regla del
+substrato](reglas-del-substrato.md), y ahí es donde le sirve a los demás. Un `HUECOS.md` con
+hallazgos del motor adentro es un hallazgo que nadie más va a encontrar.
+
+> **La excepción son los sujetos de prueba de `Metodologia/Pruebas/`**, que existen justamente para
+> falsar las guías. Ahí el archivo **es** el cuaderno de laboratorio y lleva las dos cosas, con la
+> parte del método claramente separada — y cuando esa parte se escribe en las guías, se reemplaza por
+> un puntero.
+
+### El ciclo de vida
+
+Un hueco **cierra hacia el `Preguntas.md`**: cuando alguien decide, la decisión pasa a ser capacidad o
+juicio declarado, y el renglón se va. O se queda abierto **con dueño**, que también es una respuesta.
+
+Lo que no puede pasar es que se cierre **inventando**. Un hueco tapado con un valor razonable deja de
+verse y la app empieza a contestar con seguridad algo que nadie decidió — que es el mismo defecto que
+la sección de arriba llama *un juicio inventado con mejores modales*.
+
+> **Que un hueco quede abierto no es deuda: es información.** El `HUECOS.md` vacío de un dominio joven
+> es sospechoso, no admirable.
+
+---
+
 ## 9. Antes de dar por terminado
 
 **El modelo**
@@ -531,6 +589,13 @@ rehidratación siguiente.
 
 - [ ] ¿Existe una prueba de reinicio?
 - [ ] ¿Existe una prueba de que un rechazo no envenena el journal?
+
+**Lo que queda escrito**
+
+- [ ] ¿Existe el `HUECOS.md`, con cada renglón marcado *declarado* o *descubierto*? (§8 bis)
+- [ ] ¿Ningún hueco se cerró **inventando** un valor razonable?
+- [ ] ¿Cada renglón de la Parte 1 del `Preguntas.md` tiene su clase al lado?
+      ([observable 13](observables.md))
 
 ---
 

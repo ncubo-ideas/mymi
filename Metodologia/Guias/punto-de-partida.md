@@ -284,6 +284,15 @@ ve qué falta para poder darla.
 
 Va **después de la primera pasada de modelado**, y son quince minutos, no otra entrevista.
 
+> **Se entra con el `HUECOS.md` en la mano, y ése es todo el guion.** Es el registro que quien modela
+> fue escribiendo mientras construía —lo define el [capítulo 3](03-construir-la-app.md) §8 bis— y
+> trae las dos clases de cosa que este bloque necesita: lo que quedó **declarado sin firmar** en la
+> entrevista, y lo que apareció **descubierto** al escribir las clases.
+>
+> No hace falta preparar preguntas: **cada renglón del archivo es una**, y hay que reformularla según
+> la regla de abajo antes de decirla en voz alta. Si el `HUECOS.md` está vacío, o no se modeló, o no
+> se anotó mientras se modelaba — nunca es que no hubo huecos.
+
 > **La regla que gobierna este bloque, y es la que más fácil se rompe:**
 >
 > **La persona contesta sobre el negocio. Quién se vuelve una clase lo decide quien modela.**

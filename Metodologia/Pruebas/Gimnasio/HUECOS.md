@@ -4,9 +4,18 @@ El dominio se construyó el **2026-08-28** con [`Preguntas.md`](Preguntas.md) en
 a preguntarle nada a nadie**. Cada vez que hubo que decidir algo que el archivo no decía, se anotó acá
 con la decisión que se tomó para poder seguir.
 
-**Once huecos.** Que aparezcan no invalida el método: **los once se descubrieron construyendo, no
-discutiendo** — nueve al modelar y dos más al atarlo al perform, y eso era justamente lo que se
-quería saber.
+**Catorce huecos.** Que aparezcan no invalida el método: **doce se descubrieron construyendo, no
+discutiendo** —nueve al modelar, dos al atarlo al perform y uno al revisar la Parte 1 contra las
+clases—, y eso era justamente lo que se quería saber. Los otros dos venían **declarados sin firmar**
+desde la entrevista.
+
+> **Este archivo cambió de forma el 2026-09-01**, cuando el `HUECOS.md` pasó a ser doctrina en el
+> [capítulo 3](../../Guias/03-construir-la-app.md) §8 bis. Dos cosas:
+>
+> - **Entró la columna de origen**, y con ella los dos juicios sin firmar que hasta ahora vivían sólo
+>   en el `Preguntas.md`. Un solo registro de lo no decidido, que es lo que consume el bloque 5.
+> - **Los hallazgos sobre el motor se fueron a las guías**, que es donde le sirven a los demás
+>   negocios. Abajo quedan los punteros y lo que todavía es de acá.
 
 > **El estado del modelo:** 19 clases, todas `internal`, cero dependencias, **46 comprobaciones en
 > verde**, ni una referencia al reloj, y el ciclo con journal **corrido dos veces sin que los
@@ -16,19 +25,26 @@ quería saber.
 
 ## La tabla
 
-| # | Qué faltaba | Dónde muerde | Qué se decidió para seguir |
-|---|---|---|---|
-| **1** | **Cómo se agrupan las edades** para el rango de grasa | `PorcentajeDeGrasa.ClaveDeReferencia` | La clave lleva la **edad exacta**. Ver abajo: se dejó feo a propósito |
-| **2** | Si Sonia declara **a qué valor quiere llegar**, o sólo una dirección | `Meta` | El valor es **opcional**, y cuando no está **se dice** en vez de inventarlo |
-| **3** | Cuántos **días de gracia** hay entre el fin de un plan y su medición | `Trayectoria.PlanesQueTerminaronSinMedicion` | Entra **por parámetro**. Sin él, la ausencia no se puede calcular |
-| **4** | Qué pasa con **dos metas sobre la misma medida** | `Objetivo.Agregar` | Se **rechaza la segunda**. Es honesto; si es correcto lo decide el negocio |
-| **5** | Qué pasa si **una medida no tiene meta** | `Objetivo.DireccionPara` | **Revienta.** No se inventa una dirección — pero eso deja la medida sin tendencia |
-| **6** | Qué se hace con la **semana incompleta** de un plan | `Plan.SemanasQueDuro` | División entera: **13 semanas y 4 días son 13 semanas**. Esos 4 días desaparecen del incumplimiento |
-| **7** | Qué pasa con las **asistencias fuera de todo plan**, y con **planes que se solapan** | `Trayectoria.IncumplimientoDe` | Un día que cae en dos planes **cuenta para los dos**; uno que no cae en ninguno **no lo cuenta nadie** |
-| **8** | Si un **plan sin ejercicios prescritos** es válido | `Plan` | Se **permite**. Un plan puede ser sólo frecuencia |
-| **9** | Si un período **suspendido por atraso de pago** cuenta como incumplimiento | `Trayectoria.IncumplimientoDe` | **No se modeló.** Ya venía declarado como pendiente 2 en el `Preguntas.md` |
-| **10** | **Cómo se identifica un plan.** El gimnasio no le pone nombre al papel | `Trayectoria.PlanQueEmpezo` | Se usa la **fecha de inicio**. Si dos planes empezaran el mismo día, se cae — y nada lo impide |
-| **11** | Que las cuatro medidas necesitaban un **resolutor total** para poder nombrarse desde un comando | `Medida.Crear` | Se agregó. No se ve modelando en C#; sólo aparece al atarlo al perform |
+La columna **origen** distingue lo que la entrevista dejó anotado sin firmar de lo que nadie había
+previsto. Se cierran distinto: lo declarado lo firma quien sabe del negocio, lo descubierto se lee
+como propuesta en el bloque 5. La define el [capítulo 3](../../Guias/03-construir-la-app.md) §8 bis.
+
+| # | Qué falta | Origen | Dónde muerde | Qué se decidió para seguir |
+|---|---|---|---|---|
+| **1** | **Cómo se agrupan las edades** para el rango de grasa | descubierto | `PorcentajeDeGrasa.ClaveDeReferencia` | La clave lleva la **edad exacta**. Ver abajo: se dejó feo a propósito |
+| **2** | Si Sonia declara **a qué valor quiere llegar**, o sólo una dirección | descubierto | `Meta` | El valor es **opcional**, y cuando no está **se dice** en vez de inventarlo |
+| **3** | Cuántos **días de gracia** hay entre el fin de un plan y su medición | descubierto | `Trayectoria.PlanesQueTerminaronSinMedicion` | Entra **por parámetro**. Sin él, la ausencia no se puede calcular |
+| **4** | Qué pasa con **dos metas sobre la misma medida** | descubierto | `Objetivo.Agregar` | Se **rechaza la segunda**. Es honesto; si es correcto lo decide el negocio |
+| **5** | Qué pasa si **una medida no tiene meta** | descubierto | `Objetivo.DireccionPara` | **Revienta.** No se inventa una dirección — pero eso deja la medida sin tendencia |
+| **6** | Qué se hace con la **semana incompleta** de un plan | descubierto | `Plan.SemanasQueDuro` | División entera: **13 semanas y 4 días son 13 semanas**. Esos 4 días desaparecen del incumplimiento |
+| **7** | Qué pasa con las **asistencias fuera de todo plan**, y con **planes que se solapan** | descubierto | `Trayectoria.IncumplimientoDe` | Un día que cae en dos planes **cuenta para los dos**; uno que no cae en ninguno **no lo cuenta nadie** |
+| **8** | Si un **plan sin ejercicios prescritos** es válido | descubierto | `Plan` | Se **permite**. Un plan puede ser sólo frecuencia |
+| **9** | Si un período **suspendido por atraso de pago** cuenta como incumplimiento | descubierto | `Trayectoria.IncumplimientoDe` | **No se modeló**, y hoy se sabe por qué: la membresía entera se descartó. Ver el hueco 12 |
+| **10** | **Cómo se identifica un plan.** El gimnasio no le pone nombre al papel | descubierto | `Trayectoria.PlanQueEmpezo` | Se usa la **fecha de inicio**. Si dos planes empezaran el mismo día, se cae — y nada lo impide |
+| **11** | Que las cuatro medidas necesitaban un **resolutor total** para poder nombrarse desde un comando | descubierto | `Medida.Crear` | Se agregó. No se ve modelando en C#; sólo aparece al atarlo al perform |
+| **12** | **La membresía no está modelada**, estando declarada en la Parte 1 | descubierto | no muerde en ninguna clase: **no hay ninguna** | Abierto. Es la causa del hueco 9, y de él salió la corrección del bloque 1 del [punto de partida](../../Guias/punto-de-partida.md) |
+| **13** | **Cuándo una medición no es creíble** — juicio 2 | **declarado** | `Referencia` | Valores de un experto IA, por parámetro. ⚠️ **Sin firmar**: nadie del gimnasio los validó |
+| **14** | **Qué es ruido y qué merece aviso** — juicio 4 | **declarado** | `Referencia`, `Urgencia` | Igual que el 13. ⚠️ **Sin firmar** |
 
 ---
 
