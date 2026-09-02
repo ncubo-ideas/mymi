@@ -17,6 +17,12 @@ namespace Gnothi.Host;
 //
 //   1. La sonda de Gnothi.iOS dice que el interprete de Mono NO esta puesto. Ahi
 //      InProcessShell no puede existir en iOS y esta pasa a ser obligatoria.
+//
+//      MEDIDO el 2026-09-01 en un iPhone 13 Pro (Renan): con MtouchInterpreter=-all en las
+//      dos configuraciones, los cinco pasos pasan y las banderas dan Supported=True /
+//      Compiled=False -- el interprete trabajando bajo el AOT obligatorio de Apple. Sin la
+//      bandera en Debug moria con SIGABRT en load_aot_module. LA CONDICION 1 NO SE DIO:
+//      InProcessShell existe en iOS, y esta cascara sigue congelada.
 //   2. Se decide meter el Host DENTRO de la app de Swift como framework. Ahi el unico camino
 //      documentado es NativeAOT, y con el la reflexion no sobrevive.
 //
