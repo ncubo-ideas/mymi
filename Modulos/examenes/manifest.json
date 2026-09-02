@@ -1,6 +1,8 @@
 {
   "//": "THIS FILE BELONGS TO THE MODULE. The institution writes it, and some day will sign it. It declares who it is, which substrate it needs, which capabilities it asks for, and its list of tools. Gnothi reads it to build the catalog WITHOUT starting the module.",
 
+  "//sincronizado": "2026-09-02: alineado con lo que el DLL expone (gnothi_verify_module -> matches). Se quito revisar_mis_analitos (el modulo ya no la expone: era un fantasma que la Puerta 2 ofrecia y fallaba al llamarse) y se agregaron presencia_de y que_me_falta_medir. OJO DE PROCESO: este modulo no tiene un manifiesto fuente unico como compras (Compras/manifiesto.json). Las descripciones de las dos primeras tools estan en ingles y las de las dos nuevas se tomaron del atributo [Description] del codigo, que estan en espanol. El dueno de examenes tiene que decidir el idioma y unificar la fuente.",
+
   "manifest": "1.0",
   "module": "examenes",
   "title": "My lab tests",
