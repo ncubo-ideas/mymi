@@ -2,14 +2,13 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using Choreography.Theater;
-using DealershipCar.Dominio;
 
 namespace DealershipCar.App
 {
 	public sealed class ReadOnlyDealershipCarApp : PerformanceV2
 	{
 		public ReadOnlyDealershipCarApp(string vin)
-			: base(DealershipCarApp.TheActorFor(vin), typeof(MaintenanceSchedule).Assembly)
+			: base(DealershipCarApp.TheActorFor(vin), TheDomain.Assembly)
 		{
 		}
 

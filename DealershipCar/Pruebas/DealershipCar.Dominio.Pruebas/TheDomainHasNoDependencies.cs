@@ -140,10 +140,16 @@ namespace DealershipCar.Dominio.Pruebas
 		// ensamblados pueden verlo por dentro. Cada nombre de mas es una carátula con la
 		// posibilidad de hablarle al dominio por la espalda en vez de entrar por
 		// DealershipCarAPI, que es la unica puerta.
+		//
+		// DealershipCar.App SALIO DE ESTA LISTA, y ese es el cambio que vale: la Superficie
+		// -las mil ochocientas lineas donde viven los PerformCommand- ya no puede declarar una
+		// variable del dominio ni recibirla como parametro. Lo que de verdad necesitaba el
+		// permiso era la PUERTA, que reconoce los nombres de los conjuntos cerrados antes de
+		// performar, y por eso se mudo a su propio ensamblado: DealershipCar.Frontera.
 		[Test]
 		public void OnlyTwoAssembliesSeeInsideTheDomain()
 		{
-			string[] esperados = { "DealershipCar.App", "DealershipCar.Dominio.Pruebas" };
+			string[] esperados = { "DealershipCar.Frontera", "DealershipCar.Dominio.Pruebas" };
 
 			List<string> declarados = dominio
 				.GetCustomAttributes<InternalsVisibleToAttribute>()

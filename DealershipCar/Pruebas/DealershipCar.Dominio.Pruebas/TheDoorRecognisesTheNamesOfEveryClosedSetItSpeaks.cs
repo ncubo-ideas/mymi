@@ -138,9 +138,17 @@ namespace DealershipCar.Dominio.Pruebas
 
 		private static MethodInfo TheDoorsNameResolver(string name)
 		{
-			Type door = typeof(DealershipCarAPI).Assembly.GetType("DealershipCar.App.WireName");
+			// LA PUERTA VIVE EN SU PROPIO ENSAMBLADO, DealershipCar.Frontera, y no en
+			// DealershipCar.App. El namespace sigue siendo DealershipCar.App -- lo que se separo
+			// es el ENSAMBLADO, que es lo que mira el InternalsVisibleTo del dominio: la puerta
+			// necesita nombrar los conjuntos cerrados y la Superficie no, asi que el permiso es
+			// de la puerta sola.
+			Type door = Assembly
+				.Load(new AssemblyName("DealershipCar.Frontera"))
+				.GetType("DealershipCar.App.WireName");
 
-			Assert.That(door, Is.Not.Null, "DealershipCar.App.WireName no existe.");
+			Assert.That(door, Is.Not.Null,
+				"DealershipCar.App.WireName no existe en DealershipCar.Frontera.");
 
 			MethodInfo method = door.GetMethod(
 				name, BindingFlags.Static | BindingFlags.Public | BindingFlags.NonPublic);

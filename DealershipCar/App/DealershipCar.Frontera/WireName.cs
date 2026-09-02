@@ -127,6 +127,24 @@ namespace DealershipCar.App
 			return IsAMemberOf(typeof(VolumeUnitCode), unit);
 		}
 
+		/// <summary>
+		/// Que la base declarada concuerde con los limites que la acompanan, comprobado ANTES de
+		/// performar.
+		/// </summary>
+		// VIVE ACA Y NO EN LA SUPERFICIE por la misma razon que los resolutores: para
+		// preguntarselo al dominio hay que nombrar IntervalBasisCode, y desde que el dominio es
+		// enteramente `internal` solo este ensamblado puede. La regla sigue siendo del dominio
+		// -IntervalRule.BasisIsNeverInferred-; aca solo se la invoca en el momento en que un
+		// rechazo todavia no cuesta una entrada en el journal.
+		internal static void BasisAgreesWithItsLimits(
+			string basis, int timeLimitDays, int distanceLimit)
+		{
+			IntervalRule.BasisIsNeverInferred(
+				(IntervalBasisCode)Enum.Parse(typeof(IntervalBasisCode), IntervalBasis(basis)),
+				timeLimitDays,
+				distanceLimit);
+		}
+
 		private static bool IsAMemberOf(Type closedSet, string value)
 		{
 			return !string.IsNullOrWhiteSpace(value) && Enum.IsDefined(closedSet, value);

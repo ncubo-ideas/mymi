@@ -32,6 +32,10 @@
 
   <Project Path="DealershipCar/App/DealershipCar.App/DealershipCar.App.csproj" />
   <Project Path="DealershipCar/App/DealershipCar.Consola/DealershipCar.Consola.csproj" />
+  <!-- La puerta, en su propio csproj: es el unico ensamblado de produccion que ve el dominio
+       por dentro, y separarla es lo que mantiene a DealershipCar.App cercada por el
+       compilador. Ver el AssemblyInfo de DealershipCar.Dominio. -->
+  <Project Path="DealershipCar/App/DealershipCar.Frontera/DealershipCar.Frontera.csproj" />
   <Project Path="DealershipCar/App/DealershipCar.Mcp/DealershipCar.Mcp.csproj" />
   <Project Path="DealershipCar/App/DealershipCar.Wasm/DealershipCar.Wasm.csproj" />
   <Project Path="DealershipCar/Dominio/DealershipCar.Dominio.csproj" />

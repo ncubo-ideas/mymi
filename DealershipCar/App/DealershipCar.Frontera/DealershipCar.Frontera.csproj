@@ -1,0 +1,41 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <!-- LA PUERTA, y es su PROPIO csproj a proposito.
+       Traduce el NOMBRE de un miembro de un conjunto cerrado, tal como llega por el wire, al
+       nombre que el script del DSL le pasa al dominio, y revienta antes de performar cuando
+       no nombra ningun miembro.
+
+       POR QUE VIVE SOLA. Este es el unico codigo de produccion que necesita NOMBRAR tipos del
+       dominio en C#: para reconocer un conjunto cerrado hay que mirar el conjunto. Y ese
+       rechazo tiene que ocurrir ANTES del perform, porque es la unica forma de negarse sin
+       dejar una entrada permanente en el journal de la persona: adentro de un comando la
+       entrada ya se pago. Eso no se puede mudar al script sin cambiar quien paga el rechazo.
+
+       Mientras esto vivia dentro de DealershipCar.App, el InternalsVisibleTo del dominio tenia
+       que cubrir TODA la Superficie: las mil ochocientas lineas de DealershipCarAPI podian
+       declarar variables del dominio y solo la disciplina lo impedia. Justamente lo que la
+       recomendacion dice que no alcanza. Separada, el permiso nombra a ESTE ensamblado y solo
+       a este, y DealershipCar.App vuelve a estar cercada por el compilador.
+
+       EL NAMESPACE SIGUE SIENDO DealershipCar.App a proposito: lo que cambio es el ensamblado
+       -que es lo que la cerca mira- y no la forma de llamar a la puerta. Ni un call site de la
+       Superficie se toco.
+
+       El motor NO entra aca: esto no hace performs, valida nombres antes de que los haya. -->
+
+  <PropertyGroup>
+    <TargetFramework>net9.0</TargetFramework>
+    <Nullable>disable</Nullable>
+    <ImplicitUsings>disable</ImplicitUsings>
+    <AssemblyName>DealershipCar.Frontera</AssemblyName>
+    <RootNamespace>DealershipCar.App</RootNamespace>
+
+    <AssemblyTitle>Maintenance schedule wire names</AssemblyTitle>
+    <Description>The door: it resolves the wire name of a closed-set member into the name the DSL script hands the domain, and refuses an unknown one before any command is performed.</Description>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\Dominio\DealershipCar.Dominio.csproj" />
+  </ItemGroup>
+
+</Project>

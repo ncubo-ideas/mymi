@@ -2,7 +2,7 @@ using System;
 using System.Globalization;
 using Choreography.Theater;
 using DealershipCar.App.Events;
-using DealershipCar.Dominio;
+
 using Puppeteer;
 using Puppets.Portador;
 
@@ -24,7 +24,7 @@ namespace DealershipCar.App
 			bool isMandatory, bool isSafety,
 			DateTime anchoredAt, int anchorReading, string anchorUnit)
 		{
-			TheDeclaredBasisAgreesWithItsLimits(basis, timeLimitDays, distanceLimit);
+			WireName.BasisAgreesWithItsLimits(basis, timeLimitDays, distanceLimit);
 
 			app.Using(@"
 				schedule.SeedPlanOperation(
@@ -64,7 +64,7 @@ namespace DealershipCar.App
 			string kind, string basis, int timeLimitDays, int distanceLimit, string unit,
 			DateTime anchoredAt, int anchorReading, string anchorUnit)
 		{
-			TheDeclaredBasisAgreesWithItsLimits(basis, timeLimitDays, distanceLimit);
+			WireName.BasisAgreesWithItsLimits(basis, timeLimitDays, distanceLimit);
 
 			app.Using(@"
 				schedule.AddOwnerOperation(
@@ -1335,9 +1335,9 @@ namespace DealershipCar.App
 					$"Esta app no tiene comando para un mensaje de tipo '{message.Tipo}'. La ruta "
 					+ "debio devolver null para descartarlo.", nameof(message));
 			}
-			catch (DomainException refused)
+			catch (Exception refused) when (TheDomainRefusedTheFact(refused))
 			{
-				return TheNarrativeMovesPast(message, refused);
+				return TheNarrativeMovesPast(message, refused.Message);
 			}
 		}
 
@@ -1401,7 +1401,7 @@ namespace DealershipCar.App
 
 		private string ApplyPlanOperationSeeded(PlanOperationSeeded message)
 		{
-			TheDeclaredBasisAgreesWithItsLimits(
+			WireName.BasisAgreesWithItsLimits(
 				message.Basis, message.TimeLimitDays, message.DistanceLimit);
 
 			return app.Using(
@@ -1749,7 +1749,26 @@ namespace DealershipCar.App
 		private const string TheEventIsNew =
 			"Check(@event > logbook.LastEvent()) Error 'evento ya procesado';";
 
-		private string TheNarrativeMovesPast(IMensajeDeEvento message, DomainException refused)
+		/// <summary>
+		/// El nombre completo de la excepcion con la que el dominio rechaza un hecho.
+		/// </summary>
+		// SE RECONOCE POR NOMBRE Y NO POR TIPO, y no es un atajo: el dominio es enteramente
+		// `internal` y esta Superficie no esta en su lista de InternalsVisibleTo, asi que no
+		// puede escribir `catch (DomainException)`. Y no le hace falta: lo que necesita saber
+		// no es un tipo, es una PREGUNTA -"rechazo el dominio este hecho?"- cuya respuesta
+		// consume como texto (`refused.Message`). Ligar la Superficie al tipo para leerle una
+		// cadena era acoplamiento sin contrapartida.
+		//
+		// LA CADENA ESTA AMARRADA: las pruebas comparan esta constante contra
+		// typeof(DomainException).FullName, y son el unico lugar que ve los dos lados. Si el
+		// dominio renombra o muda la excepcion, la prueba lo dice, en vez de que este catch
+		// deje de atrapar en silencio y un hecho rechazado tumbe el avance de la narrativa.
+		internal const string TheDomainRefusal = "DealershipCar.Dominio.DomainException";
+
+		private static bool TheDomainRefusedTheFact(Exception refused) =>
+			refused.GetType().FullName == TheDomainRefusal;
+
+		private string TheNarrativeMovesPast(IMensajeDeEvento message, string refusal)
 		{
 			string rejection = app.Using(
 				scriptForChk: TheEventIsNew,
@@ -1759,7 +1778,7 @@ namespace DealershipCar.App
 			})
 			.PerformCheckThenCommand();
 
-			return rejection.Length > 0 ? rejection : refused.Message;
+			return rejection.Length > 0 ? rejection : refusal;
 		}
 
 		long IDiarioDeLaApp.UltimoEventoProcesado()
@@ -1896,16 +1915,6 @@ namespace DealershipCar.App
 
 				return DateTime.SpecifyKind(rented[name].GetValue<DateTime>(), DateTimeKind.Utc);
 			}
-		}
-
-		private static void TheDeclaredBasisAgreesWithItsLimits(
-			string basis, int timeLimitDays, int distanceLimit)
-		{
-			IntervalRule.BasisIsNeverInferred(
-				(IntervalBasisCode)Enum.Parse(
-					typeof(IntervalBasisCode), WireName.IntervalBasis(basis)),
-				timeLimitDays,
-				distanceLimit);
 		}
 
 		/// <summary>
