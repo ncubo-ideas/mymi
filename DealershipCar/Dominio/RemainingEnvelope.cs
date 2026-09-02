@@ -200,7 +200,7 @@ namespace DealershipCar.Dominio
 		/// <summary>Como se dice una cantidad de meses, que se pluraliza.</summary>
 		protected static string Months(int quantity)
 		{
-			return quantity + (quantity == 1 ? " month" : " months");
+			return quantity + (quantity == 1 ? " mes" : " meses");
 		}
 
 		private static void RequireALimitInMonths(int monthsLimit)
@@ -216,33 +216,34 @@ namespace DealershipCar.Dominio
 		private string TheTimeHalfInWords()
 		{
 			if (_monthsLeft == 0)
-				return "Time: exactly at a limit of " + Months(_monthsLimit) + ".";
+				return "Tiempo: justo en un límite de " + Months(_monthsLimit) + ".";
 
 			if (_monthsLeft < 0)
-				return "Time: " + Months(-_monthsLeft) + " past a limit of "
+				return "Tiempo: " + Months(-_monthsLeft) + " pasados de un límite de "
 					+ Months(_monthsLimit) + ".";
 
-			return "Time: " + Months(_monthsLeft) + " left of " + Months(_monthsLimit) + ".";
+			return "Tiempo: " + (_monthsLeft == 1 ? "queda " : "quedan ") + Months(_monthsLeft)
+				+ " de " + Months(_monthsLimit) + ".";
 		}
 
 		private string WhichArrivedFirstInWords()
 		{
 			if (!TheStandingCanBeDecided)
-				return "Which half arrives first cannot be said either, because one of the two was "
-					+ "not measured.";
+				return "Cuál de las dos mitades llega primero tampoco se puede decir, porque una de "
+					+ "las dos no se midió.";
 
 			if (!TheEnvelopeIsReached)
-				return "Neither half has been reached, and which one arrives first depends on how "
-					+ "much this vehicle is driven from here: the two halves are not comparable to "
-					+ "each other, and this record states what it has rather than predicting a "
-					+ "rate.";
+				return "Ninguna de las dos mitades se ha alcanzado, y cuál llega primero depende de "
+					+ "cuánto se maneje este vehículo de aquí en adelante: las dos mitades no son "
+					+ "comparables entre sí, y este registro dice lo que tiene en vez de pronosticar "
+					+ "un ritmo.";
 
 			if (DecidedByTime && DecidedByDistance)
-				return "Reached by time and distance, which arrived together.";
+				return "Alcanzado por tiempo y distancia, que llegaron juntos.";
 
-			if (DecidedByDistance) return "Reached by distance, which arrived first.";
+			if (DecidedByDistance) return "Alcanzado por distancia, que llegó primero.";
 
-			return "Reached by time, which arrived first.";
+			return "Alcanzado por tiempo, que llegó primero.";
 		}
 	}
 }

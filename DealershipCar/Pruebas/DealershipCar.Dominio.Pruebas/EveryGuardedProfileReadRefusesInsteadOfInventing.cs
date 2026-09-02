@@ -92,7 +92,7 @@ namespace DealershipCar.Dominio.Pruebas
 
 			Assert.That(
 				journal.Api.DescribePublishedWarrantyEnvelope(),
-				Does.Contain("not published"),
+				Does.Contain("no ha publicado"),
 				"Y la mitad publicada contesta CON PALABRAS. Es la lectura que puede citar quien no "
 				+ "tiene ni un dato de ningun carro, y que no la haya haria que faltar el odometro de "
 				+ "alguien volviera incitable lo que la agencia publico para todos.");

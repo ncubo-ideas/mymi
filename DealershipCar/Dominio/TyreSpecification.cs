@@ -67,11 +67,11 @@ namespace DealershipCar.Dominio
 		/// </summary>
 		internal string Describe()
 		{
-			return _position.Name
-				+ ": size " + _size
-				+ ", cold pressure " + _coldPressure.ToString(CultureInfo.InvariantCulture)
+			return "Llanta " + _position.HowItIsSaid.ToLowerInvariant()
+				+ ": medida " + _size
+				+ ", presión en frío " + _coldPressure.ToString(CultureInfo.InvariantCulture)
 				+ " " + _pressureUnit.Name
-				+ ", ratings " + _ratings + ".";
+				+ ", clasificaciones " + _ratings + ".";
 		}
 	}
 }

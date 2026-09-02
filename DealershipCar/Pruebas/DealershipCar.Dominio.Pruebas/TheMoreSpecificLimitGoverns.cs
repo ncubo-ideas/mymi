@@ -48,7 +48,7 @@ namespace DealershipCar.Dominio.Pruebas
 			ASystemWithNoLimitsOfItsOwn();
 
 			Assert.That(TheStandingAt(FiveYearsLater, 40000), Is.EqualTo("Covered"));
-			Assert.That(TheSentenceAt(FiveYearsLater, 40000), Does.Contain("84 months"),
+			Assert.That(TheSentenceAt(FiveYearsLater, 40000), Does.Contain("84 meses"),
 				"Test 10 de §11: la respuesta nombra los limites que rigen. Un 'Covered' sin decir "
 				+ "contra que se midio no se puede verificar.");
 			Assert.That(TheSentenceAt(FiveYearsLater, 40000), Does.Contain("160000 km"));
@@ -63,10 +63,10 @@ namespace DealershipCar.Dominio.Pruebas
 			Assert.That(TheStandingAt(FiveYearsLater, 40000), Is.EqualTo("OutsideEnvelope"),
 				"Ley L5: lo mas especifico gana. Sesenta meses de vehiculo no alargan los treinta y "
 				+ "seis que el fabricante publico para este sistema.");
-			Assert.That(TheSentenceAt(FiveYearsLater, 40000), Does.Contain("36 months"),
+			Assert.That(TheSentenceAt(FiveYearsLater, 40000), Does.Contain("36 meses"),
 				"Y los limites que decidieron son los del sistema, asi que son esos los que la "
 				+ "respuesta nombra.");
-			Assert.That(TheSentenceAt(FiveYearsLater, 40000), Does.Not.Contain("84 months"),
+			Assert.That(TheSentenceAt(FiveYearsLater, 40000), Does.Not.Contain("84 meses"),
 				"El sobre del vehiculo no rige aca, asi que nombrarlo confundiria contra que se "
 				+ "midio.");
 		}

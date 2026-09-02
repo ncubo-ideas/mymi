@@ -178,7 +178,7 @@ namespace DealershipCar.Dominio.Pruebas
 			Assert.That(journal.Api.IsTyrePublished("Front"), Is.False,
 				"Y la llanta se retiro con la primera: lo que la sucesora no volvio a publicar no "
 				+ "queda contestando.");
-			Assert.That(journal.Api.DescribeTyre("Front"), Does.Contain("not published"));
+			Assert.That(journal.Api.DescribeTyre("Front"), Does.Contain("no se ha publicado nada"));
 		}
 
 		// EL BARRIDO DE LOS ONCE, y la asercion NOMBRA EL TIPO en vez de decir que llego algo. Una
@@ -570,16 +570,17 @@ namespace DealershipCar.Dominio.Pruebas
 			{
 				("fluidos",    "fluid EngineOil : True | R1",     "fluid BrakeFluid : True | R2",
 					"5W-30 synthetic", "DOT 4",
-					"fluid Coolant : False |  | Coolant: not published"),
+					"fluid Coolant : False |  | Refrigerante: no se ha publicado nada"),
 				("llantas",    "tyre Front : True | R1",          "tyre Rear : True | R2",
 					"205/55R16", "225/50R17",
-					"tyre Spare : False |  | Spare tyre: not published"),
+					"tyre Spare : False |  | Llanta de repuesto: no se ha publicado nada"),
 				("intervalos", "interval FluidChange : True | R1", "interval FilterChange : True | R2",
-					"FluidChange: serviced every 10000", "FilterChange: serviced every 10000",
-					"interval Inspection : False |  | Inspection service interval: not published"),
+					"Cambio de fluido: se hace cada 10000", "Cambio de filtro: se hace cada 10000",
+					"interval Inspection : False |  | Intervalo de servicio de revisión: no se ha "
+					+ "publicado nada"),
 				("precios",    "price FluidChange : True | R1",   "price FilterChange : True | R2",
 					"89.9 USD", "45.5 USD",
-					"price Inspection : False |  | Inspection service price"),
+					"price Inspection : False |  | Precio del servicio de revisión"),
 			};
 
 			Assert.That(keyed.Length, Is.EqualTo(4),

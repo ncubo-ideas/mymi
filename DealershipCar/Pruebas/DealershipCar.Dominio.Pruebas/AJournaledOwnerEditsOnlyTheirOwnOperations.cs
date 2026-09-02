@@ -58,13 +58,13 @@ namespace DealershipCar.Dominio.Pruebas
 			AddTheOwnersDiagnostic();
 			journal.Api.Evaluate(Delivery.AddDays(TwelveMonthsInDays));
 
-			Assert.That(journal.Api.ReadDueReason("Diagnostic"), Does.Not.Contain("no scheduled"),
+			Assert.That(journal.Api.ReadDueReason("Diagnostic"), Does.Not.Contain("no tiene agendada"),
 				"Primero tiene que estar: si no, la remocion no prueba nada.");
 			Assert.That(journal.Api.CountDue(), Is.EqualTo(2));
 
 			journal.Api.RemoveOwnerOperation("Diagnostic");
 
-			Assert.That(journal.Api.ReadDueReason("Diagnostic"), Does.Contain("no scheduled"));
+			Assert.That(journal.Api.ReadDueReason("Diagnostic"), Does.Contain("no tiene agendada"));
 			Assert.That(journal.Api.CountDue(), Is.EqualTo(1),
 				"Y la agenda sigue contestando: quitar una operacion la saca del conteo, no deja a "
 				+ "la agenda apuntando a una clase que ya no tiene.");
@@ -84,7 +84,7 @@ namespace DealershipCar.Dominio.Pruebas
 
 			journal.CloseAndReopenFromTheJournal();
 
-			Assert.That(journal.Api.ReadDueReason("Diagnostic"), Does.Contain("no scheduled"));
+			Assert.That(journal.Api.ReadDueReason("Diagnostic"), Does.Contain("no tiene agendada"));
 			Assert.That(journal.Api.ReadDueState("Diagnostic"), Is.EqualTo("NotDue"));
 		}
 

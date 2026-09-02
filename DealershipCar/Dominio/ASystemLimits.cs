@@ -100,13 +100,13 @@ namespace DealershipCar.Dominio
 		/// </summary>
 		internal override string Describe()
 		{
-			if (!HasADistanceHalf()) return _months + " months";
+			if (!HasADistanceHalf()) return _months + " meses";
 
 			string byDistance = _distance + " " + _unit.Name;
 
 			if (_months == 0) return byDistance;
 
-			return _months + " months or " + byDistance;
+			return _months + " meses o " + byDistance;
 		}
 
 		private static int WholeMonthsBetween(DateTime from, DateTime to)

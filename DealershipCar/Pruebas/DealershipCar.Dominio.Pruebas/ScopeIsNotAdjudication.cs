@@ -102,7 +102,7 @@ namespace DealershipCar.Dominio.Pruebas
 		public void EveryCoverageSentenceSaysItIsScopeAndNotADecisionOnAClaim()
 		{
 			foreach (string sentence in EveryCoverageSentenceThisModuleCanProduce())
-				Assert.That(sentence, Does.Contain("Scope only"),
+				Assert.That(sentence, Does.Contain("Solo alcance"),
 					"Falta la clausula de alcance en: " + sentence);
 		}
 
@@ -112,7 +112,7 @@ namespace DealershipCar.Dominio.Pruebas
 		public void TheScopeClauseSaysWhoseTheDecisionIs()
 		{
 			Assert.That(specification.DescribeCoverageSummary(),
-				Does.Contain("manufacturer"));
+				Does.Contain("fabricante"));
 		}
 
 		// La misma ley alcanza al resumen del alcance, que es la respuesta que la gente lee

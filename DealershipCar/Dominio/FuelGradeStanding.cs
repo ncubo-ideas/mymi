@@ -29,27 +29,34 @@ namespace DealershipCar.Dominio
 		/// <summary>
 		/// El grado minimo. Por debajo de este el fabricante no responde por el motor.
 		/// </summary>
-		internal static readonly FuelGradeStanding Minimum = new FuelGradeStanding("Minimum");
+		internal static readonly FuelGradeStanding Minimum = new FuelGradeStanding("Minimum", "mínimo");
 
 		/// <summary>Permitido: se puede usar sin consecuencia publicada.</summary>
 		internal static readonly FuelGradeStanding Permitted =
-			new FuelGradeStanding("Permitted");
+			new FuelGradeStanding("Permitted", "permitido");
 
 		/// <summary>
 		/// Prohibido. Es la mitad que de verdad importa decir: un grado prohibido callado es un
 		/// motor danado.
 		/// </summary>
 		internal static readonly FuelGradeStanding Prohibited =
-			new FuelGradeStanding("Prohibited");
+			new FuelGradeStanding("Prohibited", "prohibido");
 
 		/// <summary>
 		/// El nombre. Es lo unico que sale del conjunto hacia afuera; el objeto no se entrega.
 		/// </summary>
 		internal string Name { get; }
 
-		private FuelGradeStanding(string name)
+		/// <summary>
+		/// Como se dice esta postura en la frase que alguien lee. NO es lo que cruza la puerta ni
+		/// lo que viaja en el wire: eso sigue siendo <see cref="Name"/>.
+		/// </summary>
+		internal string HowItIsSaid { get; }
+
+		private FuelGradeStanding(string name, string howItIsSaid)
 		{
 			Name = name;
+			HowItIsSaid = howItIsSaid;
 		}
 
 		/// <summary>

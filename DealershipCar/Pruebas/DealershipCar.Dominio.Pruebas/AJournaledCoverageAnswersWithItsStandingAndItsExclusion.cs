@@ -65,7 +65,7 @@ namespace DealershipCar.Dominio.Pruebas
 				+ "de cobertura.");
 			Assert.That(sentence, Does.Contain(TheCondition),
 				"Y con la condicion: este modulo dice que la letra chica existe, no que le toque.");
-			Assert.That(sentence, Does.Contain("revision " + TheRevision),
+			Assert.That(sentence, Does.Contain("revisión " + TheRevision),
 				"Ley L1, tambien aca: la respuesta nombra de que publicacion salio.");
 		}
 
@@ -142,12 +142,12 @@ namespace DealershipCar.Dominio.Pruebas
 			foreach (string code in new[] { TheSystem, "PAINT", "NO-SUCH-SYSTEM" })
 				Assert.That(
 					TheSentenceAbout(code),
-					Does.Contain("nothing about how a claim would be resolved"),
+					Does.Contain("nada sobre cómo se resolvería un reclamo"),
 					"La clausula de alcance falta en la respuesta sobre '" + code + "'.");
 
 			Assert.That(
 				journal.Api.DescribeCoverageSummary(),
-				Does.Contain("nothing about how a claim would be resolved"));
+				Does.Contain("nada sobre cómo se resolvería un reclamo"));
 		}
 
 		// UN CODIGO DE SISTEMA SE RECORTA EN LA LECTURA IGUAL QUE EN LA PUBLICACION. Es lo unico que

@@ -136,8 +136,8 @@ namespace DealershipCar.Dominio.Pruebas
 				+ "importa.");
 			Assert.That(scope.Says, Does.Contain("wear parts"));
 			Assert.That(scope.Says, Does.Contain("screen burn-in"));
-			Assert.That(scope.Says, Does.Contain("revision " + TheRevision));
-			Assert.That(scope.Says, Does.Contain("nothing about how a claim would be resolved"),
+			Assert.That(scope.Says, Does.Contain("revisión " + TheRevision));
+			Assert.That(scope.Says, Does.Contain("nada sobre cómo se resolvería un reclamo"),
 				"La clausula la compone el dominio y viaja adentro de la frase, para que la ley se "
 				+ "diga a si misma y no se pierda en la primera capa que reformule la respuesta.");
 		}
@@ -164,20 +164,20 @@ namespace DealershipCar.Dominio.Pruebas
 			// LAS DOS MITADES, dichas las dos. La de distancia es exacta y no depende del reloj; la
 			// de tiempo se afirma por su FORMA, porque los meses que quedan bajan solos con el
 			// calendario y afirmar el numero seria afirmar el dia en que corre la suite.
-			Assert.That(standing.Says, Does.Contain("Distance: 11120 mi left of 20000 mi."),
+			Assert.That(standing.Says, Does.Contain("Distancia: quedan 11120 mi de 20000 mi."),
 				"La distancia se cuenta desde el odometro de la entrega y no desde cero.");
-			Assert.That(standing.Says, Does.Contain("months left of " + TheMonths + " months."),
+			Assert.That(standing.Says, Does.Contain("meses de " + TheMonths + " meses."),
 				"Si esto se pone rojo despues de 2045, el escenario cumplio su plazo y hay que "
 				+ "volver a montarlo: el plazo esta puesto largo justo porque la tool lee el reloj.");
-			Assert.That(standing.Says, Does.Contain("Neither half has been reached"));
-			Assert.That(standing.Says, Does.Contain("rather than predicting a rate"),
+			Assert.That(standing.Says, Does.Contain("Ninguna de las dos mitades se ha alcanzado"));
+			Assert.That(standing.Says, Does.Contain("en vez de pronosticar un ritmo"),
 				"Y cual llega primero NO se predice: compararlas necesitaria una tasa, y esa tasa es "
 				+ "la conversion que este modulo no hace.");
 
 			// LA LINEA DE HONESTIDAD: contra que odometro se midio y cuando se OBSERVO.
 			Assert.That(
 				standing.Says,
-				Does.Contain("odometer of 9000 mi observed on 2025-09-01"));
+				Does.Contain("odómetro de 9000 mi observado el 2025-09-01"));
 			Assert.That(standing.OdometerObservedAt, Does.StartWith("2025-09-01"));
 			Assert.That(standing.Odometer, Is.EqualTo(TheOdometerToday),
 				"Y es la SEGUNDA lectura, la vigente al instante preguntado, no la primera que "
@@ -201,16 +201,16 @@ namespace DealershipCar.Dominio.Pruebas
 			Assert.That(scope.StandingCanBeEvaluated, Is.True);
 			Assert.That(scope.Standing, Is.EqualTo("CoveredWithExclusion"));
 
-			Assert.That(scope.StandingSays, Does.Contain("'POWERTRAIN': CoveredWithExclusion"));
+			Assert.That(scope.StandingSays, Does.Contain("'POWERTRAIN': Cubierto con exclusión"));
 			Assert.That(
 				scope.StandingSays,
-				Does.Contain("Governing limits: " + TheMonths + " months or " + TheDistance + " mi."),
+				Does.Contain("Límites que rigen: " + TheMonths + " meses o " + TheDistance + " mi."),
 				"Los limites que rigen son los del SOBRE de este vehiculo, que el sistema cubierto "
 				+ "no tiene propios. Ese numero solo puede haber salido del registro.");
-			Assert.That(scope.StandingSays, Does.Contain("This vehicle is inside them."));
-			Assert.That(scope.StandingSays, Does.Contain("revision " + TheRevision));
+			Assert.That(scope.StandingSays, Does.Contain("Este vehículo está dentro de ellos."));
+			Assert.That(scope.StandingSays, Does.Contain("revisión " + TheRevision));
 
-			Assert.That(scope.ThisVehicleSays, Does.Contain("Distance: 11120 mi left of 20000 mi."),
+			Assert.That(scope.ThisVehicleSays, Does.Contain("Distancia: quedan 11120 mi de 20000 mi."),
 				"Y la mitad del vehiculo va aparte y entera, que es lo que deja citarla cuando la "
 				+ "compuesta no se puede.");
 		}
@@ -279,15 +279,15 @@ namespace DealershipCar.Dominio.Pruebas
 		{
 			WarrantyScope scope = TheAssistantAsksAbout(TheSystemInside);
 
-			Assert.That(scope.Detail, Does.Contain("standingSays is where THIS vehicle stands"));
-			Assert.That(scope.Detail, Does.Contain("say that date"));
-			Assert.That(scope.Detail, Does.Not.Contain("not in this record"),
+			Assert.That(scope.Detail, Does.Contain("standingSays es dónde está parado ESTE vehículo"));
+			Assert.That(scope.Detail, Does.Contain("diga esa fecha"));
+			Assert.That(scope.Detail, Does.Not.Contain("no está en standingSays"),
 				"La frase vieja se fue con la ley vieja.");
 
 			WarrantyStanding standing = TheAssistantAsksIfItIsStillUnderWarranty();
 
 			Assert.That(standing.Detail, Does.Contain("odometerObservedAt"));
-			Assert.That(standing.Detail, Does.Contain("not against where the car is today"));
+			Assert.That(standing.Detail, Does.Contain("no contra donde está el carro hoy"));
 		}
 
 		// Y LAS TRES LECTURAS DE NUEVE ARGUMENTOS SIGUEN PIDIENDO LOS NUEVE. Se quedan porque quien
@@ -430,13 +430,13 @@ namespace DealershipCar.Dominio.Pruebas
 				Does.Contain("keep the invoices and the parts records"));
 			Assert.That(scope.ServicingPolicySays, Does.Contain(TheRevision));
 
-			Assert.That(scope.Detail, Does.Contain("servicing-elsewhere rule is in this answer"));
-			Assert.That(scope.Detail, Does.Contain("keeps only the last of the three"));
+			Assert.That(scope.Detail, Does.Contain("La regla de servicio en otro taller está en esta respuesta"));
+			Assert.That(scope.Detail, Does.Contain("guarda solo el último de los tres"));
 
 			// Y NINGUN CONTEO LLEGA POR NINGUN CAMPO.
 			Assert.That(
 				JsonSerializer.Serialize(scope),
-				Does.Not.Contain("external services with evidence"));
+				Does.Not.Contain("servicios externos con comprobante"));
 		}
 
 		// Y LA RAZON SE RE-DERIVA EN VEZ DE CITARSE: los dos conteos de servicio externo no tienen
@@ -474,7 +474,7 @@ namespace DealershipCar.Dominio.Pruebas
 						.DoesTheWarrantyCover("");
 
 				Assert.That(scope.ServicingPolicyPublished, Is.False);
-				Assert.That(scope.Detail, Does.Not.Contain("servicing elsewhere"));
+				Assert.That(scope.Detail, Does.Not.Contain("servicio en otro taller"));
 			}
 		}
 
@@ -528,9 +528,9 @@ namespace DealershipCar.Dominio.Pruebas
 			Assert.That(whole.Published, Is.True, "Y el alcance entero contesta igual.");
 			Assert.That(whole.StandingSays, Is.EqualTo(""),
 				"Sin sistema no hay posicion de un sistema que buscar.");
-			Assert.That(whole.ThisVehicleSays, Does.Contain("Distance:"),
+			Assert.That(whole.ThisVehicleSays, Does.Contain("Distancia:"),
 				"Pero la mitad del vehiculo si contesta: no depende de cual sistema se pregunte.");
-			Assert.That(whole.Detail, Does.Contain("No system was named"));
+			Assert.That(whole.Detail, Does.Contain("No se nombró ningún sistema"));
 
 			Assert.Throws<ArgumentException>(
 				() => journal.Api.TheVocabularyIsTheManufacturers(""),

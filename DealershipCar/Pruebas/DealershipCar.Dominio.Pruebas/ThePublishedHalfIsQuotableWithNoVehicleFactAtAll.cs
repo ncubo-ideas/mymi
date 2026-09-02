@@ -66,7 +66,7 @@ namespace DealershipCar.Dominio.Pruebas
 
 			string published = journal.Api.DescribePublishedWarrantyEnvelope();
 
-			Assert.That(published, Does.Contain("36 months"));
+			Assert.That(published, Does.Contain("36 meses"));
 			Assert.That(published, Does.Contain("60000 mi"),
 				"Las dos mitades con su unidad. 'mi' es UnitB: si el codigo no hubiera cruzado, aca "
 				+ "diria 'km', que es el primer miembro del conjunto.");
@@ -126,7 +126,7 @@ namespace DealershipCar.Dominio.Pruebas
 		{
 			string said = journal.Api.DescribePublishedWarrantyEnvelope();
 
-			Assert.That(said, Does.Contain("not published"));
+			Assert.That(said, Does.Contain("no ha publicado"));
 			Assert.That(said, Does.Not.Match(@"\d"));
 		}
 	}

@@ -31,9 +31,9 @@ namespace DealershipCar.Dominio
 		internal override string Describe()
 		{
 			return TheAnswerSaying(
-				"cannot be evaluated, because no delivery has been recorded for this vehicle, and "
-				+ "both halves of the envelope are measured from the day it was handed over. The "
-				+ "dealership records that.",
+				"no se puede evaluar, porque no hay ninguna entrega registrada para este vehículo, "
+				+ "y las dos mitades del sobre se miden desde el día en que se entregó. Eso lo "
+				+ "registra el concesionario.",
 				_clause);
 		}
 	}

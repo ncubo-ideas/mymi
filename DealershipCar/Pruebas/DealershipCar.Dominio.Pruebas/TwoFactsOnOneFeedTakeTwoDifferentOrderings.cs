@@ -78,7 +78,7 @@ namespace DealershipCar.Dominio.Pruebas
 				"Y el punto de control avanza por los dos, como con cualquier hecho aceptado.");
 
 			Assert.That(journal.Api.DescribePublishedWarrantyEnvelope(),
-				Does.Contain("36 months").And.Contains("60000 mi"),
+				Does.Contain("36 meses").And.Contains("60000 mi"),
 				"PERO NO GOBIERNA: sigue rigiendo el publicado despues, que es el que llego primero. "
 				+ "El orden de LLEGADA no es el de vigencia.");
 
@@ -100,7 +100,7 @@ namespace DealershipCar.Dominio.Pruebas
 				2, 36, 60000, TheUnit, "2026-01-01T00:00:00Z")), Is.EqualTo(""));
 
 			Assert.That(journal.Api.DescribePublishedWarrantyEnvelope(),
-				Does.Contain("36 months").And.Contains("60000 mi"));
+				Does.Contain("36 meses").And.Contains("60000 mi"));
 
 			Assert.That(journal.Api.ReadEnvelopePublishedAt(), Is.EqualTo(TheFirstPublication));
 		}
@@ -158,7 +158,7 @@ namespace DealershipCar.Dominio.Pruebas
 				"La entrega se movio a la que llego ultima.");
 
 			Assert.That(journal.Api.DescribePublishedWarrantyEnvelope(),
-				Does.Contain("36 months").And.Contains("60000 mi"),
+				Does.Contain("36 meses").And.Contains("60000 mi"),
 				"Y el sobre NO se movio a la que llego ultima. Un bloque, dos ordenamientos.");
 		}
 
@@ -213,7 +213,7 @@ namespace DealershipCar.Dominio.Pruebas
 				+ "registro. Sin esto el proveedor volveria a servir el 2 en cada refresh.");
 
 			Assert.That(journal.Api.DescribePublishedWarrantyEnvelope(),
-				Does.Contain("36 months").And.Contains("60000 mi"),
+				Does.Contain("36 meses").And.Contains("60000 mi"),
 				"El sobre que regia quedo intacto: un hecho refusado adentro del cuerpo no deja el "
 				+ "agregado a medio escribir.");
 
@@ -223,7 +223,7 @@ namespace DealershipCar.Dominio.Pruebas
 				"Y el hecho siguiente entra normal: la narrativa no quedo atascada en el refusado.");
 
 			Assert.That(journal.Api.DescribePublishedWarrantyEnvelope(),
-				Does.Contain("24 months").And.Contains("40000 mi"));
+				Does.Contain("24 meses").And.Contains("40000 mi"));
 		}
 
 		// LA ENTREGA NO TIENE ESA MITAD, y decirlo es un hallazgo y no una omision: sus DOS guardas del
@@ -274,7 +274,7 @@ namespace DealershipCar.Dominio.Pruebas
 				3, 9000, TheUnit, "2026-05-01T00:00:00Z", "Telemetry")), Is.EqualTo(""));
 
 			Assert.That(journal.Api.DescribeWarrantyEnvelope(TheInstantAsked),
-				Does.Contain("Inside").Or.Contains("months left"),
+				Does.Contain("Inside").Or.Contains("meses"),
 				"Antes de la correccion el registro contesta.");
 
 			string before = TheBytesOf(journal.Folder);

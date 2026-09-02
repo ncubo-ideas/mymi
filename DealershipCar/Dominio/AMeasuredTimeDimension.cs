@@ -14,16 +14,16 @@ namespace DealershipCar.Dominio
 		{
 		}
 
-		/// <summary><c>time</c>.</summary>
+		/// <summary><c>tiempo</c>.</summary>
 		protected override string Name
 		{
-			get { return "time"; }
+			get { return "tiempo"; }
 		}
 
 		/// <summary>Los dias se pluralizan.</summary>
 		protected override string Amount(int quantity)
 		{
-			return quantity + (quantity == 1 ? " day" : " days");
+			return quantity + (quantity == 1 ? " día" : " días");
 		}
 	}
 }

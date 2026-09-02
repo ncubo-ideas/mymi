@@ -43,7 +43,7 @@ namespace DealershipCar.Dominio
 		/// <summary>El resultado por su nombre y la clausula que dice contra que se midio.</summary>
 		internal override string Describe()
 		{
-			return TheAnswerSaying(_standing.Name + ".", _clause);
+			return TheAnswerSaying(_standing.HowItIsSaid + ".", _clause);
 		}
 	}
 }

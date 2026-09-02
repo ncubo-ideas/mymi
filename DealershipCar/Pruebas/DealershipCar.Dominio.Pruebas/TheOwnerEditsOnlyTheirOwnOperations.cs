@@ -60,7 +60,7 @@ namespace DealershipCar.Dominio.Pruebas
 
 			Assert.That(
 				schedule.ReadDueReason(OperationKindCode.Diagnostic),
-				Does.Not.Contain("no scheduled"),
+				Does.Not.Contain("no tiene agendada"),
 				"Primero tiene que estar: si no, la remocion no prueba nada.");
 			Assert.That(schedule.CountDue(), Is.EqualTo(2));
 
@@ -68,7 +68,7 @@ namespace DealershipCar.Dominio.Pruebas
 
 			Assert.That(
 				schedule.ReadDueReason(OperationKindCode.Diagnostic),
-				Does.Contain("no scheduled"));
+				Does.Contain("no tiene agendada"));
 			Assert.That(schedule.CountDue(), Is.EqualTo(1),
 				"Y la agenda sigue contestando: quitar una operacion la saca del conteo, no deja "
 				+ "a la agenda apuntando a una clase que ya no tiene.");
@@ -203,7 +203,7 @@ namespace DealershipCar.Dominio.Pruebas
 
 			Assert.That(
 				schedule.ReadDueReason(OperationKindCode.RecallRemedy),
-				Does.Contain("no scheduled"));
+				Does.Contain("no tiene agendada"));
 		}
 
 		[Test]

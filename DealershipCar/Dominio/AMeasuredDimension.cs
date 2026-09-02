@@ -45,17 +45,17 @@ namespace DealershipCar.Dominio
 		internal override string Describe()
 		{
 			if (_travelled == _effectiveLimit)
-				return Name + ": exactly at a limit of " + Amount(_effectiveLimit);
+				return Name + ": justo en un límite de " + Amount(_effectiveLimit);
 
 			if (_travelled > _effectiveLimit)
 				return Name + ": " + Amount(_travelled - _effectiveLimit)
-					+ " past a limit of " + Amount(_effectiveLimit);
+					+ " pasados de un límite de " + Amount(_effectiveLimit);
 
-			return Name + ": " + _travelled + " of " + Amount(_effectiveLimit)
-				+ " since the last one";
+			return Name + ": " + _travelled + " de " + Amount(_effectiveLimit)
+				+ " desde la última";
 		}
 
-		/// <summary>Como se llama esta dimension en el motivo: <c>time</c> o <c>distance</c>.</summary>
+		/// <summary>Como se llama esta dimension en el motivo: <c>tiempo</c> o <c>distancia</c>.</summary>
 		protected abstract string Name { get; }
 
 		/// <summary>Como se dice una cantidad de esta dimension.</summary>

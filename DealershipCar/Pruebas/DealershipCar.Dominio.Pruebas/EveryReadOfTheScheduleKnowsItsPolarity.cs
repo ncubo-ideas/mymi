@@ -81,8 +81,8 @@ namespace DealershipCar.Dominio.Pruebas
 		{
 			string reason = schedule.ReadDueReason(OperationKindCode.FilterChange);
 
-			Assert.That(reason, Does.Contain("no scheduled"));
-			Assert.That(reason, Does.Contain("FilterChange"),
+			Assert.That(reason, Does.Contain("no tiene agendada"));
+			Assert.That(reason, Does.Contain("cambio de filtro"),
 				"Y nombra la clase: una frase generica obligaria a la vista a saber sobre que "
 				+ "clase estaba preguntando.");
 		}
@@ -195,7 +195,7 @@ namespace DealershipCar.Dominio.Pruebas
 
 			Assert.That(
 				schedule.ReadDueReason(OperationKindCode.FluidChange),
-				Does.Contain("has not been evaluated yet"));
+				Does.Contain("todavía no se ha evaluado"));
 		}
 
 		private void SeedTheFluidChange()

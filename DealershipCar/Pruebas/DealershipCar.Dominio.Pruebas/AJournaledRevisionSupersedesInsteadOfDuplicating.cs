@@ -154,7 +154,7 @@ namespace DealershipCar.Dominio.Pruebas
 			journal.Api.RemoveOwnerOperation("Diagnostic");
 
 			Assert.That(
-				journal.Api.ReadDueReason("Diagnostic"), Does.Not.Contain("no scheduled"),
+				journal.Api.ReadDueReason("Diagnostic"), Does.Not.Contain("no tiene agendada"),
 				"La clase quedo en manos del plan, asi que la ley L9 la protege: la persona ya no "
 				+ "la puede quitar.");
 		}

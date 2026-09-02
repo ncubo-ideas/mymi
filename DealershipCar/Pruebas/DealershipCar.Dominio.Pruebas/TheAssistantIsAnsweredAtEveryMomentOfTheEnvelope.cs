@@ -80,7 +80,7 @@ namespace DealershipCar.Dominio.Pruebas
 
 				Assert.That(
 					standing.Says,
-					Does.Contain("not the same as this vehicle having no warranty"),
+					Does.Contain("no es lo mismo que este vehículo no tenga garantía"),
 					"Y la frase lo dice ella misma. Sin ese renglon, 'no publicado' se lee como 'sin "
 					+ "garantia', que es lo contrario de lo que pasa.");
 
@@ -99,11 +99,11 @@ namespace DealershipCar.Dominio.Pruebas
 				WarrantyStanding standing = TheAssistantAsks(inside);
 
 				Assert.That(standing.Standing, Is.EqualTo("Inside"));
-				Assert.That(standing.Says, Does.Contain("Distance: 11120 mi left of 20000 mi."));
+				Assert.That(standing.Says, Does.Contain("Distancia: quedan 11120 mi de 20000 mi."));
 				Assert.That(standing.Says,
-					Does.Contain("months left of " + TheLongTerm + " months."));
-				Assert.That(standing.Says, Does.Contain("Neither half has been reached"));
-				Assert.That(standing.Says, Does.Contain("rather than predicting a rate"));
+					Does.Contain("meses de " + TheLongTerm + " meses."));
+				Assert.That(standing.Says, Does.Contain("Ninguna de las dos mitades se ha alcanzado"));
+				Assert.That(standing.Says, Does.Contain("en vez de pronosticar un ritmo"));
 			}
 		}
 
@@ -117,11 +117,11 @@ namespace DealershipCar.Dominio.Pruebas
 				WarrantyStanding standing = TheAssistantAsks(past);
 
 				Assert.That(standing.Standing, Is.EqualTo("Reached"));
-				Assert.That(standing.Says, Does.Contain("Reached by distance, which arrived first."));
-				Assert.That(standing.Says, Does.Not.Contain("Reached by time"));
-				Assert.That(standing.Says, Does.Contain("Distance: 5880 mi past a limit of 20000 mi."));
+				Assert.That(standing.Says, Does.Contain("Alcanzado por distancia, que llegó primero."));
+				Assert.That(standing.Says, Does.Not.Contain("Alcanzado por tiempo"));
+				Assert.That(standing.Says, Does.Contain("Distancia: 5880 mi pasados de un límite de 20000 mi."));
 				Assert.That(standing.Says,
-					Does.Contain("months left of " + TheLongTerm + " months."));
+					Does.Contain("meses de " + TheLongTerm + " meses."));
 
 				Assert.That(
 					TheAssistantAsksAboutCoverage(past).Standing, Is.EqualTo("OutsideEnvelope"),
@@ -141,11 +141,11 @@ namespace DealershipCar.Dominio.Pruebas
 				WarrantyStanding standing = TheAssistantAsks(past);
 
 				Assert.That(standing.Standing, Is.EqualTo("Reached"));
-				Assert.That(standing.Says, Does.Contain("Reached by time, which arrived first."));
-				Assert.That(standing.Says, Does.Not.Contain("Reached by distance"));
+				Assert.That(standing.Says, Does.Contain("Alcanzado por tiempo, que llegó primero."));
+				Assert.That(standing.Says, Does.Not.Contain("Alcanzado por distancia"));
 				Assert.That(standing.Says,
-					Does.Contain("months past a limit of " + TheExpiredTerm + " months."));
-				Assert.That(standing.Says, Does.Contain("Distance: 29120 mi left of 60000 mi."));
+					Does.Contain("meses pasados de un límite de " + TheExpiredTerm + " meses."));
+				Assert.That(standing.Says, Does.Contain("Distancia: quedan 29120 mi de 60000 mi."));
 			}
 		}
 

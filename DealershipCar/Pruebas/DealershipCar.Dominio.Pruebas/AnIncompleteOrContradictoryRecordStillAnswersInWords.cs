@@ -76,19 +76,19 @@ namespace DealershipCar.Dominio.Pruebas
 
 				// LA MITAD PUBLICADA, ENTERA.
 				Assert.That(scope.Published, Is.True);
-				Assert.That(scope.Says, Does.Contain("'POWERTRAIN' is inside the published scope"));
-				Assert.That(scope.Says, Does.Contain("revision " + TheRevision));
+				Assert.That(scope.Says, Does.Contain("'POWERTRAIN' está dentro del alcance publicado"));
+				Assert.That(scope.Says, Does.Contain("revisión " + TheRevision));
 
 				// LA MITAD DEL VEHICULO, ENTERA, Y NOMBRANDO LO QUE FALTA CON SUS PALABRAS.
-				Assert.That(scope.ThisVehicleSays, Does.Contain("NotPublished"));
+				Assert.That(scope.ThisVehicleSays, Does.Contain("Sin publicar"));
 				Assert.That(
 					scope.ThisVehicleSays,
-					Does.Contain("not the same as this vehicle having no warranty"));
+					Does.Contain("no es lo mismo que este vehículo no tenga garantía"));
 
 				// Y NINGUNA DE LAS DOS HABLA DEL FALLO: cada una habla de su propio sujeto. Es lo
 				// que hace que esto se lea como una respuesta y no como una disculpa.
-				Assert.That(scope.Says, Does.Not.Contain("could not"));
-				Assert.That(scope.ThisVehicleSays, Does.Not.Contain("could not"));
+				Assert.That(scope.Says, Does.Not.Contain("no se pudo"));
+				Assert.That(scope.ThisVehicleSays, Does.Not.Contain("no se pudo"));
 			}
 		}
 
@@ -102,15 +102,15 @@ namespace DealershipCar.Dominio.Pruebas
 			{
 				string detail = TheAssistantAsksAboutCoverage(bare).Detail;
 
-				Assert.That(detail, Does.Contain("at least one of the three facts"));
-				Assert.That(detail, Does.Contain("The two halves still answer separately"));
-				Assert.That(detail, Does.Contain("All three facts come from the dealership"));
-				Assert.That(detail, Does.Contain("neither the person nor you can supply one"));
+				Assert.That(detail, Does.Contain("al menos uno de los tres hechos"));
+				Assert.That(detail, Does.Contain("Las dos mitades siguen contestando por separado"));
+				Assert.That(detail, Does.Contain("Los tres hechos vienen del concesionario"));
+				Assert.That(detail, Does.Contain("ni la persona ni usted pueden aportar uno"));
 
 				string envelope = TheAssistantAsks(bare).Detail;
 
-				Assert.That(envelope, Does.Contain("The dealership is who states both of them"));
-				Assert.That(envelope, Does.Contain("is NOT a vehicle without a warranty"));
+				Assert.That(envelope, Does.Contain("El concesionario es quien declara los dos"));
+				Assert.That(envelope, Does.Contain("NO es un vehículo sin garantía"));
 			}
 		}
 
@@ -134,19 +134,19 @@ namespace DealershipCar.Dominio.Pruebas
 				Assert.That(standing.Standing, Is.EqualTo(""),
 					"Ninguno de los tres nombres quiere decir 'no lo se', asi que no se devuelve uno.");
 
-				Assert.That(standing.Says, Does.Contain("months left of 240 months."),
+				Assert.That(standing.Says, Does.Contain("meses de 240 meses."),
 					"La mitad de tiempo SI se midio: no tener odometro no la degrada.");
 				Assert.That(
 					standing.Says,
-					Does.Contain("Distance: cannot be measured, because there is no odometer reading"));
+					Does.Contain("Distancia: no se puede medir, porque no hay ninguna lectura del odómetro"));
 				Assert.That(
 					standing.Says,
-					Does.Contain("the dealership's feed is what brings one"));
+					Does.Contain("quien trae una es el feed del concesionario"));
 
 				Assert.That(
 					standing.Detail,
-					Does.Contain("no odometer reading has arrived"));
-				Assert.That(standing.Detail, Does.Contain("not that it is fine, and not zero"));
+					Does.Contain("no ha llegado ninguna lectura del odómetro"));
+				Assert.That(standing.Detail, Does.Contain("no que está bien, y no cero"));
 			}
 		}
 
@@ -166,9 +166,9 @@ namespace DealershipCar.Dominio.Pruebas
 				Assert.That(standing.Says, Is.EqualTo(""));
 				Assert.That(standing.Standing, Is.EqualTo(""));
 				Assert.That(standing.CanBeEvaluated, Is.False);
-				Assert.That(standing.Detail, Does.Contain("contradict each other"));
-				Assert.That(standing.Detail, Does.Contain("only the dealership can correct them"));
-				Assert.That(standing.Detail, Does.Contain("Do not estimate the standing"));
+				Assert.That(standing.Detail, Does.Contain("se contradicen entre sí"));
+				Assert.That(standing.Detail, Does.Contain("solo el concesionario puede corregirlos"));
+				Assert.That(standing.Detail, Does.Contain("No estime la posición"));
 
 				// LOS HECHOS SUELTOS SIGUEN CONTESTANDO, porque ninguno de ellos compone nada: es
 				// justo lo que le deja a la persona ver los dos numeros que no pueden ser los dos.
@@ -187,7 +187,7 @@ namespace DealershipCar.Dominio.Pruebas
 				Assert.That(scope.Published, Is.True,
 					"El alcance PUBLICADO sigue contestando: no depende de ningun hecho de este "
 					+ "carro.");
-				Assert.That(scope.Says, Does.Contain("revision " + TheRevision));
+				Assert.That(scope.Says, Does.Contain("revisión " + TheRevision));
 			}
 		}
 
@@ -228,14 +228,14 @@ namespace DealershipCar.Dominio.Pruebas
 
 				Assert.That(scope.RecordContradictsItself, Is.True);
 				Assert.That(scope.StandingSays, Is.EqualTo(""));
-				Assert.That(scope.Detail, Does.Contain("contradict each other"));
+				Assert.That(scope.Detail, Does.Contain("se contradicen entre sí"));
 
 				WarrantyStanding standing = TheAssistantAsks(ahead);
 
 				Assert.That(standing.RecordContradictsItself, Is.False,
 					"La del sobre NO revienta con este registro: contesta.");
 				Assert.That(standing.Standing, Is.EqualTo("Inside"));
-				Assert.That(standing.Says, Does.Contain("months left of 36 months."),
+				Assert.That(standing.Says, Does.Contain("meses de 36 meses."),
 					"Y contesta con MAS plazo del que el sobre publico, porque los meses cumplidos "
 					+ "salen negativos. No miente: dice exactamente lo que el registro implica.");
 
@@ -279,11 +279,11 @@ namespace DealershipCar.Dominio.Pruebas
 				Assert.That(standing.EnvelopeKnown, Is.False);
 				Assert.That(standing.Says, Is.EqualTo(""));
 				Assert.That(standing.PublishedSays, Is.EqualTo(""));
-				Assert.That(standing.Detail, Does.Contain("did not yet keep what the dealership"));
-				Assert.That(standing.Detail, Does.Contain("open their app once"));
+				Assert.That(standing.Detail, Does.Contain("todavía no guardaba lo que"));
+				Assert.That(standing.Detail, Does.Contain("abra su app una vez"));
 				Assert.That(
 					standing.Detail,
-					Does.Contain("not the same as the car having no warranty"));
+					Does.Contain("no es lo mismo que el carro no tenga garantía"));
 
 				WarrantyScope scope =
 					new ModelSpecificationTools(new JournalReader(folder, ""))
@@ -296,7 +296,7 @@ namespace DealershipCar.Dominio.Pruebas
 				Assert.That(scope.SpecificationKnown, Is.True,
 					"Y la especificacion SI esta: se degrada una global y no la respuesta entera.");
 				Assert.That(scope.Published, Is.True);
-				Assert.That(scope.Says, Does.Contain("revision " + TheRevision));
+				Assert.That(scope.Says, Does.Contain("revisión " + TheRevision));
 			}
 			finally
 			{

@@ -133,12 +133,12 @@ namespace DealershipCar.Dominio.Pruebas
 			journal.Api.DeferOperation("WearPartReplacement", "SecondOpinion", FellDue);
 
 			Assert.That(
-				journal.Api.ReadDueReason("WearPartReplacement"), Does.Contain("SecondOpinion"));
+				journal.Api.ReadDueReason("WearPartReplacement"), Does.Contain("una segunda opinión"));
 
 			journal.CloseAndReopenFromTheJournal();
 
 			Assert.That(
-				journal.Api.ReadDueReason("WearPartReplacement"), Does.Contain("SecondOpinion"),
+				journal.Api.ReadDueReason("WearPartReplacement"), Does.Contain("una segunda opinión"),
 				"Y sigue siendo el suyo despues de reproducir el journal.");
 			Assert.That(journal.Api.DeferralsUsed("WearPartReplacement"), Is.EqualTo(1));
 		}

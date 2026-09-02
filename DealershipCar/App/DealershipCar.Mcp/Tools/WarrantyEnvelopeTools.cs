@@ -23,33 +23,33 @@ namespace DealershipCar.Mcp.Tools
 		}
 
 		[McpServerTool(Name = "is_my_car_still_under_warranty", UseStructuredContent = true)]
-		[Description("Answers whether this person's vehicle is still inside the warranty envelope "
-			+ "the dealership published for it, and how much of each half is left. Use it for 'is my "
-			+ "car still under warranty?', 'until when am I covered?', 'how much warranty do I have "
-			+ "left?'. Everything it needs comes out of the person's own record - the envelope, the "
-			+ "date the car was handed over, the odometer reading taken that day and the latest one "
-			+ "the dealership's feed has brought - so never ask them for a mileage or a date, and "
-			+ "never accept one to feed back in. "
-			+ "AN ENVELOPE HAS TWO HALVES AND BOTH ARE ALWAYS SAID: a term in months and a distance. "
-			+ "Cover ends when the FIRST of the two runs out, so quoting only the comfortable half is "
-			+ "the way to give someone a wrong answer that sounds right. Which half will arrive first "
-			+ "is deliberately not predicted - that would need a rate this record does not have - so "
-			+ "say both and say that it depends on how much they drive. "
-			+ "IT STATES STANDING AND NEVER ADJUDICATES A CLAIM. Being inside the envelope is not a "
-			+ "promise that a repair gets paid; that is the manufacturer's to decide. "
-			+ "says IS THE ANSWER. It is one sentence composed by the record itself and it already "
-			+ "carries the standing, both halves, which one arrived first, the envelope it was "
-			+ "measured against with its publication date, and the odometer it was measured against "
-			+ "with the day that reading was observed. Say it rather than rebuilding it out of the "
-			+ "fields, and say the observation date: if it is months old, the distance half is as old "
-			+ "as it is, and presenting it as today's is the mistake worth avoiding. "
-			+ "WHEN SOMETHING IS MISSING IT IS NAMED, NOT ESTIMATED. The says sentence words the gap "
-			+ "itself and names which fact would decide it; the dealership is who records these, never "
-			+ "the person and never you. An envelope that was never published is not a car without a "
-			+ "warranty. "
-			+ "For what the MANUFACTURER published about the warranty's scope - which systems are in "
-			+ "it and which exclusions bite - use does_the_warranty_cover; that one also answers "
-			+ "where this vehicle stands for a system the person names.")]
+		[Description("Contesta si el vehículo de esta persona sigue dentro del sobre de garantía "
+			+ "que el concesionario le publicó, y cuánto le queda de cada mitad. Úsela para '¿mi carro todavía "
+			+ "tiene garantía?', '¿hasta cuándo estoy cubierto?', '¿cuánta garantía me queda?'. Todo "
+			+ "lo que necesita sale del registro propio de la persona -- el sobre, la fecha en que se "
+			+ "entregó el carro, la lectura del odómetro tomada ese día y la última que ha traído el "
+			+ "feed del concesionario --, así que nunca les pida un kilometraje ni una fecha, y nunca "
+			+ "acepte uno para devolverlo como dato. "
+			+ "UN SOBRE TIENE DOS MITADES Y LAS DOS SE DICEN SIEMPRE: un plazo en meses y una "
+			+ "distancia. La cobertura termina cuando se acaba la PRIMERA de las dos, así que citar "
+			+ "solo la mitad cómoda es la forma de darle a alguien una respuesta equivocada que suena "
+			+ "bien. Cuál mitad va a llegar primero no se pronostica a propósito -- eso necesitaría un "
+			+ "ritmo que este registro no tiene --, así que diga las dos y diga que depende de cuánto "
+			+ "manejen. "
+			+ "DICE POSICIÓN Y NUNCA ADJUDICA UN RECLAMO. Estar dentro del sobre no es una promesa de "
+			+ "que una reparación se pague; eso lo decide el fabricante. "
+			+ "LO QUE DICE says ES LA RESPUESTA. Es una frase que compuso el registro mismo y ya lleva "
+			+ "adentro la posición, las dos mitades, cuál llegó primero, el sobre contra el que se "
+			+ "midió con su fecha de publicación, y el odómetro contra el que se midió con el día en "
+			+ "que se observó esa lectura. Dígala en vez de rearmarla a partir de los campos, y diga "
+			+ "la fecha de observación: si tiene meses, la mitad de distancia es igual de vieja, y "
+			+ "presentarla como la de hoy es el error que hay que evitar. "
+			+ "CUANDO FALTA ALGO SE NOMBRA, NO SE ESTIMA. La frase de says pone en palabras el hueco "
+			+ "mismo y nombra qué hecho lo decidiría; el concesionario es quien registra estos, nunca la "
+			+ "persona y nunca usted. Un sobre que nunca se publicó no es un carro sin garantía. "
+			+ "Para lo que el FABRICANTE publicó sobre el alcance de la garantía -- qué sistemas están "
+			+ "adentro y qué exclusiones muerden -- use does_the_warranty_cover; esa además contesta "
+			+ "dónde está parado este vehículo en un sistema que la persona nombre.")]
 		public WarrantyStanding IsMyCarStillUnderWarranty()
 		{
 			return reader.Read(TheEnvelopeOfThisVehicle, () => new WarrantyStanding
@@ -134,152 +134,157 @@ namespace DealershipCar.Mcp.Tools
 		}
 
 		private const string TheDealershipHasNotSaidItYet =
-			"Part of what decides this is not in the record: the envelope itself, or the date the car "
-			+ "was handed over. says names which one in the record's own words - quote it. The "
-			+ "dealership is who states both of them, by the same feed that brings everything else "
-			+ "here, so the person cannot supply them and neither can you. An envelope that is not "
-			+ "recorded is NOT a vehicle without a warranty, and reporting it as one is the mistake "
-			+ "worth avoiding here. Tell them to ask their dealership to record it.";
+			"Parte de lo que decide esto no está en el registro: el sobre mismo, o la fecha en que se "
+			+ "entregó el carro. says nombra cuál de los dos con las palabras del registro: cítela. "
+			+ "El concesionario es quien declara los dos, por el mismo feed que trae todo lo demás aquí, así "
+			+ "que la persona no los puede aportar y usted tampoco. Un sobre que no está registrado NO "
+			+ "es un vehículo sin garantía, y reportarlo como tal es el error que hay que evitar aquí. "
+			+ "Dígales que le pidan a su concesionario que lo registre.";
 
 		private const string NoReadingHasArrivedForTheDistanceHalf =
-			"The envelope and the delivery are both recorded, but no odometer reading has arrived at "
-			+ "or before the instant asked, so only the time half could be measured. Say the time "
-			+ "half and say that the distance half is unmeasured - not that it is fine, and not zero. "
-			+ "The reading comes from the dealership's feed when the person opens their app.";
+			"El sobre y la entrega están los dos registrados, pero no ha llegado ninguna lectura del "
+			+ "odómetro al instante preguntado ni antes, así que solo se pudo medir la mitad de "
+			+ "tiempo. Diga la mitad de tiempo y diga que la de distancia está sin medir: no que está "
+			+ "bien, y no cero. La lectura viene del feed del concesionario cuando la persona abre su app.";
 
 		private const string TheDistanceHalfIsAsOldAsItsReading =
-			"The distance half was measured against the reading the record holds, taken on the date in "
-			+ "odometerObservedAt - not against where the car is today. Say that date. If it is old, "
-			+ "the distance left is at least that stale and the car may already be past the limit; ask "
-			+ "the person to open their app so the feed brings a current reading.";
+			"La mitad de distancia se midió contra la lectura que tiene el registro, tomada en la "
+			+ "fecha que está en odometerObservedAt, y no contra donde está el carro hoy. Diga esa "
+			+ "fecha. Si es vieja, la distancia que queda está al menos así de desactualizada y el "
+			+ "carro puede haber pasado ya el límite; pídale a la persona que abra su app para que el "
+			+ "feed traiga una lectura al día.";
 	}
 
 	/// <summary>
-	/// Donde esta parado este vehiculo contra el sobre que la agencia le publico, con los hechos del
+	/// Donde esta parado este vehiculo contra el sobre que el concesionario le publico, con los hechos del
 	/// registro contra los que se midio.
 	/// </summary>
 	internal sealed class WarrantyStanding
 	{
 		[JsonPropertyName("hasData")]
-		[Description("false when the app has not recorded anything yet; then the rest comes empty.")]
+		[Description("false cuando la app todavía no ha registrado nada; entonces el resto viene "
+			+ "vacío.")]
 		public bool HasData { get; init; }
 
 		[JsonPropertyName("vin")]
-		[Description("The vehicle this answer is about.")]
+		[Description("El vehículo del que habla esta respuesta.")]
 		public string Vin { get; init; } = "";
 
 		[JsonPropertyName("envelopeKnown")]
-		[Description("false when this record was written by a version of the app older than what the "
-			+ "dealership records about this vehicle. Then nothing below is filled - read detail. It "
-			+ "does NOT mean the car has no warranty.")]
+		[Description("false cuando este registro lo escribió una versión de la app anterior a lo que "
+			+ "el concesionario registra sobre este vehículo. Entonces no viene lleno nada de lo de abajo: "
+			+ "lea detail. NO quiere decir que el carro no tenga garantía.")]
 		public bool EnvelopeKnown { get; init; }
 
 		[JsonPropertyName("askedAt")]
-		[Description("The instant this question was asked, in UTC. Every answer here is as of that "
-			+ "instant and not as of any other.")]
+		[Description("El instante en que se hizo esta pregunta, en UTC. Toda respuesta de aquí es a "
+			+ "ese instante y no a ningún otro.")]
 		public string AskedAt { get; init; } = "";
 
 		[JsonPropertyName("envelopePublished")]
-		[Description("true when the dealership has published a warranty envelope for this vehicle. "
-			+ "false means none is recorded here - which is not the same as the car having no "
-			+ "warranty, and must never be reported as 'you are out of warranty'.")]
+		[Description("true cuando el concesionario ha publicado un sobre de garantía para este vehículo. "
+			+ "false quiere decir que aquí no hay ninguno registrado, que no es lo mismo que el carro "
+			+ "no tenga garantía, y nunca se puede reportar como 'se le acabó la garantía'.")]
 		public bool EnvelopePublished { get; init; }
 
 		[JsonPropertyName("publishedSays")]
-		[Description("The envelope as the dealership published it - both limits, their unit and the "
-			+ "date it was published - and nothing about this vehicle. It answers even when nothing "
-			+ "is published, so it is always quotable, and it is the half to quote when the standing "
-			+ "cannot be measured.")]
+		[Description("El sobre tal como lo publicó el concesionario -- los dos límites, su unidad y la "
+			+ "fecha en que se publicó -- y nada de este vehículo. Contesta incluso cuando no hay nada "
+			+ "publicado, así que siempre se puede citar, y es la mitad que hay que citar cuando la "
+			+ "posición no se pudo medir.")]
 		public string PublishedSays { get; init; } = "";
 
 		[JsonPropertyName("publishedAt")]
-		[Description("When the dealership published the envelope that governs. EMPTY means none is "
-			+ "published. A dealership can publish a new envelope, and a later one applies from its "
-			+ "own date forward, so this date is the provenance of every number here.")]
+		[Description("Cuándo publicó el concesionario el sobre que rige. VACÍO quiere decir que no hay "
+			+ "ninguno publicado. Un concesionario puede publicar un sobre nuevo, y uno posterior aplica "
+			+ "desde su propia fecha hacia adelante, así que esta fecha es la procedencia de todos los "
+			+ "números de aquí.")]
 		public string PublishedAt { get; init; } = "";
 
 		[JsonPropertyName("deliveryRecorded")]
-		[Description("true when the date the car was handed over is in the record. The term is "
-			+ "counted from that date, so without it the time half cannot be measured at all.")]
+		[Description("true cuando la fecha en que se entregó el carro está en el registro. El plazo "
+			+ "se cuenta desde esa fecha, así que sin ella la mitad de tiempo no se puede medir en "
+			+ "absoluto.")]
 		public bool DeliveryRecorded { get; init; }
 
 		[JsonPropertyName("deliveredAt")]
-		[Description("The date the dealership handed the car over, in UTC. EMPTY means it is not "
-			+ "recorded. If this date is LATER than askedAt, the record's delivery date has not "
-			+ "happened yet and the term is being counted from a date in the future: report that as "
-			+ "a record the dealership has to correct, never as warranty remaining.")]
+		[Description("La fecha en que el concesionario entregó el carro, en UTC. VACÍO quiere decir que no "
+			+ "está registrada. Si esta fecha es POSTERIOR a askedAt, la fecha de entrega del registro "
+			+ "todavía no ha ocurrido y el plazo se está contando desde una fecha futura: repórtelo "
+			+ "como un registro que el concesionario tiene que corregir, nunca como garantía restante.")]
 		public string DeliveredAt { get; init; } = "";
 
 		[JsonPropertyName("deliveryOdometer")]
-		[Description("The odometer reading taken the day the car was handed over. It is the anchor "
-			+ "the distance half counts from. ZERO with deliveryRecorded false means it is not "
-			+ "recorded - that is not 'the car had zero on it'.")]
+		[Description("La lectura del odómetro tomada el día en que se entregó el carro. Es el ancla "
+			+ "desde la que cuenta la mitad de distancia. CERO con deliveryRecorded en false quiere "
+			+ "decir que no está registrada: eso no es 'el carro tenía cero encima'.")]
 		public int DeliveryOdometer { get; init; }
 
 		[JsonPropertyName("deliveryOdometerUnit")]
-		[Description("The unit that anchor reading is in. Units are never converted here, so say the "
-			+ "value with the unit exactly as it comes.")]
+		[Description("La unidad en que está esa lectura ancla. Aquí las unidades nunca se convierten, "
+			+ "así que diga el valor con la unidad exactamente como viene.")]
 		public string DeliveryOdometerUnit { get; init; } = "";
 
 		[JsonPropertyName("odometerKnown")]
-		[Description("true when the dealership's feed has brought a reading observed at or before "
-			+ "askedAt. false means the distance half could not be measured at all - which is not "
-			+ "the same as the car having travelled nothing.")]
+		[Description("true cuando el feed del concesionario ha traído una lectura observada a askedAt o "
+			+ "antes. false quiere decir que la mitad de distancia no se pudo medir en absoluto, que "
+			+ "no es lo mismo que el carro no haya recorrido nada.")]
 		public bool OdometerKnown { get; init; }
 
 		[JsonPropertyName("odometer")]
-		[Description("The reading the distance half was measured against. ZERO with odometerKnown "
-			+ "false means there is no reading, not a reading of zero.")]
+		[Description("La lectura contra la que se midió la mitad de distancia. CERO con odometerKnown "
+			+ "en false quiere decir que no hay lectura, no una lectura de cero.")]
 		public int Odometer { get; init; }
 
 		[JsonPropertyName("odometerUnit")]
-		[Description("The unit that reading is in. It is never converted, and a reading in a unit "
-			+ "the envelope was not published in suspends the distance half rather than being "
-			+ "converted - says names both units when that happens.")]
+		[Description("La unidad en que está esa lectura. Nunca se convierte, y una lectura en una "
+			+ "unidad distinta de aquella en que se publicó el sobre suspende la mitad de distancia en "
+			+ "vez de convertirse: says nombra las dos unidades cuando eso pasa.")]
 		public string OdometerUnit { get; init; } = "";
 
 		[JsonPropertyName("odometerObservedAt")]
-		[Description("When that reading was OBSERVED - not when it was asked for. This is the date "
-			+ "the distance half is really as of, and saying it is what stops an old reading from "
-			+ "being repeated as today's mileage.")]
+		[Description("Cuándo se OBSERVÓ esa lectura, no cuándo se pidió. Esta es la fecha a la que "
+			+ "está realmente la mitad de distancia, y decirla es lo que impide que una lectura vieja "
+			+ "se repita como el kilometraje de hoy.")]
 		public string OdometerObservedAt { get; init; } = "";
 
 		[JsonPropertyName("canBeEvaluated")]
-		[Description("true when the record could decide where this vehicle stands at askedAt. Note "
-			+ "that a vehicle whose dealership never published an envelope answers TRUE here: that "
-			+ "nobody published one is something the record knows for certain, and standing then "
-			+ "reads NotPublished. false means no name applies at all - read says.")]
+		[Description("true cuando el registro pudo decidir dónde está parado este vehículo a askedAt. "
+			+ "Ojo: un vehículo cuyo concesionario nunca publicó un sobre contesta TRUE aquí: que nadie "
+			+ "haya publicado uno es algo que el registro sabe con certeza, y entonces standing lee "
+			+ "NotPublished. false quiere decir que no aplica ningún nombre: lea says.")]
 		public bool CanBeEvaluated { get; init; }
 
 		[JsonPropertyName("standing")]
-		[Description("Where the vehicle stands in one word. EMPTY means it could not be decided; "
-			+ "there is no word here meaning 'unknown', which is why it comes back empty instead of "
-			+ "guessing one. Read says either way - it is the answer, this is only its name.")]
+		[Description("Dónde está parado el vehículo, en una palabra. VACÍO quiere decir que no se "
+			+ "pudo decidir; aquí no hay ninguna palabra que quiera decir 'no se sabe', y por eso "
+			+ "viene vacío en vez de adivinar una. Lea says de todos modos: esa es la respuesta, esto "
+			+ "es solo su nombre.")]
 		public string Standing { get; init; } = "";
 
 		[JsonPropertyName("says")]
-		[Description("THE ANSWER, in one sentence the record composed: the standing, BOTH halves "
-			+ "with what is left or how far past, which half arrived first, the envelope it was "
-			+ "measured against with its publication date, and the odometer it was measured against "
-			+ "with the day it was observed - or, when something is missing, which fact is missing "
-			+ "and why that half could not be measured. Say this sentence. Do not rebuild it out of "
-			+ "the other fields and do not shorten it to the half that sounds better.")]
+		[Description("LA RESPUESTA, en una frase que compuso el registro: la posición, LAS DOS mitades "
+			+ "con lo que queda o cuánto se pasó, cuál mitad llegó primero, el sobre contra el que se "
+			+ "midió con su fecha de publicación, y el odómetro contra el que se midió con el día en "
+			+ "que se observó; o, cuando falta algo, qué hecho falta y por qué esa mitad no se pudo "
+			+ "medir. Diga esta frase. No la rearme a partir de los otros campos y no la recorte a la "
+			+ "mitad que suena mejor.")]
 		public string Says { get; init; } = "";
 
 		[JsonPropertyName("recordContradictsItself")]
-		[Description("true when two facts the dealership recorded cannot both be true at askedAt, so "
-			+ "nothing could be measured and standing and says come back empty. It is a fault in the "
-			+ "record and not in the question - read detail and tell the person to raise it with "
-			+ "their dealership.")]
+		[Description("true cuando dos hechos que el concesionario registró no pueden ser ciertos los dos a "
+			+ "askedAt, así que no se pudo medir nada y standing y says vienen vacíos. Es una falla "
+			+ "del registro y no de la pregunta: lea detail y dígale a la persona que lo plantee con "
+			+ "su concesionario.")]
 		public bool RecordContradictsItself { get; init; }
 
 		[JsonPropertyName("folder")]
-		[Description("The person's folder, where their app keeps this vehicle's record.")]
+		[Description("La carpeta de la persona, donde su app guarda el registro de este vehículo.")]
 		public string Folder { get; init; } = "";
 
 		[JsonPropertyName("detail")]
-		[Description("What this answer does not say, and anything the person had better do. Read it "
-			+ "before answering: it is where the limits of the answer are.")]
+		[Description("Lo que esta respuesta no dice, y cualquier cosa que a la persona le convenga "
+			+ "hacer. Léalo antes de contestar: ahí están los límites de la respuesta.")]
 		public string Detail { get; init; } = "";
 	}
 }

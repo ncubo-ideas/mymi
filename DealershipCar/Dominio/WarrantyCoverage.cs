@@ -28,7 +28,7 @@ namespace DealershipCar.Dominio
 		/// </summary>
 		internal static string TheCoverageQuestionAbout(string systemCode)
 		{
-			return "Warranty coverage for system '" + systemCode + "'";
+			return "La cobertura de garantía del sistema '" + systemCode + "'";
 		}
 
 		/// <summary>
@@ -38,9 +38,9 @@ namespace DealershipCar.Dominio
 		/// </summary>
 		internal static string ScopeIsNotAdjudication()
 		{
-			return "Scope only: this states what the manufacturer published about the scope of the "
-				+ "warranty, and nothing about how a claim would be resolved -- that is the "
-				+ "manufacturer's to decide, not this record's.";
+			return "Solo alcance: esto dice lo que el fabricante publicó sobre el alcance de la "
+				+ "garantía, y nada sobre cómo se resolvería un reclamo -- eso lo decide el "
+				+ "fabricante, no este registro.";
 		}
 
 		/// <summary>
@@ -179,8 +179,8 @@ namespace DealershipCar.Dominio
 		/// </summary>
 		internal string DescribeTheScope()
 		{
-			return "Systems inside the published scope: " + TheSystemsInWords() + " Exclusions: "
-				+ TheExclusionsInWords() + " " + ScopeIsNotAdjudication();
+			return "Sistemas dentro del alcance publicado: " + TheSystemsInWords()
+				+ " Exclusiones: " + TheExclusionsInWords() + " " + ScopeIsNotAdjudication();
 		}
 
 		/// <summary>
@@ -200,15 +200,16 @@ namespace DealershipCar.Dominio
 				return new ASettledCoverageAnswer(
 					subject, CoverageStanding.NotPublished,
 					TheClauseFor(systemCode,
-						"The published scope does not name this system at all, so there is nothing "
-						+ "here about it -- which is not the same as the scope leaving it out. "));
+						"El alcance publicado no nombra este sistema en ninguna parte, así que aquí "
+						+ "no hay nada sobre él -- que no es lo mismo que el alcance lo deje "
+						+ "afuera. "));
 
 			if (!TheScopeDeclaresItInside(systemCode))
 				return new ASettledCoverageAnswer(
 					subject, CoverageStanding.NotCovered,
 					TheClauseFor(systemCode,
-						"The published scope names this system only among its exclusions, and never "
-						+ "among the systems it declares inside. "));
+						"El alcance publicado nombra este sistema solo entre sus exclusiones, y "
+						+ "nunca entre los sistemas que declara adentro. "));
 
 			SystemLimits governing = TheSystemInsideTheScopeNamed(systemCode)
 				.TheMoreSpecificLimitGoverns(vehicleEnvelope);
@@ -216,7 +217,7 @@ namespace DealershipCar.Dominio
 			if (governing.TheTimeHalfIsPast(deliveredAt, asOf))
 				return new ASettledCoverageAnswer(
 					subject, CoverageStanding.OutsideEnvelope,
-					TheClauseFor(systemCode, ThisVehicleIs("past", governing)));
+					TheClauseFor(systemCode, ThisVehicleIs("fuera de ellos", governing)));
 
 			if (governing.HasADistanceHalf() && !governing.MeasuresDistanceIn(odometerUnit))
 				return new ACoverageSuspendedByAUnitMismatch(
@@ -226,22 +227,22 @@ namespace DealershipCar.Dominio
 			if (governing.TheDistanceHalfIsPast(deliveryReading, currentReading))
 				return new ASettledCoverageAnswer(
 					subject, CoverageStanding.OutsideEnvelope,
-					TheClauseFor(systemCode, ThisVehicleIs("past", governing)));
+					TheClauseFor(systemCode, ThisVehicleIs("fuera de ellos", governing)));
 
 			if (HasAnApplicableExclusion(systemCode))
 				return new ASettledCoverageAnswer(
 					subject, CoverageStanding.CoveredWithExclusion,
-					TheClauseFor(systemCode, ThisVehicleIs("inside", governing)));
+					TheClauseFor(systemCode, ThisVehicleIs("dentro de ellos", governing)));
 
 			return new ASettledCoverageAnswer(
 				subject, CoverageStanding.Covered,
-				TheClauseFor(systemCode, ThisVehicleIs("inside", governing)));
+				TheClauseFor(systemCode, ThisVehicleIs("dentro de ellos", governing)));
 		}
 
 		private static string ThisVehicleIs(string whereItStands, SystemLimits governing)
 		{
-			return "Governing limits: " + governing.Describe() + ". This vehicle is " + whereItStands
-				+ " them. ";
+			return "Límites que rigen: " + governing.Describe() + ". Este vehículo está "
+				+ whereItStands + ". ";
 		}
 
 		private string TheClauseFor(string systemCode, string reason)
@@ -273,7 +274,7 @@ namespace DealershipCar.Dominio
 
 		private string TheSystemsInWords()
 		{
-			if (_systems.Count == 0) return "none published.";
+			if (_systems.Count == 0) return "ninguno publicado.";
 
 			List<string> clauses = new List<string>();
 
@@ -284,7 +285,7 @@ namespace DealershipCar.Dominio
 
 		private string TheExclusionsInWords()
 		{
-			if (_exclusions.Count == 0) return "none published.";
+			if (_exclusions.Count == 0) return "ninguna publicada.";
 
 			return string.Join(" ", TheExclusionsPublished());
 		}

@@ -138,13 +138,13 @@ namespace DealershipCar.Dominio.Pruebas
 
 			Assert.That(said, Is.Not.Empty,
 				"Una cadena vacia no es 'no publicado': la vista la renderiza como un blanco.");
-			Assert.That(said, Does.Contain("has not published"),
+			Assert.That(said, Does.Contain("no ha publicado"),
 				"La ausencia se dice diciendo QUIEN no publico que. Callarlo deja a la persona "
 				+ "creyendo que le contestaron.");
 
 			foreach (char letra in said)
 				Assert.That(char.IsDigit(letra), Is.False,
-					"Ni un numero adentro de la frase de la ausencia: '0 months' se lee como un "
+					"Ni un numero adentro de la frase de la ausencia: '0 meses' se lee como un "
 					+ "limite publicado, que es como un default entra sin que nadie lo escriba.");
 		}
 

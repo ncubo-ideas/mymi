@@ -88,7 +88,7 @@ namespace DealershipCar.Dominio.Pruebas
 		{
 			string said = profile.DescribePublishedWarrantyEnvelope();
 
-			Assert.That(said, Does.Contain("not published"));
+			Assert.That(said, Does.Contain("no ha publicado"));
 			Assert.That(said, Does.Not.Match(@"\d"),
 				"Un cero o un numero cualquiera en la frase de una ausencia es como entra un default "
 				+ "sin que nadie lo escriba: se lee como un limite que alguien publico.");

@@ -125,7 +125,7 @@ namespace DealershipCar.Dominio.Pruebas
 		public void TheAbsentDeliverySaysThereIsNothingToMeasureFrom()
 		{
 			Assert.That(new AnEnvelopeSuspendedByAnAbsentDelivery(string.Empty).Describe(),
-				Does.Contain("no delivery"));
+				Does.Contain("ninguna entrega"));
 		}
 
 		// LEY L5: una lectura ausente se DICE. Nunca cero, nunca la de la entrega haciendo de la
@@ -135,7 +135,7 @@ namespace DealershipCar.Dominio.Pruebas
 		{
 			string said = new AnEnvelopeSuspendedByAnAbsentReading(string.Empty).Describe();
 
-			Assert.That(said, Does.Contain("no odometer reading"));
+			Assert.That(said, Does.Contain("ninguna lectura del odómetro"));
 			Assert.That(said, Does.Not.Contain(" 0 "),
 				"Ley L5: un cero en la frase de una lectura ausente se lee como un odometro en "
 				+ "cero, y desde ahi todo lo recorrido cabe adentro de cualquier sobre.");
@@ -152,7 +152,7 @@ namespace DealershipCar.Dominio.Pruebas
 
 			Assert.That(said, Does.Contain(DistanceUnit.UnitA.Name));
 			Assert.That(said, Does.Contain(DistanceUnit.UnitB.Name));
-			Assert.That(said, Does.Contain("never converted"));
+			Assert.That(said, Does.Contain("nunca se convierten"));
 		}
 
 		[Test]

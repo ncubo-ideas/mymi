@@ -181,7 +181,7 @@ namespace DealershipCar.Dominio.Pruebas
 
 			Assert.That(
 				schedule.ReadDueReason(OperationKindCode.Diagnostic),
-				Does.Not.Contain("no scheduled"),
+				Does.Not.Contain("no tiene agendada"),
 				"La clase quedo en manos del plan, asi que la ley L9 la protege: la persona ya no "
 				+ "la puede quitar. Si el reemplazo hubiera heredado el origen de la persona, "
 				+ "esta remocion habria borrado una operacion del fabricante.");

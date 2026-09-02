@@ -1,0 +1,268 @@
+@using DealershipCar.Wasm.Parts
+
+<section class="d-hero" id="hero-vehiculo">
+    <img class="d-hero__img" src="img/vehiculo.png"
+         alt="@("Fotografía del " + (Modelo.Length > 0 ? Modelo : "vehículo"))" />
+    <div class="d-hero__cap">
+        <div class="d-hero__model">
+            <span class="d-hero__name">@(Modelo.Length > 0 ? Modelo : "Tu vehículo")</span>
+            @if (Revision.Length > 0)
+            {
+                <span class="d-hero__tag">ficha @Revision</span>
+            }
+        </div>
+        <div class="d-hero__odo">@Odometro @OdometroUnidad</div>
+        <div class="d-hero__vin">VIN @Vin</div>
+    </div>
+</section>
+
+<div class="d-subtabs" id="hojas-vehiculo">
+    <button type="button" id="hoja-informacion"
+            class="@(hoja == "informacion" ? "d-subtab d-subtab--on" : "d-subtab")"
+            @onclick="@(() => hoja = "informacion")">
+        <Glyph Name="car" Size="18" Stroke="2" />
+        Información
+    </button>
+    <button type="button" id="hoja-garantia"
+            class="@(hoja == "garantia" ? "d-subtab d-subtab--on" : "d-subtab")"
+            @onclick="@(() => hoja = "garantia")">
+        <Glyph Name="shield" Size="18" Stroke="2" />
+        Garantía
+    </button>
+    <button type="button" id="hoja-manual"
+            class="@(hoja == "manual" ? "d-subtab d-subtab--on" : "d-subtab")"
+            @onclick="@(() => hoja = "manual")">
+        <Glyph Name="sheet" Size="18" Stroke="2" />
+        Manual
+    </button>
+</div>
+
+@if (hoja == "informacion")
+{
+    <section class="d-card" id="informacion">
+        <div class="d-rows">
+            <div class="d-row">
+                <span class="d-row__k">Modelo</span>
+                <span class="d-row__v">@(Modelo.Length > 0 ? Modelo : "—")</span>
+            </div>
+            <div class="d-row">
+                <span class="d-row__k">VIN</span>
+                <span class="d-row__v d-row__v--mono">@Vin</span>
+            </div>
+            <div class="d-row">
+                <span class="d-row__k">Odómetro</span>
+                <span class="d-row__v">@Odometro @OdometroUnidad</span>
+            </div>
+            <div class="d-row">
+                <span class="d-row__k">Última lectura</span>
+                <span class="d-row__v">
+                    @(Stands is not null && Stands.OdometerObservedAt.Length > 0
+                        ? ComoSeLee.Dia(Stands.OdometerObservedAt)
+                        : "—")
+                </span>
+            </div>
+            <div class="d-row">
+                <span class="d-row__k">Entregado</span>
+                <span class="d-row__v">
+                    @(Stands is not null && Stands.DeliveryRecorded
+                        ? ComoSeLee.Dia(Stands.DeliveredAt)
+                        : "sin registrar")
+                </span>
+            </div>
+            @if (Stands is not null && Stands.DeliveryRecorded)
+            {
+                <div class="d-row">
+                    <span class="d-row__k">Odómetro ese día</span>
+                    <span class="d-row__v">
+                        @ComoSeLee.Miles(Stands.DeliveryReading) @Stands.DeliveryUnit
+                    </span>
+                </div>
+            }
+            <div class="d-row">
+                <span class="d-row__k">Ficha del fabricante</span>
+                <span class="d-row__v">
+                    @(Revision.Length > 0 ? Revision : "sin publicar")
+                </span>
+            </div>
+        </div>
+    </section>
+
+    <p class="d-note" style="margin-top:12px">
+        <Glyph Name="info" Size="14" Stroke="2" />
+        <span>
+            Estos son los hechos que tu concesionario envió sobre este carro. Lo que no aparece no
+            fue descartado: nunca se mencionó, y eso es otra cosa.
+        </span>
+    </p>
+}
+else if (hoja == "garantia")
+{
+    <section class="@("d-cover d-cover--" + TonoGarantia)" id="garantia-resumen">
+        <span class="d-cover__icon"><Glyph Name="shield" Size="20" Stroke="2.2" /></span>
+        <div>
+            <div class="d-cover__title">@TitularGarantia</div>
+            <div class="d-cover__body">@CuerpoGarantia</div>
+        </div>
+    </section>
+
+    <div style="margin-top:12px">
+        <button class="d-link" type="button" id="ver-cobertura"
+                @onclick="@(() => detalleGarantia = !detalleGarantia)">
+            @(detalleGarantia ? "Ocultar la cobertura completa" : "Ver la cobertura completa")
+        </button>
+    </div>
+
+    @if (detalleGarantia)
+    {
+        <div class="stack stack--page" id="garantia-detalle" style="margin-top:10px">
+            @if (Sheet is null || Stands is null)
+            {
+                <p class="note">Este registro todavía no se ha leído.</p>
+            }
+            else
+            {
+                <Warranty Sheet="@Sheet" Stands="@Stands" />
+            }
+        </div>
+    }
+}
+else
+{
+    <section class="d-card" id="manual-resumen">
+        <div class="d-card__head">
+            <span class="d-card__title">Lo que publicó el fabricante</span>
+            @if (Revision.Length > 0)
+            {
+                <span class="d-pill d-pill--info">@Revision</span>
+            }
+        </div>
+
+        @if (Sheet is null || !Sheet.HasASealedRevision)
+        {
+            <div class="d-empty">
+                <span class="d-empty__title">Todavía no hay ficha</span>
+                Tu concesionario envía la ficha del fabricante por el mismo camino que trae todo lo
+                demás. Mientras no llegue, aquí no hay nada que citar — y eso no es una pantalla
+                esperando que la llenes.
+            </div>
+        }
+        else
+        {
+            <div class="d-rows">
+                @foreach (var fluid in Sheet.Fluids.Where(f => f.Published))
+                {
+                    <div class="d-row d-row--stack">
+                        <span class="d-row__k">@ComoSeLee.Fluido(fluid.Kind)</span>
+                        <span class="d-row__v" style="font-weight:600;font-size:13px">@fluid.Says</span>
+                    </div>
+                }
+                @foreach (var tyre in Sheet.Tyres.Where(t => t.Published))
+                {
+                    <div class="d-row d-row--stack">
+                        <span class="d-row__k">Llantas @ComoSeLee.Llanta(tyre.Position).ToLowerInvariant()</span>
+                        <span class="d-row__v" style="font-weight:600;font-size:13px">@tyre.Says</span>
+                    </div>
+                }
+                @if (Sheet.Fuel.Published)
+                {
+                    <div class="d-row d-row--stack">
+                        <span class="d-row__k">Combustible</span>
+                        <span class="d-row__v" style="font-weight:600;font-size:13px">@Sheet.Fuel.Says</span>
+                    </div>
+                }
+            </div>
+
+            @if (!Sheet.Fluids.Any(f => f.Published) && !Sheet.Tyres.Any(t => t.Published) && !Sheet.Fuel.Published)
+            {
+                <div class="d-empty">
+                    <span class="d-empty__title">La ficha llegó vacía para este modelo</span>
+                    Hay una revisión sellada (@Revision), pero no publica ni líquidos, ni llantas, ni
+                    combustible.
+                </div>
+            }
+        }
+    </section>
+
+    <div style="margin-top:12px">
+        <button class="d-link" type="button" id="ver-ficha"
+                @onclick="@(() => detalleFicha = !detalleFicha)">
+            @(detalleFicha ? "Ocultar la ficha completa" : "Ver la ficha completa")
+        </button>
+    </div>
+
+    @if (detalleFicha)
+    {
+        <div class="stack stack--page" id="ficha-detalle" style="margin-top:10px">
+            @if (Sheet is null)
+            {
+                <p class="note">Este registro todavía no se ha leído.</p>
+            }
+            else
+            {
+                <MyVehicle Sheet="@Sheet" />
+            }
+        </div>
+    }
+}
+
+@code {
+    [Parameter] public WhatTheManufacturerPublished Sheet { get; set; }
+    [Parameter] public WhereThisVehicleStands Stands { get; set; }
+
+    [Parameter] public string Modelo { get; set; } = "";
+    [Parameter] public string Vin { get; set; } = "";
+    [Parameter] public string Odometro { get; set; } = "--";
+    [Parameter] public string OdometroUnidad { get; set; } = "";
+
+    private string hoja = "informacion";
+    private bool detalleGarantia;
+    private bool detalleFicha;
+
+    private string Revision => Sheet is not null && Sheet.HasASealedRevision ? Sheet.CurrentRevision : "";
+
+    /// <summary>
+    /// El color de la garantia. Sale de la POSTURA que el dominio nombro, no de una cuenta nuestra:
+    /// "Within" es verde, cualquier salida del sobre es ambar, y no poder medir es gris -- que no
+    /// es lo mismo que estar fuera, y por eso no es rojo.
+    /// </summary>
+    private string TonoGarantia
+    {
+        get
+        {
+            if (Stands is null || Stands.RecordContradictsItself) return "mute";
+            if (!Stands.CanBeEvaluated) return "mute";
+
+            return ComoSeLee.TonoDeLaPostura(Stands.Standing);
+        }
+    }
+
+    private string TitularGarantia
+    {
+        get
+        {
+            if (Stands is null) return "Garantía";
+            if (Stands.RecordContradictsItself) return "No se pudo medir";
+            if (!Stands.EnvelopePublished) return "Tu concesionario no ha publicado la garantía";
+            if (!Stands.CanBeEvaluated) return "Garantía publicada, sin medir completa";
+
+            return "Garantía " + ComoSeLee.Postura(Stands.Standing).ToLowerInvariant();
+        }
+    }
+
+    /// <summary>
+    /// El cuerpo es la frase del dominio, literal. Es larga, y por eso vive aca abajo y no en el
+    /// titular: quien quiera el numero exacto lo tiene, y quien solo quiera saber si esta cubierto
+    /// ya lo leyo arriba en una palabra y un color.
+    /// </summary>
+    private string CuerpoGarantia
+    {
+        get
+        {
+            if (Stands is null) return "Este registro todavía no se ha leído.";
+            if (Stands.RecordContradictsItself) return TheOwnerIsTold.TheRecordSaysTwoThingsThatCannotBothBeTrue;
+            if (Stands.Says.Length > 0) return Stands.Says;
+
+            return TheOwnerIsTold.TheDealershipHasNotSentTheseFactsYet;
+        }
+    }
+}

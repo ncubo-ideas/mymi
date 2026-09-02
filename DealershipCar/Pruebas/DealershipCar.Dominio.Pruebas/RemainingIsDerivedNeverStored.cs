@@ -62,13 +62,13 @@ namespace DealershipCar.Dominio.Pruebas
 			string atTwoYears = TheSentenceAt(TwoYearsIn);
 			string sixMonthsLater = TheSentenceAt(SixMonthsLater);
 
-			Assert.That(atTwoYears, Does.Contain("12 months left"));
-			Assert.That(sixMonthsLater, Does.Contain("6 months left"),
+			Assert.That(atTwoYears, Does.Contain("quedan 12 meses"));
+			Assert.That(sixMonthsLater, Does.Contain("quedan 6 meses"),
 				"L2: la mitad de tiempo se recalcula contra el instante preguntado. Guardada, "
 				+ "seguiria diciendo 12 seis meses despues.");
 
-			Assert.That(atTwoYears, Does.Contain("35010 km left"));
-			Assert.That(sixMonthsLater, Does.Contain("35010 km left"),
+			Assert.That(atTwoYears, Does.Contain("quedan 35010 km"));
+			Assert.That(sixMonthsLater, Does.Contain("quedan 35010 km"),
 				"Y la de distancia NO se movio: no llego ninguna lectura nueva. Si se hubiera "
 				+ "movido, algo la estaria derivando del reloj -- que es la mitad que no depende "
 				+ "del reloj.");
@@ -82,8 +82,8 @@ namespace DealershipCar.Dominio.Pruebas
 		{
 			foreach (DateTime moment in new[] { TwoYearsIn, SixMonthsLater })
 			{
-				Assert.That(TheSentenceAt(moment), Does.Contain("Time:"), moment.ToString());
-				Assert.That(TheSentenceAt(moment), Does.Contain("Distance:"), moment.ToString());
+				Assert.That(TheSentenceAt(moment), Does.Contain("Tiempo:"), moment.ToString());
+				Assert.That(TheSentenceAt(moment), Does.Contain("Distancia:"), moment.ToString());
 			}
 		}
 
@@ -107,8 +107,8 @@ namespace DealershipCar.Dominio.Pruebas
 
 			string later = TheSentenceAt(SixMonthsLater);
 
-			Assert.That(captured.Describe(), Does.Contain("12 months left"));
-			Assert.That(later, Does.Contain("6 months left"));
+			Assert.That(captured.Describe(), Does.Contain("quedan 12 meses"));
+			Assert.That(later, Does.Contain("quedan 6 meses"));
 		}
 
 		// ===== TEST 4, LA MITAD ESTRUCTURAL ================================================

@@ -144,8 +144,8 @@ namespace DealershipCar.Dominio.Pruebas
 				Assert.That(
 					each.Value(),
 					each.Key == TheOil
-						? Does.Contain("revision " + TheSecondRevision)
-						: Does.Contain("not published"),
+						? Does.Contain("revisión " + TheSecondRevision)
+						: Does.Contain("no se ha publicado nada"),
 					each.Key);
 
 			EveryListIsEmpty();
@@ -164,7 +164,7 @@ namespace DealershipCar.Dominio.Pruebas
 				Assert.That(each.Value(), Is.EqualTo(revision), each.Key);
 
 			foreach (KeyValuePair<string, Func<string>> each in TheSentenceOfEveryItem())
-				Assert.That(each.Value(), Does.Contain("revision " + revision), each.Key);
+				Assert.That(each.Value(), Does.Contain("revisión " + revision), each.Key);
 		}
 
 		private void EveryItemIsUnpublished()
@@ -176,7 +176,7 @@ namespace DealershipCar.Dominio.Pruebas
 				Assert.That(each.Value(), Is.EqualTo(""), each.Key);
 
 			foreach (KeyValuePair<string, Func<string>> each in TheSentenceOfEveryItem())
-				Assert.That(each.Value(), Does.Contain("not published"), each.Key);
+				Assert.That(each.Value(), Does.Contain("no se ha publicado nada"), each.Key);
 
 			// Y LA FRASE NO DEJA ESCAPAR EL CONTENIDO por la puerta de atras: una ausencia que igual
 			// dice el grado es la hoja citada por otro camino.

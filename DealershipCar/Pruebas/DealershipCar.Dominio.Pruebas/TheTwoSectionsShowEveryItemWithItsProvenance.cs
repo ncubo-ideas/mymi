@@ -1,5 +1,6 @@
 using System;
 using DealershipCar.Wasm;
+using DealershipCar.Wasm.Parts;
 using NUnit.Framework;
 
 namespace DealershipCar.Dominio.Pruebas
@@ -118,7 +119,7 @@ namespace DealershipCar.Dominio.Pruebas
 
 			Assert.That(oil.Published, Is.True);
 			Assert.That(oil.Revision, Is.EqualTo(TheFirstRevision));
-			Assert.That(oil.Says, Does.StartWith("EngineOil:"));
+			Assert.That(oil.Says, Does.StartWith("Aceite de motor:"));
 			Assert.That(oil.Says, Does.Contain(TheOilGrade));
 
 			PublishedFluid brake = TheFluidRow(sheet, "BrakeFluid");
@@ -128,7 +129,7 @@ namespace DealershipCar.Dominio.Pruebas
 				"El liquido de frenos salio de la SEGUNDA revision. Una procedencia que contestara "
 				+ "siempre la vigente, o siempre la primera, acertaria en una fila y mentiria en la "
 				+ "otra.");
-			Assert.That(brake.Says, Does.StartWith("BrakeFluid:"));
+			Assert.That(brake.Says, Does.StartWith("Líquido de frenos:"));
 			Assert.That(brake.Says, Does.Contain(TheBrakeFluidGrade));
 
 			PublishedFluid coolant = TheFluidRow(sheet, "Coolant");
@@ -137,8 +138,8 @@ namespace DealershipCar.Dominio.Pruebas
 			Assert.That(coolant.Revision, Is.Empty,
 				"Sin publicar no hay revision que nombrar, y el vacio no se confunde con un codigo "
 				+ "porque ninguna revision tiene el codigo en blanco.");
-			Assert.That(coolant.Says, Does.StartWith("Coolant:"));
-			Assert.That(coolant.Says, Does.Contain("not published"));
+			Assert.That(coolant.Says, Does.StartWith("Refrigerante:"));
+			Assert.That(coolant.Says, Does.Contain("no se ha publicado nada"));
 		}
 
 		// LO MISMO EN LAS LLANTAS, y con la unidad de cada una: la delantera se publico en una y la
@@ -155,7 +156,7 @@ namespace DealershipCar.Dominio.Pruebas
 
 			Assert.That(front.Published, Is.True);
 			Assert.That(front.Revision, Is.EqualTo(TheFirstRevision));
-			Assert.That(front.Says, Does.StartWith("Front:"));
+			Assert.That(front.Says, Does.StartWith("Llanta delantera:"));
 			Assert.That(front.Says, Does.Contain(TheFrontTyre));
 			Assert.That(front.Says, Does.Contain("2.4 bar"));
 
@@ -163,7 +164,7 @@ namespace DealershipCar.Dominio.Pruebas
 
 			Assert.That(rear.Published, Is.True);
 			Assert.That(rear.Revision, Is.EqualTo(TheSecondRevision));
-			Assert.That(rear.Says, Does.StartWith("Rear:"));
+			Assert.That(rear.Says, Does.StartWith("Llanta trasera:"));
 			Assert.That(rear.Says, Does.Contain(TheRearTyre));
 			Assert.That(rear.Says, Does.Contain("33 psi"),
 				"La trasera se publico en la otra unidad de presion y sale en ella. Si saliera en la "
@@ -174,8 +175,8 @@ namespace DealershipCar.Dominio.Pruebas
 
 			Assert.That(spare.Published, Is.False);
 			Assert.That(spare.Revision, Is.Empty);
-			Assert.That(spare.Says, Does.StartWith("Spare tyre:"));
-			Assert.That(spare.Says, Does.Contain("not published"));
+			Assert.That(spare.Says, Does.StartWith("Llanta de repuesto:"));
+			Assert.That(spare.Says, Does.Contain("no se ha publicado nada"));
 		}
 
 		// EL COMBUSTIBLE SALE CON SUS TRES LISTAS SEPARADAS Y CON LA FRASE ENTERA. Las tres van a la
@@ -210,7 +211,7 @@ namespace DealershipCar.Dominio.Pruebas
 			Assert.That(coverage.Exclusions, Has.Length.EqualTo(2));
 			Assert.That(coverage.Says, Does.Contain("wear parts"));
 			Assert.That(coverage.Says, Does.Contain("screen burn-in"));
-			Assert.That(coverage.Says, Does.Contain("nothing about how a claim would be resolved"));
+			Assert.That(coverage.Says, Does.Contain("nada sobre cómo se resolvería un reclamo"));
 		}
 
 		// LA REVISION VIGENTE SE PIDE DESPUES DE PREGUNTAR SI HAY ALGUNA, y es la SELLADA MAS
@@ -264,7 +265,7 @@ namespace DealershipCar.Dominio.Pruebas
 				Assert.That(sheet.Fuel.ProhibitedGrades, Is.Empty,
 					"Y la lista vacia dice que no hay ninguno publicado, que no es lo mismo que "
 					+ "decir que ninguno esta prohibido.");
-				Assert.That(sheet.Fuel.Says, Does.Contain("not published"));
+				Assert.That(sheet.Fuel.Says, Does.Contain("no se ha publicado nada"));
 
 				// EL CONTROL, y sin el lo de arriba estaria verde por la razon equivocada: las dos
 				// lecturas de la vigente si revientan cuando no hay ninguna sellada. Lo que la
@@ -295,7 +296,7 @@ namespace DealershipCar.Dominio.Pruebas
 				+ "publico. Una pantalla que lo siguiera mostrando estaria citando una revision "
 				+ "sustituida.");
 			Assert.That(oil.Revision, Is.Empty);
-			Assert.That(oil.Says, Does.Contain("not published"));
+			Assert.That(oil.Says, Does.Contain("no se ha publicado nada"));
 
 			Assert.That(TheFluidRow(after, "BrakeFluid").Published, Is.True,
 				"Y lo que si republico la sucesora se queda. Sin este renglon, una hoja que se "
@@ -308,19 +309,91 @@ namespace DealershipCar.Dominio.Pruebas
 			Assert.That(after.ServicingRule.Published, Is.False);
 		}
 
-		// LA ETIQUETA DE LA FILA ES EL NOMBRE DEL CANON ESCRITO PARA LEERLO, y no otro nombre. Lo que
-		// cruza la puerta sigue siendo el del canon -- la caja es estricta y la puerta rechaza
-		// 'engineoil' -- asi que separar en mayusculas es lo unico que pasa entre el dominio y el
-		// ojo de la persona.
+		// LA ETIQUETA DE LA FILA ES EL NOMBRE DEL CANON DICHO EN EL IDIOMA DE LA PANTALLA, y no el
+		// nombre del canon. Lo que cruza la puerta sigue siendo el del canon -- la caja es estricta
+		// y la puerta rechaza 'engineoil' -- asi que el mapeo es lo unico que pasa entre el dominio
+		// y el ojo de la persona, y es la misma separacion que C67 hizo con las tres unidades.
 		[Test]
-		public void TheRowLabelIsTheCanonsNameWrittenForAPersonToRead()
+		public void TheRowLabelIsTheCanonsNameSaidInTheLanguageOfTheScreen()
 		{
-			Assert.That(AppState.Spaced("EngineOil"), Is.EqualTo("Engine oil"));
-			Assert.That(AppState.Spaced("PowerSteeringFluid"), Is.EqualTo("Power steering fluid"));
-			Assert.That(AppState.Spaced("Front"), Is.EqualTo("Front"));
+			Assert.That(HowACanonNameReads.AFluid("EngineOil"), Is.EqualTo("Aceite de motor"));
+			Assert.That(
+				HowACanonNameReads.AFluid("PowerSteeringFluid"),
+				Is.EqualTo("Líquido de dirección asistida"));
+			Assert.That(HowACanonNameReads.ATyre("Front"), Is.EqualTo("Delantera"));
+			Assert.That(HowACanonNameReads.AnOperation("FluidChange"), Is.EqualTo("Cambio de fluido"));
+			Assert.That(HowACanonNameReads.ADueState("Overdue"), Is.EqualTo("Atrasada"));
+			Assert.That(HowACanonNameReads.AStanding("NotPublished"), Is.EqualTo("Sin publicar"));
+		}
+
+		// EL MAPEO ES EXHAUSTIVO SOBRE LOS CONJUNTOS QUE LA PANTALLA RECORRE. No alcanza con probar
+		// los seis que uno se acordo de escribir arriba: el dia que entre un miembro nuevo, nadie le
+		// pone etiqueta, cae al respaldo y la persona lee el nombre del codigo en ingles. Esto se
+		// pone rojo ese dia.
+		[TestCase("AnOperation")]
+		[TestCase("ADueState")]
+		[TestCase("AFluid")]
+		[TestCase("ATyre")]
+		[TestCase("AStanding")]
+		public void NoMemberOfASetTheScreenWalksIsShownByItsCodeName(string mapeo)
+		{
+			foreach (string name in TheNamesTheScreenWalks(mapeo))
+				Assert.That(TheLabelFor(mapeo, name), Is.Not.EqualTo(AppState.Spaced(name)),
+					$"'{name}' cae al respaldo: la pantalla lo muestra con su nombre de codigo "
+					+ "separado en mayusculas, que es ingles, y la persona lee eso.");
+		}
+
+		// Y EL RESPALDO SIGUE AHI PARA LO QUE NINGUNA LISTA NOMBRA. Un nombre desconocido se separa
+		// en vez de desaparecer, que es lo que deja que agregar un miembro al dominio ponga rojo la
+		// prueba de arriba en vez de vaciar una fila en silencio.
+		[Test]
+		public void AnUnknownNameFallsBackToTheSpacedFormInsteadOfVanishing()
+		{
+			Assert.That(HowACanonNameReads.AFluid("SomethingNew"), Is.EqualTo("Something new"));
 			Assert.That(AppState.Spaced(""), Is.Empty);
 			Assert.That(AppState.Spaced(null), Is.Null);
 		}
+
+		private static string[] TheNamesTheScreenWalks(string mapeo)
+		{
+			switch (mapeo)
+			{
+				case "AnOperation": return AppState.TheNineKinds;
+				case "ADueState": return TheSevenDueStates;
+				case "AFluid": return AppState.TheSixFluidKinds;
+				case "ATyre": return AppState.TheThreeTyrePositions;
+				case "AStanding": return TheEightStandings;
+			}
+
+			throw new ArgumentException("No hay ningún mapeo llamado '" + mapeo + "'.");
+		}
+
+		private static string TheLabelFor(string mapeo, string name)
+		{
+			switch (mapeo)
+			{
+				case "AnOperation": return HowACanonNameReads.AnOperation(name);
+				case "ADueState": return HowACanonNameReads.ADueState(name);
+				case "AFluid": return HowACanonNameReads.AFluid(name);
+				case "ATyre": return HowACanonNameReads.ATyre(name);
+				case "AStanding": return HowACanonNameReads.AStanding(name);
+			}
+
+			throw new ArgumentException("No hay ningún mapeo llamado '" + mapeo + "'.");
+		}
+
+		// Los dos conjuntos que la pantalla recorre y que AppState no enumera: los estados del
+		// calendario y las dos posturas que comparten NotPublished.
+		private static readonly string[] TheSevenDueStates =
+		{
+			"NotDue", "DueSoon", "Due", "Overdue", "Deferred", "Completed", "Superseded"
+		};
+
+		private static readonly string[] TheEightStandings =
+		{
+			"Inside", "Reached", "NotPublished", "Covered", "CoveredWithExclusion", "NotCovered",
+			"OutsideEnvelope"
+		};
 
 		private WhatTheManufacturerPublished TheSheetTheScreenShows()
 		{

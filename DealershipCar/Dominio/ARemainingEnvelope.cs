@@ -48,13 +48,14 @@ namespace DealershipCar.Dominio
 		protected override string TheDistanceHalfInWords()
 		{
 			if (_distanceLeft == 0)
-				return "Distance: exactly at a limit of " + Amount(_distanceLimit) + ".";
+				return "Distancia: justo en un límite de " + Amount(_distanceLimit) + ".";
 
 			if (_distanceLeft < 0)
-				return "Distance: " + Amount(-_distanceLeft) + " past a limit of "
+				return "Distancia: " + Amount(-_distanceLeft) + " pasados de un límite de "
 					+ Amount(_distanceLimit) + ".";
 
-			return "Distance: " + Amount(_distanceLeft) + " left of " + Amount(_distanceLimit) + ".";
+			return "Distancia: " + (_distanceLeft == 1 ? "queda " : "quedan ")
+				+ Amount(_distanceLeft) + " de " + Amount(_distanceLimit) + ".";
 		}
 
 		private string Amount(int quantity)

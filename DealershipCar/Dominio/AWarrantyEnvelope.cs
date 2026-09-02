@@ -110,7 +110,7 @@ namespace DealershipCar.Dominio
 		/// </summary>
 		internal override string Describe()
 		{
-			return _months + " months or " + _distance + " " + _unit.Name + ", published on "
+			return _months + " meses o " + _distance + " " + _unit.Name + ", publicado el "
 				+ TheDay(_publishedAt) + ".";
 		}
 

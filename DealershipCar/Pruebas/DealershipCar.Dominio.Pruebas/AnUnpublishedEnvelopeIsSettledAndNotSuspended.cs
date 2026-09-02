@@ -72,8 +72,8 @@ namespace DealershipCar.Dominio.Pruebas
 			string said = new ASettledEnvelopeAnswer(EnvelopeStanding.NotPublished, string.Empty)
 				.Describe();
 
-			Assert.That(said, Does.Contain("NotPublished"));
-			Assert.That(said, Does.Contain("warranty envelope"),
+			Assert.That(said, Does.Contain("Sin publicar"));
+			Assert.That(said, Does.Contain("sobre de garantía"),
 				"La frase nombra de que habla. Si no lo nombrara, la misma serviria para "
 				+ "cualquier pregunta y nadie sabria de cual es la respuesta.");
 		}

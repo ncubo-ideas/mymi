@@ -235,7 +235,7 @@ namespace DealershipCar.Dominio.Pruebas
 			Assert.That(journal.Api.CanBeDeferred("FluidChange"), Is.True);
 			Assert.That(journal.Api.HasAnythingDue(), Is.True);
 			Assert.That(journal.Api.ReadNextDueKind(), Is.EqualTo("FluidChange"));
-			Assert.That(journal.Api.ReadDueReason("FluidChange"), Does.Contain("Due"));
+			Assert.That(journal.Api.ReadDueReason("FluidChange"), Does.Contain("Vencida"));
 			Assert.That(journal.Api.MissedCount(), Is.EqualTo(0));
 			Assert.That(journal.Api.HasBeenEvaluated(), Is.True);
 			Assert.That(
@@ -400,7 +400,7 @@ namespace DealershipCar.Dominio.Pruebas
 			Assert.Throws<InvalidOperationException>(
 				() => journal.Api.ReadEnvelopeStanding(asked));
 			Assert.That(
-				journal.Api.DescribeWarrantyEnvelope(asked), Does.Contain("no odometer reading"));
+				journal.Api.DescribeWarrantyEnvelope(asked), Does.Contain("ninguna lectura del odómetro"));
 
 			Assert.That(
 				journal.Api.CanCoverageBeEvaluatedForThisVehicle("POWERTRAIN", asked), Is.False);
@@ -555,7 +555,7 @@ namespace DealershipCar.Dominio.Pruebas
 			// segundo script corrio y no solo el primero.
 			Assert.That(journal.Api.IsWarrantyEnvelopePublished(), Is.True);
 			Assert.That(journal.Api.DescribePublishedWarrantyEnvelope(),
-				Does.Contain("24 months").And.Contains("40000 mi"),
+				Does.Contain("24 meses").And.Contains("40000 mi"),
 				"Las dos mitades del sobre que rige, con su unidad. Cruzar meses con distancia, o "
 				+ "quedarse con la primera publicacion, cambia esta frase.");
 			Assert.That(journal.Api.ReadEnvelopePublishedAt(),
@@ -620,7 +620,7 @@ namespace DealershipCar.Dominio.Pruebas
 		{
 			Assert.That(journal.Api.ReadDueState("RecallRemedy"), Is.EqualTo("NotDue"));
 			Assert.That(journal.Api.DeferralsUsed("RecallRemedy"), Is.EqualTo(0));
-			Assert.That(journal.Api.ReadDueReason("RecallRemedy"), Does.Contain("no scheduled"));
+			Assert.That(journal.Api.ReadDueReason("RecallRemedy"), Does.Contain("no tiene agendada"));
 			Assert.That(journal.Api.CanBeDeferred("RecallRemedy"), Is.False);
 		}
 
@@ -719,15 +719,15 @@ namespace DealershipCar.Dominio.Pruebas
 			Assert.That(journal.Api.HasASealedRevision(), Is.False);
 
 			Assert.That(journal.Api.IsFluidPublished("EngineOil"), Is.False);
-			Assert.That(journal.Api.DescribeFluid("EngineOil"), Does.Contain("not published"));
+			Assert.That(journal.Api.DescribeFluid("EngineOil"), Does.Contain("no se ha publicado nada"));
 			Assert.That(journal.Api.ReadFluidRevision("EngineOil"), Is.EqualTo(""));
 
 			Assert.That(journal.Api.IsTyrePublished("Front"), Is.False);
-			Assert.That(journal.Api.DescribeTyre("Front"), Does.Contain("not published"));
+			Assert.That(journal.Api.DescribeTyre("Front"), Does.Contain("no se ha publicado nada"));
 			Assert.That(journal.Api.ReadTyreRevision("Front"), Is.EqualTo(""));
 
 			Assert.That(journal.Api.IsFuelPublished(), Is.False);
-			Assert.That(journal.Api.DescribeFuel(), Does.Contain("not published"));
+			Assert.That(journal.Api.DescribeFuel(), Does.Contain("no se ha publicado nada"));
 			Assert.That(journal.Api.ReadMinimumFuelGrade(), Is.EqualTo(""));
 			Assert.That(journal.Api.PermittedFuelGrades(), Is.Empty);
 			Assert.That(journal.Api.ProhibitedFuelGrades(), Is.Empty);
@@ -736,10 +736,10 @@ namespace DealershipCar.Dominio.Pruebas
 			Assert.That(journal.Api.IsServiceIntervalPublished("FluidChange"), Is.False);
 			Assert.That(
 				journal.Api.DescribeServiceInterval("FluidChange", 8400, "UnitA"),
-				Does.Contain("not published"));
+				Does.Contain("no se ha publicado nada"));
 			Assert.That(
 				journal.Api.DescribePublishedServiceInterval("FluidChange"),
-				Does.Contain("not published"));
+				Does.Contain("no se ha publicado nada"));
 			Assert.That(journal.Api.ReadServiceIntervalRevision("FluidChange"), Is.EqualTo(""));
 
 			Assert.That(
@@ -748,13 +748,13 @@ namespace DealershipCar.Dominio.Pruebas
 			Assert.That(
 				journal.Api.DescribeServicePrice(
 					"FluidChange", TenThousandUnits, "UnitA", ThePublication),
-				Does.Contain("not published"));
+				Does.Contain("no se ha publicado nada"));
 			Assert.That(
 				journal.Api.ReadServicePriceRevision("FluidChange", TenThousandUnits, "UnitA"),
 				Is.EqualTo(""));
 
 			Assert.That(journal.Api.IsCoveragePublished(), Is.False);
-			Assert.That(journal.Api.DescribeCoverageSummary(), Does.Contain("not published"));
+			Assert.That(journal.Api.DescribeCoverageSummary(), Does.Contain("no se ha publicado nada"));
 			Assert.That(journal.Api.ReadCoverageRevision(), Is.EqualTo(""));
 			Assert.That(journal.Api.CoveredSystems(), Is.Empty);
 			Assert.That(journal.Api.CoverageExclusions(), Is.Empty);
@@ -768,14 +768,14 @@ namespace DealershipCar.Dominio.Pruebas
 				Is.EqualTo("NotPublished"));
 			Assert.That(
 				TheCoverageOf("POWERTRAIN", journal.Api.DescribeCoverage),
-				Does.Contain("not published"));
+				Does.Contain("no se ha publicado nada"));
 
 			Assert.That(journal.Api.IsServicingPolicyPublished(), Is.False);
 			Assert.That(
-				journal.Api.DescribeServicingElsewhereRule(2, 0, 0), Does.Contain("not published"));
+				journal.Api.DescribeServicingElsewhereRule(2, 0, 0), Does.Contain("no se ha publicado nada"));
 			Assert.That(
 				journal.Api.DescribePublishedServicingElsewhereRule(),
-				Does.Contain("not published"));
+				Does.Contain("no se ha publicado nada"));
 			Assert.That(journal.Api.ReadServicingPolicyRevision(), Is.EqualTo(""));
 		}
 

@@ -64,15 +64,15 @@ namespace DealershipCar.Dominio.Pruebas
 			string beforeTheSecondPublication =
 				journal.Api.DescribeWarrantyEnvelope(TheDayItIsAsked);
 
-			Assert.That(beforeTheSecondPublication, Does.Contain("36 months or 60000 mi"));
-			Assert.That(beforeTheSecondPublication, Does.Contain("published on 2025-01-01"));
+			Assert.That(beforeTheSecondPublication, Does.Contain("36 meses o 60000 mi"));
+			Assert.That(beforeTheSecondPublication, Does.Contain("publicado el 2025-01-01"));
 
 			journal.Api.PublishWarrantyEnvelope(24, 20000, TheUnitEverythingIsIn, DayOneHundred);
 
 			string afterwards = journal.Api.DescribeWarrantyEnvelope(TheDayItIsAsked);
 
-			Assert.That(afterwards, Does.Contain("24 months or 20000 mi"));
-			Assert.That(afterwards, Does.Contain("published on 2025-04-11"));
+			Assert.That(afterwards, Does.Contain("24 meses o 20000 mi"));
+			Assert.That(afterwards, Does.Contain("publicado el 2025-04-11"));
 			Assert.That(afterwards, Does.Not.Contain("60000"),
 				"Y EL SOBRE VIEJO NO DEJA NI UN NUMERO. Una respuesta que mezclara los dos seria una "
 				+ "medicion contra un limite que ya no rige.");
@@ -97,7 +97,7 @@ namespace DealershipCar.Dominio.Pruebas
 			Assert.That(journal.Api.ReadEnvelopeStanding(TheDayItIsAsked), Is.EqualTo("Reached"));
 			Assert.That(
 				journal.Api.DescribeWarrantyEnvelope(TheDayItIsAsked),
-				Does.Contain("Reached by distance, which arrived first."));
+				Does.Contain("Alcanzado por distancia, que llegó primero."));
 		}
 
 		// Y LA COBERTURA COMPUESTA TAMBIEN, porque el sobre del vehiculo es uno de los siete hechos

@@ -62,12 +62,12 @@ namespace DealershipCar.Dominio.Pruebas
 
 			// Y LO DICE, en vez de devolver ceros mudos: un tablero en cero es indistinguible de un
 			// vehiculo al dia, que es la lectura equivocada mas cara que este servidor puede inducir.
-			Assert.That(review.Detail, Does.Contain("has not been opened"));
-			Assert.That(one.Detail, Does.Contain("has not been opened"));
-			Assert.That(fresh.Detail, Does.Contain("has not been opened"));
-			Assert.That(takes.Detail, Does.Contain("has not been opened"));
-			Assert.That(scope.Detail, Does.Contain("has not been opened"));
-			Assert.That(pricing.Detail, Does.Contain("has not been opened"));
+			Assert.That(review.Detail, Does.Contain("no se ha abierto"));
+			Assert.That(one.Detail, Does.Contain("no se ha abierto"));
+			Assert.That(fresh.Detail, Does.Contain("no se ha abierto"));
+			Assert.That(takes.Detail, Does.Contain("no se ha abierto"));
+			Assert.That(scope.Detail, Does.Contain("no se ha abierto"));
+			Assert.That(pricing.Detail, Does.Contain("no se ha abierto"));
 
 			// Y NINGUNA LISTA VACIA SE LEE COMO UNA RESPUESTA: sin datos no hay seis fluidos que
 			// contestaron que no, hay una carpeta que nadie abrio.
@@ -226,7 +226,7 @@ namespace DealershipCar.Dominio.Pruebas
 				MaintenanceReview review = new DealershipCarTools(new JournalReader(folder, "")).Review();
 
 				Assert.That(review.Vin, Is.EqualTo(AnotherVin), "El primero por orden, siempre.");
-				Assert.That(review.Detail, Does.Contain("2 vehicles"),
+				Assert.That(review.Detail, Does.Contain("2 vehículos"),
 					"Y se avisa. Contestar en silencio por un vehiculo haria que la persona leyera la "
 					+ "agenda del otro auto creyendo que es la de este.");
 

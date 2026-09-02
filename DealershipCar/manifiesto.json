@@ -1,0 +1,90 @@
+{
+  "//": "ESTE ARCHIVO ES DEL MODULO. Lo escribe la institucion, y algun dia lo firma. Declara quien es, que sustrato necesita, que capacidades pide, y su lista de tools. Gnothi lo lee para armar el catalogo SIN arrancar el modulo. El instalacion.json es del HOST -son dos autoridades- y no viene aca: lo escribe quien opera Gnothi, con la cascara y la carpeta que concede.",
+
+  "manifiesto": "1.0",
+  "modulo": "concesionario",
+  "titulo": "My maintenance schedule",
+  "institucion": "Sotavento Motors (POC mock)",
+
+  "//idioma": "LAS LLAVES VAN EN ESPANOL, como en el resto del set del equipo, porque el esquema es compartido y no es de este modulo. TODO LO QUE LEE LA IA O LA PERSONA VA EN INGLES -titulo, institucion, y cada descripcion- porque este modulo habla ingles de punta a punta: la app se llama 'My maintenance schedule', el servidor MCP entrega sus instrucciones en ingles y cada descripcion de aca esta copiada TAL CUAL del [Description] del codigo. Traducir una descripcion la desincroniza de lo unico contra lo que se puede verificar. Estas notas van en espanol, igual que los /// del codigo.",
+
+  "//sustrato": "Un RANGO, no una version exacta: si un modulo pinea una version puntual, cada actualizacion del Host huerfana a todos los modulos instalados.",
+  "sustrato": { "rango": ">=3.0.0 <4.0.0" },
+
+  "//capacidades": "Lo que el modulo declara necesitar. Es CONTRASTABLE: la cascara MCP abre una carpeta y ningun socket -no le pregunta nada a la agencia, y no puede escribir- asi que 'red' en false y 'carpeta' en 'propia' son la verdad y son detectables. Ojo con leerlo de mas: la app de la persona SI habla con la agencia para traer hechos nuevos, y eso no es lo que se declara aca. Aca se declara lo que corre bajo Gnothi.",
+  "capacidades": {
+    "red": false,
+    "carpeta": "propia",
+    "parlante": false,
+    "microfono": false
+  },
+
+  "//tools": "LA LISTA QUE GNOTHI LE PASA AL ASISTENTE. La descripcion viaja tal cual: no es documentacion, es lo unico que la IA tiene para decidir si esta tool contesta la pregunta de la persona. Van en el orden en que Program.cs registra las tres clases -agenda, ficha del modelo, sobre de garantia- que es el orden en que el modulo las expone, para que comparar esta lista contra su tools/list real se lea de corrido.",
+
+  "//sin-mediciones": "NINGUNA DE LAS SIETE PIDE UN DATO DEL CARRO, y eso es la regla central del modulo y no una omision. El sobre de garantia, el dia de la entrega, el odometro de ese dia y el ultimo que trajo el feed salen del registro que la agencia escribe. Un parametro que le pidiera el kilometraje al asistente seria un numero que nadie midio con un esquema encima, y un default seria el mismo invento sin esquema. Los tres unicos parametros que hay -dos clases de operacion, un codigo de sistema y un hito de servicio- son NOMBRES que la persona dice, nunca mediciones.",
+
+  "//el-hueco": "ESTE MODULO NO TIENE EL HUECO QUE TIENE COMPRAS, y conviene decirlo en vez de inventarle uno. Aca la pantalla es de la agencia y muestra casi todo: la agenda completa, la ficha del modelo y donde para este carro contra el sobre de garantia. La UNICA que ninguna pantalla renderiza es what_the_service_costs, porque necesita un hito que la persona nombre y ninguna seccion le pide un valor a nadie. Lo que las otras seis compran no es un dato que la pantalla no pueda dibujar: es poder preguntar EN PALABRAS por una sola operacion, o si lo que se acaba de contestar sigue vigente -la pantalla dice hasta que instante se evaluo, pero el numero de evento vive detras de una bandera de instrumentacion-.",
+
+  "//parametros-cerrados": "PRECEDENTE NUEVO, y el primero del set que va PARA ATRAS: 'operation' es un CONJUNTO CERRADO y en el codigo es un enum de verdad, asi que el cliente MCP no puede mandar un valor que no exista. El formato de 'entrada' no sabe expresar eso -llega hasta string y number- asi que aca se declara string y los nueve nombres se repiten en la prosa de la descripcion, igual que en compras el rango de un numero. Es decir: EL MANIFIESTO ES MAS DEBIL QUE EL MODULO en este punto, y quien lo lea tiene que saberlo. Si el equipo cierra ese pendiente, este archivo cambia y el modulo no se entera.",
+
+  "//sin-vista-y-sin-carga": "No hay 'vista' y no hay 'carga', y ninguna de las dos ausencias es un olvido. La pantalla de este modulo es una app Blazor wasm, no un json que el Host pueda renderizar: apuntarle a MyCar.razor seria declarar algo que el Host no sabe leer. Y es un modulo stdio -embarca su propio servidor MCP- asi que no declara punto de entrada.",
+
+  "tools": [
+    {
+      "nombre": "review_my_maintenance",
+      "titulo": "What my car needs",
+      "soloLectura": true,
+      "entrada": [],
+      "descripcion": "Answers what this person's vehicle needs right now: which maintenance operations are due, which are past their grace period, which count as missed, and what the schedule says about each one. Use it when they ask something general like 'does my car need anything?', 'what's overdue?', 'what should I do first?' or 'how is my car doing?'. It reports the whole schedule in one read, so prefer it over asking about operations one at a time. Every operation carries the reason the schedule itself composed - say that reason, do not reword it into generic advice. Operations this vehicle never had scheduled say so in their reason; they are not overdue, they simply do not exist for this car."
+    },
+    {
+      "nombre": "check_one_operation",
+      "titulo": "Where this one stands",
+      "soloLectura": true,
+      "entrada": [
+        { "nombre": "operation", "tipo": "string", "descripcion": "Which maintenance operation to look up. It is a closed set and the name is taken letter for letter: Inspection, FluidChange, FilterChange, WearPartReplacement, TimedComponent, SoftwareUpdate, RecallRemedy, Diagnostic, Repair." }
+      ],
+      "descripcion": "Answers where ONE maintenance operation stands on this person's vehicle - whether it is due, how far past its limit it is, and how many times they have already deferred it. Use it when they ask about a specific operation, like 'is my oil change due?', 'how long can I put off the inspection?' or 'did the recall get done?'. If they are asking about the vehicle in general, use review_my_maintenance instead: it answers for every operation in a single read. deferralsUsed is how many deferrals they have already spent on this operation; a safety operation cannot be deferred at all."
+    },
+    {
+      "nombre": "how_up_to_date_is_this",
+      "titulo": "How current this is",
+      "soloLectura": true,
+      "entrada": [],
+      "descripcion": "Answers how far this person's app has read the dealership's record, and up to what instant the schedule has been evaluated. Use it when they expect to see something new and it is not there - after a service visit, or after they pressed Refresh - and when you need to tell whether the answer you just gave them is current. lastEventApplied is the dealership event number the app has read up to: if it goes up between two calls, new facts came in. You cannot make it go up; only the person's app can."
+    },
+    {
+      "nombre": "what_my_car_takes",
+      "titulo": "What my car takes",
+      "soloLectura": true,
+      "entrada": [],
+      "descripcion": "Answers what the manufacturer published that this person's vehicle takes: the engine oil and the five other fluids with their grade, capacity and change interval; the size and cold pressure of the tyres at each position; and the fuel grades, split into the minimum, the permitted and the prohibited ones. Use it for 'what oil does my car take?', 'what pressure should my tyres be?', 'can I put regular in it?'. It reports the whole spec sheet in one read, so prefer it over asking item by item. Every answer carries the revision of the spec sheet it came from - say that revision, because a figure without one is a rumour and a later revision may have changed it. An item whose published is false was never published for this model: that is an answer, not a gap, and it must never be filled from a similar model or a previous model year. Pressures, capacities and distances carry a unit that is never converted - say the value with the unit exactly as it comes. Of the three fuel lists the prohibited one is the one worth raising first."
+    },
+    {
+      "nombre": "does_the_warranty_cover",
+      "titulo": "Is this covered",
+      "soloLectura": true,
+      "entrada": [
+        { "nombre": "system", "tipo": "string", "descripcion": "The manufacturer's code for the system being asked about, copied letter for letter from coveredSystems or from an exclusion. Leave it out to read the whole published scope, which is where the codes come from." }
+      ],
+      "descripcion": "Answers what the manufacturer published about the SCOPE of the warranty on this person's model - which systems the scope declares inside, which exclusions it published and the condition under which each one bites, and whether a system the person names is in the manufacturer's catalogue at all - AND where THIS vehicle stands against that scope for the system they named. Use it for 'is my gearbox under warranty?' or 'what does the warranty not cover?'. IT STATES SCOPE AND STANDING, AND NEVER ADJUDICATES A CLAIM. Whether a repair gets paid is the manufacturer's to decide and nothing here says it will be, so never turn a system that is inside the scope, or a vehicle that is inside its envelope, into 'you are covered'. THE STANDING COMES OUT OF THE PERSON'S OWN RECORD and never out of you or them. It needs the vehicle's warranty envelope, the date it was handed over, the odometer taken that day and the latest one the feed has brought; all four are read here. Never ask the person for a mileage or a date to answer this, and never accept one - a figure that did not come from the record would come back as a measurement nobody made. When one of the four is missing, standingSays comes back empty and says and thisVehicleSays each still answer their own half in full: quote both, and read detail for which fact is missing and who records it. 'WE WERE NEVER TOLD ABOUT IT' IS NOT 'IT IS NOT COVERED', and collapsing the two is the failure worth avoiding: systemInTheCatalogue false means the published scope never names that system, which says nothing either way about whether the manufacturer covers it. A code listed in coveredSystems is one the scope declares inside; a code that appears only among the exclusions is one the scope names and leaves out. The system code is the MANUFACTURER'S vocabulary and not a list this app owns, so take it from coveredSystems or from an exclusion and pass it letter for letter: the match is exact, and a code spelled or cased differently answers 'never told about it'. Do not invent a code, and call the tool with no system at all to see the whole published scope first."
+    },
+    {
+      "nombre": "what_the_service_costs",
+      "titulo": "What the service costs",
+      "soloLectura": true,
+      "entrada": [
+        { "nombre": "operation", "tipo": "string", "descripcion": "Which maintenance operation the person is asking about. It is a closed set and the name is taken letter for letter: Inspection, FluidChange, FilterChange, WearPartReplacement, TimedComponent, SoftwareUpdate, RecallRemedy, Diagnostic, Repair." },
+        { "nombre": "milestoneDistance", "tipo": "number", "descripcion": "The service milestone the person named, such as 10000. Leave it out when they did not name one; do not guess a milestone." }
+      ],
+      "descripcion": "Answers what the manufacturer published about servicing ONE maintenance operation on this model: whether a service interval was published for it, and what the service costs at a milestone the person names, with the validity of that price and whether the validity is in force at the instant the question was asked. Use it for 'how much is the 10,000 service?' or 'is that price still good?'. MILESTONEDISTANCE IS THE MILESTONE THE PERSON NAMED. Leave it out if they did not name one and ask them which service they mean: this record does not list the milestones the manufacturer published, so a guessed milestone comes back with no price and that reads as 'the manufacturer never published one', which would be wrong. The milestone is looked up in each of the two distance units this record uses and answered in the unit it was published in - nothing is ever converted between them, so say the unit that comes back rather than assuming which one the person meant. A PRICE IS NEVER STATED WITHOUT ITS VALIDITY: the sentence carries the window and whether askedAt falls inside it. A stale price presented as current is a promise the branch never made. The published service interval's own numbers are not in this answer - quoting them needs how far this vehicle still has to go against that interval, and this record does hold the odometer but does not hand that remaining figure back. Use review_my_maintenance for when the next service is due. The fluid change intervals are published as part of the fluid itself, so what_my_car_takes carries those."
+    },
+    {
+      "nombre": "is_my_car_still_under_warranty",
+      "titulo": "Am I still under warranty",
+      "soloLectura": true,
+      "entrada": [],
+      "descripcion": "Answers whether this person's vehicle is still inside the warranty envelope the dealership published for it, and how much of each half is left. Use it for 'is my car still under warranty?', 'until when am I covered?', 'how much warranty do I have left?'. Everything it needs comes out of the person's own record - the envelope, the date the car was handed over, the odometer reading taken that day and the latest one the dealership's feed has brought - so never ask them for a mileage or a date, and never accept one to feed back in. AN ENVELOPE HAS TWO HALVES AND BOTH ARE ALWAYS SAID: a term in months and a distance. Cover ends when the FIRST of the two runs out, so quoting only the comfortable half is the way to give someone a wrong answer that sounds right. Which half will arrive first is deliberately not predicted - that would need a rate this record does not have - so say both and say that it depends on how much they drive. IT STATES STANDING AND NEVER ADJUDICATES A CLAIM. Being inside the envelope is not a promise that a repair gets paid; that is the manufacturer's to decide. WHAT says SAYS IS THE ANSWER. It is one sentence composed by the record itself and it already carries the standing, both halves, which one arrived first, the envelope it was measured against with its publication date, and the odometer it was measured against with the day that reading was observed. Say it rather than rebuilding it out of the fields, and say the observation date: if it is months old, the distance half is as old as it is, and presenting it as today's is the mistake worth avoiding. WHEN SOMETHING IS MISSING IT IS NAMED, NOT ESTIMATED. The says sentence words the gap itself and names which fact would decide it; the dealership is who records these, never the person and never you. An envelope that was never published is not a car without a warranty. For what the MANUFACTURER published about the warranty's scope - which systems are in it and which exclusions bite - use does_the_warranty_cover; that one also answers where this vehicle stands for a system the person names."
+    }
+  ]
+}

@@ -65,8 +65,8 @@ namespace DealershipCar.Dominio.Pruebas
 
 				Assert.That(
 					said,
-					Does.Contain("the published distance limit is in mi and this vehicle's odometer "
-						+ "is in km, and units are never converted"),
+					Does.Contain("el límite de distancia publicado está en mi y el odómetro de este "
+						+ "vehículo está en km, y las unidades nunca se convierten"),
 					"DICE CUAL CONTRA CUAL. Sin las dos unidades nombradas, quien lea sabe que algo "
 					+ "no calzo y no sabe que arreglar. Y 'mi' contra 'km' es lo que prueba que el "
 					+ "codigo cruzo entre globales como VALOR y no como el primer miembro.");
@@ -85,9 +85,9 @@ namespace DealershipCar.Dominio.Pruebas
 
 				string said = journal.Api.DescribeWarrantyEnvelope(PastTheTimeHalf);
 
-				Assert.That(said, Does.Contain("Time: 7 months past a limit of 36 months."));
-				Assert.That(said, Does.Contain("units are never converted"));
-				Assert.That(said, Does.Contain("Reached by time, which arrived first."));
+				Assert.That(said, Does.Contain("Tiempo: 7 meses pasados de un límite de 36 meses."));
+				Assert.That(said, Does.Contain("las unidades nunca se convierten"));
+				Assert.That(said, Does.Contain("Alcanzado por tiempo, que llegó primero."));
 			}
 		}
 
@@ -103,7 +103,7 @@ namespace DealershipCar.Dominio.Pruebas
 				string said = journal.Api.DescribeWarrantyEnvelope(InsideTheTimeHalf);
 
 				Assert.That(said, Does.Not.Contain("left of 15000"));
-				Assert.That(said, Does.Not.Contain("past a limit of 15000"));
+				Assert.That(said, Does.Not.Contain("pasados de un límite de 15000"));
 			}
 		}
 
@@ -119,7 +119,7 @@ namespace DealershipCar.Dominio.Pruebas
 					journal.Api.ReadEnvelopeStanding(InsideTheTimeHalf), Is.EqualTo("Inside"));
 				Assert.That(
 					journal.Api.DescribeWarrantyEnvelope(InsideTheTimeHalf),
-					Does.Contain("Distance: 10000 mi left of 15000 mi."));
+					Does.Contain("Distancia: quedan 10000 mi de 15000 mi."));
 			}
 		}
 

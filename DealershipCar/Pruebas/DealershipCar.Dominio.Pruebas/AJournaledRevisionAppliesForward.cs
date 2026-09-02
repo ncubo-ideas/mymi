@@ -72,10 +72,10 @@ namespace DealershipCar.Dominio.Pruebas
 
 			ARevisionPublishingTheOil("R2", TheSecondPublication, TheSecondGrade);
 
-			Assert.That(given, Does.Contain("revision R1"),
+			Assert.That(given, Does.Contain("revisión R1"),
 				"Lo que la persona recibio sigue diciendo de donde salio. Una revision no llega para "
 				+ "atras a cambiarlo.");
-			Assert.That(journal.Api.DescribeFluid("EngineOil"), Does.Contain("revision R2"),
+			Assert.That(journal.Api.DescribeFluid("EngineOil"), Does.Contain("revisión R2"),
 				"Y preguntar de nuevo si contesta desde la nueva: aplica desde su instante HACIA "
 				+ "ADELANTE, que es la otra mitad de la ley.");
 		}

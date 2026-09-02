@@ -118,22 +118,22 @@ namespace DealershipCar.Dominio
 		internal string Describe()
 		{
 			if (_waitsForAReceivedCrossing)
-				return State.Name + " because this operation has no time or distance limit: it "
-					+ "becomes due only when a condition threshold crossing is received.";
+				return State.HowItIsSaid + " porque esta operación no tiene límite de tiempo ni de "
+					+ "distancia: vence solo cuando llega un cruce de umbral observado.";
 
 			if (!CanBeEvaluated)
-				return State.Name + ", but nothing could be evaluated, so this is not evidence "
-					+ "that the operation is not due. " + Clauses() + ".";
+				return State.HowItIsSaid + ", pero no se pudo evaluar nada, así que esto no es "
+					+ "evidencia de que la operación no esté vencida. " + Clauses() + ".";
 
-			return State.Name + ", decided by " + WhoDecided() + ". " + Clauses() + ".";
+			return State.HowItIsSaid + ", decidido por " + WhoDecided() + ". " + Clauses() + ".";
 		}
 
 		private string WhoDecided()
 		{
-			if (DecidedByTime && DecidedByDistance) return "time and distance";
-			if (DecidedByDistance) return "distance";
+			if (DecidedByTime && DecidedByDistance) return "tiempo y distancia";
+			if (DecidedByDistance) return "distancia";
 
-			return "time";
+			return "tiempo";
 		}
 
 		private string Clauses()

@@ -51,8 +51,8 @@ namespace DealershipCar.Dominio.Pruebas
 			specification.SealRevision(TheRevision);
 
 			Assert.That(specification.DescribeFluid(FluidKindCode.EngineOil), Is.EqualTo(
-				"EngineOil: grade 5W-30, capacity 4.6 L, changed every 15000 km or 365 "
-				+ "days. Published in revision REV-2025-01."));
+				"Aceite de motor: grado 5W-30, capacidad 4.6 L, se cambia cada 15000 km o 365 "
+				+ "días. Publicado en la revisión REV-2025-01."));
 		}
 
 		// Un intervalo puede tener UNA sola mitad: "cada 15000" sin plazo, o "cada 365 dias" sin
@@ -68,7 +68,7 @@ namespace DealershipCar.Dominio.Pruebas
 			specification.SealRevision(TheRevision);
 
 			Assert.That(specification.DescribeFluid(FluidKindCode.Coolant),
-				Does.Contain("changed every 60000 km."));
+				Does.Contain("se cambia cada 60000 km."));
 			Assert.That(specification.DescribeFluid(FluidKindCode.Coolant),
 				Does.Not.Contain("days"));
 		}
@@ -82,7 +82,7 @@ namespace DealershipCar.Dominio.Pruebas
 			specification.SealRevision(TheRevision);
 
 			Assert.That(specification.DescribeFluid(FluidKindCode.BrakeFluid),
-				Does.Contain("changed every 730 days."));
+				Does.Contain("se cambia cada 730 días."));
 		}
 
 		// La unidad en que se publico es la que sale. Ni se normaliza ni se traduce: dos valores
@@ -98,8 +98,8 @@ namespace DealershipCar.Dominio.Pruebas
 
 			string answer = specification.DescribeFluid(FluidKindCode.TransmissionFluid);
 
-			Assert.That(answer, Does.Contain("capacity 7.5 gal"));
-			Assert.That(answer, Does.Contain("every 90000 mi"));
+			Assert.That(answer, Does.Contain("capacidad 7.5 gal"));
+			Assert.That(answer, Does.Contain("cada 90000 mi"));
 		}
 
 		[Test]

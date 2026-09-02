@@ -43,7 +43,7 @@ namespace DealershipCar.Dominio
 			IntervalLengthFactor factor)
 		{
 			if (factor.DistanceIsIgnored)
-				return new ADimensionSuspendedByTheUsageProfile(factor.Profile.Name);
+				return new ADimensionSuspendedByTheUsageProfile(factor.Profile.HowItIsSaid);
 
 			if (!from.HasReading || !latestUsable.Exists())
 				return NoUsableReadingToCountFrom;

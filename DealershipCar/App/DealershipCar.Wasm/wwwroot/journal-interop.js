@@ -30,7 +30,7 @@ export function modoActual() {
 }
 
 export function nombreDeLaCarpeta() {
-    if (modo === 'opfs') return "this browser's storage";
+    if (modo === 'opfs') return 'el almacenamiento de este navegador';
     return carpeta ? carpeta.name : '';
 }
 

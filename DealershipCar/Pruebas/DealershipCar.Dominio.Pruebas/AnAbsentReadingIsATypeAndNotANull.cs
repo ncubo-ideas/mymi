@@ -97,7 +97,7 @@ namespace DealershipCar.Dominio.Pruebas
 			Assert.That(assessment.DistanceIsSuspended, Is.True);
 			Assert.That(assessment.SuspendedByAnAbsentReading, Is.True);
 			Assert.That(assessment.SuspendedByUnitMismatch, Is.False);
-			Assert.That(assessment.Describe(), Does.Contain("no usable reading"));
+			Assert.That(assessment.Describe(), Does.Contain("ninguna lectura usable"));
 		}
 
 		// ===== LA OTRA MITAD OPCIONAL DEL SLICE: la del ancla =============================

@@ -45,9 +45,9 @@ namespace DealershipCar.Dominio
 		internal override string Describe()
 		{
 			return TheAnswerSaying(
-				"its distance half cannot be evaluated, because the published distance limit is in "
-				+ _limitUnit.Name + " and this vehicle's odometer is in " + _odometerUnit.Name
-				+ ", and units are never converted.",
+				"su mitad de distancia no se puede evaluar, porque el límite de distancia publicado "
+				+ "está en " + _limitUnit.Name + " y el odómetro de este vehículo está en "
+				+ _odometerUnit.Name + ", y las unidades nunca se convierten.",
 				_clause);
 		}
 	}

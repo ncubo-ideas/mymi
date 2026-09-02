@@ -130,11 +130,11 @@ namespace DealershipCar.Dominio.Pruebas
 		{
 			Assert.That(
 				journal.Api.DescribePublishedWarrantyEnvelope(),
-				Does.Contain("37 months or 61111 mi"));
+				Does.Contain("37 meses o 61111 mi"));
 
 			Assert.That(
 				journal.Api.DescribeWarrantyEnvelope(TheDayItIsAsked),
-				Does.Contain("37 months or 61111 mi"));
+				Does.Contain("37 meses o 61111 mi"));
 		}
 
 		// Y LO QUE LE QUEDA A CADA MITAD, TAMBIEN DENTRO DE LA FRASE Y EN NINGUN OTRO LADO. Es la
@@ -145,8 +145,8 @@ namespace DealershipCar.Dominio.Pruebas
 		{
 			string said = journal.Api.DescribeWarrantyEnvelope(TheDayItIsAsked);
 
-			Assert.That(said, Does.Contain("Time: 29 months left of 37 months."));
-			Assert.That(said, Does.Contain("Distance: 56111 mi left of 61111 mi."));
+			Assert.That(said, Does.Contain("Tiempo: quedan 29 meses de 37 meses."));
+			Assert.That(said, Does.Contain("Distancia: quedan 56111 mi de 61111 mi."));
 
 			foreach (KeyValuePair<string, long> answered in EveryNumberAnsweredRightNow())
 			{

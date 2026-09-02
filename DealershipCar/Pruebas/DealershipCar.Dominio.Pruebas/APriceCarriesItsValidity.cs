@@ -59,9 +59,9 @@ namespace DealershipCar.Dominio.Pruebas
 				specification.DescribeServicePrice(
 					OperationKindCode.Inspection, 10000, DistanceUnitCode.UnitA, WhileItIsInForce),
 				Is.EqualTo(
-					"Inspection at 10000 km: 120.50 CRC, valid from 2025-01-01 to 2025-12-31. "
-					+ "As of 2025-06-15 that validity is in force. "
-					+ "Published in revision REV-2025-01."));
+					"Revisión a los 10000 km: 120.50 CRC, vigente del 2025-01-01 al 2025-12-31. "
+					+ "Al 2025-06-15 esa vigencia está rigiendo. "
+					+ "Publicado en la revisión REV-2025-01."));
 		}
 
 		// TEST 16 DE §11. El precio se contesta CON su vigencia, y la frase dice que ya paso. Nunca
@@ -72,10 +72,10 @@ namespace DealershipCar.Dominio.Pruebas
 			string answer = specification.DescribeServicePrice(
 				OperationKindCode.Inspection, 10000, DistanceUnitCode.UnitA, AfterItPassed);
 
-			Assert.That(answer, Does.Contain("valid from 2025-01-01 to 2025-12-31"),
+			Assert.That(answer, Does.Contain("vigente del 2025-01-01 al 2025-12-31"),
 				"La vigencia va en la respuesta para que quien la lea vea contra que la esta "
 				+ "leyendo.");
-			Assert.That(answer, Does.Contain("is not current"),
+			Assert.That(answer, Does.Contain("no es el vigente"),
 				"Y lo dice con palabras. Un precio vencido que solo trae su fecha obliga al de "
 				+ "afuera a hacer la comparacion, que es la que este modulo ya hizo.");
 			Assert.That(answer, Does.Contain("120.50"),
@@ -90,8 +90,8 @@ namespace DealershipCar.Dominio.Pruebas
 			string answer = specification.DescribeServicePrice(
 				OperationKindCode.Inspection, 10000, DistanceUnitCode.UnitA, BeforeItStarted);
 
-			Assert.That(answer, Does.Contain("is not current"));
-			Assert.That(answer, Does.Contain("valid from 2025-01-01"));
+			Assert.That(answer, Does.Contain("no es el vigente"));
+			Assert.That(answer, Does.Contain("vigente del 2025-01-01"));
 		}
 
 		// El monto sale TAL COMO SE PUBLICO, con su escala, y la moneda es texto publicado que
@@ -144,7 +144,7 @@ namespace DealershipCar.Dominio.Pruebas
 			string answer = specification.DescribeServicePrice(
 				OperationKindCode.Repair, 10000, DistanceUnitCode.UnitA, WhileItIsInForce);
 
-			Assert.That(answer, Does.Contain("Repair"));
+			Assert.That(answer, Does.Contain("reparación"));
 			Assert.That(answer, Does.Not.Contain("120.50"));
 			Assert.That(HayAlgunDigito(answer), Is.False,
 				"Un cero adentro de una ausencia de precio se lee como gratis, que es la peor "
@@ -227,7 +227,7 @@ namespace DealershipCar.Dominio.Pruebas
 				specification.DescribeServicePrice(
 					OperationKindCode.Inspection, milestone, DistanceUnitCode.UnitA,
 					WhileItIsInForce),
-				Does.Contain("Inspection"));
+				Does.Contain("revisión"));
 		}
 
 		// Dentro de UN borrador, la ultima publicacion de un precio es la que queda. Es la unica de

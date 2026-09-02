@@ -64,7 +64,7 @@ namespace DealershipCar.Dominio.Pruebas
 			Assert.That(
 				journal.Api.DescribePublishedServiceInterval(TheOperation),
 				Is.EqualTo(
-					"FluidChange: serviced every 10000 km or 365 days. Published in revision R1."));
+					"Cambio de fluido: se hace cada 10000 km o 365 días. Publicado en la revisión R1."));
 		}
 
 		// LA MITAD PUBLICADA DE LA REGLA DE SERVICIO EN OTRO TALLER. Es la que el navegador tenia
@@ -79,7 +79,7 @@ namespace DealershipCar.Dominio.Pruebas
 
 			Assert.That(answer, Does.Contain(TheRuleAsPublished));
 			Assert.That(answer, Does.Contain(WhatPreservesCover));
-			Assert.That(answer, Does.Contain("Published in revision " + TheRevision));
+			Assert.That(answer, Does.Contain("Publicado en la revisión " + TheRevision));
 		}
 
 		// EL CONTROL, y sin el las dos pruebas de arriba pasan por la razon equivocada. Una lectura
@@ -115,9 +115,9 @@ namespace DealershipCar.Dominio.Pruebas
 
 			Assert.That(publishedRule, Is.Not.EqualTo(pairedRule));
 			Assert.That(publishedRule, Does.Not.Contain("This vehicle"),
-				"Los tres conteos entran por la frase emparejada bajo 'This vehicle'. La mitad "
+				"Los tres conteos entran por la frase emparejada bajo 'Este vehículo'. La mitad "
 				+ "publicada habla del MODELO y no de ningun carro.");
-			Assert.That(pairedRule, Does.Contain("This vehicle"));
+			Assert.That(pairedRule, Does.Contain("Este vehículo"));
 		}
 
 		// LEY L2 sobre la mitad publicada: lo no publicado se dice, con palabras del DOMINIO y
@@ -130,13 +130,13 @@ namespace DealershipCar.Dominio.Pruebas
 
 			Assert.That(journal.Api.DescribePublishedServiceInterval(TheOperation),
 				Is.EqualTo(
-					"FluidChange service interval: not published for this model, so there is "
-					+ "nothing to quote and no revision to name."));
+					"Intervalo de servicio de cambio de fluido: no se ha publicado nada para este "
+					+ "modelo, así que no hay nada que citar ni ninguna revisión que nombrar."));
 
 			Assert.That(journal.Api.DescribePublishedServicingElsewhereRule(),
 				Is.EqualTo(
-					"The servicing-elsewhere rule: not published for this model, so there is "
-					+ "nothing to quote and no revision to name."));
+					"La regla de servicio en otro taller: no se ha publicado nada para este modelo, así "
+					+ "que no hay nada que citar ni ninguna revisión que nombrar."));
 		}
 
 		// L12: una revision SIN SELLAR es invisible para toda lectura, y la mitad publicada no es
@@ -152,9 +152,9 @@ namespace DealershipCar.Dominio.Pruebas
 				TheRevision, TheRuleAsPublished, WhatPreservesCover);
 
 			Assert.That(journal.Api.DescribePublishedServiceInterval(TheOperation),
-				Does.Contain("not published"));
+				Does.Contain("no se ha publicado nada"));
 			Assert.That(journal.Api.DescribePublishedServicingElsewhereRule(),
-				Does.Contain("not published"));
+				Does.Contain("no se ha publicado nada"));
 		}
 
 		private const string TheRuleAsPublished =

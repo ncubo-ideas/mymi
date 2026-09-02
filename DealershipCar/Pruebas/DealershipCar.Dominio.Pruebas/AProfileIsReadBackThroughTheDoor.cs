@@ -119,7 +119,7 @@ namespace DealershipCar.Dominio.Pruebas
 
 			Assert.That(
 				journal.Api.DescribePublishedWarrantyEnvelope(),
-				Does.Contain("36 months or 60000 mi"),
+				Does.Contain("36 meses o 60000 mi"),
 				"La frase publicada trae las DOS mitades con su unidad. Es la unica manera de "
 				+ "llegar a los dos limites: la puerta no los da sueltos, porque una caratula que "
 				+ "arme '36 meses o 60000' con escalares se llevo la composicion fuera del dominio.");

@@ -84,7 +84,8 @@ namespace DealershipCar.Wasm
 			{
 				await ForgetFolderAsync();
 				throw new FolderNotAvailableException(
-					$"Could not read the saved folder: {listing.Reason}. Choose a folder again.");
+					$"No se pudo leer la carpeta guardada: {listing.Reason}. Elija una carpeta otra "
+					+ "vez.");
 			}
 
 			int copied = 0;
@@ -94,8 +95,8 @@ namespace DealershipCar.Wasm
 
 				if (!read.Ok)
 					throw new FolderNotAvailableException(
-						$"Could not read '{path}' from '{FolderName}': {read.Reason}. "
-						+ "Opening with half the journal would give a wrong schedule.");
+						$"No se pudo leer '{path}' de '{FolderName}': {read.Reason}. Abrir con medio "
+						+ "journal daria un plan equivocado.");
 
 				string destination = Path.Combine(RootInMemfs, path.Replace('/', Path.DirectorySeparatorChar));
 				string directory = Path.GetDirectoryName(destination);
@@ -111,9 +112,9 @@ namespace DealershipCar.Wasm
 		{
 			if (NeedsRegrant)
 				throw new WriteRefusedException(
-					$"There is no write permission on '{FolderName}'. The browser grants it separately "
-					+ "from letting you pick the folder, and it withdraws it when the app reopens. "
-					+ "Granting it again recovers it; until then nothing you see is being saved.");
+					$"No hay permiso de escritura sobre '{FolderName}'. El navegador lo da aparte del "
+					+ "de elegir la carpeta, y se lo quita cuando la app se vuelve a abrir. Volver a "
+					+ "darlo lo recupera; hasta entonces nada de lo que ve se está guardando.");
 
 			if (!HasFolder || !Directory.Exists(RootInMemfs)) return 0;
 
@@ -133,8 +134,8 @@ namespace DealershipCar.Wasm
 
 			if (failed.Count > 0)
 				throw new WriteRefusedException(
-					$"Could not save to '{FolderName}': {failed.Count} of {failed.Count + written} "
-					+ $"files failed. {string.Join("; ", failed)}");
+					$"No se pudo guardar en '{FolderName}': fallaron {failed.Count} de "
+					+ $"{failed.Count + written} archivos. {string.Join("; ", failed)}");
 
 			return written;
 		}
@@ -171,7 +172,7 @@ namespace DealershipCar.Wasm
 		[JsonPropertyName("motivo")]  public string Reason { get; set; } = "";
 
 		public override string ToString() =>
-			Ok ? $"ok, folder '{Name}' (permission {Permission})"
+			Ok ? $"ok, carpeta '{Name}' (permiso {Permission})"
 			   : $"no: {(Reason.Length > 0 ? Reason : Permission)}";
 	}
 

@@ -75,7 +75,7 @@ namespace DealershipCar.Dominio
 		/// <summary>El grado con su postura entre parentesis, como entra en la frase del item.</summary>
 		internal string Describe()
 		{
-			return _grade + " (" + _standing.Name + ")";
+			return _grade + " (" + _standing.HowItIsSaid + ")";
 		}
 	}
 }

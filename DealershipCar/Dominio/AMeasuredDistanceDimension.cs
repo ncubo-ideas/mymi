@@ -18,10 +18,10 @@ namespace DealershipCar.Dominio
 			_limitUnit = limitUnit;
 		}
 
-		/// <summary><c>distance</c>.</summary>
+		/// <summary><c>distancia</c>.</summary>
 		protected override string Name
 		{
-			get { return "distance"; }
+			get { return "distancia"; }
 		}
 
 		/// <summary>La distancia se dice en la unidad de su limite, que no se pluraliza.</summary>

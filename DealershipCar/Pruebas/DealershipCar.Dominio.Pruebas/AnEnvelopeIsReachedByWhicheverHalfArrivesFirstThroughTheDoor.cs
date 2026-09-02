@@ -56,13 +56,13 @@ namespace DealershipCar.Dominio.Pruebas
 
 				string said = journal.Api.DescribeWarrantyEnvelope(InsideTheTimeHalf);
 
-				Assert.That(said, Does.Contain("Reached by distance, which arrived first."));
-				Assert.That(said, Does.Not.Contain("Reached by time"));
+				Assert.That(said, Does.Contain("Alcanzado por distancia, que llegó primero."));
+				Assert.That(said, Does.Not.Contain("Alcanzado por tiempo"));
 
-				Assert.That(said, Does.Contain("Time: 28 months left of 36 months."),
+				Assert.That(said, Does.Contain("Tiempo: quedan 28 meses de 36 meses."),
 					"Y LA MITAD COMODA VA IGUAL. Callarla dejaria a la persona sin saber que su plazo "
 					+ "todavia no se cumplio.");
-				Assert.That(said, Does.Contain("Distance: 1000 mi past a limit of 15000 mi."));
+				Assert.That(said, Does.Contain("Distancia: 1000 mi pasados de un límite de 15000 mi."));
 			}
 		}
 
@@ -77,11 +77,11 @@ namespace DealershipCar.Dominio.Pruebas
 
 				string said = journal.Api.DescribeWarrantyEnvelope(PastTheTimeHalf);
 
-				Assert.That(said, Does.Contain("Reached by time, which arrived first."));
-				Assert.That(said, Does.Not.Contain("Reached by distance"));
+				Assert.That(said, Does.Contain("Alcanzado por tiempo, que llegó primero."));
+				Assert.That(said, Does.Not.Contain("Alcanzado por distancia"));
 
-				Assert.That(said, Does.Contain("Time: 7 months past a limit of 36 months."));
-				Assert.That(said, Does.Contain("Distance: 10000 mi left of 15000 mi."),
+				Assert.That(said, Does.Contain("Tiempo: 7 meses pasados de un límite de 36 meses."));
+				Assert.That(said, Does.Contain("Distancia: quedan 10000 mi de 15000 mi."),
 					"Y LA MITAD COMODA VA IGUAL, tambien de este lado.");
 			}
 		}
@@ -98,10 +98,10 @@ namespace DealershipCar.Dominio.Pruebas
 
 				Assert.That(journal.Api.ReadEnvelopeStanding(InsideTheTimeHalf), Is.EqualTo("Inside"));
 
-				Assert.That(said, Does.Contain("Time: 28 months left of 36 months."));
-				Assert.That(said, Does.Contain("Distance: 10000 mi left of 15000 mi."));
-				Assert.That(said, Does.Contain("Neither half has been reached"));
-				Assert.That(said, Does.Contain("rather than predicting a rate"));
+				Assert.That(said, Does.Contain("Tiempo: quedan 28 meses de 36 meses."));
+				Assert.That(said, Does.Contain("Distancia: quedan 10000 mi de 15000 mi."));
+				Assert.That(said, Does.Contain("Ninguna de las dos mitades se ha alcanzado"));
+				Assert.That(said, Does.Contain("en vez de pronosticar un ritmo"));
 			}
 		}
 
@@ -134,8 +134,8 @@ namespace DealershipCar.Dominio.Pruebas
 			{
 				string said = journal.Api.DescribeWarrantyEnvelope(InsideTheTimeHalf);
 
-				Assert.That(said, Does.Contain("odometer of 35000 mi observed on 2026-01-20"));
-				Assert.That(said, Does.Contain("30000 mi recorded when the vehicle was handed over"));
+				Assert.That(said, Does.Contain("odómetro de 35000 mi observado el 2026-01-20"));
+				Assert.That(said, Does.Contain("30000 mi registrados cuando el vehículo se entregó"));
 			}
 		}
 

@@ -103,7 +103,7 @@ namespace DealershipCar.Dominio.Pruebas
 			string sentence = TheSentenceFor(ASystemNobodyPublished);
 
 			Assert.That(sentence, Does.Contain(ASystemNobodyPublished));
-			Assert.That(sentence, Does.Contain("NotPublished"));
+			Assert.That(sentence, Does.Contain("Sin publicar"));
 			Assert.That(sentence, Does.Not.Contain("NotCovered"));
 		}
 

@@ -37,9 +37,9 @@ namespace DealershipCar.Dominio
 		/// <summary>Nombra las dos unidades y dice que no se convierten.</summary>
 		internal override string Describe()
 		{
-			return "distance: cannot be evaluated because the limit is in " + _limitUnit.Name
-				+ " and the measurements are in " + _mismatchedUnit.Name
-				+ ", and units are never converted";
+			return "distancia: no se puede evaluar porque el límite está en " + _limitUnit.Name
+				+ " y las mediciones están en " + _mismatchedUnit.Name
+				+ ", y las unidades nunca se convierten";
 		}
 	}
 }

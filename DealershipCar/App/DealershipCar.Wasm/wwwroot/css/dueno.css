@@ -1,0 +1,1010 @@
+/* ============================================================================
+   La piel del DUENO.
+
+   app.css viste la pantalla que lee un registro. Esta viste la que abre Sonia.
+   Es la misma app y el mismo registro: lo unico que cambia es que aca la
+   jerarquia la decide la pregunta del dueno -- como esta mi carro, que sigue,
+   hasta cuando tengo garantia -- y no el orden en que el dominio compone sus
+   frases.
+
+   La paleta no se invento: sale del canvas de Kenneth (Mi Carro v2), que es el
+   que el equipo ya vio. Los tres colores de estado son los mismos que el usa
+   para verde / ambar / rojo, asi que una pantalla nueva no discute con la que
+   ya esta aprobada.
+
+   REGLA QUE NO SE ROMPE: esta hoja NO inventa datos. Donde el registro no
+   trajo un numero no hay barra a medio llenar ni porcentaje redondeado -- hay
+   un estado con su nombre. Un tablero que rellena huecos con estimaciones se
+   siente mejor y miente, y este es justamente el app que no puede mentir.
+   ========================================================================= */
+
+:root {
+	--d-navy: #0a2244;
+	--d-navy-2: #123159;
+	--d-ink: #0a2a57;
+	--d-ink-2: #41597a;
+	--d-muted: #5b7292;
+	--d-muted-2: #8497b0;
+	--d-line: #dfe7f2;
+	--d-line-soft: #eaf0f8;
+
+	--d-blue: #1f6fff;
+	--d-blue-dark: #0a45a8;
+	--d-blue-tint: #e6efff;
+
+	--d-bg: #eef3fa;
+	--d-card: #ffffff;
+
+	--d-ok: #16a34a;
+	--d-ok-ink: #15803d;
+	--d-ok-tint: #e9f4ec;
+	--d-warn: #e08a0b;
+	--d-warn-ink: #b26f08;
+	--d-warn-tint: #fdf2e0;
+	--d-danger: #e5342a;
+	--d-danger-ink: #c02a21;
+	--d-danger-tint: #fdecec;
+
+	--d-shadow: 0 1px 2px rgba(10, 42, 87, .06), 0 10px 24px rgba(10, 42, 87, .08);
+	--d-shadow-lg: 0 2px 6px rgba(10, 42, 87, .08), 0 22px 48px rgba(10, 42, 87, .14);
+	--d-radius: 18px;
+	--d-radius-sm: 12px;
+}
+
+:root[data-theme="dark"] {
+	--d-navy: #050d1c;
+	--d-navy-2: #0d1c33;
+	--d-ink: #e8eefb;
+	--d-ink-2: #b9c8e0;
+	--d-muted: #90a3c0;
+	--d-muted-2: #6f83a3;
+	--d-line: #1c2b45;
+	--d-line-soft: #16233a;
+
+	--d-blue: #5b96ff;
+	--d-blue-dark: #8ab4ff;
+	--d-blue-tint: #12233f;
+
+	--d-bg: #060c16;
+	--d-card: #0e1929;
+
+	--d-ok: #34c46a;
+	--d-ok-ink: #6bdc95;
+	--d-ok-tint: #10261a;
+	--d-warn: #f0a733;
+	--d-warn-ink: #ffc46b;
+	--d-warn-tint: #2a1f0c;
+	--d-danger: #ff6a5e;
+	--d-danger-ink: #ff9086;
+	--d-danger-tint: #2b1211;
+
+	--d-shadow: 0 1px 2px rgba(0, 0, 0, .4), 0 10px 24px rgba(0, 0, 0, .34);
+	--d-shadow-lg: 0 2px 6px rgba(0, 0, 0, .45), 0 22px 48px rgba(0, 0, 0, .45);
+}
+
+/* --------------------------------------------------------------------------
+   El armazon. La columna es de telefono porque el carro se consulta parado al
+   lado del carro; en pantalla ancha se centra y no se estira, que es lo que ya
+   hacia app.css.
+   ----------------------------------------------------------------------- */
+
+.d {
+	background: var(--d-bg);
+	color: var(--d-ink);
+	min-height: 100dvh;
+	padding-bottom: 96px;
+}
+
+.d__pad {
+	padding: 0 16px;
+}
+
+.d__gap {
+	display: flex;
+	flex-direction: column;
+	gap: 14px;
+}
+
+/* --------------------------------------------------------------------------
+   La cabecera de la agencia. Azul noche, ancho completo, y el nombre de quien
+   lleva el registro -- que es el concesionario y no el dueno.
+   ----------------------------------------------------------------------- */
+
+.d-top {
+	background: linear-gradient(160deg, var(--d-navy) 0%, var(--d-navy-2) 100%);
+	color: #fff;
+	padding: 18px 16px 62px;
+	border-radius: 0 0 26px 26px;
+}
+
+.d-top__bar {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: 12px;
+}
+
+.d-top__brand {
+	display: flex;
+	align-items: center;
+	gap: 10px;
+	min-width: 0;
+}
+
+.d-top__mark {
+	width: 34px;
+	height: 34px;
+	border-radius: 10px;
+	background: rgba(255, 255, 255, .12);
+	display: grid;
+	place-items: center;
+	flex: none;
+}
+
+.d-top__mark svg {
+	width: 17px;
+	height: 17px;
+}
+
+.d-top__brand > span:last-child {
+	display: flex;
+	flex-direction: column;
+	min-width: 0;
+}
+
+.d-top__name {
+	font-size: 15px;
+	font-weight: 800;
+	letter-spacing: .2px;
+	line-height: 1.1;
+}
+
+.d-top__kicker {
+	font-size: 10px;
+	font-weight: 700;
+	letter-spacing: 2px;
+	text-transform: uppercase;
+	color: rgba(255, 255, 255, .62);
+}
+
+.d-top__hello {
+	margin: 20px 0 0;
+	font-size: 25px;
+	font-weight: 800;
+	letter-spacing: -.4px;
+	line-height: 1.18;
+}
+
+.d-top__sub {
+	margin: 6px 0 0;
+	font-size: 14px;
+	color: rgba(255, 255, 255, .72);
+}
+
+/* El bloque de contenido monta sobre la cabecera. */
+.d-lift {
+	margin-top: -48px;
+	position: relative;
+	z-index: 1;
+}
+
+/* --------------------------------------------------------------------------
+   Tarjetas
+   ----------------------------------------------------------------------- */
+
+.d-card {
+	background: var(--d-card);
+	border-radius: var(--d-radius);
+	box-shadow: var(--d-shadow);
+	padding: 16px;
+}
+
+.d-card--flush {
+	padding: 0;
+	overflow: hidden;
+}
+
+.d-card__head {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: 10px;
+	margin-bottom: 12px;
+}
+
+.d-card__title {
+	font-size: 15px;
+	font-weight: 800;
+	letter-spacing: -.2px;
+}
+
+.d-sec {
+	margin: 22px 0 10px;
+	display: flex;
+	align-items: baseline;
+	justify-content: space-between;
+	gap: 10px;
+}
+
+.d-sec__title {
+	font-size: 16px;
+	font-weight: 800;
+	letter-spacing: -.3px;
+}
+
+.d-sec__note {
+	font-size: 12px;
+	color: var(--d-muted);
+}
+
+/* --------------------------------------------------------------------------
+   El semaforo. Tres estados y nada mas: el registro no tiene medias tintas.
+   ----------------------------------------------------------------------- */
+
+.d-pill {
+	display: inline-flex;
+	align-items: center;
+	gap: 6px;
+	padding: 5px 11px;
+	border-radius: 999px;
+	font-size: 12px;
+	font-weight: 800;
+	letter-spacing: .1px;
+	white-space: nowrap;
+}
+
+.d-pill--ok {
+	background: var(--d-ok-tint);
+	color: var(--d-ok-ink);
+}
+
+.d-pill--warn {
+	background: var(--d-warn-tint);
+	color: var(--d-warn-ink);
+}
+
+.d-pill--danger {
+	background: var(--d-danger-tint);
+	color: var(--d-danger-ink);
+}
+
+.d-pill--info {
+	background: var(--d-blue-tint);
+	color: var(--d-blue-dark);
+}
+
+.d-pill--mute {
+	background: var(--d-line-soft);
+	color: var(--d-muted);
+}
+
+/* --------------------------------------------------------------------------
+   Estado del vehiculo: la tarjeta que contesta "como esta mi carro".
+
+   El numero grande es UNA CUENTA, no una nota. Dice cuantas de las nueve
+   operaciones estan al dia, porque eso es lo que el registro sabe. Un 92/100
+   se leeria mejor y seria un invento: nadie midio el motor.
+   ----------------------------------------------------------------------- */
+
+.d-health {
+	display: grid;
+	grid-template-columns: auto 1fr;
+	gap: 16px;
+	align-items: center;
+}
+
+.d-health__score {
+	display: flex;
+	align-items: baseline;
+	gap: 2px;
+	font-variant-numeric: tabular-nums;
+}
+
+.d-health__n {
+	font-size: 46px;
+	font-weight: 800;
+	letter-spacing: -2px;
+	line-height: 1;
+}
+
+.d-health__of {
+	font-size: 17px;
+	font-weight: 700;
+	color: var(--d-muted-2);
+}
+
+.d-health__body {
+	min-width: 0;
+}
+
+.d-health__what {
+	font-size: 13px;
+	color: var(--d-muted);
+	margin: 0 0 8px;
+}
+
+.d-bar {
+	height: 8px;
+	border-radius: 999px;
+	background: var(--d-line-soft);
+	overflow: hidden;
+}
+
+.d-bar__fill {
+	height: 100%;
+	border-radius: 999px;
+	background: var(--d-ok);
+	transition: width .4s ease;
+}
+
+.d-bar__fill--warn {
+	background: var(--d-warn);
+}
+
+.d-bar__fill--danger {
+	background: var(--d-danger);
+}
+
+.d-health__counts {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 6px;
+	margin-top: 12px;
+}
+
+/* --------------------------------------------------------------------------
+   Lo que sigue. Una sola cosa, grande, con el color de su urgencia.
+   ----------------------------------------------------------------------- */
+
+.d-next {
+	border-radius: var(--d-radius);
+	padding: 16px;
+	display: grid;
+	grid-template-columns: 46px 1fr;
+	gap: 14px;
+	align-items: start;
+}
+
+.d-next--ok {
+	background: var(--d-ok-tint);
+}
+
+.d-next--warn {
+	background: var(--d-warn-tint);
+}
+
+.d-next--danger {
+	background: var(--d-danger-tint);
+}
+
+.d-next__icon {
+	width: 46px;
+	height: 46px;
+	border-radius: 14px;
+	display: grid;
+	place-items: center;
+	background: var(--d-card);
+	box-shadow: var(--d-shadow);
+}
+
+.d-next__kicker {
+	font-size: 11px;
+	font-weight: 800;
+	letter-spacing: 1.4px;
+	text-transform: uppercase;
+	margin-bottom: 3px;
+}
+
+.d-next--ok .d-next__kicker,
+.d-next--ok .d-next__icon svg {
+	color: var(--d-ok-ink);
+}
+
+.d-next--warn .d-next__kicker,
+.d-next--warn .d-next__icon svg {
+	color: var(--d-warn-ink);
+}
+
+.d-next--danger .d-next__kicker,
+.d-next--danger .d-next__icon svg {
+	color: var(--d-danger-ink);
+}
+
+.d-next__title {
+	font-size: 20px;
+	font-weight: 800;
+	letter-spacing: -.5px;
+	line-height: 1.2;
+}
+
+.d-next__more {
+	margin-top: 8px;
+}
+
+/* Lo que el registro dice, con sus palabras. Va plegado: es la letra chica,
+   no el titular. */
+.d-says {
+	margin-top: 10px;
+	font-size: 13px;
+	line-height: 1.55;
+	color: var(--d-ink-2);
+	background: var(--d-card);
+	border-radius: var(--d-radius-sm);
+	padding: 11px 13px;
+}
+
+.d-says__label {
+	display: block;
+	font-size: 10px;
+	font-weight: 800;
+	letter-spacing: 1.4px;
+	text-transform: uppercase;
+	color: var(--d-muted-2);
+	margin-bottom: 5px;
+}
+
+/* El unico boton grande de la app. Es un ENLACE (abre WhatsApp con el mensaje
+   escrito): la app no manda nada por su cuenta. */
+.d-cta {
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	gap: 9px;
+	margin-top: 14px;
+	padding: 13px 16px;
+	border-radius: 14px;
+	background: var(--d-blue);
+	color: #fff;
+	font-size: 15px;
+	font-weight: 800;
+	letter-spacing: -.1px;
+	text-decoration: none;
+	box-shadow: 0 8px 20px rgba(31, 111, 255, .28);
+}
+
+.d-cta:hover {
+	background: var(--d-blue-dark);
+	color: #fff;
+}
+
+.d-cta svg {
+	color: #fff;
+}
+
+.d-link {
+	background: none;
+	border: 0;
+	padding: 0;
+	font: inherit;
+	font-size: 13px;
+	font-weight: 700;
+	color: var(--d-blue);
+	cursor: pointer;
+}
+
+.d-link:hover {
+	color: var(--d-blue-dark);
+}
+
+/* --------------------------------------------------------------------------
+   Los numeros que el registro si tiene, en fila.
+   ----------------------------------------------------------------------- */
+
+.d-tiles {
+	display: grid;
+	grid-template-columns: repeat(2, 1fr);
+	gap: 10px;
+}
+
+.d-tile {
+	background: var(--d-card);
+	border-radius: var(--d-radius-sm);
+	padding: 13px 14px;
+	box-shadow: var(--d-shadow);
+}
+
+.d-tile__v {
+	font-size: 22px;
+	font-weight: 800;
+	letter-spacing: -.8px;
+	font-variant-numeric: tabular-nums;
+	line-height: 1.1;
+}
+
+.d-tile__u {
+	font-size: 12px;
+	font-weight: 700;
+	color: var(--d-muted-2);
+	margin-left: 3px;
+}
+
+.d-tile__k {
+	font-size: 12px;
+	color: var(--d-muted);
+	margin-top: 4px;
+	line-height: 1.35;
+}
+
+/* --------------------------------------------------------------------------
+   Las nueve. Cada una con su punto de color: sin porcentaje, porque no hay.
+   ----------------------------------------------------------------------- */
+
+/* Tres por fila: las nueve caben justas en un 3x3 y a cada nombre le queda
+   sitio para no partirse por la mitad. */
+.d-dots {
+	display: grid;
+	grid-template-columns: repeat(3, 1fr);
+	gap: 14px 8px;
+}
+
+.d-dot {
+	text-align: center;
+	min-width: 0;
+}
+
+.d-dot__ring {
+	width: 46px;
+	height: 46px;
+	margin: 0 auto 6px;
+	border-radius: 50%;
+	display: grid;
+	place-items: center;
+	border: 2.5px solid var(--d-line);
+	background: var(--d-card);
+}
+
+.d-dot__ring--ok {
+	border-color: var(--d-ok);
+	color: var(--d-ok);
+}
+
+.d-dot__ring--warn {
+	border-color: var(--d-warn);
+	color: var(--d-warn);
+}
+
+.d-dot__ring--danger {
+	border-color: var(--d-danger);
+	color: var(--d-danger);
+}
+
+.d-dot__ring--mute {
+	color: var(--d-muted-2);
+}
+
+.d-dot__k {
+	font-size: 10.5px;
+	font-weight: 700;
+	color: var(--d-ink-2);
+	line-height: 1.2;
+	overflow-wrap: anywhere;
+}
+
+/* --------------------------------------------------------------------------
+   Linea de tiempo de las operaciones.
+   ----------------------------------------------------------------------- */
+
+.d-line {
+	position: relative;
+	padding-left: 26px;
+}
+
+.d-line::before {
+	content: "";
+	position: absolute;
+	left: 8px;
+	top: 10px;
+	bottom: 10px;
+	width: 2px;
+	background: var(--d-line);
+	border-radius: 2px;
+}
+
+.d-step {
+	position: relative;
+	padding: 0 0 18px;
+}
+
+.d-step:last-child {
+	padding-bottom: 0;
+}
+
+.d-step__bullet {
+	position: absolute;
+	left: -26px;
+	top: 2px;
+	width: 18px;
+	height: 18px;
+	border-radius: 50%;
+	display: grid;
+	place-items: center;
+	background: var(--d-card);
+	border: 2.5px solid var(--d-line);
+	color: var(--d-muted-2);
+}
+
+.d-step__bullet--ok {
+	border-color: var(--d-ok);
+	color: var(--d-ok);
+}
+
+.d-step__bullet--warn {
+	border-color: var(--d-warn);
+	color: var(--d-warn);
+}
+
+.d-step__bullet--danger {
+	border-color: var(--d-danger);
+	color: var(--d-danger);
+}
+
+.d-step__when {
+	font-size: 11px;
+	font-weight: 800;
+	letter-spacing: 1.2px;
+	text-transform: uppercase;
+	color: var(--d-muted-2);
+}
+
+.d-step__when--ok {
+	color: var(--d-ok-ink);
+}
+
+.d-step__when--warn {
+	color: var(--d-warn-ink);
+}
+
+.d-step__when--danger {
+	color: var(--d-danger-ink);
+}
+
+.d-step__title {
+	font-size: 15.5px;
+	font-weight: 800;
+	letter-spacing: -.2px;
+	margin: 1px 0 3px;
+}
+
+.d-step__sub {
+	font-size: 12.5px;
+	line-height: 1.5;
+	color: var(--d-muted);
+}
+
+/* --------------------------------------------------------------------------
+   Mi vehiculo: la foto grande manda.
+   ----------------------------------------------------------------------- */
+
+.d-hero {
+	position: relative;
+	border-radius: var(--d-radius);
+	overflow: hidden;
+	box-shadow: var(--d-shadow-lg);
+	background: var(--d-card);
+}
+
+.d-hero__img {
+	display: block;
+	width: 100%;
+	aspect-ratio: 488 / 245;
+	object-fit: cover;
+}
+
+.d-hero__cap {
+	position: absolute;
+	left: 0;
+	right: 0;
+	bottom: 0;
+	padding: 34px 16px 14px;
+	color: #fff;
+	background: linear-gradient(to top, rgba(6, 20, 42, .88) 12%, rgba(6, 20, 42, 0) 100%);
+}
+
+.d-hero__model {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+	flex-wrap: wrap;
+}
+
+.d-hero__name {
+	font-size: 21px;
+	font-weight: 800;
+	letter-spacing: -.5px;
+}
+
+.d-hero__tag {
+	font-size: 11px;
+	font-weight: 800;
+	letter-spacing: .6px;
+	padding: 3px 8px;
+	border-radius: 7px;
+	background: rgba(255, 255, 255, .18);
+}
+
+.d-hero__odo {
+	font-size: 14px;
+	font-weight: 700;
+	color: rgba(255, 255, 255, .9);
+	margin-top: 3px;
+	font-variant-numeric: tabular-nums;
+}
+
+.d-hero__vin {
+	font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+	font-size: 11px;
+	color: rgba(255, 255, 255, .68);
+	margin-top: 2px;
+}
+
+/* Pestanas de la hoja del vehiculo. */
+.d-subtabs {
+	display: flex;
+	gap: 2px;
+	border-bottom: 1.5px solid var(--d-line);
+	margin: 16px 0 4px;
+	overflow-x: auto;
+	scrollbar-width: none;
+}
+
+.d-subtabs::-webkit-scrollbar {
+	display: none;
+}
+
+.d-subtab {
+	flex: 1 0 auto;
+	background: none;
+	border: 0;
+	border-bottom: 2.5px solid transparent;
+	margin-bottom: -1.5px;
+	padding: 10px 12px;
+	font: inherit;
+	font-size: 13px;
+	font-weight: 700;
+	color: var(--d-muted);
+	cursor: pointer;
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	gap: 4px;
+	white-space: nowrap;
+}
+
+.d-subtab--on {
+	color: var(--d-blue);
+	border-bottom-color: var(--d-blue);
+}
+
+/* Filas de datos del vehiculo. */
+.d-rows {
+	display: flex;
+	flex-direction: column;
+}
+
+.d-row {
+	display: flex;
+	align-items: baseline;
+	justify-content: space-between;
+	gap: 14px;
+	padding: 11px 0;
+	border-bottom: 1px solid var(--d-line-soft);
+	font-size: 14px;
+}
+
+.d-row:last-child {
+	border-bottom: 0;
+}
+
+.d-row__k {
+	color: var(--d-muted);
+}
+
+.d-row__v {
+	font-weight: 700;
+	text-align: right;
+	overflow-wrap: anywhere;
+}
+
+/* Cuando el valor es una frase y no un numero, va debajo de la etiqueta y a la
+   izquierda: partir una oracion en una columna angosta a la derecha la hace
+   ilegible. */
+.d-row--stack {
+	flex-direction: column;
+	align-items: stretch;
+	gap: 3px;
+}
+
+.d-row--stack .d-row__k {
+	font-size: 12px;
+	font-weight: 700;
+	letter-spacing: .3px;
+	text-transform: uppercase;
+	color: var(--d-muted-2);
+}
+
+.d-row--stack .d-row__v {
+	text-align: left;
+	font-weight: 500;
+	line-height: 1.5;
+	color: var(--d-ink-2);
+}
+
+.d-row__v--mono {
+	font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+	font-size: 12.5px;
+	font-weight: 600;
+}
+
+/* Garantia resumida. */
+.d-cover {
+	border-radius: var(--d-radius);
+	padding: 16px;
+	display: grid;
+	grid-template-columns: 42px 1fr;
+	gap: 14px;
+	align-items: start;
+}
+
+.d-cover--ok {
+	background: var(--d-ok-tint);
+}
+
+.d-cover--warn {
+	background: var(--d-warn-tint);
+}
+
+.d-cover--mute {
+	background: var(--d-line-soft);
+}
+
+.d-cover__icon {
+	width: 42px;
+	height: 42px;
+	border-radius: 13px;
+	display: grid;
+	place-items: center;
+	background: var(--d-card);
+	box-shadow: var(--d-shadow);
+}
+
+.d-cover--ok .d-cover__icon svg {
+	color: var(--d-ok);
+}
+
+.d-cover--warn .d-cover__icon svg {
+	color: var(--d-warn);
+}
+
+.d-cover--mute .d-cover__icon svg {
+	color: var(--d-muted-2);
+}
+
+.d-cover__title {
+	font-size: 16px;
+	font-weight: 800;
+	letter-spacing: -.2px;
+}
+
+.d-cover__body {
+	font-size: 13px;
+	line-height: 1.55;
+	color: var(--d-ink-2);
+	margin-top: 4px;
+}
+
+/* --------------------------------------------------------------------------
+   Aviso honesto: lo que el concesionario todavia no publico.
+   ----------------------------------------------------------------------- */
+
+.d-empty {
+	border: 1.5px dashed var(--d-line);
+	border-radius: var(--d-radius);
+	padding: 20px 16px;
+	text-align: center;
+	color: var(--d-muted);
+	font-size: 13px;
+	line-height: 1.6;
+}
+
+.d-empty__title {
+	display: block;
+	font-size: 15px;
+	font-weight: 800;
+	color: var(--d-ink);
+	margin-bottom: 6px;
+	letter-spacing: -.2px;
+}
+
+.d-note {
+	font-size: 12.5px;
+	line-height: 1.55;
+	color: var(--d-muted);
+	display: flex;
+	gap: 7px;
+	align-items: flex-start;
+}
+
+.d-note svg {
+	flex: none;
+	margin-top: 2px;
+	color: var(--d-muted-2);
+}
+
+/* --------------------------------------------------------------------------
+   La barra de abajo, con las cinco.
+   ----------------------------------------------------------------------- */
+
+.d-tabbar {
+	position: fixed;
+	left: 50%;
+	transform: translateX(-50%);
+	bottom: 12px;
+	width: min(calc(100% - 24px), 452px);
+	display: grid;
+	grid-template-columns: repeat(5, 1fr);
+	background: var(--d-card);
+	border-radius: 20px;
+	box-shadow: var(--d-shadow-lg);
+	padding: 8px 4px;
+	z-index: 40;
+}
+
+.d-tabbar__item {
+	background: none;
+	border: 0;
+	padding: 5px 2px;
+	font: inherit;
+	font-size: 10px;
+	font-weight: 700;
+	color: var(--d-muted-2);
+	cursor: pointer;
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	gap: 4px;
+	border-radius: 13px;
+	line-height: 1.15;
+	text-align: center;
+}
+
+.d-tabbar__item--on {
+	color: var(--d-blue);
+}
+
+.d-tabbar__item:hover {
+	color: var(--d-ink-2);
+}
+
+.d-tabbar__item--on:hover {
+	color: var(--d-blue);
+}
+
+/* --------------------------------------------------------------------------
+   Pantalla ancha: la columna no se estira, se centra.
+   ----------------------------------------------------------------------- */
+
+.d__col {
+	width: min(100%, 452px);
+	margin: 0 auto;
+}
+
+@media (min-width: 900px) {
+	.d {
+		padding-bottom: 40px;
+	}
+
+	.d__col {
+		width: min(100%, 980px);
+	}
+
+	.d-two {
+		display: grid;
+		grid-template-columns: 1fr 1fr;
+		gap: 14px;
+		align-items: start;
+	}
+
+	.d-tiles {
+		grid-template-columns: repeat(4, 1fr);
+	}
+}

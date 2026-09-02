@@ -54,7 +54,7 @@ namespace DealershipCar.Dominio
 		/// </summary>
 		internal override string Describe()
 		{
-			return _subject + ": " + _standing.Name + ". " + _clause;
+			return _subject + ": " + _standing.HowItIsSaid + ". " + _clause;
 		}
 	}
 }

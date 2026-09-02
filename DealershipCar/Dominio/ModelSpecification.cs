@@ -245,7 +245,7 @@ namespace DealershipCar.Dominio
 					candidate, candidate.DescribeFluidSpecification(kind));
 			}
 
-			return UnpublishedIsAnAnswer(asked.Name);
+			return UnpublishedIsAnAnswer(asked.HowItIsSaid);
 		}
 
 		/// <summary>La misma ley para la llanta de una posicion.</summary>
@@ -733,7 +733,7 @@ namespace DealershipCar.Dominio
 		internal SpecificationAnswer ARevisionAppliesForwardToTheWarrantyScope()
 		{
 			if (!ARevisionAnswersAboutCoverage())
-				return UnpublishedIsAnAnswer("Warranty coverage");
+				return UnpublishedIsAnAnswer("La cobertura de garantía");
 
 			PublishedRevision answering = TheRevisionThatAnswersAboutCoverage();
 
@@ -1003,23 +1003,26 @@ namespace DealershipCar.Dominio
 			return OnlyASealedRevisionAnswers(candidate) && candidate.HasWarrantyCoverage();
 		}
 
-		private const string TheSubjectOfTheFuel = "Fuel grades";
-		private const string TheSubjectOfTheServicingPolicy = "The servicing-elsewhere rule";
+		private const string TheSubjectOfTheFuel = "Grados de combustible";
+		private const string TheSubjectOfTheServicingPolicy =
+			"La regla de servicio en otro taller";
 
 		private static string TheSubjectOfATyre(TyrePositionCode position)
 		{
-			return TyrePosition.OfCode(position).Name + " tyre";
+			return "Llanta " + TyrePosition.OfCode(position).HowItIsSaid.ToLowerInvariant();
 		}
 
 		private static string TheSubjectOfAServiceInterval(OperationKindCode kind)
 		{
-			return MaintenanceOperationKind.OfCode(kind).Name + " service interval";
+			return "Intervalo de servicio de "
+				+ MaintenanceOperationKind.OfCode(kind).HowItIsSaid.ToLowerInvariant();
 		}
 
 		private static string TheSubjectOfAServicePrice(OperationKindCode kind)
 		{
-			return MaintenanceOperationKind.OfCode(kind).Name
-				+ " service price at the milestone asked about";
+			return "Precio del servicio de "
+				+ MaintenanceOperationKind.OfCode(kind).HowItIsSaid.ToLowerInvariant()
+				+ " en el hito preguntado";
 		}
 
 		private static PublishedMilestone TheMilestone(

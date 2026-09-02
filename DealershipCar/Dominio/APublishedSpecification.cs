@@ -35,7 +35,7 @@ namespace DealershipCar.Dominio
 		/// </summary>
 		internal override string Describe()
 		{
-			return _clause + " Published in revision " + _revision.Code + ".";
+			return _clause + " Publicado en la revisión " + _revision.Code + ".";
 		}
 
 		/// <summary>El codigo de la revision que la publico.</summary>

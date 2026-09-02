@@ -137,12 +137,11 @@ namespace DealershipCar.Dominio
 		internal string Describe()
 		{
 			if (_state == DueState.Deferred) return TheDeferralSentence();
-			if (_state == DueState.Completed) return "Completed.";
-			if (_state == DueState.Superseded) return "Superseded.";
+			if (_state == DueState.Completed) return "Hecha.";
+			if (_state == DueState.Superseded) return "Sustituida.";
 
 			if (_conditionThresholdCrossed && _state == DueState.Due)
-				return "Due because a condition threshold crossing was received for this "
-					+ "operation.";
+				return "Vencida porque llegó un cruce de umbral observado para esta operación.";
 
 			return _standing.Describe();
 		}
@@ -346,9 +345,9 @@ namespace DealershipCar.Dominio
 		{
 			Deferral latest = _deferrals[_deferrals.Count - 1];
 
-			return "Deferred until " + latest.WindowEndsAt.ToString("yyyy-MM-dd")
-				+ " because " + latest.Reason.Name + ". " + _deferrals.Count + " of "
-				+ SchedulePolicy.MaxDeferralsPerOperation + " deferrals used.";
+			return "Aplazada hasta el " + latest.WindowEndsAt.ToString("yyyy-MM-dd")
+				+ " por " + latest.Reason.HowItIsSaid + ". " + _deferrals.Count + " de "
+				+ SchedulePolicy.MaxDeferralsPerOperation + " aplazamientos usados.";
 		}
 	}
 }

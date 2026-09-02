@@ -1,5 +1,6 @@
 @page "/"
 @inject AppState state
+@inject DealershipSettings dealership
 @inject NavigationManager nav
 
 @{
@@ -41,11 +42,12 @@
         @if (error.Length > 0)
         {
             <Notice Tone="danger" Id="error"
-                    Title="@(state.IsUp ? "The operation could not be completed." : "The app could not be opened.")">
-                This is a fault in the app, not something you did. The details name the step that failed.
+                    Title="@(state.IsUp ? "No se pudo completar la operación." : "No se pudo abrir la app.")">
+                Esto es una falla de la app, no algo que hayas hecho vos. El detalle nombra el
+                paso que falló.
                 <button class="linkbtn" type="button" id="show-error-detail"
                         @onclick="@(() => errorDetail = !errorDetail)">
-                    @(errorDetail ? "hide details" : "details")
+                    @(errorDetail ? "ocultar detalle" : "detalle")
                 </button>
                 @if (errorDetail || showInstrument)
                 {
@@ -56,7 +58,7 @@
 
         @if (destinationProblem.Length > 0)
         {
-            <Notice Tone="danger" Id="destination-problem" Title="The browser said no.">
+            <Notice Tone="danger" Id="destination-problem" Title="El navegador dijo que no.">
                 @destinationProblem
             </Notice>
         }
@@ -67,18 +69,18 @@
 {
     <div class="page-head page-head--row">
         <div>
-            <h1 class="page-title">@(state.NeedsRegrant ? "Welcome back" : "My maintenance schedule")</h1>
+            <h1 class="page-title">@(state.NeedsRegrant ? "Bienvenido de vuelta" : "Mi plan de mantenimiento")</h1>
             <p class="page-sub">
                 @if (state.NeedsRegrant)
                 {
                     <span>
-                        Your folder is <strong>&laquo;@state.FolderName&raquo;</strong>. The browser asks
-                        you to confirm write permission every time you reopen the app.
+                        Tu carpeta es <strong>&laquo;@state.FolderName&raquo;</strong>. El navegador te
+                        pide confirmar el permiso de escritura cada vez que volvés a abrir la app.
                     </span>
                 }
                 else
                 {
-                    <span>This app keeps <strong>your</strong> maintenance record. Choose where.</span>
+                    <span>Esta app guarda <strong>tu</strong> registro de mantenimiento. Elegí dónde.</span>
                 }
             </p>
         </div>
@@ -91,15 +93,15 @@
             <div class="notice__stack">
                 <button class="btn" type="button" id="regrant" @onclick="RequestPermission">
                     <Glyph Name="lock" Size="18" />
-                    Grant permission to &laquo;@state.FolderName&raquo;
+                    Dar permiso a &laquo;@state.FolderName&raquo;
                 </button>
                 <button class="btn btn--ghost" type="button" id="choose-folder" @onclick="ConnectFolder"
                         disabled="@(pickerSupported == false)">
                     <Glyph Name="folder" Size="18" />
-                    Choose a different folder
+                    Elegir otra carpeta
                 </button>
                 <button class="btn btn--quiet" type="button" id="forget-folder" @onclick="ForgetFolder">
-                    Forget this folder
+                    Olvidar esta carpeta
                 </button>
             </div>
         }
@@ -108,18 +110,18 @@
             @if (noStorage == "insecure")
             {
                 <Notice Tone="warn" Id="no-storage-insecure"
-                        Title="This page is not on a secure connection">
-                    The browser will not let it save anything &mdash; any browser would do the same.
-                    Open it over <span class="mono">https</span>, or over
+                        Title="Esta página no está en una conexión segura">
+                    El navegador no la va a dejar guardar nada &mdash; cualquier navegador haría lo
+                    mismo. Abrila por <span class="mono">https</span>, o por
                     <span class="mono">localhost</span>.
                 </Notice>
             }
             else if (noStorage == "browser")
             {
                 <Notice Tone="warn" Id="no-storage-browser"
-                        Title="This browser cannot save anything for this app.">
-                    It has neither a folder picker nor private storage. Opening the app in another
-                    browser is the way out.
+                        Title="Este navegador no puede guardar nada para esta app.">
+                    No tiene ni selector de carpetas ni almacenamiento propio. La salida es abrir la
+                    app en otro navegador.
                 </Notice>
             }
 
@@ -128,12 +130,12 @@
                 <div class="card card--pad">
                     <button class="btn" type="button" id="choose-folder" @onclick="ConnectFolder">
                         <Glyph Name="folder" Size="18" />
-                        Choose a folder
+                        Elegir una carpeta
                     </button>
                     <p class="note note--tight">
-                        The record lives in a folder of yours, and <strong>your assistant can read
-                        it</strong> &mdash; that is what the MCP server reads. This is the one that
-                        makes the app worth having.
+                        El registro vive en una carpeta tuya, y <strong>tu asistente puede
+                        leerla</strong> &mdash; eso es lo que lee el servidor MCP. Esta es la opción
+                        que hace que valga la pena tener la app.
                     </p>
                 </div>
             }
@@ -144,370 +146,176 @@
                     <button class="btn btn--ghost" type="button" id="use-browser-storage"
                             @onclick="UseBrowserStorage">
                         <Glyph Name="storage" Size="18" />
-                        @(installedApp ? "Save inside this app" : "Save in this browser")
+                        @(installedApp ? "Guardar dentro de esta app" : "Guardar en este navegador")
                     </button>
                     <p class="note note--tight">
-                        It survives closing, but it is <strong>not a folder of yours</strong> and your
-                        assistant <strong>cannot read it</strong>. The folder picker is desktop Chromium
-                        only, so this is the fallback, not an equal choice.
+                        Sobrevive al cerrar, pero <strong>no es una carpeta tuya</strong> y tu
+                        asistente <strong>no puede leerla</strong>. El selector de carpetas existe
+                        solo en Chromium de escritorio, así que esto es el recurso de reserva y no
+                        una opción equivalente.
                     </p>
                 </div>
             }
         }
 
         <button class="btn btn--quiet" type="button" id="open-without-saving" @onclick="Open">
-            Open without saving anything
+            Abrir sin guardar nada
         </button>
-    </div>
-}
-else if (tab == "home")
-{
-    <section class="@($"hero {heroTone}")" id="hero">
-        <div class="hero__photo">
-            <img src="img/road.jpg" alt="" />
-        </div>
-        <div class="hero__glow"></div>
-
-        <div class="hero__inner">
-            <div class="hero__brand">
-                <SotaventoMark Size="34" Tile="rgba(255,255,255,.16)" Slash="#FFFFFF" />
-                <div>
-                    <div class="hero__brand-name">Sotavento Motors</div>
-                    <div class="hero__brand-tag">Owner services</div>
-                </div>
-                <span class="spacer"></span>
-                <AppearanceToggle OnNight="true" />
-            </div>
-
-            <div class="hero__gap"></div>
-
-            <div class="hero__pill"><span></span>@heroPill</div>
-            <h1 class="hero__title" id="next-due">@heroTitle</h1>
-
-            <div class="hero__meter" id="odometer">
-                <div class="hero__meter-label">Latest odometer reading</div>
-                <div class="hero__meter-value">
-                    <b>@heroReading</b>
-                    <i>@heroReadingUnit</i>
-                </div>
-                <div class="hero__meter-note">@heroReadingNote</div>
-            </div>
-
-            <p class="hero__line" id="hero-line">@heroLine</p>
-
-            <button class="cta" type="button" id="refresh" @onclick="Refresh" disabled="@refreshing">
-                @(refreshing ? "Refreshing…" : "Refresh")
-                <Glyph Name="sync" Size="18" Stroke="2.2" />
-            </button>
-
-            <div class="hero__tail"></div>
-        </div>
-    </section>
-
-    <div class="stack">
-        <div class="notice__stack">
-            @if (state.NeedsRegrant)
-            {
-                <Notice Tone="danger" Id="needs-regrant"
-                        Title="@($"Your folder «{state.FolderName}» is read-only for this app.")">
-                    The browser grants permission to <em>write</em> separately from letting you pick the
-                    folder, and it withdraws it when you reopen the app. Until you grant it again,
-                    <strong>nothing you do here is being saved</strong> and your assistant is reading an
-                    older version.
-                    <span class="notice__actions">
-                        <button class="btn btn--sm" type="button" id="regrant" @onclick="RequestPermission">
-                            <Glyph Name="lock" Size="16" />
-                            Grant write access
-                        </button>
-                    </span>
-                </Notice>
-            }
-            else if (!state.HasFolder)
-            {
-                <Notice Tone="warn" Id="not-saving" Title="Nothing is being saved.">
-                    No record of yours is kept &mdash; what you see is re-fetched every time you open the
-                    app.
-                    <span class="notice__actions">
-                        @if (pickerSupported == true)
-                        {
-                            <button class="btn btn--sm" type="button" id="choose-folder"
-                                    @onclick="ConnectFolder">
-                                <Glyph Name="folder" Size="16" />
-                                Choose a folder
-                            </button>
-                        }
-                        else if (browserStorageSupported == true)
-                        {
-                            <button class="btn btn--sm" type="button" id="use-browser-storage"
-                                    @onclick="UseBrowserStorage">
-                                <Glyph Name="storage" Size="16" />
-                                Save in this browser
-                            </button>
-                        }
-                        else
-                        {
-                            <span class="note">
-                                This browser offers neither a folder picker nor its own storage, so there
-                                is nothing to attach. Open this app in Chrome or Edge directly.
-                            </span>
-                        }
-                    </span>
-                </Notice>
-            }
-            else if (state.SavingIsFailing.Length > 0)
-            {
-                <Notice Tone="danger" Id="saving-failing" Title="The folder refused the write.">
-                    What you see is <strong>not</strong> saved in &laquo;@state.FolderName&raquo;. It is
-                    usually the permission, which expires when you reopen the app.
-                    <span class="detail">@state.SavingIsFailing</span>
-                    <span class="notice__actions">
-                        <button class="btn btn--sm" type="button" id="regrant" @onclick="RequestPermission">
-                            <Glyph Name="lock" Size="16" />
-                            Grant permission again
-                        </button>
-                    </span>
-                </Notice>
-            }
-
-            @if (state.DealershipUnreachable.Length > 0)
-            {
-                <Notice Tone="warn" Id="dealership-unreachable"
-                        Title="This is your own record, not today's news from the dealership.">
-                    The app could not reach it when it opened, so anything the dealership sent since the
-                    last time is not here yet. Everything below is what your record already holds.
-                    <span class="detail">@state.DealershipUnreachable</span>
-                    <span class="notice__actions">
-                        <button class="btn btn--sm" type="button" id="retry-dealership" @onclick="Refresh">
-                            <Glyph Name="sync" Size="16" />
-                            Try again
-                        </button>
-                    </span>
-                </Notice>
-            }
-
-            @if (state.EvaluationSkipped.Length > 0)
-            {
-                <Notice Tone="warn" Id="evaluation-skipped" Title="This is not today's reading.">
-                    @state.EvaluationSkipped
-                </Notice>
-            }
-
-            @if (state.InBrowserStorage)
-            {
-                <div class="statusline" id="in-browser-storage">
-                    <Glyph Name="storage" Size="13" Stroke="2" />
-                    <span>
-                        @(installedApp ? "Saving inside this app" : "Saving in this browser") &mdash; your
-                        assistant cannot read it.
-                        <button class="linkbtn" type="button" id="why-browser-storage"
-                                @onclick="@(() => whyBrowserStorage = !whyBrowserStorage)">
-                            @(whyBrowserStorage ? "hide" : "why?")
-                        </button>
-                        @if (whyBrowserStorage)
-                        {
-                            <span class="statusline__more">
-                                Your record survives closing, but it lives in this browser's private
-                                storage. Your assistant reads a <strong>folder of yours</strong>, from
-                                outside the browser, and @(installedApp ? "here" : "this browser") does
-                                not allow one.
-                            </span>
-                        }
-                    </span>
-                </div>
-            }
-            else if (state.HasFolder && state.SavingIsFailing.Length == 0 && !state.NeedsRegrant)
-            {
-                <div class="statusline" id="in-own-folder">
-                    <Glyph Name="check" Size="13" Stroke="2.6" />
-                    <span>Saved to &laquo;@state.FolderName&raquo; after every change.</span>
-                </div>
-            }
-
-            <div class="statusline" id="evaluated-up-to">
-                <Glyph Name="clock" Size="13" Stroke="2" />
-                <span>
-                    @(evaluatedUpTo.Length > 0 ? $"Evaluated as of {evaluatedUpTo}" : "Not evaluated yet")
-                </span>
-            </div>
-        </div>
-
-        <section class="block">
-            <div class="block__label">The nine at a glance</div>
-            <div class="stats">
-                <div class="stat" id="stat-overdue">
-                    <span class="stat__value stat__value--danger">@overdue</span>
-                    <span class="stat__label">Overdue</span>
-                </div>
-                <div class="stat" id="stat-due">
-                    <span class="stat__value stat__value--warn">@due</span>
-                    <span class="stat__label">Due</span>
-                </div>
-                <div class="stat" id="stat-missed">
-                    <span class="stat__value">@missed</span>
-                    <span class="stat__label">Missed maintenance</span>
-                </div>
-            </div>
-        </section>
-
-        <section class="block">
-            <div class="block__label">What needs you</div>
-            <p class="note note--tight" id="who-keeps-this">
-                Your dealership keeps this record and is the only one who changes it. Here you read it.
-            </p>
-
-            <div class="rowlist" id="board">
-                @if (moving.Count == 0)
-                {
-                    <p class="note" id="none-moving">
-                        None of the nine is due, due soon, overdue or put off. Every one of them is under
-                        &laquo;All in order&raquo; below, with the schedule's own reason.
-                    </p>
-                }
-                else
-                {
-                    @foreach (string kind in moving)
-                    {
-                        @Moving(kind)
-                    }
-                }
-            </div>
-        </section>
-
-        <section class="block">
-            <div class="block__label">All in order</div>
-
-            <button class="disclosure disclosure--ok" type="button" id="settled-toggle"
-                    @onclick="@(() => showSettled = !showSettled)">
-                <span class="bullet bullet--sm bullet--ok">
-                    <Glyph Name="check" Size="13" Stroke="3" />
-                </span>
-                <span>@settled.Count of the nine are settled</span>
-                <span class="disclosure__more">@(showSettled ? "Hide" : "Show all")</span>
-            </button>
-
-            @if (showSettled)
-            {
-                <div class="card cardlist" id="settled">
-                    @foreach (string kind in settled)
-                    {
-                        @Settled(kind)
-                    }
-                </div>
-            }
-        </section>
-
-        @if (showInstrument)
-        {
-            <section class="block" id="instrument">
-                <div class="block__label">What this app is doing</div>
-                <div class="card card--pad">
-                    <div class="keyrows">
-                        <div class="keyrow" id="i-entries">
-                            <span class="keyrow__k">journal entries</span>
-                            <span class="keyrow__v">@entries</span>
-                        </div>
-                        <div class="keyrow" id="i-memfs">
-                            <span class="keyrow__k">memfs</span>
-                            <span class="keyrow__v">@memfsFiles files, @memfsBytes bytes</span>
-                        </div>
-                        <div class="keyrow" id="i-mode">
-                            <span class="keyrow__k">destination</span>
-                            <span class="keyrow__v">@Destination()</span>
-                        </div>
-                        <div class="keyrow" id="i-permission">
-                            <span class="keyrow__k">permission</span>
-                            <span class="keyrow__v">@permission</span>
-                        </div>
-                        <div class="keyrow" id="i-dealership">
-                            <span class="keyrow__k">dealership</span>
-                            <span class="keyrow__v">@state.WhereTheDealershipIs</span>
-                        </div>
-                        <div class="keyrow" id="i-last-event">
-                            <span class="keyrow__k">last event applied</span>
-                            <span class="keyrow__v">@lastEvent</span>
-                        </div>
-                        <div class="keyrow" id="i-credential">
-                            <span class="keyrow__k">credential stored</span>
-                            <span class="keyrow__v">@hasCredential</span>
-                        </div>
-                        <div class="keyrow" id="i-message">
-                            <span class="keyrow__k">last</span>
-                            <span class="keyrow__v">@state.LastMessage</span>
-                        </div>
-                    </div>
-                </div>
-            </section>
-        }
     </div>
 }
 else
 {
-    <div class="page-head page-head--row">
-        <h1 class="page-title">My car</h1>
-        <AppearanceToggle />
-    </div>
+    <div class="d">
+        <div class="d__col">
 
-    <section class="platecard" id="vehicle">
-        <div class="platecard__glow"></div>
+            @if (tab == "inicio")
+            {
+                <Inicio Nueve="@AppState.TheNineKinds"
+                        Board="@board"
+                        Reasons="@reasons"
+                        Overdue="@overdue"
+                        Due="@due"
+                        Missed="@missed"
+                        Siguiente="@nextDue"
+                        Modelo="@(sheet is not null ? sheet.Model : "")"
+                        Odometro="@(stands is not null && stands.OdometerKnown ? ComoSeLee.Miles(stands.Odometer) : "--")"
+                        OdometroUnidad="@(stands is not null && stands.OdometerKnown ? stands.OdometerUnit : "")"
+                        ObservadoEl="@(stands is not null ? stands.OdometerObservedAt : "")"
+                        EvaluadoHasta="@evaluatedUpTo"
+                        DondeVive="@(state.InOwnFolder ? "la carpeta «" + state.FolderName + "»" : "este navegador")"
+                        Agencia="@dealership.Name"
+                        Contacto="@dealership.Contact"
+                        VerServicios="@(() => tab = "servicios")" />
 
-        <div class="platecard__top">
-            <div>
-                <div class="platecard__name">@(sheet is not null ? sheet.Model : "")</div>
-                <div class="platecard__sub">The model on your record</div>
-            </div>
-            <div class="platecard__plate">@vin</div>
+                <div class="d__pad d__gap" style="margin-top:14px">
+                    @if (state.DealershipUnreachable.Length > 0)
+                    {
+                        <Notice Tone="warn" Id="dealership-unreachable"
+                                Title="Esto es tu registro, no las novedades de hoy.">
+                            La app no pudo llegar al concesionario al abrir, así que lo que haya enviado
+                            desde la última vez todavía no está aquí. Todo lo de arriba es lo que tu
+                            registro ya tenía.
+                            <span class="detail">@state.DealershipUnreachable</span>
+                            <span class="notice__actions">
+                                <button class="btn btn--sm" type="button" id="retry-dealership" @onclick="Refresh">
+                                    <Glyph Name="sync" Size="16" />
+                                    Intentar de nuevo
+                                </button>
+                            </span>
+                        </Notice>
+                    }
+
+                    @if (state.SavingIsFailing.Length > 0)
+                    {
+                        <Notice Tone="danger" Id="saving-failing" Title="La carpeta rechazó la escritura.">
+                            Lo que ves <strong>no</strong> quedó guardado en «@state.FolderName». Suele ser
+                            el permiso, que vence cada vez que reabrís la app.
+                            <span class="detail">@state.SavingIsFailing</span>
+                            <span class="notice__actions">
+                                <button class="btn btn--sm" type="button" id="regrant" @onclick="RequestPermission">
+                                    <Glyph Name="lock" Size="16" />
+                                    Dar permiso otra vez
+                                </button>
+                            </span>
+                        </Notice>
+                    }
+
+                    @if (state.EvaluationSkipped.Length > 0)
+                    {
+                        <Notice Tone="warn" Id="evaluation-skipped" Title="Esta no es la lectura de hoy.">
+                            @state.EvaluationSkipped
+                        </Notice>
+                    }
+                </div>
+            }
+            else if (tab == "vehiculo")
+            {
+                <div class="d__pad" style="padding-top:16px">
+                    <div class="page-head page-head--row" style="margin-bottom:12px">
+                        <h1 class="page-title">Mi vehículo</h1>
+                        <AppearanceToggle />
+                    </div>
+
+                    <Vehiculo Sheet="@sheet"
+                              Stands="@stands"
+                              Modelo="@(sheet is not null ? sheet.Model : "")"
+                              Vin="@vin"
+                              Odometro="@(stands is not null && stands.OdometerKnown ? ComoSeLee.Miles(stands.Odometer) : "--")"
+                              OdometroUnidad="@(stands is not null && stands.OdometerKnown ? stands.OdometerUnit : "")" />
+                </div>
+            }
+            else if (tab == "servicios")
+            {
+                <div class="d__pad" style="padding-top:16px">
+                    <div class="page-head page-head--row" style="margin-bottom:4px">
+                        <h1 class="page-title">Servicios</h1>
+                        <AppearanceToggle />
+                    </div>
+
+                    <Servicios Nueve="@AppState.TheNineKinds" Board="@board" Reasons="@reasons" />
+                </div>
+            }
+            else if (tab == "cobertura")
+            {
+                <div class="d__pad" style="padding-top:16px">
+                    <div class="page-head page-head--row" style="margin-bottom:4px">
+                        <h1 class="page-title">Cobertura</h1>
+                        <AppearanceToggle />
+                    </div>
+
+                    <Cobertura Sheet="@sheet" Stands="@stands" />
+                </div>
+            }
+            else
+            {
+                <div class="d__pad" style="padding-top:16px">
+                    <div class="page-head page-head--row" style="margin-bottom:4px">
+                        <h1 class="page-title">Mi registro</h1>
+                        <AppearanceToggle />
+                    </div>
+
+                    <MiRegistro EnCarpeta="@state.InOwnFolder"
+                                Carpeta="@state.FolderName"
+                                Vin="@vin"
+                                Entradas="@entries"
+                                UltimoEvento="@lastEvent"
+                                EvaluadoHasta="@evaluatedUpTo"
+                                Origen="@state.WhereTheDealershipIs"
+                                Trayendo="@refreshing"
+                                Actualizar="@Refresh" />
+                </div>
+            }
         </div>
-
-        <div class="platecard__photo">
-            <img src="img/road.jpg" alt="" />
-        </div>
-
-        <div class="platecard__odo">
-            <Glyph Name="gauge" Size="18" />
-            <span class="platecard__odo-label">Odometer</span>
-            <span class="platecard__odo-value">@heroReading @heroReadingUnit</span>
-        </div>
-    </section>
-
-    <div class="segmented">
-        <button type="button" id="tab-specification" @onclick="@(() => carTab = "specification")"
-                class="@(carTab == "specification" ? "segmented__item segmented__item--on" : "segmented__item")">
-            Specification
-        </button>
-        <button type="button" id="tab-warranty" @onclick="@(() => carTab = "warranty")"
-                class="@(carTab == "warranty" ? "segmented__item segmented__item--on" : "segmented__item")">
-            Warranty
-        </button>
-    </div>
-
-    <div class="stack stack--page">
-        @if (sheet is null || stands is null)
-        {
-            <p class="note">This record has not been read yet.</p>
-        }
-        else if (carTab == "specification")
-        {
-            <MyVehicle Sheet="@sheet" />
-        }
-        else
-        {
-            <Warranty Sheet="@sheet" Stands="@stands" />
-        }
     </div>
 }
 
 @if (state.IsUp)
 {
-    <nav class="tabbar" id="tabbar">
-        <button type="button" id="go-home" @onclick="@(() => tab = "home")"
-                class="@(tab == "home" ? "tabbar__item tabbar__item--on" : "tabbar__item")">
-            <Glyph Name="home" Size="23" Stroke="2" />
-            <span>Home</span>
+    <nav class="d-tabbar" id="tabbar">
+        <button type="button" id="go-inicio" @onclick="@(() => tab = "inicio")"
+                class="@(tab == "inicio" ? "d-tabbar__item d-tabbar__item--on" : "d-tabbar__item")">
+            <Glyph Name="home" Size="22" Stroke="2" />
+            <span>Inicio</span>
         </button>
-        <button type="button" id="go-car" @onclick="@(() => tab = "car")"
-                class="@(tab == "car" ? "tabbar__item tabbar__item--on" : "tabbar__item")">
-            <Glyph Name="car" Size="23" Stroke="2" />
-            <span>My car</span>
+        <button type="button" id="go-vehiculo" @onclick="@(() => tab = "vehiculo")"
+                class="@(tab == "vehiculo" ? "d-tabbar__item d-tabbar__item--on" : "d-tabbar__item")">
+            <Glyph Name="car" Size="22" Stroke="2" />
+            <span>Mi vehículo</span>
+        </button>
+        <button type="button" id="go-servicios" @onclick="@(() => tab = "servicios")"
+                class="@(tab == "servicios" ? "d-tabbar__item d-tabbar__item--on" : "d-tabbar__item")">
+            <Glyph Name="clock" Size="22" Stroke="2" />
+            <span>Servicios</span>
+        </button>
+        <button type="button" id="go-cobertura" @onclick="@(() => tab = "cobertura")"
+                class="@(tab == "cobertura" ? "d-tabbar__item d-tabbar__item--on" : "d-tabbar__item")">
+            <Glyph Name="shield" Size="22" Stroke="2" />
+            <span>Cobertura</span>
+        </button>
+        <button type="button" id="go-registro" @onclick="@(() => tab = "registro")"
+                class="@(tab == "registro" ? "d-tabbar__item d-tabbar__item--on" : "d-tabbar__item")">
+            <Glyph Name="folder" Size="22" Stroke="2" />
+            <span>Mi registro</span>
         </button>
     </nav>
 }
@@ -519,17 +327,12 @@ else
     private bool installedApp;
     private bool refreshing;
 
-    private bool whyBrowserStorage;
     private bool showInstrument;
-    private bool showSettled;
 
     private bool errorDetail;
 
-    /// <summary>Cual de las dos pantallas se esta viendo: la de inicio o la del carro.</summary>
-    private string tab = "home";
-
-    /// <summary>Cual de las dos hojas del carro se esta viendo: la ficha o la garantia.</summary>
-    private string carTab = "specification";
+    /// <summary>Cual de las cinco pestanas se esta viendo: inicio, vehiculo, servicios, cobertura o registro.</summary>
+    private string tab = "inicio";
 
     private string vin = "";
     private string evaluatedUpTo = "";
@@ -568,7 +371,7 @@ else
 
     /// <summary>Lo que la pantalla dice cuando ninguna de las nueve pide nada.</summary>
     private const string NothingIsMoving =
-        "Nothing is due right now.";
+        "Ahora mismo no hay nada vencido.";
 
     private List<string> moving = new List<string>();
     private List<string> settled = new List<string>(AppState.TheNineKinds);
@@ -608,14 +411,17 @@ else
         if (recovered.Ok) await Open();
     }
 
-    private Task ConnectFolder() => Try("choose a folder", async () =>
-        await OpenOrSay(await state.ConnectFolderAsync(), "choose that folder"));
+    private Task ConnectFolder() => Try("elegir una carpeta", async () =>
+        await OpenOrSay(await state.ConnectFolderAsync(), "elegir esa carpeta"));
 
-    private Task RequestPermission() => Try("grant permission to the folder", async () =>
-        await OpenOrSay(await state.RequestPermissionAsync(), "get write permission on that folder"));
+    private Task RequestPermission() => Try("dar permiso a la carpeta", async () =>
+        await OpenOrSay(
+            await state.RequestPermissionAsync(),
+            "obtener permiso de escritura sobre esa carpeta"));
 
-    private Task UseBrowserStorage() => Try("save in this browser", async () =>
-        await OpenOrSay(await state.UseBrowserStorageAsync(), "use this browser's storage"));
+    private Task UseBrowserStorage() => Try("guardar en este navegador", async () =>
+        await OpenOrSay(
+            await state.UseBrowserStorageAsync(), "usar el almacenamiento de este navegador"));
 
     private async Task OpenOrSay(FolderResult result, string whatItWasTrying)
     {
@@ -628,29 +434,30 @@ else
         }
 
         destinationProblem = result.Permission == "denied"
-            ? $"The browser refused to {whatItWasTrying}, without asking you. Two things do that, and "
-              + "they are fixed in different places. Either this site's file-editing permission is "
-              + "blocked — open the padlock next to the address, reset this site's permissions, reload, "
-              + "and pick the folder again — or this browser does not grant file editing at all, which "
-              + "is normal for an in-app or embedded browser. If there is no padlock to open, it is the "
-              + "second one: open this app in Chrome or Edge directly and the folder will work there."
-            : $"Could not {whatItWasTrying}. The browser said: "
+            ? $"El navegador se negó a {whatItWasTrying}, sin preguntarte. Hay dos cosas que hacen "
+              + "eso, y se arreglan en lugares distintos. O el permiso de edición de archivos de este "
+              + "sitio está bloqueado — abrí el candado al lado de la dirección, reiniciá los permisos "
+              + "de este sitio, recargá y volvé a elegir la carpeta — o este navegador no da edición "
+              + "de archivos del todo, que es lo normal en un navegador embebido o dentro de otra app. "
+              + "Si no hay candado que abrir, es lo segundo: abrí esta app en Chrome o Edge "
+              + "directamente y ahí la carpeta sí va a funcionar."
+            : $"No se pudo {whatItWasTrying}. El navegador dijo: "
               + (result.Reason.Length > 0 ? result.Reason : result.Permission);
     }
 
-    private Task ForgetFolder() => Try("forget the saved folder", async () =>
+    private Task ForgetFolder() => Try("olvidar la carpeta guardada", async () =>
     {
         await state.ForgetTheFolderAsync();
         destinationProblem = "";
     });
 
-    private Task Open() => Try("open the app", async () =>
+    private Task Open() => Try("abrir la app", async () =>
     {
         await state.StartAsync();
         await Reread();
     });
 
-    private Task Refresh() => Try("refresh against the dealership", async () =>
+    private Task Refresh() => Try("actualizar contra el concesionario", async () =>
     {
         refreshing = true;
         try { await state.RefreshAsync(); }
@@ -668,9 +475,10 @@ else
         }
         catch (Exception ex)
         {
-            var detail = new System.Text.StringBuilder($"Step: {step}\n{ex.GetType().FullName}: {ex.Message}");
+            var detail = new System.Text.StringBuilder(
+            $"Paso: {step}\n{ex.GetType().FullName}: {ex.Message}");
             for (Exception inner = ex.InnerException; inner is not null; inner = inner.InnerException)
-                detail.Append($"\n  cause: {inner.GetType().FullName}: {inner.Message}");
+                detail.Append($"\n  causa: {inner.GetType().FullName}: {inner.Message}");
             error = detail.ToString();
         }
         finally
@@ -757,9 +565,9 @@ else
 
     private string Destination() => state.Mode switch
     {
-        "carpeta" => $"your folder ({state.FolderName})",
-        "opfs" => "this browser's storage",
-        _ => "none",
+        "carpeta" => $"tu carpeta ({state.FolderName})",
+        "opfs" => "el almacenamiento de este navegador",
+        _ => "ninguno",
     };
 
     private static Dictionary<string, string> Empty() => EveryKindStartsAt("");

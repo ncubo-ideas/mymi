@@ -31,8 +31,8 @@ namespace DealershipCar.Dominio
 		/// <summary>Nombra el perfil, que es el que decidio.</summary>
 		internal override string Describe()
 		{
-			return "distance: cannot be evaluated because the " + _profileName
-				+ " usage profile ignores distance limits";
+			return "distancia: no se puede evaluar porque el perfil de uso " + _profileName
+				+ " ignora los límites de distancia";
 		}
 	}
 }

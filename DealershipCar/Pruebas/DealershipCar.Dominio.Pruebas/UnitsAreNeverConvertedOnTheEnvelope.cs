@@ -85,7 +85,7 @@ namespace DealershipCar.Dominio.Pruebas
 
 			Assert.That(said, Does.Contain(DistanceUnit.UnitA.Name));
 			Assert.That(said, Does.Contain(DistanceUnit.UnitB.Name));
-			Assert.That(said, Does.Contain("never converted"));
+			Assert.That(said, Does.Contain("nunca se convierten"));
 		}
 
 		// LA AFIRMACION DE QUE NO SE CONVIRTIO NADA, que es lo que el test 7 del brief pide medir:
@@ -96,7 +96,7 @@ namespace DealershipCar.Dominio.Pruebas
 		{
 			string said = TheSentenceWith(DistanceUnitCode.UnitB, InsideTheTimeHalf);
 
-			Assert.That(said, Does.Not.Contain("past a limit of 60000"),
+			Assert.That(said, Does.Not.Contain("pasados de un límite de 60000"),
 				"Ley L4: si alguien hubiera convertido, 74990 mi contra un limite de 60000 km "
 				+ "saldria como pasado. No se convierte: se deja de comparar.");
 			Assert.That(said, Does.Not.Contain("Reached"));
@@ -129,11 +129,11 @@ namespace DealershipCar.Dominio.Pruebas
 		{
 			string said = TheSentenceWith(DistanceUnitCode.UnitB, PastTheTimeHalf);
 
-			Assert.That(said, Does.Contain("Reached by time"));
-			Assert.That(said, Does.Contain("5 months past a limit of 36 months"));
-			Assert.That(said, Does.Contain("Distance: cannot be measured"));
-			Assert.That(said, Does.Contain("never converted"));
-			Assert.That(said, Does.Not.Contain("past a limit of 60000"));
+			Assert.That(said, Does.Contain("Alcanzado por tiempo"));
+			Assert.That(said, Does.Contain("5 meses pasados de un límite de 36 meses"));
+			Assert.That(said, Does.Contain("Distancia: no se puede medir"));
+			Assert.That(said, Does.Contain("nunca se convierten"));
+			Assert.That(said, Does.Not.Contain("pasados de un límite de 60000"));
 		}
 
 		// ===== LA UNIDAD DE LA ENTREGA ES LA OTRA MITAD DEL DESAJUSTE ======================
@@ -153,7 +153,7 @@ namespace DealershipCar.Dominio.Pruebas
 				25000, DistanceUnitCode.UnitA, ObservedAt, InsideTheTimeHalf);
 
 			Assert.That(answer.SuspendedByAUnitMismatch(), Is.True);
-			Assert.That(answer.Describe(), Does.Contain("recorded at delivery"),
+			Assert.That(answer.Describe(), Does.Contain("registrada en la entrega"),
 				"La frase dice CUAL de las dos distancias del registro no calzo. Sin eso, la "
 				+ "agencia sale a corregir el odometro y el problema estaba en la entrega.");
 		}

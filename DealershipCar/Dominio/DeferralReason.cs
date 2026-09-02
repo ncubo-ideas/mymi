@@ -32,28 +32,35 @@ namespace DealershipCar.Dominio
 	internal sealed class DeferralReason
 	{
 		/// <summary>No ahora por lo que cuesta.</summary>
-		internal static readonly DeferralReason Cost = new DeferralReason("Cost");
+		internal static readonly DeferralReason Cost = new DeferralReason("Cost", "el costo");
 
 		/// <summary>No ahora por cuando: no le calza dejar el vehiculo en esta fecha.</summary>
-		internal static readonly DeferralReason Timing = new DeferralReason("Timing");
+		internal static readonly DeferralReason Timing = new DeferralReason("Timing", "la fecha");
 
 		/// <summary>Quiere que otro lo vea antes de autorizarlo.</summary>
 		internal static readonly DeferralReason SecondOpinion =
-			new DeferralReason("SecondOpinion");
+			new DeferralReason("SecondOpinion", "una segunda opinión");
 
 		/// <summary>No esta convencida de que haga falta.</summary>
-		internal static readonly DeferralReason NotConvinced = new DeferralReason("NotConvinced");
+		internal static readonly DeferralReason NotConvinced = new DeferralReason("NotConvinced", "dudas de que haga falta");
 
 		/// <summary>Lo va a hacer, pero en otro lado.</summary>
 		internal static readonly DeferralReason WillDoElsewhere =
-			new DeferralReason("WillDoElsewhere");
+			new DeferralReason("WillDoElsewhere", "que se va a hacer en otro lado");
 
 		/// <summary>El nombre del motivo, para proyectarlo como escalar y para diagnosticar.</summary>
 		internal string Name { get; }
 
-		private DeferralReason(string name)
+		/// <summary>
+		/// Como se dice este motivo en la frase que alguien lee. NO es lo que cruza la
+		/// puerta ni lo que viaja en el wire: eso sigue siendo <see cref="Name"/>.
+		/// </summary>
+		internal string HowItIsSaid { get; }
+
+		private DeferralReason(string name, string howItIsSaid)
 		{
 			Name = name;
+			HowItIsSaid = howItIsSaid;
 		}
 
 		/// <summary>

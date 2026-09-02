@@ -42,7 +42,7 @@ namespace DealershipCar.Dominio
 		/// <summary>Las dos mitades, cada una entre comillas y tal como se publicaron.</summary>
 		internal override string Describe()
 		{
-			return "Servicing elsewhere: \"" + _rule + "\" What preserves cover: \""
+			return "Servicio en otro taller: \"" + _rule + "\" Qué conserva la cobertura: \""
 				+ _whatPreservesCover + "\"";
 		}
 
@@ -54,9 +54,10 @@ namespace DealershipCar.Dominio
 			int externalServicesWithEvidence, int externalServicesWithoutEvidence,
 			int missedMaintenanceCount)
 		{
-			return "This vehicle: external services with evidence " + externalServicesWithEvidence
-				+ ", external services without evidence " + externalServicesWithoutEvidence
-				+ ", missed maintenance operations " + missedMaintenanceCount + ".";
+			return "Este vehículo: servicios externos con comprobante "
+				+ externalServicesWithEvidence + ", servicios externos sin comprobante "
+				+ externalServicesWithoutEvidence + ", mantenimientos no hechos "
+				+ missedMaintenanceCount + ".";
 		}
 	}
 }

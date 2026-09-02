@@ -84,7 +84,7 @@ namespace DealershipCar.Dominio.Pruebas
 			// forma en que llegan a un llamador: la puerta no los da sueltos a proposito.
 			string published = door.DescribePublishedWarrantyEnvelope();
 
-			Assert.That(published, Does.Contain("36 months"));
+			Assert.That(published, Does.Contain("36 meses"));
 			Assert.That(published, Does.Contain("60000"));
 			Assert.That(published, Does.Contain("mi"),
 				"Y la unidad es la que se publico, dicha como la lee una persona. 'mi' es UnitB: si "
@@ -130,7 +130,7 @@ namespace DealershipCar.Dominio.Pruebas
 
 			string withBoth = door.DescribeWarrantyEnvelope(TwoYearsLater);
 
-			Assert.That(toldNothing, Does.Contain("not published"));
+			Assert.That(toldNothing, Does.Contain("no ha publicado"));
 
 			Assert.That(withTheEnvelope, Does.Contain("36"),
 				"Con el sobre puesto, la frase cita los dos limites.");
@@ -143,7 +143,7 @@ namespace DealershipCar.Dominio.Pruebas
 			Assert.That(withBoth, Does.Contain("12"),
 				"Dos anos de un plazo de 36 meses: quedan DOCE. Es el numero que sale del ancla, y es "
 				+ "el que separa 'la entrega entro' de 'la entrega se ignoro'.");
-			Assert.That(withBoth, Does.Contain("no odometer reading"),
+			Assert.That(withBoth, Does.Contain("ninguna lectura del odómetro"),
 				"Y la mitad de distancia se dice ausente con palabras. Sin lectura no hay numero, y "
 				+ "un cero aqui seria una medicion que nadie tomo.");
 		}
@@ -212,7 +212,7 @@ namespace DealershipCar.Dominio.Pruebas
 			Assert.DoesNotThrow(
 				() => door.PublishWarrantyEnvelope(12, 20000, TheUnitTheLimitIsIn, earlier));
 
-			Assert.That(door.DescribePublishedWarrantyEnvelope(), Does.Contain("36 months"),
+			Assert.That(door.DescribePublishedWarrantyEnvelope(), Does.Contain("36 meses"),
 				"Sigue rigiendo el que se publico despues.");
 			Assert.That(
 				door.DescribePublishedWarrantyEnvelope(), Does.Contain("60000 mi"));

@@ -19,15 +19,15 @@ namespace DealershipCar.Mcp.Tools
 		}
 
 		[McpServerTool(Name = "review_my_maintenance", UseStructuredContent = true)]
-		[Description("Answers what this person's vehicle needs right now: which maintenance "
-			+ "operations are due, which are past their grace period, which count as missed, and what "
-			+ "the schedule says about each one. Use it when they ask something general like 'does my "
-			+ "car need anything?', 'what's overdue?', 'what should I do first?' or 'how is my car "
-			+ "doing?'. It reports the whole schedule in one read, so prefer it over asking about "
-			+ "operations one at a time. Every operation carries the reason the schedule itself "
-			+ "composed - say that reason, do not reword it into generic advice. Operations this "
-			+ "vehicle never had scheduled say so in their reason; they are not overdue, they simply "
-			+ "do not exist for this car.")]
+		[Description("Contesta qué necesita ahora mismo el vehículo de esta persona: qué operaciones "
+			+ "de mantenimiento están vencidas, cuáles pasaron su periodo de gracia, cuáles cuentan "
+			+ "como no hechas, y qué dice el plan sobre cada una. Úsela cuando pregunten algo general "
+			+ "como '¿mi carro necesita algo?', '¿qué está atrasado?', '¿qué hago primero?' o '¿cómo "
+			+ "va mi carro?'. Reporta el plan entero en una sola lectura, así que prefiérala a "
+			+ "preguntar operación por operación. Cada operación lleva el motivo que compuso el plan "
+			+ "mismo: diga ese motivo, no lo reescriba como consejo genérico. Las operaciones que "
+			+ "este vehículo nunca tuvo agendadas lo dicen en su motivo; no están atrasadas, "
+			+ "simplemente no existen para este carro.")]
 		public MaintenanceReview Review()
 		{
 			return reader.Read(TheWholeSchedule, () => new MaintenanceReview
@@ -39,15 +39,17 @@ namespace DealershipCar.Mcp.Tools
 		}
 
 		[McpServerTool(Name = "check_one_operation", UseStructuredContent = true)]
-		[Description("Answers where ONE maintenance operation stands on this person's vehicle - "
-			+ "whether it is due, how far past its limit it is, and how many times they have already "
-			+ "deferred it. Use it when they ask about a specific operation, like 'is my oil change "
-			+ "due?', 'how long can I put off the inspection?' or 'did the recall get done?'. If they "
-			+ "are asking about the vehicle in general, use review_my_maintenance instead: it answers "
-			+ "for every operation in a single read. deferralsUsed is how many deferrals they have "
-			+ "already spent on this operation; a safety operation cannot be deferred at all.")]
+		[Description("Contesta dónde está parada UNA operación de mantenimiento en el vehículo de "
+			+ "esta persona: si está vencida, cuánto se pasó de su límite, y cuántas veces la ha "
+			+ "aplazado ya. Úsela cuando pregunten por una operación concreta, como '¿me toca el "
+			+ "cambio de aceite?', '¿cuánto puedo aplazar la revisión?' o '¿ya hicieron el llamado a "
+			+ "revisión?'. Si preguntan por el vehículo en general, use review_my_maintenance: esa "
+			+ "contesta por todas las operaciones en una sola lectura. deferralsUsed es cuántos "
+			+ "aplazamientos ha gastado ya en esta operación; una operación de seguridad no se puede "
+			+ "aplazar en absoluto.")]
 		public OperationStanding CheckOne(
-			[Description("Which maintenance operation to look up.")] MaintenanceOperation operation)
+			[Description("Qué operación de mantenimiento hay que consultar.")]
+			MaintenanceOperation operation)
 		{
 			return reader.Read(
 				api => OneOperation(api, operation),
@@ -61,12 +63,13 @@ namespace DealershipCar.Mcp.Tools
 		}
 
 		[McpServerTool(Name = "how_up_to_date_is_this", UseStructuredContent = true)]
-		[Description("Answers how far this person's app has read the dealership's record, and up to "
-			+ "what instant the schedule has been evaluated. Use it when they expect to see something "
-			+ "new and it is not there - after a service visit, or after they pressed Refresh - and "
-			+ "when you need to tell whether the answer you just gave them is current. lastEventApplied "
-			+ "is the dealership event number the app has read up to: if it goes up between two calls, "
-			+ "new facts came in. You cannot make it go up; only the person's app can.")]
+		[Description("Contesta hasta dónde ha leído la app de esta persona el registro del concesionario, "
+			+ "y hasta qué instante se ha evaluado el plan. Úsela cuando esperen ver algo nuevo y no "
+			+ "esté ahí -- después de una visita al taller, o después de apretar Actualizar -- y "
+			+ "cuando necesite saber si la respuesta que acaba de darles está al día. "
+			+ "lastEventApplied es el número de evento del concesionario hasta el que la app ha leído: si "
+			+ "sube entre dos llamadas, entraron hechos nuevos. Usted NO puede hacerlo subir; solo la "
+			+ "app de la persona puede.")]
 		public ReadingFreshness HowUpToDate()
 		{
 			return reader.Read(
@@ -183,10 +186,11 @@ namespace DealershipCar.Mcp.Tools
 		}
 
 		private const string TheAppIsOlderThanTheLogbook =
-			"This record was written by an older version of the app, which did not keep track of how "
-			+ "far it had read the dealership's events, so lastEventApplied is not available. The "
-			+ "maintenance schedule below is complete and current. Ask the person to open their app "
-			+ "once and it will start keeping that count; nothing is lost, and it is not an error.";
+			"Este registro lo escribió una versión anterior de la app, que no llevaba la cuenta de "
+			+ "hasta dónde había leído los eventos del concesionario, así que lastEventApplied no está "
+			+ "disponible. El plan de mantenimiento de abajo está completo y al día. Pídale a la "
+			+ "persona que abra su app una vez y empezará a llevar esa cuenta; no se pierde nada, y "
+			+ "no es un error.";
 
 		private const string TheAppHasNotBeenOpened = TheAssistantIsTold.TheAppHasNotBeenOpened;
 	}
@@ -194,167 +198,174 @@ namespace DealershipCar.Mcp.Tools
 	internal sealed class OperationStanding
 	{
 		[JsonPropertyName("hasData")]
-		[Description("false when the app has not recorded anything yet; then the rest comes empty.")]
+		[Description("false cuando la app todavía no ha registrado nada; entonces el resto viene "
+			+ "vacío.")]
 		public bool HasData { get; init; }
 
 		[JsonPropertyName("vin")]
-		[Description("The vehicle this answer is about.")]
+		[Description("El vehículo del que habla esta respuesta.")]
 		public string Vin { get; init; } = "";
 
 		[JsonPropertyName("operation")]
-		[Description("The maintenance operation this entry is about.")]
+		[Description("La operación de mantenimiento de la que habla esta entrada.")]
 		public string Operation { get; init; } = "";
 
 		[JsonPropertyName("state")]
-		[Description("Where this operation stands: NotDue, DueSoon (inside the courtesy warning, "
-			+ "which is never a required stop), Due, Overdue (past the grace period), Deferred (the "
-			+ "person put it off on purpose), Completed or Superseded (a plan revision replaced it). "
-			+ "An operation this vehicle never had scheduled also reads NotDue - the reason is what "
-			+ "tells the two apart.")]
+		[Description("Dónde está parada esta operación: NotDue, DueSoon (dentro del aviso de "
+			+ "cortesía, que NUNCA es una parada obligatoria), Due, Overdue (pasado el periodo de "
+			+ "gracia), Deferred (la persona la aplazó a propósito), Completed o Superseded (una "
+			+ "revisión del plan la reemplazó). Una operación que este vehículo nunca tuvo agendada "
+			+ "también lee NotDue: el motivo es lo que distingue las dos.")]
 		public string State { get; init; } = "";
 
 		[JsonPropertyName("reason")]
-		[Description("Why it stands there, in one sentence composed by the schedule itself. Say "
-			+ "this; do not reword it into generic advice. If it begins 'There is no scheduled', this "
-			+ "vehicle simply does not have that operation.")]
+		[Description("Por qué está parada ahí, en una frase que compuso el plan mismo. Diga esta "
+			+ "frase; no la reescriba como consejo genérico. Si empieza con 'Este vehículo no tiene "
+			+ "agendada', este carro simplemente no tiene esa operación.")]
 		public string Reason { get; init; } = "";
 
 		[JsonPropertyName("deferralsUsed")]
-		[Description("How many deferrals the person has already spent on this operation. There is a "
-			+ "cap, and a safety operation cannot be deferred at all.")]
+		[Description("Cuántos aplazamientos ha gastado ya la persona en esta operación. Hay un tope, "
+			+ "y una operación de seguridad no se puede aplazar en absoluto.")]
 		public int DeferralsUsed { get; init; }
 
 		[JsonPropertyName("evaluated")]
-		[Description("true if the schedule has ever been evaluated. Until it has, every state is "
-			+ "just how the plan was seeded.")]
+		[Description("true si el plan se ha evaluado alguna vez. Hasta que se evalúe, cada estado es "
+			+ "solo como se sembró el plan.")]
 		public bool Evaluated { get; init; }
 
 		[JsonPropertyName("evaluatedUpTo")]
-		[Description("The instant the schedule was evaluated up to, in UTC. Empty means it has never "
-			+ "been evaluated - the app does that when the person opens it, and you cannot.")]
+		[Description("El instante hasta el que se evaluó el plan, en UTC. Vacío quiere decir que "
+			+ "nunca se ha evaluado: eso lo hace la app cuando la persona la abre, y usted no puede.")]
 		public string EvaluatedUpTo { get; init; } = "";
 
 		[JsonPropertyName("lastEventApplied")]
-		[Description("The dealership event number the app has read up to.")]
+		[Description("El número de evento del concesionario hasta el que la app ha leído.")]
 		public long LastEventApplied { get; init; }
 
 		[JsonPropertyName("lastEventKnown")]
-		[Description("false when this record was written by an older version of the app, which did "
-			+ "not keep that count. Then lastEventApplied is zero and means nothing - do not report "
-			+ "it as 'zero events read'. Everything else in the answer is complete; read detail.")]
+		[Description("false cuando este registro lo escribió una versión anterior de la app, que no "
+			+ "llevaba esa cuenta. Entonces lastEventApplied es cero y no significa nada: no lo "
+			+ "reporte como 'cero eventos leídos'. Todo lo demás en la respuesta está completo; lea "
+			+ "detail.")]
 		public bool LastEventKnown { get; init; }
 
 		[JsonPropertyName("folder")]
-		[Description("The person's folder, where their app keeps this vehicle's record.")]
+		[Description("La carpeta de la persona, donde su app guarda el registro de este vehículo.")]
 		public string Folder { get; init; } = "";
 
 		[JsonPropertyName("detail")]
-		[Description("Empty when everything is fine; otherwise what the person had better do.")]
+		[Description("Vacío cuando todo está bien; si no, lo que a la persona le conviene hacer.")]
 		public string Detail { get; init; } = "";
 	}
 
 	internal sealed class MaintenanceReview
 	{
 		[JsonPropertyName("hasData")]
-		[Description("false when the app has not recorded anything yet; then the rest comes empty.")]
+		[Description("false cuando la app todavía no ha registrado nada; entonces el resto viene "
+			+ "vacío.")]
 		public bool HasData { get; init; }
 
 		[JsonPropertyName("vin")]
-		[Description("The vehicle this answer is about.")]
+		[Description("El vehículo del que habla esta respuesta.")]
 		public string Vin { get; init; } = "";
 
 		[JsonPropertyName("anythingDue")]
-		[Description("true if anything at all is due or past due on this vehicle.")]
+		[Description("true si hay algo vencido o pasado de vencido en este vehículo.")]
 		public bool AnythingDue { get; init; }
 
 		[JsonPropertyName("nextToDo")]
-		[Description("The operation to do first. EMPTY means nothing is due - that is an answer, not "
-			+ "a missing value, and it must not be reported as a failure.")]
+		[Description("La operación que hay que hacer primero. VACÍO quiere decir que no hay nada "
+			+ "vencido: eso es una respuesta, no un valor que falta, y no se puede reportar como una "
+			+ "falla.")]
 		public string NextToDo { get; init; } = "";
 
 		[JsonPropertyName("dueCount")]
-		[Description("How many operations are due or past due.")]
+		[Description("Cuántas operaciones están vencidas o pasadas de vencidas.")]
 		public int DueCount { get; init; }
 
 		[JsonPropertyName("overdueCount")]
-		[Description("How many are past their grace period. These are the ones worth raising first.")]
+		[Description("Cuántas pasaron su periodo de gracia. Son las que vale la pena plantear "
+			+ "primero.")]
 		public int OverdueCount { get; init; }
 
 		[JsonPropertyName("missedCount")]
-		[Description("How many count as maintenance that was not done. It is derived from where the "
-			+ "operations stand, so it goes back down when the work is actually done.")]
+		[Description("Cuántas cuentan como mantenimiento que no se hizo. Se deriva de dónde están "
+			+ "paradas las operaciones, así que vuelve a bajar cuando el trabajo se hace de verdad.")]
 		public int MissedCount { get; init; }
 
 		[JsonPropertyName("evaluated")]
-		[Description("true if the schedule has ever been evaluated.")]
+		[Description("true si el plan se ha evaluado alguna vez.")]
 		public bool Evaluated { get; init; }
 
 		[JsonPropertyName("evaluatedUpTo")]
-		[Description("The instant the schedule was evaluated up to, in UTC. Empty means never. "
-			+ "Everything below is as of that instant, not as of now: if it is old, say so rather "
-			+ "than presenting the answer as today's.")]
+		[Description("El instante hasta el que se evaluó el plan, en UTC. Vacío quiere decir nunca. "
+			+ "Todo lo de abajo es A ESE INSTANTE y no al de ahora: si es viejo, dígalo en vez de "
+			+ "presentar la respuesta como la de hoy.")]
 		public string EvaluatedUpTo { get; init; } = "";
 
 		[JsonPropertyName("lastEventApplied")]
-		[Description("The dealership event number the app has read up to. If it does not go up, "
-			+ "nothing new came in.")]
+		[Description("El número de evento del concesionario hasta el que la app ha leído. Si no sube, no "
+			+ "entró nada nuevo.")]
 		public long LastEventApplied { get; init; }
 
 		[JsonPropertyName("lastEventKnown")]
-		[Description("false when this record was written by an older version of the app, which did "
-			+ "not keep that count. Then lastEventApplied is zero and means nothing - do not report "
-			+ "it as 'zero events read'. Everything else in the answer is complete; read detail.")]
+		[Description("false cuando este registro lo escribió una versión anterior de la app, que no "
+			+ "llevaba esa cuenta. Entonces lastEventApplied es cero y no significa nada: no lo "
+			+ "reporte como 'cero eventos leídos'. Todo lo demás en la respuesta está completo; lea "
+			+ "detail.")]
 		public bool LastEventKnown { get; init; }
 
 		[JsonPropertyName("operations")]
-		[Description("Where every maintenance operation stands. Operations this vehicle never had "
-			+ "scheduled are listed too, and say so in their reason.")]
+		[Description("Dónde está parada cada operación de mantenimiento. Las que este vehículo nunca "
+			+ "tuvo agendadas también vienen en la lista, y lo dicen en su motivo.")]
 		public IReadOnlyList<OperationStanding> Operations { get; init; } = new List<OperationStanding>();
 
 		[JsonPropertyName("folder")]
-		[Description("The person's folder, where their app keeps this vehicle's record.")]
+		[Description("La carpeta de la persona, donde su app guarda el registro de este vehículo.")]
 		public string Folder { get; init; } = "";
 
 		[JsonPropertyName("detail")]
-		[Description("Empty when everything is fine; otherwise what the person had better do.")]
+		[Description("Vacío cuando todo está bien; si no, lo que a la persona le conviene hacer.")]
 		public string Detail { get; init; } = "";
 	}
 
 	internal sealed class ReadingFreshness
 	{
 		[JsonPropertyName("hasData")]
-		[Description("false when the app has not recorded anything yet.")]
+		[Description("false cuando la app todavía no ha registrado nada.")]
 		public bool HasData { get; init; }
 
 		[JsonPropertyName("vin")]
-		[Description("The vehicle this answer is about.")]
+		[Description("El vehículo del que habla esta respuesta.")]
 		public string Vin { get; init; } = "";
 
 		[JsonPropertyName("lastEventApplied")]
-		[Description("The dealership event number the app has read up to. Ask twice around a Refresh: "
-			+ "if it went up, new facts came in.")]
+		[Description("El número de evento del concesionario hasta el que la app ha leído. Pregúntelo dos "
+			+ "veces alrededor de un Actualizar: si subió, entraron hechos nuevos.")]
 		public long LastEventApplied { get; init; }
 
 		[JsonPropertyName("lastEventKnown")]
-		[Description("false when this record was written by an older version of the app, which did "
-			+ "not keep that count. Then lastEventApplied is zero and means nothing - do not report "
-			+ "it as 'zero events read'. Everything else in the answer is complete; read detail.")]
+		[Description("false cuando este registro lo escribió una versión anterior de la app, que no "
+			+ "llevaba esa cuenta. Entonces lastEventApplied es cero y no significa nada: no lo "
+			+ "reporte como 'cero eventos leídos'. Todo lo demás en la respuesta está completo; lea "
+			+ "detail.")]
 		public bool LastEventKnown { get; init; }
 
 		[JsonPropertyName("evaluated")]
-		[Description("true if the schedule has ever been evaluated.")]
+		[Description("true si el plan se ha evaluado alguna vez.")]
 		public bool Evaluated { get; init; }
 
 		[JsonPropertyName("evaluatedUpTo")]
-		[Description("The instant the schedule was evaluated up to, in UTC. Empty means never.")]
+		[Description("El instante hasta el que se evaluó el plan, en UTC. Vacío quiere decir nunca.")]
 		public string EvaluatedUpTo { get; init; } = "";
 
 		[JsonPropertyName("folder")]
-		[Description("The person's folder, where their app keeps this vehicle's record.")]
+		[Description("La carpeta de la persona, donde su app guarda el registro de este vehículo.")]
 		public string Folder { get; init; } = "";
 
 		[JsonPropertyName("detail")]
-		[Description("Empty when everything is fine; otherwise what the person had better do.")]
+		[Description("Vacío cuando todo está bien; si no, lo que a la persona le conviene hacer.")]
 		public string Detail { get; init; } = "";
 	}
 }

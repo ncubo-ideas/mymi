@@ -124,8 +124,8 @@ namespace DealershipCar.Dominio.Pruebas
 
 			string reason = schedule.ReadDueReason(OperationKindCode.FluidChange);
 
-			Assert.That(reason, Does.Contain("time:"));
-			Assert.That(reason, Does.Contain("distance:"),
+			Assert.That(reason, Does.Contain("tiempo:"));
+			Assert.That(reason, Does.Contain("distancia:"),
 				"Las dos dimensiones siguen ahi. Si SevereDuty hubiera tocado la base, esta "
 				+ "operacion habria dejado de ser TimeOrDistance sin que nadie lo pidiera.");
 			Assert.That(reason, Does.Contain("256"),
@@ -150,7 +150,7 @@ namespace DealershipCar.Dominio.Pruebas
 				+ "tampoco alcanzan, porque este perfil deja el tiempo intacto.");
 			Assert.That(
 				schedule.ReadDueReason(OperationKindCode.FluidChange),
-				Does.Contain("LowDistance"),
+				Does.Contain("de poca distancia"),
 				"Y lo dice: OHS-07 exige poder mostrar cual perfil aplico.");
 		}
 

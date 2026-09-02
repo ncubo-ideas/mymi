@@ -141,7 +141,7 @@ namespace DealershipCar.Dominio.Pruebas
 
 			Assert.That(
 				schedule.ReadDueReason(OperationKindCode.FluidChange),
-				Does.Contain("units are never converted"),
+				Does.Contain("las unidades nunca se convierten"),
 				"El limite esta en UnitA y el ancla nueva quedo en UnitB. Si la fachada hubiera "
 				+ "puesto UnitA por su cuenta, la sucesora mediria 200 unidades desde una lectura "
 				+ "que nadie tomo en esa escala.");

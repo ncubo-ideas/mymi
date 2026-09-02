@@ -68,10 +68,10 @@ namespace DealershipCar.Dominio.Pruebas
 
 			string reason = operation.Describe();
 
-			Assert.That(reason, Does.Contain("cannot be evaluated"));
-			Assert.That(reason, Does.Contain("the limit is in km"));
-			Assert.That(reason, Does.Contain("the measurements are in mi"));
-			Assert.That(reason, Does.Contain("never converted"),
+			Assert.That(reason, Does.Contain("no se puede evaluar"));
+			Assert.That(reason, Does.Contain("el límite está en km"));
+			Assert.That(reason, Does.Contain("las mediciones están en mi"));
+			Assert.That(reason, Does.Contain("nunca se convierten"),
 				"OUS-07: la persona quiere saber POR QUE, no solo QUE. Un 'no vencio' a secas "
 				+ "sobre una dimension que el sistema no puede mirar es una operacion que "
 				+ "parece al dia sin estarlo.");
@@ -100,7 +100,7 @@ namespace DealershipCar.Dominio.Pruebas
 		public void AnOperationThatWasNeverEvaluatedSaysExactlyThat()
 		{
 			Assert.That(operation.UnitMismatchSuspendsDistance(), Is.False);
-			Assert.That(operation.Describe(), Does.Contain("not been evaluated"),
+			Assert.That(operation.Describe(), Does.Contain("no se ha evaluado"),
 				"Un motivo vacio, o uno copiado de una evaluacion que nunca ocurrio, es la "
 				+ "misma mentira que el NotDue del GAP G2: parece una respuesta y no lo es.");
 		}
@@ -115,10 +115,10 @@ namespace DealershipCar.Dominio.Pruebas
 
 			string reason = operation.Describe();
 
-			Assert.That(reason, Does.StartWith("Deferred"));
+			Assert.That(reason, Does.StartWith("Aplazada"));
 			Assert.That(reason, Does.Contain("2026-03-21"), "El fin de la ventana.");
-			Assert.That(reason, Does.Contain("Cost"));
-			Assert.That(reason, Does.Contain("1 of 2"));
+			Assert.That(reason, Does.Contain("el costo"));
+			Assert.That(reason, Does.Contain("1 de 2"));
 		}
 
 		private void EvaluateWith(int reading, DistanceUnit unit)
