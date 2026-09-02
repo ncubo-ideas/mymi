@@ -358,6 +358,10 @@ public sealed class EstadoDeLaApp : IAsyncDisposable
 
 	public RebajaVista Rebaja(string numero) { Exigir(); return api!.Rebaja(numero); }
 
+	// EN QUE SUCURSALES COMPRA. La portada lo pinta plegado en una fila; el detalle
+	// entero es del asistente (donde_compro).
+	public RecorridoDeSucursalesVista Recorrido() { Exigir(); return api!.Recorrido(); }
+
 	// CADA CUANTO VA AL SUPER, que dia y en que momento. No lleva parametros: el dominio lo
 	// mide sobre todo el historial, y no hay reloj de por medio.
 	public RitmoDelSuperVista Ritmo() { Exigir(); return api!.Ritmo(); }

@@ -722,6 +722,56 @@ else
         </div>
     }
 
+    @* DONDE COMPRA, plegado a una fila como las demas. Es la lectura que propuso
+       Geannina -"antes compraba siempre en la misma; desde enero aparece en tres"- y
+       Juan pidio verla en la app, no solo en la tool. Solo se pinta cuando algun tiquete
+       trae sucursal: los journals viejos callan y la fila no inventa nada. *@
+    @if (recorrido is not null && recorrido.HayDatos)
+    {
+        <div class="list-group mb-3">
+            <button class="list-group-item list-group-item-action firma-fila"
+                    @onclick="() => verSucursales = !verSucursales">
+                <span class="firma-que">
+                    <strong>Dónde comprás</strong>
+                    <span class="ritmo-rotulo">
+                        @if (recorrido.SeMueve)
+                        {
+                            <text>sobre todo en @recorrido.Sucursales[0].Nombre · desde el @Fecha(DesdeCuandoSeMueve()) también en @SucursalesNuevas()</text>
+                        }
+                        else
+                        {
+                            <text>siempre en @recorrido.Sucursales[0].Nombre</text>
+                        }
+                    </span>
+                </span>
+                <span class="recibo-flecha" aria-hidden="true">@(verSucursales ? "⌄" : "›")</span>
+            </button>
+            @if (verSucursales)
+            {
+                @foreach (SucursalVista s in recorrido.Sucursales)
+                {
+                    <div class="list-group-item d-flex justify-content-between align-items-center flex-wrap gap-2">
+                        <div>
+                            <strong>@s.Nombre</strong>
+                            <div class="small text-body-secondary">
+                                la primera vez el @Fecha(s.PrimeraVez) &middot; la última el @Fecha(s.UltimaVez)
+                            </div>
+                        </div>
+                        <span class="etiqueta etiqueta-neutra">
+                            @s.Compras @(s.Compras == 1 ? "compra" : "compras")
+                        </span>
+                    </div>
+                }
+                @if (recorrido.ComprasSinSucursal > 0)
+                {
+                    <div class="list-group-item small text-body-secondary">
+                        @recorrido.ComprasSinSucursal @(recorrido.ComprasSinSucursal == 1 ? "compra más vieja no dice" : "compras más viejas no dicen") en qué sucursal fueron.
+                    </div>
+                }
+            }
+        </div>
+    }
+
     @* LAS GARANTIAS, plegadas a una fila: importan EL DIA que hay que reclamar, no todos
        los dias. Si alguna ya pide moverse (QueHacer), la lista arranca abierta — esa si es
        noticia. *@
@@ -824,6 +874,8 @@ else
     private CanastasComparadas? mes;
     private IReadOnlyList<PrecioQueCambio> precios = new List<PrecioQueCambio>();
     private CanastaFrenteAlPasadoVista? frente;
+    private RecorridoDeSucursalesVista? recorrido;
+    private bool verSucursales;
     private int cantidad;
     private decimal total;
     private long ultimoEvento;
@@ -954,6 +1006,7 @@ else
         mes = estado.ComparacionConElMesAnterior();
         precios = estado.Precios();
         frente = estado.FrenteAlPasado();
+        recorrido = estado.Recorrido();
     }
 
     private void VerDetalle(string numero) =>
@@ -1043,6 +1096,22 @@ else
     // es lo que mantiene la rejilla derecha. Con las veinte nuevas ya casi no queda hueco:
     // de los 29 productos del catalogo, 28 tienen imagen.
     private static string Foto(string sku) => Compras.Wasm.Fotos.De(sku);
+
+    // La primera compra fuera de la de siempre: la fecha desde la que "se mueve".
+    private DateTime DesdeCuandoSeMueve()
+    {
+        DateTime primera = DateTime.MaxValue;
+        for (int i = 1; i < recorrido!.Sucursales.Count; i++)
+            if (recorrido.Sucursales[i].PrimeraVez < primera) primera = recorrido.Sucursales[i].PrimeraVez;
+        return primera;
+    }
+
+    private string SucursalesNuevas()
+    {
+        var nombres = new List<string>();
+        for (int i = 1; i < recorrido!.Sucursales.Count; i++) nombres.Add(recorrido.Sucursales[i].Nombre);
+        return string.Join(" y ", nombres);
+    }
 
     // LA OPORTUNIDAD: la mayor bajada de la serie (vienen ordenadas por cuanto se
     // movieron), saltando la fila estrella, que ya se ve sola.
