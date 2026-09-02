@@ -359,6 +359,48 @@ internal sealed class ComprasTools
 		return lector.Consultar(api => api.GarantiasPorVencer(DateTime.Now));
 	}
 
+	[McpServerTool(Name = "como_me_cambiaron_los_precios", UseStructuredContent = true)]
+	[Description("COMO SE MOVIO EL PRECIO de cada producto que la persona SI lleva -sus "
+		+ "habituales-, comparando SIEMPRE por unidad de medida (el litro, el kilo, la unidad): "
+		+ "si paso de la leche de 1 L a la de 2 L, el precio de linea sube y el del litro puede "
+		+ "haber bajado, y esta lectura no se deja engañar por eso. Cada producto trae antes (el "
+		+ "primer precio que pago), ahora (el ultimo), la unidad, el cambio en proporcion y si "
+		+ "subio. Es SU propia inflacion -la de lo que ella compra, con los precios que ella "
+		+ "pago-, no la del pais ni la lista del super. El que mas se movio viene primero, y las "
+		+ "BAJADAS tambien vienen: subio en false es una buena noticia, no un error. Usala para "
+		+ "'¿que me subio de precio?', '¿el helado esta mas caro?' o '¿que me conviene comprar "
+		+ "ahora?'. Una lista vacia significa que ningun habitual tuvo un cambio real (mas del "
+		+ "3%: menos que eso es redondeo de gondola).")]
+	public IReadOnlyList<PrecioQueCambio> ComoMeCambiaronLosPrecios()
+	{
+		if (!lector.HayJournal) return new List<PrecioQueCambio>();
+
+		return lector.Consultar(api => api.Precios());
+	}
+
+	[McpServerTool(Name = "mi_canasta_frente_a_antes", UseStructuredContent = true)]
+	[Description("CUANTO CUESTA HOY lo mismo que la persona suele llevar, frente a hace unos "
+		+ "meses: una pieza de cada habitual, a los precios de hoy contra los de entonces, "
+		+ "SUMADA en colones. cambio es la cifra con signo (positivo = mas caro hoy) y productos "
+		+ "trae el detalle -antes, ahora y cambio por producto, en colones por SU presentacion "
+		+ "mas reciente-, el que mas se movio primero. El 'entonces' de cada producto es el "
+		+ "ultimo precio que ELLA pago en o antes del corte; un habitual sin precio tan viejo "
+		+ "queda AFUERA de la suma, no en cero. Usala para '¿cuanto mas caro me sale el super?', "
+		+ "'¿me esta rindiendo menos la plata?' o para ponerle numero a una sospecha de "
+		+ "inflacion propia. Si hayConQueComparar viene en false, ningun habitual tiene un "
+		+ "precio tan viejo todavia, y eso es la respuesta.")]
+	public CanastaFrenteAlPasadoVista MiCanastaFrenteAAntes(
+		[Description("OPCIONAL: contra hace cuantos meses comparar. Omitilo para usar la ventana "
+			+ "de la app (3 meses); pasalo solo si la persona nombro otro plazo.")]
+		int meses = 0)
+	{
+		if (!lector.HayJournal) return new CanastaFrenteAlPasadoVista();
+
+		// SIN MESES, LA VENTANA LA PONE EL DOMINIO (3): el mismo juicio que usa la app.
+		return lector.Consultar(api =>
+			meses <= 0 ? api.FrenteAlPasado(DateTime.Now) : api.FrenteAlPasado(DateTime.Now, meses));
+	}
+
 	private const string SinJournal =
 		"La app todavia no registro nada en esta carpeta. Pedile a la persona que abra su app "
 		+ "del supermercado y aprete Refresh.";

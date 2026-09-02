@@ -213,6 +213,53 @@ namespace Compras.App.Vistas
 		public string ParaElAsistente { get; init; } = "";
 	}
 
+	// LA CANASTA FRENTE A SU PASADO: cuanto cuesta hoy una pieza de cada habitual contra
+	// hace unos meses, sumado en colones. La cifra que encabeza la tarjeta de precios.
+	public sealed class CanastaFrenteAlPasadoVista
+	{
+		/// <summary>Si algún habitual tiene precio de entonces y de hoy. Sin esto, el resto en cero.</summary>
+		public bool HayConQueComparar { get; init; }
+
+		public int MesesDeVentana { get; init; }
+
+		/// <summary>Colones, con signo: positivo es más caro hoy.</summary>
+		public decimal Cambio { get; init; }
+
+		public string ParaElAsistente { get; init; } = "";
+
+		/// <summary>Los comparados, el que más se movió primero.</summary>
+		public IReadOnlyList<ProductoFrenteAlPasadoVista> Productos { get; init; } =
+			new List<ProductoFrenteAlPasadoVista>();
+	}
+
+	public sealed class ProductoFrenteAlPasadoVista
+	{
+		public string Sku { get; init; } = "";
+		public string Descripcion { get; init; } = "";
+
+		/// <summary>Contra qué presentación se leen los dos precios: la más reciente.</summary>
+		public string Presentacion { get; init; } = "";
+
+		public decimal Antes { get; init; }
+		public decimal Ahora { get; init; }
+		public decimal Cambio { get; init; }
+	}
+
+	// LA BUENA NOTICIA DE UN RECIBO: que, de esa compra, esta hoy mas barato que lo pagado.
+	public sealed class RebajaVista
+	{
+		/// <summary>Si hay rebaja de verdad. Sin esto, el resto viene vacío o en cero.</summary>
+		public bool Hay { get; init; }
+
+		public string Sku { get; init; } = "";
+		public string Descripcion { get; init; } = "";
+
+		/// <summary>Colones menos por UNA pieza, en la presentación de esa línea.</summary>
+		public decimal CuantoMenos { get; init; }
+
+		public string ParaElAsistente { get; init; } = "";
+	}
+
 	// COMO VA AL SUPER: cada cuantos dias vuelve, que dia y en que momento. Es la pantalla
 	// "tu ritmo de super" del diseño de la app — "hay dias y momentos que se repiten mas de
 	// lo que parece"— con las tres facetas juntas.

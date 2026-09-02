@@ -649,6 +649,58 @@ namespace Compras.App
 			})
 			.PerformQuery();
 
+		// LA CANASTA FRENTE A SU PASADO: cuanto cuesta hoy una pieza de cada habitual
+		// contra lo que costaba hace tantos meses, sumado en colones. Es la cifra que
+		// encabeza la tarjeta de precios ("+₡1.150 vs. hace 3 meses", del mock de
+		// Fernanda), con el detalle por producto para quien quiera saber de donde sale.
+		public string CanastaFrenteA(DateTime hoy, int mesesAtras, int cuantasCompras) =>
+			app.Using(@"
+				{
+					frente = compras.CanastaFrenteA(@hoy, @meses, @cuantas);
+					print frente.HayConQueComparar hayConQueComparar,
+						frente.MesesDeVentana mesesDeVentana,
+						frente.Cambio cambio,
+						frente.ParaElAsistente paraElAsistente;
+					foreach (producto in frente.Productos) {
+						print producto.Sku sku,
+							producto.Descripcion descripcion,
+							producto.Presentacion presentacion,
+							producto.Antes antes,
+							producto.Ahora ahora,
+							producto.Cambio cambio;
+					}
+				}
+			")
+			.WithParameters(p => {
+				p["hoy", typeof(DateTime)] = hoy;
+				p["meses", typeof(int)] = mesesAtras;
+				p["cuantas", typeof(int)] = cuantasCompras;
+			})
+			.PerformQuery();
+
+		// LA BUENA NOTICIA DE UN RECIBO: que, de esa compra, esta hoy mas barato. Todas
+		// las lecturas son totales -Hay en false trae el resto vacio o en cero-, asi que
+		// el print plano no corre peligro.
+		public string RebajaDesde(string numeroDeCompra)
+		{
+			ArgumentNullException.ThrowIfNullOrWhiteSpace(numeroDeCompra);
+
+			return app.Using(@"
+				{
+					rebaja = compras.RebajaDesde(@numero);
+					print rebaja.Hay hay,
+						rebaja.Sku sku,
+						rebaja.Descripcion descripcion,
+						rebaja.CuantoMenos cuantoMenos,
+						rebaja.ParaElAsistente paraElAsistente;
+				}
+			")
+			.WithParameters(p => {
+				p["numero", typeof(string)] = numeroDeCompra;
+			})
+			.PerformQuery();
+		}
+
 		// La garantia de un producto, con su respaldo: en que compra fue, cuando, y si
 		// sigue vigente. La FECHA DE CONSULTA entra como parametro porque el dominio no
 		// lee el reloj: quien pregunta pone su "hoy".
@@ -936,6 +988,14 @@ namespace Compras.App
 
 		public IReadOnlyList<PrecioQueCambio> Precios(int cuantasCompras = ComprasQueSeMiranParaLaFirma) =>
 			ProyeccionDeVistas.Precios(PreciosDeLosHabituales(cuantasCompras));
+
+		public CanastaFrenteAlPasadoVista FrenteAlPasado(DateTime hoy,
+			int mesesAtras = Dominio.CanastaFrenteAlPasado.VentanaPorDefectoEnMeses,
+			int cuantasCompras = ComprasQueSeMiranParaLaFirma) =>
+			ProyeccionDeVistas.FrenteAlPasado(CanastaFrenteA(hoy, mesesAtras, cuantasCompras));
+
+		public RebajaVista Rebaja(string numeroDeCompra) =>
+			ProyeccionDeVistas.Rebaja(RebajaDesde(numeroDeCompra));
 
 		public CanastasComparadas Comparacion(int anioAntes, int mesAntes, int anioDespues, int mesDespues) =>
 			ProyeccionDeVistas.Comparacion(ComparacionDeCanastas(anioAntes, mesAntes, anioDespues, mesDespues));

@@ -256,6 +256,58 @@ namespace Compras.App
 			return precios;
 		}
 
+		internal static CanastaFrenteAlPasadoVista FrenteAlPasado(string json)
+		{
+			if (string.IsNullOrWhiteSpace(json)) return new CanastaFrenteAlPasadoVista();
+
+			using JsonDocument documento = JsonDocument.Parse(json);
+			JsonElement raiz = documento.RootElement;
+
+			// La cabecera cae bajo el nombre de la variable del print ("frente"); el
+			// arreglo, bajo el de la variable del foreach ("producto").
+			JsonElement cabecera = raiz.TryGetProperty("frente", out JsonElement f) ? f : raiz;
+
+			var productos = new List<ProductoFrenteAlPasadoVista>();
+			if (raiz.TryGetProperty("producto", out JsonElement arreglo))
+				foreach (JsonElement elemento in Elementos(arreglo))
+					productos.Add(new ProductoFrenteAlPasadoVista
+					{
+						Sku = Texto(elemento, "sku"),
+						Descripcion = Texto(elemento, "descripcion"),
+						Presentacion = Texto(elemento, "presentacion"),
+						Antes = Decimal(elemento, "antes"),
+						Ahora = Decimal(elemento, "ahora"),
+						Cambio = Decimal(elemento, "cambio"),
+					});
+
+			return new CanastaFrenteAlPasadoVista
+			{
+				HayConQueComparar = Booleano(cabecera, "hayConQueComparar"),
+				MesesDeVentana = Entero(cabecera, "mesesDeVentana"),
+				Cambio = Decimal(cabecera, "cambio"),
+				ParaElAsistente = Texto(cabecera, "paraElAsistente"),
+				Productos = productos,
+			};
+		}
+
+		internal static RebajaVista Rebaja(string json)
+		{
+			if (string.IsNullOrWhiteSpace(json)) return new RebajaVista();
+
+			using JsonDocument documento = JsonDocument.Parse(json);
+			JsonElement raiz = documento.RootElement;
+			JsonElement rebaja = raiz.TryGetProperty("rebaja", out JsonElement r) ? r : raiz;
+
+			return new RebajaVista
+			{
+				Hay = Booleano(rebaja, "hay"),
+				Sku = Texto(rebaja, "sku"),
+				Descripcion = Texto(rebaja, "descripcion"),
+				CuantoMenos = Decimal(rebaja, "cuantoMenos"),
+				ParaElAsistente = Texto(rebaja, "paraElAsistente"),
+			};
+		}
+
 		internal static RitmoDelSuperVista RitmoDelSuper(string json)
 		{
 			if (string.IsNullOrWhiteSpace(json)) return new RitmoDelSuperVista();

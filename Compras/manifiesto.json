@@ -145,6 +145,20 @@
       "descripcion": "EN CUALES COMPRAS aparecio un producto o un pasillo entero, de la mas reciente a la mas vieja, con el NUMERO DE TICKET de cada una y cuanto de eso entro ahi. NO es consumo_de: aquella agrupa por mes y contesta 'cuanto y cuando'; esta devuelve los TICKETS, y su numero es lo que despues se le pasa a detalle_de_compra para ver la compra entera. Usala cuando la persona pregunte 'cuando compre esto', 'en que compra estaba' o quiera llegar a un recibo puntual. El campo productos dice que descripciones coincidieron: si trae mas de una, el texto alcanzo a varios productos y conviene decirselo antes de dar los totales. Con cuantasCompras en 0 no hay ninguna, y eso es una respuesta valida, no un error."
     },
     {
+      "nombre": "como_me_cambiaron_los_precios",
+      "titulo": "Como me cambiaron los precios",
+      "soloLectura": true,
+      "entrada": [],
+      "descripcion": "Como se movio el precio de cada habitual, comparando siempre por unidad de medida (litro, kilo, unidad): antes, ahora, el cambio en proporcion y si subio. Es la inflacion propia de la persona -con los precios que ella pago-, no la del pais. Las bajadas tambien vienen: subio en false es buena noticia. Una lista vacia significa que ningun habitual tuvo un cambio real (mas del 3%)."
+    },
+    {
+      "nombre": "mi_canasta_frente_a_antes",
+      "titulo": "Mi canasta frente a antes",
+      "soloLectura": true,
+      "entrada": ["meses (opcional: contra hace cuantos meses; sin el, 3)"],
+      "descripcion": "Cuanto cuesta hoy una pieza de cada habitual frente a hace unos meses, sumado en colones y con signo (positivo = mas caro hoy), con el detalle por producto en colones por su presentacion mas reciente. El 'entonces' es el ultimo precio que la persona pago en o antes del corte; un habitual sin precio tan viejo queda afuera de la suma. Con hayConQueComparar en false no hay pasado que mirar todavia, y eso es la respuesta."
+    },
+    {
       "nombre": "promociones_vigentes",
       "titulo": "Las promociones del super",
       "soloLectura": true,

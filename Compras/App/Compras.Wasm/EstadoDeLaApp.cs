@@ -351,6 +351,13 @@ public sealed class EstadoDeLaApp : IAsyncDisposable
 	// SU PROPIA INFLACION, solo de los productos que si lleva.
 	public IReadOnlyList<PrecioQueCambio> Precios() { Exigir(); return api!.Precios(); }
 
+	// LA CANASTA FRENTE A HACE UNOS MESES. El "hoy" lo pone la caratula, y la ventana la
+	// pone el dominio (3 meses): la pantalla no inventa la suya.
+	public CanastaFrenteAlPasadoVista FrenteAlPasado()
+	{ Exigir(); return api!.FrenteAlPasado(DateTime.Now); }
+
+	public RebajaVista Rebaja(string numero) { Exigir(); return api!.Rebaja(numero); }
+
 	// CADA CUANTO VA AL SUPER, que dia y en que momento. No lleva parametros: el dominio lo
 	// mide sobre todo el historial, y no hay reloj de por medio.
 	public RitmoDelSuperVista Ritmo() { Exigir(); return api!.Ritmo(); }
