@@ -48,9 +48,9 @@ convierte este spike en una decisión de arquitectura y no en una curiosidad.
 | **CADENA** | t7 · la pieza existe en Atajos | ✅ |
 | | t8 · encadenar hacia Claude | ✅ pero mal — ver hallazgo 6 |
 | | c4 · ¿el encuadre arregla la respuesta? | ✅ **medido** |
-| | c6 · ¿prosa o markdown? | ⬜ pendiente |
+| | c6 · ¿prosa o markdown? | 🟥 falla on-device — §9 |
 | | c7 · exámenes hacia Claude | ⬜ pendiente |
-| | c8 · ¿respeta el veredicto o diagnostica? | ⬜ pendiente |
+| | c8 · ¿respeta el veredicto o diagnostica? | 🟥 diagnostica on-device — §9 |
 | | t9 · encadenar sin que salga nada | ⬜ medible en app sobre 26.5 — ver §8 |
 
 ---
@@ -296,6 +296,32 @@ disponible». No es lo que pasa: queda disponible, y en 26.5 además genera. Que
 pasa a ser pregunta abierta.
 
 **Y desbloquea t9 y c8**: son medibles en el simulador sobre 26.5, sin teléfono prestado.
+
+---
+
+## 9. El cruce entre módulos funciona; lo que falla es el encuadre
+
+Medido el **2026-09-02** sobre iOS 26.5, con dos tools de módulos distintos en una sesión de
+`LanguageModelSession`. Está en [`../Lab.Cruce`](../Lab.Cruce), reproducible.
+
+**El tool calling corre en el simulador y el modelo cruza dos módulos en un turno.** Tres de tres:
+llamó a `examenes_evaluar_tendencia` y a `compras_consumo_de_grasas_saturadas` y compuso *«tu
+colesterol está subiendo y está por encima del umbral; has comprado manteca y embutidos en los
+últimos 18 meses, ambos en aumento»*. **El cableado no es el problema.**
+
+**El cuello de botella es la selección de tools.** Con una genérica de búsqueda por término en la
+misma sesión —`compras_consumo_de(termino)`, una de las 15 que `compras` publica— el modelo la
+agarra siempre y le pasa `"colesterol"`. Afilar su descripción se midió y **no movió nada**. Sacarla
+de la sesión sí: de ❌ y 235 s a ✅ 3/3 y 18 s. El corte lo da `disabledTools` de
+`installation.json`, que ya existe.
+
+**Y el encuadre no se respeta.** Las tres corridas buenas eligieron bien las tools, pero dos de
+tres violaron la instrucción: una dijo *«este aumento es preocupante»* —juicio clínico— y otra usó
+**markdown** pedido explícitamente que no y afirmó *«está contribuyendo»* como causa probada.
+
+Eso mide **c6** y **c8**, y las dos salen mal on-device. Es lo que más pesa para el producto: la
+promesa se apoya en que el asistente no diagnostique, y este modelo diagnostica. **No dice nada
+sobre Claude por red**, que es la otra mitad de la Puerta 2 y el contraste que decide.
 
 ---
 
