@@ -98,6 +98,34 @@ struct ContentView: View {
          "En la app del Host, apagá el switch de facturas. Sin tocar nada más, repetí r1. Facturas NO puede aparecer. Si aparece, el consentimiento tiene un agujero.")
     ]
 
+    // CON APPLE INTELLIGENCE · el techo de verdad.
+    //
+    // Todo el techo de arriba se midio en un 13 Pro, que NO puede tener Apple Intelligence -- la
+    // pieza que enrutaria voz -> indice semantico -> app no estaba en el telefono. Por eso t3 y
+    // t4 quedaron "no concluyentes" y t9 "no medible". Estas son las mismas preguntas, con el
+    // aparato que si las puede contestar.
+    //
+    // LA CONDICION QUE APPLE EXIGE Y QUE CUESTA UNA TARDE SI NO SE SABE: idioma del aparato =
+    // idioma de Siri, y en una variante soportada. La lista de Apple trae espanol de Mexico,
+    // Espana y US. Costa Rica no figura. Es la explicacion mas probable de que en el simulador
+    // no aparezca el interruptor aunque la Mac tenga Apple Intelligence activo.
+    private let conAI: [(String, String, String)] = [
+        ("a0", "Antes de nada: el aparato y el idioma",
+         "iPhone 15 Pro o 16+, iOS 26, 7 GB libres. Ajustes → Apple Intelligence & Siri → encendido. IDIOMA DEL APARATO = IDIOMA DE SIRI, en español de México, España o US — no Costa Rica. Wi-Fi y cargador mientras baja el modelo."),
+        ("a1", "t3 otra vez: sin nombrar la app",
+         "«¿Cuánto gasté en la farmacia?». En el 13 Pro cayó en búsqueda web. ¿Con Apple Intelligence llega a Gnothi?"),
+        ("a2", "t4 otra vez: por comercio",
+         "«Buscá mis facturas del Automercado». En el 13 Pro se lo llevó Apple Cash. ¿Ahora nos elige?"),
+        ("a3", "t8b: exámenes sin nombrar la app",
+         "«¿Cómo salió mi colesterol?». El analito es justo lo que la persona SÍ diría. Es la que más importa del techo."),
+        ("a4", "Spotlight por concepto, con Apple Intelligence",
+         "Buscá «combustible» y «deseable». Sin Apple Intelligence no salieron (t6, t6b). ¿El índice semántico los encuentra ahora?"),
+        ("a5", "t9: «Use Model» sin red",
+         "Atajo: Gnothi «Facturas en datos» → «Use Model» → On Device. Modo avión. ¿Contesta? Si sí, es la Puerta 2 con el modelo de Apple: gratis, sin llave, sin que el dato salga."),
+        ("a6", "Antes de pedir teléfono: el simulador",
+         "Tu Mac cumple lo que Apple pide («Simulators use the host Mac's model»). Poné el simulador en Ajustes → General → Idioma y región → español (México), y Siri en el mismo idioma. Si aparece el interruptor de Apple Intelligence, a5 se puede correr ahí. Es un ajuste, no un aparato.")
+    ]
+
     var body: some View {
         NavigationStack {
             List {
@@ -127,6 +155,10 @@ struct ContentView: View {
                 grupo("EL PUENTE · datos de verdad",
                       "Necesita la OTRA app: Gnothi.iOS, el Host de .NET. Sin ella instalada y corrida al menos una vez, estas tres no miden nada.",
                       real)
+
+                grupo("CON APPLE INTELLIGENCE · el techo de verdad",
+                      "Las de arriba corrieron en un 13 Pro, que no puede tener Apple Intelligence. Éstas necesitan un 15 Pro o 16+ prestado — salvo a5, que puede andar en el simulador si el idioma coincide (a6).",
+                      conAI)
 
                 Section {
                     Text("Las de EL PISO y LA CADENA andan en cualquier iPhone con iOS 18. Las de EL TECHO dependen del índice semántico, y ahí sí puede pesar tener Apple Intelligence (15 Pro o 16+).")
