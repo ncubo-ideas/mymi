@@ -376,6 +376,9 @@ h2, h3, h4, h5 { font-weight: 700; }
     border-radius: var(--radio-carta);
     padding: 1rem 1.1rem;
 }
+/* La version de una linea: mismo tono, menos cuerpo. La portada la lleva plegada. */
+.aviso-linea { padding: .55rem .9rem; }
+
 .aviso-fuerte {
     background: rgba(184, 118, 58, .08);
     border: 1px solid rgba(184, 118, 58, .35);
@@ -681,7 +684,13 @@ main h2 {
        horizontal que en vertical. */
     vector-effect: non-scaling-stroke;
 }
-.serie-mes circle { fill: var(--carta); stroke: var(--verde-vivo); stroke-width: 2; }
+.serie-mes .punto-serie {
+    fill: none;
+    stroke-linecap: round;
+    vector-effect: non-scaling-stroke;
+}
+.serie-mes .punto-serie--aro { stroke: var(--verde-vivo); stroke-width: 9; }
+.serie-mes .punto-serie--centro { stroke: var(--carta); stroke-width: 5; }
 
 /* Los precios: el de antes tachado y el de ahora firme. Es la forma en que un super
    escribe una rebaja, y se lee sin leyenda. */

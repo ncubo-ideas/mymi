@@ -247,16 +247,17 @@ else
        de una advertencia que vio una vez. *@
     else if (estado.EnAlmacenamientoDelNavegador)
     {
-        <div class="aviso d-flex align-items-center flex-wrap gap-2 mb-3">
-            <div class="flex-grow-1">
-                <strong>Guardado @(instalada == true ? "en esta app" : "en este navegador").</strong>
-                Tus compras sobreviven al cierre, pero viven donde el navegador las administra:
-                <strong>tu asistente no las puede consultar</strong>. Para eso hace falta una
-                carpeta tuya.
+        @* A UNA LINEA: la advertencia importa -es la mitad del producto que aca no
+           funciona- pero un parrafo permanente carga la portada. La frase corta dice lo
+           mismo que hay que saber; el porque completo vive en la pantalla de eleccion. *@
+        <div class="aviso aviso-linea d-flex align-items-center flex-wrap gap-2 mb-3">
+            <div class="flex-grow-1 small">
+                <strong>Guardado @(instalada == true ? "en esta app" : "en este navegador")</strong>
+                &middot; tu asistente no lo puede consultar.
             </div>
             @if (soportado == true)
             {
-                <button class="btn btn-aviso" @onclick="ConectarCarpeta">Elegir una carpeta</button>
+                <button class="btn btn-aviso btn-sm" @onclick="ConectarCarpeta">Elegir carpeta</button>
             }
         </div>
     }
@@ -500,19 +501,37 @@ else
                 </div>
 
                 @{ var delMes = ComprasDelMes(); }
-                @if (delMes.Count > 1)
+                @* PLEGADA, como en el mock de Fernanda ("Ver la grafica" es un ENLACE ahi,
+                   no un dibujo fijo): la forma del mes es curiosidad, no accion, y la
+                   portada estaba cargando demasiado. *@
+                @if (verGrafica && delMes.Count > 1)
                 {
                     <svg class="serie-mes" viewBox="0 0 300 60" preserveAspectRatio="none"
                          role="img" aria-label="Las compras del mes, una por punto.">
                         <polyline points="@Puntos(delMes)" />
+                        @* PUNTOS QUE NO SE DEFORMAN. Con preserveAspectRatio="none" un
+                           <circle> se estira al ancho de la carta y sale OVALO. Un trazo de
+                           largo cero con punta redonda dibuja el mismo punto, y con
+                           non-scaling-stroke NO escala: queda circulo a cualquier ancho.
+                           Van dos capas -el aro verde y el centro claro- porque una punta
+                           de trazo no puede tener relleno y borde a la vez. *@
                         @for (int i = 0; i < delMes.Count; i++)
                         {
-                            <circle cx="@Equis(i, delMes.Count)" cy="@Ye(delMes[i].Total, delMes)" r="3" />
+                            @* "M @(...)" con espacio: Razor no evalua un @ pegado a una
+                               letra (lo lee como email), y "M@Equis" salia LITERAL al svg. *@
+                            <path class="punto-serie punto-serie--aro"
+                                  d="M @Equis(i, delMes.Count) @Ye(delMes[i].Total, delMes) h0.01" />
+                            <path class="punto-serie punto-serie--centro"
+                                  d="M @Equis(i, delMes.Count) @Ye(delMes[i].Total, delMes) h0.01" />
                         }
                     </svg>
                 }
 
                 <div class="d-flex flex-wrap gap-3 mt-2">
+                    @if (!verGrafica && ComprasDelMes().Count > 1)
+                    {
+                        <button class="btn btn-link p-0 ver-todos" @onclick="() => verGrafica = true">Ver la gráfica &rarr;</button>
+                    }
                     @if (ritmo is not null && ritmo.EsObservado && !verRitmo)
                     {
                         <button class="btn btn-link p-0 ver-todos" @onclick="() => verRitmo = true">Ver tu ritmo &rarr;</button>
@@ -634,69 +653,80 @@ else
         </div>
     }
 
-    @* LO QUE NO ESTA. Una pantalla no puede renderizar una ausencia que nadie le pasó:
-       esto lo calcula el dominio con el historial, el calendario y la periodicidad de
-       cada categoría. *@
+    @* LO QUE NO ESTA, plegado a una fila: es la lectura mas "del asistente" de todas -la
+       tool que_dejaste_de_comprar la da entera- y en pantalla basta el titular. El detalle
+       se abre aca mismo. *@
     @if (pendientes.Count > 0)
     {
-        <div class="seccion-cabeza">
-            <span class="seccion-icono" aria-hidden="true"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="4" width="12" height="12" rx="3" stroke-dasharray="3 2.6"/></svg></span>
-            <h2 class="kicker">Lo que dejó de entrar</h2>
-        </div>
-        <div class="list-group mb-4">
-            @foreach (AbastecimientoEnEspera p in pendientes)
-            {
-                <div class="list-group-item d-flex justify-content-between align-items-center flex-wrap gap-2">
-                    @* El titulo, nunca la llave: "LacteosYHuevos" es lo que viene en el
-                       evento y no se le muestra a nadie. *@
-                    <div>
-                        <strong>@p.Titulo</strong>
-                        <div class="small text-body-secondary">@p.ParaElAsistente</div>
-                    </div>
-                    <span class="etiqueta @(p.Severidad == "informativo" ? "etiqueta-neutra" : "etiqueta-tierra")">
-                        @p.DiasDesdeLaUltima días
+        <div class="list-group mb-3">
+            <button class="list-group-item list-group-item-action firma-fila"
+                    @onclick="() => verHueco = !verHueco">
+                <span class="firma-que">
+                    <strong>Lo que dejó de entrar</strong>
+                    <span class="ritmo-rotulo">
+                        @pendientes[0].Titulo@(pendientes.Count > 1 ? $" · y {pendientes.Count - 1} más" : "") hace más de lo habitual
                     </span>
-                </div>
+                </span>
+                <span class="recibo-flecha" aria-hidden="true">@(verHueco ? "⌄" : "›")</span>
+            </button>
+            @if (verHueco)
+            {
+                @foreach (AbastecimientoEnEspera p in pendientes)
+                {
+                    <div class="list-group-item d-flex justify-content-between align-items-center flex-wrap gap-2">
+                        <div>
+                            <strong>@p.Titulo</strong>
+                            <div class="small text-body-secondary">@p.ParaElAsistente</div>
+                        </div>
+                        <span class="etiqueta @(p.Severidad == "informativo" ? "etiqueta-neutra" : "etiqueta-tierra")">
+                            @p.DiasDesdeLaUltima días
+                        </span>
+                    </div>
+                }
             }
         </div>
     }
 
-    @* La respuesta a "¿hasta cuando tiene garantia la olla arrocera?": el respaldo, sin
-       buscar tickets de papel. *@
+    @* LAS GARANTIAS, plegadas a una fila: importan EL DIA que hay que reclamar, no todos
+       los dias. Si alguna ya pide moverse (QueHacer), la lista arranca abierta — esa si es
+       noticia. *@
     @if (garantias.Count > 0)
     {
-        <div class="seccion-cabeza">
-            <span class="seccion-icono" aria-hidden="true"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M10 3l6 2.1v4.7c0 3.4-2.4 5.7-6 7-3.6-1.3-6-3.6-6-7V5.1z"/><path d="M7.6 9.9l1.7 1.7 3.1-3.3"/></svg></span>
-            <h2 class="kicker">Tus garantías</h2>
-        </div>
-        <div class="list-group mb-4">
-            @foreach (GarantiaDeProducto g in garantias)
-            {
-                <div class="list-group-item d-flex justify-content-between align-items-center flex-wrap gap-2">
-                    <div>
-                        <strong>@g.Descripcion</strong>
-                        @* SIN "(compra T-89917)" EN EL MEDIO de la frase: el numero es del
-                           sistema del super, y va donde sirve — junto al reclamo, que es lo
-                           unico para lo que ella lo necesita. Y las fechas se leen ("9 de
-                           mayo"), no dd/MM/yyyy, que es formato de formulario. *@
-                        <div class="small text-body-secondary">
-                            la compraste el @Fecha(g.FechaDeCompra) &middot;
-                            @g.MesesDeCobertura meses de garantía
-                        </div>
-                        @* La acción sale del conjunto cerrado del dominio: la pantalla no
-                           puede inventar una que el dominio no eligió. *@
-                        @if (g.QueHacer.Length > 0)
-                        {
-                            <div class="small mt-1">
-                                <strong>@g.QueHacer</strong> &middot;
-                                el número para el reclamo es @g.NumeroDeCompra
-                            </div>
-                        }
-                    </div>
-                    <span class="etiqueta @(g.QueHacer.Length > 0 ? "etiqueta-tierra" : "etiqueta-verde")">
-                        te cubre hasta el @Fecha(g.VenceEl)
+        <div class="list-group mb-3">
+            <button class="list-group-item list-group-item-action firma-fila"
+                    @onclick="() => verGarantias = !verGarantias">
+                <span class="firma-que">
+                    <strong>Tus garantías</strong>
+                    <span class="ritmo-rotulo">
+                        @garantias[0].Descripcion te cubre hasta el @Fecha(garantias[0].VenceEl)@(garantias.Count > 1 ? $" · y {garantias.Count - 1} más" : "")
                     </span>
-                </div>
+                </span>
+                <span class="recibo-flecha" aria-hidden="true">@(verGarantias ? "⌄" : "›")</span>
+            </button>
+            @if (verGarantias)
+            {
+                @foreach (GarantiaDeProducto g in garantias)
+                {
+                    <div class="list-group-item d-flex justify-content-between align-items-center flex-wrap gap-2">
+                        <div>
+                            <strong>@g.Descripcion</strong>
+                            <div class="small text-body-secondary">
+                                la compraste el @Fecha(g.FechaDeCompra) &middot;
+                                @g.MesesDeCobertura meses de garantía
+                            </div>
+                            @if (g.QueHacer.Length > 0)
+                            {
+                                <div class="small mt-1">
+                                    <strong>@g.QueHacer</strong> &middot;
+                                    el número para el reclamo es @g.NumeroDeCompra
+                                </div>
+                            }
+                        </div>
+                        <span class="etiqueta @(g.QueHacer.Length > 0 ? "etiqueta-tierra" : "etiqueta-verde")">
+                            te cubre hasta el @Fecha(g.VenceEl)
+                        </span>
+                    </div>
+                }
             }
         </div>
     }
@@ -721,7 +751,9 @@ else
     // CUANTOS SE NOMBRAN EN LA PORTADA. La app resume; el MCP detalla. Con compras
     // semanales el dia de ir al super "tocan" casi todos los habituales -medido: 16 de 22-,
     // y una carta con dieciseis nombres deja de ser un resumen.
-    private const int FaltantesQueSeMuestran = 6;
+    // Cuatro y no seis: Juan miro la portada armada y dijo "tiene demasiadas cosas". La
+    // fila del pie sigue diciendo cuantas mas hay, y el asistente da la lista entera.
+    private const int FaltantesQueSeMuestran = 4;
 
     // DESDE CUANDO COMPRA ACA, en palabras. "87 compras" solo es un numero; "87 compras
     // desde enero de 2025" es su historia con este super, que es lo que ella reconoce.
@@ -735,6 +767,9 @@ else
     private bool verRitmo;
     private bool verComparacion;
     private bool verPrecios;
+    private bool verGrafica;
+    private bool verHueco;
+    private bool verGarantias;
 
     private ListaDeLaProximaCompra? porCaer;
     private bool? soportado;
@@ -863,6 +898,9 @@ else
         total = estado.Total();
         ultimoEvento = estado.UltimoEvento();
         garantias = estado.GarantiasVigentes();
+        // Si alguna garantia ya pide moverse, SU fila arranca abierta: esa si es noticia.
+        foreach (GarantiaDeProducto g in garantias)
+            if (g.QueHacer.Length > 0) { verGarantias = true; break; }
         pendientes = estado.AbastecimientosPendientes();
 
         // Qué dos meses se comparan lo elige el DOMINIO, que conoce su propio rango.
