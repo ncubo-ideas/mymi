@@ -76,6 +76,11 @@ INFLACION_ANUAL = {
     # inflacion daba 25.000 solo el primer mes. Es el precio de lista de la marca que
     # compra siempre, sostenido a proposito para que el gasto del hogar sea comparable.
     "PERRO-CROQ-10KG": 0.0,
+
+    # EL TOMATE BAJA, y es el unico: sostiene la tarjeta "Puede interesarte" y la nota
+    # al pie de los recibos viejos ("hoy cuesta X menos"), que sin ninguna bajada en el
+    # guion no se podian ver nunca. Una verdura que se abarata es lo verosimil.
+    "TOMATE-KG": -0.05,
 }
 INFLACION_POR_DEFECTO = 0.06
 
