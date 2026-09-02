@@ -110,12 +110,23 @@ public sealed class Shell : IDisposable
 	/// UI: en Android es RunOnUiThread + EvaluateJavascript, en iOS InvokeOnMainThread +
 	/// EvaluateJavaScript. La cascara no quiere saber cual.
 	/// </param>
-	public Shell(Paths paths, Action<string> log, Action<string, string, string> push)
+	// LA FABRICA DEL MODELO LOCAL LA PONE LA CASCARA, y por eso es opcional. El modelo del
+	// telefono se habla por DllImport contra simbolos del propio ejecutable, asi que solo iOS
+	// puede construirlo: Android pasa null y ese proveedor no se ofrece. Este archivo se compila
+	// en las dos plataformas y no debe saber cual es cual.
+	public Shell(Paths paths, Action<string> log, Action<string, string, string> push,
+		Func<string, IModel>? modeloLocal = null)
 	{
 		this.paths = paths;
 		this.log = log;
 		this.push = push;
+		this.modeloLocal = modeloLocal;
 	}
+
+	private readonly Func<string, IModel>? modeloLocal;
+
+	/// <summary>El proveedor que corre en el aparato, sin url y sin llave.</summary>
+	public const string ProveedorLocal = "En este teléfono";
 
 	// El icono por negocio. Un mapa chico y explicito: un modulo que no este aca cae a la caja
 	// generica. NO viene del manifiesto a proposito -- el icono es asunto del Host, no de la
@@ -351,6 +362,34 @@ public sealed class Shell : IDisposable
 	// el default cuando no se eligio nada.
 	private string CfgPath => Path.Combine(paths.Files, "model.cfg");
 
+	// QUIEN DECIDE LA IMPLEMENTACION. Antes no la decidia nadie: se construia siempre
+	// ModelOpenAiCompatible y `Provider()` solo cambiaba la url. Elegir "Claude (Anthropic)" en
+	// Ajustes mandaba un cuerpo con forma de OpenAI a una API que no la habla, y ModelClaude
+	// -que existe- no se usaba nunca desde la app.
+	private IModel Modelo(string proveedor, string url, string model)
+	{
+		if (proveedor == ProveedorLocal)
+			return modeloLocal is not null
+				? modeloLocal(Encuadre)
+				: throw new InvalidOperationException("este aparato no ofrece modelo propio");
+
+		// Por nombre y no por url: la url la puede editar la persona, el proveedor lo eligio.
+		if (proveedor.Contains("Anthropic", StringComparison.OrdinalIgnoreCase))
+			return new ModelClaude(KeyPath, model);
+
+		return new ModelOpenAiCompatible(url, model, KeyPath);
+	}
+
+	// EL ENCUADRE, en un solo lugar. Viaja tal cual hasta el modelo: no es documentacion, es lo
+	// unico que separa "te leo tus numeros" de "te diagnostico". Medido: un modelo capaz lo
+	// respeta 7 de 7; el del telefono se le escapa 2 de 4 -ver Spikes/Lab.Cruce-.
+	private const string Encuadre =
+		"Sos el asistente de Gnothi. Los datos que devuelven las herramientas son los datos REALES " +
+		"de la persona que te pregunta, leidos de los registros que sus instituciones le entregaron " +
+		"y que viven en su propio telefono. No vienen de ningun servidor. Contestale sobre SUS " +
+		"numeros, en su idioma, en prosa corrida y sin markdown. El veredicto clinico ya viene hecho " +
+		"y no es tuyo: no diagnostiques ni recomendes tratamiento.";
+
 	private (string name, string url, string model) Provider()
 	{
 		try
@@ -424,8 +463,8 @@ public sealed class Shell : IDisposable
 		{
 			try
 			{
-				(_, string url, string model) = Provider();
-				var loop = new AgentLoop(dispatcher!, new ModelOpenAiCompatible(url, model, KeyPath));
+				(string proveedor, string url, string model) = Provider();
+				var loop = new AgentLoop(dispatcher!, Modelo(proveedor, url, model));
 
 				string answer = await loop.Answer(question, line => Push("trace", id, line), stop.Token);
 				Push("answer", id, answer);

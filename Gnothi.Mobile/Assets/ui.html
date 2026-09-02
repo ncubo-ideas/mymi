@@ -613,6 +613,9 @@ function inline(s) {
 
 // THE PROVIDERS ON OFFER. Adding one is adding a line; all speak the OpenAI shape.
 const PROV = [
+  // EL DE ESTE APARATO va primero y sin url ni llave: es el unico donde el dato no sale del
+  // telefono, que es la tesis del producto. La cascara lo oculta si el aparato no genera.
+  { name:'En este teléfono',  url:'',                                model:'apple-on-device',     note:'sin llave · sin red · nada sale de acá', local:true },
   { name:'Groq',              url:'https://api.groq.com/openai/v1',  model:'openai/gpt-oss-120b', note:'gratis · sin tarjeta · rápido' },
   { name:'OpenAI (ChatGPT)',  url:'https://api.openai.com/v1',       model:'gpt-4o-mini',         note:'la llave de tu cuenta de OpenAI' },
   { name:'Claude (Anthropic)',url:'https://api.anthropic.com/v1',    model:'claude-sonnet-5',     note:'la llave de tu Console' },

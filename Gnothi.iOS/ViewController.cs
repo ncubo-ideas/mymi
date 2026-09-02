@@ -88,7 +88,15 @@ public sealed class ViewController : UIViewController
 				FotoLocal: true),
 			Log,
 			(kind, id, payload) => InvokeOnMainThread(() =>
-				web?.EvaluateJavaScript(Shell.PushScript(kind, id, payload), (_, _) => { })));
+				web?.EvaluateJavaScript(Shell.PushScript(kind, id, payload), (_, _) => { })),
+
+			// EL MODELO DE ESTE TELEFONO, si de verdad genera. Se pasa como fabrica porque el
+			// Shell se comparte con Android, donde estos simbolos no existen: alla el argumento
+			// va en null y el proveedor no se ofrece.
+			//
+			// La comprobacion es Sirve() y no isAvailable, que MIENTE -en iOS 26.2 dice que si y
+			// la generacion falla-. Sirve() lo verifica generando, y cachea.
+			ModelFoundation.Sirve() ? encuadre => new ModelFoundation(encuadre) : null);
 
 		_ = Task.Run(async () =>
 		{

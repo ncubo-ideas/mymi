@@ -206,14 +206,14 @@ private func pasoImpl(
 			}
 		} catch is Detener {
 			respuesta["calls"] = captura.llamadas.map { l in
-				["id": UUID().uuidString, "name": l.nombre, "args": String(describing: l.argumentos)]
+				["id": UUID().uuidString, "name": l.nombre, "args": l.argumentos.jsonString]
 			}
 		} catch {
 			if captura.llamadas.isEmpty {
 				respuesta["error"] = "\(type(of: error)): \(error)"
 			} else {
 				respuesta["calls"] = captura.llamadas.map { l in
-					["id": UUID().uuidString, "name": l.nombre, "args": String(describing: l.argumentos)]
+					["id": UUID().uuidString, "name": l.nombre, "args": l.argumentos.jsonString]
 				}
 			}
 		}
