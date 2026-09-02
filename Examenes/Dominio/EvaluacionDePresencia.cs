@@ -16,27 +16,27 @@ namespace Examenes.Dominio
 	// hecho que hace que una sangre en heces deje de ser "conviene repetirlo".
 	//
 	// Carrier por identidad: sin Equals, sin GetHashCode, no es llave de nada.
-	public sealed class EvaluacionDePresencia : HechosDeLaSerie
+	internal sealed class EvaluacionDePresencia : HechosDeLaSerie
 	{
-		public Presencia Presencia { get; private set; }
+		internal Presencia Presencia { get; private set; }
 
 		// Cuantas de las pruebas realizadas dieron positivas, en toda la serie.
-		public int Positivas { get; private set; }
+		internal int Positivas { get; private set; }
 
 		// Cuantas positivas hay AL FINAL, una detras de otra. Es el numero que distingue
 		// "apareció" de "persiste", y por lo tanto el que cambia la conducta.
-		public int PositivasSeguidas { get; private set; }
+		internal int PositivasSeguidas { get; private set; }
 
 		// Dias entre la primera y la ultima prueba de la serie. Sirve para decir sobre
 		// cuanto tiempo se esta hablando; no se divide por el, porque una tasa de
 		// aparicion no es una magnitud clinica.
-		public int DiasTranscurridos { get; private set; }
+		internal int DiasTranscurridos { get; private set; }
 
 		// El resultado de la ultima prueba, ya dicho con el vocabulario de SU analito:
 		// "positivo", y en una serologia seria "reactivo". Vacio si no hay ninguna.
-		public string UltimoResultado { get; private set; }
+		internal string UltimoResultado { get; private set; }
 
-		public EvaluacionDePresencia(Analito analito, Presencia presencia, int cantidadDeMediciones,
+		internal EvaluacionDePresencia(Analito analito, Presencia presencia, int cantidadDeMediciones,
 			int positivas, int positivasSeguidas, int diasTranscurridos, string ultimoResultado)
 			: base(analito, cantidadDeMediciones)
 		{
@@ -50,19 +50,19 @@ namespace Examenes.Dominio
 		}
 
 		// Cero o una prueba realizada: no hay serie que evaluar.
-		public static EvaluacionDePresencia SinSerie(Analito analito, int cantidadDeMediciones,
+		internal static EvaluacionDePresencia SinSerie(Analito analito, int cantidadDeMediciones,
 			string ultimoResultado) =>
 			new EvaluacionDePresencia(analito, Presencia.Indeterminada, cantidadDeMediciones,
 				0, 0, 0, ultimoResultado);
 
-		public override string NombreDeLaLectura => Presencia.Nombre;
+		internal override string NombreDeLaLectura => Presencia.Nombre;
 
-		public override bool SugiereRepetirElExamen => Presencia.SugiereRepetirElExamen;
+		internal override bool SugiereRepetirElExamen => Presencia.SugiereRepetirElExamen;
 
 		// Proyecciones escalares, para que el print del DSL no navegue dos niveles.
-		public string NombreDeLaPresencia => Presencia.Nombre;
-		public bool EstaPresente => Presencia.EstaPresente;
-		public bool EstaConfirmado => Presencia.EstaConfirmado;
-		public int Negativas => CantidadDeMediciones - Positivas;
+		internal string NombreDeLaPresencia => Presencia.Nombre;
+		internal bool EstaPresente => Presencia.EstaPresente;
+		internal bool EstaConfirmado => Presencia.EstaConfirmado;
+		internal int Negativas => CantidadDeMediciones - Positivas;
 	}
 }

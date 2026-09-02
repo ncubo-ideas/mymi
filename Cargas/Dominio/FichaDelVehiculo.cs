@@ -9,26 +9,26 @@ namespace Cargas.Dominio
 	/// puede existir con solo la placa, y ese es justo el momento de pedirle los datos
 	/// -cuando ya hay algo que nombrar, no un formulario al inicio-.
 	/// </summary>
-	public abstract class FichaDelVehiculo
+	internal abstract class FichaDelVehiculo
 	{
 		/// <summary>La ausencia, como instancia unica.</summary>
-		public static readonly FichaDelVehiculo Vacia = new FichaVacia();
+		internal static readonly FichaDelVehiculo Vacia = new FichaVacia();
 
-		public static FichaDelVehiculo Completada(string alias, string marca, string modelo,
+		internal static FichaDelVehiculo Completada(string alias, string marca, string modelo,
 			int anio, string color, RendimientoDeFabrica rendimientoDeFabrica) =>
 			new FichaCompletada(alias, marca, modelo, anio, color, rendimientoDeFabrica);
 
-		public abstract bool Existe { get; }
+		internal abstract bool Existe { get; }
 
 		/// <summary>Revienta si la ficha esta vacia: consultar antes Existe.</summary>
-		public abstract string Alias { get; }
-		public abstract string Marca { get; }
-		public abstract string Modelo { get; }
-		public abstract int Anio { get; }
-		public abstract string Color { get; }
+		internal abstract string Alias { get; }
+		internal abstract string Marca { get; }
+		internal abstract string Modelo { get; }
+		internal abstract int Anio { get; }
+		internal abstract string Color { get; }
 
 		/// <summary>Total: una ficha vacia no aporto rendimiento de fabrica.</summary>
-		public abstract RendimientoDeFabrica RendimientoDeFabrica { get; }
+		internal abstract RendimientoDeFabrica RendimientoDeFabrica { get; }
 
 		private sealed class FichaVacia : FichaDelVehiculo
 		{
@@ -36,13 +36,13 @@ namespace Cargas.Dominio
 				new ErrorDeDominio(
 					"Sonia todavia no completo la ficha de este vehiculo: consultar antes Existe.");
 
-			public override bool Existe => false;
-			public override string Alias => throw SinFicha();
-			public override string Marca => throw SinFicha();
-			public override string Modelo => throw SinFicha();
-			public override int Anio => throw SinFicha();
-			public override string Color => throw SinFicha();
-			public override RendimientoDeFabrica RendimientoDeFabrica => RendimientoDeFabrica.SinDato;
+			internal override bool Existe => false;
+			internal override string Alias => throw SinFicha();
+			internal override string Marca => throw SinFicha();
+			internal override string Modelo => throw SinFicha();
+			internal override int Anio => throw SinFicha();
+			internal override string Color => throw SinFicha();
+			internal override RendimientoDeFabrica RendimientoDeFabrica => RendimientoDeFabrica.SinDato;
 		}
 
 		private sealed class FichaCompletada : FichaDelVehiculo
@@ -72,13 +72,13 @@ namespace Cargas.Dominio
 				this.rendimientoDeFabrica = rendimientoDeFabrica;
 			}
 
-			public override bool Existe => true;
-			public override string Alias => alias;
-			public override string Marca => marca;
-			public override string Modelo => modelo;
-			public override int Anio => anio;
-			public override string Color => color;
-			public override RendimientoDeFabrica RendimientoDeFabrica => rendimientoDeFabrica;
+			internal override bool Existe => true;
+			internal override string Alias => alias;
+			internal override string Marca => marca;
+			internal override string Modelo => modelo;
+			internal override int Anio => anio;
+			internal override string Color => color;
+			internal override RendimientoDeFabrica RendimientoDeFabrica => rendimientoDeFabrica;
 		}
 	}
 }

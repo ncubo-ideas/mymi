@@ -17,18 +17,18 @@ namespace Compras.Dominio
 	// de una canasta de comida depende de cosas que el super no sabe -un resultado de
 	// laboratorio, una dieta, cuantos comen en la casa-, y quien las cruza es el asistente
 	// con permiso de la persona.
-	public class ComparacionDeCanastas
+	internal class ComparacionDeCanastas
 	{
 		/// <summary>
 		/// Que parte del movimiento total tiene que mover un departamento para que valga
 		/// nombrarlo. Menos de un decimo es ruido de despensa y ensucia la lectura.
 		/// </summary>
-		public const decimal ParteDelMovimientoQueCuenta = 0.1m;
+		internal const decimal ParteDelMovimientoQueCuenta = 0.1m;
 
-		public Canasta Antes { get; private set; }
-		public Canasta Despues { get; private set; }
+		internal Canasta Antes { get; private set; }
+		internal Canasta Despues { get; private set; }
 
-		public ComparacionDeCanastas(Canasta antes, Canasta despues)
+		internal ComparacionDeCanastas(Canasta antes, Canasta despues)
 		{
 			ArgumentNullException.ThrowIfNull(antes);
 			ArgumentNullException.ThrowIfNull(despues);
@@ -38,17 +38,17 @@ namespace Compras.Dominio
 		}
 
 		/// <summary>Solo hay comparacion si LOS DOS meses tienen compras; si no, se inventaria una lectura.</summary>
-		public bool HayComparacion => Antes.HayCompras && Despues.HayCompras;
+		internal bool HayComparacion => Antes.HayCompras && Despues.HayCompras;
 
-		public decimal GastoAntes => Antes.GastoTotal;
+		internal decimal GastoAntes => Antes.GastoTotal;
 
-		public decimal GastoDespues => Despues.GastoTotal;
+		internal decimal GastoDespues => Despues.GastoTotal;
 
 		/// <summary>El HECHO, con signo: cuanto mas -o menos- se gasto en el mes de despues.</summary>
-		public decimal CambioEnElTotal => HayComparacion ? GastoDespues - GastoAntes : 0m;
+		internal decimal CambioEnElTotal => HayComparacion ? GastoDespues - GastoAntes : 0m;
 
 		/// <summary>El cambio del total en proporcion. 0,11 es un 11% mas que el mes de antes.</summary>
-		public decimal CambioEnProporcion =>
+		internal decimal CambioEnProporcion =>
 			HayComparacion && GastoAntes != 0m
 				? Math.Round(CambioEnElTotal / GastoAntes, 4)
 				: 0m;
@@ -57,7 +57,7 @@ namespace Compras.Dominio
 		/// Departamento por departamento, del que mas movio la aguja al que menos. Total:
 		/// sin comparacion la lista viene vacia.
 		/// </summary>
-		public IReadOnlyList<DiferenciaDeDepartamento> Diferencias
+		internal IReadOnlyList<DiferenciaDeDepartamento> Diferencias
 		{
 			get
 			{
@@ -83,7 +83,7 @@ namespace Compras.Dominio
 		}
 
 		/// <summary>Los departamentos que EXPLICAN la diferencia: los que movieron lo suficiente.</summary>
-		public IReadOnlyList<DiferenciaDeDepartamento> LasQueExplican
+		internal IReadOnlyList<DiferenciaDeDepartamento> LasQueExplican
 		{
 			get
 			{
@@ -96,13 +96,13 @@ namespace Compras.Dominio
 		}
 
 		/// <summary>Consulta de presencia, total: si hay algun departamento que explique el cambio.</summary>
-		public bool HayAlgoQueLoExplique => LasQueExplican.Count > 0;
+		internal bool HayAlgoQueLoExplique => LasQueExplican.Count > 0;
 
 		/// <summary>
 		/// La lectura en una linea, escrita por el dominio con SUS hechos: cuanto y de
 		/// donde. Lo que se haga con eso no lo decide un supermercado.
 		/// </summary>
-		public string ParaElAsistente
+		internal string ParaElAsistente
 		{
 			get
 			{
@@ -169,11 +169,11 @@ namespace Compras.Dominio
 	/// Cuanto movio UN departamento entre los dos meses: los dos montos, el cambio con
 	/// signo, y si es un pasillo que antes no aparecia.
 	/// </summary>
-	public class DiferenciaDeDepartamento
+	internal class DiferenciaDeDepartamento
 	{
-		public Categoria Categoria { get; private set; }
-		public decimal MontoAntes { get; private set; }
-		public decimal MontoDespues { get; private set; }
+		internal Categoria Categoria { get; private set; }
+		internal decimal MontoAntes { get; private set; }
+		internal decimal MontoDespues { get; private set; }
 
 		private readonly decimal movimientoTotal;
 
@@ -188,21 +188,21 @@ namespace Compras.Dominio
 			this.movimientoTotal = movimientoTotal;
 		}
 
-		public string Titulo => Categoria.Titulo;
+		internal string Titulo => Categoria.Titulo;
 
 		/// <summary>Con signo: positivo si en el mes de despues entro mas de este pasillo.</summary>
-		public decimal Cambio => MontoDespues - MontoAntes;
+		internal decimal Cambio => MontoDespues - MontoAntes;
 
-		public bool Subio => Cambio > 0m;
+		internal bool Subio => Cambio > 0m;
 
 		/// <summary>Si el pasillo ENTRO: no aparecia en el mes de antes y ahora si.</summary>
-		public bool EsNuevo => MontoAntes == 0m && MontoDespues > 0m;
+		internal bool EsNuevo => MontoAntes == 0m && MontoDespues > 0m;
 
 		/// <summary>Si el pasillo SE FUE: aparecia en el mes de antes y ahora no.</summary>
-		public bool Desaparecio => MontoAntes > 0m && MontoDespues == 0m;
+		internal bool Desaparecio => MontoAntes > 0m && MontoDespues == 0m;
 
 		/// <summary>Si movio lo suficiente como para que valga nombrarlo al explicar el cambio.</summary>
-		public bool CuentaEnElMovimiento =>
+		internal bool CuentaEnElMovimiento =>
 			movimientoTotal > 0m
 			&& Math.Abs(Cambio) / movimientoTotal >= ComparacionDeCanastas.ParteDelMovimientoQueCuenta;
 	}

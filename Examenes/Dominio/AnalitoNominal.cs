@@ -11,7 +11,7 @@ namespace Examenes.Dominio
 	// Que exista este tipo es lo que permite que el color de la orina sea un analito. Antes
 	// no podia serlo -Analito exigia unidad- y por eso terminaba aplanado adentro del
 	// string del examen.
-	public sealed class AnalitoNominal : Analito
+	internal sealed class AnalitoNominal : Analito
 	{
 		internal AnalitoNominal(string nombre, string paraMostrar, params string[] sinonimos)
 			: base(nombre, paraMostrar, RequisitoAnatomico.Ninguno, sinonimos)
@@ -22,6 +22,6 @@ namespace Examenes.Dominio
 		// ordena: "ámbar, oscuro, ámbar" no es una tendencia ni una presencia, son tres
 		// observaciones sueltas. Que devuelva false aca es lo que impide que el Expediente
 		// le arme una serie que despues nadie podria evaluar.
-		public override bool FormaSerie => false;
+		internal override bool FormaSerie => false;
 	}
 }

@@ -12,12 +12,12 @@ namespace Examenes.Dominio
 	//
 	// Los rangos por EDAD los arma cada tipo de examen (ver RangoPara en cada
 	// subclase): esta clase solo sabe contener y clasificar.
-	public class RangoDeReferencia
+	internal class RangoDeReferencia
 	{
-		public Medicion Minimo { get; private set; }
-		public Medicion Maximo { get; private set; }
+		internal Medicion Minimo { get; private set; }
+		internal Medicion Maximo { get; private set; }
 
-		public RangoDeReferencia(Medicion minimo, Medicion maximo)
+		internal RangoDeReferencia(Medicion minimo, Medicion maximo)
 		{
 			ArgumentNullException.ThrowIfNull(minimo);
 			ArgumentNullException.ThrowIfNull(maximo);
@@ -34,17 +34,17 @@ namespace Examenes.Dominio
 		}
 
 		// Atajo para el caso normal: mismo simbolo de unidad para los dos extremos.
-		public static RangoDeReferencia Entre(decimal minimo, decimal maximo, UnidadDeMedida unidad) =>
+		internal static RangoDeReferencia Entre(decimal minimo, decimal maximo, UnidadDeMedida unidad) =>
 			new RangoDeReferencia(new Medicion(minimo, unidad), new Medicion(maximo, unidad));
 
 		// Un rango que solo tiene techo (el caso del antigeno prostatico y del
 		// colesterol: no hay un "demasiado bajo" que preocupe en el demo).
-		public static RangoDeReferencia HastaUnMaximoDe(decimal maximo, UnidadDeMedida unidad) =>
+		internal static RangoDeReferencia HastaUnMaximoDe(decimal maximo, UnidadDeMedida unidad) =>
 			new RangoDeReferencia(new Medicion(0m, unidad), new Medicion(maximo, unidad));
 
-		public string Expresado => $"{Minimo.Valor} a {Maximo.Valor} {Maximo.Unidad.Simbolo}";
+		internal string Expresado => $"{Minimo.Valor} a {Maximo.Valor} {Maximo.Unidad.Simbolo}";
 
-		public bool Contiene(Medicion medicion)
+		internal bool Contiene(Medicion medicion)
 		{
 			ArgumentNullException.ThrowIfNull(medicion);
 			if (!medicion.MismaUnidadQue(Maximo))
@@ -54,7 +54,7 @@ namespace Examenes.Dominio
 			return medicion.Valor >= Minimo.Valor && medicion.Valor <= Maximo.Valor;
 		}
 
-		public ClasificacionDeValor Clasificar(Medicion medicion)
+		internal ClasificacionDeValor Clasificar(Medicion medicion)
 		{
 			ArgumentNullException.ThrowIfNull(medicion);
 			if (Contiene(medicion)) return ClasificacionDeValor.Normal;

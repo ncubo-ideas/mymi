@@ -13,46 +13,46 @@ namespace Cargas.Dominio
 	// cuenta puede abrir o cerrar un tramo. Un lleno Estimado prellena el switch y nada
 	// mas: si cerrara tramos, la institucion estaria calculando el rendimiento sola, y
 	// la tesis del dominio es que no puede.
-	public abstract class DeclaracionDeTanque
+	internal abstract class DeclaracionDeTanque
 	{
 		/// <summary>La ausencia, como instancia unica.</summary>
-		public static readonly DeclaracionDeTanque Ninguna = new SinDeclaracion();
+		internal static readonly DeclaracionDeTanque Ninguna = new SinDeclaracion();
 
-		public static DeclaracionDeTanque De(EstadoDelTanque estado, OrigenDeLectura origen) =>
+		internal static DeclaracionDeTanque De(EstadoDelTanque estado, OrigenDeLectura origen) =>
 			new TanqueDeclarado(estado, origen);
 
-		public abstract bool FueDeclarada { get; }
+		internal abstract bool FueDeclarada { get; }
 
 		/// <summary>Revienta si no hay declaracion: consultar antes FueDeclarada.</summary>
-		public abstract bool EsLleno { get; }
+		internal abstract bool EsLleno { get; }
 
 		/// <summary>Revienta si no hay declaracion.</summary>
-		public abstract OrigenDeLectura Origen { get; }
+		internal abstract OrigenDeLectura Origen { get; }
 
 		/// <summary>Si esta declaracion habilita el calculo: un lleno con procedencia que
 		/// cuenta. Total: sin declaracion, parcial o estimado dan false sin reventar.</summary>
-		public abstract bool EsLlenoQueCuenta { get; }
+		internal abstract bool EsLlenoQueCuenta { get; }
 
 		/// <summary>Para la lista y el switch prellenado: "lleno (confirmado)",
 		/// "parcial (estimado)", o vacio si nadie dijo nada.</summary>
-		public abstract string Expresada { get; }
+		internal abstract string Expresada { get; }
 
 		private sealed class SinDeclaracion : DeclaracionDeTanque
 		{
-			public override bool FueDeclarada => false;
+			internal override bool FueDeclarada => false;
 
-			public override bool EsLleno =>
+			internal override bool EsLleno =>
 				throw new ErrorDeDominio(
 					"Nadie declaro el tanque de esta carga: preguntar por EsLleno exige "
 					+ "consultar antes FueDeclarada.");
 
-			public override OrigenDeLectura Origen =>
+			internal override OrigenDeLectura Origen =>
 				throw new ErrorDeDominio(
 					"Una declaracion que no existe no tiene origen: consultar antes FueDeclarada.");
 
-			public override bool EsLlenoQueCuenta => false;
+			internal override bool EsLlenoQueCuenta => false;
 
-			public override string Expresada => "";
+			internal override string Expresada => "";
 		}
 
 		private sealed class TanqueDeclarado : DeclaracionDeTanque
@@ -69,11 +69,11 @@ namespace Cargas.Dominio
 				this.origen = origen;
 			}
 
-			public override bool FueDeclarada => true;
-			public override bool EsLleno => estado.EsLleno;
-			public override OrigenDeLectura Origen => origen;
-			public override bool EsLlenoQueCuenta => estado.EsLleno && origen.CuentaParaCalcular;
-			public override string Expresada => $"{estado.Nombre} ({origen.Nombre})";
+			internal override bool FueDeclarada => true;
+			internal override bool EsLleno => estado.EsLleno;
+			internal override OrigenDeLectura Origen => origen;
+			internal override bool EsLlenoQueCuenta => estado.EsLleno && origen.CuentaParaCalcular;
+			internal override string Expresada => $"{estado.Nombre} ({origen.Nombre})";
 		}
 	}
 }

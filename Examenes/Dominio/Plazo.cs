@@ -18,31 +18,31 @@ namespace Examenes.Dominio
 	// ⚠️ Los plazos concretos reflejan criterio de practica corriente y sirven para
 	// modelar la estructura. Antes de mostrarse fuera del equipo conviene que alguien
 	// con criterio clinico los revise.
-	public sealed class Plazo
+	internal sealed class Plazo
 	{
 		// Sin apuro: el proximo control que ya ibas a tener.
-		public static readonly Plazo EnLaProximaCita =
+		internal static readonly Plazo EnLaProximaCita =
 			new Plazo("en la proxima cita", "en la próxima cita", 1);
 
-		public static readonly Plazo EsteMes = new Plazo("este mes", "este mes", 2);
+		internal static readonly Plazo EsteMes = new Plazo("este mes", "este mes", 2);
 
 		// El "espere una semana" de la repeticion de un examen.
-		public static readonly Plazo EstaSemana = new Plazo("esta semana", "esta semana", 3);
+		internal static readonly Plazo EstaSemana = new Plazo("esta semana", "esta semana", 3);
 
 		// No espera a que consigas cita. Es el plazo del rojo reservado.
-		public static readonly Plazo Pronto = new Plazo("pronto", "pronto", 4);
+		internal static readonly Plazo Pronto = new Plazo("pronto", "pronto", 4);
 
 		// El plazo que no es del dominio decidir: repetir un examen suelto no corre, y
 		// cuando corresponde lo dice el medico. Pesa cero porque no apura nada.
-		public static readonly Plazo CuandoElMedicoLoIndique =
+		internal static readonly Plazo CuandoElMedicoLoIndique =
 			new Plazo("cuando el medico lo indique", "cuando el médico lo indique", 0);
 
 		// La etiqueta interna, sin acentos: para comparar y serializar.
-		public string Nombre { get; private set; }
+		internal string Nombre { get; private set; }
 
 		// El plazo como se le dice a la persona, con acentos, listo para encadenar
 		// despues del que: "mostráselo a tu médico" + "este mes".
-		public string ParaMostrar { get; private set; }
+		internal string ParaMostrar { get; private set; }
 
 		private readonly int peso;
 
@@ -53,7 +53,7 @@ namespace Examenes.Dominio
 			this.peso = peso;
 		}
 
-		public bool EsMasApuradoQue(Plazo otro)
+		internal bool EsMasApuradoQue(Plazo otro)
 		{
 			ArgumentNullException.ThrowIfNull(otro);
 			return peso > otro.peso;

@@ -11,13 +11,13 @@ namespace Cargas.Dominio
 	// Conjunto CERRADO comparado por referencia, igual que UnidadDeMedida en examenes.
 	// PorSimbolo es la frontera: el simbolo llega como texto en el evento y se resuelve
 	// UNA vez. "gal" pelado se rechaza a proposito, porque no dice cual de los dos es.
-	public sealed class UnidadDeVolumen
+	internal sealed class UnidadDeVolumen
 	{
-		public static readonly UnidadDeVolumen Litro = new UnidadDeVolumen("L", 1m);
-		public static readonly UnidadDeVolumen GalonUS = new UnidadDeVolumen("galUS", 3.785412m);
-		public static readonly UnidadDeVolumen GalonImperial = new UnidadDeVolumen("galImp", 4.546090m);
+		internal static readonly UnidadDeVolumen Litro = new UnidadDeVolumen("L", 1m);
+		internal static readonly UnidadDeVolumen GalonUS = new UnidadDeVolumen("galUS", 3.785412m);
+		internal static readonly UnidadDeVolumen GalonImperial = new UnidadDeVolumen("galImp", 4.546090m);
 
-		public string Simbolo { get; private set; }
+		internal string Simbolo { get; private set; }
 
 		private readonly decimal litrosPorUnidad;
 
@@ -30,11 +30,11 @@ namespace Cargas.Dominio
 		// La conversion a litros es FISICA, no monetaria: un galon US son 3.785412 litros
 		// hoy, ayer y en cualquier pais. Por eso existe, a diferencia de Moneda que no
 		// convierte nada.
-		public decimal EnLitros(decimal valor) => valor * litrosPorUnidad;
+		internal decimal EnLitros(decimal valor) => valor * litrosPorUnidad;
 
 		// La query de reconocimiento para la frontera: decide sin reventar. Ojo: "gal"
 		// pelado NO es conocido, a proposito.
-		public static bool EsConocida(string simbolo)
+		internal static bool EsConocida(string simbolo)
 		{
 			if (string.IsNullOrWhiteSpace(simbolo)) return false;
 			string normalizado = simbolo.Trim();
@@ -42,7 +42,7 @@ namespace Cargas.Dominio
 				|| normalizado == GalonImperial.Simbolo;
 		}
 
-		public static UnidadDeVolumen PorSimbolo(string simbolo)
+		internal static UnidadDeVolumen PorSimbolo(string simbolo)
 		{
 			ArgumentNullException.ThrowIfNullOrWhiteSpace(simbolo);
 
@@ -63,7 +63,7 @@ namespace Cargas.Dominio
 				+ $"{Litro.Simbolo}, {GalonUS.Simbolo}, {GalonImperial.Simbolo}.");
 		}
 
-		public bool EsLaMisma(UnidadDeVolumen otra)
+		internal bool EsLaMisma(UnidadDeVolumen otra)
 		{
 			ArgumentNullException.ThrowIfNull(otra);
 			return ReferenceEquals(this, otra);

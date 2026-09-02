@@ -13,9 +13,9 @@ namespace Examenes.Dominio
 	// Es la misma correccion que ya hicimos en Magnitud: la raiz declara solo Expresado,
 	// porque si declarara un decimal Valor, cuatro de las seis formas tendrian que
 	// devolver cero y mentir.
-	public sealed class AnalitoContinuo : Analito
+	internal sealed class AnalitoContinuo : Analito
 	{
-		public UnidadDeMedida Unidad { get; }
+		internal UnidadDeMedida Unidad { get; }
 
 		// EL RANGO DE LO FISIOLOGICAMENTE POSIBLE, que NO es el rango de referencia.
 		//
@@ -27,9 +27,9 @@ namespace Examenes.Dominio
 		// ⚠️ Los limites son deliberadamente ANCHOS y orientativos. La guarda existe para
 		// atajar basura, no para opinar de clinica: apretarlos de mas descartaria hallazgos
 		// reales, que es peor que dejar pasar uno raro.
-		public decimal ValorMinimoPosible { get; }
+		internal decimal ValorMinimoPosible { get; }
 
-		public decimal ValorMaximoPosible { get; }
+		internal decimal ValorMaximoPosible { get; }
 
 		// El caso normal: un analito que se le mide a cualquier persona. La sobrecarga de
 		// abajo es para el unico que no —el antigeno prostatico— y el requisito va ANTES
@@ -51,11 +51,11 @@ namespace Examenes.Dominio
 			ValorMaximoPosible = maximoPosible;
 		}
 
-		public bool EsValorPosible(decimal valor) =>
+		internal bool EsValorPosible(decimal valor) =>
 			valor >= ValorMinimoPosible && valor <= ValorMaximoPosible;
 
 		// Se ordena y admite aritmetica: es la forma sobre la que la serie y la velocidad
 		// significan algo.
-		public override bool FormaSerie => true;
+		internal override bool FormaSerie => true;
 	}
 }

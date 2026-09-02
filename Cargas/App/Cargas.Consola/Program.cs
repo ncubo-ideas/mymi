@@ -92,11 +92,24 @@ namespace Cargas.Consola
 			}
 			Console.WriteLine($"aplicados={aplicados} descartados={descartados} rechazados={rechazados}");
 
-			// Dos formas distintas de descartar, y las dos tienen que devolver null.
+			// DOS RECHAZOS EN DOS PLANOS DISTINTOS, y esa diferencia es el diseno.
+			//
+			// Un TIPO DE EVENTO que esta app no conoce se descarta en la RUTA: no hay
+			// mensaje que armar, y eso no necesita al dominio para saberse.
+			//
+			// Un galon ambiguo -"gal" pelado, que no dice cual galon es- ya no se descarta
+			// ahi. Reconocer un conjunto cerrado obligaba a la Superficie a NOMBRAR
+			// UnidadDeVolumen en C#, y con eso el dominio entero tenia que ser public. Ahora
+			// entra como mensaje y lo rechaza el Check DENTRO del actor, donde el motor
+			// resuelve el tipo por reflexion desde el texto del script. Lo que importa que
+			// no cambie es el efecto: no se aplica y NO deja entrada en el journal.
 			bool descartaTipo = RutaDeCargas.Rutear(Muestras.TipoDesconocido()) == null;
-			bool descartaGalon = RutaDeCargas.Rutear(Muestras.GalonAmbiguo()) == null;
 			Console.WriteLine($"descarta tipo desconocido   : {descartaTipo}");
-			Console.WriteLine($"descarta el galon ambiguo   : {descartaGalon}");
+
+			long antesDelGalon = app.Actor.CurrentEntryId;
+			string rechazoDelGalon = diario.Aplicar(RutaDeCargas.Rutear(Muestras.GalonAmbiguo()));
+			Console.WriteLine($"rechaza el galon ambiguo    : {rechazoDelGalon.Length > 0}");
+			Console.WriteLine($"  y NO deja entrada         : {app.Actor.CurrentEntryId == antesDelGalon}");
 
 			// LOS APORTES DE SONIA: lo que URL2 no sabe. Sin esto todo es SinTramo, que
 			// es exactamente la tesis del dominio.

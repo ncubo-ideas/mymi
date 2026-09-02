@@ -37,32 +37,32 @@ namespace Examenes.Dominio
 	// Viaja PLANA y con sus dos indices porque el print del motor proyecta un solo nivel:
 	// una coleccion de filas que a su vez tienen celdas no cruza. Los indices son los que
 	// permiten que la superficie rearme la grilla SIN volver a decidir nada.
-	public sealed class CeldaDelCuadro
+	internal sealed class CeldaDelCuadro
 	{
-		public int Fila { get; private set; }
+		internal int Fila { get; private set; }
 
-		public int Columna { get; private set; }
+		internal int Columna { get; private set; }
 
 		// La llave de la fila. Para los de sangre es el nombre canonico del analito, que
 		// es con el que se pide la interpretacion; para los demas, el nombre del examen.
-		public string Analito { get; private set; }
+		internal string Analito { get; private set; }
 
-		public string ParaMostrar { get; private set; }
+		internal string ParaMostrar { get; private set; }
 
 		// La fecha de la COLUMNA, ya sin hora. Se repite en todas las celdas de la misma
 		// columna a proposito: es lo que le permite a la superficie reconstruir el
 		// encabezado sin una segunda consulta.
-		public DateTime Fecha { get; private set; }
+		internal DateTime Fecha { get; private set; }
 
 		// El resultado ya dicho, con unidad. Es ResultadoExpresado y no un decimal por la
 		// misma razon que la lista: un colesterol ("280 mg/dL") y una orina ("ambar")
 		// conviven en el mismo cuadro sin que ninguno tenga que mentir sobre su forma.
-		public string Expresado { get; private set; }
+		internal string Expresado { get; private set; }
 
 		// Si esta fila forma serie. La orina entra al cuadro -tiene un resultado por
 		// fecha- pero no tiene veredicto que mostrar al final, y la superficie necesita
 		// saberlo para no dejar un hueco donde no falta nada.
-		public bool AportaSerie { get; private set; }
+		internal bool AportaSerie { get; private set; }
 
 		// QUE PIDE este examen, para las filas que NO forman serie. Las que si la forman
 		// lo dicen por su Interpretacion, que necesita la serie entera; una orina o unas
@@ -71,11 +71,11 @@ namespace Examenes.Dominio
 		// Vacio en las filas de serie, y eso no es un faltante: es que ahi la respuesta la
 		// da otro. Ver SangreEnOrina y SangreEnHeces para por que dos celdas identicas en
 		// forma pueden traer severidades distintas.
-		public string Severidad { get; private set; }
+		internal string Severidad { get; private set; }
 
-		public string ParaSonia { get; private set; }
+		internal string ParaSonia { get; private set; }
 
-		public CeldaDelCuadro(int fila, int columna, string analito, string paraMostrar,
+		internal CeldaDelCuadro(int fila, int columna, string analito, string paraMostrar,
 			DateTime fecha, string expresado, bool aportaSerie,
 			string severidad = "", string paraSonia = "")
 		{

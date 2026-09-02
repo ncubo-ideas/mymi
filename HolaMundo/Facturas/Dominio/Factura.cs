@@ -8,18 +8,18 @@ namespace Facturas.Dominio
 	// arma en Items validando que tengan el mismo largo: es el unico punto donde
 	// cuatro listas sueltas se vuelven una abstraccion, y por eso es donde se
 	// rechaza un evento mal formado.
-	public class Factura
+	internal class Factura
 	{
 		private readonly List<Item> items = new List<Item>();
 
-		public string Numero { get; private set; }
-		public DateTime Fecha { get; private set; }
+		internal string Numero { get; private set; }
+		internal DateTime Fecha { get; private set; }
 
-		public IReadOnlyList<Item> Items => items;
+		internal IReadOnlyList<Item> Items => items;
 
-		public int CantidadDeLineas => items.Count;
+		internal int CantidadDeLineas => items.Count;
 
-		public decimal Total
+		internal decimal Total
 		{
 			get
 			{
@@ -29,7 +29,7 @@ namespace Facturas.Dominio
 			}
 		}
 
-		public Factura(string numero, DateTime fecha, string[] skus, string[] descripciones,
+		internal Factura(string numero, DateTime fecha, string[] skus, string[] descripciones,
 			int[] cantidades, decimal[] preciosUnitarios)
 		{
 			ArgumentNullException.ThrowIfNullOrWhiteSpace(numero);

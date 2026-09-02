@@ -14,18 +14,18 @@ namespace Cargas.Dominio
 	// se estimara del rendimiento proyectado y despues el rendimiento se calculara con
 	// ese odometro, el resultado se confirmaria a si mismo. Confirmado si cuenta, porque
 	// Sonia miro el numero y dijo que si.
-	public sealed class OrigenDeLectura
+	internal sealed class OrigenDeLectura
 	{
-		public static readonly OrigenDeLectura Observado = new OrigenDeLectura("observado", cuenta: true);
-		public static readonly OrigenDeLectura Estimado = new OrigenDeLectura("estimado", cuenta: false);
-		public static readonly OrigenDeLectura Confirmado = new OrigenDeLectura("confirmado", cuenta: true);
+		internal static readonly OrigenDeLectura Observado = new OrigenDeLectura("observado", cuenta: true);
+		internal static readonly OrigenDeLectura Estimado = new OrigenDeLectura("estimado", cuenta: false);
+		internal static readonly OrigenDeLectura Confirmado = new OrigenDeLectura("confirmado", cuenta: true);
 
-		public string Nombre { get; private set; }
+		internal string Nombre { get; private set; }
 
 		/// <summary>Si un dato con esta procedencia puede alimentar un calculo que se
 		/// presenta como medicion. Un Estimado alimenta proyecciones -donde la
 		/// aproximacion se declara- pero jamas un rendimiento.</summary>
-		public bool CuentaParaCalcular { get; private set; }
+		internal bool CuentaParaCalcular { get; private set; }
 
 		private OrigenDeLectura(string nombre, bool cuenta)
 		{
@@ -33,7 +33,7 @@ namespace Cargas.Dominio
 			CuentaParaCalcular = cuenta;
 		}
 
-		public static OrigenDeLectura PorNombre(string nombre)
+		internal static OrigenDeLectura PorNombre(string nombre)
 		{
 			ArgumentNullException.ThrowIfNullOrWhiteSpace(nombre);
 

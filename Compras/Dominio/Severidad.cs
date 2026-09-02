@@ -13,23 +13,23 @@ namespace Compras.Dominio
 	//
 	// Tiene peso porque hay que poder decir "lo mas urgente de todo el historial", y
 	// comparar por peso es lo unico que permite ordenar cosas que no son numeros.
-	public sealed class Severidad
+	internal sealed class Severidad
 	{
 		/// <summary>Un dato. Decir que hay algo que hacer cuando no lo hay entrena a ignorar los avisos.</summary>
-		public static readonly Severidad Informativo = new Severidad("informativo", 0, "");
+		internal static readonly Severidad Informativo = new Severidad("informativo", 0, "");
 
 		/// <summary>Hay tiempo, pero conviene no dejarlo pasar.</summary>
-		public static readonly Severidad ConvieneRevisar =
+		internal static readonly Severidad ConvieneRevisar =
 			new Severidad("conviene revisar", 1, "tenelo a mano por si acaso");
 
 		/// <summary>La ventana se esta cerrando y despues no se puede reclamar.</summary>
-		public static readonly Severidad AntesDeQueSeCierre =
+		internal static readonly Severidad AntesDeQueSeCierre =
 			new Severidad("antes de que se cierre", 2, "hacé el reclamo antes de que venza");
 
-		public string Nombre { get; private set; }
+		internal string Nombre { get; private set; }
 
 		/// <summary>Que hacer, ya escrito como se le muestra a la persona. Vacio en Informativo, y eso es una respuesta.</summary>
-		public string QueHacer { get; private set; }
+		internal string QueHacer { get; private set; }
 
 		private readonly int peso;
 
@@ -40,16 +40,16 @@ namespace Compras.Dominio
 			this.peso = peso;
 		}
 
-		public bool PideAlgo => peso > 0;
+		internal bool PideAlgo => peso > 0;
 
-		public bool EsMasUrgenteQue(Severidad otra)
+		internal bool EsMasUrgenteQue(Severidad otra)
 		{
 			ArgumentNullException.ThrowIfNull(otra);
 			return peso > otra.peso;
 		}
 
 		/// <summary>La mas urgente de dos, para poder resumir sin que la superficie conozca el orden.</summary>
-		public static Severidad LaMayor(Severidad una, Severidad otra)
+		internal static Severidad LaMayor(Severidad una, Severidad otra)
 		{
 			ArgumentNullException.ThrowIfNull(una);
 			ArgumentNullException.ThrowIfNull(otra);

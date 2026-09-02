@@ -13,26 +13,26 @@ namespace Compras.Dominio
 	// salud que este modulo no tiene con que sostener: el super no sabe si la persona esta
 	// en una dieta, si son cinco en la casa, ni si el helado era de un cumpleanos. El
 	// departamento es un hecho de gondola y aguanta cualquier pregunta que venga despues.
-	public class Canasta
+	internal class Canasta
 	{
 		private readonly Dictionary<string, decimal> porDepartamento =
 			new Dictionary<string, decimal>(StringComparer.OrdinalIgnoreCase);
 
-		public int Anio { get; private set; }
-		public int Mes { get; private set; }
-		public int CantidadDeCompras { get; private set; }
+		internal int Anio { get; private set; }
+		internal int Mes { get; private set; }
+		internal int CantidadDeCompras { get; private set; }
 
-		public decimal GastoComestible { get; private set; }
-		public decimal GastoNoComestible { get; private set; }
+		internal decimal GastoComestible { get; private set; }
+		internal decimal GastoNoComestible { get; private set; }
 
-		public decimal GastoTotal => GastoComestible + GastoNoComestible;
+		internal decimal GastoTotal => GastoComestible + GastoNoComestible;
 
-		public bool HayComestible => GastoComestible > 0m;
+		internal bool HayComestible => GastoComestible > 0m;
 
-		public bool HayCompras => CantidadDeCompras > 0;
+		internal bool HayCompras => CantidadDeCompras > 0;
 
 		/// <summary>El mes, como se escribe: 2026-03.</summary>
-		public string MesExpresado => $"{Anio:0000}-{Mes:00}";
+		internal string MesExpresado => $"{Anio:0000}-{Mes:00}";
 
 		internal Canasta(int anio, int mes)
 		{
@@ -63,7 +63,7 @@ namespace Compras.Dominio
 		}
 
 		/// <summary>Cuanto entro de un departamento. Total: uno que no aparecio es cero, no una ausencia.</summary>
-		public decimal GastoDe(Categoria categoria)
+		internal decimal GastoDe(Categoria categoria)
 		{
 			ArgumentNullException.ThrowIfNull(categoria);
 
@@ -72,13 +72,13 @@ namespace Compras.Dominio
 		}
 
 		/// <summary>Consulta de presencia, total: si este departamento entro en el mes.</summary>
-		public bool Tiene(Categoria categoria) => GastoDe(categoria) > 0m;
+		internal bool Tiene(Categoria categoria) => GastoDe(categoria) > 0m;
 
 		/// <summary>
 		/// Los departamentos que entraron, del que mas pesa al que menos. Total: un mes sin
 		/// compras devuelve la lista vacia, que ya es una respuesta.
 		/// </summary>
-		public IReadOnlyList<GastoDeDepartamento> Departamentos
+		internal IReadOnlyList<GastoDeDepartamento> Departamentos
 		{
 			get
 			{
@@ -97,10 +97,10 @@ namespace Compras.Dominio
 	}
 
 	/// <summary>Cuanto entro de un departamento en un mes, y que parte del total fue.</summary>
-	public class GastoDeDepartamento
+	internal class GastoDeDepartamento
 	{
-		public Categoria Categoria { get; private set; }
-		public decimal Monto { get; private set; }
+		internal Categoria Categoria { get; private set; }
+		internal decimal Monto { get; private set; }
 
 		private readonly decimal total;
 
@@ -113,9 +113,9 @@ namespace Compras.Dominio
 			this.total = total;
 		}
 
-		public string Titulo => Categoria.Titulo;
+		internal string Titulo => Categoria.Titulo;
 
 		/// <summary>Que parte del gasto del mes fue. 1 es todo el mes.</summary>
-		public decimal ProporcionDelTotal => total == 0m ? 0m : Math.Round(Monto / total, 4);
+		internal decimal ProporcionDelTotal => total == 0m ? 0m : Math.Round(Monto / total, 4);
 	}
 }

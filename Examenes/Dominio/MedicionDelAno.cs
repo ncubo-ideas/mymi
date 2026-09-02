@@ -14,21 +14,21 @@ namespace Examenes.Dominio
 	//
 	// Los huecos NO se rellenan, por la misma razon que las celdas del cuadro: interpolar
 	// un ano que nadie midio es inventar un dato.
-	public sealed class MedicionDelAno
+	internal sealed class MedicionDelAno
 	{
-		public int Ano { get; private set; }
+		internal int Ano { get; private set; }
 
 		// El ULTIMO valor del ano, no el promedio. Es el que el medico mira: el estado en
 		// que quedo la persona al cerrar ese ano, no una mezcla de los que hubo.
-		public Medicion Valor { get; private set; }
+		internal Medicion Valor { get; private set; }
 
-		public int Cuantas { get; private set; }
+		internal int Cuantas { get; private set; }
 
 		// Con signo, contra el ano anterior CON MEDICIONES. Null en el primero, y tambien
 		// cuando el anterior no existe: sin punto de comparacion no hay comparativo.
-		public decimal? CambioContraElAnterior { get; private set; }
+		internal decimal? CambioContraElAnterior { get; private set; }
 
-		public MedicionDelAno(int ano, Medicion valor, int cuantas, decimal? cambio)
+		internal MedicionDelAno(int ano, Medicion valor, int cuantas, decimal? cambio)
 		{
 			ArgumentNullException.ThrowIfNull(valor);
 
@@ -38,11 +38,11 @@ namespace Examenes.Dominio
 			CambioContraElAnterior = cambio;
 		}
 
-		public bool HayConQueComparar => CambioContraElAnterior.HasValue;
+		internal bool HayConQueComparar => CambioContraElAnterior.HasValue;
 
-		public bool Subio => CambioContraElAnterior.HasValue && CambioContraElAnterior.Value > 0m;
+		internal bool Subio => CambioContraElAnterior.HasValue && CambioContraElAnterior.Value > 0m;
 
-		public string Expresado => HayConQueComparar
+		internal string Expresado => HayConQueComparar
 			? $"{Ano}: {Valor.Expresado} ({(Subio ? "+" : "")}{CambioContraElAnterior.Value} contra {Ano - 1})"
 			: $"{Ano}: {Valor.Expresado}";
 	}

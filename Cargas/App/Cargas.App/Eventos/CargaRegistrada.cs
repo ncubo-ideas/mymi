@@ -1,6 +1,5 @@
 using System;
 using System.Text.Json;
-using Cargas.Dominio;
 using Puppets.Portador;
 
 namespace Cargas.App.Eventos
@@ -66,22 +65,21 @@ namespace Cargas.App.Eventos
 				string transaccion = Texto(raiz, "numeroDeTransaccion");
 				if (transaccion.Length == 0) return null;
 
-				// Los conjuntos cerrados se RECONOCEN en la frontera y se descarta lo
-				// desconocido: EsConocido decide, PorNombre revienta, y aca corresponde
-				// decidir. Un "gal" pelado cae aca: no dice cual galon es.
+				// LOS CONJUNTOS CERRADOS YA NO SE RECONOCEN ACA. Antes esta frontera
+				// llamaba a TipoDeCombustible.EsConocido / UnidadDeVolumen.EsConocida /
+				// Moneda.EsConocida / FormaDeCorte.EsConocida, y para eso tenia que NOMBRAR
+				// esos tipos en C# -- lo que obligaba al dominio a ser public.
+				//
+				// Ahora el reconocimiento vive en el Check de CargasAPI, DENTRO del script:
+				// el motor resuelve el tipo por reflexion desde el texto y la interpretacion
+				// pasa adentro del actor, que es donde se journaliza con el acto. La senal
+				// con un "gal" pelado ya no se descarta en la ruta: entra como mensaje y el
+				// Check la rechaza SIN dejar entrada en el journal.
 				string tipo = Texto(raiz, "tipoDeCombustible");
-				if (!Dominio.TipoDeCombustible.EsConocido(tipo)) return null;
-
 				string unidad = Texto(raiz, "volumenUnidad");
-				if (!UnidadDeVolumen.EsConocida(unidad)) return null;
-
 				string monedaDelPrecio = Texto(raiz, "precioMoneda");
 				string monedaDelTotal = Texto(raiz, "totalMoneda");
-				if (!Moneda.EsConocida(monedaDelPrecio)) return null;
-				if (!Moneda.EsConocida(monedaDelTotal)) return null;
-
 				string corte = Texto(raiz, "formaDeCorte");
-				if (!Dominio.FormaDeCorte.EsConocida(corte)) return null;
 
 				string estacion = Texto(raiz, "surtidorEstacion");
 				string surtidor = Texto(raiz, "surtidorIdentificacion");

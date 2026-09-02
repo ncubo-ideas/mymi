@@ -8,18 +8,18 @@ namespace Cargas.Dominio
 	/// institucion, nunca se calculan aca (§11 del brief): Puntos no es Dinero, y la
 	/// tasa de canje es una regla del programa que puede cambiar.
 	/// </summary>
-	public sealed class ProgramaDeLealtad
+	internal sealed class ProgramaDeLealtad
 	{
-		public Puntos Saldo { get; private set; }
-		public NivelDeLealtad Nivel { get; private set; }
+		internal Puntos Saldo { get; private set; }
+		internal NivelDeLealtad Nivel { get; private set; }
 
-		public ProgramaDeLealtad()
+		internal ProgramaDeLealtad()
 		{
 			Saldo = new Puntos(0);
 			Nivel = NivelDeLealtad.Base;
 		}
 
-		public void Acreditar(Puntos puntos)
+		internal void Acreditar(Puntos puntos)
 		{
 			ArgumentNullException.ThrowIfNull(puntos);
 			Saldo = Saldo.Mas(puntos);
@@ -27,7 +27,7 @@ namespace Cargas.Dominio
 
 		/// <summary>El nivel lo decide la institucion; aca solo se registra. Bajar de
 		/// nivel tambien es posible: es su programa.</summary>
-		public void ActualizarNivel(NivelDeLealtad nivel)
+		internal void ActualizarNivel(NivelDeLealtad nivel)
 		{
 			ArgumentNullException.ThrowIfNull(nivel);
 			Nivel = nivel;
@@ -35,11 +35,11 @@ namespace Cargas.Dominio
 
 		// ------------------------------- proyecciones planas, para el print del actor
 
-		public int PuntosDelSaldo => Saldo.Cantidad;
-		public string NombreDelNivel => Nivel.Nombre;
+		internal int PuntosDelSaldo => Saldo.Cantidad;
+		internal string NombreDelNivel => Nivel.Nombre;
 
 		/// <summary>Cuantos faltan para el siguiente nivel. Cero en el ultimo.</summary>
-		public int PuntosParaElSiguienteNivel =>
+		internal int PuntosParaElSiguienteNivel =>
 			Nivel.EsElUltimo ? 0 : Saldo.LosQueFaltanPara(Nivel.ParaElSiguiente).Cantidad;
 	}
 }

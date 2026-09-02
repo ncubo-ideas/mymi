@@ -20,15 +20,15 @@ namespace Examenes.Dominio
 	//
 	// Conjunto CERRADO de dos, y el primero es el caso normal: casi ningun analito
 	// requiere nada. Por eso Ninguno es el default de Analito y no hay que declararlo.
-	public sealed class RequisitoAnatomico
+	internal sealed class RequisitoAnatomico
 	{
 		// La mayoria. Una hemoglobina se mide en cualquier persona; lo que cambia con el
 		// sexo es contra que se compara, y eso es el OTRO efecto.
-		public static readonly RequisitoAnatomico Ninguno = new RequisitoAnatomico("ninguno");
+		internal static readonly RequisitoAnatomico Ninguno = new RequisitoAnatomico("ninguno");
 
-		public static readonly RequisitoAnatomico Prostata = new RequisitoAnatomico("prostata");
+		internal static readonly RequisitoAnatomico Prostata = new RequisitoAnatomico("prostata");
 
-		public string Nombre { get; private set; }
+		internal string Nombre { get; private set; }
 
 		private RequisitoAnatomico(string nombre)
 		{
@@ -38,7 +38,7 @@ namespace Examenes.Dominio
 		// Si esta persona lo cumple. Devuelve los TRES estados y no un bool porque el dato
 		// del que se deriva tiene tres: con el sexo desconocido, "tiene prostata" no es
 		// falso, es indeterminado.
-		public Aplicabilidad En(Paciente paciente)
+		internal Aplicabilidad En(Paciente paciente)
 		{
 			ArgumentNullException.ThrowIfNull(paciente);
 

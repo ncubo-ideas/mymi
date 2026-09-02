@@ -15,9 +15,9 @@ namespace Compras.Dominio
 	// la caratula corre en wasm, y si el publish recorta los datos de globalizacion la
 	// cultura no existe y el monto se escribiria distinto que en la consola. Un separador
 	// explicito no depende de que ICU este ahi.
-	public static class Plata
+	internal static class Plata
 	{
-		public const string Simbolo = "₡";
+		internal const string Simbolo = "₡";
 
 		private static readonly NumberFormatInfo Colon = new NumberFormatInfo
 		{
@@ -27,6 +27,6 @@ namespace Compras.Dominio
 		};
 
 		/// <summary>Un monto redondeado al colón, con su símbolo: ₡172.630.</summary>
-		public static string Colones(decimal monto) => Simbolo + monto.ToString("N0", Colon);
+		internal static string Colones(decimal monto) => Simbolo + monto.ToString("N0", Colon);
 	}
 }

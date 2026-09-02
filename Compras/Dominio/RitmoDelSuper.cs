@@ -19,49 +19,49 @@ namespace Compras.Dominio
 	// Y NO JUZGA. Que alguien vaya al super los viernes por la noche no es mejor ni peor que
 	// ir los martes en la mañana. La app se lo cuenta porque probablemente no lo habia
 	// notado, que es literalmente lo que el diseño pregunta: "¿lo habias notado?".
-	public abstract class RitmoDelSuper
+	internal abstract class RitmoDelSuper
 	{
 		/// <summary>Cuántas compras hacen falta para poder hablar de un ritmo.</summary>
 		// Con dos compras hay UN intervalo, y un intervalo no es un ritmo: puede ser la
 		// semana que se hizo mercado dos veces. Con tres hay dos intervalos y una mediana
 		// que aguanta una casualidad.
-		public const int ComprasQueHacenFalta = 3;
+		internal const int ComprasQueHacenFalta = 3;
 
 		internal static RitmoDelSuper Ninguno(int compras) => new SinRitmo(compras);
 
 		internal static RitmoDelSuper De(IReadOnlyList<DateTime> fechas) => new Medido(fechas);
 
 		/// <summary>Cuántas compras se miraron. Total: siempre contesta, incluso cero.</summary>
-		public abstract int ComprasMiradas { get; }
+		internal abstract int ComprasMiradas { get; }
 
 		/// <summary>
 		/// Si el ritmo se pudo medir. Consulta de presencia, total: sin esto no se afirma
 		/// nada.
 		/// </summary>
-		public abstract bool EsObservado { get; }
+		internal abstract bool EsObservado { get; }
 
 		/// <summary>Cada cuántos días vuelve al súper, típicamente. Preguntar EsObservado primero.</summary>
-		public abstract int DiasTipicos { get; }
+		internal abstract int DiasTipicos { get; }
 
 		/// <summary>La cadencia con la que va, dicha en palabras. Preguntar EsObservado primero.</summary>
-		public abstract Cadencia Cadencia { get; }
+		internal abstract Cadencia Cadencia { get; }
 
 		/// <summary>El día de la semana en que más compra. Preguntar EsObservado primero.</summary>
-		public abstract DayOfWeek DiaFavorito { get; }
+		internal abstract DayOfWeek DiaFavorito { get; }
 
 		/// <summary>El día favorito en español: "viernes". Vacío cuando no hay ritmo.</summary>
-		public abstract string DiaFavoritoExpresado { get; }
+		internal abstract string DiaFavoritoExpresado { get; }
 
 		/// <summary>Cuántas compras cayeron en el día favorito. Total: cero cuando no hay ritmo.</summary>
-		public abstract int ComprasEnElDiaFavorito { get; }
+		internal abstract int ComprasEnElDiaFavorito { get; }
 
 		/// <summary>El momento del día en que más compra. Preguntar EsObservado primero.</summary>
-		public abstract MomentoDelDia MomentoFavorito { get; }
+		internal abstract MomentoDelDia MomentoFavorito { get; }
 
 		/// <summary>Cuántas compras cayeron en cada momento del día. Total: siempre trae los tres.</summary>
-		public abstract IReadOnlyList<ComprasEnUnMomento> PorMomento { get; }
+		internal abstract IReadOnlyList<ComprasEnUnMomento> PorMomento { get; }
 
-		public abstract string ParaElAsistente { get; }
+		internal abstract string ParaElAsistente { get; }
 
 		// LAS LECTURAS PARA LA FRONTERA, sin guarda: cero y vacio cuando no hay ritmo. Es el
 		// mismo par que RegistroDeGarantia y CambioDeRitmo -la tipada para el codigo, la
@@ -70,10 +70,10 @@ namespace Compras.Dominio
 		//
 		// Y no son un duplicado disfrazado: quien tiene el objeto en la mano debe recibir un
 		// Cadencia y un MomentoDelDia, no dos strings, o el conjunto cerrado no sirve.
-		public abstract int DiasEntreCompras { get; }
-		public abstract string CadenciaLegible { get; }
-		public abstract string CadenciaCompacta { get; }
-		public abstract string MomentoFavoritoExpresado { get; }
+		internal abstract int DiasEntreCompras { get; }
+		internal abstract string CadenciaLegible { get; }
+		internal abstract string CadenciaCompacta { get; }
+		internal abstract string MomentoFavoritoExpresado { get; }
 
 		private sealed class SinRitmo : RitmoDelSuper
 		{
@@ -88,32 +88,32 @@ namespace Compras.Dominio
 				this.compras = compras;
 			}
 
-			public override int ComprasMiradas => compras;
-			public override bool EsObservado => false;
+			internal override int ComprasMiradas => compras;
+			internal override bool EsObservado => false;
 
-			public override int DiasTipicos =>
+			internal override int DiasTipicos =>
 				throw new InvalidOperationException(
 					$"Hacen falta {ComprasQueHacenFalta} compras para medir cada cuanto va al "
 					+ $"super, y hay {compras}. Preguntar EsObservado antes.");
 
-			public override Cadencia Cadencia =>
+			internal override Cadencia Cadencia =>
 				throw new InvalidOperationException(
 					"No hay ritmo medido, asi que no hay cadencia. Preguntar EsObservado antes.");
 
-			public override DayOfWeek DiaFavorito =>
+			internal override DayOfWeek DiaFavorito =>
 				throw new InvalidOperationException(
 					"No hay ritmo medido, asi que no hay dia favorito. Preguntar EsObservado antes.");
 
-			public override string DiaFavoritoExpresado => "";
-			public override int ComprasEnElDiaFavorito => 0;
+			internal override string DiaFavoritoExpresado => "";
+			internal override int ComprasEnElDiaFavorito => 0;
 
-			public override MomentoDelDia MomentoFavorito =>
+			internal override MomentoDelDia MomentoFavorito =>
 				throw new InvalidOperationException(
 					"No hay ritmo medido, asi que no hay momento favorito. Preguntar EsObservado antes.");
 
 			// Los tres momentos en cero: la pantalla puede dibujar la fila vacia sin
 			// preguntar, que es de lo que sirve una lectura total.
-			public override IReadOnlyList<ComprasEnUnMomento> PorMomento
+			internal override IReadOnlyList<ComprasEnUnMomento> PorMomento
 			{
 				get
 				{
@@ -125,12 +125,12 @@ namespace Compras.Dominio
 				}
 			}
 
-			public override int DiasEntreCompras => 0;
-			public override string CadenciaLegible => "";
-			public override string CadenciaCompacta => "";
-			public override string MomentoFavoritoExpresado => "";
+			internal override int DiasEntreCompras => 0;
+			internal override string CadenciaLegible => "";
+			internal override string CadenciaCompacta => "";
+			internal override string MomentoFavoritoExpresado => "";
 
-			public override string ParaElAsistente => compras == 0
+			internal override string ParaElAsistente => compras == 0
 				? "todavía no hay compras suyas con las que ver cada cuánto va al súper"
 				: $"con {compras} compras todavía no alcanza para decir cada cuánto va al súper";
 		}
@@ -203,22 +203,22 @@ namespace Compras.Dominio
 				momentoFavorito = mejorMomento;
 			}
 
-			public override int ComprasMiradas => cuantasMiradas;
-			public override bool EsObservado => true;
-			public override int DiasTipicos => diasTipicos;
-			public override Cadencia Cadencia => cadencia;
-			public override DayOfWeek DiaFavorito => diaFavorito;
-			public override string DiaFavoritoExpresado => EnEspanol(diaFavorito);
-			public override int ComprasEnElDiaFavorito => comprasEnElDia;
-			public override MomentoDelDia MomentoFavorito => momentoFavorito;
-			public override IReadOnlyList<ComprasEnUnMomento> PorMomento => porMomento;
+			internal override int ComprasMiradas => cuantasMiradas;
+			internal override bool EsObservado => true;
+			internal override int DiasTipicos => diasTipicos;
+			internal override Cadencia Cadencia => cadencia;
+			internal override DayOfWeek DiaFavorito => diaFavorito;
+			internal override string DiaFavoritoExpresado => EnEspanol(diaFavorito);
+			internal override int ComprasEnElDiaFavorito => comprasEnElDia;
+			internal override MomentoDelDia MomentoFavorito => momentoFavorito;
+			internal override IReadOnlyList<ComprasEnUnMomento> PorMomento => porMomento;
 
-			public override int DiasEntreCompras => diasTipicos;
-			public override string CadenciaLegible => cadencia.ParaMostrar;
-			public override string CadenciaCompacta => cadencia.Compacta;
-			public override string MomentoFavoritoExpresado => momentoFavorito.ParaMostrar;
+			internal override int DiasEntreCompras => diasTipicos;
+			internal override string CadenciaLegible => cadencia.ParaMostrar;
+			internal override string CadenciaCompacta => cadencia.Compacta;
+			internal override string MomentoFavoritoExpresado => momentoFavorito.ParaMostrar;
 
-			public override string ParaElAsistente =>
+			internal override string ParaElAsistente =>
 				$"suele ir al súper cada {diasTipicos} días, y casi siempre un "
 				+ $"{DiaFavoritoExpresado} por la {momentoFavorito.ParaMostrar}";
 
@@ -251,10 +251,10 @@ namespace Compras.Dominio
 	}
 
 	/// <summary>Cuántas compras cayeron en un momento del día, y qué parte del total fue.</summary>
-	public sealed class ComprasEnUnMomento
+	internal sealed class ComprasEnUnMomento
 	{
-		public MomentoDelDia Momento { get; private set; }
-		public int Cuantas { get; private set; }
+		internal MomentoDelDia Momento { get; private set; }
+		internal int Cuantas { get; private set; }
 
 		internal ComprasEnUnMomento(MomentoDelDia momento, int cuantas, int deCuantas)
 		{
@@ -265,13 +265,13 @@ namespace Compras.Dominio
 			DeCuantas = deCuantas;
 		}
 
-		public int DeCuantas { get; private set; }
+		internal int DeCuantas { get; private set; }
 
 		/// <summary>Qué parte de las compras cayó en este momento. Cero cuando no hay compras.</summary>
-		public decimal Proporcion => DeCuantas == 0 ? 0m : Math.Round((decimal)Cuantas / DeCuantas, 4);
+		internal decimal Proporcion => DeCuantas == 0 ? 0m : Math.Round((decimal)Cuantas / DeCuantas, 4);
 
 		/// <summary>La línea de la fila: "tarde · 7 compras".</summary>
-		public string ParaMostrar =>
+		internal string ParaMostrar =>
 			$"{Momento.ParaMostrar} · {Cuantas} {(Cuantas == 1 ? "compra" : "compras")}";
 	}
 }

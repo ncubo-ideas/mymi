@@ -75,12 +75,46 @@ namespace Compras.Consola
 			LaSerieSaleBuscadaPorTexto();
 			LaCompraSabeDondeFue();
 			ElRecorridoDiceDesdeCuandoSeMueve();
+			LosDosPlataEscribenLoMismo();
 
 			Console.WriteLine();
 			Console.WriteLine(fallas == 0
 				? $"TODO OK  ({corridas} comprobaciones)"
 				: $"{fallas} FALLAS de {corridas} comprobaciones");
 			return fallas == 0 ? 0 : 1;
+		}
+
+		// ---- la duplicacion que la cerca obligo, amarrada ----
+		//
+		// Desde que el dominio es enteramente `internal`, la caratula y la consola no pueden
+		// nombrar `Compras.Dominio.Plata`, asi que la presentacion tiene el suyo en
+		// `Compras.App`. Son dos copias de la misma regla, y una copia sin prueba es la
+		// lista espejo de Categoria otra vez: se desincroniza y falla callada.
+		//
+		// Este fixture es el unico lugar del repo que puede ver las dos -- ve el dominio por
+		// InternalsVisibleTo y la App por referencia normal-- asi que es el unico que puede
+		// obligarlas a coincidir. Si alguien cambia una y no la otra, esto lo dice.
+		private static void LosDosPlataEscribenLoMismo()
+		{
+			Titulo("el Plata del dominio y el de la presentacion dicen la misma cifra");
+
+			decimal[] montos = { 0m, 1m, 999m, 1000m, 32910m, 172630m, 1234567m, 0.5m, 1999.6m };
+
+			foreach (decimal monto in montos)
+				Igual($"₡ de {monto}",
+					Compras.Dominio.Plata.Colones(monto),
+					Compras.App.Plata.Colones(monto));
+
+			Igual("y el simbolo es el mismo",
+				Compras.Dominio.Plata.Simbolo, Compras.App.Plata.Simbolo);
+
+			// El otro espejo que la cerca obligo: la ventana por defecto de
+			// CanastaFrenteAlPasado. El juicio es del dominio -"esta aca para que ninguna
+			// superficie invente el suyo"- pero un valor por defecto de un parametro tiene
+			// que ser constante de compilacion, y la Superficie ya no puede nombrarlo.
+			Igual("la ventana por defecto es la que juzga el dominio",
+				Compras.Dominio.CanastaFrenteAlPasado.VentanaPorDefectoEnMeses.ToString(),
+				Compras.App.ComprasAPI.VentanaPorDefectoEnMeses.ToString());
 		}
 
 		// ---- el ticket se arma entero o no se arma ----

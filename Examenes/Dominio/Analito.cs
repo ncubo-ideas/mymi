@@ -53,14 +53,14 @@ namespace Examenes.Dominio
 	//
 	// La identidad, los sinonimos y la resolucion por nombre se quedan aca: son de TODO
 	// analito, y son la razon de que esta clase exista.
-	public abstract class Analito
+	internal abstract class Analito
 	{
 		// Los sinonimos NO son adornos ni traducciones libres: son los encabezados con los
 		// que estos analitos aparecen impresos en reportes reales.
 		// EL UNICO CON REQUISITO ANATOMICO, y por eso el requisito entra por constructor:
 		// no es "si es hombre", es SI TIENE PROSTATA. Ver RequisitoAnatomico para por que
 		// el predicado correcto no es el sexo.
-		public static readonly AnalitoContinuo AntigenoProstatico = new AnalitoContinuo(
+		internal static readonly AnalitoContinuo AntigenoProstatico = new AnalitoContinuo(
 			"Antigeno prostatico",
 			"Antígeno prostático",
 			UnidadDeMedida.NanogramosPorMililitro,
@@ -68,28 +68,28 @@ namespace Examenes.Dominio
 			RequisitoAnatomico.Prostata,
 			"PSA", "APE", "antigeno prostatico especifico");
 
-		public static readonly AnalitoContinuo ColesterolTotal = new AnalitoContinuo(
+		internal static readonly AnalitoContinuo ColesterolTotal = new AnalitoContinuo(
 			"Colesterol total",
 			"Colesterol total",
 			UnidadDeMedida.MiligramosPorDecilitro,
 			20m, 1200m,
 			"colesterol", "CHOL", "colesterol serico");
 
-		public static readonly AnalitoContinuo ColesterolLdl = new AnalitoContinuo(
+		internal static readonly AnalitoContinuo ColesterolLdl = new AnalitoContinuo(
 			"Colesterol LDL",
 			"Colesterol LDL",
 			UnidadDeMedida.MiligramosPorDecilitro,
 			10m, 900m,
 			"LDL", "LDL-C", "lipoproteina de baja densidad");
 
-		public static readonly AnalitoContinuo ColesterolHdl = new AnalitoContinuo(
+		internal static readonly AnalitoContinuo ColesterolHdl = new AnalitoContinuo(
 			"Colesterol HDL",
 			"Colesterol HDL",
 			UnidadDeMedida.MiligramosPorDecilitro,
 			5m, 200m,
 			"HDL", "HDL-C", "lipoproteina de alta densidad");
 
-		public static readonly AnalitoContinuo Hemoglobina = new AnalitoContinuo(
+		internal static readonly AnalitoContinuo Hemoglobina = new AnalitoContinuo(
 			"Hemoglobina",
 			"Hemoglobina",
 			UnidadDeMedida.GramosPorDecilitro,
@@ -106,19 +106,19 @@ namespace Examenes.Dominio
 		// Los nombres NO chocan con las clases de magnitud -ColorDeOrina, Nitritos,
 		// SangreEnOrina- a proposito: aquellas son el RESULTADO, estas son QUE se midio.
 
-		public static readonly AnalitoNominal ColorDeLaOrina = new AnalitoNominal(
+		internal static readonly AnalitoNominal ColorDeLaOrina = new AnalitoNominal(
 			"Color de la orina", "Color de la orina", "color de orina", "aspecto de la orina");
 
-		public static readonly AnalitoBinario NitritosEnOrina = new AnalitoBinario(
+		internal static readonly AnalitoBinario NitritosEnOrina = new AnalitoBinario(
 			"Nitritos", "Nitritos", "nitrito", "nitritos en orina");
 
-		public static readonly AnalitoBinario SangreEnLaOrina = new AnalitoBinario(
+		internal static readonly AnalitoBinario SangreEnLaOrina = new AnalitoBinario(
 			"Sangre en orina", "Sangre en orina", "hematuria", "sangre oculta en orina");
 
-		public static readonly AnalitoNominal ColorDeLasHeces = new AnalitoNominal(
+		internal static readonly AnalitoNominal ColorDeLasHeces = new AnalitoNominal(
 			"Color de las heces", "Color de las heces", "color de heces", "consistencia");
 
-		public static readonly AnalitoBinario SangreEnLasHeces = new AnalitoBinario(
+		internal static readonly AnalitoBinario SangreEnLasHeces = new AnalitoBinario(
 			"Sangre en heces", "Sangre en heces", "sangre oculta en heces");
 
 		// SI ESTE ANALITO FORMA SERIE. Es la fila `EvaluarTendencia` de la tabla del brief
@@ -128,7 +128,7 @@ namespace Examenes.Dominio
 		// la orina "viene subiendo" no es una pregunta. Un binario SI, y esa es la
 		// correccion de este cambio — "negativo, negativo, positivo" es una serie legitima,
 		// y hasta ahora este dominio no la podia tener.
-		public abstract bool FormaSerie { get; }
+		internal abstract bool FormaSerie { get; }
 
 		// QUE TIENE QUE TENER LA PERSONA para que este analito signifique algo. Ninguno
 		// para casi todos; el antigeno prostatico exige prostata.
@@ -138,7 +138,7 @@ namespace Examenes.Dominio
 		// SE MIDIO, independiente de que exista una medicion. Por eso la tool MCP puede
 		// contestar "este analito no te corresponde" de un antigeno del que ni siquiera hay
 		// serie, y por eso ninguna superficie puede olvidarse de preguntarlo.
-		public RequisitoAnatomico Requisito { get; private set; }
+		internal RequisitoAnatomico Requisito { get; private set; }
 
 		// SI ESTE ANALITO EXISTE PARA ESTA PERSONA. Tres respuestas y no dos: ver
 		// Aplicabilidad.
@@ -146,7 +146,7 @@ namespace Examenes.Dominio
 		// El analito NO PREGUNTA POR EL SEXO —pregunta por su requisito, y el requisito
 		// pregunta por la anatomia—. Es lo que deja el modelo abierto a que la anatomia
 		// deje de derivarse del sexo sin tocar ningun analito.
-		public Aplicabilidad AplicaA(Paciente paciente)
+		internal Aplicabilidad AplicaA(Paciente paciente)
 		{
 			ArgumentNullException.ThrowIfNull(paciente);
 			return Requisito.En(paciente);
@@ -163,9 +163,9 @@ namespace Examenes.Dominio
 		// arma una vez.
 		private static readonly Dictionary<string, Analito> porNombre = Indexar();
 
-		public string Nombre { get; }
+		internal string Nombre { get; }
 
-		public string ParaMostrar { get; }
+		internal string ParaMostrar { get; }
 
 		private readonly string[] sinonimos;
 
@@ -180,11 +180,11 @@ namespace Examenes.Dominio
 			this.sinonimos = sinonimos ?? new string[0];
 		}
 
-		public static IReadOnlyList<Analito> Todos => todos;
+		internal static IReadOnlyList<Analito> Todos => todos;
 
 		// Los otros nombres con los que este analito llega, para que la superficie pueda
 		// explicarle a alguien por que dos hojas distintas terminaron en la misma serie.
-		public IReadOnlyList<string> Sinonimos => sinonimos;
+		internal IReadOnlyList<string> Sinonimos => sinonimos;
 
 		// El armado del indice es tambien donde se hace cumplir la invariante que hace
 		// segura la tabla de sinonimos: NINGUN nombre puede resolver a dos analitos. Sin
@@ -232,7 +232,7 @@ namespace Examenes.Dominio
 		// llega de afuera -de una consulta de la IA, de la pantalla, de un evento- y solo
 		// hay cinco analitos validos. Que no resuelva ninguno es un defecto de quien
 		// pregunta, no un analito nuevo que haya que inventar.
-		public static Analito PorNombre(string nombre)
+		internal static Analito PorNombre(string nombre)
 		{
 			ArgumentNullException.ThrowIfNullOrWhiteSpace(nombre);
 
@@ -246,7 +246,7 @@ namespace Examenes.Dominio
 		// Para quien tiene que DECIDIR en vez de fallar. La ruta de eventos descarta lo que
 		// este dominio no modela devolviendo null, y descartar no es un error: un
 		// laboratorio manda el perfil completo y esta app modela cinco analitos.
-		public static bool EsConocido(string nombre)
+		internal static bool EsConocido(string nombre)
 		{
 			if (string.IsNullOrWhiteSpace(nombre)) return false;
 			return porNombre.ContainsKey(Normalizar(nombre));
@@ -254,7 +254,7 @@ namespace Examenes.Dominio
 
 		// Si ESTE analito atiende por ese nombre. Es la pregunta desde el otro lado y
 		// evita que quien la haga tenga que resolver primero y comparar despues.
-		public bool RespondeA(string nombre)
+		internal bool RespondeA(string nombre)
 		{
 			if (string.IsNullOrWhiteSpace(nombre)) return false;
 			return porNombre.TryGetValue(Normalizar(nombre), out Analito hallado)
@@ -263,7 +263,7 @@ namespace Examenes.Dominio
 
 		// Operacion con nombre en vez de sobrecargar ==, igual que UnidadDeMedida. La
 		// pregunta del dominio es "son el mismo analito", o sea "forman serie".
-		public bool EsElMismo(Analito otro)
+		internal bool EsElMismo(Analito otro)
 		{
 			ArgumentNullException.ThrowIfNull(otro);
 			return ReferenceEquals(this, otro);

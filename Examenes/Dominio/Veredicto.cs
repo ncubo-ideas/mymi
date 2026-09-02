@@ -26,26 +26,26 @@ namespace Examenes.Dominio
 	// que todavia no existe. Quedan NOMBRADOS y no construidos, igual que las cuatro
 	// formas de Magnitud que tampoco se implementaron: es lo que hace que el modelo se
 	// lea rico sin inflar el alcance.
-	public sealed class Veredicto
+	internal sealed class Veredicto
 	{
 		// Menos de dos mediciones. No se inventa una lectura, y este estado hay que
 		// preservarlo: es lo que Alvaro marco como correcto en la hemoglobina.
-		public static readonly Veredicto Indeterminado = new Veredicto("indeterminado");
+		internal static readonly Veredicto Indeterminado = new Veredicto("indeterminado");
 
 		// Se movio menos de lo que este analito considera un cambio real.
-		public static readonly Veredicto Estable = new Veredicto("estable");
+		internal static readonly Veredicto Estable = new Veredicto("estable");
 
 		// Se mueve hacia donde conviene. PUEDE ESTAR FUERA DE RANGO Y SER ESTE: es el
 		// caso del colesterol bajando desde un pico, y es la razon de que el veredicto
 		// no se pueda derivar del rango.
-		public static readonly Veredicto Mejorando = new Veredicto("mejorando");
+		internal static readonly Veredicto Mejorando = new Veredicto("mejorando");
 
 		// Se mueve hacia donde no conviene.
-		public static readonly Veredicto Empeorando = new Veredicto("empeorando");
+		internal static readonly Veredicto Empeorando = new Veredicto("empeorando");
 
 		// El cambio es demasiado grande para el tiempo transcurrido. No es un hallazgo
 		// clinico: es una medicion que hay que repetir.
-		public static readonly Veredicto ProbableErrorDeMedicion =
+		internal static readonly Veredicto ProbableErrorDeMedicion =
 			new Veredicto("probable error de medicion");
 
 		// HUBO un pico, se repitio el examen a los pocos dias, y el valor volvio a lo de
@@ -55,7 +55,7 @@ namespace Examenes.Dominio
 		//
 		// Alvaro: "pasó de 3 a casi 4, y cuando lo vuelve a medir pasa otra vez a 3. Ahí al
 		// médico esa segunda lectura le sirve."
-		public static readonly Veredicto PicoNoConfirmado = new Veredicto("pico no confirmado");
+		internal static readonly Veredicto PicoNoConfirmado = new Veredicto("pico no confirmado");
 
 		// APARECIO UN HALLAZGO BINARIO, se repitio la prueba, y no volvio a aparecer. Es
 		// el hermano de PicoNoConfirmado para la forma 5, y son DOS y no uno porque no
@@ -66,7 +66,7 @@ namespace Examenes.Dominio
 		// Es la mejor noticia que da una serie binaria: sin ella, una sangre en la orina
 		// que aparecio una vez se sigue leyendo como "buscá atención médica pronto" para
 		// siempre.
-		public static readonly Veredicto HallazgoNoConfirmado =
+		internal static readonly Veredicto HallazgoNoConfirmado =
 			new Veredicto("hallazgo no confirmado");
 
 		// ------------------------------------------------- los dos de la aplicabilidad
@@ -78,7 +78,7 @@ namespace Examenes.Dominio
 		// ESTE ANALITO NO LE CORRESPONDE A ESTA PERSONA. La tarjeta no existe, y la tool
 		// MCP contesta esto en vez de un valor. Es lo que distingue esta correccion de un
 		// filtro de pantalla: si la tool devolviera el numero, el dominio no cambio.
-		public static readonly Veredicto NoAplica = new Veredicto("no aplica");
+		internal static readonly Veredicto NoAplica = new Veredicto("no aplica");
 
 		// NO SE PUEDE INTERPRETAR HASTA SABER EL SEXO. El valor medido se muestra igual
 		// —el laboratorio lo midio— y lo que se retiene es la lectura, porque es lo que el
@@ -88,44 +88,44 @@ namespace Examenes.Dominio
 		// Indeterminado ("una sola medicion") se resuelve esperando el proximo examen;
 		// este SE RESUELVE AHORA, en dos toques. Por eso la superficie insiste con uno y
 		// no con el otro.
-		public static readonly Veredicto RequiereSexo = new Veredicto("requiere sexo");
+		internal static readonly Veredicto RequiereSexo = new Veredicto("requiere sexo");
 
-		public string Nombre { get; private set; }
+		internal string Nombre { get; private set; }
 
 		private Veredicto(string nombre)
 		{
 			Nombre = nombre;
 		}
 
-		public bool EsMejorando => ReferenceEquals(this, Mejorando);
+		internal bool EsMejorando => ReferenceEquals(this, Mejorando);
 
-		public bool EsEmpeorando => ReferenceEquals(this, Empeorando);
+		internal bool EsEmpeorando => ReferenceEquals(this, Empeorando);
 
 		// Si hay una lectura de verdad. Los tres que no la tienen no la tienen por razones
 		// distintas —faltan mediciones, falta un dato de la persona, o la pregunta no
 		// corresponde— y ninguno de los tres se puede presentar como una conclusion.
-		public bool HayLectura =>
+		internal bool HayLectura =>
 			!ReferenceEquals(this, Indeterminado)
 			&& !ReferenceEquals(this, RequiereSexo)
 			&& !ReferenceEquals(this, NoAplica);
 
 		// El analito no le corresponde a esta persona: no hay tarjeta, no hay valor, no hay
 		// nada que decir mas alla de eso.
-		public bool NoLeCorresponde => ReferenceEquals(this, NoAplica);
+		internal bool NoLeCorresponde => ReferenceEquals(this, NoAplica);
 
 		// Falta el sexo para poder leer esto. Lo pregunta la superficie para saber cuando
 		// mostrar el valor SIN veredicto, y para contar cuantos resultados estan asi.
-		public bool RequiereElSexo => ReferenceEquals(this, RequiereSexo);
+		internal bool RequiereElSexo => ReferenceEquals(this, RequiereSexo);
 
-		public bool SugiereRepetirElExamen => ReferenceEquals(this, ProbableErrorDeMedicion);
+		internal bool SugiereRepetirElExamen => ReferenceEquals(this, ProbableErrorDeMedicion);
 
 		// El pico ya se repitio y no se confirmo: no hay nada mas que hacer.
-		public bool EsPicoDescartado => ReferenceEquals(this, PicoNoConfirmado);
+		internal bool EsPicoDescartado => ReferenceEquals(this, PicoNoConfirmado);
 
 		// Se repitio y no se confirmo, en cualquiera de las dos formas. Es lo que la
 		// superficie pregunta cuando quiere pintar la buena noticia sin saber si tiene
 		// enfrente una magnitud continua o un binario.
-		public bool SeRepitioYNoSeConfirmo =>
+		internal bool SeRepitioYNoSeConfirmo =>
 			ReferenceEquals(this, PicoNoConfirmado) || ReferenceEquals(this, HallazgoNoConfirmado);
 	}
 }

@@ -14,7 +14,7 @@ namespace Compras.Dominio
 	// LAS COMPRAS SIN SUCURSAL QUEDAN AFUERA del conteo y se dicen aparte: los journals
 	// escritos antes de que el campo existiera no dicen donde fueron, y contarlas como
 	// "otra sucursal" o como "la de siempre" seria inventar un dato que el papel no trae.
-	public class RecorridoDeSucursales
+	internal class RecorridoDeSucursales
 	{
 		internal static RecorridoDeSucursales SinDatos(int comprasSinSucursal) =>
 			new RecorridoDeSucursales(Array.Empty<SucursalFrecuentada>(), comprasSinSucursal);
@@ -31,18 +31,18 @@ namespace Compras.Dominio
 		}
 
 		/// <summary>Consulta total: si alguna compra dice en qué sucursal fue.</summary>
-		public bool HayDatos => Sucursales.Count > 0;
+		internal bool HayDatos => Sucursales.Count > 0;
 
 		/// <summary>La más frecuentada primero; a igual cantidad, la conocida primero.</summary>
-		public IReadOnlyList<SucursalFrecuentada> Sucursales { get; private set; }
+		internal IReadOnlyList<SucursalFrecuentada> Sucursales { get; private set; }
 
-		public int CuantasDistintas => Sucursales.Count;
+		internal int CuantasDistintas => Sucursales.Count;
 
 		/// <summary>Cuántas compras no dicen sucursal (las de antes de que el campo viajara).</summary>
-		public int ComprasSinSucursal { get; private set; }
+		internal int ComprasSinSucursal { get; private set; }
 
 		/// <summary>La más frecuentada. Preguntar HayDatos primero.</summary>
-		public SucursalFrecuentada LaDeSiempre =>
+		internal SucursalFrecuentada LaDeSiempre =>
 			HayDatos
 				? Sucursales[0]
 				: throw new InvalidOperationException(
@@ -53,7 +53,7 @@ namespace Compras.Dominio
 		/// la de siempre, como aaaa-mm. Vacío si nunca salió de una — pareja total de
 		/// SeMueve.
 		/// </summary>
-		public string SeMueveDesdeExpresado
+		internal string SeMueveDesdeExpresado
 		{
 			get
 			{
@@ -67,9 +67,9 @@ namespace Compras.Dominio
 			}
 		}
 
-		public bool SeMueve => Sucursales.Count > 1;
+		internal bool SeMueve => Sucursales.Count > 1;
 
-		public string ParaElAsistente
+		internal string ParaElAsistente
 		{
 			get
 			{
@@ -105,12 +105,12 @@ namespace Compras.Dominio
 	}
 
 	/// <summary>Una sucursal y su rastro: cuántas compras, la primera y la última vez.</summary>
-	public class SucursalFrecuentada
+	internal class SucursalFrecuentada
 	{
-		public string Nombre { get; private set; }
-		public int Compras { get; private set; }
-		public DateTime PrimeraVez { get; private set; }
-		public DateTime UltimaVez { get; private set; }
+		internal string Nombre { get; private set; }
+		internal int Compras { get; private set; }
+		internal DateTime PrimeraVez { get; private set; }
+		internal DateTime UltimaVez { get; private set; }
 
 		internal SucursalFrecuentada(string nombre, int compras, DateTime primeraVez, DateTime ultimaVez)
 		{

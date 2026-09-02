@@ -25,23 +25,23 @@ namespace Facturas.Dominio
 	// es DURABLE - quien lea esa carpeta puede seguir leyendo los eventos del usuario
 	// hasta que el proveedor lo revoque. Para el MVP se acepta; documentarlo es parte
 	// de aceptarlo.
-	public class Bitacora
+	internal class Bitacora
 	{
-		public long UltimoEvento { get; private set; }
+		internal long UltimoEvento { get; private set; }
 
-		public string DeviceKey { get; private set; } = "";
+		internal string DeviceKey { get; private set; } = "";
 
-		public string Token { get; private set; } = "";
+		internal string Token { get; private set; } = "";
 
-		public string RefreshToken { get; private set; } = "";
+		internal string RefreshToken { get; private set; } = "";
 
-		public bool TieneDevice => DeviceKey.Length > 0;
+		internal bool TieneDevice => DeviceKey.Length > 0;
 
-		public bool TieneToken => Token.Length > 0;
+		internal bool TieneToken => Token.Length > 0;
 
-		public bool PuedeRotar => RefreshToken.Length > 0;
+		internal bool PuedeRotar => RefreshToken.Length > 0;
 
-		public void Avanzar(long evento)
+		internal void Avanzar(long evento)
 		{
 			if (evento <= UltimoEvento)
 				throw new InvalidOperationException(
@@ -52,7 +52,7 @@ namespace Facturas.Dominio
 
 		// Una sola vez por instalacion. Si se re-registrara con otra clave, el
 		// proveedor veria otro device y la credencial vieja quedaria huerfana.
-		public void RegistrarDevice(string deviceKey)
+		internal void RegistrarDevice(string deviceKey)
 		{
 			ArgumentNullException.ThrowIfNullOrWhiteSpace(deviceKey);
 			if (DeviceKey.Length > 0 && DeviceKey != deviceKey)
@@ -63,7 +63,7 @@ namespace Facturas.Dominio
 		}
 
 		// El refresh token es opcional: hay proveedores que solo dan el access token.
-		public void GuardarCredencial(string token, string refreshToken)
+		internal void GuardarCredencial(string token, string refreshToken)
 		{
 			ArgumentNullException.ThrowIfNullOrWhiteSpace(token);
 			ArgumentNullException.ThrowIfNull(refreshToken);

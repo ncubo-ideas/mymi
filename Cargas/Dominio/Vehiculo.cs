@@ -14,10 +14,10 @@ namespace Cargas.Dominio
 	// modulo del concesionario (lamina 5), y aca su unico proposito es atribuir las
 	// cargas y prestar su serie. La placa es la llave con la que los dos modulos hablan
 	// del mismo carro sin comunicarse entre si.
-	public sealed class Vehiculo
+	internal sealed class Vehiculo
 	{
-		public Placa Placa { get; private set; }
-		public FichaDelVehiculo Ficha { get; private set; }
+		internal Placa Placa { get; private set; }
+		internal FichaDelVehiculo Ficha { get; private set; }
 
 		// Ordenadas por fecha SIEMPRE: los eventos pueden llegar atrasados y la serie
 		// se lee cronologica. El orden se garantiza al insertar, no al consultar.
@@ -32,11 +32,11 @@ namespace Cargas.Dominio
 		}
 
 		/// <summary>La placa hasta que Sonia le ponga alias; el alias despues.</summary>
-		public string NombreParaMostrar => Ficha.Existe ? Ficha.Alias : Placa.ParaMostrar;
+		internal string NombreParaMostrar => Ficha.Existe ? Ficha.Alias : Placa.ParaMostrar;
 
-		public bool TieneFicha => Ficha.Existe;
-		public string TextoDeLaPlaca => Placa.Texto;
-		public int CantidadDeCargas => cargas.Count;
+		internal bool TieneFicha => Ficha.Existe;
+		internal string TextoDeLaPlaca => Placa.Texto;
+		internal int CantidadDeCargas => cargas.Count;
 
 		internal void Agregar(Carga carga)
 		{
@@ -51,19 +51,19 @@ namespace Cargas.Dominio
 			cargas.Insert(posicion, carga);
 		}
 
-		public void CompletarFicha(FichaDelVehiculo ficha)
+		internal void CompletarFicha(FichaDelVehiculo ficha)
 		{
 			ArgumentNullException.ThrowIfNull(ficha);
 			Ficha = ficha;
 		}
 
-		public IReadOnlyList<Carga> Cargas => cargas;
+		internal IReadOnlyList<Carga> Cargas => cargas;
 
 		// ------------------------------------------------------- la coherencia del odometro
 
 		/// <summary>Si un kilometraje es coherente con la serie: el odometro es monotono
 		/// creciente. Total, para la guarda del comando: decide sin reventar.</summary>
-		public bool EsKilometrajeCoherente(Carga cargaDestino, decimal enKilometros)
+		internal bool EsKilometrajeCoherente(Carga cargaDestino, decimal enKilometros)
 		{
 			foreach (Carga otra in cargas)
 			{
@@ -91,10 +91,10 @@ namespace Cargas.Dominio
 
 		// -------------------------------------------------------------------- la serie
 
-		public SerieDeTramos Serie() => new SerieDeTramos(cargas);
+		internal SerieDeTramos Serie() => new SerieDeTramos(cargas);
 
 		/// <summary>La lectura de la serie completa: el veredicto con sus hechos.</summary>
-		public EvaluacionDeRendimiento Evaluar()
+		internal EvaluacionDeRendimiento Evaluar()
 		{
 			SerieDeTramos serie = Serie();
 			var calculados = new List<Tramo>();
@@ -190,7 +190,7 @@ namespace Cargas.Dominio
 
 		/// <summary>La carga mas grande observada con tanque lleno. Estimacion declarada:
 		/// tercera procedencia, ni de Sonia ni de la estacion.</summary>
-		public CapacidadEstimadaDeTanque Capacidad()
+		internal CapacidadEstimadaDeTanque Capacidad()
 		{
 			decimal maximo = 0m;
 			DateTime fecha = default;
@@ -208,7 +208,7 @@ namespace Cargas.Dominio
 
 		/// <summary>Capacidad estimada por rendimiento habitual: las dos derivaciones
 		/// combinadas. Sin alguna de las dos, no hay autonomia y se dice.</summary>
-		public AutonomiaEstimada Autonomia()
+		internal AutonomiaEstimada Autonomia()
 		{
 			CapacidadEstimadaDeTanque capacidad = Capacidad();
 			LineaBaseDeRendimiento habitual = Serie().LineaBase;
@@ -221,7 +221,7 @@ namespace Cargas.Dominio
 
 		/// <summary>Kilometros por dia, de las lecturas que cuentan. Cero con menos de
 		/// dos lecturas: la ausencia se dice, no se inventa.</summary>
-		public decimal KilometrosPorDia
+		internal decimal KilometrosPorDia
 		{
 			get
 			{
@@ -242,7 +242,7 @@ namespace Cargas.Dominio
 			}
 		}
 
-		public int LecturasQueCuentan
+		internal int LecturasQueCuentan
 		{
 			get
 			{
@@ -257,7 +257,7 @@ namespace Cargas.Dominio
 		/// SOLO de lecturas observadas o confirmadas (anti-circularidad del §7.3) y lo
 		/// que produce lleva origen estimado. El "hoy" entra como parametro: el dominio
 		/// no lee el reloj.</summary>
-		public ProyeccionDeOdometro OdometroEstimado(DateTime hoy)
+		internal ProyeccionDeOdometro OdometroEstimado(DateTime hoy)
 		{
 			decimal kmPorDia = KilometrosPorDia;
 			if (kmPorDia <= 0m) return ProyeccionDeOdometro.SinProyeccion;
@@ -275,7 +275,7 @@ namespace Cargas.Dominio
 
 		// ------------------------------------------------------- lo que falta y cuanto hay
 
-		public CompletitudDeDatos Completitud()
+		internal CompletitudDeDatos Completitud()
 		{
 			int conKilometraje = 0;
 			foreach (Carga carga in cargas)
@@ -296,7 +296,7 @@ namespace Cargas.Dominio
 		/// faltante nombra los kilometros que YA se saben -salen de los odometros que
 		/// Sonia si puso- porque el trabajo a medio hacer motiva mas que un formulario
 		/// en blanco.</summary>
-		public IReadOnlyList<FaltanteDeDato> Faltantes()
+		internal IReadOnlyList<FaltanteDeDato> Faltantes()
 		{
 			var faltantes = new List<FaltanteDeDato>();
 			foreach (Carga carga in cargas)
@@ -337,7 +337,7 @@ namespace Cargas.Dominio
 		/// <summary>Cuanto cuesta el kilometro, POR MONEDA. La misma ley del tramo
 		/// aplicada al dinero: lo gastado despues de la primera lectura valida, entre
 		/// los kilometros recorridos desde ella.</summary>
-		public IReadOnlyList<CostoPorDistanciaEnMoneda> CostoPorDistancia()
+		internal IReadOnlyList<CostoPorDistanciaEnMoneda> CostoPorDistancia()
 		{
 			var filas = new List<CostoPorDistanciaEnMoneda>();
 
@@ -373,7 +373,7 @@ namespace Cargas.Dominio
 		}
 
 		/// <summary>La historia del precio por litro en los surtidores donde cargo.</summary>
-		public IReadOnlyList<PrecioEnElTiempo> Precios()
+		internal IReadOnlyList<PrecioEnElTiempo> Precios()
 		{
 			var precios = new List<PrecioEnElTiempo>();
 			foreach (Carga carga in cargas)

@@ -1,6 +1,5 @@
 using Choreography.Theater;
 using Cargas.App;
-using Cargas.Dominio;
 using Puppeteer;
 
 namespace Cargas.Mcp;
@@ -65,7 +64,7 @@ internal sealed class LectorDelJournal
 	private sealed class SoloLectura : PerformanceV2
 	{
 		internal SoloLectura(string nombreDelActor)
-			: base(nombreDelActor, typeof(BitacoraDeCargas).Assembly)
+			: base(nombreDelActor, ElDominio.Assembly)
 		{
 		}
 

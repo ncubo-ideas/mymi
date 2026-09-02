@@ -95,9 +95,15 @@ namespace Compras.App
 					}
 				";
 
+			// EL RECONOCIMIENTO DEL DEPARTAMENTO VIVE ACA, no en la frontera. El nombre del
+			// tipo va DENTRO del script: el motor lo resuelve por reflexion -que no tiene
+			// frontera de assembly- asi que el dominio se queda entero `internal` y este
+			// proyecto no nombra un solo tipo suyo en C#. Rechazar por Check no deja entrada
+			// en el journal, igual que la idempotencia.
 			return app.Using(
 				scriptForChk: @"
 					Check(@evento > bitacora.UltimoEvento) Error 'evento ya procesado';
+					Check(Categoria.TodasExisten(@categorias)) Error 'departamento no modelado';
 				",
 				script)
 			.WithParameters(p => {
@@ -1075,8 +1081,18 @@ namespace Compras.App
 		public IReadOnlyList<PrecioQueCambio> Precios(int cuantasCompras = ComprasQueSeMiranParaLaFirma) =>
 			ProyeccionDeVistas.Precios(PreciosDeLosHabituales(cuantasCompras));
 
+		/// <summary>La ventana contra la que se mira el pasado, si nadie pide otra.</summary>
+		// ESPEJO DEL JUICIO DEL DOMINIO, y la copia esta AMARRADA. El juicio es suyo
+		// -CanastaFrenteAlPasado.VentanaPorDefectoEnMeses, "esta aca para que ninguna
+		// superficie invente el suyo"- pero un valor por defecto de un parametro tiene que
+		// ser una constante de compilacion, y desde que el dominio es enteramente `internal`
+		// esta Superficie no puede nombrarlo. Comprobaciones compara las dos: si el dominio
+		// cambia su juicio y esto no, el fixture lo dice, en vez de que la portada empiece a
+		// mirar una ventana distinta de la que el dominio documenta.
+		public const int VentanaPorDefectoEnMeses = 3;
+
 		public CanastaFrenteAlPasadoVista FrenteAlPasado(DateTime hoy,
-			int mesesAtras = Dominio.CanastaFrenteAlPasado.VentanaPorDefectoEnMeses,
+			int mesesAtras = VentanaPorDefectoEnMeses,
 			int cuantasCompras = ComprasQueSeMiranParaLaFirma) =>
 			ProyeccionDeVistas.FrenteAlPasado(CanastaFrenteA(hoy, mesesAtras, cuantasCompras));
 

@@ -1,6 +1,5 @@
 using System;
 using Choreography.Theater;
-using DealershipCar.Dominio;
 
 namespace DealershipCar.App
 {
@@ -22,7 +21,7 @@ namespace DealershipCar.App
 		/// posterior se ignora en silencio, y corregirlo pide un nombre de upgrade nuevo.
 		/// </summary>
 		public DealershipCarApp(string vin, string usageProfile, string modelCode)
-			: base(TheActorFor(vin), typeof(MaintenanceSchedule).Assembly)
+			: base(TheActorFor(vin), TheDomain.Assembly)
 		{
 			ArgumentException.ThrowIfNullOrWhiteSpace(modelCode);
 

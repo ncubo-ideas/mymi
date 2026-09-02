@@ -21,11 +21,11 @@ namespace Compras.Dominio
 	// SE COMPARA POR UNIDAD DE MEDIDA y se multiplica por el contenido de la
 	// presentacion MAS RECIENTE: si paso de la leche de 1 L a la de 2 L, lo honesto es
 	// preguntar cuanto costaba hace tres meses ESA cantidad, no la caja vieja.
-	public class CanastaFrenteAlPasado
+	internal class CanastaFrenteAlPasado
 	{
 		/// <summary>La ventana si nadie pide otra: tres meses. Es un juicio, y esta acá
 		/// para que ninguna superficie invente el suyo.</summary>
-		public const int VentanaPorDefectoEnMeses = 3;
+		internal const int VentanaPorDefectoEnMeses = 3;
 
 		internal static CanastaFrenteAlPasado SinConQueComparar(int mesesDeVentana) =>
 			new CanastaFrenteAlPasado(mesesDeVentana, Array.Empty<ProductoFrenteAlPasado>());
@@ -45,18 +45,18 @@ namespace Compras.Dominio
 			Productos = productos;
 		}
 
-		public int MesesDeVentana { get; private set; }
+		internal int MesesDeVentana { get; private set; }
 
 		/// <summary>Consulta total: si algún habitual tiene precio de entonces Y de hoy.</summary>
-		public bool HayConQueComparar => Productos.Count > 0;
+		internal bool HayConQueComparar => Productos.Count > 0;
 
 		/// <summary>Los comparados, el que más se movió primero. Cada uno con su antes y
 		/// su ahora en colones por SU presentación más reciente.</summary>
-		public IReadOnlyList<ProductoFrenteAlPasado> Productos { get; private set; }
+		internal IReadOnlyList<ProductoFrenteAlPasado> Productos { get; private set; }
 
 		/// <summary>El HECHO, con signo: cuántos colones más (o menos, negativo) cuesta hoy
 		/// una pieza de cada comparado. Sin comparables es cero, y HayConQueComparar lo dice.</summary>
-		public decimal Cambio
+		internal decimal Cambio
 		{
 			get
 			{
@@ -66,7 +66,7 @@ namespace Compras.Dominio
 			}
 		}
 
-		public string ParaElAsistente
+		internal string ParaElAsistente
 		{
 			get
 			{
@@ -91,18 +91,18 @@ namespace Compras.Dominio
 	/// Un habitual puesto frente a su propio pasado: lo que costaba entonces y lo que
 	/// cuesta hoy, los dos en colones por la presentación más reciente.
 	/// </summary>
-	public class ProductoFrenteAlPasado
+	internal class ProductoFrenteAlPasado
 	{
-		public string Sku { get; private set; }
-		public string Descripcion { get; private set; }
+		internal string Sku { get; private set; }
+		internal string Descripcion { get; private set; }
 
 		/// <summary>La presentación contra la que se leen los dos precios: la más reciente.</summary>
-		public string Presentacion { get; private set; }
+		internal string Presentacion { get; private set; }
 
-		public decimal Antes { get; private set; }
-		public decimal Ahora { get; private set; }
+		internal decimal Antes { get; private set; }
+		internal decimal Ahora { get; private set; }
 
-		public decimal Cambio => Ahora - Antes;
+		internal decimal Cambio => Ahora - Antes;
 
 		internal ProductoFrenteAlPasado(string sku, string descripcion, string presentacion,
 			decimal antes, decimal ahora)

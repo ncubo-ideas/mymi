@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using Choreography.Theater;
 using Examenes.App.Eventos;
 using Examenes.App.Vistas;
-using Examenes.Dominio;
+
 using Puppeteer;
 using Puppets.Portador;
 
@@ -104,24 +104,26 @@ namespace Examenes.App
 			return UnValor(evento, ClaseDelDominio(evento.Analito));
 		}
 
-		// La ULTIMA traduccion que queda: de la identidad del analito al nombre de la clase
-		// que el comando construye. Vive aca y no en el dominio porque es un detalle del
-		// DSL -el journal guarda texto y ese texto nombra una clase-, no conocimiento
+		// La ULTIMA traduccion que queda: del nombre canonico del analito al nombre de la
+		// clase que el comando construye. Vive aca y no en el dominio porque es un detalle
+		// del DSL -el journal guarda texto y ese texto nombra una clase-, no conocimiento
 		// clinico.
 		//
-		// Se compara por identidad y no por cadena: da igual como haya escrito el
-		// laboratorio el nombre, para cuando llega aca ya se resolvio.
-		private static string ClaseDelDominio(Analito analito)
+		// Compara contra NombresDeAnalito, que es texto y no una referencia a Analito: desde
+		// que el dominio es enteramente `internal`, esta Superficie no puede nombrar un tipo
+		// suyo en C#, y no le hace falta porque la ruta ya resolvio el sinonimo del
+		// laboratorio a su nombre canonico. Comprobaciones amarra esas constantes al dominio.
+		private static string ClaseDelDominio(string analito)
 		{
-			if (analito.EsElMismo(Analito.ColesterolTotal)) return "Colesterol";
-			if (analito.EsElMismo(Analito.AntigenoProstatico)) return "AntigenoProstatico";
-			if (analito.EsElMismo(Analito.Hemoglobina)) return "Hemoglobina";
+			if (analito == NombresDeAnalito.ColesterolTotal) return "Colesterol";
+			if (analito == NombresDeAnalito.AntigenoProstatico) return "AntigenoProstatico";
+			if (analito == NombresDeAnalito.Hemoglobina) return "Hemoglobina";
 
 			// El conjunto de analitos es mas grande que el de examenes construibles: el
 			// LDL entra fraccionado y el HDL no entra solo, y las dos cosas ya las filtro
 			// la ruta. Llegar aca significa que se agrego un analito y no su comando.
 			throw new ArgumentException(
-				$"Esta app no tiene comando para construir un examen de '{analito.Nombre}'. "
+				$"Esta app no tiene comando para construir un examen de '{analito}'. "
 				+ "La ruta debio devolver null para descartarlo.", nameof(analito));
 		}
 
@@ -185,7 +187,7 @@ namespace Examenes.App
 				")
 			.WithParameters(p => {
 				p["evento", typeof(long)]   = evento.Evento;
-				p["sexo",   typeof(string)] = evento.Sexo.Nombre;
+				p["sexo",   typeof(string)] = evento.Sexo;
 			})
 			.PerformCheckThenCommand();
 		}

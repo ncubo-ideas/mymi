@@ -21,9 +21,9 @@ namespace Examenes.Dominio
 	// numero", no habria donde poner estas reglas y la serie no se podria interpretar.
 	//
 	// No es sealed: es la rama de la que cuelgan los analitos.
-	public abstract class ExamenDeSangre : Examen
+	internal abstract class ExamenDeSangre : Examen
 	{
-		public Medicion Valor { get; private set; }
+		internal Medicion Valor { get; private set; }
 
 		// QUE se midio, como identidad. Es la llave de la serie: dos examenes del mismo
 		// analito forman serie aunque cada laboratorio lo haya nombrado distinto.
@@ -36,7 +36,7 @@ namespace Examenes.Dominio
 		// con unidad, y necesita la unidad para validar el evento y el rango posible para
 		// rechazar basura. El color de la orina es un analito y no tiene ninguna de las
 		// dos: por eso Analito dejo de exigirlas y ellas bajaron a la forma que si las usa.
-		public AnalitoContinuo Analito { get; private set; }
+		internal AnalitoContinuo Analito { get; private set; }
 
 		protected ExamenDeSangre(DateTime fecha, AnalitoContinuo analito, Medicion valor) : base(fecha)
 		{
@@ -73,13 +73,13 @@ namespace Examenes.Dominio
 			return new Medicion(valor, analito.Unidad);
 		}
 
-		public override bool AportaSerie => true;
+		internal override bool AportaSerie => true;
 
-		public override string ResultadoExpresado => Valor.Expresado;
+		internal override string ResultadoExpresado => Valor.Expresado;
 
 		// Un examen de sangre mide UN analito. Es el caso simple, y es justamente por eso
 		// que la forma singular parecia alcanzar para todos.
-		public override IReadOnlyList<LecturaDeExamen> Lecturas =>
+		internal override IReadOnlyList<LecturaDeExamen> Lecturas =>
 			new[] { new LecturaDeExamen(Analito, Valor) };
 
 		// El rango normal PARA ESTA PERSONA. Es una funcion de la persona, no una
@@ -95,12 +95,12 @@ namespace Examenes.Dominio
 		// rango masculino "mientras tanto" es PEOR que no devolver nada, porque produce una
 		// clasificacion que se ve igual de firme que las demas y esta mal. Quien lo llame
 		// tiene que decidir que hacer con el hueco; lo que el dominio hace es decirlo.
-		public abstract RangoDeReferencia RangoPara(Paciente paciente);
+		internal abstract RangoDeReferencia RangoPara(Paciente paciente);
 
 		// Cuanto puede moverse este analito por dia sin que el cambio sea biologicamente
 		// inverosimil. Es el umbral que convierte "subio 80" en "subio 80 EN UN DIA, o
 		// sea que alguien midio mal".
-		public abstract decimal CambioMaximoVerosimilPorDia { get; }
+		internal abstract decimal CambioMaximoVerosimilPorDia { get; }
 
 		// El cambio minimo que este analito considera un cambio DE VERDAD. Por debajo de
 		// esto la diferencia no se distingue de la variacion normal del propio analito
@@ -109,12 +109,12 @@ namespace Examenes.Dominio
 		// Antes se llamaba CambioQueExigeAtencion, y el nombre conflacionaba dos cosas
 		// que este cambio separa: que algo se haya movido de verdad, y que ese movimiento
 		// exija algo. Un colesterol que baja 60 mg/dL se movio de verdad Y no exige nada.
-		public abstract decimal CambioMinimoSignificativo { get; }
+		internal abstract decimal CambioMinimoSignificativo { get; }
 
 		// HACIA DONDE conviene que se mueva este analito. Reemplaza al bool
 		// DireccionPreocupanteEsAscenso, que solo sabia contestar "asciende o desciende"
 		// y no tenia como decir que lo bueno es quedarse quieto.
-		public abstract DireccionDeseable Direccion { get; }
+		internal abstract DireccionDeseable Direccion { get; }
 
 		// QUE SERIE LEE A ESTE ANALITO. Es la fabrica de "el plural": cada analito dice
 		// cual es su serie, y con eso el Expediente arma la correcta sin un switch.
@@ -125,7 +125,7 @@ namespace Examenes.Dominio
 		// la serie por parametro, que es la senal de que el metodo no era suyo.
 		// Devuelve la rama CONTINUA y no la raiz: un examen de sangre no puede producir
 		// una serie binaria, y decirlo en la firma evita tener que comprobarlo despues.
-		public abstract SerieContinua NuevaSerie();
+		internal abstract SerieContinua NuevaSerie();
 
 		// EL MULTIPLO QUE NINGUN INTERVALO JUSTIFICA. Es la otra mitad de lo que Alvaro
 		// planteo, y es distinta del rango posible:
@@ -141,7 +141,7 @@ namespace Examenes.Dominio
 		//
 		// Se expresa como MULTIPLO y no como diferencia absoluta porque es proporcional:
 		// duplicarse desde 1 y duplicarse desde 100 son el mismo hecho clinico.
-		public abstract decimal MultiploQueNingunIntervaloJustifica { get; }
+		internal abstract decimal MultiploQueNingunIntervaloJustifica { get; }
 
 		// CADA CUANTO conviene repetir ESTE analito, en meses.
 		//
@@ -155,29 +155,29 @@ namespace Examenes.Dominio
 		// ⚠️ Las periodicidades son de uso corriente y ORIENTATIVAS. Varian por
 		// antecedentes y criterio medico, y conviene que alguien del area las revise antes
 		// de mostrarlas fuera del equipo.
-		public abstract int MesesHastaElProximo(Paciente paciente);
+		internal abstract int MesesHastaElProximo(Paciente paciente);
 
 		// Proyecciones planas para el print del DSL, que no navega dos niveles. Es lo que
 		// permite que un grafico reciba NUMEROS y no el texto "3.0 ng/mL".
-		public decimal ValorNumerico => Valor.Valor;
+		internal decimal ValorNumerico => Valor.Valor;
 
-		public string UnidadDelValor => Valor.Unidad.Simbolo;
+		internal string UnidadDelValor => Valor.Unidad.Simbolo;
 
-		public ClasificacionDeValor ClasificarPara(Paciente paciente) =>
+		internal ClasificacionDeValor ClasificarPara(Paciente paciente) =>
 			Exigido(paciente).Clasificar(Valor);
 
 		// Si el valor se movio lo suficiente como para llamarlo cambio. Vive en la base
 		// porque la comparacion es la misma para todos; el UMBRAL, que es lo que cambia
 		// por analito, lo pone cada uno.
-		public bool EsCambioReal(decimal cambio) =>
+		internal bool EsCambioReal(decimal cambio) =>
 			Math.Abs(cambio) >= CambioMinimoSignificativo;
 
-		public bool EsNormalPara(Paciente paciente) => Exigido(paciente).Contiene(Valor);
+		internal bool EsNormalPara(Paciente paciente) => Exigido(paciente).Contiene(Valor);
 
 		// Si de esta persona se sabe lo suficiente como para que este analito tenga rango.
 		// Lo pregunta quien no puede fallar —el conteo de hallazgos, la serie que decide si
 		// hay veredicto— antes de comparar contra nada.
-		public bool HayRangoPara(Paciente paciente) => RangoPara(paciente) != null;
+		internal bool HayRangoPara(Paciente paciente) => RangoPara(paciente) != null;
 
 		// El rango, exigiendolo. Las dos operaciones que comparan contra el rango solo se
 		// alcanzan DESPUES de que la serie descarto el caso "no se puede determinar" (ver

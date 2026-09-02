@@ -7,12 +7,12 @@ namespace Cargas.Dominio
 	/// agrupa por moneda y devuelve una fila por cada una: sumar cruzado exigiria un
 	/// tipo de cambio con fecha, que es presentacion, no dominio (ver Moneda).
 	/// </summary>
-	public sealed class GastoEnMoneda
+	internal sealed class GastoEnMoneda
 	{
-		public Moneda Moneda { get; private set; }
-		public decimal Monto { get; private set; }
-		public int CantidadDeCargas { get; private set; }
-		public decimal Litros { get; private set; }
+		internal Moneda Moneda { get; private set; }
+		internal decimal Monto { get; private set; }
+		internal int CantidadDeCargas { get; private set; }
+		internal decimal Litros { get; private set; }
 
 		internal GastoEnMoneda(Moneda moneda, decimal monto, int cantidadDeCargas, decimal litros)
 		{
@@ -24,7 +24,7 @@ namespace Cargas.Dominio
 			Litros = litros;
 		}
 
-		public string CodigoDeMoneda => Moneda.Codigo;
-		public string Expresado => $"{Moneda.Simbolo}{Monto:0.##} en {CantidadDeCargas} cargas";
+		internal string CodigoDeMoneda => Moneda.Codigo;
+		internal string Expresado => $"{Moneda.Simbolo}{Monto:0.##} en {CantidadDeCargas} cargas";
 	}
 }

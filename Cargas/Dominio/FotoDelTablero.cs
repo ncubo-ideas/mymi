@@ -9,24 +9,24 @@ namespace Cargas.Dominio
 	/// que, por ser aporte de Sonia, no tiene otra evidencia. La procedencia se vuelve
 	/// auditable.
 	/// </summary>
-	public abstract class FotoDelTablero
+	internal abstract class FotoDelTablero
 	{
 		/// <summary>La ausencia, como instancia unica.</summary>
-		public static readonly FotoDelTablero Ninguna = new SinFoto();
+		internal static readonly FotoDelTablero Ninguna = new SinFoto();
 
-		public static FotoDelTablero Guardada(string nombreDeArchivo) =>
+		internal static FotoDelTablero Guardada(string nombreDeArchivo) =>
 			new FotoGuardada(nombreDeArchivo);
 
-		public abstract bool Existe { get; }
+		internal abstract bool Existe { get; }
 
 		/// <summary>Revienta si no hay foto: consultar antes Existe.</summary>
-		public abstract string NombreDeArchivo { get; }
+		internal abstract string NombreDeArchivo { get; }
 
 		private sealed class SinFoto : FotoDelTablero
 		{
-			public override bool Existe => false;
+			internal override bool Existe => false;
 
-			public override string NombreDeArchivo =>
+			internal override string NombreDeArchivo =>
 				throw new ErrorDeDominio(
 					"Esta carga no tiene foto del tablero: preguntar por NombreDeArchivo "
 					+ "exige consultar antes Existe.");
@@ -42,8 +42,8 @@ namespace Cargas.Dominio
 				this.nombreDeArchivo = nombreDeArchivo.Trim();
 			}
 
-			public override bool Existe => true;
-			public override string NombreDeArchivo => nombreDeArchivo;
+			internal override bool Existe => true;
+			internal override string NombreDeArchivo => nombreDeArchivo;
 		}
 	}
 }

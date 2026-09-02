@@ -10,20 +10,20 @@ namespace Cargas.Dominio
 	// Es la DireccionDeseable de examenes con mas filo: alla dependia del analito, aca
 	// depende de como lo estas mirando (§5.3 del brief). El selector de unidades de la
 	// UI cambia cual de estas tres se usa, y nada mas.
-	public sealed class PresentacionDeRendimiento
+	internal sealed class PresentacionDeRendimiento
 	{
-		public static readonly PresentacionDeRendimiento KilometrosPorLitro =
+		internal static readonly PresentacionDeRendimiento KilometrosPorLitro =
 			new PresentacionDeRendimiento("km/L", DireccionDeseable.MasEsMejor);
 
-		public static readonly PresentacionDeRendimiento MillasPorGalonUS =
+		internal static readonly PresentacionDeRendimiento MillasPorGalonUS =
 			new PresentacionDeRendimiento("mpg", DireccionDeseable.MasEsMejor);
 
 		// La inversa: volumen por distancia. Es la que invierte la direccion.
-		public static readonly PresentacionDeRendimiento LitrosPorCienKilometros =
+		internal static readonly PresentacionDeRendimiento LitrosPorCienKilometros =
 			new PresentacionDeRendimiento("L/100km", DireccionDeseable.MenosEsMejor);
 
-		public string Simbolo { get; private set; }
-		public DireccionDeseable Direccion { get; private set; }
+		internal string Simbolo { get; private set; }
+		internal DireccionDeseable Direccion { get; private set; }
 
 		private PresentacionDeRendimiento(string simbolo, DireccionDeseable direccion)
 		{
@@ -35,7 +35,7 @@ namespace Cargas.Dominio
 		private const decimal KilometrosPorMilla = 1.609344m;
 		private const decimal LitrosPorGalonUS = 3.785412m;
 
-		public decimal Convertir(Rendimiento rendimiento)
+		internal decimal Convertir(Rendimiento rendimiento)
 		{
 			ArgumentNullException.ThrowIfNull(rendimiento);
 
@@ -49,10 +49,10 @@ namespace Cargas.Dominio
 			return 100m / kmPorLitro;
 		}
 
-		public string Formatear(Rendimiento rendimiento) =>
+		internal string Formatear(Rendimiento rendimiento) =>
 			$"{Convertir(rendimiento):0.#} {Simbolo}";
 
-		public static PresentacionDeRendimiento PorSimbolo(string simbolo)
+		internal static PresentacionDeRendimiento PorSimbolo(string simbolo)
 		{
 			ArgumentNullException.ThrowIfNullOrWhiteSpace(simbolo);
 

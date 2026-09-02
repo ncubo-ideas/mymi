@@ -21,14 +21,14 @@ namespace Compras.Dominio
 	// Se usa la MEDIANA y no el promedio: una sola compra de reserva -el arroz de la
 	// quincena que se compro dos veces en la misma semana- corre el promedio y no cambia
 	// la mediana. Un habito se describe mejor por su intervalo tipico que por su media.
-	public abstract class RitmoDeCompra
+	internal abstract class RitmoDeCompra
 	{
 		internal static RitmoDeCompra Ninguno(Categoria categoria) => new SinRitmo(categoria);
 
 		internal static RitmoDeCompra De(Categoria categoria, IReadOnlyList<int> intervalos) =>
 			new Observado(categoria, intervalos);
 
-		public Categoria Categoria { get; private set; }
+		internal Categoria Categoria { get; private set; }
 
 		private RitmoDeCompra(Categoria categoria)
 		{
@@ -40,42 +40,42 @@ namespace Compras.Dominio
 		/// Si el ritmo se pudo MEDIR en el historial. En false, quien lee cae en la
 		/// periodicidad del repertorio, que es una suposición y no un hecho.
 		/// </summary>
-		public abstract bool EsObservado { get; }
+		internal abstract bool EsObservado { get; }
 
 		/// <summary>Cuántas veces se puede medir el intervalo: compras de la categoría menos una.</summary>
-		public abstract int IntervalosMedidos { get; }
+		internal abstract int IntervalosMedidos { get; }
 
 		/// <summary>El intervalo típico en días. Preguntar EsObservado primero.</summary>
-		public abstract int DiasTipicos { get; }
+		internal abstract int DiasTipicos { get; }
 
-		public abstract int DiasMasCorto { get; }
-		public abstract int DiasMasLargo { get; }
+		internal abstract int DiasMasCorto { get; }
+		internal abstract int DiasMasLargo { get; }
 
 		/// <summary>
 		/// Los días con los que hay que leer un hueco de esta categoría: el ritmo medido si
 		/// existe, y si no la periodicidad del repertorio. Total: siempre contesta.
 		/// </summary>
-		public int DiasParaLeerElHueco =>
+		internal int DiasParaLeerElHueco =>
 			EsObservado ? DiasTipicos : Categoria.DiasDeReabastecimiento;
 
-		public abstract string ParaElAsistente { get; }
+		internal abstract string ParaElAsistente { get; }
 
 		private sealed class SinRitmo : RitmoDeCompra
 		{
 			internal SinRitmo(Categoria categoria) : base(categoria) { }
 
-			public override bool EsObservado => false;
-			public override int IntervalosMedidos => 0;
+			internal override bool EsObservado => false;
+			internal override int IntervalosMedidos => 0;
 
-			public override int DiasTipicos =>
+			internal override int DiasTipicos =>
 				throw new InvalidOperationException(
 					$"No hay dos compras de '{Categoria.Nombre}' con las que medir un ritmo. "
 					+ "Preguntar EsObservado antes.");
 
-			public override int DiasMasCorto => DiasTipicos;
-			public override int DiasMasLargo => DiasTipicos;
+			internal override int DiasMasCorto => DiasTipicos;
+			internal override int DiasMasLargo => DiasTipicos;
 
-			public override string ParaElAsistente =>
+			internal override string ParaElAsistente =>
 				$"todavía no hay con qué medir cada cuánto comprás {Categoria.Nombre}: "
 				+ $"se lee con los {Categoria.DiasDeReabastecimiento} días del catálogo";
 		}
@@ -95,12 +95,12 @@ namespace Compras.Dominio
 				this.intervalos.Sort();
 			}
 
-			public override bool EsObservado => true;
-			public override int IntervalosMedidos => intervalos.Count;
+			internal override bool EsObservado => true;
+			internal override int IntervalosMedidos => intervalos.Count;
 
 			// La mediana: el intervalo del medio. Con un numero par se promedian los dos
 			// centrales, que es lo convencional y no cambia la idea.
-			public override int DiasTipicos
+			internal override int DiasTipicos
 			{
 				get
 				{
@@ -111,10 +111,10 @@ namespace Compras.Dominio
 				}
 			}
 
-			public override int DiasMasCorto => intervalos[0];
-			public override int DiasMasLargo => intervalos[intervalos.Count - 1];
+			internal override int DiasMasCorto => intervalos[0];
+			internal override int DiasMasLargo => intervalos[intervalos.Count - 1];
 
-			public override string ParaElAsistente
+			internal override string ParaElAsistente
 			{
 				get
 				{

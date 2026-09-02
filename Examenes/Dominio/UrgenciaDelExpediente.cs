@@ -10,14 +10,14 @@ namespace Examenes.Dominio
 	// devolver tambien LA ACCION del analito que gano, que es la que la portada titula.
 	//
 	// Carrier por identidad: sin Equals, sin GetHashCode, no es llave de nada.
-	public sealed class UrgenciaDelExpediente
+	internal sealed class UrgenciaDelExpediente
 	{
-		public Severidad Severidad { get; private set; }
+		internal Severidad Severidad { get; private set; }
 
 		// La accion del hallazgo mas urgente. Null cuando nada pide nada.
-		public Accion Accion { get; private set; }
+		internal Accion Accion { get; private set; }
 
-		public UrgenciaDelExpediente(Severidad severidad, Accion accion)
+		internal UrgenciaDelExpediente(Severidad severidad, Accion accion)
 		{
 			ArgumentNullException.ThrowIfNull(severidad);
 
@@ -31,8 +31,8 @@ namespace Examenes.Dominio
 		}
 
 		// Proyecciones planas para el print del DSL.
-		public string NombreDeLaSeveridad => Severidad.Nombre;
-		public string AccionLegible => Accion == null ? "" : Accion.Legible;
-		public bool PideAlgo => Severidad.PideAlgo;
+		internal string NombreDeLaSeveridad => Severidad.Nombre;
+		internal string AccionLegible => Accion == null ? "" : Accion.Legible;
+		internal bool PideAlgo => Severidad.PideAlgo;
 	}
 }
