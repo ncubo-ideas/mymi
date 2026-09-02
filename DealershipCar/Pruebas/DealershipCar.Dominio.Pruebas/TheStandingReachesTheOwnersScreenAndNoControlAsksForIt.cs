@@ -498,7 +498,7 @@ namespace DealershipCar.Dominio.Pruebas
 				+ "que dijera que el odometro no hace falta pasaria igual.");
 			Assert.That(
 				TheOwnerIsTold.TheDealershipHasNotSentTheseFactsYet,
-				Does.Contain("no hay nada que usted tenga que llenar"),
+				Does.Contain("no hay nada que tengas que llenar"),
 				"Y que no hay nada que la persona ponga, dicho entero: es la mitad que un formulario "
 				+ "contradice, y es la que se pierde si esto solo comprobara que aparece la palabra "
 				+ "'dealership'.");
@@ -512,10 +512,10 @@ namespace DealershipCar.Dominio.Pruebas
 			// a la persona que arregle algo que no rompio.
 			Assert.That(
 				TheOwnerIsTold.TheRecordSaysTwoThingsThatCannotBothBeTrue,
-				Does.Contain("Ninguno de los dos hechos vino de usted"));
+				Does.Contain("Ninguno de los dos hechos vino de vos"));
 			Assert.That(
 				TheOwnerIsTold.TheRecordSaysTwoThingsThatCannotBothBeTrue,
-				Does.Contain("Solo su agencia puede corregirlos"));
+				Does.Contain("Solo tu concesionario puede corregirlos"));
 			Assert.That(
 				TheOwnerIsTold.TheRecordSaysTwoThingsThatCannotBothBeTrue,
 				Does.Contain("nada de lo de arriba es una estimación de eso"),
@@ -526,14 +526,14 @@ namespace DealershipCar.Dominio.Pruebas
 			// pantalla lo sigue diciendo con los tres conteos nombrados enteros.
 			Assert.That(
 				TheOwnerIsTold.TheServicingRuleStandingIsNotInThisRecord,
-				Does.Contain("no dónde está parado su carro frente a ella"));
+				Does.Contain("no dónde está parado tu carro frente a ella"));
 			Assert.That(
 				TheOwnerIsTold.TheServicingRuleStandingIsNotInThisRecord,
 				Does.Contain("cuántos servicios ha tenido este carro en otro lado, cuántos de esos "
 					+ "tienen comprobante, y cuánto mantenimiento programado se dejó de hacer"));
 			Assert.That(
 				TheOwnerIsTold.TheServicingRuleStandingIsNotInThisRecord,
-				Does.Contain("Quien los pone aquí es su agencia"));
+				Does.Contain("Quien los pone aquí es tu concesionario"));
 
 			// Y QUE UN SISTEMA QUE LA LISTA NO NOMBRA NO ES UNO QUE EL ALCANCE DEJE AFUERA. En una
 			// pantalla sin buscador esa distincion no la puede hacer un control: solo la frase.

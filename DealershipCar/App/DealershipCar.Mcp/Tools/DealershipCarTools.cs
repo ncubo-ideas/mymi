@@ -63,11 +63,11 @@ namespace DealershipCar.Mcp.Tools
 		}
 
 		[McpServerTool(Name = "how_up_to_date_is_this", UseStructuredContent = true)]
-		[Description("Contesta hasta dónde ha leído la app de esta persona el registro de la agencia, "
+		[Description("Contesta hasta dónde ha leído la app de esta persona el registro del concesionario, "
 			+ "y hasta qué instante se ha evaluado el plan. Úsela cuando esperen ver algo nuevo y no "
 			+ "esté ahí -- después de una visita al taller, o después de apretar Actualizar -- y "
 			+ "cuando necesite saber si la respuesta que acaba de darles está al día. "
-			+ "lastEventApplied es el número de evento de la agencia hasta el que la app ha leído: si "
+			+ "lastEventApplied es el número de evento del concesionario hasta el que la app ha leído: si "
 			+ "sube entre dos llamadas, entraron hechos nuevos. Usted NO puede hacerlo subir; solo la "
 			+ "app de la persona puede.")]
 		public ReadingFreshness HowUpToDate()
@@ -187,7 +187,7 @@ namespace DealershipCar.Mcp.Tools
 
 		private const string TheAppIsOlderThanTheLogbook =
 			"Este registro lo escribió una versión anterior de la app, que no llevaba la cuenta de "
-			+ "hasta dónde había leído los eventos de la agencia, así que lastEventApplied no está "
+			+ "hasta dónde había leído los eventos del concesionario, así que lastEventApplied no está "
 			+ "disponible. El plan de mantenimiento de abajo está completo y al día. Pídale a la "
 			+ "persona que abra su app una vez y empezará a llevar esa cuenta; no se pierde nada, y "
 			+ "no es un error.";
@@ -240,7 +240,7 @@ namespace DealershipCar.Mcp.Tools
 		public string EvaluatedUpTo { get; init; } = "";
 
 		[JsonPropertyName("lastEventApplied")]
-		[Description("El número de evento de la agencia hasta el que la app ha leído.")]
+		[Description("El número de evento del concesionario hasta el que la app ha leído.")]
 		public long LastEventApplied { get; init; }
 
 		[JsonPropertyName("lastEventKnown")]
@@ -305,7 +305,7 @@ namespace DealershipCar.Mcp.Tools
 		public string EvaluatedUpTo { get; init; } = "";
 
 		[JsonPropertyName("lastEventApplied")]
-		[Description("El número de evento de la agencia hasta el que la app ha leído. Si no sube, no "
+		[Description("El número de evento del concesionario hasta el que la app ha leído. Si no sube, no "
 			+ "entró nada nuevo.")]
 		public long LastEventApplied { get; init; }
 
@@ -341,7 +341,7 @@ namespace DealershipCar.Mcp.Tools
 		public string Vin { get; init; } = "";
 
 		[JsonPropertyName("lastEventApplied")]
-		[Description("El número de evento de la agencia hasta el que la app ha leído. Pregúntelo dos "
+		[Description("El número de evento del concesionario hasta el que la app ha leído. Pregúntelo dos "
 			+ "veces alrededor de un Actualizar: si subió, entraron hechos nuevos.")]
 		public long LastEventApplied { get; init; }
 

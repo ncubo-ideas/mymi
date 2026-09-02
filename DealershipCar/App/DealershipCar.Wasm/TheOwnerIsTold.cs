@@ -12,8 +12,8 @@ namespace DealershipCar.Wasm
 		/// </summary>
 		public const string NothingHasBeenPublishedYet =
 			"Todavía no se ha publicado nada sobre este modelo. Eso no es una falla ni es una "
-			+ "pantalla esperando que usted la llene: su agencia manda la ficha del fabricante, y "
-			+ "hasta que llegue aquí no hay nada que citar.";
+			+ "pantalla esperando que vos la llenes: tu concesionario manda la ficha del "
+			+ "fabricante, y hasta que llegue aquí no hay nada que citar.";
 
 		/// <summary>
 		/// Que alguno de los tres hechos con que se mide donde esta parado este vehiculo todavia no
@@ -21,25 +21,25 @@ namespace DealershipCar.Wasm
 		/// sin garantia. CUAL falta lo dice la frase del dominio, no esta.
 		/// </summary>
 		public const string TheDealershipHasNotSentTheseFactsYet =
-			"Parte de lo que decide esto todavía no ha llegado a su registro: el sobre de garantía "
+			"Parte de lo que decide esto todavía no ha llegado a tu registro: el sobre de garantía "
 			+ "mismo, el día en que se entregó el carro, o una lectura del odómetro tomada hoy o "
-			+ "antes. La frase de arriba nombra cuál, con las palabras de su propio registro. Su "
-			+ "agencia manda los tres, por el mismo feed que trae todo lo demás aquí, así que no "
-			+ "hay nada que usted tenga que llenar ni nada que valga la pena adivinar. Un sobre que "
-			+ "no está registrado aquí no es lo mismo que un carro sin garantía -- pídale a su "
-			+ "agencia que lo registre.";
+			+ "antes. La frase de arriba nombra cuál, con las palabras de tu propio registro. Tu "
+			+ "concesionario manda los tres, por el mismo feed que trae todo lo demás aquí, así que "
+			+ "no hay nada que tengas que llenar ni nada que valga la pena adivinar. Un sobre que no "
+			+ "está registrado aquí no es lo mismo que un carro sin garantía -- pedile a tu "
+			+ "concesionario que lo registre.";
 
 		/// <summary>
-		/// Que dos hechos que la agencia registro no pueden ser ciertos los dos, que ninguno lo puso
-		/// la persona, y que solo la agencia los corrige. Es lo unico que la pantalla puede decir
-		/// cuando el registro se contradice consigo mismo.
+		/// Que dos hechos que el concesionario registro no pueden ser ciertos los dos, que ninguno
+		/// lo puso la persona, y que solo el concesionario los corrige. Es lo unico que la pantalla
+		/// puede decir cuando el registro se contradice consigo mismo.
 		/// </summary>
 		public const string TheRecordSaysTwoThingsThatCannotBothBeTrue =
-			"Dos hechos que su agencia registró sobre este carro se contradicen entre sí, así que "
-			+ "dónde está parado su carro no se pudo medir del todo y nada de lo de arriba es una "
-			+ "estimación de eso. Ninguno de los dos hechos vino de usted. Solo su agencia puede "
-			+ "corregirlos: pídales que revisen el día en que entregaron el carro y la lectura del "
-			+ "odómetro que tomaron ese día contra la última lectura que han mandado. Lo que el "
+			"Dos hechos que tu concesionario registró sobre este carro se contradicen entre sí, así "
+			+ "que dónde está parado tu carro no se pudo medir del todo y nada de lo de arriba es "
+			+ "una estimación de eso. Ninguno de los dos hechos vino de vos. Solo tu concesionario "
+			+ "puede corregirlos: pediles que revisen el día en que entregaron el carro y la lectura "
+			+ "del odómetro que tomaron ese día contra la última lectura que han mandado. Lo que el "
 			+ "fabricante publicó está abajo y esto no lo afecta.";
 
 		/// <summary>
@@ -49,17 +49,17 @@ namespace DealershipCar.Wasm
 		/// </summary>
 		public const string ASystemThatIsNotListedWasNotRuledOut =
 			"Estos son los sistemas que el fabricante publicó, y nada más. Un sistema que no está en "
-			+ "esta lista no quedó descartado aquí -- nunca se mencionó, que es otra cosa y vale "
-			+ "más preguntárselo a su agencia que darlo por hecho.";
+			+ "esta lista no quedó descartado aquí -- nunca se mencionó, que es otra cosa y vale más "
+			+ "preguntárselo a tu concesionario que darlo por hecho.";
 
 		/// <summary>
 		/// Que la regla de servicio en otro taller esta dicha entera y que donde queda este vehiculo
 		/// frente a ella no. Los tres conteos que decidirian eso van nombrados, y quien los pone.
 		/// </summary>
 		public const string TheServicingRuleStandingIsNotInThisRecord =
-			"Esa es la regla tal como se publicó, no dónde está parado su carro frente a ella. "
+			"Esa es la regla tal como se publicó, no dónde está parado tu carro frente a ella. "
 			+ "Decir eso necesita cuántos servicios ha tenido este carro en otro lado, cuántos de "
 			+ "esos tienen comprobante, y cuánto mantenimiento programado se dejó de hacer. Quien "
-			+ "los pone aquí es su agencia.";
+			+ "los pone aquí es tu concesionario.";
 	}
 }

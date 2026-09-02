@@ -417,7 +417,7 @@ namespace DealershipCar.Mcp.Tools
 
 		private const string TheStandingIsHereAndItIsAsOfTheReading =
 			"standingSays es dónde está parado ESTE vehículo frente al alcance publicado, compuesto "
-			+ "por el registro mismo a partir del sobre que publicó la agencia, la fecha en que se "
+			+ "por el registro mismo a partir del sobre que publicó el concesionario, la fecha en que se "
 			+ "entregó el carro y el odómetro que trajo el feed: diga esa frase en vez de rearmarla. Se "
 			+ "midió contra la lectura que tiene el registro, cuya fecha de observación está en "
 			+ "thisVehicleSays, y no contra donde está el carro hoy: diga esa fecha, porque una lectura "
@@ -431,8 +431,8 @@ namespace DealershipCar.Mcp.Tools
 			+ "entregó el carro, o una lectura del odómetro al instante preguntado o antes. Las dos "
 			+ "mitades siguen contestando por separado y enteras: says es lo que el fabricante publicó "
 			+ "sobre el alcance, y thisVehicleSays es lo que el registro tiene sobre este carro y "
-			+ "nombra qué hecho falta con sus propias palabras. Cite las dos. Los tres hechos vienen de "
-			+ "la agencia, así que ni la persona ni usted pueden aportar uno, y componer la posición "
+			+ "nombra qué hecho falta con sus propias palabras. Cite las dos. Los tres hechos vienen "
+			+ "del concesionario, así que ni la persona ni usted pueden aportar uno, y componer la posición "
 			+ "contra un número adivinado declararía como medido algo que nadie midió.";
 
 		private const string NoSystemWasNamed =
@@ -713,8 +713,8 @@ namespace DealershipCar.Mcp.Tools
 		public string ServicingPolicyRevision { get; init; } = "";
 
 		[JsonPropertyName("envelopeKnown")]
-		[Description("false cuando este registro lo escribió una versión de la app anterior a lo que la "
-			+ "agencia registra sobre este vehículo. Entonces no viene lleno nada de la posición de "
+		[Description("false cuando este registro lo escribió una versión de la app anterior a lo que "
+			+ "el concesionario registra sobre este vehículo. Entonces no viene lleno nada de la posición de "
 			+ "este carro y solo contesta el alcance publicado: lea detail. NO quiere decir que el "
 			+ "carro no tenga garantía.")]
 		public bool EnvelopeKnown { get; init; }
@@ -725,7 +725,7 @@ namespace DealershipCar.Mcp.Tools
 		public string AskedAt { get; init; } = "";
 
 		[JsonPropertyName("envelopePublished")]
-		[Description("true cuando la agencia ha publicado un sobre de garantía para este vehículo. Uno "
+		[Description("true cuando el concesionario ha publicado un sobre de garantía para este vehículo. Uno "
 			+ "de los tres hechos que necesita la posición. false no es 'sin garantía'.")]
 		public bool EnvelopePublished { get; init; }
 
@@ -735,7 +735,7 @@ namespace DealershipCar.Mcp.Tools
 		public bool DeliveryRecorded { get; init; }
 
 		[JsonPropertyName("odometerKnown")]
-		[Description("true cuando el feed de la agencia ha traído una lectura observada a askedAt o "
+		[Description("true cuando el feed del concesionario ha traído una lectura observada a askedAt o "
 			+ "antes. Uno de los tres hechos que necesita la posición; la mitad de distancia se mide "
 			+ "contra ella.")]
 		public bool OdometerKnown { get; init; }
@@ -772,7 +772,7 @@ namespace DealershipCar.Mcp.Tools
 		public string StandingSays { get; init; } = "";
 
 		[JsonPropertyName("recordContradictsItself")]
-		[Description("true cuando dos hechos que la agencia registró no pueden ser ciertos los dos a "
+		[Description("true cuando dos hechos que el concesionario registró no pueden ser ciertos los dos a "
 			+ "askedAt, así que no se pudo medir nada de este vehículo y thisVehicleSays y "
 			+ "standingSays vienen vacíos. El alcance publicado sigue contestando. Es una falla del "
 			+ "registro y no de la pregunta: lea detail.")]

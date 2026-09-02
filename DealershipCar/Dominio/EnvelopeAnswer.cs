@@ -28,7 +28,7 @@ namespace DealershipCar.Dominio
 		internal static string TheStandingIsNotAnAdjudication()
 		{
 			return "Solo posición: esto dice dónde está parado este vehículo frente al sobre que "
-				+ "publicó la agencia, y nada sobre si un reclamo se pagaría -- eso lo decide el "
+				+ "publicó el concesionario, y nada sobre si un reclamo se pagaría -- eso lo decide el "
 				+ "fabricante, no este registro.";
 		}
 

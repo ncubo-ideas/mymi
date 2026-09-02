@@ -33,7 +33,7 @@ namespace DealershipCar.Dominio
 			return TheAnswerSaying(
 				"no se puede evaluar, porque no hay ninguna entrega registrada para este vehículo, "
 				+ "y las dos mitades del sobre se miden desde el día en que se entregó. Eso lo "
-				+ "registra la agencia.",
+				+ "registra el concesionario.",
 				_clause);
 		}
 	}

@@ -165,7 +165,7 @@ namespace DealershipCar.Wasm
 			}
 			catch (WriteRefusedException)
 			{
-				LastMessage += " | la agencia contestó, pero la carpeta rechazó la escritura";
+				LastMessage += " | el concesionario contestó, pero la carpeta rechazó la escritura";
 			}
 			catch (Exception ex)
 			{

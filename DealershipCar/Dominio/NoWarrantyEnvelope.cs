@@ -84,9 +84,9 @@ namespace DealershipCar.Dominio
 		/// </summary>
 		internal override string Describe()
 		{
-			return "La agencia no ha publicado ningún sobre de garantía para este vehículo, así que "
-				+ "aquí no hay contra qué medir -- que no es lo mismo que este vehículo no tenga "
-				+ "garantía.";
+			return "El concesionario no ha publicado ningún sobre de garantía para este vehículo, "
+				+ "así que aquí no hay contra qué medir -- que no es lo mismo que este vehículo no "
+				+ "tenga garantía.";
 		}
 
 		private static DomainException NothingWasPublished()

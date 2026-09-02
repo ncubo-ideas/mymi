@@ -104,12 +104,12 @@ namespace DealershipCar.Dominio.Pruebas
 
 				Assert.That(detail, Does.Contain("al menos uno de los tres hechos"));
 				Assert.That(detail, Does.Contain("Las dos mitades siguen contestando por separado"));
-				Assert.That(detail, Does.Contain("Los tres hechos vienen de la agencia"));
+				Assert.That(detail, Does.Contain("Los tres hechos vienen del concesionario"));
 				Assert.That(detail, Does.Contain("ni la persona ni usted pueden aportar uno"));
 
 				string envelope = TheAssistantAsks(bare).Detail;
 
-				Assert.That(envelope, Does.Contain("La agencia es quien declara los dos"));
+				Assert.That(envelope, Does.Contain("El concesionario es quien declara los dos"));
 				Assert.That(envelope, Does.Contain("NO es un vehículo sin garantía"));
 			}
 		}
@@ -141,7 +141,7 @@ namespace DealershipCar.Dominio.Pruebas
 					Does.Contain("Distancia: no se puede medir, porque no hay ninguna lectura del odómetro"));
 				Assert.That(
 					standing.Says,
-					Does.Contain("quien trae una es el feed de la agencia"));
+					Does.Contain("quien trae una es el feed del concesionario"));
 
 				Assert.That(
 					standing.Detail,
@@ -167,7 +167,7 @@ namespace DealershipCar.Dominio.Pruebas
 				Assert.That(standing.Standing, Is.EqualTo(""));
 				Assert.That(standing.CanBeEvaluated, Is.False);
 				Assert.That(standing.Detail, Does.Contain("se contradicen entre sí"));
-				Assert.That(standing.Detail, Does.Contain("solo la agencia puede corregirlos"));
+				Assert.That(standing.Detail, Does.Contain("solo el concesionario puede corregirlos"));
 				Assert.That(standing.Detail, Does.Contain("No estime la posición"));
 
 				// LOS HECHOS SUELTOS SIGUEN CONTESTANDO, porque ninguno de ellos compone nada: es
@@ -279,7 +279,7 @@ namespace DealershipCar.Dominio.Pruebas
 				Assert.That(standing.EnvelopeKnown, Is.False);
 				Assert.That(standing.Says, Is.EqualTo(""));
 				Assert.That(standing.PublishedSays, Is.EqualTo(""));
-				Assert.That(standing.Detail, Does.Contain("todavía no guardaba lo que la agencia"));
+				Assert.That(standing.Detail, Does.Contain("todavía no guardaba lo que"));
 				Assert.That(standing.Detail, Does.Contain("abra su app una vez"));
 				Assert.That(
 					standing.Detail,

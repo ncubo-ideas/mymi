@@ -245,7 +245,7 @@ namespace DealershipCar.Dominio
 					+ "ni antes, y la mitad de distancia se mide desde una.");
 
 			string odometer = "No hay ninguna lectura del odómetro contra la cual medir la mitad de "
-				+ "distancia, y quien trae una es el feed de la agencia.";
+				+ "distancia, y quien trae una es el feed del concesionario.";
 
 			if (remaining.TheStandingCanBeDecided)
 				return TheSettledAnswerFor(remaining, odometer);
