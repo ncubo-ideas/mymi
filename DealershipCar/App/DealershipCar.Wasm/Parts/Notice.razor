@@ -1,0 +1,45 @@
+<div class="@("notice notice--" + Tone)" id="@Id" role="@(Tone == "danger" ? "alert" : "status")">
+    <span class="notice__icon">
+        <Glyph Name="@(Icon.Length > 0 ? Icon : GlyphFor(Tone))" Size="19" />
+    </span>
+    <span class="notice__body">
+        @if (Title.Length > 0)
+        {
+            <span class="notice__title">@Title</span>
+        }
+        @if (ChildContent is not null)
+        {
+            <span class="notice__text">@ChildContent</span>
+        }
+    </span>
+</div>
+
+@code {
+    /// <summary>Que tan fuerte habla el aviso: danger, warn, info o neutral.</summary>
+    [Parameter]
+    public string Tone { get; set; } = "neutral";
+
+    /// <summary>La primera linea, en negrita. Vacia si el aviso es de una sola frase.</summary>
+    [Parameter]
+    public string Title { get; set; } = "";
+
+    /// <summary>El nombre del dibujo, cuando el del tono no es el que corresponde.</summary>
+    [Parameter]
+    public string Icon { get; set; } = "";
+
+    /// <summary>El ancla del aviso en la pagina.</summary>
+    [Parameter]
+    public string Id { get; set; }
+
+    /// <summary>El cuerpo del aviso, botones incluidos.</summary>
+    [Parameter]
+    public RenderFragment ChildContent { get; set; }
+
+    private static string GlyphFor(string tone) => tone switch
+    {
+        "danger" => "cross",
+        "warn" => "alert",
+        "info" => "info",
+        _ => "info",
+    };
+}

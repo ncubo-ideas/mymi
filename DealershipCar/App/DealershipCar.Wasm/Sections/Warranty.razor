@@ -1,209 +1,213 @@
-<MudExpansionPanels Elevation="0" Class="mb-6" id="warranty">
-    <MudExpansionPanel Dense="true">
-        <TitleContent>
-            <div class="section-head">
-                <MudText Typo="Typo.subtitle1" Class="section-head__name">Warranty</MudText>
-                <span class="mono muted" id="warranty-provenance">
-                    @(Stands.Standing.Length > 0
-                        ? AppState.Spaced(Stands.Standing)
-                        : Sheet.Coverage.Published
-                            ? "scope · " + Provenance(Sheet.Coverage.Revision)
-                            : "no scope published")
-                </span>
-            </div>
-        </TitleContent>
-        <ChildContent>
-            <div class="sheet-head" id="envelope-head">
-                <MudText Typo="Typo.subtitle2">Where your car stands</MudText>
-                <span class="mono muted" id="envelope-asked-at">as of @Stands.AskedAt</span>
-            </div>
+<div class="stack stack--inner" id="warranty">
+    <section class="block">
+        <div class="sect-head" id="envelope-head">
+            <h2>Where your car stands</h2>
+            <span class="prov" id="envelope-asked-at">as of @Stands.AskedAt</span>
+        </div>
 
-            @if (Stands.RecordContradictsItself)
+        @if (Stands.RecordContradictsItself)
+        {
+            <Notice Tone="danger" Id="record-contradicts-itself">
+                @TheOwnerIsTold.TheRecordSaysTwoThingsThatCannotBothBeTrue
+            </Notice>
+
+            <p class="says says--absent" id="published-envelope-says">@Stands.PublishedSays</p>
+        }
+        else
+        {
+            @if (Stands.Standing.Length > 0)
             {
-                <MudAlert Severity="Severity.Error" Variant="Variant.Outlined" Class="mb-3"
-                          id="record-contradicts-itself">
-                    @TheOwnerIsTold.TheRecordSaysTwoThingsThatCannotBothBeTrue
-                </MudAlert>
-
-                <MudText Typo="Typo.body2" Class="sheet-says muted mb-4" id="published-envelope-says">
-                    @Stands.PublishedSays
-                </MudText>
-            }
-            else
-            {
-                @if (Stands.Standing.Length > 0)
-                {
-                    <div class="grades" id="envelope-standing">
-                        <span class="grades__label">Right now</span>
-                        <MudChip T="string" Size="Size.Small" Variant="Variant.Filled" Color="Color.Info">
-                            @AppState.Spaced(Stands.Standing)
-                        </MudChip>
-                    </div>
-                }
-
-                <MudText Typo="Typo.body2" Class="sheet-says mb-3" id="envelope-says">
-                    @Stands.Says
-                </MudText>
-
-                @if (Stands.TheRecordIsMissingAFact)
-                {
-                    <MudAlert Severity="Severity.Info" Variant="Variant.Outlined" Class="mb-3"
-                              id="envelope-incomplete">
-                        @TheOwnerIsTold.TheDealershipHasNotSentTheseFactsYet
-                    </MudAlert>
-                }
-
-                @if (Stands.EnvelopePublished || Stands.DeliveryRecorded || Stands.OdometerKnown)
-                {
-                    <MudText Typo="Typo.caption" HtmlTag="p" Class="muted mb-1" id="measured-against-head">
-                        What that was measured against
-                    </MudText>
-
-                    <div class="board mb-4" id="measured-against">
-                        @if (Stands.EnvelopePublished)
-                        {
-                            <div class="item" id="measured-envelope">
-                                <div class="item__head">
-                                    <span class="op-name">Envelope published</span>
-                                    <span class="mono muted">@Stands.PublishedAt</span>
-                                </div>
-                            </div>
-                        }
-
-                        @if (Stands.DeliveryRecorded)
-                        {
-                            <div class="item" id="measured-delivery">
-                                <div class="item__head">
-                                    <span class="op-name">Handed over</span>
-                                    <span class="mono muted">@Stands.DeliveredAt</span>
-                                </div>
-                                <div class="item__says muted">
-                                    odometer that day @Stands.DeliveryReading @Stands.DeliveryUnit
-                                </div>
-                            </div>
-                        }
-
-                        @if (Stands.OdometerKnown)
-                        {
-                            <div class="item" id="measured-odometer">
-                                <div class="item__head">
-                                    <span class="op-name">Latest odometer reading</span>
-                                    <span class="mono">@Stands.Odometer @Stands.OdometerUnit</span>
-                                </div>
-                                <div class="item__says muted">
-                                    observed on @Stands.OdometerObservedAt
-                                </div>
-                            </div>
-                        }
-                    </div>
-                }
-            }
-
-            <MudText Typo="Typo.caption" HtmlTag="p" Class="muted mb-4" id="warranty-scope-note">
-                Below is the scope the manufacturer published for model
-                <span class="mono">@Sheet.Model</span>. It says what is inside the scope; it never
-                says a repair will be paid for.
-            </MudText>
-
-            @if (!Sheet.Coverage.Published)
-            {
-                <MudAlert Severity="Severity.Info" Variant="Variant.Outlined" Class="mb-4" id="no-scope">
-                    @Sheet.Coverage.Says
-                </MudAlert>
-            }
-            else
-            {
-                <div class="sheet-head">
-                    <MudText Typo="Typo.subtitle2">What the scope says</MudText>
-                    <span class="mono muted">@Provenance(Sheet.Coverage.Revision)</span>
+                <div id="envelope-standing">
+                    <span class="chip chip--info">
+                        <Glyph Name="shield" Size="13" Stroke="2.2" />
+                        @AppState.Spaced(Stands.Standing)
+                    </span>
                 </div>
+            }
 
-                <MudText Typo="Typo.body2" Class="sheet-says mb-2" id="scope-says">@Sheet.Coverage.Says</MudText>
+            <p class="says" id="envelope-says">@Stands.Says</p>
 
-                <div class="grades" id="covered-systems">
-                    <span class="grades__label">Declared inside</span>
+            @if (Stands.TheRecordIsMissingAFact)
+            {
+                <Notice Tone="info" Id="envelope-incomplete">
+                    @TheOwnerIsTold.TheDealershipHasNotSentTheseFactsYet
+                </Notice>
+            }
+
+            @if (Stands.EnvelopePublished || Stands.DeliveryRecorded || Stands.OdometerKnown)
+            {
+                <div class="block__label" id="measured-against-head">What that was measured against</div>
+
+                <div class="card cardlist" id="measured-against">
+                    @if (Stands.EnvelopePublished)
+                    {
+                        <div class="item" id="measured-envelope">
+                            <span class="bullet bullet--sm bullet--info">
+                                <Glyph Name="shield" Size="13" Stroke="2.2" />
+                            </span>
+                            <span class="item__body">
+                                <span class="item__head">
+                                    <span class="item__name">Envelope published</span>
+                                    <span class="prov">@Stands.PublishedAt</span>
+                                </span>
+                            </span>
+                        </div>
+                    }
+
+                    @if (Stands.DeliveryRecorded)
+                    {
+                        <div class="item" id="measured-delivery">
+                            <span class="bullet bullet--sm bullet--info">
+                                <Glyph Name="calendar" Size="13" Stroke="2.2" />
+                            </span>
+                            <span class="item__body">
+                                <span class="item__head">
+                                    <span class="item__name">Handed over</span>
+                                    <span class="prov">@Stands.DeliveredAt</span>
+                                </span>
+                                <span class="item__says">
+                                    odometer that day
+                                    @HowANumberReads.Grouped(Stands.DeliveryReading) @Stands.DeliveryUnit
+                                </span>
+                            </span>
+                        </div>
+                    }
+
+                    @if (Stands.OdometerKnown)
+                    {
+                        <div class="item" id="measured-odometer">
+                            <span class="bullet bullet--sm bullet--info">
+                                <Glyph Name="gauge" Size="13" Stroke="2.2" />
+                            </span>
+                            <span class="item__body">
+                                <span class="item__head">
+                                    <span class="item__name">Latest odometer reading</span>
+                                    <span class="prov">
+                                        @HowANumberReads.Grouped(Stands.Odometer) @Stands.OdometerUnit
+                                    </span>
+                                </span>
+                                <span class="item__says">observed on @Stands.OdometerObservedAt</span>
+                            </span>
+                        </div>
+                    }
+                </div>
+            }
+        }
+    </section>
+
+    <section class="block">
+        <div class="sect-head">
+            <h2>What the scope says</h2>
+            <span class="prov" id="warranty-provenance">
+                @(Sheet.Coverage.Published ? "scope · " + Provenance(Sheet.Coverage.Revision) : "no scope published")
+            </span>
+        </div>
+
+        <p class="note note--tight" id="warranty-scope-note">
+            Below is the scope the manufacturer published for model
+            <span class="mono">@Sheet.Model</span>. It says what is inside the scope; it never says a
+            repair will be paid for.
+        </p>
+
+        @if (!Sheet.Coverage.Published)
+        {
+            <Notice Tone="info" Id="no-scope">@Sheet.Coverage.Says</Notice>
+        }
+        else
+        {
+            <div class="card card--pad">
+                <p class="says" id="scope-says">@Sheet.Coverage.Says</p>
+
+                <div class="chiprow" id="covered-systems">
+                    <span class="chiprow__label">Declared inside</span>
                     @if (Sheet.Coverage.CoveredSystems.Length == 0)
                     {
-                        <span class="muted">no system was published as being inside the scope</span>
+                        <span class="chiprow__none">
+                            no system was published as being inside the scope
+                        </span>
                     }
                     else
                     {
                         @foreach (string system in Sheet.Coverage.CoveredSystems)
                         {
-                            <MudChip T="string" Size="Size.Small" Variant="Variant.Text" Color="Color.Info">
-                                @system
-                            </MudChip>
+                            <span class="chip chip--info">@system</span>
                         }
                     }
                 </div>
 
-                <MudText Typo="Typo.caption" HtmlTag="p" Class="muted mt-2" id="silence-is-not-a-denial">
+                <p class="note note--tight" id="silence-is-not-a-denial">
                     @TheOwnerIsTold.ASystemThatIsNotListedWasNotRuledOut
-                </MudText>
+                </p>
+            </div>
 
-                @if (Stands.Systems.Count > 0)
-                {
-                    <MudText Typo="Typo.subtitle2" Class="mt-4 mb-1" id="coverage-standings-head">
-                        Where your car stands on each
-                    </MudText>
+            @if (Stands.Systems.Count > 0)
+            {
+                <div class="block__label" id="coverage-standings-head">
+                    Where your car stands on each
+                </div>
 
-                    <div class="board mb-2" id="coverage-standings">
-                        @foreach (CoverageStandingForThisVehicle system in Stands.Systems)
-                        {
-                            <div class="item" id="@("coverage-" + system.SystemCode)">
-                                <div class="item__head">
-                                    <span class="op-name">@system.SystemCode</span>
+                <div class="card cardlist" id="coverage-standings">
+                    @foreach (CoverageStandingForThisVehicle system in Stands.Systems)
+                    {
+                        <div class="item" id="@("coverage-" + system.SystemCode)">
+                            <span class="bullet bullet--sm bullet--info">
+                                <Glyph Name="shield" Size="13" Stroke="2.2" />
+                            </span>
+                            <span class="item__body">
+                                <span class="item__head">
+                                    <span class="item__name">@system.SystemCode</span>
                                     @if (system.Standing.Length > 0)
                                     {
-                                        <span class="mono">@AppState.Spaced(system.Standing)</span>
+                                        <span class="prov">@AppState.Spaced(system.Standing)</span>
                                     }
-                                </div>
-                                <div class="item__says">@system.Says</div>
-                            </div>
-                        }
-                    </div>
-                }
-
-                <div class="mt-4" id="exclusions">
-                    <MudText Typo="Typo.subtitle2" Class="mb-1">What it leaves out</MudText>
-                    @if (Sheet.Coverage.Exclusions.Length == 0)
-                    {
-                        <MudText Typo="Typo.body2" Class="muted">
-                            No exclusion was published with this scope.
-                        </MudText>
-                    }
-                    else
-                    {
-                        <ul class="exclusions">
-                            @foreach (string exclusion in Sheet.Coverage.Exclusions)
-                            {
-                                <li>@exclusion</li>
-                            }
-                        </ul>
+                                </span>
+                                <span class="item__says">@system.Says</span>
+                            </span>
+                        </div>
                     }
                 </div>
             }
 
-            <div class="sheet-head mt-6" id="servicing-rule">
-                <MudText Typo="Typo.subtitle2">Servicing elsewhere</MudText>
-                <span class="mono muted">@Provenance(Sheet.ServicingRule.Revision)</span>
+            <div id="exclusions">
+                <div class="block__title">What it leaves out</div>
+                @if (Sheet.Coverage.Exclusions.Length == 0)
+                {
+                    <p class="note">No exclusion was published with this scope.</p>
+                }
+                else
+                {
+                    <ul class="exclusions">
+                        @foreach (string exclusion in Sheet.Coverage.Exclusions)
+                        {
+                            <li>@exclusion</li>
+                        }
+                    </ul>
+                }
             </div>
+        }
+    </section>
 
-            <MudText Typo="Typo.body2" id="servicing-rule-says"
-                     Class="@(Sheet.ServicingRule.Published ? "sheet-says" : "sheet-says muted")">
+    <section class="block" id="servicing-rule">
+        <div class="sect-head">
+            <h2>Servicing elsewhere</h2>
+            <span class="prov">@Provenance(Sheet.ServicingRule.Revision)</span>
+        </div>
+
+        <div class="card card--pad">
+            <p class="@(Sheet.ServicingRule.Published ? "says" : "says says--absent")"
+               id="servicing-rule-says">
                 @Sheet.ServicingRule.Says
-            </MudText>
+            </p>
 
             @if (Sheet.ServicingRule.Published)
             {
-                <MudText Typo="Typo.caption" Class="muted d-block mt-1"
-                         id="servicing-rule-standing">
+                <p class="note note--tight" id="servicing-rule-standing">
                     @TheOwnerIsTold.TheServicingRuleStandingIsNotInThisRecord
-                </MudText>
+                </p>
             }
-        </ChildContent>
-    </MudExpansionPanel>
-</MudExpansionPanels>
+        </div>
+    </section>
+</div>
 
 @code {
     /// <summary>La ficha del fabricante, leida en un solo momento. La seccion no lee nada por su cuenta.</summary>
