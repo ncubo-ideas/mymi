@@ -472,5 +472,33 @@ namespace DealershipCar.Wasm
 		public string BaseUrl { get; set; } = "eventos/";
 		public string Resource { get; set; } = "vehicle";
 		public string Vin { get; set; } = "1HGCM82633A004352";
+
+		/// <summary>
+		/// Como se llama la agencia en la pantalla. NO sale del registro y no tiene por que: la
+		/// agencia es quien reparte esta app, asi que su propio nombre lo trae la app y no un
+		/// evento del feed.
+		/// </summary>
+		public string Name { get; set; } = "Sotavento Motors";
+
+		/// <summary>
+		/// Por donde se le habla a la agencia. Vale la misma razon que <see cref="Name"/>: es un
+		/// dato DE LA AGENCIA, no del carro de nadie, y por eso viaja en el appsettings de la app
+		/// que la agencia publica en vez de entrar por el feed del vehiculo.
+		///
+		/// Son ENLACES y nada mas -- abren WhatsApp o el marcador del telefono. Esta app no le
+		/// manda nada a la agencia ni escribe en el registro por tocarlos: lo unico que hace es
+		/// leer. Sin configurar, los botones no se dibujan.
+		/// </summary>
+		public DealershipContact Contact { get; set; } = new();
+	}
+
+	/// <summary>Los dos enlaces con que se llega a la agencia, o vacios si no los publico.</summary>
+	public sealed class DealershipContact
+	{
+		/// <summary>Numero en formato internacional sin signos, como lo pide wa.me. Ej: 50622000000.</summary>
+		public string Whatsapp { get; set; } = "";
+
+		/// <summary>Numero tal cual se marca. Ej: +506 2200 0000.</summary>
+		public string Phone { get; set; } = "";
 	}
 }

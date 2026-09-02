@@ -1,19 +1,20 @@
 @page "/"
 @inject AppState state
+@inject DealershipSettings dealership
 @inject NavigationManager nav
 
 @{
     RenderFragment<string> Moving = kind =>
         @<div class="row" id="@("row-" + kind)">
             <span class="@("row__when row__when--" + HowADueStateLooks.ToneOf(board[kind]))">
-                @HowACanonNameReads.ADueState(board[kind])
+                @AppState.Spaced(board[kind])
             </span>
             <span class="row__main">
                 <span class="row__titleline">
-                    <span class="row__title">@HowACanonNameReads.AnOperation(kind)</span>
+                    <span class="row__title">@AppState.Spaced(kind)</span>
                     @if (deferrals[kind] > 0)
                     {
-                        <span class="chip chip--ghost">aplazada @deferrals[kind]&times;</span>
+                        <span class="chip chip--ghost">put off @deferrals[kind]&times;</span>
                     }
                 </span>
                 <span class="row__sub">@reasons[kind]</span>
@@ -27,8 +28,8 @@
             </span>
             <span class="item__body">
                 <span class="item__head">
-                    <span class="item__name">@HowACanonNameReads.AnOperation(kind)</span>
-                    <span class="prov">@HowACanonNameReads.ADueState(board[kind])</span>
+                    <span class="item__name">@AppState.Spaced(kind)</span>
+                    <span class="prov">@AppState.Spaced(board[kind])</span>
                 </span>
                 <span class="item__says">@reasons[kind]</span>
             </span>
@@ -42,8 +43,8 @@
         {
             <Notice Tone="danger" Id="error"
                     Title="@(state.IsUp ? "No se pudo completar la operación." : "No se pudo abrir la app.")">
-                Esto es una falla de la app, no algo que usted haya hecho. El detalle nombra el paso
-                que falló.
+                Esto es una falla de la app, no algo que hayas hecho vos. El detalle nombra el
+                paso que falló.
                 <button class="linkbtn" type="button" id="show-error-detail"
                         @onclick="@(() => errorDetail = !errorDetail)">
                     @(errorDetail ? "ocultar detalle" : "detalle")
@@ -73,15 +74,13 @@
                 @if (state.NeedsRegrant)
                 {
                     <span>
-                        Su carpeta es <strong>&laquo;@state.FolderName&raquo;</strong>. El navegador le
-                        pide confirmar el permiso de escritura cada vez que vuelve a abrir la app.
+                        Tu carpeta es <strong>&laquo;@state.FolderName&raquo;</strong>. El navegador te
+                        pide confirmar el permiso de escritura cada vez que volvés a abrir la app.
                     </span>
                 }
                 else
                 {
-                    <span>
-                        Esta app guarda <strong>su</strong> registro de mantenimiento. Elija donde.
-                    </span>
+                    <span>Esta app guarda <strong>tu</strong> registro de mantenimiento. Elegí dónde.</span>
                 }
             </p>
         </div>
@@ -112,8 +111,8 @@
             {
                 <Notice Tone="warn" Id="no-storage-insecure"
                         Title="Esta página no está en una conexión segura">
-                    El navegador no la va a dejar guardar nada &mdash; cualquier navegador haria lo
-                    mismo. Ábrala por <span class="mono">https</span>, o por
+                    El navegador no la va a dejar guardar nada &mdash; cualquier navegador haría lo
+                    mismo. Abrila por <span class="mono">https</span>, o por
                     <span class="mono">localhost</span>.
                 </Notice>
             }
@@ -134,8 +133,8 @@
                         Elegir una carpeta
                     </button>
                     <p class="note note--tight">
-                        El registro vive en una carpeta suya, y <strong>su asistente puede
-                        leerla</strong> &mdash; eso es lo que lee el servidor MCP. Esta es la opcion
+                        El registro vive en una carpeta tuya, y <strong>tu asistente puede
+                        leerla</strong> &mdash; eso es lo que lee el servidor MCP. Esta es la opción
                         que hace que valga la pena tener la app.
                     </p>
                 </div>
@@ -150,10 +149,10 @@
                         @(installedApp ? "Guardar dentro de esta app" : "Guardar en este navegador")
                     </button>
                     <p class="note note--tight">
-                        Sobrevive al cerrar, pero <strong>no es una carpeta suya</strong> y su
+                        Sobrevive al cerrar, pero <strong>no es una carpeta tuya</strong> y tu
                         asistente <strong>no puede leerla</strong>. El selector de carpetas existe
                         solo en Chromium de escritorio, así que esto es el recurso de reserva y no
-                        una opcion equivalente.
+                        una opción equivalente.
                     </p>
                 </div>
             }
@@ -164,357 +163,159 @@
         </button>
     </div>
 }
-else if (tab == "home")
-{
-    <section class="@($"hero {heroTone}")" id="hero">
-        <div class="hero__photo">
-            <img src="img/road.jpg" alt="" />
-        </div>
-        <div class="hero__glow"></div>
-
-        <div class="hero__inner">
-            <div class="hero__brand">
-                <SotaventoMark Size="34" Tile="rgba(255,255,255,.16)" Slash="#FFFFFF" />
-                <div>
-                    <div class="hero__brand-name">Sotavento Motors</div>
-                    <div class="hero__brand-tag">Servicios al dueño</div>
-                </div>
-                <span class="spacer"></span>
-                <AppearanceToggle OnNight="true" />
-            </div>
-
-            <div class="hero__gap"></div>
-
-            <div class="hero__pill"><span></span>@heroPill</div>
-            <h1 class="hero__title" id="next-due">@heroTitle</h1>
-
-            <div class="hero__meter" id="odometer">
-                <div class="hero__meter-label">Última lectura del odómetro</div>
-                <div class="hero__meter-value">
-                    <b>@heroReading</b>
-                    <i>@heroReadingUnit</i>
-                </div>
-                <div class="hero__meter-note">@heroReadingNote</div>
-            </div>
-
-            <p class="hero__line" id="hero-line">@heroLine</p>
-
-            <button class="cta" type="button" id="refresh" @onclick="Refresh" disabled="@refreshing">
-                @(refreshing ? "Actualizando…" : "Actualizar")
-                <Glyph Name="sync" Size="18" Stroke="2.2" />
-            </button>
-
-            <div class="hero__tail"></div>
-        </div>
-    </section>
-
-    <div class="stack">
-        <div class="notice__stack">
-            @if (state.NeedsRegrant)
-            {
-                <Notice Tone="danger" Id="needs-regrant"
-                        Title="@($"Su carpeta «{state.FolderName}» es de solo lectura para esta app.")">
-                    El navegador da el permiso de <em>escritura</em> aparte del de elegir la carpeta, y
-                    se lo quita cuando vuelve a abrir la app. Hasta que lo vuelva a dar,
-                    <strong>nada de lo que haga aquí se está guardando</strong> y su asistente esta
-                    leyendo una versión más vieja.
-                    <span class="notice__actions">
-                        <button class="btn btn--sm" type="button" id="regrant" @onclick="RequestPermission">
-                            <Glyph Name="lock" Size="16" />
-                            Dar permiso de escritura
-                        </button>
-                    </span>
-                </Notice>
-            }
-            else if (!state.HasFolder)
-            {
-                <Notice Tone="warn" Id="not-saving" Title="No se está guardando nada.">
-                    No se conserva ningún registro suyo &mdash; lo que ve se vuelve a traer cada vez
-                    que abre la app.
-                    <span class="notice__actions">
-                        @if (pickerSupported == true)
-                        {
-                            <button class="btn btn--sm" type="button" id="choose-folder"
-                                    @onclick="ConnectFolder">
-                                <Glyph Name="folder" Size="16" />
-                                Elegir una carpeta
-                            </button>
-                        }
-                        else if (browserStorageSupported == true)
-                        {
-                            <button class="btn btn--sm" type="button" id="use-browser-storage"
-                                    @onclick="UseBrowserStorage">
-                                <Glyph Name="storage" Size="16" />
-                                Guardar en este navegador
-                            </button>
-                        }
-                        else
-                        {
-                            <span class="note">
-                                Este navegador no ofrece ni selector de carpetas ni almacenamiento
-                                propio, así que no hay a que engancharse. Abra esta app en Chrome o
-                                Edge directamente.
-                            </span>
-                        }
-                    </span>
-                </Notice>
-            }
-            else if (state.SavingIsFailing.Length > 0)
-            {
-                <Notice Tone="danger" Id="saving-failing" Title="La carpeta rechazó la escritura.">
-                    Lo que ve <strong>no</strong> esta guardado en &laquo;@state.FolderName&raquo;.
-                    Casi siempre es el permiso, que se vence cuando vuelve a abrir la app.
-                    <span class="detail">@state.SavingIsFailing</span>
-                    <span class="notice__actions">
-                        <button class="btn btn--sm" type="button" id="regrant" @onclick="RequestPermission">
-                            <Glyph Name="lock" Size="16" />
-                            Volver a dar el permiso
-                        </button>
-                    </span>
-                </Notice>
-            }
-
-            @if (state.DealershipUnreachable.Length > 0)
-            {
-                <Notice Tone="warn" Id="dealership-unreachable"
-                        Title="Este es su propio registro, no las novedades de hoy de la agencia.">
-                    La app no pudo alcanzarla al abrir, así que lo que la agencia haya mandado desde
-                    la última vez todavía no esta aquí. Todo lo de abajo es lo que su registro ya
-                    tiene.
-                    <span class="detail">@state.DealershipUnreachable</span>
-                    <span class="notice__actions">
-                        <button class="btn btn--sm" type="button" id="retry-dealership" @onclick="Refresh">
-                            <Glyph Name="sync" Size="16" />
-                            Reintentar
-                        </button>
-                    </span>
-                </Notice>
-            }
-
-            @if (state.EvaluationSkipped.Length > 0)
-            {
-                <Notice Tone="warn" Id="evaluation-skipped" Title="Esta no es la lectura de hoy.">
-                    @state.EvaluationSkipped
-                </Notice>
-            }
-
-            @if (state.InBrowserStorage)
-            {
-                <div class="statusline" id="in-browser-storage">
-                    <Glyph Name="storage" Size="13" Stroke="2" />
-                    <span>
-                        @(installedApp ? "Guardando dentro de esta app" : "Guardando en este navegador")
-                        &mdash; su asistente no puede leerlo.
-                        <button class="linkbtn" type="button" id="why-browser-storage"
-                                @onclick="@(() => whyBrowserStorage = !whyBrowserStorage)">
-                            @(whyBrowserStorage ? "ocultar" : "¿por qué?")
-                        </button>
-                        @if (whyBrowserStorage)
-                        {
-                            <span class="statusline__more">
-                                Su registro sobrevive al cerrar, pero vive en el almacenamiento
-                                privado de este navegador. Su asistente lee una <strong>carpeta
-                                suya</strong>, desde fuera del navegador, y
-                                @(installedApp ? "aquí" : "este navegador") no permite ninguna.
-                            </span>
-                        }
-                    </span>
-                </div>
-            }
-            else if (state.HasFolder && state.SavingIsFailing.Length == 0 && !state.NeedsRegrant)
-            {
-                <div class="statusline" id="in-own-folder">
-                    <Glyph Name="check" Size="13" Stroke="2.6" />
-                    <span>Guardado en &laquo;@state.FolderName&raquo; despues de cada cambio.</span>
-                </div>
-            }
-
-            <div class="statusline" id="evaluated-up-to">
-                <Glyph Name="clock" Size="13" Stroke="2" />
-                <span>
-                    @(evaluatedUpTo.Length > 0 ? $"Evaluado al {evaluatedUpTo}" : "Todavía sin evaluar")
-                </span>
-            </div>
-        </div>
-
-        <section class="block">
-            <div class="block__label">Las nueve de un vistazo</div>
-            <div class="stats">
-                <div class="stat" id="stat-overdue">
-                    <span class="stat__value stat__value--danger">@overdue</span>
-                    <span class="stat__label">Atrasadas</span>
-                </div>
-                <div class="stat" id="stat-due">
-                    <span class="stat__value stat__value--warn">@due</span>
-                    <span class="stat__label">Vencidas</span>
-                </div>
-                <div class="stat" id="stat-missed">
-                    <span class="stat__value">@missed</span>
-                    <span class="stat__label">Mantenimiento no hecho</span>
-                </div>
-            </div>
-        </section>
-
-        <section class="block">
-            <div class="block__label">Lo que lo necesita</div>
-            <p class="note note--tight" id="who-keeps-this">
-                Su agencia lleva este registro y es la única que lo cambia. Aquí usted lo lee.
-            </p>
-
-            <div class="rowlist" id="board">
-                @if (moving.Count == 0)
-                {
-                    <p class="note" id="none-moving">
-                        Ninguna de las nueve esta vencida, por vencer, atrasada ni aplazada. Todas
-                        están abajo en &laquo;Todo en orden&raquo;, con el motivo que compuso el
-                        plan.
-                    </p>
-                }
-                else
-                {
-                    @foreach (string kind in moving)
-                    {
-                        @Moving(kind)
-                    }
-                }
-            </div>
-        </section>
-
-        <section class="block">
-            <div class="block__label">Todo en orden</div>
-
-            <button class="disclosure disclosure--ok" type="button" id="settled-toggle"
-                    @onclick="@(() => showSettled = !showSettled)">
-                <span class="bullet bullet--sm bullet--ok">
-                    <Glyph Name="check" Size="13" Stroke="3" />
-                </span>
-                <span>@settled.Count de las nueve están resueltas</span>
-                <span class="disclosure__more">@(showSettled ? "Ocultar" : "Ver todas")</span>
-            </button>
-
-            @if (showSettled)
-            {
-                <div class="card cardlist" id="settled">
-                    @foreach (string kind in settled)
-                    {
-                        @Settled(kind)
-                    }
-                </div>
-            }
-        </section>
-
-        @if (showInstrument)
-        {
-            <section class="block" id="instrument">
-                <div class="block__label">Qué está haciendo esta app</div>
-                <div class="card card--pad">
-                    <div class="keyrows">
-                        <div class="keyrow" id="i-entries">
-                            <span class="keyrow__k">entradas del journal</span>
-                            <span class="keyrow__v">@entries</span>
-                        </div>
-                        <div class="keyrow" id="i-memfs">
-                            <span class="keyrow__k">memfs</span>
-                            <span class="keyrow__v">@memfsFiles archivos, @memfsBytes bytes</span>
-                        </div>
-                        <div class="keyrow" id="i-mode">
-                            <span class="keyrow__k">destino</span>
-                            <span class="keyrow__v">@Destination()</span>
-                        </div>
-                        <div class="keyrow" id="i-permission">
-                            <span class="keyrow__k">permiso</span>
-                            <span class="keyrow__v">@permission</span>
-                        </div>
-                        <div class="keyrow" id="i-dealership">
-                            <span class="keyrow__k">agencia</span>
-                            <span class="keyrow__v">@state.WhereTheDealershipIs</span>
-                        </div>
-                        <div class="keyrow" id="i-last-event">
-                            <span class="keyrow__k">último evento aplicado</span>
-                            <span class="keyrow__v">@lastEvent</span>
-                        </div>
-                        <div class="keyrow" id="i-credential">
-                            <span class="keyrow__k">credencial guardada</span>
-                            <span class="keyrow__v">@hasCredential</span>
-                        </div>
-                        <div class="keyrow" id="i-message">
-                            <span class="keyrow__k">último</span>
-                            <span class="keyrow__v">@state.LastMessage</span>
-                        </div>
-                    </div>
-                </div>
-            </section>
-        }
-    </div>
-}
 else
 {
-    <div class="page-head page-head--row">
-        <h1 class="page-title">Mi carro</h1>
-        <AppearanceToggle />
-    </div>
+    <div class="d">
+        <div class="d__col">
 
-    <section class="platecard" id="vehicle">
-        <div class="platecard__glow"></div>
+            @if (tab == "inicio")
+            {
+                <Inicio Nueve="@AppState.TheNineKinds"
+                        Board="@board"
+                        Reasons="@reasons"
+                        Overdue="@overdue"
+                        Due="@due"
+                        Missed="@missed"
+                        Siguiente="@nextDue"
+                        Modelo="@(sheet is not null ? sheet.Model : "")"
+                        Odometro="@(stands is not null && stands.OdometerKnown ? ComoSeLee.Miles(stands.Odometer) : "--")"
+                        OdometroUnidad="@(stands is not null && stands.OdometerKnown ? stands.OdometerUnit : "")"
+                        ObservadoEl="@(stands is not null ? stands.OdometerObservedAt : "")"
+                        EvaluadoHasta="@evaluatedUpTo"
+                        DondeVive="@(state.InOwnFolder ? "la carpeta «" + state.FolderName + "»" : "este navegador")"
+                        Agencia="@dealership.Name"
+                        Contacto="@dealership.Contact"
+                        VerServicios="@(() => tab = "servicios")" />
 
-        <div class="platecard__top">
-            <div>
-                <div class="platecard__name">@(sheet is not null ? sheet.Model : "")</div>
-                <div class="platecard__sub">El modelo que dice su registro</div>
-            </div>
-            <div class="platecard__plate">@vin</div>
+                <div class="d__pad d__gap" style="margin-top:14px">
+                    @if (state.DealershipUnreachable.Length > 0)
+                    {
+                        <Notice Tone="warn" Id="dealership-unreachable"
+                                Title="Esto es tu registro, no las novedades de hoy.">
+                            La app no pudo llegar al concesionario al abrir, así que lo que haya enviado
+                            desde la última vez todavía no está aquí. Todo lo de arriba es lo que tu
+                            registro ya tenía.
+                            <span class="detail">@state.DealershipUnreachable</span>
+                            <span class="notice__actions">
+                                <button class="btn btn--sm" type="button" id="retry-dealership" @onclick="Refresh">
+                                    <Glyph Name="sync" Size="16" />
+                                    Intentar de nuevo
+                                </button>
+                            </span>
+                        </Notice>
+                    }
+
+                    @if (state.SavingIsFailing.Length > 0)
+                    {
+                        <Notice Tone="danger" Id="saving-failing" Title="La carpeta rechazó la escritura.">
+                            Lo que ves <strong>no</strong> quedó guardado en «@state.FolderName». Suele ser
+                            el permiso, que vence cada vez que reabrís la app.
+                            <span class="detail">@state.SavingIsFailing</span>
+                            <span class="notice__actions">
+                                <button class="btn btn--sm" type="button" id="regrant" @onclick="RequestPermission">
+                                    <Glyph Name="lock" Size="16" />
+                                    Dar permiso otra vez
+                                </button>
+                            </span>
+                        </Notice>
+                    }
+
+                    @if (state.EvaluationSkipped.Length > 0)
+                    {
+                        <Notice Tone="warn" Id="evaluation-skipped" Title="Esta no es la lectura de hoy.">
+                            @state.EvaluationSkipped
+                        </Notice>
+                    }
+                </div>
+            }
+            else if (tab == "vehiculo")
+            {
+                <div class="d__pad" style="padding-top:16px">
+                    <div class="page-head page-head--row" style="margin-bottom:12px">
+                        <h1 class="page-title">Mi vehículo</h1>
+                        <AppearanceToggle />
+                    </div>
+
+                    <Vehiculo Sheet="@sheet"
+                              Stands="@stands"
+                              Modelo="@(sheet is not null ? sheet.Model : "")"
+                              Vin="@vin"
+                              Odometro="@(stands is not null && stands.OdometerKnown ? ComoSeLee.Miles(stands.Odometer) : "--")"
+                              OdometroUnidad="@(stands is not null && stands.OdometerKnown ? stands.OdometerUnit : "")" />
+                </div>
+            }
+            else if (tab == "servicios")
+            {
+                <div class="d__pad" style="padding-top:16px">
+                    <div class="page-head page-head--row" style="margin-bottom:4px">
+                        <h1 class="page-title">Servicios</h1>
+                        <AppearanceToggle />
+                    </div>
+
+                    <Servicios Nueve="@AppState.TheNineKinds" Board="@board" Reasons="@reasons" />
+                </div>
+            }
+            else if (tab == "cobertura")
+            {
+                <div class="d__pad" style="padding-top:16px">
+                    <div class="page-head page-head--row" style="margin-bottom:4px">
+                        <h1 class="page-title">Cobertura</h1>
+                        <AppearanceToggle />
+                    </div>
+
+                    <Cobertura Sheet="@sheet" Stands="@stands" />
+                </div>
+            }
+            else
+            {
+                <div class="d__pad" style="padding-top:16px">
+                    <div class="page-head page-head--row" style="margin-bottom:4px">
+                        <h1 class="page-title">Mi registro</h1>
+                        <AppearanceToggle />
+                    </div>
+
+                    <MiRegistro EnCarpeta="@state.InOwnFolder"
+                                Carpeta="@state.FolderName"
+                                Vin="@vin"
+                                Entradas="@entries"
+                                UltimoEvento="@lastEvent"
+                                EvaluadoHasta="@evaluatedUpTo"
+                                Origen="@state.WhereTheDealershipIs"
+                                Trayendo="@refreshing"
+                                Actualizar="@Refresh" />
+                </div>
+            }
         </div>
-
-        <div class="platecard__photo">
-            <img src="img/road.jpg" alt="" />
-        </div>
-
-        <div class="platecard__odo">
-            <Glyph Name="gauge" Size="18" />
-            <span class="platecard__odo-label">Odómetro</span>
-            <span class="platecard__odo-value">@heroReading @heroReadingUnit</span>
-        </div>
-    </section>
-
-    <div class="segmented">
-        <button type="button" id="tab-specification" @onclick="@(() => carTab = "specification")"
-                class="@(carTab == "specification" ? "segmented__item segmented__item--on" : "segmented__item")">
-            Ficha
-        </button>
-        <button type="button" id="tab-warranty" @onclick="@(() => carTab = "warranty")"
-                class="@(carTab == "warranty" ? "segmented__item segmented__item--on" : "segmented__item")">
-            Garantía
-        </button>
-    </div>
-
-    <div class="stack stack--page">
-        @if (sheet is null || stands is null)
-        {
-            <p class="note">Este registro todavía no se ha leído.</p>
-        }
-        else if (carTab == "specification")
-        {
-            <MyVehicle Sheet="@sheet" />
-        }
-        else
-        {
-            <Warranty Sheet="@sheet" Stands="@stands" />
-        }
     </div>
 }
 
 @if (state.IsUp)
 {
-    <nav class="tabbar" id="tabbar">
-        <button type="button" id="go-home" @onclick="@(() => tab = "home")"
-                class="@(tab == "home" ? "tabbar__item tabbar__item--on" : "tabbar__item")">
-            <Glyph Name="home" Size="23" Stroke="2" />
+    <nav class="d-tabbar" id="tabbar">
+        <button type="button" id="go-inicio" @onclick="@(() => tab = "inicio")"
+                class="@(tab == "inicio" ? "d-tabbar__item d-tabbar__item--on" : "d-tabbar__item")">
+            <Glyph Name="home" Size="22" Stroke="2" />
             <span>Inicio</span>
         </button>
-        <button type="button" id="go-car" @onclick="@(() => tab = "car")"
-                class="@(tab == "car" ? "tabbar__item tabbar__item--on" : "tabbar__item")">
-            <Glyph Name="car" Size="23" Stroke="2" />
-            <span>Mi carro</span>
+        <button type="button" id="go-vehiculo" @onclick="@(() => tab = "vehiculo")"
+                class="@(tab == "vehiculo" ? "d-tabbar__item d-tabbar__item--on" : "d-tabbar__item")">
+            <Glyph Name="car" Size="22" Stroke="2" />
+            <span>Mi vehículo</span>
+        </button>
+        <button type="button" id="go-servicios" @onclick="@(() => tab = "servicios")"
+                class="@(tab == "servicios" ? "d-tabbar__item d-tabbar__item--on" : "d-tabbar__item")">
+            <Glyph Name="clock" Size="22" Stroke="2" />
+            <span>Servicios</span>
+        </button>
+        <button type="button" id="go-cobertura" @onclick="@(() => tab = "cobertura")"
+                class="@(tab == "cobertura" ? "d-tabbar__item d-tabbar__item--on" : "d-tabbar__item")">
+            <Glyph Name="shield" Size="22" Stroke="2" />
+            <span>Cobertura</span>
+        </button>
+        <button type="button" id="go-registro" @onclick="@(() => tab = "registro")"
+                class="@(tab == "registro" ? "d-tabbar__item d-tabbar__item--on" : "d-tabbar__item")">
+            <Glyph Name="folder" Size="22" Stroke="2" />
+            <span>Mi registro</span>
         </button>
     </nav>
 }
@@ -526,17 +327,12 @@ else
     private bool installedApp;
     private bool refreshing;
 
-    private bool whyBrowserStorage;
     private bool showInstrument;
-    private bool showSettled;
 
     private bool errorDetail;
 
-    /// <summary>Cual de las dos pantallas se esta viendo: la de inicio o la del carro.</summary>
-    private string tab = "home";
-
-    /// <summary>Cual de las dos hojas del carro se esta viendo: la ficha o la garantia.</summary>
-    private string carTab = "specification";
+    /// <summary>Cual de las cinco pestanas se esta viendo: inicio, vehiculo, servicios, cobertura o registro.</summary>
+    private string tab = "inicio";
 
     private string vin = "";
     private string evaluatedUpTo = "";
@@ -638,13 +434,13 @@ else
         }
 
         destinationProblem = result.Permission == "denied"
-            ? $"El navegador se negó a {whatItWasTrying}, sin preguntarle. Hay dos cosas que hacen "
+            ? $"El navegador se negó a {whatItWasTrying}, sin preguntarte. Hay dos cosas que hacen "
               + "eso, y se arreglan en lugares distintos. O el permiso de edición de archivos de este "
-              + "sitio está bloqueado — abra el candado al lado de la dirección, reinicie los permisos "
-              + "de este sitio, recargue y vuelva a elegir la carpeta — o este navegador no da edición "
+              + "sitio está bloqueado — abrí el candado al lado de la dirección, reiniciá los permisos "
+              + "de este sitio, recargá y volvé a elegir la carpeta — o este navegador no da edición "
               + "de archivos del todo, que es lo normal en un navegador embebido o dentro de otra app. "
-              + "Si no hay candado que abrir, es lo segundo: abra esta app en Chrome o Edge "
-              + "directamente y ahí la carpeta si va a funcionar."
+              + "Si no hay candado que abrir, es lo segundo: abrí esta app en Chrome o Edge "
+              + "directamente y ahí la carpeta sí va a funcionar."
             : $"No se pudo {whatItWasTrying}. El navegador dijo: "
               + (result.Reason.Length > 0 ? result.Reason : result.Permission);
     }
@@ -661,7 +457,7 @@ else
         await Reread();
     });
 
-    private Task Refresh() => Try("actualizar contra la agencia", async () =>
+    private Task Refresh() => Try("actualizar contra el concesionario", async () =>
     {
         refreshing = true;
         try { await state.RefreshAsync(); }
@@ -680,7 +476,7 @@ else
         catch (Exception ex)
         {
             var detail = new System.Text.StringBuilder(
-                $"Paso: {step}\n{ex.GetType().FullName}: {ex.Message}");
+            $"Paso: {step}\n{ex.GetType().FullName}: {ex.Message}");
             for (Exception inner = ex.InnerException; inner is not null; inner = inner.InnerException)
                 detail.Append($"\n  causa: {inner.GetType().FullName}: {inner.Message}");
             error = detail.ToString();
@@ -747,14 +543,14 @@ else
 
         heroTone = overdue > 0 ? "hero--attention" : moving.Count > 0 ? "" : "hero--settled";
 
-        heroPill = overdue > 0 ? "Necesita atención" : moving.Count > 0 ? "Se viene" : "Al día";
+        heroPill = overdue > 0 ? "Needs attention" : moving.Count > 0 ? "Coming up" : "Up to date";
 
-        heroTitle = subject.Length > 0 ? HowACanonNameReads.AnOperation(subject) : NothingIsMoving;
+        heroTitle = subject.Length > 0 ? AppState.Spaced(subject) : NothingIsMoving;
 
         heroLine = subject.Length > 0
             ? reasons[subject]
-            : "Ninguna de las nueve esta vencida, por vencer, atrasada ni aplazada. Todas están "
-              + "abajo en «Todo en orden», con el motivo que compuso el plan.";
+            : "None of the nine is due, due soon, overdue or put off. Every one of them is under "
+              + "«All in order» below, with the schedule's own reason.";
 
         heroReading = stands is not null && stands.OdometerKnown
             ? HowANumberReads.Grouped(stands.Odometer)
@@ -763,13 +559,13 @@ else
         heroReadingUnit = stands is not null && stands.OdometerKnown ? stands.OdometerUnit : "";
 
         heroReadingNote = stands is not null && stands.OdometerKnown
-            ? $"observada el {stands.OdometerObservedAt}"
-            : "su agencia todavía no ha mandado ninguna";
+            ? $"observed on {stands.OdometerObservedAt}"
+            : "your dealership has not sent one yet";
     }
 
     private string Destination() => state.Mode switch
     {
-        "carpeta" => $"su carpeta ({state.FolderName})",
+        "carpeta" => $"tu carpeta ({state.FolderName})",
         "opfs" => "el almacenamiento de este navegador",
         _ => "ninguno",
     };

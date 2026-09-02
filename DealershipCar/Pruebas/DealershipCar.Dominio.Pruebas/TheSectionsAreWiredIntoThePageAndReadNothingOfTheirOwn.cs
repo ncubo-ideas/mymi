@@ -32,18 +32,15 @@ namespace DealershipCar.Dominio.Pruebas
 		// Y DESDE T10 GARANTIA RECIBE ADEMAS LA MITAD DEL VEHICULO, que es una hoja aparte porque la
 		// ficha es de un MODELO y la garantia de este carro es de un VIN. Las dos se leen en el mismo
 		// Reread, una detras de la otra, asi que siguen siendo un solo momento.
+		//
+		// LA PIEL DEL DUENO METIO UN PISO EN EL MEDIO y la ley no cambio: la pagina sigue haciendo
+		// las dos lecturas UNA VEZ y ahora se las pasa a Vehiculo, que es quien reusa MyVehicle y
+		// Warranty enteras. Lo que se defiende es la cadena, no en que archivo esta escrita la
+		// etiqueta: dos lecturas, un momento, y las dos secciones alimentadas de ahi.
 		[Test]
 		public void ThePageRendersBothSectionsAndHandsThemOneSheetReadAtOneMoment()
 		{
 			string page = ThePageAsItIsWritten();
-
-			Assert.That(page, Does.Contain("<MyVehicle Sheet=\"@sheet\" />"),
-				"La pagina dejo de renderizar la seccion Mi vehiculo. Nada mas en la suite lo ve: "
-				+ "la hoja se sigue componiendo bien y la mitad de T10 no aparece en la pantalla.");
-
-			Assert.That(page, Does.Contain("<Warranty Sheet=\"@sheet\" Stands=\"@stands\" />"),
-				"La pagina dejo de renderizar la seccion Garantia, o dejo de pasarle la mitad del "
-				+ "vehiculo. Sin Stands la seccion no tiene con que decir donde esta parado el carro.");
 
 			Assert.That(page, Does.Contain("state.ReadTheSpecification()"),
 				"La pagina dejo de leer la ficha, asi que las dos secciones reciben null y no pintan "
@@ -53,6 +50,24 @@ namespace DealershipCar.Dominio.Pruebas
 				"La pagina dejo de leer la mitad del vehiculo. Es la lectura que toma el instante en "
 				+ "que la pantalla pregunta, y sin ella la seccion Garantia vuelve a ser el alcance "
 				+ "publicado y nada mas.");
+
+			Assert.That(page, Does.Contain("<Vehiculo Sheet=\"@sheet\""),
+				"La pagina dejo de pasarle la ficha a la seccion del vehiculo, que es quien reusa "
+				+ "MyVehicle y Warranty. Sin ella las dos reciben null y no pintan nada.");
+
+			Assert.That(page, Does.Contain("Stands=\"@stands\""),
+				"La pagina dejo de pasar la mitad del vehiculo hacia abajo. Sin Stands la seccion "
+				+ "Garantia no tiene con que decir donde esta parado el carro.");
+
+			string vehicle = TheSectionAsItIsWritten("Vehiculo.razor");
+
+			Assert.That(vehicle, Does.Contain("<MyVehicle Sheet=\"@Sheet\" />"),
+				"La seccion del vehiculo dejo de renderizar Mi vehiculo. Nada mas en la suite lo ve: "
+				+ "la hoja se sigue componiendo bien y esa mitad no aparece en la pantalla.");
+
+			Assert.That(vehicle, Does.Contain("<Warranty Sheet=\"@Sheet\" Stands=\"@Stands\" />"),
+				"La seccion del vehiculo dejo de renderizar Garantia, o dejo de pasarle la mitad del "
+				+ "vehiculo, y entonces la prosa del dominio sobre el sobre no llega a la pantalla.");
 		}
 
 		// Y LAS SECCIONES NO LEEN NADA POR SU CUENTA. Un componente sin @inject no tiene de donde
@@ -78,7 +93,11 @@ namespace DealershipCar.Dominio.Pruebas
 				Assert.That(markup, Does.Not.Contain("DealershipCarAPI"),
 					$"'{name}' nombra la puerta.");
 
-				Assert.That(markup, Does.Not.Contain("@* "),
+				// SE BUSCA "@*" Y NO "@* ". La version con espacio dejaba pasar el encabezado que
+				// abre con "@*" y sigue en la linea de abajo, que es justo la forma en que se
+				// escribe un bloque largo: cuatro secciones nuevas entraron con uno y el barrido
+				// las dio por limpias. El agujero era del barrido, no del markup.
+				Assert.That(markup, Does.Not.Contain("@*"),
 					$"'{name}' lleva un comentario de razor, y en este arbol el codigo no lleva "
 					+ "prosa fuera de las pruebas.");
 			}

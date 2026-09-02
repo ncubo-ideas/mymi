@@ -1,0 +1,108 @@
+@using DealershipCar.Wasm.Parts
+
+@if (Revision.Length > 0)
+{
+    <div class="d-sec" style="margin-top:4px">
+        <span class="d-sec__note">ficha @Revision</span>
+    </div>
+}
+
+@if (Sheet is null)
+{
+    <p class="note">Este registro todavía no se ha leído.</p>
+}
+else if (!Sheet.Coverage.Published)
+{
+    <div class="d-empty" id="sin-cobertura">
+        <span class="d-empty__title">El fabricante no publicó el alcance</span>
+        No hay nada que citar para este modelo, y eso no quiere decir que no haya cobertura: quiere
+        decir que tu concesionario todavía no la envió.
+    </div>
+}
+else
+{
+    <section class="d-card" id="cobertura-resumen">
+        <div class="d-cover d-cover--ok" style="padding:0;background:none;grid-template-columns:1fr">
+            <div class="d-cover__body" style="margin:0">@Sheet.Coverage.Says</div>
+        </div>
+    </section>
+
+    <div class="d-sec">
+        <span class="d-sec__title">Sistemas adentro</span>
+        <span class="d-sec__note">@Sheet.Coverage.CoveredSystems.Length</span>
+    </div>
+
+    <section class="d-card" id="sistemas">
+        <div class="d-rows">
+            @foreach (string sistema in Sheet.Coverage.CoveredSystems)
+            {
+                var parado = Stands?.Systems?.FirstOrDefault(s => s.SystemCode == sistema);
+
+                <div class="d-row" id="@("sistema-" + sistema)">
+                    <span class="d-row__k" style="color:var(--d-ink);font-weight:700">@sistema</span>
+                    <span class="d-row__v">
+                        @if (parado is null || !parado.CanBeEvaluated)
+                        {
+                            <span class="d-pill d-pill--mute">sin medir</span>
+                        }
+                        else
+                        {
+                            <span class="d-pill d-pill--ok">@parado.Standing</span>
+                        }
+                    </span>
+                </div>
+            }
+        </div>
+
+        <p class="d-note" style="margin-top:12px">
+            <Glyph Name="info" Size="14" Stroke="2" />
+            <span>@TheOwnerIsTold.ASystemThatIsNotListedWasNotRuledOut</span>
+        </p>
+    </section>
+
+    @if (Sheet.Coverage.Exclusions.Length > 0)
+    {
+        <div class="d-sec">
+            <span class="d-sec__title">Lo que queda afuera</span>
+        </div>
+
+        <section class="d-card" id="exclusiones">
+            <div class="d-rows">
+                @foreach (string exclusion in Sheet.Coverage.Exclusions)
+                {
+                    <div class="d-row">
+                        <span class="d-row__k" style="text-align:left">@exclusion</span>
+                    </div>
+                }
+            </div>
+        </section>
+    }
+
+    <div class="d-sec">
+        <span class="d-sec__title">Servicio en otro taller</span>
+    </div>
+
+    <section class="d-card" id="otro-taller">
+        <div class="d-cover__body" style="margin:0">
+            @(Sheet.ServicingRule.Published
+                ? Sheet.ServicingRule.Says
+                : "El fabricante no publicó una regla de servicio en otro taller para este modelo.")
+        </div>
+
+        @if (Sheet.ServicingRule.Published)
+        {
+            <p class="d-note" style="margin-top:12px">
+                <Glyph Name="info" Size="14" Stroke="2" />
+                <span>@TheOwnerIsTold.TheServicingRuleStandingIsNotInThisRecord</span>
+            </p>
+        }
+    </section>
+}
+
+@code {
+    [Parameter] public WhatTheManufacturerPublished Sheet { get; set; }
+    [Parameter] public WhereThisVehicleStands Stands { get; set; }
+
+    private string Revision =>
+        Sheet is not null && Sheet.Coverage.Published ? Sheet.Coverage.Revision : "";
+}
