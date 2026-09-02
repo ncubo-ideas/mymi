@@ -9,6 +9,26 @@ que faltó. Cada uno está marcado también en el código, en el lugar donde mue
 Regla que se siguió al toparse con cada uno: **tomar la decisión mínima —la que no inventa un
 juicio— y dejarla a la vista.** Nunca rellenar con algo plausible.
 
+> **Y ésa era la regla equivocada.** Un hueco no debería producir *una decisión con un comentario*:
+> debería producir **una pregunta para una persona**. Este archivo fue el artefacto correcto para un
+> experimento —medir si `Preguntas.md` alcanzaba— pero en trabajo real es una lista que nadie lee.
+>
+> De ahí salió el **bloque 5** de la entrevista: los huecos vuelven a quien sabe del negocio, en una
+> conversación corta después de la primera pasada de modelado. **El hueco 7 se cerró así, y en un solo
+> intercambio.**
+
+> ### Este archivo es anterior a la doctrina que lo describe
+>
+> **Se escribió el 2026-08-26**, cuando existían siete guías y el `punto-de-partida` era la versión
+> anterior a las seis correcciones que esta misma corrida produjo. No existían la hoja de la
+> entrevista ni las reglas del substrato. **Presupuesto es el material del que salieron las guías, no
+> un producto de ellas** — vale tenerlo presente antes de usarlo como evidencia de nada.
+>
+> Por eso su tabla **no lleva la columna de origen** que el [capítulo
+> 3](../../Guias/03-construir-la-app.md) §8 bis pide hoy: los ocho son *descubiertos*, porque la
+> entrevista de entonces no producía juicios declarados sin firmar. Esa forma apareció después, en el
+> gimnasio.
+
 ---
 
 ## Los ocho
@@ -21,25 +41,47 @@ juicio— y dejarla a la vista.** Nunca rellenar con algo plausible.
 | **4** | **Para qué sirve el medio de pago.** Está listado como atributo y **ninguna de las cinco preguntas lo usa** | `Cargo.cs` | Se guarda, sin saber si es capacidad o ruido |
 | **5** | **Qué convierte a un gasto en "responsable"** del movimiento del total | `VarianciaDelMes.cs` | Se listan **todos** los que cambiaron, ordenados por monto absoluto |
 | **6** | **Cuánto vale un bien** | `Bien.cs` | Opcional. Sin valor se contesta en plata y **se dice** que el porcentaje no está disponible |
-| **7** | **Cómo se fija un presupuesto** | `Panorama.CargosQueNadieReconocio` | Se aproxima por "lo que ningún gasto recurrente reconoció", que **es otra cosa** |
+| **7** | ~~Cómo se fija un presupuesto~~ | `Panorama.CargosQueNadieReconocio` | ✅ **CERRADO.** No hay presupuesto declarado: *lo no presupuestado* **es** el imprevisto |
 | **8** | **Cuánto se puede reducir** de un gasto reducible | `MargenParaRecortar.cs` | Se pone sobre la mesa cuánto hay en cada estado, sin decir si alcanza |
 
 ---
 
 ## Los tres que más duelen
 
-### 7 · La app se llama Presupuesto y el archivo no define el presupuesto
+### 7 · ~~La app se llama Presupuesto y el archivo no define el presupuesto~~ · CERRADO
 
-Es el más grande y el más fácil de no ver. `Preguntas.md` usa la palabra *"presupuestado"* como si
-estuviera definida —el juicio 8 dice que un imprevisto es **lo no presupuestado**— y en ningún lado
-dice **quién fija un presupuesto, por categoría o total, por mes o por año**.
+Era el más grande, y se cerró **por borrado, no por relleno**: el concepto no faltaba, sobraba.
 
-Sin eso, *"lo no presupuestado"* sólo se puede aproximar por *"lo que ningún gasto recurrente
-reconoció"*, que no es lo mismo: un gasto conocido que este mes salió al doble **estaba**
-presupuestado y aun así se disparó.
+`Preguntas.md` usaba *"presupuestado"* como si estuviera definida —el juicio 8 dice que un imprevisto
+es **lo no presupuestado**— y no decía quién fija un presupuesto. Lo que faltaba era preguntarlo, y la
+respuesta fue:
 
-La entrevista nunca preguntó esto porque el bloque 2 va detrás de las **preguntas**, y "cómo se fija
-un presupuesto" es una **capacidad**. Cayó justo en el punto ciego del guion.
+> **Lo no presupuestado es lo mismo que un gasto imprevisto.**
+
+O sea que **no hay un presupuesto declarado**, y no hace falta. La definición no es circular porque
+las dos mitades las aportan cosas distintas:
+
+| | |
+|---|---|
+| **Los candidatos** se deducen | Un cargo que **ningún gasto recurrente conocido reclama** |
+| **El evento** lo marca la persona | *"Estos tres son la hospitalización"* |
+
+O sea que *"presupuestado"* acaba significando **"atribuible a un gasto recurrente conocido"**, que es
+una definición trabajable y que el modelo ya implementaba — sólo que describiéndose a sí mismo como
+una aproximación.
+
+> **Y una consecuencia que hay que dejar escrita**, porque es de las que alguien "arregla" en seis
+> meses sin preguntar: en esta app, **"presupuesto" significa el total observado, no un plan**. El
+> juicio 2 ya lo usaba así —*"el presupuesto mensual varió más de un 10 %"* es sobre lo que
+> efectivamente se gastó—. Quien lea la palabra esperando un plan declarado va a creer que falta algo.
+>
+> Declarar un presupuesto —*"quiero gastar máximo 200 mil en comida"*— es una app distinta, y ninguna
+> de las cinco preguntas la pidió. Agregarla sería modelar desde un diagrama en vez de desde las
+> preguntas.
+
+**Cómo apareció, y por qué importa para el método.** La entrevista no preguntó esto porque su bloque 2
+va detrás de las **preguntas**, y *"cómo se fija un presupuesto"* es **vocabulario**. Cayó en el punto
+ciego del guion — el mismo que dejó al dominio sin ningún tipo de ingreso. De ahí salió el **bloque 5**.
 
 ### 2 · El juicio 2 se rompe solo, y de una forma que nadie va a diagnosticar
 
@@ -83,20 +125,16 @@ exactamente lo que la doctrina predice.
 
 ## Y tres hallazgos que no son del archivo sino de las guías
 
-**La raíz no se llama como el negocio, y ningún capítulo lo dice.** El primer intento nombró la raíz
-`Presupuesto` dentro del namespace `Presupuesto.Dominio` y chocó. En el repo la convención es
-uniforme y tácita: Exámenes tiene `Expediente`, Compras tiene `Historial`. Acá quedó `Panorama`. El
-capítulo 3 debería decirlo.
+> **Actualizado el 2026-09-01.** El [capítulo 3](../../Guias/03-construir-la-app.md) §8 bis dice ahora
+> que los hallazgos sobre el método no viven en el `HUECOS.md` de un negocio: van a las guías, que es
+> donde le sirven a los demás. Éstos se quedan porque **este directorio es un sujeto de prueba** —el
+> archivo es el cuaderno de laboratorio— pero con su estado al día.
 
-**La pregunta 3 no tiene doctrina.** Es **hacia adelante y contrafáctica**, y el capítulo 4 está
-construido enteramente sobre leer la serie del pasado. No es que esté mal contestada: es que las
-guías no saben explicar esta clase de pregunta.
-
-**Un `override` faltante desactivó un invariante en silencio.** `EsConsumo` quedó como método que
-**oculta** en vez de sobrescribir, así que la guarda contra contar dos veces cada compra con tarjeta
-no habría funcionado: `Panorama` la consulta por la referencia base. El compilador lo avisó como
-warning y la comprobación lo habría cazado. Es el argumento más concreto que hay para que la carátula
-de consola exista desde el primer día.
+| El hallazgo | Estado |
+|---|---|
+| **La raíz no se llama como el negocio.** El primer intento nombró la raíz `Presupuesto` dentro de `Presupuesto.Dominio` y chocó; quedó `Panorama`. La convención del repo era uniforme y tácita | ✅ **Escrito.** Capítulo 3 §3, el 2026-09-01 — llevaba acá desde el 2026-08-26 diciendo *"el capítulo 3 debería decirlo"* |
+| **La pregunta 3 no tiene doctrina.** Es **hacia adelante y contrafáctica**, y el capítulo 4 está construido enteramente sobre leer la serie del pasado | ⚠️ **Abierto.** Sigue sin capítulo. No es que esté mal contestada: es que las guías no saben explicar esta clase de pregunta |
+| **Un `override` faltante desactivó un invariante en silencio.** `EsConsumo` **ocultaba** en vez de sobrescribir, así que la guarda contra contar dos veces cada compra con tarjeta no habría funcionado | ✅ **Ya era doctrina**, y esto la respalda: es el argumento más concreto que hay para el recuadro del capítulo 3 §8 —*un dominio no está terminado hasta que un perform lo tocó*— y para que la consola exista desde el primer día |
 
 ---
 

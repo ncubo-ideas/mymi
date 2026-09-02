@@ -45,7 +45,7 @@
       "entrada": [
         { "nombre": "cuantasCompras", "tipo": "number", "descripcion": "Cuantas de sus ultimas compras mirar. Omitilo para usar el valor de la app (8)." }
       ],
-      "descripcion": "LO QUE NO FALLA en las compras de la persona: los productos que vuelven compra tras compra. Es una de las dos lecturas con las que la app ABRE. Usala para '¿que compro yo?', '¿cual es mi canasta tipica?' y como contexto antes de contestar cualquier otra cosa sobre sus compras. Un producto entra si aparece en al menos la MITAD de las compras miradas, y cada uno trae en cuantas de cuantas aparece; estaEnTodas marca los que no fallaron ni una vez. Si existe viene en false, o no hay compras todavia o no hay nada que se repita lo suficiente, y paraSonia lo dice tal cual."
+      "descripcion": "LO QUE NO FALLA en las compras de la persona: los productos que vuelven compra tras compra. Es una de las dos lecturas con las que la app ABRE. Usala para '¿que compro yo?', '¿cual es mi canasta tipica?' y como contexto antes de contestar cualquier otra cosa sobre sus compras. Un producto entra si aparece en al menos la MITAD de las compras miradas, y cada uno trae en cuantas de cuantas aparece; estaEnTodas marca los que no fallaron ni una vez. Si existe viene en false, o no hay compras todavia o no hay nada que se repita lo suficiente, y paraElAsistente lo dice tal cual."
     },
     {
       "nombre": "que_cambio_en_mi_canasta",
@@ -103,7 +103,7 @@
         { "nombre": "anioDespues", "tipo": "number", "descripcion": "El anio del mes a comparar." },
         { "nombre": "mesDespues", "tipo": "number", "descripcion": "El mes a comparar, de 1 a 12." }
       ],
-      "descripcion": "Como cambio la canasta entre DOS MESES QUE LA PERSONA NOMBRE. Si no nombro meses concretos, usa como_viene_mi_canasta en vez de esta: los meses validos salen del rango que devuelve total_de_compras, y pedir un mes fuera de ese rango devuelve hayComparacion en false aunque la persona si tenga datos. Devuelve los dos totales y, en diferencias, que pasillos explican el cambio (mira explicaElCambio, esNuevo y desaparecio). La direccion va en el SIGNO del cambio; no hay veredicto porque el supermercado no opina sobre la alimentacion de nadie. El campo paraSonia trae la lectura ya redactada."
+      "descripcion": "Como cambio la canasta entre DOS MESES QUE LA PERSONA NOMBRE. Si no nombro meses concretos, usa como_viene_mi_canasta en vez de esta: los meses validos salen del rango que devuelve total_de_compras, y pedir un mes fuera de ese rango devuelve hayComparacion en false aunque la persona si tenga datos. Devuelve los dos totales y, en diferencias, que pasillos explican el cambio (mira explicaElCambio, esNuevo y desaparecio). La direccion va en el SIGNO del cambio; no hay veredicto porque el supermercado no opina sobre la alimentacion de nadie. El campo paraElAsistente trae la lectura ya redactada."
     },
     {
       "nombre": "garantia_de_producto",
@@ -129,7 +129,27 @@
           "descripcion": "Una categoria del catalogo -Proteinas, FrutasYVerduras, LacteosYHuevos, GranosYAbarrotes, AceitesYGrasas, Azucarados, Snacks, Limpieza, Electrohogar- o un texto de producto como 'helado' u 'olla'."
         }
       ],
-      "descripcion": "CUANTO Y CUANDO entro algo a la canasta, MES A MES: unidades, gasto y en cuantas compras, mas el mes mas alto y como cambio entre el primer mes y el ultimo. Es la serie completa, no un total, y es lo que permite decir DESDE QUE MES cambio un consumo: ninguna pantalla lo muestra. Usala cuando la persona pregunte por un producto o categoria a lo largo del tiempo, o cuando quiera relacionar sus compras con algo mas que le este pasando -por ejemplo un resultado de laboratorio-, porque ahi lo que sirve es la fecha y no el total. Si sePuedeJuzgar viene en false, entrega los hechos y no te apoyes en el veredicto: puede haber un solo mes, o la busqueda puede cruzar categorias con perfiles distintos. IMPORTANTE: esto dice que compro y cuando, NO por que; la relacion con cualquier otra cosa la propone la persona o vos, con su permiso, y siempre como una posibilidad a conversar con su medico, nunca como una causa."
+      "descripcion": "CUANTO Y CUANDO entro algo a la canasta, MES A MES: unidades, gasto y en cuantas compras, mas el mes mas alto y como cambio entre el primer mes y el ultimo. Trae la serie DOS VECES: meses, mes a mes, y anios, la misma serie agrupada; en cada anio, mesesConCompras dice cuantos meses tuvieron alguna, para no comparar un anio a medias con uno entero. Es la serie completa, no un total, y es lo que permite decir DESDE QUE MES cambio un consumo: ninguna pantalla lo muestra. Usala cuando la persona pregunte por un producto o categoria a lo largo del tiempo, o cuando quiera relacionar sus compras con algo mas que le este pasando -por ejemplo un resultado de laboratorio-, porque ahi lo que sirve es la fecha y no el total. Si sePuedeJuzgar viene en false, entrega los hechos y no te apoyes en el veredicto: puede haber un solo mes, o la busqueda puede cruzar categorias con perfiles distintos. IMPORTANTE: esto dice que compro y cuando, NO por que; la relacion con cualquier otra cosa la propone la persona o vos, con su permiso, y siempre como una posibilidad a conversar con su medico, nunca como una causa."
+    },
+    {
+      "nombre": "en_cuales_compras",
+      "titulo": "En cuales compras aparecio",
+      "soloLectura": true,
+      "entrada": [
+        {
+          "nombre": "termino",
+          "tipo": "string",
+          "descripcion": "Un texto de producto -'leche', 'helado', 'olla'- o una categoria del catalogo: Proteinas, FrutasYVerduras, LacteosYHuevos, GranosYAbarrotes, AceitesYGrasas, Embutidos, ComidasPreparadas, Azucarados, Snacks, Limpieza, Mascotas, Electrohogar."
+        }
+      ],
+      "descripcion": "EN CUALES COMPRAS aparecio un producto o un pasillo entero, de la mas reciente a la mas vieja, con el NUMERO DE TICKET de cada una y cuanto de eso entro ahi. NO es consumo_de: aquella agrupa por mes y contesta 'cuanto y cuando'; esta devuelve los TICKETS, y su numero es lo que despues se le pasa a detalle_de_compra para ver la compra entera. Usala cuando la persona pregunte 'cuando compre esto', 'en que compra estaba' o quiera llegar a un recibo puntual. El campo productos dice que descripciones coincidieron: si trae mas de una, el texto alcanzo a varios productos y conviene decirselo antes de dar los totales. Con cuantasCompras en 0 no hay ninguna, y eso es una respuesta valida, no un error."
+    },
+    {
+      "nombre": "para_mi_proxima_compra",
+      "titulo": "Que tengo que comprar",
+      "soloLectura": true,
+      "entrada": [],
+      "descripcion": "LA LISTA DE LO QUE LE VA A FALTAR, armada con el RITMO de cada producto: cada cuanto suele volver y cuanto hace que no entra, del mas atrasado al que menos falta. Cada uno trae toca, diasTipicos, diasDesdeLaUltima y diasDeMas -negativo cuando todavia no toca-. No es que_dejaste_de_comprar: esta EXCLUYE lo abandonado, porque un producto con mas de tres ciclos sin entrar ya no es una falta sino un cambio de habito. Es una lista de lo PROBABLE y no de lo necesario: la persona puede tener el producto en su casa y la app no lo sabe, asi que se presenta como sugerencia para confirmar, nunca como una orden."
     },
     {
       "nombre": "que_dejaste_de_comprar",

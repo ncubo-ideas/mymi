@@ -58,7 +58,7 @@ namespace Compras.Dominio
 		public int DiasParaLeerElHueco =>
 			EsObservado ? DiasTipicos : Categoria.DiasDeReabastecimiento;
 
-		public abstract string ParaSonia { get; }
+		public abstract string ParaElAsistente { get; }
 
 		private sealed class SinRitmo : RitmoDeCompra
 		{
@@ -75,7 +75,7 @@ namespace Compras.Dominio
 			public override int DiasMasCorto => DiasTipicos;
 			public override int DiasMasLargo => DiasTipicos;
 
-			public override string ParaSonia =>
+			public override string ParaElAsistente =>
 				$"todavía no hay con qué medir cada cuánto comprás {Categoria.Nombre}: "
 				+ $"se lee con los {Categoria.DiasDeReabastecimiento} días del catálogo";
 		}
@@ -114,7 +114,7 @@ namespace Compras.Dominio
 			public override int DiasMasCorto => intervalos[0];
 			public override int DiasMasLargo => intervalos[intervalos.Count - 1];
 
-			public override string ParaSonia
+			public override string ParaElAsistente
 			{
 				get
 				{

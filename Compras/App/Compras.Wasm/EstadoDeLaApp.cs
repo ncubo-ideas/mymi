@@ -70,6 +70,7 @@ public sealed class EstadoDeLaApp : IAsyncDisposable
 	public async ValueTask<ResultadoDeCarpeta> RecuperarCarpeta()
 	{
 		ResultadoDeCarpeta resultado = await puente.RecuperarCarpeta();
+		Modo = await puente.ModoActual();
 		UltimoMensaje = $"recuperar carpeta: {resultado}";
 		return resultado;
 	}
@@ -78,6 +79,7 @@ public sealed class EstadoDeLaApp : IAsyncDisposable
 	public async ValueTask<ResultadoDeCarpeta> ConectarCarpeta()
 	{
 		ResultadoDeCarpeta resultado = await puente.ElegirCarpeta();
+		Modo = await puente.ModoActual();
 		UltimoMensaje = $"conectar carpeta: {resultado}";
 		return resultado;
 	}
@@ -88,6 +90,51 @@ public sealed class EstadoDeLaApp : IAsyncDisposable
 		ResultadoDeCarpeta resultado = await puente.PedirPermiso();
 		UltimoMensaje = $"pedir permiso: {resultado}";
 		return resultado;
+	}
+
+	// ---------------------------------------------------------------- el modo degradado
+
+	// DONDE NO HAY PICKER. El briefing §6.2 lo pide con todas las letras: "no hagas que la
+	// app falle donde no hay picker, degrada a OPFS". showDirectoryPicker es hoy desktop
+	// Chromium; en Safari, Firefox y CUALQUIER telefono no existe, y sin esto la app se
+	// quedaba en memoria y perdia el registro al cerrar la pestaña.
+
+	public ValueTask<bool> OpfsSoportado() => puente.OpfsSoportado();
+
+	// '' si hay algun almacenamiento; 'navegador' o 'inseguro' si no hay ninguno.
+	public ValueTask<string> MotivoSinAlmacenamiento() => puente.MotivoSinAlmacenamiento();
+
+	public ValueTask<bool> EstaInstalada() => puente.EstaInstalada();
+
+	/// <summary>'carpeta', 'opfs' o 'ninguno'.</summary>
+	public string Modo { get; private set; } = "ninguno";
+
+	public bool EnAlmacenamientoDelNavegador => Modo == "opfs";
+
+	// NO EXIGE GESTO: el origen ya es dueño de su propio almacenamiento.
+	public async ValueTask<ResultadoDeCarpeta> UsarAlmacenamientoDelNavegador()
+	{
+		ResultadoDeCarpeta resultado = await puente.UsarOpfs();
+		Modo = await puente.ModoActual();
+		UltimoMensaje = $"almacenamiento del navegador: {resultado}";
+		return resultado;
+	}
+
+	// SE REENGANCHA SOLA al modo de la vez pasada, y por eso existe. Sin esto, quien abre
+	// la app en un telefono tiene que apretar "guardar en este navegador" CADA VEZ, y el
+	// modo recordado no sirve de nada: se guarda y nadie lo lee.
+	//
+	// Solo reengancha OPFS. La carpeta no se puede reenganchar sola aunque el handle este
+	// guardado: el browser puede haber degradado el permiso a 'prompt', y volver a pedirlo
+	// exige un gesto — por eso ese camino pasa por RecuperarCarpeta y, si hace falta, por
+	// el boton.
+	public async ValueTask<bool> ReengancharModo()
+	{
+		if (await puente.ModoRecordado() != "opfs") return false;
+
+		bool ok = (await puente.UsarOpfs()).Ok;
+		Modo = await puente.ModoActual();
+		return ok;
 	}
 
 	// ---------------------------------------------------------------- arranque
@@ -240,6 +287,10 @@ public sealed class EstadoDeLaApp : IAsyncDisposable
 	// decide la app (ComprasAPI), no esta caratula: es parte de la pregunta.
 	public FirmaDeLaSemana Firma() { Exigir(); return api!.Firma(); }
 
+	// DESDE CUANDO HASTA CUANDO hay compras. La pantalla lo usa para decir "87 compras desde
+	// enero de 2025" en vez de un numero suelto.
+	public RangoDelHistorialVista Rango() { Exigir(); return api!.Rango(); }
+
 	// LA CANASTA DEL ULTIMO MES CON COMPRAS. Cual es ese mes lo sabe el DOMINIO por su
 	// rango; esta pantalla no tiene por que adivinarlo ni pedirle a la persona que elija.
 	public CanastaDelMesVista CanastaDelUltimoMes()
@@ -257,26 +308,35 @@ public sealed class EstadoDeLaApp : IAsyncDisposable
 	public ConsumoEnElTiempo ConsumoDe(string producto)
 	{ Exigir(); return api!.Consumo(producto); }
 
-	// EL CORTE ES EL 1 DE ENERO DE ESTE ANO, y antes era "hace un ano" — que con compras
-	// semanales resulto estar mal. Con 87 compras, "hace un ano" partia el historial en
-	// agosto y comparaba ocho semanas de 2025 contra otras ocho de 2025: dos ventanas del
-	// mismo lado del cambio, asi que la app decia "su canasta viene igual" y la tarjeta del
-	// quiebre no aparecia. Con seis compras el bug no se veia.
-	//
-	// El ano corriente tambien es mas facil de explicar -"lo que cambio este ano"- y es el
-	// mismo marco que la comparacion de canastas, que compara este mes contra el del ano
-	// pasado. El corte lo pone la caratula porque involucra el RELOJ y el dominio no lo lee.
-	//
-	// LO QUE FALTA, y es una lectura y no un ajuste: que el DOMINIO encuentre el mes del
-	// quiebre en vez de recibirlo. La especificacion pide "el quiebre de enero", no "el
-	// quiebre desde la fecha que le pases", y hoy si el cambio de una persona fue en
-	// setiembre esta pantalla no lo encuentra.
-	public CambioDeLaCanasta CambioDelUltimoAnio()
-	{ Exigir(); return api!.Cambio(new DateTime(DateTime.Now.Year, 1, 1)); }
+	// LO QUE VA A FALTAR EN LA PROXIMA COMPRA. El "hoy" lo pone la caratula porque involucra
+	// el RELOJ, y el dominio no lo lee: si lo leyera, esta lectura daria distinto en cada
+	// replay del journal y dejaria de ser reproducible.
+	public ListaDeLaProximaCompra Lista()
+	{ Exigir(); return api!.Lista(DateTime.Now); }
 
-	// LOS PRODUCTOS A LOS QUE LES CAMBIO EL RITMO, el mas notorio primero. Mismo corte que
-	// el cambio de la canasta -"este ano"- porque las dos tarjetas cuentan el mismo quiebre
-	// desde angulos distintos: una dice QUE entro, la otra CADA CUANTO.
+	// EN CUALES COMPRAS APARECIO ESTO. La busca el DOMINIO y no la pantalla: la pantalla
+	// solo tiene la lista de compras -numero, fecha, lineas, total-, sin las lineas, asi que
+	// filtrar aca obligaria a bajar el detalle de las 87 en cada tecla.
+	public ComprasHalladas Halladas(string termino)
+	{ Exigir(); return api!.Halladas(termino); }
+
+	// EL QUIEBRE LO ENCUENTRA EL DOMINIO, y esta pantalla ya no elige una fecha.
+	//
+	// Antes cortaba el 1 de enero del ano corriente, y funcionaba POR SUERTE: el guion de la
+	// demo quiebra en enero. A una persona que cambio en setiembre le decia "su canasta
+	// viene igual", que es una respuesta FALSA y no un hueco visible — el peor de los dos
+	// errores, porque nadie va a ir a buscar lo que la app ya contesto.
+	//
+	// Y no es solo por acertar: elegir cuando partir la historia es un JUICIO, y un juicio
+	// que vive en una caratula no lo audita nadie. Ahora la pantalla pide "el cambio" y el
+	// dominio dice cual y desde cuando.
+	public CambioDeLaCanasta CambioDelUltimoAnio()
+	{ Exigir(); return api!.CambioDelQuiebre(); }
+
+	// LOS PRODUCTOS A LOS QUE LES CAMBIO EL RITMO, el mas notorio primero. EL MISMO quiebre
+	// que la tarjeta de arriba, y ahora lo garantiza el dominio: las dos cuentan el mismo
+	// cambio desde angulos distintos -una dice QUE entro, la otra CADA CUANTO-, y antes esa
+	// coordinacion era que las dos llamadas de aca pasaran la misma fecha.
 	// EL ULTIMO MES CONTRA EL ANTERIOR. Que dos meses se comparan lo elige el DOMINIO, que
 	// conoce su propio rango: esta pantalla no sabe cual es el ultimo mes con compras, y la
 	// aritmetica de "el mes anterior" se resuelve mal en enero.
@@ -291,7 +351,7 @@ public sealed class EstadoDeLaApp : IAsyncDisposable
 	public RitmoDelSuperVista Ritmo() { Exigir(); return api!.Ritmo(); }
 
 	public IReadOnlyList<RitmoQueCambio> RitmosQueCambiaron()
-	{ Exigir(); return api!.RitmosQueCambiaron(new DateTime(DateTime.Now.Year, 1, 1)); }
+	{ Exigir(); return api!.RitmosDelQuiebre(); }
 
 	// El "hoy" lo pone la caratula: el dominio no lee el reloj.
 	public IReadOnlyList<GarantiaDeProducto> GarantiasVigentes() { Exigir(); return api!.GarantiasVigentes(DateTime.Now); }
@@ -320,6 +380,35 @@ public sealed class EstadoDeLaApp : IAsyncDisposable
 		app?.Actor.GracefulExit();
 		await puente.DisposeAsync();
 	}
+}
+
+/// <summary>Cómo se llega al súper: su sitio y su WhatsApp.</summary>
+// VA EN LA CONFIGURACION Y NO EN EL CODIGO porque son datos DE LA INSTITUCION, no de la
+// app: un numero de telefono cambia, y cambiarlo no puede exigir recompilar. Es la misma
+// razon por la que el proveedor tampoco esta compilado.
+//
+// TODOS VACIOS POR DEFECTO, y el pie no se dibuja si no hay ninguno. Un supermercado que
+// despliegue esto sin WhatsApp no tiene que ver un boton roto ni tocar nuestro codigo:
+// deja el campo afuera del appsettings y el pie se ajusta solo.
+public sealed class ConfiguracionDeLaInstitucion
+{
+	/// <summary>El sitio del súper. Vacío si no tiene.</summary>
+	public string Sitio { get; set; } = "";
+
+	/// <summary>El número en formato internacional sin signos: 50622001100.</summary>
+	// SE GUARDA EL NUMERO Y NO LA URL para que quien configure no tenga que saber que
+	// wa.me existe ni como se arma. La app compone el enlace.
+	public string WhatsApp { get; set; } = "";
+
+	/// <summary>Lo que se le muestra a la persona del número: "2200-1100".</summary>
+	public string TelefonoParaMostrar { get; set; } = "";
+
+	public bool HaySitio => Sitio.Length > 0;
+	public bool HayWhatsApp => WhatsApp.Length > 0;
+	public bool HayAlguno => HaySitio || HayWhatsApp;
+
+	/// <summary>El enlace de WhatsApp, armado. Vacío cuando no hay número.</summary>
+	public string EnlaceDeWhatsApp => HayWhatsApp ? $"https://wa.me/{WhatsApp}" : "";
 }
 
 public sealed class ConfiguracionDelProveedor

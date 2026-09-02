@@ -30,7 +30,7 @@ else if (firma is null || !firma.Existe)
     @* LAS DOS FORMAS DE NO TENER RESPUESTA vienen distinguidas por el dominio, y acá se
        imprime la línea que él escribió en vez de inventar una: "no hay compras todavía" no
        es lo mismo que "no hay nada que se repita". *@
-    <p class="text-body-secondary">@(firma?.ParaSonia ?? "Todavía no hay compras.")</p>
+    <p class="text-body-secondary">@(firma?.ParaElAsistente ?? "Todavía no hay compras.")</p>
 }
 else
 {
@@ -54,9 +54,10 @@ else
                 }
                 <span class="infaltable-fila-que">
                     <strong>@habitual.Descripcion</strong>
-                    <span class="ritmo-rotulo">
-                        en @habitual.ComprasEnQueAparece de @habitual.DeCuantas compras
-                    </span>
+                    @* "casi cada vez que vas" y no "en 7 de 8 compras": la fraccion es el
+                       mecanismo de la firma, no como ella piensa su despensa. Los puntos de
+                       al lado dibujan la proporcion exacta para quien la quiera. *@
+                    <span class="ritmo-rotulo">@EnPalabras(habitual)</span>
                 </span>
                 <span class="d-inline-flex align-items-center gap-2">
                     <span class="puntos" aria-hidden="true">
@@ -116,28 +117,14 @@ else
     private void VerProducto(string descripcion) =>
         navegacion.NavigateTo($"producto/{Uri.EscapeDataString(descripcion)}");
 
-    // El mismo mapa que la portada. Vive en la caratula porque una imagen es decision de
-    // pantalla; que este en dos paginas es la señal de que le toca un componente cuando
-    // aparezca la tercera.
-    private static readonly Dictionary<string, string> FotosPorSku = new()
-    {
-        ["LECHE-1L"] = "p-leche",
-        ["ARROZ-2KG"] = "p-arroz",
-        ["GALLETA-CHOC"] = "p-galletas",
-        ["HELADO-1L"] = "p-helado",
-        ["BANANO-KG"] = "p-banano",
-        ["TOMATE-KG"] = "p-tomate",
-        ["HUEVOS-30"] = "p-huevos",
-        ["QUESO-500"] = "p-queso",
-        ["QUESO-CREMA"] = "p-queso",
-        ["LECHUGA"] = "p-lechuga",
-        ["PAN-CUADRADO"] = "p-pan",
-        ["AGUA-6PK"] = "p-agua",
-        ["CHILE-DULCE"] = "p-chile",
-    };
+    // La frecuencia dicha como se dice. El corte de "casi" es la propia firma: para entrar
+    // hay que estar en la mitad o mas, asi que aca no llega nada raro.
+    private static string EnPalabras(ProductoQueVuelve habitual) =>
+        habitual.EstaEnTodas
+            ? "cada vez que vas"
+            : "casi cada vez que vas";
 
-    private static string Foto(string sku) =>
-        FotosPorSku.TryGetValue(sku, out string nombre) ? $"assets/{nombre}.png" : "";
+    private static string Foto(string sku) => Compras.Wasm.Fotos.De(sku);
 
     private static string Mes(int mes) => mes switch
     {

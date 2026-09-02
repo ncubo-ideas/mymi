@@ -218,6 +218,7 @@ namespace Compras.App
 							item.PrecioUnitario precioUnitario,
 							item.Total totalDeLinea,
 							item.Categoria.Nombre categoria,
+							item.Categoria.Titulo titulo,
 							item.TieneGarantia tieneGarantia;
 					}
 				}
@@ -277,7 +278,7 @@ namespace Compras.App
 						comparacion.CambioEnElTotal cambioEnElTotal,
 						comparacion.CambioEnProporcion cambio,
 						comparacion.HayAlgoQueLoExplique hayAlgoQueLoExplique,
-						comparacion.ParaSonia paraSonia,
+						comparacion.ParaElAsistente paraElAsistente,
 						comparacion.Antes.Anio anioAntes,
 						comparacion.Antes.Mes mesAntes,
 						comparacion.Antes.GastoComestible gastoComestibleAntes,
@@ -317,7 +318,7 @@ namespace Compras.App
 						comparacion.CambioEnElTotal cambioEnElTotal,
 						comparacion.CambioEnProporcion cambio,
 						comparacion.HayAlgoQueLoExplique hayAlgoQueLoExplique,
-						comparacion.ParaSonia paraSonia,
+						comparacion.ParaElAsistente paraElAsistente,
 						comparacion.Antes.Anio anioAntes,
 						comparacion.Antes.Mes mesAntes,
 						comparacion.Antes.GastoComestible gastoComestibleAntes,
@@ -356,7 +357,7 @@ namespace Compras.App
 						comparacion.CambioEnElTotal cambioEnElTotal,
 						comparacion.CambioEnProporcion cambio,
 						comparacion.HayAlgoQueLoExplique hayAlgoQueLoExplique,
-						comparacion.ParaSonia paraSonia,
+						comparacion.ParaElAsistente paraElAsistente,
 						comparacion.Antes.Anio anioAntes,
 						comparacion.Antes.Mes mesAntes,
 						comparacion.Antes.GastoComestible gastoComestibleAntes,
@@ -389,7 +390,7 @@ namespace Compras.App
 					firma = compras.FirmaDeLasUltimas(@cuantas);
 					print firma.ComprasMiradas comprasMiradas,
 						firma.CuantosHabituales cuantosHabituales,
-						firma.ParaSonia paraSonia;
+						firma.ParaElAsistente paraElAsistente;
 					foreach (habitual in firma.Habituales) {
 						print habitual.Sku sku,
 							habitual.Descripcion descripcion,
@@ -418,7 +419,7 @@ namespace Compras.App
 					cambio = compras.CambioDesde(@corte, @cuantas);
 					print cambio.HayConQueComparar hayConQueComparar,
 						cambio.HayCambio hayCambio,
-						cambio.ParaSonia paraSonia;
+						cambio.ParaElAsistente paraElAsistente;
 					foreach (entro in cambio.Entraron) {
 						print entro.Sku sku,
 							entro.Descripcion descripcion,
@@ -436,6 +437,40 @@ namespace Compras.App
 			")
 			.WithParameters(p => {
 				p["corte",   typeof(DateTime)] = corte;
+				p["cuantas", typeof(int)] = cuantasCompras;
+			})
+			.PerformQuery();
+
+		// EL MISMO CAMBIO, PERO EL QUIEBRE LO ENCUENTRA EL DOMINIO. Es la que usa la portada.
+		//
+		// SE PROYECTA CorteExpresado Y NO Corte: la lectura tipada es GUARDADA -revienta
+		// cuando no hay dos lados que comparar- y en un print plano eso no blanquea la
+		// columna, mata la consulta entera. CorteExpresado es su pareja total y devuelve
+		// vacio, que es justo lo que la pantalla necesita para no dibujar nada.
+		public string CambioEncontrado(int cuantasCompras) =>
+			app.Using(@"
+				{
+					cambio = compras.CambioEncontrado(@cuantas);
+					print cambio.HayConQueComparar hayConQueComparar,
+						cambio.HayCambio hayCambio,
+						cambio.CorteExpresado corte,
+						cambio.ParaElAsistente paraElAsistente;
+					foreach (entro in cambio.Entraron) {
+						print entro.Sku sku,
+							entro.Descripcion descripcion,
+							entro.DesdeExpresado desde,
+							entro.ComprasEnQueAparece comprasEnQueAparece,
+							entro.Proporcion proporcion;
+					}
+					foreach (salio in cambio.Salieron) {
+						print salio.Sku sku,
+							salio.Descripcion descripcion,
+							salio.ComprasEnQueAparece comprasEnQueAparece,
+							salio.Proporcion proporcion;
+					}
+				}
+			")
+			.WithParameters(p => {
 				p["cuantas", typeof(int)] = cuantasCompras;
 			})
 			.PerformQuery();
@@ -460,7 +495,7 @@ namespace Compras.App
 						ritmo.Cambio cambio,
 						ritmo.AntesCompacto antes,
 						ritmo.AhoraCompacto ahora,
-						ritmo.ParaSonia paraSonia;
+						ritmo.ParaElAsistente paraElAsistente;
 				}
 			")
 			.WithParameters(p => {
@@ -495,7 +530,7 @@ namespace Compras.App
 						ritmo.DiaFavoritoExpresado diaFavorito,
 						ritmo.ComprasEnElDiaFavorito comprasEnElDiaFavorito,
 						ritmo.MomentoFavoritoExpresado momentoFavorito,
-						ritmo.ParaSonia paraSonia;
+						ritmo.ParaElAsistente paraElAsistente;
 					foreach (momento in ritmo.PorMomento) {
 						print momento.Momento.ParaMostrar nombre,
 							momento.Cuantas cuantas,
@@ -523,12 +558,35 @@ namespace Compras.App
 							ritmo.AntesCompacto antes,
 							ritmo.AhoraCompacto ahora,
 							ritmo.EsMasSeguido esMasSeguido,
-							ritmo.ParaSonia paraSonia;
+							ritmo.ParaElAsistente paraElAsistente;
 					}
 				}
 			")
 			.WithParameters(p => {
 				p["corte", typeof(DateTime)] = corte;
+			})
+			.PerformQuery();
+
+		// LOS MISMOS RITMOS, contra el quiebre que encuentra el dominio. Las dos tarjetas de
+		// la portada cuentan EL MISMO quiebre desde angulos distintos -una dice QUE entro, la
+		// otra CADA CUANTO-, asi que tienen que partir por la misma fecha, y quien garantiza
+		// eso es el dominio y no la coincidencia de que la pantalla les pase lo mismo.
+		public string CambiosDeRitmoDelQuiebre(int cuantasCompras) =>
+			app.Using(@"
+				{
+					cambios = compras.CambiosDeRitmoDelQuiebre(@cuantas);
+					foreach (ritmo in cambios) {
+						print ritmo.Sku sku,
+							ritmo.Descripcion descripcion,
+							ritmo.AntesCompacto antes,
+							ritmo.AhoraCompacto ahora,
+							ritmo.EsMasSeguido esMasSeguido,
+							ritmo.ParaElAsistente paraElAsistente;
+					}
+				}
+			")
+			.WithParameters(p => {
+				p["cuantas", typeof(int)] = cuantasCompras;
 			})
 			.PerformQuery();
 
@@ -551,7 +609,7 @@ namespace Compras.App
 							precio.CambioEnProporcion cambioEnProporcion,
 							precio.Subio subio,
 							precio.VecesQueLoCompro vecesQueLoCompro,
-							precio.ParaSonia paraSonia;
+							precio.ParaElAsistente paraElAsistente;
 					}
 				}
 			")
@@ -582,7 +640,7 @@ namespace Compras.App
 						registro.DiasParaVencer diasParaVencer,
 						registro.NombreDeLaSeveridad severidad,
 						registro.QueHacer queHacer,
-						registro.ParaSonia paraSonia;
+						registro.ParaElAsistente paraElAsistente;
 				}
 			")
 			.WithParameters(p => {
@@ -607,7 +665,7 @@ namespace Compras.App
 							registro.DiasParaVencer diasParaVencer,
 							registro.NombreDeLaSeveridad severidad,
 							registro.QueHacer queHacer,
-							registro.ParaSonia paraSonia;
+							registro.ParaElAsistente paraElAsistente;
 					}
 				}
 			")
@@ -634,7 +692,7 @@ namespace Compras.App
 							registro.DiasParaVencer diasParaVencer,
 							registro.NombreDeLaSeveridad severidad,
 							registro.QueHacer queHacer,
-							registro.ParaSonia paraSonia;
+							registro.ParaElAsistente paraElAsistente;
 					}
 				}
 			")
@@ -668,12 +726,19 @@ namespace Compras.App
 						consumo.Constancia.ParaMostrar constancia,
 						consumo.HaySerie haySerie,
 						consumo.HayCambioReal hayCambioReal,
-						consumo.ParaSonia paraSonia;
+						consumo.ParaElAsistente paraElAsistente;
 					foreach (mes in consumo.Meses) {
 						print mes.MesExpresado mes,
 							mes.Unidades unidades,
 							mes.Gasto gasto,
 							mes.Compras compras;
+					}
+					foreach (anio in consumo.Anios) {
+						print anio.AnioExpresado anio,
+							anio.Unidades unidades,
+							anio.Gasto gasto,
+							anio.Compras compras,
+							anio.MesesConCompras mesesConCompras;
 					}
 				}
 			")
@@ -682,6 +747,78 @@ namespace Compras.App
 			})
 			.PerformQuery();
 		}
+
+		// EN CUALES COMPRAS APARECIO ESTO. La cabecera y las compras salen en el mismo
+		// bloque, igual que el consumo: la cabecera como "busqueda" y cada compra como
+		// "compra".
+		//
+		// TODOS LOS CAMPOS DE LA CABECERA SON TOTALES, y eso no es suerte: un print plano
+		// no puede preguntar Existe() antes de imprimir, y un lector guardado no le
+		// blanquea la columna — le mata la consulta entera. Buscar algo que no existe tiene
+		// que devolver la cabecera en cero, no un error.
+		public string ComprasCon(string termino)
+		{
+			ArgumentNullException.ThrowIfNullOrWhiteSpace(termino);
+
+			return app.Using(@"
+				{
+					busqueda = compras.ComprasCon(@termino);
+					print busqueda.Buscado buscado,
+						busqueda.Existe() existe,
+						busqueda.CuantasCompras cuantasCompras,
+						busqueda.TotalUnidades totalUnidades,
+						busqueda.TotalGastado totalGastado,
+						busqueda.ParaElAsistente paraElAsistente;
+					foreach (producto in busqueda.Productos) {
+						print producto nombre;
+					}
+					foreach (compra in busqueda.Compras) {
+						print compra.Numero numero,
+							compra.FechaExpresada fecha,
+							compra.Unidades unidades,
+							compra.Gasto gasto,
+							compra.LineasDeLaCompra lineasDeLaCompra,
+							compra.TotalDeLaCompra totalDeLaCompra;
+					}
+				}
+			")
+			.WithParameters(p => {
+				p["termino", typeof(string)] = termino;
+			})
+			.PerformQuery();
+		}
+
+		// LO QUE VA A FALTAR EN LA PROXIMA COMPRA. La cabecera y los productos salen en el
+		// mismo bloque: la cabecera como "lista" y cada producto como "producto".
+		//
+		// SE PROYECTAN TODOS y no solo los que tocan: el filtro es de la pantalla -que muestra
+		// los atrasados- y de la IA, que a veces quiere saber que esta por caer. Recortar aca
+		// obligaria a dos consultas para dos lecturas de la misma lista.
+		public string LoQueVaAFaltar(DateTime hoy) =>
+			app.Using(@"
+				{
+					lista = compras.LoQueVaAFaltar(@hoy);
+					print lista.Existe() existe,
+						lista.CuantosTocan cuantosTocan,
+						lista.ParaElAsistente paraElAsistente;
+					foreach (producto in lista.Productos) {
+						print producto.Sku sku,
+							producto.Descripcion descripcion,
+							producto.Cadencia.ParaMostrar cadencia,
+							producto.Cadencia.Compacta cadenciaCompacta,
+							producto.DiasTipicos diasTipicos,
+							producto.UltimaVezExpresada ultimaVez,
+							producto.DiasDesdeLaUltima diasDesdeLaUltima,
+							producto.DiasDeMas diasDeMas,
+							producto.Toca toca,
+							producto.ParaElAsistente paraElAsistente;
+					}
+				}
+			")
+			.WithParameters(p => {
+				p["hoy", typeof(DateTime)] = hoy;
+			})
+			.PerformQuery();
 
 		// LA consulta que mira el hueco: que dejo de entrar a la canasta. Una pantalla no
 		// puede renderizar una ausencia que nadie le paso.
@@ -698,7 +835,7 @@ namespace Compras.App
 							pendiente.EsRitmoObservado esRitmoObservado,
 							pendiente.EsComestible esComestible,
 							pendiente.NombreDeLaSeveridad severidad,
-							pendiente.ParaSonia paraSonia;
+							pendiente.ParaElAsistente paraElAsistente;
 					}
 				}
 			")
@@ -729,6 +866,14 @@ namespace Compras.App
 		public CambioDeLaCanasta Cambio(DateTime corte, int cuantasCompras = ComprasQueSeMiranParaLaFirma) =>
 			ProyeccionDeVistas.Cambio(CambioEnLaCanasta(corte, cuantasCompras));
 
+		// LAS DOS DEL QUIEBRE QUE ENCUENTRA EL DOMINIO. Son las que usa la portada; las
+		// que reciben el corte se quedan para quien quiera preguntar por una fecha suya.
+		public CambioDeLaCanasta CambioDelQuiebre(int cuantasCompras = ComprasQueSeMiranParaLaFirma) =>
+			ProyeccionDeVistas.Cambio(CambioEncontrado(cuantasCompras));
+
+		public IReadOnlyList<RitmoQueCambio> RitmosDelQuiebre(int cuantasCompras = ComprasQueSeMiranParaLaFirma) =>
+			ProyeccionDeVistas.RitmosQueCambiaron(CambiosDeRitmoDelQuiebre(cuantasCompras));
+
 		public Vistas.RitmoDeUnProducto Ritmo(string producto, DateTime corte) =>
 			ProyeccionDeVistas.Ritmo(RitmoDeUnProducto(producto, corte));
 
@@ -755,6 +900,12 @@ namespace Compras.App
 
 		public ConsumoEnElTiempo Consumo(string termino) =>
 			ProyeccionDeVistas.Consumo(ConsumoDe(termino));
+
+		public ComprasHalladas Halladas(string termino) =>
+			ProyeccionDeVistas.Halladas(ComprasCon(termino));
+
+		public ListaDeLaProximaCompra Lista(DateTime hoy) =>
+			ProyeccionDeVistas.LaProximaCompra(LoQueVaAFaltar(hoy));
 
 		public GarantiaDeProducto Garantia(string texto, DateTime fechaDeConsulta) =>
 			ProyeccionDeVistas.Garantia(GarantiaDe(texto, fechaDeConsulta));

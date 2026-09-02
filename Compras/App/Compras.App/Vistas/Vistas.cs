@@ -21,6 +21,12 @@ namespace Compras.App.Vistas
 
 	public sealed class LineaDeCompra
 	{
+		/// <summary>El departamento legible: "lácteos y huevos". Es lo que se pinta.</summary>
+		// LA LLAVE Y EL TITULO VIAJAN LOS DOS, y no es redundancia: la llave es con lo que el
+		// codigo compara y lo que sigue igual en los diarios ya escritos; el titulo es lo
+		// unico que puede salir a pantalla.
+		public string Titulo { get; init; } = "";
+
 		public string Sku { get; init; } = "";
 		public string Descripcion { get; init; } = "";
 		public int Cantidad { get; init; }
@@ -69,7 +75,7 @@ namespace Compras.App.Vistas
 	// del cruce: el asistente la pone al lado de la tendencia del colesterol y la relacion
 	// aparece sola — el juicio es de el, con permiso, no de esta app.
 	//
-	// ParaSonia viene del DOMINIO, no se arma aca. Y no hay veredicto: la app senala y se
+	// ParaElAsistente viene del DOMINIO, no se arma aca. Y no hay veredicto: la app senala y se
 	// calla.
 	public sealed class CanastasComparadas
 	{
@@ -79,7 +85,7 @@ namespace Compras.App.Vistas
 		public decimal CambioEnElTotal { get; init; }
 		public decimal Cambio { get; init; }
 		public bool HayAlgoQueLoExplique { get; init; }
-		public string ParaSonia { get; init; } = "";
+		public string ParaElAsistente { get; init; } = "";
 		public int AnioAntes { get; init; }
 		public int MesAntes { get; init; }
 		public decimal GastoComestibleAntes { get; init; }
@@ -112,7 +118,7 @@ namespace Compras.App.Vistas
 		public int CuantosHabituales { get; init; }
 
 		// La linea de la portada, escrita por el dominio.
-		public string ParaSonia { get; init; } = "";
+		public string ParaElAsistente { get; init; } = "";
 
 		public IReadOnlyList<ProductoQueVuelve> Habituales { get; init; } =
 			new List<ProductoQueVuelve>();
@@ -140,12 +146,22 @@ namespace Compras.App.Vistas
 	// lectura de la portada, y sin veredicto: dice que paso, no si esta bien.
 	public sealed class CambioDeLaCanasta
 	{
+		/// <summary>
+		/// El mes por el que se partió el historial, como aaaa-mm. Vacío cuando no hay con
+		/// qué comparar.
+		/// </summary>
+		// NO ES MesDelCambio: aquel es el mes más viejo entre los productos que entraron -un
+		// hecho de los datos-, y éste es dónde se partió la historia para mirarlos. Desde que
+		// el dominio ENCUENTRA el corte, los dos suelen coincidir; cuando no, la diferencia
+		// dice que lo nuevo tardó en aparecer.
+		public string Corte { get; init; } = "";
+
 		/// <summary>Si los dos lados tienen compras. Sin eso no se afirma nada.</summary>
 		public bool HayConQueComparar { get; init; }
 
 		public bool HayCambio { get; init; }
 
-		public string ParaSonia { get; init; } = "";
+		public string ParaElAsistente { get; init; } = "";
 
 		public IReadOnlyList<ProductoQueEntroVista> Entraron { get; init; } =
 			new List<ProductoQueEntroVista>();
@@ -194,7 +210,7 @@ namespace Compras.App.Vistas
 		public decimal CambioEnProporcion { get; init; }
 		public bool Subio { get; init; }
 		public int VecesQueLoCompro { get; init; }
-		public string ParaSonia { get; init; } = "";
+		public string ParaElAsistente { get; init; } = "";
 	}
 
 	// COMO VA AL SUPER: cada cuantos dias vuelve, que dia y en que momento. Es la pantalla
@@ -224,7 +240,7 @@ namespace Compras.App.Vistas
 		/// <summary>"tarde". Vacío cuando no hay ritmo.</summary>
 		public string MomentoFavorito { get; init; } = "";
 
-		public string ParaSonia { get; init; } = "";
+		public string ParaElAsistente { get; init; } = "";
 
 		/// <summary>Los TRES momentos, siempre los tres y en orden del día.</summary>
 		public IReadOnlyList<ComprasEnUnMomentoVista> PorMomento { get; init; } =
@@ -261,7 +277,7 @@ namespace Compras.App.Vistas
 		public string Ahora { get; init; } = "";
 
 		/// <summary>La línea, escrita por el dominio: "X pasó de una vez al mes a todas las semanas".</summary>
-		public string ParaSonia { get; init; } = "";
+		public string ParaElAsistente { get; init; } = "";
 	}
 
 	// Un producto al que le cambio el ritmo. Viene de una lista YA FILTRADA por el dominio
@@ -277,7 +293,7 @@ namespace Compras.App.Vistas
 		/// <summary>Si ahora lo compra más seguido que antes.</summary>
 		public bool EsMasSeguido { get; init; }
 
-		public string ParaSonia { get; init; } = "";
+		public string ParaElAsistente { get; init; } = "";
 	}
 
 	// El respaldo de una garantia: en que compra fue, cuando, cuanta cobertura y si
@@ -296,7 +312,7 @@ namespace Compras.App.Vistas
 		public int DiasParaVencer { get; init; }
 		public string Severidad { get; init; } = "";
 		public string QueHacer { get; init; } = "";
-		public string ParaSonia { get; init; } = "";
+		public string ParaElAsistente { get; init; } = "";
 	}
 
 	// CUANTO Y CUANDO entro algo, mes a mes. Es la serie que permite decir desde cuando
@@ -326,8 +342,11 @@ namespace Compras.App.Vistas
 		public decimal CambioDeGasto { get; init; }
 		public bool HaySerie { get; init; }
 		public bool HayCambioReal { get; init; }
-		public string ParaSonia { get; init; } = "";
+		public string ParaElAsistente { get; init; } = "";
 		public IReadOnlyList<MesDeConsumoVista> Meses { get; init; } = new List<MesDeConsumoVista>();
+
+		/// <summary>La misma serie por año. Vacía cuando no hay consumo.</summary>
+		public IReadOnlyList<AnioDeConsumoVista> Anios { get; init; } = new List<AnioDeConsumoVista>();
 
 		public bool Existe => MesesConConsumo > 0;
 	}
@@ -364,6 +383,96 @@ namespace Compras.App.Vistas
 		public bool EsRitmoObservado { get; init; }
 		public bool EsComestible { get; init; }
 		public string Severidad { get; init; } = "";
-		public string ParaSonia { get; init; } = "";
+		public string ParaElAsistente { get; init; } = "";
+	}
+
+	// EN CUALES COMPRAS APARECIO ALGO. La respuesta del buscador de recibos, y la unica
+	// pantalla donde una lista se acorta por la PREGUNTA y no por un tope: buscar "leche"
+	// devuelve las compras con leche, no las primeras N de todas.
+	// UN AÑO DE LA SERIE. Existe porque la serie mensual crece doce filas por año y esta
+	// crece una: la ficha pinta el año mas reciente mes a mes y los anteriores de a una
+	// fila. mesesConCompras es lo que impide comparar un año a medias con uno entero como
+	// si midieran lo mismo.
+	public sealed class AnioDeConsumoVista
+	{
+		public string Anio { get; init; } = "";
+		public int Unidades { get; init; }
+		public decimal Gasto { get; init; }
+		public int Compras { get; init; }
+		public int MesesConCompras { get; init; }
+	}
+
+	// LO QUE VA A FALTAR EN LA PROXIMA COMPRA. Cada fila trae SU RAZON -cada cuanto vuelve y
+	// cuanto hace que no entra- porque sin eso una lista sugerida es la app diciendole a
+	// alguien lo que tiene que comprar.
+	public sealed class ListaDeLaProximaCompra
+	{
+		public bool Existe { get; init; }
+
+		/// <summary>Cuántos ya pasaron su tiempo. Cero cuando ninguno, y es verdad.</summary>
+		public int CuantosTocan { get; init; }
+
+		/// <summary>Todos los que tienen ritmo medido, del más atrasado al que menos falta.</summary>
+		public IReadOnlyList<ProductoPorCaer> Productos { get; init; } = new List<ProductoPorCaer>();
+
+		public string ParaElAsistente { get; init; } = "";
+	}
+
+	public sealed class ProductoPorCaer
+	{
+		public string Sku { get; init; } = "";
+		public string Descripcion { get; init; } = "";
+
+		/// <summary>"todas las semanas". Es lo que se pinta.</summary>
+		public string Cadencia { get; init; } = "";
+
+		/// <summary>"1 vez/semana", para cuando el espacio es poco.</summary>
+		public string CadenciaCompacta { get; init; } = "";
+
+		public int DiasTipicos { get; init; }
+		public string UltimaVez { get; init; } = "";
+		public int DiasDesdeLaUltima { get; init; }
+
+        /// <summary>Días de más desde que tocaba; negativo cuando todavía no toca.</summary>
+		public int DiasDeMas { get; init; }
+
+		public bool Toca { get; init; }
+		public string ParaElAsistente { get; init; } = "";
+	}
+
+	public sealed class ComprasHalladas
+	{
+		public string Buscado { get; init; } = "";
+		public bool Existe { get; init; }
+
+		/// <summary>En cuántas compras apareció. Cero cuando en ninguna.</summary>
+		public int CuantasCompras { get; init; }
+
+		public int TotalUnidades { get; init; }
+		public decimal TotalGastado { get; init; }
+
+		/// <summary>
+		/// Las descripciones distintas que coincidieron. Buscar "queso" puede alcanzar a
+		/// dos productos, y la pantalla lo dice antes de mostrar los totales.
+		/// </summary>
+		public IReadOnlyList<string> Productos { get; init; } = new List<string>();
+
+		/// <summary>De la más reciente a la más vieja. Vacía cuando no hay ninguna.</summary>
+		public IReadOnlyList<CompraHallada> Compras { get; init; } = new List<CompraHallada>();
+
+		public string ParaElAsistente { get; init; } = "";
+	}
+
+	// Una compra donde aparecio lo buscado. Lleva LAS DOS ESCALAS -lo del producto y lo de
+	// la compra entera- para que la fila se pueda pintar igual que las de la lista y ademas
+	// diga por que aparecio.
+	public sealed class CompraHallada
+	{
+		public string Numero { get; init; } = "";
+		public string Fecha { get; init; } = "";
+		public int Unidades { get; init; }
+		public decimal Gasto { get; init; }
+		public int LineasDeLaCompra { get; init; }
+		public decimal TotalDeLaCompra { get; init; }
 	}
 }

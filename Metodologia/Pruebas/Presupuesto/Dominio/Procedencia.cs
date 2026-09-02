@@ -15,16 +15,16 @@ namespace Presupuesto.Dominio
 	//
 	// Ojo con leer INSTITUCION como "mas confiable". Significa QUIEN LO EMITIO, no quien lo
 	// escribio ni si es mas objetivo.
-	public sealed class Procedencia
+	internal sealed class Procedencia
 	{
 		// El banco. Estados de cuenta de tarjeta de credito y de cuenta bancaria.
-		public static readonly Procedencia Institucion =
+		internal static readonly Procedencia Institucion =
 			new Procedencia("institucion", reconstruible: true);
 
 		// La persona. Las marcas: que cargos son el mismo gasto, que es de la propiedad, que
 		// se puede reducir, que cargos forman un imprevisto. Cuatro veces aparecio el mismo
 		// patron en la entrevista, siempre igual: marcar primero, inferir despues.
-		public static readonly Procedencia Persona =
+		internal static readonly Procedencia Persona =
 			new Procedencia("persona", reconstruible: false);
 
 		private Procedencia(string nombre, bool reconstruible)
@@ -33,11 +33,34 @@ namespace Presupuesto.Dominio
 			SeRecuperaDelProveedor = reconstruible;
 		}
 
-		public string Nombre { get; }
+		internal string Nombre { get; }
 
 		// Si esto se pierde, .se puede volver a bajar? Para lo de la persona la respuesta es
 		// NO, y de ahi sale que el respaldo de la carpeta deje de ser opcional.
-		public bool SeRecuperaDelProveedor { get; }
+		internal bool SeRecuperaDelProveedor { get; }
+
+		// EL RESOLUTOR TOTAL, y acá se ve para qué existe de verdad.
+		//
+		// MEDIDO: desde un script del DSL, `Procedencia.Institucion` —un `static readonly`—
+		// NO resuelve: revienta con "Unknown property or method 'Institucion' on type
+		// 'Object'". Un MÉTODO estático sí. O sea que un conjunto cerrado sin resolutor es
+		// inalcanzable desde el DSL, y por lo tanto imposible de usar en un comando.
+		//
+		// La guía de dominio pide el resolutor por otra razón —la totalidad, que reviente
+		// ante lo desconocido— pero en este substrato es además la ÚNICA puerta de entrada.
+		internal static Procedencia PorNombre(string nombre)
+		{
+			if (nombre != null)
+			{
+				string limpio = nombre.Trim().ToLowerInvariant();
+				if (limpio == Institucion.Nombre) return Institucion;
+				if (limpio == Persona.Nombre) return Persona;
+			}
+
+			throw new ArgumentException(
+				$"'{nombre}' no es una procedencia. Un hecho lo emitió la institución o la persona; "
+				+ "no hay una tercera.", nameof(nombre));
+		}
 
 		public override string ToString() => Nombre;
 	}

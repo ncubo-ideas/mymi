@@ -235,10 +235,11 @@ Tres cosas que el código no delataba solo:
 1. ⚠️ **El juicio 3 vive fuera del dominio.** El `8` es una constante de `ComprasAPI`, en la capa de
    aplicación. El dominio lo recibe por parámetro —eso está bien— pero la frase *"ocho son unas dos
    meses de compras semanales"* es conocimiento del negocio y está del lado equivocado de la línea.
-2. ⚠️ **El corte del quiebre se recibe, no se encuentra.** La lectura de qué cambió necesita que
-   alguien le pase la fecha del quiebre, y hoy la pantalla le pasa el 1 de enero. Funciona porque el
-   guion de demo quiebra en enero. **El dominio debería encontrar el mes**, y hasta que lo haga esta
-   lectura depende de que el que llama acierte.
+2. ~~El corte del quiebre se recibe, no se encuentra.~~ **Arreglado.** `CambioEncontrado` prueba
+   la primera compra de cada mes y elige el corte donde más productos entran y salen; la carátula
+   ya no pasa ninguna fecha. Queda anotado porque el defecto **no dejaba un hueco visible**: le
+   contestaba *"su canasta viene igual"* a quien había cambiado en otro mes, y eso se lee como un
+   hecho y no como una falla.
 3. ⚠️ **El defecto de la presentación** (Parte 1), que es del contrato del proveedor y no nuestro.
 
 Ninguno de los tres es un incumplimiento de lo que este archivo declara — son el archivo haciendo su
