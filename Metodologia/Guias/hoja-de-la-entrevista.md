@@ -81,7 +81,21 @@ Insistí hasta juntar **tres a cinco**. A cada una:
 
 ## Bloque 3 · Los juicios
 
-**El bloque que no se improvisa.** Para cada cosa que la app va a seguir en el tiempo:
+**El bloque que no se improvisa** — y el más caro. Son siete preguntas **por cada cosa que se sigue
+en el tiempo**: con seis cosas son 42, y así se siente. Léelo entero antes de empezarlo.
+
+> ### No preguntes en frío: proponé
+>
+> Umbrales, ruido, cadencia y urgencia **no son conocimiento de producto**, son conocimiento experto
+> del dominio. Quien está sentado enfrente casi nunca los tiene, y tenerlos no era su trabajo.
+>
+> Así que **traé un valor propuesto a la mesa** —de otro negocio, de un experto, de la literatura— y
+> dejá que lo muevan. Es la misma regla del bloque 5: *nadie tiene un umbral en la cabeza.*
+>
+> Lo que no se sepa **entra por parámetro y se marca ⚠️ sin firmar**. La firma es asincrónica: no
+> bloquea la sesión ni bloquea construir.
+
+Para cada cosa que la app va a seguir en el tiempo:
 
 > **1 · Dirección.** *¿Hacia dónde es deseable que se mueva: subir, bajar, o mantenerse dentro de
 > algo?* Ojo: no siempre es binario.
@@ -106,6 +120,16 @@ La **7** es la más productiva de la sesión: decide qué merece ser una clase p
 >
 > Se anota como pendiente **con nombre y apellido de quién lo sabe**. Un juicio inventado no revienta
 > nunca: da una respuesta creíble y equivocada cada vez.
+>
+> Y **un juicio sin firmar tampoco tiene un valor por defecto silencioso** en el código: o el objeto
+> no se construye sin él, o la respuesta dice que no sabe. Un default es un juicio inventado con
+> mejores modales.
+
+> ### Si te empantanás, cerrá el bloque
+>
+> Un *"no sé"* **abre** una pregunta nueva —*¿y quién lo sabe?*— en vez de cerrar. Cuando tres
+> seguidos vengan así, anotá los tres con su dueño y **seguí**. Este bloque vuelve en el 5, con
+> propuestas concretas sobre la mesa, y ahí rinde mucho más que insistiendo ahora.
 
 ---
 

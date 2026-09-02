@@ -102,6 +102,39 @@ Esto lo gobierna `domain-guide.md`. Lo que hay que retener al empezar:
   como parámetro. Es lo que hace que replayar el journal dé exactamente el mismo estado.
 - **Nombrá la ley.** No dejes que una regla viva sólo como aritmética. La provisión mensual de un
   gasto anual es una ley con nombre, no un `/12` suelto.
+- **Un juicio sin firmar no tiene valor por defecto.** Tiene su propia sección abajo.
+
+### Un juicio sin firmar no tiene valor por defecto
+
+La entrevista deja juicios pendientes de firma — es lo normal, y el
+[punto de partida](punto-de-partida.md) explica por qué la firma es asincrónica. Lo que **no** se
+puede hacer mientras tanto es esto:
+
+```csharp
+private decimal umbral = 0.10m;   // "mientras tanto"
+```
+
+Compila, corre, y el número hasta parece razonable. **Ése es el problema.** La app contesta con la
+misma seguridad que si el juicio estuviera decidido, y nadie va a investigar una respuesta creíble.
+Un default silencioso **es** un juicio inventado, sólo que con mejores modales.
+
+Las dos formas correctas, y las dos ya están en el repo:
+
+**El objeto no se construye sin él.** Así entra el umbral del presupuesto:
+
+```csharp
+internal Panorama(decimal umbralDeVariacion)
+{
+	if (umbralDeVariacion <= 0 || umbralDeVariacion >= 1)
+		throw new ArgumentOutOfRangeException(nameof(umbralDeVariacion),
+			"Es una proporcion: 0,10 son diez por ciento.");
+```
+
+**O la respuesta dice que no sabe.** Así resolvió el gimnasio una meta sin valor declarado: el valor
+es opcional, y cuando no está **se dice**, en vez de inventar un número para poder contestar.
+
+Cuál de las dos depende de si el juicio es necesario para que el objeto tenga sentido, o sólo para
+una respuesta en particular. Lo que no es una opción es la tercera.
 
 ### El dominio va `internal`, y el csproj separado es lo que lo hace cierto
 

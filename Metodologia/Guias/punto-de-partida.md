@@ -233,8 +233,40 @@ propia. En el laboratorio, la hemoglobina sabe el **grado de anemia**; no existe
 de un colesterol. Cuando una magnitud no tiene respuesta a esa pregunta, probablemente no necesitaba
 existir por separado.
 
-**Si el entrevistado no sabe contestar un juicio, no se inventa.** Se anota como pendiente y se va a
-buscar a quien sabe. Un juicio inventado no se nota hasta que alguien toma una decisión con él.
+**Si el entrevistado no sabe contestar un juicio, no se inventa.** Un juicio inventado no se nota
+hasta que alguien toma una decisión con él.
+
+> ### Pero no se pregunta en frío: se propone y se deja corregir
+>
+> **Corregido el 2026-09-01, después de correr este bloque dos veces.** Tal como estaba escrito, este
+> bloque es el más caro de la sesión y el que menos rinde, por dos razones que se midieron:
+>
+> **Escala mal.** Son siete preguntas **por cada magnitud**. En el gimnasio las magnitudes fueron
+> seis, o sea **42 preguntas con la misma forma** dentro de una sentada de unas 64. Para quien
+> contesta, la misma pregunta volviendo seis veces con otro sujeto es indistinguible de la
+> repetición, y así se reportó las dos veces que se corrió.
+>
+> **Y un "no sé" cuesta más que un "sí".** Una respuesta cierra; una no-respuesta abre una pregunta
+> nueva —*¿y quién lo sabe?*—. En una sesión donde la mayoría de este bloque es inconstestable, el
+> guion gasta más tiempo en lo que no produce que en lo que sí.
+>
+> **Es inconstestable casi siempre, y no por culpa de nadie:** umbrales, ruido, cadencia y urgencia no
+> son conocimiento de producto, son conocimiento **experto del dominio**. Un Product Owner no los
+> tiene, y tenerlos no era su trabajo.
+>
+> **Cómo se hace entonces** —y salió del gimnasio, donde funcionó sin que nadie lo hubiera escrito:
+>
+> 1. **Quien modela propone un valor**, con la mejor fuente que tenga a mano —el precedente de otro
+>    negocio, un experto, literatura del dominio—. Es la misma regla del bloque 5: *no preguntes
+>    "¿cuál es el umbral?", nadie tiene un umbral en la cabeza; proponé uno y dejá que lo muevan.*
+> 2. **El valor entra por parámetro, nunca quemado en el código.** El dominio se queda con la forma y
+>    hace la comparación; el número viene de afuera y se puede cambiar sin tocar una clase.
+> 3. **Se marca ⚠️ sin firmar** hasta que lo apruebe quien sabe. La firma es asincrónica: no bloquea
+>    la sesión ni bloquea construir.
+>
+> Lo que **no** cambia: un juicio sin firmar **no tiene valor por defecto silencioso**. O el objeto no
+> se construye sin él, o la respuesta **dice que no sabe**. Un default silencioso es un juicio
+> inventado con mejores modales — ver el [capítulo 3](03-construir-la-app.md) §3.
 
 ### Bloque 4 · Qué se descarta
 
