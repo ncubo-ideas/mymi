@@ -40,6 +40,83 @@ internal static class Conformance
 		var catalog = new ModuleCatalog(modulesRoot);
 		catalog.Load();
 
+		// THE MANIFEST AGAINST THE MODULE'S REAL SURFACE, and it runs FIRST because every
+		// comparison below is built on the catalog the manifest produces. If a manifest declares
+		// a tool the module does not have, the three gates agree perfectly -- on a lie.
+		//
+		// IT ALREADY COST A DEFECT, and that one travelled all the way to the phone: the
+		// lab-tests manifest kept declaring `revisar_mis_analitos` long after the code replaced
+		// it with `que_me_falta_medir`, and omitted the two tools that do exist. The Host builds
+		// its catalog BY READING the manifest, so the snapshot Siri's intent hands the assistant
+		// carried a tool that failed on invocation -- "module 'examenes' does not expose
+		// 'revisar_mis_analitos'" -- and hid the two that answer. Lab tests was the only business
+		// contributing no fact at all to the snapshot; invoices was fine.
+		//
+		// THE CHECK ALREADY EXISTED AND NOBODY RAN IT. `verify_module` in HostTools asks the
+		// module for its tools/list and crosses it against the manifest; the manifest's own
+		// `//names` note states the invariant it broke. Having it available on demand was not
+		// enough -- drift is silent, so it has to run unprompted. This is that same crossing.
+		int verificados = 0;
+		var sinVerificar = new List<string>();
+
+		foreach (Module m in catalog.Modules)
+		{
+			string[] declared = [.. m.Manifest.Tools.Select(t => t.Name).Order()];
+			string[] actual;
+
+			try
+			{
+				actual = [.. (await m.ActualToolNames(CancellationToken.None)).Order()];
+			}
+			catch (Exception ex)
+			{
+				// NOT A DEFECT OF THE MODULE, and it must not be reported as one: this is the
+				// documented open limitation -- installation.json carries ABSOLUTE paths from
+				// the machine where the POC was assembled, so on any other machine the shell
+				// cannot be started. See Metodologia/Guias/el-manifiesto-y-la-instalacion.md §8.
+				//
+				// It is listed instead of asserted, because a red line here would train people
+				// to ignore the suite for a reason that has nothing to do with drift. What IS
+				// asserted, below, is that not EVERY module ended up here -- a suite that
+				// verified nothing must not look green.
+				sinVerificar.Add($"{m.Name} ({ex.GetType().Name})");
+				Console.WriteLine($"  [----] {m.Name}: no se pudo verificar contra el modulo real");
+				Console.WriteLine($"          {Cut(ex.Message)}");
+				continue;
+			}
+
+			string[] declaradasYAusentes = [.. declared.Except(actual)];
+			string[] expuestasSinDeclarar = [.. actual.Except(declared)];
+
+			// The two directions fail differently and are worth separating. A tool DECLARED and
+			// missing reaches the assistant and breaks on call -- that is the defect above. One
+			// exposed and NOT declared never reaches it: the person paid for a capability the
+			// catalog hides, which is quieter and just as wrong.
+			assert($"{m.Name}: no declara ninguna tool que el modulo no tenga",
+				declaradasYAusentes.Length == 0,
+				$"declaradas y ausentes: [{string.Join(",", declaradasYAusentes)}]  ·  el modulo expone [{string.Join(",", actual)}]");
+
+			assert($"{m.Name}: no expone ninguna tool sin declarar",
+				expuestasSinDeclarar.Length == 0,
+				$"expuestas y sin declarar: [{string.Join(",", expuestasSinDeclarar)}]  ·  el manifest declara [{string.Join(",", declared)}]");
+
+			verificados++;
+		}
+
+		// THE GUARD THAT KEEPS THE ONE ABOVE HONEST. Every module can fail to start for
+		// environmental reasons, and then the crossing runs over nothing while the suite still
+		// prints green. That is the exact shape of the risk this suite was built against, so it
+		// is stated as an assertion and not as a note.
+		assert("al menos un modulo se pudo verificar contra su superficie real",
+			verificados > 0,
+			$"ninguno de {catalog.Modules.Count} se pudo arrancar: [{string.Join("  ·  ", sinVerificar)}]. "
+			+ "Casi siempre es installation.json con rutas de otra maquina (limitacion abierta, "
+			+ "ver Metodologia/Guias/el-manifiesto-y-la-instalacion.md seccion 8): apuntar "
+			+ "shell.arguments[0] al dll construido en ESTA maquina y repetir.");
+
+		if (verificados > 0 && sinVerificar.Count > 0)
+			Console.WriteLine($"  ({verificados} modulos verificados, {sinVerificar.Count} sin verificar)");
+
 		// The gate declares its own format hint; Gate 1 says json, Gate 2 says json or toon.
 		// They are built separately ON PURPOSE: if a future change made the catalog depend on
 		// the hint, the two dispatchers would disagree and the tools comparison below breaks.
