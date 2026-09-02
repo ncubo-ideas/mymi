@@ -36,7 +36,7 @@
       "input": [
         {
           "name": "cuantasCompras",
-          "type": "number",
+          "type": "integer",
           "description": "Cuantas de sus ultimas compras mirar. Omitilo para usar el valor de la app (8)."
         }
       ]
@@ -54,7 +54,7 @@
         },
         {
           "name": "cuantasCompras",
-          "type": "number",
+          "type": "integer",
           "description": "Cuantas compras mirar de cada lado. Omitilo para usar el valor de la app (8)."
         }
       ]
@@ -105,12 +105,12 @@
       "input": [
         {
           "name": "anio",
-          "type": "number",
+          "type": "integer",
           "description": "El anio, por ejemplo 2026."
         },
         {
           "name": "mes",
-          "type": "number",
+          "type": "integer",
           "description": "El mes, de 1 a 12."
         }
       ]
@@ -123,22 +123,22 @@
       "input": [
         {
           "name": "anioAntes",
-          "type": "number",
+          "type": "integer",
           "description": "El anio del mes de referencia."
         },
         {
           "name": "mesAntes",
-          "type": "number",
+          "type": "integer",
           "description": "El mes de referencia, de 1 a 12."
         },
         {
           "name": "anioDespues",
-          "type": "number",
+          "type": "integer",
           "description": "El anio del mes a comparar."
         },
         {
           "name": "mesDespues",
-          "type": "number",
+          "type": "integer",
           "description": "El mes a comparar, de 1 a 12."
         }
       ]

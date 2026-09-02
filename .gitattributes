@@ -1,3 +1,5 @@
 # Los scripts de la Mac tienen que llegar con LF: un retorno de carro (CR) en el shebang
 # da "bad interpreter" y el script ni arranca.
 *.sh text eol=lf
+# Scripts de la carpeta Herramientas: LF, o el shebang/node se rompe distinto en cada SO.
+Herramientas/*.mjs text eol=lf
