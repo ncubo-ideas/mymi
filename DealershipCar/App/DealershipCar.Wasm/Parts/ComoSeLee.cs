@@ -56,6 +56,22 @@ namespace DealershipCar.Wasm.Parts
 			["Superseded"] = "Reemplazado",
 		};
 
+		/// <summary>
+		/// Las posturas del sobre y las de cobertura, que son otro conjunto: el sobre contesta
+		/// Inside, Reached o NotPublished, y un sistema del alcance contesta una de cinco. Las dos
+		/// comparten NotPublished y se dice igual en las dos.
+		/// </summary>
+		private static readonly Dictionary<string, string> Posturas = new()
+		{
+			["Inside"] = "Vigente",
+			["Reached"] = "Alcanzada",
+			["NotPublished"] = "Sin publicar",
+			["Covered"] = "Cubierto",
+			["CoveredWithExclusion"] = "Cubierto con exclusión",
+			["NotCovered"] = "No cubierto",
+			["OutsideEnvelope"] = "Fuera de los límites",
+		};
+
 		private static readonly Dictionary<string, string> Fluidos = new()
 		{
 			["EngineOil"] = "Aceite de motor",
@@ -84,6 +100,28 @@ namespace DealershipCar.Wasm.Parts
 		/// <summary>El estado del calendario dicho como lo lee una persona.</summary>
 		public static string Estado(string dueState) =>
 			Estados.TryGetValue(dueState, out string dicho) ? dicho : AppState.Spaced(dueState);
+
+		/// <summary>
+		/// La postura del sobre, o la de un sistema del alcance, dicha como la lee una persona.
+		/// </summary>
+		public static string Postura(string standing) =>
+			Posturas.TryGetValue(standing, out string dicho) ? dicho : AppState.Spaced(standing);
+
+		/// <summary>
+		/// El tono con que se pinta una postura del sobre. Los nombres son los del conjunto cerrado
+		/// del dominio: adentro es la buena noticia, alcanzado es lo que hay que plantear, y que
+		/// nadie haya publicado un sobre no es ninguna de las dos.
+		/// </summary>
+		public static string TonoDeLaPostura(string standing) => standing switch
+		{
+			"Inside" => "ok",
+			"Covered" => "ok",
+			"Reached" => "warn",
+			"CoveredWithExclusion" => "warn",
+			"NotCovered" => "danger",
+			"OutsideEnvelope" => "danger",
+			_ => "mute",
+		};
 
 		public static string Fluido(string kind) =>
 			Fluidos.TryGetValue(kind, out string dicho) ? dicho : AppState.Spaced(kind);

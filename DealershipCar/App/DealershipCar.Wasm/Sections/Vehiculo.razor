@@ -232,14 +232,7 @@ else
             if (Stands is null || Stands.RecordContradictsItself) return "mute";
             if (!Stands.CanBeEvaluated) return "mute";
 
-            return Stands.Standing switch
-            {
-                "Within" => "ok",
-                "WithinOnTime" => "ok",
-                "WithinOnDistance" => "ok",
-                "" => "mute",
-                _ => "warn",
-            };
+            return ComoSeLee.TonoDeLaPostura(Stands.Standing);
         }
     }
 
@@ -252,7 +245,7 @@ else
             if (!Stands.EnvelopePublished) return "Tu concesionario no ha publicado la garantía";
             if (!Stands.CanBeEvaluated) return "Garantía publicada, sin medir completa";
 
-            return TonoGarantia == "ok" ? "Garantía vigente" : "Garantía " + Stands.Standing;
+            return "Garantía " + ComoSeLee.Postura(Stands.Standing).ToLowerInvariant();
         }
     }
 

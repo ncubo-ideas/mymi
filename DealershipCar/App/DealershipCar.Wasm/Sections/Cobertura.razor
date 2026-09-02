@@ -47,7 +47,9 @@ else
                         }
                         else
                         {
-                            <span class="d-pill d-pill--ok">@parado.Standing</span>
+                            <span class="@("d-pill d-pill--" + ComoSeLee.TonoDeLaPostura(parado.Standing))">
+                                @ComoSeLee.Postura(parado.Standing)
+                            </span>
                         }
                     </span>
                 </div>
