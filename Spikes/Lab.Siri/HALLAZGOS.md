@@ -2,7 +2,8 @@
 
 Spike de App Intents en iOS. El gemelo de lo que se midió en Android con App Actions.
 
-Corrido el **2026-08-28** (facturas) y el **2026-09-01** (exámenes, y el Host en el teléfono).
+Corrido el **2026-08-28** (facturas), el **2026-09-01** (exámenes, y el Host en el teléfono) y el
+**2026-09-02** (Foundation Models en el simulador — hallazgo 8).
 
 La pregunta era una sola: **¿puede un asistente del sistema llegar a un dato nuestro?**
 Y en tres alturas — nombrando la app (el piso), sin nombrarla (el techo), y dejando que la
@@ -50,7 +51,7 @@ convierte este spike en una decisión de arquitectura y no en una curiosidad.
 | | c6 · ¿prosa o markdown? | ⬜ pendiente |
 | | c7 · exámenes hacia Claude | ⬜ pendiente |
 | | c8 · ¿respeta el veredicto o diagnostica? | ⬜ pendiente |
-| | t9 · encadenar sin que salga nada | ⬜ **no medible** |
+| | t9 · encadenar sin que salga nada | ⬜ bloqueado en Atajos — ver §8 |
 
 ---
 
@@ -234,6 +235,48 @@ quede escrito antes de que alguien lo dé por hecho en una demo.
 
 ---
 
+## 8. `availability` dice «available» en el simulador, y no sirve como compuerta
+
+Medido el **2026-09-02** con una sonda propia sobre `SystemLanguageModel.default`, corrida de dos
+formas —binario pelado con `simctl spawn`, y dentro de una app instalada y lanzada— para descartar
+que el acceso a los servicios del modelo dependiera del contenedor. No dependía: da lo mismo.
+**Esto es simulador, no aparato.**
+
+`FoundationModels.framework` **está** en el SDK y dentro del runtime de iOS 26.2 y 26.5: enlaza y
+responde.
+
+| runtime | `availability` | generar texto |
+|---|---|---|
+| iOS 26.2 | `available` | ❌ `ModelManagerError 1026` — 5/5 y 5/5, en dos prompts |
+| iOS 26.5 | `available` | ✅ `OK -> 4` — una corrida, con techo de 180 s |
+| Mac nativo (control) | `available` | ✅ `OK -> 4` |
+
+**La consecuencia práctica: no condicionar nada a `isAvailable`.** En 26.2 da `true` y la
+generación falla igual. Código que lo use como compuerta pasa el simulador y se rompe donde
+importa.
+
+**El contraste 26.2 contra 26.5 se corrió una vez de cada lado y quedó sin repetir.** La serie de
+repeticiones se lanzó y no llegó a devolver, así que «26.5 genera» es **una corrida, no una
+medición**. Lo que sí quedó firme cinco veces de cinco es el fallo en 26.2. El Mac se corrió como
+control justamente para descartar la explicación fácil —que el modelo no estuviera descargado—: sí
+lo está, y el simulador de 26.2 falla igual.
+
+**El clasificador de guardrail corre de verdad**, y es lo otro que el simulador deja medir: un
+prompt puntual devuelve `guardrailViolation` 8 de 8 veces, sin llegar al modelo.
+
+**Dos hipótesis que se cayeron**, y van escritas para que no queden flotando: que el rechazo fuera
+por el tema médico, y que fuera por el idioma. Las dos son falsas — *«mi colesterol total es 220
+mg/dL, ¿está alto?»* pasa el guardrail, y *«hola, cómo estás»* también. Un prompt específico lo
+dispara siempre y no se pudo derivar la regla. **No hay base acá para concluir nada sobre política
+de guardrails en temas de salud**; eso pide un aparato, donde la generación corra sin dudas.
+
+**Qué corrige esto de este mismo archivo.** Acá decía que sin el interruptor de *Apple
+Intelligence* `SystemLanguageModel` «nunca queda disponible». No es lo que pasa: queda disponible.
+Que Atajos deshabilite `Use Model` sigue siendo lo observado, pero la causa que este archivo le
+atribuía era falsa, y pasa a ser pregunta abierta.
+
+---
+
 ## Lo que este spike NO responde
 
 Conviene no fingir que sí.
@@ -248,9 +291,10 @@ pasó igual.
 **t9 quedó sin medir.** El 13 Pro no tiene Apple Intelligence, y el simulador no deja
 activarlo: en iOS 26.2 y en 26.5 el panel de *Apple Intelligence & Siri* no tiene
 interruptor, solo ajustes de Siri, aunque la pantalla principal muestre el banner *«Ready
-for Apple Intelligence»* y el Mac lo tenga encendido. Sin eso, `SystemLanguageModel` nunca
-queda disponible y Atajos deshabilita `Use Model` con *«This action is not currently
-available»*.
+for Apple Intelligence»* y el Mac lo tenga encendido. Atajos deshabilita `Use Model` con
+*«This action is not currently available»*, y **por qué es pregunta abierta**: la explicación
+que acá había —que `SystemLanguageModel` no queda disponible— está medida y es falsa, ver
+hallazgo 8.
 
 Queda abierto si la cadena contesta **sin red**, que es la tesis de privacidad del producto.
 
@@ -305,6 +349,11 @@ nada mientras solo `displayName` machee.
   si no se sabe.
 - **`simctl spawn` no expone un shell** en el runtime de iOS 26: `ls /` falla con «No such file
   or directory». Cualquier chequeo hecho así devuelve vacío y parece un hallazgo — no lo es.
+- **`simctl launch --console-pty` no termina solo.** Se cuelga esperando el pty; hay que lanzarlo
+  con `nohup ... &`, esperar por el texto en el log y matarlo. Es la misma trampa que tenía
+  `armar-intents.sh`.
+- **La primera generación en el simulador puede tardar más de 90 s.** Con techo de 90 s parece un
+  fallo; con 180 s contesta. Un timeout corto acá se lee como «no funciona».
 - **Correr el Host en el aparato pide tres cosas** que no están en ningún README: el workload de
   iOS más nuevo exige Xcode 26.5 exacto (se salta con `-p:ValidateXcodeVersion=false`), hace falta
   un perfil de aprovisionamiento para `com.ncubo.gnothi.host`, y el credential provider de Azure
