@@ -340,7 +340,9 @@ internal sealed class ComprasTools
 		+ "persona pregunte '¿cuando compre esto?', '¿en que compra estaba?' o quiera llegar a un "
 		+ "recibo puntual. El campo productos dice que descripciones coincidieron: si trae mas de "
 		+ "una, el texto alcanzo a varios productos y conviene decirselo antes de dar los totales. "
-		+ "Con cuantasCompras en 0 no hay ninguna, y eso es una respuesta valida, no un error.")]
+		+ "Con cuantasCompras en 0 no hay ninguna, y eso es una respuesta valida, no un error. "
+		+ "Cada compra trae su sucursal si el tiquete la dijo (vacia si no): sirve para "
+		+ "'¿donde compre el helado?' sin otra consulta.")]
 	public ComprasHalladas EnCualesCompras(
 		[Description("Un texto de producto o una categoria del catalogo, por ejemplo 'leche' o 'Limpieza'.")] string termino)
 	{

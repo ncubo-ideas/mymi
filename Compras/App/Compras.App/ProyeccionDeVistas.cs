@@ -39,6 +39,7 @@ namespace Compras.App
 				{
 					Numero = Texto(elemento, "numero"),
 					Fecha = Fecha(elemento, "fecha"),
+					Sucursal = Texto(elemento, "sucursal"),
 					Lineas = Entero(elemento, "lineas"),
 					Total = Decimal(elemento, "total"),
 				});
@@ -568,6 +569,7 @@ namespace Compras.App
 					{
 						Numero = Texto(elemento, "numero"),
 						Fecha = Texto(elemento, "fecha"),
+						Sucursal = Texto(elemento, "sucursal"),
 						Unidades = Entero(elemento, "unidades"),
 						Gasto = Decimal(elemento, "gasto"),
 						LineasDeLaCompra = Entero(elemento, "lineasDeLaCompra"),

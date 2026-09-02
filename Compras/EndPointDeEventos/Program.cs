@@ -106,7 +106,9 @@ app.MapGet("/{recurso}/{id}/perfil", (string recurso, string id, HttpRequest ped
 // Existe para que la caja (la UI de operacion de la demo) no lleve el catalogo
 // hardcodeado adentro: el POS le pregunta a su propio sistema que vende, que es lo que
 // haria uno de verdad.
-app.MapGet("/catalogo", () => Results.Ok(new { productos = Catalogo.Productos }));
+// Las sucursales van con el catalogo por la misma razon: son del supermercado, y la
+// caja las ofrece en vez de escribirlas a mano.
+app.MapGet("/catalogo", () => Results.Ok(new { productos = Catalogo.Productos, sucursales = Catalogo.Sucursales }));
 
 // ---------------------------------------------------------------- control del mock
 
@@ -277,6 +279,14 @@ sealed class ProductoDelCatalogo
 
 static class Catalogo
 {
+    // LAS SUCURSALES DEL SUPER, los mismos nombres que usa generar-guion.py: la de
+    // siempre de Sonia primero. Un tiquete puede venir sin sucursal (campo opcional
+    // del contrato de URL2, acordado con Geannina).
+    internal static readonly string[] Sucursales =
+    {
+        "La Guaria Centro", "La Guaria Zapote", "La Guaria Del Este",
+    };
+
     // Los precios estan en colones y son de gondola, no inventados al azar: la demo se
     // cuenta con numeros que uno eligio. Incluye los SKUs de la narrativa sembrada, para
     // que la caja pueda repetir una compra que ya paso, y bastante mas para que la
@@ -536,6 +546,9 @@ sealed class AlmacenDeEventos
                 PreciosUnitarios = pedido.PreciosUnitarios,
                 Categorias = pedido.Categorias,
                 MesesDeGarantia = pedido.MesesDeGarantia,
+                // Vacio se vuelve null y NO viaja (WhenWritingNull): un tiquete sin
+                // sucursal se ve igual que uno de antes de que el campo existiera.
+                Sucursal = string.IsNullOrWhiteSpace(pedido.Sucursal) ? null : pedido.Sucursal.Trim(),
             };
 
             lista.Add(evento);
@@ -569,4 +582,7 @@ sealed class CompraAInyectar
     [JsonPropertyName("preciosUnitarios")] public decimal[] PreciosUnitarios { get; set; }
     [JsonPropertyName("categorias")]       public string[] Categorias { get; set; }
     [JsonPropertyName("mesesDeGarantia")]  public int[] MesesDeGarantia { get; set; }
+
+    // OPCIONAL: una caja que no lo mande sigue registrando compras validas.
+    [JsonPropertyName("sucursal")]         public string Sucursal { get; set; }
 }

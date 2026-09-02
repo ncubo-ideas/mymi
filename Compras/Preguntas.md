@@ -32,7 +32,7 @@ Capacidad, no preguntas. Declarado esto, las preguntas se componen encima.
 | **Dimensión · el producto** | Una **identidad** (el sku), no una cadena. El súper lo describe distinto entre tickets: `Leche semidescremada 1L` y `LECHE SEMIDESC 1 LT` son el mismo producto |
 | **Dimensión · el departamento** | El pasillo. **Conjunto cerrado de doce**, no texto libre: si un evento trae uno que no existe, la línea se descarta en la frontera |
 | **Dimensión · la presentación** | Por unidad, con contenido (`1 L`), o en paquete (`6 pk`). Es lo que permite comparar precios entre tamaños |
-| **Grano · la compra** | El ticket: número, total, y la fecha **con hora** |
+| **Grano · la compra** | El ticket: número, total, la fecha **con hora**, y **la sucursal si el tiquete la trae** — campo opcional del contrato (acordado con Geannina); los tiquetes viejos callan y el modelo lo dice, no lo inventa |
 | **Grano · la línea** | Qué producto, cuántas unidades, a qué precio, y si trae garantía |
 | **Repertorio** | Los departamentos que **se reponen** y cada cuántos días, contra los que no se reponen nunca |
 

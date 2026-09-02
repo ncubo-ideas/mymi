@@ -240,6 +240,7 @@ namespace Compras.App
 				foreach (compra in compras.Lista) {
 					print compra.Numero numero,
 						compra.Fecha fecha,
+						compra.Sucursal sucursal,
 						compra.CantidadDeLineas lineas,
 						compra.Total total;
 				}
@@ -942,6 +943,7 @@ namespace Compras.App
 					foreach (compra in busqueda.Compras) {
 						print compra.Numero numero,
 							compra.FechaExpresada fecha,
+							compra.Sucursal sucursal,
 							compra.Unidades unidades,
 							compra.Gasto gasto,
 							compra.LineasDeLaCompra lineasDeLaCompra,

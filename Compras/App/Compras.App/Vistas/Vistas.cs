@@ -15,6 +15,9 @@ namespace Compras.App.Vistas
 	{
 		public string Numero { get; init; } = "";
 		public DateTime Fecha { get; init; }
+
+		/// <summary>En qué sucursal fue. Vacío cuando el tiquete no lo dijo.</summary>
+		public string Sucursal { get; init; } = "";
 		public int Lineas { get; init; }
 		public decimal Total { get; init; }
 	}
@@ -614,6 +617,9 @@ namespace Compras.App.Vistas
 	{
 		public string Numero { get; init; } = "";
 		public string Fecha { get; init; } = "";
+
+		/// <summary>En qué sucursal fue. Vacío cuando el tiquete no lo dijo.</summary>
+		public string Sucursal { get; init; } = "";
 		public int Unidades { get; init; }
 		public decimal Gasto { get; init; }
 		public int LineasDeLaCompra { get; init; }

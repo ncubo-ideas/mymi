@@ -680,7 +680,7 @@ else
                 </span>
                 <span class="recibo-que">
                     <strong>@ultima.Lineas @(ultima.Lineas == 1 ? "producto" : "productos")</strong>
-                    <span class="small text-body-secondary">@DiaSemana(ultima.Fecha), @HoraCorta(ultima.Fecha)</span>
+                    <span class="small text-body-secondary">@DiaSemana(ultima.Fecha), @HoraCorta(ultima.Fecha)@(ultima.Sucursal.Length > 0 ? " · " + ultima.Sucursal : "")</span>
                 </span>
                 <span class="recibo-total numero">@Colones(ultima.Total)</span>
                 <span class="recibo-flecha" aria-hidden="true">&rsaquo;</span>

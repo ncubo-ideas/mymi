@@ -96,8 +96,11 @@ else
 
                                    El numero no se pierde: sigue en la compra, y ahi se
                                    explica PARA QUE sirve — reclamar. *@
+                                @* Y LA SUCURSAL, cuando el tiquete la trae: "el sabado en
+                                   Zapote" es como se recuerda una compra hecha fuera de la de
+                                   siempre. Sin el dato, la linea queda como estaba. *@
                                 <span class="small text-body-secondary">
-                                    @Dia(fila.Fecha), @Hora(fila.Fecha)
+                                    @Dia(fila.Fecha), @Hora(fila.Fecha)@(fila.Sucursal.Length > 0 ? " · " + fila.Sucursal : "")
                                 </span>
                             }
                         </span>
@@ -168,7 +171,7 @@ else
     // como otra pantalla.
     private sealed record Fila(
         string Numero, DateTime Fecha, int Lineas, decimal Total,
-        int Unidades, decimal Gasto, bool EsHallazgo);
+        int Unidades, decimal Gasto, bool EsHallazgo, string Sucursal);
 
     private IReadOnlyList<Fila> Filas()
     {
@@ -181,7 +184,7 @@ else
 
                 halladas.Add(new Fila(compra.Numero, Fecha(compra.Fecha),
                     compra.LineasDeLaCompra, compra.TotalDeLaCompra,
-                    compra.Unidades, compra.Gasto, true));
+                    compra.Unidades, compra.Gasto, true, compra.Sucursal));
             }
 
             return halladas;
@@ -190,7 +193,7 @@ else
         var recientes = new List<Fila>();
         for (int i = compras.Count - 1; i >= Math.Max(0, compras.Count - RecibosQueSeMuestran); i--)
             recientes.Add(new Fila(compras[i].Numero, compras[i].Fecha,
-                compras[i].Lineas, compras[i].Total, 0, 0m, false));
+                compras[i].Lineas, compras[i].Total, 0, 0m, false, compras[i].Sucursal));
 
         return recientes;
     }
