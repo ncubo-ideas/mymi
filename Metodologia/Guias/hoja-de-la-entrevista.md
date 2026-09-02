@@ -36,7 +36,28 @@ No lo des por sentado. La respuesta cambia la forma de la app entera:
 > *¿Y qué le **contesta**? ¿Qué pregunta suya responde sin que tenga que hacer cuentas?*
 
 **No las mezcles.** Entregar datos no es contestar preguntas. Lo que aparezca en la **segunda** queda
-descartado: si el portal ya lo contesta, reproducirlo no agrega nada.
+descartado **como funcionalidad**: si el portal ya lo contesta, hacer esa pantalla no agrega nada.
+
+> ⚠️ **Descartado como funcionalidad NO es descartado del modelo.** Es el error que costó la
+> membresía del gimnasio: quedó declarada en la Parte 1 y a la vez en *"lo que el gimnasio ya
+> contesta"*, y el dominio salió sin ninguna clase de membresía ni de pago. **Todo lo que la
+> institución manda entra al modelo**; lo que se descarta es hacerle una pantalla.
+
+### Y no cierres el bloque sin el papel
+
+> *Traé lo que la institución le manda hoy —la hoja, el correo, el estado de cuenta— y leámoslo
+> **campo por campo**.*
+
+Es lo más barato de toda la sesión y lo único donde **nadie dice "no sé"**. Por cada campo, dos
+preguntas y nada más:
+
+| | |
+|---|---|
+| *¿Esto qué es, en tus palabras?* | Da el sustantivo |
+| *¿Viene siempre, o a veces falta?* | Da si es obligatorio — y a veces destapa una ausencia para el bloque 2 |
+
+De acá sale la **Parte 1** del `Preguntas.md`. Sin este paso esa parte se llena con lo que haya
+aparecido suelto en la conversación, que es exactamente cómo se pierde un sustantivo.
 
 ---
 
@@ -153,12 +174,20 @@ muevan.
 
 ## Cuando terminaste
 
+- [ ] ¿Se leyó **el papel, campo por campo**, y cada campo está en la Parte 1?
 - [ ] ¿Tres a cinco preguntas, en la voz de la persona?
 - [ ] ¿Al menos una sobre una **ausencia**?
 - [ ] ¿Cada juicio contestado, o anotado con **quién** lo sabe?
-- [ ] ¿Está escrito lo que se **descartó**, y por qué?
+- [ ] ¿Está escrito lo que se **descartó**, y por qué? ¿Y quedó claro que se descartó **la pantalla**,
+      no el dato?
 - [ ] ¿**Cada palabra** que aparece en las preguntas tiene algo detrás? *(la que se salta más)*
 - [ ] ¿Lo aprobó quien conoce el negocio, **sin que nadie le tradujera nada**?
+
+Y al modelar, no en la sesión:
+
+- [ ] ¿**Cada renglón de la Parte 1** tiene una clase al lado? La casilla de las palabras mira las
+      preguntas y **no alcanza**: *"membresía"* no estaba en ninguna pregunta del gimnasio y se perdió
+      igual
 
 Y después de modelar, el bloque 5. **Nunca alcanza con una pasada.**
 

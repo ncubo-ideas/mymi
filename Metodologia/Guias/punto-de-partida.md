@@ -11,9 +11,25 @@ para decir si la app hizo lo que dijo.
 ## 1. Nadie se salta este paso, y menos el que sabe programar
 
 La tentación es obvia: leer la arquitectura, entender cómo se arma un módulo, abrir el IDE y empezar
-a escribir clases. Es el camino de menor resistencia para alguien técnico, y produce exactamente el
-fracaso que esta Metodología trata de evitar — **una app impecablemente construida que no contesta nada
-que la persona no tuviera ya.**
+a escribir clases. Es el camino de menor resistencia para alguien técnico.
+
+> **Corregido el 2026-09-01, porque este capítulo afirmaba algo que el repo no sostiene.** Decía que
+> ese camino *"produce exactamente el fracaso que esta Metodología trata de evitar — una app
+> impecablemente construida que no contesta nada que la persona no tuviera ya"*.
+>
+> **Los cuatro negocios se saltaron este paso entero, y los cuatro tienen su pregunta sobre una
+> ausencia.** Medido en los nombres de sus tools: `que_me_falta_medir`, `que_dejaste_de_comprar`,
+> `garantias_por_vencer`, `lo_que_falta_para_calcular`, `dias_hasta_la_proxima_carga`,
+> `how_up_to_date_is_this`. Cuatro de cuatro fueron a buscarla sin que ninguna guía se las pidiera.
+>
+> **Lo que sí se sostiene es más chico y más cierto:** de esos cuatro, **ninguno dejó escrito lo que
+> se proponía contestar**. El único `Preguntas.md` de un negocio real se escribió *después* del
+> código, y aun así encontró **tres defectos en una app con 461 comprobaciones en verde**. Sin la
+> intención declarada se puede leer el código, pero no hay contra qué compararlo — y la auditoría del
+> paso 8 se queda sin vara.
+
+**Ése es el primer argumento, y es el que hay que dar: este paso no te enseña a construir. Hace que
+la intención quede escrita, para que la deriva se pueda ver.**
 
 Hay una segunda razón, y es más dura. Lo que se decide acá **no es conocimiento técnico**:
 
@@ -58,10 +74,16 @@ Lo único que sí conviene traer:
 - Quién, adentro de la institución, sabe **interpretar** los datos. Esa persona va a hacer falta en
   el bloque 3, y si no aparece, la entrevista se detiene ahí.
 
-> **De dónde sale este capítulo.** Se escribió a partir de la doctrina, y después se **corrió** — una
-> entrevista completa sobre un dominio de presupuesto personal, el 2026-08-26. Esa corrida encontró
-> seis defectos en el guion y los seis están corregidos acá. Lo que todavía no se probó es si el
-> `Preguntas.md` que sale alcanza para modelar sin volver a preguntar; ése es el eslabón siguiente.
+> **De dónde sale este capítulo, y qué encontró cada corrida.** Se escribió a partir de la doctrina y
+> después se corrió tres veces:
+>
+> | | Con quién | Qué encontró |
+> |---|---|---|
+> | **2026-08-26** · presupuesto personal | quien escribió el guion | **Seis defectos en el guion**, los seis corregidos acá |
+> | **2026-08-28** · gimnasio | un peer del equipo — la primera vez con alguien que no lo escribió | El `Preguntas.md` **sí alcanza para modelar**, pero destapó **once huecos**. De ahí salió el bloque 5. Y se perdió la membresía: ver el recuadro del bloque 1 |
+> | **2026-09-01** · con una Product Owner | fuera del equipo | **La sesión es demasiado larga y se siente repetitiva**, y buena parte del bloque 3 es inconstestable por el rol. De ahí salen las correcciones del bloque 3 |
+>
+> Las tres corridas están reflejadas en el texto, cada una donde muerde.
 
 ---
 
@@ -98,8 +120,46 @@ obvio, y hay dominios donde no. La respuesta cambia la forma de la app entera:
 segundo. Un banco entrega movimientos; si además ya te muestra el gasto por categoría, eso sí es una
 pregunta contestada.
 
-Todo lo que aparezca en la **segunda** queda descartado de entrada: si el portal ya lo contesta,
-reproducirlo no agrega valor, lo reempaqueta.
+Lo que aparezca en la **segunda** queda descartado **como funcionalidad**: si el portal ya lo
+contesta, reproducirlo no agrega valor, lo reempaqueta.
+
+> ### Descartado como funcionalidad NO es descartado del modelo
+>
+> **Es la corrección más importante de este capítulo, y salió de una corrida.** El bloque 2 ya lo
+> dice —*"los filtros se aplican a las preguntas, nunca a la capacidad… va a la parte 1, que no se
+> filtra"*— pero está tres páginas más adelante, y la hoja que se usa en la sesión no lo llevaba. El
+> resultado es que este párrafo se leía como un descarte total.
+>
+> **Lo que costó:** en la corrida del gimnasio (2026-08-28) la **membresía** quedó declarada en la
+> Parte 1 —*"Pagos, próximo cobro, atrasos"*— y doce líneas más abajo, en *"lo que el gimnasio ya
+> contesta, y por eso se descarta"*. El dominio se construyó **sin ninguna clase de membresía ni de
+> pago**, y por eso hoy un período suspendido por falta de pago cuenta como incumplimiento del plan.
+> Una respuesta creíble y equivocada, que es lo que esta Metodología existe para evitar.
+>
+> Que el gimnasio ya te diga si estás al día es razón perfecta para **no hacer una pantalla de
+> pagos**. No es ninguna razón para que el dominio no sepa qué es una membresía.
+
+### Y antes de cerrar el bloque: traé el papel
+
+**No alcanza con saber que hay un papel. Hay que leerlo.**
+
+> *Traé lo que la institución le manda hoy —la hoja, el correo, el estado de cuenta, el PDF— y
+> leámoslo campo por campo.*
+
+Es la pregunta más barata de toda la entrevista y la única donde **nadie contesta "no sé"**: lo que
+está en la hoja está en la hoja. Y es lo único que produce la Parte 1 del `Preguntas.md` de forma
+sistemática — hasta ahora esa parte se llenaba con lo que hubiera aparecido suelto en la conversación,
+que es exactamente cómo se pierde un sustantivo.
+
+Por cada campo, dos preguntas y nada más:
+
+| | |
+|---|---|
+| *¿Esto qué es, en tus palabras?* | Da el nombre del sustantivo |
+| *¿Viene siempre, o a veces falta?* | Da si es obligatorio, y a veces destapa una ausencia para el bloque 2 |
+
+**Todo campo del artefacto entra al modelo**, lo conteste ya el portal o no. Lo que se decide después
+es qué se muestra y qué se pregunta, no qué se sabe.
 
 ### Bloque 2 · Las preguntas
 
