@@ -44,9 +44,13 @@
         <p class="hero-bajada">
             @if (estado.EstaArriba && compras.Count > 0)
             {
-                @(ritmos.Count > 0
+                @* Y LAS SUCURSALES EN LA MISMA LINEA, cuando se mueve: "desde enero en 3
+                   sucursales" es el arco de Geannina en seis palabras, y Juan no lo
+                   encontraba plegado alla abajo. Si compra siempre en la misma, no suma
+                   nada: no es noticia. *@
+                @((ritmos.Count > 0
                     ? $"Casi todo habitual · {ritmos.Count} {(ritmos.Count == 1 ? "cambio" : "cambios")} de ritmo"
-                    : "Todo como siempre por acá.")
+                    : "Todo como siempre por acá.") + Sucursales())
             }
             else
             {
@@ -1096,6 +1100,19 @@ else
     // es lo que mantiene la rejilla derecha. Con las veinte nuevas ya casi no queda hueco:
     // de los 29 productos del catalogo, 28 tienen imagen.
     private static string Foto(string sku) => Compras.Wasm.Fotos.De(sku);
+
+    // El remate de la bajada del hero: vacio si no se mueve, o nada que decir todavia.
+    private string Sucursales() =>
+        recorrido is not null && recorrido.HayDatos && recorrido.SeMueve
+            ? $" · desde {MesCorto(DesdeCuandoSeMueve())} en {recorrido.CuantasDistintas} sucursales"
+            : "";
+
+    private static string MesCorto(DateTime cuando) => cuando.Month switch
+    {
+        1 => "enero", 2 => "febrero", 3 => "marzo", 4 => "abril", 5 => "mayo", 6 => "junio",
+        7 => "julio", 8 => "agosto", 9 => "setiembre", 10 => "octubre", 11 => "noviembre",
+        _ => "diciembre",
+    };
 
     // La primera compra fuera de la de siempre: la fecha desde la que "se mueve".
     private DateTime DesdeCuandoSeMueve()
