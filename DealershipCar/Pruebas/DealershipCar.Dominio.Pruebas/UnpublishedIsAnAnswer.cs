@@ -61,7 +61,7 @@ namespace DealershipCar.Dominio.Pruebas
 			Assert.That(answer, Is.Not.Empty,
 				"Una cadena vacia no es 'no publicado': es una respuesta que no dice nada y que la "
 				+ "vista va a renderizar como un espacio en blanco.");
-			Assert.That(answer, Does.Contain("BrakeFluid"),
+			Assert.That(answer, Does.Contain("Líquido de frenos"),
 				"La respuesta nombra lo que se pregunto. Si no lo nombrara, la misma frase serviria "
 				+ "para los seis fluidos y nadie sabria de cual habla.");
 			Assert.That(answer, Does.Not.Contain(TheGrade),

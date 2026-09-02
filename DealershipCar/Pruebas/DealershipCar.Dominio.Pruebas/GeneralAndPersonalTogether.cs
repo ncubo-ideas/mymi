@@ -65,8 +65,8 @@ namespace DealershipCar.Dominio.Pruebas
 
 			Assert.That(answer, Does.Contain(TheRule));
 			Assert.That(answer, Does.Contain(WhatPreservesCover));
-			Assert.That(answer, Does.Contain("external services with evidence 2"));
-			Assert.That(answer, Does.Contain("missed maintenance operations 0"));
+			Assert.That(answer, Does.Contain("servicios externos con comprobante 2"));
+			Assert.That(answer, Does.Contain("mantenimientos no hechos 0"));
 			Assert.That(answer, Does.Contain(TheRevision));
 		}
 
@@ -77,10 +77,10 @@ namespace DealershipCar.Dominio.Pruebas
 			specification.SealRevision(TheRevision);
 
 			Assert.That(specification.DescribeServicingElsewhereRule(2, 1, 0), Is.EqualTo(
-				"Servicing elsewhere: \"Work may be done at any workshop.\" What preserves cover: "
-				+ "\"Keep the invoice and the parts numbers.\" This vehicle: external services with "
-				+ "evidence 2, external services without evidence 1, missed maintenance operations "
-				+ "0. Published in revision REV-2025-01."));
+				"Servicio en otro taller: \"Work may be done at any workshop.\" Qué conserva la cobertura: "
+				+ "\"Keep the invoice and the parts numbers.\" Este vehículo: servicios externos con "
+				+ "comprobante 2, servicios externos sin comprobante 1, mantenimientos no hechos "
+				+ "0. Publicado en la revisión REV-2025-01."));
 		}
 
 		// LA MITAD RECIBIDA NO SE QUEDA. Se lee con unos numeros, despues con otros, y despues otra

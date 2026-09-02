@@ -27,7 +27,7 @@ namespace DealershipCar.Dominio.Pruebas
 	//   3. Y ESTA ES LA QUE DECIDE: "cual decidio" TIENE TRES RESPUESTAS HONESTAS y un conjunto de
 	//      dos miembros tiene dos. DueAssessment ya lo descubrio y lo resolvio con DOS PREDICADOS
 	//      TOTALES -- DecidedByTime y DecidedByDistance -- que pueden ser los dos verdaderos a la
-	//      vez, y su frase dice "decided by time and distance". Un EnvelopeDimension obligaria a
+	//      vez, y su frase dice "decidido por tiempo y distancia". Un EnvelopeDimension obligaria a
 	//      elegir una de las dos en el empate, o a agregarle un tercer miembro que ya no seria una
 	//      dimension. Es exactamente el argumento de L9 -- que EnvelopeStanding no sea un booleano
 	//      -- aplicado a la otra pregunta del slice.
@@ -103,8 +103,8 @@ namespace DealershipCar.Dominio.Pruebas
 		[Test]
 		public void EachMeasuredDimensionNamesItselfInItsOwnClause()
 		{
-			Assert.That(LaDimensionDeTiempo().Describe(), Does.Contain("time"));
-			Assert.That(LaDimensionDeDistancia().Describe(), Does.Contain("distance"));
+			Assert.That(LaDimensionDeTiempo().Describe(), Does.Contain("tiempo"));
+			Assert.That(LaDimensionDeDistancia().Describe(), Does.Contain("distancia"));
 		}
 
 		// Y el nombre NO SALE como valor: el miembro que lo lleva no es alcanzable desde afuera
@@ -147,7 +147,7 @@ namespace DealershipCar.Dominio.Pruebas
 			Assert.That(tie.DecidedByDistance, Is.True,
 				"Las dos llegaron igual de lejos, asi que deciden las dos. Con un solo miembro de "
 				+ "un conjunto de dos habria que elegir una, y elegir seria inventar.");
-			Assert.That(tie.Describe(), Does.Contain("time and distance"));
+			Assert.That(tie.Describe(), Does.Contain("tiempo y distancia"));
 		}
 
 		// Y cuando decide UNA sola, los dos predicados tambien lo dicen -- asi que la forma de dos
@@ -161,7 +161,7 @@ namespace DealershipCar.Dominio.Pruebas
 
 			Assert.That(porDistancia.DecidedByDistance, Is.True);
 			Assert.That(porDistancia.DecidedByTime, Is.False);
-			Assert.That(porDistancia.Describe(), Does.Contain("decided by distance"));
+			Assert.That(porDistancia.Describe(), Does.Contain("decidido por distancia"));
 		}
 
 		private LimitStanding LaDimensionDeTiempo()

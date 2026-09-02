@@ -403,7 +403,7 @@ namespace DealershipCar.Dominio.Pruebas
 				"Y con su procedencia adentro, que es lo que la separa de un folleto.");
 
 			foreach (string said in EveryWordTheScreenIsHanded())
-				Assert.That(said, Does.Not.Contain("external services with evidence"),
+				Assert.That(said, Does.Not.Contain("servicios externos con comprobante"),
 					"Un conteo llego a la pantalla. Dos de los tres no existen en ninguna lectura, "
 					+ "asi que un numero ahi lo invento alguien.");
 
@@ -412,7 +412,7 @@ namespace DealershipCar.Dominio.Pruebas
 			string whole = journal.Api.DescribeServicingElsewhereRule(2, 1, 0);
 
 			Assert.That(whole, Does.Contain(TheRuleAsPublished));
-			Assert.That(whole, Does.Contain("external services with evidence 2"));
+			Assert.That(whole, Does.Contain("servicios externos con comprobante 2"));
 			Assert.That(sheet.ServicingRule.Says, Is.Not.EqualTo(whole),
 				"Y las dos frases son distintas. Si fueran iguales, la hoja estaria trayendo la "
 				+ "emparejada y el barrido no tendria nada que encontrar.");
@@ -486,25 +486,25 @@ namespace DealershipCar.Dominio.Pruebas
 		public void TheScreenSaysWhoSendsAFactThatHasNotArrivedAndNeverGuessesIt()
 		{
 			foreach (string sentence in EveryWordTheScreenAddsOfItsOwn())
-				Assert.That(sentence, Does.Not.Contain("this record holds none of the four"),
+				Assert.That(sentence, Does.Not.Contain("no lleva ninguno de los cuatro"),
 					"La frase que decia que el registro no lleva ninguno de los cuatro hechos sigue "
 					+ "ahi, y es falsa desde que la agencia los manda por comando y por feed.");
 
 			Assert.That(
 				TheOwnerIsTold.TheDealershipHasNotSentTheseFactsYet,
-				Does.Contain("the warranty envelope itself, the day the car was handed over, or an "
-					+ "odometer reading taken on or before today"),
+				Does.Contain("el sobre de garantía mismo, el día en que se entregó el carro, o una "
+					+ "lectura del odómetro tomada hoy o antes"),
 				"Los tres hechos, dichos enteros. Con solo la palabra 'odometer' adentro, una frase "
 				+ "que dijera que el odometro no hace falta pasaria igual.");
 			Assert.That(
 				TheOwnerIsTold.TheDealershipHasNotSentTheseFactsYet,
-				Does.Contain("nothing here for you to fill in"),
+				Does.Contain("no hay nada que usted tenga que llenar"),
 				"Y que no hay nada que la persona ponga, dicho entero: es la mitad que un formulario "
 				+ "contradice, y es la que se pierde si esto solo comprobara que aparece la palabra "
 				+ "'dealership'.");
 			Assert.That(
 				TheOwnerIsTold.TheDealershipHasNotSentTheseFactsYet,
-				Does.Contain("not the same as a car with no warranty"),
+				Does.Contain("no es lo mismo que un carro sin garantía"),
 				"Y la lectura equivocada mas cara de todas, dicha en voz alta.");
 
 			// LO QUE SE LE DICE CUANDO EL REGISTRO SE CONTRADICE: que ninguno de los dos hechos lo puso
@@ -512,13 +512,13 @@ namespace DealershipCar.Dominio.Pruebas
 			// a la persona que arregle algo que no rompio.
 			Assert.That(
 				TheOwnerIsTold.TheRecordSaysTwoThingsThatCannotBothBeTrue,
-				Does.Contain("Neither fact came from you"));
+				Does.Contain("Ninguno de los dos hechos vino de usted"));
 			Assert.That(
 				TheOwnerIsTold.TheRecordSaysTwoThingsThatCannotBothBeTrue,
-				Does.Contain("Only your dealership can correct them"));
+				Does.Contain("Solo su agencia puede corregirlos"));
 			Assert.That(
 				TheOwnerIsTold.TheRecordSaysTwoThingsThatCannotBothBeTrue,
-				Does.Contain("nothing above is an estimate of it"),
+				Does.Contain("nada de lo de arriba es una estimación de eso"),
 				"Y que lo que se muestra no es una estimacion de la postura, que es la unica forma de "
 				+ "fallar aca que le cuesta dinero a la persona.");
 
@@ -526,20 +526,20 @@ namespace DealershipCar.Dominio.Pruebas
 			// pantalla lo sigue diciendo con los tres conteos nombrados enteros.
 			Assert.That(
 				TheOwnerIsTold.TheServicingRuleStandingIsNotInThisRecord,
-				Does.Contain("not where your car stands against it"));
+				Does.Contain("no dónde está parado su carro frente a ella"));
 			Assert.That(
 				TheOwnerIsTold.TheServicingRuleStandingIsNotInThisRecord,
-				Does.Contain("how many services this car has had elsewhere, how many of those have "
-					+ "paperwork, and how much scheduled maintenance was missed"));
+				Does.Contain("cuántos servicios ha tenido este carro en otro lado, cuántos de esos "
+					+ "tienen comprobante, y cuánto mantenimiento programado se dejó de hacer"));
 			Assert.That(
 				TheOwnerIsTold.TheServicingRuleStandingIsNotInThisRecord,
-				Does.Contain("Your dealership is who puts them here"));
+				Does.Contain("Quien los pone aquí es su agencia"));
 
 			// Y QUE UN SISTEMA QUE LA LISTA NO NOMBRA NO ES UNO QUE EL ALCANCE DEJE AFUERA. En una
 			// pantalla sin buscador esa distincion no la puede hacer un control: solo la frase.
 			Assert.That(
 				TheOwnerIsTold.ASystemThatIsNotListedWasNotRuledOut,
-				Does.Contain("was not ruled out here"));
+				Does.Contain("no quedó descartado aquí"));
 		}
 
 		// ===== EL BARRIDO LLEGA A LAS HOJAS ==============================================
@@ -558,7 +558,7 @@ namespace DealershipCar.Dominio.Pruebas
 				+ "con su fila por sistema.");
 
 			Assert.That(words, Has.Some.Contains("EngineOil"), "No entro a la lista de fluidos.");
-			Assert.That(words, Has.Some.Contains("Spare tyre"), "No entro a la lista de llantas.");
+			Assert.That(words, Has.Some.Contains("Llanta de repuesto"), "No entro a la lista de llantas.");
 			Assert.That(words, Has.Some.Contains(TheSystemInside), "No entro al arreglo de sistemas.");
 			Assert.That(words, Has.Some.Contains("wear parts"), "No entro al arreglo de exclusiones.");
 			Assert.That(words, Has.Some.Contains(TheRevision), "No leyo ninguna procedencia.");

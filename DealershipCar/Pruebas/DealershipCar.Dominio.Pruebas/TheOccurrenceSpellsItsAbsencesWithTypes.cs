@@ -67,8 +67,8 @@ namespace DealershipCar.Dominio.Pruebas
 		{
 			string reason = RecordedAssessment.None.Describe();
 
-			Assert.That(reason, Does.Contain("not been evaluated"));
-			Assert.That(reason, Does.Contain("not evidence"),
+			Assert.That(reason, Does.Contain("no se ha evaluado"));
+			Assert.That(reason, Does.Contain("no es evidencia"),
 				"Es el mismo cuidado del GAP G2 un piso mas arriba: un NotDue que nadie calculo "
 				+ "no puede sonar igual que uno que la ley decidio.");
 		}

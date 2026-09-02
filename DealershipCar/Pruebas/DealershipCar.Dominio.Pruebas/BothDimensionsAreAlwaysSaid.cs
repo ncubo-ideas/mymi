@@ -75,8 +75,8 @@ namespace DealershipCar.Dominio.Pruebas
 		{
 			foreach (RemainingEnvelope pair in LasDosFormasDelPar())
 			{
-				Assert.That(pair.Describe(), Does.Contain("Time:"), pair.GetType().Name);
-				Assert.That(pair.Describe(), Does.Contain("Distance:"), pair.GetType().Name);
+				Assert.That(pair.Describe(), Does.Contain("Tiempo:"), pair.GetType().Name);
+				Assert.That(pair.Describe(), Does.Contain("Distancia:"), pair.GetType().Name);
 			}
 		}
 
@@ -89,11 +89,11 @@ namespace DealershipCar.Dominio.Pruebas
 				SixtyThousand + TheDeliveryReading - 10, DistanceUnitCode.UnitA,
 				ObservedAt, InsideBothHalves);
 
-			Assert.That(said, Does.Contain("12 months left of 36 months"));
-			Assert.That(said, Does.Contain("10 km left of 60000 km"),
+			Assert.That(said, Does.Contain("12 meses de 36 meses"));
+			Assert.That(said, Does.Contain("10 km de 60000 km"),
 				"La mitad apretada se dice con su numero. Decir solo la comoda es la mitad de la "
 				+ "respuesta y la mitad equivocada.");
-			Assert.That(said, Does.Contain("Inside"));
+			Assert.That(said, Does.Contain("Adentro"));
 		}
 
 		// LEY L9: toda respuesta lleva el instante en que la agencia publico el sobre. Un sobre
@@ -115,9 +115,9 @@ namespace DealershipCar.Dominio.Pruebas
 		{
 			foreach (EnvelopeAnswer answer in LasRespuestasQueElPerfilCompone())
 			{
-				Assert.That(answer.Describe(), Does.Contain("Time:"),
+				Assert.That(answer.Describe(), Does.Contain("Tiempo:"),
 					answer.GetType().Name + " no dice la mitad de tiempo.");
-				Assert.That(answer.Describe(), Does.Contain("Distance:"),
+				Assert.That(answer.Describe(), Does.Contain("Distancia:"),
 					answer.GetType().Name + " no dice la mitad de distancia.");
 			}
 		}
@@ -144,10 +144,10 @@ namespace DealershipCar.Dominio.Pruebas
 				"Entro o salio una variante de EnvelopeAnswer. Cada una tiene que decidir si lleva "
 				+ "las dos mitades o si es una de las dos que no tienen ninguna.");
 
-			Assert.That(SinSobre().Describe(), Does.Not.Contain("Time:"),
+			Assert.That(SinSobre().Describe(), Does.Not.Contain("Tiempo:"),
 				"Sin sobre publicado no hay limites, asi que no queda nada de nada: la frase lo "
 				+ "dice con palabras en vez de con dos ceros.");
-			Assert.That(SinEntrega().Describe(), Does.Not.Contain("Time:"),
+			Assert.That(SinEntrega().Describe(), Does.Not.Contain("Tiempo:"),
 				"Sin entrega no hay ancla, y las dos mitades se miden desde ahi.");
 		}
 

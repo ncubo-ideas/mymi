@@ -78,7 +78,7 @@ namespace DealershipCar.Dominio.Pruebas
 				schedule.ReadDueState(OperationKindCode.WearPartReplacement), Is.EqualTo("NotDue"));
 			Assert.That(
 				schedule.ReadDueReason(OperationKindCode.WearPartReplacement),
-				Does.Contain("no usable reading"),
+				Does.Contain("ninguna lectura usable"),
 				"Y lo dice: ese NotDue NO es evidencia de que la operacion no venza (GAP G2). Es "
 				+ "que todavia no se observo nada con que medirla.");
 

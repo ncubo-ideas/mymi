@@ -17,7 +17,7 @@ namespace DealershipCar.Dominio
 		/// </summary>
 		internal static string TheEnvelopeQuestion()
 		{
-			return "This vehicle's warranty envelope";
+			return "El sobre de garantía de este vehículo";
 		}
 
 		/// <summary>
@@ -27,9 +27,9 @@ namespace DealershipCar.Dominio
 		/// </summary>
 		internal static string TheStandingIsNotAnAdjudication()
 		{
-			return "Standing only: this states where this vehicle stands against the envelope the "
-				+ "dealership published, and nothing about whether a claim would be paid -- that is "
-				+ "the manufacturer's to decide, not this record's.";
+			return "Solo posición: esto dice dónde está parado este vehículo frente al sobre que "
+				+ "publicó la agencia, y nada sobre si un reclamo se pagaría -- eso lo decide el "
+				+ "fabricante, no este registro.";
 		}
 
 		/// <summary>

@@ -156,8 +156,8 @@ namespace DealershipCar.Dominio.Pruebas
 
 			string reason = journal.Api.ReadDueReason("FluidChange");
 
-			Assert.That(reason, Does.Contain("time:"));
-			Assert.That(reason, Does.Contain("distance:"),
+			Assert.That(reason, Does.Contain("tiempo:"));
+			Assert.That(reason, Does.Contain("distancia:"),
 				"Las dos dimensiones siguen ahi: SevereDuty no volvio otra operacion a esta.");
 			Assert.That(reason, Does.Contain("256"),
 				"Y el limite que se compara es el ESCALADO, no el declarado.");
@@ -175,7 +175,7 @@ namespace DealershipCar.Dominio.Pruebas
 			Assert.That(journal.Api.ReadDueState("FluidChange"), Is.EqualTo("NotDue"),
 				"15000 unidades recorridas de un limite de 10000, y la operacion NO vence: con "
 				+ "LowDistance la dimension de distancia no se evalua.");
-			Assert.That(journal.Api.ReadDueReason("FluidChange"), Does.Contain("LowDistance"),
+			Assert.That(journal.Api.ReadDueReason("FluidChange"), Does.Contain("de poca distancia"),
 				"Y lo dice: OHS-07 exige poder mostrar cual perfil aplico.");
 		}
 

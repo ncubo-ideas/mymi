@@ -313,7 +313,7 @@ namespace DealershipCar.Dominio.Pruebas
 
 			Assert.That(
 				after.DescribePublishedWarrantyEnvelope(),
-				Does.Contain("not published"),
+				Does.Contain("no ha publicado"),
 				"Y la mitad publicada contesta con palabras igual, que es la ley L7: que a este "
 				+ "vehiculo le falte todo no vuelve incitable lo que la agencia publico -- o no "
 				+ "publico -- para cualquiera.");

@@ -1,5 +1,6 @@
 using System;
 using DealershipCar.Mcp;
+using DealershipCar.Wasm.Parts;
 using DealershipCar.Mcp.Tools;
 using NUnit.Framework;
 
@@ -148,7 +149,7 @@ namespace DealershipCar.Dominio.Pruebas
 				// suite entera verde.
 				foreach (PublishedFluid each in sheet.Fluids)
 				{
-					Assert.That(each.Says, Does.StartWith(each.Kind),
+					Assert.That(each.Says, Does.StartWith(HowACanonNameReads.AFluid(each.Kind)),
 						$"'{each.Kind}' contesto con la frase de otro fluido.");
 					Assert.That(each.Published, Is.EqualTo(each.Kind == "EngineOil"),
 						$"'{each.Kind}': solo el aceite se publico en esta revision.");
@@ -156,7 +157,7 @@ namespace DealershipCar.Dominio.Pruebas
 
 				foreach (PublishedTyre each in sheet.Tyres)
 				{
-					Assert.That(each.Says, Does.StartWith(each.Position),
+					Assert.That(each.Says, Does.StartWith("Llanta " + HowACanonNameReads.ATyre(each.Position).ToLowerInvariant()),
 						$"'{each.Position}' contesto con la frase de otra posicion.");
 					Assert.That(each.Published, Is.EqualTo(each.Position == "Front"),
 						$"'{each.Position}': solo la delantera se publico en esta revision.");

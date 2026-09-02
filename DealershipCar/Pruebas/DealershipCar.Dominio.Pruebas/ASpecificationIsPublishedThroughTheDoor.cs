@@ -49,7 +49,7 @@ namespace DealershipCar.Dominio.Pruebas
 		// EL DECIMAL, LAS DOS MITADES DE UNA VEZ. El journal escribe un decimal sin los ceros que le
 		// sobran a la derecha (MEDIDO en T0/S2), asi que una capacidad publicada como 2.40 vuelve
 		// como 2.4: mismo valor, distinto ToString. Sin normalizar en la frontera, la respuesta viva
-		// dice "capacity 2.40" y la reproducida dice "capacity 2.4" -- la misma pregunta contestada
+		// dice "capacidad 2.40" y la reproducida dice "capacidad 2.4" -- la misma pregunta contestada
 		// de dos maneras segun si la app se acaba de abrir, sin revision de por medio y sin nada que
 		// senalar.
 		[Test]
@@ -59,7 +59,7 @@ namespace DealershipCar.Dominio.Pruebas
 
 			string live = TheFluidClause("EngineOil");
 
-			Assert.That(live, Does.Contain("capacity 2.4 L"),
+			Assert.That(live, Does.Contain("capacidad 2.4 L"),
 				"Con la forma que va a tener despues del journal, desde la primera lectura.");
 			Assert.That(live, Does.Not.Contain("2.40"),
 				"Y no con la que el editorial escribio, porque esa no sobrevive al replay. El "
@@ -109,7 +109,7 @@ namespace DealershipCar.Dominio.Pruebas
 
 			Assert.That(live, Does.Contain("0W-20"),
 				"Dentro de un mismo segundo manda el orden de llegada, y R2 llego despues.");
-			Assert.That(live, Does.Contain("revision R2"));
+			Assert.That(live, Does.Contain("revisión R2"));
 
 			journal.CloseAndReopenFromTheJournal();
 
@@ -135,7 +135,7 @@ namespace DealershipCar.Dominio.Pruebas
 
 			string live = ThePriceClauseAsOf(Published);
 
-			Assert.That(live, Does.Contain("in force"));
+			Assert.That(live, Does.Contain("está rigiendo"));
 
 			journal.CloseAndReopenFromTheJournal();
 
@@ -183,8 +183,8 @@ namespace DealershipCar.Dominio.Pruebas
 
 			string scope = journal.Api.DescribeCoverageSummary();
 
-			Assert.That(scope, Does.Contain("'POWERTRAIN' is inside the published scope"));
-			Assert.That(scope, Does.Not.Contain("with its own limits"),
+			Assert.That(scope, Does.Contain("'POWERTRAIN' está dentro del alcance publicado"));
+			Assert.That(scope, Does.Not.Contain("con límites propios"),
 				"El sistema no publico limites propios, asi que rige el sobre del vehiculo. Un cero "
 				+ "convertido en limite diria lo contrario, y lo diria en una frase que se lee bien.");
 		}
@@ -246,10 +246,10 @@ namespace DealershipCar.Dominio.Pruebas
 
 			Assert.That(
 				journal.Api.DescribeCoverageSummary(),
-				Does.Contain("'Powertrain-Hybrid' is inside the published scope"),
+				Does.Contain("'Powertrain-Hybrid' está dentro del alcance publicado"),
 				"Recortado en los extremos, y nada mas: tal como lo publicaron.");
 
-			Assert.That(TheFluidClause("EngineOil"), Does.Contain("grade 5W-30 Full Synthetic,"),
+			Assert.That(TheFluidClause("EngineOil"), Does.Contain("grado 5W-30 Full Synthetic,"),
 				"Los espacios de adentro son del texto publicado; los de los extremos son del "
 				+ "transporte.");
 		}

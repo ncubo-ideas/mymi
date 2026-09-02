@@ -78,16 +78,16 @@ namespace DealershipCar.Dominio.Pruebas
 		[Test]
 		public void APriceValidityIsJudgedAtTheWholeSecondTheJournalKeeps()
 		{
-			Assert.That(ThePriceClauseAsOf(ValidUntil), Does.Contain("in force"));
+			Assert.That(ThePriceClauseAsOf(ValidUntil), Does.Contain("está rigiendo"));
 
 			Assert.That(ThePriceClauseAsOf(ValidUntil.AddMilliseconds(500)),
-				Does.Contain("in force"),
+				Does.Contain("está rigiendo"),
 				"Media fraccion despues del ultimo segundo de la vigencia sigue siendo ESE segundo: "
 				+ "es el unico que el journal guardo. Sin truncar en la puerta, este precio se "
 				+ "declara vencido por una fraccion que no existe en ningun lado.");
 
 			Assert.That(ThePriceClauseAsOf(ValidUntil.AddSeconds(1)),
-				Does.Contain("not current"),
+				Does.Contain("no es el vigente"),
 				"Y un segundo entero despues si esta vencido: el truncado no corre la vigencia, la "
 				+ "redondea a la resolucion que hay.");
 		}

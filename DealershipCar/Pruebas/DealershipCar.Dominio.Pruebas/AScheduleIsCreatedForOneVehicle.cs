@@ -96,7 +96,7 @@ namespace DealershipCar.Dominio.Pruebas
 
 			string reason = schedule.ReadDueReason(OperationKindCode.FluidChange);
 
-			Assert.That(reason, Does.Contain("cannot be evaluated"),
+			Assert.That(reason, Does.Contain("no se puede evaluar"),
 				"El limite esta en UnitA y el ancla en UnitB. Las unidades NO se convierten "
 				+ "(OINV-21, ley L7), asi que la distancia no se compara: se suspende.");
 			Assert.That(schedule.ReadDueState(OperationKindCode.FluidChange), Is.EqualTo("NotDue"),
@@ -117,7 +117,7 @@ namespace DealershipCar.Dominio.Pruebas
 
 			Assert.That(
 				schedule.ReadDueReason(OperationKindCode.TimedComponent),
-				Does.Contain("no scheduled"),
+				Does.Contain("no tiene agendada"),
 				"E12, mutar al final: la operacion se arma y se valida ANTES de entrar. Si "
 				+ "quedara sembrada a medias, la agenda tendria una operacion cuya ley nadie "
 				+ "acepto.");

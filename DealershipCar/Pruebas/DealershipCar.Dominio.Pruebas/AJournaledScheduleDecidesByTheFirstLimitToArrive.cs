@@ -50,7 +50,7 @@ namespace DealershipCar.Dominio.Pruebas
 
 			Assert.That(journal.Api.ReadDueState("FluidChange"), Is.EqualTo("DueSoon"));
 			Assert.That(
-				journal.Api.ReadDueReason("FluidChange"), Does.Contain("decided by distance"),
+				journal.Api.ReadDueReason("FluidChange"), Does.Contain("decidido por distancia"),
 				"9000 de 10000 esta dentro del anticipo de 1000; 228 dias de 365 no.");
 		}
 
@@ -63,7 +63,7 @@ namespace DealershipCar.Dominio.Pruebas
 
 			Assert.That(journal.Api.ReadDueState("FluidChange"), Is.EqualTo("DueSoon"));
 			Assert.That(
-				journal.Api.ReadDueReason("FluidChange"), Does.Contain("decided by time"),
+				journal.Api.ReadDueReason("FluidChange"), Does.Contain("decidido por tiempo"),
 				"335 dias de 365 esta dentro del anticipo de 30; 3000 de 10000 no. Ninguna de las "
 				+ "dos dimensiones domina (OINV-20).");
 		}
@@ -101,7 +101,7 @@ namespace DealershipCar.Dominio.Pruebas
 				+ "perdiera en la puerta, la caratula no tendria como saber que aviso dar.");
 			Assert.That(
 				journal.Api.ReadDueReason("FluidChange"),
-				Does.Contain("decided by time and distance"),
+				Does.Contain("decidido por tiempo y distancia"),
 				"Empatadas deciden las dos, y decirlo importa.");
 		}
 
@@ -138,7 +138,7 @@ namespace DealershipCar.Dominio.Pruebas
 				"OINV-21: si alguien hubiera convertido, 40000 seria el limite y esto seria Due.");
 			Assert.That(
 				journal.Api.ReadDueReason("FluidChange"),
-				Does.Contain("units are never converted"),
+				Does.Contain("las unidades nunca se convierten"),
 				"Y el motivo lo dice con todas las letras: ese NotDue no es evidencia de nada "
 				+ "(GAP G2).");
 		}
@@ -163,12 +163,12 @@ namespace DealershipCar.Dominio.Pruebas
 
 			Assert.That(
 				journal.Api.ReadDueReason("FilterChange"),
-				Does.Contain("units are never converted"),
+				Does.Contain("las unidades nunca se convierten"),
 				"El ancla se tomo en UnitB y el limite esta en UnitA. Si la puerta hubiera prestado "
 				+ "la unidad del limite, la agenda estaria midiendo 9000 unidades desde una lectura "
 				+ "que nadie tomo en esa escala.");
 			Assert.That(
-				journal.Api.ReadDueReason("FluidChange"), Does.Contain("decided by distance"),
+				journal.Api.ReadDueReason("FluidChange"), Does.Contain("decidido por distancia"),
 				"Y la MISMA siembra con las dos unidades iguales si mide: es lo que hace que esta "
 				+ "prueba este mirando la unidad del ancla y no otra cosa.");
 		}

@@ -75,7 +75,7 @@ namespace DealershipCar.Dominio.Pruebas
 			journal.Api.Evaluate(AfterSixMonths);
 
 			Assert.That(journal.Api.ReadDueReason("FluidChange"),
-				Does.Contain("units are never converted"),
+				Does.Contain("las unidades nunca se convierten"),
 				"El ancla esta en UnitB y las mediciones en UnitA: dos lineas de medida que nadie "
 				+ "convierte. Si el ancla tomara la unidad del limite las dos serian UnitA, no "
 				+ "habria desajuste, y esta frase no aparecerian.");
@@ -180,7 +180,7 @@ namespace DealershipCar.Dominio.Pruebas
 			Apply(ADealershipNarrative.RevisionSealed(3, "R1"));
 
 			Assert.That(journal.Api.DescribeFluid("EngineOil"),
-				Does.Contain("capacity 4.2 gal").And.Contain("every 10000 km"),
+				Does.Contain("capacidad 4.2 gal").And.Contain("cada 10000 km"),
 				"La capacidad sale en la unidad de volumen en que se publico y el intervalo en la de "
 				+ "distancia en que se publico. Cruzadas, las dos mitades dirian lo contrario y las "
 				+ "dos seguirian siendo nombres legales.");
@@ -196,7 +196,7 @@ namespace DealershipCar.Dominio.Pruebas
 			Apply(ADealershipNarrative.RevisionSealed(3, "R1"));
 
 			Assert.That(journal.Api.DescribeTyre("Front"),
-				Does.Contain("cold pressure 2.4 psi"),
+				Does.Contain("presión en frío 2.4 psi"),
 				"Quien la lee la va a marcar en un manometro: la unidad no es un adorno de la frase.");
 		}
 
@@ -216,7 +216,7 @@ namespace DealershipCar.Dominio.Pruebas
 				journal.Api.DescribeServicePrice(
 					"FluidChange", 10000, "UnitA",
 					new DateTime(2026, 9, 1, 0, 0, 0, DateTimeKind.Utc)),
-				Does.Contain("valid from 2025-08-15 to 2026-12-31"),
+				Does.Contain("vigente del 2025-08-15 al 2026-12-31"),
 				"El desde es el desde y el hasta es el hasta.");
 		}
 
@@ -235,7 +235,7 @@ namespace DealershipCar.Dominio.Pruebas
 					"POWERTRAIN", 36, 60000, "UnitA",
 					new DateTime(2025, 6, 1, 0, 0, 0, DateTimeKind.Utc), 30000, 35000, "UnitA",
 					new DateTime(2026, 9, 1, 0, 0, 0, DateTimeKind.Utc)),
-				Does.Contain("60 months or 100000 km"),
+				Does.Contain("60 meses o 100000 km"),
 				"Y son los limites PROPIOS del sistema los que rigen sobre el sobre del vehiculo, "
 				+ "que llego con 36 y 60000: mas especifico manda.");
 		}
@@ -261,9 +261,9 @@ namespace DealershipCar.Dominio.Pruebas
 			Assert.That(journal.Api.ProhibitedFuelGrades(), Is.EqualTo(new[] { "E85 Flex" }));
 
 			Assert.That(journal.Api.DescribeFuel(),
-				Does.Contain("95 RON Premium (Permitted)")
-					.And.Contain("91 RON regular (Minimum)")
-					.And.Contain("E85 Flex (Prohibited)"));
+				Does.Contain("95 RON Premium (permitido)")
+					.And.Contain("91 RON regular (mínimo)")
+					.And.Contain("E85 Flex (prohibido)"));
 		}
 
 		// LA DISTANCIA Y LOS DIAS DEL INTERVALO PUBLICADO SON DOS COSAS, y cruzados la hoja diria que
@@ -280,7 +280,7 @@ namespace DealershipCar.Dominio.Pruebas
 
 			Assert.That(
 				journal.Api.DescribeServiceInterval("FluidChange", 2000, "UnitA"),
-				Does.Contain("every 10000 km or 365 days"));
+				Does.Contain("cada 10000 km o 365 días"));
 		}
 
 		// LO QUE UNA EXCLUSION EXCLUYE Y LA CONDICION BAJO LA CUAL MUERDE SON DOS TEXTOS. Cruzados, la
@@ -297,7 +297,7 @@ namespace DealershipCar.Dominio.Pruebas
 
 			Assert.That(journal.Api.DescribeCoverageSummary(),
 				Does.Contain(
-					"Exclusion on 'POWERTRAIN': wear parts Stated to apply when: when the part is a "
+					"Exclusión sobre 'POWERTRAIN': wear parts Publicada para aplicar cuando: when the part is a "
 					+ "consumable."));
 		}
 
@@ -313,8 +313,8 @@ namespace DealershipCar.Dominio.Pruebas
 			Apply(ADealershipNarrative.RevisionSealed(3, "R1"));
 
 			Assert.That(journal.Api.DescribeServicingElsewhereRule(2, 1, 0),
-				Does.Contain("Servicing elsewhere: \"service anywhere qualified\"")
-					.And.Contain("What preserves cover: \"keep every invoice\""));
+				Does.Contain("Servicio en otro taller: \"service anywhere qualified\"")
+					.And.Contain("Qué conserva la cobertura: \"keep every invoice\""));
 		}
 
 		// LOS DOS CODIGOS DE UNA SUSTITUCION SON DOS. Cruzados, la sucesora quedaria apagada y la
@@ -381,9 +381,9 @@ namespace DealershipCar.Dominio.Pruebas
 
 			(string Where, string Says, Func<string> Read)[] normalized =
 			{
-				("la capacidad del fluido", "capacity 4.2 L",
+				("la capacidad del fluido", "capacidad 4.2 L",
 					() => journal.Api.DescribeFluid("EngineOil")),
-				("la presion de la llanta", "cold pressure 2.4 bar",
+				("la presión de la llanta", "presión en frío 2.4 bar",
 					() => journal.Api.DescribeTyre("Front")),
 				("el monto del precio", "89.9 USD",
 					() => journal.Api.DescribeServicePrice(
@@ -563,7 +563,7 @@ namespace DealershipCar.Dominio.Pruebas
 			Apply(ADealershipNarrative.Envelope(1, 36, 60000, "UnitB", ThePublication));
 
 			Assert.That(journal.Api.DescribePublishedWarrantyEnvelope(),
-				Does.Contain("36 months").And.Contains("60000 mi"));
+				Does.Contain("36 meses").And.Contains("60000 mi"));
 		}
 
 		// LOS DOS INSTANTES DE ESTE PAR TAMPOCO. El de la entrega y el de la publicacion del sobre son

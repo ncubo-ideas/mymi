@@ -128,9 +128,9 @@ namespace DealershipCar.Dominio.Pruebas
 		[Test]
 		public void EachAbsenceAsksForDifferentWork()
 		{
-			Assert.That(TheAbsentDelivery().Describe(), Does.Contain("no delivery"));
-			Assert.That(TheAbsentReading().Describe(), Does.Contain("no odometer reading"));
-			Assert.That(TheUnitMismatch().Describe(), Does.Contain("never converted"));
+			Assert.That(TheAbsentDelivery().Describe(), Does.Contain("ninguna entrega"));
+			Assert.That(TheAbsentReading().Describe(), Does.Contain("ninguna lectura del odómetro"));
+			Assert.That(TheUnitMismatch().Describe(), Does.Contain("nunca se convierten"));
 		}
 
 		// NINGUN LLAMADOR RAMIFICA POR EL TIPO CONCRETO, y esto lo hace ejecutable: cada una de las

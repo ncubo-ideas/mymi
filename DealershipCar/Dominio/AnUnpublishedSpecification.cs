@@ -42,8 +42,8 @@ namespace DealershipCar.Dominio
 		internal override string Describe()
 		{
 			return _subject
-				+ ": not published for this model, so there is nothing to quote and no revision to "
-				+ "name.";
+				+ ": no se ha publicado nada para este modelo, así que no hay nada que citar ni "
+				+ "ninguna revisión que nombrar.";
 		}
 
 		/// <summary>

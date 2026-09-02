@@ -166,7 +166,7 @@ namespace DealershipCar.Dominio.Pruebas
 				"15000 unidades recorridas de un limite de 10000, y aun asi no vence: con "
 				+ "LowDistance los limites de distancia se ignoran y decide el tiempo, que va en "
 				+ "233 de 365.");
-			Assert.That(vencimiento.Describe(), Does.Contain("LowDistance"));
+			Assert.That(vencimiento.Describe(), Does.Contain("de poca distancia"));
 		}
 
 		private static bool EsExpuesto(MemberInfo miembro)

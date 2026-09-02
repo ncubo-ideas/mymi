@@ -19,20 +19,20 @@
 <div class="stack stack--inner" id="my-vehicle">
     <section class="block">
         <div class="sect-head">
-            <h2>The manufacturer's sheet</h2>
+            <h2>La ficha del fabricante</h2>
             <span class="prov" id="my-vehicle-provenance">
                 @Sheet.Model@(Sheet.HasASealedRevision ? " · " + Sheet.CurrentRevision : "")
             </span>
         </div>
 
         <p class="note note--tight" id="my-vehicle-scope">
-            What the manufacturer published for model <span class="mono">@Sheet.Model</span>.
+            Lo que el fabricante publicó para el modelo <span class="mono">@Sheet.Model</span>.
             @if (Sheet.HasASealedRevision)
             {
                 <span>
-                    The current sheet is revision <span class="mono">@Sheet.CurrentRevision</span>,
-                    published @Sheet.CurrentRevisionPublishedAt. Each line below names the revision it
-                    came from, which is not always this one.
+                    La ficha vigente es la revisión <span class="mono">@Sheet.CurrentRevision</span>,
+                    publicada el @Sheet.CurrentRevisionPublishedAt. Cada línea de abajo nombra la
+                    revisión de la que salió, que no siempre es esta.
                 </span>
             }
         </p>
@@ -47,7 +47,7 @@
     else
     {
         <section class="block">
-            <div class="block__title">Fluids</div>
+            <div class="block__title">Fluidos</div>
 
             @if (publishedFluids.Count > 0)
             {
@@ -64,8 +64,11 @@
                 <button class="disclosure" type="button" id="fluids-unpublished-toggle"
                         @onclick="@(() => showUnpublishedFluids = !showUnpublishedFluids)">
                     <Glyph Name="info" Size="16" />
-                    <span>@Absences(unpublishedFluids.Count, Sheet.Fluids.Count, "fluids")</span>
-                    <span class="disclosure__more">@(showUnpublishedFluids ? "Hide" : "Show")</span>
+                    <span>
+                        @Absences(unpublishedFluids.Count, Sheet.Fluids.Count, "fluidos",
+                            "no publicados")
+                    </span>
+                    <span class="disclosure__more">@(showUnpublishedFluids ? "Ocultar" : "Ver")</span>
                 </button>
 
                 @if (showUnpublishedFluids)
@@ -81,7 +84,7 @@
         </section>
 
         <section class="block">
-            <div class="block__title">Tyres</div>
+            <div class="block__title">Llantas</div>
 
             @if (publishedTyres.Count > 0)
             {
@@ -98,8 +101,11 @@
                 <button class="disclosure" type="button" id="tyres-unpublished-toggle"
                         @onclick="@(() => showUnpublishedTyres = !showUnpublishedTyres)">
                     <Glyph Name="info" Size="16" />
-                    <span>@Absences(unpublishedTyres.Count, Sheet.Tyres.Count, "tyre positions")</span>
-                    <span class="disclosure__more">@(showUnpublishedTyres ? "Hide" : "Show")</span>
+                    <span>
+                        @Absences(unpublishedTyres.Count, Sheet.Tyres.Count, "posiciones de llanta",
+                            "no publicadas")
+                    </span>
+                    <span class="disclosure__more">@(showUnpublishedTyres ? "Ocultar" : "Ver")</span>
                 </button>
 
                 @if (showUnpublishedTyres)
@@ -116,7 +122,7 @@
 
         <section class="block">
             <div class="sect-head">
-                <div class="block__title">Fuel</div>
+                <div class="block__title">Combustible</div>
                 <span class="prov">@Provenance(Sheet.Fuel.Revision)</span>
             </div>
 
@@ -128,10 +134,10 @@
                 @if (Sheet.Fuel.Published)
                 {
                     <div class="chiprow" id="fuel-prohibited">
-                        <span class="chiprow__label">Never put in</span>
+                        <span class="chiprow__label">Nunca le eche</span>
                         @if (Sheet.Fuel.ProhibitedGrades.Length == 0)
                         {
-                            <span class="chiprow__none">nothing was published as prohibited</span>
+                            <span class="chiprow__none">no se publicó ninguno como prohibido</span>
                         }
                         else
                         {
@@ -146,10 +152,10 @@
                     </div>
 
                     <div class="chiprow" id="fuel-minimum">
-                        <span class="chiprow__label">At least</span>
+                        <span class="chiprow__label">Como mínimo</span>
                         @if (Sheet.Fuel.MinimumGrade.Length == 0)
                         {
-                            <span class="chiprow__none">no minimum grade was published</span>
+                            <span class="chiprow__none">no se publicó ningún grado mínimo</span>
                         }
                         else
                         {
@@ -158,10 +164,10 @@
                     </div>
 
                     <div class="chiprow" id="fuel-permitted">
-                        <span class="chiprow__label">Also allowed</span>
+                        <span class="chiprow__label">También permitidos</span>
                         @if (Sheet.Fuel.PermittedGrades.Length == 0)
                         {
-                            <span class="chiprow__none">nothing else was published as permitted</span>
+                            <span class="chiprow__none">no se publicó ningún otro como permitido</span>
                         }
                         else
                         {
@@ -220,7 +226,7 @@
             var line = new Line
             {
                 Anchor = "fluid-" + fluid.Kind,
-                Label = AppState.Spaced(fluid.Kind),
+                Label = HowACanonNameReads.AFluid(fluid.Kind),
                 Says = fluid.Says,
                 Revision = fluid.Revision,
                 Symbol = "drop",
@@ -238,7 +244,7 @@
             var line = new Line
             {
                 Anchor = "tyre-" + tyre.Position,
-                Label = AppState.Spaced(tyre.Position),
+                Label = HowACanonNameReads.ATyre(tyre.Position),
                 Says = tyre.Says,
                 Revision = tyre.Revision,
                 Symbol = "tyre",
@@ -256,6 +262,10 @@
 
     private static string Provenance(string revision) => revision.Length > 0 ? revision : "--";
 
-    private static string Absences(int absent, int total, string subject) =>
-        $"{absent} of the {total} {subject} — not published for this model";
+    /// <summary>
+    /// Cuantos de los items de una lista no tiene publicados este modelo. El participio entra por
+    /// parametro porque concuerda con el sujeto, y el sujeto lo elige la seccion.
+    /// </summary>
+    private static string Absences(int absent, int total, string subject, string unpublished) =>
+        $"{absent} de {total} {subject} — {unpublished} para este modelo";
 }

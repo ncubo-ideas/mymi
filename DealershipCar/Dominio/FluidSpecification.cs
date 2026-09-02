@@ -63,11 +63,11 @@ namespace DealershipCar.Dominio
 		/// </summary>
 		internal string Describe()
 		{
-			return _kind.Name
-				+ ": grade " + _grade
-				+ ", capacity " + _capacity.ToString(CultureInfo.InvariantCulture)
+			return _kind.HowItIsSaid
+				+ ": grado " + _grade
+				+ ", capacidad " + _capacity.ToString(CultureInfo.InvariantCulture)
 				+ " " + _capacityUnit.Name
-				+ ", changed " + _changeInterval.Describe() + ".";
+				+ ", se cambia " + _changeInterval.Describe() + ".";
 		}
 	}
 }

@@ -176,7 +176,7 @@ namespace DealershipCar.Dominio.Pruebas
 			Assert.That(empty.CoverageExclusions(), Is.Empty);
 			Assert.That(empty.ReadCoverageRevision(), Is.EqualTo(""));
 			Assert.That(empty.DescribeCoverageSummary(), Is.Not.Empty);
-			Assert.That(empty.DescribeCoverageSummary(), Does.Contain("not published"));
+			Assert.That(empty.DescribeCoverageSummary(), Does.Contain("no se ha publicado nada"));
 		}
 
 		// Un alcance que solo publico exclusiones es un alcance: el catalogo lo conoce y el
@@ -220,8 +220,8 @@ namespace DealershipCar.Dominio.Pruebas
 
 			Assert.That(specification.CoveredSystems(),
 				Is.EqualTo(new[] { "ENG-BLOCK", "HV-BATTERY" }));
-			Assert.That(specification.DescribeCoverageSummary(), Does.Contain("120 months"));
-			Assert.That(specification.DescribeCoverageSummary(), Does.Not.Contain("96 months"));
+			Assert.That(specification.DescribeCoverageSummary(), Does.Contain("120 meses"));
+			Assert.That(specification.DescribeCoverageSummary(), Does.Not.Contain("96 meses"));
 		}
 
 		// Publicar un sistema sin codigo, o una exclusion sin texto, es un defecto de quien

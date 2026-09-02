@@ -90,12 +90,12 @@ namespace DealershipCar.Dominio.Pruebas
 			string answer = specification.DescribeServiceInterval(
 				OperationKindCode.FluidChange, 8400, DistanceUnitCode.UnitB);
 
-			Assert.That(answer, Does.Contain("cannot be evaluated"));
-			Assert.That(answer, Does.Contain("published in km"));
+			Assert.That(answer, Does.Contain("no se puede evaluar"));
+			Assert.That(answer, Does.Contain("publicado en km"));
 			Assert.That(answer, Does.Contain("8400 mi"),
 				"Se nombran las DOS unidades. 'No se puede evaluar' sin decir cual contra cual "
 				+ "obliga a adivinar donde esta el problema.");
-			Assert.That(answer, Does.Contain("never converted"));
+			Assert.That(answer, Does.Contain("nunca se convierten"));
 		}
 
 		// Y NO APARECE NINGUN NUMERO CONVERTIDO. Los dos numeros de la frase son los dos que
@@ -132,7 +132,7 @@ namespace DealershipCar.Dominio.Pruebas
 				OperationKindCode.FluidChange, 8400, DistanceUnitCode.UnitA);
 
 			Assert.That(answer, Does.Contain("8400 km"));
-			Assert.That(answer, Does.Not.Contain("cannot be evaluated"));
+			Assert.That(answer, Does.Not.Contain("no se puede evaluar"));
 		}
 
 		// Un intervalo publicado SOLO como plazo tampoco se puede comparar con una distancia. No es
@@ -148,8 +148,8 @@ namespace DealershipCar.Dominio.Pruebas
 			string answer = specification.DescribeServiceInterval(
 				OperationKindCode.TimedComponent, 8400, DistanceUnitCode.UnitA);
 
-			Assert.That(answer, Does.Contain("cannot be evaluated"));
-			Assert.That(answer, Does.Contain("1825 days"));
+			Assert.That(answer, Does.Contain("no se puede evaluar"));
+			Assert.That(answer, Does.Contain("1825 días"));
 		}
 
 		// LA AUSENCIA DE CONVERSION, AFIRMADA COMO LISTA BLANCA. Un Convert, un ToUnitA, un factor
@@ -230,7 +230,7 @@ namespace DealershipCar.Dominio.Pruebas
 
 		private static string SinLaProcedencia(string frase)
 		{
-			int procedencia = frase.IndexOf(" Published in revision", StringComparison.Ordinal);
+			int procedencia = frase.IndexOf(" Publicado en la revisión", StringComparison.Ordinal);
 
 			return procedencia < 0 ? frase : frase.Substring(0, procedencia);
 		}

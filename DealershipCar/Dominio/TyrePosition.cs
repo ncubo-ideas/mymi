@@ -26,22 +26,29 @@ namespace DealershipCar.Dominio
 	internal sealed class TyrePosition
 	{
 		/// <summary>Las de adelante.</summary>
-		internal static readonly TyrePosition Front = new TyrePosition("Front");
+		internal static readonly TyrePosition Front = new TyrePosition("Front", "Delantera");
 
 		/// <summary>Las de atras.</summary>
-		internal static readonly TyrePosition Rear = new TyrePosition("Rear");
+		internal static readonly TyrePosition Rear = new TyrePosition("Rear", "Trasera");
 
 		/// <summary>La de repuesto, que suele llevar su propia presion.</summary>
-		internal static readonly TyrePosition Spare = new TyrePosition("Spare");
+		internal static readonly TyrePosition Spare = new TyrePosition("Spare", "De repuesto");
 
 		/// <summary>
 		/// El nombre. Es lo unico que sale del conjunto hacia afuera; el objeto no se entrega.
 		/// </summary>
 		internal string Name { get; }
 
-		private TyrePosition(string name)
+		/// <summary>
+		/// Como se dice esta posicion en la frase que alguien lee. NO es lo que cruza la puerta
+		/// ni lo que viaja en el wire: eso sigue siendo <see cref="Name"/>.
+		/// </summary>
+		internal string HowItIsSaid { get; }
+
+		private TyrePosition(string name, string howItIsSaid)
 		{
 			Name = name;
+			HowItIsSaid = howItIsSaid;
 		}
 
 		/// <summary>

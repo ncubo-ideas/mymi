@@ -44,8 +44,8 @@ namespace DealershipCar.Dominio.Pruebas
 			specification.SealRevision(TheRevision);
 
 			Assert.That(specification.DescribeTyre(TyrePositionCode.Front), Is.EqualTo(
-				"Front: size 205/55R16, cold pressure 2.4 bar, ratings 91V. "
-				+ "Published in revision REV-2025-01."));
+				"Llanta delantera: medida 205/55R16, presión en frío 2.4 bar, clasificaciones 91V. "
+				+ "Publicado en la revisión REV-2025-01."));
 		}
 
 		// PRIMERA MITAD DEL TEST 9 DE §11: publicada en UnitA, contestada en UnitA. Ni se
@@ -60,7 +60,7 @@ namespace DealershipCar.Dominio.Pruebas
 
 			string answer = specification.DescribeTyre(TyrePositionCode.Rear);
 
-			Assert.That(answer, Does.Contain("cold pressure 2.6 psi"));
+			Assert.That(answer, Does.Contain("presión en frío 2.6 psi"));
 			Assert.That(answer, Does.Not.Contain("bar"),
 				"Ley L8: la unidad publicada es la que sale. Si apareciera la otra, alguien "
 				+ "convirtio -- y una presion convertida es alguien inflando una llanta al numero "
@@ -104,7 +104,7 @@ namespace DealershipCar.Dominio.Pruebas
 
 			string answer = specification.DescribeTyre(TyrePositionCode.Rear);
 
-			Assert.That(answer, Does.Contain("Rear"));
+			Assert.That(answer, Does.Contain("trasera"));
 			Assert.That(answer, Does.Not.Contain("205/55R16"));
 			Assert.That(HayAlgunDigito(answer), Is.False,
 				"Una ausencia con un numero adentro se lee como un dato publicado, que es la forma "

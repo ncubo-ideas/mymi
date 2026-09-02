@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Text.Json;
 using DealershipCar.Mcp;
 using DealershipCar.Mcp.Tools;
+using DealershipCar.Wasm.Parts;
 using NUnit.Framework;
 
 namespace DealershipCar.Dominio.Pruebas
@@ -71,7 +72,7 @@ namespace DealershipCar.Dominio.Pruebas
 				Assert.That(each.Value, Is.EqualTo(""), each.Key);
 
 			foreach (KeyValuePair<string, string> each in TheSentenceOfEveryItem(takes))
-				Assert.That(each.Value, Does.Contain("not published"), each.Key);
+				Assert.That(each.Value, Does.Contain("no se ha publicado nada"), each.Key);
 
 			// Y EL CONTENIDO NO SE ESCAPA POR NINGUN CAMPO. Se mide sobre la respuesta ENTERA
 			// serializada y no sobre los campos que uno se acuerda de mirar: una hoja a medio cargar
@@ -112,7 +113,7 @@ namespace DealershipCar.Dominio.Pruebas
 				Assert.That(each.Value, Is.EqualTo(TheFirstRevision), each.Key);
 
 			foreach (KeyValuePair<string, string> each in TheSentenceOfEveryItem(takes))
-				Assert.That(each.Value, Does.Contain("revision " + TheFirstRevision), each.Key);
+				Assert.That(each.Value, Does.Contain("revisión " + TheFirstRevision), each.Key);
 
 			Assert.That(takes.Fuel.MinimumGrade, Is.EqualTo("91 RON regular"));
 			Assert.That(takes.Fuel.PermittedGrades, Is.EqualTo(new[] { "95 RON Premium" }));
@@ -132,7 +133,7 @@ namespace DealershipCar.Dominio.Pruebas
 
 			foreach (PublishedFluid each in takes.Fluids)
 			{
-				Assert.That(each.Says, Does.StartWith(each.Kind), each.Kind);
+				Assert.That(each.Says, Does.StartWith(HowACanonNameReads.AFluid(each.Kind)), each.Kind);
 				Assert.That(each.Published, Is.EqualTo(each.Kind == "EngineOil"), each.Kind);
 				Assert.That(
 					each.Revision, Is.EqualTo(each.Kind == "EngineOil" ? TheFirstRevision : ""),
@@ -140,14 +141,17 @@ namespace DealershipCar.Dominio.Pruebas
 				Assert.That(
 					each.Says,
 					each.Kind == "EngineOil"
-						? Does.Contain("revision " + TheFirstRevision)
-						: Does.Contain("not published"),
+						? Does.Contain("revisión " + TheFirstRevision)
+						: Does.Contain("no se ha publicado nada"),
 					each.Kind);
 			}
 
 			foreach (PublishedTyre each in takes.Tyres)
 			{
-				Assert.That(each.Says, Does.StartWith(each.Position), each.Position);
+				Assert.That(
+					each.Says,
+					Does.StartWith(TheTyreSubjectFor(each.Position)),
+					each.Position);
 				Assert.That(each.Published, Is.EqualTo(each.Position == "Front"), each.Position);
 				Assert.That(
 					each.Revision, Is.EqualTo(each.Position == "Front" ? TheFirstRevision : ""),
@@ -200,8 +204,8 @@ namespace DealershipCar.Dominio.Pruebas
 				Assert.That(
 					each.Value,
 					each.Key == "aceite"
-						? Does.Contain("revision " + TheSecondRevision)
-						: Does.Contain("not published"),
+						? Does.Contain("revisión " + TheSecondRevision)
+						: Does.Contain("no se ha publicado nada"),
 					each.Key);
 
 			Assert.That(takes.Fuel.MinimumGrade, Is.EqualTo(""));
@@ -245,9 +249,9 @@ namespace DealershipCar.Dominio.Pruebas
 
 			Assert.That(current.Prices, Has.Count.EqualTo(1));
 			Assert.That(current.Prices[0].Says, Does.Contain("89.9 USD"));
-			Assert.That(current.Prices[0].Says, Does.Contain("valid from"));
-			Assert.That(current.Prices[0].Says, Does.Contain("that validity is in force"));
-			Assert.That(current.Prices[0].Says, Does.Contain("revision " + TheFirstRevision));
+			Assert.That(current.Prices[0].Says, Does.Contain("vigente del"));
+			Assert.That(current.Prices[0].Says, Does.Contain("esa vigencia está rigiendo"));
+			Assert.That(current.Prices[0].Says, Does.Contain("revisión " + TheFirstRevision));
 			Assert.That(current.AskedAt, Is.Not.Empty,
 				"Y se dice CONTRA QUE INSTANTE se juzgo. Sin el, 'vigente' no es respecto de nada.");
 
@@ -255,7 +259,7 @@ namespace DealershipCar.Dominio.Pruebas
 				TheAssistant().WhatTheServiceCosts(MaintenanceOperation.FluidChange, 20000);
 
 			Assert.That(stale.Prices, Has.Count.EqualTo(1));
-			Assert.That(stale.Prices[0].Says, Does.Contain("that validity has passed"),
+			Assert.That(stale.Prices[0].Says, Does.Contain("esa vigencia ya pasó"),
 				"Un precio viejo mostrado como vigente es una promesa que la sucursal no hizo.");
 		}
 
@@ -276,8 +280,8 @@ namespace DealershipCar.Dominio.Pruebas
 
 			Assert.That(nothingAsked.MilestoneAsked, Is.EqualTo(0));
 			Assert.That(nothingAsked.Prices, Is.Empty);
-			Assert.That(nothingAsked.Detail, Does.Contain("No milestone was named"));
-			Assert.That(nothingAsked.Detail, Does.Not.Contain("Nothing is published at that"));
+			Assert.That(nothingAsked.Detail, Does.Contain("No se nombró ningún hito"));
+			Assert.That(nothingAsked.Detail, Does.Not.Contain("No hay nada publicado en ese"));
 
 			// Y CON UN HITO QUE NADIE PUBLICO, LA OTRA RAZON. Las dos frases son distintas porque los
 			// dos hechos lo son, y con una sola el asistente no puede saber cual le toco.
@@ -285,8 +289,8 @@ namespace DealershipCar.Dominio.Pruebas
 				TheAssistant().WhatTheServiceCosts(MaintenanceOperation.FluidChange, 15000);
 
 			Assert.That(wrongMilestone.Prices, Is.Empty);
-			Assert.That(wrongMilestone.Detail, Does.Contain("Nothing is published at that milestone"));
-			Assert.That(wrongMilestone.Detail, Does.Not.Contain("No milestone was named"));
+			Assert.That(wrongMilestone.Detail, Does.Contain("No hay nada publicado en ese hito"));
+			Assert.That(wrongMilestone.Detail, Does.Not.Contain("No se nombró ningún hito"));
 		}
 
 		// EL INTERVALO PUBLICADO SE CITA ENTERO, Y LA POSICION DE ESTE VEHICULO NO. Es la decision de
@@ -307,34 +311,34 @@ namespace DealershipCar.Dominio.Pruebas
 			Assert.That(pricing.IntervalRevision, Is.EqualTo(TheFirstRevision));
 
 			// LA FRASE PUBLICADA LLEGA, con su procedencia adentro.
-			Assert.That(pricing.IntervalSays, Does.Contain("serviced every"));
-			Assert.That(pricing.IntervalSays, Does.Contain("365 days"));
+			Assert.That(pricing.IntervalSays, Does.Contain("se hace cada"));
+			Assert.That(pricing.IntervalSays, Does.Contain("365 días"));
 			Assert.That(pricing.IntervalSays, Does.Contain(TheFirstRevision));
 
-			Assert.That(pricing.Detail, Does.Contain("service interval is in this answer"));
+			Assert.That(pricing.Detail, Does.Contain("El intervalo de servicio está en esta respuesta"));
 
 			// ESTA LINEA AFIRMABA "does not keep the odometer" Y ERA FALSA DESDE QUE EL ODOMETRO SE
 			// PUSO EN LA PUERTA. El registro SI lo lleva; lo que no hay es la distancia que le falta
 			// a este vehiculo CONTRA ESE INTERVALO, que no es lo mismo. La frase vieja estaba en una
 			// cadena que el programa le entrega a un modelo, y esta prueba la sostenia: una prosa
 			// vencida fijada por una afirmacion se vuelve carga y deja de poder corregirse sola.
-			Assert.That(pricing.Detail, Does.Contain("holds the odometer"));
+			Assert.That(pricing.Detail, Does.Contain("tiene el odómetro"));
 			Assert.That(
 				pricing.Detail,
-				Does.Contain("distance still to go against this interval is not a figure"));
+				Does.Contain("distancia que falta contra este intervalo no es un número"));
 
 			// Y LA MITAD RECIBIDA NO LLEGA POR NINGUN CAMPO. El discriminador es la frase con la que
 			// el DOMINIO abre la mitad recibida -- "This vehicle has <n> km to go against it" -- y no
 			// el "to go" suelto: detail habla de esa distancia para decir que NO esta, asi que un
 			// barrido por las tres palabras se pone rojo con el texto correcto adentro. Es C60 sobre
 			// una frase en vez de sobre una lectura, y ya paso una vez en este mismo archivo.
-			Assert.That(JsonSerializer.Serialize(pricing), Does.Not.Contain("This vehicle has"));
+			Assert.That(JsonSerializer.Serialize(pricing), Does.Not.Contain("le quedan"));
 
 			// EL CONTROL: la puerta SI compone la frase emparejada cuando le llega la mitad del
 			// vehiculo, asi que el renglon de arriba mira una diferencia real.
 			Assert.That(
 				journal.Api.DescribeServiceInterval("FluidChange", 2000, "UnitA"),
-				Does.Contain("2000 km to go"));
+				Does.Contain("le quedan 2000 km"));
 		}
 
 		// Y CUANDO NO HAY INTERVALO PUBLICADO NO SE ANUNCIA NADA. Sin esto, la frase de arriba podria
@@ -346,7 +350,7 @@ namespace DealershipCar.Dominio.Pruebas
 				TheAssistant().WhatTheServiceCosts(MaintenanceOperation.FluidChange);
 
 			Assert.That(pricing.IntervalPublished, Is.False);
-			Assert.That(pricing.Detail, Does.Not.Contain("A service interval was published"));
+			Assert.That(pricing.Detail, Does.Not.Contain("Se publicó un intervalo de servicio"));
 		}
 
 		private ModelSpecificationTools TheAssistant()
@@ -482,6 +486,14 @@ namespace DealershipCar.Dominio.Pruebas
 		private static DateTime OnThe(int year, int month, int day)
 		{
 			return new DateTime(year, month, day, 0, 0, 0, DateTimeKind.Utc);
+		}
+
+		// COMO EMPIEZA LA FRASE DE UNA LLANTA. El sujeto lo compone el dominio con la etiqueta de la
+		// posicion en minuscula, y aca se rearma igual para que el barrido siga distinguiendo una
+		// posicion de otra.
+		private static string TheTyreSubjectFor(string position)
+		{
+			return "Llanta " + HowACanonNameReads.ATyre(position).ToLowerInvariant();
 		}
 	}
 }

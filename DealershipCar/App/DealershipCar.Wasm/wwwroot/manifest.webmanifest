@@ -1,14 +1,14 @@
 {
-  "name": "My maintenance schedule · Sotavento Motors",
-  "short_name": "My schedule",
-  "description": "Your vehicle's maintenance schedule, kept in a folder of yours. Works offline.",
+  "name": "Mi plan de mantenimiento · Sotavento Motors",
+  "short_name": "Mi plan",
+  "description": "El plan de mantenimiento de su vehículo, guardado en una carpeta suya. Funciona sin conexión.",
   "id": "./",
   "start_url": "./",
   "scope": "./",
   "display": "standalone",
   "background_color": "#EEF3FA",
   "theme_color": "#05132E",
-  "lang": "en",
+  "lang": "es",
   "prefer_related_applications": false,
   "icons": [
     { "src": "icon-192.png", "type": "image/png", "sizes": "192x192" },

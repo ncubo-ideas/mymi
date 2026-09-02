@@ -50,7 +50,7 @@ namespace DealershipCar.Dominio
 		/// <summary>Dice que falta y por que, y no da ningun numero en su lugar.</summary>
 		protected override string TheDistanceHalfInWords()
 		{
-			return "Distance: cannot be measured, " + _whyItCouldNotBeMeasured.Trim();
+			return "Distancia: no se puede medir, " + _whyItCouldNotBeMeasured.Trim();
 		}
 
 		private static DomainException TheDistanceHalfWasNotMeasured()

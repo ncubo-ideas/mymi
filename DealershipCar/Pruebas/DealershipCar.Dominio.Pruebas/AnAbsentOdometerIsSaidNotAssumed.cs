@@ -13,9 +13,9 @@ namespace DealershipCar.Dominio.Pruebas
 	// lectura. Los tres numeros que la respuesta NO puede dar son distinguibles a proposito (C60):
 	//
 	//   cero                          -> recorrido = 0 - 10, imposible; y si se recortara a 0,
-	//                                    diria "60000 km left", que es lo mas parecido a una
+	//                                    diria "quedan 60000 km", que es lo mas parecido a una
 	//                                    promesa que este modulo puede escribir
-	//   la lectura de la entrega (10) -> diria "60000 km left" tambien: cero recorrido bajo garantia
+	//   la lectura de la entrega (10) -> diria "quedan 60000 km" tambien: cero recorrido bajo garantia
 	//   Inside                        -> el miembro benigno, sin haber medido nada
 	//
 	// Y LA MISMA REGLA D4 SE APLICA AQUI: una lectura ausente tambien deja la mitad de TIEMPO
@@ -65,12 +65,12 @@ namespace DealershipCar.Dominio.Pruebas
 		{
 			string said = profile.DescribeWarrantyEnvelopeWithNoOdometer(InsideTheTimeHalf);
 
-			Assert.That(said, Does.Not.Contain("60000 km left"),
+			Assert.That(said, Does.Not.Contain("quedan 60000 km"),
 				"Ley L5: ni cero ni la lectura de la entrega. Las dos darian 60000 km de sobra, que "
 				+ "es lo mas parecido a una promesa que este modulo puede escribir.");
 			Assert.That(said, Does.Not.Contain("Inside"),
 				"Y tampoco el miembro benigno: ninguno de los tres significa 'no lo se'.");
-			Assert.That(said, Does.Contain("no odometer reading"));
+			Assert.That(said, Does.Contain("ninguna lectura del odómetro"));
 		}
 
 		// LA MITAD DE TIEMPO SE SIGUE DICIENDO (L3): que falte el odometro no borra el plazo, que no
@@ -80,8 +80,8 @@ namespace DealershipCar.Dominio.Pruebas
 		{
 			string said = profile.DescribeWarrantyEnvelopeWithNoOdometer(InsideTheTimeHalf);
 
-			Assert.That(said, Does.Contain("12 months left of 36 months"));
-			Assert.That(said, Does.Contain("Distance: cannot be measured"));
+			Assert.That(said, Does.Contain("12 meses de 36 meses"));
+			Assert.That(said, Does.Contain("Distancia: no se puede medir"));
 		}
 
 		// Y D4 DEL OTRO LADO: cumplido el plazo, la respuesta se DECIDE por tiempo aunque no haya
@@ -94,8 +94,8 @@ namespace DealershipCar.Dominio.Pruebas
 			Assert.That(answer.CanBeEvaluated(), Is.True);
 			Assert.That(answer.Standing(), Is.SameAs(EnvelopeStanding.Reached));
 			Assert.That(answer.SuspendedByAnAbsentReading(), Is.False);
-			Assert.That(answer.Describe(), Does.Contain("Reached by time"));
-			Assert.That(answer.Describe(), Does.Contain("Distance: cannot be measured"));
+			Assert.That(answer.Describe(), Does.Contain("Alcanzado por tiempo"));
+			Assert.That(answer.Describe(), Does.Contain("Distancia: no se puede medir"));
 		}
 
 		// LA LECTURA GUARDADA DEL STANDING REVIENTA para la suspension, y su mensaje manda a

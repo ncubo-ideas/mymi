@@ -36,33 +36,40 @@ namespace DealershipCar.Dominio
 	internal sealed class FluidKind
 	{
 		/// <summary>El aceite del motor. Es el que la persona pregunta primero.</summary>
-		internal static readonly FluidKind EngineOil = new FluidKind("EngineOil");
+		internal static readonly FluidKind EngineOil = new FluidKind("EngineOil", "Aceite de motor");
 
 		/// <summary>El liquido de frenos.</summary>
-		internal static readonly FluidKind BrakeFluid = new FluidKind("BrakeFluid");
+		internal static readonly FluidKind BrakeFluid = new FluidKind("BrakeFluid", "Líquido de frenos");
 
 		/// <summary>El refrigerante del motor.</summary>
-		internal static readonly FluidKind Coolant = new FluidKind("Coolant");
+		internal static readonly FluidKind Coolant = new FluidKind("Coolant", "Refrigerante");
 
 		/// <summary>El liquido de la transmision.</summary>
 		internal static readonly FluidKind TransmissionFluid =
-			new FluidKind("TransmissionFluid");
+			new FluidKind("TransmissionFluid", "Líquido de transmisión");
 
 		/// <summary>El liquido de la direccion asistida.</summary>
 		internal static readonly FluidKind PowerSteeringFluid =
-			new FluidKind("PowerSteeringFluid");
+			new FluidKind("PowerSteeringFluid", "Líquido de dirección asistida");
 
 		/// <summary>El liquido del limpiaparabrisas.</summary>
-		internal static readonly FluidKind WasherFluid = new FluidKind("WasherFluid");
+		internal static readonly FluidKind WasherFluid = new FluidKind("WasherFluid", "Líquido de limpiaparabrisas");
 
 		/// <summary>
 		/// El nombre. Es lo unico que sale del conjunto hacia afuera; el objeto no se entrega.
 		/// </summary>
 		internal string Name { get; }
 
-		private FluidKind(string name)
+		/// <summary>
+		/// Como se dice esta clase de fluido en la frase que alguien lee. NO es lo que cruza la
+		/// puerta ni lo que viaja en el wire: eso sigue siendo <see cref="Name"/>.
+		/// </summary>
+		internal string HowItIsSaid { get; }
+
+		private FluidKind(string name, string howItIsSaid)
 		{
 			Name = name;
+			HowItIsSaid = howItIsSaid;
 		}
 
 		/// <summary>

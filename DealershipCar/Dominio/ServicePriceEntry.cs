@@ -83,9 +83,9 @@ namespace DealershipCar.Dominio
 		/// </summary>
 		internal string APriceCarriesItsValidity()
 		{
-			return _kind.Name + " at " + _milestone.Describe()
+			return _kind.HowItIsSaid + " a los " + _milestone.Describe()
 				+ ": " + _amount.ToString(CultureInfo.InvariantCulture) + " " + _currency
-				+ ", valid from " + Fecha(_validFrom) + " to " + Fecha(_validUntil) + ".";
+				+ ", vigente del " + Fecha(_validFrom) + " al " + Fecha(_validUntil) + ".";
 		}
 
 		/// <summary>
@@ -98,16 +98,16 @@ namespace DealershipCar.Dominio
 		{
 			if (asOf < _validFrom)
 				return APriceCarriesItsValidity()
-					+ " As of " + Fecha(asOf)
-					+ " that validity has not started, so this price is not current.";
+					+ " Al " + Fecha(asOf)
+					+ " esa vigencia todavía no ha empezado, así que este precio no es el vigente.";
 
 			if (asOf > _validUntil)
 				return APriceCarriesItsValidity()
-					+ " As of " + Fecha(asOf)
-					+ " that validity has passed, so this price is not current.";
+					+ " Al " + Fecha(asOf)
+					+ " esa vigencia ya pasó, así que este precio no es el vigente.";
 
 			return APriceCarriesItsValidity()
-				+ " As of " + Fecha(asOf) + " that validity is in force.";
+				+ " Al " + Fecha(asOf) + " esa vigencia está rigiendo.";
 		}
 
 		private static string Fecha(DateTime instant)

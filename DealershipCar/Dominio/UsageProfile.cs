@@ -30,29 +30,36 @@ namespace DealershipCar.Dominio
 	internal sealed class UsageProfile
 	{
 		/// <summary>Uso normal: el plan del fabricante tal como viene, sin escalar.</summary>
-		internal static readonly UsageProfile Standard = new UsageProfile("Standard");
+		internal static readonly UsageProfile Standard = new UsageProfile("Standard", "normal");
 
 		/// <summary>
 		/// Uso severo -- polvo, remolque, ciudad pesada, temperaturas extremas. Acorta el largo
 		/// de los intervalos por SevereDutyIntervalFactor.
 		/// </summary>
-		internal static readonly UsageProfile SevereDuty = new UsageProfile("SevereDuty");
+		internal static readonly UsageProfile SevereDuty = new UsageProfile("SevereDuty", "de uso severo");
 
 		/// <summary>
 		/// Poca distancia al año: los limites de tiempo quedan intactos y los de distancia se
 		/// ignoran.
 		/// </summary>
-		internal static readonly UsageProfile LowDistance = new UsageProfile("LowDistance");
+		internal static readonly UsageProfile LowDistance = new UsageProfile("LowDistance", "de poca distancia");
 
 		/// <summary>Uso comercial: el vehiculo es herramienta de trabajo, no transporte personal.</summary>
-		internal static readonly UsageProfile Commercial = new UsageProfile("Commercial");
+		internal static readonly UsageProfile Commercial = new UsageProfile("Commercial", "comercial");
 
 		/// <summary>El nombre, para proyectar cual perfil aplico.</summary>
 		internal string Name { get; }
 
-		private UsageProfile(string name)
+		/// <summary>
+		/// Como se dice este perfil en la frase que alguien lee. NO es lo que cruza la puerta ni
+		/// lo que viaja en el wire: eso sigue siendo <see cref="Name"/>.
+		/// </summary>
+		internal string HowItIsSaid { get; }
+
+		private UsageProfile(string name, string howItIsSaid)
 		{
 			Name = name;
+			HowItIsSaid = howItIsSaid;
 		}
 
 		/// <summary>

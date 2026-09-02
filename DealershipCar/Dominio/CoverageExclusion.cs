@@ -81,8 +81,8 @@ namespace DealershipCar.Dominio
 		/// </summary>
 		internal string Describe()
 		{
-			return "Exclusion on '" + _systemCode + "': " + _exclusion
-				+ " Stated to apply when: " + _condition + ".";
+			return "Exclusión sobre '" + _systemCode + "': " + _exclusion
+				+ " Publicada para aplicar cuando: " + _condition + ".";
 		}
 	}
 }

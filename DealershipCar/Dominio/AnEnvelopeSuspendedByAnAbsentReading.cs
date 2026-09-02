@@ -31,9 +31,9 @@ namespace DealershipCar.Dominio
 		internal override string Describe()
 		{
 			return TheAnswerSaying(
-				"cannot be evaluated, because there is no odometer reading for this vehicle at or "
-				+ "before the instant asked. An absent reading is not a reading of nothing, and the "
-				+ "distance half cannot be measured without one.",
+				"no se puede evaluar, porque no hay ninguna lectura del odómetro de este vehículo "
+				+ "al instante preguntado ni antes. Una lectura ausente no es una lectura de nada, "
+				+ "y la mitad de distancia no se puede medir sin una.",
 				_clause);
 		}
 	}

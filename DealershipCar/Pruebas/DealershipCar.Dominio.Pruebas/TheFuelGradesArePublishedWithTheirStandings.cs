@@ -45,8 +45,8 @@ namespace DealershipCar.Dominio.Pruebas
 			specification.SealRevision(TheRevision);
 
 			Assert.That(specification.DescribeFuel(), Is.EqualTo(
-				"Fuel grades: RON 95 (Minimum), RON 98 (Permitted), E85 (Prohibited). "
-				+ "Published in revision REV-2025-01."));
+				"Grados de combustible: RON 95 (mínimo), RON 98 (permitido), E85 (prohibido). "
+				+ "Publicado en la revisión REV-2025-01."));
 		}
 
 		// La postura viaja pegada al grado. Un grado sin su postura seria "los combustibles que
@@ -58,7 +58,7 @@ namespace DealershipCar.Dominio.Pruebas
 			TheThreeGradesEnter();
 			specification.SealRevision(TheRevision);
 
-			Assert.That(specification.DescribeFuel(), Does.Contain("E85 (Prohibited)"));
+			Assert.That(specification.DescribeFuel(), Does.Contain("E85 (prohibido)"));
 		}
 
 		// TEST 8 DE §11. Sin ninguna revision no hay especificacion de combustible, y la lectura
@@ -74,7 +74,7 @@ namespace DealershipCar.Dominio.Pruebas
 			string answer = withoutAnything.DescribeFuel();
 
 			Assert.That(answer, Is.Not.Empty);
-			Assert.That(answer, Does.Contain("Fuel"),
+			Assert.That(answer, Does.Contain("Grados de combustible"),
 				"La ausencia nombra lo que se pregunto. Sin eso la misma frase serviria para todo.");
 			Assert.That(HayAlgunDigito(answer), Is.False,
 				"Ni un numero adentro: un grado inventado o un cero se leen como dato publicado.");
@@ -111,8 +111,8 @@ namespace DealershipCar.Dominio.Pruebas
 			specification.PublishFuelGrade(TheRevision, "E85", FuelGradeStandingCode.Prohibited);
 			specification.SealRevision(TheRevision);
 
-			Assert.That(specification.DescribeFuel(), Does.Contain("E85 (Prohibited)"));
-			Assert.That(specification.DescribeFuel(), Does.Not.Contain("E85 (Permitted)"));
+			Assert.That(specification.DescribeFuel(), Does.Contain("E85 (prohibido)"));
+			Assert.That(specification.DescribeFuel(), Does.Not.Contain("E85 (permitido)"));
 		}
 
 		// EL ITEM ES LA ESPECIFICACION ENTERA. La revision 2 publica un solo grado y contesta ella
@@ -129,7 +129,7 @@ namespace DealershipCar.Dominio.Pruebas
 			specification.SealRevision(TheNextRevision);
 
 			Assert.That(specification.ReadFuelRevision(), Is.EqualTo(TheNextRevision));
-			Assert.That(specification.DescribeFuel(), Does.Contain("RON 91 (Minimum)"));
+			Assert.That(specification.DescribeFuel(), Does.Contain("RON 91 (mínimo)"));
 			Assert.That(specification.DescribeFuel(), Does.Not.Contain("E85"),
 				"La revision 2 publico LA especificacion de combustible, no un anexo a la de la "
 				+ "revision 1. Arrastrar lo viejo mezclaria dos procedencias en una sola frase.");

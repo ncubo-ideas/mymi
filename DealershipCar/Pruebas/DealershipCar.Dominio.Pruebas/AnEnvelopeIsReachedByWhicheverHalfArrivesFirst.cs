@@ -121,11 +121,11 @@ namespace DealershipCar.Dominio.Pruebas
 
 			string said = TheSentenceAt(AReadingPastTheDistanceHalf, InsideTheTimeHalf);
 
-			Assert.That(said, Does.Contain("Reached by distance"));
-			Assert.That(said, Does.Contain("12 months left of 36 months"),
+			Assert.That(said, Does.Contain("Alcanzado por distancia"));
+			Assert.That(said, Does.Contain("12 meses de 36 meses"),
 				"Ley L3: la otra mitad no se omite. Que el sobre se haya alcanzado por distancia no "
 				+ "borra que todavia quedan doce meses de plazo.");
-			Assert.That(said, Does.Contain("14990 km past a limit of 60000 km"));
+			Assert.That(said, Does.Contain("14990 km pasados de un límite de 60000 km"));
 		}
 
 		[Test]
@@ -136,9 +136,9 @@ namespace DealershipCar.Dominio.Pruebas
 
 			string said = TheSentenceAt(AReadingWellInsideTheDistanceHalf, PastTheTimeHalf);
 
-			Assert.That(said, Does.Contain("Reached by time"));
-			Assert.That(said, Does.Contain("5 months past a limit of 36 months"));
-			Assert.That(said, Does.Contain("35010 km left of 60000 km"),
+			Assert.That(said, Does.Contain("Alcanzado por tiempo"));
+			Assert.That(said, Does.Contain("5 meses pasados de un límite de 36 meses"));
+			Assert.That(said, Does.Contain("35010 km de 60000 km"),
 				"Ley L3, del otro lado: quedan 35010 km y se dicen, aunque no cambien la respuesta.");
 		}
 
@@ -146,7 +146,7 @@ namespace DealershipCar.Dominio.Pruebas
 		public void PastBothLimitsNamesBothAndNotOne()
 		{
 			Assert.That(TheSentenceAt(AReadingPastTheDistanceHalf, PastTheTimeHalf),
-				Does.Contain("time and distance"));
+				Does.Contain("tiempo y distancia"));
 		}
 
 		[Test]
@@ -157,7 +157,7 @@ namespace DealershipCar.Dominio.Pruebas
 
 			string said = TheSentenceAt(AReadingWellInsideTheDistanceHalf, InsideTheTimeHalf);
 
-			Assert.That(said, Does.Contain("not comparable"),
+			Assert.That(said, Does.Contain("no son comparables"),
 				"Las dos mitades son incomparables entre si (GAP G4). Convertir una en la otra por "
 				+ "un promedio de km por mes es la conversion que L4 prohibe, con un pronostico "
 				+ "encima.");
@@ -178,7 +178,7 @@ namespace DealershipCar.Dominio.Pruebas
 
 			string said = TheSentenceAt(elOdometroExacto, InsideTheTimeHalf);
 
-			Assert.That(said, Does.Contain("exactly at a limit of 60000 km"));
+			Assert.That(said, Does.Contain("justo en un límite de 60000 km"));
 			Assert.That(said, Does.Not.Contain("0 km past"));
 		}
 
@@ -192,7 +192,7 @@ namespace DealershipCar.Dominio.Pruebas
 				Is.EqualTo("Inside"));
 			Assert.That(
 				TheSentenceAt(AReadingWellInsideTheDistanceHalf, new DateTime(2026, 12, 31)),
-				Does.Contain("1 month left of 36 months"),
+				Does.Contain("queda 1 mes de 36 meses"),
 				"El 2026-12-31 hay 35 meses cumplidos desde el 2024-01-01: falta uno, y se dice en "
 				+ "singular.");
 
@@ -201,7 +201,7 @@ namespace DealershipCar.Dominio.Pruebas
 				Is.EqualTo("Reached"));
 			Assert.That(
 				TheSentenceAt(AReadingWellInsideTheDistanceHalf, new DateTime(2027, 1, 1)),
-				Does.Contain("exactly at a limit of 36 months"));
+				Does.Contain("justo en un límite de 36 meses"));
 		}
 
 		// UN ODOMETRO QUE VA PARA ATRAS NO ES UNA AUSENCIA, ES UN HECHO IMPOSIBLE (E32), y revienta

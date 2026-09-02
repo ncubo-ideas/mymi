@@ -76,7 +76,7 @@ namespace DealershipCar.Dominio.Pruebas
 
 				Assert.That(
 					stands.Says,
-					Does.Contain("not the same as this vehicle having no warranty"),
+					Does.Contain("no es lo mismo que este vehículo no tenga garantía"),
 					"La frase que mas facil se lee al reves, dicha por el dominio y no por la pantalla.");
 
 				Assert.That(stands.PublishedSays, Is.Not.Empty);
@@ -95,8 +95,8 @@ namespace DealershipCar.Dominio.Pruebas
 				Assert.That(sheet.Coverage.CoveredSystems, Is.EqualTo(new[] { TheSystem }));
 				Assert.That(sheet.Coverage.Revision, Is.EqualTo(TheRevision));
 
-				Assert.That(stands.Says, Does.Not.Contain("could not"));
-				Assert.That(sheet.Coverage.Says, Does.Not.Contain("could not"));
+				Assert.That(stands.Says, Does.Not.Contain("no se pudo"));
+				Assert.That(sheet.Coverage.Says, Does.Not.Contain("no se pudo"));
 			}
 		}
 
@@ -127,11 +127,11 @@ namespace DealershipCar.Dominio.Pruebas
 					"Ninguno de los tres nombres quiere decir 'no se pudo medir', asi que no se "
 					+ "devuelve uno -- y la pantalla no pinta el chip.");
 
-				Assert.That(stands.Says, Does.Contain("months left of 240 months."),
+				Assert.That(stands.Says, Does.Contain("meses de 240 meses."),
 					"La mitad de tiempo SI se midio: no tener odometro no la degrada.");
 				Assert.That(
 					stands.Says,
-					Does.Contain("Distance: cannot be measured, because there is no odometer reading"));
+					Does.Contain("Distancia: no se puede medir, porque no hay ninguna lectura del odómetro"));
 
 				// Y LOS DOS HECHOS QUE SI ESTAN SIGUEN SALIENDO, que es lo que la pantalla pinta al
 				// lado de la frase. El renglon del odometro no.
@@ -218,7 +218,7 @@ namespace DealershipCar.Dominio.Pruebas
 				Assert.That(after.PublishedAt, Is.EqualTo("2026-01-01"),
 					"Un sobre publicado despues rige desde su propia fecha hacia adelante, y la "
 					+ "procedencia que la pantalla nombra es la suya.");
-				Assert.That(after.Says, Does.Contain("120 months or 200000 mi"));
+				Assert.That(after.Says, Does.Contain("120 meses o 200000 mi"));
 				Assert.That(after.Says, Does.Not.Contain("60000 mi"),
 					"Y los limites del primero ya no salen. Si salieran, la pantalla estaria midiendo "
 					+ "contra un sobre que dejo de regir.");
@@ -259,12 +259,12 @@ namespace DealershipCar.Dominio.Pruebas
 				// LA CLAUSULA DE ADENTRO, QUE ES LA CORRECTA.
 				Assert.That(
 					stands.Says,
-					Does.Contain("the odometer reading recorded at delivery is in mi"));
+					Does.Contain("la lectura del odómetro registrada en la entrega está en mi"));
 
 				// Y LA DE AFUERA, QUE NOMBRA OTRO HECHO. Las dos van a la pantalla en la misma frase.
 				Assert.That(
 					stands.Says,
-					Does.Contain("this vehicle's odometer is in mi"),
+					Does.Contain("el odómetro de este vehículo está en mi"),
 					"ESTE RENGLON FIJA UN DEFECTO, no una ley. El odometro de este vehiculo esta en km "
 					+ "-- la misma unidad que el limite -- y la frase dice que esta en mi. Si esto se "
 					+ "pone rojo, alguien arreglo la frase del dominio: borrar este renglon y decirlo.");
@@ -364,7 +364,7 @@ namespace DealershipCar.Dominio.Pruebas
 				// NO es lo que pasa aca.
 				Assert.That(
 					ahead.Api.DescribeWarrantyEnvelope(TheDayTheScreenAsks),
-					Does.Contain("months left of 36 months."),
+					Does.Contain("meses de 36 meses."),
 					"El sobre contesta, con MAS plazo del que publico, porque los meses cumplidos "
 					+ "salen negativos. No miente: dice exactamente lo que el registro implica.");
 
@@ -391,7 +391,7 @@ namespace DealershipCar.Dominio.Pruebas
 				Assert.That(stands.RecordContradictsItself, Is.False,
 					"Sin ningun sistema que preguntar, nada revienta y la contradiccion pasa entera.");
 				Assert.That(stands.Standing, Is.EqualTo("Inside"));
-				Assert.That(stands.Says, Does.Contain("months left of 36 months."));
+				Assert.That(stands.Says, Does.Contain("meses de 36 meses."));
 
 				// LO UNICO QUE LO DELATA EN LA PANTALLA: los dos instantes, uno al lado del otro, en
 				// el mismo bloque. Si alguno de los dos dejara de pintarse, el disparate se quedaria

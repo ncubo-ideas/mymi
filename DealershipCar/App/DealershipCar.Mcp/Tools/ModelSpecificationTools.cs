@@ -27,19 +27,19 @@ namespace DealershipCar.Mcp.Tools
 		}
 
 		[McpServerTool(Name = "what_my_car_takes", UseStructuredContent = true)]
-		[Description("Answers what the manufacturer published that this person's vehicle takes: the "
-			+ "engine oil and the five other fluids with their grade, capacity and change interval; "
-			+ "the size and cold pressure of the tyres at each position; and the fuel grades, split "
-			+ "into the minimum, the permitted and the prohibited ones. Use it for 'what oil does my "
-			+ "car take?', 'what pressure should my tyres be?', 'can I put regular in it?'. It reports "
-			+ "the whole spec sheet in one read, so prefer it over asking item by item. Every answer "
-			+ "carries the revision of the spec sheet it came from - say that revision, because a "
-			+ "figure without one is a rumour and a later revision may have changed it. An item whose "
-			+ "published is false was never published for this model: that is an answer, not a gap, "
-			+ "and it must never be filled from a similar model or a previous model year. Pressures, "
-			+ "capacities and distances carry a unit that is never converted - say the value with the "
-			+ "unit exactly as it comes. Of the three fuel lists the prohibited one is the one worth "
-			+ "raising first.")]
+		[Description("Contesta lo que el fabricante publicó que lleva el vehículo de esta persona: el "
+			+ "aceite de motor y los otros cinco fluidos con su grado, capacidad e intervalo de "
+			+ "cambio; la medida y la presión en frío de las llantas en cada posición; y los grados de "
+			+ "combustible, separados en el mínimo, los permitidos y los prohibidos. Úsela para '¿qué "
+			+ "aceite lleva mi carro?', '¿a qué presión van mis llantas?', '¿le puedo echar regular?'. "
+			+ "Reporta la ficha entera en una sola lectura, así que prefiérala a preguntar ítem por "
+			+ "ítem. Cada respuesta lleva la revisión de la ficha de la que salió: diga esa revisión, "
+			+ "porque un número sin ella es un rumor y una revisión posterior puede haberlo cambiado. "
+			+ "Un ítem cuyo published es false nunca se publicó para este modelo: eso es una respuesta, "
+			+ "no un hueco, y nunca se puede llenar con un modelo parecido ni con un año anterior. Las "
+			+ "presiones, las capacidades y las distancias llevan una unidad que nunca se convierte: "
+			+ "diga el valor con la unidad exactamente como viene. De las tres listas de combustible, "
+			+ "la de prohibidos es la que vale la pena plantear primero.")]
 		public SpecificationSheet WhatMyCarTakes()
 		{
 			return reader.Read(TheWholeSpecSheet, () => new SpecificationSheet
@@ -51,38 +51,38 @@ namespace DealershipCar.Mcp.Tools
 		}
 
 		[McpServerTool(Name = "does_the_warranty_cover", UseStructuredContent = true)]
-		[Description("Answers what the manufacturer published about the SCOPE of the warranty on this "
-			+ "person's model - which systems the scope declares inside, which exclusions it published "
-			+ "and the condition under which each one bites, and whether a system the person names is "
-			+ "in the manufacturer's catalogue at all - AND where THIS vehicle stands against that "
-			+ "scope for the system they named. Use it for 'is my gearbox under warranty?' or 'what "
-			+ "does the warranty not cover?'. "
-			+ "IT STATES SCOPE AND STANDING, AND NEVER ADJUDICATES A CLAIM. Whether a repair gets paid "
-			+ "is the manufacturer's to decide and nothing here says it will be, so never turn a "
-			+ "system that is inside the scope, or a vehicle that is inside its envelope, into 'you "
-			+ "are covered'. "
-			+ "THE STANDING COMES OUT OF THE PERSON'S OWN RECORD and never out of you or them. It "
-			+ "needs the vehicle's warranty envelope, the date it was handed over, the odometer taken "
-			+ "that day and the latest one the feed has brought; all four are read here. Never ask "
-			+ "the person for a mileage or a date to answer this, and never accept one - a figure "
-			+ "that did not come from the record would come back as a measurement nobody made. When "
-			+ "one of the four is missing, standingSays comes back empty and says and thisVehicleSays "
-			+ "each still answer their own half in full: quote both, and read detail for which fact "
-			+ "is missing and who records it. "
-			+ "'WE WERE NEVER TOLD ABOUT IT' IS NOT 'IT IS NOT COVERED', and collapsing the two is the "
-			+ "failure worth avoiding: systemInTheCatalogue false means the published scope never "
-			+ "names that system, which says nothing either way about whether the manufacturer covers "
-			+ "it. A code listed in coveredSystems is one the scope declares inside; a code that "
-			+ "appears only among the exclusions is one the scope names and leaves out. "
-			+ "The system code is the MANUFACTURER'S vocabulary and not a list this app owns, so take "
-			+ "it from coveredSystems or from an exclusion and pass it letter for letter: the match is "
-			+ "exact, and a code spelled or cased differently answers 'never told about it'. Do not "
-			+ "invent a code, and call the tool with no system at all to see the whole published "
-			+ "scope first.")]
+		[Description("Contesta lo que el fabricante publicó sobre el ALCANCE de la garantía del modelo "
+			+ "de esta persona -- qué sistemas declara adentro el alcance, qué exclusiones publicó y "
+			+ "bajo qué condición muerde cada una, y si un sistema que la persona nombre está siquiera "
+			+ "en el catálogo del fabricante -- Y dónde está parado ESTE vehículo frente a ese alcance "
+			+ "en el sistema que nombraron. Úsela para '¿mi caja tiene garantía?' o '¿qué no cubre la "
+			+ "garantía?'. "
+			+ "DICE ALCANCE Y POSICIÓN, Y NUNCA ADJUDICA UN RECLAMO. Que una reparación se pague lo "
+			+ "decide el fabricante y nada de aquí dice que se vaya a pagar, así que nunca convierta un "
+			+ "sistema que está dentro del alcance, ni un vehículo que está dentro de su sobre, en "
+			+ "'usted está cubierto'. "
+			+ "LA POSICIÓN SALE DEL REGISTRO PROPIO DE LA PERSONA y nunca de usted ni de ella. "
+			+ "Necesita el sobre de garantía del vehículo, la fecha en que se entregó, el odómetro "
+			+ "tomado ese día y el último que haya traído el feed; los cuatro se leen aquí. Nunca le "
+			+ "pida a la persona un kilometraje ni una fecha para contestar esto, y nunca acepte uno: "
+			+ "un número que no salió del registro volvería como una medición que nadie hizo. Cuando "
+			+ "falta uno de los cuatro, standingSays viene vacío y says y thisVehicleSays contestan "
+			+ "cada uno su propia mitad entera: cite las dos, y lea detail para saber qué hecho falta "
+			+ "y quién lo registra. "
+			+ "'NO NOS LO DIJERON' NO ES 'NO ESTÁ CUBIERTO', y confundir los dos es la falla que hay "
+			+ "que evitar: systemInTheCatalogue en false quiere decir que el alcance publicado nunca "
+			+ "nombra ese sistema, lo cual no dice nada ni a favor ni en contra de que el fabricante lo "
+			+ "cubra. Un código que está en coveredSystems es uno que el alcance declara adentro; un "
+			+ "código que aparece solo entre las exclusiones es uno que el alcance nombra y deja fuera. "
+			+ "El código de sistema es el vocabulario DEL FABRICANTE y no una lista de esta app, así "
+			+ "que tómelo de coveredSystems o de una exclusión y pásela letra por letra: la coincidencia "
+			+ "es exacta, y un código escrito con otra ortografía o con otras mayúsculas contesta 'no "
+			+ "nos lo dijeron'. No invente un código, y llame a la tool sin ningún sistema para ver "
+			+ "primero el alcance publicado entero.")]
 		public WarrantyScope DoesTheWarrantyCover(
-			[Description("The manufacturer's code for the system being asked about, copied letter for "
-				+ "letter from coveredSystems or from an exclusion. Leave it out to read the whole "
-				+ "published scope, which is where the codes come from.")]
+			[Description("El código del fabricante para el sistema por el que se pregunta, copiado letra "
+				+ "por letra de coveredSystems o de una exclusión. Omítalo para leer el alcance "
+				+ "publicado entero, que es de donde salen los códigos.")]
 			string system = "")
 		{
 			string asked = system == null ? "" : system.Trim();
@@ -99,31 +99,31 @@ namespace DealershipCar.Mcp.Tools
 		}
 
 		[McpServerTool(Name = "what_the_service_costs", UseStructuredContent = true)]
-		[Description("Answers what the manufacturer published about servicing ONE maintenance "
-			+ "operation on this model: whether a service interval was published for it, and what the "
-			+ "service costs at a milestone the person names, with the validity of that price and "
-			+ "whether the validity is in force at the instant the question was asked. Use it for "
-			+ "'how much is the 10,000 service?' or 'is that price still good?'. "
-			+ "MILESTONEDISTANCE IS THE MILESTONE THE PERSON NAMED. Leave it out if they did not name "
-			+ "one and ask them which service they mean: this record does not list the milestones the "
-			+ "manufacturer published, so a guessed milestone comes back with no price and that reads "
-			+ "as 'the manufacturer never published one', which would be wrong. The milestone is "
-			+ "looked up in each of the two distance units this record uses and answered in the unit "
-			+ "it was published in - nothing is ever converted between them, so say the unit that "
-			+ "comes back rather than assuming which one the person meant. "
-			+ "A PRICE IS NEVER STATED WITHOUT ITS VALIDITY: the sentence carries the window and "
-			+ "whether askedAt falls inside it. A stale price presented as current is a promise the "
-			+ "branch never made. "
-			+ "The published service interval's own numbers are not in this answer - quoting them "
-			+ "needs how far this vehicle still has to go against that interval, and this record does "
-			+ "hold the odometer but does not hand that remaining figure back. Use "
-			+ "review_my_maintenance for when the next service is due. The fluid change intervals are "
-			+ "published as part of the fluid itself, so what_my_car_takes carries those.")]
+		[Description("Contesta lo que el fabricante publicó sobre el servicio de UNA operación de "
+			+ "mantenimiento en este modelo: si se publicó un intervalo de servicio para ella, y qué "
+			+ "cuesta el servicio en un hito que la persona nombre, con la vigencia de ese precio y si "
+			+ "esa vigencia rige al instante en que se hizo la pregunta. Úsela para '¿cuánto cuesta el "
+			+ "servicio de los 10.000?' o '¿ese precio sigue vigente?'. "
+			+ "MILESTONEDISTANCE ES EL HITO QUE NOMBRÓ LA PERSONA. Omítalo si no nombraron ninguno y "
+			+ "pregúnteles a qué servicio se refieren: este registro no lista los hitos que publicó el "
+			+ "fabricante, así que un hito adivinado vuelve sin precio y eso se lee como 'el fabricante "
+			+ "nunca publicó uno', que sería falso. El hito se busca en cada una de las dos unidades de "
+			+ "distancia que usa este registro y se contesta en la unidad en que se publicó: entre ellas "
+			+ "nunca se convierte nada, así que diga la unidad que vuelve en vez de suponer cuál quería "
+			+ "decir la persona. "
+			+ "UN PRECIO NUNCA SE DICE SIN SU VIGENCIA: la frase lleva la ventana y si askedAt cae "
+			+ "dentro de ella. Un precio viejo presentado como el de hoy es una promesa que la sucursal "
+			+ "nunca hizo. "
+			+ "Los números del intervalo de servicio publicado no están en esta respuesta: citarlos "
+			+ "necesita cuánto le falta a este vehículo contra ese intervalo, y este registro sí tiene "
+			+ "el odómetro pero no devuelve esa distancia restante. Use review_my_maintenance para "
+			+ "cuándo toca el próximo servicio. Los intervalos de cambio de fluido se publican como "
+			+ "parte del fluido mismo, así que esos los lleva what_my_car_takes.")]
 		public ServicePricing WhatTheServiceCosts(
-			[Description("Which maintenance operation the person is asking about.")]
+			[Description("Por qué operación de mantenimiento está preguntando la persona.")]
 			MaintenanceOperation operation,
-			[Description("The service milestone the person named, such as 10000. Leave it out when "
-				+ "they did not name one; do not guess a milestone.")]
+			[Description("El hito de servicio que nombró la persona, por ejemplo 10000. Omítalo cuando "
+				+ "no nombraron ninguno; no adivine un hito.")]
 			int milestoneDistance = 0)
 		{
 			return reader.Read(
@@ -408,85 +408,87 @@ namespace DealershipCar.Mcp.Tools
 		}
 
 		private const string TheAppIsOlderThanTheSpecification =
-			"This record was written by an older version of the app, which did not carry the "
-			+ "manufacturer's specification at all, so there is nothing here about what this model "
-			+ "takes, what the warranty's scope is, or what a service costs. Their maintenance "
-			+ "schedule is complete and current - the other tools still answer in full. Ask the "
-			+ "person to open their app once and it will bring the specification in; nothing is lost, "
-			+ "and it is not an error.";
+			"Este registro lo escribió una versión anterior de la app, que no llevaba la "
+			+ "especificación del fabricante en absoluto, así que aquí no hay nada sobre lo que lleva "
+			+ "este modelo, cuál es el alcance de la garantía, ni cuánto cuesta un servicio. Su plan de "
+			+ "mantenimiento está completo y al día: las otras tools siguen contestando enteras. Pídale "
+			+ "a la persona que abra su app una vez y eso traerá la especificación; no se pierde nada, "
+			+ "y no es un error.";
 
 		private const string TheStandingIsHereAndItIsAsOfTheReading =
-			"standingSays is where THIS vehicle stands against the published scope, composed by the "
-			+ "record itself from the envelope the dealership published, the date the car was handed "
-			+ "over and the odometer the feed brought - say that sentence rather than rebuilding it. "
-			+ "It was measured against the reading in the record, whose observation date is in "
-			+ "thisVehicleSays, and not against where the car is today: say that date, because a "
-			+ "reading that is months old makes the distance half exactly that stale. Inside the "
-			+ "scope and inside the envelope together are still not a promise that a claim will be "
-			+ "paid.";
+			"standingSays es dónde está parado ESTE vehículo frente al alcance publicado, compuesto "
+			+ "por el registro mismo a partir del sobre que publicó la agencia, la fecha en que se "
+			+ "entregó el carro y el odómetro que trajo el feed: diga esa frase en vez de rearmarla. Se "
+			+ "midió contra la lectura que tiene el registro, cuya fecha de observación está en "
+			+ "thisVehicleSays, y no contra donde está el carro hoy: diga esa fecha, porque una lectura "
+			+ "de hace meses deja la mitad de distancia exactamente así de vieja. Estar dentro del "
+			+ "alcance y dentro del sobre a la vez sigue sin ser una promesa de que un reclamo se "
+			+ "vaya a pagar.";
 
 		private const string TheStandingNeedsAFactTheRecordDoesNotHaveYet =
-			"Where THIS vehicle stands is not in standingSays, because at least one of the three "
-			+ "facts it takes is missing from the record: the warranty envelope, the date the car was "
-			+ "handed over, or an odometer reading at or before the instant asked. The two halves "
-			+ "still answer separately and in full - says is what the manufacturer published about "
-			+ "the scope, thisVehicleSays is what the record holds about this car and names which "
-			+ "fact is missing in its own words. Quote both. All three facts come from the "
-			+ "dealership, so neither the person nor you can supply one, and composing the standing "
-			+ "against a guessed figure would state as measured something nobody measured.";
+			"Dónde está parado ESTE vehículo no está en standingSays, porque al menos uno de los tres "
+			+ "hechos que necesita falta en el registro: el sobre de garantía, la fecha en que se "
+			+ "entregó el carro, o una lectura del odómetro al instante preguntado o antes. Las dos "
+			+ "mitades siguen contestando por separado y enteras: says es lo que el fabricante publicó "
+			+ "sobre el alcance, y thisVehicleSays es lo que el registro tiene sobre este carro y "
+			+ "nombra qué hecho falta con sus propias palabras. Cite las dos. Los tres hechos vienen de "
+			+ "la agencia, así que ni la persona ni usted pueden aportar uno, y componer la posición "
+			+ "contra un número adivinado declararía como medido algo que nadie midió.";
 
 		private const string NoSystemWasNamed =
-			"No system was named, so no standing was looked up for one. thisVehicleSays still answers "
-			+ "where this vehicle stands against its own envelope, which is the half that does not "
-			+ "depend on which system is being asked about. To get the standing for a system, call "
-			+ "again with a code from coveredSystems or from an exclusion.";
+			"No se nombró ningún sistema, así que no se buscó la posición de ninguno. thisVehicleSays "
+			+ "sigue contestando dónde está parado este vehículo frente a su propio sobre, que es la "
+			+ "mitad que no depende de por qué sistema se pregunte. Para obtener la posición de un "
+			+ "sistema, vuelva a llamar con un código de coveredSystems o de una exclusión.";
 
 		private const string TheServicingRuleStandingIsNotInThisRecord =
-			"The servicing-elsewhere rule is in this answer as the manufacturer published it. Where "
-			+ "this vehicle stands against it is not: that needs how many services it has had "
-			+ "elsewhere, how many of those carry evidence, and its missed-maintenance count, and this "
-			+ "record keeps only the last of the three. Quote the rule and say the standing is not "
-			+ "here; do not infer compliance from silence.";
+			"La regla de servicio en otro taller está en esta respuesta tal como la publicó el "
+			+ "fabricante. Dónde está parado este vehículo frente a ella no: eso necesita cuántos "
+			+ "servicios ha tenido en otro lado, cuántos de esos llevan comprobante, y su cuenta de "
+			+ "mantenimiento no hecho, y este registro guarda solo el último de los tres. Cite la regla "
+			+ "y diga que la posición no está aquí; no deduzca cumplimiento del silencio.";
 
 		private const string TheIntervalStandingIsNotInThisRecord =
-			"The service interval is in this answer as the manufacturer published it. How far this "
-			+ "vehicle still has to go against it is not: the record holds the odometer, but the "
-			+ "distance still to go against this interval is not a figure it hands back. Quote the "
-			+ "interval and say that where the car stands against it is not here - the maintenance "
-			+ "tools answer when the next service is due.";
+			"El intervalo de servicio está en esta respuesta tal como lo publicó el fabricante. "
+			+ "Cuánto le falta a este vehículo contra él no: el registro tiene el odómetro, pero la "
+			+ "distancia que falta contra este intervalo no es un número que devuelva. Cite el "
+			+ "intervalo y diga que dónde está parado el carro frente a él no está aquí; las tools de "
+			+ "mantenimiento contestan cuándo toca el próximo servicio.";
 
 		private const string NoMilestoneWasNamed =
-			"No milestone was named, so no price was looked up. Ask the person which service they "
-			+ "mean - the 10,000 one, the 20,000 one - because this record cannot list the milestones "
-			+ "the manufacturer published and guessing one would come back as 'no price published'.";
+			"No se nombró ningún hito, así que no se buscó ningún precio. Pregúntele a la persona a "
+			+ "qué servicio se refiere -- el de los 10.000, el de los 20.000 --, porque este registro "
+			+ "no puede listar los hitos que publicó el fabricante y adivinar uno volvería como 'no hay "
+			+ "precio publicado'.";
 
 		private const string NothingIsPublishedAtThatMilestone =
-			"Nothing is published at that milestone in either distance unit. That means this record "
-			+ "was never told a price for it, not that the service is free and not that it does not "
-			+ "exist; the milestone the manufacturer did publish may simply be a different number.";
+			"No hay nada publicado en ese hito en ninguna de las dos unidades de distancia. Eso quiere "
+			+ "decir que a este registro nunca le dijeron un precio para él, no que el servicio sea "
+			+ "gratis ni que no exista; el hito que el fabricante sí publicó puede ser simplemente otro "
+			+ "número.";
 	}
 
 	/// <summary>Lo publicado sobre una clase de fluido, con la revision de la que sale.</summary>
 	internal sealed class PublishedFluid
 	{
 		[JsonPropertyName("kind")]
-		[Description("Which fluid this entry is about.")]
+		[Description("De qué fluido habla esta entrada.")]
 		public string Kind { get; init; } = "";
 
 		[JsonPropertyName("published")]
-		[Description("false when nothing was ever published about this fluid for this model. That is "
-			+ "an answer: do not fill it from another model or another year.")]
+		[Description("false cuando nunca se publicó nada sobre este fluido para este modelo. Eso es "
+			+ "una respuesta: no lo llene con otro modelo ni con otro año.")]
 		public bool Published { get; init; }
 
 		[JsonPropertyName("says")]
-		[Description("What the manufacturer published, in one sentence composed by the record itself, "
-			+ "with the revision inside it. Say this sentence; do not reword it into advice. When "
-			+ "nothing was published it says so in words.")]
+		[Description("Lo que publicó el fabricante, en una frase que compuso el registro mismo, con la "
+			+ "revisión adentro. Diga esta frase; no la reescriba como consejo. Cuando no se publicó "
+			+ "nada, lo dice con palabras.")]
 		public string Says { get; init; } = "";
 
 		[JsonPropertyName("revision")]
-		[Description("The revision of the spec sheet this answer came from. EMPTY means nothing is "
-			+ "published, and no revision is ever blank.")]
+		[Description("La revisión de la ficha de la que salió esta respuesta. VACÍO quiere decir que no "
+			+ "hay nada publicado, y ninguna revisión tiene el código en blanco.")]
 		public string Revision { get; init; } = "";
 	}
 
@@ -494,20 +496,21 @@ namespace DealershipCar.Mcp.Tools
 	internal sealed class PublishedTyre
 	{
 		[JsonPropertyName("position")]
-		[Description("Which wheels this entry is about.")]
+		[Description("De qué ruedas habla esta entrada.")]
 		public string Position { get; init; } = "";
 
 		[JsonPropertyName("published")]
-		[Description("false when nothing was ever published about the tyres at this position.")]
+		[Description("false cuando nunca se publicó nada sobre las llantas de esta posición.")]
 		public bool Published { get; init; }
 
 		[JsonPropertyName("says")]
-		[Description("Size, cold pressure and ratings in one sentence with its revision. The pressure "
-			+ "carries a unit that is never converted - say it exactly as it comes.")]
+		[Description("Medida, presión en frío y clasificaciones en una frase con su revisión. La "
+			+ "presión lleva una unidad que nunca se convierte: dígala exactamente como viene.")]
 		public string Says { get; init; } = "";
 
 		[JsonPropertyName("revision")]
-		[Description("The revision this answer came from. EMPTY means nothing is published.")]
+		[Description("La revisión de la que salió esta respuesta. VACÍO quiere decir que no hay nada "
+			+ "publicado.")]
 		public string Revision { get; init; } = "";
 	}
 
@@ -515,31 +518,33 @@ namespace DealershipCar.Mcp.Tools
 	internal sealed class PublishedFuel
 	{
 		[JsonPropertyName("published")]
-		[Description("false when no fuel grade was ever published for this model.")]
+		[Description("false cuando nunca se publicó ningún grado de combustible para este modelo.")]
 		public bool Published { get; init; }
 
 		[JsonPropertyName("says")]
-		[Description("Every published grade with the manufacturer's standing on it, in one sentence "
-			+ "with its revision.")]
+		[Description("Cada grado publicado con la postura que le puso el fabricante, en una frase con "
+			+ "su revisión.")]
 		public string Says { get; init; } = "";
 
 		[JsonPropertyName("minimumGrade")]
-		[Description("The lowest grade the manufacturer accepts, which is how fuel is asked for at a "
-			+ "pump. EMPTY means no minimum was published - not that any grade will do.")]
+		[Description("El grado más bajo que acepta el fabricante, que es como se pide el combustible "
+			+ "en una bomba. VACÍO quiere decir que no se publicó ningún mínimo, no que valga "
+			+ "cualquier grado.")]
 		public string MinimumGrade { get; init; } = "";
 
 		[JsonPropertyName("permittedGrades")]
-		[Description("The grades published as permitted. An empty list says none was published as "
-			+ "permitted, which is not the same as saying every grade is.")]
+		[Description("Los grados publicados como permitidos. Una lista vacía dice que no se publicó "
+			+ "ninguno como permitido, que no es lo mismo que decir que todos lo están.")]
 		public IReadOnlyList<string> PermittedGrades { get; init; } = new List<string>();
 
 		[JsonPropertyName("prohibitedGrades")]
-		[Description("The grades published as prohibited. This is the list worth raising first: a "
-			+ "prohibited grade kept quiet is a damaged engine.")]
+		[Description("Los grados publicados como prohibidos. Esta es la lista que vale la pena "
+			+ "plantear primero: un grado prohibido callado es un motor dañado.")]
 		public IReadOnlyList<string> ProhibitedGrades { get; init; } = new List<string>();
 
 		[JsonPropertyName("revision")]
-		[Description("The revision this answer came from. EMPTY means nothing is published.")]
+		[Description("La revisión de la que salió esta respuesta. VACÍO quiere decir que no hay nada "
+			+ "publicado.")]
 		public string Revision { get; init; } = "";
 	}
 
@@ -547,22 +552,23 @@ namespace DealershipCar.Mcp.Tools
 	internal sealed class PublishedPrice
 	{
 		[JsonPropertyName("milestoneDistance")]
-		[Description("The milestone this price is for.")]
+		[Description("El hito para el que es este precio.")]
 		public int MilestoneDistance { get; init; }
 
 		[JsonPropertyName("milestoneUnit")]
-		[Description("The distance unit the manufacturer published that milestone in. Say it: the "
-			+ "record never converts between the two units, so the number alone is not the answer.")]
+		[Description("La unidad de distancia en que el fabricante publicó ese hito. Dígala: el "
+			+ "registro nunca convierte entre las dos unidades, así que el número solo no es la "
+			+ "respuesta.")]
 		public string MilestoneUnit { get; init; } = "";
 
 		[JsonPropertyName("says")]
-		[Description("The amount with its currency, the window the price is valid in, whether that "
-			+ "window is in force at askedAt, and the revision it came from. Say the whole sentence: "
-			+ "a price without its validity is a promise the branch never made.")]
+		[Description("El monto con su moneda, la ventana en que el precio rige, si esa ventana está "
+			+ "rigiendo a askedAt, y la revisión de la que salió. Diga la frase entera: un precio sin "
+			+ "su vigencia es una promesa que la sucursal nunca hizo.")]
 		public string Says { get; init; } = "";
 
 		[JsonPropertyName("revision")]
-		[Description("The revision this price came from.")]
+		[Description("La revisión de la que salió este precio.")]
 		public string Revision { get; init; } = "";
 	}
 
@@ -570,54 +576,57 @@ namespace DealershipCar.Mcp.Tools
 	internal sealed class SpecificationSheet
 	{
 		[JsonPropertyName("hasData")]
-		[Description("false when the app has not recorded anything yet; then the rest comes empty.")]
+		[Description("false cuando la app todavía no ha registrado nada; entonces el resto viene "
+			+ "vacío.")]
 		public bool HasData { get; init; }
 
 		[JsonPropertyName("vin")]
-		[Description("The vehicle this answer is about.")]
+		[Description("El vehículo del que habla esta respuesta.")]
 		public string Vin { get; init; } = "";
 
 		[JsonPropertyName("specificationKnown")]
-		[Description("false when this record was written by a version of the app older than the "
-			+ "manufacturer's spec sheet. Then nothing below is filled and it means NOTHING was "
-			+ "published - read detail. Their maintenance schedule is unaffected.")]
+		[Description("false cuando este registro lo escribió una versión de la app anterior a la ficha "
+			+ "del fabricante. Entonces no viene lleno nada de lo de abajo y quiere decir que NO se "
+			+ "publicó nada: lea detail. Su plan de mantenimiento no se ve afectado.")]
 		public bool SpecificationKnown { get; init; }
 
 		[JsonPropertyName("model")]
-		[Description("The model this spec sheet is about. The sheet describes the model, not this "
-			+ "particular car.")]
+		[Description("El modelo del que habla esta ficha. La ficha describe el modelo, no este carro "
+			+ "en particular.")]
 		public string Model { get; init; } = "";
 
 		[JsonPropertyName("currentRevision")]
-		[Description("The most recent sealed revision of the spec sheet. EMPTY means none has been "
-			+ "sealed yet, so nothing at all can be quoted. An individual item may name an older "
-			+ "revision than this one: a revision that corrects one item leaves the rest alone.")]
+		[Description("La revisión sellada más reciente de la ficha. VACÍO quiere decir que todavía no "
+			+ "se ha sellado ninguna, así que no se puede citar nada en absoluto. Un ítem suelto puede "
+			+ "nombrar una revisión más vieja que esta: una revisión que corrige un ítem deja los demás "
+			+ "en paz.")]
 		public string CurrentRevision { get; init; } = "";
 
 		[JsonPropertyName("currentRevisionPublishedAt")]
-		[Description("The instant the manufacturer published that revision, in UTC. Empty when none "
-			+ "is sealed.")]
+		[Description("El instante en que el fabricante publicó esa revisión, en UTC. Vacío cuando no "
+			+ "hay ninguna sellada.")]
 		public string CurrentRevisionPublishedAt { get; init; } = "";
 
 		[JsonPropertyName("fluids")]
-		[Description("The six kinds of fluid, including the ones nothing was published about, which "
-			+ "say so. Absence is stated, not skipped.")]
+		[Description("Las seis clases de fluido, incluidas aquellas sobre las que no se publicó nada, "
+			+ "que lo dicen. La ausencia se declara, no se saltea.")]
 		public IReadOnlyList<PublishedFluid> Fluids { get; init; } = new List<PublishedFluid>();
 
 		[JsonPropertyName("tyres")]
-		[Description("The three wheel positions, including the ones nothing was published about.")]
+		[Description("Las tres posiciones de rueda, incluidas aquellas sobre las que no se publicó "
+			+ "nada.")]
 		public IReadOnlyList<PublishedTyre> Tyres { get; init; } = new List<PublishedTyre>();
 
 		[JsonPropertyName("fuel")]
-		[Description("What fuel the model accepts, and what it must not be given.")]
+		[Description("Qué combustible acepta el modelo, y cuál no se le puede echar.")]
 		public PublishedFuel Fuel { get; init; } = new PublishedFuel();
 
 		[JsonPropertyName("folder")]
-		[Description("The person's folder, where their app keeps this vehicle's record.")]
+		[Description("La carpeta de la persona, donde su app guarda el registro de este vehículo.")]
 		public string Folder { get; init; } = "";
 
 		[JsonPropertyName("detail")]
-		[Description("Empty when everything is fine; otherwise what the person had better do.")]
+		[Description("Vacío cuando todo está bien; si no, lo que a la persona le conviene hacer.")]
 		public string Detail { get; init; } = "";
 	}
 
@@ -625,152 +634,158 @@ namespace DealershipCar.Mcp.Tools
 	internal sealed class WarrantyScope
 	{
 		[JsonPropertyName("hasData")]
-		[Description("false when the app has not recorded anything yet; then the rest comes empty.")]
+		[Description("false cuando la app todavía no ha registrado nada; entonces el resto viene "
+			+ "vacío.")]
 		public bool HasData { get; init; }
 
 		[JsonPropertyName("vin")]
-		[Description("The vehicle this answer is about.")]
+		[Description("El vehículo del que habla esta respuesta.")]
 		public string Vin { get; init; } = "";
 
 		[JsonPropertyName("specificationKnown")]
-		[Description("false when this record was written by a version of the app older than the "
-			+ "manufacturer's spec sheet. Then nothing below is filled - read detail.")]
+		[Description("false cuando este registro lo escribió una versión de la app anterior a la ficha "
+			+ "del fabricante. Entonces no viene lleno nada de lo de abajo: lea detail.")]
 		public bool SpecificationKnown { get; init; }
 
 		[JsonPropertyName("model")]
-		[Description("The model whose warranty scope this is.")]
+		[Description("El modelo del que es este alcance de garantía.")]
 		public string Model { get; init; } = "";
 
 		[JsonPropertyName("currentRevision")]
-		[Description("The most recent sealed revision of the spec sheet. EMPTY means none is sealed.")]
+		[Description("La revisión sellada más reciente de la ficha. VACÍO quiere decir que no hay "
+			+ "ninguna sellada.")]
 		public string CurrentRevision { get; init; } = "";
 
 		[JsonPropertyName("system")]
-		[Description("The system code that was asked about, exactly as it was passed. Empty when none "
-			+ "was named and this is the whole scope.")]
+		[Description("El código del sistema por el que se preguntó, exactamente como se pasó. Vacío "
+			+ "cuando no se nombró ninguno y esto es el alcance entero.")]
 		public string System { get; init; } = "";
 
 		[JsonPropertyName("systemInTheCatalogue")]
-		[Description("true when the published scope names that code at all - either among the systems "
-			+ "it declares inside or in one of its exclusions. false means the scope never mentions "
-			+ "it, which is 'we were never told about it' and NOT 'it is not covered'. Never report "
-			+ "false as a refusal of cover, and check the spelling before reporting it at all: the "
-			+ "match is exact.")]
+		[Description("true cuando el alcance publicado nombra ese código de alguna de las dos formas: "
+			+ "entre los sistemas que declara adentro o en una de sus exclusiones. false quiere decir "
+			+ "que el alcance nunca lo menciona, que es 'no nos lo dijeron' y NO 'no está cubierto'. "
+			+ "Nunca reporte false como una negativa de cobertura, y revise la ortografía antes de "
+			+ "reportarlo siquiera: la coincidencia es exacta.")]
 		public bool SystemInTheCatalogue { get; init; }
 
 		[JsonPropertyName("published")]
-		[Description("false when no warranty scope was ever published for this model.")]
+		[Description("false cuando nunca se publicó ningún alcance de garantía para este modelo.")]
 		public bool Published { get; init; }
 
 		[JsonPropertyName("says")]
-		[Description("The whole published scope in one sentence - the systems inside it, the "
-			+ "exclusions, and the manufacturer's own words that this is scope and not the resolution "
-			+ "of a claim. Say that last part too.")]
+		[Description("El alcance publicado entero en una frase: los sistemas que están adentro, las "
+			+ "exclusiones, y las palabras del fabricante mismo diciendo que esto es alcance y no la "
+			+ "resolución de un reclamo. Diga también esa última parte.")]
 		public string Says { get; init; } = "";
 
 		[JsonPropertyName("revision")]
-		[Description("The revision the scope came from. EMPTY means nothing is published.")]
+		[Description("La revisión de la que salió el alcance. VACÍO quiere decir que no hay nada "
+			+ "publicado.")]
 		public string Revision { get; init; } = "";
 
 		[JsonPropertyName("coveredSystems")]
-		[Description("The codes the scope declares INSIDE it. These are the codes to pass back as "
-			+ "system, letter for letter. A code being here does not mean this vehicle's warranty is "
-			+ "in force - that is not in this record.")]
+		[Description("Los códigos que el alcance declara ADENTRO. Estos son los códigos que hay que "
+			+ "devolver como system, letra por letra. Que un código esté aquí no quiere decir que la "
+			+ "garantía de este vehículo esté rigiendo: eso no está en este registro.")]
 		public IReadOnlyList<string> CoveredSystems { get; init; } = new List<string>();
 
 		[JsonPropertyName("exclusions")]
-		[Description("Every published exclusion with the system it names and the condition under "
-			+ "which it bites. An exclusion the record knows about and does not mention is the worst "
-			+ "possible answer to a coverage question, so read them out.")]
+		[Description("Cada exclusión publicada con el sistema que nombra y la condición bajo la cual "
+			+ "muerde. Una exclusión que el registro conoce y no se menciona es la peor respuesta "
+			+ "posible a una pregunta de cobertura, así que léalas en voz alta.")]
 		public IReadOnlyList<string> Exclusions { get; init; } = new List<string>();
 
 		[JsonPropertyName("servicingPolicyPublished")]
-		[Description("true when the manufacturer published a rule about servicing elsewhere and what "
-			+ "preserves cover.")]
+		[Description("true cuando el fabricante publicó una regla sobre el servicio en otro taller y "
+			+ "qué conserva la cobertura.")]
 		public bool ServicingPolicyPublished { get; init; }
 
 		[JsonPropertyName("servicingPolicySays")]
-		[Description("The rule as the manufacturer published it, with the revision it came from - or "
-			+ "that none is published. Say this sentence; it is the answer, not a summary of one. "
-			+ "Where THIS vehicle stands against the rule is not here - read detail.")]
+		[Description("La regla tal como la publicó el fabricante, con la revisión de la que salió, o "
+			+ "que no hay ninguna publicada. Diga esta frase; es la respuesta, no el resumen de una. "
+			+ "Dónde está parado ESTE vehículo frente a la regla no está aquí: lea detail.")]
 		public string ServicingPolicySays { get; init; } = "";
 
 		[JsonPropertyName("servicingPolicyRevision")]
-		[Description("The revision that rule came from. EMPTY means none is published.")]
+		[Description("La revisión de la que salió esa regla. VACÍO quiere decir que no hay ninguna "
+			+ "publicada.")]
 		public string ServicingPolicyRevision { get; init; } = "";
 
 		[JsonPropertyName("envelopeKnown")]
-		[Description("false when this record was written by a version of the app older than what the "
-			+ "dealership records about this vehicle. Then nothing about this car's standing is "
-			+ "filled and only the published scope answers - read detail. It does NOT mean the car "
-			+ "has no warranty.")]
+		[Description("false cuando este registro lo escribió una versión de la app anterior a lo que la "
+			+ "agencia registra sobre este vehículo. Entonces no viene lleno nada de la posición de "
+			+ "este carro y solo contesta el alcance publicado: lea detail. NO quiere decir que el "
+			+ "carro no tenga garantía.")]
 		public bool EnvelopeKnown { get; init; }
 
 		[JsonPropertyName("askedAt")]
-		[Description("The instant this question was asked, in UTC, and the instant the standing was "
-			+ "measured at. Everything about this vehicle here is as of that instant.")]
+		[Description("El instante en que se hizo esta pregunta, en UTC, y el instante al que se midió "
+			+ "la posición. Todo lo de este vehículo aquí es a ese instante.")]
 		public string AskedAt { get; init; } = "";
 
 		[JsonPropertyName("envelopePublished")]
-		[Description("true when the dealership has published a warranty envelope for this vehicle. "
-			+ "One of the three facts the standing needs. false is not 'out of warranty'.")]
+		[Description("true cuando la agencia ha publicado un sobre de garantía para este vehículo. Uno "
+			+ "de los tres hechos que necesita la posición. false no es 'sin garantía'.")]
 		public bool EnvelopePublished { get; init; }
 
 		[JsonPropertyName("deliveryRecorded")]
-		[Description("true when the date the car was handed over is in the record. One of the three "
-			+ "facts the standing needs; the term is counted from that date.")]
+		[Description("true cuando la fecha en que se entregó el carro está en el registro. Uno de los "
+			+ "tres hechos que necesita la posición; el plazo se cuenta desde esa fecha.")]
 		public bool DeliveryRecorded { get; init; }
 
 		[JsonPropertyName("odometerKnown")]
-		[Description("true when the dealership's feed has brought a reading observed at or before "
-			+ "askedAt. One of the three facts the standing needs; the distance half is measured "
-			+ "against it.")]
+		[Description("true cuando el feed de la agencia ha traído una lectura observada a askedAt o "
+			+ "antes. Uno de los tres hechos que necesita la posición; la mitad de distancia se mide "
+			+ "contra ella.")]
 		public bool OdometerKnown { get; init; }
 
 		[JsonPropertyName("thisVehicleSays")]
-		[Description("Where this vehicle stands against ITS OWN warranty envelope, in one sentence "
-			+ "the record composed - both halves, which one arrived first, and the odometer it was "
-			+ "measured against with the day that reading was observed. It answers even when a fact "
-			+ "is missing, naming which one, so it is the half to quote whenever standingSays is "
-			+ "empty. It is about the envelope and not about any one system; is_my_car_still_under_"
-			+ "warranty answers this question on its own with the same sentence.")]
+		[Description("Dónde está parado este vehículo frente a SU PROPIO sobre de garantía, en una "
+			+ "frase que compuso el registro: las dos mitades, cuál llegó primero, y el odómetro "
+			+ "contra el que se midió con el día en que se observó esa lectura. Contesta incluso "
+			+ "cuando falta un hecho, nombrando cuál, así que es la mitad que hay que citar siempre "
+			+ "que standingSays venga vacío. Habla del sobre y no de ningún sistema en particular; "
+			+ "is_my_car_still_under_warranty contesta esta pregunta por su cuenta con la misma frase.")]
 		public string ThisVehicleSays { get; init; } = "";
 
 		[JsonPropertyName("standingCanBeEvaluated")]
-		[Description("true when the coverage of the system named could be decided for THIS vehicle "
-			+ "at askedAt. false when a fact is missing, when no system was named, or when the "
-			+ "envelope's limit and the odometer arrived in different units - which are never "
-			+ "converted.")]
+		[Description("true cuando la cobertura del sistema nombrado se pudo decidir para ESTE vehículo "
+			+ "a askedAt. false cuando falta un hecho, cuando no se nombró ningún sistema, o cuando el "
+			+ "límite del sobre y el odómetro llegaron en unidades distintas, que nunca se "
+			+ "convierten.")]
 		public bool StandingCanBeEvaluated { get; init; }
 
 		[JsonPropertyName("standing")]
-		[Description("Where this vehicle stands on the system named, in one word. EMPTY means it "
-			+ "could not be decided; no word here means 'unknown', which is why it comes back empty "
-			+ "instead of guessing one. Read standingSays - it is the answer, this is only its name.")]
+		[Description("Dónde está parado este vehículo en el sistema nombrado, en una palabra. VACÍO "
+			+ "quiere decir que no se pudo decidir; aquí ninguna palabra quiere decir 'no se sabe', y "
+			+ "por eso viene vacío en vez de adivinar una. Lea standingSays: esa es la respuesta, esto "
+			+ "es solo su nombre.")]
 		public string Standing { get; init; } = "";
 
 		[JsonPropertyName("standingSays")]
-		[Description("THE COMPOSED ANSWER for the system named: where this vehicle stands, the "
-			+ "limits that govern it, the exclusions that apply, and the revision it came from. Say "
-			+ "this sentence. EMPTY means it could not be composed - then say and thisVehicleSays "
-			+ "each answer their own half in full, and detail says which fact is missing. Never "
-			+ "assemble a replacement out of the other two.")]
+		[Description("LA RESPUESTA COMPUESTA para el sistema nombrado: dónde está parado este "
+			+ "vehículo, los límites que rigen, las exclusiones que aplican, y la revisión de la que "
+			+ "salió. Diga esta frase. VACÍO quiere decir que no se pudo componer: entonces says y "
+			+ "thisVehicleSays contestan cada uno su propia mitad entera, y detail dice qué hecho "
+			+ "falta. Nunca arme un reemplazo a partir de los otros dos.")]
 		public string StandingSays { get; init; } = "";
 
 		[JsonPropertyName("recordContradictsItself")]
-		[Description("true when two facts the dealership recorded cannot both be true at askedAt, so "
-			+ "nothing about this vehicle could be measured and thisVehicleSays and standingSays come "
-			+ "back empty. The published scope still answers. It is a fault in the record and not in "
-			+ "the question - read detail.")]
+		[Description("true cuando dos hechos que la agencia registró no pueden ser ciertos los dos a "
+			+ "askedAt, así que no se pudo medir nada de este vehículo y thisVehicleSays y "
+			+ "standingSays vienen vacíos. El alcance publicado sigue contestando. Es una falla del "
+			+ "registro y no de la pregunta: lea detail.")]
 		public bool RecordContradictsItself { get; init; }
 
 		[JsonPropertyName("folder")]
-		[Description("The person's folder, where their app keeps this vehicle's record.")]
+		[Description("La carpeta de la persona, donde su app guarda el registro de este vehículo.")]
 		public string Folder { get; init; } = "";
 
 		[JsonPropertyName("detail")]
-		[Description("What this answer does not say, and anything the person had better do. Read it "
-			+ "before answering a coverage question: it is where the limits of the answer are.")]
+		[Description("Lo que esta respuesta no dice, y cualquier cosa que a la persona le convenga "
+			+ "hacer. Léalo antes de contestar una pregunta de cobertura: ahí están los límites de la "
+			+ "respuesta.")]
 		public string Detail { get; init; } = "";
 	}
 
@@ -778,67 +793,71 @@ namespace DealershipCar.Mcp.Tools
 	internal sealed class ServicePricing
 	{
 		[JsonPropertyName("hasData")]
-		[Description("false when the app has not recorded anything yet; then the rest comes empty.")]
+		[Description("false cuando la app todavía no ha registrado nada; entonces el resto viene "
+			+ "vacío.")]
 		public bool HasData { get; init; }
 
 		[JsonPropertyName("vin")]
-		[Description("The vehicle this answer is about.")]
+		[Description("El vehículo del que habla esta respuesta.")]
 		public string Vin { get; init; } = "";
 
 		[JsonPropertyName("specificationKnown")]
-		[Description("false when this record was written by a version of the app older than the "
-			+ "manufacturer's spec sheet. Then nothing below is filled - read detail.")]
+		[Description("false cuando este registro lo escribió una versión de la app anterior a la ficha "
+			+ "del fabricante. Entonces no viene lleno nada de lo de abajo: lea detail.")]
 		public bool SpecificationKnown { get; init; }
 
 		[JsonPropertyName("model")]
-		[Description("The model these figures are published for.")]
+		[Description("El modelo para el que están publicados estos números.")]
 		public string Model { get; init; } = "";
 
 		[JsonPropertyName("currentRevision")]
-		[Description("The most recent sealed revision of the spec sheet. EMPTY means none is sealed.")]
+		[Description("La revisión sellada más reciente de la ficha. VACÍO quiere decir que no hay "
+			+ "ninguna sellada.")]
 		public string CurrentRevision { get; init; } = "";
 
 		[JsonPropertyName("operation")]
-		[Description("The maintenance operation this answer is about.")]
+		[Description("La operación de mantenimiento de la que habla esta respuesta.")]
 		public string Operation { get; init; } = "";
 
 		[JsonPropertyName("intervalPublished")]
-		[Description("true when the manufacturer published how often this operation is done.")]
+		[Description("true cuando el fabricante publicó cada cuánto se hace esta operación.")]
 		public bool IntervalPublished { get; init; }
 
 		[JsonPropertyName("intervalSays")]
-		[Description("How often the manufacturer publishes that this operation is done, with the "
-			+ "revision it came from - or that no interval is published. Say this sentence; it is the "
-			+ "answer, not a summary of one. How far THIS vehicle still has to go is not here - read "
+		[Description("Cada cuánto publica el fabricante que se hace esta operación, con la revisión de "
+			+ "la que salió, o que no hay ningún intervalo publicado. Diga esta frase; es la "
+			+ "respuesta, no el resumen de una. Cuánto le falta a ESTE vehículo no está aquí: lea "
 			+ "detail.")]
 		public string IntervalSays { get; init; } = "";
 
 		[JsonPropertyName("intervalRevision")]
-		[Description("The revision that interval came from. EMPTY means none is published.")]
+		[Description("La revisión de la que salió ese intervalo. VACÍO quiere decir que no hay ninguno "
+			+ "publicado.")]
 		public string IntervalRevision { get; init; } = "";
 
 		[JsonPropertyName("milestoneAsked")]
-		[Description("The milestone that was looked up. ZERO means none was named and no price was "
-			+ "looked up at all - that is not 'the price is zero'.")]
+		[Description("El hito que se buscó. CERO quiere decir que no se nombró ninguno y no se buscó "
+			+ "ningún precio en absoluto: eso no es 'el precio es cero'.")]
 		public int MilestoneAsked { get; init; }
 
 		[JsonPropertyName("prices")]
-		[Description("One entry per distance unit in which a price is published at that milestone, "
-			+ "usually one. An empty list means no price is published there - read detail for which "
-			+ "of the two reasons it is.")]
+		[Description("Una entrada por cada unidad de distancia en la que hay un precio publicado en "
+			+ "ese hito, normalmente una. Una lista vacía quiere decir que ahí no hay ningún precio "
+			+ "publicado: lea detail para saber cuál de los dos motivos es.")]
 		public IReadOnlyList<PublishedPrice> Prices { get; init; } = new List<PublishedPrice>();
 
 		[JsonPropertyName("askedAt")]
-		[Description("The instant this question was asked, in UTC, and the instant every validity in "
-			+ "prices was judged against. Everything here is as of that instant.")]
+		[Description("El instante en que se hizo esta pregunta, en UTC, y el instante contra el que se "
+			+ "juzgó cada vigencia de prices. Todo lo de aquí es a ese instante.")]
 		public string AskedAt { get; init; } = "";
 
 		[JsonPropertyName("folder")]
-		[Description("The person's folder, where their app keeps this vehicle's record.")]
+		[Description("La carpeta de la persona, donde su app guarda el registro de este vehículo.")]
 		public string Folder { get; init; } = "";
 
 		[JsonPropertyName("detail")]
-		[Description("What this answer does not say, and anything the person had better do.")]
+		[Description("Lo que esta respuesta no dice, y cualquier cosa que a la persona le convenga "
+			+ "hacer.")]
 		public string Detail { get; init; } = "";
 	}
 }

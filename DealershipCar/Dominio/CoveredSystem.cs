@@ -70,9 +70,9 @@ namespace DealershipCar.Dominio
 		/// </summary>
 		internal string Describe()
 		{
-			if (!_ownLimits.Exists()) return "'" + Code + "' is inside the published scope";
+			if (!_ownLimits.Exists()) return "'" + Code + "' está dentro del alcance publicado";
 
-			return "'" + Code + "' is inside the published scope, with its own limits of "
+			return "'" + Code + "' está dentro del alcance publicado, con límites propios de "
 				+ _ownLimits.Describe();
 		}
 	}

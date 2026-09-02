@@ -1,5 +1,6 @@
 using System;
 using DealershipCar.Wasm;
+using DealershipCar.Wasm.Parts;
 using NUnit.Framework;
 
 namespace DealershipCar.Dominio.Pruebas
@@ -157,7 +158,7 @@ namespace DealershipCar.Dominio.Pruebas
 				{
 					Assert.That(journal.Api.IsFluidPublished(kind), Is.False, $"'{kind}'");
 					Assert.That(journal.Api.ReadFluidRevision(kind), Is.Empty, $"'{kind}'");
-					Assert.That(journal.Api.DescribeFluid(kind), Does.StartWith(kind + ":"),
+					Assert.That(journal.Api.DescribeFluid(kind), Does.StartWith(HowACanonNameReads.AFluid(kind) + ":"),
 						$"la frase de '{kind}' no nombra a '{kind}'.");
 				}
 
@@ -166,7 +167,7 @@ namespace DealershipCar.Dominio.Pruebas
 					Assert.That(journal.Api.IsTyrePublished(position), Is.False, $"'{position}'");
 					Assert.That(journal.Api.ReadTyreRevision(position), Is.Empty, $"'{position}'");
 					Assert.That(
-						journal.Api.DescribeTyre(position), Does.StartWith(position + " tyre:"),
+						journal.Api.DescribeTyre(position), Does.StartWith("Llanta " + HowACanonNameReads.ATyre(position).ToLowerInvariant() + ":"),
 						$"la frase de '{position}' no nombra a '{position}'.");
 				}
 			}

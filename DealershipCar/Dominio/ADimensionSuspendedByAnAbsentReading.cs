@@ -28,7 +28,7 @@ namespace DealershipCar.Dominio
 		/// <summary>Dice que falta el hecho, no el limite.</summary>
 		internal override string Describe()
 		{
-			return "distance: cannot be evaluated because no usable reading is available";
+			return "distancia: no se puede evaluar porque no hay ninguna lectura usable";
 		}
 	}
 }

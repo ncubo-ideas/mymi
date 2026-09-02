@@ -49,13 +49,13 @@ namespace DealershipCar.Dominio
 		/// </summary>
 		internal string Describe()
 		{
-			if (_distance == 0) return "every " + _days + " days";
+			if (_distance == 0) return "cada " + _days + " días";
 
-			string byDistance = "every " + _distance + " " + _unit.Name;
+			string byDistance = "cada " + _distance + " " + _unit.Name;
 
 			if (_days == 0) return byDistance;
 
-			return byDistance + " or " + _days + " days";
+			return byDistance + " o " + _days + " días";
 		}
 
 		/// <summary>
@@ -75,17 +75,17 @@ namespace DealershipCar.Dominio
 					+ "nada que comparar ni nada que decir que no se puede comparar.");
 
 			if (_distance == 0)
-				return "This vehicle has " + distanceRemaining + " " + remainingUnit.Name
-					+ " to go, which cannot be evaluated against an interval published as a term "
-					+ "and no distance.";
+				return "La distancia que le queda a este vehículo es " + distanceRemaining + " "
+					+ remainingUnit.Name + ", que no se puede evaluar contra un intervalo publicado "
+					+ "como plazo y sin distancia.";
 
 			if (_unit != remainingUnit)
-				return "This vehicle's remaining distance is " + distanceRemaining + " "
-					+ remainingUnit.Name + ", which cannot be evaluated against an interval "
-					+ "published in " + _unit.Name + ": these units are never converted.";
+				return "La distancia que le queda a este vehículo es " + distanceRemaining + " "
+					+ remainingUnit.Name + ", que no se puede evaluar contra un intervalo publicado "
+					+ "en " + _unit.Name + ": estas unidades nunca se convierten.";
 
-			return "This vehicle has " + distanceRemaining + " " + remainingUnit.Name
-				+ " to go against it.";
+			return "A este vehículo le quedan " + distanceRemaining + " " + remainingUnit.Name
+				+ " contra él.";
 		}
 	}
 }

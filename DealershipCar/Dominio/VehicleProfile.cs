@@ -211,12 +211,12 @@ namespace DealershipCar.Dominio
 
 			if (!_delivery.IsExpressedIn(limitUnit))
 				return TheAnswerWithAUnitMismatch(
-					limitUnit, _delivery.Unit, "the odometer reading recorded at delivery",
+					limitUnit, _delivery.Unit, "la lectura del odómetro registrada en la entrega",
 					odometer, asOf);
 
 			if (!_envelope.MeasuresDistanceIn(odometerUnit))
 				return TheAnswerWithAUnitMismatch(
-					limitUnit, odometerUnit, "this vehicle's odometer", odometer, asOf);
+					limitUnit, odometerUnit, "el odómetro de este vehículo", odometer, asOf);
 
 			return TheSettledAnswerFor(
 				RemainingEnvelope.InBothHalves(
@@ -241,11 +241,11 @@ namespace DealershipCar.Dominio
 			RemainingEnvelope remaining = RemainingEnvelope.MeasuredOnlyInTime(
 				_envelope.MonthsLeftAsOf(_delivery.DeliveredAt, asOf),
 				_envelope.Months,
-				"because there is no odometer reading for this vehicle at or before the instant "
-					+ "asked, and the distance half is measured from one.");
+				"porque no hay ninguna lectura del odómetro de este vehículo al instante preguntado "
+					+ "ni antes, y la mitad de distancia se mide desde una.");
 
-			string odometer = "There is no odometer reading to measure the distance half against, "
-				+ "and the dealership's feed is what brings one.";
+			string odometer = "No hay ninguna lectura del odómetro contra la cual medir la mitad de "
+				+ "distancia, y quien trae una es el feed de la agencia.";
 
 			if (remaining.TheStandingCanBeDecided)
 				return TheSettledAnswerFor(remaining, odometer);
@@ -271,8 +271,9 @@ namespace DealershipCar.Dominio
 			RemainingEnvelope remaining = RemainingEnvelope.MeasuredOnlyInTime(
 				_envelope.MonthsLeftAsOf(_delivery.DeliveredAt, asOf),
 				_envelope.Months,
-				"because the published distance limit is in " + limitUnit.Name + " and " + whoseUnit
-					+ " is in " + other.Name + ", and units are never converted.");
+				"porque el límite de distancia publicado está en " + limitUnit.Name + " y "
+					+ whoseUnit + " está en " + other.Name + ", y las unidades nunca se "
+					+ "convierten.");
 
 			if (remaining.TheStandingCanBeDecided)
 				return TheSettledAnswerFor(remaining, odometer);
@@ -295,14 +296,14 @@ namespace DealershipCar.Dominio
 
 		private string ThePublishedHalf()
 		{
-			return "Published envelope: " + _envelope.Describe();
+			return "Sobre publicado: " + _envelope.Describe();
 		}
 
 		private string TheOdometerClause(int reading, DistanceUnit unit, DateTime observedAt)
 		{
-			return "Measured against an odometer of " + reading + " " + unit.Name + " observed on "
-				+ TheDay(observedAt) + ", counting from the " + _delivery.Reading + " "
-				+ _delivery.Unit.Name + " recorded when the vehicle was handed over on "
+			return "Medido contra un odómetro de " + reading + " " + unit.Name + " observado el "
+				+ TheDay(observedAt) + ", contando desde los " + _delivery.Reading + " "
+				+ _delivery.Unit.Name + " registrados cuando el vehículo se entregó el "
 				+ TheDay(_delivery.DeliveredAt) + ".";
 		}
 

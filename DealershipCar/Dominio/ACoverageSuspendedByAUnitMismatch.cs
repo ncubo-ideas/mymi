@@ -50,9 +50,9 @@ namespace DealershipCar.Dominio
 		/// </summary>
 		internal override string Describe()
 		{
-			return _subject + ": cannot be evaluated, because the governing distance limit is in "
-				+ _limitUnit.Name + " and this vehicle's odometer is in " + _odometerUnit.Name
-				+ ", and units are never converted. " + _clause;
+			return _subject + ": no se puede evaluar, porque el límite de distancia que rige está en "
+				+ _limitUnit.Name + " y el odómetro de este vehículo está en " + _odometerUnit.Name
+				+ ", y las unidades nunca se convierten. " + _clause;
 		}
 	}
 }

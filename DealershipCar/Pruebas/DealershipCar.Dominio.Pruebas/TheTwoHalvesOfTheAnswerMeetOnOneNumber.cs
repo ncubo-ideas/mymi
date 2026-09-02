@@ -69,11 +69,11 @@ namespace DealershipCar.Dominio.Pruebas
 				schedule.ReadOdometerObservedAt(TheInstantAsked),
 				TheInstantAsked);
 
-			Assert.That(said, Does.Contain("Time: 12 months left of 36 months."));
-			Assert.That(said, Does.Contain("Distance: 35000 mi left of 60000 mi."),
+			Assert.That(said, Does.Contain("Tiempo: quedan 12 meses de 36 meses."));
+			Assert.That(said, Does.Contain("Distancia: quedan 35000 mi de 60000 mi."),
 				"35000 = 60000 - (25010 - 10). El numero que la agenda entrego es el que el sobre "
 				+ "resto de su limite: un hecho, un numero, dos agregados.");
-			Assert.That(said, Does.Contain("observed on 2025-11-20"),
+			Assert.That(said, Does.Contain("observado el 2025-11-20"),
 				"Y la frase NOMBRA cuando se observo la lectura contra la que se midio, que es la "
 				+ "linea de honestidad de este slice mientras la frescura no exista.");
 		}
@@ -130,10 +130,10 @@ namespace DealershipCar.Dominio.Pruebas
 
 			string said = profile.DescribeWarrantyEnvelopeWithNoOdometer(TheInstantAsked);
 
-			Assert.That(said, Does.Contain("Time: 12 months left of 36 months."),
+			Assert.That(said, Does.Contain("Tiempo: quedan 12 meses de 36 meses."),
 				"La mitad de tiempo se sigue diciendo: no depende de ninguna lectura.");
-			Assert.That(said, Does.Contain("no odometer reading"));
-			Assert.That(said, Does.Not.Contain("60000 mi left"),
+			Assert.That(said, Does.Contain("ninguna lectura del odómetro"));
+			Assert.That(said, Does.Not.Contain("quedan 60000 mi"),
 				"Y ningun numero ocupa el lugar de la lectura que falta.");
 		}
 

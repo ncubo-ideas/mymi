@@ -83,10 +83,10 @@ namespace DealershipCar.Dominio.Pruebas
 
 			string motivo = vencimiento.Describe();
 
-			Assert.That(motivo, Does.Contain("cannot be evaluated"));
-			Assert.That(motivo, Does.Contain("the limit is in km"));
-			Assert.That(motivo, Does.Contain("the measurements are in mi"));
-			Assert.That(motivo, Does.Contain("never converted"),
+			Assert.That(motivo, Does.Contain("no se puede evaluar"));
+			Assert.That(motivo, Does.Contain("el límite está en km"));
+			Assert.That(motivo, Does.Contain("las mediciones están en mi"));
+			Assert.That(motivo, Does.Contain("nunca se convierten"),
 				"OUS-07: la persona tiene que poder saber POR QUE el sistema no esta mirando la "
 				+ "distancia. 'No vencio' a secas es indistinguible de 'no lo se'.");
 		}
@@ -146,7 +146,7 @@ namespace DealershipCar.Dominio.Pruebas
 			Assert.That(vencimiento.DistanceIsSuspended, Is.True);
 			Assert.That(vencimiento.SuspendedByAnAbsentReading, Is.True);
 			Assert.That(vencimiento.SuspendedByUnitMismatch, Is.False);
-			Assert.That(vencimiento.Describe(), Does.Contain("no usable reading"));
+			Assert.That(vencimiento.Describe(), Does.Contain("ninguna lectura usable"));
 		}
 
 		// Un ancla sin lectura -- la operacion nunca se completo -- suspende la distancia por
@@ -180,7 +180,7 @@ namespace DealershipCar.Dominio.Pruebas
 				"Es la unica dimension que esta regla tiene, asi que no hay a donde degradar. "
 				+ "Devolver NotDue a secas seria mentir con la verdad.");
 			Assert.That(vencimiento.State, Is.SameAs(DueState.NotDue));
-			Assert.That(vencimiento.Describe(), Does.Contain("not evidence"),
+			Assert.That(vencimiento.Describe(), Does.Contain("no es evidencia"),
 				"El motivo tiene que decir que este NotDue no es evidencia de nada.");
 		}
 

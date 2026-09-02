@@ -93,10 +93,10 @@ namespace DealershipCar.Dominio.Pruebas
 
 			string sentence = TheSentence();
 
-			Assert.That(sentence, Does.Contain("cannot be evaluated"));
-			Assert.That(sentence, Does.Contain("distance limit is in mi"));
-			Assert.That(sentence, Does.Contain("odometer is in km"));
-			Assert.That(sentence, Does.Contain("never converted"));
+			Assert.That(sentence, Does.Contain("no se puede evaluar"));
+			Assert.That(sentence, Does.Contain("límite de distancia que rige está en mi"));
+			Assert.That(sentence, Does.Contain("odómetro de este vehículo está en km"));
+			Assert.That(sentence, Does.Contain("nunca se convierten"));
 			Assert.That(sentence, Does.Contain(TheSystem));
 		}
 

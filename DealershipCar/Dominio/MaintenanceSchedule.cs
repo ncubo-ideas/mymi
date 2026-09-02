@@ -407,8 +407,9 @@ namespace DealershipCar.Dominio
 			MaintenanceOperationKind asked = MaintenanceOperationKind.OfCode(kind);
 
 			if (!_operations.ContainsKey(kind))
-				return "There is no scheduled " + asked.Name
-					+ " on this vehicle, so there is nothing that could be due.";
+				return "Este vehículo no tiene agendada ninguna operación de "
+					+ asked.HowItIsSaid.ToLowerInvariant() + ", así que no hay nada que pueda "
+					+ "estar vencido.";
 
 			return _operations[kind].Describe();
 		}

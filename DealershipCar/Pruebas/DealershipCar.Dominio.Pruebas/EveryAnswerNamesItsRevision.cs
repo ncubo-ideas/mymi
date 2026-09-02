@@ -35,7 +35,7 @@ namespace DealershipCar.Dominio.Pruebas
 	public sealed class EveryAnswerNamesItsRevision
 	{
 		private const string TheRevision = "REV-2025-01";
-		private const string TheClause = "EngineOil: grade 5W-30";
+		private const string TheClause = "Aceite de motor: grado 5W-30";
 
 		private static readonly DateTime PublishedAt = new DateTime(2025, 3, 14, 10, 0, 0);
 

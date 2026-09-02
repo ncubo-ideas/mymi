@@ -40,7 +40,7 @@ namespace DealershipCar.Dominio
 		/// </summary>
 		internal string Describe()
 		{
-			return _kind.Name + ": serviced " + _interval.Describe() + ".";
+			return _kind.HowItIsSaid + ": se hace " + _interval.Describe() + ".";
 		}
 
 		/// <summary>

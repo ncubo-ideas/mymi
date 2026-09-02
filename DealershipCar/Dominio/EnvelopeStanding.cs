@@ -18,13 +18,13 @@ namespace DealershipCar.Dominio
 		/// <summary>
 		/// Adentro: ninguna de las dos mitades del sobre se alcanzo al instante preguntado.
 		/// </summary>
-		internal static readonly EnvelopeStanding Inside = new EnvelopeStanding("Inside");
+		internal static readonly EnvelopeStanding Inside = new EnvelopeStanding("Inside", "Adentro");
 
 		/// <summary>
 		/// Alcanzado: al menos una de las dos mitades llego a su limite. Cual llego lo dice la
 		/// frase de la respuesta, que nombra siempre las dos.
 		/// </summary>
-		internal static readonly EnvelopeStanding Reached = new EnvelopeStanding("Reached");
+		internal static readonly EnvelopeStanding Reached = new EnvelopeStanding("Reached", "Alcanzado");
 
 		/// <summary>
 		/// La agencia no publico ningun sobre para este vehiculo. NO es lo mismo que estar
@@ -32,14 +32,21 @@ namespace DealershipCar.Dominio
 		/// certeza, asi que es una respuesta decidida y no una suspension.
 		/// </summary>
 		internal static readonly EnvelopeStanding NotPublished =
-			new EnvelopeStanding("NotPublished");
+			new EnvelopeStanding("NotPublished", "Sin publicar");
 
 		/// <summary>El nombre. Es lo unico que cruza hacia afuera; el objeto no se entrega.</summary>
 		internal string Name { get; }
 
-		private EnvelopeStanding(string name)
+		/// <summary>
+		/// Como se dice esta respuesta en la frase que alguien lee. NO es lo que cruza la puerta:
+		/// eso sigue siendo <see cref="Name"/>.
+		/// </summary>
+		internal string HowItIsSaid { get; }
+
+		private EnvelopeStanding(string name, string howItIsSaid)
 		{
 			Name = name;
+			HowItIsSaid = howItIsSaid;
 		}
 	}
 }

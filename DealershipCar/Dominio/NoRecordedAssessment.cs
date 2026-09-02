@@ -13,8 +13,8 @@ namespace DealershipCar.Dominio
 		/// <summary>Lo dice en vez de inventar una respuesta que nadie calculo.</summary>
 		internal override string Describe()
 		{
-			return "NotDue, but this operation has not been evaluated yet, so this is not "
-				+ "evidence that the operation is not due.";
+			return "Sin vencer, pero esta operación todavía no se ha evaluado, así que esto no es "
+				+ "evidencia de que la operación no esté vencida.";
 		}
 
 		/// <summary>No: no hay evaluacion de donde derivarlo.</summary>

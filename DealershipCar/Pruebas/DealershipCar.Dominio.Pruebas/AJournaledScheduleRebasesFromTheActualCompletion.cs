@@ -142,7 +142,7 @@ namespace DealershipCar.Dominio.Pruebas
 
 			Assert.That(
 				journal.Api.ReadDueReason("FluidChange"),
-				Does.Contain("units are never converted"),
+				Does.Contain("las unidades nunca se convierten"),
 				"El limite esta en UnitA y el ancla nueva quedo en UnitB.");
 			Assert.That(journal.Api.ReadDueState("FluidChange"), Is.EqualTo("NotDue"),
 				"Y degrada a solo-tiempo: 120 dias de 365.");

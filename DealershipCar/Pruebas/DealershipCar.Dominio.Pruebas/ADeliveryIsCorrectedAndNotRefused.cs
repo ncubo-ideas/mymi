@@ -91,11 +91,11 @@ namespace DealershipCar.Dominio.Pruebas
 
 			string after = TheSentence();
 
-			Assert.That(before, Does.Contain("17 months left of 36 months"));
-			Assert.That(before, Does.Contain("35500 km left of 60000 km"));
+			Assert.That(before, Does.Contain("17 meses de 36 meses"));
+			Assert.That(before, Does.Contain("35500 km de 60000 km"));
 
-			Assert.That(after, Does.Contain("12 months left of 36 months"));
-			Assert.That(after, Does.Contain("35010 km left of 60000 km"),
+			Assert.That(after, Does.Contain("12 meses de 36 meses"));
+			Assert.That(after, Does.Contain("35010 km de 60000 km"),
 				"Las dos mitades se miden desde el ancla, asi que corregirla las mueve las dos. Si "
 				+ "solo se moviera una, algo estaria guardando la otra.");
 		}

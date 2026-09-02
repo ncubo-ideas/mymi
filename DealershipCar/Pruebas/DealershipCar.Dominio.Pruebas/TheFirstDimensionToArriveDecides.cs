@@ -68,11 +68,11 @@ namespace DealershipCar.Dominio.Pruebas
 				"El tiempo lleva 228 de 365 dias: no decide nada todavia. Si decide, la ley se "
 				+ "escribio como 'vence por tiempo y de paso miro la distancia'.");
 
-			Assert.That(vencimiento.Describe(), Does.Contain("decided by distance"));
-			Assert.That(vencimiento.Describe(), Does.Not.Contain("decided by time"));
+			Assert.That(vencimiento.Describe(), Does.Contain("decidido por distancia"));
+			Assert.That(vencimiento.Describe(), Does.Not.Contain("decidido por tiempo"));
 			Assert.That(vencimiento.Describe(), Does.Contain("9000"),
 				"OUS-07: el motivo tiene que decir la DIMENSION y el MONTO, no solo que vence.");
-			Assert.That(vencimiento.Describe(), Does.Contain("of 10000 km"));
+			Assert.That(vencimiento.Describe(), Does.Contain("de 10000 km"));
 		}
 
 		// PRUEBA 2 de §9. Lectura 33000 el 2026-05-02.
@@ -90,9 +90,9 @@ namespace DealershipCar.Dominio.Pruebas
 			Assert.That(vencimiento.DecidedByTime, Is.True);
 			Assert.That(vencimiento.DecidedByDistance, Is.False);
 
-			Assert.That(vencimiento.Describe(), Does.Contain("decided by time"));
+			Assert.That(vencimiento.Describe(), Does.Contain("decidido por tiempo"));
 			Assert.That(vencimiento.Describe(), Does.Contain("335"));
-			Assert.That(vencimiento.Describe(), Does.Contain("days"));
+			Assert.That(vencimiento.Describe(), Does.Contain("días"));
 		}
 
 		// PRUEBA 3 de §9. Lectura 40000 el 2026-01-20 -> Due.
@@ -148,7 +148,7 @@ namespace DealershipCar.Dominio.Pruebas
 			Assert.That(vencimiento.State, Is.SameAs(DueState.Due));
 			Assert.That(vencimiento.DecidedByTime, Is.True);
 			Assert.That(vencimiento.DecidedByDistance, Is.True);
-			Assert.That(vencimiento.Describe(), Does.Contain("decided by time and distance"));
+			Assert.That(vencimiento.Describe(), Does.Contain("decidido por tiempo y distancia"));
 		}
 
 		// CADA CLAUSULA SE NOMBRA A SI MISMA, y hasta aqui nadie lo defendia: una etiqueta
@@ -156,7 +156,7 @@ namespace DealershipCar.Dominio.Pruebas
 		// adentro de la clausula equivocada, y toda la suite seguia verde. Se encontro
 		// falsificando a proposito el nombre de la dimension de tiempo.
 		//
-		// "decided by time and distance" NO alcanza para taparlo: esa frase la compone
+		// "decidido por tiempo y distancia" NO alcanza para taparlo: esa frase la compone
 		// DueAssessment con dos booleanos, y no toca las etiquetas que pone cada dimension.
 		[Test]
 		public void EachClauseOfTheReasonNamesItsOwnDimension()
@@ -165,11 +165,11 @@ namespace DealershipCar.Dominio.Pruebas
 				desde, new DateTime(2026, 6, 1), Lectura(40000, DistanceUnit.UnitA), sinEscalar)
 				.Describe();
 
-			Assert.That(motivo, Does.Contain("time: "),
+			Assert.That(motivo, Does.Contain("tiempo: "),
 				"La clausula del tiempo tiene que decir que es del tiempo.");
-			Assert.That(motivo, Does.Contain("distance: "),
+			Assert.That(motivo, Does.Contain("distancia: "),
 				"Y la de la distancia, que es de la distancia.");
-			Assert.That(motivo, Does.Contain("days"), "Los dias van en la clausula del tiempo.");
+			Assert.That(motivo, Does.Contain("días"), "Los días van en la clausula del tiempo.");
 			Assert.That(motivo, Does.Contain(" km"),
 				"Y la unidad del limite en la de la distancia.");
 		}

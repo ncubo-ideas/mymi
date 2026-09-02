@@ -57,11 +57,11 @@ namespace DealershipCar.Dominio.Pruebas
 
 				string said = journal.Api.DescribeWarrantyEnvelope(TheDayItIsAsked);
 
-				Assert.That(said, Does.Contain("no odometer reading"));
-				Assert.That(said, Does.Contain("Time: 28 months left of 36 months."),
+				Assert.That(said, Does.Contain("ninguna lectura del odómetro"));
+				Assert.That(said, Does.Contain("Tiempo: quedan 28 meses de 36 meses."),
 					"La mitad de tiempo se mide igual: no depende de ninguna lectura.");
 
-				Assert.That(said, Does.Not.Contain("Distance: 0"));
+				Assert.That(said, Does.Not.Contain("Distancia: 0"));
 				Assert.That(said, Does.Not.Contain("left of 15000"),
 					"Y NINGUN NUMERO DE DISTANCIA. Un cero, o la lectura de la entrega haciendo de la "
 					+ "de hoy, seria una medicion que nadie tomo, y quien la lea rio abajo no podria "
@@ -86,7 +86,7 @@ namespace DealershipCar.Dominio.Pruebas
 					journal.Api.ReadEnvelopeStanding(TheDayItIsAsked), Is.EqualTo("NotPublished"));
 				Assert.That(
 					journal.Api.DescribeWarrantyEnvelope(TheDayItIsAsked),
-					Does.Contain("not published"));
+					Does.Contain("no ha publicado"));
 			}
 		}
 
@@ -104,11 +104,11 @@ namespace DealershipCar.Dominio.Pruebas
 
 				string said = journal.Api.DescribeWarrantyEnvelope(TheDayItIsAsked);
 
-				Assert.That(said, Does.Contain("no delivery"));
-				Assert.That(said, Does.Contain("36 months or 15000 mi"),
+				Assert.That(said, Does.Contain("ninguna entrega"));
+				Assert.That(said, Does.Contain("36 meses o 15000 mi"),
 					"Y LO PUBLICADO SE SIGUE CITANDO. Faltar un hecho personal no vuelve incitable lo "
 					+ "que la agencia publico.");
-				Assert.That(said, Does.Not.Contain("Time:"),
+				Assert.That(said, Does.Not.Contain("Tiempo:"),
 					"Sin ancla no hay desde donde contar el plazo, asi que tampoco hay mitad de "
 					+ "tiempo que decir: un numero aqui se contaria desde una fecha inventada.");
 			}
@@ -191,7 +191,7 @@ namespace DealershipCar.Dominio.Pruebas
 					Is.EqualTo("Covered"));
 				Assert.That(
 					journal.Api.DescribeCoverageForThisVehicle(TheSystem, TheDayItIsAsked),
-					Does.Contain("Covered"));
+					Does.Contain("Cubierto"));
 			}
 		}
 
@@ -215,7 +215,7 @@ namespace DealershipCar.Dominio.Pruebas
 
 				Assert.That(
 					journal.Api.DescribeWarrantyEnvelope(TheDayItIsAsked),
-					Does.Contain("no odometer reading"));
+					Does.Contain("ninguna lectura del odómetro"));
 
 				Assert.Throws<InvalidOperationException>(
 					() => journal.Api.ReadEnvelopeStanding(TheDayItIsAsked));

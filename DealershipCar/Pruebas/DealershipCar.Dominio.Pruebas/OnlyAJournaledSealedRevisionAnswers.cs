@@ -44,7 +44,7 @@ namespace DealershipCar.Dominio.Pruebas
 			ADraftWithContent();
 
 			Assert.That(journal.Api.IsFluidPublished("EngineOil"), Is.False);
-			Assert.That(journal.Api.DescribeFluid("EngineOil"), Does.Contain("not published"));
+			Assert.That(journal.Api.DescribeFluid("EngineOil"), Does.Contain("no se ha publicado nada"));
 			Assert.That(journal.Api.DescribeFluid("EngineOil"), Does.Not.Contain(TheGrade),
 				"Y la frase no deja escapar el grado que ya esta adentro del borrador. Una ausencia "
 				+ "que igual dice el dato es la hoja citada por otro camino.");
@@ -88,7 +88,7 @@ namespace DealershipCar.Dominio.Pruebas
 
 			Assert.That(journal.Api.IsFluidPublished("EngineOil"), Is.True);
 			Assert.That(fluid, Does.Contain(TheGrade));
-			Assert.That(fluid, Does.Contain("revision " + TheRevision),
+			Assert.That(fluid, Does.Contain("revisión " + TheRevision),
 				"Ley L1: la procedencia va DENTRO de la frase, no solo en la lectura aparte que un "
 				+ "lector puede saltarse.");
 			Assert.That(journal.Api.ReadFluidRevision("EngineOil"), Is.EqualTo(TheRevision));

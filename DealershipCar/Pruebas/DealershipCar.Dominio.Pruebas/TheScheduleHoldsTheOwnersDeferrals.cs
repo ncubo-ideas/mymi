@@ -143,7 +143,7 @@ namespace DealershipCar.Dominio.Pruebas
 
 			Assert.That(
 				schedule.ReadDueReason(OperationKindCode.WearPartReplacement),
-				Does.Contain("SecondOpinion"));
+				Does.Contain("una segunda opinión"));
 		}
 
 		// PRUEBA 10 de §9: una operacion clasificada de seguridad rechaza el PRIMER intento, y

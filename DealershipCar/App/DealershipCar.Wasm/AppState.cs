@@ -56,7 +56,7 @@ namespace DealershipCar.Wasm
 
 		public string EvaluationSkipped { get; private set; } = "";
 
-		public string WhereTheDealershipIs => http.BaseAddress?.ToString() ?? "(not configured)";
+		public string WhereTheDealershipIs => http.BaseAddress?.ToString() ?? "(sin configurar)";
 
 		public string Vin => dealership.Vin;
 
@@ -76,7 +76,7 @@ namespace DealershipCar.Wasm
 		{
 			FolderResult result = await bridge.RecoverFolderAsync();
 			Mode = await bridge.CurrentModeAsync();
-			LastMessage = $"recover folder: {result}";
+			LastMessage = $"recuperar carpeta: {result}";
 			return result;
 		}
 
@@ -84,7 +84,7 @@ namespace DealershipCar.Wasm
 		{
 			FolderResult result = await bridge.ChooseFolderAsync();
 			Mode = await bridge.CurrentModeAsync();
-			LastMessage = $"connect folder: {result}";
+			LastMessage = $"conectar carpeta: {result}";
 
 			if (result.Ok) ReleaseTheActor();
 			return result;
@@ -105,7 +105,7 @@ namespace DealershipCar.Wasm
 		public async ValueTask<FolderResult> RequestPermissionAsync()
 		{
 			FolderResult result = await bridge.RequestPermissionAsync();
-			LastMessage = $"request permission: {result}";
+			LastMessage = $"pedir permiso: {result}";
 
 			if (result.Ok) ReleaseTheActor();
 			return result;
@@ -115,14 +115,14 @@ namespace DealershipCar.Wasm
 		{
 			await bridge.ForgetFolderAsync();
 			Mode = await bridge.CurrentModeAsync();
-			LastMessage = "the saved folder was forgotten; nothing in it was touched";
+			LastMessage = "se olvidó la carpeta guardada; no se tocó nada de lo que hay adentro";
 		}
 
 		public async ValueTask<FolderResult> UseBrowserStorageAsync()
 		{
 			FolderResult result = await bridge.UseBrowserStorageAsync();
 			Mode = await bridge.CurrentModeAsync();
-			LastMessage = $"browser storage: {result}";
+			LastMessage = $"almacenamiento del navegador: {result}";
 
 			if (result.Ok) ReleaseTheActor();
 			return result;
@@ -152,8 +152,8 @@ namespace DealershipCar.Wasm
 			try { await FlushToDiskAsync(); } catch (WriteRefusedException) { }
 
 			LastMessage = bridge.HasFolder
-				? $"up. {preloaded} files preloaded from '{bridge.FolderName}'"
-				: "up, but WITHOUT a folder: the journal lives only in memory and is lost on close";
+				? $"arriba. {preloaded} archivos precargados de '{bridge.FolderName}'"
+				: "arriba, pero SIN carpeta: el journal vive solo en memoria y se pierde al cerrar";
 
 			try
 			{
@@ -161,16 +161,16 @@ namespace DealershipCar.Wasm
 				ResultadoDeRefresh onOpen = await loop.Ejecutar(CancellationToken.None);
 				await FlushAfterTheBlockAsync();
 				DealershipUnreachable = "";
-				LastMessage += $" | on open: {onOpen}";
+				LastMessage += $" | al abrir: {onOpen}";
 			}
 			catch (WriteRefusedException)
 			{
-				LastMessage += " | the dealership answered, but the folder refused the write";
+				LastMessage += " | la agencia contestó, pero la carpeta rechazó la escritura";
 			}
 			catch (Exception ex)
 			{
 				DealershipUnreachable =
-					$"Could not reach {WhereTheDealershipIs} ({ex.GetType().Name}: {ex.Message}).";
+					$"No se pudo alcanzar {WhereTheDealershipIs} ({ex.GetType().Name}: {ex.Message}).";
 				LastMessage += " | " + DealershipUnreachable;
 			}
 
@@ -180,7 +180,7 @@ namespace DealershipCar.Wasm
 			}
 			catch (Exception ex)
 			{
-				LastMessage += $" | could not evaluate ({ex.GetType().Name}: {ex.Message})";
+				LastMessage += $" | no se pudo evaluar ({ex.GetType().Name}: {ex.Message})";
 			}
 		}
 
@@ -224,7 +224,7 @@ namespace DealershipCar.Wasm
 			if (refresh.Length > 0)
 			{
 				Credencial rotated = await new ProveedorDeToken(http).Rotar(refresh, ct);
-				if (rotated is not null) return await StoreAsync(rotated, "credential rotated with the refresh token");
+				if (rotated is not null) return await StoreAsync(rotated, "credencial rotada con el refresh token");
 			}
 
 			return await AskForANewCredentialAsync(ct);
@@ -235,7 +235,7 @@ namespace DealershipCar.Wasm
 			Credencial fresh = await new ProveedorDeToken(http)
 				.Pedir(api.StoredDeviceKey(), dealership.Resource, dealership.Vin, ct);
 
-			return await StoreAsync(fresh, $"new credential (scope {fresh.Scope})");
+			return await StoreAsync(fresh, $"credencial nueva (alcance {fresh.Scope})");
 		}
 
 		private async Task<string> StoreAsync(Credencial credential, string whatHappened)
@@ -257,7 +257,7 @@ namespace DealershipCar.Wasm
 			ResultadoDeRefresh result = await loop.Ejecutar(ct);
 
 			DealershipUnreachable = "";
-			LastMessage = $"refresh: {result}";
+			LastMessage = $"actualización: {result}";
 
 			await FlushAfterTheBlockAsync();
 			return result;
@@ -273,20 +273,20 @@ namespace DealershipCar.Wasm
 			if (!outcome.WasEvaluated)
 			{
 				EvaluationSkipped = api.HasBeenEvaluated()
-					? $"This record was already evaluated up to {Instant(api.LastEvaluatedAt())}, which is "
-					  + $"later than now ({Instant(asOf)}). The schedule below is as of that later instant, "
-					  + "not as of today, and it cannot be re-evaluated backwards."
+					? $"Este registro ya se evaluó hasta el {Instant(api.LastEvaluatedAt())}, que es "
+					  + $"posterior a ahora ({Instant(asOf)}). El plan de abajo está a ese instante "
+					  + "posterior, no al de hoy, y no se puede volver a evaluar hacia atrás."
 					: Unwrap(outcome.Rejection);
-				LastMessage = $"evaluate: skipped. {Unwrap(outcome.Rejection)}";
+				LastMessage = $"evaluación: omitida. {Unwrap(outcome.Rejection)}";
 				return EvaluationSkipped;
 			}
 
 			EvaluationSkipped = "";
 			await FlushToDiskAsync();
-			LastMessage = $"evaluate: {outcome.TransitionCount} "
-			            + (outcome.TransitionCount == 1 ? "transition" : "transitions")
-			            + (outcome.AnythingBecameDue ? ", something became due" : "")
-			            + (outcome.AnythingBecameOverdue ? ", something became overdue" : "");
+			LastMessage = $"evaluación: {outcome.TransitionCount} "
+			            + (outcome.TransitionCount == 1 ? "transición" : "transiciones")
+			            + (outcome.AnythingBecameDue ? ", algo venció" : "")
+			            + (outcome.AnythingBecameOverdue ? ", algo se atrasó" : "");
 			return "";
 		}
 
@@ -302,10 +302,10 @@ namespace DealershipCar.Wasm
 
 			if (now < lastStampSent)
 				throw new InvalidOperationException(
-					$"This machine's clock went backwards: it is now {Instant(now)} and this app has "
-					+ $"already sent a command stamped {Instant(lastStampSent)}. It will not send an "
-					+ "instant that moves backwards -- a retroactive declaration fails INSIDE the "
-					+ "command and leaves a permanent entry in the journal.");
+					$"El reloj de esta máquina fue para atrás: ahora son las {Instant(now)} y esta "
+					+ $"app ya mando un comando marcado {Instant(lastStampSent)}. No va a mandar un "
+					+ "instante que va hacia atrás -- una declaración retroactiva falla ADENTRO del "
+					+ "comando y deja una entrada permanente en el journal.");
 
 			lastStampSent = now;
 			return now;
@@ -457,7 +457,7 @@ namespace DealershipCar.Wasm
 
 		private void Require()
 		{
-			if (api is null) throw new InvalidOperationException("This app has not opened yet.");
+			if (api is null) throw new InvalidOperationException("Esta app todavía no se ha abierto.");
 		}
 
 		public async ValueTask DisposeAsync()

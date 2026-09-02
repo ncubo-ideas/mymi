@@ -101,7 +101,7 @@ namespace DealershipCar.Dominio
 
 			foreach (FuelGrade grade in _grades) dichos.Add(grade.Describe());
 
-			return "Fuel grades: " + string.Join(", ", dichos) + ".";
+			return "Grados de combustible: " + string.Join(", ", dichos) + ".";
 		}
 	}
 }

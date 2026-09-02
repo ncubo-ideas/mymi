@@ -68,10 +68,10 @@ namespace DealershipCar.Dominio.Pruebas
 
 			string said = TheSentence();
 
-			Assert.That(said, Does.Contain("of 60 months"));
-			Assert.That(said, Does.Contain("of 100000 km"));
-			Assert.That(said, Does.Contain("published on 2024-04-10"));
-			Assert.That(said, Does.Not.Contain("published on 2023-12-01"),
+			Assert.That(said, Does.Contain("de 60 meses"));
+			Assert.That(said, Does.Contain("de 100000 km"));
+			Assert.That(said, Does.Contain("publicado el 2024-04-10"));
+			Assert.That(said, Does.Not.Contain("publicado el 2023-12-01"),
 				"El instante viejo no puede seguir apareciendo: la segunda publicacion lo reemplazo.");
 		}
 
@@ -86,7 +86,7 @@ namespace DealershipCar.Dominio.Pruebas
 			Assert.That(profile.EnvelopeDistance(), Is.EqualTo(TheSecondDistance));
 			Assert.That(profile.ReadEnvelopePublishedAt(), Is.EqualTo(TheSecondPublication));
 			Assert.That(profile.DescribePublishedWarrantyEnvelope(),
-				Does.Contain("60 months or 100000 km"));
+				Does.Contain("60 meses o 100000 km"));
 		}
 
 		// MITAD 2, LA QUE MUERDE: la respuesta capturada ANTES sigue nombrando el primer sobre. Se
@@ -99,14 +99,14 @@ namespace DealershipCar.Dominio.Pruebas
 
 			ASecondEnvelopeIsPublished();
 
-			Assert.That(captured.Describe(), Does.Contain("of 36 months"));
-			Assert.That(captured.Describe(), Does.Contain("published on 2023-12-01"));
+			Assert.That(captured.Describe(), Does.Contain("de 36 meses"));
+			Assert.That(captured.Describe(), Does.Contain("publicado el 2023-12-01"));
 			Assert.That(captured.Describe(), Does.Not.Contain("100000"),
 				"L10: una publicacion no alcanza hacia atras. La respuesta se compuso con el sobre "
 				+ "que la dio y se quedo con el; una que se re-resuelve cada vez que se lee no es "
 				+ "una respuesta, es una consulta.");
 
-			Assert.That(TheSentence(), Does.Contain("of 100000 km"),
+			Assert.That(TheSentence(), Does.Contain("de 100000 km"),
 				"Y una lectura NUEVA si trae el sobre nuevo: hacia adelante si alcanza.");
 		}
 

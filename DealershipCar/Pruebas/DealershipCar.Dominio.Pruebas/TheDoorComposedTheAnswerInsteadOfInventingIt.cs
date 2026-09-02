@@ -177,7 +177,7 @@ namespace DealershipCar.Dominio.Pruebas
 
 				string said = journal.Api.DescribeCoverageForThisVehicle(TheSystem, TheDayItIsAsked);
 
-				Assert.That(said, Does.Contain("never converted"),
+				Assert.That(said, Does.Contain("nunca se convierten"),
 					"La frase dice por que no se pudo, y es lo mismo que dice la de nueve.");
 				Assert.That(
 					said,
@@ -210,7 +210,7 @@ namespace DealershipCar.Dominio.Pruebas
 			{
 				string said = journal.Api.DescribeWarrantyEnvelope(TheDayItIsAsked);
 
-				Assert.That(said, Does.Contain("odometer of 40000 mi observed on 2026-01-20"));
+				Assert.That(said, Does.Contain("odómetro de 40000 mi observado el 2026-01-20"));
 				Assert.That(said, Does.Not.Contain("46000"),
 					"La lectura de marzo existe en el registro y NO cuenta para una pregunta de "
 					+ "febrero. Es la misma regla con la que la agenda evalua.");
@@ -235,7 +235,7 @@ namespace DealershipCar.Dominio.Pruebas
 
 				string said = journal.Api.DescribeWarrantyEnvelope(afterwards);
 
-				Assert.That(said, Does.Contain("odometer of 46000 mi observed on 2026-03-01"));
+				Assert.That(said, Does.Contain("odómetro de 46000 mi observado el 2026-03-01"));
 				Assert.That(journal.Api.ReadEnvelopeStanding(afterwards), Is.EqualTo("Reached"));
 				Assert.That(
 					journal.Api.ReadCoverageStandingForThisVehicle(TheSystem, afterwards),
@@ -314,7 +314,7 @@ namespace DealershipCar.Dominio.Pruebas
 
 				Assert.That(
 					journal.Api.DescribeWarrantyEnvelope(beforeItWasHandedOver),
-					Does.Contain("39 months left of 36 months"),
+					Does.Contain("39 meses de 36 meses"),
 					"Mas plazo del que el sobre publico, porque los meses cumplidos salen negativos. "
 					+ "No revienta y no miente: dice exactamente lo que el registro implica.");
 

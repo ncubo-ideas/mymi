@@ -95,8 +95,8 @@ namespace DealershipCar.Dominio.Pruebas
 				+ "la bandera el asistente diria 'no entro ningun evento' donde el hecho es 'esta "
 				+ "app no llevaba la cuenta'.");
 			Assert.That(review.LastEventApplied, Is.EqualTo(0L));
-			Assert.That(review.Detail, Does.Contain("older version of the app"));
-			Assert.That(review.Detail, Does.Contain("open their app once"));
+			Assert.That(review.Detail, Does.Contain("una versión anterior de la app"));
+			Assert.That(review.Detail, Does.Contain("abra su app una vez"));
 		}
 
 		[Test]
@@ -191,8 +191,8 @@ namespace DealershipCar.Dominio.Pruebas
 				Assert.That(takes.Fluids, Is.Empty,
 					"Y no seis fluidos contestando que no. Una ficha vacia se leeria como un "
 					+ "fabricante que no publico nada, y el hecho es que esta app nunca la trajo.");
-				Assert.That(takes.Detail, Does.Contain("older version of the app"));
-				Assert.That(takes.Detail, Does.Contain("open their app once"));
+				Assert.That(takes.Detail, Does.Contain("una versión anterior de la app"));
+				Assert.That(takes.Detail, Does.Contain("abra su app una vez"));
 
 				Assert.That(sheet.DoesTheWarrantyCover("POWERTRAIN").SpecificationKnown, Is.False);
 				Assert.That(
