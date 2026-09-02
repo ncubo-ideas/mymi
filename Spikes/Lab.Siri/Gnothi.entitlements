@@ -4,8 +4,8 @@
 <dict>
 	<!-- EL CONTENEDOR COMPARTIDO CON EL HOST.
 	     Esta app tiene los App Intents; el Host de .NET (Gnothi.iOS) tiene los journals. No se
-	     pueden llamar -- los App Intents solo existen en Swift, y el issue dotnet/macios#24863
-	     sigue abierto -- asi que el Host deja una foto aca y esta app la lee. Ver
+	     pueden llamar (los App Intents solo existen en Swift, y el issue dotnet/macios#24863
+	     sigue abierto) asi que el Host deja una foto aca y esta app la lee. Ver
 	     Instantanea.swift.
 
 	     TIENE QUE SER EL MISMO STRING que en Gnothi.iOS/Entitlements.plist. Si difieren en una

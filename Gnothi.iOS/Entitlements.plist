@@ -11,7 +11,7 @@
 	     nuestras y NO serviria para que una institucion entregue la suya.
 
 	     NO ALCANZA CON ESTE ARCHIVO: el App Group tiene que estar habilitado en el portal de
-	     Apple para los dos app IDs -- este y el del spike de Siri -- y venir en el perfil de
+	     Apple para los dos app IDs (este y el del spike de Siri) y venir en el perfil de
 	     aprovisionamiento. Si falta, GetContainerUrl devuelve null EN SILENCIO. Por eso el
 	     ViewController lo escribe en el log al arrancar. -->
 	<key>com.apple.security.application-groups</key>
