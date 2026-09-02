@@ -99,11 +99,17 @@ se corra.
 corriendo contra el cual probar una receta.
 
 **8 (auditar). Parcialmente desbloqueado.** Ya existe el instrumento: [la tabla de
-observables](observables.md), con cinco chequeos corridos contra los tres negocios. Faltan seis por
-correr, y uno quedó declarado **no observable** a propósito. Lo que todavía bloquea la auditoría
-completa es que **sólo `Compras` tiene su `Preguntas.md`** —lo escribió el equipo el 2026-08-27, y
-encontró tres defectos en un negocio con 461 comprobaciones en verde—. Sin la intención declarada, un
-agente puede leer el código pero no sabe contra qué compararlo.
+observables](observables.md), con cinco chequeos corridos contra los tres negocios. De los trece,
+faltan siete por correr y uno quedó declarado **no observable** a propósito. Lo que todavía bloquea la
+auditoría completa es que **sólo `Compras` tiene su `Preguntas.md`** —lo escribió el equipo el
+2026-08-27, y encontró tres defectos en un negocio con 461 comprobaciones en verde—. Sin la intención
+declarada, un agente puede leer el código pero no sabe contra qué compararlo.
+
+> **El 13 es nuevo y audita algo que ninguno de los doce anteriores audita: completitud.** Los doce
+> preguntan si los juicios quedaron donde se dijo; el 13 pregunta si el dominio tiene todo lo que el
+> archivo declaró que iba a saber. Corre contra la Parte 1 del `Preguntas.md`, y **necesita que esa
+> tabla lleve la columna con el nombre de la clase** — hoy sólo la tiene `Pruebas/Gimnasio`, donde ya
+> encontró un renglón sin clase.
 
 
 **El teléfono. Desbloqueado, y con la parte cara medida.** `Gnothi.Mobile` compila el núcleo del Host

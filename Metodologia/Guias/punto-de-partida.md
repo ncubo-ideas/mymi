@@ -365,6 +365,25 @@ Esa asimetría es el corazón del asunto. **No se enumeran las preguntas: se enu
 hacen que ciertas preguntas tengan respuesta.** Un modelo al que se le declaró la capacidad contesta
 cosas que nadie previó; un modelo al que no se le declaró un juicio no lo puede inventar después.
 
+> ### La Parte 1 lleva una columna con la clase que la cubre
+>
+> Un renglón por sustantivo, y **al lado el nombre de la clase del dominio que lo implementa** — que
+> se llena **al modelar**, no en la entrevista:
+>
+> | | Qué es | Clase |
+> |---|---|---|
+> | **El plan** | Lo que el gimnasio le indica hacer, con su frecuencia | `Plan` |
+> | **La membresía** | Pagos, próximo cobro, atrasos | *(vacía)* |
+>
+> Un renglón sin clase es un sustantivo declarado y no modelado. **Es exactamente lo que pasó con la
+> membresía del gimnasio**, y nadie lo vio porque no había dónde mirarlo. Con la columna se ve al
+> primer vistazo, y además vuelve chequeable el
+> [observable 13](observables.md) — sin ella el chequeo tendría que adivinar qué clase corresponde a
+> qué renglón, y *un `grep` no es un observable*.
+>
+> Escribir la columna es también el momento en que quien modela **se ve obligado a mirar los
+> renglones uno por uno**, que es donde el defecto se caza gratis.
+
 El capítulo 4 desarrolla cómo se escribe cada parte, y trae el ejemplo trabajado completo.
 
 ---
@@ -380,6 +399,12 @@ El capítulo 4 desarrolla cómo se escribe cada parte, y trae el ejemplo trabaja
 - [ ] ¿**Cada palabra** que aparece en las preguntas tiene algo detrás? Es el que más se salta, y el
       que dejó a un dominio de presupuesto **sin ningún tipo de ingreso** teniendo *"el alquiler que
       recibo"* escrito en una de sus preguntas
+- [ ] ¿**Cada renglón de la Parte 1** tiene una clase al lado? La casilla de arriba mira las
+      preguntas y **no alcanza**: en el gimnasio la palabra *"membresía"* no aparecía en ninguna
+      pregunta —estaba en la Parte 1 y en lo descartado—, así que la casilla anterior la dejó pasar y
+      el dominio salió sin ella. **Esta casilla se llena al modelar, no en la sesión**
+- [ ] ¿Los juicios que quedaron sin firmar están marcados como tales, y **ninguno tiene un valor por
+      defecto silencioso** en el código?
 - [ ] ¿Lo leyó y lo aprobó quien conoce el negocio, sin necesidad de que nadie le tradujera nada?
 
 Ese último es el que de verdad cierra el paso. Si hizo falta explicarle el archivo a la persona que

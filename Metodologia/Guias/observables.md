@@ -61,6 +61,7 @@ antes de reportar un hallazgo, se mira la línea.
 | 10 | Cada clase justifica existir | Las clases del dominio | Cada una tiene al menos un miembro que ninguna otra tiene | **no es observable** — requiere juicio |
 | 11 | **Lo declarado coincide con lo que el módulo expone** | `manifest.json` vs. las tools reales | La lista de `tools[].name` y la que el módulo responde en `tools/list` son la misma: ni de más ni de menos | por correr |
 | 12 | **El costo fijo de una pregunta se puede medir sin llave** | El catálogo que la Puerta 2 le muestra al modelo | Existe una forma de contarlo **sin un modelo del otro lado**. Medido en el POC: ~1.364 tokens, de los cuales el 86 % es el catálogo | por correr |
+| **13** | **Lo declarado en la Parte 1 está modelado** | La Parte 1 del `Preguntas.md` vs. `Dominio/` | **Cada renglón nombra una clase, y esa clase existe.** Cero renglones con la columna vacía | **discrimina** — bloqueado, ver abajo |
 
 ### Sobre el 5, que es el único que discriminó
 
@@ -89,6 +90,37 @@ proyectar sin un modelo del otro lado, que es justo lo que lo vuelve un chequeo 
 Lo que vigila es una deriva silenciosa: cada tool que se agrega engorda el catálogo, el catálogo viaja
 en **cada** pregunta, y nadie lo nota hasta que llega la cuenta. Ver
 [las puertas de la IA](07-las-puertas-de-la-ia.md) §4.7.
+
+### Sobre el 13, que audita algo que ningún otro audita
+
+Los doce primeros auditan **deriva**: *¿los juicios quedaron donde se dijo que iban a quedar?* Ninguno
+audita **completitud**: *¿el dominio tiene todo lo que el archivo declaró que iba a saber?*
+
+La diferencia no es académica. Un `Preguntas.md` que declara un sustantivo y un dominio que no lo
+tiene **pasan los doce con boletín perfecto**, porque no hay nada que cruce la Parte 1 contra las
+clases. Es lo que pasó con la membresía del gimnasio: declarada, no modelada, y ningún instrumento
+sonó.
+
+**Corrido a mano contra el gimnasio**, que es de donde salió:
+
+| Renglón de la Parte 1 | Clase |
+|---|---|
+| El plan · La asistencia · La medición · El perfil · El objetivo · El rango de referencia | `Plan`, `Trayectoria`, `Medicion`, `Perfil`, `Objetivo`, `Referencia` ✅ |
+| **La membresía** | **ninguna** ❌ |
+
+Seis de siete. Habría fallado **el mismo día que se escribió el archivo**, meses antes de que se
+notara construyendo.
+
+> **Por qué está bloqueado, y qué lo desbloquea.** Escrito como búsqueda de texto **no funciona**, y
+> por la razón que esta misma página advierte arriba: *"asistencia"* no es una clase —vive dentro de
+> `Trayectoria`—, y *"rango de referencia"* es `Referencia`. Un chequeo textual daría falsos negativos
+> justo en los dominios bien modelados, que es el mismo defecto que ya se midió en la primera corrida.
+>
+> **Lo desbloquea una columna.** El [punto de partida](punto-de-partida.md) §4 ahora pide que cada
+> renglón de la Parte 1 lleve al lado el nombre de la clase que lo cubre. Con eso el chequeo deja de
+> adivinar y pasa a verificar una declaración —el mismo argumento del manifiesto: *porque es una
+> declaración, se puede verificar*—. Queda **por correr** hasta que los `Preguntas.md` existentes
+> lleven la columna.
 
 ### Sobre el 10, que se cayó al escribirlo
 
