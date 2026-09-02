@@ -24,6 +24,13 @@ chequeo. Eso no es un fracaso: es el chequeo haciendo su trabajo.
 
 ---
 
+> **Estos doce miran el código de los negocios. Las guías también se pueden chequear**, y eso vive
+> aparte: [`Metodologia/Herramientas/`](../Herramientas/). Hoy hay uno —que ningún enlace ni ancla
+> apunte a la nada— y su README cuenta las dos veces que mintió antes de servir, que son la mejor
+> ilustración que hay de la regla de acá abajo.
+
+---
+
 ## La regla que hay que leer antes de escribir un observable
 
 > **Un `grep` no es un observable.**
