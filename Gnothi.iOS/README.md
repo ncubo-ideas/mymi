@@ -204,6 +204,13 @@ muleta de laboratorio. Acá no hace falta.
 
 ## La sonda de AOT — leer esto ANTES de sacar conclusiones
 
+> **Ya corrió, y pasó.** Renan la midió en un iPhone 13 Pro el 2026-09-01: con
+> `MtouchInterpreter=-all` en las dos configuraciones (commit `a5047d6`), los cinco pasos pasan y
+> las banderas dan `Supported=True / Compiled=False`. **Un módulo que llega después de instalar
+> carga y ejecuta en un iPhone real.** Sin la bandera en Debug moría con SIGABRT en
+> `load_aot_module` — la afirmación de que Debug traía el intérprete por omisión era falsa. Los
+> dos logs están en `Spikes/Lab.Siri/HALLAZGOS.md`. Lo de abajo queda como guía de lectura.
+
 `Sonda.cs` corre al arrancar y escribe en el log. Contesta la pregunta que la nota 31 dejó
 abierta: **si un módulo que llega después de instalar se puede cargar con el AOT obligatorio.**
 
