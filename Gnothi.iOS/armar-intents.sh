@@ -174,9 +174,36 @@ say "5 · instalar en el simulador abierto y abrir una vez (para que escriba la 
 #
 # El udid se resuelve una vez y se usa explicito en lugar de `booted`, asi las tres llamadas van
 # al MISMO aparato aunque alguien bootee otro en el medio.
-UDID="$(xcrun simctl list devices booted | sed -n 's/.*(\([0-9A-Fa-f-]\{36\}\)).*/\1/p' | sed -n '1p')"
-[ -n "$UDID" ] || { bad "no hay ningun simulador booteado: abrir uno y repetir"; exit 1; }
-info "aparato: $UDID"
+# Y ELEGIR POR RUNTIME, no el primero que aparezca. `simctl list devices booted` no dice de que
+# version es cada aparato -la version esta en el encabezado "-- iOS X.Y --" que los agrupa-, asi
+# que tomar el primero puede caer en un runtime viejo sin que se note. La app soporta iOS 16 de
+# verdad -SupportedOSPlatformVersion 16.0-, asi que instalar en uno viejo NO es un error: los
+# App Intents andan. Lo que NO se puede medir ahi es Foundation Models, que pide 26 -y en 26.2
+# tampoco genera, ver Spikes/Lab.Siri/HALLAZGOS.md seccion 8-. Por eso se elige el MAS NUEVO y
+# se avisa si queda por debajo, en vez de abortar: abortar seria negar un uso legitimo.
+#
+# El awk resuelve todo de una y sin pipes: un `| head` acá manda SIGPIPE y con pipefail el
+# script se muere justo cuando encontro lo que buscaba.
+MINIMO_IOS="${MINIMO_IOS:-26.0}"
+ELEGIDO="$(xcrun simctl list devices 2>/dev/null | awk '
+  /^-- iOS [0-9]/            { split($3, p, "."); v = p[1] * 1000 + p[2]; ver = $3; next }
+  /^-- /                     { v = 0; next }
+  v > 0 && /\(Booted\)/ && match($0, /\([0-9A-Fa-f-]{36}\)/) {
+      if (v > mejor) { mejor = v; mver = ver; mudid = substr($0, RSTART + 1, RLENGTH - 2) }
+  }
+  END { if (mejor > 0) print mver, mudid }')"
+
+[ -n "$ELEGIDO" ] || { bad "no hay ningun simulador booteado: abrir uno y repetir"; exit 1; }
+VERSION="${ELEGIDO%% *}"
+UDID="${ELEGIDO##* }"
+
+if awk -v a="$VERSION" -v b="$MINIMO_IOS" 'BEGIN {
+      split(a, x, "."); split(b, y, ".")
+      exit !(x[1] * 1000 + x[2] < y[1] * 1000 + y[2]) }'; then
+  aviso "el booteado mas nuevo es iOS $VERSION, por debajo de $MINIMO_IOS: los App Intents se"
+  aviso "miden igual, pero Foundation Models no. Para eso hace falta un simulador de 26.5."
+fi
+info "aparato: iOS $VERSION · $UDID"
 
 xcrun simctl uninstall "$UDID" "$BUNDLE_ID" >/dev/null 2>&1 || true
 xcrun simctl install "$UDID" "$APP" || { bad "simctl install fallo"; exit 1; }
