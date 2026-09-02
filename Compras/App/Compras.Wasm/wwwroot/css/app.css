@@ -904,6 +904,38 @@ main h2 {
     filter: drop-shadow(0 4px 8px rgba(22, 38, 28, .12));
 }
 
+/* --------------------------------------------- las piezas del patron teaser
+
+   LA FILA DE LA FIRMA: tres fotitos solapadas y tres nombres. Es el resumen de la grilla
+   que vive en /infaltables — la portada reconoce, la pantalla completa recorre. */
+.firma-fila { display: flex; align-items: center; gap: .8rem; text-align: left; }
+.fotitos { display: inline-flex; flex: 0 0 auto; }
+.fotitos img {
+    width: 34px;
+    height: 34px;
+    object-fit: contain;
+    background: var(--ficha);
+    border: 2px solid var(--carta);
+    border-radius: 50%;
+    padding: 3px;
+}
+/* Solapadas como una pila: es el gesto universal de "esto es un grupo". */
+.fotitos img + img { margin-left: -10px; }
+.firma-que { display: flex; flex-direction: column; gap: 1px; flex: 1 1 auto; min-width: 0; }
+
+/* LAS TRES CIFRAS DEL MES, lado a lado. Reusa .ritmo-cifra; esto solo las acomoda. */
+.tiles-mes {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: .8rem;
+    margin-bottom: .5rem;
+}
+@media (max-width: 575.98px) { .tiles-mes { grid-template-columns: 1fr 1fr; } }
+
+/* La ultima compra va sobre el tinte estable: es el acceso rapido, no una alerta. */
+.ultima-compra { background: var(--tinte-verde); }
+.ultima-compra:hover { background: var(--estable-borde); }
+
 /* ------------------------------------------------- la anatomia de una seccion
 
    TODA SECCION ABRE IGUAL: un chip con su icono y el titulo en kicker. Es lo que vuelve la
