@@ -166,10 +166,43 @@ codesign --force --sign - --deep "$APP" && ok "bundle re-firmado (ad-hoc, simula
 
 # ── 5 · instalar y lanzar ──────────────────────────────────────────────────────────────────
 say "5 · instalar en el simulador abierto y abrir una vez (para que escriba la foto)"
-xcrun simctl uninstall booted "$BUNDLE_ID" >/dev/null 2>&1 || true
-xcrun simctl install booted "$APP" && ok "instalada"
-info "lanzando; buscar en el log: 'instantanea: N modulos' y 'Metadata.appintents'"
-xcrun simctl launch --console-pty booted "$BUNDLE_ID" 2>&1 | grep GNOTHI | head -12 || true
+
+# EXIGIR UN APARATO BOOTEADO, y abortar si no hay. `simctl install booted` falla con "No devices
+# are booted", y como iba dentro de un `&&` el fallo no abortaba nada: el script seguia derecho
+# a imprimir las instrucciones del paso 6 como si la app estuviera instalada. Lo que se medIa
+# despues era la instalacion ANTERIOR, con el paquete anterior. Ya paso.
+#
+# El udid se resuelve una vez y se usa explicito en lugar de `booted`, asi las tres llamadas van
+# al MISMO aparato aunque alguien bootee otro en el medio.
+UDID="$(xcrun simctl list devices booted | sed -n 's/.*(\([0-9A-Fa-f-]\{36\}\)).*/\1/p' | sed -n '1p')"
+[ -n "$UDID" ] || { bad "no hay ningun simulador booteado: abrir uno y repetir"; exit 1; }
+info "aparato: $UDID"
+
+xcrun simctl uninstall "$UDID" "$BUNDLE_ID" >/dev/null 2>&1 || true
+xcrun simctl install "$UDID" "$APP" || { bad "simctl install fallo"; exit 1; }
+ok "instalada"
+
+# EL LANZADO, ACOTADO. --console-pty no termina solo porque la app no sale, y antes esto
+# terminaba solo de rebote: `| head -12` cerraba el pipe al juntar 12 lineas GNOTHI. Si la app
+# imprimia menos -o fallaba antes de loguear- colgaba para siempre. Ahora corre al fondo y se
+# espera la linea que importa, con techo.
+LOG="$(mktemp)"
+info "lanzando; se espera la linea 'instantanea: N modulos'"
+xcrun simctl launch --console-pty "$UDID" "$BUNDLE_ID" > "$LOG" 2>&1 &
+PID_APP=$!
+for _ in $(seq 90); do
+  grep -q "instantanea:" "$LOG" 2>/dev/null && break
+  sleep 1
+done
+kill "$PID_APP" 2>/dev/null || true
+grep GNOTHI "$LOG" | sed -n '1,16p' || true
+if grep -q "instantanea:" "$LOG"; then
+  ok "la app arranco y escribio la foto"
+else
+  bad "no aparecio 'instantanea:' en 90 s: la app no llego a escribirla. El 6 no se puede medir."
+  rm -f "$LOG"; exit 1
+fi
+rm -f "$LOG"
 
 # ── 6 · a mano ─────────────────────────────────────────────────────────────────────────────
 say "6 · AHORA SE MIDE A MANO"
