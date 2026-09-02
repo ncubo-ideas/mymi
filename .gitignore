@@ -59,3 +59,7 @@ xcuserdata/
 # Lo que armar-intents.sh compila del Swift: la .a, el modulo y los const values. Es salida
 # de build y la regenera el script; el .swiftconstvalues cambia en cada corrida.
 Gnothi.iOS/Intents/out/
+
+# Lo que deja xcodebuild al compilar Lab.Siri por linea de comandos. Xcode lo crea al lado del
+# .xcodeproj aunque se le pase CONFIGURATION_BUILD_DIR a otra parte.
+Spikes/Lab.Siri/build/
