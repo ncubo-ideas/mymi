@@ -1,6 +1,6 @@
 # Las reglas del substrato
 
-Dieciséis cosas que el motor hace y ninguna documentación dice. **Todas se descubrieron a los
+Dieciocho cosas que el motor hace y ninguna documentación dice. **Todas se descubrieron a los
 golpes**, escribiendo un dominio y viéndolo fallar.
 
 > **Esto es una referencia, no un tutorial.** Si estás construyendo tu primera app, el
@@ -30,12 +30,18 @@ como *§7.5*.
 | **14** | [El dominio dice duraciones, no fechas](#14--el-dominio-dice-duraciones-no-fechas) | Es de diseño, no del motor |
 | **15** | [El `print` de varios campos lleva alias sin comillas](#15--el-print-de-varios-campos-lleva-alias-sin-comillas-separados-por-coma) | Al armar cualquier vista |
 | **16** | [Un escalar tipado sale por parámetro `out`](#16--un-escalar-tipado-sale-por-parámetro-out-no-parseando-el-print) | Al querer un número y no un texto |
+| **17** | [El `Check` pregunta exactamente lo que el dominio rechaza](#17--el-check-tiene-que-preguntar-exactamente-lo-que-el-dominio-rechaza) | **Corolario de la 1**, y envenena el journal igual |
+| **18** | [Todo comando necesita `Check`, incluso el que no puede fallar](#18--todo-comando-necesita-check-incluso-el-que-no-puede-fallar) | **No falla: miente.** El peor de encontrar |
 
 > La **14** es la única que no es una limitación del motor: es una decisión de diseño que se
 > descubrió al chocar con el `print`. Se quedó acá porque se aprende en el mismo lugar.
 >
-> Las **15** y **16** son las más nuevas: salieron de construir el
-> [Hola Mundo](../Ejemplos/HolaMundo/README.md), y la **2** se corrigió en la misma corrida.
+> Las **15** y **16** salieron de construir el [Hola Mundo](../Ejemplos/HolaMundo/README.md), y la
+> **2** se corrigió en la misma corrida.
+>
+> Las **17** y **18** son las más nuevas y **las dos corrigen a la 1**: salieron de atar el dominio
+> del gimnasio al perform, donde la 1 se cumplió al pie de la letra y aun así se envenenaron tres
+> journals. Si ya leíste la 1 alguna vez, **volvé por esas dos**.
 
 ---
 
@@ -73,6 +79,13 @@ actor.Using(
 
 Por eso el dominio necesita **predicados totales** (§3): el `Check` sólo puede preguntar lo que el
 dominio sabe responder sin reventar.
+
+> ⚠️ **Esta regla, sola, no alcanza — y se midió.** Cumplirla al pie de la letra y envenenar tres
+> journals igual es perfectamente posible, por dos agujeros que tiene: el `Check` puede preguntar
+> **otra cosa** que la que el dominio rechaza ([regla 17](#17--el-check-tiene-que-preguntar-exactamente-lo-que-el-dominio-rechaza)),
+> y un comando que **no puede fallar** parece no necesitar `Check` y sí lo necesita
+> ([regla 18](#18--todo-comando-necesita-check-incluso-el-que-no-puede-fallar)). Leé las dos antes de
+> dar esta por sabida.
 
 ## 2 · El contrato de retorno de `PerformCheckThenCommand`
 
@@ -265,6 +278,17 @@ escalares**, y eso decide la forma de tus carriers antes de que escribas el prim
   celda, con su `fila` y su `columna`— y la superficie rearma la grilla sin volver a decidir nada.
 - **Un nullable viaja como bool más valor**, nunca como hueco. Si mandás sólo el número, quien lo
   reciba no puede distinguir *"cero"* de *"no se sabe"*, y ésas son dos respuestas muy distintas.
+- **Un `ToString()` sobrescrito no se llama solo.** Aunque la clase lo tenga puesto justamente para
+  poder imprimirse, hay que escribirlo en el script: `print lectura.ToString() estado`. Si no:
+
+  ```
+  'Print estado' emits a value of type 'Lectura', which is material, not a value.
+  The projection is the actor's to author, not the material's: emit the leaves the
+  view needs, or state the rendering explicitly (for instance '.ToString()').
+  ```
+
+  El mensaje dice la razón, y es la misma de toda esta regla: **decidir qué se ve del material es del
+  actor, no del material.** Un `ToString()` implícito sería el material eligiendo por él.
 
 ## 14 · El dominio dice duraciones, no fechas
 
@@ -363,3 +387,76 @@ hacer aritmética sin adivinar, y a una tool del asistente devolver un `decimal`
 > **Lo que NO es el antipatrón.** Leer el JSON de una **vista** para armar tus records de pantalla es
 > correcto: ahí el `print` con formatter JSON es el canal declarado y ya hizo el trabajo de
 > serializar. El antipatrón es usar ese canal para un **escalar**.
+
+---
+
+## 17 · El `Check` tiene que preguntar exactamente lo que el dominio rechaza
+
+**Corolario de la [regla 1](#1--un-comando-rechazado-se-journaliza-igual--y-envenena-el-replay), y sin
+él la 1 no alcanza.** La 1 dice: guardá con un `Check` todo comando que el dominio pueda rechazar.
+Eso se puede cumplir al pie de la letra y envenenar el journal igual, si el `Check` pregunta **otra
+cosa**.
+
+Pasó tres veces seguidas en un mismo dominio. Los `Check` preguntaban cosas razonables, y ninguna era
+la que hacía reventar al dominio:
+
+| Comando | El `Check` preguntaba | El dominio rechazaba por |
+|---|---|---|
+| Agregar meta | ¿hay objetivo? | la meta **ya existía** |
+| Prescribir ejercicio | ¿existe el plan? | el ejercicio **ya estaba prescrito** |
+| Terminar plan | ¿ya terminó? | …y también si **terminaría antes de empezar** |
+| Registrar medida | ¿el nombre existe? | …y también si **ya estaba en esa hoja** |
+
+El `Check` pasa, el comando entra, el dominio revienta a mitad de la escritura — y como la entrada ya
+se escribió, se replaya en cada arranque:
+
+```
+Rehydration execution failed. EntryId=55, Cause: Ya hay una meta para 'cintura'.
+```
+
+**La regla, y es de forma, no de cuidado: un predicado total por comando, en la raíz, que junte
+TODAS las razones por las que ese comando fallaría.** Nombrado `Puede<Comando>`, uno por cada método
+de la superficie:
+
+```csharp
+internal bool PuedeRegistrarMedida(DateTime fecha, string queSeMidio, decimal valor)
+```
+
+Un `Check` que llama a un predicado con el nombre del comando **no se puede desalinear**: si mañana
+el dominio agrega una razón de rechazo, se agrega adentro de ese predicado y el `Check` la hereda.
+Repartir las condiciones entre varios `Check` sueltos es lo que produce la tabla de arriba.
+
+> **Y es auditable:** todo comando de la superficie tiene `Check`, y ese `Check` llama a exactamente
+> un predicado `Puede<Comando>`. Se puede mirar sin entender el negocio.
+
+---
+
+## 18 · Todo comando necesita `Check`, incluso el que no puede fallar
+
+**El más difícil de encontrar de las dieciocho, porque no produce ningún error.**
+
+La [regla 1](#1--un-comando-rechazado-se-journaliza-igual--y-envenena-el-replay) habla de comandos que
+el dominio **puede rechazar**. Leída así, un comando que no rechaza nada no necesita `Check` — y eso
+es exactamente lo que se creyó de `Asistio`, que sólo agrega un día a una lista.
+
+Corriendo el mismo journal dos veces:
+
+```
+primera corrida:  {"esperados":39,"fue":30,"faltaron":9,"cumplio":false}
+segunda corrida:  {"esperados":39,"fue":60,"faltaron":0,"cumplio":true}
+```
+
+**No falló.** Contó los mismos treinta días otra vez y le dijo a la persona que cumplió su plan
+cuando le faltaron nueve. Ninguna excepción, ningún `EWI`, ninguna línea roja. Una respuesta creíble
+y equivocada **es peor que un error**, porque nadie la va a investigar.
+
+**La pregunta correcta no es *¿este comando puede fallar?* sino *¿este mismo hecho puede volver a
+llegar?*** — y en una app con journal **siempre** puede: un replay es exactamente eso, y un proveedor
+que reenvía un evento también.
+
+> **Los comandos que no pueden fallar necesitan `Check` por identidad, no por validez.** El predicado
+> no pregunta si el dato es válido; pregunta si **ese hecho ya está adentro**.
+
+La forma es la misma de la regla 17 — `PuedeRegistrarAsistencia(dia)` devuelve `false` si ese día ya
+se registró — así que en la práctica las dos reglas se cumplen con el mismo trabajo: **un predicado
+total por comando, sin excepciones, incluidos los que "no hacen nada peligroso"**.

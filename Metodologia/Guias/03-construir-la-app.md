@@ -445,16 +445,17 @@ cualquier parser.
 
 **Se mudaron a su propio documento: [Las reglas del substrato](reglas-del-substrato.md).**
 
-Son dieciséis cosas que el motor hace y ninguna documentación dice, todas descubiertas a los golpes.
+Son dieciocho cosas que el motor hace y ninguna documentación dice, todas descubiertas a los golpes.
 Salieron de acá porque **no se leen igual que el resto del capítulo**: esto es un how-to que se
 recorre una vez, y ésas son una referencia que se consulta cada semana. **Conservan su numeración**:
 la *regla 5* de allá es la que hasta hoy se citaba como *§7.5*, acá y en commits viejos.
 
-**Antes de escribir la fase 1, leé por lo menos estas tres:**
+**Antes de escribir la fase 1, leé por lo menos estas cuatro:**
 
 | | | Por qué ahora |
 |---|---|---|
 | **1** | Un comando rechazado se journaliza igual | Es la peor de todas: envenena el replay para siempre |
+| **17 y 18** | El `Check` pregunta exactamente lo que el dominio rechaza, y **todo** comando lleva `Check` | **Corrigen a la 1**, que se puede cumplir al pie de la letra y envenenar el journal igual. De acá sale la forma del dominio: **un predicado total por comando** |
 | **10** | Un parámetro le puede robar el nombre a un tipo | Te muerde al nombrar el primer perform |
 | **13** | El `print` proyecta un solo nivel | Decide la forma de tus carriers, y rehacerla después duele |
 
@@ -514,8 +515,11 @@ rehidratación siguiente.
       pasar las pruebas del modelo puro no alcanza — ver el recuadro de §8
 - [ ] ¿Ningún parámetro se llama como un tipo del dominio? ([regla 10](reglas-del-substrato.md))
 - [ ] ¿El agregado se construye en un `upgrade`, como global raíz?
-- [ ] ¿Cada comando que el dominio pueda rechazar va detrás de un `Check`? ([regla 1](reglas-del-substrato.md))
-- [ ] ¿Hay un predicado total por cada cosa que el `Check` necesita preguntar?
+- [ ] ¿**Todo** comando va detrás de un `Check` — incluidos los que no pueden fallar, que lo llevan
+      por identidad y no por validez? ([reglas 1 y 18](reglas-del-substrato.md))
+- [ ] ¿Cada `Check` llama a **un** predicado `Puede<Comando>` que junta todas las razones de rechazo
+      de ese comando? ([regla 17](reglas-del-substrato.md))
+- [ ] ¿Se corrió el ciclo **dos veces sobre la misma carpeta** y los números no se movieron?
 - [ ] ¿Ningún valor se concatena en el texto del DSL?
 - [ ] ¿El actor se construye una vez y se reusa?
 

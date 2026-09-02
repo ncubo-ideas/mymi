@@ -99,71 +99,40 @@ Tres cosas que no salieron del gimnasio sino de **modelarlo**, y que valen para 
 capítulo 3 §8 avisa —*"un dominio no está terminado hasta que un perform lo tocó"*— y acá se cumplió
 cuatro veces seguidas.
 
-## 1 · El parámetro `@genero` tapó al tipo `Genero`
+> **Cuatro de los cinco hallazgos ya son doctrina, y por eso acá quedan como punteros.** Es la regla
+> del [capítulo 3](../../Guias/03-construir-la-app.md) §8 bis: un hallazgo sobre el motor metido
+> adentro del `HUECOS.md` de un negocio es un hallazgo que nadie más va a encontrar. Se escribieron en
+> las guías el 2026-09-01.
 
-```
-Unknown property or method 'PorNombre' on type 'String'
-```
+| Qué pasó | Dónde vive ahora |
+|---|---|
+| El parámetro `@genero` tapó al tipo `Genero`, y el error acusaba a `String` | [Regla 10](../../Guias/reglas-del-substrato.md#10--un-parámetro-le-puede-robar-el-nombre-a-un-tipo) — **ya lo decía**, ver abajo |
+| Un `ToString()` sobrescrito no se llama solo desde el `print` | [Regla 13](../../Guias/reglas-del-substrato.md#13--el-print-proyecta-un-solo-nivel), último punto |
+| Tres journals envenenados: el `Check` preguntaba **otra cosa** que la que el dominio rechazaba | [Regla 17](../../Guias/reglas-del-substrato.md#17--el-check-tiene-que-preguntar-exactamente-lo-que-el-dominio-rechaza) |
+| `Asistio` no podía fallar, no llevaba `Check`, y contó los mismos 30 días dos veces | [Regla 18](../../Guias/reglas-del-substrato.md#18--todo-comando-necesita-check-incluso-el-que-no-puede-fallar) |
 
-Es la **regla 10** del substrato, y me mordió **después de escribir un comentario diciendo que la
-estaba evitando**. Vale anotar el detalle que la regla no dice: **la colisión es insensible a
-mayúsculas.** El parámetro se llamaba `genero` en minúscula y el tipo `Genero`; alcanzó.
-
-## 2 · Un `ToString()` no alcanza para imprimir
-
-```
-'Print estado' emits a value of type 'Lectura', which is material, not a value.
-The projection is the actor's to author, not the material's: emit the leaves the
-view needs, or state the rendering explicitly (for instance '.ToString()').
-```
-
-`Lectura`, `Tendencia` y `Urgencia` tienen `ToString()` sobrescrito **justamente para poder
-imprimirse**, y no se llama solo. Hay que escribir `lectura.ToString()` en el script.
-
-## 3 · Tres journals envenenados por el mismo error, que no es el que la regla 1 describe
-
-La regla 1 dice *"guardá con un `Check` todo comando que el dominio pueda rechazar"*. Lo hice. Y aun
-así:
-
-```
-Rehydration execution failed. EntryId=55,
-Cause: Ya hay una meta para 'cintura'.
-```
-
-**Lo que falta en la regla es que el `Check` tiene que preguntar EXACTAMENTE lo que el dominio va a
-rechazar.** Mis Checks preguntaban cosas razonables pero distintas:
-
-| Comando | El `Check` preguntaba | El dominio rechazaba por |
-|---|---|---|
-| Agregar meta | ¿hay objetivo? | la meta **ya existía** |
-| Prescribir ejercicio | ¿existe el plan? | el ejercicio **ya estaba prescrito** |
-| Terminar plan | ¿ya terminó? | ...y también si **terminaría antes de empezar** |
-| Registrar medida | ¿el nombre existe? | ...y también si **ya estaba en esa hoja** |
-
-Un `Check` que pregunta otra cosa **deja pasar el comando**, el dominio revienta a mitad de la
-escritura, y esa entrada se replaya en cada arranque para siempre.
-
-De ahí salió la simetría que el dominio tiene ahora: **por cada comando, un predicado total en la
-raíz que junta todas las razones por las que ese comando fallaría.** `PuedeDeclararPerfil`,
-`PuedeRegistrarPlan`, `PuedePrescribir`, `PuedeTerminarPlan`, `PuedeRegistrarMedida`,
-`PuedeRegistrarAsistencia`.
-
-## 4 · Y el peor fue el comando que no podía fallar
-
-`Asistio` no rechaza nada: agrega un día a una lista. Por eso no le puse `Check`. En la segunda
-corrida contó los mismos 30 días otra vez:
+Los dos últimos son los que valen, porque **corrigen a la regla 1**: se la cumplió al pie de la letra
+y aun así se envenenaron tres journals. Y el de `Asistio` fue el peor de toda la corrida justamente
+porque **no falló**:
 
 ```
 primera corrida:  {"esperados":39,"fue":30,"faltaron":9,"cumplio":false}
 segunda corrida:  {"esperados":39,"fue":60,"faltaron":0,"cumplio":true}
 ```
 
-**No falló.** Le dijo a Sonia que cumplió su plan cuando le faltaron nueve días. Una respuesta creíble
-y equivocada es peor que una excepción, porque nadie la va a investigar.
+Le dijo a Sonia que cumplió su plan cuando le faltaron nueve días. **Una respuesta creíble y
+equivocada es peor que una excepción, porque nadie la va a investigar.**
 
-> **La lección, y va más allá de este dominio:** un comando que no puede fallar **igual necesita
-> idempotencia si el mismo hecho puede volver a llegar**. Y siempre puede: un replay es exactamente
-> eso.
+## El único que se queda acá, porque no es del motor
+
+**La regla 10 estaba completa y se rompió igual.** Termina diciendo *"ni siquiera con otra
+capitalización"*, y está así desde que se escribió el documento —**antes** de esta corrida—. El
+parámetro se llamaba `genero` en minúscula, el tipo `Genero`, y alcanzó. El comentario de
+`GimnasioAPI.cs` que decía que la estaba evitando se escribió **antes** de romperla.
+
+> Lo que eso muestra no es un hueco de la regla: es que **la prosa correcta no evitó el error**. No
+> pide más documentación. Pide que la colisión se impida donde se escribe el nombre del parámetro —
+> un chequeo, o un generador que nunca emita uno que colisione con un tipo del dominio.
 
 ## Y dos cosas que el perform pidió y el dominio no tenía
 
