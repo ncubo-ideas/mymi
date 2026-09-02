@@ -4,15 +4,105 @@
             <div class="section-head">
                 <MudText Typo="Typo.subtitle1" Class="section-head__name">Warranty</MudText>
                 <span class="mono muted" id="warranty-provenance">
-                    @(Sheet.Coverage.Published ? "scope · " + Provenance(Sheet.Coverage.Revision)
-                                               : "no scope published")
+                    @(Stands.Standing.Length > 0
+                        ? AppState.Spaced(Stands.Standing)
+                        : Sheet.Coverage.Published
+                            ? "scope · " + Provenance(Sheet.Coverage.Revision)
+                            : "no scope published")
                 </span>
             </div>
         </TitleContent>
         <ChildContent>
+            <div class="sheet-head" id="envelope-head">
+                <MudText Typo="Typo.subtitle2">Where your car stands</MudText>
+                <span class="mono muted" id="envelope-asked-at">as of @Stands.AskedAt</span>
+            </div>
+
+            @if (Stands.RecordContradictsItself)
+            {
+                <MudAlert Severity="Severity.Error" Variant="Variant.Outlined" Class="mb-3"
+                          id="record-contradicts-itself">
+                    @TheOwnerIsTold.TheRecordSaysTwoThingsThatCannotBothBeTrue
+                </MudAlert>
+
+                <MudText Typo="Typo.body2" Class="sheet-says muted mb-4" id="published-envelope-says">
+                    @Stands.PublishedSays
+                </MudText>
+            }
+            else
+            {
+                @if (Stands.Standing.Length > 0)
+                {
+                    <div class="grades" id="envelope-standing">
+                        <span class="grades__label">Right now</span>
+                        <MudChip T="string" Size="Size.Small" Variant="Variant.Filled" Color="Color.Info">
+                            @AppState.Spaced(Stands.Standing)
+                        </MudChip>
+                    </div>
+                }
+
+                <MudText Typo="Typo.body2" Class="sheet-says mb-3" id="envelope-says">
+                    @Stands.Says
+                </MudText>
+
+                @if (Stands.TheRecordIsMissingAFact)
+                {
+                    <MudAlert Severity="Severity.Info" Variant="Variant.Outlined" Class="mb-3"
+                              id="envelope-incomplete">
+                        @TheOwnerIsTold.TheDealershipHasNotSentTheseFactsYet
+                    </MudAlert>
+                }
+
+                @if (Stands.EnvelopePublished || Stands.DeliveryRecorded || Stands.OdometerKnown)
+                {
+                    <MudText Typo="Typo.caption" HtmlTag="p" Class="muted mb-1" id="measured-against-head">
+                        What that was measured against
+                    </MudText>
+
+                    <div class="board mb-4" id="measured-against">
+                        @if (Stands.EnvelopePublished)
+                        {
+                            <div class="item" id="measured-envelope">
+                                <div class="item__head">
+                                    <span class="op-name">Envelope published</span>
+                                    <span class="mono muted">@Stands.PublishedAt</span>
+                                </div>
+                            </div>
+                        }
+
+                        @if (Stands.DeliveryRecorded)
+                        {
+                            <div class="item" id="measured-delivery">
+                                <div class="item__head">
+                                    <span class="op-name">Handed over</span>
+                                    <span class="mono muted">@Stands.DeliveredAt</span>
+                                </div>
+                                <div class="item__says muted">
+                                    odometer that day @Stands.DeliveryReading @Stands.DeliveryUnit
+                                </div>
+                            </div>
+                        }
+
+                        @if (Stands.OdometerKnown)
+                        {
+                            <div class="item" id="measured-odometer">
+                                <div class="item__head">
+                                    <span class="op-name">Latest odometer reading</span>
+                                    <span class="mono">@Stands.Odometer @Stands.OdometerUnit</span>
+                                </div>
+                                <div class="item__says muted">
+                                    observed on @Stands.OdometerObservedAt
+                                </div>
+                            </div>
+                        }
+                    </div>
+                }
+            }
+
             <MudText Typo="Typo.caption" HtmlTag="p" Class="muted mb-4" id="warranty-scope-note">
-                The scope the manufacturer published for model <span class="mono">@Sheet.Model</span>.
-                It says what is inside the scope; it never says a repair will be paid for.
+                Below is the scope the manufacturer published for model
+                <span class="mono">@Sheet.Model</span>. It says what is inside the scope; it never
+                says a repair will be paid for.
             </MudText>
 
             @if (!Sheet.Coverage.Published)
@@ -51,6 +141,29 @@
                     @TheOwnerIsTold.ASystemThatIsNotListedWasNotRuledOut
                 </MudText>
 
+                @if (Stands.Systems.Count > 0)
+                {
+                    <MudText Typo="Typo.subtitle2" Class="mt-4 mb-1" id="coverage-standings-head">
+                        Where your car stands on each
+                    </MudText>
+
+                    <div class="board mb-2" id="coverage-standings">
+                        @foreach (CoverageStandingForThisVehicle system in Stands.Systems)
+                        {
+                            <div class="item" id="@("coverage-" + system.SystemCode)">
+                                <div class="item__head">
+                                    <span class="op-name">@system.SystemCode</span>
+                                    @if (system.Standing.Length > 0)
+                                    {
+                                        <span class="mono">@AppState.Spaced(system.Standing)</span>
+                                    }
+                                </div>
+                                <div class="item__says">@system.Says</div>
+                            </div>
+                        }
+                    </div>
+                }
+
                 <div class="mt-4" id="exclusions">
                     <MudText Typo="Typo.subtitle2" Class="mb-1">What it leaves out</MudText>
                     @if (Sheet.Coverage.Exclusions.Length == 0)
@@ -69,12 +182,6 @@
                         </ul>
                     }
                 </div>
-
-                <MudAlert Severity="Severity.Warning" Variant="Variant.Outlined" Class="mt-4"
-                          id="warranty-standing">
-                    <strong>Where your car stands is not here.</strong>
-                    <div class="mt-1">@TheOwnerIsTold.TheStandingIsNotInThisRecord</div>
-                </MudAlert>
             }
 
             <div class="sheet-head mt-6" id="servicing-rule">
@@ -99,9 +206,16 @@
 </MudExpansionPanels>
 
 @code {
-    /// <summary>La ficha leida en un solo momento. La seccion no lee nada por su cuenta.</summary>
+    /// <summary>La ficha del fabricante, leida en un solo momento. La seccion no lee nada por su cuenta.</summary>
     [Parameter, EditorRequired]
     public WhatTheManufacturerPublished Sheet { get; set; }
+
+    /// <summary>
+    /// Donde esta parado ESTE vehiculo, leido en el mismo momento. Va aparte de la ficha porque la
+    /// ficha es de un modelo y esto es de un carro.
+    /// </summary>
+    [Parameter, EditorRequired]
+    public WhereThisVehicleStands Stands { get; set; }
 
     private static string Provenance(string revision) => revision.Length > 0 ? revision : "--";
 }

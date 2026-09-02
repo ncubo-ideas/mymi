@@ -370,10 +370,10 @@ else
         </MudExpansionPanel>
     </MudExpansionPanels>
 
-    @if (sheet is not null)
+    @if (sheet is not null && stands is not null)
     {
         <MyVehicle Sheet="@sheet" />
-        <Warranty Sheet="@sheet" />
+        <Warranty Sheet="@sheet" Stands="@stands" />
     }
 
     @if (showInstrument)
@@ -438,6 +438,7 @@ else
     private List<string> settled = new List<string>(AppState.TheNineKinds);
 
     private WhatTheManufacturerPublished sheet;
+    private WhereThisVehicleStands stands;
 
     private string error = "";
     private string destinationProblem = "";
@@ -580,6 +581,7 @@ else
         settled = resolved;
 
         sheet = state.ReadTheSpecification();
+        stands = state.ReadWhereThisVehicleStands();
 
         (memfsFiles, memfsBytes) = state.MemfsState();
         permission = await state.CurrentPermissionAsync();

@@ -28,6 +28,10 @@ namespace DealershipCar.Dominio.Pruebas
 		// LA PAGINA RENDERIZA LAS DOS SECCIONES Y LES PASA LA MISMA HOJA. La misma a proposito: si
 		// cada una leyera la suya, la revision que una nombra podria no ser la de la otra, y en una
 		// pantalla que se refresca contra el taller eso pasa de verdad.
+		//
+		// Y DESDE T10 GARANTIA RECIBE ADEMAS LA MITAD DEL VEHICULO, que es una hoja aparte porque la
+		// ficha es de un MODELO y la garantia de este carro es de un VIN. Las dos se leen en el mismo
+		// Reread, una detras de la otra, asi que siguen siendo un solo momento.
 		[Test]
 		public void ThePageRendersBothSectionsAndHandsThemOneSheetReadAtOneMoment()
 		{
@@ -37,12 +41,18 @@ namespace DealershipCar.Dominio.Pruebas
 				"La pagina dejo de renderizar la seccion Mi vehiculo. Nada mas en la suite lo ve: "
 				+ "la hoja se sigue componiendo bien y la mitad de T10 no aparece en la pantalla.");
 
-			Assert.That(page, Does.Contain("<Warranty Sheet=\"@sheet\" />"),
-				"La pagina dejo de renderizar la seccion Garantia.");
+			Assert.That(page, Does.Contain("<Warranty Sheet=\"@sheet\" Stands=\"@stands\" />"),
+				"La pagina dejo de renderizar la seccion Garantia, o dejo de pasarle la mitad del "
+				+ "vehiculo. Sin Stands la seccion no tiene con que decir donde esta parado el carro.");
 
 			Assert.That(page, Does.Contain("state.ReadTheSpecification()"),
 				"La pagina dejo de leer la ficha, asi que las dos secciones reciben null y no pintan "
 				+ "nada -- sin ningun error y sin ningun aviso.");
+
+			Assert.That(page, Does.Contain("state.ReadWhereThisVehicleStands()"),
+				"La pagina dejo de leer la mitad del vehiculo. Es la lectura que toma el instante en "
+				+ "que la pantalla pregunta, y sin ella la seccion Garantia vuelve a ser el alcance "
+				+ "publicado y nada mas.");
 		}
 
 		// Y LAS SECCIONES NO LEEN NADA POR SU CUENTA. Un componente sin @inject no tiene de donde
@@ -79,6 +89,52 @@ namespace DealershipCar.Dominio.Pruebas
 
 			Assert.That(swept, Contains.Item("MyVehicle.razor"));
 			Assert.That(swept, Contains.Item("Warranty.razor"));
+		}
+
+		// Y LA SECCION PINTA LAS FRASES DEL DOMINIO Y NO UNAS PROPIAS. Es la tercera cosa que ninguna
+		// otra prueba ve: todo lo demas se defiende sobre las dos hojas, y una seccion que armara su
+		// propia frase con pedazos de ellas dejaria las hojas intactas y la suite entera verde.
+		//
+		// SE AFIRMA SOBRE EL MARKUP porque es donde vive la composicion: los campos que llevan una
+		// frase del dominio tienen que aparecer pintados, y aparecer SOLOS -- no adentro de una
+		// concatenacion. Un componente Blazor compilado no se puede inspeccionar sin un banco de
+		// pruebas de componentes, y en este repo no hay ninguno.
+		[Test]
+		public void TheWarrantySectionPaintsTheDomainsSentencesAndComposesNoneOfItsOwn()
+		{
+			string markup = TheSectionAsItIsWritten("Warranty.razor");
+
+			foreach (string sentence in TheDomainsSentencesTheSectionMustQuote)
+				Assert.That(markup, Does.Contain(sentence),
+					$"La seccion Garantia dejo de pintar '{sentence}'. La frase la compone el dominio: "
+					+ "una que la caratula arme con pedazos de las otras sale con la procedencia del "
+					+ "fabricante encima de algo que el fabricante no dijo.");
+
+			foreach (string forbidden in new[] { "Stands.Says +", "+ Stands.Says", "Says +", "+ Says" })
+				Assert.That(markup, Does.Not.Contain(forbidden),
+					$"La seccion concatena algo con una frase del dominio ('{forbidden}'). Lo que sale "
+					+ "de la puerta se cita letra por letra o no se cita.");
+		}
+
+		// Las frases del dominio que la seccion Garantia tiene que pintar, cada una de su propia
+		// mitad: lo que el fabricante publico del alcance y de la regla, el sobre publicado solo, la
+		// respuesta compuesta del vehiculo, y la de cada sistema.
+		private static readonly string[] TheDomainsSentencesTheSectionMustQuote =
+		{
+			"@Sheet.Coverage.Says",
+			"@Sheet.ServicingRule.Says",
+			"@Stands.PublishedSays",
+			"@Stands.Says",
+			"@system.Says",
+		};
+
+		private static string TheSectionAsItIsWritten(string name)
+		{
+			foreach (string file in TheSectionFiles())
+				if (Path.GetFileName(file) == name) return File.ReadAllText(file);
+
+			Assert.Fail($"'{name}' no llego al output.");
+			return "";
 		}
 
 		private static string ThePageAsItIsWritten()

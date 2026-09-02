@@ -99,4 +99,20 @@
           CopyToOutputDirectory="PreserveNewest" />
   </ItemGroup>
 
+  <!-- Y TODO EL MARKUP DE LA CARATULA, desde T10, por una tercera cosa que ninguna prueba veia: que
+       NINGUN control de la pantalla le pida a la persona un hecho de su propio vehiculo. El censo de
+       parametros de la puerta no lo puede ver, porque un formulario guarda su valor en el estado de
+       la pagina y no cruza ninguna puerta. Es exactamente el hueco que T8 midio en la caratula MCP y
+       tuvo que tapar con un censo de su propia superficie.
+
+       Va sobre TODOS los .razor y no solo sobre las secciones, porque un formulario en la pagina es
+       igual de malo que uno en una seccion, y por GLOB recursivo para que una pagina nueva entre sola
+       al barrido. -->
+  <ItemGroup>
+    <None Include="..\..\App\DealershipCar.Wasm\**\*.razor"
+          Exclude="..\..\App\DealershipCar.Wasm\bin\**\*.razor;..\..\App\DealershipCar.Wasm\obj\**\*.razor"
+          LinkBase="MarcadoComoDato"
+          CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
+
 </Project>
