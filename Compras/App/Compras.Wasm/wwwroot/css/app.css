@@ -178,9 +178,16 @@ h2, h3, h4, h5 { font-weight: 700; }
 
 /* §3: --gu-verde-oscuro va en "titulares, barra superior, pie". Es el único lugar donde el
    verde entra como masa, y es lo que le da a la pantalla el aire de supermercado. */
+/* PEGAJOSA, y es el requerimiento de marketing hecho CSS: el equipo pidio que Sonia
+   "recuerde siempre la institucion", y una barra que se va al primer scroll no cumple el
+   SIEMPRE. Asi la flor y el nombre acompañan toda la pantalla, tambien en las internas. */
 .barra {
     background: var(--barra-fondo);
     color: var(--barra-tinta);
+    position: sticky;
+    top: 0;
+    z-index: 950;
+    box-shadow: 0 2px 10px rgba(22, 38, 28, .22);
 }
 .barra-dentro {
     max-width: 56rem;
@@ -203,7 +210,9 @@ h2, h3, h4, h5 { font-weight: 700; }
     box-shadow: 0 1px 6px rgba(0, 0, 0, .25);
 }
 .marca-texto { display: flex; flex-direction: column; gap: 1px; min-width: 0; }
-.marca-nombre { font-weight: 700; font-size: 1.12rem; line-height: 1.15; }   /* §1 */
+/* Un punto mas grande que la §1: es EL elemento de marketing de la app, y el equipo pidio
+   visibilidad del negocio. Anotado como desviacion consciente, igual que el plato. */
+.marca-nombre { font-weight: 800; font-size: 1.2rem; line-height: 1.15; letter-spacing: -.01em; }
 .marca-bajada { font-size: .74rem; color: var(--barra-tenue); line-height: 1.25; }
 /* El sello se queda JUNTO A LA MARCA y no en la esquina: dice de que es demo esta app, y
    pegado al nombre se lee como parte de la identidad. La esquina derecha la necesitan las
@@ -574,7 +583,30 @@ main h2 {
     border-radius: 0 0 var(--radio-marco) var(--radio-marco);
     overflow: hidden;
 }
-.hero-dicho { min-width: 0; }
+/* LA FLOR DE AGUA: grande, tenue y detras de todo. La opacidad baja es lo que la vuelve
+   textura de marca en vez de estampa; el hero ya recorta con overflow:hidden. */
+.hero-flor {
+    position: absolute;
+    right: 8%;
+    top: -12%;
+    width: 15rem;
+    height: 15rem;
+    opacity: .14;
+    transform: rotate(12deg);
+    pointer-events: none;
+}
+.hero { position: relative; }
+.hero-dicho { min-width: 0; position: relative; }
+
+/* La firma de quien te lo cuenta: chiquita, en el verde de marca, debajo de la bajada. */
+.hero-firma {
+    margin: 0;
+    font-size: .74rem;
+    font-weight: 700;
+    letter-spacing: .1em;
+    text-transform: uppercase;
+    color: var(--verde);
+}
 .hero-saludo {
     font-size: .95rem;
     font-weight: 600;
