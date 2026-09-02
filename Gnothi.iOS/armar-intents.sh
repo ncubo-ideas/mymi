@@ -77,6 +77,12 @@ say "2 · dotnet build"
 #
 # Se saltea solo si de verdad no coinciden, y se avisa: bypasear siempre esconderia el dia que
 # la diferencia sea grande y si importe.
+# LIMPIAR LA METADATA ANTES DE COMPILAR, o el paso 3 miente. El paso 4 la inyecta dentro de
+# bin/ y el build siguiente es incremental, asi que sobrevive; el paso 3 entonces lee la de la
+# corrida ANTERIOR y concluye que dotnet build la genera -declarando falsa la hipotesis y
+# dejando sin sentido al paso 4-. Medido: borrada y con dotnet build a secas, no reaparece.
+rm -rf "bin/Debug/net9.0-ios/$RID/Gnothi.iOS.app/Metadata.appintents"
+
 XC_PIDE="$(sed -n '/_RecommendedXcodeVersion>/{
                      s/.*_RecommendedXcodeVersion>\([0-9]*\.[0-9]*\).*/\1/p; q; }' \
                    /usr/local/share/dotnet/*/packs/Microsoft.iOS.Sdk.net9.0_*/*/targets/*.props \
