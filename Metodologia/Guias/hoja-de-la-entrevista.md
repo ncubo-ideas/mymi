@@ -9,7 +9,10 @@ hizo lo que prometió.
 
 ---
 
-## Bloque 0 · Con qué llega
+## Antes de empezar · Con qué llega
+
+**No es un bloque** y por eso no lleva número: no se sale de acá con nada escrito.
+Son **cinco bloques**, del 1 al 5, igual que en el capítulo.
 
 > *Contame qué querés que sea esta app, como se lo contarías a alguien en un ascensor.*
 
@@ -28,8 +31,13 @@ No lo des por sentado. La respuesta cambia la forma de la app entera:
 | | Qué implica |
 |---|---|
 | **Hay una** y publica datos | La forma completa: página de descarga, endpoint de eventos, token |
-| **No hay** | La persona registra todo. El registro deja de ser reconstruible **desde el día uno** |
+| **No hay** | La persona registra todo |
 | **Híbrida** | La institución manda lo que puede y la persona aporta lo que ella no puede saber |
+
+> ⚠️ **El corte que importa no es «¿hay institución?» sino «¿la persona aporta algo?»** — y agarra a
+> los dos últimos por igual. **En cuanto la persona aporta un hecho, el registro deja de ser
+> reconstruible y el respaldo deja de ser opcional.** El híbrido es el más frecuente y donde más fácil
+> se pasa por alto, porque *"hay institución"* suena a que los datos están a salvo.
 
 > *¿Qué le **entrega** hoy esa institución a la persona: un papel, un portal, un correo?*
 >
@@ -72,6 +80,11 @@ Insistí hasta juntar **tres a cinco**. A cada una:
 - ¿La respuesta **cambia lo que hace**? → si no, es decoración
 - ¿Alcanza con **un solo dato**, o hace falta la historia? → si alcanza con uno, el portal ya lo daba
 - ¿El portal **ya se la contesta**? → volviste al bloque 1
+
+> ⚠️ **Los filtros se aplican a las PREGUNTAS, nunca a la capacidad.** Es el error más fácil de
+> cometer y descarta cosas imprescindibles. La clasificación de gastos la hacen hoy muchos bancos, y
+> aun así el modelo la necesita: sin ella no hay cómo contestar *"¿se incrementó un gasto fijo?"*.
+> **La Parte 1 no se filtra.** Es la misma regla del bloque 1, dicha en general.
 
 > **Una tiene que ser sobre una AUSENCIA.** *"¿Hace cuánto que no…?"*, *"¿qué me falta?"*, *"¿se me
 > venció algo?"*. Ninguna pantalla puede contestar eso, porque una pantalla renderiza lo que tiene.
@@ -149,6 +162,13 @@ Si no sale casi nada, no es que la entrevista falló: hay dominios donde este fi
 **No es parte de la misma sentada.** Va **después de la primera pasada de modelado**, y son quince
 minutos. Una sola pasada nunca alcanza: modelar siempre destapa lo que la entrevista no preguntó.
 
+> **Se entra con el `HUECOS.md` en la mano, y ése es todo el guion.** Es lo que quien modela fue
+> anotando mientras construía: lo que quedó **declarado sin firmar** en la entrevista y lo que
+> apareció **descubierto** al escribir las clases. **Cada renglón es una pregunta** — hay que
+> reformularla según la regla de abajo antes de decirla en voz alta.
+>
+> Si está vacío, o no se modeló o no se anotó mientras se modelaba. Nunca es que no hubo huecos.
+
 > ### La regla que gobierna este bloque
 >
 > **La persona contesta sobre el negocio. Quién se vuelve una clase lo decide quien modela.**
@@ -168,6 +188,10 @@ La primera es la más productiva de todas: es *"¿qué sabe esto que ninguna otr
 idioma de negocio.
 
 **2 · Al modelar hizo falta un dato que nadie mencionó.**
+
+**Antes de preguntar, volvé a mirar qué manda la institución.** Un estado de cuenta trae débitos **y
+créditos**: si el modelo sólo tiene gastos, le falta la mitad de lo que ya está entrando — y eso se ve
+sin entrevistar a nadie. Es el mismo movimiento del bloque 1, ahora con el modelo escrito al lado.
 
 > *¿De dónde sale…?*
 > *¿Eso viene en lo que te manda la institución, o lo sabés vos?*
@@ -204,6 +228,7 @@ muevan.
 - [ ] ¿Cada juicio contestado, o anotado con **quién** lo sabe?
 - [ ] ¿Está escrito lo que se **descartó**, y por qué? ¿Y quedó claro que se descartó **la pantalla**,
       no el dato?
+- [ ] ¿Los **candidatos a cruce** quedaron anotados, en vez de forzados adentro?
 - [ ] ¿**Cada palabra** que aparece en las preguntas tiene algo detrás? *(la que se salta más)*
 - [ ] ¿Lo aprobó quien conoce el negocio, **sin que nadie le tradujera nada**?
 
@@ -212,6 +237,8 @@ Y al modelar, no en la sesión:
 - [ ] ¿**Cada renglón de la Parte 1** tiene una clase al lado? La casilla de las palabras mira las
       preguntas y **no alcanza**: *"membresía"* no estaba en ninguna pregunta del gimnasio y se perdió
       igual
+- [ ] ¿Los juicios sin firmar están **marcados como tales**, y ninguno tiene un **valor por defecto
+      silencioso** en el código?
 
 Y después de modelar, el bloque 5. **Nunca alcanza con una pasada.**
 

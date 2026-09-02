@@ -108,8 +108,19 @@ obvio, y hay dominios donde no. La respuesta cambia la forma de la app entera:
 | | Qué implica |
 |---|---|
 | **Hay institución** y publica eventos | La forma completa: URL1, URL2, token, señuelo. Es la de Exámenes y Compras |
-| **No hay institución** | La persona registra todo. El journal es enteramente de procedencia `TÚ`, no hay URL2 ni token, y **deja de ser reconstruible desde el primer día** |
-| **Híbrida** | La institución manda lo que puede y la persona aporta lo que la institución no puede saber. Con las mismas consecuencias que el caso anterior sobre el respaldo |
+| **No hay institución** | La persona registra todo. El journal es enteramente de procedencia `TÚ`, y no hay URL2 ni token |
+| **Híbrida** | La institución manda lo que puede y la persona aporta lo que la institución no puede saber |
+
+> **El corte que importa no es «¿hay institución?» sino «¿la persona aporta algo?»**, y agarra a los
+> dos últimos casos por igual:
+>
+> **En cuanto la persona aporta un hecho, el journal deja de ser reconstruible desde URL2.** Borrar la
+> carpeta ya no es volver a bajar los eventos: es perder el trabajo de la persona, y **el respaldo
+> deja de ser opcional**. Es una decisión de arquitectura que se toma en el minuto tres de la
+> entrevista y después no se revisa, así que conviene decirla en voz alta cuando se toma.
+>
+> El caso híbrido es el más frecuente de los tres y es donde más fácil se pasa por alto, porque *"hay
+> institución"* suena a que los datos están a salvo.
 
 **Después, y son dos preguntas distintas:**
 
@@ -233,7 +244,8 @@ propia. En el laboratorio, la hemoglobina sabe el **grado de anemia**; no existe
 de un colesterol. Cuando una magnitud no tiene respuesta a esa pregunta, probablemente no necesitaba
 existir por separado.
 
-**Si el entrevistado no sabe contestar un juicio, no se inventa.** Un juicio inventado no se nota
+**Si el entrevistado no sabe contestar un juicio, no se inventa.** Se anota como pendiente **con
+nombre y apellido de quién lo sabe**, y se va a buscar a esa persona. Un juicio inventado no se nota
 hasta que alguien toma una decisión con él.
 
 > ### Pero no se pregunta en frío: se propone y se deja corregir
@@ -267,6 +279,19 @@ hasta que alguien toma una decisión con él.
 > Lo que **no** cambia: un juicio sin firmar **no tiene valor por defecto silencioso**. O el objeto no
 > se construye sin él, o la respuesta **dice que no sabe**. Un default silencioso es un juicio
 > inventado con mejores modales — ver el [capítulo 3](03-construir-la-app.md) §3.
+
+> ### Y una regla de corte, para la sesión en vivo
+>
+> **Cuando vengan tres *"no sé"* seguidos, anotá los tres con su dueño y seguí.**
+>
+> Se deduce de lo de arriba pero hay que decirlo, porque en la mesa la tentación es la contraria:
+> insistir, reformular, buscarle la vuelta. Y no hay vuelta que buscarle — si el conocimiento no está
+> en la sala, no va a aparecer por preguntar distinto, y cada intento gasta el tiempo que necesitan
+> los bloques que sí se pueden contestar.
+>
+> Lo que se pierde insistiendo se recupera solo: **este bloque vuelve en el 5**, con valores
+> propuestos sobre la mesa, y ahí la misma pregunta rinde mucho más — porque corregir un número es
+> fácil e inventarlo no.
 
 ### Bloque 4 · Qué se descarta
 
@@ -399,6 +424,8 @@ El capítulo 4 desarrolla cómo se escribe cada parte, y trae el ejemplo trabaja
 
 ## 5. Cuándo terminaste
 
+- [ ] ¿Se leyó **el papel campo por campo**, y cada campo quedó en la Parte 1? Es la casilla que
+      verifica el paso más barato del bloque 1, y el único donde nadie contesta *"no sé"*
 - [ ] ¿Hay tres a cinco preguntas, cada una en la voz de la persona y no en la de un sistema?
 - [ ] ¿Al menos una es sobre una **ausencia**, que ninguna pantalla podría mostrar?
 - [ ] ¿Cada juicio del bloque 3 tiene respuesta, o está anotado como pendiente con **nombre y
