@@ -122,6 +122,51 @@ Sobre datos vacíos tampoco rellena:
 > «No tengo datos de hemoglobina cargados en tus registros… puede que ese análisis no esté entre
 > los que autorizaste compartir desde tu laboratorio.»
 
+## Sin la muleta: ¿deduce el cruce, o solo lo elige?
+
+Las dos variantes de arriba le dan `compras_consumo_de_grasas_saturadas` — o sea, **el cruce ya
+resuelto**. Que lo elija bien prueba que sabe elegir, no que sepa deducir. La comparación estaba
+despareja: al modelo chico se lo probó primero SIN esa tool, y al grande siempre con ella.
+
+El modo `crudo` la empareja: `evaluar_tendencia` + `consumo_de(termino)` genérica, nada más. Es
+exactamente la configuración donde el 3B llamó `consumo_de("colesterol")` y contestó «no hay
+relación».
+
+**Claude no llamó a `consumo_de("colesterol")` ni una vez en tres.** Dedujo los alimentos solo:
+
+    #1   manteca · queso · carne roja                                  13 s
+    #2   manteca · queso                                               15 s
+    #3   grasa saturada · manteca · queso · carne roja · aceite        17 s
+
+| configuración | on-device 3B | Claude por red |
+|---|---|---|
+| con el cruce nombrado | ✅ 4/4 | ✅ 3/3 |
+| con el cruce nombrado + genéricas | ❌ 0/3 | ✅ 4/4 |
+| **sin el cruce nombrado** | ❌ **0/2** | ✅ **3/3** |
+
+### Lo que esto decide
+
+**Un modelo capaz no necesita que el Host sepa de dominio.** La genérica alcanza: el conocimiento
+de qué alimentos suben el colesterol lo pone el modelo, no el catálogo. Así que **nombrar el cruce
+en una tool del Host es una compensación para el modelo chico**, y meterla ahí dejaría
+conocimiento de negocio grabado en la capa que está diseñada para no entender de negocios — a
+cambio de la limitación de un solo modelo.
+
+Si el destino es on-device, esa compensación hace falta igual. Pero conviene saber que es eso, y
+no una pieza que la arquitectura pedía.
+
+### Y encontró un problema en la premisa
+
+Ninguno de nosotros lo había dicho:
+
+> «no hay forma de saber desde estos datos cuánto de eso efectivamente comiste, en qué cantidades,
+> ni qué otros factores influyen en tu colesterol»
+
+**Comprar no es comer.** El boss final —«tengo el colesterol alto porque compro estos alimentos»—
+cruza una compra con un analito, y entre las dos cosas falta quién lo consumió y cuánto. Es una
+limitación del ejemplo, no del mecanismo, pero si la respuesta va a decirse en serio hay que
+decirla con ese cuidado.
+
 ## Un matiz que conviene discutir, no dar por bueno
 
 Las siete corridas terminan derivando al médico —*«lo indicado es que lo charles con tu médico»*—.

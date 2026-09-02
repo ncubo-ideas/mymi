@@ -77,7 +77,22 @@ string pregunta = args.Length > 1 ? args[1] : "¿Puede que mi colesterol tenga a
 string rutaClave = Environment.GetEnvironmentVariable("GNOTHI_KEYFILE")
 	?? Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile), ".gnothi-model-key");
 
-List<ToolForTheModel> tools = modo == "completo" ? [tendencia, grasas, consumo, enCuales, total] : [tendencia, grasas];
+// TRES CATALOGOS, y el tercero es el que empareja la comparacion.
+//
+//   curado    tendencia + el cruce YA NOMBRADO
+//   completo  los dos anteriores mas las genericas que al modelo chico lo capturaban
+//   crudo     tendencia + la generica, SIN el cruce nombrado
+//
+// El tercero es la unica configuracion que mide DEDUCCION y no seleccion: sin una tool que
+// diga que la manteca se relaciona con el colesterol, el modelo tiene que llegar solo a
+// buscar alimentos. Al modelo chico se lo probo asi y fallo -llamo consumo_de("colesterol")-;
+// al grande, hasta esta corrida, se le habia dado siempre la muleta.
+List<ToolForTheModel> tools = modo switch
+{
+	"completo" => [tendencia, grasas, consumo, enCuales, total],
+	"crudo"    => [tendencia, consumo],
+	_          => [tendencia, grasas],
+};
 
 Console.WriteLine($"modo      : {modo}  ({tools.Count} tools)");
 Console.WriteLine($"pregunta  : {pregunta}");
