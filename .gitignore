@@ -55,3 +55,7 @@ Gnothi.Mobile/paquete.zip
 # compartido si van, para no rearmar el target a mano en cada clon.
 xcuserdata/
 *.xcuserstate
+
+# Lo que armar-intents.sh compila del Swift: la .a, el modulo y los const values. Es salida
+# de build y la regenera el script; el .swiftconstvalues cambia en cada corrida.
+Gnothi.iOS/Intents/out/

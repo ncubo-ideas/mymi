@@ -16,6 +16,7 @@ cd "$(dirname "$0")"
 say()  { printf '\n\033[1m%s\033[0m\n' "$*"; }
 ok()   { printf '  \033[32m✔ %s\033[0m\n' "$*"; }
 bad()  { printf '  \033[31m✘ %s\033[0m\n' "$*"; }
+aviso(){ printf '  \033[33m! %s\033[0m\n' "$*"; }
 info() { printf '  · %s\n' "$*"; }
 
 MODULO="GnothiIntents"
@@ -44,6 +45,13 @@ xcrun --find appintentsmetadataprocessor >/dev/null 2>&1 \
   || info "NO hay ../Gnothi.Mobile/paquete: la app arranca sin modulos y la foto sale vacia. Pedirle el zip a Edgar."
 
 # ── 1 · Swift → libreria estatica + const values ───────────────────────────────────────────
+# -emit-const-values-path dice DONDE escribir, pero no alcanza para que Swift lo emita: hay que
+# pedirle ademas QUE protocolos recoger, y eso es -const-gather-protocols-file, que es flag del
+# FRONTEND y no del driver -por eso va con -Xfrontend-. Sin el, el .a sale igual y el
+# .swiftconstvalues no, asi que el paso 4 se queda sin nada de donde extraer.
+#
+# La lista vive en Intents/protocolos-appintents.json, versionada, porque Xcode no trae ninguna:
+# rules_apple la genera al vuelo y aca la escribimos nosotros.
 say "1 · compilar Intents/GnothiIntents.swift a libreria estatica"
 rm -rf Intents/out && mkdir -p Intents/out
 xcrun swiftc \
@@ -52,6 +60,7 @@ xcrun swiftc \
   -target "$TRIPLE" -sdk "$SDK" \
   -emit-library -static -o Intents/out/libGnothiIntents.a \
   -emit-module -emit-module-path "Intents/out/$MODULO.swiftmodule" \
+  -Xfrontend -const-gather-protocols-file -Xfrontend Intents/protocolos-appintents.json \
   -emit-const-values-path "Intents/out/$MODULO.swiftconstvalues" \
   Intents/GnothiIntents.swift
 ok "libGnothiIntents.a  $(stat -f%z Intents/out/libGnothiIntents.a) bytes"
@@ -61,15 +70,45 @@ ok "libGnothiIntents.a  $(stat -f%z Intents/out/libGnothiIntents.a) bytes"
 
 # ── 2 · la app, con la libreria enlazada ───────────────────────────────────────────────────
 say "2 · dotnet build"
-dotnet build -f net9.0-ios -r "$RID" -c Debug -v:quiet -clp:NoSummary
+# EL CHEQUEO DE XCODE, y por que se saltea SOLO cuando hace falta. El workload de iOS exige la
+# version EXACTA de Xcode que trae su banda: 26.5.9004 pide Xcode 26.5, y con 26.6 instalado el
+# build muere antes de compilar. No hay workload publicado para 26.6 todavia, asi que las
+# opciones reales son bajar Xcode 26.5 o saltear el chequeo.
+#
+# Se saltea solo si de verdad no coinciden, y se avisa: bypasear siempre esconderia el dia que
+# la diferencia sea grande y si importe.
+XC_PIDE="$(sed -n '/_RecommendedXcodeVersion>/{
+                     s/.*_RecommendedXcodeVersion>\([0-9]*\.[0-9]*\).*/\1/p; q; }' \
+                   /usr/local/share/dotnet/*/packs/Microsoft.iOS.Sdk.net9.0_*/*/targets/*.props \
+                   "$HOME"/.dotnet/packs/Microsoft.iOS.Sdk.net9.0_*/*/targets/*.props 2>/dev/null || true)"
+XC_HAY="$(xcodebuild -version | awk 'NR==1 { split($2, v, "."); print v[1] "." v[2] }')"
+SALTAR=""
+if [ -n "$XC_PIDE" ] && [ "$XC_PIDE" != "$XC_HAY" ]; then
+  SALTAR="-p:ValidateXcodeVersion=false"
+  aviso "el workload pide Xcode $XC_PIDE y hay $XC_HAY: se saltea el chequeo de version"
+fi
+dotnet build -f net9.0-ios -r "$RID" -c Debug -v:quiet -clp:NoSummary $SALTAR
 APP="bin/Debug/net9.0-ios/$RID/Gnothi.iOS.app"
 BIN="$APP/Gnothi.iOS"
 [ -d "$APP" ] || { bad "no aparecio $APP"; exit 1; }
 ok "$APP"
-nm "$BIN" 2>/dev/null | grep -q "$TIPO" \
-  && ok "$TIPO esta en el ejecutable (ForceLoad funciono)" \
+# HAY QUE DESMANGLAR ANTES DE BUSCAR. El mangler de Swift comprime subcadenas repetidas con
+# back-references, y como "Gnothi" ya aparece en el nombre del modulo, en el del tipo se
+# reemplaza por una letra:
+#
+#     _$s13GnothiIntents05LoQueA11TieneIntentV...
+#                             ^ "Gnothi", sustituido
+#
+# O sea que la cadena "LoQueGnothiTieneIntent" NO existe en el binario aunque el tipo si este.
+# Buscarla cruda daba un falso negativo y acusaba al linker de haberlo borrado. Desmanglado son
+# 52 coincidencias. Le pasa a cualquier tipo cuyo nombre repita un trozo del nombre del modulo.
+# grep -c y no grep -q: -q sale al primer match, le manda SIGPIPE a swift-demangle, y con
+# pipefail el pipeline entero cuenta como fallido aunque el simbolo ESTUVIERA. -c lee todo.
+CUENTA_TIPO="$(nm "$BIN" 2>/dev/null | xcrun swift-demangle 2>/dev/null | grep -c "$TIPO" || true)"
+[ "${CUENTA_TIPO:-0}" -gt 0 ] \
+  && ok "$TIPO esta en el ejecutable, $CUENTA_TIPO simbolos (ForceLoad funciono)" \
   || { bad "$TIPO NO esta en el ejecutable: el linker lo borro. Revisar ForceLoad en el csproj."; exit 1; }
-otool -L "$BIN" | grep -q AppIntents.framework \
+[ "$(otool -L "$BIN" | grep -c AppIntents.framework || true)" -gt 0 ] \
   && ok "el ejecutable carga AppIntents.framework" \
   || { bad "el ejecutable NO carga AppIntents.framework. Revisar <Frameworks> en el csproj."; exit 1; }
 
