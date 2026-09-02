@@ -1,0 +1,261 @@
+@{
+    RenderFragment<Line> Row = line =>
+        @<div class="item" id="@line.Anchor">
+            <span class="@(line.Published ? "bullet bullet--sm bullet--info" : "bullet bullet--sm")">
+                <Glyph Name="@line.Symbol" Size="13" Stroke="2.2" />
+            </span>
+            <span class="item__body">
+                <span class="item__head">
+                    <span class="item__name">@line.Label</span>
+                    <span class="prov">@Provenance(line.Revision)</span>
+                </span>
+                <span class="@(line.Published ? "item__says" : "item__says item__says--absent")">
+                    @line.Says
+                </span>
+            </span>
+        </div>;
+}
+
+<div class="stack stack--inner" id="my-vehicle">
+    <section class="block">
+        <div class="sect-head">
+            <h2>The manufacturer's sheet</h2>
+            <span class="prov" id="my-vehicle-provenance">
+                @Sheet.Model@(Sheet.HasASealedRevision ? " · " + Sheet.CurrentRevision : "")
+            </span>
+        </div>
+
+        <p class="note note--tight" id="my-vehicle-scope">
+            What the manufacturer published for model <span class="mono">@Sheet.Model</span>.
+            @if (Sheet.HasASealedRevision)
+            {
+                <span>
+                    The current sheet is revision <span class="mono">@Sheet.CurrentRevision</span>,
+                    published @Sheet.CurrentRevisionPublishedAt. Each line below names the revision it
+                    came from, which is not always this one.
+                </span>
+            }
+        </p>
+    </section>
+
+    @if (!Sheet.HasASealedRevision)
+    {
+        <Notice Tone="info" Id="nothing-published">
+            @TheOwnerIsTold.NothingHasBeenPublishedYet
+        </Notice>
+    }
+    else
+    {
+        <section class="block">
+            <div class="block__title">Fluids</div>
+
+            @if (publishedFluids.Count > 0)
+            {
+                <div class="card cardlist" id="fluids">
+                    @foreach (Line line in publishedFluids)
+                    {
+                        @Row(line)
+                    }
+                </div>
+            }
+
+            @if (unpublishedFluids.Count > 0)
+            {
+                <button class="disclosure" type="button" id="fluids-unpublished-toggle"
+                        @onclick="@(() => showUnpublishedFluids = !showUnpublishedFluids)">
+                    <Glyph Name="info" Size="16" />
+                    <span>@Absences(unpublishedFluids.Count, Sheet.Fluids.Count, "fluids")</span>
+                    <span class="disclosure__more">@(showUnpublishedFluids ? "Hide" : "Show")</span>
+                </button>
+
+                @if (showUnpublishedFluids)
+                {
+                    <div class="card cardlist" id="fluids-unpublished">
+                        @foreach (Line line in unpublishedFluids)
+                        {
+                            @Row(line)
+                        }
+                    </div>
+                }
+            }
+        </section>
+
+        <section class="block">
+            <div class="block__title">Tyres</div>
+
+            @if (publishedTyres.Count > 0)
+            {
+                <div class="card cardlist" id="tyres">
+                    @foreach (Line line in publishedTyres)
+                    {
+                        @Row(line)
+                    }
+                </div>
+            }
+
+            @if (unpublishedTyres.Count > 0)
+            {
+                <button class="disclosure" type="button" id="tyres-unpublished-toggle"
+                        @onclick="@(() => showUnpublishedTyres = !showUnpublishedTyres)">
+                    <Glyph Name="info" Size="16" />
+                    <span>@Absences(unpublishedTyres.Count, Sheet.Tyres.Count, "tyre positions")</span>
+                    <span class="disclosure__more">@(showUnpublishedTyres ? "Hide" : "Show")</span>
+                </button>
+
+                @if (showUnpublishedTyres)
+                {
+                    <div class="card cardlist" id="tyres-unpublished">
+                        @foreach (Line line in unpublishedTyres)
+                        {
+                            @Row(line)
+                        }
+                    </div>
+                }
+            }
+        </section>
+
+        <section class="block">
+            <div class="sect-head">
+                <div class="block__title">Fuel</div>
+                <span class="prov">@Provenance(Sheet.Fuel.Revision)</span>
+            </div>
+
+            <div class="card card--pad">
+                <p class="@(Sheet.Fuel.Published ? "says" : "says says--absent")" id="fuel-says">
+                    @Sheet.Fuel.Says
+                </p>
+
+                @if (Sheet.Fuel.Published)
+                {
+                    <div class="chiprow" id="fuel-prohibited">
+                        <span class="chiprow__label">Never put in</span>
+                        @if (Sheet.Fuel.ProhibitedGrades.Length == 0)
+                        {
+                            <span class="chiprow__none">nothing was published as prohibited</span>
+                        }
+                        else
+                        {
+                            @foreach (string grade in Sheet.Fuel.ProhibitedGrades)
+                            {
+                                <span class="chip chip--danger">
+                                    <Glyph Name="block" Size="13" Stroke="2.2" />
+                                    @grade
+                                </span>
+                            }
+                        }
+                    </div>
+
+                    <div class="chiprow" id="fuel-minimum">
+                        <span class="chiprow__label">At least</span>
+                        @if (Sheet.Fuel.MinimumGrade.Length == 0)
+                        {
+                            <span class="chiprow__none">no minimum grade was published</span>
+                        }
+                        else
+                        {
+                            <span class="chip chip--info">@Sheet.Fuel.MinimumGrade</span>
+                        }
+                    </div>
+
+                    <div class="chiprow" id="fuel-permitted">
+                        <span class="chiprow__label">Also allowed</span>
+                        @if (Sheet.Fuel.PermittedGrades.Length == 0)
+                        {
+                            <span class="chiprow__none">nothing else was published as permitted</span>
+                        }
+                        else
+                        {
+                            @foreach (string grade in Sheet.Fuel.PermittedGrades)
+                            {
+                                <span class="chip">@grade</span>
+                            }
+                        }
+                    </div>
+                }
+            </div>
+        </section>
+    }
+</div>
+
+@code {
+    /// <summary>La ficha leida en un solo momento. La seccion no lee nada por su cuenta.</summary>
+    [Parameter, EditorRequired]
+    public WhatTheManufacturerPublished Sheet { get; set; }
+
+    /// <summary>
+    /// Un item de la ficha listo para pintar: su etiqueta, la frase que compuso el dominio y la
+    /// revision de la que salio. Existe para que fluidos y llantas se pinten con una sola forma;
+    /// no compone nada.
+    /// </summary>
+    private sealed class Line
+    {
+        public string Anchor { get; init; } = "";
+
+        public string Label { get; init; } = "";
+
+        public string Says { get; init; } = "";
+
+        public string Revision { get; init; } = "";
+
+        public string Symbol { get; init; } = "";
+
+        public bool Published { get; init; }
+    }
+
+    private bool showUnpublishedFluids;
+    private bool showUnpublishedTyres;
+
+    private List<Line> publishedFluids = new List<Line>();
+    private List<Line> unpublishedFluids = new List<Line>();
+    private List<Line> publishedTyres = new List<Line>();
+    private List<Line> unpublishedTyres = new List<Line>();
+
+    protected override void OnParametersSet()
+    {
+        var fluidsIn = new List<Line>();
+        var fluidsOut = new List<Line>();
+
+        foreach (PublishedFluid fluid in Sheet.Fluids)
+        {
+            var line = new Line
+            {
+                Anchor = "fluid-" + fluid.Kind,
+                Label = AppState.Spaced(fluid.Kind),
+                Says = fluid.Says,
+                Revision = fluid.Revision,
+                Symbol = "drop",
+                Published = fluid.Published,
+            };
+
+            if (fluid.Published) fluidsIn.Add(line); else fluidsOut.Add(line);
+        }
+
+        var tyresIn = new List<Line>();
+        var tyresOut = new List<Line>();
+
+        foreach (PublishedTyre tyre in Sheet.Tyres)
+        {
+            var line = new Line
+            {
+                Anchor = "tyre-" + tyre.Position,
+                Label = AppState.Spaced(tyre.Position),
+                Says = tyre.Says,
+                Revision = tyre.Revision,
+                Symbol = "tyre",
+                Published = tyre.Published,
+            };
+
+            if (tyre.Published) tyresIn.Add(line); else tyresOut.Add(line);
+        }
+
+        publishedFluids = fluidsIn;
+        unpublishedFluids = fluidsOut;
+        publishedTyres = tyresIn;
+        unpublishedTyres = tyresOut;
+    }
+
+    private static string Provenance(string revision) => revision.Length > 0 ? revision : "--";
+
+    private static string Absences(int absent, int total, string subject) =>
+        $"{absent} of the {total} {subject} — not published for this model";
+}

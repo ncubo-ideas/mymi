@@ -179,6 +179,136 @@ namespace DealershipCar.Dominio.Pruebas
 			Assert.That(journal.Api.LastEventApplied(), Is.EqualTo(checkpoint));
 		}
 
+		// CADA HECHO QUE ENTRA DEJA EL PUNTO DE CONTROL EN SU PROPIO NUMERO DE EVENTO, y son
+		// DIECIOCHO scripts los que lo prometen: cinco de la agenda, once de la especificacion y dos
+		// del perfil de este vehiculo. Es la promesa que hace exacto el resume, y no se hereda de un
+		// script al siguiente.
+		//
+		// ESTA PRUEBA EXISTE POR LA PASADA DE FALSIFICACION DE LA INGESTA DE LA FICHA. Quitarle
+		// logbook.Advance al script del fluido -- y al del intervalo de servicio -- dejo la suite EN
+		// VERDE, porque el checkpoint solo se atrasaba UNO y el hecho siguiente traia un numero mas
+		// alto de todas formas. El sello y la sustitucion si se veian, y por una razon que no se
+		// generaliza: el dominio los rechaza al repetirse, mientras que publicar dos veces en un
+		// borrador es idempotente por contenido. Asi que la mitad de los scripts tenia testigo por
+		// accidente.
+		//
+		// Y PASO OTRA VEZ, EXACTO, CON EL SCRIPT DE LA ENTREGA. La falsificacion de la ingesta del
+		// perfil quito logbook.Advance del script de la ENTREGA y la suite quedo EN VERDE, mientras
+		// que quitarlo del script del SOBRE puso cuatro en rojo -- porque la entrega es el primero de
+		// los tres hechos de su lista y los dos sobres de atras avanzan el checkpoint igual. La misma
+		// asimetria, un agregado mas alla, y el arreglo es el mismo: barrer LA TERCERA LISTA tambien.
+		// Es la razon por la que este barrido es por script y no por bloque.
+		//
+		// LO QUE SE PIERDE SIN ESTO. Una caida entre el hecho y el flush deja el checkpoint atras del
+		// hecho, el proveedor re-sirve, y el hecho vuelve a ejecutarse. Para un publish en borrador
+		// eso no cambia el estado -- por eso nada se rompia -- pero deja una segunda entrada en el
+		// journal de la persona por cada refresh que ocurra antes del siguiente hecho, y es
+		// exactamente el atasco que C28 existe para evitar.
+		[Test]
+		public void EverySignalThatEntersLeavesTheCheckpointOnItsOwnEventNumber()
+		{
+			HashSet<string> swept = new HashSet<string>();
+			List<SenalDeEvento> everything = new List<SenalDeEvento>();
+
+			everything.AddRange(ADealershipNarrative.TheWholeStory());
+			everything.AddRange(ADealershipNarrative.TheWholeSpecSheet());
+			everything.AddRange(ADealershipNarrative.TheDeliveryAndTheEnvelope());
+
+			foreach (SenalDeEvento signal in everything)
+			{
+				IMensajeDeEvento message = DealershipEventRoute.Route(signal);
+
+				if (message == null)
+				{
+					Assert.That(journal.Api.LastEventApplied(), Is.LessThan(signal.Numero),
+						"Un descarte NO mueve el punto de control: nada se escribio por el. "
+						+ signal.Tipo);
+					continue;
+				}
+
+				Assert.That(journal.Api.Apply(message), Is.EqualTo(""), signal.Tipo);
+
+				Assert.That(journal.Api.LastEventApplied(), Is.EqualTo(signal.Numero),
+					"El script de " + signal.Tipo + " tiene que avanzar el punto de control EN EL "
+					+ "MISMO comando que el hecho. Atrasado uno, una caida antes del flush "
+					+ "siguiente hace que el proveedor lo re-sirva y el hecho se ejecute otra vez.");
+
+				swept.Add(signal.Tipo);
+			}
+
+			Assert.That(swept.Count, Is.EqualTo(18),
+				"Son DIECIOCHO scripts de ingesta con hecho -- cinco de la agenda, once de la "
+				+ "especificacion y dos del perfil del vehiculo -- mas el comando suelto que avanza el "
+				+ "punto de control cuando el dominio rechaza uno, que es el diecinueve y no tiene "
+				+ "hecho que aplicar.");
+		}
+
+		// LAS DOS PROMESAS VUELVEN A MEDIRSE SOBRE LOS ONCE HECHOS DE LA ESPECIFICACION, y hace falta
+		// medirlas otra vez: cada tipo de hecho tiene su propio script con su propio Check, y una
+		// promesa que se cumple en cinco scripts no se hereda al sexto.
+		//
+		// EL CORTE SE HACE JUSTO DESPUES DEL SELLO de la primera revision, que es el sitio donde una
+		// re-entrega es mas peligrosa: al reabrir, el proveedor sirve desde el punto de control y el
+		// bloque vuelve a traer el OpenRevision de esa revision. Si lo que lo parara fuera el dominio
+		// -- 'esta especificacion ya tiene una revision' -- el rechazo seria correcto y la entrada
+		// quedaria escrita igual. Lo que lo para es el Check, y eso es lo que este renglon fija.
+		[Test]
+		public void KillingMidSheetAndReopeningNeitherDuplicatesTheRevisionNorSkipsItsContent()
+		{
+			Ingest(journal.Api, TheFirstOfTheSheet(12));
+
+			long checkpointBeforeTheCrash = journal.Api.LastEventApplied();
+			Assert.That(checkpointBeforeTheCrash, Is.EqualTo(22L),
+				"Doce senales de la ficha llegan hasta el sello de la primera revision.");
+
+			journal.CloseAndReopenFromTheJournal();
+
+			Assert.That(journal.Api.LastEventApplied(), Is.EqualTo(checkpointBeforeTheCrash),
+				"EL CHECKPOINT SALE DEL JOURNAL, y con el la ficha: la especificacion es una global "
+				+ "de raiz, no un campo de C#.");
+
+			Ingested rest = Ingest(journal.Api, ADealershipNarrative.TheWholeSpecSheet());
+
+			Assert.That(rest.Applied, Is.EqualTo(4),
+				"Solo entran los cuatro que faltaban: la segunda revision, su aceite, su sello y la "
+				+ "sustitucion. NO HAY DUPLICADO.");
+			Assert.That(rest.Rejected, Is.EqualTo(12),
+				"Y los doce que ya habian entrado los rechaza el Check, uno por uno -- incluido el "
+				+ "OpenRevision, que el dominio habria rechazado por otra razon y con otro costo.");
+
+			Assert.That(journal.Api.LastEventApplied(),
+				Is.EqualTo(ADealershipNarrative.TheLastSpecificationEvent),
+				"Y NO HAY HUECO: la ficha termina donde termina.");
+
+			Assert.That(journal.Api.ReadCurrentRevisionCode(),
+				Is.EqualTo(ADealershipNarrative.TheSecondRevision));
+			Assert.That(journal.Api.DescribeFluid("EngineOil"),
+				Does.Contain(ADealershipNarrative.TheSecondOilGrade));
+		}
+
+		// Y LA FICHA QUEDA IGUAL QUE SI NUNCA HUBIERA HABIDO CORTE. Sin esto, "el checkpoint llego al
+		// 26" seria compatible con haberse salteado un item por el camino.
+		[Test]
+		public void TheSheetAfterACrashIsTheSameAsIfTheBlockHadNeverBeenCut()
+		{
+			Ingest(journal.Api, TheFirstOfTheSheet(12));
+			journal.CloseAndReopenFromTheJournal();
+			Ingest(journal.Api, ADealershipNarrative.TheWholeSpecSheet());
+
+			string afterTheCrash = journal.EverySpecificationAnswerItCanGive();
+
+			using (AScheduleOnARealJournal uninterrupted =
+				new AScheduleOnARealJournal(ADealershipNarrative.TheVin, "Standard"))
+			{
+				Ingest(uninterrupted.Api, ADealershipNarrative.TheWholeSpecSheet());
+
+				Assert.That(afterTheCrash,
+					Is.EqualTo(uninterrupted.EverySpecificationAnswerItCanGive()),
+					"El corte no dejo rastro en la hoja: no que el numero coincida, sino que la ficha "
+					+ "sea la misma respuesta por respuesta.");
+			}
+		}
+
 		// LO QUE LA HISTORIA DEJA EN LA AGENDA, afirmado en negocio y no solo en contadores. Sin
 		// esto, todo lo de arriba seguiria verde con una ingesta que aplicara los ocho comandos
 		// equivocados.
@@ -232,6 +362,20 @@ namespace DealershipCar.Dominio.Pruebas
 			internal int Applied;
 			internal int Discarded;
 			internal int Rejected;
+		}
+
+		// Los primeros cuantos de la ficha, para simular una caida a mitad de la publicacion.
+		private static IReadOnlyList<SenalDeEvento> TheFirstOfTheSheet(int howMany)
+		{
+			List<SenalDeEvento> some = new List<SenalDeEvento>();
+
+			foreach (SenalDeEvento signal in ADealershipNarrative.TheWholeSpecSheet())
+			{
+				if (some.Count == howMany) break;
+				some.Add(signal);
+			}
+
+			return some;
 		}
 
 		private static string TheTreeOf(string folder)

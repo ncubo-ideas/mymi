@@ -84,8 +84,8 @@ namespace DealershipCar.Dominio.Pruebas
 			string motivo = vencimiento.Describe();
 
 			Assert.That(motivo, Does.Contain("cannot be evaluated"));
-			Assert.That(motivo, Does.Contain("UnitA"));
-			Assert.That(motivo, Does.Contain("UnitB"));
+			Assert.That(motivo, Does.Contain("the limit is in km"));
+			Assert.That(motivo, Does.Contain("the measurements are in mi"));
 			Assert.That(motivo, Does.Contain("never converted"),
 				"OUS-07: la persona tiene que poder saber POR QUE el sistema no esta mirando la "
 				+ "distancia. 'No vencio' a secas es indistinguible de 'no lo se'.");

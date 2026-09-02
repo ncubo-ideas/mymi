@@ -27,6 +27,12 @@ namespace DealershipCar.Dominio.Pruebas
 	// El host viejo de aca es el mismo que usa TheSecondGlobalReachesAJournalThatOnlyHasTheSeed, y
 	// esta repetido a proposito: es una forma HISTORICA que no va a cambiar nunca, y cada fixture de
 	// esta suite es dueño de su propio aparejo.
+	//
+	// T8 LO VUELVE A ENCONTRAR CON LA TERCERA GLOBAL, y esta vez estaba anunciado: 'specification'
+	// llego despues de 'bitacora-de-eventos', asi que TODO journal escrito antes le falta y este
+	// proceso tampoco la puede crear. Lo que se degrada es SOLO esa global -- la agenda contesta
+	// entera -- y lo que hace falta para poder afirmarlo es un journal con bitacora y SIN
+	// especificacion, que es la unica forma de que las dos banderas no suban y bajen juntas.
 	[TestFixture]
 	public sealed class AJournalFromAnOlderAppStillAnswersWhatItCan
 	{
@@ -142,7 +148,8 @@ namespace DealershipCar.Dominio.Pruebas
 
 			Assert.That(tools.Review().LastEventKnown, Is.False);
 
-			var current = new DealershipCarApp(TheVin, "Standard");
+			var current = new DealershipCarApp(
+				TheVin, "Standard", AScheduleOnARealJournal.TheModelAtDelivery);
 			current.ConfigureStorage(DatabaseType.FileSystem, "path=" + folder);
 			current.Start();
 			current.Dispose();
@@ -151,6 +158,177 @@ namespace DealershipCar.Dominio.Pruebas
 				"Una sola apertura de la app de verdad aplica upgrade('bitacora-de-eventos') donde "
 				+ "faltaba. Migrar es del ESCRITOR: este proceso no puede y no debe.");
 			Assert.That(tools.Review().Detail, Is.EqualTo(""));
+		}
+
+		// LA TERCERA GLOBAL SE DEGRADA SOLA, y esto es lo que lo demuestra: un journal con bitacora y
+		// SIN especificacion. Sobre el journal del SetUp -- que no tiene ninguna de las dos -- las dos
+		// banderas dan false juntas y no se puede distinguir "se degrada por global" de "se degrada
+		// entero", que es justo la ley que C33 dejo escrita.
+		[Test]
+		public void AJournalWithTheLogbookButNoSpecificationDegradesOnlyThere()
+		{
+			string elsewhere = AJournalWrittenBefore(new AnAppFromBeforeTheSpecification(TheVin));
+
+			try
+			{
+				var tools = new DealershipCarTools(new JournalReader(elsewhere, ""));
+				var sheet = new ModelSpecificationTools(new JournalReader(elsewhere, ""));
+
+				Assert.That(tools.Review().LastEventKnown, Is.True,
+					"La bitacora SI esta: esta app es posterior a ella.");
+				Assert.That(tools.Review().Operations, Has.Count.EqualTo(9),
+					"Y la agenda contesta entera. Negarsela a la persona por una global que le "
+					+ "falta seria peor que decirle que esa global le falta.");
+
+				SpecificationSheet takes = sheet.WhatMyCarTakes();
+
+				Assert.That(takes.HasData, Is.True,
+					"El registro EXISTE. 'No hay nada grabado en esta carpeta' y 'esta app es "
+					+ "anterior a la ficha' son dos ausencias distintas con dos remedios distintos "
+					+ "-- instalar y abrir, o solo abrir.");
+				Assert.That(takes.SpecificationKnown, Is.False);
+				Assert.That(takes.Model, Is.EqualTo(""));
+				Assert.That(takes.Fluids, Is.Empty,
+					"Y no seis fluidos contestando que no. Una ficha vacia se leeria como un "
+					+ "fabricante que no publico nada, y el hecho es que esta app nunca la trajo.");
+				Assert.That(takes.Detail, Does.Contain("older version of the app"));
+				Assert.That(takes.Detail, Does.Contain("open their app once"));
+
+				Assert.That(sheet.DoesTheWarrantyCover("POWERTRAIN").SpecificationKnown, Is.False);
+				Assert.That(
+					sheet.WhatTheServiceCosts(MaintenanceOperation.FluidChange, 10000)
+						.SpecificationKnown,
+					Is.False);
+			}
+			finally
+			{
+				SweepAway(elsewhere);
+			}
+		}
+
+		// LAS TRES TOOLS DE LA FICHA SOBREVIVEN AL JOURNAL MAS VIEJO QUE HAY -- el del SetUp, sin
+		// bitacora y sin especificacion -- y ninguna revienta.
+		[Test]
+		public void TheSheetToolsSurviveAJournalOlderThanEitherGlobal()
+		{
+			var sheet = new ModelSpecificationTools(new JournalReader(folder, ""));
+
+			Assert.That(sheet.WhatMyCarTakes().SpecificationKnown, Is.False);
+			Assert.That(sheet.DoesTheWarrantyCover("").SpecificationKnown, Is.False);
+			Assert.That(
+				sheet.WhatTheServiceCosts(MaintenanceOperation.Inspection).SpecificationKnown,
+				Is.False);
+
+			// Y la agenda sigue contestando, que es la mitad que importa: la persona pregunto por su
+			// carro, no por la ficha del fabricante.
+			Assert.That(new DealershipCarTools(new JournalReader(folder, "")).Review().HasData,
+				Is.True);
+		}
+
+		// EL CONTROL DE LA BANDERA NUEVA, y es el que impide que se vuelva un "siempre false". Sobre
+		// un journal de la app de HOY la especificacion SI esta.
+		[Test]
+		public void AndOnAJournalTheCurrentAppWroteTheSpecificationIsKnown()
+		{
+			using (var current = new AScheduleOnARealJournal(TheVin, "Standard"))
+			{
+				var sheet = new ModelSpecificationTools(new JournalReader(current.Folder, ""));
+				SpecificationSheet takes = sheet.WhatMyCarTakes();
+
+				Assert.That(takes.SpecificationKnown, Is.True,
+					"Si esto se pone rojo, la bandera se volvio una constante y la prueba de arriba "
+					+ "no prueba nada.");
+				Assert.That(takes.Model, Is.EqualTo(AScheduleOnARealJournal.TheModelAtDelivery));
+				Assert.That(takes.Fluids, Has.Count.EqualTo(6),
+					"Y los seis fluidos contestan, cada uno que no hay nada publicado sobre el.");
+				Assert.That(takes.Detail, Is.EqualTo(""),
+					"Y no se le avisa nada a la persona, porque no hay nada que avisarle.");
+			}
+		}
+
+		// ABRIR CON LA APP DE HOY TAMBIEN TRAE LA TERCERA GLOBAL. Se mide, para que el consejo del
+		// detail no sea una suposicion.
+		[Test]
+		public void OpeningTheCurrentAppOnceBringsTheSpecificationIn()
+		{
+			var sheet = new ModelSpecificationTools(new JournalReader(folder, ""));
+
+			Assert.That(sheet.WhatMyCarTakes().SpecificationKnown, Is.False);
+
+			var current = new DealershipCarApp(
+				TheVin, "Standard", AScheduleOnARealJournal.TheModelAtDelivery);
+			current.ConfigureStorage(DatabaseType.FileSystem, "path=" + folder);
+			current.Start();
+			current.Dispose();
+
+			SpecificationSheet takes = sheet.WhatMyCarTakes();
+
+			Assert.That(takes.SpecificationKnown, Is.True,
+				"Una sola apertura de la app de verdad aplica upgrade('especificacion-del-modelo') "
+				+ "donde faltaba. Migrar es del ESCRITOR: este proceso no puede y no debe.");
+			Assert.That(takes.Model, Is.EqualTo(AScheduleOnARealJournal.TheModelAtDelivery));
+			Assert.That(takes.Detail, Is.EqualTo(""));
+		}
+
+		// Un journal escrito por un host anterior y dejado cerrado, en su propia carpeta.
+		private static string AJournalWrittenBefore(PerformanceV2 older)
+		{
+			string where = Path.Combine(
+				AScheduleOnARealJournal.TheRootOfEveryTemporaryJournal, Guid.NewGuid().ToString("N"));
+			Directory.CreateDirectory(where);
+
+			older.ConfigureStorage(DatabaseType.FileSystem, "path=" + where);
+			older.Start();
+
+			var api = new DealershipCarAPI(older);
+			api.SeedPlanOperation(
+				"FluidChange", "TimeOrDistance", 365, 10000, "UnitA", true, false,
+				new DateTime(2025, 9, 1, 0, 0, 0, DateTimeKind.Utc), 12000, "UnitA");
+
+			// EL RENGLON QUE HACE QUE LA PRUEBA PUEDA DISTINGUIR ALGO: la especificacion falta DE
+			// VERDAD. Sin el, todo lo de abajo estaria verde aunque el host la hubiera sembrado.
+			Assert.That(() => api.ReadModel(), Throws.Exception);
+
+			older.Dispose();
+
+			return where;
+		}
+
+		private static void SweepAway(string where)
+		{
+			try { if (Directory.Exists(where)) Directory.Delete(where, true); }
+			catch (IOException) { }
+			catch (UnauthorizedAccessException) { }
+		}
+
+		// La app tal como era entre T8 de la agenda y T5 de la ficha: dos globales de raiz, sin
+		// especificacion. Es la version que escribio los journals que hay en el mundo hoy.
+		private sealed class AnAppFromBeforeTheSpecification : PerformanceV2
+		{
+			private readonly string vin;
+
+			internal AnAppFromBeforeTheSpecification(string vin)
+				: base(DealershipCarApp.TheActorFor(vin), typeof(MaintenanceSchedule).Assembly)
+			{
+				this.vin = vin;
+			}
+
+			protected override void OnHydrated()
+			{
+				Using(@"
+					upgrade('semilla') {
+						schedule = MaintenanceSchedule(@vin, @usage);
+					}
+					upgrade('bitacora-de-eventos') {
+						logbook = Logbook();
+					}
+				")
+				.WithParameters(p => {
+					p["vin",   typeof(string)] = vin;
+					p["usage", typeof(Enum)]   = "Standard";
+				})
+				.PerformCommand();
+			}
 		}
 
 		// La app tal como era antes de T8: una sola global de raiz.

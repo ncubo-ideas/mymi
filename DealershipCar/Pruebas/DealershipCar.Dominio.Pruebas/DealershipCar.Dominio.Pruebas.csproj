@@ -81,4 +81,38 @@
           CopyToOutputDirectory="PreserveNewest" />
   </ItemGroup>
 
+  <!-- Y EL MARKUP DE LAS DOS SECCIONES DE T10, tambien COMO DATO, por la misma razon que el csproj
+       de arriba: el chequeo obvio no alcanza. Un componente Blazor compilado no se puede inspeccionar
+       sin un banco de pruebas de componentes, y en este repo no hay ninguno; lo que si se puede leer
+       es el markup, y ahi estan las dos cosas que ninguna otra prueba ve — que la pagina de verdad
+       renderiza las secciones, y que las secciones no leen nada por su cuenta.
+
+       Va por GLOB y no archivo por archivo: una seccion nueva entra sola al barrido. Con una lista
+       escrita a mano, la tercera seccion que alguien agregue no la mira nadie. -->
+  <ItemGroup>
+    <None Include="..\..\App\DealershipCar.Wasm\Sections\*.razor"
+          LinkBase="SeccionesComoDato"
+          CopyToOutputDirectory="PreserveNewest" />
+
+    <None Include="..\..\App\DealershipCar.Wasm\Pages\MyCar.razor"
+          Link="MyCar.razor.dato"
+          CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
+
+  <!-- Y TODO EL MARKUP DE LA CARATULA, desde T10, por una tercera cosa que ninguna prueba veia: que
+       NINGUN control de la pantalla le pida a la persona un hecho de su propio vehiculo. El censo de
+       parametros de la puerta no lo puede ver, porque un formulario guarda su valor en el estado de
+       la pagina y no cruza ninguna puerta. Es exactamente el hueco que T8 midio en la caratula MCP y
+       tuvo que tapar con un censo de su propia superficie.
+
+       Va sobre TODOS los .razor y no solo sobre las secciones, porque un formulario en la pagina es
+       igual de malo que uno en una seccion, y por GLOB recursivo para que una pagina nueva entre sola
+       al barrido. -->
+  <ItemGroup>
+    <None Include="..\..\App\DealershipCar.Wasm\**\*.razor"
+          Exclude="..\..\App\DealershipCar.Wasm\bin\**\*.razor;..\..\App\DealershipCar.Wasm\obj\**\*.razor"
+          LinkBase="MarcadoComoDato"
+          CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
+
 </Project>

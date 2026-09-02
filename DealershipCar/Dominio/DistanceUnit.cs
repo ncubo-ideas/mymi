@@ -22,14 +22,14 @@ namespace DealershipCar.Dominio
 	/// </summary>
 	internal sealed class DistanceUnit
 	{
-		/// <summary>Una de las dos. Abstracta: el dominio no necesita saber cual es.</summary>
-		internal static readonly DistanceUnit UnitA = new DistanceUnit("UnitA");
+		/// <summary>Una de las dos, que se dice «km». Incomparable con <see cref="UnitB"/>.</summary>
+		internal static readonly DistanceUnit UnitA = new DistanceUnit("km");
 
-		/// <summary>La otra. Incomparable con <see cref="UnitA"/> por definicion.</summary>
-		internal static readonly DistanceUnit UnitB = new DistanceUnit("UnitB");
+		/// <summary>La otra, que se dice «mi». Incomparable con <see cref="UnitA"/>.</summary>
+		internal static readonly DistanceUnit UnitB = new DistanceUnit("mi");
 
 		/// <summary>
-		/// El nombre, para proyectarlo en el motivo y diagnosticar. NO es clave de comparacion: dos
+		/// Como se dice esta unidad en la frase que alguien lee. NO es clave de comparacion: dos
 		/// unidades se comparan por identidad.
 		/// </summary>
 		internal string Name { get; }

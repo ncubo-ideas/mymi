@@ -11,6 +11,8 @@ namespace DealershipCar.Wasm
 	{
 		public const string TheProfileAtDelivery = "Standard";
 
+		public const string TheModelAtDelivery = "SM-SEDAN-2025";
+
 		private readonly JournalBridge bridge;
 		private readonly HttpClient http;
 		private readonly DealershipSettings dealership;
@@ -132,7 +134,8 @@ namespace DealershipCar.Wasm
 
 			int preloaded = bridge.HasFolder ? await bridge.PreloadIntoMemfsAsync() : 0;
 
-			var started = new DealershipCarApp(dealership.Vin, TheProfileAtDelivery);
+			var started = new DealershipCarApp(
+				dealership.Vin, TheProfileAtDelivery, TheModelAtDelivery);
 			started.ConfigureStorage(DatabaseType.FileSystem, "path=" + JournalBridge.RootInMemfs);
 			started.Start();
 
@@ -287,10 +290,15 @@ namespace DealershipCar.Wasm
 			return "";
 		}
 
+		/// <summary>
+		/// El instante que esta app le manda a un COMANDO. Es monotono dentro de la sesion, y lo es
+		/// porque un instante hacia atras falla ADENTRO del cuerpo del comando, cuando la entrada ya
+		/// esta escrita: queda una entrada permanente que loguea un fallo de rehidratacion en cada
+		/// arranque futuro. Es de instancia porque la monotonia necesita el estado de la sesion.
+		/// </summary>
 		private DateTime AnInstantThatDoesNotGoBackwards()
 		{
-			DateTime now = DateTime.UtcNow;
-			now = new DateTime(now.Year, now.Month, now.Day, now.Hour, now.Minute, now.Second, DateTimeKind.Utc);
+			DateTime now = TheWholeSecondItIsNow();
 
 			if (now < lastStampSent)
 				throw new InvalidOperationException(
@@ -301,6 +309,26 @@ namespace DealershipCar.Wasm
 
 			lastStampSent = now;
 			return now;
+		}
+
+		/// <summary>
+		/// El instante en que la pantalla PREGUNTA. Es argumento de una LECTURA, asi que deliberadamente
+		/// NO es monotono: una pregunta no escribe ninguna entrada, no hay nada que marcar, y una guarda
+		/// de monotonia solo rechazaria una segunda pregunta legitima un segundo despues. Es estatico
+		/// justamente por eso: sin estado de sesion que consultar, no puede volverse monotono por
+		/// descuido. Trunca al segundo entero como el otro, porque el journal ahi trunca.
+		/// </summary>
+		private static DateTime TheInstantTheScreenAsksAt()
+		{
+			return TheWholeSecondItIsNow();
+		}
+
+		private static DateTime TheWholeSecondItIsNow()
+		{
+			DateTime now = DateTime.UtcNow;
+
+			return new DateTime(
+				now.Year, now.Month, now.Day, now.Hour, now.Minute, now.Second, DateTimeKind.Utc);
 		}
 
 		public static readonly string[] TheNineKinds =
@@ -318,6 +346,36 @@ namespace DealershipCar.Wasm
 		{
 			"Cost", "Timing", "SecondOpinion", "NotConvinced", "WillDoElsewhere"
 		};
+
+		public static readonly string[] TheSixFluidKinds =
+		{
+			"EngineOil", "BrakeFluid", "Coolant", "TransmissionFluid", "PowerSteeringFluid",
+			"WasherFluid"
+		};
+
+		public static readonly string[] TheThreeTyrePositions =
+		{
+			"Front", "Rear", "Spare"
+		};
+
+		/// <summary>
+		/// Un nombre del canon escrito como lo lee una persona: se separa en cada mayuscula y solo
+		/// la primera queda en alta. Es etiqueta, no identidad -- lo que cruza la puerta sigue
+		/// siendo el nombre tal cual.
+		/// </summary>
+		public static string Spaced(string name)
+		{
+			if (string.IsNullOrEmpty(name)) return name;
+
+			var spaced = new System.Text.StringBuilder(name.Length + 4);
+			spaced.Append(name[0]);
+			for (int i = 1; i < name.Length; i++)
+			{
+				if (char.IsUpper(name[i])) spaced.Append(' ').Append(char.ToLowerInvariant(name[i]));
+				else spaced.Append(name[i]);
+			}
+			return spaced.ToString();
+		}
 
 		public string ReadVin() { Require(); return api.ReadVin(); }
 
@@ -346,6 +404,27 @@ namespace DealershipCar.Wasm
 		}
 
 		public long LastEventApplied() { Require(); return api.LastEventApplied(); }
+
+		/// <summary>
+		/// La ficha del fabricante entera, leida en un solo momento para que las dos secciones que
+		/// la muestran nombren la misma revision de la que salieron sus frases.
+		/// </summary>
+		public WhatTheManufacturerPublished ReadTheSpecification()
+		{
+			Require();
+			return WhatTheManufacturerPublished.ReadThrough(api);
+		}
+
+		/// <summary>
+		/// Donde esta parado este vehiculo contra su sobre, leido entero al instante en que la pantalla
+		/// pregunta. Va aparte de la ficha porque la ficha es de un modelo y esto es de un carro, y
+		/// porque solo esta mitad depende del instante.
+		/// </summary>
+		public WhereThisVehicleStands ReadWhereThisVehicleStands()
+		{
+			Require();
+			return WhereThisVehicleStands.ReadThrough(api, TheInstantTheScreenAsksAt());
+		}
 
 		public bool HasCredential() { Require(); return api.StoredToken().Length > 0; }
 

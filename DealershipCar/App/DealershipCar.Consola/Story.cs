@@ -10,6 +10,8 @@ namespace DealershipCar.Consola
 
 		internal const string TheProfileAtDelivery = "Standard";
 
+		internal const string TheModelAtDelivery = "SM-SEDAN-2025";
+
 		private const string UnitA = "UnitA";
 
 		internal static readonly DateTime Delivery = OnThe(2025, 9, 1);

@@ -72,7 +72,7 @@ namespace DealershipCar.Dominio.Pruebas
 			Assert.That(vencimiento.Describe(), Does.Not.Contain("decided by time"));
 			Assert.That(vencimiento.Describe(), Does.Contain("9000"),
 				"OUS-07: el motivo tiene que decir la DIMENSION y el MONTO, no solo que vence.");
-			Assert.That(vencimiento.Describe(), Does.Contain("UnitA"));
+			Assert.That(vencimiento.Describe(), Does.Contain("of 10000 km"));
 		}
 
 		// PRUEBA 2 de §9. Lectura 33000 el 2026-05-02.
@@ -170,7 +170,7 @@ namespace DealershipCar.Dominio.Pruebas
 			Assert.That(motivo, Does.Contain("distance: "),
 				"Y la de la distancia, que es de la distancia.");
 			Assert.That(motivo, Does.Contain("days"), "Los dias van en la clausula del tiempo.");
-			Assert.That(motivo, Does.Contain("UnitA"),
+			Assert.That(motivo, Does.Contain(" km"),
 				"Y la unidad del limite en la de la distancia.");
 		}
 

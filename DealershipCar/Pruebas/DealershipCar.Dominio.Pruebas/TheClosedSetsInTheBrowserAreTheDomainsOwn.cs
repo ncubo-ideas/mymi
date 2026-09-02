@@ -18,7 +18,12 @@ namespace DealershipCar.Dominio.Pruebas
 	//
 	// Lo segundo es lo que esta prueba cubre, y es lo que T7 solo pudo dejar dicho porque su
 	// caratula no era referenciable desde aca. Va roja si al dominio se le agrega un miembro, se le
-	// quita uno, o se le renombra uno, en cualquiera de los tres conjuntos.
+	// quita uno, o se le renombra uno, en cualquiera de los CINCO conjuntos.
+	//
+	// DESDE T10 SON CINCO. Las dos secciones nuevas -- Mi vehiculo y Garantia -- recorren las seis
+	// clases de fluido y las tres posiciones de llanta, y las dos listas estan escritas a mano por
+	// la misma razon que las otras tres. Y EL ORDEN TAMBIEN SE FIJA: la pantalla muestra las filas
+	// en el orden de la lista, asi que el canon manda tambien en cual va primero.
 	[TestFixture]
 	public sealed class TheClosedSetsInTheBrowserAreTheDomainsOwn
 	{
@@ -71,10 +76,34 @@ namespace DealershipCar.Dominio.Pruebas
 				+ "agregue y esta lista no no la delata nadie mas (L6).");
 		}
 
+		// LAS SEIS CLASES DE FLUIDO, con su ORDEN. La seccion Mi vehiculo pinta una fila por miembro y
+		// en este orden, asi que una clase que el dominio agregue y esta lista no es una fila que la
+		// persona nunca ve -- y dos miembros cambiados de sitio es una hoja que se lee distinto de
+		// como la escribe el canon. Is.EqualTo sobre arrays compara elemento por elemento y en orden,
+		// que es exactamente lo que hace falta aca.
+		[Test]
+		public void TheFluidsTheScreenListsAreExactlyTheDomainsFluidKindsAndInThatOrder()
+		{
+			Assert.That(AppState.TheSixFluidKinds, Is.EqualTo(Enum.GetNames(typeof(FluidKindCode))),
+				"La lista de fluidos de la pantalla se desincronizo del dominio. Una clase que el "
+				+ "dominio tiene y la pantalla no es una fila que nunca aparece, en silencio y para "
+				+ "siempre; y un orden distinto es una ficha que no se lee como la escribe el canon.");
+		}
+
+		// LAS TRES POSICIONES DE LLANTA, igual y por lo mismo. La de repuesto es la que mas facil se
+		// cae de una lista escrita a mano, y es justo la que nadie mira hasta que la necesita.
+		[Test]
+		public void TheTyrePositionsTheScreenListsAreExactlyTheDomainsAndInThatOrder()
+		{
+			Assert.That(
+				AppState.TheThreeTyrePositions, Is.EqualTo(Enum.GetNames(typeof(TyrePositionCode))),
+				"La lista de posiciones de llanta de la pantalla se desincronizo del dominio.");
+		}
+
 		// LA VERSION CON DIENTES, y hace falta porque coincidir con Enum.GetNames no demuestra que la
 		// puerta acepte los nombres: es la misma disciplina que EveryScriptOfTheDoorHasBeenRun -- un
 		// nombre mal escrito se descubre en RUNTIME, no al compilar (S5). Se manda cada miembro de
-		// cada una de las tres listas por el comando de LA PUERTA que le corresponde.
+		// cada una de las cinco listas por el comando o la lectura de LA PUERTA que le corresponde.
 		//
 		// DE LAS TRES LISTAS, HOY LA PANTALLA SOLO MANDA UNA. Las nueve clases se leen en cada fila
 		// del tablero; los perfiles y las razones ya no salen de la caratula -- la app del dueno es de
@@ -117,6 +146,29 @@ namespace DealershipCar.Dominio.Pruebas
 						() => journal.Api.DeclareUsageProfile(profile, effectiveFrom),
 						$"la puerta rechazo el perfil '{profile}', que la lista de la caratula espeja.");
 				}
+
+				// LAS SEIS CLASES DE FLUIDO Y LAS TRES POSICIONES, por las lecturas con que la
+				// seccion Mi vehiculo las pinta. Nada esta publicado en este journal, que es a
+				// proposito: la lectura es TOTAL y contesta igual (L2), y la frase de lo no
+				// publicado NOMBRA lo que se pregunto -- que es el discriminador que hace falta
+				// (C60). Una lectura que contestara siempre por el aceite dejaria las seis filas
+				// con la misma frase y un Is.Not.Empty no podria verlo.
+				foreach (string kind in AppState.TheSixFluidKinds)
+				{
+					Assert.That(journal.Api.IsFluidPublished(kind), Is.False, $"'{kind}'");
+					Assert.That(journal.Api.ReadFluidRevision(kind), Is.Empty, $"'{kind}'");
+					Assert.That(journal.Api.DescribeFluid(kind), Does.StartWith(kind + ":"),
+						$"la frase de '{kind}' no nombra a '{kind}'.");
+				}
+
+				foreach (string position in AppState.TheThreeTyrePositions)
+				{
+					Assert.That(journal.Api.IsTyrePublished(position), Is.False, $"'{position}'");
+					Assert.That(journal.Api.ReadTyreRevision(position), Is.Empty, $"'{position}'");
+					Assert.That(
+						journal.Api.DescribeTyre(position), Does.StartWith(position + " tyre:"),
+						$"la frase de '{position}' no nombra a '{position}'.");
+				}
 			}
 
 			// Y EL PERFIL DE ENTREGA por el camino por el que viaja de verdad: el constructor del
@@ -142,6 +194,11 @@ namespace DealershipCar.Dominio.Pruebas
 				Assert.Throws<ArgumentException>(
 					() => journal.Api.DeferOperation("FluidChange", "cost",
 						new DateTime(2025, 9, 1, 0, 0, 0, DateTimeKind.Utc)));
+
+				// Y en los dos conjuntos de T10 igual, que es donde una lista escrita a mano con la
+				// grafia de la pantalla ("Engine oil") en vez de la del canon se descubriria.
+				Assert.Throws<ArgumentException>(() => journal.Api.DescribeFluid("engineoil"));
+				Assert.Throws<ArgumentException>(() => journal.Api.DescribeTyre("front"));
 			}
 		}
 	}
