@@ -123,9 +123,6 @@ Assert("Request carries no caller identity -- Dispatcher.Serve still does not kn
 // would be the worst outcome: a green CI asserting nothing.
 // ============================================================================================
 
-Console.WriteLine();
-Console.WriteLine("=== LAS TRES PUERTAS CONTESTAN LO MISMO ===");
-
 string modulos = Gnothi.Conformance.Conformance.FindModules();
 
 if (modulos.Length == 0)
@@ -135,7 +132,16 @@ if (modulos.Length == 0)
 }
 else
 {
+	// PRIMERO el guardian: que cada manifiesto coincida con las tools que su modulo REALMENTE
+	// expone. Comparar las tres puertas sobre un catalogo que no coincide con los modulos seria
+	// verificar la copia equivocada. Ver GuardianDeManifiestos.
+	Console.WriteLine();
+	Console.WriteLine("=== LOS MANIFIESTOS COINCIDEN CON LOS MODULOS ===");
 	Console.WriteLine($"  modulos: {modulos}");
+	await Gnothi.Conformance.GuardianDeManifiestos.Verificar(modulos, Assert);
+
+	Console.WriteLine();
+	Console.WriteLine("=== LAS TRES PUERTAS CONTESTAN LO MISMO ===");
 	await Gnothi.Conformance.Conformance.Run(modulos, Assert);
 }
 
