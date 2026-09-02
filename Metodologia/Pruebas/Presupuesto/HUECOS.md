@@ -17,6 +17,18 @@ juicio— y dejarla a la vista.** Nunca rellenar con algo plausible.
 > conversación corta después de la primera pasada de modelado. **El hueco 7 se cerró así, y en un solo
 > intercambio.**
 
+> ### Este archivo es anterior a la doctrina que lo describe
+>
+> **Se escribió el 2026-08-26**, cuando existían siete guías y el `punto-de-partida` era la versión
+> anterior a las seis correcciones que esta misma corrida produjo. No existían la hoja de la
+> entrevista ni las reglas del substrato. **Presupuesto es el material del que salieron las guías, no
+> un producto de ellas** — vale tenerlo presente antes de usarlo como evidencia de nada.
+>
+> Por eso su tabla **no lleva la columna de origen** que el [capítulo
+> 3](../../Guias/03-construir-la-app.md) §8 bis pide hoy: los ocho son *descubiertos*, porque la
+> entrevista de entonces no producía juicios declarados sin firmar. Esa forma apareció después, en el
+> gimnasio.
+
 ---
 
 ## Los ocho
@@ -113,20 +125,16 @@ exactamente lo que la doctrina predice.
 
 ## Y tres hallazgos que no son del archivo sino de las guías
 
-**La raíz no se llama como el negocio, y ningún capítulo lo dice.** El primer intento nombró la raíz
-`Presupuesto` dentro del namespace `Presupuesto.Dominio` y chocó. En el repo la convención es
-uniforme y tácita: Exámenes tiene `Expediente`, Compras tiene `Historial`. Acá quedó `Panorama`. El
-capítulo 3 debería decirlo.
+> **Actualizado el 2026-09-01.** El [capítulo 3](../../Guias/03-construir-la-app.md) §8 bis dice ahora
+> que los hallazgos sobre el método no viven en el `HUECOS.md` de un negocio: van a las guías, que es
+> donde le sirven a los demás. Éstos se quedan porque **este directorio es un sujeto de prueba** —el
+> archivo es el cuaderno de laboratorio— pero con su estado al día.
 
-**La pregunta 3 no tiene doctrina.** Es **hacia adelante y contrafáctica**, y el capítulo 4 está
-construido enteramente sobre leer la serie del pasado. No es que esté mal contestada: es que las
-guías no saben explicar esta clase de pregunta.
-
-**Un `override` faltante desactivó un invariante en silencio.** `EsConsumo` quedó como método que
-**oculta** en vez de sobrescribir, así que la guarda contra contar dos veces cada compra con tarjeta
-no habría funcionado: `Panorama` la consulta por la referencia base. El compilador lo avisó como
-warning y la comprobación lo habría cazado. Es el argumento más concreto que hay para que la carátula
-de consola exista desde el primer día.
+| El hallazgo | Estado |
+|---|---|
+| **La raíz no se llama como el negocio.** El primer intento nombró la raíz `Presupuesto` dentro de `Presupuesto.Dominio` y chocó; quedó `Panorama`. La convención del repo era uniforme y tácita | ✅ **Escrito.** Capítulo 3 §3, el 2026-09-01 — llevaba acá desde el 2026-08-26 diciendo *"el capítulo 3 debería decirlo"* |
+| **La pregunta 3 no tiene doctrina.** Es **hacia adelante y contrafáctica**, y el capítulo 4 está construido enteramente sobre leer la serie del pasado | ⚠️ **Abierto.** Sigue sin capítulo. No es que esté mal contestada: es que las guías no saben explicar esta clase de pregunta |
+| **Un `override` faltante desactivó un invariante en silencio.** `EsConsumo` **ocultaba** en vez de sobrescribir, así que la guarda contra contar dos veces cada compra con tarjeta no habría funcionado | ✅ **Ya era doctrina**, y esto la respalda: es el argumento más concreto que hay para el recuadro del capítulo 3 §8 —*un dominio no está terminado hasta que un perform lo tocó*— y para que la consola exista desde el primer día |
 
 ---
 

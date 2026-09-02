@@ -11,13 +11,13 @@ que sabe programar, menos que nadie.
 
 | | Paso | Qué produce | Capítulo |
 |---|---|---|---|
-| **1** | **Punto de partida** — llegás con una descripción funcional en prosa y salís con las preguntas. **Vuelve después del paso 5**: una sola pasada nunca alcanza | **`Preguntas.md`** | [Punto de partida](punto-de-partida.md) · [hoja](hoja-de-la-entrevista.md) |
+| **1** | **Punto de partida** — llegás con una descripción funcional en prosa y salís con las preguntas. **Vuelve después del paso 5** con el `HUECOS.md` en la mano: una sola pasada nunca alcanza | **`Preguntas.md`** | [Punto de partida](punto-de-partida.md) · [hoja](hoja-de-la-entrevista.md) |
 | **2** | **Escribir bien ese archivo** — la capacidad, los juicios, lo que se descarta | `Preguntas.md` terminado | [4](04-requerimientos-que-agregan-valor.md) |
 | **3** | **Preparar el escritorio** — y las tres fallas del feed privado, que se ven todas iguales | una máquina que compila | [1](01-preparar-el-escritorio.md) |
-| **4** | **Hello World** — algo que tocar y romper antes de lo propio | entendimiento | [2](#) *pendiente* |
-| **5** | **Construir** — el dominio, la lógica, y la carátula de **consola**, que es el arnés | `Dominio/` · `App/<N>.App` · `App/<N>.Consola` | [3](03-construir-la-app.md) |
+| **4** | **Hello World** — algo que tocar y romper antes de lo propio | entendimiento | [2 · Hola Mundo](../Ejemplos/HolaMundo/README.md) |
+| **5** | **Construir** — el dominio, la lógica, y la carátula de **consola**, que es el arnés | `Dominio/` · `App/<N>.App` · `App/<N>.Consola` · **`HUECOS.md`** | [3](03-construir-la-app.md) |
 | **6** | **Traer los datos del proveedor** | `EndPointDeEventos/` · `InyectorDeEventosDemo/` | [5](#) *pendiente* |
-| **7** | **Exponerla** — las dos carátulas que miran **hacia afuera**: la que instala la persona y la que ve la IA | `App/<N>.Wasm` · `App/<N>.Mcp` | [6](06-cli-y-acceso-de-la-ia.md) |
+| **7** | **Exponerla** — las dos carátulas que miran **hacia afuera**: la que instala la persona y la que ve la IA | `App/<N>.Wasm` · `App/<N>.Mcp` | [6](06-cli-y-acceso-de-la-ia.md) · [7 · las puertas](07-las-puertas-de-la-ia.md) |
 | **8** | **Auditar** contra `Preguntas.md` | el reporte de deriva | [Observables](observables.md) |
 | **9** | **Publicar** — la página de descarga, el compose y el README de cómo se corre | `PaginaDeDescarga/` · `docker-compose.yml` · `README.md` | *pendiente* |
 | **10** | **Declarar el módulo** — para que el Host lo catalogue, le conceda y lo verifique **sin arrancarlo** | `manifest.json` | [El manifiesto y la instalación](el-manifiesto-y-la-instalacion.md) |
@@ -30,11 +30,20 @@ que sabe programar, menos que nadie.
 > está bloqueado por el motor, así que se trabaja y se valida por Consola — es para lo que existe esa
 > carátula"*.
 
+> **Por qué el capítulo 2 no vive en esta carpeta.** Porque es el único que **es** un código, y un
+> capítulo que explica archivos de otra carpeta se desincroniza — el mismo problema que ya medimos
+> con los manifiestos. Vive al lado de lo que describe, en
+> [`Ejemplos/HolaMundo/`](../Ejemplos/HolaMundo/README.md), donde no puede quedar viejo sin que se
+> note.
+
 Aparte del orden, y se lee cuando haga falta:
 
 | Capítulo | Qué es |
 |---|---|
 | [0 · La arquitectura clientecéntrica](00-arquitectura-clientecentrica.md) | Dónde corre todo, de quién es el journal, el Host y los módulos. **Contexto, no requisito**: se puede hacer el paso 1 sin haberlo leído |
+| [Las reglas del substrato](reglas-del-substrato.md) | Las 18 cosas que el motor hace y ninguna documentación dice. **Referencia, no tutorial**: si ya sabés lo que hacés, entrás por acá y no por el paso 5 |
+| [Herramientas](../Herramientas/) | Los chequeos que se corren solos **sobre estas guías**. Hoy uno: que ningún enlace ni ancla apunte a la nada |
+| El teléfono | **pendiente, y desbloqueado.** `Gnothi.Mobile` corre el núcleo del Host adentro de una app Android, medido en un Galaxy A54 físico. Por qué la cáscara **tiene** que ser en proceso, que no es MAUI, y qué significa que sea "el mismo código" |
 | A · Compartir información entre apps | **pendiente**, con punto de partida en el cap. 0 §6 |
 
 > **Los números son identificadores, no orden.** Vienen de cuando las guías se escribieron en otra
@@ -50,11 +59,13 @@ Importa, porque estas guías se van a leer como si todo tuviera el mismo respald
 | | |
 |---|---|
 | **Capítulo 0** | Cruzado contra las infografías del equipo **y contra el repo corriendo** (`Examenes`, `Compras`, `HolaMundo/Facturas`). Lo que es objetivo y no realidad está marcado como tal |
-| **Capítulo 3** | Construido y corrido de punta a punta en un ejercicio de presupuesto. Las reglas de §7 salieron de chocar con ellas, y hay pruebas que las fijan |
+| **Capítulo 2** | **Construido y corrido.** 12 comprobaciones del dominio puro, y el ciclo con journal dos veces sobre la misma carpeta para ver el replay. Las reglas 15 y 16 del substrato salieron de escribirlo |
+| **Capítulo 3** | Construido y corrido de punta a punta en un ejercicio de presupuesto. Las [reglas del substrato](reglas-del-substrato.md) salieron de chocar con ellas, y hay pruebas que las fijan |
 | **Capítulo 4** | Doctrina confirmada por los tres casos del equipo. Su **ejemplo trabajado** sigue una pregunta hasta el fondo en un dominio real, y el §6bis dice qué de este capítulo se puede auditar y qué **no** |
-| **Punto de partida** | **Corrido una vez**, sobre un dominio de presupuesto personal (2026-08-26). La corrida encontró seis defectos en el guion, y los seis están corregidos |
+| **Punto de partida** | **Corrido tres veces**, y cada corrida lo cambió: presupuesto personal (2026-08-26, seis defectos en el guion), gimnasio con un peer del equipo (2026-08-28, de ahí el bloque 5 y la corrección del descarte del bloque 1), y con una Product Owner de fuera del equipo (2026-09-01, de ahí las correcciones del bloque 3). El detalle está en su §2 |
 | **Capítulo 1** | **Escrito preparando una máquina y anotando dónde se rompió.** Versiones, mensajes de error y diagnósticos medidos. Lo que no se pudo verificar —Docker, `wasm-tools`— lo dice |
 | **El manifiesto** | **Leído del Host que lo valida** (`Gnothi.Host/Manifest.cs`, rama `master_gnothiHostDesktop`), no propuesto. Pero el Host se diseña **en paralelo**: §8 dice qué sigue abierto |
+| **Capítulo 7** | **Leído del código que corre** —`Gnothi.Assistant`, y el Host medido en un Galaxy A54—. La tercera puerta es un **spike de 8 de 9 pruebas** y está marcada como tal; de Android no se afirma nada porque su medición no está en el repo |
 | **Capítulo 6, CLI** | Construido y corrido. 44 pruebas |
 | **Capítulo 6, MCP** | **Corregido.** Se construyó un servidor y se le habló por stdio; esa corrida desmintió la versión anterior. Falta enchufarlo a un cliente real |
 
@@ -85,18 +96,39 @@ lo describe en su §6; el capítulo 6 debería tenerlo también.
 todas iguales desde el error, y la trampa de que el mismo comando funciona o falla según desde dónde
 se corra.
 
-**4 (Hello World). Desbloqueado.** El repo ya tiene tres negocios corriendo con sus READMEs de "cómo
-se corre", `docker-compose` por negocio y `.mcp.json`. Se puede escribir mirando. Ojo: los ejemplos
-**de la Metodología** son propios y chiquitos; los negocios del repo se citan, no se adoptan.
-
 **6 (datos del proveedor).** Sigue bloqueado: falta el lado del proveedor y no hay ningún motor SQL
 corriendo contra el cual probar una receta.
 
 **8 (auditar). Parcialmente desbloqueado.** Ya existe el instrumento: [la tabla de
-observables](observables.md), con cinco chequeos corridos contra los tres negocios. Faltan cinco por
-correr, y uno quedó declarado **no observable** a propósito. Lo que todavía bloquea la auditoría
-completa es que **ningún negocio tiene su `Preguntas.md`**: sin la intención declarada, un agente
-puede leer el código pero no sabe contra qué compararlo.
+observables](observables.md). De los catorce, **ocho corridos**, uno declarado **no observable** a
+propósito y cinco pendientes — los cinco bloqueados por cosas que no están en este repo: el lado del
+proveedor corriendo, los `manifest.json` y `Gnothi.Assistant`. Lo que todavía bloquea la auditoría
+completa es que **sólo `Compras` tiene su `Preguntas.md`** —lo escribió el equipo el 2026-08-27, y
+encontró tres defectos en un negocio con 461 comprobaciones en verde—. Sin la intención declarada, un
+agente puede leer el código pero no sabe contra qué compararlo.
+
+> **Dos han discriminado alguna vez: el 5 y el 7.** El 7 se corrió el 2026-09-02 y encontró el primer
+> hallazgo real de la tabla — un juicio de negocio (*cuántas compras se miran para reconocer la
+> firma*) viviendo en `App/` en vez del dominio, con su argumentación escrita al lado, que es lo que
+> lo delata.
+
+> **El 13 es nuevo y audita algo que ninguno de los doce anteriores audita: completitud.** Los doce
+> preguntan si los juicios quedaron donde se dijo; el 13 pregunta si el dominio tiene todo lo que el
+> archivo declaró que iba a saber. Corre contra la Parte 1 del `Preguntas.md`, y **necesita que esa
+> tabla lleve una columna que diga dónde vive cada renglón** — hoy sólo la tiene `Pruebas/Gimnasio`,
+> donde ya encontró un renglón que no está en ninguna parte.
+>
+> **No pide una clase por renglón**, y la primera redacción sí lo pedía: probado contra los tres
+> `Preguntas.md` que existen, los tres tienen renglones que legítimamente se resuelven con un miembro
+> o con una tabla de valores. Así escrito, el 13 empujaba a crear clases vacías y **chocaba con el
+> 10**.
+
+
+**El teléfono. Desbloqueado, y con la parte cara medida.** `Gnothi.Mobile` compila el núcleo del Host
+adentro de una app Android —**no es MAUI**— y corrió en un Galaxy A54 físico: 3 módulos, 8 consultas,
+0 procesos hijos. El hallazgo que hace falta escribir: en un teléfono la cáscara **tiene** que ser en
+proceso, porque una app con `targetSdk >= 29` no puede `exec()` archivos de su directorio de datos.
+No es una preferencia de diseño, es el sistema operativo.
 
 **9 (publicar). Sin capítulo, pero con material.** El paso existía en la práctica y no en este orden
 de trabajo: se descubrió comparando las fases contra la estructura de los negocios del repo, y

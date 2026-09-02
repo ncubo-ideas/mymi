@@ -8,9 +8,11 @@ carátulas de consola y de IA, sobre un journal de file system.
 **Qué es esta guía y qué no.** No reemplaza a las guías de Puppeteer (`basics.md`, `parameters.md`,
 `control-flow.md`, `conventions.md`, `output-and-controller.md`, `hosting-and-environments.md`) ni a
 la guía de dominio (`domain-guide.md`). Aquéllas dicen **cómo funciona el framework**; ésta dice **en
-qué orden armar una aplicación y con qué forma**, y —lo más importante— recoge las reglas del
-substrato que **no están escritas en ninguna guía** y que sólo se aprenden chocando con ellas. La
-sección §7 es el corazón del documento: si vas con prisa, leé esa.
+qué orden armar una aplicación y con qué forma**.
+
+> **Si vas con prisa, esto no es lo que buscabas.** Las reglas del substrato —lo que sólo se aprende
+> chocando— viven ahora en [Las reglas del substrato](reglas-del-substrato.md). Este capítulo es el
+> how-to que se recorre una vez; aquél es la referencia que se consulta seguido.
 
 El ejemplo recurrente es un presupuesto familiar. Cada vez que aparece, es **ilustración, no
 prescripción**: generalizá la forma, no los nombres.
@@ -58,7 +60,7 @@ necesite referenciar tu dominio, algo se cruzó.
 > corren hoy. La recomendación del equipo sobre `internal` viene con uno distinto —`Superficie`,
 > `Cli`, `Tests`, `publicador-simulado`— y dice de sí misma que *"no es definitiva"*. Lo que **no**
 > depende de cuál gane es todo lo demás de este capítulo: el dominio puro y `internal`, la fachada, y
-> las reglas del substrato de §7.
+> las [reglas del substrato](reglas-del-substrato.md).
 
 ---
 
@@ -100,6 +102,44 @@ Esto lo gobierna `domain-guide.md`. Lo que hay que retener al empezar:
   como parámetro. Es lo que hace que replayar el journal dé exactamente el mismo estado.
 - **Nombrá la ley.** No dejes que una regla viva sólo como aritmética. La provisión mensual de un
   gasto anual es una ley con nombre, no un `/12` suelto.
+- **La raíz no se llama como el negocio.** El agregado raíz nombra **lo que contiene**, no el dominio:
+  Exámenes tiene `Expediente`, Compras tiene `Historial`, el gimnasio tiene `Trayectoria`, el Hola
+  Mundo tiene `Libro`. Llamarla `Presupuesto` dentro de `Presupuesto.Dominio` choca, y además tapa la
+  pregunta útil —*¿qué es esto, una colección de qué?*—, que es la que da el buen nombre. La
+  convención era uniforme en el repo y **tácita**; costó un choque descubrirla.
+- **Un juicio sin firmar no tiene valor por defecto.** Tiene su propia sección abajo.
+
+### Un juicio sin firmar no tiene valor por defecto
+
+La entrevista deja juicios pendientes de firma — es lo normal, y el
+[punto de partida](punto-de-partida.md) explica por qué la firma es asincrónica. Lo que **no** se
+puede hacer mientras tanto es esto:
+
+```csharp
+private decimal umbral = 0.10m;   // "mientras tanto"
+```
+
+Compila, corre, y el número hasta parece razonable. **Ése es el problema.** La app contesta con la
+misma seguridad que si el juicio estuviera decidido, y nadie va a investigar una respuesta creíble.
+Un default silencioso **es** un juicio inventado, sólo que con mejores modales.
+
+Las dos formas correctas, y las dos ya están en el repo:
+
+**El objeto no se construye sin él.** Así entra el umbral del presupuesto:
+
+```csharp
+internal Panorama(decimal umbralDeVariacion)
+{
+	if (umbralDeVariacion <= 0 || umbralDeVariacion >= 1)
+		throw new ArgumentOutOfRangeException(nameof(umbralDeVariacion),
+			"Es una proporcion: 0,10 son diez por ciento.");
+```
+
+**O la respuesta dice que no sabe.** Así resolvió el gimnasio una meta sin valor declarado: el valor
+es opcional, y cuando no está **se dice**, en vez de inventar un número para poder contestar.
+
+Cuál de las dos depende de si el juicio es necesario para que el objeto tenga sentido, o sólo para
+una respuesta en particular. Lo que no es una opción es la tercera.
 
 ### El dominio va `internal`, y el csproj separado es lo que lo hace cierto
 
@@ -257,7 +297,7 @@ internal bool HandlesCurrency(string code);
 internal bool CanSettle(int folio, string currency);
 ```
 
-Esto parece un detalle y es lo contrario. Es lo que permite el `Check` de §7.3, sin el cual un
+Esto parece un detalle y es lo contrario. Es lo que permite el `Check` de la [regla 3](reglas-del-substrato.md), sin el cual un
 comando rechazado envenena el journal para siempre.
 
 ---
@@ -406,244 +446,23 @@ cualquier parser.
 
 ---
 
-## 7. Las reglas del substrato que no están en ninguna guía
+## 7. Las reglas del substrato
 
-Esta sección es el motivo de existir del documento. Todo lo de acá se descubrió a los golpes.
+**Se mudaron a su propio documento: [Las reglas del substrato](reglas-del-substrato.md).**
 
-### 7.1 Un comando rechazado se journaliza igual — y envenena el replay
+Son dieciocho cosas que el motor hace y ninguna documentación dice, todas descubiertas a los golpes.
+Salieron de acá porque **no se leen igual que el resto del capítulo**: esto es un how-to que se
+recorre una vez, y ésas son una referencia que se consulta cada semana. **Conservan su numeración**:
+la *regla 5* de allá es la que hasta hoy se citaba como *§7.5*, acá y en commits viejos.
 
-**El peor de todos.** Si el dominio revienta a mitad de un `PerformCommand`, la entrada **ya se
-escribió**. Desde ese momento, cada rehidratación la replaya y vuelve a fallar:
+**Antes de escribir la fase 1, leé por lo menos estas cuatro:**
 
-```
-[Puppeteer ERROR] Script execution failed at write-time. EntryId=33   ← se escribió
-[Puppeteer ERROR] Rehydration execution failed. EntryId=33            ← y falla en cada arranque
-```
-
-Un error de tipeo en una moneda queda permanente en el journal.
-
-**La solución** está en `control-flow.md` §9 y hay que aplicarla a **todo comando que el dominio
-pueda rechazar**: guardarlo con un `Check` y usar `PerformCheckThenCommand`. Un `Check` que falla
-corre bajo read lock, **antes** del write lock, y no escribe nada.
-
-```csharp
-actor.Using(
-	check: @"
-	Check(root.HandlesCurrency(@currency)) Error 'moneda desconocida';
-	Check(root.CanSettle(@folio, @currency)) Error 'no hay plan esperando';
-",
-	@"
-	{
-		root.Settle(@folio, @currency, @amount);
-		print @folio 'settled';
-	}
-")
-.WithParameters(...)
-.PerformCheckThenCommand();
-```
-
-Por eso el dominio necesita **predicados totales** (§3): el `Check` sólo puede preguntar lo que el
-dominio sabe responder sin reventar.
-
-### 7.2 El contrato de retorno de `PerformCheckThenCommand`
-
-Medido, no supuesto:
-
-| | retorno | entradas del journal |
+| | | Por qué ahora |
 |---|---|---|
-| **rechazado** | `{"EWI":[{"Error":"…"}]}` (JSON) · `EWI:\n  - Error: "…"` (TOON) | **no avanzan** |
-| **aceptado** | lo que el `print` produjo | avanzan |
-
-El marcador es que el documento **empieza con `EWI`**. No alcanza con "retorno no vacío", porque un
-comando aceptado que imprime algo también devuelve texto.
-
-### 7.3 El dominio se resuelve por el assembly del actor
-
-`ActorHandler` hace `actor.GetType().Assembly` para saber dónde buscar el vocabulario. Consecuencias:
-
-- **Pasá el assembly explícitamente**: `new PerformanceV2(name, domainAssembly)`.
-- El constructor de un solo argumento usa `Assembly.GetCallingAssembly()`, que desde el host es **el
-  host**, no el dominio. Silencioso y equivocado.
-- Cargalo por nombre (`Assembly.Load`) para no tener que hacer público ningún tipo del dominio.
-
-### 7.4 El seed cuesta una entrada por arranque
-
-`OnHydrated` corre en cada hidratación y re-emite el `upgrade`. El cuerpo **no** se re-ejecuta, pero
-el comando **sí se journaliza**. Medido:
-
-| operación | entryId |
-|---|---|
-| `Start()` con journal vacío | 0 |
-| seed `upgrade` (forma nueva) | 2 — `define action` + `invoke` |
-| seed `upgrade` otra vez (no-op) | 3 — **+1**, misma forma → sólo `invoke` |
-| un comando nuevo | 5 |
-| una consulta | 5 — **+0** |
-
-Para un servicio que arranca una vez, es nada. **Para un CLI invocado cincuenta veces al día, son
-cincuenta entradas.** Es el precio del idiom que prescribe la guía —y la alternativa
-(`OnFirstHydration`) rompe el versionado de upgrades. Sabelo y decidí.
-
-**Y hay una consecuencia peor, que muerde a la superficie de sólo lectura.** Si el servidor MCP usara
-la misma clase que la app, **cada pregunta de la IA escribiría una entrada en el journal de la
-persona** y rompería la invariante de un solo escritor. La solución es un actor gemelo: mismo nombre,
-mismo dominio, **`OnHydrated` vacío**. Capítulo 6 §6.6.
-
-**Un segundo `upgrade` no se comporta como el primero.** Reportado por el equipo con receta de
-reproducción: un `upgrade` agregado en un **segundo** `PerformCommand` **no asienta en la corrida que
-siembra el journal**, así que otro proceso que rehidrate ese mismo journal no encuentra el global y
-falla con algo que no parece culpa suya. Verificado en un journal real: los dos upgrades aparecían
-**dos veces cada uno**, o sea que la guarda de una-vez-por-actor tampoco estaba conteniendo lo que
-parecía.
-
-> Si alguna vez hace falta un `upgrade` nuevo, **probalo abriendo el journal desde cero con otro
-> proceso** —el MCP, por ejemplo— y no sólo con la app que lo sembró.
-
-### 7.5 El framework escribe en stdout
-
-`ActorHandler` hace `Console.WriteLine("Starting …")` y marcas de progreso `1%2%` **sin newline**, que
-prefijan la línea siguiente. En un CLI cuya salida alguien va a parsear, eso la arruina.
-
-**En una consola: capturá `Console.Out` mientras corre el framework y reenvialo a stderr.** stdout
-lleva sólo la respuesta.
-
-### 7.6 El formatter
-
-- En un `PerformanceV2`, `.Formatter(new ToonFormatter())`.
-- En un `ActorV2` pelado —que es por donde van los performs con parámetros— **no hay `.Formatter`**:
-  se empuja por contexto, `using (FormatterContext.Push(formatter)) { … }`.
-- JSON para APIs, TOON para consumo de IA, texto plano para personas.
-- **Cuidado con `<InvariantGlobalization>true</InvariantGlobalization>`**: `ToonFormatter` construye
-  un `CultureInfo("en-US")` en su constructor estático y revienta al arrancar.
-- Una proyección multilínea renderizada como campo vuelve con los saltos escapados. Si es prosa para
-  leer, sacala del documento e imprimila cruda.
-
-### 7.7 Un journal, un escritor
-
-El backend de file system toma lock. **No corras el API y el CLI contra el mismo journal a la vez.**
-Connection string verificado:
-
-```
-path=<directorio>;maxFileSize=4194304;compression=GZip
-```
-
-### 7.8 Los valores viajan como parámetros, nunca concatenados
-
-```csharp
-// MAL: texto distinto en cada llamada → una Action nueva por llamada, journal que explota
-actor.Using($"root.Add('{sku}', {qty});")
-
-// BIEN: una plantilla, argumentos aparte
-actor.Using("root.Add(@sku, @qty);").WithParameters(...)
-```
-
-El journal guarda **una sentencia reusable más sus argumentos**. Concatenar destruye esa densidad y
-además rompe la identidad de la Action.
-
-### 7.9 Verificá la versión del framework contra la que escribís
-
-Las guías describen un commit concreto. Un checkout viejo puede no tener la API que documentan —y
-fallar de maneras que parecen error propio. En este proyecto el checkout estaba **967 commits atrás**,
-con `Parameters` exponiendo los indexers como `internal` (o sea: **imposible pasar `@params` desde
-otro assembly**) y `PerformanceV2` sellado sin constructor de assembly.
-
-**Antes de pelear con una API que no calza con la guía, comprobá en qué commit estás.**
-
----
-
-### 7.10 Un parámetro le puede robar el nombre a un tipo
-
-`@periodicidad` y `Periodicidad` son el mismo nombre para el resolutor del DSL, y **gana el
-parámetro**. Este script:
-
-```
-g = GastoDeLaPersona(@nombre, Periodicidad.PorNombre(@periodicidad));
-```
-
-falla con
-
-```
-Unknown property or method 'PorNombre' on type 'String'
-```
-
-Léelo dos veces: dice **`String`**. El resolutor tomó `Periodicidad` como el parámetro —que es un
-`string`— y el mensaje acusa al tipo equivocado, así que mandan a revisar la clase del dominio, que
-está perfecta.
-
-**La regla: ningún parámetro puede llamarse como un tipo del dominio**, ni siquiera con otra
-capitalización. Nombralos por su papel en la frase (`@cadaCuanto`, `@desdeCuando`) y no por su tipo.
-
-### 7.11 Un `static readonly` no se alcanza desde el DSL; un método estático sí
-
-Un conjunto cerrado suele exponerse así:
-
-```csharp
-internal static readonly Procedencia Institucion = new Procedencia("institucion");
-```
-
-Desde un script, `Procedencia.Institucion` **revienta**:
-
-```
-Unknown property or method 'Institucion' on type 'Object'
-```
-
-Un **método** estático sí resuelve. Y de ahí sale la consecuencia, que es más grande que el síntoma:
-
-> **Un conjunto cerrado sin resolutor total es inalcanzable desde un comando.**
-
-La guía de dominio ya pide ese resolutor —`Periodicidad.PorNombre('mensual')`, que revienta ante lo
-desconocido— por la **totalidad**. En este substrato es además la **única puerta de entrada**. Si tu
-conjunto cerrado no tiene uno, no es que quede feo: es que ningún comando lo puede nombrar.
-
-### 7.12 El ternario no unifica dos subclases a su base común
-
-```
-contra = @hay ? ContraUnaTasaAnual(@nombre, @tasa) : ContraSuPropiaHistoria();
-```
-
-```
-Binary operation TernaryAstExpression cannot combine
-ContraUnaTasaAnual and ContraSuPropiaHistoria
-```
-
-Las dos ramas tienen que dar **el mismo tipo**, aunque el parámetro que las recibe sea la base.
-
-**Elegí el texto del script en C#**, no la rama adentro del DSL. Y en un comando eso además es más
-honesto: el journal guarda **cuál se ejecutó de verdad**, en vez de una condición que hay que volver
-a evaluar en cada replay.
-
-### 7.13 El `print` proyecta un solo nivel
-
-`print v.Responsables` no cruza. `print r.Gasto.Nombre` tampoco. Lo que cruza es **un nivel de
-escalares**, y eso decide la forma de tus carriers antes de que escribas el primero:
-
-- **Un objeto adentro de un carrier** se aplana con un accesor: `NombreDelGasto`, `NombreDeLaSeveridad`.
-- **Una colección adentro de un carrier** no cruza: o se convierte en un escalar (`CuantosSinMarcar`)
-  o va en **una consulta aparte** con su propio `foreach`.
-- **Una colección de filas que a su vez tienen celdas** tampoco. Se aplana con índices —una fila por
-  celda, con su `fila` y su `columna`— y la superficie rearma la grilla sin volver a decidir nada.
-- **Un nullable viaja como bool más valor**, nunca como hueco. Si mandás sólo el número, quien lo
-  reciba no puede distinguir *"cero"* de *"no se sabe"*, y ésas son dos respuestas muy distintas.
-
-### 7.14 El dominio dice duraciones, no fechas
-
-Una lectura que arma el dominio **no formatea una fecha**. Dice *"lleva 15 días sin aparecer"*, no
-*"se esperaba el 05/07/2026"*.
-
-Hay una razón de forma y una de fondo.
-
-**De forma:** el `print` serializa las fechas en el formato del framework. Si tu frase formatea la
-misma fecha con otro, el payload sale con **dos versiones del mismo instante** y quien lo lea tiene
-que adivinar. Medido: el campo salía `07/05/2026` y la frase decía `05/07/2026` —los dos el 5 de
-julio— y un consumidor que leyera el campo como día/mes iba a reportar dos meses de atraso donde
-había quince días.
-
-**De fondo, y es la que importa:** *"se esperaba el 05/07/2026"* obliga a quien lo lea a hacer la
-resta. *"Lleva 15 días sin aparecer"* **ya es la lectura**, que es lo único que el objeto sabe decir
-mejor que nadie. La fecha sigue viajando en su campo como `DateTime`; formatearla es derecho de la
-superficie, que es la que sabe para quién escribe.
-
-Corolario práctico: decí las duraciones como las diría una persona — días hasta un par de meses,
-meses de ahí en adelante. Una app que informa *"lleva 437 días"* obliga a dividir.
+| **1** | Un comando rechazado se journaliza igual | Es la peor de todas: envenena el replay para siempre |
+| **17 y 18** | El `Check` pregunta exactamente lo que el dominio rechaza, y **todo** comando lleva `Check` | **Corrigen a la 1**, que se puede cumplir al pie de la letra y envenenar el journal igual. De acá sale la forma del dominio: **un predicado total por comando** |
+| **10** | Un parámetro le puede robar el nombre a un tipo | Te muerde al nombrar el primer perform |
+| **13** | El `print` proyecta un solo nivel | Decide la forma de tus carriers, y rehacerla después duele |
 
 ---
 
@@ -653,8 +472,8 @@ meses de ahí en adelante. Una app que informa *"lleva 437 días"* obliga a divi
 >
 > Es la regla que más caro sale ignorar, y hay una medición detrás. Un dominio de veintidós clases
 > compiló limpio y pasó **31 comprobaciones** del modelo puro — y era **imposible de hospedar**: tres
-> de sus conjuntos cerrados no se podían nombrar desde un comando (§7.11), un parámetro tapaba a un
-> tipo (§7.10), y sus carriers tenían dos niveles donde el `print` proyecta uno (§7.13).
+> de sus conjuntos cerrados no se podían nombrar desde un comando ([regla 11](reglas-del-substrato.md)), un parámetro tapaba a un
+> tipo ([regla 10](reglas-del-substrato.md)), y sus carriers tenían dos niveles donde el `print` proyecta uno ([regla 13](reglas-del-substrato.md)).
 >
 > Ninguna de las dos redes lo atrapa. El compilador no ve el DSL, que se resuelve por reflexión en
 > tiempo de ejecución; y las comprobaciones del dominio puro prueban las **leyes del negocio**, que
@@ -676,8 +495,61 @@ En el nivel perform, **la prueba que más vale es la del reinicio**: registrá a
 reabrí sobre el mismo journal y comprobá que sigue ahí. Es la única evidencia honesta de que el estado
 lo sostiene el journal y no la memoria.
 
-Y fijá con una prueba lo que descubriste en §7.1: que un rechazo **no deja nada** que haga fallar la
+Y fijá con una prueba lo que descubriste en la [regla 1](reglas-del-substrato.md): que un rechazo **no deja nada** que haga fallar la
 rehidratación siguiente.
+
+---
+
+## 8 bis. El `HUECOS.md`, que se escribe mientras modelás
+
+**Modelar destapa decisiones que nadie tomó.** No es un defecto de la entrevista: hasta que alguien no
+intenta construir la respuesta, no se ve qué falta para poder darla. En los dos dominios donde se midió
+aparecieron **ocho y once**, en dominios chicos.
+
+Esas decisiones se anotan **en el momento**, en un `HUECOS.md` al lado del `Preguntas.md`. Es un
+registro por dominio: `Compras` tiene el suyo, `Gimnasio` el suyo, y no se parecen.
+
+### Una sola tabla, con la columna de origen
+
+Lo no decidido llega por dos caminos, y conviene distinguirlos porque se cierran distinto:
+
+| Origen | Qué es | Quién lo cierra |
+|---|---|---|
+| **declarado** | Salió de la entrevista y quedó ⚠️ sin firmar — un umbral, una cadencia | Quien sabe del negocio, asincrónico |
+| **descubierto** | No lo previó nadie. Apareció al escribir la clase | El bloque 5, leyéndolo como propuesta |
+
+Son dos columnas de la misma tabla, **no dos archivos**. Los dos son *"cosas que la app todavía no
+sabe"*, y tener dos registros de eso es exactamente la deriva que estas guías persiguen en otros
+lados.
+
+| # | Qué falta | Origen | Dónde muerde | Qué se decidió para seguir |
+|---|---|---|---|---|
+| 1 | Cómo se agrupan las edades | descubierto | `PorcentajeDeGrasa` | La clave lleva la edad exacta — feo a propósito |
+| 2 | Qué variación es ruido | declarado | `Referencia` | Valor propuesto, ⚠️ sin firmar |
+
+### Qué NO va acá
+
+**Los hallazgos sobre el método o sobre el motor.** Que un `Check` tenga que preguntar exactamente lo
+que el dominio rechaza no es un hueco de tu negocio: es una [regla del
+substrato](reglas-del-substrato.md), y ahí es donde le sirve a los demás. Un `HUECOS.md` con
+hallazgos del motor adentro es un hallazgo que nadie más va a encontrar.
+
+> **La excepción son los sujetos de prueba de `Metodologia/Pruebas/`**, que existen justamente para
+> falsar las guías. Ahí el archivo **es** el cuaderno de laboratorio y lleva las dos cosas, con la
+> parte del método claramente separada — y cuando esa parte se escribe en las guías, se reemplaza por
+> un puntero.
+
+### El ciclo de vida
+
+Un hueco **cierra hacia el `Preguntas.md`**: cuando alguien decide, la decisión pasa a ser capacidad o
+juicio declarado, y el renglón se va. O se queda abierto **con dueño**, que también es una respuesta.
+
+Lo que no puede pasar es que se cierre **inventando**. Un hueco tapado con un valor razonable deja de
+verse y la app empieza a contestar con seguridad algo que nadie decidió — que es el mismo defecto que
+la sección de arriba llama *un juicio inventado con mejores modales*.
+
+> **Que un hueco quede abierto no es deuda: es información.** El `HUECOS.md` vacío de un dominio joven
+> es sospechoso, no admirable.
 
 ---
 
@@ -690,19 +562,22 @@ rehidratación siguiente.
 - [ ] ¿Ninguna parte del dominio lee el reloj ni genera azar?
 - [ ] ¿Las consultas de la fachada devuelven escalares, arreglos primitivos o proyecciones?
 - [ ] ¿Cada conjunto cerrado tiene su **resolutor total** desde primitivo? Sin él, ningún comando lo
-      puede nombrar (§7.11)
-- [ ] ¿Ningún carrier tiene un objeto o una colección adentro que la fachada exponga? (§7.13)
-- [ ] ¿Los nullable viajan como bool más valor, y no como hueco? (§7.13)
-- [ ] ¿Ninguna lectura que arma el dominio formatea una fecha? (§7.14)
+      puede nombrar ([regla 11](reglas-del-substrato.md))
+- [ ] ¿Ningún carrier tiene un objeto o una colección adentro que la fachada exponga? ([regla 13](reglas-del-substrato.md))
+- [ ] ¿Los nullable viajan como bool más valor, y no como hueco? ([regla 13](reglas-del-substrato.md))
+- [ ] ¿Ninguna lectura que arma el dominio formatea una fecha? ([regla 14](reglas-del-substrato.md))
 
 **El substrato**
 
 - [ ] ¿**Un perform tocó el dominio**, aunque sea desde una consola de veinte líneas? Compilar y
       pasar las pruebas del modelo puro no alcanza — ver el recuadro de §8
-- [ ] ¿Ningún parámetro se llama como un tipo del dominio? (§7.10)
+- [ ] ¿Ningún parámetro se llama como un tipo del dominio? ([regla 10](reglas-del-substrato.md))
 - [ ] ¿El agregado se construye en un `upgrade`, como global raíz?
-- [ ] ¿Cada comando que el dominio pueda rechazar va detrás de un `Check`? (§7.1)
-- [ ] ¿Hay un predicado total por cada cosa que el `Check` necesita preguntar?
+- [ ] ¿**Todo** comando va detrás de un `Check` — incluidos los que no pueden fallar, que lo llevan
+      por identidad y no por validez? ([reglas 1 y 18](reglas-del-substrato.md))
+- [ ] ¿Cada `Check` llama a **un** predicado `Puede<Comando>` que junta todas las razones de rechazo
+      de ese comando? ([regla 17](reglas-del-substrato.md))
+- [ ] ¿Se corrió el ciclo **dos veces sobre la misma carpeta** y los números no se movieron?
 - [ ] ¿Ningún valor se concatena en el texto del DSL?
 - [ ] ¿El actor se construye una vez y se reusa?
 
@@ -714,6 +589,13 @@ rehidratación siguiente.
 
 - [ ] ¿Existe una prueba de reinicio?
 - [ ] ¿Existe una prueba de que un rechazo no envenena el journal?
+
+**Lo que queda escrito**
+
+- [ ] ¿Existe el `HUECOS.md`, con cada renglón marcado *declarado* o *descubierto*? (§8 bis)
+- [ ] ¿Ningún hueco se cerró **inventando** un valor razonable?
+- [ ] ¿Cada renglón de la Parte 1 del `Preguntas.md` tiene su clase al lado?
+      ([observable 13](observables.md))
 
 ---
 

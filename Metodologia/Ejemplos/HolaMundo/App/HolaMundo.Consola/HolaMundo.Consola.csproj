@@ -1,0 +1,24 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!-- LA CARÁTULA DE CONSOLA. Es el arnés con el que se trabaja: mide el dominio sin el
+       sandbox del browser encima, y por eso es donde se valida primero.
+
+       Referencia al dominio DIRECTO —a diferencia de HolaMundo.App— porque las
+       comprobaciones puras instancian las clases sin pasar por scripts. Ése es el
+       permiso `InternalsVisibleTo` del csproj del dominio. -->
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net9.0</TargetFramework>
+    <Nullable>disable</Nullable>
+    <ImplicitUsings>disable</ImplicitUsings>
+    <RootNamespace>HolaMundo.Consola</RootNamespace>
+    <AssemblyName>HolaMundo.Consola</AssemblyName>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\Dominio\HolaMundo.Dominio.csproj" />
+    <ProjectReference Include="..\HolaMundo.App\HolaMundo.App.csproj" />
+  </ItemGroup>
+
+</Project>

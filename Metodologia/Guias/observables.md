@@ -24,6 +24,13 @@ chequeo. Eso no es un fracaso: es el chequeo haciendo su trabajo.
 
 ---
 
+> **Estos doce miran el código de los negocios. Las guías también se pueden chequear**, y eso vive
+> aparte: [`Metodologia/Herramientas/`](../Herramientas/). Hoy hay uno —que ningún enlace ni ancla
+> apunte a la nada— y su README cuenta las dos veces que mintió antes de servir, que son la mejor
+> ilustración que hay de la regla de acá abajo.
+
+---
+
 ## La regla que hay que leer antes de escribir un observable
 
 > **Un `grep` no es un observable.**
@@ -54,12 +61,15 @@ antes de reportar un hallazgo, se mira la línea.
 | 3 | El proveedor no conoce el dominio | `EndPointDeEventos/` e `InyectorDeEventosDemo/` | Ninguno referencia `Dominio/` ni toca el journal. Lo único que los conecta es HTTP | no discrimina |
 | 4 | No hay tool genérica | Las tools del `.Mcp` | Ninguna con forma `Query(puppet, operacion, parametros)`. Cada tool es una pregunta | no discrimina |
 | 5 | **Hay al menos una pregunta que sólo contesta la IA** | Nombres de tools vs. lo que renderizan las `.razor` | Existe **al menos una** tool cuya respuesta ninguna vista muestra | **discrimina** |
-| 6 | Los argumentos de la frontera son conjuntos cerrados | Firmas de las tools | El parámetro es un `enum`, no un `string`: la lista de valores válidos vive en el `inputSchema`, no en la prosa de la descripción | por correr |
-| 7 | Los juicios viven en el dominio | Umbrales, periodicidades, direcciones | Son miembros de clases de `Dominio/`, no constantes en `App/`, `Wasm/` o `Mcp/` | por correr |
+| 6 | Los argumentos de la frontera son conjuntos cerrados | Firmas de las tools | El parámetro es un `enum`, no un `string`: la lista de valores válidos vive en el `inputSchema`, no en la prosa de la descripción | **no discrimina** — y dos de cuatro no tuvieron ocasión, ver abajo |
+| 7 | **Los juicios viven en el dominio** | Umbrales, periodicidades, direcciones | Son miembros de clases de `Dominio/`, no constantes en `App/`, `Wasm/` o `Mcp/` | **discrimina** — ✅ corrido, **1 de 4 falla** |
 | 8 | El MCP no corrompe su propio canal | `Program.cs` del `.Mcp` | Redirige `stdout` antes de tocar el motor — con transporte stdio, `stdout` **es** el canal JSON-RPC | por correr |
 | 9 | La app no es cliente de los servicios generales | URL2 | Hay un señuelo que devuelve **403 con el token válido** de la app | por correr |
 | 10 | Cada clase justifica existir | Las clases del dominio | Cada una tiene al menos un miembro que ninguna otra tiene | **no es observable** — requiere juicio |
 | 11 | **Lo declarado coincide con lo que el módulo expone** | `manifest.json` vs. las tools reales | La lista de `tools[].name` y la que el módulo responde en `tools/list` son la misma: ni de más ni de menos | por correr |
+| 12 | **El costo fijo de una pregunta se puede medir sin llave** | El catálogo que la Puerta 2 le muestra al modelo | Existe una forma de contarlo **sin un modelo del otro lado**. Medido en el POC: ~1.364 tokens, de los cuales el 86 % es el catálogo | por correr |
+| **13** | **Lo declarado en la Parte 1 existe en el modelo** | La Parte 1 del `Preguntas.md` vs. `Dominio/` | **Cada renglón dice dónde vive** —una clase, varias, un miembro, un conjunto cerrado— **y ese identificador aparece en `Dominio/`.** Cero renglones vacíos | **discrimina** — bloqueado, ver abajo |
+| **14** | **La hoja y el capítulo dicen las mismas reglas** | Los marcadores de `hoja-de-la-entrevista.md` vs. `punto-de-partida.md` | Todo marcador de la hoja está en el capítulo, y todo marcador `sesion` del capítulo está en la hoja | **discrimina** — ✅ corrido |
 
 ### Sobre el 5, que es el único que discriminó
 
@@ -78,6 +88,182 @@ La primera es que **corre sin el Host**: un manifiesto que nadie lee y que deriv
 que no tenerlo, y hoy los del lado del módulo no los lee nadie. La segunda es que este chequeo mide
 algo que ninguna guía puede sostener por doctrina — una lista copiada **siempre** deriva; lo único que
 la salva es compararla. Ver [El manifiesto y la instalación](el-manifiesto-y-la-instalacion.md) §4.
+
+### Sobre el 12, que mide plata y no diseño
+
+Es el primero de esta tabla que no vigila una decisión de modelado sino **una factura**. Entra porque
+cumple la regla: es contrastable sin juicio, y **no cuesta nada correrlo** — el catálogo se puede
+proyectar sin un modelo del otro lado, que es justo lo que lo vuelve un chequeo y no una estimación.
+
+Lo que vigila es una deriva silenciosa: cada tool que se agrega engorda el catálogo, el catálogo viaja
+en **cada** pregunta, y nadie lo nota hasta que llega la cuenta. Ver
+[las puertas de la IA](07-las-puertas-de-la-ia.md) §4.7.
+
+### Sobre el 13, que audita algo que ningún otro audita
+
+Los doce primeros auditan **deriva**: *¿los juicios quedaron donde se dijo que iban a quedar?* Ninguno
+audita **completitud**: *¿el dominio tiene todo lo que el archivo declaró que iba a saber?*
+
+La diferencia no es académica. Un `Preguntas.md` que declara un sustantivo y un dominio que no lo
+tiene **pasan los doce con boletín perfecto**, porque no hay nada que cruce la Parte 1 contra las
+clases. Es lo que pasó con la membresía del gimnasio: declarada, no modelada, y ningún instrumento
+sonó.
+
+**Corrido a mano contra el gimnasio**, que es de donde salió: seis renglones ubicados y **la
+membresía en ninguna parte**. Habría fallado **el mismo día que se escribió el archivo**, meses antes
+de que se notara construyendo.
+
+### No es «una clase por renglón», y la primera versión decía eso
+
+Se corrigió el 2026-09-01, antes de correrlo. **La primera redacción exigía una clase por cada
+renglón de la Parte 1, y eso es falso** — probado contra los tres `Preguntas.md` que existen:
+
+| Renglón | ¿Clase propia? |
+|---|---|
+| Compras · producto, departamento, presentación, compra, línea | ✅ las cinco |
+| Compras · **Repertorio** — *"los departamentos que se reponen y cada cuántos días"* | ❌ es una tabla de valores |
+| Gimnasio · **la asistencia** | ❌ es una `List<DateTime>` adentro de `Trayectoria` |
+| Presupuesto · **la razón**, **Repertorio** | ❌ ninguna |
+
+**Tres de tres tienen un renglón sin clase propia**, y *"Repertorio"* falla en los tres: es una fila
+estándar de la plantilla y por definición es **dato, no cosa**.
+
+> **Y así escrito, el 13 empujaba contra el [10](#sobre-el-10-que-se-cayó-al-escribirlo).** Exigir una
+> clase por renglón presiona a crear `Asistencia` y `Repertorio` — clases sin nada propio, que es
+> justo lo que el 10 prohíbe y lo que el capítulo 4 llama porosidad. **Un chequeo que empuja a violar
+> otra regla es peor que no tener chequeo.**
+
+Por eso la columna no dice *cuál clase* sino **dónde vive**, y hay cuatro formas legítimas:
+
+| Forma | Ejemplo |
+|---|---|
+| Una clase | producto → `Producto` |
+| Varias | medición → `Medicion`, `Medida` |
+| **Un miembro de otra clase** | asistencia → `Trayectoria.Asistio` |
+| **Un conjunto cerrado o una tabla** | departamento → `Categoria` |
+| **Vacío** | membresía → **el hallazgo** |
+
+### Qué prueba y qué no
+
+**Prueba ausencia, no correctitud.** Caza *"declarado y no está en ninguna parte"* —el caso de la
+membresía, que es el que lo motivó— y **no** caza *"declarado y mal modelado"*, que necesita entender
+el negocio y por lo tanto es clase 3, igual que el 10. Es menos de lo que parecía prometer, y decirlo
+es la diferencia entre un chequeo y un adorno.
+
+> **Por qué está bloqueado, y qué lo desbloquea.** Como búsqueda de texto sobre el nombre del renglón
+> **no funciona**, por la razón que esta página advierte arriba: *"asistencia"* no aparece como
+> palabra en el dominio y *"rango de referencia"* se llama `Referencia`. Daría falsos negativos justo
+> en los dominios bien modelados.
+>
+> **Lo desbloquea la columna**, que convierte la búsqueda en la verificación de una declaración — el
+> mismo argumento del manifiesto: *porque es una declaración, se puede verificar*. Queda **por
+> correr** hasta que los `Preguntas.md` la lleven; hoy sólo la tiene
+> [`Pruebas/Gimnasio`](../Pruebas/Gimnasio/Preguntas.md).
+
+### Sobre el 7, el segundo que discriminó — y el único hallazgo real hasta hoy
+
+Corrido el 2026-09-02 contra los cuatro negocios. **Falla uno**, y los otros tres pasan por razones
+que vale la pena separar.
+
+**`Compras` falla.** En `App/Compras.App/ComprasAPI.cs`:
+
+```csharp
+/// <summary>Cuántas compras se miran para reconocer la firma, si nadie dice otra cosa.</summary>
+// Ocho son unas dos meses de compras semanales: alcanza para que "lo de siempre"
+// se repita y es poco para que un cambio de habitos quede sepultado.
+public const int ComprasQueSeMiranParaLaFirma = 8;
+```
+
+**El comentario argumenta el juicio en voz alta** —por qué ocho y no cuatro ni veinte— y eso es
+justamente lo que lo delata: es una decisión de negocio, y vive en `App/`.
+
+Vale ser preciso sobre cuánto pesa. El dominio **sí tiene la forma**: `FirmaDeLaSemana(cuantasCompras)`
+recibe el número por parámetro. Lo que quedó afuera es **el valor**, como default. Y como las dos
+tools usan el default y nadie lo pisa, en la práctica el juicio lo toma `App/`. Es una violación más
+suave que un umbral quemado adentro de una fórmula, y sigue siendo una: el día que alguien quiera
+cambiar de ocho a doce, no lo va a buscar en el proyecto donde está.
+
+**`DealershipCar` pasa, y es el caso que más enseña.** Su `Wasm` tiene tres conjuntos cerrados
+escritos a mano como arreglos de texto —`TheNineKinds`, `TheFourProfiles`, `TheFiveDeferralReasons`—
+que a primera vista son exactamente lo que este observable busca. **No lo son**, porque el browser no
+puede referenciar el dominio (es `internal`) y porque hay una prueba que los fija miembro por miembro
+contra el `enum`:
+
+```csharp
+Assert.That(AppState.TheNineKinds, Is.EqualTo(Enum.GetNames(typeof(OperationKindCode))), ...
+```
+
+Y su comentario dice la parte que este observable no sabía: *"un nombre **mal escrito** lo rechaza
+`WireName` en la puerta, ruidosamente. Un miembro **que falta** no lo rechaza nadie — simplemente no
+aparece en la pantalla, en silencio y para siempre."* Una lista copiada siempre deriva; **lo único que
+la salva es compararla**, que es el mismo argumento del observable 11.
+
+**`Examenes` pasa**, y tiene el otro falso positivo obvio: `EdadDelPacienteDelDemo = 34` en `App/`.
+Es **dato de demo**, no un juicio — el juicio (que los rangos se mueven con la edad) vive en el
+dominio. Hubo que mirar la línea, como manda la regla de arriba.
+
+> **Lo que la corrida le agregó al observable.** Escrito como *"cero constantes en `App/`"* marcaría
+> los tres pasados. Lo que separa un juicio de una constante no es el tipo ni el lugar: es **si
+> alguien tuvo que decidirlo**. Un formato de fecha, un nombre de actor, una edad de demo y una lista
+> espejada-y-probada no son juicios. Un `8` con dos renglones de argumentación, sí.
+
+### Sobre el 6, que pasó sin tener mucho que mirar
+
+Los cuatro pasan, pero sólo **dos tuvieron ocasión de fallar**:
+
+| | Argumento de conjunto cerrado | |
+|---|---|---|
+| `Examenes` | `Analito`, `AnalitoBinario` | ✅ `enum`, con el porqué escrito: *"sin strings en el contrato… con un enum vive en el `inputSchema`"* |
+| `DealershipCar` | `MaintenanceOperation` | ✅ `enum` |
+| `Cargas` | `string placa` | — una placa no es un conjunto cerrado: son las del dueño |
+| `Compras` | ninguno | — sus 13 tools no reciben ninguno |
+
+**`Compras` es el interesante**: su `Preguntas.md` declara un conjunto cerrado —*"el departamento:
+conjunto cerrado de doce"*— y **ese conjunto nunca llega a la frontera**. No es que lo haya expuesto
+mal; es que ninguna de sus preguntas lo pide.
+
+> **Y ahí está el defecto del 6, que es el mismo del piso del [14](#sobre-el-14-el-primero-que-audita-las-guías-y-no-un-negocio):**
+> no distingue *"lo hizo bien"* de *"no tuvo la oportunidad de hacerlo mal"*. Un negocio sin ningún
+> argumento cerrado pasa perfecto sin haber probado nada. Por eso queda clasificado **no
+> discrimina** y el conteo de cuántos tuvieron ocasión se reporta al lado.
+
+### Sobre el 14, el primero que audita las guías y no un negocio
+
+Los trece anteriores miran el código de un negocio. **El 14 mira estas guías**, y existe porque
+`hoja-de-la-entrevista.md` es un resumen a mano de `punto-de-partida.md` y **nada lo mantiene
+sincronizado**. Derivó **cuatro veces en una semana**, en las dos direcciones — incluida la que costó
+la membresía del gimnasio: el caveat *"los filtros se aplican a las preguntas, nunca a la capacidad"*
+estaba en el capítulo y no en la hoja, que es la que se usa en la sesión.
+
+Comparar el texto **no sirve**: los dos dicen lo mismo con palabras distintas a propósito, y los
+títulos de los recuadros también difieren. Comparar significados necesita juicio, o sea que no es
+observable. Por eso cada regla lleva un marcador invisible y se comparan **conjuntos**:
+
+```
+<!-- regla: filtros-no-a-la-capacidad sesion -->
+```
+
+La etiqueta `sesion` es lo que deja que el capítulo tenga cosas propias —la argumentación, el porqué
+de cada regla— sin producir falsos positivos.
+
+> **Probado antes de escribirlo, contra las nueve divergencias reales.** Se reconstruyó el estado del
+> repo de antes de arreglarlas y se corrió: **caza siete de las nueve.** Las dos que no:
+>
+> - Una **regla que pierde contenido sin desaparecer** — el capítulo dejó de decir *"se anota con
+>   nombre y apellido"* y la regla siguió existiendo en los dos lados. Los marcadores comparan
+>   presencia, no contenido; y el chequeo de acoplamiento tampoco la ve, porque ese commit tocó los
+>   dos archivos. **Es el defecto residual conocido de este observable.**
+> - La numeración (`bloque 0` contra *"cinco bloques"*), que es de forma.
+
+**Y tiene una segunda mitad, que es una heurística y no un observable:**
+[`revisar-acoplamiento.sh`](../Herramientas/revisar-acoplamiento.sh) avisa cuando un commit tocó uno
+de los dos archivos y no el otro. Cubre el agujero de que **el marcador lo pone la misma persona que
+se olvida de sincronizar**: si alguien agrega una regla sin marcador, el chequeo de conjuntos pasa
+igual. Corrido sobre la historia real marcó tres commits, y **dos son exactamente los que
+introdujeron dos de las divergencias**. Tiene falsos positivos legítimos —un typo no obliga a tocar
+los dos— así que dice *"revisar"*, nunca falla, y por eso no entra a esta tabla como observable.
+
+Los dos scripts viven en [`Metodologia/Herramientas/`](../Herramientas/).
 
 ### Sobre el 10, que se cayó al escribirlo
 
