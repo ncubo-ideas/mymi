@@ -52,7 +52,7 @@ xcrun --find appintentsmetadataprocessor >/dev/null 2>&1 \
 #
 # La lista vive en Intents/protocolos-appintents.json, versionada, porque Xcode no trae ninguna:
 # rules_apple la genera al vuelo y aca la escribimos nosotros.
-say "1 · compilar Intents/GnothiIntents.swift a libreria estatica"
+say "1 · compilar el Swift de Intents/ a libreria estatica"
 rm -rf Intents/out && mkdir -p Intents/out
 xcrun swiftc \
   -parse-as-library -wmo \
@@ -62,7 +62,7 @@ xcrun swiftc \
   -emit-module -emit-module-path "Intents/out/$MODULO.swiftmodule" \
   -Xfrontend -const-gather-protocols-file -Xfrontend Intents/protocolos-appintents.json \
   -emit-const-values-path "Intents/out/$MODULO.swiftconstvalues" \
-  Intents/GnothiIntents.swift
+  Intents/GnothiIntents.swift Intents/Puente.swift
 ok "libGnothiIntents.a  $(stat -f%z Intents/out/libGnothiIntents.a) bytes"
 [ -s "Intents/out/$MODULO.swiftconstvalues" ] \
   && ok "$MODULO.swiftconstvalues  $(stat -f%z "Intents/out/$MODULO.swiftconstvalues") bytes" \
@@ -138,7 +138,7 @@ procesar() {
     --binary-file /ruta/falsa/a/proposito \
     --module-name "$MODULO" \
     --output "$1" \
-    --source-files Intents/GnothiIntents.swift \
+    --source-files Intents/GnothiIntents.swift Intents/Puente.swift \
     --swift-const-vals "Intents/out/$MODULO.swiftconstvalues" \
     --sdk-root "$SDK" \
     --platform-family iOS \

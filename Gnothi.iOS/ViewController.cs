@@ -97,6 +97,7 @@ public sealed class ViewController : UIViewController
 			// en el log. Un spike que falla sin decir en cual de los cuatro pasos fallo cuesta
 			// una tarde.
 			Sonda.Correr(Log);
+			SondaPuente.Correr(Log);
 			try { await shell.Run(); }
 			catch (Exception e) { Log($"shell fallo: {e.GetType().Name}: {e.Message}"); }
 		});
