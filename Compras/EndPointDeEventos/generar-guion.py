@@ -116,6 +116,26 @@ def sabados():
         dia += timedelta(days=7)
 
 
+# LA SUCURSAL DEL TICKET, y es parte del arco de Sonia (propuesta de Geannina): hasta
+# diciembre compra SIEMPRE en la de su barrio; desde enero supervisa tiendas y aparece
+# comprando en dos mas, segun donde la agarre el sabado. Determinista por semana, como
+# todo el guion.
+SUCURSAL_DE_SIEMPRE = "La Guaria Centro"
+SUCURSALES_NUEVAS = ["La Guaria Zapote", "La Guaria Del Este"]
+
+
+def sucursal_de(dia, indice):
+    if dia < ARRANQUE_DEL_CAMBIO:
+        return SUCURSAL_DE_SIEMPRE
+
+    # Desde enero: dos de cada cuatro sabados sigue en la suya; los otros dos la
+    # agarran en una tienda que supervisa.
+    resto = indice % 4
+    if resto < 2:
+        return SUCURSAL_DE_SIEMPRE
+    return SUCURSALES_NUEVAS[resto - 2]
+
+
 def canasta_de(dia, indice):
     """Que lleva Sonia ese sabado. Devuelve [(sku, cantidad)].
 
@@ -275,6 +295,7 @@ def armar():
             "preciosUnitarios": [float(precio(sku, dia)) for sku, _ in lineas],
             "categorias": [CATALOGO[sku][2] for sku, _ in lineas],
             "mesesDeGarantia": garantias,
+            "sucursal": sucursal_de(dia, indice),
         })
 
     return guion

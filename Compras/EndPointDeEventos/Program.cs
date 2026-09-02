@@ -398,6 +398,12 @@ sealed class EventoDeCompra
     // verdad trae cobertura (un electrodomestico) lleva meses.
     [JsonPropertyName("mesesDeGarantia")]  public int[] MesesDeGarantia { get; init; }
 
+    // En que sucursal fue. OPCIONAL en el wire -los tiquetes viejos no lo traen- y
+    // propuesta de Geannina: con el, el super puede corroborar por si solo "antes
+    // compraba siempre en la misma; desde enero aparece en tres".
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    [JsonPropertyName("sucursal")]         public string Sucursal { get; init; }
+
     // ------------------------- los campos de una PromocionPublicada -------------------
     // El mismo tipo sirve los DOS eventos del stream: las compras usan las listas de
     // arriba y las promociones estos tres. WhenWritingNull evita que cada compra viaje

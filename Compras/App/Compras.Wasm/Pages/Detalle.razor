@@ -34,7 +34,9 @@ else
        pantalla en una factura. Lo que ella recuerda de una compra es CUANDO fue. *@
     <p class="kicker mb-1">Tu compra del</p>
     <h1 class="h3 mb-0">@Dia(compra.Fecha).ToLower() @compra.Fecha.Day de @MesLargo(compra.Fecha.Month)</h1>
-    <p class="text-body-secondary">a las @Hora(compra.Fecha)</p>
+    <p class="text-body-secondary">
+        a las @Hora(compra.Fecha)@(compra.Sucursal.Length > 0 ? " · " + compra.Sucursal : "")
+    </p>
 
     @* EL RESUMEN ANTES DE LA LISTA, del mock de Fernanda: tres fotos de muestra y el total
        en grande. Es lo que se busca al abrir un recibo -"cuanto fue"- y estaba escondido en
