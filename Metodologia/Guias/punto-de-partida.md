@@ -399,23 +399,30 @@ Esa asimetría es el corazón del asunto. **No se enumeran las preguntas: se enu
 hacen que ciertas preguntas tengan respuesta.** Un modelo al que se le declaró la capacidad contesta
 cosas que nadie previó; un modelo al que no se le declaró un juicio no lo puede inventar después.
 
-> ### La Parte 1 lleva una columna con la clase que la cubre
+> ### La Parte 1 lleva una columna que dice dónde vive cada renglón
 >
-> Un renglón por sustantivo, y **al lado el nombre de la clase del dominio que lo implementa** — que
-> se llena **al modelar**, no en la entrevista:
+> Un renglón por sustantivo, y **al lado dónde quedó en el dominio** — se llena **al modelar**, no en
+> la entrevista:
 >
-> | | Qué es | Clase |
+> | | Qué es | Dónde vive |
 > |---|---|---|
 > | **El plan** | Lo que el gimnasio le indica hacer, con su frecuencia | `Plan` |
+> | **La asistencia** | Los días que fue | `Trayectoria.Asistio` |
 > | **La membresía** | Pagos, próximo cobro, atrasos | *(vacía)* |
 >
-> Un renglón sin clase es un sustantivo declarado y no modelado. **Es exactamente lo que pasó con la
-> membresía del gimnasio**, y nadie lo vio porque no había dónde mirarlo. Con la columna se ve al
-> primer vistazo, y además vuelve chequeable el
-> [observable 13](observables.md) — sin ella el chequeo tendría que adivinar qué clase corresponde a
-> qué renglón, y *un `grep` no es un observable*.
+> **No es «una clase por renglón», y conviene decirlo fuerte porque es el error obvio.** Un renglón
+> puede resolverse con una clase, con varias, con **un miembro de otra clase** —la asistencia es una
+> lista adentro de la raíz— o con **un conjunto cerrado o una tabla de valores**, como el repertorio.
+> Exigir una clase por renglón presiona a inventar clases sin nada propio, que es justo lo que el
+> capítulo 4 llama porosidad.
 >
-> Escribir la columna es también el momento en que quien modela **se ve obligado a mirar los
+> **Lo que no puede quedar es vacío.** Un renglón sin nada al lado es un sustantivo declarado que no
+> está en ninguna parte — **exactamente lo que pasó con la membresía del gimnasio**, y nadie lo vio
+> porque no había dónde mirarlo.
+>
+> Con la columna se ve al primer vistazo, y además vuelve chequeable el
+> [observable 13](observables.md): sin ella el chequeo tendría que adivinar, y *un `grep` no es un
+> observable*. Escribirla es también el momento en que quien modela **se ve obligado a mirar los
 > renglones uno por uno**, que es donde el defecto se caza gratis.
 
 El capítulo 4 desarrolla cómo se escribe cada parte, y trae el ejemplo trabajado completo.
@@ -435,10 +442,11 @@ El capítulo 4 desarrolla cómo se escribe cada parte, y trae el ejemplo trabaja
 - [ ] ¿**Cada palabra** que aparece en las preguntas tiene algo detrás? Es el que más se salta, y el
       que dejó a un dominio de presupuesto **sin ningún tipo de ingreso** teniendo *"el alquiler que
       recibo"* escrito en una de sus preguntas
-- [ ] ¿**Cada renglón de la Parte 1** tiene una clase al lado? La casilla de arriba mira las
-      preguntas y **no alcanza**: en el gimnasio la palabra *"membresía"* no aparecía en ninguna
-      pregunta —estaba en la Parte 1 y en lo descartado—, así que la casilla anterior la dejó pasar y
-      el dominio salió sin ella. **Esta casilla se llena al modelar, no en la sesión**
+- [ ] ¿**Cada renglón de la Parte 1** dice dónde vive —una clase, varias, un miembro, un conjunto
+      cerrado— y **ninguno quedó vacío**? No se pide una clase por renglón: se pide que nada declarado
+      esté en ninguna parte. La casilla de arriba mira las preguntas y **no alcanza**: en el gimnasio
+      *"membresía"* no aparecía en ninguna pregunta —estaba en la Parte 1 y en lo descartado—, así que
+      la dejó pasar y el dominio salió sin ella. **Esta casilla se llena al modelar, no en la sesión**
 - [ ] ¿Los juicios que quedaron sin firmar están marcados como tales, y **ninguno tiene un valor por
       defecto silencioso** en el código?
 - [ ] ¿Lo leyó y lo aprobó quien conoce el negocio, sin necesidad de que nadie le tradujera nada?

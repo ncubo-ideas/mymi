@@ -234,9 +234,10 @@ muevan.
 
 Y al modelar, no en la sesión:
 
-- [ ] ¿**Cada renglón de la Parte 1** tiene una clase al lado? La casilla de las palabras mira las
-      preguntas y **no alcanza**: *"membresía"* no estaba en ninguna pregunta del gimnasio y se perdió
-      igual
+- [ ] ¿**Cada renglón de la Parte 1** dice dónde vive, y **ninguno quedó vacío**? No es una clase por
+      renglón —puede ser un miembro, o un conjunto cerrado—; es que nada declarado esté en ninguna
+      parte. La casilla de las palabras mira las preguntas y **no alcanza**: *"membresía"* no estaba
+      en ninguna pregunta del gimnasio y se perdió igual
 - [ ] ¿Los juicios sin firmar están **marcados como tales**, y ninguno tiene un **valor por defecto
       silencioso** en el código?
 

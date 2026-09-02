@@ -22,18 +22,18 @@ tiempo en alimentar con datos la app"*. Tiene dos consecuencias que se aceptan c
 Capacidad, no preguntas. Declarado esto, las preguntas se componen encima.
 
 La columna de la derecha se llena **al modelar**, no en la entrevista, y es lo que hace corrible el
-[observable 13](../../Guias/observables.md). Un renglón sin clase es un sustantivo declarado y no
-modelado.
+[observable 13](../../Guias/observables.md). **No es una clase por renglón** —la asistencia es un
+miembro de la raíz y está bien que lo sea—: lo que no puede quedar es **vacío**.
 
-| | Qué es | Clase |
+| | Qué es | Dónde vive |
 |---|---|---|
 | **El plan** | Lo que el gimnasio le indica hacer, con su frecuencia esperada y los pesos prescritos. **Se actualiza**, y esa actualización es un hecho: es la progresión | `Plan`, `EjercicioPrescrito` |
-| **La asistencia** | Los días que Sonia entró. El gimnasio los tiene y los manda | `Trayectoria` |
+| **La asistencia** | Los días que Sonia entró. El gimnasio los tiene y los manda | `Trayectoria.Asistio` — una lista, **no merece clase propia** |
 | **La medición** | Una hoja con medidas. **No es un evento de calendario: ocurre al final de un plan** | `Medicion`, `Medida` |
 | **El perfil** | Género, edad, altura. **No es decoración — sin él ningún número se puede interpretar** | `Perfil`, `Genero` |
 | **El objetivo** | Lo que Sonia quiere lograr. Es lo que le da **signo** a cada medida | `Objetivo`, `Meta` |
 | **El rango de referencia** | Cada medida tiene valores **normales, bajos y altos**, y dependen del perfil. Es la misma forma que el analito de [Exámenes](../../Guias/04-requerimientos-que-agregan-valor.md) | `Referencia`, `Lectura` |
-| **La membresía** | Pagos, próximo cobro, atrasos | ❌ **ninguna** |
+| **La membresía** | Pagos, próximo cobro, atrasos | ❌ **nada** |
 
 > **Ese ❌ es el hallazgo que produjo la corrección del bloque 1 del punto de partida.** La membresía
 > quedó declarada acá y a la vez abajo, en *"lo que el gimnasio ya contesta, y por eso se descarta"*,

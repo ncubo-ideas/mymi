@@ -109,8 +109,13 @@ declarada, un agente puede leer el código pero no sabe contra qué compararlo.
 > **El 13 es nuevo y audita algo que ninguno de los doce anteriores audita: completitud.** Los doce
 > preguntan si los juicios quedaron donde se dijo; el 13 pregunta si el dominio tiene todo lo que el
 > archivo declaró que iba a saber. Corre contra la Parte 1 del `Preguntas.md`, y **necesita que esa
-> tabla lleve la columna con el nombre de la clase** — hoy sólo la tiene `Pruebas/Gimnasio`, donde ya
-> encontró un renglón sin clase.
+> tabla lleve una columna que diga dónde vive cada renglón** — hoy sólo la tiene `Pruebas/Gimnasio`,
+> donde ya encontró un renglón que no está en ninguna parte.
+>
+> **No pide una clase por renglón**, y la primera redacción sí lo pedía: probado contra los tres
+> `Preguntas.md` que existen, los tres tienen renglones que legítimamente se resuelven con un miembro
+> o con una tabla de valores. Así escrito, el 13 empujaba a crear clases vacías y **chocaba con el
+> 10**.
 
 
 **El teléfono. Desbloqueado, y con la parte cara medida.** `Gnothi.Mobile` compila el núcleo del Host
