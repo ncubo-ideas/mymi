@@ -13,6 +13,10 @@ ver si el techo medido con facturas era una rareza de cómo las escribimos o una
 iOS. Y se midió el Host de verdad (`Gnothi.iOS`) contra el mismo mecanismo, que es lo que
 convierte este spike en una decisión de arquitectura y no en una curiosidad.
 
+> **Todo lo de acá se midió sobre iOS 26.6.** Qué de esto cambia en iOS 27 —y qué no, que es
+> más— está en [`IOS27.md`](IOS27.md): investigación de escritorio sobre material de beta,
+> aparte a propósito para que este archivo siga diciendo solo lo que se corrió en un aparato.
+
 ---
 
 ## Dónde se corrió
@@ -91,6 +95,10 @@ El 2026-09-01 se agregó `ExamenEntity` con el mismo mapeo —analito a `display
 
 Mismo resultado, misma forma, otra entidad. **Deja de ser una rareza de cómo escribimos las
 facturas: de cualquier `AppEntity` nuestra, Spotlight indexa el título y nada más.**
+
+> Lo que esto mide es **Spotlight como buscador de texto**, y conviene tenerlo presente al leer
+> lo de iOS 27: ahí lo que cambia es que **Siri consulta el índice semánticamente**, que es otra
+> cosa. El `indexingKey` ya estaba puesto cuando esto falló. Ver [`IOS27.md`](IOS27.md).
 
 ### Y acá el matiz que cambia la decisión de negocio
 
@@ -199,6 +207,11 @@ es la firma de código.
 
 Lo remata un tope duro: **Apple admite 10 AppShortcut por app**. Aun si se pudieran generar, con
 tres tools por módulo el presupuesto se acaba en tres módulos.
+
+> **En iOS 27 el muro sigue en pie** —las intents se siguen extrayendo en compilación— pero el
+> tope deja de ser el techo de escala: `parameterPresentation` con `OptionsCollection` resuelve
+> las opciones en runtime desde una query, así que el número de módulos ya no consume
+> presupuesto. Ver [`IOS27.md`](IOS27.md).
 
 ### La distinción que ordena todo: los tipos son estáticos, las instancias son dinámicas
 

@@ -76,6 +76,14 @@ por negocio para el índice de Spotlight.
 Lo que **no** hay que prometer en una demo: «cada tool de cada módulo aparece como una acción de
 Siri».
 
+**En iOS 27 esto no cambia**, y está investigado en
+[`Spikes/Lab.Siri/IOS27.md`](../Spikes/Lab.Siri/IOS27.md): las intents se siguen extrayendo en
+compilación y MCP entró a Xcode 27, no a iOS. Lo que sí cambia son tres cosas que tocan a esta
+app: el tope de 10 deja de ser el techo de escala (`OptionsCollection`), `ExecutionTargets =
+.main` vuelve explícito el escritor único del journal, y Foundation Models on-device acepta
+tools de schema dinámico — o sea `ToolIndex` contra un modelo local, que es la Puerta 2 sin
+red. Nada de eso es medible sin un aparato A17 Pro o superior.
+
 ## PARA CORRERLO
 
 ### 1 · Lo que hace falta antes
