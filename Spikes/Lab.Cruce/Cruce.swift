@@ -14,7 +14,7 @@ struct Tendencia: Tool {
     }
     func call(arguments a: Arguments) async throws -> String {
         print("TOOL-LLAMADA: examenes_evaluar_tendencia(\(a.analito))")
-        guard a.analito.lowercased().contains("colesterol") else {
+        guard a.analito.lowercased() == "colesteroltotal" else {
             return #"{"hayDatos":false,"analito":"\#(a.analito)"}"#
         }
         return """

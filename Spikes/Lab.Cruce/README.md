@@ -77,3 +77,66 @@ contraste entre los dos es la decisión de producto.
   como tool de verdad todavía. Quién debe conocer el mapa alimento→analito es una pregunta de
   diseño abierta: ningún módulo puede ver al otro.
 - **La latencia varía muchísimo** — 18 s la buena, 235 s la de tres tools. Sin medir por qué.
+
+---
+
+# La misma pregunta, por red
+
+**Medido el 2026-09-02 con `claude-sonnet-5`, 7 corridas.** Mismas tools, mismos payloads, misma
+pregunta y mismo encuadre que el lado on-device: lo único que cambia es el modelo.
+
+```bash
+dotnet run --project Spikes/Lab.Cruce/Red -- [curado|completo] ["la pregunta"]
+```
+
+## El resultado que decide
+
+| | on-device 3B | Claude por red |
+|---|---|---|
+| selección con catálogo **curado** (2 tools) | ✅ 4/4 | ✅ 3/3 |
+| selección con catálogo **completo** (5 tools, con genéricas) | ❌ **0/3** | ✅ **4/4** |
+| afirma una causa que los datos no prueban | ❌ 2 de 4 | ✅ 0 de 7 |
+| markdown cuando se pidió prosa | ❌ 1 de 4 | ✅ 0 de 7 |
+| inventa cuando la tool dice `hayDatos:false` | sin medir | ✅ no |
+| latencia | 18–235 s | **6–9 s** |
+| vueltas hasta cerrar | 1 | 2 |
+
+**Con el catálogo completo —las mismas genéricas que al modelo chico le capturaban la pregunta y
+lo mandaban a `consumo_de("colesterol")`— Claude eligió las dos correctas las cuatro veces y no
+tocó las genéricas ni una.**
+
+De ahí sale lo que importa para el diseño: **recortar el catálogo es una concesión al modelo
+chico, no una regla del producto.** Si mañana la Puerta 2 corre contra un modelo grande, los 15
+tools de `compras` no son un problema y `disabledTools` vuelve a ser lo que dice el manifiesto que
+es —el corte que decide la persona—, no una muleta del asistente.
+
+Y lo otro: **el problema del encuadre era del modelo, no del encuadre.** El mismo texto de
+instrucciones que on-device se violaba dos de cuatro veces, acá se respetó siete de siete:
+
+> «Los dos datos coinciden en el tiempo y van en la misma dirección, pero esto no alcanza para
+> decir que uno haya causado el otro: son dos registros que suben juntos, no una prueba de
+> causalidad.»
+
+Sobre datos vacíos tampoco rellena:
+
+> «No tengo datos de hemoglobina cargados en tus registros… puede que ese análisis no esté entre
+> los que autorizaste compartir desde tu laboratorio.»
+
+## Un matiz que conviene discutir, no dar por bueno
+
+Las siete corridas terminan derivando al médico —*«lo indicado es que lo charles con tu médico»*—.
+La instrucción decía *«no diagnostiques ni recomendes tratamiento»*, y derivar no es ninguna de
+las dos: es lo contrario de diagnosticar, y coincide con lo que el propio dominio de exámenes
+dice de los controles con `exigeAtencion`. **Lo cuento como cumplimiento, pero es un juicio, no
+una medición.** Si el equipo lo lee distinto, el encuadre debería decirlo explícitamente.
+
+## Lo que esta mitad NO responde
+
+- **Es la nube.** No dice nada de un modelo grande corriendo local (LM Studio, Ollama), que es la
+  variante más alineada con la tesis del producto y que `ModelOpenAiCompatible` ya soporta
+  cambiando la base URL.
+- **Siete corridas de una sola pregunta.** El encuadre aguantó acá; c8 pide la pregunta que más
+  invita a diagnosticar, con el antígeno en 5,2 y sangre oculta positiva.
+- **Un error del banco de pruebas, corregido a mitad de camino:** el filtro devolvía los mismos
+  números para `ColesterolLdl` que para `ColesterolTotal`. Lo detectó el propio modelo —*«tus dos
+  mediciones de colesterol total dieron el mismo dato»*—. Ya está arreglado en los dos lados.
