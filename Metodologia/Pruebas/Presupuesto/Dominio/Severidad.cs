@@ -15,21 +15,21 @@ namespace Presupuesto.Dominio
 	// QUE HACER sale de aca y no lo escribe cada compromiso. Es la misma garantia que usa
 	// Examenes: con cuatro textos fijos, ningun compromiso puede inventarse una accion
 	// propia. Si manana hay que decir otra cosa, se cambia en un solo lugar.
-	public sealed class Severidad
+	internal sealed class Severidad
 	{
-		public static readonly Severidad Informativo =
+		internal static readonly Severidad Informativo =
 			new Severidad("informativo", 0, "");
 
-		public static readonly Severidad Seguimiento =
+		internal static readonly Severidad Seguimiento =
 			new Severidad("seguimiento", 1, "Conviene revisarlo cuando puedas.");
 
-		public static readonly Severidad Atencion =
+		internal static readonly Severidad Atencion =
 			new Severidad("atencion", 2, "Revisalo esta semana.");
 
 		// El unico nivel que nombra una consecuencia, porque es el unico que la tiene:
 		// un pago comprometido que no salio no es un dato que falta, es plata que se va
 		// a perder en intereses o en mora.
-		public static readonly Severidad Critico =
+		internal static readonly Severidad Critico =
 			new Severidad("critico", 3, "Verificalo hoy: si el pago no salio, corre interes o mora.");
 
 		private Severidad(string nombre, int orden, string queHacer)
@@ -39,16 +39,16 @@ namespace Presupuesto.Dominio
 			QueHacer = queHacer;
 		}
 
-		public string Nombre { get; }
+		internal string Nombre { get; }
 
 		// Para ordenar lo mas grave primero. No es "cuanta plata": es cuanto corre.
-		public int Orden { get; }
+		internal int Orden { get; }
 
-		public string QueHacer { get; }
+		internal string QueHacer { get; }
 
-		public bool PideAlgo => QueHacer.Length > 0;
+		internal bool PideAlgo => QueHacer.Length > 0;
 
-		public bool EsAlMenos(Severidad otra)
+		internal bool EsAlMenos(Severidad otra)
 		{
 			if (otra == null) throw new ArgumentNullException(nameof(otra));
 			return Orden >= otra.Orden;

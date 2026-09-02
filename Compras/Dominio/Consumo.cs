@@ -21,8 +21,9 @@ namespace Compras.Dominio
 		/// <summary>Lo que no se encontro: nunca null.</summary>
 		internal static Consumo Ninguno(string termino) => new SinConsumo(termino);
 
-		internal static Consumo De(string termino, bool esCategoria, IReadOnlyList<MesDeConsumo> meses) =>
-			new Serie(termino, esCategoria, meses);
+		internal static Consumo De(string termino, bool esCategoria, IReadOnlyList<MesDeConsumo> meses,
+			DateTime ultimaVez, int comprasDelHistorial) =>
+			new Serie(termino, esCategoria, meses, ultimaVez, comprasDelHistorial);
 
 		public string Termino { get; private set; }
 
@@ -39,6 +40,17 @@ namespace Compras.Dominio
 		public abstract bool EsCategoria { get; }
 
 		public abstract IReadOnlyList<MesDeConsumo> Meses { get; }
+
+		/// <summary>
+		/// La misma serie un escalón más arriba, un punto por año. Vacía cuando no hay
+		/// consumo.
+		/// </summary>
+		// LA SERIE MENSUAL CRECE PARA SIEMPRE -doce filas por año- y la anual crece UNA. La
+		// pantalla pinta el año mas reciente mes a mes y los anteriores de a una fila, asi
+		// que pasa de crecer 12 por año a crecer 1. Las dos conviven a proposito: quien
+		// pregunta por una fecha -una IA cruzando un resultado de laboratorio- necesita el
+		// mes, y quien mira la pantalla necesita poder recorrerla.
+		public abstract IReadOnlyList<AnioDeConsumo> Anios { get; }
 
 		public abstract int MesesConConsumo { get; }
 		public abstract decimal TotalGastado { get; }
@@ -66,7 +78,26 @@ namespace Compras.Dominio
 		public abstract bool Subio { get; }
 
 		/// <summary>La linea, escrita por el dominio con SUS hechos. Nunca un consejo.</summary>
-		public abstract string ParaSonia { get; }
+		public abstract string ParaElAsistente { get; }
+
+		// LO QUE LA FICHA DE UN PRODUCTO NECESITA, y que la serie por mes no contesta sola.
+		//
+		// EN CUANTAS COMPRAS APARECIO: se suma por mes, y sumarlo aca en vez de en cada
+		// pantalla evita que dos superficies cuenten distinto -una contando lineas y otra
+		// tickets- sobre el mismo producto.
+		public abstract int TotalCompras { get; }
+
+		/// <summary>La última vez que lo llevó. Preguntar Existe primero.</summary>
+		public abstract DateTime UltimaVez { get; }
+
+		/// <summary>La última vez, en aaaa-mm-dd. Vacío cuando no lo compró nunca.</summary>
+		public abstract string UltimaVezExpresada { get; }
+
+		// QUE TAN FIEL ES, sobre TODO el historial y no sobre una ventana de ocho compras:
+		// la ficha de un producto contesta "¿que tanto llevo esto?", y para eso la respuesta
+		// honesta se mide contra todas sus compras. La firma de la portada usa una ventana
+		// porque ahi la pregunta es otra -"que estoy llevando AHORA"-.
+		public abstract Constancia Constancia { get; }
 
 		private sealed class SinConsumo : Consumo
 		{
@@ -75,9 +106,20 @@ namespace Compras.Dominio
 			public override bool Existe() => false;
 			public override bool EsCategoria => false;
 			public override IReadOnlyList<MesDeConsumo> Meses => Array.Empty<MesDeConsumo>();
+			public override IReadOnlyList<AnioDeConsumo> Anios => Array.Empty<AnioDeConsumo>();
 			public override int MesesConConsumo => 0;
 			public override decimal TotalGastado => 0m;
 			public override int TotalUnidades => 0;
+			public override int TotalCompras => 0;
+
+			public override DateTime UltimaVez =>
+				throw new InvalidOperationException(
+					$"'{Termino}' no aparece en ninguna compra, asi que no hay una ultima vez. "
+					+ "Preguntar Existe antes.");
+
+			public override string UltimaVezExpresada => "";
+			public override Constancia Constancia => Constancia.DeVezEnCuando;
+
 			public override string PrimerMesExpresado => "";
 			public override string UltimoMesExpresado => "";
 			public override string MesDelPicoExpresado => "";
@@ -91,7 +133,7 @@ namespace Compras.Dominio
 				throw new InvalidOperationException(
 					$"No hay compras de «{Termino}»: no hay direccion que dar. Preguntar HayCambioReal antes.");
 
-			public override string ParaSonia =>
+			public override string ParaElAsistente =>
 				$"no hay compras de «{Termino}» en el historial";
 		}
 
@@ -103,11 +145,16 @@ namespace Compras.Dominio
 
 			private readonly bool esCategoria;
 			private readonly IReadOnlyList<MesDeConsumo> meses;
+			private readonly DateTime ultimaVez;
+			private readonly int comprasDelHistorial;
 
-			internal Serie(string termino, bool esCategoria, IReadOnlyList<MesDeConsumo> meses)
+			internal Serie(string termino, bool esCategoria, IReadOnlyList<MesDeConsumo> meses,
+				DateTime ultimaVez, int comprasDelHistorial)
 				: base(termino)
 			{
 				ArgumentNullException.ThrowIfNull(meses);
+				this.ultimaVez = ultimaVez;
+				this.comprasDelHistorial = comprasDelHistorial;
 				if (meses.Count == 0)
 					throw new ArgumentException("Una serie sin meses no es una serie; eso es Consumo.Ninguno.",
 						nameof(meses));
@@ -119,6 +166,35 @@ namespace Compras.Dominio
 			public override bool Existe() => true;
 			public override bool EsCategoria => esCategoria;
 			public override IReadOnlyList<MesDeConsumo> Meses => meses;
+
+			// SE ARMA AL LEERLA y no en el constructor, igual que los totales de esta clase:
+			// la mayoria de las consultas no la pide, y recorrer veinte meses para armar dos
+			// filas que nadie va a mirar se paga en cada consulta.
+			//
+			// LOS MESES YA VIENEN ORDENADOS -quien los arma los ordena por llave aaaamm-, asi
+			// que basta con recorrerlos: el año cambia cuando cambia, y no hace falta ni
+			// diccionario ni ordenar de nuevo.
+			public override IReadOnlyList<AnioDeConsumo> Anios
+			{
+				get
+				{
+					var anios = new List<AnioDeConsumo>();
+					AnioDeConsumo actual = null;
+
+					foreach (MesDeConsumo mes in meses)
+					{
+						if (actual is null || actual.Anio != mes.Anio)
+						{
+							actual = new AnioDeConsumo(mes.Anio);
+							anios.Add(actual);
+						}
+
+						actual.Sumar(mes);
+					}
+
+					return anios;
+				}
+			}
 			public override int MesesConConsumo => meses.Count;
 
 			public override decimal TotalGastado
@@ -140,6 +216,26 @@ namespace Compras.Dominio
 					return total;
 				}
 			}
+
+			public override int TotalCompras
+			{
+				get
+				{
+					int cuantas = 0;
+					foreach (MesDeConsumo mes in meses) cuantas += mes.Compras;
+					return cuantas;
+				}
+			}
+
+			public override DateTime UltimaVez => ultimaVez;
+			public override string UltimaVezExpresada => ultimaVez.ToString("yyyy-MM-dd");
+
+			// SOBRE TODAS SUS COMPRAS, no sobre una ventana. Si el historial viniera en cero
+			// -imposible si hay meses, pero la division no se arriesga- cae en la constancia
+			// mas baja, que es la respuesta honesta cuando no hay con que medir.
+			public override Constancia Constancia => comprasDelHistorial <= 0
+				? Constancia.DeVezEnCuando
+				: Constancia.Para(Math.Min(1m, (decimal)TotalCompras / comprasDelHistorial));
 
 			public override string PrimerMesExpresado => meses[0].MesExpresado;
 			public override string UltimoMesExpresado => meses[meses.Count - 1].MesExpresado;
@@ -188,7 +284,7 @@ namespace Compras.Dominio
 				}
 			}
 
-			public override string ParaSonia
+			public override string ParaElAsistente
 			{
 				get
 				{

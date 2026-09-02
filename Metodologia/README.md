@@ -19,15 +19,15 @@ plantillas del esqueleto de un negocio nuevo.
 
 ```
 Metodologia/
-├── Guias/         los capítulos, el guion de la entrevista y los observables    ← hay contenido
-├── Pruebas/       los sujetos con los que se falsan las guías                   ← hay contenido
-├── Ambiente/      preparar el escritorio: qué se baja, qué se verifica    (paso 3)
-├── Ejemplos/      lo mínimo que se toca y se rompe, con sus .md           (paso 4)
-├── Recetas/       MySQL, SQL Server, un API de ejemplo                    (paso 6)
+├── Guias/         los capítulos, el guion de la entrevista y los observables   ← hay contenido
+├── Ejemplos/      lo mínimo que se toca y se rompe — el capítulo 2 vive acá    ← hay contenido
+├── Pruebas/       los sujetos con los que se falsan las guías                  ← hay contenido
+├── Ambiente/      preparar el escritorio: qué se baja, qué se verifica   (paso 3)
+├── Recetas/       MySQL, SQL Server, un API de ejemplo                   (paso 6)
 └── Plantillas/    el esqueleto de un negocio nuevo, con los cinco nodos
 ```
 
-`Guias/` y `Pruebas/` tienen contenido. El resto está nombrado y no construido, a propósito: es más
+Los tres primeros tienen contenido. El resto está nombrado y no construido, a propósito: es más
 útil ver la forma completa y saber qué falta que encontrarse carpetas vacías sin explicación.
 
 **`Ejemplos/` y `Pruebas/` no son lo mismo**, y conviene tenerlo claro desde el principio: los

@@ -1,0 +1,221 @@
+@page "/producto/{Nombre}"
+@using System.Globalization
+@using Compras.App.Vistas
+@using Compras.Dominio
+@inject EstadoDeLaApp estado
+@inject NavigationManager navegacion
+
+@* LA FICHA DE UN PRODUCTO: "uno de tus infaltables". Cuatro cifras, la serie de cómo lo fue
+   llevando, y la constancia en palabras.
+
+   EL PRODUCTO SE NOMBRA, no se codifica: la url lleva "Leche semidescremada 1L" y no
+   LECHE-1L, y el dominio lo resuelve igual que la tool del MCP. Una url con la llave
+   interna adentro es el sku asomándose por la puerta de atrás. *@
+
+<PageTitle>@Nombre · La Guaria y vos</PageTitle>
+
+@if (!estado.EstaArriba)
+{
+    <div class="aviso">
+        La app todavía no abrió en esta computadora.
+        <a href="">Andá a Inicio</a> y elegí tu carpeta.
+    </div>
+}
+else if (consumo is null || !consumo.Existe)
+{
+    <h1>@Nombre</h1>
+    <p class="text-body-secondary">
+        No hay ninguna compra tuya con <strong>«@Nombre»</strong>.
+    </p>
+    <a class="btn btn-primary" href="infaltables">Ver los que nunca faltan</a>
+}
+else
+{
+    <p class="ritmo-rotulo mb-1">Uno de tus infaltables</p>
+    <h1>@Nombre</h1>
+    <p class="mb-4">
+        <span class="etiqueta etiqueta-verde">@consumo.Constancia</span>
+    </p>
+
+    @* LAS CUATRO CIFRAS del diseño. Cada una es un hecho, y ninguna lleva veredicto: no
+       dice si son muchas unidades o si gastó de más. *@
+    <div class="cifras-producto mb-4">
+        <div class="ritmo-cifra">
+            <span class="ritmo-numero">@consumo.TotalCompras</span>
+            <span class="ritmo-rotulo">compras en las que apareció</span>
+        </div>
+        <div class="ritmo-cifra">
+            <span class="ritmo-numero">@consumo.TotalUnidades</span>
+            <span class="ritmo-rotulo">unidades llevadas</span>
+        </div>
+        <div class="ritmo-cifra">
+            <span class="ritmo-numero ritmo-numero-largo">@Colones(consumo.TotalGastado)</span>
+            <span class="ritmo-rotulo">gastado en este producto</span>
+        </div>
+        <div class="ritmo-cifra">
+            <span class="ritmo-numero ritmo-numero-largo">@Fecha(consumo.UltimaVez)</span>
+            <span class="ritmo-rotulo">última vez que lo llevaste</span>
+        </div>
+    </div>
+
+    @* CÓMO LO FUISTE LLEVANDO. La barra en UNIDADES y no en plata: la pregunta de esta
+       pantalla es cuánto lleva, y el precio se mueve por su cuenta. La plata va al lado, en
+       chico, para quien la quiera.
+
+       LOS AÑOS VIEJOS SE RESUMEN Y EL ÚLTIMO SE ABRE. La serie mensual crece DOCE filas por
+       año: con dos años de compras semanales ya son veinte, y en cinco años son sesenta.
+       Así crece UNA por año, y no se pierde nada de lo que se mira — el detalle que alguien
+       recorre es el del año en curso, y de los anteriores lo que importa es el total contra
+       el que compararse.
+
+       Y NO SE PAGINÓ, que era la otra salida. Partir una serie de tiempo en páginas de doce
+       rompe justo lo que la serie sirve para ver: enero de un año y enero del otro caen en
+       páginas distintas y ya no se pueden comparar. *@
+    <h2>Cómo lo fuiste llevando</h2>
+
+    @* LOS AÑOS ANTERIORES van en su PROPIO bloque, y no mezclados con los meses, por una
+       razón de lectura: un año suma doce meses, así que en una sola escala la barra del año
+       aplasta a las de los meses hasta dejarlas en nada. Cada bloque se escala contra su
+       propio máximo, y estar separados es lo que hace obvio que son dos escalas. *@
+    @if (AniosAnteriores().Count > 0)
+    {
+        <p class="ritmo-rotulo mb-2">Unidades por año.</p>
+        <div class="list-group mb-4">
+            @foreach (var anio in AniosAnteriores())
+            {
+                <div class="list-group-item mes-fila">
+                    <span class="mes-nombre">@anio.Anio</span>
+                    <span class="momento-barra">
+                        <span style="width:@AnchoDelAnio(anio.Unidades, AniosAnteriores())%"></span>
+                    </span>
+                    <span class="mes-unidades numero">@anio.Unidades</span>
+                    @* CUÁNTOS MESES TUVO es lo que impide leer un año a medias como uno
+                       entero: 31 unidades en ocho meses no se compara con 48 en doce. *@
+                    <span class="ritmo-rotulo mes-gasto">
+                        @Colones(anio.Gasto)
+                        <span class="anio-meses">@anio.MesesConCompras @(anio.MesesConCompras == 1 ? "mes" : "meses")</span>
+                    </span>
+                </div>
+            }
+        </div>
+    }
+
+    <p class="ritmo-rotulo mb-2">
+        @(AniosAnteriores().Count > 0 ? $"{UltimoAnio()}, mes a mes." : "Unidades por mes.")
+    </p>
+    <div class="list-group mb-4">
+        @foreach (var mes in MesesDelUltimoAnio())
+        {
+            <div class="list-group-item mes-fila">
+                <span class="mes-nombre">@mes.Mes</span>
+                <span class="momento-barra">
+                    <span style="width:@Ancho(mes.Unidades)%"></span>
+                </span>
+                <span class="mes-unidades numero">@mes.Unidades</span>
+                <span class="ritmo-rotulo mes-gasto">@Colones(mes.Gasto)</span>
+            </div>
+        }
+    </div>
+
+    <p class="mb-0">@consumo.ParaElAsistente</p>
+
+    <p class="mt-4">
+        <a class="btn btn-primary" href="infaltables">&larr; Los que nunca faltan</a>
+    </p>
+}
+
+@code {
+    [Parameter] public string Nombre { get; set; } = "";
+
+    private ConsumoEnElTiempo? consumo;
+
+    protected override void OnParametersSet()
+    {
+        if (!estado.EstaArriba) return;
+
+        consumo = estado.ConsumoDe(Nombre);
+    }
+
+    // LOS AÑOS ANTERIORES: todos menos el ultimo, que es el que se abre mes a mes abajo.
+    private IReadOnlyList<AnioDeConsumoVista> AniosAnteriores()
+    {
+        if (consumo is null) return new List<AnioDeConsumoVista>();
+
+        var anteriores = new List<AnioDeConsumoVista>();
+        for (int i = 0; i + 1 < consumo.Anios.Count; i++) anteriores.Add(consumo.Anios[i]);
+
+        return anteriores;
+    }
+
+    private string UltimoAnio() =>
+        consumo is null || consumo.Anios.Count == 0 ? "" : consumo.Anios[consumo.Anios.Count - 1].Anio;
+
+    // LOS MESES QUE SE ABREN son los del ULTIMO año de la serie. Los anteriores ya estan
+    // arriba, resumidos de a una fila: mostrarlos otra vez mes a mes seria contar dos veces
+    // lo mismo, y es justo lo que hace que la lista crezca sin freno.
+    private IReadOnlyList<MesDeConsumoVista> MesesDelUltimoAnio()
+    {
+        if (consumo is null || consumo.Meses.Count == 0) return new List<MesDeConsumoVista>();
+
+        // La serie viene ordenada, asi que el año del ultimo mes es el mas reciente.
+        string ultimo = consumo.Meses[consumo.Meses.Count - 1].Mes;
+        string anio = ultimo.Length >= 4 ? ultimo[..4] : ultimo;
+
+        var delAnio = new List<MesDeConsumoVista>();
+        foreach (MesDeConsumoVista mes in consumo.Meses)
+            if (mes.Mes.StartsWith(anio, StringComparison.Ordinal)) delAnio.Add(mes);
+
+        return delAnio;
+    }
+
+    // LA BARRA SE ESCALA AL MES MAS ALTO DE LOS QUE SE PINTAN, no a una escala fija: lo que
+    // la fila cuenta es en que meses llevo mas y en cuales menos, y contra una escala global
+    // un producto barato quedaria siempre en cero.
+    //
+    // Y SE MIDE CONTRA LOS MESES VISIBLES, no contra toda la serie: si el pico fue hace tres
+    // años, escalar contra el dejaria el año en curso hecho una raya y la pantalla no diria
+    // nada. El bloque de arriba es el que sirve para comparar entre años.
+    private int Ancho(int unidades)
+    {
+        IReadOnlyList<MesDeConsumoVista> visibles = MesesDelUltimoAnio();
+        if (visibles.Count == 0) return 0;
+
+        int mayor = 0;
+        foreach (MesDeConsumoVista mes in visibles)
+            if (mes.Unidades > mayor) mayor = mes.Unidades;
+
+        return mayor == 0 ? 0 : (int)(unidades * 100L / mayor);
+    }
+
+    // El bloque de los años tiene SU escala, contra el año mas alto de los que se pintan.
+    // Compartirla con los meses aplastaria las barras mensuales hasta dejarlas en nada,
+    // porque un año suma doce.
+    private static int AnchoDelAnio(int unidades, IReadOnlyList<AnioDeConsumoVista> anios)
+    {
+        int mayor = 0;
+        foreach (AnioDeConsumoVista anio in anios)
+            if (anio.Unidades > mayor) mayor = anio.Unidades;
+
+        return mayor == 0 ? 0 : (int)(unidades * 100L / mayor);
+    }
+
+    private static string Colones(decimal monto) => Plata.Colones(monto);
+
+    // "29 ago 2026" y no "2026-08-29". El aaaa-mm-dd es la forma en que la fecha VIAJA -y
+    // asi la devuelve la tool del MCP, que es lo correcto para una maquina-; en la ficha se
+    // lee, y ademas el guion la partia en dos lineas.
+    private static string Fecha(string aaaaMmDd)
+    {
+        if (!DateTime.TryParse(aaaaMmDd, CultureInfo.InvariantCulture,
+                DateTimeStyles.None, out DateTime cuando))
+            return aaaaMmDd;
+
+        return $"{cuando.Day} {Mes(cuando.Month)} {cuando.Year}";
+    }
+
+    private static string Mes(int mes) => mes switch
+    {
+        1 => "ene", 2 => "feb", 3 => "mar", 4 => "abr", 5 => "may", 6 => "jun",
+        7 => "jul", 8 => "ago", 9 => "sep", 10 => "oct", 11 => "nov", _ => "dic",
+    };
+}

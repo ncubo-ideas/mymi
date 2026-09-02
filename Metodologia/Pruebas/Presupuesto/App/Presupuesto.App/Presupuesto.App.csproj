@@ -1,0 +1,35 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!-- LA SUPERFICIE INTENCIONAL de la app: donde viven los PerformCommand y los
+       PerformQuery. La consola, el servidor MCP y la carátula del browser llaman a
+       PresupuestoAPI, nunca al actor crudo. Que la lógica sea UNA es lo que hace que la
+       IA y la persona vean lo mismo.
+
+       NO REFERENCIA AL DOMINIO. Y eso es a propósito, no un olvido: el dominio es
+       enteramente `internal` y este nodo no nombra ni un tipo suyo en C#. Los tipos
+       viajan DENTRO de los scripts del DSL y los resuelve el motor por reflexión, que no
+       tiene frontera de assembly. El assembly se obtiene por nombre — ver PresupuestoApp.
+
+       El motor viene por NuGet; la versión está en Directory.Build.props de la raíz. -->
+
+  <PropertyGroup>
+    <TargetFramework>net9.0</TargetFramework>
+    <Nullable>disable</Nullable>
+    <ImplicitUsings>disable</ImplicitUsings>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Ncubo.Puppeteer" Version="$(VersionDelMotor)" />
+  </ItemGroup>
+
+  <!-- El dominio no se referencia, pero tiene que ESTAR junto al ejecutable: el motor lo
+       carga por nombre en tiempo de ejecución. Esto lo copia sin crear una referencia de
+       compilación, que es justamente lo que mantiene la cerca en pie. -->
+  <ItemGroup>
+    <ProjectReference Include="..\..\Dominio\Presupuesto.Dominio.csproj"
+                      ReferenceOutputAssembly="false"
+                      OutputItemType="Content"
+                      CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
+
+</Project>

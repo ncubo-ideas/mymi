@@ -27,6 +27,19 @@ async function onInstall(event) {
         .filter(asset => !offlineAssetsExclude.some(pattern => pattern.test(asset.url)))
         .map(asset => new Request(asset.url, { integrity: asset.hash, cache: 'no-cache' }));
     await caches.open(cacheName).then(cache => cache.addAll(assetsRequests));
+
+    // SIN ESTO, UNA ACTUALIZACION NO LLEGA NUNCA A UNA PESTAÑA QUE NO SE CIERRA. El
+    // worker de la plantilla instala la version nueva y la deja ESPERANDO a que se
+    // cierren todas las pestañas de la app; una pestaña anclada -o una PWA instalada que
+    // nunca se cierra- se queda en la version vieja para siempre. Paso de verdad: se
+    // publico, Juan recargo, y siguio viendo la UI de tres dias antes mientras el panel
+    // -donde el worker no registra- mostraba la nueva.
+    //
+    // skipWaiting activa la version nueva apenas termina de instalarse. El riesgo teorico
+    // -una app que carga recursos a demanda podria mezclar dos versiones- aca no aplica:
+    // Blazor baja todo al arrancar, asi que lo unico que pasa es que la PROXIMA recarga ya
+    // sirve lo nuevo.
+    self.skipWaiting();
 }
 
 async function onActivate(event) {
@@ -37,6 +50,10 @@ async function onActivate(event) {
     await Promise.all(cacheKeys
         .filter(key => key.startsWith(cacheNamePrefix) && key !== cacheName)
         .map(key => caches.delete(key)));
+
+    // La pareja de skipWaiting: sin claim, el worker nuevo queda activo pero las pestañas
+    // ya abiertas siguen controladas por nada (o por el viejo) hasta navegar de nuevo.
+    await self.clients.claim();
 }
 
 async function onFetch(event) {

@@ -2,15 +2,17 @@
 
 > Capítulo 3 de las [guías](README.md). El 0 dice dónde corre todo; el 4, qué modelar; éste, cómo se escribe.
 
-Receta de trabajo, derivada de construir una app completa de punta a punta: dominio puro, API REST y
-CLI, sobre un journal de file system.
+Receta de trabajo, derivada de construir dos apps completas de punta a punta: dominio puro, lógica,
+carátulas de consola y de IA, sobre un journal de file system.
 
 **Qué es esta guía y qué no.** No reemplaza a las guías de Puppeteer (`basics.md`, `parameters.md`,
 `control-flow.md`, `conventions.md`, `output-and-controller.md`, `hosting-and-environments.md`) ni a
 la guía de dominio (`domain-guide.md`). Aquéllas dicen **cómo funciona el framework**; ésta dice **en
-qué orden armar una aplicación y con qué forma**, y —lo más importante— recoge las reglas del
-substrato que **no están escritas en ninguna guía** y que sólo se aprenden chocando con ellas. La
-sección §7 es el corazón del documento: si vas con prisa, leé esa.
+qué orden armar una aplicación y con qué forma**.
+
+> **Si vas con prisa, esto no es lo que buscabas.** Las reglas del substrato —lo que sólo se aprende
+> chocando— viven ahora en [Las reglas del substrato](reglas-del-substrato.md). Este capítulo es el
+> how-to que se recorre una vez; aquél es la referencia que se consulta seguido.
 
 El ejemplo recurrente es un presupuesto familiar. Cada vez que aparece, es **ilustración, no
 prescripción**: generalizá la forma, no los nombres.
@@ -19,36 +21,46 @@ prescripción**: generalizá la forma, no los nombres.
 
 ## 1. La forma de la solución
 
-Cuatro proyectos de producción y uno de pruebas por cada uno que valga la pena probar.
+**Un directorio por negocio, cinco nodos adentro, nombres en español.** Es la convención del equipo y
+la sostienen idéntica los negocios que ya existen. El capítulo 0 §7 la describe entera; acá va lo que
+manda al escribir.
 
 ```
-<Repo>.sln
-Directory.Build.props                 ← dónde vive Puppeteer
-
-src/
-  <App>.Domain/                       ← el modelo puro. NO referencia nada.
-  <App>.Hosting/                      ← el puppet: qué actor, qué journal, el seed
-  <App>.Api/                          ← una carátula (HTTP)
-  <App>.Cli/                          ← otra carátula (consola)
-
-tests/
-  <App>.Domain.Tests/                 ← el modelo, sin substrato
-  <App>.Api.Tests/                    ← cruzando el perform layer, journal real
-  <App>.Cli.Tests/                    ← la herramienta como la ve quien la invoca
+<Negocio>/
+├── Preguntas.md             lo que el negocio se compromete a contestar. NO es un nodo
+├── PaginaDeDescarga/        URL1 · nginx. No es un csproj
+├── EndPointDeEventos/       URL2 · eventos, token, rotación, señuelo 403
+├── InyectorDeEventosDemo/   siembra la historia en URL2. Valores elegidos, no aleatorios
+├── Mecanismo/               el Portador: refresh, token, checkpoint, puente de journal
+├── Dominio/                 el puppet. CERO dependencias
+└── App/                     una lógica y tres carátulas
+    ├── <Negocio>.App        la lógica: los PerformCommand y PerformQuery. No sabe dónde corre
+    ├── <Negocio>.Wasm       la app que instala la persona
+    ├── <Negocio>.Mcp        la superficie que ve la IA. SOLO LECTURA
+    └── <Negocio>.Consola    para medir el dominio y el refresh sin browser
 ```
 
-**Por qué esos cortes, y no otros.**
+**Quién puede nombrar a quién, que es lo que de verdad ordena los cortes:**
 
-| Proyecto | Referencia a | Razón |
+| Nodo | Referencia a | Razón |
 |---|---|---|
-| `Domain` | **nada** | El modelo es el activo durable. Si referencia el host, muere con él. |
-| `Hosting` | Puppeteer + Domain | El wiring es idéntico para toda carátula: mismo actor, mismo journal, mismo seed. |
-| `Api` | Hosting | Sólo sabe de HTTP y códigos de estado. |
-| `Cli` | Hosting | Sólo sabe de argv, stdout/stderr y códigos de salida. |
+| `Dominio` | **nada** | El modelo es el activo durable. Si referencia el host, muere con él |
+| `<N>.App` | Puppeteer, y el dominio **sólo como archivo** | Es la lógica, idéntica para toda carátula. **No nombra un tipo del dominio en C#**: los tipos van dentro de los scripts y los resuelve el motor por reflexión |
+| `<N>.Wasm`, `<N>.Mcp` | `<N>.App` | Sólo saben de su medio: pantalla, o tools y stdio |
+| `<N>.Consola` | `<N>.App`, y el dominio **de verdad** | Es la única excepción, porque además del ciclo corre el fixture que instancia el modelo directo. Necesita `InternalsVisibleTo` |
+| `EndPointDeEventos`, `InyectorDeEventosDemo` | **ni el dominio ni el journal** | *El proveedor no conoce el dominio de la persona.* Lo único que los conecta es HTTP |
 
-El error a evitar: que el CLI referencie al proyecto web para reusar el puppet. Eso arrastra ASP.NET
-a una consola y acopla dos carátulas que no se conocen. Extraé `Hosting` **antes** de escribir la
-segunda carátula, no después.
+Ese último es un **invariante falsable**, no una preferencia: el día que tu endpoint de eventos
+necesite referenciar tu dominio, algo se cruzó.
+
+**El error a evitar:** que una carátula referencie a otra para reusar el puppet. Extraé `<N>.App`
+**antes** de escribir la segunda carátula, no después.
+
+> **Y una advertencia sobre esta sección.** El árbol de arriba es el que tienen los negocios que
+> corren hoy. La recomendación del equipo sobre `internal` viene con uno distinto —`Superficie`,
+> `Cli`, `Tests`, `publicador-simulado`— y dice de sí misma que *"no es definitiva"*. Lo que **no**
+> depende de cuál gane es todo lo demás de este capítulo: el dominio puro y `internal`, la fachada, y
+> las [reglas del substrato](reglas-del-substrato.md).
 
 ---
 
@@ -56,13 +68,21 @@ segunda carátula, no después.
 
 El orden importa: cada fase deja verificado lo que la siguiente asume.
 
-1. **El dominio, con sus tests.** Sin framework, sin journal, sin host. Corre en milisegundos.
-2. **El hosting.** El puppet abre, hidrata y siembra. Verificalo con un spike desechable.
-3. **La primera carátula.** Con tests que cruzan el perform layer contra un journal de verdad.
-4. **La segunda carátula.** Si la primera dejó el wiring en su lugar, ésta es sólo entrada y salida.
+1. **El dominio, con sus comprobaciones.** Sin framework, sin journal, sin host. Corre en
+   milisegundos.
+2. **La lógica y la carátula de consola, juntas.** El puppet abre, hidrata y siembra; la consola es
+   el arnés que lo prueba. **No dejes esto para después** — ver el recuadro de §8: un dominio que
+   compila y pasa sus comprobaciones puede ser imposible de hospedar, y no hay forma de enterarse
+   hasta que un perform lo toca.
+3. **URL2 y el inyector.** Recién acá entran datos que no inventaste vos.
+4. **Las dos carátulas de afuera**: la que instala la persona y la que ve la IA. Si la lógica quedó
+   en su lugar, éstas son sólo entrada y salida.
 
 No saltes la 1. Un dominio que se escribe al mismo tiempo que el host termina contaminado de
 decisiones del host —fechas del reloj, formatos, DTOs— que después no se pueden sacar.
+
+Y no separes la 1 de la 2 más de lo necesario. Son dos preguntas distintas —*¿piensa bien?* y *¿se
+puede hospedar?*— y ninguna red atrapa lo de la otra.
 
 ---
 
@@ -70,8 +90,8 @@ decisiones del host —fechas del reloj, formatos, DTOs— que después no se pu
 
 Esto lo gobierna `domain-guide.md`. Lo que hay que retener al empezar:
 
-- **Todo `internal`.** El perform llega por reflexión; no necesita más. El host jamás nombra un tipo
-  del dominio.
+- **Todo `internal`**, y en su propio csproj. Es la regla que más se rompe y la que más cuesta:
+  tiene su propia sección abajo.
 - **Entidades con identidad, nunca value objects.** Sin `Equals`/`GetHashCode`/`record`, sin
   colecciones llaveadas por valor. Llaveá por primitivo (un folio, un ordinal de mes).
 - **La operación es lo primario, no el estado.** `presupuesto.PuedeLiquidar(folio, moneda)`, no
@@ -82,6 +102,178 @@ Esto lo gobierna `domain-guide.md`. Lo que hay que retener al empezar:
   como parámetro. Es lo que hace que replayar el journal dé exactamente el mismo estado.
 - **Nombrá la ley.** No dejes que una regla viva sólo como aritmética. La provisión mensual de un
   gasto anual es una ley con nombre, no un `/12` suelto.
+- **La raíz no se llama como el negocio.** El agregado raíz nombra **lo que contiene**, no el dominio:
+  Exámenes tiene `Expediente`, Compras tiene `Historial`, el gimnasio tiene `Trayectoria`, el Hola
+  Mundo tiene `Libro`. Llamarla `Presupuesto` dentro de `Presupuesto.Dominio` choca, y además tapa la
+  pregunta útil —*¿qué es esto, una colección de qué?*—, que es la que da el buen nombre. La
+  convención era uniforme en el repo y **tácita**; costó un choque descubrirla.
+- **Un juicio sin firmar no tiene valor por defecto.** Tiene su propia sección abajo.
+
+### Un juicio sin firmar no tiene valor por defecto
+
+La entrevista deja juicios pendientes de firma — es lo normal, y el
+[punto de partida](punto-de-partida.md) explica por qué la firma es asincrónica. Lo que **no** se
+puede hacer mientras tanto es esto:
+
+```csharp
+private decimal umbral = 0.10m;   // "mientras tanto"
+```
+
+Compila, corre, y el número hasta parece razonable. **Ése es el problema.** La app contesta con la
+misma seguridad que si el juicio estuviera decidido, y nadie va a investigar una respuesta creíble.
+Un default silencioso **es** un juicio inventado, sólo que con mejores modales.
+
+Las dos formas correctas, y las dos ya están en el repo:
+
+**El objeto no se construye sin él.** Así entra el umbral del presupuesto:
+
+```csharp
+internal Panorama(decimal umbralDeVariacion)
+{
+	if (umbralDeVariacion <= 0 || umbralDeVariacion >= 1)
+		throw new ArgumentOutOfRangeException(nameof(umbralDeVariacion),
+			"Es una proporcion: 0,10 son diez por ciento.");
+```
+
+**O la respuesta dice que no sabe.** Así resolvió el gimnasio una meta sin valor declarado: el valor
+es opcional, y cuando no está **se dice**, en vez de inventar un número para poder contestar.
+
+Cuál de las dos depende de si el juicio es necesario para que el objeto tenga sentido, o sólo para
+una respuesta en particular. Lo que no es una opción es la tercera.
+
+### El dominio va `internal`, y el csproj separado es lo que lo hace cierto
+
+Es la regla que más se rompe, casi siempre con la misma justificación —*"el motor necesita que sea
+`public`"*— y esa justificación es falsa. Vale desarmarla entera, porque el argumento de verdad no es
+el que uno espera.
+
+**El motor nunca pidió `public`.** Tres hechos sobre su fuente:
+
+| | |
+|---|---|
+| El registro de tipos usa **`assembly.GetTypes()`**, no `GetExportedTypes()` | Un dominio entero `internal` entra al registro sin excepción |
+| Su único filtro es **`!t.IsNestedPrivate`** | Entra `internal` top-level, `internal` anidado, `protected`. Sólo quedan afuera las clases que el compilador emite para closures |
+| **`BindingFlags.NonPublic`** en toda la ruta del intérprete | Ningún método ni field necesita ser público. Un método `internal` —o `private`— se invoca igual desde un script |
+
+**Y el perform tampoco.** Acá está el malentendido que más se repite: *"el perform alcanza los
+`internal` porque comparte assembly con el dominio"*. **El perform no alcanza internals ni
+compartiendo assembly: entrega una cadena.**
+
+```csharp
+Using(@"
+    upgrade('semilla') {
+        facturas = Facturario();
+    }
+").PerformCommand();
+```
+
+`Facturario` aparece **dentro de un string**. Quien lo resuelve es el motor, por reflexión, y **la
+reflexión no tiene frontera de assembly**: eso funciona idéntico con el dominio en otro csproj y
+enteramente `internal`. Lo único que ese archivo le pide al dominio en C# es un `typeof(X).Assembly`
+para el constructor — y hasta eso se evita:
+
+```csharp
+: base(nombreDelActor, ElDominio.Assembly)     // ver abajo: LoadFrom, no Load
+```
+
+Con eso se cae también el `using` del namespace del dominio. Ese `public` es **ergonomía**, no
+necesidad.
+
+> **Cuidado con `Assembly.Load` por nombre: no encuentra un DLL que está al lado.** Medido, y cuesta
+> caro porque el error apunta a otro lado —
+>
+> ```
+> FileNotFoundException: Could not load file or assembly 'Laboratorio.Dominio'
+> ```
+>
+> La carga por nombre simple se resuelve contra el **`deps.json`**, y un proyecto que no referencia
+> el dominio en compilación no lo tiene ahí — que es exactamente el caso que la cerca produce.
+> **Copiar el archivo no alcanza.** Hay que cargarlo por ruta:
+>
+> ```csharp
+> Assembly.LoadFrom(Path.Combine(AppContext.BaseDirectory, "Laboratorio.Dominio.dll"))
+> ```
+>
+> Y no es un parche: es más fiel a lo que va a pasar de verdad, porque en la arquitectura objetivo
+> **el Host carga el módulo como un archivo** que la persona bajó de la institución, no como una
+> dependencia de compilación.
+>
+> Dos cosas más, del mismo hallazgo. **El `content` no es transitivo**: que un proyecto copie el
+> dominio a su salida no lo pone en la salida de los que dependen de él — cada host que hospede un
+> actor lo declara. Y **cargalo una sola vez**: `LoadFrom` sobre la misma ruta devuelve el mismo
+> assembly, pero dos rutas distintas al mismo archivo dan dos assemblies, y el motor no reconoce los
+> tipos de uno en el otro.
+
+#### Por qué entonces insistir
+
+Porque `public` no es sólo innecesario: **es dañino**, y por dos razones que no dependen de dónde
+corra la app.
+
+**Uno · los DTOs se van de paseo al dominio.** Con el dominio `public`, la superficie puede pasarle un
+DTO a la lógica de negocio, y lo va a hacer: es el atajo más corto que existe. Lo que se pierde ahí no
+es elegancia — es que **la interpretación del dato ocurre afuera del actor**. Qué significa, cómo se
+coacciona, qué default toma cuando viene vacío: nada de eso queda en el journal. El journal deja de
+ser el registro del acto y pasa a ser el registro de un acto **ya interpretado por alguien más**, cuya
+interpretación no se puede replayar ni auditar.
+
+**Dos · la lógica de negocio se muda a la superficie.** Si la superficie puede declarar una variable
+de tipo dominio, la declara. Y con un objeto de dominio en la mano, la primera decisión "chiquita" se
+escribe ahí mismo: un `if` sobre un estado, un cálculo, un default. Eso es lógica que quedó **fuera
+del actor**: no se journaliza, no se replaya, no se rehidrata. Al reiniciar, el estado reconstruido no
+la incluye, porque nunca fue un acto. Y el drenaje es silencioso — nadie escribe *"voy a mover el
+dominio a la superficie"*; se escriben cinco `if` en seis meses, cada uno razonable por sí solo.
+
+Con el dominio `internal`, **las dos cosas no compilan.**
+
+#### Y por eso es csproj separado, no "disciplina"
+
+Ésta es la parte que se pierde, y es toda la diferencia:
+
+- **`internal` dentro del mismo assembly que la superficie no es una cerca.** La superficie está del
+  lado de adentro y alcanza todo. La disciplina queda a cargo de la memoria del autor, y la memoria
+  del autor no sobrevive a un sprint apretado.
+- **`internal` en su propio assembly es una cerca que sostiene el compilador.** El atajo deja de ser
+  de mal gusto y pasa a ser un **error de compilación**.
+
+No es una cerca de seguridad: `internal` no defiende de nadie, cualquiera con reflexión pasa. Es una
+**cerca contra el lenguaje anfitrión**: el DSL entra, C# no.
+
+#### La única excepción, y cómo se pide
+
+Un fixture que instancia el modelo directo, sin pasar por scripts. Ése es el único código C# fuera del
+dominio que legítimamente nombra tipos del dominio, y **tampoco fuerza `public`**:
+
+```xml
+<ItemGroup>
+  <InternalsVisibleTo Include="Laboratorio.Tests" />
+</ItemGroup>
+```
+
+Sin `PublicKey` si nada está firmado. Por qué esto no rompe la cerca: es un permiso **explícito,
+nominal y auditable**. Se ve en el diff, se justifica en la revisión, y se le puede pedir cuentas a
+quien quiera agregar el segundo. `public` no le pide permiso a nadie ni deja rastro.
+
+#### Si te toca hacer el barrido
+
+1. Cambiar los tipos a `internal`.
+2. Buscar cada nombre de tipo del dominio en todos los nodos de afuera.
+3. Clasificar: **dentro de un string** (DSL) no es acoplamiento y se queda; **`typeof(X).Assembly`**
+   es reemplazable; **declaración, `new`, cast, `is`, parámetro o retorno en C#** es acoplamiento real
+   — se elimina o recibe su `InternalsVisibleTo` con justificación.
+4. Compilar. **Lo que no compila es el mapa exacto de los atajos que la cerca estaba dejando pasar.**
+   Cada error es un lugar donde el dominio se estaba filtrando, no una molestia.
+
+Tres falsos positivos que el grep levanta y no son referencias a tipos: **constantes string** con el
+nombre del tipo, **propiedades de DTOs propios** que se llaman parecido, y **métodos o records de
+vista homónimos**. Revisá a mano.
+
+> **Una precaución para WASM y WASI, no medida.** `typeof(X).Assembly` deja una referencia IL dura al
+> assembly del dominio; `Assembly.Load(new AssemblyName(...))` no —el único vínculo es una cadena— y
+> el trimmer que Blazor activa en `publish` Release podría sacarlo del output. El síntoma sería un
+> `dotnet run` que anda y un publish que revienta. La respuesta es `<TrimmerRootAssembly>`, y conviene
+> saber que **ese riesgo ya existe con el `typeof`**: ancla el tipo, no los miembros que el DSL
+> resuelve por reflexión. Un dominio descubierto por reflexión y un trimmer agresivo son incompatibles
+> por naturaleza.
 
 ### La fachada es lo que el perform bindea
 
@@ -105,7 +297,7 @@ internal bool HandlesCurrency(string code);
 internal bool CanSettle(int folio, string currency);
 ```
 
-Esto parece un detalle y es lo contrario. Es lo que permite el `Check` de §7.3, sin el cual un
+Esto parece un detalle y es lo contrario. Es lo que permite el `Check` de la [regla 3](reglas-del-substrato.md), sin el cual un
 comando rechazado envenena el journal para siempre.
 
 ---
@@ -126,7 +318,7 @@ public sealed class AppPuppet : PerformanceV2
     private readonly AppJournal _journal;
 
     public AppPuppet(AppJournal journal)
-        : base(Role, Assembly.Load(new AssemblyName("<App>.Domain")))
+        : base(Role, ElDominio.Assembly)          // LoadFrom por ruta — ver §3
     {
         _journal = journal;      // asignado ANTES de Start(), porque OnHydrated lo lee
     }
@@ -169,12 +361,17 @@ un día.
 
 ---
 
-## 5. Fase 3 — una carátula HTTP
+## 5. Fase 3 — la lógica, y de ahí las carátulas
 
-La regla: **el actor se construye una vez y se reusa**. Singleton de DI, abierto al arrancar para que
-ninguna petición corra contra la hidratación.
+La regla que vale para todas: **el actor se construye una vez y se reusa**. La carátula lo abre al
+arrancar y lo mantiene vivo; **un actor no se crea por request**.
 
-Cada endpoint son siempre los mismos tres pasos:
+> **Sobre el ejemplo de abajo.** Está escrito como un endpoint HTTP porque es la forma más corta de
+> enseñar los tres pasos, y esos tres pasos son idénticos en las tres carátulas. Pero **una app
+> clientecéntrica no tiene API REST propia**: sus carátulas son la que instala la persona, la que ve
+> la IA, y la de consola. Leé el `[HttpPost]` como *"acá entra una petición de afuera"*.
+
+Cada operación son siempre los mismos tres pasos:
 
 ```csharp
 [HttpPost("salary")]
@@ -249,136 +446,42 @@ cualquier parser.
 
 ---
 
-## 7. Las reglas del substrato que no están en ninguna guía
+## 7. Las reglas del substrato
 
-Esta sección es el motivo de existir del documento. Todo lo de acá se descubrió a los golpes.
+**Se mudaron a su propio documento: [Las reglas del substrato](reglas-del-substrato.md).**
 
-### 7.1 Un comando rechazado se journaliza igual — y envenena el replay
+Son dieciocho cosas que el motor hace y ninguna documentación dice, todas descubiertas a los golpes.
+Salieron de acá porque **no se leen igual que el resto del capítulo**: esto es un how-to que se
+recorre una vez, y ésas son una referencia que se consulta cada semana. **Conservan su numeración**:
+la *regla 5* de allá es la que hasta hoy se citaba como *§7.5*, acá y en commits viejos.
 
-**El peor de todos.** Si el dominio revienta a mitad de un `PerformCommand`, la entrada **ya se
-escribió**. Desde ese momento, cada rehidratación la replaya y vuelve a fallar:
+**Antes de escribir la fase 1, leé por lo menos estas cuatro:**
 
-```
-[Puppeteer ERROR] Script execution failed at write-time. EntryId=33   ← se escribió
-[Puppeteer ERROR] Rehydration execution failed. EntryId=33            ← y falla en cada arranque
-```
-
-Un error de tipeo en una moneda queda permanente en el journal.
-
-**La solución** está en `control-flow.md` §9 y hay que aplicarla a **todo comando que el dominio
-pueda rechazar**: guardarlo con un `Check` y usar `PerformCheckThenCommand`. Un `Check` que falla
-corre bajo read lock, **antes** del write lock, y no escribe nada.
-
-```csharp
-actor.Using(
-	check: @"
-	Check(root.HandlesCurrency(@currency)) Error 'moneda desconocida';
-	Check(root.CanSettle(@folio, @currency)) Error 'no hay plan esperando';
-",
-	@"
-	{
-		root.Settle(@folio, @currency, @amount);
-		print @folio 'settled';
-	}
-")
-.WithParameters(...)
-.PerformCheckThenCommand();
-```
-
-Por eso el dominio necesita **predicados totales** (§3): el `Check` sólo puede preguntar lo que el
-dominio sabe responder sin reventar.
-
-### 7.2 El contrato de retorno de `PerformCheckThenCommand`
-
-Medido, no supuesto:
-
-| | retorno | entradas del journal |
+| | | Por qué ahora |
 |---|---|---|
-| **rechazado** | `{"EWI":[{"Error":"…"}]}` (JSON) · `EWI:\n  - Error: "…"` (TOON) | **no avanzan** |
-| **aceptado** | lo que el `print` produjo | avanzan |
-
-El marcador es que el documento **empieza con `EWI`**. No alcanza con "retorno no vacío", porque un
-comando aceptado que imprime algo también devuelve texto.
-
-### 7.3 El dominio se resuelve por el assembly del actor
-
-`ActorHandler` hace `actor.GetType().Assembly` para saber dónde buscar el vocabulario. Consecuencias:
-
-- **Pasá el assembly explícitamente**: `new PerformanceV2(name, domainAssembly)`.
-- El constructor de un solo argumento usa `Assembly.GetCallingAssembly()`, que desde el host es **el
-  host**, no el dominio. Silencioso y equivocado.
-- Cargalo por nombre (`Assembly.Load`) para no tener que hacer público ningún tipo del dominio.
-
-### 7.4 El seed cuesta una entrada por arranque
-
-`OnHydrated` corre en cada hidratación y re-emite el `upgrade`. El cuerpo **no** se re-ejecuta, pero
-el comando **sí se journaliza**. Medido:
-
-| operación | entryId |
-|---|---|
-| `Start()` con journal vacío | 0 |
-| seed `upgrade` (forma nueva) | 2 — `define action` + `invoke` |
-| seed `upgrade` otra vez (no-op) | 3 — **+1**, misma forma → sólo `invoke` |
-| un comando nuevo | 5 |
-| una consulta | 5 — **+0** |
-
-Para un servicio que arranca una vez, es nada. **Para un CLI invocado cincuenta veces al día, son
-cincuenta entradas.** Es el precio del idiom que prescribe la guía —y la alternativa
-(`OnFirstHydration`) rompe el versionado de upgrades. Sabelo y decidí.
-
-### 7.5 El framework escribe en stdout
-
-`ActorHandler` hace `Console.WriteLine("Starting …")` y marcas de progreso `1%2%` **sin newline**, que
-prefijan la línea siguiente. En un CLI cuya salida alguien va a parsear, eso la arruina.
-
-**En una consola: capturá `Console.Out` mientras corre el framework y reenvialo a stderr.** stdout
-lleva sólo la respuesta.
-
-### 7.6 El formatter
-
-- En un `PerformanceV2`, `.Formatter(new ToonFormatter())`.
-- En un `ActorV2` pelado —que es por donde van los performs con parámetros— **no hay `.Formatter`**:
-  se empuja por contexto, `using (FormatterContext.Push(formatter)) { … }`.
-- JSON para APIs, TOON para consumo de IA, texto plano para personas.
-- **Cuidado con `<InvariantGlobalization>true</InvariantGlobalization>`**: `ToonFormatter` construye
-  un `CultureInfo("en-US")` en su constructor estático y revienta al arrancar.
-- Una proyección multilínea renderizada como campo vuelve con los saltos escapados. Si es prosa para
-  leer, sacala del documento e imprimila cruda.
-
-### 7.7 Un journal, un escritor
-
-El backend de file system toma lock. **No corras el API y el CLI contra el mismo journal a la vez.**
-Connection string verificado:
-
-```
-path=<directorio>;maxFileSize=4194304;compression=GZip
-```
-
-### 7.8 Los valores viajan como parámetros, nunca concatenados
-
-```csharp
-// MAL: texto distinto en cada llamada → una Action nueva por llamada, journal que explota
-actor.Using($"root.Add('{sku}', {qty});")
-
-// BIEN: una plantilla, argumentos aparte
-actor.Using("root.Add(@sku, @qty);").WithParameters(...)
-```
-
-El journal guarda **una sentencia reusable más sus argumentos**. Concatenar destruye esa densidad y
-además rompe la identidad de la Action.
-
-### 7.9 Verificá la versión del framework contra la que escribís
-
-Las guías describen un commit concreto. Un checkout viejo puede no tener la API que documentan —y
-fallar de maneras que parecen error propio. En este proyecto el checkout estaba **967 commits atrás**,
-con `Parameters` exponiendo los indexers como `internal` (o sea: **imposible pasar `@params` desde
-otro assembly**) y `PerformanceV2` sellado sin constructor de assembly.
-
-**Antes de pelear con una API que no calza con la guía, comprobá en qué commit estás.**
+| **1** | Un comando rechazado se journaliza igual | Es la peor de todas: envenena el replay para siempre |
+| **17 y 18** | El `Check` pregunta exactamente lo que el dominio rechaza, y **todo** comando lleva `Check` | **Corrigen a la 1**, que se puede cumplir al pie de la letra y envenenar el journal igual. De acá sale la forma del dominio: **un predicado total por comando** |
+| **10** | Un parámetro le puede robar el nombre a un tipo | Te muerde al nombrar el primer perform |
+| **13** | El `print` proyecta un solo nivel | Decide la forma de tus carriers, y rehacerla después duele |
 
 ---
 
 ## 8. Sobre las pruebas
+
+> **Un dominio no está terminado hasta que un perform lo tocó.**
+>
+> Es la regla que más caro sale ignorar, y hay una medición detrás. Un dominio de veintidós clases
+> compiló limpio y pasó **31 comprobaciones** del modelo puro — y era **imposible de hospedar**: tres
+> de sus conjuntos cerrados no se podían nombrar desde un comando ([regla 11](reglas-del-substrato.md)), un parámetro tapaba a un
+> tipo ([regla 10](reglas-del-substrato.md)), y sus carriers tenían dos niveles donde el `print` proyecta uno ([regla 13](reglas-del-substrato.md)).
+>
+> Ninguna de las dos redes lo atrapa. El compilador no ve el DSL, que se resuelve por reflexión en
+> tiempo de ejecución; y las comprobaciones del dominio puro prueban las **leyes del negocio**, que
+> estaban bien. Cinco de los seis defectos aparecieron **en la primera corrida contra un journal**, y
+> ninguno antes.
+>
+> Traducido a orden de trabajo: no declares terminado el dominio para pasar a la carátula. Atalo a un
+> perform **mientras** lo escribís, aunque sea con una carátula de consola de veinte líneas.
 
 Tres niveles, cada uno probando lo que el anterior no puede ver.
 
@@ -392,8 +495,61 @@ En el nivel perform, **la prueba que más vale es la del reinicio**: registrá a
 reabrí sobre el mismo journal y comprobá que sigue ahí. Es la única evidencia honesta de que el estado
 lo sostiene el journal y no la memoria.
 
-Y fijá con una prueba lo que descubriste en §7.1: que un rechazo **no deja nada** que haga fallar la
+Y fijá con una prueba lo que descubriste en la [regla 1](reglas-del-substrato.md): que un rechazo **no deja nada** que haga fallar la
 rehidratación siguiente.
+
+---
+
+## 8 bis. El `HUECOS.md`, que se escribe mientras modelás
+
+**Modelar destapa decisiones que nadie tomó.** No es un defecto de la entrevista: hasta que alguien no
+intenta construir la respuesta, no se ve qué falta para poder darla. En los dos dominios donde se midió
+aparecieron **ocho y once**, en dominios chicos.
+
+Esas decisiones se anotan **en el momento**, en un `HUECOS.md` al lado del `Preguntas.md`. Es un
+registro por dominio: `Compras` tiene el suyo, `Gimnasio` el suyo, y no se parecen.
+
+### Una sola tabla, con la columna de origen
+
+Lo no decidido llega por dos caminos, y conviene distinguirlos porque se cierran distinto:
+
+| Origen | Qué es | Quién lo cierra |
+|---|---|---|
+| **declarado** | Salió de la entrevista y quedó ⚠️ sin firmar — un umbral, una cadencia | Quien sabe del negocio, asincrónico |
+| **descubierto** | No lo previó nadie. Apareció al escribir la clase | El bloque 5, leyéndolo como propuesta |
+
+Son dos columnas de la misma tabla, **no dos archivos**. Los dos son *"cosas que la app todavía no
+sabe"*, y tener dos registros de eso es exactamente la deriva que estas guías persiguen en otros
+lados.
+
+| # | Qué falta | Origen | Dónde muerde | Qué se decidió para seguir |
+|---|---|---|---|---|
+| 1 | Cómo se agrupan las edades | descubierto | `PorcentajeDeGrasa` | La clave lleva la edad exacta — feo a propósito |
+| 2 | Qué variación es ruido | declarado | `Referencia` | Valor propuesto, ⚠️ sin firmar |
+
+### Qué NO va acá
+
+**Los hallazgos sobre el método o sobre el motor.** Que un `Check` tenga que preguntar exactamente lo
+que el dominio rechaza no es un hueco de tu negocio: es una [regla del
+substrato](reglas-del-substrato.md), y ahí es donde le sirve a los demás. Un `HUECOS.md` con
+hallazgos del motor adentro es un hallazgo que nadie más va a encontrar.
+
+> **La excepción son los sujetos de prueba de `Metodologia/Pruebas/`**, que existen justamente para
+> falsar las guías. Ahí el archivo **es** el cuaderno de laboratorio y lleva las dos cosas, con la
+> parte del método claramente separada — y cuando esa parte se escribe en las guías, se reemplaza por
+> un puntero.
+
+### El ciclo de vida
+
+Un hueco **cierra hacia el `Preguntas.md`**: cuando alguien decide, la decisión pasa a ser capacidad o
+juicio declarado, y el renglón se va. O se queda abierto **con dueño**, que también es una respuesta.
+
+Lo que no puede pasar es que se cierre **inventando**. Un hueco tapado con un valor razonable deja de
+verse y la app empieza a contestar con seguridad algo que nadie decidió — que es el mismo defecto que
+la sección de arriba llama *un juicio inventado con mejores modales*.
+
+> **Que un hueco quede abierto no es deuda: es información.** El `HUECOS.md` vacío de un dominio joven
+> es sospechoso, no admirable.
 
 ---
 
@@ -401,16 +557,27 @@ rehidratación siguiente.
 
 **El modelo**
 
-- [ ] ¿El `.Domain` no referencia absolutamente nada?
+- [ ] ¿El `Dominio/` no referencia absolutamente nada?
 - [ ] ¿Todos los tipos del dominio son `internal`? ¿El host no nombra ninguno?
 - [ ] ¿Ninguna parte del dominio lee el reloj ni genera azar?
 - [ ] ¿Las consultas de la fachada devuelven escalares, arreglos primitivos o proyecciones?
+- [ ] ¿Cada conjunto cerrado tiene su **resolutor total** desde primitivo? Sin él, ningún comando lo
+      puede nombrar ([regla 11](reglas-del-substrato.md))
+- [ ] ¿Ningún carrier tiene un objeto o una colección adentro que la fachada exponga? ([regla 13](reglas-del-substrato.md))
+- [ ] ¿Los nullable viajan como bool más valor, y no como hueco? ([regla 13](reglas-del-substrato.md))
+- [ ] ¿Ninguna lectura que arma el dominio formatea una fecha? ([regla 14](reglas-del-substrato.md))
 
 **El substrato**
 
+- [ ] ¿**Un perform tocó el dominio**, aunque sea desde una consola de veinte líneas? Compilar y
+      pasar las pruebas del modelo puro no alcanza — ver el recuadro de §8
+- [ ] ¿Ningún parámetro se llama como un tipo del dominio? ([regla 10](reglas-del-substrato.md))
 - [ ] ¿El agregado se construye en un `upgrade`, como global raíz?
-- [ ] ¿Cada comando que el dominio pueda rechazar va detrás de un `Check`? (§7.1)
-- [ ] ¿Hay un predicado total por cada cosa que el `Check` necesita preguntar?
+- [ ] ¿**Todo** comando va detrás de un `Check` — incluidos los que no pueden fallar, que lo llevan
+      por identidad y no por validez? ([reglas 1 y 18](reglas-del-substrato.md))
+- [ ] ¿Cada `Check` llama a **un** predicado `Puede<Comando>` que junta todas las razones de rechazo
+      de ese comando? ([regla 17](reglas-del-substrato.md))
+- [ ] ¿Se corrió el ciclo **dos veces sobre la misma carpeta** y los números no se movieron?
 - [ ] ¿Ningún valor se concatena en el texto del DSL?
 - [ ] ¿El actor se construye una vez y se reusa?
 
@@ -422,6 +589,13 @@ rehidratación siguiente.
 
 - [ ] ¿Existe una prueba de reinicio?
 - [ ] ¿Existe una prueba de que un rechazo no envenena el journal?
+
+**Lo que queda escrito**
+
+- [ ] ¿Existe el `HUECOS.md`, con cada renglón marcado *declarado* o *descubierto*? (§8 bis)
+- [ ] ¿Ningún hueco se cerró **inventando** un valor razonable?
+- [ ] ¿Cada renglón de la Parte 1 del `Preguntas.md` tiene su clase al lado?
+      ([observable 13](observables.md))
 
 ---
 

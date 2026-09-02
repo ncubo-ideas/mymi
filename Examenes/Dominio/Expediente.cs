@@ -668,6 +668,36 @@ namespace Examenes.Dominio
 			}
 		}
 
+		// CUANTOS ESTAN DONDE TIENEN QUE ESTAR, y la frase que lo dice. Es la contracara
+		// de LoMasUrgente, y va por la misma puerta: la portada muestra las dos juntas.
+		//
+		// Un analito cuenta cuando le CORRESPONDE a esta persona, cuando su rango se puede
+		// determinar —si depende del sexo y el sexo no se sabe, no se puede— y cuando su
+		// ultima lectura no es un hallazgo. Las tres condiciones en una sola pasada: es
+		// una cuenta, no una resta entre escalares publicados por separado.
+		public TranquilidadDelExpediente LoQueEstaEnRango
+		{
+			get
+			{
+				int enRango = 0;
+				int conSerie = 0;
+				Paciente paciente = Paciente;
+
+				foreach (KeyValuePair<Analito, SerieDeAnalito> par in Visibles())
+				{
+					conSerie++;
+
+					if (!par.Key.AplicaA(paciente).EsAplica) continue;
+					if (par.Value.Interpretar(paciente).RequiereElSexo) continue;
+					if (par.Value.UltimaEsHallazgo(paciente)) continue;
+
+					enRango++;
+				}
+
+				return new TranquilidadDelExpediente(enRango, conSerie);
+			}
+		}
+
 		// Cuantos analitos tienen HOY algo que no deberia estar. Es un conteo derivado, no
 		// un campo que pueda quedar desincronizado.
 		//

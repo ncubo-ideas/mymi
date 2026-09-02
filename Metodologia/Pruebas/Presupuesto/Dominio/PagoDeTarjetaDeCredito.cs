@@ -19,29 +19,29 @@ namespace Presupuesto.Dominio
 	// cuenta de las cuentas bancarias"-. La regla es la misma, un piso mas abajo. Pero es
 	// una extension mia de su criterio, y conviene confirmarla antes de que alguien construya
 	// un total encima.
-	public sealed class PagoDeTarjetaDeCredito : GastoRecurrente
+	internal sealed class PagoDeTarjetaDeCredito : GastoRecurrente
 	{
-		public PagoDeTarjetaDeCredito(string nombre) : base(nombre)
+		internal PagoDeTarjetaDeCredito(string nombre) : base(nombre)
 		{
 		}
 
-		public override Periodicidad Periodicidad => Periodicidad.Mensual;
+		internal override Periodicidad Periodicidad => Periodicidad.Mensual;
 
-		public override Severidad SeveridadSiFalta => Severidad.Critico;
+		internal override Severidad SeveridadSiFalta => Severidad.Critico;
 
-		public override Reducibilidad Reducibilidad => Reducibilidad.Comprometido;
+		internal override Reducibilidad Reducibilidad => Reducibilidad.Comprometido;
 
-		public override int DiasDeGracia => 1;
+		internal override int DiasDeGracia => 1;
 
 		// ------------------------------------------------------------ lo suyo
 
 		// La propiedad que lo distingue de todo lo demas del dominio. Quien sume gastos
 		// TIENE que preguntar esto antes de sumar.
-		public override bool EsConsumo => false;
+		internal override bool EsConsumo => false;
 
 		// Que no cuente como consumo NO lo vuelve invisible: si no aparece, es critico -es
 		// mora- y por eso sigue siendo un gasto recurrente con todo lo demas intacto.
-		public string PorQueNoSuma =>
+		internal string PorQueNoSuma =>
 			"Pagar la tarjeta no es consumir: salda compras que ya estan contadas una por una.";
 	}
 }

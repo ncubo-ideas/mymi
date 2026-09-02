@@ -269,16 +269,39 @@ negocio, cinco nodos adentro, nombres en español.**
 
 ```
 <Negocio>/
+├── Preguntas.md             lo que el negocio se compromete a contestar. NO es un nodo
 ├── PaginaDeDescarga/        URL1 · nginx. No es un csproj
 ├── EndPointDeEventos/       URL2 · eventos, token, rotación, señuelo 403
 ├── InyectorDeEventosDemo/   siembra la historia en URL2. Valores y fechas elegidos, no aleatorios
+├── Mecanismo/               el Portador: refresh, token, checkpoint, puente de journal
 ├── Dominio/                 el puppet. CERO dependencias
+├── docker-compose.yml
+├── README.md                cómo se corre. No es papeleo: ver abajo
 └── App/                     una lógica y tres carátulas
     ├── <Negocio>.App        la lógica: los PerformCommand y PerformQuery. No sabe dónde corre
     ├── <Negocio>.Wasm       la app que instala la persona. Blazor WASM, PWA
     ├── <Negocio>.Mcp        la superficie que ve la IA. SOLO LECTURA sobre el journal
     └── <Negocio>.Consola    para medir el dominio y el refresh sin browser
 ```
+
+**`Preguntas.md` vive en la raíz del negocio y no es un nodo.** Sale del paso 1 del orden de trabajo,
+antes de que exista una sola línea de código, y es contra ese archivo que se audita después si la app
+hizo lo que dijo. Que esté al lado de los cinco nodos y no adentro de ninguno es a propósito: **no lo
+produce ningún nodo, los produce a todos.**
+
+**El reporte de auditoría no vive en ningún lado, y también es a propósito.** Se genera cuando se
+corre, se lee y se tira. Lo durable es `Preguntas.md` —la intención— y el código —el hecho—; un
+reporte commiteado sólo envejece.
+
+**`Mecanismo/` hoy se copia byte por byte entre negocios.** Es el mismo para todos —el bucle de
+refresh, el token y su rotación, el checkpoint, el puente de journal— y la convención del equipo lo
+ubica en la raíz del repo. Mientras no suba, cada negocio lleva su copia. **No lo edites**: resolvió
+problemas no obvios, como el orden precarga-MEMFS → actor → flush-por-comando.
+
+**Y el `README.md` de "cómo se corre" no es papeleo.** En los negocios que ya existen es donde vive la
+mitad del conocimiento del proyecto: por qué la app cuelga de `/app/` y no de la raíz, por qué desde
+un teléfono hay que entrar por https, qué hace `MSBuildEnableWorkloadResolver=false`. Nada de eso está
+en el código y todo cuesta una tarde si no está escrito.
 
 **"Una lógica y tres carátulas"** es la frase que hay que retener, y es exactamente lo que el
 capítulo 3 llama la carátula: el dominio y la lógica no se duplican por superficie.

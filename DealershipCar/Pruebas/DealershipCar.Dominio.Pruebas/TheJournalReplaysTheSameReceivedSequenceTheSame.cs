@@ -34,6 +34,21 @@ namespace DealershipCar.Dominio.Pruebas
 		private static readonly DateTime TheLastEvaluation =
 			new DateTime(2026, 3, 1, 0, 0, 0, DateTimeKind.Utc);
 
+		// EL PAR DEL MISMO SEGUNDO, para las dos ultimas pruebas. El instante se construye ya
+		// truncado a segundos y en UTC: la puerta normaliza en las dos direcciones (C24) y ademas
+		// trunca, asi que construirlo asi deja la prueba honesta sobre lo que prueba.
+		private const string TheOperationMeasuredByDistance = "WearPartReplacement";
+		private const int TheReadingInThePlanUnit = 40000;
+		private const int TheReadingInTheOtherUnit = 35000;
+
+		private static readonly DateTime TheSameSecond =
+			new DateTime(2026, 1, 20, 8, 30, 0, DateTimeKind.Utc);
+
+		private static readonly DateTime TheEvaluationBeforeTheReopen =
+			new DateTime(2026, 2, 1, 0, 0, 0, DateTimeKind.Utc);
+		private static readonly DateTime TheEvaluationAfterTheReopen =
+			new DateTime(2026, 2, 2, 0, 0, 0, DateTimeKind.Utc);
+
 		// PRUEBA 16, la mitad que el nivel A tambien prueba: dos corridas de la misma secuencia
 		// contestan lo mismo. Aca cada corrida pasa por su propio actor, su propio journal y su
 		// propio disco.
@@ -120,6 +135,73 @@ namespace DealershipCar.Dominio.Pruebas
 				Assert.That(
 					bare.EveryDueStateItCanAnswer(),
 					Is.Not.EqualTo(lived.EveryDueStateItCanAnswer()));
+			}
+		}
+
+		// EL DESEMPATE DEL MISMO SEGUNDO, DESPUES DE REABRIR. El journal guarda el instante como
+		// texto con granularidad de SEGUNDOS (spike S4), asi que dos lecturas observadas dentro del
+		// mismo segundo no se distinguen por su instante: las ordena el ORDEN DE LLEGADA -- y ese
+		// orden es lo unico que queda escrito. RecordReading lo implementa por posicion de
+		// insercion.
+		//
+		// El nivel A ya lo afirma (TwoReadingsObservedInTheSameInstantKeepTheirArrivalOrder), pero
+		// ahi el agregado vive en memoria y el orden de insercion se conserva solo. Lo que S4
+		// afirma es sobre el REPLAY, y eso ninguna prueba del nivel A lo puede tocar.
+		//
+		// SE VUELVE A EVALUAR DESPUES DE REABRIR en vez de solo releer el estado. Releerlo probaria
+		// que el DueState guardado se rehidrato; volver a evaluar prueba que las LECTURAS volvieron
+		// en el mismo orden, que es la afirmacion. La segunda evaluacion va a un instante
+		// ESTRICTAMENTE POSTERIOR: la guarda de cadencia rechaza uno ya evaluado, y un rechazo no
+		// escribe nada (spike S3).
+		//
+		// LAS DOS LECTURAS VAN EN UNIDADES DISTINTAS, y no es adorno: es la unica forma de que el
+		// par se pueda recibir en los DOS ordenes. Dentro de una misma unidad la guarda de la linea
+		// de observacion rechaza el orden invertido -- un odometro no va para atras -- asi que la
+		// segunda en llegar tiene que ser siempre la mayor y el orden de llegada no se ve en el
+		// estado. Dos unidades son dos lineas de tiempo que no se juzgan entre si (OINV-21): los
+		// dos ordenes entran, y cual quedo ULTIMA se ve, porque la del plan mide y la otra suspende
+		// la distancia.
+		[Test]
+		public void TheSameSecondTieBreakSurvivesAReopen()
+		{
+			using (AScheduleOnARealJournal journal = AScheduleWhereThePlanUnitArrivedLast())
+			{
+				string live = journal.Api.ReadDueState(TheOperationMeasuredByDistance);
+				string why = journal.Api.ReadDueReason(TheOperationMeasuredByDistance);
+
+				Assert.That(live, Is.EqualTo("Due"),
+					"La ultima en llegar dentro del segundo es la que mide: 40000 sobre un ancla de "
+					+ "30000 con limite de 10000. Si mandara la primera, la distancia quedaria "
+					+ "suspendida por unidad y esto seria NotDue.");
+
+				Assert.That(TheDueStateAfterReplayingTheJournal(journal), Is.EqualTo(live),
+					"S4: el instante llega al journal truncado al segundo, asi que el desempate que "
+					+ "sobrevive es el ORDEN. Si el replay devolviera las dos lecturas al reves, "
+					+ "esta evaluacion nueva contestaria otra cosa.");
+				Assert.That(journal.Api.ReadDueReason(TheOperationMeasuredByDistance), Is.EqualTo(why),
+					"Y por el mismo motivo, no por otro que de la misma respuesta.");
+			}
+		}
+
+		// EL CONTROL, y sin el la de arriba no prueba nada: que un estado sobreviva al replay se
+		// cumple solo si el orden de llegada no decide NADA. Aca entra el mismo par al reves y
+		// tiene que contestar DISTINTO.
+		//
+		// El dia que alguien le quite el desempate a RecordReading -- ordenar el mismo segundo por
+		// valor, por ejemplo, en vez de por llegada -- los dos ordenes colapsan a la misma
+		// respuesta y esta prueba se pone roja. La de arriba seguiria verde: para eso esta esta.
+		[Test]
+		public void TheReversedArrivalOrderInTheSameSecondAnswersDifferently()
+		{
+			using (AScheduleOnARealJournal asItArrived = AScheduleWhereThePlanUnitArrivedLast())
+			using (AScheduleOnARealJournal reversed = AScheduleWhereTheOtherUnitArrivedLast())
+			{
+				Assert.That(
+					TheDueStateAfterReplayingTheJournal(reversed),
+					Is.Not.EqualTo(TheDueStateAfterReplayingTheJournal(asItArrived)),
+					"Las dos lecturas son las mismas y el segundo observado es el mismo: lo unico "
+					+ "que cambia es cual llego primero. Si las dos contestan igual, el orden de "
+					+ "llegada dejo de decidir y el desempate del mismo segundo no existe.");
 			}
 		}
 
@@ -300,6 +382,66 @@ namespace DealershipCar.Dominio.Pruebas
 				new DateTime(2026, 2, 10, 0, 0, 0, DateTimeKind.Utc), 41000);
 			yield return new KeyValuePair<DateTime, int>(
 				new DateTime(2026, 3, 1, 0, 0, 0, DateTimeKind.Utc), 42000);
+		}
+
+		// Las dos lecturas del mismo segundo, con la del PLAN llegando ultima. La telemetria del
+		// vehiculo y el numero que tecleo la persona caen dentro del mismo segundo: no es un caso
+		// de laboratorio, es lo que S4 vuelve indistinguible.
+		private static AScheduleOnARealJournal AScheduleWhereThePlanUnitArrivedLast()
+		{
+			AScheduleOnARealJournal journal = AScheduleWithOneOperationMeasuredByDistance();
+
+			journal.Api.RecordReading(
+				TheReadingInTheOtherUnit, "UnitB", TheSameSecond, "HumanEntry");
+			journal.Api.RecordReading(
+				TheReadingInThePlanUnit, "UnitA", TheSameSecond, "Telemetry");
+
+			journal.Api.Evaluate(TheEvaluationBeforeTheReopen);
+
+			return journal;
+		}
+
+		// El mismo par, al reves. Es el control.
+		private static AScheduleOnARealJournal AScheduleWhereTheOtherUnitArrivedLast()
+		{
+			AScheduleOnARealJournal journal = AScheduleWithOneOperationMeasuredByDistance();
+
+			journal.Api.RecordReading(
+				TheReadingInThePlanUnit, "UnitA", TheSameSecond, "Telemetry");
+			journal.Api.RecordReading(
+				TheReadingInTheOtherUnit, "UnitB", TheSameSecond, "HumanEntry");
+
+			journal.Api.Evaluate(TheEvaluationBeforeTheReopen);
+
+			return journal;
+		}
+
+		private static AScheduleOnARealJournal AScheduleWithOneOperationMeasuredByDistance()
+		{
+			AScheduleOnARealJournal journal = new AScheduleOnARealJournal(TheVin, "Standard");
+
+			journal.Api.SeedPlanOperation(
+				TheOperationMeasuredByDistance, "DistanceOnly", 0, TenThousandUnits, "UnitA",
+				true, false,
+				Delivery, OdometerAtDelivery, "UnitA");
+
+			return journal;
+		}
+
+		// Cierra, reabre y VUELVE A EVALUAR. Que la evaluacion nueva haya pasado la guarda se
+		// afirma aca: rechazada, ReadDueState devolveria el estado de antes de reabrir y las dos
+		// pruebas de arriba pasarian sin haber evaluado nada despues del replay.
+		private static string TheDueStateAfterReplayingTheJournal(AScheduleOnARealJournal journal)
+		{
+			journal.CloseAndReopenFromTheJournal();
+
+			EvaluationOutcome again = journal.Api.Evaluate(TheEvaluationAfterTheReopen);
+
+			Assert.That(again.WasEvaluated, Is.True,
+				"El instante es posterior al ya evaluado, asi que la guarda tiene que dejarlo "
+				+ "pasar. Si lo rechaza, lo que se esta leyendo despues es el estado viejo.");
+
+			return journal.Api.ReadDueState(TheOperationMeasuredByDistance);
 		}
 
 		// El arbol entero del journal reducido a una cadena: nombre relativo mas hash del

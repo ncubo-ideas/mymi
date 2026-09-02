@@ -12,11 +12,31 @@
 // arrancar se precarga MEMFS ANTES de tocar el motor, y despues de cada comando se
 // baja a la carpeta con fire-and-forget.
 
-const BASE_DE_DATOS = 'app1-facturas';
+// LA BASE ES DE COMPRAS Y NO DE FACTURAS. Decia 'app1-facturas', copiado del negocio del
+// que salio este puente. Hoy no colisiona porque IndexedDB es por ORIGEN y cada app corre
+// en su puerto, pero el dia que dos modulos compartan origen -que es a donde va el Host-
+// se estarian pisando el handle y el modo.
+const BASE_DE_DATOS = 'compras-la-guaria';
 const ALMACEN = 'handles';
 const CLAVE_DE_CARPETA = 'carpeta-del-journal';
+const CLAVE_DE_MODO = 'modo-de-persistencia';
 
-let carpeta = null;   // FileSystemDirectoryHandle
+// LOS MODOS DEL BRIEFING (§6.2). "Carpeta real elegida por el usuario" es hoy desktop
+// Chromium y nada mas, asi que la app NO puede fallar donde no hay picker: degrada a OPFS.
+//
+//   'carpeta'  la que la persona eligio. El caso estrella: es SUYA y el servidor MCP la
+//              lee desde afuera del browser.
+//   'opfs'     almacenamiento privado del origen. Persiste igual, pero lo administra el
+//              browser: no es una carpeta elegida y NADIE la ve desde afuera, tampoco el
+//              MCP. Es el modo degradado, no un reemplazo.
+//   'ninguno'  solo memoria. Se pierde al cerrar.
+//
+// LA PIEZA QUE HACE ESTO BARATO: OPFS devuelve un FileSystemDirectoryHandle, el MISMO tipo
+// que el picker. Por eso recorrer/listar/leer/escribir de abajo funcionan sin cambios y el
+// orden precarga-MEMFS -> actor -> flush queda intacto: lo unico que cambia es a que raiz
+// apunta `carpeta`.
+let carpeta = null;   // FileSystemDirectoryHandle (del picker o de OPFS)
+let modo = 'ninguno';
 
 // ---------------------------------------------------------------- soporte
 
@@ -24,7 +44,49 @@ export function estaSoportado() {
     return typeof window.showDirectoryPicker === 'function';
 }
 
+export function opfsSoportado() {
+    return !!(navigator.storage && typeof navigator.storage.getDirectory === 'function');
+}
+
+// POR QUE no hay almacenamiento, que no es lo mismo que QUE no lo haya.
+//
+// Las dos APIs -el picker y OPFS- exigen CONTEXTO SEGURO: https, o el literal localhost.
+// Fuera de eso el browser ni siquiera las define, asi que detectar por "typeof === function"
+// da el MISMO false para dos causas que se arreglan distinto:
+//
+//   'navegador'  este browser no las tiene. La salida es abrir la app en otro.
+//   'inseguro'   la pagina no es contexto seguro. La salida es entrar por https, y el
+//                browser NO tiene la culpa.
+//
+// Decirle "tu navegador no puede" a alguien que entro por la IP de la maquina es culpar al
+// equipo equivocado y mandarlo a buscar otro browser que va a fallar igual.
+export function motivoSinAlmacenamiento() {
+    if (opfsSoportado() || estaSoportado()) return '';
+    return window.isSecureContext ? 'navegador' : 'inseguro';
+}
+
+export function esContextoSeguro() {
+    return window.isSecureContext === true;
+}
+
+// INSTALADA, la app no es "un navegador" para quien la usa: es una ventana con su nombre y
+// su icono. Decirle "en este navegador" ahi suena a que habla de otra cosa. El
+// almacenamiento es el mismo; cambia como se llama delante de la persona.
+//
+// Dos formas porque iOS no implementa display-mode: navigator.standalone es lo unico que lo
+// reporta ahi.
+export function estaInstalada() {
+    if (navigator.standalone === true) return true;
+    return window.matchMedia('(display-mode: standalone)').matches
+        || window.matchMedia('(display-mode: window-controls-overlay)').matches;
+}
+
+export function modoActual() {
+    return modo;
+}
+
 export function nombreDeLaCarpeta() {
+    if (modo === 'opfs') return 'almacenamiento de este navegador';
     return carpeta ? carpeta.name : '';
 }
 
@@ -59,8 +121,10 @@ export async function elegirCarpeta() {
     if (!estaSoportado()) return { ok: false, motivo: 'este browser no tiene showDirectoryPicker' };
 
     try {
-        carpeta = await window.showDirectoryPicker({ mode: 'readwrite', id: 'app1-journal' });
+        carpeta = await window.showDirectoryPicker({ mode: 'readwrite', id: 'compras-journal' });
+        modo = 'carpeta';
         await enTransaccion('readwrite', almacen => almacen.put(carpeta, CLAVE_DE_CARPETA));
+        await enTransaccion('readwrite', almacen => almacen.put(modo, CLAVE_DE_MODO));
         return { ok: true, nombre: carpeta.name, permiso: 'granted' };
     } catch (e) {
         // AbortError = el usuario cerro el dialogo. No es un error del programa.
@@ -78,6 +142,7 @@ export async function recuperarCarpeta() {
         if (!guardada) return { ok: false, motivo: 'no hay carpeta guardada todavia' };
 
         carpeta = guardada;
+        modo = 'carpeta';
         const permiso = await carpeta.queryPermission({ mode: 'readwrite' });
         return { ok: permiso === 'granted', nombre: carpeta.name, permiso };
     } catch (e) {
@@ -101,6 +166,8 @@ export async function pedirPermiso() {
 // 'sin-carpeta'. El browser puede degradar un 'granted' a 'prompt' al reabrir la app,
 // y ahi las escrituras empiezan a fallar aunque todo lo demas parezca normal.
 export async function permisoActual() {
+    // OPFS no tiene permiso que revalidar: es del origen y no caduca al reabrir.
+    if (modo === 'opfs') return 'granted';
     if (!carpeta) return 'sin-carpeta';
     try {
         return await carpeta.queryPermission({ mode: 'readwrite' });
@@ -113,11 +180,48 @@ export async function permisoActual() {
 // vez y tapar el error original.
 export async function olvidarCarpeta() {
     carpeta = null;
+    modo = 'ninguno';
     try {
+        await enTransaccion('readwrite', almacen => almacen.delete(CLAVE_DE_MODO));
         await enTransaccion('readwrite', almacen => almacen.delete(CLAVE_DE_CARPETA));
         return { ok: true, motivo: '' };
     } catch (e) {
         return { ok: false, motivo: `${e.name}: ${e.message}` };
+    }
+}
+
+// ---------------------------------------------------------------- OPFS
+
+// EL MODO DEGRADADO. No exige gesto de usuario ni permiso: el origen ya es dueno de su
+// propio almacenamiento, asi que se puede activar al arrancar.
+//
+// Lo que se gana: el registro sobrevive al cierre, y eso es lo que hoy NO pasa en un
+// telefono -no hay showDirectoryPicker en movil, asi que la app caia en memoria y se
+// perdia todo-. Justo donde el diseño de Fernanda esta pensado para vivir.
+//
+// Lo que NO se gana, y la pantalla tiene que decirlo: no es una carpeta de la persona, y
+// el servidor MCP no la puede leer porque vive dentro del sandbox del browser. La mitad
+// "tu IA lo consulta" del producto NO funciona en este modo.
+export async function usarOpfs() {
+    if (!opfsSoportado()) return { ok: false, motivo: 'este navegador no tiene almacenamiento persistente' };
+
+    try {
+        carpeta = await navigator.storage.getDirectory();
+        modo = 'opfs';
+        await enTransaccion('readwrite', almacen => almacen.put(modo, CLAVE_DE_MODO));
+        return { ok: true, nombre: nombreDeLaCarpeta(), permiso: 'granted' };
+    } catch (e) {
+        return { ok: false, motivo: `${e.name}: ${e.message}` };
+    }
+}
+
+// Que modo quedo elegido la vez pasada. Se consulta al arrancar para no volver a
+// preguntar: si la persona ya opto por OPFS, se reengancha sola y sin gesto.
+export async function modoRecordado() {
+    try {
+        return (await enTransaccion('readonly', almacen => almacen.get(CLAVE_DE_MODO))) || 'ninguno';
+    } catch (e) {
+        return 'ninguno';
     }
 }
 

@@ -1,0 +1,242 @@
+# Preguntas — Gimnasio
+
+Lo que esta app se compromete a poder contestar. Salió de la entrevista del **2026-08-28**, antes de
+escribir una línea de código.
+
+La persona es **Sonia**: entrena varias veces por semana, sigue un plan que le arma el gimnasio,
+tiene un perfil con sus medidas, y tiene objetivos.
+
+**Este dominio NO es híbrido, y se decidió a propósito.** Todo llega del gimnasio; Sonia no aporta
+nada. La decisión salió de una restricción de producto: *"muchos usuarios no van a estar gastando
+tiempo en alimentar con datos la app"*. Tiene dos consecuencias que se aceptan con los ojos abiertos:
+
+> **El journal vuelve a ser reconstruible.** Borrar la carpeta es volver a bajar los datos, no perder
+> el trabajo de nadie. El respaldo es opcional — al revés que en [Presupuesto](../Presupuesto/Preguntas.md).
+>
+> **Y si el gimnasio no lo manda, no existe.** Eso mató una pregunta entera (ver abajo).
+
+---
+
+# Parte 1 · Lo que el modelo sabe
+
+Capacidad, no preguntas. Declarado esto, las preguntas se componen encima.
+
+La columna de la derecha se llena **al modelar**, no en la entrevista, y es lo que hace corrible el
+[observable 13](../../Guias/observables.md). **No es una clase por renglón** —la asistencia es un
+miembro de la raíz y está bien que lo sea—: lo que no puede quedar es **vacío**.
+
+| | Qué es | Dónde vive |
+|---|---|---|
+| **El plan** | Lo que el gimnasio le indica hacer, con su frecuencia esperada y los pesos prescritos. **Se actualiza**, y esa actualización es un hecho: es la progresión | `Plan`, `EjercicioPrescrito` |
+| **La asistencia** | Los días que Sonia entró. El gimnasio los tiene y los manda | `Trayectoria.Asistio` — una lista, **no merece clase propia** |
+| **La medición** | Una hoja con medidas. **No es un evento de calendario: ocurre al final de un plan** | `Medicion`, `Medida` |
+| **El perfil** | Género, edad, altura. **No es decoración — sin él ningún número se puede interpretar** | `Perfil`, `Genero` |
+| **El objetivo** | Lo que Sonia quiere lograr. Es lo que le da **signo** a cada medida | `Objetivo`, `Meta` |
+| **El rango de referencia** | Cada medida tiene valores **normales, bajos y altos**, y dependen del perfil. Es la misma forma que el analito de [Exámenes](../../Guias/04-requerimientos-que-agregan-valor.md) | `Referencia`, `Lectura` |
+| **La membresía** | Pagos, próximo cobro, atrasos | ❌ **nada** |
+
+> **Ese ❌ es el hallazgo que produjo la corrección del bloque 1 del punto de partida.** La membresía
+> quedó declarada acá y a la vez abajo, en *"lo que el gimnasio ya contesta, y por eso se descarta"*,
+> y el dominio se construyó sin ella. Hoy eso significa que **un período suspendido por falta de pago
+> cuenta como incumplimiento del plan** — es el [hueco 9](HUECOS.md).
+>
+> Se deja el ❌ en vez de taparlo, por la misma razón que la clave `grasa:femenino:42`: un hueco
+> visible vale más que uno bien disimulado.
+
+## Dos juicios sobre el mismo número, y no se reemplazan
+
+Esto salió al traer el precedente de Exámenes, y es lo que más forma le da al modelo:
+
+| | Qué contesta | De dónde sale | Es sobre |
+|---|---|---|---|
+| **La lectura** | ¿está normal, bajo o alto? | **El perfil** — género, edad | el **estado** de hoy |
+| **La tendencia** | ¿se mueve como Sonia quiere? | **El objetivo** | el **movimiento** |
+
+**Ninguno se deduce del otro, y hacen falta los dos.** Un % de grasa puede estar *alto* y **mejorando**;
+otro puede estar *normal* y **yendo hacia donde ella no quiere**. Una app que sólo diga una de las dos
+cosas miente por omisión en la mitad de los casos.
+
+> Es la diferencia con Exámenes, y conviene tenerla presente: **un laboratorio tiene un solo juicio**
+> —el valor contra su rango—, porque un paciente no declara hacia dónde quiere que vaya su colesterol.
+> Acá Sonia sí declara un objetivo, y eso agrega un eje entero.
+
+## Lo que el gimnasio ya contesta, y por eso se descarta
+
+Entregar datos no es contestar preguntas, y esto es lo segundo:
+
+- Cuántas veces fue en la semana o el mes
+- Las métricas del perfil, en serie — *"le da una hoja al iniciar y otra después de un período"*
+- Si está atrasada en pagos, si pagó por adelantado, cuándo es el próximo cobro
+
+## Lo que NADIE tiene
+
+**Qué hizo Sonia adentro del gimnasio.** El gimnasio le da un plan y ve que cruzó la puerta; entre la
+puerta y la salida no registra nada. Con la decisión de cero aporte, **ese hueco se queda vacío** — no
+se llena pidiéndole a ella que lo llene.
+
+---
+
+# Parte 2 · Los juicios que el dominio toma
+
+Ninguno se deduce de los datos: existen porque alguien los decidió.
+
+| # | El juicio | La decisión |
+|---|---|---|
+| 1 | **Hacia dónde es deseable que se mueva una medida** | **Lo da el objetivo, no la medida.** Subir de peso es buena noticia para quien necesita subir y mala para quien necesita bajar. **Sin objetivo declarado, la app no puede opinar sobre ningún número** |
+| 2 | **Cuándo una medición no es creíble** | Depende del **tiempo transcurrido** y de **qué medida es**. Valores por defecto abajo — ⚠️ sin firmar |
+| 3 | **Cada cuánto se espera una medición** | **Al final de cada plan. No es el calendario.** Los planes suelen ser trimestrales pero no es fijo |
+| 4 | **Qué es ruido y qué merece aviso** | Valores por defecto abajo — ⚠️ sin firmar |
+| 5 | **Se vigila cada medida por separado, o el conjunto** | **Por separado.** Ver la nota de abajo: acá es sensato y en presupuesto no lo era |
+| 6 | **Qué hace urgente un hallazgo** | **Magnitud + signo respecto del objetivo.** Y existe la **urgencia positiva**: 2 cm menos de cintura avisa igual que 2 cm más |
+| 7 | **Qué sabe cada medida que ninguna otra sabe** | **Su propio rango de referencia, y qué parte del perfil necesita para leerlo.** Ver la tabla |
+| 8 | **Qué es normal, bajo o alto** | **Lo decide la medida contra el perfil**, igual que un analito de laboratorio. Es un juicio **distinto** del 1, y los dos hacen falta |
+
+### El 1 tiene una excepción, y rompe la regla
+
+**La masa muscular es la única donde la dirección NO depende del objetivo**: subir es bueno en los dos
+casos. El modelo tiene que dejar espacio para las dos formas — no alcanza con colgar la dirección del
+objetivo y listo.
+
+### Por qué el 5 acá es distinto de Presupuesto
+
+En presupuesto se decidió vigilar **el total**, porque con doce gastos vigilándose **todos los meses**
+algo dispara siempre y nadie mira la app a los tres meses. Acá son pocas medidas **cada trimestre**.
+
+> **El juicio de alcance no es universal: depende del ritmo.** Vigilar cada cosa por separado es
+> sensato cuando el ritmo es lento. Eso salió de esta entrevista y no estaba en ninguna guía.
+
+### El 7, desarrollado
+
+Un número solo no significa nada. Cada medida sabe **qué necesita para poder leerse**:
+
+| Medida | Necesita del perfil | Lo propio |
+|---|---|---|
+| **Peso** | la altura | Sola no dice nada: **su rango sólo existe combinada con la altura** |
+| **% de grasa** | género y edad | Su rango saludable **se mueve con la edad**, y es distinto entre hombres y mujeres |
+| **Cintura** | género | Es la única que dice algo de salud **sin compararse consigo misma**: tiene un umbral de riesgo propio |
+| **Masa muscular** | — | La única cuya **dirección** no depende del objetivo |
+
+Y esto es lo que decide qué merece ser una clase: **cada medida arma su propia lectura**, porque cada
+una necesita algo distinto del perfil y tiene un rango que ninguna otra tiene. Una sola clase
+`Medida` con un `tipo` adentro no puede hacer eso sin convertirse en un `switch` — es la porosidad
+que el capítulo 4 manda evitar.
+
+> **Y con el límite de Exámenes, que ya está corregido en el capítulo 0 §8:** la medida **nombra** su
+> lectura —*"alto"*, *"normal"*— porque es lo único que puede decirlo mejor que nadie. Lo que **no**
+> inventa es el consejo. Y el número viaja siempre al lado de la palabra.
+
+---
+
+## ⚠️ Los valores del 2 y del 4 NO están firmados
+
+**Quién los da: un experto IA.** No hay una persona del gimnasio que los haya validado.
+
+Por eso el modelo los **recibe por parámetro y no los lleva como constantes**, y por eso esta sección
+está marcada. La línea que hay que sostener:
+
+> **La IA da los valores; el dominio se queda con la forma y hace la comparación.** Si la IA hiciera
+> la comparación, el juicio no quedaría en el journal y la app contestaría distinto mañana sobre los
+> mismos datos. Con los valores por parámetro, la app es **reproducible** y la IA es **reemplazable**.
+
+**Juicio 2 — no es creíble si:**
+
+| Medida | Umbral |
+|---|---|
+| Peso | cambió más de **1 % del peso corporal por semana** |
+| % de grasa | saltó más de **5 puntos** entre dos mediciones de un trimestre |
+| Circunferencias | cambió más de **1 cm** con menos de **2 semanas** de diferencia |
+| Masa muscular | igual que % de grasa — sale del mismo aparato |
+
+**Juicio 4 — ruido y aviso:**
+
+| Medida | Ruido | Merece aviso |
+|---|---|---|
+| Cintura | < 1 cm | **≥ 2 cm** |
+| Peso | ± 1 kg en un trimestre | sostenido en la misma dirección dos mediciones seguidas |
+| % de grasa | < 1 punto | **≥ 2 puntos** en un plan |
+| Masa muscular | < 0,5 kg | ≥ 1 kg |
+
+**La regla que los une, y ésa sí se sostiene sin firma:** por debajo del error del instrumento no hay
+noticia. Un aviso que dispara dentro del margen de error entrena a la persona a ignorar los avisos.
+
+---
+
+# Parte 3 · Lo que la UI muestra
+
+Se decide **al final**, y va a mostrar menos que lo que el modelo sabe. Pendiente.
+
+Un requisito ya conocido: **los pagos y el próximo cobro se muestran pero no se modelan.** El gimnasio
+los contesta completos; están porque son cómodos de tener a mano, no porque el dominio los necesite.
+
+---
+
+# Las preguntas que originaron todo esto
+
+1. *"¿Cómo vengo desde que entré al gimnasio hasta hoy?"* — el progreso a lo largo de la serie
+2. *"¿Cuánto subió lo que el gimnasio me pide levantar?"* — la progresión del plan
+3. *"¿Cuántos días incumplí el plan?"* — **la ausencia**
+4. *"¿Qué me falta para cumplir mi objetivo?"* — **la ausencia**, y la que obliga a que el objetivo exista
+5. *"¿Terminó mi plan y nadie me midió?"* — **la ausencia que salió del juicio 3.** Ninguna pantalla la
+   puede mostrar, porque una pantalla renderiza lo que tiene
+
+### Las dos que no sobrevivieron, y por qué
+
+**«¿Aumenté o disminuí el peso que levanto?»** — **muerta.** El gimnasio no sabe con cuánto peso
+entrenó, y con cero aporte nadie lo va a registrar. Se reformuló a la **2**, que es la progresión de lo
+**prescrito** — un hecho observado y no un asumido. No es lo mismo, y el archivo lo dice.
+
+**«¿Qué combinación de ejercicios me conviene para mis metas?»** — **estaba prematura**, y al mirarla
+de cerca resultó ser la ambición que se rechaza. Ver abajo.
+
+---
+
+# Lo que se rechazó
+
+⚠️ **Ningún dato.** Igual que en presupuesto: hay dominios donde este filtro no pesa. Lo que se
+descarta acá es **una ambición**, que es más difícil de ver y más cara de dejar pasar:
+
+| Se descarta | Por qué |
+|---|---|
+| **Ser un entrenador** | La app **no arma planes, no recomienda ejercicios y no dice qué debería hacer Sonia**. Puede decir *"llevás dos planes sin que te midan"* o *"la cintura bajó 2 cm"* — hechos. El plan lo hace el gimnasio, y recomendar sobre el cuerpo de una persona no es lo que este dominio nombra |
+
+Sin esto escrito, en tres meses alguien pide que sugiera rutinas.
+
+---
+
+# Candidatos a cruce
+
+| El gimnasio pone | El otro módulo pone | De dónde vendría |
+|---|---|---|
+| La cuota de la membresía | qué lugar ocupa en el presupuesto del mes | Presupuesto |
+| El % de grasa, la cintura | los valores de laboratorio del mismo trimestre | Exámenes |
+| Los días que entrenó | qué comió esas semanas | Compras |
+
+El cruce con **Exámenes** es el más fuerte: el perfil corporal y el perfil bioquímico se leen juntos y
+hoy viven en dos papeles que nadie junta.
+
+---
+
+# Verificación
+
+| Se dijo | Dónde se comprueba |
+|---|---|
+| La dirección la da el objetivo | Ninguna medida tiene una dirección fija propia — **salvo la masa muscular**, que sí, y por eso hay dos formas |
+| **La lectura y la tendencia son dos** | Existen dos operaciones distintas y **ninguna se deduce de la otra**. Hay una prueba con un valor *alto* que **mejora**, y otra con uno *normal* que **empeora** |
+| Cada medida arma su propia lectura | No hay una clase `Medida` con un `switch` por tipo adentro. Cada una es su propia clase, con su rango |
+| El perfil es entrada obligatoria | Ninguna lectura se puede pedir sin género, edad y altura. **No compila** una interpretación sin perfil |
+| El ritmo es del plan | La ausencia se calcula contra **el fin de un plan**, no contra una cantidad de días |
+| Los umbrales entran por parámetro | Ninguna constante numérica de las tablas del 2 y el 4 vive en el dominio |
+| La urgencia tiene signo | El tipo distingue urgencia **positiva** de negativa, no sólo severidad |
+| El dominio no lee el reloj | Ninguna clase referencia `DateTime.Now`. Las fechas entran por parámetro |
+| Hay una pregunta que sólo contesta la IA | Al menos una tool que ninguna vista renderiza. Candidata: la **5** |
+| El journal es reconstruible | Nada del modelo depende de un hecho que sólo Sonia pudo aportar |
+
+---
+
+# Pendientes, con nombre
+
+| # | Qué falta | Quién puede saberlo |
+|---|---|---|
+| 1 | **Firmar los umbrales del juicio 2 y el 4.** Hoy los da un experto IA y nadie del gimnasio los validó | Sin asignar. **Es un dominio de salud: conviene que tenga nombre antes de producción** |
+| 2 | Si un período **suspendido por atraso de pago** cuenta como incumplimiento | Sin asignar. Si cuenta, el pago entra al dominio y deja de ser sólo pantalla |
+| 3 | Qué pasa cuando Sonia tiene **más de un objetivo**, y se contradicen entre sí | Sin asignar. El juicio 1 depende de que haya **un** objetivo que dé signo |

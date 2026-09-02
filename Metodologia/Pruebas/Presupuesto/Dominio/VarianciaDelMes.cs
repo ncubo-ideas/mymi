@@ -15,7 +15,7 @@ namespace Presupuesto.Dominio
 	// gasto suena mas fino y es peor.
 	//
 	// El umbral es 10%, y es del dominio: entra al construir, no vive quemado aca.
-	public sealed class VarianciaDelMes
+	internal sealed class VarianciaDelMes
 	{
 		private readonly List<Responsable> responsables = new List<Responsable>();
 
@@ -29,30 +29,30 @@ namespace Presupuesto.Dominio
 			Umbral = umbral;
 		}
 
-		public int Ano { get; }
-		public int Mes { get; }
-		public decimal TotalDelMes { get; }
-		public decimal TotalAnterior { get; }
-		public decimal Umbral { get; }
+		internal int Ano { get; }
+		internal int Mes { get; }
+		internal decimal TotalDelMes { get; }
+		internal decimal TotalAnterior { get; }
+		internal decimal Umbral { get; }
 
-		public bool HayConQueComparar => TotalAnterior > 0;
+		internal bool HayConQueComparar => TotalAnterior > 0;
 
 		// Con signo: positivo si se gasto mas.
-		public decimal Proporcion =>
+		internal decimal Proporcion =>
 			HayConQueComparar ? (TotalDelMes - TotalAnterior) / TotalAnterior : 0m;
 
-		public bool ExigeAtencion => HayConQueComparar && Math.Abs(Proporcion) > Umbral;
+		internal bool ExigeAtencion => HayConQueComparar && Math.Abs(Proporcion) > Umbral;
 
 		// Los gastos que explican el movimiento. Solo se llenan cuando ExigeAtencion: si el
 		// total no se movio, no hay a quien buscar.
-		public IReadOnlyList<Responsable> Responsables => responsables;
+		internal IReadOnlyList<Responsable> Responsables => responsables;
 
 		internal void Culpa(GastoRecurrente gasto, decimal antes, decimal ahora)
 		{
 			responsables.Add(new Responsable(gasto, antes, ahora));
 		}
 
-		public string Lectura
+		internal string Lectura
 		{
 			get
 			{
@@ -76,7 +76,7 @@ namespace Presupuesto.Dominio
 		// obvia y el archivo no la tiene. Aca se listan TODOS los que cambiaron y se ordenan
 		// por monto absoluto, que es la decision menos inventiva: no elige por la persona,
 		// solo pone primero lo que mas pesa.
-		public sealed class Responsable
+		internal sealed class Responsable
 		{
 			internal Responsable(GastoRecurrente gasto, decimal antes, decimal ahora)
 			{
@@ -85,18 +85,21 @@ namespace Presupuesto.Dominio
 				Ahora = ahora;
 			}
 
-			public GastoRecurrente Gasto { get; }
-			public decimal Antes { get; }
-			public decimal Ahora { get; }
-			public decimal Cambio => Ahora - Antes;
-			public decimal Proporcion => Antes > 0 ? Cambio / Antes : 0m;
+			internal GastoRecurrente Gasto { get; }
+			internal decimal Antes { get; }
+			internal decimal Ahora { get; }
+
+			// El print proyecta un solo nivel: `r.Gasto.Nombre` no cruza.
+			internal string NombreDelGasto => Gasto.Nombre;
+			internal decimal Cambio => Ahora - Antes;
+			internal decimal Proporcion => Antes > 0 ? Cambio / Antes : 0m;
 
 			// El servicio basico es el unico que sabe si su propio cambio es el clima. Si el
 			// gasto no tiene esa nocion, no se le inventa una.
-			public bool EsVariacionNormalDeSuClase =>
+			internal bool EsVariacionNormalDeSuClase =>
 				Gasto is ServicioBasico servicio && servicio.EsVariacionNormal(Proporcion);
 
-			public string Lectura =>
+			internal string Lectura =>
 				$"{Gasto.Nombre}: de {Antes} a {Ahora} ({Proporcion:P1})"
 				+ (EsVariacionNormalDeSuClase ? ", que es su variacion estacional normal." : ".");
 		}

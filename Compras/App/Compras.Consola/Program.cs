@@ -7,6 +7,7 @@ using System.Threading.Tasks;
 using Compras.App;
 using Compras.App.Eventos;
 using Compras.App.Vistas;
+using Compras.Dominio;
 using Puppeteer;
 using Puppets.Portador;
 
@@ -32,6 +33,9 @@ namespace Compras.Consola
 					case "canasta":   return CanastaDe(args);
 					case "comparar":  return Comparar(args);
 					case "garantia":  return GarantiaDe(args);
+					case "buscar":    return Buscar(args);
+					case "quiebre":   return Quiebre(args);
+					case "lista":     return Lista(args);
 					// Los dos que miran el hueco: lo que la pantalla no puede renderizar.
 					case "pendientes": return Pendientes(args);
 					case "porvencer":  return PorVencer(args);
@@ -155,14 +159,23 @@ namespace Compras.Consola
 			Console.WriteLine();
 			Console.WriteLine("-- lo que NO esta (el hueco) --");
 			foreach (AbastecimientoEnEspera p in api.AbastecimientosPendientes(DateTime.Now))
-				Console.WriteLine($"  {p.ParaSonia}  [{p.Severidad}]");
+				Console.WriteLine($"  {p.ParaElAsistente}  [{p.Severidad}]");
 
 			if (!conVeredicto) return;
 
-			bool totalOk = api.TotalDeCompras().ToString(CultureInfo.InvariantCulture) == Muestras.TotalEsperado;
+			// LOS TRES CRITERIOS, UNO POR LINEA. Antes esto era un solo booleano, y un "False"
+			// sin decir cual de los tres fallo obliga a adivinar: la primera vez que fallo
+			// costo tres corridas descubrir que era el total. Un veredicto que no dice donde
+			// no sirve de veredicto.
+			decimal total = api.TotalDeCompras();
+			bool totalOk = total == Muestras.TotalEsperado;
 			bool comparacionOk = api.Comparacion(2025, 8, 2026, 8).HayAlgoQueLoExplique;
 			bool garantiaOk = api.Garantia(Muestras.ProductoConGarantia, DateTime.Now).Encontrada;
+
 			Console.WriteLine();
+			Console.WriteLine($"  total        : {(totalOk ? "ok" : $"MAL (esperado [{Muestras.TotalEsperado}], obtenido [{total}])")}");
+			Console.WriteLine($"  comparacion  : {(comparacionOk ? "ok" : "MAL (no hay pasillo que explique la diferencia)")}");
+			Console.WriteLine($"  garantia     : {(garantiaOk ? "ok" : $"MAL (no se encontro '{Muestras.ProductoConGarantia}')")}");
 			Console.WriteLine($"CRITERIOS CORRECTOS         : {totalOk && comparacionOk && garantiaOk}");
 		}
 
@@ -171,13 +184,13 @@ namespace Compras.Consola
 		private static void ImprimirPortada(ComprasAPI api, DateTime corte)
 		{
 			FirmaDeLaSemana firma = api.Firma();
-			Console.WriteLine($"  {firma.ParaSonia}");
+			Console.WriteLine($"  {firma.ParaElAsistente}");
 			foreach (ProductoQueVuelve p in firma.Habituales)
 				Console.WriteLine($"    {p.Descripcion,-28} en {p.ComprasEnQueAparece} de {p.DeCuantas}"
 					+ $"{(p.EstaEnTodas ? "  (en todas)" : "")}");
 
 			CambioDeLaCanasta cambio = api.Cambio(corte);
-			Console.WriteLine($"  {cambio.ParaSonia}");
+			Console.WriteLine($"  {cambio.ParaElAsistente}");
 			foreach (ProductoQueEntroVista p in cambio.Entraron)
 				Console.WriteLine($"    entro  {p.Descripcion,-28} desde {p.Desde}");
 			foreach (ProductoQueVuelve p in cambio.Salieron)
@@ -206,7 +219,7 @@ namespace Compras.Consola
 			// se decide nada: se imprime.
 			if (!c.HayComparacion)
 			{
-				Console.WriteLine($"  {c.ParaSonia}");
+				Console.WriteLine($"  {c.ParaElAsistente}");
 				return;
 			}
 
@@ -219,7 +232,7 @@ namespace Compras.Consola
 					Console.WriteLine($"    {d.Titulo}: {Formato(d.MontoAntes)} -> {Formato(d.MontoDespues)}"
 						+ $"{(d.EsNuevo ? "  (entro este mes)" : "")}{(d.Desaparecio ? "  (dejo de aparecer)" : "")}");
 
-			Console.WriteLine($"  {c.ParaSonia}");
+			Console.WriteLine($"  {c.ParaElAsistente}");
 		}
 
 		private static void ImprimirGarantia(ComprasAPI api, string texto, DateTime fechaDeConsulta)
@@ -227,7 +240,7 @@ namespace Compras.Consola
 			GarantiaDeProducto g = api.Garantia(texto, fechaDeConsulta);
 
 			// La linea sale del dominio, incluido el caso "no encontrada".
-			Console.WriteLine($"  {g.ParaSonia}");
+			Console.WriteLine($"  {g.ParaElAsistente}");
 			if (!g.Encontrada) return;
 
 			Console.WriteLine($"  {g.Descripcion} ({g.Sku})");
@@ -326,6 +339,95 @@ namespace Compras.Consola
 			return 0;
 		}
 
+		// EN CUALES COMPRAS APARECIO ESTO. Existe sobre todo para probar la CONSULTA, que es
+		// donde vive la trampa: un print plano no puede preguntar Existe() antes de imprimir
+		// un campo, y un lector guardado no le blanquea la columna — le mata la consulta
+		// entera. Buscar algo que no existe tiene que dar cabecera en cero, no un error.
+		private static int Buscar(string[] args)
+		{
+			string carpeta = Carpeta(args, 1);
+			string termino = Opcional(args, 2, "leche");
+
+			ComprasApp app = Abrir(carpeta);
+			var api = new ComprasAPI(app);
+
+			ComprasHalladas halladas = api.Halladas(termino);
+			Console.WriteLine(halladas.ParaElAsistente);
+			if (halladas.Productos.Count > 0)
+				Console.WriteLine($"  coinciden: {string.Join(", ", halladas.Productos)}");
+			Console.WriteLine();
+			foreach (CompraHallada compra in halladas.Compras)
+				Console.WriteLine($"  {compra.Fecha}  {compra.Numero,-10} "
+					+ $"{compra.Unidades,3} u  {Plata.Colones(compra.Gasto),12}"
+					+ $"   (de {compra.LineasDeLaCompra} lineas, {Plata.Colones(compra.TotalDeLaCompra)})");
+
+			Console.WriteLine();
+			Console.WriteLine("-- crudo (print, formatter JSON) --");
+			Console.WriteLine(api.ComprasCon(termino));
+
+			app.Actor.GracefulExit();
+			return 0;
+		}
+
+		// EL MES DEL QUIEBRE, encontrado por el dominio. Existe para poder CONTRASTARLO con
+		// el corte que la caratula inventaba: imprime los dos, el que el dominio elige y el
+		// 1 de enero que se usaba antes.
+		private static int Quiebre(string[] args)
+		{
+			string carpeta = Carpeta(args, 1);
+
+			ComprasApp app = Abrir(carpeta);
+			var api = new ComprasAPI(app);
+
+			CambioDeLaCanasta encontrado = api.CambioDelQuiebre();
+			Console.WriteLine("EL DOMINIO ENCUENTRA");
+			Console.WriteLine($"  corte      : {(encontrado.Corte.Length > 0 ? encontrado.Corte : "(ninguno)")}" );
+			Console.WriteLine($"  hay cambio : {encontrado.HayCambio}");
+			Console.WriteLine($"  {encontrado.ParaElAsistente}");
+
+			DateTime enero = new DateTime(DateTime.Now.Year, 1, 1);
+			CambioDeLaCanasta porEnero = api.Cambio(enero);
+			Console.WriteLine();
+			Console.WriteLine($"CORTANDO EL {enero:yyyy-MM-dd}, como hacia la caratula");
+			Console.WriteLine($"  hay cambio : {porEnero.HayCambio}");
+			Console.WriteLine($"  {porEnero.ParaElAsistente}");
+
+			Console.WriteLine();
+			Console.WriteLine("LOS RITMOS DEL MISMO QUIEBRE");
+			foreach (RitmoQueCambio ritmo in api.RitmosDelQuiebre())
+				Console.WriteLine($"  {ritmo.Descripcion,-32} {ritmo.Antes} -> {ritmo.Ahora}");
+
+			app.Actor.GracefulExit();
+			return 0;
+		}
+
+		// LO QUE VA A FALTAR EN LA PROXIMA COMPRA. Existe sobre todo para probar la CONSULTA
+		// contra datos de verdad: las comprobaciones del dominio no la tocan, y el print
+		// plano es donde se rompen estas cosas.
+		private static int Lista(string[] args)
+		{
+			string carpeta = Carpeta(args, 1);
+			DateTime hoy = FechaOpcional(args, 2, DateTime.Now);
+
+			ComprasApp app = Abrir(carpeta);
+			var api = new ComprasAPI(app);
+
+			ListaDeLaProximaCompra lista = api.Lista(hoy);
+			Console.WriteLine($"al {hoy:yyyy-MM-dd}: {lista.ParaElAsistente}");
+			Console.WriteLine();
+			foreach (ProductoPorCaer p in lista.Productos)
+				Console.WriteLine($"  {(p.Toca ? "TOCA" : "    ")}  {p.Descripcion,-32} "
+					+ $"{p.CadenciaCompacta,-16} hace {p.DiasDesdeLaUltima,3}d  "
+					+ $"({(p.DiasDeMas >= 0 ? "+" : "")}{p.DiasDeMas}d)");
+
+			Console.WriteLine();
+			Console.WriteLine("-- crudo (print, formatter JSON) --");
+			Console.WriteLine(api.LoQueVaAFaltar(hoy));
+
+			app.Actor.GracefulExit();
+			return 0;
+		}
+
 		// ---------------------------------------------------- lo que NO esta (el hueco)
 
 		private static int Pendientes(string[] args)
@@ -343,7 +445,7 @@ namespace Compras.Consola
 			{
 				Console.WriteLine($"  {p.Categoria,-18} {p.DiasDesdeLaUltima,4} dias (se repone cada {p.DiasEsperados})"
 					+ $"  [{p.Severidad}]");
-				Console.WriteLine($"  {"",-18} {p.ParaSonia}");
+				Console.WriteLine($"  {"",-18} {p.ParaElAsistente}");
 			}
 			if (pendientes.Count == 0) Console.WriteLine("  (al dia con todo lo que se repone)");
 
@@ -365,7 +467,7 @@ namespace Compras.Consola
 			foreach (GarantiaDeProducto g in porVencer)
 			{
 				Console.WriteLine($"  {g.Descripcion,-22} quedan {g.DiasParaVencer,4} dias  [{g.Severidad}]");
-				Console.WriteLine($"  {"",-22} {g.ParaSonia}");
+				Console.WriteLine($"  {"",-22} {g.ParaElAsistente}");
 				if (g.QueHacer.Length > 0) Console.WriteLine($"  {"",-22} -> {g.QueHacer}");
 			}
 			if (porVencer.Count == 0)
@@ -469,6 +571,9 @@ namespace Compras.Consola
 			Console.WriteLine("  canasta   [carpeta] [anio] [mes]                la foto de un mes, pasillo por pasillo");
 			Console.WriteLine("  comparar  [carpeta] [a1] [m1] [a2] [m2]         como cambio la canasta entre dos meses");
 			Console.WriteLine("  garantia  [carpeta] [texto] [yyyy-MM-dd]        la garantia de un producto, con su respaldo");
+			Console.WriteLine("  buscar    [carpeta] [texto]                     en cuales compras aparecio un producto o un pasillo");
+			Console.WriteLine("  quiebre   [carpeta]                             el mes del quiebre que ENCUENTRA el dominio, contra el corte viejo");
+			Console.WriteLine("  lista     [carpeta] [yyyy-MM-dd]                lo que va a faltar en la proxima compra, y por que");
 			Console.WriteLine("  pendientes [carpeta] [yyyy-MM-dd]              LO QUE NO ESTA: que dejo de entrar a la canasta");
 			Console.WriteLine("  porvencer  [carpeta] [yyyy-MM-dd]              las garantias cuya ventana se esta cerrando");
 			Console.WriteLine("  refrescar [carpeta] [baseUrl] [recurso] [id]    trae eventos del supermercado y los aplica de a uno");

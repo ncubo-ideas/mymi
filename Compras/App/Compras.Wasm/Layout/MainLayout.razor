@@ -1,4 +1,6 @@
 @inherits LayoutComponentBase
+@inject EstadoDeLaApp estado
+@inject ConfiguracionDeLaInstitucion institucion
 
 @* Sin sidebar, sin navegacion, sin barra "About" del template. La UI de la app son cuatro
    cosas y nada mas: el boton de refresh, la portada, las lecturas y el back para volver a
@@ -48,29 +50,203 @@
             <div class="marca-bajada">Su barrio, su despensa, desde 1992</div>
         </div>
         <span class="sello-demo">demo</span>
+
+        @* LAS DOS PESTAÑAS, y son UNA sola UI que se comporta distinto por resolucion — que
+           es lo que pidio Alvaro: "lo ideal es mantener una sola ui que mantenga a mobile y
+           desktop, quizas dependiendo de la resolucion se comporte distinto, en vez de dos
+           uis separadas".
+
+           VIVEN DENTRO DE LA BARRA DE MARCA, y antes tenian una banda propia debajo. La
+           banda se fue por tres razones que eran la misma: de sus 885 px, 641 estaban
+           VACIOS -el 72 %- porque su unico trabajo era sostener dos elementos chicos;
+           sumaba una segunda franja oscura hasta los 104 px de cromo antes de la primera
+           linea de contenido; y obligaba a la pestaña activa a empalmar con el fondo de la
+           pagina, que es lo que no cerraba (ver el CSS).
+
+           EN TELEFONO SIGUEN AL PIE Y FIJAS, que es donde llega el pulgar. `position:
+           fixed` las saca del flujo, asi que estar adentro de la barra no las ata a ella:
+           el markup es uno solo y el CSS decide donde se paran. *@
+        <nav class="pestanas">
+            <div class="pestanas-dentro">
+                <NavLink class="pestana" href="" Match="NavLinkMatch.All">
+                    @* LOS ICONOS SE DIBUJAN, no se escriben. Antes eran dos glifos -☉ y ☰-
+                       y la fuente recortada NO LOS TRAE: caian en otra familia, con otro
+                       peso y otras metricas, justo al lado de la etiqueta que si carga. Es
+                       el mismo problema que el cuadro del "sin foto", y se arregla igual.
+
+                       Y el ☰ ademas mentia: un hamburguesa significa "menu", no "compras".
+                       Este es un RECIBO, que es a donde lleva la pestaña y lo que la
+                       canasta del hero trae adentro. *@
+                    <svg class="pestana-icono" viewBox="0 0 20 20" fill="none"
+                         stroke="currentColor" stroke-width="1.7" stroke-linecap="round"
+                         stroke-linejoin="round" aria-hidden="true">
+                        <path d="M2.9 9.2 10 3.4l7.1 5.8v7.4H2.9z"/>
+                        <path d="M7.8 16.6v-4.7h4.4v4.7"/>
+                    </svg>
+                    Inicio
+                </NavLink>
+                <NavLink class="pestana" href="recibos">
+                    <svg class="pestana-icono" viewBox="0 0 20 20" fill="none"
+                         stroke="currentColor" stroke-width="1.7" stroke-linecap="round"
+                         stroke-linejoin="round" aria-hidden="true">
+                        <path d="M5.2 3.2h9.6v13.6l-2.4-1.5-2.4 1.5-2.4-1.5-2.4 1.5z"/>
+                        <path d="M7.9 7.1h4.2M7.9 10.3h4.2"/>
+                    </svg>
+                    Compras
+                </NavLink>
+            </div>
+        </nav>
     </div>
 </header>
 
-@* LAS DOS PESTAÑAS, y son UNA sola UI que se comporta distinto por resolucion — que es
-   lo que pidio Alvaro: "lo ideal es mantener una sola ui que mantenga a mobile y desktop,
-   quizas dependiendo de la resolucion se comporte distinto, en vez de dos uis separadas".
+@* EL CUERPO NO SE PINTA HASTA SABER SI LA APP ABRE, y esa espera es el arreglo de un bug
+   real. Abrir la app es asincrono; las paginas leen `estado.EstaArriba` cuando se
+   inicializan, que es ANTES de que el await de abajo termine. Asi que se renderizaban con
+   la app cerrada, mostraban "la app todavia no abrio" y nadie les volvia a avisar: quedaban
+   con ese cartel para siempre aunque la app hubiera abierto un instante despues.
 
-   Arriba de 768 px van en linea, debajo de la barra de marca, como pestañas de escritorio.
-   Debajo, se van al PIE y quedan fijas, que es donde el pulgar alcanza. El markup es el
-   mismo; lo que cambia es el CSS. *@
-<nav class="pestanas">
-    <div class="pestanas-dentro">
-        <NavLink class="pestana" href="" Match="NavLinkMatch.All">
-            <span class="pestana-icono" aria-hidden="true">&#9737;</span>
-            Inicio
-        </NavLink>
-        <NavLink class="pestana" href="recibos">
-            <span class="pestana-icono" aria-hidden="true">&#9776;</span>
-            Compras
-        </NavLink>
-    </div>
-</nav>
-
+   La alternativa era un evento en EstadoDeLaApp al que se suscriban las cinco pantallas.
+   Esto es una linea y no deja a nadie afuera por olvido. *@
 <main class="container py-4" style="max-width:56rem">
-    @Body
+    @if (loIntento)
+    {
+        @Body
+    }
+    else
+    {
+        <p class="text-body-secondary">Abriendo tus compras…</p>
+    }
 </main>
+
+@* COMO SE LLEGA AL SUPER. Es la observacion 5 del equipo: "link al sitio, link a redes
+   sociales como WhatsApp al final".
+
+   VA EN EL LAYOUT Y NO EN UNA PANTALLA: el pie es de toda la app, y repetirlo en cinco
+   paginas es cinco lugares donde un telefono queda viejo.
+
+   REL="noopener noreferrer" Y NO SOLO noopener, y en esta app no es rutina. Sin
+   noreferrer, el navegador le manda al super la URL desde la que se salio — o sea
+   /app/producto/Leche%20semidescremada%201L, que le dice QUE ESTABA MIRANDO la persona
+   cuando decidio escribirle. Todo el modulo existe para que el super no se entere de eso;
+   dejarlo salir por la cabecera de un enlace seria regalarlo en la puerta. *@
+@if (institucion.HayAlguno)
+{
+    <footer class="pie">
+        @* EL PIE ESPEJA LA BARRA: el mismo bloque de marca -flor, nombre, bajada- con el que
+           la app abre. Es lo que hace que la pagina CIERRE en vez de terminarse, y los
+           enlaces dejan de ser texto suelto: son botones con su icono, que es como una
+           persona espera tocar "el sitio" y "el WhatsApp". *@
+        <div class="pie-dentro">
+            <span class="pie-marca">
+                <svg class="pie-flor" viewBox="0 0 40 40" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+                    <g stroke="var(--barra-fondo)" stroke-width="0.9" paint-order="stroke fill">
+                        <ellipse fill="var(--gu-morado-claro)" cx="20" cy="9.6" rx="2.9" ry="6.4"/>
+                        <ellipse fill="var(--gu-morado-claro)" cx="11.8" cy="27.6" rx="6.2" ry="2.4"
+                                 transform="rotate(40 11.8 27.6)"/>
+                        <ellipse fill="var(--gu-morado-claro)" cx="28.2" cy="27.6" rx="6.2" ry="2.4"
+                                 transform="rotate(-40 28.2 27.6)"/>
+                        <ellipse fill="var(--gu-morado)" cx="11.2" cy="15.6" rx="6.4" ry="3.5"
+                                 transform="rotate(-26 11.2 15.6)"/>
+                        <ellipse fill="var(--gu-morado)" cx="28.8" cy="15.6" rx="6.4" ry="3.5"
+                                 transform="rotate(26 28.8 15.6)"/>
+                        <path fill="var(--gu-morado-hondo)" d="M20 19.6c4 0 6.4 2.8 6.4 6 0 2.6-1.8 4.4-4 4.8-.9-.9-1.5-1.4
+                                 -2.4-1.4s-1.5.5-2.4 1.4c-2.2-.4-4-2.2-4-4.8 0-3.2 2.4-6 6.4-6z"/>
+                    </g>
+                    <circle fill="var(--gu-corazon)" cx="20" cy="19.2" r="2"/>
+                </svg>
+                <span class="pie-textos">
+                    <span class="pie-quien">Supermercado La Guaria</span>
+                    <span class="pie-bajada">Su barrio, su despensa, desde 1992</span>
+                </span>
+            </span>
+
+            <span class="pie-enlaces">
+                @if (institucion.HaySitio)
+                {
+                    <a class="pie-boton" href="@institucion.Sitio" target="_blank" rel="noopener noreferrer">
+                        <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5"
+                             stroke-linecap="round" aria-hidden="true">
+                            <circle cx="10" cy="10" r="6.8"/>
+                            <path d="M3.2 10h13.6M10 3.2c-4.4 4.4-4.4 9.2 0 13.6M10 3.2c4.4 4.4 4.4 9.2 0 13.6"/>
+                        </svg>
+                        Nuestro sitio
+                    </a>
+                }
+                @if (institucion.HayWhatsApp)
+                {
+                    <a class="pie-boton pie-boton--whatsapp" href="@institucion.EnlaceDeWhatsApp"
+                       target="_blank" rel="noopener noreferrer">
+                        <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5"
+                             stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                            <path d="M10 3.4a6.6 6.6 0 0 0-5.7 9.9L3.4 16.6l3.4-.9A6.6 6.6 0 1 0 10 3.4z"/>
+                            <path d="M7.6 7.3c.2-.5.5-.5.8-.5l.6 1.2c.1.2 0 .4-.1.5l-.4.5c.3.7 1 1.4 1.7 1.7l.5-.4c.1-.2.3-.2.5-.1l1.2.6c0 .3 0 .6-.5.8-1.9.7-4.9-2.3-4.3-4.3z"/>
+                        </svg>
+                        WhatsApp
+                        @if (institucion.TelefonoParaMostrar.Length > 0)
+                        {
+                            <span class="pie-numero">@institucion.TelefonoParaMostrar</span>
+                        }
+                    </a>
+                }
+            </span>
+        </div>
+
+        @* LO QUE EL PIE TIENE QUE DECIR ADEMAS DE LOS ENLACES. Son dos enlaces que SALEN de
+           la app, y esta app promete que los datos no salen: conviene que la frontera este
+           escrita justo donde se cruza. *@
+        <div class="pie-dentro pie-nota">
+            Tus compras viven en este aparato. Estos enlaces te llevan afuera; no llevan
+            nada tuyo.
+        </div>
+    </footer>
+}
+
+@code {
+    // LA APP SE ABRE SOLA DESDE CUALQUIER RUTA, y por eso esto vive en el layout y no en la
+    // portada.
+    //
+    // ANTES VIVIA EN MisCompras.OnInitializedAsync, asi que solo se abria entrando por la
+    // raiz. Con el servidor estatico de desarrollo eso no se notaba porque una ruta profunda
+    // daba 404 y nunca se llegaba a la pantalla; servida por nginx —que SI tiene el fallback
+    // de SPA— la ruta resuelve, Blazor rutea bien, y la pagina aparece diciendo "la app
+    // todavia no abrio, volve a la lista y abrila ahi".
+    //
+    // O sea que un bookmark a un recibo, un enlace compartido o un simple F5 sobre el
+    // detalle caian en un callejon sin salida, teniendo el modo de guardado recordado y todo
+    // lo necesario para abrirse. Lo encontro la primera corrida con Docker.
+    //
+    // SOLO REENGANCHA LO QUE NO PIDE GESTO: el almacenamiento del navegador se reengancha
+    // solo, y la carpeta solo si el permiso sigue otorgado. Cuando el browser lo degrado a
+    // 'prompt' hace falta un click, y ese boton lo ofrece la portada — que es donde se
+    // explica lo que esta pasando.
+    private bool loIntento;
+
+    protected override async Task OnInitializedAsync()
+    {
+        if (estado.EstaArriba) { loIntento = true; return; }
+
+        try
+        {
+            if (!await estado.ReengancharModo())
+            {
+                if (!await estado.EstaSoportado()) return;
+                if (!(await estado.RecuperarCarpeta()).Ok) return;
+            }
+
+            await estado.Arrancar();
+        }
+        catch
+        {
+            // Abrir sola es una comodidad, no el camino obligado: si falla, cada pantalla
+            // muestra su aviso y la portada tiene los botones. Tirar aca dejaria la app
+            // entera en blanco por algo que se resuelve con un click.
+        }
+        finally
+        {
+            // PASE LO QUE PASE se pinta el cuerpo. Si esto quedara dentro del try, un fallo
+            // al abrir dejaria "Abriendo tus compras…" para siempre — un cartel de espera
+            // que no espera nada es peor que el aviso que la pantalla sabe dar.
+            loIntento = true;
+        }
+    }
+}

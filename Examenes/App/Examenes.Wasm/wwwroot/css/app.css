@@ -585,9 +585,12 @@ code { font-family: var(--mono); font-size: .9em; color: var(--ambar); }
    LA PRIMERA PREGUNTA. Alguien abre esta app para saber si esta bien, y lo primero que
    veia era un boton de Refresh y el numero de evento del journal.
 
-   Es LA TARJETA DE SEMAFORO del mock del landing: panel translucido con el borde y el
-   titular en el color de la severidad. El TONO lo decide el dominio -es la severidad
-   mayor de todo el expediente- y aca solo se traduce a color. */
+   Es LA PANTALLA DEL TELEFONO del landing: un panel translucido que adentro lleva LOS
+   VEREDICTOS, uno por bloque. El tono lo decide el dominio -la severidad que salio de
+   recorrer las series- y aca solo se traduce a color; lo que cambio es donde se aplica.
+
+   Antes la severidad mayor pintaba la tarjeta entera, y con eso un solo analito en ambar
+   se llevaba puesta la tranquilidad de todos los demas. */
 
 .portada {
     background: var(--carta);
@@ -596,9 +599,30 @@ code { font-family: var(--mono); font-size: .9em; color: var(--ambar); }
     padding: 22px 26px 20px;
     margin-bottom: 18px;
 }
-.portada--calma        { background: var(--bien-suave);  border-color: var(--bien-borde); }
-.portada--atencion     { background: var(--ambar-suave); border-color: var(--ambar-borde); }
-.portada--problema     { background: var(--rojo-suave);  border-color: var(--rojo-borde); }
+
+/* LOS VEREDICTOS. Son los bloques `telBien` y `telAtencion` del telefono del landing, con
+   sus valores exactos: el fondo, el borde y el trazo de la cara salen del semaforo de la
+   marca, que ya estaba en las variables.
+
+   La tarjeta ya NO se pinta entera del color de la severidad mayor. Cada bloque lleva el
+   suyo, y por eso pueden convivir: el verde dice cuantos valores estan donde tienen que
+   estar y el ambar dice cual se movio. Con un solo tono, lo segundo borraba lo primero. */
+.veredicto {
+    display: flex; align-items: flex-start; gap: 12px;
+    padding: 14px 16px;
+    border-radius: 14px;
+    margin-bottom: 12px;
+}
+.veredicto:last-of-type { margin-bottom: 0; }
+
+.veredicto svg {
+    flex: 0 0 auto; width: 28px; height: 28px; margin-top: 2px;
+    stroke: currentColor;
+}
+
+.veredicto--bien     { background: var(--bien-suave);  border: 1px solid var(--bien-borde);  color: var(--bien); }
+.veredicto--atencion { background: var(--ambar-suave); border: 1px solid var(--ambar-borde); color: var(--ambar); }
+.veredicto--problema { background: var(--rojo-suave);  border: 1px solid var(--rojo-borde);  color: var(--rojo); }
 
 /* EL ROTULO Y ACTUALIZAR COMPARTEN RENGLON. El boton es lo que vuelve a contestar la
    pregunta que contesta la tarjeta -si el rotulo dice "hoy", "esto es de hoy?" pertenece
@@ -639,18 +663,24 @@ code { font-family: var(--mono); font-size: .9em; color: var(--ambar); }
 .portada-releer:focus-visible { outline: 2px solid var(--celeste); outline-offset: 2px; }
 .portada-releer:disabled { opacity: .5; cursor: progress; }
 
-/* El titular es la frase del DOMINIO cuando hay algo que hacer. Va en serif y grande
-   porque es lo unico que alguien necesita leer si no lee nada mas — y en el trazo del
-   semaforo, como el «Todo está bien» del mock. */
-.portada-titular {
+/* El titulo es la frase del DOMINIO cuando hay algo que hacer, y el conteo cuando no.
+   Va en serif y grande porque es lo unico que alguien necesita leer si no lee nada mas.
+
+   HEREDA EL COLOR del bloque -`currentColor`, el mismo que la cara- en vez de tener una
+   regla por severidad: el tono ya lo decidio el contenedor una sola vez. */
+.veredicto-titulo {
     font-family: var(--serif); font-weight: 700;
-    font-size: clamp(25px, 5vw, 34px); line-height: 1.1;
-    letter-spacing: -.01em; margin: 0; color: var(--tinta);
+    font-size: clamp(20px, 3.4vw, 27px); line-height: 1.15;
+    letter-spacing: -.01em; margin: 0; color: currentColor;
     text-wrap: balance;
 }
-.portada--calma .portada-titular    { color: var(--bien); }
-.portada--atencion .portada-titular { color: var(--ambar); }
-.portada--problema .portada-titular { color: var(--rojo); }
+
+/* El detalle se lee de verdad, asi que va en sans y en la tinta del cuerpo: el color del
+   semaforo es del titulo y de la cara, no de una frase de tres lineas. */
+.veredicto-detalle {
+    font-family: var(--sans); font-size: 14px; line-height: 1.5;
+    margin: 5px 0 0; color: var(--tinta);
+}
 
 /* SOBRE QUE. Son botones y no texto porque llevan a la serie: la pregunta siguiente
    -"¿cual de todos?"- se contesta tocando. */
@@ -674,6 +704,20 @@ code { font-family: var(--mono); font-size: .9em; color: var(--ambar); }
     font-family: var(--mono); font-size: 11.5px; color: var(--tenue-2);
 }
 .portada-pie b { color: var(--tinta); font-weight: 500; font-size: 13px; }
+
+/* LA LINEA DEL CANDADO, la ultima de la portada. En el telefono del landing es lo ultimo
+   que se lee antes del boton, y aca cierra la tarjeta por la misma razon: es la promesa
+   desde la que alguien instalo esto. Tenue a proposito -no es una alerta- pero presente
+   en cada apertura y no solo en la pantalla del permiso. */
+.portada-candado {
+    display: flex; align-items: flex-start; gap: 8px;
+    margin: 12px 0 0;
+    font-family: var(--sans); font-size: 12.5px; line-height: 1.45; color: var(--tenue-2);
+}
+.portada-candado svg {
+    flex: 0 0 auto; width: 16px; height: 16px; margin-top: 2px;
+    stroke: var(--celeste); fill: none;
+}
 
 /* ---------------------------------------------------------------- movimiento
 

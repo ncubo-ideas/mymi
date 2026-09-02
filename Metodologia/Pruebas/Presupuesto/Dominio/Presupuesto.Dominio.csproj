@@ -14,4 +14,13 @@
     <ImplicitUsings>disable</ImplicitUsings>
   </PropertyGroup>
 
+  <!-- LA UNICA EXCEPCION LEGITIMA. El fixture instancia el modelo directo, sin pasar por
+       scripts, y es el unico codigo C# fuera del dominio que nombra tipos del dominio.
+       Un grant NOMINAL: explicito, auditable, y se le puede pedir cuentas a quien agregue
+       el segundo. `public` no le pide permiso a nadie ni deja rastro.
+       Sin PublicKey porque nada de este ecosistema esta firmado. -->
+  <ItemGroup>
+    <InternalsVisibleTo Include="Presupuesto.Consola" />
+  </ItemGroup>
+
 </Project>

@@ -64,6 +64,7 @@ namespace Compras.App
 						PrecioUnitario = Decimal(elemento, "precioUnitario"),
 						Total = Decimal(elemento, "totalDeLinea"),
 						Categoria = Texto(elemento, "categoria"),
+						Titulo = Texto(elemento, "titulo"),
 						TieneGarantia = Booleano(elemento, "tieneGarantia"),
 					});
 
@@ -145,7 +146,7 @@ namespace Compras.App
 				CambioEnElTotal = Decimal(cabecera, "cambioEnElTotal"),
 				Cambio = Decimal(cabecera, "cambio"),
 				HayAlgoQueLoExplique = Booleano(cabecera, "hayAlgoQueLoExplique"),
-				ParaSonia = Texto(cabecera, "paraSonia"),
+				ParaElAsistente = Texto(cabecera, "paraElAsistente"),
 				AnioAntes = Entero(cabecera, "anioAntes"),
 				MesAntes = Entero(cabecera, "mesAntes"),
 				GastoComestibleAntes = Decimal(cabecera, "gastoComestibleAntes"),
@@ -171,7 +172,7 @@ namespace Compras.App
 			{
 				ComprasMiradas = Entero(cabecera, "comprasMiradas"),
 				CuantosHabituales = Entero(cabecera, "cuantosHabituales"),
-				ParaSonia = Texto(cabecera, "paraSonia"),
+				ParaElAsistente = Texto(cabecera, "paraElAsistente"),
 				Habituales = Habituales(raiz, "habitual"),
 			};
 		}
@@ -201,7 +202,8 @@ namespace Compras.App
 			{
 				HayConQueComparar = Booleano(cabecera, "hayConQueComparar"),
 				HayCambio = Booleano(cabecera, "hayCambio"),
-				ParaSonia = Texto(cabecera, "paraSonia"),
+				Corte = Texto(cabecera, "corte"),
+				ParaElAsistente = Texto(cabecera, "paraElAsistente"),
 				Entraron = entraron,
 				Salieron = Habituales(raiz, "salio"),
 			};
@@ -223,9 +225,70 @@ namespace Compras.App
 					DeCuantas = Entero(elemento, "deCuantas"),
 					Proporcion = Decimal(elemento, "proporcion"),
 					EstaEnTodas = Booleano(elemento, "estaEnTodas"),
+					Constancia = Texto(elemento, "constancia"),
 				});
 
 			return productos;
+		}
+
+		internal static IReadOnlyList<PrecioQueCambio> Precios(string json)
+		{
+			var precios = new List<PrecioQueCambio>();
+			if (string.IsNullOrWhiteSpace(json)) return precios;
+
+			using JsonDocument documento = JsonDocument.Parse(json);
+			if (!documento.RootElement.TryGetProperty("precio", out JsonElement arreglo)) return precios;
+
+			foreach (JsonElement elemento in Elementos(arreglo))
+				precios.Add(new PrecioQueCambio
+				{
+					Sku = Texto(elemento, "sku"),
+					Descripcion = Texto(elemento, "descripcion"),
+					Antes = Decimal(elemento, "antes"),
+					Ahora = Decimal(elemento, "ahora"),
+					Unidad = Texto(elemento, "unidad"),
+					CambioEnProporcion = Decimal(elemento, "cambioEnProporcion"),
+					Subio = Booleano(elemento, "subio"),
+					VecesQueLoCompro = Entero(elemento, "vecesQueLoCompro"),
+					ParaElAsistente = Texto(elemento, "paraElAsistente"),
+				});
+
+			return precios;
+		}
+
+		internal static RitmoDelSuperVista RitmoDelSuper(string json)
+		{
+			if (string.IsNullOrWhiteSpace(json)) return new RitmoDelSuperVista();
+
+			using JsonDocument documento = JsonDocument.Parse(json);
+			JsonElement raiz = documento.RootElement;
+			JsonElement r = raiz.TryGetProperty("ritmo", out JsonElement uno) ? uno : raiz;
+
+			var momentos = new List<ComprasEnUnMomentoVista>();
+			if (raiz.TryGetProperty("momento", out JsonElement arreglo))
+				foreach (JsonElement elemento in Elementos(arreglo))
+					momentos.Add(new ComprasEnUnMomentoVista
+					{
+						Momento = Texto(elemento, "nombre"),
+						Cuantas = Entero(elemento, "cuantas"),
+						DeCuantas = Entero(elemento, "deCuantas"),
+						Proporcion = Decimal(elemento, "proporcion"),
+						ParaMostrar = Texto(elemento, "paraMostrar"),
+					});
+
+			return new RitmoDelSuperVista
+			{
+				ComprasMiradas = Entero(r, "comprasMiradas"),
+				EsObservado = Booleano(r, "esObservado"),
+				DiasEntreCompras = Entero(r, "diasEntreCompras"),
+				Cadencia = Texto(r, "cadencia"),
+				CadenciaCompacta = Texto(r, "cadenciaCompacta"),
+				DiaFavorito = Texto(r, "diaFavorito"),
+				ComprasEnElDiaFavorito = Entero(r, "comprasEnElDiaFavorito"),
+				MomentoFavorito = Texto(r, "momentoFavorito"),
+				ParaElAsistente = Texto(r, "paraElAsistente"),
+				PorMomento = momentos,
+			};
 		}
 
 		internal static RitmoDeUnProducto Ritmo(string json)
@@ -244,7 +307,7 @@ namespace Compras.App
 				Cambio = Booleano(r, "cambio"),
 				Antes = Texto(r, "antes"),
 				Ahora = Texto(r, "ahora"),
-				ParaSonia = Texto(r, "paraSonia"),
+				ParaElAsistente = Texto(r, "paraElAsistente"),
 			};
 		}
 
@@ -264,7 +327,7 @@ namespace Compras.App
 					Antes = Texto(elemento, "antes"),
 					Ahora = Texto(elemento, "ahora"),
 					EsMasSeguido = Booleano(elemento, "esMasSeguido"),
-					ParaSonia = Texto(elemento, "paraSonia"),
+					ParaElAsistente = Texto(elemento, "paraElAsistente"),
 				});
 
 			return cambios;
@@ -292,6 +355,89 @@ namespace Compras.App
 			return garantias;
 		}
 
+		// EN CUALES COMPRAS APARECIO ALGO. Tres print del mismo bloque: la cabecera sale
+		// como "busqueda", cada producto que coincidio como "nombre" y cada compra como
+		// "compra".
+		// LO QUE VA A FALTAR. La clave del arreglo es el nombre de la variable del foreach
+		// -"producto"-, no el alias del print.
+		internal static ListaDeLaProximaCompra LaProximaCompra(string json)
+		{
+			if (string.IsNullOrWhiteSpace(json)) return new ListaDeLaProximaCompra();
+
+			using JsonDocument documento = JsonDocument.Parse(json);
+			JsonElement raiz = documento.RootElement;
+			JsonElement cabecera = raiz.TryGetProperty("lista", out JsonElement c) ? c : raiz;
+
+			var productos = new List<ProductoPorCaer>();
+			if (raiz.TryGetProperty("producto", out JsonElement arreglo))
+				foreach (JsonElement elemento in Elementos(arreglo))
+					productos.Add(new ProductoPorCaer
+					{
+						Sku = Texto(elemento, "sku"),
+						Descripcion = Texto(elemento, "descripcion"),
+						Cadencia = Texto(elemento, "cadencia"),
+						CadenciaCompacta = Texto(elemento, "cadenciaCompacta"),
+						DiasTipicos = Entero(elemento, "diasTipicos"),
+						UltimaVez = Texto(elemento, "ultimaVez"),
+						DiasDesdeLaUltima = Entero(elemento, "diasDesdeLaUltima"),
+						DiasDeMas = Entero(elemento, "diasDeMas"),
+						Toca = Booleano(elemento, "toca"),
+						ParaElAsistente = Texto(elemento, "paraElAsistente"),
+					});
+
+			return new ListaDeLaProximaCompra
+			{
+				Existe = Booleano(cabecera, "existe"),
+				CuantosTocan = Entero(cabecera, "cuantosTocan"),
+				Productos = productos,
+				ParaElAsistente = Texto(cabecera, "paraElAsistente"),
+			};
+		}
+
+		internal static ComprasHalladas Halladas(string json)
+		{
+			if (string.IsNullOrWhiteSpace(json)) return new ComprasHalladas();
+
+			using JsonDocument documento = JsonDocument.Parse(json);
+			JsonElement raiz = documento.RootElement;
+			JsonElement cabecera = raiz.TryGetProperty("busqueda", out JsonElement c) ? c : raiz;
+
+			// LA CLAVE DEL ARREGLO ES EL NOMBRE DE LA VARIABLE DEL FOREACH, no el alias del
+			// print: `foreach (producto in ...) { print producto nombre; }` sale como
+			// "producto":[{"nombre":"..."}]. Leer "nombre" en la raiz no encuentra nada y
+			// -esto es lo peor- no falla: la lista queda vacia y la pantalla pinta la
+			// cabecera sin el producto, como paso.
+			var productos = new List<string>();
+			if (raiz.TryGetProperty("producto", out JsonElement nombres))
+				foreach (JsonElement elemento in Elementos(nombres))
+					productos.Add(Texto(elemento, "nombre"));
+
+			var halladas = new List<CompraHallada>();
+			if (raiz.TryGetProperty("compra", out JsonElement arreglo))
+				foreach (JsonElement elemento in Elementos(arreglo))
+					halladas.Add(new CompraHallada
+					{
+						Numero = Texto(elemento, "numero"),
+						Fecha = Texto(elemento, "fecha"),
+						Unidades = Entero(elemento, "unidades"),
+						Gasto = Decimal(elemento, "gasto"),
+						LineasDeLaCompra = Entero(elemento, "lineasDeLaCompra"),
+						TotalDeLaCompra = Decimal(elemento, "totalDeLaCompra"),
+					});
+
+			return new ComprasHalladas
+			{
+				Buscado = Texto(cabecera, "buscado"),
+				Existe = Booleano(cabecera, "existe"),
+				CuantasCompras = Entero(cabecera, "cuantasCompras"),
+				TotalUnidades = Entero(cabecera, "totalUnidades"),
+				TotalGastado = Decimal(cabecera, "totalGastado"),
+				Productos = productos,
+				Compras = halladas,
+				ParaElAsistente = Texto(cabecera, "paraElAsistente"),
+			};
+		}
+
 		internal static ConsumoEnElTiempo Consumo(string json)
 		{
 			if (string.IsNullOrWhiteSpace(json)) return new ConsumoEnElTiempo();
@@ -314,13 +460,32 @@ namespace Compras.App
 						Compras = Entero(elemento, "compras"),
 					});
 
+			// LA CLAVE ES LA VARIABLE DEL FOREACH, no el alias del print: `foreach (anio in
+			// ...)` sale como "anio":[{...}]. Leer mal la clave no falla — deja la lista
+			// vacia y la pantalla pinta de menos, que es peor que un error.
+			var anios = new List<AnioDeConsumoVista>();
+			if (raiz.TryGetProperty("anio", out JsonElement porAnio))
+				foreach (JsonElement elemento in Elementos(porAnio))
+					anios.Add(new AnioDeConsumoVista
+					{
+						Anio = Texto(elemento, "anio"),
+						Unidades = Entero(elemento, "unidades"),
+						Gasto = Decimal(elemento, "gasto"),
+						Compras = Entero(elemento, "compras"),
+						MesesConCompras = Entero(elemento, "mesesConCompras"),
+					});
+
 			return new ConsumoEnElTiempo
 			{
 				Termino = Texto(cabecera, "termino"),
+				Anios = anios,
 				EsCategoria = Booleano(cabecera, "esCategoria"),
 				MesesConConsumo = Entero(cabecera, "mesesConConsumo"),
 				TotalGastado = Decimal(cabecera, "totalGastado"),
 				TotalUnidades = Entero(cabecera, "totalUnidades"),
+				TotalCompras = Entero(cabecera, "totalCompras"),
+				UltimaVez = Texto(cabecera, "ultimaVez"),
+				Constancia = Texto(cabecera, "constancia"),
 				PrimerMes = Texto(cabecera, "primerMes"),
 				UltimoMes = Texto(cabecera, "ultimoMes"),
 				MesDelPico = Texto(cabecera, "mesDelPico"),
@@ -329,7 +494,7 @@ namespace Compras.App
 				CambioDeGasto = Decimal(cabecera, "cambioDeGasto"),
 				HaySerie = Booleano(cabecera, "haySerie"),
 				HayCambioReal = Booleano(cabecera, "hayCambioReal"),
-				ParaSonia = Texto(cabecera, "paraSonia"),
+				ParaElAsistente = Texto(cabecera, "paraElAsistente"),
 				Meses = meses,
 			};
 		}
@@ -368,7 +533,7 @@ namespace Compras.App
 					EsRitmoObservado = Booleano(elemento, "esRitmoObservado"),
 					EsComestible = Booleano(elemento, "esComestible"),
 					Severidad = Texto(elemento, "severidad"),
-					ParaSonia = Texto(elemento, "paraSonia"),
+					ParaElAsistente = Texto(elemento, "paraElAsistente"),
 				});
 
 			return pendientes;
@@ -395,7 +560,7 @@ namespace Compras.App
 				DiasParaVencer = Entero(elemento, "diasParaVencer"),
 				Severidad = Texto(elemento, "severidad"),
 				QueHacer = Texto(elemento, "queHacer"),
-				ParaSonia = Texto(elemento, "paraSonia"),
+				ParaElAsistente = Texto(elemento, "paraElAsistente"),
 			};
 
 		// Un solo print emite un objeto; varios emiten un arreglo. Tratar los dos casos

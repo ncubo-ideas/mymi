@@ -90,7 +90,7 @@ internal sealed class ComprasTools
 		+ "compras, porque dice de que esta hecha su rutina. Un producto entra si aparece en al "
 		+ "menos la MITAD de las compras miradas, y cada uno trae en cuantas de cuantas aparece; "
 		+ "estaEnTodas marca los que no fallaron ni una vez. Si existe viene en false, o no hay "
-		+ "compras todavia o no hay nada que se repita lo suficiente, y paraSonia lo dice tal "
+		+ "compras todavia o no hay nada que se repita lo suficiente, y paraElAsistente lo dice tal "
 		+ "cual: son dos hechos distintos y ninguno es un error.")]
 	public FirmaDeLaSemana Firma(
 		[Description("Cuantas de sus ultimas compras mirar. Omitilo para usar el valor de la app (8).")]
@@ -109,17 +109,20 @@ internal sealed class ComprasTools
 		+ "concreto. Cada producto que entro trae el mes en que se lo vio por primera vez, en "
 		+ "formato aaaa-mm. Ojo: si hayConQueComparar viene en false NO hay cambio que reportar "
 		+ "-falta un lado de la comparacion- y es distinto de hayCambio en false, que significa "
-		+ "que la canasta viene igual. Este modulo dice QUE cambio y no si esta bien: el helado "
+		+ "que la canasta viene igual. El campo corte dice POR QUE MES se partio la historia: si no "
+		+ "pasaste fecha, es el que el dominio encontro, y conviene nombrarselo a la persona. Este modulo dice QUE cambio y no si esta bien: el helado "
 		+ "que pasa de mensual a semanal es un dato, no una falta.")]
 	public CambioDeLaCanasta Cambio(
-		[Description("La fecha de corte, en formato aaaa-mm-dd. Lo de antes se compara con lo de despues.")]
-		DateTime corte,
+		[Description("OPCIONAL, en formato aaaa-mm-dd. Omitilo y el dominio busca solo el mes del quiebre, que es lo normal; pasalo unicamente si la persona nombro una fecha suya.")]
+		DateTime corte = default,
 		[Description("Cuantas compras mirar de cada lado. Omitilo para usar el valor de la app (8).")]
 		int cuantasCompras = ComprasAPI.ComprasQueSeMiranParaLaFirma)
 	{
 		if (!lector.HayJournal) return new CambioDeLaCanasta();
 
-		return lector.Consultar(api => api.Cambio(corte, cuantasCompras));
+		// SIN FECHA, LA BUSCA EL DOMINIO, y el campo corte de la respuesta dice cual eligio.
+		return lector.Consultar(api =>
+			corte == default ? api.CambioDelQuiebre(cuantasCompras) : api.Cambio(corte, cuantasCompras));
 	}
 
 	[McpServerTool(Name = "cada_cuanto_compro", UseStructuredContent = true)]
@@ -132,14 +135,14 @@ internal sealed class ComprasTools
 		+ "es un error. Y ojo con cambio en false: significa que el ritmo viene igual, que tambien "
 		+ "es una respuesta. Este modulo dice de que a que, nunca si esta mejor.")]
 	public RitmoDeUnProducto Ritmo(
-		[Description("El SKU del producto, como viene en las lineas de una compra. Usa detalle_de_compra o consumo_de para encontrarlo.")]
-		string sku,
+		[Description("El producto, como lo nombraria la persona: 'leche', 'helado'. Se busca por nombre o por parte del nombre; tambien acepta el codigo interno, pero no hace falta.")]
+		string producto,
 		[Description("La fecha de corte, en formato aaaa-mm-dd. Lo de antes se compara con lo de despues.")]
 		DateTime corte)
 	{
 		if (!lector.HayJournal) return new RitmoDeUnProducto();
 
-		return lector.Consultar(api => api.Ritmo(sku, corte));
+		return lector.Consultar(api => api.Ritmo(producto, corte));
 	}
 
 	[McpServerTool(Name = "que_cambio_en_mi_rutina", UseStructuredContent = true)]
@@ -152,12 +155,34 @@ internal sealed class ComprasTools
 		+ "esMasSeguido distingue lo que entro de lo que se fue apagando. Una lista vacia significa "
 		+ "que ningun producto cambio de ritmo, que es una respuesta y no una falla.")]
 	public IReadOnlyList<RitmoQueCambio> RitmosQueCambiaron(
-		[Description("La fecha de corte, en formato aaaa-mm-dd. Lo de antes se compara con lo de despues.")]
-		DateTime corte)
+		[Description("OPCIONAL, en formato aaaa-mm-dd. Omitilo y el dominio busca solo el mes del quiebre, que es lo normal; pasalo unicamente si la persona nombro una fecha suya.")]
+		DateTime corte = default)
 	{
 		if (!lector.HayJournal) return new List<RitmoQueCambio>();
 
-		return lector.Consultar(api => api.RitmosQueCambiaron(corte));
+		// SIN FECHA, LA BUSCA EL DOMINIO. Es lo correcto por defecto: quien pregunta -sobre
+		// todo una IA- no tiene forma de saber cuando cambio esta canasta, y una fecha
+		// adivinada devuelve "no cambio nada", que se lee como un hecho y no como un fallo.
+		return lector.Consultar(api =>
+			corte == default ? api.RitmosDelQuiebre() : api.RitmosQueCambiaron(corte));
+	}
+
+	[McpServerTool(Name = "mi_ritmo_de_super", UseStructuredContent = true)]
+	[Description("COMO VA AL SUPER esta persona: cada cuantos dias vuelve, que dia de la semana "
+		+ "suele comprar y en que momento del dia. Usala para '¿cada cuanto voy al super?', "
+		+ "'¿que dia compro?' o cuando la persona quiere entender su propia rutina — son cosas "
+		+ "que probablemente no habia notado. OJO CON LA CONFUSION: esto es cada cuanto VA AL "
+		+ "SUPER, no cada cuanto compra un producto (eso es cada_cuanto_compro) ni cada cuanto "
+		+ "entra un departamento (eso lo mira que_dejaste_de_comprar). Una persona puede ir todas "
+		+ "las semanas y comprar pollo cada tres. porMomento SIEMPRE trae los tres momentos del "
+		+ "dia -manana, tarde, noche- aunque alguno venga en cero. Si esObservado viene en false "
+		+ "no hay suficientes compras para medir un ritmo, y no es un error. Y esto no juzga: ir "
+		+ "los viernes de noche no es mejor ni peor que ir los martes en la mañana.")]
+	public RitmoDelSuperVista RitmoDelSuper()
+	{
+		if (!lector.HayJournal) return new RitmoDelSuperVista();
+
+		return lector.Consultar(api => api.Ritmo());
 	}
 
 	[McpServerTool(Name = "canasta_del_mes", UseStructuredContent = true)]
@@ -203,7 +228,7 @@ internal sealed class ComprasTools
 		+ "respaldo completo: numero de compra, fecha, meses de cobertura, fecha de vencimiento, "
 		+ "cuantos dias le quedan y si esta vigente HOY. Si encontrada viene en false, o el "
 		+ "producto no esta en el registro o no tiene garantia — son dos hechos legitimos, no un "
-		+ "error. El campo paraSonia trae la lectura ya redactada por el dominio; queHacer viene "
+		+ "error. El campo paraElAsistente trae la lectura ya redactada por el dominio; queHacer viene "
 		+ "vacio cuando no hay nada que hacer, y eso tambien es una respuesta.")]
 	public GarantiaDeProducto Garantia(
 		[Description("Nombre (o parte del nombre) o sku del producto, por ejemplo 'olla arrocera'.")] string producto)
@@ -244,7 +269,10 @@ internal sealed class ComprasTools
 		+ "y en cuantas compras, mas el mes mas alto y como cambio entre el primer mes y el ultimo. "
 		+ "Acepta una categoria del catalogo (Azucarados, Proteinas, FrutasYVerduras, LacteosYHuevos, "
 		+ "GranosYAbarrotes, AceitesYGrasas, Snacks, Limpieza, Electrohogar) o un texto de producto "
-		+ "('helado', 'soda', 'olla'). Es la serie completa, no un total: es lo que permite decir "
+		+ "('helado', 'soda', 'olla'). Trae la serie DOS VECES: meses, mes a mes, y anios, la misma "
+		+ "serie agrupada — usa anios cuando la pregunta abarca varios anios y meses cuando necesites "
+		+ "una fecha. En un anio, mesesConCompras dice cuantos meses tuvieron alguna: un anio a medias "
+		+ "no se compara con uno entero como si midieran lo mismo. Es la serie completa, no un total: es lo que permite decir "
 		+ "DESDE QUE MES cambio un consumo, y ninguna pantalla lo muestra. Usala cuando la persona "
 		+ "pregunte por un producto o categoria a lo largo del tiempo, o cuando quiera relacionar "
 		+ "sus compras con algo mas que le este pasando -por ejemplo un resultado de laboratorio-: "
@@ -259,6 +287,46 @@ internal sealed class ComprasTools
 		if (!lector.HayJournal) return new ConsumoEnElTiempo();
 
 		return lector.Consultar(api => api.Consumo(termino));
+	}
+
+	[McpServerTool(Name = "para_mi_proxima_compra", UseStructuredContent = true)]
+	[Description("LA LISTA DE LO QUE LE VA A FALTAR a la persona, armada con el RITMO de cada "
+		+ "producto: cada cuanto suele volver y cuanto hace que no entra. Del mas atrasado al que "
+		+ "menos falta. Usala para '¿que tengo que comprar?', '¿que me esta faltando?' o cuando "
+		+ "arme una lista antes de ir al super. Cada producto trae toca -si ya paso su tiempo-, "
+		+ "diasTipicos, diasDesdeLaUltima y diasDeMas, que es negativo cuando todavia no toca: "
+		+ "los que NO tocan tambien vienen, por si quiere adelantarse. NO ES que_dejaste_de_comprar: "
+		+ "aquella mira lo que salio de la rutina, y esta EXCLUYE justamente eso — un producto que "
+		+ "lleva mas de tres ciclos sin entrar ya no cuenta como falta, cuenta como abandonado. "
+		+ "IMPORTANTE: es una lista de lo probable, no de lo necesario. La persona puede tener el "
+		+ "producto en su casa y esta app no lo sabe, asi que presentala como una sugerencia para "
+		+ "confirmar y nunca como una orden. Con cuantosTocan en 0 viene al dia, y eso es una "
+		+ "respuesta.")]
+	public ListaDeLaProximaCompra ParaMiProximaCompra()
+	{
+		if (!lector.HayJournal) return new ListaDeLaProximaCompra();
+
+		return lector.Consultar(api => api.Lista(DateTime.Now));
+	}
+
+	[McpServerTool(Name = "en_cuales_compras", UseStructuredContent = true)]
+	[Description("EN CUALES COMPRAS aparecio un producto o un pasillo entero, de la mas reciente a "
+		+ "la mas vieja, con el NUMERO DE TICKET de cada una y cuanto de eso entro ahi. Acepta un "
+		+ "texto de producto ('leche', 'helado', 'olla') o una categoria del catalogo (Azucarados, "
+		+ "Proteinas, FrutasYVerduras, LacteosYHuevos, GranosYAbarrotes, AceitesYGrasas, Embutidos, "
+		+ "ComidasPreparadas, Snacks, Limpieza, Mascotas, Electrohogar). NO ES consumo_de: aquella "
+		+ "agrupa por mes y contesta 'cuanto y cuando'; esta devuelve los TICKETS, y su numero es lo "
+		+ "que despues le podes pasar a detalle_de_compra para ver la compra entera. Usala cuando la "
+		+ "persona pregunte '¿cuando compre esto?', '¿en que compra estaba?' o quiera llegar a un "
+		+ "recibo puntual. El campo productos dice que descripciones coincidieron: si trae mas de "
+		+ "una, el texto alcanzo a varios productos y conviene decirselo antes de dar los totales. "
+		+ "Con cuantasCompras en 0 no hay ninguna, y eso es una respuesta valida, no un error.")]
+	public ComprasHalladas EnCualesCompras(
+		[Description("Un texto de producto o una categoria del catalogo, por ejemplo 'leche' o 'Limpieza'.")] string termino)
+	{
+		if (!lector.HayJournal) return new ComprasHalladas();
+
+		return lector.Consultar(api => api.Halladas(termino));
 	}
 
 	[McpServerTool(Name = "garantias_por_vencer", UseStructuredContent = true)]

@@ -37,7 +37,7 @@ namespace Compras.Dominio
 		public string QueHacer => Severidad.QueHacer;
 
 		/// <summary>La linea, escrita por el dominio con SUS hechos.</summary>
-		public abstract string ParaSonia { get; }
+		public abstract string ParaElAsistente { get; }
 
 		private RegistroDeGarantia(string textoBuscado)
 		{
@@ -73,7 +73,7 @@ namespace Compras.Dominio
 			public override int DiasParaVencer => 0;
 			public override Severidad Severidad => Severidad.Informativo;
 
-			public override string ParaSonia =>
+			public override string ParaElAsistente =>
 				$"no hay ninguna compra con garantía que coincida con «{TextoBuscado}»";
 		}
 
@@ -117,7 +117,7 @@ namespace Compras.Dominio
 				}
 			}
 
-			public override string ParaSonia
+			public override string ParaElAsistente
 			{
 				get
 				{

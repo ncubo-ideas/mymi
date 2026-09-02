@@ -61,7 +61,19 @@ namespace Compras.Dominio
 		/// <summary>Cuántas compras cayeron en cada momento del día. Total: siempre trae los tres.</summary>
 		public abstract IReadOnlyList<ComprasEnUnMomento> PorMomento { get; }
 
-		public abstract string ParaSonia { get; }
+		public abstract string ParaElAsistente { get; }
+
+		// LAS LECTURAS PARA LA FRONTERA, sin guarda: cero y vacio cuando no hay ritmo. Es el
+		// mismo par que RegistroDeGarantia y CambioDeRitmo -la tipada para el codigo, la
+		// total para el wire- porque una proyeccion plana no puede preguntar antes: un
+		// lector guardado no revienta el campo, revienta la consulta entera.
+		//
+		// Y no son un duplicado disfrazado: quien tiene el objeto en la mano debe recibir un
+		// Cadencia y un MomentoDelDia, no dos strings, o el conjunto cerrado no sirve.
+		public abstract int DiasEntreCompras { get; }
+		public abstract string CadenciaLegible { get; }
+		public abstract string CadenciaCompacta { get; }
+		public abstract string MomentoFavoritoExpresado { get; }
 
 		private sealed class SinRitmo : RitmoDelSuper
 		{
@@ -113,7 +125,12 @@ namespace Compras.Dominio
 				}
 			}
 
-			public override string ParaSonia => compras == 0
+			public override int DiasEntreCompras => 0;
+			public override string CadenciaLegible => "";
+			public override string CadenciaCompacta => "";
+			public override string MomentoFavoritoExpresado => "";
+
+			public override string ParaElAsistente => compras == 0
 				? "todavía no hay compras suyas con las que ver cada cuánto va al súper"
 				: $"con {compras} compras todavía no alcanza para decir cada cuánto va al súper";
 		}
@@ -196,7 +213,12 @@ namespace Compras.Dominio
 			public override MomentoDelDia MomentoFavorito => momentoFavorito;
 			public override IReadOnlyList<ComprasEnUnMomento> PorMomento => porMomento;
 
-			public override string ParaSonia =>
+			public override int DiasEntreCompras => diasTipicos;
+			public override string CadenciaLegible => cadencia.ParaMostrar;
+			public override string CadenciaCompacta => cadencia.Compacta;
+			public override string MomentoFavoritoExpresado => momentoFavorito.ParaMostrar;
+
+			public override string ParaElAsistente =>
 				$"suele ir al súper cada {diasTipicos} días, y casi siempre un "
 				+ $"{DiaFavoritoExpresado} por la {momentoFavorito.ParaMostrar}";
 

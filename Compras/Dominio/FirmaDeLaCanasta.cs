@@ -49,7 +49,7 @@ namespace Compras.Dominio
 		public abstract int CuantosHabituales { get; }
 
 		/// <summary>La línea de la portada, escrita por el dominio. Sin jerga: ni sku ni categorías.</summary>
-		public abstract string ParaSonia { get; }
+		public abstract string ParaElAsistente { get; }
 
 		private sealed class SinFirma : FirmaDeLaCanasta
 		{
@@ -59,7 +59,7 @@ namespace Compras.Dominio
 			public override IReadOnlyList<ProductoHabitual> Habituales => Array.Empty<ProductoHabitual>();
 			public override int CuantosHabituales => 0;
 
-			public override string ParaSonia => ComprasMiradas == 0
+			public override string ParaElAsistente => ComprasMiradas == 0
 				? "todavía no hay compras suyas con las que ver un patrón"
 				: $"en sus últimas {ComprasMiradas} compras no hay nada que se repita lo suficiente "
 					+ "como para llamarlo su firma";
@@ -87,7 +87,7 @@ namespace Compras.Dominio
 			// Se nombran los productos como los nombra el supermercado, en una lista que
 			// una persona lee de corrido. Cinco alcanzan para reconocerse; mas es un
 			// inventario, y un inventario no es una firma.
-			public override string ParaSonia
+			public override string ParaElAsistente
 			{
 				get
 				{
@@ -137,5 +137,10 @@ namespace Compras.Dominio
 
 		/// <summary>Si está en TODAS las compras miradas. Lo que de verdad no falla.</summary>
 		public bool EstaEnTodas => ComprasEnQueAparece == ComprasMiradas;
+
+		/// <summary>Qué tan fiel es, dicho en palabras: "nunca falla", "casi nunca falta".</summary>
+		// Va aca y no en la pantalla porque es la MISMA respuesta para el MCP y para la UI, y
+		// porque el umbral -cuanto es "casi nunca falta"- es un juicio del dominio.
+		public Constancia Constancia => Constancia.Para(Proporcion);
 	}
 }

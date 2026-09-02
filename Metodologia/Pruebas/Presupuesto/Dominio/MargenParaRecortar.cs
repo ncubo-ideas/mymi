@@ -16,7 +16,7 @@ namespace Presupuesto.Dominio
 	//
 	// Preferir eso a inventar el juicio que falta es lo que evita el fallo caro: una
 	// respuesta que no revienta nunca y esta mal siempre.
-	public sealed class MargenParaRecortar
+	internal sealed class MargenParaRecortar
 	{
 		internal MargenParaRecortar(decimal mensualidadNueva, decimal discrecional,
 			decimal comprometido, decimal porDefinir, IReadOnlyList<GastoRecurrente> sinMarcar)
@@ -28,33 +28,41 @@ namespace Presupuesto.Dominio
 			SinMarcar = sinMarcar;
 		}
 
-		public decimal MensualidadNueva { get; }
+		internal decimal MensualidadNueva { get; }
 
 		// Lo que el repertorio ya sabe que es discrecional: cine, delivery, bar, restaurante,
 		// viajes.
-		public decimal Discrecional { get; }
+		internal decimal Discrecional { get; }
 
 		// Compromisos adquiridos. No es que cueste recortarlos: es que no dependen de la
 		// voluntad de este mes.
-		public decimal Comprometido { get; }
+		internal decimal Comprometido { get; }
 
 		// Lo que nadie marco. NO es cero y NO es recortable: es desconocido.
-		public decimal PorDefinir { get; }
+		internal decimal PorDefinir { get; }
 
-		public IReadOnlyList<GastoRecurrente> SinMarcar { get; }
+		internal IReadOnlyList<GastoRecurrente> SinMarcar { get; }
+
+		// ------------------------------------------------------ lo que cruza el perform
+		//
+		// La lista NO cruza: una coleccion adentro de un carrier es el segundo nivel que
+		// el print no proyecta. Lo que cruza es CUANTOS son; los nombres, si hacen falta,
+		// son una consulta aparte con su propio foreach. Cero no significa "no hay":
+		// significa que no quedo nada sin marcar, que es la respuesta completa.
+		internal int CuantosSinMarcar => SinMarcar.Count;
 
 		// El techo optimista: todo lo discrecional a cero. No es una recomendacion -nadie
 		// vive recortando el 100% de su ocio- y por eso el nombre dice "techo".
-		public decimal TechoDeLoConocido => Discrecional;
+		internal decimal TechoDeLoConocido => Discrecional;
 
 		// .Alcanza con lo que se SABE que es recortable?
-		public bool AlcanzaConLoConocido => TechoDeLoConocido >= MensualidadNueva;
+		internal bool AlcanzaConLoConocido => TechoDeLoConocido >= MensualidadNueva;
 
 		// La respuesta es incompleta mientras haya plata sin marcar que podria cambiarla.
-		public bool LaRespuestaEstaCompleta =>
+		internal bool LaRespuestaEstaCompleta =>
 			PorDefinir == 0m || AlcanzaConLoConocido;
 
-		public string Lectura
+		internal string Lectura
 		{
 			get
 			{

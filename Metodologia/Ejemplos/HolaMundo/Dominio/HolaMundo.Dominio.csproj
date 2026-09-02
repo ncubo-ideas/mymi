@@ -1,0 +1,24 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!-- EL DOMINIO. Mirá lo que NO hay acá abajo: ni un PackageReference, ni un
+       ProjectReference. Cero dependencias.
+
+       Eso no es minimalismo: es la prueba de que este código no cambia cuando la app
+       cruza al browser, a la consola o al asistente. Si algún día necesita una
+       dependencia, ESO es el hallazgo — no la dependencia. -->
+
+  <PropertyGroup>
+    <TargetFramework>net9.0</TargetFramework>
+    <Nullable>disable</Nullable>
+    <ImplicitUsings>disable</ImplicitUsings>
+  </PropertyGroup>
+
+  <!-- La única excepción. La consola instancia el modelo directo para sus
+       comprobaciones, sin pasar por scripts. Es un permiso NOMINAL: explícito,
+       auditable, y se le puede pedir cuentas a quien agregue el segundo.
+       Poner las clases en `public` no le pide permiso a nadie ni deja rastro. -->
+  <ItemGroup>
+    <InternalsVisibleTo Include="HolaMundo.Consola" />
+  </ItemGroup>
+
+</Project>

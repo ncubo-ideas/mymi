@@ -124,6 +124,58 @@ namespace Compras.Dominio
 		}
 
 		/// <summary>
+		/// El último mes con compras contra el mes INMEDIATAMENTE ANTERIOR. Total: sin
+		/// compras devuelve una comparación que contesta que no hay comparación.
+		/// </summary>
+		// ES OTRA PREGUNTA QUE CompararConElAnioPasado, y las dos hacen falta. Contra el año
+		// pasado se ve si la canasta cambio de fondo -las estaciones y los habitos ya
+		// dieron la vuelta-; contra el mes anterior se ve si ESTE mes viene distinto, que es
+		// lo que alguien pregunta cuando abre la app un martes.
+		//
+		// La aritmetica del mes anterior vive ACA y no en la pantalla: que enero venga
+		// despues de diciembre del año pasado es del calendario, y una superficie que lo
+		// resuelva sola lo va a resolver mal en enero.
+		public ComparacionDeCanastas CompararConElMesAnterior()
+		{
+			RangoDeCompras rango = Rango;
+			if (!rango.Existe()) return CompararCanastas(1900, 1, 1900, 2);
+
+			int anioAntes = rango.UltimoMes == 1 ? rango.UltimoAnio - 1 : rango.UltimoAnio;
+			int mesAntes = rango.UltimoMes == 1 ? 12 : rango.UltimoMes - 1;
+
+			return CompararCanastas(anioAntes, mesAntes, rango.UltimoAnio, rango.UltimoMes);
+		}
+
+		/// <summary>
+		/// CÓMO SE MOVIERON LOS PRECIOS de los productos que sí lleva: los habituales, cada
+		/// uno con su serie. El que más subió primero.
+		/// </summary>
+		// "DE LOS PRODUCTOS QUE SI LLEVAS", que es lo que el diseño de la app promete y lo
+		// que hace util a esta lectura. Una lista de los 45 precios del catalogo es un
+		// boletin de inflacion; la de SUS doce habituales es su propia inflacion, que es el
+		// dato que ninguna app de super da.
+		//
+		// Se cruza la firma con la serie de precios en el DOMINIO y no en la pantalla: una
+		// superficie que lo hiciera tendria que pedir doce series por separado, y peor,
+		// tendria que decidir cuales doce — que es justo el juicio que la firma ya tomo.
+		public IReadOnlyList<PrecioEnElTiempo> PreciosDeLosHabituales(int cuantasCompras)
+		{
+			FirmaDeLaCanasta firma = FirmaDeLasUltimas(cuantasCompras);
+
+			var series = new List<PrecioEnElTiempo>();
+			foreach (ProductoHabitual habitual in firma.Habituales)
+			{
+				PrecioEnElTiempo serie = PrecioDe(habitual.Sku);
+				if (serie.Existe() && serie.HaySerie && serie.HayCambioReal) series.Add(serie);
+			}
+
+			// El que mas movio primero, en valor absoluto: una bajada de 300 dice tanto como
+			// una subida de 300, y quien lee decide que hacer con el signo.
+			series.Sort((uno, otro) => Math.Abs(otro.CambioEnProporcion).CompareTo(Math.Abs(uno.CambioEnProporcion)));
+			return series;
+		}
+
+		/// <summary>
 		/// La garantia de un producto, buscada por sku o descripcion. Si se compro varias
 		/// veces gana la mas reciente, que es la cobertura que corre. La fecha de consulta
 		/// viene recibida: el dominio no lee el reloj.
@@ -187,7 +239,66 @@ namespace Compras.Dominio
 			var meses = new List<MesDeConsumo>();
 			foreach (int llave in orden) meses.Add(porMes[llave]);
 
-			return Consumo.De(termino, esCategoria, meses);
+			// LA ULTIMA VEZ y EL TOTAL DE COMPRAS los sabe el agregado, no la serie por mes:
+			// la serie agrupa, y agrupar pierde el dia exacto y no sabe cuantas compras hay
+			// en total. Se los pasa quien los tiene.
+			DateTime ultimaVez = DateTime.MinValue;
+			foreach (Compra compra in compras)
+				foreach (Item item in compra.Items)
+					if (Alcanza(item, termino, esCategoria) && compra.Fecha > ultimaVez)
+					{
+						ultimaVez = compra.Fecha;
+						break;
+					}
+
+			return Consumo.De(termino, esCategoria, meses, ultimaVez, compras.Count);
+		}
+
+		/// <summary>
+		/// EN CUÁLES COMPRAS APARECIÓ ESTO, de la más reciente a la más vieja. El término
+		/// puede ser un producto o un departamento entero.
+		/// </summary>
+		// USA EL MISMO CRITERIO QUE EL CONSUMO -Alcanza- y no uno propio, que es lo que
+		// hace que "Limpieza" encuentre el pasillo y "leche" el producto. Dos criterios de
+		// busqueda distintos en la misma app es como se llega a que una pantalla encuentre
+		// algo que la otra no.
+		//
+		// TOTAL: un termino que nunca se llevo devuelve Ninguna, no una lista vacia. La
+		// diferencia importa porque la pantalla dice cosas distintas -"no hay ninguna
+		// compra con «X»" no es lo mismo que "todavia no hay compras"- y una lista vacia no
+		// sabe cual de las dos es.
+		public ComprasConElProducto ComprasCon(string termino)
+		{
+			ArgumentNullException.ThrowIfNullOrWhiteSpace(termino);
+
+			bool esCategoria = Categoria.Existe(termino);
+			var halladas = new List<CompraConElProducto>();
+			var productos = new List<string>();
+
+			// DE LA MAS RECIENTE A LA MAS VIEJA, y el orden se arma al recorrer y no
+			// ordenando despues: la lista ya viene en orden de llegada, asi que basta con
+			// leerla al reves. Ordenar seria pagar dos veces por algo que ya esta.
+			for (int i = compras.Count - 1; i >= 0; i--)
+			{
+				Compra compra = compras[i];
+				CompraConElProducto hallada = null;
+
+				foreach (Item item in compra.Items)
+				{
+					if (!Alcanza(item, termino, esCategoria)) continue;
+
+					hallada ??= new CompraConElProducto(compra);
+					hallada.Sumar(item.Cantidad, item.Total);
+
+					if (!productos.Contains(item.Descripcion)) productos.Add(item.Descripcion);
+				}
+
+				if (hallada is not null) halladas.Add(hallada);
+			}
+
+			return halladas.Count == 0
+				? ComprasConElProducto.Ninguna(termino)
+				: ComprasConElProducto.De(termino, halladas, productos);
 		}
 
 		private static bool Alcanza(Item item, string termino, bool esCategoria) =>
@@ -270,7 +381,97 @@ namespace Compras.Dominio
 			return new CambioEnLaCanasta(
 				FirmaDe(Ultimas(antes, cuantasCompras)),
 				FirmaDe(Primeras(despues, cuantasCompras)),
-				PrimeraVezPorSku(corte));
+				PrimeraVezPorSku(corte),
+				corte);
+		}
+
+		/// <summary>
+		/// EL MISMO CAMBIO, pero el mes del quiebre LO ENCUENTRA EL DOMINIO. Total: cuando
+		/// no hay historia suficiente devuelve un cambio sin con qué comparar, no revienta.
+		/// </summary>
+		// EXISTE PORQUE RECIBIR EL CORTE ERA UNA TRAMPA. La carátula pasaba el 1 de enero
+		// del año corriente, y eso funcionaba por SUERTE: el guion de la demo quiebra en
+		// enero. A una persona que cambió en setiembre, esa pantalla no le encontraba nada
+		// — y peor, le decía que su canasta venía igual, que es una respuesta falsa y no un
+		// hueco visible.
+		//
+		// COMO SE BUSCA. Se prueba el primero de cada mes y se elige el corte donde MAS
+		// PRODUCTOS ENTRAN Y SALEN. Que el maximo caiga en el mes correcto no es casualidad
+		// del criterio: si la canasta cambio en enero y se quedo asi, cortar en febrero
+		// deja lo nuevo de enero de LOS DOS LADOS y la diferencia se achica. El pico esta
+		// donde el contraste es limpio.
+		//
+		// HACEN FALTA cuantasCompras DE CADA LADO. Con menos, la firma se arma sobre tres o
+		// cuatro compras y cualquier cosa que aparezca en dos ya es "habitual": el
+		// buscador encontraria quiebres en el ruido, y encima cerca de los extremos, que es
+		// donde menos historia hay.
+		//
+		// EMPATE: gana el mas viejo. Si dos meses explican el cambio igual de bien, el que
+		// la persona reconoce es cuando EMPEZO.
+		public CambioEnLaCanasta CambioEncontrado(int cuantasCompras)
+		{
+			if (cuantasCompras <= 0)
+				throw new ArgumentOutOfRangeException(nameof(cuantasCompras), cuantasCompras,
+					"Mirar cero compras no da un cambio.");
+
+			IReadOnlyList<Compra> ordenadas = Ordenadas();
+			CambioEnLaCanasta mejor = null;
+			int mejorTamano = 0;
+
+			foreach (DateTime corte in CortesPosibles(ordenadas, cuantasCompras))
+			{
+				CambioEnLaCanasta candidato = CambioDesde(corte, cuantasCompras);
+				if (!candidato.HayCambio) continue;
+
+				int tamano = candidato.Entraron.Count + candidato.Salieron.Count;
+				// Estrictamente mayor: los cortes vienen del mas viejo al mas nuevo, asi que
+				// no reemplazar en el empate es lo que hace ganar al primero.
+				if (tamano > mejorTamano)
+				{
+					mejor = candidato;
+					mejorTamano = tamano;
+				}
+			}
+
+			// NINGUN MES QUEDO: o no hay historia de los dos lados, o la canasta viene igual
+			// en todos los cortes. Las dos son respuestas, y las dos se dicen con el mismo
+			// objeto vacio — HayConQueComparar y HayCambio las distinguen.
+			return mejor ?? new CambioEnLaCanasta(
+				FirmaDeLaCanasta.Ninguna(0),
+				FirmaDeLaCanasta.Ninguna(0),
+				new Dictionary<string, DateTime>(),
+				DateTime.MinValue);
+		}
+
+		/// <summary>
+		/// La PRIMERA COMPRA de cada mes que tenga alguna, mientras deje al menos
+		/// <paramref name="cuantasCompras"/> de cada lado.
+		/// </summary>
+		// LOS CANDIDATOS SON FECHAS DE COMPRA Y NO PRIMEROS DE MES, y la diferencia se vio
+		// probando: con un historial que compra en julio y en setiembre y NADA en agosto,
+		// cortar el 1 de agosto y cortar el 1 de setiembre parten igual -julio de un lado,
+		// setiembre del otro-, empatan, y gana el mas viejo. La app terminaba diciendo "tu
+		// canasta cambio desde 2026-08", un mes en el que la persona no piso el super.
+		//
+		// Con la fecha de la primera compra del mes, el corte SIEMPRE cae en un mes que
+		// existe en su historia, y ademas coincide con MesDelCambioExpresado en vez de
+		// contradecirlo por un mes.
+		private static IEnumerable<DateTime> CortesPosibles(
+			IReadOnlyList<Compra> ordenadas, int cuantasCompras)
+		{
+			// La ventana util: el corte tiene que dejar cuantasCompras atras y otras tantas
+			// adelante, asi que se mueve entre esas dos y no por todo el historial.
+			for (int i = cuantasCompras; i <= ordenadas.Count - cuantasCompras; i++)
+			{
+				DateTime cuando = ordenadas[i].Fecha;
+				DateTime anterior = ordenadas[i - 1].Fecha;
+
+				// Solo la PRIMERA de su mes: dos cortes dentro del mismo mes darian el
+				// mismo mes en pantalla y multiplicarian el trabajo sin agregar respuestas.
+				if (cuando.Year == anterior.Year && cuando.Month == anterior.Month) continue;
+
+				yield return cuando;
+			}
 		}
 
 		/// <summary>
@@ -489,9 +690,20 @@ namespace Compras.Dominio
 		/// cada cuánto lo compra después. Total: sin suficientes compras de un lado
 		/// devuelve el cambio Ninguno, que lo dice.
 		/// </summary>
-		public CambioDeRitmo RitmoDeUnProducto(string sku, DateTime corte)
+		// EL PRODUCTO SE NOMBRA, NO SE CODIFICA. Antes esto pedia un sku, y eso obligaba a
+		// quien pregunta -sobre todo a la IA- a conocer una llave interna: la especificacion
+		// de marca prohibe la palabra "SKU" en lo que ve la persona, y una tool que la EXIGE
+		// como argumento es la version peor de lo mismo.
+		//
+		// Se resuelve con el mismo criterio que BuscarGarantia -sku o parte de la
+		// descripcion-, que ya era el precedente del modulo. Y si no encuentra nada, el par
+		// total contesta con el texto que se busco, sin reventar.
+		public CambioDeRitmo RitmoDeUnProducto(string producto, DateTime corte)
 		{
-			ArgumentNullException.ThrowIfNullOrWhiteSpace(sku);
+			ArgumentNullException.ThrowIfNullOrWhiteSpace(producto);
+
+			string sku = SkuDe(producto);
+			if (sku.Length == 0) return CambioDeRitmo.Ninguno(producto, producto);
 
 			var antes = new List<DateTime>();
 			var despues = new List<DateTime>();
@@ -531,6 +743,23 @@ namespace Compras.Dominio
 		// contesta "¿que cambio en mi rutina?", y lo que cambia una rutina es la
 		// frecuencia. Un producto que paso de una vez cada dos meses a todas las semanas
 		// dice mas que uno que subio de precio.
+		/// <summary>
+		/// Los mismos cambios de ritmo, pero contra el quiebre QUE ENCUENTRA EL DOMINIO.
+		/// </summary>
+		// LAS DOS TARJETAS CUENTAN EL MISMO QUIEBRE desde angulos distintos -una dice QUE
+		// entro, la otra CADA CUANTO- y por eso tienen que partir por la MISMA fecha. Antes
+		// la caratula les pasaba el 1 de enero a las dos, y esa coordinacion vivia en la
+		// pantalla: bastaba con que alguien cambiara una llamada para que las dos tarjetas
+		// hablaran de meses distintos sin que nada fallara.
+		public IReadOnlyList<CambioDeRitmo> CambiosDeRitmoDelQuiebre(int cuantasCompras)
+		{
+			CambioEnLaCanasta quiebre = CambioEncontrado(cuantasCompras);
+
+			return quiebre.HayConQueComparar
+				? CambiosDeRitmo(quiebre.Corte)
+				: Array.Empty<CambioDeRitmo>();
+		}
+
 		public IReadOnlyList<CambioDeRitmo> CambiosDeRitmo(DateTime corte)
 		{
 			var cambios = new List<CambioDeRitmo>();
@@ -560,6 +789,100 @@ namespace Compras.Dominio
 		}
 
 		// Los dias entre fechas consecutivas. Compartido por las dos lecturas de ritmo.
+		/// <summary>
+		/// LO QUE PROBABLEMENTE LE VA A FALTAR: los productos con ritmo conocido, medidos
+		/// contra cuánto hace que no entran. Del más atrasado al que menos falta.
+		/// </summary>
+		// LA FECHA DE HOY VIENE RECIBIDA, como en todas las lecturas que miran el calendario:
+		// el dominio no lee el reloj. Sin eso, esta lectura daria distinto en cada replay del
+		// journal y dejaria de ser reproducible.
+		//
+		// SE RECORRE EL HISTORIAL UNA VEZ Y SE AGRUPA POR SKU. La alternativa -pedirle a
+		// RitmoDeUnProducto el ritmo de cada producto del catalogo- recorreria las 87 compras
+		// una vez por producto: con 29 productos son 29 pasadas para armar una lista.
+		public ListaParaLaProximaCompra LoQueVaAFaltar(DateTime hoy)
+		{
+			// Las fechas de compra de cada producto, en orden y sin repetir el mismo dia: un
+			// producto en dos lineas del mismo ticket es UNA compra, y un intervalo de cero
+			// dias no es un ritmo.
+			var fechasPorSku = new Dictionary<string, List<DateTime>>(StringComparer.OrdinalIgnoreCase);
+
+			foreach (Compra compra in Ordenadas())
+			{
+				var vistos = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+				foreach (Item item in compra.Items)
+				{
+					if (!vistos.Add(item.Sku)) continue;
+
+					if (!fechasPorSku.TryGetValue(item.Sku, out List<DateTime> fechas))
+					{
+						fechas = new List<DateTime>();
+						fechasPorSku[item.Sku] = fechas;
+					}
+
+					if (fechas.Count == 0 || fechas[fechas.Count - 1].Date != compra.Fecha.Date)
+						fechas.Add(compra.Fecha);
+				}
+			}
+
+			var productos = new List<ProductoQueVaAFaltar>();
+			foreach (KeyValuePair<string, List<DateTime>> par in fechasPorSku)
+			{
+				if (par.Value.Count < ListaParaLaProximaCompra.ComprasQueHacenFaltaParaSaberElRitmo)
+					continue;
+
+				IReadOnlyList<int> intervalos = Intervalos(par.Value);
+				if (intervalos.Count == 0) continue;
+
+				DateTime ultima = par.Value[par.Value.Count - 1];
+				int desde = (int)(hoy.Date - ultima.Date).TotalDays;
+				// Una compra con fecha posterior a "hoy" no es un error de datos que valga
+				// reventar: se cuenta como recien comprada.
+				if (desde < 0) desde = 0;
+
+				// LO QUE SE ABANDONO NO ES LO QUE FALTA. Pasados tantos ciclos sin entrar, el
+				// producto salio de la rutina y ponerlo en la lista de la proxima compra seria
+				// sugerirle a alguien algo que decidio dejar. Esa otra pregunta -"que dejaste
+				// de comprar"- la contesta AbastecimientosPendientes.
+				int tipicos = Mediana(intervalos);
+				if (desde > tipicos * ListaParaLaProximaCompra.CiclosDespuesDeLosCualesYaNoEsFalta)
+					continue;
+
+				productos.Add(new ProductoQueVaAFaltar(
+					par.Key,
+					Catalogo.Tiene(par.Key) ? Catalogo[par.Key].Descripcion : par.Key,
+					tipicos,
+					ultima,
+					desde));
+			}
+
+			if (productos.Count == 0) return ListaParaLaProximaCompra.Ninguna;
+
+			// DEL MAS ATRASADO AL QUE MENOS FALTA. A igual atraso gana el de ritmo mas corto:
+			// dos dias de mas sobre algo semanal aprieta mas que dos sobre algo mensual.
+			productos.Sort((uno, otro) =>
+			{
+				int porAtraso = otro.DiasDeMas.CompareTo(uno.DiasDeMas);
+				return porAtraso != 0 ? porAtraso : uno.DiasTipicos.CompareTo(otro.DiasTipicos);
+			});
+
+			return ListaParaLaProximaCompra.De(productos);
+		}
+
+		// La mediana de los intervalos, que es lo que resiste una compra corrida. Vive aca
+		// porque la usan dos lecturas -el cambio de ritmo y esta lista- y las dos tienen que
+		// medir el ritmo igual.
+		private static int Mediana(IReadOnlyList<int> valores)
+		{
+			var ordenados = new List<int>(valores);
+			ordenados.Sort();
+
+			int medio = ordenados.Count / 2;
+			return ordenados.Count % 2 == 1
+				? ordenados[medio]
+				: (ordenados[medio - 1] + ordenados[medio]) / 2;
+		}
+
 		private static IReadOnlyList<int> Intervalos(IReadOnlyList<DateTime> fechas)
 		{
 			var intervalos = new List<int>();
@@ -625,6 +948,31 @@ namespace Compras.Dominio
 				}
 
 			return vigentes;
+		}
+
+		/// <summary>
+		/// El sku de un producto nombrado por su sku o por parte de su descripción. Vacío
+		/// cuando no aparece en el historial: consulta total, no revienta.
+		/// </summary>
+		// GANA EL MAS RECIENTE cuando varios coinciden, igual que en BuscarGarantia: si
+		// alguien escribe "leche" y compro dos leches distintas, la que le interesa es la
+		// que lleva ahora.
+		public string SkuDe(string producto)
+		{
+			ArgumentNullException.ThrowIfNullOrWhiteSpace(producto);
+
+			string hallado = "";
+			DateTime masReciente = DateTime.MinValue;
+
+			foreach (Compra compra in compras)
+				foreach (Item item in compra.Items)
+					if (Coincide(item, producto) && compra.Fecha >= masReciente)
+					{
+						hallado = item.Sku;
+						masReciente = compra.Fecha;
+					}
+
+			return hallado;
 		}
 
 		private static bool Coincide(Item item, string texto) =>
