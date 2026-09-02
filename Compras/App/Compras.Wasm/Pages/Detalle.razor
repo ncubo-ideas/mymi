@@ -111,6 +111,27 @@ else
 
        Es lo único de esta app donde la resolución cambia QUÉ SE RENDERIZA y no sólo cómo se
        ve, así que es lo único que necesita saber el ancho desde C#. Ver Pantalla.cs. *@
+    @* LA BUENA NOTICIA AL PIE, del mock de Fernanda ("la leche que llevaste esta hoy
+       ₡100 mas barata"): de lo que llevo en ESTA compra, lo que hoy cuesta menos. El
+       "hoy" es el ultimo precio que ELLA pago -esta lectura no sabe de gondolas-, solo
+       bajadas reales (el mismo umbral del 3% de la serie), y una sola: es una nota, no
+       otra lista. *@
+    @if (rebaja is not null && rebaja.Hay)
+    {
+        <div class="nota-rebaja d-flex align-items-center gap-2 mb-3">
+            <span class="proxima-foto @(Foto(rebaja.Sku).Length == 0 ? "proxima-foto--sin" : "")">
+                @if (Foto(rebaja.Sku).Length > 0)
+                {
+                    <img src="@Foto(rebaja.Sku)" alt="" />
+                }
+            </span>
+            <span class="small">
+                <strong>@rebaja.Descripcion</strong> hoy cuesta
+                <strong>@Colones(rebaja.CuantoMenos) menos</strong> que en esta compra.
+            </span>
+        </div>
+    }
+
     @* EL NUMERO SIGUE ESTANDO, y abajo, dicho por lo que le sirve A ELLA. No es dato
        interno -es lo que le van a pedir en el mostrador si va a reclamar algo, y la tarjeta
        de garantias ya lo nombra-, pero encabezar con el es hablarle en el idioma del
@@ -175,6 +196,7 @@ else
     [Parameter] public string Numero { get; set; } = "";
 
     private CompraDetallada? compra;
+    private RebajaVista? rebaja;
 
     // EL ESTADO ES UNO POR MODO y no se comparte: en telefono "esta abierto o no", en
     // escritorio "en que pagina voy". Meter los dos en un solo campo obligaria a traducir
@@ -199,6 +221,9 @@ else
 
         try { compra = estado.Detalle(Numero); }
         catch { compra = new CompraDetallada(); }
+
+        try { rebaja = estado.Rebaja(Numero); }
+        catch { rebaja = new RebajaVista(); }
     }
 
     // EL ANCHO SE PREGUNTA DESPUES DE PINTAR, porque antes no hay JS con quien hablar. El

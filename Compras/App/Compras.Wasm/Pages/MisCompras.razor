@@ -602,6 +602,17 @@ else
             <h2 class="kicker">Tus habituales cambiaron de precio</h2>
         </div>
         <div class="list-group mb-4">
+            @* LA CIFRA DEL MOCK DE FERNANDA: "+₡1.150 vs. hace 3 meses". Es OTRA ventana
+               que las filas de abajo -ellas cuentan la serie entera, esta el pasado
+               cercano- y el rotulo la lleva puesta para que no se lean como una sola. En
+               cero no se pinta: "cuesta lo mismo" no encabeza nada. *@
+            @if (frente is not null && frente.HayConQueComparar && frente.Cambio != 0)
+            {
+                <div class="list-group-item frente-al-pasado">
+                    <span class="frente-cifra @(frente.Cambio > 0 ? "frente-cifra--sube" : "frente-cifra--baja")">@(frente.Cambio > 0 ? "+" : "−")@Colones(Math.Abs(frente.Cambio))</span>
+                    <span class="ritmo-rotulo">vs. hace @frente.MesesDeVentana meses, una pieza de cada habitual</span>
+                </div>
+            }
             @foreach (var precio in (verPrecios ? precios : precios.Take(1)))
             {
                 <div class="list-group-item d-flex justify-content-between align-items-center flex-wrap gap-2">
@@ -614,6 +625,30 @@ else
                         <span class="etiqueta @(precio.Subio ? "etiqueta-cambio" : "etiqueta-verde")">
                             @(precio.Subio ? "▲" : "▼") @Porcentaje(precio.CambioEnProporcion)
                         </span>
+                    </span>
+                </div>
+            }
+            @* PUEDE INTERESARTE, del mock de Fernanda: la mayor BAJADA, con su foto y el
+               precio tachado. Solo si la fila estrella no la esta mostrando ya (cuando el
+               que mas se movio ES una bajada, repetirla seria eco), y solo plegado: al
+               expandir, todas las bajadas ya estan a la vista. *@
+            @if (!verPrecios && Oportunidad() is PrecioQueCambio oportunidad)
+            {
+                <div class="list-group-item oportunidad">
+                    <span class="proxima-foto @(Foto(oportunidad.Sku).Length == 0 ? "proxima-foto--sin" : "")">
+                        @if (Foto(oportunidad.Sku).Length > 0)
+                        {
+                            <img src="@Foto(oportunidad.Sku)" alt="" />
+                        }
+                    </span>
+                    <span class="oportunidad-que">
+                        <span class="oportunidad-kicker">Puede interesarte</span>
+                        <strong>@oportunidad.Descripcion</strong>
+                    </span>
+                    <span class="d-inline-flex align-items-baseline gap-2 flex-wrap">
+                        <span class="precio-antes">@Colones(oportunidad.Antes)</span>
+                        <span class="precio-ahora precio-ahora--baja">@Colones(oportunidad.Ahora)</span>
+                        <span class="ritmo-rotulo">por @oportunidad.Unidad</span>
                     </span>
                 </div>
             }
@@ -788,6 +823,7 @@ else
     private RitmoDelSuperVista? ritmo;
     private CanastasComparadas? mes;
     private IReadOnlyList<PrecioQueCambio> precios = new List<PrecioQueCambio>();
+    private CanastaFrenteAlPasadoVista? frente;
     private int cantidad;
     private decimal total;
     private long ultimoEvento;
@@ -917,6 +953,7 @@ else
         ritmo = estado.Ritmo();
         mes = estado.ComparacionConElMesAnterior();
         precios = estado.Precios();
+        frente = estado.FrenteAlPasado();
     }
 
     private void VerDetalle(string numero) =>
@@ -1006,6 +1043,16 @@ else
     // es lo que mantiene la rejilla derecha. Con las veinte nuevas ya casi no queda hueco:
     // de los 29 productos del catalogo, 28 tienen imagen.
     private static string Foto(string sku) => Compras.Wasm.Fotos.De(sku);
+
+    // LA OPORTUNIDAD: la mayor bajada de la serie (vienen ordenadas por cuanto se
+    // movieron), saltando la fila estrella, que ya se ve sola.
+    private PrecioQueCambio? Oportunidad()
+    {
+        for (int i = 1; i < precios.Count; i++)
+            if (!precios[i].Subio) return precios[i];
+
+        return null;
+    }
 
     // EL NOMBRE CORTO PARA LA FICHA. "Leche semidescremada 1L" en una ficha de 6,5 rem se
     // parte en tres lineas y desalinea la rejilla; el diseño de Fernanda usa "Leche".

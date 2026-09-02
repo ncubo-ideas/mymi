@@ -701,6 +701,40 @@ main h2 {
 }
 .precio-ahora { font-weight: 700; font-variant-numeric: tabular-nums; }
 
+/* LA CIFRA FRENTE AL PASADO, encabezando la tarjeta de precios: "+₡1.150 vs. hace 3
+   meses". Tierra cuando sube -es un aviso, no una alarma- y verde cuando baja. */
+.frente-al-pasado { display: flex; align-items: baseline; gap: .6rem; flex-wrap: wrap; }
+.frente-cifra {
+    font-size: 1.7rem;
+    font-weight: 800;
+    letter-spacing: -.03em;
+    line-height: 1.1;
+    font-variant-numeric: tabular-nums;
+}
+.frente-cifra--sube { color: var(--gu-tierra); }
+.frente-cifra--baja { color: var(--verde-vivo); }
+
+/* PUEDE INTERESARTE: una bajada con foto y tachado. El kicker en verde la separa de las
+   filas de cambios, que son noticia neutra. */
+.oportunidad { display: flex; align-items: center; gap: .8rem; flex-wrap: wrap; }
+.oportunidad-que { display: flex; flex-direction: column; gap: .05rem; flex: 1 1 auto; min-width: 0; }
+.oportunidad-kicker {
+    font-size: .72rem;
+    font-weight: 700;
+    letter-spacing: .06em;
+    text-transform: uppercase;
+    color: var(--verde);
+}
+.precio-ahora--baja { color: var(--verde-vivo); }
+
+/* La buena noticia al pie de un recibo, en el mismo tono tenido del resto de avisos. */
+.nota-rebaja {
+    background: rgba(46, 158, 91, .08);
+    border: 1px solid rgba(46, 158, 91, .25);
+    border-radius: var(--radio-carta);
+    padding: .6rem .9rem;
+}
+
 /* ------------------------------------------------- infaltables y ficha de producto */
 
 /* El "Ver todos" de la portada: verde de marca, 12.5 px y 700, como en su canvas. */
