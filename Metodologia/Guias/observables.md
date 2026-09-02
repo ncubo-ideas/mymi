@@ -69,6 +69,7 @@ antes de reportar un hallazgo, se mira la línea.
 | 11 | **Lo declarado coincide con lo que el módulo expone** | `manifest.json` vs. las tools reales | La lista de `tools[].name` y la que el módulo responde en `tools/list` son la misma: ni de más ni de menos | por correr |
 | 12 | **El costo fijo de una pregunta se puede medir sin llave** | El catálogo que la Puerta 2 le muestra al modelo | Existe una forma de contarlo **sin un modelo del otro lado**. Medido en el POC: ~1.364 tokens, de los cuales el 86 % es el catálogo | por correr |
 | **13** | **Lo declarado en la Parte 1 existe en el modelo** | La Parte 1 del `Preguntas.md` vs. `Dominio/` | **Cada renglón dice dónde vive** —una clase, varias, un miembro, un conjunto cerrado— **y ese identificador aparece en `Dominio/`.** Cero renglones vacíos | **discrimina** — bloqueado, ver abajo |
+| **14** | **La hoja y el capítulo dicen las mismas reglas** | Los marcadores de `hoja-de-la-entrevista.md` vs. `punto-de-partida.md` | Todo marcador de la hoja está en el capítulo, y todo marcador `sesion` del capítulo está en la hoja | **discrimina** — ✅ corrido |
 
 ### Sobre el 5, que es el único que discriminó
 
@@ -158,6 +159,44 @@ es la diferencia entre un chequeo y un adorno.
 > mismo argumento del manifiesto: *porque es una declaración, se puede verificar*. Queda **por
 > correr** hasta que los `Preguntas.md` la lleven; hoy sólo la tiene
 > [`Pruebas/Gimnasio`](../Pruebas/Gimnasio/Preguntas.md).
+
+### Sobre el 14, el primero que audita las guías y no un negocio
+
+Los trece anteriores miran el código de un negocio. **El 14 mira estas guías**, y existe porque
+`hoja-de-la-entrevista.md` es un resumen a mano de `punto-de-partida.md` y **nada lo mantiene
+sincronizado**. Derivó **cuatro veces en una semana**, en las dos direcciones — incluida la que costó
+la membresía del gimnasio: el caveat *"los filtros se aplican a las preguntas, nunca a la capacidad"*
+estaba en el capítulo y no en la hoja, que es la que se usa en la sesión.
+
+Comparar el texto **no sirve**: los dos dicen lo mismo con palabras distintas a propósito, y los
+títulos de los recuadros también difieren. Comparar significados necesita juicio, o sea que no es
+observable. Por eso cada regla lleva un marcador invisible y se comparan **conjuntos**:
+
+```
+<!-- regla: filtros-no-a-la-capacidad sesion -->
+```
+
+La etiqueta `sesion` es lo que deja que el capítulo tenga cosas propias —la argumentación, el porqué
+de cada regla— sin producir falsos positivos.
+
+> **Probado antes de escribirlo, contra las nueve divergencias reales.** Se reconstruyó el estado del
+> repo de antes de arreglarlas y se corrió: **caza siete de las nueve.** Las dos que no:
+>
+> - Una **regla que pierde contenido sin desaparecer** — el capítulo dejó de decir *"se anota con
+>   nombre y apellido"* y la regla siguió existiendo en los dos lados. Los marcadores comparan
+>   presencia, no contenido; y el chequeo de acoplamiento tampoco la ve, porque ese commit tocó los
+>   dos archivos. **Es el defecto residual conocido de este observable.**
+> - La numeración (`bloque 0` contra *"cinco bloques"*), que es de forma.
+
+**Y tiene una segunda mitad, que es una heurística y no un observable:**
+[`revisar-acoplamiento.sh`](../Herramientas/revisar-acoplamiento.sh) avisa cuando un commit tocó uno
+de los dos archivos y no el otro. Cubre el agujero de que **el marcador lo pone la misma persona que
+se olvida de sincronizar**: si alguien agrega una regla sin marcador, el chequeo de conjuntos pasa
+igual. Corrido sobre la historia real marcó tres commits, y **dos son exactamente los que
+introdujeron dos de las divergencias**. Tiene falsos positivos legítimos —un typo no obliga a tocar
+los dos— así que dice *"revisar"*, nunca falla, y por eso no entra a esta tabla como observable.
+
+Los dos scripts viven en [`Metodologia/Herramientas/`](../Herramientas/).
 
 ### Sobre el 10, que se cayó al escribirlo
 

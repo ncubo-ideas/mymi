@@ -22,6 +22,7 @@ de la próxima hora.
 
 ---
 
+<!-- regla: quien-es-la-institucion -->
 ## Bloque 1 · Qué ya existe
 
 > **¿Quién es la institución acá?**
@@ -34,6 +35,7 @@ No lo des por sentado. La respuesta cambia la forma de la app entera:
 | **No hay** | La persona registra todo |
 | **Híbrida** | La institución manda lo que puede y la persona aporta lo que ella no puede saber |
 
+<!-- regla: respaldo-si-la-persona-aporta -->
 > ⚠️ **El corte que importa no es «¿hay institución?» sino «¿la persona aporta algo?»** — y agarra a
 > los dos últimos por igual. **En cuanto la persona aporta un hecho, el registro deja de ser
 > reconstruible y el respaldo deja de ser opcional.** El híbrido es el más frecuente y donde más fácil
@@ -43,14 +45,17 @@ No lo des por sentado. La respuesta cambia la forma de la app entera:
 >
 > *¿Y qué le **contesta**? ¿Qué pregunta suya responde sin que tenga que hacer cuentas?*
 
+<!-- regla: entregar-no-es-contestar -->
 **No las mezcles.** Entregar datos no es contestar preguntas. Lo que aparezca en la **segunda** queda
 descartado **como funcionalidad**: si el portal ya lo contesta, hacer esa pantalla no agrega nada.
 
+<!-- regla: descarte-es-de-la-pantalla -->
 > ⚠️ **Descartado como funcionalidad NO es descartado del modelo.** Es el error que costó la
 > membresía del gimnasio: quedó declarada en la Parte 1 y a la vez en *"lo que el gimnasio ya
 > contesta"*, y el dominio salió sin ninguna clase de membresía ni de pago. **Todo lo que la
 > institución manda entra al modelo**; lo que se descarta es hacerle una pantalla.
 
+<!-- regla: trae-el-papel -->
 ### Y no cierres el bloque sin el papel
 
 > *Traé lo que la institución le manda hoy —la hoja, el correo, el estado de cuenta— y leámoslo
@@ -75,17 +80,20 @@ aparecido suelto en la conversación, que es exactamente cómo se pierde un sust
 
 No *"listar exámenes por fecha"*. Sino *"¿me está subiendo el colesterol o fue una mala lectura?"*.
 
+<!-- regla: tres-filtros -->
 Insistí hasta juntar **tres a cinco**. A cada una:
 
 - ¿La respuesta **cambia lo que hace**? → si no, es decoración
 - ¿Alcanza con **un solo dato**, o hace falta la historia? → si alcanza con uno, el portal ya lo daba
 - ¿El portal **ya se la contesta**? → volviste al bloque 1
 
+<!-- regla: filtros-no-a-la-capacidad -->
 > ⚠️ **Los filtros se aplican a las PREGUNTAS, nunca a la capacidad.** Es el error más fácil de
 > cometer y descarta cosas imprescindibles. La clasificación de gastos la hacen hoy muchos bancos, y
 > aun así el modelo la necesita: sin ella no hay cómo contestar *"¿se incrementó un gasto fijo?"*.
 > **La Parte 1 no se filtra.** Es la misma regla del bloque 1, dicha en general.
 
+<!-- regla: pregunta-de-ausencia -->
 > **Una tiene que ser sobre una AUSENCIA.** *"¿Hace cuánto que no…?"*, *"¿qué me falta?"*, *"¿se me
 > venció algo?"*. Ninguna pantalla puede contestar eso, porque una pantalla renderiza lo que tiene.
 > Si no sale ninguna así, probablemente estén diseñando un listado con mejor tipografía.
@@ -97,6 +105,7 @@ Insistí hasta juntar **tres a cinco**. A cada una:
 **El bloque que no se improvisa** — y el más caro. Son siete preguntas **por cada cosa que se sigue
 en el tiempo**: con seis cosas son 42, y así se siente. Léelo entero antes de empezarlo.
 
+<!-- regla: no-preguntes-en-frio -->
 > ### No preguntes en frío: proponé
 >
 > Umbrales, ruido, cadencia y urgencia **no son conocimiento de producto**, son conocimiento experto
@@ -110,6 +119,7 @@ en el tiempo**: con seis cosas son 42, y así se siente. Léelo entero antes de 
 
 Para cada cosa que la app va a seguir en el tiempo:
 
+<!-- regla: siete-juicios -->
 > **1 · Dirección.** *¿Hacia dónde es deseable que se mueva: subir, bajar, o mantenerse dentro de
 > algo?* Ojo: no siempre es binario.
 >
@@ -129,15 +139,18 @@ Para cada cosa que la app va a seguir en el tiempo:
 
 La **7** es la más productiva de la sesión: decide qué merece ser una clase propia.
 
+<!-- regla: no-se-inventa -->
 > ### Si no saben, NO SE INVENTA
 >
 > Se anota como pendiente **con nombre y apellido de quién lo sabe**. Un juicio inventado no revienta
 > nunca: da una respuesta creíble y equivocada cada vez.
 >
+> <!-- regla: sin-default-silencioso -->
 > Y **un juicio sin firmar tampoco tiene un valor por defecto silencioso** en el código: o el objeto
 > no se construye sin él, o la respuesta dice que no sabe. Un default es un juicio inventado con
 > mejores modales.
 
+<!-- regla: regla-de-corte -->
 > ### Si te empantanás, cerrá el bloque
 >
 > Un *"no sé"* **abre** una pregunta nueva —*¿y quién lo sabe?*— en vez de cerrar. Cuando tres
@@ -146,6 +159,7 @@ La **7** es la más productiva de la sesión: decide qué merece ser una clase p
 
 ---
 
+<!-- regla: que-se-descarta -->
 ## Bloque 4 · Qué se descarta
 
 > *¿Qué dato te parece importante pero, siendo honesto, no le sirve a la persona **en este dominio**?*
@@ -162,6 +176,7 @@ Si no sale casi nada, no es que la entrevista falló: hay dominios donde este fi
 **No es parte de la misma sentada.** Va **después de la primera pasada de modelado**, y son quince
 minutos. Una sola pasada nunca alcanza: modelar siempre destapa lo que la entrevista no preguntó.
 
+<!-- regla: bloque-5-con-huecos -->
 > **Se entra con el `HUECOS.md` en la mano, y ése es todo el guion.** Es lo que quien modela fue
 > anotando mientras construía: lo que quedó **declarado sin firmar** en la entrevista y lo que
 > apareció **descubierto** al escribir las clases. **Cada renglón es una pregunta** — hay que
@@ -169,6 +184,7 @@ minutos. Una sola pasada nunca alcanza: modelar siempre destapa lo que la entrev
 >
 > Si está vacío, o no se modeló o no se anotó mientras se modelaba. Nunca es que no hubo huecos.
 
+<!-- regla: quien-es-clase-lo-decide -->
 > ### La regla que gobierna este bloque
 >
 > **La persona contesta sobre el negocio. Quién se vuelve una clase lo decide quien modela.**
@@ -176,6 +192,7 @@ minutos. Una sola pasada nunca alcanza: modelar siempre destapa lo que la entrev
 > La prueba: **¿podría contestarla alguien que nunca programó?** Si la pregunta dice *clase*, *tipo*,
 > *entidad*, *dominio* o *sustantivo*, está mal formada — reformulala antes de hacerla.
 
+<!-- regla: tres-cacerias -->
 ### Tres cacerías
 
 **1 · Una palabra apareció en las preguntas y nadie la desarrolló.**
@@ -189,6 +206,7 @@ idioma de negocio.
 
 **2 · Al modelar hizo falta un dato que nadie mencionó.**
 
+<!-- regla: barrido-de-la-institucion -->
 **Antes de preguntar, volvé a mirar qué manda la institución.** Un estado de cuenta trae débitos **y
 créditos**: si el modelo sólo tiene gastos, le falta la mitad de lo que ya está entrando — y eso se ve
 sin entrevistar a nadie. Es el mismo movimiento del bloque 1, ahora con el modelo escrito al lado.
@@ -202,9 +220,11 @@ Todo lo que quien modela decidió solo, **se lee en voz alta como propuesta** y 
 
 > *Dejamos que un cargo que no llega se avise a los tres días. ¿Te suena bien, o depende de cuál?*
 
+<!-- regla: proponer-el-umbral -->
 No preguntes *"¿cuál es el umbral?"* — nadie tiene un umbral en la cabeza. Proponé uno y dejá que lo
 muevan.
 
+<!-- regla: mal-vs-bien-formada -->
 ### Cómo se ven las dos formas
 
 | Mal formada | Bien formada |
@@ -214,6 +234,7 @@ muevan.
 | ¿Lo que se aparta **es algo** con saldo? | *Cuando te pasa un imprevisto, ¿de dónde sale la plata?* |
 | ¿Quién **fija** el presupuesto? | *Cuando decís que algo "no estaba presupuestado", ¿contra qué lo comparás?* |
 
+<!-- regla: entrevistado-generoso -->
 > **Y una advertencia.** Si contesta todo rápido y sin dudar, sospechá. **Una persona generosa
 > contesta igual una pregunta mal formada**, y eso esconde el defecto en vez de mostrarlo. Pasó en la
 > corrida donde se descubrió esta regla.
@@ -222,24 +243,24 @@ muevan.
 
 ## Cuando terminaste
 
-- [ ] ¿Se leyó **el papel, campo por campo**, y cada campo está en la Parte 1?
-- [ ] ¿Tres a cinco preguntas, en la voz de la persona?
-- [ ] ¿Al menos una sobre una **ausencia**?
-- [ ] ¿Cada juicio contestado, o anotado con **quién** lo sabe?
+- [ ] ¿Se leyó **el papel, campo por campo**, y cada campo está en la Parte 1? <!-- regla: cierre-papel -->
+- [ ] ¿Tres a cinco preguntas, en la voz de la persona? <!-- regla: cierre-preguntas -->
+- [ ] ¿Al menos una sobre una **ausencia**? <!-- regla: cierre-ausencia -->
+- [ ] ¿Cada juicio contestado, o anotado con **quién** lo sabe? <!-- regla: cierre-juicios -->
 - [ ] ¿Está escrito lo que se **descartó**, y por qué? ¿Y quedó claro que se descartó **la pantalla**,
-      no el dato?
-- [ ] ¿Los **candidatos a cruce** quedaron anotados, en vez de forzados adentro?
-- [ ] ¿**Cada palabra** que aparece en las preguntas tiene algo detrás? *(la que se salta más)*
-- [ ] ¿Lo aprobó quien conoce el negocio, **sin que nadie le tradujera nada**?
+      no el dato? <!-- regla: cierre-descartado -->
+- [ ] ¿Los **candidatos a cruce** quedaron anotados, en vez de forzados adentro? <!-- regla: cierre-cruces -->
+- [ ] ¿**Cada palabra** que aparece en las preguntas tiene algo detrás? *(la que se salta más)* <!-- regla: cierre-palabras -->
+- [ ] ¿Lo aprobó quien conoce el negocio, **sin que nadie le tradujera nada**? <!-- regla: cierre-aprobado -->
 
 Y al modelar, no en la sesión:
 
 - [ ] ¿**Cada renglón de la Parte 1** dice dónde vive, y **ninguno quedó vacío**? No es una clase por
       renglón —puede ser un miembro, o un conjunto cerrado—; es que nada declarado esté en ninguna
       parte. La casilla de las palabras mira las preguntas y **no alcanza**: *"membresía"* no estaba
-      en ninguna pregunta del gimnasio y se perdió igual
+      en ninguna pregunta del gimnasio y se perdió igual <!-- regla: cierre-parte-1 -->
 - [ ] ¿Los juicios sin firmar están **marcados como tales**, y ninguno tiene un **valor por defecto
-      silencioso** en el código?
+      silencioso** en el código? <!-- regla: cierre-sin-firmar -->
 
 Y después de modelar, el bloque 5. **Nunca alcanza con una pasada.**
 
@@ -248,5 +269,6 @@ archivo está mal escrito.
 
 ---
 
+<!-- regla: bloques-no-son-una-direccion -->
 **Los bloques no van en una sola dirección.** Es normal que el 3 haga aparecer una pregunta que
 pertenecía al 2. Cuando pase, volvé. Un bloque cerrado no está clausurado.

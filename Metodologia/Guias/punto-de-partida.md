@@ -8,6 +8,7 @@ para decir si la app hizo lo que dijo.
 
 ---
 
+<!-- regla: por-que-no-se-salta -->
 ## 1. Nadie se salta este paso, y menos el que sabe programar
 
 La tentación es obvia: leer la arquitectura, entender cómo se arma un módulo, abrir el IDE y empezar
@@ -52,6 +53,7 @@ Lo que cambia entre un lector y otro no es si hacen este paso, sino qué papel j
 
 ---
 
+<!-- regla: con-que-llegas -->
 ## 2. Con qué llegás
 
 **Con una descripción funcional en prosa. Nada más.** No hace falta saber qué es un WASM, ni un
@@ -96,10 +98,12 @@ quinto se hace **después de la primera pasada de modelado**. Ese corte no es lo
 que alguien no intenta construir la respuesta, no se ve qué falta para poder darla.
 
 Es una conversación, no un formulario. El orden importa —cada bloque se apoya en el anterior— pero
+<!-- regla: bloques-no-son-una-direccion sesion -->
 **no es de una sola dirección**: es normal que el bloque 3 haga aparecer una pregunta que pertenecía
 al 2, o que el 4 obligue a revisar una respuesta del 1. Cuando pase, se vuelve y se corrige. Un
 bloque cerrado no está clausurado.
 
+<!-- regla: quien-es-la-institucion sesion -->
 ### Bloque 1 · Qué ya existe
 
 **Primero, quién es la institución.** No lo des por sentado: en un laboratorio o un supermercado es
@@ -111,6 +115,7 @@ obvio, y hay dominios donde no. La respuesta cambia la forma de la app entera:
 | **No hay institución** | La persona registra todo. El journal es enteramente de procedencia `TÚ`, y no hay URL2 ni token |
 | **Híbrida** | La institución manda lo que puede y la persona aporta lo que la institución no puede saber |
 
+<!-- regla: respaldo-si-la-persona-aporta sesion -->
 > **El corte que importa no es «¿hay institución?» sino «¿la persona aporta algo?»**, y agarra a los
 > dos últimos casos por igual:
 >
@@ -127,6 +132,7 @@ obvio, y hay dominios donde no. La respuesta cambia la forma de la app entera:
 > *¿Qué le **entrega** hoy la institución: un papel, un portal, un correo?*
 > *¿Y qué le **contesta**? ¿Qué pregunta suya responde sin que tenga que hacer cuentas?*
 
+<!-- regla: entregar-no-es-contestar sesion -->
 **No las mezcles.** Entregar datos no es contestar preguntas, y el filtro del bloque 2 opera sobre lo
 segundo. Un banco entrega movimientos; si además ya te muestra el gasto por categoría, eso sí es una
 pregunta contestada.
@@ -134,6 +140,7 @@ pregunta contestada.
 Lo que aparezca en la **segunda** queda descartado **como funcionalidad**: si el portal ya lo
 contesta, reproducirlo no agrega valor, lo reempaqueta.
 
+<!-- regla: descarte-es-de-la-pantalla sesion -->
 > ### Descartado como funcionalidad NO es descartado del modelo
 >
 > **Es la corrección más importante de este capítulo, y salió de una corrida.** El bloque 2 ya lo
@@ -150,6 +157,7 @@ contesta, reproducirlo no agrega valor, lo reempaqueta.
 > Que el gimnasio ya te diga si estás al día es razón perfecta para **no hacer una pantalla de
 > pagos**. No es ninguna razón para que el dominio no sepa qué es una membresía.
 
+<!-- regla: trae-el-papel sesion -->
 ### Y antes de cerrar el bloque: traé el papel
 
 **No alcanza con saber que hay un papel. Hay que leerlo.**
@@ -178,6 +186,7 @@ es qué se muestra y qué se pregunta, no qué se sabe.
 
 No *"listar exámenes por fecha"*. Sino *"¿me está subiendo el colesterol o fue una mala lectura?"*.
 
+<!-- regla: tres-filtros sesion -->
 Se insiste hasta juntar tres a cinco. Y a cada una se le pasan tres filtros:
 
 | Filtro | Si falla |
@@ -186,6 +195,7 @@ Se insiste hasta juntar tres a cinco. Y a cada una se le pasan tres filtros:
 | ¿Alcanza con **un solo dato**, o hace falta la historia? | Si alcanza con uno, el proveedor probablemente ya se lo daba |
 | ¿El portal **ya se la contesta**? | Volviste al bloque 1 |
 
+<!-- regla: filtros-no-a-la-capacidad sesion -->
 > **Los filtros se aplican a las preguntas, nunca a la capacidad.** Es el error más fácil de cometer
 > y descarta cosas imprescindibles. La clasificación de gastos, por ejemplo, la hace hoy la app de
 > muchos bancos — y aun así el modelo la necesita, porque sin ella no se puede contestar *"¿se
@@ -201,6 +211,7 @@ Se insiste hasta juntar tres a cinco. Y a cada una se le pasan tres filtros:
 > nada, porque el dominio **es** la plata — y todo el peso cae en los otros dos filtros. Si al llegar
 > al bloque 4 no hay casi nada descartado, no es que la entrevista salió mal: es este efecto.
 
+<!-- regla: pregunta-de-ausencia sesion -->
 **Una de las preguntas tiene que ser sobre una ausencia.** *"¿Hace cuánto que no me mido esto?"*,
 *"¿qué me falta?"*, *"¿se me venció algo?"*. Es la clase de pregunta que ninguna pantalla puede
 contestar —una pantalla renderiza lo que tiene— y si la lista no tiene ninguna así, lo que se está
@@ -212,6 +223,7 @@ diseñando es probablemente un listado con mejor tipografía.
 Para cada magnitud que apareció en el bloque 2 — un analito, un gasto recurrente, una categoría de
 compra, lo que sea que este dominio siga a lo largo del tiempo:
 
+<!-- regla: siete-juicios sesion -->
 > **1 · Dirección.** *¿Hacia dónde es deseable que se mueva? ¿Subir, bajar, o mantenerse dentro de
 > algo?* Ojo con asumir que es binario: hay magnitudes a las que alejarse les es malo en las dos
 > direcciones.
@@ -244,10 +256,12 @@ propia. En el laboratorio, la hemoglobina sabe el **grado de anemia**; no existe
 de un colesterol. Cuando una magnitud no tiene respuesta a esa pregunta, probablemente no necesitaba
 existir por separado.
 
+<!-- regla: no-se-inventa sesion -->
 **Si el entrevistado no sabe contestar un juicio, no se inventa.** Se anota como pendiente **con
 nombre y apellido de quién lo sabe**, y se va a buscar a esa persona. Un juicio inventado no se nota
 hasta que alguien toma una decisión con él.
 
+<!-- regla: no-preguntes-en-frio sesion -->
 > ### Pero no se pregunta en frío: se propone y se deja corregir
 >
 > **Corregido el 2026-09-01, después de correr este bloque dos veces.** Tal como estaba escrito, este
@@ -276,10 +290,12 @@ hasta que alguien toma una decisión con él.
 > 3. **Se marca ⚠️ sin firmar** hasta que lo apruebe quien sabe. La firma es asincrónica: no bloquea
 >    la sesión ni bloquea construir.
 >
+> <!-- regla: sin-default-silencioso sesion -->
 > Lo que **no** cambia: un juicio sin firmar **no tiene valor por defecto silencioso**. O el objeto no
 > se construye sin él, o la respuesta **dice que no sabe**. Un default silencioso es un juicio
 > inventado con mejores modales — ver el [capítulo 3](03-construir-la-app.md) §3.
 
+<!-- regla: regla-de-corte sesion -->
 > ### Y una regla de corte, para la sesión en vivo
 >
 > **Cuando vengan tres *"no sé"* seguidos, anotá los tres con su dueño y seguí.**
@@ -293,6 +309,7 @@ hasta que alguien toma una decisión con él.
 > propuestos sobre la mesa, y ahí la misma pregunta rinde mucho más — porque corregir un número es
 > fácil e inventarlo no.
 
+<!-- regla: que-se-descarta sesion -->
 ### Bloque 4 · Qué se descarta
 
 > *¿Qué dato te parece importante pero, siendo honesto, no le sirve a la persona **en este dominio**?*
@@ -309,6 +326,7 @@ ve qué falta para poder darla.
 
 Va **después de la primera pasada de modelado**, y son quince minutos, no otra entrevista.
 
+<!-- regla: bloque-5-con-huecos sesion -->
 > **Se entra con el `HUECOS.md` en la mano, y ése es todo el guion.** Es el registro que quien modela
 > fue escribiendo mientras construía —lo define el [capítulo 3](03-construir-la-app.md) §8 bis— y
 > trae las dos clases de cosa que este bloque necesita: lo que quedó **declarado sin firmar** en la
@@ -318,6 +336,7 @@ Va **después de la primera pasada de modelado**, y son quince minutos, no otra 
 > la regla de abajo antes de decirla en voz alta. Si el `HUECOS.md` está vacío, o no se modeló, o no
 > se anotó mientras se modelaba — nunca es que no hubo huecos.
 
+<!-- regla: quien-es-clase-lo-decide sesion -->
 > **La regla que gobierna este bloque, y es la que más fácil se rompe:**
 >
 > **La persona contesta sobre el negocio. Quién se vuelve una clase lo decide quien modela.**
@@ -325,6 +344,7 @@ Va **después de la primera pasada de modelado**, y son quince minutos, no otra 
 > La prueba es literal: **¿podría contestarla alguien que nunca programó?** Si la pregunta contiene
 > *clase*, *tipo*, *entidad*, *dominio* o *sustantivo*, está mal formada.
 
+<!-- regla: mal-vs-bien-formada sesion -->
 #### Por qué esto se rompe tan fácil
 
 Porque para este punto **quien modela ya sabe qué le falta**, y lo que le falta tiene forma de
@@ -341,6 +361,7 @@ razonable de este lado del escritorio.
 Las de la derecha se contestan sin saber nada técnico, y **de sus respuestas se deduce lo mismo** —
 esa es la prueba de que la de la izquierda era innecesaria.
 
+<!-- regla: tres-cacerias sesion -->
 #### Las tres cacerías
 
 **1 · Una palabra apareció en las preguntas y nadie la desarrolló.**
@@ -359,6 +380,7 @@ productiva de la sesión.
 
 > *¿De dónde sale…? ¿Eso viene en lo que te manda la institución, o lo sabés vos?*
 
+<!-- regla: barrido-de-la-institucion sesion -->
 Hay un barrido barato que conviene hacer antes de preguntar: **mirar qué manda realmente la
 institución.** Un estado de cuenta bancario trae débitos **y créditos**; si el modelo sólo tiene
 gastos, le falta la mitad de lo que ya está entrando, y eso no requiere entrevistar a nadie para
@@ -370,9 +392,11 @@ Todo lo que quien modela decidió solo se **lee en voz alta como propuesta**, y 
 
 > *Dejamos que un cargo que no llega se avise a los tres días. ¿Te suena bien, o depende de cuál?*
 
+<!-- regla: proponer-el-umbral sesion -->
 No preguntes *"¿cuál es el umbral?"*: nadie tiene un umbral en la cabeza. **Proponé uno y dejá que lo
 muevan** — corregir es mucho más fácil que inventar, y lo que corrijan es información.
 
+<!-- regla: entrevistado-generoso sesion -->
 #### Y una advertencia sobre el entrevistado
 
 **Si contesta todo rápido y sin dudar, sospechá.** Una persona generosa contesta igual una pregunta
@@ -382,6 +406,7 @@ paciente.
 
 ---
 
+<!-- regla: que-sale-tres-partes -->
 ## 4. Qué sale
 
 Un `Preguntas.md` en el directorio del negocio, con tres partes que **no se enumeran igual**:
@@ -399,6 +424,7 @@ Esa asimetría es el corazón del asunto. **No se enumeran las preguntas: se enu
 hacen que ciertas preguntas tengan respuesta.** Un modelo al que se le declaró la capacidad contesta
 cosas que nadie previó; un modelo al que no se le declaró un juicio no lo puede inventar después.
 
+<!-- regla: parte-1-donde-vive -->
 > ### La Parte 1 lleva una columna que dice dónde vive cada renglón
 >
 > Un renglón por sustantivo, y **al lado dónde quedó en el dominio** — se llena **al modelar**, no en
@@ -432,24 +458,24 @@ El capítulo 4 desarrolla cómo se escribe cada parte, y trae el ejemplo trabaja
 ## 5. Cuándo terminaste
 
 - [ ] ¿Se leyó **el papel campo por campo**, y cada campo quedó en la Parte 1? Es la casilla que
-      verifica el paso más barato del bloque 1, y el único donde nadie contesta *"no sé"*
-- [ ] ¿Hay tres a cinco preguntas, cada una en la voz de la persona y no en la de un sistema?
-- [ ] ¿Al menos una es sobre una **ausencia**, que ninguna pantalla podría mostrar?
+      verifica el paso más barato del bloque 1, y el único donde nadie contesta *"no sé"* <!-- regla: cierre-papel sesion -->
+- [ ] ¿Hay tres a cinco preguntas, cada una en la voz de la persona y no en la de un sistema? <!-- regla: cierre-preguntas sesion -->
+- [ ] ¿Al menos una es sobre una **ausencia**, que ninguna pantalla podría mostrar? <!-- regla: cierre-ausencia sesion -->
 - [ ] ¿Cada juicio del bloque 3 tiene respuesta, o está anotado como pendiente con **nombre y
-      apellido** de quién la tiene?
-- [ ] ¿Está escrito lo que se **descartó**, y por qué?
-- [ ] ¿Los candidatos a cruce quedaron anotados en vez de forzados adentro?
+      apellido** de quién la tiene? <!-- regla: cierre-juicios sesion -->
+- [ ] ¿Está escrito lo que se **descartó**, y por qué? <!-- regla: cierre-descartado sesion -->
+- [ ] ¿Los candidatos a cruce quedaron anotados en vez de forzados adentro? <!-- regla: cierre-cruces sesion -->
 - [ ] ¿**Cada palabra** que aparece en las preguntas tiene algo detrás? Es el que más se salta, y el
       que dejó a un dominio de presupuesto **sin ningún tipo de ingreso** teniendo *"el alquiler que
-      recibo"* escrito en una de sus preguntas
+      recibo"* escrito en una de sus preguntas <!-- regla: cierre-palabras sesion -->
 - [ ] ¿**Cada renglón de la Parte 1** dice dónde vive —una clase, varias, un miembro, un conjunto
       cerrado— y **ninguno quedó vacío**? No se pide una clase por renglón: se pide que nada declarado
       esté en ninguna parte. La casilla de arriba mira las preguntas y **no alcanza**: en el gimnasio
       *"membresía"* no aparecía en ninguna pregunta —estaba en la Parte 1 y en lo descartado—, así que
-      la dejó pasar y el dominio salió sin ella. **Esta casilla se llena al modelar, no en la sesión**
+      la dejó pasar y el dominio salió sin ella. **Esta casilla se llena al modelar, no en la sesión** <!-- regla: cierre-parte-1 sesion -->
 - [ ] ¿Los juicios que quedaron sin firmar están marcados como tales, y **ninguno tiene un valor por
-      defecto silencioso** en el código?
-- [ ] ¿Lo leyó y lo aprobó quien conoce el negocio, sin necesidad de que nadie le tradujera nada?
+      defecto silencioso** en el código? <!-- regla: cierre-sin-firmar sesion -->
+- [ ] ¿Lo leyó y lo aprobó quien conoce el negocio, sin necesidad de que nadie le tradujera nada? <!-- regla: cierre-aprobado sesion -->
 
 Ese último es el que de verdad cierra el paso. Si hizo falta explicarle el archivo a la persona que
 lo va a aprobar, el archivo está mal escrito.

@@ -7,6 +7,8 @@ mismas**, que hasta ahora no tenían ningún chequeo.
 | | Qué verifica | Cuándo correrlo |
 |---|---|---|
 | [`verificar-enlaces.sh`](verificar-enlaces.sh) | Que cada enlace de los `.md` apunte a un archivo que existe, y que cada ancla `#...` corresponda a un encabezado real | Después de tocar cualquier guía |
+| [`verificar-hoja.sh`](verificar-hoja.sh) | Que la hoja de la entrevista y el punto de partida declaren las **mismas reglas**. Es el [observable 14](../Guias/observables.md) | Después de tocar cualquiera de los dos |
+| [`revisar-acoplamiento.sh`](revisar-acoplamiento.sh) | Avisa si un commit tocó la hoja o el capítulo **pero no el otro**. Heurística, no observable: nunca falla | Antes de abrir un PR |
 
 ---
 
@@ -40,6 +42,63 @@ cuando una regla se corrige— rompe todos esos enlaces en silencio.
 - **Ignora lo que esté adentro de un bloque de código**, a propósito: ahí el markdown es un ejemplo,
   no un enlace. Es lo que permite que este mismo README muestre enlaces rotos sin dispararse
 - Sólo mira el árbol que se le pase por argumento
+
+---
+
+---
+
+## `verificar-hoja.sh`
+
+```bash
+bash Metodologia/Herramientas/verificar-hoja.sh
+```
+
+Compara los **marcadores de regla** de los dos archivos — comentarios HTML, invisibles al leer:
+
+```
+<!-- regla: filtros-no-a-la-capacidad sesion -->
+```
+
+Dos reglas: **todo marcador de la hoja está en el capítulo** (la hoja no tiene doctrina propia), y
+**todo marcador `sesion` del capítulo está en la hoja** (lo que hace falta en vivo llega al guion).
+
+### Por qué marcadores y no comparar el texto
+
+Los dos documentos dicen lo mismo con palabras distintas **a propósito**: uno es doctrina y el otro
+es guion de sesión. *"Pero no se pregunta en frío: se propone y se deja corregir"* contra *"No
+preguntes en frío: proponé"*. Un diff daría cientos de diferencias legítimas y ninguna real.
+
+Comparar significados necesita que un humano juzgue — o sea que **no es observable**. La salida es
+volverlo una declaración, que es el argumento del manifiesto: *porque es una declaración, se puede
+verificar*.
+
+### El piso
+
+Si cualquiera de los dos archivos trae menos de **20** marcadores, el script **falla** en vez de
+aprobar. Sin eso, un par sin marcadores pasa perfecto —cero marcadores, cero divergencias, código
+0—, y borrar los marcadores sería la forma más fácil de tener el chequeo en verde.
+
+### Lo que NO caza
+
+**Una regla que pierde contenido sin desaparecer.** Si el capítulo deja de decir algo dentro de una
+regla que sigue estando en los dos lados, esto no lo ve — compara presencia, no contenido. Pasó de
+verdad, y es el defecto residual conocido.
+
+---
+
+## `revisar-acoplamiento.sh`
+
+```bash
+bash Metodologia/Herramientas/revisar-acoplamiento.sh 20
+```
+
+Cubre el agujero del anterior: **el marcador lo pone la misma persona que se olvida de sincronizar.**
+Esto no depende de que nadie declare nada — mira los commits y avisa cuando uno tocó la hoja o el
+capítulo pero no el otro.
+
+**Es una heurística, no un observable.** Tiene falsos positivos legítimos —un typo en el capítulo no
+obliga a tocar la hoja— así que dice *"revisar"* y **sale siempre con código 0**. Corrido sobre la
+historia real marcó tres commits, y dos eran exactamente los que habían introducido divergencias.
 
 ---
 
@@ -78,3 +137,18 @@ dos rotos:
 
 Los dos últimos importan tanto como los primeros: un verificador que marca todo como roto es tan
 inútil como uno que no marca nada, y es el error que este script ya cometió.
+
+### Y `verificar-hoja.sh` se probó antes de escribirlo
+
+Con la misma disciplina, aplicada al revés: **se reconstruyó el estado del repo de antes de arreglar
+las nueve divergencias**, se marcó, y se corrió contra eso. Cazó siete de las nueve, y las dos que no
+quedaron escritas arriba en vez de disimuladas.
+
+Cuando se toque, los cuatro controles se vuelven a correr:
+
+| | Esperado |
+|---|---|
+| Los archivos de hoy | 0 divergencias, código 0 |
+| El estado de `b6b48dc`, marcado | 8 divergencias, código 1 |
+| Dos `.md` cualesquiera sin marcadores | **falla por el piso**, código 1 |
+| `revisar-acoplamiento.sh` sobre la historia | marca `b6b48dc` y `2451225` |
