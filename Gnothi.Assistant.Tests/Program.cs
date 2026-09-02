@@ -132,14 +132,9 @@ if (modulos.Length == 0)
 }
 else
 {
-	// PRIMERO el guardian: que cada manifiesto coincida con las tools que su modulo REALMENTE
-	// expone. Comparar las tres puertas sobre un catalogo que no coincide con los modulos seria
-	// verificar la copia equivocada. Ver GuardianDeManifiestos.
-	Console.WriteLine();
-	Console.WriteLine("=== LOS MANIFIESTOS COINCIDEN CON LOS MODULOS ===");
-	Console.WriteLine($"  modulos: {modulos}");
-	await Gnothi.Conformance.GuardianDeManifiestos.Verificar(modulos, Assert);
-
+	// La suite arranca cada modulo y cruza su manifiesto contra las tools REALES antes de comparar
+	// las tres puertas: un catalogo que no coincide con los modulos compararia la copia equivocada.
+	// Ese guardian corre PRIMERO dentro de Run (Conformance.cs).
 	Console.WriteLine();
 	Console.WriteLine("=== LAS TRES PUERTAS CONTESTAN LO MISMO ===");
 	await Gnothi.Conformance.Conformance.Run(modulos, Assert);
