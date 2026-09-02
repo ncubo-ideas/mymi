@@ -37,6 +37,10 @@ namespace Compras.App.Eventos
 		public string[] Categorias { get; private set; }
 		public int[] MesesDeGarantia { get; private set; }
 
+		/// <summary>En qué sucursal fue, o vacío: el campo es OPCIONAL en el wire, y un
+		/// tiquete que no lo trae sigue siendo un tiquete válido.</summary>
+		public string Sucursal { get; private set; } = "";
+
 		private CompraRegistrada() { }
 
 		// Devuelve null si la senal no es una CompraRegistrada bien formada, o si trae
@@ -80,6 +84,9 @@ namespace Compras.App.Eventos
 					Evento = senal.Numero,
 					Numero = numero,
 					Fecha = fecha,
+					// Opcional a proposito: los proveedores que no lo mandan siguen
+					// entrando. Sin el, la compra queda sin situar, no rechazada.
+					Sucursal = Texto(raiz, "sucursal"),
 					Skus = skus,
 					Descripciones = descripciones,
 					Cantidades = cantidades,

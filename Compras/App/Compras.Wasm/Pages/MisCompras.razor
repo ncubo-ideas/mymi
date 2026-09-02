@@ -16,18 +16,96 @@
    contesta, así que la promesa y el producto dicen lo mismo. Eso no siempre pasa: el landing
    prometía un "% ocasional" que la app ya no calcula, y hubo que sacarlo. *@
 <header class="hero">
+    @* LA FLOR DE AGUA: la guaria grande y tenue detras de la canasta. Es la presencia de
+       marca EN EL LIENZO -no solo en el cromo oscuro- que el equipo pidio: la institucion
+       firma la pantalla sin escribir su nombre dos veces. Decorativa: aria-hidden. *@
+    <svg class="hero-flor" viewBox="0 0 40 40" aria-hidden="true">
+        <g>
+            <ellipse fill="var(--gu-morado-claro)" cx="20" cy="9.6" rx="2.9" ry="6.4"/>
+            <ellipse fill="var(--gu-morado-claro)" cx="11.8" cy="27.6" rx="6.2" ry="2.4"
+                     transform="rotate(40 11.8 27.6)"/>
+            <ellipse fill="var(--gu-morado-claro)" cx="28.2" cy="27.6" rx="6.2" ry="2.4"
+                     transform="rotate(-40 28.2 27.6)"/>
+            <ellipse fill="var(--gu-morado)" cx="11.2" cy="15.6" rx="6.4" ry="3.5"
+                     transform="rotate(-26 11.2 15.6)"/>
+            <ellipse fill="var(--gu-morado)" cx="28.8" cy="15.6" rx="6.4" ry="3.5"
+                     transform="rotate(26 28.8 15.6)"/>
+            <path fill="var(--gu-morado-hondo)" d="M20 19.6c4 0 6.4 2.8 6.4 6 0 2.6-1.8 4.4-4 4.8-.9-.9-1.5-1.4
+                     -2.4-1.4s-1.5.5-2.4 1.4c-2.2-.4-4-2.2-4-4.8 0-3.2 2.4-6 6.4-6z"/>
+        </g>
+    </svg>
     <div class="hero-dicho">
+        @* EL HERO ES LA RESPUESTA, no el eslogan (rediseño de Fernanda). "Tu super, mas
+           cerca de vos" decia que hace la app; "Asi vienen tus compras" dice que dicen SUS
+           datos hoy, y la bajada lo resume con lo que el dominio ya sabe. El eslogan queda
+           para antes de abrir, que es cuando la app todavia no tiene nada que contar. *@
         <p class="hero-saludo">¡Hola!</p>
-        <h1>Tu súper,<br />más cerca de vos</h1>
+        <h1>Así vienen<br />tus compras</h1>
         <p class="hero-bajada">
-            Descubrí lo que siempre vuelve y cómo cambia tu carrito.
+            @if (estado.EstaArriba && compras.Count > 0)
+            {
+                @* Y LAS SUCURSALES EN LA MISMA LINEA, cuando se mueve: "desde enero en 3
+                   sucursales" es el arco de Geannina en seis palabras, y Juan no lo
+                   encontraba plegado alla abajo. Si compra siempre en la misma, no suma
+                   nada: no es noticia. *@
+                @((ritmos.Count > 0
+                    ? $"Casi todo habitual · {ritmos.Count} {(ritmos.Count == 1 ? "cambio" : "cambios")} de ritmo"
+                    : "Todo como siempre por acá.") + Sucursales())
+            }
+            else
+            {
+                @:Descubrí lo que siempre vuelve y cómo cambia tu carrito.
+            }
         </p>
+        @* LA FIRMA DE QUIEN TE LO CUENTA. El hero da la respuesta; esta linea dice de parte
+           de quien viene — que es exactamente el marketing que el equipo pidio: la lectura
+           util QUEDA ASOCIADA a la marca. *@
+        <p class="hero-firma">Supermercado La Guaria &middot; tu súper de barrio</p>
     </div>
     @* La ilustración es DECORATIVA: alt vacío y aria-hidden. Lo que dice ya está en el
        texto de al lado, y un lector de pantalla que la anuncie repite sin agregar. *@
     <img class="hero-canasta" src="assets/hero-canasta.png" alt="" aria-hidden="true"
          width="480" height="514" loading="eager" />
 </header>
+
+@* LOS BANNERES DEL SUPER, ya no maqueta: cada cartel LLEGO COMO EVENTO por URL2 al
+   journal, igual que las compras — es copia de ella, funciona sin conexion, y el super no
+   se entera de cuales vio. La app solo muestra las VIGENTES al dia de hoy; las vencidas
+   quedan en el journal para el asistente.
+
+   Los tres tintes rotan por posicion -verde, crema, y el morado de la flor- y la foto
+   sale del sku del evento por el mismo mapa de las fichas; un cartel sin sku (la rifa)
+   lleva la canasta del hero. *@
+@if (estado.EstaArriba && promociones.Count > 0)
+{
+    <section class="promos" aria-label="Promociones de la semana">
+        <div class="seccion-cabeza">
+            <span class="seccion-icono" aria-hidden="true">
+                <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6"
+                     stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M3 8.5v3l9 4V4.5z"/><path d="M12 6.5c2 .6 3.2 1.9 3.2 3.5S14 12.9 12 13.5"/>
+                    <path d="M5.2 12.2l.8 3.6c.1.5.5.7 1 .7h.9"/>
+                </svg>
+            </span>
+            <h2 class="kicker">Promociones de la semana</h2>
+        </div>
+
+        <div class="promo-tira">
+            @for (int i = 0; i < promociones.Count; i++)
+            {
+                var promo = promociones[i];
+                <article class="promo @Tinte(i)">
+                    <div class="promo-dicho">
+                        <span class="promo-gancho">@promo.Gancho</span>
+                        <span class="promo-que">@promo.Detalle</span>
+                        <span class="promo-vence">@Vigencia(promo)</span>
+                    </div>
+                    <img class="promo-foto" src="@FotoDePromo(promo)" alt="" aria-hidden="true" />
+                </article>
+            }
+        </div>
+    </section>
+}
 
 @* UN solo lugar para los errores, y arriba (la leccion de la pantalla de Examenes). *@
 @if (error.Length > 0)
@@ -173,16 +251,17 @@ else
        de una advertencia que vio una vez. *@
     else if (estado.EnAlmacenamientoDelNavegador)
     {
-        <div class="aviso d-flex align-items-center flex-wrap gap-2 mb-3">
-            <div class="flex-grow-1">
-                <strong>Guardado @(instalada == true ? "en esta app" : "en este navegador").</strong>
-                Tus compras sobreviven al cierre, pero viven donde el navegador las administra:
-                <strong>tu asistente no las puede consultar</strong>. Para eso hace falta una
-                carpeta tuya.
+        @* A UNA LINEA: la advertencia importa -es la mitad del producto que aca no
+           funciona- pero un parrafo permanente carga la portada. La frase corta dice lo
+           mismo que hay que saber; el porque completo vive en la pantalla de eleccion. *@
+        <div class="aviso aviso-linea d-flex align-items-center flex-wrap gap-2 mb-3">
+            <div class="flex-grow-1 small">
+                <strong>Guardado @(instalada == true ? "en esta app" : "en este navegador")</strong>
+                &middot; tu asistente no lo puede consultar.
             </div>
             @if (soportado == true)
             {
-                <button class="btn btn-aviso" @onclick="ConectarCarpeta">Elegir una carpeta</button>
+                <button class="btn btn-aviso btn-sm" @onclick="ConectarCarpeta">Elegir carpeta</button>
             }
         </div>
     }
@@ -277,168 +356,128 @@ else
         </div>
     }
 
-    @if (firma is not null && firma.Existe)
+    @* ============ LA PORTADA RESUME; EL DETALLE VIVE DETRAS DE UN "VER →" ============
+       Es el rediseño de Fernanda que el equipo aprobo: cada carta cuenta UNA historia y el
+       resto se abre ahi mismo o vive en su pantalla. Antes la portada desplegaba todo
+       -diez secciones, cinco mil pixeles en telefono-; ahora es una pantalla y media. Nada
+       se perdio: lo que ya no se pinta desplegado se abre con su enlace, y el asistente
+       siempre tuvo el detalle entero por sus tools. *@
+
+    @* UN CAMBIO EN TU RUTINA: una sola historia -la mas notoria, que ya viene primera del
+       dominio- con su antes/ahora y desde cuando. El resto de los cambios y los productos
+       que entraron/salieron se abren aca mismo. *@
+    @if (ritmos.Count > 0)
     {
-        <div class="card border-success-subtle bg-success-subtle mb-3">
-            <div class="card-body">
-                @* EL "VER TODOS" es del diseño de Fernanda, y la portada muestra un puñado
-                   a proposito: aca la pregunta es reconocerse de un vistazo, y la lista
-                   entera es otra pantalla. *@
-                <div class="seccion-cabeza seccion-cabeza--estable">
-                    <span class="seccion-icono" aria-hidden="true"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M4.5 10a5.5 5.5 0 0 1 9.3-4"/><path d="M13.9 3.2v3.2h-3.2"/><path d="M15.5 10a5.5 5.5 0 0 1-9.3 4"/><path d="M6.1 16.8v-3.2h3.2"/></svg></span>
-                    <span class="kicker">Los que siempre vuelven</span>
-                    <a class="ver-todos" href="infaltables">Ver todos &rarr;</a>
-                </div>
-                @* NO SE PINTA LA FRASE DEL DOMINIO. Decia "su semana tiene una firma:
-                   Leche…" — en TERCERA PERSONA, porque esas frases estan escritas para que
-                   se las LEA el asistente, no para esta pantalla. Toda la app la tutea y esa
-                   linea hablaba SOBRE ella, como un reporte sobre una clienta.
-
-                   Por eso ese miembro dejo de llamarse ParaSonia y se llama ParaElAsistente:
-                   el nombre viejo invitaba a pintarlo. *@
-                <div class="fs-5">
-                    Esto es lo que no te falla. Lo llevás casi cada vez que vas.
-                </div>
-
-                @* Con UN solo habitual, repetir el nombre debajo de la frase que ya lo dice
-                   es ruido: alcanza la frecuencia. Con varios, las etiquetas dicen cual
-                   falla menos, que la frase no puede ordenar. *@
-                @if (firma.CuantosHabituales == 1)
-                {
-                    <div class="small text-body-secondary mt-2">
-                        @Frecuencia(firma.Habituales[0])
-                    </div>
-                }
-                else
-                {
-                    @* LOS PUNTITOS son del diseño de la app: "3 de 4 compras" con tres de
-                       cuatro puntos llenos. Un numero se lee; una fila de puntos se
-                       RECONOCE de un vistazo, y con doce habituales eso importa. *@
-                    <div class="infaltables">
-                        @foreach (var habitual in firma.Habituales)
-                        {
-                            <div class="infaltable">
-                                @{ string foto = Foto(habitual.Sku); }
-                                @if (foto.Length > 0)
-                                {
-                                    <img class="infaltable-foto" src="@foto" alt="" />
-                                }
-                                else
-                                {
-                                    <span class="infaltable-sinfoto" aria-hidden="true"></span>
-                                }
-                                <div class="infaltable-nombre">@Corto(habitual.Descripcion)</div>
-                                @* SE FUE EL "8 de 8 compras". Es la FRACCION con la que el
-                                   dominio decide quien entra a la firma — un dato del
-                                   mecanismo, no de ella: nadie piensa "llevo la leche en 8 de
-                                   mis ultimas 8 compras". Los puntos ya dibujan esa misma
-                                   proporcion para quien la quiera de un vistazo, y la
-                                   constancia la dice como se dice: "nunca falla". La cuenta
-                                   exacta la sigue dando la tool la_firma_de_mi_canasta. *@
-                                <div class="puntos" aria-hidden="true">
-                                    @for (int i = 0; i < habitual.DeCuantas; i++)
-                                    {
-                                        <span class="punto @(i < habitual.ComprasEnQueAparece ? "punto-lleno" : "")"></span>
-                                    }
-                                </div>
-                                <div class="infaltable-constancia">@habitual.Constancia</div>
-                            </div>
-                        }
-                    </div>
-                }
-            </div>
-        </div>
-    }
-
-    @if (cambio is not null && cambio.HayCambio)
-    {
-        <div class="card border-warning-subtle bg-warning-subtle mb-4">
+        <div class="card border-warning-subtle bg-warning-subtle mb-3">
             <div class="card-body">
                 <div class="seccion-cabeza seccion-cabeza--cambio">
                     <span class="seccion-icono" aria-hidden="true"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M10 3.5l1.5 4.2 4.2 1.5-4.2 1.5L10 14.9l-1.5-4.2-4.2-1.5 4.2-1.5z"/><path d="M15.7 13.9l.6 1.7 1.7.6-1.7.6-.6 1.7-.6-1.7-1.7-.6 1.7-.6z"/></svg></span>
-                    <span class="kicker">
-                        Lo que cambió
-                        @if (cambio.MesDelCambio.Length > 0)
-                        {
-                            <span class="seccion-desde">· desde @cambio.MesDelCambio</span>
-                        }
-                    </span>
+                    <span class="kicker">Un cambio en tu rutina</span>
                 </div>
 
-                @* La frase del dominio (ParaElAsistente) esta escrita para que la LEA alguien: es
-                   la que contestan el MCP y la consola. En pantalla, con nueve productos, se
-                   volvia un parrafo de cuatro lineas que terminaba en "(y 4 mas)" — un
-                   volcado, no una lectura. Aca van los mismos hechos del dominio
-                   -Entraron y Salieron, cada uno con su mes- en dos filas que se recorren
-                   con la vista. *@
-                @if (cambio.Entraron.Count > 0)
-                {
-                    <div class="mb-2">
-                        <span class="small text-body-secondary me-2">entraron</span>
-                        <span class="d-inline-flex flex-wrap gap-2 align-middle">
-                            @foreach (var entro in cambio.Entraron)
-                            {
-                                <span class="etiqueta etiqueta-cambio">
-                                    @entro.Descripcion
-                                    <span class="opacity-75">&middot; @entro.Desde</span>
-                                </span>
-                            }
-                        </span>
-                    </div>
-                }
+                <div class="fs-5 mb-2">
+                    @ritmos[0].Descripcion aparece @(ritmos[0].EsMasSeguido ? "más" : "menos") seguido
+                </div>
+                <div class="d-flex align-items-center gap-2 flex-wrap">
+                    <span class="ritmo-rotulo">antes</span>
+                    <span class="etiqueta etiqueta-neutra">@ritmos[0].Antes</span>
+                    <span class="text-body-secondary">&rarr;</span>
+                    <span class="ritmo-rotulo">ahora</span>
+                    <span class="etiqueta etiqueta-cambio">@ritmos[0].Ahora</span>
+                    @if (cambio is not null && cambio.Corte.Length > 0)
+                    {
+                        <span class="ritmo-rotulo ms-1">&middot; cambió desde @MesLegible(cambio.Corte)</span>
+                    }
+                </div>
 
-                @if (cambio.Salieron.Count > 0)
+                @if (!verCambios && (ritmos.Count > 1 || (cambio is not null && cambio.HayCambio)))
                 {
-                    <div>
-                        <span class="small text-body-secondary me-2">dejó de aparecer</span>
-                        <span class="d-inline-flex flex-wrap gap-2 align-middle">
-                            @foreach (var salio in cambio.Salieron)
+                    <button class="btn btn-link p-0 mt-3 ver-todos" @onclick="() => verCambios = true">
+                        Ver los cambios &rarr;
+                    </button>
+                }
+                @if (verCambios)
+                {
+                    @if (ritmos.Count > 1)
+                    {
+                        <div class="mt-3">
+                            @foreach (var r in ritmos.Skip(1))
                             {
-                                <span class="etiqueta etiqueta-neutra">@salio.Descripcion</span>
+                                <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 py-1">
+                                    <span>@r.Descripcion</span>
+                                    <span class="d-inline-flex align-items-center gap-2">
+                                        <span class="etiqueta etiqueta-neutra">@r.Antes</span>
+                                        <span class="text-body-secondary">&rarr;</span>
+                                        <span class="etiqueta @(r.EsMasSeguido ? "etiqueta-cambio" : "etiqueta-neutra")">@r.Ahora</span>
+                                    </span>
+                                </div>
                             }
-                        </span>
-                    </div>
+                        </div>
+                    }
+                    @if (cambio is not null && cambio.Entraron.Count > 0)
+                    {
+                        <div class="mt-3">
+                            <span class="small text-body-secondary me-2">entraron</span>
+                            <span class="d-inline-flex flex-wrap gap-2 align-middle">
+                                @foreach (var entro in cambio.Entraron)
+                                {
+                                    <span class="etiqueta etiqueta-cambio">@entro.Descripcion <span class="opacity-75">&middot; @entro.Desde</span></span>
+                                }
+                            </span>
+                        </div>
+                    }
+                    @if (cambio is not null && cambio.Salieron.Count > 0)
+                    {
+                        <div class="mt-2">
+                            <span class="small text-body-secondary me-2">dejó de aparecer</span>
+                            <span class="d-inline-flex flex-wrap gap-2 align-middle">
+                                @foreach (var salio in cambio.Salieron)
+                                {
+                                    <span class="etiqueta etiqueta-neutra">@salio.Descripcion</span>
+                                }
+                            </span>
+                        </div>
+                    }
+                    <button class="btn btn-link p-0 mt-3 ver-todos" @onclick="() => verCambios = false">
+                        Ver menos
+                    </button>
                 }
             </div>
         </div>
     }
 
-    @* CADA CUANTO, que es la otra cara del mismo quiebre: la tarjeta de arriba dice QUÉ
-       entró, esta dice si lo compra MÁS SEGUIDO. Es la tarjeta "un cambio en tu rutina"
-       del diseño de la app.
-
-       La cadencia se dice como habla la gente —"1 vez/mes → 1 vez/semana"— y no en días,
-       porque "cada 6,5 días" no es como habla nadie. Y sin veredicto: de qué a qué. *@
-    @if (ritmos is not null && ritmos.Count > 0)
+    @* LOS QUE CASI NUNCA FALTAN: una fila compacta -tres fotitos y tres nombres- que lleva
+       a la pantalla completa. Antes era una grilla de doce fichas EN la portada; la grilla
+       vive en /infaltables, que siempre fue su pantalla. *@
+    @if (firma is not null && firma.Existe)
     {
-        <div class="seccion-cabeza">
-            <span class="seccion-icono" aria-hidden="true"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M10 6.3v4l2.6 1.6"/><circle cx="10" cy="10" r="6.6"/></svg></span>
-            <h2 class="kicker">Un cambio en tu rutina</h2>
-        </div>
-        <div class="list-group mb-4">
-            @foreach (var ritmo in ritmos)
-            {
-                <div class="list-group-item d-flex justify-content-between align-items-center flex-wrap gap-2">
-                    <strong>@ritmo.Descripcion</strong>
-                    <span class="d-inline-flex align-items-center gap-2">
-                        <span class="etiqueta etiqueta-neutra">@ritmo.Antes</span>
-                        <span class="text-body-secondary">&rarr;</span>
-                        <span class="etiqueta @(ritmo.EsMasSeguido ? "etiqueta-cambio" : "etiqueta-neutra")">
-                            @ritmo.Ahora
-                        </span>
+        <div class="list-group mb-3">
+            <button class="list-group-item list-group-item-action firma-fila"
+                    @onclick="@(() => navegacion.NavigateTo("infaltables"))">
+                <span class="fotitos" aria-hidden="true">
+                    @foreach (var h in firma.Habituales.Take(3))
+                    {
+                        @if (Foto(h.Sku).Length > 0)
+                        {
+                            <img src="@Foto(h.Sku)" alt="" />
+                        }
+                    }
+                </span>
+                <span class="firma-que">
+                    <strong>Lo que casi nunca falta</strong>
+                    <span class="ritmo-rotulo">
+                        @string.Join(" · ", firma.Habituales.Take(3).Select(h => Corto(h.Descripcion)))@(firma.CuantosHabituales > 3 ? $" · y {firma.CuantosHabituales - 3} más" : "")
                     </span>
-                </div>
-            }
+                </span>
+                <span class="recibo-flecha" aria-hidden="true">&rsaquo;</span>
+            </button>
         </div>
     }
 
-    @* TU MES EN EL SÚPER. La cifra grande, cuántas compras la hicieron, cómo viene contra
-       el mes anterior, y la serie de las compras del mes.
-
-       El sparkline se dibuja con la lista que la pantalla YA tiene —cada compra trae fecha
-       y total—, así que no hace falta una lectura nueva del dominio para esto. Lo que sí
-       vino del dominio es QUÉ DOS MESES comparar: esta pantalla no sabe cuál es el último
-       mes con compras, y la aritmética de "el mes anterior" se resuelve mal en enero. *@
+    @* TU MES EN EL SUPER: una carta con las tres cifras del mes -cuantas compras, cada
+       cuantos dias, y como viene contra el mes pasado- y el detalle detras de sus enlaces:
+       el ritmo (dia y momento favoritos) y la comparacion del año, que es la respuesta a
+       S14. Fusiona las tres cartas que antes iban sueltas. *@
     @if (mes is not null && mes.HayComparacion)
     {
         <div class="seccion-cabeza">
@@ -447,56 +486,138 @@ else
         </div>
         <div class="card mb-4">
             <div class="card-body">
-                <div class="d-flex justify-content-between align-items-start flex-wrap gap-2">
-                    <div>
-                        <div class="cifra-grande">@Colones(mes.GastoDespues)</div>
-                        <div class="ritmo-rotulo">
-                            en @ComprasDelMes().Count
-                            @(ComprasDelMes().Count == 1 ? "compra" : "compras")
-                            &middot; @Mes(mes.MesDespues)/@mes.AnioDespues
-                        </div>
+                <div class="tiles-mes">
+                    <div class="ritmo-cifra">
+                        <span class="ritmo-numero">@ComprasDelMes().Count</span>
+                        <span class="ritmo-rotulo">@(ComprasDelMes().Count == 1 ? "compra este mes" : "compras este mes")</span>
                     </div>
-                    @* El signo lo dice el DOMINIO (Cambio); acá solo se pinta. Y va neutro,
-                       no verde ni rojo: gastar menos no es un logro ni gastar más una falta.
-                       La app señala y se calla. *@
-                    <span class="etiqueta etiqueta-neutra">
-                        @(mes.Cambio >= 0 ? "▲" : "▼")
-                        @Porcentaje(mes.Cambio) vs. @Mes(mes.MesAntes)
-                    </span>
+                    @if (ritmo is not null && ritmo.EsObservado)
+                    {
+                        <div class="ritmo-cifra">
+                            <span class="ritmo-numero">@ritmo.DiasEntreCompras</span>
+                            <span class="ritmo-rotulo">días entre una y otra</span>
+                        </div>
+                    }
+                    <div class="ritmo-cifra">
+                        <span class="ritmo-numero ritmo-numero-largo">@Colones(Math.Abs(mes.CambioEnElTotal))</span>
+                        <span class="ritmo-rotulo">@(mes.CambioEnElTotal <= 0 ? "menos" : "más") que en @Mes(mes.MesAntes)</span>
+                    </div>
                 </div>
 
                 @{ var delMes = ComprasDelMes(); }
-                @if (delMes.Count > 1)
+                @* PLEGADA, como en el mock de Fernanda ("Ver la grafica" es un ENLACE ahi,
+                   no un dibujo fijo): la forma del mes es curiosidad, no accion, y la
+                   portada estaba cargando demasiado. *@
+                @if (verGrafica && delMes.Count > 1)
                 {
                     <svg class="serie-mes" viewBox="0 0 300 60" preserveAspectRatio="none"
                          role="img" aria-label="Las compras del mes, una por punto.">
                         <polyline points="@Puntos(delMes)" />
+                        @* PUNTOS QUE NO SE DEFORMAN. Con preserveAspectRatio="none" un
+                           <circle> se estira al ancho de la carta y sale OVALO. Un trazo de
+                           largo cero con punta redonda dibuja el mismo punto, y con
+                           non-scaling-stroke NO escala: queda circulo a cualquier ancho.
+                           Van dos capas -el aro verde y el centro claro- porque una punta
+                           de trazo no puede tener relleno y borde a la vez. *@
                         @for (int i = 0; i < delMes.Count; i++)
                         {
-                            <circle cx="@Equis(i, delMes.Count)" cy="@Ye(delMes[i].Total, delMes)" r="3" />
+                            @* "M @(...)" con espacio: Razor no evalua un @ pegado a una
+                               letra (lo lee como email), y "M@Equis" salia LITERAL al svg. *@
+                            <path class="punto-serie punto-serie--aro"
+                                  d="M @Equis(i, delMes.Count) @Ye(delMes[i].Total, delMes) h0.01" />
+                            <path class="punto-serie punto-serie--centro"
+                                  d="M @Equis(i, delMes.Count) @Ye(delMes[i].Total, delMes) h0.01" />
                         }
                     </svg>
-                    <div class="d-flex justify-content-between ritmo-rotulo">
-                        <span>@delMes[0].Fecha.Day @Mes(delMes[0].Fecha.Month)</span>
-                        <span>@delMes[delMes.Count - 1].Fecha.Day @Mes(delMes[delMes.Count - 1].Fecha.Month)</span>
+                }
+
+                <div class="d-flex flex-wrap gap-3 mt-2">
+                    @if (!verGrafica && ComprasDelMes().Count > 1)
+                    {
+                        <button class="btn btn-link p-0 ver-todos" @onclick="() => verGrafica = true">Ver la gráfica &rarr;</button>
+                    }
+                    @if (ritmo is not null && ritmo.EsObservado && !verRitmo)
+                    {
+                        <button class="btn btn-link p-0 ver-todos" @onclick="() => verRitmo = true">Ver tu ritmo &rarr;</button>
+                    }
+                    @if (comparacion is not null && comparacion.HayComparacion && !verComparacion)
+                    {
+                        <button class="btn btn-link p-0 ver-todos" @onclick="() => verComparacion = true">Comparar con el año pasado &rarr;</button>
+                    }
+                </div>
+
+                @if (verRitmo && ritmo is not null && ritmo.EsObservado)
+                {
+                    <div class="mt-3">
+                        <div class="ritmo-rotulo mb-1">
+                            El día que más comprás: <strong>@ritmo.DiaFavorito</strong>
+                            (@ritmo.ComprasEnElDiaFavorito de @ritmo.ComprasMiradas)
+                        </div>
+                        <div class="momentos">
+                            @foreach (var m in ritmo.PorMomento)
+                            {
+                                <div class="momento @(m.Momento == ritmo.MomentoFavorito ? "momento-favorito" : "")">
+                                    <div class="momento-nombre">@m.Momento</div>
+                                    <div class="momento-barra"><span style="width:@((int)(m.Proporcion * 100))%"></span></div>
+                                    <div class="momento-cuantas">@m.Cuantas @(m.Cuantas == 1 ? "compra" : "compras")</div>
+                                </div>
+                            }
+                        </div>
+                    </div>
+                }
+
+                @if (verComparacion && comparacion is not null && comparacion.HayComparacion)
+                {
+                    <div class="mt-3">
+                        <div class="d-flex justify-content-between align-items-start flex-wrap gap-2">
+                            <div class="ritmo-rotulo">
+                                @Mes(comparacion.MesAntes)/@comparacion.AnioAntes vs @Mes(comparacion.MesDespues)/@comparacion.AnioDespues
+                            </div>
+                            <div class="text-end">
+                                <div>@Colones(comparacion.GastoAntes) &rarr; @Colones(comparacion.GastoDespues)</div>
+                                <div class="small text-body-secondary">@(comparacion.CambioEnElTotal >= 0 ? "+" : "")@Colones(comparacion.CambioEnElTotal)</div>
+                            </div>
+                        </div>
+                        <div class="small mt-2">@Tuteada(comparacion.ParaElAsistente)</div>
+                        @foreach (var diferencia in comparacion.Diferencias)
+                        {
+                            if (!diferencia.ExplicaElCambio) { continue; }
+                            <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 py-1 small">
+                                <span>
+                                    @diferencia.Titulo
+                                    @if (diferencia.EsNuevo) { <span class="etiqueta etiqueta-cambio ms-1">entró este año</span> }
+                                    @if (diferencia.Desaparecio) { <span class="etiqueta etiqueta-neutra ms-1">dejó de aparecer</span> }
+                                </span>
+                                <span>@Colones(diferencia.MontoAntes) &rarr; @Colones(diferencia.MontoDespues)</span>
+                            </div>
+                        }
                     </div>
                 }
             </div>
         </div>
     }
 
-    @* LO QUE CAMBIÓ DE PRECIO, y sólo de los productos que sí lleva: es SU inflación, no la
-       del país. Cada precio va POR UNIDAD DE MEDIDA y con la unidad al lado — un precio sin
-       su referencia no se puede comparar, y esa es la mitad del dato. *@
+    @* TUS HABITUALES CAMBIARON DE PRECIO: el que mas se movio -que ya viene primero del
+       dominio- y el resto detras del enlace. Colones tachados, como en el rediseño. *@
     @if (precios is not null && precios.Count > 0)
     {
         <div class="seccion-cabeza">
             <span class="seccion-icono" aria-hidden="true"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M3.5 10.3V4.7a1.2 1.2 0 0 1 1.2-1.2h5.6l6.2 6.2-6.8 6.8z"/><circle cx="7.2" cy="7.2" r="1.15"/></svg></span>
-            <h2 class="kicker">Lo que cambió de precio</h2>
+            <h2 class="kicker">Tus habituales cambiaron de precio</h2>
         </div>
-        <p class="ritmo-rotulo mb-2">De los productos que sí llevás.</p>
         <div class="list-group mb-4">
-            @foreach (var precio in precios)
+            @* LA CIFRA DEL MOCK DE FERNANDA: "+₡1.150 vs. hace 3 meses". Es OTRA ventana
+               que las filas de abajo -ellas cuentan la serie entera, esta el pasado
+               cercano- y el rotulo la lleva puesta para que no se lean como una sola. En
+               cero no se pinta: "cuesta lo mismo" no encabeza nada. *@
+            @if (frente is not null && frente.HayConQueComparar && frente.Cambio != 0)
+            {
+                <div class="list-group-item frente-al-pasado">
+                    <span class="frente-cifra @(frente.Cambio > 0 ? "frente-cifra--sube" : "frente-cifra--baja")">@(frente.Cambio > 0 ? "+" : "−")@Colones(Math.Abs(frente.Cambio))</span>
+                    <span class="ritmo-rotulo">vs. hace @frente.MesesDeVentana meses, una pieza de cada habitual</span>
+                </div>
+            }
+            @foreach (var precio in (verPrecios ? precios : precios.Take(1)))
             {
                 <div class="list-group-item d-flex justify-content-between align-items-center flex-wrap gap-2">
                     <strong>@precio.Descripcion</strong>
@@ -511,192 +632,190 @@ else
                     </span>
                 </div>
             }
-        </div>
-    }
-
-    @* TU RITMO. Es la pantalla "tu ritmo de súper" del diseño de la app — "hay días y
-       momentos que se repiten más de lo que parece" — y responde algo que la persona
-       probablemente no había notado, que es literalmente lo que ese diseño pregunta:
-       "¿lo habías notado?".
-
-       No juzga: ir los viernes de noche no es mejor ni peor que ir los martes en la
-       mañana. La línea la escribe el DOMINIO. *@
-    @if (ritmo is not null && ritmo.EsObservado)
-    {
-        <div class="seccion-cabeza">
-            <span class="seccion-icono" aria-hidden="true"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M2.8 11h3l2-5 3.6 8 2-5h3.8"/></svg></span>
-            <h2 class="kicker">Tu ritmo</h2>
-        </div>
-        <div class="card mb-4">
-            <div class="card-body">
-                @* Igual que arriba: la frase del dominio es para el asistente. Aca las
-                   cifras de abajo ya lo dicen, asi que alcanza con nombrar la pregunta. *@
-                <div class="fs-5 mb-3">Así vas al súper.</div>
-
-                <div class="ritmo-cifras">
-                    <div class="ritmo-cifra">
-                        <span class="ritmo-numero">@ritmo.DiasEntreCompras</span>
-                        <span class="ritmo-rotulo">días entre compras</span>
-                        <span class="etiqueta etiqueta-verde mt-1">@ritmo.CadenciaCompacta</span>
-                    </div>
-                    <div class="ritmo-cifra">
-                        <span class="ritmo-numero ritmo-palabra">@ritmo.DiaFavorito</span>
-                        <span class="ritmo-rotulo">
-                            el día que más compra&nbsp;&mdash;
-                            @ritmo.ComprasEnElDiaFavorito de @ritmo.ComprasMiradas
-                        </span>
-                    </div>
-                </div>
-
-                @* LOS TRES MOMENTOS vienen SIEMPRE, aunque alguno esté en cero: la fila se
-                   dibuja igual y no hay que preguntar antes. *@
-                <div class="ritmo-rotulo mt-3 mb-2">Cuándo suele comprar</div>
-                <div class="momentos">
-                    @foreach (var m in ritmo.PorMomento)
-                    {
-                        <div class="momento @(m.Momento == ritmo.MomentoFavorito ? "momento-favorito" : "")">
-                            <div class="momento-nombre">@m.Momento</div>
-                            <div class="momento-barra">
-                                <span style="width:@((int)(m.Proporcion * 100))%"></span>
-                            </div>
-                            <div class="momento-cuantas">
-                                @m.Cuantas @(m.Cuantas == 1 ? "compra" : "compras")
-                            </div>
-                        </div>
-                    }
-                </div>
-            </div>
-        </div>
-    }
-
-    @* LO QUE NINGUN TICKET DE PAPEL DICE: los dos totales y DE DONDE
-       sale la diferencia, pasillo por pasillo. La línea la escribe el DOMINIO.
-
-       No hay veredicto, y es una decisión: "que el helado pasara de mensual a semanal es un
-       dato, no una falta. La app lo señala y se calla; el juicio no es suyo." Se muestra el
-       pasillo con su título legible; la llave del repertorio no se le enseña a nadie. *@
-    @if (comparacion is not null && comparacion.HayComparacion)
-    {
-        <div class="seccion-cabeza">
-            <span class="seccion-icono" aria-hidden="true"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M4.6 16.3v-4.6"/><path d="M10 16.3V6.5"/><path d="M15.4 16.3v-6.8"/><path d="M3 16.3h14"/></svg></span>
-            <h2 class="kicker">Tu canasta, comparada</h2>
-        </div>
-        <div class="list-group mb-4">
-            <div class="list-group-item">
-                <div class="d-flex justify-content-between align-items-start flex-wrap gap-2">
-                    <div>
-                        <strong>Lo que gastaste</strong>
-                        <div class="small text-body-secondary mt-1">
-                            @Mes(comparacion.MesAntes)/@comparacion.AnioAntes vs @Mes(comparacion.MesDespues)/@comparacion.AnioDespues
-                        </div>
-                    </div>
-                    <div class="text-end">
-                        <div class="fs-5">
-                            @Colones(comparacion.GastoAntes) &rarr; @Colones(comparacion.GastoDespues)
-                        </div>
-                        <div class="small text-body-secondary">
-                            @(comparacion.CambioEnElTotal >= 0 ? "+" : "")@Colones(comparacion.CambioEnElTotal)
-                        </div>
-                    </div>
-                </div>
-                @* La comparacion es la unica cuya frase SI vale en pantalla: dice de que
-                   pasillos sale la diferencia, y eso no se arma desde las cifras de al lado.
-                   Se la tutea al pintarla en vez de reescribir el dominio, que la necesita
-                   asi para el asistente. *@
-                <div class="small mt-2">@Tuteada(comparacion.ParaElAsistente)</div>
-            </div>
-
-            @foreach (var diferencia in comparacion.Diferencias)
+            @* PUEDE INTERESARTE, del mock de Fernanda: la mayor BAJADA, con su foto y el
+               precio tachado. Solo si la fila estrella no la esta mostrando ya (cuando el
+               que mas se movio ES una bajada, repetirla seria eco), y solo plegado: al
+               expandir, todas las bajadas ya estan a la vista. *@
+            @if (!verPrecios && Oportunidad() is PrecioQueCambio oportunidad)
             {
-                @* Solo los pasillos que de verdad mueven la aguja: quien decide cuáles
-                   cuentan es el dominio, no esta pantalla. *@
-                if (!diferencia.ExplicaElCambio) { continue; }
-
-                <div class="list-group-item">
-                    <div class="d-flex justify-content-between align-items-center flex-wrap gap-2">
-                        <div>
-                            @diferencia.Titulo
-                            @if (diferencia.EsNuevo)
-                            {
-                                <span class="etiqueta etiqueta-cambio ms-2">entró este año</span>
-                            }
-                            @if (diferencia.Desaparecio)
-                            {
-                                <span class="etiqueta etiqueta-neutra ms-2">dejó de aparecer</span>
-                            }
-                        </div>
-                        <div class="text-end small">
-                            @Colones(diferencia.MontoAntes) &rarr; @Colones(diferencia.MontoDespues)
-                        </div>
-                    </div>
+                <div class="list-group-item oportunidad">
+                    <span class="proxima-foto @(Foto(oportunidad.Sku).Length == 0 ? "proxima-foto--sin" : "")">
+                        @if (Foto(oportunidad.Sku).Length > 0)
+                        {
+                            <img src="@Foto(oportunidad.Sku)" alt="" />
+                        }
+                    </span>
+                    <span class="oportunidad-que">
+                        <span class="oportunidad-kicker">Puede interesarte</span>
+                        <strong>@oportunidad.Descripcion</strong>
+                    </span>
+                    <span class="d-inline-flex align-items-baseline gap-2 flex-wrap">
+                        <span class="precio-antes">@Colones(oportunidad.Antes)</span>
+                        <span class="precio-ahora precio-ahora--baja">@Colones(oportunidad.Ahora)</span>
+                        <span class="ritmo-rotulo">por @oportunidad.Unidad</span>
+                    </span>
                 </div>
+            }
+            @if (precios.Count > 1)
+            {
+                <button class="list-group-item list-group-item-action ver-todos text-start"
+                        @onclick="() => verPrecios = !verPrecios">
+                    @(verPrecios ? "Ver menos" : $"Ver {precios.Count - 1} más →")
+                </button>
             }
         </div>
     }
 
-    @* LO QUE NO ESTA. Una pantalla no puede renderizar una ausencia que nadie le pasó:
-       esto lo calcula el dominio con el historial, el calendario y la periodicidad de
-       cada categoría. *@
+    @* TU ULTIMA COMPRA: el acceso rapido que el rediseño agrega. La fecha grande es lo que
+       se reconoce; el chevron lleva al detalle. *@
+    @if (compras.Count > 0)
+    {
+        var ultima = compras[compras.Count - 1];
+        <div class="seccion-cabeza">
+            <span class="seccion-icono" aria-hidden="true"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M5.2 3.2h9.6v13.6l-2.4-1.5-2.4 1.5-2.4-1.5-2.4 1.5z"/><path d="M7.9 7.1h4.2M7.9 10.3h4.2"/></svg></span>
+            <h2 class="kicker">Tu última compra</h2>
+        </div>
+        <div class="list-group mb-4">
+            <button class="list-group-item list-group-item-action recibo ultima-compra"
+                    @onclick="@(() => navegacion.NavigateTo($"compra/{Uri.EscapeDataString(ultima.Numero)}"))">
+                <span class="recibo-dia">
+                    <span class="recibo-numero-dia">@ultima.Fecha.Day</span>
+                    <span class="recibo-mes">@Mes(ultima.Fecha.Month)</span>
+                </span>
+                <span class="recibo-que">
+                    <strong>@ultima.Lineas @(ultima.Lineas == 1 ? "producto" : "productos")</strong>
+                    <span class="small text-body-secondary">@DiaSemana(ultima.Fecha), @HoraCorta(ultima.Fecha)@(ultima.Sucursal.Length > 0 ? " · " + ultima.Sucursal : "")</span>
+                </span>
+                <span class="recibo-total numero">@Colones(ultima.Total)</span>
+                <span class="recibo-flecha" aria-hidden="true">&rsaquo;</span>
+            </button>
+        </div>
+    }
+
+    @* LO QUE NO ESTA, plegado a una fila: es la lectura mas "del asistente" de todas -la
+       tool que_dejaste_de_comprar la da entera- y en pantalla basta el titular. El detalle
+       se abre aca mismo. *@
     @if (pendientes.Count > 0)
     {
-        <div class="seccion-cabeza">
-            <span class="seccion-icono" aria-hidden="true"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="4" width="12" height="12" rx="3" stroke-dasharray="3 2.6"/></svg></span>
-            <h2 class="kicker">Lo que dejó de entrar</h2>
-        </div>
-        <div class="list-group mb-4">
-            @foreach (AbastecimientoEnEspera p in pendientes)
-            {
-                <div class="list-group-item d-flex justify-content-between align-items-center flex-wrap gap-2">
-                    @* El titulo, nunca la llave: "LacteosYHuevos" es lo que viene en el
-                       evento y no se le muestra a nadie. *@
-                    <div>
-                        <strong>@p.Titulo</strong>
-                        <div class="small text-body-secondary">@p.ParaElAsistente</div>
-                    </div>
-                    <span class="etiqueta @(p.Severidad == "informativo" ? "etiqueta-neutra" : "etiqueta-tierra")">
-                        @p.DiasDesdeLaUltima días
+        <div class="list-group mb-3">
+            <button class="list-group-item list-group-item-action firma-fila"
+                    @onclick="() => verHueco = !verHueco">
+                <span class="firma-que">
+                    <strong>Lo que dejó de entrar</strong>
+                    <span class="ritmo-rotulo">
+                        @pendientes[0].Titulo@(pendientes.Count > 1 ? $" · y {pendientes.Count - 1} más" : "") hace más de lo habitual
                     </span>
-                </div>
+                </span>
+                <span class="recibo-flecha" aria-hidden="true">@(verHueco ? "⌄" : "›")</span>
+            </button>
+            @if (verHueco)
+            {
+                @foreach (AbastecimientoEnEspera p in pendientes)
+                {
+                    <div class="list-group-item d-flex justify-content-between align-items-center flex-wrap gap-2">
+                        <div>
+                            <strong>@p.Titulo</strong>
+                            <div class="small text-body-secondary">@p.ParaElAsistente</div>
+                        </div>
+                        <span class="etiqueta @(p.Severidad == "informativo" ? "etiqueta-neutra" : "etiqueta-tierra")">
+                            @p.DiasDesdeLaUltima días
+                        </span>
+                    </div>
+                }
             }
         </div>
     }
 
-    @* La respuesta a "¿hasta cuando tiene garantia la olla arrocera?": el respaldo, sin
-       buscar tickets de papel. *@
+    @* DONDE COMPRA, plegado a una fila como las demas. Es la lectura que propuso
+       Geannina -"antes compraba siempre en la misma; desde enero aparece en tres"- y
+       Juan pidio verla en la app, no solo en la tool. Solo se pinta cuando algun tiquete
+       trae sucursal: los journals viejos callan y la fila no inventa nada. *@
+    @if (recorrido is not null && recorrido.HayDatos)
+    {
+        <div class="list-group mb-3">
+            <button class="list-group-item list-group-item-action firma-fila"
+                    @onclick="() => verSucursales = !verSucursales">
+                <span class="firma-que">
+                    <strong>Dónde comprás</strong>
+                    <span class="ritmo-rotulo">
+                        @if (recorrido.SeMueve)
+                        {
+                            <text>sobre todo en @recorrido.Sucursales[0].Nombre · desde el @Fecha(DesdeCuandoSeMueve()) también en @SucursalesNuevas()</text>
+                        }
+                        else
+                        {
+                            <text>siempre en @recorrido.Sucursales[0].Nombre</text>
+                        }
+                    </span>
+                </span>
+                <span class="recibo-flecha" aria-hidden="true">@(verSucursales ? "⌄" : "›")</span>
+            </button>
+            @if (verSucursales)
+            {
+                @foreach (SucursalVista s in recorrido.Sucursales)
+                {
+                    <div class="list-group-item d-flex justify-content-between align-items-center flex-wrap gap-2">
+                        <div>
+                            <strong>@s.Nombre</strong>
+                            <div class="small text-body-secondary">
+                                la primera vez el @Fecha(s.PrimeraVez) &middot; la última el @Fecha(s.UltimaVez)
+                            </div>
+                        </div>
+                        <span class="etiqueta etiqueta-neutra">
+                            @s.Compras @(s.Compras == 1 ? "compra" : "compras")
+                        </span>
+                    </div>
+                }
+                @if (recorrido.ComprasSinSucursal > 0)
+                {
+                    <div class="list-group-item small text-body-secondary">
+                        @recorrido.ComprasSinSucursal @(recorrido.ComprasSinSucursal == 1 ? "compra más vieja no dice" : "compras más viejas no dicen") en qué sucursal fueron.
+                    </div>
+                }
+            }
+        </div>
+    }
+
+    @* LAS GARANTIAS, plegadas a una fila: importan EL DIA que hay que reclamar, no todos
+       los dias. Si alguna ya pide moverse (QueHacer), la lista arranca abierta — esa si es
+       noticia. *@
     @if (garantias.Count > 0)
     {
-        <div class="seccion-cabeza">
-            <span class="seccion-icono" aria-hidden="true"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M10 3l6 2.1v4.7c0 3.4-2.4 5.7-6 7-3.6-1.3-6-3.6-6-7V5.1z"/><path d="M7.6 9.9l1.7 1.7 3.1-3.3"/></svg></span>
-            <h2 class="kicker">Tus garantías</h2>
-        </div>
-        <div class="list-group mb-4">
-            @foreach (GarantiaDeProducto g in garantias)
-            {
-                <div class="list-group-item d-flex justify-content-between align-items-center flex-wrap gap-2">
-                    <div>
-                        <strong>@g.Descripcion</strong>
-                        @* SIN "(compra T-89917)" EN EL MEDIO de la frase: el numero es del
-                           sistema del super, y va donde sirve — junto al reclamo, que es lo
-                           unico para lo que ella lo necesita. Y las fechas se leen ("9 de
-                           mayo"), no dd/MM/yyyy, que es formato de formulario. *@
-                        <div class="small text-body-secondary">
-                            la compraste el @Fecha(g.FechaDeCompra) &middot;
-                            @g.MesesDeCobertura meses de garantía
-                        </div>
-                        @* La acción sale del conjunto cerrado del dominio: la pantalla no
-                           puede inventar una que el dominio no eligió. *@
-                        @if (g.QueHacer.Length > 0)
-                        {
-                            <div class="small mt-1">
-                                <strong>@g.QueHacer</strong> &middot;
-                                el número para el reclamo es @g.NumeroDeCompra
-                            </div>
-                        }
-                    </div>
-                    <span class="etiqueta @(g.QueHacer.Length > 0 ? "etiqueta-tierra" : "etiqueta-verde")">
-                        te cubre hasta el @Fecha(g.VenceEl)
+        <div class="list-group mb-3">
+            <button class="list-group-item list-group-item-action firma-fila"
+                    @onclick="() => verGarantias = !verGarantias">
+                <span class="firma-que">
+                    <strong>Tus garantías</strong>
+                    <span class="ritmo-rotulo">
+                        @garantias[0].Descripcion te cubre hasta el @Fecha(garantias[0].VenceEl)@(garantias.Count > 1 ? $" · y {garantias.Count - 1} más" : "")
                     </span>
-                </div>
+                </span>
+                <span class="recibo-flecha" aria-hidden="true">@(verGarantias ? "⌄" : "›")</span>
+            </button>
+            @if (verGarantias)
+            {
+                @foreach (GarantiaDeProducto g in garantias)
+                {
+                    <div class="list-group-item d-flex justify-content-between align-items-center flex-wrap gap-2">
+                        <div>
+                            <strong>@g.Descripcion</strong>
+                            <div class="small text-body-secondary">
+                                la compraste el @Fecha(g.FechaDeCompra) &middot;
+                                @g.MesesDeCobertura meses de garantía
+                            </div>
+                            @if (g.QueHacer.Length > 0)
+                            {
+                                <div class="small mt-1">
+                                    <strong>@g.QueHacer</strong> &middot;
+                                    el número para el reclamo es @g.NumeroDeCompra
+                                </div>
+                            }
+                        </div>
+                        <span class="etiqueta @(g.QueHacer.Length > 0 ? "etiqueta-tierra" : "etiqueta-verde")">
+                            te cubre hasta el @Fecha(g.VenceEl)
+                        </span>
+                    </div>
+                }
             }
         </div>
     }
@@ -721,11 +840,25 @@ else
     // CUANTOS SE NOMBRAN EN LA PORTADA. La app resume; el MCP detalla. Con compras
     // semanales el dia de ir al super "tocan" casi todos los habituales -medido: 16 de 22-,
     // y una carta con dieciseis nombres deja de ser un resumen.
-    private const int FaltantesQueSeMuestran = 6;
+    // Cuatro y no seis: Juan miro la portada armada y dijo "tiene demasiadas cosas". La
+    // fila del pie sigue diciendo cuantas mas hay, y el asistente da la lista entera.
+    private const int FaltantesQueSeMuestran = 4;
 
     // DESDE CUANDO COMPRA ACA, en palabras. "87 compras" solo es un numero; "87 compras
     // desde enero de 2025" es su historia con este super, que es lo que ella reconoce.
     private string desdeCuando = "";
+
+    private IReadOnlyList<PromocionVista> promociones = new List<PromocionVista>();
+    // Los desplegables del patron teaser: la portada resume y cada "Ver ->" abre su
+    // detalle aca mismo, sin navegar. Se reinician en cada carga, que es lo esperado de
+    // un resumen.
+    private bool verCambios;
+    private bool verRitmo;
+    private bool verComparacion;
+    private bool verPrecios;
+    private bool verGrafica;
+    private bool verHueco;
+    private bool verGarantias;
 
     private ListaDeLaProximaCompra? porCaer;
     private bool? soportado;
@@ -744,6 +877,9 @@ else
     private RitmoDelSuperVista? ritmo;
     private CanastasComparadas? mes;
     private IReadOnlyList<PrecioQueCambio> precios = new List<PrecioQueCambio>();
+    private CanastaFrenteAlPasadoVista? frente;
+    private RecorridoDeSucursalesVista? recorrido;
+    private bool verSucursales;
     private int cantidad;
     private decimal total;
     private long ultimoEvento;
@@ -854,6 +990,9 @@ else
         total = estado.Total();
         ultimoEvento = estado.UltimoEvento();
         garantias = estado.GarantiasVigentes();
+        // Si alguna garantia ya pide moverse, SU fila arranca abierta: esa si es noticia.
+        foreach (GarantiaDeProducto g in garantias)
+            if (g.QueHacer.Length > 0) { verGarantias = true; break; }
         pendientes = estado.AbastecimientosPendientes();
 
         // Qué dos meses se comparan lo elige el DOMINIO, que conoce su propio rango.
@@ -862,6 +1001,7 @@ else
 
         // La portada: lo estable y lo que cambió.
         desdeCuando = DesdeCuando(estado.Rango());
+        promociones = estado.Promociones();
         porCaer = estado.Lista();
         firma = estado.Firma();
         cambio = estado.CambioDelUltimoAnio();
@@ -869,6 +1009,8 @@ else
         ritmo = estado.Ritmo();
         mes = estado.ComparacionConElMesAnterior();
         precios = estado.Precios();
+        frente = estado.FrenteAlPasado();
+        recorrido = estado.Recorrido();
     }
 
     private void VerDetalle(string numero) =>
@@ -959,6 +1101,45 @@ else
     // de los 29 productos del catalogo, 28 tienen imagen.
     private static string Foto(string sku) => Compras.Wasm.Fotos.De(sku);
 
+    // El remate de la bajada del hero: vacio si no se mueve, o nada que decir todavia.
+    private string Sucursales() =>
+        recorrido is not null && recorrido.HayDatos && recorrido.SeMueve
+            ? $" · desde {MesCorto(DesdeCuandoSeMueve())} en {recorrido.CuantasDistintas} sucursales"
+            : "";
+
+    private static string MesCorto(DateTime cuando) => cuando.Month switch
+    {
+        1 => "enero", 2 => "febrero", 3 => "marzo", 4 => "abril", 5 => "mayo", 6 => "junio",
+        7 => "julio", 8 => "agosto", 9 => "setiembre", 10 => "octubre", 11 => "noviembre",
+        _ => "diciembre",
+    };
+
+    // La primera compra fuera de la de siempre: la fecha desde la que "se mueve".
+    private DateTime DesdeCuandoSeMueve()
+    {
+        DateTime primera = DateTime.MaxValue;
+        for (int i = 1; i < recorrido!.Sucursales.Count; i++)
+            if (recorrido.Sucursales[i].PrimeraVez < primera) primera = recorrido.Sucursales[i].PrimeraVez;
+        return primera;
+    }
+
+    private string SucursalesNuevas()
+    {
+        var nombres = new List<string>();
+        for (int i = 1; i < recorrido!.Sucursales.Count; i++) nombres.Add(recorrido.Sucursales[i].Nombre);
+        return string.Join(" y ", nombres);
+    }
+
+    // LA OPORTUNIDAD: la mayor bajada de la serie (vienen ordenadas por cuanto se
+    // movieron), saltando la fila estrella, que ya se ve sola.
+    private PrecioQueCambio? Oportunidad()
+    {
+        for (int i = 1; i < precios.Count; i++)
+            if (!precios[i].Subio) return precios[i];
+
+        return null;
+    }
+
     // EL NOMBRE CORTO PARA LA FICHA. "Leche semidescremada 1L" en una ficha de 6,5 rem se
     // parte en tres lineas y desalinea la rejilla; el diseño de Fernanda usa "Leche".
     //
@@ -1033,6 +1214,31 @@ else
         return $"{meses[mes - 1]} de {partes[0]}";
     }
 
+    // "enero" desde el aaaa-mm del corte, para decir "cambio desde enero" como el rediseño.
+    private static string MesLegible(string aaaaMm)
+    {
+        string[] partes = aaaaMm.Split('-');
+        if (partes.Length < 2 || !int.TryParse(partes[1], out int mes) || mes < 1 || mes > 12) return aaaaMm;
+
+        string[] meses = { "enero", "febrero", "marzo", "abril", "mayo", "junio",
+            "julio", "agosto", "setiembre", "octubre", "noviembre", "diciembre" };
+        return meses[mes - 1];
+    }
+
+    private static string DiaSemana(DateTime cuando) => cuando.DayOfWeek switch
+    {
+        DayOfWeek.Monday => "lunes", DayOfWeek.Tuesday => "martes",
+        DayOfWeek.Wednesday => "miércoles", DayOfWeek.Thursday => "jueves",
+        DayOfWeek.Friday => "viernes", DayOfWeek.Saturday => "sábado", _ => "domingo",
+    };
+
+    private static string HoraCorta(DateTime cuando)
+    {
+        int hora = cuando.Hour % 12;
+        if (hora == 0) hora = 12;
+        return $"{hora}:{cuando.Minute:00} {(cuando.Hour < 12 ? "a.m." : "p.m.")}";
+    }
+
     private static string Tuteada(string frase)
     {
         if (frase.Length == 0) return frase;
@@ -1045,6 +1251,39 @@ else
             .Replace(" lleva ", " llevás ");
 
         return char.ToUpperInvariant(tuya[0]) + tuya.Substring(1);
+    }
+
+    // Los tres tintes de la paleta rotan por posicion: no hay semantica que los distinga
+    // -todas son promociones- y la rotacion es lo que hace la tira variada sin decidir nada.
+    private static string Tinte(int posicion) =>
+        (posicion % 3) switch { 0 => "promo--verde", 1 => "promo--crema", _ => "promo--morado" };
+
+    // "valida hasta el viernes 5" cuando quedan dias; "ultimo dia" cuando es hoy. La fecha
+    // del evento viaja como aaaa-mm-dd y aca se dice como se dice.
+    private string Vigencia(PromocionVista promo)
+    {
+        if (promo.DiasQueQuedan == 0) return "último día";
+
+        if (DateTime.TryParse(promo.ValidaHasta, CultureInfo.InvariantCulture,
+                DateTimeStyles.None, out DateTime hasta))
+            return $"válida hasta el {DiaCorto(hasta)} {hasta.Day}";
+
+        return $"quedan {promo.DiasQueQuedan} días";
+    }
+
+    private static string DiaCorto(DateTime cuando) => cuando.DayOfWeek switch
+    {
+        DayOfWeek.Monday => "lunes", DayOfWeek.Tuesday => "martes",
+        DayOfWeek.Wednesday => "miércoles", DayOfWeek.Thursday => "jueves",
+        DayOfWeek.Friday => "viernes", DayOfWeek.Saturday => "sábado", _ => "domingo",
+    };
+
+    // La foto del sku por el mismo mapa de las fichas; sin sku -una rifa, un pasillo- va
+    // la canasta del hero, que es la imagen mas "super" que tenemos.
+    private static string FotoDePromo(PromocionVista promo)
+    {
+        string foto = promo.Sku.Length > 0 ? Compras.Wasm.Fotos.De(promo.Sku) : "";
+        return foto.Length > 0 ? foto : "assets/hero-canasta.png";
     }
 
     private static string Colones(decimal monto) =>

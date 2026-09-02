@@ -176,6 +176,112 @@ namespace Compras.Dominio
 		}
 
 		/// <summary>
+		/// LA CANASTA FRENTE A SU PASADO: cuánto cuesta hoy una pieza de cada habitual
+		/// contra lo que costaba hace tantos meses, en colones. El "hoy" viene recibido:
+		/// el dominio no lee el reloj.
+		/// </summary>
+		// EL "ENTONCES" de cada producto es su ULTIMA observacion en o antes del corte: el
+		// precio que corria ese dia es el ultimo que ella pago, no el proximo. Un habitual
+		// sin observacion tan vieja queda AFUERA de la suma -no hay con que compararlo- y
+		// uno sin compras desde el corte compara su ultima contra si misma y suma cero,
+		// que es verdad: su precio, para ella, no se ha movido.
+		public CanastaFrenteAlPasado CanastaFrenteA(DateTime hoy, int mesesAtras, int cuantasCompras)
+		{
+			if (mesesAtras <= 0)
+				throw new ArgumentOutOfRangeException(nameof(mesesAtras), mesesAtras,
+					"Una ventana de cero meses no compara contra ningún pasado.");
+
+			DateTime corte = hoy.AddMonths(-mesesAtras);
+			FirmaDeLaCanasta firma = FirmaDeLasUltimas(cuantasCompras);
+
+			var comparados = new List<(ProductoFrenteAlPasado Producto, int Llegada)>();
+			foreach (ProductoHabitual habitual in firma.Habituales)
+			{
+				PrecioEnElTiempo serie = PrecioDe(habitual.Sku);
+				if (!serie.Existe()) continue;
+
+				PrecioObservado deEntonces = null;
+				foreach (PrecioObservado observado in serie.Observados)
+					if (observado.Fecha <= corte) deEntonces = observado;
+				if (deEntonces is null) continue;   // mas nuevo que la ventana: sin pasado que mirar
+
+				PrecioObservado deHoy = serie.Observados[serie.Observados.Count - 1];
+				if (deHoy.PrecioPorUnidad <= 0m) continue;
+
+				// El contenido de la presentacion mas reciente, sin re-parsearla: la propia
+				// observacion lo trae implicito (precio de linea / precio por unidad).
+				decimal contenido = deHoy.PrecioDeLinea / deHoy.PrecioPorUnidad;
+				decimal antes = Math.Round(deEntonces.PrecioPorUnidad * contenido, 2);
+
+				comparados.Add((new ProductoFrenteAlPasado(serie.Sku, serie.Descripcion,
+					deHoy.PresentacionExpresada, antes, deHoy.PrecioDeLinea), comparados.Count));
+			}
+
+			if (comparados.Count == 0) return CanastaFrenteAlPasado.SinConQueComparar(mesesAtras);
+
+			// El que mas se movio primero, como en los precios; el desempate explicito
+			// porque List.Sort no es estable.
+			comparados.Sort((uno, otro) =>
+			{
+				int porCambio = Math.Abs(otro.Producto.Cambio).CompareTo(Math.Abs(uno.Producto.Cambio));
+				return porCambio != 0 ? porCambio : uno.Llegada.CompareTo(otro.Llegada);
+			});
+
+			var productos = new List<ProductoFrenteAlPasado>();
+			foreach ((ProductoFrenteAlPasado producto, _) in comparados) productos.Add(producto);
+			return CanastaFrenteAlPasado.Medida(mesesAtras, productos);
+		}
+
+		/// <summary>
+		/// LA BUENA NOTICIA DE UN RECIBO: de lo que llevó en esa compra, lo que hoy está
+		/// más barato — la mayor rebaja, o Ninguna. Total: un número que no existe
+		/// tampoco revienta.
+		/// </summary>
+		// "HOY" es la ultima observacion del historial, no el reloj: esta lectura solo
+		// sabe de precios que ella pago. Cuenta solo si es POSTERIOR a la compra mirada,
+		// y solo si la bajada es real (el mismo umbral del 3% de la serie de precios:
+		// menos que eso es redondeo de gondola, no noticia).
+		public RebajaDesdeLaCompra RebajaDesde(string numeroDeCompra)
+		{
+			ArgumentNullException.ThrowIfNullOrWhiteSpace(numeroDeCompra);
+
+			Compra laCompra = null;
+			foreach (Compra compra in compras)
+				if (string.Equals(compra.Numero, numeroDeCompra, StringComparison.OrdinalIgnoreCase))
+				{
+					laCompra = compra;
+					break;
+				}
+			if (laCompra is null) return RebajaDesdeLaCompra.Ninguna(numeroDeCompra);
+
+			RebajaDesdeLaCompra mejor = RebajaDesdeLaCompra.Ninguna(numeroDeCompra);
+			foreach (Item item in laCompra.Items)
+			{
+				PrecioEnElTiempo serie = PrecioDe(item.Sku);
+				if (!serie.Existe()) continue;
+
+				PrecioObservado ultimo = serie.Observados[serie.Observados.Count - 1];
+				if (ultimo.Fecha <= laCompra.Fecha) continue;   // nada mas nuevo que este recibo
+
+				decimal pagado = item.PrecioPorUnidadBase;
+				if (pagado <= 0m) continue;
+				if ((pagado - ultimo.PrecioPorUnidad) / pagado < PrecioEnElTiempo.CambioQueCuentaComoReal)
+					continue;
+
+				// En colones por UNA pieza de la presentacion de esa linea: es la cifra que
+				// se reconoce ("la leche esta ₡100 mas barata"), no la del carrito entero.
+				decimal porPieza = Math.Round((pagado - ultimo.PrecioPorUnidad)
+					* item.Presentacion.TotalEnBase(1), 2);
+
+				// A igual rebaja gana la primera linea del recibo: el orden del papel.
+				if (mejor.Hay && porPieza <= mejor.CuantoMenos) continue;
+				mejor = RebajaDesdeLaCompra.De(numeroDeCompra, item.Sku, item.Descripcion, porPieza);
+			}
+
+			return mejor;
+		}
+
+		/// <summary>
 		/// La garantia de un producto, buscada por sku o descripcion. Si se compro varias
 		/// veces gana la mas reciente, que es la cobertura que corre. La fecha de consulta
 		/// viene recibida: el dominio no lee el reloj.
@@ -957,6 +1063,73 @@ namespace Compras.Dominio
 		// GANA EL MAS RECIENTE cuando varios coinciden, igual que en BuscarGarantia: si
 		// alguien escribe "leche" y compro dos leches distintas, la que le interesa es la
 		// que lleva ahora.
+		/// <summary>
+		/// EN QUÉ SUCURSALES compra, y desde cuándo se mueve. Total: un historial sin
+		/// el dato (journals viejos) contesta SinDatos y dice cuántas compras callan.
+		/// </summary>
+		// La propuesta de Geannina: "antes compraba siempre en la misma; desde enero
+		// aparece en tres". Las compras sin sucursal quedan AFUERA del conteo -contarlas
+		// de un lado seria inventar el dato- pero se cuentan aparte para que la lectura
+		// diga que hay tiquetes que callan.
+		public RecorridoDeSucursales Sucursales()
+		{
+			var rastro = new Dictionary<string, (int Compras, DateTime Primera, DateTime Ultima, int Llegada)>(
+				StringComparer.OrdinalIgnoreCase);
+			var nombres = new List<string>();
+			int sinSucursal = 0;
+
+			foreach (Compra compra in Ordenadas())
+			{
+				if (compra.Sucursal.Length == 0)
+				{
+					sinSucursal++;
+					continue;
+				}
+
+				if (rastro.TryGetValue(compra.Sucursal, out var visto))
+					rastro[compra.Sucursal] = (visto.Compras + 1, visto.Primera, compra.Fecha, visto.Llegada);
+				else
+				{
+					rastro[compra.Sucursal] = (1, compra.Fecha, compra.Fecha, nombres.Count);
+					nombres.Add(compra.Sucursal);
+				}
+			}
+
+			if (nombres.Count == 0) return RecorridoDeSucursales.SinDatos(sinSucursal);
+
+			// La mas frecuentada primero; a igual cantidad, la conocida primero. El
+			// desempate explicito porque List.Sort no es estable.
+			nombres.Sort((uno, otro) =>
+			{
+				int porCompras = rastro[otro].Compras.CompareTo(rastro[uno].Compras);
+				return porCompras != 0 ? porCompras : rastro[uno].Llegada.CompareTo(rastro[otro].Llegada);
+			});
+
+			var sucursales = new List<SucursalFrecuentada>();
+			foreach (string nombre in nombres)
+			{
+				(int compras, DateTime primera, DateTime ultima, _) = rastro[nombre];
+				sucursales.Add(new SucursalFrecuentada(nombre, compras, primera, ultima));
+			}
+
+			return RecorridoDeSucursales.De(sucursales, sinSucursal);
+		}
+
+		/// <summary>
+		/// LA SERIE DE PRECIOS de un producto nombrado por texto. Total: lo que no
+		/// aparece en el historial devuelve Ninguno, no una excepción.
+		/// </summary>
+		// Geannina lo dijo mejor que el codigo: "el banco le dice cuanto gasto; nadie le
+		// dice que el MISMO producto le subio". La serie estaba construida y solo la leian
+		// las comprobaciones; este es el punto por el que sale.
+		public PrecioEnElTiempo PrecioBuscado(string producto)
+		{
+			ArgumentNullException.ThrowIfNullOrWhiteSpace(producto);
+
+			string sku = SkuDe(producto);
+			return sku.Length == 0 ? PrecioEnElTiempo.Ninguno(producto) : PrecioDe(sku);
+		}
+
 		public string SkuDe(string producto)
 		{
 			ArgumentNullException.ThrowIfNullOrWhiteSpace(producto);

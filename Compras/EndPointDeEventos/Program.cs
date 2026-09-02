@@ -106,7 +106,9 @@ app.MapGet("/{recurso}/{id}/perfil", (string recurso, string id, HttpRequest ped
 // Existe para que la caja (la UI de operacion de la demo) no lleve el catalogo
 // hardcodeado adentro: el POS le pregunta a su propio sistema que vende, que es lo que
 // haria uno de verdad.
-app.MapGet("/catalogo", () => Results.Ok(new { productos = Catalogo.Productos }));
+// Las sucursales van con el catalogo por la misma razon: son del supermercado, y la
+// caja las ofrece en vez de escribirlas a mano.
+app.MapGet("/catalogo", () => Results.Ok(new { productos = Catalogo.Productos, sucursales = Catalogo.Sucursales }));
 
 // ---------------------------------------------------------------- control del mock
 
@@ -277,6 +279,14 @@ sealed class ProductoDelCatalogo
 
 static class Catalogo
 {
+    // LAS SUCURSALES DEL SUPER, los mismos nombres que usa generar-guion.py: la de
+    // siempre de Sonia primero. Un tiquete puede venir sin sucursal (campo opcional
+    // del contrato de URL2, acordado con Geannina).
+    internal static readonly string[] Sucursales =
+    {
+        "La Guaria Centro", "La Guaria Zapote", "La Guaria Del Este",
+    };
+
     // Los precios estan en colones y son de gondola, no inventados al azar: la demo se
     // cuenta con numeros que uno eligio. Incluye los SKUs de la narrativa sembrada, para
     // que la caja pueda repetir una compra que ya paso, y bastante mas para que la
@@ -398,6 +408,25 @@ sealed class EventoDeCompra
     // verdad trae cobertura (un electrodomestico) lleva meses.
     [JsonPropertyName("mesesDeGarantia")]  public int[] MesesDeGarantia { get; init; }
 
+    // En que sucursal fue. OPCIONAL en el wire -los tiquetes viejos no lo traen- y
+    // propuesta de Geannina: con el, el super puede corroborar por si solo "antes
+    // compraba siempre en la misma; desde enero aparece en tres".
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    [JsonPropertyName("sucursal")]         public string Sucursal { get; init; }
+
+    // ------------------------- los campos de una PromocionPublicada -------------------
+    // El mismo tipo sirve los DOS eventos del stream: las compras usan las listas de
+    // arriba y las promociones estos tres. WhenWritingNull evita que cada compra viaje
+    // con "gancho":null de lastre.
+    [JsonPropertyName("gancho"), JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public string Gancho { get; init; }
+    [JsonPropertyName("detalle"), JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public string Detalle { get; init; }
+    [JsonPropertyName("sku"), JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public string Sku { get; init; }
+    [JsonPropertyName("validaHasta"), JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public DateTime? ValidaHasta { get; init; }
+
     internal decimal Total()
     {
         decimal total = 0m;
@@ -456,6 +485,31 @@ sealed class AlmacenDeEventos
         if (guion is null || guion.Count == 0)
             throw new InvalidOperationException("guion.json no trae ninguna compra.");
 
+        // LAS PROMOCIONES DE LA SEMANA, sembradas DESPUES del guion y con ids que lo
+        // continuan: un journal que ya leyo hasta el 387 las recibe en su proximo refresh
+        // sin migrar nada. Van aca y no en generar-guion.py porque el guion son LAS
+        // COMPRAS DE ELLA -con trece invariantes que verificar- y esto es contenido DEL
+        // SUPER: dos autorias distintas, dos lugares.
+        long siguiente = guion.Max(e => e.Id);
+        guion.Add(new EventoDeCompra
+        {
+            Id = ++siguiente, Tipo = "PromocionPublicada",
+            Gancho = "2 x 1", Detalle = "en Helado de vainilla 1L", Sku = "HELADO-1L",
+            ValidaHasta = new DateTime(2026, 9, 5),
+        });
+        guion.Add(new EventoDeCompra
+        {
+            Id = ++siguiente, Tipo = "PromocionPublicada",
+            Gancho = "15% menos", Detalle = "en todo el pasillo de limpieza", Sku = "DETERG-5L",
+            ValidaHasta = new DateTime(2026, 9, 7),
+        });
+        guion.Add(new EventoDeCompra
+        {
+            Id = ++siguiente, Tipo = "PromocionPublicada",
+            Gancho = "Rifa de setiembre", Detalle = "una canasta llena por comprar este mes",
+            ValidaHasta = new DateTime(2026, 9, 30),
+        });
+
         return guion;
     }
 
@@ -492,6 +546,9 @@ sealed class AlmacenDeEventos
                 PreciosUnitarios = pedido.PreciosUnitarios,
                 Categorias = pedido.Categorias,
                 MesesDeGarantia = pedido.MesesDeGarantia,
+                // Vacio se vuelve null y NO viaja (WhenWritingNull): un tiquete sin
+                // sucursal se ve igual que uno de antes de que el campo existiera.
+                Sucursal = string.IsNullOrWhiteSpace(pedido.Sucursal) ? null : pedido.Sucursal.Trim(),
             };
 
             lista.Add(evento);
@@ -525,4 +582,7 @@ sealed class CompraAInyectar
     [JsonPropertyName("preciosUnitarios")] public decimal[] PreciosUnitarios { get; set; }
     [JsonPropertyName("categorias")]       public string[] Categorias { get; set; }
     [JsonPropertyName("mesesDeGarantia")]  public int[] MesesDeGarantia { get; set; }
+
+    // OPCIONAL: una caja que no lo mande sigue registrando compras validas.
+    [JsonPropertyName("sucursal")]         public string Sucursal { get; set; }
 }

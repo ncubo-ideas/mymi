@@ -16,6 +16,9 @@ namespace Compras.Dominio
 		public string Numero { get; private set; }
 		public DateTime Fecha { get; private set; }
 
+		/// <summary>En qué sucursal fue, o vacío si el tiquete no lo dijo.</summary>
+		public string Sucursal { get; private set; } = "";
+
 		public IReadOnlyList<Item> Items => items;
 
 		public int CantidadDeLineas => items.Count;
@@ -86,6 +89,22 @@ namespace Compras.Dominio
 			for (int i = 0; i < skus.Length; i++)
 				items.Add(new Item(skus[i], descripciones[i], cantidades[i], preciosUnitarios[i],
 					Categoria.Desde(categorias[i]), mesesDeGarantia[i]));
+		}
+
+		/// <summary>La misma compra, situada: una copia con la sucursal puesta.</summary>
+		// UN WITHER Y NO OTRO CONSTRUCTOR, a proposito. Compra ya tiene dos formas -con y
+		// sin presentaciones- y el DSL del journal resuelve por nombre y cantidad de
+		// argumentos: una tercera forma con un string en la posicion del string[] seria
+		// una ambiguedad esperando turno. El comando nuevo arma la compra como siempre y
+		// la situa en una segunda sentencia; los journals viejos ni se enteran.
+		public Compra EnSucursal(string sucursal)
+		{
+			ArgumentNullException.ThrowIfNullOrWhiteSpace(sucursal);
+
+			// La copia comparte los items (son inmutables); solo cambia donde fue.
+			var situada = (Compra)MemberwiseClone();
+			situada.Sucursal = sucursal.Trim();
+			return situada;
 		}
 
 		public bool EsDelMes(int anio, int mes) => Fecha.Year == anio && Fecha.Month == mes;

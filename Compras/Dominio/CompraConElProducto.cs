@@ -15,6 +15,9 @@ namespace Compras.Dominio
 		public string Numero { get; private set; }
 		public DateTime Fecha { get; private set; }
 
+		/// <summary>En qué sucursal fue, o vacío si el tiquete no lo dijo.</summary>
+		public string Sucursal { get; private set; }
+
 		/// <summary>Cuántas unidades de lo buscado entraron en ESTA compra.</summary>
 		public int Unidades { get; private set; }
 
@@ -32,6 +35,7 @@ namespace Compras.Dominio
 
 			Numero = compra.Numero;
 			Fecha = compra.Fecha;
+			Sucursal = compra.Sucursal;
 			LineasDeLaCompra = compra.Items.Count;
 			TotalDeLaCompra = compra.Total;
 		}

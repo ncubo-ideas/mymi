@@ -81,9 +81,11 @@ async Task Listar()
 // vuelve la narrativa analizable, y los meses (0 = sin garantia) lo que respalda la
 // pregunta de la garantia.
 //
-//   inyectar --numero T-97001 --fecha 2026-08-25 \
+//   inyectar --numero T-97001 --fecha 2026-08-25 --sucursal "La Guaria Zapote" \
 //     --linea "HELADO-1L,Helado de vainilla 1L,2,3680,Azucarados,0" \
 //     --linea "LICUA-600,Licuadora 600W,1,28900,Electrohogar,24"
+//
+// --sucursal es OPCIONAL, como en el contrato: sin el, la compra entra sin situar.
 async Task Inyectar()
 {
     string numero = Arg(args, "--numero", "");
@@ -103,10 +105,12 @@ async Task Inyectar()
         return;
     }
 
+    string sucursal = Arg(args, "--sucursal", "");
     var cuerpo = new
     {
         numero,
         fecha = Arg(args, "--fecha", DateTime.Today.ToString("yyyy-MM-dd")),
+        sucursal = sucursal.Length == 0 ? null : sucursal,
         skus = partes.Select(p => p[0].Trim()).ToArray(),
         descripciones = partes.Select(p => p[1].Trim()).ToArray(),
         cantidades = partes.Select(p => int.Parse(p[2], CultureInfo.InvariantCulture)).ToArray(),
@@ -147,38 +151,40 @@ async Task Historia()
         Console.WriteLine($"  OJO: {recurso}/{id} ya tiene {existentes} eventos. Los numeros de ticket "
             + "que se repitan los va a rechazar la app, no el mock.");
 
-    (string numero, string fecha, string porque, string[] lineas)[] guion =
+    // LA SUCURSAL SIGUE EL ARCO del guion grande: 2025 siempre en Centro; desde enero
+    // aparece en las que supervisa.
+    (string numero, string fecha, string sucursal, string porque, string[] lineas)[] guion =
     {
-        ("T-88101", "2025-08-05", "la canasta base: proteina, granos, lacteos y verdura",
+        ("T-88101", "2025-08-05", "La Guaria Centro", "la canasta base: proteina, granos, lacteos y verdura",
             new[] { "POLLO-KG,Pechuga de pollo kg,2,4200,Proteinas,0",
                     "FRIJOL-900,Frijoles negros 900g,2,1150,GranosYAbarrotes,0",
                     "LECHE-1L,Leche semidescremada 1L,6,950,LacteosYHuevos,0",
                     "BROCOLI,Brocoli unidad,3,890,FrutasYVerduras,0" }),
 
-        ("T-88240", "2025-08-20", "el unico aceite del mes: de aca sale el 8,8% ocasional",
+        ("T-88240", "2025-08-20", "La Guaria Centro", "el unico aceite del mes: de aca sale el 8,8% ocasional",
             new[] { "ACEITE-GIR-1L,Aceite de girasol 1L,1,2890,AceitesYGrasas,0",
                     "ARROZ-2KG,Arroz grano entero 2kg,1,2450,GranosYAbarrotes,0",
                     "HUEVOS-30,Huevos carton 30,1,3300,LacteosYHuevos,0",
                     "TILAPIA-KG,Filet de tilapia kg,1,5200,Proteinas,0" }),
 
-        ("T-91515", "2026-02-14", "empieza el deslizamiento: helado, sodas y galletas",
+        ("T-91515", "2026-02-14", "La Guaria Zapote", "empieza el deslizamiento: helado, sodas y galletas",
             new[] { "HELADO-1L,Helado de vainilla 1L,2,3450,Azucarados,0",
                     "SODA-2L,Soda cola 2L,4,1750,Azucarados,0",
                     "GALLETA-CHOC,Galletas de chocolate,3,1250,Azucarados,0",
                     "POLLO-KG,Pechuga de pollo kg,1,4350,Proteinas,0" }),
 
-        ("T-93872", "2026-05-10", "LA COMPRA DE LA GARANTIA: la olla arrocera, 12 meses",
+        ("T-93872", "2026-05-10", "La Guaria Centro", "LA COMPRA DE LA GARANTIA: la olla arrocera, 12 meses",
             new[] { "OLLA-ARR-18,Olla arrocera 1.8L,1,45900,Electrohogar,12",
                     "ARROZ-2KG,Arroz grano entero 2kg,2,2520,GranosYAbarrotes,0",
                     "MANTECA-500,Manteca de palma 500g,1,1980,AceitesYGrasas,0" }),
 
-        ("T-95104", "2026-07-03", "el ultimo mes con algo de limpieza: de aca sale el hueco",
+        ("T-95104", "2026-07-03", "La Guaria Del Este", "el ultimo mes con algo de limpieza: de aca sale el hueco",
             new[] { "SODA-12PK,Soda cola lata 12-pack,2,5990,Azucarados,0",
                     "HELADO-1L,Helado de vainilla 1L,2,3560,Azucarados,0",
                     "PAPAS-FAM,Papas fritas familiar,3,2100,Snacks,0",
                     "DETERG-5L,Detergente liquido 5L,1,6800,Limpieza,0" }),
 
-        ("T-96470", "2026-08-15", "la canasta ya se volteo: 97% ocasional",
+        ("T-96470", "2026-08-15", "La Guaria Centro", "la canasta ya se volteo: 97% ocasional",
             new[] { "HELADO-1L,Helado de vainilla 1L,3,3680,Azucarados,0",
                     "SODA-2L,Soda cola 2L,6,1790,Azucarados,0",
                     "CHOC-BARRA,Chocolate de leche barra,4,1450,Azucarados,0",
@@ -186,13 +192,14 @@ async Task Historia()
                     "BROCOLI,Brocoli unidad,1,920,FrutasYVerduras,0" }),
     };
 
-    foreach (var (numero, fecha, porque, lineas) in guion)
+    foreach (var (numero, fecha, sucursal, porque, lineas) in guion)
     {
         var partes = lineas.Select(l => l.Split(',')).ToArray();
         var cuerpo = new
         {
             numero,
             fecha,
+            sucursal,
             skus = partes.Select(p => p[0].Trim()).ToArray(),
             descripciones = partes.Select(p => p[1].Trim()).ToArray(),
             cantidades = partes.Select(p => int.Parse(p[2], CultureInfo.InvariantCulture)).ToArray(),
@@ -279,7 +286,7 @@ static void Ayuda()
     Console.WriteLine("Inyector de eventos de demo para URL2 (Compras)");
     Console.WriteLine();
     Console.WriteLine("  listar                             que ve hoy la app (y desde donde sigue la numeracion)");
-    Console.WriteLine("  inyectar --numero T-97001 [--fecha yyyy-MM-dd] --linea \"sku,descripcion,cantidad,precio,categoria,meses\" ...");
+    Console.WriteLine("  inyectar --numero T-97001 [--fecha yyyy-MM-dd] [--sucursal \"La Guaria Zapote\"] --linea \"sku,descripcion,cantidad,precio,categoria,meses\" ...");
     Console.WriteLine("  historia                           siembra el guion completo del demo, de un tiro");
     Console.WriteLine("  senuelo                            demuestra el 403 estructural del token de la app");
     Console.WriteLine();
@@ -287,4 +294,5 @@ static void Ayuda()
     Console.WriteLine();
     Console.WriteLine("  categorias: Proteinas FrutasYVerduras LacteosYHuevos GranosYAbarrotes");
     Console.WriteLine("              AceitesYGrasas Azucarados Snacks Limpieza Electrohogar");
+    Console.WriteLine("  sucursales: La Guaria Centro | La Guaria Zapote | La Guaria Del Este  (opcional)");
 }
