@@ -21,15 +21,15 @@
 
   "//names": "The tool names, their parameter names and the analyte values are the module's REAL ones, over the protocol. They are not translated: they have to match what the module's MCP server exposes, or tools/call fails and gnothi_verify_module reports a mismatch.",
 
-  "//no-precedent": "This is the FIRST module with parameterized tools. The invoices manifest declares 'input': [] in its only tool, so there is no example of how a parameter is declared. The two here take an analyte, and the module publishes it as an ENUM of four values -measured by asking it for its tools/list-. The 'input' schema of this manifest only models type and description, so the valid values cannot be expressed and have to be repeated in the description. This is the concrete evidence for deciding the format, which is still open in the team's set.",
+  "//no-precedent": "This is the FIRST module with parameterized tools. The invoices manifest declares 'input': [] in its only tool, so there is no example of how a parameter is declared. Three of the four here take an analyte, and the module publishes them as TWO separate enums -four numeric analytes and three binary ones, measured by asking it for its tools/list-, because the questions that can be asked of each set are not the same: a nitrite does not have a velocity. The 'input' schema of this manifest only models type and description, so the valid values cannot be expressed and have to be repeated in the description. This is the concrete evidence for deciding the format, which is still open in the team's set.",
 
   "tools": [
     {
-      "name": "revisar_mis_analitos",
-      "title": "How am I doing",
+      "name": "que_me_falta_medir",
+      "title": "What I am due for",
       "readOnly": true,
       "input": [],
-      "description": "Reviews EVERY analyte the person has history for and returns the trend of each one, flagging which ones demand attention. Use it when they ask something general such as 'is anything in my lab tests getting worse?', 'how am I doing?' or 'is there anything I should worry about?'. It is not the list of tests the app already shows them: it is the READING of each series over time, which no screen provides. The ones with exigeAtencion true are the ones worth having their doctor see."
+      "description": "Which of the person's analytes are overdue: how long since each was last measured, and how often each one should be repeated. Use it when they ask 'which tests am I due for?', 'how long since I had my cholesterol checked?' or 'am I up to date?'. It is what NO screen can show: the app shows what there IS, this says what is MISSING. The interval is decided by each analyte and is not fixed - a cholesterol in range repeats every five years and a high one every year. Only analytes measured at least once appear: for one never done there is nothing to repeat."
     },
     {
       "name": "evaluar_tendencia",
@@ -42,7 +42,7 @@
           "description": "Which analyte to evaluate. Valid values: AntigenoProstatico, ColesterolTotal, ColesterolLdl, Hemoglobina."
         }
       ],
-      "description": "Answers whether one of the person's analytes IS GOING UP, is going down or is stable, looking at their whole history and not at the latest result. It is the question their lab sheet cannot answer, because a sheet carries one value and one date. If sugiereRepetirElExamen comes back true, the change is too large for the time elapsed and the most likely cause is a measurement error: suggest repeating the test, do not alarm. The analyte is passed as one of these exact values: AntigenoProstatico, ColesterolTotal, ColesterolLdl, Hemoglobina."
+      "description": "Answers whether one of the person's analytes IS GOING UP, is going down or is stable, looking at their whole history and not at the latest result. It is the question their lab sheet cannot answer, because a sheet carries one value and one date. If sugiereRepetirElExamen comes back true, the change is too large for the time elapsed and the most likely cause is a measurement error: suggest repeating the test, do not alarm. It only works for analytes carrying a NUMBER; for the ones reported as present or absent the tool is presencia_de. The analyte is passed as one of these exact values: AntigenoProstatico, ColesterolTotal, ColesterolLdl, Hemoglobina."
     },
     {
       "name": "velocidad_de",
@@ -56,6 +56,19 @@
         }
       ],
       "description": "Answers HOW FAST an analyte has been changing, in units per year, and whether that rate on its own already demands attention even if the absolute value is still within range. It differs from evaluar_tendencia: the trend looks at the whole series and this looks at the MOST RECENT stretch, which is how a prostate-specific antigen is read in clinical practice. The analyte is passed as one of these exact values: AntigenoProstatico, ColesterolTotal, ColesterolLdl, Hemoglobina."
+    },
+    {
+      "name": "presencia_de",
+      "title": "Whether it is still there",
+      "readOnly": true,
+      "input": [
+        {
+          "name": "analito",
+          "type": "string",
+          "description": "Which binary analyte to evaluate. Valid values: Nitritos, SangreEnOrina, SangreEnHeces."
+        }
+      ],
+      "description": "Answers how an analyte reported as PRESENT or ABSENT - occult blood, nitrites - is doing, looking at its whole history and not at the latest test. Use it when they ask 'am I still passing blood?', 'did the infection clear?' or 'has this happened to me before?'. It returns whether it appeared, whether it PERSISTS -two or more consecutive positive tests: it was repeated and came back-, whether it was not confirmed -it appeared once and the next one was negative- or whether it cleared. It differs from evaluar_tendencia, which only works for analytes carrying a number: a nitrite is not going up. Pay attention to positivasSeguidas: a confirmed finding and an isolated one do NOT call for the same thing, and the right action comes in the accion field. The analyte is passed as one of these exact values: Nitritos, SangreEnOrina, SangreEnHeces."
     }
   ]
 }
