@@ -61,8 +61,8 @@ antes de reportar un hallazgo, se mira la línea.
 | 3 | El proveedor no conoce el dominio | `EndPointDeEventos/` e `InyectorDeEventosDemo/` | Ninguno referencia `Dominio/` ni toca el journal. Lo único que los conecta es HTTP | no discrimina |
 | 4 | No hay tool genérica | Las tools del `.Mcp` | Ninguna con forma `Query(puppet, operacion, parametros)`. Cada tool es una pregunta | no discrimina |
 | 5 | **Hay al menos una pregunta que sólo contesta la IA** | Nombres de tools vs. lo que renderizan las `.razor` | Existe **al menos una** tool cuya respuesta ninguna vista muestra | **discrimina** |
-| 6 | Los argumentos de la frontera son conjuntos cerrados | Firmas de las tools | El parámetro es un `enum`, no un `string`: la lista de valores válidos vive en el `inputSchema`, no en la prosa de la descripción | por correr |
-| 7 | Los juicios viven en el dominio | Umbrales, periodicidades, direcciones | Son miembros de clases de `Dominio/`, no constantes en `App/`, `Wasm/` o `Mcp/` | por correr |
+| 6 | Los argumentos de la frontera son conjuntos cerrados | Firmas de las tools | El parámetro es un `enum`, no un `string`: la lista de valores válidos vive en el `inputSchema`, no en la prosa de la descripción | **no discrimina** — y dos de cuatro no tuvieron ocasión, ver abajo |
+| 7 | **Los juicios viven en el dominio** | Umbrales, periodicidades, direcciones | Son miembros de clases de `Dominio/`, no constantes en `App/`, `Wasm/` o `Mcp/` | **discrimina** — ✅ corrido, **1 de 4 falla** |
 | 8 | El MCP no corrompe su propio canal | `Program.cs` del `.Mcp` | Redirige `stdout` antes de tocar el motor — con transporte stdio, `stdout` **es** el canal JSON-RPC | por correr |
 | 9 | La app no es cliente de los servicios generales | URL2 | Hay un señuelo que devuelve **403 con el token válido** de la app | por correr |
 | 10 | Cada clase justifica existir | Las clases del dominio | Cada una tiene al menos un miembro que ninguna otra tiene | **no es observable** — requiere juicio |
@@ -159,6 +159,73 @@ es la diferencia entre un chequeo y un adorno.
 > mismo argumento del manifiesto: *porque es una declaración, se puede verificar*. Queda **por
 > correr** hasta que los `Preguntas.md` la lleven; hoy sólo la tiene
 > [`Pruebas/Gimnasio`](../Pruebas/Gimnasio/Preguntas.md).
+
+### Sobre el 7, el segundo que discriminó — y el único hallazgo real hasta hoy
+
+Corrido el 2026-09-02 contra los cuatro negocios. **Falla uno**, y los otros tres pasan por razones
+que vale la pena separar.
+
+**`Compras` falla.** En `App/Compras.App/ComprasAPI.cs`:
+
+```csharp
+/// <summary>Cuántas compras se miran para reconocer la firma, si nadie dice otra cosa.</summary>
+// Ocho son unas dos meses de compras semanales: alcanza para que "lo de siempre"
+// se repita y es poco para que un cambio de habitos quede sepultado.
+public const int ComprasQueSeMiranParaLaFirma = 8;
+```
+
+**El comentario argumenta el juicio en voz alta** —por qué ocho y no cuatro ni veinte— y eso es
+justamente lo que lo delata: es una decisión de negocio, y vive en `App/`.
+
+Vale ser preciso sobre cuánto pesa. El dominio **sí tiene la forma**: `FirmaDeLaSemana(cuantasCompras)`
+recibe el número por parámetro. Lo que quedó afuera es **el valor**, como default. Y como las dos
+tools usan el default y nadie lo pisa, en la práctica el juicio lo toma `App/`. Es una violación más
+suave que un umbral quemado adentro de una fórmula, y sigue siendo una: el día que alguien quiera
+cambiar de ocho a doce, no lo va a buscar en el proyecto donde está.
+
+**`DealershipCar` pasa, y es el caso que más enseña.** Su `Wasm` tiene tres conjuntos cerrados
+escritos a mano como arreglos de texto —`TheNineKinds`, `TheFourProfiles`, `TheFiveDeferralReasons`—
+que a primera vista son exactamente lo que este observable busca. **No lo son**, porque el browser no
+puede referenciar el dominio (es `internal`) y porque hay una prueba que los fija miembro por miembro
+contra el `enum`:
+
+```csharp
+Assert.That(AppState.TheNineKinds, Is.EqualTo(Enum.GetNames(typeof(OperationKindCode))), ...
+```
+
+Y su comentario dice la parte que este observable no sabía: *"un nombre **mal escrito** lo rechaza
+`WireName` en la puerta, ruidosamente. Un miembro **que falta** no lo rechaza nadie — simplemente no
+aparece en la pantalla, en silencio y para siempre."* Una lista copiada siempre deriva; **lo único que
+la salva es compararla**, que es el mismo argumento del observable 11.
+
+**`Examenes` pasa**, y tiene el otro falso positivo obvio: `EdadDelPacienteDelDemo = 34` en `App/`.
+Es **dato de demo**, no un juicio — el juicio (que los rangos se mueven con la edad) vive en el
+dominio. Hubo que mirar la línea, como manda la regla de arriba.
+
+> **Lo que la corrida le agregó al observable.** Escrito como *"cero constantes en `App/`"* marcaría
+> los tres pasados. Lo que separa un juicio de una constante no es el tipo ni el lugar: es **si
+> alguien tuvo que decidirlo**. Un formato de fecha, un nombre de actor, una edad de demo y una lista
+> espejada-y-probada no son juicios. Un `8` con dos renglones de argumentación, sí.
+
+### Sobre el 6, que pasó sin tener mucho que mirar
+
+Los cuatro pasan, pero sólo **dos tuvieron ocasión de fallar**:
+
+| | Argumento de conjunto cerrado | |
+|---|---|---|
+| `Examenes` | `Analito`, `AnalitoBinario` | ✅ `enum`, con el porqué escrito: *"sin strings en el contrato… con un enum vive en el `inputSchema`"* |
+| `DealershipCar` | `MaintenanceOperation` | ✅ `enum` |
+| `Cargas` | `string placa` | — una placa no es un conjunto cerrado: son las del dueño |
+| `Compras` | ninguno | — sus 13 tools no reciben ninguno |
+
+**`Compras` es el interesante**: su `Preguntas.md` declara un conjunto cerrado —*"el departamento:
+conjunto cerrado de doce"*— y **ese conjunto nunca llega a la frontera**. No es que lo haya expuesto
+mal; es que ninguna de sus preguntas lo pide.
+
+> **Y ahí está el defecto del 6, que es el mismo del piso del [14](#sobre-el-14-el-primero-que-audita-las-guías-y-no-un-negocio):**
+> no distingue *"lo hizo bien"* de *"no tuvo la oportunidad de hacerlo mal"*. Un negocio sin ningún
+> argumento cerrado pasa perfecto sin haber probado nada. Por eso queda clasificado **no
+> discrimina** y el conteo de cuántos tuvieron ocasión se reporta al lado.
 
 ### Sobre el 14, el primero que audita las guías y no un negocio
 

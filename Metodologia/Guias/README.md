@@ -100,11 +100,17 @@ se corra.
 corriendo contra el cual probar una receta.
 
 **8 (auditar). Parcialmente desbloqueado.** Ya existe el instrumento: [la tabla de
-observables](observables.md), con cinco chequeos corridos contra los tres negocios. De los trece,
-faltan siete por correr y uno quedó declarado **no observable** a propósito. Lo que todavía bloquea la
-auditoría completa es que **sólo `Compras` tiene su `Preguntas.md`** —lo escribió el equipo el
-2026-08-27, y encontró tres defectos en un negocio con 461 comprobaciones en verde—. Sin la intención
-declarada, un agente puede leer el código pero no sabe contra qué compararlo.
+observables](observables.md). De los catorce, **ocho corridos**, uno declarado **no observable** a
+propósito y cinco pendientes — los cinco bloqueados por cosas que no están en este repo: el lado del
+proveedor corriendo, los `manifest.json` y `Gnothi.Assistant`. Lo que todavía bloquea la auditoría
+completa es que **sólo `Compras` tiene su `Preguntas.md`** —lo escribió el equipo el 2026-08-27, y
+encontró tres defectos en un negocio con 461 comprobaciones en verde—. Sin la intención declarada, un
+agente puede leer el código pero no sabe contra qué compararlo.
+
+> **Dos han discriminado alguna vez: el 5 y el 7.** El 7 se corrió el 2026-09-02 y encontró el primer
+> hallazgo real de la tabla — un juicio de negocio (*cuántas compras se miran para reconocer la
+> firma*) viviendo en `App/` en vez del dominio, con su argumentación escrita al lado, que es lo que
+> lo delata.
 
 > **El 13 es nuevo y audita algo que ninguno de los doce anteriores audita: completitud.** Los doce
 > preguntan si los juicios quedaron donde se dijo; el 13 pregunta si el dominio tiene todo lo que el
