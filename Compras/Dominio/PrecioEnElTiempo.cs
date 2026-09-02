@@ -17,6 +17,11 @@ namespace Compras.Dominio
 	// Total: un sku con una sola compra no tiene serie de precios, y lo dice.
 	public abstract class PrecioEnElTiempo
 	{
+		// Cuanto tiene que moverse para llamarlo un cambio real. Un 3% es redondeo de
+		// gondola; mas que eso lo siente quien paga. PUBLICO porque es UN SOLO juicio:
+		// la rebaja de un recibo (RebajaDesdeLaCompra) juzga con este mismo numero.
+		public const decimal CambioQueCuentaComoReal = 0.03m;
+
 		internal static PrecioEnElTiempo Ninguno(string sku) => new SinPrecios(sku);
 
 		internal static PrecioEnElTiempo De(Producto producto, IReadOnlyList<PrecioObservado> observados) =>
@@ -84,10 +89,6 @@ namespace Compras.Dominio
 
 		private sealed class Serie : PrecioEnElTiempo
 		{
-			// Cuanto tiene que moverse para llamarlo un cambio real. Un 3% es redondeo de
-			// gondola; mas que eso lo siente quien paga.
-			private const decimal CambioQueCuentaComoReal = 0.03m;
-
 			private readonly Producto producto;
 			private readonly IReadOnlyList<PrecioObservado> observados;
 

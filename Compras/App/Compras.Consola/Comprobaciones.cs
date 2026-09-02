@@ -70,6 +70,8 @@ namespace Compras.Consola
 			LaListaDiceQueVaAFaltar();
 			LaSerieSeAgrupaPorAnio();
 			LaBusquedaEncuentraPorProducto();
+			LaCanastaSeMideContraSuPasado();
+			LaRebajaEsLaBuenaNoticiaDelRecibo();
 
 			Console.WriteLine();
 			Console.WriteLine(fallas == 0
@@ -1754,6 +1756,126 @@ namespace Compras.Consola
 				("CHOC-BARRA", "Chocolate de leche barra", 4, 1450m, "Azucarados", 0),
 				("MANTECA-500", "Manteca de palma 500g", 2, 2050m, "AceitesYGrasas", 0),
 				("BROCOLI", "Brocoli unidad", 1, 920m, "FrutasYVerduras", 0)));
+
+			return historial;
+		}
+
+		// ---- la canasta frente a su pasado ----
+		private static void LaCanastaSeMideContraSuPasado()
+		{
+			Titulo("la canasta se mide contra su pasado");
+
+			// UN GUION DE PRECIOS QUE SE MUEVEN, con la trampa a proposito: la leche cambia
+			// de presentacion (1 L -> 2 L) y su precio de LINEA casi se duplica mientras el
+			// precio por litro BAJA. Si la comparacion sumara lineas, mentiria justo aca.
+			Historial precios = PreciosQueSeMueven();
+
+			// Hoy 25-ago, ventana de 3: el corte cae el 25-may. El "entonces" de cada
+			// producto es su ultima observacion en o antes de esa fecha (la compra T-2,
+			// del 20-may).
+			CanastaFrenteAlPasado frente = precios.CanastaFrenteA(Hoy, 3, 4);
+			Igual("hay con que comparar", "True", frente.HayConQueComparar.ToString());
+
+			// EL CAFE QUEDA AFUERA: es habitual (2 de 4) pero entro DESPUES del corte, asi
+			// que no tiene pasado contra el que mirarse. Afuera de la suma, no en cero.
+			Igual("  se comparan 3 y no 4", "3", frente.Productos.Count.ToString());
+			foreach (ProductoFrenteAlPasado producto in frente.Productos)
+				Igual($"  {producto.Sku} no es el cafe", "False", (producto.Sku == "CAFE").ToString());
+
+			// LA HONESTIDAD DE LA PRESENTACION: hoy lleva la leche de 2 L a 1.960. Hace 3
+			// meses el litro le costaba 1.000, o sea que ESA cantidad costaba 2.000: la
+			// leche le BAJO 40, aunque el ticket diga casi el doble.
+			ProductoFrenteAlPasado leche = frente.Productos[2];
+			Igual("la leche se lee por su presentacion de hoy", "2 L", leche.Presentacion);
+			Igual("  antes: 2.000", "2000", leche.Antes.ToString("0"));
+			Igual("  ahora: 1.960", "1960", leche.Ahora.ToString("0"));
+			Igual("  o sea bajo 40", "-40", leche.Cambio.ToString("0"));
+
+			// El que mas se movio primero: el aceite (380), las galletas (87), la leche (40).
+			Igual("el aceite encabeza", "ACEITE", frente.Productos[0].Sku);
+			Igual("  y las galletas siguen", "GALLETAS", frente.Productos[1].Sku);
+
+			// LA SUMA con signo: -380 - 40 + 87 = -333. Esta canasta esta mas barata.
+			Igual("la suma da -333", "-333", frente.Cambio.ToString("0"));
+			Igual("  y la frase dice menos", "True",
+				frente.ParaElAsistente.Contains("333").ToString());
+			Igual("  con la ventana adentro", "True",
+				frente.ParaElAsistente.Contains("3 meses").ToString());
+
+			// CON VENTANA DE 4 el corte cae el 25-abr: el aceite tambien pierde su pasado
+			// (entro el 20-may) y los dos que quedan SUBIERON: +60 la leche, +110 las
+			// galletas. La misma canasta, contra otro pasado, cuesta mas.
+			CanastaFrenteAlPasado contraAbril = precios.CanastaFrenteA(Hoy, 4, 4);
+			Igual("contra abril se comparan 2", "2", contraAbril.Productos.Count.ToString());
+			Igual("  y la suma da +170", "170", contraAbril.Cambio.ToString("0"));
+			Igual("  la frase dice mas", "True", contraAbril.ParaElAsistente.Contains("más").ToString());
+
+			// TOTAL: una ventana que nadie alcanza contesta "no hay", con la suma en cero.
+			CanastaFrenteAlPasado sinPasado = precios.CanastaFrenteA(Hoy, 12, 4);
+			Igual("ventana de 12: no hay con que comparar", "False",
+				sinPasado.HayConQueComparar.ToString());
+			Igual("  y la suma es cero", "0", sinPasado.Cambio.ToString("0"));
+
+			Igual("historial vacio: tampoco revienta", "False",
+				new Historial().CanastaFrenteA(Hoy, 3, 4).HayConQueComparar.ToString());
+			Revienta("una ventana de cero meses revienta", () => precios.CanastaFrenteA(Hoy, 0, 4));
+		}
+
+		// ---- la buena noticia del recibo ----
+		private static void LaRebajaEsLaBuenaNoticiaDelRecibo()
+		{
+			Titulo("la rebaja es la buena noticia del recibo");
+
+			Historial precios = PreciosQueSeMueven();
+
+			// En la T-2 pago el aceite a 3.800; la ultima observacion lo tiene a 3.420.
+			// Bajo un 10% -real- y la nota lo dice en colones por SU pieza: 380.
+			RebajaDesdeLaCompra rebaja = precios.RebajaDesde("T-2");
+			Igual("hay rebaja", "True", rebaja.Hay.ToString());
+			Igual("  y es el aceite", "ACEITE", rebaja.Sku);
+			Igual("  380 menos por pieza", "380", rebaja.CuantoMenos.ToString("0"));
+			Igual("  la frase lo dice", "True", rebaja.ParaElAsistente.Contains("380").ToString());
+
+			// LA LECHE NO CUENTA aunque bajo: su litro paso de 1.000 a 980, un 2%, y el
+			// umbral es el MISMO 3% de la serie de precios. Redondeo de gondola no es nota.
+			Igual("  y no es la leche, que bajo un 2%", "False", (rebaja.Sku == "LECHE").ToString());
+
+			// LA ULTIMA COMPRA NO TIENE REBAJA por definicion: no hay observacion posterior.
+			// El precio de ese mismo dia no es noticia de hoy.
+			Igual("la ultima compra: ninguna", "False", precios.RebajaDesde("T-4").Hay.ToString());
+
+			// TOTAL: un numero que no existe contesta "ninguna", no revienta.
+			RebajaDesdeLaCompra deNadie = precios.RebajaDesde("T-99");
+			Igual("una compra que no existe: ninguna", "False", deNadie.Hay.ToString());
+			Igual("  y la frase lo dice", "True",
+				deNadie.ParaElAsistente.Contains("nada de la compra").ToString());
+
+			Revienta("un numero vacio revienta", () => precios.RebajaDesde(" "));
+		}
+
+		// Cuatro compras con precios que se mueven de las tres maneras: las galletas suben
+		// (1.400 -> 1.510), el aceite baja fuerte (3.800 -> 3.420), y la leche cambia de
+		// presentacion (1 L -> 2 L) bajando por litro mientras sube por linea. El cafe
+		// entra tarde, despues del corte de 3 meses.
+		private static Historial PreciosQueSeMueven()
+		{
+			var historial = new Historial();
+
+			var galletasT1 = ("GALLETAS", "Galletas surtidas", 1, 1400m, "Snacks", 0, "u");
+			var galletasT2 = ("GALLETAS", "Galletas surtidas", 1, 1423m, "Snacks", 0, "u");
+			var galletasHoy = ("GALLETAS", "Galletas surtidas", 1, 1510m, "Snacks", 0, "u");
+			var cafe = ("CAFE", "Cafe molido 500g", 1, 2800m, "GranosYAbarrotes", 0, "u");
+
+			historial.Agregar(UnaCompraCon("T-1", new DateTime(2026, 3, 10),
+				("LECHE", "Leche entera", 1, 950m, "LacteosYHuevos", 0, "1 L"), galletasT1));
+			historial.Agregar(UnaCompraCon("T-2", new DateTime(2026, 5, 20),
+				("LECHE", "Leche entera", 1, 1000m, "LacteosYHuevos", 0, "1 L"), galletasT2,
+				("ACEITE", "Aceite de girasol 900ml", 1, 3800m, "AceitesYGrasas", 0, "u")));
+			historial.Agregar(UnaCompraCon("T-3", new DateTime(2026, 7, 15),
+				("LECHE", "Leche entera", 1, 1900m, "LacteosYHuevos", 0, "2 L"), galletasHoy, cafe));
+			historial.Agregar(UnaCompraCon("T-4", new DateTime(2026, 8, 20),
+				("LECHE", "Leche entera", 1, 1960m, "LacteosYHuevos", 0, "2 L"), galletasHoy, cafe,
+				("ACEITE", "Aceite de girasol 900ml", 1, 3420m, "AceitesYGrasas", 0, "u")));
 
 			return historial;
 		}

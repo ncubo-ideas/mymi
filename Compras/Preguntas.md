@@ -90,6 +90,9 @@ La columna de la derecha es la que hay que leer:
 | 13 | **Qué es comestible** | Y **la comida de la perra no lo es**, aunque sea comida | ⚠️ propuesta |
 | 14 | **Cuándo urge una garantía** | Conviene revisarla a los 90 días de que se cierre la ventana; hay que moverse a los 30 | ⚠️ propuesta |
 | 15 | **Cómo se escribe la plata** | `₡` y punto de miles. De Costa Rica, y armado a mano porque el wasm puede venir sin los datos de globalización | ⚠️ propuesta |
+| 16 | **Contra qué pasado se mide la canasta** | **3 meses.** El "entonces" de cada habitual es el último precio que ELLA pagó en o antes del corte; la suma va en colones por la presentación MÁS RECIENTE (si pasó a la leche de 2 L, se pregunta cuánto costaba entonces ESA cantidad); un habitual sin precio tan viejo queda **afuera de la suma**, no en cero | ⚠️ propuesta (del mock de Fernanda) |
+| 17 | **Qué es una "oportunidad"** | **La mayor bajada real** de los habituales, con el mismo 3 % del juicio 10. Solo bajadas: la tarjeta es una invitación, y las subidas ya tienen sus filas | ⚠️ propuesta (del mock de Fernanda) |
+| 18 | **La buena noticia de un recibo** | De lo que llevó en ESA compra, **una sola** rebaja —la mayor—, por pieza de esa línea. "Hoy" es la última observación del historial (sus propios precios, no la góndola), solo si es posterior al recibo, y con el mismo 3 % del juicio 10 | ⚠️ propuesta (del mock de Fernanda) |
 
 ### Por qué la holgura del 5 es deliberada
 
