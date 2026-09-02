@@ -1,0 +1,107 @@
+@using DealershipCar.Wasm.Parts
+
+@*
+    SERVICIOS -- las nueve, en el orden en que le importan a la duena.
+
+    La referencia pedia una LINEA DE TIEMPO con fechas ("hace 1 mes", "en 1.200
+    km"). Una linea de tiempo de verdad necesita dos cosas que este registro no
+    da todavia: el historico de lo ya hecho, y cuanto falta en numero. El
+    dominio guarda las dos -- se completan operaciones y se calculan restos --
+    pero no las expone: lo hecho no tiene lectura, y los restos viven dentro de
+    la frase, no como enteros.
+
+    Asi que esto es la mitad honesta de esa linea: el eje vertical y el orden
+    por urgencia, sin fechas inventadas. Cuando el dominio publique
+    "DistanceRemaining", "DaysRemaining" y el historico, esta misma pantalla los
+    pone y no hay que rehacerla.
+*@
+
+<div class="d-sec" style="margin-top:4px">
+    <span class="d-sec__note">@Nueve.Count operaciones, primero lo urgente</span>
+</div>
+
+<section class="d-card" id="linea-servicios">
+    <div class="d-line">
+        @foreach (string kind in EnOrden)
+        {
+            string estado = Board.TryGetValue(kind, out string s) ? s : "";
+            string tono = ComoSeLee.Tono(estado);
+
+            <div class="d-step" id="@("servicio-" + kind)">
+                <span class="@("d-step__bullet d-step__bullet--" + tono)">
+                    <Glyph Name="@ComoSeLee.Dibujo(estado)" Size="11" Stroke="3" />
+                </span>
+                <div class="@("d-step__when d-step__when--" + tono)">@ComoSeLee.Estado(estado)</div>
+                <div class="d-step__title">@ComoSeLee.Operacion(kind)</div>
+                <div class="d-step__sub">
+                    @if (abierto == kind)
+                    {
+                        <span>@(Reasons.TryGetValue(kind, out string r) ? r : "")</span>
+                    }
+                    else
+                    {
+                        <span>@Resumen(kind, estado)</span>
+                    }
+                </div>
+                <div style="margin-top:6px">
+                    <button class="d-link" type="button" id="@("por-que-" + kind)"
+                            @onclick="@(() => abierto = abierto == kind ? "" : kind)">
+                        @(abierto == kind ? "Ocultar" : "¿Por qué?")
+                    </button>
+                </div>
+            </div>
+        }
+    </div>
+</section>
+
+<p class="d-note" style="margin-top:14px">
+    <Glyph Name="info" Size="14" Stroke="2" />
+    <span>
+        El orden lo pone la urgencia, no el calendario: primero lo vencido, después lo que toca, y
+        de último lo que está al día. Las fechas de lo ya hecho todavía no vienen en el registro.
+    </span>
+</p>
+
+@code {
+    [Parameter, EditorRequired] public IReadOnlyList<string> Nueve { get; set; } = new List<string>();
+    [Parameter, EditorRequired] public Dictionary<string, string> Board { get; set; } = new();
+    [Parameter, EditorRequired] public Dictionary<string, string> Reasons { get; set; } = new();
+
+    private string abierto = "";
+
+    /// <summary>
+    /// El peso de cada tono para ordenar. Lo urgente arriba, y dentro de un mismo tono se conserva
+    /// el orden en que el dominio nombra las nueve: dos operaciones igual de urgentes no tienen por
+    /// que cambiar de lugar entre dos aperturas de la pantalla.
+    /// </summary>
+    private static int Peso(string tono) => tono switch
+    {
+        "danger" => 0,
+        "warn" => 1,
+        "ok" => 3,
+        _ => 2,
+    };
+
+    private IEnumerable<string> EnOrden =>
+        Nueve
+            .Select((kind, position) => (kind, position))
+            .OrderBy(x => Peso(ComoSeLee.Tono(Board.TryGetValue(x.kind, out string s) ? s : "")))
+            .ThenBy(x => x.position)
+            .Select(x => x.kind);
+
+    /// <summary>
+    /// La linea corta que va bajo el nombre cuando el detalle esta cerrado. NO resume la frase del
+    /// dominio -- la reemplaza por lo unico que se puede decir sin leerla: que estado tiene y quien
+    /// lo decidio. Recortar la frase con puntos suspensivos cortaria justo donde estan los numeros.
+    /// </summary>
+    private static string Resumen(string kind, string estado) => estado switch
+    {
+        "Overdue" => "Se pasó del intervalo que publicó el fabricante.",
+        "Due" => "Llegó al intervalo que publicó el fabricante.",
+        "DueSoon" => "Está cerca del intervalo que publicó el fabricante.",
+        "Deferred" => "Vos pediste posponerla.",
+        "Missed" => "Pasó su momento sin registrarse.",
+        "NotDue" => "Dentro del intervalo, o sin intervalo programado para este carro.",
+        _ => "Tu registro no le puso un estado a esta operación.",
+    };
+}
