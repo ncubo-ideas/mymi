@@ -111,7 +111,11 @@ internal sealed class ComprasTools
 		+ "-falta un lado de la comparacion- y es distinto de hayCambio en false, que significa "
 		+ "que la canasta viene igual. El campo corte dice POR QUE MES se partio la historia: si no "
 		+ "pasaste fecha, es el que el dominio encontro, y conviene nombrarselo a la persona. Este modulo dice QUE cambio y no si esta bien: el helado "
-		+ "que pasa de mensual a semanal es un dato, no una falta.")]
+		+ "que pasa de mensual a semanal es un dato, no una falta. OJO CON LO OCASIONAL: esta tool "
+		+ "lista lo que entro Y SE VOLVIO HABITO (el umbral de la firma); un producto que entro "
+		+ "en el mismo mes SIN volverse costumbre -la mantequilla ocasional- NO aparece aca, y "
+		+ "solo consumo_de lo encuentra. Para responder 'que entro desde tal mes' COMPLETO, usa "
+		+ "las dos juntas.")]
 	public CambioDeLaCanasta Cambio(
 		[Description("OPCIONAL, en formato aaaa-mm-dd. Omitilo y el dominio busca solo el mes del quiebre, que es lo normal; pasalo unicamente si la persona nombro una fecha suya.")]
 		DateTime corte = default,
@@ -357,6 +361,44 @@ internal sealed class ComprasTools
 		if (!lector.HayJournal) return new List<GarantiaDeProducto>();
 
 		return lector.Consultar(api => api.GarantiasPorVencer(DateTime.Now));
+	}
+
+	[McpServerTool(Name = "donde_compro", UseStructuredContent = true)]
+	[Description("EN QUE SUCURSALES compra la persona, y DESDE CUANDO se mueve: cada sucursal "
+		+ "con sus compras, la primera y la ultima vez; la mas frecuentada viene primero y esa "
+		+ "es 'la de siempre'. seMueveDesde trae el mes (aaaa-mm) de la primera compra en una "
+		+ "sucursal distinta — el dato que corrobora un cambio de vida desde una fuente que "
+		+ "nadie esperaria: alguien que empezo a moverse por trabajo aparece comprando en "
+		+ "tiendas nuevas ese mismo mes. comprasSinSucursal cuenta los tiquetes que NO dicen "
+		+ "donde fueron (el campo es nuevo y los viejos callan): decilo si es grande, porque el "
+		+ "recorrido se lee solo de los que si lo dicen. Con hayDatos en false ningun tiquete "
+		+ "trae el dato todavia, y eso es la respuesta, no un error.")]
+	public RecorridoDeSucursalesVista DondeCompro()
+	{
+		if (!lector.HayJournal) return new RecorridoDeSucursalesVista();
+
+		return lector.Consultar(api => api.Recorrido());
+	}
+
+	[McpServerTool(Name = "como_me_cambio_el_precio", UseStructuredContent = true)]
+	[Description("LA SERIE DE PRECIOS de UN producto: cada precio que la persona pago, con su "
+		+ "FECHA, su presentacion y el numero de compra. Es la que contesta 'el mismo helado te "
+		+ "costaba 3.680 en enero de 2025 y hoy 4.214' — el dato que ninguna otra fuente le da: "
+		+ "el banco le dice cuanto gasto, nadie le dice que el MISMO producto le subio. Los "
+		+ "precios van por UNIDAD DE MEDIDA (unidad, litro, kilo); precioDeLinea es lo que ese "
+		+ "dia costo el empaque. Acepta sku o texto ('helado'); si hay varios que coinciden gana "
+		+ "el comprado mas recientemente. La direccion se lee del SIGNO de cambio, y "
+		+ "hayCambioReal dice si el movimiento supera el 3% (menos es redondeo de gondola). Con "
+		+ "hay en false el producto no esta en el historial; con haySerie en false hay UNA sola "
+		+ "compra y no hay cambio que leer — las dos son respuestas. Usala cuando pregunten por "
+		+ "el precio de UN producto en el tiempo; para el panorama de todos los habituales esta "
+		+ "como_me_cambiaron_los_precios.")]
+	public SerieDePreciosVista ComoMeCambioElPrecio(
+		[Description("El producto, por sku o por texto: 'helado', 'LECHE-1L', 'detergente'.")] string producto)
+	{
+		if (!lector.HayJournal) return new SerieDePreciosVista();
+
+		return lector.Consultar(api => api.Serie(producto));
 	}
 
 	[McpServerTool(Name = "como_me_cambiaron_los_precios", UseStructuredContent = true)]

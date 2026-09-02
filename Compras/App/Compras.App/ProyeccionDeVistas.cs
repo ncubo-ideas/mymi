@@ -70,6 +70,7 @@ namespace Compras.App
 
 			return new CompraDetallada
 			{
+				Sucursal = Texto(raiz, "sucursal"),
 				Numero = Texto(raiz, "numero"),
 				Fecha = Fecha(raiz, "fecha"),
 				Total = Decimal(raiz, "total"),
@@ -254,6 +255,78 @@ namespace Compras.App
 				});
 
 			return precios;
+		}
+
+		internal static RecorridoDeSucursalesVista Recorrido(string json)
+		{
+			if (string.IsNullOrWhiteSpace(json)) return new RecorridoDeSucursalesVista();
+
+			using JsonDocument documento = JsonDocument.Parse(json);
+			JsonElement raiz = documento.RootElement;
+			JsonElement cabecera = raiz.TryGetProperty("recorrido", out JsonElement r) ? r : raiz;
+
+			var sucursales = new List<SucursalVista>();
+			if (raiz.TryGetProperty("sucursal", out JsonElement arreglo))
+				foreach (JsonElement elemento in Elementos(arreglo))
+					sucursales.Add(new SucursalVista
+					{
+						Nombre = Texto(elemento, "nombre"),
+						Compras = Entero(elemento, "compras"),
+						PrimeraVez = Fecha(elemento, "primeraVez"),
+						UltimaVez = Fecha(elemento, "ultimaVez"),
+					});
+
+			return new RecorridoDeSucursalesVista
+			{
+				HayDatos = Booleano(cabecera, "hayDatos"),
+				CuantasDistintas = Entero(cabecera, "cuantasDistintas"),
+				ComprasSinSucursal = Entero(cabecera, "comprasSinSucursal"),
+				SeMueve = Booleano(cabecera, "seMueve"),
+				SeMueveDesde = Texto(cabecera, "seMueveDesde"),
+				ParaElAsistente = Texto(cabecera, "paraElAsistente"),
+				Sucursales = sucursales,
+			};
+		}
+
+		internal static SerieDePreciosVista Serie(string json)
+		{
+			if (string.IsNullOrWhiteSpace(json)) return new SerieDePreciosVista();
+
+			using JsonDocument documento = JsonDocument.Parse(json);
+			JsonElement raiz = documento.RootElement;
+			JsonElement cabecera = raiz.TryGetProperty("serie", out JsonElement s) ? s : raiz;
+
+			var observados = new List<PrecioObservadoVista>();
+			if (raiz.TryGetProperty("observado", out JsonElement arreglo))
+				foreach (JsonElement elemento in Elementos(arreglo))
+					observados.Add(new PrecioObservadoVista
+					{
+						Fecha = Fecha(elemento, "fecha"),
+						Mes = Texto(elemento, "mes"),
+						PrecioPorUnidad = Decimal(elemento, "precioPorUnidad"),
+						PrecioDeLinea = Decimal(elemento, "precioDeLinea"),
+						Presentacion = Texto(elemento, "presentacion"),
+						NumeroDeCompra = Texto(elemento, "numeroDeCompra"),
+					});
+
+			return new SerieDePreciosVista
+			{
+				// "Existe" es un metodo del dominio y los prints llevan propiedades: la
+				// presencia se deriva de las veces, que dicen lo mismo.
+				Hay = Entero(cabecera, "vecesQueLoCompro") > 0,
+				Sku = Texto(cabecera, "sku"),
+				Descripcion = Texto(cabecera, "descripcion"),
+				VecesQueLoCompro = Entero(cabecera, "vecesQueLoCompro"),
+				HaySerie = Booleano(cabecera, "haySerie"),
+				PrimeroPorUnidad = Decimal(cabecera, "primero"),
+				UltimoPorUnidad = Decimal(cabecera, "ultimo"),
+				Unidad = Texto(cabecera, "unidad"),
+				Cambio = Decimal(cabecera, "cambio"),
+				CambioEnProporcion = Decimal(cabecera, "cambioEnProporcion"),
+				HayCambioReal = Booleano(cabecera, "hayCambioReal"),
+				ParaElAsistente = Texto(cabecera, "paraElAsistente"),
+				Observados = observados,
+			};
 		}
 
 		internal static CanastaFrenteAlPasadoVista FrenteAlPasado(string json)

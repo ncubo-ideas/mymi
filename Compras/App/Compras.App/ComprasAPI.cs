@@ -73,17 +73,33 @@ namespace Compras.App
 				throw new ArgumentOutOfRangeException(nameof(evento), evento.Evento,
 					"El numero de evento debe ser positivo.");
 
-			return app.Using(
-				scriptForChk: @"
-					Check(@evento > bitacora.UltimoEvento) Error 'evento ya procesado';
-				",
-				@"
+			// DOS SCRIPTS Y NO UNO CON GUARDA: el evento sin sucursal journalea EXACTAMENTE
+			// el comando de siempre -los journals nuevos y los viejos quedan iguales linea a
+			// linea-, y el que si la trae journalea la forma situada. La sucursal entra por
+			// el wither EnSucursal en una sentencia aparte, no por otro constructor: Compra
+			// ya tiene dos formas y el DSL resuelve por cantidad de argumentos.
+			string script = evento.Sucursal.Length == 0
+				? @"
 					{
 						compra = Compra(@numero, @fecha, @skus, @descripciones, @cantidades, @preciosUnitarios, @categorias, @mesesDeGarantia);
 						compras.Agregar(compra);
 						bitacora.Avanzar(@evento);
 					}
-				")
+				"
+				: @"
+					{
+						compra = Compra(@numero, @fecha, @skus, @descripciones, @cantidades, @preciosUnitarios, @categorias, @mesesDeGarantia);
+						situada = compra.EnSucursal(@sucursal);
+						compras.Agregar(situada);
+						bitacora.Avanzar(@evento);
+					}
+				";
+
+			return app.Using(
+				scriptForChk: @"
+					Check(@evento > bitacora.UltimoEvento) Error 'evento ya procesado';
+				",
+				script)
 			.WithParameters(p => {
 				p["evento",           typeof(long)]      = evento.Evento;
 				p["numero",           typeof(string)]    = evento.Numero;
@@ -94,6 +110,8 @@ namespace Compras.App
 				p["preciosUnitarios", typeof(decimal[])] = evento.PreciosUnitarios;
 				p["categorias",       typeof(string[])]  = evento.Categorias;
 				p["mesesDeGarantia",  typeof(int[])]     = evento.MesesDeGarantia;
+				if (evento.Sucursal.Length > 0)
+					p["sucursal", typeof(string)] = evento.Sucursal;
 			})
 			.PerformCheckThenCommand();
 		}
@@ -241,6 +259,7 @@ namespace Compras.App
 					compra = compras[@numero];
 					print compra.Numero numero,
 						compra.Fecha fecha,
+						compra.Sucursal sucursal,
 						compra.Total total;
 					foreach (item in compra.Items) {
 						print item.Sku sku,
@@ -649,6 +668,71 @@ namespace Compras.App
 			})
 			.PerformQuery();
 
+		// EN QUE SUCURSALES COMPRA, y desde cuando se mueve. LaDeSiempre NO se imprime:
+		// es una lectura guardada (revienta sin datos) y en un print plano eso mata la
+		// consulta; la primera del arreglo ES la de siempre.
+		public string SucursalesQueFrecuenta() =>
+			app.Using(@"
+				{
+					recorrido = compras.Sucursales();
+					print recorrido.HayDatos hayDatos,
+						recorrido.CuantasDistintas cuantasDistintas,
+						recorrido.ComprasSinSucursal comprasSinSucursal,
+						recorrido.SeMueve seMueve,
+						recorrido.SeMueveDesdeExpresado seMueveDesde,
+						recorrido.ParaElAsistente paraElAsistente;
+					foreach (sucursal in recorrido.Sucursales) {
+						print sucursal.Nombre nombre,
+							sucursal.Compras compras,
+							sucursal.PrimeraVez primeraVez,
+							sucursal.UltimaVez ultimaVez;
+					}
+				}
+			")
+			.PerformQuery();
+
+		// LA SERIE DE PRECIOS de UN producto, con cada observacion fechada: es la que
+		// contesta "el mismo helado te costaba 3.680 en enero de 2025 y hoy 4.214".
+		// Geannina la pidio publicada: estaba construida y solo la leian las
+		// comprobaciones.
+		//
+		// OJO: Subio NO se imprime a proposito. Es una lectura GUARDADA (revienta sin
+		// cambio real) y en un print plano eso mata la consulta entera; el signo ya
+		// viaja en cambio.
+		public string SerieDePrecios(string termino)
+		{
+			ArgumentNullException.ThrowIfNullOrWhiteSpace(termino);
+
+			return app.Using(@"
+				{
+					serie = compras.PrecioBuscado(@termino);
+					print serie.Sku sku,
+						serie.Descripcion descripcion,
+						serie.VecesQueLoCompro vecesQueLoCompro,
+						serie.HaySerie haySerie,
+						serie.PrimerPrecioPorUnidad primero,
+						serie.UltimoPrecioPorUnidad ultimo,
+						serie.UnidadDeReferencia unidad,
+						serie.Cambio cambio,
+						serie.CambioEnProporcion cambioEnProporcion,
+						serie.HayCambioReal hayCambioReal,
+						serie.ParaElAsistente paraElAsistente;
+					foreach (observado in serie.Observados) {
+						print observado.Fecha fecha,
+							observado.MesExpresado mes,
+							observado.PrecioPorUnidad precioPorUnidad,
+							observado.PrecioDeLinea precioDeLinea,
+							observado.PresentacionExpresada presentacion,
+							observado.NumeroDeCompra numeroDeCompra;
+					}
+				}
+			")
+			.WithParameters(p => {
+				p["termino", typeof(string)] = termino;
+			})
+			.PerformQuery();
+		}
+
 		// LA CANASTA FRENTE A SU PASADO: cuanto cuesta hoy una pieza de cada habitual
 		// contra lo que costaba hace tantos meses, sumado en colones. Es la cifra que
 		// encabeza la tarjeta de precios ("+₡1.150 vs. hace 3 meses", del mock de
@@ -996,6 +1080,12 @@ namespace Compras.App
 
 		public RebajaVista Rebaja(string numeroDeCompra) =>
 			ProyeccionDeVistas.Rebaja(RebajaDesde(numeroDeCompra));
+
+		public SerieDePreciosVista Serie(string termino) =>
+			ProyeccionDeVistas.Serie(SerieDePrecios(termino));
+
+		public RecorridoDeSucursalesVista Recorrido() =>
+			ProyeccionDeVistas.Recorrido(SucursalesQueFrecuenta());
 
 		public CanastasComparadas Comparacion(int anioAntes, int mesAntes, int anioDespues, int mesDespues) =>
 			ProyeccionDeVistas.Comparacion(ComparacionDeCanastas(anioAntes, mesAntes, anioDespues, mesDespues));

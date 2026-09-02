@@ -55,7 +55,7 @@
         { "nombre": "corte", "tipo": "string", "descripcion": "La fecha de corte, en formato aaaa-mm-dd. Lo de antes se compara con lo de despues." },
         { "nombre": "cuantasCompras", "tipo": "number", "descripcion": "Cuantas compras mirar de cada lado. Omitilo para usar el valor de la app (8)." }
       ],
-      "descripcion": "QUE SE VOLVIO HABITUAL Y DESDE CUANDO, y que dejo de estar. Es la otra lectura de la portada, y la que le pone FECHA a un cambio de habitos: usala para '¿que cambio en mis compras?', '¿desde cuando compro tanto helado?' o cuando la persona quiere relacionar sus compras con algo que le paso en un mes concreto. Cada producto que entro trae el mes de su primera aparicion, en formato aaaa-mm. Ojo: hayConQueComparar en false significa que falta un lado de la comparacion, y es distinto de hayCambio en false, que significa que la canasta viene igual. Dice QUE cambio y no si esta bien."
+      "descripcion": "QUE SE VOLVIO HABITUAL Y DESDE CUANDO, y que dejo de estar. OJO: lista lo que entro Y SE VOLVIO HABITO; lo ocasional que entro sin volverse costumbre NO aparece aca y solo consumo_de lo encuentra — para 'que entro desde tal mes' completo van las dos juntas. Es la otra lectura de la portada, y la que le pone FECHA a un cambio de habitos: usala para '¿que cambio en mis compras?', '¿desde cuando compro tanto helado?' o cuando la persona quiere relacionar sus compras con algo que le paso en un mes concreto. Cada producto que entro trae el mes de su primera aparicion, en formato aaaa-mm. Ojo: hayConQueComparar en false significa que falta un lado de la comparacion, y es distinto de hayCambio en false, que significa que la canasta viene igual. Dice QUE cambio y no si esta bien."
     },
     {
       "nombre": "cada_cuanto_compro",
@@ -143,6 +143,22 @@
         }
       ],
       "descripcion": "EN CUALES COMPRAS aparecio un producto o un pasillo entero, de la mas reciente a la mas vieja, con el NUMERO DE TICKET de cada una y cuanto de eso entro ahi. NO es consumo_de: aquella agrupa por mes y contesta 'cuanto y cuando'; esta devuelve los TICKETS, y su numero es lo que despues se le pasa a detalle_de_compra para ver la compra entera. Usala cuando la persona pregunte 'cuando compre esto', 'en que compra estaba' o quiera llegar a un recibo puntual. El campo productos dice que descripciones coincidieron: si trae mas de una, el texto alcanzo a varios productos y conviene decirselo antes de dar los totales. Con cuantasCompras en 0 no hay ninguna, y eso es una respuesta valida, no un error."
+    },
+    {
+      "nombre": "donde_compro",
+      "titulo": "En que sucursales compro",
+      "soloLectura": true,
+      "entrada": [],
+      "descripcion": "En que sucursales compra la persona y desde cuando se mueve: cada una con sus compras, la primera y la ultima vez; la mas frecuentada primero (esa es la de siempre) y seMueveDesde con el mes de la primera compra en una distinta. comprasSinSucursal cuenta los tiquetes que no dicen donde fueron: el campo es nuevo en el wire y los viejos callan. Con hayDatos en false ningun tiquete trae el dato todavia, y eso es la respuesta."
+    },
+    {
+      "nombre": "como_me_cambio_el_precio",
+      "titulo": "El precio de un producto, fechado",
+      "soloLectura": true,
+      "entrada": [
+        { "nombre": "producto", "tipo": "string", "descripcion": "El producto, por sku o por texto: 'helado', 'LECHE-1L'. Si varios coinciden gana el comprado mas recientemente." }
+      ],
+      "descripcion": "La serie de precios de UN producto: cada precio que la persona pago, con su fecha, su presentacion y el numero de compra. Contesta 'el mismo helado te costaba 3.680 en enero de 2025 y hoy 4.214' — el banco dice cuanto gasto; nadie mas le dice que el MISMO producto le subio. Precios por unidad de medida; la direccion se lee del signo de cambio y hayCambioReal marca el umbral del 3%. Con hay en false no esta en el historial; con haySerie en false hay una sola compra: las dos son respuestas."
     },
     {
       "nombre": "como_me_cambiaron_los_precios",

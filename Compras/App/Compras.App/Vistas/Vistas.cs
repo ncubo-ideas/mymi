@@ -39,6 +39,9 @@ namespace Compras.App.Vistas
 	public sealed class CompraDetallada
 	{
 		public string Numero { get; init; } = "";
+
+		/// <summary>En qué sucursal fue. Vacío cuando el tiquete no lo dijo.</summary>
+		public string Sucursal { get; init; } = "";
 		public DateTime Fecha { get; init; }
 		public decimal Total { get; init; }
 		public IReadOnlyList<LineaDeCompra> Lineas { get; init; } = new List<LineaDeCompra>();
@@ -211,6 +214,81 @@ namespace Compras.App.Vistas
 		public bool Subio { get; init; }
 		public int VecesQueLoCompro { get; init; }
 		public string ParaElAsistente { get; init; } = "";
+	}
+
+	// EN QUE SUCURSALES COMPRA, y desde cuando se mueve: la de siempre es la primera
+	// del arreglo. La propuesta de Geannina, publicada.
+	public sealed class RecorridoDeSucursalesVista
+	{
+		/// <summary>Si alguna compra dice sucursal. Sin esto, el resto en cero.</summary>
+		public bool HayDatos { get; init; }
+
+		public int CuantasDistintas { get; init; }
+
+		/// <summary>Cuántas compras callan: las de antes de que el campo viajara.</summary>
+		public int ComprasSinSucursal { get; init; }
+
+		public bool SeMueve { get; init; }
+
+		/// <summary>aaaa-mm de la primera compra fuera de la de siempre. Vacío si no se mueve.</summary>
+		public string SeMueveDesde { get; init; } = "";
+
+		public string ParaElAsistente { get; init; } = "";
+
+		/// <summary>La más frecuentada primero: esa es la de siempre.</summary>
+		public IReadOnlyList<SucursalVista> Sucursales { get; init; } = new List<SucursalVista>();
+	}
+
+	public sealed class SucursalVista
+	{
+		public string Nombre { get; init; } = "";
+		public int Compras { get; init; }
+		public DateTime PrimeraVez { get; init; }
+		public DateTime UltimaVez { get; init; }
+	}
+
+	// LA SERIE DE PRECIOS de un producto: cada precio que la persona pago, fechado. Es
+	// la que contesta "el mismo helado te costaba 3.680 en enero de 2025 y hoy 4.214".
+	public sealed class SerieDePreciosVista
+	{
+		/// <summary>Si el producto aparece en el historial. Sin esto, el resto en cero.</summary>
+		public bool Hay { get; init; }
+
+		public string Sku { get; init; } = "";
+		public string Descripcion { get; init; } = "";
+		public int VecesQueLoCompro { get; init; }
+
+		/// <summary>Con UNA sola compra no hay serie: hay un precio suelto.</summary>
+		public bool HaySerie { get; init; }
+
+		/// <summary>Por unidad de medida, como todo precio de esta app.</summary>
+		public decimal PrimeroPorUnidad { get; init; }
+		public decimal UltimoPorUnidad { get; init; }
+		public string Unidad { get; init; } = "";
+
+		/// <summary>Con signo. La dirección se lee de aquí: positivo subió.</summary>
+		public decimal Cambio { get; init; }
+		public decimal CambioEnProporcion { get; init; }
+		public bool HayCambioReal { get; init; }
+
+		public string ParaElAsistente { get; init; } = "";
+
+		/// <summary>Cada precio pagado, del más viejo al más reciente.</summary>
+		public IReadOnlyList<PrecioObservadoVista> Observados { get; init; } =
+			new List<PrecioObservadoVista>();
+	}
+
+	public sealed class PrecioObservadoVista
+	{
+		public DateTime Fecha { get; init; }
+
+		/// <summary>aaaa-mm, para hablar de meses sin parsear la fecha.</summary>
+		public string Mes { get; init; } = "";
+
+		public decimal PrecioPorUnidad { get; init; }
+		public decimal PrecioDeLinea { get; init; }
+		public string Presentacion { get; init; } = "";
+		public string NumeroDeCompra { get; init; } = "";
 	}
 
 	// LA CANASTA FRENTE A SU PASADO: cuanto cuesta hoy una pieza de cada habitual contra
