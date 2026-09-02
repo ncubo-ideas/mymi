@@ -119,11 +119,19 @@ internal static class Conformance
 
 			if (telemetriaDelHost)
 			{
-				// What still has to hold: same shape, same size. If a gate started projecting
-				// the Host's tools differently, THAT would be a defect and this catches it.
+				// COMPARING LENGTH WAS FRAGILE, and the growing catalog exposed it. The counter
+				// differs by VALUE between gates (each door served a different number of
+				// queries) and, once a count crosses 9->10, by DIGIT COUNT too -- so two
+				// responses of the same shape ended up 822 vs 823 characters and this went red
+				// for the wrong reason. Blank the per-process counter and compare the FORM
+				// exactly: stricter than length -it catches a real shape change- and blind only
+				// to the number it must be blind to.
+				string f1 = SinContadorDeQueries(byGate1);
+				string f2 = SinContadorDeQueries(byGate2);
+				string f3 = SinContadorDeQueries(byGate3);
 				assert($"{e.PublicName}: telemetria del Host -- misma forma por las tres puertas",
-					byGate1.Length == byGate2.Length && byGate2.Length == byGate3.Length,
-					PrimeraDiferencia(byGate1, byGate2, byGate3));
+					f1 == f2 && f2 == f3,
+					PrimeraDiferencia(f1, f2, f3));
 				compared++;
 				continue;
 			}
@@ -155,6 +163,11 @@ internal static class Conformance
 	// Two strings of the same length that differ somewhere are the worst kind of failure to
 	// read: the eye cannot find the spot. This points at it. The original defect was a length
 	// difference and was obvious; the next one may not be.
+	// The Meter's per-process counter, blanked so the FORM of the Host telemetry can be compared
+	// across gates without the one number that legitimately differs between processes.
+	private static string SinContadorDeQueries(string json) =>
+		System.Text.RegularExpressions.Regex.Replace(json, "\"assistantQueries\":\\d+", "\"assistantQueries\":N");
+
 	private static string PrimeraDiferencia(string a, string b, string c)
 	{
 		int i = 0;
