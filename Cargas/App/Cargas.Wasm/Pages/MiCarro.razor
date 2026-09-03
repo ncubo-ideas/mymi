@@ -60,9 +60,13 @@ else
             <span>Modelo</span>
             <input class="campo campo--texto" @bind="modelo" maxlength="30" />
         </label>
+        @* VACÍO ES VACÍO. El año y el rendimiento salían como «0» y «0.0», que parecen datos
+           y no lo son. Los campos son anulables: sin valor no muestran nada, el placeholder
+           dice qué va, y el cero vuelve a ser la ausencia al guardar. *@
         <label class="ficha-campo">
             <span>Año</span>
-            <input class="campo" type="number" inputmode="numeric" @bind="anio" min="1900" max="2100" />
+            <input class="campo" type="number" inputmode="numeric" @bind="anio" min="1900" max="2100"
+                   placeholder="2019" />
         </label>
         <label class="ficha-campo">
             <span>Color</span>
@@ -72,13 +76,14 @@ else
         <label class="ficha-campo ficha-campo--ancho">
             <span>Rendimiento de fábrica</span>
             <input class="campo" type="number" step="0.1" inputmode="decimal"
-                   @bind="rendimientoDeFabrica" aria-describedby="porque-el-rendimiento" />
+                   @bind="rendimientoDeFabrica" aria-describedby="porque-el-rendimiento"
+                   placeholder="14.5" />
         </label>
         @* Es la otra mitad del cruce con el concesionario: lo que el manual promete,
            contra lo que el carro está dando de verdad. *@
         <p id="porque-el-rendimiento" class="ficha-nota">
             En km/L, lo que dice el manual. Sirve para comparar lo que promete contra lo
-            que tu carro está dando. Dejalo en 0 si no lo sabés.
+            que tu carro está dando. Dejalo vacío si no lo sabés.
         </p>
 
         <div class="fila ficha-campo--ancho">
@@ -206,8 +211,11 @@ else
 
     private string alias = "", marca = "", modelo = "", color = "";
     private long ultimoEvento;
-    private int anio;
-    private decimal rendimientoDeFabrica;
+
+    // Anulables a proposito: el dominio guarda 0 como "no lo se", pero en un campo el 0 se
+    // ve como un dato. Aca la ausencia es null y se traduce al guardar y al cargar.
+    private int? anio;
+    private decimal? rendimientoDeFabrica;
     private string guardado = "";
 
     // La placa de la que se cargaron los campos. Si el selector del capó cambia de carro,
@@ -242,9 +250,9 @@ else
             alias = enFoco.Alias;
             marca = enFoco.Marca;
             modelo = enFoco.Modelo;
-            anio = enFoco.Anio;
+            anio = enFoco.Anio > 0 ? enFoco.Anio : null;
             color = enFoco.Color;
-            rendimientoDeFabrica = enFoco.RendimientoDeFabrica;
+            rendimientoDeFabrica = enFoco.RendimientoDeFabrica > 0 ? enFoco.RendimientoDeFabrica : null;
         }
     }
 
@@ -253,7 +261,7 @@ else
         if (enFoco is null || alias.Trim().Length == 0) return;
 
         string rechazo = await Estado.CompletarFicha(enFoco.Placa, alias.Trim(), marca.Trim(),
-            modelo.Trim(), anio, color.Trim(), rendimientoDeFabrica);
+            modelo.Trim(), anio ?? 0, color.Trim(), rendimientoDeFabrica ?? 0m);
         if (rechazo.Length > 0) throw new InvalidOperationException(rechazo);
 
         guardado = $"Listo: ahora le decimos «{alias.Trim()}».";
