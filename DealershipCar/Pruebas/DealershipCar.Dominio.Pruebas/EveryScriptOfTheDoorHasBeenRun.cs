@@ -15,15 +15,16 @@ namespace DealershipCar.Dominio.Pruebas
 	// aunque el estado siga siendo correcto.
 	//
 	// Asi que ninguna linea de DSL de DealershipCarAPI puede llegar al journal de una persona sin
-	// haberse ejecutado antes aca. Esta prueba corre CADA UNA de las NOVENTA Y OCHO operaciones de
+	// haberse ejecutado antes aca. Esta prueba corre CADA UNA de las CIENTO UNA operaciones de
 	// la puerta al menos una vez -- las veintiuna de la agenda (OS2/T6), las siete de la ingesta
 	// (OS2/T8: los dos comandos de la bitacora, sus cuatro lecturas, y el Apply), CanBeDeferred, los
 	// once comandos de publicacion de la especificacion (T5), las TREINTA Y SIETE lecturas de la
 	// especificacion (T6, mas las dos mitades publicadas que agrego
 	// PLAN-ModelSpecification-AmendmentMigrations B1 por la ley L7b), los DOS comandos del perfil
 	// del vehiculo (WarrantyEnvelope/T4), las ONCE lecturas sin componer del perfil y del odometro
-	// (WarrantyEnvelope/T5) y las SEIS COMPUESTAS (WarrantyEnvelope/T6), mas los DOS CONTEOS de la
-	// agenda que BuildOrder/SH-1 agrego al arreglar P-2 -- al dia y agendadas.
+	// (WarrantyEnvelope/T5) y las SEIS COMPUESTAS (WarrantyEnvelope/T6), los DOS CONTEOS de la
+	// agenda que BuildOrder/SH-1 agrego al arreglar P-2 -- al dia y agendadas -- y los TRES COMANDOS
+	// de las estadias en el taller que BuildOrder/SH-3 agrego con la quinta global de raiz.
 	// No mira reglas de negocio -- de eso se ocupan las otras pruebas del nivel B -- mira que el
 	// script exista, parsee, ate sus parametros y devuelva lo que dijo que devolvia.
 	//
@@ -50,18 +51,22 @@ namespace DealershipCar.Dominio.Pruebas
 	// escrito. Es la misma forma que el censo de escrituras de
 	// TheOwnerIsNeverASourceOfAFactAboutTheirOwnVehicle, con el mismo limite.
 	//
-	// LAS OPERACIONES SON NOVENTA Y OCHO Y LOS SCRIPTS SON MAS, y la ingesta es donde la diferencia
+	// LAS OPERACIONES SON CIENTO UNA Y LOS SCRIPTS SON MAS, y la ingesta es donde la diferencia
 	// se vuelve grande: Apply es UNA operacion de la puerta y tiene DIECINUEVE scripts detras -- uno
 	// por cada tipo de hecho recibido, mas el comando suelto que avanza el punto de control cuando
 	// el dominio rechaza el hecho. Contar operaciones y contar scripts son dos cuentas distintas, y
 	// la que S5 obliga a hacer es la de los scripts.
 	//
+	// Y SH-3 AGREGO UN SCRIPT QUE NO ES NINGUNA OPERACION: el pre-chequeo de los dos comandos de
+	// estadias pregunta stays.IsInsideTheShopAt por un miembro PRIVADO de la puerta, porque la
+	// pregunta publica es de SH-4. Se ejercita solo, cada vez que uno de esos dos comandos corre.
+	//
 	// ESTE PARRAFO DECIA NOVENTA CUANDO LA PUERTA YA TENIA NOVENTA Y SEIS, y el de arriba decia
 	// noventa y seis: dos cuentas de la misma cosa en el mismo encabezado, una de ellas vieja. Es el
 	// mismo defecto que dejo escrito "setenta y siete" cuando la puerta tenia setenta y nueve, y es
 	// la tercera vez que aparece en este archivo. Una cuenta afirmada en prosa envejece en silencio,
-	// asi que la que manda es TheOperationsAreNinetyEight, que la afirma al lado de la lista que
-	// cuenta.
+	// asi que la que manda es TheOperationsAreOneHundredAndOne, que la afirma al lado de la lista
+	// que cuenta -- y su NOMBRE lleva la cuenta a proposito, para que subirla obligue a renombrarla.
 	[TestFixture]
 	public sealed class EveryScriptOfTheDoorHasBeenRun
 	{
@@ -135,7 +140,8 @@ namespace DealershipCar.Dominio.Pruebas
 			"ReadNextDueKind", "ReadOdometer", "ReadOdometerObservedAt", "ReadOdometerUnit",
 			"ReadRevisionState", "ReadServiceIntervalRevision", "ReadServicePriceRevision",
 			"ReadServicingPolicyRevision", "ReadTyreRevision", "ReadVin",
-			"RecordConditionThreshold", "RecordDelivery", "RecordReading", "RegisterDevice",
+			"RecordConditionThreshold", "RecordDelivery", "RecordReading",
+			"RecordShopCollection", "RecordShopEntry", "RecordShopStay", "RegisterDevice",
 			"RemoveOwnerOperation", "SealRevision", "SeedPlanOperation", "StoreCredential",
 			"StoredDeviceKey", "StoredRefreshToken", "StoredToken", "SupersedeRevision",
 			"TheVocabularyIsTheManufacturers",
@@ -162,9 +168,9 @@ namespace DealershipCar.Dominio.Pruebas
 		// dejo escrito "setenta y siete" cuando la puerta ya tenia setenta y nueve: una cuenta
 		// afirmada en prosa envejece en silencio, y esta afirmada al lado de lo que cuenta.
 		[Test]
-		public void TheOperationsAreNinetyEight()
+		public void TheOperationsAreOneHundredAndOne()
 		{
-			Assert.That(EveryOperationThisFixtureRuns, Has.Length.EqualTo(98));
+			Assert.That(EveryOperationThisFixtureRuns, Has.Length.EqualTo(101));
 		}
 
 		// La semilla corre en OnHydrated, asi que para cuando la prueba arranca la agenda ya
@@ -213,6 +219,22 @@ namespace DealershipCar.Dominio.Pruebas
 				"Diagnostic", new DateTime(2026, 1, 21, 0, 0, 0, DateTimeKind.Utc), 40100, "UnitA");
 
 			journal.Api.RemoveOwnerOperation("Diagnostic");
+
+			// LOS TRES DE LAS ESTADIAS. Los dos primeros arrastran ademas el script PRIVADO del
+			// pre-chequeo, que es el unico script de la puerta que no es una operacion suya.
+			journal.Api.RecordShopEntry(
+				"Taller Curridabat", "Cambio de aceite",
+				new DateTime(2026, 1, 22, 8, 30, 0, DateTimeKind.Utc));
+
+			journal.Api.RecordShopCollection(
+				new DateTime(2026, 1, 23, 16, 45, 0, DateTimeKind.Utc),
+				new[] { "2026-01-22", "2026-01-23" });
+
+			journal.Api.RecordShopStay(
+				"Taller Escazu", "Frenos",
+				new DateTime(2025, 11, 3, 7, 0, 0, DateTimeKind.Utc),
+				new DateTime(2025, 11, 4, 17, 0, 0, DateTimeKind.Utc),
+				new[] { "2025-11-03", "2025-11-04" });
 
 			Assert.That(journal.Api.ReadDueState("FluidChange"), Is.EqualTo("Deferred"));
 		}
