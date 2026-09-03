@@ -545,17 +545,49 @@ else
         </button>
     }
 
-    @* Un hallazgo de un examen sin serie. Va acá arriba y no perdido en una celda:
-       «apareció sangre» no es un dato de tabla. El texto y la urgencia los pone el
-       dominio — dos positivos de la misma forma pueden decir cosas muy distintas.
+    @* LOS NOMINALES, con SU forma. Terceras tarjetas iguales, y por la misma razón que las
+       de los binarios: son la lectura de una serie y se leen distinto porque lo son. Acá
+       no hay «pasó de 200 a 280» ni «apareció en las 2 seguidas»: hay «salió ámbar, y las
+       tres veces estuvo dentro de lo esperable».
 
-       Hoy esto son sólo los COLORES. Los binarios subieron a sus propias tarjetas en
-       cuanto tuvieron serie, que es donde tenían que estar desde el principio. *@
-    @foreach (FilaDelCuadro hallazgo in Hallazgos())
+       Esto reemplazó un bloque de avisos sueltos. Los colores eran lo único medido sin
+       serie, así que su lectura salía de la magnitud —que dice lo mismo siempre— y viajaba
+       colgada de la celda del cuadro. Desde que tienen serie subieron acá, que es donde
+       tenían que estar, y con la lectura que mira la historia: un oscuro que después
+       volvió a ámbar ya no pide nada. *@
+    @foreach (ConstanciaDeAnalito c in constancias)
     {
-        <div class="aviso @(hallazgo.Severidad == "urgente" ? "aviso--problema" : "aviso--atencion")" style="margin-top:26px">
-            <strong>@hallazgo.ParaMostrar.</strong> @hallazgo.ParaSonia.
-        </div>
+        <button class="serie" @key="@($"{c.Analito}-{redibujo}")" @onclick="() => VerSerie(c.Analito)">
+            @{ InterpretacionDeAnalito suya = Lectura(c.Analito); }
+            <div class="serie-cabeza">
+                <div>
+                    <span class="serie-nombre">@c.ParaMostrar</span>
+                    <span class="chip @Insignia(c)">@c.Constancia</span>
+                    <div class="serie-relato">@Relato(c)</div>
+                </div>
+                <div>
+                    <div class="serie-valor">@c.UltimaCategoria</div>
+                    @if (suya.ReferenciaLegible.Length > 0)
+                    {
+                        <div class="serie-referencia">@suya.ReferenciaLegible</div>
+                    }
+                </div>
+            </div>
+
+            @if (c.HaySerie)
+            {
+                <CategoriaEnElTiempo Observaciones="Categorias(c.Analito)"
+                                     Seguidas="c.NoEsperablesSeguidas"
+                                     Descripcion="@suya.ParaSonia" />
+            }
+
+            @if (!string.IsNullOrEmpty(suya.ParaSonia))
+            {
+                <div class="serie-lectura@(suya.PideAlgo ? " serie-lectura--atencion" : "")">
+                    @suya.ParaSonia@(suya.PideAlgo ? ": " : ".")<b>@suya.Accion</b>
+                </div>
+            }
+        </button>
     }
 
     <h2 class="seccion">Tu historial</h2>
@@ -853,6 +885,7 @@ else
         // pantalla la lee, no la inventa.
         var hechos = new List<TendenciaDeAnalito>();
         var presentes = new List<PresenciaDeAnalito>();
+        var categorias = new List<ConstanciaDeAnalito>();
         var leidos = new Dictionary<string, InterpretacionDeAnalito>();
         foreach (string analito in estado.Analitos())
         {
@@ -866,12 +899,23 @@ else
                 continue;
             }
 
+            // TERCERA PUERTA, y por la misma razón que la segunda. Un color no tiene
+            // tendencia ni puntos con número: tiene categorías. Antes caía por la puerta
+            // continua y salía como una tarjeta de tendencia «no aplica» con un valor cero.
+            if (lectura.Forma == FormaDeCategoria)
+            {
+                categorias.Add(estado.Constancia(analito));
+                observaciones[analito] = estado.Observaciones(analito);
+                continue;
+            }
+
             hechos.Add(estado.Tendencia(analito));
             puntos[analito] = estado.Puntos(analito);
             lineas[analito] = estado.Referencias(analito);
         }
         analitos = hechos;
         presencias = presentes;
+        constancias = categorias;
         interpretaciones = leidos;
         celdas = estado.Cuadro();
     }
@@ -893,6 +937,12 @@ else
             ? $"{p.Positivas} de {p.Mediciones} pruebas en {p.Dias} {(p.Dias == 1 ? "día" : "días")}"
             : "";
 
+    private static string Relato(ConstanciaDeAnalito c) =>
+        c.HaySerie
+            ? $"{c.Mediciones - c.NoEsperables} de {c.Mediciones} veces dentro de lo esperable, "
+              + $"en {c.Dias} {(c.Dias == 1 ? "día" : "días")}"
+            : "";
+
     private static string Relato(TendenciaDeAnalito t) =>
         t.HaySerie
             ? $"pasó de {Valor(t.ValorInicial)} a {Valor(t.ValorFinal)} {t.Unidad} "
@@ -905,12 +955,7 @@ else
     {
         public string Analito { get; init; } = "";
         public string ParaMostrar { get; init; } = "";
-        public bool AportaSerie { get; init; }
         public string[] Celdas { get; init; } = new string[0];
-
-        // Las filas sin serie traen su lectura en la celda; las de serie la piden aparte.
-        public string Severidad { get; init; } = "";
-        public string ParaSonia { get; init; } = "";
     }
 
     // Las columnas salen de las celdas: el dominio manda la fecha en cada una, ya
@@ -940,9 +985,6 @@ else
                 {
                     Analito = celda.Analito,
                     ParaMostrar = celda.ParaMostrar,
-                    AportaSerie = celda.AportaSerie,
-                    Severidad = celda.Severidad,
-                    ParaSonia = celda.ParaSonia,
                     // Vacias por defecto: lo que el dominio no mando, no se midio.
                     Celdas = new string[columnas],
                 };
@@ -958,43 +1000,36 @@ else
         return ordenadas;
     }
 
-    // El indicador del final de la fila. Lo provee el DOMINIO: es la severidad que
-    // decidio el analito. Una fila que no forma serie -la orina- no lleva ninguno, y eso
-    // no es un hueco: es que no hay veredicto que dar sobre un color.
+    // El indicador del final de la fila. Lo provee el DOMINIO: es la severidad que decidió
+    // el analito, pedida a su Interpretación.
+    //
+    // Había acá una rama para las filas que no forman serie —los colores— que leía la
+    // severidad de la celda. Se fue con ellas: todas las filas tienen serie, así que todas
+    // se preguntan igual, y la pantalla dejó de tener dos fuentes para la misma respuesta.
     private string Marca(FilaDelCuadro fila)
     {
-        // Las filas sin serie traen su severidad en la celda: una orina o unas heces se
-        // leen de un solo punto. Las de serie la piden a su Interpretación.
-        if (!fila.AportaSerie)
-            return fila.Severidad == "informativo" || fila.Severidad == "" ? "·" : "⚠";
-
         InterpretacionDeAnalito lectura = Lectura(fila.Analito);
         if (lectura.SugiereRepetirElExamen) return "↻";
         return lectura.PideAlgo ? "⚠" : "·";
-    }
-
-    // Los hallazgos de los exámenes que no forman serie. No entran en «Cómo vienen tus
-    // valores» porque no vienen de ningún lado: son de un solo punto. Pero un positivo
-    // no puede quedar escondido en una celda de tabla.
-    private List<FilaDelCuadro> Hallazgos()
-    {
-        var hallazgos = new List<FilaDelCuadro>();
-        foreach (FilaDelCuadro fila in FilasDelCuadro())
-            if (!fila.AportaSerie && fila.Severidad != "" && fila.Severidad != "informativo")
-                hallazgos.Add(fila);
-        return hallazgos;
     }
 
     // El nombre de la forma tal como lo dice el dominio. La pantalla hace un switch sobre
     // esto y ese switch SÍ es presentación legítima: traduce una forma del dominio a
     // píxeles. Lo que no puede es decidirla.
     private const string FormaDePresencia = "presencia en el tiempo";
+    private const string FormaDeCategoria = "categoria en el tiempo";
 
     private List<PresenciaDeAnalito> presencias = new();
     private Dictionary<string, IReadOnlyList<PruebaEnSerie>> pruebas = new();
 
     private IReadOnlyList<PruebaEnSerie> Tira(string analito) =>
         pruebas.TryGetValue(analito, out var p) ? p : new List<PruebaEnSerie>();
+
+    private List<ConstanciaDeAnalito> constancias = new();
+    private Dictionary<string, IReadOnlyList<ObservacionEnSerie>> observaciones = new();
+
+    private IReadOnlyList<ObservacionEnSerie> Categorias(string analito) =>
+        observaciones.TryGetValue(analito, out var o) ? o : new List<ObservacionEnSerie>();
 
     private Dictionary<string, IReadOnlyList<PuntoDeSerie>> puntos = new();
     private Dictionary<string, IReadOnlyList<LineaDeReferencia>> lineas = new();
@@ -1052,6 +1087,15 @@ else
         if (lectura.Severidad == "urgente") return "chip--problema";
         if (lectura.PideAlgo) return "chip--atencion";
         if (!p.HaySerie) return "chip--sinserie";
+        return "chip--estable";
+    }
+
+    private string Insignia(ConstanciaDeAnalito c)
+    {
+        InterpretacionDeAnalito lectura = Lectura(c.Analito);
+        if (lectura.Severidad == "urgente") return "chip--problema";
+        if (lectura.PideAlgo) return "chip--atencion";
+        if (!c.HaySerie) return "chip--sinserie";
         return "chip--estable";
     }
 

@@ -31,18 +31,15 @@ namespace Examenes.Dominio
 		// identidad en la lista.
 		internal abstract string Nombre { get; }
 
-		// Si este examen aporta un punto a una serie CON NUMEROS. Los de sangre si; la
+		// Si este examen ENTERO es un punto de una serie CON NUMEROS. Los de sangre si; la
 		// orina y las heces no, porque ni un color ni un positivo tienen valor que graficar.
 		//
-		// NO ES "si aporta serie", aunque se siga llamando asi en la proyeccion que ya
-		// viajo a la app. Desde que los binarios tienen serie, un urianalisis aporta dos
-		// —nitritos y sangre— y no aporta la tercera —el color—, asi que la pregunta dejo
-		// de tener una sola respuesta a nivel de examen. Quien la contesta bien es cada
-		// lectura: ver LecturaDeExamen.AportaSerie, que es la que usa el cuadro.
-		//
-		// Lo que este bool sigue diciendo con verdad es que el examen ENTERO sea un punto
-		// de una serie, y eso solo pasa cuando mide una sola cosa y esa cosa es un numero.
-		internal abstract bool AportaSerie { get; }
+		// SE LLAMABA AportaSerie y el nombre habia dejado de ser verdad: un urianalisis
+		// aporta TRES series —nitritos, sangre y color— y sin embargo no es el punto de
+		// ninguna. Las dos preguntas son distintas y ahora se distinguen por el nombre; esta
+		// es la que ordena las filas del cuadro, y la otra la contesta cada serie con su
+		// FormaDeLectura.
+		internal abstract bool AportaSerieContinua { get; }
 
 		// Lo que se le muestra al paciente como resultado, ya expresado. Un numero con
 		// unidad para los de sangre, un color para la orina.

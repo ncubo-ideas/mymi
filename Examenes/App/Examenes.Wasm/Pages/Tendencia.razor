@@ -143,6 +143,84 @@ else
             </ol>
         }
     }
+    else if (EsNominal)
+    {
+        @*  UN NOMINAL SE CUENTA DISTINTO OTRA VEZ, y por eso son tres ramas y no dos. Acá
+            no hay «de cuánto a cuánto» ni «cuántas veces apareció»: hay CUÁL salió, cuántas
+            veces se salió de lo esperable y —lo que cambia la conducta— cuántas SEGUIDAS.
+
+            Con una sola observación no hay «todavía no se puede decir»: un color ES su
+            categoría, así que la lectura ya está completa. Es la diferencia de fondo con
+            las otras dos formas.                                                        *@
+        <p style="margin:10px 0 0"><span class="chip chip--grande @Insignia()">@constancia.Constancia</span></p>
+
+        <p class="cifra-par">
+            <span class="@(interpretacion.PideAlgo ? "final" : "")">@constancia.UltimaCategoria</span>
+        </p>
+        <p class="apunte">
+            @if (constancia.HaySerie)
+            {
+                <text>
+                    @(constancia.Mediciones - constancia.NoEsperables) de @constancia.Mediciones
+                    veces dentro de lo esperable,
+                    en @constancia.Dias @(constancia.Dias == 1 ? "día" : "días")
+                    @(constancia.NoEsperablesSeguidas >= 2
+                        ? $"· {constancia.NoEsperablesSeguidas} seguidas al final"
+                        : "")
+                </text>
+            }
+            else
+            {
+                <text>una sola observación: la categoría ya es la lectura</text>
+            }
+            @if (interpretacion.ReferenciaLegible.Length > 0)
+            {
+                <text>· @interpretacion.ReferenciaLegible</text>
+            }
+        </p>
+
+        @if (constancia.HaySerie)
+        {
+            <CategoriaEnElTiempo Observaciones="observaciones"
+                                 Seguidas="constancia.NoEsperablesSeguidas"
+                                 Descripcion="@interpretacion.ParaSonia" />
+        }
+
+        @if (interpretacion.PideAlgo)
+        {
+            <div class="aviso @(interpretacion.Severidad == "urgente" ? "aviso--problema" : "aviso--atencion")" style="margin-top:22px">
+                <strong>@interpretacion.Veredicto.</strong>
+                @interpretacion.ParaSonia. No es un diagnóstico: es la lectura de tu propia
+                serie. Lo que corresponde es <strong>@interpretacion.Accion</strong>.
+            </div>
+        }
+        else if (interpretacion.ParaSonia.Length > 0)
+        {
+            <div class="aviso" style="margin-top:22px;border-left-color:var(--bien)">
+                @interpretacion.ParaSonia.
+            </div>
+        }
+
+        @* CADA OBSERVACION, una por una. La tira de arriba dice la forma; esto dice las
+           fechas — y en un color el hueco entre observaciones es la mitad del dato. *@
+        @if (constancia.Mediciones > 0)
+        {
+            <h2 class="seccion">Cada observación</h2>
+            <ol class="mediciones">
+                @foreach (Paso paso in PasosNominales())
+                {
+                    <li class="medicion@(paso.EsPositivo ? " medicion--presente" : "")">
+                        <div class="medicion-fecha">
+                            <span class="medicion-dia">@paso.Fecha.ToString("dd MMM", Cultura)</span>
+                            <span class="medicion-ano">@paso.Fecha.Year</span>
+                        </div>
+                        <div class="medicion-valor">@paso.Expresado</div>
+                        <div class="medicion-salto">@paso.Salto</div>
+                    </li>
+                }
+            </ol>
+        }
+    }
     else if (!lectura.HaySerie)
     {
         <p class="apunte" style="margin-top:14px">
@@ -311,6 +389,13 @@ else
     private IReadOnlyList<PruebaEnSerie> pruebas = new List<PruebaEnSerie>();
     private bool EsBinario => interpretacion.Forma == FormaDePresencia;
 
+    // Y un nominal tampoco tiene tendencia: tiene categorias en fechas. Tercera puerta,
+    // por la misma razon que la segunda.
+    private const string FormaDeCategoria = "categoria en el tiempo";
+    private ConstanciaDeAnalito constancia = new();
+    private IReadOnlyList<ObservacionEnSerie> observaciones = new List<ObservacionEnSerie>();
+    private bool EsNominal => interpretacion.Forma == FormaDeCategoria;
+
     // Los HECHOS y la LECTURA son dos consultas distintas: aquella dice que paso, esta
     // dice que significa segun el analito. La pantalla no combina ni interpreta, muestra.
     private InterpretacionDeAnalito interpretacion = new();
@@ -338,6 +423,13 @@ else
             {
                 presencia = estado.Presencia(Analito);
                 pruebas = estado.Pruebas(Analito);
+                return;
+            }
+
+            if (interpretacion.Forma == FormaDeCategoria)
+            {
+                constancia = estado.Constancia(Analito);
+                observaciones = estado.Observaciones(Analito);
                 return;
             }
 
@@ -425,6 +517,36 @@ else
                 Expresado = prueba.Expresado,
                 Salto = salto,
                 EsPositivo = prueba.EsPositivo,
+            });
+        }
+
+        pasos.Reverse();
+        return pasos;
+    }
+
+    // En un nominal tampoco hay salto que restar, y lo que se marca no es «positivo» sino
+    // «se salió de lo esperable». Se reusa Paso —y su EsPositivo— porque la lista de la
+    // pantalla es la misma; lo que cambia es qué la pinta.
+    private List<Paso> PasosNominales()
+    {
+        var pasos = new List<Paso>();
+        for (int i = 0; i < observaciones.Count; i++)
+        {
+            ObservacionEnSerie observacion = observaciones[i];
+            string salto = "";
+            if (i > 0)
+            {
+                // TotalDays por lo mismo que en Pasos(): get_Days no existe publicado.
+                int dias = (int)(observacion.Fecha - observaciones[i - 1].Fecha).TotalDays;
+                salto = $"{dias} {(dias == 1 ? "día" : "días")} después";
+            }
+
+            pasos.Add(new Paso
+            {
+                Fecha = observacion.Fecha,
+                Expresado = observacion.Expresado,
+                Salto = salto,
+                EsPositivo = observacion.EsHallazgo,
             });
         }
 

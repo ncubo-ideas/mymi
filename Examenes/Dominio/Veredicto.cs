@@ -32,6 +32,18 @@ namespace Examenes.Dominio
 		// preservarlo: es lo que Alvaro marco como correcto en la hemoglobina.
 		internal static readonly Veredicto Indeterminado = new Veredicto("indeterminado");
 
+		// NO HAY PARA DONDE: esto es lo que se vio. Es el veredicto de la forma nominal con
+		// una sola observacion, y hace falta un nombre propio porque los otros dos candidatos
+		// dicen algo falso:
+		//
+		//   Indeterminado  "no puedo leer esto todavia". Un color con UNA observacion SI se
+		//                  lee: la categoria es la lectura entera y no la mitad de una serie.
+		//   Estable        afirma que se comparo y no se movio. Con una observacion no hubo
+		//                  con que comparar, y "el color no se movio" no es lo que se midio.
+		//
+		// HayLectura da true, que es lo correcto: hay algo que decir.
+		internal static readonly Veredicto Observado = new Veredicto("observado");
+
 		// Se movio menos de lo que este analito considera un cambio real.
 		internal static readonly Veredicto Estable = new Veredicto("estable");
 

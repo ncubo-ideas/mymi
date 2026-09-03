@@ -26,10 +26,29 @@ namespace Examenes.App
 		public const string ColesterolHdl = "Colesterol HDL";
 		public const string Hemoglobina = "Hemoglobina";
 
+		// La quimica general. Los siete se leen contra un rango que NO depende del sexo, y
+		// eso es la razon por la que son estos siete y no otros: cada analito que dependiera
+		// del sexo le bajaria el numerador al titular de la portada.
+		public const string Trigliceridos = "Trigliceridos";
+		public const string GlucosaEnAyunas = "Glucosa en ayunas";
+		public const string NitrogenoUreico = "Nitrogeno ureico";
+		public const string Sodio = "Sodio";
+		public const string Potasio = "Potasio";
+		public const string Cloro = "Cloro";
+		public const string ProteinasTotales = "Proteinas totales";
+
 		public const string ColorDeLaOrina = "Color de la orina";
 		public const string NitritosEnOrina = "Nitritos";
 		public const string SangreEnLaOrina = "Sangre en orina";
 		public const string ColorDeLasHeces = "Color de las heces";
 		public const string SangreEnLasHeces = "Sangre en heces";
+
+		// Las otras tres casillas de la tira reactiva. Ojo con las dos glucosas: la de
+		// SANGRE es "Glucosa en ayunas" y responde a "glucosa"; la de ORINA responde a
+		// "glucosuria" y a su propio nombre. Son dos analitos distintos con dos series
+		// distintas, y confundirlos aca haria que el MCP contestara por el otro.
+		public const string ProteinaEnLaOrina = "Proteina en orina";
+		public const string CetonasEnOrina = "Cetonas";
+		public const string GlucosaEnLaOrina = "Glucosa en orina";
 	}
 }

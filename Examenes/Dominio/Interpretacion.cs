@@ -47,9 +47,10 @@ namespace Examenes.Dominio
 
 		// Los hechos con los que se llego a esto, para que la superficie pueda mostrarlos
 		// sin volver a pedirlos y para que la conclusion sea auditable.
-		// TIPADO A LA RAIZ, no a la evaluacion de tendencia. Una serie binaria concluye
-		// con EvaluacionDePresencia —"apareció, 2 seguidas sobre 3 pruebas"— y no tiene
-		// valor inicial, ni final, ni cambio. Dejar el campo tipado a la continua la
+		// TIPADO A LA RAIZ, no a la evaluacion de tendencia. Una serie binaria concluye con
+		// EvaluacionDePresencia —"apareció, 2 seguidas sobre 3 pruebas"— y una nominal con
+		// EvaluacionDeNominal —"persiste, salió oscuro las 2 veces"—; ninguna de las dos
+		// tiene valor inicial, ni final, ni cambio. Dejar el campo tipado a la continua las
 		// habria obligado a mandar nulls y ceros.
 		internal HechosDeLaSerie Hechos { get; private set; }
 
@@ -99,9 +100,14 @@ namespace Examenes.Dominio
 			Accion = accion;
 		}
 
-		// El caso sin serie, que es identico para todos los analitos y por eso se arma
-		// una sola vez: con una medicion no se afirma tendencia. Preservarlo es explicito
-		// en el feedback.
+		// El caso sin serie, que es identico para todos los analitos y por eso se arma una
+		// sola vez: con una medicion no se afirma tendencia. Preservarlo es explicito en el
+		// feedback.
+		//
+		// UN NOMINAL CON UNA OBSERVACION NO PASA POR ACA, y no es un olvido: un color ES su
+		// categoria, asi que con una sola su lectura ya esta completa. Las dos frases de
+		// abajo -"todavia no hay serie para decir para donde viene"- y la accion de repetir
+		// el examen serian falsas ahi. Ver SerieDeColorDeOrina.Leer y Veredicto.Observado.
 		//
 		// CON UNA MEDICION HAY UNA ACCION, y tiene plazo aunque no corra: repetir el
 		// examen es lo unico que convierte un punto en una serie, y cuando conviene
