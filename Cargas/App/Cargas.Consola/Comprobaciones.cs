@@ -1033,16 +1033,21 @@ namespace Cargas.Consola
 			Igual("sin ficha, la placa", "BQR482",
 				bitacora.VehiculoDe("BQR-482").NombreParaMostrar);
 
-			bitacora.CompletarFicha("BQR-482", "el Corolla", "Toyota", "Corolla", 2019,
-				"gris", 18m);
+			// LA FICHA QUE SE COMPLETA ACA ES LA QUE SIEMBRA EL DEMO, no una inventada
+			// para la comprobacion: si el guion deja de aportarla, esto deja de pasar.
+			var ficha = Muestras.FichaDelDemo;
+			bitacora.CompletarFicha("BQR-482", ficha.alias, ficha.marca, ficha.modelo,
+				ficha.anio, ficha.color, ficha.rendimientoDeFabrica);
 			Vehiculo vehiculo = bitacora.VehiculoDe("BQR-482");
-			Igual("con ficha, el alias", "el Corolla", vehiculo.NombreParaMostrar);
+			Igual("con ficha, el alias", "el Yaris", vehiculo.NombreParaMostrar);
+			Igual("y el carro es el del canon", "Toyota Yaris 2019",
+				$"{vehiculo.MarcaDeLaFicha} {vehiculo.ModeloDeLaFicha} {vehiculo.AnioDeLaFicha}");
 			Igual("y el manual dice 18: la otra mitad del cruce con el concesionario",
 				"18 km/L", vehiculo.Ficha.RendimientoDeFabrica.Valor.Expresado);
 
 			// El cero del formulario es "no lo se", y se escala al tipo de ausencia.
-			bitacora.CompletarFicha("BQR-482", "el Corolla", "Toyota", "Corolla", 2019,
-				"gris", 0m);
+			bitacora.CompletarFicha("BQR-482", ficha.alias, ficha.marca, ficha.modelo,
+				ficha.anio, ficha.color, 0m);
 			Igual("sin rendimiento de fabrica, el tipo lo dice", "False",
 				bitacora.VehiculoDe("BQR-482").Ficha.RendimientoDeFabrica.Existe.ToString());
 		}
