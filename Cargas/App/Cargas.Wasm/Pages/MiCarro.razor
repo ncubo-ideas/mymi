@@ -186,8 +186,30 @@ else
    saber si un Actualizar trajo algo. Acá, al lado de dónde vive, es donde se entiende. *@
 <p class="apunte mono">leída hasta el evento @ultimoEvento de la estación</p>
 
+@* IMPORTAR TAMBIÉN DESDE ACÁ. Exportar vivía en esta pantalla e importar solo en la de
+   arranque, así que traer una bitácora con la app ya abierta obligaba a cerrarla. Pero
+   importar REEMPLAZA el expediente y rearranca el actor, así que va en dos pasos: el
+   primero dice qué va a pasar y el segundo abre el selector. No es un diálogo del browser
+   porque el aviso tiene que decir qué se pierde, y un confirm() no tiene dónde. *@
+@if (porImportar)
+{
+    <div class="parte parte--atencion fila">
+        <div class="crece">
+            <strong>Importar reemplaza tu bitácora actual</strong> por la del archivo que elijas.
+            Lo que la estación publicó se vuelve a pedir al abrir; tus kilometrajes y
+            confirmaciones de hoy solo sobreviven si están en ese archivo. Exportá antes si
+            querés conservarlos.
+        </div>
+        <button class="tecla tecla--alerta" @onclick="Importar">Sí, elegir el archivo</button>
+        <button class="tecla tecla--contorno" @onclick="() => porImportar = false">Cancelar</button>
+    </div>
+}
+
 <div class="fila" style="margin-top:12px">
     <button class="tecla tecla--contorno" @onclick="Exportar">Exportar a un archivo</button>
+    <button class="tecla tecla--texto" @onclick="() => porImportar = true" disabled="@porImportar">
+        Importar una bitácora
+    </button>
 </div>
 
 @code {
@@ -279,6 +301,17 @@ else
     {
         string rechazo = await Estado.ElegirUnidadDeDistancia(simbolo);
         if (rechazo.Length > 0) throw new InvalidOperationException(rechazo);
+    });
+
+    // El primer paso de importar: se muestra el aviso; el segundo llama a Estado.Importar.
+    private bool porImportar;
+
+    private Task Importar() => Intentar("importar una bitácora", async () =>
+    {
+        porImportar = false;
+        string motivo = await Estado.Importar();
+        if (motivo.Length > 0) throw new InvalidOperationException(motivo);
+        guardado = "Listo: la bitácora importada ya está abierta.";
     });
 
     private Task Exportar() => Intentar("exportar la bitácora", async () =>
