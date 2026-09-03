@@ -183,6 +183,44 @@ else
         }
     </section>
 
+    @if (Costs is not null)
+    {
+        <section class="d-card" id="precios-publicados" style="margin-top:12px">
+            <div class="d-card__head">
+                <span class="d-card__title">Precios publicados</span>
+                @if (Costs.AnyPriceOnRecord)
+                {
+                    <span class="d-pill d-pill--info">@Costs.PriceCountOnRecord</span>
+                }
+            </div>
+
+            @if (Costs.Rows.Count > 0)
+            {
+                <div class="d-rows">
+                    @foreach (APublishedPriceOnTheSheet precio in Costs.Rows)
+                    {
+                        <div class="d-row d-row--stack" id="@("precio-" + precio.Operation)">
+                            <span class="d-row__k">
+                                @ComoSeLee.Operacion(precio.Operation)
+                                <span class="d-pill">@precio.Milestone</span>
+                                <span class="d-pill d-pill--info">@precio.Revision</span>
+                            </span>
+                            <span class="d-row__v" style="font-weight:600;font-size:13px">@precio.Says</span>
+                        </div>
+                    }
+                </div>
+            }
+            else
+            {
+                <div class="d-empty" id="sin-precios">
+                    <span class="d-empty__title">Todavía no hay ningún precio publicado</span>
+                    Tu concesionario manda los precios del fabricante por el mismo camino que trae la
+                    ficha. Mientras no lleguen, aquí no hay nada que citar.
+                </div>
+            }
+        </section>
+    }
+
     <div style="margin-top:12px">
         <button class="d-link" type="button" id="ver-ficha"
                 @onclick="@(() => detalleFicha = !detalleFicha)">
@@ -208,6 +246,12 @@ else
 @code {
     [Parameter] public WhatTheManufacturerPublished Sheet { get; set; }
     [Parameter] public WhereThisVehicleStands Stands { get; set; }
+
+    /// <summary>
+    /// Lo que el fabricante publico que cuestan los servicios, leido en el mismo momento que la ficha.
+    /// Va aparte de la ficha porque la vigencia de un precio se juzga contra un instante.
+    /// </summary>
+    [Parameter] public WhatTheServicesCost Costs { get; set; }
 
     [Parameter] public string Modelo { get; set; } = "";
     [Parameter] public string Vin { get; set; } = "";

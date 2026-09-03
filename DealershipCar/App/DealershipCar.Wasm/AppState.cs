@@ -446,6 +446,28 @@ namespace DealershipCar.Wasm
 				api, TheFirstDayOfTheYearOf(asOf), TheDay(asOf), asOf);
 		}
 
+		/// <summary>
+		/// Donde esta parada cada operacion de la agenda, leido entero al instante en que la pantalla
+		/// pregunta: lo que le falta a cada una y lo que ya se le hizo. El instante lo pone el reloj de
+		/// la maquina y no se le pide a nadie -- pedirlo seria dejar que alguien pregunte por un momento
+		/// que se invento.
+		/// </summary>
+		public WhereEachOperationStands ReadWhereEachOperationStands()
+		{
+			Require();
+			return WhereEachOperationStands.ReadThrough(api, TheInstantTheScreenAsksAt());
+		}
+
+		/// <summary>
+		/// Lo que el fabricante publico que cuestan los servicios, leido entero al instante en que la
+		/// pantalla pregunta, porque la vigencia de un precio se juzga contra un momento.
+		/// </summary>
+		public WhatTheServicesCost ReadWhatTheServicesCost()
+		{
+			Require();
+			return WhatTheServicesCost.ReadThrough(api, TheInstantTheScreenAsksAt());
+		}
+
 		public bool HasCredential() { Require(); return api.StoredToken().Length > 0; }
 
 		public long JournalEntries() { Require(); return app.Actor.CurrentEntryId; }

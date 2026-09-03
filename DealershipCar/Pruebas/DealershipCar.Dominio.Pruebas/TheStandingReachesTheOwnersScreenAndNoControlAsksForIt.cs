@@ -468,7 +468,16 @@ namespace DealershipCar.Dominio.Pruebas
 			// cada frase contesta su propia pregunta y ninguna habla de la otra. La primera dice que
 			// los dias de una estadia todavia abierta no estan en la cuenta del periodo y por que; la
 			// segunda, que un periodo sin ninguna estadia registrada no es un periodo sin taller.
-			Assert.That(said, Has.Count.EqualTo(7),
+			//
+			// Y SON NUEVE DESDE LA PANTALLA DE MANTENIMIENTO, que entra con DOS mas de esa misma
+			// familia. La primera es la unica cosa que la pantalla puede decir cuando la agenda RECHAZA
+			// la pregunta de una operacion: el rechazo se atrapa por un tipo mas ancho que la condicion
+			// que lo causa, asi que la frase nombra QUIEN pone la fecha desde la que se cuenta y NO
+			// nombra cual hecho esta mal -- decirlo seria inventar algo del carro. La segunda dice que
+			// una operacion sin ninguna completacion registrada no es una operacion que nunca se le
+			// hizo al carro, que es la frase que mas facil se lee al reves en el historial, y ninguna
+			// frase del dominio la dice porque cada una contesta por su propia clase.
+			Assert.That(said, Has.Count.EqualTo(9),
 				"Si TheOwnerIsTold gana o pierde una frase, este barrido se vuelve a mirar en vez de "
 				+ "seguir contando las de antes.");
 

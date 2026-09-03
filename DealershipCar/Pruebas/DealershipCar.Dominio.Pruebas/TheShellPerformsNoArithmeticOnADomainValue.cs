@@ -50,7 +50,11 @@ namespace DealershipCar.Dominio.Pruebas
 			new object[] { TheCodeOfTheShellsAsData.Frontera, 2 },
 			new object[] { TheCodeOfTheShellsAsData.Consola, 4 },
 			new object[] { TheCodeOfTheShellsAsData.Mcp, 8 },
-			new object[] { TheCodeOfTheShellsAsData.Wasm, 22 },
+			// EL PISO DE Wasm SUBIO 22 -> 24 CON LOS DOS PORTADORES DE LA PANTALLA DE MANTENIMIENTO,
+			// para conservar el margen de cinco archivos que le dio la rebanada anterior. Un piso que
+			// se queda quieto mientras la raiz crece es un piso que deja de decir cuando algo dejo de
+			// llegar.
+			new object[] { TheCodeOfTheShellsAsData.Wasm, 24 },
 			new object[] { TheCodeOfTheShellsAsData.EndPointDeEventos, 1 },
 			new object[] { TheCodeOfTheShellsAsData.InyectorDeEventosDemo, 1 },
 			new object[] { TheCodeOfTheShellsAsData.PaginaDeDescarga, 1 },
