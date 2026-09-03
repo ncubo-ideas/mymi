@@ -20,12 +20,12 @@ namespace DealershipCar.Dominio.Pruebas
 	//   1. UNA CUENTA PARTIDA EN DOS LINEAS. Se mira linea por linea, asi que "a" en una linea y
 	//      "- b" en la siguiente no se ve. Es el punto ciego que PLAN-BuildOrder.md §2.2 ya declara.
 	//   2. UN INCREMENTO PREFIJO (++i, --i). Solo se mira el postfijo, porque "--" seguido de una
-	//      letra es una variable de CSS en tres de los cinco lenguajes que se barren.
+	//      letra es una variable de CSS en dos de los cuatro lenguajes que se barren.
 	//   3. UN OPERADOR PEGADO EN LOS LENGUAJES DONDE UN GUION ES PARTE DE UN NOMBRE. En .cs un guion
 	//      nunca es parte de un identificador, asi que "a-b" cuenta entero; en .razor la mitad del
 	//      archivo es markup y ahi un guion es un nombre -- aria-label, d-pill--on -- asi que EL
-	//      GUION pide espacio de un lado y los otros cuatro operadores siguen pegados; en .js, .html
-	//      y .conf "X-Forwarded-For" y "application/wasm" son nombres y TODO operador pide espacio.
+	//      GUION pide espacio de un lado y los otros cuatro operadores siguen pegados; en .js y
+	//      .conf "X-Forwarded-For" y "application/wasm" son nombres y TODO operador pide espacio.
 	//   4. UNA CUENTA DENTRO DEL TEXTO DE UN LITERAL. El contenido de "...", de @"..." y el TEXTO de
 	//      un interpolado se apaga, porque si no toda fecha "2026-06-10" y todo especificador de
 	//      formato {x:yyyy-MM-dd} serian aciertos. Los AGUJEROS de un interpolado quedan vivos: ahi
@@ -53,12 +53,10 @@ namespace DealershipCar.Dominio.Pruebas
 		internal const string EndPointDeEventos = "EndPointDeEventos";
 		internal const string InyectorDeEventosDemo = "InyectorDeEventosDemo";
 		internal const string PaginaDeDescarga = "PaginaDeDescarga";
-		internal const string MiCarroAppMockup = "MiCarroAppMockup";
 
 		private const string Sharp = "cs";
 		private const string Razor = "razor";
 		private const string Js = "js";
-		private const string Html = "html";
 		private const string Conf = "conf";
 
 		// UN OPERANDO SE RECONOCE POR EL CARACTER QUE LO TERMINA O LO EMPIEZA, y no por el token
@@ -100,10 +98,10 @@ namespace DealershipCar.Dominio.Pruebas
 			};
 		}
 
-		/// <summary>Las dos que se ENUMERAN: hosting y maqueta, ninguna de las dos codigo de caratula.</summary>
+		/// <summary>La que se ENUMERA: hosting, que no es codigo de caratula.</summary>
 		internal static string[] TheEnumeratedRoots()
 		{
-			return new[] { PaginaDeDescarga, MiCarroAppMockup };
+			return new[] { PaginaDeDescarga };
 		}
 
 		internal static string[] EveryRoot()
@@ -203,7 +201,6 @@ namespace DealershipCar.Dominio.Pruebas
 			if (file.EndsWith(".cs", StringComparison.Ordinal)) return Sharp;
 			if (file.EndsWith(".razor", StringComparison.Ordinal)) return Razor;
 			if (file.EndsWith(".js", StringComparison.Ordinal)) return Js;
-			if (file.EndsWith(".html", StringComparison.Ordinal)) return Html;
 			if (file.EndsWith(".conf", StringComparison.Ordinal)) return Conf;
 
 			throw new NotSupportedException(
@@ -223,9 +220,9 @@ namespace DealershipCar.Dominio.Pruebas
 			bool slashStar = language != Conf;
 			bool hash = language == Conf;
 			bool razor = language == Razor;
-			bool htmlComment = language == Razor || language == Html;
+			bool htmlComment = language == Razor;
 			bool verbatim = language == Sharp || language == Razor;
-			bool backtick = language == Js || language == Html;
+			bool backtick = language == Js;
 
 			char[] live = source.ToCharArray();
 			int i = 0;

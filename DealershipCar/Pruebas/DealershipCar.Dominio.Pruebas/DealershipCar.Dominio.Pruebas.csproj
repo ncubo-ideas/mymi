@@ -125,7 +125,7 @@
        mirar es el TEXTO, un operador entre dos operandos, y eso no sobrevive a la compilacion.
 
        UN GRUPO POR RAIZ, y la raiz es la carpeta bajo CodigoComoDato: asi el barrido puede decir en
-       cual de las ocho carpetas del modulo esta cada acierto. EndPointDeEventos e InyectorDeEventosDemo
+       cual de las siete carpetas del modulo esta cada acierto. EndPointDeEventos e InyectorDeEventosDemo
        son HERMANOS de App\ y no hijos, asi que van nombrados aparte o se caen del glob. -->
   <ItemGroup>
     <None Include="..\..\App\DealershipCar.App\**\*.cs"
@@ -164,22 +164,19 @@
           CopyToOutputDirectory="PreserveNewest" />
   </ItemGroup>
 
-  <!-- Y LAS DOS RAICES QUE SE ENUMERAN SIN JUZGARSE COMO CODIGO DE LA CARATULA.
+  <!-- Y LA RAIZ QUE SE ENUMERA SIN JUZGARSE COMO CODIGO DE LA CARATULA.
 
        PaginaDeDescarga es hosting: publicado\ es salida de publicacion y no es ni bin ni obj, asi que
        se excluye por nombre o el glob se traga los .wasm del framework.
 
-       MiCarroAppMockup no es codigo que se despliegue: es la maqueta que la caratula sigue. Sus
-       cuentas se afirman PRESENTES y no ausentes: son el registro de lo que la caratula se niega
-       a copiar. -->
+       AQUI VIVIA UN SEGUNDO GRUPO, el de MiCarroAppMockup, y no se puede volver a poner tal cual: esa
+       carpeta era gitignorada, asi que el grupo copiaba algo que solo existia en la maquina de quien
+       la diseno y en cualquier clon nuevo las pruebas que la nombraban se ponian rojas. Una carpeta
+       que el barrido necesite tiene que estar versionada. -->
   <ItemGroup>
     <None Include="..\..\PaginaDeDescarga\**\*.conf;..\..\PaginaDeDescarga\**\*.js"
           Exclude="..\..\PaginaDeDescarga\publicado\**\*.*"
           LinkBase="CodigoComoDato\PaginaDeDescarga"
-          CopyToOutputDirectory="PreserveNewest" />
-
-    <None Include="..\..\MiCarroAppMockup\**\*.js;..\..\MiCarroAppMockup\**\*.dc.html"
-          LinkBase="CodigoComoDato\MiCarroAppMockup"
           CopyToOutputDirectory="PreserveNewest" />
   </ItemGroup>
 
