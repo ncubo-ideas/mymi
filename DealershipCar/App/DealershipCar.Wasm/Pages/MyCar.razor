@@ -176,6 +176,8 @@ else
                         Overdue="@overdue"
                         Due="@due"
                         Missed="@missed"
+                        AlDia="@upToDate"
+                        Programadas="@scheduled"
                         Siguiente="@nextDue"
                         Modelo="@(sheet is not null ? sheet.Model : "")"
                         Odometro="@(stands is not null && stands.OdometerKnown ? ComoSeLee.Miles(stands.Odometer) : "--")"
@@ -340,6 +342,8 @@ else
     private int due;
     private int overdue;
     private int missed;
+    private int upToDate;
+    private int scheduled;
     private long lastEvent;
     private long entries;
     private int memfsFiles;
@@ -493,6 +497,8 @@ else
         due = state.CountDue();
         overdue = state.CountOverdue();
         missed = state.MissedCount();
+        upToDate = state.CountUpToDate();
+        scheduled = state.CountScheduled();
         lastEvent = state.LastEventApplied();
         evaluatedUpTo = state.EvaluatedUpTo();
         nextDue = state.NextDueKind();

@@ -27,12 +27,18 @@ namespace DealershipCar.Dominio.Pruebas
 	//   limites. El censo solo prueba que nadie agrego un miembro sin escribirlo; esto prueba que
 	//   ninguno de los que hay entrega media respuesta.
 	//
-	// POR QUE LOS SIETE QUE HAY SI PUEDEN. Ninguno es la mitad de una respuesta compuesta: cinco son
-	// CONTEOS que la agenda y la bitacora publican por su cuenta -- vencidas, atrasadas, aplazos
-	// usados, mantenimientos perdidos, ultimo evento aplicado -- y dos son HECHOS RECIBIDOS que el
-	// registro guarda tal como llegaron: el odometro del dia de la entrega y el de hoy. Un hecho
-	// recibido se puede dar suelto porque nadie lo derivo de otro; una mitad derivada no, porque su
-	// unidad, su limite y el instante contra el que se midio viven en la frase.
+	// POR QUE LOS NUEVE QUE HAY SI PUEDEN. Ninguno es la mitad de una respuesta compuesta: siete son
+	// CONTEOS que la agenda y la bitacora publican por su cuenta -- vencidas, atrasadas, al dia,
+	// agendadas, aplazos usados, mantenimientos perdidos, ultimo evento aplicado -- y dos son HECHOS
+	// RECIBIDOS que el registro guarda tal como llegaron: el odometro del dia de la entrega y el de
+	// hoy. Un hecho recibido se puede dar suelto porque nadie lo derivo de otro; una mitad derivada
+	// no, porque su unidad, su limite y el instante contra el que se midio viven en la frase.
+	//
+	// AL DIA Y AGENDADAS ENTRARON JUNTAS Y POR ESO, no por comodidad. Inicio.razor contaba las al dia
+	// por el TONO de la pantalla y las dividia entre las NUEVE clases del canon; las dos mitades ya
+	// las compone la agenda y ninguna capa las divide. El PORCENTAJE no esta aca ni en la caratula:
+	// un porcentaje no es un conteo ni un hecho recibido, y admitirlo pedia cambiar la regla de
+	// admision de este censo, que es otra decision y de otra rebanada.
 	[TestFixture]
 	public sealed class AHalfOfAComposedAnswerNeverLeavesTheDoorAsANumber
 	{
@@ -82,12 +88,14 @@ namespace DealershipCar.Dominio.Pruebas
 			journal.Dispose();
 		}
 
-		// LAS SIETE PREGUNTAS DE LA PUERTA QUE CONTESTAN CON UN NUMERO. Conjunto exacto, con la
+		// LAS NUEVE PREGUNTAS DE LA PUERTA QUE CONTESTAN CON UN NUMERO. Conjunto exacto, con la
 		// aridad en la clave: una sobrecarga es su propio sitio y el rojo la nombra.
 		private static readonly string[] EveryNumberTheDoorHandsOut =
 		{
 			"CountDue/0",
 			"CountOverdue/0",
+			"CountUpToDate/0",
+			"CountScheduled/0",
 			"DeferralsUsed/1",
 			"MissedCount/0",
 			"LastEventApplied/0",

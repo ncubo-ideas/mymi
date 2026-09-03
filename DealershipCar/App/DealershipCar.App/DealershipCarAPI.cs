@@ -503,6 +503,24 @@ namespace DealershipCar.App
 			return ACount("@overdue = schedule.CountOverdue();", "overdue", p => { });
 		}
 
+		/// <summary>
+		/// Cuantas operaciones no tienen nada pendiente. Es un conteo que el dominio compone, no la
+		/// mitad de ninguna respuesta: la pantalla lo imprime al lado del siguiente y no los divide.
+		/// </summary>
+		public int CountUpToDate()
+		{
+			return ACount("@upToDate = schedule.CountUpToDate();", "upToDate", p => { });
+		}
+
+		/// <summary>
+		/// Cuantas operaciones tiene agendadas este vehiculo. Va con la anterior: son las dos que una
+		/// pantalla pondria una sobre la otra, y las dos las compone el dominio.
+		/// </summary>
+		public int CountScheduled()
+		{
+			return ACount("@scheduled = schedule.CountScheduled();", "scheduled", p => { });
+		}
+
 		public int DeferralsUsed(string kind)
 		{
 			return ACount("@used = schedule.DeferralsUsed(@kind);", "used", p => {

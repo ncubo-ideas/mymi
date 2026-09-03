@@ -389,6 +389,10 @@ namespace DealershipCar.Wasm
 
 		public int CountOverdue() { Require(); return api.CountOverdue(); }
 
+		public int CountUpToDate() { Require(); return api.CountUpToDate(); }
+
+		public int CountScheduled() { Require(); return api.CountScheduled(); }
+
 		public int MissedCount() { Require(); return api.MissedCount(); }
 
 		public bool HasAnythingDue() { Require(); return api.HasAnythingDue(); }

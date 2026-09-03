@@ -15,14 +15,15 @@ namespace DealershipCar.Dominio.Pruebas
 	// aunque el estado siga siendo correcto.
 	//
 	// Asi que ninguna linea de DSL de DealershipCarAPI puede llegar al journal de una persona sin
-	// haberse ejecutado antes aca. Esta prueba corre CADA UNA de las NOVENTA Y SEIS operaciones de
+	// haberse ejecutado antes aca. Esta prueba corre CADA UNA de las NOVENTA Y OCHO operaciones de
 	// la puerta al menos una vez -- las veintiuna de la agenda (OS2/T6), las siete de la ingesta
 	// (OS2/T8: los dos comandos de la bitacora, sus cuatro lecturas, y el Apply), CanBeDeferred, los
 	// once comandos de publicacion de la especificacion (T5), las TREINTA Y SIETE lecturas de la
 	// especificacion (T6, mas las dos mitades publicadas que agrego
 	// PLAN-ModelSpecification-AmendmentMigrations B1 por la ley L7b), los DOS comandos del perfil
 	// del vehiculo (WarrantyEnvelope/T4), las ONCE lecturas sin componer del perfil y del odometro
-	// (WarrantyEnvelope/T5) y las SEIS COMPUESTAS (WarrantyEnvelope/T6).
+	// (WarrantyEnvelope/T5) y las SEIS COMPUESTAS (WarrantyEnvelope/T6), mas los DOS CONTEOS de la
+	// agenda que BuildOrder/SH-1 agrego al arreglar P-2 -- al dia y agendadas.
 	// No mira reglas de negocio -- de eso se ocupan las otras pruebas del nivel B -- mira que el
 	// script exista, parsee, ate sus parametros y devuelva lo que dijo que devolvia.
 	//
@@ -49,7 +50,7 @@ namespace DealershipCar.Dominio.Pruebas
 	// escrito. Es la misma forma que el censo de escrituras de
 	// TheOwnerIsNeverASourceOfAFactAboutTheirOwnVehicle, con el mismo limite.
 	//
-	// LAS OPERACIONES SON NOVENTA Y SEIS Y LOS SCRIPTS SON MAS, y la ingesta es donde la diferencia
+	// LAS OPERACIONES SON NOVENTA Y OCHO Y LOS SCRIPTS SON MAS, y la ingesta es donde la diferencia
 	// se vuelve grande: Apply es UNA operacion de la puerta y tiene DIECINUEVE scripts detras -- uno
 	// por cada tipo de hecho recibido, mas el comando suelto que avanza el punto de control cuando
 	// el dominio rechaza el hecho. Contar operaciones y contar scripts son dos cuentas distintas, y
@@ -59,7 +60,7 @@ namespace DealershipCar.Dominio.Pruebas
 	// noventa y seis: dos cuentas de la misma cosa en el mismo encabezado, una de ellas vieja. Es el
 	// mismo defecto que dejo escrito "setenta y siete" cuando la puerta tenia setenta y nueve, y es
 	// la tercera vez que aparece en este archivo. Una cuenta afirmada en prosa envejece en silencio,
-	// asi que la que manda es TheOperationsAreNinetySix, que la afirma al lado de la lista que
+	// asi que la que manda es TheOperationsAreNinetyEight, que la afirma al lado de la lista que
 	// cuenta.
 	[TestFixture]
 	public sealed class EveryScriptOfTheDoorHasBeenRun
@@ -108,6 +109,7 @@ namespace DealershipCar.Dominio.Pruebas
 			"AddOwnerOperation", "AdoptPlanRevision", "Apply", "CanBeDeferred",
 			"CanCoverageBeEvaluated", "CanCoverageBeEvaluatedForThisVehicle",
 			"CanTheEnvelopeBeEvaluated", "CompleteOperation", "CountDue", "CountOverdue",
+			"CountScheduled", "CountUpToDate",
 			"CoverageExclusions", "CoveredSystems", "DeclareUsageProfile", "DeferOperation",
 			"DeferralsUsed", "DescribeCoverage", "DescribeCoverageForThisVehicle",
 			"DescribeCoverageSummary", "DescribeFluid",
@@ -160,9 +162,9 @@ namespace DealershipCar.Dominio.Pruebas
 		// dejo escrito "setenta y siete" cuando la puerta ya tenia setenta y nueve: una cuenta
 		// afirmada en prosa envejece en silencio, y esta afirmada al lado de lo que cuenta.
 		[Test]
-		public void TheOperationsAreNinetySix()
+		public void TheOperationsAreNinetyEight()
 		{
-			Assert.That(EveryOperationThisFixtureRuns, Has.Length.EqualTo(96));
+			Assert.That(EveryOperationThisFixtureRuns, Has.Length.EqualTo(98));
 		}
 
 		// La semilla corre en OnHydrated, asi que para cuando la prueba arranca la agenda ya
@@ -231,6 +233,8 @@ namespace DealershipCar.Dominio.Pruebas
 			Assert.That(journal.Api.ReadDueState("FluidChange"), Is.EqualTo("Due"));
 			Assert.That(journal.Api.CountDue(), Is.EqualTo(1));
 			Assert.That(journal.Api.CountOverdue(), Is.EqualTo(0));
+			Assert.That(journal.Api.CountScheduled(), Is.EqualTo(1));
+			Assert.That(journal.Api.CountUpToDate(), Is.EqualTo(0));
 			Assert.That(journal.Api.DeferralsUsed("FluidChange"), Is.EqualTo(0));
 			Assert.That(journal.Api.CanBeDeferred("FluidChange"), Is.True);
 			Assert.That(journal.Api.HasAnythingDue(), Is.True);

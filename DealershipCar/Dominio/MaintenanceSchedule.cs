@@ -331,6 +331,31 @@ namespace DealershipCar.Dominio
 			return due;
 		}
 
+		/// <summary>
+		/// Cuantas operaciones no tienen nada pendiente. DERIVADO de donde esta parada cada una,
+		/// igual que <see cref="MissedCount"/>: un contador aparte se quedaria abajo despues de
+		/// completar una operacion, porque la que sube es la sucesora y no la que se hizo.
+		/// </summary>
+		internal int CountUpToDate()
+		{
+			int upToDate = 0;
+
+			foreach (OperationKindCode kind in _order)
+				if (_operations[kind].IsUpToDate()) upToDate++;
+
+			return upToDate;
+		}
+
+		/// <summary>
+		/// Cuantas operaciones tiene agendadas este vehiculo. Es el denominador de la anterior, y va
+		/// al lado de ella para que nadie divida una cuenta del dominio entre una lista de la
+		/// caratula: las clases del canon son nueve y las agendadas son las que la agencia programo.
+		/// </summary>
+		internal int CountScheduled()
+		{
+			return _order.Count;
+		}
+
 		/// <summary>Cuantas operaciones se pasaron de la gracia.</summary>
 		internal int CountOverdue()
 		{
