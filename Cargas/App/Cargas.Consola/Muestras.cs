@@ -97,6 +97,26 @@ namespace Cargas.Consola
 			"T-0206", "T-0207", "T-0208", "T-0209",
 		};
 
+		// LA FICHA: el tercer aporte, y el que el guion venia sin sembrar. CompletarFicha
+		// existia desde el principio y nadie lo llamaba, asi que en una corrida limpia el
+		// carro de Sonia no tenia mas nombre que su placa y el rendimiento de fabrica no
+		// existia. Sin eso el CRUCE ESTRELLA -"el manual dice 18, tus tramos dan 9"- no
+		// se puede ensenar sin que alguien lo escriba a mano en la pantalla primero.
+		//
+		// El carro es el del canon: Toyota Yaris 2019.
+		//
+		// LOS 18 km/L SON APORTE DE SONIA, no un dato del concesionario. Ella los lee del
+		// manual de su carro; la ficha del fabricante que publica el otro modulo trae
+		// fluidos, llantas y grados de combustible, y NO trae consumo. Que el cruce se
+		// sostenga sin pedirle nada a ese modulo es la gracia, no una carencia.
+		//
+		// EL COLOR VA VACIO A PROPOSITO: el canon no lo dice, y un color inventado se
+		// leeria igual que un dato. El alias si es nuestro y tiene que serlo -es como la
+		// persona le dice a su carro, y eso no lo fija ningun canon-.
+		internal static readonly (string alias, string marca, string modelo, int anio,
+			string color, decimal rendimientoDeFabrica) FichaDelDemo =
+			("el Yaris", "Toyota", "Yaris", 2019, "", 18m);
+
 		private static SenalDeEvento Carga(long id, string fecha, decimal litros,
 			string surtidor, decimal precio, decimal total, string corte, string transaccion) =>
 			new SenalDeEvento(id, "CargaRegistrada", $@"{{

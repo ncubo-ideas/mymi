@@ -175,7 +175,14 @@ namespace Cargas.Consola
 			foreach (string transaccion in Muestras.TanquesPorConfirmar)
 				if (api.ConfirmarTanque(transaccion).Length == 0) confirmados++;
 
-			Console.WriteLine($"aportes: kilometrajes={anotados} tanques confirmados={confirmados}");
+			// La ficha va DESPUES de las cargas y no antes: sin una carga de esa placa no
+			// hay vehiculo que completar, y el Check lo rechazaria con razon.
+			var ficha = Muestras.FichaDelDemo;
+			bool conFicha = api.CompletarFicha(Muestras.PlacaDelDemo, ficha.alias, ficha.marca,
+				ficha.modelo, ficha.anio, ficha.color, ficha.rendimientoDeFabrica).Length == 0;
+
+			Console.WriteLine(
+				$"aportes: kilometrajes={anotados} tanques confirmados={confirmados} ficha={conFicha}");
 		}
 
 		// Los aportes sobre una carpeta ya refrescada contra URL2. Idempotente a su
