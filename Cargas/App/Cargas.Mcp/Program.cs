@@ -79,6 +79,17 @@ static string Instrucciones(string carpeta) => $"""
     reinterpretes por el signo: en km/L mas es mejor y en L/100km menos es mejor, y esa
     inversion es de presentacion, no del juicio.
 
+    LA PERSONA ELIGE EN QUE UNIDAD MIRA SU RENDIMIENTO, y esa eleccion esta en su
+    bitacora: km/L, L/100km o mpg. Las tools ya te la dan aplicada y con su simbolo, asi
+    que HABLA EN LA UNIDAD QUE TE LLEGA y no la conviertas ni la traduzcas a km/L. Si le
+    contestas en km/L mientras su pantalla dice L/100km, para ella son dos apps distintas
+    hablando del mismo carro.
+
+    El porcentaje tambien te llega ya en esa unidad, y NO es el mismo numero en todas: la
+    inversa no es lineal, asi que la misma caida es "25% menos" en km/L y "33% mas" en
+    L/100km. Los dos dicen que el carro empeoro. Deci el que te llega con la palabra que
+    te llega, y no rehagas la cuenta.
+
     Si el veredicto es "dato sospechoso", el numero es implausible y casi seguro falta
     una carga por registrar: quedaron los kilometros de dos tanques con los litros de
     uno. Es un problema de datos, no del carro - sugeri registrar la carga que falto,
@@ -88,7 +99,7 @@ static string Instrucciones(string carpeta) => $"""
     Decila como aproximacion, nunca como medicion.
 
     Como hablar de esto. Deci los HECHOS que te da la tool: "venias rindiendo 12.6 km/L
-    y el ultimo tramo dio 9.4". Compara contra SU propia linea base, nunca contra un
+    y el ultimo tramo dio 9.4" -o lo mismo en la unidad que ella eligio-. Compara contra SU propia linea base, nunca contra un
     promedio nacional, y no des consejos de plantilla tipo "revise la presion de las
     llantas": no tenes de donde sacarlos.
 

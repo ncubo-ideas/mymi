@@ -112,6 +112,26 @@ namespace Cargas.Dominio
 			EsSospechoso = true;
 		}
 
+		// LA MIRADA LA PONE LA BITACORA al entregarlo, igual que la serie le pone las
+		// marcas: el tramo solo la porta. Asi el trecho de la pantalla se dice en la unidad
+		// que ella eligio, sin que el calculo deje de ser canonico ni un momento — la curva
+		// y la barra siguen leyendo RendimientoEnKmPorLitro.
+		private ComoLoMira mirada = ComoLoMira.Canonica;
+
+		internal void MirarloComo(ComoLoMira como)
+		{
+			ArgumentNullException.ThrowIfNull(como);
+			mirada = como;
+		}
+
+		internal decimal RendimientoComoSeVe => EstaCalculado
+			? mirada.Rendimiento.ConvertirKmPorLitro(RendimientoEnKmPorLitro)
+			: 0m;
+
+		internal decimal KilometrosComoSeVen => mirada.DistanciaComoSeVe(Kilometros);
+		internal string SimboloDelRendimiento => mirada.SimboloDelRendimiento;
+		internal string SimboloDeLaDistancia => mirada.SimboloDeLaDistancia;
+
 		internal string Expresado => EstaCalculado
 			? $"{Kilometros:0} km / {Litros:0.#} L = {RendimientoEnKmPorLitro:0.#} km/L"
 			: $"bloqueado: falta {QueFalta}";

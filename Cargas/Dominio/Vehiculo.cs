@@ -111,8 +111,31 @@ namespace Cargas.Dominio
 		internal SerieDeTramos Serie() => new SerieDeTramos(cargas);
 
 		/// <summary>La lectura de la serie completa: el veredicto con sus hechos.</summary>
-		internal EvaluacionDeRendimiento Evaluar()
+		/// <summary>La lectura de la serie EN CANONICO. Sigue existiendo porque las
+		/// comprobaciones y cualquier lectura que no dependa de como ella lo mire no tienen
+		/// por que arrastrar una preferencia de presentacion.</summary>
+		internal EvaluacionDeRendimiento Evaluar() => Evaluar(ComoLoMira.Canonica);
+
+		/// <summary>La misma lectura, dicha en las unidades que ella eligio.
+		///
+		/// EL VEREDICTO NO SE MUEVE: mejoro y empeoro se deciden con el cambio CANONICO,
+		/// que es donde se juzgo. Lo que cambia con la unidad es la flecha, la palabra y la
+		/// magnitud — y por eso el porcentaje sale de CambioComoSeVe y no del canonico: la
+		/// inversa no es lineal, y "un 25% menos" al lado de 7.9 y 10.6 se contradice solo.</summary>
+		internal EvaluacionDeRendimiento Evaluar(ComoLoMira mirada)
 		{
+			ArgumentNullException.ThrowIfNull(mirada);
+
+			// Funcion local y no un helper estatico: asi CAPTURA la mirada y las siete
+			// salidas de abajo no tienen que arrastrarla una por una.
+			EvaluacionDeRendimiento Evaluacion(VeredictoDeRendimiento veredicto,
+				Severidad severidad, Accion accion, decimal actual, decimal habitual,
+				decimal cambio, int calculados, int bloqueados, bool haySerie,
+				string paraSonia, string queFalta, string motivo) =>
+				new EvaluacionDeRendimiento(veredicto, severidad, accion, actual, habitual,
+					cambio, calculados, bloqueados, haySerie, paraSonia, queFalta, motivo,
+					mirada);
+
 			SerieDeTramos serie = Serie();
 			var calculados = new List<Tramo>();
 			int bloqueados = 0;
@@ -150,8 +173,9 @@ namespace Cargas.Dominio
 				return Evaluacion(VeredictoDeRendimiento.DatoSospechoso, Severidad.Vigilar,
 					Accion.RegistrarLaCargaQueFalto(Plazo.EstaSemana), actual, habitual,
 					0m, calculados.Count, bloqueados, haySerie,
-					$"un tramo dio {actual:0.#} km/L contra tu nivel de siempre de "
-					+ $"{habitual:0.#}: casi seguro cargaste y no quedó registrada", "", "");
+					$"un tramo dio {mirada.Rendimiento.Formatear(ultimo.Rendimiento)} contra tu "
+					+ $"nivel de siempre de {mirada.Rendimiento.Formatear(serie.LineaBase.Rendimiento)}: "
+					+ "casi seguro cargaste y no quedó registrada", "", "");
 
 			if (!ultimo.EsComparable)
 				return Evaluacion(VeredictoDeRendimiento.NoComparable, Severidad.Informativo,
@@ -162,8 +186,8 @@ namespace Cargas.Dominio
 			if (!haySerie)
 				return Evaluacion(VeredictoDeRendimiento.Indeterminado, Severidad.Informativo,
 					null, actual, 0m, 0m, calculados.Count, bloqueados, false,
-					$"un solo tramo calculado ({actual:0.#} km/L): todavía no hay serie "
-					+ "para comparar", "", "");
+					$"un solo tramo calculado ({mirada.Rendimiento.Formatear(ultimo.Rendimiento)}): "
+					+ "todavía no hay serie para comparar", "", "");
 
 			decimal cambio = ultimo.Rendimiento
 				.CambioProporcionalDesde(serie.LineaBase.Rendimiento);
@@ -171,27 +195,27 @@ namespace Cargas.Dominio
 			if (Math.Abs(cambio) < UmbralesDeRendimiento.CambioMinimoSignificativo)
 				return Evaluacion(VeredictoDeRendimiento.Estable, Severidad.Informativo,
 					null, actual, habitual, cambio, calculados.Count, bloqueados, true,
-					$"tu carro rinde {actual:0.#} km/L, tu nivel de siempre", "", "");
+					$"tu carro rinde {mirada.Rendimiento.Formatear(ultimo.Rendimiento)}, "
+					+ "tu nivel de siempre", "", "");
+
+			// LA FRASE SE ARMA CON LO QUE SE VE, el veredicto con lo canonico. En km/L
+			// 12.6 -> 9.4 es un 25% menos; los mismos dos tramos en L/100km son 7.9 -> 10.6,
+			// que es un 33% MAS. El carro empeoro en los dos casos.
+			decimal comoSeVe = mirada.Rendimiento.CambioComoSeVe(
+				serie.LineaBase.Rendimiento, ultimo.Rendimiento);
+			string frase = $"venías rindiendo {mirada.Rendimiento.Formatear(serie.LineaBase.Rendimiento)}"
+				+ $" y el último tramo dio {mirada.Rendimiento.Convertir(ultimo.Rendimiento):0.#}: "
+				+ $"un {Math.Round(Math.Abs(comoSeVe) * 100m):0}% {(comoSeVe > 0m ? "más" : "menos")}";
 
 			if (cambio > 0m)
 				return Evaluacion(VeredictoDeRendimiento.Mejoro, Severidad.Informativo,
 					null, actual, habitual, cambio, calculados.Count, bloqueados, true,
-					$"venías rindiendo {habitual:0.#} km/L y el último tramo dio "
-					+ $"{actual:0.#}: un {Math.Round(cambio * 100m):0}% más", "", "");
+					frase, "", "");
 
 			return Evaluacion(VeredictoDeRendimiento.Empeoro, Severidad.Vigilar,
 				Accion.RevisarloConTuTaller(Plazo.EsteMes), actual, habitual, cambio,
-				calculados.Count, bloqueados, true,
-				$"venías rindiendo {habitual:0.#} km/L y el último tramo dio "
-				+ $"{actual:0.#}: un {Math.Round(-cambio * 100m):0}% menos", "", "");
+				calculados.Count, bloqueados, true, frase, "", "");
 		}
-
-		private static EvaluacionDeRendimiento Evaluacion(VeredictoDeRendimiento veredicto,
-			Severidad severidad, Accion accion, decimal actual, decimal habitual,
-			decimal cambio, int calculados, int bloqueados, bool haySerie, string paraSonia,
-			string queFalta, string motivo) =>
-			new EvaluacionDeRendimiento(veredicto, severidad, accion, actual, habitual,
-				cambio, calculados, bloqueados, haySerie, paraSonia, queFalta, motivo);
 
 		private string PrimerFaltante(SerieDeTramos serie)
 		{

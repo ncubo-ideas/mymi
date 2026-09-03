@@ -64,7 +64,7 @@
                 else
                 {
                     <text>con el tanque lleno &middot; @Cifra(autonomia.CapacidadEnLitros) L
-                    a <b>@Cifra(autonomia.HabitualKmPorLitro) km/L</b></text>
+                    a <b>@Cifra(rendimiento.HabitualComoSeVe) @rendimiento.Simbolo</b></text>
                 }
             </div>
         }
@@ -90,16 +90,19 @@
         @if (rendimiento.Actual > 0)
         {
             <div class="fila">
-                <span class="cifra">@Cifra(rendimiento.Actual)<span class="unidad">km/L</span></span>
-                @if (rendimiento.HaySerie && rendimiento.CambioPorcentual != 0)
+                <span class="cifra">@Cifra(rendimiento.ActualComoSeVe)<span class="unidad">@rendimiento.Simbolo</span></span>
+                @if (rendimiento.HaySerie && rendimiento.CambioPorcentualComoSeVe != 0)
                 {
-                    @* La flecha y el signo son de la PRESENTACIÓN: en km/L más es
-                       mejor, en L/100km menos, y esa inversión no toca el veredicto.
-                       Por eso la clase la decide EstaMejorando y no el signo. *@
+                    @* LA FLECHA SIGUE AL NÚMERO Y EL COLOR AL VEREDICTO, y no es un
+                       detalle: en L/100km la misma caída de rendimiento es un número que
+                       SUBE. Con la flecha atada al veredicto, la pantalla mostraría «▼ 33%»
+                       al lado de 7.9 → 10.6 y se contradiría sola. Así sale «▲ 33%» en
+                       ámbar: subió, y subir ahí es peor. Que la unidad invierta la flecha
+                       pero nunca el juicio es lo que DireccionDeseable ya sabía. *@
                     <span class="delta @(rendimiento.EstaMejorando ? "delta--mejor"
                         : rendimiento.EstaEmpeorando ? "delta--peor" : "delta--igual")">
-                        @(rendimiento.EstaMejorando ? "▲" : rendimiento.EstaEmpeorando ? "▼" : "=")
-                        @Math.Abs(rendimiento.CambioPorcentual)%
+                        @(rendimiento.CambioPorcentualComoSeVe > 0 ? "▲" : "▼")
+                        @Math.Abs(rendimiento.CambioPorcentualComoSeVe)%
                     </span>
                 }
             </div>
@@ -114,7 +117,7 @@
             <div class="cifra-pie">
                 @if (rendimiento.Habitual > 0)
                 {
-                    <text>tu nivel de siempre: <b>@Cifra(rendimiento.Habitual) km/L</b> &middot; </text>
+                    <text>tu nivel de siempre: <b>@Cifra(rendimiento.HabitualComoSeVe) @rendimiento.Simbolo</b> &middot; </text>
                 }
                 sobre @rendimiento.TramosCalculados @(rendimiento.TramosCalculados == 1 ? "tramo" : "tramos")
                 entre tanques llenos@(rendimiento.TramosBloqueados > 0
@@ -180,10 +183,10 @@
         <span class="rotulo">Odómetro</span>
         @if (propuesta.Hay)
         {
-            <TiraDeOdometro Kilometros="propuesta.Kilometros"
-                            Descripcion="@($"{Entero(propuesta.Kilometros)} kilómetros, estimado para hoy")" />
+            <TiraDeOdometro Kilometros="propuesta.KilometrosComoSeVen"
+                            Descripcion="@($"{Entero(propuesta.KilometrosComoSeVen)} {propuesta.SimboloDeLaDistancia}, estimado para hoy")" />
             <div class="cifra-pie">
-                hoy, estimado &middot; <b>@Cifra(propuesta.KilometrosPorDia) km</b> por día
+                hoy, estimado &middot; <b>@Cifra(propuesta.PorDiaComoSeVe) @propuesta.SimboloDeLaDistancia</b> por día
                 desde tu última lectura, hace
                 <b>@propuesta.DiasDesdeLaUltimaLectura</b> @(propuesta.DiasDesdeLaUltimaLectura == 1 ? "día" : "días")
             </div>

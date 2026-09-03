@@ -83,8 +83,26 @@ namespace Cargas.App
 					EsSospechoso = Booleano(elemento, "esSospechoso"),
 					QueFalta = Texto(elemento, "queFalta"),
 					Expresado = Texto(elemento, "expresado"),
+					RendimientoComoSeVe = Decimal(elemento, "rendimientoComoSeVe"),
+					KilometrosComoSeVen = Decimal(elemento, "kilometrosComoSeVen"),
+					SimboloDelRendimiento = Texto(elemento, "simboloDelRendimiento"),
+					SimboloDeLaDistancia = Texto(elemento, "simboloDeLaDistancia"),
 				});
 			return tramos;
+		}
+
+		internal static UnidadesElegidas Unidades(string json)
+		{
+			if (string.IsNullOrWhiteSpace(json)) return new UnidadesElegidas();
+
+			using JsonDocument documento = JsonDocument.Parse(json);
+			JsonElement raiz = documento.RootElement;
+
+			return new UnidadesElegidas
+			{
+				Rendimiento = Texto(raiz, "rendimiento"),
+				Distancia = Texto(raiz, "distancia"),
+			};
 		}
 
 		internal static RendimientoDelVehiculo Rendimiento(string json)
@@ -113,6 +131,10 @@ namespace Cargas.App
 				EstaMejorando = Booleano(raiz, "estaMejorando"),
 				EstaEmpeorando = Booleano(raiz, "estaEmpeorando"),
 				SugiereRegistrarLaCargaQueFalto = Booleano(raiz, "sugiereRegistrarLaCargaQueFalto"),
+				ActualComoSeVe = Decimal(raiz, "actualComoSeVe"),
+				HabitualComoSeVe = Decimal(raiz, "habitualComoSeVe"),
+				CambioPorcentualComoSeVe = Entero(raiz, "cambioPorcentualComoSeVe"),
+				Simbolo = Texto(raiz, "simbolo"),
 			};
 		}
 
@@ -182,6 +204,9 @@ namespace Cargas.App
 				KilometrosPorDia = Decimal(raiz, "kilometrosPorDia"),
 				DiasDesdeLaUltimaLectura = Entero(raiz, "diasDesdeLaUltimaLectura"),
 				Origen = Texto(raiz, "origen"),
+				KilometrosComoSeVen = Decimal(raiz, "kilometrosComoSeVen"),
+				PorDiaComoSeVe = Decimal(raiz, "porDiaComoSeVe"),
+				SimboloDeLaDistancia = Texto(raiz, "simboloDeLaDistancia"),
 			};
 		}
 

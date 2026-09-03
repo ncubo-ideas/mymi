@@ -107,6 +107,50 @@ else
     }
 }
 
+<h2 class="rotulo" style="margin:26px 0 10px">Cómo lo mirás</h2>
+
+@* LAS UNIDADES VAN AL JOURNAL, no a este navegador. Es la única preferencia que lo hace,
+   y la razón es que cambia lo que la app DICE y no solo lo que se ve: guardada en el
+   browser, la pantalla mostraría mpg mientras tu asistente te sigue contestando en km/L
+   sobre la misma bitácora.
+
+   La MONEDA no está acá y no es un olvido: no es una preferencia, es un dato que viene con
+   cada carga desde la estación. Convertirla obligaría a inventar un tipo de cambio, que es
+   justo lo que este producto no hace en ninguna otra parte. Por eso hay un instrumento de
+   gasto por moneda en vez de un selector. *@
+<div class="unidades">
+    <fieldset class="unidad-grupo">
+        <legend>Rendimiento</legend>
+        @foreach ((string simbolo, string comoSeLee) in FormasDeMirarElRendimiento)
+        {
+            <button type="button" @key="@simbolo"
+                    class="tecla tecla--contorno @(unidades.Rendimiento == simbolo ? "tecla--elegida" : "")"
+                    aria-pressed="@(unidades.Rendimiento == simbolo)"
+                    @onclick="() => ElegirRendimiento(simbolo)">
+                @comoSeLee
+            </button>
+        }
+    </fieldset>
+
+    <fieldset class="unidad-grupo">
+        <legend>Distancia</legend>
+        @foreach ((string simbolo, string comoSeLee) in FormasDeMirarLaDistancia)
+        {
+            <button type="button" @key="@simbolo"
+                    class="tecla tecla--contorno @(unidades.Distancia == simbolo ? "tecla--elegida" : "")"
+                    aria-pressed="@(unidades.Distancia == simbolo)"
+                    @onclick="() => ElegirDistancia(simbolo)">
+                @comoSeLee
+            </button>
+        }
+    </fieldset>
+</div>
+
+<p class="apunte" style="margin-top:8px">
+    Cambiar la unidad cambia cómo se dice tu rendimiento, nunca el veredicto: si tu carro
+    empeoró, empeoró en las tres.
+</p>
+
 <h2 class="rotulo" style="margin:26px 0 10px">Dónde vive tu bitácora</h2>
 
 @if (Estado.HayCarpeta && !Estado.EnAlmacenamientoDelNavegador)
@@ -138,6 +182,23 @@ else
     private VehiculoEnLista? enFoco;
     private List<VehiculoEnLista> otros = new();
 
+    private UnidadesElegidas unidades = new();
+
+    // Los simbolos son los del DOMINIO -PresentacionDeRendimiento y UnidadDeDistancia- y
+    // el texto de al lado es como se lee. Si alguna vez entra una cuarta, entra alla.
+    private static readonly (string simbolo, string comoSeLee)[] FormasDeMirarElRendimiento =
+    {
+        ("km/L",    "km/L"),
+        ("L/100km", "L/100 km"),
+        ("mpg",     "mpg"),
+    };
+
+    private static readonly (string simbolo, string comoSeLee)[] FormasDeMirarLaDistancia =
+    {
+        ("km", "kilómetros"),
+        ("mi", "millas"),
+    };
+
     private string alias = "", marca = "", modelo = "", color = "";
     private int anio;
     private decimal rendimientoDeFabrica;
@@ -150,6 +211,8 @@ else
 
     protected override void Releer()
     {
+        unidades = Estado.Unidades();
+
         IReadOnlyList<VehiculoEnLista> vehiculos = Estado.Vehiculos();
         string placa = Estado.PlacaEnFoco(vehiculos);
 
@@ -187,6 +250,18 @@ else
         if (rechazo.Length > 0) throw new InvalidOperationException(rechazo);
 
         guardado = $"Listo: ahora le decimos «{alias.Trim()}».";
+    });
+
+    private Task ElegirRendimiento(string simbolo) => Intentar("elegir cómo mirás el rendimiento", async () =>
+    {
+        string rechazo = await Estado.ElegirPresentacionDeRendimiento(simbolo);
+        if (rechazo.Length > 0) throw new InvalidOperationException(rechazo);
+    });
+
+    private Task ElegirDistancia(string simbolo) => Intentar("elegir la unidad de distancia", async () =>
+    {
+        string rechazo = await Estado.ElegirUnidadDeDistancia(simbolo);
+        if (rechazo.Length > 0) throw new InvalidOperationException(rechazo);
     });
 
     private Task Exportar() => Intentar("exportar la bitácora", async () =>

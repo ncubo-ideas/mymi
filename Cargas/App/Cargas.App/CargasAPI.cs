@@ -247,6 +247,43 @@ namespace Cargas.App
 
 		// El cero en el rendimiento de fabrica es el "no lo se" del formulario; la
 		// bitacora lo escala al tipo de ausencia antes de tocar el dominio.
+		// EN QUE UNIDADES LO MIRA ELLA. Va al journal y no al browser porque cambia lo que
+		// la app DICE y no solo lo que se ve: con la preferencia en IndexedDB, la pantalla
+		// mostraria mpg mientras su asistente le contesta en km/L sobre la misma bitacora.
+		//
+		// SIN Check, como DeclararSexo en examenes: viene de un boton y volver a elegir lo
+		// mismo es legitimo. El simbolo viaja como @param -nunca concatenado al script- y
+		// el dominio lo RECONOCE antes de guardarlo: uno desconocido journalizado dejaria
+		// la bitacora irreproducible para cualquier binario que no lo conozca.
+		public string ElegirPresentacionDeRendimiento(string simbolo)
+		{
+			ArgumentNullException.ThrowIfNullOrWhiteSpace(simbolo);
+
+			return app.Using("bitacoraDeCargas.ElegirPresentacionDeRendimiento(@simbolo);")
+				.WithParameters(p => { p["simbolo", typeof(string)] = simbolo; })
+				.PerformCommand();
+		}
+
+		public string ElegirUnidadDeDistancia(string simbolo)
+		{
+			ArgumentNullException.ThrowIfNullOrWhiteSpace(simbolo);
+
+			return app.Using("bitacoraDeCargas.ElegirUnidadDeDistancia(@simbolo);")
+				.WithParameters(p => { p["simbolo", typeof(string)] = simbolo; })
+				.PerformCommand();
+		}
+
+		/// <summary>Como lo mira hoy, para que la pantalla pueda marcar la opcion elegida.</summary>
+		public string ComoLoMira() =>
+			app.Using(@"
+				{
+					print bitacoraDeCargas.SimboloDelRendimiento rendimiento,
+						bitacoraDeCargas.SimboloDeLaDistancia distancia;
+				}
+			").PerformQuery();
+
+		public UnidadesElegidas Unidades() => ProyeccionDeVistas.Unidades(ComoLoMira());
+
 		public string CompletarFicha(string placa, string alias, string marca, string modelo,
 			int anio, string color, decimal rendimientoDeFabricaKmPorLitro)
 		{
@@ -416,7 +453,11 @@ namespace Cargas.App
 						tramo.MotivoDeReserva motivoDeReserva,
 						tramo.EsSospechoso esSospechoso,
 						tramo.QueFalta queFalta,
-						tramo.Expresado expresado;
+						tramo.Expresado expresado,
+						tramo.RendimientoComoSeVe rendimientoComoSeVe,
+						tramo.KilometrosComoSeVen kilometrosComoSeVen,
+						tramo.SimboloDelRendimiento simboloDelRendimiento,
+						tramo.SimboloDeLaDistancia simboloDeLaDistancia;
 				}
 			")
 			.WithParameters(p => { p["placa", typeof(string)] = placa; })
@@ -454,7 +495,11 @@ namespace Cargas.App
 						evaluacion.MotivoDeReserva motivoDeReserva,
 						evaluacion.EstaMejorando estaMejorando,
 						evaluacion.EstaEmpeorando estaEmpeorando,
-						evaluacion.SugiereRegistrarLaCargaQueFalto sugiereRegistrarLaCargaQueFalto;
+						evaluacion.SugiereRegistrarLaCargaQueFalto sugiereRegistrarLaCargaQueFalto,
+						evaluacion.ActualComoSeVe actualComoSeVe,
+						evaluacion.HabitualComoSeVe habitualComoSeVe,
+						evaluacion.CambioPorcentualComoSeVe cambioPorcentualComoSeVe,
+						evaluacion.SimboloDelRendimiento simbolo;
 				}
 			")
 			.WithParameters(p => { p["placa", typeof(string)] = placa; })
@@ -587,7 +632,10 @@ namespace Cargas.App
 						proyeccion.Kilometros kilometros,
 						proyeccion.KilometrosPorDia kilometrosPorDia,
 						proyeccion.DiasDesdeLaUltimaLectura diasDesdeLaUltimaLectura,
-						proyeccion.Origen origen;
+						proyeccion.Origen origen,
+						proyeccion.KilometrosComoSeVen kilometrosComoSeVen,
+						proyeccion.PorDiaComoSeVe porDiaComoSeVe,
+						proyeccion.SimboloDeLaDistancia simboloDeLaDistancia;
 				}
 			")
 			.WithParameters(p => {

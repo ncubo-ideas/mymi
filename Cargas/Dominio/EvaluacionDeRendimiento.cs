@@ -39,13 +39,17 @@ namespace Cargas.Dominio
 		/// <summary>El motivo de la reserva, cuando el veredicto es NoComparable.</summary>
 		internal string MotivoDeReserva { get; private set; }
 
+		private readonly ComoLoMira mirada;
+
 		internal EvaluacionDeRendimiento(VeredictoDeRendimiento veredicto, Severidad severidad,
 			Accion accion, decimal actual, decimal habitual, decimal cambio,
 			int tramosCalculados, int tramosBloqueados, bool haySerie, string paraSonia,
-			string queFalta, string motivoDeReserva)
+			string queFalta, string motivoDeReserva, ComoLoMira mirada = null)
 		{
 			ArgumentNullException.ThrowIfNull(veredicto);
 			ArgumentNullException.ThrowIfNull(severidad);
+
+			this.mirada = mirada ?? ComoLoMira.Canonica;
 
 			// La invariante hecha ley por construccion, heredada de examenes: una
 			// severidad que pide algo tiene que decir que, y con su plazo.
@@ -69,6 +73,31 @@ namespace Cargas.Dominio
 		}
 
 		// ------------------------------- proyecciones planas, para el print del actor
+
+		// ---------------------------- lo mismo, dicho como ella lo mira
+
+		// LOS CANONICOS DE ARRIBA NO SE TOCAN: son los que codifican mejor y peor, y de
+		// ellos salen la curva y la barra. Estos son para el TEXTO, que es lo unico que
+		// cambia con la unidad.
+
+		internal string SimboloDelRendimiento => mirada.SimboloDelRendimiento;
+
+		internal decimal ActualComoSeVe => mirada.Rendimiento.ConvertirKmPorLitro(ActualKmPorLitro);
+		internal decimal HabitualComoSeVe => mirada.Rendimiento.ConvertirKmPorLitro(HabitualKmPorLitro);
+
+		/// <summary>El cambio porcentual TAL COMO SE VE, con signo. En km/L y en L/100km no
+		/// es el mismo numero -la inversa no es lineal- y por eso la flecha de la pantalla
+		/// sale de aca mientras el color sale del veredicto: en L/100km una flecha para
+		/// arriba es peor, y eso es exactamente lo que DireccionDeseable ya sabia.</summary>
+		internal int CambioPorcentualComoSeVe
+		{
+			get
+			{
+				decimal antes = HabitualComoSeVe;
+				if (antes == 0m || ActualComoSeVe == 0m) return 0;
+				return (int)Math.Round((ActualComoSeVe - antes) / antes * 100m);
+			}
+		}
 
 		internal string NombreDelVeredicto => Veredicto.Nombre;
 		internal string NombreDeLaSeveridad => Severidad.Nombre;

@@ -36,6 +36,7 @@ namespace Cargas.Consola
 			LaSuposicionDelTanqueSeEnunciaAntesDePreguntar();
 			ElGastoDelCarroNoEsElGastoDeLaPersona();
 			LaFichaSeLeePlanaParaPoderCorregirla();
+			LaUnidadCambiaLaFraseYNuncaElVeredicto();
 			OtroSurtidorNoSeComparaConLaSerie();
 			ElVeredictoDelGuionEsEmpeoro();
 			CambiarLaUnidadInvierteLaFlechaPeroNoElVeredicto();
@@ -321,6 +322,67 @@ namespace Cargas.Consola
 				bitacora.VehiculoDe("ABC-123").AliasDeLaFicha);
 			Igual("y sin rendimiento de fabrica vuelve a cero", "0",
 				bitacora.VehiculoDe("ABC-123").RendimientoDeFabricaDeLaFicha.ToString("0"));
+		}
+
+		// LA UNIDAD ES PRESENTACION, EL VEREDICTO ES JUICIO. Es la comprobacion que
+		// justifica toda la fase: si alguna vez el veredicto empieza a depender de como se
+		// mire, el dominio dejo de juzgar y paso a describir.
+		private static void LaUnidadCambiaLaFraseYNuncaElVeredicto()
+		{
+			Titulo("la unidad cambia la frase, nunca el veredicto");
+
+			// ElGuion() ya trae los kilometrajes y las confirmaciones: el veredicto del
+			// guion es "empeoro", que es justo el caso donde la palabra se invierte.
+			BitacoraDeCargas bitacora = ElGuion();
+
+			EvaluacionDeRendimiento enKmPorLitro = bitacora.EvaluarRendimientoDe("ABC-123");
+			Igual("en km/L el veredicto es empeoro", "empeoro", enKmPorLitro.NombreDelVeredicto);
+			Igual("y la frase dice MENOS", "True",
+				enKmPorLitro.ParaSonia.Contains("% menos").ToString());
+			Igual("con el 25 del guion", "True",
+				enKmPorLitro.ParaSonia.Contains("25%").ToString());
+
+			bitacora.ElegirPresentacionDeRendimiento("L/100km");
+			EvaluacionDeRendimiento enLitros = bitacora.EvaluarRendimientoDe("ABC-123");
+
+			// LO QUE NO SE MUEVE.
+			Igual("el veredicto sigue siendo empeoro", "empeoro", enLitros.NombreDelVeredicto);
+			Igual("y la severidad sigue siendo la misma", enKmPorLitro.NombreDeLaSeveridad,
+				enLitros.NombreDeLaSeveridad);
+			Igual("y el canonico no se toca", enKmPorLitro.ActualKmPorLitro.ToString("0.##"),
+				enLitros.ActualKmPorLitro.ToString("0.##"));
+
+			// LO QUE SI SE MUEVE: la palabra y la magnitud. La inversa no es lineal, asi
+			// que 25% menos en km/L son 34% MAS en L/100km. Decir "25% menos" al lado de
+			// 7.9 y 10.6 seria una contradiccion que la persona ve sola.
+			Igual("ahora la frase dice MAS", "True", enLitros.ParaSonia.Contains("% más").ToString());
+			Igual("y ya no dice menos", "False", enLitros.ParaSonia.Contains("% menos").ToString());
+			Igual("el porcentaje como se ve cambia", "33",
+				enLitros.CambioPorcentualComoSeVe.ToString());
+			Igual("y el de km/L era negativo", "-25",
+				enKmPorLitro.CambioPorcentualComoSeVe.ToString());
+			Igual("el simbolo acompaña", "L/100km", enLitros.SimboloDelRendimiento);
+
+			// Y en mpg, que es la otra direccion: mas sigue siendo mejor, asi que la
+			// palabra vuelve a ser "menos".
+			bitacora.ElegirPresentacionDeRendimiento("mpg");
+			EvaluacionDeRendimiento enMpg = bitacora.EvaluarRendimientoDe("ABC-123");
+			Igual("en mpg el veredicto tampoco se mueve", "empeoro", enMpg.NombreDelVeredicto);
+			Igual("y vuelve a decir menos", "True", enMpg.ParaSonia.Contains("% menos").ToString());
+			Igual("con el mismo 25, porque mpg es proporcional a km/L", "-25",
+				enMpg.CambioPorcentualComoSeVe.ToString());
+
+			// UN SIMBOLO DESCONOCIDO NO ENTRA. Si entrara, el journal quedaria
+			// irreproducible para cualquier binario que no lo conozca.
+			Revienta<ErrorDeDominio>("un simbolo desconocido no se journaliza",
+				() => bitacora.ElegirPresentacionDeRendimiento("km/galon"));
+			Igual("y la mirada no se movio", "mpg", bitacora.SimboloDelRendimiento);
+
+			// LA DISTANCIA, con el mismo criterio.
+			bitacora.ElegirUnidadDeDistancia("mi");
+			Igual("la distancia queda en millas", "mi", bitacora.SimboloDeLaDistancia);
+			Revienta<ErrorDeDominio>("y una unidad desconocida tampoco entra",
+				() => bitacora.ElegirUnidadDeDistancia("leguas"));
 		}
 
 		private static void LaSuposicionDelTanqueSeEnunciaAntesDePreguntar()

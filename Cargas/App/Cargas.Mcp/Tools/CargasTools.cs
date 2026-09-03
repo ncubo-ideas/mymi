@@ -115,9 +115,10 @@ internal sealed class CargasTools
 				HayVehiculo = true,
 				Veredicto = lectura.Veredicto,
 				ParaLaPersona = lectura.ParaSonia,
-				ActualKmPorLitro = Math.Round(lectura.Actual, 2),
-				HabitualKmPorLitro = Math.Round(lectura.Habitual, 2),
-				CambioPorcentual = lectura.CambioPorcentual,
+				Actual = Math.Round(lectura.ActualComoSeVe, 2),
+				Habitual = Math.Round(lectura.HabitualComoSeVe, 2),
+				Unidad = lectura.Simbolo,
+				CambioPorcentual = lectura.CambioPorcentualComoSeVe,
 				TramosCalculados = lectura.TramosCalculados,
 				TramosBloqueados = lectura.TramosBloqueados,
 				HaySerie = lectura.HaySerie,
@@ -308,13 +309,27 @@ public sealed class RendimientoDeVehiculo
 	[Description("La lectura en una linea, armada con los hechos de la persona.")]
 	public string ParaLaPersona { get; init; } = "";
 
-	[JsonPropertyName("actualKmPorLitro")]
-	public decimal ActualKmPorLitro { get; init; }
+	// LOS NUMEROS VAN EN LA UNIDAD QUE LA PERSONA ELIGIO, y los canonicos NO viajan.
+	// Tenerlos al lado invitaria justo a lo que las instrucciones prohiben: convertir. Si
+	// la IA contesta en km/L mientras su pantalla dice L/100km, para ella son dos apps
+	// distintas hablando del mismo carro.
+	[JsonPropertyName("actual")]
+	[Description("El rendimiento del ultimo tramo, en la unidad que la persona eligio. "
+		+ "Decilo tal cual, con su unidad: no lo conviertas.")]
+	public decimal Actual { get; init; }
 
-	[JsonPropertyName("habitualKmPorLitro")]
-	public decimal HabitualKmPorLitro { get; init; }
+	[JsonPropertyName("habitual")]
+	[Description("Su nivel de siempre, en la misma unidad.")]
+	public decimal Habitual { get; init; }
+
+	[JsonPropertyName("unidad")]
+	[Description("El simbolo de esa unidad: km/L, L/100km o mpg.")]
+	public string Unidad { get; init; } = "";
 
 	[JsonPropertyName("cambioPorcentual")]
+	[Description("El cambio EN ESA UNIDAD, con signo. No es el mismo numero en todas: la "
+		+ "inversa no es lineal, asi que la misma caida es -25 en km/L y +33 en L/100km, y "
+		+ "las dos dicen que empeoro. Deci el que te llega y no rehagas la cuenta.")]
 	public int CambioPorcentual { get; init; }
 
 	[JsonPropertyName("tramosCalculados")]

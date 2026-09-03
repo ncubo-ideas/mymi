@@ -137,6 +137,39 @@ namespace Cargas.Dominio
 		/// <summary>La ficha entra con primitivos del wire y escala aca: el cero en el
 		/// rendimiento de fabrica es el "no lo se" del formulario, y se convierte en el
 		/// tipo de ausencia antes de tocar el dominio.</summary>
+		// ------------------------------------------------------ como lo mira ella
+
+		/// <summary>En que unidades lo mira. Nace canonica y solo ella la cambia.</summary>
+		internal ComoLoMira Mirada { get; private set; } = ComoLoMira.Canonica;
+
+		/// <summary>Elegir en que se mira el rendimiento. SIN Check, a proposito: viene de
+		/// un boton, y volver a elegir lo mismo es legitimo -no es un reintento del que
+		/// haya que defenderse-. Es el mismo criterio que DeclararSexo en examenes.
+		///
+		/// RECONOCE en la frontera: un simbolo desconocido se rechaza aca y no se
+		/// journaliza. Si entrara, el journal quedaria irreproducible para cualquier
+		/// binario que no conozca ese simbolo.</summary>
+		internal void ElegirPresentacionDeRendimiento(string simbolo)
+		{
+			if (!PresentacionDeRendimiento.EsConocida(simbolo))
+				throw new ErrorDeDominio(
+					$"'{simbolo}' no es una forma conocida de mirar el rendimiento.");
+
+			Mirada = Mirada.ConRendimiento(PresentacionDeRendimiento.PorSimbolo(simbolo));
+		}
+
+		internal void ElegirUnidadDeDistancia(string simbolo)
+		{
+			if (!UnidadDeDistancia.EsConocida(simbolo))
+				throw new ErrorDeDominio(
+					$"'{simbolo}' no es una unidad de distancia conocida.");
+
+			Mirada = Mirada.ConDistancia(UnidadDeDistancia.PorSimbolo(simbolo));
+		}
+
+		internal string SimboloDelRendimiento => Mirada.SimboloDelRendimiento;
+		internal string SimboloDeLaDistancia => Mirada.SimboloDeLaDistancia;
+
 		internal void CompletarFicha(string placa, string alias, string marca, string modelo,
 			int anio, string color, decimal rendimientoDeFabricaKmPorLitro)
 		{
@@ -174,10 +207,18 @@ namespace Cargas.Dominio
 
 		internal IReadOnlyList<Carga> CargasDe(string placa) => VehiculoDe(placa).Cargas;
 
-		internal IReadOnlyList<Tramo> TramosDe(string placa) => VehiculoDe(placa).Serie().Tramos;
+		/// <summary>Los tramos, ya marcados con la mirada. La bitacora es quien conoce en
+		/// que unidades lo mira ella, igual que la serie es quien conoce la linea base: cada
+		/// una pone la marca que sabe y el tramo las porta.</summary>
+		internal IReadOnlyList<Tramo> TramosDe(string placa)
+		{
+			IReadOnlyList<Tramo> tramos = VehiculoDe(placa).Serie().Tramos;
+			foreach (Tramo tramo in tramos) tramo.MirarloComo(Mirada);
+			return tramos;
+		}
 
 		internal EvaluacionDeRendimiento EvaluarRendimientoDe(string placa) =>
-			VehiculoDe(placa).Evaluar();
+			VehiculoDe(placa).Evaluar(Mirada);
 
 		internal LineaBaseDeRendimiento LineaBaseDe(string placa) =>
 			VehiculoDe(placa).Serie().LineaBase;
@@ -193,8 +234,12 @@ namespace Cargas.Dominio
 		internal IReadOnlyList<FaltanteDeDato> FaltantesDe(string placa) =>
 			VehiculoDe(placa).Faltantes();
 
-		internal ProyeccionDeOdometro OdometroEstimadoDe(string placa, DateTime hoy) =>
-			VehiculoDe(placa).OdometroEstimado(hoy);
+		internal ProyeccionDeOdometro OdometroEstimadoDe(string placa, DateTime hoy)
+		{
+			ProyeccionDeOdometro proyeccion = VehiculoDe(placa).OdometroEstimado(hoy);
+			proyeccion.MirarloComo(Mirada);
+			return proyeccion;
+		}
 
 		internal IReadOnlyList<CostoPorDistanciaEnMoneda> CostoPorDistanciaDe(string placa) =>
 			VehiculoDe(placa).CostoPorDistancia();

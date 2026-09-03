@@ -38,8 +38,16 @@ namespace Cargas.Dominio
 		internal decimal Convertir(Rendimiento rendimiento)
 		{
 			ArgumentNullException.ThrowIfNull(rendimiento);
+			return ConvertirKmPorLitro(rendimiento.KilometrosPorLitro);
+		}
 
-			decimal kmPorLitro = rendimiento.KilometrosPorLitro;
+		/// <summary>La misma conversion desde el canonico suelto. Existe porque varias
+		/// lecturas ya viajan como decimal en km/L y volver a envolverlas en un Rendimiento
+		/// solo para convertirlas seria ceremonia.</summary>
+		internal decimal ConvertirKmPorLitro(decimal kmPorLitro)
+		{
+			if (kmPorLitro == 0m) return 0m;
+
 			if (ReferenceEquals(this, KilometrosPorLitro)) return kmPorLitro;
 			if (ReferenceEquals(this, MillasPorGalonUS))
 				return kmPorLitro / KilometrosPorMilla * LitrosPorGalonUS;
@@ -51,6 +59,35 @@ namespace Cargas.Dominio
 
 		internal string Formatear(Rendimiento rendimiento) =>
 			$"{Convertir(rendimiento):0.#} {Simbolo}";
+
+		/// <summary>EL CAMBIO TAL COMO SE VE EN ESTA PRESENTACION, y no es el canonico.
+		///
+		/// La inversa no es lineal: 12.6 -> 9.4 km/L es un 25% MENOS, y esos mismos dos
+		/// tramos en L/100km son un 33% MAS -porque 1/(1-0.25) - 1 = 0.33, no 0.25-, asi
+		/// que decir "25% menos" al lado de 7.9 y 10.6 es una contradiccion que la
+		/// persona ve sola.
+		///
+		/// El VEREDICTO no sale de aca -ese se juzgo en canonico y no cambia con la
+		/// unidad-: de aca salen la palabra y la magnitud, que son presentacion.</summary>
+		internal decimal CambioComoSeVe(Rendimiento desde, Rendimiento hasta)
+		{
+			ArgumentNullException.ThrowIfNull(desde);
+			ArgumentNullException.ThrowIfNull(hasta);
+
+			decimal antes = Convertir(desde);
+			return antes == 0m ? 0m : (Convertir(hasta) - antes) / antes;
+		}
+
+		/// <summary>RECONOCE sin reventar. Ver UnidadDeDistancia.EsConocida: la elegida se
+		/// journaliza y la leen dos binarios distintos.</summary>
+		internal static bool EsConocida(string simbolo)
+		{
+			if (string.IsNullOrWhiteSpace(simbolo)) return false;
+			string normalizado = simbolo.Trim();
+			return normalizado == KilometrosPorLitro.Simbolo
+				|| normalizado == MillasPorGalonUS.Simbolo
+				|| normalizado == LitrosPorCienKilometros.Simbolo;
+		}
 
 		internal static PresentacionDeRendimiento PorSimbolo(string simbolo)
 		{

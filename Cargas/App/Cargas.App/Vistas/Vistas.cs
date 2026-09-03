@@ -52,6 +52,13 @@ namespace Cargas.App.Vistas
 		public bool EsSospechoso { get; init; }
 		public string QueFalta { get; init; } = "";
 		public string Expresado { get; init; } = "";
+
+		// Los de arriba son CANONICOS y de ellos salen la curva y la barra; estos son para
+		// el texto del trecho. Ver RendimientoDelVehiculo.
+		public decimal RendimientoComoSeVe { get; init; }
+		public decimal KilometrosComoSeVen { get; init; }
+		public string SimboloDelRendimiento { get; init; } = "";
+		public string SimboloDeLaDistancia { get; init; } = "";
 	}
 
 	// LA LECTURA DE LA SERIE: el veredicto con sus hechos. Es la vista que no tiene
@@ -79,6 +86,25 @@ namespace Cargas.App.Vistas
 		public bool EstaMejorando { get; init; }
 		public bool EstaEmpeorando { get; init; }
 		public bool SugiereRegistrarLaCargaQueFalto { get; init; }
+
+		// LO MISMO, DICHO COMO ELLA LO MIRA. Los de arriba son canonicos y de ahi salen la
+		// curva y la barra -la geometria que codifica mejor y peor no se puede invertir con
+		// una unidad-; estos son para el texto.
+		//
+		// El porcentaje NO es el de arriba: en km/L 12.6 -> 9.4 es 25% menos, y esos mismos
+		// dos tramos en L/100km son 7.9 -> 10.6, un 33% MAS. Viene con signo, para que la
+		// flecha siga al numero mientras el color sigue al veredicto.
+		public decimal ActualComoSeVe { get; init; }
+		public decimal HabitualComoSeVe { get; init; }
+		public int CambioPorcentualComoSeVe { get; init; }
+		public string Simbolo { get; init; } = "";
+	}
+
+	/// <summary>En que unidades lo mira, para que la pantalla marque la elegida.</summary>
+	public sealed class UnidadesElegidas
+	{
+		public string Rendimiento { get; init; } = "";
+		public string Distancia { get; init; } = "";
 	}
 
 	// "Te alcanza para ~X km": combinada de dos derivaciones, siempre proyeccion.
@@ -147,6 +173,12 @@ namespace Cargas.App.Vistas
 		public decimal KilometrosPorDia { get; init; }
 		public int DiasDesdeLaUltimaLectura { get; init; }
 		public string Origen { get; init; } = "";
+
+		// EN LA UNIDAD QUE ELLA MIRA, y acá no es cosmético: el campo del kilometraje llega
+		// prellenado con esto, y lo que se teclea se journaliza con la unidad del campo.
+		public decimal KilometrosComoSeVen { get; init; }
+		public decimal PorDiaComoSeVe { get; init; }
+		public string SimboloDeLaDistancia { get; init; } = "";
 	}
 
 	public sealed class CostoEnLista

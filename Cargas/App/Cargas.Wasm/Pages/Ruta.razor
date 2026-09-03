@@ -134,7 +134,7 @@ else
                             {
                                 <div class="fila">
                                     <input class="campo" type="number" inputmode="numeric"
-                                           aria-label="Kilometraje de esta carga"
+                                           aria-label="@($"Kilometraje de esta carga, en {unidades.Distancia}")"
                                            value="@Kilometraje(pendiente.Transaccion)"
                                            @onchange="e => AnotarEnElCampo(pendiente.Transaccion, e)" />
                                     <button class="tecla tecla--alerta"
@@ -148,8 +148,8 @@ else
                                        meses. *@
                                     @if (propuesta.Hay && pendiente.Transaccion == transaccionConPropuesta)
                                     {
-                                        <span class="apunte crece">¿unos @Entero(propuesta.Kilometros) km?
-                                            Es lo que da tu promedio de @Cifra(propuesta.KilometrosPorDia) km por día.</span>
+                                        <span class="apunte crece">¿unos @Entero(propuesta.KilometrosComoSeVen) @propuesta.SimboloDeLaDistancia?
+                                            Es lo que da tu promedio de @Cifra(propuesta.PorDiaComoSeVe) @propuesta.SimboloDeLaDistancia por día.</span>
                                     }
                                 </div>
                             }
@@ -209,8 +209,8 @@ else
                         <div class="eslabon-riel"></div>
                         <div class="eslabon-cuerpo">
                             <div class="trecho-cifras">
-                                <span class="trecho-rinde">@Cifra(tramo.Rendimiento)<span class="unidad">km/L</span></span>
-                                <span class="trecho-dato">@Entero(tramo.Kilometros) km</span>
+                                <span class="trecho-rinde">@Cifra(tramo.RendimientoComoSeVe)<span class="unidad">@tramo.SimboloDelRendimiento</span></span>
+                                <span class="trecho-dato">@Entero(tramo.KilometrosComoSeVen) @tramo.SimboloDeLaDistancia</span>
                                 <span class="trecho-dato">@Cifra(tramo.Litros) L</span>
                                 <span>desde el @tramo.Desde.ToString("dd MMM", Cultura)</span>
                                 @if (tramo.EsSospechoso)
@@ -225,7 +225,7 @@ else
                                    un promedio nacional: un trecho solo no significa
                                    nada, significa contra su propia línea base. *@
                                 <div class="trecho-barra" role="img"
-                                     aria-label="@Cifra(tramo.Rendimiento) km/L contra tu nivel de siempre de @Cifra(rendimiento.Habitual) km/L">
+                                     aria-label="@Cifra(tramo.RendimientoComoSeVe) @tramo.SimboloDelRendimiento contra tu nivel de siempre de @Cifra(rendimiento.HabitualComoSeVe) @rendimiento.Simbolo">
                                     <span class="relleno" style="width:@Ancho(tramo.Rendimiento)%"></span>
                                     <span class="muesca" style="left:60%"></span>
                                 </div>
@@ -270,6 +270,7 @@ else
     private AutonomiaDelVehiculo autonomia = new();
     private CompletitudDelVehiculo completitud = new();
     private OdometroPropuesto propuesta = new();
+    private UnidadesElegidas unidades = new();
     private long ultimoEvento;
 
     // El prellenado, UNO POR CARGA (llave: el numero de transaccion). Si ella manda la
@@ -381,17 +382,24 @@ else
         if (kilometraje <= 0) return;
 
         int tramosAntes = rendimiento.TramosCalculados;
-        string origen = propuesta.Hay && kilometraje == propuesta.Kilometros
+        // La comparacion tiene que ser contra la propuesta COMO SE VE: es el numero que
+        // ella tuvo delante. Contra la canonica, aceptar la sugerencia en millas entraria
+        // como "observado" en vez de "confirmado".
+        string origen = propuesta.Hay && kilometraje == propuesta.KilometrosComoSeVen
             ? "confirmado" : "observado";
 
-        string rechazo = await Estado.AnotarOdometro(transaccion, kilometraje, origen);
+        // LA UNIDAD ES LA DEL CAMPO, no "km" clavado: si la persona mira en millas, el
+        // numero que acaba de leer son millas, y el dominio necesita saberlo para
+        // normalizar. Mandar km sobre una lectura en millas la mete 1.6 veces mas grande.
+        string rechazo = await Estado.AnotarOdometro(transaccion, kilometraje,
+            unidades.Distancia, origen);
         if (rechazo.Length > 0)
             throw new InvalidOperationException(
                 "La app no anotó ese kilometraje: no es coherente con la serie (el "
                 + "odómetro solo crece). Revisá el número.");
 
         if (rendimiento.TramosCalculados > tramosAntes && rendimiento.Actual > 0)
-            desbloqueado = $"el rendimiento de ese tramo: {Cifra(rendimiento.Actual)} km/L."
+            desbloqueado = $"el rendimiento de ese tramo: {Cifra(rendimiento.ActualComoSeVe)} {rendimiento.Simbolo}."
                 + (autonomia.Hay ? $" Y tu autonomía estimada: ~{Entero(autonomia.Kilometros)} km." : "");
     });
 
@@ -448,6 +456,7 @@ else
     {
         vehiculos = Estado.Vehiculos();
         ultimoEvento = Estado.UltimoEvento();
+        unidades = Estado.Unidades();
 
         if (vehiculos.Count == 0)
         {
@@ -506,7 +515,7 @@ else
                 {
                     transaccionConPropuesta = faltante.Transaccion;
                     if (!kilometrajePorAnotar.ContainsKey(faltante.Transaccion))
-                        kilometrajePorAnotar[faltante.Transaccion] = propuesta.Kilometros;
+                        kilometrajePorAnotar[faltante.Transaccion] = propuesta.KilometrosComoSeVen;
                     break;
                 }
         }

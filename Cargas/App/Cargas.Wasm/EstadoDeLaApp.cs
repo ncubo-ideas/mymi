@@ -373,11 +373,20 @@ public sealed class EstadoDeLaApp : IAsyncDisposable
 	// de refresh. Devuelven el mensaje del Check ("" si entro): un kilometraje que
 	// retrocede se rechaza sin dejar entrada, y la pantalla lo dice.
 
-	public async ValueTask<string> AnotarOdometro(string transaccion, decimal kilometros,
-		string origen)
+	/// <summary>El kilometraje que ella leyo, EN LA UNIDAD EN QUE LO LEYO.
+	///
+	/// La unidad iba clavada en "km", y con el selector de unidades eso pasaba de detalle a
+	/// bug silencioso: si el campo muestra millas y el comando dice km, cada lectura entra
+	/// 1.6 veces mas grande, ya journalizada, la coherencia por monotonia empieza a
+	/// rechazar entradas validas y la linea base queda envenenada sin que nada lo diga.
+	///
+	/// La preferencia decide el DEFAULT del campo; lo que se journaliza es la unidad en la
+	/// que ella lo leyo, que es la que el dominio necesita para normalizar.</summary>
+	public async ValueTask<string> AnotarOdometro(string transaccion, decimal kilometraje,
+		string unidad, string origen)
 	{
 		Exigir();
-		string rechazo = api!.AnotarOdometro(transaccion, kilometros, "km", origen);
+		string rechazo = api!.AnotarOdometro(transaccion, kilometraje, unidad, origen);
 		if (rechazo.Length == 0) { await BajarADisco(); Avisar(); }
 		return rechazo;
 	}
@@ -469,6 +478,28 @@ public sealed class EstadoDeLaApp : IAsyncDisposable
 	{ Exigir(); return api!.GastosDe(placa, anio, mes); }
 
 	public EstadoDeLealtad Lealtad() { Exigir(); return api!.Lealtad(); }
+
+	// ---------------------------------------------------------------- las unidades
+
+	public UnidadesElegidas Unidades() { Exigir(); return api!.Unidades(); }
+
+	/// <summary>Elegir en que se mira. Va al journal -cambia lo que la IA DICE, no solo lo
+	/// que se ve- y por eso baja a disco como cualquier otro aporte.</summary>
+	public async ValueTask<string> ElegirPresentacionDeRendimiento(string simbolo)
+	{
+		Exigir();
+		string rechazo = api!.ElegirPresentacionDeRendimiento(simbolo);
+		if (rechazo.Length == 0) { await BajarADisco(); Avisar(); }
+		return rechazo;
+	}
+
+	public async ValueTask<string> ElegirUnidadDeDistancia(string simbolo)
+	{
+		Exigir();
+		string rechazo = api!.ElegirUnidadDeDistancia(simbolo);
+		if (rechazo.Length == 0) { await BajarADisco(); Avisar(); }
+		return rechazo;
+	}
 
 	public int Cantidad() { Exigir(); return api!.CantidadDeCargas(); }
 
