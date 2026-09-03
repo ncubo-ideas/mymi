@@ -1513,6 +1513,11 @@ namespace DealershipCar.App
 				if (message is WarrantyEnvelopePublished envelope)
 					return ApplyWarrantyEnvelopePublished(envelope);
 
+				if (message is ShopEntryRecorded entry) return ApplyShopEntryRecorded(entry);
+				if (message is ShopCollectionRecorded collection)
+					return ApplyShopCollectionRecorded(collection);
+				if (message is ShopStayRecorded stay) return ApplyShopStayRecorded(stay);
+
 				throw new ArgumentException(
 					$"Esta app no tiene comando para un mensaje de tipo '{message.Tipo}'. La ruta "
 					+ "debio devolver null para descartarlo.", nameof(message));
@@ -1928,6 +1933,77 @@ namespace DealershipCar.App
 			.PerformCheckThenCommand();
 		}
 
+		/// <summary>
+		/// NO PRE-CHEQUEA que el vehiculo estuviera afuera, y no es un olvido. La guarda de la puerta
+		/// revienta con InvalidOperationException, que no es la excepcion con que el dominio rechaza,
+		/// asi que saldria de Apply sin que nadie la atrape y se llevaria el bloque de refresh entero.
+		/// Y escribirla de nuevo aca como un if seria una segunda fuente de verdad de una ley del
+		/// dominio, para un hecho que la sucursal ya publico: lo que la frontera descarta es lo que no
+		/// se puede DECIR, y una segunda entrada se puede decir.
+		/// </summary>
+		private string ApplyShopEntryRecorded(ShopEntryRecorded message)
+		{
+			return app.Using(
+				scriptForChk: TheEventIsNew,
+				@"
+					{
+						stays.RecordEntry(@branch, @subject, @enteredAt);
+						logbook.Advance(@event);
+					}
+				")
+			.WithParameters(p => {
+				p["event",     typeof(long)]     = message.EventNumber;
+				p["branch",    typeof(string)]   = message.Branch;
+				p["subject",   typeof(string)]   = message.Subject;
+				p["enteredAt", typeof(DateTime)] = InUtc(message.EnteredAt);
+			})
+			.PerformCheckThenCommand();
+		}
+
+		/// <summary>
+		/// Los dias cruzan como llegaron, sin volver a exigirlos: ADay revienta con ArgumentException
+		/// y por este camino eso se llevaria el bloque entero, asi que la forma de cada dia ya se
+		/// exigio al interpretar la senal, donde descartarla no cuesta ninguna entrada.
+		/// </summary>
+		private string ApplyShopCollectionRecorded(ShopCollectionRecorded message)
+		{
+			return app.Using(
+				scriptForChk: TheEventIsNew,
+				@"
+					{
+						stays.RecordCollection(@collectedAt, @days);
+						logbook.Advance(@event);
+					}
+				")
+			.WithParameters(p => {
+				p["event",       typeof(long)]     = message.EventNumber;
+				p["collectedAt", typeof(DateTime)] = InUtc(message.CollectedAt);
+				p["days",        typeof(string[])] = message.CoveredDays;
+			})
+			.PerformCheckThenCommand();
+		}
+
+		private string ApplyShopStayRecorded(ShopStayRecorded message)
+		{
+			return app.Using(
+				scriptForChk: TheEventIsNew,
+				@"
+					{
+						stays.RecordStay(@branch, @subject, @enteredAt, @collectedAt, @days);
+						logbook.Advance(@event);
+					}
+				")
+			.WithParameters(p => {
+				p["event",       typeof(long)]     = message.EventNumber;
+				p["branch",      typeof(string)]   = message.Branch;
+				p["subject",     typeof(string)]   = message.Subject;
+				p["enteredAt",   typeof(DateTime)] = InUtc(message.EnteredAt);
+				p["collectedAt", typeof(DateTime)] = InUtc(message.CollectedAt);
+				p["days",        typeof(string[])] = message.CoveredDays;
+			})
+			.PerformCheckThenCommand();
+		}
+
 		private const string TheEventIsNew =
 			"Check(@event > logbook.LastEvent()) Error 'evento ya procesado';";
 
@@ -2309,8 +2385,12 @@ namespace DealershipCar.App
 			return day.ToString(TheShapeADayIsSaidIn, CultureInfo.InvariantCulture);
 		}
 
-		/// <summary>Como se dice un dia de calendario en este modulo, de los dos lados del wire.</summary>
-		private const string TheShapeADayIsSaidIn = "yyyy-MM-dd";
+		/// <summary>
+		/// Como se dice un dia de calendario en este modulo, de los dos lados del wire. Es internal
+		/// porque el otro lado del wire tambien lo mira: la frontera de la ingesta exige esta misma
+		/// forma antes de que haya comando, y dos copias de la forma serian dos formas.
+		/// </summary>
+		internal const string TheShapeADayIsSaidIn = "yyyy-MM-dd";
 
 		/// <summary>
 		/// Los dos extremos de un periodo dicho en dias, exigidos y atados para el script que los

@@ -180,9 +180,9 @@ namespace DealershipCar.Dominio.Pruebas
 		}
 
 		// CADA HECHO QUE ENTRA DEJA EL PUNTO DE CONTROL EN SU PROPIO NUMERO DE EVENTO, y son
-		// DIECIOCHO scripts los que lo prometen: cinco de la agenda, once de la especificacion y dos
-		// del perfil de este vehiculo. Es la promesa que hace exacto el resume, y no se hereda de un
-		// script al siguiente.
+		// VEINTIUN scripts los que lo prometen: cinco de la agenda, once de la especificacion, dos
+		// del perfil de este vehiculo y TRES de las estadias en el taller. Es la promesa que hace
+		// exacto el resume, y no se hereda de un script al siguiente.
 		//
 		// ESTA PRUEBA EXISTE POR LA PASADA DE FALSIFICACION DE LA INGESTA DE LA FICHA. Quitarle
 		// logbook.Advance al script del fluido -- y al del intervalo de servicio -- dejo la suite EN
@@ -213,6 +213,7 @@ namespace DealershipCar.Dominio.Pruebas
 			everything.AddRange(ADealershipNarrative.TheWholeStory());
 			everything.AddRange(ADealershipNarrative.TheWholeSpecSheet());
 			everything.AddRange(ADealershipNarrative.TheDeliveryAndTheEnvelope());
+			everything.AddRange(ADealershipNarrative.TheStays());
 
 			foreach (SenalDeEvento signal in everything)
 			{
@@ -236,11 +237,11 @@ namespace DealershipCar.Dominio.Pruebas
 				swept.Add(signal.Tipo);
 			}
 
-			Assert.That(swept.Count, Is.EqualTo(18),
-				"Son DIECIOCHO scripts de ingesta con hecho -- cinco de la agenda, once de la "
-				+ "especificacion y dos del perfil del vehiculo -- mas el comando suelto que avanza el "
-				+ "punto de control cuando el dominio rechaza uno, que es el diecinueve y no tiene "
-				+ "hecho que aplicar.");
+			Assert.That(swept.Count, Is.EqualTo(21),
+				"Son VEINTIUN scripts de ingesta con hecho -- cinco de la agenda, once de la "
+				+ "especificacion, dos del perfil del vehiculo y tres de las estadias en el taller -- "
+				+ "mas el comando suelto que avanza el punto de control cuando el dominio rechaza uno, "
+				+ "que es el veintidos y no tiene hecho que aplicar.");
 		}
 
 		// LAS DOS PROMESAS VUELVEN A MEDIRSE SOBRE LOS ONCE HECHOS DE LA ESPECIFICACION, y hace falta
@@ -331,6 +332,135 @@ namespace DealershipCar.Dominio.Pruebas
 				"Y una clase que la narrativa nunca menciono contesta igual: la ausencia es una "
 				+ "respuesta legal (E41).");
 		}
+
+		// LO QUE LAS ESTADIAS DEJAN EN EL REGISTRO, afirmado en negocio y no solo en contadores. Es el
+		// hermano del renglon de arriba, un global de raiz mas alla, y hace falta por lo mismo: todo lo
+		// demas de este fixture seguiria verde con una ingesta que aplicara los cuatro comandos
+		// equivocados, o los tres correctos con los campos cruzados.
+		//
+		// EL ORACULO SON LAS OCHO LECTURAS DE LA PUERTA, que es lo que SH-3 no tenia cuando escribio
+		// los tres comandos: se lee de vuelta lo que la sucursal dijo, por valor, y no que algo llego.
+		//
+		// LOS DIAS VAN POR VALOR Y NO POR LARGO (C60). Cinco dias equivocados satisfacen un largo de
+		// cinco igual de bien que los cinco que la sucursal mando, y el largo es lo unico que una
+		// ingesta con los campos cruzados no cambiaria.
+		[Test]
+		public void TheStaysLandOnTheRecordAsTheFactsTheyWere()
+		{
+			Ingested entered = Ingest(journal.Api, ADealershipNarrative.TheStays());
+
+			Assert.That(entered.Applied, Is.EqualTo(ADealershipNarrative.StaySignalsThatApply));
+			Assert.That(entered.Discarded, Is.EqualTo(0));
+			Assert.That(entered.Rejected, Is.EqualTo(0));
+
+			Assert.That(journal.Api.LastEventApplied(),
+				Is.EqualTo(ADealershipNarrative.TheLastStayEvent));
+
+			// LAS DOS POR INSTANTE, que son las unicas que alcanzan la estadia que quedo abierta.
+			Assert.That(journal.Api.IsInsideTheShopAt(InsideTheOpenStay), Is.True,
+				"IsInsideTheShopAt: la estadia del 5 de octubre entro por la entrada del 33 y nadie la "
+				+ "cerro, asi que el vehiculo sigue adentro.");
+
+			Assert.That(journal.Api.IsInsideTheShopAt(BetweenTheTwoClosedStays), Is.False,
+				"Y en junio no estaba adentro de ninguna: la de mayo ya habia salido y la de julio no "
+				+ "habia entrado.");
+
+			// CADA UNO ADENTRO DE SU PROPIA CLAUSULA, y esto se corrigio despues de MEDIRLO: con la
+			// sucursal y el asunto cruzados en el script de la entrada, un
+			// Does.Contain(sucursal).And.Contains(asunto) quedaba VERDE, porque la frase nombra a los
+			// dos y no dice cual esta donde. Para la estadia ABIERTA la frase es el unico oraculo que
+			// hay -- ninguna lectura de periodo la alcanza, asi que no tiene fila ni columnas -- de
+			// modo que si esta afirmacion no discrimina, nada discrimina.
+			Assert.That(
+				journal.Api.DescribeTheStayAt(InsideTheOpenStay),
+				Does.Contain("en " + ADealershipNarrative.TheOpenShopBranch + " desde el")
+					.And.Contains("Entró por " + ADealershipNarrative.TheOpenShopSubject),
+				"DescribeTheStayAt dice la estadia ABIERTA con la sucursal en la clausula de la "
+				+ "sucursal y el asunto en la del asunto: si el script cruzara los dos campos, esta "
+				+ "frase los diria al reves.");
+
+			Assert.That(
+				journal.Api.DescribeTheStayAt(InsideTheFirstClosedStay),
+				Does.Contain("en " + ADealershipNarrative.TheFirstShopBranch + " desde el")
+					.And.Contains("Entró por " + ADealershipNarrative.TheFirstShopSubject),
+				"Y la del acto unico cuando se pregunta por un instante que ELLA cubre.");
+
+			// LAS SEIS POR DIAS, y ninguna de ellas ve la abierta.
+			Assert.That(journal.Api.HasAnyStayBetween(TheYearFrom, TheYearTo), Is.True);
+
+			Assert.That(
+				journal.Api.DaysInTheShopBetween(TheYearFrom, TheYearTo),
+				Is.EqualTo(new[]
+				{
+					"2026-05-11", "2026-05-12", "2026-05-13", "2026-07-06", "2026-07-07",
+				}),
+				"Los CINCO dias que las dos sucursales dijeron, por valor y ascendentes. Tres los mando "
+				+ "el acto unico y dos la entrega, asi que un camino roto se ve en cual falta.");
+
+			Assert.That(journal.Api.DaysInTheShopCountBetween(TheYearFrom, TheYearTo), Is.EqualTo(5));
+
+			Assert.That(
+				journal.Api.DescribeDaysInTheShopBetween(TheYearFrom, TheYearTo),
+				Does.Contain("5 días").And.Contains("2 estadías"));
+
+			Assert.That(journal.Api.StayCountBetween(TheYearFrom, TheYearTo), Is.EqualTo(2),
+				"DOS estadias con dias registrados, no tres: la abierta no entra en un periodo dicho "
+				+ "en dias, y no cinco: dias y estadias son dos cuentas distintas.");
+
+			ShopStayRecord record = journal.Api.StaysBetween(TheYearFrom, TheYearTo);
+
+			Assert.That(
+				record.Branch,
+				Is.EqualTo(new[]
+				{
+					ADealershipNarrative.TheFirstShopBranch, ADealershipNarrative.TheSecondShopBranch,
+				}),
+				"Las dos filas en orden de ENTRADA, con la sucursal de cada una.");
+
+			Assert.That(
+				record.Subject,
+				Is.EqualTo(new[]
+				{
+					ADealershipNarrative.TheFirstShopSubject, ADealershipNarrative.TheSecondShopSubject,
+				}));
+
+			Assert.That(
+				record.EnteredAt,
+				Is.EqualTo(new[] { "2026-05-11 08:30:00", "2026-07-06 07:15:00" }),
+				"Y los instantes de entrada con su HORA, tal como llegaron por el cable.");
+
+			Assert.That(
+				record.CoveredDays,
+				Is.EqualTo(new[]
+				{
+					"2026-05-11 2026-05-12 2026-05-13", "2026-07-06 2026-07-07",
+				}));
+
+			// CADA FILA SE DICE A SI MISMA, y el asunto se afirma ADENTRO DE LA CLAUSULA DEL ASUNTO y
+			// la sucursal adentro de la suya. Un Does.Contain pelado se satisface con la frase entera:
+			// SH-4 lo midio -- con la columna del asunto trayendo la sucursal, la prueba quedaba verde.
+			Assert.That(
+				record.Says[0],
+				Does.Contain("Entró por " + ADealershipNarrative.TheFirstShopSubject)
+					.And.Contains("en " + ADealershipNarrative.TheFirstShopBranch + " desde el"));
+
+			Assert.That(
+				record.Says[1],
+				Does.Contain("Entró por " + ADealershipNarrative.TheSecondShopSubject)
+					.And.Contains("en " + ADealershipNarrative.TheSecondShopBranch + " desde el"));
+		}
+
+		private static readonly DateTime InsideTheOpenStay =
+			new DateTime(2026, 11, 1, 0, 0, 0, DateTimeKind.Utc);
+
+		private static readonly DateTime BetweenTheTwoClosedStays =
+			new DateTime(2026, 6, 1, 0, 0, 0, DateTimeKind.Utc);
+
+		private static readonly DateTime InsideTheFirstClosedStay =
+			new DateTime(2026, 5, 12, 12, 0, 0, DateTimeKind.Utc);
+
+		private const string TheYearFrom = "2026-01-01";
+		private const string TheYearTo = "2026-12-31";
 
 		// ------------------------------------------------------ el aparejo
 

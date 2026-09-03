@@ -53,10 +53,15 @@ namespace DealershipCar.Dominio.Pruebas
 	// TheOwnerIsNeverASourceOfAFactAboutTheirOwnVehicle, con el mismo limite.
 	//
 	// LAS OPERACIONES SON CIENTO NUEVE Y LOS SCRIPTS SON MAS, y la ingesta es donde la diferencia
-	// se vuelve grande: Apply es UNA operacion de la puerta y tiene DIECINUEVE scripts detras -- uno
-	// por cada tipo de hecho recibido, mas el comando suelto que avanza el punto de control cuando
-	// el dominio rechaza el hecho. Contar operaciones y contar scripts son dos cuentas distintas, y
-	// la que S5 obliga a hacer es la de los scripts.
+	// se vuelve grande: Apply es UNA operacion de la puerta y tiene VEINTIDOS scripts detras -- uno
+	// por cada tipo de hecho recibido, que son veintiuno, mas el comando suelto que avanza el punto
+	// de control cuando el dominio rechaza el hecho. Contar operaciones y contar scripts son dos
+	// cuentas distintas, y la que S5 obliga a hacer es la de los scripts.
+	//
+	// LOS TRES QUE AGREGO BuildOrder/SH-5 SON SCRIPTS Y NO OPERACIONES, y por eso la lista de abajo
+	// no se movio: los tres hechos de las estadias entran por el Apply que ya estaba y aplican los
+	// TRES COMANDOS que SH-3 ya le habia puesto a la puerta. Una operacion nueva aca seria el aviso
+	// de que la ingesta se agrego mal.
 	//
 	// Y LA DIFERENCIA VA PARA EL OTRO LADO TAMBIEN: StaysBetween es UNA operacion y su script tiene
 	// CINCO lineas, una por columna, en una sola consulta. Correr la operacion las corre las cinco;
@@ -654,6 +659,69 @@ namespace DealershipCar.Dominio.Pruebas
 			Assert.That(journal.Api.ReadEnvelopePublishedAt(),
 				Is.EqualTo(new DateTime(2026, 1, 1, 0, 0, 0, DateTimeKind.Utc)));
 		}
+
+		// LOS TRES SCRIPTS DE INGESTA DE LAS ESTADIAS: la entrada, la entrega y la estadia entera de un
+		// solo acto, que aplican por los TRES comandos que la puerta ya tenia y no agregan ninguna
+		// operacion.
+		//
+		// LA DISCRIMINACION ES LO CARO DE ESTA PRUEBA, y sin ella se quedaria verde con los tres
+		// scripts escribiendo en el global equivocado, o con los campos cruzados entre si: correr los
+		// tres y afirmar que nada revento no distingue un script que registra de uno que no. Asi que
+		// cada hecho se vuelve a leer por LA LECTURA DE LA PUERTA QUE CONTESTARIA DISTINTO -- la
+		// abierta solo la ven las dos lecturas por instante, y los dias de las dos cerradas salen por
+		// las de periodo.
+		[Test]
+		public void EveryStayIngestionScriptOfTheDoorParsesBindsAndRuns()
+		{
+			Assert.That(journal.Api.IsInsideTheShopAt(TheInstantInsideTheOpenStay), Is.False,
+				"Antes de nada no hay ninguna estadia: sin esto los renglones de abajo podrian estar "
+				+ "mirando una que puso otra prueba.");
+			Assert.That(journal.Api.StayCountBetween(TheYearOfTheStays, TheEndOfThatYear),
+				Is.EqualTo(0));
+
+			HashSet<string> ran = new HashSet<string>();
+
+			foreach (Puppets.Portador.SenalDeEvento signal in ADealershipNarrative.TheStays())
+			{
+				Assert.That(Apply(signal), Is.EqualTo(""),
+					"El script de " + signal.Tipo + " tenia que correr sin rechazo.");
+
+				ran.Add(signal.Tipo);
+			}
+
+			Assert.That(ran.Count, Is.EqualTo(3),
+				"Son TRES scripts de ingesta de las estadias, uno por comando de la sucursal.");
+
+			Assert.That(journal.Api.LastEventApplied(),
+				Is.EqualTo(ADealershipNarrative.TheLastStayEvent),
+				"Y los cuatro hechos avanzan el punto de control en el MISMO comando que el hecho.");
+
+			// LA ESTADIA ENTERA Y LA QUE SE ARMO EN DOS HECHOS, cada una por su cuenta: si el script de
+			// la entrega escribiera en la estadia equivocada, o el del acto unico no cerrara nada, la
+			// cuenta de estadias y la de dias lo dicen por separado.
+			Assert.That(journal.Api.StayCountBetween(TheYearOfTheStays, TheEndOfThatYear),
+				Is.EqualTo(2));
+			Assert.That(journal.Api.DaysInTheShopCountBetween(TheYearOfTheStays, TheEndOfThatYear),
+				Is.EqualTo(5));
+
+			// Y LA ABIERTA, que es lo unico que separa el script de la ENTRADA de los otros dos: la
+			// dejo abierta y ninguna lectura de periodo la ve.
+			Assert.That(journal.Api.IsInsideTheShopAt(TheInstantInsideTheOpenStay), Is.True);
+
+			// LA SUCURSAL ADENTRO DE LA CLAUSULA DE LA SUCURSAL, y no suelta en la frase: la frase
+			// nombra tambien el asunto, asi que un Does.Contain pelado se satisface con los dos campos
+			// cruzados. MEDIDO en la pasada de falsificacion de esta tarea.
+			Assert.That(
+				journal.Api.DescribeTheStayAt(TheInstantInsideTheOpenStay),
+				Does.Contain("en " + ADealershipNarrative.TheOpenShopBranch + " desde el")
+					.And.Contains("Entró por " + ADealershipNarrative.TheOpenShopSubject));
+		}
+
+		private const string TheYearOfTheStays = "2026-01-01";
+		private const string TheEndOfThatYear = "2026-12-31";
+
+		private static readonly DateTime TheInstantInsideTheOpenStay =
+			new DateTime(2026, 11, 1, 0, 0, 0, DateTimeKind.Utc);
 
 		// Y LOS SEIS DE LA INGESTA QUE TRAJO T8: los cinco comandos con Check de cada tipo de hecho
 		// recibido, mas el comando suelto que avanza el punto de control cuando el dominio rechaza el

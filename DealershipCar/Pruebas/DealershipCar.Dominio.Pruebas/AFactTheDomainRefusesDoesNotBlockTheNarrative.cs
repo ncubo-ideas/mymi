@@ -290,6 +290,111 @@ namespace DealershipCar.Dominio.Pruebas
 				+ "miembro son las dos cosas que no se pueden DECIR.");
 		}
 
+		// Y LAS CUATRO DE LAS ESTADIAS SON LAS DOS CATEGORIAS A LA VEZ, un global de raiz mas alla. Se
+		// dicen aparte de las de arriba porque son de OTRO agregado y porque cada cuenta tiene que
+		// seguir diciendo de que es.
+		//
+		// DOS DE ELLAS MIRAN EL ESTADO DEL REGISTRO -- si hay otra estadia abierta, si hay alguna que
+		// cerrar -- que es la categoria de C22, y la puerta SI las adelanta cuando el que llama es un
+		// llamador que puede preguntar antes. LA INGESTA NO LAS LLAMA, a proposito: revientan con
+		// InvalidOperationException, que no es la excepcion con que el dominio rechaza, asi que
+		// saldrian de Apply sin que nadie las atrape y se llevarian el bloque de refresh entero.
+		//
+		// LAS OTRAS DOS SON UNA FUNCION PURA DE LOS VALORES -- los dias contiguos, y la salida anterior
+		// a la entrada -- y viven en el CONSTRUCTOR de la estadia cerrada, que es la tercera categoria.
+		// La de la contiguidad no se puede adelantar sin escribir la ley por segunda vez; la de los dos
+		// extremos SI se adelanta cuando la senal trae los dos, y por eso llega aca por el camino de la
+		// ENTREGA, donde la entrada esta adentro del dominio y la senal no la trae.
+		[Test]
+		public void AndTheseFourStayGuardsAreBothCategoriesOneRootGlobalOver()
+		{
+			Assert.That(Apply(ADealershipNarrative.ShopEntry(4, TheBranch, TheSubject, TheEntry)),
+				Is.EqualTo(""),
+				"La entrada que abre la estadia tenia que entrar; si no entro, los renglones de abajo "
+				+ "no miden lo que dicen.");
+
+			(string Guard, SenalDeEvento Signal, string Says)[] refused =
+			{
+				("una segunda entrada mientras hay otra abierta",
+					ADealershipNarrative.ShopEntry(5, "Taller Heredia", "Otra cosa", TheEntry),
+					"ya tiene una estadia abierta"),
+
+				("unos dias con un hueco entre ellos",
+					ADealershipNarrative.ShopCollection(
+						6, TheCollection, new[] { "2026-04-08", "2026-04-10" }),
+					"Una estadia es continua"),
+
+				("una entrega anterior a la entrada de la estadia que cierra",
+					ADealershipNarrative.ShopCollection(
+						7, "2026-04-07T06:00:00Z", new[] { "2026-04-07" }),
+					"salio antes de entrar"),
+			};
+
+			Assert.That(refused.Length, Is.EqualTo(3),
+				"Son TRES contra una estadia ABIERTA: la segunda entrada, los dias con hueco y la "
+				+ "entrega anterior a la entrada. La cuarta necesita que no haya ninguna abierta, asi "
+				+ "que va despues de cerrarla.");
+
+			foreach ((string guard, SenalDeEvento signal, string says) in refused)
+				Assert.That(Apply(signal), Does.Contain(says), guard);
+
+			Assert.That(
+				Apply(ADealershipNarrative.ShopCollection(
+					8, TheCollection, new[] { "2026-04-08", "2026-04-09" })),
+				Is.EqualTo(""),
+				"Y la entrega buena SI cierra la estadia: las tres de arriba la dejaron abierta, que es "
+				+ "lo que separa un hecho perdido de un registro roto.");
+
+			Assert.That(
+				Apply(ADealershipNarrative.ShopCollection(
+					9, TheCollection, new[] { "2026-04-08", "2026-04-09" })),
+				Does.Contain("no tiene ninguna estadia abierta que cerrar"),
+				"LA CUARTA: una estadia cerrada es terminal y no se reabre.");
+
+			Assert.That(journal.Api.LastEventApplied(), Is.EqualTo(9L),
+				"Y la narrativa avanzo por las cuatro: se pierde el hecho, no el registro.");
+
+			Assert.That(journal.Api.DaysInTheShopBetween("2026-04-01", "2026-04-30"),
+				Is.EqualTo(new[] { "2026-04-08", "2026-04-09" }),
+				"El registro quedo con los dias de la entrega que SI entro, y con ninguno de los que "
+				+ "las refusadas traian.");
+
+			Assert.That(WhatTheEngineSaysWhenItReopens(),
+				Does.Contain("Rehydration execution failed"),
+				"Las cuatro dejaron entrada: el motor ya la habia escrito cuando el cuerpo corrio.");
+		}
+
+		// EL CONTROL DE LAS CUATRO DE ARRIBA, y es lo que separa las dos mitades de la linea: la MISMA
+		// ley -- una salida anterior a su entrada -- se descarta gratis cuando la senal trae los dos
+		// extremos y cicatriza cuando trae uno solo. Sin este renglon, 'la frontera descarta lo que no
+		// se puede decir' seria una frase y no una medicion.
+		[Test]
+		public void TheSameLawCostsNothingWhenTheSignalCarriesBothEndsOfTheStay()
+		{
+			string before = TheTreeOf(journal.Folder);
+
+			Assert.That(
+				DealershipEventRoute.Route(ADealershipNarrative.CompletedStay(
+					4, TheBranch, TheSubject, TheEntry, "2026-04-07T06:00:00Z",
+					new[] { "2026-04-08" })),
+				Is.Null,
+				"La estadia de un solo acto trae sus dos extremos, asi que la frontera ve que salio "
+				+ "antes de entrar y la descarta.");
+
+			Assert.That(TheTreeOf(journal.Folder), Is.EqualTo(before),
+				"Y descartar cuesta CERO: no llego a haber comando, asi que no hay entrada que "
+				+ "reventar. Por el camino de la ENTREGA la misma ley cicatriza, porque ahi la entrada "
+				+ "esta adentro del dominio y la senal no la trae.");
+
+			Assert.That(WhatTheEngineSaysWhenItReopens(),
+				Does.Not.Contain("Rehydration execution failed"));
+		}
+
+		private const string TheBranch = "Taller Central";
+		private const string TheSubject = "Cambio de frenos";
+		private const string TheEntry = "2026-04-08T08:00:00Z";
+		private const string TheCollection = "2026-04-09T17:00:00Z";
+
 		// EL CONTROL DE LAS DOS DE ARRIBA, y sin el las dos podrian estar midiendo lo que no dicen: lo
 		// que la frontera SI descarta no deja cicatriz ninguna, ni la primera vez.
 		[Test]
