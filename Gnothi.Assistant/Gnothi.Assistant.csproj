@@ -19,6 +19,12 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <!-- Simetrico al que ya tiene Gnothi.Host. La suite enlaza Instantanea.cs, que usa el Json
+         interno de este ensamblado para escribir la foto. -->
+    <InternalsVisibleTo Include="Gnothi.Assistant.Tests" />
+  </ItemGroup>
+
+  <ItemGroup>
     <!-- THE ONLY reference, and the arrow goes one way. -->
     <ProjectReference Include="..\Gnothi.Host\Gnothi.Host.csproj" />
   </ItemGroup>

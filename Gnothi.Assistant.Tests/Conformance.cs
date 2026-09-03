@@ -1,6 +1,7 @@
 using System.Text.Json;
 using Gnothi.Assistant;
 using Gnothi.Host;
+using Gnothi.Movil;   // Instantanea: la foto que lee la App Intent de Siri
 
 namespace Gnothi.Conformance;
 
@@ -403,6 +404,47 @@ internal static class Conformance
 			assert($"{m.Name}: apagado el modulo entero, el Dispatcher rechaza sus tools",
 				!moduloOff.Authorized && (moduloOff.Reason ?? "").Contains("switched off", StringComparison.OrdinalIgnoreCase),
 				$"autorizado={moduloOff.Authorized} motivo: {moduloOff.Reason}");
+			// ── 5 · LA FOTO DE VERDAD, el archivo que Siri lee ─────────────────────────────
+			// Hasta aca se probo que la tool apagada no esta en el catalogo que la foto recorre.
+			// Esto prueba el ARCHIVO: se escribe con Instantanea.Escribir -- el mismo codigo que
+			// compilan iOS y Android, no una reimplementacion -- y se busca el nombre adentro.
+			//
+			// Importa que sea el archivo y no el catalogo porque en iOS la App Intent NO llama al
+			// Dispatcher: abre este json y contesta con lo que diga. Es el unico artefacto que
+			// Siri realmente consume.
+			string carpeta = Path.Combine(Path.GetTempPath(), "gnothi-foto-" + Guid.NewGuid().ToString("N"));
+			try
+			{
+				m.Reconsent(true, []);
+				await Instantanea.Escribir(d, carpeta, _ => { }, CancellationToken.None);
+				string conLaTool = await File.ReadAllTextAsync(Path.Combine(carpeta, Instantanea.NombreDelArchivo));
+
+				assert($"{publico}: encendida, SI aparece en la foto que lee Siri",
+					conLaTool.Contains($"\"{tool}\"", StringComparison.Ordinal),
+					"no aparecio encendida: la foto no la trae y el resto de esta prueba no diria nada");
+
+				m.Reconsent(true, [tool]);
+				await Instantanea.Escribir(d, carpeta, _ => { }, CancellationToken.None);
+				string sinLaTool = await File.ReadAllTextAsync(Path.Combine(carpeta, Instantanea.NombreDelArchivo));
+
+				assert($"{publico}: apagada, NO aparece en la foto que lee Siri",
+					!sinLaTool.Contains($"\"{tool}\"", StringComparison.Ordinal),
+					"el nombre de la tool apagada quedo escrito en el json que la App Intent lee");
+
+				// El modulo entero apagado no puede dejar NI SU NOMBRE: si la foto lo nombrara,
+				// Siri podria decir "tenes un modulo de compras" de uno que la persona revoco.
+				m.Reconsent(false, []);
+				await Instantanea.Escribir(d, carpeta, _ => { }, CancellationToken.None);
+				string sinElModulo = await File.ReadAllTextAsync(Path.Combine(carpeta, Instantanea.NombreDelArchivo));
+
+				assert($"{m.Name}: apagado el modulo entero, no queda ni su nombre en la foto",
+					!sinElModulo.Contains($"\"{m.Name}\"", StringComparison.Ordinal),
+					"el modulo revocado sigue nombrado en la foto que lee Siri");
+			}
+			finally
+			{
+				try { Directory.Delete(carpeta, recursive: true); } catch { }
+			}
 		}
 		finally
 		{
