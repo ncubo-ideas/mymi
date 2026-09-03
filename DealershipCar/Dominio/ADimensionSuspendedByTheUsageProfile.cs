@@ -34,5 +34,14 @@ namespace DealershipCar.Dominio
 			return "distancia: no se puede evaluar porque el perfil de uso " + _profileName
 				+ " ignora los límites de distancia";
 		}
+
+		/// <summary>
+		/// No hay contra que medir cuando el perfil ignora la dimension. La frase es la del
+		/// dominio, que nombra el perfil que decidio.
+		/// </summary>
+		internal override ARemainder WhatRemains()
+		{
+			return ARemainder.IgnoredByTheUsageProfile(Describe());
+		}
 	}
 }

@@ -517,6 +517,124 @@ namespace DealershipCar.Dominio
 			return TheOdometerReadingAsOf(asOf).ObservedAt;
 		}
 
+		/// <summary>
+		/// Si se puede decir cuanta distancia le queda a esa operacion en ese instante. Total: es
+		/// la pregunta que hay que hacer antes de las dos guardadas de abajo.
+		/// </summary>
+		internal bool CanDistanceRemainingBeSaid(OperationKindCode kind, DateTime asOf)
+		{
+			return TheRemainderOnDistanceFor(kind, asOf).CanBeSaid();
+		}
+
+		/// <summary>
+		/// La distancia que le queda, compuesta adentro contra el limite ya escalado. Accesor
+		/// GUARDADO. Pasado el limite es el EXCESO y nunca un negativo: cual de las dos lo dice
+		/// <see cref="ReadDistanceRemainderStanding"/>.
+		/// </summary>
+		internal int ReadDistanceRemaining(OperationKindCode kind, DateTime asOf)
+		{
+			return TheRemainderOnDistanceFor(kind, asOf).Amount();
+		}
+
+		/// <summary>
+		/// La unidad de ese monto, por su nombre, para quien la lea. Accesor GUARDADO.
+		/// </summary>
+		internal string ReadDistanceRemainingUnit(OperationKindCode kind, DateTime asOf)
+		{
+			return TheRemainderOnDistanceFor(kind, asOf).UnitName();
+		}
+
+		/// <summary>
+		/// En cual de las siete situaciones esta la mitad de distancia, por su nombre. Total, y es
+		/// lo que separa "no se mide asi" de "falta la lectura", que un booleano juntaria.
+		/// </summary>
+		internal string ReadDistanceRemainderStanding(OperationKindCode kind, DateTime asOf)
+		{
+			return TheRemainderOnDistanceFor(kind, asOf).Standing().Name;
+		}
+
+		/// <summary>
+		/// Lo que le queda de distancia, en una frase. Total: las siete situaciones dicen algo.
+		/// </summary>
+		internal string DescribeDistanceRemaining(OperationKindCode kind, DateTime asOf)
+		{
+			return TheRemainderOnDistanceFor(kind, asOf).Describe();
+		}
+
+		/// <summary>Si se puede decir cuantos dias le quedan a esa operacion. Total.</summary>
+		internal bool CanDaysRemainingBeSaid(OperationKindCode kind, DateTime asOf)
+		{
+			return TheRemainderOnTimeFor(kind, asOf).CanBeSaid();
+		}
+
+		/// <summary>
+		/// Los dias que le quedan del plazo ya escalado. Accesor GUARDADO, y pasado el plazo es el
+		/// exceso, igual que en la distancia.
+		/// </summary>
+		internal int ReadDaysRemaining(OperationKindCode kind, DateTime asOf)
+		{
+			return TheRemainderOnTimeFor(kind, asOf).Amount();
+		}
+
+		/// <summary>En cual de las siete situaciones esta la mitad de tiempo, por su nombre. Total.</summary>
+		internal string ReadTimeRemainderStanding(OperationKindCode kind, DateTime asOf)
+		{
+			return TheRemainderOnTimeFor(kind, asOf).Standing().Name;
+		}
+
+		/// <summary>Lo que le queda de plazo, en una frase. Total.</summary>
+		internal string DescribeDaysRemaining(OperationKindCode kind, DateTime asOf)
+		{
+			return TheRemainderOnTimeFor(kind, asOf).Describe();
+		}
+
+		/// <summary>
+		/// La cuenta atras entera: LAS DOS dimensiones y las dos situaciones en una frase, sin
+		/// elegir ninguna. Elegir la mas cercana dejaria el numero de la pantalla discrepando del
+		/// motivo del estado para quien lea los dos juntos. Total.
+		/// <para>
+		/// Sin operacion agendada no hay dos mitades que decir, asi que se dice una sola vez.
+		/// </para>
+		/// </summary>
+		internal string DescribeCountdown(OperationKindCode kind, DateTime asOf)
+		{
+			ARemainder distance = TheRemainderOnDistanceFor(kind, asOf);
+
+			if (distance.HasNoOperationScheduled()) return distance.Describe();
+
+			return distance.Describe() + "; " + TheRemainderOnTimeFor(kind, asOf).Describe();
+		}
+
+		private ARemainder TheRemainderOnDistanceFor(OperationKindCode kind, DateTime asOf)
+		{
+			AKindThatNamesNoMemberIsACallerBug(kind);
+
+			if (!_operations.ContainsKey(kind)) return NoOperationScheduledFor(kind);
+
+			return TheAssessmentAsOf(kind, asOf).WhatRemainsOnDistance();
+		}
+
+		private ARemainder TheRemainderOnTimeFor(OperationKindCode kind, DateTime asOf)
+		{
+			AKindThatNamesNoMemberIsACallerBug(kind);
+
+			if (!_operations.ContainsKey(kind)) return NoOperationScheduledFor(kind);
+
+			return TheAssessmentAsOf(kind, asOf).WhatRemainsOnTime();
+		}
+
+		private DueAssessment TheAssessmentAsOf(OperationKindCode kind, DateTime asOf)
+		{
+			return _operations[kind].AssessedAt(
+				asOf, TheLatestUsableReadingAsOf(asOf), UsageAdjustsLengthNotBasis(asOf));
+		}
+
+		private static ARemainder NoOperationScheduledFor(OperationKindCode kind)
+		{
+			return ARemainder.WithNoOperationScheduled(
+				MaintenanceOperationKind.OfCode(kind).HowItIsSaid);
+		}
+
 		private static BasePoint TheAnchor(
 			DateTime anchoredAt, int anchorReading, DistanceUnitCode anchorUnit)
 		{

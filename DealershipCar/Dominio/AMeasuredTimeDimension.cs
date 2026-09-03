@@ -20,6 +20,15 @@ namespace DealershipCar.Dominio
 			get { return "tiempo"; }
 		}
 
+		/// <summary>
+		/// Los dias son su unidad. Se dice en plural porque es como se nombra la unidad; una
+		/// cantidad de uno la pluraliza <see cref="Amount"/>, que es quien la dice.
+		/// </summary>
+		protected override string UnitName
+		{
+			get { return "días"; }
+		}
+
 		/// <summary>Los dias se pluralizan.</summary>
 		protected override string Amount(int quantity)
 		{

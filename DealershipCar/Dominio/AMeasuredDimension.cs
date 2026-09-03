@@ -55,8 +55,25 @@ namespace DealershipCar.Dominio
 				+ " desde la última";
 		}
 
+		/// <summary>
+		/// Lo que queda contra el limite ya escalado. ES LA UNICA RESTA de este dominio en el
+		/// sentido "lo que falta", y el signo elige la variante: nunca sale un numero negativo, y
+		/// tampoco se acota a cero -- pasado el limite el monto es el exceso, que es verdad.
+		/// </summary>
+		internal override ARemainder WhatRemains()
+		{
+			int left = _effectiveLimit - _travelled;
+
+			if (left > 0) return ARemainder.StillAhead(Name, left, UnitName, Amount(left));
+
+			return ARemainder.AlreadyPassed(Name, -left, UnitName, Amount(-left));
+		}
+
 		/// <summary>Como se llama esta dimension en el motivo: <c>tiempo</c> o <c>distancia</c>.</summary>
 		protected abstract string Name { get; }
+
+		/// <summary>La unidad en que esta dimension dice sus montos, por su nombre.</summary>
+		protected abstract string UnitName { get; }
 
 		/// <summary>Como se dice una cantidad de esta dimension.</summary>
 		protected abstract string Amount(int quantity);

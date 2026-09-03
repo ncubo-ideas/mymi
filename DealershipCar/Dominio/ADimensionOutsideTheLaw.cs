@@ -8,9 +8,15 @@ namespace DealershipCar.Dominio
 	/// </summary>
 	internal sealed class ADimensionOutsideTheLaw : LimitStanding
 	{
-		/// <summary>Se llega por las dos fabricas <c>...IsNotPartOfThisLaw</c>.</summary>
-		internal ADimensionOutsideTheLaw()
+		private readonly string _dimensionName;
+
+		/// <summary>
+		/// Se llega por las dos fabricas <c>...IsNotPartOfThisLaw</c>, cada una con la dimension
+		/// que nombra: el motivo no la menciona, pero lo que le queda tiene que decir cual es.
+		/// </summary>
+		internal ADimensionOutsideTheLaw(string dimensionName)
 		{
+			_dimensionName = dimensionName;
 		}
 
 		/// <summary>No.</summary>
@@ -23,6 +29,15 @@ namespace DealershipCar.Dominio
 		internal override string Describe()
 		{
 			return "";
+		}
+
+		/// <summary>
+		/// Nada le queda, y lo dice nombrando la dimension. No reusa <see cref="Describe"/>: esa es
+		/// la cadena vacia a proposito, y una cuenta atras no puede callar una de sus dos mitades.
+		/// </summary>
+		internal override ARemainder WhatRemains()
+		{
+			return ARemainder.NotMeasuredByThisLaw(_dimensionName);
 		}
 	}
 }

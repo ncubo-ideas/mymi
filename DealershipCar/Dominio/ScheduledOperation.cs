@@ -178,6 +178,17 @@ namespace DealershipCar.Dominio
 		}
 
 		/// <summary>
+		/// Donde quedaria la operacion en ese instante, sin mover ni registrar nada: es el mismo
+		/// calculo que <see cref="Evaluate"/> envuelve, menos la transicion de estado. El instante
+		/// SE RECIBE, como en Evaluate.
+		/// </summary>
+		internal DueAssessment AssessedAt(
+			DateTime asOf, UsableReading latestUsable, IntervalLengthFactor factor)
+		{
+			return _definition.Assess(_basePoint, asOf, latestUsable, factor);
+		}
+
+		/// <summary>
 		/// La persona deja la operacion para despues. Delega en
 		/// <see cref="DeferralCapAndWindow"/>, donde la ley tiene su nombre.
 		/// </summary>
