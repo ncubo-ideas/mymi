@@ -138,6 +138,8 @@ private func estadoImpl() -> Int32 {
 		catch { genera = false }
 		sem.signal()
 	}
+	// Aca vencerse SI significa lo que dice: si la primera generacion no vuelve en 200 s, este
+	// aparato no sirve para contestarle a nadie. El 1 no miente.
 	_ = sem.wait(timeout: .now() + 200)
 	return genera ? 2 : 1
 }
@@ -220,7 +222,19 @@ private func pasoImpl(
 		sem.signal()
 	}
 
-	_ = sem.wait(timeout: .now() + 300)
+	// EL TECHO, Y POR QUE ES TAN ALTO. Medido: una pregunta tardo 354 s de punta a punta -el
+	// guardrail de Apple recien termino de revisar la salida a los 5:54-. Con el techo en 300 s
+	// esto se vencia, devolvia {} y la respuesta real llegaba tarde a un semaforo que ya nadie
+	// esperaba. El modelo del telefono es lento y variable: 18 s la buena, 235 s la de tres
+	// tools, 354 s esta.
+	//
+	// Y VENCERSE TIENE QUE DOLER. Antes se devolvia {} a secas, que del lado del C# se lee como
+	// "el modelo no dijo nada": sin error, sin log, pantalla en blanco. Eso costo una prueba
+	// perdida y media hora de diagnostico. Ahora dice que se vencio y cuanto espero.
+	if sem.wait(timeout: .now() + 900) == .timedOut {
+		return cadena("{\"error\":\"el modelo del telefono no contesto en 900 s\"}")
+	}
+
 	let datos = (try? JSONSerialization.data(withJSONObject: respuesta)) ?? Data("{}".utf8)
 	return cadena(String(data: datos, encoding: .utf8) ?? "{}")
 }

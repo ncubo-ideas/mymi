@@ -207,6 +207,14 @@ internal sealed class ModelFoundation : IModel
 
 		string? texto = r.TryGetProperty("texto", out JsonElement t) ? t.GetString() : null;
 
+		// NI TEXTO NI LLAMADAS NO ES UNA RESPUESTA, es un paso perdido. AgentLoop lo tomaria como
+		// "termino sin decir nada" y le empujaria null a la pagina: la persona ve la pantalla en
+		// blanco y no hay con que diagnosticar. Paso de verdad -un techo vencido devolvia {}- y
+		// costo una prueba y media hora. Que reviente aca, con nombre.
+		if (texto is null && llamadas.Count == 0)
+			throw new InvalidOperationException(
+				"el modelo del telefono devolvio un paso vacio: ni texto ni tool calls");
+
 		return new Said(texto, llamadas);
 	}
 }
