@@ -27,19 +27,47 @@ namespace DealershipCar.Dominio.Pruebas
 	//   limites. El censo solo prueba que nadie agrego un miembro sin escribirlo; esto prueba que
 	//   ninguno de los que hay entrega media respuesta.
 	//
-	// POR QUE LOS ONCE QUE HAY SI PUEDEN. Ninguno es la mitad de una respuesta compuesta: NUEVE son
-	// CONTEOS que la agenda, la bitacora y las estadias publican por su cuenta -- vencidas,
-	// atrasadas, al dia, agendadas, aplazos usados, mantenimientos perdidos, ultimo evento aplicado,
-	// dias en el taller y estadias en un periodo -- y dos son HECHOS RECIBIDOS que el registro
-	// guarda tal como llegaron: el odometro del dia de la entrega y el de hoy. Un hecho recibido se
-	// puede dar suelto porque nadie lo derivo de otro; una mitad derivada no, porque su unidad, su
-	// limite y el instante contra el que se midio viven en la frase.
+	// POR QUE LOS QUINCE QUE HAY SI PUEDEN, Y SON TRES CATEGORIAS. Ninguno es la mitad de una
+	// respuesta compuesta:
+	//
+	//   ONCE son CONTEOS QUE EL DOMINIO COMPONE y publica por su cuenta -- vencidas, atrasadas, al
+	//   dia, agendadas, aplazos usados, mantenimientos perdidos, ultimo evento aplicado, dias en el
+	//   taller, estadias en un periodo, completaciones de una clase y precios publicados. Un conteo
+	//   es una respuesta entera: no le falta ni unidad ni limite ni instante.
+	//
+	//   DOS son HECHOS RECIBIDOS que el registro guarda tal como llegaron: el odometro del dia de la
+	//   entrega y el de hoy. Un hecho recibido se puede dar suelto porque nadie lo derivo de otro.
+	//
+	//   Y DOS son RESTOS COMPUESTOS ADENTRO, CON SU UNIDAD Y SU MEDIBILIDAD AL LADO EN LA MISMA
+	//   SUPERFICIE: la distancia y los dias que le quedan a una operacion. Esta tercera categoria la
+	//   abrio BuildOrder/MS-4 y es una AMPLIACION DELIBERADA de la regla de admision, escrita en
+	//   DECISIONS.md el mismo dia y en el mismo commit que las lecturas que admite.
+	//
+	// POR QUE UN RESTO SI Y UNA MITAD NO, que es toda la ampliacion. La ley no habla de numeros: habla
+	// de MITADES. Una mitad es peligrosa porque COMPLETA UNA AFIRMACION QUE EL DOMINIO NO HIZO --
+	// quien tenga lo recorrido Y el limite arma la resta y ademas un porcentaje del intervalo, y esas
+	// dos frases el dominio no las dijo nunca. Un resto no tiene con que combinarse: ES la respuesta,
+	// llega con su unidad al lado (ReadDistanceRemainingUnit, o el nombre del miembro donde la unidad
+	// es una sola) y con su medibilidad al lado (CanDistanceRemainingBeSaid), que es exactamente la
+	// forma que WhereThisVehicleStands ya tiene para el odometro. Los DOS OPERANDOS siguen prohibidos
+	// en cualquier grafia, y de eso se ocupa
+	// TravelledAndEffectiveLimitNeverLeaveTheDoorInAnySpelling, por nombre y por valor.
+	//
+	// LA UNICA FRASE RIVAL QUE ESTO HABILITA YA TIENE DUENO: quien tenga los dos restos los divide y
+	// pinta un ritmo de uso. Esa respuesta la compone SLICE-OdometerSeries.md adentro del dominio,
+	// sobre la serie de verdad y con sus unidades comprobadas, y que ninguna caratula la escriba lo
+	// barre TheShellPerformsNoArithmeticOnADomainValue.
+	//
+	// LAS DOS QUE ENTRARON EN MS-4 Y NO NECESITARON NINGUNA AMPLIACION: CompletionCount y
+	// PublishedServicePriceCount son CONTEOS QUE EL DOMINIO COMPONE, la primera categoria, que ya
+	// estaba. Dejar que la ampliacion las cubriera en silencio seria justamente la regresion que la
+	// ampliacion escrita existe para poder distinguir.
 	//
 	// AL DIA Y AGENDADAS ENTRARON JUNTAS Y POR ESO, no por comodidad. Inicio.razor contaba las al dia
 	// por el TONO de la pantalla y las dividia entre las NUEVE clases del canon; las dos mitades ya
 	// las compone la agenda y ninguna capa las divide. El PORCENTAJE no esta aca ni en la caratula:
-	// un porcentaje no es un conteo ni un hecho recibido, y admitirlo pedia cambiar la regla de
-	// admision de este censo, que es otra decision y de otra rebanada.
+	// un porcentaje no es un conteo, ni un hecho recibido, ni un resto -- es una razon entre dos
+	// numeros, que es una mitad con otro nombre.
 	[TestFixture]
 	public sealed class AHalfOfAComposedAnswerNeverLeavesTheDoorAsANumber
 	{
@@ -73,6 +101,22 @@ namespace DealershipCar.Dominio.Pruebas
 		private static readonly DateTime TheDayItIsAsked =
 			new DateTime(2026, 2, 1, 0, 0, 0, DateTimeKind.Utc);
 
+		// LA OPERACION QUE MS-4 TUVO QUE INSTALAR, y por que instalarla es parte de la ampliacion y no
+		// una comodidad. La mitad POR VALOR de este fixture INVOCA cada pregunta que contesta con un
+		// numero, y las dos restas nuevas son lecturas GUARDADAS: sobre un registro sin ninguna
+		// operacion agendada contestan que no se puede decir y rechazan, asi que el barrido se caia
+		// con una excepcion en vez de con una afirmacion. La alternativa era saltarse los miembros
+		// guardados, que es tomar la comparacion justo en el momento en que los miembros nuevos no
+		// contestan nada -- una comparacion vale lo que vale el estado en que se toma.
+		//
+		// LO QUE CAMBIA DE LO QUE ESTE FIXTURE MIDE, dicho y no disimulado: ahora hay una agenda con
+		// una operacion, asi que los conteos de la agenda contestan uno en vez de cero. LOS CUATRO
+		// CENTINELAS SIGUEN SIENDO UNICOS -- 37, 61111, 29 y 56111 -- y los dos limites de la
+		// operacion se eligieron para que sus dos restas den 7345 y 255, que no se cruzan con ninguno
+		// de los cuatro ni con ningun odometro ni conteo de este fixture.
+		private const int TheOperationsDistanceLimit = 12345;
+		private const int TheOperationsDayLimit = 500;
+
 		private AScheduleOnARealJournal journal;
 
 		[SetUp]
@@ -87,6 +131,11 @@ namespace DealershipCar.Dominio.Pruebas
 				TheDayItWasHandedOver, TheOdometerAtDelivery, TheUnitEverythingIsIn);
 			journal.Api.RecordReading(
 				TheOdometerToday, TheUnitEverythingIsIn, TheDayItWasObserved, "Telemetry");
+
+			journal.Api.SeedPlanOperation(
+				"FluidChange", "TimeOrDistance",
+				TheOperationsDayLimit, TheOperationsDistanceLimit, TheUnitEverythingIsIn, true, false,
+				TheDayItWasHandedOver, TheOdometerAtDelivery, TheUnitEverythingIsIn);
 		}
 
 		[TearDown]
@@ -95,15 +144,25 @@ namespace DealershipCar.Dominio.Pruebas
 			journal.Dispose();
 		}
 
-		// LAS ONCE PREGUNTAS DE LA PUERTA QUE CONTESTAN CON UN NUMERO. Conjunto exacto, con la
+		// LAS QUINCE PREGUNTAS DE LA PUERTA QUE CONTESTAN CON UN NUMERO. Conjunto exacto, con la
 		// aridad en la clave: una sobrecarga es su propio sitio y el rojo la nombra.
 		//
-		// LAS DOS ULTIMAS ENTRARON EN BuildOrder/SH-4 Y BAJO LA REGLA DE ADMISION QUE YA HABIA: las
-		// dos son CONTEOS QUE EL DOMINIO COMPONE -- la primera de las dos categorias que el
-		// encabezado admite -- sobre las estadias de un periodo. Los dias salen de las estadias que
-		// se cruzan con el periodo y la cuenta sale de los dias; ninguna de las dos es la mitad de
-		// una frase, y las dos tienen su hermana en palabras al lado
-		// (DescribeDaysInTheShopBetween). No hizo falta cambiar la regla.
+		// LAS DOS DE ESTADIAS ENTRARON EN BuildOrder/SH-4 Y BAJO LA REGLA DE ADMISION QUE YA HABIA:
+		// las dos son CONTEOS QUE EL DOMINIO COMPONE -- la primera categoria -- sobre las estadias de
+		// un periodo. Los dias salen de las estadias que se cruzan con el periodo y la cuenta sale de
+		// los dias; ninguna de las dos es la mitad de una frase, y las dos tienen su hermana en
+		// palabras al lado (DescribeDaysInTheShopBetween). No hizo falta cambiar la regla.
+		//
+		// Y LAS CUATRO DE BuildOrder/MS-4 ENTRARON POR DOS PUERTAS DISTINTAS, que es lo que hay que
+		// leer aca y no en la suma:
+		//
+		//   CompletionCount y PublishedServicePriceCount son CONTEOS QUE EL DOMINIO COMPONE -- la
+		//   PRIMERA categoria, la que ya estaba -- y las dos tienen su hermana en palabras al lado
+		//   (DescribeCompletions, DescribeEachPublishedPriceAsOf). No pidieron ninguna ampliacion.
+		//
+		//   ReadDistanceRemaining y ReadDaysRemaining son la TERCERA categoria, la que MS-4 abrio: un
+		//   resto compuesto adentro, con su unidad y su medibilidad al lado. Es la ampliacion, y esta
+		//   escrita arriba y en DECISIONS.md.
 		private static readonly string[] EveryNumberTheDoorHandsOut =
 		{
 			"CountDue/0",
@@ -117,6 +176,10 @@ namespace DealershipCar.Dominio.Pruebas
 			"ReadOdometer/1",
 			"DaysInTheShopCountBetween/2",
 			"StayCountBetween/2",
+			"CompletionCount/1",
+			"PublishedServicePriceCount/0",
+			"ReadDistanceRemaining/2",
+			"ReadDaysRemaining/2",
 		};
 
 		[Test]
@@ -125,10 +188,13 @@ namespace DealershipCar.Dominio.Pruebas
 			Assert.That(EveryQuestionAnsweringWithANumber(), Is.EquivalentTo(EveryNumberTheDoorHandsOut),
 				"La puerta gano o perdio una pregunta que contesta con un NUMERO. ESTA ES LA PRUEBA "
 				+ "QUE SE PONE ROJA EL DIA QUE ALGUIEN SACA UNA MITAD DE LA FRASE: un limite del "
-				+ "sobre, lo que le queda a una mitad, o cualquier cantidad que el dominio derivo de "
-				+ "otras. Si lo nuevo es de verdad un hecho RECIBIDO que el registro guarda tal como "
-				+ "llego, se agrega aca y se dice por que; si es una mitad de una respuesta "
-				+ "compuesta, ya llega a quien pregunta dentro de la frase.");
+				+ "sobre, lo recorrido, el limite ya escalado, o cualquier operando del que otra capa "
+				+ "pueda armar una frase que el dominio no dijo. Lo nuevo entra por UNA de las tres "
+				+ "categorias del encabezado -- un CONTEO que el dominio compone, un hecho RECIBIDO "
+				+ "que el registro guarda tal como llego, o un RESTO compuesto adentro con su unidad y "
+				+ "su medibilidad al lado en la misma superficie -- y se dice POR CUAL. Si no es "
+				+ "ninguna de las tres, es una mitad, y una mitad ya llega a quien pregunta dentro de "
+				+ "la frase.");
 		}
 
 		// Y LA MITAD POR VALOR, que es la que el censo no da: con un sobre publicado, ninguna de las
@@ -161,11 +227,22 @@ namespace DealershipCar.Dominio.Pruebas
 				Does.Contain("37 meses o 61111 mi"));
 		}
 
-		// Y LO QUE LE QUEDA A CADA MITAD, TAMBIEN DENTRO DE LA FRASE Y EN NINGUN OTRO LADO. Es la
-		// misma ley aplicada a lo DERIVADO en vez de a lo publicado, y es la mitad que mas tentacion
-		// da: una pantalla que quiera pintar una barra querria los dos numeros sueltos.
+		// Y LO QUE LE QUEDA A CADA MITAD DEL SOBRE, TAMBIEN DENTRO DE LA FRASE Y EN NINGUN OTRO LADO.
+		// Es la misma ley aplicada a lo DERIVADO en vez de a lo publicado, y es la mitad que mas
+		// tentacion da: una pantalla que quiera pintar una barra querria los dos numeros sueltos.
+		//
+		// EL NOMBRE SE ESTRECHO EN BuildOrder/MS-4 Y ESO ES LO QUE HAY QUE LEER AQUI. Decia
+		// "WhatIsLeftOfEachHalf...", sin nombrar de que; desde MS-4 la puerta SI entrega un resto como
+		// numero -- ReadDistanceRemaining y ReadDaysRemaining -- y el nombre viejo se volvio falso. El
+		// resto que ahora cruza es de OTRO AGREGADO y contra OTRO LIMITE: la agenda contra el limite
+		// del plan escalado por el perfil de uso, no el perfil del vehiculo contra el sobre publicado.
+		// Asi que lo que sigue siendo cierto, y lo que este renglon afirma, es de LAS DOS MITADES DEL
+		// SOBRE: 29 meses y 56111 de distancia no salen por ningun miembro, y salen dentro de la
+		// frase. Estrechar el nombre es la unica forma de que la prueba siga diciendo lo que hace; sin
+		// estrecharlo, un lector dentro de seis meses no puede distinguir una ampliacion deliberada de
+		// una regresion que dejo de notarse.
 		[Test]
-		public void WhatIsLeftOfEachHalfReachesTheCallerInsideTheSentenceAndNowhereElse()
+		public void WhatIsLeftOfTheEnvelopesTwoHalvesReachesTheCallerInsideTheSentenceAndNowhereElse()
 		{
 			string said = journal.Api.DescribeWarrantyEnvelope(TheDayItIsAsked);
 
@@ -178,6 +255,52 @@ namespace DealershipCar.Dominio.Pruebas
 					answered.Key + " contesto los meses que quedan.");
 				Assert.That(answered.Value, Is.Not.EqualTo(56111),
 					answered.Key + " contesto la distancia que queda.");
+			}
+		}
+
+		// LA AMPLIACION, HECHA VISIBLE. El brief pide que el censo quede ROJO contra la enumeracion
+		// ANTERIOR y verde contra la nueva, en un solo commit y con la decision escrita. Esto lo dice
+		// literalmente: las ONCE de antes se vuelven a enumerar aqui y se afirma que YA NO son lo que
+		// la puerta contesta.
+		//
+		// SIN ESTE RENGLON, LA AMPLIACION SE VE IGUAL QUE UNA REGRESION QUE DEJO DE NOTARSE: la lista
+		// de arriba habria crecido cuatro nombres y nada diria que crecio a proposito. Con el, quien
+		// vuelva a estrechar la puerta a las once tiene que borrar esta prueba, y borrarla es un acto.
+		private static readonly string[] TheEnumerationBeforeTheAmendment =
+		{
+			"CountDue/0",
+			"CountOverdue/0",
+			"CountUpToDate/0",
+			"CountScheduled/0",
+			"DeferralsUsed/1",
+			"MissedCount/0",
+			"LastEventApplied/0",
+			"ReadDeliveryReading/0",
+			"ReadOdometer/1",
+			"DaysInTheShopCountBetween/2",
+			"StayCountBetween/2",
+		};
+
+		[Test]
+		public void ThePreAmendmentEnumerationIsRedAgainstThisDoor()
+		{
+			Assert.That(TheEnumerationBeforeTheAmendment, Has.Length.EqualTo(11));
+
+			Assert.That(
+				EveryQuestionAnsweringWithANumber(),
+				Is.Not.EquivalentTo(TheEnumerationBeforeTheAmendment),
+				"La puerta volvio a contestar exactamente las once de antes de la ampliacion. Si eso "
+				+ "es a proposito, la ampliacion se retira entera -- encabezado, mensaje, conjunto y "
+				+ "el nombre estrechado de la ley del sobre -- y no solo esta prueba.");
+
+			foreach (string admitted in new[]
+			{
+				"CompletionCount/1", "PublishedServicePriceCount/0",
+				"ReadDistanceRemaining/2", "ReadDaysRemaining/2",
+			})
+			{
+				Assert.That(TheEnumerationBeforeTheAmendment, Does.Not.Contain(admitted));
+				Assert.That(EveryQuestionAnsweringWithANumber(), Does.Contain(admitted));
 			}
 		}
 
