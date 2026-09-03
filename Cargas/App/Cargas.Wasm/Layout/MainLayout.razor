@@ -139,8 +139,8 @@
         @* La tecla va DESPUES de las pestañas: en escritorio queda al borde derecho, donde
            no compite con la navegacion. Es tenue a proposito -la app se pone al dia sola al
            abrir-, asi que esto es "volve a chequear AHORA" y no el punto de partida. *@
-        <button class="tecla tecla--releer" @onclick="Refrescar" disabled="@refrescando">
-            @(refrescando ? "Actualizando…" : "Actualizar")
+        <button class="tecla tecla--releer" @onclick="Refrescar" disabled="@estado.Refrescando">
+            @(estado.Refrescando ? "Actualizando…" : "Actualizar")
         </button>
         }
     </div>
@@ -159,9 +159,19 @@
 
     @if (!estado.EstaArriba)
     {
+        @* MIENTRAS SE RESUELVE QUÉ HABÍA RECORDADO, no se pinta el elegidor. Hasta que
+           IndexedDB contesta no sabemos si la persona ya eligió, y mostrarle «Elegí dónde»
+           a quien eligió la semana pasada es pedirle que vuelva a decidir: medido, entre 2
+           y 8 segundos de elegidor en cada recarga, y encima sin la tecla grande, porque
+           «soportado» y «opfs» todavía eran null. El elegidor aparece SOLO cuando se sabe
+           que no hay nada recordado o que recuperarlo falló. *@
+        @if (resolviendo)
+        {
+            <p class="abriendo" role="status" aria-live="polite">@TextoDeAbriendo()</p>
+        }
         @* Cuando el handle volvió de IndexedDB pero el permiso caducó, la acción correcta
            es RE-OTORGAR, no volver a elegir la carpeta. *@
-        @if (estado.FaltaReotorgarPermiso)
+        else if (estado.FaltaReotorgarPermiso)
         {
             <div class="parte parte--neutro">
                 <p>
@@ -274,9 +284,14 @@
                 }
 
                 @* Las salidas de emergencia, plegadas: siguen a un toque, pero dejan de
-                   competir con la recomendada. *@
-                <details class="otras">
-                    <summary>Otras formas de empezar</summary>
+                   competir con la recomendada.
+
+                   SALVO CUANDO NO HAY RECOMENDADA. Sin carpeta ni OPFS -un browser embebido,
+                   un WebView- la pantalla quedaba con la tabla de comparación y ni una sola
+                   tecla a la vista: todo lo que se podía hacer estaba plegado acá. Cuando
+                   estas son las únicas puertas, van abiertas y con su nombre. *@
+                <details class="otras" open="@sinRecomendada">
+                    <summary>@(sinRecomendada ? "Cómo empezar acá" : "Otras formas de empezar")</summary>
 
                     @if (soportado == true && opfs == true)
                     {
@@ -297,7 +312,8 @@
                     </div>
 
                     <div class="otra">
-                        <button class="tecla tecla--texto" @onclick="Arrancar">Abrir sin guardar nada</button>
+                        <button class="@(sinRecomendada ? "tecla tecla--contorno" : "tecla tecla--texto")"
+                                @onclick="Arrancar">Abrir sin guardar nada</button>
                         <p>Para mirar nomás. Lo que la estación publicó se vuelve a pedir al abrir,
                            pero <b>tus kilometrajes y confirmaciones se pierden</b>.</p>
                     </div>
@@ -341,6 +357,22 @@
                 <button class="tecla tecla--problema" @onclick="PedirPermiso">Volver a dar permiso</button>
             </div>
         }
+        else if (estado.ProblemaAlPonerseAlDia.Length > 0)
+        {
+            @* EL REFRESH QUE NO LLEGÓ. Va después de las alarmas y no antes: no guardar es
+               una alarma; no haberse podido poner al día es atención. Antes esto no se veía
+               en ninguna parte, y una estación caída se leía igual que una sin novedades. *@
+            <div class="parte parte--atencion fila">
+                <div class="crece">
+                    <strong>No se pudo poner al día con la estación.</strong>
+                    Lo que ya estaba registrado se muestra igual.
+                    <div class="apunte mono">@estado.ProblemaAlPonerseAlDia</div>
+                </div>
+                <button class="tecla tecla--contorno" @onclick="Refrescar" disabled="@estado.Refrescando">
+                    Volver a intentar
+                </button>
+            </div>
+        }
 
         @* El aviso NEUTRO -"se esta guardando en este navegador"- ya no vive aca: vive en
            Mi carro, junto a "donde vive tu bitacora". La razon es de orden. En la cascara
@@ -359,8 +391,16 @@
     private bool? opfs;
     private string sinAlmacenamiento = "";
     private bool instalada;
-    private bool refrescando;
     private string error = "";
+
+    // LO QUE SABEMOS DEL ARRANQUE, y son tres cosas y no dos: hasta que IndexedDB contesta
+    // no sabemos si hay un modo recordado. `resolviendo` es ese rato; `abriendo` dice qué
+    // se está reenganchando, para que el texto lo nombre.
+    private bool resolviendo = true;
+    private string abriendo = "";
+
+    // Ni carpeta ni OPFS: no hay tecla grande que recomendar, y lo plegado es lo unico.
+    private bool sinRecomendada => soportado != true && opfs != true;
 
     private IReadOnlyList<VehiculoEnLista> vehiculos = new List<VehiculoEnLista>();
 
@@ -383,31 +423,67 @@
     {
         estado.Cambio += CuandoElEstadoCambia;
 
-        if (estado.EstaArriba) { Releer(); return; }
+        if (estado.EstaArriba) { resolviendo = false; Releer(); return; }
 
-        soportado = await estado.EstaSoportado();
-        opfs = await estado.OpfsSoportado();
-        sinAlmacenamiento = await estado.MotivoSinAlmacenamiento();
-        instalada = await estado.EstaInstalada();
-
-        // EL MODO RECORDADO. La app ya guardaba cual eligio la persona la vez pasada y
-        // ninguna pantalla lo consumia: al recargar, quien habia elegido "este navegador"
-        // volvia a la pantalla de elegir destino como si fuera la primera vez.
-        //
-        // La carpeta necesita revalidar el permiso -sin gesto solo se recupera el handle-,
-        // pero OPFS no necesita nada: si eligio eso, se reengancha sola.
-        string recordado = await estado.ModoRecordado();
-        if (recordado == "opfs" && opfs == true)
+        try
         {
-            if ((await estado.UsarAlmacenamientoDelNavegador()).Ok) { await Arrancar(); return; }
+            // EL MODO RECORDADO VA PRIMERO, porque es lo unico que decide que pantalla va.
+            // La app ya guardaba cual eligio la persona la vez pasada y ninguna pantalla lo
+            // consumia: al recargar, quien habia elegido "este navegador" volvia a la
+            // pantalla de elegir destino como si fuera la primera vez.
+            string recordado = await estado.ModoRecordado();
+            abriendo = recordado is "opfs" or "carpeta" ? recordado : "";
+            StateHasChanged();
+
+            soportado = await estado.EstaSoportado();
+            opfs = await estado.OpfsSoportado();
+            sinAlmacenamiento = await estado.MotivoSinAlmacenamiento();
+            instalada = await estado.EstaInstalada();
+
+            // La carpeta necesita revalidar el permiso -sin gesto solo se recupera el
+            // handle-, pero OPFS no necesita nada: si eligio eso, se reengancha sola.
+            if (abriendo == "opfs" && opfs == true)
+            {
+                if ((await estado.UsarAlmacenamientoDelNavegador()).Ok) { await estado.Arrancar(); return; }
+            }
+
+            if (soportado != true) return;
+
+            // Recuperar el handle NO necesita gesto; volver a otorgar el permiso SI. Se
+            // intenta tambien sin modo recordado: una instalacion anterior a que se
+            // guardara el modo tiene handle y no tiene modo, y no hay que mandarla al
+            // elegidor por eso.
+            ResultadoDeCarpeta recuperada = await estado.RecuperarCarpeta();
+            StateHasChanged();
+            if (recuperada.Ok) await estado.Arrancar();
         }
-
-        if (soportado != true) return;
-
-        // Recuperar el handle NO necesita gesto; volver a otorgar el permiso SI.
-        ResultadoDeCarpeta recuperada = await estado.RecuperarCarpeta();
-        if (recuperada.Ok) await Arrancar();
+        catch (Exception ex)
+        {
+            // Recuperar lo recordado fallo -carpeta movida, MEMFS ilegible-. Se dice arriba
+            // y se cae al elegidor: es el caso "no se pudo", no un cartel de espera eterno.
+            error = Fallo.Detalle("abrir la app", ex);
+        }
+        finally
+        {
+            // PASE LO QUE PASE se deja de esperar. Si esto quedara dentro del try, un fallo
+            // al abrir dejaria «Abriendo…» para siempre: es la misma advertencia que dejo
+            // escrita Compras en su propio layout.
+            resolviendo = false;
+            abriendo = "";
+            StateHasChanged();
+        }
     }
+
+    // El texto nombra lo que se esta reenganchando. «Abriendo…» pelado es lo que se ve el
+    // instante antes de saber si habia algo recordado.
+    private string TextoDeAbriendo() => abriendo switch
+    {
+        "opfs"    => "Abriendo tu bitácora guardada en este navegador…",
+        "carpeta" => estado.NombreDeLaCarpeta.Length > 0
+                         ? $"Abriendo tu carpeta «{estado.NombreDeLaCarpeta}»…"
+                         : "Abriendo tu carpeta…",
+        _         => "Abriendo…",
+    };
 
     private void CuandoElEstadoCambia()
     {
@@ -455,11 +531,11 @@
 
     private Task Arrancar() => Intentar("abrir la app", () => estado.Arrancar().AsTask());
 
+    // El "Actualizando…" de la tecla ya no se lleva aca: lo dice EstadoDeLaApp, que es el
+    // unico que sabe cuando empieza y termina un refresh, incluido el del arranque.
     private Task Refrescar() => Intentar("refrescar contra la estación", async () =>
     {
-        refrescando = true;
-        try { await estado.Refrescar(); }
-        finally { refrescando = false; }
+        await estado.Refrescar();
     });
 
     // El mismo Intentar de las pantallas, y por la misma razon: el StateHasChanged del

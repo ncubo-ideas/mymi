@@ -109,6 +109,19 @@ public sealed class EstadoDeLaApp : IAsyncDisposable
 	/// instrumentos: eso es respuesta a "fui a buscar y volvi", no a teclear un numero.</summary>
 	public int Refrescos { get; private set; }
 
+	/// <summary>SI SE ESTA PONIENDO AL DIA con la estacion, sea al abrir o por la tecla.
+	///
+	/// Vive aca y no en el layout porque el arranque tambien refresca, y el layout no
+	/// puede saber cuando empieza ni cuando termina ese refresh: solo ve el aviso. Con esto
+	/// la tecla dice "Actualizando…" tambien durante el arranque, que es cuando mas dura.</summary>
+	public bool Refrescando { get; private set; }
+
+	/// <summary>EL REFRESH QUE NO LLEGO. Antes esto iba a UltimoMensaje, que ninguna
+	/// pantalla lee, asi que una estacion caida y una estacion sin novedades se veian
+	/// identicas. No es un error de la app -el journal propio se muestra igual- pero hay
+	/// que decirlo, y se limpia solo con el siguiente refresh que si llega.</summary>
+	public string ProblemaAlPonerseAlDia { get; private set; } = "";
+
 	public event Action? Cambio;
 
 	private void Avisar() => Cambio?.Invoke();
@@ -242,6 +255,18 @@ public sealed class EstadoDeLaApp : IAsyncDisposable
 			? $"arriba. {precargados} archivos precargados de la carpeta '{puente.NombreDeLaCarpeta}'"
 			: "arriba, pero SIN carpeta: el journal vive solo en memoria y se pierde al cerrar";
 
+		// La preferencia se lee ANTES de avisar: asi la primera pintada ya sale con el
+		// carro que quedo elegido, en vez de mostrar el primero y saltar despues.
+		placaElegida = await puente.Preferencia(ClaveDelCarro);
+
+		// ARRIBA YA, ANTES DE IR A LA ESTACION. El journal propio alcanza para pintar el
+		// tablero; ponerse al dia es lo siguiente, no la condicion. Antes el aviso iba
+		// despues del refresh, y con la estacion lenta -o caida, hasta el timeout- la
+		// pantalla se quedaba en "elegí dónde guardar" mientras el actor ya estaba vivo.
+		// Medido: entre 2 y 8 segundos de elegidor para alguien que ya habia elegido.
+		Refrescando = true;
+		Avisar();
+
 		// La app se pone al dia sola: consigue su credencial si no la tiene y lee lo
 		// nuevo. Es el "el app puede hacer cada manana o cada vez que abre" del diseno.
 		// Si el proveedor no esta disponible, abrir NO falla: se muestra lo que ya hay
@@ -251,20 +276,24 @@ public sealed class EstadoDeLaApp : IAsyncDisposable
 			await Credencial(CancellationToken.None);
 			ResultadoDeRefresh alAbrir = await bucle.Ejecutar(CancellationToken.None);
 			UltimoMensaje += $" | al abrir: {alAbrir}";
+			ProblemaAlPonerseAlDia = "";
+
+			// El cuadro vuelve a entrar animado SOLO si llego algo: es la respuesta a "fui
+			// a buscar y volvi con novedades". Sin novedades, la primera pintada ya animo y
+			// repetirla dos segundos despues es un parpadeo sin motivo.
+			if (alAbrir.Aplicados > 0) Refrescos++;
 		}
 		catch (Exception ex)
 		{
 			UltimoMensaje += $" | al abrir no se pudo poner al dia ({ex.GetType().Name}: {ex.Message}). "
 			               + "Lo que ya estaba registrado se muestra igual.";
+			ProblemaAlPonerseAlDia = $"{ex.GetType().Name}: {ex.Message}";
 		}
-
-		// La preferencia se lee ANTES de avisar: asi la primera pintada ya sale con el
-		// carro que quedo elegido, en vez de mostrar el primero y saltar despues.
-		placaElegida = await puente.Preferencia(ClaveDelCarro);
-
-		// Avisa aunque el refresh haya fallado: el actor esta arriba y hay journal que
-		// mostrar, que es de lo que sirve tener el dato propio.
-		Avisar();
+		finally
+		{
+			Refrescando = false;
+			Avisar();
+		}
 	}
 
 	// El unico camino por el que la app baja a disco. Recuerda si fallo, para que la
@@ -357,13 +386,25 @@ public sealed class EstadoDeLaApp : IAsyncDisposable
 		//
 		// Medido en un iPhone: la app abria, el arranque no alcanzaba el proveedor, y el
 		// boton quedaba inutil reportando la consecuencia en vez de la causa.
-		await Credencial(ct);
-
-		ResultadoDeRefresh resultado = await bucle!.Ejecutar(ct);
-		UltimoMensaje = $"refresh: {resultado}";
-		Refrescos++;
+		// Se avisa al ENTRAR y no solo al salir: la tecla del capo tiene que decir
+		// "Actualizando…" en el acto, no cuando el Intentar de la cascara repinte.
+		Refrescando = true;
 		Avisar();
-		return resultado;
+		try
+		{
+			await Credencial(ct);
+
+			ResultadoDeRefresh resultado = await bucle!.Ejecutar(ct);
+			UltimoMensaje = $"refresh: {resultado}";
+			ProblemaAlPonerseAlDia = "";
+			Refrescos++;
+			return resultado;
+		}
+		finally
+		{
+			Refrescando = false;
+			Avisar();
+		}
 	}
 
 	// ------------------------------------------------------- los aportes de Sonia
