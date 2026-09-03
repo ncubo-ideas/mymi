@@ -367,6 +367,9 @@ h1:focus, h1:focus-visible { outline: none; }
 .medidor .carga  { stroke: var(--cobre); }
 .medidor .aguja  { stroke: var(--cobre); }
 .medidor .eje    { fill: var(--cara); stroke: var(--cobre); }
+/* Apagado: la pista punteada y el eje sin cobre. La silueta está; el dato, todavía no. */
+.medidor--apagado .pista { stroke-dasharray: 3 5; }
+.medidor--apagado .eje   { fill: transparent; stroke: var(--tenue-2); }
 .medidor .marca-e, .medidor .marca-f {
     fill: var(--tenue-2); font-family: var(--sans);
     font-size: 9px; font-weight: 700; letter-spacing: .1em;

@@ -15,10 +15,13 @@
    SIN FRACCIÓN NO HAY AGUJA. Cuando no se puede estimar cuánto queda, el arco se
    dibuja lleno y la lectura pasa a ser «el tanque lleno da ~X km»: eso sí se sabe. *@
 
-<svg class="medidor" viewBox="0 0 120 86" role="img" aria-label="@Descripcion">
+@* APAGADO, CON SILUETA. Cuando todavía no hay autonomía el instrumento no se esconde ni
+   queda como una caja 2x2 con un guion: se dibuja el arco punteado, sin carga y sin aguja.
+   La silueta dice «acá va a aparecer esto», igual que un medidor con el motor apagado. *@
+<svg class="@(Apagado ? "medidor medidor--apagado" : "medidor")" viewBox="0 0 120 86" role="img" aria-label="@Descripcion">
     <path class="pista" d="@Arco(0, 1)" fill="none" stroke-width="7" stroke-linecap="round" />
 
-    @if (Nivel() > 0)
+    @if (!Apagado && Nivel() > 0)
     {
         <path class="carga" d="@Arco(0, Nivel())" fill="none" stroke-width="7"
               stroke-linecap="round" pathLength="1" />
@@ -27,8 +30,11 @@
     <text class="marca-e" x="20" y="84" text-anchor="middle">E</text>
     <text class="marca-f" x="100" y="84" text-anchor="middle">F</text>
 
-    <line class="aguja" x1="60" y1="54" x2="@N(Xr(Nivel(), 31))" y2="@N(Yr(Nivel(), 31))"
-          stroke-width="2.5" stroke-linecap="round" />
+    @if (!Apagado)
+    {
+        <line class="aguja" x1="60" y1="54" x2="@N(Xr(Nivel(), 31))" y2="@N(Yr(Nivel(), 31))"
+              stroke-width="2.5" stroke-linecap="round" />
+    }
     <circle class="eje" cx="60" cy="54" r="4" stroke-width="2" />
 </svg>
 
@@ -39,6 +45,9 @@
     [Parameter] public decimal Fraccion { get; set; }
 
     [Parameter] public string Descripcion { get; set; } = "";
+
+    /// <summary>Sin dato: solo la silueta, sin carga ni aguja.</summary>
+    [Parameter] public bool Apagado { get; set; }
 
     private double Nivel()
     {
