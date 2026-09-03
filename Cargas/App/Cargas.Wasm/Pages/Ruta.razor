@@ -185,7 +185,7 @@ else
                     }
                     else
                     {
-                    @foreach (FaltanteEnLista pendiente in pendientes)
+                    foreach (FaltanteEnLista pendiente in pendientes)
                     {
                         <div class="falta" @key="@($"falta-{pendiente.Transaccion}-{pendiente.QueFalta}")">
                             @if (pendiente.QueFalta == "el kilometraje")
