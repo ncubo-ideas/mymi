@@ -21,6 +21,13 @@ namespace Examenes.Dominio
 		internal static readonly UnidadDeMedida NanogramosPorMililitro = new UnidadDeMedida("ng/mL");
 		internal static readonly UnidadDeMedida GramosPorDecilitro = new UnidadDeMedida("g/dL");
 
+		// Los electrolitos —sodio, potasio, cloro— se informan en miliequivalentes por
+		// litro. Es una constante mas y no el refactor de FAMILIAS de unidad: mEq/L es un
+		// escalar sin conversion contra las otras tres, igual que ellas entre si. Lo caro de
+		// las unidades son los porcentajes, los conteos por volumen y los /CAP contra /CBP,
+		// donde dos simbolos distintos SI miden lo mismo y hay que convertir.
+		internal static readonly UnidadDeMedida MiliequivalentesPorLitro = new UnidadDeMedida("mEq/L");
+
 		internal string Simbolo { get; private set; }
 
 		private UnidadDeMedida(string simbolo)
@@ -28,8 +35,8 @@ namespace Examenes.Dominio
 			Simbolo = simbolo;
 		}
 
-		// Funcion total con excepcion: el simbolo viene del wire y solo hay tres
-		// unidades validas. Que no coincida ninguna es un defecto del emisor.
+		// Funcion total con excepcion: el simbolo viene del wire y solo hay cuatro unidades
+		// validas. Que no coincida ninguna es un defecto del emisor.
 		internal static UnidadDeMedida PorSimbolo(string simbolo)
 		{
 			ArgumentNullException.ThrowIfNullOrWhiteSpace(simbolo);
@@ -38,10 +45,12 @@ namespace Examenes.Dominio
 			if (normalizado == MiligramosPorDecilitro.Simbolo) return MiligramosPorDecilitro;
 			if (normalizado == NanogramosPorMililitro.Simbolo) return NanogramosPorMililitro;
 			if (normalizado == GramosPorDecilitro.Simbolo) return GramosPorDecilitro;
+			if (normalizado == MiliequivalentesPorLitro.Simbolo) return MiliequivalentesPorLitro;
 
 			throw new ArgumentException(
 				$"'{simbolo}' no es una unidad de medida conocida. Las validas son: "
-				+ $"{MiligramosPorDecilitro.Simbolo}, {NanogramosPorMililitro.Simbolo}, {GramosPorDecilitro.Simbolo}.",
+				+ $"{MiligramosPorDecilitro.Simbolo}, {NanogramosPorMililitro.Simbolo}, "
+				+ $"{GramosPorDecilitro.Simbolo}, {MiliequivalentesPorLitro.Simbolo}.",
 				nameof(simbolo));
 		}
 

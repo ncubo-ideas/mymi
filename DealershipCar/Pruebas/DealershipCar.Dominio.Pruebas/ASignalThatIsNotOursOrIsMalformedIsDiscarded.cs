@@ -219,8 +219,11 @@ namespace DealershipCar.Dominio.Pruebas
 				Is.Null);
 		}
 
-		// LA RUTA RECONOCE LOS DIECISEIS, y esto es lo que impide que las pruebas de arriba queden
-		// verdes para siempre: una ruta que devolviera null a todo las pasaria todas.
+		// LA RUTA RECONOCE LOS VEINTIUNO, y esto es lo que impide que las pruebas de arriba queden
+		// verdes para siempre: una ruta que devolviera null a todo las pasaria todas. Son CINCO de la
+		// agenda escritos a mano, ONCE de la especificacion, DOS del perfil del vehiculo y TRES de las
+		// estadias, y cada grupo se cuenta APARTE -- meterlos en una sola cuenta haria que ninguna de
+		// las cuatro dijera lo que dice.
 		//
 		// LOS ONCE DE LA ESPECIFICACION SE BARREN CON LA FICHA ENTERA, que es la lista que ya tiene
 		// uno de cada tipo en el orden en que un feed los manda. Barrer la lista en vez de escribir
@@ -290,12 +293,34 @@ namespace DealershipCar.Dominio.Pruebas
 			Assert.That(ofThisVehicle.Count, Is.EqualTo(2),
 				"Son DOS tipos de hecho del perfil del vehiculo, uno por comando de la agencia: la "
 				+ "entrega y el sobre.");
+
+			// Y LOS TRES DE LAS ESTADIAS SE CUENTAN APARTE POR LO MISMO: son hechos de una CUARTA
+			// global de raiz -- el registro de estadias de este carro -- y sumarlos a cualquiera de
+			// las tres cuentas de arriba haria que esa cuenta dejara de decir lo que dice.
+			HashSet<string> ofTheShop = new HashSet<string>();
+
+			foreach (SenalDeEvento signal in ADealershipNarrative.TheStays())
+			{
+				IMensajeDeEvento message = DealershipEventRoute.Route(signal);
+
+				Assert.That(message, Is.Not.Null,
+					"La ruta no reconoce " + signal.Tipo + ", asi que un feed que lo mande lo "
+					+ "descartaria en silencio.");
+				Assert.That(message.Tipo, Is.EqualTo(signal.Tipo),
+					"Y lo reconoce como lo que es, no como el tipo de al lado.");
+
+				ofTheShop.Add(signal.Tipo);
+			}
+
+			Assert.That(ofTheShop.Count, Is.EqualTo(3),
+				"Son TRES tipos de hecho de las estadias, uno por comando de la sucursal: la entrada, "
+				+ "la entrega y la estadia entera de un solo acto.");
 		}
 
 		// EL TAG DE CADA MENSAJE ES SU PROPIO NOMBRE DE TIPO, y esto se enumera POR REFLEXION y no
 		// contra una lista escrita a mano: la lista de la narrativa no puede ver un tipo de mensaje
 		// que nadie ruteo y que nadie le agrego. Enumerar los tipos es enumerar los sitios donde la
-		// regla se decide (C57), y son DIECIOCHO.
+		// regla se decide (C57), y son VEINTIUNO.
 		//
 		// POR QUE IMPORTA EL NOMBRE. El tag viaja por tres sitios mas: la ruta lo compara, el mock lo
 		// lista en TiposConocidos, y el inyector lo escribe en el guion. Ninguno de esos tres tiene
@@ -310,11 +335,11 @@ namespace DealershipCar.Dominio.Pruebas
 				if (typeof(IMensajeDeEvento).IsAssignableFrom(candidate) && !candidate.IsInterface)
 					messages.Add(candidate);
 
-			Assert.That(messages.Count, Is.EqualTo(18),
-				"Son DIECIOCHO tipos de mensaje: cinco de la agenda, once de la especificacion y DOS "
-				+ "del perfil de este vehiculo. Si este numero sube, hay un tipo nuevo -- y los "
-				+ "barridos que se apoyan en la lista de la narrativa no lo van a ver hasta que "
-				+ "alguien lo agregue ahi.");
+			Assert.That(messages.Count, Is.EqualTo(21),
+				"Son VEINTIUN tipos de mensaje: cinco de la agenda, once de la especificacion, DOS "
+				+ "del perfil de este vehiculo y TRES de las estadias en el taller. Si este numero "
+				+ "sube, hay un tipo nuevo -- y los barridos que se apoyan en la lista de la narrativa "
+				+ "no lo van a ver hasta que alguien lo agregue ahi.");
 
 			Assert.Multiple(() =>
 			{
@@ -339,9 +364,9 @@ namespace DealershipCar.Dominio.Pruebas
 				}
 			});
 
-			// Y LOS DIECIOCHO ESTAN EN LA NARRATIVA, que es lo que hace que los barridos de las otras
-			// pruebas midan los dieciocho y no diecisiete. Son TRES listas porque el feed le escribe a
-			// tres globales de raiz, y el union de las tres es lo que esta prueba mira.
+			// Y LOS VEINTIUNO ESTAN EN LA NARRATIVA, que es lo que hace que los barridos de las otras
+			// pruebas midan los veintiuno y no veinte. Son CUATRO listas porque el feed le escribe a
+			// cuatro globales de raiz, y el union de las cuatro es lo que esta prueba mira.
 			HashSet<string> inTheNarrative = new HashSet<string>();
 
 			foreach (SenalDeEvento signal in ADealershipNarrative.TheWholeStory())
@@ -351,6 +376,9 @@ namespace DealershipCar.Dominio.Pruebas
 				inTheNarrative.Add(signal.Tipo);
 
 			foreach (SenalDeEvento signal in ADealershipNarrative.TheDeliveryAndTheEnvelope())
+				inTheNarrative.Add(signal.Tipo);
+
+			foreach (SenalDeEvento signal in ADealershipNarrative.TheStays())
 				inTheNarrative.Add(signal.Tipo);
 
 			Assert.Multiple(() =>
@@ -870,6 +898,285 @@ namespace DealershipCar.Dominio.Pruebas
 				+ "una entrega.");
 		}
 
+		// -------------------------------- la frontera de los tres hechos de las estadias en el taller
+		//
+		// LA MISMA POLARIDAD Y LA MISMA LINEA, sobre los tres tipos que trajo SH-5. Se descarta lo que
+		// no se puede DECIR -- una sucursal en blanco, un asunto en blanco, un instante ausente, unos
+		// dias que no nombran ningun dia -- y se le deja al dominio lo que es una LEY sobre valores
+		// que si se pueden decir: que haya o no otra estadia abierta, y si los dias son contiguos.
+		//
+		// EL BARRIDO ES POR SITIO DE VALIDACION (C57): tres clases de mensaje tienen CUATRO textos
+		// obligatorios, CUATRO instantes obligatorios y DOS listas de dias, porque la entrada trae dos
+		// textos y un instante, la entrega un instante y una lista, y la estadia entera los dos textos,
+		// los dos instantes y la lista.
+
+		[Test]
+		public void EveryRequiredTextOfAShopFactIsRequired()
+		{
+			(string Where, SenalDeEvento Blanked, SenalDeEvento Absent)[] required =
+			{
+				("entry.branch",  Blank(AnEntry(), "branch"),  Without(AnEntry(), "branch")),
+				("entry.subject", Blank(AnEntry(), "subject"), Without(AnEntry(), "subject")),
+				("stay.branch",   Blank(ACompletedStay(), "branch"),    Without(ACompletedStay(), "branch")),
+				("stay.subject",  Blank(ACompletedStay(), "subject"),   Without(ACompletedStay(), "subject")),
+			};
+
+			Assert.That(required.Length, Is.EqualTo(4),
+				"Son CUATRO textos obligatorios: la sucursal y el asunto de la entrada, y los mismos "
+				+ "dos de la estadia entera. La entrega no trae ninguno -- cierra la que ya esta "
+				+ "abierta, y esa ya los dijo.");
+
+			Assert.Multiple(() =>
+			{
+				foreach ((string where, SenalDeEvento blanked, SenalDeEvento absent) in required)
+				{
+					Assert.That(DealershipEventRoute.Route(blanked), Is.Null,
+						"Un " + where + " en blanco tiene que DESCARTAR la senal: una estadia sin "
+						+ "sucursal no dice donde estuvo el carro, y una sin asunto no dice por que.");
+
+					Assert.That(DealershipEventRoute.Route(absent), Is.Null,
+						"Y ausente tambien, que es el OTRO camino: Payload.Text contesta cadena vacia "
+						+ "cuando la propiedad no esta, y es esa cadena la que el guardia mira. "
+						+ where);
+				}
+			});
+		}
+
+		[Test]
+		public void EveryRequiredInstantOfAShopFactMustBePresent()
+		{
+			(string Where, SenalDeEvento Signal)[] missing =
+			{
+				("entry.enteredAt",        Without(AnEntry(), "enteredAt")),
+				("collection.collectedAt", Without(ACollection(), "collectedAt")),
+				("stay.enteredAt",         Without(ACompletedStay(), "enteredAt")),
+				("stay.collectedAt",       Without(ACompletedStay(), "collectedAt")),
+			};
+
+			Assert.That(missing.Length, Is.EqualTo(4),
+				"Son CUATRO instantes obligatorios: la entrada, la entrega, y los dos extremos de la "
+				+ "estadia entera.");
+
+			Assert.Multiple(() =>
+			{
+				foreach ((string where, SenalDeEvento signal) in missing)
+					Assert.That(DealershipEventRoute.Route(signal), Is.Null,
+						"Un " + where + " ausente tiene que DESCARTAR la senal: una estadia es un "
+						+ "intervalo y sin uno de sus extremos no hay intervalo que registrar.");
+			});
+
+			// Y UN INSTANTE QUE NO ES UN INSTANTE tampoco pasa. Va con los de arriba y no aparte:
+			// Payload.Instant mira las dos cosas -- que la propiedad este y que diga un instante -- y
+			// una senal que trae 'ayer' no esta diciendo uno menos preciso, no esta diciendo ninguno.
+			Assert.That(
+				DealershipEventRoute.Route(Named(AnEntry(), "enteredAt", "ayer por la tarde")),
+				Is.Null);
+		}
+
+		// LOS DIAS SON EL HECHO, asi que las cinco formas de no decirlos se barren juntas sobre las dos
+		// senales que los traen. Una lista vacia va en esta lista y no en la del dominio: es el blanco
+		// de una lista, y un blanco es 'presente y no dice nada', que es exactamente lo que la frontera
+		// descarta en un texto.
+		[Test]
+		public void EveryDayListOfAShopFactHasToSayItsDays()
+		{
+			(string Where, SenalDeEvento Signal)[] saysNoDay =
+			{
+				("collection.coveredDays ausente",     Without(ACollection(), "coveredDays")),
+				("collection.coveredDays no es lista", Named(ACollection(), "coveredDays", "\"2026-05-11\"")),
+				("collection.coveredDays vacia",       Named(ACollection(), "coveredDays", "[]")),
+				("collection.coveredDays con un numero", Named(ACollection(), "coveredDays", "[20260511]")),
+				("collection.coveredDays en otra forma", Named(ACollection(), "coveredDays", "[\"11/05/2026\"]")),
+
+				("stay.coveredDays ausente",           Without(ACompletedStay(), "coveredDays")),
+				("stay.coveredDays no es lista",       Named(ACompletedStay(), "coveredDays", "\"2026-05-11\"")),
+				("stay.coveredDays vacia",             Named(ACompletedStay(), "coveredDays", "[]")),
+				("stay.coveredDays con un numero",     Named(ACompletedStay(), "coveredDays", "[20260511]")),
+				("stay.coveredDays en otra forma",     Named(ACompletedStay(), "coveredDays", "[\"2026-5-11\"]")),
+			};
+
+			Assert.That(saysNoDay.Length, Is.EqualTo(10),
+				"Son DOS senales que traen dias por CINCO formas de no decirlos: ausente, que no sea "
+				+ "una lista, vacia, con un elemento que no es texto y con un elemento que no dice un "
+				+ "dia en yyyy-MM-dd. Cada forma es su propio sitio.");
+
+			Assert.Multiple(() =>
+			{
+				foreach ((string where, SenalDeEvento signal) in saysNoDay)
+					Assert.That(DealershipEventRoute.Route(signal), Is.Null,
+						"'" + where + "' tiene que DESCARTAR la senal. Un dia de calendario llega "
+						+ "RECIBIDO y no sale de ningun instante, asi que una forma que este registro "
+						+ "no lee no es un dia menos preciso: no es ninguno.");
+			});
+		}
+
+		// Y LOS DIAS QUE SI DICEN UN DIA PASAN, aunque el dominio despues los rechace. Es la otra mitad
+		// de la linea, y hace falta escribirla: sin ella todo lo de arriba quedaria verde con un
+		// Payload.Days que contestara que no a todo.
+		[Test]
+		public void ADayListThatSaysItsDaysCrossesEvenWhenTheDomainWillRefuseIt()
+		{
+			Assert.That(
+				DealershipEventRoute.Route(ACollection()),
+				Is.InstanceOf<ShopCollectionRecorded>());
+
+			Assert.That(
+				DealershipEventRoute.Route(
+					Named(ACollection(), "coveredDays", "[\"2026-05-11\",\"2026-05-13\"]")),
+				Is.InstanceOf<ShopCollectionRecorded>(),
+				"Dos dias con un hueco entre ellos SI cruzan: los dos dicen un dia. Que una estadia sea "
+				+ "continua es ley del dominio, y copiarla aca seria una segunda fuente de verdad. Lo "
+				+ "que el dominio hace con ese hueco esta en "
+				+ "AFactTheDomainRefusesDoesNotBlockTheNarrative.");
+		}
+
+		// UNA SALIDA ANTERIOR A SU ENTRADA SE DESCARTA EN LA ESTADIA ENTERA Y NO SE PUEDE DESCARTAR EN
+		// LA ENTREGA, y las dos mitades van juntas porque una sola de ellas se leeria como una regla
+		// que no se aplica en todas partes.
+		//
+		// LA ESTADIA ENTERA TRAE LOS DOS EXTREMOS, asi que compararlos no mira nada del registro: es
+		// una funcion pura de la senal, y descartar cuesta cero. LA ENTREGA NO TRAE LA ENTRADA -- la
+		// entrada esta en la estadia abierta, adentro del dominio -- asi que por ese camino la misma
+		// ley solo la puede contestar el dominio, con su marca.
+		[Test]
+		public void AStayWhoseExitComesBeforeItsEntryIsDiscardedAndACollectionsCannotBe()
+		{
+			Assert.That(
+				DealershipEventRoute.Route(Named(ACompletedStay(), "collectedAt", "2026-05-10T08:00:00Z")),
+				Is.Null,
+				"La estadia dice que salio el 10 y que entro el 11: es un registro que se contradice a "
+				+ "si mismo, y los dos extremos vienen en la senal.");
+
+			Assert.That(
+				DealershipEventRoute.Route(Named(ACompletedStay(), "collectedAt", ADealershipNarrative.TheFirstShopEntry)),
+				Is.InstanceOf<ShopStayRecorded>(),
+				"Y salir en el MISMO instante en que entro si cruza: el journal recorta a segundos "
+				+ "enteros, asi que rechazar la igualdad aceptaria un registro vivo y lo rechazaria al "
+				+ "reproducirlo.");
+
+			foreach (PropertyInfo each in typeof(ShopCollectionRecorded).GetProperties())
+				Assert.That(each.Name, Does.Not.Contain("Entered"),
+					"ShopCollectionRecorded gano un instante de entrada. El dia que lo tenga, esta "
+					+ "frontera SI puede comparar los dos extremos y el comentario de arriba deja de "
+					+ "ser cierto.");
+		}
+
+		// LOS TRES DESCARTES QUE TODO HECHO COMPARTE, sobre los tres nuevos. Mismo barrido que el de
+		// los once y el de los dos, y hace falta aparte por lo mismo: ninguno de los tres puede quedar
+		// cubierto por casualidad en dos de los tres.
+		[Test]
+		public void EveryShopFactChecksItsTagItsEventNumberAndItsPayload()
+		{
+			Assert.Multiple(() =>
+			{
+				foreach (SenalDeEvento signal in ADealershipNarrative.TheStays())
+				{
+					Assert.That(
+						DealershipEventRoute.Route(
+							new SenalDeEvento(signal.Numero, "TelemetryPing", signal.Contenido)),
+						Is.Null,
+						"El payload de " + signal.Tipo + " calza campo por campo y aun asi no es ese "
+						+ "hecho: lo que dice QUE hecho es, es el tag.");
+
+					Assert.That(
+						DealershipEventRoute.Route(
+							new SenalDeEvento(0, signal.Tipo, signal.Contenido)),
+						Is.Null,
+						"Un numero de evento que no avanza desde cero no se puede journalizar como "
+						+ "punto de control: " + signal.Tipo);
+
+					Assert.That(
+						DealershipEventRoute.Route(new SenalDeEvento(signal.Numero, signal.Tipo, "")),
+						Is.Null,
+						"Sin payload no hay hecho: " + signal.Tipo);
+
+					Assert.That(
+						DealershipEventRoute.Route(
+							new SenalDeEvento(signal.Numero, signal.Tipo, "no soy json")),
+						Is.Null,
+						"Y un payload que no parsea se descarta en vez de reventar: " + signal.Tipo);
+				}
+			});
+		}
+
+		// Y LOS TRES PAYLOADS NO SON INTERCAMBIABLES ENTRE SI, que es el hueco que el barrido del tag
+		// de arriba no ve: ahi el tag ajeno es de un tipo que la app no consume. Estos tres se parecen
+		// mucho mas entre ellos que a nada -- el de la estadia entera es la union de los otros dos --
+		// asi que las SEIS combinaciones se escriben.
+		[Test]
+		public void TheThreeShopFactsDoNotAnswerToEachOthersPayload()
+		{
+			(string Says, string Tag, string Payload)[] crossed =
+			{
+				("el payload de la entrada con el tag de la entrega no trae coveredDays",
+					ShopCollectionRecorded.TheEventType, AnEntry().Contenido),
+				("el payload de la entrada con el tag de la estadia entera no trae collectedAt",
+					ShopStayRecorded.TheEventType, AnEntry().Contenido),
+
+				("el payload de la entrega con el tag de la entrada no trae branch ni enteredAt",
+					ShopEntryRecorded.TheEventType, ACollection().Contenido),
+				("el payload de la entrega con el tag de la estadia entera no trae branch ni enteredAt",
+					ShopStayRecorded.TheEventType, ACollection().Contenido),
+			};
+
+			Assert.Multiple(() =>
+			{
+				foreach ((string says, string tag, string payload) in crossed)
+					Assert.That(
+						DealershipEventRoute.Route(new SenalDeEvento(1, tag, payload)),
+						Is.Null, says);
+			});
+
+			// Y LAS DOS QUE FALTAN VAN APARTE porque son las UNICAS dos que no se descartan: el payload
+			// de la estadia entera CONTIENE los de los otros dos, asi que con cualquiera de sus dos tags
+			// se lee como ese hecho. No es un defecto -- el tag decide, y lo que el tag pidio esta ahi
+			// -- pero es la asimetria que un lector supondria al reves.
+			Assert.That(
+				DealershipEventRoute.Route(new SenalDeEvento(
+					1, ShopEntryRecorded.TheEventType, ACompletedStay().Contenido)),
+				Is.InstanceOf<ShopEntryRecorded>(),
+				"Con el tag de la entrada, el payload de la estadia entera ES una entrada: trae la "
+				+ "sucursal, el asunto y el instante de entrada, y lo demas sobra.");
+
+			Assert.That(
+				DealershipEventRoute.Route(new SenalDeEvento(
+					1, ShopCollectionRecorded.TheEventType, ACompletedStay().Contenido)),
+				Is.InstanceOf<ShopCollectionRecorded>(),
+				"Y con el tag de la entrega, ES una entrega: trae el instante de entrega y los dias.");
+		}
+
+		// LA IDENTIDAD DEL VEHICULO ES DEL FEED Y NO DEL HECHO, y esto se escribe como prueba porque es
+		// una AUSENCIA: 'un VIN que no es el de este carro' no es un descarte que esta frontera pueda
+		// hacer, porque ninguna senal trae un VIN. El feed se pide por recurso -- /{recurso}/{id}/events
+		// -- asi que el vehiculo es la URL, y un hecho que llegara con un VIN adentro estaria diciendo
+		// de que carro es por segunda vez, con la posibilidad de contradecir a la primera.
+		//
+		// SE ENUMERAN LOS VEINTIUNO Y NO SOLO LOS TRES NUEVOS: la regla es de la app entera, y un tipo
+		// que la rompiera podria ser cualquiera.
+		[Test]
+		public void TheIdentityOfTheVehicleIsTheFeedsAndNoFactCarriesAVin()
+		{
+			List<Type> messages = new List<Type>();
+
+			foreach (Type candidate in typeof(OdometerReported).Assembly.GetTypes())
+				if (typeof(IMensajeDeEvento).IsAssignableFrom(candidate) && !candidate.IsInterface)
+					messages.Add(candidate);
+
+			Assert.That(messages.Count, Is.EqualTo(21),
+				"El mismo VEINTIUNO de arriba, re-derivado aca: si este barrido midiera menos tipos que "
+				+ "aquel, estaria diciendo de menos hechos que los que hay.");
+
+			Assert.Multiple(() =>
+			{
+				foreach (Type message in messages)
+					foreach (PropertyInfo each in message.GetProperties())
+						Assert.That(each.Name, Does.Not.Contain("Vin"),
+							message.Name + " gano un VIN. El vehiculo lo dice el recurso del feed, no "
+							+ "el hecho: un hecho con VIN adentro puede contradecir a la URL por la que "
+							+ "llego, y entonces habria que decidir cual de los dos manda.");
+			});
+		}
+
 		// ------------------------------------------------------ el aparejo
 
 		private static SenalDeEvento ADelivery()
@@ -942,6 +1249,27 @@ namespace DealershipCar.Dominio.Pruebas
 				1, "R1", "service anywhere", "keep the receipts");
 		}
 
+		private static SenalDeEvento AnEntry()
+		{
+			return ADealershipNarrative.ShopEntry(
+				1, ADealershipNarrative.TheFirstShopBranch, ADealershipNarrative.TheFirstShopSubject,
+				ADealershipNarrative.TheFirstShopEntry);
+		}
+
+		private static SenalDeEvento ACollection()
+		{
+			return ADealershipNarrative.ShopCollection(
+				1, ADealershipNarrative.TheFirstShopCollection, ADealershipNarrative.TheFirstShopDays);
+		}
+
+		private static SenalDeEvento ACompletedStay()
+		{
+			return ADealershipNarrative.CompletedStay(
+				1, ADealershipNarrative.TheFirstShopBranch, ADealershipNarrative.TheFirstShopSubject,
+				ADealershipNarrative.TheFirstShopEntry, ADealershipNarrative.TheFirstShopCollection,
+				ADealershipNarrative.TheFirstShopDays);
+		}
+
 		private const string TheInstant = "2025-08-15T00:00:00Z";
 
 		// LAS TRES CIRUGIAS, y las tres REVIENTAN si no cambiaron nada: un nombre de campo mal
@@ -1006,9 +1334,13 @@ namespace DealershipCar.Dominio.Pruebas
 			return found.Value.Substring(found.Value.IndexOf(':') + 1);
 		}
 
+		// LA ALTERNATIVA DE LA LISTA ES DE SH-5. Los dias de una estadia son el unico campo de esta app
+		// que viaja como LISTA de JSON, y sin este renglon las tres cirugias no lo veian -- que no las
+		// dejaba pasar en silencio: Rewritten revienta cuando no cambio nada, asi que el rojo decia que
+		// la senal quedo intacta en vez de dejar leer un descarte que no ocurrio.
 		private static string ThePropertyPatternFor(string field)
 		{
-			return ",\"" + Regex.Escape(field) + "\":(?:\"[^\"]*\"|-?[0-9.]+)";
+			return ",\"" + Regex.Escape(field) + "\":(?:\"[^\"]*\"|\\[[^\\]]*\\]|-?[0-9.]+)";
 		}
 
 		// Y CADA MENSAJE LLEVA SU NUMERO Y SU TAG, que es lo unico que el mecanismo le mira: el

@@ -15,14 +15,17 @@ namespace DealershipCar.Dominio.Pruebas
 	// aunque el estado siga siendo correcto.
 	//
 	// Asi que ninguna linea de DSL de DealershipCarAPI puede llegar al journal de una persona sin
-	// haberse ejecutado antes aca. Esta prueba corre CADA UNA de las NOVENTA Y SEIS operaciones de
+	// haberse ejecutado antes aca. Esta prueba corre CADA UNA de las CIENTO NUEVE operaciones de
 	// la puerta al menos una vez -- las veintiuna de la agenda (OS2/T6), las siete de la ingesta
 	// (OS2/T8: los dos comandos de la bitacora, sus cuatro lecturas, y el Apply), CanBeDeferred, los
 	// once comandos de publicacion de la especificacion (T5), las TREINTA Y SIETE lecturas de la
 	// especificacion (T6, mas las dos mitades publicadas que agrego
 	// PLAN-ModelSpecification-AmendmentMigrations B1 por la ley L7b), los DOS comandos del perfil
 	// del vehiculo (WarrantyEnvelope/T4), las ONCE lecturas sin componer del perfil y del odometro
-	// (WarrantyEnvelope/T5) y las SEIS COMPUESTAS (WarrantyEnvelope/T6).
+	// (WarrantyEnvelope/T5) y las SEIS COMPUESTAS (WarrantyEnvelope/T6), los DOS CONTEOS de la
+	// agenda que BuildOrder/SH-1 agrego al arreglar P-2 -- al dia y agendadas -- los TRES COMANDOS
+	// de las estadias en el taller que BuildOrder/SH-3 agrego con la quinta global de raiz, y las
+	// OCHO LECTURAS de esas estadias que agrego BuildOrder/SH-4.
 	// No mira reglas de negocio -- de eso se ocupan las otras pruebas del nivel B -- mira que el
 	// script exista, parsee, ate sus parametros y devuelva lo que dijo que devolvia.
 	//
@@ -49,18 +52,33 @@ namespace DealershipCar.Dominio.Pruebas
 	// escrito. Es la misma forma que el censo de escrituras de
 	// TheOwnerIsNeverASourceOfAFactAboutTheirOwnVehicle, con el mismo limite.
 	//
-	// LAS OPERACIONES SON NOVENTA Y SEIS Y LOS SCRIPTS SON MAS, y la ingesta es donde la diferencia
-	// se vuelve grande: Apply es UNA operacion de la puerta y tiene DIECINUEVE scripts detras -- uno
-	// por cada tipo de hecho recibido, mas el comando suelto que avanza el punto de control cuando
-	// el dominio rechaza el hecho. Contar operaciones y contar scripts son dos cuentas distintas, y
-	// la que S5 obliga a hacer es la de los scripts.
+	// LAS OPERACIONES SON CIENTO NUEVE Y LOS SCRIPTS SON MAS, y la ingesta es donde la diferencia
+	// se vuelve grande: Apply es UNA operacion de la puerta y tiene VEINTIDOS scripts detras -- uno
+	// por cada tipo de hecho recibido, que son veintiuno, mas el comando suelto que avanza el punto
+	// de control cuando el dominio rechaza el hecho. Contar operaciones y contar scripts son dos
+	// cuentas distintas, y la que S5 obliga a hacer es la de los scripts.
+	//
+	// LOS TRES QUE AGREGO BuildOrder/SH-5 SON SCRIPTS Y NO OPERACIONES, y por eso la lista de abajo
+	// no se movio: los tres hechos de las estadias entran por el Apply que ya estaba y aplican los
+	// TRES COMANDOS que SH-3 ya le habia puesto a la puerta. Una operacion nueva aca seria el aviso
+	// de que la ingesta se agrego mal.
+	//
+	// Y LA DIFERENCIA VA PARA EL OTRO LADO TAMBIEN: StaysBetween es UNA operacion y su script tiene
+	// CINCO lineas, una por columna, en una sola consulta. Correr la operacion las corre las cinco;
+	// que cada columna traiga lo suyo y no lo de la de al lado es de
+	// TheRecordsColumnsAreParallelAndEveryRowSaysItself.
+	//
+	// SH-3 AGREGO UN SCRIPT QUE NO ERA NINGUNA OPERACION -- el pre-chequeo de los dos comandos de
+	// estadias, que preguntaba stays.IsInsideTheShopAt por un miembro PRIVADO de la puerta porque la
+	// pregunta publica no existia. SH-4 la escribio, asi que el pre-chequeo ES esa operacion ahora y
+	// ya no hay un script de la puerta que no sea una de estas ciento nueve.
 	//
 	// ESTE PARRAFO DECIA NOVENTA CUANDO LA PUERTA YA TENIA NOVENTA Y SEIS, y el de arriba decia
 	// noventa y seis: dos cuentas de la misma cosa en el mismo encabezado, una de ellas vieja. Es el
 	// mismo defecto que dejo escrito "setenta y siete" cuando la puerta tenia setenta y nueve, y es
 	// la tercera vez que aparece en este archivo. Una cuenta afirmada en prosa envejece en silencio,
-	// asi que la que manda es TheOperationsAreNinetySix, que la afirma al lado de la lista que
-	// cuenta.
+	// asi que la que manda es TheOperationsAreOneHundredAndNine, que la afirma al lado de la lista
+	// que cuenta -- y su NOMBRE lleva la cuenta a proposito, para que subirla obligue a renombrarla.
 	[TestFixture]
 	public sealed class EveryScriptOfTheDoorHasBeenRun
 	{
@@ -108,16 +126,20 @@ namespace DealershipCar.Dominio.Pruebas
 			"AddOwnerOperation", "AdoptPlanRevision", "Apply", "CanBeDeferred",
 			"CanCoverageBeEvaluated", "CanCoverageBeEvaluatedForThisVehicle",
 			"CanTheEnvelopeBeEvaluated", "CompleteOperation", "CountDue", "CountOverdue",
-			"CoverageExclusions", "CoveredSystems", "DeclareUsageProfile", "DeferOperation",
+			"CountScheduled", "CountUpToDate",
+			"CoverageExclusions", "CoveredSystems",
+			"DaysInTheShopBetween", "DaysInTheShopCountBetween",
+			"DeclareUsageProfile", "DeferOperation",
 			"DeferralsUsed", "DescribeCoverage", "DescribeCoverageForThisVehicle",
-			"DescribeCoverageSummary", "DescribeFluid",
+			"DescribeCoverageSummary", "DescribeDaysInTheShopBetween", "DescribeFluid",
 			"DescribeFuel", "DescribePublishedServiceInterval",
 			"DescribePublishedServicingElsewhereRule", "DescribePublishedWarrantyEnvelope",
 			"DescribeServiceInterval", "DescribeServicePrice", "DescribeServicingElsewhereRule",
-			"DescribeTyre", "DescribeWarrantyEnvelope",
-			"Evaluate", "HasASealedRevision", "HasAnOdometerReading",
+			"DescribeTheStayAt", "DescribeTyre", "DescribeWarrantyEnvelope",
+			"Evaluate", "HasASealedRevision", "HasAnOdometerReading", "HasAnyStayBetween",
 			"HasAnythingDue", "HasBeenEvaluated", "HasDeliveryBeenRecorded", "IsCoveragePublished",
-			"IsFluidPublished", "IsFuelPublished", "IsServiceIntervalPublished",
+			"IsFluidPublished", "IsFuelPublished", "IsInsideTheShopAt",
+			"IsServiceIntervalPublished",
 			"IsServicePricePublished", "IsServicingPolicyPublished", "IsTyrePublished",
 			"IsWarrantyEnvelopePublished", "LastEvaluatedAt", "LastEventApplied", "MissedCount",
 			"OpenRevision", "PermittedFuelGrades", "ProhibitedFuelGrades",
@@ -133,8 +155,10 @@ namespace DealershipCar.Dominio.Pruebas
 			"ReadNextDueKind", "ReadOdometer", "ReadOdometerObservedAt", "ReadOdometerUnit",
 			"ReadRevisionState", "ReadServiceIntervalRevision", "ReadServicePriceRevision",
 			"ReadServicingPolicyRevision", "ReadTyreRevision", "ReadVin",
-			"RecordConditionThreshold", "RecordDelivery", "RecordReading", "RegisterDevice",
-			"RemoveOwnerOperation", "SealRevision", "SeedPlanOperation", "StoreCredential",
+			"RecordConditionThreshold", "RecordDelivery", "RecordReading",
+			"RecordShopCollection", "RecordShopEntry", "RecordShopStay", "RegisterDevice",
+			"RemoveOwnerOperation", "SealRevision", "SeedPlanOperation",
+			"StayCountBetween", "StaysBetween", "StoreCredential",
 			"StoredDeviceKey", "StoredRefreshToken", "StoredToken", "SupersedeRevision",
 			"TheVocabularyIsTheManufacturers",
 		};
@@ -160,9 +184,9 @@ namespace DealershipCar.Dominio.Pruebas
 		// dejo escrito "setenta y siete" cuando la puerta ya tenia setenta y nueve: una cuenta
 		// afirmada en prosa envejece en silencio, y esta afirmada al lado de lo que cuenta.
 		[Test]
-		public void TheOperationsAreNinetySix()
+		public void TheOperationsAreOneHundredAndNine()
 		{
-			Assert.That(EveryOperationThisFixtureRuns, Has.Length.EqualTo(96));
+			Assert.That(EveryOperationThisFixtureRuns, Has.Length.EqualTo(109));
 		}
 
 		// La semilla corre en OnHydrated, asi que para cuando la prueba arranca la agenda ya
@@ -212,6 +236,22 @@ namespace DealershipCar.Dominio.Pruebas
 
 			journal.Api.RemoveOwnerOperation("Diagnostic");
 
+			// LOS TRES DE LAS ESTADIAS. Los dos primeros arrastran ademas el script PRIVADO del
+			// pre-chequeo, que es el unico script de la puerta que no es una operacion suya.
+			journal.Api.RecordShopEntry(
+				"Taller Curridabat", "Cambio de aceite",
+				new DateTime(2026, 1, 22, 8, 30, 0, DateTimeKind.Utc));
+
+			journal.Api.RecordShopCollection(
+				new DateTime(2026, 1, 23, 16, 45, 0, DateTimeKind.Utc),
+				new[] { "2026-01-22", "2026-01-23" });
+
+			journal.Api.RecordShopStay(
+				"Taller Escazu", "Frenos",
+				new DateTime(2025, 11, 3, 7, 0, 0, DateTimeKind.Utc),
+				new DateTime(2025, 11, 4, 17, 0, 0, DateTimeKind.Utc),
+				new[] { "2025-11-03", "2025-11-04" });
+
 			Assert.That(journal.Api.ReadDueState("FluidChange"), Is.EqualTo("Deferred"));
 		}
 
@@ -231,6 +271,8 @@ namespace DealershipCar.Dominio.Pruebas
 			Assert.That(journal.Api.ReadDueState("FluidChange"), Is.EqualTo("Due"));
 			Assert.That(journal.Api.CountDue(), Is.EqualTo(1));
 			Assert.That(journal.Api.CountOverdue(), Is.EqualTo(0));
+			Assert.That(journal.Api.CountScheduled(), Is.EqualTo(1));
+			Assert.That(journal.Api.CountUpToDate(), Is.EqualTo(0));
 			Assert.That(journal.Api.DeferralsUsed("FluidChange"), Is.EqualTo(0));
 			Assert.That(journal.Api.CanBeDeferred("FluidChange"), Is.True);
 			Assert.That(journal.Api.HasAnythingDue(), Is.True);
@@ -241,6 +283,62 @@ namespace DealershipCar.Dominio.Pruebas
 			Assert.That(
 				journal.Api.LastEvaluatedAt(),
 				Is.EqualTo(new DateTime(2026, 1, 20, 0, 0, 0, DateTimeKind.Utc)));
+		}
+
+		// LAS OCHO LECTURAS DE LAS ESTADIAS QUE TRAJO SH-4, CADA UNA EN LOS DOS ESTADOS DEL REGISTRO.
+		// Dos estados y no uno porque un registro sin ninguna estadia contesta la ausencia a casi
+		// todo, y ocho ausencias que se ponen de acuerdo sobre nada no ejercitan lo mismo que ocho
+		// respuestas.
+		//
+		// LO QUE SE AFIRMA ES LA FORMA: que el script parsee, ate sus dos dias o su instante y vuelva
+		// TIPADO. De que cada una conteste lo suyo se ocupa
+		// TheEightReadsOfTheStaysAnswerInTwoStatesOfTheRecord, del paralelismo de las columnas
+		// TheRecordsColumnsAreParallelAndEveryRowSaysItself, y de que un periodo dicho en dias no
+		// alcance una estadia abierta AnOpenStayIsReachableOnlyByTheInstantKeyedReads.
+		[Test]
+		public void EveryStayReadOfTheDoorParsesBindsAndComesBackTypedInBothStates()
+		{
+			DateTime insideTheStay = new DateTime(2026, 1, 22, 12, 0, 0, DateTimeKind.Utc);
+
+			// SIN NINGUNA ESTADIA: los ocho scripts corren igual y ninguno rechaza.
+			Assert.That(journal.Api.IsInsideTheShopAt(insideTheStay), Is.False);
+			Assert.That(journal.Api.DescribeTheStayAt(insideTheStay), Is.Not.Empty);
+			Assert.That(journal.Api.HasAnyStayBetween("2026-01-01", "2026-12-31"), Is.False);
+			Assert.That(journal.Api.DaysInTheShopBetween("2026-01-01", "2026-12-31"), Is.Empty);
+			Assert.That(
+				journal.Api.DaysInTheShopCountBetween("2026-01-01", "2026-12-31"), Is.EqualTo(0));
+			Assert.That(
+				journal.Api.DescribeDaysInTheShopBetween("2026-01-01", "2026-12-31"), Is.Not.Empty);
+			Assert.That(journal.Api.StayCountBetween("2026-01-01", "2026-12-31"), Is.EqualTo(0));
+			Assert.That(journal.Api.StaysBetween("2026-01-01", "2026-12-31").Branch, Is.Empty);
+
+			// CON UNA ESTADIA CERRADA Y UNA ABIERTA: los mismos ocho, y ahora contestando.
+			journal.Api.RecordShopStay(
+				"Taller Escazu", "Frenos",
+				new DateTime(2026, 1, 22, 8, 30, 0, DateTimeKind.Utc),
+				new DateTime(2026, 1, 23, 16, 45, 0, DateTimeKind.Utc),
+				new[] { "2026-01-22", "2026-01-23" });
+
+			journal.Api.RecordShopEntry(
+				"Taller Curridabat", "Cambio de aceite",
+				new DateTime(2026, 6, 10, 8, 30, 0, DateTimeKind.Utc));
+
+			Assert.That(journal.Api.IsInsideTheShopAt(insideTheStay), Is.True);
+			Assert.That(journal.Api.DescribeTheStayAt(insideTheStay), Does.Contain("Taller Escazu"));
+			Assert.That(journal.Api.HasAnyStayBetween("2026-01-01", "2026-12-31"), Is.True);
+			Assert.That(
+				journal.Api.DaysInTheShopBetween("2026-01-01", "2026-12-31"),
+				Is.EqualTo(new[] { "2026-01-22", "2026-01-23" }));
+			Assert.That(
+				journal.Api.DaysInTheShopCountBetween("2026-01-01", "2026-12-31"), Is.EqualTo(2));
+			Assert.That(
+				journal.Api.DescribeDaysInTheShopBetween("2026-01-01", "2026-12-31"),
+				Does.Contain("2 días"));
+			Assert.That(journal.Api.StayCountBetween("2026-01-01", "2026-12-31"), Is.EqualTo(1));
+			Assert.That(
+				journal.Api.StaysBetween("2026-01-01", "2026-12-31").Says,
+				Has.Length.EqualTo(1),
+				"Y las CINCO lineas del script del registro atan sus cinco Out en una sola consulta.");
 		}
 
 		// Las dos lecturas guardadas de E41, del lado del wire. El DomainException del dominio es
@@ -561,6 +659,69 @@ namespace DealershipCar.Dominio.Pruebas
 			Assert.That(journal.Api.ReadEnvelopePublishedAt(),
 				Is.EqualTo(new DateTime(2026, 1, 1, 0, 0, 0, DateTimeKind.Utc)));
 		}
+
+		// LOS TRES SCRIPTS DE INGESTA DE LAS ESTADIAS: la entrada, la entrega y la estadia entera de un
+		// solo acto, que aplican por los TRES comandos que la puerta ya tenia y no agregan ninguna
+		// operacion.
+		//
+		// LA DISCRIMINACION ES LO CARO DE ESTA PRUEBA, y sin ella se quedaria verde con los tres
+		// scripts escribiendo en el global equivocado, o con los campos cruzados entre si: correr los
+		// tres y afirmar que nada revento no distingue un script que registra de uno que no. Asi que
+		// cada hecho se vuelve a leer por LA LECTURA DE LA PUERTA QUE CONTESTARIA DISTINTO -- la
+		// abierta solo la ven las dos lecturas por instante, y los dias de las dos cerradas salen por
+		// las de periodo.
+		[Test]
+		public void EveryStayIngestionScriptOfTheDoorParsesBindsAndRuns()
+		{
+			Assert.That(journal.Api.IsInsideTheShopAt(TheInstantInsideTheOpenStay), Is.False,
+				"Antes de nada no hay ninguna estadia: sin esto los renglones de abajo podrian estar "
+				+ "mirando una que puso otra prueba.");
+			Assert.That(journal.Api.StayCountBetween(TheYearOfTheStays, TheEndOfThatYear),
+				Is.EqualTo(0));
+
+			HashSet<string> ran = new HashSet<string>();
+
+			foreach (Puppets.Portador.SenalDeEvento signal in ADealershipNarrative.TheStays())
+			{
+				Assert.That(Apply(signal), Is.EqualTo(""),
+					"El script de " + signal.Tipo + " tenia que correr sin rechazo.");
+
+				ran.Add(signal.Tipo);
+			}
+
+			Assert.That(ran.Count, Is.EqualTo(3),
+				"Son TRES scripts de ingesta de las estadias, uno por comando de la sucursal.");
+
+			Assert.That(journal.Api.LastEventApplied(),
+				Is.EqualTo(ADealershipNarrative.TheLastStayEvent),
+				"Y los cuatro hechos avanzan el punto de control en el MISMO comando que el hecho.");
+
+			// LA ESTADIA ENTERA Y LA QUE SE ARMO EN DOS HECHOS, cada una por su cuenta: si el script de
+			// la entrega escribiera en la estadia equivocada, o el del acto unico no cerrara nada, la
+			// cuenta de estadias y la de dias lo dicen por separado.
+			Assert.That(journal.Api.StayCountBetween(TheYearOfTheStays, TheEndOfThatYear),
+				Is.EqualTo(2));
+			Assert.That(journal.Api.DaysInTheShopCountBetween(TheYearOfTheStays, TheEndOfThatYear),
+				Is.EqualTo(5));
+
+			// Y LA ABIERTA, que es lo unico que separa el script de la ENTRADA de los otros dos: la
+			// dejo abierta y ninguna lectura de periodo la ve.
+			Assert.That(journal.Api.IsInsideTheShopAt(TheInstantInsideTheOpenStay), Is.True);
+
+			// LA SUCURSAL ADENTRO DE LA CLAUSULA DE LA SUCURSAL, y no suelta en la frase: la frase
+			// nombra tambien el asunto, asi que un Does.Contain pelado se satisface con los dos campos
+			// cruzados. MEDIDO en la pasada de falsificacion de esta tarea.
+			Assert.That(
+				journal.Api.DescribeTheStayAt(TheInstantInsideTheOpenStay),
+				Does.Contain("en " + ADealershipNarrative.TheOpenShopBranch + " desde el")
+					.And.Contains("Entró por " + ADealershipNarrative.TheOpenShopSubject));
+		}
+
+		private const string TheYearOfTheStays = "2026-01-01";
+		private const string TheEndOfThatYear = "2026-12-31";
+
+		private static readonly DateTime TheInstantInsideTheOpenStay =
+			new DateTime(2026, 11, 1, 0, 0, 0, DateTimeKind.Utc);
 
 		// Y LOS SEIS DE LA INGESTA QUE TRAJO T8: los cinco comandos con Check de cada tipo de hecho
 		// recibido, mas el comando suelto que avanza el punto de control cuando el dominio rechaza el

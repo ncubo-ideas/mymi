@@ -24,7 +24,10 @@ namespace DealershipCar.App.Events
 			IMensajeDeEvento sheet = ASpecificationFact(signal);
 			if (sheet != null) return sheet;
 
-			return AVehicleRecordFact(signal);
+			IMensajeDeEvento ofThisVehicle = AVehicleRecordFact(signal);
+			if (ofThisVehicle != null) return ofThisVehicle;
+
+			return AShopFact(signal);
 		}
 
 		private static IMensajeDeEvento ASpecificationFact(SenalDeEvento signal)
@@ -68,6 +71,17 @@ namespace DealershipCar.App.Events
 			if (delivery != null) return delivery;
 
 			return WarrantyEnvelopePublished.Interpret(signal);
+		}
+
+		private static IMensajeDeEvento AShopFact(SenalDeEvento signal)
+		{
+			IMensajeDeEvento entry = ShopEntryRecorded.Interpret(signal);
+			if (entry != null) return entry;
+
+			IMensajeDeEvento collection = ShopCollectionRecorded.Interpret(signal);
+			if (collection != null) return collection;
+
+			return ShopStayRecorded.Interpret(signal);
 		}
 	}
 }

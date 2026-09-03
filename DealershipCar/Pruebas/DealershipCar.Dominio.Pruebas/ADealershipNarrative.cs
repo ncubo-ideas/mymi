@@ -420,5 +420,110 @@ namespace DealershipCar.Dominio.Pruebas
 				+ ",\"unit\":\"" + unit + "\""
 				+ ",\"publishedAt\":\"" + publishedAt + "\"}");
 		}
+
+		// ------------------------------- las estadias en el taller de este vehiculo, como feed
+		//
+		// LA CUARTA LISTA, y son cuatro porque el feed le escribe a CUATRO globales de raiz: la
+		// agenda, la ficha del fabricante, el perfil de este vehiculo y las estadias (esta). Meter
+		// estos tres tipos en cualquiera de las otras tres haria que el barrido que cuenta ONCE tipos
+		// de la especificacion contara catorce, y contarlos es lo que impide que un barrido se acorte
+		// sin que nadie lo note.
+		//
+		// LOS TRES TIPOS ESTAN Y EN EL ORDEN EN QUE UN TALLER LOS MANDA. Una estadia entera de un solo
+		// acto -- la forma correctiva, para lo que se registra despues de haber pasado -- y despues
+		// una entrada y su entrega, que es la estadia que se abre y se cierra en dos hechos. Sin las
+		// dos formas la lista probaria una sola.
+		//
+		// Y LA ULTIMA ESTADIA QUEDA ABIERTA A PROPOSITO. Es el unico estado del registro que alcanzan
+		// las dos lecturas por instante y ninguna de las seis por dias, asi que una narrativa que
+		// cerrara todo dejaria esas dos sin nada distinto que contestar.
+		//
+		// EL ORDEN IMPORTA Y NO ES UN DETALLE: RecordEntry rechaza una segunda entrada mientras haya
+		// otra estadia abierta, asi que la entrega del 32 tiene que llegar antes de la entrada del 33.
+		// Los numeros arrancan en el 30 y siguen al perfil, porque el proveedor sirve en orden desde
+		// el punto de control y esta lista es ese orden escrito a mano.
+		internal const string TheFirstShopBranch = "Taller Central";
+		internal const string TheFirstShopSubject = "Cambio de frenos";
+		internal const string TheFirstShopEntry = "2026-05-11T08:30:00Z";
+		internal const string TheFirstShopCollection = "2026-05-13T16:45:00Z";
+
+		internal const string TheSecondShopBranch = "Taller Escazú";
+		internal const string TheSecondShopSubject = "Revisión de los 20 mil";
+		internal const string TheSecondShopEntry = "2026-07-06T07:15:00Z";
+		internal const string TheSecondShopCollection = "2026-07-07T17:00:00Z";
+
+		internal const string TheOpenShopBranch = "Taller Curridabat";
+		internal const string TheOpenShopSubject = "Ruido en la suspensión";
+		internal const string TheOpenShopEntry = "2026-10-05T09:00:00Z";
+
+		// LOS DIAS SON TRES Y DOS, distintos entre las dos estadias, asi que cruzar una celda con la
+		// otra cambia hasta el largo. Los dice la sucursal y no salen de los instantes.
+		internal static readonly string[] TheFirstShopDays =
+			{ "2026-05-11", "2026-05-12", "2026-05-13" };
+
+		internal static readonly string[] TheSecondShopDays = { "2026-07-06", "2026-07-07" };
+
+		// Cuantas senales de las estadias se aplican, y hasta donde queda la bitacora cuando entraron
+		// enteras. Escritas aparte para que una prueba pueda afirmarlas sin contar la lista a mano.
+		internal const int StaySignalsThatApply = 4;
+		internal const long TheLastStayEvent = 33;
+
+		internal static IReadOnlyList<SenalDeEvento> TheStays()
+		{
+			return new List<SenalDeEvento>
+			{
+				CompletedStay(30, TheFirstShopBranch, TheFirstShopSubject,
+					TheFirstShopEntry, TheFirstShopCollection, TheFirstShopDays),
+
+				ShopEntry(31, TheSecondShopBranch, TheSecondShopSubject, TheSecondShopEntry),
+				ShopCollection(32, TheSecondShopCollection, TheSecondShopDays),
+
+				ShopEntry(33, TheOpenShopBranch, TheOpenShopSubject, TheOpenShopEntry),
+			};
+		}
+
+		internal static SenalDeEvento ShopEntry(
+			long number, string branch, string subject, string enteredAt)
+		{
+			return new SenalDeEvento(number, "ShopEntryRecorded",
+				"{\"id\":" + number + ",\"tipo\":\"ShopEntryRecorded\""
+				+ ",\"branch\":\"" + branch + "\""
+				+ ",\"subject\":\"" + subject + "\""
+				+ ",\"enteredAt\":\"" + enteredAt + "\"}");
+		}
+
+		internal static SenalDeEvento ShopCollection(
+			long number, string collectedAt, string[] coveredDays)
+		{
+			return new SenalDeEvento(number, "ShopCollectionRecorded",
+				"{\"id\":" + number + ",\"tipo\":\"ShopCollectionRecorded\""
+				+ ",\"collectedAt\":\"" + collectedAt + "\""
+				+ ",\"coveredDays\":" + TheDaysSaid(coveredDays) + "}");
+		}
+
+		internal static SenalDeEvento CompletedStay(
+			long number, string branch, string subject, string enteredAt, string collectedAt,
+			string[] coveredDays)
+		{
+			return new SenalDeEvento(number, "ShopStayRecorded",
+				"{\"id\":" + number + ",\"tipo\":\"ShopStayRecorded\""
+				+ ",\"branch\":\"" + branch + "\""
+				+ ",\"subject\":\"" + subject + "\""
+				+ ",\"enteredAt\":\"" + enteredAt + "\""
+				+ ",\"collectedAt\":\"" + collectedAt + "\""
+				+ ",\"coveredDays\":" + TheDaysSaid(coveredDays) + "}");
+		}
+
+		// Los dias como el wire los trae: una LISTA de JSON, no una cadena separada por espacios. Es
+		// el unico campo de esta app que viaja como lista, y por eso la cirugia de payload de las
+		// pruebas de descarte tuvo que aprender a verlo.
+		private static string TheDaysSaid(string[] coveredDays)
+		{
+			List<string> quoted = new List<string>();
+
+			foreach (string day in coveredDays) quoted.Add("\"" + day + "\"");
+
+			return "[" + string.Join(",", quoted) + "]";
+		}
 	}
 }

@@ -8,8 +8,9 @@ namespace Examenes.Dominio
 	// Existe porque el color es una caracteristica de la ORINA. Un examen de sangre no
 	// tiene color, y por eso esto no vive en Examen sino en ExamenDeOrina: es el caso
 	// que obliga a que la herencia sea real y no una jerarquia decorativa.
-	// Es la FORMA 6 de la taxonomia de Magnitud: nominal. No se ordena y no tiene serie,
-	// y eso no es una carencia sino lo que un color ES.
+	// Es la FORMA 6 de la taxonomia de Magnitud: nominal. No se ordena —preguntarle si viene
+	// subiendo no es una pregunta— y sin embargo SI forma serie: ver SerieDeColorDeOrina,
+	// que es donde vive lo que tres colores en fila dicen y uno solo no.
 	internal sealed class ColorDeOrina : MagnitudNominal
 	{
 		internal static readonly ColorDeOrina Transparente = new ColorDeOrina("transparente", "transparente", true);
@@ -44,6 +45,10 @@ namespace Examenes.Dominio
 		internal override string ParaSonia => EsEsperable
 			? $"el color de la orina salió {ParaMostrar}, que es de lo esperable"
 			: $"el color de la orina salió {ParaMostrar}";
+
+		// La serie que lo lee. Es la fabrica de MagnitudNominal: el Expediente arma la
+		// serie correcta sin un switch, preguntandole al resultado cual es la suya.
+		internal override SerieNominal NuevaSerie() => new SerieDeColorDeOrina();
 
 		private ColorDeOrina(string nombre, string paraMostrar, bool esEsperable)
 		{

@@ -2,11 +2,12 @@ using System;
 
 namespace Examenes.Dominio
 {
-	// QUE LE PASO A UN HALLAZGO BINARIO A LO LARGO DEL TIEMPO. Es el par de Tendencia
-	// para la forma 5, y son dos conjuntos y no uno porque no son la misma pregunta.
+	// QUE LE PASO A UN HALLAZGO BINARIO A LO LARGO DEL TIEMPO. Es el par de Tendencia para
+	// la forma 5, y son TRES conjuntos y no uno porque no son la misma pregunta.
 	//
-	//   Tendencia  "para donde viene"   ascenso, descenso, estable
-	//   Presencia  "aparecio o no"      no hay para donde: una prueba esta o no esta
+	//   Tendencia   "para donde viene"       ascenso, descenso, estable
+	//   Presencia   "aparecio o no"          no hay para donde: una prueba esta o no esta
+	//   Constancia  "salio de lo esperable"  hay N categorias, y algunas son esperables
 	//
 	// Meter los binarios en Tendencia obligaria a decir que un negativo que pasa a
 	// positivo esta "en ascenso", que no significa nada: no hay mas positivo ni menos

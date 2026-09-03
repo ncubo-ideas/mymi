@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Globalization;
 using System.IO;
+using System.Linq;
 using System.Net.Http;
 using System.Net.Http.Headers;
 using System.Reflection;
@@ -29,6 +30,7 @@ namespace DealershipCar.Consola
 					case "estado":   return TheBoardFromTheJournal(AFolder(args, 1));
 					case "ficha":    return TheSpecSheetPublishedAndReadBack(AFolder(args, 1));
 					case "garantia": return TheWarrantyEnvelopePublishedAndReadBack(AFolder(args, 1));
+					case "taller":   return TheShopStaysRecordedAndReadBack(AFolder(args, 1));
 					case "refresco": return await TheRefreshLoopAgainstTheDealership(args);
 					case "corte":    return await ACrashInTheMiddleOfABlock(args);
 					default:         Help(); return 1;
@@ -863,6 +865,242 @@ namespace DealershipCar.Consola
 			reopened.Dispose();
 		}
 
+		private static int TheShopStaysRecordedAndReadBack(string folder)
+		{
+			Console.WriteLine("DealershipCar - las estadias en el taller, registradas y leidas de vuelta");
+			Console.WriteLine();
+			Console.WriteLine($"folder    : {folder}");
+			Console.WriteLine($"vin       : {Story.TheVin}");
+			Console.WriteLine($"actor     : {DealershipCarApp.TheActorFor(Story.TheVin)}");
+
+			EmptyTheJournalOfThisVehicle(folder);
+			Console.WriteLine("journal   : vaciado - esta corrida SIEMPRE borra el journal de este");
+			Console.WriteLine("            vehiculo, y es por el motivo de 'historia' y no por el de");
+			Console.WriteLine("            'ficha': ningun hecho de una estadia toma una clave que se");
+			Console.WriteLine("            gaste, asi que los tres se podrian volver a mandar. Lo que no");
+			Console.WriteLine("            se repite es el ESTADO que deja la ultima, que queda abierta:");
+			Console.WriteLine("            una segunda corrida sin borrar chocaria con ella");
+
+			DealershipCarApp app = Open(folder);
+			var api = new DealershipCarAPI(app);
+
+			Console.WriteLine($"entrada 0 : {app.Actor.CurrentEntryId}  (la semilla, que deja OnHydrated)");
+			Console.WriteLine();
+			Console.WriteLine("Ningun instante y ningun dia de esta corrida sale de un reloj: los cinco");
+			Console.WriteLine("instantes y los cinco dias estan escritos, para que dos corridas contesten");
+			Console.WriteLine("lo mismo. Los dias los DICE la sucursal y no se sacan de los instantes:");
+			Console.WriteLine("sacarlos pediria una zona horaria que este registro no lleva.");
+			Console.WriteLine();
+
+			PrintTheStays(api, "ANTES DE QUE NINGUNA SUCURSAL DIGA NADA");
+
+			foreach ((string what, Action<DealershipCarAPI> act) in ShopStays.TheTwoClosedStays())
+				Act(app, "   llega " + what, () => act(api));
+
+			PrintTheStays(api, "DOS ESTADIAS CERRADAS: CINCO DIAS EN DOS ESTADIAS");
+
+			Console.WriteLine("   La respuesta son los DIAS y no una duracion. Los cinco se pueden nombrar");
+			Console.WriteLine("   uno por uno y cruzar con el calendario de cualquiera -- el de la escuela,");
+			Console.WriteLine("   el de un viaje --, que es lo que una duracion no puede hacer.");
+			Console.WriteLine();
+
+			Act(app, "   llega una TERCERA entrada que nadie cierra: el carro queda adentro",
+				() => ShopStays.TheThirdStayEntersAndStaysOpen(api));
+
+			PrintTheStays(api, "Y UNA TERCERA ABIERTA, QUE SEIS DE LAS OCHO LECTURAS NO VEN");
+
+			Console.WriteLine("   Las seis lecturas por DIAS contestan igual que antes: una estadia abierta");
+			Console.WriteLine("   todavia no tiene ningun dia -- los dias llegan con la entrega -- asi que");
+			Console.WriteLine("   ningun periodo dicho en dias la alcanza. Las dos por INSTANTE si.");
+			Console.WriteLine();
+
+			TheSecondEntryTheDoorRefusesForFree(app, api, folder);
+			TheStayThatThePeriodCutsInHalf(api);
+
+			return TheLastMomentOfTheStaysAndWhatTheDiskSays(app, api, folder);
+		}
+
+		private static void PrintTheStays(DealershipCarAPI api, string moment)
+		{
+			Console.WriteLine("================================================================");
+			Console.WriteLine($"  {moment}");
+			Console.WriteLine($"  el periodo preguntado va del {ShopStays.TheYearFrom} al {ShopStays.TheYearTo}");
+			Console.WriteLine("================================================================");
+			Console.WriteLine();
+
+			TheSixPeriodReads(api);
+			TheTwoInstantReads(api);
+			TheRowsOfThePeriod(api);
+		}
+
+		private static void TheSixPeriodReads(DealershipCarAPI api)
+		{
+			string from = ShopStays.TheYearFrom;
+			string to = ShopStays.TheYearTo;
+
+			Console.WriteLine("   -- las SEIS lecturas por DIAS. Las seis son TOTALES --");
+			Console.WriteLine($"   {"hay alguna estadia",-24} : {api.HasAnyStayBetween(from, to)}");
+			Console.WriteLine($"   {"cuantos dias",-24} : {api.DaysInTheShopCountBetween(from, to)}");
+			Console.WriteLine($"   {"cuantas estadias",-24} : {api.StayCountBetween(from, to)}");
+			Console.WriteLine($"   {"los dias, uno por uno",-24} : "
+				+ ADayList(api.DaysInTheShopBetween(from, to)));
+			Console.WriteLine($"     {api.DescribeDaysInTheShopBetween(from, to)}");
+			Console.WriteLine();
+		}
+
+		private static void TheTwoInstantReads(DealershipCarAPI api)
+		{
+			Console.WriteLine("   -- las DOS lecturas por INSTANTE, que son las unicas que ven una");
+			Console.WriteLine("      estadia todavia abierta --");
+
+			foreach (DateTime asOf in new[] { ShopStays.TheFirstEntry, TheInstantTheStaysAreRead })
+			{
+				Console.WriteLine($"   al {Day(asOf)}");
+				Console.WriteLine($"   {"esta adentro",-24} : {api.IsInsideTheShopAt(asOf)}");
+				Console.WriteLine($"     {api.DescribeTheStayAt(asOf)}");
+			}
+
+			Console.WriteLine();
+		}
+
+		private static void TheRowsOfThePeriod(DealershipCarAPI api)
+		{
+			ShopStayRecord record = api.StaysBetween(ShopStays.TheYearFrom, ShopStays.TheYearTo);
+
+			Console.WriteLine("   -- el registro crudo: una fila por estadia CERRADA, en columnas");
+			Console.WriteLine("      paralelas y en orden de entrada --");
+
+			if (record.Branch.Length == 0) Console.WriteLine("   (ninguna fila todavia)");
+
+			foreach (int row in Enumerable.Range(0, record.Branch.Length))
+			{
+				Console.WriteLine($"   {record.EnteredAt[row],-21} {record.Branch[row]}");
+				Console.WriteLine($"   {"",-21} {record.Subject[row]}");
+				Console.WriteLine($"   {"",-21} dias: {record.CoveredDays[row]}");
+				Console.WriteLine($"   {"",-21} {record.Says[row]}");
+			}
+
+			Console.WriteLine();
+		}
+
+		private static void TheSecondEntryTheDoorRefusesForFree(
+			DealershipCarApp app, DealershipCarAPI api, string folder)
+		{
+			string actorFolder = Path.Combine(folder, DealershipCarApp.TheActorFor(Story.TheVin));
+			string bytesBefore = TheTreeOf(actorFolder);
+			long entryBefore = app.Actor.CurrentEntryId;
+
+			string refusal = WhatThePreCheckSaysAbout(
+				() => api.RecordShopEntry("Taller de otra ciudad", "Lo que sea", TheInstantTheStaysAreRead));
+
+			Console.WriteLine("una SEGUNDA entrada con una estadia ya abierta:");
+			Console.WriteLine($"  la puerta contesta        : {refusal}");
+			Console.WriteLine($"  entrada del journal       : {entryBefore} -> {app.Actor.CurrentEntryId}");
+			Console.WriteLine($"  arbol byte a byte igual   : {TheTreeOf(actorFolder) == bytesBefore}");
+			Console.WriteLine("  (la puerta pregunta IsInsideTheShopAt ANTES de performar nada, que es el");
+			Console.WriteLine("   unico momento en que rechazar todavia es gratis. La invariante sigue");
+			Console.WriteLine("   siendo del dominio; dejar que la rechace EL sale caro, porque adentro de");
+			Console.WriteLine("   un comando la entrada del journal ya esta escrita y el rechazo queda");
+			Console.WriteLine("   ahi para siempre. Por el feed no hay a quien preguntarle antes, y por");
+			Console.WriteLine("   eso esa es la unica ruta por la que esta misma ley cicatriza)");
+			Console.WriteLine();
+		}
+
+		private static void TheStayThatThePeriodCutsInHalf(DealershipCarAPI api)
+		{
+			string from = ShopStays.TheCutFrom;
+			string to = ShopStays.TheCutTo;
+
+			ShopStayRecord record = api.StaysBetween(from, to);
+
+			Console.WriteLine($"un periodo que CORTA una estadia, del {from} al {to}:");
+			Console.WriteLine($"  dias del periodo          : {ADayList(api.DaysInTheShopBetween(from, to))}");
+			Console.WriteLine($"  cuantos                   : {api.DaysInTheShopCountBetween(from, to)}");
+
+			foreach (int row in Enumerable.Range(0, record.Branch.Length))
+				Console.WriteLine($"  dias de la FILA           : {record.CoveredDays[row]}");
+
+			Console.WriteLine("  (la fila trae la estadia ENTERA y el total viene recortado al periodo, y");
+			Console.WriteLine("   tiene que ser asi: la frase de la propia fila nombra los tres dias, y una");
+			Console.WriteLine("   celda recortada contradiria a su vecina en la misma fila)");
+			Console.WriteLine();
+		}
+
+		private static int TheLastMomentOfTheStaysAndWhatTheDiskSays(
+			DealershipCarApp app, DealershipCarAPI api, string folder)
+		{
+			string actorFolder = Path.Combine(folder, DealershipCarApp.TheActorFor(Story.TheVin));
+			string bytesBeforeReading = TheTreeOf(actorFolder);
+			long entryBeforeReading = app.Actor.CurrentEntryId;
+
+			string days = ADayList(
+				api.DaysInTheShopBetween(ShopStays.TheYearFrom, ShopStays.TheYearTo));
+			string period = api.DescribeDaysInTheShopBetween(
+				ShopStays.TheYearFrom, ShopStays.TheYearTo);
+			string open = api.DescribeTheStayAt(TheInstantTheStaysAreRead);
+
+			Console.WriteLine("---- mediciones contra el disco -------------------------------");
+			Console.WriteLine();
+			Console.WriteLine("las ocho lecturas, leidas enteras:");
+			Console.WriteLine(
+				$"  entrada del journal       : {entryBeforeReading} -> {app.Actor.CurrentEntryId}");
+			Console.WriteLine($"  arbol byte a byte igual   : {TheTreeOf(actorFolder) == bytesBeforeReading}");
+			Console.WriteLine("  (las ocho son consultas y no comandos: preguntar que dias estuvo el carro");
+			Console.WriteLine("   en el taller no deja entrada en su journal)");
+			Console.WriteLine();
+
+			app.Dispose();
+
+			DealershipCarApp reopened = Open(folder);
+			var again = new DealershipCarAPI(reopened);
+
+			Console.WriteLine("reabrir el journal y volver a preguntar lo mismo:");
+			Console.WriteLine($"  entrada del journal       : {reopened.Actor.CurrentEntryId}"
+				+ "  (crecio una: OnHydrated deja la semilla en CADA arranque)");
+			Console.WriteLine("  los dias iguales          : "
+				+ $"{ADayList(again.DaysInTheShopBetween(ShopStays.TheYearFrom, ShopStays.TheYearTo)) == days}"
+				+ "  <- uno por uno");
+			Console.WriteLine("  la frase del periodo igual: "
+				+ $"{again.DescribeDaysInTheShopBetween(ShopStays.TheYearFrom, ShopStays.TheYearTo) == period}"
+				+ "  <- letra por letra");
+			Console.WriteLine("  la estadia abierta igual  : "
+				+ $"{again.DescribeTheStayAt(TheInstantTheStaysAreRead) == open}  <- letra por letra");
+			Console.WriteLine();
+			Console.WriteLine("  Las estadias no son un campo de C#: salen del journal, y los tres hechos");
+			Console.WriteLine("  se vuelven a aplicar corriendo otra vez los mismos comandos, en el mismo");
+			Console.WriteLine("  orden. La tercera sigue abierta despues del replay.");
+			Console.WriteLine();
+
+			reopened.Dispose();
+			return 0;
+		}
+
+		/// <summary>
+		/// El instante al que esta caratula pregunta si el carro esta adentro. Esta ESCRITO y no sale
+		/// de ningun reloj, como todo lo demas de esta corrida.
+		/// </summary>
+		private static readonly DateTime TheInstantTheStaysAreRead =
+			new DateTime(2026, 11, 1, 0, 0, 0, DateTimeKind.Utc);
+
+		private static string ADayList(string[] days)
+		{
+			return days.Length == 0 ? "(ninguno)" : string.Join(" ", days);
+		}
+
+		private static string WhatThePreCheckSaysAbout(Action call)
+		{
+			try
+			{
+				call();
+			}
+			catch (InvalidOperationException refused)
+			{
+				return $"{refused.GetType().Name} - {FirstLineOf(refused.Message)}";
+			}
+
+			return "NO LO RECHAZO (y deberia)";
+		}
+
 		private static async Task<int> TheRefreshLoopAgainstTheDealership(string[] args)
 		{
 			string folder  = AFolder(args, 1);
@@ -1312,6 +1550,10 @@ namespace DealershipCar.Consola
 			Console.WriteLine("                       donde esta parado en cuatro momentos: antes de que la");
 			Console.WriteLine("                       agencia diga nada, adentro, pasada la distancia y");
 			Console.WriteLine("                       pasado el plazo");
+			Console.WriteLine("                       (TAMBIEN borra el journal de este vehiculo)");
+			Console.WriteLine("  taller   [carpeta]   registra tres estadias en el taller -- una entera de un");
+			Console.WriteLine("                       solo acto, una en dos hechos y una que queda ABIERTA --");
+			Console.WriteLine("                       y lee las ocho lecturas en cada momento");
 			Console.WriteLine("                       (TAMBIEN borra el journal de este vehiculo)");
 			Console.WriteLine("  refresco [carpeta] [url] [recurso] [id]");
 			Console.WriteLine("                       trae los eventos del concesionario y los aplica de a uno");

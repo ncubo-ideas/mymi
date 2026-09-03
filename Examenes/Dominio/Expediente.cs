@@ -47,8 +47,8 @@ namespace Examenes.Dominio
 		// Antes era un Dictionary<string,...> con OrdinalIgnoreCase, que resolvia las
 		// mayusculas y NADA mas: "HGB" y "Hemoglobina" seguian siendo dos series.
 		//
-		// El valor es la RAIZ de las series, no la rama continua: desde este cambio el
-		// diccionario tiene tambien series binarias —nitritos, las dos sangres ocultas— y
+		// El valor es la RAIZ de las series, no la rama continua: el diccionario tiene las
+		// tres formas —continuas, binarias y, desde que el color forma serie, nominales— y
 		// el Expediente les pregunta lo mismo a todas sin saber cual tiene enfrente.
 		private readonly Dictionary<Analito, SerieDeAnalito> series =
 			new Dictionary<Analito, SerieDeAnalito>();
@@ -163,17 +163,29 @@ namespace Examenes.Dominio
 			if (examen is ExamenDeSangre deSangre)
 				((SerieContinua)Nueva(deSangre.Analito, deSangre.NuevaSerie)).Agregar(deSangre);
 
-			// LOS BINARIOS ENTRAN POR LA LECTURA. Un urianalisis trae TRES cosas medidas y
-			// solo dos de ellas forman serie; el examen entero no es el punto de ninguna.
-			// Ahi el conocimiento clinico esta en la magnitud —el vocabulario, la
-			// polaridad, la severidad— y el examen no aporta mas que la fecha.
+			// LO QUE NO ES DE SANGRE ENTRA POR LA LECTURA, y cada lectura a la serie de SU
+			// forma. Un urianalisis trae TRES cosas medidas y las TRES forman serie —cada
+			// una con la suya—; el examen entero no es el punto de ninguna. Ahi el
+			// conocimiento clinico esta en la magnitud —el vocabulario y la polaridad en el
+			// binario, las categorias y lo esperable en el nominal— y el examen no aporta
+			// mas que la fecha.
 			//
 			// Antes esto no ocurria en absoluto: un examen de orina entraba a la lista y a
 			// ninguna serie, asi que "cómo viene mi sangre en orina" no se podia preguntar.
+			// Y hasta el cambio de los nominales el color seguia afuera: se medía, se
+			// clasificaba y no estaba en ningun plural.
+			//
+			// Un solo foreach con dos ramas y no dos foreach: una sola pasada, y la simetria
+			// entre las dos formas queda a la vista.
 			foreach (LecturaDeExamen lectura in examen.Lecturas)
+			{
 				if (lectura.Resultado is MagnitudBinaria binaria)
 					((SerieBinaria)Nueva(lectura.Analito, binaria.NuevaSerie))
 						.Agregar(new PruebaBinaria(examen.Fecha, binaria));
+				else if (lectura.Resultado is MagnitudNominal nominal)
+					((SerieNominal)Nueva(lectura.Analito, nominal.NuevaSerie))
+						.Agregar(new ObservacionNominal(examen.Fecha, nominal));
+			}
 		}
 
 		// La serie de ese analito, creandola con SU propia fabrica la primera vez. El
@@ -261,7 +273,8 @@ namespace Examenes.Dominio
 					: EvaluacionDeTendencia.SinSerie(cual, 0, null);
 
 			// LA TENDENCIA SOLO EXISTE EN LAS SERIES CONTINUAS. Un binario no asciende ni
-			// desciende: aparece. La consulta sigue siendo TOTAL —la superficie pregunta
+			// desciende: aparece. Un nominal tampoco: se observa, y lo que se puede decir de
+			// el es si salio de lo esperable. La consulta sigue siendo TOTAL —la superficie pregunta
 			// sin saber que forma tiene enfrente— y por eso la respuesta es NoAplica y no
 			// SinSerie: decirle "indeterminada" a un analito con cuatro pruebas seria
 			// decirle a la persona que le faltan examenes.
@@ -331,24 +344,15 @@ namespace Examenes.Dominio
 					}
 				}
 
-				// Y lo que NO forma serie tambien pesa. Hoy eso son los NOMINALES: un
-				// color oscuro no tiene tendencia ninguna y sin embargo puede ser lo mas
-				// urgente del expediente. Un modelo que solo mirara series se lo perderia.
+				// UN SOLO RECORRIDO, y por eso este metodo ya no lee `examenes`. Habia un
+				// segundo loop sobre las lecturas sueltas para los NOMINALES, que eran lo
+				// unico medido sin serie; desde que el color forma la suya, su severidad
+				// llega por Visibles() como la de todos.
 				//
-				// Las sangres ocultas y los nitritos YA NO entran por aca, y esa es la
-				// diferencia que trae la serie binaria: su severidad la decide su historia
-				// y no el examen donde aparecieron. Sumar las dos cosas taparia el caso que
-				// mas importa —el positivo que no se confirmo, y que la serie baja a
-				// informativo mientras el examen suelto sigue diciendo lo maximo—.
-				foreach (Examen examen in examenes)
-					foreach (LecturaDeExamen lectura in examen.Lecturas)
-						if (lectura.Resultado is MagnitudNominal nominal
-							&& nominal.SeveridadDelHallazgo.EsMasUrgenteQue(mayor))
-						{
-							mayor = nominal.SeveridadDelHallazgo;
-							accion = nominal.AccionDelHallazgo;
-						}
-
+				// Sumar las dos cosas taparia el caso que mas importa, y es el mismo
+				// argumento con el que las sangres ocultas y los nitritos habian salido de
+				// aca antes: el hallazgo que no se confirmo, que la serie baja a informativo
+				// mientras el examen suelto sigue diciendo lo maximo para siempre.
 				return new UrgenciaDelExpediente(mayor, accion);
 			}
 		}
@@ -410,10 +414,11 @@ namespace Examenes.Dominio
 		// decir "te toca repetirlo": no hay nada que repetir, y el dominio no inventa una
 		// recomendacion sobre algo que nadie pidio.
 		//
-		// DESDE QUE LOS BINARIOS TIENEN SERIE, esto cubre tambien la sangre oculta y los
-		// nitritos, que era el limite anotado en §7 bis: "que_me_falta_medir solo cubre
-		// analitos con serie, o sea solo sangre". Y la periodicidad la resuelve cada uno
-		// contra su ultimo resultado: una sangre oculta positiva no espera al ano.
+		// DESDE QUE LAS TRES FORMAS TIENEN SERIE, esto cubre todo lo que se mide: la sangre
+		// oculta, los nitritos y los dos colores. Era el limite anotado en §7 bis:
+		// "que_me_falta_medir solo cubre analitos con serie, o sea solo sangre". Y la
+		// periodicidad la resuelve cada uno contra su ultimo resultado: una sangre oculta
+		// positiva no espera al ano, y un color inesperado tampoco.
 		internal IReadOnlyList<ControlPendiente> ControlesPendientes(DateTime hoy)
 		{
 			var pendientes = new List<ControlPendiente>();
@@ -450,8 +455,9 @@ namespace Examenes.Dominio
 		{
 			Analito cual = Analito.PorNombre(analito);
 
-			// Solo las continuas tienen puntos con NUMERO. Los de un binario son fechas
-			// con un si o un no, y van por PruebasDe.
+			// Solo las continuas tienen puntos con NUMERO. Los de un binario son fechas con
+			// un si o un no y van por PruebasDe; los de un nominal son fechas con una
+			// categoria y van por ObservacionesDe.
 			//
 			// Y solo las que le corresponden: un analito que no aplica no devuelve sus
 			// puntos, porque un grafico con datos es una forma de mostrar el valor.
@@ -484,6 +490,31 @@ namespace Examenes.Dominio
 				: EvaluacionDePresencia.SinSerie(cual, 0, "");
 		}
 
+		// LOS PUNTOS DE UNA SERIE NOMINAL: fechas con una CATEGORIA. Es el tercer par de
+		// PuntosDe, y son tres consultas y no una porque no devuelven lo mismo — un color no
+		// tiene ValorNumerico ni un si o un no: tiene un nombre.
+		internal IReadOnlyList<ObservacionNominal> ObservacionesDe(string analito)
+		{
+			Analito cual = Analito.PorNombre(analito);
+
+			return Visible(cual) is SerieNominal nominal
+				? nominal.Observaciones
+				: new List<ObservacionNominal>();
+		}
+
+		// LOS HECHOS DE UNA SERIE NOMINAL: siempre lo esperable, aparecio, persiste, volvio,
+		// y sobre cuantas observaciones. Es el par de EvaluarPresenciaDe para la forma 6, y
+		// es total por la misma razon: preguntar por un analito real del que todavia no hay
+		// nada es legitimo.
+		internal EvaluacionDeNominal EvaluarConstanciaDe(string analito)
+		{
+			Analito cual = Analito.PorNombre(analito);
+
+			return Visible(cual) is SerieNominal nominal
+				? nominal.Evaluar()
+				: EvaluacionDeNominal.SinSerie(cual, 0, "", true);
+		}
+
 		// COMO SE LEE ese analito. Total: de uno sin mediciones la respuesta es que no hay
 		// nada que dibujar.
 		internal string FormaDeLecturaDe(string analito)
@@ -511,10 +542,11 @@ namespace Examenes.Dominio
 		// COLUMNAS: los dias distintos en que hubo algun examen, en orden. Un dia es una
 		// visita al laboratorio, aunque haya traido cinco analitos a horas distintas.
 		//
-		// FILAS: primero las que forman serie y despues las que no, y adentro de cada
-		// grupo por nombre. Es un orden ESTABLE a proposito: si las filas se ordenaran por
-		// urgencia, el cuadro se reacomodaria solo cada vez que entra un examen, y una
-		// tabla que se mueve deja de servir para comparar contra la vez pasada.
+		// FILAS: primero las de sangre y despues las de las otras muestras, y adentro de
+		// cada grupo por nombre —ver OrdenadosParaElCuadro—. Es un orden ESTABLE a
+		// proposito: si las filas se ordenaran por urgencia, el cuadro se reacomodaria solo
+		// cada vez que entra un examen, y una tabla que se mueve deja de servir para
+		// comparar contra la vez pasada.
 		//
 		// Dos mediciones del mismo analito el mismo dia colapsan en una celda y gana la
 		// ULTIMA por hora: es una remedicion, no dos columnas.
@@ -529,7 +561,8 @@ namespace Examenes.Dominio
 
 			// UNA FILA POR ANALITO, no por examen. Un urianalisis trae tres cosas medidas y
 			// antes las tres caian en la misma fila, aplanadas en un string. Ahora cada
-			// lectura es su propia fila, con su nombre y su resultado.
+			// lectura es su propia fila, con su nombre y su resultado —y las tres tienen
+			// serie, asi que a las tres se les puede pedir la lectura por su analito.
 			// EL HISTORIAL TAMBIEN FILTRA. Es el ultimo lugar donde un analito que no
 			// corresponde podia seguir asomando: la tarjeta ya no existe, el titular ya no
 			// lo nombra, y la fila del historial seguiria mostrando "Antígeno prostático
@@ -556,35 +589,21 @@ namespace Examenes.Dominio
 				LecturaDeExamen lectura = par.Value.Lectura;
 				string llave = lectura.Analito.Nombre;
 
-				// La lectura viaja SOLO para los que no forman serie, que desde este
-				// cambio son unicamente los NOMINALES: un color no tiene historia que
-				// consultar, asi que lo que se puede decir de el se dice mirando la celda.
+				// LA CELDA ES EL RESULTADO Y NADA MAS: fecha, analito y lo que se midio.
 				//
-				// Antes viajaba la severidad del EXAMEN ENTERO, que mezclaba el color con
-				// los binarios que van al lado. Ahora esa mezcla seria incorrecta: la
-				// lectura de una sangre oculta ya no sale del examen donde aparecio, sale
-				// de su serie —y puede ser MENOR, cuando el positivo no se confirmo—.
-				string severidad = "";
-				string paraSonia = "";
-				if (lectura.Resultado is MagnitudNominal nominal)
-				{
-					severidad = nominal.SeveridadDelHallazgo.Nombre;
-					paraSonia = nominal.ParaSonia;
-				}
-
+				// Antes viajaba tambien una lectura colgada —severidad y frase— para las
+				// filas que no formaban serie, que al final eran unicamente los NOMINALES.
+				// Desde que el color forma la suya no queda ninguna, y esa segunda fuente
+				// de lectura seria peor que redundante: la magnitud sola contesta lo mismo
+				// siempre, y la serie sabe bajarlo cuando el hallazgo no se repitio. Toda
+				// lectura sale por UNA puerta, InterpretarSerieDe.
 				celdas.Add(new CeldaDelCuadro(
 					filas.IndexOf(llave),
 					columnas.IndexOf(examen.Fecha.Date),
 					llave,
 					lectura.ParaMostrar,
 					examen.Fecha.Date,
-					lectura.Expresado,
-					// LO CONTESTA LA LECTURA, no el examen que la contiene. Un urianalisis
-					// trae tres cosas medidas y solo dos forman serie: preguntarselo al
-					// examen le ponia la misma respuesta a las tres.
-					lectura.AportaSerie,
-					severidad,
-					paraSonia));
+					lectura.Expresado));
 			}
 
 			celdas.Sort((una, otra) => una.Fila == otra.Fila
@@ -610,14 +629,15 @@ namespace Examenes.Dominio
 			}
 		}
 
-		// Series primero, y adentro por nombre. Estable e independiente del orden en que
-		// llegaron los eventos.
+		// Los de sangre primero —los que son punto de una serie continua— y adentro por
+		// nombre. Estable e independiente del orden en que llegaron los eventos.
 		private List<Examen> OrdenadosParaElCuadro()
 		{
 			var ordenados = new List<Examen>(examenes);
 			ordenados.Sort((uno, otro) =>
 			{
-				if (uno.AportaSerie != otro.AportaSerie) return uno.AportaSerie ? -1 : 1;
+				if (uno.AportaSerieContinua != otro.AportaSerieContinua)
+					return uno.AportaSerieContinua ? -1 : 1;
 
 				int porNombre = string.Compare(uno.Nombre, otro.Nombre,
 					StringComparison.OrdinalIgnoreCase);

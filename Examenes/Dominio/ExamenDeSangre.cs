@@ -73,7 +73,7 @@ namespace Examenes.Dominio
 			return new Medicion(valor, analito.Unidad);
 		}
 
-		internal override bool AportaSerie => true;
+		internal override bool AportaSerieContinua => true;
 
 		internal override string ResultadoExpresado => Valor.Expresado;
 

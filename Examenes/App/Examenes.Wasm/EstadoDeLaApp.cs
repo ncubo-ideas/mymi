@@ -365,6 +365,13 @@ public sealed class EstadoDeLaApp : IAsyncDisposable
 
 	public IReadOnlyList<PruebaEnSerie> Pruebas(string analito) { Exigir(); return api!.Pruebas(analito); }
 
+	// Y LOS NOMINALES POR UNA TERCERA. Un color no tiene tendencia ni un si o un no: tiene
+	// una categoria por fecha, y lo que se puede leer de la serie es si volvio a lo
+	// esperable.
+	public ConstanciaDeAnalito Constancia(string analito) { Exigir(); return api!.Constancia(analito); }
+
+	public IReadOnlyList<ObservacionEnSerie> Observaciones(string analito) { Exigir(); return api!.Observaciones(analito); }
+
 	public int Cantidad() { Exigir(); return api!.CantidadDeExamenes(); }
 
 	public int AnalitosFueraDeRango() { Exigir(); return api!.AnalitosFueraDeRango(); }

@@ -32,7 +32,8 @@ builder.Services.AddMcpServer(options =>
 .WithStdioServerTransport()
 .WithTools<DealershipCarTools>()
 .WithTools<ModelSpecificationTools>()
-.WithTools<WarrantyEnvelopeTools>();
+.WithTools<WarrantyEnvelopeTools>()
+.WithTools<ShopStayTools>();
 
 builder.Logging.ClearProviders();
 builder.Logging.AddConsole(o => o.LogToStandardErrorThreshold = LogLevel.Trace);
@@ -66,15 +67,24 @@ static string Instructions(string folder) => $"""
 	operación que este vehículo nunca tuvo agendada también lee NotDue, y su motivo lo dice con
 	todas las letras; eso no es un hueco en los datos, es un carro que no tiene esa parte.
 
-	DOS CLASES DE PREGUNTA. review_my_maintenance, check_one_operation, how_up_to_date_is_this e
-	is_my_car_still_under_warranty contestan dónde está parado ESTE VEHÍCULO. what_my_car_takes y
-	what_the_service_costs contestan lo que el FABRICANTE PUBLICÓ sobre este modelo: los fluidos,
-	las llantas, el combustible, el precio de un servicio. does_the_warranty_cover contesta las
-	dos a la vez: el alcance publicado, y dónde está parado este vehículo frente a él. Toda
-	respuesta publicada nombra la revisión de la ficha de la que salió: diga esa revisión, porque
-	el fabricante puede publicar una nueva y una respuesta sin procedencia es un rumor. Un ítem
-	que no está publicado lo dice con palabras, y eso es una respuesta: nunca lo llene con un
-	modelo parecido ni con un año anterior.
+	DOS CLASES DE PREGUNTA. review_my_maintenance, check_one_operation, how_up_to_date_is_this,
+	is_my_car_still_under_warranty y days_my_car_spent_in_the_shop contestan dónde está parado
+	ESTE VEHÍCULO. what_my_car_takes y what_the_service_costs contestan lo que el FABRICANTE
+	PUBLICÓ sobre este modelo: los fluidos, las llantas, el combustible, el precio de un servicio.
+	does_the_warranty_cover contesta las dos a la vez: el alcance publicado, y dónde está parado
+	este vehículo frente a él. Toda respuesta publicada nombra la revisión de la ficha de la que
+	salió: diga esa revisión, porque el fabricante puede publicar una nueva y una respuesta sin
+	procedencia es un rumor. Un ítem que no está publicado lo dice con palabras, y eso es una
+	respuesta: nunca lo llene con un modelo parecido ni con un año anterior.
+
+	LOS DÍAS EN EL TALLER SON DÍAS Y NO UNA DURACIÓN. days_my_car_spent_in_the_shop devuelve cada
+	día por separado, en yyyy-MM-dd, porque una duración no se puede cruzar con el calendario de
+	nadie y una lista de fechas sí: son los días que se pueden cruzar con la escuela, con un viaje
+	o con una semana concreta. Los dice la sucursal cuando entrega el carro, no se calculan de las
+	horas de entrada y salida, y usted tampoco los rellene. Sus dos parámetros son los extremos
+	del periodo por el que se pregunta, no datos del carro; omítalos si nadie nombró un periodo.
+	Una estadía que sigue ABIERTA todavía no tiene ningún día, así que no está en esa lista: si
+	insideRightNow viene en true, el carro está en el taller ahora y el total no lo incluye.
 
 	Las dos tools de garantía dicen ALCANCE y POSICIÓN y nunca adjudican un reclamo: que una
 	reparación se pague lo decide el fabricante, así que un sistema dentro del alcance y un

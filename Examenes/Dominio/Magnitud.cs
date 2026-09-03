@@ -44,11 +44,14 @@ namespace Examenes.Dominio
 	/// Forma 1 y 2 — una cantidad continua: se ordena y admite aritmetica.
 	/// </summary>
 	///
-	/// Es la unica rama sobre la que tienen sentido una SERIE y una VELOCIDAD. Restar dos
-	/// colesteroles significa algo; restar "3+" menos "trazas" no significa nada, y restar
-	/// "ambar" menos "rojizo" menos todavia. Que <see cref="SerieDeAnalito"/> solo se
-	/// construya a partir de examenes que informan una magnitud continua es lo que hace
-	/// cumplir esa verdad clinica sin un solo if.
+	/// Es la unica rama sobre la que tiene sentido una VELOCIDAD. Restar dos colesteroles
+	/// significa algo; restar "3+" menos "trazas" no significa nada, y restar "ambar" menos
+	/// "rojizo" menos todavia. Que la tendencia y la velocidad vivan SOLO en
+	/// <see cref="SerieContinua"/> es lo que hace cumplir esa verdad clinica sin un solo if.
+	///
+	/// La SERIE, en cambio, ya no es de esta rama sola: las tres formas construidas tienen
+	/// la suya —ver <see cref="SerieDeAnalito"/>—. Lo que las distingue no es tenerla, es
+	/// que se puede leer de ella.
 	///
 	/// La forma 2 (continua SIN unidad: pH, densidad relativa) colgaria de aca y no esta
 	/// construida. Trae ademas su propia trampa, anotada para quien la agregue: el pH es
@@ -147,6 +150,11 @@ namespace Examenes.Dominio
 	/// No se ordena y no se le saca tendencia: preguntar si un color "viene subiendo" no es
 	/// una pregunta. Es la forma del ejemplo favorito de Alvaro —el color de la orina— y la
 	/// razon concreta de que <see cref="Examen"/> no declare un valor medido.
+	///
+	/// PERO SI TIENE PLURAL. Que no se ordene no quiere decir que una sola observacion sea
+	/// todo lo que hay: tres colores en fila dicen si el inesperado se repitio o si volvio,
+	/// y eso cambia la conducta. Por eso declara <see cref="NuevaSerie"/>, igual que la
+	/// binaria, y por eso existe <see cref="SerieNominal"/>.
 	internal abstract class MagnitudNominal : Magnitud
 	{
 		/// <summary>Como se llama esta categoria para el paciente.</summary>
@@ -169,5 +177,13 @@ namespace Examenes.Dominio
 
 		/// <summary>La lectura para la persona, escrita por la propia categoria.</summary>
 		internal abstract string ParaSonia { get; }
+
+		/// <summary>QUE SERIE LEE A ESTE ANALITO. La fabrica de "el plural" de la forma 6.</summary>
+		///
+		/// Vive aca por la misma regla que la pone en <see cref="MagnitudBinaria"/> para la
+		/// forma 5 y en <see cref="ExamenDeSangre"/> para la continua: <b>la declara la
+		/// clase que carga el conocimiento clinico del analito</b>. En un nominal esa clase
+		/// es esta, donde estan las categorias, cuales son esperables y la severidad.
+		internal abstract SerieNominal NuevaSerie();
 	}
 }

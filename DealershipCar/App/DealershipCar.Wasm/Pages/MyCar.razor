@@ -176,6 +176,8 @@ else
                         Overdue="@overdue"
                         Due="@due"
                         Missed="@missed"
+                        AlDia="@upToDate"
+                        Programadas="@scheduled"
                         Siguiente="@nextDue"
                         Modelo="@(sheet is not null ? sheet.Model : "")"
                         Odometro="@(stands is not null && stands.OdometerKnown ? ComoSeLee.Miles(stands.Odometer) : "--")"
@@ -266,6 +268,17 @@ else
                     <Cobertura Sheet="@sheet" Stands="@stands" />
                 </div>
             }
+            else if (tab == "historial")
+            {
+                <div class="d__pad" style="padding-top:16px">
+                    <div class="page-head page-head--row" style="margin-bottom:4px">
+                        <h1 class="page-title">Historial</h1>
+                        <AppearanceToggle />
+                    </div>
+
+                    <Historial Stays="@stays" />
+                </div>
+            }
             else
             {
                 <div class="d__pad" style="padding-top:16px">
@@ -312,6 +325,11 @@ else
             <Glyph Name="shield" Size="22" Stroke="2" />
             <span>Cobertura</span>
         </button>
+        <button type="button" id="go-historial" @onclick="@(() => tab = "historial")"
+                class="@(tab == "historial" ? "d-tabbar__item d-tabbar__item--on" : "d-tabbar__item")">
+            <Glyph Name="history" Size="22" Stroke="2" />
+            <span>Historial</span>
+        </button>
         <button type="button" id="go-registro" @onclick="@(() => tab = "registro")"
                 class="@(tab == "registro" ? "d-tabbar__item d-tabbar__item--on" : "d-tabbar__item")">
             <Glyph Name="folder" Size="22" Stroke="2" />
@@ -331,7 +349,10 @@ else
 
     private bool errorDetail;
 
-    /// <summary>Cual de las cinco pestanas se esta viendo: inicio, vehiculo, servicios, cobertura o registro.</summary>
+    /// <summary>
+    /// Cual de las seis pestanas se esta viendo: inicio, vehiculo, servicios, cobertura, historial o
+    /// registro.
+    /// </summary>
     private string tab = "inicio";
 
     private string vin = "";
@@ -340,6 +361,8 @@ else
     private int due;
     private int overdue;
     private int missed;
+    private int upToDate;
+    private int scheduled;
     private long lastEvent;
     private long entries;
     private int memfsFiles;
@@ -378,6 +401,7 @@ else
 
     private WhatTheManufacturerPublished sheet;
     private WhereThisVehicleStands stands;
+    private TheStaysOfThisVehicle stays;
 
     private string error = "";
     private string destinationProblem = "";
@@ -493,6 +517,8 @@ else
         due = state.CountDue();
         overdue = state.CountOverdue();
         missed = state.MissedCount();
+        upToDate = state.CountUpToDate();
+        scheduled = state.CountScheduled();
         lastEvent = state.LastEventApplied();
         evaluatedUpTo = state.EvaluatedUpTo();
         nextDue = state.NextDueKind();
@@ -526,6 +552,7 @@ else
 
         sheet = state.ReadTheSpecification();
         stands = state.ReadWhereThisVehicleStands();
+        stays = state.ReadTheStaysOfThisVehicle();
 
         ComposeTheHero();
 

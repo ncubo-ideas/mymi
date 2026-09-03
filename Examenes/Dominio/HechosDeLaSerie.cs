@@ -4,16 +4,17 @@ namespace Examenes.Dominio
 {
 	// LOS HECHOS DE UNA SERIE, sin la lectura. Es la raiz de lo que Evaluar() devuelve.
 	//
-	// POR QUE APARECE AHORA. Hasta este cambio habia un solo tipo de hechos
+	// POR QUE APARECE. Hasta que los binarios tuvieron serie habia un solo tipo de hechos
 	// -EvaluacionDeTendencia- y alcanzaba, porque todas las series eran de magnitudes
 	// continuas: primero, ultimo, dias, cambio. Un binario no tiene nada de eso. No tiene
-	// "cambio de 80"; tiene "aparecio", y eso no es un numero mas chico: es otra cosa.
+	// "cambio de 80"; tiene "aparecio", y eso no es un numero mas chico: es otra cosa. Un
+	// nominal tampoco: tiene una CATEGORIA, que ni siquiera es un si o un no.
 	//
-	// Si los binarios reutilizaran EvaluacionDeTendencia tendrian que devolver null en
-	// Primero y Ultimo y cero en Cambio, que es exactamente la mentira que este dominio
-	// evita en todos los otros pisos: la misma razon por la que Magnitud no declara un
-	// decimal y por la que ReferenciaDeLectura es una lista y no un record con cinco
-	// campos.
+	// Hoy son TRES hijos —tendencia, presencia y nominal—. Si los otros dos reutilizaran
+	// EvaluacionDeTendencia tendrian que devolver null en Primero y Ultimo y cero en
+	// Cambio, que es exactamente la mentira que este dominio evita en todos los otros
+	// pisos: la misma razon por la que Magnitud no declara un decimal y por la que
+	// ReferenciaDeLectura es una lista y no un record con cinco campos.
 	//
 	// LO QUE SI ES COMUN, y por eso vive aca: de que analito son los hechos, cuantas
 	// mediciones los sostienen, si hay serie, y como se llama la lectura en una palabra.
@@ -49,13 +50,14 @@ namespace Examenes.Dominio
 		internal bool HaySerie => CantidadDeMediciones >= 2;
 
 		// LA LECTURA EN UNA PALABRA. "en ascenso" para una continua, "apareció" para un
-		// binario. Es lo unico que la superficie puede pedir sin saber que forma tiene
-		// enfrente, y es la razon de que esta raiz sea util y no ceremonia.
+		// binario, "persiste" para un nominal. Es lo unico que la superficie puede pedir sin
+		// saber que forma tiene enfrente, y es la razon de que esta raiz sea util y no
+		// ceremonia.
 		internal abstract string NombreDeLaLectura { get; }
 
 		// Si lo que se vio pide REPETIR la medicion antes que cualquier otra cosa. En una
 		// continua es el salto inverosimil; en un binario, un positivo aislado que todavia
-		// nadie confirmo.
+		// nadie confirmo. En un nominal, nunca: un color se mira, no se repite.
 		internal abstract bool SugiereRepetirElExamen { get; }
 	}
 }

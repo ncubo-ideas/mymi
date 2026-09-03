@@ -69,6 +69,7 @@ namespace DealershipCar.Dominio.Pruebas
 			"PublishServiceInterval", "PublishServicePrice", "PublishServicingPolicy",
 			"SealRevision", "SupersedeRevision",
 			"RecordDelivery", "PublishWarrantyEnvelope",
+			"RecordShopEntry", "RecordShopCollection", "RecordShopStay",
 		};
 
 		[Test]

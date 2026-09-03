@@ -59,25 +59,17 @@ namespace Examenes.Dominio
 		// conviven en el mismo cuadro sin que ninguno tenga que mentir sobre su forma.
 		internal string Expresado { get; private set; }
 
-		// Si esta fila forma serie. La orina entra al cuadro -tiene un resultado por
-		// fecha- pero no tiene veredicto que mostrar al final, y la superficie necesita
-		// saberlo para no dejar un hueco donde no falta nada.
-		internal bool AportaSerie { get; private set; }
-
-		// QUE PIDE este examen, para las filas que NO forman serie. Las que si la forman
-		// lo dicen por su Interpretacion, que necesita la serie entera; una orina o unas
-		// heces se leen de un solo punto, asi que su lectura viaja en la celda.
+		// NO HAY LECTURA COLGADA ACA, y es una decision. Hubo tres campos mas —si la fila
+		// formaba serie, su severidad y su frase— que existian para las filas SIN serie, o
+		// sea para los colores. Desde que los nominales forman la suya no queda ninguna
+		// fila sin serie: TODA lectura se pide por el analito, a InterpretarSerieDe, y la
+		// celda vuelve a ser lo que el cuadro dice que es —una fecha y un resultado—.
 		//
-		// Vacio en las filas de serie, y eso no es un faltante: es que ahi la respuesta la
-		// da otro. Ver SangreEnOrina y SangreEnHeces para por que dos celdas identicas en
-		// forma pueden traer severidades distintas.
-		internal string Severidad { get; private set; }
-
-		internal string ParaSonia { get; private set; }
-
+		// Dejarlos habria sido peor que redundante: la magnitud sola contesta lo mismo
+		// siempre y la serie sabe bajarlo cuando el hallazgo no se repitio, asi que la
+		// pantalla tendria dos respuestas distintas para la misma pregunta.
 		internal CeldaDelCuadro(int fila, int columna, string analito, string paraMostrar,
-			DateTime fecha, string expresado, bool aportaSerie,
-			string severidad = "", string paraSonia = "")
+			DateTime fecha, string expresado)
 		{
 			if (fila < 0)
 				throw new ArgumentOutOfRangeException(nameof(fila), fila, "La fila no puede ser negativa.");
@@ -91,9 +83,6 @@ namespace Examenes.Dominio
 			ParaMostrar = paraMostrar;
 			Fecha = fecha;
 			Expresado = expresado;
-			AportaSerie = aportaSerie;
-			Severidad = severidad ?? "";
-			ParaSonia = paraSonia ?? "";
 		}
 	}
 }

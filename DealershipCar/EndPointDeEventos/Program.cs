@@ -248,6 +248,16 @@ sealed class EventoDelConcesionario
     [JsonPropertyName("months")]             public int Months { get; init; }
     [JsonPropertyName("distance")]           public int Distance { get; init; }
 
+    [JsonPropertyName("branch")]             public string Branch { get; init; } = "";
+    [JsonPropertyName("subject")]            public string Subject { get; init; } = "";
+    [JsonPropertyName("enteredAt")]          public DateTime EnteredAt { get; init; }
+    [JsonPropertyName("collectedAt")]        public DateTime CollectedAt { get; init; }
+
+    // El unico campo de este feed que viaja como LISTA. Los dias de una estadia los DICE la
+    // sucursal: no salen de los dos instantes, porque sacarlos pediria una zona horaria que este
+    // feed no lleva.
+    [JsonPropertyName("coveredDays")]        public string[] CoveredDays { get; init; } = [];
+
     internal string Resumen() => Tipo switch
     {
         "OdometerReported" => $"{Value} {Unit} observado el {ObservedAt:yyyy-MM-dd} ({Source})",
@@ -279,6 +289,14 @@ sealed class EventoDelConcesionario
         "WarrantyEnvelopePublished" =>
             $"sobre de {Months} meses o {Distance} {Unit}, publicado el {PublishedAt:yyyy-MM-dd}",
 
+        "ShopEntryRecorded" =>
+            $"entro a {Branch} el {EnteredAt:yyyy-MM-dd HH:mm} por {Subject}",
+        "ShopCollectionRecorded" =>
+            $"entregado el {CollectedAt:yyyy-MM-dd HH:mm}, cubrio {string.Join(" ", CoveredDays)}",
+        "ShopStayRecorded" =>
+            $"estadia en {Branch} por {Subject}, del {EnteredAt:yyyy-MM-dd HH:mm} al "
+            + $"{CollectedAt:yyyy-MM-dd HH:mm}, cubrio {string.Join(" ", CoveredDays)}",
+
         _ => Tipo,
     };
 }
@@ -304,6 +322,8 @@ sealed class AlmacenDeEventos
         "SpecificationRevisionSuperseded",
 
         "VehicleDelivered", "WarrantyEnvelopePublished",
+
+        "ShopEntryRecorded", "ShopCollectionRecorded", "ShopStayRecorded",
     };
 
     private List<EventoDelConcesionario> Lista(string recurso, string id) =>
@@ -466,6 +486,11 @@ sealed class AlmacenDeEventos
                 Reading = pedido.Reading,
                 Months = pedido.Months,
                 Distance = pedido.Distance,
+                Branch = pedido.Branch ?? "",
+                Subject = pedido.Subject ?? "",
+                EnteredAt = pedido.EnteredAt,
+                CollectedAt = pedido.CollectedAt,
+                CoveredDays = pedido.CoveredDays ?? [],
             };
 
             lista.Add(evento);
@@ -553,4 +578,10 @@ sealed class HechoAInyectar
     [JsonPropertyName("reading")]            public int Reading { get; set; }
     [JsonPropertyName("months")]             public int Months { get; set; }
     [JsonPropertyName("distance")]           public int Distance { get; set; }
+
+    [JsonPropertyName("branch")]             public string Branch { get; set; }
+    [JsonPropertyName("subject")]            public string Subject { get; set; }
+    [JsonPropertyName("enteredAt")]          public DateTime EnteredAt { get; set; }
+    [JsonPropertyName("collectedAt")]        public DateTime CollectedAt { get; set; }
+    [JsonPropertyName("coveredDays")]        public string[] CoveredDays { get; set; }
 }
