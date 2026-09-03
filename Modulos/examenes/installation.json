@@ -12,7 +12,7 @@
     ]
   },
 
-  "//grantedFolder": "The ONLY folder this module may touch. The module does not choose it: granting is an act of the granter. IT HAS TO BE THE SAME ONE you picked in the app when you installed it - if they do not match, the module will report hayDatos=false and Claude will ask you to open the app. This one was seeded with: dotnet run --project Examenes/App/Examenes.Consola -- medir C:/Gnothi/examenes",
+  "//grantedFolder": "The ONLY folder this module may touch. The module does not choose it: granting is an act of the granter. IT HAS TO BE THE SAME ONE you picked in the app when you installed it - if they do not match, the module will report hayDatos=false and Claude will ask you to open the app. This one is seeded with the refresh loop, against URL2 running (dotnet run --project Examenes/EndPointDeEventos): dotnet run --project Examenes/App/Examenes.Consola -- refrescar C:/Gnothi/examenes http://localhost:8091/ expediente 1. NOT with 'medir': that command is the console TEST HARNESS, and on purpose it appends to the folder a measurement that is a test case -a cholesterol of 360 mg/dL dated one day after the real 212- so what it leaves behind is not the person's record.",
   "grantedFolder": "C:/Gnothi/examenes",
 
   "//enabled": "The switch belongs to the Host. Disabled = Gnothi leaves this module's tools out of the list it hands the assistant, and the module does NOT find out: it cannot tell 'I was switched off' apart from 'nobody asked'.",
