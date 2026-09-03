@@ -165,6 +165,17 @@ else
                                             Es lo que da tu promedio de @Cifra(propuesta.PorDiaComoSeVe) @propuesta.SimboloDeLaDistancia por día.</span>
                                     }
                                 </div>
+                                @* LO QUE DESTRABA, dicho en la carga que lo debe y no en los
+                                   baches. Un mismo kilometraje puede bloquear dos tramos -el que
+                                   termina en esta carga y el que arranca en ella-, y antes cada
+                                   bache lo anunciaba por su cuenta: el mismo faltante dos veces,
+                                   arriba y abajo del campo. Singular y plural explícitos. *@
+                                @if (tramosQueDestraba.TryGetValue(pendiente.Transaccion, out int destraba) && destraba > 0)
+                                {
+                                    <p class="bache-desbloquea">
+                                        Con este kilometraje @(destraba == 1 ? "se calcula 1 tramo" : $"se calculan {destraba} tramos").
+                                    </p>
+                                }
                             }
                             else if (pendiente.QueFalta == "la confirmación del tanque")
                             {
@@ -253,19 +264,16 @@ else
                 }
                 else
                 {
+                    @* EL BACHE, a una línea. El riel sigue punteado -ahí el camino no se midió-
+                       pero el texto ya no compite con la carga que lo destraba, que es donde
+                       vive el formulario y donde se dice cuántos tramos abre. La fecha se
+                       compone acá con el mismo «dd MMM» del resto de la ruta: la frase del
+                       dominio (tramo.QueFalta) trae «25/07/2026», y en la misma pantalla que
+                       «desde el 25 jul» eran dos calendarios. *@
                     <li class="eslabon bache" @key="@($"bache-{tramo.Desde:O}")">
                         <div class="eslabon-riel"></div>
                         <div class="eslabon-cuerpo">
-                            <div class="bache-caja">
-                                <p class="bache-que">
-                                    El tramo desde el @tramo.Desde.ToString("dd MMM", Cultura)
-                                    no se puede calcular: falta <b>@tramo.QueFalta</b>.
-                                </p>
-                                <p class="bache-desbloquea">
-                                    Con eso aparece cuánto rindió el carro entre estas dos cargas,
-                                    y ese tramo entra a tu nivel de siempre.
-                                </p>
-                            </div>
+                            <p class="bache-linea">sin calcular &middot; @EsperaDelBache(tramo)</p>
                         </div>
                     </li>
                 }
@@ -367,6 +375,25 @@ else
     // un barrido adentro convierte el dibujo de la ruta en cuadratico.
     private Dictionary<DateTime, TramoEnLista> tramoPorCierre = new();
     private Dictionary<string, List<FaltanteEnLista>> faltantesPorCarga = new();
+
+    // QUIEN DESTRABA CADA BACHE. Un tramo bloqueado espera el kilometraje de la carga sin
+    // odometro que esta en uno de sus extremos: en SerieDeTramos la trunca es `Hasta` en el
+    // tramo fino hacia atras y `Desde` en el fino hacia adelante, y pueden faltar los dos.
+    // De aca salen la linea del bache («espera el kilometraje del 25 jul») y la cuenta que se
+    // le dice a la carga («con este kilometraje se calculan 2 tramos»). Es emparejamiento
+    // de PRESENTACION por fecha, igual que TramoQueCierraEn: el dominio ya dijo cuales son
+    // los tramos y entre que fechas.
+    private Dictionary<string, int> tramosQueDestraba = new();
+    private Dictionary<DateTime, List<DateTime>> fechasQueEsperaElBache = new();
+
+    private string EsperaDelBache(TramoEnLista tramo)
+    {
+        if (!fechasQueEsperaElBache.TryGetValue(tramo.Desde, out List<DateTime>? fechas) || fechas.Count == 0)
+            return "espera un kilometraje";
+        if (fechas.Count == 1)
+            return $"espera el kilometraje del {fechas[0].ToString("dd MMM", Cultura)}";
+        return $"espera los kilometrajes del {fechas[0].ToString("dd MMM", Cultura)} y del {fechas[1].ToString("dd MMM", Cultura)}";
+    }
 
     private static readonly List<FaltanteEnLista> SinPendientes = new();
 
@@ -491,6 +518,8 @@ else
             propuesta = new OdometroPropuesto();
             tramoPorCierre = new Dictionary<DateTime, TramoEnLista>();
             faltantesPorCarga = new Dictionary<string, List<FaltanteEnLista>>();
+            tramosQueDestraba = new Dictionary<string, int>();
+            fechasQueEsperaElBache = new Dictionary<DateTime, List<DateTime>>();
             return;
         }
 
@@ -507,6 +536,26 @@ else
         // alguna vez devolviera dos con el mismo cierre.
         tramoPorCierre = new Dictionary<DateTime, TramoEnLista>();
         foreach (TramoEnLista tramo in tramos) tramoPorCierre.TryAdd(tramo.Hasta, tramo);
+
+        var sinKilometrajePorFecha = new Dictionary<DateTime, CargaEnLista>();
+        foreach (CargaEnLista carga in cargas)
+            if (!carga.TieneKilometraje) sinKilometrajePorFecha.TryAdd(carga.Fecha, carga);
+
+        tramosQueDestraba = new Dictionary<string, int>();
+        fechasQueEsperaElBache = new Dictionary<DateTime, List<DateTime>>();
+        foreach (TramoEnLista tramo in tramos)
+        {
+            if (tramo.EstaCalculado) continue;
+            var espera = new List<DateTime>();
+            foreach (DateTime extremo in new[] { tramo.Desde, tramo.Hasta })
+                if (sinKilometrajePorFecha.TryGetValue(extremo, out CargaEnLista? trunca))
+                {
+                    espera.Add(extremo);
+                    tramosQueDestraba[trunca.Transaccion] =
+                        tramosQueDestraba.GetValueOrDefault(trunca.Transaccion) + 1;
+                }
+            fechasQueEsperaElBache[tramo.Desde] = espera;
+        }
 
         faltantesPorCarga = new Dictionary<string, List<FaltanteEnLista>>();
         foreach (FaltanteEnLista faltante in faltantes)

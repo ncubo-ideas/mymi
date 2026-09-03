@@ -487,15 +487,12 @@ h1:focus, h1:focus-visible { outline: none; }
 .trecho--reservado { opacity: .62; }
 
 /* EL BACHE: el tramo que existe pero está bloqueado. Riel punteado — el camino sigue,
-   pero ese pedazo no se puede medir. */
+   pero ese pedazo no se puede medir. Va TENUE y a una línea: era una caja ámbar de tres
+   renglones que repetía, arriba y abajo del campo, el mismo dato que faltaba. Lo que
+   destraba se dice en la carga que lo debe; el bache solo marca el hueco. */
 .bache .eslabon-riel::before { border-left-style: dashed; border-color: var(--ambar-borde); }
-.bache .eslabon-cuerpo { padding: 12px 0 16px; }
-.bache-caja {
-    padding: 12px 15px; border-radius: 9px;
-    border: 1px dashed var(--ambar-borde); background: var(--ambar-suave);
-}
-.bache-que { font-size: 14px; color: var(--tinta); margin: 0; }
-.bache-que b { color: var(--ambar); font-weight: 600; }
+.bache .eslabon-cuerpo { padding: 6px 0 8px; }
+.bache-linea { margin: 0; font-size: 12.5px; color: var(--tenue-2); }
 .bache-desbloquea { margin: 4px 0 0; font-size: 12.5px; color: var(--tenue); }
 
 /* LA FOTO DEL TABLERO, cuando se está mirando. Grande de verdad: existe para que se lea
