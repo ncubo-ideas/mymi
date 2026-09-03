@@ -295,6 +295,18 @@ sealed class EventoDeCarga : EventoDeLaEstacion
         + $"({FormaDeCorte}) = {TotalMonto} {TotalMoneda}";
 }
 
+// El carnet de socia. El numero es DE CARA AL CLIENTE: se dicta por telefono y se
+// muestra en la bomba. La llave con la que la app se baja el historial es otra cosa y no
+// viaja por aca.
+sealed class EventoDeMembresia : EventoDeLaEstacion
+{
+    public override string Tipo => "MembresiaEmitida";
+
+    [JsonPropertyName("numeroDeSocio")] public string NumeroDeSocio { get; init; } = "";
+    [JsonPropertyName("nombre")]        public string Nombre { get; init; } = "";
+    [JsonPropertyName("desde")]         public DateTime Desde { get; init; }
+}
+
 sealed class EventoDePuntos : EventoDeLaEstacion
 {
     public override string Tipo => "PuntosAcreditados";
@@ -412,6 +424,17 @@ sealed class AlmacenDeEventos
 
         Sorteo(237, new DateTime(2026, 8, 26), "SORTEO-2026-12", "Tómbola de fin de año",
             "un Toyota Yaris", new DateTime(2026, 12, 15), 10000m),
+
+        // El carnet, que en la vida real llega el dia que uno se afilia y aca llega
+        // ultimo por la misma razon que los boletos: solo se agrega al final.
+        new EventoDeMembresia
+        {
+            Id = 238,
+            Fecha = new DateTime(2026, 8, 26, 9, 0, 0),
+            NumeroDeSocio = "SOCIO-000142",
+            Nombre = "Sonia Vargas",
+            Desde = new DateTime(2025, 11, 3),
+        },
     };
 
     private static EventoDeCarga Carga(long id, DateTime fecha, decimal litros, string surtidor,

@@ -70,6 +70,11 @@ namespace Cargas.Dominio
 			Lealtad.ActualizarNivel(NivelDeLealtad.PorNombre(nivel));
 		}
 
+		internal void Afiliar(string numeroDeSocio, string nombre, DateTime desde)
+		{
+			Lealtad.Afiliar(numeroDeSocio, nombre, desde);
+		}
+
 		// ---------------------------------------------------------- los aportes de Sonia
 
 		// Las guardas de decision son totales -deciden sin reventar- porque alimentan el

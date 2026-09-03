@@ -211,6 +211,13 @@ namespace Cargas.App.Vistas
 		public int Saldo { get; init; }
 		public string Nivel { get; init; } = "";
 		public int PuntosParaElSiguienteNivel { get; init; }
+
+		// EL CARNET. Sin afiliacion los tres salen vacios y eso ES el estado: el carnet
+		// todavia no llego. La caratula pregunta por EstaAfiliada, no por Numero.Length.
+		public bool EstaAfiliada { get; init; }
+		public string NumeroDeSocio { get; init; } = "";
+		public string NombreDelSocio { get; init; } = "";
+		public DateTime SocioDesde { get; init; }
 	}
 
 	// UN SORTEO CON SUS BOLETOS, ya juzgado contra hoy. Un vencido se muestra vencido y

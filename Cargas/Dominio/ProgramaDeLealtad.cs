@@ -13,12 +13,20 @@ namespace Cargas.Dominio
 	{
 		internal Puntos Saldo { get; private set; }
 		internal NivelDeLealtad Nivel { get; private set; }
+		internal Membresia Membresia { get; private set; }
 
 		internal ProgramaDeLealtad()
 		{
 			Saldo = new Puntos(0);
 			Nivel = NivelDeLealtad.Base;
+			Membresia = Membresia.SinAfiliar;
 		}
+
+		/// <summary>La membresia LLEGA, igual que los puntos. Volver a emitirla es legitimo
+		/// -la estacion puede reimprimir un carnet- y simplemente reemplaza a la anterior:
+		/// el numero vigente es el ultimo que ellos dijeron.</summary>
+		internal void Afiliar(string numeroDeSocio, string nombre, DateTime desde) =>
+			Membresia = Membresia.Emitida(numeroDeSocio, nombre, desde);
 
 		internal void Acreditar(Puntos puntos)
 		{
@@ -125,6 +133,15 @@ namespace Cargas.Dominio
 
 		internal int PuntosDelSaldo => Saldo.Cantidad;
 		internal string NombreDelNivel => Nivel.Nombre;
+
+		// La membresia se aplana con la ausencia YA RESUELTA: el print del actor no puede
+		// preguntar, asi que sin afiliacion salen vacios y la caratula lee eso como el
+		// carnet que todavia no llego.
+		internal bool EstaAfiliada => Membresia.EstaAfiliada;
+		internal string NumeroDeSocio => Membresia.EstaAfiliada ? Membresia.Numero : "";
+		internal string NombreDelSocio => Membresia.EstaAfiliada ? Membresia.Nombre : "";
+		internal DateTime SocioDesde =>
+			Membresia.EstaAfiliada ? Membresia.Desde : default;
 
 		/// <summary>Cuantos faltan para el siguiente nivel. Cero en el ultimo.</summary>
 		internal int PuntosParaElSiguienteNivel =>

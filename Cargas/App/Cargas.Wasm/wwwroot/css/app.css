@@ -871,3 +871,36 @@ code { font-family: var(--cifras); font-size: .9em; color: var(--cobre); }
         animation: none;
     }
 }
+
+/* EL CARNET DE SOCIA. No es un instrumento del tablero: es una tarjeta, y se ve como una
+   -clara, con el código en alto contraste- porque tiene que leerla el escáner de la caja,
+   no la persona. El resto de la app es oscura; ésta es la excepción y lo es a propósito. */
+.carnet {
+    display: flex; align-items: center; gap: 18px;
+    margin: 0 0 10px; padding: 16px 18px;
+    border: 1px solid var(--bisel-vivo); border-radius: 14px;
+    background: linear-gradient(135deg, var(--marca) 0%, var(--cara) 78%);
+    position: relative; overflow: hidden;
+}
+.carnet::before {
+    content: ""; position: absolute; inset: 0 0 auto; height: 1px;
+    background: linear-gradient(90deg, transparent, var(--brillo), transparent);
+}
+.carnet-datos { flex: 1 1 12rem; min-width: 0; }
+.carnet-nombre { margin-top: 6px; font-size: 17px; font-weight: 600; color: var(--tinta); }
+.carnet-numero {
+    margin: 2px 0 6px; font-family: var(--cifras);
+    font-size: 21px; letter-spacing: .06em; color: var(--logo);
+    overflow-wrap: anywhere;
+}
+
+/* El QR va sobre blanco y con su propio margen de silencio: un código sobre el fondo
+   oscuro de la app no lo levanta ningún lector. */
+.carnet-codigo {
+    flex: 0 0 auto; width: 116px; height: 116px;
+    padding: 6px; border-radius: 8px; background: #fff;
+}
+.carnet-codigo svg { display: block; width: 100%; height: 100%; }
+.carnet-apunte { margin: 0 0 18px; }
+
+.carnet--sin { background: transparent; border-style: dashed; }

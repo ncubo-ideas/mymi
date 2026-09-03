@@ -11,6 +11,7 @@
 @* Sin esto, Razor trata <MedidorDeAutonomia> como un tag HTML desconocido: compila sin
    una queja y emite <medidordeautonomia fraccion="proxima.FraccionRestante"> literal. No
    falla, no se ve, y solo se descubre mirando el DOM. *@
+@using Cargas.Wasm.Lealtad
 @using Cargas.Wasm.Tablero
 
 @* Los formateadores, sin prefijo: en un tablero la cifra es el contenido y escribir

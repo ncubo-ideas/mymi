@@ -39,6 +39,7 @@ namespace Cargas.Consola
 			LaUnidadCambiaLaFraseYNuncaElVeredicto();
 			LosBoletosLleganYLaAppSoloExplica();
 			UnBoletoPuedeLlegarAntesQueSuSorteo();
+			ElCarnetLlegaNoSeInventa();
 			OtroSurtidorNoSeComparaConLaSerie();
 			ElVeredictoDelGuionEsEmpeoro();
 			CambiarLaUnidadInvierteLaFlechaPeroNoElVeredicto();
@@ -499,6 +500,52 @@ namespace Cargas.Consola
 					new DateTime(2027, 1, 1), 5000m, "CRC"));
 			Revienta<ErrorDeDominio>("dos boletos con el mismo numero revientan",
 				() => bitacora.EmitirBoleto("B-1", "SORTEO-2026-12", new DateTime(2026, 8, 25), "T-0209"));
+		}
+
+		private static void ElCarnetLlegaNoSeInventa()
+		{
+			Titulo("el carnet lo emite la estacion, la app no se inventa un numero");
+
+			var bitacora = new BitacoraDeCargas();
+
+			// SIN AFILIAR ES UN ESTADO, no un error: es lo que ve cualquiera que abre la
+			// app antes de que llegue el primer evento.
+			Igual("recien abierta no hay membresia", "False",
+				bitacora.Lealtad.EstaAfiliada.ToString());
+			Igual("y el numero sale vacio, no en null", "", bitacora.Lealtad.NumeroDeSocio);
+			Revienta<ErrorDeDominio>("preguntar el numero sin afiliacion revienta",
+				() => { string _ = bitacora.Lealtad.Membresia.Numero; });
+
+			bitacora.Afiliar("socio-000142", "Sonia Vargas", new DateTime(2025, 11, 3));
+
+			Igual("con el evento ya hay carnet", "True",
+				bitacora.Lealtad.EstaAfiliada.ToString());
+
+			// Se normaliza como la placa y el codigo de sorteo: el numero es una identidad,
+			// no un string suelto, y "socio-142" dictado por telefono tiene que llegar al
+			// mismo lugar que "SOCIO-142".
+			Igual("y el numero queda normalizado", "SOCIO-000142",
+				bitacora.Lealtad.NumeroDeSocio);
+			Igual("con su nombre", "Sonia Vargas", bitacora.Lealtad.NombreDelSocio);
+			Igual("y desde cuando", "03/11/2025",
+				bitacora.Lealtad.SocioDesde.ToString("dd/MM/yyyy", CultureInfo.InvariantCulture));
+
+			// REEMITIR ES LEGITIMO -la estacion reimprime un carnet- y por eso no revienta:
+			// el numero vigente es el ultimo que ellos dijeron.
+			bitacora.Afiliar("SOCIO-000999", "Sonia Vargas", new DateTime(2026, 8, 26));
+			Igual("reemitir reemplaza, no revienta", "SOCIO-000999",
+				bitacora.Lealtad.NumeroDeSocio);
+
+			// Un carnet sin nombre sigue acreditando: exigirlo seria pedir un dato personal
+			// para nada.
+			bitacora.Afiliar("SOCIO-000999", "", new DateTime(2026, 8, 26));
+			Igual("un carnet sin nombre igual vale", "True",
+				bitacora.Lealtad.EstaAfiliada.ToString());
+
+			Revienta<ArgumentException>("un numero en blanco no es un socio",
+				() => bitacora.Afiliar("   ", "Sonia", new DateTime(2025, 11, 3)));
+			Revienta<ErrorDeDominio>("y sin fecha no dice desde cuando",
+				() => bitacora.Afiliar("SOCIO-1", "Sonia", default));
 		}
 
 		private static void LaSuposicionDelTanqueSeEnunciaAntesDePreguntar()

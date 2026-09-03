@@ -192,6 +192,31 @@ namespace Cargas.App
 			.PerformCheckThenCommand();
 		}
 
+		// LA MEMBRESIA LLEGA, no se inventa. Un numero de socio fabricado aca se imprime
+		// igual de lindo en el carnet y no acredita nada en la caja.
+		public string AplicarMembresiaEmitida(MembresiaEmitida evento)
+		{
+			ArgumentNullException.ThrowIfNull(evento);
+
+			return app.Using(
+				scriptForChk: @"
+					Check(@evento > bitacora.UltimoEvento) Error 'evento ya procesado';
+				",
+				@"
+					{
+						bitacoraDeCargas.Afiliar(@socio, @nombre, @desde);
+						bitacora.Avanzar(@evento);
+					}
+				")
+			.WithParameters(p => {
+				p["evento", typeof(long)]     = evento.Evento;
+				p["socio",  typeof(string)]   = evento.NumeroDeSocio;
+				p["nombre", typeof(string)]   = evento.Nombre;
+				p["desde",  typeof(DateTime)] = evento.Desde;
+			})
+			.PerformCheckThenCommand();
+		}
+
 		public string AplicarNivelActualizado(NivelActualizado evento)
 		{
 			ArgumentNullException.ThrowIfNull(evento);
@@ -861,7 +886,11 @@ namespace Cargas.App
 					lealtad = bitacoraDeCargas.Lealtad;
 					print lealtad.PuntosDelSaldo saldo,
 						lealtad.NombreDelNivel nivel,
-						lealtad.PuntosParaElSiguienteNivel paraElSiguiente;
+						lealtad.PuntosParaElSiguienteNivel paraElSiguiente,
+						lealtad.EstaAfiliada afiliada,
+						lealtad.NumeroDeSocio socio,
+						lealtad.NombreDelSocio nombreDelSocio,
+						lealtad.SocioDesde socioDesde;
 				}
 			")
 			.PerformQuery();
@@ -880,6 +909,7 @@ namespace Cargas.App
 			if (mensaje is NivelActualizado nivel) return AplicarNivelActualizado(nivel);
 			if (mensaje is SorteoAnunciado sorteo) return AplicarSorteoAnunciado(sorteo);
 			if (mensaje is BoletoEmitido boleto) return AplicarBoletoEmitido(boleto);
+			if (mensaje is MembresiaEmitida membresia) return AplicarMembresiaEmitida(membresia);
 
 			throw new ArgumentException(
 				$"Esta app no tiene comando para un mensaje de tipo '{mensaje.Tipo}'. La ruta debio devolver null "

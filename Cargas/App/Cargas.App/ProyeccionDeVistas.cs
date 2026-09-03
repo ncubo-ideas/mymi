@@ -308,6 +308,10 @@ namespace Cargas.App
 				Saldo = Entero(raiz, "saldo"),
 				Nivel = Texto(raiz, "nivel"),
 				PuntosParaElSiguienteNivel = Entero(raiz, "paraElSiguiente"),
+				EstaAfiliada = Booleano(raiz, "afiliada"),
+				NumeroDeSocio = Texto(raiz, "socio"),
+				NombreDelSocio = Texto(raiz, "nombreDelSocio"),
+				SocioDesde = Fecha(raiz, "socioDesde"),
 			};
 		}
 
