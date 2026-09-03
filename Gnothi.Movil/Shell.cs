@@ -93,6 +93,10 @@ public sealed class Shell : IDisposable
 	private ModuleCatalog? catalog;
 	private ConsentWatch? watch;
 
+	/// La cola de escrituras de la foto. Existe para SERIALIZARLAS: dos Fotografiar() a la vez
+	/// pelean por el mismo archivo temporal. Ver SetConsent.
+	private Task fotos = Task.CompletedTask;
+
 	// DONDE VIVE EL MODELO. Dos constantes, porque cambiar de proveedor tiene que seguir
 	// siendo asi de barato -- ese es todo el argumento de que IModel sea una interfaz.
 	//
@@ -339,6 +343,26 @@ public sealed class Shell : IDisposable
 		// ReloadConsent no encuentra nada mas que cambiar y se queda callado.
 		catalog!.ReloadConsent();
 		log($"consent: {module}{(tool is null ? "" : "." + tool)} -> {(enabled ? "on" : "off")}");
+
+		// Y LA FOTO SE REESCRIBE DESDE ACA. Esta linea parecia redundante -- ConsentWatch.Changed
+		// ya llama a Fotografiar() -- y no lo es: es la unica que corre cuando la persona mueve el
+		// switch DENTRO de la app, que es el caso normal.
+		//
+		// Por que el watcher no alcanza, y cuesta verlo: la linea de arriba ya consumio el cambio.
+		// Cuando el watcher despierta vuelve a llamar ReloadConsent(), que ahora devuelve CERO
+		// cambios, y ConsentWatch corta ahi -- «if (changes.Count == 0) continue» --. O sea que
+		// Changed no dispara y Fotografiar() no corre. La foto quedaba con lo de antes hasta el
+		// siguiente arranque de la app, y Siri y el Atajo seguian contestando por una tool que la
+		// persona ya habia apagado. El watcher sigue haciendo falta para el otro caso: que el
+		// archivo lo edite algo de afuera.
+		//
+		// EN SEGUNDO PLANO a proposito: Fotografiar() pide cada hecho por Dispatcher.Serve, o sea
+		// que despierta modulos, y el switch tiene que contestar ya.
+		//
+		// Y ENCADENADA, no suelta: tres switches seguidos serian tres escrituras peleando por el
+		// mismo archivo temporal. Encadenarlas las serializa sin bloquear a nadie.
+		fotos = fotos.ContinueWith(_ => Fotografiar(), TaskScheduler.Default).Unwrap();
+
 		return StateJson();
 	}
 
