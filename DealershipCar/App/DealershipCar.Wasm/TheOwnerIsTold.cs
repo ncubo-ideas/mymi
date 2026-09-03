@@ -61,5 +61,26 @@ namespace DealershipCar.Wasm
 			+ "Decir eso necesita cuántos servicios ha tenido este carro en otro lado, cuántos de "
 			+ "esos tienen comprobante, y cuánto mantenimiento programado se dejó de hacer. Quien "
 			+ "los pone aquí es tu concesionario.";
+
+		/// <summary>
+		/// Que los dias de una estadia todavia abierta no estan contados arriba, y por que: los manda
+		/// el taller cuando entrega el carro. Es lo unico que ninguna frase del dominio dice, porque
+		/// cada una contesta su propia pregunta y ninguna habla de la otra.
+		/// </summary>
+		public const string TheDaysOfAStayArriveWhenTheCarIsCollected =
+			"Los días de esta estadía todavía no están contados arriba, y no es un error de la "
+			+ "cuenta: los días de una estadía los manda el taller cuando te entrega el carro, así "
+			+ "que hasta entonces se sabe que está adentro y desde cuándo, pero no cuántos días "
+			+ "habrán sido.";
+
+		/// <summary>
+		/// Que un periodo sin ninguna estadia registrada no es un periodo en que el carro no entro al
+		/// taller, y quien las registra. Es la frase que mas facil se lee al reves en este bloque.
+		/// </summary>
+		public const string TheStaysAreRecordedByTheWorkshopThatReceivesTheCar =
+			"Que no haya ninguna aquí no quiere decir que tu carro no haya entrado a un taller: "
+			+ "quiere decir que ninguna quedó registrada en este periodo. Las estadías las registra "
+			+ "el taller que recibe el carro, por el mismo feed que trae todo lo demás aquí, y no hay "
+			+ "nada que tengas que llenar vos.";
 	}
 }

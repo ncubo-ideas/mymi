@@ -1,0 +1,78 @@
+@using DealershipCar.Wasm.Parts
+
+@if (Stays is null)
+{
+    <p class="note">Este registro todavía no se ha leído.</p>
+}
+else
+{
+    <div class="d-sec" style="margin-top:4px">
+        <span class="d-sec__title">Los días en el taller</span>
+    </div>
+
+    <section class="d-card" id="dias-en-el-taller">
+        <div class="d-cover d-cover--mute" style="padding:0;background:none;grid-template-columns:1fr">
+            <div class="d-cover__body" style="margin:0" id="periodo-dice">@Stays.Says</div>
+        </div>
+
+        @if (Stays.InsideRightNow)
+        {
+            <div class="d-says" id="adentro-ahora">
+                <span class="d-says__label">Ahora mismo, al @Stays.AskedAt</span>
+                @Stays.TheStayRightNowSays
+            </div>
+
+            <p class="d-note" style="margin-top:10px">
+                <Glyph Name="info" Size="14" Stroke="2" />
+                <span>@TheOwnerIsTold.TheDaysOfAStayArriveWhenTheCarIsCollected</span>
+            </p>
+        }
+    </section>
+
+    @if (Stays.AnyStayInThePeriod)
+    {
+        <div class="d-sec">
+            <span class="d-sec__title">Cada estadía</span>
+        </div>
+
+        <section class="d-card" id="linea-estadias">
+            <div class="d-line">
+                @foreach (AStayOnTheRecord estadia in Stays.Rows)
+                {
+                    <div class="d-step" id="@("estadia-" + estadia.EnteredAt)">
+                        <span class="d-step__bullet">
+                            <Glyph Name="calendar" Size="11" Stroke="3" />
+                        </span>
+                        <div class="d-step__when">@estadia.EnteredAt</div>
+                        <div class="d-step__title">@estadia.Subject</div>
+                        <div class="d-step__sub">@estadia.Branch</div>
+
+                        <div style="display:flex;flex-wrap:wrap;gap:6px;margin-top:8px">
+                            @foreach (string dia in estadia.CoveredDays)
+                            {
+                                <span class="d-pill d-pill--info">@dia</span>
+                            }
+                        </div>
+
+                        <div class="d-says">@estadia.Says</div>
+                    </div>
+                }
+            </div>
+        </section>
+    }
+    else
+    {
+        <div class="d-empty" id="sin-estadias">
+            <span class="d-empty__title">Ninguna estadía registrada en este periodo</span>
+            @TheOwnerIsTold.TheStaysAreRecordedByTheWorkshopThatReceivesTheCar
+        </div>
+    }
+}
+
+@code {
+    /// <summary>
+    /// Las estadias en el taller, leidas en un solo momento. La seccion no lee nada por su cuenta.
+    /// </summary>
+    [Parameter, EditorRequired]
+    public TheStaysOfThisVehicle Stays { get; set; }
+}

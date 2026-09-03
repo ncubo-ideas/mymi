@@ -457,11 +457,18 @@ namespace DealershipCar.Dominio.Pruebas
 		{
 			List<string> said = EveryWordTheScreenAddsOfItsOwn();
 
-			// SE MIRO DE NUEVO, que es lo que este renglon pide. Eran cuatro y son CINCO: la frase que
-			// decia que la posicion no estaba en el registro se fue con la ley que la sostenia, y
-			// entraron dos -- quien manda un hecho que todavia no llego, y que hacer cuando el registro
+			// SE MIRO DE NUEVO, que es lo que este renglon pide. Eran cuatro, fueron CINCO -- la frase
+			// que decia que la posicion no estaba en el registro se fue con la ley que la sostenia, y
+			// entraron dos: quien manda un hecho que todavia no llego, y que hacer cuando el registro
 			// se contradice consigo mismo.
-			Assert.That(said, Has.Count.EqualTo(5),
+			//
+			// Y SON SIETE DESDE EL BLOQUE DE LAS ESTADIAS, que entra con DOS de la misma familia que
+			// las cinco: ninguna dice un hecho del vehiculo, las dos nombran QUIEN registra el hecho
+			// que falta, y las dos hacen falta porque ninguna frase del dominio puede decirlas --
+			// cada frase contesta su propia pregunta y ninguna habla de la otra. La primera dice que
+			// los dias de una estadia todavia abierta no estan en la cuenta del periodo y por que; la
+			// segunda, que un periodo sin ninguna estadia registrada no es un periodo sin taller.
+			Assert.That(said, Has.Count.EqualTo(7),
 				"Si TheOwnerIsTold gana o pierde una frase, este barrido se vuelve a mirar en vez de "
 				+ "seguir contando las de antes.");
 

@@ -430,6 +430,22 @@ namespace DealershipCar.Wasm
 			return WhereThisVehicleStands.ReadThrough(api, TheInstantTheScreenAsksAt());
 		}
 
+		/// <summary>
+		/// Las estadias en el taller de este vehiculo, leidas enteras al instante en que la pantalla
+		/// pregunta: el ano de calendario corrido hasta ese dia, y la estadia que cubre ese instante.
+		/// La ventana la fija la pantalla con su propio reloj y no se le pide a nadie -- esta app no
+		/// tiene ningun control que recoja un valor de una persona, asi que no hay selector de periodo.
+		/// </summary>
+		public TheStaysOfThisVehicle ReadTheStaysOfThisVehicle()
+		{
+			Require();
+
+			DateTime asOf = TheInstantTheScreenAsksAt();
+
+			return TheStaysOfThisVehicle.ReadThrough(
+				api, TheFirstDayOfTheYearOf(asOf), TheDay(asOf), asOf);
+		}
+
 		public bool HasCredential() { Require(); return api.StoredToken().Length > 0; }
 
 		public long JournalEntries() { Require(); return app.Actor.CurrentEntryId; }
@@ -437,6 +453,18 @@ namespace DealershipCar.Wasm
 		public (int files, long bytes) MemfsState() => JournalBridge.MemfsState();
 
 		private static string Instant(DateTime instant) => instant.ToString("yyyy-MM-dd HH:mm:ss'Z'");
+
+		/// <summary>Ese instante dicho como el dia de calendario en que cae.</summary>
+		private static string TheDay(DateTime instant) =>
+			instant.ToString("yyyy-MM-dd", System.Globalization.CultureInfo.InvariantCulture);
+
+		/// <summary>
+		/// El primero de enero del ano de ese instante. Es el comienzo de la ventana fija que el
+		/// bloque de estadias muestra, armado con los componentes del instante y no calculado a partir
+		/// de ningun valor del dominio.
+		/// </summary>
+		private static string TheFirstDayOfTheYearOf(DateTime instant) =>
+			TheDay(new DateTime(instant.Year, 1, 1, 0, 0, 0, DateTimeKind.Utc));
 
 		private static string Unwrap(string rejection)
 		{

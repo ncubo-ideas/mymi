@@ -51,7 +51,7 @@ namespace DealershipCar.Dominio.Pruebas
 			new object[] { TheCodeOfTheShellsAsData.Frontera, 2 },
 			new object[] { TheCodeOfTheShellsAsData.Consola, 4 },
 			new object[] { TheCodeOfTheShellsAsData.Mcp, 8 },
-			new object[] { TheCodeOfTheShellsAsData.Wasm, 20 },
+			new object[] { TheCodeOfTheShellsAsData.Wasm, 22 },
 			new object[] { TheCodeOfTheShellsAsData.EndPointDeEventos, 1 },
 			new object[] { TheCodeOfTheShellsAsData.InyectorDeEventosDemo, 1 },
 			new object[] { TheCodeOfTheShellsAsData.PaginaDeDescarga, 1 },
