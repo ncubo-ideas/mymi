@@ -325,6 +325,52 @@ sobre Claude por red**, que es la otra mitad de la Puerta 2 y el contraste que d
 
 ---
 
+## 10. El cruce, en la app, con el modelo del teléfono
+
+Medido el **2026-09-02** en el simulador de iOS 26.5, dentro de Gnothi Host y no en una sonda
+suelta. **Esto es simulador, no aparato.**
+
+Ajustes arranca —sin `model.cfg`, o sea por defecto— en **«En este teléfono · sin llave · sin red
+· nada sale de acá»**, y la pestaña Asistente contesta cruzando dos módulos:
+
+```
+catalog: 7 tools
+round 1: 1 query   examenes_velocidad_de:       486 characters
+round 2: 1 query   facturas_total_de_facturas:  320 characters
+```
+
+> «El examen de hemoglobina muestra una tasa de cambio de 0.0 unidades por año… En cuanto a las
+> facturas, el total es de 30.996,5 unidades, con 5 facturas registradas.»
+
+**Los números de facturas son los del journal** —`total: 30996.5`, `cantidadDeFacturas: 5`—, así
+que no hay invención. Sin markdown y sin recetar. Los de hemoglobina no se verificaron contra el
+journal.
+
+### Una alarma que se levantó y hay que bajar
+
+La corrida anterior, con la pregunta corrompida por el autocorrector —*«Mira Mia examines y Mia
+fractures juntos»*—, devolvió esto:
+
+> «El colesterol de **Mia** aumentó… de **280 mg/dL a 360 mg/dL**… **debe repetir el examen esta
+> semana**»
+
+Ninguno de esos valores está en el expediente, y ahí sí prescribió. **Se reportó como
+"confabulación sobre datos reales" y esa conclusión era apurada**: con la pregunta bien escrita,
+el mismo modelo y las mismas tools reportan los valores verdaderos.
+
+Lo que queda, más acotado y de todos modos real: **ante una pregunta ininteligible el modelo no
+dice «no entendí» — inventa valores clínicos plausibles y prescribe.** La gente escribe mal, así
+que es un modo de falla que hay que cubrir; pero no es el caso general.
+
+### Dos huecos que son nuestros, no del modelo
+
+- **`total_de_facturas` devuelve el número sin moneda**, y por eso la respuesta dice «30.996,5
+  unidades». Es del módulo.
+- El modelo eligió `velocidad_de(Hemoglobina)` para un «mirá mis exámenes» genérico.
+  `que_me_falta_medir` habría sido mejor. Elección pobre, no error.
+
+---
+
 ## Lo que este spike NO responde
 
 Conviene no fingir que sí.
