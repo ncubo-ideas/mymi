@@ -27,7 +27,9 @@
 }
 else
 {
-    <h2 class="rotulo">@(enFoco.TieneFicha ? "Tu carro" : "Ponele nombre a tu carro")</h2>
+    @* LOS TÍTULOS DE SECCIÓN SON TÍTULOS. Todos eran .rotulo de 10.5 px, el mismo de un
+       instrumento, y la pantalla no tenía ningún nivel entre la marca y los campos. *@
+    <h2 class="seccion-titulo">@(enFoco.TieneFicha ? "Tu carro" : "Ponele nombre a tu carro")</h2>
 
     @* LA FICHA. CompletarFicha existía desde el principio y ninguna pantalla lo llamaba,
        así que un segundo carro no se podía ni nombrar: la app lo mostraba por su placa
@@ -43,11 +45,11 @@ else
                    placeholder="el Corolla, la camioneta…" />
         </label>
 
-        <label class="ficha-campo">
+        @* La placa es un dato, no un campo apagado: se muestra como placa, con la nota. *@
+        <div class="ficha-campo">
             <span>Placa</span>
-            <input class="campo campo--texto" value="@enFoco.Placa" disabled
-                   aria-describedby="porque-la-placa" />
-        </label>
+            <span class="placa ficha-placa" aria-describedby="porque-la-placa">@enFoco.Placa</span>
+        </div>
         <p id="porque-la-placa" class="ficha-nota">
             La placa la pone la estación con cada carga: no es tuya para cambiar.
         </p>
@@ -95,7 +97,7 @@ else
 
     @if (otros.Count > 0)
     {
-        <h2 class="rotulo" style="margin:26px 0 10px">Tus otros carros</h2>
+        <h2 class="seccion-titulo">Tus otros carros</h2>
         <p class="apunte">
             Elegí cuál mirás con el selector de arriba.
         </p>
@@ -112,7 +114,7 @@ else
     }
 }
 
-<h2 class="rotulo" style="margin:26px 0 10px">Cómo lo mirás</h2>
+<h2 class="seccion-titulo">Cómo lo mirás</h2>
 
 @* LAS UNIDADES VAN AL JOURNAL, no a este navegador. Es la única preferencia que lo hace,
    y la razón es que cambia lo que la app DICE y no solo lo que se ve: guardada en el
@@ -156,7 +158,7 @@ else
     empeoró, empeoró en las tres.
 </p>
 
-<h2 class="rotulo" style="margin:26px 0 10px">Dónde vive tu bitácora</h2>
+<h2 class="seccion-titulo">Dónde vive tu bitácora</h2>
 
 @if (Estado.HayCarpeta && !Estado.EnAlmacenamientoDelNavegador)
 {
