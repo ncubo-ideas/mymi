@@ -283,6 +283,14 @@ namespace Cargas.Consola
 			IReadOnlyList<GastoEnMoneda> delSegundo = bitacora.GastoDelPeriodoDe("XYZ-789", 2026, 4);
 			Igual("y el segundo lo suyo", "18000", delSegundo[0].Monto.ToString("0"));
 
+			// LA FRASE SE COMPRUEBA, no solo el numero: la lee el MCP y la repite tal cual,
+			// asi que "en 1 cargas" saldria por la boca de la IA. Y la plata va agrupada
+			// aunque la arme el dominio, para no discrepar con lo que escribe la caratula.
+			Igual("dos cargas se dicen en plural", "\u20a142\u202f000 en 2 cargas",
+				deLaPersona[0].Expresado);
+			Igual("y una sola, en singular", "\u20a124\u202f000 en 1 carga",
+				delPrimero[0].Expresado);
+
 			// La misma acumulacion para los dos: si se calcularan por separado, un dia
 			// darian distinto y nadie sabria cual creer.
 			Igual("los dos suman lo de la persona", "42000",

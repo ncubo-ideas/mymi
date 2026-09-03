@@ -64,7 +64,12 @@ namespace Cargas.Dominio
 		}
 
 		internal string CodigoDeMoneda => Moneda.Codigo;
+
+		// CONCORDANCIA: "en 1 cargas" no lo dice nadie. La frase la lee el MCP, que la
+		// repite tal cual, asi que el numero y la palabra se deciden juntos -igual que en
+		// BoletosDelSorteo y BoletosDeLaCarga-.
 		internal string Expresado =>
-			$"{Moneda.Simbolo}{Cifras.Plata(Monto)} en {CantidadDeCargas} cargas";
+			$"{Moneda.Simbolo}{Cifras.Plata(Monto)} en {CantidadDeCargas} "
+			+ (CantidadDeCargas == 1 ? "carga" : "cargas");
 	}
 }
