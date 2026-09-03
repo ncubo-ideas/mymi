@@ -112,8 +112,11 @@ else
                                 📷 ver la foto del tablero
                             </button>
                         }
-                        else if (!parada.TieneFoto && Estado.HayCarpeta)
+                        else if (!parada.TieneFoto && !parada.TieneKilometraje && Estado.HayCarpeta)
                         {
+                            @* Solo donde falta el kilometraje: la foto existe para leer el
+                               odómetro después, y en una carga ya anotada no tiene trabajo.
+                               Nueve invitaciones a sacar foto eran ruido. *@
                             <label class="tecla tecla--texto" style="cursor:pointer">
                                 📷 foto del tablero
                                 <InputFile OnChange="e => GuardarFoto(parada.Transaccion, e)"
