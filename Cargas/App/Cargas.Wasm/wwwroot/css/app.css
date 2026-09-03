@@ -795,6 +795,18 @@ code { font-family: var(--cifras); font-size: .9em; color: var(--cobre); }
     .instrumento--medidor { grid-row: span 2; }
 }
 
+/* LA FRANJA ENTRE EL TELÉFONO Y EL ESCRITORIO. Entre 768 y ~980 px las pestañas todavía
+   viven en el capó pero ya no entran en la misma fila que la marca, la placa y la tecla:
+   «Actualizar» caía solo a una segunda fila y las pestañas quedaban flotando en la primera.
+   MEDIDO a 787 px. Acá las pestañas toman una segunda fila completa, y la primera queda
+   como en escritorio: marca, placa y la tecla al borde derecho. */
+@media (min-width: 768px) and (max-width: 979.98px) {
+    .pestanas { order: 10; flex-basis: 100%; margin-left: 0; }
+    .pestanas-dentro { gap: 6px; }
+    /* En la segunda fila el subrayado de la activa se apoya en el borde del capó igual
+       que en escritorio: el padding de abajo es el mismo. */
+}
+
 /* EL BREAKPOINT DE LAS PESTAÑAS es el mismo de Compras: por debajo, la barra se va al pie,
    que es donde llega el pulgar. `position: fixed` la saca del flujo, así que estar dentro
    del capó no la ata a él — el marcado es uno solo y esto decide dónde se para. */
