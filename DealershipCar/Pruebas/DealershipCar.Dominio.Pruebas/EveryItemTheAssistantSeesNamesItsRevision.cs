@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Reflection;
 using System.Text.Json;
 using DealershipCar.Mcp;
 using DealershipCar.Mcp.Tools;
@@ -222,7 +223,7 @@ namespace DealershipCar.Dominio.Pruebas
 				+ "dijeron' y no 'no lo cubre'.");
 
 			ServicePricing pricing =
-				TheAssistant().WhatTheServiceCosts(MaintenanceOperation.FluidChange, TheMilestone);
+				TheAssistant().WhatTheServiceCosts(MaintenanceOperation.FluidChange);
 
 			Assert.That(pricing.IntervalPublished, Is.False);
 			Assert.That(pricing.IntervalRevision, Is.EqualTo(""));
@@ -230,8 +231,9 @@ namespace DealershipCar.Dominio.Pruebas
 		}
 
 		// UN PRECIO NUNCA SALE SIN SU VIGENCIA, y la vigencia se dice respecto del instante en que se
-		// pregunto. Los dos lados: uno vigente y uno vencido, en la misma ficha, para que "vigente" no
-		// pueda ser una constante.
+		// pregunto. Los dos lados -- uno vigente y uno vencido -- Y AHORA EN LA MISMA RESPUESTA,
+		// porque P-12 hizo que la tool enumere todos los hitos de la operacion en vez de buscar el que
+		// alguien nombre. Que los dos convivan es lo que impide que "vigente" sea una constante.
 		[Test]
 		public void APriceCarriesItsValidityAndSaysWhetherItIsInForceAtTheInstantItWasAsked()
 		{
@@ -244,30 +246,38 @@ namespace DealershipCar.Dominio.Pruebas
 				OnThe(2000, 1, 1), OnThe(2001, 1, 1));
 			journal.Api.SealRevision(TheFirstRevision);
 
-			ServicePricing current =
-				TheAssistant().WhatTheServiceCosts(MaintenanceOperation.FluidChange, TheMilestone);
+			ServicePricing pricing =
+				TheAssistant().WhatTheServiceCosts(MaintenanceOperation.FluidChange);
 
-			Assert.That(current.Prices, Has.Count.EqualTo(1));
-			Assert.That(current.Prices[0].Says, Does.Contain("89.9 USD"));
-			Assert.That(current.Prices[0].Says, Does.Contain("vigente del"));
-			Assert.That(current.Prices[0].Says, Does.Contain("esa vigencia está rigiendo"));
-			Assert.That(current.Prices[0].Says, Does.Contain("revisión " + TheFirstRevision));
-			Assert.That(current.AskedAt, Is.Not.Empty,
+			Assert.That(pricing.Prices, Has.Count.EqualTo(2),
+				"LOS DOS HITOS, sin que nadie nombre ninguno. Ahi esta P-12 entero: la tool enumera "
+				+ "lo que el fabricante publico en vez de pedirle un numero a quien pregunta.");
+
+			PublishedPrice current = ThePriceAt(pricing, "10000 km");
+			PublishedPrice stale = ThePriceAt(pricing, "20000 km");
+
+			Assert.That(current.Says, Does.StartWith("Cambio de fluido a los 10000 km: 89.9 USD"),
+				"LA FORMA FUERTE: el hito y el monto en una frase con su conectiva, asi que una fila "
+				+ "armada con el hito de una y el monto de otra se ve.");
+			Assert.That(current.Says, Does.Contain("vigente del"));
+			Assert.That(current.Says, Does.Contain("esa vigencia está rigiendo"));
+			Assert.That(current.Says, Does.Contain("revisión " + TheFirstRevision));
+			Assert.That(current.Revision, Is.EqualTo(TheFirstRevision));
+
+			Assert.That(pricing.AskedAt, Is.Not.Empty,
 				"Y se dice CONTRA QUE INSTANTE se juzgo. Sin el, 'vigente' no es respecto de nada.");
 
-			ServicePricing stale =
-				TheAssistant().WhatTheServiceCosts(MaintenanceOperation.FluidChange, 20000);
-
-			Assert.That(stale.Prices, Has.Count.EqualTo(1));
-			Assert.That(stale.Prices[0].Says, Does.Contain("esa vigencia ya pasó"),
+			Assert.That(stale.Says, Does.StartWith("Cambio de fluido a los 20000 km: 149.9 USD"));
+			Assert.That(stale.Says, Does.Contain("esa vigencia ya pasó"),
 				"Un precio viejo mostrado como vigente es una promesa que la sucursal no hizo.");
+			Assert.That(stale.Says, Does.Not.Contain("esa vigencia está rigiendo"));
 		}
 
-		// SIN HITO NO SE BUSCA NINGUN PRECIO, y se dice por que. Contestar "no hay precio publicado" a
-		// quien no nombro un hito es reportar como ausencia del fabricante lo que es una pregunta a
-		// medio hacer.
+		// EL HITO SE DICE Y NO SE DIRECCIONA, y esa es la mitad de P-12 que hay que afirmar aparte:
+		// devolver el hito en una forma que se pueda volver a pasar seria el mapeo inverso que DEC-24
+		// ya paga dos veces, y volveria a poner el numero del fabricante en manos de quien pregunta.
 		[Test]
-		public void WithNoMilestoneNamedNoPriceIsLookedUpAndTheReasonIsSaid()
+		public void TheMilestoneIsSaidWithItsUnitAndNeverHandedBackAsANumberToPass()
 		{
 			journal.Api.OpenRevision(TheFirstRevision, TheFirstPublication);
 			journal.Api.PublishServicePrice(
@@ -275,22 +285,58 @@ namespace DealershipCar.Dominio.Pruebas
 				OnThe(2000, 1, 1), OnThe(2099, 12, 31));
 			journal.Api.SealRevision(TheFirstRevision);
 
-			ServicePricing nothingAsked =
+			ServicePricing pricing =
 				TheAssistant().WhatTheServiceCosts(MaintenanceOperation.FluidChange);
 
-			Assert.That(nothingAsked.MilestoneAsked, Is.EqualTo(0));
-			Assert.That(nothingAsked.Prices, Is.Empty);
-			Assert.That(nothingAsked.Detail, Does.Contain("No se nombró ningún hito"));
-			Assert.That(nothingAsked.Detail, Does.Not.Contain("No hay nada publicado en ese"));
+			Assert.That(pricing.Prices, Has.Count.EqualTo(1));
+			Assert.That(pricing.Prices[0].Milestone, Is.EqualTo("10000 km"));
 
-			// Y CON UN HITO QUE NADIE PUBLICO, LA OTRA RAZON. Las dos frases son distintas porque los
-			// dos hechos lo son, y con una sola el asistente no puede saber cual le toco.
-			ServicePricing wrongMilestone =
-				TheAssistant().WhatTheServiceCosts(MaintenanceOperation.FluidChange, 15000);
+			foreach (PropertyInfo each in typeof(PublishedPrice).GetProperties())
+				Assert.That(
+					each.PropertyType, Is.EqualTo(typeof(string)),
+					"'" + each.Name + "' de una fila de precio no es texto. Un hito numerico de vuelta "
+					+ "es una forma direccionable, y quien la reciba la puede pasar como si la hubiera "
+					+ "aprendido del fabricante.");
+		}
 
-			Assert.That(wrongMilestone.Prices, Is.Empty);
-			Assert.That(wrongMilestone.Detail, Does.Contain("No hay nada publicado en ese hito"));
-			Assert.That(wrongMilestone.Detail, Does.Not.Contain("No se nombró ningún hito"));
+		// LA LISTA VACIA SON DOS RESPUESTAS DISTINTAS, y con una sola frase el asistente no puede
+		// saber cual le toco. Reemplaza a la ley vieja -- "sin hito no se busca ningun precio" -- que
+		// P-12 retiro: ya no hay ninguna pregunta a medio hacer, porque no hay nada que preguntar.
+		[Test]
+		public void AnEmptyPriceListIsTwoDifferentAnswersAndTheDetailSaysWhichOne()
+		{
+			journal.Api.OpenRevision(TheFirstRevision, TheFirstPublication);
+			journal.Api.PublishServicePrice(
+				TheFirstRevision, "FluidChange", TheMilestone, "UnitA", 89.90m, "USD",
+				OnThe(2000, 1, 1), OnThe(2099, 12, 31));
+			journal.Api.SealRevision(TheFirstRevision);
+
+			// (a) HAY PRECIOS EN EL REGISTRO, PERO NINGUNO DE ESTA OPERACION.
+			ServicePricing another = TheAssistant().WhatTheServiceCosts(MaintenanceOperation.Repair);
+
+			Assert.That(another.AnyPriceOnRecord, Is.True);
+			Assert.That(another.PriceCountOnRecord, Is.EqualTo(1),
+				"La cuenta es del registro ENTERO y no de la operacion preguntada: es la asimetria "
+				+ "que MS-4 dijo que no se ordenara.");
+			Assert.That(another.Prices, Is.Empty);
+			Assert.That(another.Detail, Does.Contain("No hay ningún precio publicado para esta operación"));
+			Assert.That(another.Detail, Does.Not.Contain("no lleva NINGÚN precio publicado"));
+
+			// (b) Y EL REGISTRO SIN NINGUN PRECIO EN ABSOLUTO, en su propia carpeta.
+			using (var bare = new AScheduleOnARealJournal("1FTFW1ET5DFA00009", "Standard"))
+			{
+				ServicePricing nothing =
+					new ModelSpecificationTools(new JournalReader(bare.Folder, ""))
+						.WhatTheServiceCosts(MaintenanceOperation.FluidChange);
+
+				Assert.That(nothing.AnyPriceOnRecord, Is.False);
+				Assert.That(nothing.PriceCountOnRecord, Is.EqualTo(0));
+				Assert.That(nothing.Prices, Is.Empty);
+				Assert.That(nothing.Detail, Does.Contain("no lleva NINGÚN precio publicado"));
+				Assert.That(
+					nothing.Detail,
+					Does.Not.Contain("No hay ningún precio publicado para esta operación"));
+			}
 		}
 
 		// EL INTERVALO PUBLICADO SE CITA ENTERO, Y LA POSICION DE ESTE VEHICULO NO. Es la decision de
@@ -365,7 +411,18 @@ namespace DealershipCar.Dominio.Pruebas
 			return JsonSerializer.Serialize(assistant.WhatMyCarTakes())
 				+ JsonSerializer.Serialize(assistant.DoesTheWarrantyCover("POWERTRAIN"))
 				+ JsonSerializer.Serialize(
-					assistant.WhatTheServiceCosts(MaintenanceOperation.FluidChange, TheMilestone));
+					assistant.WhatTheServiceCosts(MaintenanceOperation.FluidChange));
+		}
+
+		// La fila del hito que se nombra, buscada POR SU CELDA de hito: el juego viene enumerado y su
+		// orden es el de las revisiones, asi que indexar por posicion afirmaria ese orden y no el hito.
+		private static PublishedPrice ThePriceAt(ServicePricing pricing, string milestone)
+		{
+			foreach (PublishedPrice each in pricing.Prices)
+				if (each.Milestone == milestone) return each;
+
+			throw new InvalidOperationException(
+				"La respuesta no trajo ningun precio al hito " + milestone + ".");
 		}
 
 		private static PublishedFluid TheOilOf(SpecificationSheet takes)
@@ -391,7 +448,7 @@ namespace DealershipCar.Dominio.Pruebas
 		{
 			WarrantyScope scope = TheAssistant().DoesTheWarrantyCover("POWERTRAIN");
 			ServicePricing pricing =
-				TheAssistant().WhatTheServiceCosts(MaintenanceOperation.FluidChange, TheMilestone);
+				TheAssistant().WhatTheServiceCosts(MaintenanceOperation.FluidChange);
 
 			return new Dictionary<string, bool>
 			{
@@ -409,7 +466,7 @@ namespace DealershipCar.Dominio.Pruebas
 		{
 			WarrantyScope scope = TheAssistant().DoesTheWarrantyCover("POWERTRAIN");
 			ServicePricing pricing =
-				TheAssistant().WhatTheServiceCosts(MaintenanceOperation.FluidChange, TheMilestone);
+				TheAssistant().WhatTheServiceCosts(MaintenanceOperation.FluidChange);
 
 			return new Dictionary<string, string>
 			{

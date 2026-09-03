@@ -112,7 +112,7 @@ namespace DealershipCar.Dominio.Pruebas
 				SpecificationSheet sheet = tools.WhatMyCarTakes();
 				WarrantyScope scope = tools.DoesTheWarrantyCover("");
 				ServicePricing pricing =
-					tools.WhatTheServiceCosts(MaintenanceOperation.FluidChange, 10000);
+					tools.WhatTheServiceCosts(MaintenanceOperation.FluidChange);
 
 				Assert.That(sheet.SpecificationKnown, Is.True,
 					"La especificacion SI esta -- la app de hoy la siembra --; lo que no hay es nada "
@@ -154,7 +154,7 @@ namespace DealershipCar.Dominio.Pruebas
 				Assert.That(
 					tools.DoesTheWarrantyCover("").CurrentRevision, Is.EqualTo("MY2025-R1"));
 				Assert.That(
-					tools.WhatTheServiceCosts(MaintenanceOperation.FluidChange, 10000)
+					tools.WhatTheServiceCosts(MaintenanceOperation.FluidChange)
 						.CurrentRevision,
 					Is.EqualTo("MY2025-R1"));
 			}

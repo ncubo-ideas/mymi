@@ -165,10 +165,20 @@ namespace DealershipCar.Dominio.Pruebas
 			}
 		}
 
-		// LAS DOS UNIDADES CRUZAN, y hace falta comprobarlo con la SEGUNDA: el precio se busca en las
-		// dos y una tool que solo preguntara por UnitA pasaria cualquier prueba escrita con UnitA.
-		// Aca se publica en UnitB a proposito, y lo que vuelve tiene que decir UnitB -- no se
-		// convierte ninguna unidad a ninguna otra en ningun punto.
+		// LAS DOS UNIDADES CRUZAN, y hace falta comprobarlo con la SEGUNDA: aca se publica en UnitB a
+		// proposito, y lo que vuelve tiene que decir la unidad en que se publico -- no se convierte
+		// ninguna unidad a ninguna otra en ningun punto.
+		//
+		// P-12 CAMBIO EL DISCRIMINADOR Y HAY QUE DECIRLO. Antes la tool preguntaba por el hito en cada
+		// una de las dos unidades, y este renglon existia porque una tool que solo mirara UnitA pasaria
+		// cualquier prueba escrita con UnitA. Ahora la tool no pregunta por ninguna unidad: ENUMERA los
+		// precios publicados, asi que no puede perder una unidad y lo que queda por comprobar es que la
+		// que vuelve es la publicada.
+		//
+		// Y ESTA SUPERFICIE PERDIO SU UNICO CODIGO DE WIRE. MilestoneUnit -- 'UnitB', el nombre del
+		// miembro -- se fue con el parametro, y era el unico sitio del borde del asistente donde una
+		// unidad de distancia cruzaba como CODIGO: en las demas cruza dentro de la frase, como la lee
+		// una persona. Asi que la unidad ya no se dice dos veces aca, se dice una.
 		[Test]
 		public void APricePublishedInTheSecondUnitIsFoundAndAnsweredInThatUnit()
 		{
@@ -182,21 +192,28 @@ namespace DealershipCar.Dominio.Pruebas
 
 				ServicePricing pricing =
 					new ModelSpecificationTools(new JournalReader(journal.Folder, ""))
-						.WhatTheServiceCosts(MaintenanceOperation.FluidChange, 6000);
+						.WhatTheServiceCosts(MaintenanceOperation.FluidChange);
 
 				Assert.That(pricing.Prices, Has.Count.EqualTo(1));
-				Assert.That(pricing.Prices[0].MilestoneUnit, Is.EqualTo("UnitB"),
-					"La unidad vuelve tal como se publico. Contestar UnitA aca seria haber "
-					+ "convertido, que es lo unico que este dominio nunca hace.");
 
-				// LA CLAVE Y LA FRASE HABLAN DOS VOCABULARIOS, a proposito: la clave es la del wire
-				// -- el nombre del miembro del enum, que es lo que viaja y lo que el journal guarda
-				// -- y la frase es la que lee una persona. Son la MISMA unidad dicha dos veces, y
-				// que una diga UnitB y la otra mi es lo que hay que ver aca: si la frase dijera km,
-				// alguien convirtio.
+				Assert.That(pricing.Prices[0].Milestone, Is.EqualTo("6000 mi"),
+					"El hito vuelve en la unidad en que se publico. Contestar km aca seria haber "
+					+ "convertido, que es lo unico que este dominio nunca hace.");
+				Assert.That(
+					pricing.Prices[0].Milestone,
+					Does.Not.Contain("UnitA").And.Not.Contain("UnitB"),
+					"Y se dice como la lee una persona, no como la nombra el wire: el codigo se fue "
+					+ "con el parametro que P-12 retiro.");
+
 				Assert.That(pricing.Prices[0].Says, Does.Contain("6000 mi"));
 				Assert.That(pricing.Prices[0].Says, Does.Not.Contain("km"));
 				Assert.That(pricing.Prices[0].Revision, Is.EqualTo("MY2025-R1"));
+
+				// Y NINGUN CAMPO DE LA RESPUESTA ENTERA TRAE UN CODIGO DE UNIDAD. Sin este renglon,
+				// un campo nuevo podria reintroducir el mapeo inverso sin que nadie lo mire.
+				Assert.That(
+					System.Text.Json.JsonSerializer.Serialize(pricing),
+					Does.Not.Contain("UnitA").And.Not.Contain("UnitB"));
 			}
 		}
 
