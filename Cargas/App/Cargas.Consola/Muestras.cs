@@ -26,9 +26,12 @@ namespace Cargas.Consola
 	// TotalNoCuadra se ejercita con una carga sintetica en Comprobaciones, no aca.
 	internal static class Muestras
 	{
-		// La placa del demo. COORDINADA CON KENNETH pendiente: tiene que ser la misma
-		// del concesionario o el cruce estrella no se puede ensenar (§6.1.1).
-		internal const string PlacaDelDemo = "ABC-123";
+		// La placa del demo, y es LA DEL CANON: el carro de Sonia es el mismo en los dos
+		// modulos, asi que el numero no lo elige este guion. La llave del cruce quedo
+		// acordada con Kenneth el 2026-09-03 -el concesionario indexa por VIN adentro,
+		// pero la placa es lo que cruza la puerta- porque pedirle el VIN a alguien en una
+		// gasolinera no lo hace nadie (§6.1.1).
+		internal const string PlacaDelDemo = "BQR-482";
 
 		internal const string EstacionDelDemo = "La Sabana";
 

@@ -217,7 +217,7 @@ namespace Cargas.Consola
 			Titulo("el guion parte en los tramos del brief (§7 y §13)");
 
 			BitacoraDeCargas bitacora = ElGuion();
-			IReadOnlyList<Tramo> tramos = bitacora.TramosDe("ABC-123");
+			IReadOnlyList<Tramo> tramos = bitacora.TramosDe("BQR-482");
 
 			Igual("nueve cargas, un vehiculo", "9 1",
 				$"{bitacora.Cantidad} {bitacora.CantidadDeVehiculos}");
@@ -238,7 +238,7 @@ namespace Cargas.Consola
 		{
 			Titulo("una parcial no rompe el tramo, lo aplaza");
 
-			IReadOnlyList<Tramo> calculados = Calculados(ElGuion().TramosDe("ABC-123"));
+			IReadOnlyList<Tramo> calculados = Calculados(ElGuion().TramosDe("BQR-482"));
 
 			// El tramo 3 absorbe la carga preseteada: 490 km con los litros de las DOS
 			// cargas que repusieron (20 + 19).
@@ -267,7 +267,7 @@ namespace Cargas.Consola
 			// Dos carros, el mismo mes, la misma moneda.
 			bitacora.Agregar(new Carga(new DateTime(2026, 4, 3), "La Sabana", "A-3",
 				"regular", 40m, "L", 600m, "CRC", 24000m, "CRC", "automatico",
-				"ABC-123", "T-8001"));
+				"BQR-482", "T-8001"));
 			bitacora.Agregar(new Carga(new DateTime(2026, 4, 18), "La Sabana", "A-3",
 				"regular", 30m, "L", 600m, "CRC", 18000m, "CRC", "automatico",
 				"XYZ-789", "T-8002"));
@@ -276,7 +276,7 @@ namespace Cargas.Consola
 			Igual("la persona gasto los dos", "42000", deLaPersona[0].Monto.ToString("0"));
 			Igual("en dos cargas", "2", deLaPersona[0].CantidadDeCargas.ToString());
 
-			IReadOnlyList<GastoEnMoneda> delPrimero = bitacora.GastoDelPeriodoDe("ABC-123", 2026, 4);
+			IReadOnlyList<GastoEnMoneda> delPrimero = bitacora.GastoDelPeriodoDe("BQR-482", 2026, 4);
 			Igual("el primer carro solo lo suyo", "24000", delPrimero[0].Monto.ToString("0"));
 			Igual("y una sola carga", "1", delPrimero[0].CantidadDeCargas.ToString());
 
@@ -299,7 +299,7 @@ namespace Cargas.Consola
 			// Un mes sin cargas de ese carro no es cero: es ninguna fila. El cero seria
 			// una moneda inventada.
 			Igual("un mes sin cargas no trae filas", "0",
-				bitacora.GastoDelPeriodoDe("ABC-123", 2026, 5).Count.ToString());
+				bitacora.GastoDelPeriodoDe("BQR-482", 2026, 5).Count.ToString());
 		}
 
 		// LA FICHA SE PUEDE EDITAR, y para eso hay que poder leerla. Sus miembros revientan
@@ -312,18 +312,18 @@ namespace Cargas.Consola
 			var bitacora = new BitacoraDeCargas();
 			bitacora.Agregar(new Carga(new DateTime(2026, 4, 3), "La Sabana", "A-3",
 				"regular", 40m, "L", 600m, "CRC", 24000m, "CRC", "automatico",
-				"ABC-123", "T-8101"));
+				"BQR-482", "T-8101"));
 
-			Vehiculo sinFicha = bitacora.VehiculoDe("ABC-123");
+			Vehiculo sinFicha = bitacora.VehiculoDe("BQR-482");
 			Igual("sin ficha, el alias es vacio y no revienta", "", sinFicha.AliasDeLaFicha);
 			Igual("sin ficha, el anio es cero", "0", sinFicha.AnioDeLaFicha.ToString());
 			Igual("sin ficha, el rendimiento de fabrica es cero", "0",
 				sinFicha.RendimientoDeFabricaDeLaFicha.ToString("0"));
 
-			bitacora.CompletarFicha("ABC-123", "el Corolla", "Toyota", "Corolla", 2018,
+			bitacora.CompletarFicha("BQR-482", "el Corolla", "Toyota", "Corolla", 2018,
 				"gris", 18m);
 
-			Vehiculo conFicha = bitacora.VehiculoDe("ABC-123");
+			Vehiculo conFicha = bitacora.VehiculoDe("BQR-482");
 			Igual("con ficha, el alias vuelve", "el Corolla", conFicha.AliasDeLaFicha);
 			Igual("y la marca", "Toyota", conFicha.MarcaDeLaFicha);
 			Igual("y el anio", "2018", conFicha.AnioDeLaFicha.ToString());
@@ -331,11 +331,11 @@ namespace Cargas.Consola
 
 			// Completar de nuevo CORRIGE: ponerle nombre a un carro casi siempre es
 			// arreglar el que le pusiste antes.
-			bitacora.CompletarFicha("ABC-123", "la nave", "Toyota", "Corolla", 2018, "gris", 0m);
+			bitacora.CompletarFicha("BQR-482", "la nave", "Toyota", "Corolla", 2018, "gris", 0m);
 			Igual("volver a completar corrige", "la nave",
-				bitacora.VehiculoDe("ABC-123").AliasDeLaFicha);
+				bitacora.VehiculoDe("BQR-482").AliasDeLaFicha);
 			Igual("y sin rendimiento de fabrica vuelve a cero", "0",
-				bitacora.VehiculoDe("ABC-123").RendimientoDeFabricaDeLaFicha.ToString("0"));
+				bitacora.VehiculoDe("BQR-482").RendimientoDeFabricaDeLaFicha.ToString("0"));
 		}
 
 		// LA UNIDAD ES PRESENTACION, EL VEREDICTO ES JUICIO. Es la comprobacion que
@@ -349,7 +349,7 @@ namespace Cargas.Consola
 			// guion es "empeoro", que es justo el caso donde la palabra se invierte.
 			BitacoraDeCargas bitacora = ElGuion();
 
-			EvaluacionDeRendimiento enKmPorLitro = bitacora.EvaluarRendimientoDe("ABC-123");
+			EvaluacionDeRendimiento enKmPorLitro = bitacora.EvaluarRendimientoDe("BQR-482");
 			Igual("en km/L el veredicto es empeoro", "empeoro", enKmPorLitro.NombreDelVeredicto);
 			Igual("y la frase dice MENOS", "True",
 				enKmPorLitro.ParaSonia.Contains("% menos").ToString());
@@ -357,7 +357,7 @@ namespace Cargas.Consola
 				enKmPorLitro.ParaSonia.Contains("25%").ToString());
 
 			bitacora.ElegirPresentacionDeRendimiento("L/100km");
-			EvaluacionDeRendimiento enLitros = bitacora.EvaluarRendimientoDe("ABC-123");
+			EvaluacionDeRendimiento enLitros = bitacora.EvaluarRendimientoDe("BQR-482");
 
 			// LO QUE NO SE MUEVE.
 			Igual("el veredicto sigue siendo empeoro", "empeoro", enLitros.NombreDelVeredicto);
@@ -380,7 +380,7 @@ namespace Cargas.Consola
 			// Y en mpg, que es la otra direccion: mas sigue siendo mejor, asi que la
 			// palabra vuelve a ser "menos".
 			bitacora.ElegirPresentacionDeRendimiento("mpg");
-			EvaluacionDeRendimiento enMpg = bitacora.EvaluarRendimientoDe("ABC-123");
+			EvaluacionDeRendimiento enMpg = bitacora.EvaluarRendimientoDe("BQR-482");
 			Igual("en mpg el veredicto tampoco se mueve", "empeoro", enMpg.NombreDelVeredicto);
 			Igual("y vuelve a decir menos", "True", enMpg.ParaSonia.Contains("% menos").ToString());
 			Igual("con el mismo 25, porque mpg es proporcional a km/L", "-25",
@@ -413,15 +413,15 @@ namespace Cargas.Consola
 			// Una carga de 29 392: la regla da 2 boletos y sobran 9 392.
 			bitacora.Agregar(new Carga(new DateTime(2026, 8, 25), "La Sabana", "A-3",
 				"regular", 44m, "L", 668m, "CRC", 29392m, "CRC", "automatico",
-				"ABC-123", "T-0209"));
+				"BQR-482", "T-0209"));
 
 			// SIN BOLETOS EMITIDOS no hay boletos, aunque la regla diga que darian dos.
 			Igual("la regla daria dos", "2",
-				bitacora.BoletosPorCargaDe("ABC-123")[0].BoletosQueDaLaRegla.ToString());
+				bitacora.BoletosPorCargaDe("BQR-482")[0].BoletosQueDaLaRegla.ToString());
 			Igual("pero la app no inventa ninguno", "0", bitacora.CantidadDeBoletos.ToString());
 
 			// La explicacion SI se deriva, y dice lo que se pierde.
-			BoletosDeLaCarga sinEmitir = bitacora.BoletosPorCargaDe("ABC-123")[0];
+			BoletosDeLaCarga sinEmitir = bitacora.BoletosPorCargaDe("BQR-482")[0];
 			Igual("y avisa que probablemente falta un dato", "True",
 				sinEmitir.ProbablementeFaltaUnDato.ToString());
 			Igual("sin decir que la estacion le debe algo", "False",
@@ -430,7 +430,7 @@ namespace Cargas.Consola
 			bitacora.EmitirBoleto("B-000205", "SORTEO-2026-12", new DateTime(2026, 8, 25), "T-0209");
 			bitacora.EmitirBoleto("B-000206", "SORTEO-2026-12", new DateTime(2026, 8, 25), "T-0209");
 
-			BoletosDeLaCarga cuadrada = bitacora.BoletosPorCargaDe("ABC-123")[0];
+			BoletosDeLaCarga cuadrada = bitacora.BoletosPorCargaDe("BQR-482")[0];
 			Igual("con los dos emitidos, la cuenta cuadra", "True",
 				cuadrada.LaCuentaCuadra.ToString());
 			Igual("dice los dos boletos", "True", cuadrada.ParaSonia.Contains("2 boletos").ToString());
@@ -569,15 +569,15 @@ namespace Cargas.Consola
 			// Corte automatico: se supone que quedo lleno.
 			bitacora.Agregar(new Carga(new DateTime(2026, 1, 10), "La Sabana", "A-3",
 				"regular", 40m, "L", 615m, "CRC", 24600m, "CRC", "automatico",
-				"ABC-123", "T-9001"));
+				"BQR-482", "T-9001"));
 
 			// Corte preseteado: se supone que NO quedo lleno.
 			bitacora.Agregar(new Carga(new DateTime(2026, 2, 10), "La Sabana", "A-3",
 				"regular", 20m, "L", 615m, "CRC", 12300m, "CRC", "preseteado",
-				"ABC-123", "T-9002"));
+				"BQR-482", "T-9002"));
 
 			FaltanteDeDato delLleno = null, delParcial = null;
-			foreach (FaltanteDeDato faltante in bitacora.FaltantesDe("ABC-123"))
+			foreach (FaltanteDeDato faltante in bitacora.FaltantesDe("BQR-482"))
 			{
 				if (faltante.QueFalta != "la confirmación del tanque") continue;
 				if (faltante.NumeroDeLaTransaccion == "T-9001") delLleno = faltante;
@@ -607,7 +607,7 @@ namespace Cargas.Consola
 			// El kilometraje NO se infiere de nada: no hay suposicion que enunciar, y su
 			// frase sigue siendo el pedido de siempre.
 			FaltanteDeDato delKilometraje = null;
-			foreach (FaltanteDeDato faltante in bitacora.FaltantesDe("ABC-123"))
+			foreach (FaltanteDeDato faltante in bitacora.FaltantesDe("BQR-482"))
 				if (faltante.QueFalta == "el kilometraje") { delKilometraje = faltante; break; }
 
 			Igual("el kilometraje no nace de una suposicion", "False",
@@ -620,7 +620,7 @@ namespace Cargas.Consola
 		{
 			Titulo("un kilometraje faltante rompe dos tramos, y el largo se calcula igual");
 
-			IReadOnlyList<Tramo> tramos = ElGuion().TramosDe("ABC-123");
+			IReadOnlyList<Tramo> tramos = ElGuion().TramosDe("BQR-482");
 
 			var bloqueados = new List<Tramo>();
 			foreach (Tramo tramo in tramos)
@@ -646,7 +646,7 @@ namespace Cargas.Consola
 		{
 			Titulo("otro surtidor no se compara con la serie (§6.3.1)");
 
-			IReadOnlyList<Tramo> calculados = Calculados(ElGuion().TramosDe("ABC-123"));
+			IReadOnlyList<Tramo> calculados = Calculados(ElGuion().TramosDe("BQR-482"));
 			Tramo enB1 = calculados[4];
 
 			Igual("el tramo medido por B-1 no es comparable", "False",
@@ -660,7 +660,7 @@ namespace Cargas.Consola
 		{
 			Titulo("el veredicto del guion: empeoro contra la propia base");
 
-			EvaluacionDeRendimiento evaluacion = ElGuion().EvaluarRendimientoDe("ABC-123");
+			EvaluacionDeRendimiento evaluacion = ElGuion().EvaluarRendimientoDe("BQR-482");
 
 			Igual("veredicto", "empeoro", evaluacion.NombreDelVeredicto);
 			Igual("el actual es el tramo largo", "9.4",
@@ -678,7 +678,7 @@ namespace Cargas.Consola
 		{
 			Titulo("cambiar la unidad invierte la flecha, pero no el veredicto (§5.3)");
 
-			EvaluacionDeRendimiento evaluacion = ElGuion().EvaluarRendimientoDe("ABC-123");
+			EvaluacionDeRendimiento evaluacion = ElGuion().EvaluarRendimientoDe("BQR-482");
 			Rendimiento actual = Rendimiento.DeFabrica(evaluacion.ActualKmPorLitro);
 
 			Igual("en km/L, mas es mejor", "mas es mejor",
@@ -709,7 +709,7 @@ namespace Cargas.Consola
 			Titulo("mejorar tambien se dice");
 
 			BitacoraDeCargas bitacora = SerieSintetica(10000m, 10400m, 10800m, 11280m);
-			Igual("veredicto", "mejoro", bitacora.EvaluarRendimientoDe("ABC-123").NombreDelVeredicto);
+			Igual("veredicto", "mejoro", bitacora.EvaluarRendimientoDe("BQR-482").NombreDelVeredicto);
 		}
 
 		private static void UnCambioChicoEsEstable()
@@ -717,7 +717,7 @@ namespace Cargas.Consola
 			Titulo("un cambio por debajo del minimo significativo es estable");
 
 			BitacoraDeCargas bitacora = SerieSintetica(10000m, 10400m, 10800m, 11208m);
-			EvaluacionDeRendimiento evaluacion = bitacora.EvaluarRendimientoDe("ABC-123");
+			EvaluacionDeRendimiento evaluacion = bitacora.EvaluarRendimientoDe("BQR-482");
 			Igual("veredicto", "estable", evaluacion.NombreDelVeredicto);
 			Igual("sin accion: decir algo aca es entrenar a ignorar avisos", "",
 				evaluacion.AccionLegible);
@@ -729,7 +729,7 @@ namespace Cargas.Consola
 
 			BitacoraDeCargas bitacora = SerieSintetica(10000m, 10400m);
 			Igual("veredicto", "indeterminado",
-				bitacora.EvaluarRendimientoDe("ABC-123").NombreDelVeredicto);
+				bitacora.EvaluarRendimientoDe("BQR-482").NombreDelVeredicto);
 		}
 
 		private static void SinDosLlenosNoHayTramoYSeDiceQueFalta()
@@ -741,7 +741,7 @@ namespace Cargas.Consola
 			bitacora.AnotarOdometro("T-1", 10000m, "km", "observado");
 			bitacora.ConfirmarTanque("T-1");
 
-			EvaluacionDeRendimiento evaluacion = bitacora.EvaluarRendimientoDe("ABC-123");
+			EvaluacionDeRendimiento evaluacion = bitacora.EvaluarRendimientoDe("BQR-482");
 			Igual("veredicto", "sin tramo", evaluacion.NombreDelVeredicto);
 			Igual("la primera carga nunca da rendimiento, y esta bien decirlo", "True",
 				evaluacion.QueFalta.Contains("segunda carga").ToString());
@@ -754,7 +754,7 @@ namespace Cargas.Consola
 			// El ultimo tramo da 20 km/L contra una base de 10: quedaron los kilometros
 			// de dos tanques con los litros de uno.
 			BitacoraDeCargas bitacora = SerieSintetica(10000m, 10400m, 10800m, 11600m);
-			EvaluacionDeRendimiento evaluacion = bitacora.EvaluarRendimientoDe("ABC-123");
+			EvaluacionDeRendimiento evaluacion = bitacora.EvaluarRendimientoDe("BQR-482");
 
 			Igual("veredicto", "dato sospechoso", evaluacion.NombreDelVeredicto);
 			Igual("sugiere registrar la carga que falto, NO alarma", "True",
@@ -773,7 +773,7 @@ namespace Cargas.Consola
 			bitacora.AnotarOdometro("T-4", 11200m, "km", "observado");
 			bitacora.ConfirmarTanque("T-4");
 
-			EvaluacionDeRendimiento evaluacion = bitacora.EvaluarRendimientoDe("ABC-123");
+			EvaluacionDeRendimiento evaluacion = bitacora.EvaluarRendimientoDe("BQR-482");
 			Igual("veredicto", "no comparable", evaluacion.NombreDelVeredicto);
 			Igual("y dice por que", "cambio de combustible dentro del tramo",
 				evaluacion.MotivoDeReserva);
@@ -791,7 +791,7 @@ namespace Cargas.Consola
 			Igual("la carga lo sabe", "False",
 				bitacora.CargaDe("T-2").ElTotalCuadra.ToString());
 			Igual("y el veredicto lo dice antes que cualquier lectura", "total no cuadra",
-				bitacora.EvaluarRendimientoDe("ABC-123").NombreDelVeredicto);
+				bitacora.EvaluarRendimientoDe("BQR-482").NombreDelVeredicto);
 
 			// El redondeo del surtidor NO dispara el reporte: la tolerancia existe.
 			Igual("un redondeo chico si cuadra", "True",
@@ -820,13 +820,13 @@ namespace Cargas.Consola
 
 			BitacoraDeCargas bitacora = ElGuion();
 
-			CapacidadEstimadaDeTanque capacidad = bitacora.CapacidadDe("ABC-123");
+			CapacidadEstimadaDeTanque capacidad = bitacora.CapacidadDe("BQR-482");
 			Igual("la capacidad sale de la carga maxima con lleno", "44",
 				Formato(capacidad.Litros, "0"));
 			Igual("  y dice que carga la fijo", "25/08/2026",
 				capacidad.FechaDeLaCargaQueLaFijo.ToString("dd/MM/yyyy", CultureInfo.InvariantCulture));
 
-			AutonomiaEstimada autonomia = bitacora.AutonomiaDe("ABC-123");
+			AutonomiaEstimada autonomia = bitacora.AutonomiaDe("BQR-482");
 			Igual("la autonomia combina capacidad y habitual", "553",
 				Formato(autonomia.Kilometros, "0"));
 			Igual("  y SIEMPRE es proyeccion", "True", autonomia.EsProyeccion.ToString());
@@ -836,7 +836,7 @@ namespace Cargas.Consola
 			AgregarCarga(sinBase, "2026-08-01", 40m, "A-3", 615m, 24600m, "automatico", "T-1");
 			sinBase.ConfirmarTanque("T-1");
 			Igual("sin habitual no se inventa", "False",
-				sinBase.AutonomiaDe("ABC-123").Hay.ToString());
+				sinBase.AutonomiaDe("BQR-482").Hay.ToString());
 		}
 
 		private static void ElOdometroEstimadoProponeYNuncaEscribe()
@@ -847,7 +847,7 @@ namespace Cargas.Consola
 
 			// El prellenado de la carga trunca: lo que la app le hubiera propuesto a
 			// Sonia el dia de la carga 8.
-			ProyeccionDeOdometro propuesta = bitacora.OdometroEstimadoDe("ABC-123",
+			ProyeccionDeOdometro propuesta = bitacora.OdometroEstimadoDe("BQR-482",
 				new DateTime(2026, 7, 25));
 			Igual("propone ~42 823 km", "42823", Formato(propuesta.Kilometros, "0"));
 			Igual("  con el promedio del que salio", "12.6",
@@ -856,7 +856,7 @@ namespace Cargas.Consola
 
 			// Hoy, con la lectura del dia, la propuesta ES la lectura.
 			Igual("al dia de la ultima lectura propone esa lectura", "43200",
-				Formato(bitacora.OdometroEstimadoDe("ABC-123", Hoy).Kilometros, "0"));
+				Formato(bitacora.OdometroEstimadoDe("BQR-482", Hoy).Kilometros, "0"));
 		}
 
 		private static void LaCompletitudYLoQueFaltaMotivanElIngreso()
@@ -866,9 +866,9 @@ namespace Cargas.Consola
 			BitacoraDeCargas bitacora = ElGuion();
 
 			Igual("la linea discreta", "8 de 9 cargas con kilometraje · 6 tramos calculables",
-				bitacora.CompletitudDe("ABC-123").Expresada);
+				bitacora.CompletitudDe("BQR-482").Expresada);
 
-			IReadOnlyList<FaltanteDeDato> faltantes = bitacora.FaltantesDe("ABC-123");
+			IReadOnlyList<FaltanteDeDato> faltantes = bitacora.FaltantesDe("BQR-482");
 			Igual("un solo faltante", "1", faltantes.Count.ToString());
 			Igual("nombra la carga y lo que se desbloquea", "True",
 				(faltantes[0].ParaSonia.Contains("25/07/2026")
@@ -878,14 +878,14 @@ namespace Cargas.Consola
 			// es para quien lee la bitacora (el MCP); la caratula muestra el numero solo. El
 			// separador es el espacio fino de Cifras, el mismo de la plata.
 			Carga? ultima = null;
-			foreach (Carga carga in bitacora.CargasDe("ABC-123"))
+			foreach (Carga carga in bitacora.CargasDe("BQR-482"))
 				if (carga.NumeroDeLaTransaccion == "T-0209") ultima = carga;
 			Igual("el numero con miles", "43\u202f200 km", ultima!.KilometrajeAnotado);
 			Igual("la procedencia aparte", "observado", ultima.OrigenDelKilometraje);
 			Igual("la frase entera sigue", "43\u202f200 km (observado)", ultima.KilometrajeExpresado);
 
 			Carga? trunca = null;
-			foreach (Carga carga in bitacora.CargasDe("ABC-123"))
+			foreach (Carga carga in bitacora.CargasDe("BQR-482"))
 				if (carga.NumeroDeLaTransaccion == "T-0208") trunca = carga;
 			Igual("sin lectura, vacio y no cero", "|", trunca!.KilometrajeAnotado + "|" + trunca.OrigenDelKilometraje);
 		}
@@ -897,7 +897,7 @@ namespace Cargas.Consola
 			BitacoraDeCargas bitacora = ElGuion();
 			bitacora.AnotarOdometro("T-0208", 42800m, "km", "confirmado");
 
-			IReadOnlyList<Tramo> tramos = bitacora.TramosDe("ABC-123");
+			IReadOnlyList<Tramo> tramos = bitacora.TramosDe("BQR-482");
 			Igual("siete calculados y cero bloqueados", "7 0", Conteo(tramos));
 
 			IReadOnlyList<Tramo> calculados = Calculados(tramos);
@@ -906,9 +906,9 @@ namespace Cargas.Consola
 			Igual("y el que sigue tambien", "9.1",
 				Formato(calculados[6].RendimientoEnKmPorLitro, "0.#"));
 			Igual("la anomalia sostenida no cambia de historia", "empeoro",
-				bitacora.EvaluarRendimientoDe("ABC-123").NombreDelVeredicto);
+				bitacora.EvaluarRendimientoDe("BQR-482").NombreDelVeredicto);
 			Igual("y ya no falta nada", "0",
-				bitacora.FaltantesDe("ABC-123").Count.ToString());
+				bitacora.FaltantesDe("BQR-482").Count.ToString());
 		}
 
 		private static void ElTanqueSeConfirmaNoSeConvence()
@@ -972,9 +972,9 @@ namespace Cargas.Consola
 				bitacora.ConfirmarTanque(transaccion);
 
 			Igual("dos tramos como si hubieran llegado en orden", "2 0",
-				Conteo(bitacora.TramosDe("ABC-123")));
+				Conteo(bitacora.TramosDe("BQR-482")));
 			Igual("con los rendimientos correctos", "10",
-				Formato(Calculados(bitacora.TramosDe("ABC-123"))[0].RendimientoEnKmPorLitro, "0.#"));
+				Formato(Calculados(bitacora.TramosDe("BQR-482"))[0].RendimientoEnKmPorLitro, "0.#"));
 		}
 
 		private static void LasLecturasGuardadasRevientanYLasDeReconocimientoDeciden()
@@ -1019,7 +1019,7 @@ namespace Cargas.Consola
 
 			// Un carro que rinde menos no es una emergencia: el rojo no se gasta aca.
 			Igual("el empeoro del guion pide vigilar, no urgente", "vigilar",
-				ElGuion().EvaluarRendimientoDe("ABC-123").NombreDeLaSeveridad);
+				ElGuion().EvaluarRendimientoDe("BQR-482").NombreDeLaSeveridad);
 			Igual("urgente sigue siendo el mas alto, reservado", "True",
 				Severidad.Urgente.EsMasUrgenteQue(Severidad.ConsultePronto).ToString());
 		}
@@ -1030,21 +1030,21 @@ namespace Cargas.Consola
 
 			BitacoraDeCargas bitacora = ElGuion();
 
-			Igual("sin ficha, la placa", "ABC123",
-				bitacora.VehiculoDe("ABC-123").NombreParaMostrar);
+			Igual("sin ficha, la placa", "BQR482",
+				bitacora.VehiculoDe("BQR-482").NombreParaMostrar);
 
-			bitacora.CompletarFicha("ABC-123", "el Corolla", "Toyota", "Corolla", 2019,
+			bitacora.CompletarFicha("BQR-482", "el Corolla", "Toyota", "Corolla", 2019,
 				"gris", 18m);
-			Vehiculo vehiculo = bitacora.VehiculoDe("ABC-123");
+			Vehiculo vehiculo = bitacora.VehiculoDe("BQR-482");
 			Igual("con ficha, el alias", "el Corolla", vehiculo.NombreParaMostrar);
 			Igual("y el manual dice 18: la otra mitad del cruce con el concesionario",
 				"18 km/L", vehiculo.Ficha.RendimientoDeFabrica.Valor.Expresado);
 
 			// El cero del formulario es "no lo se", y se escala al tipo de ausencia.
-			bitacora.CompletarFicha("ABC-123", "el Corolla", "Toyota", "Corolla", 2019,
+			bitacora.CompletarFicha("BQR-482", "el Corolla", "Toyota", "Corolla", 2019,
 				"gris", 0m);
 			Igual("sin rendimiento de fabrica, el tipo lo dice", "False",
-				bitacora.VehiculoDe("ABC-123").Ficha.RendimientoDeFabrica.Existe.ToString());
+				bitacora.VehiculoDe("BQR-482").Ficha.RendimientoDeFabrica.Existe.ToString());
 		}
 
 		// -------------------------------------------------------------------- el guion
@@ -1102,7 +1102,7 @@ namespace Cargas.Consola
 			bitacora.Agregar(new Carga(
 				DateTime.ParseExact(fecha, "yyyy-MM-dd", CultureInfo.InvariantCulture),
 				"La Sabana", surtidor, tipo, litros, "L", precio, "CRC", total, "CRC",
-				corte, "ABC-123", transaccion));
+				corte, "BQR-482", transaccion));
 		}
 
 		private static string Conteo(IReadOnlyList<Tramo> tramos)

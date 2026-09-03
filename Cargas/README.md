@@ -71,7 +71,8 @@ dotnet run --project Cargas/InyectorDeEventosDemo -- inyectar --litros 42 --prec
 
 ## El guion del demo (§13 del brief, v2)
 
-Nueve cargas de la placa `ABC-123` (⚠️ coordinar con el demo del concesionario), con
+Nueve cargas de la placa `BQR-482` —la del canon, acordada con el demo del
+concesionario como llave del cruce—, con
 fechas literales. Las historias que cierran: la línea base de 12.6 km/L, la parcial
 preseteada que la inferencia lee como «no fue lleno», la caída 12.6 → 9.4 contra la
 propia base (−25%), el tramo no comparable del surtidor B-1, el kilometraje faltante de
