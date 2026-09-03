@@ -6,37 +6,106 @@
 
 <h1 class="solo-para-lectores">Mi carro y mis ajustes</h1>
 
-@* LA PESTAÑA DE AJUSTES: el carro, las unidades y donde vive la bitacora.
-   La ficha y el selector de unidades entran en las fases C y D del plan. *@
+@* LA PESTAÑA DE AJUSTES. Es del carro que se está mirando -el que elige el selector del
+   capó- y no de todos: con la ficha de tres carros en la misma pantalla no se sabe cuál
+   se está editando. Los otros aparecen abajo, para que se sepa que están.
+
+   El selector de unidades entra acá en la fase D. *@
 @if (Error.Length > 0)
 {
     <div class="parte parte--problema"><pre>@Error</pre></div>
 }
 
-<div class="cuadro">
-    @foreach (VehiculoEnLista vehiculo in vehiculos)
-    {
-        <div class="instrumento instrumento--medio" @key="@vehiculo.Placa">
-            <span class="rotulo">@(vehiculo.TieneFicha ? vehiculo.Nombre : "Tu carro")</span>
-            <div class="cifra cifra--chica">@vehiculo.Placa</div>
-            <div class="cifra-pie">
-                <b>@vehiculo.Cargas</b> @(vehiculo.Cargas == 1 ? "carga" : "cargas")
-                @if (!vehiculo.TieneFicha)
-                {
-                    <text> &middot; todavía no tiene nombre</text>
-                }
-            </div>
+@if (guardado.Length > 0)
+{
+    <div class="parte parte--neutro">@guardado</div>
+}
+
+@if (enFoco is null)
+{
+    <p class="apunte">Todavía no entró ninguna carga, así que la app no conoce ningún carro.</p>
+}
+else
+{
+    <h2 class="rotulo">@(enFoco.TieneFicha ? "Tu carro" : "Ponele nombre a tu carro")</h2>
+
+    @* LA FICHA. CompletarFicha existía desde el principio y ninguna pantalla lo llamaba,
+       así que un segundo carro no se podía ni nombrar: la app lo mostraba por su placa
+       para siempre.
+
+       SOLO EL ALIAS ES OBLIGATORIO. Lo demás es de la persona y no hace falta para nada
+       de lo que la app calcula — pedirlo entero antes de dejarla seguir sería pedirle
+       trabajo por prolijidad nuestra. *@
+    <form class="ficha" @onsubmit="Guardar" @onsubmit:preventDefault>
+        <label class="ficha-campo ficha-campo--ancho">
+            <span>Cómo le decís</span>
+            <input class="campo campo--texto" @bind="alias" maxlength="40"
+                   placeholder="el Corolla, la camioneta…" />
+        </label>
+
+        <label class="ficha-campo">
+            <span>Placa</span>
+            <input class="campo campo--texto" value="@enFoco.Placa" disabled
+                   aria-describedby="porque-la-placa" />
+        </label>
+        <p id="porque-la-placa" class="ficha-nota">
+            La placa la pone la estación con cada carga: no es tuya para cambiar.
+        </p>
+
+        <label class="ficha-campo">
+            <span>Marca</span>
+            <input class="campo campo--texto" @bind="marca" maxlength="30" />
+        </label>
+        <label class="ficha-campo">
+            <span>Modelo</span>
+            <input class="campo campo--texto" @bind="modelo" maxlength="30" />
+        </label>
+        <label class="ficha-campo">
+            <span>Año</span>
+            <input class="campo" type="number" inputmode="numeric" @bind="anio" min="1900" max="2100" />
+        </label>
+        <label class="ficha-campo">
+            <span>Color</span>
+            <input class="campo campo--texto" @bind="color" maxlength="20" />
+        </label>
+
+        <label class="ficha-campo ficha-campo--ancho">
+            <span>Rendimiento de fábrica</span>
+            <input class="campo" type="number" step="0.1" inputmode="decimal"
+                   @bind="rendimientoDeFabrica" aria-describedby="porque-el-rendimiento" />
+        </label>
+        @* Es la otra mitad del cruce con el concesionario: lo que el manual promete,
+           contra lo que el carro está dando de verdad. *@
+        <p id="porque-el-rendimiento" class="ficha-nota">
+            En km/L, lo que dice el manual. Sirve para comparar lo que promete contra lo
+            que tu carro está dando. Dejalo en 0 si no lo sabés.
+        </p>
+
+        <div class="fila ficha-campo--ancho">
+            <button class="tecla" type="submit" disabled="@(alias.Trim().Length == 0)">
+                @(enFoco.TieneFicha ? "Guardar los cambios" : "Ponerle nombre")
+            </button>
         </div>
-    }
-    @if (vehiculos.Count == 0)
+    </form>
+
+    @if (otros.Count > 0)
     {
-        <div class="instrumento instrumento--medio instrumento--apagado">
-            <span class="rotulo">Tu carro</span>
-            <div class="cifra cifra--chica">—</div>
-            <div class="cifra-pie">Todavía no entró ninguna carga.</div>
-        </div>
+        <h2 class="rotulo" style="margin:26px 0 10px">Tus otros carros</h2>
+        <p class="apunte">
+            Elegí cuál mirás con el selector de arriba.
+        </p>
+        <ul class="otros-carros">
+            @foreach (VehiculoEnLista otro in otros)
+            {
+                <li @key="@otro.Placa">
+                    <span class="n">@otro.Placa</span>
+                    @(otro.TieneFicha ? $" · {otro.Nombre}" : " · todavía sin nombre")
+                    <span class="apunte"> · @otro.Cargas @(otro.Cargas == 1 ? "carga" : "cargas")</span>
+                </li>
+            }
+        </ul>
     }
-</div>
+}
 
 <h2 class="rotulo" style="margin:26px 0 10px">Dónde vive tu bitácora</h2>
 
@@ -66,9 +135,59 @@ else
 </div>
 
 @code {
-    private IReadOnlyList<VehiculoEnLista> vehiculos = new List<VehiculoEnLista>();
+    private VehiculoEnLista? enFoco;
+    private List<VehiculoEnLista> otros = new();
 
-    protected override void Releer() => vehiculos = Estado.Vehiculos();
+    private string alias = "", marca = "", modelo = "", color = "";
+    private int anio;
+    private decimal rendimientoDeFabrica;
+    private string guardado = "";
+
+    // La placa de la que se cargaron los campos. Si el selector del capó cambia de carro,
+    // el formulario tiene que recargarse: si no, se estaria editando un carro con los
+    // datos tecleados para otro.
+    private string cargadaPara = "";
+
+    protected override void Releer()
+    {
+        IReadOnlyList<VehiculoEnLista> vehiculos = Estado.Vehiculos();
+        string placa = Estado.PlacaEnFoco(vehiculos);
+
+        enFoco = null;
+        otros = new List<VehiculoEnLista>();
+        foreach (VehiculoEnLista vehiculo in vehiculos)
+        {
+            if (vehiculo.Placa == placa) enFoco = vehiculo;
+            else otros.Add(vehiculo);
+        }
+
+        if (enFoco is null) { cargadaPara = ""; return; }
+
+        // Se recargan los campos solo al CAMBIAR de carro, no en cada lectura: releer
+        // mientras alguien escribe le borraria lo tecleado.
+        if (cargadaPara != enFoco.Placa)
+        {
+            cargadaPara = enFoco.Placa;
+            guardado = "";
+            alias = enFoco.Alias;
+            marca = enFoco.Marca;
+            modelo = enFoco.Modelo;
+            anio = enFoco.Anio;
+            color = enFoco.Color;
+            rendimientoDeFabrica = enFoco.RendimientoDeFabrica;
+        }
+    }
+
+    private Task Guardar() => Intentar("guardar la ficha", async () =>
+    {
+        if (enFoco is null || alias.Trim().Length == 0) return;
+
+        string rechazo = await Estado.CompletarFicha(enFoco.Placa, alias.Trim(), marca.Trim(),
+            modelo.Trim(), anio, color.Trim(), rendimientoDeFabrica);
+        if (rechazo.Length > 0) throw new InvalidOperationException(rechazo);
+
+        guardado = $"Listo: ahora le decimos «{alias.Trim()}».";
+    });
 
     private Task Exportar() => Intentar("exportar la bitácora", async () =>
     {

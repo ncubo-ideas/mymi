@@ -34,6 +34,8 @@ namespace Cargas.Consola
 			LaParcialNoRompeElTramoLoAplaza();
 			UnKilometrajeFaltanteRompeDosTramosYDejaElLargo();
 			LaSuposicionDelTanqueSeEnunciaAntesDePreguntar();
+			ElGastoDelCarroNoEsElGastoDeLaPersona();
+			LaFichaSeLeePlanaParaPoderCorregirla();
 			OtroSurtidorNoSeComparaConLaSerie();
 			ElVeredictoDelGuionEsEmpeoro();
 			CambiarLaUnidadInvierteLaFlechaPeroNoElVeredicto();
@@ -246,6 +248,81 @@ namespace Cargas.Consola
 		// "asi", con los mismos dos botones tanto si la inferencia decia lleno como
 		// parcial. La suposicion es del dominio -la hace FormaDeCorte- asi que la frase
 		// que la enuncia tambien.
+		// EL TABLERO ES DE UN CARRO, asi que su gasto tambien. El instrumento mostraba el
+		// gasto de TODOS los vehiculos al lado de la autonomia, el rendimiento y el costo
+		// por kilometro de UNO: con dos carros mentia por omision y nada lo decia.
+		private static void ElGastoDelCarroNoEsElGastoDeLaPersona()
+		{
+			Titulo("el gasto del carro no es el gasto de la persona");
+
+			var bitacora = new BitacoraDeCargas();
+
+			// Dos carros, el mismo mes, la misma moneda.
+			bitacora.Agregar(new Carga(new DateTime(2026, 4, 3), "La Sabana", "A-3",
+				"regular", 40m, "L", 600m, "CRC", 24000m, "CRC", "automatico",
+				"ABC-123", "T-8001"));
+			bitacora.Agregar(new Carga(new DateTime(2026, 4, 18), "La Sabana", "A-3",
+				"regular", 30m, "L", 600m, "CRC", 18000m, "CRC", "automatico",
+				"XYZ-789", "T-8002"));
+
+			IReadOnlyList<GastoEnMoneda> deLaPersona = bitacora.GastoDelPeriodo(2026, 4);
+			Igual("la persona gasto los dos", "42000", deLaPersona[0].Monto.ToString("0"));
+			Igual("en dos cargas", "2", deLaPersona[0].CantidadDeCargas.ToString());
+
+			IReadOnlyList<GastoEnMoneda> delPrimero = bitacora.GastoDelPeriodoDe("ABC-123", 2026, 4);
+			Igual("el primer carro solo lo suyo", "24000", delPrimero[0].Monto.ToString("0"));
+			Igual("y una sola carga", "1", delPrimero[0].CantidadDeCargas.ToString());
+
+			IReadOnlyList<GastoEnMoneda> delSegundo = bitacora.GastoDelPeriodoDe("XYZ-789", 2026, 4);
+			Igual("y el segundo lo suyo", "18000", delSegundo[0].Monto.ToString("0"));
+
+			// La misma acumulacion para los dos: si se calcularan por separado, un dia
+			// darian distinto y nadie sabria cual creer.
+			Igual("los dos suman lo de la persona", "42000",
+				(delPrimero[0].Monto + delSegundo[0].Monto).ToString("0"));
+
+			// Un mes sin cargas de ese carro no es cero: es ninguna fila. El cero seria
+			// una moneda inventada.
+			Igual("un mes sin cargas no trae filas", "0",
+				bitacora.GastoDelPeriodoDe("ABC-123", 2026, 5).Count.ToString());
+		}
+
+		// LA FICHA SE PUEDE EDITAR, y para eso hay que poder leerla. Sus miembros revientan
+		// cuando no existe -y hacen bien-, asi que la proyeccion plana devuelve el vacio de
+		// cada tipo en vez de reventar el print.
+		private static void LaFichaSeLeePlanaParaPoderCorregirla()
+		{
+			Titulo("la ficha se lee plana para poder corregirla");
+
+			var bitacora = new BitacoraDeCargas();
+			bitacora.Agregar(new Carga(new DateTime(2026, 4, 3), "La Sabana", "A-3",
+				"regular", 40m, "L", 600m, "CRC", 24000m, "CRC", "automatico",
+				"ABC-123", "T-8101"));
+
+			Vehiculo sinFicha = bitacora.VehiculoDe("ABC-123");
+			Igual("sin ficha, el alias es vacio y no revienta", "", sinFicha.AliasDeLaFicha);
+			Igual("sin ficha, el anio es cero", "0", sinFicha.AnioDeLaFicha.ToString());
+			Igual("sin ficha, el rendimiento de fabrica es cero", "0",
+				sinFicha.RendimientoDeFabricaDeLaFicha.ToString("0"));
+
+			bitacora.CompletarFicha("ABC-123", "el Corolla", "Toyota", "Corolla", 2018,
+				"gris", 18m);
+
+			Vehiculo conFicha = bitacora.VehiculoDe("ABC-123");
+			Igual("con ficha, el alias vuelve", "el Corolla", conFicha.AliasDeLaFicha);
+			Igual("y la marca", "Toyota", conFicha.MarcaDeLaFicha);
+			Igual("y el anio", "2018", conFicha.AnioDeLaFicha.ToString());
+			Igual("y el rendimiento de fabrica", "18", conFicha.RendimientoDeFabricaDeLaFicha.ToString("0"));
+
+			// Completar de nuevo CORRIGE: ponerle nombre a un carro casi siempre es
+			// arreglar el que le pusiste antes.
+			bitacora.CompletarFicha("ABC-123", "la nave", "Toyota", "Corolla", 2018, "gris", 0m);
+			Igual("volver a completar corrige", "la nave",
+				bitacora.VehiculoDe("ABC-123").AliasDeLaFicha);
+			Igual("y sin rendimiento de fabrica vuelve a cero", "0",
+				bitacora.VehiculoDe("ABC-123").RendimientoDeFabricaDeLaFicha.ToString("0"));
+		}
+
 		private static void LaSuposicionDelTanqueSeEnunciaAntesDePreguntar()
 		{
 			Titulo("lo que se pide confirmar se enuncia antes de preguntar");

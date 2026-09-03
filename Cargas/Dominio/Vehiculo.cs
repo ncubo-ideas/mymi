@@ -35,6 +35,23 @@ namespace Cargas.Dominio
 		internal string NombreParaMostrar => Ficha.Existe ? Ficha.Alias : Placa.ParaMostrar;
 
 		internal bool TieneFicha => Ficha.Existe;
+
+		// LA FICHA, PLANA Y TOTAL. Sus miembros revientan cuando no existe -devolver algo
+		// mentiria- asi que la proyeccion para el print devuelve el vacio de cada tipo.
+		// Sirve para PRELLENAR el formulario: editar una ficha es corregir la que hay, y
+		// sin esto la pantalla tendria que pedirla en blanco cada vez.
+		internal string AliasDeLaFicha => Ficha.Existe ? Ficha.Alias : "";
+		internal string MarcaDeLaFicha => Ficha.Existe ? Ficha.Marca : "";
+		internal string ModeloDeLaFicha => Ficha.Existe ? Ficha.Modelo : "";
+		internal int AnioDeLaFicha => Ficha.Existe ? Ficha.Anio : 0;
+		internal string ColorDeLaFicha => Ficha.Existe ? Ficha.Color : "";
+
+		/// <summary>El rendimiento de fabrica en km/L, o 0 si no lo declaro. El cero es
+		/// ausencia y no un valor: el tipo del dominio ya lo distingue.</summary>
+		internal decimal RendimientoDeFabricaDeLaFicha =>
+			Ficha.Existe && Ficha.RendimientoDeFabrica.Existe
+				? Ficha.RendimientoDeFabrica.Valor.KilometrosPorLitro
+				: 0m;
 		internal string TextoDeLaPlaca => Placa.Texto;
 		internal int CantidadDeCargas => cargas.Count;
 

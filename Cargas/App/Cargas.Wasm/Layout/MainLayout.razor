@@ -40,7 +40,14 @@
             </div>
         </div>
 
-        @if (estado.EstaArriba && vehiculos.Count > 0)
+        @* DE QUIEN ES ESTE TABLERO. Con un carro es una placa y nada mas; con varios se
+           vuelve selector, que es el patron de Road Trip -el nombre del vehiculo en el
+           encabezado ES el selector- y evita UI gratis para el caso comun.
+
+           Un <select> nativo y no una lista propia: en telefono abre la rueda del sistema,
+           llega por teclado sin que haya que escribirlo, y no hay que resolver el cierre
+           al tocar afuera. *@
+        @if (estado.EstaArriba && vehiculos.Count == 1)
         {
             <span class="placa">
                 @vehiculos[0].Placa
@@ -49,6 +56,19 @@
                     <span class="apodo">@vehiculos[0].Nombre</span>
                 }
             </span>
+        }
+        else if (estado.EstaArriba && vehiculos.Count > 1)
+        {
+            <select class="placa placa--selector" value="@enFoco"
+                    aria-label="Elegí de qué carro es el tablero"
+                    @onchange="CambiarDeCarro">
+                @foreach (VehiculoEnLista vehiculo in vehiculos)
+                {
+                    <option value="@vehiculo.Placa">
+                        @(vehiculo.TieneFicha ? $"{vehiculo.Nombre} · {vehiculo.Placa}" : vehiculo.Placa)
+                    </option>
+                }
+            </select>
         }
 
         @* LAS CUATRO PESTAÑAS, y son UNA sola UI que se comporta distinto por resolucion: pestañas
@@ -355,6 +375,10 @@
     // de la persona, y eso es Faltantes.
     private int pendientes;
 
+    // La placa que se esta mirando. La cascara la necesita para el selector y para saber
+    // de que carro cuenta los pendientes del badge.
+    private string enFoco = "";
+
     protected override async Task OnInitializedAsync()
     {
         estado.Cambio += CuandoElEstadoCambia;
@@ -398,10 +422,15 @@
         if (!estado.EstaArriba) return;
 
         vehiculos = estado.Vehiculos();
-        pendientes = vehiculos.Count == 0
-            ? 0
-            : estado.Faltantes(vehiculos[0].Placa).Count;
+        enFoco = estado.PlacaEnFoco(vehiculos);
+        pendientes = enFoco.Length == 0 ? 0 : estado.Faltantes(enFoco).Count;
     }
+
+    private Task CambiarDeCarro(ChangeEventArgs e) => Intentar("cambiar de carro", async () =>
+    {
+        string placa = e.Value?.ToString() ?? "";
+        if (placa.Length > 0) await estado.ElegirVehiculo(placa);
+    });
 
     private Task ConectarCarpeta() => Intentar("elegir carpeta", async () =>
     {

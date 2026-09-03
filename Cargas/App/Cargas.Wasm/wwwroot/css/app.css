@@ -180,6 +180,24 @@ h1:focus, h1:focus-visible { outline: none; }
     font-family: var(--sans); letter-spacing: 0; font-size: 13px; color: var(--tenue);
 }
 
+/* CON VARIOS CARROS LA PLACA SE VUELVE SELECTOR, y sigue pareciendo una placa: es el
+   mismo objeto, ahora elegible. Un <select> nativo porque en teléfono abre la rueda del
+   sistema y llega por teclado sin que haya que resolver nada. */
+.placa--selector {
+    -webkit-appearance: none; appearance: none;
+    cursor: pointer; max-width: 15rem;
+    padding-right: 28px;
+    /* La flecha, dibujada: es el único adorno y no vale una fuente de iconos. */
+    background-image: linear-gradient(45deg, transparent 50%, var(--tenue) 50%),
+                      linear-gradient(135deg, var(--tenue) 50%, transparent 50%);
+    background-position: calc(100% - 15px) 52%, calc(100% - 10px) 52%;
+    background-size: 5px 5px, 5px 5px;
+    background-repeat: no-repeat;
+}
+.placa--selector:hover { border-color: var(--cobre); }
+.placa--selector:focus-visible { outline: 2px solid var(--cobre); outline-offset: 2px; }
+.placa--selector option { background: var(--cara); color: var(--tinta); }
+
 /* ------------------------------------------------------------------ las pestañas
 
    UNA SOLA UI que se comporta distinto por resolución: pestañas a la derecha del capó en
@@ -632,6 +650,46 @@ h1:focus, h1:focus-visible { outline: none; }
 .otra { padding: 12px 0; border-top: 1px solid var(--bisel); }
 .otra p { margin: 8px 0 0; font-size: 13.5px; color: var(--tenue); }
 .otra p b { color: var(--tinta); font-weight: 600; }
+
+/* --------------------------------------------------------------------- la ficha
+
+   El formulario que le pone nombre al carro. Rejilla de dos columnas en escritorio y una
+   en teléfono; el alias y el rendimiento ocupan la fila entera porque su etiqueta no
+   entra en media. */
+
+.ficha {
+    display: grid; grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 12px 16px; max-width: 40rem; margin-top: 12px;
+}
+.ficha-campo { display: flex; flex-direction: column; gap: 5px; }
+.ficha-campo--ancho { grid-column: 1 / -1; }
+.ficha-campo > span {
+    font-size: 11px; font-weight: 600; letter-spacing: .14em; text-transform: uppercase;
+    color: var(--tenue-2);
+}
+.ficha-nota {
+    grid-column: 1 / -1; margin: -6px 0 0;
+    font-size: 12.5px; color: var(--tenue-2);
+}
+
+/* El campo de texto es el mismo .campo de la ruta, pero sin cifras tabulares: un alias
+   no es un número. */
+.campo--texto {
+    font-family: var(--sans); font-variant-numeric: normal;
+    max-width: none; letter-spacing: 0;
+}
+.campo:disabled { opacity: .55; cursor: not-allowed; }
+
+.otros-carros { list-style: none; margin: 10px 0 0; padding: 0; font-size: 14px; }
+.otros-carros li { padding: 7px 0; border-top: 1px solid var(--bisel); color: var(--tenue); }
+.otros-carros .n {
+    font-family: var(--cifras); font-variant-numeric: tabular-nums; color: var(--tinta);
+    letter-spacing: .06em;
+}
+
+@media (max-width: 600px) {
+    .ficha { grid-template-columns: minmax(0, 1fr); }
+}
 
 /* ------------------------------------------------------------------- arranque */
 

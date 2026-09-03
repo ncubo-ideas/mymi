@@ -349,7 +349,13 @@ namespace Cargas.App
 					print vehiculo.TextoDeLaPlaca placa,
 						vehiculo.NombreParaMostrar nombre,
 						vehiculo.TieneFicha tieneFicha,
-						vehiculo.CantidadDeCargas cargas;
+						vehiculo.CantidadDeCargas cargas,
+						vehiculo.AliasDeLaFicha alias,
+						vehiculo.MarcaDeLaFicha marca,
+						vehiculo.ModeloDeLaFicha modelo,
+						vehiculo.AnioDeLaFicha anio,
+						vehiculo.ColorDeLaFicha color,
+						vehiculo.RendimientoDeFabricaDeLaFicha rendimientoDeFabrica;
 				}
 			")
 			.PerformQuery();
@@ -656,6 +662,33 @@ namespace Cargas.App
 
 		public IReadOnlyList<GastoEnLista> Gastos(int anio, int mes) =>
 			ProyeccionDeVistas.Gastos(GastoDelPeriodo(anio, mes));
+
+		// EL GASTO DE UN CARRO. El tablero es de un vehiculo, asi que su instrumento de
+		// gasto tiene que serlo tambien: con dos carros, el gasto de todos conviviendo con
+		// la autonomia y el rendimiento de uno solo miente por omision.
+		public string GastoDelPeriodoDe(string placa, int anio, int mes)
+		{
+			ArgumentNullException.ThrowIfNullOrWhiteSpace(placa);
+
+			return app.Using(@"
+				foreach (gastoDelCarro in bitacoraDeCargas.GastoDelPeriodoDe(@placa, @anio, @mes)) {
+					print gastoDelCarro.CodigoDeMoneda moneda,
+						gastoDelCarro.Monto monto,
+						gastoDelCarro.CantidadDeCargas cargas,
+						gastoDelCarro.Litros litros,
+						gastoDelCarro.Expresado expresado;
+				}
+			")
+			.WithParameters(p => {
+				p["placa", typeof(string)] = placa;
+				p["anio",  typeof(int)]    = anio;
+				p["mes",   typeof(int)]    = mes;
+			})
+			.PerformQuery();
+		}
+
+		public IReadOnlyList<GastoEnLista> GastosDe(string placa, int anio, int mes) =>
+			ProyeccionDeVistas.Gastos(GastoDelPeriodoDe(placa, anio, mes), "gastoDelCarro");
 
 		// La lealtad, discreta: presente para que se sienta real, no es el foco.
 		public string EstadoDeLealtad() =>

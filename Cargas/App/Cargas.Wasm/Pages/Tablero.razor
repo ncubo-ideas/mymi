@@ -288,7 +288,7 @@
             return;
         }
 
-        string placa = vehiculos[0].Placa;
+        string placa = Estado.PlacaEnFoco(vehiculos);
         tramos = Estado.Tramos(placa);
         rendimiento = Estado.Rendimiento(placa);
         autonomia = Estado.Autonomia(placa);
@@ -303,11 +303,15 @@
         // EL GASTO DEL MES DE LA ULTIMA CARGA, no el del mes del calendario. Con el mes
         // corriente el instrumento aparece vacio en cuanto pasan treinta dias sin cargar, y
         // "0" no es la respuesta: la respuesta es cuanto llevaba gastado la ultima vez.
+        //
+        // Y ES EL DE ESTE CARRO. Antes era el de todos, conviviendo con la autonomia, el
+        // rendimiento y el costo por kilometro de UNO: con dos carros el instrumento mentia
+        // por omision y nada en la pantalla lo decia.
         gastos = new List<GastoEnLista>();
         mesDelGasto = default;
         foreach (CargaEnLista carga in Estado.Cargas(placa))
             if (carga.Fecha > mesDelGasto) mesDelGasto = carga.Fecha;
         if (mesDelGasto != default)
-            gastos = Estado.Gastos(mesDelGasto.Year, mesDelGasto.Month);
+            gastos = Estado.Gastos(placa, mesDelGasto.Year, mesDelGasto.Month);
     }
 }

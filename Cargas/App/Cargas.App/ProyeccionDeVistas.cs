@@ -30,6 +30,12 @@ namespace Cargas.App
 					Nombre = Texto(elemento, "nombre"),
 					TieneFicha = Booleano(elemento, "tieneFicha"),
 					Cargas = Entero(elemento, "cargas"),
+					Alias = Texto(elemento, "alias"),
+					Marca = Texto(elemento, "marca"),
+					Modelo = Texto(elemento, "modelo"),
+					Anio = Entero(elemento, "anio"),
+					Color = Texto(elemento, "color"),
+					RendimientoDeFabrica = Decimal(elemento, "rendimientoDeFabrica"),
 				});
 			return vehiculos;
 		}
@@ -207,10 +213,12 @@ namespace Cargas.App
 			return precios;
 		}
 
-		internal static IReadOnlyList<GastoEnLista> Gastos(string json)
+		// LA LLAVE ES EL NOMBRE DE LA VARIABLE DEL foreach del DSL, no la primera columna,
+		// asi que dos consultas que devuelven la misma forma tienen que decir cual usan.
+		internal static IReadOnlyList<GastoEnLista> Gastos(string json, string llave = "gasto")
 		{
 			var gastos = new List<GastoEnLista>();
-			foreach (JsonElement elemento in Arreglo(json, "gasto"))
+			foreach (JsonElement elemento in Arreglo(json, llave))
 				gastos.Add(new GastoEnLista
 				{
 					Moneda = Texto(elemento, "moneda"),

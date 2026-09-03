@@ -190,5 +190,15 @@ namespace Cargas.App.Vistas
 
 		public bool TieneFicha { get; init; }
 		public int Cargas { get; init; }
+
+		// LA FICHA, para poder EDITARLA. Completar una ficha casi siempre es corregir la
+		// que hay, y sin esto el formulario tendria que pedirla en blanco cada vez. Vacias
+		// -y el año y el rendimiento en cero- cuando todavia no hay ficha.
+		public string Alias { get; init; } = "";
+		public string Marca { get; init; } = "";
+		public string Modelo { get; init; } = "";
+		public int Anio { get; init; }
+		public string Color { get; init; } = "";
+		public decimal RendimientoDeFabrica { get; init; }
 	}
 }

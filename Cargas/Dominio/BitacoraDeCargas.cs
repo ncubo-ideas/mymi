@@ -202,37 +202,16 @@ namespace Cargas.Dominio
 		internal IReadOnlyList<PrecioEnElTiempo> PreciosDe(string placa) =>
 			VehiculoDe(placa).Precios();
 
-		/// <summary>El gasto de un mes, POR MONEDA y sobre todos los vehiculos: es la
+		/// <summary>El gasto de un mes, POR MONEDA y sobre TODOS los vehiculos: es la
 		/// pregunta de la billetera, no la del carro.</summary>
-		internal IReadOnlyList<GastoEnMoneda> GastoDelPeriodo(int anio, int mes)
-		{
-			var montos = new Dictionary<Moneda, GastoAcumulado>();
-			foreach (Carga carga in cargasPorTransaccion.Values)
-			{
-				if (carga.Fecha.Year != anio || carga.Fecha.Month != mes) continue;
+		internal IReadOnlyList<GastoEnMoneda> GastoDelPeriodo(int anio, int mes) =>
+			GastoEnMoneda.DelPeriodo(cargasPorTransaccion.Values, anio, mes);
 
-				if (!montos.TryGetValue(carga.Total.Moneda, out GastoAcumulado acumulado))
-				{
-					acumulado = new GastoAcumulado();
-					montos[carga.Total.Moneda] = acumulado;
-				}
-				acumulado.Monto += carga.Total.Monto;
-				acumulado.Cargas++;
-				acumulado.Litros += carga.Volumen.EnLitros;
-			}
-
-			var filas = new List<GastoEnMoneda>();
-			foreach (KeyValuePair<Moneda, GastoAcumulado> par in montos)
-				filas.Add(new GastoEnMoneda(par.Key, par.Value.Monto, par.Value.Cargas,
-					par.Value.Litros));
-			return filas;
-		}
-
-		private sealed class GastoAcumulado
-		{
-			internal decimal Monto;
-			internal int Cargas;
-			internal decimal Litros;
-		}
+		/// <summary>El gasto de un mes DE UN CARRO. Existe porque el tablero es de un
+		/// vehiculo: ahi el gasto de todos convivia con la autonomia, el rendimiento y el
+		/// costo por kilometro de UNO solo, y con dos carros el instrumento mentia por
+		/// omision sin que nada lo dijera.</summary>
+		internal IReadOnlyList<GastoEnMoneda> GastoDelPeriodoDe(string placa, int anio, int mes) =>
+			GastoEnMoneda.DelPeriodo(VehiculoDe(placa).Cargas, anio, mes);
 	}
 }

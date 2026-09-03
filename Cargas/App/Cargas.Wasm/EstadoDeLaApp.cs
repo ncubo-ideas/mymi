@@ -58,6 +58,48 @@ public sealed class EstadoDeLaApp : IAsyncDisposable
 	/// Lo dispara TODO lo que cambia el estado del actor -arrancar, refrescar y cada
 	/// aporte-, y no solo el refresh: si un aporte hecho en la Ruta desbloquea un tramo,
 	/// el Tablero tiene que enterarse aunque nadie lo haya tocado.</summary>
+	// ------------------------------------------------------- el carro que se esta mirando
+
+	// LA PLACA ELEGIDA es una PREFERENCIA DE PANTALLA, no un hecho: vive en IndexedDB al
+	// lado del handle de la carpeta y no en el journal. Que carro estaba mirando alguien
+	// no es un hecho de la estacion ni un aporte sobre el carro, y si estuviera en el
+	// journal el servidor MCP la leeria sin que significara nada para el.
+	private string placaElegida = "";
+
+	/// <summary>La placa que se esta mirando, resuelta contra los vehiculos que HAY.
+	///
+	/// La preferencia guardada es una PISTA, no una verdad: el carro pudo dejar de estar
+	/// -otra computadora, otra bitacora importada- y en ese caso se cae al primero en vez
+	/// de dejar el tablero en blanco apuntando a una placa que ya no existe. Total a
+	/// proposito: sin vehiculos devuelve "".
+	///
+	/// Recibe la lista en vez de volver a consultarla porque quien llama ya la tiene: es
+	/// un PerformQuery, y pedirlo dos veces por repintado no es gratis.</summary>
+	public string PlacaEnFoco(IReadOnlyList<VehiculoEnLista> vehiculos)
+	{
+		ArgumentNullException.ThrowIfNull(vehiculos);
+		if (vehiculos.Count == 0) return "";
+
+		foreach (VehiculoEnLista vehiculo in vehiculos)
+			if (vehiculo.Placa == placaElegida) return placaElegida;
+
+		return vehiculos[0].Placa;
+	}
+
+	/// <summary>Elegir carro. Se recuerda para la proxima vez y se avisa, porque lo que
+	/// cambia no es una pantalla: cambian las cuatro.</summary>
+	public async ValueTask ElegirVehiculo(string placa)
+	{
+		ArgumentNullException.ThrowIfNullOrWhiteSpace(placa);
+		if (placa == placaElegida) return;
+
+		placaElegida = placa;
+		await puente.RecordarPreferencia(ClaveDelCarro, placa);
+		Avisar();
+	}
+
+	private const string ClaveDelCarro = "carro-en-foco";
+
 	/// <summary>Cuantas veces se fue a buscar datos. Es la llave que hace que el cuadro de
 	/// instrumentos se recree y vuelva a entrar animado.
 	///
@@ -215,6 +257,10 @@ public sealed class EstadoDeLaApp : IAsyncDisposable
 			UltimoMensaje += $" | al abrir no se pudo poner al dia ({ex.GetType().Name}: {ex.Message}). "
 			               + "Lo que ya estaba registrado se muestra igual.";
 		}
+
+		// La preferencia se lee ANTES de avisar: asi la primera pintada ya sale con el
+		// carro que quedo elegido, en vez de mostrar el primero y saltar despues.
+		placaElegida = await puente.Preferencia(ClaveDelCarro);
 
 		// Avisa aunque el refresh haya fallado: el actor esta arriba y hay journal que
 		// mostrar, que es de lo que sirve tener el dato propio.
@@ -416,6 +462,11 @@ public sealed class EstadoDeLaApp : IAsyncDisposable
 	public IReadOnlyList<PrecioEnLista> Precios(string placa) { Exigir(); return api!.Precios(placa); }
 
 	public IReadOnlyList<GastoEnLista> Gastos(int anio, int mes) { Exigir(); return api!.Gastos(anio, mes); }
+
+	/// <summary>El gasto de UN carro. El de la persona -Gastos(anio, mes)- sigue existiendo
+	/// para cuando la pregunta sea de la billetera; el tablero usa este.</summary>
+	public IReadOnlyList<GastoEnLista> Gastos(string placa, int anio, int mes)
+	{ Exigir(); return api!.GastosDe(placa, anio, mes); }
 
 	public EstadoDeLealtad Lealtad() { Exigir(); return api!.Lealtad(); }
 

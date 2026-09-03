@@ -463,7 +463,7 @@ else
             return;
         }
 
-        string placa = vehiculos[0].Placa;
+        string placa = Estado.PlacaEnFoco(vehiculos);
         cargas = Estado.Cargas(placa);
         tramos = Estado.Tramos(placa);
         rendimiento = Estado.Rendimiento(placa);
