@@ -26,6 +26,7 @@ namespace Cargas.Consola
 				{
 					// Comprobaciones del dominio puro: sin actor, sin journal, sin disco.
 					case "comprobar":       return Comprobaciones.Correr();
+					case "qr":              return Qr(args);
 					case "medir":           return Medir(Carpeta(args, 1));
 					case "estado":          return Estado(Carpeta(args, 1));
 					case "rendimiento":     return RendimientoDe(args);
@@ -45,6 +46,28 @@ namespace Cargas.Consola
 					Console.Error.WriteLine($"  causa: {interna.GetType().FullName}: {interna.Message}");
 				return 2;
 			}
+		}
+
+		// LA MATRIZ DEL QR, en crudo. Herramienta de verificacion: un codigo QR mal armado
+		// se ve perfecto y no lo lee ningun telefono, asi que mirarlo no alcanza como
+		// prueba. Esto imprime la matriz para poder compararla, modulo por modulo, contra
+		// un codificador de referencia independiente.
+		private static int Qr(string[] args)
+		{
+			string contenido = args.Length > 1 ? args[1] : "SOCIO-000142";
+
+			bool[,] matriz = Cargas.App.Vistas.CodigoQR.Matriz(contenido);
+			int lado = matriz.GetLength(0);
+
+			Console.WriteLine($"### {contenido} {lado}");
+			for (int fila = 0; fila < lado; fila++)
+			{
+				var linea = new System.Text.StringBuilder();
+				for (int columna = 0; columna < lado; columna++)
+					linea.Append(matriz[fila, columna] ? '1' : '0');
+				Console.WriteLine(linea.ToString());
+			}
+			return 0;
 		}
 
 		// Abre el puppet sobre una carpeta real. Es el mismo par ConfigureStorage + Start
@@ -412,6 +435,7 @@ namespace Cargas.Consola
 			Console.WriteLine("  autonomia       [carpeta] [placa]              capacidad estimada x rendimiento habitual");
 			Console.WriteLine("  sembrar-aportes [carpeta]                      los aportes de Sonia sobre un journal refrescado");
 			Console.WriteLine("  refrescar       [carpeta] [baseUrl] [recurso] [id]   trae eventos de la estacion y los aplica");
+			Console.WriteLine("  qr              [contenido]                    imprime la matriz del QR en 0 y 1, para contrastarla");
 			Console.WriteLine();
 			Console.WriteLine("carpeta por defecto: ~/Cargas-journal");
 			Console.WriteLine("baseUrl por defecto: http://localhost:8111/");

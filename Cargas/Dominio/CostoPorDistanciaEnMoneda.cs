@@ -26,6 +26,6 @@ namespace Cargas.Dominio
 
 		internal string CodigoDeMoneda => Moneda.Codigo;
 		internal string Expresado =>
-			$"{Moneda.Simbolo}{MontoPorKilometro:0.##} por km, sobre {Kilometros:0} km";
+			$"{Moneda.Simbolo}{Cifras.Plata(MontoPorKilometro)} por km, sobre {Cifras.Entera(Kilometros)} km";
 	}
 }

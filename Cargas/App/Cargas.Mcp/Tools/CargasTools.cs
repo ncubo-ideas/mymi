@@ -115,9 +115,10 @@ internal sealed class CargasTools
 				HayVehiculo = true,
 				Veredicto = lectura.Veredicto,
 				ParaLaPersona = lectura.ParaSonia,
-				ActualKmPorLitro = Math.Round(lectura.Actual, 2),
-				HabitualKmPorLitro = Math.Round(lectura.Habitual, 2),
-				CambioPorcentual = lectura.CambioPorcentual,
+				Actual = Math.Round(lectura.ActualComoSeVe, 2),
+				Habitual = Math.Round(lectura.HabitualComoSeVe, 2),
+				Unidad = lectura.Simbolo,
+				CambioPorcentual = lectura.CambioPorcentualComoSeVe,
 				TramosCalculados = lectura.TramosCalculados,
 				TramosBloqueados = lectura.TramosBloqueados,
 				HaySerie = lectura.HaySerie,
@@ -181,26 +182,78 @@ internal sealed class CargasTools
 			if (!ConocePlaca(api, placa))
 				return new ProximaCarga { HayDatos = true, HayVehiculo = false };
 
-			AutonomiaDelVehiculo autonomia = api.Autonomia(placa);
-			OdometroPropuesto proyeccion = api.Odometro(placa, hoy);
-			if (!autonomia.Hay || !proyeccion.Hay || proyeccion.KilometrosPorDia <= 0m)
+			// LA MISMA COMPOSICION QUE MIRA LA PERSONA. La resta vivia aca; se subio a
+			// CargasAPI cuando el tablero pidio la cifra, porque calcularla dos veces es
+			// como la IA y la persona terminan diciendo numeros distintos del mismo
+			// carro. Esta tool ya solo la viste de DTO.
+			ProximaCargaDelVehiculo proxima = api.ProximaCarga(placa, hoy);
+			if (!proxima.Hay)
 				return new ProximaCarga { HayDatos = true, HayVehiculo = true, HayEstimacion = false };
-
-			// Lo recorrido desde la ultima lectura, proyectado con su promedio; lo que
-			// queda es autonomia menos eso. Aproximacion declarada: la ultima lectura
-			// no siempre coincide con la ultima carga llena.
-			decimal recorridos = proyeccion.KilometrosPorDia * proyeccion.DiasDesdeLaUltimaLectura;
-			decimal restantes = Math.Max(0m, autonomia.Kilometros - recorridos);
 
 			return new ProximaCarga
 			{
 				HayDatos = true,
 				HayVehiculo = true,
 				HayEstimacion = true,
-				DiasEstimados = (int)Math.Round(restantes / proyeccion.KilometrosPorDia),
-				KilometrosRestantes = Math.Round(restantes),
-				KilometrosPorDia = Math.Round(proyeccion.KilometrosPorDia, 1),
-				EsProyeccion = true,
+				DiasEstimados = proxima.DiasEstimados,
+				KilometrosRestantes = proxima.KilometrosRestantes,
+				KilometrosPorDia = proxima.KilometrosPorDia,
+				EsProyeccion = proxima.EsProyeccion,
+			};
+		});
+	}
+
+	[McpServerTool(Name = "mis_boletos_de_tombola", UseStructuredContent = true)]
+	[Description("Los boletos de tombola de la persona, agrupados por sorteo, y de donde "
+		+ "salio cada uno. Los boletos los EMITE la estacion: la app no los calcula. Lo "
+		+ "que si deriva es la explicacion de cuantos dio cada carga y cuanto sobro.")]
+	public BoletosDeTombola MisBoletosDeTombola(
+		[Description("La placa del vehiculo, como la lista mis_cargas.")] string placa)
+	{
+		if (!lector.HayJournal) return new BoletosDeTombola { HayDatos = false };
+
+		// HOY lo pone ESTE proceso, no el dominio. Si el modelo leyera el reloj, el mismo
+		// journal reproducido manana diria que un sorteo ya vencio.
+		DateTime hoy = DateTime.Now;
+
+		return lector.Consultar(api =>
+		{
+			if (!ConocePlaca(api, placa))
+				return new BoletosDeTombola { HayDatos = true, HayVehiculo = false };
+
+			var sorteos = new List<SorteoDeTombola>();
+			foreach (SorteoEnLista sorteo in api.Sorteos(hoy))
+				sorteos.Add(new SorteoDeTombola
+				{
+					Codigo = sorteo.Codigo,
+					Nombre = sorteo.Nombre,
+					Premio = sorteo.Premio,
+					FueAnunciado = sorteo.FueAnunciado,
+					Boletos = sorteo.Boletos,
+					EstaVencido = sorteo.EstaVencido,
+					DiasParaElSorteo = sorteo.DiasParaElSorteo,
+					ParaLaPersona = sorteo.ParaSonia,
+				});
+
+			var porCarga = new List<BoletosDeUnaCarga>();
+			foreach (BoletosDeLaCargaEnLista fila in api.BoletosDeLasCargas(placa))
+				porCarga.Add(new BoletosDeUnaCarga
+				{
+					Fecha = fila.Fecha,
+					Sorteo = fila.Sorteo,
+					QueDaLaRegla = fila.QueDaLaRegla,
+					Emitidos = fila.Emitidos,
+					Sobrante = fila.Sobrante,
+					ProbablementeFaltaUnDato = fila.ProbablementeFaltaUnDato,
+					ParaLaPersona = fila.ParaSonia,
+				});
+
+			return new BoletosDeTombola
+			{
+				HayDatos = true,
+				HayVehiculo = true,
+				Sorteos = sorteos,
+				PorCarga = porCarga,
 			};
 		});
 	}
@@ -311,13 +364,27 @@ public sealed class RendimientoDeVehiculo
 	[Description("La lectura en una linea, armada con los hechos de la persona.")]
 	public string ParaLaPersona { get; init; } = "";
 
-	[JsonPropertyName("actualKmPorLitro")]
-	public decimal ActualKmPorLitro { get; init; }
+	// LOS NUMEROS VAN EN LA UNIDAD QUE LA PERSONA ELIGIO, y los canonicos NO viajan.
+	// Tenerlos al lado invitaria justo a lo que las instrucciones prohiben: convertir. Si
+	// la IA contesta en km/L mientras su pantalla dice L/100km, para ella son dos apps
+	// distintas hablando del mismo carro.
+	[JsonPropertyName("actual")]
+	[Description("El rendimiento del ultimo tramo, en la unidad que la persona eligio. "
+		+ "Decilo tal cual, con su unidad: no lo conviertas.")]
+	public decimal Actual { get; init; }
 
-	[JsonPropertyName("habitualKmPorLitro")]
-	public decimal HabitualKmPorLitro { get; init; }
+	[JsonPropertyName("habitual")]
+	[Description("Su nivel de siempre, en la misma unidad.")]
+	public decimal Habitual { get; init; }
+
+	[JsonPropertyName("unidad")]
+	[Description("El simbolo de esa unidad: km/L, L/100km o mpg.")]
+	public string Unidad { get; init; } = "";
 
 	[JsonPropertyName("cambioPorcentual")]
+	[Description("El cambio EN ESA UNIDAD, con signo. No es el mismo numero en todas: la "
+		+ "inversa no es lineal, asi que la misma caida es -25 en km/L y +33 en L/100km, y "
+		+ "las dos dicen que empeoro. Deci el que te llega y no rehagas la cuenta.")]
 	public int CambioPorcentual { get; init; }
 
 	[JsonPropertyName("tramosCalculados")]
@@ -394,4 +461,67 @@ public sealed class ProximaCarga
 
 	[JsonPropertyName("esProyeccion")]
 	public bool EsProyeccion { get; init; }
+}
+
+public sealed class BoletosDeTombola
+{
+	[JsonPropertyName("hayDatos")]
+	public bool HayDatos { get; init; }
+
+	[JsonPropertyName("hayVehiculo")]
+	public bool HayVehiculo { get; init; }
+
+	[JsonPropertyName("sorteos")]
+	public IReadOnlyList<SorteoDeTombola> Sorteos { get; init; } = new List<SorteoDeTombola>();
+
+	[JsonPropertyName("porCarga")]
+	[Description("La explicacion, carga por carga. Es lo unico que la app deriva.")]
+	public IReadOnlyList<BoletosDeUnaCarga> PorCarga { get; init; } = new List<BoletosDeUnaCarga>();
+}
+
+public sealed class SorteoDeTombola
+{
+	[JsonPropertyName("codigo")]  public string Codigo { get; init; } = "";
+	[JsonPropertyName("nombre")]  public string Nombre { get; init; } = "";
+	[JsonPropertyName("premio")]  public string Premio { get; init; } = "";
+
+	[JsonPropertyName("fueAnunciado")]
+	[Description("Si la estacion ya publico su premio y su fecha. Uno sin anunciar TIENE "
+		+ "boletos y no tiene premio ni fecha: no los inventes.")]
+	public bool FueAnunciado { get; init; }
+
+	[JsonPropertyName("boletos")] public int Boletos { get; init; }
+
+	[JsonPropertyName("estaVencido")]
+	[Description("Ya se rifo. Un boleto vencido SE DICE vencido: no desaparece ni se calla.")]
+	public bool EstaVencido { get; init; }
+
+	[JsonPropertyName("diasParaElSorteo")] public int DiasParaElSorteo { get; init; }
+	[JsonPropertyName("paraLaPersona")]    public string ParaLaPersona { get; init; } = "";
+}
+
+public sealed class BoletosDeUnaCarga
+{
+	[JsonPropertyName("fecha")]  public DateTime Fecha { get; init; }
+	[JsonPropertyName("sorteo")] public string Sorteo { get; init; } = "";
+
+	[JsonPropertyName("queDaLaRegla")]
+	[Description("Cuantos boletos daria la regla del sorteo por el monto de esa carga.")]
+	public int QueDaLaRegla { get; init; }
+
+	[JsonPropertyName("emitidos")]
+	[Description("Cuantos emitio la estacion de verdad. Esta es la cifra autoritativa.")]
+	public int Emitidos { get; init; }
+
+	[JsonPropertyName("sobrante")]
+	[Description("Lo que sobro de esa compra y NO se acumula para la siguiente.")]
+	public string Sobrante { get; init; } = "";
+
+	[JsonPropertyName("probablementeFaltaUnDato")]
+	[Description("La cuenta derivada no cuadra con lo emitido. Deci que probablemente "
+		+ "falta un dato por llegar y que abra su app y apriete Actualizar. NUNCA que la "
+		+ "estacion le debe boletos: es un problema de datos, no una deuda.")]
+	public bool ProbablementeFaltaUnDato { get; init; }
+
+	[JsonPropertyName("paraLaPersona")] public string ParaLaPersona { get; init; } = "";
 }

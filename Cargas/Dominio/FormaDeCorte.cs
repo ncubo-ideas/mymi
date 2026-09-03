@@ -48,6 +48,23 @@ namespace Cargas.Dominio
 				+ $"{Automatico.Nombre}, {Preseteado.Nombre}, {Indeterminado.Nombre}.");
 		}
 
+		/// <summary>COMO SE DETUVO, dicho para la persona. Es lo que hay que ENUNCIAR
+		/// antes de pedirle que confirme: la pantalla estaba pidiendo confirmar una
+		/// afirmacion que nunca decia, y "si, quedo asi" no dice que es "asi".
+		///
+		/// Vive aca y no en la caratula porque la inferencia es de este tipo: quien sabe
+		/// que un corte automatico significa tanque lleno es la FormaDeCorte, y la frase
+		/// que lo explica es la misma pieza de conocimiento.</summary>
+		internal string ComoSeDetuvo()
+		{
+			if (ReferenceEquals(this, Automatico)) return "el surtidor cortó solo";
+			if (ReferenceEquals(this, Preseteado)) return "cargaste un monto fijo";
+
+			// Indeterminado no infiere nada, asi que nunca genera un faltante que
+			// confirmar: no hay suposicion que enunciar.
+			return "";
+		}
+
 		/// <summary>La inferencia inicial del tanque para una carga con este corte. Corte
 		/// automatico: casi seguro quedo lleno. Preseteado: casi seguro no. Indeterminado:
 		/// no se infiere nada. Lo inferido entra con origen Estimado -el mismo mecanismo

@@ -8,7 +8,13 @@
 @using Microsoft.JSInterop
 @using Cargas.Wasm
 @using Cargas.Wasm.Layout
-@* Sin esto, Razor trata <TrayectoriaConLineaBase> como un tag HTML desconocido: compila
-   sin una queja y emite <trayectoriaconlineabase puntos="Serie(t.Analito)"> literal. No
+@* Sin esto, Razor trata <MedidorDeAutonomia> como un tag HTML desconocido: compila sin
+   una queja y emite <medidordeautonomia fraccion="proxima.FraccionRestante"> literal. No
    falla, no se ve, y solo se descubre mirando el DOM. *@
-@using Cargas.Wasm.Formas
+@using Cargas.Wasm.Lealtad
+@using Cargas.Wasm.Tablero
+
+@* Los formateadores, sin prefijo: en un tablero la cifra es el contenido y escribir
+   Formato.Cifra(...) en cada linea del marcado lo ensucia. Los tres formatos son los del
+   dominio -0.# rendimiento, 0.## dinero, enteros los kilometros-; ver Formato.cs. *@
+@using static Cargas.Wasm.Formato

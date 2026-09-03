@@ -23,6 +23,20 @@ namespace Cargas.Dominio
 
 		internal decimal EnKilometros(decimal valor) => valor * kilometrosPorUnidad;
 
+		/// <summary>De canonico a esta unidad: la vuelta de EnKilometros, para MOSTRAR.</summary>
+		internal decimal DesdeKilometros(decimal kilometros) => kilometros / kilometrosPorUnidad;
+
+		/// <summary>RECONOCE sin reventar, para la frontera. Hace falta porque la unidad
+		/// elegida se journaliza y la leen DOS binarios: si una WASM nueva guarda un
+		/// simbolo que un MCP viejo no conoce, PorSimbolo le revienta la hidratacion
+		/// entera y deja de contestar CUALQUIER pregunta, no solo esta.</summary>
+		internal static bool EsConocida(string simbolo)
+		{
+			if (string.IsNullOrWhiteSpace(simbolo)) return false;
+			string normalizado = simbolo.Trim();
+			return normalizado == Kilometro.Simbolo || normalizado == Milla.Simbolo;
+		}
+
 		internal static UnidadDeDistancia PorSimbolo(string simbolo)
 		{
 			ArgumentNullException.ThrowIfNullOrWhiteSpace(simbolo);

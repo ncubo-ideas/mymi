@@ -41,6 +41,22 @@ namespace Cargas.Dominio
 
 		/// <summary>El nombre del origen con el que entraria si Sonia la acepta sin
 		/// mirar: estimado. Solo su confirmacion lo sube a confirmado.</summary>
+		// LA MIRADA LA PONE LA BITACORA al entregarla, igual que en Tramo. Aca no es
+		// cosmetico: el campo del kilometraje llega PRELLENADO con esta proyeccion y lo que
+		// se teclea ahi se journaliza con la unidad del campo. Si la proyeccion viniera en
+		// km y el campo dijera millas, cada aceptacion entraria 1.6 veces mas grande.
+		private ComoLoMira mirada = ComoLoMira.Canonica;
+
+		internal void MirarloComo(ComoLoMira como)
+		{
+			ArgumentNullException.ThrowIfNull(como);
+			mirada = como;
+		}
+
+		internal decimal KilometrosComoSeVen => mirada.DistanciaComoSeVe(Kilometros);
+		internal decimal PorDiaComoSeVe => mirada.DistanciaComoSeVe(KilometrosPorDia);
+		internal string SimboloDeLaDistancia => mirada.SimboloDeLaDistancia;
+
 		internal string Origen => OrigenDeLectura.Estimado.Nombre;
 	}
 }

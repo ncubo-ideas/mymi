@@ -31,6 +31,10 @@ namespace Cargas.App.Vistas
 		public string Transaccion { get; init; } = "";
 		public bool TieneKilometraje { get; init; }
 		public bool TieneFoto { get; init; }
+
+		// El nombre del archivo dentro de la carpeta, para poder volver a mostrarla. Vacio
+		// si no hay foto.
+		public string Foto { get; init; } = "";
 	}
 
 	// UN TRAMO, calculado o bloqueado en la misma lista: el bloqueado no es la ausencia
@@ -48,6 +52,13 @@ namespace Cargas.App.Vistas
 		public bool EsSospechoso { get; init; }
 		public string QueFalta { get; init; } = "";
 		public string Expresado { get; init; } = "";
+
+		// Los de arriba son CANONICOS y de ellos salen la curva y la barra; estos son para
+		// el texto del trecho. Ver RendimientoDelVehiculo.
+		public decimal RendimientoComoSeVe { get; init; }
+		public decimal KilometrosComoSeVen { get; init; }
+		public string SimboloDelRendimiento { get; init; } = "";
+		public string SimboloDeLaDistancia { get; init; } = "";
 	}
 
 	// LA LECTURA DE LA SERIE: el veredicto con sus hechos. Es la vista que no tiene
@@ -75,6 +86,25 @@ namespace Cargas.App.Vistas
 		public bool EstaMejorando { get; init; }
 		public bool EstaEmpeorando { get; init; }
 		public bool SugiereRegistrarLaCargaQueFalto { get; init; }
+
+		// LO MISMO, DICHO COMO ELLA LO MIRA. Los de arriba son canonicos y de ahi salen la
+		// curva y la barra -la geometria que codifica mejor y peor no se puede invertir con
+		// una unidad-; estos son para el texto.
+		//
+		// El porcentaje NO es el de arriba: en km/L 12.6 -> 9.4 es 25% menos, y esos mismos
+		// dos tramos en L/100km son 7.9 -> 10.6, un 33% MAS. Viene con signo, para que la
+		// flecha siga al numero mientras el color sigue al veredicto.
+		public decimal ActualComoSeVe { get; init; }
+		public decimal HabitualComoSeVe { get; init; }
+		public int CambioPorcentualComoSeVe { get; init; }
+		public string Simbolo { get; init; } = "";
+	}
+
+	/// <summary>En que unidades lo mira, para que la pantalla marque la elegida.</summary>
+	public sealed class UnidadesElegidas
+	{
+		public string Rendimiento { get; init; } = "";
+		public string Distancia { get; init; } = "";
 	}
 
 	// "Te alcanza para ~X km": combinada de dos derivaciones, siempre proyeccion.
@@ -85,6 +115,28 @@ namespace Cargas.App.Vistas
 		public decimal CapacidadEnLitros { get; init; }
 		public decimal HabitualKmPorLitro { get; init; }
 		public bool EsProyeccion { get; init; }
+	}
+
+	// EN CUANTOS DIAS VA A TENER QUE CARGAR. Se compone de dos derivaciones que ya
+	// existen -la autonomia del tanque lleno y la proyeccion del odometro-, y por eso
+	// vive ACA y no en una caratula: la calculaba el servidor MCP para su tool, y el
+	// tablero necesitaba la misma cifra. Dos derivaciones separadas es como la IA y la
+	// persona terminan diciendo numeros distintos del mismo carro.
+	//
+	// SIEMPRE es proyeccion, y ademas una aproximacion sobre otra: la ultima lectura de
+	// odometro no siempre coincide con la ultima carga llena.
+	public sealed class ProximaCargaDelVehiculo
+	{
+		public bool Hay { get; init; }
+		public int DiasEstimados { get; init; }
+		public decimal KilometrosRestantes { get; init; }
+		public decimal KilometrosDeTanqueLleno { get; init; }
+		public decimal KilometrosPorDia { get; init; }
+		public bool EsProyeccion { get; init; }
+
+		// La fraccion del tanque que queda, de 0 a 1: lo que mueve la aguja del medidor.
+		// Es derivada y no un dato: si no hay estimacion, no hay aguja que mover.
+		public decimal FraccionRestante { get; init; }
 	}
 
 	public sealed class CompletitudDelVehiculo
@@ -104,6 +156,12 @@ namespace Cargas.App.Vistas
 		public string QueFalta { get; init; } = "";
 		public string QueDesbloquea { get; init; } = "";
 		public string ParaSonia { get; init; } = "";
+
+		// LA SUPOSICION, para poder enunciarla antes de preguntar y para que los botones
+		// digan que es "así". Vacias cuando el faltante no nace de una inferencia.
+		public string LoQueSeSupone { get; init; } = "";
+		public string LaSuposicion { get; init; } = "";
+		public bool NaceDeUnaSuposicion { get; init; }
 	}
 
 	// El kilometraje PROPUESTO para el prellenado. Nunca se escribe solo: si Sonia lo
@@ -115,6 +173,12 @@ namespace Cargas.App.Vistas
 		public decimal KilometrosPorDia { get; init; }
 		public int DiasDesdeLaUltimaLectura { get; init; }
 		public string Origen { get; init; } = "";
+
+		// EN LA UNIDAD QUE ELLA MIRA, y acá no es cosmético: el campo del kilometraje llega
+		// prellenado con esto, y lo que se teclea se journaliza con la unidad del campo.
+		public decimal KilometrosComoSeVen { get; init; }
+		public decimal PorDiaComoSeVe { get; init; }
+		public string SimboloDeLaDistancia { get; init; } = "";
 	}
 
 	public sealed class CostoEnLista
@@ -147,6 +211,47 @@ namespace Cargas.App.Vistas
 		public int Saldo { get; init; }
 		public string Nivel { get; init; } = "";
 		public int PuntosParaElSiguienteNivel { get; init; }
+
+		// EL CARNET. Sin afiliacion los tres salen vacios y eso ES el estado: el carnet
+		// todavia no llego. La caratula pregunta por EstaAfiliada, no por Numero.Length.
+		public bool EstaAfiliada { get; init; }
+		public string NumeroDeSocio { get; init; } = "";
+		public string NombreDelSocio { get; init; } = "";
+		public DateTime SocioDesde { get; init; }
+	}
+
+	// UN SORTEO CON SUS BOLETOS, ya juzgado contra hoy. Un vencido se muestra vencido y
+	// NUNCA desaparece: que se esfumen boletos de una app de lealtad es la forma mas rapida
+	// de perder la confianza que este producto entero intenta construir.
+	public sealed class SorteoEnLista
+	{
+		public string Codigo { get; init; } = "";
+		public string Nombre { get; init; } = "";
+		public string Premio { get; init; } = "";
+		public bool FueAnunciado { get; init; }
+		public DateTime FechaDelSorteo { get; init; }
+		public int Boletos { get; init; }
+		public bool EstaVencido { get; init; }
+		public int DiasParaElSorteo { get; init; }
+		public string MontoPorBoleto { get; init; } = "";
+		public string ParaSonia { get; init; } = "";
+	}
+
+	// LA EXPLICACION de una carga: lo unico que la app SI deriva. Cuando no cuadra con lo
+	// emitido, se dice que probablemente falta un dato, nunca que la estacion debe algo.
+	public sealed class BoletosDeLaCargaEnLista
+	{
+		public DateTime Fecha { get; init; }
+		public string Transaccion { get; init; } = "";
+		public string Sorteo { get; init; } = "";
+		public string NombreDelSorteo { get; init; } = "";
+		public bool HayRegla { get; init; }
+		public int QueDaLaRegla { get; init; }
+		public int Emitidos { get; init; }
+		public string Sobrante { get; init; } = "";
+		public bool Cuadra { get; init; }
+		public bool ProbablementeFaltaUnDato { get; init; }
+		public string ParaSonia { get; init; } = "";
 	}
 
 	public sealed class VehiculoEnLista
@@ -158,5 +263,15 @@ namespace Cargas.App.Vistas
 
 		public bool TieneFicha { get; init; }
 		public int Cargas { get; init; }
+
+		// LA FICHA, para poder EDITARLA. Completar una ficha casi siempre es corregir la
+		// que hay, y sin esto el formulario tendria que pedirla en blanco cada vez. Vacias
+		// -y el año y el rendimiento en cero- cuando todavia no hay ficha.
+		public string Alias { get; init; } = "";
+		public string Marca { get; init; } = "";
+		public string Modelo { get; init; } = "";
+		public int Anio { get; init; }
+		public string Color { get; init; } = "";
+		public decimal RendimientoDeFabrica { get; init; }
 	}
 }

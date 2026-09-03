@@ -48,6 +48,71 @@ public sealed class EstadoDeLaApp : IAsyncDisposable
 
 	public bool EstaArriba => app is not null;
 
+	/// <summary>SE DISPARA CUANDO EL ACTOR CAMBIO y las pantallas tienen que releer.
+	///
+	/// Existe por las pestañas: el boton de Actualizar vive en el layout y lo que hay que
+	/// releer vive en la pagina, asi que no alcanza con que quien aprieta repinte. Blazor
+	/// no observa servicios inyectados, y este singleton es lo unico que las cuatro
+	/// pantallas comparten.
+	///
+	/// Lo dispara TODO lo que cambia el estado del actor -arrancar, refrescar y cada
+	/// aporte-, y no solo el refresh: si un aporte hecho en la Ruta desbloquea un tramo,
+	/// el Tablero tiene que enterarse aunque nadie lo haya tocado.</summary>
+	// ------------------------------------------------------- el carro que se esta mirando
+
+	// LA PLACA ELEGIDA es una PREFERENCIA DE PANTALLA, no un hecho: vive en IndexedDB al
+	// lado del handle de la carpeta y no en el journal. Que carro estaba mirando alguien
+	// no es un hecho de la estacion ni un aporte sobre el carro, y si estuviera en el
+	// journal el servidor MCP la leeria sin que significara nada para el.
+	private string placaElegida = "";
+
+	/// <summary>La placa que se esta mirando, resuelta contra los vehiculos que HAY.
+	///
+	/// La preferencia guardada es una PISTA, no una verdad: el carro pudo dejar de estar
+	/// -otra computadora, otra bitacora importada- y en ese caso se cae al primero en vez
+	/// de dejar el tablero en blanco apuntando a una placa que ya no existe. Total a
+	/// proposito: sin vehiculos devuelve "".
+	///
+	/// Recibe la lista en vez de volver a consultarla porque quien llama ya la tiene: es
+	/// un PerformQuery, y pedirlo dos veces por repintado no es gratis.</summary>
+	public string PlacaEnFoco(IReadOnlyList<VehiculoEnLista> vehiculos)
+	{
+		ArgumentNullException.ThrowIfNull(vehiculos);
+		if (vehiculos.Count == 0) return "";
+
+		foreach (VehiculoEnLista vehiculo in vehiculos)
+			if (vehiculo.Placa == placaElegida) return placaElegida;
+
+		return vehiculos[0].Placa;
+	}
+
+	/// <summary>Elegir carro. Se recuerda para la proxima vez y se avisa, porque lo que
+	/// cambia no es una pantalla: cambian las cuatro.</summary>
+	public async ValueTask ElegirVehiculo(string placa)
+	{
+		ArgumentNullException.ThrowIfNullOrWhiteSpace(placa);
+		if (placa == placaElegida) return;
+
+		placaElegida = placa;
+		await puente.RecordarPreferencia(ClaveDelCarro, placa);
+		Avisar();
+	}
+
+	private const string ClaveDelCarro = "carro-en-foco";
+
+	/// <summary>Cuantas veces se fue a buscar datos. Es la llave que hace que el cuadro de
+	/// instrumentos se recree y vuelva a entrar animado.
+	///
+	/// La animacion se dispara al MONTAR, asi que lo que decide cuando corre no es el CSS:
+	/// es que el nodo se recree, y eso lo decide el @key. Sube SOLO acá y no en cada
+	/// lectura, para que anotar un kilometraje no haga entrar de nuevo a los seis
+	/// instrumentos: eso es respuesta a "fui a buscar y volvi", no a teclear un numero.</summary>
+	public int Refrescos { get; private set; }
+
+	public event Action? Cambio;
+
+	private void Avisar() => Cambio?.Invoke();
+
 	public bool HayCarpeta => puente.HayCarpeta;
 
 	public bool FaltaReotorgarPermiso => puente.FaltaReotorgarPermiso;
@@ -85,6 +150,12 @@ public sealed class EstadoDeLaApp : IAsyncDisposable
 
 
 	public ValueTask<string> ModoRecordado() => puente.ModoRecordado();
+
+	// Las preferencias de pantalla, tal cual salen del puente. Ver PuenteDeJournal.
+	public ValueTask<string> Preferencia(string nombre) => puente.Preferencia(nombre);
+
+	public ValueTask RecordarPreferencia(string nombre, string valor) =>
+		puente.RecordarPreferencia(nombre, valor);
 
 	public async ValueTask<ResultadoDeCarpeta> UsarAlmacenamientoDelNavegador()
 	{
@@ -186,6 +257,14 @@ public sealed class EstadoDeLaApp : IAsyncDisposable
 			UltimoMensaje += $" | al abrir no se pudo poner al dia ({ex.GetType().Name}: {ex.Message}). "
 			               + "Lo que ya estaba registrado se muestra igual.";
 		}
+
+		// La preferencia se lee ANTES de avisar: asi la primera pintada ya sale con el
+		// carro que quedo elegido, en vez de mostrar el primero y saltar despues.
+		placaElegida = await puente.Preferencia(ClaveDelCarro);
+
+		// Avisa aunque el refresh haya fallado: el actor esta arriba y hay journal que
+		// mostrar, que es de lo que sirve tener el dato propio.
+		Avisar();
 	}
 
 	// El unico camino por el que la app baja a disco. Recuerda si fallo, para que la
@@ -282,6 +361,8 @@ public sealed class EstadoDeLaApp : IAsyncDisposable
 
 		ResultadoDeRefresh resultado = await bucle!.Ejecutar(ct);
 		UltimoMensaje = $"refresh: {resultado}";
+		Refrescos++;
+		Avisar();
 		return resultado;
 	}
 
@@ -292,12 +373,21 @@ public sealed class EstadoDeLaApp : IAsyncDisposable
 	// de refresh. Devuelven el mensaje del Check ("" si entro): un kilometraje que
 	// retrocede se rechaza sin dejar entrada, y la pantalla lo dice.
 
-	public async ValueTask<string> AnotarOdometro(string transaccion, decimal kilometros,
-		string origen)
+	/// <summary>El kilometraje que ella leyo, EN LA UNIDAD EN QUE LO LEYO.
+	///
+	/// La unidad iba clavada en "km", y con el selector de unidades eso pasaba de detalle a
+	/// bug silencioso: si el campo muestra millas y el comando dice km, cada lectura entra
+	/// 1.6 veces mas grande, ya journalizada, la coherencia por monotonia empieza a
+	/// rechazar entradas validas y la linea base queda envenenada sin que nada lo diga.
+	///
+	/// La preferencia decide el DEFAULT del campo; lo que se journaliza es la unidad en la
+	/// que ella lo leyo, que es la que el dominio necesita para normalizar.</summary>
+	public async ValueTask<string> AnotarOdometro(string transaccion, decimal kilometraje,
+		string unidad, string origen)
 	{
 		Exigir();
-		string rechazo = api!.AnotarOdometro(transaccion, kilometros, "km", origen);
-		if (rechazo.Length == 0) await BajarADisco();
+		string rechazo = api!.AnotarOdometro(transaccion, kilometraje, unidad, origen);
+		if (rechazo.Length == 0) { await BajarADisco(); Avisar(); }
 		return rechazo;
 	}
 
@@ -305,7 +395,7 @@ public sealed class EstadoDeLaApp : IAsyncDisposable
 	{
 		Exigir();
 		string rechazo = api!.ConfirmarTanque(transaccion);
-		if (rechazo.Length == 0) await BajarADisco();
+		if (rechazo.Length == 0) { await BajarADisco(); Avisar(); }
 		return rechazo;
 	}
 
@@ -313,7 +403,7 @@ public sealed class EstadoDeLaApp : IAsyncDisposable
 	{
 		Exigir();
 		string rechazo = api!.DeclararTanque(transaccion, estado);
-		if (rechazo.Length == 0) await BajarADisco();
+		if (rechazo.Length == 0) { await BajarADisco(); Avisar(); }
 		return rechazo;
 	}
 
@@ -323,7 +413,7 @@ public sealed class EstadoDeLaApp : IAsyncDisposable
 		Exigir();
 		string rechazo = api!.CompletarFicha(placa, alias, marca, modelo, anio, color,
 			rendimientoDeFabrica);
-		if (rechazo.Length == 0) await BajarADisco();
+		if (rechazo.Length == 0) { await BajarADisco(); Avisar(); }
 		return rechazo;
 	}
 
@@ -331,6 +421,9 @@ public sealed class EstadoDeLaApp : IAsyncDisposable
 	// (fotos/) y el journal guarda solo el nombre. Es el respaldo de un dato que, por
 	// ser aporte de Sonia, no tiene otra evidencia. La lectura del numero sigue siendo
 	// de ella: aca no hay OCR, y si algun dia lo hay, escribe solo tras su visto bueno.
+	/// <summary>La foto del tablero, de vuelta de la carpeta, en base64. "" si no se pudo.</summary>
+	public ValueTask<string> LeerFoto(string nombreDeArchivo) => puente.LeerArchivo(nombreDeArchivo);
+
 	public async ValueTask<string> AdjuntarFoto(string transaccion, string extension,
 		byte[] contenido)
 	{
@@ -343,7 +436,7 @@ public sealed class EstadoDeLaApp : IAsyncDisposable
 		if (motivo.Length > 0) return motivo;
 
 		string rechazo = api!.AdjuntarFoto(transaccion, nombre);
-		if (rechazo.Length == 0) await BajarADisco();
+		if (rechazo.Length == 0) { await BajarADisco(); Avisar(); }
 		return rechazo;
 	}
 
@@ -361,6 +454,10 @@ public sealed class EstadoDeLaApp : IAsyncDisposable
 
 	public AutonomiaDelVehiculo Autonomia(string placa) { Exigir(); return api!.Autonomia(placa); }
 
+	// El "hoy" lo pone la caratula, como en Odometro(): el dominio no lee el reloj.
+	public ProximaCargaDelVehiculo ProximaCarga(string placa, DateTime hoy)
+	{ Exigir(); return api!.ProximaCarga(placa, hoy); }
+
 	public CompletitudDelVehiculo Completitud(string placa) { Exigir(); return api!.Completitud(placa); }
 
 	public IReadOnlyList<FaltanteEnLista> Faltantes(string placa) { Exigir(); return api!.Faltantes(placa); }
@@ -375,7 +472,41 @@ public sealed class EstadoDeLaApp : IAsyncDisposable
 
 	public IReadOnlyList<GastoEnLista> Gastos(int anio, int mes) { Exigir(); return api!.Gastos(anio, mes); }
 
+	/// <summary>El gasto de UN carro. El de la persona -Gastos(anio, mes)- sigue existiendo
+	/// para cuando la pregunta sea de la billetera; el tablero usa este.</summary>
+	public IReadOnlyList<GastoEnLista> Gastos(string placa, int anio, int mes)
+	{ Exigir(); return api!.GastosDe(placa, anio, mes); }
+
 	public EstadoDeLealtad Lealtad() { Exigir(); return api!.Lealtad(); }
+
+	// ---------------------------------------------------------------- las unidades
+
+	public UnidadesElegidas Unidades() { Exigir(); return api!.Unidades(); }
+
+	// LAS TOMBOLAS. El "hoy" lo pone esta caratula, como en Odometro y ProximaCarga.
+	public IReadOnlyList<SorteoEnLista> Sorteos(DateTime hoy)
+	{ Exigir(); return api!.Sorteos(hoy); }
+
+	public IReadOnlyList<BoletosDeLaCargaEnLista> BoletosDeLasCargas(string placa)
+	{ Exigir(); return api!.BoletosDeLasCargas(placa); }
+
+	/// <summary>Elegir en que se mira. Va al journal -cambia lo que la IA DICE, no solo lo
+	/// que se ve- y por eso baja a disco como cualquier otro aporte.</summary>
+	public async ValueTask<string> ElegirPresentacionDeRendimiento(string simbolo)
+	{
+		Exigir();
+		string rechazo = api!.ElegirPresentacionDeRendimiento(simbolo);
+		if (rechazo.Length == 0) { await BajarADisco(); Avisar(); }
+		return rechazo;
+	}
+
+	public async ValueTask<string> ElegirUnidadDeDistancia(string simbolo)
+	{
+		Exigir();
+		string rechazo = api!.ElegirUnidadDeDistancia(simbolo);
+		if (rechazo.Length == 0) { await BajarADisco(); Avisar(); }
+		return rechazo;
+	}
 
 	public int Cantidad() { Exigir(); return api!.CantidadDeCargas(); }
 

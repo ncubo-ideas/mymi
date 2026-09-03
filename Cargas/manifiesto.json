@@ -10,8 +10,8 @@
 
   "version": {
     "//": "Dos versiones y no una: el repertorio cambia por otra razon que el codigo. La estacion actualiza una tasa de puntos y el dominio no se toca; separadas, el Host puede actualizar repertorio sin re-verificar el dominio.",
-    "dominio": "0.1.0",
-    "repertorio": "2026.08"
+    "dominio": "0.2.0",
+    "repertorio": "2026.09"
   },
 
   "institucion": {
@@ -77,13 +77,14 @@
 
   "consultas": {
     "//": "EL CATALOGO DE PERMISOS DE LA IA. El Host las apaga una por una y journaliza la decision.",
-    "//solo-lectura": "Las cinco son PerformQuery. Este modulo NO expone ninguna escritura a la IA: los aportes entran solo por la app de la persona, y el unico escritor del journal es ella.",
+    "//solo-lectura": "Las seis son PerformQuery. Este modulo NO expone ninguna escritura a la IA: los aportes entran solo por la app de la persona, y el unico escritor del journal es ella.",
     "//el-criterio": "Si la IA puede contestar algo que ya esta en una pantalla, el demo no probo nada. Por eso no hay una consulta 'dame las cargas': el historial lo muestra la app.",
     "lista": [
       { "nombre": "mis_cargas",                  "revela": "que vehiculos hay, con su placa y su completitud" },
       { "nombre": "autonomia_estimada",          "revela": "capacidad estimada por rendimiento habitual: dos derivaciones combinadas" },
       { "nombre": "rendimiento_vs_habitual",     "revela": "la serie de tramos contra la propia linea base, con veredicto semantico" },
       { "nombre": "lo_que_falta_para_calcular",  "revela": "que dato falta y que calculo se desbloquea" },
+      { "nombre": "mis_boletos_de_tombola",      "revela": "los boletos por sorteo, y de que carga salio cada uno con lo que sobro" },
       { "nombre": "dias_hasta_la_proxima_carga", "revela": "la prediccion de la proxima carga, declarada como proyeccion" }
     ]
   },
@@ -107,8 +108,8 @@
   "presupuesto": {
     "//": "El Host mide y pone cupos. Comparar contra lo declarado convierte el cupo en algo diagnosticable.",
     "latenciaDeConsultaMs": 50,
-    "eventosPorAno": 30,
-    "//eventosPorAno": "Una carga cada ~2 semanas mas sus puntos: del orden de 30 eventos de la institucion por ano, mas los aportes locales de la persona."
+    "eventosPorAno": 90,
+    "//eventosPorAno": "Una carga cada ~2 semanas mas sus puntos y sus boletos de tombola: del orden de 90 eventos de la institucion por ano, mas los aportes locales de la persona. Los boletos son la mayoria porque va UNO POR BOLETO: el numero es su identidad y por lo tanto su guarda de idempotencia."
   },
 
   "instrucciones": {
@@ -117,6 +118,7 @@
   },
 
   "advertencias": [
+    { "que": "El monto por boleto, los nombres y los premios de las tombolas son del demo y nadie con criterio del negocio los vio" },
     {
       "//": "Va en el manifiesto y no en un README porque el Host y el asistente tienen que saberlo para hablar con la persona, y ningun DLL lo dice.",
       "que": "Ningun umbral de este repertorio esta revisado",

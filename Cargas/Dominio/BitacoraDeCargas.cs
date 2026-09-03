@@ -70,6 +70,11 @@ namespace Cargas.Dominio
 			Lealtad.ActualizarNivel(NivelDeLealtad.PorNombre(nivel));
 		}
 
+		internal void Afiliar(string numeroDeSocio, string nombre, DateTime desde)
+		{
+			Lealtad.Afiliar(numeroDeSocio, nombre, desde);
+		}
+
 		// ---------------------------------------------------------- los aportes de Sonia
 
 		// Las guardas de decision son totales -deciden sin reventar- porque alimentan el
@@ -137,6 +142,39 @@ namespace Cargas.Dominio
 		/// <summary>La ficha entra con primitivos del wire y escala aca: el cero en el
 		/// rendimiento de fabrica es el "no lo se" del formulario, y se convierte en el
 		/// tipo de ausencia antes de tocar el dominio.</summary>
+		// ------------------------------------------------------ como lo mira ella
+
+		/// <summary>En que unidades lo mira. Nace canonica y solo ella la cambia.</summary>
+		internal ComoLoMira Mirada { get; private set; } = ComoLoMira.Canonica;
+
+		/// <summary>Elegir en que se mira el rendimiento. SIN Check, a proposito: viene de
+		/// un boton, y volver a elegir lo mismo es legitimo -no es un reintento del que
+		/// haya que defenderse-. Es el mismo criterio que DeclararSexo en examenes.
+		///
+		/// RECONOCE en la frontera: un simbolo desconocido se rechaza aca y no se
+		/// journaliza. Si entrara, el journal quedaria irreproducible para cualquier
+		/// binario que no conozca ese simbolo.</summary>
+		internal void ElegirPresentacionDeRendimiento(string simbolo)
+		{
+			if (!PresentacionDeRendimiento.EsConocida(simbolo))
+				throw new ErrorDeDominio(
+					$"'{simbolo}' no es una forma conocida de mirar el rendimiento.");
+
+			Mirada = Mirada.ConRendimiento(PresentacionDeRendimiento.PorSimbolo(simbolo));
+		}
+
+		internal void ElegirUnidadDeDistancia(string simbolo)
+		{
+			if (!UnidadDeDistancia.EsConocida(simbolo))
+				throw new ErrorDeDominio(
+					$"'{simbolo}' no es una unidad de distancia conocida.");
+
+			Mirada = Mirada.ConDistancia(UnidadDeDistancia.PorSimbolo(simbolo));
+		}
+
+		internal string SimboloDelRendimiento => Mirada.SimboloDelRendimiento;
+		internal string SimboloDeLaDistancia => Mirada.SimboloDeLaDistancia;
+
 		internal void CompletarFicha(string placa, string alias, string marca, string modelo,
 			int anio, string color, decimal rendimientoDeFabricaKmPorLitro)
 		{
@@ -174,10 +212,18 @@ namespace Cargas.Dominio
 
 		internal IReadOnlyList<Carga> CargasDe(string placa) => VehiculoDe(placa).Cargas;
 
-		internal IReadOnlyList<Tramo> TramosDe(string placa) => VehiculoDe(placa).Serie().Tramos;
+		/// <summary>Los tramos, ya marcados con la mirada. La bitacora es quien conoce en
+		/// que unidades lo mira ella, igual que la serie es quien conoce la linea base: cada
+		/// una pone la marca que sabe y el tramo las porta.</summary>
+		internal IReadOnlyList<Tramo> TramosDe(string placa)
+		{
+			IReadOnlyList<Tramo> tramos = VehiculoDe(placa).Serie().Tramos;
+			foreach (Tramo tramo in tramos) tramo.MirarloComo(Mirada);
+			return tramos;
+		}
 
 		internal EvaluacionDeRendimiento EvaluarRendimientoDe(string placa) =>
-			VehiculoDe(placa).Evaluar();
+			VehiculoDe(placa).Evaluar(Mirada);
 
 		internal LineaBaseDeRendimiento LineaBaseDe(string placa) =>
 			VehiculoDe(placa).Serie().LineaBase;
@@ -193,8 +239,12 @@ namespace Cargas.Dominio
 		internal IReadOnlyList<FaltanteDeDato> FaltantesDe(string placa) =>
 			VehiculoDe(placa).Faltantes();
 
-		internal ProyeccionDeOdometro OdometroEstimadoDe(string placa, DateTime hoy) =>
-			VehiculoDe(placa).OdometroEstimado(hoy);
+		internal ProyeccionDeOdometro OdometroEstimadoDe(string placa, DateTime hoy)
+		{
+			ProyeccionDeOdometro proyeccion = VehiculoDe(placa).OdometroEstimado(hoy);
+			proyeccion.MirarloComo(Mirada);
+			return proyeccion;
+		}
 
 		internal IReadOnlyList<CostoPorDistanciaEnMoneda> CostoPorDistanciaDe(string placa) =>
 			VehiculoDe(placa).CostoPorDistancia();
@@ -202,37 +252,88 @@ namespace Cargas.Dominio
 		internal IReadOnlyList<PrecioEnElTiempo> PreciosDe(string placa) =>
 			VehiculoDe(placa).Precios();
 
-		/// <summary>El gasto de un mes, POR MONEDA y sobre todos los vehiculos: es la
-		/// pregunta de la billetera, no la del carro.</summary>
-		internal IReadOnlyList<GastoEnMoneda> GastoDelPeriodo(int anio, int mes)
+		// ------------------------------------------------------- las tombolas
+
+		internal void AnunciarSorteo(string codigo, string nombre, string premio,
+			DateTime fechaDelSorteo, decimal montoPorBoleto, string moneda) =>
+			Lealtad.AnunciarSorteo(codigo, nombre, premio, fechaDelSorteo, montoPorBoleto, moneda);
+
+		internal void EmitirBoleto(string numeroDeBoleto, string codigoDelSorteo,
+			DateTime fecha, string numeroDeTransaccion) =>
+			Lealtad.EmitirBoleto(numeroDeBoleto, codigoDelSorteo, fecha, numeroDeTransaccion);
+
+		internal bool ConoceSorteo(string codigo) => Lealtad.ConoceSorteo(codigo);
+
+		internal bool ConoceBoleto(string codigoDelSorteo, string numeroDeBoleto) =>
+			Lealtad.ConoceSorteo(codigoDelSorteo)
+			&& Lealtad.SorteoDe(codigoDelSorteo).ConoceBoleto(numeroDeBoleto);
+
+		/// <summary>Los sorteos con sus boletos, juzgados contra ese dia.</summary>
+		internal IReadOnlyList<BoletosDelSorteo> BoletosPorSorteo(DateTime hoy)
 		{
-			var montos = new Dictionary<Moneda, GastoAcumulado>();
-			foreach (Carga carga in cargasPorTransaccion.Values)
-			{
-				if (carga.Fecha.Year != anio || carga.Fecha.Month != mes) continue;
-
-				if (!montos.TryGetValue(carga.Total.Moneda, out GastoAcumulado acumulado))
-				{
-					acumulado = new GastoAcumulado();
-					montos[carga.Total.Moneda] = acumulado;
-				}
-				acumulado.Monto += carga.Total.Monto;
-				acumulado.Cargas++;
-				acumulado.Litros += carga.Volumen.EnLitros;
-			}
-
-			var filas = new List<GastoEnMoneda>();
-			foreach (KeyValuePair<Moneda, GastoAcumulado> par in montos)
-				filas.Add(new GastoEnMoneda(par.Key, par.Value.Monto, par.Value.Cargas,
-					par.Value.Litros));
+			var filas = new List<BoletosDelSorteo>();
+			foreach (Sorteo sorteo in Lealtad.Sorteos) filas.Add(new BoletosDelSorteo(sorteo, hoy));
 			return filas;
 		}
 
-		private sealed class GastoAcumulado
+		/// <summary>LA EXPLICACION, carga por carga. Vive ACA y no en el vehiculo ni en el
+		/// programa porque es lo unico que CRUZA los dos: el dinero de una carga con la
+		/// regla de un sorteo. Mismo argumento que GastoDelPeriodo.
+		///
+		/// Los boletos emitidos se cuentan sobre TODOS los sorteos y no solo sobre el que
+		/// cubre la fecha: la estacion es la autoritativa sobre a cual mando cada boleto, y
+		/// nuestra ventana es para explicar, no para mandar.</summary>
+		internal IReadOnlyList<BoletosDeLaCarga> BoletosPorCargaDe(string placa)
 		{
-			internal decimal Monto;
-			internal int Cargas;
-			internal decimal Litros;
+			var filas = new List<BoletosDeLaCarga>();
+
+			foreach (Carga carga in VehiculoDe(placa).Cargas)
+			{
+				int emitidos = 0;
+				foreach (Sorteo cualquiera in Lealtad.Sorteos)
+					emitidos += cualquiera.BoletosDeLaTransaccion(carga.Transaccion.Texto);
+
+				if (!Lealtad.HaySorteoQueCubra(carga.Fecha))
+				{
+					filas.Add(new BoletosDeLaCarga(carga.Fecha, carga.Transaccion.Texto, "", "",
+						false, "esta carga es de antes o de después de los sorteos que conozco",
+						0, emitidos, 0m, ""));
+					continue;
+				}
+
+				Sorteo sorteo = Lealtad.SorteoQueCubre(carga.Fecha);
+				if (!sorteo.LaReglaAplicaA(carga.Total))
+				{
+					filas.Add(new BoletosDeLaCarga(carga.Fecha, carga.Transaccion.Texto,
+						sorteo.TextoDelCodigo, sorteo.NombreDelSorteo, false,
+						$"el sorteo da boletos por {sorteo.MonedaDeLaRegla} y esta carga fue "
+						+ $"en {carga.MonedaDelTotal}", 0, emitidos, 0m, ""));
+					continue;
+				}
+
+				decimal sobrante = sorteo.SobranteDe(carga.Total);
+				filas.Add(new BoletosDeLaCarga(carga.Fecha, carga.Transaccion.Texto,
+					sorteo.TextoDelCodigo, sorteo.NombreDelSorteo, true, "",
+					sorteo.BoletosQueDaria(carga.Total), emitidos, sobrante,
+					new Dinero(sobrante, carga.Total.Moneda).Expresado));
+			}
+
+			return filas;
 		}
+
+		internal int CantidadDeBoletos => Lealtad.CantidadDeBoletos;
+		internal int CantidadDeSorteos => Lealtad.CantidadDeSorteos;
+
+		/// <summary>El gasto de un mes, POR MONEDA y sobre TODOS los vehiculos: es la
+		/// pregunta de la billetera, no la del carro.</summary>
+		internal IReadOnlyList<GastoEnMoneda> GastoDelPeriodo(int anio, int mes) =>
+			GastoEnMoneda.DelPeriodo(cargasPorTransaccion.Values, anio, mes);
+
+		/// <summary>El gasto de un mes DE UN CARRO. Existe porque el tablero es de un
+		/// vehiculo: ahi el gasto de todos convivia con la autonomia, el rendimiento y el
+		/// costo por kilometro de UNO solo, y con dos carros el instrumento mentia por
+		/// omision sin que nada lo dijera.</summary>
+		internal IReadOnlyList<GastoEnMoneda> GastoDelPeriodoDe(string placa, int anio, int mes) =>
+			GastoEnMoneda.DelPeriodo(VehiculoDe(placa).Cargas, anio, mes);
 	}
 }

@@ -1,0 +1,523 @@
+@page "/ruta"
+@inherits PantallaDeCargas
+@using System.Globalization
+@using Cargas.App.Vistas
+
+<PageTitle>La ruta · Estaciones Faro</PageTitle>
+
+<h1 class="solo-para-lectores">La ruta de mis cargas</h1>
+
+@if (Error.Length > 0)
+{
+    <div class="parte parte--problema"><pre>@Error</pre></div>
+}
+
+@* EL REFUERZO: al cerrar un tramo se muestra lo que se DESBLOQUEÓ, no una insignia.
+   El premio es información sobre su carro. *@
+@if (desbloqueado.Length > 0)
+{
+    <div class="parte parte--neutro"><strong>Se desbloqueó:</strong> @desbloqueado</div>
+}
+
+@* -------------------------------------------------------------- LA RUTA
+
+   El camino de paradas y trechos. El objeto de este negocio es el TRAMO entre dos
+   tanques llenos, así que la pantalla lo dibuja como lo que es, y el HUECO que lo
+   bloquea es parte del camino: bache con riel punteado y el dato que lo destraba ahí
+   mismo, no en una sección aparte al final. *@
+<div class="ruta-cabeza">
+    <span class="rotulo">La ruta</span>
+    @if (completitud.TotalDeCargas > 0)
+    {
+        <span class="apunte">@completitud.Expresada</span>
+    }
+    <span class="apunte mono">leído hasta el evento @ultimoEvento</span>
+</div>
+
+@if (cargas.Count == 0)
+{
+    <p class="apunte">Todavía no hay cargas. Apretá <em>Actualizar</em>.</p>
+}
+else
+{
+    <ol class="ruta">
+        @{
+            List<CargaEnLista> camino = Recientes();
+        }
+        @for (int i = 0; i < camino.Count; i++)
+        {
+            CargaEnLista parada = camino[i];
+            List<FaltanteEnLista> pendientes = FaltantesDe(parada.Transaccion);
+
+            <li class="eslabon parada @(pendientes.Count > 0 ? "parada--pendiente" : "")"
+                @key="@($"parada-{parada.Transaccion}")">
+                <div class="eslabon-riel"><span class="parada-punto"></span></div>
+                <div class="eslabon-cuerpo">
+                    <div class="parada-cabeza">
+                        <span class="parada-fecha">@parada.Fecha.ToString("dd MMM yyyy", Cultura)</span>
+                        @if (parada.Tanque.Length > 0)
+                        {
+                            <span class="parada-tanque">tanque @parada.Tanque</span>
+                        }
+                    </div>
+
+                    <div class="parada-datos">
+                        <span><span class="n">@parada.Volumen</span> de @parada.Tipo</span>
+                        <span>surtidor @parada.Surtidor</span>
+                        <span class="n">@Simbolo(parada.Moneda)@Plata(parada.Total)</span>
+                        <span class="n">@Simbolo(parada.Moneda)@Plata(parada.Precio)/L</span>
+                        @if (parada.TieneKilometraje)
+                        {
+                            <span class="n">@parada.Kilometraje</span>
+                        }
+                    </div>
+
+                    @* LA FOTO DEL TABLERO. El input NO otorga cámara -el selector es del
+                       sistema y en móvil ya ofrece «tomar foto»-, así que el sandbox del
+                       FAQ #5 queda intacto. El archivo va a la carpeta; el journal guarda
+                       el nombre.
+
+                       Y AHORA SE PUEDE VOLVER A MIRAR, que es lo que la hacía servir para
+                       algo. Antes decía «foto guardada» y ahí terminaba: la foto no
+                       llenaba nada y no había forma de verla. El valor real es partir el
+                       trabajo en dos —sacás la foto en la bomba, anotás el número después,
+                       en el sillón—, y para eso la foto tiene que estar ahí cuando te
+                       sentás. Se lee bajo demanda y no al abrir: son varios MB cada una.
+
+                       NO HAY OCR, y el spike recomendó descartarlo: 4/6 en el caso más
+                       fácil, con fallos de un dígito. Un dígito de más plausible entra en
+                       silencio y envenena la línea base. La foto no reemplaza a la persona:
+                       le quita la necesidad de acordarse. *@
+                    <div class="parada-datos">
+                        @if (parada.TieneFoto && !fotoPorCarga.ContainsKey(parada.Transaccion))
+                        {
+                            <button class="tecla tecla--texto"
+                                    @onclick="() => VerLaFoto(parada.Transaccion, parada.Foto)">
+                                📷 ver la foto del tablero
+                            </button>
+                        }
+                        else if (!parada.TieneFoto && Estado.HayCarpeta)
+                        {
+                            <label class="tecla tecla--texto" style="cursor:pointer">
+                                📷 foto del tablero
+                                <InputFile OnChange="e => GuardarFoto(parada.Transaccion, e)"
+                                           accept="image/*" style="display:none" />
+                            </label>
+                        }
+                    </div>
+
+                    @if (fotoPorCarga.TryGetValue(parada.Transaccion, out string? laFoto))
+                    {
+                        <figure class="foto">
+                            <img src="@laFoto" alt="El tablero de tu carro en la carga del @parada.Fecha.ToString("dd MMM yyyy", Cultura)" />
+                            @if (!parada.TieneKilometraje)
+                            {
+                                <figcaption>Leé el odómetro acá y anotalo abajo.</figcaption>
+                            }
+                        </figure>
+                    }
+
+                    @* LO QUE FALTA, en la carga que lo debe. El kilometraje llega
+                       PRELLENADO con la proyección -«¿unos 42 900?»- para que
+                       confirmar sea más fácil que recordar y teclear: si ella lo
+                       acepta tal cual entra confirmado, si lo edita, observado. Nunca
+                       se escribe solo.
+
+                       UN CAMPO POR CARGA, y no uno compartido. Con un solo campo para
+                       toda la lista, los nueve formularios mostraban el mismo número y
+                       el que se tecleaba para una carga aparecía en las otras ocho: es
+                       la invitación a apretar «Agregar» en la fila equivocada. *@
+                    @foreach (FaltanteEnLista pendiente in pendientes)
+                    {
+                        <div class="falta" @key="@($"falta-{pendiente.Transaccion}-{pendiente.QueFalta}")">
+                            @if (pendiente.QueFalta == "el kilometraje")
+                            {
+                                <div class="fila">
+                                    <input class="campo" type="number" inputmode="numeric"
+                                           aria-label="@($"Kilometraje de esta carga, en {unidades.Distancia}")"
+                                           value="@Kilometraje(pendiente.Transaccion)"
+                                           @onchange="e => AnotarEnElCampo(pendiente.Transaccion, e)" />
+                                    <button class="tecla tecla--alerta"
+                                            @onclick="() => AgregarKilometraje(pendiente.Transaccion)">
+                                        Agregar kilometraje
+                                    </button>
+                                    @* La sugerencia SOLO donde se puede proyectar: la
+                                       carga más reciente que espera kilometraje. Ver
+                                       Releer(). Ponerla en todas sería sugerir el
+                                       kilometraje de hoy para una carga de hace ocho
+                                       meses. *@
+                                    @if (propuesta.Hay && pendiente.Transaccion == transaccionConPropuesta)
+                                    {
+                                        <span class="apunte crece">¿unos @Entero(propuesta.KilometrosComoSeVen) @propuesta.SimboloDeLaDistancia?
+                                            Es lo que da tu promedio de @Cifra(propuesta.PorDiaComoSeVe) @propuesta.SimboloDeLaDistancia por día.</span>
+                                    }
+                                </div>
+                            }
+                            else if (pendiente.QueFalta == "la confirmación del tanque")
+                            {
+                                @* ENUNCIAR, Y DESPUÉS PREGUNTAR. Acá se pedía confirmar una
+                                   afirmación que nunca se decía —«necesito la confirmación
+                                   del tanque de tu carga del 25/08/2026 para calcular el
+                                   tramo que esta carga abre o cierra»— y se ofrecía «Sí,
+                                   quedó así» sin decir qué era «así». Encima los dos botones
+                                   eran los mismos tanto si la inferencia decía lleno como
+                                   parcial, así que ni siquiera podían derivarse.
+
+                                   La suposición la hace el dominio (FormaDeCorte), así que la
+                                   frase viene de ahí y los rótulos salen de LO QUE SE SUPONE,
+                                   no escritos fijos. *@
+                                <p class="suposicion">@Mayuscula(pendiente.LaSuposicion).</p>
+                                @if (pendiente.QueDesbloquea.Length > 0)
+                                {
+                                    <p class="bache-desbloquea">
+                                        Si es así, podemos calcular @pendiente.QueDesbloquea.
+                                    </p>
+                                }
+                                <div class="fila">
+                                    <button class="tecla tecla--alerta"
+                                            @onclick="() => ConfirmarTanque(pendiente.Transaccion)">
+                                        @(SuponeLleno(pendiente) ? "Sí, quedó lleno" : "Así fue, cargué un monto")
+                                    </button>
+                                    <button class="tecla tecla--contorno"
+                                            @onclick="() => CorregirTanque(pendiente.Transaccion)">
+                                        @(SuponeLleno(pendiente) ? "No, cargué solo un poco" : "No, lo llené")
+                                    </button>
+                                </div>
+                            }
+                        </div>
+                    }
+                </div>
+            </li>
+
+            @* EL TRECHO QUE ESTA PARADA CIERRA, o el BACHE si está bloqueado. Cuelga
+               de la carga que lo CIERRA y declara desde dónde viene, porque un tramo
+               no siempre une dos paradas vecinas: una carga PARCIAL en el medio no
+               cierra tramo, y el que la salta va de un tanque lleno al siguiente. Con
+               la pareja adyacente no aparecía ninguno.
+
+               Sin tramo no se dibuja nada: la primera carga de la historia no cierra
+               nada, y una parcial tampoco. Eso no es un hueco, es que ahí no hay
+               tramo que medir. *@
+            TramoEnLista? tramo = TramoQueCierraEn(parada.Fecha);
+            if (tramo is not null)
+            {
+                if (tramo.EstaCalculado)
+                {
+                    <li class="eslabon trecho @(tramo.EsComparable ? "" : "trecho--reservado")
+                               @(tramo.EsSospechoso ? "trecho--atencion" : "")"
+                        @key="@($"trecho-{tramo.Desde:O}")">
+                        <div class="eslabon-riel"></div>
+                        <div class="eslabon-cuerpo">
+                            <div class="trecho-cifras">
+                                <span class="trecho-rinde">@Cifra(tramo.RendimientoComoSeVe)<span class="unidad">@tramo.SimboloDelRendimiento</span></span>
+                                <span class="trecho-dato">@Entero(tramo.KilometrosComoSeVen) @tramo.SimboloDeLaDistancia</span>
+                                <span class="trecho-dato">@Cifra(tramo.Litros) L</span>
+                                <span>desde el @tramo.Desde.ToString("dd MMM", Cultura)</span>
+                                @if (tramo.EsSospechoso)
+                                {
+                                    <span class="sello sello--dudoso">dato sospechoso</span>
+                                }
+                            </div>
+
+                            @if (rendimiento.Habitual > 0 && tramo.EsComparable)
+                            {
+                                @* La muesca es el nivel de siempre de ESTE carro, nunca
+                                   un promedio nacional: un trecho solo no significa
+                                   nada, significa contra su propia línea base. *@
+                                <div class="trecho-barra" role="img"
+                                     aria-label="@Cifra(tramo.RendimientoComoSeVe) @tramo.SimboloDelRendimiento contra tu nivel de siempre de @Cifra(rendimiento.HabitualComoSeVe) @rendimiento.Simbolo">
+                                    <span class="relleno" style="width:@Ancho(tramo.Rendimiento)%"></span>
+                                    <span class="muesca" style="left:60%"></span>
+                                </div>
+                            }
+
+                            @if (!tramo.EsComparable && tramo.MotivoDeReserva.Length > 0)
+                            {
+                                <p class="cifra-pie">@Mayuscula(tramo.MotivoDeReserva).</p>
+                            }
+                        </div>
+                    </li>
+                }
+                else
+                {
+                    <li class="eslabon bache" @key="@($"bache-{tramo.Desde:O}")">
+                        <div class="eslabon-riel"></div>
+                        <div class="eslabon-cuerpo">
+                            <div class="bache-caja">
+                                <p class="bache-que">
+                                    El tramo desde el @tramo.Desde.ToString("dd MMM", Cultura)
+                                    no se puede calcular: falta <b>@tramo.QueFalta</b>.
+                                </p>
+                                <p class="bache-desbloquea">
+                                    Con eso aparece cuánto rindió el carro entre estas dos cargas,
+                                    y ese tramo entra a tu nivel de siempre.
+                                </p>
+                            </div>
+                        </div>
+                    </li>
+                }
+            }
+        }
+    </ol>
+}
+
+@code {
+    private IReadOnlyList<VehiculoEnLista> vehiculos = new List<VehiculoEnLista>();
+    private IReadOnlyList<CargaEnLista> cargas = new List<CargaEnLista>();
+    private IReadOnlyList<TramoEnLista> tramos = new List<TramoEnLista>();
+    private IReadOnlyList<FaltanteEnLista> faltantes = new List<FaltanteEnLista>();
+    private RendimientoDelVehiculo rendimiento = new();
+    private AutonomiaDelVehiculo autonomia = new();
+    private CompletitudDelVehiculo completitud = new();
+    private OdometroPropuesto propuesta = new();
+    private UnidadesElegidas unidades = new();
+    private long ultimoEvento;
+
+    // El prellenado, UNO POR CARGA (llave: el numero de transaccion). Si ella manda la
+    // propuesta tal cual, su origen es "confirmado" -miro el numero y dijo que si-; si la
+    // edita, "observado".
+    private Dictionary<string, decimal> kilometrajePorAnotar = new();
+
+    private decimal Kilometraje(string transaccion) =>
+        kilometrajePorAnotar.TryGetValue(transaccion, out decimal km) ? km : 0m;
+
+    // La carga a la que se le propuso la proyeccion, si hay alguna. Vacio si no.
+    private string transaccionConPropuesta = "";
+
+    private void AnotarEnElCampo(string transaccion, ChangeEventArgs e)
+    {
+        kilometrajePorAnotar[transaccion] =
+            decimal.TryParse(e.Value?.ToString(), NumberStyles.Any, CultureInfo.InvariantCulture,
+                out decimal km) ? km : 0m;
+    }
+
+    // El refuerzo del ingreso: lo que aparecio al cerrar un tramo.
+    private string desbloqueado = "";
+
+    // LAS FOTOS QUE SE ESTAN MIRANDO, por transaccion, ya como data URL. Se cargan bajo
+    // demanda y no al abrir: una foto de tablero ronda los pocos MB y esta pantalla puede
+    // tener nueve. La que se acaba de sacar entra sin releer nada, porque sus bytes ya
+    // pasaron por aca.
+    private Dictionary<string, string> fotoPorCarga = new();
+
+    private Task VerLaFoto(string transaccion, string nombreDeArchivo) =>
+        Intentar("abrir la foto del tablero", async () =>
+        {
+            string base64 = await Estado.LeerFoto(nombreDeArchivo);
+            if (base64.Length == 0)
+                throw new InvalidOperationException(
+                    $"No se pudo leer «{nombreDeArchivo}» de tu carpeta. ¿Sigue ahí?");
+
+            fotoPorCarga[transaccion] = $"data:{TipoDeImagen(nombreDeArchivo)};base64,{base64}";
+        });
+
+    // El tipo sale de la extension y no de los bytes: el archivo lo guardo esta misma app,
+    // con la extension que traia el que ella eligio.
+    private static string TipoDeImagen(string nombreDeArchivo) =>
+        Path.GetExtension(nombreDeArchivo).ToLowerInvariant() switch
+        {
+            ".png"  => "image/png",
+            ".webp" => "image/webp",
+            ".heic" => "image/heic",
+            ".heif" => "image/heif",
+            _       => "image/jpeg",
+        };
+
+    // ------------------------------------------------------------------ el camino
+
+    // EL ANCHO DE LA BARRA DEL TRECHO. El nivel de siempre se planta en el 60% para que un
+    // tramo mejor que el habitual tenga hacia donde crecer: con el habitual al 100% toda
+    // mejora quedaria clavada contra el borde y se leerian iguales.
+    private string Ancho(decimal rinde)
+    {
+        if (rendimiento.Habitual <= 0m) return "0";
+        double proporcion = (double)(rinde / rendimiento.Habitual) * 60.0;
+        return Math.Clamp(proporcion, 2, 100).ToString("0.#", CultureInfo.InvariantCulture);
+    }
+
+    // EL TRAMO QUE ESTA CARGA CIERRA. Es un emparejamiento de PRESENTACION -el dominio ya
+    // dijo cuales son los tramos y entre que fechas-, no una regla.
+    //
+    // Se busca por la fecha que lo CIERRA y no por la pareja adyacente, porque un tramo va
+    // de un tanque lleno al siguiente y en el medio puede haber una carga PARCIAL que no lo
+    // cierra. Con adyacencia no aparecia ninguno de los que saltan una parcial, que en el
+    // guion de la demo son justo los interesantes.
+    //
+    // POR DICCIONARIO Y NO RECORRIENDO LA LISTA: esto se llama una vez por parada, asi que
+    // un barrido adentro convierte el dibujo de la ruta en cuadratico.
+    private Dictionary<DateTime, TramoEnLista> tramoPorCierre = new();
+    private Dictionary<string, List<FaltanteEnLista>> faltantesPorCarga = new();
+
+    private static readonly List<FaltanteEnLista> SinPendientes = new();
+
+    private TramoEnLista? TramoQueCierraEn(DateTime hasta) =>
+        tramoPorCierre.TryGetValue(hasta, out TramoEnLista? tramo) ? tramo : null;
+
+    private List<FaltanteEnLista> FaltantesDe(string transaccion) =>
+        faltantesPorCarga.TryGetValue(transaccion, out List<FaltanteEnLista>? pendientes)
+            ? pendientes : SinPendientes;
+
+    // Los dos botones salen de lo que el DOMINIO supuso, no de dos rotulos fijos: con
+    // corte automatico se supone lleno y con preseteado, parcial, y la pregunta correcta
+    // es la contraria en cada caso.
+    private static bool SuponeLleno(FaltanteEnLista faltante) =>
+        faltante.LoQueSeSupone == "lleno";
+
+    // Lo mas reciente arriba: la ruta desciende hacia el pasado, que es como se mira un
+    // historial y como se lee un tablero -lo de ahora primero.
+    private List<CargaEnLista> Recientes()
+    {
+        var recientes = new List<CargaEnLista>(cargas);
+        recientes.Sort((una, otra) => otra.Fecha.CompareTo(una.Fecha));
+        return recientes;
+    }
+
+    // ------------------------------------------------------------------ los aportes
+
+    // EL APORTE DE ELLA. Si mando la propuesta sin tocarla, su origen es confirmado -miro
+    // el numero y dijo que si-; si lo edito, observado. Nunca entra solo.
+    private Task AgregarKilometraje(string transaccion) => Intentar("anotar el kilometraje", async () =>
+    {
+        decimal kilometraje = Kilometraje(transaccion);
+        if (kilometraje <= 0) return;
+
+        int tramosAntes = rendimiento.TramosCalculados;
+        // La comparacion tiene que ser contra la propuesta COMO SE VE: es el numero que
+        // ella tuvo delante. Contra la canonica, aceptar la sugerencia en millas entraria
+        // como "observado" en vez de "confirmado".
+        string origen = propuesta.Hay && kilometraje == propuesta.KilometrosComoSeVen
+            ? "confirmado" : "observado";
+
+        // LA UNIDAD ES LA DEL CAMPO, no "km" clavado: si la persona mira en millas, el
+        // numero que acaba de leer son millas, y el dominio necesita saberlo para
+        // normalizar. Mandar km sobre una lectura en millas la mete 1.6 veces mas grande.
+        string rechazo = await Estado.AnotarOdometro(transaccion, kilometraje,
+            unidades.Distancia, origen);
+        if (rechazo.Length > 0)
+            throw new InvalidOperationException(
+                "La app no anotó ese kilometraje: no es coherente con la serie (el "
+                + "odómetro solo crece). Revisá el número.");
+
+        if (rendimiento.TramosCalculados > tramosAntes && rendimiento.Actual > 0)
+            desbloqueado = $"el rendimiento de ese tramo: {Cifra(rendimiento.ActualComoSeVe)} {rendimiento.Simbolo}."
+                + (autonomia.Hay ? $" Y tu autonomía estimada: ~{Entero(autonomia.Kilometros)} km." : "");
+    });
+
+    private Task ConfirmarTanque(string transaccion) => Intentar("confirmar el tanque", async () =>
+    {
+        string rechazo = await Estado.ConfirmarTanque(transaccion);
+        if (rechazo.Length > 0) throw new InvalidOperationException(rechazo);
+    });
+
+    // "Era al reves": lo que la inferencia propuso no era. Se declara lo contrario, con la
+    // palabra de ella (origen observado).
+    private Task CorregirTanque(string transaccion) => Intentar("corregir el tanque", async () =>
+    {
+        CargaEnLista? carga = null;
+        foreach (CargaEnLista candidata in cargas)
+            if (candidata.Transaccion == transaccion) { carga = candidata; break; }
+        if (carga is null) return;
+
+        string contrario = carga.Tanque.StartsWith("lleno") ? "parcial" : "lleno";
+        string rechazo = await Estado.DeclararTanque(transaccion, contrario);
+        if (rechazo.Length > 0) throw new InvalidOperationException(rechazo);
+    });
+
+    // La foto entra entera a memoria antes de ir a la carpeta: una foto de tablero ronda
+    // los pocos MB y el tope evita que un archivo equivocado tumbe la pestana.
+    private Task GuardarFoto(string transaccion, InputFileChangeEventArgs e) =>
+        Intentar("guardar la foto del tablero", async () =>
+        {
+            const long topeDeBytes = 15 * 1024 * 1024;
+            IBrowserFile archivo = e.File;
+            if (archivo.Size > topeDeBytes)
+                throw new InvalidOperationException("La foto pesa más de 15 MB: elegí otra.");
+
+            using var memoria = new MemoryStream();
+            await archivo.OpenReadStream(topeDeBytes).CopyToAsync(memoria);
+
+            string extension = Path.GetExtension(archivo.Name);
+            if (extension.Length == 0) extension = ".jpg";
+
+            byte[] contenido = memoria.ToArray();
+            string rechazo = await Estado.AdjuntarFoto(transaccion, extension, contenido);
+            if (rechazo.Length > 0) throw new InvalidOperationException(rechazo);
+
+            // Se muestra en el acto y sin volver a leer la carpeta: los bytes ya están
+            // acá. Es el momento en que la persona la sacó y el número que busca está en
+            // pantalla, así que el campo de abajo es el paso siguiente natural.
+            fotoPorCarga[transaccion] = $"data:{TipoDeImagen(extension)};base64,"
+                + Convert.ToBase64String(contenido);
+        });
+
+    // ------------------------------------------------------------------ la lectura
+
+    protected override void Releer()
+    {
+        vehiculos = Estado.Vehiculos();
+        ultimoEvento = Estado.UltimoEvento();
+        unidades = Estado.Unidades();
+
+        if (vehiculos.Count == 0)
+        {
+            cargas = new List<CargaEnLista>();
+            tramos = new List<TramoEnLista>();
+            faltantes = new List<FaltanteEnLista>();
+            rendimiento = new RendimientoDelVehiculo();
+            autonomia = new AutonomiaDelVehiculo();
+            completitud = new CompletitudDelVehiculo();
+            propuesta = new OdometroPropuesto();
+            tramoPorCierre = new Dictionary<DateTime, TramoEnLista>();
+            faltantesPorCarga = new Dictionary<string, List<FaltanteEnLista>>();
+            return;
+        }
+
+        string placa = Estado.PlacaEnFoco(vehiculos);
+        cargas = Estado.Cargas(placa);
+        tramos = Estado.Tramos(placa);
+        rendimiento = Estado.Rendimiento(placa);
+        autonomia = Estado.Autonomia(placa);
+        completitud = Estado.Completitud(placa);
+        faltantes = Estado.Faltantes(placa);
+
+        // Los indices de la ruta, armados una sola vez por lectura. Un tramo lo cierra una
+        // carga y solo una, asi que TryAdd alcanza y ademas deja el primero si el dominio
+        // alguna vez devolviera dos con el mismo cierre.
+        tramoPorCierre = new Dictionary<DateTime, TramoEnLista>();
+        foreach (TramoEnLista tramo in tramos) tramoPorCierre.TryAdd(tramo.Hasta, tramo);
+
+        faltantesPorCarga = new Dictionary<string, List<FaltanteEnLista>>();
+        foreach (FaltanteEnLista faltante in faltantes)
+        {
+            if (!faltantesPorCarga.TryGetValue(faltante.Transaccion, out List<FaltanteEnLista>? pendientes))
+                faltantesPorCarga[faltante.Transaccion] = pendientes = new List<FaltanteEnLista>();
+            pendientes.Add(faltante);
+        }
+
+        // El "hoy" del prellenado lo pone ESTA caratula: el dominio no lee el reloj.
+        propuesta = Estado.Odometro(placa, DateTime.Now);
+
+        // LA PROYECCION SE PROPONE SOLO EN LA ULTIMA CARGA DE TODAS, y solo si es ella la
+        // que espera kilometraje. La proyeccion es "cuanto marca el odometro HOY", asi que
+        // a cualquier carga anterior le queda grande: en el guion, la que espera es la de
+        // julio y la de agosto ya esta anotada en 43 200, asi que proponia los 43 225 de
+        // hoy para una carga anterior. El odometro solo crece -el dominio lo iba a
+        // rechazar-, y proponer un numero que uno mismo va a rechazar es peor que nada.
+        transaccionConPropuesta = "";
+        if (propuesta.Hay && cargas.Count > 0)
+        {
+            DateTime ultimaFecha = DateTime.MinValue;
+            foreach (CargaEnLista carga in cargas)
+                if (carga.Fecha > ultimaFecha) ultimaFecha = carga.Fecha;
+
+            foreach (FaltanteEnLista faltante in faltantes)
+                if (faltante.QueFalta == "el kilometraje" && faltante.Fecha == ultimaFecha)
+                {
+                    transaccionConPropuesta = faltante.Transaccion;
+                    if (!kilometrajePorAnotar.ContainsKey(faltante.Transaccion))
+                        kilometrajePorAnotar[faltante.Transaccion] = propuesta.KilometrosComoSeVen;
+                    break;
+                }
+        }
+    }
+}

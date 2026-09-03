@@ -1,9 +1,487 @@
 @inherits LayoutComponentBase
+@using Cargas.App.Vistas
+@using Puppets.Portador
+@inject EstadoDeLaApp estado
+@implements IDisposable
 
-@* Sin sidebar, sin navegacion, sin barra "About" del template. La UI de la app son cuatro
-   cosas y nada mas: el boton de actualizar, la lista de cargas, la lectura de cada serie,
-   y el back para volver a la lista. Una app que le entregas a una persona para ver SUS datos
-   no tiene por que traer el andamio del framework con el que se hizo. *@
-<main class="hoja">
-    @Body
+@* LA CASCARA DE LA APP: el capo, las pestañas y todo lo que habla de la APP y no del carro.
+
+   POR QUE EL ARRANQUE VIVE ACA Y NO EN LA PAGINA. Hasta las pestañas, abrir la carpeta y
+   levantar el actor pasaban en la unica pagina que habia. El patron heredado -que Compras y
+   Examenes todavia tienen- deja eso en la raiz y las paginas secundarias muestran "anda a
+   Inicio y elegi tu carpeta". Con una barra inferior eso es inaceptable: la persona toca
+   Lealtad y tiene que funcionar, y un deep link a /app/ruta tambien.
+
+   Asi que la cascara decide: si la app no esta arriba, muestra donde guardar y NO dibuja el
+   @@Body. Ninguna pagina tiene que defenderse de un estado a medio levantar.
+
+   POR QUE LA MARCA VIVE ACA. Es de toda la app, y repetirla en cada pantalla ademas compite
+   con el titulo de la pantalla. Compras ya hizo este movimiento y dejo escrito el motivo.
+
+   Y LOS AVISOS DE PERSISTENCIA TAMBIEN. "No se esta guardando nada" es lo mas importante
+   que la app puede decir, y si viviera en el Tablero, alguien que se queda en la Ruta nunca
+   se entera de que sus kilometrajes se van a perder. *@
+
+<header class="capo">
+    @* EL CAPÓ. ⚠️ MARCA PROVISIONAL: el nombre y la paleta esperan la especificación de
+       Geaninna; lo que no espera es la estructura. El faro va de un solo trazo -torre y
+       haz-, nunca relleno, legible a 24 px. *@
+    <div class="capo-dentro">
+        <div class="marca">
+            <svg viewBox="0 0 40 40" xmlns="http://www.w3.org/2000/svg"
+                 fill="none" stroke="var(--logo)" stroke-width="2.4" aria-hidden="true">
+                <path d="M16 34 L18 12 h4 L24 34 z" />
+                <path d="M15 12 h10 M17 7 h6 M18 12 V7 M22 12 V7" />
+                <path d="M26 8 l6 -2.5 M26 11 l7 0" />
+            </svg>
+            <div>
+                <div class="marca-nombre">Estaciones Faro</div>
+                <div class="marca-claim">Tu camino, claro</div>
+            </div>
+        </div>
+
+        @* DE QUIEN ES ESTE TABLERO. Con un carro es una placa y nada mas; con varios se
+           vuelve selector, que es el patron de Road Trip -el nombre del vehiculo en el
+           encabezado ES el selector- y evita UI gratis para el caso comun.
+
+           Un <select> nativo y no una lista propia: en telefono abre la rueda del sistema,
+           llega por teclado sin que haya que escribirlo, y no hay que resolver el cierre
+           al tocar afuera. *@
+        @if (estado.EstaArriba && vehiculos.Count == 1)
+        {
+            <span class="placa">
+                @vehiculos[0].Placa
+                @if (vehiculos[0].TieneFicha)
+                {
+                    <span class="apodo">@vehiculos[0].Nombre</span>
+                }
+            </span>
+        }
+        else if (estado.EstaArriba && vehiculos.Count > 1)
+        {
+            <select class="placa placa--selector" value="@enFoco"
+                    aria-label="Elegí de qué carro es el tablero"
+                    @onchange="CambiarDeCarro">
+                @foreach (VehiculoEnLista vehiculo in vehiculos)
+                {
+                    <option value="@vehiculo.Placa">
+                        @(vehiculo.TieneFicha ? $"{vehiculo.Nombre} · {vehiculo.Placa}" : vehiculo.Placa)
+                    </option>
+                }
+            </select>
+        }
+
+        @* LAS CUATRO PESTAÑAS, y son UNA sola UI que se comporta distinto por resolucion: pestañas
+           a la derecha del capo en escritorio, barra fija al pie en telefono. El markup es uno solo
+           y el CSS decide donde se paran. Es el patron de Compras, textual.
+
+           LOS ICONOS SE DIBUJAN, no se escriben: un glifo cae en otra familia con otras metricas
+           justo al lado de la etiqueta. Y `stroke="currentColor"` para que hereden el color
+           del estado activo sin repetir la paleta.
+
+           EL BADGE DE LA RUTA NO ES ADORNO. Antes de las pestañas, la ausencia que bloquea un
+           calculo se veia porque estaba en la misma pantalla que los instrumentos. Partida en
+           pestañas se esconde, y partir sin avisar seria una regresion: la cuenta de lo que
+           espera un dato suyo viaja hasta la pestaña. *@
+        @if (estado.EstaArriba)
+        {
+        <nav class="pestanas">
+            <div class="pestanas-dentro">
+                <NavLink class="pestana" href="" Match="NavLinkMatch.All">
+                    @* El medidor: un arco y su aguja. *@
+                    <svg class="pestana-icono" viewBox="0 0 20 20" fill="none" stroke="currentColor"
+                         stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                        <path d="M3.6 14.4a6.4 6.4 0 0 1 12.8 0" />
+                        <path d="M10 14.4 13.4 10.8" />
+                    </svg>
+                    Tablero
+                </NavLink>
+
+                <NavLink class="pestana" href="ruta">
+                    @* El camino: dos bordes y la linea discontinua del medio. *@
+                    <svg class="pestana-icono" viewBox="0 0 20 20" fill="none" stroke="currentColor"
+                         stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                        <path d="M6.4 3.4v13.2M13.6 3.4v13.2" />
+                        <path d="M10 5.2v2.2M10 9.4v2.2M10 13.6v2.2" />
+                    </svg>
+                    Ruta
+                    @if (pendientes > 0)
+                    {
+                        <span class="pestana-badge"
+                              aria-label="@pendientes datos esperando que los completes">@pendientes</span>
+                    }
+                </NavLink>
+
+                <NavLink class="pestana" href="lealtad">
+                    @* El boleto, con su linea de corte. *@
+                    <svg class="pestana-icono" viewBox="0 0 20 20" fill="none" stroke="currentColor"
+                         stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                        <rect x="2.8" y="5.6" width="14.4" height="8.8" rx="1.6" />
+                        <path d="M12.4 5.6v8.8" stroke-dasharray="1.6 1.5" />
+                    </svg>
+                    Lealtad
+                </NavLink>
+
+                <NavLink class="pestana" href="mi-carro">
+                    @* El carro, de perfil. *@
+                    <svg class="pestana-icono" viewBox="0 0 20 20" fill="none" stroke="currentColor"
+                         stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                        <path d="M3.4 13.2v-2.4l1.8-4h9.6l1.8 4v2.4" />
+                        <path d="M3.4 10.8h13.2" />
+                        <circle cx="6.6" cy="13.4" r="1.4" />
+                        <circle cx="13.4" cy="13.4" r="1.4" />
+                    </svg>
+                    Mi carro
+                </NavLink>
+            </div>
+        </nav>
+
+        @* La tecla va DESPUES de las pestañas: en escritorio queda al borde derecho, donde
+           no compite con la navegacion. Es tenue a proposito -la app se pone al dia sola al
+           abrir-, asi que esto es "volve a chequear AHORA" y no el punto de partida. *@
+        <button class="tecla tecla--releer" @onclick="Refrescar" disabled="@refrescando">
+            @(refrescando ? "Actualizando…" : "Actualizar")
+        </button>
+        }
+    </div>
+</header>
+
+<main class="tablero">
+    @* UN solo lugar para los errores, y arriba de todo: un fallo abajo queda fuera de
+       pantalla y la app parece no reaccionar al click. *@
+    @if (error.Length > 0)
+    {
+        <div class="parte parte--problema">
+            <strong>@(estado.EstaArriba ? "No se pudo completar la operación." : "No se pudo abrir la app.")</strong>
+            <pre>@error</pre>
+        </div>
+    }
+
+    @if (!estado.EstaArriba)
+    {
+        @* Cuando el handle volvió de IndexedDB pero el permiso caducó, la acción correcta
+           es RE-OTORGAR, no volver a elegir la carpeta. *@
+        @if (estado.FaltaReotorgarPermiso)
+        {
+            <div class="parte parte--neutro">
+                <p>
+                    Tu carpeta es <strong>&laquo;@estado.NombreDeLaCarpeta&raquo;</strong>. El browser pide
+                    confirmar el permiso de escritura cada vez que volvés a abrir la app.
+                </p>
+                <div class="fila">
+                    <button class="tecla tecla--alerta" @onclick="PedirPermiso">
+                        Dar permiso a &laquo;@estado.NombreDeLaCarpeta&raquo;
+                    </button>
+                    <button class="tecla tecla--contorno" @onclick="ConectarCarpeta"
+                            disabled="@(soportado == false)">
+                        Elegir otra carpeta
+                    </button>
+                </div>
+            </div>
+        }
+        else
+        {
+            @* LA PRIMERA VUELTA DE LLAVE, y no un diálogo de configuración.
+
+               Acá había tres tarjetas del mismo tamaño y el mismo peso, así que las tres se
+               leían como igual de válidas. No lo son: una es la recomendada y las otras dos
+               son salidas de emergencia. Ahora hay UNA acción primaria y el resto se pliega.
+
+               Y el diferenciador que de verdad decide —«¿tu asistente la puede leer?»— era
+               una frase en negrita adentro de un párrafo. Es una comparación, así que se
+               muestra como una: tres filas que se leen de un vistazo y donde la respuesta
+               correcta se ve sola, sin que la pantalla tenga que insistir.
+
+               LO QUE NO CAMBIA: cada modo sigue diciendo lo que NO da. Eso no es adorno. *@
+            <div class="arranque">
+                <p class="arranque-promesa">Esta app guarda <strong>tus</strong> cargas. Elegí dónde.</p>
+
+                @if (sinAlmacenamiento == "inseguro")
+                {
+                    <p class="parte parte--atencion">
+                        <strong>Esta página no está en una conexión segura</strong>, y por eso el
+                        navegador no le deja guardar nada — en cualquier navegador pasaría lo mismo.
+                        Entrá por <strong>https</strong> y las opciones de guardado aparecen.
+                    </p>
+                }
+                else if (sinAlmacenamiento == "navegador")
+                {
+                    <p class="parte parte--atencion">
+                        <strong>@(instalada ? "Acá no se puede guardar la bitácora." : "Este navegador no puede guardar la bitácora.")</strong>
+                        Podés usar la app igual, pero lo que veas se pierde al cerrar. Para que
+                        quede guardado, @(instalada ? "instalala" : "abrila") desde
+                        <strong>Chrome</strong> o <strong>Edge</strong>.
+                    </p>
+                }
+
+                @* LA ÚNICA ACCIÓN PRIMARIA, y cuál es depende de qué se puede: si la carpeta
+                   no está disponible, la recomendada pasa a ser el navegador. La pantalla no
+                   puede empujar hacia una puerta cerrada. *@
+                @if (soportado == true)
+                {
+                    <button class="tecla tecla--grande" @onclick="ConectarCarpeta">Elegir una carpeta tuya</button>
+                    <p class="arranque-porque">
+                        La bitácora queda en tu disco, donde vos la pusiste.
+                        <b>Es el único modo en el que tu asistente la puede leer.</b>
+                    </p>
+                }
+                else if (opfs == true)
+                {
+                    <button class="tecla tecla--grande" @onclick="UsarNavegador">
+                        Guardar @(instalada ? "dentro de la app" : "en este navegador")
+                    </button>
+                    <p class="arranque-porque">
+                        Sobrevive al cerrar, pero <b>tu asistente no la va a poder leer</b>: para eso
+                        hace falta una carpeta tuya, y @(instalada ? "acá" : "este navegador") no las permite.
+                    </p>
+                }
+
+                @* LA COMPARACIÓN. Tres filas, y la de abajo es la que decide. *@
+                <table class="comparacion">
+                    <thead>
+                        <tr>
+                            <th scope="col"><span class="solo-para-lectores">Qué da cada modo</span></th>
+                            <th scope="col">Una carpeta tuya</th>
+                            <th scope="col">@(instalada ? "Dentro de la app" : "Este navegador")</th>
+                            <th scope="col">Sin guardar</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <th scope="row">Sobrevive al cerrar</th>
+                            <td class="si">sí</td><td class="si">sí</td><td class="no">no</td>
+                        </tr>
+                        <tr>
+                            <th scope="row">Es una carpeta tuya</th>
+                            <td class="si">sí</td><td class="no">no</td><td class="no">no</td>
+                        </tr>
+                        <tr>
+                            <th scope="row">Tu asistente la puede leer</th>
+                            <td class="si">sí</td><td class="no">no</td><td class="no">no</td>
+                        </tr>
+                    </tbody>
+                </table>
+
+                @if (soportado != true)
+                {
+                    <p class="arranque-nota">
+                        @(sinAlmacenamiento == "inseguro"
+                            ? "La carpeta necesita una conexión segura (https), así que acá no está disponible."
+                            : instalada
+                                ? "La carpeta acá no está disponible. Para usarla, instalá la app desde Chrome o Edge."
+                                : "Este navegador no permite elegir una carpeta. Para usarla, abrí la app en Chrome o Edge.")
+                    </p>
+                }
+
+                @* Las salidas de emergencia, plegadas: siguen a un toque, pero dejan de
+                   competir con la recomendada. *@
+                <details class="otras">
+                    <summary>Otras formas de empezar</summary>
+
+                    @if (soportado == true && opfs == true)
+                    {
+                        <div class="otra">
+                            <button class="tecla tecla--contorno" @onclick="UsarNavegador">
+                                Guardar @(instalada ? "dentro de la app" : "en este navegador")
+                            </button>
+                            <p>Se guarda igual y sobrevive al cerrar, pero
+                               @(instalada ? "queda dentro de la app" : "lo administra el navegador"):
+                               <b>no es una carpeta tuya y tu asistente no lo puede leer.</b></p>
+                        </div>
+                    }
+
+                    <div class="otra">
+                        <button class="tecla tecla--contorno" @onclick="Importar">Importar una bitácora</button>
+                        <p>Traé una que exportaste antes, desde esta u otra computadora.
+                           Funciona en cualquier navegador.</p>
+                    </div>
+
+                    <div class="otra">
+                        <button class="tecla tecla--texto" @onclick="Arrancar">Abrir sin guardar nada</button>
+                        <p>Para mirar nomás. Lo que la estación publicó se vuelve a pedir al abrir,
+                           pero <b>tus kilometrajes y confirmaciones se pierden</b>.</p>
+                    </div>
+                </details>
+            </div>
+        }
+    }
+    else
+    {
+        @* Si la app no está guardando, eso es lo MÁS importante de la pantalla y va antes que
+           los instrumentos: sin destino se ve completa y correcta, y no hay forma de notar
+           que no persiste salvo que se diga. *@
+        @if (!estado.HayCarpeta)
+        {
+            <div class="parte parte--atencion fila">
+                <div class="crece">
+                    <strong>No se está guardando nada.</strong>
+                    Esta app está funcionando sin destino: lo que la estación publicó se vuelve a
+                    pedir al abrir, pero <strong>tus kilometrajes y confirmaciones se pierden</strong>
+                    — esos no los sabe nadie más que vos.
+                </div>
+                @if (soportado == true)
+                {
+                    <button class="tecla tecla--alerta" @onclick="ConectarCarpeta">Elegir carpeta</button>
+                }
+                else if (opfs == true)
+                {
+                    <button class="tecla tecla--alerta" @onclick="UsarNavegador">Guardar en este navegador</button>
+                }
+            </div>
+        }
+        else if (estado.GuardadoFallando.Length > 0)
+        {
+            <div class="parte parte--problema fila">
+                <div class="crece">
+                    <strong>La carpeta rechazó la escritura.</strong>
+                    Lo que ves en pantalla no está guardado en &laquo;@estado.NombreDeLaCarpeta&raquo;.
+                    Suele ser el permiso, que caduca al reabrir.
+                    <div class="apunte mono">@estado.GuardadoFallando</div>
+                </div>
+                <button class="tecla tecla--problema" @onclick="PedirPermiso">Volver a dar permiso</button>
+            </div>
+        }
+
+        @* El aviso NEUTRO -"se esta guardando en este navegador"- ya no vive aca: vive en
+           Mi carro, junto a "donde vive tu bitacora". La razon es de orden. En la cascara
+           quedaba ARRIBA DE LA FRANJA, o sea que un dato informativo se leia antes que el
+           veredicto del dominio, que es lo primero que alguien abre esta app para saber.
+           Los dos de arriba SI se quedan: no se esta guardando nada y la carpeta rechazo
+           la escritura son alarmas, y una alarma sí va antes que todo. *@
+
+        @Body
+
+    }
 </main>
+
+@code {
+    private bool? soportado;
+    private bool? opfs;
+    private string sinAlmacenamiento = "";
+    private bool instalada;
+    private bool refrescando;
+    private string error = "";
+
+    private IReadOnlyList<VehiculoEnLista> vehiculos = new List<VehiculoEnLista>();
+
+    // LO QUE VIAJA HASTA LA PESTAÑA DE LA RUTA, y es lo unico que la cascara sabe del
+    // carro: la ausencia que bloquea un calculo tiene que verse desde cualquier pantalla,
+    // no solo desde la que la muestra.
+    //
+    // ES LA CUENTA DE FALTANTES Y NO LA DE TRAMOS BLOQUEADOS. Medido: con 7 kilometrajes
+    // esperando, los tramos bloqueados eran CERO y el badge no aparecia. Tiene sentido —
+    // sin kilometraje el tramo ni se forma, asi que no hay nada que bloquear— pero es
+    // exactamente el caso en que mas hace falta avisar. Un badge cuenta lo que espera algo
+    // de la persona, y eso es Faltantes.
+    private int pendientes;
+
+    // La placa que se esta mirando. La cascara la necesita para el selector y para saber
+    // de que carro cuenta los pendientes del badge.
+    private string enFoco = "";
+
+    protected override async Task OnInitializedAsync()
+    {
+        estado.Cambio += CuandoElEstadoCambia;
+
+        if (estado.EstaArriba) { Releer(); return; }
+
+        soportado = await estado.EstaSoportado();
+        opfs = await estado.OpfsSoportado();
+        sinAlmacenamiento = await estado.MotivoSinAlmacenamiento();
+        instalada = await estado.EstaInstalada();
+
+        // EL MODO RECORDADO. La app ya guardaba cual eligio la persona la vez pasada y
+        // ninguna pantalla lo consumia: al recargar, quien habia elegido "este navegador"
+        // volvia a la pantalla de elegir destino como si fuera la primera vez.
+        //
+        // La carpeta necesita revalidar el permiso -sin gesto solo se recupera el handle-,
+        // pero OPFS no necesita nada: si eligio eso, se reengancha sola.
+        string recordado = await estado.ModoRecordado();
+        if (recordado == "opfs" && opfs == true)
+        {
+            if ((await estado.UsarAlmacenamientoDelNavegador()).Ok) { await Arrancar(); return; }
+        }
+
+        if (soportado != true) return;
+
+        // Recuperar el handle NO necesita gesto; volver a otorgar el permiso SI.
+        ResultadoDeCarpeta recuperada = await estado.RecuperarCarpeta();
+        if (recuperada.Ok) await Arrancar();
+    }
+
+    private void CuandoElEstadoCambia()
+    {
+        Releer();
+        StateHasChanged();
+    }
+
+    // La cascara lee poquito: quien es el carro y cuanto falta. Todo lo demas es de las
+    // paginas, y sale de consultar al actor igual que acá.
+    private void Releer()
+    {
+        if (!estado.EstaArriba) return;
+
+        vehiculos = estado.Vehiculos();
+        enFoco = estado.PlacaEnFoco(vehiculos);
+        pendientes = enFoco.Length == 0 ? 0 : estado.Faltantes(enFoco).Count;
+    }
+
+    private Task CambiarDeCarro(ChangeEventArgs e) => Intentar("cambiar de carro", async () =>
+    {
+        string placa = e.Value?.ToString() ?? "";
+        if (placa.Length > 0) await estado.ElegirVehiculo(placa);
+    });
+
+    private Task ConectarCarpeta() => Intentar("elegir carpeta", async () =>
+    {
+        if ((await estado.ConectarCarpeta()).Ok) await estado.Arrancar();
+    });
+
+    private Task PedirPermiso() => Intentar("dar permiso a la carpeta", async () =>
+    {
+        if ((await estado.PedirPermiso()).Ok) await estado.Arrancar();
+    });
+
+    private Task UsarNavegador() => Intentar("guardar en este navegador", async () =>
+    {
+        if ((await estado.UsarAlmacenamientoDelNavegador()).Ok) await estado.Arrancar();
+    });
+
+    private Task Importar() => Intentar("importar una bitácora", async () =>
+    {
+        string motivo = await estado.Importar();
+        if (motivo.Length > 0) throw new InvalidOperationException(motivo);
+    });
+
+    private Task Arrancar() => Intentar("abrir la app", () => estado.Arrancar().AsTask());
+
+    private Task Refrescar() => Intentar("refrescar contra la estación", async () =>
+    {
+        refrescando = true;
+        try { await estado.Refrescar(); }
+        finally { refrescando = false; }
+    });
+
+    // El mismo Intentar de las pantallas, y por la misma razon: el StateHasChanged del
+    // finally. Casi todo lo que decide esta cascara vive en EstadoDeLaApp, y Blazor no
+    // observa servicios inyectados; sin esto, "hay que apretar dos veces". No se hereda de
+    // PantallaDeCargas porque un layout tiene que heredar de LayoutComponentBase.
+    private async Task Intentar(string paso, Func<Task> accion)
+    {
+        error = "";
+        try
+        {
+            await accion();
+        }
+        catch (Exception ex)
+        {
+            error = Fallo.Detalle(paso, ex);
+        }
+        finally
+        {
+            StateHasChanged();
+        }
+    }
+
+    public void Dispose() => estado.Cambio -= CuandoElEstadoCambia;
+}

@@ -130,6 +130,93 @@ namespace Cargas.App
 			.PerformCheckThenCommand();
 		}
 
+		// LA TOMBOLA LLEGA, NO SE CALCULA, igual que los puntos: el sorteo se rifa sobre
+		// numeros y un boleto fabricado aca no sirve para reclamar nada. Lo unico que la
+		// app deriva es la explicacion de cuantos dio cada carga.
+		public string AplicarSorteoAnunciado(SorteoAnunciado evento)
+		{
+			ArgumentNullException.ThrowIfNull(evento);
+
+			return app.Using(
+				scriptForChk: @"
+					Check(@evento > bitacora.UltimoEvento) Error 'evento ya procesado';
+					Check(Moneda.EsConocida(@monedaDeLaRegla)) Error 'moneda de la regla no modelada';
+				",
+				@"
+					{
+						bitacoraDeCargas.AnunciarSorteo(@codigo, @nombre, @premio,
+							@fechaDelSorteo, @montoPorBoleto, @monedaDeLaRegla);
+						bitacora.Avanzar(@evento);
+					}
+				")
+			.WithParameters(p => {
+				p["evento",         typeof(long)]     = evento.Evento;
+				p["codigo",         typeof(string)]   = evento.Codigo;
+				p["nombre",         typeof(string)]   = evento.Nombre;
+				p["premio",         typeof(string)]   = evento.Premio;
+				p["fechaDelSorteo", typeof(DateTime)] = evento.FechaDelSorteo;
+				p["montoPorBoleto", typeof(decimal)]  = evento.MontoPorBoleto;
+				// EL PARAMETRO NO SE PUEDE LLAMAR @moneda: el script nombra al tipo Moneda
+				// para reconocerlo, y el motor resuelve primero el parametro homonimo —
+				// "Unknown property or method 'EsConocida' on type 'String'". Por eso la
+				// carga usa precioMoneda y totalMoneda, y no era casualidad.
+				p["monedaDeLaRegla", typeof(string)]  = evento.Moneda;
+			})
+			.PerformCheckThenCommand();
+		}
+
+		// UN COMANDO POR BOLETO. El numero es su identidad, asi que un boleto repetido es
+		// un defecto del emisor y el dominio lo dice; la guarda del checkpoint es la que
+		// para los reintentos del refresh.
+		public string AplicarBoletoEmitido(BoletoEmitido evento)
+		{
+			ArgumentNullException.ThrowIfNull(evento);
+
+			return app.Using(
+				scriptForChk: @"
+					Check(@evento > bitacora.UltimoEvento) Error 'evento ya procesado';
+				",
+				@"
+					{
+						bitacoraDeCargas.EmitirBoleto(@numero, @sorteo, @fecha, @transaccion);
+						bitacora.Avanzar(@evento);
+					}
+				")
+			.WithParameters(p => {
+				p["evento",      typeof(long)]     = evento.Evento;
+				p["numero",      typeof(string)]   = evento.NumeroDeBoleto;
+				p["sorteo",      typeof(string)]   = evento.CodigoDelSorteo;
+				p["fecha",       typeof(DateTime)] = evento.Fecha;
+				p["transaccion", typeof(string)]   = evento.NumeroDeTransaccion;
+			})
+			.PerformCheckThenCommand();
+		}
+
+		// LA MEMBRESIA LLEGA, no se inventa. Un numero de socio fabricado aca se imprime
+		// igual de lindo en el carnet y no acredita nada en la caja.
+		public string AplicarMembresiaEmitida(MembresiaEmitida evento)
+		{
+			ArgumentNullException.ThrowIfNull(evento);
+
+			return app.Using(
+				scriptForChk: @"
+					Check(@evento > bitacora.UltimoEvento) Error 'evento ya procesado';
+				",
+				@"
+					{
+						bitacoraDeCargas.Afiliar(@socio, @nombre, @desde);
+						bitacora.Avanzar(@evento);
+					}
+				")
+			.WithParameters(p => {
+				p["evento", typeof(long)]     = evento.Evento;
+				p["socio",  typeof(string)]   = evento.NumeroDeSocio;
+				p["nombre", typeof(string)]   = evento.Nombre;
+				p["desde",  typeof(DateTime)] = evento.Desde;
+			})
+			.PerformCheckThenCommand();
+		}
+
 		public string AplicarNivelActualizado(NivelActualizado evento)
 		{
 			ArgumentNullException.ThrowIfNull(evento);
@@ -247,6 +334,43 @@ namespace Cargas.App
 
 		// El cero en el rendimiento de fabrica es el "no lo se" del formulario; la
 		// bitacora lo escala al tipo de ausencia antes de tocar el dominio.
+		// EN QUE UNIDADES LO MIRA ELLA. Va al journal y no al browser porque cambia lo que
+		// la app DICE y no solo lo que se ve: con la preferencia en IndexedDB, la pantalla
+		// mostraria mpg mientras su asistente le contesta en km/L sobre la misma bitacora.
+		//
+		// SIN Check, como DeclararSexo en examenes: viene de un boton y volver a elegir lo
+		// mismo es legitimo. El simbolo viaja como @param -nunca concatenado al script- y
+		// el dominio lo RECONOCE antes de guardarlo: uno desconocido journalizado dejaria
+		// la bitacora irreproducible para cualquier binario que no lo conozca.
+		public string ElegirPresentacionDeRendimiento(string simbolo)
+		{
+			ArgumentNullException.ThrowIfNullOrWhiteSpace(simbolo);
+
+			return app.Using("bitacoraDeCargas.ElegirPresentacionDeRendimiento(@simbolo);")
+				.WithParameters(p => { p["simbolo", typeof(string)] = simbolo; })
+				.PerformCommand();
+		}
+
+		public string ElegirUnidadDeDistancia(string simbolo)
+		{
+			ArgumentNullException.ThrowIfNullOrWhiteSpace(simbolo);
+
+			return app.Using("bitacoraDeCargas.ElegirUnidadDeDistancia(@simbolo);")
+				.WithParameters(p => { p["simbolo", typeof(string)] = simbolo; })
+				.PerformCommand();
+		}
+
+		/// <summary>Como lo mira hoy, para que la pantalla pueda marcar la opcion elegida.</summary>
+		public string ComoLoMira() =>
+			app.Using(@"
+				{
+					print bitacoraDeCargas.SimboloDelRendimiento rendimiento,
+						bitacoraDeCargas.SimboloDeLaDistancia distancia;
+				}
+			").PerformQuery();
+
+		public UnidadesElegidas Unidades() => ProyeccionDeVistas.Unidades(ComoLoMira());
+
 		public string CompletarFicha(string placa, string alias, string marca, string modelo,
 			int anio, string color, decimal rendimientoDeFabricaKmPorLitro)
 		{
@@ -349,7 +473,13 @@ namespace Cargas.App
 					print vehiculo.TextoDeLaPlaca placa,
 						vehiculo.NombreParaMostrar nombre,
 						vehiculo.TieneFicha tieneFicha,
-						vehiculo.CantidadDeCargas cargas;
+						vehiculo.CantidadDeCargas cargas,
+						vehiculo.AliasDeLaFicha alias,
+						vehiculo.MarcaDeLaFicha marca,
+						vehiculo.ModeloDeLaFicha modelo,
+						vehiculo.AnioDeLaFicha anio,
+						vehiculo.ColorDeLaFicha color,
+						vehiculo.RendimientoDeFabricaDeLaFicha rendimientoDeFabrica;
 				}
 			")
 			.PerformQuery();
@@ -380,7 +510,8 @@ namespace Cargas.App
 						carga.TanqueExpresado tanque,
 						carga.NumeroDeLaTransaccion transaccion,
 						carga.TieneKilometraje tieneKilometraje,
-						carga.TieneFoto tieneFoto;
+						carga.TieneFoto tieneFoto,
+						carga.NombreDeLaFoto foto;
 				}
 			")
 			.WithParameters(p => { p["placa", typeof(string)] = placa; })
@@ -409,7 +540,11 @@ namespace Cargas.App
 						tramo.MotivoDeReserva motivoDeReserva,
 						tramo.EsSospechoso esSospechoso,
 						tramo.QueFalta queFalta,
-						tramo.Expresado expresado;
+						tramo.Expresado expresado,
+						tramo.RendimientoComoSeVe rendimientoComoSeVe,
+						tramo.KilometrosComoSeVen kilometrosComoSeVen,
+						tramo.SimboloDelRendimiento simboloDelRendimiento,
+						tramo.SimboloDeLaDistancia simboloDeLaDistancia;
 				}
 			")
 			.WithParameters(p => { p["placa", typeof(string)] = placa; })
@@ -447,7 +582,11 @@ namespace Cargas.App
 						evaluacion.MotivoDeReserva motivoDeReserva,
 						evaluacion.EstaMejorando estaMejorando,
 						evaluacion.EstaEmpeorando estaEmpeorando,
-						evaluacion.SugiereRegistrarLaCargaQueFalto sugiereRegistrarLaCargaQueFalto;
+						evaluacion.SugiereRegistrarLaCargaQueFalto sugiereRegistrarLaCargaQueFalto,
+						evaluacion.ActualComoSeVe actualComoSeVe,
+						evaluacion.HabitualComoSeVe habitualComoSeVe,
+						evaluacion.CambioPorcentualComoSeVe cambioPorcentualComoSeVe,
+						evaluacion.SimboloDelRendimiento simbolo;
 				}
 			")
 			.WithParameters(p => { p["placa", typeof(string)] = placa; })
@@ -479,6 +618,46 @@ namespace Cargas.App
 
 		public AutonomiaDelVehiculo Autonomia(string placa) =>
 			ProyeccionDeVistas.Autonomia(AutonomiaEstimada(placa));
+
+		// EN CUANTOS DIAS VA A TENER QUE CARGAR. No hay un PerformQuery propio: es la
+		// COMPOSICION de dos consultas que ya existen, y por eso es un metodo de la App
+		// y no un verbo del dominio. Lo unico que agrega es la resta, y la resta no es
+		// una regla de negocio: es aritmetica sobre dos derivaciones ya juzgadas.
+		//
+		// HOY LO PONE EL LLAMADOR. El dominio no lee el reloj -si lo hiciera, el mismo
+		// journal reproducido manana daria otra respuesta-, asi que la caratula pasa su
+		// "hoy" igual que se lo pasa a Odometro().
+		//
+		// Estaba en la tool del MCP y se subio aca cuando el tablero pidio la misma
+		// cifra: dos derivaciones separadas es como la IA y la persona terminan diciendo
+		// numeros distintos del mismo carro.
+		public ProximaCargaDelVehiculo ProximaCarga(string placa, DateTime hoy)
+		{
+			ArgumentNullException.ThrowIfNullOrWhiteSpace(placa);
+
+			AutonomiaDelVehiculo autonomia = Autonomia(placa);
+			OdometroPropuesto proyeccion = Odometro(placa, hoy);
+			if (!autonomia.Hay || !proyeccion.Hay || proyeccion.KilometrosPorDia <= 0m
+				|| autonomia.Kilometros <= 0m)
+				return new ProximaCargaDelVehiculo();
+
+			// Lo recorrido desde la ultima lectura, proyectado con su promedio; lo que
+			// queda es la autonomia menos eso. Aproximacion declarada: la ultima lectura
+			// no siempre coincide con la ultima carga llena.
+			decimal recorridos = proyeccion.KilometrosPorDia * proyeccion.DiasDesdeLaUltimaLectura;
+			decimal restantes = Math.Max(0m, autonomia.Kilometros - recorridos);
+
+			return new ProximaCargaDelVehiculo
+			{
+				Hay = true,
+				DiasEstimados = (int)Math.Round(restantes / proyeccion.KilometrosPorDia),
+				KilometrosRestantes = Math.Round(restantes),
+				KilometrosDeTanqueLleno = Math.Round(autonomia.Kilometros),
+				KilometrosPorDia = Math.Round(proyeccion.KilometrosPorDia, 1),
+				EsProyeccion = true,
+				FraccionRestante = restantes / autonomia.Kilometros,
+			};
+		}
 
 		// Cuanto del aporte de Sonia ya esta: la linea discreta, nunca el reproche.
 		public string CompletitudDeDatos(string placa)
@@ -514,7 +693,10 @@ namespace Cargas.App
 						faltante.NumeroDeLaTransaccion transaccion,
 						faltante.QueFalta queFalta,
 						faltante.QueDesbloquea queDesbloquea,
-						faltante.ParaSonia paraSonia;
+						faltante.ParaSonia paraSonia,
+						faltante.LoQueSeSupone loQueSeSupone,
+						faltante.LaSuposicion laSuposicion,
+						faltante.NaceDeUnaSuposicion naceDeUnaSuposicion;
 				}
 			")
 			.WithParameters(p => { p["placa", typeof(string)] = placa; })
@@ -537,7 +719,10 @@ namespace Cargas.App
 						proyeccion.Kilometros kilometros,
 						proyeccion.KilometrosPorDia kilometrosPorDia,
 						proyeccion.DiasDesdeLaUltimaLectura diasDesdeLaUltimaLectura,
-						proyeccion.Origen origen;
+						proyeccion.Origen origen,
+						proyeccion.KilometrosComoSeVen kilometrosComoSeVen,
+						proyeccion.PorDiaComoSeVe porDiaComoSeVe,
+						proyeccion.SimboloDeLaDistancia simboloDeLaDistancia;
 				}
 			")
 			.WithParameters(p => {
@@ -613,14 +798,99 @@ namespace Cargas.App
 		public IReadOnlyList<GastoEnLista> Gastos(int anio, int mes) =>
 			ProyeccionDeVistas.Gastos(GastoDelPeriodo(anio, mes));
 
+		// EL GASTO DE UN CARRO. El tablero es de un vehiculo, asi que su instrumento de
+		// gasto tiene que serlo tambien: con dos carros, el gasto de todos conviviendo con
+		// la autonomia y el rendimiento de uno solo miente por omision.
+		public string GastoDelPeriodoDe(string placa, int anio, int mes)
+		{
+			ArgumentNullException.ThrowIfNullOrWhiteSpace(placa);
+
+			return app.Using(@"
+				foreach (gastoDelCarro in bitacoraDeCargas.GastoDelPeriodoDe(@placa, @anio, @mes)) {
+					print gastoDelCarro.CodigoDeMoneda moneda,
+						gastoDelCarro.Monto monto,
+						gastoDelCarro.CantidadDeCargas cargas,
+						gastoDelCarro.Litros litros,
+						gastoDelCarro.Expresado expresado;
+				}
+			")
+			.WithParameters(p => {
+				p["placa", typeof(string)] = placa;
+				p["anio",  typeof(int)]    = anio;
+				p["mes",   typeof(int)]    = mes;
+			})
+			.PerformQuery();
+		}
+
+		public IReadOnlyList<GastoEnLista> GastosDe(string placa, int anio, int mes) =>
+			ProyeccionDeVistas.Gastos(GastoDelPeriodoDe(placa, anio, mes), "gastoDelCarro");
+
 		// La lealtad, discreta: presente para que se sienta real, no es el foco.
+		// LAS TOMBOLAS. El "hoy" lo pone la caratula, como en Odometro y ProximaCarga: el
+		// dominio no lee el reloj, y si lo hiciera el mismo journal reproducido manana
+		// diria que un sorteo ya venció.
+		//
+		// Las tres variables del foreach son DISTINTAS a proposito: el parser llavea por el
+		// nombre de la variable, no por la primera columna, y dos vistas con la misma llave
+		// se pisarian sin error.
+		public string ListaDeSorteos(DateTime hoy) =>
+			app.Using(@"
+				foreach (sorteo in bitacoraDeCargas.BoletosPorSorteo(@hoy)) {
+					print sorteo.Codigo codigo,
+						sorteo.Nombre nombre,
+						sorteo.Premio premio,
+						sorteo.FueAnunciado fueAnunciado,
+						sorteo.FechaDelSorteo fechaDelSorteo,
+						sorteo.CantidadDeBoletos boletos,
+						sorteo.EstaVencido estaVencido,
+						sorteo.DiasParaElSorteo diasParaElSorteo,
+						sorteo.MontoPorBoletoExpresado montoPorBoleto,
+						sorteo.ParaSonia paraSonia;
+				}
+			")
+			.WithParameters(p => { p["hoy", typeof(DateTime)] = hoy; })
+			.PerformQuery();
+
+		public IReadOnlyList<SorteoEnLista> Sorteos(DateTime hoy) =>
+			ProyeccionDeVistas.Sorteos(ListaDeSorteos(hoy));
+
+		public string BoletosPorCarga(string placa)
+		{
+			ArgumentNullException.ThrowIfNullOrWhiteSpace(placa);
+
+			return app.Using(@"
+				foreach (explicacion in bitacoraDeCargas.BoletosPorCargaDe(@placa)) {
+					print explicacion.FechaDeLaCarga fecha,
+						explicacion.NumeroDeLaTransaccion transaccion,
+						explicacion.CodigoDelSorteo sorteo,
+						explicacion.NombreDelSorteo nombreDelSorteo,
+						explicacion.HayRegla hayRegla,
+						explicacion.BoletosQueDaLaRegla queDaLaRegla,
+						explicacion.BoletosEmitidos emitidos,
+						explicacion.SobranteExpresado sobrante,
+						explicacion.LaCuentaCuadra cuadra,
+						explicacion.ProbablementeFaltaUnDato probablementeFaltaUnDato,
+						explicacion.ParaSonia paraSonia;
+				}
+			")
+			.WithParameters(p => { p["placa", typeof(string)] = placa; })
+			.PerformQuery();
+		}
+
+		public IReadOnlyList<BoletosDeLaCargaEnLista> BoletosDeLasCargas(string placa) =>
+			ProyeccionDeVistas.BoletosDeLasCargas(BoletosPorCarga(placa));
+
 		public string EstadoDeLealtad() =>
 			app.Using(@"
 				{
 					lealtad = bitacoraDeCargas.Lealtad;
 					print lealtad.PuntosDelSaldo saldo,
 						lealtad.NombreDelNivel nivel,
-						lealtad.PuntosParaElSiguienteNivel paraElSiguiente;
+						lealtad.PuntosParaElSiguienteNivel paraElSiguiente,
+						lealtad.EstaAfiliada afiliada,
+						lealtad.NumeroDeSocio socio,
+						lealtad.NombreDelSocio nombreDelSocio,
+						lealtad.SocioDesde socioDesde;
 				}
 			")
 			.PerformQuery();
@@ -637,6 +907,9 @@ namespace Cargas.App
 			if (mensaje is CargaRegistrada carga) return AplicarCargaRegistrada(carga);
 			if (mensaje is PuntosAcreditados puntos) return AplicarPuntosAcreditados(puntos);
 			if (mensaje is NivelActualizado nivel) return AplicarNivelActualizado(nivel);
+			if (mensaje is SorteoAnunciado sorteo) return AplicarSorteoAnunciado(sorteo);
+			if (mensaje is BoletoEmitido boleto) return AplicarBoletoEmitido(boleto);
+			if (mensaje is MembresiaEmitida membresia) return AplicarMembresiaEmitida(membresia);
 
 			throw new ArgumentException(
 				$"Esta app no tiene comando para un mensaje de tipo '{mensaje.Tipo}'. La ruta debio devolver null "
