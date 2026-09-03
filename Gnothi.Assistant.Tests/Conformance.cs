@@ -269,4 +269,123 @@ internal static class Conformance
 		}
 		return "";
 	}
+
+	// ============================================================================================
+	// EL CONSENTIMIENTO SE RESPETA, Y NINGUNA PUERTA LO ESQUIVA.
+	//
+	// La compuerta vive en UN solo lugar -- Dispatcher.Serve -- y el catalogo sale ya filtrado de
+	// Module.EnabledTools(). Eso esta bien construido, y el comentario del Dispatcher lo dice:
+	// «the permission is checked HERE, not in the front end. A new front end cannot forget to
+	// check it because it is not the one doing the invoking».
+	//
+	// LO QUE NO EXISTIA ERA LA PRUEBA. Hasta hoy ningun test del repo apagaba una tool: la suite
+	// recorria ToolIndex.All, que YA viene filtrado, asi que solo ejercitaba tools ENCENDIDAS. La
+	// propiedad se sostenia por argumento, no por medicion, y un front end nuevo que decidiera
+	// invocar por su cuenta habria pasado el CI en verde.
+	//
+	// POR QUE ESTO CUBRE TAMBIEN LA FOTO QUE LEE SIRI, que es el camino mas riesgoso porque su
+	// respuesta sale de un archivo y no de una consulta en vivo: Instantanea.cs arma la foto
+	// recorriendo dispatcher.Catalog() y pidiendo cada hecho por dispatcher.Serve. Si una tool
+	// apagada no aparece en el catalogo NI la sirve el dispatcher, no hay por donde entrar en la
+	// foto. Lo que esta prueba NO puede cubrir es que la foto EN DISCO se reescriba cuando el
+	// consentimiento cambia -- eso es ConsentWatch en la app viva -- y por eso se mide en el aparato.
+	//
+	// NO TOCA EL DISCO: Module.Reconsent solo cambia el objeto en memoria. El installation.json de
+	// la persona lo escribe Shell.SetConsent, que no participa aca. El working tree queda igual.
+	//
+	// NO NECESITA QUE LOS MODULOS ARRANQUEN, y es a proposito: el permiso se chequea ANTES de
+	// invocar, asi que esto corre igual en una maquina donde installation.json trae rutas de otra
+	// -- la limitacion abierta de la seccion 8 --.
+	public static async Task Consentimiento(string modulesRoot, Action<string, bool, string> assert)
+	{
+		var catalog = new ModuleCatalog(modulesRoot);
+		catalog.Load();
+
+		var d = new Dispatcher(catalog, new Meter(), Accepts.JsonOrToon);
+
+		Module? m = catalog.Modules.FirstOrDefault(x => x.Manifest.Tools.Count > 0);
+		if (m is null)
+		{
+			assert("hay un modulo con tools para probar el consentimiento", false,
+				$"ninguno de {catalog.Modules.Count} modulos declara tools");
+			await catalog.DisposeAsync();
+			return;
+		}
+
+		string tool = m.Manifest.Tools[0].Name;
+		string publico = Module.PublicName(m.Name, tool);
+
+		// El estado original, para devolverlo al final aunque una afirmacion falle.
+		bool enabled0 = m.Installation.Enabled;
+		string[] disabled0 = [.. m.Installation.DisabledTools];
+
+		// Las tres listas donde una tool apagada NO debe aparecer. Son las que alimentan a los
+		// tres consumidores: el catalogo crudo va a la foto de Siri, ToolIndex es lo que ve la
+		// Puerta 1, y CatalogFor es lo que ve el modelo en la Puerta 2.
+		bool EnCatalogo() => d.Catalog().Any(x => x.module.Name == m.Name && x.tool.Name == tool);
+		bool EnPuerta1() => ToolIndex.Of(d).All.Any(e => e.PublicName == publico);
+		bool EnPuerta2() => AgentLoop.CatalogFor(d).Any(t => t.Name == publico);
+
+		try
+		{
+			// ── 1 · EL PISO: encendida, aparece en las tres ────────────────────────────────
+			m.Reconsent(true, []);
+			assert($"{publico}: encendida, aparece en el catalogo y en las dos puertas",
+				EnCatalogo() && EnPuerta1() && EnPuerta2(),
+				$"catalogo={EnCatalogo()} puerta1={EnPuerta1()} puerta2={EnPuerta2()}");
+
+			// ── 2 · APAGAR SOLO ESA TOOL ───────────────────────────────────────────────────
+			m.Reconsent(true, [tool]);
+
+			Response apagada = await d.Serve(new Request(m.Name, tool, null), CancellationToken.None);
+
+			assert($"{publico}: apagada, el Dispatcher la RECHAZA",
+				!apagada.Authorized,
+				"el dispatcher la sirvio igual: la compuerta no se aplico");
+
+			// Y la rechaza POR CONSENTIMIENTO. Sin esto la afirmacion de arriba tambien pasaria
+			// si el modulo simplemente no arranca -- Serve devuelve Denied en los dos casos --,
+			// y estariamos festejando una compuerta que nunca se ejecuto.
+			assert($"{publico}: y el motivo es el consentimiento, no un fallo del modulo",
+				(apagada.Reason ?? "").Contains("switched off", StringComparison.OrdinalIgnoreCase),
+				$"motivo: {apagada.Reason}");
+
+			assert($"{publico}: apagada, DESAPARECE del catalogo que arma la foto de Siri",
+				!EnCatalogo(),
+				"sigue en Dispatcher.Catalog(): entraria en la instantanea que lee la App Intent");
+
+			assert($"{publico}: apagada, no la ve la Puerta 1 ni la Puerta 2",
+				!EnPuerta1() && !EnPuerta2(),
+				$"puerta1={EnPuerta1()} puerta2={EnPuerta2()}");
+
+			// ── 3 · VOLVER A ENCENDERLA ────────────────────────────────────────────────────
+			// Un apagado que no se puede deshacer no es consentimiento, es una baja.
+			m.Reconsent(true, []);
+			assert($"{publico}: al reencenderla vuelve a las tres listas",
+				EnCatalogo() && EnPuerta1() && EnPuerta2(),
+				$"catalogo={EnCatalogo()} puerta1={EnPuerta1()} puerta2={EnPuerta2()}");
+
+			// ── 4 · APAGAR EL MODULO ENTERO ────────────────────────────────────────────────
+			// Es el otro switch de la UI, y no comparte codigo con el de arriba: Enabled y
+			// DisabledTools son campos distintos, asi que se afirma aparte.
+			m.Reconsent(false, []);
+
+			string[] asomadas = [.. d.Catalog().Where(x => x.module.Name == m.Name).Select(x => x.tool.Name)];
+			assert($"{m.Name}: apagado el modulo entero, NINGUNA de sus tools queda en el catalogo",
+				asomadas.Length == 0,
+				$"quedaron asomadas: [{string.Join(", ", asomadas)}]");
+
+			Response moduloOff = await d.Serve(new Request(m.Name, tool, null), CancellationToken.None);
+			assert($"{m.Name}: apagado el modulo entero, el Dispatcher rechaza sus tools",
+				!moduloOff.Authorized && (moduloOff.Reason ?? "").Contains("switched off", StringComparison.OrdinalIgnoreCase),
+				$"autorizado={moduloOff.Authorized} motivo: {moduloOff.Reason}");
+		}
+		finally
+		{
+			// Devolver el estado, pase lo que pase. Es en memoria, pero dejar el objeto mentido
+			// haria que cualquier afirmacion posterior midiera otra cosa.
+			m.Reconsent(enabled0, disabled0);
+			await catalog.DisposeAsync();
+		}
+	}
 }

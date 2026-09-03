@@ -138,6 +138,13 @@ else
 	Console.WriteLine();
 	Console.WriteLine("=== LAS TRES PUERTAS CONTESTAN LO MISMO ===");
 	await Gnothi.Conformance.Conformance.Run(modulos, Assert);
+
+	// EL APAGADO SE RESPETA POR TODAS LAS PUERTAS. Corre DESPUES de la conformance porque
+	// necesita su propio catalogo -- apaga y enciende tools para medir la compuerta -- y no
+	// tiene por que mezclarse con el que la comparacion usa. Ver Conformance.Consentimiento.
+	Console.WriteLine();
+	Console.WriteLine("=== UNA TOOL APAGADA NO SE CUELA POR NINGUNA PUERTA ===");
+	await Gnothi.Conformance.Conformance.Consentimiento(modulos, Assert);
 }
 
 Console.WriteLine();
