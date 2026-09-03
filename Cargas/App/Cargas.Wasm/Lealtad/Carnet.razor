@@ -21,7 +21,7 @@
             }
             <div class="carnet-numero">@lealtad.NumeroDeSocio</div>
             <div class="cifra-pie">
-                socia desde @Mayuscula(lealtad.SocioDesde.ToString("MMMM yyyy", Cultura))
+                socia desde @lealtad.SocioDesde.ToString("MMMM yyyy", Cultura)
                 @if (lealtad.Nivel.Length > 0)
                 {
                     <text> &middot; nivel <b>@lealtad.Nivel</b></text>
