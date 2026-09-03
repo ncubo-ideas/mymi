@@ -37,6 +37,8 @@ namespace Cargas.Consola
 			ElGastoDelCarroNoEsElGastoDeLaPersona();
 			LaFichaSeLeePlanaParaPoderCorregirla();
 			LaUnidadCambiaLaFraseYNuncaElVeredicto();
+			LosBoletosLleganYLaAppSoloExplica();
+			UnBoletoPuedeLlegarAntesQueSuSorteo();
 			OtroSurtidorNoSeComparaConLaSerie();
 			ElVeredictoDelGuionEsEmpeoro();
 			CambiarLaUnidadInvierteLaFlechaPeroNoElVeredicto();
@@ -383,6 +385,120 @@ namespace Cargas.Consola
 			Igual("la distancia queda en millas", "mi", bitacora.SimboloDeLaDistancia);
 			Revienta<ErrorDeDominio>("y una unidad desconocida tampoco entra",
 				() => bitacora.ElegirUnidadDeDistancia("leguas"));
+		}
+
+		// LOS BOLETOS LLEGAN, LA APP SOLO EXPLICA. Es la invariante de la tombola, y es la
+		// misma que ya regia los puntos: el sorteo se rifa sobre numeros y uno fabricado
+		// aca no sirve para reclamar nada.
+		private static void LosBoletosLleganYLaAppSoloExplica()
+		{
+			Titulo("los boletos llegan, y la app solo explica");
+
+			var bitacora = new BitacoraDeCargas();
+			bitacora.AnunciarSorteo("SORTEO-2026-12", "Fin de año", "un Yaris",
+				new DateTime(2026, 12, 15), 10000m, "CRC");
+
+			// Una carga de 29 392: la regla da 2 boletos y sobran 9 392.
+			bitacora.Agregar(new Carga(new DateTime(2026, 8, 25), "La Sabana", "A-3",
+				"regular", 44m, "L", 668m, "CRC", 29392m, "CRC", "automatico",
+				"ABC-123", "T-0209"));
+
+			// SIN BOLETOS EMITIDOS no hay boletos, aunque la regla diga que darian dos.
+			Igual("la regla daria dos", "2",
+				bitacora.BoletosPorCargaDe("ABC-123")[0].BoletosQueDaLaRegla.ToString());
+			Igual("pero la app no inventa ninguno", "0", bitacora.CantidadDeBoletos.ToString());
+
+			// La explicacion SI se deriva, y dice lo que se pierde.
+			BoletosDeLaCarga sinEmitir = bitacora.BoletosPorCargaDe("ABC-123")[0];
+			Igual("y avisa que probablemente falta un dato", "True",
+				sinEmitir.ProbablementeFaltaUnDato.ToString());
+			Igual("sin decir que la estacion le debe algo", "False",
+				sinEmitir.ParaSonia.Contains("deb").ToString());
+
+			bitacora.EmitirBoleto("B-000205", "SORTEO-2026-12", new DateTime(2026, 8, 25), "T-0209");
+			bitacora.EmitirBoleto("B-000206", "SORTEO-2026-12", new DateTime(2026, 8, 25), "T-0209");
+
+			BoletosDeLaCarga cuadrada = bitacora.BoletosPorCargaDe("ABC-123")[0];
+			Igual("con los dos emitidos, la cuenta cuadra", "True",
+				cuadrada.LaCuentaCuadra.ToString());
+			Igual("dice los dos boletos", "True", cuadrada.ParaSonia.Contains("2 boletos").ToString());
+
+			// EL SOBRANTE SE DICE, y en pasado: "sobraron X que no se acumulan" es un hecho
+			// de su registro. "Carga X mas y te llevas otro" seria la estacion vendiendo por
+			// la boca de su propia app.
+			Igual("y el sobrante que se pierde", "True", cuadrada.ParaSonia.Contains("9392").ToString());
+			Igual("con la palabra que lo explica", "True",
+				cuadrada.ParaSonia.Contains("no se acumulan").ToString());
+
+			// EL RESTO NO SE ACUMULA. El falsificador: acumulando los sobrantes entre
+			// compras, dos cargas de 9 000 darian un boleto; por compra no dan ninguno.
+			var acumulando = new BitacoraDeCargas();
+			acumulando.AnunciarSorteo("S", "", "", new DateTime(2026, 12, 15), 10000m, "CRC");
+			acumulando.Agregar(new Carga(new DateTime(2026, 8, 1), "La Sabana", "A-3",
+				"regular", 13m, "L", 692m, "CRC", 9000m, "CRC", "automatico", "XYZ-1", "T-1"));
+			acumulando.Agregar(new Carga(new DateTime(2026, 8, 2), "La Sabana", "A-3",
+				"regular", 13m, "L", 692m, "CRC", 9000m, "CRC", "automatico", "XYZ-1", "T-2"));
+
+			IReadOnlyList<BoletosDeLaCarga> dos = acumulando.BoletosPorCargaDe("XYZ-1");
+			Igual("dos cargas de 9 000 no dan ningun boleto", "0 0",
+				$"{dos[0].BoletosQueDaLaRegla} {dos[1].BoletosQueDaLaRegla}");
+
+			// EL DINERO NO SE CONVIERTE, tampoco para los boletos.
+			acumulando.Agregar(new Carga(new DateTime(2026, 8, 3), "La Sabana", "A-3",
+				"regular", 20m, "L", 1m, "USD", 60m, "USD", "automatico", "XYZ-1", "T-3"));
+			BoletosDeLaCarga enDolares = null;
+			foreach (BoletosDeLaCarga fila in acumulando.BoletosPorCargaDe("XYZ-1"))
+				if (fila.NumeroDeLaTransaccion == "T-3") enDolares = fila;
+
+			Igual("una carga en otra moneda no tiene regla", "False", enDolares.HayRegla.ToString());
+			Igual("y lo dice en vez de inventar un tipo de cambio", "True",
+				enDolares.MotivoSinRegla.Contains("USD").ToString());
+		}
+
+		// EL DESORDEN DE LLEGADA ES REAL: los eventos vienen en el orden en que la estacion
+		// los publico, no en el que a este modelo le conviene.
+		private static void UnBoletoPuedeLlegarAntesQueSuSorteo()
+		{
+			Titulo("un boleto puede llegar antes que su sorteo");
+
+			var bitacora = new BitacoraDeCargas();
+
+			// El boleto primero, sin que su sorteo exista.
+			bitacora.EmitirBoleto("B-1", "SORTEO-2026-12", new DateTime(2026, 8, 25), "T-0209");
+
+			Igual("el sorteo existe igual", "True", bitacora.ConoceSorteo("SORTEO-2026-12").ToString());
+			Igual("con su boleto adentro", "1", bitacora.CantidadDeBoletos.ToString());
+
+			IReadOnlyList<BoletosDelSorteo> antes = bitacora.BoletosPorSorteo(new DateTime(2026, 8, 25));
+			Igual("pero sin anunciar", "False", antes[0].FueAnunciado.ToString());
+			Igual("y sin anunciar no puede estar vencido", "False", antes[0].EstaVencido.ToString());
+			Igual("y lo dice con palabras", "True",
+				antes[0].ParaSonia.Contains("todavía no anunció").ToString());
+
+			// El anuncio lo COMPLETA, sin perder el boleto.
+			bitacora.AnunciarSorteo("SORTEO-2026-12", "Fin de año", "un Yaris",
+				new DateTime(2026, 12, 15), 10000m, "CRC");
+
+			IReadOnlyList<BoletosDelSorteo> despues = bitacora.BoletosPorSorteo(new DateTime(2026, 8, 25));
+			Igual("ahora si esta anunciado", "True", despues[0].FueAnunciado.ToString());
+			Igual("con su premio", "un Yaris", despues[0].Premio);
+			Igual("y el boleto sigue ahi", "1", despues[0].CantidadDeBoletos.ToString());
+			Igual("faltan 112 dias", "112", despues[0].DiasParaElSorteo.ToString());
+
+			// UN BOLETO VENCIDO SE MUESTRA VENCIDO Y NUNCA DESAPARECE: que se esfumen
+			// boletos es la forma mas rapida de perder la confianza que este producto entero
+			// intenta construir.
+			IReadOnlyList<BoletosDelSorteo> pasado = bitacora.BoletosPorSorteo(new DateTime(2027, 1, 10));
+			Igual("pasada la fecha esta vencido", "True", pasado[0].EstaVencido.ToString());
+			Igual("y el boleto SIGUE contado", "1", pasado[0].CantidadDeBoletos.ToString());
+			Igual("y se dice que ya se rifo", "True", pasado[0].ParaSonia.Contains("ya se rifó").ToString());
+
+			// Dos anuncios o dos boletos con la misma identidad son un defecto del emisor.
+			Revienta<ErrorDeDominio>("dos anuncios del mismo sorteo revientan",
+				() => bitacora.AnunciarSorteo("SORTEO-2026-12", "Otro", "otro premio",
+					new DateTime(2027, 1, 1), 5000m, "CRC"));
+			Revienta<ErrorDeDominio>("dos boletos con el mismo numero revientan",
+				() => bitacora.EmitirBoleto("B-1", "SORTEO-2026-12", new DateTime(2026, 8, 25), "T-0209"));
 		}
 
 		private static void LaSuposicionDelTanqueSeEnunciaAntesDePreguntar()

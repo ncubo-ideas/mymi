@@ -651,6 +651,46 @@ h1:focus, h1:focus-visible { outline: none; }
 .otra p { margin: 8px 0 0; font-size: 13.5px; color: var(--tenue); }
 .otra p b { color: var(--tinta); font-weight: 600; }
 
+/* --------------------------------------------------------------------- las tómbolas
+
+   Un sorteo con sus boletos. El VENCIDO se atenúa pero NO desaparece: que se esfumen
+   boletos de una app de lealtad es la forma más rápida de perder la confianza que este
+   producto entero intenta construir. Atenuado dice «ya pasó»; ausente diría «te mentimos». */
+
+.sorteo {
+    position: relative; overflow: hidden;
+    padding: 15px 17px; margin-bottom: 12px;
+    border-radius: 12px; background: var(--cara); border: 1px solid var(--bisel);
+}
+.sorteo::before {
+    content: ""; position: absolute; inset: 0 0 auto 0; height: 1px;
+    background: linear-gradient(90deg, transparent, var(--brillo), transparent);
+}
+.sorteo--vencido { opacity: .58; }
+
+.sorteo-cabeza { display: flex; align-items: flex-start; gap: 14px; }
+.sorteo-cabeza > :first-child { flex: 1 1 14rem; }
+.sorteo-cabeza > :last-child { text-align: right; }
+.sorteo-nombre {
+    font-size: 15px; font-weight: 600; color: var(--tinta); margin-right: 8px;
+}
+.sorteo-relato { margin-top: 5px; font-size: 13px; color: var(--tenue); }
+.sorteo-premio { margin: 10px 0 0; font-size: 13.5px; color: var(--tenue); }
+.sorteo-premio b { color: var(--cobre); font-weight: 600; }
+
+/* DE DÓNDE SALIERON. Es lo que el tiquete de la bomba no dice. */
+.explicaciones { list-style: none; margin: 10px 0 0; padding: 0; font-size: 13.5px; }
+.explicaciones li {
+    display: flex; flex-wrap: wrap; gap: 4px 12px;
+    padding: 8px 0; border-top: 1px solid var(--bisel); color: var(--tenue);
+}
+.explicaciones .n {
+    font-family: var(--cifras); font-variant-numeric: tabular-nums; color: var(--tinta);
+    flex: 0 0 7.5rem;
+}
+/* La que no cuadra se marca en ámbar, no en rojo: es un dato que falta, no una deuda. */
+.explicacion--dudosa { color: var(--ambar); }
+
 /* --------------------------------------------------------------------- la ficha
 
    El formulario que le pone nombre al carro. Rejilla de dos columnas en escritorio y una

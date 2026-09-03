@@ -213,6 +213,40 @@ namespace Cargas.App.Vistas
 		public int PuntosParaElSiguienteNivel { get; init; }
 	}
 
+	// UN SORTEO CON SUS BOLETOS, ya juzgado contra hoy. Un vencido se muestra vencido y
+	// NUNCA desaparece: que se esfumen boletos de una app de lealtad es la forma mas rapida
+	// de perder la confianza que este producto entero intenta construir.
+	public sealed class SorteoEnLista
+	{
+		public string Codigo { get; init; } = "";
+		public string Nombre { get; init; } = "";
+		public string Premio { get; init; } = "";
+		public bool FueAnunciado { get; init; }
+		public DateTime FechaDelSorteo { get; init; }
+		public int Boletos { get; init; }
+		public bool EstaVencido { get; init; }
+		public int DiasParaElSorteo { get; init; }
+		public string MontoPorBoleto { get; init; } = "";
+		public string ParaSonia { get; init; } = "";
+	}
+
+	// LA EXPLICACION de una carga: lo unico que la app SI deriva. Cuando no cuadra con lo
+	// emitido, se dice que probablemente falta un dato, nunca que la estacion debe algo.
+	public sealed class BoletosDeLaCargaEnLista
+	{
+		public DateTime Fecha { get; init; }
+		public string Transaccion { get; init; } = "";
+		public string Sorteo { get; init; } = "";
+		public string NombreDelSorteo { get; init; } = "";
+		public bool HayRegla { get; init; }
+		public int QueDaLaRegla { get; init; }
+		public int Emitidos { get; init; }
+		public string Sobrante { get; init; } = "";
+		public bool Cuadra { get; init; }
+		public bool ProbablementeFaltaUnDato { get; init; }
+		public string ParaSonia { get; init; } = "";
+	}
+
 	public sealed class VehiculoEnLista
 	{
 		public string Placa { get; init; } = "";

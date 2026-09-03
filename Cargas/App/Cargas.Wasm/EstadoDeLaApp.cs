@@ -483,6 +483,13 @@ public sealed class EstadoDeLaApp : IAsyncDisposable
 
 	public UnidadesElegidas Unidades() { Exigir(); return api!.Unidades(); }
 
+	// LAS TOMBOLAS. El "hoy" lo pone esta caratula, como en Odometro y ProximaCarga.
+	public IReadOnlyList<SorteoEnLista> Sorteos(DateTime hoy)
+	{ Exigir(); return api!.Sorteos(hoy); }
+
+	public IReadOnlyList<BoletosDeLaCargaEnLista> BoletosDeLasCargas(string placa)
+	{ Exigir(); return api!.BoletosDeLasCargas(placa); }
+
 	/// <summary>Elegir en que se mira. Va al journal -cambia lo que la IA DICE, no solo lo
 	/// que se ve- y por eso baja a disco como cualquier otro aporte.</summary>
 	public async ValueTask<string> ElegirPresentacionDeRendimiento(string simbolo)

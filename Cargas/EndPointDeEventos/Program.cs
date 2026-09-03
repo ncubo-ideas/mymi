@@ -309,6 +309,27 @@ sealed class EventoDeNivel : EventoDeLaEstacion
     [JsonPropertyName("nivel")] public string Nivel { get; init; } = "";
 }
 
+sealed class EventoDeSorteo : EventoDeLaEstacion
+{
+    public override string Tipo => "SorteoAnunciado";
+
+    [JsonPropertyName("codigo")]         public string Codigo { get; init; } = "";
+    [JsonPropertyName("nombre")]         public string Nombre { get; init; } = "";
+    [JsonPropertyName("premio")]         public string Premio { get; init; } = "";
+    [JsonPropertyName("fechaDelSorteo")] public DateTime FechaDelSorteo { get; init; }
+    [JsonPropertyName("montoPorBoleto")] public decimal MontoPorBoleto { get; init; }
+    [JsonPropertyName("moneda")]         public string Moneda { get; init; } = "CRC";
+}
+
+sealed class EventoDeBoleto : EventoDeLaEstacion
+{
+    public override string Tipo => "BoletoEmitido";
+
+    [JsonPropertyName("numeroDeBoleto")]      public string NumeroDeBoleto { get; init; } = "";
+    [JsonPropertyName("codigoDelSorteo")]     public string CodigoDelSorteo { get; init; } = "";
+    [JsonPropertyName("numeroDeTransaccion")] public string NumeroDeTransaccion { get; init; } = "";
+}
+
 sealed class AlmacenDeEventos
 {
     private readonly ConcurrentDictionary<string, List<EventoDeLaEstacion>> porRecurso = new();
@@ -352,6 +373,45 @@ sealed class AlmacenDeEventos
         new EventoDeNivel { Id = 217, Fecha = new DateTime(2026, 6, 20, 9, 5, 10), Nivel = "plata" },
         Puntos(218, new DateTime(2026, 7, 25, 8, 30, 5), 43),
         Puntos(219, new DateTime(2026, 8, 25, 8, 40, 5), 44),
+
+        // LA TOMBOLA. Un boleto por cada 10 000 colones de una carga, y el resto NO se
+        // acumula para la siguiente. Los boletos los EMITE la estacion: el sorteo se rifa
+        // sobre numeros, asi que uno fabricado por la app no serviria para reclamar nada.
+        //
+        // SOLO SE AGREGA AL FINAL, del 220 en adelante, y 201-219 no se renumeran nunca:
+        // una bitacora existente pide after=219 y unos boletos intercalados no le llegarian
+        // jamas — sin error, porque el Check los rechazaria en silencio.
+        //
+        // DOS SORTEOS para que el vencimiento se pueda enseñar: al "hoy" del arnes
+        // (2026-08-25) el de junio ya se rifo y el de diciembre sigue abierto.
+        Sorteo(220, new DateTime(2025, 12, 1), "SORTEO-2026-06", "Tómbola de medio año",
+            "un Hyundai Grand i10", new DateTime(2026, 6, 15), 10000m),
+
+        // Diez boletos: 2+2+2 de las tres primeras, 1+1 de las dos parciales, 2 de mayo.
+        Boleto(221, new DateTime(2025, 12, 15, 8, 10, 10), "B-000101", "SORTEO-2026-06", "T-0201"),
+        Boleto(222, new DateTime(2025, 12, 15, 8, 10, 11), "B-000102", "SORTEO-2026-06", "T-0201"),
+        Boleto(223, new DateTime(2026, 1, 15, 9, 20, 10), "B-000103", "SORTEO-2026-06", "T-0202"),
+        Boleto(224, new DateTime(2026, 1, 15, 9, 20, 11), "B-000104", "SORTEO-2026-06", "T-0202"),
+        Boleto(225, new DateTime(2026, 2, 15, 8, 45, 10), "B-000105", "SORTEO-2026-06", "T-0203"),
+        Boleto(226, new DateTime(2026, 2, 15, 8, 45, 11), "B-000106", "SORTEO-2026-06", "T-0203"),
+        Boleto(227, new DateTime(2026, 3, 20, 17, 30, 10), "B-000107", "SORTEO-2026-06", "T-0204"),
+        Boleto(228, new DateTime(2026, 3, 28, 8, 15, 10), "B-000108", "SORTEO-2026-06", "T-0205"),
+        Boleto(229, new DateTime(2026, 5, 20, 8, 50, 10), "B-000109", "SORTEO-2026-06", "T-0206"),
+        Boleto(230, new DateTime(2026, 5, 20, 8, 50, 11), "B-000110", "SORTEO-2026-06", "T-0206"),
+
+        // LOS SEIS DE DICIEMBRE LLEGAN ANTES QUE SU ANUNCIO, y es a proposito: el desorden
+        // de llegada es real -los eventos vienen en el orden en que la estacion los
+        // publico- y asi el guion de fabrica lo ejercita en CADA corrida, en vez de quedar
+        // escondido en un test que nadie mira.
+        Boleto(231, new DateTime(2026, 6, 20, 9, 5, 20), "B-000201", "SORTEO-2026-12", "T-0207"),
+        Boleto(232, new DateTime(2026, 6, 20, 9, 5, 21), "B-000202", "SORTEO-2026-12", "T-0207"),
+        Boleto(233, new DateTime(2026, 7, 25, 8, 30, 20), "B-000203", "SORTEO-2026-12", "T-0208"),
+        Boleto(234, new DateTime(2026, 7, 25, 8, 30, 21), "B-000204", "SORTEO-2026-12", "T-0208"),
+        Boleto(235, new DateTime(2026, 8, 25, 8, 40, 20), "B-000205", "SORTEO-2026-12", "T-0209"),
+        Boleto(236, new DateTime(2026, 8, 25, 8, 40, 21), "B-000206", "SORTEO-2026-12", "T-0209"),
+
+        Sorteo(237, new DateTime(2026, 8, 26), "SORTEO-2026-12", "Tómbola de fin de año",
+            "un Toyota Yaris", new DateTime(2026, 12, 15), 10000m),
     };
 
     private static EventoDeCarga Carga(long id, DateTime fecha, decimal litros, string surtidor,
@@ -376,6 +436,22 @@ sealed class AlmacenDeEventos
 
     private static EventoDePuntos Puntos(long id, DateTime fecha, int puntos) =>
         new EventoDePuntos { Id = id, Fecha = fecha, Puntos = puntos };
+
+    private static EventoDeSorteo Sorteo(long id, DateTime fecha, string codigo, string nombre,
+        string premio, DateTime fechaDelSorteo, decimal montoPorBoleto) =>
+        new EventoDeSorteo
+        {
+            Id = id, Fecha = fecha, Codigo = codigo, Nombre = nombre, Premio = premio,
+            FechaDelSorteo = fechaDelSorteo, MontoPorBoleto = montoPorBoleto, Moneda = "CRC",
+        };
+
+    private static EventoDeBoleto Boleto(long id, DateTime fecha, string numero,
+        string sorteo, string transaccion) =>
+        new EventoDeBoleto
+        {
+            Id = id, Fecha = fecha, NumeroDeBoleto = numero,
+            CodigoDelSorteo = sorteo, NumeroDeTransaccion = transaccion,
+        };
 
     // La lista viaja como object para que el serializador emita el tipo CONCRETO de cada
     // evento: declarada como base, un EventoDeCarga saldria sin sus campos.

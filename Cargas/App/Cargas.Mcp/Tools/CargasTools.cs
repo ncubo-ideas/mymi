@@ -203,6 +203,61 @@ internal sealed class CargasTools
 		});
 	}
 
+	[McpServerTool(Name = "mis_boletos_de_tombola", UseStructuredContent = true)]
+	[Description("Los boletos de tombola de la persona, agrupados por sorteo, y de donde "
+		+ "salio cada uno. Los boletos los EMITE la estacion: la app no los calcula. Lo "
+		+ "que si deriva es la explicacion de cuantos dio cada carga y cuanto sobro.")]
+	public BoletosDeTombola MisBoletosDeTombola(
+		[Description("La placa del vehiculo, como la lista mis_cargas.")] string placa)
+	{
+		if (!lector.HayJournal) return new BoletosDeTombola { HayDatos = false };
+
+		// HOY lo pone ESTE proceso, no el dominio. Si el modelo leyera el reloj, el mismo
+		// journal reproducido manana diria que un sorteo ya vencio.
+		DateTime hoy = DateTime.Now;
+
+		return lector.Consultar(api =>
+		{
+			if (!ConocePlaca(api, placa))
+				return new BoletosDeTombola { HayDatos = true, HayVehiculo = false };
+
+			var sorteos = new List<SorteoDeTombola>();
+			foreach (SorteoEnLista sorteo in api.Sorteos(hoy))
+				sorteos.Add(new SorteoDeTombola
+				{
+					Codigo = sorteo.Codigo,
+					Nombre = sorteo.Nombre,
+					Premio = sorteo.Premio,
+					FueAnunciado = sorteo.FueAnunciado,
+					Boletos = sorteo.Boletos,
+					EstaVencido = sorteo.EstaVencido,
+					DiasParaElSorteo = sorteo.DiasParaElSorteo,
+					ParaLaPersona = sorteo.ParaSonia,
+				});
+
+			var porCarga = new List<BoletosDeUnaCarga>();
+			foreach (BoletosDeLaCargaEnLista fila in api.BoletosDeLasCargas(placa))
+				porCarga.Add(new BoletosDeUnaCarga
+				{
+					Fecha = fila.Fecha,
+					Sorteo = fila.Sorteo,
+					QueDaLaRegla = fila.QueDaLaRegla,
+					Emitidos = fila.Emitidos,
+					Sobrante = fila.Sobrante,
+					ProbablementeFaltaUnDato = fila.ProbablementeFaltaUnDato,
+					ParaLaPersona = fila.ParaSonia,
+				});
+
+			return new BoletosDeTombola
+			{
+				HayDatos = true,
+				HayVehiculo = true,
+				Sorteos = sorteos,
+				PorCarga = porCarga,
+			};
+		});
+	}
+
 	private static bool ConocePlaca(Cargas.App.CargasAPI api, string placa)
 	{
 		if (string.IsNullOrWhiteSpace(placa)) return false;
@@ -406,4 +461,67 @@ public sealed class ProximaCarga
 
 	[JsonPropertyName("esProyeccion")]
 	public bool EsProyeccion { get; init; }
+}
+
+public sealed class BoletosDeTombola
+{
+	[JsonPropertyName("hayDatos")]
+	public bool HayDatos { get; init; }
+
+	[JsonPropertyName("hayVehiculo")]
+	public bool HayVehiculo { get; init; }
+
+	[JsonPropertyName("sorteos")]
+	public IReadOnlyList<SorteoDeTombola> Sorteos { get; init; } = new List<SorteoDeTombola>();
+
+	[JsonPropertyName("porCarga")]
+	[Description("La explicacion, carga por carga. Es lo unico que la app deriva.")]
+	public IReadOnlyList<BoletosDeUnaCarga> PorCarga { get; init; } = new List<BoletosDeUnaCarga>();
+}
+
+public sealed class SorteoDeTombola
+{
+	[JsonPropertyName("codigo")]  public string Codigo { get; init; } = "";
+	[JsonPropertyName("nombre")]  public string Nombre { get; init; } = "";
+	[JsonPropertyName("premio")]  public string Premio { get; init; } = "";
+
+	[JsonPropertyName("fueAnunciado")]
+	[Description("Si la estacion ya publico su premio y su fecha. Uno sin anunciar TIENE "
+		+ "boletos y no tiene premio ni fecha: no los inventes.")]
+	public bool FueAnunciado { get; init; }
+
+	[JsonPropertyName("boletos")] public int Boletos { get; init; }
+
+	[JsonPropertyName("estaVencido")]
+	[Description("Ya se rifo. Un boleto vencido SE DICE vencido: no desaparece ni se calla.")]
+	public bool EstaVencido { get; init; }
+
+	[JsonPropertyName("diasParaElSorteo")] public int DiasParaElSorteo { get; init; }
+	[JsonPropertyName("paraLaPersona")]    public string ParaLaPersona { get; init; } = "";
+}
+
+public sealed class BoletosDeUnaCarga
+{
+	[JsonPropertyName("fecha")]  public DateTime Fecha { get; init; }
+	[JsonPropertyName("sorteo")] public string Sorteo { get; init; } = "";
+
+	[JsonPropertyName("queDaLaRegla")]
+	[Description("Cuantos boletos daria la regla del sorteo por el monto de esa carga.")]
+	public int QueDaLaRegla { get; init; }
+
+	[JsonPropertyName("emitidos")]
+	[Description("Cuantos emitio la estacion de verdad. Esta es la cifra autoritativa.")]
+	public int Emitidos { get; init; }
+
+	[JsonPropertyName("sobrante")]
+	[Description("Lo que sobro de esa compra y NO se acumula para la siguiente.")]
+	public string Sobrante { get; init; } = "";
+
+	[JsonPropertyName("probablementeFaltaUnDato")]
+	[Description("La cuenta derivada no cuadra con lo emitido. Deci que probablemente "
+		+ "falta un dato por llegar y que abra su app y apriete Actualizar. NUNCA que la "
+		+ "estacion le debe boletos: es un problema de datos, no una deuda.")]
+	public bool ProbablementeFaltaUnDato { get; init; }
+
+	[JsonPropertyName("paraLaPersona")] public string ParaLaPersona { get; init; } = "";
 }

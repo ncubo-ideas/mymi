@@ -130,6 +130,68 @@ namespace Cargas.App
 			.PerformCheckThenCommand();
 		}
 
+		// LA TOMBOLA LLEGA, NO SE CALCULA, igual que los puntos: el sorteo se rifa sobre
+		// numeros y un boleto fabricado aca no sirve para reclamar nada. Lo unico que la
+		// app deriva es la explicacion de cuantos dio cada carga.
+		public string AplicarSorteoAnunciado(SorteoAnunciado evento)
+		{
+			ArgumentNullException.ThrowIfNull(evento);
+
+			return app.Using(
+				scriptForChk: @"
+					Check(@evento > bitacora.UltimoEvento) Error 'evento ya procesado';
+					Check(Moneda.EsConocida(@monedaDeLaRegla)) Error 'moneda de la regla no modelada';
+				",
+				@"
+					{
+						bitacoraDeCargas.AnunciarSorteo(@codigo, @nombre, @premio,
+							@fechaDelSorteo, @montoPorBoleto, @monedaDeLaRegla);
+						bitacora.Avanzar(@evento);
+					}
+				")
+			.WithParameters(p => {
+				p["evento",         typeof(long)]     = evento.Evento;
+				p["codigo",         typeof(string)]   = evento.Codigo;
+				p["nombre",         typeof(string)]   = evento.Nombre;
+				p["premio",         typeof(string)]   = evento.Premio;
+				p["fechaDelSorteo", typeof(DateTime)] = evento.FechaDelSorteo;
+				p["montoPorBoleto", typeof(decimal)]  = evento.MontoPorBoleto;
+				// EL PARAMETRO NO SE PUEDE LLAMAR @moneda: el script nombra al tipo Moneda
+				// para reconocerlo, y el motor resuelve primero el parametro homonimo —
+				// "Unknown property or method 'EsConocida' on type 'String'". Por eso la
+				// carga usa precioMoneda y totalMoneda, y no era casualidad.
+				p["monedaDeLaRegla", typeof(string)]  = evento.Moneda;
+			})
+			.PerformCheckThenCommand();
+		}
+
+		// UN COMANDO POR BOLETO. El numero es su identidad, asi que un boleto repetido es
+		// un defecto del emisor y el dominio lo dice; la guarda del checkpoint es la que
+		// para los reintentos del refresh.
+		public string AplicarBoletoEmitido(BoletoEmitido evento)
+		{
+			ArgumentNullException.ThrowIfNull(evento);
+
+			return app.Using(
+				scriptForChk: @"
+					Check(@evento > bitacora.UltimoEvento) Error 'evento ya procesado';
+				",
+				@"
+					{
+						bitacoraDeCargas.EmitirBoleto(@numero, @sorteo, @fecha, @transaccion);
+						bitacora.Avanzar(@evento);
+					}
+				")
+			.WithParameters(p => {
+				p["evento",      typeof(long)]     = evento.Evento;
+				p["numero",      typeof(string)]   = evento.NumeroDeBoleto;
+				p["sorteo",      typeof(string)]   = evento.CodigoDelSorteo;
+				p["fecha",       typeof(DateTime)] = evento.Fecha;
+				p["transaccion", typeof(string)]   = evento.NumeroDeTransaccion;
+			})
+			.PerformCheckThenCommand();
+		}
+
 		public string AplicarNivelActualizado(NivelActualizado evento)
 		{
 			ArgumentNullException.ThrowIfNull(evento);
@@ -739,6 +801,60 @@ namespace Cargas.App
 			ProyeccionDeVistas.Gastos(GastoDelPeriodoDe(placa, anio, mes), "gastoDelCarro");
 
 		// La lealtad, discreta: presente para que se sienta real, no es el foco.
+		// LAS TOMBOLAS. El "hoy" lo pone la caratula, como en Odometro y ProximaCarga: el
+		// dominio no lee el reloj, y si lo hiciera el mismo journal reproducido manana
+		// diria que un sorteo ya venció.
+		//
+		// Las tres variables del foreach son DISTINTAS a proposito: el parser llavea por el
+		// nombre de la variable, no por la primera columna, y dos vistas con la misma llave
+		// se pisarian sin error.
+		public string ListaDeSorteos(DateTime hoy) =>
+			app.Using(@"
+				foreach (sorteo in bitacoraDeCargas.BoletosPorSorteo(@hoy)) {
+					print sorteo.Codigo codigo,
+						sorteo.Nombre nombre,
+						sorteo.Premio premio,
+						sorteo.FueAnunciado fueAnunciado,
+						sorteo.FechaDelSorteo fechaDelSorteo,
+						sorteo.CantidadDeBoletos boletos,
+						sorteo.EstaVencido estaVencido,
+						sorteo.DiasParaElSorteo diasParaElSorteo,
+						sorteo.MontoPorBoletoExpresado montoPorBoleto,
+						sorteo.ParaSonia paraSonia;
+				}
+			")
+			.WithParameters(p => { p["hoy", typeof(DateTime)] = hoy; })
+			.PerformQuery();
+
+		public IReadOnlyList<SorteoEnLista> Sorteos(DateTime hoy) =>
+			ProyeccionDeVistas.Sorteos(ListaDeSorteos(hoy));
+
+		public string BoletosPorCarga(string placa)
+		{
+			ArgumentNullException.ThrowIfNullOrWhiteSpace(placa);
+
+			return app.Using(@"
+				foreach (explicacion in bitacoraDeCargas.BoletosPorCargaDe(@placa)) {
+					print explicacion.FechaDeLaCarga fecha,
+						explicacion.NumeroDeLaTransaccion transaccion,
+						explicacion.CodigoDelSorteo sorteo,
+						explicacion.NombreDelSorteo nombreDelSorteo,
+						explicacion.HayRegla hayRegla,
+						explicacion.BoletosQueDaLaRegla queDaLaRegla,
+						explicacion.BoletosEmitidos emitidos,
+						explicacion.SobranteExpresado sobrante,
+						explicacion.LaCuentaCuadra cuadra,
+						explicacion.ProbablementeFaltaUnDato probablementeFaltaUnDato,
+						explicacion.ParaSonia paraSonia;
+				}
+			")
+			.WithParameters(p => { p["placa", typeof(string)] = placa; })
+			.PerformQuery();
+		}
+
+		public IReadOnlyList<BoletosDeLaCargaEnLista> BoletosDeLasCargas(string placa) =>
+			ProyeccionDeVistas.BoletosDeLasCargas(BoletosPorCarga(placa));
+
 		public string EstadoDeLealtad() =>
 			app.Using(@"
 				{
@@ -762,6 +878,8 @@ namespace Cargas.App
 			if (mensaje is CargaRegistrada carga) return AplicarCargaRegistrada(carga);
 			if (mensaje is PuntosAcreditados puntos) return AplicarPuntosAcreditados(puntos);
 			if (mensaje is NivelActualizado nivel) return AplicarNivelActualizado(nivel);
+			if (mensaje is SorteoAnunciado sorteo) return AplicarSorteoAnunciado(sorteo);
+			if (mensaje is BoletoEmitido boleto) return AplicarBoletoEmitido(boleto);
 
 			throw new ArgumentException(
 				$"Esta app no tiene comando para un mensaje de tipo '{mensaje.Tipo}'. La ruta debio devolver null "

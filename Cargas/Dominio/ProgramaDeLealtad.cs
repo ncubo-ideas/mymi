@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 
 namespace Cargas.Dominio
 {
@@ -31,6 +32,93 @@ namespace Cargas.Dominio
 		{
 			ArgumentNullException.ThrowIfNull(nivel);
 			Nivel = nivel;
+		}
+
+		// ------------------------------------------------------- las tombolas
+
+		// CUELGAN DE ACA Y NO DE UN GLOBAL NUEVO DEL DSL, y no es una preferencia: un
+		// segundo upgrade('...') NO asienta en la misma corrida que siembra el journal, y
+		// la vista de SoloLectura del MCP -que hidrata con OnHydrated vacio- rehidrataria
+		// sin encontrarlo. Es un bug ya vivido en examenes, y solo aparece abriendo el
+		// journal desde CERO con el MCP. ProgramaDeLealtad ya se construye en la semilla,
+		// asi que el replay los reconstruye sin migracion.
+
+		private readonly Dictionary<string, Sorteo> porCodigo =
+			new Dictionary<string, Sorteo>(StringComparer.OrdinalIgnoreCase);
+		private readonly List<Sorteo> sorteos = new List<Sorteo>();
+
+		/// <summary>Obtiene el sorteo o lo CREA sin detalles. Aca es donde un BoletoEmitido
+		/// que llega antes que su anuncio deja de ser un problema: el sorteo existe con sus
+		/// boletos, y el anuncio lo completa cuando llegue.</summary>
+		private Sorteo ObtenerOCrear(string codigo)
+		{
+			string llave = new CodigoDeSorteo(codigo).Texto;
+			if (porCodigo.TryGetValue(llave, out Sorteo existente)) return existente;
+
+			var sorteo = new Sorteo(llave);
+			porCodigo[llave] = sorteo;
+			sorteos.Add(sorteo);
+			return sorteo;
+		}
+
+		internal void AnunciarSorteo(string codigo, string nombre, string premio,
+			DateTime fechaDelSorteo, decimal montoPorBoleto, string moneda) =>
+			ObtenerOCrear(codigo).Anunciar(nombre, premio, fechaDelSorteo, montoPorBoleto, moneda);
+
+		internal void EmitirBoleto(string numeroDeBoleto, string codigoDelSorteo,
+			DateTime fecha, string numeroDeTransaccion) =>
+			ObtenerOCrear(codigoDelSorteo).Emitir(
+				new Boleto(numeroDeBoleto, codigoDelSorteo, fecha, numeroDeTransaccion));
+
+		internal bool ConoceSorteo(string codigo) =>
+			!string.IsNullOrWhiteSpace(codigo)
+			&& porCodigo.ContainsKey(new CodigoDeSorteo(codigo).Texto);
+
+		internal Sorteo SorteoDe(string codigo)
+		{
+			string llave = new CodigoDeSorteo(codigo).Texto;
+			if (porCodigo.TryGetValue(llave, out Sorteo sorteo)) return sorteo;
+
+			throw new ErrorDeDominio($"No hay un sorteo {llave}: consultar antes ConoceSorteo.");
+		}
+
+		internal IReadOnlyList<Sorteo> Sorteos => sorteos;
+		internal int CantidadDeSorteos => sorteos.Count;
+
+		internal int CantidadDeBoletos
+		{
+			get
+			{
+				int cuantos = 0;
+				foreach (Sorteo sorteo in sorteos) cuantos += sorteo.CantidadDeBoletos;
+				return cuantos;
+			}
+		}
+
+		/// <summary>El sorteo al que le toca una carga de esa fecha: el PRIMERO ANUNCIADO
+		/// cuya fecha de rifa no haya pasado todavia. Los sin anunciar quedan afuera porque
+		/// no tienen ventana — otra vez la ausencia haciendo trabajo.
+		///
+		/// No hace falta un campo de ventana: la fecha del sorteo ya la define.</summary>
+		internal bool HaySorteoQueCubra(DateTime fecha) => BuscarQueCubra(fecha) != null;
+
+		internal Sorteo SorteoQueCubre(DateTime fecha) =>
+			BuscarQueCubra(fecha) ?? throw new ErrorDeDominio(
+				$"Ningun sorteo anunciado cubre el {fecha:dd/MM/yyyy}: consultar antes "
+				+ "HaySorteoQueCubra.");
+
+		private Sorteo BuscarQueCubra(DateTime fecha)
+		{
+			Sorteo elMasCercano = null;
+			foreach (Sorteo sorteo in sorteos)
+			{
+				if (!sorteo.FueAnunciado) continue;
+				if (sorteo.FechaDelSorteo.Date < fecha.Date) continue;
+
+				if (elMasCercano == null || sorteo.FechaDelSorteo < elMasCercano.FechaDelSorteo)
+					elMasCercano = sorteo;
+			}
+			return elMasCercano;
 		}
 
 		// ------------------------------- proyecciones planas, para el print del actor

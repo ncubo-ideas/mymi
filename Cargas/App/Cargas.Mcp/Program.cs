@@ -95,6 +95,20 @@ static string Instrucciones(string carpeta) => $"""
     uno. Es un problema de datos, no del carro - sugeri registrar la carga que falto,
     NO alarmes.
 
+    LA TOMBOLA. Los boletos los EMITE la estacion, igual que los puntos: el sorteo se
+    rifa sobre numeros y uno fabricado por la app no serviria para reclamar nada. Lo
+    unico que la app deriva es la EXPLICACION de cuantos dio cada carga.
+
+    Tres reglas al hablar de boletos:
+    - El resto de cada compra NO SE ACUMULA para la siguiente. Decilo cuando expliques.
+    - Un boleto vencido SE DICE VENCIDO. No desaparece ni se calla: que se esfumen
+      boletos es la forma mas rapida de perderle la confianza a una app de lealtad.
+    - Si probablementeFaltaUnDato viene en true, la cuenta derivada no cuadra con lo
+      emitido: deci que probablemente falta un dato por llegar y que abra su app y
+      apriete Actualizar. NUNCA que la estacion le debe boletos.
+
+    Un sorteo sin anunciar TIENE boletos y no tiene premio ni fecha. No los inventes.
+
     Toda autonomia, proyeccion o estimacion viene declarada como tal (esProyeccion).
     Decila como aproximacion, nunca como medicion.
 

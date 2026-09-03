@@ -247,6 +247,78 @@ namespace Cargas.Dominio
 		internal IReadOnlyList<PrecioEnElTiempo> PreciosDe(string placa) =>
 			VehiculoDe(placa).Precios();
 
+		// ------------------------------------------------------- las tombolas
+
+		internal void AnunciarSorteo(string codigo, string nombre, string premio,
+			DateTime fechaDelSorteo, decimal montoPorBoleto, string moneda) =>
+			Lealtad.AnunciarSorteo(codigo, nombre, premio, fechaDelSorteo, montoPorBoleto, moneda);
+
+		internal void EmitirBoleto(string numeroDeBoleto, string codigoDelSorteo,
+			DateTime fecha, string numeroDeTransaccion) =>
+			Lealtad.EmitirBoleto(numeroDeBoleto, codigoDelSorteo, fecha, numeroDeTransaccion);
+
+		internal bool ConoceSorteo(string codigo) => Lealtad.ConoceSorteo(codigo);
+
+		internal bool ConoceBoleto(string codigoDelSorteo, string numeroDeBoleto) =>
+			Lealtad.ConoceSorteo(codigoDelSorteo)
+			&& Lealtad.SorteoDe(codigoDelSorteo).ConoceBoleto(numeroDeBoleto);
+
+		/// <summary>Los sorteos con sus boletos, juzgados contra ese dia.</summary>
+		internal IReadOnlyList<BoletosDelSorteo> BoletosPorSorteo(DateTime hoy)
+		{
+			var filas = new List<BoletosDelSorteo>();
+			foreach (Sorteo sorteo in Lealtad.Sorteos) filas.Add(new BoletosDelSorteo(sorteo, hoy));
+			return filas;
+		}
+
+		/// <summary>LA EXPLICACION, carga por carga. Vive ACA y no en el vehiculo ni en el
+		/// programa porque es lo unico que CRUZA los dos: el dinero de una carga con la
+		/// regla de un sorteo. Mismo argumento que GastoDelPeriodo.
+		///
+		/// Los boletos emitidos se cuentan sobre TODOS los sorteos y no solo sobre el que
+		/// cubre la fecha: la estacion es la autoritativa sobre a cual mando cada boleto, y
+		/// nuestra ventana es para explicar, no para mandar.</summary>
+		internal IReadOnlyList<BoletosDeLaCarga> BoletosPorCargaDe(string placa)
+		{
+			var filas = new List<BoletosDeLaCarga>();
+
+			foreach (Carga carga in VehiculoDe(placa).Cargas)
+			{
+				int emitidos = 0;
+				foreach (Sorteo cualquiera in Lealtad.Sorteos)
+					emitidos += cualquiera.BoletosDeLaTransaccion(carga.Transaccion.Texto);
+
+				if (!Lealtad.HaySorteoQueCubra(carga.Fecha))
+				{
+					filas.Add(new BoletosDeLaCarga(carga.Fecha, carga.Transaccion.Texto, "", "",
+						false, "esta carga es de antes o de después de los sorteos que conozco",
+						0, emitidos, 0m, ""));
+					continue;
+				}
+
+				Sorteo sorteo = Lealtad.SorteoQueCubre(carga.Fecha);
+				if (!sorteo.LaReglaAplicaA(carga.Total))
+				{
+					filas.Add(new BoletosDeLaCarga(carga.Fecha, carga.Transaccion.Texto,
+						sorteo.TextoDelCodigo, sorteo.NombreDelSorteo, false,
+						$"el sorteo da boletos por {sorteo.MonedaDeLaRegla} y esta carga fue "
+						+ $"en {carga.MonedaDelTotal}", 0, emitidos, 0m, ""));
+					continue;
+				}
+
+				decimal sobrante = sorteo.SobranteDe(carga.Total);
+				filas.Add(new BoletosDeLaCarga(carga.Fecha, carga.Transaccion.Texto,
+					sorteo.TextoDelCodigo, sorteo.NombreDelSorteo, true, "",
+					sorteo.BoletosQueDaria(carga.Total), emitidos, sobrante,
+					new Dinero(sobrante, carga.Total.Moneda).Expresado));
+			}
+
+			return filas;
+		}
+
+		internal int CantidadDeBoletos => Lealtad.CantidadDeBoletos;
+		internal int CantidadDeSorteos => Lealtad.CantidadDeSorteos;
+
 		/// <summary>El gasto de un mes, POR MONEDA y sobre TODOS los vehiculos: es la
 		/// pregunta de la billetera, no la del carro.</summary>
 		internal IReadOnlyList<GastoEnMoneda> GastoDelPeriodo(int anio, int mes) =>

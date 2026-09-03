@@ -6,13 +6,13 @@
 
 <h1 class="solo-para-lectores">Mi lealtad</h1>
 
-@* LA PESTAÑA DE LEALTAD, todavia con lo que hay. Los puntos y el nivel LLEGAN como eventos
-   de la estacion y nunca se calculan aca: la tasa de canje es una regla del programa que
-   puede cambiar, y una app que la derivara discreparia con la estacion el dia que cambie.
+@* LOS PUNTOS Y LOS BOLETOS LLEGAN COMO EVENTOS, no se calculan acá: la tasa de canje y la
+   regla de la tómbola son del programa y pueden cambiar, y una app que las derivara
+   discreparía con la estación el día que cambien. Discrepar sobre un premio es el peor bug
+   posible en un programa de lealtad.
 
-   Falta lo que la hace valer la pena -el carnet con el QR y los boletos de tombola-, y eso
-   es la fase E del plan: dos eventos nuevos desde la estacion, porque el sorteo se rifa
-   sobre numeros y un boleto fabricado aca no sirve para reclamar nada. *@
+   Lo que la app SÍ deriva es la explicación de cada carga, que es justo lo que un tiquete
+   de bomba no puede dar. *@
 @if (Error.Length > 0)
 {
     <div class="parte parte--problema"><pre>@Error</pre></div>
@@ -38,18 +38,104 @@
         </div>
     </div>
 
-    <div class="instrumento instrumento--medio instrumento--apagado">
+    <div class="instrumento instrumento--medio @(TotalDeBoletos > 0 ? "" : "instrumento--apagado")">
         <span class="rotulo">Boletos de tómbola</span>
-        <div class="cifra cifra--chica">—</div>
+        <div class="cifra">@Entero(TotalDeBoletos)</div>
         <div class="cifra-pie">
-            Un boleto por cada ₡10 000 de una carga, y el resto no se acumula. Todavía no
-            llegan: los emite la estación.
+            @if (TotalDeBoletos > 0)
+            {
+                <text>en <b>@sorteos.Count</b> @(sorteos.Count == 1 ? "sorteo" : "sorteos")</text>
+            }
+            else
+            {
+                <text>Un boleto por cada carga que alcance el monto. Los emite la estación.</text>
+            }
         </div>
     </div>
 </div>
 
+@* LOS SORTEOS, cada uno con sus boletos. Un vencido SE MUESTRA VENCIDO y nunca
+   desaparece: que se esfumen boletos de una app de lealtad es la forma más rápida de
+   perder la confianza que este producto entero intenta construir. *@
+@foreach (SorteoEnLista sorteo in sorteos)
+{
+    <div class="sorteo @(sorteo.EstaVencido ? "sorteo--vencido" : "")" @key="@sorteo.Codigo">
+        <div class="sorteo-cabeza">
+            <div>
+                <span class="sorteo-nombre">@(sorteo.Nombre.Length > 0 ? sorteo.Nombre : sorteo.Codigo)</span>
+                @if (sorteo.EstaVencido)
+                {
+                    <span class="sello">ya se rifó</span>
+                }
+                else if (sorteo.FueAnunciado)
+                {
+                    <span class="sello sello--bien">en @sorteo.DiasParaElSorteo días</span>
+                }
+                else
+                {
+                    <span class="sello sello--dudoso">sin anunciar</span>
+                }
+                <div class="sorteo-relato">@Mayuscula(sorteo.ParaSonia).</div>
+            </div>
+            <div>
+                <div class="cifra cifra--chica">@Entero(sorteo.Boletos)</div>
+                <div class="cifra-pie">@(sorteo.Boletos == 1 ? "boleto" : "boletos")</div>
+            </div>
+        </div>
+
+        @if (sorteo.Premio.Length > 0)
+        {
+            <p class="sorteo-premio">Se rifa <b>@sorteo.Premio</b>@(sorteo.MontoPorBoleto.Length > 0
+                ? $", un boleto por cada {sorteo.MontoPorBoleto.Split(" en ")[0]} de una carga" : "").</p>
+        }
+    </div>
+}
+
+@if (explicaciones.Count > 0)
+{
+    <h2 class="rotulo" style="margin:26px 0 10px">De dónde salieron</h2>
+    <p class="apunte">
+        Es lo que el tiquete de la bomba no dice: cuántos boletos te dio cada carga, y
+        cuánto sobró.
+    </p>
+    <ul class="explicaciones">
+        @foreach (BoletosDeLaCargaEnLista fila in explicaciones)
+        {
+            <li @key="@fila.Transaccion" class="@(fila.ProbablementeFaltaUnDato ? "explicacion--dudosa" : "")">
+                <span class="n">@fila.Fecha.ToString("dd MMM yyyy", Cultura)</span>
+                <span>@Mayuscula(fila.ParaSonia).</span>
+            </li>
+        }
+    </ul>
+}
+
 @code {
     private EstadoDeLealtad lealtad = new();
+    private IReadOnlyList<SorteoEnLista> sorteos = new List<SorteoEnLista>();
+    private IReadOnlyList<BoletosDeLaCargaEnLista> explicaciones = new List<BoletosDeLaCargaEnLista>();
 
-    protected override void Releer() => lealtad = Estado.Lealtad();
+    private int TotalDeBoletos
+    {
+        get
+        {
+            int cuantos = 0;
+            foreach (SorteoEnLista sorteo in sorteos) cuantos += sorteo.Boletos;
+            return cuantos;
+        }
+    }
+
+    protected override void Releer()
+    {
+        lealtad = Estado.Lealtad();
+
+        // El "hoy" lo pone esta carátula: el dominio no lee el reloj, y si lo hiciera el
+        // mismo journal reproducido mañana diría que un sorteo ya venció.
+        sorteos = Estado.Sorteos(DateTime.Now);
+
+        IReadOnlyList<VehiculoEnLista> vehiculos = Estado.Vehiculos();
+        string placa = Estado.PlacaEnFoco(vehiculos);
+        explicaciones = placa.Length == 0
+            ? new List<BoletosDeLaCargaEnLista>()
+            : Estado.BoletosDeLasCargas(placa);
+    }
 }

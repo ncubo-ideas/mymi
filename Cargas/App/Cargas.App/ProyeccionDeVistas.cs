@@ -91,6 +91,47 @@ namespace Cargas.App
 			return tramos;
 		}
 
+		internal static IReadOnlyList<SorteoEnLista> Sorteos(string json)
+		{
+			var sorteos = new List<SorteoEnLista>();
+			foreach (JsonElement elemento in Arreglo(json, "sorteo"))
+				sorteos.Add(new SorteoEnLista
+				{
+					Codigo = Texto(elemento, "codigo"),
+					Nombre = Texto(elemento, "nombre"),
+					Premio = Texto(elemento, "premio"),
+					FueAnunciado = Booleano(elemento, "fueAnunciado"),
+					FechaDelSorteo = Fecha(elemento, "fechaDelSorteo"),
+					Boletos = Entero(elemento, "boletos"),
+					EstaVencido = Booleano(elemento, "estaVencido"),
+					DiasParaElSorteo = Entero(elemento, "diasParaElSorteo"),
+					MontoPorBoleto = Texto(elemento, "montoPorBoleto"),
+					ParaSonia = Texto(elemento, "paraSonia"),
+				});
+			return sorteos;
+		}
+
+		internal static IReadOnlyList<BoletosDeLaCargaEnLista> BoletosDeLasCargas(string json)
+		{
+			var filas = new List<BoletosDeLaCargaEnLista>();
+			foreach (JsonElement elemento in Arreglo(json, "explicacion"))
+				filas.Add(new BoletosDeLaCargaEnLista
+				{
+					Fecha = Fecha(elemento, "fecha"),
+					Transaccion = Texto(elemento, "transaccion"),
+					Sorteo = Texto(elemento, "sorteo"),
+					NombreDelSorteo = Texto(elemento, "nombreDelSorteo"),
+					HayRegla = Booleano(elemento, "hayRegla"),
+					QueDaLaRegla = Entero(elemento, "queDaLaRegla"),
+					Emitidos = Entero(elemento, "emitidos"),
+					Sobrante = Texto(elemento, "sobrante"),
+					Cuadra = Booleano(elemento, "cuadra"),
+					ProbablementeFaltaUnDato = Booleano(elemento, "probablementeFaltaUnDato"),
+					ParaSonia = Texto(elemento, "paraSonia"),
+				});
+			return filas;
+		}
+
 		internal static UnidadesElegidas Unidades(string json)
 		{
 			if (string.IsNullOrWhiteSpace(json)) return new UnidadesElegidas();
