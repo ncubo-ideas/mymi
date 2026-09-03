@@ -305,7 +305,10 @@ else
 
                             @if (!tramo.EsComparable && tramo.MotivoDeReserva.Length > 0)
                             {
-                                <p class="cifra-pie">@Mayuscula(tramo.MotivoDeReserva).</p>
+                                @* El motivo viene del dominio como frase nominal —«otro
+                                   surtidor»— y pelado no se entiende qué hace ahí. El marco
+                                   lo pone la carátula; el literal no se toca. *@
+                                <p class="cifra-pie">No se compara con tu nivel de siempre: @tramo.MotivoDeReserva.</p>
                             }
                         </div>
                     </li>
