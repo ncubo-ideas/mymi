@@ -201,7 +201,13 @@ namespace DealershipCar.Dominio.Pruebas
 					"'" + mine + "' no esta entre el markup que el barrido del modulo lee, asi que lo que "
 					+ "MS-7 le escribio no lo mira nadie y NADA se pone rojo.");
 
-			Assert.That(swept, Has.Count.GreaterThanOrEqualTo(16),
+			// EL PISO BAJO DE 16 A 15 PORQUE SE BORRO UNA SECCION, no porque la copia se rompiera. La
+			// pestana "Mi registro" -- MiRegistro.razor -- mostraba entradas del diario, ultimo evento
+			// aplicado y de donde se trae el feed, que es plumbing y no algo que la duena lea; se saco
+			// del modulo y su boton de traer novedades se movio a Inicio. Un piso que no se baja al
+			// borrar deja este barrido rojo diciendo que fallo la copia, que es lo contrario de lo que
+			// paso.
+			Assert.That(swept, Has.Count.GreaterThanOrEqualTo(15),
 				"El barrido trajo menos markup del que hay. Lo que fallo es la copia.");
 		}
 
