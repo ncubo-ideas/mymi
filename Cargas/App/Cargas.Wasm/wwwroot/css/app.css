@@ -264,6 +264,10 @@ h1:focus, h1:focus-visible { outline: none; }
 .franja-frase { margin: 0; font-size: 17.5px; line-height: 1.35; color: var(--tinta); text-wrap: balance; }
 .franja-accion { margin: 6px 0 0; font-size: 14px; color: var(--tenue); }
 
+/* SIN VEREDICTO, LUZ APAGADA: gris, no verde. El verde es «bien», y una pantalla que todavía
+   no sabe no puede decir que todo está bien. */
+.franja--neutra .franja-luz { background: var(--tenue-2); box-shadow: 0 0 0 4px rgba(126, 196, 207, .10); }
+
 .franja--atencion { border-color: var(--ambar-borde); background: var(--ambar-suave); }
 .franja--atencion .franja-luz { background: var(--ambar); box-shadow: 0 0 0 4px var(--ambar-suave); }
 .franja--atencion .franja-accion { color: var(--ambar); }

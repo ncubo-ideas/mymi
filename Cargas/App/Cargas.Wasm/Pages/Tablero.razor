@@ -239,13 +239,21 @@
 
     // El tono de la franja lo decide el DOMINIO: la severidad del veredicto, traducida al
     // semaforo de la marca. El rojo queda reservado y hoy nadie lo produce.
-    private string Tono() => rendimiento.Severidad switch
+    //
+    // Y SIN VEREDICTO, LUZ NEUTRA. «Todavía no puedo calcular tu rendimiento» salía con la luz
+    // verde, porque verde era el color por defecto: una pantalla que no sabe nada decía que
+    // todo estaba bien. El verde queda para cuando el dominio dijo «bien».
+    private string Tono()
     {
-        "urgente"         => "franja--problema",
-        "consulte pronto" => "franja--atencion",
-        "vigilar"         => "franja--atencion",
-        _                 => "",
-    };
+        if (rendimiento.Veredicto.Length == 0) return "franja--neutra";
+        return rendimiento.Severidad switch
+        {
+            "urgente"         => "franja--problema",
+            "consulte pronto" => "franja--atencion",
+            "vigilar"         => "franja--atencion",
+            _                 => "",
+        };
+    }
 
     private string Sello()
     {
