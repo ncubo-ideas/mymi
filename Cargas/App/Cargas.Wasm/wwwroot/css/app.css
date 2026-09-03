@@ -509,6 +509,17 @@ h1:focus, h1:focus-visible { outline: none; }
     margin-top: 6px; font-size: 12.5px; color: var(--cobre);
 }
 
+/* LA PENDIENTE PLEGADA: una línea, no un formulario. Dice qué falta y qué verbo la abre.
+   Con nueve cargas sin aportes, nueve formularios abiertos eran dieciocho teclas ámbar. */
+.falta-plegada {
+    display: inline-flex; align-items: baseline; gap: 8px; margin: 6px 12px 0 0; padding: 2px 0;
+    font: inherit; font-size: 13px; color: var(--ambar);
+    background: transparent; border: 0; cursor: pointer; text-align: left;
+}
+.falta-plegada .accion { color: var(--cobre); text-decoration: underline; text-underline-offset: 3px; }
+.falta-plegada:hover .accion { color: var(--accion-viva); }
+.falta-plegada:focus-visible { outline: 2px solid var(--cobre); outline-offset: 2px; border-radius: 4px; }
+
 /* LA SUPOSICIÓN que se pide confirmar. Va con el peso de una afirmación y no de un apunte
    tenue: es lo que la persona tiene que leer para poder contestar, y si se lee como una
    nota al pie, los dos botones de abajo vuelven a quedar sin referente. */

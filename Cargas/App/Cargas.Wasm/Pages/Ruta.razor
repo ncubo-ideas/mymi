@@ -132,6 +132,32 @@ else
                        toda la lista, los nueve formularios mostraban el mismo número y
                        el que se tecleaba para una carga aparecía en las otras ocho: es
                        la invitación a apretar «Agregar» en la fila equivocada. *@
+                    @if (pendientes.Count > 0 && Desplegada != parada.Transaccion)
+                    {
+                        @* PLEGADA: una línea por dato, con el verbo que la abre. Con nueve
+                           cargas sin aportes, nueve formularios abiertos eran dieciocho teclas
+                           ámbar y ninguna decía por dónde empezar. Se despliega UNA sola: por
+                           defecto la más reciente que espera kilometraje —que es la única a la
+                           que se le puede proponer el odómetro de hoy— y, si ella toca otra,
+                           esa. El punto ámbar de la parada sigue diciendo que está incompleta. *@
+                        @foreach (FaltanteEnLista pendiente in pendientes)
+                        {
+                            <button type="button" class="falta-plegada" aria-expanded="false"
+                                    @key="@($"plegada-{pendiente.Transaccion}-{pendiente.QueFalta}")"
+                                    @onclick="() => Desplegar(parada.Transaccion)">
+                                @if (pendiente.QueFalta == "el kilometraje")
+                                {
+                                    <span>falta el kilometraje</span><span class="accion">anotar</span>
+                                }
+                                else
+                                {
+                                    <span>tanque estimado: @pendiente.LoQueSeSupone</span><span class="accion">confirmar</span>
+                                }
+                            </button>
+                        }
+                    }
+                    else
+                    {
                     @foreach (FaltanteEnLista pendiente in pendientes)
                     {
                         <div class="falta" @key="@($"falta-{pendiente.Transaccion}-{pendiente.QueFalta}")">
@@ -209,6 +235,7 @@ else
                                 </div>
                             }
                         </div>
+                    }
                     }
                 </div>
             </li>
@@ -292,6 +319,17 @@ else
     private CompletitudDelVehiculo completitud = new();
     private OdometroPropuesto propuesta = new();
     private UnidadesElegidas unidades = new();
+
+    // LA PARADA DESPLEGADA, y es una sola. Lo que ella toco sobrevive a Releer; lo que la
+    // lectura propone se recalcula en cada Releer. Si lo que toco ya no tiene pendientes
+    // -acaba de anotarlo-, se cae al default: la siguiente se abre sola.
+    private string desplegadaPorElla = "";
+    private string desplegadaPorDefecto = "";
+
+    private string Desplegada =>
+        faltantesPorCarga.ContainsKey(desplegadaPorElla) ? desplegadaPorElla : desplegadaPorDefecto;
+
+    private void Desplegar(string transaccion) => desplegadaPorElla = transaccion;
 
     // El prellenado, UNO POR CARGA (llave: el numero de transaccion). Si ella manda la
     // propuesta tal cual, su origen es "confirmado" -miro el numero y dijo que si-; si la
@@ -590,5 +628,24 @@ else
                     break;
                 }
         }
+
+        // EL DEFAULT DEL PLIEGUE: la carga mas reciente que espera kilometraje; si ninguna, la
+        // mas reciente con cualquier pendiente. Se compara por fecha y no se confia en el
+        // orden de la lista: si el dominio alguna vez la devolviera al reves, esto no cambia.
+        desplegadaPorDefecto = "";
+        DateTime masReciente = DateTime.MinValue;
+        foreach (FaltanteEnLista faltante in faltantes)
+            if (faltante.QueFalta == "el kilometraje" && faltante.Fecha > masReciente)
+            {
+                masReciente = faltante.Fecha;
+                desplegadaPorDefecto = faltante.Transaccion;
+            }
+        if (desplegadaPorDefecto.Length == 0)
+            foreach (FaltanteEnLista faltante in faltantes)
+                if (faltante.Fecha > masReciente)
+                {
+                    masReciente = faltante.Fecha;
+                    desplegadaPorDefecto = faltante.Transaccion;
+                }
     }
 }
