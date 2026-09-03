@@ -36,6 +36,13 @@ namespace DealershipCar.Dominio.Pruebas
 	//      si se marca.
 	//   6. UN "//" EN TEXTO DE MARKUP SIN COMILLAS. Se toma por comentario y apaga el resto de la
 	//      linea. Una URL suelta en markup entra en ese caso; una entre comillas no.
+	//   7. UN RAW STRING LITERAL ("""...""" y $"""...""") NO SE APAGA, y este punto ciego va al reves
+	//      que los otros seis: no esconde una cuenta, INVENTA una. El apagado conoce "...", @"..." y
+	//      $"...", asi que el texto de un raw string llega VIVO al detector y cualquier palabra con
+	//      guion adentro -- yyyy-MM-dd, X-Forwarded-For -- se lee como una resta entre dos
+	//      identificadores. Se paga con un renglon en la lista de permitidos por cada linea, y hoy hay
+	//      uno: las instructions del servidor MCP, que es el unico raw string de las siete raices
+	//      juzgadas. Medido en TheDetectorIsBlindToTheShapesItsHeaderNames, con su control.
 	internal static class TheCodeOfTheShellsAsData
 	{
 		internal const string App = "App";

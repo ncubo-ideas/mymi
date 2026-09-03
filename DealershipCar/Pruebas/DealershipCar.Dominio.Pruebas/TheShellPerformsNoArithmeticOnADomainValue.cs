@@ -136,6 +136,20 @@ namespace DealershipCar.Dominio.Pruebas
 				Snippet = "counted.Applied++;",
 				Reason = "Cuenta de la corrida: cuantos entraron.",
 			},
+			// NO ES UNA CUENTA: ES PROSA, Y EL DETECTOR LA LEE COMO CODIGO. Las instructions del
+			// servidor MCP viven en un RAW STRING LITERAL ($"""..."""), y el apagado de literales no
+			// conoce esa forma -- conoce "...", @"..." y $"..." -- asi que el texto entero llega vivo al
+			// detector y 'yyyy-MM-dd' se lee como una resta entre dos identificadores. El punto ciego
+			// esta ahora declarado en la cabecera del instrumento y medido en
+			// TheDetectorIsBlindToTheShapesItsHeaderNames.
+			new AllowedArithmetic
+			{
+				Root = TheCodeOfTheShellsAsData.Mcp, File = "Program.cs", Member = "Instructions",
+				Snippet = "día por separado, en yyyy-MM-dd, porque una duración no se puede cruzar con el calendario de",
+				Reason = "Texto de las instructions, adentro de un raw string literal que el detector no "
+					+ "apaga. 'yyyy-MM-dd' es el formato en que este modulo dice un dia de calendario, "
+					+ "no una resta, y esa linea no ejecuta nada.",
+			},
 			new AllowedArithmetic
 			{
 				Root = TheCodeOfTheShellsAsData.Mcp, File = "Tools/TheClockTheAssistantReads.cs",
@@ -325,6 +339,19 @@ namespace DealershipCar.Dominio.Pruebas
 			ItDoesNotSee("a.js", "const gap = nextService-odometer;");
 			ItDoesNotSee("Inicio.razor", "<span>@(nextService-odometer)</span>");
 			ItDoesNotSee("a.cs", "for (int i = n; i > 0; --i) { }");
+
+			// EL QUINTO PUNTO CIEGO, Y ES AL REVES QUE LOS CUATRO DE ARRIBA: el detector NO ve una
+			// cuenta que ellos esconden, y aca VE una que no existe. Un raw string literal ("""...""")
+			// no se apaga -- el apagado conoce "...", @"..." y $"..." -- asi que su texto llega vivo, y
+			// cualquier palabra con guion adentro se lee como una resta. Se paga con un renglon en la
+			// lista de permitidos, que es lo que hoy tiene la unica de este modulo: las instructions
+			// del servidor MCP.
+			ItSees("a.cs", "static string Says() => $\"\"\"\n\ten yyyy-MM-dd, y nada mas\n\t\"\"\";");
+
+			// Y EL CONTROL QUE LO CONVIERTE EN UNA MEDICION: EL MISMO TEXTO, en un literal de los que
+			// el detector si apaga, no se ve. La diferencia entre los dos renglones es la comilla, y
+			// nada mas.
+			ItDoesNotSee("a.cs", "string says = \"en yyyy-MM-dd, y nada mas\";");
 
 			// Y EL CONTROL DE LOS CUATRO DE ARRIBA: la misma cuenta en una sola linea, la misma
 			// pegada pero en C#, y la misma con el otro operador en un .razor, si se ven. Sin este
