@@ -23,7 +23,7 @@
     {
       "name": "que_me_falta_medir",
       "title": "What I am due for",
-      "description": "Which of the person's analytes are overdue: how long since each was last measured, and how often each one should be repeated. Use it when they ask 'which tests am I due for?', 'how long since I had my cholesterol checked?' or 'am I up to date?'. It is what NO screen can show: the app shows what there IS, this says what is MISSING. The interval is decided by each analyte and is not fixed - a cholesterol in range repeats every five years and a high one every year. Only analytes measured at least once appear: for one never done there is nothing to repeat.",
+      "description": "Every analyte the person has history for, with how long since each was last measured, how often it should be repeated, and WHETHER IT IS OVERDUE. Use it when they ask 'which tests am I due for?', 'how long since I had my cholesterol checked?' or 'am I up to date?'. IT RETURNS THE UP-TO-DATE ONES TOO, so a row appearing does NOT mean it is pending: read estaVencido on each one, and read cuantosVencidos, which is the count that answers the question - cuantosVencidos zero means the person is up to date with everything, and then you say exactly that instead of listing rows as if they were pending. Each row carries its own lectura already written; say that. The interval is decided by each analyte and is not fixed - a cholesterol in range repeats every five years and a high one every year. Only analytes measured at least once appear: for one never done there is nothing to repeat.",
       "readOnly": true,
       "input": []
     },
