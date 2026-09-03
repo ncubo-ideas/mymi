@@ -40,17 +40,28 @@
         </div>
     </div>
 
-    <div class="instrumento instrumento--medio @(TotalDeBoletos > 0 ? "" : "instrumento--apagado")">
+    @* LOS VIGENTES EN LA CIFRA. «16 boletos en 2 sorteos» sumaba los diez de una tómbola que
+       ya se rifó, y un titular que cuenta boletos que ya no juegan promete de más. La cifra
+       son los que juegan; los pasados se dicen aparte, porque tampoco se esfuman. *@
+    <div class="instrumento instrumento--medio @(BoletosVigentes > 0 || BoletosPasados > 0 ? "" : "instrumento--apagado")">
         <span class="rotulo">Boletos de tómbola</span>
-        <div class="cifra">@Entero(TotalDeBoletos)</div>
+        <div class="cifra">@Entero(BoletosVigentes)</div>
         <div class="cifra-pie">
-            @if (TotalDeBoletos > 0)
+            @if (BoletosVigentes > 0)
             {
-                <text>en <b>@sorteos.Count</b> @(sorteos.Count == 1 ? "sorteo" : "sorteos")</text>
+                <text>en <b>@SorteosVigentes</b> @(SorteosVigentes == 1 ? "sorteo vigente" : "sorteos vigentes")</text>
+            }
+            else if (BoletosPasados == 0)
+            {
+                <text>Un boleto por cada carga que alcance el monto. Los emite la estación.</text>
             }
             else
             {
-                <text>Un boleto por cada carga que alcance el monto. Los emite la estación.</text>
+                <text>ninguno en juego ahora</text>
+            }
+            @if (BoletosPasados > 0)
+            {
+                <text> &middot; y <b>@Entero(BoletosPasados)</b> de @(SorteosPasados == 1 ? "un sorteo que ya se rifó" : "sorteos que ya se rifaron")</text>
             }
         </div>
     </div>
@@ -119,14 +130,25 @@
     private IReadOnlyList<SorteoEnLista> sorteos = new List<SorteoEnLista>();
     private IReadOnlyList<BoletosDeLaCargaEnLista> explicaciones = new List<BoletosDeLaCargaEnLista>();
 
-    private int TotalDeBoletos
+    private int BoletosVigentes => Suma(vencidos: false);
+    private int BoletosPasados => Suma(vencidos: true);
+    private int SorteosVigentes => Cuenta(vencidos: false);
+    private int SorteosPasados => Cuenta(vencidos: true);
+
+    private int Suma(bool vencidos)
     {
-        get
-        {
-            int cuantos = 0;
-            foreach (SorteoEnLista sorteo in sorteos) cuantos += sorteo.Boletos;
-            return cuantos;
-        }
+        int cuantos = 0;
+        foreach (SorteoEnLista sorteo in sorteos)
+            if (sorteo.EstaVencido == vencidos) cuantos += sorteo.Boletos;
+        return cuantos;
+    }
+
+    private int Cuenta(bool vencidos)
+    {
+        int cuantos = 0;
+        foreach (SorteoEnLista sorteo in sorteos)
+            if (sorteo.EstaVencido == vencidos) cuantos++;
+        return cuantos;
     }
 
     protected override void Releer()
