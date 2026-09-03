@@ -605,6 +605,170 @@ namespace DealershipCar.Dominio
 			return distance.Describe() + "; " + TheRemainderOnTimeFor(kind, asOf).Describe();
 		}
 
+		/// <summary>
+		/// Si esa clase tiene alguna completacion alcanzable en su cadena. Total: es la pregunta que
+		/// hay que hacer antes de leer las filas, y las dos ausencias contestan que no por razones
+		/// distintas que <see cref="DescribeCompletions"/> dice.
+		/// </summary>
+		internal bool HasAnyCompletion(OperationKindCode kind)
+		{
+			return TheCompletionsOf(kind).HasAnyCompletion();
+		}
+
+		/// <summary>
+		/// Cuantas completaciones hay en la cadena de esa clase. DERIVADO de las filas en cada
+		/// lectura y nunca guardado. Total.
+		/// </summary>
+		internal int CompletionCount(OperationKindCode kind)
+		{
+			return TheCompletionsOf(kind).HowManyCompletions();
+		}
+
+		/// <summary>
+		/// El historial de esa clase en una frase. Total: nunca completada y no agendada son dos
+		/// ausencias distintas y cada una dice la suya.
+		/// </summary>
+		internal string DescribeCompletions(OperationKindCode kind)
+		{
+			return TheCompletionsOf(kind).Describe();
+		}
+
+		/// <summary>
+		/// Cuando se hizo cada completacion de esa clase, una por fila, de la mas reciente a la mas
+		/// vieja. TOTAL.
+		/// </summary>
+		internal string[] CompletionInstantsOf(OperationKindCode kind)
+		{
+			List<ACompletionRow> rows = TheCompletionsOf(kind).TheCompletions();
+
+			string[] said = new string[rows.Count];
+
+			for (int row = 0; row < rows.Count; row++) said[row] = rows[row].TheInstantItWasDone();
+
+			return said;
+		}
+
+		/// <summary>
+		/// Con que lectura del odometro se hizo cada completacion de esa clase, una por fila y en el
+		/// mismo orden. La que no tiene lectura lo DICE con palabras. TOTAL.
+		/// </summary>
+		internal string[] CompletionReadingsOf(OperationKindCode kind)
+		{
+			List<ACompletionRow> rows = TheCompletionsOf(kind).TheCompletions();
+
+			string[] said = new string[rows.Count];
+
+			for (int row = 0; row < rows.Count; row++) said[row] = rows[row].TheReadingItWasDoneAt();
+
+			return said;
+		}
+
+		/// <summary>
+		/// Cada completacion de esa clase en su propia frase, una por fila y en el mismo orden.
+		/// TOTAL.
+		/// </summary>
+		internal string[] DescribeEachCompletionOf(OperationKindCode kind)
+		{
+			List<ACompletionRow> rows = TheCompletionsOf(kind).TheCompletions();
+
+			string[] said = new string[rows.Count];
+
+			for (int row = 0; row < rows.Count; row++) said[row] = rows[row].Describe();
+
+			return said;
+		}
+
+		/// <summary>
+		/// De que clase es cada completacion del historial entero, por el NOMBRE del miembro, una por
+		/// fila y de la mas reciente a la mas vieja. TOTAL.
+		/// </summary>
+		internal string[] CompletionKindsOnRecord()
+		{
+			List<ACompletionRow> rows = TheCompletionsOnRecord();
+
+			string[] said = new string[rows.Count];
+
+			for (int row = 0; row < rows.Count; row++) said[row] = rows[row].TheNameOfItsKind();
+
+			return said;
+		}
+
+		/// <summary>
+		/// Cuando se hizo cada completacion del historial entero, una por fila y en el mismo orden.
+		/// TOTAL.
+		/// </summary>
+		internal string[] CompletionInstantsOnRecord()
+		{
+			List<ACompletionRow> rows = TheCompletionsOnRecord();
+
+			string[] said = new string[rows.Count];
+
+			for (int row = 0; row < rows.Count; row++) said[row] = rows[row].TheInstantItWasDone();
+
+			return said;
+		}
+
+		/// <summary>
+		/// Con que lectura del odometro se hizo cada completacion del historial entero, una por fila
+		/// y en el mismo orden. La que no tiene lectura lo dice. TOTAL.
+		/// </summary>
+		internal string[] CompletionReadingsOnRecord()
+		{
+			List<ACompletionRow> rows = TheCompletionsOnRecord();
+
+			string[] said = new string[rows.Count];
+
+			for (int row = 0; row < rows.Count; row++) said[row] = rows[row].TheReadingItWasDoneAt();
+
+			return said;
+		}
+
+		/// <summary>
+		/// Cada completacion del historial entero en su propia frase, una por fila y en el mismo
+		/// orden. TOTAL.
+		/// </summary>
+		internal string[] DescribeEachCompletionOnRecord()
+		{
+			List<ACompletionRow> rows = TheCompletionsOnRecord();
+
+			string[] said = new string[rows.Count];
+
+			for (int row = 0; row < rows.Count; row++) said[row] = rows[row].Describe();
+
+			return said;
+		}
+
+		private CompletionsOfAnOperation TheCompletionsOf(OperationKindCode kind)
+		{
+			MaintenanceOperationKind asked = MaintenanceOperationKind.OfCode(kind);
+
+			if (!_operations.ContainsKey(kind))
+				return CompletionsOfAnOperation.OfAKindThatIsNotOnTheSchedule(asked);
+
+			return CompletionsOfAnOperation.Of(
+				asked, new List<ACompletionRow>(_operations[kind].TheCompletionsBehindIt()));
+		}
+
+		private List<ACompletionRow> TheCompletionsOnRecord()
+		{
+			List<ACompletionRow> rows = new List<ACompletionRow>();
+
+			foreach (OperationKindCode kind in _order)
+				foreach (ACompletionRow arriving in TheCompletionsOf(kind).TheCompletions())
+					PlaceNewestFirst(rows, arriving);
+
+			return rows;
+		}
+
+		private static void PlaceNewestFirst(List<ACompletionRow> rows, ACompletionRow arriving)
+		{
+			int place = rows.Count;
+
+			while (place > 0 && arriving.IsNewerThan(rows[place - 1])) place--;
+
+			rows.Insert(place, arriving);
+		}
+
 		private ARemainder TheRemainderOnDistanceFor(OperationKindCode kind, DateTime asOf)
 		{
 			AKindThatNamesNoMemberIsACallerBug(kind);

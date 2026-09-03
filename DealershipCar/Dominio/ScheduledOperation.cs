@@ -189,6 +189,36 @@ namespace DealershipCar.Dominio
 		}
 
 		/// <summary>
+		/// Las completaciones que hay detras de esta ocurrencia, de la mas reciente a la mas vieja.
+		/// La cadena se CAMINA en cada lectura y no se guarda ninguna: una copia seria un segundo
+		/// historial que puede discrepar del primero.
+		/// <para>
+		/// La completacion de una ocurrencia se lee del ancla de su SUCESORA -- la que termino guarda
+		/// solo que termino -- asi que cada fila sale del ancla de quien mira hacia atras. Una
+		/// anterior que termino SUSTITUIDA no completo nada, y la genesis esta anclada donde se la
+		/// sembro, que tampoco es una completacion.
+		/// </para>
+		/// </summary>
+		internal ACompletionRow[] TheCompletionsBehindIt()
+		{
+			List<ACompletionRow> rows = new List<ACompletionRow>();
+
+			ScheduledOperation occurrence = this;
+
+			while (occurrence.HasAPredecessor())
+			{
+				ScheduledOperation earlier = occurrence.PrecededBy();
+
+				if (earlier.State == DueState.Completed)
+					rows.Add(occurrence.ItsAnchorAsACompletion());
+
+				occurrence = earlier;
+			}
+
+			return rows.ToArray();
+		}
+
+		/// <summary>
 		/// La persona deja la operacion para despues. Delega en
 		/// <see cref="DeferralCapAndWindow"/>, donde la ley tiene su nombre.
 		/// </summary>
@@ -350,6 +380,15 @@ namespace DealershipCar.Dominio
 
 			return new ScheduledOperation(
 				replacement, anchoredAt, _requestedByTheOwner, Predecessor.Of(this));
+		}
+
+		private ACompletionRow ItsAnchorAsACompletion()
+		{
+			if (!_basePoint.HasReading)
+				return ACompletionRow.WithNoReading(_definition.Kind, _basePoint.Instant);
+
+			return ACompletionRow.WithAReading(
+				_definition.Kind, _basePoint.Instant, _basePoint.Reading, _basePoint.Unit);
 		}
 
 		private bool IsInADueState()
