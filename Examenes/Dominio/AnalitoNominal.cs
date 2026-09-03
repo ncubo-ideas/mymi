@@ -17,11 +17,5 @@ namespace Examenes.Dominio
 			: base(nombre, paraMostrar, RequisitoAnatomico.Ninguno, sinonimos)
 		{
 		}
-
-		// NO forma serie, y es lo unico de la taxonomia que no la forma. Un color no se
-		// ordena: "ámbar, oscuro, ámbar" no es una tendencia ni una presencia, son tres
-		// observaciones sueltas. Que devuelva false aca es lo que impide que el Expediente
-		// le arme una serie que despues nadie podria evaluar.
-		internal override bool FormaSerie => false;
 	}
 }

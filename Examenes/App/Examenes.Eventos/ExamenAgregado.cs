@@ -92,6 +92,15 @@ namespace Examenes.App.Eventos
 		// examen entra, no el emisor.
 		public string Sangre { get; private set; }
 
+		// Las otras tres casillas de la tira, con la MISMA semantica que los nitritos: vacio
+		// es que el laboratorio no corrio esa prueba, y eso es distinto de un negativo. Un
+		// reporte viejo no trae ninguna de las tres.
+		public string Proteina { get; private set; }
+
+		public string Cetonas { get; private set; }
+
+		public string GlucosaEnOrina { get; private set; }
+
 		private ExamenAgregado() { }
 
 		// Devuelve null si la senal no es un ExamenAgregado bien formado, o si es de un
@@ -220,6 +229,9 @@ namespace Examenes.App.Eventos
 				Color = color,
 				Nitritos = Texto(raiz, "nitritos"),
 				Sangre = Texto(raiz, "sangre"),
+				Proteina = Texto(raiz, "proteina"),
+				Cetonas = Texto(raiz, "cetonas"),
+				GlucosaEnOrina = Texto(raiz, "glucosa"),
 			};
 
 		private static bool EsDeLaMuestra(string examen, string muestra) =>

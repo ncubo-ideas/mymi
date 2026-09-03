@@ -12,6 +12,9 @@ namespace Examenes.Dominio
 	// lleva fecha porque la fecha es del examen que la contiene. Un punto de serie SI la
 	// necesita: la serie no tiene los examenes, tiene los puntos.
 	//
+	// Su gemela en la forma nominal es ObservacionNominal, que lleva una CATEGORIA en vez
+	// de un si o un no, y por eso son dos tipos y no uno con un campo de mas.
+	//
 	// SOLO ENTRAN LAS REALIZADAS. Una prueba que el laboratorio no corrio no es un punto:
 	// no es un negativo, no es un positivo, no esta. Ver MagnitudBinaria.FueRealizada.
 	//

@@ -281,10 +281,20 @@ puntos y no en tres de un punto:
 
 ```
 Analito                       identidad + sinónimos + REQUISITO ANATÓMICO
-├── AnalitoContinuo           tiene unidad y rango posible   PSA, colesterol, hemoglobina
-├── AnalitoBinario            sin unidad, forma serie        nitritos, las dos sangres
-└── AnalitoNominal            sin unidad, NO forma serie     los dos colores
+├── AnalitoContinuo           tiene unidad y rango posible   PSA, el colesterol, la
+│                                                            hemoglobina y los siete de
+│                                                            la química general
+├── AnalitoBinario            sin unidad, presencia          las dos sangres ocultas y
+│                                                            las cuatro casillas de la tira
+└── AnalitoNominal            sin unidad, categorías         los dos colores
 ```
+
+Son **18**, y ese número es el titular de la portada: *«17 de tus 18 valores están en su
+rango»*. El que falta es siempre el mismo —la hemoglobina, cuyo rango depende de un sexo que
+Sonia no declaró— y por eso los 18 no son «los más comunes» sino **los que tienen rango
+independiente del sexo**: cada analito nuevo que dependiera de él bajaría el numerador. Es la
+razón concreta por la que la creatinina, la ALT y la AST no están, aunque sí estén en el
+reporte real del CSS.
 
 **El requisito anatómico vive acá, en la identidad, y no en el examen.** Es lo que hace
 que la dependencia del sexo no sea un filtro de pantalla: la aplicabilidad es una
@@ -309,7 +319,8 @@ Magnitud
 ├── MagnitudOrdinal    forma 3 · cruces         identificada   tira reactiva
 ├── MagnitudDeConteo   forma 4 · por campo      identificada   eritrocitos
 ├── MagnitudBinaria    forma 5                  IMPLEMENTADA   Nitritos, SangreEnOrina,
-│                                                              SangreEnHeces
+│                                                              SangreEnHeces, ProteinaEnOrina,
+│                                                              Cetonas, GlucosaEnOrina
 └── MagnitudNominal    forma 6                  IMPLEMENTADA   ColorDeOrina, ColorDeHeces
 ```
 
@@ -322,17 +333,46 @@ SerieDeAnalito                identidad + cuándo fue la última + cada cuánto 
 │   ├── SerieDeAntigenoProstatico   velocidad, nivel habitual, confirmación de un pico
 │   ├── SerieDeColesterol           meta, partida del episodio, si viene bajando
 │   ├── SerieDeColesterolLdl        si el HDL acompaña
-│   └── SerieDeHemoglobina          el peor grado de anemia que hubo
-└── SerieBinaria              cuenta apariciones y rachas      → EvaluacionDePresencia
-    ├── SerieDeNitritos             si la infección cedió
-    ├── SerieDeSangreEnOrina        si fue pasajera
-    └── SerieDeSangreEnHeces        si se repitió y volvió a salir
+│   ├── SerieDeHemoglobina          el peor grado de anemia que hubo
+│   ├── SerieDeTrigliceridos        si vienen bajando, aunque sigan sobre la meta
+│   └── las seis de banda           glucosa, BUN, sodio, potasio, cloro, proteínas:
+│                                   alejarse es peor en las dos direcciones
+├── SerieBinaria              cuenta apariciones y rachas      → EvaluacionDePresencia
+│   ├── SerieDeNitritos             si la infección cedió
+│   ├── SerieDeSangreEnOrina        si fue pasajera
+│   ├── SerieDeSangreEnHeces        si se repitió y volvió a salir
+│   ├── SerieDeProteinaEnOrina      si era pasajera o se repitió
+│   ├── SerieDeCetonas              si se explican por el ayuno
+│   └── SerieDeGlucosaEnOrina       si dejó de salir
+└── SerieNominal              cuenta salidas de lo esperable   → EvaluacionDeNominal
+    ├── SerieDeColorDeOrina         si volvió a lo esperable
+    └── SerieDeColorDeHeces         y con qué categoría, que acá importa
 ```
+
+**Las tres ramas tienen serie, y lo que las distingue es qué se puede leer de ella.** El
+último corte fue el de los nominales: el color se medía, se clasificaba y no estaba en
+ningún plural, así que su lectura era la de la magnitud sola —que contesta lo mismo
+siempre— y no entraba al conteo de la portada. Con serie, el **mismo** color oscuro se lee
+de tres maneras: uno suelto espera la próxima cita, dos seguidos ya no, y uno que después
+volvió a ámbar deja de pedir algo. Ninguna observación sola puede distinguirlas.
+
+Y no se factorizan las dos últimas en una sola «serie de hallazgos»: eso obligaría a un
+tipo de punto común y a un conjunto cerrado común de lectura, que es justo lo que la
+partición niega — un binario tiene *una* cosa que puede aparecer, un nominal tiene N
+categorías y dos de ellas inesperadas no son la misma cosa.
 
 `Examen` **no declara un valor medido**, y ahí está la decisión que ordena todo lo demás. Si
 la base hubiera declarado un `decimal Valor`, cuatro de las seis formas tendrían que
 devolver cero y mentir. Lo mismo un piso más abajo: `SerieDeAnalito` no declara `Cambio`,
 porque un binario no tiene uno.
+
+Por la misma regla se **retiró** `Analito.FormaSerie`. Preguntaba si el analito formaba
+serie, y cuando el color pasó a formar la suya se quedó sin habitante negativo: las tres
+subclases contestaban `true`. Una pregunta cuya respuesta es siempre la misma no es una
+pregunta. Lo que la pantalla necesitaba saber de verdad —*cómo* se lee y *cómo* se dibuja—
+lo contesta `FormaDeLectura`, que además distingue tres casos donde el bool distinguía dos;
+y si el examen **entero** es un punto de una serie continua lo contesta
+`Examen.AportaSerieContinua`, que es otra pregunta y ahora lo dice el nombre.
 
 Las formas 2, 3 y 4 están **nombradas y no construidas**, a propósito: el encargo fue
 modelar dos o tres analitos de verdad, no un sistema de laboratorio clínico.

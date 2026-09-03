@@ -20,8 +20,9 @@ namespace Examenes.Dominio
 	// tipo de magnitud, misma pregunta, distinta conducta, y la diferencia vive en el
 	// analito. Ver SangreEnOrina y SangreEnHeces, que estan escritas para leerse juntas.
 	//
-	// Igual que la orina, NO tiene numero ni unidad ni rango, y no aporta serie. Y trae
-	// dos magnitudes de formas distintas:
+	// Igual que la orina, NO tiene numero ni unidad ni rango, asi que el examen entero no es
+	// el punto de ninguna serie continua. Sus DOS magnitudes si tienen serie, cada una la
+	// suya, y son de formas distintas:
 	//
 	//   el color   -> MagnitudNominal   (forma 6)
 	//   la sangre  -> MagnitudBinaria   (forma 5)
@@ -44,7 +45,7 @@ namespace Examenes.Dominio
 
 		internal override string Nombre => "Examen general de heces";
 
-		internal override bool AportaSerie => false;
+		internal override bool AportaSerieContinua => false;
 
 		internal override string ResultadoExpresado => Sangre.FueRealizada
 			? $"{Color.Expresado}, sangre {Sangre.Expresado}"

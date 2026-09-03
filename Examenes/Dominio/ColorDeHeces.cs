@@ -48,6 +48,10 @@ namespace Examenes.Dominio
 			? $"el color de las heces salió {ParaMostrar}, que es de lo esperable"
 			: $"el color de las heces salió {ParaMostrar}";
 
+		// La serie que lo lee. Es la fabrica de MagnitudNominal: el Expediente arma la
+		// serie correcta sin un switch, preguntandole al resultado cual es la suya.
+		internal override SerieNominal NuevaSerie() => new SerieDeColorDeHeces();
+
 		private ColorDeHeces(string nombre, string paraMostrar, bool esEsperable)
 		{
 			Nombre = nombre;

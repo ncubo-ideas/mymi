@@ -53,9 +53,5 @@ namespace Examenes.Dominio
 
 		internal bool EsValorPosible(decimal valor) =>
 			valor >= ValorMinimoPosible && valor <= ValorMaximoPosible;
-
-		// Se ordena y admite aritmetica: es la forma sobre la que la serie y la velocidad
-		// significan algo.
-		internal override bool FormaSerie => true;
 	}
 }

@@ -308,6 +308,84 @@ internal sealed class ExamenesTools
 		});
 	}
 
+	// LA TERCERA FORMA, y la ultima que le faltaba a la IA.
+	//
+	// Un color se medía desde el principio y no se podia preguntar por su historia: no tenia
+	// serie, asi que lo unico que habia era la ultima hoja de laboratorio — que dice "vigilar"
+	// de un oscuro para siempre, aunque el examen siguiente haya vuelto a ambar.
+	//
+	// LA QUE MAS APORTA ES, otra vez, LA INVERSA: un color inesperado que en la observacion
+	// siguiente volvio a lo esperable NO quedo confirmado, y sin la serie eso no se puede
+	// decir.
+	[McpServerTool(Name = "constancia_de", UseStructuredContent = true)]
+	[Description("Contesta como viene un analito que se informa como una CATEGORIA — el color "
+		+ "de la orina, el de las heces — mirando toda su historia y no la ultima vez. Usala "
+		+ "cuando pregunte '¿el color me sigue saliendo raro?', '¿esto ya me habia pasado?' o "
+		+ "'¿es normal este color?'. Devuelve si siempre estuvo dentro de lo esperable, si se "
+		+ "salio, si PERSISTE (dos o mas veces seguidas afuera: ya se repitio), si no se "
+		+ "confirmo (se salio una vez y la siguiente volvio) o si volvio a lo esperable. Es "
+		+ "distinto de evaluar_tendencia, que solo sirve para analitos con numero, y de "
+		+ "presencia_de, que sirve para los de positivo o negativo: un color no viene subiendo "
+		+ "ni aparece, SALE. Presta atencion a noEsperablesSeguidas: una categoria inesperada "
+		+ "aislada y una repetida NO piden lo mismo, y la accion correcta viene en el campo "
+		+ "accion.")]
+	public ConstanciaDelAnalito Constancia(
+		[Description("Cual analito nominal evaluar.")] AnalitoNominal analito)
+	{
+		if (!lector.HayJournal)
+			return new ConstanciaDelAnalito
+			{
+				HayDatos = false, Carpeta = lector.Carpeta, Detalle = DetalleSinJournal,
+			};
+
+		string nombre = analito.Nombre();
+
+		return lector.Consultar(api =>
+		{
+			ConstanciaDeAnalito c = api.Constancia(nombre);
+
+			// Sin observaciones no se inventa una lectura, por lo mismo que en la presencia:
+			// no es lo mismo "siempre estuvo bien" que "nunca te lo miraron".
+			if (c.Mediciones == 0)
+				return new ConstanciaDelAnalito
+				{
+					HayDatos = true,
+					Analito = nombre,
+					Constancia = "sin observaciones",
+					Carpeta = lector.Carpeta,
+					UltimoEventoLeido = api.UltimoEventoProcesado(),
+					Detalle = $"El expediente todavia no tiene ninguna observacion de '{nombre}'. "
+						+ "Pedile que abra su app y apriete Actualizar.",
+				};
+
+			InterpretacionDeAnalito i = api.Interpretacion(nombre);
+
+			return new ConstanciaDelAnalito
+			{
+				HayDatos = true,
+				Analito = c.ParaMostrar,
+				Constancia = c.Constancia,
+				Observaciones = c.Mediciones,
+				NoEsperables = c.NoEsperables,
+				NoEsperablesSeguidas = c.NoEsperablesSeguidas,
+				LaUltimaSeRepitio = c.LaUltimaSeRepitio,
+				DiasEntreLaPrimeraYLaUltima = c.Dias,
+				UltimaCategoria = c.UltimaCategoria,
+				EstaFueraDeLoEsperable = c.EstaFueraDeLoEsperable,
+				HaySerie = c.HaySerie,
+				Veredicto = i.Veredicto,
+				Severidad = i.Severidad,
+				Lectura = i.ParaSonia,
+				Accion = i.Accion,
+				PideAlgo = i.PideAlgo,
+				Referencia = i.ReferenciaLegible,
+				UltimoEventoLeido = api.UltimoEventoProcesado(),
+				Carpeta = lector.Carpeta,
+				Detalle = "",
+			};
+		});
+	}
+
 	// LA TOOL QUE MIRA EL HUECO, no el dato.
 	//
 	// Reemplaza a `revisar_mis_analitos`, que recorria los analitos y devolvia la tendencia
@@ -547,6 +625,103 @@ internal sealed class TendenciaDelAnalito
 // LO QUE CONCLUYE LA SERIE DE UN BINARIO. Tipo aparte de TendenciaDelAnalito porque no
 // trae lo mismo: no hay valor inicial ni final ni unidad. Hay cuantas veces se busco,
 // cuantas aparecio y cuantas SEGUIDAS, que es la unica que cambia la conducta.
+internal sealed class ConstanciaDelAnalito
+{
+	[JsonPropertyName("hayDatos")]
+	[Description("false cuando la app todavia no registro nada; ahi el resto viene en cero.")]
+	public bool HayDatos { get; init; }
+
+	[JsonPropertyName("analito")]
+	[Description("El analito evaluado.")]
+	public string Analito { get; init; } = "";
+
+	[JsonPropertyName("constancia")]
+	[Description("La lectura de la serie: 'siempre lo esperable' (todas las veces cayeron "
+		+ "dentro de lo esperable, aunque hayan sido categorias distintas), 'apareció' (la "
+		+ "ultima se salio y la anterior no: todavia nadie lo vio dos veces), 'persiste' (dos o "
+		+ "mas seguidas afuera: ya se repitio), 'no confirmado' (se salio una vez y la "
+		+ "siguiente volvio), 'volvió a lo esperable' (estuvo varias veces afuera y ya no), "
+		+ "'indeterminada' (una sola observacion) o 'sin observaciones'.")]
+	public string Constancia { get; init; } = "";
+
+	[JsonPropertyName("observaciones")]
+	[Description("Cuantas veces se informo esta categoria.")]
+	public int Observaciones { get; init; }
+
+	[JsonPropertyName("noEsperables")]
+	[Description("De esas, cuantas cayeron fuera de lo esperable en total.")]
+	public int NoEsperables { get; init; }
+
+	[JsonPropertyName("noEsperablesSeguidas")]
+	[Description("Cuantas inesperadas hay AL FINAL, una detras de otra. Es el numero que "
+		+ "distingue un resultado suelto de uno repetido, y por lo tanto el que cambia que "
+		+ "hacer.")]
+	public int NoEsperablesSeguidas { get; init; }
+
+	[JsonPropertyName("laUltimaSeRepitio")]
+	[Description("Si esas seguidas son todas la MISMA categoria. Dos inesperadas distintas "
+		+ "-un negro y un palido- no son un mismo hallazgo persistiendo, y no se le puede "
+		+ "decir a la persona que 'le salio X dos veces seguidas'.")]
+	public bool LaUltimaSeRepitio { get; init; }
+
+	[JsonPropertyName("diasEntreLaPrimeraYLaUltima")]
+	public int DiasEntreLaPrimeraYLaUltima { get; init; }
+
+	[JsonPropertyName("ultimaCategoria")]
+	[Description("La ultima categoria, con el vocabulario de esa muestra: 'ámbar' en la orina, "
+		+ "'marrón' en las heces.")]
+	public string UltimaCategoria { get; init; } = "";
+
+	[JsonPropertyName("estaFueraDeLoEsperable")]
+	[Description("Si hoy la categoria esta afuera. Es lo unico que se puede saber sin la "
+		+ "historia, y es lo unico que decia este dominio antes de que el color tuviera serie.")]
+	public bool EstaFueraDeLoEsperable { get; init; }
+
+	[JsonPropertyName("haySerie")]
+	[Description("false con una sola observacion. Ojo: a diferencia de las otras dos formas, "
+		+ "eso NO significa que no se pueda leer — un color ES su categoria, asi que con una "
+		+ "sola la lectura ya esta completa. Lo que no se puede decir es si se repite.")]
+	public bool HaySerie { get; init; }
+
+	[JsonPropertyName("veredicto")]
+	[Description("Que significa: 'observado' (una sola observacion: es lo que se vio), "
+		+ "'estable', 'empeorando', 'mejorando' o 'hallazgo no confirmado' (se salio y en la "
+		+ "observacion siguiente ya habia vuelto).")]
+	public string Veredicto { get; init; } = "";
+
+	[JsonPropertyName("severidad")]
+	[Description("'informativo', 'vigilar', 'consulte pronto' o 'urgente'.")]
+	public string Severidad { get; init; } = "";
+
+	[JsonPropertyName("lectura")]
+	[Description("La lectura en una linea, escrita por el propio analito. Decila tal cual: no "
+		+ "la reemplaces por una frase generica.")]
+	public string Lectura { get; init; } = "";
+
+	[JsonPropertyName("accion")]
+	[Description("Que corresponde hacer Y CUANDO, ya dicho entero. Vacio cuando no hay nada "
+		+ "que hacer.")]
+	public string Accion { get; init; } = "";
+
+	[JsonPropertyName("pideAlgo")]
+	public bool PideAlgo { get; init; }
+
+	[JsonPropertyName("referencia")]
+	[Description("Contra que se lee la categoria. En un nominal la referencia no es un "
+		+ "intervalo: es el conjunto de lo esperable, y no es el mismo en la orina que en las "
+		+ "heces.")]
+	public string Referencia { get; init; } = "";
+
+	[JsonPropertyName("ultimoEventoLeido")]
+	public long UltimoEventoLeido { get; init; }
+
+	[JsonPropertyName("carpeta")]
+	public string Carpeta { get; init; } = "";
+
+	[JsonPropertyName("detalle")]
+	public string Detalle { get; init; } = "";
+}
+
 internal sealed class PresenciaDelAnalito
 {
 	[JsonPropertyName("hayDatos")]

@@ -222,8 +222,15 @@ namespace Examenes.Consola
 			// lado— y hasta ahora solo se podia mirar en el browser. Van pegados porque se
 			// leen juntos: cada uno solo dice media cosa.
 			LoQueEstaBien enRango = api.LoQueEstaEnRango();
-			Console.WriteLine($"lo que esta en rango        : {enRango.EnSuRango} de {enRango.Analitos}"
+			string conteo = $"{enRango.EnSuRango} de {enRango.Analitos}";
+			Console.WriteLine($"lo que esta en rango        : {conteo}"
 				+ (enRango.HayAlgo ? $" - {enRango.ParaSonia}" : " (nada que afirmar todavia)"));
+
+			// EL PAR SE COMPARA, no solo se imprime. Es la misma idea que `esperados` unas
+			// lineas arriba, aplicada al titular de la portada: la landing lo promete en texto
+			// fijo, y esta linea es lo unico que hace ruido cuando el dominio deja de decirlo.
+			Console.WriteLine($"esperado por la portada     : {Muestras.ConteoEsperadoDeLaPortada}"
+				+ (conteo == Muestras.ConteoEsperadoDeLaPortada ? " OK" : "  <-- NO COINCIDE"));
 			Console.WriteLine($"token guardado              : [{api.TokenGuardado()}]");
 
 			Console.WriteLine();
@@ -284,14 +291,14 @@ namespace Examenes.Consola
 			}
 
 			Console.Write($"  {"",-22}");
-			for (int j = 0; j < columnas; j++) Console.Write($"{fechas[j],14}");
+			for (int j = 0; j < columnas; j++) Console.Write($"{fechas[j],16}");
 			Console.WriteLine();
 
 			for (int i = 0; i < filas; i++)
 			{
 				Console.Write($"  {nombres[i],-22}");
 				for (int j = 0; j < columnas; j++)
-					Console.Write($"{(grilla[i, j] ?? "-"),14}");
+					Console.Write($"{(grilla[i, j] ?? "-"),16}");
 				Console.WriteLine();
 			}
 		}
@@ -336,11 +343,20 @@ namespace Examenes.Consola
 				var valores = new List<string>();
 				foreach (PuntoDeSerie p in puntos) valores.Add(Formato(p.Valor));
 
-				// LOS BINARIOS NO TIENEN NUMEROS QUE DIBUJAR: tienen presencias. Se piden
-				// por otra puerta -Pruebas en vez de Puntos- porque no devuelven lo mismo,
-				// y se pintan como lo que son: una tira de si y de no.
+				// LOS BINARIOS NO TIENEN NUMEROS QUE DIBUJAR: tienen presencias. Se piden por
+				// otra puerta -Pruebas en vez de Puntos- porque no devuelven lo mismo, y se
+				// pintan como lo que son: una tira de si y de no. Son DOS de las tres formas
+				// las que no traen numeros; la tercera esta abajo.
 				foreach (PruebaEnSerie prueba in api.Pruebas(analito))
 					valores.Add(prueba.EsPositivo ? "●" : "○");
+
+				// Y LOS NOMINALES TAMPOCO: tienen categorias. Tercera puerta, por la misma
+				// razon que la segunda -un color no tiene ValorNumerico ni un si o un no-,
+				// y se pintan diciendo cual salio, que es el hecho.
+				foreach (ObservacionEnSerie observacion in api.Observaciones(analito))
+					valores.Add(observacion.EsEsperable
+						? observacion.Expresado
+						: $"[{observacion.Expresado}]");
 
 				var refs = new List<string>();
 				foreach (LineaDeReferencia l in lineas) refs.Add($"{l.Nombre}={Formato(l.Valor)}");
@@ -353,11 +369,22 @@ namespace Examenes.Consola
 		private static void ImprimirTendencia(ExamenesAPI api, string analito)
 		{
 			// UN BINARIO NO TIENE TENDENCIA, y preguntarsela devolveria "no aplica" con
-			// ceros. Se lee por su propia puerta: cuantas pruebas, cuantas dieron
-			// positivas y cuantas SEGUIDAS, que es lo que cambia la conducta.
+			// ceros. Se lee por su propia puerta: cuantas pruebas, cuantas dieron positivas
+			// y cuantas SEGUIDAS, que es lo que cambia la conducta. Son TRES puertas y no
+			// dos: la tercera, abajo, es la de los nominales.
 			if (api.Interpretacion(analito).Forma == FormaDePresencia)
 			{
 				ImprimirPresencia(api, analito);
+				return;
+			}
+
+			// UN NOMINAL TAMPOCO, y por eso son TRES puertas y no dos. La suya trae cual
+			// categoria salio y si volvio a lo esperable. Antes de que los colores formaran
+			// serie caian por la puerta continua, y salian como una tendencia "no aplica"
+			// con un valor cero y sin unidad: la carencia estaba aca, no en el dominio.
+			if (api.Interpretacion(analito).Forma == FormaDeCategoria)
+			{
+				ImprimirConstancia(api, analito);
 				return;
 			}
 
@@ -396,6 +423,7 @@ namespace Examenes.Consola
 		// es traducir una forma del dominio a una decision de impresion, que es lo unico
 		// que esta caratula tiene derecho a decidir.
 		private const string FormaDePresencia = "presencia en el tiempo";
+		private const string FormaDeCategoria = "categoria en el tiempo";
 
 		// La lectura de un binario. La tira -○ ○ ●- es el hecho que ninguna medicion sola
 		// puede mostrar, y es la razon de que estas series existan.
@@ -412,6 +440,30 @@ namespace Examenes.Consola
 				: $"una sola prueba ({p.UltimoResultado}): todavia no hay serie";
 
 			Console.WriteLine($"  {p.ParaMostrar,-22} {p.Presencia,-20} {relato}");
+
+			InterpretacionDeAnalito lectura = api.Interpretacion(analito);
+			Console.WriteLine($"  {"",-22} {lectura.Veredicto}: {lectura.ParaSonia}");
+			if (lectura.PideAlgo)
+				Console.WriteLine($"  {"",-22} ^ {lectura.Severidad} - {lectura.Accion}");
+		}
+
+		// La lectura de un nominal. La tira -ambar ambar [oscuro]- es el hecho que ninguna
+		// observacion sola puede mostrar, y es la razon de que estas series existan.
+		private static void ImprimirConstancia(ExamenesAPI api, string analito)
+		{
+			ConstanciaDeAnalito c = api.Constancia(analito);
+
+			var tira = new List<string>();
+			foreach (ObservacionEnSerie observacion in api.Observaciones(analito))
+				tira.Add(observacion.EsEsperable
+					? observacion.Expresado
+					: $"[{observacion.Expresado}]");
+
+			string relato = c.HaySerie
+				? $"{string.Join(" ", tira)}  sobre {c.Mediciones} observaciones en {c.Dias} dias"
+				: $"una sola observacion ({c.UltimaCategoria}): la categoria ya es la lectura";
+
+			Console.WriteLine($"  {c.ParaMostrar,-22} {c.Constancia,-20} {relato}");
 
 			InterpretacionDeAnalito lectura = api.Interpretacion(analito);
 			Console.WriteLine($"  {"",-22} {lectura.Veredicto}: {lectura.ParaSonia}");

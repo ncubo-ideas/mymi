@@ -14,15 +14,22 @@ namespace Examenes.Dominio
 	// no se podia tener, aunque §6.5 del brief la anticipa desde el principio y aunque
 	// desde el cambio anterior los nitritos YA son un analito con identidad propia.
 	//
-	// LAS DOS RAMAS, y por que son dos:
+	// LAS TRES RAMAS, y por que son tres:
 	//
 	//   SerieContinua   ordena, resta y divide por dias. Tiene tendencia y velocidad.
 	//   SerieBinaria    no ordena ni resta. Tiene APARICION y PERSISTENCIA.
+	//   SerieNominal    no ordena ni resta, y tiene N categorias. Tiene CONSTANCIA: si
+	//                   salio de lo esperable y si volvio.
 	//
 	// "Negativo -> positivo" no es un ascenso de nada: no hay mas positivo ni menos
-	// positivo. Forzar a las dos a devolver EvaluacionDeTendencia obligaria al binario a
-	// mandar null en Primero y cero en Cambio, que es la misma mentira que Magnitud evita
-	// al no declarar un decimal en la raiz.
+	// positivo, y "amarillo -> ambar" tampoco. Forzar a las tres a devolver
+	// EvaluacionDeTendencia obligaria a las otras dos a mandar null en Primero y cero en
+	// Cambio, que es la misma mentira que Magnitud evita al no declarar un decimal en la
+	// raiz.
+	//
+	// Y las dos ultimas no se factorizan en una sola "serie de hallazgos": eso obligaria a
+	// un tipo de punto comun y a un conjunto cerrado comun, que es justo lo que la
+	// particion niega. Ver Constancia.
 	//
 	// LO QUE SI TIENE TODA SERIE, y por eso vive aca: de que analito es, cuantos puntos
 	// tiene, cuando fue el ultimo, cada cuanto conviene repetirlo, si lo ultimo que se
