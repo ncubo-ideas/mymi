@@ -52,7 +52,7 @@ public sealed class AgentLoop
 		[.. index.All.Select(e => new ToolForTheModel(
 			e.PublicName,
 			e.Tool.Description,
-			JsonSerializer.Serialize(ToolIndex.InputSchema(e.Tool))))];
+			Json.Write(ToolIndex.InputSchema(e.Tool))))];
 
 	// One question from the person, one answer in words.
 	public async Task<string> Answer(string question, Action<string>? trace, CancellationToken ct)
@@ -119,7 +119,7 @@ public sealed class AgentLoop
 		// Serialized plainly, because BOTH shells now hand back the module's facts. This line
 		// used to send the model the MCP envelope whenever the module ran over stdio: the facts
 		// escaped inside a string, 525 characters where in-process sent 126.
-		string json = JsonSerializer.Serialize(r.Content);
+		string json = Json.Write(r.Content);
 		say($"  {call.PublicName}: {json.Length} characters");
 		return new Returned(call.Id, json, Failed: false);
 	}

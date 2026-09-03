@@ -61,7 +61,7 @@ public sealed class ModelClaude : IModel
 			{
 				["name"] = t.Name,
 				["description"] = t.Description,
-				["input_schema"] = JsonSerializer.Deserialize<JsonElement>(t.SchemaJson),
+				["input_schema"] = Json.Parse(t.SchemaJson),
 			}).ToArray(),
 			["messages"] = Messages(conversation),
 		};
@@ -167,7 +167,7 @@ public sealed class ModelClaude : IModel
 		using var request = new HttpRequestMessage(HttpMethod.Post, Url);
 		request.Headers.Add("x-api-key", key);
 		request.Headers.Add("anthropic-version", Version);
-		request.Content = new StringContent(JsonSerializer.Serialize(body), Encoding.UTF8);
+		request.Content = new StringContent(Json.Write(body), Encoding.UTF8);
 		request.Content.Headers.ContentType = new MediaTypeHeaderValue("application/json");
 
 		using HttpResponseMessage res = await http.SendAsync(request, ct);
@@ -176,7 +176,7 @@ public sealed class ModelClaude : IModel
 		if (!res.IsSuccessStatusCode)
 			throw new InvalidOperationException($"the API answered {(int)res.StatusCode}: {text}");
 
-		return JsonSerializer.Deserialize<JsonElement>(text);
+		return Json.Parse(text);
 	}
 
 	// The instructions are the same ones the Host hands over through MCP on desktop. They are

@@ -1,0 +1,189 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!-- EL HOST DE GNOTHI EN UN iPHONE. El espejo de Gnothi.Mobile, a proposito.
+
+       Los dos proyectos incluyen EXACTAMENTE los mismos globs, con las mismas exclusiones, y
+       la misma Assets/ui.html -que no se copia: se enlaza el mismo archivo. Si algo entra al
+       nucleo, entra en los dos. Si divergen, es un bug.
+
+           Gnothi.Host/*.cs        el nucleo          identico
+           Gnothi.Assistant/*.cs   la Puerta 2        identico
+           Gnothi.Movil/*.cs       la cascara         identico
+           Assets/ui.html          la cara            EL MISMO ARCHIVO
+           ════════════════
+           MainActivity.cs         WebView Android    ~120 lineas
+           ViewController.cs       WKWebView iOS      ~120 lineas
+
+       POR QUE NO MAUI. Ver el comentario largo en Gnothi.Movil/Shell.cs. En resumen: la cara
+       de Gnothi ya es un HTML, asi que la UI YA ESTA compartida; MAUI compartiria su propio
+       framework -que no usamos- y NO compartiria el puente del WebView, que es API nativa de
+       cada plataforma igual. -->
+
+  <PropertyGroup>
+    <TargetFramework>net9.0-ios</TargetFramework>
+    <OutputType>Exe</OutputType>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <SupportedOSPlatformVersion>16.0</SupportedOSPlatformVersion>
+    <RootNamespace>Gnothi.iOS</RootNamespace>
+
+    <ApplicationId>com.ncubo.gnothi.host</ApplicationId>
+    <ApplicationTitle>Gnothi Host</ApplicationTitle>
+    <ApplicationDisplayVersion>1.0</ApplicationDisplayVersion>
+    <ApplicationVersion>1</ApplicationVersion>
+
+    <!-- El App Group, sin el cual la caratula de Swift no tiene donde leer la foto.
+         Ver Entitlements.plist: el archivo solo no alcanza, hay que habilitarlo en el portal
+         de Apple para los dos app IDs. -->
+    <CodesignEntitlements>Entitlements.plist</CodesignEntitlements>
+  </PropertyGroup>
+
+  <!-- ═══ AOT: LA PARTE QUE HAY QUE LEER ANTES DE TOCAR ═══════════════════════════════
+
+       Android puede escribir esto, y lo escribe:
+
+           <RunAOTCompilation>false</RunAOTCompilation>
+           <AndroidLinkMode>None</AndroidLinkMode>
+
+       con el comentario «No AOT and no linker: reflection IS the mechanism, not a detail».
+
+       EN iOS ESA LINEA NO EXISTE. Apple prohibe generar codigo nativo en el aparato, asi que
+       .NET compila AOT y punto. Medido en Spikes/Lab.Aot: el nucleo pasa limpio -Dispatcher,
+       ModuleCatalog, Module, ToolIndex, HostTools, ConsentWatch, IShell, cero warnings- y los
+       37 que salen son 28 de JsonSerializer y 9 de InProcessShell, que es el cargador
+       dinamico de modulos.
+
+       LO QUE LOS TAPA, y no es lo mismo para cada uno:
+
+           IL3050  RequiresDynamicCode        -> el INTERPRETE de Mono
+           IL2026  RequiresUnreferencedCode   -> el LINKER (MtouchLink)
+           IL2070/IL2075  reflexion            -> idem linker
+
+       Detalle completo, con fuentes: NotasGnothiHost/32. -->
+
+  <PropertyGroup>
+    <!-- NUNCA NativeAOT. El interprete de Mono NO es compatible con el, y prenderlo apagaria
+         la unica salida que tenemos para cargar un modulo que llega despues. Esta linea esta
+         puesta para que alguien que quiera "que ande mas rapido" tropiece con el comentario
+         antes que con el bug. -->
+    <PublishAot>false</PublishAot>
+  </PropertyGroup>
+
+  <!-- EL INTERPRETE, EN LAS DOS CONFIGURACIONES, Y NO ES UNA PRECAUCION: ESTA MEDIDO.
+
+       «AOT compile all assemblies, while still allowing the interpreter to perform dynamic code
+       generation» · es textual de la doc de Microsoft, y es la combinacion que nos sirve: el
+       rendimiento del AOT para todo lo que ya viene adentro, y el interprete disponible para lo
+       que llegue despues.
+
+       ESTABA SOLO EN RELEASE, con un comentario en Debug que decia «el interprete ya viene
+       encendido por omision en Debug». ES FALSO EN EL APARATO. Medido en un iPhone 13 Pro el
+       2026-09-01, compilando Debug tal cual estaba:
+
+           IsDynamicCodeSupported = False
+           IsDynamicCodeCompiled  = False
+           1) AssemblyLoadContext(isCollectible: true) .... OK
+           2) AssemblyDependencyResolver .... FALLA PlatformNotSupportedException
+           error: Failed to load AOT module 'Examenes.App.dll.dylib' in aot-only mode.
+           Got a SIGABRT while executing native code.  ->  App terminated due to signal 6.
+
+       Muere en el paso 3, y ni siquiera con el ExecutionEngineException que uno esperaria: con
+       SIGABRT en load_aot_module, antes de llegar a ejecutar nada. Con esta linea puesta, los
+       cinco pasos pasan y las banderas dan Supported=True / Compiled=False, que es exactamente
+       el interprete haciendo su trabajo bajo el AOT obligatorio de Apple.
+
+       Por eso sube aca y deja de ser exclusiva de Release: quien compile Debug para probar que
+       un modulo carga se comia el SIGABRT y concluia que el mecanismo no funciona, cuando lo
+       unico que faltaba era la bandera.
+
+       El detalle completo, con los dos logs, esta en Spikes/Lab.Siri/HALLAZGOS.md. -->
+  <PropertyGroup>
+    <MtouchInterpreter>-all</MtouchInterpreter>
+  </PropertyGroup>
+
+  <PropertyGroup Condition="'$(Configuration)' == 'Debug'">
+    <!-- Sin linker: en Debug queremos MEDIR si la reflexion anda, no pelear con lo que el
+         trimmer borro. -->
+    <MtouchLink>None</MtouchLink>
+  </PropertyGroup>
+
+  <PropertyGroup Condition="'$(Configuration)' == 'Release'">
+    <!-- SdkOnly y no Full: el linker toca las bibliotecas del SDK y deja NUESTRO codigo en
+         paz, que es donde vive la reflexion.
+
+         El MtouchInterpreter que estaba aca subio al PropertyGroup sin condicion de arriba;
+         Release lo sigue heredando igual. -->
+    <MtouchLink>SdkOnly</MtouchLink>
+  </PropertyGroup>
+
+  <!-- ═══ EL MISMO CODIGO QUE ANDROID ═════════════════════════════════════════════════ -->
+
+  <ItemGroup>
+    <!-- EL MISMO GLOB Y LAS MISMAS EXCLUSIONES QUE Gnothi.Mobile.csproj. Si estas dos listas
+         dejan de coincidir, las dos plataformas dejan de correr el mismo Host · que es
+         justamente lo que la suite de conformance existe para impedir. -->
+    <Compile Include="..\Gnothi.Host\*.cs"
+             Exclude="..\Gnothi.Host\Program.cs;..\Gnothi.Host\ToolBridge.cs;..\Gnothi.Host\ConsentWatcher.cs;..\Gnothi.Host\HostInstaller.cs;..\Gnothi.Host\QueryConsole.cs;..\Gnothi.Host\StdioShell.cs" />
+
+    <!-- El stub del shell de stdio se REUSA, no se copia, y la razon de fondo es la misma en
+         las dos plataformas: no hay exec() desde la carpeta de datos y no hay dotnet CLI. El
+         dia que esa explicacion cambie, cambia en un solo lugar. -->
+    <Compile Include="..\Gnothi.Mobile\StdioShellStub.cs" />
+
+    <Compile Include="..\Gnothi.Assistant\*.cs" />
+    <Compile Include="..\Gnothi.Movil\*.cs" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- LA CARA, Y ES EL MISMO ARCHIVO. No una copia: el mismo ui.html que renderiza Android.
+         Esa es la mitad de la respuesta a «que se vea igual». -->
+    <BundleResource Include="..\Gnothi.Mobile\Assets\ui.html" Link="Assets\ui.html" LogicalName="Assets/ui.html" />
+
+    <!-- EL PAQUETE, SI YA SE ARMO. Es lo mismo que armar-paquete.ps1 le empuja al Android por
+         adb: los journals y los modulos. Va condicionado porque paquete/ esta gitignoreado
+         -es salida de build, no fuente- y un clon limpio no lo tiene.
+
+         Va dentro del bundle solo como SEMILLA: ViewController lo copia a Documents/incoming
+         la primera vez y despues no lo vuelve a tocar. Lo que la persona deje ahi por la app
+         Archivos manda sobre esto. -->
+    <BundleResource Include="..\Gnothi.Mobile\paquete\**\*"
+                    Link="paquete\%(RecursiveDir)%(Filename)%(Extension)"
+                    LogicalName="paquete/%(RecursiveDir)%(Filename)%(Extension)"
+                    Condition="Exists('..\Gnothi.Mobile\paquete')" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- LOS APP INTENTS, EN SWIFT, ADENTRO DE ESTA APP. Ver Intents/GnothiIntents.swift.
+
+         La libreria la produce armar-intents.sh con swiftc directo, y el mismo script genera
+         Metadata.appintents con appintentsmetadataprocessor y la mete al bundle: ese es el
+         paso que el build de .NET no hace, y la razon de que dotnet/macios#24863 diga que
+         "no funciona". Bazel lo hace en produccion fuera de Xcode; nosotros igual.
+
+         ForceLoad: una conformance a AppIntent no la llama nadie por codigo · solo la lee la
+         metadata · asi que sin esto el linker la borra como codigo muerto.
+
+         Frameworks=AppIntents: el ejecutable tiene que cargar AppIntents.framework o el
+         runtime ni mira la metadata. La libreria estatica no lo arrastra sola.
+
+         Estatico y no framework: en Xcode puro las intents dentro de un framework dinamico
+         tampoco se descubren (AppIntentCounter2). Estatico deja el tipo Swift en el mismo
+         Mach-O que la app.
+
+         Condicionado a que la .a exista: en Windows compila el C# igual, y la sonda y la
+         Puerta 2 no dependen de esto. En la Mac, armar-intents.sh aborta si falta. -->
+    <NativeReference Include="Intents\out\libGnothiIntents.a" Condition="Exists('Intents\out\libGnothiIntents.a')">
+      <Kind>Static</Kind>
+      <ForceLoad>True</ForceLoad>
+      <SmartLink>False</SmartLink>
+      <Frameworks>AppIntents Foundation</Frameworks>
+    </NativeReference>
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Ncubo.Puppeteer" Version="$(VersionDelMotor)" />
+    <ProjectReference Include="..\Examenes\Mecanismo\Puppets.Portador\Puppets.Portador.csproj" />
+    <ProjectReference Include="..\Gnothi.Contract\Gnothi.Contract.csproj" />
+  </ItemGroup>
+
+</Project>

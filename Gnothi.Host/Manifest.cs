@@ -40,7 +40,7 @@ public sealed record Manifest
 
 	public static Manifest Read(string path)
 	{
-		Manifest? m = JsonSerializer.Deserialize<Manifest>(File.ReadAllText(path), JsonOptions);
+		Manifest? m = JsonSerializer.Deserialize(File.ReadAllText(path), HostJson.Default.Manifest);
 		if (m is null) throw new InvalidDataException($"empty or unreadable manifest: {path}");
 		if (string.IsNullOrWhiteSpace(m.Module))
 			throw new InvalidDataException($"the manifest does not declare 'module': {path}");
@@ -107,4 +107,11 @@ public sealed record DeclaredParameter
 	[JsonPropertyName("name")] public string Name { get; init; } = "";
 	[JsonPropertyName("type")] public string Type { get; init; } = "string";
 	[JsonPropertyName("description")] public string Description { get; init; } = "";
+
+	// THE CLOSED SET OF VALUES, when the parameter is an enum. Optional: a text search or a free
+	// number leaves it null and nothing changes. When present, ToolIndex puts it in the schema
+	// as a real JSON Schema "enum", which is a far stronger signal to the model than the same
+	// values buried in the prose of the description -- the exact gap the InputSchema comment
+	// used to name as "a manifest decision". This is that decision: the values are DATA now.
+	[JsonPropertyName("enum")] public IReadOnlyList<string>? Enum { get; init; }
 }

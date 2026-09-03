@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<!-- LO QUE EL SO INDEXA. El formato se copio de una app que ya funciona en el aparato
+     (Samsung Reminder), no de documentacion: se descargo su APK y se leyo su
+     assets/app_function.xml.
+
+     El function_id lleva el nombre publico de Gnothi despues del '#': "<modulo>_<tool>",
+     que es exactamente Module.PublicName. El generador de R13 emitiria una entrada por
+     cada tool del manifiesto; aca hay UNA, a mano, para el spike. -->
+<appfunctions>
+    <version>1</version>
+    <appfunction>
+        <function_id>com.ncubo.lab.caratula#facturas_total_de_facturas</function_id>
+        <schema_category>utils</schema_category>
+        <schema_name>total_de_facturas</schema_name>
+        <schema_version>1</schema_version>
+        <enabled_by_default>true</enabled_by_default>
+        <restrict_callers_with_execute_app_functions>false</restrict_callers_with_execute_app_functions>
+        <display_name_string_res>0</display_name_string_res>
+    </appfunction>
+</appfunctions>
