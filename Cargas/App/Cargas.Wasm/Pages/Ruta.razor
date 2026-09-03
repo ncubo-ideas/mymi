@@ -29,6 +29,27 @@
        «dónde vive tu bitácora», que es donde se habla de la app. *@
 </div>
 
+@* CONFIRMAR LOS TANQUES DE UNA VEZ. Cada carga nace con el tanque INFERIDO por la forma de
+   corte y solo se pide el visto bueno; con nueve cargas eran nueve visto buenos iguales, uno
+   por uno. Si en todas quedó como dice, se confirman juntas; si alguna no, se entra a esa.
+   Va debajo de la cabeza y no dentro: la cabeza es un rótulo. Y va en contorno, no en ámbar:
+   el atajo confirma N suposiciones de un golpe, así que el camino cuidadoso —carga por
+   carga— se queda con el color de atención. *@
+@if (tanquesEstimados.Count >= 2)
+{
+    <div class="ruta-acciones">
+        <span class="crece">
+            <b>@tanquesEstimados.Count cargas</b> tienen el tanque estimado por cómo cortó el surtidor.
+            Si en todas quedó como dice, confirmalas juntas; si alguna no, entrá a esa carga.
+        </span>
+        <button class="tecla tecla--contorno" @onclick="ConfirmarTodosLosTanques" disabled="@(confirmando > 0)">
+            @(confirmando > 0
+                ? $"Confirmando {confirmando} de {tanquesEstimados.Count}…"
+                : $"Confirmar los {tanquesEstimados.Count} tanques estimados")
+        </button>
+    </div>
+}
+
 @if (cargas.Count == 0)
 {
     <p class="apunte">Todavía no hay cargas. Apretá <em>Actualizar</em>.</p>
@@ -491,6 +512,41 @@ else
                 + (autonomia.Hay ? $" Y tu autonomía estimada: ~{Entero(autonomia.Kilometros)} km." : "");
     });
 
+    // Las cargas que esperan el visto bueno del tanque, en el orden de los faltantes.
+    private List<string> tanquesEstimados = new();
+
+    // 0 = quieto; n = va por la n-esima. Es lo que la tecla cuenta mientras trabaja.
+    private int confirmando;
+
+    // N COMANDOS Y NO UNO. No hay comando de lote en el dominio y no se agrega: cada
+    // confirmacion lleva su Check, su entrada en el journal y su flush, igual que si ella las
+    // hubiera tocado de a una. La lista se copia antes porque cada ConfirmarTanque avisa y
+    // Releer la reescribe abajo nuestro. Un rechazo no frena a los demas: se juntan y se
+    // dicen al final.
+    private Task ConfirmarTodosLosTanques() => Intentar("confirmar los tanques estimados", async () =>
+    {
+        var porConfirmar = new List<string>(tanquesEstimados);
+        var rechazos = new List<string>();
+        try
+        {
+            for (int i = 0; i < porConfirmar.Count; i++)
+            {
+                confirmando = i + 1;
+                string rechazo = await Estado.ConfirmarTanque(porConfirmar[i]);
+                if (rechazo.Length > 0) rechazos.Add($"{porConfirmar[i]}: {rechazo}");
+            }
+        }
+        finally
+        {
+            confirmando = 0;
+        }
+
+        if (rechazos.Count > 0)
+            throw new InvalidOperationException(
+                $"Se confirmaron {porConfirmar.Count - rechazos.Count} de {porConfirmar.Count}. "
+                + "No entraron: " + string.Join("; ", rechazos));
+    });
+
     private Task ConfirmarTanque(string transaccion) => Intentar("confirmar el tanque", async () =>
     {
         string rechazo = await Estado.ConfirmarTanque(transaccion);
@@ -558,6 +614,7 @@ else
             faltantesPorCarga = new Dictionary<string, List<FaltanteEnLista>>();
             tramosQueDestraba = new Dictionary<string, int>();
             fechasQueEsperaElBache = new Dictionary<DateTime, List<DateTime>>();
+            tanquesEstimados = new List<string>();
             return;
         }
 
@@ -602,6 +659,11 @@ else
                 faltantesPorCarga[faltante.Transaccion] = pendientes = new List<FaltanteEnLista>();
             pendientes.Add(faltante);
         }
+
+        tanquesEstimados = new List<string>();
+        foreach (FaltanteEnLista faltante in faltantes)
+            if (faltante.QueFalta == "la confirmación del tanque")
+                tanquesEstimados.Add(faltante.Transaccion);
 
         // El "hoy" del prellenado lo pone ESTA caratula: el dominio no lee el reloj.
         propuesta = Estado.Odometro(placa, DateTime.Now);

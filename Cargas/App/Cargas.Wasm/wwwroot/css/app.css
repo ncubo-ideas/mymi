@@ -421,6 +421,13 @@ h1:focus, h1:focus-visible { outline: none; }
 }
 .ruta { list-style: none; margin: 0; padding: 0; }
 
+/* LA ACCIÓN DE LOTE, debajo de la cabeza y no dentro: la cabeza es un rótulo. */
+.ruta-acciones {
+    display: flex; flex-wrap: wrap; align-items: center; gap: 10px 14px;
+    margin: -4px 0 16px; font-size: 13.5px; color: var(--tenue);
+}
+.ruta-acciones b { color: var(--tinta); font-weight: 600; }
+
 .eslabon { display: grid; grid-template-columns: 22px minmax(0, 1fr); gap: 0 14px; }
 .eslabon-riel { position: relative; }
 .eslabon-riel::before {
