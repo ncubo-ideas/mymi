@@ -64,6 +64,7 @@ namespace Cargas.Dominio
 		}
 
 		internal string CodigoDeMoneda => Moneda.Codigo;
-		internal string Expresado => $"{Moneda.Simbolo}{Monto:0.##} en {CantidadDeCargas} cargas";
+		internal string Expresado =>
+			$"{Moneda.Simbolo}{Cifras.Plata(Monto)} en {CantidadDeCargas} cargas";
 	}
 }

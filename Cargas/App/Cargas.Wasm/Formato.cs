@@ -20,9 +20,9 @@ public static class Formato
 	// distintos antes y despues de reabrir la app.
 	//
 	// CON SEPARADOR DE MILES, y es del tablero: aca la cifra es el contenido, y "29392"
-	// hay que contarlo con el dedo. El separador es un espacio fino -el mismo que ya usa
-	// el dominio cuando expresa un kilometraje, "42 380 km"- y el decimal sigue siendo el
-	// punto, asi que no hay dos convenciones en la misma pantalla.
+	// hay que contarlo con el dedo. El separador es un espacio fino -el mismo que usa el
+	// dominio cuando arma una frase con plata adentro, Cifras.Plata- y el decimal sigue
+	// siendo el punto, asi que no hay dos convenciones en la misma pantalla.
 	private static readonly NumberFormatInfo Miles = new NumberFormatInfo
 	{
 		NumberGroupSeparator = "\u202f",   // espacio fino, escapado a proposito: invisible en el fuente

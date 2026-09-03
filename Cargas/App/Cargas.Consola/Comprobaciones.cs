@@ -105,7 +105,10 @@ namespace Cargas.Consola
 				() => colones.Mas(dolares));
 			Revienta<ErrorDeDominio>("compararlos tampoco se puede",
 				() => colones.DiferenciaAbsolutaCon(dolares));
-			Igual("sumar en la misma moneda si", "₡1500",
+			// CON SEPARADOR DE MILES y con el punto decimal fijo: la frase la lee tambien
+			// el MCP, y un "0.##" pelado la escribiria distinto segun la cultura del
+			// proceso que la genere.
+			Igual("sumar en la misma moneda si", "\u20a11\u202f500",
 				colones.Mas(new Dinero(500m, Moneda.Colon)).Expresado);
 		}
 
@@ -427,7 +430,8 @@ namespace Cargas.Consola
 			// EL SOBRANTE SE DICE, y en pasado: "sobraron X que no se acumulan" es un hecho
 			// de su registro. "Carga X mas y te llevas otro" seria la estacion vendiendo por
 			// la boca de su propia app.
-			Igual("y el sobrante que se pierde", "True", cuadrada.ParaSonia.Contains("9392").ToString());
+			Igual("y el sobrante que se pierde", "True",
+				cuadrada.ParaSonia.Contains("\u20a19\u202f392").ToString());
 			Igual("con la palabra que lo explica", "True",
 				cuadrada.ParaSonia.Contains("no se acumulan").ToString());
 

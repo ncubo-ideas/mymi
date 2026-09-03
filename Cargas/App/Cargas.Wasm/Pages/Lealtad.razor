@@ -87,8 +87,11 @@
 
         @if (sorteo.Premio.Length > 0)
         {
+            @* El monto sale ENTERO del dominio, sin recortarle nada: el `Split(" en ")` que
+               había acá venía copiado del gasto -que sí dice "en N cargas"- y sobre esta
+               cadena no cortaba nunca. Una cirugía sobre prosa ajena que un día corta. *@
             <p class="sorteo-premio">Se rifa <b>@sorteo.Premio</b>@(sorteo.MontoPorBoleto.Length > 0
-                ? $", un boleto por cada {sorteo.MontoPorBoleto.Split(" en ")[0]} de una carga" : "").</p>
+                ? $", un boleto por cada {sorteo.MontoPorBoleto} de una carga" : "").</p>
         }
     </div>
 }

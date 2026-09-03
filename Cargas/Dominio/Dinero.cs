@@ -44,6 +44,6 @@ namespace Cargas.Dominio
 			return Math.Abs(Monto - otro.Monto);
 		}
 
-		internal string Expresado => $"{Moneda.Simbolo}{Monto:0.##}";
+		internal string Expresado => Moneda.Simbolo + Cifras.Plata(Monto);
 	}
 }
