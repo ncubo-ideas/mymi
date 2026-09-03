@@ -507,6 +507,8 @@ namespace Cargas.App
 						carga.MonedaDelTotal moneda,
 						carga.NombreDelCorte corte,
 						carga.KilometrajeExpresado kilometraje,
+						carga.KilometrajeAnotado kilometrajeAnotado,
+						carga.OrigenDelKilometraje origenDelKilometraje,
 						carga.TanqueExpresado tanque,
 						carga.NumeroDeLaTransaccion transaccion,
 						carga.TieneKilometraje tieneKilometraje,

@@ -39,6 +39,10 @@ namespace Cargas.Dominio
 			return EnKilometros > otra.EnKilometros;
 		}
 
-		internal string Expresada => $"{Valor:0.#} {Unidad.Simbolo}";
+		// CON SEPARADOR DE MILES E INDEPENDIENTE DE LA CULTURA, como toda cifra que el
+		// dominio pone en una frase (ver Cifras). Con "{Valor:0.#}" pelado la parada decia
+		// "43200 km" tres centimetros debajo de un "43 624 km" de la caratula: la misma
+		// magnitud con dos convenciones se lee como dos medidas.
+		internal string Expresada => $"{Valor.ToString("#,0.#", Cifras.Agrupadas)} {Unidad.Simbolo}";
 	}
 }

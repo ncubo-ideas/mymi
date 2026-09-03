@@ -40,17 +40,28 @@
         </div>
     </div>
 
-    <div class="instrumento instrumento--medio @(TotalDeBoletos > 0 ? "" : "instrumento--apagado")">
+    @* LOS VIGENTES EN LA CIFRA. «16 boletos en 2 sorteos» sumaba los diez de una tómbola que
+       ya se rifó, y un titular que cuenta boletos que ya no juegan promete de más. La cifra
+       son los que juegan; los pasados se dicen aparte, porque tampoco se esfuman. *@
+    <div class="instrumento instrumento--medio @(BoletosVigentes > 0 || BoletosPasados > 0 ? "" : "instrumento--apagado")">
         <span class="rotulo">Boletos de tómbola</span>
-        <div class="cifra">@Entero(TotalDeBoletos)</div>
+        <div class="cifra">@Entero(BoletosVigentes)</div>
         <div class="cifra-pie">
-            @if (TotalDeBoletos > 0)
+            @if (BoletosVigentes > 0)
             {
-                <text>en <b>@sorteos.Count</b> @(sorteos.Count == 1 ? "sorteo" : "sorteos")</text>
+                <text>en <b>@SorteosVigentes</b> @(SorteosVigentes == 1 ? "sorteo vigente" : "sorteos vigentes")</text>
+            }
+            else if (BoletosPasados == 0)
+            {
+                <text>Un boleto por cada carga que alcance el monto. Los emite la estación.</text>
             }
             else
             {
-                <text>Un boleto por cada carga que alcance el monto. Los emite la estación.</text>
+                <text>ninguno en juego ahora</text>
+            }
+            @if (BoletosPasados > 0)
+            {
+                <text> &middot; y <b>@Entero(BoletosPasados)</b> de @(SorteosPasados == 1 ? "un sorteo que ya se rifó" : "sorteos que ya se rifaron")</text>
             }
         </div>
     </div>
@@ -77,7 +88,13 @@
                 {
                     <span class="sello sello--dudoso">sin anunciar</span>
                 }
-                <div class="sorteo-relato">@Mayuscula(sorteo.ParaSonia).</div>
+                @* La fecha y nada más. El relato del dominio —«10 boletos para el sorteo
+                   del 15/06/2026, que ya se rifó»— repetía la cifra de la derecha y el
+                   sello de al lado. La cuenta se dice una vez, en la cifra. *@
+                @if (sorteo.FueAnunciado)
+                {
+                    <div class="sorteo-relato">sorteo del @sorteo.FechaDelSorteo.ToString("d 'de' MMMM 'de' yyyy", Cultura)</div>
+                }
             </div>
             <div>
                 <div class="cifra cifra--chica">@Entero(sorteo.Boletos)</div>
@@ -98,20 +115,42 @@
 
 @if (explicaciones.Count > 0)
 {
-    <h2 class="rotulo" style="margin:26px 0 10px">De dónde salieron</h2>
+    <h2 class="seccion-titulo">De dónde salieron</h2>
     <p class="apunte">
         Es lo que el tiquete de la bomba no dice: cuántos boletos te dio cada carga, y
         cuánto sobró.
     </p>
-    <ul class="explicaciones">
-        @foreach (BoletosDeLaCargaEnLista fila in explicaciones)
-        {
-            <li @key="@fila.Transaccion" class="@(fila.ProbablementeFaltaUnDato ? "explicacion--dudosa" : "")">
-                <span class="n">@fila.Fecha.ToString("dd MMM yyyy", Cultura)</span>
-                <span>@Mayuscula(fila.ParaSonia).</span>
-            </li>
-        }
-    </ul>
+    @* UNA TABLA, Y EN EL ORDEN DE LA RUTA. Nueve filas con la misma oración —«esta carga dio
+       2 boletos; sobraron ₡4 600, que no se acumulan»— se leen una por una; en columnas se
+       leen de un vistazo. Y de la más reciente a la más vieja, como la ruta: dos listas de
+       las mismas cargas en orden contrario obligan a reorientarse al cambiar de pestaña.
+       La fila que no cuadra conserva la frase del dominio, que es la que explica. *@
+    <table class="explicaciones">
+        <thead>
+            <tr>
+                <th scope="col">carga</th>
+                <th scope="col" class="num">boletos</th>
+                <th scope="col">sobró</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (BoletosDeLaCargaEnLista fila in Recientes())
+            {
+                <tr @key="@fila.Transaccion" class="@(fila.ProbablementeFaltaUnDato ? "explicacion--dudosa" : "")">
+                    <td class="n">@fila.Fecha.ToString("dd MMM yyyy", Cultura)</td>
+                    @if (fila.HayRegla && !fila.ProbablementeFaltaUnDato)
+                    {
+                        <td class="n num">@fila.Emitidos</td>
+                        <td class="n">@fila.Sobrante</td>
+                    }
+                    else
+                    {
+                        <td colspan="2">@Mayuscula(fila.ParaSonia).</td>
+                    }
+                </tr>
+            }
+        </tbody>
+    </table>
 }
 
 @code {
@@ -119,14 +158,33 @@
     private IReadOnlyList<SorteoEnLista> sorteos = new List<SorteoEnLista>();
     private IReadOnlyList<BoletosDeLaCargaEnLista> explicaciones = new List<BoletosDeLaCargaEnLista>();
 
-    private int TotalDeBoletos
+    private int BoletosVigentes => Suma(vencidos: false);
+    private int BoletosPasados => Suma(vencidos: true);
+    private int SorteosVigentes => Cuenta(vencidos: false);
+    private int SorteosPasados => Cuenta(vencidos: true);
+
+    private int Suma(bool vencidos)
     {
-        get
-        {
-            int cuantos = 0;
-            foreach (SorteoEnLista sorteo in sorteos) cuantos += sorteo.Boletos;
-            return cuantos;
-        }
+        int cuantos = 0;
+        foreach (SorteoEnLista sorteo in sorteos)
+            if (sorteo.EstaVencido == vencidos) cuantos += sorteo.Boletos;
+        return cuantos;
+    }
+
+    private int Cuenta(bool vencidos)
+    {
+        int cuantos = 0;
+        foreach (SorteoEnLista sorteo in sorteos)
+            if (sorteo.EstaVencido == vencidos) cuantos++;
+        return cuantos;
+    }
+
+    // Lo mas reciente arriba, como la ruta.
+    private List<BoletosDeLaCargaEnLista> Recientes()
+    {
+        var recientes = new List<BoletosDeLaCargaEnLista>(explicaciones);
+        recientes.Sort((una, otra) => otra.Fecha.CompareTo(una.Fecha));
+        return recientes;
     }
 
     protected override void Releer()

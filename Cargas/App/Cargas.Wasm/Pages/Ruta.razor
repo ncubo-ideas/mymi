@@ -12,13 +12,6 @@
     <div class="parte parte--problema"><pre>@Error</pre></div>
 }
 
-@* EL REFUERZO: al cerrar un tramo se muestra lo que se DESBLOQUEÓ, no una insignia.
-   El premio es información sobre su carro. *@
-@if (desbloqueado.Length > 0)
-{
-    <div class="parte parte--neutro"><strong>Se desbloqueó:</strong> @desbloqueado</div>
-}
-
 @* -------------------------------------------------------------- LA RUTA
 
    El camino de paradas y trechos. El objeto de este negocio es el TRAMO entre dos
@@ -31,8 +24,31 @@
     {
         <span class="apunte">@completitud.Expresada</span>
     }
-    <span class="apunte mono">leído hasta el evento @ultimoEvento</span>
+    @* «Leído hasta el evento N» ya no va acá: es un dato de la app sobre sí misma, no del
+       carro, y en teléfono se llevaba una línea entera de la cabeza. Vive en Mi carro, con
+       «dónde vive tu bitácora», que es donde se habla de la app. *@
 </div>
+
+@* CONFIRMAR LOS TANQUES DE UNA VEZ. Cada carga nace con el tanque INFERIDO por la forma de
+   corte y solo se pide el visto bueno; con nueve cargas eran nueve visto buenos iguales, uno
+   por uno. Si en todas quedó como dice, se confirman juntas; si alguna no, se entra a esa.
+   Va debajo de la cabeza y no dentro: la cabeza es un rótulo. Y va en contorno, no en ámbar:
+   el atajo confirma N suposiciones de un golpe, así que el camino cuidadoso —carga por
+   carga— se queda con el color de atención. *@
+@if (tanquesEstimados.Count >= 2)
+{
+    <div class="ruta-acciones">
+        <span class="crece">
+            <b>@tanquesEstimados.Count cargas</b> tienen el tanque estimado por cómo cortó el surtidor.
+            Si en todas quedó como dice, confirmalas juntas; si alguna no, entrá a esa carga.
+        </span>
+        <button class="tecla tecla--contorno" @onclick="ConfirmarTodosLosTanques" disabled="@(confirmando > 0)">
+            @(confirmando > 0
+                ? $"Confirmando {confirmando} de {tanquesEstimados.Count}…"
+                : $"Confirmar los {tanquesEstimados.Count} tanques estimados")
+        </button>
+    </div>
+}
 
 @if (cargas.Count == 0)
 {
@@ -68,7 +84,10 @@ else
                         <span class="n">@Simbolo(parada.Moneda)@Plata(parada.Precio)/L</span>
                         @if (parada.TieneKilometraje)
                         {
-                            <span class="n">@parada.Kilometraje</span>
+                            @* El número solo. «observado» y «confirmado» son palabras del
+                               dominio que ella no eligió y en la parada sobraban; la
+                               procedencia queda en el title para quien la quiera mirar. *@
+                            <span class="n" title="@parada.OrigenDelKilometraje">@parada.KilometrajeAnotado</span>
                         }
                     </div>
 
@@ -96,8 +115,11 @@ else
                                 📷 ver la foto del tablero
                             </button>
                         }
-                        else if (!parada.TieneFoto && Estado.HayCarpeta)
+                        else if (!parada.TieneFoto && !parada.TieneKilometraje && Estado.HayCarpeta)
                         {
+                            @* Solo donde falta el kilometraje: la foto existe para leer el
+                               odómetro después, y en una carga ya anotada no tiene trabajo.
+                               Nueve invitaciones a sacar foto eran ruido. *@
                             <label class="tecla tecla--texto" style="cursor:pointer">
                                 📷 foto del tablero
                                 <InputFile OnChange="e => GuardarFoto(parada.Transaccion, e)"
@@ -105,6 +127,16 @@ else
                             </label>
                         }
                     </div>
+
+                    @* EL REFUERZO: al cerrar un tramo se muestra lo que se DESBLOQUEÓ, no una
+                       insignia. El premio es información sobre su carro. Y se muestra ACÁ,
+                       donde estaba el campo que acaba de llenar: arriba de la página quedaba
+                       fuera de vista para quien anotó la carga de abajo, y se quedaba ahí
+                       hasta la próxima acción sin que nadie lo viera. *@
+                    @if (desbloqueado.Length > 0 && desbloqueadoEn == parada.Transaccion)
+                    {
+                        <div class="parte parte--neutro parada-logro"><strong>Se desbloqueó:</strong> @desbloqueado</div>
+                    }
 
                     @if (fotoPorCarga.TryGetValue(parada.Transaccion, out string? laFoto))
                     {
@@ -127,17 +159,51 @@ else
                        toda la lista, los nueve formularios mostraban el mismo número y
                        el que se tecleaba para una carga aparecía en las otras ocho: es
                        la invitación a apretar «Agregar» en la fila equivocada. *@
-                    @foreach (FaltanteEnLista pendiente in pendientes)
+                    @if (pendientes.Count > 0 && Desplegada != parada.Transaccion)
+                    {
+                        @* PLEGADA: una línea por dato, con el verbo que la abre. Con nueve
+                           cargas sin aportes, nueve formularios abiertos eran dieciocho teclas
+                           ámbar y ninguna decía por dónde empezar. Se despliega UNA sola: por
+                           defecto la más reciente que espera kilometraje —que es la única a la
+                           que se le puede proponer el odómetro de hoy— y, si ella toca otra,
+                           esa. El punto ámbar de la parada sigue diciendo que está incompleta. *@
+                        @foreach (FaltanteEnLista pendiente in pendientes)
+                        {
+                            <button type="button" class="falta-plegada" aria-expanded="false"
+                                    @key="@($"plegada-{pendiente.Transaccion}-{pendiente.QueFalta}")"
+                                    @onclick="() => Desplegar(parada.Transaccion)">
+                                @if (pendiente.QueFalta == "el kilometraje")
+                                {
+                                    <span>falta el kilometraje</span><span class="accion">anotar</span>
+                                }
+                                else
+                                {
+                                    <span>tanque estimado: @pendiente.LoQueSeSupone</span><span class="accion">confirmar</span>
+                                }
+                            </button>
+                        }
+                    }
+                    else
+                    {
+                    foreach (FaltanteEnLista pendiente in pendientes)
                     {
                         <div class="falta" @key="@($"falta-{pendiente.Transaccion}-{pendiente.QueFalta}")">
                             @if (pendiente.QueFalta == "el kilometraje")
                             {
+                                @* VACÍO ES VACÍO, no «0». El campo sin valor mostraba un cero,
+                                   y «Agregar» con cero no hacía nada y no decía nada. Ahora el
+                                   valor nulo omite el atributo, el placeholder dice qué va, y la
+                                   tecla se apaga hasta que haya un número. Es @oninput y no
+                                   @onchange para que la tecla se prenda mientras se teclea, no
+                                   al salir del campo. *@
                                 <div class="fila">
-                                    <input class="campo" type="number" inputmode="numeric"
+                                    <input class="campo" type="number" inputmode="numeric" min="1"
                                            aria-label="@($"Kilometraje de esta carga, en {unidades.Distancia}")"
-                                           value="@Kilometraje(pendiente.Transaccion)"
-                                           @onchange="e => AnotarEnElCampo(pendiente.Transaccion, e)" />
+                                           placeholder="@($"odómetro en {unidades.Distancia}")"
+                                           value="@KilometrajeOVacio(pendiente.Transaccion)"
+                                           @oninput="e => AnotarEnElCampo(pendiente.Transaccion, e)" />
                                     <button class="tecla tecla--alerta"
+                                            disabled="@(Kilometraje(pendiente.Transaccion) <= 0)"
                                             @onclick="() => AgregarKilometraje(pendiente.Transaccion)">
                                         Agregar kilometraje
                                     </button>
@@ -152,6 +218,17 @@ else
                                             Es lo que da tu promedio de @Cifra(propuesta.PorDiaComoSeVe) @propuesta.SimboloDeLaDistancia por día.</span>
                                     }
                                 </div>
+                                @* LO QUE DESTRABA, dicho en la carga que lo debe y no en los
+                                   baches. Un mismo kilometraje puede bloquear dos tramos -el que
+                                   termina en esta carga y el que arranca en ella-, y antes cada
+                                   bache lo anunciaba por su cuenta: el mismo faltante dos veces,
+                                   arriba y abajo del campo. Singular y plural explícitos. *@
+                                @if (tramosQueDestraba.TryGetValue(pendiente.Transaccion, out int destraba) && destraba > 0)
+                                {
+                                    <p class="bache-desbloquea">
+                                        Con este kilometraje @(destraba == 1 ? "se calcula 1 tramo" : $"se calculan {destraba} tramos").
+                                    </p>
+                                }
                             }
                             else if (pendiente.QueFalta == "la confirmación del tanque")
                             {
@@ -185,6 +262,7 @@ else
                                 </div>
                             }
                         </div>
+                    }
                     }
                 </div>
             </li>
@@ -233,26 +311,26 @@ else
 
                             @if (!tramo.EsComparable && tramo.MotivoDeReserva.Length > 0)
                             {
-                                <p class="cifra-pie">@Mayuscula(tramo.MotivoDeReserva).</p>
+                                @* El motivo viene del dominio como frase nominal —«otro
+                                   surtidor»— y pelado no se entiende qué hace ahí. El marco
+                                   lo pone la carátula; el literal no se toca. *@
+                                <p class="cifra-pie">No se compara con tu nivel de siempre: @tramo.MotivoDeReserva.</p>
                             }
                         </div>
                     </li>
                 }
                 else
                 {
+                    @* EL BACHE, a una línea. El riel sigue punteado -ahí el camino no se midió-
+                       pero el texto ya no compite con la carga que lo destraba, que es donde
+                       vive el formulario y donde se dice cuántos tramos abre. La fecha se
+                       compone acá con el mismo «dd MMM» del resto de la ruta: la frase del
+                       dominio (tramo.QueFalta) trae «25/07/2026», y en la misma pantalla que
+                       «desde el 25 jul» eran dos calendarios. *@
                     <li class="eslabon bache" @key="@($"bache-{tramo.Desde:O}")">
                         <div class="eslabon-riel"></div>
                         <div class="eslabon-cuerpo">
-                            <div class="bache-caja">
-                                <p class="bache-que">
-                                    El tramo desde el @tramo.Desde.ToString("dd MMM", Cultura)
-                                    no se puede calcular: falta <b>@tramo.QueFalta</b>.
-                                </p>
-                                <p class="bache-desbloquea">
-                                    Con eso aparece cuánto rindió el carro entre estas dos cargas,
-                                    y ese tramo entra a tu nivel de siempre.
-                                </p>
-                            </div>
+                            <p class="bache-linea">sin calcular &middot; @EsperaDelBache(tramo)</p>
                         </div>
                     </li>
                 }
@@ -271,7 +349,17 @@ else
     private CompletitudDelVehiculo completitud = new();
     private OdometroPropuesto propuesta = new();
     private UnidadesElegidas unidades = new();
-    private long ultimoEvento;
+
+    // LA PARADA DESPLEGADA, y es una sola. Lo que ella toco sobrevive a Releer; lo que la
+    // lectura propone se recalcula en cada Releer. Si lo que toco ya no tiene pendientes
+    // -acaba de anotarlo-, se cae al default: la siguiente se abre sola.
+    private string desplegadaPorElla = "";
+    private string desplegadaPorDefecto = "";
+
+    private string Desplegada =>
+        faltantesPorCarga.ContainsKey(desplegadaPorElla) ? desplegadaPorElla : desplegadaPorDefecto;
+
+    private void Desplegar(string transaccion) => desplegadaPorElla = transaccion;
 
     // El prellenado, UNO POR CARGA (llave: el numero de transaccion). Si ella manda la
     // propuesta tal cual, su origen es "confirmado" -miro el numero y dijo que si-; si la
@@ -280,6 +368,12 @@ else
 
     private decimal Kilometraje(string transaccion) =>
         kilometrajePorAnotar.TryGetValue(transaccion, out decimal km) ? km : 0m;
+
+    // Lo que ve el campo: el numero si hay, y NADA si no. Blazor omite el atributo con
+    // null, y asi el placeholder se ve en vez de un cero que parece un dato.
+    private string? KilometrajeOVacio(string transaccion) =>
+        kilometrajePorAnotar.TryGetValue(transaccion, out decimal km) && km > 0
+            ? km.ToString(CultureInfo.InvariantCulture) : null;
 
     // La carga a la que se le propuso la proyeccion, si hay alguna. Vacio si no.
     private string transaccionConPropuesta = "";
@@ -291,8 +385,10 @@ else
                 out decimal km) ? km : 0m;
     }
 
-    // El refuerzo del ingreso: lo que aparecio al cerrar un tramo.
+    // El refuerzo del ingreso: lo que aparecio al cerrar un tramo, y EN QUE CARGA se anoto,
+    // para mostrarlo ahi y no arriba de todo.
     private string desbloqueado = "";
+    private string desbloqueadoEn = "";
 
     // LAS FOTOS QUE SE ESTAN MIRANDO, por transaccion, ya como data URL. Se cargan bajo
     // demanda y no al abrir: una foto de tablero ronda los pocos MB y esta pantalla puede
@@ -348,6 +444,25 @@ else
     private Dictionary<DateTime, TramoEnLista> tramoPorCierre = new();
     private Dictionary<string, List<FaltanteEnLista>> faltantesPorCarga = new();
 
+    // QUIEN DESTRABA CADA BACHE. Un tramo bloqueado espera el kilometraje de la carga sin
+    // odometro que esta en uno de sus extremos: en SerieDeTramos la trunca es `Hasta` en el
+    // tramo fino hacia atras y `Desde` en el fino hacia adelante, y pueden faltar los dos.
+    // De aca salen la linea del bache («espera el kilometraje del 25 jul») y la cuenta que se
+    // le dice a la carga («con este kilometraje se calculan 2 tramos»). Es emparejamiento
+    // de PRESENTACION por fecha, igual que TramoQueCierraEn: el dominio ya dijo cuales son
+    // los tramos y entre que fechas.
+    private Dictionary<string, int> tramosQueDestraba = new();
+    private Dictionary<DateTime, List<DateTime>> fechasQueEsperaElBache = new();
+
+    private string EsperaDelBache(TramoEnLista tramo)
+    {
+        if (!fechasQueEsperaElBache.TryGetValue(tramo.Desde, out List<DateTime>? fechas) || fechas.Count == 0)
+            return "espera un kilometraje";
+        if (fechas.Count == 1)
+            return $"espera el kilometraje del {fechas[0].ToString("dd MMM", Cultura)}";
+        return $"espera los kilometrajes del {fechas[0].ToString("dd MMM", Cultura)} y del {fechas[1].ToString("dd MMM", Cultura)}";
+    }
+
     private static readonly List<FaltanteEnLista> SinPendientes = new();
 
     private TramoEnLista? TramoQueCierraEn(DateTime hasta) =>
@@ -381,6 +496,9 @@ else
         decimal kilometraje = Kilometraje(transaccion);
         if (kilometraje <= 0) return;
 
+        desbloqueado = "";
+        desbloqueadoEn = transaccion;
+
         int tramosAntes = rendimiento.TramosCalculados;
         // La comparacion tiene que ser contra la propuesta COMO SE VE: es el numero que
         // ella tuvo delante. Contra la canonica, aceptar la sugerencia en millas entraria
@@ -401,6 +519,41 @@ else
         if (rendimiento.TramosCalculados > tramosAntes && rendimiento.Actual > 0)
             desbloqueado = $"el rendimiento de ese tramo: {Cifra(rendimiento.ActualComoSeVe)} {rendimiento.Simbolo}."
                 + (autonomia.Hay ? $" Y tu autonomía estimada: ~{Entero(autonomia.Kilometros)} km." : "");
+    });
+
+    // Las cargas que esperan el visto bueno del tanque, en el orden de los faltantes.
+    private List<string> tanquesEstimados = new();
+
+    // 0 = quieto; n = va por la n-esima. Es lo que la tecla cuenta mientras trabaja.
+    private int confirmando;
+
+    // N COMANDOS Y NO UNO. No hay comando de lote en el dominio y no se agrega: cada
+    // confirmacion lleva su Check, su entrada en el journal y su flush, igual que si ella las
+    // hubiera tocado de a una. La lista se copia antes porque cada ConfirmarTanque avisa y
+    // Releer la reescribe abajo nuestro. Un rechazo no frena a los demas: se juntan y se
+    // dicen al final.
+    private Task ConfirmarTodosLosTanques() => Intentar("confirmar los tanques estimados", async () =>
+    {
+        var porConfirmar = new List<string>(tanquesEstimados);
+        var rechazos = new List<string>();
+        try
+        {
+            for (int i = 0; i < porConfirmar.Count; i++)
+            {
+                confirmando = i + 1;
+                string rechazo = await Estado.ConfirmarTanque(porConfirmar[i]);
+                if (rechazo.Length > 0) rechazos.Add($"{porConfirmar[i]}: {rechazo}");
+            }
+        }
+        finally
+        {
+            confirmando = 0;
+        }
+
+        if (rechazos.Count > 0)
+            throw new InvalidOperationException(
+                $"Se confirmaron {porConfirmar.Count - rechazos.Count} de {porConfirmar.Count}. "
+                + "No entraron: " + string.Join("; ", rechazos));
     });
 
     private Task ConfirmarTanque(string transaccion) => Intentar("confirmar el tanque", async () =>
@@ -455,7 +608,6 @@ else
     protected override void Releer()
     {
         vehiculos = Estado.Vehiculos();
-        ultimoEvento = Estado.UltimoEvento();
         unidades = Estado.Unidades();
 
         if (vehiculos.Count == 0)
@@ -469,6 +621,9 @@ else
             propuesta = new OdometroPropuesto();
             tramoPorCierre = new Dictionary<DateTime, TramoEnLista>();
             faltantesPorCarga = new Dictionary<string, List<FaltanteEnLista>>();
+            tramosQueDestraba = new Dictionary<string, int>();
+            fechasQueEsperaElBache = new Dictionary<DateTime, List<DateTime>>();
+            tanquesEstimados = new List<string>();
             return;
         }
 
@@ -486,6 +641,26 @@ else
         tramoPorCierre = new Dictionary<DateTime, TramoEnLista>();
         foreach (TramoEnLista tramo in tramos) tramoPorCierre.TryAdd(tramo.Hasta, tramo);
 
+        var sinKilometrajePorFecha = new Dictionary<DateTime, CargaEnLista>();
+        foreach (CargaEnLista carga in cargas)
+            if (!carga.TieneKilometraje) sinKilometrajePorFecha.TryAdd(carga.Fecha, carga);
+
+        tramosQueDestraba = new Dictionary<string, int>();
+        fechasQueEsperaElBache = new Dictionary<DateTime, List<DateTime>>();
+        foreach (TramoEnLista tramo in tramos)
+        {
+            if (tramo.EstaCalculado) continue;
+            var espera = new List<DateTime>();
+            foreach (DateTime extremo in new[] { tramo.Desde, tramo.Hasta })
+                if (sinKilometrajePorFecha.TryGetValue(extremo, out CargaEnLista? trunca))
+                {
+                    espera.Add(extremo);
+                    tramosQueDestraba[trunca.Transaccion] =
+                        tramosQueDestraba.GetValueOrDefault(trunca.Transaccion) + 1;
+                }
+            fechasQueEsperaElBache[tramo.Desde] = espera;
+        }
+
         faltantesPorCarga = new Dictionary<string, List<FaltanteEnLista>>();
         foreach (FaltanteEnLista faltante in faltantes)
         {
@@ -493,6 +668,11 @@ else
                 faltantesPorCarga[faltante.Transaccion] = pendientes = new List<FaltanteEnLista>();
             pendientes.Add(faltante);
         }
+
+        tanquesEstimados = new List<string>();
+        foreach (FaltanteEnLista faltante in faltantes)
+            if (faltante.QueFalta == "la confirmación del tanque")
+                tanquesEstimados.Add(faltante.Transaccion);
 
         // El "hoy" del prellenado lo pone ESTA caratula: el dominio no lee el reloj.
         propuesta = Estado.Odometro(placa, DateTime.Now);
@@ -519,5 +699,24 @@ else
                     break;
                 }
         }
+
+        // EL DEFAULT DEL PLIEGUE: la carga mas reciente que espera kilometraje; si ninguna, la
+        // mas reciente con cualquier pendiente. Se compara por fecha y no se confia en el
+        // orden de la lista: si el dominio alguna vez la devolviera al reves, esto no cambia.
+        desplegadaPorDefecto = "";
+        DateTime masReciente = DateTime.MinValue;
+        foreach (FaltanteEnLista faltante in faltantes)
+            if (faltante.QueFalta == "el kilometraje" && faltante.Fecha > masReciente)
+            {
+                masReciente = faltante.Fecha;
+                desplegadaPorDefecto = faltante.Transaccion;
+            }
+        if (desplegadaPorDefecto.Length == 0)
+            foreach (FaltanteEnLista faltante in faltantes)
+                if (faltante.Fecha > masReciente)
+                {
+                    masReciente = faltante.Fecha;
+                    desplegadaPorDefecto = faltante.Transaccion;
+                }
     }
 }
