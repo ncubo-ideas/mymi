@@ -101,7 +101,7 @@ async Task Inyectar()
     var cuerpo = new
     {
         fecha = Arg(args, "--fecha", DateTime.Today.ToString("yyyy-MM-dd")),
-        placa = Arg(args, "--placa", "ABC-123"),
+        placa = Arg(args, "--placa", "BQR-482"),
         tipoDeCombustible = Arg(args, "--tipo", "regular"),
         surtidor = Arg(args, "--surtidor", "A-3"),
         estacion = Arg(args, "--estacion", "La Sabana"),
@@ -156,7 +156,7 @@ async Task Historia()
     {
         var cuerpo = new
         {
-            fecha, placa = "ABC-123", tipoDeCombustible = "regular",
+            fecha, placa = "BQR-482", tipoDeCombustible = "regular",
             surtidor, estacion = "La Sabana",
             precioMonto = precio, precioMoneda = "CRC",
             volumenValor = litros, volumenUnidad = "L",
@@ -224,7 +224,7 @@ static void Ayuda()
     Console.WriteLine("  inyectar --litros 42 --precio 668 [--total 28056] [--fecha 2026-08-26]");
     Console.WriteLine("           [--surtidor A-3] [--corte automatico|preseteado|indeterminado]");
     Console.WriteLine("           [--tipo regular|super|diesel] [--unidad L|galUS|galImp] [--moneda CRC|PAB|USD]");
-    Console.WriteLine("           [--placa ABC-123] [--transaccion T-0210]");
+    Console.WriteLine("           [--placa BQR-482] [--transaccion T-0210]");
     Console.WriteLine("                                agrega UNA carga concreta");
     Console.WriteLine();
     Console.WriteLine("  Los kilometrajes y el tanque NO se inyectan: son aportes de Sonia y entran");

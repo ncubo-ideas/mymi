@@ -26,9 +26,12 @@ namespace Cargas.Consola
 	// TotalNoCuadra se ejercita con una carga sintetica en Comprobaciones, no aca.
 	internal static class Muestras
 	{
-		// La placa del demo. COORDINADA CON KENNETH pendiente: tiene que ser la misma
-		// del concesionario o el cruce estrella no se puede ensenar (§6.1.1).
-		internal const string PlacaDelDemo = "ABC-123";
+		// La placa del demo, y es LA DEL CANON: el carro de Sonia es el mismo en los dos
+		// modulos, asi que el numero no lo elige este guion. La llave del cruce quedo
+		// acordada con Kenneth el 2026-09-03 -el concesionario indexa por VIN adentro,
+		// pero la placa es lo que cruza la puerta- porque pedirle el VIN a alguien en una
+		// gasolinera no lo hace nadie (§6.1.1).
+		internal const string PlacaDelDemo = "BQR-482";
 
 		internal const string EstacionDelDemo = "La Sabana";
 
@@ -93,6 +96,26 @@ namespace Cargas.Consola
 			"T-0201", "T-0202", "T-0203", "T-0204", "T-0205",
 			"T-0206", "T-0207", "T-0208", "T-0209",
 		};
+
+		// LA FICHA: el tercer aporte, y el que el guion venia sin sembrar. CompletarFicha
+		// existia desde el principio y nadie lo llamaba, asi que en una corrida limpia el
+		// carro de Sonia no tenia mas nombre que su placa y el rendimiento de fabrica no
+		// existia. Sin eso el CRUCE ESTRELLA -"el manual dice 18, tus tramos dan 9"- no
+		// se puede ensenar sin que alguien lo escriba a mano en la pantalla primero.
+		//
+		// El carro es el del canon: Toyota Yaris 2019.
+		//
+		// LOS 18 km/L SON APORTE DE SONIA, no un dato del concesionario. Ella los lee del
+		// manual de su carro; la ficha del fabricante que publica el otro modulo trae
+		// fluidos, llantas y grados de combustible, y NO trae consumo. Que el cruce se
+		// sostenga sin pedirle nada a ese modulo es la gracia, no una carencia.
+		//
+		// EL COLOR VA VACIO A PROPOSITO: el canon no lo dice, y un color inventado se
+		// leeria igual que un dato. El alias si es nuestro y tiene que serlo -es como la
+		// persona le dice a su carro, y eso no lo fija ningun canon-.
+		internal static readonly (string alias, string marca, string modelo, int anio,
+			string color, decimal rendimientoDeFabrica) FichaDelDemo =
+			("el Yaris", "Toyota", "Yaris", 2019, "", 18m);
 
 		private static SenalDeEvento Carga(long id, string fecha, decimal litros,
 			string surtidor, decimal precio, decimal total, string corte, string transaccion) =>

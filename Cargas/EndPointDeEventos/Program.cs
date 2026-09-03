@@ -443,7 +443,7 @@ sealed class AlmacenDeEventos
         {
             Id = id,
             Fecha = fecha,
-            Placa = "ABC-123",
+            Placa = "BQR-482",
             TipoDeCombustible = "regular",
             SurtidorIdentificacion = surtidor,
             SurtidorEstacion = "La Sabana",
