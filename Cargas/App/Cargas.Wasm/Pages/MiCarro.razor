@@ -174,6 +174,11 @@ else
     </p>
 }
 
+@* HASTA DÓNDE LEYÓ. Antes iba en la cabeza de la Ruta, en mono, como si fuera del carro.
+   Es de la app: dice hasta qué evento de la estación llegó la bitácora, y sirve para
+   saber si un Actualizar trajo algo. Acá, al lado de dónde vive, es donde se entiende. *@
+<p class="apunte mono">leída hasta el evento @ultimoEvento de la estación</p>
+
 <div class="fila" style="margin-top:12px">
     <button class="tecla tecla--contorno" @onclick="Exportar">Exportar a un archivo</button>
 </div>
@@ -200,6 +205,7 @@ else
     };
 
     private string alias = "", marca = "", modelo = "", color = "";
+    private long ultimoEvento;
     private int anio;
     private decimal rendimientoDeFabrica;
     private string guardado = "";
@@ -212,6 +218,7 @@ else
     protected override void Releer()
     {
         unidades = Estado.Unidades();
+        ultimoEvento = Estado.UltimoEvento();
 
         IReadOnlyList<VehiculoEnLista> vehiculos = Estado.Vehiculos();
         string placa = Estado.PlacaEnFoco(vehiculos);

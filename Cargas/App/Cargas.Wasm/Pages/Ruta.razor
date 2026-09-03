@@ -31,7 +31,9 @@
     {
         <span class="apunte">@completitud.Expresada</span>
     }
-    <span class="apunte mono">leído hasta el evento @ultimoEvento</span>
+    @* «Leído hasta el evento N» ya no va acá: es un dato de la app sobre sí misma, no del
+       carro, y en teléfono se llevaba una línea entera de la cabeza. Vive en Mi carro, con
+       «dónde vive tu bitácora», que es donde se habla de la app. *@
 </div>
 
 @if (cargas.Count == 0)
@@ -271,7 +273,6 @@ else
     private CompletitudDelVehiculo completitud = new();
     private OdometroPropuesto propuesta = new();
     private UnidadesElegidas unidades = new();
-    private long ultimoEvento;
 
     // El prellenado, UNO POR CARGA (llave: el numero de transaccion). Si ella manda la
     // propuesta tal cual, su origen es "confirmado" -miro el numero y dijo que si-; si la
@@ -455,7 +456,6 @@ else
     protected override void Releer()
     {
         vehiculos = Estado.Vehiculos();
-        ultimoEvento = Estado.UltimoEvento();
         unidades = Estado.Unidades();
 
         if (vehiculos.Count == 0)
