@@ -330,16 +330,20 @@ internal static class Conformance
 		{
 			// ── 1 · EL PISO: encendida, aparece en las tres ────────────────────────────────
 			m.Reconsent(true, []);
-			assert($"{publico}: encendida, aparece en el catalogo y en las dos puertas",
+			assert($"{publico}: encendida, la ven las tres puertas",
 				EnCatalogo() && EnPuerta1() && EnPuerta2(),
-				$"catalogo={EnCatalogo()} puerta1={EnPuerta1()} puerta2={EnPuerta2()}");
+				$"puerta1={EnPuerta1()} puerta2={EnPuerta2()} foto-de-Siri={EnCatalogo()}");
 
 			// ── 2 · APAGAR SOLO ESA TOOL ───────────────────────────────────────────────────
 			m.Reconsent(true, [tool]);
 
 			Response apagada = await d.Serve(new Request(m.Name, tool, null), CancellationToken.None);
 
-			assert($"{publico}: apagada, el Dispatcher la RECHAZA",
+			// LA INVOCACION EN VIVO NO SE SEPARA POR PUERTA, y es a proposito: Puerta 1, Puerta 2
+			// y la caratula de Android convergen las tres en Dispatcher.Serve. Inventar tres
+			// llamadas identicas no probaria nada mas -- es lo que ya hace la conformance de
+			// arriba con r2 y r3 -- y daria la ilusion de tres mediciones donde hay una.
+			assert($"{publico}: apagada · cualquier puerta que invoque: el Dispatcher la RECHAZA",
 				!apagada.Authorized,
 				"el dispatcher la sirvio igual: la compuerta no se aplico");
 
@@ -350,20 +354,40 @@ internal static class Conformance
 				(apagada.Reason ?? "").Contains("switched off", StringComparison.OrdinalIgnoreCase),
 				$"motivo: {apagada.Reason}");
 
-			assert($"{publico}: apagada, DESAPARECE del catalogo que arma la foto de Siri",
-				!EnCatalogo(),
-				"sigue en Dispatcher.Catalog(): entraria en la instantanea que lee la App Intent");
+			// UNA AFIRMACION POR PUERTA, y conviene decir con precision QUE compra eso, porque
+			// las tres listas NO son independientes: son una cadena.
+			//
+			//     Dispatcher.Catalog()        <- la raiz, m.EnabledTools()
+			//            v
+			//     ToolIndex.Of(dispatcher)    <- Puerta 1, construido desde Catalog()
+			//            v
+			//     AgentLoop.CatalogFor(host)  <- Puerta 2, construido desde ToolIndex
+			//
+			// O sea que romper la raiz enrojece las tres, y separarlas NO da tres pruebas
+			// independientes. Lo que si da, y por eso se separan: si manana una capa agrega su
+			// propio filtro o transformacion y se equivoca -- ToolIndex incluyendo algo que
+			// Catalog excluyo, o CatalogFor volviendo a sumar tools -- la linea roja nombra LA
+			// CAPA. Y de paso deja escrito que lista alimenta a que puerta, que es justo lo que
+			// nadie tenia claro.
+			assert($"{publico}: apagada · Puerta 1 (asistente externo): no esta en su catalogo",
+				!EnPuerta1(),
+				"sigue en ToolIndex: un asistente externo la veria y podria pedirla");
 
-			assert($"{publico}: apagada, no la ve la Puerta 1 ni la Puerta 2",
-				!EnPuerta1() && !EnPuerta2(),
-				$"puerta1={EnPuerta1()} puerta2={EnPuerta2()}");
+			assert($"{publico}: apagada · Puerta 2 (nuestro bucle): no esta en su catalogo",
+				!EnPuerta2(),
+				"sigue en AgentLoop.CatalogFor: el modelo la veria en su lista de tools");
+
+			assert($"{publico}: apagada · la foto de Siri: no entra en el catalogo que la arma",
+				!EnCatalogo(),
+				"sigue en Dispatcher.Catalog(): entraria en la instantanea que lee la App Intent, "
+				+ "que es la que contestan Siri y el Atajo en iOS");
 
 			// ── 3 · VOLVER A ENCENDERLA ────────────────────────────────────────────────────
 			// Un apagado que no se puede deshacer no es consentimiento, es una baja.
 			m.Reconsent(true, []);
-			assert($"{publico}: al reencenderla vuelve a las tres listas",
+			assert($"{publico}: al reencenderla vuelve a las tres puertas",
 				EnCatalogo() && EnPuerta1() && EnPuerta2(),
-				$"catalogo={EnCatalogo()} puerta1={EnPuerta1()} puerta2={EnPuerta2()}");
+				$"puerta1={EnPuerta1()} puerta2={EnPuerta2()} foto-de-Siri={EnCatalogo()}");
 
 			// ── 4 · APAGAR EL MODULO ENTERO ────────────────────────────────────────────────
 			// Es el otro switch de la UI, y no comparte codigo con el de arriba: Enabled y
