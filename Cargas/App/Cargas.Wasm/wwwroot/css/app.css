@@ -529,6 +529,11 @@ h1:focus, h1:focus-visible { outline: none; }
     border: 1px solid var(--bisel-vivo); border-radius: 6px;
 }
 .campo:focus-visible { outline: 2px solid var(--cobre); outline-offset: 1px; }
+.campo::placeholder { color: var(--tenue-2); font-family: var(--sans); font-size: 13px; }
+
+/* Lo que se desbloqueó, en la parada donde se anotó el dato. */
+.parada-logro { margin: 10px 0 0; }
+
 /* ----------------------------------------------------------------- las teclas
 
    Un tablero tiene pocas teclas y todas hacen algo. Cobre lleno la que actúa, contorno
@@ -555,6 +560,9 @@ h1:focus, h1:focus-visible { outline: none; }
 
 .tecla--alerta { background: var(--ambar); color: #26200a; }
 .tecla--alerta:hover:not(:disabled) { background: #ffdd85; }
+/* Apagada por campo vacío, no por estar ocupada: el cursor de «esperá» mentiría. */
+.tecla--alerta:disabled { cursor: not-allowed; }
+
 .tecla--problema { background: var(--rojo); color: #2b0d0d; }
 
 /* LA TECLA DE REFRESCAR es tenue y vive al otro extremo del capó: la app se pone al día

@@ -12,13 +12,6 @@
     <div class="parte parte--problema"><pre>@Error</pre></div>
 }
 
-@* EL REFUERZO: al cerrar un tramo se muestra lo que se DESBLOQUEÓ, no una insignia.
-   El premio es información sobre su carro. *@
-@if (desbloqueado.Length > 0)
-{
-    <div class="parte parte--neutro"><strong>Se desbloqueó:</strong> @desbloqueado</div>
-}
-
 @* -------------------------------------------------------------- LA RUTA
 
    El camino de paradas y trechos. El objeto de este negocio es el TRAMO entre dos
@@ -108,6 +101,16 @@ else
                         }
                     </div>
 
+                    @* EL REFUERZO: al cerrar un tramo se muestra lo que se DESBLOQUEÓ, no una
+                       insignia. El premio es información sobre su carro. Y se muestra ACÁ,
+                       donde estaba el campo que acaba de llenar: arriba de la página quedaba
+                       fuera de vista para quien anotó la carga de abajo, y se quedaba ahí
+                       hasta la próxima acción sin que nadie lo viera. *@
+                    @if (desbloqueado.Length > 0 && desbloqueadoEn == parada.Transaccion)
+                    {
+                        <div class="parte parte--neutro parada-logro"><strong>Se desbloqueó:</strong> @desbloqueado</div>
+                    }
+
                     @if (fotoPorCarga.TryGetValue(parada.Transaccion, out string? laFoto))
                     {
                         <figure class="foto">
@@ -134,12 +137,20 @@ else
                         <div class="falta" @key="@($"falta-{pendiente.Transaccion}-{pendiente.QueFalta}")">
                             @if (pendiente.QueFalta == "el kilometraje")
                             {
+                                @* VACÍO ES VACÍO, no «0». El campo sin valor mostraba un cero,
+                                   y «Agregar» con cero no hacía nada y no decía nada. Ahora el
+                                   valor nulo omite el atributo, el placeholder dice qué va, y la
+                                   tecla se apaga hasta que haya un número. Es @oninput y no
+                                   @onchange para que la tecla se prenda mientras se teclea, no
+                                   al salir del campo. *@
                                 <div class="fila">
-                                    <input class="campo" type="number" inputmode="numeric"
+                                    <input class="campo" type="number" inputmode="numeric" min="1"
                                            aria-label="@($"Kilometraje de esta carga, en {unidades.Distancia}")"
-                                           value="@Kilometraje(pendiente.Transaccion)"
-                                           @onchange="e => AnotarEnElCampo(pendiente.Transaccion, e)" />
+                                           placeholder="@($"odómetro en {unidades.Distancia}")"
+                                           value="@KilometrajeOVacio(pendiente.Transaccion)"
+                                           @oninput="e => AnotarEnElCampo(pendiente.Transaccion, e)" />
                                     <button class="tecla tecla--alerta"
+                                            disabled="@(Kilometraje(pendiente.Transaccion) <= 0)"
                                             @onclick="() => AgregarKilometraje(pendiente.Transaccion)">
                                         Agregar kilometraje
                                     </button>
@@ -282,6 +293,12 @@ else
     private decimal Kilometraje(string transaccion) =>
         kilometrajePorAnotar.TryGetValue(transaccion, out decimal km) ? km : 0m;
 
+    // Lo que ve el campo: el numero si hay, y NADA si no. Blazor omite el atributo con
+    // null, y asi el placeholder se ve en vez de un cero que parece un dato.
+    private string? KilometrajeOVacio(string transaccion) =>
+        kilometrajePorAnotar.TryGetValue(transaccion, out decimal km) && km > 0
+            ? km.ToString(CultureInfo.InvariantCulture) : null;
+
     // La carga a la que se le propuso la proyeccion, si hay alguna. Vacio si no.
     private string transaccionConPropuesta = "";
 
@@ -292,8 +309,10 @@ else
                 out decimal km) ? km : 0m;
     }
 
-    // El refuerzo del ingreso: lo que aparecio al cerrar un tramo.
+    // El refuerzo del ingreso: lo que aparecio al cerrar un tramo, y EN QUE CARGA se anoto,
+    // para mostrarlo ahi y no arriba de todo.
     private string desbloqueado = "";
+    private string desbloqueadoEn = "";
 
     // LAS FOTOS QUE SE ESTAN MIRANDO, por transaccion, ya como data URL. Se cargan bajo
     // demanda y no al abrir: una foto de tablero ronda los pocos MB y esta pantalla puede
@@ -381,6 +400,9 @@ else
     {
         decimal kilometraje = Kilometraje(transaccion);
         if (kilometraje <= 0) return;
+
+        desbloqueado = "";
+        desbloqueadoEn = transaccion;
 
         int tramosAntes = rendimiento.TramosCalculados;
         // La comparacion tiene que ser contra la propuesta COMO SE VE: es el numero que
