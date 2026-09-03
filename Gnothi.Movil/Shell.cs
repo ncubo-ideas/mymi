@@ -348,7 +348,17 @@ public sealed class Shell : IDisposable
 		return new Dictionary<string, object?>
 		{
 			["name"] = name,
-			["provider"] = new Uri(url).Host,
+			// SIN URL NO HAY HOST, y el proveedor de este aparato no tiene servidor. `new Uri("")`
+			// lanza, y como esto se serializa DENTRO de la respuesta que la pagina espera, la
+			// excepcion no se veia como error: la pagina solo repinta si le vuelve estado, asi
+			// que elegir el modelo local guardaba bien y no se reflejaba nunca. Y TryCreate
+			// tambien cubre la url que la persona escribe a mano en "Otro".
+			["provider"] = string.IsNullOrWhiteSpace(url)
+				? "este aparato"
+				: Uri.TryCreate(url, UriKind.Absolute, out Uri? u) ? u.Host : url,
+
+			// Para que la pagina no pida llave donde no hace falta.
+			["local"] = name == ProveedorLocal,
 			["model"] = model,
 			// SI HAY llave para ESTE proveedor, nunca la llave.
 			["keyPresent"] = File.Exists(KeyPath),
@@ -403,7 +413,13 @@ public sealed class Shell : IDisposable
 			}
 		}
 		catch { /* una eleccion ilegible cae al default */ }
-		return ("Groq", ModelUrl, ModelName);
+
+		// EL DEFAULT ES EL APARATO cuando el aparato puede. Es el unico proveedor donde el dato
+		// no sale del telefono, asi que arrancar en otro seria elegir por la persona la opcion
+		// menos privada. Si no hay modelo propio, el de siempre.
+		return modeloLocal is not null
+			? (ProveedorLocal, "", "apple-on-device")
+			: ("Groq", ModelUrl, ModelName);
 	}
 
 	private string SetProvider(string name, string url, string model)

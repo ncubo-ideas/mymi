@@ -461,6 +461,10 @@ const gn = {
         + '<input id="key-in" type="text" autocomplete="off" spellcheck="false" placeholder="pegala acá — se guarda solo en este teléfono">'
         + '<div class="btns"><button class="btn" onclick="gn.saveKey()">Guardar</button>'
         + '<button class="btn ghost" onclick="gn.keyEdit=false;gn.paint()">Cancelar</button></div>'
+      // EL DE ESTE APARATO NO LLEVA LLAVE, y decir "Falta — el asistente no puede contestar"
+      // ahi seria mentir: puede contestar, y ademas sin que nada salga del telefono.
+      : s.local
+        ? '<div class="st"><i class="dot ok"></i><b>No hace falta — el modelo corre acá</b></div>'
       : (s.keyPresent
         ? '<div class="st"><i class="dot ok"></i><b>Guardada en este teléfono</b></div>'
           + '<div class="btns"><button class="btn ghost" onclick="gn.keyEdit=true;gn.paint()">Cambiar</button>'
@@ -504,7 +508,8 @@ const gn = {
     if (s) {
       gn.state = s;
       // no key for this provider yet -> open the editor right away: pick, paste, done.
-      gn.keyEdit = !s.settings.keyPresent;
+      // sin llave no hay nada que pegar: el de este aparato no usa ninguna.
+      gn.keyEdit = !s.settings.local && !s.settings.keyPresent;
       gn.paint();
     }
   },
