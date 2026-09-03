@@ -88,7 +88,13 @@
                 {
                     <span class="sello sello--dudoso">sin anunciar</span>
                 }
-                <div class="sorteo-relato">@Mayuscula(sorteo.ParaSonia).</div>
+                @* La fecha y nada más. El relato del dominio —«10 boletos para el sorteo
+                   del 15/06/2026, que ya se rifó»— repetía la cifra de la derecha y el
+                   sello de al lado. La cuenta se dice una vez, en la cifra. *@
+                @if (sorteo.FueAnunciado)
+                {
+                    <div class="sorteo-relato">sorteo del @sorteo.FechaDelSorteo.ToString("d 'de' MMMM 'de' yyyy", Cultura)</div>
+                }
             </div>
             <div>
                 <div class="cifra cifra--chica">@Entero(sorteo.Boletos)</div>
