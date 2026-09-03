@@ -141,8 +141,10 @@
         <span class="rotulo">Próxima carga</span>
         @if (proxima.Hay)
         {
+            @* «~35 días» y no «en ~35 días»: el «en» en la tipografía de las cifras se leía
+               como parte del número. El rótulo ya dice de qué se trata. *@
             <div class="cifra cifra--chica">
-                en ~@proxima.DiasEstimados<span class="unidad">@(proxima.DiasEstimados == 1 ? "día" : "días")</span>
+                ~@proxima.DiasEstimados<span class="unidad">@(proxima.DiasEstimados == 1 ? "día" : "días")</span>
             </div>
             <div class="cifra-pie">
                 estimado &middot; te quedan <b>~@Entero(proxima.KilometrosRestantes) km</b>
@@ -164,11 +166,13 @@
     {
         <div class="instrumento" @key="@($"costo-{costo.Moneda}")">
             <span class="rotulo">Costo por kilómetro</span>
+            @* Sin «por km» pegado a la cifra: el rótulo ya lo dice, y repetirlo era la
+               unidad diciendo lo mismo que el título. El pie lo recuerda en prosa. *@
             <div class="cifra cifra--chica">
-                @Simbolo(costo.Moneda)@Plata(costo.MontoPorKilometro)<span class="unidad">por km</span>
+                @Simbolo(costo.Moneda)@Plata(costo.MontoPorKilometro)
             </div>
             <div class="cifra-pie">
-                sobre <b>@Entero(costo.Kilometros) km</b> con kilometraje anotado
+                por kilómetro &middot; sobre <b>@Entero(costo.Kilometros) km</b> con kilometraje anotado
             </div>
         </div>
     }
