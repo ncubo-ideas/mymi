@@ -115,4 +115,72 @@
           CopyToOutputDirectory="PreserveNewest" />
   </ItemGroup>
 
+  <!-- Y TODO EL CODIGO DE LAS CARATULAS, COMO DATO, por una cuarta cosa que ninguna prueba veia: que
+       la caratula no haga CUENTAS con un valor del dominio. La convencion de registro crudo (regla 3
+       de SLICE-ShopStay.md §7) dice que todo agregado en pantalla lo compone el dominio; una resta o
+       una division en un .razor construye una frase rival que el dominio nunca dijo, y ningun censo
+       de la puerta la puede ver porque nunca cruza la puerta.
+
+       Va COMO DATO y no por reflexion por la misma razon que el markup de arriba: lo que hay que
+       mirar es el TEXTO, un operador entre dos operandos, y eso no sobrevive a la compilacion.
+
+       UN GRUPO POR RAIZ, y la raiz es la carpeta bajo CodigoComoDato: asi el barrido puede decir en
+       cual de las ocho carpetas del modulo esta cada acierto. EndPointDeEventos e InyectorDeEventosDemo
+       son HERMANOS de App\ y no hijos, asi que van nombrados aparte o se caen del glob. -->
+  <ItemGroup>
+    <None Include="..\..\App\DealershipCar.App\**\*.cs"
+          Exclude="..\..\App\DealershipCar.App\bin\**\*.cs;..\..\App\DealershipCar.App\obj\**\*.cs"
+          LinkBase="CodigoComoDato\App"
+          CopyToOutputDirectory="PreserveNewest" />
+
+    <None Include="..\..\App\DealershipCar.Frontera\**\*.cs"
+          Exclude="..\..\App\DealershipCar.Frontera\bin\**\*.cs;..\..\App\DealershipCar.Frontera\obj\**\*.cs"
+          LinkBase="CodigoComoDato\Frontera"
+          CopyToOutputDirectory="PreserveNewest" />
+
+    <None Include="..\..\App\DealershipCar.Consola\**\*.cs"
+          Exclude="..\..\App\DealershipCar.Consola\bin\**\*.cs;..\..\App\DealershipCar.Consola\obj\**\*.cs"
+          LinkBase="CodigoComoDato\Consola"
+          CopyToOutputDirectory="PreserveNewest" />
+
+    <None Include="..\..\App\DealershipCar.Mcp\**\*.cs"
+          Exclude="..\..\App\DealershipCar.Mcp\bin\**\*.cs;..\..\App\DealershipCar.Mcp\obj\**\*.cs"
+          LinkBase="CodigoComoDato\Mcp"
+          CopyToOutputDirectory="PreserveNewest" />
+
+    <None Include="..\..\App\DealershipCar.Wasm\**\*.cs;..\..\App\DealershipCar.Wasm\**\*.razor"
+          Exclude="..\..\App\DealershipCar.Wasm\bin\**\*.*;..\..\App\DealershipCar.Wasm\obj\**\*.*"
+          LinkBase="CodigoComoDato\Wasm"
+          CopyToOutputDirectory="PreserveNewest" />
+
+    <None Include="..\..\EndPointDeEventos\**\*.cs"
+          Exclude="..\..\EndPointDeEventos\bin\**\*.cs;..\..\EndPointDeEventos\obj\**\*.cs"
+          LinkBase="CodigoComoDato\EndPointDeEventos"
+          CopyToOutputDirectory="PreserveNewest" />
+
+    <None Include="..\..\InyectorDeEventosDemo\**\*.cs"
+          Exclude="..\..\InyectorDeEventosDemo\bin\**\*.cs;..\..\InyectorDeEventosDemo\obj\**\*.cs"
+          LinkBase="CodigoComoDato\InyectorDeEventosDemo"
+          CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
+
+  <!-- Y LAS DOS RAICES QUE SE ENUMERAN SIN JUZGARSE COMO CODIGO DE LA CARATULA.
+
+       PaginaDeDescarga es hosting: publicado\ es salida de publicacion y no es ni bin ni obj, asi que
+       se excluye por nombre o el glob se traga los .wasm del framework.
+
+       MiCarroAppMockup no es codigo que se despliegue: es la maqueta que la caratula sigue. Sus
+       cuentas se afirman PRESENTES y no ausentes: son el registro de lo que la caratula se niega
+       a copiar. -->
+  <ItemGroup>
+    <None Include="..\..\PaginaDeDescarga\**\*.conf;..\..\PaginaDeDescarga\**\*.js"
+          Exclude="..\..\PaginaDeDescarga\publicado\**\*.*"
+          LinkBase="CodigoComoDato\PaginaDeDescarga"
+          CopyToOutputDirectory="PreserveNewest" />
+
+    <None Include="..\..\MiCarroAppMockup\**\*.js;..\..\MiCarroAppMockup\**\*.dc.html"
+          LinkBase="CodigoComoDato\MiCarroAppMockup"
+          CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
+
 </Project>

@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Globalization;
 using Choreography.Theater;
 using DealershipCar.App.Events;
@@ -446,6 +447,73 @@ namespace DealershipCar.App
 			.PerformCommand();
 		}
 
+		/// <summary>
+		/// Registra la entrada de ESTE vehiculo al taller: en que sucursal, con que asunto lo
+		/// recibieron y cuando entro. Se rechaza ACA mientras el vehiculo ya estuviera adentro en ese
+		/// instante, donde el rechazo todavia no cuesta ninguna entrada.
+		/// </summary>
+		public void RecordShopEntry(string branch, string subject, DateTime enteredAt)
+		{
+			ArgumentException.ThrowIfNullOrWhiteSpace(branch);
+			ArgumentException.ThrowIfNullOrWhiteSpace(subject);
+
+			TheVehicleHasToBeOutsideAt(enteredAt);
+
+			app.Using("stays.RecordEntry(@branch, @subject, @enteredAt);")
+			.WithParameters(p => {
+				p["branch",    typeof(string)]   = branch;
+				p["subject",   typeof(string)]   = subject;
+				p["enteredAt", typeof(DateTime)] = InUtc(enteredAt);
+			})
+			.PerformCommand();
+		}
+
+		/// <summary>
+		/// Registra que entregaron ESTE vehiculo: cuando salio y que dias de calendario dice la
+		/// sucursal que cubrio la estadia. Se rechaza ACA mientras no hubiera ninguna estadia que
+		/// cerrar en ese instante.
+		/// </summary>
+		public void RecordShopCollection(DateTime collectedAt, string[] coveredDays)
+		{
+			string[] days = TheDaysTheBranchSaid(coveredDays);
+
+			TheVehicleHasToBeInsideAt(collectedAt);
+
+			app.Using("stays.RecordCollection(@collectedAt, @days);")
+			.WithParameters(p => {
+				p["collectedAt", typeof(DateTime)] = InUtc(collectedAt);
+				p["days",        typeof(string[])] = days;
+			})
+			.PerformCommand();
+		}
+
+		/// <summary>
+		/// Registra de un solo acto una estadia que ya termino: donde, por que, sus dos instantes y
+		/// los dias que cubrio. Es la forma correctiva, para lo que se registra despues de haber
+		/// pasado, y NO se pre-chequea: una estadia cerrada no deja una segunda abierta, asi que
+		/// refusarla mientras otra sigue abierta refusaria un registro legitimo.
+		/// </summary>
+		public void RecordShopStay(
+			string branch, string subject, DateTime enteredAt, DateTime collectedAt,
+			string[] coveredDays)
+		{
+			ArgumentException.ThrowIfNullOrWhiteSpace(branch);
+			ArgumentException.ThrowIfNullOrWhiteSpace(subject);
+
+			string[] days = TheDaysTheBranchSaid(coveredDays);
+
+			app.Using(
+				"stays.RecordStay(@branch, @subject, @enteredAt, @collectedAt, @days);")
+			.WithParameters(p => {
+				p["branch",      typeof(string)]   = branch;
+				p["subject",     typeof(string)]   = subject;
+				p["enteredAt",   typeof(DateTime)] = InUtc(enteredAt);
+				p["collectedAt", typeof(DateTime)] = InUtc(collectedAt);
+				p["days",        typeof(string[])] = days;
+			})
+			.PerformCommand();
+		}
+
 		public EvaluationOutcome Evaluate(DateTime asOf)
 		{
 			using (RentedParameter rented = app.Actor.RentedParameters())
@@ -501,6 +569,24 @@ namespace DealershipCar.App
 		public int CountOverdue()
 		{
 			return ACount("@overdue = schedule.CountOverdue();", "overdue", p => { });
+		}
+
+		/// <summary>
+		/// Cuantas operaciones no tienen nada pendiente. Es un conteo que el dominio compone, no la
+		/// mitad de ninguna respuesta: la pantalla lo imprime al lado del siguiente y no los divide.
+		/// </summary>
+		public int CountUpToDate()
+		{
+			return ACount("@upToDate = schedule.CountUpToDate();", "upToDate", p => { });
+		}
+
+		/// <summary>
+		/// Cuantas operaciones tiene agendadas este vehiculo. Va con la anterior: son las dos que una
+		/// pantalla pondria una sobre la otra, y las dos las compone el dominio.
+		/// </summary>
+		public int CountScheduled()
+		{
+			return ACount("@scheduled = schedule.CountScheduled();", "scheduled", p => { });
 		}
 
 		public int DeferralsUsed(string kind)
@@ -1292,6 +1378,102 @@ namespace DealershipCar.App
 			", "clause", TheSystemAndTheInstant(systemCode, asOf));
 		}
 
+		/// <summary>
+		/// Si ESTE vehiculo estaba adentro de alguna sucursal en ese instante. TOTAL, y es una de las
+		/// dos unicas preguntas que alcanzan una estadia todavia abierta.
+		/// </summary>
+		public bool IsInsideTheShopAt(DateTime asOf)
+		{
+			return ATruth(
+				"@inside = stays.IsInsideTheShopAt(@asOf);", "inside",
+				p => { p["asOf", typeof(DateTime)] = InUtc(asOf); });
+		}
+
+		/// <summary>
+		/// La estadia que cubre ese instante, dicha entera, o la constancia de que ninguna lo cubre.
+		/// TOTAL, y es la otra pregunta que alcanza una estadia todavia abierta.
+		/// </summary>
+		public string DescribeTheStayAt(DateTime asOf)
+		{
+			return AText(
+				"@says = stays.DescribeTheStayAt(@asOf);", "says",
+				p => { p["asOf", typeof(DateTime)] = InUtc(asOf); });
+		}
+
+		/// <summary>
+		/// Si alguna estadia con dias registrados se cruza con ese periodo, dicho en dias. TOTAL.
+		/// </summary>
+		public bool HasAnyStayBetween(string fromDay, string toDay)
+		{
+			return ATruth(
+				"@any = stays.HasAnyStayBetween(@fromDay, @toDay);", "any",
+				ADayRange(fromDay, toDay));
+		}
+
+		/// <summary>
+		/// Los dias del periodo en que el vehiculo estuvo en el taller, ascendentes y sin repetidos.
+		/// TOTAL: un periodo sin ninguno contesta la lista vacia, y quien no pueda hacer nada con una
+		/// lista vacia tiene la frase de DescribeDaysInTheShopBetween, que nombra el periodo.
+		/// </summary>
+		public string[] DaysInTheShopBetween(string fromDay, string toDay)
+		{
+			return ATextList(
+				"@days = stays.DaysInTheShopBetween(@fromDay, @toDay);", "days",
+				ADayRange(fromDay, toDay));
+		}
+
+		/// <summary>
+		/// Cuantos dias estuvo en el taller en ese periodo. TOTAL, y lo cuenta el dominio sobre los
+		/// dias: de los dias sale la cuenta y de la cuenta no salen los dias.
+		/// </summary>
+		public int DaysInTheShopCountBetween(string fromDay, string toDay)
+		{
+			return ACount(
+				"@count = stays.DaysInTheShopCountBetween(@fromDay, @toDay);", "count",
+				ADayRange(fromDay, toDay));
+		}
+
+		/// <summary>
+		/// El periodo en una frase: los dias en que estuvo adentro y en cuantas estadias, o la
+		/// constancia de que no hay ninguna con dias registrados. TOTAL.
+		/// </summary>
+		public string DescribeDaysInTheShopBetween(string fromDay, string toDay)
+		{
+			return AText(
+				"@says = stays.DescribeDaysInTheShopBetween(@fromDay, @toDay);", "says",
+				ADayRange(fromDay, toDay));
+		}
+
+		/// <summary>
+		/// Cuantas estadias se cruzan con ese periodo. TOTAL, y es la cuenta de las FILAS del registro
+		/// de abajo.
+		/// </summary>
+		public int StayCountBetween(string fromDay, string toDay)
+		{
+			return ACount(
+				"@count = stays.StayCountBetween(@fromDay, @toDay);", "count",
+				ADayRange(fromDay, toDay));
+		}
+
+		/// <summary>
+		/// Las estadias del periodo como filas: donde, por que, cuando entro, que dias cubrio y la
+		/// frase con que el dominio la dice, en columnas paralelas y en orden de entrada. TOTAL, y
+		/// contesta CERO filas donde no hay ninguna. Un periodo dicho en dias no alcanza una estadia
+		/// todavia abierta: esa se pregunta por instante.
+		/// </summary>
+		public ShopStayRecord StaysBetween(string fromDay, string toDay)
+		{
+			string[][] columns = TheTextColumns(@"
+				@branch      = stays.StayBranchesBetween(@fromDay, @toDay);
+				@subject     = stays.StaySubjectsBetween(@fromDay, @toDay);
+				@enteredAt   = stays.StayEntryInstantsBetween(@fromDay, @toDay);
+				@coveredDays = stays.StayCoveredDaysBetween(@fromDay, @toDay);
+				@says        = stays.DescribeEachStayBetween(@fromDay, @toDay);
+			", TheColumnsOfAStayRecord, ADayRange(fromDay, toDay));
+
+			return ShopStayRecord.Of(columns[0], columns[1], columns[2], columns[3], columns[4]);
+		}
+
 		public string Apply(IMensajeDeEvento message)
 		{
 			ArgumentNullException.ThrowIfNull(message);
@@ -1330,6 +1512,11 @@ namespace DealershipCar.App
 				if (message is VehicleDelivered delivery) return ApplyVehicleDelivered(delivery);
 				if (message is WarrantyEnvelopePublished envelope)
 					return ApplyWarrantyEnvelopePublished(envelope);
+
+				if (message is ShopEntryRecorded entry) return ApplyShopEntryRecorded(entry);
+				if (message is ShopCollectionRecorded collection)
+					return ApplyShopCollectionRecorded(collection);
+				if (message is ShopStayRecorded stay) return ApplyShopStayRecorded(stay);
 
 				throw new ArgumentException(
 					$"Esta app no tiene comando para un mensaje de tipo '{message.Tipo}'. La ruta "
@@ -1746,6 +1933,77 @@ namespace DealershipCar.App
 			.PerformCheckThenCommand();
 		}
 
+		/// <summary>
+		/// NO PRE-CHEQUEA que el vehiculo estuviera afuera, y no es un olvido. La guarda de la puerta
+		/// revienta con InvalidOperationException, que no es la excepcion con que el dominio rechaza,
+		/// asi que saldria de Apply sin que nadie la atrape y se llevaria el bloque de refresh entero.
+		/// Y escribirla de nuevo aca como un if seria una segunda fuente de verdad de una ley del
+		/// dominio, para un hecho que la sucursal ya publico: lo que la frontera descarta es lo que no
+		/// se puede DECIR, y una segunda entrada se puede decir.
+		/// </summary>
+		private string ApplyShopEntryRecorded(ShopEntryRecorded message)
+		{
+			return app.Using(
+				scriptForChk: TheEventIsNew,
+				@"
+					{
+						stays.RecordEntry(@branch, @subject, @enteredAt);
+						logbook.Advance(@event);
+					}
+				")
+			.WithParameters(p => {
+				p["event",     typeof(long)]     = message.EventNumber;
+				p["branch",    typeof(string)]   = message.Branch;
+				p["subject",   typeof(string)]   = message.Subject;
+				p["enteredAt", typeof(DateTime)] = InUtc(message.EnteredAt);
+			})
+			.PerformCheckThenCommand();
+		}
+
+		/// <summary>
+		/// Los dias cruzan como llegaron, sin volver a exigirlos: ADay revienta con ArgumentException
+		/// y por este camino eso se llevaria el bloque entero, asi que la forma de cada dia ya se
+		/// exigio al interpretar la senal, donde descartarla no cuesta ninguna entrada.
+		/// </summary>
+		private string ApplyShopCollectionRecorded(ShopCollectionRecorded message)
+		{
+			return app.Using(
+				scriptForChk: TheEventIsNew,
+				@"
+					{
+						stays.RecordCollection(@collectedAt, @days);
+						logbook.Advance(@event);
+					}
+				")
+			.WithParameters(p => {
+				p["event",       typeof(long)]     = message.EventNumber;
+				p["collectedAt", typeof(DateTime)] = InUtc(message.CollectedAt);
+				p["days",        typeof(string[])] = message.CoveredDays;
+			})
+			.PerformCheckThenCommand();
+		}
+
+		private string ApplyShopStayRecorded(ShopStayRecorded message)
+		{
+			return app.Using(
+				scriptForChk: TheEventIsNew,
+				@"
+					{
+						stays.RecordStay(@branch, @subject, @enteredAt, @collectedAt, @days);
+						logbook.Advance(@event);
+					}
+				")
+			.WithParameters(p => {
+				p["event",       typeof(long)]     = message.EventNumber;
+				p["branch",      typeof(string)]   = message.Branch;
+				p["subject",     typeof(string)]   = message.Subject;
+				p["enteredAt",   typeof(DateTime)] = InUtc(message.EnteredAt);
+				p["collectedAt", typeof(DateTime)] = InUtc(message.CollectedAt);
+				p["days",        typeof(string[])] = message.CoveredDays;
+			})
+			.PerformCheckThenCommand();
+		}
+
 		private const string TheEventIsNew =
 			"Check(@event > logbook.LastEvent()) Error 'evento ya procesado';";
 
@@ -1875,6 +2133,38 @@ namespace DealershipCar.App
 				return rented[name].GetValue<string[]>();
 			}
 		}
+
+		/// <summary>
+		/// Varias columnas de texto de vuelta desde UNA sola consulta, en el orden de los nombres
+		/// pedidos. Es lo que una fila necesita para ser una fila: dos llamadas a ATextList son dos
+		/// consultas, y dos consultas son dos momentos.
+		/// </summary>
+		private string[][] TheTextColumns(string script, string[] names, Action<Parameters> arguments)
+		{
+			using (RentedParameter rented = app.Actor.RentedParameters())
+			{
+				app.Actor.Using(script)
+				.WithParameters(rented, p => {
+					foreach (string each in names) p[Parameter.Out, each, typeof(string[])] = default;
+
+					arguments(p);
+				})
+				.PerformQuery();
+
+				List<string[]> columns = new List<string[]>();
+
+				foreach (string each in names) columns.Add(rented[each].GetValue<string[]>());
+
+				return columns.ToArray();
+			}
+		}
+
+		/// <summary>
+		/// Los nombres de las cinco columnas del registro de estadias, en el orden en que el DTO las
+		/// recibe.
+		/// </summary>
+		private static readonly string[] TheColumnsOfAStayRecord =
+			{ "branch", "subject", "enteredAt", "coveredDays", "says" };
 
 		/// <summary>
 		/// Los nueve hechos que la pregunta de cobertura necesita, atados una sola vez para las tres
@@ -2021,6 +2311,106 @@ namespace DealershipCar.App
 			return p => {
 				p["systemCode", typeof(string)]   = TheText(systemCode, nameof(systemCode));
 				p["asOf",       typeof(DateTime)] = InUtc(asOf);
+			};
+		}
+
+		/// <summary>
+		/// Que el vehiculo NO estuviera ya adentro cuando dice que entro. La guarda del dominio sigue
+		/// siendo la duena de la invariante -- un carro no esta en dos sucursales a la vez -- y esta
+		/// la adelanta al unico momento en que rechazarla todavia es gratis. NO la ve entera: una
+		/// entrada fechada antes de la que ya esta abierta pasa por aca, y esa la refusa el dominio.
+		/// </summary>
+		private void TheVehicleHasToBeOutsideAt(DateTime enteredAt)
+		{
+			if (!IsInsideTheShopAt(enteredAt)) return;
+
+			throw new InvalidOperationException(
+				$"Este vehiculo ya estaba adentro de un taller al {InUtc(enteredAt):O}: pregunte "
+				+ "IsInsideTheShopAt con ese mismo instante antes. Un carro no esta en dos sucursales "
+				+ "a la vez, y dejar que el dominio lo rechace deja el rechazo escrito en el journal "
+				+ "de la persona para siempre.");
+		}
+
+		/// <summary>
+		/// Que hubiera algo que cerrar cuando dice que lo entregaron. Mismo motivo que la de arriba y
+		/// mismo limite: una estadia YA CERRADA que cubre ese instante pasa por aca, y esa la refusa
+		/// el dominio.
+		/// </summary>
+		private void TheVehicleHasToBeInsideAt(DateTime collectedAt)
+		{
+			if (IsInsideTheShopAt(collectedAt)) return;
+
+			throw new InvalidOperationException(
+				$"Este vehiculo no estaba adentro de ningun taller al {InUtc(collectedAt):O}, asi que "
+				+ "no hay ninguna estadia que cerrar: pregunte IsInsideTheShopAt con ese mismo "
+				+ "instante antes. Una estadia cerrada es terminal y no se reabre.");
+		}
+
+		/// <summary>
+		/// Los dias que la sucursal dice que la estadia cubrio, cada uno exigido como dia antes de
+		/// que haya comando. Cuantos son, en que orden vienen y si son contiguos es LEY DEL DOMINIO y
+		/// no se copia aca: lo que se exige en el borde es lo que se puede DECIR.
+		/// </summary>
+		private static string[] TheDaysTheBranchSaid(string[] coveredDays)
+		{
+			ArgumentNullException.ThrowIfNull(coveredDays);
+
+			List<string> said = new List<string>();
+
+			foreach (string each in coveredDays) said.Add(ADay(each, nameof(coveredDays)));
+
+			return said.ToArray();
+		}
+
+		/// <summary>
+		/// Un dia de calendario tal como la sucursal lo dice, exigido y devuelto vuelto a escribir,
+		/// asi que lo que cruza el wire es canonico por construccion. Un INSTANTE no es un dia:
+		/// recortarlo a su fecha seria inventar la zona horaria que este registro no tiene.
+		/// </summary>
+		private static string ADay(string text, string parameterName)
+		{
+			ArgumentException.ThrowIfNullOrWhiteSpace(text, parameterName);
+
+			DateOnly day;
+
+			if (!DateOnly.TryParseExact(
+					text, TheShapeADayIsSaidIn, CultureInfo.InvariantCulture, DateTimeStyles.None,
+					out day))
+				throw new ArgumentException(
+					$"'{text}' no dice un dia de calendario en {TheShapeADayIsSaidIn}. El dia llega "
+					+ "escrito junto con el hecho, asi que una forma que este registro no lea no es "
+					+ "un dia menos preciso: no es ninguno. Y un instante tampoco es un dia.",
+					parameterName);
+
+			return day.ToString(TheShapeADayIsSaidIn, CultureInfo.InvariantCulture);
+		}
+
+		/// <summary>
+		/// Como se dice un dia de calendario en este modulo, de los dos lados del wire. Es internal
+		/// porque el otro lado del wire tambien lo mira: la frontera de la ingesta exige esta misma
+		/// forma antes de que haya comando, y dos copias de la forma serian dos formas.
+		/// </summary>
+		internal const string TheShapeADayIsSaidIn = "yyyy-MM-dd";
+
+		/// <summary>
+		/// Los dos extremos de un periodo dicho en dias, exigidos y atados para el script que los
+		/// pregunta. El segundo no va antes que el primero; uno igual al otro es un periodo de un
+		/// solo dia, porque los dos extremos son inclusivos.
+		/// </summary>
+		private static Action<Parameters> ADayRange(string fromDay, string toDay)
+		{
+			string from = ADay(fromDay, nameof(fromDay));
+			string to = ADay(toDay, nameof(toDay));
+
+			if (string.CompareOrdinal(from, to) > 0)
+				throw new ArgumentException(
+					$"El periodo va del {from} al {to}, y ese segundo dia es anterior al primero: un "
+					+ "periodo que termina antes de empezar no nombra ningun dia.",
+					nameof(toDay));
+
+			return p => {
+				p["fromDay", typeof(string)] = from;
+				p["toDay",   typeof(string)] = to;
 			};
 		}
 

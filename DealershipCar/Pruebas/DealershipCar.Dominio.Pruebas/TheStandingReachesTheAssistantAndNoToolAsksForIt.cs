@@ -353,6 +353,8 @@ namespace DealershipCar.Dominio.Pruebas
 			"what_the_service_costs/2(operation):MaintenanceOperation",
 			"what_the_service_costs/2(milestoneDistance):Int32",
 			"check_one_operation/1(operation):MaintenanceOperation",
+			"days_my_car_spent_in_the_shop/2(from):String",
+			"days_my_car_spent_in_the_shop/2(to):String",
 		};
 
 		[Test]
@@ -377,15 +379,73 @@ namespace DealershipCar.Dominio.Pruebas
 			Assert.That(TheOneCatalogueKey[0], Is.EqualTo("milestone"));
 		}
 
+		// EL CENSO SE ENSANCHA POR NOMBRE Y NO POR TIPO, Y SE ESCRIBE EN VEZ DE ESQUIVARSE (P-3). La
+		// tool de las estadias toma DOS LIMITES DE PERIODO -- 'from' y 'to', en yyyy-MM-dd -- y son
+		// CLAVES DE CATALOGO y no mediciones: un limite elige LA PREGUNTA -- cuales estadias listar --
+		// y no afirma ningun hecho del carro; la respuesta ademas NOMBRA los dos limites con que
+		// contesto, asi que un limite inventado produce una respuesta visiblemente acotada y nunca un
+		// hecho falso.
+		//
+		// Y ESO NO ES LO MISMO QUE 'asOf', que es LA OTRA MITAD DE ESTA DECISION Y LA QUE LA VUELVE
+		// discutible. DEC-43 rechazo 'asOf' como parametro de tool porque es EL INSTANTE EN QUE SE MIDE
+		// LA POSICION -- un hecho -- y un modelo puede inventarse una fecha; el instante se lee del
+		// reloj del anfitrion. Un limite de periodo no mide nada: dice cual pedazo del registro se
+		// esta pidiendo. Es la misma distincion que el censo de la PUERTA ya dibuja entre 'asOf' y un
+		// odometro, aplicada a una superficie donde el que pregunta es un asistente.
+		//
+		// SE ESCRIBEN POR NOMBRE PORQUE EL DISCRIMINADOR NO LOS VE. Una cadena es el punto ciego
+		// declarado de este censo -- IsAMeasurement mira numeros e instantes -- asi que 'from' y 'to'
+		// cruzarian sin que nadie los mirara, y el ensanchamiento seria una decision que nadie tomo.
+		// Escribirlos aca es lo que la vuelve una decision.
+		private static readonly string[] TheTwoPeriodBoundsThatAreCatalogueKeys = { "from", "to" };
+
+		[Test]
+		public void NoToolAsksForAFactAboutTheCarAndTheTwoBoundsAreKeys()
+		{
+			// (a) el censo de mediciones sigue VACIO: los dos limites no lo tocan, porque son texto.
+			Assert.That(EveryMeasurementOfEveryTool(), Is.EquivalentTo(EveryMeasurementAToolTakes));
+
+			// (b) y estan en el censo de parametros, POR NOMBRE Y CON SU TIPO. El conjunto exacto de
+			// mas arriba ya se pondria rojo; esto dice CUALES son los dos y que se decidio sobre ellos.
+			Assert.That(TheTwoPeriodBoundsThatAreCatalogueKeys, Is.EqualTo(new[] { "from", "to" }));
+
+			foreach (string each in TheTwoPeriodBoundsThatAreCatalogueKeys)
+				Assert.That(
+					EveryParameterOfEveryTool(),
+					Does.Contain("days_my_car_spent_in_the_shop/2(" + each + "):String"),
+					"El limite '" + each + "' dejo de ser una cadena en yyyy-MM-dd. Es la forma que lo "
+					+ "hace una clave: un dia de calendario LLEGA ESCRITO con el hecho y no se saca de "
+					+ "un instante, asi que pedirlo como instante seria pedir la zona horaria que este "
+					+ "registro no tiene.");
+
+			// (c) Y LA LISTA DE CLAVES NUMERICAS NO SE ENSANCHO, que es lo que impide que esto sea una
+			// puerta de atras. Si alguien vuelve a tipar un limite como DateTime o como int, no queda
+			// exento por llamarse 'from': lo agarra el censo de mediciones Y el conjunto exacto de
+			// parametros, los dos, y en rojo.
+			Assert.That(TheOneCatalogueKey, Has.Length.EqualTo(1));
+			Assert.That(TheOneCatalogueKey, Does.Not.Contain("from"));
+			Assert.That(TheOneCatalogueKey, Does.Not.Contain("to"));
+
+			// (d) EL CONTROL: el discriminador sigue disparando contra un hecho de vehiculo de verdad.
+			var wouldBeCaught = new List<string>();
+
+			foreach (ParameterInfo each in TheDoorsOverloadsOf("DescribeCoverage")[0].GetParameters())
+				if (IsAMeasurement(each)) wouldBeCaught.Add(each.Name);
+
+			Assert.That(wouldBeCaught, Has.Count.EqualTo(6),
+				"Si esto se vacia, las tres afirmaciones de arriba las cumple un discriminador que no "
+				+ "reconoce nada.");
+		}
+
 		// EL CONTROL DE LOS DOS CENSOS, Y CON EL CONJUNTO DE MEDICIONES VACIO ES EL RENGLON QUE LOS
-		// SOSTIENE. Prueba dos cosas: que el barrido de verdad encuentra las tools -- las SIETE, en
-		// TRES clases -- y que el discriminador SI dispara contra un hecho de vehiculo de verdad. Las
+		// SOSTIENE. Prueba dos cosas: que el barrido de verdad encuentra las tools -- las OCHO, en
+		// CUATRO clases -- y que el discriminador SI dispara contra un hecho de vehiculo de verdad. Las
 		// cinco mediciones de la lectura de nueve argumentos de la puerta son exactamente los hechos
 		// que aparecerian en una tool si alguien agregara el parametro de comodidad.
 		[Test]
 		public void TheSweepFindsTheToolsAndTheDiscriminatorFiresOnARealVehicleFact()
 		{
-			Assert.That(EveryToolMethod(), Has.Count.EqualTo(7),
+			Assert.That(EveryToolMethod(), Has.Count.EqualTo(8),
 				"El barrido dejo de encontrar las tools y los dos censos no defienden nada.");
 			Assert.That(EveryParameterOfEveryTool(), Is.Not.Empty);
 

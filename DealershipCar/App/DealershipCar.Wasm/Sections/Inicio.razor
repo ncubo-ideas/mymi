@@ -29,15 +29,12 @@
         <div class="d-health">
             <div class="d-health__score">
                 <span class="d-health__n">@AlDia</span>
-                <span class="d-health__of">/@Nueve.Count</span>
+                <span class="d-health__of">/@Programadas</span>
             </div>
             <div class="d-health__body">
                 <p class="d-health__what">
                     operaciones al día de las que tu concesionario programó
                 </p>
-                <div class="d-bar">
-                    <div class="@("d-bar__fill d-bar__fill--" + BarraTono)" style="@("width:" + Porcentaje + "%")"></div>
-                </div>
             </div>
         </div>
 
@@ -101,7 +98,7 @@
             {
                 <div class="d-next__more">
                     <span class="d-note">
-                        Ninguna de las @Nueve.Count operaciones que tu concesionario programó está
+                        Ninguna de las @Programadas operaciones que tu concesionario programó está
                         vencida ni te toca ahora.
                     </span>
                 </div>
@@ -208,6 +205,16 @@
     [Parameter] public int Due { get; set; }
     [Parameter] public int Missed { get; set; }
 
+    /// <summary>Cuantas no tienen nada pendiente. La compone el dominio; aca no se cuenta nada.</summary>
+    [Parameter] public int AlDia { get; set; }
+
+    /// <summary>
+    /// Cuantas le programo la agencia a este carro. Es el otro numero de la tarjeta, y tambien lo
+    /// compone el dominio: dividir uno entre otro seria una cuenta, y armar el denominador con las
+    /// nueve clases del canon diria algo que el registro no dice.
+    /// </summary>
+    [Parameter] public int Programadas { get; set; }
+
     /// <summary>La operacion que el calendario pone de primera, o vacio si no hay ninguna.</summary>
     [Parameter] public string Siguiente { get; set; } = "";
 
@@ -250,20 +257,10 @@
     }
 
     /// <summary>
-    /// Cuantas de las nueve estan al dia. Se cuenta por el estado de cada una y no restando los
-    /// conteos: un mismo estado puede sumar en dos conteos del dominio, y una resta lo diria mal.
-    /// </summary>
-    private int AlDia => Nueve.Count(k => ComoSeLee.Tono(Board.TryGetValue(k, out string s) ? s : "") == "ok");
-
-    private int Porcentaje => Nueve.Count == 0 ? 0 : (int)System.Math.Round(100.0 * AlDia / Nueve.Count);
-
-    /// <summary>
     /// El tono de la pantalla entera. Lo decide lo PEOR que haya, no el promedio: un carro con un
     /// mantenimiento vencido no esta "83% bien", esta con algo vencido.
     /// </summary>
     private string Tono => Overdue > 0 ? "danger" : Due > 0 ? "warn" : "ok";
-
-    private string BarraTono => Tono;
 
     private string Titular => Overdue > 0 ? "Necesita atención" : Due > 0 ? "Algo por hacer" : "Al día";
 

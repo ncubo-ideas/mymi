@@ -19,6 +19,7 @@ try
         case "historia":  await Historia(); break;
         case "ficha":     await Ficha(); break;
         case "garantia":  await Garantia(); break;
+        case "taller":    await Taller(); break;
         case "senuelo":   await Senuelo(); break;
         default:          Ayuda(); break;
     }
@@ -107,6 +108,14 @@ static string Resumen(JsonElement e)
             $"sobre de {Numero(e, "months")} meses o {Numero(e, "distance")} "
             + $"{Texto(e, "unit")}, publicado el {Dia(e, "publishedAt")}",
 
+        "ShopEntryRecorded" =>
+            $"entro a {Texto(e, "branch")} el {Dia(e, "enteredAt")} por {Texto(e, "subject")}",
+        "ShopCollectionRecorded" =>
+            $"entregado el {Dia(e, "collectedAt")}, cubrio {Dias(e, "coveredDays")}",
+        "ShopStayRecorded" =>
+            $"estadia en {Texto(e, "branch")} por {Texto(e, "subject")}, del "
+            + $"{Dia(e, "enteredAt")} al {Dia(e, "collectedAt")}, cubrio {Dias(e, "coveredDays")}",
+
         _ => "(un tipo que la app NO consume: lo descarta)",
     };
 }
@@ -170,6 +179,12 @@ async Task Inyectar()
         reading = Entero(Arg(args, "--reading", "0")),
         months = Entero(Arg(args, "--months", "0")),
         distance = Entero(Arg(args, "--distance", "0")),
+
+        branch = Arg(args, "--branch", ""),
+        subject = Arg(args, "--subject", ""),
+        enteredAt = Arg(args, "--enteredAt", "2026-09-01"),
+        collectedAt = Arg(args, "--collectedAt", "2026-09-01"),
+        coveredDays = ListaDeDias(Arg(args, "--coveredDays", "")),
     };
 
     using var respuesta = await http.PostAsJsonAsync($"{recurso}/{id}/events/hecho", cuerpo);
@@ -318,6 +333,7 @@ async Task Ficha()
 
 async Task Garantia()
 {
+    const string unidadDeLaNarrativa = "UnitA";
     string unidad = Arg(args, "--unit", "UnitB");
 
     Console.WriteLine($"publicando la entrega y el sobre de garantia en {recurso}/{id}...");
@@ -367,17 +383,106 @@ async Task Garantia()
     Console.WriteLine("Lo unico que hace falta es que los numeros de evento sigan avanzando, y de eso se");
     Console.WriteLine("encarga el mock.");
     Console.WriteLine();
-    Console.WriteLine("Y SOBRE LA NARRATIVA QUE EL MOCK YA TRAE, LA MITAD DE DISTANCIA QUEDA SUSPENDIDA,");
-    Console.WriteLine("que es la ley y no un defecto. Esa narrativa mide en UnitA, este guion en UnitB, y");
-    Console.WriteLine("las unidades no se convierten -- asi que la respuesta contesta el plazo, dice con");
-    Console.WriteLine("palabras que la distancia no se pudo medir, y nombra las dos unidades que no");
-    Console.WriteLine("calzaron.");
+    if (unidad == unidadDeLaNarrativa)
+    {
+        Console.WriteLine("Y SOBRE LA NARRATIVA QUE EL MOCK YA TRAE, LAS TRES UNIDADES CALZAN: la del limite");
+        Console.WriteLine("del sobre, la de la lectura del dia de la entrega y la del odometro de hoy, las tres");
+        Console.WriteLine($"en {unidad}. Asi que la respuesta contesta las DOS mitades, el plazo y la distancia,");
+        Console.WriteLine("y no queda nada suspendido.");
+        Console.WriteLine();
+        Console.WriteLine("SON TRES Y NO DOS, y por eso este guion las manda todas juntas. Corrido en la otra");
+        Console.WriteLine("unidad la respuesta contesta el plazo, dice con palabras que la distancia no se pudo");
+        Console.WriteLine("medir y nombra las dos que no calzaron; cambiar solo la del sobre mueve el desajuste");
+        Console.WriteLine("de una pareja a la otra en vez de resolverlo. Para verlo:");
+        Console.WriteLine("  garantia --unit UnitB");
+    }
+    else
+    {
+        Console.WriteLine("Y SOBRE LA NARRATIVA QUE EL MOCK YA TRAE, LA MITAD DE DISTANCIA QUEDA SUSPENDIDA,");
+        Console.WriteLine($"que es la ley y no un defecto. Esa narrativa mide en {unidadDeLaNarrativa}, este guion");
+        Console.WriteLine($"en {unidad}, y las unidades no se convierten -- asi que la respuesta contesta el plazo,");
+        Console.WriteLine("dice con palabras que la distancia no se pudo medir, y nombra las dos unidades que no");
+        Console.WriteLine("calzaron.");
+        Console.WriteLine();
+        Console.WriteLine("SON TRES UNIDADES LAS QUE TIENEN QUE CALZAR, no dos: la del limite del sobre, la");
+        Console.WriteLine("de la lectura del dia de la entrega, y la del odometro de hoy. Cambiar solo la del");
+        Console.WriteLine("sobre mueve el desajuste de una pareja a la otra en vez de resolverlo. Para verlo");
+        Console.WriteLine("entero hay que correr TODO este guion en la unidad de la narrativa:");
+        Console.WriteLine($"  garantia --unit {unidadDeLaNarrativa}");
+    }
+}
+
+async Task Taller()
+{
+    bool dejaUnaAbierta = !args.Contains("--sin-abrir");
+
+    Console.WriteLine($"publicando las estadias en el taller de {recurso}/{id}...");
+    Console.WriteLine(dejaUnaAbierta
+        ? "  y la ultima estadia queda ABIERTA: el carro esta adentro y todavia no lo entregan"
+        : "  SIN dejar ninguna abierta, que es lo que hace este guion re-corrible");
     Console.WriteLine();
-    Console.WriteLine("SON TRES UNIDADES LAS QUE TIENEN QUE CALZAR, no dos: la del limite del sobre, la");
-    Console.WriteLine("de la lectura del dia de la entrega, y la del odometro de hoy. Cambiar solo la del");
-    Console.WriteLine("sobre mueve el desajuste de una pareja a la otra en vez de resolverlo. Para verlo");
-    Console.WriteLine("entero hay que correr TODO este guion en la unidad de la narrativa:");
-    Console.WriteLine("  garantia --unit UnitA");
+
+    (object cuerpo, string porque)[] guion =
+    {
+        (EstadiaCompleta("Taller Central", "Cambio de frenos",
+                "2026-05-11T08:30:00Z", "2026-05-13T16:45:00Z",
+                ["2026-05-11", "2026-05-12", "2026-05-13"]),
+            "una estadia entera DE UN SOLO ACTO: los dos extremos y los TRES dias que cubrio, "
+            + "todo en un hecho. Es la forma correctiva, para lo que se registra despues"),
+
+        (EntradaAlTaller("Taller Escazu", "Revision de los 20 mil", "2026-07-06T07:15:00Z"),
+            "la ENTRADA: el carro entro y desde aca la estadia queda abierta. Es lo unico que "
+            + "las dos lecturas por instante alcanzan"),
+        (EntregaDelTaller("2026-07-07T17:00:00Z", ["2026-07-06", "2026-07-07"]),
+            "y la ENTREGA, que la cierra con los DOS dias que la sucursal dice que cubrio. Los "
+            + "dias los DICE la sucursal: no salen de los dos instantes"),
+    };
+
+    foreach ((object cuerpo, string porque) in guion)
+    {
+        using var r = await http.PostAsJsonAsync($"{recurso}/{id}/events/hecho", cuerpo);
+        Console.WriteLine($"  HTTP {(int)r.StatusCode}   {porque}");
+    }
+
+    if (dejaUnaAbierta)
+    {
+        using var r = await http.PostAsJsonAsync($"{recurso}/{id}/events/hecho",
+            EntradaAlTaller("Taller Curridabat", "Ruido en la suspension", "2026-10-05T09:00:00Z"));
+        Console.WriteLine($"  HTTP {(int)r.StatusCode}   "
+            + "una SEGUNDA entrada que nadie cierra: el carro queda adentro");
+    }
+
+    Console.WriteLine();
+    Console.WriteLine("LA RESPUESTA SON LOS DIAS Y NO UNA DURACION. Cinco dias en dos estadias, y los");
+    Console.WriteLine("cinco se pueden nombrar uno por uno: 11, 12 y 13 de mayo, 6 y 7 de julio. Una");
+    Console.WriteLine("duracion no se puede cruzar con el calendario de nadie; una lista de fechas si.");
+    Console.WriteLine();
+    Console.WriteLine("LOS DIAS LLEGAN CON EL HECHO Y NO SE CALCULAN. Entro el 11 a las 08:30 y salio el");
+    Console.WriteLine("13 a las 16:45, y los dias que cubrio son tres porque la sucursal dijo tres.");
+    Console.WriteLine("Sacarlos de los dos instantes pediria una zona horaria que este registro no");
+    Console.WriteLine("lleva, y con la zona equivocada el 11 podria salir siendo el 10.");
+    Console.WriteLine();
+    if (dejaUnaAbierta)
+    {
+        Console.WriteLine("LA ULTIMA QUEDO ABIERTA A PROPOSITO, y es el unico estado que separa las dos");
+        Console.WriteLine("lecturas por INSTANTE de las seis por DIAS: una estadia abierta todavia no tiene");
+        Console.WriteLine("ningun dia -- los dias llegan con la entrega -- asi que ningun periodo dicho en");
+        Console.WriteLine("dias la alcanza, y preguntar si el carro esta adentro AHORA si.");
+        Console.WriteLine();
+        Console.WriteLine("Y POR ESO ESTO NO SE PUEDE VOLVER A CORRER TAL CUAL: un carro no esta en dos");
+        Console.WriteLine("sucursales a la vez, asi que la primera entrada de una segunda corrida se rechaza");
+        Console.WriteLine("mientras la de octubre siga abierta, y ese rechazo marca el journal. Para una");
+        Console.WriteLine("segunda corrida:");
+        Console.WriteLine("  taller --sin-abrir");
+    }
+    else
+    {
+        Console.WriteLine("NO SE DEJO NINGUNA ABIERTA, asi que esto SI se puede volver a correr contra el");
+        Console.WriteLine("mismo journal: ninguno de los tres hechos toma una clave que se gaste, y sin una");
+        Console.WriteLine("estadia abierta la entrada de la corrida siguiente no choca con nada. Lo que se");
+        Console.WriteLine("pierde es la estadia abierta, que es lo unico que las dos lecturas por instante");
+        Console.WriteLine("contestan distinto de las seis por dias.");
+    }
 }
 
 async Task Senuelo()
@@ -519,6 +624,23 @@ static object Regla(string codigo, string regla, string conserva) => new
     rule = regla, whatPreservesCover = conserva,
 };
 
+static object EntradaAlTaller(string sucursal, string asunto, string entro) => new
+{
+    tipo = "ShopEntryRecorded", branch = sucursal, subject = asunto, enteredAt = entro,
+};
+
+static object EntregaDelTaller(string entregado, string[] dias) => new
+{
+    tipo = "ShopCollectionRecorded", collectedAt = entregado, coveredDays = dias,
+};
+
+static object EstadiaCompleta(
+    string sucursal, string asunto, string entro, string entregado, string[] dias) => new
+{
+    tipo = "ShopStayRecorded", branch = sucursal, subject = asunto,
+    enteredAt = entro, collectedAt = entregado, coveredDays = dias,
+};
+
 static object Reclamo(string reclamo, string observado) => new
 {
     tipo = "WarrantyClaimFiled", observedAt = observado, revisionCode = reclamo,
@@ -541,6 +663,28 @@ static string Dia(JsonElement e, string campo) =>
     e.TryGetProperty(campo, out JsonElement v) && v.TryGetDateTime(out DateTime d)
         ? d.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture)
         : "";
+
+// Los dias de una estadia llegan como LISTA y se imprimen como llegaron. No se cuentan ni se
+// resumen: la respuesta de esta rebanada son los dias, no cuantos son.
+static string Dias(JsonElement e, string campo)
+{
+    if (!e.TryGetProperty(campo, out JsonElement v) || v.ValueKind != JsonValueKind.Array)
+        return "";
+
+    List<string> dichos = [];
+
+    foreach (JsonElement dia in v.EnumerateArray())
+        if (dia.ValueKind == JsonValueKind.String) dichos.Add(dia.GetString());
+
+    return string.Join(" ", dichos);
+}
+
+// Los dias que se le pasan a `inyectar`, separados por coma en la linea de comandos. Vacio es una
+// lista vacia y no una lista con una cadena vacia adentro: un dia en blanco no es un dia.
+static string[] ListaDeDias(string texto) =>
+    texto.Length == 0
+        ? []
+        : texto.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
 
 static int Entero(string texto) =>
     int.TryParse(texto, NumberStyles.Any, CultureInfo.InvariantCulture, out int valor) ? valor : 0;
@@ -574,6 +718,11 @@ static void Ayuda()
     Console.WriteLine("                                --unit (default UnitB) manda las TRES unidades del");
     Console.WriteLine("                                guion; con UnitA calza con la narrativa del mock y la");
     Console.WriteLine("                                mitad de distancia se puede medir");
+    Console.WriteLine("  taller                        publica las estadias en el taller de este vehiculo:");
+    Console.WriteLine("                                una entera de un solo acto, y una entrada con su");
+    Console.WriteLine("                                entrega. La respuesta son los DIAS y no una duracion");
+    Console.WriteLine("                                --sin-abrir salta la ultima entrada; sin esa bandera");
+    Console.WriteLine("                                queda una estadia ABIERTA y no se puede repetir");
     Console.WriteLine("  senuelo                       demuestra el 403 de /customer con el token de la app");
     Console.WriteLine("  inyectar --tipo <tipo> ...    agrega UN hecho concreto");
     Console.WriteLine();
@@ -611,6 +760,16 @@ static void Ayuda()
     Console.WriteLine("    VehicleDelivered                 --deliveredAt --reading --unit");
     Console.WriteLine("    WarrantyEnvelopePublished        --months --distance --unit --publishedAt");
     Console.WriteLine();
+    Console.WriteLine("  y los TRES de las estadias en el taller, uno por comando de la sucursal. Los");
+    Console.WriteLine("  dias van SEPARADOS POR COMA y cada uno en yyyy-MM-dd: los dice la sucursal, no");
+    Console.WriteLine("  salen de los dos instantes. Una entrada deja la estadia ABIERTA hasta que llegue");
+    Console.WriteLine("  su entrega, y un carro no esta en dos sucursales a la vez.");
+    Console.WriteLine();
+    Console.WriteLine("    ShopEntryRecorded                --branch --subject --enteredAt");
+    Console.WriteLine("    ShopCollectionRecorded           --collectedAt --coveredDays");
+    Console.WriteLine("    ShopStayRecorded                 --branch --subject --enteredAt");
+    Console.WriteLine("                                     --collectedAt --coveredDays");
+    Console.WriteLine();
     Console.WriteLine("  cualquier otro --tipo se acepta y la app lo DESCARTA, que es lo normal:");
     Console.WriteLine("  el concesionario publica su narrativa entera y este modulo modela una rebanada.");
     Console.WriteLine();
@@ -624,6 +783,10 @@ static void Ayuda()
     Console.WriteLine("    inyectar --tipo VehicleDelivered --deliveredAt 2025-03-01 --reading 120 --unit UnitB");
     Console.WriteLine("    inyectar --tipo WarrantyEnvelopePublished --months 36 --distance 60000");
     Console.WriteLine("             --unit UnitB --publishedAt 2025-03-01");
+    Console.WriteLine("    inyectar --tipo ShopEntryRecorded --branch \"Taller Central\" --subject Frenos");
+    Console.WriteLine("             --enteredAt 2026-05-11T08:30:00Z");
+    Console.WriteLine("    inyectar --tipo ShopCollectionRecorded --collectedAt 2026-05-13T16:45:00Z");
+    Console.WriteLine("             --coveredDays 2026-05-11,2026-05-12,2026-05-13");
     Console.WriteLine();
     Console.WriteLine("  --url      default http://localhost:8092/");
     Console.WriteLine("  --recurso  default vehicle");

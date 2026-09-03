@@ -30,6 +30,19 @@ namespace DealershipCar.Mcp.Tools
 			+ "persona que abra su app una vez y eso lo traerá.";
 
 		/// <summary>
+		/// Que este journal lo escribio una app anterior a las estadias en el taller, asi que no hay
+		/// ninguna en el. No es lo mismo que el carro nunca haya estado en un taller.
+		/// </summary>
+		internal const string TheAppIsOlderThanTheShopStays =
+			"Este registro lo escribió una versión de la app que todavía no guardaba las estadías en "
+			+ "el taller de este vehículo, así que aquí no hay ninguna en absoluto. Eso NO es lo mismo "
+			+ "que el carro nunca haya estado en un taller, y no se puede reportar como cero días: es "
+			+ "que este registro no lleva ese dato todavía. Su plan de mantenimiento y todo lo que el "
+			+ "fabricante publicó están completos y siguen contestando. Pídale a la persona que abra su "
+			+ "app una vez y eso lo traerá; este servidor no lo puede arreglar, porque arreglarlo "
+			+ "querría decir escribir en su registro.";
+
+		/// <summary>
 		/// Que dos hechos que el concesionario registro se contradicen entre si, y que quien pregunta no
 		/// puso ninguno de los dos.
 		/// </summary>
@@ -67,6 +80,26 @@ namespace DealershipCar.Mcp.Tools
 			try
 			{
 				api.IsWarrantyEnvelopePublished();
+				return true;
+			}
+			catch (LanguageException)
+			{
+				return false;
+			}
+		}
+
+		/// <summary>
+		/// Si este journal lleva las estadias en el taller de este vehiculo. Un journal que escribio
+		/// una app anterior no tiene la global de raiz, y este proceso NO la puede crear: crearla seria
+		/// escribir. Se pregunta con la lectura por instante, que es la que la tool necesita igual.
+		/// </summary>
+		internal static bool TheVehiclesStaysAreThere(DealershipCarAPI api, DateTime asOf)
+		{
+			ArgumentNullException.ThrowIfNull(api);
+
+			try
+			{
+				api.IsInsideTheShopAt(asOf);
 				return true;
 			}
 			catch (LanguageException)

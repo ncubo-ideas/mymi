@@ -107,6 +107,18 @@ namespace DealershipCar.Dominio
 		}
 
 		/// <summary>
+		/// Si no hay nada que hacer con ella. DERIVADO del estado: solo la que no ha vencido esta
+		/// al dia. Por vencer, vencida, atrasada y aplazada son cuatro formas de que si haya algo
+		/// que hacer, y una terminada ya solto su identidad y no cuenta por si misma.
+		/// </summary>
+		internal bool IsUpToDate()
+		{
+			if (HasEnded()) return false;
+
+			return _state == DueState.NotDue;
+		}
+
+		/// <summary>
 		/// Si cuenta como mantenimiento no hecho. DERIVADO del estado, asi que se apaga solo
 		/// cuando la operacion se hace. Una aplazada sigue contando si la ley dice que se paso de
 		/// la gracia: aplazar es la decision de la persona y no la saca de la cuenta.

@@ -45,9 +45,15 @@ namespace DealershipCar.Dominio.Pruebas
 
 				WarrantyEnvelopeTools envelope = TheAssistantsEnvelopeToolsOver(journal.Folder);
 
-				// LAS SIETE tools, varias veces, que es como pregunta un asistente de verdad. Las de
-				// las tres clases van en la misma vuelta: la promesa es de la carpeta entera y no de
+				ShopStayTools stays = TheAssistantsStayToolsOver(journal.Folder);
+
+				// LAS OCHO tools, varias veces, que es como pregunta un asistente de verdad. Las de
+				// las cuatro clases van en la misma vuelta: la promesa es de la carpeta entera y no de
 				// una familia de preguntas.
+				//
+				// LA DE LAS ESTADIAS VA DE LAS DOS FORMAS -- con los dos limites en blanco y con un
+				// periodo nombrado -- porque son dos recorridos distintos adentro de la tool y el que
+				// no se corra no queda probado.
 				for (int round = 0; round < 4; round++)
 				{
 					tools.Review();
@@ -56,6 +62,8 @@ namespace DealershipCar.Dominio.Pruebas
 					sheet.DoesTheWarrantyCover("POWERTRAIN");
 					sheet.WhatTheServiceCosts(MaintenanceOperation.FluidChange, 10000);
 					envelope.IsMyCarStillUnderWarranty();
+					stays.DaysMyCarSpentInTheShop();
+					stays.DaysMyCarSpentInTheShop("2026-01-01", "2026-12-31");
 
 					foreach (MaintenanceOperation each in TheOperationKind.All)
 						tools.CheckOne(each);
@@ -83,12 +91,14 @@ namespace DealershipCar.Dominio.Pruebas
 				DealershipCarTools tools = TheAssistantsToolsOver(journal.Folder);
 				ModelSpecificationTools sheet = TheAssistantsSheetToolsOver(journal.Folder);
 				WarrantyEnvelopeTools envelope = TheAssistantsEnvelopeToolsOver(journal.Folder);
+				ShopStayTools stays = TheAssistantsStayToolsOver(journal.Folder);
 
 				for (int round = 0; round < 12; round++)
 				{
 					tools.Review();
 					sheet.WhatMyCarTakes();
 					envelope.IsMyCarStillUnderWarranty();
+					stays.DaysMyCarSpentInTheShop();
 				}
 
 				Assert.That(TheSecondProgramOf(journal.Folder), Is.EqualTo(before),
@@ -137,6 +147,7 @@ namespace DealershipCar.Dominio.Pruebas
 				DealershipCarTools tools = TheAssistantsToolsOver(journal.Folder);
 				ModelSpecificationTools sheet = TheAssistantsSheetToolsOver(journal.Folder);
 				WarrantyEnvelopeTools envelope = TheAssistantsEnvelopeToolsOver(journal.Folder);
+				ShopStayTools stays = TheAssistantsStayToolsOver(journal.Folder);
 
 				var everything = new StringBuilder();
 				everything.Append(JsonSerializer.Serialize(tools.Review()));
@@ -146,6 +157,7 @@ namespace DealershipCar.Dominio.Pruebas
 				everything.Append(JsonSerializer.Serialize(
 					sheet.WhatTheServiceCosts(MaintenanceOperation.FluidChange, 10000)));
 				everything.Append(JsonSerializer.Serialize(envelope.IsMyCarStillUnderWarranty()));
+				everything.Append(JsonSerializer.Serialize(stays.DaysMyCarSpentInTheShop()));
 				foreach (MaintenanceOperation each in TheOperationKind.All)
 					everything.Append(JsonSerializer.Serialize(tools.CheckOne(each)));
 
@@ -231,7 +243,7 @@ namespace DealershipCar.Dominio.Pruebas
 		// lista y no llega a ningun asistente. Program.cs son sentencias de nivel superior de un Exe
 		// y armar aca su contenedor seria copiarlo, no probarlo.
 		[Test]
-		public void TheAssistantIsOfferedSevenToolsAndNoneOfThemIsACommand()
+		public void TheAssistantIsOfferedEightToolsAndNoneOfThemIsACommand()
 		{
 			var offered = new List<string>();
 
@@ -246,18 +258,18 @@ namespace DealershipCar.Dominio.Pruebas
 
 			Assert.That(offered, Is.EqualTo(new[]
 			{
-				"check_one_operation", "does_the_warranty_cover", "how_up_to_date_is_this",
-				"is_my_car_still_under_warranty", "review_my_maintenance", "what_my_car_takes",
-				"what_the_service_costs",
+				"check_one_operation", "days_my_car_spent_in_the_shop", "does_the_warranty_cover",
+				"how_up_to_date_is_this", "is_my_car_still_under_warranty", "review_my_maintenance",
+				"what_my_car_takes", "what_the_service_costs",
 			}), "Una tool que se agrega sin pensarla es como entra un comando a una superficie de "
 				+ "solo lectura. La lista se escribe aca para que agregar una obligue a mirarla.");
 		}
 
-		// Y LAS CLASES QUE LAS LLEVAN TAMBIEN SE ESCRIBEN, por la misma razon: son los tres sitios que
-		// Program.cs tiene que registrar, y una cuarta que aparezca sin que nadie la registre queda
+		// Y LAS CLASES QUE LAS LLEVAN TAMBIEN SE ESCRIBEN, por la misma razon: son los cuatro sitios
+		// que Program.cs tiene que registrar, y una quinta que aparezca sin que nadie la registre queda
 		// invisible para la prueba de arriba y para el asistente.
 		[Test]
-		public void TheToolsLiveInExactlyThreeClassesAndAllOfThemAreAboutReading()
+		public void TheToolsLiveInExactlyFourClassesAndAllOfThemAreAboutReading()
 		{
 			var named = new List<string>();
 
@@ -267,7 +279,8 @@ namespace DealershipCar.Dominio.Pruebas
 
 			Assert.That(named, Is.EqualTo(new[]
 			{
-				"DealershipCarTools", "ModelSpecificationTools", "WarrantyEnvelopeTools",
+				"DealershipCarTools", "ModelSpecificationTools", "ShopStayTools",
+				"WarrantyEnvelopeTools",
 			}), "Una clase de tools nueva tiene que pasar por aca, porque tiene que pasar tambien "
 				+ "por el .WithTools de Program.cs y esto es lo unico que lo recuerda.");
 		}
@@ -301,6 +314,11 @@ namespace DealershipCar.Dominio.Pruebas
 			return new WarrantyEnvelopeTools(new JournalReader(folder, ""));
 		}
 
+		private static ShopStayTools TheAssistantsStayToolsOver(string folder)
+		{
+			return new ShopStayTools(new JournalReader(folder, ""));
+		}
+
 		private static AScheduleOnARealJournal AVehicleWithAPlanAndAnEvaluation()
 		{
 			var journal = new AScheduleOnARealJournal(TheVin, "Standard");
@@ -327,6 +345,21 @@ namespace DealershipCar.Dominio.Pruebas
 				240, 100000, "UnitA", new DateTime(2025, 8, 15, 0, 0, 0, DateTimeKind.Utc));
 			journal.Api.RecordDelivery(
 				new DateTime(2025, 9, 1, 0, 0, 0, DateTimeKind.Utc), 12000, "UnitA");
+
+			// Y DOS ESTADIAS, UNA CERRADA Y UNA ABIERTA, POR LO MISMO. Sin ninguna, la tool de las
+			// estadias contesta la ausencia por el camino corto y la promesa de que leer no escribe se
+			// estaria comprobando sobre los recorridos que nunca se hacen. La abierta ademas es el
+			// unico estado que llega a las dos lecturas por instante, y esta fechada en 2026 -- antes
+			// del reloj de cualquier corrida -- porque la tool lee el reloj del anfitrion.
+			journal.Api.RecordShopStay(
+				"Taller Central", "Cambio de frenos",
+				new DateTime(2026, 5, 11, 8, 30, 0, DateTimeKind.Utc),
+				new DateTime(2026, 5, 13, 16, 45, 0, DateTimeKind.Utc),
+				new[] { "2026-05-11", "2026-05-12", "2026-05-13" });
+
+			journal.Api.RecordShopEntry(
+				"Taller Escazú", "Ruido en la suspensión",
+				new DateTime(2026, 5, 20, 9, 0, 0, DateTimeKind.Utc));
 
 			return journal;
 		}

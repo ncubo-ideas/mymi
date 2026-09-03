@@ -4,8 +4,8 @@ using Choreography.Theater;
 namespace DealershipCar.App
 {
 	/// <summary>
-	/// El host de escritura de un vehiculo: un actor por Vin, con su journal, y las cuatro globales
-	/// de raiz que la app necesita. Cada una llega bajo su propio nombre de upgrade, y los cuatro
+	/// El host de escritura de un vehiculo: un actor por Vin, con su journal, y las cinco globales
+	/// de raiz que la app necesita. Cada una llega bajo su propio nombre de upgrade, y los cinco
 	/// viajan en un solo comando porque cada comando deja una entrada en CADA apertura.
 	/// </summary>
 	public sealed class DealershipCarApp : PerformanceV2
@@ -62,6 +62,9 @@ namespace DealershipCar.App
 				}
 				upgrade('perfil-del-vehiculo') {
 					profile = VehicleProfile(@vin);
+				}
+				upgrade('estadias-en-taller') {
+					stays = ShopStay(@vin);
 				}
 			")
 			.WithParameters(p => {
