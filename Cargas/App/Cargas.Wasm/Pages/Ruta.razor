@@ -84,7 +84,10 @@ else
                         <span class="n">@Simbolo(parada.Moneda)@Plata(parada.Precio)/L</span>
                         @if (parada.TieneKilometraje)
                         {
-                            <span class="n">@parada.Kilometraje</span>
+                            @* El número solo. «observado» y «confirmado» son palabras del
+                               dominio que ella no eligió y en la parada sobraban; la
+                               procedencia queda en el title para quien la quiera mirar. *@
+                            <span class="n" title="@parada.OrigenDelKilometraje">@parada.KilometrajeAnotado</span>
                         }
                     </div>
 

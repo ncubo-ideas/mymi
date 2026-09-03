@@ -873,6 +873,21 @@ namespace Cargas.Consola
 			Igual("nombra la carga y lo que se desbloquea", "True",
 				(faltantes[0].ParaSonia.Contains("25/07/2026")
 					&& faltantes[0].ParaSonia.Contains("820 km")).ToString());
+
+			// EL KILOMETRAJE ANOTADO, con miles y con su procedencia aparte. La frase entera
+			// es para quien lee la bitacora (el MCP); la caratula muestra el numero solo. El
+			// separador es el espacio fino de Cifras, el mismo de la plata.
+			Carga? ultima = null;
+			foreach (Carga carga in bitacora.CargasDe("ABC-123"))
+				if (carga.NumeroDeLaTransaccion == "T-0209") ultima = carga;
+			Igual("el numero con miles", "43\u202f200 km", ultima!.KilometrajeAnotado);
+			Igual("la procedencia aparte", "observado", ultima.OrigenDelKilometraje);
+			Igual("la frase entera sigue", "43\u202f200 km (observado)", ultima.KilometrajeExpresado);
+
+			Carga? trunca = null;
+			foreach (Carga carga in bitacora.CargasDe("ABC-123"))
+				if (carga.NumeroDeLaTransaccion == "T-0208") trunca = carga;
+			Igual("sin lectura, vacio y no cero", "|", trunca!.KilometrajeAnotado + "|" + trunca.OrigenDelKilometraje);
 		}
 
 		private static void AgregarElKilometrajeParteElTramoLargo()

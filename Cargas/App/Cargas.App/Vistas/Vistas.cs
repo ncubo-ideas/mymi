@@ -26,6 +26,12 @@ namespace Cargas.App.Vistas
 		// El aporte de Sonia, ya dicho con su procedencia: "42 380 km (observado)".
 		// Vacio cuando no lo puso, que es informacion y no un cero.
 		public string Kilometraje { get; init; } = "";
+
+		// El mismo aporte, partido: el numero con su unidad -"42 380 km"- y la procedencia
+		// aparte -"observado" / "confirmado"-. La caratula muestra el numero y guarda la
+		// procedencia para quien la quiera mirar; la frase entera es para el MCP.
+		public string KilometrajeAnotado { get; init; } = "";
+		public string OrigenDelKilometraje { get; init; } = "";
 		public string Tanque { get; init; } = "";
 
 		public string Transaccion { get; init; } = "";

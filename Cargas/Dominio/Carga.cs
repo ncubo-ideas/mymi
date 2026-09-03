@@ -140,6 +140,14 @@ namespace Cargas.Dominio
 		internal string TextoDeLaPlaca => Placa.Texto;
 		internal string NumeroDeLaTransaccion => Transaccion.Texto;
 		internal string KilometrajeExpresado => Odometro.Expresada;
+
+		// EL NUMERO Y SU PROCEDENCIA, POR SEPARADO. KilometrajeExpresado los junta -"42 380 km
+		// (observado)"- y esa es la frase para quien lee la bitacora entera, el MCP. La
+		// caratula necesita el numero solo: "observado" y "confirmado" son palabras del
+		// dominio que Sonia no eligio, y en la parada sobran; la procedencia queda a mano
+		// para quien la quiera mirar. Vacios cuando no hay lectura, que es informacion.
+		internal string KilometrajeAnotado => Odometro.Existe ? Odometro.Kilometraje.Expresada : "";
+		internal string OrigenDelKilometraje => Odometro.Existe ? Odometro.Origen.Nombre : "";
 		internal string TanqueExpresado => Tanque.Expresada;
 		internal bool TieneKilometraje => Odometro.Existe;
 		internal bool TieneFoto => Foto.Existe;

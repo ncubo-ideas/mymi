@@ -57,6 +57,8 @@ namespace Cargas.App
 					Moneda = Texto(elemento, "moneda"),
 					Corte = Texto(elemento, "corte"),
 					Kilometraje = Texto(elemento, "kilometraje"),
+					KilometrajeAnotado = Texto(elemento, "kilometrajeAnotado"),
+					OrigenDelKilometraje = Texto(elemento, "origenDelKilometraje"),
 					Tanque = Texto(elemento, "tanque"),
 					Transaccion = Texto(elemento, "transaccion"),
 					TieneKilometraje = Booleano(elemento, "tieneKilometraje"),
