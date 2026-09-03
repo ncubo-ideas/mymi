@@ -100,39 +100,41 @@ namespace DealershipCar.Mcp.Tools
 
 		[McpServerTool(Name = "what_the_service_costs", UseStructuredContent = true)]
 		[Description("Contesta lo que el fabricante publicó sobre el servicio de UNA operación de "
-			+ "mantenimiento en este modelo: si se publicó un intervalo de servicio para ella, y qué "
-			+ "cuesta el servicio en un hito que la persona nombre, con la vigencia de ese precio y si "
-			+ "esa vigencia rige al instante en que se hizo la pregunta. Úsela para '¿cuánto cuesta el "
-			+ "servicio de los 10.000?' o '¿ese precio sigue vigente?'. "
-			+ "MILESTONEDISTANCE ES EL HITO QUE NOMBRÓ LA PERSONA. Omítalo si no nombraron ninguno y "
-			+ "pregúnteles a qué servicio se refieren: este registro no lista los hitos que publicó el "
-			+ "fabricante, así que un hito adivinado vuelve sin precio y eso se lee como 'el fabricante "
-			+ "nunca publicó uno', que sería falso. El hito se busca en cada una de las dos unidades de "
-			+ "distancia que usa este registro y se contesta en la unidad en que se publicó: entre ellas "
-			+ "nunca se convierte nada, así que diga la unidad que vuelve en vez de suponer cuál quería "
-			+ "decir la persona. "
+			+ "mantenimiento en este modelo: si se publicó un intervalo de servicio para ella, y TODOS "
+			+ "los precios que hay publicados para ella, cada uno con el hito al que corresponde, su "
+			+ "vigencia y si esa vigencia rige al instante en que se hizo la pregunta. Úsela para "
+			+ "'¿cuánto cuesta el servicio?', '¿cuánto cuesta el de los 10.000?' o '¿ese precio sigue "
+			+ "vigente?'. "
+			+ "NO HAY QUE NOMBRAR NINGÚN HITO Y NO SE PUEDE. Los hitos los publica el fabricante y esta "
+			+ "respuesta los ENUMERA: vienen todos, con el suyo escrito en cada fila. Si la persona "
+			+ "nombró uno, búsquelo entre las filas que volvieron; si nombró uno que no está, dígale "
+			+ "cuáles sí hay en vez de reportar que no hay precio. "
+			+ "EL HITO DE CADA FILA SE DICE Y NO SE DIRECCIONA: viene con su unidad como la lee una "
+			+ "persona, porque el registro nunca convierte entre sus dos unidades de distancia. Cítelo "
+			+ "como viene. "
 			+ "UN PRECIO NUNCA SE DICE SIN SU VIGENCIA: la frase lleva la ventana y si askedAt cae "
 			+ "dentro de ella. Un precio viejo presentado como el de hoy es una promesa que la sucursal "
-			+ "nunca hizo. "
+			+ "nunca hizo, y en la misma lista puede haber uno vigente y uno vencido. "
+			+ "UNA LISTA VACÍA SON DOS RESPUESTAS DISTINTAS y anyPriceOnRecord dice cuál: con "
+			+ "anyPriceOnRecord en false a este registro nunca le dijeron ningún precio de nada, y con "
+			+ "anyPriceOnRecord en true hay precios publicados pero ninguno de ESTA operación. Lea "
+			+ "detail. "
 			+ "Los números del intervalo de servicio publicado no están en esta respuesta: citarlos "
 			+ "necesita cuánto le falta a este vehículo contra ese intervalo, y este registro sí tiene "
-			+ "el odómetro pero no devuelve esa distancia restante. Use review_my_maintenance para "
-			+ "cuándo toca el próximo servicio. Los intervalos de cambio de fluido se publican como "
-			+ "parte del fluido mismo, así que esos los lleva what_my_car_takes.")]
+			+ "el odómetro pero no devuelve esa distancia restante. Use what_is_left_before_each_service "
+			+ "para cuánto le falta y review_my_maintenance para dónde está parado el plan. Los "
+			+ "intervalos de cambio de fluido se publican como parte del fluido mismo, así que esos los "
+			+ "lleva what_my_car_takes.")]
 		public ServicePricing WhatTheServiceCosts(
 			[Description("Por qué operación de mantenimiento está preguntando la persona.")]
-			MaintenanceOperation operation,
-			[Description("El hito de servicio que nombró la persona, por ejemplo 10000. Omítalo cuando "
-				+ "no nombraron ninguno; no adivine un hito.")]
-			int milestoneDistance = 0)
+			MaintenanceOperation operation)
 		{
 			return reader.Read(
-				api => ThePublishedCostOf(api, operation, milestoneDistance),
+				api => ThePublishedCostOf(api, operation),
 				() => new ServicePricing
 				{
 					HasData = false,
 					Operation = operation.WireName(),
-					MilestoneAsked = milestoneDistance,
 					Folder = reader.Folder,
 					Detail = TheAssistantIsTold.TheAppHasNotBeenOpened,
 				});
@@ -307,7 +309,7 @@ namespace DealershipCar.Mcp.Tools
 		}
 
 		private ServicePricing ThePublishedCostOf(
-			DealershipCarAPI api, MaintenanceOperation operation, int milestoneDistance)
+			DealershipCarAPI api, MaintenanceOperation operation)
 		{
 			string kind = operation.WireName();
 			string model;
@@ -318,28 +320,28 @@ namespace DealershipCar.Mcp.Tools
 					HasData = true,
 					Vin = api.ReadVin(),
 					Operation = kind,
-					MilestoneAsked = milestoneDistance,
 					SpecificationKnown = false,
 					Folder = reader.Folder,
 					Detail = TheDetailWhen(false),
 				};
 
 			DateTime askedAt = TheClockTheAssistantReads.TheInstantThisWasAsked();
+
+			PublishedPriceRecord record = api.PublishedServicePricesAsOf(askedAt);
+
 			var prices = new List<PublishedPrice>();
 
-			if (milestoneDistance > 0)
-				foreach (string unit in TheClosedSetsOfTheSheet.DistanceUnits)
-					if (api.IsServicePricePublished(kind, milestoneDistance, unit))
-						prices.Add(new PublishedPrice
-						{
-							MilestoneDistance = milestoneDistance,
-							MilestoneUnit = unit,
-							Says = api.DescribeServicePrice(
-								kind, milestoneDistance, unit, askedAt),
-							Revision = api.ReadServicePriceRevision(kind, milestoneDistance, unit),
-						});
+			foreach (int row in Enumerable.Range(0, record.Operation.Length))
+				if (record.Operation[row] == kind)
+					prices.Add(new PublishedPrice
+					{
+						Milestone = record.Milestone[row],
+						Says = record.Says[row],
+						Revision = record.Revision[row],
+					});
 
 			bool intervalPublished = api.IsServiceIntervalPublished(kind);
+			bool anyOnRecord = api.HasAnyPublishedServicePrice();
 
 			return new ServicePricing
 			{
@@ -352,13 +354,14 @@ namespace DealershipCar.Mcp.Tools
 				IntervalPublished = intervalPublished,
 				IntervalSays = api.DescribePublishedServiceInterval(kind),
 				IntervalRevision = api.ReadServiceIntervalRevision(kind),
-				MilestoneAsked = milestoneDistance,
+				AnyPriceOnRecord = anyOnRecord,
+				PriceCountOnRecord = api.PublishedServicePriceCount(),
 				Prices = prices,
 				AskedAt = askedAt.ToString("O"),
 				Folder = reader.Folder,
 				Detail = TheAssistantIsTold.EverythingWorthSaying(
 					TheDetailWhen(true),
-					TheWordOnThePrices(milestoneDistance, prices.Count),
+					TheWordOnThePrices(anyOnRecord, prices.Count),
 					intervalPublished ? TheIntervalStandingIsNotInThisRecord : ""),
 			};
 		}
@@ -393,11 +396,11 @@ namespace DealershipCar.Mcp.Tools
 				: "";
 		}
 
-		private static string TheWordOnThePrices(int milestoneDistance, int howManyPrices)
+		private static string TheWordOnThePrices(bool anyPriceOnRecord, int howManyPrices)
 		{
-			if (milestoneDistance <= 0) return NoMilestoneWasNamed;
+			if (howManyPrices > 0) return "";
 
-			return howManyPrices > 0 ? "" : NothingIsPublishedAtThatMilestone;
+			return anyPriceOnRecord ? NoPriceIsPublishedForThisOperation : NoPriceIsOnThisRecordAtAll;
 		}
 
 		private string TheDetailWhen(bool theSpecificationIsThere)
@@ -455,17 +458,18 @@ namespace DealershipCar.Mcp.Tools
 			+ "intervalo y diga que dónde está parado el carro frente a él no está aquí; las tools de "
 			+ "mantenimiento contestan cuándo toca el próximo servicio.";
 
-		private const string NoMilestoneWasNamed =
-			"No se nombró ningún hito, así que no se buscó ningún precio. Pregúntele a la persona a "
-			+ "qué servicio se refiere -- el de los 10.000, el de los 20.000 --, porque este registro "
-			+ "no puede listar los hitos que publicó el fabricante y adivinar uno volvería como 'no hay "
-			+ "precio publicado'.";
+		private const string NoPriceIsPublishedForThisOperation =
+			"No hay ningún precio publicado para esta operación, y sí hay precios publicados para "
+			+ "otras: a este registro nunca le dijeron uno para ella. Eso no quiere decir que el "
+			+ "servicio sea gratis ni que no exista. Pregunte por otra operación para ver los que sí "
+			+ "hay; no hay ningún hito que nombrar, porque los hitos los enumera esta misma respuesta.";
 
-		private const string NothingIsPublishedAtThatMilestone =
-			"No hay nada publicado en ese hito en ninguna de las dos unidades de distancia. Eso quiere "
-			+ "decir que a este registro nunca le dijeron un precio para él, no que el servicio sea "
-			+ "gratis ni que no exista; el hito que el fabricante sí publicó puede ser simplemente otro "
-			+ "número.";
+		private const string NoPriceIsOnThisRecordAtAll =
+			"Este registro no lleva NINGÚN precio publicado, de ninguna operación: el fabricante no ha "
+			+ "publicado precios en ninguna revisión sellada, o los publicó en una revisión que todavía "
+			+ "está abierta. No es que el servicio sea gratis, y no es un hueco que usted pueda llenar "
+			+ "con otro modelo ni con otro año. Los precios llegan por el feed del concesionario cuando "
+			+ "la persona abre su app.";
 	}
 
 	/// <summary>Lo publicado sobre una clase de fluido, con la revision de la que sale.</summary>
@@ -548,18 +552,14 @@ namespace DealershipCar.Mcp.Tools
 		public string Revision { get; init; } = "";
 	}
 
-	/// <summary>Un precio publicado para un hito, en la unidad en que se publico.</summary>
+	/// <summary>Un precio publicado, con el hito al que corresponde dicho como lo lee una persona.</summary>
 	internal sealed class PublishedPrice
 	{
-		[JsonPropertyName("milestoneDistance")]
-		[Description("El hito para el que es este precio.")]
-		public int MilestoneDistance { get; init; }
-
-		[JsonPropertyName("milestoneUnit")]
-		[Description("La unidad de distancia en que el fabricante publicó ese hito. Dígala: el "
-			+ "registro nunca convierte entre las dos unidades, así que el número solo no es la "
-			+ "respuesta.")]
-		public string MilestoneUnit { get; init; } = "";
+		[JsonPropertyName("milestone")]
+		[Description("El hito para el que es este precio, con su unidad como la lee una persona. Es el "
+			+ "hito DICHO y no una forma que se pueda volver a pasar: el registro nunca convierte "
+			+ "entre sus dos unidades de distancia, así que cítelo como viene.")]
+		public string Milestone { get; init; } = "";
 
 		[JsonPropertyName("says")]
 		[Description("El monto con su moneda, la ventana en que el precio rige, si esa ventana está "
@@ -835,15 +835,24 @@ namespace DealershipCar.Mcp.Tools
 			+ "publicado.")]
 		public string IntervalRevision { get; init; } = "";
 
-		[JsonPropertyName("milestoneAsked")]
-		[Description("El hito que se buscó. CERO quiere decir que no se nombró ninguno y no se buscó "
-			+ "ningún precio en absoluto: eso no es 'el precio es cero'.")]
-		public int MilestoneAsked { get; init; }
+		[JsonPropertyName("anyPriceOnRecord")]
+		[Description("true si alguna revisión sellada publicó algún precio, de cualquier operación. Es "
+			+ "lo que separa las dos razones por las que prices puede venir vacía: en false a este "
+			+ "registro nunca le dijeron ningún precio de nada.")]
+		public bool AnyPriceOnRecord { get; init; }
+
+		[JsonPropertyName("priceCountOnRecord")]
+		[Description("Cuántos precios publicados hay en el registro ENTERO, de todas las operaciones "
+			+ "juntas. NO es cuántos trae prices: esas son solo las de la operación por la que se "
+			+ "preguntó. No toma el instante de la pregunta, a propósito, porque el juego de precios "
+			+ "publicados no depende de él: solo su vigencia.")]
+		public int PriceCountOnRecord { get; init; }
 
 		[JsonPropertyName("prices")]
-		[Description("Una entrada por cada unidad de distancia en la que hay un precio publicado en "
-			+ "ese hito, normalmente una. Una lista vacía quiere decir que ahí no hay ningún precio "
-			+ "publicado: lea detail para saber cuál de los dos motivos es.")]
+		[Description("Una entrada por cada precio publicado PARA ESTA OPERACIÓN, uno por hito, de la "
+			+ "revisión más nueva a la más vieja. Los hitos los enumera el registro y nadie los "
+			+ "nombra. Una lista vacía es una respuesta: lea anyPriceOnRecord y detail para saber cuál "
+			+ "de los dos motivos es.")]
 		public IReadOnlyList<PublishedPrice> Prices { get; init; } = new List<PublishedPrice>();
 
 		[JsonPropertyName("askedAt")]

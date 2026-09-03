@@ -195,12 +195,16 @@ namespace DealershipCar.Dominio.Pruebas
 		// CoverageStanding y el nuevo EnvelopeStanding se eligen adentro y proyectan su nombre
 		// igual, asi que caen bajo la misma ley y faltaban. Los tres pasaban ya; lo que faltaba
 		// era que la barrida lo dijera.
+		// MS-1 AGREGA RemainderStanding, y cae bajo la misma ley por lo mismo que los tres de
+		// arriba: se elige adentro y proyecta su nombre. Su HowItIsSaid es un segundo vocabulario
+		// -- el que una persona lee -- y no es lo que cruza la puerta.
 		[TestCase(typeof(FluidKind))]
 		[TestCase(typeof(TyrePosition))]
 		[TestCase(typeof(FuelGradeStanding))]
 		[TestCase(typeof(RevisionState))]
 		[TestCase(typeof(CoverageStanding))]
 		[TestCase(typeof(EnvelopeStanding))]
+		[TestCase(typeof(RemainderStanding))]
 		public void TheProjectedNameIsTheMembersOwnName(Type conjunto)
 		{
 			foreach (FieldInfo campo in MiembrosDe(conjunto))

@@ -3,39 +3,6 @@
 @inject DealershipSettings dealership
 @inject NavigationManager nav
 
-@{
-    RenderFragment<string> Moving = kind =>
-        @<div class="row" id="@("row-" + kind)">
-            <span class="@("row__when row__when--" + HowADueStateLooks.ToneOf(board[kind]))">
-                @AppState.Spaced(board[kind])
-            </span>
-            <span class="row__main">
-                <span class="row__titleline">
-                    <span class="row__title">@AppState.Spaced(kind)</span>
-                    @if (deferrals[kind] > 0)
-                    {
-                        <span class="chip chip--ghost">put off @deferrals[kind]&times;</span>
-                    }
-                </span>
-                <span class="row__sub">@reasons[kind]</span>
-            </span>
-        </div>;
-
-    RenderFragment<string> Settled = kind =>
-        @<div class="item" id="@("row-" + kind)">
-            <span class="@("bullet bullet--sm bullet--" + HowADueStateLooks.ToneOf(board[kind]))">
-                <Glyph Name="@HowADueStateLooks.GlyphOf(board[kind])" Size="13" Stroke="2.6" />
-            </span>
-            <span class="item__body">
-                <span class="item__head">
-                    <span class="item__name">@AppState.Spaced(kind)</span>
-                    <span class="prov">@AppState.Spaced(board[kind])</span>
-                </span>
-                <span class="item__says">@reasons[kind]</span>
-            </span>
-        </div>;
-}
-
 @if (error.Length > 0 || destinationProblem.Length > 0)
 {
     <div class="stack stack--top">
@@ -187,6 +154,8 @@ else
                         DondeVive="@(state.InOwnFolder ? "la carpeta «" + state.FolderName + "»" : "este navegador")"
                         Agencia="@dealership.Name"
                         Contacto="@dealership.Contact"
+                        Trayendo="@refreshing"
+                        Actualizar="@Refresh"
                         VerServicios="@(() => tab = "servicios")" />
 
                 <div class="d__pad d__gap" style="margin-top:14px">
@@ -240,6 +209,7 @@ else
 
                     <Vehiculo Sheet="@sheet"
                               Stands="@stands"
+                              Costs="@costs"
                               Modelo="@(sheet is not null ? sheet.Model : "")"
                               Vin="@vin"
                               Odometro="@(stands is not null && stands.OdometerKnown ? ComoSeLee.Miles(stands.Odometer) : "--")"
@@ -254,7 +224,8 @@ else
                         <AppearanceToggle />
                     </div>
 
-                    <Servicios Nueve="@AppState.TheNineKinds" Board="@board" Reasons="@reasons" />
+                    <Servicios Nueve="@AppState.TheNineKinds" Board="@board" Reasons="@reasons"
+                               Operations="@operations" />
                 </div>
             }
             else if (tab == "cobertura")
@@ -276,26 +247,7 @@ else
                         <AppearanceToggle />
                     </div>
 
-                    <Historial Stays="@stays" />
-                </div>
-            }
-            else
-            {
-                <div class="d__pad" style="padding-top:16px">
-                    <div class="page-head page-head--row" style="margin-bottom:4px">
-                        <h1 class="page-title">Mi registro</h1>
-                        <AppearanceToggle />
-                    </div>
-
-                    <MiRegistro EnCarpeta="@state.InOwnFolder"
-                                Carpeta="@state.FolderName"
-                                Vin="@vin"
-                                Entradas="@entries"
-                                UltimoEvento="@lastEvent"
-                                EvaluadoHasta="@evaluatedUpTo"
-                                Origen="@state.WhereTheDealershipIs"
-                                Trayendo="@refreshing"
-                                Actualizar="@Refresh" />
+                    <Historial Stays="@stays" Operations="@operations" />
                 </div>
             }
         </div>
@@ -330,11 +282,6 @@ else
             <Glyph Name="history" Size="22" Stroke="2" />
             <span>Historial</span>
         </button>
-        <button type="button" id="go-registro" @onclick="@(() => tab = "registro")"
-                class="@(tab == "registro" ? "d-tabbar__item d-tabbar__item--on" : "d-tabbar__item")">
-            <Glyph Name="folder" Size="22" Stroke="2" />
-            <span>Mi registro</span>
-        </button>
     </nav>
 }
 
@@ -350,8 +297,8 @@ else
     private bool errorDetail;
 
     /// <summary>
-    /// Cual de las seis pestanas se esta viendo: inicio, vehiculo, servicios, cobertura, historial o
-    /// registro.
+    /// Cual de las cinco pestanas se esta viendo: inicio, vehiculo, servicios, cobertura o
+    /// historial.
     /// </summary>
     private string tab = "inicio";
 
@@ -363,45 +310,15 @@ else
     private int missed;
     private int upToDate;
     private int scheduled;
-    private long lastEvent;
-    private long entries;
-    private int memfsFiles;
-    private long memfsBytes;
-    private string permission = "";
-    private bool hasCredential;
-
-    private string heroTone = "";
-    private string heroPill = "";
-    private string heroTitle = "";
-    private string heroLine = "";
-    private string heroReading = "--";
-    private string heroReadingUnit = "";
-    private string heroReadingNote = "";
 
     private Dictionary<string, string> board = Empty();
     private Dictionary<string, string> reasons = Empty();
-    private Dictionary<string, int> deferrals = NoDeferralsYet();
-
-    /// <summary>
-    /// Los estados que piden algo, en el orden en que se leen. Un estado fuera de esta lista esta
-    /// resuelto y va al grupo plegado, asi que agregar un estado al dominio sin agregarlo aca lo
-    /// esconde en vez de romper.
-    /// </summary>
-    private static readonly string[] TheStatesThatAskForSomething =
-    {
-        "Overdue", "Due", "DueSoon", "Deferred"
-    };
-
-    /// <summary>Lo que la pantalla dice cuando ninguna de las nueve pide nada.</summary>
-    private const string NothingIsMoving =
-        "Ahora mismo no hay nada vencido.";
-
-    private List<string> moving = new List<string>();
-    private List<string> settled = new List<string>(AppState.TheNineKinds);
 
     private WhatTheManufacturerPublished sheet;
     private WhereThisVehicleStands stands;
     private TheStaysOfThisVehicle stays;
+    private WhereEachOperationStands operations;
+    private WhatTheServicesCost costs;
 
     private string error = "";
     private string destinationProblem = "";
@@ -421,7 +338,7 @@ else
             _ => "",
         };
 
-        if (state.IsUp) { await Reread(); return; }
+        if (state.IsUp) { Reread(); return; }
 
         if (await state.RememberedModeAsync() == "opfs" && browserStorageSupported == true)
         {
@@ -453,7 +370,7 @@ else
         {
             destinationProblem = "";
             await state.StartAsync();
-            await Reread();
+            Reread();
             return;
         }
 
@@ -478,14 +395,14 @@ else
     private Task Open() => Try("abrir la app", async () =>
     {
         await state.StartAsync();
-        await Reread();
+        Reread();
     });
 
     private Task Refresh() => Try("actualizar contra el concesionario", async () =>
     {
         refreshing = true;
         try { await state.RefreshAsync(); }
-        finally { refreshing = false; await Reread(); }
+        finally { refreshing = false; Reread(); }
     });
 
     private async Task Try(string step, Func<Task> action)
@@ -511,7 +428,7 @@ else
         }
     }
 
-    private async Task Reread()
+    private void Reread()
     {
         vin = state.ReadVin();
         due = state.CountDue();
@@ -519,92 +436,27 @@ else
         missed = state.MissedCount();
         upToDate = state.CountUpToDate();
         scheduled = state.CountScheduled();
-        lastEvent = state.LastEventApplied();
         evaluatedUpTo = state.EvaluatedUpTo();
         nextDue = state.NextDueKind();
-        entries = state.JournalEntries();
-        hasCredential = state.HasCredential();
 
         var states = new Dictionary<string, string>();
         var why = new Dictionary<string, string>();
-        var used = new Dictionary<string, int>();
         foreach (string kind in AppState.TheNineKinds)
         {
             states[kind] = state.ReadDueState(kind);
             why[kind] = state.ReadDueReason(kind);
-            used[kind] = state.DeferralsUsed(kind);
         }
         board = states;
         reasons = why;
-        deferrals = used;
-
-        var asking = new List<string>();
-        foreach (string asked in TheStatesThatAskForSomething)
-            foreach (string kind in AppState.TheNineKinds)
-                if (states[kind] == asked) asking.Add(kind);
-
-        var resolved = new List<string>();
-        foreach (string kind in AppState.TheNineKinds)
-            if (Array.IndexOf(TheStatesThatAskForSomething, states[kind]) < 0) resolved.Add(kind);
-
-        moving = asking;
-        settled = resolved;
 
         sheet = state.ReadTheSpecification();
         stands = state.ReadWhereThisVehicleStands();
         stays = state.ReadTheStaysOfThisVehicle();
-
-        ComposeTheHero();
-
-        (memfsFiles, memfsBytes) = state.MemfsState();
-        permission = await state.CurrentPermissionAsync();
+        operations = state.ReadWhereEachOperationStands();
+        costs = state.ReadWhatTheServicesCost();
     }
-
-    /// <summary>
-    /// Arma el encabezado con lo que el registro ya contesto. Ninguna frase se compone aca: la linea
-    /// larga es la razon que escribio el calendario, y las cortas son etiquetas de la pantalla.
-    /// </summary>
-    private void ComposeTheHero()
-    {
-        string subject = nextDue.Length > 0 ? nextDue : moving.Count > 0 ? moving[0] : "";
-
-        heroTone = overdue > 0 ? "hero--attention" : moving.Count > 0 ? "" : "hero--settled";
-
-        heroPill = overdue > 0 ? "Needs attention" : moving.Count > 0 ? "Coming up" : "Up to date";
-
-        heroTitle = subject.Length > 0 ? AppState.Spaced(subject) : NothingIsMoving;
-
-        heroLine = subject.Length > 0
-            ? reasons[subject]
-            : "None of the nine is due, due soon, overdue or put off. Every one of them is under "
-              + "«All in order» below, with the schedule's own reason.";
-
-        heroReading = stands is not null && stands.OdometerKnown
-            ? HowANumberReads.Grouped(stands.Odometer)
-            : "--";
-
-        heroReadingUnit = stands is not null && stands.OdometerKnown ? stands.OdometerUnit : "";
-
-        heroReadingNote = stands is not null && stands.OdometerKnown
-            ? $"observed on {stands.OdometerObservedAt}"
-            : "your dealership has not sent one yet";
-    }
-
-    private string Destination() => state.Mode switch
-    {
-        "carpeta" => $"tu carpeta ({state.FolderName})",
-        "opfs" => "el almacenamiento de este navegador",
-        _ => "ninguno",
-    };
 
     private static Dictionary<string, string> Empty() => EveryKindStartsAt("");
-
-    private static Dictionary<string, int> NoDeferralsYet()
-    {
-        var start = new Dictionary<string, int>();
-        foreach (string kind in AppState.TheNineKinds) start[kind] = 0;
-        return start;
-    }
 
     private static Dictionary<string, string> EveryKindStartsAt(string value)
     {

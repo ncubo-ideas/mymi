@@ -65,6 +65,8 @@ namespace DealershipCar.Dominio.Pruebas
 			new[] { "DescribeCoverage", "ReadCoverageRevision" },
 			new[] { "DescribePublishedServiceInterval", "ReadServiceIntervalRevision" },
 			new[] { "DescribePublishedServicingElsewhereRule", "ReadServicingPolicyRevision" },
+			new[] { "DescribePublishedServicePrice", "ReadServicePriceRevision" },
+			new[] { "DescribeEachPublishedPriceAsOf", "PublishedPriceRevisionsAsOf" },
 		};
 
 		// LAS DOS QUE ENTRARON CON LA LEY L7b son el mismo caso que las dos de T4 y por eso la
@@ -77,6 +79,19 @@ namespace DealershipCar.Dominio.Pruebas
 		// lo estaba. Las lecturas de presencia y de procedencia ya contestaban sin un solo hecho
 		// del vehiculo -- las dos pasan por la sobrecarga sin parametros recibidos -- asi que lo
 		// que L7b agrego a la superficie fue la tercera lectura del trio, no un trio nuevo.
+		//
+		// EN MS-3 ENTRARON DOS, Y LA SEGUNDA ES UNA FORMA NUEVA PARA ESTA TABLA. DescribePublishedServicePrice
+		// es el caso ya conocido -- la mitad publicada de un item comparte la procedencia de la
+		// compuesta, igual que las dos de L7b --, pero DescribeEachPublishedPriceAsOf es la primera
+		// frase de esta fachada que contesta una COLUMNA. Su procedencia es la columna PARALELA
+		// PublishedPriceRevisionsAsOf, que empareja fila por fila en vez de llamada por llamada: las
+		// dos abren con la misma enumeracion, asi que la fila N de una y la fila N de la otra hablan
+		// del mismo precio por construccion. La ley no cambia -- una respuesta sin revision sigue
+		// siendo un rumor --; lo que crecio es la FORMA en que se cumple, y por eso DevuelveTexto
+		// acepta ahora tambien una columna de frases.
+		//
+		// La otra mitad de esa procedencia sigue estando DENTRO de cada frase: la columna Says trae
+		// "Publicado en la revision X." al final, como toda respuesta publicada de este agregado.
 
 		[Test]
 		public void EveryDescribeReadOfTheFacadeIsPairedWithARevisionRead()
@@ -219,12 +234,16 @@ namespace DealershipCar.Dominio.Pruebas
 				.ToList();
 		}
 
+		// Texto es una frase O una columna de frases. Las dos son respuestas en palabras; la
+		// diferencia es cuantas, y la ley de procedencia se cumple igual en las dos -- por una
+		// lectura aparte en la primera y por una columna paralela en la segunda.
 		private static bool DevuelveTexto(string miembro)
 		{
 			return typeof(ModelSpecification)
 				.GetMethods(BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic
 					| BindingFlags.DeclaredOnly)
-				.Any(metodo => metodo.Name == miembro && metodo.ReturnType == typeof(string)
+				.Any(metodo => metodo.Name == miembro
+					&& (metodo.ReturnType == typeof(string) || metodo.ReturnType == typeof(string[]))
 					&& (metodo.IsPublic || metodo.IsAssembly));
 		}
 

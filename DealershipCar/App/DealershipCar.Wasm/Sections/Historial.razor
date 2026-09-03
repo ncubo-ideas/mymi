@@ -1,12 +1,71 @@
 @using DealershipCar.Wasm.Parts
 
+@if (Operations is not null)
+{
+    <div class="d-sec" style="margin-top:4px">
+        <span class="d-sec__title">Lo que le han hecho</span>
+    </div>
+
+    @if (Operations.WhatHasBeenDone.Count > 0)
+    {
+        <section class="d-card" id="linea-completaciones">
+            <div class="d-line">
+                @foreach (AThingThatWasDone hecho in Operations.WhatHasBeenDone)
+                {
+                    <div class="d-step" id="@("hecho-" + hecho.CompletedAt)">
+                        <span class="d-step__bullet d-step__bullet--ok">
+                            <Glyph Name="check" Size="11" Stroke="3" />
+                        </span>
+                        <div class="d-step__when">@hecho.CompletedAt</div>
+
+                        <div style="display:flex;flex-wrap:wrap;gap:6px;margin-top:2px">
+                            <span class="d-pill d-pill--info">@hecho.Reading</span>
+                        </div>
+
+                        <div class="d-says">@hecho.Says</div>
+                    </div>
+                }
+            </div>
+        </section>
+    }
+    else
+    {
+        <div class="d-empty" id="sin-completaciones">
+            <span class="d-empty__title">Todavía no hay nada registrado como hecho</span>
+            Cada operación dice abajo por qué no tiene nada.
+        </div>
+    }
+
+    @if (Operations.Operations.Any(parada => !parada.HasBeenCompleted))
+    {
+        <div class="d-sec">
+            <span class="d-sec__title">Lo que no tiene nada registrado</span>
+        </div>
+
+        <section class="d-card" id="operaciones-sin-registro">
+            @foreach (HowOneOperationStands parada in Operations.Operations)
+            {
+                @if (!parada.HasBeenCompleted)
+                {
+                    <div class="d-says" id="@("nada-de-" + parada.Kind)">@parada.CompletionsSays</div>
+                }
+            }
+        </section>
+
+        <p class="d-note" style="margin-top:10px">
+            <Glyph Name="info" Size="14" Stroke="2" />
+            <span>@TheOwnerIsTold.TheCompletionsAreRecordedByTheWorkshopThatDoesTheWork</span>
+        </p>
+    }
+}
+
 @if (Stays is null)
 {
     <p class="note">Este registro todavía no se ha leído.</p>
 }
 else
 {
-    <div class="d-sec" style="margin-top:4px">
+    <div class="d-sec">
         <span class="d-sec__title">Los días en el taller</span>
     </div>
 
@@ -75,4 +134,11 @@ else
     /// </summary>
     [Parameter, EditorRequired]
     public TheStaysOfThisVehicle Stays { get; set; }
+
+    /// <summary>
+    /// Donde esta parada cada operacion, leido en el mismo momento. De aca sale el historial entero y
+    /// la ausencia por clase, que es lo que el historial entero no puede decir.
+    /// </summary>
+    [Parameter, EditorRequired]
+    public WhereEachOperationStands Operations { get; set; }
 }

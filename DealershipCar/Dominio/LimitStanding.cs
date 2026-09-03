@@ -9,7 +9,10 @@ namespace DealershipCar.Dominio
 	/// </summary>
 	internal abstract class LimitStanding
 	{
-		private static readonly LimitStanding OutsideTheLaw = new ADimensionOutsideTheLaw();
+		private static readonly LimitStanding TimeOutsideTheLaw =
+			new ADimensionOutsideTheLaw("tiempo");
+		private static readonly LimitStanding DistanceOutsideTheLaw =
+			new ADimensionOutsideTheLaw("distancia");
 		private static readonly LimitStanding NoUsableReadingToCountFrom =
 			new ADimensionSuspendedByAnAbsentReading();
 
@@ -74,16 +77,20 @@ namespace DealershipCar.Dominio
 				limitUnit);
 		}
 
-		/// <summary>La ley no mide tiempo: DistanceOnly y ConditionOnly.</summary>
+		/// <summary>
+		/// La ley no mide tiempo: DistanceOnly y ConditionOnly. Es su propia instancia y no la
+		/// comparte con la de distancia: <see cref="WhatRemains"/> tiene que poder decir CUAL
+		/// dimension es la que la ley no tiene.
+		/// </summary>
 		internal static LimitStanding TimeIsNotPartOfThisLaw()
 		{
-			return OutsideTheLaw;
+			return TimeOutsideTheLaw;
 		}
 
 		/// <summary>La ley no mide distancia: TimeOnly y ConditionOnly.</summary>
 		internal static LimitStanding DistanceIsNotPartOfThisLaw()
 		{
-			return OutsideTheLaw;
+			return DistanceOutsideTheLaw;
 		}
 
 		/// <summary>
@@ -139,6 +146,13 @@ namespace DealershipCar.Dominio
 		/// se pudo evaluar. Componerla es del dominio, no de la vista.
 		/// </summary>
 		internal abstract string Describe();
+
+		/// <summary>
+		/// Lo que le queda a esta dimension: el monto compuesto con su unidad, o cual razon impide
+		/// decirlo. La resta se escribe UNA vez, en <see cref="AMeasuredDimension"/>, y el signo
+		/// elige la variante.
+		/// </summary>
+		internal abstract ARemainder WhatRemains();
 
 		/// <summary>
 		/// Si llego mas lejos que la otra. Con ella se dice la ley: decide la mas avanzada.

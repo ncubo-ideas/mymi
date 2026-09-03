@@ -189,6 +189,14 @@
                 : "Todavía sin evaluar.")
         </span>
     </p>
+
+    <div style="margin-top:10px">
+        <button class="btn btn--ghost" type="button" id="traer-novedades" @onclick="Actualizar"
+                disabled="@Trayendo">
+            <Glyph Name="sync" Size="18" />
+            @(Trayendo ? "Trayendo…" : "Traer lo que haya nuevo")
+        </button>
+    </div>
 </div>
 
 @code {
@@ -229,6 +237,12 @@
 
     /// <summary>Lo que hay que hacer cuando la duena toca "ver todas".</summary>
     [Parameter] public EventCallback VerServicios { get; set; }
+
+    /// <summary>Si la pagina esta trayendo el bloque del concesionario en este momento.</summary>
+    [Parameter] public bool Trayendo { get; set; }
+
+    /// <summary>Lo que hay que hacer cuando la duena pide traer lo que haya nuevo.</summary>
+    [Parameter] public EventCallback Actualizar { get; set; }
 
     private bool porQue;
 

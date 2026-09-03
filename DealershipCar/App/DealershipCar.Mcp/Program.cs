@@ -68,6 +68,7 @@ static string Instructions(string folder) => $"""
 	todas las letras; eso no es un hueco en los datos, es un carro que no tiene esa parte.
 
 	DOS CLASES DE PREGUNTA. review_my_maintenance, check_one_operation, how_up_to_date_is_this,
+	what_is_left_before_each_service, what_has_been_done_to_my_car,
 	is_my_car_still_under_warranty y days_my_car_spent_in_the_shop contestan dónde está parado
 	ESTE VEHÍCULO. what_my_car_takes y what_the_service_costs contestan lo que el FABRICANTE
 	PUBLICÓ sobre este modelo: los fluidos, las llantas, el combustible, el precio de un servicio.
@@ -76,6 +77,36 @@ static string Instructions(string folder) => $"""
 	salió: diga esa revisión, porque el fabricante puede publicar una nueva y una respuesta sin
 	procedencia es un rumor. Un ítem que no está publicado lo dice con palabras, y eso es una
 	respuesta: nunca lo llene con un modelo parecido ni con un año anterior.
+
+	CUÁNTO LE FALTA SON DOS MITADES Y NUNCA SE COMBINAN.
+	what_is_left_before_each_service contesta, por cada una de las nueve clases de operación,
+	cuánta distancia y cuántos días faltan, cada monto con su unidad y con la situación en que
+	está esa mitad. La frase del registro ya dice las dos y no elige ninguna, a propósito: cuál
+	va a llegar primero depende de cuánto manejen, y este registro no tiene ese ritmo. Diga las
+	dos. Dividir un monto entre el otro daría un ritmo que nadie midió, y restar o comparar los
+	montos de dos operaciones compone una cuenta que el registro no hizo. Pasado el límite el
+	monto es EL EXCESO y la situación lo dice, así que nunca es un número negativo y nunca se
+	recorta a cero. Cuando una mitad no se pudo medir, su monto viene en cero con su canBeSaid en
+	false al lado: ese cero no es una distancia ni un plazo, es que no hay ningún monto. Y la
+	situación es una de siete y no un sí o un no: que una operación no se mida en kilómetros, que
+	falte una lectura del odómetro y que este carro no tenga esa operación agendada son tres
+	respuestas distintas.
+
+	QUÉ LE HAN HECHO SE CAMINA Y NO SE GUARDA. what_has_been_done_to_my_car contesta cada
+	completación registrada como una fila con su operación, su instante y el odómetro con que se
+	hizo, o la constancia en palabras de que no hay ninguno: una operación que se mide solo en
+	tiempo no guarda odómetro, y reportar cero ahí sería decir que el carro tenía cero kilómetros.
+	No depende del instante en que pregunte, porque cada fila trae el suyo. Y dos ausencias que se
+	parecen no son la misma: que una operación esté agendada y nunca se haya hecho lo arregla una
+	visita al taller, y que este carro no tenga esa operación en absoluto no lo arregla ninguna. La
+	frase de cada operación dice cuál de las dos es; no las resuma en un sí o un no.
+
+	LOS PRECIOS PUBLICADOS SE ENUMERAN Y NO SE ADIVINAN. what_the_service_costs devuelve TODOS los
+	precios que el fabricante publicó para la operación por la que se pregunta, cada uno con el
+	hito al que corresponde y con su vigencia. Nadie nombra un hito, y usted tampoco puede: los
+	hitos son del fabricante y esta respuesta los lista. Si la persona nombró uno, búsquelo entre
+	las filas que volvieron, y si no está, dígale cuáles sí hay en vez de reportar que no hay
+	precio.
 
 	LOS DÍAS EN EL TALLER SON DÍAS Y NO UNA DURACIÓN. days_my_car_spent_in_the_shop devuelve cada
 	día por separado, en yyyy-MM-dd, porque una duración no se puede cruzar con el calendario de

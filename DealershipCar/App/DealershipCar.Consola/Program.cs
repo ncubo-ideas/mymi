@@ -123,6 +123,10 @@ namespace DealershipCar.Consola
 			Dictionary<string, string> after = TheBoard(api);
 			PrintTheBoard(api, after, before);
 
+			TheCountdownOfEveryKind(api);
+			TheHistoryOfEveryKind(api);
+			ThePublishedServicePrices(api);
+
 			Measurements(app, api, folder);
 
 			app.Dispose();
@@ -201,6 +205,179 @@ namespace DealershipCar.Consola
 		private static bool ItIsScheduled(DealershipCarAPI api, string kind)
 		{
 			return !api.ReadDueReason(kind).StartsWith("There is no scheduled", StringComparison.Ordinal);
+		}
+
+		private static void TheCountdownOfEveryKind(DealershipCarAPI api)
+		{
+			Console.WriteLine("================================================================");
+			Console.WriteLine($"  CUANTO ME FALTA: LA CUENTA ATRAS DE CADA CLASE, AL {Day(TheInstantTheBoardIsRead)}");
+			Console.WriteLine();
+			Console.WriteLine("  El instante esta ESCRITO, como todos los de esta corrida: ni el dominio");
+			Console.WriteLine("  ni esta caratula leen la hora, asi que dos corridas contestan lo mismo.");
+			Console.WriteLine();
+			Console.WriteLine("  La frase la compone el dominio y dice LAS DOS dimensiones sin elegir");
+			Console.WriteLine("  ninguna. La distancia y el plazo rara vez coinciden, y quedarse con la");
+			Console.WriteLine("  mas cercana dejaria el numero discrepando del motivo del estado para");
+			Console.WriteLine("  quien lea los dos juntos. Las dos mitades se pueden pedir por separado");
+			Console.WriteLine("  ademas de juntas, y la caratula no las divide ni las suma.");
+			Console.WriteLine();
+			Console.WriteLine("  Las diez lecturas heredan una guarda del dominio: un instante ANTERIOR");
+			Console.WriteLine("  al ancla de la ocurrencia se rechaza, y la puerta lo TRADUCE a un tipo");
+			Console.WriteLine("  que una caratula puede nombrar. No se puede preguntar antes, porque");
+			Console.WriteLine("  ninguna lectura contesta el ancla, asi que se atrapa POR CLASE: una");
+			Console.WriteLine("  sola con el plan anclado adelante no se lleva las otras ocho. En esta");
+			Console.WriteLine("  corrida las cinco agendadas estan ancladas el dia de la entrega, que es");
+			Console.WriteLine("  anterior al instante del tablero, asi que no salta.");
+			Console.WriteLine("================================================================");
+			Console.WriteLine();
+
+			foreach (string kind in Story.TheNineKinds) TheCountdownOfOneKind(api, kind);
+		}
+
+		private static void TheCountdownOfOneKind(DealershipCarAPI api, string kind)
+		{
+			Console.WriteLine($"   {kind}");
+
+			try
+			{
+				Console.WriteLine($"   la cuenta atras          : {api.DescribeCountdown(kind, TheInstantTheBoardIsRead)}");
+				Console.WriteLine($"   situacion en distancia   : {api.ReadDistanceRemainderStanding(kind, TheInstantTheBoardIsRead)}");
+				Console.WriteLine($"   la distancia en palabras : {api.DescribeDistanceRemaining(kind, TheInstantTheBoardIsRead)}");
+
+				bool distance = api.CanDistanceRemainingBeSaid(kind, TheInstantTheBoardIsRead);
+				Console.WriteLine($"   se puede decir cuanta    : {distance}");
+
+				if (distance)
+				{
+					Console.WriteLine($"   distancia que queda      : {api.ReadDistanceRemaining(kind, TheInstantTheBoardIsRead)}");
+					Console.WriteLine($"   y en que unidad          : {api.ReadDistanceRemainingUnit(kind, TheInstantTheBoardIsRead)}");
+				}
+
+				Console.WriteLine($"   situacion en el plazo    : {api.ReadTimeRemainderStanding(kind, TheInstantTheBoardIsRead)}");
+				Console.WriteLine($"   el plazo en palabras     : {api.DescribeDaysRemaining(kind, TheInstantTheBoardIsRead)}");
+
+				bool days = api.CanDaysRemainingBeSaid(kind, TheInstantTheBoardIsRead);
+				Console.WriteLine($"   se puede decir cuantos   : {days}");
+
+				if (days)
+					Console.WriteLine($"   dias que quedan          : {api.ReadDaysRemaining(kind, TheInstantTheBoardIsRead)}");
+			}
+			catch (InvalidOperationException refused)
+			{
+				Console.WriteLine($"   la puerta contesta       : {refused.GetType().Name} - {FirstLineOf(refused.Message)}");
+			}
+
+			Console.WriteLine();
+		}
+
+		private static void TheHistoryOfEveryKind(DealershipCarAPI api)
+		{
+			Console.WriteLine("================================================================");
+			Console.WriteLine("  QUE ME HAN HECHO: EL HISTORIAL, CAMINADO EN CADA LECTURA");
+			Console.WriteLine();
+			Console.WriteLine("  Ninguna de las cinco lecturas toma un instante: cada fila trae el suyo");
+			Console.WriteLine("  y la cadena es la que es. Nada de esto esta guardado como lista -- la");
+			Console.WriteLine("  completacion de una ocurrencia es el ancla de su sucesora, y la cadena");
+			Console.WriteLine("  se camina hacia atras en cada pregunta.");
+			Console.WriteLine();
+			Console.WriteLine("  Esta corrida guiona el plan, seis meses de odometro, un aplazo, un");
+			Console.WriteLine("  perfil severo y un cruce de umbral, y NINGUNA completacion. Lo que se");
+			Console.WriteLine("  ve abajo son las DOS AUSENCIAS de la parte B, que no son la misma:");
+			Console.WriteLine("  cuatro clases no estan agendadas, y cinco lo estan y nunca se");
+			Console.WriteLine("  completaron. Un booleano juntaria las dos.");
+			Console.WriteLine("================================================================");
+			Console.WriteLine();
+
+			foreach (string kind in Story.TheNineKinds) TheHistoryOfOneKind(api, kind);
+
+			TheWholeHistoryAsRows(api);
+		}
+
+		private static void TheHistoryOfOneKind(DealershipCarAPI api, string kind)
+		{
+			CompletionRecord record = api.CompletionsOf(kind);
+
+			Console.WriteLine($"   {kind}");
+			Console.WriteLine($"   hay alguna               : {api.HasAnyCompletion(kind)}");
+			Console.WriteLine($"   cuantas                  : {api.CompletionCount(kind)}");
+			Console.WriteLine($"   el historial en palabras : {api.DescribeCompletions(kind)}");
+
+			if (record.Says.Length == 0) Console.WriteLine("   filas                    : (ninguna)");
+
+			foreach (int row in Enumerable.Range(0, record.Says.Length))
+			{
+				Console.WriteLine($"   hecha el                 : {record.CompletedAt[row]}");
+				Console.WriteLine($"   con el odometro en       : {record.Reading[row]}");
+				Console.WriteLine($"   dice la fila             : {record.Says[row]}");
+			}
+
+			Console.WriteLine();
+		}
+
+		private static void TheWholeHistoryAsRows(DealershipCarAPI api)
+		{
+			EveryKindCompletionRecord record = api.CompletionsOfEveryKind();
+
+			Console.WriteLine("   -- el historial ENTERO, de la completacion mas reciente a la mas vieja");
+			Console.WriteLine("      entre todas las clases, en columnas paralelas --");
+			Console.WriteLine();
+			Console.WriteLine("   Esta lectura no tiene frase de ausencia y no la va a tener: sin ninguna");
+			Console.WriteLine("   completacion contesta CUATRO COLUMNAS VACIAS y nada mas. Es una");
+			Console.WriteLine("   decision de alcance y no un hueco -- la que nombra una clase es la de");
+			Console.WriteLine("   arriba, y componer una frase aca la pondria a decir algo que el dominio");
+			Console.WriteLine("   no dijo. Y trae la columna de la CLASE, que la de una sola clase no");
+			Console.WriteLine("   trae: alla la puso quien pregunta.");
+			Console.WriteLine();
+
+			if (record.Kind.Length == 0) Console.WriteLine("   (ninguna fila)");
+
+			foreach (int row in Enumerable.Range(0, record.Kind.Length))
+			{
+				Console.WriteLine($"   clase                    : {record.Kind[row]}");
+				Console.WriteLine($"   hecha el                 : {record.CompletedAt[row]}");
+				Console.WriteLine($"   con el odometro en       : {record.Reading[row]}");
+				Console.WriteLine($"   dice la fila             : {record.Says[row]}");
+				Console.WriteLine();
+			}
+
+			Console.WriteLine();
+		}
+
+		private static void ThePublishedServicePrices(DealershipCarAPI api)
+		{
+			PublishedPriceRecord record = api.PublishedServicePricesAsOf(TheInstantTheBoardIsRead);
+
+			Console.WriteLine("================================================================");
+			Console.WriteLine($"  CUANTO ME VA A COSTAR: LOS PRECIOS PUBLICADOS, AL {Day(TheInstantTheBoardIsRead)}");
+			Console.WriteLine();
+			Console.WriteLine("  Las filas se ENUMERAN, y eso es todo el punto: ninguna pide un hito a");
+			Console.WriteLine("  quien pregunta, porque nadie puede nombrar un hito que no aprendio del");
+			Console.WriteLine("  dominio. El instante mueve la FRASE de cada fila -- si la vigencia rige");
+			Console.WriteLine("  hoy o ya paso -- y nunca el juego de filas, y por eso las dos primeras");
+			Console.WriteLine("  lecturas no lo toman. Esa asimetria es la afirmacion y no un descuido.");
+			Console.WriteLine("================================================================");
+			Console.WriteLine();
+			Console.WriteLine($"   hay alguno               : {api.HasAnyPublishedServicePrice()}");
+			Console.WriteLine($"   cuantos                  : {api.PublishedServicePriceCount()}");
+			Console.WriteLine();
+
+			if (record.Operation.Length == 0)
+			{
+				Console.WriteLine("   (ninguna fila, y no es un defecto: esta corrida guiona el plan del");
+				Console.WriteLine("    fabricante y el odometro, y no publica ninguna REVISION suya. La que");
+				Console.WriteLine("    las publica es 'ficha', que borra el journal por otro motivo que");
+				Console.WriteLine("    'historia': un codigo de revision se toma una sola vez)");
+				Console.WriteLine();
+			}
+
+			foreach (int row in Enumerable.Range(0, record.Operation.Length))
+			{
+				Console.WriteLine($"   operacion                : {record.Operation[row]}");
+				Console.WriteLine($"   hito                     : {record.Milestone[row]}");
+				Console.WriteLine($"   revision                 : {record.Revision[row]}");
+				Console.WriteLine($"   dice la fila             : {record.Says[row]}");
+				Console.WriteLine();
+			}
 		}
 
 		private static void Measurements(DealershipCarApp app, DealershipCarAPI api, string folder)

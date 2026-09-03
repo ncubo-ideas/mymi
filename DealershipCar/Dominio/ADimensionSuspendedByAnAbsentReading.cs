@@ -30,5 +30,14 @@ namespace DealershipCar.Dominio
 		{
 			return "distancia: no se puede evaluar porque no hay ninguna lectura usable";
 		}
+
+		/// <summary>
+		/// No se puede decir lo que queda, y la razon es la unica de las tres que se cura trayendo
+		/// un hecho. La frase es la del dominio, no una paralela.
+		/// </summary>
+		internal override ARemainder WhatRemains()
+		{
+			return ARemainder.NoReadingToCountFrom(Describe());
+		}
 	}
 }

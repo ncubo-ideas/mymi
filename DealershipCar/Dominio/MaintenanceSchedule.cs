@@ -517,6 +517,288 @@ namespace DealershipCar.Dominio
 			return TheOdometerReadingAsOf(asOf).ObservedAt;
 		}
 
+		/// <summary>
+		/// Si se puede decir cuanta distancia le queda a esa operacion en ese instante. Total: es
+		/// la pregunta que hay que hacer antes de las dos guardadas de abajo.
+		/// </summary>
+		internal bool CanDistanceRemainingBeSaid(OperationKindCode kind, DateTime asOf)
+		{
+			return TheRemainderOnDistanceFor(kind, asOf).CanBeSaid();
+		}
+
+		/// <summary>
+		/// La distancia que le queda, compuesta adentro contra el limite ya escalado. Accesor
+		/// GUARDADO. Pasado el limite es el EXCESO y nunca un negativo: cual de las dos lo dice
+		/// <see cref="ReadDistanceRemainderStanding"/>.
+		/// </summary>
+		internal int ReadDistanceRemaining(OperationKindCode kind, DateTime asOf)
+		{
+			return TheRemainderOnDistanceFor(kind, asOf).Amount();
+		}
+
+		/// <summary>
+		/// La unidad de ese monto, por su nombre, para quien la lea. Accesor GUARDADO.
+		/// </summary>
+		internal string ReadDistanceRemainingUnit(OperationKindCode kind, DateTime asOf)
+		{
+			return TheRemainderOnDistanceFor(kind, asOf).UnitName();
+		}
+
+		/// <summary>
+		/// En cual de las siete situaciones esta la mitad de distancia, por su nombre. Total, y es
+		/// lo que separa "no se mide asi" de "falta la lectura", que un booleano juntaria.
+		/// </summary>
+		internal string ReadDistanceRemainderStanding(OperationKindCode kind, DateTime asOf)
+		{
+			return TheRemainderOnDistanceFor(kind, asOf).Standing().Name;
+		}
+
+		/// <summary>
+		/// Lo que le queda de distancia, en una frase. Total: las siete situaciones dicen algo.
+		/// </summary>
+		internal string DescribeDistanceRemaining(OperationKindCode kind, DateTime asOf)
+		{
+			return TheRemainderOnDistanceFor(kind, asOf).Describe();
+		}
+
+		/// <summary>Si se puede decir cuantos dias le quedan a esa operacion. Total.</summary>
+		internal bool CanDaysRemainingBeSaid(OperationKindCode kind, DateTime asOf)
+		{
+			return TheRemainderOnTimeFor(kind, asOf).CanBeSaid();
+		}
+
+		/// <summary>
+		/// Los dias que le quedan del plazo ya escalado. Accesor GUARDADO, y pasado el plazo es el
+		/// exceso, igual que en la distancia.
+		/// </summary>
+		internal int ReadDaysRemaining(OperationKindCode kind, DateTime asOf)
+		{
+			return TheRemainderOnTimeFor(kind, asOf).Amount();
+		}
+
+		/// <summary>En cual de las siete situaciones esta la mitad de tiempo, por su nombre. Total.</summary>
+		internal string ReadTimeRemainderStanding(OperationKindCode kind, DateTime asOf)
+		{
+			return TheRemainderOnTimeFor(kind, asOf).Standing().Name;
+		}
+
+		/// <summary>Lo que le queda de plazo, en una frase. Total.</summary>
+		internal string DescribeDaysRemaining(OperationKindCode kind, DateTime asOf)
+		{
+			return TheRemainderOnTimeFor(kind, asOf).Describe();
+		}
+
+		/// <summary>
+		/// La cuenta atras entera: LAS DOS dimensiones y las dos situaciones en una frase, sin
+		/// elegir ninguna. Elegir la mas cercana dejaria el numero de la pantalla discrepando del
+		/// motivo del estado para quien lea los dos juntos. Total.
+		/// <para>
+		/// Sin operacion agendada no hay dos mitades que decir, asi que se dice una sola vez.
+		/// </para>
+		/// </summary>
+		internal string DescribeCountdown(OperationKindCode kind, DateTime asOf)
+		{
+			ARemainder distance = TheRemainderOnDistanceFor(kind, asOf);
+
+			if (distance.HasNoOperationScheduled()) return distance.Describe();
+
+			return distance.Describe() + "; " + TheRemainderOnTimeFor(kind, asOf).Describe();
+		}
+
+		/// <summary>
+		/// Si esa clase tiene alguna completacion alcanzable en su cadena. Total: es la pregunta que
+		/// hay que hacer antes de leer las filas, y las dos ausencias contestan que no por razones
+		/// distintas que <see cref="DescribeCompletions"/> dice.
+		/// </summary>
+		internal bool HasAnyCompletion(OperationKindCode kind)
+		{
+			return TheCompletionsOf(kind).HasAnyCompletion();
+		}
+
+		/// <summary>
+		/// Cuantas completaciones hay en la cadena de esa clase. DERIVADO de las filas en cada
+		/// lectura y nunca guardado. Total.
+		/// </summary>
+		internal int CompletionCount(OperationKindCode kind)
+		{
+			return TheCompletionsOf(kind).HowManyCompletions();
+		}
+
+		/// <summary>
+		/// El historial de esa clase en una frase. Total: nunca completada y no agendada son dos
+		/// ausencias distintas y cada una dice la suya.
+		/// </summary>
+		internal string DescribeCompletions(OperationKindCode kind)
+		{
+			return TheCompletionsOf(kind).Describe();
+		}
+
+		/// <summary>
+		/// Cuando se hizo cada completacion de esa clase, una por fila, de la mas reciente a la mas
+		/// vieja. TOTAL.
+		/// </summary>
+		internal string[] CompletionInstantsOf(OperationKindCode kind)
+		{
+			List<ACompletionRow> rows = TheCompletionsOf(kind).TheCompletions();
+
+			string[] said = new string[rows.Count];
+
+			for (int row = 0; row < rows.Count; row++) said[row] = rows[row].TheInstantItWasDone();
+
+			return said;
+		}
+
+		/// <summary>
+		/// Con que lectura del odometro se hizo cada completacion de esa clase, una por fila y en el
+		/// mismo orden. La que no tiene lectura lo DICE con palabras. TOTAL.
+		/// </summary>
+		internal string[] CompletionReadingsOf(OperationKindCode kind)
+		{
+			List<ACompletionRow> rows = TheCompletionsOf(kind).TheCompletions();
+
+			string[] said = new string[rows.Count];
+
+			for (int row = 0; row < rows.Count; row++) said[row] = rows[row].TheReadingItWasDoneAt();
+
+			return said;
+		}
+
+		/// <summary>
+		/// Cada completacion de esa clase en su propia frase, una por fila y en el mismo orden.
+		/// TOTAL.
+		/// </summary>
+		internal string[] DescribeEachCompletionOf(OperationKindCode kind)
+		{
+			List<ACompletionRow> rows = TheCompletionsOf(kind).TheCompletions();
+
+			string[] said = new string[rows.Count];
+
+			for (int row = 0; row < rows.Count; row++) said[row] = rows[row].Describe();
+
+			return said;
+		}
+
+		/// <summary>
+		/// De que clase es cada completacion del historial entero, por el NOMBRE del miembro, una por
+		/// fila y de la mas reciente a la mas vieja. TOTAL.
+		/// </summary>
+		internal string[] CompletionKindsOnRecord()
+		{
+			List<ACompletionRow> rows = TheCompletionsOnRecord();
+
+			string[] said = new string[rows.Count];
+
+			for (int row = 0; row < rows.Count; row++) said[row] = rows[row].TheNameOfItsKind();
+
+			return said;
+		}
+
+		/// <summary>
+		/// Cuando se hizo cada completacion del historial entero, una por fila y en el mismo orden.
+		/// TOTAL.
+		/// </summary>
+		internal string[] CompletionInstantsOnRecord()
+		{
+			List<ACompletionRow> rows = TheCompletionsOnRecord();
+
+			string[] said = new string[rows.Count];
+
+			for (int row = 0; row < rows.Count; row++) said[row] = rows[row].TheInstantItWasDone();
+
+			return said;
+		}
+
+		/// <summary>
+		/// Con que lectura del odometro se hizo cada completacion del historial entero, una por fila
+		/// y en el mismo orden. La que no tiene lectura lo dice. TOTAL.
+		/// </summary>
+		internal string[] CompletionReadingsOnRecord()
+		{
+			List<ACompletionRow> rows = TheCompletionsOnRecord();
+
+			string[] said = new string[rows.Count];
+
+			for (int row = 0; row < rows.Count; row++) said[row] = rows[row].TheReadingItWasDoneAt();
+
+			return said;
+		}
+
+		/// <summary>
+		/// Cada completacion del historial entero en su propia frase, una por fila y en el mismo
+		/// orden. TOTAL.
+		/// </summary>
+		internal string[] DescribeEachCompletionOnRecord()
+		{
+			List<ACompletionRow> rows = TheCompletionsOnRecord();
+
+			string[] said = new string[rows.Count];
+
+			for (int row = 0; row < rows.Count; row++) said[row] = rows[row].Describe();
+
+			return said;
+		}
+
+		private CompletionsOfAnOperation TheCompletionsOf(OperationKindCode kind)
+		{
+			MaintenanceOperationKind asked = MaintenanceOperationKind.OfCode(kind);
+
+			if (!_operations.ContainsKey(kind))
+				return CompletionsOfAnOperation.OfAKindThatIsNotOnTheSchedule(asked);
+
+			return CompletionsOfAnOperation.Of(
+				asked, new List<ACompletionRow>(_operations[kind].TheCompletionsBehindIt()));
+		}
+
+		private List<ACompletionRow> TheCompletionsOnRecord()
+		{
+			List<ACompletionRow> rows = new List<ACompletionRow>();
+
+			foreach (OperationKindCode kind in _order)
+				foreach (ACompletionRow arriving in TheCompletionsOf(kind).TheCompletions())
+					PlaceNewestFirst(rows, arriving);
+
+			return rows;
+		}
+
+		private static void PlaceNewestFirst(List<ACompletionRow> rows, ACompletionRow arriving)
+		{
+			int place = rows.Count;
+
+			while (place > 0 && arriving.IsNewerThan(rows[place - 1])) place--;
+
+			rows.Insert(place, arriving);
+		}
+
+		private ARemainder TheRemainderOnDistanceFor(OperationKindCode kind, DateTime asOf)
+		{
+			AKindThatNamesNoMemberIsACallerBug(kind);
+
+			if (!_operations.ContainsKey(kind)) return NoOperationScheduledFor(kind);
+
+			return TheAssessmentAsOf(kind, asOf).WhatRemainsOnDistance();
+		}
+
+		private ARemainder TheRemainderOnTimeFor(OperationKindCode kind, DateTime asOf)
+		{
+			AKindThatNamesNoMemberIsACallerBug(kind);
+
+			if (!_operations.ContainsKey(kind)) return NoOperationScheduledFor(kind);
+
+			return TheAssessmentAsOf(kind, asOf).WhatRemainsOnTime();
+		}
+
+		private DueAssessment TheAssessmentAsOf(OperationKindCode kind, DateTime asOf)
+		{
+			return _operations[kind].AssessedAt(
+				asOf, TheLatestUsableReadingAsOf(asOf), UsageAdjustsLengthNotBasis(asOf));
+		}
+
+		private static ARemainder NoOperationScheduledFor(OperationKindCode kind)
+		{
+			return ARemainder.WithNoOperationScheduled(
+				MaintenanceOperationKind.OfCode(kind).HowItIsSaid);
+		}
+
 		private static BasePoint TheAnchor(
 			DateTime anchoredAt, int anchorReading, DistanceUnitCode anchorUnit)
 		{

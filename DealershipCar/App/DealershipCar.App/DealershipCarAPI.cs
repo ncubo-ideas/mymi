@@ -892,6 +892,64 @@ namespace DealershipCar.App
 			});
 		}
 
+		/// <summary>
+		/// Cuanto cuesta esa operacion en ese hito, con su moneda, su vigencia y la revision, y SIN
+		/// decir si rige: eso necesita un instante, y quien no tenga ninguno que aportar igual puede
+		/// citar lo que el fabricante publico. TOTAL.
+		/// </summary>
+		public string DescribePublishedServicePrice(
+			string kind, int milestoneDistance, string milestoneUnit)
+		{
+			return AText(@"
+				@clause = specification.DescribePublishedServicePrice(
+					@kind, @milestoneDistance, @milestoneUnit);
+			", "clause", p => {
+				p["kind",              typeof(Enum)] = WireName.OperationKind(kind);
+				p["milestoneDistance", typeof(int)]  = milestoneDistance;
+				p["milestoneUnit",     typeof(Enum)] =
+					WireName.DistanceUnit(milestoneUnit, nameof(milestoneUnit));
+			});
+		}
+
+		/// <summary>
+		/// Si alguna revision sellada publico algun precio. TOTAL, y es la pregunta que hay que hacer
+		/// antes de leer las filas. No toma instante porque sellada es un ESTADO y no un instante.
+		/// </summary>
+		public bool HasAnyPublishedServicePrice()
+		{
+			return ATruth("@any = specification.HasAnyPublishedServicePrice();", "any", p => { });
+		}
+
+		/// <summary>
+		/// Cuantos precios publicados hay. TOTAL, y es la cuenta de las FILAS del registro de abajo:
+		/// las dos salen de la misma enumeracion en cada lectura, asi que no pueden discrepar.
+		/// </summary>
+		public int PublishedServicePriceCount()
+		{
+			return ACount("@count = specification.PublishedServicePriceCount();", "count", p => { });
+		}
+
+		/// <summary>
+		/// Los precios publicados como filas: de que operacion, a que hito, la frase con que el
+		/// dominio lo dice al instante preguntado y de que revision salio, en columnas paralelas y de
+		/// la revision mas nueva a la mas vieja. TOTAL, y contesta CERO filas donde no hay ninguno.
+		/// Ninguna fila pide un hito a quien pregunta. El instante mueve la FRASE y nunca el juego de
+		/// filas.
+		/// </summary>
+		public PublishedPriceRecord PublishedServicePricesAsOf(DateTime asOf)
+		{
+			string[][] columns = TheTextColumns(@"
+				@operation = specification.PublishedPriceOperationsAsOf(@asOf);
+				@milestone = specification.PublishedPriceMilestonesAsOf(@asOf);
+				@says      = specification.DescribeEachPublishedPriceAsOf(@asOf);
+				@revision  = specification.PublishedPriceRevisionsAsOf(@asOf);
+			", TheColumnsOfAPublishedPriceRecord, p => {
+				p["asOf", typeof(DateTime)] = InUtc(asOf);
+			});
+
+			return PublishedPriceRecord.Of(columns[0], columns[1], columns[2], columns[3]);
+		}
+
 		/// <summary>Si hay alcance de garantia publicado. TOTAL.</summary>
 		public bool IsCoveragePublished()
 		{
@@ -1247,6 +1305,177 @@ namespace DealershipCar.App
 			return AnInstant("@at = schedule.ReadOdometerObservedAt(@asOf);", "at", p => {
 				p["asOf", typeof(DateTime)] = InUtc(asOf);
 			});
+		}
+
+		/// <summary>
+		/// Si se puede decir cuanta distancia le queda a esa operacion a ese instante. TOTAL, y es la
+		/// pregunta que hay que hacer antes de las dos lecturas guardadas de abajo.
+		/// </summary>
+		public bool CanDistanceRemainingBeSaid(string kind, DateTime asOf)
+		{
+			return ATruthAboutAnOperation(
+				"@can = schedule.CanDistanceRemainingBeSaid(@kind, @asOf);", "can", kind, asOf);
+		}
+
+		/// <summary>
+		/// La distancia que le queda, compuesta ADENTRO contra el limite ya escalado. Lectura
+		/// GUARDADA. Pasado el limite es el EXCESO y nunca un negativo: cual de las dos lo dice
+		/// <see cref="ReadDistanceRemainderStanding"/>, y en que unidad
+		/// <see cref="ReadDistanceRemainingUnit"/>.
+		/// </summary>
+		public int ReadDistanceRemaining(string kind, DateTime asOf)
+		{
+			TheDistanceRemainderHasToBeSayable(kind, asOf);
+
+			return ACountAboutAnOperation(
+				"@left = schedule.ReadDistanceRemaining(@kind, @asOf);", "left", kind, asOf);
+		}
+
+		/// <summary>
+		/// La unidad de ese monto, por su NOMBRE y nunca por su codigo. Lectura GUARDADA: una unidad
+		/// para una mitad que nadie midio se lee como que hubo medicion.
+		/// </summary>
+		public string ReadDistanceRemainingUnit(string kind, DateTime asOf)
+		{
+			TheDistanceRemainderHasToBeSayable(kind, asOf);
+
+			return ATextAboutAnOperation(
+				"@unit = schedule.ReadDistanceRemainingUnit(@kind, @asOf);", "unit", kind, asOf);
+		}
+
+		/// <summary>
+		/// En cual de las siete situaciones esta la mitad de distancia, por su nombre. TOTAL, y es lo
+		/// que separa "no se mide asi" de "falta la lectura", que un booleano juntaria.
+		/// </summary>
+		public string ReadDistanceRemainderStanding(string kind, DateTime asOf)
+		{
+			return ATextAboutAnOperation(
+				"@standing = schedule.ReadDistanceRemainderStanding(@kind, @asOf);", "standing",
+				kind, asOf);
+		}
+
+		/// <summary>
+		/// Lo que le queda de distancia, en una frase. TOTAL: las siete situaciones dicen algo.
+		/// </summary>
+		public string DescribeDistanceRemaining(string kind, DateTime asOf)
+		{
+			return ATextAboutAnOperation(
+				"@clause = schedule.DescribeDistanceRemaining(@kind, @asOf);", "clause", kind, asOf);
+		}
+
+		/// <summary>
+		/// Si se puede decir cuantos dias le quedan a esa operacion a ese instante. TOTAL, y es la
+		/// pregunta que hay que hacer antes de la lectura guardada de abajo.
+		/// </summary>
+		public bool CanDaysRemainingBeSaid(string kind, DateTime asOf)
+		{
+			return ATruthAboutAnOperation(
+				"@can = schedule.CanDaysRemainingBeSaid(@kind, @asOf);", "can", kind, asOf);
+		}
+
+		/// <summary>
+		/// Los dias que le quedan del plazo ya escalado. Lectura GUARDADA, y pasado el plazo es el
+		/// exceso igual que en la distancia. Su unidad esta en el nombre del miembro: el plazo se mide
+		/// en una sola, a diferencia de la distancia, que tiene dos.
+		/// </summary>
+		public int ReadDaysRemaining(string kind, DateTime asOf)
+		{
+			TheTimeRemainderHasToBeSayable(kind, asOf);
+
+			return ACountAboutAnOperation(
+				"@left = schedule.ReadDaysRemaining(@kind, @asOf);", "left", kind, asOf);
+		}
+
+		/// <summary>
+		/// En cual de las siete situaciones esta la mitad de tiempo, por su nombre. TOTAL.
+		/// </summary>
+		public string ReadTimeRemainderStanding(string kind, DateTime asOf)
+		{
+			return ATextAboutAnOperation(
+				"@standing = schedule.ReadTimeRemainderStanding(@kind, @asOf);", "standing",
+				kind, asOf);
+		}
+
+		/// <summary>Lo que le queda de plazo, en una frase. TOTAL.</summary>
+		public string DescribeDaysRemaining(string kind, DateTime asOf)
+		{
+			return ATextAboutAnOperation(
+				"@clause = schedule.DescribeDaysRemaining(@kind, @asOf);", "clause", kind, asOf);
+		}
+
+		/// <summary>
+		/// La cuenta atras entera: LAS DOS dimensiones y las dos situaciones en una frase, sin elegir
+		/// ninguna. TOTAL, y la compone el dominio: elegir la mas cercana dejaria el numero de la
+		/// pantalla discrepando del motivo del estado para quien lea los dos juntos.
+		/// </summary>
+		public string DescribeCountdown(string kind, DateTime asOf)
+		{
+			return ATextAboutAnOperation(
+				"@clause = schedule.DescribeCountdown(@kind, @asOf);", "clause", kind, asOf);
+		}
+
+		/// <summary>
+		/// Si esa clase tiene alguna completacion alcanzable en su cadena. TOTAL, y es la pregunta que
+		/// hay que hacer antes de leer las filas: las dos ausencias contestan que no por razones
+		/// distintas que <see cref="DescribeCompletions"/> dice.
+		/// </summary>
+		public bool HasAnyCompletion(string kind)
+		{
+			return ATruth("@any = schedule.HasAnyCompletion(@kind);", "any", TheKindAsked(kind));
+		}
+
+		/// <summary>
+		/// Cuantas completaciones hay en la cadena de esa clase. TOTAL, y es la cuenta de las FILAS
+		/// del registro de abajo: las dos se caminan en cada lectura y no se guardan.
+		/// </summary>
+		public int CompletionCount(string kind)
+		{
+			return ACount("@count = schedule.CompletionCount(@kind);", "count", TheKindAsked(kind));
+		}
+
+		/// <summary>
+		/// El historial de esa clase en una frase. TOTAL: nunca completada y no agendada son dos
+		/// ausencias distintas y cada una dice la suya.
+		/// </summary>
+		public string DescribeCompletions(string kind)
+		{
+			return AText(
+				"@clause = schedule.DescribeCompletions(@kind);", "clause", TheKindAsked(kind));
+		}
+
+		/// <summary>
+		/// Las completaciones de esa clase como filas: cuando se hizo cada una, con que lectura del
+		/// odometro o la constancia de que no hay, y la frase con que el dominio la dice, en columnas
+		/// paralelas y de la mas reciente a la mas vieja. TOTAL, y contesta CERO filas donde no hay
+		/// ninguna. La clase la puso quien pregunta, asi que no viene como columna.
+		/// </summary>
+		public CompletionRecord CompletionsOf(string kind)
+		{
+			string[][] columns = TheTextColumns(@"
+				@completedAt = schedule.CompletionInstantsOf(@kind);
+				@reading     = schedule.CompletionReadingsOf(@kind);
+				@says        = schedule.DescribeEachCompletionOf(@kind);
+			", TheColumnsOfACompletionRecord, TheKindAsked(kind));
+
+			return CompletionRecord.Of(columns[0], columns[1], columns[2]);
+		}
+
+		/// <summary>
+		/// El historial entero como filas: de que clase es cada completacion, cuando se hizo, con que
+		/// lectura o la constancia de que no hay, y su frase, en columnas paralelas y de la mas
+		/// reciente a la mas vieja entre todas las clases. TOTAL, y no toma ningun instante: cada fila
+		/// trae el suyo y la cadena es la que es.
+		/// </summary>
+		public EveryKindCompletionRecord CompletionsOfEveryKind()
+		{
+			string[][] columns = TheTextColumns(@"
+				@kind        = schedule.CompletionKindsOnRecord();
+				@completedAt = schedule.CompletionInstantsOnRecord();
+				@reading     = schedule.CompletionReadingsOnRecord();
+				@says        = schedule.DescribeEachCompletionOnRecord();
+			", TheColumnsOfAnEveryKindCompletionRecord, p => { });
+
+			return EveryKindCompletionRecord.Of(columns[0], columns[1], columns[2], columns[3]);
 		}
 
 		/// <summary>
@@ -2165,6 +2394,144 @@ namespace DealershipCar.App
 		/// </summary>
 		private static readonly string[] TheColumnsOfAStayRecord =
 			{ "branch", "subject", "enteredAt", "coveredDays", "says" };
+
+		/// <summary>
+		/// Los nombres de las tres columnas del registro de completaciones de UNA clase, en el orden
+		/// en que el DTO las recibe. No hay columna de clase: la puso quien pregunta.
+		/// </summary>
+		private static readonly string[] TheColumnsOfACompletionRecord =
+			{ "completedAt", "reading", "says" };
+
+		/// <summary>
+		/// Los nombres de las cuatro columnas del registro de completaciones de TODAS las clases, en
+		/// el orden en que el DTO las recibe. Aqui la clase cambia de fila en fila y viene por columna.
+		/// </summary>
+		private static readonly string[] TheColumnsOfAnEveryKindCompletionRecord =
+			{ "kind", "completedAt", "reading", "says" };
+
+		/// <summary>
+		/// Los nombres de las cuatro columnas del registro de precios publicados, en el orden en que
+		/// el DTO las recibe.
+		/// </summary>
+		private static readonly string[] TheColumnsOfAPublishedPriceRecord =
+			{ "operation", "milestone", "says", "revision" };
+
+		/// <summary>
+		/// La clase por la que se pregunta, exigida como nombre de miembro ANTES de que haya consulta.
+		/// </summary>
+		private static Action<Parameters> TheKindAsked(string kind)
+		{
+			return p => {
+				p["kind", typeof(Enum)] = WireName.OperationKind(kind);
+			};
+		}
+
+		/// <summary>
+		/// La clase y el instante que las diez lecturas de la cuenta atras toman, atados una sola vez.
+		/// </summary>
+		private static Action<Parameters> TheKindAndTheInstant(string kind, DateTime asOf)
+		{
+			return p => {
+				p["kind", typeof(Enum)]     = WireName.OperationKind(kind);
+				p["asOf", typeof(DateTime)] = InUtc(asOf);
+			};
+		}
+
+		/// <summary>
+		/// Una de las diez lecturas de la cuenta atras que contesta con un si o un no, con el rechazo
+		/// del dominio traducido a un tipo que quien lee puede nombrar.
+		/// </summary>
+		private bool ATruthAboutAnOperation(
+			string script, string name, string kind, DateTime asOf)
+		{
+			try
+			{
+				return ATruth(script, name, TheKindAndTheInstant(kind, asOf));
+			}
+			catch (Exception refused) when (TheDomainRefusedTheFact(refused))
+			{
+				throw ARefusalTheReaderCanName(kind, asOf, refused);
+			}
+		}
+
+		/// <summary>Lo mismo para la que contesta con un numero.</summary>
+		private int ACountAboutAnOperation(
+			string script, string name, string kind, DateTime asOf)
+		{
+			try
+			{
+				return ACount(script, name, TheKindAndTheInstant(kind, asOf));
+			}
+			catch (Exception refused) when (TheDomainRefusedTheFact(refused))
+			{
+				throw ARefusalTheReaderCanName(kind, asOf, refused);
+			}
+		}
+
+		/// <summary>Lo mismo para la que contesta con palabras.</summary>
+		private string ATextAboutAnOperation(
+			string script, string name, string kind, DateTime asOf)
+		{
+			try
+			{
+				return AText(script, name, TheKindAndTheInstant(kind, asOf));
+			}
+			catch (Exception refused) when (TheDomainRefusedTheFact(refused))
+			{
+				throw ARefusalTheReaderCanName(kind, asOf, refused);
+			}
+		}
+
+		/// <summary>
+		/// El rechazo del dominio dicho en un tipo que quien lee puede nombrar. Las diez lecturas de
+		/// la cuenta atras heredan una guarda del dominio -- no se evalua el pasado de un ancla que
+		/// todavia no existia -- y esta puerta NO LA PUEDE PRE-CHEQUEAR: no tiene ninguna lectura que
+		/// conteste cual es el ancla de la ocurrencia, asi que no hay nada que preguntar antes. Lo que
+		/// si hace falta igual es que el rechazo se pueda atrapar POR TIPO, y la excepcion del dominio
+		/// es interna: ninguna caratula la puede nombrar, y un catch de Exception a secas confundiria
+		/// un fallo de disco con el rechazo del dominio. Asi que se traduce en vez de pre-chequearse,
+		/// y esto se dice en vez de disimularse.
+		/// </summary>
+		private static InvalidOperationException ARefusalTheReaderCanName(
+			string kind, DateTime asOf, Exception refused)
+		{
+			return new InvalidOperationException(
+				$"La agenda rechazo la pregunta por {kind} al {InUtc(asOf):O}. Lo que dijo: "
+				+ refused.Message
+				+ " Preguntar por un instante anterior al ancla de la ocurrencia es la forma conocida "
+				+ "de llegar aca, y la agencia puede sembrar un plan anclado adelante, asi que "
+				+ "pregunte por un instante que no sea anterior a esa ancla.",
+				refused);
+		}
+
+		/// <summary>
+		/// Que lo que le queda de distancia se pueda decir antes de pedir el monto o la unidad. Se
+		/// pregunta con el MISMO instante que la lectura va a usar, que es lo que hace que las dos
+		/// hablen de un solo momento. La guarda vive aca por el motivo de arriba.
+		/// </summary>
+		private void TheDistanceRemainderHasToBeSayable(string kind, DateTime asOf)
+		{
+			if (CanDistanceRemainingBeSaid(kind, asOf)) return;
+
+			throw new InvalidOperationException(
+				$"No se pudo medir cuanta distancia le queda a {kind} al {InUtc(asOf):O}: pregunte "
+				+ "CanDistanceRemainingBeSaid con ese mismo instante antes. Un cero aca se leeria como "
+				+ "que no falta nada, que es exactamente lo que no se puede decir. En cual de las "
+				+ "siete situaciones esta lo contesta ReadDistanceRemainderStanding, y con palabras "
+				+ "DescribeDistanceRemaining.");
+		}
+
+		/// <summary>Lo mismo para el plazo, y son dos mitades: una se puede medir sin la otra.</summary>
+		private void TheTimeRemainderHasToBeSayable(string kind, DateTime asOf)
+		{
+			if (CanDaysRemainingBeSaid(kind, asOf)) return;
+
+			throw new InvalidOperationException(
+				$"No se pudo medir cuantos dias le quedan a {kind} al {InUtc(asOf):O}: pregunte "
+				+ "CanDaysRemainingBeSaid con ese mismo instante antes. Un cero aca se leeria como que "
+				+ "no falta nada. En cual de las siete situaciones esta lo contesta "
+				+ "ReadTimeRemainderStanding, y con palabras DescribeDaysRemaining.");
+		}
 
 		/// <summary>
 		/// Los nueve hechos que la pregunta de cobertura necesita, atados una sola vez para las tres

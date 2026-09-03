@@ -130,11 +130,10 @@ namespace DealershipCar.Wasm.Parts
 			Llantas.TryGetValue(position, out string dicho) ? dicho : AppState.Spaced(position);
 
 		/// <summary>
-		/// El tono con que se pinta un estado. Es el mismo reparto que <see cref="HowADueStateLooks"/>
-		/// hace para la pantalla tecnica, con una diferencia: aca "NotDue" es VERDE y no neutro.
-		/// Para quien lee un registro, "no toca" es la ausencia de un evento; para quien maneja el
-		/// carro, es la buena noticia, y pintarla gris al lado de dos rojos hace que la pantalla se
-		/// vea peor de lo que el registro dice.
+		/// El tono con que se pinta un estado, que es el sufijo de la clase de css que lo pinta. Aca
+		/// "NotDue" es VERDE y no neutro: para quien maneja el carro, "no toca" es la buena noticia, y
+		/// pintarla gris al lado de dos rojos hace que la pantalla se vea peor de lo que el registro
+		/// dice. Un estado que la lista no nombre se pinta neutro en vez de desaparecer.
 		/// </summary>
 		public static string Tono(string dueState) => dueState switch
 		{

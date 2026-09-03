@@ -196,7 +196,7 @@ namespace DealershipCar.Dominio.Pruebas
 
 				Assert.That(sheet.DoesTheWarrantyCover("POWERTRAIN").SpecificationKnown, Is.False);
 				Assert.That(
-					sheet.WhatTheServiceCosts(MaintenanceOperation.FluidChange, 10000)
+					sheet.WhatTheServiceCosts(MaintenanceOperation.FluidChange)
 						.SpecificationKnown,
 					Is.False);
 			}

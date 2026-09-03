@@ -47,7 +47,7 @@ namespace DealershipCar.Dominio.Pruebas
 
 				ShopStayTools stays = TheAssistantsStayToolsOver(journal.Folder);
 
-				// LAS OCHO tools, varias veces, que es como pregunta un asistente de verdad. Las de
+				// LAS DIEZ tools, varias veces, que es como pregunta un asistente de verdad. Las de
 				// las cuatro clases van en la misma vuelta: la promesa es de la carpeta entera y no de
 				// una familia de preguntas.
 				//
@@ -58,9 +58,11 @@ namespace DealershipCar.Dominio.Pruebas
 				{
 					tools.Review();
 					tools.HowUpToDate();
+					tools.WhatIsLeftBeforeEachService();
+					tools.WhatHasBeenDoneToMyCar();
 					sheet.WhatMyCarTakes();
 					sheet.DoesTheWarrantyCover("POWERTRAIN");
-					sheet.WhatTheServiceCosts(MaintenanceOperation.FluidChange, 10000);
+					sheet.WhatTheServiceCosts(MaintenanceOperation.FluidChange);
 					envelope.IsMyCarStillUnderWarranty();
 					stays.DaysMyCarSpentInTheShop();
 					stays.DaysMyCarSpentInTheShop("2026-01-01", "2026-12-31");
@@ -96,7 +98,10 @@ namespace DealershipCar.Dominio.Pruebas
 				for (int round = 0; round < 12; round++)
 				{
 					tools.Review();
+					tools.WhatIsLeftBeforeEachService();
+					tools.WhatHasBeenDoneToMyCar();
 					sheet.WhatMyCarTakes();
+					sheet.WhatTheServiceCosts(MaintenanceOperation.FluidChange);
 					envelope.IsMyCarStillUnderWarranty();
 					stays.DaysMyCarSpentInTheShop();
 				}
@@ -152,10 +157,12 @@ namespace DealershipCar.Dominio.Pruebas
 				var everything = new StringBuilder();
 				everything.Append(JsonSerializer.Serialize(tools.Review()));
 				everything.Append(JsonSerializer.Serialize(tools.HowUpToDate()));
+				everything.Append(JsonSerializer.Serialize(tools.WhatIsLeftBeforeEachService()));
+				everything.Append(JsonSerializer.Serialize(tools.WhatHasBeenDoneToMyCar()));
 				everything.Append(JsonSerializer.Serialize(sheet.WhatMyCarTakes()));
 				everything.Append(JsonSerializer.Serialize(sheet.DoesTheWarrantyCover("POWERTRAIN")));
 				everything.Append(JsonSerializer.Serialize(
-					sheet.WhatTheServiceCosts(MaintenanceOperation.FluidChange, 10000)));
+					sheet.WhatTheServiceCosts(MaintenanceOperation.FluidChange)));
 				everything.Append(JsonSerializer.Serialize(envelope.IsMyCarStillUnderWarranty()));
 				everything.Append(JsonSerializer.Serialize(stays.DaysMyCarSpentInTheShop()));
 				foreach (MaintenanceOperation each in TheOperationKind.All)
@@ -238,12 +245,17 @@ namespace DealershipCar.Dominio.Pruebas
 		// C57 en esta frontera -- se enumera el sitio donde la regla se decide, no el sustantivo del
 		// que habla.
 		//
-		// LO QUE ESTE BARRIDO NO PUEDE VER, dicho en vez de omitido: que Program.cs REGISTRE las tres
-		// clases. Una clase con [McpServerToolType] que nadie pasa a .WithTools sale igual en esta
-		// lista y no llega a ningun asistente. Program.cs son sentencias de nivel superior de un Exe
-		// y armar aca su contenedor seria copiarlo, no probarlo.
+		// LO QUE ESTE BARRIDO NO PUEDE VER, dicho en vez de omitido: que Program.cs REGISTRE las
+		// cuatro clases. Una clase con [McpServerToolType] que nadie pasa a .WithTools sale igual en
+		// esta lista y no llega a ningun asistente. Program.cs son sentencias de nivel superior de un
+		// Exe y armar aca su contenedor seria copiarlo, no probarlo.
+		//
+		// ESTE NOMBRE DECIA OCHO Y MS-6 LO VOLVIO FALSO: la pantalla de mantenimiento agrega dos tools
+		// a DealershipCarTools -- la cuenta atras y el historial. El nombre se mueve con la ley, que es
+		// lo que SH-6 ya hizo una vez con el mismo nombre; aflojarlo a "unas cuantas" habria dejado de
+		// obligar a mirar la lista.
 		[Test]
-		public void TheAssistantIsOfferedEightToolsAndNoneOfThemIsACommand()
+		public void TheAssistantIsOfferedTenToolsAndNoneOfThemIsACommand()
 		{
 			var offered = new List<string>();
 
@@ -260,6 +272,7 @@ namespace DealershipCar.Dominio.Pruebas
 			{
 				"check_one_operation", "days_my_car_spent_in_the_shop", "does_the_warranty_cover",
 				"how_up_to_date_is_this", "is_my_car_still_under_warranty", "review_my_maintenance",
+				"what_has_been_done_to_my_car", "what_is_left_before_each_service",
 				"what_my_car_takes", "what_the_service_costs",
 			}), "Una tool que se agrega sin pensarla es como entra un comando a una superficie de "
 				+ "solo lectura. La lista se escribe aca para que agregar una obligue a mirarla.");

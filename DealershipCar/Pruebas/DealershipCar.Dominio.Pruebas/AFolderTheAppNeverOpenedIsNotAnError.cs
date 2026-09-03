@@ -48,14 +48,18 @@ namespace DealershipCar.Dominio.Pruebas
 			MaintenanceReview review = tools.Review();
 			OperationStanding one = tools.CheckOne(MaintenanceOperation.FluidChange);
 			ReadingFreshness fresh = tools.HowUpToDate();
+			MaintenanceCountdown countdown = tools.WhatIsLeftBeforeEachService();
+			MaintenanceHistory history = tools.WhatHasBeenDoneToMyCar();
 			SpecificationSheet takes = sheet.WhatMyCarTakes();
 			WarrantyScope scope = sheet.DoesTheWarrantyCover("POWERTRAIN");
 			ServicePricing pricing =
-				sheet.WhatTheServiceCosts(MaintenanceOperation.FluidChange, 10000);
+				sheet.WhatTheServiceCosts(MaintenanceOperation.FluidChange);
 
 			Assert.That(review.HasData, Is.False);
 			Assert.That(one.HasData, Is.False);
 			Assert.That(fresh.HasData, Is.False);
+			Assert.That(countdown.HasData, Is.False);
+			Assert.That(history.HasData, Is.False);
 			Assert.That(takes.HasData, Is.False);
 			Assert.That(scope.HasData, Is.False);
 			Assert.That(pricing.HasData, Is.False);
@@ -81,7 +85,12 @@ namespace DealershipCar.Dominio.Pruebas
 			Assert.That(one.Operation, Is.EqualTo("FluidChange"));
 			Assert.That(scope.System, Is.EqualTo("POWERTRAIN"));
 			Assert.That(pricing.Operation, Is.EqualTo("FluidChange"));
-			Assert.That(pricing.MilestoneAsked, Is.EqualTo(10000));
+
+			// Y LA CUENTA ATRAS Y EL HISTORIAL NO PREGUNTAN NADA, asi que no hay nada que devolver:
+			// sus listas vienen vacias y eso es el estado y no un hueco.
+			Assert.That(countdown.Operations, Is.Empty);
+			Assert.That(history.Completions, Is.Empty);
+			Assert.That(history.ByOperation, Is.Empty);
 		}
 
 		// LA PREGUNTA VA ANTES DE ABRIR EL ACTOR, Y ESTA ES LA MEDICION QUE LO OBLIGA. Start() sobre
@@ -142,10 +151,12 @@ namespace DealershipCar.Dominio.Pruebas
 			Assert.That(tools.Review().HasData, Is.False);
 			Assert.That(tools.CheckOne(MaintenanceOperation.Inspection).HasData, Is.False);
 			Assert.That(tools.HowUpToDate().HasData, Is.False);
+			Assert.That(tools.WhatIsLeftBeforeEachService().HasData, Is.False);
+			Assert.That(tools.WhatHasBeenDoneToMyCar().HasData, Is.False);
 			Assert.That(sheet.WhatMyCarTakes().HasData, Is.False);
 			Assert.That(sheet.DoesTheWarrantyCover("POWERTRAIN").HasData, Is.False);
 			Assert.That(
-				sheet.WhatTheServiceCosts(MaintenanceOperation.FluidChange, 10000).HasData,
+				sheet.WhatTheServiceCosts(MaintenanceOperation.FluidChange).HasData,
 				Is.False);
 		}
 

@@ -82,5 +82,29 @@ namespace DealershipCar.Wasm
 			+ "quiere decir que ninguna quedó registrada en este periodo. Las estadías las registra "
 			+ "el taller que recibe el carro, por el mismo feed que trae todo lo demás aquí, y no hay "
 			+ "nada que tengas que llenar vos.";
+
+		/// <summary>
+		/// Que la agenda rechazo la pregunta de esa operacion, que ninguno de los hechos que la
+		/// deciden vino de la persona, y quien los corrige. NO dice CUAL hecho, porque el rechazo se
+		/// atrapa por un tipo mas ancho que la condicion que lo causa: nombrarla seria afirmar algo
+		/// del carro que la pantalla no sabe.
+		/// </summary>
+		public const string TheDealershipSetTheDateThisOperationCountsFrom =
+			"Tu registro no pudo contestar la cuenta atrás de esta operación. Ninguno de los datos "
+			+ "que la deciden vino de vos: el plan de la operación y la fecha desde la que se cuenta "
+			+ "los pone tu concesionario, así que no hay nada que tengas que llenar ni nada que valga "
+			+ "la pena adivinar. Si esto no se arregla solo, pediles que revisen esa fecha -- lo "
+			+ "demás de esta pantalla no lo afecta.";
+
+		/// <summary>
+		/// Que una operacion sin ninguna completacion registrada no es una operacion que nunca se le
+		/// hizo al carro, y quien las registra. Es la frase que mas facil se lee al reves en el
+		/// historial, y ninguna frase del dominio la dice: cada una contesta por su propia clase.
+		/// </summary>
+		public const string TheCompletionsAreRecordedByTheWorkshopThatDoesTheWork =
+			"Que una operación no aparezca aquí no quiere decir que nunca se le haya hecho al carro: "
+			+ "quiere decir que no quedó registrada. Lo que se le hace al carro lo registra el taller "
+			+ "que lo atiende, por el mismo feed que trae todo lo demás aquí, y no hay nada que "
+			+ "tengas que llenar vos.";
 	}
 }

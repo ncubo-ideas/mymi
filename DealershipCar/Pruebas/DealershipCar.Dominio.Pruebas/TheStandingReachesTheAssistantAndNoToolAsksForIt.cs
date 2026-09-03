@@ -350,8 +350,7 @@ namespace DealershipCar.Dominio.Pruebas
 		private static readonly string[] EveryParameterEveryToolTakes =
 		{
 			"does_the_warranty_cover/1(system):String",
-			"what_the_service_costs/2(operation):MaintenanceOperation",
-			"what_the_service_costs/2(milestoneDistance):Int32",
+			"what_the_service_costs/1(operation):MaintenanceOperation",
 			"check_one_operation/1(operation):MaintenanceOperation",
 			"days_my_car_spent_in_the_shop/2(from):String",
 			"days_my_car_spent_in_the_shop/2(to):String",
@@ -366,17 +365,76 @@ namespace DealershipCar.Dominio.Pruebas
 				+ "se pone rojo, que es justo lo que una lista de miembros permitidos no veria.");
 		}
 
-		// LA UNICA CLAVE DE CATALOGO SIGUE SIENDO UNA. Es lo que impide que el censo de mediciones se
-		// vacie por la puerta de atras: agrandar la lista de claves esconde un hecho en vez de
-		// censarlo, y agrandarla tiene que costar un rojo.
-		[Test]
-		public void TheOnlyNumberAToolMayTakeWithoutBeingAMeasurementIsOne()
-		{
-			Assert.That(TheOneCatalogueKey, Has.Length.EqualTo(1),
-				"Si esto crecio, alguien amplio lo que cuenta como clave y no como hecho. Se decide a "
-				+ "proposito, con el motivo escrito, o no se decide.");
+		// LA LISTA DE EXENCIONES NUMERICAS ESTA VACIA, Y ESO ES UN ACTO Y NO UNA CASUALIDAD (P-12).
+		//
+		// SE LLAMABA TheOnlyNumberAToolMayTakeWithoutBeingAMeasurementIsOne Y AFIRMABA QUE ERA UNA:
+		// 'milestone...', el hito de what_the_service_costs. P-12 retiro ese parametro -- la
+		// enumeracion de precios contesta todos los hitos y nadie tiene que nombrar ninguno -- asi que
+		// la lista quedo nombrando una FORMA QUE NINGUNA TOOL TOMA. Dejarla como estaba habria dejado
+		// esta prueba verde defendiendo nada, y con la exencion ARMADA: quien volviera a poner un
+		// 'milestoneDistance' en una tool lo tendria exento del censo de mediciones de regalo, que es
+		// justo la puerta de atras que esta prueba existe para cerrar. Vaciarla la pone roja, y un
+		// rojo es lo que obliga a mirar.
+		//
+		// Y VACIA ES SU ESTADO MAS FUERTE: hoy NINGUNA tool toma un numero ni un instante, asi que no
+		// hay nada que exentar y toda medicion que aparezca la agarra el censo sin que nadie discuta.
+		// Quien agregue una clave numerica de verdad la escribe aca y dice por que.
+		private static readonly string[] TheNumericCatalogueKeysAToolMayTake = new string[0];
 
-			Assert.That(TheOneCatalogueKey[0], Is.EqualTo("milestone"));
+		[Test]
+		public void TheExemptionListIsEmptyBecauseNoToolTakesANumberAtAll()
+		{
+			Assert.That(TheNumericCatalogueKeysAToolMayTake, Is.Empty,
+				"Alguien amplio lo que cuenta como clave y no como hecho. Se decide a proposito, con "
+				+ "el motivo escrito, o no se decide.");
+
+			// Y LA MITAD QUE LO SOSTIENE: la lista esta vacia porque no hay ningun numero que exentar,
+			// no porque el barrido dejo de mirar. Ni un parametro de ninguna tool es un numero ni un
+			// instante.
+			foreach (MethodInfo each in EveryToolMethod())
+				foreach (ParameterInfo parameter in each.GetParameters())
+					Assert.That(
+						parameter.ParameterType,
+						Is.EqualTo(typeof(string)).Or.EqualTo(typeof(MaintenanceOperation)),
+						"'" + TheNameOfTheToolOn(each) + "(" + parameter.Name + ")' no es un nombre. "
+						+ "En esta superficie las preguntas se hacen con NOMBRES -- cadenas y miembros "
+						+ "de conjuntos cerrados -- y cualquier otra forma es una medicion o una clave "
+						+ "que hay que escribir.");
+		}
+
+		// P-12 EN SU FORMA MAS CORTA: NINGUNA TOOL PIDE UN HITO. Es un RETIRO y esta escrito -- el
+		// conjunto exacto de parametros perdio su renglon --, no una omision que nadie note.
+		[Test]
+		public void NoToolAsksForAMilestoneAnyMore()
+		{
+			foreach (MethodInfo each in EveryToolMethod())
+				foreach (ParameterInfo parameter in each.GetParameters())
+					Assert.That(
+						parameter.Name,
+						Does.Not.StartWith("milestone").IgnoreCase,
+						"'" + TheNameOfTheToolOn(each) + "' volvio a pedir un hito. Ningun llamador "
+						+ "aporta un hito que no haya aprendido del dominio: un hito adivinado vuelve "
+						+ "sin precio y eso se lee como que el fabricante nunca publico uno, que seria "
+						+ "falso. La enumeracion de precios contesta TODOS los hitos publicados.");
+
+			Assert.That(
+				EveryParameterEveryToolTakes,
+				Has.None.Contains("milestone"),
+				"El conjunto exacto de parametros volvio a nombrar un hito.");
+
+			// EL CONTROL: la puerta SIGUE tomando el hito en sus tres lecturas por clave. El parametro
+			// se retiro del borde del ASISTENTE y no de la puerta, donde quien monta un escenario lo
+			// puede pasar.
+			var keyed = new List<string>();
+
+			foreach (MethodInfo each in typeof(DealershipCarAPI).GetMethods())
+				foreach (ParameterInfo parameter in each.GetParameters())
+					if (parameter.Name.StartsWith("milestone", StringComparison.Ordinal))
+						keyed.Add(each.Name);
+
+			Assert.That(keyed, Is.Not.Empty,
+				"La puerta perdio sus lecturas por clave de precio. P-12 retira el parametro de la "
+				+ "TOOL; la puerta las conserva porque la consola monta un escenario.");
 		}
 
 		// EL CENSO SE ENSANCHA POR NOMBRE Y NO POR TIPO, Y SE ESCRIBE EN VEZ DE ESQUIVARSE (P-3). La
@@ -421,10 +479,9 @@ namespace DealershipCar.Dominio.Pruebas
 			// (c) Y LA LISTA DE CLAVES NUMERICAS NO SE ENSANCHO, que es lo que impide que esto sea una
 			// puerta de atras. Si alguien vuelve a tipar un limite como DateTime o como int, no queda
 			// exento por llamarse 'from': lo agarra el censo de mediciones Y el conjunto exacto de
-			// parametros, los dos, y en rojo.
-			Assert.That(TheOneCatalogueKey, Has.Length.EqualTo(1));
-			Assert.That(TheOneCatalogueKey, Does.Not.Contain("from"));
-			Assert.That(TheOneCatalogueKey, Does.Not.Contain("to"));
+			// parametros, los dos, y en rojo. DESDE P-12 esa lista esta VACIA, que es una version mas
+			// fuerte de lo mismo: no hay ninguna exencion que un nombre pueda aprovechar.
+			Assert.That(TheNumericCatalogueKeysAToolMayTake, Is.Empty);
 
 			// (d) EL CONTROL: el discriminador sigue disparando contra un hecho de vehiculo de verdad.
 			var wouldBeCaught = new List<string>();
@@ -438,14 +495,16 @@ namespace DealershipCar.Dominio.Pruebas
 		}
 
 		// EL CONTROL DE LOS DOS CENSOS, Y CON EL CONJUNTO DE MEDICIONES VACIO ES EL RENGLON QUE LOS
-		// SOSTIENE. Prueba dos cosas: que el barrido de verdad encuentra las tools -- las OCHO, en
-		// CUATRO clases -- y que el discriminador SI dispara contra un hecho de vehiculo de verdad. Las
-		// cinco mediciones de la lectura de nueve argumentos de la puerta son exactamente los hechos
-		// que aparecerian en una tool si alguien agregara el parametro de comodidad.
+		// SOSTIENE -- mas todavia desde P-12, que dejo VACIA tambien la lista de exenciones: dos
+		// conjuntos vacios los cumple igual un barrido que no encuentra nada. Prueba dos cosas: que el
+		// barrido de verdad encuentra las tools -- las DIEZ, en CUATRO clases -- y que el discriminador
+		// SI dispara contra un hecho de vehiculo de verdad. Las cinco mediciones de la lectura de nueve
+		// argumentos de la puerta son exactamente los hechos que aparecerian en una tool si alguien
+		// agregara el parametro de comodidad.
 		[Test]
 		public void TheSweepFindsTheToolsAndTheDiscriminatorFiresOnARealVehicleFact()
 		{
-			Assert.That(EveryToolMethod(), Has.Count.EqualTo(8),
+			Assert.That(EveryToolMethod(), Has.Count.EqualTo(10),
 				"El barrido dejo de encontrar las tools y los dos censos no defienden nada.");
 			Assert.That(EveryParameterOfEveryTool(), Is.Not.Empty);
 
@@ -657,13 +716,16 @@ namespace DealershipCar.Dominio.Pruebas
 			return found.ToArray();
 		}
 
-		// 'milestone...' dice CUAL precio publicado del catalogo se esta pidiendo: es de la pregunta y
-		// no del vehiculo, y es la unica.
-		private static readonly string[] TheOneCatalogueKey = { "milestone" };
-
+		// Una clave de catalogo NUMERICA seria un numero que dice CUAL respuesta del catalogo se esta
+		// pidiendo, y no un hecho de ningun carro. Hoy no hay ninguna: la lista de mas arriba esta
+		// vacia y el bucle no encuentra nada, que es lo mismo que decir que todo numero es una
+		// medicion.
 		private static bool IsACatalogueKey(ParameterInfo parameter)
 		{
-			return parameter.Name.StartsWith(TheOneCatalogueKey[0], StringComparison.Ordinal);
+			foreach (string each in TheNumericCatalogueKeysAToolMayTake)
+				if (parameter.Name.StartsWith(each, StringComparison.Ordinal)) return true;
+
+			return false;
 		}
 
 		// Una MEDICION es un numero o un instante que no es clave de catalogo. En esta superficie los

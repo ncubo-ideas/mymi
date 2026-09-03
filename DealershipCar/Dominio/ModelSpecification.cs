@@ -360,13 +360,25 @@ namespace DealershipCar.Dominio
 
 		/// <summary>
 		/// La misma ley, y ademas si esa vigencia rige EN EL INSTANTE RECIBIDO. El dominio no lee
-		/// ningun reloj: sin ese instante no hay forma de decir "vencido" respecto a nada.
+		/// ningun reloj: sin ese instante no hay forma de decir "vencido" respecto a nada. Resuelve
+		/// el codigo del wire y delega: el cuerpo es uno solo, y es el que la enumeracion tambien
+		/// recorre.
 		/// </summary>
 		internal SpecificationAnswer ARevisionAppliesForward(
 			OperationKindCode kind, PublishedMilestone milestone, DateTime asOf)
 		{
-			MaintenanceOperationKind operation = MaintenanceOperationKind.OfCode(kind);
+			return ARevisionAppliesForward(
+				MaintenanceOperationKind.OfCode(kind), milestone, asOf);
+		}
 
+		/// <summary>
+		/// La misma ley con la clase de operacion ya resuelta. Es el UNICO cuerpo que contesta el
+		/// precio de un hito en un instante: la lectura llaveada llega envuelta y la enumeracion
+		/// llega derecho, asi que las dos dicen lo mismo porque no hay dos sitios que decirlo.
+		/// </summary>
+		internal SpecificationAnswer ARevisionAppliesForward(
+			MaintenanceOperationKind operation, PublishedMilestone milestone, DateTime asOf)
+		{
 			for (int revision = _order.Count - 1; revision >= 0; revision--)
 			{
 				PublishedRevision candidate = _order[revision];
@@ -378,7 +390,7 @@ namespace DealershipCar.Dominio
 					candidate, candidate.DescribeServicePrice(operation, milestone, asOf));
 			}
 
-			return UnpublishedIsAnAnswer(TheSubjectOfAServicePrice(kind));
+			return UnpublishedIsAnAnswer(TheSubjectOfAServicePrice(operation));
 		}
 
 		/// <summary>
@@ -649,6 +661,140 @@ namespace DealershipCar.Dominio
 
 			return ARevisionAppliesForward(
 				kind, TheMilestone(milestoneDistance, milestoneUnit)).RevisionCode();
+		}
+
+		/// <summary>
+		/// Cuanto cuesta esa operacion en ese hito, con su moneda, su vigencia y la revision, y SIN
+		/// decir si rige: eso necesita un instante, y quien no tenga ninguno que aportar igual puede
+		/// citar lo que el fabricante publico. TOTAL.
+		/// </summary>
+		internal string DescribePublishedServicePrice(
+			OperationKindCode kind, int milestoneDistance, DistanceUnitCode milestoneUnit)
+		{
+			if (milestoneDistance <= 0)
+				return UnpublishedIsAnAnswer(TheSubjectOfAServicePrice(kind)).Describe();
+
+			return ARevisionAppliesForward(
+				kind, TheMilestone(milestoneDistance, milestoneUnit)).Describe();
+		}
+
+		/// <summary>
+		/// Si alguna revision sellada publico algun precio. TOTAL: es la pregunta que hay que hacer
+		/// antes de leer las filas, y no recibe instante porque sellada es un estado y no un
+		/// instante.
+		/// </summary>
+		internal bool HasAnyPublishedServicePrice()
+		{
+			return ThePriceKeysThatGovern().Count > 0;
+		}
+
+		/// <summary>
+		/// Cuantos precios publicados hay. DERIVADO de la enumeracion en cada lectura y nunca
+		/// guardado, asi que no puede quedar en desacuerdo con las filas. TOTAL.
+		/// </summary>
+		internal int PublishedServicePriceCount()
+		{
+			return ThePriceKeysThatGovern().Count;
+		}
+
+		/// <summary>
+		/// De que operacion es cada precio publicado, por el NOMBRE del miembro, una por fila y de la
+		/// revision mas nueva a la mas vieja. TOTAL.
+		/// </summary>
+		internal string[] PublishedPriceOperationsAsOf(DateTime asOf)
+		{
+			List<APublishedPriceRow> rows = ThePublishedPricesAsOf(asOf);
+
+			string[] said = new string[rows.Count];
+
+			for (int row = 0; row < rows.Count; row++) said[row] = rows[row].TheNameOfItsOperation();
+
+			return said;
+		}
+
+		/// <summary>
+		/// A que hito se publico cada precio, dicho con su unidad, una por fila y en el mismo orden.
+		/// TOTAL.
+		/// </summary>
+		internal string[] PublishedPriceMilestonesAsOf(DateTime asOf)
+		{
+			List<APublishedPriceRow> rows = ThePublishedPricesAsOf(asOf);
+
+			string[] said = new string[rows.Count];
+
+			for (int row = 0; row < rows.Count; row++)
+				said[row] = rows[row].TheMilestoneItWasPublishedAt();
+
+			return said;
+		}
+
+		/// <summary>
+		/// Cada precio publicado en su propia frase -- con su monto, su moneda, su vigencia, si rige
+		/// en el instante preguntado y su revision --, una por fila y en el mismo orden. TOTAL.
+		/// </summary>
+		internal string[] DescribeEachPublishedPriceAsOf(DateTime asOf)
+		{
+			List<APublishedPriceRow> rows = ThePublishedPricesAsOf(asOf);
+
+			string[] said = new string[rows.Count];
+
+			for (int row = 0; row < rows.Count; row++) said[row] = rows[row].Describe();
+
+			return said;
+		}
+
+		/// <summary>
+		/// De que revision salio cada precio publicado, una por fila y en el mismo orden. TOTAL.
+		/// </summary>
+		internal string[] PublishedPriceRevisionsAsOf(DateTime asOf)
+		{
+			List<APublishedPriceRow> rows = ThePublishedPricesAsOf(asOf);
+
+			string[] said = new string[rows.Count];
+
+			for (int row = 0; row < rows.Count; row++) said[row] = rows[row].TheRevisionItCameFrom();
+
+			return said;
+		}
+
+		private List<APublishedPriceKey> ThePriceKeysThatGovern()
+		{
+			List<APublishedPriceKey> keys = new List<APublishedPriceKey>();
+
+			for (int revision = _order.Count - 1; revision >= 0; revision--)
+			{
+				PublishedRevision candidate = _order[revision];
+
+				if (!OnlyASealedRevisionAnswers(candidate)) continue;
+
+				foreach (APublishedPriceKey arriving in candidate.ThePriceKeysItPublished())
+					if (!ItIsAlreadyOnTheList(keys, arriving)) keys.Add(arriving);
+			}
+
+			return keys;
+		}
+
+		private static bool ItIsAlreadyOnTheList(
+			List<APublishedPriceKey> keys, APublishedPriceKey arriving)
+		{
+			for (int key = 0; key < keys.Count; key++)
+				if (keys[key].IsTheSameKeyAs(arriving)) return true;
+
+			return false;
+		}
+
+		private List<APublishedPriceRow> ThePublishedPricesAsOf(DateTime asOf)
+		{
+			List<APublishedPriceKey> keys = ThePriceKeysThatGovern();
+			List<APublishedPriceRow> rows = new List<APublishedPriceRow>();
+
+			for (int key = 0; key < keys.Count; key++)
+				rows.Add(APublishedPriceRow.Of(
+					keys[key],
+					ARevisionAppliesForward(
+						keys[key].TheOperationItNames(), keys[key].TheMilestoneItNames(), asOf)));
+
+			return rows;
 		}
 
 		/// <summary>Si hay publicada una regla de servicio en otro taller. TOTAL.</summary>
@@ -1020,8 +1166,12 @@ namespace DealershipCar.Dominio
 
 		private static string TheSubjectOfAServicePrice(OperationKindCode kind)
 		{
-			return "Precio del servicio de "
-				+ MaintenanceOperationKind.OfCode(kind).HowItIsSaid.ToLowerInvariant()
+			return TheSubjectOfAServicePrice(MaintenanceOperationKind.OfCode(kind));
+		}
+
+		private static string TheSubjectOfAServicePrice(MaintenanceOperationKind operation)
+		{
+			return "Precio del servicio de " + operation.HowItIsSaid.ToLowerInvariant()
 				+ " en el hito preguntado";
 		}
 

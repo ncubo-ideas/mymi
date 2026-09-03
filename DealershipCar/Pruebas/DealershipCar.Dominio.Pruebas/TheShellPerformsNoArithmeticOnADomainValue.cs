@@ -23,13 +23,12 @@ namespace DealershipCar.Dominio.Pruebas
 	// EL DISCRIMINADOR ES EL QUE NOMBRAN LAS REBANADAS: Wasm/Parts/HowANumberReads.cs dice de si mismo
 	// "Es formato y no una cuenta". FORMATO SE PERMITE; ARITMETICA NO.
 	//
-	// LAS OCHO CARPETAS DEL MODULO Y COMO LAS TRATA:
+	// LAS SIETE CARPETAS DEL MODULO Y COMO LAS TRATA:
 	//
 	//   App\ (cinco proyectos: App, Frontera, Consola, Mcp, Wasm)  JUZGADA
 	//   EndPointDeEventos\                                          JUZGADA -- hermana de App\, no hija
 	//   InyectorDeEventosDemo\                                      JUZGADA -- hermana de App\, no hija
 	//   PaginaDeDescarga\                                           ENUMERADA, publicado\ excluido
-	//   MiCarroAppMockup\                                           ENUMERADA, aciertos afirmados PRESENTES
 	//   Dominio\                                                    FUERA DEL SUJETO -- componer es su oficio
 	//   Pruebas\                                                    FUERA DEL SUJETO -- una prueba calcula lo que espera
 	//   Mecanismo\                                                  EXCLUIDA, la regla de todo barrido del repo
@@ -51,11 +50,14 @@ namespace DealershipCar.Dominio.Pruebas
 			new object[] { TheCodeOfTheShellsAsData.Frontera, 2 },
 			new object[] { TheCodeOfTheShellsAsData.Consola, 4 },
 			new object[] { TheCodeOfTheShellsAsData.Mcp, 8 },
-			new object[] { TheCodeOfTheShellsAsData.Wasm, 22 },
+			// EL PISO DE Wasm SUBIO 22 -> 24 CON LOS DOS PORTADORES DE LA PANTALLA DE MANTENIMIENTO,
+			// para conservar el margen de cinco archivos que le dio la rebanada anterior. Un piso que
+			// se queda quieto mientras la raiz crece es un piso que deja de decir cuando algo dejo de
+			// llegar.
+			new object[] { TheCodeOfTheShellsAsData.Wasm, 24 },
 			new object[] { TheCodeOfTheShellsAsData.EndPointDeEventos, 1 },
 			new object[] { TheCodeOfTheShellsAsData.InyectorDeEventosDemo, 1 },
 			new object[] { TheCodeOfTheShellsAsData.PaginaDeDescarga, 1 },
-			new object[] { TheCodeOfTheShellsAsData.MiCarroAppMockup, 5 },
 		};
 
 		// UN ARCHIVO CON NOMBRE POR RAIZ. El piso cuenta; esto nombra. Un glob que se rompio y trajo
@@ -70,7 +72,6 @@ namespace DealershipCar.Dominio.Pruebas
 			new object[] { TheCodeOfTheShellsAsData.EndPointDeEventos, "Program.cs" },
 			new object[] { TheCodeOfTheShellsAsData.InyectorDeEventosDemo, "Program.cs" },
 			new object[] { TheCodeOfTheShellsAsData.PaginaDeDescarga, "nginx.conf" },
-			new object[] { TheCodeOfTheShellsAsData.MiCarroAppMockup, "Mi Carro v2.dc.html" },
 		};
 
 		// LA LISTA DE PERMITIDOS. Cada renglon: raiz, archivo, EL MIEMBRO SOBRE EL QUE ESTA, la linea
@@ -417,32 +418,19 @@ namespace DealershipCar.Dominio.Pruebas
 			};
 		}
 
-		// LA MAQUETA SE ENUMERA AL REVES: sus cuentas se afirman PRESENTES. Es el registro de lo que la
-		// caratula se niega a copiar -- el heroe "Te faltan N km" es una resta y las alturas de las
-		// barras son una division, y P-9 dice que ninguna de las dos se construye. El dia que la
-		// maqueta deje de tenerlas, la decision de no copiarlas se queda sin sujeto.
-		[Test]
-		public void TheMockupStillShowsTheArithmeticTheShellRefusesToCopy()
-		{
-			List<ArithmeticHit> found =
-				TheCodeOfTheShellsAsData.TheArithmeticIn(TheCodeOfTheShellsAsData.MiCarroAppMockup);
-
-			Assert.That(TheOneThatSays(found, "\"Te faltan ~\""), Is.Not.Null,
-				"La maqueta dejo de restar el odometro al proximo servicio. Esa resta es el sujeto de "
-				+ "P-9: la frase la compone el dominio y la pantalla la imprime entera.");
-
-			Assert.That(TheOneThatSays(found, "x.km / maxKm"), Is.Not.Null,
-				"La maqueta dejo de dividir el kilometraje del mes entre el maximo. Esas alturas son "
-				+ "la otra mitad de P-9: el grafico de barras no se construye.");
-		}
-
-		private static ArithmeticHit TheOneThatSays(List<ArithmeticHit> found, string what)
-		{
-			foreach (ArithmeticHit hit in found)
-				if (hit.Snippet.Contains(what)) return hit;
-
-			return null;
-		}
+		// LA MAQUETA YA NO SE BARRE. Estuvo enumerada al reves -- sus cuentas afirmadas PRESENTES, como
+		// registro de lo que la caratula se niega a copiar -- y se borro del modulo por obsoleta. La
+		// raiz no podia quedar nombrada aca sin la carpeta: la carpeta es gitignorada, asi que en un
+		// clon nuevo nunca llego, y cinco pruebas de estas dos fixtures se ponian rojas en master por
+		// una carpeta que solo existia en la maquina de quien la diseno.
+		//
+		// LO QUE SE FUE CON ELLA ES EL SUJETO, NO LA LEY. Que la caratula no construya la resta del
+		// heroe ni la division de las alturas de las barras lo sigue afirmando, sin necesitar la
+		// maqueta, TheJudgedRootsHoldExactlyTheArithmeticThatIsWrittenDown: ninguna de las dos formas
+		// esta en la lista de permitidos, asi que escribirla en un .razor pone rojo ese renglon. Y las
+		// dos siguen siendo lo que el detector se prueba a si mismo en
+		// TheDetectorSeesEveryShapeTheConventionIsAbout, donde son un texto de la prueba y no un
+		// archivo que tenga que llegar.
 
 		private static void ItSees(string file, string source)
 		{

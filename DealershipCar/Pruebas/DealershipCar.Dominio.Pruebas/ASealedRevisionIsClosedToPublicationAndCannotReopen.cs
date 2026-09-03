@@ -59,6 +59,13 @@ namespace DealershipCar.Dominio.Pruebas
 		// de la lista que devuelve una respuesta compuesta en vez de una frase, porque es la unica
 		// que puede quedar sin poder evaluarse -- y eso se dice con un tipo, no con un miembro
 		// benigno del conjunto de respuestas.
+		//
+		// EN MS-3 CRECIO CON UNO, Y ES UNA CUARTA FORMA: ThePriceKeysItPublished, que ENUMERA las
+		// claves de lo que esta revision publico. No es una entrada, ni una pregunta de presencia,
+		// ni un accesor guardado -- es una lectura total que contesta que precios hay. Leida contra
+		// esta ley: no acepta nada, no cambia ningun estado y no puede devolver una revision sellada
+		// a borrador; y entrega CLAVES y no entradas, asi que nadie recibe un monto por este camino.
+		// Es lo que deja enumerar los precios sin que ningun llamador aporte un hito.
 		private static readonly string[] LoQueUnaRevisionPuedeExponer =
 		{
 			".ctor",
@@ -88,6 +95,7 @@ namespace DealershipCar.Dominio.Pruebas
 			"PublishAServicePrice",
 			"HasAServicePrice",
 			"DescribeServicePrice",
+			"ThePriceKeysItPublished",
 			"PublishAServicingPolicy",
 			"HasAServicingPolicy",
 			"DescribeServicingPolicy",

@@ -41,5 +41,14 @@ namespace DealershipCar.Dominio
 				+ " y las mediciones están en " + _mismatchedUnit.Name
 				+ ", y las unidades nunca se convierten";
 		}
+
+		/// <summary>
+		/// No hay resta que hacer entre dos unidades distintas. La frase es la del dominio, que
+		/// nombra cual contra cual.
+		/// </summary>
+		internal override ARemainder WhatRemains()
+		{
+			return ARemainder.UnitsThatDoNotMatch(Describe());
+		}
 	}
 }

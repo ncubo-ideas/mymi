@@ -15,7 +15,7 @@ namespace DealershipCar.Dominio.Pruebas
 	// aunque el estado siga siendo correcto.
 	//
 	// Asi que ninguna linea de DSL de DealershipCarAPI puede llegar al journal de una persona sin
-	// haberse ejecutado antes aca. Esta prueba corre CADA UNA de las CIENTO NUEVE operaciones de
+	// haberse ejecutado antes aca. Esta prueba corre CADA UNA de las CIENTO VEINTIOCHO operaciones de
 	// la puerta al menos una vez -- las veintiuna de la agenda (OS2/T6), las siete de la ingesta
 	// (OS2/T8: los dos comandos de la bitacora, sus cuatro lecturas, y el Apply), CanBeDeferred, los
 	// once comandos de publicacion de la especificacion (T5), las TREINTA Y SIETE lecturas de la
@@ -24,8 +24,10 @@ namespace DealershipCar.Dominio.Pruebas
 	// del vehiculo (WarrantyEnvelope/T4), las ONCE lecturas sin componer del perfil y del odometro
 	// (WarrantyEnvelope/T5) y las SEIS COMPUESTAS (WarrantyEnvelope/T6), los DOS CONTEOS de la
 	// agenda que BuildOrder/SH-1 agrego al arreglar P-2 -- al dia y agendadas -- los TRES COMANDOS
-	// de las estadias en el taller que BuildOrder/SH-3 agrego con la quinta global de raiz, y las
-	// OCHO LECTURAS de esas estadias que agrego BuildOrder/SH-4.
+	// de las estadias en el taller que BuildOrder/SH-3 agrego con la quinta global de raiz, las
+	// OCHO LECTURAS de esas estadias que agrego BuildOrder/SH-4, y las DIECINUEVE de la pantalla de
+	// mantenimiento que agrego BuildOrder/MS-4: DIEZ de la cuenta atras, CINCO del historial y
+	// CUATRO de los precios publicados.
 	// No mira reglas de negocio -- de eso se ocupan las otras pruebas del nivel B -- mira que el
 	// script exista, parsee, ate sus parametros y devuelva lo que dijo que devolvia.
 	//
@@ -52,11 +54,15 @@ namespace DealershipCar.Dominio.Pruebas
 	// escrito. Es la misma forma que el censo de escrituras de
 	// TheOwnerIsNeverASourceOfAFactAboutTheirOwnVehicle, con el mismo limite.
 	//
-	// LAS OPERACIONES SON CIENTO NUEVE Y LOS SCRIPTS SON MAS, y la ingesta es donde la diferencia
-	// se vuelve grande: Apply es UNA operacion de la puerta y tiene VEINTIDOS scripts detras -- uno
-	// por cada tipo de hecho recibido, que son veintiuno, mas el comando suelto que avanza el punto
-	// de control cuando el dominio rechaza el hecho. Contar operaciones y contar scripts son dos
-	// cuentas distintas, y la que S5 obliga a hacer es la de los scripts.
+	// LAS OPERACIONES SON CIENTO VEINTIOCHO Y LOS SCRIPTS SON MAS, y la ingesta es donde la
+	// diferencia se vuelve grande: Apply es UNA operacion de la puerta y tiene VEINTIDOS scripts
+	// detras -- uno por cada tipo de hecho recibido, que son veintiuno, mas el comando suelto que
+	// avanza el punto de control cuando el dominio rechaza el hecho. Contar operaciones y contar
+	// scripts son dos cuentas distintas, y la que S5 obliga a hacer es la de los scripts.
+	//
+	// Y LAS TRES GUARDADAS DE LA CUENTA ATRAS SON DOS SCRIPTS CADA UNA: el pre-chequeo pregunta con
+	// el mismo instante antes de leer el monto, que es DEC-30 y su precio medido en DEC-34. Correrlas
+	// con la respuesta en si y con la respuesta en no toca los dos caminos.
 	//
 	// LOS TRES QUE AGREGO BuildOrder/SH-5 SON SCRIPTS Y NO OPERACIONES, y por eso la lista de abajo
 	// no se movio: los tres hechos de las estadias entran por el Apply que ya estaba y aplican los
@@ -125,18 +131,24 @@ namespace DealershipCar.Dominio.Pruebas
 		{
 			"AddOwnerOperation", "AdoptPlanRevision", "Apply", "CanBeDeferred",
 			"CanCoverageBeEvaluated", "CanCoverageBeEvaluatedForThisVehicle",
-			"CanTheEnvelopeBeEvaluated", "CompleteOperation", "CountDue", "CountOverdue",
+			"CanDaysRemainingBeSaid", "CanDistanceRemainingBeSaid",
+			"CanTheEnvelopeBeEvaluated", "CompleteOperation",
+			"CompletionCount", "CompletionsOf", "CompletionsOfEveryKind",
+			"CountDue", "CountOverdue",
 			"CountScheduled", "CountUpToDate",
 			"CoverageExclusions", "CoveredSystems",
 			"DaysInTheShopBetween", "DaysInTheShopCountBetween",
 			"DeclareUsageProfile", "DeferOperation",
-			"DeferralsUsed", "DescribeCoverage", "DescribeCoverageForThisVehicle",
-			"DescribeCoverageSummary", "DescribeDaysInTheShopBetween", "DescribeFluid",
-			"DescribeFuel", "DescribePublishedServiceInterval",
+			"DeferralsUsed", "DescribeCompletions", "DescribeCountdown",
+			"DescribeCoverage", "DescribeCoverageForThisVehicle",
+			"DescribeCoverageSummary", "DescribeDaysInTheShopBetween", "DescribeDaysRemaining",
+			"DescribeDistanceRemaining", "DescribeFluid",
+			"DescribeFuel", "DescribePublishedServiceInterval", "DescribePublishedServicePrice",
 			"DescribePublishedServicingElsewhereRule", "DescribePublishedWarrantyEnvelope",
 			"DescribeServiceInterval", "DescribeServicePrice", "DescribeServicingElsewhereRule",
 			"DescribeTheStayAt", "DescribeTyre", "DescribeWarrantyEnvelope",
-			"Evaluate", "HasASealedRevision", "HasAnOdometerReading", "HasAnyStayBetween",
+			"Evaluate", "HasASealedRevision", "HasAnOdometerReading", "HasAnyCompletion",
+			"HasAnyPublishedServicePrice", "HasAnyStayBetween",
 			"HasAnythingDue", "HasBeenEvaluated", "HasDeliveryBeenRecorded", "IsCoveragePublished",
 			"IsFluidPublished", "IsFuelPublished", "IsInsideTheShopAt",
 			"IsServiceIntervalPublished",
@@ -146,15 +158,18 @@ namespace DealershipCar.Dominio.Pruebas
 			"PublishCoverageExclusion", "PublishCoveredSystem", "PublishFluidSpecification",
 			"PublishFuelGrade", "PublishServiceInterval", "PublishServicePrice",
 			"PublishServicingPolicy", "PublishTyreSpecification", "PublishWarrantyEnvelope",
+			"PublishedServicePriceCount", "PublishedServicePricesAsOf",
 			"ReadCoverageRevision", "ReadCoverageStanding",
 			"ReadCoverageStandingForThisVehicle", "ReadCurrentRevisionCode",
-			"ReadCurrentRevisionPublishedAt", "ReadDeliveredAt", "ReadDeliveryReading",
-			"ReadDeliveryUnit", "ReadDueReason", "ReadDueState", "ReadEnvelopePublishedAt",
+			"ReadCurrentRevisionPublishedAt", "ReadDaysRemaining", "ReadDeliveredAt",
+			"ReadDeliveryReading",
+			"ReadDeliveryUnit", "ReadDistanceRemainderStanding", "ReadDistanceRemaining",
+			"ReadDistanceRemainingUnit", "ReadDueReason", "ReadDueState", "ReadEnvelopePublishedAt",
 			"ReadEnvelopeStanding",
 			"ReadFluidRevision", "ReadFuelRevision", "ReadMinimumFuelGrade", "ReadModel",
 			"ReadNextDueKind", "ReadOdometer", "ReadOdometerObservedAt", "ReadOdometerUnit",
 			"ReadRevisionState", "ReadServiceIntervalRevision", "ReadServicePriceRevision",
-			"ReadServicingPolicyRevision", "ReadTyreRevision", "ReadVin",
+			"ReadServicingPolicyRevision", "ReadTimeRemainderStanding", "ReadTyreRevision", "ReadVin",
 			"RecordConditionThreshold", "RecordDelivery", "RecordReading",
 			"RecordShopCollection", "RecordShopEntry", "RecordShopStay", "RegisterDevice",
 			"RemoveOwnerOperation", "SealRevision", "SeedPlanOperation",
@@ -184,9 +199,9 @@ namespace DealershipCar.Dominio.Pruebas
 		// dejo escrito "setenta y siete" cuando la puerta ya tenia setenta y nueve: una cuenta
 		// afirmada en prosa envejece en silencio, y esta afirmada al lado de lo que cuenta.
 		[Test]
-		public void TheOperationsAreOneHundredAndNine()
+		public void TheOperationsAreOneHundredAndTwentyEight()
 		{
-			Assert.That(EveryOperationThisFixtureRuns, Has.Length.EqualTo(109));
+			Assert.That(EveryOperationThisFixtureRuns, Has.Length.EqualTo(128));
 		}
 
 		// La semilla corre en OnHydrated, asi que para cuando la prueba arranca la agenda ya
@@ -339,6 +354,100 @@ namespace DealershipCar.Dominio.Pruebas
 				journal.Api.StaysBetween("2026-01-01", "2026-12-31").Says,
 				Has.Length.EqualTo(1),
 				"Y las CINCO lineas del script del registro atan sus cinco Out en una sola consulta.");
+		}
+
+		// LAS DIECINUEVE DE LA PANTALLA DE MANTENIMIENTO QUE TRAJO MS-4, CADA UNA EN LOS DOS ESTADOS
+		// DEL REGISTRO. Dos estados y no uno porque un registro sin operacion agendada, sin ninguna
+		// completacion y sin ninguna revision sellada contesta la ausencia a casi todo, y diecinueve
+		// ausencias de acuerdo sobre nada no ejercitan lo mismo que diecinueve respuestas.
+		//
+		// LO QUE SE AFIRMA ES LA FORMA: que el script parsee, ate su clase y su instante y vuelva
+		// TIPADO. De que cada una conteste lo suyo se ocupan las tres fixtures de MS-4.
+		[Test]
+		public void EveryMaintenanceScreenReadOfTheDoorParsesBindsAndComesBackTypedInBothStates()
+		{
+			DateTime asked = new DateTime(2026, 2, 1, 0, 0, 0, DateTimeKind.Utc);
+
+			// SIN NADA AGENDADO, NADA COMPLETADO Y NADA SELLADO: las diecinueve corren igual. Las tres
+			// guardadas rechazan por tipo, que es su camino de "no" y es un script mas cada una.
+			Assert.That(journal.Api.CanDistanceRemainingBeSaid("FluidChange", asked), Is.False);
+			Assert.That(journal.Api.CanDaysRemainingBeSaid("FluidChange", asked), Is.False);
+			Assert.That(
+				journal.Api.ReadDistanceRemainderStanding("FluidChange", asked),
+				Is.EqualTo("NoOperationScheduled"));
+			Assert.That(
+				journal.Api.ReadTimeRemainderStanding("FluidChange", asked),
+				Is.EqualTo("NoOperationScheduled"));
+			Assert.That(journal.Api.DescribeDistanceRemaining("FluidChange", asked), Is.Not.Empty);
+			Assert.That(journal.Api.DescribeDaysRemaining("FluidChange", asked), Is.Not.Empty);
+			Assert.That(journal.Api.DescribeCountdown("FluidChange", asked), Is.Not.Empty);
+
+			Assert.Throws<InvalidOperationException>(
+				() => journal.Api.ReadDistanceRemaining("FluidChange", asked));
+			Assert.Throws<InvalidOperationException>(
+				() => journal.Api.ReadDistanceRemainingUnit("FluidChange", asked));
+			Assert.Throws<InvalidOperationException>(
+				() => journal.Api.ReadDaysRemaining("FluidChange", asked));
+
+			Assert.That(journal.Api.HasAnyCompletion("FluidChange"), Is.False);
+			Assert.That(journal.Api.CompletionCount("FluidChange"), Is.EqualTo(0));
+			Assert.That(journal.Api.DescribeCompletions("FluidChange"), Is.Not.Empty);
+			Assert.That(journal.Api.CompletionsOf("FluidChange").Says, Is.Empty);
+			Assert.That(journal.Api.CompletionsOfEveryKind().Kind, Is.Empty);
+
+			Assert.That(journal.Api.HasAnyPublishedServicePrice(), Is.False);
+			Assert.That(journal.Api.PublishedServicePriceCount(), Is.EqualTo(0));
+			Assert.That(journal.Api.PublishedServicePricesAsOf(asked).Says, Is.Empty);
+			Assert.That(
+				journal.Api.DescribePublishedServicePrice("FluidChange", TenThousandUnits, "UnitA"),
+				Is.Not.Empty);
+
+			// CON UNA OPERACION AGENDADA, UNA COMPLETACION Y UNA REVISION SELLADA: las mismas
+			// diecinueve, y ahora las tres guardadas contestan en vez de rechazar.
+			journal.Api.SeedPlanOperation(
+				"FluidChange", "TimeOrDistance", TwelveMonthsInDays, TenThousandUnits, "UnitA",
+				true, false,
+				Delivery, OdometerAtDelivery, "UnitA");
+
+			journal.Api.CompleteOperation(
+				"FluidChange", new DateTime(2026, 1, 21, 0, 0, 0, DateTimeKind.Utc), 35100, "UnitA");
+
+			journal.Api.RecordReading(
+				36000, "UnitA", new DateTime(2026, 1, 25, 0, 0, 0, DateTimeKind.Utc), "Telemetry");
+
+			ASealedSpecSheet();
+
+			Assert.That(journal.Api.CanDistanceRemainingBeSaid("FluidChange", asked), Is.True);
+			Assert.That(journal.Api.CanDaysRemainingBeSaid("FluidChange", asked), Is.True);
+			Assert.That(journal.Api.ReadDistanceRemaining("FluidChange", asked), Is.TypeOf<int>());
+			Assert.That(journal.Api.ReadDistanceRemainingUnit("FluidChange", asked), Is.EqualTo("km"));
+			Assert.That(journal.Api.ReadDaysRemaining("FluidChange", asked), Is.TypeOf<int>());
+			Assert.That(
+				journal.Api.ReadDistanceRemainderStanding("FluidChange", asked),
+				Is.Not.EqualTo("NoOperationScheduled"));
+			Assert.That(
+				journal.Api.ReadTimeRemainderStanding("FluidChange", asked),
+				Is.Not.EqualTo("NoOperationScheduled"));
+			Assert.That(journal.Api.DescribeCountdown("FluidChange", asked), Does.Contain("distancia"));
+
+			Assert.That(journal.Api.HasAnyCompletion("FluidChange"), Is.True);
+			Assert.That(journal.Api.CompletionCount("FluidChange"), Is.EqualTo(1));
+			Assert.That(journal.Api.DescribeCompletions("FluidChange"), Does.Contain("2026-01-21"));
+			Assert.That(
+				journal.Api.CompletionsOf("FluidChange").Says, Has.Length.EqualTo(1),
+				"Y las TRES lineas del script del registro atan sus tres Out en una sola consulta.");
+			Assert.That(
+				journal.Api.CompletionsOfEveryKind().Kind, Is.EqualTo(new[] { "FluidChange" }),
+				"Y las CUATRO lineas del script del historial entero atan sus cuatro Out en una sola.");
+
+			Assert.That(journal.Api.HasAnyPublishedServicePrice(), Is.True);
+			Assert.That(journal.Api.PublishedServicePriceCount(), Is.EqualTo(1));
+			Assert.That(
+				journal.Api.PublishedServicePricesAsOf(asked).Revision, Is.EqualTo(new[] { TheRevision }),
+				"Y las CUATRO lineas del script de los precios atan sus cuatro Out en una sola.");
+			Assert.That(
+				journal.Api.DescribePublishedServicePrice("FluidChange", TenThousandUnits, "UnitA"),
+				Does.Contain("75.5 USD").And.Not.Contain(" Al "));
 		}
 
 		// Las dos lecturas guardadas de E41, del lado del wire. El DomainException del dominio es

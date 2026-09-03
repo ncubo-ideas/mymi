@@ -73,6 +73,21 @@ namespace DealershipCar.Dominio
 			get { return _distance.SuspendedByTheUsageProfile; }
 		}
 
+		/// <summary>
+		/// Lo que le queda a la mitad de tiempo. Delega en la dimension, que es la que tiene los
+		/// operandos: la dimension misma no sale de aqui.
+		/// </summary>
+		internal ARemainder WhatRemainsOnTime()
+		{
+			return _time.WhatRemains();
+		}
+
+		/// <summary>Lo que le queda a la mitad de distancia, por lo mismo.</summary>
+		internal ARemainder WhatRemainsOnDistance()
+		{
+			return _distance.WhatRemains();
+		}
+
 		/// <summary>La respuesta de una evaluacion que si pudo hacerse.</summary>
 		internal static DueAssessment DecidedBy(
 			DueState state,
