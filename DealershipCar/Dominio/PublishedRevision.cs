@@ -327,6 +327,21 @@ namespace DealershipCar.Dominio
 		}
 
 		/// <summary>
+		/// Las claves de los precios que esta revision publico, en el orden en que se publicaron.
+		/// Entrega CLAVES y no entradas: quien enumera necesita saber que precios hay para volver a
+		/// preguntarlos por el mismo camino que cualquier otro, y no necesita ver ningun monto.
+		/// </summary>
+		internal List<APublishedPriceKey> ThePriceKeysItPublished()
+		{
+			List<APublishedPriceKey> keys = new List<APublishedPriceKey>();
+
+			for (int published = 0; published < _servicePrices.Count; published++)
+				keys.Add(_servicePrices[published].TheKeyItWasPublishedUnder());
+
+			return keys;
+		}
+
+		/// <summary>
 		/// Si esta revision publico el precio de esa operacion en ese hito. TOTAL: un hito que no
 		/// esta contesta que no, y el mismo numero en la otra unidad es otro hito.
 		/// </summary>

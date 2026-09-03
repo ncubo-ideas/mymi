@@ -62,9 +62,18 @@ namespace DealershipCar.Dominio
 		}
 
 		/// <summary>
+		/// La clave bajo la que se publico, armada por quien la tiene. Es lo que deja enumerar los
+		/// precios de una revision sin entregar ni las entradas ni sus dos mitades por separado.
+		/// </summary>
+		internal APublishedPriceKey TheKeyItWasPublishedUnder()
+		{
+			return APublishedPriceKey.Of(_kind, _milestone);
+		}
+
+		/// <summary>
 		/// Si este es el precio que se pidio: la misma operacion Y el mismo hito. Es la busqueda con
 		/// nombre que recorre la lista, y se niega a mirar dos hitos en unidades distintas como si
-		/// fueran uno.
+		/// fueran uno. La comparacion misma vive en la clave, en un solo sitio.
 		/// </summary>
 		internal bool IsFor(MaintenanceOperationKind kind, PublishedMilestone milestone)
 		{
@@ -73,7 +82,8 @@ namespace DealershipCar.Dominio
 					"Se busco un precio sin decir de que operacion o para que hito. Sin las dos "
 					+ "mitades no hay precio que buscar.");
 
-			return _kind == kind && _milestone.IsTheSameMilestoneAs(milestone);
+			return TheKeyItWasPublishedUnder().IsTheSameKeyAs(
+				APublishedPriceKey.Of(kind, milestone));
 		}
 
 		/// <summary>
