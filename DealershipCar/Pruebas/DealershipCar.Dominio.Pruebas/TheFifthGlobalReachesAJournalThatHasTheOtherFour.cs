@@ -286,7 +286,7 @@ namespace DealershipCar.Dominio.Pruebas
 				TheBranch, TheSubject, TheStayEntered, TheStayCollected, TheStayDays);
 
 			Assert.That(
-				AStayReadWithoutTheDoor.Days(spelledOutByHand, TheYearFrom, TheYearTo),
+				new DealershipCarAPI(spelledOutByHand).DaysInTheShopBetween(TheYearFrom, TheYearTo),
 				Is.EqualTo(TheStayDays),
 				"La estadia quedo escrita en la global que creo el nombre escrito a mano aqui.");
 
@@ -294,7 +294,7 @@ namespace DealershipCar.Dominio.Pruebas
 
 			DealershipCarApp real = AJournalTheCurrentAppOpened();
 
-			Assert.That(AStayReadWithoutTheDoor.Days(real, TheYearFrom, TheYearTo),
+			Assert.That(new DealershipCarAPI(real).DaysInTheShopBetween(TheYearFrom, TheYearTo),
 				Is.EqualTo(TheStayDays),
 				"Y SIGUE AHI despues de que la app de verdad abrio el journal. Eso solo pasa si el "
 				+ "nombre de su quinto upgrade calza letra por letra con 'estadias-en-taller': un "
@@ -344,7 +344,7 @@ namespace DealershipCar.Dominio.Pruebas
 				+ "unico nuevo es el TEXTO del script, que es una plantilla que este actor nunca "
 				+ "habia visto.");
 
-			Assert.That(AStayReadWithoutTheDoor.Days(real, TheYearFrom, TheYearTo),
+			Assert.That(new DealershipCarAPI(real).DaysInTheShopBetween(TheYearFrom, TheYearTo),
 				Is.EqualTo(TheStayDays),
 				"Y el control que lo prueba: ningun cuerpo volvio a correr, porque la estadia que se "
 				+ "escribio antes sigue ahi. Si alguno hubiera corrido, su global estaria recien "

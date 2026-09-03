@@ -27,12 +27,13 @@ namespace DealershipCar.Dominio.Pruebas
 	//   limites. El censo solo prueba que nadie agrego un miembro sin escribirlo; esto prueba que
 	//   ninguno de los que hay entrega media respuesta.
 	//
-	// POR QUE LOS NUEVE QUE HAY SI PUEDEN. Ninguno es la mitad de una respuesta compuesta: siete son
-	// CONTEOS que la agenda y la bitacora publican por su cuenta -- vencidas, atrasadas, al dia,
-	// agendadas, aplazos usados, mantenimientos perdidos, ultimo evento aplicado -- y dos son HECHOS
-	// RECIBIDOS que el registro guarda tal como llegaron: el odometro del dia de la entrega y el de
-	// hoy. Un hecho recibido se puede dar suelto porque nadie lo derivo de otro; una mitad derivada
-	// no, porque su unidad, su limite y el instante contra el que se midio viven en la frase.
+	// POR QUE LOS ONCE QUE HAY SI PUEDEN. Ninguno es la mitad de una respuesta compuesta: NUEVE son
+	// CONTEOS que la agenda, la bitacora y las estadias publican por su cuenta -- vencidas,
+	// atrasadas, al dia, agendadas, aplazos usados, mantenimientos perdidos, ultimo evento aplicado,
+	// dias en el taller y estadias en un periodo -- y dos son HECHOS RECIBIDOS que el registro
+	// guarda tal como llegaron: el odometro del dia de la entrega y el de hoy. Un hecho recibido se
+	// puede dar suelto porque nadie lo derivo de otro; una mitad derivada no, porque su unidad, su
+	// limite y el instante contra el que se midio viven en la frase.
 	//
 	// AL DIA Y AGENDADAS ENTRARON JUNTAS Y POR ESO, no por comodidad. Inicio.razor contaba las al dia
 	// por el TONO de la pantalla y las dividia entre las NUEVE clases del canon; las dos mitades ya
@@ -53,6 +54,12 @@ namespace DealershipCar.Dominio.Pruebas
 
 		private const int TheOdometerAtDelivery = 30000;
 		private const int TheOdometerToday = 35000;
+
+		// Los dos limites con que el barrido pregunta las dos cuentas de periodo. Sin ninguna estadia
+		// registrada las dos contestan cero, que es lo que hace falta aca: lo que este fixture mide
+		// es que ninguna de las once conteste 37 ni 61111.
+		private const string TheFirstDayOfThePeriod = "2026-01-01";
+		private const string TheLastDayOfThePeriod = "2026-12-31";
 
 		private static readonly DateTime ThePublication =
 			new DateTime(2023, 11, 15, 0, 0, 0, DateTimeKind.Utc);
@@ -88,8 +95,15 @@ namespace DealershipCar.Dominio.Pruebas
 			journal.Dispose();
 		}
 
-		// LAS NUEVE PREGUNTAS DE LA PUERTA QUE CONTESTAN CON UN NUMERO. Conjunto exacto, con la
+		// LAS ONCE PREGUNTAS DE LA PUERTA QUE CONTESTAN CON UN NUMERO. Conjunto exacto, con la
 		// aridad en la clave: una sobrecarga es su propio sitio y el rojo la nombra.
+		//
+		// LAS DOS ULTIMAS ENTRARON EN BuildOrder/SH-4 Y BAJO LA REGLA DE ADMISION QUE YA HABIA: las
+		// dos son CONTEOS QUE EL DOMINIO COMPONE -- la primera de las dos categorias que el
+		// encabezado admite -- sobre las estadias de un periodo. Los dias salen de las estadias que
+		// se cruzan con el periodo y la cuenta sale de los dias; ninguna de las dos es la mitad de
+		// una frase, y las dos tienen su hermana en palabras al lado
+		// (DescribeDaysInTheShopBetween). No hizo falta cambiar la regla.
 		private static readonly string[] EveryNumberTheDoorHandsOut =
 		{
 			"CountDue/0",
@@ -101,6 +115,8 @@ namespace DealershipCar.Dominio.Pruebas
 			"LastEventApplied/0",
 			"ReadDeliveryReading/0",
 			"ReadOdometer/1",
+			"DaysInTheShopCountBetween/2",
+			"StayCountBetween/2",
 		};
 
 		[Test]
@@ -116,7 +132,7 @@ namespace DealershipCar.Dominio.Pruebas
 		}
 
 		// Y LA MITAD POR VALOR, que es la que el censo no da: con un sobre publicado, ninguna de las
-		// siete contesta ninguno de sus dos limites. El censo prueba que nadie agrego un miembro sin
+		// ONCE contesta ninguno de sus dos limites. El censo prueba que nadie agrego un miembro sin
 		// escribirlo; esto prueba que ninguno de los que hay entrega media respuesta.
 		[Test]
 		public void NotOneOfThemAnswersWithEitherLimitOfThePublishedEnvelope()
@@ -176,7 +192,7 @@ namespace DealershipCar.Dominio.Pruebas
 			return found;
 		}
 
-		// Cada una de las siete, invocada contra este registro. Los argumentos se arman por TIPO y no
+		// Cada una de las once, invocada contra este registro. Los argumentos se arman por TIPO y no
 		// por nombre: es lo que hace que una lectura nueva entre al barrido sola en vez de esperar a
 		// que alguien la agregue.
 		private List<KeyValuePair<string, long>> EveryNumberAnsweredRightNow()
@@ -204,6 +220,15 @@ namespace DealershipCar.Dominio.Pruebas
 			foreach (ParameterInfo each in member.GetParameters())
 			{
 				if (each.ParameterType == typeof(DateTime)) { arguments.Add(TheDayItIsAsked); continue; }
+
+				// EL BARRIDO SE ARMA POR TIPO Y AQUI TIENE QUE MIRAR EL NOMBRE, y esa es la excepcion:
+				// un limite de periodo es una cadena que la puerta exige que DIGA UN DIA antes de
+				// performar, asi que "FluidChange" no la pasa. Los dos nombres se escriben porque la
+				// alternativa -- pasar un dia a toda cadena -- rompe las claves de catalogo, que son
+				// cadenas de otra clase.
+				if (each.Name == "fromDay") { arguments.Add(TheFirstDayOfThePeriod); continue; }
+				if (each.Name == "toDay") { arguments.Add(TheLastDayOfThePeriod); continue; }
+
 				if (each.ParameterType == typeof(string)) { arguments.Add("FluidChange"); continue; }
 
 				Assert.Fail(

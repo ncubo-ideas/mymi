@@ -123,7 +123,7 @@ namespace DealershipCar.Dominio.Pruebas
 			Assert.Throws<InvalidOperationException>(
 				() => api.RecordShopEntry(TheSecondBranch, TheOtherSubject, EnteredAgainLater));
 
-			string says = AStayReadWithoutTheDoor.Says(app, EnteredAgainLater);
+			string says = api.DescribeTheStayAt(EnteredAgainLater);
 
 			Assert.That(says, Does.Contain(TheBranch), "La abierta sigue siendo la PRIMERA...");
 			Assert.That(says, Does.Not.Contain(TheSecondBranch), "...y la segunda no entro a medias.");

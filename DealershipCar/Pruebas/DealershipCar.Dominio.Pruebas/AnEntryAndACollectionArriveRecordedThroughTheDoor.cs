@@ -72,12 +72,12 @@ namespace DealershipCar.Dominio.Pruebas
 		{
 			api.RecordShopEntry(TheBranch, TheSubject, Entered);
 
-			Assert.That(AStayReadWithoutTheDoor.Inside(app, Entered), Is.True,
+			Assert.That(api.IsInsideTheShopAt(Entered), Is.True,
 				"En el instante mismo de la entrada ya esta adentro: los dos extremos son inclusivos.");
-			Assert.That(AStayReadWithoutTheDoor.Inside(app, Collected), Is.True,
+			Assert.That(api.IsInsideTheShopAt(Collected), Is.True,
 				"Y sigue adentro despues, porque nadie ha registrado que lo entregaran.");
 
-			string says = AStayReadWithoutTheDoor.Says(app, Collected);
+			string says = api.DescribeTheStayAt(Collected);
 
 			Assert.That(says, Does.Contain(TheBranch), "La frase dice DONDE esta.");
 			Assert.That(says, Does.Contain("2026-06-10 08:30:00"),
@@ -96,7 +96,7 @@ namespace DealershipCar.Dominio.Pruebas
 			api.RecordShopEntry(TheBranch, TheSubject, Entered);
 			api.RecordShopCollection(Collected, TheDaysItCovered);
 
-			string[] days = AStayReadWithoutTheDoor.Days(app, TheYearFrom, TheYearTo);
+			string[] days = api.DaysInTheShopBetween(TheYearFrom, TheYearTo);
 
 			Assert.That(days, Has.Length.EqualTo(3));
 			Assert.That(days[0], Is.EqualTo("2026-06-10"));
@@ -105,7 +105,7 @@ namespace DealershipCar.Dominio.Pruebas
 				"EL TERCER DIA POR VALOR. Una cuenta de tres se satisface igual con los tres dias en "
 				+ "desorden, y el desorden es justo lo que la ley de contiguidad mediria mal.");
 
-			Assert.That(AStayReadWithoutTheDoor.Inside(app, Collected.AddDays(1)), Is.False,
+			Assert.That(api.IsInsideTheShopAt(Collected.AddDays(1)), Is.False,
 				"Y ya no esta adentro despues de la salida: la estadia cerro.");
 		}
 
@@ -119,15 +119,15 @@ namespace DealershipCar.Dominio.Pruebas
 			api.RecordShopEntry(TheBranch, TheSubject, Entered);
 			api.RecordShopCollection(Collected, TheDaysItCovered);
 
-			string live = AStayReadWithoutTheDoor.Says(app, Collected);
-			string[] liveDays = AStayReadWithoutTheDoor.Days(app, TheYearFrom, TheYearTo);
+			string live = api.DescribeTheStayAt(Collected);
+			string[] liveDays = api.DaysInTheShopBetween(TheYearFrom, TheYearTo);
 
 			CloseAndReopenFromTheJournal();
 
-			Assert.That(AStayReadWithoutTheDoor.Says(app, Collected), Is.EqualTo(live),
+			Assert.That(api.DescribeTheStayAt(Collected), Is.EqualTo(live),
 				"La misma frase, palabra por palabra. Si el borde de la puerta le hiciera algo al "
 				+ "instante que el journal no repite, aca vendria otra.");
-			Assert.That(AStayReadWithoutTheDoor.Days(app, TheYearFrom, TheYearTo),
+			Assert.That(api.DaysInTheShopBetween(TheYearFrom, TheYearTo),
 				Is.EqualTo(liveDays));
 			Assert.That(AStayReadWithoutTheDoor.Vin(app), Is.EqualTo(TheVin),
 				"Y la quinta global sigue siendo la de ESTE vehiculo despues de reproducirla.");

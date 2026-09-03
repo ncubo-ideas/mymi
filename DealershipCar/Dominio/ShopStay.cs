@@ -145,6 +145,81 @@ namespace DealershipCar.Dominio
 		}
 
 		/// <summary>
+		/// La sucursal de cada estadia del periodo, una por fila y en orden de entrada. TOTAL.
+		/// </summary>
+		internal string[] StayBranchesBetween(string fromDay, string toDay)
+		{
+			List<AStay> stays = TheStaysBetween(fromDay, toDay).TheStays();
+
+			string[] said = new string[stays.Count];
+
+			for (int row = 0; row < stays.Count; row++) said[row] = stays[row].Branch;
+
+			return said;
+		}
+
+		/// <summary>
+		/// El asunto con que entro cada estadia del periodo, una por fila y en el mismo orden. TOTAL.
+		/// </summary>
+		internal string[] StaySubjectsBetween(string fromDay, string toDay)
+		{
+			List<AStay> stays = TheStaysBetween(fromDay, toDay).TheStays();
+
+			string[] said = new string[stays.Count];
+
+			for (int row = 0; row < stays.Count; row++) said[row] = stays[row].Subject.Value;
+
+			return said;
+		}
+
+		/// <summary>
+		/// Cuando entro cada estadia del periodo, dicho como INSTANTE con su hora y no como un dia de
+		/// calendario, una por fila y en el mismo orden. TOTAL.
+		/// </summary>
+		internal string[] StayEntryInstantsBetween(string fromDay, string toDay)
+		{
+			List<AStay> stays = TheStaysBetween(fromDay, toDay).TheStays();
+
+			string[] said = new string[stays.Count];
+
+			for (int row = 0; row < stays.Count; row++) said[row] = TheInstant(stays[row].EnteredAt);
+
+			return said;
+		}
+
+		/// <summary>
+		/// Los dias que cubrio cada estadia del periodo -- los SUYOS enteros, que es lo que la fila
+		/// dice de si misma -- separados por espacio, una fila por estadia y en el mismo orden. Una
+		/// estadia abierta todavia no tiene ninguno, asi que su celda no dice nada. TOTAL.
+		/// </summary>
+		internal string[] StayCoveredDaysBetween(string fromDay, string toDay)
+		{
+			List<AStay> stays = TheStaysBetween(fromDay, toDay).TheStays();
+
+			string[] said = new string[stays.Count];
+
+			for (int row = 0; row < stays.Count; row++)
+				said[row] = stays[row].IsOpen() ? "" : TheDaysOf(stays[row]);
+
+			return said;
+		}
+
+		/// <summary>
+		/// Cada estadia del periodo en su propia frase, una por fila y en el mismo orden. TOTAL: la
+		/// que sigue abierta tambien se dice con palabras.
+		/// </summary>
+		internal string[] DescribeEachStayBetween(string fromDay, string toDay)
+		{
+			List<AStay> stays = TheStaysBetween(fromDay, toDay).TheStays();
+
+			string[] said = new string[stays.Count];
+
+			for (int row = 0; row < stays.Count; row++) said[row] = stays[row].Describe();
+
+			return said;
+		}
+
+		/// <summary>
 		/// Compone la respuesta de un periodo. Es el UNICO sitio donde un periodo se resuelve: toda
 		/// lectura de periodo lo envuelve, asi que ninguna puede estar acotada distinto que otra.
 		/// </summary>
@@ -164,6 +239,15 @@ namespace DealershipCar.Dominio
 		private static string TheInstant(DateTime instant)
 		{
 			return instant.ToString("yyyy-MM-dd HH:mm:ss", CultureInfo.InvariantCulture);
+		}
+
+		private static string TheDaysOf(AStay stay)
+		{
+			List<string> said = new List<string>();
+
+			foreach (StayDay day in stay.TheDaysItCovered()) said.Add(day.HowItIsSaid());
+
+			return string.Join(" ", said);
 		}
 
 		private static StayDay[] TheReceivedDays(string[] coveredDays)

@@ -1378,6 +1378,102 @@ namespace DealershipCar.App
 			", "clause", TheSystemAndTheInstant(systemCode, asOf));
 		}
 
+		/// <summary>
+		/// Si ESTE vehiculo estaba adentro de alguna sucursal en ese instante. TOTAL, y es una de las
+		/// dos unicas preguntas que alcanzan una estadia todavia abierta.
+		/// </summary>
+		public bool IsInsideTheShopAt(DateTime asOf)
+		{
+			return ATruth(
+				"@inside = stays.IsInsideTheShopAt(@asOf);", "inside",
+				p => { p["asOf", typeof(DateTime)] = InUtc(asOf); });
+		}
+
+		/// <summary>
+		/// La estadia que cubre ese instante, dicha entera, o la constancia de que ninguna lo cubre.
+		/// TOTAL, y es la otra pregunta que alcanza una estadia todavia abierta.
+		/// </summary>
+		public string DescribeTheStayAt(DateTime asOf)
+		{
+			return AText(
+				"@says = stays.DescribeTheStayAt(@asOf);", "says",
+				p => { p["asOf", typeof(DateTime)] = InUtc(asOf); });
+		}
+
+		/// <summary>
+		/// Si alguna estadia con dias registrados se cruza con ese periodo, dicho en dias. TOTAL.
+		/// </summary>
+		public bool HasAnyStayBetween(string fromDay, string toDay)
+		{
+			return ATruth(
+				"@any = stays.HasAnyStayBetween(@fromDay, @toDay);", "any",
+				ADayRange(fromDay, toDay));
+		}
+
+		/// <summary>
+		/// Los dias del periodo en que el vehiculo estuvo en el taller, ascendentes y sin repetidos.
+		/// TOTAL: un periodo sin ninguno contesta la lista vacia, y quien no pueda hacer nada con una
+		/// lista vacia tiene la frase de DescribeDaysInTheShopBetween, que nombra el periodo.
+		/// </summary>
+		public string[] DaysInTheShopBetween(string fromDay, string toDay)
+		{
+			return ATextList(
+				"@days = stays.DaysInTheShopBetween(@fromDay, @toDay);", "days",
+				ADayRange(fromDay, toDay));
+		}
+
+		/// <summary>
+		/// Cuantos dias estuvo en el taller en ese periodo. TOTAL, y lo cuenta el dominio sobre los
+		/// dias: de los dias sale la cuenta y de la cuenta no salen los dias.
+		/// </summary>
+		public int DaysInTheShopCountBetween(string fromDay, string toDay)
+		{
+			return ACount(
+				"@count = stays.DaysInTheShopCountBetween(@fromDay, @toDay);", "count",
+				ADayRange(fromDay, toDay));
+		}
+
+		/// <summary>
+		/// El periodo en una frase: los dias en que estuvo adentro y en cuantas estadias, o la
+		/// constancia de que no hay ninguna con dias registrados. TOTAL.
+		/// </summary>
+		public string DescribeDaysInTheShopBetween(string fromDay, string toDay)
+		{
+			return AText(
+				"@says = stays.DescribeDaysInTheShopBetween(@fromDay, @toDay);", "says",
+				ADayRange(fromDay, toDay));
+		}
+
+		/// <summary>
+		/// Cuantas estadias se cruzan con ese periodo. TOTAL, y es la cuenta de las FILAS del registro
+		/// de abajo.
+		/// </summary>
+		public int StayCountBetween(string fromDay, string toDay)
+		{
+			return ACount(
+				"@count = stays.StayCountBetween(@fromDay, @toDay);", "count",
+				ADayRange(fromDay, toDay));
+		}
+
+		/// <summary>
+		/// Las estadias del periodo como filas: donde, por que, cuando entro, que dias cubrio y la
+		/// frase con que el dominio la dice, en columnas paralelas y en orden de entrada. TOTAL, y
+		/// contesta CERO filas donde no hay ninguna. Un periodo dicho en dias no alcanza una estadia
+		/// todavia abierta: esa se pregunta por instante.
+		/// </summary>
+		public ShopStayRecord StaysBetween(string fromDay, string toDay)
+		{
+			string[][] columns = TheTextColumns(@"
+				@branch      = stays.StayBranchesBetween(@fromDay, @toDay);
+				@subject     = stays.StaySubjectsBetween(@fromDay, @toDay);
+				@enteredAt   = stays.StayEntryInstantsBetween(@fromDay, @toDay);
+				@coveredDays = stays.StayCoveredDaysBetween(@fromDay, @toDay);
+				@says        = stays.DescribeEachStayBetween(@fromDay, @toDay);
+			", TheColumnsOfAStayRecord, ADayRange(fromDay, toDay));
+
+			return ShopStayRecord.Of(columns[0], columns[1], columns[2], columns[3], columns[4]);
+		}
+
 		public string Apply(IMensajeDeEvento message)
 		{
 			ArgumentNullException.ThrowIfNull(message);
@@ -1963,6 +2059,38 @@ namespace DealershipCar.App
 		}
 
 		/// <summary>
+		/// Varias columnas de texto de vuelta desde UNA sola consulta, en el orden de los nombres
+		/// pedidos. Es lo que una fila necesita para ser una fila: dos llamadas a ATextList son dos
+		/// consultas, y dos consultas son dos momentos.
+		/// </summary>
+		private string[][] TheTextColumns(string script, string[] names, Action<Parameters> arguments)
+		{
+			using (RentedParameter rented = app.Actor.RentedParameters())
+			{
+				app.Actor.Using(script)
+				.WithParameters(rented, p => {
+					foreach (string each in names) p[Parameter.Out, each, typeof(string[])] = default;
+
+					arguments(p);
+				})
+				.PerformQuery();
+
+				List<string[]> columns = new List<string[]>();
+
+				foreach (string each in names) columns.Add(rented[each].GetValue<string[]>());
+
+				return columns.ToArray();
+			}
+		}
+
+		/// <summary>
+		/// Los nombres de las cinco columnas del registro de estadias, en el orden en que el DTO las
+		/// recibe.
+		/// </summary>
+		private static readonly string[] TheColumnsOfAStayRecord =
+			{ "branch", "subject", "enteredAt", "coveredDays", "says" };
+
+		/// <summary>
 		/// Los nueve hechos que la pregunta de cobertura necesita, atados una sola vez para las tres
 		/// lecturas que la hacen. Van los nueve tal como llegaron: la resta entre el limite y el
 		/// odometro es donde se compara la unidad, y precalcularla afuera se llevaria esa
@@ -2111,18 +2239,6 @@ namespace DealershipCar.App
 		}
 
 		/// <summary>
-		/// Si el vehiculo estaba adentro de alguna sucursal en ese instante. Vive privada porque la
-		/// pregunta publica todavia no existe: aca la usan las dos guardas de abajo, con el MISMO
-		/// instante que el comando va a mandar.
-		/// </summary>
-		private bool TheVehicleIsInsideAt(DateTime asOf)
-		{
-			return ATruth(
-				"@inside = stays.IsInsideTheShopAt(@asOf);", "inside",
-				p => { p["asOf", typeof(DateTime)] = InUtc(asOf); });
-		}
-
-		/// <summary>
 		/// Que el vehiculo NO estuviera ya adentro cuando dice que entro. La guarda del dominio sigue
 		/// siendo la duena de la invariante -- un carro no esta en dos sucursales a la vez -- y esta
 		/// la adelanta al unico momento en que rechazarla todavia es gratis. NO la ve entera: una
@@ -2130,7 +2246,7 @@ namespace DealershipCar.App
 		/// </summary>
 		private void TheVehicleHasToBeOutsideAt(DateTime enteredAt)
 		{
-			if (!TheVehicleIsInsideAt(enteredAt)) return;
+			if (!IsInsideTheShopAt(enteredAt)) return;
 
 			throw new InvalidOperationException(
 				$"Este vehiculo ya estaba adentro de un taller al {InUtc(enteredAt):O}: pregunte "
@@ -2146,7 +2262,7 @@ namespace DealershipCar.App
 		/// </summary>
 		private void TheVehicleHasToBeInsideAt(DateTime collectedAt)
 		{
-			if (TheVehicleIsInsideAt(collectedAt)) return;
+			if (IsInsideTheShopAt(collectedAt)) return;
 
 			throw new InvalidOperationException(
 				$"Este vehiculo no estaba adentro de ningun taller al {InUtc(collectedAt):O}, asi que "

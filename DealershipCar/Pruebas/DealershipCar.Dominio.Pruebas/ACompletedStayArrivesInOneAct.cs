@@ -80,14 +80,14 @@ namespace DealershipCar.Dominio.Pruebas
 		{
 			api.RecordShopStay(TheBranch, TheSubject, Entered, Collected, TheDaysItCovered);
 
-			Assert.That(AStayReadWithoutTheDoor.Inside(app, Entered), Is.True,
+			Assert.That(api.IsInsideTheShopAt(Entered), Is.True,
 				"Adentro en el instante de la entrada.");
-			Assert.That(AStayReadWithoutTheDoor.Inside(app, Collected), Is.True,
+			Assert.That(api.IsInsideTheShopAt(Collected), Is.True,
 				"Y en el de la salida: los dos extremos son inclusivos.");
-			Assert.That(AStayReadWithoutTheDoor.Inside(app, Collected.AddSeconds(1)), Is.False,
+			Assert.That(api.IsInsideTheShopAt(Collected.AddSeconds(1)), Is.False,
 				"Y un segundo despues ya no: la estadia llego cerrada.");
 
-			string[] days = AStayReadWithoutTheDoor.Days(app, TheYearFrom, TheYearTo);
+			string[] days = api.DaysInTheShopBetween(TheYearFrom, TheYearTo);
 
 			Assert.That(days, Has.Length.EqualTo(2));
 			Assert.That(days[0], Is.EqualTo("2026-03-02"));
@@ -95,7 +95,7 @@ namespace DealershipCar.Dominio.Pruebas
 				"Los dos dias por valor. DOS es el control que mata una constante: una estadia de tres "
 				+ "dias y una de dos no pueden contestar lo mismo.");
 
-			string says = AStayReadWithoutTheDoor.Says(app, Collected);
+			string says = api.DescribeTheStayAt(Collected);
 
 			Assert.That(says, Does.Contain(TheBranch));
 			Assert.That(says, Does.Contain("2026-03-02 07:15:00"),
@@ -112,7 +112,7 @@ namespace DealershipCar.Dominio.Pruebas
 		{
 			api.RecordShopEntry(TheOtherBranch, TheOtherSubject, TheOtherStayOpenedEarlier);
 
-			Assert.That(AStayReadWithoutTheDoor.Inside(app, Entered), Is.True,
+			Assert.That(api.IsInsideTheShopAt(Entered), Is.True,
 				"Hay una estadia abierta que ya cubre el instante del acto unico. ES LA CONDICION QUE "
 				+ "HACE QUE ESTA PRUEBA MIDA ALGO: es el unico arreglo en que un pre-chequeo prohibido "
 				+ "sobre RecordShopStay refusaria la llamada.");
@@ -123,11 +123,11 @@ namespace DealershipCar.Dominio.Pruebas
 				+ "'una sola abierta a la vez' no la mira. Un pre-chequeo aca refusaria el registro "
 				+ "correctivo que esta forma existe para permitir.");
 
-			Assert.That(AStayReadWithoutTheDoor.Days(app, TheYearFrom, TheYearTo),
+			Assert.That(api.DaysInTheShopBetween(TheYearFrom, TheYearTo),
 				Has.Length.EqualTo(2),
 				"Y los dias de la cerrada quedaron. La abierta no aporta ninguno: no tiene todavia.");
 
-			Assert.That(AStayReadWithoutTheDoor.Inside(app, Collected.AddMonths(3)), Is.True,
+			Assert.That(api.IsInsideTheShopAt(Collected.AddMonths(3)), Is.True,
 				"Y la abierta sigue abierta mucho despues de la salida de la cerrada: registrar la "
 				+ "cerrada no la toco.");
 		}
@@ -139,13 +139,13 @@ namespace DealershipCar.Dominio.Pruebas
 		{
 			api.RecordShopStay(TheBranch, TheSubject, Entered, Collected, TheDaysItCovered);
 
-			string live = AStayReadWithoutTheDoor.Says(app, Collected);
-			string[] liveDays = AStayReadWithoutTheDoor.Days(app, TheYearFrom, TheYearTo);
+			string live = api.DescribeTheStayAt(Collected);
+			string[] liveDays = api.DaysInTheShopBetween(TheYearFrom, TheYearTo);
 
 			CloseAndReopenFromTheJournal();
 
-			Assert.That(AStayReadWithoutTheDoor.Says(app, Collected), Is.EqualTo(live));
-			Assert.That(AStayReadWithoutTheDoor.Days(app, TheYearFrom, TheYearTo),
+			Assert.That(api.DescribeTheStayAt(Collected), Is.EqualTo(live));
+			Assert.That(api.DaysInTheShopBetween(TheYearFrom, TheYearTo),
 				Is.EqualTo(liveDays));
 		}
 

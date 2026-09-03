@@ -131,7 +131,7 @@ namespace DealershipCar.Dominio.Pruebas
 		[Test]
 		public void TheDayIsRefusedBeforeTheStateIsEvenAskedAbout()
 		{
-			Assert.That(AStayReadWithoutTheDoor.Inside(app, Collected), Is.False,
+			Assert.That(api.IsInsideTheShopAt(Collected), Is.False,
 				"No hay ninguna estadia: el pre-chequeo de la entrega refusaria esta llamada.");
 
 			ArgumentException refusal = Assert.Throws<ArgumentException>(
