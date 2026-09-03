@@ -21,7 +21,7 @@
     {
       "name": "total_de_facturas",
       "title": "Total spent",
-      "description": "How much the person spent in total, adding up every purchase invoice their app has recorded on this computer. It also returns how many invoices there are and up to which provider event the app has read, which tells you whether it is up to date. The data comes from the record the app wrote in the person's folder, not from any server.",
+      "description": "How much the person spent in total, adding up every purchase invoice their app has recorded on this computer. It also returns how many invoices there are and up to which provider event the app has read, which tells you whether it is up to date. The data comes from the record the app wrote in the person's folder, not from any server. THE TOTAL HAS NO CURRENCY: the institution does not report one in its events, so this module does not know it and neither do you. Say the amount as the bare number it is, and do not attach a currency or a unit to it - not 'units' either, which is not a thing anybody spends.",
       "readOnly": true,
       "input": []
     }
