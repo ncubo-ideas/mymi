@@ -710,15 +710,23 @@ h1:focus, h1:focus-visible { outline: none; }
 .sorteo-premio { margin: 10px 0 0; font-size: 13.5px; color: var(--tenue); }
 .sorteo-premio b { color: var(--cobre); font-weight: 600; }
 
-/* DE DÓNDE SALIERON. Es lo que el tiquete de la bomba no dice. */
-.explicaciones { list-style: none; margin: 10px 0 0; padding: 0; font-size: 13.5px; }
-.explicaciones li {
-    display: flex; flex-wrap: wrap; gap: 4px 12px;
-    padding: 8px 0; border-top: 1px solid var(--bisel); color: var(--tenue);
+/* DE DÓNDE SALIERON. Es lo que el tiquete de la bomba no dice. Una tabla y no una lista de
+   oraciones: nueve veces la misma frase se lee una por una; en columnas, de un vistazo. */
+.explicaciones {
+    width: 100%; max-width: 34rem; margin: 10px 0 0; border-collapse: collapse;
+    font-size: 13.5px; color: var(--tenue);
 }
+.explicaciones th, .explicaciones td {
+    padding: 8px 10px 8px 0; text-align: left; border-top: 1px solid var(--bisel);
+}
+.explicaciones thead th {
+    border-top: 0; padding-top: 0;
+    font-size: 10.5px; font-weight: 600; letter-spacing: .12em; text-transform: uppercase;
+    color: var(--tenue-2);
+}
+.explicaciones .num { text-align: right; padding-right: 18px; }
 .explicaciones .n {
     font-family: var(--cifras); font-variant-numeric: tabular-nums; color: var(--tinta);
-    flex: 0 0 7.5rem;
 }
 /* La que no cuadra se marca en ámbar, no en rojo: es un dato que falta, no una deuda. */
 .explicacion--dudosa { color: var(--ambar); }

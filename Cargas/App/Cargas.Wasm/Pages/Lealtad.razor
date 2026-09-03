@@ -120,15 +120,37 @@
         Es lo que el tiquete de la bomba no dice: cuántos boletos te dio cada carga, y
         cuánto sobró.
     </p>
-    <ul class="explicaciones">
-        @foreach (BoletosDeLaCargaEnLista fila in explicaciones)
-        {
-            <li @key="@fila.Transaccion" class="@(fila.ProbablementeFaltaUnDato ? "explicacion--dudosa" : "")">
-                <span class="n">@fila.Fecha.ToString("dd MMM yyyy", Cultura)</span>
-                <span>@Mayuscula(fila.ParaSonia).</span>
-            </li>
-        }
-    </ul>
+    @* UNA TABLA, Y EN EL ORDEN DE LA RUTA. Nueve filas con la misma oración —«esta carga dio
+       2 boletos; sobraron ₡4 600, que no se acumulan»— se leen una por una; en columnas se
+       leen de un vistazo. Y de la más reciente a la más vieja, como la ruta: dos listas de
+       las mismas cargas en orden contrario obligan a reorientarse al cambiar de pestaña.
+       La fila que no cuadra conserva la frase del dominio, que es la que explica. *@
+    <table class="explicaciones">
+        <thead>
+            <tr>
+                <th scope="col">carga</th>
+                <th scope="col" class="num">boletos</th>
+                <th scope="col">sobró</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (BoletosDeLaCargaEnLista fila in Recientes())
+            {
+                <tr @key="@fila.Transaccion" class="@(fila.ProbablementeFaltaUnDato ? "explicacion--dudosa" : "")">
+                    <td class="n">@fila.Fecha.ToString("dd MMM yyyy", Cultura)</td>
+                    @if (fila.HayRegla && !fila.ProbablementeFaltaUnDato)
+                    {
+                        <td class="n num">@fila.Emitidos</td>
+                        <td class="n">@fila.Sobrante</td>
+                    }
+                    else
+                    {
+                        <td colspan="2">@Mayuscula(fila.ParaSonia).</td>
+                    }
+                </tr>
+            }
+        </tbody>
+    </table>
 }
 
 @code {
@@ -155,6 +177,14 @@
         foreach (SorteoEnLista sorteo in sorteos)
             if (sorteo.EstaVencido == vencidos) cuantos++;
         return cuantos;
+    }
+
+    // Lo mas reciente arriba, como la ruta.
+    private List<BoletosDeLaCargaEnLista> Recientes()
+    {
+        var recientes = new List<BoletosDeLaCargaEnLista>(explicaciones);
+        recientes.Sort((una, otra) => otra.Fecha.CompareTo(una.Fecha));
+        return recientes;
     }
 
     protected override void Releer()
