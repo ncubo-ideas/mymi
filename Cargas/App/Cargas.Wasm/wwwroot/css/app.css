@@ -61,6 +61,10 @@
        metafora, no un adorno, y tiene que leerse de lejos. MEDIDO mirandolo. */
     --riel:        rgba(126, 196, 207, .32);
     --bisel-vivo:  rgba(126, 196, 207, .34);
+    /* EL BORDE DE UN CONTROL va más fuerte que el de una cara: el bisel-vivo daba 2.14:1 sobre
+       la cara y WCAG 1.4.11 pide 3:1 para el límite de un control. .55 da 3.43. Las caras se
+       quedan con el bisel tenue: son decorativas y el relieve es la luz de arriba. MEDIDO. */
+    --bisel-control: rgba(126, 196, 207, .55);
     --brillo:      rgba(226, 246, 250, .16);   /* la luz que corre por el filo de arriba */
 
     --tinta:       #e8f4f6;   /* texto principal */
@@ -574,7 +578,7 @@ p.apunte, .ficha-nota, .arranque-porque, .arranque-nota, .otra p { max-width: 60
     font-family: var(--cifras); font-variant-numeric: tabular-nums;
     font-size: 15px; max-width: 9em; padding: 7px 10px;
     background: var(--cara-honda); color: var(--tinta);
-    border: 1px solid var(--bisel-vivo); border-radius: 6px;
+    border: 1px solid var(--bisel-control); border-radius: 6px;
 }
 .campo:focus-visible { outline: 2px solid var(--cobre); outline-offset: 1px; }
 .campo::placeholder { color: var(--tenue-2); font-family: var(--sans); font-size: 13px; }
@@ -600,7 +604,7 @@ p.apunte, .ficha-nota, .arranque-porque, .arranque-nota, .otra p { max-width: 60
 .tecla:focus-visible { outline: 2px solid var(--cobre); outline-offset: 2px; }
 .tecla:disabled { opacity: .5; cursor: progress; }
 
-.tecla--contorno { background: transparent; color: var(--tinta); border-color: var(--bisel-vivo); }
+.tecla--contorno { background: transparent; color: var(--tinta); border-color: var(--bisel-control); }
 .tecla--contorno:hover:not(:disabled) { background: transparent; border-color: var(--cobre); }
 
 .tecla--texto {
