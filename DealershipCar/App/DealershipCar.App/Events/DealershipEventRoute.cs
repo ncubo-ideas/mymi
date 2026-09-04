@@ -27,7 +27,10 @@ namespace DealershipCar.App.Events
 			IMensajeDeEvento ofThisVehicle = AVehicleRecordFact(signal);
 			if (ofThisVehicle != null) return ofThisVehicle;
 
-			return AShopFact(signal);
+			IMensajeDeEvento ofTheShop = AShopFact(signal);
+			if (ofTheShop != null) return ofTheShop;
+
+			return ACostFact(signal);
 		}
 
 		private static IMensajeDeEvento ASpecificationFact(SenalDeEvento signal)
@@ -82,6 +85,14 @@ namespace DealershipCar.App.Events
 			if (collection != null) return collection;
 
 			return ShopStayRecorded.Interpret(signal);
+		}
+
+		private static IMensajeDeEvento ACostFact(SenalDeEvento signal)
+		{
+			IMensajeDeEvento recurring = RecurringCostRecorded.Interpret(signal);
+			if (recurring != null) return recurring;
+
+			return DurableCostRecorded.Interpret(signal);
 		}
 	}
 }

@@ -58,8 +58,8 @@ namespace DealershipCar.Dominio.Pruebas
 	// TheOwnerIsNeverASourceOfAFactAboutTheirOwnVehicle, con el mismo limite.
 	//
 	// LAS OPERACIONES SON CIENTO CUARENTA Y CINCO Y LOS SCRIPTS SON MAS, y la ingesta es donde la
-	// diferencia se vuelve grande: Apply es UNA operacion de la puerta y tiene VEINTIDOS scripts
-	// detras -- uno por cada tipo de hecho recibido, que son veintiuno, mas el comando suelto que
+	// diferencia se vuelve grande: Apply es UNA operacion de la puerta y tiene VEINTICUATRO scripts
+	// detras -- uno por cada tipo de hecho recibido, que son veintitres, mas el comando suelto que
 	// avanza el punto de control cuando el dominio rechaza el hecho. Contar operaciones y contar
 	// scripts son dos cuentas distintas, y la que S5 obliga a hacer es la de los scripts.
 	//
@@ -71,6 +71,12 @@ namespace DealershipCar.Dominio.Pruebas
 	// no se movio: los tres hechos de las estadias entran por el Apply que ya estaba y aplican los
 	// TRES COMANDOS que SH-3 ya le habia puesto a la puerta. Una operacion nueva aca seria el aviso
 	// de que la ingesta se agrego mal.
+	//
+	// LOS DOS QUE AGREGO BuildOrder/CL-7 SON EL MISMO CASO Y LA LISTA TAMPOCO SE MOVIO: los dos hechos
+	// del libro de costos entran por ese mismo Apply y aplican los DOS COMANDOS que CL-4 ya le habia
+	// puesto a la puerta. Lo unico que se movio es la cuenta de SCRIPTS de arriba -- de veintidos a
+	// veinticuatro -- y esa cuenta es prosa, asi que la unica cosa que la mantiene honesta es
+	// re-derivarla contra el numero de tipos de mensaje que la app consume.
 	//
 	// Y LA DIFERENCIA VA PARA EL OTRO LADO TAMBIEN: StaysBetween es UNA operacion y su script tiene
 	// CINCO lineas, una por columna, en una sola consulta. Correr la operacion las corre las cinco;
@@ -1037,6 +1043,56 @@ namespace DealershipCar.Dominio.Pruebas
 				Does.Contain("en " + ADealershipNarrative.TheOpenShopBranch + " desde el")
 					.And.Contains("Entró por " + ADealershipNarrative.TheOpenShopSubject));
 		}
+
+		// LOS DOS SCRIPTS DE INGESTA DEL LIBRO DE COSTOS: el gasto que se consume en su periodo y el que
+		// sigue dando valor despues, que aplican por los DOS comandos que la puerta ya tenia y no agregan
+		// ninguna operacion.
+		//
+		// LA DISCRIMINACION ES LO CARO DE ESTA PRUEBA, y sin ella se quedaria verde con los dos scripts
+		// aplicando el comando equivocado: los dos hechos tienen los mismos cuatro campos, y el duradero
+		// solo agrega la vida util. Asi que cada uno se vuelve a leer por LA COLUMNA QUE CONTESTARIA
+		// DISTINTO -- la clase y la vida util -- y no por que la cuenta subio.
+		[Test]
+		public void EveryCostIngestionScriptOfTheDoorParsesBindsAndRuns()
+		{
+			Assert.That(journal.Api.CostEntryCountBetween(TheCostYearFrom, TheCostYearTo), Is.EqualTo(0),
+				"Antes de nada el libro esta vacio: sin esto los renglones de abajo podrian estar mirando "
+				+ "un gasto que puso otra prueba.");
+
+			HashSet<string> ran = new HashSet<string>();
+
+			foreach (Puppets.Portador.SenalDeEvento signal in ADealershipNarrative.TheCosts())
+			{
+				Assert.That(Apply(signal), Is.EqualTo(""),
+					"El script de " + signal.Tipo + " tenia que correr sin rechazo.");
+
+				ran.Add(signal.Tipo);
+			}
+
+			Assert.That(ran.Count, Is.EqualTo(2),
+				"Son DOS scripts de ingesta del libro, uno por comando de la sucursal.");
+
+			Assert.That(journal.Api.LastEventApplied(),
+				Is.EqualTo(ADealershipNarrative.TheLastCostEvent),
+				"Y los tres hechos avanzan el punto de control en el MISMO comando que el hecho.");
+
+			CostLedgerRecord record =
+				journal.Api.CostEntriesBetween(TheCostYearFrom, TheCostYearTo);
+
+			Assert.That(record.Classification, Is.EqualTo(new[] { "Durable", "Recurring", "Recurring" }),
+				"UNA duradera y DOS recurrentes, y en ese orden: es lo unico que separa el script del "
+				+ "duradero del script del recurrente, porque los dos escriben en el mismo libro.");
+
+			Assert.That(record.ExpectedLife, Is.EqualTo(new[] { "48 meses", "", "" }),
+				"Y la vida util solo la lleva la duradera: un script que aplicara el comando equivocado "
+				+ "dejaria esta columna entera vacia o entera llena.");
+		}
+
+		private static readonly DateTime TheCostYearFrom =
+			new DateTime(2026, 1, 1, 0, 0, 0, DateTimeKind.Utc);
+
+		private static readonly DateTime TheCostYearTo =
+			new DateTime(2026, 12, 31, 23, 59, 59, DateTimeKind.Utc);
 
 		private const string TheYearOfTheStays = "2026-01-01";
 		private const string TheEndOfThatYear = "2026-12-31";

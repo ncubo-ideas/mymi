@@ -2023,6 +2023,10 @@ namespace DealershipCar.App
 					return ApplyShopCollectionRecorded(collection);
 				if (message is ShopStayRecorded stay) return ApplyShopStayRecorded(stay);
 
+				if (message is RecurringCostRecorded recurring)
+					return ApplyRecurringCostRecorded(recurring);
+				if (message is DurableCostRecorded durable) return ApplyDurableCostRecorded(durable);
+
 				throw new ArgumentException(
 					$"Esta app no tiene comando para un mensaje de tipo '{message.Tipo}'. La ruta "
 					+ "debio devolver null para descartarlo.", nameof(message));
@@ -2505,6 +2509,62 @@ namespace DealershipCar.App
 				p["enteredAt",   typeof(DateTime)] = InUtc(message.EnteredAt);
 				p["collectedAt", typeof(DateTime)] = InUtc(message.CollectedAt);
 				p["days",        typeof(string[])] = message.CoveredDays;
+			})
+			.PerformCheckThenCommand();
+		}
+
+		/// <summary>
+		/// El gasto que se consume en su periodo, tal como llego. La clase la dice CUAL de los dos
+		/// comandos se aplica y no ningun campo de la senal, y ninguna de las dos guardas de la puerta
+		/// se llama por aca: revientan con ArgumentOutOfRangeException, que por este camino se llevaria
+		/// el bloque entero, asi que el monto ya se exigio al interpretar la senal -- donde descartarla
+		/// no cuesta ninguna entrada. La moneda tambien: cruza como llego, porque el borde ya comprobo
+		/// que este modulo la nombra.
+		/// </summary>
+		private string ApplyRecurringCostRecorded(RecurringCostRecorded message)
+		{
+			return app.Using(
+				scriptForChk: TheEventIsNew,
+				@"
+					{
+						ledger.RecordRecurringCost(@incurredAt, @amount, @currency, @subject);
+						logbook.Advance(@event);
+					}
+				")
+			.WithParameters(p => {
+				p["event",      typeof(long)]     = message.EventNumber;
+				p["incurredAt", typeof(DateTime)] = InUtc(message.IncurredAt);
+				p["amount",     typeof(decimal)]  = Normalized(message.Amount);
+				p["currency",   typeof(string)]   = message.Currency;
+				p["subject",    typeof(string)]   = message.Subject;
+			})
+			.PerformCheckThenCommand();
+		}
+
+		/// <summary>
+		/// El gasto que sigue dando valor despues, con la vida util que llego con el. Mismo motivo que
+		/// arriba para no llamar ninguna guarda de la puerta, y la vida util ya se exigio positiva al
+		/// interpretar la senal. Lo que NO se adelanta es que su ventana quepa: eso lo contesta el
+		/// dominio y deja su marca.
+		/// </summary>
+		private string ApplyDurableCostRecorded(DurableCostRecorded message)
+		{
+			return app.Using(
+				scriptForChk: TheEventIsNew,
+				@"
+					{
+						ledger.RecordDurableCost(
+							@incurredAt, @amount, @currency, @subject, @expectedLifeMonths);
+						logbook.Advance(@event);
+					}
+				")
+			.WithParameters(p => {
+				p["event",              typeof(long)]     = message.EventNumber;
+				p["incurredAt",         typeof(DateTime)] = InUtc(message.IncurredAt);
+				p["amount",             typeof(decimal)]  = Normalized(message.Amount);
+				p["currency",           typeof(string)]   = message.Currency;
+				p["subject",            typeof(string)]   = message.Subject;
+				p["expectedLifeMonths", typeof(int)]      = message.ExpectedLifeMonths;
 			})
 			.PerformCheckThenCommand();
 		}

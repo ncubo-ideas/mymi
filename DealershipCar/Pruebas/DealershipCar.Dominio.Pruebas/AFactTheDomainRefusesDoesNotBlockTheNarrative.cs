@@ -390,6 +390,91 @@ namespace DealershipCar.Dominio.Pruebas
 				Does.Not.Contain("Rehydration execution failed"));
 		}
 
+		// Y LA UNICA DEL LIBRO DE COSTOS QUE CICATRIZA ES LA QUE EL BORDE NO PUEDE VER, una global de
+		// raiz mas alla. Se dice aparte de las de arriba porque es de OTRO agregado y porque cada cuenta
+		// tiene que seguir diciendo de que es.
+		//
+		// UNA ENTRADA DEL LIBRO NO TIENE CLAVE, asi que ningun gasto recibido puede chocar con otro y no
+		// hay NINGUNA guarda de la categoria de C22 por este camino: no existe un estado del libro que
+		// una segunda entrada tenga que respetar. Es la diferencia con las estadias, donde dos de las
+		// cuatro miran el estado del registro.
+		//
+		// LO QUE QUEDA ES UNA SOLA GUARDA, Y ES UNA INTERACCION ENTRE DOS VALORES: un gasto duradero
+		// incurrido tan adelante que el fin de su ventana se pasa del tiempo que este modulo puede decir.
+		// Adelantarla al borde pide reproducir la aritmetica del dominio en un shell -- que es la forma
+		// que DEC-86 midio en cero rojos -- asi que se deja donde esta y CICATRIZA. Es la misma decision
+		// que la puerta tomo para su propio camino, y aca cuesta lo mismo.
+		[Test]
+		public void AndTheOnlyCostGuardThatScarsIsTheOneTheEdgeCannotSee()
+		{
+			Assert.That(
+				Apply(ADealershipNarrative.RecurringCost(
+					4, "2026-05-20T10:30:00Z", "45000.00", "CRC", "Cambio de aceite")),
+				Is.EqualTo(""),
+				"El gasto bueno tenia que entrar; si no entro, el renglon de abajo no mide lo que dice.");
+
+			Assert.That(
+				Apply(ADealershipNarrative.DurableCost(
+					5, "9999-01-01T00:00:00Z", "240000.00", "CRC", "Llantas nuevas", 48)),
+				Does.Contain("su ventana no cabe"),
+				"La ventana de un duradero arranca en el instante en que se incurrio y termina ese "
+				+ "instante mas sus meses. El borde no la ve porque verla es hacer la cuenta, y hacerla "
+				+ "aca la escribiria por segunda vez.");
+
+			Assert.That(journal.Api.LastEventApplied(), Is.EqualTo(5L),
+				"Y la narrativa avanzo: se pierde el hecho, no el registro.");
+
+			Assert.That(
+				journal.Api.CostEntryCountBetween(
+					new DateTime(2026, 1, 1, 0, 0, 0, DateTimeKind.Utc),
+					new DateTime(2026, 12, 31, 23, 59, 59, DateTimeKind.Utc)),
+				Is.EqualTo(1),
+				"El libro quedo con el gasto que SI entro y sin el que el dominio rechazo.");
+
+			Assert.That(WhatTheEngineSaysWhenItReopens(),
+				Does.Contain("Rehydration execution failed"),
+				"Dejo entrada: el motor ya la habia escrito cuando el cuerpo corrio.");
+		}
+
+		// EL CONTROL DE LA DE ARRIBA, y es lo que separa las dos mitades de la linea: lo que el borde SI
+		// puede ver -- un monto negativo, una vida util que no es positiva y una moneda que este modulo
+		// no nombra -- se descarta GRATIS, y las tres son una funcion pura de la senal. Sin este renglon,
+		// "el borde descarta lo que no se puede decir" seria una frase y no una medicion.
+		[Test]
+		public void TheThreeCostLawsTheEdgeCanSeeCostNothingAtAll()
+		{
+			string before = TheTreeOf(journal.Folder);
+
+			(string Says, SenalDeEvento Signal)[] discarded =
+			{
+				("un monto negativo no es un gasto",
+					ADealershipNarrative.RecurringCost(
+						4, "2026-05-20T10:30:00Z", "-45000.00", "CRC", "Cambio de aceite")),
+
+				("una vida util que no es positiva no deja ninguna ventana",
+					ADealershipNarrative.DurableCost(
+						4, "2026-03-12T09:00:00Z", "240000.00", "CRC", "Llantas nuevas", 0)),
+
+				("una moneda que este modulo no nombra",
+					ADealershipNarrative.RecurringCost(
+						4, "2026-05-20T10:30:00Z", "45000.00", "XYZ", "Cambio de aceite")),
+			};
+
+			Assert.Multiple(() =>
+			{
+				foreach ((string says, SenalDeEvento signal) in discarded)
+					Assert.That(DealershipEventRoute.Route(signal), Is.Null, says);
+			});
+
+			Assert.That(TheTreeOf(journal.Folder), Is.EqualTo(before),
+				"Y descartar cuesta CERO: no llego a haber comando, asi que no hay entrada que reventar. "
+				+ "Las tres leyes existen tambien en el dominio, y por este camino ninguna de las tres "
+				+ "llega a ellas.");
+
+			Assert.That(WhatTheEngineSaysWhenItReopens(),
+				Does.Not.Contain("Rehydration execution failed"));
+		}
+
 		private const string TheBranch = "Taller Central";
 		private const string TheSubject = "Cambio de frenos";
 		private const string TheEntry = "2026-04-08T08:00:00Z";

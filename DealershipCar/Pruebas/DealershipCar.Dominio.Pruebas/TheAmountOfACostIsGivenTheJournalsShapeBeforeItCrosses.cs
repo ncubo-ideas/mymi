@@ -70,6 +70,40 @@ namespace DealershipCar.Dominio.Pruebas
 				+ "manda es la ultima.");
 		}
 
+		// Y LOS DOS SCRIPTS DE INGESTA DEL FEED HACEN LO MISMO, que es la mitad que este fixture debia
+		// desde que se escribio: su propio encabezado dice que CL-7 le abre al feed su entrada, y esa
+		// entrada tiene sus propias dos ataduras del mismo monto y del mismo instante.
+		//
+		// Y ACA EL INSTRUMENTO ES EL FUENTE POR UNA RAZON MAS FUERTE TODAVIA. Por el feed el borde
+		// tambien descarta toda moneda que el conjunto no nombre -- L14 -- asi que tampoco por aca hay
+		// un monto cuya escala se pueda ver en una respuesta. Los dos caminos quedaron cerrados, y lo
+		// que sigue abierto es el unico que ninguno de los dos toca: un libro que una app anterior ya
+		// escribio.
+		[TestCase("ApplyRecurringCostRecorded")]
+		[TestCase("ApplyDurableCostRecorded")]
+		public void TheIngestionScriptBindsItsAmountThroughTheDoorsNormalizationToo(string script)
+		{
+			string body = TheIngestionBodyOf(script);
+
+			TestContext.Out.WriteLine(script + " -- " + body);
+
+			Assert.That(
+				body, Does.Contain("p[\"amount\", typeof(decimal)] = Normalized(message.Amount);"),
+				"El monto recibido tiene que cruzar con la forma que el journal le va a dar. Un script "
+				+ "de ingesta que lo manda crudo esta verde el dia que se escribe y discrepa consigo "
+				+ "mismo despues del primer reinicio.");
+
+			Assert.That(
+				body,
+				Does.Contain("p[\"incurredAt\", typeof(DateTime)] = InUtc(message.IncurredAt);"),
+				"Y el instante con la suya: el journal lo trunca al segundo entero y le borra el Kind.");
+
+			Assert.That(
+				Regex.Matches(body, Regex.Escape("p[\"amount\"")).Count, Is.EqualTo(1),
+				"Y una sola vez: dos ataduras del mismo nombre son dos formas de mandar el mismo valor, "
+				+ "y la que manda es la ultima.");
+		}
+
 		// LO QUE Normalized HACE, medido en el propio miembro y no supuesto. Sin esto, las dos pruebas
 		// de arriba afirmarian que se llama a algo que podria no hacer nada.
 		[TestCase("145.00", "145")]
@@ -115,6 +149,26 @@ namespace DealershipCar.Dominio.Pruebas
 				+ "ausencia en vez de una atadura.");
 
 			int closes = source.IndexOf(".PerformCommand();", opens, StringComparison.Ordinal);
+
+			Assert.That(closes, Is.GreaterThan(opens));
+
+			return Regex.Replace(source.Substring(opens, closes - opens), @"\s+", " ");
+		}
+
+		// Y EL DE UN SCRIPT DE INGESTA, que es privado y cierra con otro Perform. Se recorta igual y por
+		// el mismo motivo: buscar en el archivo entero dejaria verde una llamada hecha en otro miembro.
+		private static string TheIngestionBodyOf(string script)
+		{
+			string source = File.ReadAllText(Path.Combine(
+				AppContext.BaseDirectory, "CodigoComoDato", "App", "DealershipCarAPI.cs"));
+
+			int opens = source.IndexOf("private string " + script + "(", StringComparison.Ordinal);
+
+			Assert.That(opens, Is.GreaterThan(-1),
+				$"'{script}' no esta en el fuente de la puerta. Si se renombro, esta prueba mide una "
+				+ "ausencia en vez de una atadura.");
+
+			int closes = source.IndexOf(".PerformCheckThenCommand();", opens, StringComparison.Ordinal);
 
 			Assert.That(closes, Is.GreaterThan(opens));
 

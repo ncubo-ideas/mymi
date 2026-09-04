@@ -20,6 +20,7 @@ try
         case "ficha":     await Ficha(); break;
         case "garantia":  await Garantia(); break;
         case "taller":    await Taller(); break;
+        case "costos":    await Costos(); break;
         case "senuelo":   await Senuelo(); break;
         default:          Ayuda(); break;
     }
@@ -116,6 +117,14 @@ static string Resumen(JsonElement e)
             $"estadia en {Texto(e, "branch")} por {Texto(e, "subject")}, del "
             + $"{Dia(e, "enteredAt")} al {Dia(e, "collectedAt")}, cubrio {Dias(e, "coveredDays")}",
 
+        "RecurringCostRecorded" =>
+            $"gasto recurrente de {Numero(e, "amount")} {Texto(e, "currency")} en "
+            + $"{Texto(e, "subject")}, incurrido el {Dia(e, "incurredAt")}",
+        "DurableCostRecorded" =>
+            $"gasto duradero de {Numero(e, "amount")} {Texto(e, "currency")} en "
+            + $"{Texto(e, "subject")}, incurrido el {Dia(e, "incurredAt")}, con "
+            + $"{Numero(e, "expectedLifeMonths")} meses de vida util",
+
         _ => "(un tipo que la app NO consume: lo descarta)",
     };
 }
@@ -185,6 +194,9 @@ async Task Inyectar()
         enteredAt = Arg(args, "--enteredAt", "2026-09-01"),
         collectedAt = Arg(args, "--collectedAt", "2026-09-01"),
         coveredDays = ListaDeDias(Arg(args, "--coveredDays", "")),
+
+        incurredAt = Arg(args, "--incurredAt", "2026-09-01"),
+        expectedLifeMonths = Entero(Arg(args, "--expectedLifeMonths", "0")),
     };
 
     using var respuesta = await http.PostAsJsonAsync($"{recurso}/{id}/events/hecho", cuerpo);
@@ -485,6 +497,54 @@ async Task Taller()
     }
 }
 
+async Task Costos()
+{
+    Console.WriteLine($"publicando los gastos de {recurso}/{id}...");
+    Console.WriteLine("  UNA duradera y DOS recurrentes, en DOS monedas, y en un orden que NO es el");
+    Console.WriteLine("  orden en que se incurrieron");
+    Console.WriteLine();
+
+    (object cuerpo, string porque)[] guion =
+    {
+        (GastoDuradero("2026-03-12T09:00:00Z", 240000.00m, "CRC", "Llantas nuevas", 48),
+            "un gasto DURADERO: sigue dando valor despues del periodo en que se pago, y la vida "
+            + "util en meses la dijo quien lo vendio. Es el que hace que las dos vistas difieran"),
+
+        (GastoRecurrente("2026-08-05T14:15:00Z", 120.50m, "USD", "Lavado premium"),
+            "un gasto RECURRENTE en OTRA moneda, y en AGOSTO: llega antes que el de mayo a "
+            + "proposito, y las filas salen igual en orden del instante en que se incurrieron"),
+
+        (GastoRecurrente("2026-05-20T10:30:00Z", 45000.00m, "CRC", "Cambio de aceite"),
+            "y otro RECURRENTE, de mayo: se consume en su propio periodo y no se reparte"),
+    };
+
+    foreach ((object cuerpo, string porque) in guion)
+    {
+        using var r = await http.PostAsJsonAsync($"{recurso}/{id}/events/hecho", cuerpo);
+        Console.WriteLine($"  HTTP {(int)r.StatusCode}   {porque}");
+    }
+
+    Console.WriteLine();
+    Console.WriteLine("LA RESPUESTA SON LAS DOS VISTAS EN UNA SOLA FRASE. Lo que salio del banco en el");
+    Console.WriteLine("periodo y lo que el periodo consumio, siempre juntas: sin separar la duradera de");
+    Console.WriteLine("las recurrentes, un total dice 'el carro se puso caro' cuando la verdad es");
+    Console.WriteLine("'compro llantas'. Ninguna lectura contesta una vista sola.");
+    Console.WriteLine();
+    Console.WriteLine("Y LAS DOS MONEDAS SE DICEN CADA UNA POR SU LADO. No hay total entre ellas y no");
+    Console.WriteLine("hay factor con que sumarlas: reconvertir un historico es falsear el pasado.");
+    Console.WriteLine();
+    Console.WriteLine("ESTO SE PUEDE VOLVER A CORRER contra el mismo journal, SIN NINGUNA BANDERA, y es");
+    Console.WriteLine("la diferencia con 'taller' y con 'ficha'. Una entrada del libro no tiene clave:");
+    Console.WriteLine("dos gastos del mismo monto en el mismo asunto y el mismo dia son DOS gastos, no");
+    Console.WriteLine("una correccion, asi que no hay nada que se gaste ni ningun estado con que");
+    Console.WriteLine("chocar. Correrlo dos veces deja seis entradas, que es lo correcto.");
+    Console.WriteLine();
+    Console.WriteLine("UNA MONEDA QUE ESTE MODULO NO NOMBRA SE DESCARTA EN EL BORDE y no deja marca.");
+    Console.WriteLine("Para verlo:");
+    Console.WriteLine("  inyectar --tipo RecurringCostRecorded --currency XYZ --amount 1000");
+    Console.WriteLine("           --incurredAt 2026-05-20T10:30:00Z --subject Prueba");
+}
+
 async Task Senuelo()
 {
     string credencial = await Credencial();
@@ -641,6 +701,21 @@ static object EstadiaCompleta(
     enteredAt = entro, collectedAt = entregado, coveredDays = dias,
 };
 
+/// <summary>Un gasto que se consume en el periodo en que se incurrio. No lleva vida util.</summary>
+static object GastoRecurrente(string incurrido, decimal monto, string moneda, string asunto) => new
+{
+    tipo = "RecurringCostRecorded", incurredAt = incurrido,
+    amount = monto, currency = moneda, subject = asunto,
+};
+
+/// <summary>Un gasto que sigue dando valor despues, con su vida util en meses.</summary>
+static object GastoDuradero(
+    string incurrido, decimal monto, string moneda, string asunto, int vidaUtilEnMeses) => new
+{
+    tipo = "DurableCostRecorded", incurredAt = incurrido,
+    amount = monto, currency = moneda, subject = asunto, expectedLifeMonths = vidaUtilEnMeses,
+};
+
 static object Reclamo(string reclamo, string observado) => new
 {
     tipo = "WarrantyClaimFiled", observedAt = observado, revisionCode = reclamo,
@@ -723,6 +798,10 @@ static void Ayuda()
     Console.WriteLine("                                entrega. La respuesta son los DIAS y no una duracion");
     Console.WriteLine("                                --sin-abrir salta la ultima entrada; sin esa bandera");
     Console.WriteLine("                                queda una estadia ABIERTA y no se puede repetir");
+    Console.WriteLine("  costos                        publica los gastos de este vehiculo: una duradera con");
+    Console.WriteLine("                                su vida util y dos recurrentes, en dos monedas. Se");
+    Console.WriteLine("                                puede repetir SIN ninguna bandera -- una entrada del");
+    Console.WriteLine("                                libro no tiene clave que se gaste");
     Console.WriteLine("  senuelo                       demuestra el 403 de /customer con el token de la app");
     Console.WriteLine("  inyectar --tipo <tipo> ...    agrega UN hecho concreto");
     Console.WriteLine();
@@ -770,6 +849,15 @@ static void Ayuda()
     Console.WriteLine("    ShopStayRecorded                 --branch --subject --enteredAt");
     Console.WriteLine("                                     --collectedAt --coveredDays");
     Console.WriteLine();
+    Console.WriteLine("  y los DOS del libro de costos, uno por comando de la sucursal. Ninguno de los dos");
+    Console.WriteLine("  trae la clasificacion: la dice CUAL de los dos se manda, y solo el duradero lleva");
+    Console.WriteLine("  --expectedLifeMonths. Una moneda que este modulo no nombra se DESCARTA en el borde");
+    Console.WriteLine("  y no deja marca; las que hay son CRC y USD. Los dos se pueden repetir.");
+    Console.WriteLine();
+    Console.WriteLine("    RecurringCostRecorded            --incurredAt --amount --currency --subject");
+    Console.WriteLine("    DurableCostRecorded              --incurredAt --amount --currency --subject");
+    Console.WriteLine("                                     --expectedLifeMonths");
+    Console.WriteLine();
     Console.WriteLine("  cualquier otro --tipo se acepta y la app lo DESCARTA, que es lo normal:");
     Console.WriteLine("  el concesionario publica su narrativa entera y este modulo modela una rebanada.");
     Console.WriteLine();
@@ -787,6 +875,11 @@ static void Ayuda()
     Console.WriteLine("             --enteredAt 2026-05-11T08:30:00Z");
     Console.WriteLine("    inyectar --tipo ShopCollectionRecorded --collectedAt 2026-05-13T16:45:00Z");
     Console.WriteLine("             --coveredDays 2026-05-11,2026-05-12,2026-05-13");
+    Console.WriteLine("    inyectar --tipo RecurringCostRecorded --incurredAt 2026-05-20T10:30:00Z");
+    Console.WriteLine("             --amount 45000.00 --currency CRC --subject \"Cambio de aceite\"");
+    Console.WriteLine("    inyectar --tipo DurableCostRecorded --incurredAt 2026-03-12T09:00:00Z");
+    Console.WriteLine("             --amount 240000.00 --currency CRC --subject \"Llantas nuevas\"");
+    Console.WriteLine("             --expectedLifeMonths 48");
     Console.WriteLine();
     Console.WriteLine("  --url      default http://localhost:8092/");
     Console.WriteLine("  --recurso  default vehicle");

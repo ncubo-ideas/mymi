@@ -180,9 +180,9 @@ namespace DealershipCar.Dominio.Pruebas
 		}
 
 		// CADA HECHO QUE ENTRA DEJA EL PUNTO DE CONTROL EN SU PROPIO NUMERO DE EVENTO, y son
-		// VEINTIUN scripts los que lo prometen: cinco de la agenda, once de la especificacion, dos
-		// del perfil de este vehiculo y TRES de las estadias en el taller. Es la promesa que hace
-		// exacto el resume, y no se hereda de un script al siguiente.
+		// VEINTITRES scripts los que lo prometen: cinco de la agenda, once de la especificacion, dos
+		// del perfil de este vehiculo, TRES de las estadias en el taller y DOS del libro de costos. Es
+		// la promesa que hace exacto el resume, y no se hereda de un script al siguiente.
 		//
 		// ESTA PRUEBA EXISTE POR LA PASADA DE FALSIFICACION DE LA INGESTA DE LA FICHA. Quitarle
 		// logbook.Advance al script del fluido -- y al del intervalo de servicio -- dejo la suite EN
@@ -214,6 +214,7 @@ namespace DealershipCar.Dominio.Pruebas
 			everything.AddRange(ADealershipNarrative.TheWholeSpecSheet());
 			everything.AddRange(ADealershipNarrative.TheDeliveryAndTheEnvelope());
 			everything.AddRange(ADealershipNarrative.TheStays());
+			everything.AddRange(ADealershipNarrative.TheCosts());
 
 			foreach (SenalDeEvento signal in everything)
 			{
@@ -237,11 +238,11 @@ namespace DealershipCar.Dominio.Pruebas
 				swept.Add(signal.Tipo);
 			}
 
-			Assert.That(swept.Count, Is.EqualTo(21),
-				"Son VEINTIUN scripts de ingesta con hecho -- cinco de la agenda, once de la "
-				+ "especificacion, dos del perfil del vehiculo y tres de las estadias en el taller -- "
-				+ "mas el comando suelto que avanza el punto de control cuando el dominio rechaza uno, "
-				+ "que es el veintidos y no tiene hecho que aplicar.");
+			Assert.That(swept.Count, Is.EqualTo(23),
+				"Son VEINTITRES scripts de ingesta con hecho -- cinco de la agenda, once de la "
+				+ "especificacion, dos del perfil del vehiculo, tres de las estadias en el taller y dos "
+				+ "del libro de costos -- mas el comando suelto que avanza el punto de control cuando el "
+				+ "dominio rechaza uno, que es el veinticuatro y no tiene hecho que aplicar.");
 		}
 
 		// LAS DOS PROMESAS VUELVEN A MEDIRSE SOBRE LOS ONCE HECHOS DE LA ESPECIFICACION, y hace falta
@@ -449,6 +450,153 @@ namespace DealershipCar.Dominio.Pruebas
 				Does.Contain("Entró por " + ADealershipNarrative.TheSecondShopSubject)
 					.And.Contains("en " + ADealershipNarrative.TheSecondShopBranch + " desde el"));
 		}
+
+		// LO QUE LOS GASTOS DEJAN EN EL LIBRO, afirmado en negocio y no solo en contadores. Es el hermano
+		// de los dos renglones de arriba, una global de raiz mas alla, y hace falta por lo mismo: todo lo
+		// demas de este fixture seguiria verde con una ingesta que aplicara el comando equivocado de los
+		// dos, o el correcto con los campos cruzados.
+		//
+		// EL ORACULO SON LAS SIETE LECTURAS DE LA PUERTA, y las cifras van POR VALOR: un monto que llego
+		// a otra columna suma igual de bien, y la clase que un feed no puede decir la pone el comando.
+		//
+		// Y LAS FILAS SALEN EN ORDEN DEL INSTANTE EN QUE SE INCURRIERON Y NO EN EL QUE LLEGARON, que es
+		// lo que esta lista mide y las otras cuatro no: la narrativa manda el lavado de AGOSTO antes que
+		// el cambio de aceite de MAYO, asi que una ingesta que apilara en orden de llegada pondria estas
+		// tres filas en otro orden.
+		[Test]
+		public void TheCostsLandOnTheLedgerAsTheFactsTheyWere()
+		{
+			Ingested entered = Ingest(journal.Api, ADealershipNarrative.TheCosts());
+
+			Assert.That(entered.Applied, Is.EqualTo(ADealershipNarrative.CostSignalsThatApply));
+			Assert.That(entered.Discarded, Is.EqualTo(0));
+			Assert.That(entered.Rejected, Is.EqualTo(0));
+
+			Assert.That(journal.Api.LastEventApplied(),
+				Is.EqualTo(ADealershipNarrative.TheLastCostEvent));
+
+			// LAS TRES SITUACIONES QUE UN PERIODO PUEDE TENER, cada una sobre el mismo libro: el anio
+			// tiene las tres entradas en DOS monedas, el semestre las dos de colones en UNA, y 2025
+			// ninguna.
+			Assert.That(journal.Api.HasAnyCostBetween(TheCostYearFrom, TheCostYearTo), Is.True);
+			Assert.That(journal.Api.HasAnyCostBetween(TheYearBeforeFrom, TheYearBeforeTo), Is.False,
+				"Y NO en 2025, donde la ventana de la duradera todavia no empezaba.");
+
+			Assert.That(
+				journal.Api.IsSpendSaidInOneCurrencyBetween(TheColonesHalfFrom, TheColonesHalfTo),
+				Is.True);
+			Assert.That(
+				journal.Api.IsSpendSaidInOneCurrencyBetween(TheCostYearFrom, TheCostYearTo), Is.False,
+				"El anio entero mezcla monedas, asi que no esta dicho en una sola.");
+
+			Assert.That(journal.Api.CostEntryCountBetween(TheCostYearFrom, TheCostYearTo), Is.EqualTo(3));
+			Assert.That(
+				journal.Api.CostEntryCountBetween(TheColonesHalfFrom, TheColonesHalfTo), Is.EqualTo(2),
+				"DOS en el semestre, que es lo que hace que la cuenta sea del periodo y no del libro.");
+
+			// LAS DOS VISTAS EN UNA SOLA RESPUESTA (L6), y TIENEN que diferir: es el caso de las llantas
+			// de marzo. La caja del semestre son las dos entradas de colones enteras; lo consumido es el
+			// cambio de aceite entero mas la parte que a ese semestre le toca de las llantas.
+			string theColonesHalf =
+				journal.Api.DescribeSpendBetween(TheColonesHalfFrom, TheColonesHalfTo);
+
+			Assert.That(theColonesHalf, Does.Contain("Salieron ₡285000.00 del banco"),
+				"La caja del semestre, sumada por el DOMINIO: 240000 mas 45000, los dos montos como el "
+				+ "feed los mando.");
+			Assert.That(theColonesHalf, Does.Not.Contain("consumió ₡285000.00"),
+				"Y lo consumido DIFIERE de la caja: la duradera se reparte a lo largo de 48 meses.");
+			Assert.That(
+				theColonesHalf,
+				Does.Contain(
+					"₡240000.00 en " + ADealershipNarrative.TheTyresSubject
+					+ ", en línea recta a lo largo de 48 meses desde el 2026-03-12 09:00:00"),
+				"Y la vida util que llego por el feed va dicha adentro de la regla, con el asunto y el "
+				+ "instante de anclaje: cruzar la vida con el monto cambia esta frase.");
+
+			string theYear = journal.Api.DescribeSpendPerCurrencyBetween(TheCostYearFrom, TheCostYearTo);
+
+			Assert.That(theYear, Does.Contain("2 monedas distintas"));
+			Assert.That(theYear, Does.Contain("₡285000.00"), "El colon por su lado.");
+			Assert.That(theYear, Does.Contain("$120.50"),
+				"Y el dolar con su propio signo: las dos monedas del feed llegaron distintas, asi que una "
+				+ "moneda cruzada entre filas cambia esta frase.");
+			Assert.That(theYear, Does.Not.Contain("285120"), "Y NINGUN total entre las dos.");
+
+			Assert.That(
+				journal.Api.DescribeTwoPeriodsOfSpendCompared(
+					TheColonesHalfFrom, TheColonesHalfTo, TheYearBeforeFrom, TheYearBeforeTo),
+				Does.Contain("Primer período: Entre el 2026-01-01 00:00:00")
+					.And.Contains("no hay ningún gasto registrado"));
+
+			CostLedgerRecord record = journal.Api.CostEntriesBetween(TheCostYearFrom, TheCostYearTo);
+
+			Assert.That(
+				record.IncurredAt,
+				Is.EqualTo(new[]
+				{
+					"2026-03-12 09:00:00", "2026-05-20 10:30:00", "2026-08-05 14:15:00",
+				}),
+				"Las tres filas en orden del instante en que se INCURRIERON, con su hora tal como llego "
+				+ "por el cable -- y NO en el orden en que la narrativa las mando, que pone el lavado de "
+				+ "agosto en medio.");
+
+			Assert.That(
+				record.Subject,
+				Is.EqualTo(new[]
+				{
+					ADealershipNarrative.TheTyresSubject, ADealershipNarrative.TheOilChangeSubject,
+					ADealershipNarrative.TheWashSubject,
+				}),
+				"Los asuntos con las palabras que la sucursal mando, sin tocar.");
+
+			Assert.That(
+				record.Money, Is.EqualTo(new[] { "₡240000.00", "₡45000.00", "$120.50" }),
+				"El dinero dicho por el DOMINIO, con el signo y los decimales de cada moneda. LOS TRES "
+				+ "MONTOS LLEGARON CON UN CERO A LA DERECHA que el journal deja caer, asi que esta "
+				+ "afirmacion tambien dice que Normalized y Expressed lo reponen.");
+
+			Assert.That(
+				record.Classification, Is.EqualTo(new[] { "Durable", "Recurring", "Recurring" }),
+				"La clase por el NOMBRE del miembro, y la puso CUAL de los dos comandos aplico la "
+				+ "ingesta: ninguna de las dos senales trae un campo de clasificacion.");
+
+			Assert.That(record.ExpectedLife, Is.EqualTo(new[] { "48 meses", "", "" }),
+				"La vida util solo la lleva la duradera: la senal del recurrente no tiene por donde "
+				+ "decirla, y las dos celdas vacias son eso y no una vida de cero meses.");
+
+			Assert.That(
+				record.Says[0],
+				Does.Contain("₡240000.00 en " + ADealershipNarrative.TheTyresSubject
+					+ " el 2026-03-12 09:00:00")
+					.And.Contains("Duradero"),
+				"Y cada fila se dice entera, con el asunto ADENTRO de su propia clausula (C60): un "
+				+ "Does.Contain suelto pasaria con dos columnas cruzadas.");
+
+			Assert.That(
+				record.Says[2],
+				Does.Contain("$120.50 en " + ADealershipNarrative.TheWashSubject
+					+ " el 2026-08-05 14:15:00")
+					.And.Contains("Recurrente"),
+				"La tercera fila dice lo suyo: otra moneda, otra clase y otro asunto que la primera.");
+		}
+
+		private static readonly DateTime TheCostYearFrom =
+			new DateTime(2026, 1, 1, 0, 0, 0, DateTimeKind.Utc);
+
+		private static readonly DateTime TheCostYearTo =
+			new DateTime(2026, 12, 31, 23, 59, 59, DateTimeKind.Utc);
+
+		private static readonly DateTime TheColonesHalfFrom =
+			new DateTime(2026, 1, 1, 0, 0, 0, DateTimeKind.Utc);
+
+		private static readonly DateTime TheColonesHalfTo =
+			new DateTime(2026, 6, 30, 23, 59, 59, DateTimeKind.Utc);
+
+		private static readonly DateTime TheYearBeforeFrom =
+			new DateTime(2025, 1, 1, 0, 0, 0, DateTimeKind.Utc);
+
+		private static readonly DateTime TheYearBeforeTo =
+			new DateTime(2025, 12, 31, 23, 59, 59, DateTimeKind.Utc);
 
 		private static readonly DateTime InsideTheOpenStay =
 			new DateTime(2026, 11, 1, 0, 0, 0, DateTimeKind.Utc);

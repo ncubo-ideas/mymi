@@ -50,7 +50,11 @@ namespace DealershipCar.Dominio.Pruebas
 			// paso de 33 a 34 y el margen sigue siendo TRECE. Es la misma convencion que Wasm dejo
 			// escrita abajo -- se mueve POR LO QUE SE AGREGO y no hasta donde alcance -- y subirlo es
 			// acto de la tarea que ESCRIBE el archivo, nunca de la que cierra.
-			new object[] { TheCodeOfTheShellsAsData.App, 21 },
+			//
+			// Y SUBIO 21 -> 23 CON LOS DOS MENSAJES DEL FEED DEL LIBRO, que son DOS archivos: la raiz
+			// paso de 34 a 36 y el margen sigue siendo TRECE. Los dos van en Events/, que es de esta
+			// misma raiz: el barrido lee la raiz entera y no solo el archivo de la puerta.
+			new object[] { TheCodeOfTheShellsAsData.App, 23 },
 			new object[] { TheCodeOfTheShellsAsData.Frontera, 2 },
 			new object[] { TheCodeOfTheShellsAsData.Consola, 4 },
 			new object[] { TheCodeOfTheShellsAsData.Mcp, 8 },
