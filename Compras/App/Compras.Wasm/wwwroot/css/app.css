@@ -75,9 +75,20 @@
     --gu-morado-hondo: #5f4288;
     --gu-corazon:      #f6e9a8;
 
-    --barra-fondo:     var(--verde-hondo);
-    --barra-tinta:     #eef6f0;
-    --barra-tenue:     #a0ada2;
+    /* RONDA D — de bloque verde a acento verde: pidieron sacar la masa oscura de barra,
+       pestañas y pie. Los tres comparten estos tres alias (ver mas abajo donde se usan), asi
+       que retocar el trio los pasa a los tres de una vez sin tocar su markup ni su logica.
+
+       --barra-fondo YA NO ES --tinte-verde (#e9f4ec): es #e4f2e8, el primer color LITERAL
+       del degradado del hero de Inicio (`linear-gradient(160deg, #e4f2e8 0%, ...)`, ver
+       .lg-home-hero mas abajo). Pidieron "mint muy suave, inspirado DIRECTAMENTE en el hero
+       del HTML de referencia", y esto es tomar el tono de ahi en vez de uno parecido.
+       --barra-tinta/--barra-tenue siguen en los alias de texto que ya existian
+       (--tinta/--tenue): el mismo verde oscuro y el mismo gris-verde que pidieron, y ya
+       estaban armados para leerse bien sobre fondo claro. */
+    --barra-fondo:     #e4f2e8;
+    --barra-tinta:     var(--tinta);
+    --barra-tenue:     var(--tenue);
 
     /* LOS DOS ESTADOS. El verde tenido para lo estable, el crema para lo que cambio: son
        los dos fondos que su diseño usa, y el crema es mas calido que el ambar que teniamos
@@ -187,7 +198,10 @@ h2, h3, h4, h5 { font-weight: 700; }
     position: sticky;
     top: 0;
     z-index: 950;
-    box-shadow: 0 2px 10px rgba(22, 38, 28, .22);
+    /* Era una sombra de 10px pensada para separar un bloque OSCURO del papel: sobre fondo
+       claro esa misma sombra se lee como suciedad. Queda solo la linea fina que pidieron
+       ("línea/sombra inferior muy sutil"). */
+    box-shadow: 0 1px 0 rgba(22, 38, 28, .07);
 }
 .barra-dentro {
     max-width: 56rem;
@@ -196,6 +210,10 @@ h2, h3, h4, h5 { font-weight: 700; }
     display: flex;
     align-items: center;
     gap: .75rem;
+    /* RONDA D: el padding es lo que encoge cuando la barra pasa a compacta -ver mas abajo-,
+       asi que anima ESTO y no un alto fijo: un alto fijo con contenido que cambia de tamaño
+       adentro salta, el padding se acomoda solo. */
+    transition: padding .18s ease;
 }
 /* EL PLATO CLARO es lo que la hace distinguirse (pedido del equipo): sobre el verde
    oscuro de la barra, el morado de la flor se fundia. 46 px con el plato = la flor sigue
@@ -207,19 +225,45 @@ h2, h3, h4, h5 { font-weight: 700; }
     padding: 4px;
     border-radius: 50%;
     background: var(--papel);
-    box-shadow: 0 1px 6px rgba(0, 0, 0, .25);
+    /* Era una sombra de 25% negro pensada para separar el plato claro del verde oscuro de
+       fondo; sobre el mint palido de ahora se veia como un aro sucio. Baja a un tinte de
+       --tinta, muy leve. */
+    box-shadow: 0 1px 4px rgba(22, 38, 28, .12);
+    /* RONDA D: la flor tambien encoge en el estado compacto -ver .barra--compacta-. */
+    transition: width .18s ease, height .18s ease;
 }
 .marca-texto { display: flex; flex-direction: column; gap: 1px; min-width: 0; }
 /* Un punto mas grande que la §1: es EL elemento de marketing de la app, y el equipo pidio
    visibilidad del negocio. Anotado como desviacion consciente, igual que el plato. */
 .marca-nombre { font-weight: 800; font-size: 1.2rem; line-height: 1.15; letter-spacing: -.01em; }
 .marca-bajada { font-size: .74rem; color: var(--barra-tenue); line-height: 1.25; }
+
+/* ---- RONDA D: LA BARRA EN DOS ESTADOS ----
+   Arriba: logo + "Supermercado La Guaria" + subtitulo + DEMO, completa.
+   Al bajar el scroll: logo chico + "La Guaria" a secas + DEMO -sin subtitulo-, para
+   "recuperar altura util de pantalla" que pidieron. La clase `.barra--compacta` la pone
+   js/barra-compacta.js -es puro scroll, no hay estado de C# de por medio-; este CSS solo
+   decide como se ve cada estado.
+
+   DOS TEXTOS Y NO UNO TRUNCADO: el CSS no puede acortar "Supermercado La Guaria" a
+   "La Guaria" -no hay forma de recortar el PRINCIPIO de una cadena con puro CSS-, asi que
+   el markup trae los dos (`.marca-nombre--completo` / `.marca-nombre--corto`, ver
+   MainLayout.razor) y cada estado muestra el que le toca. */
+.marca-nombre--corto { display: none; }
+.barra--compacta .marca-nombre--completo { display: none; }
+.barra--compacta .marca-nombre--corto { display: block; }
+.barra--compacta .marca-bajada { display: none; }
+.barra--compacta .marca-flor { width: 30px; height: 30px; flex: 0 0 30px; }
+.barra--compacta .barra-dentro { padding-top: .45rem; padding-bottom: .45rem; }
 /* El sello se queda JUNTO A LA MARCA y no en la esquina: dice de que es demo esta app, y
    pegado al nombre se lee como parte de la identidad. La esquina derecha la necesitan las
    pestañas, que es lo que la persona va a buscar ahi. */
 .barra-dentro .sello-demo {
-    color: var(--barra-tenue);
-    border-color: rgba(234, 246, 234, .3);
+    /* Chip discreto: antes era una pastilla translucida hecha para flotar sobre el verde
+       oscuro. Sobre fondo claro se pide lo contrario, un borde verde fino que lo marca como
+       "demo" sin volverlo el elemento mas fuerte de la barra. */
+    color: var(--verde);
+    border-color: var(--estable-borde);
 }
 
 /* ---------------------------------------------------------------- las pestañas */
@@ -250,14 +294,24 @@ h2, h3, h4, h5 { font-weight: 700; }
      donde el degradado esta mas verde. Una pestaña de expediente cuyo folio es de otro
      color no se lee como pestaña: se lee como una pastilla flotando. Adentro de la barra el
      problema no existe, porque ya no hay ningun folio con el que empalmar. */
+/* RONDA D (correccion): la nav SIEMPRE tiene que estar, Inicio incluido -es la unica forma
+   de moverse entre Inicio y Compras-, pero la barra de marca se sigue ocultando en Inicio
+   -su hero trae la suya-. Antes las dos vivian juntas dentro de `.barra`/`@if (!EsInicio)`
+   en MainLayout.razor, asi que ocultar la marca apagaba la nav con ella: ese era el bug.
+   Ahora `<nav class="pestanas">` es HERMANA del `<header>`, no hija, y se dibuja en cada
+   ruta sin condicion (ver MainLayout.razor). Este bloque ya no asume que vive adentro de
+   `.barra-dentro`: es su propia franja, con su propio ancho maximo centrado -igual que
+   `.barra-dentro`- y las pestañas a la derecha para conservar la lectura que tenia antes. */
 .pestanas {
     background: var(--barra-fondo);
-    /* A la derecha de todo: la marca empuja desde la izquierda y este auto se come el hueco
-       que antes quedaba vacio. */
-    margin-left: auto;
+    border-bottom: 1px solid var(--linea);
 }
 .pestanas-dentro {
+    max-width: 56rem;
+    margin: 0 auto;
+    padding: 0 1.5rem;
     display: flex;
+    justify-content: flex-end;
     gap: .15rem;
 }
 .pestana {
@@ -273,26 +327,28 @@ h2, h3, h4, h5 { font-weight: 700; }
     font-size: .92rem;
     line-height: 1;
 }
-.pestana:hover { color: var(--barra-tinta); background: rgba(234, 246, 234, .08); }
+.pestana:hover { color: var(--verde); background: rgba(31, 122, 67, .06); }
 
 /* LA ACTIVA SE MARCA CON UN SUBRAYADO Y NO CON UN RELLENO, y es el mismo recurso que en
    telefono -alla la raya va en el canto de arriba, porque la barra esta al pie-. Que las
    dos resoluciones usen el MISMO lenguaje visual y solo lo espejen es lo que hace que sea
    una sola UI y no dos que se parecen.
 
-   Ademas el subrayado no tiene problema de contraste: la etiqueta queda en --barra-tinta
-   sobre --barra-fondo, que es 13:1. Un relleno verde vivo con texto claro encima daba 2,9
-   y no pasaba ni el AA. */
-.pestana.active { color: var(--barra-tinta); }
+   RONDA D: la activa ya no toma --barra-tinta -ese alias ahora es el texto general de la
+   barra, verde muy oscuro para la marca-, sino --verde directo: es el "estado activo en
+   verde La Guaria" que pidieron, y lo separa del texto de marca aunque los dos sean verdes.
+   El indicador baja de 3px a 2px y de --verde-vivo a --verde: sobre fondo claro un trazo
+   fino alcanza para marcar la activa sin gritar ("indicador muy sutil"). */
+.pestana.active { color: var(--verde); }
 .pestana.active::after {
     content: "";
     position: absolute;
     left: .8rem;
     right: .8rem;
     bottom: -.15rem;
-    height: 3px;
+    height: 2px;
     border-radius: 3px 3px 0 0;
-    background: var(--verde-vivo);
+    background: var(--verde);
 }
 .pestana-icono {
     width: 1.15rem;
@@ -306,19 +362,21 @@ h2, h3, h4, h5 { font-weight: 700; }
        sea que no estan en esta fila- y la esquina queda libre. */
     .barra-dentro .sello-demo { margin-left: auto; }
 
-    /* Al pie, fijas, y en dos mitades iguales. `fixed` las saca del flujo, asi que el
-       `margin-left: auto` del escritorio no aplica y no hace falta anularlo — pero se
-       anula igual, porque un margen auto en un elemento fijo con left y right puestos lo
-       centraria si algun dia se le quita uno de los dos. */
+    /* Al pie, fijas, y en dos mitades iguales. `fixed` las saca del flujo por completo, asi
+       que da igual que en escritorio esta misma nav sea su propia franja en vez de vivir
+       adentro de la barra: aca abajo no le queda rastro de esa fila. */
     .pestanas {
         position: fixed;
         left: 0;
         right: 0;
         bottom: 0;
-        margin-left: 0;
         z-index: 900;
-        border-top: 1px solid rgba(0, 0, 0, .2);
-        box-shadow: 0 -2px 12px rgba(20, 51, 31, .18);
+        /* RONDA D: el borde y la sombra eran los de una barra OSCURA pegada sobre contenido
+           claro -20% de negro y una sombra de 12px-. Con fondo claro esa misma receta se ve
+           sucia. Queda una linea fina de --linea, el mismo borde que usan las tarjetas, y una
+           sombra apenas perceptible: "integrada con la interfaz", no una barra pesada. */
+        border-top: 1px solid var(--linea);
+        box-shadow: 0 -2px 10px rgba(22, 38, 28, .05);
         /* El area segura del telefono: sin esto la barra queda debajo del gesto de inicio. */
         padding-bottom: env(safe-area-inset-bottom, 0);
     }
@@ -812,14 +870,18 @@ main h2 {
 
 /* ---------------------------------------------------------------- el pie
 
-   §3 asigna --gu-verde-oscuro a "titulares, barra superior, PIE", asi que el pie cierra con
-   la misma masa de color con la que la barra abre. Es lo que hace que la pantalla se lea
-   como una pieza y no como contenido suelto sobre un fondo. */
+   RONDA D: era la misma masa de --gu-verde-oscuro con la que abria la barra ("el pie cierra
+   con la misma masa de color"). Ese cierre simetrico ya lo da --barra-fondo -ahora un verde
+   palido, ver el trio de alias arriba- sin que haga falta un bloque oscuro: sigue siendo la
+   MISMA pieza visual que la barra, solo que las dos son livianas. Se suma un borde superior
+   fino porque, a diferencia del verde oscuro, el verde palido del pie casi no se distingue
+   del papel del cuerpo -sin la linea, el limite entre "contenido" y "pie" desaparecia-. */
 .pie {
     background: var(--barra-fondo);
     color: var(--barra-tenue);
+    border-top: 1px solid var(--linea);
     margin-top: 2.5rem;
-    padding: 1.4rem 0 1.6rem;
+    padding: 1.1rem 0 1.3rem;
 }
 .pie-dentro {
     max-width: 56rem;
@@ -831,21 +893,23 @@ main h2 {
     gap: .6rem 1.4rem;
     font-size: .88rem;
 }
-/* El bloque de marca del pie: la misma flor y las mismas dos lineas de la barra, un punto
-   mas chicas. Abrir y cerrar con la misma cara es lo que hace que la pagina se sienta una
-   pieza. */
-.pie-marca { display: flex; align-items: center; gap: .7rem; }
+/* El bloque de marca del pie: la misma flor y las mismas dos lineas de la barra, ahora mas
+   chicas todavia ("logo + nombre pueden mantenerse, pero con mucho menos peso"). Sobre fondo
+   oscuro la flor necesitaba un plato claro para no fundirse (--papel contra --verde-hondo);
+   sobre este verde palido el plato casi no se nota, que es justo lo que se pidio: menos
+   peso, no un elemento nuevo que resolver. */
+.pie-marca { display: flex; align-items: center; gap: .6rem; }
 .pie-flor {
-    width: 38px;
-    height: 38px;
-    flex: 0 0 38px;
-    padding: 3px;
+    width: 28px;
+    height: 28px;
+    flex: 0 0 28px;
+    padding: 2px;
     border-radius: 50%;
     background: var(--papel);
 }
 .pie-textos { display: flex; flex-direction: column; gap: 1px; }
-.pie-quien { color: var(--barra-tinta); font-weight: 700; font-size: .95rem; line-height: 1.2; }
-.pie-bajada { font-size: .72rem; color: var(--barra-tenue); }
+.pie-quien { color: var(--barra-tinta); font-weight: 600; font-size: .82rem; line-height: 1.2; }
+.pie-bajada { font-size: .68rem; color: var(--barra-tenue); }
 
 /* Los enlaces a la derecha en escritorio; debajo, y a la izquierda, en telefono. El
    margin-left auto se apaga solo cuando el flex envuelve. */
@@ -853,47 +917,76 @@ main h2 {
     margin-left: auto;
     display: flex;
     flex-wrap: wrap;
-    gap: .6rem;
+    align-items: center;
+    gap: .5rem;
 }
 
-/* BOTONES, no texto subrayado: "el sitio" y "el WhatsApp" son cosas que se tocan, y sobre
-   el verde oscuro una pastilla translucida con su icono se lee como boton sin gritar. */
+/* BOTONES COMPACTOS, no la pastilla traslucida de antes -esa era para flotar sobre el verde
+   oscuro; sobre fondo claro un borde fino alcanza para leerse como accion sin pesar-. Sitio y
+   WhatsApp son funcionalidad real (§ver ConfiguracionDeLaInstitucion): esto es un cambio de
+   piel, los href y el target siguen siendo los mismos del layout. */
 .pie-boton {
     display: inline-flex;
     align-items: center;
-    gap: .45rem;
-    padding: .5rem .95rem;
+    gap: .35rem;
+    padding: .4rem .7rem;
     border-radius: var(--radio-boton);
-    background: rgba(234, 246, 234, .08);
-    border: 1px solid rgba(234, 246, 234, .18);
-    color: var(--barra-tinta);
+    background: transparent;
+    border: 1px solid var(--linea);
+    color: var(--tenue);
     text-decoration: none;
-    font-size: .86rem;
-    font-weight: 600;
-    transition: background-color .15s ease, border-color .15s ease;
-}
-.pie-boton svg { width: 17px; height: 17px; }
-.pie-boton:hover {
-    background: rgba(46, 158, 91, .28);
-    border-color: var(--verde-vivo);
-    color: #fff;
-}
-
-/* El de WhatsApp lleva SU verde en el icono: es la unica marca ajena del pie, y el color
-   es lo que la vuelve reconocible de un vistazo. Solo el icono — el boton sigue siendo
-   nuestro. */
-.pie-boton--whatsapp svg { color: #4fce5d; }
-.pie-boton--whatsapp:hover { border-color: #4fce5d; background: rgba(79, 206, 93, .16); }
-
-.pie-numero { color: var(--barra-tenue); font-weight: 400; }
-
-/* La nota de la frontera: mas chica, y separada de los enlaces por su propia linea. */
-.pie-nota {
-    margin-top: .9rem;
-    padding-top: .9rem;
-    border-top: 1px solid rgba(234, 246, 234, .12);
     font-size: .78rem;
-    color: var(--barra-tenue);
+    font-weight: 600;
+    transition: background-color .15s ease, border-color .15s ease, color .15s ease;
+}
+.pie-boton svg { width: 15px; height: 15px; flex: none; }
+.pie-boton:hover {
+    background: var(--estable-fondo);
+    border-color: var(--estable-borde);
+    color: var(--verde);
+}
+
+/* WHATSAPP CON EL ICONO POR DELANTE, que es lo que se pidio -"priorizar el icono, evitando
+   un boton verde grande"-. La palabra "WhatsApp" se queda para quien usa lector de pantalla
+   (.visually-hidden en el markup, ver MainLayout.razor) pero ya no se dibuja: el icono en su
+   verde de marca mas el numero -cuando esta configurado- son suficiente pista visual, y sin
+   la palabra el boton queda mas chico que el de "Nuestro sitio" en vez de mas grande. */
+.pie-boton--whatsapp { padding-left: .55rem; padding-right: .65rem; }
+.pie-boton--whatsapp svg { width: 18px; height: 18px; color: #3fb350; }
+.pie-boton--whatsapp:hover { border-color: #3fb350; background: rgba(63, 179, 80, .1); color: var(--tinta); }
+
+/* No doy por sentado que Bootstrap la trae cargada -este wwwroot no tiene un bootstrap.css
+   propio a la vista-, asi que la defino aca: es la receta estandar para "se lee, no se ve".
+   La usa el "WhatsApp" del boton de arriba. */
+.visually-hidden {
+    position: absolute !important;
+    width: 1px !important;
+    height: 1px !important;
+    padding: 0 !important;
+    margin: -1px !important;
+    overflow: hidden !important;
+    clip: rect(0, 0, 0, 0) !important;
+    white-space: nowrap !important;
+    border: 0 !important;
+}
+
+.pie-numero { color: var(--barra-tenue); font-weight: 500; font-size: .78rem; }
+
+/* La nota de la frontera: jerarquia TERCIARIA y no secundaria -por eso --tenue-2 y no
+   --barra-tenue-, que es el mismo alias que ya usan los rotulitos y pies de tarjeta en el
+   resto de la app. No compite con "Nuestro sitio"/WhatsApp ni con la info de compras de
+   arriba: es la letra mas chica y mas palida de todo el pie. */
+.pie-nota {
+    margin-top: .7rem;
+    padding-top: .7rem;
+    border-top: 1px solid var(--linea);
+    font-size: .66rem;
+    line-height: 1.35;
+    color: var(--tenue-2);
+    /* Un paso mas de peso afuera: ni el tamaño ni el color solos alcanzaban a bajarla mas.
+       No es interactiva -no es un enlace ni un boton-, asi que restarle opacidad no le quita
+       nada de uso, solo la termina de poner en tercer plano. */
+    opacity: .82;
 }
 
 @media (max-width: 767.98px) {
@@ -1565,3 +1658,240 @@ h2.kicker { font-size: .74rem; margin: 0; }
     .loading-progress-text:after { content: var(--blazor-load-percentage-text, "Cargando"); }
 
 code { color: var(--gu-morado-hondo); }
+
+/* ==================================================================
+   SOLO INICIO, cuarta pasada visual: el HTML es ahora la fuente de verdad VISUAL y el
+   demo es solo datos/logica -"si el markup viejo impide parecerse al HTML, no lo
+   reutilices"-. Por eso el bloque 1 (header + hero, y el renglon "tus compras" que va
+   pegado a el) se reescribio con su PROPIO prefijo nuevo, "lg-home-", en vez de seguir
+   extendiendo las clases "mk-" de los intentos anteriores. Las reglas "mk-cambio"/
+   "mk-oportunidad" de mas abajo siguen en pie -son el bloque 2, todavia no tocado-, y
+   ninguna clase de aca (ni mk- ni lg-home-) se reutiliza en Recibos, Infaltables, Detalle,
+   Producto o Ritmo: eso es lo que deja a las demas pantallas sin cambiar un pixel.
+
+   LOS COLORES DEL HERO SON LOS DEL HTML, LITERALES -no los tokens compartidos de la app-:
+   Fernanda pidio que el HTML mande en lo visual, y su degradado/paleta del hero tiene sus
+   propios valores que no coinciden con --tinte-verde. El resto de "lg-home-*" que no es el
+   hero (el renglon de estado) SI usa los tokens de siempre (--carta, --tenue, --verde):
+   son elementos de chrome de la app, no parte de la composicion calcada del mock.
+   ================================================================== */
+
+/* ---- BLOQUE 1: header + hero, calcado del HTML ---- */
+
+/* SIN LA BARRA OSCURA: la marca (logo + nombre) y el boton de WhatsApp viven ADENTRO del
+   hero -como en el mock, que no tiene ninguna franja corporativa por encima-. MainLayout
+   deja de dibujar <header class="barra"> en esta ruta; este bloque es su reemplazo. La
+   ilustracion de fondo (hero-canasta-3d.png, detras de un velo claro) y el
+   degradado propio le dan al hero el mismo peso visual y la misma sensacion de "fondo
+   integrado" que tiene en el HTML. */
+.lg-home-hero {
+    position: relative;
+    overflow: hidden;
+    border-radius: 0 0 28px 28px;
+    background: linear-gradient(160deg, #e4f2e8 0%, #edf6ef 52%, #f5f6ef 84%, #f7f5f0 100%);
+    margin: -1.5rem -.75rem 1.5rem;
+    padding: 26px 20px 24px;
+    min-height: 248px;
+}
+.lg-home-hero-mancha { position: absolute; border-radius: 50%; pointer-events: none; }
+.lg-home-hero-mancha--a {
+    width: 230px; height: 205px; top: -70px; right: -60px;
+    background: radial-gradient(circle at 45% 45%, rgba(174,216,188,.5), rgba(174,216,188,0) 70%);
+}
+.lg-home-hero-mancha--b {
+    width: 190px; height: 165px; bottom: -40px; left: -70px;
+    background: radial-gradient(circle at 60% 50%, rgba(198,226,205,.42), rgba(198,226,205,0) 70%);
+}
+/* LA ILUSTRACION DE FONDO, tenue y recortada -igual que "hero-tienda.png" en el mock-:
+   siempre la misma (hero-canasta-3d.png), nunca cambia con la señal activa. Es un recorte
+   propio, nuevo, sacado de "sprite-laguaria.png" -el sprite que trajo Fernanda-: mismo
+   estilo 3D que logo.png, mas limpio que el hero-canasta.png plano que ya existia (ese
+   sigue en la carpeta, sin usar, por si hace falta volver atras). La foto de PRODUCTO
+   especifica (.lg-home-hero-foto) es harina de otro costal y va mas abajo, en la fila de
+   texto. */
+.lg-home-hero-ilustracion {
+    position: absolute; z-index: 1; bottom: -18px; right: -8px; width: 160px; height: auto;
+    opacity: .55; pointer-events: none;
+    -webkit-mask-image: radial-gradient(closest-side ellipse at 55% 55%, #000 45%, rgba(0,0,0,.4) 75%, transparent 100%);
+    mask-image: radial-gradient(closest-side ellipse at 55% 55%, #000 45%, rgba(0,0,0,.4) 75%, transparent 100%);
+}
+.lg-home-hero-velo {
+    position: absolute; inset: 0; z-index: 2; pointer-events: none;
+    background: radial-gradient(120% 100% at 2% 40%, rgba(240,248,241,.95) 0%, rgba(240,248,241,.82) 40%, rgba(240,248,241,.32) 62%, rgba(240,248,241,0) 80%);
+}
+.lg-home-hero-piso {
+    position: absolute; left: 0; right: 0; bottom: 0; height: 34px; z-index: 2; pointer-events: none;
+    background: linear-gradient(180deg, rgba(247,245,240,0) 0%, rgba(247,245,240,.6) 70%, var(--papel) 100%);
+}
+.lg-home-hero-arriba {
+    position: relative; z-index: 3;
+    display: flex; align-items: center; justify-content: space-between; gap: 10px;
+}
+.lg-home-hero-marca { display: flex; align-items: center; gap: 9px; min-width: 0; }
+.lg-home-hero-marca img { width: 34px; height: 34px; object-fit: contain; flex: none; display: block; }
+.lg-home-hero-marca span {
+    font-size: 1.15rem; font-weight: 800; color: #1f7a43; letter-spacing: -.01em; white-space: nowrap;
+}
+/* EL BOTON REDONDO A LA DERECHA no es una campana decorativa -no hay
+   notificaciones que mostrar y esta app no inventa una funcion que no
+   tiene-: es el acceso rapido a WhatsApp, que es contacto real. Si no
+   hay WhatsApp configurado, no se dibuja nada: no queda un boton que
+   no lleva a ningun lado. */
+.lg-home-hero-ayuda {
+    width: 40px; height: 40px; border-radius: 50%;
+    background: #fff; border: none;
+    box-shadow: 0 4px 14px rgba(22,38,28,.10);
+    display: inline-flex; align-items: center; justify-content: center;
+    color: #1f7a43; flex: none; text-decoration: none;
+}
+.lg-home-hero-saludo { position: relative; z-index: 3; margin: 14px 0 0; font-size: .85rem; font-weight: 700; color: #3f9160; }
+/* TEXTO A LA IZQUIERDA, FOTO A LA DERECHA -misma fila, alineados al piso-, exactamente
+   como arma el HTML. */
+.lg-home-hero-fila { position: relative; z-index: 3; display: flex; align-items: flex-end; gap: 8px; margin-top: 11px; }
+.lg-home-hero-texto { flex: 1; min-width: 0; }
+.lg-home-hero-kicker {
+    display: block; font-size: .62rem; font-weight: 800; color: #3f9160;
+    letter-spacing: .13em; line-height: 1.4; margin-bottom: .5rem;
+}
+.lg-home-hero-texto h1 {
+    margin: 0; font-size: clamp(1.35rem, 5.4vw, 1.6rem);
+    line-height: 1.1; font-weight: 800; color: #16261c; letter-spacing: -.03em;
+}
+.lg-home-hero-precio { display: flex; align-items: baseline; gap: 7px; margin-top: .5rem; }
+.lg-home-hero-precio-antes { font-size: .8rem; color: #6e8175; text-decoration: line-through; }
+.lg-home-hero-precio-ahora { font-size: 1.2rem; font-weight: 800; color: #1f7a43; letter-spacing: -.02em; }
+.lg-home-hero-ver {
+    display: inline-flex; align-items: center; gap: 5px; margin-top: .6rem;
+    font-size: .78rem; font-weight: 700; color: #1f7a43; text-decoration: none;
+}
+.lg-home-hero-ver:hover { color: #155c31; }
+.lg-home-hero-bajada { margin: .55rem 0 0; font-size: .82rem; color: #4a6b56; line-height: 1.45; }
+.lg-home-hero-foto {
+    flex: none; width: 84px; height: auto; max-height: 96px; object-fit: contain;
+    margin-bottom: -4px; filter: drop-shadow(0 10px 16px rgba(22,60,34,.18));
+}
+
+/* ---- "tus compras · hay N cambios recientes": el camino a Compras y el
+   icono de actualizar, chiquitos, en vez del boton grande y las cifras
+   historicas de antes. Chrome de la app, no composicion del mock -por
+   eso usa los tokens de siempre y no colores literales del HTML. ---- */
+
+.lg-home-estado { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 0 2px; }
+.lg-home-estado-link {
+    display: flex; align-items: center; gap: 6px; min-width: 0;
+    font-size: .8rem; font-weight: 700; color: var(--tenue); text-decoration: none;
+}
+.lg-home-estado-fuerte { color: var(--tinta); }
+.lg-home-estado-punto { color: var(--linea); }
+.lg-home-estado-cambio { color: #a9761a; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.lg-home-estado-cambio--calmo { color: var(--tenue); }
+.lg-home-estado-flecha { color: #c99a2b; flex: none; }
+.lg-home-estado-refrescar {
+    width: 30px; height: 30px; border-radius: 50%; flex: none;
+    background: var(--carta); border: none; box-shadow: 0 2px 8px rgba(22,38,28,.08);
+    display: inline-flex; align-items: center; justify-content: center; color: var(--verde);
+}
+.lg-home-estado-refrescar[disabled] { opacity: .55; }
+.lg-home-estado-refrescar svg.lg-home-girando { animation: lg-home-girar .9s linear infinite; }
+@keyframes lg-home-girar { to { transform: rotate(360deg); } }
+
+/* ---- BLOQUE 2 (todavia mk-, pendiente de rehacer): un cambio en tu rutina, fila
+   compacta, no carta alta ---- */
+
+.mk-cambio {
+    display: flex; align-items: center; gap: 10px;
+    background: var(--tinte-crema); border-radius: 16px;
+    padding: 14px 16px 14px 14px; margin-bottom: 12px;
+    position: relative; overflow: visible;
+}
+.mk-cambio-foto {
+    width: 64px; height: auto; flex: none;
+    margin: -14px -2px -12px -4px;
+    filter: drop-shadow(0 6px 10px rgba(122,88,16,.16));
+}
+.mk-cambio-que { flex: 1; min-width: 0; }
+.mk-cambio-nombre { display: flex; align-items: center; gap: 7px; flex-wrap: wrap; }
+.mk-cambio-nombre strong { font-size: 15px; font-weight: 800; color: var(--tinta); letter-spacing: -.01em; }
+.mk-cambio-pill {
+    font-size: 10px; font-weight: 800; color: var(--cambio-tinta);
+    background: #f6dfa4; border-radius: 999px; padding: 3px 7px; letter-spacing: .06em;
+}
+.mk-cambio-linea {
+    display: flex; align-items: center; gap: 7px; margin-top: 6px;
+    font-size: 13px; color: var(--cambio-tinta); flex-wrap: wrap;
+}
+.mk-cambio-desde { font-size: 10.5px; color: var(--tenue); margin-top: 4px; }
+.mk-cambio-mas {
+    background: none; border: none; padding: 0; margin-top: 8px;
+    font-size: 12.5px; font-weight: 700; color: var(--cambio-tinta); text-decoration: underline;
+}
+/* El detalle expandido -los demas cambios, entraron/salieron- va en
+   texto simple debajo de la fila: sigue siendo la misma informacion
+   de siempre, solo que sin una segunda carta encima de la primera. */
+.mk-cambio-detalle { margin-top: 10px; font-size: 12.5px; color: var(--cambio-tinta); }
+.mk-cambio-detalle > * + * { margin-top: 6px; }
+
+/* ---- puede interesarte: mini-afiche, no fila blanca ---- */
+
+.mk-oportunidad {
+    position: relative; overflow: hidden;
+    background: var(--tinte-verde); border-radius: 18px; padding: 15px 16px;
+    display: flex; align-items: center; gap: 12px; margin-bottom: 12px;
+    text-decoration: none;
+}
+.mk-oportunidad-blob-a { position: absolute; width: 150px; height: 150px; border-radius: 50%; background: var(--estable-borde); top: -58px; right: -34px; }
+.mk-oportunidad-blob-b { position: absolute; width: 86px; height: 86px; border-radius: 50%; background: #d3ead6; bottom: -40px; right: 38px; }
+.mk-oportunidad-foto { position: relative; height: 64px; width: auto; object-fit: contain; flex: none; filter: drop-shadow(0 8px 12px rgba(22,60,34,.14)); }
+.mk-oportunidad-que { position: relative; flex: 1; min-width: 0; }
+.mk-oportunidad-kicker { font-size: 10px; font-weight: 800; color: var(--verde); letter-spacing: .14em; }
+.mk-oportunidad-precio { display: flex; align-items: baseline; gap: 7px; margin-top: 5px; flex-wrap: wrap; }
+.mk-oportunidad-precio span:first-child { font-size: 13px; font-weight: 700; color: #41584c; }
+.mk-oportunidad-precio strong { font-size: 24px; font-weight: 800; color: var(--verde); letter-spacing: -.03em; }
+.mk-oportunidad-ahorro { position: relative; font-size: 11.5px; color: var(--tenue); margin-top: 5px; }
+.mk-oportunidad-badge {
+    position: absolute; top: 10px; right: 10px; font-size: 9.5px; font-weight: 800; color: var(--verde);
+    background: #fff; border-radius: 999px; padding: 5px 9px; letter-spacing: .06em;
+    box-shadow: 0 2px 6px rgba(22,60,34,.1);
+}
+
+/* ---- para tu proxima compra: minima, uno o dos productos ---- */
+
+.mk-proxima-kicker { font-size: 13px; font-weight: 700; color: var(--tinta); margin: 0 2px 6px; }
+.mk-proxima-lista { margin-bottom: 14px; }
+.mk-proxima-fila { display: flex; align-items: center; gap: 10px; padding: .5rem 0; }
+.mk-proxima-fila + .mk-proxima-fila { border-top: 1px solid var(--linea); }
+.mk-proxima-foto {
+    width: 34px; height: 34px; border-radius: 50%; background: var(--ficha);
+    display: inline-flex; align-items: center; justify-content: center; flex: none;
+}
+.mk-proxima-foto img { max-width: 22px; max-height: 24px; }
+.mk-proxima-que { flex: 1; min-width: 0; font-size: .86rem; }
+.mk-proxima-que strong { font-weight: 700; color: var(--tinta); }
+.mk-proxima-razon { display: block; font-size: .74rem; color: var(--tenue); }
+.mk-proxima-hace { font-size: .72rem; color: var(--tenue); white-space: nowrap; }
+
+/* ---- titulos simples: sin chip de icono, como en el mock ---- */
+
+.mk-titulo { font-size: 1rem; font-weight: 800; color: var(--tinta); letter-spacing: -.01em; margin: 0 2px 10px; }
+
+/* ---- info secundaria: filas divididas, no tres cartas sueltas ---- */
+
+.mk-secundario { margin: 1.6rem 0 0; }
+.mk-secundario-fila {
+    display: flex; align-items: center; justify-content: space-between; gap: 10px;
+    width: 100%; background: none; border: none; border-top: 1px solid var(--linea);
+    padding: .7rem .2rem; text-align: left; font-size: .85rem; color: var(--tinta);
+}
+.mk-secundario .mk-secundario-fila:last-of-type { border-bottom: 1px solid var(--linea); }
+.mk-secundario-detalle { padding: 0 .2rem .8rem; font-size: .8rem; color: var(--tenue); }
+.mk-secundario-detalle > * + * { margin-top: 6px; }
+
+/* ---- ayuda: una linea liviana, no el pie corporativo entero ---- */
+
+.mk-ayuda {
+    margin-top: 1.8rem; padding-top: 1rem; border-top: 1px solid var(--linea);
+    display: flex; flex-wrap: wrap; align-items: center; gap: .6rem 1.1rem;
+    font-size: .82rem; color: var(--tenue);
+}
+.mk-ayuda a { display: inline-flex; align-items: center; gap: .35rem; color: var(--verde); font-weight: 700; text-decoration: none; }
+.mk-ayuda a:hover { color: var(--verde-hondo); text-decoration: underline; }

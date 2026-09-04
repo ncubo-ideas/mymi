@@ -5,107 +5,112 @@
 @using Puppets.Portador
 @inject EstadoDeLaApp estado
 @inject NavigationManager navegacion
+@inject ConfiguracionDeLaInstitucion institucion
 
 <PageTitle>La Guaria y vos</PageTitle>
 
-@* EL HERO, con la copia y la ilustración del diseño de Fernanda. Va antes que todo y en
-   los dos estados de la app —con carpeta o sin ella— porque es la presentación: lo que la
-   pantalla dice que es, antes de decir lo que sabe.
+@* BLOQUE 1 -HEADER + HERO-, cuarta pasada: el HTML es la fuente de verdad visual y el
+   demo es solo datos/logica. Este bloque se reescribe DESDE CERO con su propio prefijo
+   -"lg-home-"-, sin heredar clases mk-* de intentos anteriores. Las llamadas al dominio
+   (heroNovedad/heroOportunidad/heroPromo, Corto, Colones, Foto, Sucursales, Vigencia) son
+   las mismas de siempre; lo unico que cambia es COMO se pintan.
 
-   "Descubrí lo que siempre vuelve y cómo cambia tu carrito" es exactamente lo que el módulo
-   contesta, así que la promesa y el producto dicen lo mismo. Eso no siempre pasa: el landing
-   prometía un "% ocasional" que la app ya no calcula, y hubo que sacarlo. *@
-<header class="hero">
-    @* LA FLOR DE AGUA: la guaria grande y tenue detras de la canasta. Es la presencia de
-       marca EN EL LIENZO -no solo en el cromo oscuro- que el equipo pidio: la institucion
-       firma la pantalla sin escribir su nombre dos veces. Decorativa: aria-hidden. *@
-    <svg class="hero-flor" viewBox="0 0 40 40" aria-hidden="true">
-        <g>
-            <ellipse fill="var(--gu-morado-claro)" cx="20" cy="9.6" rx="2.9" ry="6.4"/>
-            <ellipse fill="var(--gu-morado-claro)" cx="11.8" cy="27.6" rx="6.2" ry="2.4"
-                     transform="rotate(40 11.8 27.6)"/>
-            <ellipse fill="var(--gu-morado-claro)" cx="28.2" cy="27.6" rx="6.2" ry="2.4"
-                     transform="rotate(-40 28.2 27.6)"/>
-            <ellipse fill="var(--gu-morado)" cx="11.2" cy="15.6" rx="6.4" ry="3.5"
-                     transform="rotate(-26 11.2 15.6)"/>
-            <ellipse fill="var(--gu-morado)" cx="28.8" cy="15.6" rx="6.4" ry="3.5"
-                     transform="rotate(26 28.8 15.6)"/>
-            <path fill="var(--gu-morado-hondo)" d="M20 19.6c4 0 6.4 2.8 6.4 6 0 2.6-1.8 4.4-4 4.8-.9-.9-1.5-1.4
-                     -2.4-1.4s-1.5.5-2.4 1.4c-2.2-.4-4-2.2-4-4.8 0-3.2 2.4-6 6.4-6z"/>
-        </g>
-    </svg>
-    <div class="hero-dicho">
-        @* EL HERO ES LA RESPUESTA, no el eslogan (rediseño de Fernanda). "Tu super, mas
-           cerca de vos" decia que hace la app; "Asi vienen tus compras" dice que dicen SUS
-           datos hoy, y la bajada lo resume con lo que el dominio ya sabe. El eslogan queda
-           para antes de abrir, que es cuando la app todavia no tiene nada que contar. *@
-        <p class="hero-saludo">¡Hola!</p>
-        <h1>Así vienen<br />tus compras</h1>
-        <p class="hero-bajada">
-            @if (estado.EstaArriba && compras.Count > 0)
+   COMPOSICION, calcada del HTML: fondo degradado propio (no un token compartido con el
+   resto de la app), una ilustracion de fondo que sangra por abajo-derecha -tenue, detras
+   de un velo claro para que el texto se lea, igual que arma el mock-, arriba logo+marca y
+   el boton de WhatsApp, debajo el saludo, y despues LA MISMA fila del mock: texto a la
+   izquierda + foto del producto de la señal activa a la derecha, alineados al piso. Sin
+   foto no se dibuja nada -nunca una caja vacia-, y en el estado neutro no hay foto de
+   producto: la ilustracion de fondo ya cumple ese lugar, como en el mock. *@
+<header class="lg-home-hero">
+    <span class="lg-home-hero-mancha lg-home-hero-mancha--a" aria-hidden="true"></span>
+    <span class="lg-home-hero-mancha lg-home-hero-mancha--b" aria-hidden="true"></span>
+    <img class="lg-home-hero-ilustracion" src="assets/hero-canasta-3d.png" alt="" aria-hidden="true" />
+    <span class="lg-home-hero-velo" aria-hidden="true"></span>
+    <span class="lg-home-hero-piso" aria-hidden="true"></span>
+
+    <div class="lg-home-hero-arriba">
+        <span class="lg-home-hero-marca">
+            <img src="assets/logo.png" alt="" />
+            <span>La Guaria</span>
+        </span>
+
+        @* EL BOTON REDONDO no es una campana de notificaciones -esta app no tiene, y no
+           inventa una-: es WhatsApp, si el súper lo configuró. Contacto real, no adorno. *@
+        @if (institucion.HayWhatsApp)
+        {
+            <a class="lg-home-hero-ayuda" href="@institucion.EnlaceDeWhatsApp" target="_blank"
+               rel="noopener noreferrer" aria-label="Escribinos por WhatsApp">
+                <svg width="18" height="18" viewBox="0 0 20 20" fill="none" stroke="currentColor"
+                     stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                    <path d="M10 3.4a6.6 6.6 0 0 0-5.7 9.9L3.4 16.6l3.4-.9A6.6 6.6 0 1 0 10 3.4z"/>
+                    <path d="M7.6 7.3c.2-.5.5-.5.8-.5l.6 1.2c.1.2 0 .4-.1.5l-.4.5c.3.7 1 1.4 1.7 1.7l.5-.4c.1-.2.3-.2.5-.1l1.2.6c0 .3 0 .6-.5.8-1.9.7-4.9-2.3-4.3-4.3z"/>
+                </svg>
+            </a>
+        }
+    </div>
+
+    <p class="lg-home-hero-saludo">¡Hola!</p>
+
+    <div class="lg-home-hero-fila">
+        <div class="lg-home-hero-texto">
+            @if (heroNovedad is ProductoQueEntroVista novedad)
             {
+                <span class="lg-home-hero-kicker">NUEVO</span>
+                <h1>Llegó algo nuevo de tus @Corto(novedad.Descripcion).ToLowerInvariant()</h1>
+                <a class="lg-home-hero-ver" href="producto/@Uri.EscapeDataString(novedad.Descripcion)">Verlo &rarr;</a>
+            }
+            else if (heroOportunidad is PrecioQueCambio oportunidad)
+            {
+                <span class="lg-home-hero-kicker">TU HABITUAL</span>
+                <h1>Tu @Corto(oportunidad.Descripcion).ToLowerInvariant() habitual bajó de precio</h1>
+                <span class="lg-home-hero-precio">
+                    <span class="lg-home-hero-precio-antes">@Colones(oportunidad.Antes)</span>
+                    <span aria-hidden="true">&rarr;</span>
+                    <span class="lg-home-hero-precio-ahora">@Colones(oportunidad.Ahora)</span>
+                </span>
+                <a class="lg-home-hero-ver" href="producto/@Uri.EscapeDataString(oportunidad.Descripcion)">Verlo &rarr;</a>
+            }
+            else if (heroPromo is PromocionVista promo)
+            {
+                <span class="lg-home-hero-kicker">PUEDE INTERESARTE</span>
+                <h1>@promo.Gancho</h1>
+                <p class="lg-home-hero-bajada">@promo.Detalle &middot; @Vigencia(promo)</p>
+            }
+            else if (estado.EstaArriba && compras.Count > 0)
+            {
+                <h1>Así vienen tus compras</h1>
                 @* Y LAS SUCURSALES EN LA MISMA LINEA, cuando se mueve: "desde enero en 3
                    sucursales" es el arco de Geannina en seis palabras, y Juan no lo
                    encontraba plegado alla abajo. Si compra siempre en la misma, no suma
                    nada: no es noticia. *@
-                @((ritmos.Count > 0
-                    ? $"Casi todo habitual · {ritmos.Count} {(ritmos.Count == 1 ? "cambio" : "cambios")} de ritmo"
-                    : "Todo como siempre por acá.") + Sucursales())
+                <p class="lg-home-hero-bajada">
+                    @((ritmos.Count > 0
+                        ? $"Casi todo habitual · {ritmos.Count} {(ritmos.Count == 1 ? "cambio" : "cambios")} de ritmo"
+                        : "Todo como siempre por acá.") + Sucursales())
+                </p>
             }
             else
             {
-                @:Descubrí lo que siempre vuelve y cómo cambia tu carrito.
+                <h1>Bienvenida a<br />La Guaria</h1>
+                <p class="lg-home-hero-bajada">Descubrí lo que siempre vuelve y cómo cambia tu carrito.</p>
             }
-        </p>
-        @* LA FIRMA DE QUIEN TE LO CUENTA. El hero da la respuesta; esta linea dice de parte
-           de quien viene — que es exactamente el marketing que el equipo pidio: la lectura
-           util QUEDA ASOCIADA a la marca. *@
-        <p class="hero-firma">Supermercado La Guaria &middot; tu súper de barrio</p>
+        </div>
+
+        @if (heroNovedad is ProductoQueEntroVista novedadImg && Foto(novedadImg.Sku).Length > 0)
+        {
+            <img class="lg-home-hero-foto" src="@Foto(novedadImg.Sku)" alt="" aria-hidden="true" />
+        }
+        else if (heroOportunidad is PrecioQueCambio oportunidadImg && Foto(oportunidadImg.Sku).Length > 0)
+        {
+            <img class="lg-home-hero-foto" src="@Foto(oportunidadImg.Sku)" alt="" aria-hidden="true" />
+        }
+        else if (heroPromo is PromocionVista promoImg && Foto(promoImg.Sku).Length > 0)
+        {
+            <img class="lg-home-hero-foto" src="@Foto(promoImg.Sku)" alt="" aria-hidden="true" />
+        }
     </div>
-    @* La ilustración es DECORATIVA: alt vacío y aria-hidden. Lo que dice ya está en el
-       texto de al lado, y un lector de pantalla que la anuncie repite sin agregar. *@
-    <img class="hero-canasta" src="assets/hero-canasta.png" alt="" aria-hidden="true"
-         width="480" height="514" loading="eager" />
 </header>
-
-@* LOS BANNERES DEL SUPER, ya no maqueta: cada cartel LLEGO COMO EVENTO por URL2 al
-   journal, igual que las compras — es copia de ella, funciona sin conexion, y el super no
-   se entera de cuales vio. La app solo muestra las VIGENTES al dia de hoy; las vencidas
-   quedan en el journal para el asistente.
-
-   Los tres tintes rotan por posicion -verde, crema, y el morado de la flor- y la foto
-   sale del sku del evento por el mismo mapa de las fichas; un cartel sin sku (la rifa)
-   lleva la canasta del hero. *@
-@if (estado.EstaArriba && promociones.Count > 0)
-{
-    <section class="promos" aria-label="Promociones de la semana">
-        <div class="seccion-cabeza">
-            <span class="seccion-icono" aria-hidden="true">
-                <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6"
-                     stroke-linecap="round" stroke-linejoin="round">
-                    <path d="M3 8.5v3l9 4V4.5z"/><path d="M12 6.5c2 .6 3.2 1.9 3.2 3.5S14 12.9 12 13.5"/>
-                    <path d="M5.2 12.2l.8 3.6c.1.5.5.7 1 .7h.9"/>
-                </svg>
-            </span>
-            <h2 class="kicker">Promociones de la semana</h2>
-        </div>
-
-        <div class="promo-tira">
-            @for (int i = 0; i < promociones.Count; i++)
-            {
-                var promo = promociones[i];
-                <article class="promo @Tinte(i)">
-                    <div class="promo-dicho">
-                        <span class="promo-gancho">@promo.Gancho</span>
-                        <span class="promo-que">@promo.Detalle</span>
-                        <span class="promo-vence">@Vigencia(promo)</span>
-                    </div>
-                    <img class="promo-foto" src="@FotoDePromo(promo)" alt="" aria-hidden="true" />
-                </article>
-            }
-        </div>
-    </section>
-}
 
 @* UN solo lugar para los errores, y arriba (la leccion de la pantalla de Examenes). *@
 @if (error.Length > 0)
@@ -208,27 +213,11 @@
 }
 else
 {
-    @* LA FRANJA DE ARRIBA, en el idioma de ella y no en el del sistema. Decia:
-       "Refresh · 87 compras · ₡3.222.336 en total · leído hasta el evento 387".
-
-       "Refresh" es un verbo de programa. "leído hasta el evento 387" es el checkpoint
-       INTERNO de la bitacora, o sea la app hablando de si misma en la primera linea de la
-       pantalla: no le dice nada a quien compra, y le dice que esto es un sistema. Sigue
-       existiendo donde sirve —la tool total_de_compras lo devuelve, porque para saber si la
-       app esta al dia SI hace falta— pero eso lo mira el asistente, no ella. *@
-    <div class="d-flex align-items-center flex-wrap gap-2 mb-3">
-        <button class="btn btn-primary" @onclick="Refrescar" disabled="@refrescando">
-            @(refrescando ? "Buscando…" : "Buscar compras nuevas")
-        </button>
-        <span class="text-body-secondary">
-            @cantidad @(cantidad == 1 ? "compra tuya" : "compras tuyas")
-            @if (desdeCuando.Length > 0)
-            {
-                @: desde @desdeCuando
-            }
-            &middot; @Colones(total)
-        </span>
-    </div>
+    @* LA FRANJA DE ARRIBA YA NO DICE NUMEROS HISTORICOS -"87 compras · ₡3.222.336 en
+       total"-: eso es la app hablando de si misma. "Buscar compras nuevas" tampoco es ya
+       un boton grande a mitad del Home -el mock no tiene ninguno-: la actualizacion contra
+       el proveedor SIGUE existiendo (Refrescar/refrescando, sin tocar), pero ahora vive en
+       el icono chiquito junto a "Tus compras", ahi abajo. *@
 
     @if (!estado.HayCarpeta)
     {
@@ -277,12 +266,11 @@ else
             <button class="btn btn-aviso" @onclick="PedirPermiso">Volver a dar permiso</button>
         </div>
     }
-    else
-    {
-        <p class="small text-body-secondary">
-            Se guarda en &laquo;@estado.NombreDeLaCarpeta&raquo; después de cada cambio.
-        </p>
-    }
+    @* SIN "ELSE": cuando no hay ningun aviso que dar -el caso de todos los dias- no se
+       pinta nada aca. "Se guarda en «carpeta» despues de cada cambio" era exactamente el
+       texto tecnico -donde vive el dato- que Fernanda pidio sacar del primer viewport; el
+       dato sigue ahi (estado.NombreDeLaCarpeta), solo que la portada ya no lo repite cuando
+       no hay nada raro que avisar. *@
 
     @* LA PORTADA, y va antes que todo lo demás porque la especificación de marca lo pide
        así: "la pantalla abre con la firma de su semana y con el quiebre de enero. La lista
@@ -290,72 +278,6 @@ else
 
        Son los dos estados de la marca: VERDE lo estable, ÁMBAR lo que cambió. Rojo nunca
        —"un carrito no tiene urgencias"—. Y el ámbar no es un regaño: señala y se calla. *@
-    @* PARA LA PROXIMA COMPRA. Va PRIMERA porque es lo unico accionable de la portada: el
-       resto cuenta lo que ya paso, y esto dice que hacer hoy.
-
-       ES UN RESUMEN Y NO LA LISTA ENTERA, que es lo que el equipo pidio para la app: se
-       nombran unos pocos y se dice cuantos son. El detalle completo -cada producto con su
-       ritmo y sus dias- lo da la tool del MCP, que es donde el detalle no estorba. *@
-    @if (porCaer is not null && porCaer.CuantosTocan > 0)
-    {
-        <div class="card border-warning-subtle bg-warning-subtle mb-3">
-            <div class="card-body">
-        @* UNA SOLA ANATOMIA DE SECCION para toda la portada. Antes convivian dos: tres
-           cartas con kicker y siete <h2> pelados con el contenido suelto — y esa mezcla es
-           lo que hacia que la pagina no se sintiera un sistema. Ahora toda seccion abre
-           igual: un chip con su icono y el titulo en kicker. Los iconos son SVG inline por
-           lo mismo que los de las pestañas: la fuente recortada no trae glifos decorativos,
-           y un emoji renderiza distinto en cada sistema. *@
-                <div class="seccion-cabeza seccion-cabeza--cambio">
-                    <span class="seccion-icono" aria-hidden="true"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M3.5 8h13l-1.4 7.5H4.9z"/><path d="M7 8l3-4.5L13 8"/></svg></span>
-                    <span class="kicker">Para tu próxima compra</span>
-                </div>
-                <div class="fs-5">
-                    @porCaer.CuantosTocan @(porCaer.CuantosTocan == 1 ? "cosa" : "cosas")
-                    de las que solés llevar ya pasaron su tiempo.
-                </div>
-
-                @* UNA LISTA DE VERDAD, no chips. Cada fila con la FOTO del producto -las
-                   mismas que ya usan las fichas-, el nombre, y su razon debajo: sin el
-                   "hace 16 días" seria la app diciendote que compres pollo; con el es un
-                   hecho tuyo que podes confirmar o descartar — podes tener dos en el
-                   congelador y esta app no lo sabe.
-
-                   La antiguedad va en una pastilla a la derecha, como el "vence el" de las
-                   garantias: mismo gesto para "el dato que decide" en toda la app. *@
-                <div class="lista-proxima mt-3">
-                    @foreach (var producto in Faltantes())
-                    {
-                        <div class="proxima-fila">
-                            @{ string foto = Foto(producto.Sku); }
-                            @if (foto.Length > 0)
-                            {
-                                <span class="proxima-foto"><img src="@foto" alt="" /></span>
-                            }
-                            else
-                            {
-                                <span class="proxima-foto proxima-foto--sin" aria-hidden="true"></span>
-                            }
-                            <span class="proxima-que">
-                                <strong>@producto.Descripcion</strong>
-                                <span class="proxima-razon">@producto.CadenciaCompacta en tu carrito</span>
-                            </span>
-                            <span class="proxima-hace">hace @producto.DiasDesdeLaUltima días</span>
-                        </div>
-                    }
-                </div>
-
-                @if (porCaer.CuantosTocan > FaltantesQueSeMuestran)
-                {
-                    <div class="small text-body-secondary mt-2">
-                        Y @(porCaer.CuantosTocan - FaltantesQueSeMuestran) más.
-                        Tu asistente te puede dar la lista completa.
-                    </div>
-                }
-            </div>
-        </div>
-    }
-
     @* ============ LA PORTADA RESUME; EL DETALLE VIVE DETRAS DE UN "VER →" ============
        Es el rediseño de Fernanda que el equipo aprobo: cada carta cuenta UNA historia y el
        resto se abre ahi mismo o vive en su pantalla. Antes la portada desplegaba todo
@@ -363,86 +285,199 @@ else
        se perdio: lo que ya no se pinta desplegado se abre con su enlace, y el asistente
        siempre tuvo el detalle entero por sus tools. *@
 
+    @* "TUS COMPRAS · HAY N CAMBIOS RECIENTES →": el renglon compacto que reemplaza el
+       boton grande y las cifras historicas de arriba. Es tambien el camino a Compras -la
+       nav Inicio/Compras ya no vive dentro del hero como pastillas-, y lleva pegado el
+       icono de actualizar -Refrescar()/refrescando, la misma logica de siempre-, chiquito
+       y sin protagonismo. "N cambios" es ritmos.Count, el mismo dato que ya respalda la
+       historia de "un cambio en tu rutina" bien abajo: no se inventa una cuenta aparte. *@
+    <div class="lg-home-estado mb-3">
+        <a class="lg-home-estado-link" href="recibos">
+            <span class="lg-home-estado-fuerte">Tus compras</span>
+            <span class="lg-home-estado-punto" aria-hidden="true">&middot;</span>
+            @if (ritmos.Count > 0)
+            {
+                <span class="lg-home-estado-cambio">Hay @ritmos.Count @(ritmos.Count == 1 ? "cambio reciente" : "cambios recientes")</span>
+            }
+            else
+            {
+                <span class="lg-home-estado-cambio lg-home-estado-cambio--calmo">Todo como siempre</span>
+            }
+            <svg class="lg-home-estado-flecha" width="12" height="12" viewBox="0 0 24 24" fill="none"
+                 stroke="currentColor" stroke-width="2.4" stroke-linecap="round" aria-hidden="true">
+                <path d="M4 12h15M14 6l6 6-6 6"/>
+            </svg>
+        </a>
+        <button class="lg-home-estado-refrescar" @onclick="Refrescar" disabled="@refrescando"
+                aria-label="Buscar compras nuevas" title="Buscar compras nuevas">
+            <svg class="@(refrescando ? "lg-home-girando" : "")" width="15" height="15" viewBox="0 0 24 24"
+                 fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <path d="M21 12a9 9 0 1 1-2.6-6.36"/>
+                <path d="M21 3v6h-6"/>
+            </svg>
+        </button>
+    </div>
+
     @* UN CAMBIO EN TU RUTINA: una sola historia -la mas notoria, que ya viene primera del
        dominio- con su antes/ahora y desde cuando. El resto de los cambios y los productos
        que entraron/salieron se abren aca mismo. *@
     @if (ritmos.Count > 0)
     {
-        <div class="card border-warning-subtle bg-warning-subtle mb-3">
-            <div class="card-body">
-                <div class="seccion-cabeza seccion-cabeza--cambio">
-                    <span class="seccion-icono" aria-hidden="true"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M10 3.5l1.5 4.2 4.2 1.5-4.2 1.5L10 14.9l-1.5-4.2-4.2-1.5 4.2-1.5z"/><path d="M15.7 13.9l.6 1.7 1.7.6-1.7.6-.6 1.7-.6-1.7-1.7-.6 1.7-.6z"/></svg></span>
-                    <span class="kicker">Un cambio en tu rutina</span>
-                </div>
-
-                <div class="fs-5 mb-2">
-                    @ritmos[0].Descripcion aparece @(ritmos[0].EsMasSeguido ? "más" : "menos") seguido
-                </div>
-                <div class="d-flex align-items-center gap-2 flex-wrap">
-                    <span class="ritmo-rotulo">antes</span>
-                    <span class="etiqueta etiqueta-neutra">@ritmos[0].Antes</span>
-                    <span class="text-body-secondary">&rarr;</span>
-                    <span class="ritmo-rotulo">ahora</span>
-                    <span class="etiqueta etiqueta-cambio">@ritmos[0].Ahora</span>
-                    @if (cambio is not null && cambio.Corte.Length > 0)
-                    {
-                        <span class="ritmo-rotulo ms-1">&middot; cambió desde @MesLegible(cambio.Corte)</span>
-                    }
-                </div>
-
+        <div class="mk-cambio mb-3">
+            @{ string cambioFoto = Foto(ritmos[0].Sku); }
+            @if (cambioFoto.Length > 0)
+            {
+                <span class="mk-cambio-foto"><img src="@cambioFoto" alt="" /></span>
+            }
+            else
+            {
+                <span class="mk-cambio-foto" aria-hidden="true"></span>
+            }
+            <span class="mk-cambio-que">
+                <span class="mk-cambio-nombre">
+                    <strong>@ritmos[0].Descripcion</strong>
+                    <span class="mk-cambio-pill">CAMBIÓ</span>
+                </span>
+                <span class="mk-cambio-linea">
+                    <span>@ritmos[0].Antes</span>
+                    <span aria-hidden="true">&rarr;</span>
+                    <span>@ritmos[0].Ahora</span>
+                </span>
+                @if (cambio is not null && cambio.Corte.Length > 0)
+                {
+                    <span class="mk-cambio-desde">cambió desde @MesLegible(cambio.Corte)</span>
+                }
                 @if (!verCambios && (ritmos.Count > 1 || (cambio is not null && cambio.HayCambio)))
                 {
-                    <button class="btn btn-link p-0 mt-3 ver-todos" @onclick="() => verCambios = true">
+                    <button class="mk-cambio-mas" @onclick="() => verCambios = true">
                         Ver los cambios &rarr;
                     </button>
                 }
-                @if (verCambios)
+            </span>
+        </div>
+        @if (verCambios)
+        {
+            <div class="mk-cambio-detalle mb-3">
+                @if (ritmos.Count > 1)
                 {
-                    @if (ritmos.Count > 1)
-                    {
-                        <div class="mt-3">
-                            @foreach (var r in ritmos.Skip(1))
+                    <div class="mt-1">
+                        @foreach (var r in ritmos.Skip(1))
+                        {
+                            <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 py-1">
+                                <span>@r.Descripcion</span>
+                                <span class="d-inline-flex align-items-center gap-2">
+                                    <span class="etiqueta etiqueta-neutra">@r.Antes</span>
+                                    <span class="text-body-secondary">&rarr;</span>
+                                    <span class="etiqueta @(r.EsMasSeguido ? "etiqueta-cambio" : "etiqueta-neutra")">@r.Ahora</span>
+                                </span>
+                            </div>
+                        }
+                    </div>
+                }
+                @if (cambio is not null && cambio.Entraron.Count > 0)
+                {
+                    <div class="mt-2">
+                        <span class="small text-body-secondary me-2">entraron</span>
+                        <span class="d-inline-flex flex-wrap gap-2 align-middle">
+                            @foreach (var entro in cambio.Entraron)
                             {
-                                <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 py-1">
-                                    <span>@r.Descripcion</span>
-                                    <span class="d-inline-flex align-items-center gap-2">
-                                        <span class="etiqueta etiqueta-neutra">@r.Antes</span>
-                                        <span class="text-body-secondary">&rarr;</span>
-                                        <span class="etiqueta @(r.EsMasSeguido ? "etiqueta-cambio" : "etiqueta-neutra")">@r.Ahora</span>
-                                    </span>
-                                </div>
+                                <span class="etiqueta etiqueta-cambio">@entro.Descripcion <span class="opacity-75">&middot; @entro.Desde</span></span>
                             }
-                        </div>
-                    }
-                    @if (cambio is not null && cambio.Entraron.Count > 0)
-                    {
-                        <div class="mt-3">
-                            <span class="small text-body-secondary me-2">entraron</span>
-                            <span class="d-inline-flex flex-wrap gap-2 align-middle">
-                                @foreach (var entro in cambio.Entraron)
-                                {
-                                    <span class="etiqueta etiqueta-cambio">@entro.Descripcion <span class="opacity-75">&middot; @entro.Desde</span></span>
-                                }
-                            </span>
-                        </div>
-                    }
-                    @if (cambio is not null && cambio.Salieron.Count > 0)
-                    {
-                        <div class="mt-2">
-                            <span class="small text-body-secondary me-2">dejó de aparecer</span>
-                            <span class="d-inline-flex flex-wrap gap-2 align-middle">
-                                @foreach (var salio in cambio.Salieron)
-                                {
-                                    <span class="etiqueta etiqueta-neutra">@salio.Descripcion</span>
-                                }
-                            </span>
-                        </div>
-                    }
-                    <button class="btn btn-link p-0 mt-3 ver-todos" @onclick="() => verCambios = false">
-                        Ver menos
-                    </button>
+                        </span>
+                    </div>
+                }
+                @if (cambio is not null && cambio.Salieron.Count > 0)
+                {
+                    <div class="mt-2">
+                        <span class="small text-body-secondary me-2">dejó de aparecer</span>
+                        <span class="d-inline-flex flex-wrap gap-2 align-middle">
+                            @foreach (var salio in cambio.Salieron)
+                            {
+                                <span class="etiqueta etiqueta-neutra">@salio.Descripcion</span>
+                            }
+                        </span>
+                    </div>
+                }
+                <button class="mk-cambio-mas" @onclick="() => verCambios = false">
+                    Ver menos
+                </button>
+            </div>
+        }
+    }
+
+    @* TU HABITUAL (la oportunidad de precio): la mejor bajada entre sus habituales, como
+       mini-afiche propio y sin cabecera de seccion -el mock de Fernanda tampoco le pone
+       una-, con el mismo kicker "TU HABITUAL" que trae el HTML. Va ANTES de "para tu
+       proxima compra" porque es la oportunidad genuina mas cercana a lo que ya lleva, y
+       sube desde donde vivia -adentro de la carta de precios, al fondo- a un lugar que se
+       ve. *@
+    @if (heroOportunidad is PrecioQueCambio oportunidadDeHoy)
+    {
+        <div class="mk-oportunidad mb-3">
+            <span class="mk-oportunidad-blob-a" aria-hidden="true"></span>
+            <span class="mk-oportunidad-blob-b" aria-hidden="true"></span>
+            @{ string oportunidadFoto = Foto(oportunidadDeHoy.Sku); }
+            @if (oportunidadFoto.Length > 0)
+            {
+                <span class="mk-oportunidad-foto"><img src="@oportunidadFoto" alt="" /></span>
+            }
+            <span class="mk-oportunidad-que">
+                <span class="mk-oportunidad-kicker">TU HABITUAL</span>
+                <strong>@oportunidadDeHoy.Descripcion</strong>
+            </span>
+            <span class="mk-oportunidad-precio">
+                <span class="precio-antes">@Colones(oportunidadDeHoy.Antes)</span>
+                <strong>@Colones(oportunidadDeHoy.Ahora)</strong>
+                <span class="ritmo-rotulo">por @oportunidadDeHoy.Unidad</span>
+            </span>
+            <span class="mk-oportunidad-ahorro">
+                @Colones(oportunidadDeHoy.Antes - oportunidadDeHoy.Ahora) menos
+            </span>
+            <span class="mk-oportunidad-badge">MEJOR PRECIO</span>
+        </div>
+    }
+
+    @* PARA TU PROXIMA COMPRA. COMPACTA A PROPOSITO -uno o dos productos, nunca la lista
+       entera- porque el equipo pidio que la portada no le adivine el carrito a nadie.
+       Y SIN CERTEZA FALSA: antes decia "ya pasaron su tiempo", una afirmacion que la app no
+       puede sostener -puede tener dos en la alacena y esta app no lo sabe-. Ahora dice
+       "quiza ya te toque" y deja que la razon (cada cuanto vuelve, hace cuanto no entra) sea
+       lo que decide, no la app. El detalle completo -la lista entera- lo da el asistente. *@
+    @if (porCaer is not null && porCaer.CuantosTocan > 0)
+    {
+        <div class="mb-3">
+            <span class="mk-proxima-kicker">Quizá ya te toque</span>
+
+            @* LA LISTA, COMPACTA: la foto, el nombre y SU RAZON -cada cuanto vuelve y
+               hace cuanto no entra-, nunca una afirmacion de que falta. *@
+            <div class="mk-proxima-lista">
+                @foreach (var producto in Faltantes())
+                {
+                    <div class="mk-proxima-fila">
+                        @{ string foto = Foto(producto.Sku); }
+                        @if (foto.Length > 0)
+                        {
+                            <span class="mk-proxima-foto"><img src="@foto" alt="" /></span>
+                        }
+                        else
+                        {
+                            <span class="mk-proxima-foto" aria-hidden="true"></span>
+                        }
+                        <span class="mk-proxima-que">
+                            <strong>@producto.Descripcion</strong>
+                            <span class="mk-proxima-razon">suele volver @producto.CadenciaCompacta</span>
+                        </span>
+                        <span class="mk-proxima-hace">hace @producto.DiasDesdeLaUltima días</span>
+                    </div>
                 }
             </div>
+
+            @if (porCaer.CuantosTocan > FaltantesQueSeMuestran)
+            {
+                <div class="small text-body-secondary mt-1">
+                    Y @(porCaer.CuantosTocan - FaltantesQueSeMuestran) más. Tu asistente te puede dar la lista completa.
+                </div>
+            }
         </div>
     }
 
@@ -480,10 +515,7 @@ else
        S14. Fusiona las tres cartas que antes iban sueltas. *@
     @if (mes is not null && mes.HayComparacion)
     {
-        <div class="seccion-cabeza">
-            <span class="seccion-icono" aria-hidden="true"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M3.5 8.4h13"/><path d="M7 3.2v2.6"/><path d="M13 3.2v2.6"/><rect x="3.5" y="4.5" width="13" height="12" rx="2.2"/></svg></span>
-            <h2 class="kicker">Tu mes en el súper</h2>
-        </div>
+        <h2 class="mk-titulo">Tu mes en el súper</h2>
         <div class="card mb-4">
             <div class="card-body">
                 <div class="tiles-mes">
@@ -536,35 +568,19 @@ else
                     {
                         <button class="btn btn-link p-0 ver-todos" @onclick="() => verGrafica = true">Ver la gráfica &rarr;</button>
                     }
-                    @if (ritmo is not null && ritmo.EsObservado && !verRitmo)
+                    @* "VER TU RITMO" YA NO DESPLIEGA ACA: lleva a /ritmo, su propia
+                       pantalla -el mismo patron que /infaltables para la firma-, porque el
+                       detalle del ritmo (dia y momento favoritos, los tres momentos del
+                       dia) es una historia completa y no un parrafo mas de esta carta. *@
+                    @if (ritmo is not null && ritmo.EsObservado)
                     {
-                        <button class="btn btn-link p-0 ver-todos" @onclick="() => verRitmo = true">Ver tu ritmo &rarr;</button>
+                        <a class="btn btn-link p-0 ver-todos" href="ritmo">Ver tu ritmo &rarr;</a>
                     }
                     @if (comparacion is not null && comparacion.HayComparacion && !verComparacion)
                     {
                         <button class="btn btn-link p-0 ver-todos" @onclick="() => verComparacion = true">Comparar con el año pasado &rarr;</button>
                     }
                 </div>
-
-                @if (verRitmo && ritmo is not null && ritmo.EsObservado)
-                {
-                    <div class="mt-3">
-                        <div class="ritmo-rotulo mb-1">
-                            El día que más comprás: <strong>@ritmo.DiaFavorito</strong>
-                            (@ritmo.ComprasEnElDiaFavorito de @ritmo.ComprasMiradas)
-                        </div>
-                        <div class="momentos">
-                            @foreach (var m in ritmo.PorMomento)
-                            {
-                                <div class="momento @(m.Momento == ritmo.MomentoFavorito ? "momento-favorito" : "")">
-                                    <div class="momento-nombre">@m.Momento</div>
-                                    <div class="momento-barra"><span style="width:@((int)(m.Proporcion * 100))%"></span></div>
-                                    <div class="momento-cuantas">@m.Cuantas @(m.Cuantas == 1 ? "compra" : "compras")</div>
-                                </div>
-                            }
-                        </div>
-                    </div>
-                }
 
                 @if (verComparacion && comparacion is not null && comparacion.HayComparacion)
                 {
@@ -601,10 +617,7 @@ else
        dominio- y el resto detras del enlace. Colones tachados, como en el rediseño. *@
     @if (precios is not null && precios.Count > 0)
     {
-        <div class="seccion-cabeza">
-            <span class="seccion-icono" aria-hidden="true"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M3.5 10.3V4.7a1.2 1.2 0 0 1 1.2-1.2h5.6l6.2 6.2-6.8 6.8z"/><circle cx="7.2" cy="7.2" r="1.15"/></svg></span>
-            <h2 class="kicker">Tus habituales cambiaron de precio</h2>
-        </div>
+        <h2 class="mk-titulo">Tus habituales cambiaron de precio</h2>
         <div class="list-group mb-4">
             @* LA CIFRA DEL MOCK DE FERNANDA: "+₡1.150 vs. hace 3 meses". Es OTRA ventana
                que las filas de abajo -ellas cuentan la serie entera, esta el pasado
@@ -632,30 +645,10 @@ else
                     </span>
                 </div>
             }
-            @* PUEDE INTERESARTE, del mock de Fernanda: la mayor BAJADA, con su foto y el
-               precio tachado. Solo si la fila estrella no la esta mostrando ya (cuando el
-               que mas se movio ES una bajada, repetirla seria eco), y solo plegado: al
-               expandir, todas las bajadas ya estan a la vista. *@
-            @if (!verPrecios && Oportunidad() is PrecioQueCambio oportunidad)
-            {
-                <div class="list-group-item oportunidad">
-                    <span class="proxima-foto @(Foto(oportunidad.Sku).Length == 0 ? "proxima-foto--sin" : "")">
-                        @if (Foto(oportunidad.Sku).Length > 0)
-                        {
-                            <img src="@Foto(oportunidad.Sku)" alt="" />
-                        }
-                    </span>
-                    <span class="oportunidad-que">
-                        <span class="oportunidad-kicker">Puede interesarte</span>
-                        <strong>@oportunidad.Descripcion</strong>
-                    </span>
-                    <span class="d-inline-flex align-items-baseline gap-2 flex-wrap">
-                        <span class="precio-antes">@Colones(oportunidad.Antes)</span>
-                        <span class="precio-ahora precio-ahora--baja">@Colones(oportunidad.Ahora)</span>
-                        <span class="ritmo-rotulo">por @oportunidad.Unidad</span>
-                    </span>
-                </div>
-            }
+            @* "PUEDE INTERESARTE" YA NO VIVE ACA: subio a su propio bloque, arriba de
+               "para tu proxima compra", porque es una oportunidad y no un detalle de esta
+               lista de precios. Sigue siendo la misma llamada -Oportunidad()-, calculada
+               una sola vez en Releer() como heroOportunidad. *@
             @if (precios.Count > 1)
             {
                 <button class="list-group-item list-group-item-action ver-todos text-start"
@@ -671,10 +664,7 @@ else
     @if (compras.Count > 0)
     {
         var ultima = compras[compras.Count - 1];
-        <div class="seccion-cabeza">
-            <span class="seccion-icono" aria-hidden="true"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M5.2 3.2h9.6v13.6l-2.4-1.5-2.4 1.5-2.4-1.5-2.4 1.5z"/><path d="M7.9 7.1h4.2M7.9 10.3h4.2"/></svg></span>
-            <h2 class="kicker">Tu última compra</h2>
-        </div>
+        <h2 class="mk-titulo">Tu última compra</h2>
         <div class="list-group mb-4">
             <button class="list-group-item list-group-item-action recibo ultima-compra"
                     @onclick="@(() => navegacion.NavigateTo($"compra/{Uri.EscapeDataString(ultima.Numero)}"))">
@@ -695,125 +685,128 @@ else
     @* LO QUE NO ESTA, plegado a una fila: es la lectura mas "del asistente" de todas -la
        tool que_dejaste_de_comprar la da entera- y en pantalla basta el titular. El detalle
        se abre aca mismo. *@
-    @if (pendientes.Count > 0)
+    @* LAS TRES FILAS SECUNDARIAS -lo que dejo de entrar, donde compra, garantias- comparten
+       un mismo bloque liviano de filas divididas (.mk-secundario) en vez de tres cartas
+       sueltas con sombra: son informacion de consulta, no protagonistas de la portada. Cada
+       una conserva su propio booleano de apertura y su detalle exacto de antes. *@
+    @if (pendientes.Count > 0 || (recorrido is not null && recorrido.HayDatos) || garantias.Count > 0)
     {
-        <div class="list-group mb-3">
-            <button class="list-group-item list-group-item-action firma-fila"
-                    @onclick="() => verHueco = !verHueco">
-                <span class="firma-que">
-                    <strong>Lo que dejó de entrar</strong>
-                    <span class="ritmo-rotulo">
-                        @pendientes[0].Titulo@(pendientes.Count > 1 ? $" · y {pendientes.Count - 1} más" : "") hace más de lo habitual
-                    </span>
-                </span>
-                <span class="recibo-flecha" aria-hidden="true">@(verHueco ? "⌄" : "›")</span>
-            </button>
-            @if (verHueco)
+        <div class="mk-secundario">
+            @if (pendientes.Count > 0)
             {
-                @foreach (AbastecimientoEnEspera p in pendientes)
-                {
-                    <div class="list-group-item d-flex justify-content-between align-items-center flex-wrap gap-2">
-                        <div>
-                            <strong>@p.Titulo</strong>
-                            <div class="small text-body-secondary">@p.ParaElAsistente</div>
-                        </div>
-                        <span class="etiqueta @(p.Severidad == "informativo" ? "etiqueta-neutra" : "etiqueta-tierra")">
-                            @p.DiasDesdeLaUltima días
+                <button class="mk-secundario-fila" @onclick="() => verHueco = !verHueco">
+                    <span class="firma-que">
+                        <strong>Lo que dejó de entrar</strong>
+                        <span class="ritmo-rotulo">
+                            @pendientes[0].Titulo@(pendientes.Count > 1 ? $" · y {pendientes.Count - 1} más" : "") hace más de lo habitual
                         </span>
-                    </div>
-                }
-            }
-        </div>
-    }
-
-    @* DONDE COMPRA, plegado a una fila como las demas. Es la lectura que propuso
-       Geannina -"antes compraba siempre en la misma; desde enero aparece en tres"- y
-       Juan pidio verla en la app, no solo en la tool. Solo se pinta cuando algun tiquete
-       trae sucursal: los journals viejos callan y la fila no inventa nada. *@
-    @if (recorrido is not null && recorrido.HayDatos)
-    {
-        <div class="list-group mb-3">
-            <button class="list-group-item list-group-item-action firma-fila"
-                    @onclick="() => verSucursales = !verSucursales">
-                <span class="firma-que">
-                    <strong>Dónde comprás</strong>
-                    <span class="ritmo-rotulo">
-                        @if (recorrido.SeMueve)
-                        {
-                            <text>sobre todo en @recorrido.Sucursales[0].Nombre · desde el @Fecha(DesdeCuandoSeMueve()) también en @SucursalesNuevas()</text>
-                        }
-                        else
-                        {
-                            <text>siempre en @recorrido.Sucursales[0].Nombre</text>
-                        }
                     </span>
-                </span>
-                <span class="recibo-flecha" aria-hidden="true">@(verSucursales ? "⌄" : "›")</span>
-            </button>
-            @if (verSucursales)
-            {
-                @foreach (SucursalVista s in recorrido.Sucursales)
+                    <span class="recibo-flecha" aria-hidden="true">@(verHueco ? "⌄" : "›")</span>
+                </button>
+                @if (verHueco)
                 {
-                    <div class="list-group-item d-flex justify-content-between align-items-center flex-wrap gap-2">
-                        <div>
-                            <strong>@s.Nombre</strong>
-                            <div class="small text-body-secondary">
-                                la primera vez el @Fecha(s.PrimeraVez) &middot; la última el @Fecha(s.UltimaVez)
-                            </div>
-                        </div>
-                        <span class="etiqueta etiqueta-neutra">
-                            @s.Compras @(s.Compras == 1 ? "compra" : "compras")
-                        </span>
-                    </div>
-                }
-                @if (recorrido.ComprasSinSucursal > 0)
-                {
-                    <div class="list-group-item small text-body-secondary">
-                        @recorrido.ComprasSinSucursal @(recorrido.ComprasSinSucursal == 1 ? "compra más vieja no dice" : "compras más viejas no dicen") en qué sucursal fueron.
-                    </div>
-                }
-            }
-        </div>
-    }
-
-    @* LAS GARANTIAS, plegadas a una fila: importan EL DIA que hay que reclamar, no todos
-       los dias. Si alguna ya pide moverse (QueHacer), la lista arranca abierta — esa si es
-       noticia. *@
-    @if (garantias.Count > 0)
-    {
-        <div class="list-group mb-3">
-            <button class="list-group-item list-group-item-action firma-fila"
-                    @onclick="() => verGarantias = !verGarantias">
-                <span class="firma-que">
-                    <strong>Tus garantías</strong>
-                    <span class="ritmo-rotulo">
-                        @garantias[0].Descripcion te cubre hasta el @Fecha(garantias[0].VenceEl)@(garantias.Count > 1 ? $" · y {garantias.Count - 1} más" : "")
-                    </span>
-                </span>
-                <span class="recibo-flecha" aria-hidden="true">@(verGarantias ? "⌄" : "›")</span>
-            </button>
-            @if (verGarantias)
-            {
-                @foreach (GarantiaDeProducto g in garantias)
-                {
-                    <div class="list-group-item d-flex justify-content-between align-items-center flex-wrap gap-2">
-                        <div>
-                            <strong>@g.Descripcion</strong>
-                            <div class="small text-body-secondary">
-                                la compraste el @Fecha(g.FechaDeCompra) &middot;
-                                @g.MesesDeCobertura meses de garantía
-                            </div>
-                            @if (g.QueHacer.Length > 0)
-                            {
-                                <div class="small mt-1">
-                                    <strong>@g.QueHacer</strong> &middot;
-                                    el número para el reclamo es @g.NumeroDeCompra
+                    <div class="mk-secundario-detalle">
+                        @foreach (AbastecimientoEnEspera p in pendientes)
+                        {
+                            <div class="d-flex justify-content-between align-items-center flex-wrap gap-2">
+                                <div>
+                                    <strong>@p.Titulo</strong>
+                                    <div class="small text-body-secondary">@p.ParaElAsistente</div>
                                 </div>
+                                <span class="etiqueta @(p.Severidad == "informativo" ? "etiqueta-neutra" : "etiqueta-tierra")">
+                                    @p.DiasDesdeLaUltima días
+                                </span>
+                            </div>
+                        }
+                    </div>
+                }
+            }
+
+            @* DONDE COMPRA: la lectura que propuso Geannina -"antes compraba siempre en la
+               misma; desde enero aparece en tres"-. Solo se pinta cuando algun tiquete trae
+               sucursal: los journals viejos callan y la fila no inventa nada. *@
+            @if (recorrido is not null && recorrido.HayDatos)
+            {
+                <button class="mk-secundario-fila" @onclick="() => verSucursales = !verSucursales">
+                    <span class="firma-que">
+                        <strong>Dónde comprás</strong>
+                        <span class="ritmo-rotulo">
+                            @if (recorrido.SeMueve)
+                            {
+                                <text>sobre todo en @recorrido.Sucursales[0].Nombre · desde el @Fecha(DesdeCuandoSeMueve()) también en @SucursalesNuevas()</text>
                             }
-                        </div>
-                        <span class="etiqueta @(g.QueHacer.Length > 0 ? "etiqueta-tierra" : "etiqueta-verde")">
-                            te cubre hasta el @Fecha(g.VenceEl)
+                            else
+                            {
+                                <text>siempre en @recorrido.Sucursales[0].Nombre</text>
+                            }
                         </span>
+                    </span>
+                    <span class="recibo-flecha" aria-hidden="true">@(verSucursales ? "⌄" : "›")</span>
+                </button>
+                @if (verSucursales)
+                {
+                    <div class="mk-secundario-detalle">
+                        @foreach (SucursalVista s in recorrido.Sucursales)
+                        {
+                            <div class="d-flex justify-content-between align-items-center flex-wrap gap-2">
+                                <div>
+                                    <strong>@s.Nombre</strong>
+                                    <div class="small text-body-secondary">
+                                        la primera vez el @Fecha(s.PrimeraVez) &middot; la última el @Fecha(s.UltimaVez)
+                                    </div>
+                                </div>
+                                <span class="etiqueta etiqueta-neutra">
+                                    @s.Compras @(s.Compras == 1 ? "compra" : "compras")
+                                </span>
+                            </div>
+                        }
+                        @if (recorrido.ComprasSinSucursal > 0)
+                        {
+                            <div class="small text-body-secondary">
+                                @recorrido.ComprasSinSucursal @(recorrido.ComprasSinSucursal == 1 ? "compra más vieja no dice" : "compras más viejas no dicen") en qué sucursal fueron.
+                            </div>
+                        }
+                    </div>
+                }
+            }
+
+            @* LAS GARANTIAS: importan EL DIA que hay que reclamar, no todos los dias. *@
+            @if (garantias.Count > 0)
+            {
+                <button class="mk-secundario-fila" @onclick="() => verGarantias = !verGarantias">
+                    <span class="firma-que">
+                        <strong>Tus garantías</strong>
+                        <span class="ritmo-rotulo">
+                            @garantias[0].Descripcion te cubre hasta el @Fecha(garantias[0].VenceEl)@(garantias.Count > 1 ? $" · y {garantias.Count - 1} más" : "")
+                        </span>
+                    </span>
+                    <span class="recibo-flecha" aria-hidden="true">@(verGarantias ? "⌄" : "›")</span>
+                </button>
+                @if (verGarantias)
+                {
+                    <div class="mk-secundario-detalle">
+                        @foreach (GarantiaDeProducto g in garantias)
+                        {
+                            <div class="d-flex justify-content-between align-items-center flex-wrap gap-2">
+                                <div>
+                                    <strong>@g.Descripcion</strong>
+                                    <div class="small text-body-secondary">
+                                        la compraste el @Fecha(g.FechaDeCompra) &middot;
+                                        @g.MesesDeCobertura meses de garantía
+                                    </div>
+                                    @if (g.QueHacer.Length > 0)
+                                    {
+                                        <div class="small mt-1">
+                                            <strong>@g.QueHacer</strong> &middot;
+                                            el número para el reclamo es @g.NumeroDeCompra
+                                        </div>
+                                    }
+                                </div>
+                                <span class="etiqueta @(g.QueHacer.Length > 0 ? "etiqueta-tierra" : "etiqueta-verde")">
+                                    te cubre hasta el @Fecha(g.VenceEl)
+                                </span>
+                            </div>
+                        }
                     </div>
                 }
             }
@@ -823,26 +816,38 @@ else
     @* LOS RECIBOS VIVEN EN SU PROPIA PESTAÑA, y no es solo orden: la especificación dice
        que "la lista de recibos existe, pero no es la portada", y con 87 compras cualquier
        forma de ponerla en la misma pantalla la vuelve la portada por tamaño. En una
-       pestaña aparte deja de competir, y quien la busca la encuentra donde espera. *@
-    <p class="small text-body-secondary mt-4">
-        Los recibos, uno por uno, están en <a href="recibos">Compras</a>.
-    </p>
+       pestaña aparte deja de competir, y quien la busca la encuentra donde espera.
 
-    @if (!estado.HayCarpeta)
-    {
-        <p class="small text-body-secondary mt-4">
-            <strong>Sin carpeta:</strong> el registro vive solo en memoria y se pierde al cerrar.
-        </p>
-    }
+       Y COMO EL LAYOUT YA NO PINTA SU PIE CORPORATIVO EN INICIO -MainLayout lo suprime en
+       esta ruta-, esta franja liviana toma su lugar: el enlace a Compras, y el contacto con
+       La Guaria (WhatsApp/sitio) solo si la institucion los tiene configurados. Nunca
+       protagonista, siempre al final. *@
+    <div class="mk-ayuda">
+        <a href="recibos">Ver todos tus recibos</a>
+        @if (institucion.HayWhatsApp)
+        {
+            <a href="@institucion.EnlaceDeWhatsApp" target="_blank" rel="noopener">Escribir por WhatsApp</a>
+        }
+        @if (institucion.HaySitio)
+        {
+            <a href="@institucion.Sitio" target="_blank" rel="noopener">Sitio de La Guaria</a>
+        }
+        @if (!estado.HayCarpeta)
+        {
+            <span>Sin carpeta: el registro vive solo en memoria y se pierde al cerrar.</span>
+        }
+    </div>
 }
 
 @code {
     // CUANTOS SE NOMBRAN EN LA PORTADA. La app resume; el MCP detalla. Con compras
     // semanales el dia de ir al super "tocan" casi todos los habituales -medido: 16 de 22-,
     // y una carta con dieciseis nombres deja de ser un resumen.
-    // Cuatro y no seis: Juan miro la portada armada y dijo "tiene demasiadas cosas". La
-    // fila del pie sigue diciendo cuantas mas hay, y el asistente da la lista entera.
-    private const int FaltantesQueSeMuestran = 4;
+    // DOS Y NO CUATRO: el rediseño de Fernanda pide "para tu próxima compra" compacta -uno
+    // o dos productos, nunca la lista entera-, para que la portada no le adivine el
+    // carrito a nadie. La fila del pie sigue diciendo cuantas mas hay, y el asistente da
+    // la lista entera.
+    private const int FaltantesQueSeMuestran = 2;
 
     // DESDE CUANDO COMPRA ACA, en palabras. "87 compras" solo es un numero; "87 compras
     // desde enero de 2025" es su historia con este super, que es lo que ella reconoce.
@@ -853,7 +858,6 @@ else
     // detalle aca mismo, sin navegar. Se reinician en cada carga, que es lo esperado de
     // un resumen.
     private bool verCambios;
-    private bool verRitmo;
     private bool verComparacion;
     private bool verPrecios;
     private bool verGrafica;
@@ -880,6 +884,18 @@ else
     private CanastaFrenteAlPasadoVista? frente;
     private RecorridoDeSucursalesVista? recorrido;
     private bool verSucursales;
+
+    // EL HERO PERSONALIZADO. Se calculan UNA VEZ en Releer() -no en el markup- porque las
+    // vistas del hero (novedad, oportunidad, promo) leen datos que ya usan otras tarjetas
+    // -Oportunidad() es la misma de "Puede interesarte"-: dos calculos separados podrian,
+    // en teoria, desincronizarse.
+    //
+    // NOVEDAD GUARDA EL PRODUCTO ENTERO y no solo el nombre: la foto que sangra en el hero
+    // necesita su sku, y pedirlo aparte hubiera sido una segunda lectura del mismo dato.
+    private ProductoQueEntroVista? heroNovedad;
+    private PrecioQueCambio? heroOportunidad;
+    private PromocionVista? heroPromo;
+
     private int cantidad;
     private decimal total;
     private long ultimoEvento;
@@ -1011,6 +1027,40 @@ else
         precios = estado.Precios();
         frente = estado.FrenteAlPasado();
         recorrido = estado.Recorrido();
+
+        // EL HERO, al final, porque lee cambio, precios, firma y promociones, y los cuatro
+        // ya estan releidos aca.
+        //
+        // LA NOVEDAD SOLO CUENTA SI ES RECIENTE. cambio.Entraron es el quiebre que encontro
+        // el dominio, y ese quiebre no se mueve solo hasta que entra algo nuevo de verdad —
+        // asi que sin este filtro el hero seguiria diciendo "llego algo nuevo" ocho meses
+        // despues de que dejo de serlo.
+        heroOportunidad = Oportunidad();
+        heroNovedad = cambio is not null && cambio.Entraron.Count > 0
+                      && EsRecienteElMes(cambio.Entraron[0].Desde)
+            ? cambio.Entraron[0]
+            : null;
+
+        // LA PROMO SOLO CUENTA SI ES DE ALGO QUE ELLA COMPRA DE VERDAD -su sku aparece
+        // entre sus habituales o entre lo que tiene precio seguido-, nunca la primera que
+        // llegue: "no forzar promociones" fue instruccion explicita, y una promo generica
+        // en el hero es exactamente eso.
+        heroPromo = promociones.FirstOrDefault(p =>
+            p.Sku.Length > 0
+            && ((firma is not null && firma.Habituales.Any(h => h.Sku == p.Sku))
+                || precios.Any(pr => pr.Sku == p.Sku)));
+    }
+
+    // "RECIENTE" es este mes, el pasado o el anterior a ese: tres meses de ventana, ni un
+    // quiebre de anteayer ni uno del año pasado disfrazado de noticia.
+    private static bool EsRecienteElMes(string aaaaMm)
+    {
+        string[] partes = aaaaMm.Split('-');
+        if (partes.Length < 2 || !int.TryParse(partes[0], out int anio)
+                               || !int.TryParse(partes[1], out int mes)) return false;
+
+        int mesesDeDiferencia = (DateTime.Now.Year - anio) * 12 + (DateTime.Now.Month - mes);
+        return mesesDeDiferencia is >= 0 and <= 2;
     }
 
     private void VerDetalle(string numero) =>
@@ -1277,14 +1327,6 @@ else
         DayOfWeek.Wednesday => "miércoles", DayOfWeek.Thursday => "jueves",
         DayOfWeek.Friday => "viernes", DayOfWeek.Saturday => "sábado", _ => "domingo",
     };
-
-    // La foto del sku por el mismo mapa de las fichas; sin sku -una rifa, un pasillo- va
-    // la canasta del hero, que es la imagen mas "super" que tenemos.
-    private static string FotoDePromo(PromocionVista promo)
-    {
-        string foto = promo.Sku.Length > 0 ? Compras.Wasm.Fotos.De(promo.Sku) : "";
-        return foto.Length > 0 ? foto : "assets/hero-canasta.png";
-    }
 
     private static string Colones(decimal monto) =>
         Plata.Colones(monto);   @* la regla vive en el dominio, no en cada pantalla *@

@@ -1,0 +1,93 @@
+@page "/ritmo"
+@using Compras.App.Vistas
+@using Compras.App
+@inject EstadoDeLaApp estado
+
+@* TU RITMO DE SUPER: la pantalla propia a la que lleva "Ver tu ritmo →" desde "Tu mes en
+   el súper". Mismo patron que /infaltables para la firma -la portada resume en una linea,
+   el detalle completo vive aca-, y las clases (.ritmo-cifra, .momentos, .momento) ya
+   estaban en app.css para exactamente esto: la hoja de estilos las describe como "la
+   pantalla 'tu ritmo de super' del diseño de la app" desde antes de que esta pantalla
+   existiera.
+
+   SOLO SE MUESTRA LO QUE EL DOMINIO PUEDE RESPALDAR. RitmoDelSuperVista no trae una
+   distribucion por los siete dias de la semana -solo el dia favorito y su conteo-, asi que
+   esta pantalla no dibuja las siete barras del mock: dibujaria seis en cero que no son un
+   hecho, son un hueco disfrazado de dato. Tampoco lleva ningun cartel de "¿lo habias
+   notado?": esa observacion en el mock no tiene una consulta que la respalde, y esta app
+   señala lo que sabe y se calla en lo que no. *@
+
+<PageTitle>Tu ritmo de súper · La Guaria y vos</PageTitle>
+
+<Volver Respaldo="" />
+
+<h1>Tu ritmo de súper</h1>
+<p class="text-body-secondary mb-4">
+    Hay días y momentos que se repiten más de lo que parece.
+</p>
+
+@if (!estado.EstaArriba)
+{
+    <div class="aviso">
+        La app todavía no abrió en esta computadora.
+        <a href="">Andá a Inicio</a> y elegí tu carpeta.
+    </div>
+}
+else if (ritmo is null || !ritmo.EsObservado)
+{
+    <p class="text-body-secondary">
+        @(ritmo?.ParaElAsistente is { Length: > 0 } texto ? texto : "Todavía no hay compras suficientes para medir un ritmo.")
+    </p>
+}
+else
+{
+    <p class="ritmo-rotulo mb-3">
+        Mirando tus últimas @ritmo.ComprasMiradas compras.
+    </p>
+
+    <div class="ritmo-cifras mb-4">
+        <div class="ritmo-cifra">
+            <span class="ritmo-numero ritmo-numero-largo">Cada @ritmo.DiasEntreCompras días</span>
+            <span class="ritmo-rotulo">volvés al súper</span>
+        </div>
+        <div class="ritmo-cifra">
+            <span class="ritmo-numero ritmo-palabra">@ritmo.DiaFavorito</span>
+            <span class="ritmo-rotulo">
+                el día en que más comprás
+                (@ritmo.ComprasEnElDiaFavorito de @ritmo.ComprasMiradas)
+            </span>
+        </div>
+    </div>
+
+    @* LOS TRES MOMENTOS, siempre los tres y en orden del dia -manana, tarde, noche-: el
+       dominio ya los entrega asi, y el favorito se marca solo con el verde vivo. *@
+    <div class="card mb-4">
+        <div class="card-body">
+            <div class="seccion-cabeza">
+                <span class="seccion-icono" aria-hidden="true"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="10" cy="10" r="6.6"/><path d="M10 6.4V10l2.6 1.6"/></svg></span>
+                <h2 class="kicker">A qué hora solés ir</h2>
+            </div>
+            <div class="momentos">
+                @foreach (var m in ritmo.PorMomento)
+                {
+                    <div class="momento @(m.Momento == ritmo.MomentoFavorito ? "momento-favorito" : "")">
+                        <div class="momento-nombre">@m.Momento</div>
+                        <div class="momento-barra"><span style="width:@((int)(m.Proporcion * 100))%"></span></div>
+                        <div class="momento-cuantas">@m.Cuantas @(m.Cuantas == 1 ? "compra" : "compras")</div>
+                    </div>
+                }
+            </div>
+        </div>
+    </div>
+}
+
+@code {
+    private RitmoDelSuperVista? ritmo;
+
+    protected override void OnInitialized()
+    {
+        if (!estado.EstaArriba) return;
+
+        ritmo = estado.Ritmo();
+    }
+}
