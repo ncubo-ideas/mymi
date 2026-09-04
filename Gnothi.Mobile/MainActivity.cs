@@ -61,8 +61,8 @@ public class MainActivity : Activity
 	// La raiz de la pantalla, para poder poner el modulo encima; el anfitrion, para pedirselo;
 	// y cual esta a la vista, que es lo que el boton atras tiene que cerrar primero.
 	private Android.Widget.FrameLayout? raiz;
-	private AnfitrionDeModulosWeb? anfitrion;
-	private ModuloWeb? enPantalla;
+	private AndroidWebModuleHost? anfitrion;
+	private AndroidWebModule? enPantalla;
 	private ConsentWatch? watch;
 	private readonly CancellationTokenSource stop = new();
 
@@ -157,8 +157,8 @@ public class MainActivity : Activity
 		// QUIEN SABE CREAR WEBVIEWS. ChooseShell es estatico y no tiene Context, asi que la
 		// cascara de webview no puede construir el anfitrion: se lo registra la Activity, que
 		// si lo tiene. Sin esto, un modulo con "type": "webview" falla diciendo exactamente eso.
-		anfitrion = new AnfitrionDeModulosWeb(this);
-		Gnothi.Host.WebViewShell.Anfitrion = anfitrion;
+		anfitrion = new AndroidWebModuleHost(this, new AndroidSecretStore(FilesDir!.AbsolutePath), s => global::Android.Util.Log.Info("gnothi", s));
+		Gnothi.Host.WebViewShell.Host = anfitrion;
 
 		// 2 - DISCOVER. The very same code the desktop Host runs.
 		catalog = new ModuleCatalog(root);
@@ -351,8 +351,8 @@ public class MainActivity : Activity
 
 		try
 		{
-			ModuloWeb vivo = await anfitrion.Abrir(m, ct);
-			string resultado = await vivo.Traspasar(asercionesJson, ct);
+			AndroidWebModule vivo = await anfitrion.Open(m, ct);
+			string resultado = await vivo.Handoff(asercionesJson, ct);
 			Log($"traspaso a {m.Manifest.Module}: {resultado}");
 		}
 		catch (Exception ex)
@@ -486,7 +486,7 @@ public class MainActivity : Activity
 		{
 			try
 			{
-				ModuloWeb vivo = await anfitrion.Abrir(m, stop.Token);
+				AndroidWebModule vivo = await anfitrion.Open(m, stop.Token);
 				RunOnUiThread(() => Mostrar(vivo));
 			}
 			catch (Exception ex)
@@ -500,9 +500,9 @@ public class MainActivity : Activity
 
 	// El WebView del módulo entra ARRIBA del de Gnothi, tapándolo. No se reemplaza la vista:
 	// la de Gnothi sigue viva detrás, con su estado y su conversación intactos.
-	private void Mostrar(ModuloWeb vivo)
+	private void Mostrar(AndroidWebModule vivo)
 	{
-		Android.Views.View? vista = vivo.Vista;
+		Android.Views.View? vista = vivo.View;
 		if (vista is null || raiz is null) return;
 
 		Cerrar();
@@ -519,7 +519,7 @@ public class MainActivity : Activity
 	{
 		if (enPantalla is null) return false;
 
-		Android.Views.View? vista = enPantalla.Vista;
+		Android.Views.View? vista = enPantalla.View;
 		if (vista is not null) raiz?.RemoveView(vista);
 
 		enPantalla.Visible = false;

@@ -30,6 +30,7 @@ public sealed class ViewController : UIViewController
 
 	private WKWebView? web;
 	private Shell? shell;
+	private IosWebModuleHost? anfitrion;
 
 	public override void ViewDidLoad()
 	{
@@ -97,6 +98,15 @@ public sealed class ViewController : UIViewController
 			// La comprobacion es Sirve() y no isAvailable, que MIENTE -en iOS 26.2 dice que si y
 			// la generacion falla-. Sirve() lo verifica generando, y cachea.
 			ModelFoundation.Sirve() ? encuadre => new ModelFoundation(encuadre) : null);
+
+		// QUIEN SABE CREAR WEBVIEWS. ChooseShell es estatico y no tiene ViewController, asi que
+		// la cascara de webview no puede construir el anfitrion: se lo registra esta clase, que
+		// si lo tiene. Sin esto, un modulo con "type": "webview" falla diciendo exactamente eso.
+		//
+		// Es la MISMA linea que MainActivity corre en Android, y con la misma forma: el Host solo
+		// nombra la interfaz, la plataforma pone quien la cumple.
+		anfitrion = new IosWebModuleHost(this, new IosSecretStore(), Log);
+		Gnothi.Host.WebViewShell.Host = anfitrion;
 
 		_ = Task.Run(async () =>
 		{
