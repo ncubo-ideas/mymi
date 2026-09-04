@@ -72,6 +72,18 @@
   .mod b{font-size:15px;line-height:1.25}
   .mod small{color:var(--muted);font-size:11.5px;line-height:1.35;display:block;
        white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%}
+  /* EL ALTA EN CURSO. Vive arriba de la grilla porque es lo que la persona está esperando. */
+  .alta{display:flex;align-items:center;gap:10px;margin:0 0 14px;padding:13px 15px;
+        border-radius:14px;font-size:13.5px;line-height:1.4}
+  .alta b{font-weight:600}
+  .alta.trabajando{background:#EEF0FB;color:#3A3577}
+  .alta.listo{background:#E6F6EC;color:#1D6B39}
+  .alta.error{background:#FDECEA;color:#8E2A1F}
+  .alta .sp{width:16px;height:16px;flex:0 0 16px;border-radius:50%;
+            border:2px solid rgba(58,53,119,.25);border-top-color:#3A3577;
+            animation:girar .8s linear infinite}
+  @keyframes girar{to{transform:rotate(360deg)}}
+  .alta .ic{flex:0 0 16px;font-size:15px;line-height:1}
   .chip{display:inline-flex;align-items:center;gap:5px;font-size:10.5px;font-weight:600;
        color:var(--muted);margin-top:4px;justify-content:center}
   .chip svg{width:12px;height:12px}
@@ -90,6 +102,14 @@
   .osheet.on{display:flex}
   .osheet .card{background:var(--card);border-radius:22px 22px 0 0;padding:24px 22px 30px;
        width:100%;max-height:78vh;overflow-y:auto}
+  /* LA PROPUESTA DE ALTA. Lista de consultas y las dos rutas que Gnothi fija. */
+  .pr-tools{list-style:none;margin:6px 0 14px;padding:0}
+  .pr-tools li{padding:9px 0;border-bottom:1px solid var(--line);font-size:13.5px}
+  .pr-tools li:last-child{border-bottom:0}
+  .pr-tools small{color:var(--muted);font-size:12px;line-height:1.4;display:block;margin-top:2px}
+  .osheet code{display:inline-block;background:#EEF0FB;color:#3A3577;border-radius:6px;
+               padding:3px 7px;font-size:11.5px;word-break:break-all;margin-top:3px}
+  .ojo{background:#FFF6E5;color:#8A5A00;border-radius:10px;padding:10px 12px;font-size:13px}
   .osheet h4{font-size:17px;margin-bottom:8px}
   .osheet p{color:var(--muted);font-size:13.5px;line-height:1.6;margin-bottom:8px}
   .osheet button.cta{width:100%;margin-top:12px;border:0;border-radius:14px;padding:13px;
@@ -244,6 +264,10 @@
       <span class="chev">›</span>
     </div>
 
+    <!-- EL ALTA, MIENTRAS PASA. Es lo primero que Sonia ve hacer a Gnothi por ella: tocó un
+         botón en la página de su institución y volvió acá. Sin esto son 12 MB de silencio. -->
+    <div id="alta"></div>
+
     <div class="sec"><b>Tus módulos</b><small id="home-sub"></small></div>
     <div class="grid" id="mods"></div>
   </div>
@@ -300,6 +324,22 @@
 </div>
 
 <!-- adding a module, explained honestly: it is not ours to fabricate here -->
+
+<!-- ═══ EL ALTA: LO QUE LA INSTITUCIÓN PROPONE ═══
+     Instalar un módulo es el acto más grande que Sonia hace en Gnothi: le da a una
+     institución una carpeta suya y un endpoint registrado. Hasta el 2026-09-04 pasaba sola,
+     como efecto de tocar un enlace. Acá se le muestra QUÉ trae y QUÉ va a poder hacer, y
+     recién si acepta el módulo ocupa un lugar. Cancelar no deja nada. -->
+<div id="propuesta" class="osheet">
+  <div class="card">
+    <h4 id="pr-t"></h4>
+    <p id="pr-i"></p>
+    <div id="pr-cuerpo"></div>
+    <button class="cta" onclick="gn.altaAceptar()">Instalar en mi teléfono</button>
+    <button class="btn ghost" style="width:100%;margin-top:10px" onclick="gn.altaDescartar()">Ahora no</button>
+  </div>
+</div>
+
 <div id="sheet" class="osheet" onclick="if(event.target===this)gn.sheet(false)">
   <div class="card">
     <h4>Un módulo te lo entrega una institución</h4>
@@ -358,6 +398,10 @@ const NOMBRE = { examenes:'Tus exámenes', compras:'Tus compras', facturas:'Tus 
 const gn = {
   state: null, open: null, busy: false, seq: 0,
 
+  // ABRIR EL MODULO: la app de la institucion se dibuja a si misma, adentro de Gnothi
+  // (especificacion 11 §8). La pone en pantalla el lado nativo; esta pagina solo lo pide.
+  abrir(name) { gn.call('abrir', { module: name }); },
+
   sheet(on) { document.getElementById('sheet').classList.toggle('on', on); },
 
   // THE PHONE'S BACK BUTTON lands here: the Activity asks the page first. Returns whether
@@ -383,6 +427,54 @@ const gn = {
     if (kind === 'trace')  { gn.traceLine(payload); return; }
     if (kind === 'answer') { gn.answer(payload, false); return; }
     if (kind === 'fail')   { gn.answer('No pude contestar: ' + payload, true); return; }
+    if (kind === 'alta')   { if (JSON.parse(payload).estado === 'nada') { document.getElementById('alta').innerHTML = ''; return; } gn.alta(JSON.parse(payload)); return; }
+    if (kind === 'propuesta') { gn.verPropuesta(JSON.parse(payload)); return; }
+  },
+
+  // EL ALTA, MIENTRAS PASA. "listo" se va solo a los 6 segundos porque ya se ve la tarjeta
+  // nueva abajo; "error" SE QUEDA, porque si no la persona vuelve a quedarse sin saber por qué.
+  // LO QUE LA INSTITUCIÓN PROPONE, antes de que exista nada. Se le muestra a Sonia lo que el
+  // manifiesto DECLARA -quién es, qué consultas ofrece- y las dos cosas que decide Gnothi y
+  // ella tiene derecho a saber: dónde va a vivir el registro y contra qué endpoint va a hablar.
+  propuesta: null,
+  verPropuesta(p) {
+    gn.propuesta = p;
+    document.getElementById('alta').innerHTML = '';
+
+    document.getElementById('pr-t').textContent =
+      (p.yaEstaba ? 'Reinstalar ' : 'Agregar ') + p.titulo;
+    document.getElementById('pr-i').textContent = p.institucion;
+
+    const tools = (p.tools || []).map(t =>
+      '<li><b>' + esc(t.titulo || t.nombre) + '</b><br><small>' + esc(t.descripcion) + '</small></li>').join('');
+
+    document.getElementById('pr-cuerpo').innerHTML =
+      (p.yaEstaba ? '<p class="ojo">Ya tenés este módulo. Reinstalarlo reemplaza su app; su registro se conserva.</p>' : '')
+      + '<p><b>Qué va a poder contestar</b></p><ul class="pr-tools">' + tools + '</ul>'
+      + '<p><b>Dónde va a vivir tu registro</b><br><code>' + esc(p.journal) + '</code></p>'
+      + '<p><b>Con quién va a hablar</b><br><code>' + esc(p.publicador || '(no declara publicador)') + '</code><br>'
+      + '<small>Es la única red que va a poder tocar, y la hace Gnothi por él. '
+      + 'El bundle lo sirvió <b>' + esc(p.servido) + '</b>.</small></p>';
+
+    document.getElementById('propuesta').classList.add('on');
+  },
+
+  altaAceptar()   { document.getElementById('propuesta').classList.remove('on'); gn.call('altaAceptar'); },
+  altaDescartar() { document.getElementById('propuesta').classList.remove('on'); gn.propuesta = null; gn.call('altaDescartar'); },
+
+  altaTimer: null,
+  alta(a) {
+    const caja = document.getElementById('alta');
+    if (gn.altaTimer) { clearTimeout(gn.altaTimer); gn.altaTimer = null; }
+
+    const adorno = a.estado === 'trabajando' ? '<span class="sp"></span>'
+                 : a.estado === 'listo'      ? '<span class="ic">✓</span>'
+                 :                              '<span class="ic">!</span>';
+
+    caja.innerHTML = '<div class="alta ' + a.estado + '">' + adorno
+                   + '<span>' + esc(a.detalle) + '</span></div>';
+
+    if (a.estado === 'listo') gn.altaTimer = setTimeout(() => { caja.innerHTML = ''; }, 6000);
   },
 
   nav(v) {
@@ -429,6 +521,11 @@ const gn = {
 
         + '<div class="master"><span>Módulo encendido</span>'
         + sw(m.enabled, "gn.setModule('" + m.name + "',this.checked)") + '</div>'
+
+        + (m.enabled
+            ? '<div class="master" onclick="gn.abrir(\'' + m.name + '\')"><span><b>Abrir ' + esc(m.title) + '</b><br>'
+              + '<small>la app de tu institución, adentro de Gnothi</small></span><span class="chev">›</span></div>'
+            : '')
 
         + '<h3 class="cap">Consultas que ofrece</h3>'
         + m.tools.map(t =>

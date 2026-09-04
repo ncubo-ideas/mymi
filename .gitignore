@@ -46,3 +46,7 @@ __pycache__/
 # El paquete de modulos para el telefono: 20 MB de salida de build.
 # Lo arma Gnothi.Mobile/armar-paquete.ps1 cuando hace falta.
 Gnothi.Mobile/paquete/
+
+# Los bundles de las instituciones: 12 MB de salida de publish por modulo.
+# Los arma Gnothi.Mobile/armar-bundle.ps1 cuando hace falta.
+Gnothi.Mobile/bundles/

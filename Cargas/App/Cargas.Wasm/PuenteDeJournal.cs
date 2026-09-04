@@ -18,19 +18,35 @@ namespace Cargas.Wasm;
 // browser son ASINCRONAS, y en wasm single-thread no se puede bloquear esperando una
 // promesa. De ahi la forma: PRECARGAR sincrono antes de tocar el motor, PERSISTIR
 // asincrono despues de cada comando.
-public sealed class PuenteDeJournal : IAsyncDisposable
+public sealed class PuenteDeJournal : IDestinoDelJournal, IAsyncDisposable
 {
 	// La raiz en MEMFS. Es lo que se le pasa al motor como path=, y no tiene nada que
 	// ver con donde el usuario puso la carpeta.
 	public const string RaizEnMemfs = "/journal";
 
 	private readonly IJSRuntime js;
+	private readonly IDestinoDelJournal destino;
 	private IJSObjectReference? modulo;
 
+	// MODO SUELTO: el destino es el storage del browser, y de eso se ocupa esta misma
+	// clase (ver la region "el destino" al final). Es el constructor de siempre.
 	public PuenteDeJournal(IJSRuntime js)
 	{
 		ArgumentNullException.ThrowIfNull(js);
 		this.js = js;
+		destino = this;
+	}
+
+	// MODO HOSPEDADO: el destino son los archivos de Gnothi, por el puente nativo. El
+	// movimiento MEMFS <-> destino es EL MISMO; lo unico que cambia es donde aterrizan los
+	// bytes. La plomeria de browser que queda abajo -picker, permisos, OPFS- no se usa en
+	// este modo: Gnothi no le pregunta a nadie donde escribir.
+	public PuenteDeJournal(IJSRuntime js, IDestinoDelJournal destino)
+	{
+		ArgumentNullException.ThrowIfNull(js);
+		ArgumentNullException.ThrowIfNull(destino);
+		this.js = js;
+		this.destino = destino;
 	}
 
 	// TENER la carpeta y TENER PERMISO sobre ella son dos cosas distintas, y confundirlas
@@ -43,6 +59,11 @@ public sealed class PuenteDeJournal : IAsyncDisposable
 	public bool PermisoOtorgado { get; private set; }
 
 	public bool HayCarpeta => NombreDeLaCarpeta.Length > 0 && PermisoOtorgado;
+
+	// SI HAY DONDE ESCRIBIR, sea el storage del browser o los archivos de Gnothi. Es lo que
+	// mira el arranque para decidir si precarga: "carpeta" es vocabulario del modo suelto y
+	// hospedado no aplica.
+	public bool HayDestino => destino.Disponible;
 
 	// Hay handle recuperado pero el permiso caduco: se recupera con un click, sin volver
 	// a elegir la carpeta.
@@ -152,9 +173,9 @@ public sealed class PuenteDeJournal : IAsyncDisposable
 		int escritos = 0;
 		foreach (ArchivoExportado archivo in archivos)
 		{
-			string destino = Path.Combine(RaizEnMemfs, archivo.Ruta.Replace('/', Path.DirectorySeparatorChar));
-			Directory.CreateDirectory(Path.GetDirectoryName(destino)!);
-			File.WriteAllBytes(destino, Convert.FromBase64String(archivo.Contenido));
+			string destinoEnMemfs = Path.Combine(RaizEnMemfs, archivo.Ruta.Replace('/', Path.DirectorySeparatorChar));
+			Directory.CreateDirectory(Path.GetDirectoryName(destinoEnMemfs)!);
+			File.WriteAllBytes(destinoEnMemfs, Convert.FromBase64String(archivo.Contenido));
 			escritos++;
 		}
 		return escritos;
@@ -166,8 +187,7 @@ public sealed class PuenteDeJournal : IAsyncDisposable
 	// permite que el replay del motor lea todo sincrono.
 	public async ValueTask<int> PrecargarEnMemfs()
 	{
-		IJSObjectReference modulo = await Modulo();
-		ResultadoDeListado listado = await modulo.InvokeAsync<ResultadoDeListado>("listar");
+		ResultadoDeListado listado = await destino.Listar();
 
 		// Handle colgando: la carpeta se movio, se renombro o se borro. El permiso puede
 		// seguir figurando como otorgado, asi que el unico momento en que se descubre es
@@ -175,28 +195,30 @@ public sealed class PuenteDeJournal : IAsyncDisposable
 		// carpeta en vez de reintentar contra algo que ya no esta.
 		if (!listado.Ok)
 		{
-			await OlvidarCarpeta();
+			// Solo en el modo suelto: hospedado no hay handle que olvidar ni carpeta que
+			// volver a elegir, y un fallo al listar es un error de verdad de Gnothi.
+			if (ReferenceEquals(destino, this)) await OlvidarCarpeta();
 			throw new CarpetaNoDisponibleException(
-				$"No se pudo leer la carpeta guardada: {listado.Motivo}. Elegí una carpeta de nuevo.");
+				$"No se pudo leer '{destino.Nombre}': {listado.Motivo}. Elegí una carpeta de nuevo.");
 		}
 
 		int copiados = 0;
 		foreach (string ruta in listado.Rutas)
 		{
-			ResultadoDeLectura leido = await modulo.InvokeAsync<ResultadoDeLectura>("leer", ruta);
+			ResultadoDeLectura leido = await destino.Leer(ruta);
 
 			// Un archivo del journal que no se puede leer NO se puede saltar: la
 			// rehidratacion quedaria incompleta y el total saldria mal, sin aviso.
 			if (!leido.Ok)
 				throw new CarpetaNoDisponibleException(
-					$"No se pudo leer '{ruta}' de la carpeta '{NombreDeLaCarpeta}': {leido.Motivo}. "
+					$"No se pudo leer '{ruta}' de '{destino.Nombre}': {leido.Motivo}. "
 					+ "Abrir con el registro a medias daria totales equivocados.");
 
-			string destino = Path.Combine(RaizEnMemfs, ruta.Replace('/', Path.DirectorySeparatorChar));
-			string? directorio = Path.GetDirectoryName(destino);
+			string destinoEnMemfs = Path.Combine(RaizEnMemfs, ruta.Replace('/', Path.DirectorySeparatorChar));
+			string? directorio = Path.GetDirectoryName(destinoEnMemfs);
 			if (!string.IsNullOrEmpty(directorio)) Directory.CreateDirectory(directorio);
 
-			File.WriteAllBytes(destino, Convert.FromBase64String(leido.Contenido));
+			File.WriteAllBytes(destinoEnMemfs, Convert.FromBase64String(leido.Contenido));
 			copiados++;
 		}
 		return copiados;
@@ -214,9 +236,8 @@ public sealed class PuenteDeJournal : IAsyncDisposable
 	// hay que comparar tamano y fecha antes de escribir.
 	public async ValueTask<int> BajarDeMemfs()
 	{
-		if (!HayCarpeta || !Directory.Exists(RaizEnMemfs)) return 0;
+		if (!destino.Disponible || !Directory.Exists(RaizEnMemfs)) return 0;
 
-		IJSObjectReference modulo = await Modulo();
 		int escritos = 0;
 		var fallidos = new List<string>();
 
@@ -225,7 +246,7 @@ public sealed class PuenteDeJournal : IAsyncDisposable
 			string relativa = Path.GetRelativePath(RaizEnMemfs, archivo).Replace(Path.DirectorySeparatorChar, '/');
 			string base64 = Convert.ToBase64String(File.ReadAllBytes(archivo));
 
-			ResultadoDeEscritura resultado = await modulo.InvokeAsync<ResultadoDeEscritura>("escribir", relativa, base64);
+			ResultadoDeEscritura resultado = await destino.Escribir(relativa, base64);
 			if (resultado.Ok) escritos++;
 			else fallidos.Add($"{relativa} ({resultado.Motivo})");
 		}
@@ -239,7 +260,7 @@ public sealed class PuenteDeJournal : IAsyncDisposable
 		// escritura sobre la carpeta caduco, y eso se arregla volviendolo a otorgar.
 		if (fallidos.Count > 0)
 			throw new EscrituraRechazadaException(
-				$"No se pudo guardar en la carpeta '{NombreDeLaCarpeta}': fallaron {fallidos.Count} de "
+				$"No se pudo guardar en '{destino.Nombre}': fallaron {fallidos.Count} de "
 				+ $"{fallidos.Count + escritos} archivos. {string.Join("; ", fallidos)}");
 
 		return escritos;
@@ -261,6 +282,27 @@ public sealed class PuenteDeJournal : IAsyncDisposable
 
 	// El permiso vigente sobre la carpeta, sin pedir nada. Sirve para avisar ANTES de
 	// aplicar comandos que no se van a poder guardar.
+	// ---------------------------------------------------------------- el destino, modo suelto
+
+	// EL STORAGE DEL BROWSER como destino del journal. Esta clase ya tenia las tres
+	// operaciones y el estado del permiso, asi que las expone por la costura en vez de
+	// mudarlas: el modo suelto no cambia una linea de comportamiento.
+	//
+	// Implementacion EXPLICITA a proposito: son para el mecanismo, no para la caratula. La
+	// pantalla sigue hablando de carpeta y permiso, que es lo que la persona entiende.
+	string IDestinoDelJournal.Nombre => NombreDeLaCarpeta;
+
+	bool IDestinoDelJournal.Disponible => HayCarpeta;
+
+	async ValueTask<ResultadoDeListado> IDestinoDelJournal.Listar() =>
+		await (await Modulo()).InvokeAsync<ResultadoDeListado>("listar");
+
+	async ValueTask<ResultadoDeLectura> IDestinoDelJournal.Leer(string ruta) =>
+		await (await Modulo()).InvokeAsync<ResultadoDeLectura>("leer", ruta);
+
+	async ValueTask<ResultadoDeEscritura> IDestinoDelJournal.Escribir(string ruta, string contenidoBase64) =>
+		await (await Modulo()).InvokeAsync<ResultadoDeEscritura>("escribir", ruta, contenidoBase64);
+
 	public async ValueTask<string> PermisoActual() =>
 		await (await Modulo()).InvokeAsync<string>("permisoActual");
 

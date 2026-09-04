@@ -3,20 +3,23 @@ using System;
 namespace DealershipCar.Dominio
 {
 	/// <summary>
-	/// Hasta donde leyo la app la narrativa del concesionario, y con que credencial la sigue
-	/// leyendo. Es la SEGUNDA raiz global del DSL, al lado de <see cref="MaintenanceSchedule"/> y
-	/// nunca adentro: ni el punto de control ni la credencial son hechos de mantenimiento.
+	/// Hasta donde leyo la app la narrativa del concesionario. Es la SEGUNDA raiz global del DSL,
+	/// al lado de <see cref="MaintenanceSchedule"/> y nunca adentro: el punto de control no es un
+	/// hecho de mantenimiento.
 	/// </summary>
+	// LA CREDENCIAL YA NO VIVE ACA. Hasta el 2026-09-03 la clave de device, el access token y el
+	// refresh token eran estado de esta clase y se journalizaban, con sus tres lecturas guardadas.
+	// Se sacaron: un token no es un hecho de la vida de la persona, es contexto de sesion de quien
+	// hospeda la app. En el journal quedaba en claro, viajaba con cualquier copia del expediente, y
+	// lo leia todo proceso que lee la carpeta. Ahora la guarda el host fuera del journal y el bucle
+	// de refresh la recibe de ahi, no del diario.
 	internal sealed class Logbook
 	{
 		private long _lastEvent;
-		private string _deviceKey = "";
-		private string _token = "";
-		private string _refreshToken = "";
 
 		/// <summary>
-		/// El constructor ES la creacion: una bitacora que no leyo nada todavia y no tiene con
-		/// que leer. Las dos cosas llegan despues, cada una por su comando.
+		/// El constructor ES la creacion: una bitacora que no leyo nada todavia. Hasta donde leyo
+		/// llega despues, por su comando.
 		/// </summary>
 		internal Logbook()
 		{
@@ -45,99 +48,21 @@ namespace DealershipCar.Dominio
 			_lastEvent = eventNumber;
 		}
 
-		/// <summary>Si esta instalacion ya se registro ante el concesionario. Total.</summary>
-		internal bool HasADevice()
-		{
-			return _deviceKey.Length > 0;
-		}
-
-		/// <summary>
-		/// La clave con que el concesionario conoce a ESTA instalacion. GUARDADA: sin registro no
-		/// hay clave vacia, hay ausencia de clave.
-		/// </summary>
-		internal string DeviceKey()
-		{
-			if (!HasADevice())
-				throw new DomainException(
-					"Esta instalacion no esta registrada ante el concesionario: pregunte "
-					+ "HasADevice antes. Una clave vacia se veria igual que una clave.");
-
-			return _deviceKey;
-		}
-
-		/// <summary>
-		/// Registra esta instalacion, UNA sola vez. Re-registrarla con otra clave dejaria huerfana
-		/// la credencial vieja, porque el concesionario veria otro device.
-		/// </summary>
+		// COMPATIBILIDAD CON JOURNALS ANTERIORES, y nada mas. Los journals escritos antes del
+		// 2026-09-03 contienen entradas `logbook.RegisterDevice(...)` y `logbook.StoreCredential(...)`;
+		// el replay las vuelve a ejecutar y necesita que los metodos existan con la misma firma.
+		// Aceptan y descartan: no guardan nada, no validan nada, no fallan -- si validaran, un
+		// journal viejo con una clave que hoy pareciera invalida no se podria ni abrir. Ninguna
+		// puerta los emite ya. Lo que esos journals tienen en claro sigue ahi -- el journal es
+		// append-only --: la credencial vieja se revoca en el concesionario, no se edita el historial.
+		/// <summary>Acepta y descarta: existe para que el replay de un journal viejo no falle.</summary>
 		internal void RegisterDevice(string deviceKey)
 		{
-			if (string.IsNullOrWhiteSpace(deviceKey))
-				throw new DomainException(
-					"Una instalacion sin clave de device no se puede registrar: la clave es lo "
-					+ "que hace que el concesionario le emita una credencial a ESTA instalacion y "
-					+ "no a cualquiera.");
-
-			if (HasADevice() && _deviceKey != deviceKey)
-				throw new DomainException(
-					$"Esta instalacion ya esta registrada como device '{_deviceKey}'; no se puede "
-					+ $"cambiar a '{deviceKey}'.");
-
-			_deviceKey = deviceKey;
 		}
 
-		/// <summary>Si hay credencial guardada con que leer la narrativa. Total.</summary>
-		internal bool HasACredential()
-		{
-			return _token.Length > 0;
-		}
-
-		/// <summary>
-		/// El access token con que se leen los eventos. GUARDADA, por lo mismo que
-		/// <see cref="DeviceKey"/>.
-		/// </summary>
-		internal string Token()
-		{
-			if (!HasACredential())
-				throw new DomainException(
-					"Esta bitacora no tiene credencial guardada: pregunte HasACredential antes. "
-					+ "Un token vacio se veria igual que un token.");
-
-			return _token;
-		}
-
-		/// <summary>
-		/// Si la credencial se puede rotar sola. Total: hay proveedores que solo dan el access
-		/// token, y entonces la instalacion pide una credencial nueva con su clave de device.
-		/// </summary>
-		internal bool CanRotate()
-		{
-			return _refreshToken.Length > 0;
-		}
-
-		/// <summary>El refresh token, durable y rotatorio. GUARDADA.</summary>
-		internal string RefreshToken()
-		{
-			if (!CanRotate())
-				throw new DomainException(
-					"Esta bitacora no tiene refresh token: pregunte CanRotate antes. El access "
-					+ "token es corto, y sin refresh la instalacion pide credencial nueva.");
-
-			return _refreshToken;
-		}
-
-		/// <summary>
-		/// Guarda la credencial con que se sigue leyendo. El refresh token es opcional y se
-		/// expresa vacio, que en esta operacion es "el proveedor no dio ninguno" y no un olvido.
-		/// </summary>
+		/// <summary>Acepta y descarta: existe para que el replay de un journal viejo no falle.</summary>
 		internal void StoreCredential(string token, string refreshToken)
 		{
-			if (string.IsNullOrWhiteSpace(token))
-				throw new DomainException(
-					"Una credencial sin access token no sirve para leer nada: guardarla dejaria "
-					+ "la bitacora diciendo que tiene con que leer cuando no tiene.");
-
-			_token = token;
-			_refreshToken = refreshToken ?? "";
 		}
 	}
 }

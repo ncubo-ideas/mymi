@@ -40,34 +40,22 @@ namespace Examenes.App
 		private bool HasJournal => Directory.Exists(Path.Combine(folder, ActorName, "journal"));
 
 		// A SUMMARY LINE. The smallest useful block, and the one a screen shows at the top.
-		[Query("resumen")]
+		[Query(ConsultasDelModulo.Resumen)]
 		public object Resumen()
 		{
 			if (!HasJournal) return NoData();
-			return Read(api => new
-			{
-				hayDatos = true,
-				examenes = api.CantidadDeExamenes(),
-				analitosFueraDeRango = api.AnalitosFueraDeRango(),
-				ultimoEventoLeido = api.UltimoEventoProcesado(),
-			});
+			return Read(ConsultasDelModulo.HacerResumen);
 		}
 
 		// THE LIST OF EXAMS. An array of flat rows -exactly what the window renders as a table.
-		[Query("lista_de_examenes")]
+		[Query(ConsultasDelModulo.ListaDeExamenes)]
 		public object ListaDeExamenes()
 		{
 			if (!HasJournal) return NoData();
-			return Read(api => new { hayDatos = true, examenes = api.Examenes() });
+			return Read(ConsultasDelModulo.HacerListaDeExamenes);
 		}
 
-		private object NoData() => new
-		{
-			hayDatos = false,
-			carpeta = folder,
-			detalle = "The app has not recorded anything in this folder yet. Ask the person to open "
-				+ "their exams app and press Update.",
-		};
+		private object NoData() => ConsultasDelModulo.SinDatos(folder);
 
 		// Re-hydrated on EVERY query on purpose: the installed app writes to this folder while
 		// this process lives, so a cached actor would answer with the state of the first

@@ -1,0 +1,39 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!-- EL SPIKE QUE DECIDE (doc 11 §12): la PWA REAL de Examenes dentro de un WebView, con la
+       app cerrada al empezar. Tres numeros: cuanto tarda en arrancar el runtime wasm, cuanta
+       memoria ocupa el WebView con el modulo adentro, y cuanto pesa el bundle en el apk.
+
+       No referencia a Gnothi.Host ni a Puppeteer a proposito: lo que se mide es el WEBVIEW y
+       el bundle web, no el nucleo del Host. Si esto no da, el resto del camino movil no
+       importa. -->
+
+  <PropertyGroup>
+    <TargetFramework>net9.0-android</TargetFramework>
+    <OutputType>Exe</OutputType>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <SupportedOSPlatformVersion>24.0</SupportedOSPlatformVersion>
+    <ApplicationId>com.ncubo.gnothi.spike.webviewwasm</ApplicationId>
+    <ApplicationDisplayVersion>1.0</ApplicationDisplayVersion>
+    <ApplicationVersion>1</ApplicationVersion>
+    <RootNamespace>Lab.WebViewWasm</RootNamespace>
+
+    <!-- Autocontenido: sin Fast Deployment el apk se basta solo y 'pm clear' no lo rompe.
+         Misma razon que en Gnothi.Mobile, ahi esta medido. -->
+    <EmbedAssembliesIntoApk>true</EmbedAssembliesIntoApk>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <!-- EL BUNDLE PUBLICADO, POR REFERENCIA: no se copia al repo. Entra como assets del apk
+         bajo app/, que es lo que Gnothi haria al servir un modulo desde su contenedor.
+
+         Se excluyen .gz y .br: los sirve un servidor que negocia Content-Encoding, y aca los
+         bytes salen de disco local. Dejarlos solo inflaria el apk. Lo que queda -el crudo- es
+         el peso real que un modulo ocupa en el aparato. -->
+    <AndroidAsset Include="..\..\Examenes\PaginaDeDescarga\publicado\wwwroot\**\*"
+                  Exclude="..\..\Examenes\PaginaDeDescarga\publicado\wwwroot\**\*.gz;..\..\Examenes\PaginaDeDescarga\publicado\wwwroot\**\*.br"
+                  Link="Assets\app\%(RecursiveDir)%(Filename)%(Extension)" />
+  </ItemGroup>
+
+</Project>

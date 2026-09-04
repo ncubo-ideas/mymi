@@ -12,6 +12,9 @@ namespace DealershipCar.Wasm
 		public const string TheProfileAtDelivery = "Standard";
 
 		private readonly JournalBridge bridge;
+		private readonly HostingMode mode;
+		private readonly GnothiBridge gnothi;
+		private readonly CredentialStore credentials;
 		private readonly HttpClient http;
 		private readonly DealershipSettings dealership;
 
@@ -21,13 +24,20 @@ namespace DealershipCar.Wasm
 
 		private DateTime lastStampSent = DateTime.MinValue;
 
-		public AppState(JournalBridge bridge, HttpClient http, DealershipSettings dealership)
+		public AppState(JournalBridge bridge, HostingMode mode, GnothiBridge gnothi,
+			CredentialStore credentials, HttpClient http, DealershipSettings dealership)
 		{
 			ArgumentNullException.ThrowIfNull(bridge);
+			ArgumentNullException.ThrowIfNull(mode);
+			ArgumentNullException.ThrowIfNull(gnothi);
+			ArgumentNullException.ThrowIfNull(credentials);
 			ArgumentNullException.ThrowIfNull(http);
 			ArgumentNullException.ThrowIfNull(dealership);
 
 			this.bridge = bridge;
+			this.mode = mode;
+			this.gnothi = gnothi;
+			this.credentials = credentials;
 			this.http = http;
 			this.dealership = dealership;
 		}
@@ -130,7 +140,7 @@ namespace DealershipCar.Wasm
 		{
 			if (app is not null) return;
 
-			int preloaded = bridge.HasFolder ? await bridge.PreloadIntoMemfsAsync() : 0;
+			int preloaded = bridge.HasDestination ? await bridge.PreloadIntoMemfsAsync() : 0;
 
 			var started = new DealershipCarApp(dealership.Vin, TheProfileAtDelivery);
 			started.ConfigureStorage(DatabaseType.FileSystem, "path=" + JournalBridge.RootInMemfs);
@@ -139,23 +149,33 @@ namespace DealershipCar.Wasm
 			app = started;
 			api = new DealershipCarAPI(started);
 
-			loop = new BucleDeRefresh(
-				api,
-				new FuenteHttpDeEventos(http, dealership.Resource, dealership.Vin),
-				DealershipEventRoute.Route,
-				FlushToDiskAsync,
-				ct => RenewTheCredentialAsync(ct));
+			// LA FUENTE DEPENDE DEL HOSPEDAJE, y es lo unico que depende junto con el destino
+			// (11 §2). Suelta hace su propio pull con su credencial; hospedada le pide a Gnothi,
+			// que releva con la suya. El cursor lo pone el actor en los dos casos.
+			IFuenteDeEventos source = mode.Hosted
+				? new FuenteDeEventosPorGnothi((after, _) => mode.Bridge!.PullAsync(after).AsTask())
+				: new FuenteHttpDeEventos(http, dealership.Resource, dealership.Vin,
+					CredentialAsync, RenewTheCredentialAsync);
+
+			loop = new BucleDeRefresh(api, source, DealershipEventRoute.Route, FlushToDiskAsync);
 
 			try { await FlushToDiskAsync(); } catch (WriteRefusedException) { }
 
-			LastMessage = bridge.HasFolder
-				? $"up. {preloaded} files preloaded from '{bridge.FolderName}'"
-				: "up, but WITHOUT a folder: the journal lives only in memory and is lost on close";
+			LastMessage = mode.Hosted
+				? $"up, hosted in Gnothi. {preloaded} files preloaded"
+				: bridge.HasDestination
+					? $"up. {preloaded} files preloaded from '{bridge.FolderName}'"
+					: "up, but WITHOUT a folder: the journal lives only in memory and is lost on close";
 
 			try
 			{
-				await CredentialAsync(CancellationToken.None);
+				// LA CREDENCIAL SOLO EN EL MODO SUELTO. Hospedada la sostiene Gnothi del otro
+				// lado del puente y este modulo no ve ningun token: pedirla aca lo mandaria a
+				// hablar con el publicador, que es justo lo que la CSP le niega.
+				if (!mode.Hosted) await CredentialAsync(CancellationToken.None);
+
 				ResultadoDeRefresh onOpen = await loop.Ejecutar(CancellationToken.None);
+				if (onOpen.Cuenta is not null) Account = onOpen.Cuenta;
 				await FlushAfterTheBlockAsync();
 				DealershipUnreachable = "";
 				LastMessage += $" | on open: {onOpen}";
@@ -179,8 +199,58 @@ namespace DealershipCar.Wasm
 			{
 				LastMessage += $" | could not evaluate ({ex.GetType().Name}: {ex.Message})";
 			}
+
+			// RECIEN AHORA el modulo puede recibir: el actor esta hidratado. Gnothi no puede
+			// adivinarlo mirando la pantalla, que se dibuja antes.
+			if (mode.Hosted) await gnothi.ReadyAsync();
 		}
 
+
+		// ------------------------------------------------------------ hosted in Gnothi
+
+		// EN QUE ESTADO ESTA LA CUENTA ante el proveedor, tal como vino en el ultimo sobre.
+		// Null hasta el primer refresh, o si el publicador todavia no manda el bloque `account`.
+		public EstadoDeCuenta? Account { get; private set; }
+
+		// La instalacion SUELTA cuyo registro ya se mudo a Gnothi. Hospedada nunca esta
+		// migrada: es el destino, no el origen.
+		public bool Migrated => !mode.Hosted && Account is { Migrada: true };
+
+		public string WhereItLivesNow => Account?.Host is { Length: > 0 } where ? where : "Gnothi";
+
+		public bool Hosted => mode.Hosted;
+
+		// UNA CONSULTA, la que Gnothi pide por la superficie del modulo. Contra el actor VIVO y
+		// con los MISMOS cuerpos que usa cualquier otro hospedaje (ModuleQueries).
+		public object Ask(string tool)
+		{
+			Require();
+
+			return tool switch
+			{
+				ModuleQueries.Summary => ModuleQueries.MakeSummary(api),
+				ModuleQueries.Freshness => ModuleQueries.MakeFreshness(api),
+				_ => throw new ArgumentException($"The module does not answer the tool '{tool}'."),
+			};
+		}
+
+		// EL CARTERO ENTREGA. Gnothi trae un sobre ya leido del publicador y se asienta por EL
+		// MISMO camino que el refresh propio: misma ruta, misma guarda Check, mismo flush. De
+		// ahi sale gratis que entregar dos veces el mismo sobre no duplique nada.
+		public async Task<ResultadoDeRefresh> DeliverAsync(string envelopeJson, CancellationToken ct = default)
+		{
+			Require();
+
+			var once = new BucleDeRefresh(
+				api,
+				new FuenteDeEventosPorGnothi((_, _) => Task.FromResult(envelopeJson ?? ""), "gnothi.deliver"),
+				DealershipEventRoute.Route,
+				FlushToDiskAsync);
+
+			ResultadoDeRefresh result = await once.Ejecutar(ct);
+			LastMessage = $"delivery from Gnothi: {result}";
+			return result;
+		}
 		private async Task FlushToDiskAsync()
 		{
 			try
@@ -197,30 +267,33 @@ namespace DealershipCar.Wasm
 
 		private async Task FlushAfterTheBlockAsync() => await FlushToDiskAsync();
 
-		private async ValueTask<string> CredentialAsync(CancellationToken ct)
+		// La credencial la pide LA APP, no la persona. El concesionario la emite contra el device
+		// key de esta instalacion, acotada a leer los eventos de un recurso. Las tres piezas viven
+		// en el CREDENTIAL STORE -storage del browser del origen-, NO en el journal: un token es
+		// contexto de sesion, no historia de la persona, y en el journal quedaba en claro y viajaba
+		// con cualquier copia del expediente (hasta el 2026-09-03 era asi). La fuente HTTP recibe
+		// CredentialAsync y RenewTheCredentialAsync como delegados y el diario no la conoce.
+		private async Task<string> CredentialAsync(CancellationToken ct)
 		{
-			Require();
+			StoredCredential stored = await credentials.ReadAsync();
 
-			if (api.StoredDeviceKey().Length == 0)
+			if (stored.DeviceKey.Length == 0)
 			{
-				api.RegisterDevice(ANewDeviceKey());
-				await FlushToDiskAsync();
+				stored.DeviceKey = ANewDeviceKey();
+				await credentials.StoreAsync(stored);
 			}
 
-			string current = api.StoredToken();
-			if (current.Length > 0) return current;
+			if (stored.Token.Length > 0) return stored.Token;
 
 			return await AskForANewCredentialAsync(ct);
 		}
 
 		private async Task<string> RenewTheCredentialAsync(CancellationToken ct)
 		{
-			Require();
-
-			string refresh = api.StoredRefreshToken();
-			if (refresh.Length > 0)
+			StoredCredential stored = await credentials.ReadAsync();
+			if (stored.Refresh.Length > 0)
 			{
-				Credencial rotated = await new ProveedorDeToken(http).Rotar(refresh, ct);
+				Credencial rotated = await new ProveedorDeToken(http).Rotar(stored.Refresh, ct);
 				if (rotated is not null) return await StoreAsync(rotated, "credential rotated with the refresh token");
 			}
 
@@ -229,20 +302,31 @@ namespace DealershipCar.Wasm
 
 		private async Task<string> AskForANewCredentialAsync(CancellationToken ct)
 		{
+			StoredCredential stored = await credentials.ReadAsync();
 			Credencial fresh = await new ProveedorDeToken(http)
-				.Pedir(api.StoredDeviceKey(), dealership.Resource, dealership.Vin, ct);
+				.Pedir(stored.DeviceKey, dealership.Resource, dealership.Vin, ct);
 
 			return await StoreAsync(fresh, $"new credential (scope {fresh.Scope})");
 		}
 
-		private async Task<string> StoreAsync(Credencial credential, string whatHappened)
+		// Guarda en el store, no en el journal: por eso ya no baja nada a disco.
+		private async Task<string> StoreAsync(Credencial granted, string whatHappened)
 		{
-			api.StoreCredential(credential.AccessToken, credential.RefreshToken);
-			await FlushToDiskAsync();
-			LastMessage = whatHappened;
-			return credential.AccessToken;
+			StoredCredential stored = await credentials.ReadAsync();
+			stored.Token = granted.AccessToken;
+			stored.Refresh = granted.RefreshToken ?? "";
+			await credentials.StoreAsync(stored);
+
+			LastMessage = credentials.NotBackedUp
+				? whatHappened + " (only in memory: the browser refused to store it; a new one will be asked for on reopen)"
+				: whatHappened;
+			return granted.AccessToken;
 		}
 
+		// La identidad de esta instalacion. Se genera una sola vez y se guarda en el store
+		// (storage del browser), NO en el journal. Si el browser la desaloja, la app se presenta
+		// ante el concesionario como un device nuevo y pide otra concesion; la vieja queda
+		// huerfana hasta que el concesionario la revoque.
 		private static string ANewDeviceKey() => "device-" + Guid.NewGuid().ToString("N")[..16];
 
 		public async ValueTask<ResultadoDeRefresh> RefreshAsync(CancellationToken ct = default)
@@ -347,7 +431,9 @@ namespace DealershipCar.Wasm
 
 		public long LastEventApplied() { Require(); return api.LastEventApplied(); }
 
-		public bool HasCredential() { Require(); return api.StoredToken().Length > 0; }
+		// Del store, no del journal. Sincrono: la pantalla lo pregunta al renderizar y el store
+		// ya tiene la credencial en cache despues del primer ReadAsync.
+		public bool HasCredential() => credentials.HasToken;
 
 		public long JournalEntries() { Require(); return app.Actor.CurrentEntryId; }
 
@@ -385,6 +471,8 @@ namespace DealershipCar.Wasm
 		{
 			app?.Actor.GracefulExit();
 			await bridge.DisposeAsync();
+			await credentials.DisposeAsync();
+			await gnothi.DisposeAsync();
 		}
 	}
 

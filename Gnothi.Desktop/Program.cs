@@ -38,6 +38,10 @@ internal static class Program
 		services.AddWindowsFormsBlazorWebView();
 		services.AddSingleton(state);
 
+		// The assistant's provider + BYOK key, read from the person's private area. One instance:
+		// Ajustes writes it, Asistente reads it. The key never rides through here.
+		services.AddSingleton<ModelConfig>();
+
 		// Developer tools ONLY in Debug: in Release nobody gets an inspector opened over their
 		// own data.
 #if DEBUG

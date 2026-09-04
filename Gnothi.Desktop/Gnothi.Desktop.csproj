@@ -46,6 +46,8 @@
 
   <ItemGroup>
     <ProjectReference Include="..\Gnothi.Host\Gnothi.Host.csproj" />
+    <!-- The assistant brain -the SAME AgentLoop the phone runs- reused, not reimplemented. -->
+    <ProjectReference Include="..\Gnothi.Assistant\Gnothi.Assistant.csproj" />
   </ItemGroup>
 
 </Project>

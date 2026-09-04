@@ -149,29 +149,6 @@ namespace DealershipCar.App
 			.PerformCommand();
 		}
 
-		public void RegisterDevice(string deviceKey)
-		{
-			ArgumentException.ThrowIfNullOrWhiteSpace(deviceKey);
-
-			app.Using("logbook.RegisterDevice(@device);")
-			.WithParameters(p => {
-				p["device", typeof(string)] = deviceKey;
-			})
-			.PerformCommand();
-		}
-
-		public void StoreCredential(string token, string refreshToken)
-		{
-			ArgumentException.ThrowIfNullOrWhiteSpace(token);
-
-			app.Using("logbook.StoreCredential(@token, @refresh);")
-			.WithParameters(p => {
-				p["token",   typeof(string)] = token;
-				p["refresh", typeof(string)] = refreshToken ?? "";
-			})
-			.PerformCommand();
-		}
-
 		public EvaluationOutcome Evaluate(DateTime asOf)
 		{
 			using (RentedParameter rented = app.Actor.RentedParameters())
@@ -290,27 +267,6 @@ namespace DealershipCar.App
 		public long LastEventApplied()
 		{
 			return ANumber("@last = logbook.LastEvent();", "last", p => { });
-		}
-
-		public string StoredToken()
-		{
-			return ATruth("@has = logbook.HasACredential();", "has", p => { })
-				? AText("@value = logbook.Token();", "value", p => { })
-				: "";
-		}
-
-		public string StoredRefreshToken()
-		{
-			return ATruth("@can = logbook.CanRotate();", "can", p => { })
-				? AText("@value = logbook.RefreshToken();", "value", p => { })
-				: "";
-		}
-
-		public string StoredDeviceKey()
-		{
-			return ATruth("@has = logbook.HasADevice();", "has", p => { })
-				? AText("@value = logbook.DeviceKey();", "value", p => { })
-				: "";
 		}
 
 		public string Apply(IMensajeDeEvento message)
@@ -463,11 +419,6 @@ namespace DealershipCar.App
 		long IDiarioDeLaApp.UltimoEventoProcesado()
 		{
 			return LastEventApplied();
-		}
-
-		string IDiarioDeLaApp.TokenGuardado()
-		{
-			return StoredToken();
 		}
 
 		string IDiarioDeLaApp.Aplicar(IMensajeDeEvento message)

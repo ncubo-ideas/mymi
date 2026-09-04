@@ -139,8 +139,8 @@ else
        existiendo donde sirve —la tool total_de_compras lo devuelve, porque para saber si la
        app esta al dia SI hace falta— pero eso lo mira el asistente, no ella. *@
     <div class="d-flex align-items-center flex-wrap gap-2 mb-3">
-        <button class="btn btn-primary" @onclick="Refrescar" disabled="@refrescando">
-            @(refrescando ? "Buscando…" : "Buscar compras nuevas")
+        <button class="btn btn-primary" @onclick="Refrescar" disabled="@(refrescando || estado.Migrada)">
+            @(estado.Migrada ? "Ya no se actualiza" : refrescando ? "Buscando…" : "Buscar compras nuevas")
         </button>
         <span class="text-body-secondary">
             @cantidad @(cantidad == 1 ? "compra tuya" : "compras tuyas")
@@ -152,7 +152,31 @@ else
         </span>
     </div>
 
-    @if (!estado.HayCarpeta)
+    @* MIGRADA: el proveedor dice que el registro de esta cuenta ya vive en Gnothi
+       (especificación 13 §4 y §6.2). "Desaparecer" NO es desinstalar y NO es borrar: la app
+       sigue mostrando lo que tiene, porque es de ella. Lo que deja de hacer es SINCRONIZAR,
+       que es lo único que produciría dos historias que divergen. *@
+    @if (estado.Migrada)
+    {
+        <div class="aviso d-flex align-items-center flex-wrap gap-2 mb-3">
+            <div class="flex-grow-1">
+                <strong>Tu registro ahora vive en @estado.DondeVive.</strong>
+                Lo que ves acá se queda, pero esta copia ya no se actualiza: las compras
+                nuevas te llegan allá.
+            </div>
+        </div>
+    }
+    else if (estado.Hospedada)
+    {
+        <div class="aviso d-flex align-items-center flex-wrap gap-2 mb-3">
+            <div class="flex-grow-1">
+                <strong>Se está guardando en Gnothi.</strong>
+                Tu registro vive en el dispositivo, en la carpeta que Gnothi le dio a este
+                supermercado, y tu asistente lo puede leer desde ahí.
+            </div>
+        </div>
+    }
+    else if (!estado.HayCarpeta)
     {
         <div class="aviso d-flex align-items-center flex-wrap gap-2 mb-3">
             <div class="flex-grow-1">
@@ -709,7 +733,7 @@ else
         Los recibos, uno por uno, están en <a href="recibos">Compras</a>.
     </p>
 
-    @if (!estado.HayCarpeta)
+    @if (!estado.Hospedada && !estado.HayCarpeta)
     {
         <p class="small text-body-secondary mt-4">
             <strong>Sin carpeta:</strong> el registro vive solo en memoria y se pierde al cerrar.
@@ -752,6 +776,10 @@ else
     protected override async Task OnInitializedAsync()
     {
         if (estado.EstaArriba) { Releer(); return; }
+
+        // HOSPEDADA: el destino es de Gnothi y no hay nada que elegir ni permiso que pedir.
+        // La app arranca sola; el selector de almacenamiento es vocabulario del modo suelto.
+        if (estado.Hospedada) { await Arrancar(); return; }
 
         // SE PREGUNTA TODO ANTES DE DECIDIR NADA. Antes esto hacia
         // `if (soportado != true) return;` y se iba: en un telefono -donde no hay picker-

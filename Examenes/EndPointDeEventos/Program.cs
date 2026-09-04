@@ -35,6 +35,21 @@ app.UseCors();
 var almacen = new AlmacenDeEventos();
 var concesiones = new Concesiones();
 
+// A QUE HOST ESTA VINCULADA LA CUENTA. Es la marca de migracion, y vive ACA por una razon
+// que no es de comodidad (especificacion 13 §4): ninguna marca del lado del navegador
+// sobrevive a "borrar datos del sitio" ni a que la persona quite el icono, y una marca que
+// la app se escribe a si misma no prueba que Gnothi haya recibido nada. La unica que
+// sobrevive y que ademas CERTIFICA la recepcion es la que escribe el proveedor cuando le
+// emitio credencial al otro cliente.
+//
+// Se escribe SOLA cuando un device de Gnothi pide su primera concesion, que es el instante
+// que el documento describe. En un proveedor de verdad ese instante lleva una pantalla de
+// consentimiento -"mover el registro de esta cuenta a Gnothi en este telefono"- para que la
+// marca sea un acto de la persona y no un efecto secundario.
+var vinculadas = new Dictionary<string, (string Host, string Desde)>();
+
+static string Cuenta(string recurso, string id) => $"{recurso}/{id}";
+
 // ---------------------------------------------------------------- credenciales
 
 // El laboratorio le da al DEVICE del usuario un access token corto y un refresh token
@@ -48,6 +63,16 @@ app.MapPost("/device/token", (PedidoDeToken pedido) =>
     string id = Vacio(pedido.Id) ? "1" : pedido.Id;
 
     Concesion concesion = concesiones.Otorgar(pedido.DeviceKey, recurso, id);
+
+    // EL INSTANTE DE LA MIGRACION: el proveedor le acaba de emitir credencial a Gnothi para
+    // esta cuenta. Ahi queda vinculada, y la app suelta se entera en su proximo pull porque
+    // el sobre pasa a decir "migrated". Un device de Gnothi se reconoce por su prefijo, que
+    // en un proveedor de verdad seria un client_id registrado.
+    if (pedido.DeviceKey.StartsWith("device-gnothi", StringComparison.Ordinal))
+    {
+        vinculadas[Cuenta(recurso, id)] = ("Gnothi", DateTime.UtcNow.ToString("O"));
+        Console.WriteLine($"cuenta {Cuenta(recurso, id)} vinculada a Gnothi ({pedido.DeviceKey})");
+    }
     return Results.Ok(concesion.ComoRespuesta());
 });
 
@@ -75,6 +100,12 @@ app.MapGet("/{recurso}/{id}/events", (string recurso, string id, long? after, Ht
 
     return Results.Ok(new
     {
+        // EL ESTADO DE LA CUENTA VIAJA EN EL SOBRE, y viaja SIEMPRE, aunque no haya un solo
+        // evento nuevo: es justamente lo que la app suelta necesita para enterarse de que su
+        // registro ya se mudó. Campo aditivo: un cliente viejo lo ignora.
+        account = vinculadas.TryGetValue(Cuenta(recurso, id), out var vinculo)
+            ? new { state = "migrated", migratedAt = vinculo.Desde, host = vinculo.Host }
+            : new { state = "active", migratedAt = "", host = "" },
         events = eventos,
         last = almacen.UltimoNumero(recurso, id),
     });

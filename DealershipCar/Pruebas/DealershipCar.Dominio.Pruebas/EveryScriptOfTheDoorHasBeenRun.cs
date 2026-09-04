@@ -130,24 +130,15 @@ namespace DealershipCar.Dominio.Pruebas
 			Assert.Throws<InvalidOperationException>(() => journal.Api.LastEvaluatedAt());
 		}
 
-		// LOS NUEVE SCRIPTS DE LA BITACORA: dos comandos y siete lecturas. Son siete y no cuatro
-		// porque las tres lecturas de credencial son GUARDADAS del lado del dominio -- la puerta
-		// pregunta la presencia y despues el valor -- asi que cada una son dos scripts, y hay que
-		// correrlas con y sin credencial guardada para tocar los dos caminos.
+		// EL UNICO SCRIPT QUE LE QUEDA A LA BITACORA: la lectura del punto de control. Hasta el
+		// 2026-09-03 eran nueve -- dos comandos de credencial y siete lecturas, siete y no cuatro
+		// porque las tres de credencial eran GUARDADAS del lado del dominio y la puerta preguntaba
+		// la presencia antes que el valor --. Se fueron con la credencial: un token es contexto de
+		// sesion del host, no historia de la persona, y ya no se journaliza.
 		[Test]
 		public void EveryScriptOfTheEventLogParsesBindsAndRuns()
 		{
 			Assert.That(journal.Api.LastEventApplied(), Is.EqualTo(0L));
-			Assert.That(journal.Api.StoredDeviceKey(), Is.EqualTo(""));
-			Assert.That(journal.Api.StoredToken(), Is.EqualTo(""));
-			Assert.That(journal.Api.StoredRefreshToken(), Is.EqualTo(""));
-
-			journal.Api.RegisterDevice("device-de-prueba");
-			journal.Api.StoreCredential("at_1234", "rt_5678");
-
-			Assert.That(journal.Api.StoredDeviceKey(), Is.EqualTo("device-de-prueba"));
-			Assert.That(journal.Api.StoredToken(), Is.EqualTo("at_1234"));
-			Assert.That(journal.Api.StoredRefreshToken(), Is.EqualTo("rt_5678"));
 		}
 
 		// Y LOS SEIS DE LA INGESTA: los cinco comandos con Check de cada tipo de hecho recibido, mas

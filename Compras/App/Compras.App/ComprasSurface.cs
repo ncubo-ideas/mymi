@@ -37,33 +37,21 @@ namespace Compras.App
 
 		private bool HasJournal => Directory.Exists(Path.Combine(folder, ActorName, "journal"));
 
-		[Query("resumen")]
+		[Query(ConsultasDelModulo.Resumen)]
 		public object Resumen()
 		{
 			if (!HasJournal) return NoData();
-			return Read(api => new
-			{
-				hayDatos = true,
-				totalGastado = api.TotalDeCompras(),
-				cantidadDeCompras = api.CantidadDeCompras(),
-				ultimoEventoLeido = api.UltimoEventoProcesado(),
-			});
+			return Read(ConsultasDelModulo.HacerResumen);
 		}
 
-		[Query("lista_de_compras")]
+		[Query(ConsultasDelModulo.ListaDeCompras)]
 		public object ListaDeCompras()
 		{
 			if (!HasJournal) return NoData();
-			return Read(api => new { hayDatos = true, compras = api.Compras() });
+			return Read(ConsultasDelModulo.HacerListaDeCompras);
 		}
 
-		private object NoData() => new
-		{
-			hayDatos = false,
-			carpeta = folder,
-			detalle = "The app has not recorded anything in this folder yet. Ask the person to open "
-				+ "their supermarket app and press Update.",
-		};
+		private object NoData() => ConsultasDelModulo.SinDatos(folder);
 
 		private T Read<T>(Func<ComprasAPI, T> question)
 		{

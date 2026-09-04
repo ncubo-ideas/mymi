@@ -41,6 +41,11 @@ public sealed class Module : IAsyncDisposable
 	private static IShell ChooseShell(string name, Installation installation) =>
 		installation.Shell.Type.ToLowerInvariant() switch
 		{
+			// MOVIL: el modulo es la PWA de la institucion dentro de un WebView. Es la unica
+			// forma que las tiendas permiten para codigo que llega de afuera -Play y Apple
+			// nombran JavaScript en un webview como la excepcion-, y por eso en un telefono
+			// "in-process" no se puede publicar aunque funcione.
+			"webview"    => new WebViewShell(name, installation.Shell, installation.GrantedFolder),
 			"in-process" => new InProcessShell(name, installation.Shell, installation.GrantedFolder),
 			_            => new StdioShell(name, installation.Shell, installation.GrantedFolder),
 		};

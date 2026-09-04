@@ -294,15 +294,16 @@ namespace DealershipCar.Consola
 				DealershipCarApp app = Open(folder);
 				var api = new DealershipCarAPI(app);
 				var tokens = new ProveedorDeToken(http);
+				var credential = new TheCredentialThisRunHolds();
 
-				await TheAppGetsItsOwnCredential(api, tokens, resource, id);
+				await TheAppGetsItsOwnCredential(credential, tokens, resource, id);
 
 				var loop = new BucleDeRefresh(
 					api,
-					new FuenteHttpDeEventos(http, resource, id),
-					DealershipEventRoute.Route,
-					null,
-					ct => RenewTheCredential(api, tokens, resource, id, ct));
+					new FuenteHttpDeEventos(http, resource, id,
+						ct => TheAppGetsItsOwnCredential(credential, tokens, resource, id, ct),
+						ct => RenewTheCredential(credential, tokens, resource, id, ct)),
+					DealershipEventRoute.Route);
 
 				string actorFolder = Path.Combine(folder, DealershipCarApp.TheActorFor(Story.TheVin));
 
@@ -330,7 +331,7 @@ namespace DealershipCar.Consola
 
 				bytesBefore = TheTreeOf(actorFolder);
 				entryBefore = app.Actor.CurrentEntryId;
-				Ingested whole = await TheWholeBlockAgainFromZero(api, http, resource, id);
+				Ingested whole = await TheWholeBlockAgainFromZero(api, http, credential, tokens, resource, id);
 
 				Console.WriteLine("-- el bloque ENTERO re-entregado desde el evento 0 --");
 				Console.WriteLine($"   {whole}");
@@ -354,7 +355,7 @@ namespace DealershipCar.Consola
 				Console.WriteLine($"   arbol byte a byte igual   : {TheTreeOf(actorFolder) == bytesBefore}   <- tiene que ser False");
 				Console.WriteLine();
 
-				await TheDecoyAnswers403(http, api, resource, id);
+				await TheDecoyAnswers403(http, credential, resource, id);
 
 				app.Dispose();
 			}
@@ -378,12 +379,15 @@ namespace DealershipCar.Consola
 			{
 				DealershipCarApp app = Open(folder);
 				var api = new DealershipCarAPI(app);
+				var tokens = new ProveedorDeToken(http);
+				var credential = new TheCredentialThisRunHolds();
 
-				await TheAppGetsItsOwnCredential(api, new ProveedorDeToken(http), resource, id);
+				await TheAppGetsItsOwnCredential(credential, tokens, resource, id);
 
-				var source = new FuenteHttpDeEventos(http, resource, id);
+				var source = new FuenteHttpDeEventos(http, resource, id,
+					ct => TheAppGetsItsOwnCredential(credential, tokens, resource, id, ct));
 				IReadOnlyList<SenalDeEvento> block =
-					await source.LeerDesde(api.LastEventApplied(), api.StoredToken(), CancellationToken.None);
+					(await source.LeerDesde(api.LastEventApplied(), CancellationToken.None)).Senales;
 
 				Console.WriteLine($"bloque    : {block.Count} eventos desde el {api.LastEventApplied()}");
 				Console.WriteLine($"se aplican: {howMany}, y despues se MATA el proceso");
@@ -419,12 +423,14 @@ namespace DealershipCar.Consola
 
 		private static void WhatTheRefreshLoopNeededAndWhetherTheDoorAnswersItNow()
 		{
-			Console.WriteLine("BucleDeRefresh(diario, fuente, ruta, flush, renovarCredencial)");
+			Console.WriteLine("BucleDeRefresh(diario, fuente, ruta, flush)");
 			Console.WriteLine();
 			Console.WriteLine("  flush     : null, y es lo correcto para esta caratula: existe para bajar");
 			Console.WriteLine("              de MEMFS a la carpeta del usuario en wasm, y aca el journal");
 			Console.WriteLine("              ya esta en disco.");
-			Console.WriteLine("  fuente    : FuenteHttpDeEventos - la API de eventos del concesionario.");
+			Console.WriteLine("  fuente    : FuenteHttpDeEventos - la API de eventos del concesionario, y");
+			Console.WriteLine("              es ELLA la que sostiene la credencial y la rota: quien lee");
+			Console.WriteLine("              por HTTP necesita un token, quien lee por otro medio no.");
 			Console.WriteLine("  ruta      : DealershipEventRoute.Route - senal cruda -> IMensajeDeEvento.");
 			Console.WriteLine("  diario    : DealershipCarAPI, que ahora ES un IDiarioDeLaApp:");
 			Console.WriteLine();
@@ -440,10 +446,14 @@ namespace DealershipCar.Consola
 
 			Console.WriteLine();
 			Console.WriteLine("  UltimoEventoProcesado sale DEL JOURNAL -- es lo que hace exacto el resume");
-			Console.WriteLine("  tras una caida -- y TokenGuardado de una credencial journalizada. Las dos");
-			Console.WriteLine("  viven en Logbook, una SEGUNDA global de raiz al lado de la agenda y nunca");
-			Console.WriteLine("  adentro: ni el punto de control ni la credencial son hechos de");
+			Console.WriteLine("  tras una caida -- y vive en Logbook, una SEGUNDA global de raiz al lado de");
+			Console.WriteLine("  la agenda y nunca adentro: el punto de control no es un hecho de");
 			Console.WriteLine("  mantenimiento. MaintenanceSchedule no cambio.");
+			Console.WriteLine();
+			Console.WriteLine("  LO QUE YA NO ESTA: TokenGuardado. Hasta el 2026-09-03 el bucle le pedia la");
+			Console.WriteLine("  credencial AL JOURNAL, y por eso quedaba en claro en la carpeta y viajaba");
+			Console.WriteLine("  con cualquier copia. Un token es contexto de sesion del host, no historia");
+			Console.WriteLine("  de la persona: ahora la sostiene la fuente y el diario no la conoce.");
 			Console.WriteLine();
 		}
 
@@ -469,11 +479,13 @@ namespace DealershipCar.Consola
 		}
 
 		private static async Task<Ingested> TheWholeBlockAgainFromZero(
-			DealershipCarAPI api, HttpClient http, string resource, string id)
+			DealershipCarAPI api, HttpClient http, TheCredentialThisRunHolds credential,
+			ProveedorDeToken tokens, string resource, string id)
 		{
-			var source = new FuenteHttpDeEventos(http, resource, id);
+			var source = new FuenteHttpDeEventos(http, resource, id,
+				ct => TheAppGetsItsOwnCredential(credential, tokens, resource, id, ct));
 			IReadOnlyList<SenalDeEvento> block =
-				await source.LeerDesde(0, api.StoredToken(), CancellationToken.None);
+				(await source.LeerDesde(0, CancellationToken.None)).Senales;
 
 			var counted = new Ingested { Read = block.Count };
 
@@ -503,37 +515,57 @@ namespace DealershipCar.Consola
 			}
 		}
 
-		private static async Task TheAppGetsItsOwnCredential(
-			DealershipCarAPI api, ProveedorDeToken tokens, string resource, string id)
+		// LA CREDENCIAL DE ESTA CORRIDA, en memoria y no en el journal. Hasta el 2026-09-03
+		// la sostenia el Logbook y se journalizaba: quedaba en claro en la carpeta y viajaba
+		// con cualquier copia del expediente. Un token es contexto de sesion de quien hospeda
+		// la app -- aca, esta consola -- y no historia de la persona, asi que muere con el
+		// proceso, que es exactamente lo que se quiere de el.
+		private sealed class TheCredentialThisRunHolds
 		{
-			if (api.StoredDeviceKey().Length == 0)
-				api.RegisterDevice("device-consola-de-medicion");
+			internal const string DeviceKey = "device-consola-de-medicion";
 
-			if (api.StoredToken().Length > 0) return;
+			internal string AccessToken { get; private set; } = "";
 
-			Credencial credential = await tokens.Pedir(api.StoredDeviceKey(), resource, id);
-			Console.WriteLine($"credencial: scope={credential.Scope} expiresIn={credential.ExpiresIn}s");
+			internal string RefreshToken { get; private set; } = "";
+
+			internal void Store(Credencial granted)
+			{
+				AccessToken = granted.AccessToken;
+				RefreshToken = granted.RefreshToken ?? "";
+			}
+		}
+
+		private static async Task<string> TheAppGetsItsOwnCredential(
+			TheCredentialThisRunHolds credential, ProveedorDeToken tokens, string resource, string id,
+			CancellationToken ct = default)
+		{
+			if (credential.AccessToken.Length > 0) return credential.AccessToken;
+
+			Credencial granted = await tokens.Pedir(TheCredentialThisRunHolds.DeviceKey, resource, id, ct);
+			Console.WriteLine($"credencial: scope={granted.Scope} expiresIn={granted.ExpiresIn}s");
 			Console.WriteLine();
-			api.StoreCredential(credential.AccessToken, credential.RefreshToken);
+			credential.Store(granted);
+			return credential.AccessToken;
 		}
 
 		private static async Task<string> RenewTheCredential(
-			DealershipCarAPI api, ProveedorDeToken tokens, string resource, string id,
+			TheCredentialThisRunHolds credential, ProveedorDeToken tokens, string resource, string id,
 			CancellationToken ct)
 		{
-			string refresh = api.StoredRefreshToken();
+			string refresh = credential.RefreshToken;
 
 			Credencial renewed = refresh.Length > 0 ? await tokens.Rotar(refresh, ct) : null;
 			string how = renewed != null ? "rotada con el refresh token" : "nueva contra el device key";
-			if (renewed == null) renewed = await tokens.Pedir(api.StoredDeviceKey(), resource, id, ct);
+			if (renewed == null)
+				renewed = await tokens.Pedir(TheCredentialThisRunHolds.DeviceKey, resource, id, ct);
 
 			Console.WriteLine($"   credencial renovada: {how} (scope {renewed.Scope})");
-			api.StoreCredential(renewed.AccessToken, renewed.RefreshToken);
-			return renewed.AccessToken;
+			credential.Store(renewed);
+			return credential.AccessToken;
 		}
 
 		private static async Task TheDecoyAnswers403(
-			HttpClient http, DealershipCarAPI api, string resource, string id)
+			HttpClient http, TheCredentialThisRunHolds credential, string resource, string id)
 		{
 			Console.WriteLine("-- el senuelo: la app NO es cliente de los servicios del concesionario --");
 
@@ -542,7 +574,7 @@ namespace DealershipCar.Consola
 				using (var request = new HttpRequestMessage(HttpMethod.Get, route))
 				{
 					request.Headers.Authorization =
-						new AuthenticationHeaderValue("Bearer", api.StoredToken());
+						new AuthenticationHeaderValue("Bearer", credential.AccessToken);
 
 					using (HttpResponseMessage answer = await http.SendAsync(request))
 					{

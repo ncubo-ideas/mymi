@@ -9,6 +9,10 @@
   "background_color": "#0e2f55",
   "theme_color": "#0e2f55",
   "lang": "es",
+  "_comentario_related_applications": "Lo que habilita navigator.getInstalledRelatedApps(): la PWA declara al Host, y el APK del Host tiene que declarar de vuelta el ORIGEN EXACTO de esta PWA en sus asset_statements. Sin los dos lados, devuelve lista vacia (especificacion 13 §6.1).",
+  "related_applications": [
+    { "platform": "play", "id": "com.ncubo.gnothi.host", "url": "https://play.google.com/store/apps/details?id=com.ncubo.gnothi.host" }
+  ],
   "prefer_related_applications": false,
   "icons": [
     { "src": "icon-192.png", "type": "image/png", "sizes": "192x192" },

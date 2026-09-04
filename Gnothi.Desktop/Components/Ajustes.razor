@@ -1,0 +1,191 @@
+@inject ModelConfig Config
+@implements IDisposable
+
+@*
+    AJUSTES. El proveedor del modelo, la llave (BYOK) y —con la llave puesta— el modelo elegido de
+    entre los que el proveedor REALMENTE ofrece. La llave es de la persona: vive solo en su area
+    privada, NUNCA se muestra de vuelta (aca solo se ve SI hay una y la lista de modelos que el
+    proveedor responde), y no va a ningun log.
+*@
+
+<h1>Ajustes</h1>
+<p class="sub">El modelo que redacta las respuestas del asistente. La llave es tuya.</p>
+
+<div class="card">
+    <div class="title">Proveedor</div>
+    <div class="meta" style="margin:4px 0 10px">
+        @name · <strong>@model</strong>
+        <br /><span style="font-family:ui-monospace,Consolas,monospace">@url</span>
+    </div>
+
+    <label class="field">Elegí un proveedor</label>
+    <select @onchange="OnPreset">
+        @foreach (ModelConfig.Preset p in ModelConfig.Presets)
+        {
+            <option value="@p.Name" selected="@(p.Name == name)">@p.Name</option>
+        }
+    </select>
+</div>
+
+<div class="card">
+    <div class="title">Llave de @name</div>
+    @if (needsKey)
+    {
+        <div class="meta" style="margin:4px 0 10px">
+            @if (Config.KeyPresent)
+            {
+                <text>✓ Hay una llave guardada (no se muestra).</text>
+            }
+            else
+            {
+                <text>Todavía no hay llave para este proveedor.</text>
+            }
+        </div>
+        <label class="field">Pegá tu API key</label>
+        <input type="password" @bind="keyDraft" placeholder="sk-…" />
+        <div style="margin-top:10px">
+            <button class="small" disabled="@(keyDraft.Trim().Length == 0)" @onclick="SaveKey">Guardar</button>
+            @if (Config.KeyPresent)
+            {
+                <button class="small ghost" @onclick="ClearKey">Borrar</button>
+            }
+        </div>
+    }
+    else
+    {
+        <div class="meta" style="margin:4px 0">Este proveedor es local — no necesita llave, nada sale de la máquina.</div>
+    }
+
+    @if (saved.Length > 0)
+    {
+        <div class="notice" style="margin-top:10px">@saved</div>
+    }
+</div>
+
+<div class="card">
+    <div class="title">Modelo</div>
+    <div class="meta" style="margin:4px 0 10px">
+        En uso: <strong>@model</strong>. Cargá los modelos que ofrece @name y elegí el que quieras;
+        ese es el que usa cada pregunta.
+    </div>
+
+    <button class="small" disabled="@(loadingModels || (needsKey && !Config.KeyPresent))" @onclick="LoadModels">
+        @(loadingModels ? "Cargando…" : "Cargar modelos disponibles")
+    </button>
+    @if (needsKey && !Config.KeyPresent)
+    {
+        <div class="meta" style="margin-top:8px">Poné primero la llave para poder consultar los modelos.</div>
+    }
+
+    @if (models.Count > 0)
+    {
+        <label class="field" style="margin-top:12px">Modelo (@models.Count disponibles)</label>
+        <select @onchange="OnModelChange">
+            @foreach (string mid in models)
+            {
+                <option value="@mid" selected="@(mid == model)">@mid</option>
+            }
+        </select>
+    }
+
+    @if (modelsError.Length > 0)
+    {
+        <div class="notice denied" style="margin-top:10px">@modelsError</div>
+    }
+</div>
+
+@code {
+    private string name = "", kind = "", url = "", model = "";
+    private string keyDraft = "";
+    private string saved = "";
+
+    private bool loadingModels;
+    private List<string> models = new();
+    private string modelsError = "";
+
+    private CancellationTokenSource? cts;
+
+    private bool needsKey => Config.NeedsKey;
+
+    protected override void OnInitialized() => Load();
+
+    private void Load() => (name, kind, url, model) = Config.Provider();
+
+    private void OnPreset(ChangeEventArgs e)
+    {
+        ModelConfig.Preset? p = ModelConfig.Presets.FirstOrDefault(x => x.Name == e.Value?.ToString());
+        if (p is null) return;
+
+        Config.SetProvider(p.Name, p.Kind, p.Url, p.Model);
+        Load();
+        keyDraft = "";
+        saved = "";
+        // Los modelos listados eran del proveedor anterior: se descartan hasta volver a cargar.
+        models = new();
+        modelsError = "";
+    }
+
+    private void SaveKey()
+    {
+        Config.SetKey(keyDraft);
+        keyDraft = "";
+        saved = "Llave guardada. Ya podés cargar los modelos.";
+    }
+
+    private void ClearKey()
+    {
+        Config.ClearKey();
+        saved = "Llave borrada.";
+        models = new();
+        modelsError = "";
+    }
+
+    private async Task LoadModels()
+    {
+        loadingModels = true;
+        modelsError = "";
+        cts?.Cancel();
+        cts?.Dispose();
+        cts = new CancellationTokenSource();
+
+        try
+        {
+            ModelConfig.ModelsResult r = await Config.FetchModels(cts.Token);
+            if (r.Ok)
+            {
+                models = r.Models.ToList();
+                // Si el modelo actual no está en la lista, adoptamos el primero para que lo que se
+                // usa sea siempre uno real del proveedor.
+                if (!models.Contains(model) && models.Count > 0)
+                {
+                    Config.SetModel(models[0]);
+                    Load();
+                }
+            }
+            else
+            {
+                models = new();
+                modelsError = r.Error ?? "No se pudieron cargar los modelos.";
+            }
+        }
+        catch (OperationCanceledException) { /* reemplazado por otra carga */ }
+        finally
+        {
+            loadingModels = false;
+        }
+    }
+
+    private void OnModelChange(ChangeEventArgs e)
+    {
+        string? chosen = e.Value?.ToString();
+        if (string.IsNullOrEmpty(chosen)) return;
+        Config.SetModel(chosen);
+        Load();
+    }
+
+    public void Dispose()
+    {
+        cts?.Cancel();
+        cts?.Dispose();
+    }
+}

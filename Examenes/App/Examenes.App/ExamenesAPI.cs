@@ -26,33 +26,6 @@ namespace Examenes.App
 
 		// ---------------------------------------------------------------- comandos
 
-		// La clave de ESTA instalacion ante el proveedor. Se genera en C# y entra como
-		// parametro, no dentro del DSL: asi el valor queda journalizado y el replay lo
-		// reusa. Un Guid.NewGuid() en codigo de dominio daria una clave distinta en cada
-		// replay y la app perderia su identidad ante el proveedor.
-		public void RegistrarDevice(string deviceKey)
-		{
-			ArgumentNullException.ThrowIfNullOrWhiteSpace(deviceKey);
-
-			app.Using("bitacora.RegistrarDevice(@device);")
-			.WithParameters(p => {
-				p["device", typeof(string)] = deviceKey;
-			})
-			.PerformCommand();
-		}
-
-		public void GuardarCredencial(string token, string refreshToken)
-		{
-			ArgumentNullException.ThrowIfNullOrWhiteSpace(token);
-
-			app.Using("bitacora.GuardarCredencial(@token, @refresh);")
-			.WithParameters(p => {
-				p["token",   typeof(string)] = token;
-				p["refresh", typeof(string)] = refreshToken ?? "";
-			})
-			.PerformCommand();
-		}
-
 		// LO QUE LA PERSONA DICE DE SI MISMA. Procedencia TU, y por eso es un comando local
 		// y no un evento: nadie se lo publico, lo declaro ella.
 		//
@@ -333,12 +306,6 @@ namespace Examenes.App
 				return alquilados["ultimo"].GetValue<long>();
 			}
 		}
-
-		public string TokenGuardado() => Texto("bitacora.Token");
-
-		public string RefreshTokenGuardado() => Texto("bitacora.RefreshToken");
-
-		public string DeviceKeyGuardado() => Texto("bitacora.DeviceKey");
 
 		private string Texto(string expresion)
 		{

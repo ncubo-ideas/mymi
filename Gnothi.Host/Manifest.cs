@@ -22,6 +22,10 @@ public sealed record Manifest
 	[JsonPropertyName("institution")] public string Institution { get; init; } = "";
 	[JsonPropertyName("substrate")] public Substrate? Substrate { get; init; }
 	[JsonPropertyName("capabilities")] public Capabilities? Capabilities { get; init; }
+
+	// Donde esta el publicador de esta institucion, para el cartero. Opcional: un modulo
+	// puede vivir solo de lo que ya tiene en su journal.
+	[JsonPropertyName("publicador")] public Publicador? Publicador { get; init; }
 	[JsonPropertyName("tools")] public IReadOnlyList<DeclaredTool> Tools { get; init; } = [];
 
 	// THE DECLARATIVE VIEW, optional. The name of a json file, shipped inside the module, that
@@ -57,6 +61,24 @@ public sealed record Manifest
 
 // A RANGE, NOT an exact version. If a module pins one precise version, every Host update
 // orphans every installed module.
+
+// DONDE VIVE LA NARRATIVA de esta institucion. Lo declara ELLA en su manifiesto, y Gnothi lo
+// registra al dar de alta el modulo: a partir de ahi el endpoint es FIJO y el modulo no lo
+// elige ni lo puede cambiar (especificacion 11 §6, 13 §7).
+//
+// El modulo nunca lo usa: no tiene red. Lo usa el cartero, que es Gnothi.
+public sealed record Publicador
+{
+	// La base del servicio de eventos de la institucion.
+	[JsonPropertyName("eventos")] public string Eventos { get; init; } = "";
+
+	// Que recurso de la persona, y cual. La app pide UNA sola forma de URL sobre esto:
+	// {recurso}/{id}/events?after=N, y nada mas.
+	[JsonPropertyName("recurso")] public string Recurso { get; init; } = "expediente";
+
+	[JsonPropertyName("id")] public string Id { get; init; } = "1";
+}
+
 public sealed record Substrate
 {
 	[JsonPropertyName("range")] public string Range { get; init; } = "";

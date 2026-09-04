@@ -141,8 +141,8 @@ else
 
         <div class="actions">
             <MudButton Variant="Variant.Filled" Color="Color.Primary" id="refresh"
-                       StartIcon="@Icons.Material.Rounded.CloudSync" OnClick="Refresh" Disabled="@refreshing">
-                @(refreshing ? "Refreshing…" : "Refresh")
+                       StartIcon="@Icons.Material.Rounded.CloudSync" OnClick="Refresh" Disabled="@(refreshing || state.Migrated)">
+                @(state.Migrated ? "No longer updating" : refreshing ? "Refreshing…" : "Refresh")
             </MudButton>
         </div>
     </MudPaper>
@@ -162,6 +162,34 @@ else
                            StartIcon="@Icons.Material.Rounded.LockOpen" OnClick="RequestPermission">
                     Grant write access
                 </MudButton>
+            </div>
+        </MudAlert>
+    }
+    @* MIGRATED: the publisher says this account's record now lives in Gnothi (spec 13 §4,
+       §6.2). "Disappearing" is NOT uninstalling and NOT deleting: the app keeps showing what
+       it has, because it is its own. What it stops doing is SYNCING, which is the only thing
+       that would produce two histories that diverge. *@
+    else if (state.Migrated)
+    {
+        <MudAlert Severity="Severity.Warning" Variant="Variant.Filled" Class="mb-4" id="migrated">
+            <div class="alert-row">
+                <div>
+                    <strong>Your record now lives in @state.WhereItLivesNow.</strong>
+                    What you see here stays, but this copy no longer updates: new maintenance
+                    facts reach you there.
+                </div>
+            </div>
+        </MudAlert>
+    }
+    else if (state.Hosted)
+    {
+        <MudAlert Severity="Severity.Info" Variant="Variant.Filled" Class="mb-4" id="hosted-in-gnothi">
+            <div class="alert-row">
+                <div>
+                    <strong>It is being saved in Gnothi.</strong>
+                    Your record lives on this device, in the folder Gnothi gave this dealership,
+                    and your assistant can read it from there.
+                </div>
             </div>
         </MudAlert>
     }
@@ -403,6 +431,10 @@ else
 
     protected override async Task OnInitializedAsync()
     {
+        // HOSPEDADA: el destino es de Gnothi y no hay nada que elegir ni permiso que pedir.
+        // La app arranca sola; el selector de almacenamiento es vocabulario del modo suelto.
+        if (state.Hosted) { await state.StartAsync(); await Reread(); return; }
+
         pickerSupported = await state.PickerIsSupportedAsync();
         browserStorageSupported = await state.BrowserStorageIsSupportedAsync();
         installedApp = await state.RunsAsInstalledAppAsync();

@@ -33,10 +33,39 @@ builder.Services.AddSingleton(_ => new HttpClient
 	BaseAddress = new Uri(new Uri(builder.HostEnvironment.BaseAddress), proveedor.BaseUrl),
 });
 
-builder.Services.AddSingleton<PuenteDeJournal>(sp => new PuenteDeJournal(sp.GetRequiredService<IJSRuntime>()));
+// EL PUENTE DEL JOURNAL SE CONSTRUYE CON SU DESTINO YA ELEGIDO. Suelta, el destino es el
+// storage del browser y de eso se ocupa el puente mismo; hospedada, son los archivos de
+// Gnothi. Por eso el modo se decide antes de que nadie resuelva este singleton.
+builder.Services.AddSingleton<ModoDeLaApp>();
+builder.Services.AddSingleton<PuenteDeJournal>(sp =>
+{
+    var modo = sp.GetRequiredService<ModoDeLaApp>();
+    var js = sp.GetRequiredService<IJSRuntime>();
+    return modo.Destino is null ? new PuenteDeJournal(js) : new PuenteDeJournal(js, modo.Destino);
+});
+
+// LA CREDENCIAL ANTE EL PROVEEDOR vive aca -storage del browser del origen-, no en el
+// journal. Singleton por la misma razon que el puente: es estado de la instalacion.
+builder.Services.AddSingleton<AlmacenDeCredencial>(sp => new AlmacenDeCredencial(sp.GetRequiredService<IJSRuntime>()));
+
+builder.Services.AddSingleton<PuenteDeGnothi>(sp => new PuenteDeGnothi(sp.GetRequiredService<IJSRuntime>()));
 
 // SINGLETON a proposito: el actor NO se crea por pantalla. Owna estado persistente, se
 // construye una vez y se mantiene alcanzable mientras la app vive.
 builder.Services.AddSingleton<EstadoDeLaApp>();
 
-await builder.Build().RunAsync();
+var host = builder.Build();
+
+// EN QUE HOSPEDAJE CORRE, decidido ANTES del render: el contenedor construye el puente del
+// journal con el destino ya puesto, y despues seria tarde. Se pregunta por la presencia del
+// puente que Gnothi inyecta, no por el origen.
+var puenteDeGnothi = host.Services.GetRequiredService<PuenteDeGnothi>();
+if (await puenteDeGnothi.EstaHospedada())
+    host.Services.GetRequiredService<ModoDeLaApp>().Hospedar(puenteDeGnothi);
+
+// EL SINGLETON VIVO, al alcance de la superficie que Gnothi llama. DotNet.invokeMethodAsync
+// solo alcanza metodos estaticos, asi que la superficie necesita esta referencia; no hay otra
+// manera de que el nativo llegue al actor sin abrir un segundo.
+SuperficieDelModulo.Registrar(host.Services.GetRequiredService<EstadoDeLaApp>());
+
+await host.RunAsync();

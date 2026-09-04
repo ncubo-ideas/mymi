@@ -3,8 +3,8 @@ using NUnit.Framework;
 namespace DealershipCar.Dominio.Pruebas
 {
 	// LA BITACORA DE EVENTOS, EN NIVEL A. Es la segunda global de raiz que trajo T8 -- hasta donde
-	// leyo la app la narrativa del concesionario, y con que credencial la sigue leyendo -- y no es
-	// un hecho de mantenimiento: por eso vive AL LADO de MaintenanceSchedule y no adentro (C26).
+	// leyo la app la narrativa del concesionario -- y no es un hecho de mantenimiento: por eso vive
+	// AL LADO de MaintenanceSchedule y no adentro (C26).
 	//
 	// ESTE ARCHIVO EXISTE POR LA PASADA DE FALSIFICACION DE T8, y esa es la razon que vale la pena
 	// leer. Romper la guarda de Advance -- dejarla aceptar el mismo evento otra vez, y despues
@@ -33,9 +33,6 @@ namespace DealershipCar.Dominio.Pruebas
 		public void ANewLogbookHasReadNothingAndThatIsAValueNotAnAbsence()
 		{
 			Assert.That(logbook.LastEvent(), Is.EqualTo(0L));
-			Assert.That(logbook.HasADevice(), Is.False);
-			Assert.That(logbook.HasACredential(), Is.False);
-			Assert.That(logbook.CanRotate(), Is.False);
 		}
 
 		[Test]
@@ -74,83 +71,11 @@ namespace DealershipCar.Dominio.Pruebas
 			Assert.That(logbook.LastEvent(), Is.EqualTo(118L));
 		}
 
-		// ------------------------------------------------------ la credencial
-
-		// UNA SOLA VEZ POR INSTALACION. Re-registrarla con otra clave dejaria huerfana la credencial
-		// vieja, porque el concesionario veria otro device.
-		[Test]
-		public void AnInstallationRegistersItselfOnceAndKeepsThatIdentity()
-		{
-			logbook.RegisterDevice("device-de-esta-instalacion");
-
-			Assert.That(logbook.HasADevice(), Is.True);
-			Assert.That(logbook.DeviceKey(), Is.EqualTo("device-de-esta-instalacion"));
-
-			Assert.DoesNotThrow(() => logbook.RegisterDevice("device-de-esta-instalacion"),
-				"Registrarse otra vez con LA MISMA clave es un arranque repetido, no un cambio de "
-				+ "identidad: es lo que hace idempotente abrir la app dos veces.");
-
-			Assert.Throws<DomainException>(() => logbook.RegisterDevice("otro-device"));
-
-			Assert.That(logbook.DeviceKey(), Is.EqualTo("device-de-esta-instalacion"));
-		}
-
-		[Test]
-		public void AnInstallationWithoutAKeyCannotRegister()
-		{
-			Assert.Throws<DomainException>(() => logbook.RegisterDevice(""));
-			Assert.Throws<DomainException>(() => logbook.RegisterDevice("   "));
-			Assert.Throws<DomainException>(() => logbook.RegisterDevice(null));
-		}
-
-		[Test]
-		public void TheCredentialIsWhatItWasStoredWith()
-		{
-			logbook.StoreCredential("at_1234", "rt_5678");
-
-			Assert.That(logbook.HasACredential(), Is.True);
-			Assert.That(logbook.Token(), Is.EqualTo("at_1234"));
-			Assert.That(logbook.CanRotate(), Is.True);
-			Assert.That(logbook.RefreshToken(), Is.EqualTo("rt_5678"));
-		}
-
-		// El refresh token es OPCIONAL -- hay proveedores que solo dan el access token -- y su
-		// ausencia tiene nombre: CanRotate contesta false, y la instalacion pide credencial nueva
-		// con su clave de device en vez de rotar.
-		[Test]
-		public void ACredentialWithoutARefreshTokenCannotRotateAndSaysSo()
-		{
-			logbook.StoreCredential("at_1234", "");
-
-			Assert.That(logbook.HasACredential(), Is.True);
-			Assert.That(logbook.CanRotate(), Is.False);
-			Assert.Throws<DomainException>(() => logbook.RefreshToken());
-		}
-
-		[Test]
-		public void ACredentialWithoutAnAccessTokenIsNotACredential()
-		{
-			Assert.Throws<DomainException>(() => logbook.StoreCredential("", "rt_5678"));
-			Assert.Throws<DomainException>(() => logbook.StoreCredential(null, "rt_5678"));
-
-			Assert.That(logbook.HasACredential(), Is.False);
-		}
-
-		// LAS TRES LECTURAS GUARDADAS (E41). Ausencia de clave no es una clave vacia, y devolver ""
-		// haria indistinguible "esta instalacion no se registro" de "se registro sin nombre". La
-		// traduccion a "" para el mecanismo la hace la puerta, que es donde el contrato del Portador
-		// la pide, y no el dominio.
-		[Test]
-		public void EachStoredValueIsGuardedByItsOwnPresenceQuestion()
-		{
-			Assert.That(logbook.HasADevice(), Is.False);
-			Assert.Throws<DomainException>(() => logbook.DeviceKey());
-
-			Assert.That(logbook.HasACredential(), Is.False);
-			Assert.Throws<DomainException>(() => logbook.Token());
-
-			Assert.That(logbook.CanRotate(), Is.False);
-			Assert.Throws<DomainException>(() => logbook.RefreshToken());
-		}
+		// LA CREDENCIAL NO SE PRUEBA ACA PORQUE YA NO VIVE ACA. Hasta el 2026-09-03 este archivo
+		// tenia cinco pruebas mas -- registro de device, credencial guardada, refresh opcional, y
+		// las tres lecturas guardadas por su pregunta de presencia --. Se fueron con el estado que
+		// fijaban: la credencial la sostiene el host, fuera del journal. Lo que queda es lo que
+		// justifico este archivo: la guarda de Advance, inalcanzable por la puerta y por eso
+		// probada contra el objeto.
 	}
 }
