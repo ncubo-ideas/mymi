@@ -64,6 +64,11 @@
     /* La acción: el cobre del brief. Un tablero tiene pocas teclas y todas hacen algo. */
     --accion:      #c2703d;
     --accion-viva: #d9814a;
+    /* LA TINTA SOBRE EL COBRE ES OSCURA, no blanca. Blanco sobre --accion da 3.70:1 y sobre
+       el hover 2.92:1 —debajo del AA de 4.5 para texto de 14 px—, y es la primera tecla que ve
+       cualquiera. Oscuro da 5.00:1 y 6.33:1, y además es lo que ya hacían las otras dos teclas
+       de color (ámbar y rojo): la primaria era la única distinta. MEDIDO. */
+    --sobre-cobre: #1f1008;
 
     /* EL SEMÁFORO, con los valores exactos de la §5 para fondo oscuro. Es lo único que
        Geaninna marcó como no negociable, y sigue igual: lo que cambió es la forma, no
@@ -574,7 +579,7 @@ h1:focus, h1:focus-visible { outline: none; }
 .tecla {
     font: inherit; font-size: 14px; font-weight: 600;
     padding: 8px 16px; border-radius: 7px; cursor: pointer;
-    background: var(--accion); color: #ffffff; border: 1px solid transparent;
+    background: var(--accion); color: var(--sobre-cobre); border: 1px solid transparent;
     transition: background .12s ease, border-color .12s ease, color .12s ease;
 }
 .tecla:hover:not(:disabled) { background: var(--accion-viva); }
