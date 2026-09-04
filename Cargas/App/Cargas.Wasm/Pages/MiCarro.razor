@@ -16,9 +16,11 @@
     <div class="parte parte--problema"><pre>@Error</pre></div>
 }
 
-@if (guardado.Length > 0)
+@* EL ÉXITO, verde y pasajero. Era un parte gris que se quedaba hasta cambiar de carro: el
+   éxito no tenía color propio en la hoja, y un aviso que no se va deja de leerse. *@
+@if (Listo.Texto.Length > 0)
 {
-    <div class="parte parte--neutro">@guardado</div>
+    <div class="parte parte--listo parte--pasajero" role="status">@Listo.Texto</div>
 }
 
 @if (enFoco is null)
@@ -245,7 +247,6 @@ else
     // ve como un dato. Aca la ausencia es null y se traduce al guardar y al cargar.
     private int? anio;
     private decimal? rendimientoDeFabrica;
-    private string guardado = "";
 
     // La placa de la que se cargaron los campos. Si el selector del capó cambia de carro,
     // el formulario tiene que recargarse: si no, se estaria editando un carro con los
@@ -275,7 +276,7 @@ else
         if (cargadaPara != enFoco.Placa)
         {
             cargadaPara = enFoco.Placa;
-            guardado = "";
+            Listo.Borrar();
             alias = enFoco.Alias;
             marca = enFoco.Marca;
             modelo = enFoco.Modelo;
@@ -293,7 +294,7 @@ else
             modelo.Trim(), anio ?? 0, color.Trim(), rendimientoDeFabrica ?? 0m);
         if (rechazo.Length > 0) throw new InvalidOperationException(rechazo);
 
-        guardado = $"Listo: ahora le decimos «{alias.Trim()}».";
+        MostrarListo($"Listo: ahora le decimos «{alias.Trim()}».");
     });
 
     private Task ElegirRendimiento(string simbolo) => Intentar("elegir cómo mirás el rendimiento", async () =>
@@ -316,12 +317,18 @@ else
         porImportar = false;
         string motivo = await Estado.Importar();
         if (motivo.Length > 0) throw new InvalidOperationException(motivo);
-        guardado = "Listo: la bitácora importada ya está abierta.";
+        MostrarListo("Listo: la bitácora importada ya está abierta.");
     });
 
     private Task Exportar() => Intentar("exportar la bitácora", async () =>
     {
         ResultadoDeExportacion resultado = await Estado.Exportar();
         if (!resultado.Ok) throw new InvalidOperationException(resultado.Motivo);
+
+        // Exportar bajaba un archivo y la pantalla no decía nada: la descarga la anuncia el
+        // browser donde le parece, y en una PWA instalada a veces en ningún lado. Se nombra
+        // el archivo para que se pueda encontrar después.
+        MostrarListo($"Exportado: «{resultado.Nombre}», {resultado.Archivos} "
+            + (resultado.Archivos == 1 ? "archivo." : "archivos."));
     });
 }

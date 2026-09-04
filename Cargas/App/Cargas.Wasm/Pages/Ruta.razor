@@ -38,6 +38,13 @@
    Va debajo de la cabeza y no dentro: la cabeza es un rótulo. Y va en contorno, no en ámbar:
    el atajo confirma N suposiciones de un golpe, así que el camino cuidadoso —carga por
    carga— se queda con el color de atención. *@
+@* EL ÉXITO DEL LOTE, en el lugar de la barra que acaba de desaparecer: la persona mira ahí
+   cuando apretó, y ahí tiene que estar la respuesta. Se va solo (ver AvisoDeListo). *@
+@if (Listo.Texto.Length > 0 && listoEn.Length == 0)
+{
+    <div class="parte parte--listo parte--pasajero" role="status">@Listo.Texto</div>
+}
+
 @if (tanquesEstimados.Count >= 2)
 {
     <div class="ruta-acciones">
@@ -141,7 +148,16 @@ else
                        hasta la próxima acción sin que nadie lo viera. *@
                     @if (desbloqueado.Length > 0 && desbloqueadoEn == parada.Transaccion)
                     {
-                        <div class="parte parte--neutro parada-logro"><strong>Se desbloqueó:</strong> @desbloqueado</div>
+                        @* VERDE Y SIN APAGARSE: es información sobre el carro, no un «ok». *@
+                        <div class="parte parte--listo parada-logro" role="status"><strong>Se desbloqueó:</strong> @desbloqueado</div>
+                    }
+
+                    @* EL ÉXITO DE UN TANQUE, en la parada que lo recibió. Antes confirmar solo
+                       cambiaba «(estimado)» por «(confirmado)» en la versalita, y el bloque se
+                       plegaba: parecía que la tecla no había hecho nada. *@
+                    @if (Listo.Texto.Length > 0 && listoEn == parada.Transaccion)
+                    {
+                        <div class="parte parte--listo parte--pasajero parada-logro" role="status">@Listo.Texto</div>
                     }
 
                     @if (fotoPorCarga.TryGetValue(parada.Transaccion, out string? laFoto))
@@ -597,12 +613,34 @@ else
             throw new InvalidOperationException(
                 $"Se confirmaron {porConfirmar.Count - rechazos.Count} de {porConfirmar.Count}. "
                 + "No entraron: " + string.Join("; ", rechazos));
+
+        listoEn = "";
+        MostrarListo(porConfirmar.Count == 1
+            ? "Listo: el tanque quedó confirmado."
+            : $"Listo: {porConfirmar.Count} tanques confirmados.");
     });
+
+    // EN QUÉ PARADA se dibuja el éxito: la transacción, o "" para el de arriba (el lote).
+    private string listoEn = "";
+
+    // El texto dice QUÉ quedó, no solo que quedó: con «lleno» o «parcial» a la vista, la
+    // persona que confirmó por costumbre todavía puede darse cuenta de que no era.
+    private string QueQuedo(string transaccion)
+    {
+        foreach (CargaEnLista carga in cargas)
+            if (carga.Transaccion == transaccion)
+                return carga.Tanque.StartsWith("lleno") ? "lleno" : "parcial";
+        return "";
+    }
 
     private Task ConfirmarTanque(string transaccion) => Intentar("confirmar el tanque", async () =>
     {
         string rechazo = await Estado.ConfirmarTanque(transaccion);
         if (rechazo.Length > 0) throw new InvalidOperationException(rechazo);
+
+        listoEn = transaccion;
+        string quedo = QueQuedo(transaccion);
+        MostrarListo(quedo.Length > 0 ? $"Confirmado: tanque {quedo}." : "Confirmado.");
     });
 
     // "Era al reves": lo que la inferencia propuso no era. Se declara lo contrario, con la
@@ -617,6 +655,9 @@ else
         string contrario = carga.Tanque.StartsWith("lleno") ? "parcial" : "lleno";
         string rechazo = await Estado.DeclararTanque(transaccion, contrario);
         if (rechazo.Length > 0) throw new InvalidOperationException(rechazo);
+
+        listoEn = transaccion;
+        MostrarListo($"Anotado: tanque {contrario}.");
     });
 
     // La foto entra entera a memoria antes de ir a la carpeta: una foto de tablero ronda

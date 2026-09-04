@@ -25,6 +25,13 @@ public abstract class PantallaDeCargas : ComponentBase, IDisposable
 	/// fallo abajo queda fuera de pantalla y la app parece no reaccionar al click.</summary>
 	protected string Error { get; private set; } = "";
 
+	/// <summary>EL ÉXITO, y se va solo. Ver AvisoDeListo. Cada pantalla decide dónde lo
+	/// dibuja; acá solo se garantiza que repinta cuando se apaga.</summary>
+	protected AvisoDeListo Listo { get; } = new();
+
+	protected void MostrarListo(string texto) =>
+		Listo.Mostrar(texto, () => InvokeAsync(StateHasChanged));
+
 	/// <summary>Lo que la pantalla hace cuando el actor cambio: releer sus consultas.
 	/// TODO lo que se ve sale de consultar al actor.</summary>
 	protected abstract void Releer();
