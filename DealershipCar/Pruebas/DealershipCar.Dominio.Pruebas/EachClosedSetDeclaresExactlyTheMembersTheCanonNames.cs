@@ -23,6 +23,28 @@ namespace DealershipCar.Dominio.Pruebas
 	//
 	// La cuenta esta escrita a mano a proposito. Un test que derive el numero del propio tipo
 	// no puede fallar: diria "declara los que declara". El numero viene del canon.
+	//
+	// CL-1 AGREGA Currency CON LOS DOS DE P-8, y es el primer conjunto cerrado de este modulo que
+	// es TAMBIEN una base polimorfica, asi que entra en dos de los cuatro metodos y no en los otros
+	// dos. Las razones, escritas donde el proximo lector las va a buscar:
+	//
+	//   ItDeclaresExactlyItsMembers        SI. Declara dos static readonly Currency, CRC y USD.
+	//   ItIsInternalLikeTheRestOfTheDomain SI. Como todo el dominio.
+	//
+	//   ItCannotBeInstantiatedFromOutside  NO: su ctor no puede ser privado, porque sus dos
+	//                                      variantes lo llaman. Lo que cierra el conjunto aca no es
+	//                                      el ctor sino el resolutor -- Of y OfPublished son los
+	//                                      unicos caminos desde un codigo, y jamas entregan una
+	//                                      moneda nombrada que no sea CRC o USD.
+	//   ItIsSealedBecauseNothingExtendsAClosedSet
+	//                                      NO: E43 dice que una base polimorfica se deja ABIERTA, y
+	//                                      la cabecera de este fixture ya lo reconoce. Currency
+	//                                      tiene DOS variantes que se portan distinto -- una
+	//                                      nombrada sabe su simbolo y sus decimales, una recibida y
+	//                                      sin nombrar no los sabe y no se compara con ninguna --
+	//                                      asi que ganan su tipo por comportamiento (E11, E39) y la
+	//                                      base no puede sellarse. La ley del sellado se afirma
+	//                                      sobre las HOJAS, mas abajo.
 	[TestFixture]
 	public sealed class EachClosedSetDeclaresExactlyTheMembersTheCanonNames
 	{
@@ -34,6 +56,7 @@ namespace DealershipCar.Dominio.Pruebas
 		[TestCase(typeof(RevisionState), 3)]
 		[TestCase(typeof(CoverageStanding), 5)]
 		[TestCase(typeof(EnvelopeStanding), 3)]
+		[TestCase(typeof(Currency), 2)]
 		public void ItDeclaresExactlyItsMembers(Type conjunto, int cuantos)
 		{
 			List<object> miembros = MiembrosDe(conjunto);
@@ -106,10 +129,44 @@ namespace DealershipCar.Dominio.Pruebas
 		[TestCase(typeof(RevisionState))]
 		[TestCase(typeof(CoverageStanding))]
 		[TestCase(typeof(EnvelopeStanding))]
+		[TestCase(typeof(Currency))]
 		public void ItIsInternalLikeTheRestOfTheDomain(Type conjunto)
 		{
 			Assert.That(conjunto.IsPublic, Is.False,
 				$"{conjunto.Name} es public. El dominio es internal de punta a punta.");
+		}
+
+		// LA LEY DEL SELLADO SOBRE LAS HOJAS, para el conjunto cerrado que es tambien una base
+		// polimorfica. Los ocho de arriba son hojas y se afirman directo; Currency no puede serlo
+		// (E43, y la cabecera dice por que), asi que lo que se afirma es que sus VARIANTES lo son y
+		// que son exactamente dos: la nombrada y la recibida-y-sin-nombrar.
+		//
+		// Una tercera variante que apareciera seria una tercera razon para no poder decir una
+		// moneda, y este modulo tiene una sola. Eso se ve aca antes que en produccion.
+		[Test]
+		public void TheCurrencysVariantsAreSealedLeavesAndThereAreExactlyTwo()
+		{
+			List<Type> variantes = typeof(Currency).Assembly
+				.GetTypes()
+				.Where(tipo => tipo != typeof(Currency) && typeof(Currency).IsAssignableFrom(tipo))
+				.OrderBy(tipo => tipo.Name, StringComparer.Ordinal)
+				.ToList();
+
+			Assert.That(variantes.Select(tipo => tipo.Name),
+				Is.EqualTo(new[] { "ACurrencyThisModuleDoesNotName", "ANamedCurrency" }),
+				"Las variantes de Currency son dos y se portan distinto. Una tercera es una tercera "
+				+ "razon para no poder decir una moneda, y no hay ninguna mas.");
+
+			Assert.That(typeof(Currency).IsAbstract, Is.True,
+				"Currency es la base y no se instancia: una moneda es una de sus dos variantes.");
+
+			foreach (Type variante in variantes)
+			{
+				Assert.That(variante.IsSealed, Is.True,
+					$"{variante.Name} no esta sellada. Es una hoja y nadie la extiende (E43).");
+				Assert.That(variante.IsPublic, Is.False,
+					$"{variante.Name} es public. El dominio es internal de punta a punta.");
+			}
 		}
 
 		private static List<object> MiembrosDe(Type conjunto)
