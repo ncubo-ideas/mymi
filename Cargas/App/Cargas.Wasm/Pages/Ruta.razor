@@ -245,9 +245,15 @@ else
                                        selector es del sistema y en móvil ya ofrece «tomar foto». *@
                                     @if (!parada.TieneFoto && Estado.HayCarpeta)
                                     {
-                                        <label class="tecla tecla--contorno tecla--icono" title="Sacale una foto al odómetro y anotá el número después">
+                                        @* UN <label> NO LLEGA POR TECLADO: no entra en el orden de tabulación y
+                                           Enter no lo activa. tabindex lo mete en el orden y el onkeydown
+                                           traduce Enter y Espacio al click del input escondido, que es lo que
+                                           hace el mouse. Y la explicación deja de vivir en un title —que en
+                                           touch no existe— para decirse en la etiqueta. *@
+                                        <label class="tecla tecla--contorno tecla--icono" tabindex="0" role="button"
+                                               onkeydown="if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); this.querySelector('input').click(); }">
                                             <svg class="tecla-icono" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3.2 7.4h3.1l1.6-2.2h4.2l1.6 2.2h3.1v8.4H3.2z" /><circle cx="10" cy="11.4" r="2.6" /></svg>
-                                            Foto
+                                            Foto del odómetro
                                             <InputFile OnChange="e => GuardarFoto(parada.Transaccion, e)"
                                                        accept="image/*" style="display:none" />
                                         </label>
