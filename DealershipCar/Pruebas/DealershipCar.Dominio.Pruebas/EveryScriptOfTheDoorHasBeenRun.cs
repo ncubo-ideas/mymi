@@ -452,7 +452,7 @@ namespace DealershipCar.Dominio.Pruebas
 				"Y las CUATRO lineas del script de los precios atan sus cuatro Out en una sola.");
 			Assert.That(
 				journal.Api.DescribePublishedServicePrice("FluidChange", TenThousandUnits, "UnitA"),
-				Does.Contain("75.5 USD").And.Not.Contain(" Al "));
+				Does.Contain("$75.50").And.Not.Contain(" Al "));
 		}
 
 		// LAS SEIS DE LA SERIE DEL ODOMETRO QUE TRAJO OD-2, CADA UNA EN LOS DOS ESTADOS DEL REGISTRO.
@@ -1002,7 +1002,7 @@ namespace DealershipCar.Dominio.Pruebas
 			Assert.That(
 				journal.Api.DescribeServicePrice(
 					"FluidChange", TenThousandUnits, "UnitA", ThePublication),
-				Does.Contain("USD"));
+				Does.Contain("$75.50"));
 			Assert.That(
 				journal.Api.ReadServicePriceRevision("FluidChange", TenThousandUnits, "UnitA"),
 				Is.EqualTo(TheRevision));

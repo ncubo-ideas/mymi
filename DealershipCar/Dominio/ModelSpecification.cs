@@ -125,7 +125,9 @@ namespace DealershipCar.Dominio
 
 		/// <summary>
 		/// Publica dentro de una revision el precio de una operacion en un hito, con su vigencia. El
-		/// monto y la moneda entran tal como se publicaron y no se convierten ni se normalizan.
+		/// monto y la moneda llegan por separado y se vuelven un solo dinero aca, antes de armar la
+		/// entrada; ninguno de los dos se convierte ni se normaliza. Una moneda que este modulo no
+		/// nombra se recibe igual: el precio ya se publico.
 		/// </summary>
 		internal void PublishServicePrice(
 			string revisionCode, OperationKindCode kind,
@@ -137,9 +139,10 @@ namespace DealershipCar.Dominio
 			MaintenanceOperationKind operation = MaintenanceOperationKind.OfCode(kind);
 			PublishedMilestone milestone = new PublishedMilestone(
 				milestoneDistance, DistanceUnit.OfCode(milestoneUnit));
+			Money price = new Money(amount, Currency.OfPublished(currency));
 
 			ServicePriceEntry published = new ServicePriceEntry(
-				operation, milestone, amount, currency, validFrom, validUntil);
+				operation, milestone, price, validFrom, validUntil);
 
 			revision.PublishAServicePrice(operation, milestone, published);
 		}

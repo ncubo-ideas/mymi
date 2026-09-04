@@ -80,19 +80,19 @@ namespace DealershipCar.Dominio.Pruebas
 			int repair = Array.IndexOf(milestones, "30000 mi");
 
 			Assert.That(said[inspection], Is.EqualTo(
-				"Revisión a los 10000 km: 145.00 CRC, vigente del 2025-01-01 al 2025-12-31. "
+				"Revisión a los 10000 km: ₡145.00, vigente del 2025-01-01 al 2025-12-31. "
 				+ "Al 2025-09-01 esa vigencia está rigiendo. "
 				+ "Publicado en la revisión REV-2025-02."));
 			Assert.That(revisions[inspection], Is.EqualTo(TheSecondRevision));
 
 			Assert.That(said[fluid], Is.EqualTo(
-				"Cambio de fluido a los 20000 km: 340.00 CRC, vigente del 2025-01-01 al 2025-06-30. "
+				"Cambio de fluido a los 20000 km: ₡340.00, vigente del 2025-01-01 al 2025-06-30. "
 				+ "Al 2025-09-01 esa vigencia ya pasó, así que este precio no es el vigente. "
 				+ "Publicado en la revisión REV-2025-01."));
 			Assert.That(revisions[fluid], Is.EqualTo(TheFirstRevision));
 
 			Assert.That(said[repair], Is.EqualTo(
-				"Reparación a los 30000 mi: 900.00 USD, vigente del 2025-01-01 al 2025-12-31. "
+				"Reparación a los 30000 mi: $900.00, vigente del 2025-01-01 al 2025-12-31. "
 				+ "Al 2025-09-01 esa vigencia está rigiendo. "
 				+ "Publicado en la revisión REV-2025-02."));
 			Assert.That(revisions[repair], Is.EqualTo(TheSecondRevision));
@@ -156,7 +156,7 @@ namespace DealershipCar.Dominio.Pruebas
 				specification.DescribeServicePrice(
 					OperationKindCode.Inspection, 10000, DistanceUnitCode.UnitA, WhileBothAreInForce),
 				Is.EqualTo(
-					"Revisión a los 10000 km: 145.00 CRC, vigente del 2025-01-01 al 2025-12-31. "
+					"Revisión a los 10000 km: ₡145.00, vigente del 2025-01-01 al 2025-12-31. "
 					+ "Al 2025-06-15 esa vigencia está rigiendo. "
 					+ "Publicado en la revisión REV-2025-02."));
 			Assert.That(

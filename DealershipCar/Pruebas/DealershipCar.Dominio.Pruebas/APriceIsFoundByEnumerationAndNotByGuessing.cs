@@ -159,7 +159,7 @@ namespace DealershipCar.Dominio.Pruebas
 			int theFluidRow = Array.IndexOf(milestones, "20000 km");
 
 			Assert.That(theFluidRow, Is.GreaterThanOrEqualTo(0));
-			Assert.That(said[theFluidRow], Does.Contain("Cambio de fluido a los 20000 km: 340.00 CRC"));
+			Assert.That(said[theFluidRow], Does.Contain("Cambio de fluido a los 20000 km: ₡340.00"));
 			Assert.That(said[theFluidRow], Does.Not.Contain("120.50"));
 		}
 
@@ -177,7 +177,7 @@ namespace DealershipCar.Dominio.Pruebas
 			int theInspectionRow = Array.IndexOf(milestones, "10000 km");
 
 			Assert.That(said[theFluidRow], Does.Contain("esa vigencia ya pasó"));
-			Assert.That(said[theFluidRow], Does.Contain("340.00 CRC"),
+			Assert.That(said[theFluidRow], Does.Contain("₡340.00"),
 				"Vencido no es inexistente: el monto publicado sigue saliendo.");
 			Assert.That(said[theInspectionRow], Does.Contain("esa vigencia está rigiendo"));
 		}

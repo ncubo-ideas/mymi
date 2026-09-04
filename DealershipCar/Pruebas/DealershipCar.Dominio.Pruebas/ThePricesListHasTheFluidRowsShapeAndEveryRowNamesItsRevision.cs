@@ -84,10 +84,15 @@ namespace DealershipCar.Dominio.Pruebas
 
 			Assert.That(inspection.Milestone, Is.EqualTo("10000 km"),
 				"El hito DICHO con su unidad, como lo lee una persona.");
-			Assert.That(inspection.Says, Does.Contain("120.5"),
-				"El monto tal como el dominio lo dice. Se publico 120.50 y una decimal se NORMALIZA al "
-				+ "cruzar, asi que el literal de la caratula no es el del dominio.");
-			Assert.That(inspection.Says, Does.Contain("CRC"));
+			// EL MONTO CON SU SIGNO Y SUS DECIMALES, como el dominio lo dice desde CL-2: se publico
+			// 120.50, el decimal se NORMALIZA a 120.5 al cruzar la puerta, y Money.Expressed lo vuelve
+			// a decir con los dos decimales de su moneda. Asi que la normalizacion sigue ocurriendo y
+			// ESTA FRASE ya no la muestra -- lo que la sigue impidiendo es el Normalized de la puerta,
+			// que esta en el camino de ESCRITURA y por eso vivo y replayado coinciden.
+			Assert.That(inspection.Says, Does.Contain("₡120.50"),
+				"Una sola afirmacion en vez de dos: el monto y su moneda son un valor y se dicen "
+				+ "juntos, asi que separarlos dejaria pasar una fila con el monto de una y la moneda "
+				+ "de otra.");
 
 			Assert.That(fluid.Milestone, Is.EqualTo("20000 km"),
 				"Y el otro hito es OTRO: cruzar las dos filas cambia esta afirmacion y la de arriba.");

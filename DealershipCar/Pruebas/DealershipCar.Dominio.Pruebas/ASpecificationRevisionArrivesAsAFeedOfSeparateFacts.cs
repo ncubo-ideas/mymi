@@ -579,7 +579,7 @@ namespace DealershipCar.Dominio.Pruebas
 					"interval Inspection : False |  | Intervalo de servicio de revisión: no se ha "
 					+ "publicado nada"),
 				("precios",    "price FluidChange : True | R1",   "price FilterChange : True | R2",
-					"89.9 USD", "45.5 USD",
+					"$89.90", "$45.50",
 					"price Inspection : False |  | Precio del servicio de revisión"),
 			};
 

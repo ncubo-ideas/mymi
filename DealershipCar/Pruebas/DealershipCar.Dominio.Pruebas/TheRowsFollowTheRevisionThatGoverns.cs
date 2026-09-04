@@ -62,7 +62,7 @@ namespace DealershipCar.Dominio.Pruebas
 				Is.EqualTo(new[] { TheNewRevision }));
 			Assert.That(
 				specification.DescribeEachPublishedPriceAsOf(WhileItIsInForce),
-				Has.All.Contains("145.00 CRC"));
+				Has.All.Contains("₡145.00"));
 		}
 
 		// LA OTRA MITAD, y es la que separa sustituir de publicar: dos revisiones SELLADAS dejan las
@@ -111,7 +111,7 @@ namespace DealershipCar.Dominio.Pruebas
 				Is.EqualTo(new[] { TheNewRevision }));
 			Assert.That(
 				specification.DescribeEachPublishedPriceAsOf(WhileItIsInForce),
-				Has.All.Contains("145.00 CRC"));
+				Has.All.Contains("₡145.00"));
 		}
 
 		// SUSTITUIR RETIRA lo que la sucesora no volvio a publicar, y aca eso deja la lista vacia. La

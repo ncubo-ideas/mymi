@@ -116,21 +116,21 @@ namespace DealershipCar.Dominio.Pruebas
 			int repair = Array.IndexOf(rows.Milestone, "30000 mi");
 
 			Assert.That(rows.Says[inspection], Is.EqualTo(
-				"Revisión a los 10000 km: 145 CRC, vigente del 2025-01-01 al 2025-12-31. "
+				"Revisión a los 10000 km: ₡145.00, vigente del 2025-01-01 al 2025-12-31. "
 				+ "Al 2025-09-01 esa vigencia está rigiendo. "
 				+ "Publicado en la revisión REV-2025-02."));
 			Assert.That(rows.Revision[inspection], Is.EqualTo(TheSecondRevision));
 			Assert.That(rows.Operation[inspection], Is.EqualTo("Inspection"));
 
 			Assert.That(rows.Says[fluid], Is.EqualTo(
-				"Cambio de fluido a los 20000 km: 340 CRC, vigente del 2025-01-01 al 2025-06-30. "
+				"Cambio de fluido a los 20000 km: ₡340.00, vigente del 2025-01-01 al 2025-06-30. "
 				+ "Al 2025-09-01 esa vigencia ya pasó, así que este precio no es el vigente. "
 				+ "Publicado en la revisión REV-2025-01."));
 			Assert.That(rows.Revision[fluid], Is.EqualTo(TheFirstRevision));
 			Assert.That(rows.Operation[fluid], Is.EqualTo("FluidChange"));
 
 			Assert.That(rows.Says[repair], Is.EqualTo(
-				"Reparación a los 30000 mi: 900 USD, vigente del 2025-01-01 al 2025-12-31. "
+				"Reparación a los 30000 mi: $900.00, vigente del 2025-01-01 al 2025-12-31. "
 				+ "Al 2025-09-01 esa vigencia está rigiendo. "
 				+ "Publicado en la revisión REV-2025-02."));
 			Assert.That(rows.Revision[repair], Is.EqualTo(TheSecondRevision));
@@ -246,7 +246,7 @@ namespace DealershipCar.Dominio.Pruebas
 			string said = journal.Api.DescribePublishedServicePrice("Inspection", 10000, "UnitA");
 
 			Assert.That(said, Is.EqualTo(
-				"Revisión a los 10000 km: 145 CRC, vigente del 2025-01-01 al 2025-12-31. "
+				"Revisión a los 10000 km: ₡145.00, vigente del 2025-01-01 al 2025-12-31. "
 				+ "Publicado en la revisión REV-2025-02."));
 
 			Assert.That(said, Does.Not.Contain(" Al "));

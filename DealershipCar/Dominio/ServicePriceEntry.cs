@@ -4,29 +4,27 @@ using System.Globalization;
 namespace DealershipCar.Dominio
 {
 	/// <summary>
-	/// El precio que el fabricante publico para una operacion en un hito: el monto con su moneda y
-	/// la vigencia entre la que rige. La clave de un precio son tres cosas juntas -- la operacion,
-	/// la distancia del hito y su unidad -- asi que los precios se guardan en una lista y se buscan
-	/// por una operacion con nombre, no por una clave compuesta.
+	/// El precio que el fabricante publico para una operacion en un hito: el dinero con que se
+	/// publico y la vigencia entre la que rige. La clave de un precio son tres cosas juntas -- la
+	/// operacion, la distancia del hito y su unidad -- asi que los precios se guardan en una lista y
+	/// se buscan por una operacion con nombre, no por una clave compuesta.
 	/// </summary>
 	internal sealed class ServicePriceEntry
 	{
 		private readonly MaintenanceOperationKind _kind;
 		private readonly PublishedMilestone _milestone;
-		private readonly decimal _amount;
-		private readonly string _currency;
+		private readonly Money _price;
 		private readonly DateTime _validFrom;
 		private readonly DateTime _validUntil;
 
 		/// <summary>
-		/// Se arma entero y se valida antes de entrar a ninguna revision. El monto se guarda tal
-		/// como se publico y la moneda es texto publicado: ninguno de los dos se convierte ni se
-		/// normaliza. Un monto en cero se acepta -- un servicio incluido es un precio publicado --
-		/// pero uno negativo no es un precio.
+		/// Se arma entero y se valida antes de entrar a ninguna revision: de que operacion es, para
+		/// que hito, con cuanto dinero y entre que fechas rige. El dinero llega ya armado, asi que un
+		/// monto sin su moneda no llega hasta aca, y el precio se guarda tal como se publico.
 		/// </summary>
 		internal ServicePriceEntry(
-			MaintenanceOperationKind kind, PublishedMilestone milestone, decimal amount,
-			string currency, DateTime validFrom, DateTime validUntil)
+			MaintenanceOperationKind kind, PublishedMilestone milestone, Money price,
+			DateTime validFrom, DateTime validUntil)
 		{
 			if (kind == null)
 				throw new DomainException(
@@ -37,15 +35,10 @@ namespace DealershipCar.Dominio
 					$"Se publico un precio de {kind.Name} sin decir para que hito. Un precio sin hito "
 					+ "no se puede pedir: no se sabe que servicio cubre.");
 
-			if (amount < 0)
+			if (price == null)
 				throw new DomainException(
-					$"Se publico un precio de {kind.Name} de {amount}. Un precio negativo no es un "
-					+ "precio, es la sucursal pagandole a la persona por traer el carro.");
-
-			if (string.IsNullOrWhiteSpace(currency))
-				throw new DomainException(
-					$"Se publico un precio de {kind.Name} sin decir en que moneda. Un monto sin "
-					+ "moneda no se puede leer, y aca las monedas no se convierten entre si.");
+					$"Se publico un precio de {kind.Name} sin decir cuanto. Un precio sin dinero no "
+					+ "es un precio: no hay nada que cotizar.");
 
 			if (validUntil < validFrom)
 				throw new DomainException(
@@ -55,8 +48,7 @@ namespace DealershipCar.Dominio
 
 			_kind = kind;
 			_milestone = milestone;
-			_amount = amount;
-			_currency = currency;
+			_price = price;
 			_validFrom = validFrom;
 			_validUntil = validUntil;
 		}
@@ -87,14 +79,14 @@ namespace DealershipCar.Dominio
 		}
 
 		/// <summary>
-		/// El precio dicho CON su vigencia: la operacion, el hito, el monto con su moneda y entre
-		/// que fechas rige. La vigencia no es un adorno de la frase -- es lo que impide leer un
-		/// precio viejo como el de hoy.
+		/// El precio dicho CON su vigencia: la operacion, el hito, el dinero como su propia moneda
+		/// lo dice y entre que fechas rige. La vigencia no es un adorno de la frase -- es lo que
+		/// impide leer un precio viejo como el de hoy.
 		/// </summary>
 		internal string APriceCarriesItsValidity()
 		{
 			return _kind.HowItIsSaid + " a los " + _milestone.Describe()
-				+ ": " + _amount.ToString(CultureInfo.InvariantCulture) + " " + _currency
+				+ ": " + _price.Expressed()
 				+ ", vigente del " + Fecha(_validFrom) + " al " + Fecha(_validUntil) + ".";
 		}
 
