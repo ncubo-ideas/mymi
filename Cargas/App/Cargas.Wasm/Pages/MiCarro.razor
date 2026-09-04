@@ -64,11 +64,16 @@ else
         </label>
         @* VACÍO ES VACÍO. El año y el rendimiento salían como «0» y «0.0», que parecen datos
            y no lo son. Los campos son anulables: sin valor no muestran nada, el placeholder
-           dice qué va, y el cero vuelve a ser la ausencia al guardar. *@
+           dice qué va, y el cero vuelve a ser la ausencia al guardar.
+
+           Y EL PLACEHOLDER SE DECLARA EJEMPLO. «2019» pelado, en un campo numérico del mismo
+           ancho que su valor, se leía como un año ya cargado —en 375 px no se distinguía— y
+           alguien guardaba creyendo que el dato estaba. Con el «p. ej.» delante no hay forma
+           de confundirlo con un valor. *@
         <label class="ficha-campo">
             <span>Año</span>
             <input class="campo" type="number" inputmode="numeric" @bind="anio" min="1900" max="2100"
-                   placeholder="2019" />
+                   placeholder="p. ej. 2019" />
         </label>
         <label class="ficha-campo">
             <span>Color</span>
@@ -79,7 +84,7 @@ else
             <span>Rendimiento de fábrica</span>
             <input class="campo" type="number" step="0.1" inputmode="decimal"
                    @bind="rendimientoDeFabrica" aria-describedby="porque-el-rendimiento"
-                   placeholder="14.5" />
+                   placeholder="p. ej. 14.5" />
         </label>
         @* Es la otra mitad del cruce con el concesionario: lo que el manual promete,
            contra lo que el carro está dando de verdad. *@
