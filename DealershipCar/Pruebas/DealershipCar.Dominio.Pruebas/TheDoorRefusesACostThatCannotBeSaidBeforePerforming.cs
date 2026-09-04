@@ -115,7 +115,7 @@ namespace DealershipCar.Dominio.Pruebas
 			api.RecordRecurringCost(TheCostIncurred, 0m, TheCurrency, "Revisión incluida");
 
 			Assert.That(
-				ALedgerReadWithoutTheDoor.CostCountBetween(app, TheYearFrom, TheYearTo),
+				api.CostEntryCountBetween(TheYearFrom, TheYearTo),
 				Is.EqualTo(1),
 				"Cero es un monto. Un servicio incluido tambien se registra, y su fila es lo que "
 				+ "distingue 'no costo nada' de 'no paso'.");
@@ -167,7 +167,7 @@ namespace DealershipCar.Dominio.Pruebas
 			api.RecordRecurringCost(TheCostIncurred, TheAmount, TheCurrency, "  Llantas nuevas  ");
 
 			Assert.That(
-				ALedgerReadWithoutTheDoor.EachCostEntryBetween(app, TheYearFrom, TheYearTo)[0],
+				api.CostEntriesBetween(TheYearFrom, TheYearTo).Says[0],
 				Does.Contain("  Llantas nuevas  "),
 				"Con sus espacios. Recortarlo seria corregir un hecho recibido, que es lo que la "
 				+ "puerta hace con una CLAVE y lo que no hace con una frase.");
@@ -215,7 +215,7 @@ namespace DealershipCar.Dominio.Pruebas
 			api.RecordDurableCost(TheCostIncurred, TheAmount, TheCurrency, TheSubject, 1);
 
 			Assert.That(
-				ALedgerReadWithoutTheDoor.EachCostEntryBetween(app, TheYearFrom, TheYearTo)[0],
+				api.CostEntriesBetween(TheYearFrom, TheYearTo).Says[0],
 				Does.Contain("1 mes"),
 				"Y el dominio lo dice en singular, que es suyo y no de la puerta.");
 		}

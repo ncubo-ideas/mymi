@@ -303,8 +303,8 @@ namespace DealershipCar.Dominio.Pruebas
 				TheCostIncurred, TheAmount, TheCurrency, TheCostSubject);
 
 			Assert.That(
-				ALedgerReadWithoutTheDoor.CostCountBetween(
-					spelledOutByHand, TheYearFrom, TheYearTo),
+				new DealershipCarAPI(spelledOutByHand).CostEntryCountBetween(
+					TheYearFrom, TheYearTo),
 				Is.EqualTo(1),
 				"El gasto quedo escrito en la global que creo el nombre escrito a mano aqui.");
 
@@ -313,7 +313,7 @@ namespace DealershipCar.Dominio.Pruebas
 			DealershipCarApp real = AJournalTheCurrentAppOpened();
 
 			Assert.That(
-				ALedgerReadWithoutTheDoor.CostCountBetween(real, TheYearFrom, TheYearTo),
+				new DealershipCarAPI(real).CostEntryCountBetween(TheYearFrom, TheYearTo),
 				Is.EqualTo(1),
 				"Y SIGUE AHI despues de que la app de verdad abrio el journal. Eso solo pasa si el "
 				+ "nombre de su sexto upgrade calza letra por letra con 'libro-de-costos': un nombre "
@@ -321,7 +321,7 @@ namespace DealershipCar.Dominio.Pruebas
 				+ "replay, y reemplazaria 'ledger' por un CostLedger recien hecho y vacio.");
 
 			Assert.That(
-				ALedgerReadWithoutTheDoor.EachCostEntryBetween(real, TheYearFrom, TheYearTo)[0],
+				new DealershipCarAPI(real).CostEntriesBetween(TheYearFrom, TheYearTo).Says[0],
 				Does.Contain(TheCostSubject),
 				"Y es EL MISMO gasto y no otro: un libro recien hecho tendria cero filas, pero una "
 				+ "cuenta sola no distingue un uno de otro uno.");

@@ -15,7 +15,7 @@ namespace DealershipCar.Dominio.Pruebas
 	// aunque el estado siga siendo correcto.
 	//
 	// Asi que ninguna linea de DSL de DealershipCarAPI puede llegar al journal de una persona sin
-	// haberse ejecutado antes aca. Esta prueba corre CADA UNA de las CIENTO TREINTA Y SEIS
+	// haberse ejecutado antes aca. Esta prueba corre CADA UNA de las CIENTO CUARENTA Y TRES
 	// operaciones de la puerta al menos una vez -- las veintiuna de la agenda (OS2/T6), las siete de la ingesta
 	// (OS2/T8: los dos comandos de la bitacora, sus cuatro lecturas, y el Apply), CanBeDeferred, los
 	// once comandos de publicacion de la especificacion (T5), las TREINTA Y SIETE lecturas de la
@@ -28,8 +28,8 @@ namespace DealershipCar.Dominio.Pruebas
 	// OCHO LECTURAS de esas estadias que agrego BuildOrder/SH-4, las DIECINUEVE de la pantalla de
 	// mantenimiento que agrego BuildOrder/MS-4 -- DIEZ de la cuenta atras, CINCO del historial y
 	// CUATRO de los precios publicados -- y las SEIS de la serie del odometro que agrego
-	// BuildOrder/OD-2, y los DOS COMANDOS del libro de costos que BuildOrder/CL-4 agrego con la
-	// SEXTA global de raiz.
+	// BuildOrder/OD-2, los DOS COMANDOS del libro de costos que BuildOrder/CL-4 agrego con la
+	// SEXTA global de raiz, y las SIETE LECTURAS de ese libro que agrego BuildOrder/CL-5.
 	// No mira reglas de negocio -- de eso se ocupan las otras pruebas del nivel B -- mira que el
 	// script exista, parsee, ate sus parametros y devuelva lo que dijo que devolvia.
 	//
@@ -56,7 +56,7 @@ namespace DealershipCar.Dominio.Pruebas
 	// escrito. Es la misma forma que el censo de escrituras de
 	// TheOwnerIsNeverASourceOfAFactAboutTheirOwnVehicle, con el mismo limite.
 	//
-	// LAS OPERACIONES SON CIENTO TREINTA Y SEIS Y LOS SCRIPTS SON MAS, y la ingesta es donde la
+	// LAS OPERACIONES SON CIENTO CUARENTA Y TRES Y LOS SCRIPTS SON MAS, y la ingesta es donde la
 	// diferencia se vuelve grande: Apply es UNA operacion de la puerta y tiene VEINTIDOS scripts
 	// detras -- uno por cada tipo de hecho recibido, que son veintiuno, mas el comando suelto que
 	// avanza el punto de control cuando el dominio rechaza el hecho. Contar operaciones y contar
@@ -74,18 +74,21 @@ namespace DealershipCar.Dominio.Pruebas
 	// Y LA DIFERENCIA VA PARA EL OTRO LADO TAMBIEN: StaysBetween es UNA operacion y su script tiene
 	// CINCO lineas, una por columna, en una sola consulta. Correr la operacion las corre las cinco;
 	// que cada columna traiga lo suyo y no lo de la de al lado es de
-	// TheRecordsColumnsAreParallelAndEveryRowSaysItself.
+	// TheRecordsColumnsAreParallelAndEveryRowSaysItself. CostEntriesBetween es el mismo caso con
+	// SEIS lineas, y quien lo mira es
+	// TheSevenReadsOfTheLedgerAnswerInTwoStatesOfTheRecord.EveryRowOfTheRecordSaysItselfInsideItsOwnSentence.
 	//
 	// SH-3 AGREGO UN SCRIPT QUE NO ERA NINGUNA OPERACION -- el pre-chequeo de los dos comandos de
 	// estadias, que preguntaba stays.IsInsideTheShopAt por un miembro PRIVADO de la puerta porque la
 	// pregunta publica no existia. SH-4 la escribio, asi que el pre-chequeo ES esa operacion ahora y
-	// ya no hay un script de la puerta que no sea una de estas ciento treinta y seis.
+	// ya no hay un script de la puerta que no sea una de estas ciento cuarenta y tres.
 	//
 	// LOS DOS DE BuildOrder/CL-4 SI SON OPERACIONES, y por eso la lista de abajo se movio: la sexta
-	// global de raiz llega con dos comandos propios y con ninguna lectura. Las siete lecturas del
-	// libro son de CL-5, y hasta que lleguen lo unico que lee esa global es un script crudo de
-	// Pruebas/ -- ALedgerReadWithoutTheDoor -- que no es una operacion de esta puerta y por eso no
-	// esta aca.
+	// global de raiz llego con dos comandos propios y con ninguna lectura. LAS SIETE DE CL-5 SON LAS
+	// LECTURAS DE ESA MISMA GLOBAL, y con ellas ALedgerReadWithoutTheDoor -- el script crudo de
+	// Pruebas/ que era lo unico que la leia -- se quedo con UN miembro: los otros tres contestaban lo
+	// que estas siete contestan, que es la superficie de lectura paralela que DEC-31 y DEC-35
+	// refusaron.
 	//
 	// ESTE PARRAFO DECIA NOVENTA CUANDO LA PUERTA YA TENIA NOVENTA Y SEIS, y el de arriba decia
 	// noventa y seis: dos cuentas de la misma cosa en el mismo encabezado, una de ellas vieja. Es el
@@ -93,9 +96,9 @@ namespace DealershipCar.Dominio.Pruebas
 	// A PASAR: al llegar CL-4 este encabezado decia "ciento veintiocho" en un parrafo y "ciento
 	// nueve" en otro mientras la puerta tenia CIENTO TREINTA Y CUATRO, y las tres cuentas se
 	// re-derivaron contra la lista de abajo en vez de arrastrarse. Una cuenta afirmada en prosa
-	// envejece en silencio, asi que la que manda es TheOperationsAreOneHundredAndThirtySix, que la
+	// envejece en silencio, asi que la que manda es TheOperationsAreOneHundredAndFortyThree, que la
 	// afirma al lado de la lista que cuenta -- y su NOMBRE lleva la cuenta a proposito, para que
-	// subirla obligue a renombrarla.
+	// subirla obligue a renombrarla. CL-5 la subio y la renombro.
 	[TestFixture]
 	public sealed class EveryScriptOfTheDoorHasBeenRun
 	{
@@ -187,6 +190,10 @@ namespace DealershipCar.Dominio.Pruebas
 			"ReadServicingPolicyRevision", "ReadTimeRemainderStanding", "ReadTyreRevision", "ReadVin",
 			"RecordConditionThreshold", "RecordDelivery", "RecordDurableCost", "RecordReading",
 			"RecordRecurringCost",
+			"CostEntriesBetween", "CostEntryCountBetween",
+			"DescribeSpendBetween", "DescribeSpendPerCurrencyBetween",
+			"DescribeTwoPeriodsOfSpendCompared", "HasAnyCostBetween",
+			"IsSpendSaidInOneCurrencyBetween",
 			"RecordShopCollection", "RecordShopEntry", "RecordShopStay", "RegisterDevice",
 			"RemoveOwnerOperation", "SealRevision", "SeedPlanOperation",
 			"StayCountBetween", "StaysBetween", "StoreCredential",
@@ -215,9 +222,9 @@ namespace DealershipCar.Dominio.Pruebas
 		// dejo escrito "setenta y siete" cuando la puerta ya tenia setenta y nueve: una cuenta
 		// afirmada en prosa envejece en silencio, y esta afirmada al lado de lo que cuenta.
 		[Test]
-		public void TheOperationsAreOneHundredAndThirtySix()
+		public void TheOperationsAreOneHundredAndFortyThree()
 		{
-			Assert.That(EveryOperationThisFixtureRuns, Has.Length.EqualTo(136));
+			Assert.That(EveryOperationThisFixtureRuns, Has.Length.EqualTo(143));
 		}
 
 		// La semilla corre en OnHydrated, asi que para cuando la prueba arranca la agenda ya
@@ -528,6 +535,62 @@ namespace DealershipCar.Dominio.Pruebas
 				journal.Api.ReadingsBetween(from, to).Value, Is.EqualTo(new[] { 40000, 41000 }),
 				"Y las CINCO lineas del script del registro atan sus cinco Out en una sola consulta, "
 				+ "cuatro de texto y una de numeros.");
+		}
+
+		// LAS SIETE DEL LIBRO DE COSTOS QUE TRAJO CL-5, CADA UNA EN LOS DOS ESTADOS DEL LIBRO. Dos
+		// estados y no uno porque un libro sin ninguna entrada contesta la ausencia a las siete, y
+		// siete ausencias de acuerdo sobre nada no ejercitan lo mismo que siete respuestas.
+		//
+		// LO QUE SE AFIRMA ES LA FORMA: que el script parsee, ate sus dos o sus cuatro extremos y
+		// vuelva TIPADO. De que cada una conteste lo suyo se ocupa
+		// TheSevenReadsOfTheLedgerAnswerInTwoStatesOfTheRecord, y de que ninguna entregue un monto,
+		// una parte o una diferencia suelta NoReadHandsOutABareAmountOrABareShareOrABareDelta.
+		[Test]
+		public void EveryCostLedgerReadOfTheDoorParsesBindsAndComesBackTypedInBothStates()
+		{
+			DateTime from = new DateTime(2026, 1, 1, 0, 0, 0, DateTimeKind.Utc);
+			DateTime to = new DateTime(2026, 12, 31, 23, 59, 59, DateTimeKind.Utc);
+			DateTime theYearBeforeFrom = new DateTime(2025, 1, 1, 0, 0, 0, DateTimeKind.Utc);
+			DateTime theYearBeforeTo = new DateTime(2025, 12, 31, 23, 59, 59, DateTimeKind.Utc);
+
+			// SIN NINGUNA ENTRADA: las siete corren igual y ninguna rechaza.
+			Assert.That(journal.Api.HasAnyCostBetween(from, to), Is.False);
+			Assert.That(journal.Api.DescribeSpendBetween(from, to), Is.Not.Empty);
+			Assert.That(journal.Api.IsSpendSaidInOneCurrencyBetween(from, to), Is.False);
+			Assert.That(journal.Api.DescribeSpendPerCurrencyBetween(from, to), Is.Not.Empty);
+			Assert.That(
+				journal.Api.DescribeTwoPeriodsOfSpendCompared(
+					from, to, theYearBeforeFrom, theYearBeforeTo),
+				Is.Not.Empty);
+			Assert.That(journal.Api.CostEntryCountBetween(from, to), Is.EqualTo(0));
+			Assert.That(journal.Api.CostEntriesBetween(from, to).Says, Is.Empty);
+
+			// CON UNA DURADERA Y UNA RECURRENTE EN DOS MONEDAS: las mismas siete, y ahora contestando.
+			journal.Api.RecordDurableCost(
+				new DateTime(2026, 3, 12, 9, 0, 0, DateTimeKind.Utc), 240000m, "CRC",
+				"Llantas nuevas", 48);
+
+			journal.Api.RecordRecurringCost(
+				new DateTime(2026, 8, 5, 14, 15, 0, DateTimeKind.Utc), 120.50m, "USD",
+				"Lavado premium");
+
+			Assert.That(journal.Api.HasAnyCostBetween(from, to), Is.True);
+			Assert.That(journal.Api.DescribeSpendBetween(from, to), Does.Contain("₡240000.00"));
+			Assert.That(journal.Api.IsSpendSaidInOneCurrencyBetween(from, to), Is.False);
+			Assert.That(
+				journal.Api.DescribeSpendPerCurrencyBetween(from, to),
+				Does.Contain("2 monedas distintas"));
+			Assert.That(
+				journal.Api.DescribeTwoPeriodsOfSpendCompared(
+					from, to, theYearBeforeFrom, theYearBeforeTo),
+				Does.Contain("Segundo período: Entre el 2025-01-01 00:00:00"),
+				"Y los CUATRO extremos del script de la comparacion atan por separado: el segundo "
+				+ "periodo es otro anio y no tiene ningun gasto que decir.");
+			Assert.That(journal.Api.CostEntryCountBetween(from, to), Is.EqualTo(2));
+			Assert.That(
+				journal.Api.CostEntriesBetween(from, to).Classification,
+				Is.EqualTo(new[] { "Durable", "Recurring" }),
+				"Y las SEIS lineas del script del registro atan sus seis Out en una sola consulta.");
 		}
 
 		// Las dos lecturas guardadas de E41, del lado del wire. El DomainException del dominio es

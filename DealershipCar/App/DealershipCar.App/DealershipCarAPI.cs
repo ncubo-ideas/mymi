@@ -565,6 +565,98 @@ namespace DealershipCar.App
 			.PerformCommand();
 		}
 
+		/// <summary>
+		/// Si ese periodo tiene algun gasto, salido del banco adentro o consumido adentro. TOTAL, y
+		/// contesta que NO donde no hay ninguno: la ausencia es un tipo y no un rechazo.
+		/// </summary>
+		public bool HasAnyCostBetween(DateTime from, DateTime to)
+		{
+			return ATruth(
+				"@has = ledger.HasAnyCostBetween(@from, @to);", "has",
+				APeriodOfInstants(from, to));
+		}
+
+		/// <summary>
+		/// El gasto de ese periodo en una frase, con LAS DOS VISTAS adentro -- lo que salio del banco
+		/// y lo que el periodo consumio -- o la constancia con nombre de que no hay ninguno. TOTAL, y
+		/// ninguna lectura contesta una vista sola.
+		/// </summary>
+		public string DescribeSpendBetween(DateTime from, DateTime to)
+		{
+			return AText(
+				"@says = ledger.DescribeSpendBetween(@from, @to);", "says",
+				APeriodOfInstants(from, to));
+		}
+
+		/// <summary>
+		/// Si todo el gasto de ese periodo esta dicho en una sola moneda. TOTAL, y un periodo sin
+		/// ningun gasto contesta que NO: no hay ninguna moneda en la que este dicho.
+		/// </summary>
+		public bool IsSpendSaidInOneCurrencyBetween(DateTime from, DateTime to)
+		{
+			return ATruth(
+				"@said = ledger.IsSpendSaidInOneCurrencyBetween(@from, @to);", "said",
+				APeriodOfInstants(from, to));
+		}
+
+		/// <summary>
+		/// El gasto de ese periodo dicho moneda por moneda, o el estado con nombre en que hay mas de
+		/// una y no hay total entre ellas. TOTAL. El dinero no se convierte: agrupar por moneda es de
+		/// quien consulta.
+		/// </summary>
+		public string DescribeSpendPerCurrencyBetween(DateTime from, DateTime to)
+		{
+			return AText(
+				"@says = ledger.DescribeSpendPerCurrencyBetween(@from, @to);", "says",
+				APeriodOfInstants(from, to));
+		}
+
+		/// <summary>
+		/// Los dos periodos dichos juntos en una sola frase, cada uno con sus limites y sus dos
+		/// vistas. TOTAL. El PRIMER par de extremos es el primer periodo; ninguna diferencia entre
+		/// los dos sale por ninguna lectura como numero.
+		/// </summary>
+		public string DescribeTwoPeriodsOfSpendCompared(
+			DateTime from1, DateTime to1, DateTime from2, DateTime to2)
+		{
+			return AText(@"
+				@says = ledger.DescribeTwoPeriodsOfSpendCompared(@from1, @to1, @from2, @to2);
+			", "says", TwoPeriodsOfInstants(from1, to1, from2, to2));
+		}
+
+		/// <summary>
+		/// Las entradas incurridas adentro de ese periodo como filas: cuando se incurrio cada una, en
+		/// que se fue, cuanto costo dicho por su moneda, de que clase es, su vida util si tiene, y la
+		/// frase con que el dominio la dice, en columnas paralelas y en orden del instante en que se
+		/// incurrieron. TOTAL, y contesta CERO filas donde no hay ninguna.
+		/// </summary>
+		public CostLedgerRecord CostEntriesBetween(DateTime from, DateTime to)
+		{
+			string[][] columns = TheTextColumns(@"
+				@incurredAt     = ledger.CostEntryInstantsBetween(@from, @to);
+				@subject        = ledger.CostEntrySubjectsBetween(@from, @to);
+				@money          = ledger.CostEntryMoniesBetween(@from, @to);
+				@classification = ledger.CostEntryClassificationsBetween(@from, @to);
+				@expectedLife   = ledger.CostEntryExpectedLivesBetween(@from, @to);
+				@says           = ledger.DescribeEachCostEntryBetween(@from, @to);
+			", TheColumnsOfACostLedgerRecord, APeriodOfInstants(from, to));
+
+			return CostLedgerRecord.Of(
+				columns[0], columns[1], columns[2], columns[3], columns[4], columns[5]);
+		}
+
+		/// <summary>
+		/// Cuantas entradas se incurrieron adentro de ese periodo. TOTAL, y es la cuenta de las FILAS
+		/// del registro de arriba: de las entradas sale la cuenta y de la cuenta no salen las
+		/// entradas.
+		/// </summary>
+		public int CostEntryCountBetween(DateTime from, DateTime to)
+		{
+			return ACount(
+				"@count = ledger.CostEntryCountBetween(@from, @to);", "count",
+				APeriodOfInstants(from, to));
+		}
+
 		public EvaluationOutcome Evaluate(DateTime asOf)
 		{
 			using (RentedParameter rented = app.Actor.RentedParameters())
@@ -2562,6 +2654,15 @@ namespace DealershipCar.App
 		/// </summary>
 		private static readonly string[] TheColumnsOfAPublishedPriceRecord =
 			{ "operation", "milestone", "says", "revision" };
+
+		/// <summary>
+		/// Los nombres de las seis columnas del registro del libro de costos, en el orden en que el
+		/// DTO las recibe. No hay columna de identidad ni de la parte que a un periodo le toca.
+		/// </summary>
+		private static readonly string[] TheColumnsOfACostLedgerRecord =
+		{
+			"incurredAt", "subject", "money", "classification", "expectedLife", "says",
+		};
 
 		/// <summary>
 		/// La clase por la que se pregunta, exigida como nombre de miembro ANTES de que haya consulta.

@@ -132,7 +132,7 @@ namespace DealershipCar.Dominio.Pruebas
 			Assert.That(heard, Does.Not.Contain("[Puppeteer ERROR]"));
 
 			Assert.That(
-				ALedgerReadWithoutTheDoor.CostCountBetween(app, TheYearFrom, TheYearTo),
+				api.CostEntryCountBetween(TheYearFrom, TheYearTo),
 				Is.EqualTo(0),
 				"Y el libro sigue vacio: el rechazo no entro a medias.");
 		}
@@ -188,7 +188,7 @@ namespace DealershipCar.Dominio.Pruebas
 			api.RecordRecurringCost(TheCostIncurred, TheAmount, "CRC", TheSubject);
 
 			Assert.That(
-				ALedgerReadWithoutTheDoor.CostCountBetween(app, TheYearFrom, TheYearTo),
+				api.CostEntryCountBetween(TheYearFrom, TheYearTo),
 				Is.EqualTo(1),
 				"Y el codigo tal como el conjunto lo nombra si pasa, que es lo que hace que el "
 				+ "renglon de arriba mida el padding y no la puerta entera.");

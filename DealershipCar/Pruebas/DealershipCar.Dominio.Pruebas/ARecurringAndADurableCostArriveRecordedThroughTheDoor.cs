@@ -19,10 +19,12 @@ namespace DealershipCar.Dominio.Pruebas
 	// es que un gasto registrado por el comando recurrente SALE recurrente y uno registrado por el
 	// duradero sale duradero, sin que nadie lo haya dicho por ninguna ranura.
 	//
-	// SE LEE POR ALedgerReadWithoutTheDoor Y NO POR LA PUERTA, porque la puerta todavia no tiene
-	// ninguna lectura del libro: CL-5 escribe las siete. Un comando que escribe donde nadie puede
-	// leer esta verde tanto si escribio como si no, y ese es el unico motivo por el que ese ayudante
-	// existe.
+	// SE LEE POR LA PUERTA DESDE CL-5. Hasta CL-4 se leia por el script crudo de
+	// ALedgerReadWithoutTheDoor, porque la puerta no tenia ninguna lectura del libro y un comando que
+	// escribe donde nadie puede leer esta verde tanto si escribio como si no. CL-5 puso las siete, asi
+	// que los tres miembros del ayudante que contestaban esto se borraron: dejarlos seria la
+	// superficie de lectura PARALELA que DEC-31 y DEC-35 refusaron. La mudanza es lo que hace que
+	// romper CostEntriesBetween ponga rojas estas pruebas, que antes no podian verlo.
 	//
 	// Y SE VUELVE A ABRIR EL JOURNAL, que es lo que separa un campo de C# de un hecho journalizado.
 	// Las dos frases tienen que decir letra por letra lo mismo despues del replay: el instante cruza
@@ -80,11 +82,11 @@ namespace DealershipCar.Dominio.Pruebas
 			api.RecordRecurringCost(TheOilChangeIncurred, TheOilChangeCost, TheColon, TheOilChange);
 
 			Assert.That(
-				ALedgerReadWithoutTheDoor.CostCountBetween(app, TheYearFrom, TheYearTo),
+				api.CostEntryCountBetween(TheYearFrom, TheYearTo),
 				Is.EqualTo(1),
 				"El script parseo, ato sus cuatro parametros y el gasto llego al libro.");
 
-			string[] rows = ALedgerReadWithoutTheDoor.EachCostEntryBetween(app, TheYearFrom, TheYearTo);
+			string[] rows = api.CostEntriesBetween(TheYearFrom, TheYearTo).Says;
 
 			TestContext.Out.WriteLine("RECURRENTE -- " + rows[0]);
 
@@ -108,7 +110,7 @@ namespace DealershipCar.Dominio.Pruebas
 			api.RecordDurableCost(
 				TheTyresIncurred, TheTyresCost, TheColon, TheTyres, FourYearsOfLife);
 
-			string[] rows = ALedgerReadWithoutTheDoor.EachCostEntryBetween(app, TheYearFrom, TheYearTo);
+			string[] rows = api.CostEntriesBetween(TheYearFrom, TheYearTo).Says;
 
 			TestContext.Out.WriteLine("DURADERO -- " + rows[0]);
 
@@ -135,10 +137,10 @@ namespace DealershipCar.Dominio.Pruebas
 				"Escáner de diagnóstico");
 
 			Assert.That(
-				ALedgerReadWithoutTheDoor.CostCountBetween(app, TheYearFrom, TheYearTo),
+				api.CostEntryCountBetween(TheYearFrom, TheYearTo),
 				Is.EqualTo(3));
 
-			string period = ALedgerReadWithoutTheDoor.SpendBetween(app, TheYearFrom, TheYearTo);
+			string period = api.DescribeSpendBetween(TheYearFrom, TheYearTo);
 
 			TestContext.Out.WriteLine("EL PERIODO -- " + period);
 
@@ -162,21 +164,21 @@ namespace DealershipCar.Dominio.Pruebas
 				TheTyresIncurred, TheTyresCost, TheColon, TheTyres, FourYearsOfLife);
 			api.RecordRecurringCost(TheOilChangeIncurred, TheOilChangeCost, TheColon, TheOilChange);
 
-			string[] live = ALedgerReadWithoutTheDoor.EachCostEntryBetween(app, TheYearFrom, TheYearTo);
-			string livePeriod = ALedgerReadWithoutTheDoor.SpendBetween(app, TheYearFrom, TheYearTo);
+			string[] live = api.CostEntriesBetween(TheYearFrom, TheYearTo).Says;
+			string livePeriod = api.DescribeSpendBetween(TheYearFrom, TheYearTo);
 
 			Close();
 			Open();
 
 			string[] replayed =
-				ALedgerReadWithoutTheDoor.EachCostEntryBetween(app, TheYearFrom, TheYearTo);
+				api.CostEntriesBetween(TheYearFrom, TheYearTo).Says;
 
 			TestContext.Out.WriteLine("VIVO      -- " + live[0]);
 			TestContext.Out.WriteLine("REPLAYADO -- " + replayed[0]);
 
 			Assert.That(replayed, Is.EqualTo(live));
 			Assert.That(
-				ALedgerReadWithoutTheDoor.SpendBetween(app, TheYearFrom, TheYearTo),
+				api.DescribeSpendBetween(TheYearFrom, TheYearTo),
 				Is.EqualTo(livePeriod));
 		}
 
@@ -190,7 +192,7 @@ namespace DealershipCar.Dominio.Pruebas
 				new DateTime(2026, 5, 4, 9, 15, 42, 987, DateTimeKind.Utc), TheOilChangeCost,
 				TheColon, TheOilChange);
 
-			string[] rows = ALedgerReadWithoutTheDoor.EachCostEntryBetween(app, TheYearFrom, TheYearTo);
+			string[] rows = api.CostEntriesBetween(TheYearFrom, TheYearTo).Says;
 
 			Assert.That(rows[0], Does.Contain("2026-05-04 09:15:42"),
 				"El segundo entero llega; los milisegundos no, porque el journal los deja caer y el "
@@ -215,12 +217,12 @@ namespace DealershipCar.Dominio.Pruebas
 				new DateTime(2026, 12, 31, 23, 59, 59, 500, DateTimeKind.Utc), TheOilChangeCost,
 				TheColon, TheOilChange);
 
-			int live = ALedgerReadWithoutTheDoor.CostCountBetween(app, TheYearFrom, TheYearTo);
+			int live = api.CostEntryCountBetween(TheYearFrom, TheYearTo);
 
 			Close();
 			Open();
 
-			int replayed = ALedgerReadWithoutTheDoor.CostCountBetween(app, TheYearFrom, TheYearTo);
+			int replayed = api.CostEntryCountBetween(TheYearFrom, TheYearTo);
 
 			TestContext.Out.WriteLine(
 				"EL ULTIMO SEGUNDO DEL PERIODO -- vivo " + live + ", replayado " + replayed);

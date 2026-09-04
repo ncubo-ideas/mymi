@@ -46,7 +46,11 @@ namespace DealershipCar.Dominio.Pruebas
 		// cuando alguien agrega, y solo se ponen rojos cuando algo dejo de llegar.
 		private static readonly object[] TheFloorOfEachRoot =
 		{
-			new object[] { TheCodeOfTheShellsAsData.App, 20 },
+			// EL PISO DE App SUBIO 20 -> 21 CON EL DTO DEL LIBRO DE COSTOS, que es UN archivo: la raiz
+			// paso de 33 a 34 y el margen sigue siendo TRECE. Es la misma convencion que Wasm dejo
+			// escrita abajo -- se mueve POR LO QUE SE AGREGO y no hasta donde alcance -- y subirlo es
+			// acto de la tarea que ESCRIBE el archivo, nunca de la que cierra.
+			new object[] { TheCodeOfTheShellsAsData.App, 21 },
 			new object[] { TheCodeOfTheShellsAsData.Frontera, 2 },
 			new object[] { TheCodeOfTheShellsAsData.Consola, 4 },
 			new object[] { TheCodeOfTheShellsAsData.Mcp, 8 },

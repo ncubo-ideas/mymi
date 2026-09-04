@@ -136,6 +136,36 @@ namespace DealershipCar.Dominio.Pruebas
 			"DescribePublishedServicePrice/3",
 		};
 
+		// LAS SIETE DEL LIBRO DE COSTOS, Y ESTAR AQUI ES OTRA COSA QUE ESTAR EN LA LISTA DE ARRIBA.
+		// Las diecinueve se restan porque son las que ESTA rebanada agrego y la comparacion es sobre
+		// lo que ya existia. Estas siete se restan por una razon estructural: BuildOrder/CL-4 le
+		// agrego a la app una SEXTA GLOBAL DE RAIZ -- el libro de costos -- y la app de antes de
+		// MS- no la tiene, asi que sobre ella las siete no rechazan una regla de negocio: el DSL no
+		// encuentra 'ledger' y revienta. Comparar ese rechazo contra la respuesta que da la app de hoy
+		// -- que abrio el mismo journal y le APLICO la migracion -- mide la migracion de CL-4 y no la
+		// promesa de esta rebanada.
+		//
+		// ESTE FIXTURE SE PUSO ROJO EN CL-5 Y EL ROJO ERA CORRECTO, que es la misma forma que CL-4 ya
+		// habia encontrado por el lado del CONTEO DE ENTRADAS: una prueba de ausencia-de-migracion
+		// escrita contra LA APP DE HOY envejece el dia que una rebanada POSTERIOR agrega una global, y
+		// envejece poniendose roja, que es la buena manera. La correccion es restarlas POR NOMBRE con
+		// el motivo escrito, no aflojar la comparacion.
+		//
+		// Y NO SE AFLOJA, porque la resta se defiende con las mismas dos mitades que la de arriba: la
+		// cuenta escrita, que ve un nombre que se caiga, y la afirmacion de que las siete siguen en la
+		// puerta, que ve un nombre que sobre. Que las siete CONTESTEN sobre el journal ya migrado lo
+		// afirma TheSixthGlobalReachesAJournalThatHasTheOtherFive, que es de quien es esa mitad.
+		private static readonly string[] TheSevenTheCostLedgerAdded =
+		{
+			"HasAnyCostBetween/2",
+			"DescribeSpendBetween/2",
+			"IsSpendSaidInOneCurrencyBetween/2",
+			"DescribeSpendPerCurrencyBetween/2",
+			"DescribeTwoPeriodsOfSpendCompared/4",
+			"CostEntriesBetween/2",
+			"CostEntryCountBetween/2",
+		};
+
 		// LOS DOS MIEMBROS PUBLICOS QUE DEVUELVEN ALGO Y ESCRIBEN. No son lecturas y el barrido no los
 		// puede invocar sin ensuciar justo lo que compara.
 		private static readonly string[] TheTwoQuestionShapedWriters = { "Evaluate/1", "Apply/1" };
@@ -384,10 +414,12 @@ namespace DealershipCar.Dominio.Pruebas
 		private static List<MethodInfo> TheReadsThatAlreadyExisted()
 		{
 			var nineteen = new List<string>(TheNineteenThisSliceAdded);
+			var ofTheLedger = new List<string>(TheSevenTheCostLedgerAdded);
 			var writers = new List<string>(TheTwoQuestionShapedWriters);
 
 			var reads = new List<MethodInfo>();
 			var seenNineteen = new List<string>();
+			var seenSeven = new List<string>();
 
 			foreach (MethodInfo each in typeof(DealershipCarAPI).GetMethods(
 				BindingFlags.Instance | BindingFlags.Public | BindingFlags.DeclaredOnly))
@@ -397,6 +429,7 @@ namespace DealershipCar.Dominio.Pruebas
 				string key = each.Name + "/" + each.GetParameters().Length;
 
 				if (nineteen.Contains(key)) { seenNineteen.Add(key); continue; }
+				if (ofTheLedger.Contains(key)) { seenSeven.Add(key); continue; }
 				if (writers.Contains(key)) continue;
 
 				reads.Add(each);
@@ -414,6 +447,17 @@ namespace DealershipCar.Dominio.Pruebas
 
 			Assert.That(seenNineteen, Is.EquivalentTo(TheNineteenThisSliceAdded),
 				"Un nombre de la lista ya no esta en la puerta, o cambio de aridad.");
+
+			// Y LAS SIETE DEL LIBRO, CON LAS MISMAS DOS MITADES. La cuenta escrita ve un nombre que se
+			// caiga -- que se contaria como si hubiera existido antes de esta rebanada -- y la
+			// equivalencia ve uno que sobre.
+			Assert.That(TheSevenTheCostLedgerAdded, Has.Length.EqualTo(7),
+				"La lista del libro dejo de tener siete nombres. Una que se le caiga se cuenta como si "
+				+ "ya hubiera existido antes de MS-, y la comparacion volveria a medir la migracion de "
+				+ "CL-4 en vez de lo que dice medir.");
+
+			Assert.That(seenSeven, Is.EquivalentTo(TheSevenTheCostLedgerAdded),
+				"Un nombre de la lista del libro ya no esta en la puerta, o cambio de aridad.");
 
 			reads.Sort((a, b) => string.CompareOrdinal(
 				a.Name + "/" + a.GetParameters().Length, b.Name + "/" + b.GetParameters().Length));

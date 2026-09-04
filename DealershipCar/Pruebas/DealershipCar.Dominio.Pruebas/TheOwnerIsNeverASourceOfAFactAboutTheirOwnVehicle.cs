@@ -48,10 +48,11 @@ namespace DealershipCar.Dominio.Pruebas
 	// carro, y LA RESPUESTA NOMBRA LOS EXTREMOS QUE USO, asi que un extremo inventado produce una
 	// respuesta visiblemente acotada y nunca un hecho falso.
 	//
-	// Y LA MITAD QUE HACE QUE SEA UNA DECISION Y NO UNA ESCAPATORIA: los catorce pares que la
+	// Y LA MITAD QUE HACE QUE SEA UNA DECISION Y NO UNA ESCAPATORIA: los treinta pares que la
 	// ampliacion deja pasar se ENUMERAN, exactos, con su miembro. Las claves se amplian por NOMBRE en
 	// toda la puerta, pero los sitios donde ese nombre aparece estan escritos: un 'DateTime from'
-	// nuevo en una lectura que no sea una de las SEIS de la serie se pone rojo igual.
+	// nuevo en una lectura que no sea una de las SEIS de la serie ni una de las SIETE del libro se
+	// pone rojo igual.
 	//
 	// ASI QUE EL CENSO SE ARMA POR ELIMINACION Y NO POR RECONOCIMIENTO: todo int y todo DateTime de
 	// una PREGUNTA que no sea una de esas dos claves es una medicion, y el censo se afirma como
@@ -257,10 +258,15 @@ namespace DealershipCar.Dominio.Pruebas
 				+ "nombrar un periodo en este modulo.");
 		}
 
-		// LOS CATORCE PARES QUE LA AMPLIACION DEJA PASAR, CON SU MIEMBRO, COMO CONJUNTO EXACTO. Las
+		// LOS TREINTA PARES QUE LA AMPLIACION DEJA PASAR, CON SU MIEMBRO, COMO CONJUNTO EXACTO. Las
 		// claves se amplian por NOMBRE en toda la puerta; esto es lo que impide que ese nombre sirva
 		// en cualquier parte. Un 'DateTime from' en una lectura que no sea una de las SEIS de la
-		// serie es un PAR nuevo aca, y el rojo lo nombra.
+		// serie ni una de las SIETE del libro de costos es un PAR nuevo aca, y el rojo lo nombra.
+		//
+		// CATORCE ERAN HASTA BuildOrder/CL-5 y las DIECISEIS nuevas son las de las siete lecturas del
+		// libro. LAS CLAVES NO SE MOVIERON: las siete piden from/to y from1/to1/from2/to2, que ya eran
+		// seis de las OCHO claves de catalogo desde OD-2. Lo que se movio es DONDE valen, que es
+		// exactamente lo que este conjunto enumera.
 		private static readonly string[] EveryPeriodBoundAQuestionTakes =
 		{
 			"CanARateOfUseBeSaid/2(from)",
@@ -282,10 +288,33 @@ namespace DealershipCar.Dominio.Pruebas
 
 			"ReadingCountBetween/2(from)",
 			"ReadingCountBetween/2(to)",
+
+			"HasAnyCostBetween/2(from)",
+			"HasAnyCostBetween/2(to)",
+
+			"DescribeSpendBetween/2(from)",
+			"DescribeSpendBetween/2(to)",
+
+			"IsSpendSaidInOneCurrencyBetween/2(from)",
+			"IsSpendSaidInOneCurrencyBetween/2(to)",
+
+			"DescribeSpendPerCurrencyBetween/2(from)",
+			"DescribeSpendPerCurrencyBetween/2(to)",
+
+			"DescribeTwoPeriodsOfSpendCompared/4(from1)",
+			"DescribeTwoPeriodsOfSpendCompared/4(to1)",
+			"DescribeTwoPeriodsOfSpendCompared/4(from2)",
+			"DescribeTwoPeriodsOfSpendCompared/4(to2)",
+
+			"CostEntriesBetween/2(from)",
+			"CostEntriesBetween/2(to)",
+
+			"CostEntryCountBetween/2(from)",
+			"CostEntryCountBetween/2(to)",
 		};
 
 		[Test]
-		public void OnlyTheSixReadsOfTheSeriesTakeAPeriodBoundAtAll()
+		public void OnlyTheThirteenReadsOfTheSeriesAndTheLedgerTakeAPeriodBoundAtAll()
 		{
 			Assert.That(EveryPeriodBound(), Is.EquivalentTo(EveryPeriodBoundAQuestionTakes),
 				"Una pregunta de la puerta gano o perdio un EXTREMO DE PERIODO. Los seis nombres son "
@@ -303,14 +332,18 @@ namespace DealershipCar.Dominio.Pruebas
 			{
 				"CanARateOfUseBeSaid", "ReadRateOfUseStanding", "DescribeRateOfUse",
 				"DescribeTwoPeriodsOfUseCompared", "ReadingsBetween", "ReadingCountBetween",
+				"HasAnyCostBetween", "DescribeSpendBetween", "IsSpendSaidInOneCurrencyBetween",
+				"DescribeSpendPerCurrencyBetween", "DescribeTwoPeriodsOfSpendCompared",
+				"CostEntriesBetween", "CostEntryCountBetween",
 			}),
-				"Y son SEIS MIEMBROS. El censo de pares ya lo implica; escrito aparte, el rojo dice "
-				+ "que miembro en vez de que par.");
+				"Y son TRECE MIEMBROS -- SEIS de la serie del odometro y SIETE del libro de costos. El "
+				+ "censo de pares ya lo implica; escrito aparte, el rojo dice que miembro en vez de "
+				+ "que par.");
 		}
 
 		// LA AMPLIACION, HECHA VISIBLE. Las DOS claves de antes se vuelven a correr contra esta
-		// puerta y se afirma que ya NO alcanzan: con ellas, los catorce extremos de periodo son
-		// mediciones y el censo de mediciones seria de TREINTA Y TRES.
+		// puerta y se afirma que ya NO alcanzan: con ellas, los treinta extremos de periodo son
+		// mediciones y el censo de mediciones seria de CUARENTA Y NUEVE.
 		//
 		// SIN ESTE RENGLON, LA AMPLIACION SE VE IGUAL QUE UN HUECO QUE DEJO DE NOTARSE: la lista de
 		// claves habria crecido seis nombres y nada diria que crecio a proposito. Con el, quien
@@ -334,8 +367,8 @@ namespace DealershipCar.Dominio.Pruebas
 				withTheOldKeys,
 				Has.Count.EqualTo(
 					EveryMeasurementAQuestionTakes.Length + EveryPeriodBoundAQuestionTakes.Length),
-				"Y la diferencia son exactamente los catorce extremos de periodo: diecinueve mas "
-				+ "catorce son las treinta y tres que las claves de antes contarian.");
+				"Y la diferencia son exactamente los treinta extremos de periodo: diecinueve mas "
+				+ "treinta son las cuarenta y nueve que las claves de antes contarian.");
 
 			foreach (string bound in EveryPeriodBoundAQuestionTakes)
 			{
