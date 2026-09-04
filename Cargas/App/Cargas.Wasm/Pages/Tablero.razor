@@ -33,6 +33,13 @@
                 <p class="franja-accion">@Mayuscula(rendimiento.Accion).</p>
             }
         }
+        else if (Estado.Refrescando)
+        {
+            @* MIENTRAS SE VA A BUSCAR, la franja lo dice. Antes decía «Apretá Actualizar»
+               con la tecla del capó ya en «Actualizando…»: pedía una acción que estaba en
+               curso, y quien obedecía apretaba una tecla apagada. *@
+            <p class="franja-frase">Buscando tus cargas en la estación…</p>
+        }
         else
         {
             <p class="franja-frase">Todavía no hay cargas. Apretá <em>Actualizar</em>.</p>

@@ -55,7 +55,16 @@
 
 @if (cargas.Count == 0)
 {
-    <p class="apunte">Todavía no hay cargas. Apretá <em>Actualizar</em>.</p>
+    @* Mismo criterio que la franja del Tablero: mientras la app está yendo a la estación no
+       se le pide a la persona que apriete una tecla que ya está en «Actualizando…». *@
+    @if (Estado.Refrescando)
+    {
+        <p class="apunte">Buscando tus cargas en la estación…</p>
+    }
+    else
+    {
+        <p class="apunte">Todavía no hay cargas. Apretá <em>Actualizar</em>.</p>
+    }
 }
 else
 {
