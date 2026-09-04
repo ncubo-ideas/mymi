@@ -287,8 +287,17 @@ escalares**, y eso decide la forma de tus carriers antes de que escribas el prim
   view needs, or state the rendering explicitly (for instance '.ToString()').
   ```
 
-  El mensaje dice la razón, y es la misma de toda esta regla: **decidir qué se ve del material es del
-  actor, no del material.** Un `ToString()` implícito sería el material eligiendo por él.
+  **La primera salida es la buena; la segunda es la escapatoria.** Escribir `.ToString()` en el
+  script cambia **quién llama**, no **quién decide**: el material sigue eligiendo el texto y el actor
+  sólo lo pide en voz alta. Si el tipo tiene una etiqueta, **exponela como hoja** — `Nitritos` en
+  `Examenes` expone `Etiqueta`; los tipos de juicio del gimnasio guardan su `estado` privado y sólo
+  se dejan leer por `ToString()`, que es el material eligiendo por el actor.
+
+  **El tell: si la única forma de sacarle el texto a un tipo es `ToString()`, el actor no tiene entre
+  qué elegir.** `.ToString()` en el script se justifica sólo cuando el tipo tiene **una sola**
+  rendición y es del dominio —un conjunto cerrado diciendo su nombre—; un juicio que la superficie
+  puede querer mostrar de varias formas expone hojas. (Guía de dominios, **E24**: `ToString` es para
+  intención de dominio o depuración, **nunca un contrato que alguien parsee**.)
 
 ## 14 · El dominio dice duraciones, no fechas
 
