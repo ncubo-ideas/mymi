@@ -47,13 +47,17 @@ namespace DealershipCar.Dominio.Pruebas
 
 				ShopStayTools stays = TheAssistantsStayToolsOver(journal.Folder);
 
-				// LAS DIEZ tools, varias veces, que es como pregunta un asistente de verdad. Las de
-				// las cuatro clases van en la misma vuelta: la promesa es de la carpeta entera y no de
+				OdometerSeriesTools driven = TheAssistantsSeriesToolsOver(journal.Folder);
+
+				// LAS ONCE tools, varias veces, que es como pregunta un asistente de verdad. Las de
+				// las cinco clases van en la misma vuelta: la promesa es de la carpeta entera y no de
 				// una familia de preguntas.
 				//
-				// LA DE LAS ESTADIAS VA DE LAS DOS FORMAS -- con los dos limites en blanco y con un
-				// periodo nombrado -- porque son dos recorridos distintos adentro de la tool y el que
-				// no se corra no queda probado.
+				// LA DE LAS ESTADIAS Y LA DEL ODOMETRO VAN DE LAS TRES FORMAS -- con los dos limites
+				// en blanco, con un periodo nombrado y con un limite que no dice un dia -- porque son
+				// recorridos distintos adentro de la tool y el que no se corra no queda probado. El
+				// tercero importa: es el unico que NO llega a ninguna lectura de la puerta, asi que
+				// sin el la promesa se estaria comprobando sobre el camino largo nada mas.
 				for (int round = 0; round < 4; round++)
 				{
 					tools.Review();
@@ -66,6 +70,9 @@ namespace DealershipCar.Dominio.Pruebas
 					envelope.IsMyCarStillUnderWarranty();
 					stays.DaysMyCarSpentInTheShop();
 					stays.DaysMyCarSpentInTheShop("2026-01-01", "2026-12-31");
+					driven.HowMuchMyCarIsDriven();
+					driven.HowMuchMyCarIsDriven("2026-01-01", "2026-12-31");
+					driven.HowMuchMyCarIsDriven("el martes pasado", "");
 
 					foreach (MaintenanceOperation each in TheOperationKind.All)
 						tools.CheckOne(each);
@@ -94,6 +101,7 @@ namespace DealershipCar.Dominio.Pruebas
 				ModelSpecificationTools sheet = TheAssistantsSheetToolsOver(journal.Folder);
 				WarrantyEnvelopeTools envelope = TheAssistantsEnvelopeToolsOver(journal.Folder);
 				ShopStayTools stays = TheAssistantsStayToolsOver(journal.Folder);
+				OdometerSeriesTools driven = TheAssistantsSeriesToolsOver(journal.Folder);
 
 				for (int round = 0; round < 12; round++)
 				{
@@ -104,6 +112,8 @@ namespace DealershipCar.Dominio.Pruebas
 					sheet.WhatTheServiceCosts(MaintenanceOperation.FluidChange);
 					envelope.IsMyCarStillUnderWarranty();
 					stays.DaysMyCarSpentInTheShop();
+					driven.HowMuchMyCarIsDriven();
+					driven.HowMuchMyCarIsDriven("2026-01-01", "2026-12-31");
 				}
 
 				Assert.That(TheSecondProgramOf(journal.Folder), Is.EqualTo(before),
@@ -153,6 +163,7 @@ namespace DealershipCar.Dominio.Pruebas
 				ModelSpecificationTools sheet = TheAssistantsSheetToolsOver(journal.Folder);
 				WarrantyEnvelopeTools envelope = TheAssistantsEnvelopeToolsOver(journal.Folder);
 				ShopStayTools stays = TheAssistantsStayToolsOver(journal.Folder);
+				OdometerSeriesTools driven = TheAssistantsSeriesToolsOver(journal.Folder);
 
 				var everything = new StringBuilder();
 				everything.Append(JsonSerializer.Serialize(tools.Review()));
@@ -165,6 +176,7 @@ namespace DealershipCar.Dominio.Pruebas
 					sheet.WhatTheServiceCosts(MaintenanceOperation.FluidChange)));
 				everything.Append(JsonSerializer.Serialize(envelope.IsMyCarStillUnderWarranty()));
 				everything.Append(JsonSerializer.Serialize(stays.DaysMyCarSpentInTheShop()));
+				everything.Append(JsonSerializer.Serialize(driven.HowMuchMyCarIsDriven()));
 				foreach (MaintenanceOperation each in TheOperationKind.All)
 					everything.Append(JsonSerializer.Serialize(tools.CheckOne(each)));
 
@@ -254,8 +266,10 @@ namespace DealershipCar.Dominio.Pruebas
 		// a DealershipCarTools -- la cuenta atras y el historial. El nombre se mueve con la ley, que es
 		// lo que SH-6 ya hizo una vez con el mismo nombre; aflojarlo a "unas cuantas" habria dejado de
 		// obligar a mirar la lista.
+		//
+		// Y OD-4 LO VOLVIO A MOVER, a ONCE: how_much_my_car_is_driven, el ritmo de uso de un periodo.
 		[Test]
-		public void TheAssistantIsOfferedTenToolsAndNoneOfThemIsACommand()
+		public void TheAssistantIsOfferedElevenToolsAndNoneOfThemIsACommand()
 		{
 			var offered = new List<string>();
 
@@ -271,18 +285,26 @@ namespace DealershipCar.Dominio.Pruebas
 			Assert.That(offered, Is.EqualTo(new[]
 			{
 				"check_one_operation", "days_my_car_spent_in_the_shop", "does_the_warranty_cover",
-				"how_up_to_date_is_this", "is_my_car_still_under_warranty", "review_my_maintenance",
+				"how_much_my_car_is_driven", "how_up_to_date_is_this",
+				"is_my_car_still_under_warranty", "review_my_maintenance",
 				"what_has_been_done_to_my_car", "what_is_left_before_each_service",
 				"what_my_car_takes", "what_the_service_costs",
 			}), "Una tool que se agrega sin pensarla es como entra un comando a una superficie de "
 				+ "solo lectura. La lista se escribe aca para que agregar una obligue a mirarla.");
 		}
 
-		// Y LAS CLASES QUE LAS LLEVAN TAMBIEN SE ESCRIBEN, por la misma razon: son los cuatro sitios
-		// que Program.cs tiene que registrar, y una quinta que aparezca sin que nadie la registre queda
+		// Y LAS CLASES QUE LAS LLEVAN TAMBIEN SE ESCRIBEN, por la misma razon: son los cinco sitios
+		// que Program.cs tiene que registrar, y una sexta que aparezca sin que nadie la registre queda
 		// invisible para la prueba de arriba y para el asistente.
+		//
+		// LA QUINTA ES OD-4 Y ES UNA DECISION, NO UN SITIO DONDE CAYO. DEC-40 dice que la frontera de
+		// clase en esta caratula es DE QUE HABLA LA RESPUESTA, y cuanto se maneja un carro no es una
+		// pregunta del plan de mantenimiento: las cinco de DealershipCarTools contestan donde esta
+		// parado el PLAN -- que falta, que se hizo, que tan al dia esta -- y esta contesta un hecho de
+		// USO que el plan resulta guardar. Meterla ahi habria hecho de esa clase dos sujetos sin que
+		// nada se pusiera rojo, porque esa clase no lleva ningun /// que se pudiera volver falso.
 		[Test]
-		public void TheToolsLiveInExactlyFourClassesAndAllOfThemAreAboutReading()
+		public void TheToolsLiveInExactlyFiveClassesAndAllOfThemAreAboutReading()
 		{
 			var named = new List<string>();
 
@@ -292,8 +314,8 @@ namespace DealershipCar.Dominio.Pruebas
 
 			Assert.That(named, Is.EqualTo(new[]
 			{
-				"DealershipCarTools", "ModelSpecificationTools", "ShopStayTools",
-				"WarrantyEnvelopeTools",
+				"DealershipCarTools", "ModelSpecificationTools", "OdometerSeriesTools",
+				"ShopStayTools", "WarrantyEnvelopeTools",
 			}), "Una clase de tools nueva tiene que pasar por aca, porque tiene que pasar tambien "
 				+ "por el .WithTools de Program.cs y esto es lo unico que lo recuerda.");
 		}
@@ -330,6 +352,11 @@ namespace DealershipCar.Dominio.Pruebas
 		private static ShopStayTools TheAssistantsStayToolsOver(string folder)
 		{
 			return new ShopStayTools(new JournalReader(folder, ""));
+		}
+
+		private static OdometerSeriesTools TheAssistantsSeriesToolsOver(string folder)
+		{
+			return new OdometerSeriesTools(new JournalReader(folder, ""));
 		}
 
 		private static AScheduleOnARealJournal AVehicleWithAPlanAndAnEvaluation()

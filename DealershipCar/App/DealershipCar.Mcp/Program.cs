@@ -33,7 +33,8 @@ builder.Services.AddMcpServer(options =>
 .WithTools<DealershipCarTools>()
 .WithTools<ModelSpecificationTools>()
 .WithTools<WarrantyEnvelopeTools>()
-.WithTools<ShopStayTools>();
+.WithTools<ShopStayTools>()
+.WithTools<OdometerSeriesTools>();
 
 builder.Logging.ClearProviders();
 builder.Logging.AddConsole(o => o.LogToStandardErrorThreshold = LogLevel.Trace);
@@ -69,8 +70,9 @@ static string Instructions(string folder) => $"""
 
 	DOS CLASES DE PREGUNTA. review_my_maintenance, check_one_operation, how_up_to_date_is_this,
 	what_is_left_before_each_service, what_has_been_done_to_my_car,
-	is_my_car_still_under_warranty y days_my_car_spent_in_the_shop contestan dónde está parado
-	ESTE VEHÍCULO. what_my_car_takes y what_the_service_costs contestan lo que el FABRICANTE
+	is_my_car_still_under_warranty, days_my_car_spent_in_the_shop y how_much_my_car_is_driven
+	contestan dónde está parado ESTE VEHÍCULO.
+	what_my_car_takes y what_the_service_costs contestan lo que el FABRICANTE
 	PUBLICÓ sobre este modelo: los fluidos, las llantas, el combustible, el precio de un servicio.
 	does_the_warranty_cover contesta las dos a la vez: el alcance publicado, y dónde está parado
 	este vehículo frente a él. Toda respuesta publicada nombra la revisión de la ficha de la que
@@ -116,6 +118,19 @@ static string Instructions(string folder) => $"""
 	del periodo por el que se pregunta, no datos del carro; omítalos si nadie nombró un periodo.
 	Una estadía que sigue ABIERTA todavía no tiene ningún día, así que no está en esa lista: si
 	insideRightNow viene en true, el carro está en el taller ahora y el total no lo incluye.
+
+	CUÁNTO SE MANEJA LO DICE EL REGISTRO Y NUNCA SALE DE UNA DIVISIÓN SUYA.
+	how_much_my_car_is_driven contesta el ritmo de un periodo en una frase que ya trae los dos
+	extremos con sus instantes, la distancia entre ellos, el tiempo transcurrido y la distancia
+	por día, y al lado las lecturas del odómetro de ese periodo como filas, cada una con su
+	fuente. Las filas están para que la persona vea de dónde salió el ritmo, no para volver a
+	sacarlo: restar dos lecturas o dividir una entre otra da un número que nadie midió. Un ritmo
+	se puede no poder decir, y eso es una respuesta y no un hueco: standing dice cuál de cinco
+	situaciones es y says la dice con palabras, nombrando la lectura o el periodo que la explica.
+	Nunca conteste cero por una de ellas, y nunca amplíe el periodo por su cuenta hasta que dé un
+	número. La fuente de una lectura se dice y no se pondera: una que declaró la persona pesa lo
+	mismo que una que reportó el vehículo. Sus dos parámetros son los extremos del periodo por el
+	que se pregunta, no datos del carro; omítalos si nadie nombró un periodo.
 
 	Las dos tools de garantía dicen ALCANCE y POSICIÓN y nunca adjudican un reclamo: que una
 	reparación se pague lo decide el fabricante, así que un sistema dentro del alcance y un

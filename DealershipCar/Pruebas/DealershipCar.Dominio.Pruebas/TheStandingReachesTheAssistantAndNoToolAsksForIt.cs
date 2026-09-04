@@ -354,6 +354,16 @@ namespace DealershipCar.Dominio.Pruebas
 			"check_one_operation/1(operation):MaintenanceOperation",
 			"days_my_car_spent_in_the_shop/2(from):String",
 			"days_my_car_spent_in_the_shop/2(to):String",
+			// OD-4: LOS DOS LIMITES DE LA SEGUNDA TOOL QUE PREGUNTA POR UN PERIODO. Misma decision
+			// (P-3, DEC-56) y misma forma: texto en yyyy-MM-dd, clave de catalogo y no medicion.
+			//
+			// LO QUE ESTE CENSO NO CUENTA Y CONVIENE DECIR AQUI: how_much_my_car_is_driven contesta
+			// con una COLUMNA DE NUMEROS -- el valor del odometro de cada fila, el primer int[] que
+			// llega a esta frontera. Una columna es una RESPUESTA y no un parametro, asi que no toca
+			// ninguna de las dos listas de exencion de mas abajo: las dos siguen vacias porque
+			// ninguna tool RECIBE un numero, que es lo unico que esas listas miran.
+			"how_much_my_car_is_driven/2(from):String",
+			"how_much_my_car_is_driven/2(to):String",
 		};
 
 		[Test]
@@ -457,6 +467,15 @@ namespace DealershipCar.Dominio.Pruebas
 		// Escribirlos aca es lo que la vuelve una decision.
 		private static readonly string[] TheTwoPeriodBoundsThatAreCatalogueKeys = { "from", "to" };
 
+		// LAS DOS TOOLS QUE PREGUNTAN POR UN PERIODO. SIGUEN SIENDO DOS NOMBRES -- 'from' y 'to' -- y
+		// por eso el nombre de la prueba no se movio: lo que crecio es cuantas tools los toman, no
+		// cuantas claves hay. Se escriben las dos a proposito, porque un bucle sobre una sola tool
+		// dejaria a la segunda cruzando sin que nadie mirara su tipo.
+		private static readonly string[] TheToolsThatAskAboutAPeriod =
+		{
+			"days_my_car_spent_in_the_shop", "how_much_my_car_is_driven",
+		};
+
 		[Test]
 		public void NoToolAsksForAFactAboutTheCarAndTheTwoBoundsAreKeys()
 		{
@@ -467,14 +486,17 @@ namespace DealershipCar.Dominio.Pruebas
 			// mas arriba ya se pondria rojo; esto dice CUALES son los dos y que se decidio sobre ellos.
 			Assert.That(TheTwoPeriodBoundsThatAreCatalogueKeys, Is.EqualTo(new[] { "from", "to" }));
 
-			foreach (string each in TheTwoPeriodBoundsThatAreCatalogueKeys)
-				Assert.That(
-					EveryParameterOfEveryTool(),
-					Does.Contain("days_my_car_spent_in_the_shop/2(" + each + "):String"),
-					"El limite '" + each + "' dejo de ser una cadena en yyyy-MM-dd. Es la forma que lo "
-					+ "hace una clave: un dia de calendario LLEGA ESCRITO con el hecho y no se saca de "
-					+ "un instante, asi que pedirlo como instante seria pedir la zona horaria que este "
-					+ "registro no tiene.");
+			foreach (string tool in TheToolsThatAskAboutAPeriod)
+				foreach (string each in TheTwoPeriodBoundsThatAreCatalogueKeys)
+					Assert.That(
+						EveryParameterOfEveryTool(),
+						Does.Contain(tool + "/2(" + each + "):String"),
+						"El limite '" + each + "' de '" + tool + "' dejo de ser una cadena en "
+						+ "yyyy-MM-dd. Es la forma que lo hace una clave, y la puerta es la que "
+						+ "decide que instante preguntar: la de las estadias porque un dia de "
+						+ "calendario LLEGA ESCRITO con el hecho, y la del odometro porque la tool "
+						+ "misma convierte el dia en las dos puntas del periodo. Tiparlo como "
+						+ "DateTime aca lo volveria una medicion.");
 
 			// (c) Y LA LISTA DE CLAVES NUMERICAS NO SE ENSANCHO, que es lo que impide que esto sea una
 			// puerta de atras. Si alguien vuelve a tipar un limite como DateTime o como int, no queda
@@ -497,14 +519,14 @@ namespace DealershipCar.Dominio.Pruebas
 		// EL CONTROL DE LOS DOS CENSOS, Y CON EL CONJUNTO DE MEDICIONES VACIO ES EL RENGLON QUE LOS
 		// SOSTIENE -- mas todavia desde P-12, que dejo VACIA tambien la lista de exenciones: dos
 		// conjuntos vacios los cumple igual un barrido que no encuentra nada. Prueba dos cosas: que el
-		// barrido de verdad encuentra las tools -- las DIEZ, en CUATRO clases -- y que el discriminador
+		// barrido de verdad encuentra las tools -- las ONCE, en CINCO clases -- y que el discriminador
 		// SI dispara contra un hecho de vehiculo de verdad. Las cinco mediciones de la lectura de nueve
 		// argumentos de la puerta son exactamente los hechos que aparecerian en una tool si alguien
 		// agregara el parametro de comodidad.
 		[Test]
 		public void TheSweepFindsTheToolsAndTheDiscriminatorFiresOnARealVehicleFact()
 		{
-			Assert.That(EveryToolMethod(), Has.Count.EqualTo(10),
+			Assert.That(EveryToolMethod(), Has.Count.EqualTo(11),
 				"El barrido dejo de encontrar las tools y los dos censos no defienden nada.");
 			Assert.That(EveryParameterOfEveryTool(), Is.Not.Empty);
 
