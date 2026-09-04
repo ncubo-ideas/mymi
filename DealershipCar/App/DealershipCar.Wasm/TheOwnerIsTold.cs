@@ -106,5 +106,17 @@ namespace DealershipCar.Wasm
 			+ "quiere decir que no quedó registrada. Lo que se le hace al carro lo registra el taller "
 			+ "que lo atiende, por el mismo feed que trae todo lo demás aquí, y no hay nada que "
 			+ "tengas que llenar vos.";
+
+		/// <summary>
+		/// Que un periodo sin ninguna lectura del odometro no es un periodo en que el carro no se
+		/// movio, y quien manda las lecturas. Es la frase que mas facil se lee al reves en este
+		/// bloque, y ninguna frase del dominio la dice: la del ritmo dice que no se puede decir y por
+		/// que, y esa es otra cosa.
+		/// </summary>
+		public const string TheOdometerReadingsAreSentByTheDealershipAndTheVehicle =
+			"Que no haya ninguna lectura aquí no quiere decir que el carro no se haya movido en este "
+			+ "periodo: quiere decir que nadie mandó una lectura del odómetro. Las lecturas las manda "
+			+ "tu concesionario, o el carro mismo cuando reporta, por el mismo feed que trae todo lo "
+			+ "demás aquí, y no hay nada que tengas que llenar vos.";
 	}
 }

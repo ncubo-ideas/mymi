@@ -36,14 +36,18 @@ namespace DealershipCar.Dominio.Pruebas
 				"La pagina dejo de leer las estadias, asi que la seccion recibe null y no pinta nada "
 				+ "-- sin ningun error y sin ningun aviso.");
 
-			// LA ETIQUETA GANO UN SEGUNDO PORTADOR CON EL BLOQUE DEL HISTORIAL DE MANTENIMIENTO, y esta
-			// afirmacion se AMPLIO en vez de aflojarse: se sigue afirmando la etiqueta ENTERA, con los
-			// dos portadores nombrados y en su orden. Aflojarla a un prefijo dejaria pasar una etiqueta
-			// que perdio uno de los dos.
-			Assert.That(page, Does.Contain("<Historial Stays=\"@stays\" Operations=\"@operations\" />"),
-				"La pagina dejo de renderizar la seccion Historial, o dejo de pasarle uno de sus dos "
+			// LA ETIQUETA GANO UN SEGUNDO PORTADOR CON EL BLOQUE DEL HISTORIAL DE MANTENIMIENTO Y UN
+			// TERCERO CON EL DEL RITMO DE USO, y esta afirmacion se AMPLIO las dos veces en vez de
+			// aflojarse: se sigue afirmando la etiqueta ENTERA, con los tres portadores nombrados y en
+			// su orden. Aflojarla a un prefijo dejaria pasar una etiqueta que perdio uno de los tres.
+			Assert.That(
+				page,
+				Does.Contain(
+					"<Historial Stays=\"@stays\" Operations=\"@operations\" Use=\"@use\" />"),
+				"La pagina dejo de renderizar la seccion Historial, o dejo de pasarle uno de sus tres "
 				+ "portadores. Sin las estadias no llega el bloque de los dias en el taller; sin la "
-				+ "agenda no llega el de lo que le han hecho ni la ausencia por clase.");
+				+ "agenda no llega el de lo que le han hecho ni la ausencia por clase; sin el ritmo no "
+				+ "llega el de cuanto se maneja.");
 		}
 
 		// Y HAY UNA PESTANA PARA LLEGAR A ELLA. Una seccion renderizada en una rama a la que ningun

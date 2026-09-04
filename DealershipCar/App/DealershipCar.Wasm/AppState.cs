@@ -468,6 +468,24 @@ namespace DealershipCar.Wasm
 			return WhatTheServicesCost.ReadThrough(api, TheInstantTheScreenAsksAt());
 		}
 
+		/// <summary>
+		/// Cuanto se maneja este vehiculo, leido entero al instante en que la pantalla pregunta: los
+		/// doce meses que terminan en ese instante y los doce anteriores. Los cuatro limites salen de
+		/// UNA sola lectura del reloj, asi que las dos ventanas son contiguas y del mismo momento. La
+		/// ventana la fija la pantalla y no se le pide a nadie -- esta app no tiene ningun control que
+		/// recoja un valor de una persona, asi que no hay selector de periodo.
+		/// </summary>
+		public HowThisVehicleIsDriven ReadHowThisVehicleIsDriven()
+		{
+			Require();
+
+			DateTime asOf = TheInstantTheScreenAsksAt();
+
+			return HowThisVehicleIsDriven.ReadThrough(
+				api, TheTwelveMonthsBefore(asOf), asOf, TheTwentyFourMonthsBefore(asOf),
+				TheTwelveMonthsBefore(asOf));
+		}
+
 		public bool HasCredential() { Require(); return api.StoredToken().Length > 0; }
 
 		public long JournalEntries() { Require(); return app.Actor.CurrentEntryId; }
@@ -487,6 +505,19 @@ namespace DealershipCar.Wasm
 		/// </summary>
 		private static string TheFirstDayOfTheYearOf(DateTime instant) =>
 			TheDay(new DateTime(instant.Year, 1, 1, 0, 0, 0, DateTimeKind.Utc));
+
+		/// <summary>
+		/// El mismo instante doce meses de calendario antes. Es el comienzo de la ventana que el
+		/// bloque del ritmo muestra, derivado del instante en que la pantalla pregunta y de ningun
+		/// valor del dominio.
+		/// </summary>
+		private static DateTime TheTwelveMonthsBefore(DateTime instant) => instant.AddYears(-1);
+
+		/// <summary>
+		/// El mismo instante veinticuatro meses de calendario antes. Es el comienzo de la ventana
+		/// anterior, con la que la de arriba se compara.
+		/// </summary>
+		private static DateTime TheTwentyFourMonthsBefore(DateTime instant) => instant.AddYears(-2);
 
 		private static string Unwrap(string rejection)
 		{
