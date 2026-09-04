@@ -377,8 +377,8 @@ h1:focus, h1:focus-visible { outline: none; }
 .medidor .carga  { stroke: var(--cobre); }
 .medidor .aguja  { stroke: var(--cobre); }
 .medidor .eje    { fill: var(--cara); stroke: var(--cobre); }
-/* Apagado: la pista punteada y el eje sin cobre. La silueta está; el dato, todavía no. */
-.medidor--apagado .pista { stroke-dasharray: 3 5; }
+/* Apagado: la misma pista, lisa, y el eje sin cobre. La silueta está; el dato, todavía no.
+   Estuvo punteada y se leía como un arco segmentado, no como un medidor sin aguja. */
 .medidor--apagado .eje   { fill: transparent; stroke: var(--tenue-2); }
 .medidor .marca-e, .medidor .marca-f {
     fill: var(--tenue-2); font-family: var(--sans);
@@ -590,6 +590,10 @@ h1:focus, h1:focus-visible { outline: none; }
 }
 .tecla--texto:hover:not(:disabled) { background: transparent; color: var(--accion-viva); }
 
+/* Una tecla con icono dibujado al lado de la etiqueta: el icono hereda el color. */
+.tecla--icono { display: inline-flex; align-items: center; gap: 6px; cursor: pointer; }
+.tecla-icono { width: 1.05rem; height: 1.05rem; flex: 0 0 auto; }
+
 .tecla--alerta { background: var(--ambar); color: #26200a; }
 .tecla--alerta:hover:not(:disabled) { background: #ffdd85; }
 /* Apagada por campo vacío, no por estar ocupada: el cursor de «esperá» mentiría. */
@@ -708,7 +712,9 @@ h1:focus, h1:focus-visible { outline: none; }
     content: ""; position: absolute; inset: 0 0 auto 0; height: 1px;
     background: linear-gradient(90deg, transparent, var(--brillo), transparent);
 }
-.sorteo--vencido { opacity: .58; }
+/* Los sorteos pasados, plegados en una línea cada uno. */
+.sorteos-pasados { margin: 4px 0 18px; }
+.sorteos-pasados .otros-carros li b { color: var(--tinta); font-weight: 600; }
 
 .sorteo-cabeza { display: flex; align-items: flex-start; gap: 14px; }
 .sorteo-cabeza > :first-child { flex: 1 1 14rem; }

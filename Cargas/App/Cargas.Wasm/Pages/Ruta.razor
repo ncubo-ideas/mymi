@@ -1,11 +1,11 @@
-@page "/ruta"
+@page "/cargas"
 @inherits PantallaDeCargas
 @using System.Globalization
 @using Cargas.App.Vistas
 
-<PageTitle>La ruta · Estaciones Faro</PageTitle>
+<PageTitle>Mis cargas · Estaciones Faro</PageTitle>
 
-<h1 class="solo-para-lectores">La ruta de mis cargas</h1>
+<h1 class="solo-para-lectores">Mis cargas</h1>
 
 @if (Error.Length > 0)
 {
@@ -18,8 +18,11 @@
    tanques llenos, así que la pantalla lo dibuja como lo que es, y el HUECO que lo
    bloquea es parte del camino: bache con riel punteado y el dato que lo destraba ahí
    mismo, no en una sección aparte al final. *@
+@* SE LLAMA «CARGAS», no «Ruta». La ruta es la metáfora del dibujo —paradas, trechos y
+   baches— y sigue en los nombres del CSS, pero como título le sonaba a GPS y a puntos
+   visitados. Lo que hay acá son las cargas, una por parada. *@
 <div class="ruta-cabeza">
-    <span class="rotulo">La ruta</span>
+    <span class="rotulo">Tus cargas</span>
     @if (completitud.TotalDeCargas > 0)
     {
         <span class="apunte">@completitud.Expresada</span>
@@ -107,26 +110,20 @@ else
                        fácil, con fallos de un dígito. Un dígito de más plausible entra en
                        silencio y envenena la línea base. La foto no reemplaza a la persona:
                        le quita la necesidad de acordarse. *@
-                    <div class="parada-datos">
-                        @if (parada.TieneFoto && !fotoPorCarga.ContainsKey(parada.Transaccion))
-                        {
-                            <button class="tecla tecla--texto"
+                    @* LA FOTO QUE YA EXISTE se puede volver a mirar desde la parada, con el
+                       icono dibujado de la casa y no un emoji: el emoji cae en otra familia
+                       tipográfica y se lee como un adorno. Sacar la foto vive más abajo, en la
+                       fila del kilometraje, que es el trabajo para el que existe. *@
+                    @if (parada.TieneFoto && !fotoPorCarga.ContainsKey(parada.Transaccion))
+                    {
+                        <div class="parada-datos">
+                            <button class="tecla tecla--texto tecla--icono"
                                     @onclick="() => VerLaFoto(parada.Transaccion, parada.Foto)">
-                                📷 ver la foto del tablero
+                                <svg class="tecla-icono" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3.2 7.4h3.1l1.6-2.2h4.2l1.6 2.2h3.1v8.4H3.2z" /><circle cx="10" cy="11.4" r="2.6" /></svg>
+                                ver la foto del odómetro
                             </button>
-                        }
-                        else if (!parada.TieneFoto && !parada.TieneKilometraje && Estado.HayCarpeta)
-                        {
-                            @* Solo donde falta el kilometraje: la foto existe para leer el
-                               odómetro después, y en una carga ya anotada no tiene trabajo.
-                               Nueve invitaciones a sacar foto eran ruido. *@
-                            <label class="tecla tecla--texto" style="cursor:pointer">
-                                📷 foto del tablero
-                                <InputFile OnChange="e => GuardarFoto(parada.Transaccion, e)"
-                                           accept="image/*" style="display:none" />
-                            </label>
-                        }
-                    </div>
+                        </div>
+                    }
 
                     @* EL REFUERZO: al cerrar un tramo se muestra lo que se DESBLOQUEÓ, no una
                        insignia. El premio es información sobre su carro. Y se muestra ACÁ,
@@ -207,6 +204,20 @@ else
                                             @onclick="() => AgregarKilometraje(pendiente.Transaccion)">
                                         Agregar kilometraje
                                     </button>
+                                    @* LA FOTO, al lado del campo que llena. Es la otra forma de
+                                       traer el número: sacás la foto en la bomba y lo tecleás
+                                       después, en el sillón. Solo mientras falta el kilometraje y
+                                       hay carpeta donde guardarla. El input NO otorga cámara: el
+                                       selector es del sistema y en móvil ya ofrece «tomar foto». *@
+                                    @if (!parada.TieneFoto && Estado.HayCarpeta)
+                                    {
+                                        <label class="tecla tecla--contorno tecla--icono" title="Sacale una foto al odómetro y anotá el número después">
+                                            <svg class="tecla-icono" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3.2 7.4h3.1l1.6-2.2h4.2l1.6 2.2h3.1v8.4H3.2z" /><circle cx="10" cy="11.4" r="2.6" /></svg>
+                                            Foto
+                                            <InputFile OnChange="e => GuardarFoto(parada.Transaccion, e)"
+                                                       accept="image/*" style="display:none" />
+                                        </label>
+                                    }
                                     @* La sugerencia SOLO donde se puede proyectar: la
                                        carga más reciente que espera kilometraje. Ver
                                        Releer(). Ponerla en todas sería sugerir el

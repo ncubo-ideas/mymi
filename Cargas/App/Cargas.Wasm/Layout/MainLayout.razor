@@ -79,7 +79,7 @@
            justo al lado de la etiqueta. Y `stroke="currentColor"` para que hereden el color
            del estado activo sin repetir la paleta.
 
-           EL BADGE DE LA RUTA NO ES ADORNO. Antes de las pestañas, la ausencia que bloquea un
+           EL BADGE DE CARGAS NO ES ADORNO. Antes de las pestañas, la ausencia que bloquea un
            calculo se veia porque estaba en la misma pantalla que los instrumentos. Partida en
            pestañas se esconde, y partir sin avisar seria una regresion: la cuenta de lo que
            espera un dato suyo viaja hasta la pestaña. *@
@@ -97,14 +97,15 @@
                     Tablero
                 </NavLink>
 
-                <NavLink class="pestana" href="ruta">
-                    @* El camino: dos bordes y la linea discontinua del medio. *@
+                <NavLink class="pestana" href="cargas">
+                    @* El surtidor: el cuerpo, la ventanilla y la manguera. *@
                     <svg class="pestana-icono" viewBox="0 0 20 20" fill="none" stroke="currentColor"
                          stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-                        <path d="M6.4 3.4v13.2M13.6 3.4v13.2" />
-                        <path d="M10 5.2v2.2M10 9.4v2.2M10 13.6v2.2" />
+                        <rect x="3.6" y="3.4" width="8.2" height="13.2" rx="1.2" />
+                        <path d="M5.8 6h3.8v3.2H5.8z" />
+                        <path d="M11.8 8.2h1.6a1.4 1.4 0 0 1 1.4 1.4v4.2a1.1 1.1 0 0 0 2.2 0V8.6l-1.8-1.8" />
                     </svg>
-                    Ruta
+                    Cargas
                     @if (pendientes > 0)
                     {
                         <span class="pestana-badge"
