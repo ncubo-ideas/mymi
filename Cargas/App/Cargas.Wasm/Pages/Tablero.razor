@@ -44,6 +44,10 @@
     </div>
 </div>
 
+@* LAS CIFRAS DEL PIE VAN EN MONO, como toda cifra del tablero. Estaban en la sans en
+   negrita y el separador de miles —un espacio fino— desaparecía a 12.5 px: «~1452 km» tres
+   líneas debajo de «~1 017 km». La palabra que acompaña («plata», «cargas») sigue en la sans:
+   solo el número cambia de familia, igual que en la ruta. *@
 @* ------------------------------------------------------------- EL CUADRO
 
    Los instrumentos, en el orden en que se preguntan: cuánto me queda, cómo viene
@@ -63,12 +67,12 @@
                 @if (proxima.Hay)
                 {
                     <text>lo que queda, estimado &middot; con el tanque lleno son
-                    <b>~@Entero(autonomia.Kilometros) km</b></text>
+                    <b class="mono">~@Entero(autonomia.Kilometros) km</b></text>
                 }
                 else
                 {
                     <text>con el tanque lleno &middot; @Cifra(autonomia.CapacidadEnLitros) L
-                    a <b>@Cifra(rendimiento.HabitualComoSeVe) @rendimiento.Simbolo</b></text>
+                    a <b class="mono">@Cifra(rendimiento.HabitualComoSeVe) @rendimiento.Simbolo</b></text>
                 }
             </div>
         }
@@ -123,7 +127,7 @@
             <div class="cifra-pie">
                 @if (rendimiento.Habitual > 0)
                 {
-                    <text>tu nivel de siempre: <b>@Cifra(rendimiento.HabitualComoSeVe) @rendimiento.Simbolo</b> &middot; </text>
+                    <text>tu nivel de siempre: <b class="mono">@Cifra(rendimiento.HabitualComoSeVe) @rendimiento.Simbolo</b> &middot; </text>
                 }
                 sobre @rendimiento.TramosCalculados @(rendimiento.TramosCalculados == 1 ? "tramo" : "tramos")
                 entre tanques llenos@(rendimiento.TramosBloqueados > 0
@@ -151,8 +155,8 @@
                 ~@proxima.DiasEstimados<span class="unidad">@(proxima.DiasEstimados == 1 ? "día" : "días")</span>
             </div>
             <div class="cifra-pie">
-                estimado &middot; te quedan <b>~@Entero(proxima.KilometrosRestantes) km</b>
-                y andás <b>@Cifra(proxima.KilometrosPorDia) km</b> por día
+                estimado &middot; te quedan <b class="mono">~@Entero(proxima.KilometrosRestantes) km</b>
+                y andás <b class="mono">@Cifra(proxima.KilometrosPorDia) km</b> por día
             </div>
         }
         else
@@ -176,7 +180,7 @@
                 @Simbolo(costo.Moneda)@Plata(costo.MontoPorKilometro)
             </div>
             <div class="cifra-pie">
-                por kilómetro &middot; sobre <b>@Entero(costo.Kilometros) km</b> con kilometraje anotado
+                por kilómetro &middot; sobre <b class="mono">@Entero(costo.Kilometros) km</b> con kilometraje anotado
             </div>
         </div>
     }
@@ -196,9 +200,9 @@
             <TiraDeOdometro Kilometros="propuesta.KilometrosComoSeVen"
                             Descripcion="@($"{Entero(propuesta.KilometrosComoSeVen)} {propuesta.SimboloDeLaDistancia}, estimado para hoy")" />
             <div class="cifra-pie">
-                hoy, estimado &middot; <b>@Cifra(propuesta.PorDiaComoSeVe) @propuesta.SimboloDeLaDistancia</b> por día
+                hoy, estimado &middot; <b class="mono">@Cifra(propuesta.PorDiaComoSeVe) @propuesta.SimboloDeLaDistancia</b> por día
                 desde tu última lectura, hace
-                <b>@propuesta.DiasDesdeLaUltimaLectura</b> @(propuesta.DiasDesdeLaUltimaLectura == 1 ? "día" : "días")
+                <b class="mono">@propuesta.DiasDesdeLaUltimaLectura</b> @(propuesta.DiasDesdeLaUltimaLectura == 1 ? "día" : "días")
             </div>
         }
         else
@@ -218,8 +222,8 @@
             <span class="rotulo">Gasto @MesDelGasto()</span>
             <div class="cifra cifra--chica">@Simbolo(gasto.Moneda)@Plata(gasto.Monto)</div>
             <div class="cifra-pie">
-                <b>@gasto.Cargas</b> @(gasto.Cargas == 1 ? "carga" : "cargas") &middot;
-                <b>@Cifra(gasto.Litros) L</b>
+                <b class="mono">@gasto.Cargas</b> @(gasto.Cargas == 1 ? "carga" : "cargas") &middot;
+                <b class="mono">@Cifra(gasto.Litros) L</b>
             </div>
         </div>
     }
