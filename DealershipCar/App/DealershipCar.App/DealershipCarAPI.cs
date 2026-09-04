@@ -514,6 +514,57 @@ namespace DealershipCar.App
 			.PerformCommand();
 		}
 
+		/// <summary>
+		/// Registra un gasto que se consume en el periodo en que se incurrio: cuando se incurrio,
+		/// cuanto costo, en que moneda y en que se fue. Que sea de los que se consumen en su periodo
+		/// lo dice ESTE comando: no hay ninguna ranura por donde decir la clase, ni ninguna vida util
+		/// que darle.
+		/// </summary>
+		public void RecordRecurringCost(
+			DateTime incurredAt, decimal amount, string currency, string subject)
+		{
+			ArgumentException.ThrowIfNullOrWhiteSpace(subject);
+
+			TheAmountSpentIsNotNegative(amount);
+
+			app.Using("ledger.RecordRecurringCost(@incurredAt, @amount, @currency, @subject);")
+			.WithParameters(p => {
+				p["incurredAt", typeof(DateTime)] = InUtc(incurredAt);
+				p["amount",     typeof(decimal)]  = Normalized(amount);
+				p["currency",   typeof(string)]   = WireName.Currency(currency);
+				p["subject",    typeof(string)]   = subject;
+			})
+			.PerformCommand();
+		}
+
+		/// <summary>
+		/// Registra un gasto que sigue dando valor despues del periodo en que se incurrio, con la
+		/// vida util en meses que le dio quien lo vendio. La vida util es OBLIGATORIA y no tiene
+		/// valor por defecto, y que sea de los duraderos lo dice ESTE comando.
+		/// </summary>
+		public void RecordDurableCost(
+			DateTime incurredAt, decimal amount, string currency, string subject,
+			int expectedLifeMonths)
+		{
+			ArgumentException.ThrowIfNullOrWhiteSpace(subject);
+
+			TheAmountSpentIsNotNegative(amount);
+			TheExpectedLifeIsSaidInPositiveMonths(expectedLifeMonths);
+
+			app.Using(@"
+				ledger.RecordDurableCost(
+					@incurredAt, @amount, @currency, @subject, @expectedLifeMonths);
+			")
+			.WithParameters(p => {
+				p["incurredAt",         typeof(DateTime)] = InUtc(incurredAt);
+				p["amount",             typeof(decimal)]  = Normalized(amount);
+				p["currency",           typeof(string)]   = WireName.Currency(currency);
+				p["subject",            typeof(string)]   = subject;
+				p["expectedLifeMonths", typeof(int)]      = expectedLifeMonths;
+			})
+			.PerformCommand();
+		}
+
 		public EvaluationOutcome Evaluate(DateTime asOf)
 		{
 			using (RentedParameter rented = app.Actor.RentedParameters())
@@ -2701,6 +2752,40 @@ namespace DealershipCar.App
 				nameof(reading),
 				$"El odometro del dia de la entrega no puede ser negativo, y llego {reading}. Es la "
 				+ "lectura desde la que se cuenta todo lo que el vehiculo recorrio bajo garantia.");
+		}
+
+		/// <summary>
+		/// Que lo que se gasto sea dinero. El dominio lo exige tambien y esto no lo reemplaza: para
+		/// cuando su guarda corre, la entrada del comando ya se escribio. Un monto negativo es la
+		/// sucursal pagandole a la persona; cero SI es un monto, porque un servicio incluido tambien
+		/// se registra.
+		/// </summary>
+		private static void TheAmountSpentIsNotNegative(decimal amount)
+		{
+			if (amount >= 0) return;
+
+			throw new ArgumentOutOfRangeException(
+				nameof(amount),
+				$"Llego un gasto de {amount} y un monto negativo no es dinero: es la sucursal "
+				+ "pagandole a la persona. Un gasto se registra por lo que costo, y devolver plata "
+				+ "es otro hecho que este libro no lleva.");
+		}
+
+		/// <summary>
+		/// Que un gasto duradero traiga la vida util en meses positivos. Mismo motivo que arriba, y
+		/// no hay ninguna vida por defecto que poner en su lugar: cuanto dura una pieza lo sabe quien
+		/// la vendio.
+		/// </summary>
+		private static void TheExpectedLifeIsSaidInPositiveMonths(int expectedLifeMonths)
+		{
+			if (expectedLifeMonths > 0) return;
+
+			throw new ArgumentOutOfRangeException(
+				nameof(expectedLifeMonths),
+				$"Llego un gasto duradero con una vida util de {expectedLifeMonths} meses. Una vida "
+				+ "util que no es positiva no deja ninguna ventana sobre la que repartir el gasto, y "
+				+ "no hay ninguna por defecto: lo que se consume en su propio periodo se registra con "
+				+ "el otro comando.");
 		}
 
 		/// <summary>

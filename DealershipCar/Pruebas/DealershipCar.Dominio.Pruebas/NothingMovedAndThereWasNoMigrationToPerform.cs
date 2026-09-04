@@ -154,10 +154,19 @@ namespace DealershipCar.Dominio.Pruebas
 			Sweep(folder);
 		}
 
-		// LA AUSENCIA DE LA MIGRACION, MEDIDA EN ENTRADAS DEL JOURNAL. +1 es lo que cuesta una
-		// apertura en regimen; +2 es lo que cuesta una que migra, y lo cuesta tambien cuando lo unico
-		// nuevo es el TEXTO del script. El control positivo va en el mismo test para que un +1 que
-		// dejara de discriminar se vea.
+		// LA AUSENCIA DE LA MIGRACION DE MS-, MEDIDA EN ENTRADAS DEL JOURNAL -- Y LO QUE ESTE
+		// INSTRUMENTO MIDE DE VERDAD ES LA DISTANCIA ENTRE DOS APPS, no la deuda de una rebanada. +1
+		// es lo que cuesta una apertura en regimen; +2 es lo que cuesta una que migra, y lo cuesta
+		// tambien cuando lo unico nuevo es el TEXTO del script. Se escribio comparando el journal de
+		// antes de MS- contra LA APP DE HOY, y ese +1 valia mientras la app de hoy declarara los
+		// mismos CINCO upgrades que la de entonces. BuildOrder/CL-4 le agrego el SEXTO --
+		// 'libro-de-costos' -- asi que la primera apertura con la app de hoy paga UNA migracion, y esa
+		// migracion es de CL-4 y no de MS-.
+		//
+		// LO QUE DEFIENDE LA AUSENCIA DE MS- DESPUES DE ESO SON LAS OTRAS DOS MITADES: la segunda
+		// apertura vuelve a +1, y el renglon que nombra CUAL global llego dice que la unica deuda
+		// pagada es la del libro de costos. El control positivo sigue en el mismo test para que un +2
+		// que dejara de discriminar se vea.
 		[Test]
 		public void AJournalFromBeforeThisSliceCostsTheOpeningItAlwaysCostAndNothingMore()
 		{
@@ -165,25 +174,32 @@ namespace DealershipCar.Dominio.Pruebas
 
 			DealershipCarApp today = TheAppOfTodayOpening(folder);
 			long afterTodaysApp = today.Actor.CurrentEntryId;
+			string theGlobalThatArrived = ALedgerReadWithoutTheDoor.Vin(today);
 			today.Dispose();
 
 			TestContext.Out.WriteLine(
 				"COSTO DE ABRIR UN JOURNAL DE ANTES DE MS- CON LA APP DE HOY -- CurrentEntryId: "
 				+ afterTheOlderAppWrote + " -> " + afterTodaysApp);
 
-			Assert.That(afterTodaysApp, Is.EqualTo(afterTheOlderAppWrote + 1),
-				"UNA entrada, la que toda apertura paga por el comando de la semilla. DOS querria "
-				+ "decir que corrio un cuerpo de upgrade nuevo o que el texto del script cambio, y "
-				+ "las dos cosas son una migracion. MS- no agrega global, ni nombre de upgrade, ni "
-				+ "comando: los dos textos son el mismo, y este numero es lo que lo dice.");
+			Assert.That(afterTodaysApp, Is.EqualTo(afterTheOlderAppWrote + 2),
+				"DOS, y las dos estan contadas: la que toda apertura paga por el comando de la "
+				+ "semilla, mas la del texto de script nuevo que trajo la sexta global de CL-4. MS- "
+				+ "no agrega global, ni nombre de upgrade, ni comando; lo que este numero mide es la "
+				+ "distancia entre la app de antes de MS- y la de HOY, y esa distancia ya no es cero "
+				+ "por una rebanada posterior.");
+
+			Assert.That(theGlobalThatArrived, Is.EqualTo(TheVin),
+				"Y LA MIGRACION QUE SE PAGO ES LA DEL LIBRO DE COSTOS, nombrada. Un +2 solo dice que "
+				+ "algo se aplico; esto dice que.");
 
 			DealershipCarApp again = TheAppOfTodayOpening(folder);
 			long afterASecondOpening = again.Actor.CurrentEntryId;
 			again.Dispose();
 
 			Assert.That(afterASecondOpening, Is.EqualTo(afterTodaysApp + 1),
-				"Y sigue costando una. Si la primera hubiera migrado algo, la segunda seria mas "
-				+ "barata que la primera y este renglon lo mostraria.");
+				"Y VUELVE A COSTAR UNA, que es la mitad que sigue defendiendo lo que esta prueba "
+				+ "nombra: no queda nada por aplicar. Si la pantalla de mantenimiento hubiera "
+				+ "necesitado una migracion propia, esta apertura la seguiria pagando.");
 
 			// EL CONTROL POSITIVO, y sin el un +1 constante pasaria igual. Los CINCO MISMOS NOMBRES en
 			// otro orden son otro TEXTO, y otro texto cuesta +2 sin que ningun cuerpo vuelva a correr.

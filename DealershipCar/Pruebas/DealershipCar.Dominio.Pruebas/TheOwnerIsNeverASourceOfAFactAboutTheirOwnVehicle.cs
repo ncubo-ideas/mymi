@@ -76,6 +76,14 @@ namespace DealershipCar.Dominio.Pruebas
 		//
 		// NO ES UNA LISTA DE PERMITIDOS QUE CRECE SOLA: es igualdad de conjuntos, asi que tambien se
 		// pone rojo si alguien BORRA uno, y el rojo dice cual.
+		//
+		// LOS DOS DE BuildOrder/CL-4 SON GASTOS QUE UNA SUCURSAL REGISTRO, y por eso entran aqui y no
+		// del lado de las preguntas. Un gasto es un hecho ocurrido con autor: la sucursal cobro, y lo
+		// que llega es lo que cobro. El dueno no lo inventa ni lo estima -- la app del dueno sigue
+		// siendo de SOLO LECTURA, Amendment 2 -- y el que un comando tome un monto y un instante no
+		// es el dueno siendo fuente de un hecho de su propio vehiculo: es la agencia registrando el
+		// suyo, que es lo que un miembro que REGISTRA hace por oficio. La forma que separa las dos
+		// cosas es la del miembro y no el nombre de sus parametros: estos dos devuelven void.
 		private static readonly string[] EveryCommandTheDealershipHas =
 		{
 			"SeedPlanOperation", "AdoptPlanRevision", "AddOwnerOperation", "RemoveOwnerOperation",
@@ -87,6 +95,7 @@ namespace DealershipCar.Dominio.Pruebas
 			"SealRevision", "SupersedeRevision",
 			"RecordDelivery", "PublishWarrantyEnvelope",
 			"RecordShopEntry", "RecordShopCollection", "RecordShopStay",
+			"RecordRecurringCost", "RecordDurableCost",
 		};
 
 		[Test]

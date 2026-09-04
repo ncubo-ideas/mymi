@@ -15,7 +15,7 @@ namespace DealershipCar.Dominio.Pruebas
 	// aunque el estado siga siendo correcto.
 	//
 	// Asi que ninguna linea de DSL de DealershipCarAPI puede llegar al journal de una persona sin
-	// haberse ejecutado antes aca. Esta prueba corre CADA UNA de las CIENTO TREINTA Y CUATRO
+	// haberse ejecutado antes aca. Esta prueba corre CADA UNA de las CIENTO TREINTA Y SEIS
 	// operaciones de la puerta al menos una vez -- las veintiuna de la agenda (OS2/T6), las siete de la ingesta
 	// (OS2/T8: los dos comandos de la bitacora, sus cuatro lecturas, y el Apply), CanBeDeferred, los
 	// once comandos de publicacion de la especificacion (T5), las TREINTA Y SIETE lecturas de la
@@ -28,7 +28,8 @@ namespace DealershipCar.Dominio.Pruebas
 	// OCHO LECTURAS de esas estadias que agrego BuildOrder/SH-4, las DIECINUEVE de la pantalla de
 	// mantenimiento que agrego BuildOrder/MS-4 -- DIEZ de la cuenta atras, CINCO del historial y
 	// CUATRO de los precios publicados -- y las SEIS de la serie del odometro que agrego
-	// BuildOrder/OD-2.
+	// BuildOrder/OD-2, y los DOS COMANDOS del libro de costos que BuildOrder/CL-4 agrego con la
+	// SEXTA global de raiz.
 	// No mira reglas de negocio -- de eso se ocupan las otras pruebas del nivel B -- mira que el
 	// script exista, parsee, ate sus parametros y devuelva lo que dijo que devolvia.
 	//
@@ -55,7 +56,7 @@ namespace DealershipCar.Dominio.Pruebas
 	// escrito. Es la misma forma que el censo de escrituras de
 	// TheOwnerIsNeverASourceOfAFactAboutTheirOwnVehicle, con el mismo limite.
 	//
-	// LAS OPERACIONES SON CIENTO VEINTIOCHO Y LOS SCRIPTS SON MAS, y la ingesta es donde la
+	// LAS OPERACIONES SON CIENTO TREINTA Y SEIS Y LOS SCRIPTS SON MAS, y la ingesta es donde la
 	// diferencia se vuelve grande: Apply es UNA operacion de la puerta y tiene VEINTIDOS scripts
 	// detras -- uno por cada tipo de hecho recibido, que son veintiuno, mas el comando suelto que
 	// avanza el punto de control cuando el dominio rechaza el hecho. Contar operaciones y contar
@@ -78,14 +79,23 @@ namespace DealershipCar.Dominio.Pruebas
 	// SH-3 AGREGO UN SCRIPT QUE NO ERA NINGUNA OPERACION -- el pre-chequeo de los dos comandos de
 	// estadias, que preguntaba stays.IsInsideTheShopAt por un miembro PRIVADO de la puerta porque la
 	// pregunta publica no existia. SH-4 la escribio, asi que el pre-chequeo ES esa operacion ahora y
-	// ya no hay un script de la puerta que no sea una de estas ciento nueve.
+	// ya no hay un script de la puerta que no sea una de estas ciento treinta y seis.
+	//
+	// LOS DOS DE BuildOrder/CL-4 SI SON OPERACIONES, y por eso la lista de abajo se movio: la sexta
+	// global de raiz llega con dos comandos propios y con ninguna lectura. Las siete lecturas del
+	// libro son de CL-5, y hasta que lleguen lo unico que lee esa global es un script crudo de
+	// Pruebas/ -- ALedgerReadWithoutTheDoor -- que no es una operacion de esta puerta y por eso no
+	// esta aca.
 	//
 	// ESTE PARRAFO DECIA NOVENTA CUANDO LA PUERTA YA TENIA NOVENTA Y SEIS, y el de arriba decia
 	// noventa y seis: dos cuentas de la misma cosa en el mismo encabezado, una de ellas vieja. Es el
-	// mismo defecto que dejo escrito "setenta y siete" cuando la puerta tenia setenta y nueve, y es
-	// la tercera vez que aparece en este archivo. Una cuenta afirmada en prosa envejece en silencio,
-	// asi que la que manda es TheOperationsAreOneHundredAndNine, que la afirma al lado de la lista
-	// que cuenta -- y su NOMBRE lleva la cuenta a proposito, para que subirla obligue a renombrarla.
+	// mismo defecto que dejo escrito "setenta y siete" cuando la puerta tenia setenta y nueve. VOLVIO
+	// A PASAR: al llegar CL-4 este encabezado decia "ciento veintiocho" en un parrafo y "ciento
+	// nueve" en otro mientras la puerta tenia CIENTO TREINTA Y CUATRO, y las tres cuentas se
+	// re-derivaron contra la lista de abajo en vez de arrastrarse. Una cuenta afirmada en prosa
+	// envejece en silencio, asi que la que manda es TheOperationsAreOneHundredAndThirtySix, que la
+	// afirma al lado de la lista que cuenta -- y su NOMBRE lleva la cuenta a proposito, para que
+	// subirla obligue a renombrarla.
 	[TestFixture]
 	public sealed class EveryScriptOfTheDoorHasBeenRun
 	{
@@ -175,7 +185,8 @@ namespace DealershipCar.Dominio.Pruebas
 			"ReadRateOfUseStanding", "ReadingCountBetween", "ReadingsBetween",
 			"ReadRevisionState", "ReadServiceIntervalRevision", "ReadServicePriceRevision",
 			"ReadServicingPolicyRevision", "ReadTimeRemainderStanding", "ReadTyreRevision", "ReadVin",
-			"RecordConditionThreshold", "RecordDelivery", "RecordReading",
+			"RecordConditionThreshold", "RecordDelivery", "RecordDurableCost", "RecordReading",
+			"RecordRecurringCost",
 			"RecordShopCollection", "RecordShopEntry", "RecordShopStay", "RegisterDevice",
 			"RemoveOwnerOperation", "SealRevision", "SeedPlanOperation",
 			"StayCountBetween", "StaysBetween", "StoreCredential",
@@ -204,9 +215,9 @@ namespace DealershipCar.Dominio.Pruebas
 		// dejo escrito "setenta y siete" cuando la puerta ya tenia setenta y nueve: una cuenta
 		// afirmada en prosa envejece en silencio, y esta afirmada al lado de lo que cuenta.
 		[Test]
-		public void TheOperationsAreOneHundredAndThirtyFour()
+		public void TheOperationsAreOneHundredAndThirtySix()
 		{
-			Assert.That(EveryOperationThisFixtureRuns, Has.Length.EqualTo(134));
+			Assert.That(EveryOperationThisFixtureRuns, Has.Length.EqualTo(136));
 		}
 
 		// La semilla corre en OnHydrated, asi que para cuando la prueba arranca la agenda ya
@@ -271,6 +282,17 @@ namespace DealershipCar.Dominio.Pruebas
 				new DateTime(2025, 11, 3, 7, 0, 0, DateTimeKind.Utc),
 				new DateTime(2025, 11, 4, 17, 0, 0, DateTimeKind.Utc),
 				new[] { "2025-11-03", "2025-11-04" });
+
+			// LOS DOS DEL LIBRO DE COSTOS. Son dos scripts distintos y no uno con un parametro de
+			// mas: la clasificacion la recibe cual comando se llamo, asi que correr uno solo dejaria
+			// el otro sin ejecutar.
+			journal.Api.RecordRecurringCost(
+				new DateTime(2026, 1, 24, 11, 0, 0, DateTimeKind.Utc), 25000m, "CRC",
+				"Cambio de aceite");
+
+			journal.Api.RecordDurableCost(
+				new DateTime(2026, 1, 25, 15, 30, 0, DateTimeKind.Utc), 240000m, "CRC",
+				"Llantas nuevas", 48);
 
 			Assert.That(journal.Api.ReadDueState("FluidChange"), Is.EqualTo("Deferred"));
 		}
