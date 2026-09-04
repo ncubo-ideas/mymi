@@ -11,19 +11,41 @@ namespace Cargas.Consola
 	// reproducido manana daria otros dias transcurridos y otra distancia diaria. Un
 	// guion de demo con fechas moviles no es reproducible.
 	//
-	// La historia que cuentan estas nueve cargas (§13 del brief, v2):
+	// La historia que cuentan estas 28 cargas (§13 del brief, v2, realineada al CANON
+	// de Sonia: el mismo carro que cuenta el modulo del concesionario):
 	//
-	//   tramos 1 a 3:   12.6 km/L parejo - la LINEA BASE
-	//   carga 4:        PRESETEADA (20.000 L exactos) - la inferencia dice "no fue
-	//                   lleno" y acierta; la parcial no rompe el tramo, lo aplaza
-	//   tramo con la parcial adentro: sigue en 12.6
-	//   tramo 5 a 6:    11.7 - empieza la caida
-	//   carga 7:        en OTRO SURTIDOR (B-1) - el tramo sale no comparable
-	//   carga 8:        SIN kilometraje - rompe dos tramos finos y motiva el ingreso
-	//   tramo 7 a 9:    el largo, 820 km / 87 L = 9.4 - la anomalia sostenida
+	//   el odometro:    49.850 (dic-25) -> 60.962 (ago-26), con el QUIEBRE DE ENERO -850
+	//                   km/mes antes del ascenso, 1.400 despues-. Ese salto es el unico
+	//                   hecho del que cuelga el demo entero.
+	//   la cadencia:    y por eso las cargas se aprietan SOLAS, de una cada 17 dias a una
+	//                   cada 8. El ascenso se ve aca sin que nadie lo explique, y es lo
+	//                   que ningun otro modulo puede mostrar.
+	//   tramos 1 a 13:  12.6 km/L - la LINEA BASE. Son mayoria A PROPOSITO: el habitual
+	//                   es la MEDIANA de los comparables, asi que si la base deja de ser
+	//                   mayoria el habitual se corre y la caida deja de dar -25%.
+	//   carga 7:        PRESETEADA (20.000 L exactos) - la inferencia dice "no fue lleno"
+	//                   y acierta; la parcial no rompe el tramo, lo aplaza, y el tramo 6
+	//                   sale de 680 km con los litros de las DOS cargas
+	//   tramos 14 a 18: 11.7 - empieza la caida
+	//   carga 18:       en OTRO SURTIDOR (B-1) - el tramo sale no comparable. Son 10 L
+	//                   porque ese tramo son 128 km: lleno desde 3/4 de tanque en una
+	//                   bomba que no es la suya. Y por 6.520 colones NO da boleto, que es
+	//                   el unico caso del guion donde una carga no llega al corte.
+	//   tramos 19 a 21: 11.0 -> 10.4 -> 9.8, el escalon
+	//   carga 27:       SIN kilometraje - rompe dos tramos finos y motiva el ingreso
+	//   tramo 25:       el largo, 743 km / 79 L = 9.4 - la anomalia sostenida
+	//   la lealtad:     998 puntos cruzan LOS DOS umbrales, 200 y 800: plata en febrero y
+	//                   oro en julio. El guion de nueve cargas se quedaba en plata.
 	//
 	// Los totales cuadran EXACTO con precio por volumen a proposito: el veredicto
 	// TotalNoCuadra se ejercita con una carga sintetica en Comprobaciones, no aca.
+	//
+	// ESTA TABLA NO SE EDITA A MANO, y ese es el punto: sale de resolver tres
+	// restricciones en cascada -el odometro lo fija el canon, el rendimiento de cada
+	// tramo lo fija el arco, y entonces los litros y la fecha YA NO SON LIBRES, porque
+	// litros = distancia / rendimiento y la fecha sale de invertir la curva del canon-.
+	// Tocar un numero suelto rompe el cuadre en silencio. La unica holgura real es el
+	// tramo del B-1, que por diseno no tiene que dar ningun numero.
 	internal static class Muestras
 	{
 		// La placa del demo, y es LA DEL CANON: el carro de Sonia es el mismo en los dos
@@ -37,64 +59,112 @@ namespace Cargas.Consola
 
 		internal static SenalDeEvento[] LaHistoria() => new[]
 		{
-			// --- la linea base: tres tramos parejos de ~12.6 km/L ---
-			Carga(201, "2025-12-15T08:10:00", 40m, "A-3", 615m, 24600m, "automatico", "T-0201"),
-			Carga(202, "2026-01-15T09:20:00", 38m, "A-3", 620m, 23560m, "automatico", "T-0202"),
-			Carga(203, "2026-02-15T08:45:00", 39m, "A-3", 628m, 24492m, "automatico", "T-0203"),
+			Carga(201, "2025-12-15T08:10:00", 37m, "A-3", 615m, 22755m, "automatico", "T-0201"),
+			Carga(202, "2026-01-01T09:20:00", 36m, "A-3", 620m, 22320m, "automatico", "T-0202"),
+			Carga(203, "2026-01-17T08:45:00", 38m, "A-3", 620m, 23560m, "automatico", "T-0203"),
+			Carga(204, "2026-01-27T07:55:00", 37m, "A-3", 620m, 22940m, "automatico", "T-0204"),
+			Carga(205, "2026-02-06T08:15:00", 36m, "A-3", 628m, 22608m, "automatico", "T-0205"),
+			Carga(206, "2026-02-16T09:05:00", 36m, "A-3", 628m, 22608m, "automatico", "T-0206"),
+			Carga(207, "2026-02-21T17:30:00", 20m, "A-3", 628m, 12560m, "preseteado", "T-0207"),
+			Carga(208, "2026-03-02T08:40:00", 34m, "A-3", 634m, 21556m, "automatico", "T-0208"),
+			Carga(209, "2026-03-12T07:40:00", 37m, "A-3", 634m, 23458m, "automatico", "T-0209"),
+			Carga(210, "2026-03-22T09:30:00", 36m, "A-3", 634m, 22824m, "automatico", "T-0210"),
+			Carga(211, "2026-04-01T08:10:00", 38m, "A-3", 640m, 24320m, "automatico", "T-0211"),
+			Carga(212, "2026-04-11T09:20:00", 36m, "A-3", 640m, 23040m, "automatico", "T-0212"),
+			Carga(213, "2026-04-21T08:45:00", 37m, "A-3", 640m, 23680m, "automatico", "T-0213"),
+			Carga(214, "2026-05-02T07:55:00", 38m, "A-3", 645m, 24510m, "automatico", "T-0214"),
+			Carga(215, "2026-05-12T08:15:00", 36m, "A-3", 645m, 23220m, "automatico", "T-0215"),
+			Carga(216, "2026-05-21T09:05:00", 38m, "A-3", 645m, 24510m, "automatico", "T-0216"),
+			Carga(217, "2026-05-30T08:30:00", 36m, "A-3", 645m, 23220m, "automatico", "T-0217"),
+			Carga(218, "2026-06-02T08:40:00", 10m, "B-1", 652m, 6520m, "automatico", "T-0218"),
+			Carga(219, "2026-06-12T07:40:00", 39m, "A-3", 652m, 25428m, "automatico", "T-0219"),
+			Carga(220, "2026-06-21T09:30:00", 37m, "A-3", 652m, 24124m, "automatico", "T-0220"),
+			Carga(221, "2026-06-30T08:10:00", 38m, "A-3", 652m, 24776m, "automatico", "T-0221"),
+			Carga(222, "2026-07-09T09:20:00", 37m, "A-3", 660m, 24420m, "automatico", "T-0222"),
+			Carga(223, "2026-07-17T08:45:00", 39m, "A-3", 660m, 25740m, "automatico", "T-0223"),
+			Carga(224, "2026-07-25T07:55:00", 38m, "A-3", 660m, 25080m, "automatico", "T-0224"),
+			Carga(225, "2026-08-01T08:15:00", 36m, "A-3", 668m, 24048m, "automatico", "T-0225"),
+			Carga(226, "2026-08-09T09:05:00", 39m, "A-3", 668m, 26052m, "automatico", "T-0226"),
+			Carga(227, "2026-08-17T08:30:00", 39m, "A-3", 668m, 26052m, "automatico", "T-0227"),
+			Carga(228, "2026-08-25T08:40:00", 40m, "A-3", 668m, 26720m, "automatico", "T-0228"),
 
-			// --- la parcial PRESETEADA: 20.000 L exactos. La huella queda en el dato y
-			// la inferencia propone "no fue lleno" antes de que Sonia diga nada ---
-			Carga(204, "2026-03-20T17:30:00", 20m, "A-3", 634m, 12680m, "preseteado", "T-0204"),
-			Carga(205, "2026-03-28T08:15:00", 19m, "A-3", 634m, 12046m, "automatico", "T-0205"),
-
-			// --- empieza la caida ---
-			Carga(206, "2026-05-20T08:50:00", 41m, "A-3", 645m, 26445m, "automatico", "T-0206"),
-
-			// --- otro surtidor: consistente por dentro, no comparable contra la serie ---
-			Carga(207, "2026-06-20T09:05:00", 42m, "B-1", 652m, 27384m, "automatico", "T-0207"),
-
-			// --- la carga a la que le va a faltar el kilometraje ---
-			Carga(208, "2026-07-25T08:30:00", 43m, "A-3", 660m, 28380m, "automatico", "T-0208"),
-
-			// --- hoy: el tramo largo cierra la anomalia, y los 44 L fijan la capacidad ---
-			Carga(209, "2026-08-25T08:40:00", 44m, "A-3", 668m, 29392m, "automatico", "T-0209"),
-
-			// --- la lealtad, discreta: un punto por litro entero (⚠️ tasa del demo) ---
-			Puntos(210, "2025-12-15T08:10:05", 40),
-			Puntos(211, "2026-01-15T09:20:05", 38),
-			Puntos(212, "2026-02-15T08:45:05", 39),
-			Puntos(213, "2026-03-20T17:30:05", 20),
-			Puntos(214, "2026-03-28T08:15:05", 19),
-			Puntos(215, "2026-05-20T08:50:05", 41),
-			Puntos(216, "2026-06-20T09:05:05", 42),
-			Nivel(217, "2026-06-20T09:05:10", "plata"),
-			Puntos(218, "2026-07-25T08:30:05", 43),
-			Puntos(219, "2026-08-25T08:40:05", 44),
+			Puntos(229, "2025-12-15T08:10:05", 37),
+			Puntos(230, "2026-01-01T09:20:05", 36),
+			Puntos(231, "2026-01-17T08:45:05", 38),
+			Puntos(232, "2026-01-27T07:55:05", 37),
+			Puntos(233, "2026-02-06T08:15:05", 36),
+			Puntos(234, "2026-02-16T09:05:05", 36),
+			Nivel(235, "2026-02-16T09:05:07", "plata"),
+			Puntos(236, "2026-02-21T17:30:05", 20),
+			Puntos(237, "2026-03-02T08:40:05", 34),
+			Puntos(238, "2026-03-12T07:40:05", 37),
+			Puntos(239, "2026-03-22T09:30:05", 36),
+			Puntos(240, "2026-04-01T08:10:05", 38),
+			Puntos(241, "2026-04-11T09:20:05", 36),
+			Puntos(242, "2026-04-21T08:45:05", 37),
+			Puntos(243, "2026-05-02T07:55:05", 38),
+			Puntos(244, "2026-05-12T08:15:05", 36),
+			Puntos(245, "2026-05-21T09:05:05", 38),
+			Puntos(246, "2026-05-30T08:30:05", 36),
+			Puntos(247, "2026-06-02T08:40:05", 10),
+			Puntos(248, "2026-06-12T07:40:05", 39),
+			Puntos(249, "2026-06-21T09:30:05", 37),
+			Puntos(250, "2026-06-30T08:10:05", 38),
+			Puntos(251, "2026-07-09T09:20:05", 37),
+			Puntos(252, "2026-07-17T08:45:05", 39),
+			Nivel(253, "2026-07-17T08:45:07", "oro"),
+			Puntos(254, "2026-07-25T07:55:05", 38),
+			Puntos(255, "2026-08-01T08:15:05", 36),
+			Puntos(256, "2026-08-09T09:05:05", 39),
+			Puntos(257, "2026-08-17T08:30:05", 39),
+			Puntos(258, "2026-08-25T08:40:05", 40),
 		};
 
 		// LOS APORTES DE SONIA. NO viajan por URL2 -la estacion no los sabe- asi que no
 		// son senales: son los comandos locales que siguen al refresh. El kilometraje de
-		// la carga 8 falta A PROPOSITO: es la historia del tramo bloqueado.
+		// la carga 27 (T-0227) falta A PROPOSITO: es la historia del tramo bloqueado.
 		//
 		// El tanque no se declara: se CONFIRMA. Cada carga nace con la inferencia de su
 		// forma de corte, y Sonia solo da el visto bueno (§6.3.3).
 		internal static readonly (string transaccion, decimal kilometros)[] Kilometrajes =
 		{
-			("T-0201", 40000m),
-			("T-0202", 40480m),
-			("T-0203", 40970m),
-			("T-0204", 41200m),
-			("T-0205", 41460m),
-			("T-0206", 41940m),
-			("T-0207", 42380m),
-			// T-0208 sin kilometraje: rompe dos tramos finos y motiva el ingreso.
-			("T-0209", 43200m),
+			("T-0201", 49850m),
+			("T-0202", 50304m),
+			("T-0203", 50783m),
+			("T-0204", 51249m),
+			("T-0205", 51703m),
+			("T-0206", 52157m),
+			("T-0207", 52409m),
+			("T-0208", 52837m),
+			("T-0209", 53303m),
+			("T-0210", 53757m),
+			("T-0211", 54236m),
+			("T-0212", 54690m),
+			("T-0213", 55156m),
+			("T-0214", 55635m),
+			("T-0215", 56089m),
+			("T-0216", 56534m),
+			("T-0217", 56955m),
+			("T-0218", 57083m),
+			("T-0219", 57539m),
+			("T-0220", 57972m),
+			("T-0221", 58390m),
+			("T-0222", 58775m),
+			("T-0223", 59157m),
+			("T-0224", 59514m),
+			("T-0225", 59852m),
+			("T-0226", 60219m),
+			("T-0228", 60962m),
 		};
 
 		internal static readonly string[] TanquesPorConfirmar =
 		{
 			"T-0201", "T-0202", "T-0203", "T-0204", "T-0205",
-			"T-0206", "T-0207", "T-0208", "T-0209",
+			"T-0206", "T-0207", "T-0208", "T-0209", "T-0210",
+			"T-0211", "T-0212", "T-0213", "T-0214", "T-0215",
+			"T-0216", "T-0217", "T-0218", "T-0219", "T-0220",
+			"T-0221", "T-0222", "T-0223", "T-0224", "T-0225",
+			"T-0226", "T-0227", "T-0228",
 		};
 
 		// LA FICHA: el tercer aporte, y el que el guion venia sin sembrar. CompletarFicha
@@ -149,9 +219,9 @@ namespace Cargas.Consola
 
 		// Lo que la historia tiene que dar. Son los criterios de la fase: si esto no
 		// sale asi, el dominio no esta contando la historia que la demo promete.
-		internal const int CargasEsperadas = 9;
+		internal const int CargasEsperadas = 28;
 		internal const string VeredictoEsperado = "empeoro";
-		internal const int PuntosEsperados = 326;
+		internal const int PuntosEsperados = 998;
 
 		// Una senal de un tipo que esta app no consume. La ruta debe devolver null y el
 		// bucle descartarla, sin inventar un comando para tragarsela.

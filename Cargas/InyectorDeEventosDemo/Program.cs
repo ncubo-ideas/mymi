@@ -83,8 +83,8 @@ async Task Listar()
 }
 
 // Una carga CONCRETA, con su fecha y sus numeros.
-//   inyectar --fecha 2026-08-26 --litros 42 --precio 668 --total 28056 \
-//            --surtidor A-3 --corte automatico --transaccion T-0210
+//   inyectar --fecha 2026-08-30 --litros 38 --precio 668 --total 25384 \
+//            --surtidor A-3 --corte automatico --transaccion T-0229
 async Task Inyectar()
 {
     decimal litros = Decimal(Arg(args, "--litros", "0"));
@@ -141,15 +141,34 @@ async Task Historia()
     (string fecha, decimal litros, string surtidor, decimal precio, decimal total,
         string corte, string transaccion, string porque)[] guion =
     {
-        ("2025-12-15", 40m, "A-3", 615m, 24600m, "automatico", "T-0201", "linea base, sin rendimiento aun"),
-        ("2026-01-15", 38m, "A-3", 620m, 23560m, "automatico", "T-0202", "primer tramo: 12.6 km/L"),
-        ("2026-02-15", 39m, "A-3", 628m, 24492m, "automatico", "T-0203", "confirma la base"),
-        ("2026-03-20", 20m, "A-3", 634m, 12680m, "preseteado", "T-0204", "PRESETEADA: la inferencia dice 'no fue lleno'"),
-        ("2026-03-28", 19m, "A-3", 634m, 12046m, "automatico", "T-0205", "la parcial no rompe el tramo: 12.6"),
-        ("2026-05-20", 41m, "A-3", 645m, 26445m, "automatico", "T-0206", "empieza la caida: 11.7"),
-        ("2026-06-20", 42m, "B-1", 652m, 27384m, "automatico", "T-0207", "OTRO SURTIDOR: tramo no comparable"),
-        ("2026-07-25", 43m, "A-3", 660m, 28380m, "automatico", "T-0208", "a esta le va a faltar el kilometraje"),
-        ("2026-08-25", 44m, "A-3", 668m, 29392m, "automatico", "T-0209", "el tramo largo: 9.4, la anomalia"),
+        ("2025-12-15", 37m, "A-3", 615m, 22755m, "automatico", "T-0201", "linea base, sin rendimiento aun"),
+        ("2026-01-01", 36m, "A-3", 620m, 22320m, "automatico", "T-0202", "primer tramo: 12.6 km/L"),
+        ("2026-01-17", 38m, "A-3", 620m, 23560m, "automatico", "T-0203", "confirma la base"),
+        ("2026-01-27", 37m, "A-3", 620m, 22940m, "automatico", "T-0204", "la serie del canon: 51 249 km"),
+        ("2026-02-06", 36m, "A-3", 628m, 22608m, "automatico", "T-0205", "la serie del canon: 51 703 km"),
+        ("2026-02-16", 36m, "A-3", 628m, 22608m, "automatico", "T-0206", "la serie del canon: 52 157 km"),
+        ("2026-02-21", 20m, "A-3", 628m, 12560m, "preseteado", "T-0207", "PRESETEADA: la inferencia dice 'no fue lleno'"),
+        ("2026-03-02", 34m, "A-3", 634m, 21556m, "automatico", "T-0208", "la parcial no rompe el tramo: 12.6"),
+        ("2026-03-12", 37m, "A-3", 634m, 23458m, "automatico", "T-0209", "la serie del canon: 53 303 km"),
+        ("2026-03-22", 36m, "A-3", 634m, 22824m, "automatico", "T-0210", "la serie del canon: 53 757 km"),
+        ("2026-04-01", 38m, "A-3", 640m, 24320m, "automatico", "T-0211", "la serie del canon: 54 236 km"),
+        ("2026-04-11", 36m, "A-3", 640m, 23040m, "automatico", "T-0212", "la serie del canon: 54 690 km"),
+        ("2026-04-21", 37m, "A-3", 640m, 23680m, "automatico", "T-0213", "la serie del canon: 55 156 km"),
+        ("2026-05-02", 38m, "A-3", 645m, 24510m, "automatico", "T-0214", "empieza la caida: 11.7"),
+        ("2026-05-12", 36m, "A-3", 645m, 23220m, "automatico", "T-0215", "la serie del canon: 56 089 km"),
+        ("2026-05-21", 38m, "A-3", 645m, 24510m, "automatico", "T-0216", "la serie del canon: 56 534 km"),
+        ("2026-05-30", 36m, "A-3", 645m, 23220m, "automatico", "T-0217", "la serie del canon: 56 955 km"),
+        ("2026-06-02", 10m, "B-1", 652m, 6520m, "automatico", "T-0218", "OTRO SURTIDOR: tramo no comparable, y por 6520 no da boleto"),
+        ("2026-06-12", 39m, "A-3", 652m, 25428m, "automatico", "T-0219", "el escalon sigue bajando"),
+        ("2026-06-21", 37m, "A-3", 652m, 24124m, "automatico", "T-0220", "la serie del canon: 57 972 km"),
+        ("2026-06-30", 38m, "A-3", 652m, 24776m, "automatico", "T-0221", "la serie del canon: 58 390 km"),
+        ("2026-07-09", 37m, "A-3", 660m, 24420m, "automatico", "T-0222", "la serie del canon: 58 775 km"),
+        ("2026-07-17", 39m, "A-3", 660m, 25740m, "automatico", "T-0223", "la serie del canon: 59 157 km"),
+        ("2026-07-25", 38m, "A-3", 660m, 25080m, "automatico", "T-0224", "la serie del canon: 59 514 km"),
+        ("2026-08-01", 36m, "A-3", 668m, 24048m, "automatico", "T-0225", "la serie del canon: 59 852 km"),
+        ("2026-08-09", 39m, "A-3", 668m, 26052m, "automatico", "T-0226", "la serie del canon: 60 219 km"),
+        ("2026-08-17", 39m, "A-3", 668m, 26052m, "automatico", "T-0227", "a esta le va a faltar el kilometraje"),
+        ("2026-08-25", 40m, "A-3", 668m, 26720m, "automatico", "T-0228", "el tramo largo: 9.4, la anomalia"),
     };
 
     foreach (var (fecha, litros, surtidor, precio, total, corte, transaccion, porque) in guion)
@@ -221,10 +240,10 @@ static void Ayuda()
     Console.WriteLine("  listar                        que eventos ve la app hoy");
     Console.WriteLine("  historia                      siembra el guion completo de la demo (cargas + lealtad)");
     Console.WriteLine("  senuelo                       demuestra el 403 de /perfil con el token de la app");
-    Console.WriteLine("  inyectar --litros 42 --precio 668 [--total 28056] [--fecha 2026-08-26]");
+    Console.WriteLine("  inyectar --litros 38 --precio 668 [--total 25384] [--fecha 2026-08-30]");
     Console.WriteLine("           [--surtidor A-3] [--corte automatico|preseteado|indeterminado]");
     Console.WriteLine("           [--tipo regular|super|diesel] [--unidad L|galUS|galImp] [--moneda CRC|PAB|USD]");
-    Console.WriteLine("           [--placa BQR-482] [--transaccion T-0210]");
+    Console.WriteLine("           [--placa BQR-482] [--transaccion T-0229]");
     Console.WriteLine("                                agrega UNA carga concreta");
     Console.WriteLine();
     Console.WriteLine("  Los kilometrajes y el tanque NO se inyectan: son aportes de Sonia y entran");
