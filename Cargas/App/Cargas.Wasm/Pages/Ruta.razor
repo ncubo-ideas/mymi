@@ -113,7 +113,12 @@ else
                             @* El número solo. «observado» y «confirmado» son palabras del
                                dominio que ella no eligió y en la parada sobraban; la
                                procedencia queda en el title para quien la quiera mirar. *@
-                            <span class="n" title="@parada.OrigenDelKilometraje">@parada.KilometrajeAnotado</span>
+                            @* EN COBRE: es el único dato de la fila que puso ELLA. La tesis del
+                               negocio es que una carga tiene dos procedencias en el mismo hecho, y
+                               con el kilometraje del mismo color que los litros y el precio la
+                               pantalla no lo mostraba. El cobre ya significa «lo tuyo» en esta app:
+                               es el color de las agujas, los trazos y las teclas. *@
+                            <span class="n aporte" title="@($"Lo anotaste vos ({parada.OrigenDelKilometraje})")">@parada.KilometrajeAnotado</span>
                         }
                     </div>
 

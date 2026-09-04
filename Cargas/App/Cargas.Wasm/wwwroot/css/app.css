@@ -503,6 +503,8 @@ p.apunte, .ficha-nota, .arranque-porque, .arranque-nota, .otra p { max-width: 60
 .parada-datos .n {
     font-family: var(--cifras); font-variant-numeric: tabular-nums; color: var(--tinta);
 }
+/* Lo que puso ella, en cobre: la otra procedencia del mismo hecho (ver Ruta). */
+.parada-datos .aporte { color: var(--cobre); }
 
 /* EL TRECHO: lo que se recorrió entre dos paradas, que es el objeto de todo esto. La
    cifra que manda es km/L; los kilómetros y el costo la acompañan. */
