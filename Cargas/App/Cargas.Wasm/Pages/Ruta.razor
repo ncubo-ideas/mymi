@@ -7,9 +7,13 @@
 
 <h1 class="solo-para-lectores">Cargas</h1>
 
-@if (Error.Length > 0)
+@* EL ERROR VA DONDE ESTABA LA MANO. Con veintiocho cargas, anotar en la de abajo y que el
+   dominio rechace el número mostraba el parte arriba de todo, fuera de pantalla: el mismo
+   argumento que ya se aplicó a «Se desbloqueó». Si el fallo nació en una parada, se dibuja en
+   esa parada; si no (el lote, la lista), arriba. *@
+@if (errorEn.Length == 0)
 {
-    <div class="parte parte--problema"><pre>@Error</pre></div>
+    <Problema De="Error" />
 }
 
 @* -------------------------------------------------------------- LA RUTA
@@ -158,6 +162,11 @@ else
                     @if (Listo.Texto.Length > 0 && listoEn == parada.Transaccion)
                     {
                         <div class="parte parte--listo parte--pasajero parada-logro" role="status">@Listo.Texto</div>
+                    }
+
+                    @if (Error.Hay && errorEn == parada.Transaccion)
+                    {
+                        <div class="parada-logro"><Problema De="Error" /></div>
                     }
 
                     @if (fotoPorCarga.TryGetValue(parada.Transaccion, out string? laFoto))
@@ -432,9 +441,14 @@ else
     // pasaron por aca.
     private Dictionary<string, string> fotoPorCarga = new();
 
+    // EN QUE PARADA nació el último fallo: "" cuando fue arriba (el lote, la lista). Se
+    // asigna ANTES de Intentar, que limpia Error; si la acción sale bien no se dibuja nada.
+    private string errorEn = "";
+
     private Task VerLaFoto(string transaccion, string nombreDeArchivo) =>
         Intentar("abrir la foto del tablero", async () =>
         {
+            errorEn = transaccion;
             string base64 = await Estado.LeerFoto(nombreDeArchivo);
             if (base64.Length == 0)
                 throw new InvalidOperationException(
@@ -529,6 +543,7 @@ else
     // el numero y dijo que si-; si lo edito, observado. Nunca entra solo.
     private Task AgregarKilometraje(string transaccion) => Intentar("anotar el kilometraje", async () =>
     {
+        errorEn = transaccion;
         decimal kilometraje = Kilometraje(transaccion);
         if (kilometraje <= 0) return;
 
@@ -593,6 +608,7 @@ else
     // dicen al final.
     private Task ConfirmarTodosLosTanques() => Intentar("confirmar los tanques estimados", async () =>
     {
+        errorEn = "";
         var porConfirmar = new List<string>(tanquesEstimados);
         var rechazos = new List<string>();
         try
@@ -635,6 +651,7 @@ else
 
     private Task ConfirmarTanque(string transaccion) => Intentar("confirmar el tanque", async () =>
     {
+        errorEn = transaccion;
         string rechazo = await Estado.ConfirmarTanque(transaccion);
         if (rechazo.Length > 0) throw new InvalidOperationException(rechazo);
 
@@ -647,6 +664,7 @@ else
     // palabra de ella (origen observado).
     private Task CorregirTanque(string transaccion) => Intentar("corregir el tanque", async () =>
     {
+        errorEn = transaccion;
         CargaEnLista? carga = null;
         foreach (CargaEnLista candidata in cargas)
             if (candidata.Transaccion == transaccion) { carga = candidata; break; }
@@ -665,6 +683,7 @@ else
     private Task GuardarFoto(string transaccion, InputFileChangeEventArgs e) =>
         Intentar("guardar la foto del tablero", async () =>
         {
+            errorEn = transaccion;
             const long topeDeBytes = 15 * 1024 * 1024;
             IBrowserFile archivo = e.File;
             if (archivo.Size > topeDeBytes)

@@ -21,9 +21,10 @@ public abstract class PantallaDeCargas : ComponentBase, IDisposable
 {
 	[Inject] protected EstadoDeLaApp Estado { get; set; } = default!;
 
-	/// <summary>UN solo lugar para los errores, y arriba de todo en cada pantalla: un
-	/// fallo abajo queda fuera de pantalla y la app parece no reaccionar al click.</summary>
-	protected string Error { get; private set; } = "";
+	/// <summary>EL FALLO DE LA ULTIMA ACCION, con su cara humana y su detalle (ver Fallo).
+	/// Cada pantalla lo dibuja con Problema.razor, y decide DONDE: arriba de todo por
+	/// defecto, o al lado de lo que se tocó cuando la pantalla es larga (ver Ruta).</summary>
+	protected Fallo Error { get; private set; } = Fallo.Ninguno;
 
 	/// <summary>EL ÉXITO, y se va solo. Ver AvisoDeListo. Cada pantalla decide dónde lo
 	/// dibuja; acá solo se garantiza que repinta cuando se apaga.</summary>
@@ -50,7 +51,7 @@ public abstract class PantallaDeCargas : ComponentBase, IDisposable
 
 	protected async Task Intentar(string paso, Func<Task> accion)
 	{
-		Error = "";
+		Error = Fallo.Ninguno;
 		try
 		{
 			await accion();

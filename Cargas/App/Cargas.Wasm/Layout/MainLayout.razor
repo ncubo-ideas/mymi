@@ -150,13 +150,7 @@
 <main class="tablero">
     @* UN solo lugar para los errores, y arriba de todo: un fallo abajo queda fuera de
        pantalla y la app parece no reaccionar al click. *@
-    @if (error.Length > 0)
-    {
-        <div class="parte parte--problema">
-            <strong>@(estado.EstaArriba ? "No se pudo completar la operación." : "No se pudo abrir la app.")</strong>
-            <pre>@error</pre>
-        </div>
-    }
+    <Problema De="error" />
 
     @if (!estado.EstaArriba)
     {
@@ -401,7 +395,7 @@
     private bool? opfs;
     private string sinAlmacenamiento = "";
     private bool instalada;
-    private string error = "";
+    private Fallo error = Fallo.Ninguno;
 
     // LO QUE SABEMOS DEL ARRANQUE, y son tres cosas y no dos: hasta que IndexedDB contesta
     // no sabemos si hay un modo recordado. `resolviendo` es ese rato; `abriendo` dice qué
@@ -561,7 +555,7 @@
     // PantallaDeCargas porque un layout tiene que heredar de LayoutComponentBase.
     private async Task Intentar(string paso, Func<Task> accion)
     {
-        error = "";
+        error = Fallo.Ninguno;
         try
         {
             await accion();

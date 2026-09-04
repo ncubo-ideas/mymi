@@ -1,0 +1,23 @@
+@* EL PARTE DE UN FALLO, uno solo para las cuatro pantallas y la cáscara.
+
+   LA FRASE HUMANA PRIMERO, y el detalle técnico plegado. Antes el <pre> mostraba el tipo .NET
+   delante de la frase que sí decía qué hacer, y lo técnico quedaba a la misma altura que lo
+   humano. El detalle no se borra —sigue siendo lo único que hay para depurar en el browser de
+   otra persona—, pero se abre a pedido.
+
+   role="alert": el error es lo único que un lector de pantalla tiene que interrumpir para
+   decir. Sin esto, la acción fallaba en silencio para quien no ve. *@
+@if (De.Hay)
+{
+    <div class="parte parte--problema" role="alert">
+        <p>@De.Que</p>
+        <details class="problema-detalle">
+            <summary>Detalle técnico</summary>
+            <pre>@De.Tecnico</pre>
+        </details>
+    </div>
+}
+
+@code {
+    [Parameter, EditorRequired] public Fallo De { get; set; } = Fallo.Ninguno;
+}

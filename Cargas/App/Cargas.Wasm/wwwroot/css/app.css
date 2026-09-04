@@ -642,6 +642,13 @@ h1:focus, h1:focus-visible { outline: none; }
     font-family: var(--cifras); font-size: 12px; color: var(--tenue);
     white-space: pre-wrap; word-break: break-word; margin: 8px 0 0;
 }
+
+/* EL DETALLE TÉCNICO DE UN FALLO, plegado. Para quien depura, no para quien maneja: ver
+   Problema.razor. El summary es una línea tenue debajo de la frase humana. */
+.problema-detalle { margin-top: 6px; }
+.problema-detalle summary { cursor: pointer; font-size: 12.5px; color: var(--tenue-2); }
+.problema-detalle summary:focus-visible { outline: 2px solid var(--cobre); outline-offset: 2px; }
+.problema-detalle[open] summary { color: var(--tenue); }
 .parte--atencion { border-color: var(--ambar-borde); border-left-color: var(--ambar); background: var(--ambar-suave); }
 .parte--problema { border-color: var(--rojo-borde);  border-left-color: var(--rojo);  background: var(--rojo-suave); }
 .parte--neutro   { border-left-color: var(--bisel-vivo); }
