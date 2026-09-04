@@ -646,6 +646,43 @@ namespace DealershipCar.App
 		}
 
 		/// <summary>
+		/// Si se puede decir cuanto costo la distancia de ese periodo: hace falta un tramo de uso que
+		/// medir Y algun gasto. TOTAL, y es la mitad de MEDIBILIDAD de la respuesta de abajo -- la
+		/// misma pareja que el ritmo de uso ya tiene -- y no una guarda delante de un rechazo.
+		/// </summary>
+		public bool CanCostPerDistanceBeSaid(DateTime from, DateTime to)
+		{
+			return ATruth(@"
+				@can = schedule.CanARateOfUseBeSaid(@from, @to) && ledger.HasAnyCostBetween(@from, @to);
+			", "can", APeriodOfInstants(from, to));
+		}
+
+		/// <summary>
+		/// Cuanto costo la distancia de ese periodo, moneda por moneda y con las dos unidades dichas --
+		/// el signo de cada moneda y la unidad de la distancia -- o la constancia con nombre de que no
+		/// hay tramo de uso por el que dividir. TOTAL.
+		/// <para>
+		/// Cruza DOS globales de raiz en un solo script: el tramo lo dice la agenda y el dinero el libro
+		/// de costos. Ni la distancia ni el ancla se le piden a quien pregunta, y ninguna de las dos
+		/// sale por ninguna lectura como numero.
+		/// </para>
+		/// </summary>
+		public string DescribeCostPerDistanceBetween(DateTime from, DateTime to)
+		{
+			return AText(@"
+				if (schedule.CanARateOfUseBeSaid(@from, @to)) {
+					@clause = ledger.DescribeCostPerDistance(@from, @to,
+						schedule.FirstReadingInstantBetween(@from, @to),
+						schedule.DistanceTravelledBetween(@from, @to),
+						schedule.UnitOfTravelBetween(@from, @to));
+				} else {
+					@clause = ledger.DescribeCostPerDistanceWithNoSpan(@from, @to,
+						schedule.DescribeRateOfUse(@from, @to));
+				}
+			", "clause", APeriodOfInstants(from, to));
+		}
+
+		/// <summary>
 		/// Cuantas entradas se incurrieron adentro de ese periodo. TOTAL, y es la cuenta de las FILAS
 		/// del registro de arriba: de las entradas sale la cuenta y de la cuenta no salen las
 		/// entradas.

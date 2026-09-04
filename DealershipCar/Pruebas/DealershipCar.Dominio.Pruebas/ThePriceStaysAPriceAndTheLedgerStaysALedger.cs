@@ -68,6 +68,12 @@ namespace DealershipCar.Dominio.Pruebas
 
 		// Los tipos del libro que este censo recorre, enumerados por reflexion sobre la base y el
 		// agregado en vez de escritos a mano: un tipo nuevo entra al censo solo.
+		//
+		// Y "SOLO" TIENE UN LIMITE QUE ES C57: la enumeracion es por BASE, asi que un tipo de respuesta
+		// que no derive de ninguna de las tres bases no entra -- ASpendComparison esta nombrado a mano
+		// justo por eso. BuildOrder/CL-6 agrego una CUARTA base, ACostPerDistance, y la agrego aca en
+		// el mismo commit: el censo se quedaba verde sin ver los tres tipos nuevos, que es lo que un
+		// barrido incompleto siempre hace.
 		private static IEnumerable<Type> TheTypesOfTheLedger()
 		{
 			List<Type> found = new List<Type> { typeof(CostLedger) };
@@ -75,6 +81,7 @@ namespace DealershipCar.Dominio.Pruebas
 			foreach (Type declared in typeof(CostLedger).Assembly.GetTypes())
 				if (typeof(ACostEntry).IsAssignableFrom(declared)
 					|| typeof(SpendInAPeriod).IsAssignableFrom(declared)
+					|| typeof(ACostPerDistance).IsAssignableFrom(declared)
 					|| declared == typeof(ASpendSummary)
 					|| declared == typeof(ASpendComparison)
 					|| declared == typeof(AnAmortizedShare)

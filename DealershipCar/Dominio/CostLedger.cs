@@ -99,6 +99,35 @@ namespace DealershipCar.Dominio
 				TheSpendBetween(from1, to1), TheSpendBetween(from2, to2)).Describe();
 		}
 
+		/// <summary>
+		/// Lo que este periodo costo por unidad de distancia, moneda por moneda, sobre el tramo que
+		/// otro agregado midio: el instante de la primera lectura del periodo, la distancia recorrida
+		/// desde ella y la unidad de esa distancia. TOTAL.
+		/// <para>
+		/// Solo cuenta lo incurrido DESPUES de esa primera lectura. La unidad llega como CODIGO porque
+		/// el valor viene de otro agregado adentro del mismo script, donde un enum cruza tipado.
+		/// </para>
+		/// </summary>
+		internal string DescribeCostPerDistance(
+			DateTime from, DateTime to, DateTime firstReading, int distanceTravelled,
+			DistanceUnitCode unitOfTravel)
+		{
+			return ACostPerDistance.Of(
+				from, to, firstReading, distanceTravelled, DistanceUnit.OfCode(unitOfTravel),
+				TheSpendBetween(from, to).TheEntriesIncurredInside()).Describe();
+		}
+
+		/// <summary>
+		/// Lo mismo cuando el periodo no tiene tramo de uso que medir: el motivo llega DICHO por la
+		/// serie del odometro y se pasa entero. TOTAL, y es una operacion aparte y no un valor especial
+		/// de la de arriba -- una distancia por defecto seria una medicion que nadie tomo.
+		/// </summary>
+		internal string DescribeCostPerDistanceWithNoSpan(
+			DateTime from, DateTime to, string whyTheRateCannotBeSaid)
+		{
+			return ACostPerDistance.WithNoSpanOfUse(from, to, whyTheRateCannotBeSaid).Describe();
+		}
+
 		/// <summary>Cuantas entradas se incurrieron adentro del periodo. TOTAL.</summary>
 		internal int CostEntryCountBetween(DateTime from, DateTime to)
 		{

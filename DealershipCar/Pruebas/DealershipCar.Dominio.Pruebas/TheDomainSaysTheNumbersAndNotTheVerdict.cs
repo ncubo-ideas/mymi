@@ -66,12 +66,13 @@ namespace DealershipCar.Dominio.Pruebas
 				}
 			}
 
-			Assert.That(swept, Has.Count.GreaterThanOrEqualTo(30),
-				"El censo barrio " + swept.Count + " frases. Nueve lecturas de frase sobre tres "
-				+ "estados: el estado vacio contesta solo las tres frases enteras -- sus columnas "
-				+ "vienen vacias -- y los otros dos contestan tres frases mas seis columnas por "
+			Assert.That(swept, Has.Count.GreaterThanOrEqualTo(36),
+				"El censo barrio " + swept.Count + " frases. ONCE lecturas de frase sobre tres "
+				+ "estados: el estado vacio contesta solo las CINCO frases enteras -- sus columnas "
+				+ "vienen vacias -- y los otros dos contestan cinco frases mas seis columnas por "
 				+ "fila. Si el numero baja, o el censo dejo de ver una lectura o el agregado dejo "
-				+ "de contestarla.");
+				+ "de contestarla. EL PISO SUBIO 30 -> 36 EN BuildOrder/CL-6, por lo que esa tarea "
+				+ "agrego -- dos lecturas de frase sobre tres estados -- y no hasta donde llega.");
 
 			TestContext.Out.WriteLine(
 				"LAS FRASES BARRIDAS (" + swept.Count + ") -- " + string.Join("; ", swept));
@@ -102,6 +103,9 @@ namespace DealershipCar.Dominio.Pruebas
 		[TestCase(typeof(SpendInAPeriod))]
 		[TestCase(typeof(ACostEntry))]
 		[TestCase(typeof(AnAmortizedShare))]
+		[TestCase(typeof(ACostPerDistance))]
+		[TestCase(typeof(AMeasuredCostPerDistance))]
+		[TestCase(typeof(NoSpanOfUseToDivideBy))]
 		public void AndNoMemberOfTheLedgerIsNamedForAVerdict(Type subject)
 		{
 			foreach (MemberInfo member in subject.GetMembers(
@@ -152,13 +156,18 @@ namespace DealershipCar.Dominio.Pruebas
 			return found;
 		}
 
+		// LOS ARGUMENTOS POR ARIDAD, Y LAS DOS DEL CRUCE HAY QUE ARMARLAS APARTE. BuildOrder/CL-6 le
+		// agrego al libro dos lecturas de frase que toman los hechos del TRAMO de otro agregado -- el
+		// ancla, la distancia y su unidad, o el motivo dicho de que no hay tramo -- asi que sus
+		// aridades son CINCO y TRES. Este censo se puso rojo con una TargetParameterCountException
+		// cuando llegaron, y el rojo era correcto: barrer "toda frase del libro" y saber armar solo dos
+		// aridades es una lista de permitidos disfrazada de barrido. Se amplia POR ARIDAD y no
+		// aflojando el filtro.
 		private static IEnumerable<string> TheAnswersOf(MethodInfo read, CostLedger ledger)
 		{
 			ParameterInfo[] slots = read.GetParameters();
 
-			object[] given = slots.Length == 4
-				? new object[] { TheStart, TheEnd, TheStart, TheEnd }
-				: new object[] { TheStart, TheEnd };
+			object[] given = TheArgumentsFor(slots.Length);
 
 			object answer = read.Invoke(ledger, given);
 
@@ -168,5 +177,39 @@ namespace DealershipCar.Dominio.Pruebas
 
 			return (string[])answer;
 		}
+
+		// UNA ARIDAD QUE ESTE CENSO NO SEPA ARMAR FALLA EN VEZ DE ADIVINAR, que es la unica manera de
+		// que ampliar el libro obligue a pasar por aca.
+		private static object[] TheArgumentsFor(int slots)
+		{
+			if (slots == 2) return new object[] { TheStart, TheEnd };
+
+			if (slots == 4) return new object[] { TheStart, TheEnd, TheStart, TheEnd };
+
+			// LOS DOS EXTREMOS Y EL MOTIVO DICHO POR LA SERIE DEL ODOMETRO. El motivo se pasa como una
+			// frase cualquiera: lo que este censo mide es lo que el LIBRO compone alrededor de ella.
+			if (slots == 3)
+				return new object[] { TheStart, TheEnd, "no se puede decir cuánto se maneja" };
+
+			// LOS DOS EXTREMOS Y LOS TRES HECHOS DEL TRAMO. La distancia y el ancla son literales: el
+			// censo no lee ningun reloj y no depende de ninguna serie (C27).
+			if (slots == 5)
+				return new object[]
+				{
+					TheStart, TheEnd, TheAnchor, TheDistance, DistanceUnitCode.UnitA,
+				};
+
+			throw new ArgumentException(
+				"El libro gano una lectura de frase de " + slots + " argumentos y este censo no sabe "
+				+ "armarlos. Se arma por ARIDAD a proposito: agregue la aridad nueva y diga con que "
+				+ "valores se pregunta.", nameof(slots));
+		}
+
+		// EL ANCLA Y LA DISTANCIA CON QUE SE PREGUNTA EL COSTO POR DISTANCIA. Elegidos para que el
+		// tramo caiga adentro del periodo y para que las dos entradas de colones queden despues del
+		// ancla, que es donde la frase dice cifras y no una ausencia.
+		private static readonly DateTime TheAnchor = new DateTime(2026, 1, 1, 0, 0, 0);
+
+		private const int TheDistance = 3200;
 	}
 }

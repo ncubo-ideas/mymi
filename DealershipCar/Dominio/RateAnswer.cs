@@ -128,5 +128,40 @@ namespace DealershipCar.Dominio
 				"Este periodo no tiene ritmo que decir, asi que no se puede comparar: pregunte "
 				+ "CanBeSaid en los dos antes.");
 		}
+
+		/// <summary>
+		/// El instante en que se observo la PRIMERA lectura del periodo, que es el ancla contra la que
+		/// otro agregado mide lo suyo. Accesor GUARDADO: sin ritmo no hay dos extremos, y un instante
+		/// por defecto seria un ancla que nadie observo.
+		/// </summary>
+		internal virtual DateTime TheInstantOfItsFirstEnd()
+		{
+			throw new DomainException(
+				"Este periodo no tiene ritmo que decir, asi que no tiene una primera lectura que sea "
+				+ "el ancla de nada: pregunte CanBeSaid antes.");
+		}
+
+		/// <summary>
+		/// La distancia recorrida entre los dos extremos, exacta y en la unidad que comparten. Accesor
+		/// GUARDADO: un cero devuelto aqui se leeria como que el vehiculo no se movio, que es otro
+		/// hecho.
+		/// </summary>
+		internal virtual int TheDistanceBetweenItsEnds()
+		{
+			throw new DomainException(
+				"Este periodo no tiene ritmo que decir, asi que no tiene distancia recorrida entre sus "
+				+ "extremos: pregunte CanBeSaid antes.");
+		}
+
+		/// <summary>
+		/// La unidad de esa distancia, dicha con su CODIGO para que un script la pase como argumento
+		/// al metodo de otro agregado. Accesor GUARDADO por lo mismo.
+		/// </summary>
+		internal virtual DistanceUnitCode TheCodeOfItsUnit()
+		{
+			throw new DomainException(
+				"Este periodo no tiene ritmo que decir, asi que su distancia no esta expresada en "
+				+ "ninguna unidad: pregunte CanBeSaid antes.");
+		}
 	}
 }

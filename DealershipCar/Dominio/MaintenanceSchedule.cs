@@ -559,6 +559,37 @@ namespace DealershipCar.Dominio
 				TheSpanOfUseBetween(from2, to2).TheRate()).Describe();
 		}
 
+		/// <summary>
+		/// Cuando se observo la PRIMERA lectura de ese periodo, que es el ancla contra la que otro
+		/// agregado mide lo suyo. Accesor GUARDADO: hay que preguntar antes si se puede decir el ritmo,
+		/// con los mismos dos extremos. No sale hacia ninguna vista: el valor va directo al metodo de
+		/// otro agregado adentro del mismo script.
+		/// </summary>
+		internal DateTime FirstReadingInstantBetween(DateTime from, DateTime to)
+		{
+			return TheSpanOfUseBetween(from, to).TheRate().TheInstantOfItsFirstEnd();
+		}
+
+		/// <summary>
+		/// La distancia que el vehiculo recorrio entre los dos extremos de ese periodo, exacta.
+		/// Accesor GUARDADO, y por el mismo camino: va directo al metodo de otro agregado adentro del
+		/// mismo script y no sale por ninguna lectura de la puerta -- quien la tuviera suelta armaria
+		/// una frase que este dominio no dijo.
+		/// </summary>
+		internal int DistanceTravelledBetween(DateTime from, DateTime to)
+		{
+			return TheSpanOfUseBetween(from, to).TheRate().TheDistanceBetweenItsEnds();
+		}
+
+		/// <summary>
+		/// La unidad de esa distancia, dicha con su CODIGO. Accesor GUARDADO, y es la misma pareja que
+		/// el odometro ya tiene: el codigo para un script, el nombre para quien lee.
+		/// </summary>
+		internal DistanceUnitCode UnitOfTravelBetween(DateTime from, DateTime to)
+		{
+			return TheSpanOfUseBetween(from, to).TheRate().TheCodeOfItsUnit();
+		}
+
 		/// <summary>Cuantas lecturas del odometro cayeron dentro de ese periodo. TOTAL.</summary>
 		internal int ReadingCountBetween(DateTime from, DateTime to)
 		{

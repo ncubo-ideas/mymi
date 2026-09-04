@@ -204,12 +204,70 @@ namespace DealershipCar.Dominio.Pruebas
 				"El rechazo nombra el gasto del que se pregunto.");
 		}
 
-		// Y LAS SEIS SON DEL DOMINIO Y NINGUNA ES UNA ArgumentException, censado de una vez sobre los
-		// seis sitios en vez de repetir el assert en cada test.
+		// LOS TRES COLABORADORES DEL COSTO POR DISTANCIA. Los tres llegan de OTRO agregado adentro del
+		// mismo script, asi que ningun estado alcanzable los produce ausentes: son afirmaciones
+		// estructurales y sin este test nada las veria (es el problema que CL-2 §12 item 4 midio).
+		[Test]
+		public void ACostPerDistanceWithoutTheUnitOfItsDistanceHasNothingToDivideBy()
+		{
+			DomainException refused = Assert.Throws<DomainException>(
+				() => ACostPerDistance.Of(
+					TheStart, TheEnd, TheStart, 3200, null, new List<ACostEntry>()));
+
+			Assert.That(refused.Message, Does.Contain("unidad"),
+				"El rechazo dice que falta la unidad y no solo que algo llego nulo.");
+		}
+
+		[Test]
+		public void AndACostPerDistanceWithNoListOfEntriesIsNotAPeriodWithoutSpend()
+		{
+			DomainException refused = Assert.Throws<DomainException>(
+				() => ACostPerDistance.Of(
+					TheStart, TheEnd, TheStart, 3200, DistanceUnit.UnitA, null));
+
+			Assert.That(refused.Message, Does.Contain("lista ausente"),
+				"Ninguna entrada y una lista ausente no son lo mismo, y el rechazo lo dice.");
+		}
+
+		// Y UNA DISTANCIA NEGATIVA ES UN HECHO IMPOSIBLE Y NO UN TRAMO CORTO: el odometro no va para
+		// atras. Un cero SI es legal -- el vehiculo no se movio -- y lo dice la frase.
+		[Test]
+		public void AndADistanceThatWentBackwardsIsAnImpossibleFactAndNotAShortSpan()
+		{
+			DomainException refused = Assert.Throws<DomainException>(
+				() => ACostPerDistance.Of(
+					TheStart, TheEnd, TheStart, -1, DistanceUnit.UnitA, new List<ACostEntry>()));
+
+			Assert.That(refused.Message, Does.Contain("no va para atras"));
+
+			Assert.That(
+				ACostPerDistance.Of(
+					TheStart, TheEnd, TheStart, 0, DistanceUnit.UnitA, new List<ACostEntry>())
+					.Describe(),
+				Is.Not.Empty,
+				"Y cero no se rechaza: es un tramo en el que el vehiculo no se movio, que es un hecho.");
+		}
+
+		// Y LA VARIANTE SIN TRAMO NECESITA EL MOTIVO DICHO. Sin el, la respuesta seria una negativa sin
+		// causa, y este libro NO vuelve a escribir la razon: es de la serie del odometro.
+		[TestCase(null)]
+		[TestCase("")]
+		[TestCase("   ")]
+		public void AndACostPerDistanceWithNoSpanNeedsTheReasonTheOtherAggregateSaid(string why)
+		{
+			DomainException refused = Assert.Throws<DomainException>(
+				() => ACostPerDistance.WithNoSpanOfUse(TheStart, TheEnd, why));
+
+			Assert.That(refused.Message, Does.Contain("serie del odometro"),
+				"El rechazo dice de quien es el motivo, que es lo que impide escribirlo aca.");
+		}
+
+		// Y LAS DIEZ SON DEL DOMINIO Y NINGUNA ES UNA ArgumentException, censado de una vez sobre los
+		// diez sitios en vez de repetir el assert en cada test.
 		[Test]
 		public void AndEveryOneOfTheseRefusalsIsTheDomainsOwn()
 		{
-			List<TestDelegate> theSixWays = new List<TestDelegate>
+			List<TestDelegate> theTenWays = new List<TestDelegate>
 			{
 				() => new CostLedger("  "),
 				() => new CostSubject("  "),
@@ -217,9 +275,16 @@ namespace DealershipCar.Dominio.Pruebas
 				() => new ARecurringCost(new Money(1m, Currency.CRC), Incurred, null),
 				() => SpendInAPeriod.Of(TheStart, TheEnd, null),
 				() => ASpendSummary.Of(TheStart, TheEnd, new List<ACostEntry>()),
+				() => ACostPerDistance.Of(
+					TheStart, TheEnd, TheStart, 3200, null, new List<ACostEntry>()),
+				() => ACostPerDistance.Of(
+					TheStart, TheEnd, TheStart, 3200, DistanceUnit.UnitA, null),
+				() => ACostPerDistance.Of(
+					TheStart, TheEnd, TheStart, -1, DistanceUnit.UnitA, new List<ACostEntry>()),
+				() => ACostPerDistance.WithNoSpanOfUse(TheStart, TheEnd, "  "),
 			};
 
-			foreach (TestDelegate way in theSixWays)
+			foreach (TestDelegate way in theTenWays)
 				Assert.That(Assert.Catch(way),
 					Is.InstanceOf<DomainException>().And.Not.InstanceOf<ArgumentException>(),
 					"C22/C36/C37: una guarda que tira algo que no es DomainException se escapa de "

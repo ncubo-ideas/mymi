@@ -81,6 +81,24 @@ namespace DealershipCar.Dominio
 			return mine > theirs ? "un " + said + "% más" : "un " + said + "% menos";
 		}
 
+		/// <summary>Cuando se observo la primera de las dos lecturas del tramo.</summary>
+		internal override DateTime TheInstantOfItsFirstEnd()
+		{
+			return _from.WhenItWasObserved();
+		}
+
+		/// <summary>La distancia entre los dos extremos, exacta y sin redondear.</summary>
+		internal override int TheDistanceBetweenItsEnds()
+		{
+			return _to.DistanceFrom(_from);
+		}
+
+		/// <summary>El codigo de la unidad que los dos extremos comparten.</summary>
+		internal override DistanceUnitCode TheCodeOfItsUnit()
+		{
+			return _to.TheCodeOfItsUnit();
+		}
+
 		/// <summary>
 		/// El ritmo entero en una frase: de donde a donde, cuanto y en cuanto tiempo, y la
 		/// distancia por dia introducida por "unos", que es lo que dice que ese ultimo numero esta
