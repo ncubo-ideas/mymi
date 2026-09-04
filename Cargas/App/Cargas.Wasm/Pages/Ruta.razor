@@ -1,11 +1,11 @@
-@page "/ruta"
+@page "/cargas"
 @inherits PantallaDeCargas
 @using System.Globalization
 @using Cargas.App.Vistas
 
-<PageTitle>La ruta · Estaciones Faro</PageTitle>
+<PageTitle>Mis cargas · Estaciones Faro</PageTitle>
 
-<h1 class="solo-para-lectores">La ruta de mis cargas</h1>
+<h1 class="solo-para-lectores">Mis cargas</h1>
 
 @if (Error.Length > 0)
 {
@@ -18,8 +18,11 @@
    tanques llenos, así que la pantalla lo dibuja como lo que es, y el HUECO que lo
    bloquea es parte del camino: bache con riel punteado y el dato que lo destraba ahí
    mismo, no en una sección aparte al final. *@
+@* SE LLAMA «CARGAS», no «Ruta». La ruta es la metáfora del dibujo —paradas, trechos y
+   baches— y sigue en los nombres del CSS, pero como título le sonaba a GPS y a puntos
+   visitados. Lo que hay acá son las cargas, una por parada. *@
 <div class="ruta-cabeza">
-    <span class="rotulo">La ruta</span>
+    <span class="rotulo">Tus cargas</span>
     @if (completitud.TotalDeCargas > 0)
     {
         <span class="apunte">@completitud.Expresada</span>
