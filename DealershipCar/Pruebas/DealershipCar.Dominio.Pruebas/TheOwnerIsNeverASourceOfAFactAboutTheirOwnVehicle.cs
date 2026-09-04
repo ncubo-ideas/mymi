@@ -32,9 +32,26 @@ namespace DealershipCar.Dominio.Pruebas
 	//   en las claves de esta puerta los NOMBRES son cadenas y las MEDICIONES son numeros e
 	//   instantes. Un miembro cerrado, una revision, un sistema, una unidad: todos string. El
 	//   odometro, los dos limites del sobre, el instante de entrega, los tres conteos de servicio
-	//   externo: todos int o DateTime. Hay exactamente DOS excepciones y las dos son claves de
-	//   catalogo y no hechos de ningun carro -- 'asOf', el instante en que se pregunta, y un int
-	//   'milestone…', que dice CUAL precio publicado se esta pidiendo.
+	//   externo: todos int o DateTime. Las excepciones son claves de catalogo y no hechos de ningun
+	//   carro -- 'asOf', el instante en que se pregunta; un int 'milestone…', que dice CUAL precio
+	//   publicado se esta pidiendo; y los SEIS EXTREMOS DE PERIODO que BuildOrder/OD-2 agrego.
+	//
+	// LOS SEIS EXTREMOS DE PERIODO SON UNA AMPLIACION DELIBERADA DE LAS CLAVES, escrita el mismo dia
+	// y en el mismo commit que las lecturas que la piden, y con un renglon aparte que vuelve a correr
+	// las DOS claves de antes contra esta puerta y las deja rojas. Sin ese renglon, ampliar la lista
+	// de claves se ve exactamente igual que esconder un hecho: el censo de mediciones se vaciaria por
+	// la puerta de atras y nada diria que se vacio a proposito.
+	//
+	// LA DISTINCION QUE LA DECIDE, y es la misma que se tomo antes en el borde del asistente. 'asOf'
+	// es EL INSTANTE EN QUE SE MIDE UNA SITUACION -- un hecho, y uno inventado produce una situacion
+	// falsa. Un extremo de periodo es CUALES LECTURAS LISTAR: elige la pregunta, no afirma nada del
+	// carro, y LA RESPUESTA NOMBRA LOS EXTREMOS QUE USO, asi que un extremo inventado produce una
+	// respuesta visiblemente acotada y nunca un hecho falso.
+	//
+	// Y LA MITAD QUE HACE QUE SEA UNA DECISION Y NO UNA ESCAPATORIA: los catorce pares que la
+	// ampliacion deja pasar se ENUMERAN, exactos, con su miembro. Las claves se amplian por NOMBRE en
+	// toda la puerta, pero los sitios donde ese nombre aparece estan escritos: un 'DateTime from'
+	// nuevo en una lectura que no sea una de las SEIS de la serie se pone rojo igual.
 	//
 	// ASI QUE EL CENSO SE ARMA POR ELIMINACION Y NO POR RECONOCIMIENTO: todo int y todo DateTime de
 	// una PREGUNTA que no sea una de esas dos claves es una medicion, y el censo se afirma como
@@ -206,29 +223,164 @@ namespace DealershipCar.Dominio.Pruebas
 			Assert.That(EveryQuestion(), Is.Not.Empty);
 		}
 
-		// Y LAS DOS CLAVES DE CATALOGO SIGUEN SIENDO DOS. Es lo que impide que el censo de mediciones
-		// se vacie por la puerta de atras: agrandar la lista de claves esconde un hecho en vez de
+		// Y LAS CLAVES DE CATALOGO SIGUEN SIENDO OCHO. Es lo que impide que el censo de mediciones se
+		// vacie por la puerta de atras: agrandar la lista de claves esconde un hecho en vez de
 		// censarlo, y agrandarla tiene que costar un rojo.
+		//
+		// EL NOMBRE DE ESTA PRUEBA LLEVA LA CUENTA A PROPOSITO, para que ampliarla obligue a
+		// renombrarla -- y renombrar una prueba es un acto. Decia "AreTwo" hasta BuildOrder/OD-2.
 		[Test]
-		public void TheOnlyNumbersOrInstantsAQuestionMayTakeWithoutBeingAMeasurementAreTwo()
+		public void TheOnlyNumbersOrInstantsAQuestionMayTakeWithoutBeingAMeasurementAreEight()
 		{
-			Assert.That(TheTwoCatalogueKeys, Has.Length.EqualTo(2),
+			Assert.That(TheEightCatalogueKeys, Has.Length.EqualTo(8),
 				"Si esto crecio, alguien amplio lo que cuenta como clave y no como hecho. Se decide a "
 				+ "proposito, con el motivo escrito, o no se decide.");
 
-			Assert.That(TheTwoCatalogueKeys[0], Is.EqualTo("asOf"));
-			Assert.That(TheTwoCatalogueKeys[1], Is.EqualTo("milestone"));
+			Assert.That(TheEightCatalogueKeys, Is.EqualTo(new[]
+			{
+				"asOf", "from", "to", "from1", "to1", "from2", "to2", "milestone",
+			}));
+
+			Assert.That(TheKeySaidAsAPrefix, Is.EqualTo("milestone"),
+				"Una sola de las ocho se reconoce por PREFIJO, porque un hito cruza como par -- "
+				+ "milestoneDistance y milestoneUnit. Las otras siete se reconocen enteras: 'fromDay' "
+				+ "no es 'from', y que no lo sea es lo que mantiene separadas las dos formas de "
+				+ "nombrar un periodo en este modulo.");
 		}
 
-		// 'asOf' es el instante en que se PREGUNTA -- no un hecho del carro -- y 'milestone…' dice
-		// CUAL precio publicado del catalogo se esta pidiendo. Las dos son de la pregunta y no del
-		// vehiculo, y son las dos unicas.
-		private static readonly string[] TheTwoCatalogueKeys = { "asOf", "milestone" };
+		// LOS CATORCE PARES QUE LA AMPLIACION DEJA PASAR, CON SU MIEMBRO, COMO CONJUNTO EXACTO. Las
+		// claves se amplian por NOMBRE en toda la puerta; esto es lo que impide que ese nombre sirva
+		// en cualquier parte. Un 'DateTime from' en una lectura que no sea una de las SEIS de la
+		// serie es un PAR nuevo aca, y el rojo lo nombra.
+		private static readonly string[] EveryPeriodBoundAQuestionTakes =
+		{
+			"CanARateOfUseBeSaid/2(from)",
+			"CanARateOfUseBeSaid/2(to)",
+
+			"ReadRateOfUseStanding/2(from)",
+			"ReadRateOfUseStanding/2(to)",
+
+			"DescribeRateOfUse/2(from)",
+			"DescribeRateOfUse/2(to)",
+
+			"DescribeTwoPeriodsOfUseCompared/4(from1)",
+			"DescribeTwoPeriodsOfUseCompared/4(to1)",
+			"DescribeTwoPeriodsOfUseCompared/4(from2)",
+			"DescribeTwoPeriodsOfUseCompared/4(to2)",
+
+			"ReadingsBetween/2(from)",
+			"ReadingsBetween/2(to)",
+
+			"ReadingCountBetween/2(from)",
+			"ReadingCountBetween/2(to)",
+		};
+
+		[Test]
+		public void OnlyTheSixReadsOfTheSeriesTakeAPeriodBoundAtAll()
+		{
+			Assert.That(EveryPeriodBound(), Is.EquivalentTo(EveryPeriodBoundAQuestionTakes),
+				"Una pregunta de la puerta gano o perdio un EXTREMO DE PERIODO. Los seis nombres son "
+				+ "claves de catalogo porque eligen la pregunta y la respuesta los nombra; que lo "
+				+ "sean no los vuelve libres en cualquier miembro. Si el par nuevo es de verdad un "
+				+ "periodo, se escribe aca; si es un hecho del carro con nombre de extremo, el "
+				+ "registro ya lo lleva y la lectura lo saca de ahi en vez de pedirlo.");
+
+			var members = new List<string>();
+
+			foreach (KeyValuePair<string, string> each in EveryPeriodBoundByMember())
+				if (!members.Contains(each.Value)) members.Add(each.Value);
+
+			Assert.That(members, Is.EquivalentTo(new[]
+			{
+				"CanARateOfUseBeSaid", "ReadRateOfUseStanding", "DescribeRateOfUse",
+				"DescribeTwoPeriodsOfUseCompared", "ReadingsBetween", "ReadingCountBetween",
+			}),
+				"Y son SEIS MIEMBROS. El censo de pares ya lo implica; escrito aparte, el rojo dice "
+				+ "que miembro en vez de que par.");
+		}
+
+		// LA AMPLIACION, HECHA VISIBLE. Las DOS claves de antes se vuelven a correr contra esta
+		// puerta y se afirma que ya NO alcanzan: con ellas, los catorce extremos de periodo son
+		// mediciones y el censo de mediciones seria de TREINTA Y TRES.
+		//
+		// SIN ESTE RENGLON, LA AMPLIACION SE VE IGUAL QUE UN HUECO QUE DEJO DE NOTARSE: la lista de
+		// claves habria crecido seis nombres y nada diria que crecio a proposito. Con el, quien
+		// vuelva a estrechar las claves a dos tiene que borrar esta prueba, y borrarla es un acto.
+		private static readonly string[] TheKeysBeforeTheWidening = { "asOf", "milestone" };
+
+		[Test]
+		public void ThePreWideningKeysAreRedAgainstThisDoor()
+		{
+			Assert.That(TheKeysBeforeTheWidening, Has.Length.EqualTo(2));
+
+			List<string> withTheOldKeys = EveryMeasurementUnder(TheKeysBeforeTheWidening);
+
+			Assert.That(withTheOldKeys, Is.Not.EquivalentTo(EveryMeasurementAQuestionTakes),
+				"Con las dos claves de antes, la puerta vuelve a contestar exactamente las "
+				+ "diecinueve mediciones de siempre. Si eso es a proposito, la ampliacion se retira "
+				+ "entera -- encabezado, claves, el nombre de la prueba que las cuenta y el censo de "
+				+ "extremos -- y no solo esta prueba.");
+
+			Assert.That(
+				withTheOldKeys,
+				Has.Count.EqualTo(
+					EveryMeasurementAQuestionTakes.Length + EveryPeriodBoundAQuestionTakes.Length),
+				"Y la diferencia son exactamente los catorce extremos de periodo: diecinueve mas "
+				+ "catorce son las treinta y tres que las claves de antes contarian.");
+
+			foreach (string bound in EveryPeriodBoundAQuestionTakes)
+			{
+				Assert.That(withTheOldKeys, Does.Contain(bound));
+				Assert.That(EveryMeasurementAQuestionTakes, Does.Not.Contain(bound));
+			}
+		}
+
+		// 'asOf' es el instante en que se PREGUNTA -- no un hecho del carro -- 'milestone…' dice CUAL
+		// precio publicado del catalogo se esta pidiendo, y los seis extremos dicen QUE PERIODO se
+		// esta listando. Las ocho son de la pregunta y no del vehiculo, y son las ocho unicas.
+		private static readonly string[] TheEightCatalogueKeys =
+		{
+			"asOf", "from", "to", "from1", "to1", "from2", "to2", "milestone",
+		};
+
+		// La unica que se reconoce por PREFIJO, porque un hito cruza como par. Las otras siete se
+		// reconocen enteras: un 'fromDay' no es un 'from'.
+		private const string TheKeySaidAsAPrefix = "milestone";
 
 		private static bool IsACatalogueKey(ParameterInfo parameter)
 		{
-			return parameter.Name == TheTwoCatalogueKeys[0]
-				|| parameter.Name.StartsWith(TheTwoCatalogueKeys[1], StringComparison.Ordinal);
+			return IsACatalogueKeyUnder(parameter, TheEightCatalogueKeys);
+		}
+
+		private static bool IsACatalogueKeyUnder(ParameterInfo parameter, string[] keys)
+		{
+			foreach (string each in keys)
+			{
+				if (each == TheKeySaidAsAPrefix)
+				{
+					if (parameter.Name.StartsWith(each, StringComparison.Ordinal)) return true;
+
+					continue;
+				}
+
+				if (parameter.Name == each) return true;
+			}
+
+			return false;
+		}
+
+		// Un EXTREMO DE PERIODO: un instante cuyo nombre es uno de los seis. Se reconoce por nombre
+		// entero y por tipo, las dos cosas -- un 'from' que dejara de ser un DateTime seria otra
+		// clase de parametro y tendria que decir cual.
+		private static bool IsAPeriodBound(ParameterInfo parameter)
+		{
+			if (parameter.ParameterType != typeof(DateTime)) return false;
+
+			foreach (string each in TheEightCatalogueKeys)
+				if (each != TheKeySaidAsAPrefix && each != "asOf" && parameter.Name == each)
+					return true;
+
+			return false;
 		}
 
 		// Una MEDICION es un numero o un instante que no es clave de catalogo. Los NOMBRES de esta
@@ -236,7 +388,12 @@ namespace DealershipCar.Dominio.Pruebas
 		// numeros e instantes, asi que el tipo es el que discrimina y no el nombre.
 		private static bool IsAMeasurement(ParameterInfo parameter)
 		{
-			if (IsACatalogueKey(parameter)) return false;
+			return IsAMeasurementUnder(parameter, TheEightCatalogueKeys);
+		}
+
+		private static bool IsAMeasurementUnder(ParameterInfo parameter, string[] keys)
+		{
+			if (IsACatalogueKeyUnder(parameter, keys)) return false;
 
 			return parameter.ParameterType == typeof(int)
 				|| parameter.ParameterType == typeof(DateTime);
@@ -297,6 +454,44 @@ namespace DealershipCar.Dominio.Pruebas
 
 		private static List<KeyValuePair<string, string>> EveryMeasurementByMember()
 		{
+			return EveryPairWhere(parameter => IsAMeasurement(parameter));
+		}
+
+		// El mismo censo, corrido bajo OTRO juego de claves. Es lo que hace que la ampliacion se
+		// pueda enseñar en vez de solo afirmar: con las dos claves de antes, el censo cuenta treinta
+		// y tres.
+		private static List<string> EveryMeasurementUnder(string[] keys)
+		{
+			var pairs = new List<string>();
+
+			foreach (KeyValuePair<string, string> each
+				in EveryPairWhere(parameter => IsAMeasurementUnder(parameter, keys)))
+				pairs.Add(each.Key);
+
+			return pairs;
+		}
+
+		private static List<string> EveryPeriodBound()
+		{
+			var pairs = new List<string>();
+
+			foreach (KeyValuePair<string, string> each in EveryPeriodBoundByMember())
+				pairs.Add(each.Key);
+
+			return pairs;
+		}
+
+		private static List<KeyValuePair<string, string>> EveryPeriodBoundByMember()
+		{
+			return EveryPairWhere(parameter => IsAPeriodBound(parameter));
+		}
+
+		// Todo par (miembro/aridad, parametro) de una PREGUNTA que cumple la condicion. La clave
+		// lleva la aridad porque lo que se enumera son los SITIOS por donde la regla puede romperse:
+		// una sobrecarga es su propio sitio y el rojo la nombra.
+		private static List<KeyValuePair<string, string>> EveryPairWhere(
+			Func<ParameterInfo, bool> condition)
+		{
 			var found = new List<KeyValuePair<string, string>>();
 
 			foreach (MethodInfo each in TheDoorsMembers())
@@ -306,7 +501,7 @@ namespace DealershipCar.Dominio.Pruebas
 				ParameterInfo[] parameters = each.GetParameters();
 
 				foreach (ParameterInfo parameter in parameters)
-					if (IsAMeasurement(parameter))
+					if (condition(parameter))
 						found.Add(new KeyValuePair<string, string>(
 							each.Name + "/" + parameters.Length + "(" + parameter.Name + ")",
 							each.Name));
