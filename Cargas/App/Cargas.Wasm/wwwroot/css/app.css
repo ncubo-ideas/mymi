@@ -153,6 +153,11 @@ h1:focus, h1:focus-visible { outline: none; }
 }
 
 .apunte { color: var(--tenue); font-size: 13.5px; }
+/* LA PROSA TIENE TOPE. Los apuntes de Mi carro y Lealtad corrían a los 74 rem de la página:
+   más de 150 caracteres por línea, y el ojo pierde el renglón al volver. 60ch es la medida de
+   lectura; los instrumentos no la necesitan porque no son prosa. Solo en bloque: el .apunte
+   inline de la cabeza de la ruta no se toca. */
+p.apunte, .ficha-nota, .arranque-porque, .arranque-nota, .otra p { max-width: 60ch; }
 .apunte b { color: var(--tinta); font-weight: 600; }
 .mono { font-family: var(--cifras); font-variant-numeric: tabular-nums; }
 .fila { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; }
