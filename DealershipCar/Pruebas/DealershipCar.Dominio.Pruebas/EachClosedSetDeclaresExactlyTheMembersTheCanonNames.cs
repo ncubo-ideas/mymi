@@ -45,6 +45,17 @@ namespace DealershipCar.Dominio.Pruebas
 	//                                      asi que ganan su tipo por comportamiento (E11, E39) y la
 	//                                      base no puede sellarse. La ley del sellado se afirma
 	//                                      sobre las HOJAS, mas abajo.
+	//
+	// CL-3 AGREGA CostClassification CON LOS DOS DEL CANON, y entra en LOS CUATRO metodos -- es un
+	// conjunto cerrado plano, sellado, de ctor privado, como los cinco primeros. Por que este fixture
+	// y no TheClosedSetsAreReachedFromTheBoundary, que es la otra membresia de este modulo: el nombre
+	// de aquel es una afirmacion sobre ser ALCANZADO DESDE LA FRONTERA, y CostClassification no lo es
+	// -- no hay ningun parametro de clasificacion en ninguna parte, porque llega por cual comando se
+	// llamo. Ponerlo alli volveria falso ese nombre para uno de sus casos, que es el defecto que
+	// OD-6 §3 midio. Este nombre habla de DECLARAR los miembros que el canon nombra, y eso es cierto
+	// de cualquier conjunto cerrado, se elija donde se elija. La otra mitad -- que no tiene resolutor
+	// ni enum de frontera -- se afirma en AnInternallySelectedSetIsNotReachedFromTheBoundary, que es
+	// donde viven las tres ausencias del mismo tipo.
 	[TestFixture]
 	public sealed class EachClosedSetDeclaresExactlyTheMembersTheCanonNames
 	{
@@ -57,6 +68,7 @@ namespace DealershipCar.Dominio.Pruebas
 		[TestCase(typeof(CoverageStanding), 5)]
 		[TestCase(typeof(EnvelopeStanding), 3)]
 		[TestCase(typeof(Currency), 2)]
+		[TestCase(typeof(CostClassification), 2)]
 		public void ItDeclaresExactlyItsMembers(Type conjunto, int cuantos)
 		{
 			List<object> miembros = MiembrosDe(conjunto);
@@ -85,6 +97,7 @@ namespace DealershipCar.Dominio.Pruebas
 		[TestCase(typeof(RevisionState))]
 		[TestCase(typeof(CoverageStanding))]
 		[TestCase(typeof(EnvelopeStanding))]
+		[TestCase(typeof(CostClassification))]
 		public void ItCannotBeInstantiatedFromOutside(Type conjunto)
 		{
 			ConstructorInfo[] ctores = conjunto.GetConstructors(
@@ -111,6 +124,7 @@ namespace DealershipCar.Dominio.Pruebas
 		[TestCase(typeof(RevisionState))]
 		[TestCase(typeof(CoverageStanding))]
 		[TestCase(typeof(EnvelopeStanding))]
+		[TestCase(typeof(CostClassification))]
 		public void ItIsSealedBecauseNothingExtendsAClosedSet(Type conjunto)
 		{
 			Assert.That(conjunto.IsSealed, Is.True,
@@ -130,6 +144,7 @@ namespace DealershipCar.Dominio.Pruebas
 		[TestCase(typeof(CoverageStanding))]
 		[TestCase(typeof(EnvelopeStanding))]
 		[TestCase(typeof(Currency))]
+		[TestCase(typeof(CostClassification))]
 		public void ItIsInternalLikeTheRestOfTheDomain(Type conjunto)
 		{
 			Assert.That(conjunto.IsPublic, Is.False,

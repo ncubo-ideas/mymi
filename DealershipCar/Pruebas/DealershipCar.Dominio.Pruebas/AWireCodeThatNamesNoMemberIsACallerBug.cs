@@ -202,6 +202,14 @@ namespace DealershipCar.Dominio.Pruebas
 		// elige adentro y solo PROYECTA, no cruza nada hacia adentro, asi que NO necesita miembros
 		// en WireName ni ensancha TheDoorRecognisesTheNamesOfEveryClosedSetItSpeaks. La lista de
 		// aca abajo y la de aquel barrido no son la misma lista, y esa es la razon.
+		// CL-3 AGREGA CostClassification, y es el caso MAS interno de los nueve: los otros ocho se
+		// eligen adentro por una transicion o por una derivacion, y este se elige POR CUAL COMANDO SE
+		// LLAMO (§7.2 del plan). No hay ningun parametro de clasificacion en ninguna parte, asi que
+		// nunca cruza hacia adentro y no necesita ni un XxxCode ni miembros en WireName -- el
+		// argumento entero esta en DECISIONS.md, y su otra mitad se afirma en
+		// AnInternallySelectedSetIsNotReachedFromTheBoundary. Su Name es lo que la columna de las
+		// filas lleva; su HowItIsSaid es el segundo vocabulario, el que una persona lee, y no es lo
+		// que cruza la puerta.
 		[TestCase(typeof(FluidKind))]
 		[TestCase(typeof(TyrePosition))]
 		[TestCase(typeof(FuelGradeStanding))]
@@ -210,6 +218,7 @@ namespace DealershipCar.Dominio.Pruebas
 		[TestCase(typeof(EnvelopeStanding))]
 		[TestCase(typeof(RemainderStanding))]
 		[TestCase(typeof(RateStanding))]
+		[TestCase(typeof(CostClassification))]
 		public void TheProjectedNameIsTheMembersOwnName(Type conjunto)
 		{
 			foreach (FieldInfo campo in MiembrosDe(conjunto))

@@ -65,6 +65,38 @@ namespace DealershipCar.Dominio
 		}
 
 		/// <summary>
+		/// La parte de este monto que le corresponde a esa fraccion del entero, en la MISMA moneda.
+		/// Una parte que no es positiva, un entero que no lo es, o una parte mayor que el entero son
+		/// defectos de quien llama.
+		/// <para>
+		/// No redondea: el redondeo vive donde el monto se DICE, una sola vez, en la precision de su
+		/// propia moneda. Redondear aqui haria que las partes de un entero no sumaran el entero.
+		/// </para>
+		/// </summary>
+		internal Money Prorated(long part, long whole)
+		{
+			if (whole <= 0)
+				throw new DomainException(
+					"Se pidio una parte de " + Expressed() + " sobre un entero de "
+					+ whole.ToString(CultureInfo.InvariantCulture)
+					+ ". Sin un entero positivo no hay fraccion que sacar.");
+
+			if (part <= 0)
+				throw new DomainException(
+					"Se pidio una parte de " + part.ToString(CultureInfo.InvariantCulture)
+					+ " de " + Expressed() + ". Una parte que no es positiva no es una parte, y un "
+					+ "cero de dinero se lee como un gasto que hubo.");
+
+			if (part > whole)
+				throw new DomainException(
+					"Se pidio la parte " + part.ToString(CultureInfo.InvariantCulture) + " de "
+					+ whole.ToString(CultureInfo.InvariantCulture) + " de " + Expressed()
+					+ ". Una parte mayor que el entero daria mas dinero del que hubo.");
+
+			return new Money(_amount * part / whole, _currency);
+		}
+
+		/// <summary>
 		/// El monto dicho POR EL DOMINIO, con el signo de su moneda y su precision. La caratula lo
 		/// imprime y no compone nada.
 		/// </summary>
