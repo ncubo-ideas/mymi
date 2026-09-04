@@ -404,18 +404,23 @@ namespace DealershipCar.Dominio.Pruebas
 				"state.ReadTheStaysOfThisVehicle()",
 				"state.ReadWhereEachOperationStands()",
 				"state.ReadWhatTheServicesCost()",
+				"state.ReadHowThisVehicleIsDriven()",
 			})
 				Assert.That(page, Does.Contain(read),
-					"La pagina no hace la lectura '" + read + "'. Las cinco se leen en el mismo Reread: "
+					"La pagina no hace la lectura '" + read + "'. Las seis se leen en el mismo Reread: "
 					+ "una que se leyera aparte contestaria sobre otro momento del mismo registro.");
 		}
 
-		// Y LAS CINCO ESTAN UNA DETRAS DE LA OTRA, SIN NADA EN EL MEDIO, que es lo que "un solo momento"
+		// Y LAS SEIS ESTAN UNA DETRAS DE LA OTRA, SIN NADA EN EL MEDIO, que es lo que "un solo momento"
 		// quiere decir. Esta prueba se escribio DESPUES de que la falsificacion encontrara que nada veia
 		// la diferencia: MEDIDO, sacar una de las cinco de Reread y llamarla desde otro metodo DESPUES
 		// de un await dejo la suite entera VERDE, porque la afirmacion de arriba busca cada lectura por
 		// separado y las cinco seguian escritas en la pagina. Buscarlas sueltas afirma que existen; solo
 		// la CONTIGUIDAD afirma que son un momento.
+		//
+		// SON SEIS DESDE EL BLOQUE DEL RITMO DE USO, y la afirmacion se AMPLIO nombrando la sexta en su
+		// sitio en vez de aflojarse a un prefijo: la sexta lee su propio instante, asi que si se separa
+		// de las otras cinco su ventana de doce meses queda anclada en otro momento del mismo registro.
 		[Test]
 		public void AndTheFiveReadsAreContiguousWithNothingBetweenThemThatCouldAwait()
 		{
@@ -428,11 +433,12 @@ namespace DealershipCar.Dominio.Pruebas
 					+ "stands = state.ReadWhereThisVehicleStands(); "
 					+ "stays = state.ReadTheStaysOfThisVehicle(); "
 					+ "operations = state.ReadWhereEachOperationStands(); "
-					+ "costs = state.ReadWhatTheServicesCost();"),
-				"Las cinco lecturas dejaron de estar una detras de la otra. Una que se haga aparte -- en "
+					+ "costs = state.ReadWhatTheServicesCost(); "
+					+ "use = state.ReadHowThisVehicleIsDriven();"),
+				"Las seis lecturas dejaron de estar una detras de la otra. Una que se haga aparte -- en "
 				+ "otro metodo, o despues de un await -- contesta sobre otro momento del mismo registro, "
 				+ "y la pantalla mezcla dos: eso es exactamente lo que 'un solo Reread' existe para "
-				+ "impedir. Buscar cada lectura por separado NO lo ve, porque las cinco siguen escritas.");
+				+ "impedir. Buscar cada lectura por separado NO lo ve, porque las seis siguen escritas.");
 
 			// Y NINGUNA SE HACE DOS VECES. Un segundo sitio de llamada es un segundo momento aunque el
 			// bloque de arriba siga intacto.
@@ -443,6 +449,7 @@ namespace DealershipCar.Dominio.Pruebas
 				"state.ReadTheStaysOfThisVehicle()",
 				"state.ReadWhereEachOperationStands()",
 				"state.ReadWhatTheServicesCost()",
+				"state.ReadHowThisVehicleIsDriven()",
 			})
 				Assert.That(TimesItSays(page, read), Is.EqualTo(1),
 					"'" + read + "' se hace en mas de un sitio de la pagina.");

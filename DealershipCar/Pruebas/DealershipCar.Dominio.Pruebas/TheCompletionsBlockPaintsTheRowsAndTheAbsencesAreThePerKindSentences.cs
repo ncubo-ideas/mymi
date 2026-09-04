@@ -200,6 +200,14 @@ namespace DealershipCar.Dominio.Pruebas
 		// EL ENCABEZADO NO NOMBRA NINGUNA VENTANA, y no es una omision: la lectura del historial no toma
 		// ningun instante y no tiene periodo. Cada fila trae su propio instante y la cadena es la que es,
 		// asi que no hay ninguna ventana que el encabezado pudiera duplicar.
+		//
+		// EL SUJETO SE ESTRECHO AL ENCABEZADO DE ESTE BLOQUE, y hay que decir por que. Esta afirmacion
+		// se escribio cuando Historial.razor tenia DOS bloques y buscaba las palabras de periodo en el
+		// ARCHIVO ENTERO; hoy tiene CUATRO, y el del ritmo de uso nombra su ventana en el encabezado
+		// porque su ley se lo exige -- la frase del dominio no la nombra cuando hay lecturas. Un
+		// archivo compartido convierte una afirmacion sobre el propio bloque en una afirmacion sobre
+		// los vecinos, y esa segunda es falsa. No se aflojo: se apunto a lo que siempre fue su sujeto,
+		// y el renglon de abajo prueba que sigue atrapando lo que existe para atrapar.
 		[Test]
 		public void TheBlockNamesNoWindowBecauseTheReadIsUnbounded()
 		{
@@ -208,14 +216,28 @@ namespace DealershipCar.Dominio.Pruebas
 			Assert.That(markup, Does.Contain("Lo que le han hecho"),
 				"El encabezado del bloque cambio de nombre.");
 
+			string heading = TheHeadingOfThisBlockIn(markup);
+
 			foreach (string bounded in new[]
 			{
 				"Lo que le han hecho en", "Lo que le han hecho desde", "últimos", "este año",
 			})
-				Assert.That(markup, Does.Not.Contain(bounded),
+			{
+				Assert.That(heading, Does.Not.Contain(bounded),
 					"El encabezado del bloque del historial nombra un periodo ('" + bounded + "'). La "
 					+ "lectura no toma ningun instante: acotarla en el encabezado seria una ventana que "
 					+ "nadie aplico.");
+
+				// EL CONTROL DEL RECORTE: la misma palabra, metida en este encabezado, SI se ve. Sin
+				// este renglon, recortar el sujeto y recortarlo hasta que no mire nada son el mismo
+				// verde.
+				Assert.That(
+					TheHeadingOfThisBlockIn(markup.Replace(
+						"Lo que le han hecho", "Lo que le han hecho, " + bounded)),
+					Does.Contain(bounded),
+					"El recorte del sujeto dejo de ver una palabra de periodo puesta en ESTE "
+					+ "encabezado, asi que la afirmacion de arriba no mide nada.");
+			}
 
 			// Y EL PORTADOR TAMPOCO LE PONE UNO: el instante que si lleva es el de la cuenta atras, cuyas
 			// frases no nombran su propio momento.
@@ -338,6 +360,31 @@ namespace DealershipCar.Dominio.Pruebas
 			}
 
 			return found;
+		}
+
+		/// <summary>
+		/// El encabezado de ESTE bloque y nada mas: el div de seccion que lleva su titulo, desde su
+		/// apertura hasta su cierre. Hace falta porque el archivo tiene mas de un bloque y cada uno
+		/// decide por su cuenta si nombra una ventana.
+		/// </summary>
+		private static string TheHeadingOfThisBlockIn(string markup)
+		{
+			int title = markup.IndexOf("Lo que le han hecho", StringComparison.Ordinal);
+
+			Assert.That(title, Is.GreaterThanOrEqualTo(0),
+				"El titulo del bloque no esta en el markup, asi que no hay encabezado que recortar.");
+
+			int opens = markup.LastIndexOf("<div class=\"d-sec\"", title, StringComparison.Ordinal);
+
+			Assert.That(opens, Is.GreaterThanOrEqualTo(0),
+				"El titulo del bloque dejo de estar dentro de un div de seccion.");
+
+			int closes = markup.IndexOf("</div>", title, StringComparison.Ordinal);
+
+			Assert.That(closes, Is.GreaterThan(opens),
+				"El div de seccion del encabezado no cierra.");
+
+			return markup.Substring(opens, closes - opens);
 		}
 
 		private static string TheBlockAsItIsWritten()

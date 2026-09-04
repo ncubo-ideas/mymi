@@ -58,6 +58,20 @@ namespace DealershipCar.Dominio.Pruebas
 	// sobre la serie de verdad y con sus unidades comprobadas, y que ninguna caratula la escriba lo
 	// barre TheShellPerformsNoArithmeticOnADomainValue.
 	//
+	// Y ESA SERIE YA LLEGO A LA PUERTA -- BuildOrder/OD-2 -- CON UN SOLO NUMERO: ReadingCountBetween,
+	// que es un CONTEO QUE EL DOMINIO COMPONE, la primera categoria, la que ya estaba. Las otras
+	// cinco lecturas de la serie contestan un si o no, un nombre, dos frases y el registro. El ritmo
+	// NO sale como numero por ninguna: sale adentro de la frase, con su tramo dicho.
+	//
+	// LO QUE ESTE INSTRUMENTO NO VE, SEGUNDA PARTE, dicho como LIMITE y no tapado con una prueba que
+	// se le parezca: un numero adentro de una COLUMNA de un registro. El discriminador de abajo es
+	// ReturnType == int o long, exactamente, asi que el int[] de valores del odometro que
+	// OdometerSeriesRecord lleva no entra en este censo y no tiene por que -- el sujeto de esta ley
+	// es una MITAD, y una fila de la serie es COMPLETA: valor, unidad, instante y fuente, con el
+	// ritmo ya compuesto llegando en la misma respuesta. Que ninguna columna se llame por una mitad
+	// lo afirman TravelledAndEffectiveLimitNeverLeaveTheDoorInAnySpelling y
+	// NoReadReturnsTheEndsWithoutTheRateAndNoReadReturnsTheChangeAlone, cada uno sobre sus nombres.
+	//
 	// LAS DOS QUE ENTRARON EN MS-4 Y NO NECESITARON NINGUNA AMPLIACION: CompletionCount y
 	// PublishedServicePriceCount son CONTEOS QUE EL DOMINIO COMPONE, la primera categoria, que ya
 	// estaba. Dejar que la ampliacion las cubriera en silencio seria justamente la regresion que la
@@ -163,6 +177,12 @@ namespace DealershipCar.Dominio.Pruebas
 		//   ReadDistanceRemaining y ReadDaysRemaining son la TERCERA categoria, la que MS-4 abrio: un
 		//   resto compuesto adentro, con su unidad y su medibilidad al lado. Es la ampliacion, y esta
 		//   escrita arriba y en DECISIONS.md.
+		//
+		// Y LA DE BuildOrder/OD-2 ENTRA POR LA PRIMERA, LA QUE YA ESTABA. ReadingCountBetween cuenta
+		// las FILAS del registro de la serie en un periodo -- de las lecturas sale la cuenta y de la
+		// cuenta no salen las lecturas -- y tiene su hermana en filas al lado (ReadingsBetween) y su
+		// hermana en palabras al lado (DescribeRateOfUse). No pidio ninguna ampliacion, y decirlo es
+		// lo que impide que la ampliacion de MS-4 la cubra en silencio.
 		private static readonly string[] EveryNumberTheDoorHandsOut =
 		{
 			"CountDue/0",
@@ -180,6 +200,7 @@ namespace DealershipCar.Dominio.Pruebas
 			"PublishedServicePriceCount/0",
 			"ReadDistanceRemaining/2",
 			"ReadDaysRemaining/2",
+			"ReadingCountBetween/2",
 		};
 
 		[Test]

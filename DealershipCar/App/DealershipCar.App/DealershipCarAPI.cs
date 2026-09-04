@@ -1308,6 +1308,102 @@ namespace DealershipCar.App
 		}
 
 		/// <summary>
+		/// Si se puede decir el ritmo de uso de ese periodo. TOTAL, y es la que hay que hacer antes
+		/// de mostrar la frase donde no cabe una suspension. Las cinco situaciones contestan: ninguna
+		/// de las otras cinco lecturas de la serie rechaza por esta.
+		/// </summary>
+		public bool CanARateOfUseBeSaid(DateTime from, DateTime to)
+		{
+			return ATruth(
+				"@can = schedule.CanARateOfUseBeSaid(@from, @to);", "can",
+				APeriodOfInstants(from, to));
+		}
+
+		/// <summary>
+		/// En cual de las cinco situaciones esta el ritmo de ese periodo, por el NOMBRE del miembro.
+		/// TOTAL, y ninguna de las cinco quiere decir que no se sabe.
+		/// </summary>
+		public string ReadRateOfUseStanding(DateTime from, DateTime to)
+		{
+			return AText(
+				"@standing = schedule.ReadRateOfUseStanding(@from, @to);", "standing",
+				APeriodOfInstants(from, to));
+		}
+
+		/// <summary>
+		/// El ritmo de uso de ese periodo en una frase: los dos extremos con sus instantes, la
+		/// distancia, el tiempo y la distancia por dia; o la razon con nombre que impide decirlo.
+		/// TOTAL. Los dos extremos no salen nunca sueltos: salen aca, y esta frase ya trae el ritmo.
+		/// </summary>
+		public string DescribeRateOfUse(DateTime from, DateTime to)
+		{
+			return AText(
+				"@says = schedule.DescribeRateOfUse(@from, @to);", "says",
+				APeriodOfInstants(from, to));
+		}
+
+		/// <summary>
+		/// Los dos periodos comparados en una sola frase: cada uno con su propio ritmo, y el cambio
+		/// del PRIMERO respecto al SEGUNDO dicho adentro. TOTAL. El cambio no sale por ninguna
+		/// lectura como numero.
+		/// </summary>
+		public string DescribeTwoPeriodsOfUseCompared(
+			DateTime from1, DateTime to1, DateTime from2, DateTime to2)
+		{
+			return AText(@"
+				@says = schedule.DescribeTwoPeriodsOfUseCompared(@from1, @to1, @from2, @to2);
+			", "says", TwoPeriodsOfInstants(from1, to1, from2, to2));
+		}
+
+		/// <summary>
+		/// Las lecturas del periodo como filas: cuando se observo cada una, que valor leyo, en que
+		/// unidad, de que fuente vino y la frase con que el dominio la dice, en columnas paralelas y
+		/// en orden de observacion. TOTAL, y contesta CERO filas donde no hay ninguna.
+		/// </summary>
+		public OdometerSeriesRecord ReadingsBetween(DateTime from, DateTime to)
+		{
+			using (RentedParameter rented = app.Actor.RentedParameters())
+			{
+				app.Actor.Using(@"
+					@observedAt = schedule.ReadingInstantsBetween(@from, @to);
+					@value      = schedule.ReadingValuesBetween(@from, @to);
+					@unit       = schedule.ReadingUnitsBetween(@from, @to);
+					@source     = schedule.ReadingSourcesBetween(@from, @to);
+					@says       = schedule.DescribeEachReadingBetween(@from, @to);
+				")
+				.WithParameters(rented, p => {
+					p[Parameter.Out, "observedAt", typeof(string[])] = default;
+					p[Parameter.Out, "value",      typeof(int[])]    = default;
+					p[Parameter.Out, "unit",       typeof(string[])] = default;
+					p[Parameter.Out, "source",     typeof(string[])] = default;
+					p[Parameter.Out, "says",       typeof(string[])] = default;
+
+					APeriodOfInstants(from, to)(p);
+				})
+				.PerformQuery();
+
+				return OdometerSeriesRecord.Of(
+					rented["observedAt"].GetValue<string[]>(),
+					rented["value"].GetValue<int[]>(),
+					rented["unit"].GetValue<string[]>(),
+					rented["source"].GetValue<string[]>(),
+					rented["says"].GetValue<string[]>());
+			}
+		}
+
+		/// <summary>
+		/// Cuantas lecturas del odometro cayeron dentro de ese periodo. TOTAL, y es la cuenta de las
+		/// FILAS del registro de arriba: de las lecturas sale la cuenta y de la cuenta no salen las
+		/// lecturas.
+		/// </summary>
+		public int ReadingCountBetween(DateTime from, DateTime to)
+		{
+			return ACount(
+				"@count = schedule.ReadingCountBetween(@from, @to);", "count",
+				APeriodOfInstants(from, to));
+		}
+
+		/// <summary>
 		/// Si se puede decir cuanta distancia le queda a esa operacion a ese instante. TOTAL, y es la
 		/// pregunta que hay que hacer antes de las dos lecturas guardadas de abajo.
 		/// </summary>
@@ -2778,6 +2874,40 @@ namespace DealershipCar.App
 			return p => {
 				p["fromDay", typeof(string)] = from;
 				p["toDay",   typeof(string)] = to;
+			};
+		}
+
+		/// <summary>
+		/// Los dos extremos de un periodo dicho en INSTANTES, normalizados y atados para el script
+		/// que los pregunta. Los dos son inclusivos.
+		/// <para>
+		/// Un segundo extremo anterior al primero NO se refusa, al reves que un periodo dicho en
+		/// dias: los dos extremos ya dicen un instante cada uno, las seis lecturas de la serie son
+		/// totales, y la respuesta nombra los extremos que se le dieron -- asi que un extremo
+		/// inventado produce una respuesta visiblemente acotada y nunca un hecho falso. Ordenarlos
+		/// aca contestaria un periodo distinto del que se pregunto, sin decirlo.
+		/// </para>
+		/// </summary>
+		private static Action<Parameters> APeriodOfInstants(DateTime from, DateTime to)
+		{
+			return p => {
+				p["from", typeof(DateTime)] = InUtc(from);
+				p["to",   typeof(DateTime)] = InUtc(to);
+			};
+		}
+
+		/// <summary>
+		/// Los cuatro extremos de la comparacion, atados una sola vez. El primer par es el periodo
+		/// del que se dice el cambio y el segundo es contra el que se dice.
+		/// </summary>
+		private static Action<Parameters> TwoPeriodsOfInstants(
+			DateTime from1, DateTime to1, DateTime from2, DateTime to2)
+		{
+			return p => {
+				p["from1", typeof(DateTime)] = InUtc(from1);
+				p["to1",   typeof(DateTime)] = InUtc(to1);
+				p["from2", typeof(DateTime)] = InUtc(from2);
+				p["to2",   typeof(DateTime)] = InUtc(to2);
 			};
 		}
 

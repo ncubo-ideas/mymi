@@ -8,8 +8,14 @@ namespace DealershipCar.Dominio.Pruebas
 	// EL TABLERO DE 'historia' PREGUNTA LA PANTALLA DE MANTENIMIENTO A UN INSTANTE ESCRITO Y A NINGUN
 	// OTRO. La consola GUIONA una secuencia recibida, asi que no lee reloj (C27) -- eso ya lo afirma
 	// TheConsoleStagesFromLiteralsAndReadsNoClock, y esta fixture NO lo repite. Lo que agrega es la otra
-	// mitad, la que ese barrido no puede ver: que de los instantes ESCRITOS que la consola tiene, los
-	// tres bloques nuevos usan UNO, y es TheInstantTheBoardIsRead.
+	// mitad, la que ese barrido no puede ver: CUAL de los instantes ESCRITOS que la consola tiene usa
+	// cada lectura del tablero.
+	//
+	// LA PANTALLA DE MANTENIMIENTO USA UNO SOLO, y es TheInstantTheBoardIsRead: sus once lecturas
+	// preguntan POR UN INSTANTE. LOS DOS BLOQUES DEL ODOMETRO USAN TRES, porque sus seis lecturas
+	// preguntan POR UN PERIODO, y un periodo tiene dos extremos: el instante del tablero es uno de
+	// ellos y los otros dos son momentos que la propia historia ya guiona -- el dia de la entrega y
+	// la primera evaluacion. Son dos leyes distintas y estan afirmadas por separado.
 	//
 	// POR QUE TIENE QUE SER UNA PRUEBA SOBRE EL TEXTO Y NO SOBRE UNA CORRIDA. Dos razones, y la segunda
 	// es la que decide:
@@ -26,7 +32,7 @@ namespace DealershipCar.Dominio.Pruebas
 	// con once lineas largas y se cobra en que el instrumento ve lo que tiene que ver.
 	//
 	// LO QUE ESTA FIXTURE NO VE, dicho y no disimulado: una clase pedida a traves de una variable que no
-	// sea la del recorrido. Hoy no hay ninguna otra en los tres bloques, y por eso lo que se afirma es
+	// sea la del recorrido. Hoy no hay ninguna otra en los cinco bloques, y por eso lo que se afirma es
 	// que ninguna lectura recibe una clase ENTRE COMILLAS -- que es la unica forma en que la consola
 	// podria nombrar una por su cuenta, porque no referencia el dominio y no tiene sus enums.
 	[TestFixture]
@@ -36,11 +42,60 @@ namespace DealershipCar.Dominio.Pruebas
 
 		private const string TheBoardsFile = "Program.cs";
 
-		// LOS TRES BLOQUES. El piso de abajo cuenta archivos; esto nombra los miembros: un barrido que
-		// leyo Program.cs y no encontro ninguno de los tres esta verde por no haber nada que juzgar.
-		private static readonly string[] TheThreeBlocks =
+		// LOS CINCO BLOQUES. El piso de abajo cuenta archivos; esto nombra los miembros: un barrido que
+		// leyo Program.cs y no encontro ninguno esta verde por no haber nada que juzgar.
+		//
+		// ERAN TRES Y SON CINCO DESDE OD-3, y el nombre lleva la cuenta a proposito: agregar un bloque
+		// al tablero obliga a renombrar esto y los dos metodos de abajo, que es algo que se ve en un
+		// diff. Los dos nuevos son los del odometro -- el ritmo del tramo de la historia y las dos
+		// mitades comparadas -- y entran aca por lo que midio la fila 10 de la tabla de falsificacion
+		// de MS-5: borrada la LLAMADA a un bloque, el bloque queda declarado y nunca invocado, C# no
+		// avisa nada y todas las demas afirmaciones de esta fixture miran el CUERPO.
+		private static readonly string[] TheFiveBlocks =
 		{
 			"TheCountdownOfEveryKind", "TheHistoryOfEveryKind", "ThePublishedServicePrices",
+			"TheRateOfUseOverTheStorysSpan", "TheTwoHalvesOfTheStoryCompared",
+		};
+
+		// LAS SEIS LECTURAS DE LA SERIE, todas con periodo y ninguna guardada: las seis son TOTALES y
+		// no hay pre-chequeo que escribir. CanARateOfUseBeSaid es la mitad de MEDIBILIDAD de un par
+		// compuesto y no una guarda delante de un rechazo, asi que no entra a TheGuardOfEachRead.
+		private static readonly string[] TheSixReadsOfTheSeries =
+		{
+			"CanARateOfUseBeSaid",
+			"ReadRateOfUseStanding",
+			"DescribeRateOfUse",
+			"DescribeTwoPeriodsOfUseCompared",
+			"ReadingsBetween",
+			"ReadingCountBetween",
+		};
+
+		// LOS TRES INSTANTES ESCRITOS CON QUE LOS BLOQUES DEL ODOMETRO PUEDEN PREGUNTAR, y son los
+		// momentos que la propia historia ya guiona: el dia de la entrega, la primera evaluacion y el
+		// instante del tablero. Ninguno se deriva de otro.
+		//
+		// Story.SixMonthsLater NO ESTA, y ese es el filo: vale lo mismo que TheInstantTheBoardIsRead
+		// -- los dos son el 2026-09-01 -- asi que ninguna corrida podria notar el cambio. El tablero
+		// pregunta con el instante DEL TABLERO y lo dice con ese nombre.
+		private static readonly string[] TheWrittenMomentsTheUseBlocksMayAskWith =
+		{
+			"TheInstantTheBoardIsRead", "Story.Delivery", "Story.TheFirstEvaluation",
+		};
+
+		// EL ORDEN DE LOS CUATRO LIMITES DE LA COMPARACION, y es contrato: el cambio se dice del
+		// PRIMER periodo respecto al SEGUNDO, cosa que OD-2 fijo por falsificacion en la puerta. La
+		// mitad TARDIA va primera -- la del semestre que termina en el instante del tablero -- que es
+		// la misma direccion que va a querer la ventana de la pantalla.
+		private const string TheComparisonsFourBoundsInOrder =
+			"Story.TheFirstEvaluation, TheInstantTheBoardIsRead, Story.Delivery, "
+			+ "Story.TheFirstEvaluation";
+
+		// LAS CUATRO FORMAS DE DERIVAR UNA FECHA DE OTRA. Un instante derivado sigue siendo
+		// reproducible y deja de decir cual es, que es el argumento que ya hace
+		// EveryInstantOfTheStagedStaysIsWrittenDownAsALiteral sobre el guion de las estadias.
+		private static readonly string[] TheWaysOfDerivingAnInstant =
+		{
+			"AddDays", "AddMonths", "AddYears", "AddHours",
 		};
 
 		// LAS ONCE LECTURAS DEL TABLERO QUE TOMAN UN INSTANTE: las DIEZ de la parte A, que lo toman
@@ -81,13 +136,13 @@ namespace DealershipCar.Dominio.Pruebas
 		// de la fila no sirve para eso: es el hito DICHO y deliberadamente no direccionable.
 		private const string TheOneTheBoardDoesNotCall = "DescribePublishedServicePrice";
 
-		// LA REGION QUE ESTA FIXTURE JUZGA PARA LAS ETIQUETAS: los tres bloques, que van seguidos y
+		// LA REGION QUE ESTA FIXTURE JUZGA PARA LAS ETIQUETAS: los cinco bloques, que van seguidos y
 		// terminan donde empiezan las mediciones contra el disco. Se acota A PROPOSITO y no por
 		// comodidad: 'taller' imprime su propia columna Says y la pinta en una linea de continuacion sin
 		// etiqueta, que es otra rebanada y otra decision (DEC-52/DEC-61). Un barrido global tendria que
 		// llevarla en una lista de excepciones, y una lista de excepciones sobre codigo ajeno crece.
 		//
-		// Y LA REGION SE DEFIENDE SOLA: si alguien saca uno de los tres printers de aca, la columna que
+		// Y LA REGION SE DEFIENDE SOLA: si alguien saca uno de los printers de aca, la columna que
 		// ese printer pinta deja de aparecer y el 'right' de abajo queda vacio, que es rojo.
 		private const string TheFirstLineOfTheBlocks = "private static void TheCountdownOfEveryKind(";
 
@@ -107,10 +162,18 @@ namespace DealershipCar.Dominio.Pruebas
 			new object[] { ".Operation[", "operacion" },
 			new object[] { ".Milestone[", "hito" },
 			new object[] { ".Revision[", "revision" },
+			// LAS CUATRO COLUMNAS QUE OD-3 AGREGA AL TABLERO. La quinta del registro de la serie es
+			// Says, que ya esta arriba con la misma etiqueta que las otras tres filas del tablero.
+			// Value es la PRIMERA columna numerica del modulo y entra igual que las de texto: lo que
+			// esta afirmacion ve es la etiqueta, no el tipo.
+			new object[] { ".ObservedAt[", "observada el" },
+			new object[] { ".Value[", "el odometro marcaba" },
+			new object[] { ".Unit[", "en unidad" },
+			new object[] { ".Source[", "de fuente" },
 		};
 
 		[Test]
-		public void TheThreeBlocksArrivedAndTheSweepIsReadingTheFileTheyAreIn()
+		public void TheFiveBlocksArrivedAndTheSweepIsReadingTheFileTheyAreIn()
 		{
 			var named = new List<string>();
 
@@ -125,27 +188,27 @@ namespace DealershipCar.Dominio.Pruebas
 
 			string live = TheLiveBoard();
 
-			foreach (string block in TheThreeBlocks)
+			foreach (string block in TheFiveBlocks)
 				Assert.That(live, Does.Contain(block),
 					"El bloque '" + block + "' no esta en el tablero. Las afirmaciones de esta fixture "
-					+ "recorren LLAMADAS: sin los tres bloques no hay ninguna, y no haber ninguna es "
+					+ "recorren LLAMADAS: sin los cinco bloques no hay ninguna, y no haber ninguna es "
 					+ "verde.");
 		}
 
-		// Y LOS TRES SE LLAMAN, UNA VEZ CADA UNO, DESDE LA HISTORIA DE SEIS MESES. Esta prueba tambien
+		// Y LOS CINCO SE LLAMAN, UNA VEZ CADA UNO, DESDE LA HISTORIA DE SEIS MESES. Esta prueba tambien
 		// existe porque un parche no puso nada rojo: borrada la LLAMADA al bloque de precios -- el
 		// bloque entero declarado y nunca invocado --, la suite quedo verde y el tablero imprimia dos
 		// tercios de si mismo. Un metodo privado que nadie llama no lo avisa el compilador de C#, y
 		// ninguna de las otras afirmaciones de esta fixture mira las LLAMADAS: todas miran el cuerpo.
 		//
 		// UNA VEZ CADA UNO Y DESDE ADENTRO DE 'historia', que es lo que PLAN-BuildOrder.md §8 dice --
-		// tres bloques y UN llamador. Llamarlos tambien desde 'estado' o desde 'refresco' no esta
+		// cinco bloques y UN llamador. Llamarlos tambien desde 'estado' o desde 'refresco' no esta
 		// prohibido, esta obligado a decirse: ahi los instantes son otros y P-13 reserva el guionado a
 		// las rebanadas que reciben un hecho nuevo.
 		private const string TheCallerOfTheBlocks = "private static int TheSixMonthStory(";
 
 		[Test]
-		public void TheThreeBlocksAreCalledOnceEachFromTheSixMonthStoryAndFromNowhereElse()
+		public void TheFiveBlocksAreCalledOnceEachFromTheSixMonthStoryAndFromNowhereElse()
 		{
 			string[] live = TheLiveBoard().Split('\n');
 
@@ -162,7 +225,7 @@ namespace DealershipCar.Dominio.Pruebas
 				"No esta '" + TheCallerOfTheBlocks + "', que es el subcomando que arma el tablero.");
 			Assert.That(to, Is.GreaterThan(from), "No se encontro el final de ese subcomando.");
 
-			foreach (string block in TheThreeBlocks)
+			foreach (string block in TheFiveBlocks)
 			{
 				var calls = new List<int>();
 				var call = new Regex(@"^\s*" + block + @"\s*\(");
@@ -237,6 +300,76 @@ namespace DealershipCar.Dominio.Pruebas
 				+ "a what_the_service_costs, con otra ropa.");
 		}
 
+		// LAS SEIS LECTURAS DE LA SERIE SE PIDEN EN EL TABLERO, Y SOLO CON LOS MOMENTOS ESCRITOS DE LA
+		// PROPIA HISTORIA. Dos mitades, y la primera es un PISO: una lectura que la consola nunca
+		// ejercito es la unica defensa que hay contra un error de tipeo en un script del DSL, porque
+		// un typo del DSL se descubre corriendo y no compilando.
+		//
+		// LA SEGUNDA MITAD ES LA QUE DECIDE ALGO. Los limites del tramo se pueden escribir de dos
+		// maneras que en esta historia dan EL MISMO INSTANTE: Story.Delivery es el 2025-09-01 y
+		// TheInstantTheBoardIsRead.AddYears(-1) tambien. La derivada no la atrapa el barrido de
+		// aritmetica -- el detector pide un caracter de operando antes del operador y ahi hay un
+		// parentesis -- asi que si nadie afirma esto, la eleccion vive en la prosa que el bloque
+		// imprime y en ningun otro lado. Lo que se pide es el nombre del momento, que es lo que dice
+		// CUAL es; un -1 al lado de un AddYears es un largo de ventana que nadie publico.
+		[Test]
+		public void EveryReadOfTheSeriesIsAskedOnTheBoardAndOnlyWithTheStorysOwnWrittenMoments()
+		{
+			string region = TheRegionOfTheBlocks();
+
+			foreach (string read in TheSixReadsOfTheSeries)
+			{
+				List<string> calls = TheArgumentsOfEveryCallTo(region, read);
+
+				Assert.That(calls, Is.Not.Empty,
+					"El tablero no llama a '" + read + "'. Las seis lecturas de la serie son TOTALES y "
+					+ "ninguna rechaza, asi que no hay pre-chequeo que las cubra: lo unico que las "
+					+ "ejercita es que la caratula las pida, y un script del DSL con un error de tipeo "
+					+ "se descubre corriendo.");
+
+				foreach (string arguments in calls)
+					foreach (string bound in arguments.Split(','))
+						Assert.That(TheWrittenMomentsTheUseBlocksMayAskWith, Does.Contain(bound.Trim()),
+							"'" + read + "(" + arguments + ")' pregunta con un limite que no es ninguno "
+							+ "de los tres momentos escritos de la historia. Story.SixMonthsLater vale "
+							+ "lo mismo que TheInstantTheBoardIsRead y ninguna corrida notaria el "
+							+ "cambio; una fecha derivada de otra sigue siendo reproducible y deja de "
+							+ "decir cual es.");
+			}
+
+			foreach (string derived in TheWaysOfDerivingAnInstant)
+				Assert.That(region, Does.Not.Contain(derived),
+					"'" + derived + "' en los bloques del tablero. Un tramo de doce meses escrito como "
+					+ "'el instante del tablero menos un ano' trae un largo de ventana que nadie le "
+					+ "publico a esta caratula, y en esta historia da exactamente el mismo instante que "
+					+ "el dia de la entrega, que si es un hecho del guion.");
+		}
+
+		// EL ORDEN DE LOS CUATRO LIMITES DE LA COMPARACION, QUE ES CONTRATO Y NO PRESENTACION. El
+		// cambio se dice del PRIMER periodo respecto al SEGUNDO -- OD-2 lo fijo cruzando los cuatro en
+		// la puerta -- asi que cual mitad va primera decide el signo de la frase.
+		//
+		// SE MIRA EL TEXTO ENTERO DE LOS ARGUMENTOS Y NO CADA UNO POR SEPARADO: los cuatro limites
+		// salen de un juego de tres nombres, asi que una permutacion pasa cualquier afirmacion que
+		// mire los nombres sin el orden.
+		[Test]
+		public void TheComparisonAsksTheLaterHalfFirstAndTheEarlierHalfSecond()
+		{
+			List<string> calls = TheArgumentsOfEveryCallTo(
+				TheRegionOfTheBlocks(), "DescribeTwoPeriodsOfUseCompared");
+
+			Assert.That(calls, Has.Count.EqualTo(1),
+				"La comparacion de las dos mitades se pide " + calls.Count + " veces en los bloques "
+				+ "del tablero, y se pide una.");
+
+			Assert.That(TheOneSpaced(calls[0]), Is.EqualTo(TheComparisonsFourBoundsInOrder),
+				"Los cuatro limites de la comparacion no son los cuatro esperados en ese orden. La "
+				+ "mitad TARDIA -- de la primera evaluacion al instante del tablero -- va PRIMERA, y "
+				+ "la temprana -- de la entrega a la primera evaluacion -- va segunda: el dominio dice "
+				+ "el cambio del primer periodo respecto al segundo, asi que cruzarlos da la frase al "
+				+ "reves sin que nada mas se entere. Lo escrito: " + TheOneSpaced(calls[0]));
+		}
+
 		// NINGUNA CLASE LA PONE LA CONSOLA. Las nueve salen de Story.TheNineKinds y cada lectura recibe
 		// la del recorrido. Una clase entre comillas adentro de un bloque seria una fila de una clase
 		// impresa bajo el titulo de otra, que es el rojo que esto existe para dar.
@@ -295,7 +428,7 @@ namespace DealershipCar.Dominio.Pruebas
 			int atBranch = -1;
 			int atAsked = -1;
 
-			foreach (int line in TheLinesOfTheThreeBlocks(written))
+			foreach (int line in TheLinesOfTheBlocks(written))
 			{
 				if (bound.IsMatch(live[line])) atBound = line;
 				if (branch.IsMatch(live[line])) atBranch = line;
@@ -344,7 +477,7 @@ namespace DealershipCar.Dominio.Pruebas
 			var wrong = new List<string>();
 			var right = new List<string>();
 
-			foreach (int line in TheLinesOfTheThreeBlocks(written))
+			foreach (int line in TheLinesOfTheBlocks(written))
 			{
 				if (!live[line].Contains(column)) continue;
 
@@ -377,7 +510,7 @@ namespace DealershipCar.Dominio.Pruebas
 			// Does.Contain global pasaria con la linea de otra rebanada.
 			var inTheBlocks = new List<string>();
 
-			foreach (int line in TheLinesOfTheThreeBlocks(written)) inTheBlocks.Add(live[line]);
+			foreach (int line in TheLinesOfTheBlocks(written)) inTheBlocks.Add(live[line]);
 
 			string region = string.Join("\n", inTheBlocks);
 
@@ -439,10 +572,10 @@ namespace DealershipCar.Dominio.Pruebas
 				"TheInstantTheBoardIsRead no se declara con un new DateTime de argumentos constantes.");
 		}
 
-		// LOS INDICES DE LAS LINEAS DE LOS TRES BLOQUES, y revienta si no encuentra los dos bordes: un
+		// LOS INDICES DE LAS LINEAS DE LOS BLOQUES, y revienta si no encuentra los dos bordes: un
 		// borde no encontrado devolveria una region vacia, y una region vacia deja las etiquetas verdes
 		// por no haber mirado ninguna linea.
-		private static IEnumerable<int> TheLinesOfTheThreeBlocks(string[] written)
+		private static IEnumerable<int> TheLinesOfTheBlocks(string[] written)
 		{
 			int from = -1;
 			int to = -1;
@@ -454,9 +587,9 @@ namespace DealershipCar.Dominio.Pruebas
 			}
 
 			Assert.That(from, Is.GreaterThanOrEqualTo(0),
-				"No esta '" + TheFirstLineOfTheBlocks + "', que es donde empiezan los tres bloques.");
+				"No esta '" + TheFirstLineOfTheBlocks + "', que es donde empiezan los bloques.");
 			Assert.That(to, Is.GreaterThan(from),
-				"'" + TheFirstLineAfterTheBlocks + "' no esta despues de los tres bloques, asi que la "
+				"'" + TheFirstLineAfterTheBlocks + "' no esta despues de los bloques, asi que la "
 				+ "region que se juzga esta vacia o al reves.");
 
 			var lines = new List<int>();
@@ -464,6 +597,29 @@ namespace DealershipCar.Dominio.Pruebas
 			for (int line = from; line < to; line++) lines.Add(line);
 
 			return lines;
+		}
+
+		// LA REGION ENTERA COMO TEXTO VIVO, para las afirmaciones que recorren LLAMADAS en vez de
+		// lineas etiquetadas. Se acota igual que las etiquetas y por la misma razon: 'taller' y
+		// 'garantia' preguntan con sus propios instantes escritos, que son correctos ahi y serian un
+		// rojo aca.
+		private static string TheRegionOfTheBlocks()
+		{
+			string[] live = TheLiveBoard().Split('\n');
+			string[] written = File.ReadAllText(TheBoardsSource()).Split('\n');
+
+			var inTheBlocks = new List<string>();
+
+			foreach (int line in TheLinesOfTheBlocks(written)) inTheBlocks.Add(live[line]);
+
+			return string.Join("\n", inTheBlocks);
+		}
+
+		// LOS ARGUMENTOS DICHOS CON UN SOLO ESPACIO ENTRE COMAS, para poder compararlos letra por
+		// letra sin que el ancho de una linea partida decida el resultado.
+		private static string TheOneSpaced(string arguments)
+		{
+			return new Regex(@"\s+").Replace(arguments, " ").Trim();
 		}
 
 		private static string TheBoardsSource()
@@ -479,7 +635,7 @@ namespace DealershipCar.Dominio.Pruebas
 		}
 
 		// LOS ARGUMENTOS DE CADA LLAMADA A ESE MIEMBRO. Sin parentesis anidados adentro, que es lo que
-		// las llamadas de los tres bloques tienen: (kind, TheInstantTheBoardIsRead) o (kind) o ().
+		// las llamadas de los bloques tienen: (kind, TheInstantTheBoardIsRead) o (kind) o ().
 		// El \b de adelante y el ( de atras separan ReadDistanceRemaining de
 		// ReadDistanceRemainingUnit y CompletionsOf de CompletionsOfEveryKind.
 		private static List<string> TheArgumentsOfEveryCallTo(string live, string member)

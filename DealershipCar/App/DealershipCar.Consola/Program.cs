@@ -126,6 +126,8 @@ namespace DealershipCar.Consola
 			TheCountdownOfEveryKind(api);
 			TheHistoryOfEveryKind(api);
 			ThePublishedServicePrices(api);
+			TheRateOfUseOverTheStorysSpan(api);
+			TheTwoHalvesOfTheStoryCompared(api);
 
 			Measurements(app, api, folder);
 
@@ -378,6 +380,83 @@ namespace DealershipCar.Consola
 				Console.WriteLine($"   dice la fila             : {record.Says[row]}");
 				Console.WriteLine();
 			}
+		}
+
+		private static void TheRateOfUseOverTheStorysSpan(DealershipCarAPI api)
+		{
+			OdometerSeriesRecord record = api.ReadingsBetween(Story.Delivery, TheInstantTheBoardIsRead);
+
+			Console.WriteLine("================================================================");
+			Console.WriteLine($"  CUANTO SE MANEJA: EL RITMO DEL {Day(Story.Delivery)} AL {Day(TheInstantTheBoardIsRead)}");
+			Console.WriteLine();
+			Console.WriteLine("  El tramo va del dia de la entrega al instante del tablero, que son los");
+			Console.WriteLine("  dos extremos de esta historia y los dos estan ESCRITOS. Ninguno se");
+			Console.WriteLine("  deriva del otro: restarle un ano al instante del tablero daria el mismo");
+			Console.WriteLine("  dia y traeria un largo de ventana que nadie le publico a esta caratula.");
+			Console.WriteLine();
+			Console.WriteLine("  El ritmo lo compone el dominio entero y llega dicho: los dos extremos");
+			Console.WriteLine("  con sus instantes, la distancia y el tiempo EXACTOS, y recien despues la");
+			Console.WriteLine("  distancia por dia, que es el unico numero redondeado y sale introducido");
+			Console.WriteLine("  por 'unos'. Quien lea la frase puede rehacer la division; la caratula no");
+			Console.WriteLine("  divide nada, ni siquiera para comprobarla.");
+			Console.WriteLine();
+			Console.WriteLine("  Y las filas van al lado de la frase, no en vez de ella: la tabla de");
+			Console.WriteLine("  lecturas y el ritmo son DOS lecturas separadas de la misma puerta, y las");
+			Console.WriteLine("  dos se imprimen enteras. Cada fila se dice sola -- valor, unidad,");
+			Console.WriteLine("  instante y fuente -- asi que no hay nada que recombinar.");
+			Console.WriteLine("================================================================");
+			Console.WriteLine();
+			Console.WriteLine($"   se puede decir           : {api.CanARateOfUseBeSaid(Story.Delivery, TheInstantTheBoardIsRead)}");
+			Console.WriteLine($"   situacion del ritmo      : {api.ReadRateOfUseStanding(Story.Delivery, TheInstantTheBoardIsRead)}");
+			Console.WriteLine($"   el ritmo en palabras     : {api.DescribeRateOfUse(Story.Delivery, TheInstantTheBoardIsRead)}");
+			Console.WriteLine($"   cuantas lecturas         : {api.ReadingCountBetween(Story.Delivery, TheInstantTheBoardIsRead)}");
+			Console.WriteLine();
+
+			if (record.Says.Length == 0) Console.WriteLine("   filas                    : (ninguna)");
+
+			foreach (int row in Enumerable.Range(0, record.Says.Length))
+			{
+				Console.WriteLine($"   observada el             : {record.ObservedAt[row]}");
+				Console.WriteLine($"   el odometro marcaba      : {record.Value[row]}");
+				Console.WriteLine($"   en unidad                : {record.Unit[row]}");
+				Console.WriteLine($"   de fuente                : {record.Source[row]}");
+				Console.WriteLine($"   dice la fila             : {record.Says[row]}");
+				Console.WriteLine();
+			}
+		}
+
+		private static void TheTwoHalvesOfTheStoryCompared(DealershipCarAPI api)
+		{
+			Console.WriteLine("================================================================");
+			Console.WriteLine($"  LAS DOS MITADES DE LA HISTORIA, PARTIDA EL {Day(Story.TheFirstEvaluation)}");
+			Console.WriteLine();
+			Console.WriteLine("  Las dos mitades son las de la propia historia y el corte es su bisagra:");
+			Console.WriteLine("  antes de la primera evaluacion llegan el plan y seis meses de odometro,");
+			Console.WriteLine("  y despues no llega ningun hecho nuevo del odometro -- esta misma corrida");
+			Console.WriteLine("  lo dice mas arriba, antes del salto de seis meses. No se eligio un corte");
+			Console.WriteLine("  que dejara datos de los dos lados: el corte es un momento del guion.");
+			Console.WriteLine();
+			Console.WriteLine("  La mitad TARDIA va primera porque el dominio dice el cambio del PRIMER");
+			Console.WriteLine("  periodo respecto al SEGUNDO, asi que cruzarlas daria la frase al reves.");
+			Console.WriteLine();
+			Console.WriteLine("  Y por eso esta mitad no tiene ritmo, que es la respuesta y no un hueco:");
+			Console.WriteLine("  una sola lectura es un TODAVIA NO y nunca un cero. Cuando a alguno de");
+			Console.WriteLine("  los dos periodos le falta el ritmo, la frase sigue diciendo los dos y no");
+			Console.WriteLine("  dice ningun cambio.");
+			Console.WriteLine("================================================================");
+			Console.WriteLine();
+			Console.WriteLine($"   primer periodo, del      : {Day(Story.TheFirstEvaluation)} al {Day(TheInstantTheBoardIsRead)}");
+			Console.WriteLine($"   situacion del ritmo      : {api.ReadRateOfUseStanding(Story.TheFirstEvaluation, TheInstantTheBoardIsRead)}");
+			Console.WriteLine($"   cuantas lecturas         : {api.ReadingCountBetween(Story.TheFirstEvaluation, TheInstantTheBoardIsRead)}");
+			Console.WriteLine($"   se puede decir           : {api.CanARateOfUseBeSaid(Story.TheFirstEvaluation, TheInstantTheBoardIsRead)}");
+			Console.WriteLine();
+			Console.WriteLine($"   segundo periodo, del     : {Day(Story.Delivery)} al {Day(Story.TheFirstEvaluation)}");
+			Console.WriteLine($"   situacion del ritmo      : {api.ReadRateOfUseStanding(Story.Delivery, Story.TheFirstEvaluation)}");
+			Console.WriteLine($"   cuantas lecturas         : {api.ReadingCountBetween(Story.Delivery, Story.TheFirstEvaluation)}");
+			Console.WriteLine($"   se puede decir           : {api.CanARateOfUseBeSaid(Story.Delivery, Story.TheFirstEvaluation)}");
+			Console.WriteLine();
+			Console.WriteLine($"   los dos comparados       : {api.DescribeTwoPeriodsOfUseCompared(Story.TheFirstEvaluation, TheInstantTheBoardIsRead, Story.Delivery, Story.TheFirstEvaluation)}");
+			Console.WriteLine();
 		}
 
 		private static void Measurements(DealershipCarApp app, DealershipCarAPI api, string folder)

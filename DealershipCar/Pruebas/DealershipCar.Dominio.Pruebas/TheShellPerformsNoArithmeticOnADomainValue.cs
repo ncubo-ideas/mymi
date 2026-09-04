@@ -54,7 +54,12 @@ namespace DealershipCar.Dominio.Pruebas
 			// para conservar el margen de cinco archivos que le dio la rebanada anterior. Un piso que
 			// se queda quieto mientras la raiz crece es un piso que deja de decir cuando algo dejo de
 			// llegar.
-			new object[] { TheCodeOfTheShellsAsData.Wasm, 24 },
+			//
+			// Y SUBIO 24 -> 25 CON EL PORTADOR DEL RITMO DE USO, que es UN archivo: la raiz paso de 27
+			// a 28 y el margen sigue siendo TRES. Se mueve por lo que se agrego y no hasta donde
+			// alcance -- un piso pegado al conteo se pone rojo por cualquier reordenamiento, y uno
+			// lejos deja de ver una raiz que se vacio.
+			new object[] { TheCodeOfTheShellsAsData.Wasm, 25 },
 			new object[] { TheCodeOfTheShellsAsData.EndPointDeEventos, 1 },
 			new object[] { TheCodeOfTheShellsAsData.InyectorDeEventosDemo, 1 },
 			new object[] { TheCodeOfTheShellsAsData.PaginaDeDescarga, 1 },

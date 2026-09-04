@@ -495,7 +495,23 @@ namespace DealershipCar.Dominio.Pruebas
 
 			if (answer is string text) return text;
 			if (answer is DateTime instant) return instant.ToString("O", CultureInfo.InvariantCulture);
-			if (answer is string[] column) return string.Join(" / ", column);
+
+			// CUALQUIER COLUMNA, Y NO SOLO UNA DE TEXTO. Decia string[] y BuildOrder/OD-2 le trajo la
+			// primera columna numerica de este modulo: un int[] caia a la rama de reflexion de abajo,
+			// donde Array.SyncRoot devuelve EL PROPIO ARREGLO y la recursion no termina.
+			//
+			// EL MODO DE FALLA ES POR QUE ESTO SE ARREGLA EN VEZ DE ANOTARSE: no era un rojo. Era un
+			// desborde de pila que ABORTA EL PROCESO ENTERO, asi que la corrida no reportaba 1 fallo
+			// -- reportaba "Test Run Aborted" y ninguna cuenta. Rendir elemento por elemento sirve
+			// para toda columna que venga despues y de paso saca del camino el SyncRoot.
+			if (answer is Array column)
+			{
+				var joined = new List<string>();
+
+				foreach (object each in column) joined.Add(Rendered(each));
+
+				return string.Join(" / ", joined);
+			}
 
 			if (answer is IFormattable formattable)
 				return formattable.ToString(null, CultureInfo.InvariantCulture);

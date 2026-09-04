@@ -477,7 +477,14 @@ namespace DealershipCar.Dominio.Pruebas
 			// una operacion sin ninguna completacion registrada no es una operacion que nunca se le
 			// hizo al carro, que es la frase que mas facil se lee al reves en el historial, y ninguna
 			// frase del dominio la dice porque cada una contesta por su propia clase.
-			Assert.That(said, Has.Count.EqualTo(9),
+			//
+			// Y SON DIEZ DESDE EL BLOQUE DEL RITMO DE USO, que entra con UNA de la misma familia. Dice
+			// que un periodo sin ninguna lectura del odometro no es un periodo en que el carro no se
+			// movio, y quien manda las lecturas. Ninguna frase del dominio la dice: la del ritmo dice
+			// que no se puede decir y por que, y "no se puede decir cuanto se maneja" y "el carro no se
+			// movio" son dos cosas distintas -- confundirlas es exactamente el cero que L6 prohibe,
+			// dicho por la pantalla en vez de por el dominio.
+			Assert.That(said, Has.Count.EqualTo(10),
 				"Si TheOwnerIsTold gana o pierde una frase, este barrido se vuelve a mirar en vez de "
 				+ "seguir contando las de antes.");
 

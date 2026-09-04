@@ -115,6 +115,7 @@ namespace DealershipCar.Dominio.Pruebas
 			{
 				typeof(CompletionRecord), typeof(EveryKindCompletionRecord),
 				typeof(PublishedPriceRecord), typeof(ShopStayRecord),
+				typeof(OdometerSeriesRecord),
 			})
 				foreach (PropertyInfo column in record.GetProperties(
 					BindingFlags.Instance | BindingFlags.Public | BindingFlags.DeclaredOnly))

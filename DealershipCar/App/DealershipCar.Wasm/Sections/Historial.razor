@@ -128,12 +128,91 @@ else
     }
 }
 
+@if (Use is not null)
+{
+    <div class="d-sec">
+        <span class="d-sec__title">Cuánto se maneja</span>
+        <span class="d-sec__note">los últimos doce meses</span>
+    </div>
+
+    <section class="d-card" id="cuanto-se-maneja">
+        <p class="d-note" style="margin-top:0;margin-bottom:10px">
+            <Glyph Name="clock" Size="14" Stroke="2" />
+            <span>Del @Use.From al @Use.To</span>
+        </p>
+
+        <div class="d-cover d-cover--mute" style="padding:0;background:none;grid-template-columns:1fr">
+            <div class="d-cover__body" style="margin:0" id="ritmo-dice">@Use.Says</div>
+        </div>
+    </section>
+
+    <div class="d-sec">
+        <span class="d-sec__title">Contra los doce meses anteriores</span>
+    </div>
+
+    <section class="d-card" id="ritmo-comparado">
+        <p class="d-note" style="margin-top:0;margin-bottom:10px">
+            <Glyph Name="history" Size="14" Stroke="2" />
+            <span>Del @Use.EarlierFrom al @Use.EarlierTo</span>
+        </p>
+
+        <div class="d-says" id="comparacion-dice">
+            <span class="d-says__label">Los dos periodos</span>
+            @Use.BothPeriodsSay
+        </div>
+    </section>
+
+    @if (Use.ReadingCount > 0)
+    {
+        <div class="d-sec">
+            <span class="d-sec__title">Cada lectura del odómetro</span>
+            <span class="d-sec__note">@Use.ReadingCount en el periodo</span>
+        </div>
+
+        <section class="d-card" id="linea-lecturas">
+            <div class="d-line">
+                @foreach (AReadingOnTheRecord lectura in Use.Rows)
+                {
+                    <div class="d-step" id="@("lectura-" + lectura.ObservedAt)">
+                        <span class="d-step__bullet">
+                            <Glyph Name="gauge" Size="11" Stroke="3" />
+                        </span>
+                        <div class="d-step__when">@lectura.ObservedAt</div>
+
+                        <div style="display:flex;flex-wrap:wrap;gap:6px;margin-top:2px">
+                            <span class="d-pill d-pill--info">
+                                @ComoSeLee.Miles(lectura.Value) @lectura.Unit
+                            </span>
+                        </div>
+
+                        <div class="d-says">@lectura.Says</div>
+                    </div>
+                }
+            </div>
+        </section>
+    }
+    else
+    {
+        <div class="d-empty" id="sin-lecturas">
+            <span class="d-empty__title">Ninguna lectura del odómetro en este periodo</span>
+            @TheOwnerIsTold.TheOdometerReadingsAreSentByTheDealershipAndTheVehicle
+        </div>
+    }
+}
+
 @code {
     /// <summary>
     /// Las estadias en el taller, leidas en un solo momento. La seccion no lee nada por su cuenta.
     /// </summary>
     [Parameter, EditorRequired]
     public TheStaysOfThisVehicle Stays { get; set; }
+
+    /// <summary>
+    /// Cuanto se maneja este vehiculo, leido en el mismo momento. De aca sale el ritmo de la ventana,
+    /// la comparacion con la anterior y las lecturas del periodo como filas.
+    /// </summary>
+    [Parameter, EditorRequired]
+    public HowThisVehicleIsDriven Use { get; set; }
 
     /// <summary>
     /// Donde esta parada cada operacion, leido en el mismo momento. De aca sale el historial entero y

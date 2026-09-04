@@ -15,8 +15,8 @@ namespace DealershipCar.Dominio.Pruebas
 	// aunque el estado siga siendo correcto.
 	//
 	// Asi que ninguna linea de DSL de DealershipCarAPI puede llegar al journal de una persona sin
-	// haberse ejecutado antes aca. Esta prueba corre CADA UNA de las CIENTO VEINTIOCHO operaciones de
-	// la puerta al menos una vez -- las veintiuna de la agenda (OS2/T6), las siete de la ingesta
+	// haberse ejecutado antes aca. Esta prueba corre CADA UNA de las CIENTO TREINTA Y CUATRO
+	// operaciones de la puerta al menos una vez -- las veintiuna de la agenda (OS2/T6), las siete de la ingesta
 	// (OS2/T8: los dos comandos de la bitacora, sus cuatro lecturas, y el Apply), CanBeDeferred, los
 	// once comandos de publicacion de la especificacion (T5), las TREINTA Y SIETE lecturas de la
 	// especificacion (T6, mas las dos mitades publicadas que agrego
@@ -25,9 +25,10 @@ namespace DealershipCar.Dominio.Pruebas
 	// (WarrantyEnvelope/T5) y las SEIS COMPUESTAS (WarrantyEnvelope/T6), los DOS CONTEOS de la
 	// agenda que BuildOrder/SH-1 agrego al arreglar P-2 -- al dia y agendadas -- los TRES COMANDOS
 	// de las estadias en el taller que BuildOrder/SH-3 agrego con la quinta global de raiz, las
-	// OCHO LECTURAS de esas estadias que agrego BuildOrder/SH-4, y las DIECINUEVE de la pantalla de
-	// mantenimiento que agrego BuildOrder/MS-4: DIEZ de la cuenta atras, CINCO del historial y
-	// CUATRO de los precios publicados.
+	// OCHO LECTURAS de esas estadias que agrego BuildOrder/SH-4, las DIECINUEVE de la pantalla de
+	// mantenimiento que agrego BuildOrder/MS-4 -- DIEZ de la cuenta atras, CINCO del historial y
+	// CUATRO de los precios publicados -- y las SEIS de la serie del odometro que agrego
+	// BuildOrder/OD-2.
 	// No mira reglas de negocio -- de eso se ocupan las otras pruebas del nivel B -- mira que el
 	// script exista, parsee, ate sus parametros y devuelva lo que dijo que devolvia.
 	//
@@ -129,7 +130,8 @@ namespace DealershipCar.Dominio.Pruebas
 		// crezca la puerta sin tocar este archivo; no puede comprobar que la llamada se haya escrito.
 		private static readonly string[] EveryOperationThisFixtureRuns =
 		{
-			"AddOwnerOperation", "AdoptPlanRevision", "Apply", "CanBeDeferred",
+			"AddOwnerOperation", "AdoptPlanRevision", "Apply",
+			"CanARateOfUseBeSaid", "CanBeDeferred",
 			"CanCoverageBeEvaluated", "CanCoverageBeEvaluatedForThisVehicle",
 			"CanDaysRemainingBeSaid", "CanDistanceRemainingBeSaid",
 			"CanTheEnvelopeBeEvaluated", "CompleteOperation",
@@ -145,8 +147,10 @@ namespace DealershipCar.Dominio.Pruebas
 			"DescribeDistanceRemaining", "DescribeFluid",
 			"DescribeFuel", "DescribePublishedServiceInterval", "DescribePublishedServicePrice",
 			"DescribePublishedServicingElsewhereRule", "DescribePublishedWarrantyEnvelope",
+			"DescribeRateOfUse",
 			"DescribeServiceInterval", "DescribeServicePrice", "DescribeServicingElsewhereRule",
-			"DescribeTheStayAt", "DescribeTyre", "DescribeWarrantyEnvelope",
+			"DescribeTheStayAt", "DescribeTwoPeriodsOfUseCompared", "DescribeTyre",
+			"DescribeWarrantyEnvelope",
 			"Evaluate", "HasASealedRevision", "HasAnOdometerReading", "HasAnyCompletion",
 			"HasAnyPublishedServicePrice", "HasAnyStayBetween",
 			"HasAnythingDue", "HasBeenEvaluated", "HasDeliveryBeenRecorded", "IsCoveragePublished",
@@ -168,6 +172,7 @@ namespace DealershipCar.Dominio.Pruebas
 			"ReadEnvelopeStanding",
 			"ReadFluidRevision", "ReadFuelRevision", "ReadMinimumFuelGrade", "ReadModel",
 			"ReadNextDueKind", "ReadOdometer", "ReadOdometerObservedAt", "ReadOdometerUnit",
+			"ReadRateOfUseStanding", "ReadingCountBetween", "ReadingsBetween",
 			"ReadRevisionState", "ReadServiceIntervalRevision", "ReadServicePriceRevision",
 			"ReadServicingPolicyRevision", "ReadTimeRemainderStanding", "ReadTyreRevision", "ReadVin",
 			"RecordConditionThreshold", "RecordDelivery", "RecordReading",
@@ -199,9 +204,9 @@ namespace DealershipCar.Dominio.Pruebas
 		// dejo escrito "setenta y siete" cuando la puerta ya tenia setenta y nueve: una cuenta
 		// afirmada en prosa envejece en silencio, y esta afirmada al lado de lo que cuenta.
 		[Test]
-		public void TheOperationsAreOneHundredAndTwentyEight()
+		public void TheOperationsAreOneHundredAndThirtyFour()
 		{
-			Assert.That(EveryOperationThisFixtureRuns, Has.Length.EqualTo(128));
+			Assert.That(EveryOperationThisFixtureRuns, Has.Length.EqualTo(134));
 		}
 
 		// La semilla corre en OnHydrated, asi que para cuando la prueba arranca la agenda ya
@@ -448,6 +453,59 @@ namespace DealershipCar.Dominio.Pruebas
 			Assert.That(
 				journal.Api.DescribePublishedServicePrice("FluidChange", TenThousandUnits, "UnitA"),
 				Does.Contain("75.5 USD").And.Not.Contain(" Al "));
+		}
+
+		// LAS SEIS DE LA SERIE DEL ODOMETRO QUE TRAJO OD-2, CADA UNA EN LOS DOS ESTADOS DEL REGISTRO.
+		// Dos estados y no uno porque un registro sin ninguna lectura contesta la ausencia a las
+		// seis, y seis ausencias de acuerdo sobre nada no ejercitan lo mismo que seis respuestas.
+		//
+		// LO QUE SE AFIRMA ES LA FORMA: que el script parsee, ate sus dos o sus cuatro extremos y
+		// vuelva TIPADO. De que cada una conteste lo suyo se ocupa
+		// TheSixReadsOfTheSeriesAnswerInTwoStatesOfTheRecord, y de que ninguna entregue un extremo
+		// suelto NoReadReturnsTheEndsWithoutTheRateAndNoReadReturnsTheChangeAlone.
+		[Test]
+		public void EveryOdometerSeriesReadOfTheDoorParsesBindsAndComesBackTypedInBothStates()
+		{
+			DateTime from = new DateTime(2026, 1, 1, 0, 0, 0, DateTimeKind.Utc);
+			DateTime to = new DateTime(2026, 12, 31, 23, 59, 59, DateTimeKind.Utc);
+			DateTime theYearBeforeFrom = new DateTime(2025, 1, 1, 0, 0, 0, DateTimeKind.Utc);
+			DateTime theYearBeforeTo = new DateTime(2025, 12, 31, 23, 59, 59, DateTimeKind.Utc);
+
+			// SIN NINGUNA LECTURA: las seis corren igual y ninguna rechaza.
+			Assert.That(journal.Api.CanARateOfUseBeSaid(from, to), Is.False);
+			Assert.That(
+				journal.Api.ReadRateOfUseStanding(from, to),
+				Is.EqualTo("SuspendedByAnAbsentReading"));
+			Assert.That(journal.Api.DescribeRateOfUse(from, to), Is.Not.Empty);
+			Assert.That(
+				journal.Api.DescribeTwoPeriodsOfUseCompared(
+					from, to, theYearBeforeFrom, theYearBeforeTo),
+				Is.Not.Empty);
+			Assert.That(journal.Api.ReadingCountBetween(from, to), Is.EqualTo(0));
+			Assert.That(journal.Api.ReadingsBetween(from, to).Says, Is.Empty);
+
+			// CON DOS LECTURAS EN UNA UNIDAD: las mismas seis, y ahora contestando.
+			journal.Api.RecordReading(
+				40000, "UnitA", new DateTime(2026, 1, 20, 0, 0, 0, DateTimeKind.Utc), "Telemetry");
+
+			journal.Api.RecordReading(
+				41000, "UnitA", new DateTime(2026, 2, 19, 0, 0, 0, DateTimeKind.Utc), "Inspection");
+
+			Assert.That(journal.Api.CanARateOfUseBeSaid(from, to), Is.True);
+			Assert.That(journal.Api.ReadRateOfUseStanding(from, to), Is.EqualTo("Measured"));
+			Assert.That(
+				journal.Api.DescribeRateOfUse(from, to), Does.Contain("unos 33 km por día"));
+			Assert.That(
+				journal.Api.DescribeTwoPeriodsOfUseCompared(
+					from, to, theYearBeforeFrom, theYearBeforeTo),
+				Does.Contain("No se puede decir el cambio"),
+				"Y los CUATRO extremos del script de la comparacion atan por separado: el segundo "
+				+ "periodo es otro anio y no tiene ritmo que decir.");
+			Assert.That(journal.Api.ReadingCountBetween(from, to), Is.EqualTo(2));
+			Assert.That(
+				journal.Api.ReadingsBetween(from, to).Value, Is.EqualTo(new[] { 40000, 41000 }),
+				"Y las CINCO lineas del script del registro atan sus cinco Out en una sola consulta, "
+				+ "cuatro de texto y una de numeros.");
 		}
 
 		// Las dos lecturas guardadas de E41, del lado del wire. El DomainException del dominio es

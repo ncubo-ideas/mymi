@@ -17,7 +17,7 @@ namespace DealershipCar.Dominio
 		/// <summary>Cuando se OBSERVO la lectura, que no es cuando llego.</summary>
 		internal DateTime ObservedAt { get; }
 
-		/// <summary>De donde vino, que es lo que determina cuanto se le cree.</summary>
+		/// <summary>De donde vino. Se dice en cada fila del registro y no pondera nada.</summary>
 		internal ReadingSource Source { get; }
 
 		/// <summary>
@@ -36,8 +36,8 @@ namespace DealershipCar.Dominio
 
 			if (source == null)
 				throw new DomainException(
-					"Una lectura sin fuente no se puede pesar: la fuente es lo que determina "
-					+ "cuanta confianza merece.");
+					"Una lectura sin fuente es una lectura que no dice de donde salio, y cada fila "
+					+ "del registro tiene que decirlo.");
 
 			Value = value;
 			Unit = unit;
