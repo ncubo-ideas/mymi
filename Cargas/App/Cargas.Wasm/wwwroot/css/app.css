@@ -590,6 +590,10 @@ h1:focus, h1:focus-visible { outline: none; }
 }
 .tecla--texto:hover:not(:disabled) { background: transparent; color: var(--accion-viva); }
 
+/* Una tecla con icono dibujado al lado de la etiqueta: el icono hereda el color. */
+.tecla--icono { display: inline-flex; align-items: center; gap: 6px; cursor: pointer; }
+.tecla-icono { width: 1.05rem; height: 1.05rem; flex: 0 0 auto; }
+
 .tecla--alerta { background: var(--ambar); color: #26200a; }
 .tecla--alerta:hover:not(:disabled) { background: #ffdd85; }
 /* Apagada por campo vacío, no por estar ocupada: el cursor de «esperá» mentiría. */
