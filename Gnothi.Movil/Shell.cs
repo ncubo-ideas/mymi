@@ -519,6 +519,28 @@ public sealed class Shell : IDisposable
 
 	public void PushState() => Push("state", "", StateJson());
 
+	/// DESPUES DE INSTALAR UN MODULO, y lo hacen las dos plataformas llamando aca.
+	///
+	/// El catalogo se relee ENTERO: es la misma ruta por la que un cambio hecho desde afuera
+	/// repinta la pantalla. Una sola fuente de verdad, sus archivos -- y no un catalogo al que
+	/// se le agrega una entrada a mano, que es como las dos verdades empiezan.
+	///
+	/// Devuelve los warnings de la carga para que quien llame los escriba en SU log, que es lo
+	/// unico que cambia entre Android y iOS.
+	public IReadOnlyList<string> ReloadAfterInstall()
+	{
+		IReadOnlyList<string> warnings = catalog?.Load() ?? [];
+		PushState();
+		return warnings;
+	}
+
+	/// Cuantos modulos ve el Host ahora mismo. Para poder decirlo en el log despues de un alta.
+	public int ModuleCount => catalog?.Modules.Count ?? 0;
+
+	/// El titulo que la persona leyo en la propuesta, para poder nombrarlo al confirmar.
+	public string TitleOf(string module) =>
+		catalog?.Modules.FirstOrDefault(m => m.Name == module)?.Manifest.Title ?? module;
+
 	private void Push(string kind, string id, string payload) => push(kind, id, payload);
 
 	/// El javascript que la plataforma tiene que evaluar para empujarle algo a la pagina.

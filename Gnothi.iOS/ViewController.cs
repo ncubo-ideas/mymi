@@ -68,6 +68,7 @@ public sealed class ViewController : UIViewController
 
 		// LAS DOS CARPETAS LAS ELIGE LA PLATAFORMA, igual que en Android.
 		string files = Path.Combine(Home(NSSearchPathDirectory.LibraryDirectory), "Application Support");
+		filesRoot = files;
 		string incoming = Path.Combine(Home(NSSearchPathDirectory.DocumentDirectory), "incoming");
 		Directory.CreateDirectory(files);
 
@@ -116,7 +117,19 @@ public sealed class ViewController : UIViewController
 			// una tarde.
 			Sonda.Correr(Log);
 			SondaPuente.Correr(Log);
-			try { await shell.Run(); }
+			try
+			{
+				// Run() es el bucle del Host y no termina: se arranca UNA vez y se espera al
+				// final. Entre medio se atiende lo que hubiera llegado antes.
+				Task corriendo = shell.Run();
+
+				// EL ENLACE QUE LLEGO ANTES DE QUE EL HOST LEVANTARA. Android tiene el mismo
+				// pendiente por la misma razon: iOS puede lanzar la app CON el universal link,
+				// y ahi ContinueUserActivity corre antes de que esto termine de armarse.
+				if (altaPendiente is { Length: > 0 } p) { altaPendiente = null; await DarDeAlta(p); }
+
+				await corriendo;
+			}
 			catch (Exception e) { Log($"shell fallo: {e.GetType().Name}: {e.Message}"); }
 		});
 	}
@@ -186,6 +199,129 @@ public sealed class ViewController : UIViewController
 	//     log stream --predicate 'processImagePath CONTAINS "Gnothi"' --style compact
 	private static void Log(string s) => Console.WriteLine($"GNOTHI: {s}");
 
+	// ── el alta desde el enlace de la institucion ───────────────────────────────────────
+	//
+	// EL ESPEJO DE DarDeAlta/AceptarAlta/DescartarAlta en MainActivity. Lo que hace el trabajo
+	// -bajar, desempaquetar, leer el manifiesto, escribir la instalacion- es
+	// Gnothi.Movil/ModuleEnrollment.cs, el MISMO archivo en las dos plataformas. Lo que queda
+	// aca son los callbacks: donde se loguea y como se le empuja a la pagina.
+	//
+	// [DEUDA ANOTADA] Estas cuatro funciones son casi identicas a las de MainActivity y
+	// deberian vivir en Shell.cs, que ya es dueño del catalogo, del push y del switch de
+	// Handle. No se hizo todavia porque MainActivity viene roto del merge 38dbe22 y el cambio
+	// no se podria verificar del lado de Android. Es el proximo movimiento, no un olvido.
+
+	private EnrollmentProposal? propuesta;
+	private ModuleEnrollment? altaEnCurso;
+	private string? altaPendiente;
+	private string filesRoot = "";
+
+	/// LO QUE LLEGA DEL UNIVERSAL LINK. Si el Host todavia no levanto se guarda y se atiende
+	/// cuando termine -- igual que altaPendiente en Android.
+	internal void AtenderEnlace(string url)
+	{
+		if (!Uri.TryCreate(url, UriKind.Absolute, out Uri? donde)) { Log($"alta: enlace ilegible: {url}"); return; }
+
+		// El bundle viaja como parametro, no como path: la institucion sirve su zip donde
+		// quiera y go.gnothi.app solo lo transporta.
+		string bundle = System.Web.HttpUtility.ParseQueryString(donde.Query)["bundle"] ?? "";
+		if (bundle.Length == 0) { Log($"alta: el enlace no trae ?bundle= : {url}"); return; }
+
+		if (shell is null) { altaPendiente = bundle; Log("alta: el Host todavia no levanto; queda pendiente"); return; }
+
+		_ = DarDeAlta(bundle);
+	}
+
+	private async Task DarDeAlta(string url)
+	{
+		try
+		{
+			if (propuesta is not null) { altaEnCurso?.Discard(propuesta); propuesta = null; }
+
+			altaEnCurso = new ModuleEnrollment(
+				Path.Combine(filesRoot, "Modulos"),
+				Path.Combine(filesRoot, "journals"),
+				Log);
+
+			// BAJAR NO ES INSTALAR. Esto trae el bundle y lee su manifiesto; el modulo todavia
+			// no ocupa ningun lugar en el aparato.
+			propuesta = await altaEnCurso.Examine(url, CancellationToken.None,
+				paso => PushAlta("trabajando", paso));
+
+			Log($"alta: propuesta de '{propuesta.Manifest.Module}' servida por {propuesta.ServedBy}");
+			PushPropuesta(propuesta);
+		}
+		catch (Exception ex)
+		{
+			// Un alta que falla tiene que DECIRLO, Y EN LA PANTALLA. Si solo va al log, la
+			// persona toca el boton de su institucion, vuelve a Gnothi y no pasa nada.
+			Log($"alta: no se pudo leer el modulo de {url}: {ex.GetType().Name}: {ex.Message}");
+			PushAlta("error", "No se pudo leer el módulo. Pedile el enlace otra vez a tu institución.");
+		}
+	}
+
+	internal string AceptarAlta()
+	{
+		if (propuesta is null || altaEnCurso is null || shell is null) return "{}";
+
+		try
+		{
+			string modulo = altaEnCurso.Accept(propuesta);
+			propuesta = null;
+
+			foreach (string w in shell.ReloadAfterInstall()) Log($"warning: {w}");
+			Log($"alta: '{modulo}' quedo instalado; {shell.ModuleCount} modulos");
+
+			PushAlta("listo", $"Listo: ya tenés '{shell.TitleOf(modulo)}' en Gnothi.");
+		}
+		catch (Exception ex)
+		{
+			Log($"alta: no se pudo instalar: {ex.GetType().Name}: {ex.Message}");
+			PushAlta("error", "No se pudo instalar el módulo.");
+		}
+
+		return "\"ok\"";
+	}
+
+	internal string DescartarAlta()
+	{
+		if (propuesta is not null)
+		{
+			altaEnCurso?.Discard(propuesta);
+			propuesta = null;
+		}
+		PushAlta("nada", "");
+		return "\"ok\"";
+	}
+
+	private void PushAlta(string estado, string mensaje) =>
+		Empujar("alta", "", Gnothi.Assistant.Json.Write(new Dictionary<string, object?>
+		{
+			["estado"] = estado,
+			["mensaje"] = mensaje,
+		}));
+
+	private void PushPropuesta(EnrollmentProposal p) =>
+		Empujar("propuesta", "", Gnothi.Assistant.Json.Write(new Dictionary<string, object?>
+		{
+			["modulo"] = p.Manifest.Module,
+			["titulo"] = p.Manifest.Title,
+			["institucion"] = p.Manifest.Institution,
+			["servido"] = p.ServedBy,
+			["publicador"] = p.Publisher,
+			["journal"] = p.JournalGoesTo,
+			["yaEstaba"] = p.AlreadyThere,
+			["tools"] = p.Manifest.Tools.Select(t => new Dictionary<string, object?>
+			{
+				["nombre"] = t.Name,
+				["titulo"] = t.Title,
+				["descripcion"] = t.Description,
+			}).ToArray(),
+		}));
+
+	private void Empujar(string kind, string id, string payload) => InvokeOnMainThread(() =>
+		web?.EvaluateJavaScript(Shell.PushScript(kind, id, payload), (_, _) => { }));
+
 	// ── el puente, la mitad que SI es de iOS ────────────────────────────────────────────
 	//
 	// La pagina llama window.prompt('gnothi', json), igual que en Android. Lo unico que hace
@@ -210,7 +346,18 @@ public sealed class ViewController : UIViewController
 				return;
 			}
 
-			completionHandler(host.shell?.Handle(defaultText) ?? "{}");
+			// LOS DOS VERBOS DEL ALTA los atiende la cara, no el Shell: la propuesta en curso es
+			// estado de esta pantalla. Todo lo demas sigue derecho a Shell.Handle, que es el
+			// mismo archivo en las dos plataformas.
+			string verbo = defaultText.Contains("\"altaAceptar\"") ? "altaAceptar"
+				: defaultText.Contains("\"altaDescartar\"") ? "altaDescartar" : "";
+
+			completionHandler(verbo switch
+			{
+				"altaAceptar" => host.AceptarAlta(),
+				"altaDescartar" => host.DescartarAlta(),
+				_ => host.shell?.Handle(defaultText) ?? "{}",
+			});
 		}
 	}
 }

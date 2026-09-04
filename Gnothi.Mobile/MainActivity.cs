@@ -375,8 +375,8 @@ public class MainActivity : Activity
 	// LA PROPUESTA EN CURSO, esperando que la persona diga si o no. Una sola a la vez: si llega
 	// otro enlace mientras hay una en pantalla, la anterior se descarta -- no se acumulan
 	// decisiones que ella no vio.
-	private PropuestaDeAlta? propuesta;
-	private AltaDeModulo? altaEnCurso;
+	private EnrollmentProposal? propuesta;
+	private ModuleEnrollment? altaEnCurso;
 
 	private async Task DarDeAlta(string url, CancellationToken ct)
 	{
@@ -384,17 +384,18 @@ public class MainActivity : Activity
 
 		try
 		{
-			if (propuesta is not null) { AltaDeModulo.Descartar(propuesta); propuesta = null; }
+			if (propuesta is not null) { altaEnCurso?.Discard(propuesta); propuesta = null; }
 
-			altaEnCurso = new AltaDeModulo(
+			altaEnCurso = new ModuleEnrollment(
 				System.IO.Path.Combine(FilesDir!.AbsolutePath, "Modulos"),
-				System.IO.Path.Combine(FilesDir!.AbsolutePath, "journals"));
+				System.IO.Path.Combine(FilesDir!.AbsolutePath, "journals"),
+				s => global::Android.Util.Log.Info("gnothi", s));
 
 			// BAJAR NO ES INSTALAR. Esto trae el bundle y lee su manifiesto; el módulo todavía
 			// no ocupa ningún lugar en el aparato.
-			propuesta = await altaEnCurso.Examinar(url, ct, paso => PushAlta("trabajando", paso));
+			propuesta = await altaEnCurso.Examine(url, ct, paso => PushAlta("trabajando", paso));
 
-			Log($"alta: propuesta de '{propuesta.Manifiesto.Module}' servida por {propuesta.Servido}");
+			Log($"alta: propuesta de '{propuesta.Manifest.Module}' servida por {propuesta.ServedBy}");
 			PushPropuesta(propuesta);
 		}
 		catch (Exception ex)
@@ -415,7 +416,7 @@ public class MainActivity : Activity
 
 		try
 		{
-			string modulo = altaEnCurso.Aceptar(propuesta);
+			string modulo = altaEnCurso.Accept(propuesta);
 			propuesta = null;
 
 			// El catálogo se relee entero: es la misma ruta por la que un cambio hecho desde
@@ -441,23 +442,23 @@ public class MainActivity : Activity
 	{
 		if (propuesta is not null)
 		{
-			AltaDeModulo.Descartar(propuesta);
+			altaEnCurso?.Discard(propuesta);
 			propuesta = null;
 		}
 		PushAlta("nada", "");
 		return "\"ok\"";
 	}
 
-	private void PushPropuesta(PropuestaDeAlta p) => Push("propuesta", "", JsonSerializer.Serialize(new
+	private void PushPropuesta(EnrollmentProposal p) => Push("propuesta", "", JsonSerializer.Serialize(new
 	{
-		modulo = p.Manifiesto.Module,
-		titulo = p.Manifiesto.Title,
-		institucion = p.Manifiesto.Institution,
-		servido = p.Servido,
-		publicador = p.Publicador,
-		journal = p.DondeVaElJournal,
-		yaEstaba = p.YaEstaba,
-		tools = p.Manifiesto.Tools.Select(t => new { nombre = t.Name, titulo = t.Title, descripcion = t.Description }),
+		modulo = p.Manifest.Module,
+		titulo = p.Manifest.Title,
+		institucion = p.Manifest.Institution,
+		servido = p.ServedBy,
+		publicador = p.Publisher,
+		journal = p.JournalGoesTo,
+		yaEstaba = p.AlreadyThere,
+		tools = p.Manifest.Tools.Select(t => new { nombre = t.Name, titulo = t.Title, descripcion = t.Description }),
 	}));
 
 	// ── EL MÓDULO EN PANTALLA ────────────────────────────────────────────────────────────
@@ -608,7 +609,7 @@ public class MainActivity : Activity
 		ArgumentException =>
 			"El enlace que tocaste no es una dirección válida de módulo.",
 
-		// Lo que tira AltaDeModulo -bundle sin manifiesto, nombre invalido, zip que escribe
+		// Lo que tira ModuleEnrollment -bundle sin manifiesto, nombre invalido, zip que escribe
 		// afuera, techo de tamano- ya viene escrito para leerse. Se pasa tal cual.
 		InvalidOperationException =>
 			"No se pudo instalar el módulo: " + ex.Message,
