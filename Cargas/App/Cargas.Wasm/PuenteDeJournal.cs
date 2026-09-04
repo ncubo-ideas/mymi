@@ -371,6 +371,10 @@ public sealed class ResultadoDeExportacion
 	public bool Ok { get; set; }
 	public string Motivo { get; set; } = "";
 	public int Archivos { get; set; }
+
+	// El nombre lo decide el JS (lleva la fecha en UTC, la de toISOString); se devuelve para
+	// que la pantalla pueda nombrarlo en vez de recomponerlo y errarle a medianoche.
+	public string Nombre { get; set; } = "";
 }
 
 public sealed class ResultadoDeImportacion

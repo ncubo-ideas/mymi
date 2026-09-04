@@ -13,10 +13,7 @@
 
    Lo que la app SÍ deriva es la explicación de cada carga, que es justo lo que un tiquete
    de bomba no puede dar. *@
-@if (Error.Length > 0)
-{
-    <div class="parte parte--problema"><pre>@Error</pre></div>
-}
+<Problema De="Error" />
 
 <Carnet lealtad="@lealtad" />
 
@@ -30,7 +27,7 @@
                 <text>nivel <b>@lealtad.Nivel</b></text>
                 @if (lealtad.PuntosParaElSiguienteNivel > 0)
                 {
-                    <text> &middot; faltan <b>@Entero(lealtad.PuntosParaElSiguienteNivel)</b> para el siguiente</text>
+                    <text> &middot; faltan <b class="mono">@Entero(lealtad.PuntosParaElSiguienteNivel)</b> para el siguiente</text>
                 }
             }
             else
@@ -49,7 +46,7 @@
         <div class="cifra-pie">
             @if (BoletosVigentes > 0)
             {
-                <text>en <b>@SorteosVigentes</b> @(SorteosVigentes == 1 ? "sorteo vigente" : "sorteos vigentes")</text>
+                <text>en <b class="mono">@SorteosVigentes</b> @(SorteosVigentes == 1 ? "sorteo vigente" : "sorteos vigentes")</text>
             }
             else if (BoletosPasados == 0)
             {

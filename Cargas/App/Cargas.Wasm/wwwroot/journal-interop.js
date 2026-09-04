@@ -366,13 +366,14 @@ export async function exportarJournal() {
         const url = URL.createObjectURL(new Blob([sobre], { type: 'application/json' }));
         const ancla = document.createElement('a');
         ancla.href = url;
-        ancla.download = `mis-cargas-${new Date().toISOString().slice(0, 10)}.json`;
+        const nombre = `mis-cargas-${new Date().toISOString().slice(0, 10)}.json`;
+        ancla.download = nombre;
         document.body.appendChild(ancla);
         ancla.click();
         ancla.remove();
         URL.revokeObjectURL(url);
 
-        return { ok: true, motivo: '', archivos: archivos.length };
+        return { ok: true, motivo: '', archivos: archivos.length, nombre };
     } catch (e) {
         return { ok: false, motivo: `${e.name}: ${e.message}` };
     }

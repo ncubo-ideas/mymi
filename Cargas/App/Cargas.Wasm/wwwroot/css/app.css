@@ -34,6 +34,12 @@
  */
 
 :root {
+    /* EL BROWSER TAMBIÉN ES OSCURO. Sin esto, lo que dibuja el sistema y no la hoja —el
+       desplegable del <select> de la placa, los spinners de type=number, el marcador de
+       <details>, la barra de scroll en Windows— sale claro sobre el tablero: un popup blanco
+       que delata que la oscuridad es un CSS y no un producto. */
+    color-scheme: dark;
+
     /* ⚠️ PALETA PROVISIONAL: teal petróleo + cobre, el candidato del brief §3, a la
        espera de la especificación de Geaninna. Se conservan los valores que ya estaban
        —lo provisional no es lo que había que rediseñar— y los nombres se enderezaron:
@@ -55,6 +61,10 @@
        metafora, no un adorno, y tiene que leerse de lejos. MEDIDO mirandolo. */
     --riel:        rgba(126, 196, 207, .32);
     --bisel-vivo:  rgba(126, 196, 207, .34);
+    /* EL BORDE DE UN CONTROL va más fuerte que el de una cara: el bisel-vivo daba 2.14:1 sobre
+       la cara y WCAG 1.4.11 pide 3:1 para el límite de un control. .55 da 3.43. Las caras se
+       quedan con el bisel tenue: son decorativas y el relieve es la luz de arriba. MEDIDO. */
+    --bisel-control: rgba(126, 196, 207, .55);
     --brillo:      rgba(226, 246, 250, .16);   /* la luz que corre por el filo de arriba */
 
     --tinta:       #e8f4f6;   /* texto principal */
@@ -64,6 +74,11 @@
     /* La acción: el cobre del brief. Un tablero tiene pocas teclas y todas hacen algo. */
     --accion:      #c2703d;
     --accion-viva: #d9814a;
+    /* LA TINTA SOBRE EL COBRE ES OSCURA, no blanca. Blanco sobre --accion da 3.70:1 y sobre
+       el hover 2.92:1 —debajo del AA de 4.5 para texto de 14 px—, y es la primera tecla que ve
+       cualquiera. Oscuro da 5.00:1 y 6.33:1, y además es lo que ya hacían las otras dos teclas
+       de color (ámbar y rojo): la primaria era la única distinta. MEDIDO. */
+    --sobre-cobre: #1f1008;
 
     /* EL SEMÁFORO, con los valores exactos de la §5 para fondo oscuro. Es lo único que
        Geaninna marcó como no negociable, y sigue igual: lo que cambió es la forma, no
@@ -142,6 +157,11 @@ h1:focus, h1:focus-visible { outline: none; }
 }
 
 .apunte { color: var(--tenue); font-size: 13.5px; }
+/* LA PROSA TIENE TOPE. Los apuntes de Mi carro y Lealtad corrían a los 74 rem de la página:
+   más de 150 caracteres por línea, y el ojo pierde el renglón al volver. 60ch es la medida de
+   lectura; los instrumentos no la necesitan porque no son prosa. Solo en bloque: el .apunte
+   inline de la cabeza de la ruta no se toca. */
+p.apunte, .ficha-nota, .arranque-porque, .arranque-nota, .otra p { max-width: 60ch; }
 .apunte b { color: var(--tinta); font-weight: 600; }
 .mono { font-family: var(--cifras); font-variant-numeric: tabular-nums; }
 .fila { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; }
@@ -457,6 +477,9 @@ h1:focus, h1:focus-visible { outline: none; }
 
 /* LA PARADA: una carga. */
 .parada .eslabon-cuerpo { padding: 0 0 4px; }
+/* La parada enfocada por teclado (ver Enfocar en Ruta): el anillo de la casa, con aire. */
+.parada:focus { outline: none; }
+.parada:focus-visible { outline: 2px solid var(--cobre); outline-offset: 6px; border-radius: 6px; }
 .parada-punto {
     position: absolute; left: 5px; top: 6px; z-index: 1;
     width: 12px; height: 12px; border-radius: 50%;
@@ -473,6 +496,16 @@ h1:focus, h1:focus-visible { outline: none; }
     font-size: 11px; font-weight: 600; letter-spacing: .09em; text-transform: uppercase;
     color: var(--tenue-2);
 }
+/* LA PUERTA PARA CAMBIAR UN TANQUE YA DICHO (ver Ruta). Es un enlace chico al lado de la
+   versalita, no una tecla: la corrección no puede pesar lo que pesa el camino normal. */
+.parada-cambiar {
+    font: inherit; font-size: 11.5px; color: var(--cobre);
+    background: transparent; border: 0; padding: 0 2px; cursor: pointer;
+    text-decoration: underline; text-underline-offset: 3px;
+}
+.parada-cambiar:hover { color: var(--accion-viva); }
+.parada-cambiar:focus-visible { outline: 2px solid var(--cobre); outline-offset: 2px; border-radius: 3px; }
+
 .parada-datos {
     display: flex; flex-wrap: wrap; gap: 2px 14px; margin-top: 3px;
     font-size: 13.5px; color: var(--tenue);
@@ -480,6 +513,8 @@ h1:focus, h1:focus-visible { outline: none; }
 .parada-datos .n {
     font-family: var(--cifras); font-variant-numeric: tabular-nums; color: var(--tinta);
 }
+/* Lo que puso ella, en cobre: la otra procedencia del mismo hecho (ver Ruta). */
+.parada-datos .aporte { color: var(--cobre); }
 
 /* EL TRECHO: lo que se recorrió entre dos paradas, que es el objeto de todo esto. La
    cifra que manda es km/L; los kilómetros y el costo la acompañan. */
@@ -558,7 +593,7 @@ h1:focus, h1:focus-visible { outline: none; }
     font-family: var(--cifras); font-variant-numeric: tabular-nums;
     font-size: 15px; max-width: 9em; padding: 7px 10px;
     background: var(--cara-honda); color: var(--tinta);
-    border: 1px solid var(--bisel-vivo); border-radius: 6px;
+    border: 1px solid var(--bisel-control); border-radius: 6px;
 }
 .campo:focus-visible { outline: 2px solid var(--cobre); outline-offset: 1px; }
 .campo::placeholder { color: var(--tenue-2); font-family: var(--sans); font-size: 13px; }
@@ -572,16 +607,19 @@ h1:focus, h1:focus-visible { outline: none; }
    la secundaria, y sin caja la que es un enlace disfrazado. */
 
 .tecla {
+    /* inline-flex y no inline-block: es lo que permite darle un alto mínimo táctil en
+       teléfono (abajo) sin que la etiqueta quede pegada al borde de arriba. */
+    display: inline-flex; align-items: center; justify-content: center;
     font: inherit; font-size: 14px; font-weight: 600;
     padding: 8px 16px; border-radius: 7px; cursor: pointer;
-    background: var(--accion); color: #ffffff; border: 1px solid transparent;
+    background: var(--accion); color: var(--sobre-cobre); border: 1px solid transparent;
     transition: background .12s ease, border-color .12s ease, color .12s ease;
 }
 .tecla:hover:not(:disabled) { background: var(--accion-viva); }
 .tecla:focus-visible { outline: 2px solid var(--cobre); outline-offset: 2px; }
 .tecla:disabled { opacity: .5; cursor: progress; }
 
-.tecla--contorno { background: transparent; color: var(--tinta); border-color: var(--bisel-vivo); }
+.tecla--contorno { background: transparent; color: var(--tinta); border-color: var(--bisel-control); }
 .tecla--contorno:hover:not(:disabled) { background: transparent; border-color: var(--cobre); }
 
 .tecla--texto {
@@ -628,9 +666,25 @@ h1:focus, h1:focus-visible { outline: none; }
     font-family: var(--cifras); font-size: 12px; color: var(--tenue);
     white-space: pre-wrap; word-break: break-word; margin: 8px 0 0;
 }
+
+/* EL DETALLE TÉCNICO DE UN FALLO, plegado. Para quien depura, no para quien maneja: ver
+   Problema.razor. El summary es una línea tenue debajo de la frase humana. */
+.problema-detalle { margin-top: 6px; }
+.problema-detalle summary { cursor: pointer; font-size: 12.5px; color: var(--tenue-2); }
+.problema-detalle summary:focus-visible { outline: 2px solid var(--cobre); outline-offset: 2px; }
+.problema-detalle[open] summary { color: var(--tenue); }
 .parte--atencion { border-color: var(--ambar-borde); border-left-color: var(--ambar); background: var(--ambar-suave); }
 .parte--problema { border-color: var(--rojo-borde);  border-left-color: var(--rojo);  background: var(--rojo-suave); }
 .parte--neutro   { border-left-color: var(--bisel-vivo); }
+
+/* EL ÉXITO. No existía: --bien estaba en la hoja y ningún parte lo usaba, así que «Listo» se
+   decía en gris, con el mismo tono que «se está guardando en este navegador». */
+.parte--listo    { border-color: var(--bien-borde); border-left-color: var(--bien); background: var(--bien-suave); }
+
+/* Y EL QUE SE VA SOLO. Se desvanece en el último tramo de su vida (ver AvisoDeListo) para
+   que cuando el DOM lo saque ya no se viera: lo que se mueve es un fantasma, no un aviso. */
+.parte--pasajero { animation: se-apaga .6s ease-in both; animation-delay: 4.4s; }
+@keyframes se-apaga { to { opacity: 0; } }
 
 /* MIENTRAS SE RESUELVE QUÉ HABÍA RECORDADO. A la misma altura que el aro de carga de
    index.html (22vh), para que el paso de «Cargando» a «Abriendo tu carpeta…» no salte. */
@@ -831,6 +885,14 @@ h1:focus, h1:focus-visible { outline: none; }
 }
 .loading-progress-text:after { content: var(--blazor-load-percentage-text, "Cargando"); }
 
+/* La marca bajo el aro (ver index.html): la misma marca del capó, centrada y tenue. */
+.loading-marca {
+    display: flex; align-items: center; justify-content: center; gap: 8px;
+    margin-top: 14px; color: var(--tenue);
+    font-size: 14.5px; font-weight: 600; letter-spacing: .02em;
+}
+.loading-marca svg { width: 26px; height: 26px; }
+
 #blazor-error-ui {
     background: #7f1d1d; color: #ffffff; border-top: 2px solid var(--rojo);
     bottom: 0; left: 0; width: 100%;
@@ -903,6 +965,17 @@ code { font-family: var(--cifras); font-size: .9em; color: var(--cobre); }
 
     /* EL COLCHÓN para que la barra fija no tape la última fila de la ruta. */
     .tablero { padding-bottom: 6rem; }
+
+    /* OBJETIVOS TÁCTILES. MEDIDO a 375 px: la pendiente plegada daba 24 px de alto, las
+       teclas y el campo 34. O sea que el toque más frecuente de la app —anotar el
+       kilometraje en la bomba, con una mano— era el más chico de la pantalla. 44 px es el
+       mínimo de Apple y el AAA de WCAG; 24 apenas el AA de 2.2. En escritorio se quedan
+       como están: ahí el puntero es fino y el alto se lo come a los instrumentos. */
+    .tecla, .campo { min-height: 44px; }
+    .falta-plegada { min-height: 44px; align-items: center; margin-top: 0; }
+    /* «cambiar» agranda su área de toque sin agrandar la fila: el margen negativo devuelve
+       lo que el padding se lleva, y la versalita de al lado no se mueve. */
+    .parada-cambiar { padding: 12px 8px; margin: -12px -6px; }
 }
 
 @media (max-width: 600px) {
@@ -933,16 +1006,29 @@ code { font-family: var(--cifras); font-size: .9em; color: var(--cobre); }
 @keyframes barre      { from { transform: rotate(-120deg); } }
 
 .instrumento { animation: entra .4s ease-out both; }
-.medidor .aguja { transform-origin: 60px 54px; animation: barre .9s cubic-bezier(.2,.8,.3,1) both; }
-.medidor .carga { stroke-dasharray: 1; animation: se-traza .9s cubic-bezier(.2,.8,.3,1) both; }
-.chispa .trazo { stroke-dasharray: 1; animation: se-traza .9s ease-out both; }
-.chispa .punto { animation: aparece .3s ease-out both .5s; }
+
+/* EL ENCENDIDO ES EN SECUENCIA. Los seis instrumentos entraban a la vez y eso se lee como un
+   parpadeo, no como un tablero que se prende: un carro enciende los relojes de a uno. Sesenta
+   milisegundos entre cada uno, en el orden de lectura de la rejilla; con `both`, cada cara
+   espera invisible hasta su turno. La aguja y la curva arrancan cuando su cara ya está. */
+.cuadro > :nth-child(2) { animation-delay: 60ms; }
+.cuadro > :nth-child(3) { animation-delay: 120ms; }
+.cuadro > :nth-child(4) { animation-delay: 180ms; }
+.cuadro > :nth-child(5) { animation-delay: 240ms; }
+.cuadro > :nth-child(6) { animation-delay: 300ms; }
+.cuadro > :nth-child(7) { animation-delay: 360ms; }
+.cuadro > :nth-child(n+8) { animation-delay: 420ms; }
+
+.medidor .aguja { transform-origin: 60px 54px; animation: barre .9s cubic-bezier(.2,.8,.3,1) both .2s; }
+.medidor .carga { stroke-dasharray: 1; animation: se-traza .9s cubic-bezier(.2,.8,.3,1) both .2s; }
+.chispa .trazo { stroke-dasharray: 1; animation: se-traza .9s ease-out both .3s; }
+.chispa .punto { animation: aparece .3s ease-out both .8s; }
 .trecho-barra .relleno { transform-origin: left center; animation: crece .7s ease-out both .1s; }
 
 /* Quien pidió que no se mueva, no se mueve. */
 @media (prefers-reduced-motion: reduce) {
     .instrumento, .medidor .aguja, .medidor .carga,
-    .chispa .trazo, .chispa .punto, .trecho-barra .relleno {
+    .chispa .trazo, .chispa .punto, .trecho-barra .relleno, .parte--pasajero {
         animation: none;
     }
 }

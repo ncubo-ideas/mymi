@@ -150,13 +150,7 @@
 <main class="tablero">
     @* UN solo lugar para los errores, y arriba de todo: un fallo abajo queda fuera de
        pantalla y la app parece no reaccionar al click. *@
-    @if (error.Length > 0)
-    {
-        <div class="parte parte--problema">
-            <strong>@(estado.EstaArriba ? "No se pudo completar la operación." : "No se pudo abrir la app.")</strong>
-            <pre>@error</pre>
-        </div>
-    }
+    <Problema De="error" />
 
     @if (!estado.EstaArriba)
     {
@@ -382,6 +376,15 @@
            Los dos de arriba SI se quedan: no se esta guardando nada y la carpeta rechazo
            la escritura son alarmas, y una alarma sí va antes que todo. *@
 
+        @* LO QUE TRAJO ACTUALIZAR. Antes la tecla volvía a decir «Actualizar» y nada más: una
+           estación sin novedades y una tecla que no hizo nada se veían iguales, y la persona
+           apretaba de nuevo. Solo el refresh de la tecla, no el del arranque: al abrir, lo
+           que se ve ES la respuesta. *@
+        @if (listo.Texto.Length > 0)
+        {
+            <div class="parte parte--listo parte--pasajero" role="status">@listo.Texto</div>
+        }
+
         @Body
 
     }
@@ -392,7 +395,7 @@
     private bool? opfs;
     private string sinAlmacenamiento = "";
     private bool instalada;
-    private string error = "";
+    private Fallo error = Fallo.Ninguno;
 
     // LO QUE SABEMOS DEL ARRANQUE, y son tres cosas y no dos: hasta que IndexedDB contesta
     // no sabemos si hay un modo recordado. `resolviendo` es ese rato; `abriendo` dice qué
@@ -534,9 +537,16 @@
 
     // El "Actualizando…" de la tecla ya no se lleva aca: lo dice EstadoDeLaApp, que es el
     // unico que sabe cuando empieza y termina un refresh, incluido el del arranque.
+    private readonly AvisoDeListo listo = new();
+
     private Task Refrescar() => Intentar("refrescar contra la estación", async () =>
     {
-        await estado.Refrescar();
+        ResultadoDeRefresh resultado = await estado.Refrescar();
+        listo.Mostrar(resultado.Aplicados == 0
+            ? "Al día: la estación no tiene novedades."
+            : $"Al día: entraron {resultado.Aplicados} "
+              + (resultado.Aplicados == 1 ? "novedad" : "novedades") + " de la estación.",
+            () => InvokeAsync(StateHasChanged));
     });
 
     // El mismo Intentar de las pantallas, y por la misma razon: el StateHasChanged del
@@ -545,7 +555,7 @@
     // PantallaDeCargas porque un layout tiene que heredar de LayoutComponentBase.
     private async Task Intentar(string paso, Func<Task> accion)
     {
-        error = "";
+        error = Fallo.Ninguno;
         try
         {
             await accion();

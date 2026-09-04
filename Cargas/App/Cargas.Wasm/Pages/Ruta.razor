@@ -7,9 +7,13 @@
 
 <h1 class="solo-para-lectores">Cargas</h1>
 
-@if (Error.Length > 0)
+@* EL ERROR VA DONDE ESTABA LA MANO. Con veintiocho cargas, anotar en la de abajo y que el
+   dominio rechace el número mostraba el parte arriba de todo, fuera de pantalla: el mismo
+   argumento que ya se aplicó a «Se desbloqueó». Si el fallo nació en una parada, se dibuja en
+   esa parada; si no (el lote, la lista), arriba. *@
+@if (errorEn.Length == 0)
 {
-    <div class="parte parte--problema"><pre>@Error</pre></div>
+    <Problema De="Error" />
 }
 
 @* -------------------------------------------------------------- LA RUTA
@@ -38,6 +42,13 @@
    Va debajo de la cabeza y no dentro: la cabeza es un rótulo. Y va en contorno, no en ámbar:
    el atajo confirma N suposiciones de un golpe, así que el camino cuidadoso —carga por
    carga— se queda con el color de atención. *@
+@* EL ÉXITO DEL LOTE, en el lugar de la barra que acaba de desaparecer: la persona mira ahí
+   cuando apretó, y ahí tiene que estar la respuesta. Se va solo (ver AvisoDeListo). *@
+@if (Listo.Texto.Length > 0 && listoEn.Length == 0)
+{
+    <div class="parte parte--listo parte--pasajero" role="status">@Listo.Texto</div>
+}
+
 @if (tanquesEstimados.Count >= 2)
 {
     <div class="ruta-acciones">
@@ -55,7 +66,16 @@
 
 @if (cargas.Count == 0)
 {
-    <p class="apunte">Todavía no hay cargas. Apretá <em>Actualizar</em>.</p>
+    @* Mismo criterio que la franja del Tablero: mientras la app está yendo a la estación no
+       se le pide a la persona que apriete una tecla que ya está en «Actualizando…». *@
+    @if (Estado.Refrescando)
+    {
+        <p class="apunte">Buscando tus cargas en la estación…</p>
+    }
+    else
+    {
+        <p class="apunte">Todavía no hay cargas. Apretá <em>Actualizar</em>.</p>
+    }
 }
 else
 {
@@ -68,8 +88,11 @@ else
             CargaEnLista parada = camino[i];
             List<FaltanteEnLista> pendientes = FaltantesDe(parada.Transaccion);
 
+            @* tabindex=-1: la parada recibe el foco por programa cuando la tecla que lo tenía
+               desaparece (ver Enfocar), y no entra en el orden de tabulación. *@
             <li class="eslabon parada @(pendientes.Count > 0 ? "parada--pendiente" : "")"
-                @key="@($"parada-{parada.Transaccion}")">
+                @key="@($"parada-{parada.Transaccion}")" tabindex="-1"
+                @ref="paradas[parada.Transaccion]">
                 <div class="eslabon-riel"><span class="parada-punto"></span></div>
                 <div class="eslabon-cuerpo">
                     <div class="parada-cabeza">
@@ -77,6 +100,19 @@ else
                         @if (parada.Tanque.Length > 0)
                         {
                             <span class="parada-tanque">tanque @parada.Tanque</span>
+                        }
+                        @* CAMBIAR UN TANQUE YA DICHO. «Confirmar los 28 tanques» confirma
+                           veintiocho suposiciones de un golpe, y una que estaba mal no tenía
+                           vuelta: la UI solo ofrecía «No, cargué solo un poco» mientras la
+                           carga estaba pendiente. DeclararTanque siempre sobreescribió con la
+                           palabra de ella (origen observado); acá solo se le pone una puerta.
+                           Discreta a propósito —es la corrección, no el camino— y no aparece
+                           mientras la pregunta de confirmar sigue abierta, que ya la incluye. *@
+                        @if (parada.Tanque.Length > 0 && !EsperaConfirmacion(pendientes))
+                        {
+                            <button type="button" class="parada-cambiar"
+                                    aria-label="@($"Cambiar el tanque de la carga del {parada.Fecha.ToString("dd MMM", Cultura)}: quedó {(parada.Tanque.StartsWith("lleno") ? "lleno" : "parcial")}, pasa a {(parada.Tanque.StartsWith("lleno") ? "parcial" : "lleno")}")"
+                                    @onclick="() => CorregirTanque(parada.Transaccion)">cambiar</button>
                         }
                     </div>
 
@@ -90,7 +126,12 @@ else
                             @* El número solo. «observado» y «confirmado» son palabras del
                                dominio que ella no eligió y en la parada sobraban; la
                                procedencia queda en el title para quien la quiera mirar. *@
-                            <span class="n" title="@parada.OrigenDelKilometraje">@parada.KilometrajeAnotado</span>
+                            @* EN COBRE: es el único dato de la fila que puso ELLA. La tesis del
+                               negocio es que una carga tiene dos procedencias en el mismo hecho, y
+                               con el kilometraje del mismo color que los litros y el precio la
+                               pantalla no lo mostraba. El cobre ya significa «lo tuyo» en esta app:
+                               es el color de las agujas, los trazos y las teclas. *@
+                            <span class="n aporte" title="@($"Lo anotaste vos ({parada.OrigenDelKilometraje})")">@parada.KilometrajeAnotado</span>
                         }
                     </div>
 
@@ -132,7 +173,21 @@ else
                        hasta la próxima acción sin que nadie lo viera. *@
                     @if (desbloqueado.Length > 0 && desbloqueadoEn == parada.Transaccion)
                     {
-                        <div class="parte parte--neutro parada-logro"><strong>Se desbloqueó:</strong> @desbloqueado</div>
+                        @* VERDE Y SIN APAGARSE: es información sobre el carro, no un «ok». *@
+                        <div class="parte parte--listo parada-logro" role="status"><strong>Se desbloqueó:</strong> @desbloqueado</div>
+                    }
+
+                    @* EL ÉXITO DE UN TANQUE, en la parada que lo recibió. Antes confirmar solo
+                       cambiaba «(estimado)» por «(confirmado)» en la versalita, y el bloque se
+                       plegaba: parecía que la tecla no había hecho nada. *@
+                    @if (Listo.Texto.Length > 0 && listoEn == parada.Transaccion)
+                    {
+                        <div class="parte parte--listo parte--pasajero parada-logro" role="status">@Listo.Texto</div>
+                    }
+
+                    @if (Error.Hay && errorEn == parada.Transaccion)
+                    {
+                        <div class="parada-logro"><Problema De="Error" /></div>
                     }
 
                     @if (fotoPorCarga.TryGetValue(parada.Transaccion, out string? laFoto))
@@ -211,9 +266,15 @@ else
                                        selector es del sistema y en móvil ya ofrece «tomar foto». *@
                                     @if (!parada.TieneFoto && Estado.HayCarpeta)
                                     {
-                                        <label class="tecla tecla--contorno tecla--icono" title="Sacale una foto al odómetro y anotá el número después">
+                                        @* UN <label> NO LLEGA POR TECLADO: no entra en el orden de tabulación y
+                                           Enter no lo activa. tabindex lo mete en el orden y el onkeydown
+                                           traduce Enter y Espacio al click del input escondido, que es lo que
+                                           hace el mouse. Y la explicación deja de vivir en un title —que en
+                                           touch no existe— para decirse en la etiqueta. *@
+                                        <label class="tecla tecla--contorno tecla--icono" tabindex="0" role="button"
+                                               onkeydown="if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); this.querySelector('input').click(); }">
                                             <svg class="tecla-icono" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3.2 7.4h3.1l1.6-2.2h4.2l1.6 2.2h3.1v8.4H3.2z" /><circle cx="10" cy="11.4" r="2.6" /></svg>
-                                            Foto
+                                            Foto del odómetro
                                             <InputFile OnChange="e => GuardarFoto(parada.Transaccion, e)"
                                                        accept="image/*" style="display:none" />
                                         </label>
@@ -407,9 +468,34 @@ else
     // pasaron por aca.
     private Dictionary<string, string> fotoPorCarga = new();
 
+    // EL FOCO NO SE PIERDE AL ACTUAR. «Sí, quedó lleno» y «Agregar kilometraje» desaparecen
+    // al hacer su trabajo, y el foco caía al body: quien navega por teclado volvía a empezar
+    // desde arriba. La parada que se tocó lo recibe en el render siguiente, que es cuando
+    // la tecla ya no está y la parada ya existe con su estado nuevo. Con mouse no se ve nada
+    // (focus-visible no se aplica al foco programático tras un click); con teclado se ve el
+    // anillo de la casa alrededor de la parada, que además dice dónde quedó lo que hizo.
+    private readonly Dictionary<string, ElementReference> paradas = new();
+    private string porEnfocar = "";
+
+    private void Enfocar(string transaccion) => porEnfocar = transaccion;
+
+    protected override async Task OnAfterRenderAsync(bool primerRender)
+    {
+        if (porEnfocar.Length == 0) return;
+        string transaccion = porEnfocar;
+        porEnfocar = "";
+        if (paradas.TryGetValue(transaccion, out ElementReference parada))
+            await parada.FocusAsync();
+    }
+
+    // EN QUE PARADA nació el último fallo: "" cuando fue arriba (el lote, la lista). Se
+    // asigna ANTES de Intentar, que limpia Error; si la acción sale bien no se dibuja nada.
+    private string errorEn = "";
+
     private Task VerLaFoto(string transaccion, string nombreDeArchivo) =>
         Intentar("abrir la foto del tablero", async () =>
         {
+            errorEn = transaccion;
             string base64 = await Estado.LeerFoto(nombreDeArchivo);
             if (base64.Length == 0)
                 throw new InvalidOperationException(
@@ -483,6 +569,13 @@ else
         faltantesPorCarga.TryGetValue(transaccion, out List<FaltanteEnLista>? pendientes)
             ? pendientes : SinPendientes;
 
+    private static bool EsperaConfirmacion(List<FaltanteEnLista> pendientes)
+    {
+        foreach (FaltanteEnLista pendiente in pendientes)
+            if (pendiente.QueFalta == "la confirmación del tanque") return true;
+        return false;
+    }
+
     // Los dos botones salen de lo que el DOMINIO supuso, no de dos rotulos fijos: con
     // corte automatico se supone lleno y con preseteado, parcial, y la pregunta correcta
     // es la contraria en cada caso.
@@ -504,13 +597,21 @@ else
     // el numero y dijo que si-; si lo edito, observado. Nunca entra solo.
     private Task AgregarKilometraje(string transaccion) => Intentar("anotar el kilometraje", async () =>
     {
+        errorEn = transaccion;
         decimal kilometraje = Kilometraje(transaccion);
         if (kilometraje <= 0) return;
 
         desbloqueado = "";
         desbloqueadoEn = transaccion;
 
-        int tramosAntes = rendimiento.TramosCalculados;
+        // LOS TRAMOS QUE YA ESTABAN, para saber cuáles nacen con este kilometraje. Antes el
+        // parte decía «el rendimiento de ese tramo» y ponía rendimiento.Actual, que es el
+        // ÚLTIMO tramo de la serie y no el que esta carga cerró: anotar la carga del 20 jun
+        // hacía nacer un tramo de 32.3 y el parte decía 33.7. Un refuerzo que miente por un
+        // decimal enseña a no leerlo. Se identifican por Desde, que un tramo no comparte.
+        var calculadosAntes = new HashSet<DateTime>();
+        foreach (TramoEnLista tramo in tramos)
+            if (tramo.EstaCalculado) calculadosAntes.Add(tramo.Desde);
         // La comparacion tiene que ser contra la propuesta COMO SE VE: es el numero que
         // ella tuvo delante. Contra la canonica, aceptar la sugerencia en millas entraria
         // como "observado" en vez de "confirmado".
@@ -527,9 +628,27 @@ else
                 "La app no anotó ese kilometraje: no es coherente con la serie (el "
                 + "odómetro solo crece). Revisá el número.");
 
-        if (rendimiento.TramosCalculados > tramosAntes && rendimiento.Actual > 0)
-            desbloqueado = $"el rendimiento de ese tramo: {Cifra(rendimiento.ActualComoSeVe)} {rendimiento.Simbolo}."
-                + (autonomia.Hay ? $" Y tu autonomía estimada: ~{Entero(autonomia.Kilometros)} km." : "");
+        Enfocar(transaccion);
+
+        // Releer ya corrió (Avisar → Cambio → Releer, sincrónico), así que `tramos` es la
+        // serie de después. Un kilometraje puede cerrar DOS tramos —el que termina en esta
+        // carga y el que arranca en ella—, y los dos se nombran.
+        var nuevos = new List<TramoEnLista>();
+        foreach (TramoEnLista tramo in tramos)
+            if (tramo.EstaCalculado && !calculadosAntes.Contains(tramo.Desde)) nuevos.Add(tramo);
+
+        if (nuevos.Count == 1)
+            desbloqueado = $"el rendimiento de ese tramo: {Cifra(nuevos[0].RendimientoComoSeVe)} {nuevos[0].SimboloDelRendimiento}.";
+        else if (nuevos.Count > 1)
+        {
+            var cifras = new List<string>();
+            foreach (TramoEnLista tramo in nuevos)
+                cifras.Add($"{Cifra(tramo.RendimientoComoSeVe)} {tramo.SimboloDelRendimiento}");
+            desbloqueado = $"el rendimiento de los {nuevos.Count} tramos que tocan esta carga: "
+                + string.Join(" y ", cifras) + ".";
+        }
+        if (desbloqueado.Length > 0 && autonomia.Hay)
+            desbloqueado += $" Y tu autonomía estimada: ~{Entero(autonomia.Kilometros)} km.";
     });
 
     // Las cargas que esperan el visto bueno del tanque, en el orden de los faltantes.
@@ -545,6 +664,7 @@ else
     // dicen al final.
     private Task ConfirmarTodosLosTanques() => Intentar("confirmar los tanques estimados", async () =>
     {
+        errorEn = "";
         var porConfirmar = new List<string>(tanquesEstimados);
         var rechazos = new List<string>();
         try
@@ -565,18 +685,43 @@ else
             throw new InvalidOperationException(
                 $"Se confirmaron {porConfirmar.Count - rechazos.Count} de {porConfirmar.Count}. "
                 + "No entraron: " + string.Join("; ", rechazos));
+
+        listoEn = "";
+        MostrarListo(porConfirmar.Count == 1
+            ? "Listo: el tanque quedó confirmado."
+            : $"Listo: {porConfirmar.Count} tanques confirmados.");
     });
+
+    // EN QUÉ PARADA se dibuja el éxito: la transacción, o "" para el de arriba (el lote).
+    private string listoEn = "";
+
+    // El texto dice QUÉ quedó, no solo que quedó: con «lleno» o «parcial» a la vista, la
+    // persona que confirmó por costumbre todavía puede darse cuenta de que no era.
+    private string QueQuedo(string transaccion)
+    {
+        foreach (CargaEnLista carga in cargas)
+            if (carga.Transaccion == transaccion)
+                return carga.Tanque.StartsWith("lleno") ? "lleno" : "parcial";
+        return "";
+    }
 
     private Task ConfirmarTanque(string transaccion) => Intentar("confirmar el tanque", async () =>
     {
+        errorEn = transaccion;
         string rechazo = await Estado.ConfirmarTanque(transaccion);
         if (rechazo.Length > 0) throw new InvalidOperationException(rechazo);
+
+        listoEn = transaccion;
+        Enfocar(transaccion);
+        string quedo = QueQuedo(transaccion);
+        MostrarListo(quedo.Length > 0 ? $"Confirmado: tanque {quedo}." : "Confirmado.");
     });
 
     // "Era al reves": lo que la inferencia propuso no era. Se declara lo contrario, con la
     // palabra de ella (origen observado).
     private Task CorregirTanque(string transaccion) => Intentar("corregir el tanque", async () =>
     {
+        errorEn = transaccion;
         CargaEnLista? carga = null;
         foreach (CargaEnLista candidata in cargas)
             if (candidata.Transaccion == transaccion) { carga = candidata; break; }
@@ -585,6 +730,10 @@ else
         string contrario = carga.Tanque.StartsWith("lleno") ? "parcial" : "lleno";
         string rechazo = await Estado.DeclararTanque(transaccion, contrario);
         if (rechazo.Length > 0) throw new InvalidOperationException(rechazo);
+
+        listoEn = transaccion;
+        Enfocar(transaccion);
+        MostrarListo($"Anotado: tanque {contrario}.");
     });
 
     // La foto entra entera a memoria antes de ir a la carpeta: una foto de tablero ronda
@@ -592,6 +741,7 @@ else
     private Task GuardarFoto(string transaccion, InputFileChangeEventArgs e) =>
         Intentar("guardar la foto del tablero", async () =>
         {
+            errorEn = transaccion;
             const long topeDeBytes = 15 * 1024 * 1024;
             IBrowserFile archivo = e.File;
             if (archivo.Size > topeDeBytes)
