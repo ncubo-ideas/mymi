@@ -646,6 +646,15 @@ h1:focus, h1:focus-visible { outline: none; }
 .parte--problema { border-color: var(--rojo-borde);  border-left-color: var(--rojo);  background: var(--rojo-suave); }
 .parte--neutro   { border-left-color: var(--bisel-vivo); }
 
+/* EL ÉXITO. No existía: --bien estaba en la hoja y ningún parte lo usaba, así que «Listo» se
+   decía en gris, con el mismo tono que «se está guardando en este navegador». */
+.parte--listo    { border-color: var(--bien-borde); border-left-color: var(--bien); background: var(--bien-suave); }
+
+/* Y EL QUE SE VA SOLO. Se desvanece en el último tramo de su vida (ver AvisoDeListo) para
+   que cuando el DOM lo saque ya no se viera: lo que se mueve es un fantasma, no un aviso. */
+.parte--pasajero { animation: se-apaga .6s ease-in both; animation-delay: 4.4s; }
+@keyframes se-apaga { to { opacity: 0; } }
+
 /* MIENTRAS SE RESUELVE QUÉ HABÍA RECORDADO. A la misma altura que el aro de carga de
    index.html (22vh), para que el paso de «Cargando» a «Abriendo tu carpeta…» no salte. */
 .abriendo { margin: 22vh auto 0; text-align: center; font-size: 15px; color: var(--tenue); }
@@ -955,16 +964,29 @@ code { font-family: var(--cifras); font-size: .9em; color: var(--cobre); }
 @keyframes barre      { from { transform: rotate(-120deg); } }
 
 .instrumento { animation: entra .4s ease-out both; }
-.medidor .aguja { transform-origin: 60px 54px; animation: barre .9s cubic-bezier(.2,.8,.3,1) both; }
-.medidor .carga { stroke-dasharray: 1; animation: se-traza .9s cubic-bezier(.2,.8,.3,1) both; }
-.chispa .trazo { stroke-dasharray: 1; animation: se-traza .9s ease-out both; }
-.chispa .punto { animation: aparece .3s ease-out both .5s; }
+
+/* EL ENCENDIDO ES EN SECUENCIA. Los seis instrumentos entraban a la vez y eso se lee como un
+   parpadeo, no como un tablero que se prende: un carro enciende los relojes de a uno. Sesenta
+   milisegundos entre cada uno, en el orden de lectura de la rejilla; con `both`, cada cara
+   espera invisible hasta su turno. La aguja y la curva arrancan cuando su cara ya está. */
+.cuadro > :nth-child(2) { animation-delay: 60ms; }
+.cuadro > :nth-child(3) { animation-delay: 120ms; }
+.cuadro > :nth-child(4) { animation-delay: 180ms; }
+.cuadro > :nth-child(5) { animation-delay: 240ms; }
+.cuadro > :nth-child(6) { animation-delay: 300ms; }
+.cuadro > :nth-child(7) { animation-delay: 360ms; }
+.cuadro > :nth-child(n+8) { animation-delay: 420ms; }
+
+.medidor .aguja { transform-origin: 60px 54px; animation: barre .9s cubic-bezier(.2,.8,.3,1) both .2s; }
+.medidor .carga { stroke-dasharray: 1; animation: se-traza .9s cubic-bezier(.2,.8,.3,1) both .2s; }
+.chispa .trazo { stroke-dasharray: 1; animation: se-traza .9s ease-out both .3s; }
+.chispa .punto { animation: aparece .3s ease-out both .8s; }
 .trecho-barra .relleno { transform-origin: left center; animation: crece .7s ease-out both .1s; }
 
 /* Quien pidió que no se mueva, no se mueve. */
 @media (prefers-reduced-motion: reduce) {
     .instrumento, .medidor .aguja, .medidor .carga,
-    .chispa .trazo, .chispa .punto, .trecho-barra .relleno {
+    .chispa .trazo, .chispa .punto, .trecho-barra .relleno, .parte--pasajero {
         animation: none;
     }
 }
