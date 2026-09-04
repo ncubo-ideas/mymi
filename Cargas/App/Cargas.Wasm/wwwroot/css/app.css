@@ -477,6 +477,9 @@ p.apunte, .ficha-nota, .arranque-porque, .arranque-nota, .otra p { max-width: 60
 
 /* LA PARADA: una carga. */
 .parada .eslabon-cuerpo { padding: 0 0 4px; }
+/* La parada enfocada por teclado (ver Enfocar en Ruta): el anillo de la casa, con aire. */
+.parada:focus { outline: none; }
+.parada:focus-visible { outline: 2px solid var(--cobre); outline-offset: 6px; border-radius: 6px; }
 .parada-punto {
     position: absolute; left: 5px; top: 6px; z-index: 1;
     width: 12px; height: 12px; border-radius: 50%;

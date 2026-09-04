@@ -88,8 +88,11 @@ else
             CargaEnLista parada = camino[i];
             List<FaltanteEnLista> pendientes = FaltantesDe(parada.Transaccion);
 
+            @* tabindex=-1: la parada recibe el foco por programa cuando la tecla que lo tenía
+               desaparece (ver Enfocar), y no entra en el orden de tabulación. *@
             <li class="eslabon parada @(pendientes.Count > 0 ? "parada--pendiente" : "")"
-                @key="@($"parada-{parada.Transaccion}")">
+                @key="@($"parada-{parada.Transaccion}")" tabindex="-1"
+                @ref="paradas[parada.Transaccion]">
                 <div class="eslabon-riel"><span class="parada-punto"></span></div>
                 <div class="eslabon-cuerpo">
                     <div class="parada-cabeza">
@@ -447,6 +450,26 @@ else
     // pasaron por aca.
     private Dictionary<string, string> fotoPorCarga = new();
 
+    // EL FOCO NO SE PIERDE AL ACTUAR. «Sí, quedó lleno» y «Agregar kilometraje» desaparecen
+    // al hacer su trabajo, y el foco caía al body: quien navega por teclado volvía a empezar
+    // desde arriba. La parada que se tocó lo recibe en el render siguiente, que es cuando
+    // la tecla ya no está y la parada ya existe con su estado nuevo. Con mouse no se ve nada
+    // (focus-visible no se aplica al foco programático tras un click); con teclado se ve el
+    // anillo de la casa alrededor de la parada, que además dice dónde quedó lo que hizo.
+    private readonly Dictionary<string, ElementReference> paradas = new();
+    private string porEnfocar = "";
+
+    private void Enfocar(string transaccion) => porEnfocar = transaccion;
+
+    protected override async Task OnAfterRenderAsync(bool primerRender)
+    {
+        if (porEnfocar.Length == 0) return;
+        string transaccion = porEnfocar;
+        porEnfocar = "";
+        if (paradas.TryGetValue(transaccion, out ElementReference parada))
+            await parada.FocusAsync();
+    }
+
     // EN QUE PARADA nació el último fallo: "" cuando fue arriba (el lote, la lista). Se
     // asigna ANTES de Intentar, que limpia Error; si la acción sale bien no se dibuja nada.
     private string errorEn = "";
@@ -580,6 +603,8 @@ else
                 "La app no anotó ese kilometraje: no es coherente con la serie (el "
                 + "odómetro solo crece). Revisá el número.");
 
+        Enfocar(transaccion);
+
         // Releer ya corrió (Avisar → Cambio → Releer, sincrónico), así que `tramos` es la
         // serie de después. Un kilometraje puede cerrar DOS tramos —el que termina en esta
         // carga y el que arranca en ella—, y los dos se nombran.
@@ -662,6 +687,7 @@ else
         if (rechazo.Length > 0) throw new InvalidOperationException(rechazo);
 
         listoEn = transaccion;
+        Enfocar(transaccion);
         string quedo = QueQuedo(transaccion);
         MostrarListo(quedo.Length > 0 ? $"Confirmado: tanque {quedo}." : "Confirmado.");
     });
@@ -681,6 +707,7 @@ else
         if (rechazo.Length > 0) throw new InvalidOperationException(rechazo);
 
         listoEn = transaccion;
+        Enfocar(transaccion);
         MostrarListo($"Anotado: tanque {contrario}.");
     });
 
