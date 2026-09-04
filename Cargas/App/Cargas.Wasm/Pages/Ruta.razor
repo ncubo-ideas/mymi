@@ -101,6 +101,19 @@ else
                         {
                             <span class="parada-tanque">tanque @parada.Tanque</span>
                         }
+                        @* CAMBIAR UN TANQUE YA DICHO. «Confirmar los 28 tanques» confirma
+                           veintiocho suposiciones de un golpe, y una que estaba mal no tenía
+                           vuelta: la UI solo ofrecía «No, cargué solo un poco» mientras la
+                           carga estaba pendiente. DeclararTanque siempre sobreescribió con la
+                           palabra de ella (origen observado); acá solo se le pone una puerta.
+                           Discreta a propósito —es la corrección, no el camino— y no aparece
+                           mientras la pregunta de confirmar sigue abierta, que ya la incluye. *@
+                        @if (parada.Tanque.Length > 0 && !EsperaConfirmacion(pendientes))
+                        {
+                            <button type="button" class="parada-cambiar"
+                                    aria-label="@($"Cambiar el tanque de la carga del {parada.Fecha.ToString("dd MMM", Cultura)}: quedó {(parada.Tanque.StartsWith("lleno") ? "lleno" : "parcial")}, pasa a {(parada.Tanque.StartsWith("lleno") ? "parcial" : "lleno")}")"
+                                    @onclick="() => CorregirTanque(parada.Transaccion)">cambiar</button>
+                        }
                     </div>
 
                     <div class="parada-datos">
@@ -555,6 +568,13 @@ else
     private List<FaltanteEnLista> FaltantesDe(string transaccion) =>
         faltantesPorCarga.TryGetValue(transaccion, out List<FaltanteEnLista>? pendientes)
             ? pendientes : SinPendientes;
+
+    private static bool EsperaConfirmacion(List<FaltanteEnLista> pendientes)
+    {
+        foreach (FaltanteEnLista pendiente in pendientes)
+            if (pendiente.QueFalta == "la confirmación del tanque") return true;
+        return false;
+    }
 
     // Los dos botones salen de lo que el DOMINIO supuso, no de dos rotulos fijos: con
     // corte automatico se supone lleno y con preseteado, parcial, y la pregunta correcta
