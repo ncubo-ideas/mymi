@@ -519,7 +519,14 @@ else
         desbloqueado = "";
         desbloqueadoEn = transaccion;
 
-        int tramosAntes = rendimiento.TramosCalculados;
+        // LOS TRAMOS QUE YA ESTABAN, para saber cuáles nacen con este kilometraje. Antes el
+        // parte decía «el rendimiento de ese tramo» y ponía rendimiento.Actual, que es el
+        // ÚLTIMO tramo de la serie y no el que esta carga cerró: anotar la carga del 20 jun
+        // hacía nacer un tramo de 32.3 y el parte decía 33.7. Un refuerzo que miente por un
+        // decimal enseña a no leerlo. Se identifican por Desde, que un tramo no comparte.
+        var calculadosAntes = new HashSet<DateTime>();
+        foreach (TramoEnLista tramo in tramos)
+            if (tramo.EstaCalculado) calculadosAntes.Add(tramo.Desde);
         // La comparacion tiene que ser contra la propuesta COMO SE VE: es el numero que
         // ella tuvo delante. Contra la canonica, aceptar la sugerencia en millas entraria
         // como "observado" en vez de "confirmado".
@@ -536,9 +543,25 @@ else
                 "La app no anotó ese kilometraje: no es coherente con la serie (el "
                 + "odómetro solo crece). Revisá el número.");
 
-        if (rendimiento.TramosCalculados > tramosAntes && rendimiento.Actual > 0)
-            desbloqueado = $"el rendimiento de ese tramo: {Cifra(rendimiento.ActualComoSeVe)} {rendimiento.Simbolo}."
-                + (autonomia.Hay ? $" Y tu autonomía estimada: ~{Entero(autonomia.Kilometros)} km." : "");
+        // Releer ya corrió (Avisar → Cambio → Releer, sincrónico), así que `tramos` es la
+        // serie de después. Un kilometraje puede cerrar DOS tramos —el que termina en esta
+        // carga y el que arranca en ella—, y los dos se nombran.
+        var nuevos = new List<TramoEnLista>();
+        foreach (TramoEnLista tramo in tramos)
+            if (tramo.EstaCalculado && !calculadosAntes.Contains(tramo.Desde)) nuevos.Add(tramo);
+
+        if (nuevos.Count == 1)
+            desbloqueado = $"el rendimiento de ese tramo: {Cifra(nuevos[0].RendimientoComoSeVe)} {nuevos[0].SimboloDelRendimiento}.";
+        else if (nuevos.Count > 1)
+        {
+            var cifras = new List<string>();
+            foreach (TramoEnLista tramo in nuevos)
+                cifras.Add($"{Cifra(tramo.RendimientoComoSeVe)} {tramo.SimboloDelRendimiento}");
+            desbloqueado = $"el rendimiento de los {nuevos.Count} tramos que tocan esta carga: "
+                + string.Join(" y ", cifras) + ".";
+        }
+        if (desbloqueado.Length > 0 && autonomia.Hay)
+            desbloqueado += $" Y tu autonomía estimada: ~{Entero(autonomia.Kilometros)} km.";
     });
 
     // Las cargas que esperan el visto bueno del tanque, en el orden de los faltantes.
