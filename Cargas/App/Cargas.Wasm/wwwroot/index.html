@@ -24,6 +24,20 @@
             <circle r="40%" cx="50%" cy="50%" />
         </svg>
         <div class="loading-progress-text"></div>
+        <!-- LA MARCA, debajo del aro. Con ~35 MB sin trimming la primera carga son varios
+             segundos mirando un aro que no decía de quién era. Va debajo y no encima para
+             que el aro se quede en sus 22vh y el paso a «Abriendo…» siga sin saltar. El faro
+             es el mismo trazo del capó (Layout/MainLayout.razor), a mano porque acá todavía
+             no hay Blazor que lo dibuje. -->
+        <div class="loading-marca" aria-hidden="true">
+            <svg viewBox="0 0 40 40" xmlns="http://www.w3.org/2000/svg"
+                 fill="none" stroke="currentColor" stroke-width="2.4">
+                <path d="M16 34 L18 12 h4 L24 34 z" />
+                <path d="M15 12 h10 M17 7 h6 M18 12 V7 M22 12 V7" />
+                <path d="M26 8 l6 -2.5 M26 11 l7 0" />
+            </svg>
+            <span>Estaciones Faro</span>
+        </div>
     </div>
 
     <div id="blazor-error-ui">
