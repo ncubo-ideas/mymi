@@ -60,6 +60,8 @@
     --verde:           #1f7a43;   /* el verde de marca: enlaces, "ver todos" */
     --verde-vivo:      #2e9e5b;   /* el acento: botones, puntos llenos */
     --verde-hondo:     #16261c;   /* la barra superior y el pie */
+    --verde-medio:     #6cb98a;   /* segundo tono de la barra de categorias */
+    --verde-palido:    #a9d6bb;   /* tercer tono de la barra de categorias */
 
     --papel:           #f7f5f0;   /* el fondo de la pantalla: CALIDO, no verdoso */
     --carta:           #ffffff;   /* las tarjetas */
@@ -67,6 +69,7 @@
     --linea:           #dde3da;   /* bordes, y los puntos vacios */
     --tinte-verde:     #e9f4ec;   /* fondos tenidos de verde */
     --tinte-crema:     #fdf1e0;   /* el fondo de "un cambio en tu rutina" */
+    --tinte-durazno:   #fbe3ce;   /* crema/durazno suave: el banner "puede interesarte" */
     --tierra:          #e8b775;   /* el acento calido de ese mismo bloque */
 
     /* La flor de la marca. Es el unico lugar donde entra el morado. */
@@ -759,18 +762,15 @@ main h2 {
 }
 .precio-ahora { font-weight: 700; font-variant-numeric: tabular-nums; }
 
-/* LA CIFRA FRENTE AL PASADO, encabezando la tarjeta de precios: "+₡1.150 vs. hace 3
-   meses". Tierra cuando sube -es un aviso, no una alarma- y verde cuando baja. */
-.frente-al-pasado { display: flex; align-items: baseline; gap: .6rem; flex-wrap: wrap; }
-.frente-cifra {
-    font-size: 1.7rem;
-    font-weight: 800;
-    letter-spacing: -.03em;
-    line-height: 1.1;
-    font-variant-numeric: tabular-nums;
-}
-.frente-cifra--sube { color: var(--gu-tierra); }
-.frente-cifra--baja { color: var(--verde-vivo); }
+/* "TUS HABITUALES" — RONDA "RESUMEN, NO TABLA": la vieja cifra suelta "+₡1.150 vs. hace 3
+   meses" (.frente-al-pasado/.frente-cifra) se retira -era otra forma de la misma tabla-, a
+   favor del mismo patron "conclusion primero" que ya usa "Tu mes en el super"
+   (.mes-cabeza/.mes-conclusion): titulo + "Ver todos" en una fila, la frase debajo. Las
+   filas mismas reusan .infaltable-fila tal cual -misma anatomia foto/que/chip/flecha-, asi
+   que no hace falta un juego de clases nuevo para ellas. */
+.habituales-cabeza { display: flex; align-items: center; justify-content: space-between; gap: .6rem; margin: 0 0 8px; }
+.habituales-cabeza-titulo { margin: 0; }
+.habituales-contexto { margin: 2px 0 12px; font-size: .82rem; }
 
 /* PUEDE INTERESARTE: una bajada con foto y tachado. El kicker en verde la separa de las
    filas de cambios, que son noticia neutra. */
@@ -1080,8 +1080,16 @@ main h2 {
 /* --------------------------------------------- las piezas del patron teaser
 
    LA FILA DE LA FIRMA: tres fotitos solapadas y tres nombres. Es el resumen de la grilla
-   que vive en /infaltables — la portada reconoce, la pantalla completa recorre. */
+   que vive en /infaltables — la portada reconoce, la pantalla completa recorre.
+
+   RONDA "DESTACADA PERO SEGUNDA": fondo mint muy suave y flecha en su propio circulo, para
+   que llame un poco mas la atencion que una fila blanca comun sin competir con la tarjeta
+   de "Tus habituales". .list-group-item.firma-fila (dos clases) es a proposito: mas abajo
+   en esta hoja ".list-group-item" ya fija background-color:var(--carta), y una sola clase
+   no le hubiera ganado por especificidad -el orden de aparicion la hubiera perdido-. */
 .firma-fila { display: flex; align-items: center; gap: .8rem; text-align: left; }
+.list-group-item.firma-fila { background: var(--tinte-verde); border-color: var(--estable-borde); }
+.list-group-item.firma-fila:hover { background: var(--estable-borde); }
 .fotitos { display: inline-flex; flex: 0 0 auto; }
 .fotitos img {
     width: 34px;
@@ -1095,8 +1103,24 @@ main h2 {
 /* Solapadas como una pila: es el gesto universal de "esto es un grupo". */
 .fotitos img + img { margin-left: -10px; }
 .firma-que { display: flex; flex-direction: column; gap: 1px; flex: 1 1 auto; min-width: 0; }
+.firma-flecha {
+    flex: 0 0 auto;
+    width: 26px;
+    height: 26px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: var(--radio-boton);
+    background: var(--estable-borde);
+    color: var(--verde);
+    font-size: 1.05rem;
+    line-height: 1;
+}
 
-/* LAS TRES CIFRAS DEL MES, lado a lado. Reusa .ritmo-cifra; esto solo las acomoda. */
+/* LAS TRES CIFRAS DEL MES, lado a lado. Reusa .ritmo-cifra; esto solo las acomoda.
+   YA NO LA USA "Tu mes en el súper" -ver .mes-resumen mas abajo, la carta caia en una
+   cuadricula 2+1 en telefono, que es justo lo que se pidio corregir-, pero la dejo intacta:
+   no la usa nadie mas por ahora, y tocarla no era parte de esta ronda. */
 .tiles-mes {
     display: grid;
     grid-template-columns: repeat(3, 1fr);
@@ -1104,6 +1128,54 @@ main h2 {
     margin-bottom: .5rem;
 }
 @media (max-width: 575.98px) { .tiles-mes { grid-template-columns: 1fr 1fr; } }
+
+/* "TU MES EN EL SUPER" — RONDA "PRIMERO LA CONCLUSION": antes la carta abria directo en
+   tres cifras (.tiles-mes) que obligaban a interpretar. Ahora responde primero QUE esta
+   pasando con una frase (.mes-conclusion) y recien despues muestra los datos que la
+   sostienen -en una sola fila de tres columnas, nunca una cuadricula 2+1-, sin tarjetas
+   internas: separadas solo por un divisor sutil (border-right), no por fondo ni sombra.
+   Prefijo propio ".mes-*" para no arrastrar el peso visual de ".ritmo-cifra" (que sigue
+   siendo de /ritmo, ver Ritmo.razor) a un resumen que se pidio explicitamente liviano. */
+.mes-cabeza { display: flex; align-items: center; justify-content: space-between; gap: .6rem; margin: 0 0 8px; }
+.mes-cabeza-titulo { margin: 0; }
+/* EL CHIP "Este mes ▾" es presentacional por ahora -no hay mas de un mes entre los que
+   elegir en los datos del demo-, asi que no lleva rol ni onclick de select real: solo marca
+   visualmente el periodo que se esta mirando, listo para volverse interactivo el dia que
+   haya mas de un mes de donde elegir. */
+.mes-chip {
+    display: inline-flex; align-items: center; gap: 3px; flex: none;
+    font-size: .76rem; font-weight: 700; color: var(--tenue);
+    background: var(--ficha); border-radius: var(--radio-boton);
+    padding: 5px 10px; white-space: nowrap;
+}
+.mes-chip-flecha { font-size: .6rem; color: var(--tenue-2); }
+
+.mes-conclusion { margin: 0 0 14px; font-size: 1.02rem; font-weight: 700; color: var(--tinta); line-height: 1.35; }
+
+.mes-resumen { display: flex; align-items: stretch; margin-bottom: .4rem; }
+.mes-resumen-item {
+    flex: 1 1 0; min-width: 0;
+    display: flex; flex-direction: column; align-items: center; text-align: center; gap: 3px;
+    padding: 2px 6px;
+}
+/* EL DIVISOR ES UN BORDE, no un elemento aparte: se acomoda solo si "días entre compras"
+   no se dibuja (ritmo.EsObservado en false) sin dejar un divisor huerfano colgando. */
+.mes-resumen-item:not(:last-child) { border-right: 1px solid var(--linea); }
+.mes-resumen-icono { color: var(--tenue-2); display: inline-flex; }
+.mes-resumen-numero {
+    font-size: .95rem; font-weight: 800; color: var(--tinta);
+    font-variant-numeric: tabular-nums; white-space: nowrap;
+}
+.mes-resumen-rotulo { font-size: 10.5px; color: var(--tenue); line-height: 1.25; }
+
+/* EL TERCER INDICADOR PESA MAS -es el cambio, la razon de ser de la frase de arriba-:
+   numero mas grande y el mismo par de color de SIGNIFICADO que ya usa ".frente-cifra" para
+   "sube"/"baja" en la carta de precios (tierra/verde-vivo), nunca rojo de alerta. */
+.mes-resumen-item--foco .mes-resumen-numero { font-size: 1.1rem; letter-spacing: -.01em; }
+.mes-resumen-item--sube .mes-resumen-icono,
+.mes-resumen-item--sube .mes-resumen-numero { color: var(--gu-tierra); }
+.mes-resumen-item--baja .mes-resumen-icono,
+.mes-resumen-item--baja .mes-resumen-numero { color: var(--verde-vivo); }
 
 /* La ultima compra va sobre el tinte estable: es el acceso rapido, no una alerta. */
 .ultima-compra { background: var(--tinte-verde); }
@@ -1475,6 +1547,21 @@ h2.kicker { font-size: .74rem; margin: 0; }
 }
 .recibo-numero-dia { font-size: 1.25rem; font-weight: 800; font-variant-numeric: tabular-nums; }
 .recibo-mes { font-size: .64rem; text-transform: uppercase; letter-spacing: .1em; color: var(--tenue); }
+/* EL DIVISOR SUTIL de "Tu última compra": solo ahi -.ultima-compra es la unica fila de
+   recibo que no vive en /recibos-, para no tocar la lista completa que comparte estas
+   mismas clases .recibo*. Un pseudo-elemento posicionado a la mitad del gap existente
+   (.9rem), no un border-right/padding: eso encogeria el ancho fijo de 2.9rem donde ya
+   apenas caben el numero de dia y el mes en mayusculas. */
+.ultima-compra .recibo-dia { position: relative; }
+.ultima-compra .recibo-dia::after {
+    content: "";
+    position: absolute;
+    top: 12%;
+    bottom: 12%;
+    right: -.45rem;
+    width: 1px;
+    background: var(--linea);
+}
 .recibo-que { display: flex; flex-direction: column; gap: .1rem; flex: 1 1 auto; min-width: 0; }
 .recibo-total { font-weight: 700; white-space: nowrap; }
 .recibo-flecha { color: var(--tenue); font-size: 1.3rem; line-height: 1; }
@@ -1678,97 +1765,134 @@ code { color: var(--gu-morado-hondo); }
 
 /* ---- BLOQUE 1: header + hero, calcado del HTML ---- */
 
-/* SIN LA BARRA OSCURA: la marca (logo + nombre) y el boton de WhatsApp viven ADENTRO del
-   hero -como en el mock, que no tiene ninguna franja corporativa por encima-. MainLayout
-   deja de dibujar <header class="barra"> en esta ruta; este bloque es su reemplazo. La
-   ilustracion de fondo (hero-canasta-3d.png, detras de un velo claro) y el
-   degradado propio le dan al hero el mismo peso visual y la misma sensacion de "fondo
-   integrado" que tiene en el HTML. */
-.lg-home-hero {
-    position: relative;
-    overflow: hidden;
-    border-radius: 0 0 28px 28px;
-    background: linear-gradient(160deg, #e4f2e8 0%, #edf6ef 52%, #f5f6ef 84%, #f7f5f0 100%);
-    margin: -1.5rem -.75rem 1.5rem;
-    padding: 26px 20px 24px;
-    min-height: 248px;
+/* RONDA "CARRUSEL": el hero de una sola señal (fondo degradado + ilustracion sangrando +
+   texto/foto compitiendo por el mismo espacio) se retira. En su lugar, una identidad
+   simple sobre el fondo normal de la pagina -logo+nombre, sin franja ni gradiente propio-,
+   el saludo "¡Hola!" una sola vez, y debajo un carrusel horizontal donde CADA slide es su
+   propia composicion completa: columna de texto + columna de imagen, cada una con su
+   grid-column explicito -mismo criterio que ".mk-cambio"/".mk-oportunidad" mas abajo-, asi
+   que la imagen nunca flota sobre el texto ni al reves. Con scroll-snap nativo: sin libreria
+   de carrusel, el proyecto no tenia ninguna cargada (solo bootstrap.min.CSS, sin su JS). */
+.lg-home-arriba {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 4px 2px 0;
 }
-.lg-home-hero-mancha { position: absolute; border-radius: 50%; pointer-events: none; }
-.lg-home-hero-mancha--a {
-    width: 230px; height: 205px; top: -70px; right: -60px;
-    background: radial-gradient(circle at 45% 45%, rgba(174,216,188,.5), rgba(174,216,188,0) 70%);
+.lg-home-marca { display: flex; align-items: center; gap: 9px; min-width: 0; }
+.lg-home-marca img { width: 30px; height: 30px; object-fit: contain; flex: none; display: block; }
+.lg-home-marca span {
+    font-size: 1.1rem; font-weight: 800; color: #1f7a43; letter-spacing: -.01em; white-space: nowrap;
 }
-.lg-home-hero-mancha--b {
-    width: 190px; height: 165px; bottom: -40px; left: -70px;
-    background: radial-gradient(circle at 60% 50%, rgba(198,226,205,.42), rgba(198,226,205,0) 70%);
+.lg-home-saludo { margin: 14px 2px 10px; font-size: 1.05rem; font-weight: 800; color: var(--tinta); }
+
+.lg-home-carrusel-envoltorio { margin: 0 -.75rem 1.25rem; }
+/* RONDA "AJUSTE DE PEEK": antes cada slide ocupaba flex:0 0 100% del content-box ya
+   angosto por el padding -en la practica dejaba ver una porcion grande e irregular de la
+   siguiente tarjeta, "cortada"-. Ahora el ancho del slide se calcula para dejar SIEMPRE
+   ~14px de "peek" (mas los 10px de gap entre tarjetas) visibles del siguiente, de forma
+   predecible -no por redondeo del layout-, ver .lg-home-banner mas abajo. */
+.lg-home-carrusel {
+    display: flex;
+    gap: 10px;
+    overflow-x: auto;
+    scroll-snap-type: x mandatory;
+    scroll-padding-left: .75rem;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+    padding: 0 .75rem;
 }
-/* LA ILUSTRACION DE FONDO, tenue y recortada -igual que "hero-tienda.png" en el mock-:
-   siempre la misma (hero-canasta-3d.png), nunca cambia con la señal activa. Es un recorte
-   propio, nuevo, sacado de "sprite-laguaria.png" -el sprite que trajo Fernanda-: mismo
-   estilo 3D que logo.png, mas limpio que el hero-canasta.png plano que ya existia (ese
-   sigue en la carpeta, sin usar, por si hace falta volver atras). La foto de PRODUCTO
-   especifica (.lg-home-hero-foto) es harina de otro costal y va mas abajo, en la fila de
-   texto. */
-.lg-home-hero-ilustracion {
-    position: absolute; z-index: 1; bottom: -18px; right: -8px; width: 160px; height: auto;
-    opacity: .55; pointer-events: none;
-    -webkit-mask-image: radial-gradient(closest-side ellipse at 55% 55%, #000 45%, rgba(0,0,0,.4) 75%, transparent 100%);
-    mask-image: radial-gradient(closest-side ellipse at 55% 55%, #000 45%, rgba(0,0,0,.4) 75%, transparent 100%);
+.lg-home-carrusel::-webkit-scrollbar { display: none; }
+
+/* EL SLIDE ACTIVO OCUPA CASI TODO EL ANCHO UTIL -100% del content-box del carrusel, que ya
+   respeta los margenes generales via el padding:.75rem de arriba- MENOS 24px (10px de gap +
+   14px de peek): asi el borde derecho de la tarjeta activa siempre deja ver ~14px de la
+   siguiente, ni mas ni menos, sea cual sea el ancho real del telefono. Adentro sigue siendo
+   un grid de 2 columnas: texto (elastica) + imagen (fija, 38% del ancho, entre 96 y 150px).
+   Proporcion aprox. 58%/42% texto/imagen a 390px de ancho. */
+.lg-home-banner {
+    scroll-snap-align: start;
+    flex: 0 0 calc(100% - 24px);
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) clamp(96px, 38%, 150px);
+    align-items: center;
+    column-gap: 14px;
+    min-height: 200px;
+    border-radius: var(--radio-carta);
+    padding: 20px 20px 18px;
+    text-decoration: none;
 }
-.lg-home-hero-velo {
-    position: absolute; inset: 0; z-index: 2; pointer-events: none;
-    background: radial-gradient(120% 100% at 2% 40%, rgba(240,248,241,.95) 0%, rgba(240,248,241,.82) 40%, rgba(240,248,241,.32) 62%, rgba(240,248,241,0) 80%);
-}
-.lg-home-hero-piso {
-    position: absolute; left: 0; right: 0; bottom: 0; height: 34px; z-index: 2; pointer-events: none;
-    background: linear-gradient(180deg, rgba(247,245,240,0) 0%, rgba(247,245,240,.6) 70%, var(--papel) 100%);
-}
-.lg-home-hero-arriba {
-    position: relative; z-index: 3;
-    display: flex; align-items: center; justify-content: space-between; gap: 10px;
-}
-.lg-home-hero-marca { display: flex; align-items: center; gap: 9px; min-width: 0; }
-.lg-home-hero-marca img { width: 34px; height: 34px; object-fit: contain; flex: none; display: block; }
-.lg-home-hero-marca span {
-    font-size: 1.15rem; font-weight: 800; color: #1f7a43; letter-spacing: -.01em; white-space: nowrap;
-}
-/* EL BOTON REDONDO A LA DERECHA no es una campana decorativa -no hay
-   notificaciones que mostrar y esta app no inventa una funcion que no
-   tiene-: es el acceso rapido a WhatsApp, que es contacto real. Si no
-   hay WhatsApp configurado, no se dibuja nada: no queda un boton que
-   no lleva a ningun lado. */
-.lg-home-hero-ayuda {
-    width: 40px; height: 40px; border-radius: 50%;
-    background: #fff; border: none;
-    box-shadow: 0 4px 14px rgba(22,38,28,.10);
-    display: inline-flex; align-items: center; justify-content: center;
-    color: #1f7a43; flex: none; text-decoration: none;
-}
-.lg-home-hero-saludo { position: relative; z-index: 3; margin: 14px 0 0; font-size: .85rem; font-weight: 700; color: #3f9160; }
-/* TEXTO A LA IZQUIERDA, FOTO A LA DERECHA -misma fila, alineados al piso-, exactamente
-   como arma el HTML. */
-.lg-home-hero-fila { position: relative; z-index: 3; display: flex; align-items: flex-end; gap: 8px; margin-top: 11px; }
-.lg-home-hero-texto { flex: 1; min-width: 0; }
-.lg-home-hero-kicker {
+.lg-home-banner--sin-imagen { grid-template-columns: minmax(0, 1fr); }
+
+.lg-home-banner--nuevo    { background: var(--tinte-crema); }
+.lg-home-banner--habitual { background: var(--tinte-verde); }
+/* RONDA "MISMA ESTRUCTURA EN TODOS LOS SLIDES": este era el unico banner que rompia la
+   continuidad -fondo blanco + borde gris, o sea la misma pinta de una card generica en
+   vez de un pastel propio-. Mismo tratamiento que los demas: fondo solido, sin borde.
+   Durazno/crema muy suave, complementario al verde de marca, no naranja saturado. */
+.lg-home-banner--promo    { background: var(--tinte-durazno); }
+.lg-home-banner--neutro   { background: linear-gradient(160deg, #e4f2e8 0%, #f5f6ef 100%); }
+
+.lg-home-banner-texto { grid-column: 1; grid-row: 1; min-width: 0; }
+.lg-home-banner-kicker {
     display: block; font-size: .62rem; font-weight: 800; color: #3f9160;
     letter-spacing: .13em; line-height: 1.4; margin-bottom: .5rem;
 }
-.lg-home-hero-texto h1 {
-    margin: 0; font-size: clamp(1.35rem, 5.4vw, 1.6rem);
-    line-height: 1.1; font-weight: 800; color: #16261c; letter-spacing: -.03em;
+/* SIN TOPE DE ANCHO ARTIFICIAL: la columna de texto ya tiene su propio track de grid
+   (minmax(0,1fr)) que termina justo antes de la columna de imagen, asi que el titulo puede
+   partirse en 2-3 lineas sin invadir nada -no hace falta un max-width a ojo como antes. */
+.lg-home-banner-texto h1 {
+    margin: 0; font-size: clamp(1.2rem, 5.2vw, 1.45rem);
+    line-height: 1.18; font-weight: 800; color: #16261c; letter-spacing: -.03em;
 }
-.lg-home-hero-precio { display: flex; align-items: baseline; gap: 7px; margin-top: .5rem; }
-.lg-home-hero-precio-antes { font-size: .8rem; color: #6e8175; text-decoration: line-through; }
-.lg-home-hero-precio-ahora { font-size: 1.2rem; font-weight: 800; color: #1f7a43; letter-spacing: -.02em; }
-.lg-home-hero-ver {
-    display: inline-flex; align-items: center; gap: 5px; margin-top: .6rem;
-    font-size: .78rem; font-weight: 700; color: #1f7a43; text-decoration: none;
+.lg-home-banner-secundario { margin: .5rem 0 0; font-size: .82rem; color: #4a6b56; line-height: 1.45; }
+.lg-home-banner-precio { display: flex; align-items: baseline; gap: 7px; margin-top: .5rem; flex-wrap: wrap; }
+.lg-home-banner-precio-antes { font-size: .8rem; color: #6e8175; text-decoration: line-through; }
+.lg-home-banner-precio-ahora { font-size: 1.2rem; font-weight: 800; color: #1f7a43; letter-spacing: -.02em; }
+.lg-home-banner-cta {
+    display: inline-flex; align-items: center; gap: 5px; margin-top: .7rem;
+    font-size: .8rem; font-weight: 700; color: #1f7a43; text-decoration: none;
+    background: #fff; border-radius: var(--radio-boton); padding: .4rem .85rem;
+    box-shadow: 0 2px 6px rgba(22,60,34,.08);
 }
-.lg-home-hero-ver:hover { color: #155c31; }
-.lg-home-hero-bajada { margin: .55rem 0 0; font-size: .82rem; color: #4a6b56; line-height: 1.45; }
-.lg-home-hero-foto {
-    flex: none; width: 84px; height: auto; max-height: 96px; object-fit: contain;
-    margin-bottom: -4px; filter: drop-shadow(0 10px 16px rgba(22,60,34,.18));
+.lg-home-banner-cta:hover { color: #155c31; }
+
+/* LA IMAGEN VIVE EN SU PROPIA COLUMNA -grid-column:2, con caja propia (max-height:150px,
+   object-fit:contain)-, nunca position:absolute ni margen negativo: no puede pisar el
+   texto porque no comparte su espacio. */
+.lg-home-banner-imagen {
+    grid-column: 2; grid-row: 1;
+    width: 100%; max-width: 100%; height: 100%; max-height: 150px;
+    object-fit: contain; display: block;
+    filter: drop-shadow(0 10px 16px rgba(22,60,34,.16));
+}
+
+/* INDICADORES DISCRETOS, sin flechas: puntitos que hero-carrusel.js marca segun el slide
+   visible (scroll-snap + IntersectionObserver, sin dependencias). RONDA "AJUSTE DE PEEK":
+   margin-top baja de 10px a 6px para que se lean pegados al banner -parte del mismo
+   componente- y no como una fila aparte. */
+.lg-home-carrusel-puntos { display: flex; align-items: center; justify-content: center; gap: 6px; margin-top: 6px; }
+.lg-home-punto { width: 6px; height: 6px; border-radius: 50%; background: var(--linea); transition: width .15s, background-color .15s; }
+.lg-home-punto.activo { width: 16px; border-radius: 999px; background: var(--verde); }
+
+/* WHATSAPP, AHORA FLOTANTE: circular, solo icono, discreto, abajo a la derecha -"acción
+   secundaria disponible, no protagonista"-. `bottom` en mobile deja libre TODA la altura
+   real de `.pestanas` (fixed, z-index:900: icono 1.35rem + texto .74rem + paddings + area
+   segura del telefono, ver el bloque de `.pestanas` en @media max-width:767.98px) mas un
+   respiro de 14px, y el boton sube un escalon en z-index (950) para quedar POR ENCIMA de la
+   nav sin taparla -nunca sobre Inicio/Compras, siempre arriba de la barra misma-. En
+   escritorio la nav no es fixed, asi que el offset vuelve a un margen simple. */
+.lg-home-whatsapp {
+    position: fixed;
+    right: 16px;
+    bottom: 16px;
+    width: 52px; height: 52px; border-radius: 50%;
+    background: #25d366; color: #fff;
+    display: inline-flex; align-items: center; justify-content: center;
+    box-shadow: 0 6px 16px rgba(22,38,28,.22);
+    z-index: 950;
+    text-decoration: none;
+}
+@media (max-width: 767.98px) {
+    .lg-home-whatsapp { bottom: calc(70px + env(safe-area-inset-bottom, 0) + 14px); }
 }
 
 /* ---- "tus compras · hay N cambios recientes": el camino a Compras y el
@@ -1798,18 +1922,25 @@ code { color: var(--gu-morado-hondo); }
 /* ---- BLOQUE 2 (todavia mk-, pendiente de rehacer): un cambio en tu rutina, fila
    compacta, no carta alta ---- */
 
+/* RONDA E (rehecho): grid real de 2 zonas -columna imagen fija (80px) y columna contenido
+   (minmax(0,1fr))-, cada elemento con su grid-column explicito. Nada de flex compartiendo
+   una sola fila, nada de position:absolute, nada de margenes negativos: la foto y el texto
+   tienen cada uno su caja, y nunca se pisan aunque la foto falte o el nombre ocupe 2 lineas. */
 .mk-cambio {
-    display: flex; align-items: center; gap: 10px;
+    display: grid;
+    grid-template-columns: 80px minmax(0, 1fr);
+    align-items: center; gap: 12px;
     background: var(--tinte-crema); border-radius: 16px;
-    padding: 14px 16px 14px 14px; margin-bottom: 12px;
-    position: relative; overflow: visible;
+    padding: 14px 16px; margin-bottom: 12px;
 }
 .mk-cambio-foto {
-    width: 64px; height: auto; flex: none;
-    margin: -14px -2px -12px -4px;
-    filter: drop-shadow(0 6px 10px rgba(122,88,16,.16));
+    grid-column: 1; grid-row: 1;
+    width: 100%; max-width: 100%; height: 80px; max-height: 80px;
+    object-fit: contain; display: block;
 }
-.mk-cambio-que { flex: 1; min-width: 0; }
+/* `flex-direction: column` en la columna de contenido: nombre, la linea antes→ahora,
+   "cambio desde..." y el boton "Ver los cambios" van cada uno en su propia linea. */
+.mk-cambio-que { grid-column: 2; grid-row: 1; min-width: 0; display: flex; flex-direction: column; align-items: flex-start; }
 .mk-cambio-nombre { display: flex; align-items: center; gap: 7px; flex-wrap: wrap; }
 .mk-cambio-nombre strong { font-size: 15px; font-weight: 800; color: var(--tinta); letter-spacing: -.01em; }
 .mk-cambio-pill {
@@ -1820,7 +1951,7 @@ code { color: var(--gu-morado-hondo); }
     display: flex; align-items: center; gap: 7px; margin-top: 6px;
     font-size: 13px; color: var(--cambio-tinta); flex-wrap: wrap;
 }
-.mk-cambio-desde { font-size: 10.5px; color: var(--tenue); margin-top: 4px; }
+.mk-cambio-desde { display: block; font-size: 10.5px; color: var(--tenue); margin-top: 4px; }
 .mk-cambio-mas {
     background: none; border: none; padding: 0; margin-top: 8px;
     font-size: 12.5px; font-weight: 700; color: var(--cambio-tinta); text-decoration: underline;
@@ -1831,25 +1962,172 @@ code { color: var(--gu-morado-hondo); }
 .mk-cambio-detalle { margin-top: 10px; font-size: 12.5px; color: var(--cambio-tinta); }
 .mk-cambio-detalle > * + * { margin-top: 6px; }
 
+/* ---- ¿en que se llena tu carrito?: tarjeta propia, titular + barra, no un dashboard ---- */
+
+/* RONDA "PROTAGONISTA": pasa a ser tarjeta -blanco con un tinte de menta MUY tenue en la
+   esquina, el mismo degrade de dos paradas que ya usa ".hero"- porque ahora el numero
+   grande (mk-carrito-destacado) necesita la misma jerarquia que el resto de tarjetas de la
+   pantalla, y "suelta" sobre el papel ya no alcanzaba para sostenerlo. El titulo baja de
+   categoria a rotulo chico en mayusculas -ya no es lo primero que se lee, el titular si-. */
+.mk-carrito { background: linear-gradient(165deg, var(--tinte-verde) 0%, var(--carta) 55%); }
+
+/* LA CABECERA: rotulo + periodo a la izquierda, la ilustracion de canasta -ya existia en
+   wwwroot/assets, hoy sin uso- chica y quieta a la derecha. Es un adorno, no un dato: por
+   eso no compite por jerarquia con el titular de abajo. */
+.mk-carrito-cabeza { display: flex; align-items: flex-start; justify-content: space-between; gap: .75rem; margin: 0 2px 1rem; }
+.mk-carrito-titulos { min-width: 0; }
+.mk-carrito-titulo {
+    margin: 0 0 3px;
+    font-size: .72rem;
+    font-weight: 800;
+    letter-spacing: .06em;
+    text-transform: uppercase;
+    color: var(--verde);
+}
+.mk-carrito-periodo { margin: 0; font-size: .8rem; color: var(--tenue); }
+.mk-carrito-ilustracion { width: 68px; height: auto; flex: 0 0 auto; }
+
+/* EL TITULAR: la conclusion con mas jerarquia de la tarjeta -"tus 3 categorias principales
+   representan el 51.8%..."-. El numero se resalta con peso y color de marca; el resto de la
+   frase tambien sube de peso -no es una linea de texto secundario mas- porque es la
+   conclusion principal de la tarjeta, la que Sonia lee primero. */
+.mk-carrito-destacado {
+    margin: 0 2px 1.1rem;
+    font-size: 1.15rem;
+    font-weight: 700;
+    line-height: 1.35;
+    color: var(--tinta);
+}
+.mk-carrito-cifra { font-weight: 800; color: var(--verde); }
+
+/* LA BARRA: UN elemento (overflow:hidden + flex-grow por segmento), no piezas sueltas: los
+   huecos de 2px entre segmentos vienen del margin-right. Familia de un solo color -verde
+   principal, salvia, menta suave- y "Otros" en el gris-verde neutro de siempre: se
+   distinguen entre si pero se leen como variaciones de un mismo tono, no como un semaforo. */
+.mk-carrito-barra {
+    display: flex;
+    height: 12px;
+    border-radius: var(--radio-boton);
+    overflow: hidden;
+    background: var(--linea);
+    margin: 0 2px 1.1rem;
+}
+.mk-carrito-segmento { flex-basis: 0; min-width: 3px; }
+.mk-carrito-segmento:not(:last-child) { margin-right: 2px; }
+.mk-carrito-segmento--1 { background: var(--verde); }
+.mk-carrito-segmento--2 { background: var(--verde-medio); }
+.mk-carrito-segmento--3 { background: var(--verde-palido); }
+.mk-carrito-segmento--otros { background: var(--linea); }
+
+/* LOS DATOS: nombre + monto + porcentaje por categoria, en grilla de 2x2 -nunca cuatro
+   columnas angostas- para que a 390px cada dato tenga ancho real donde acomodarse en vez de
+   apretarse. Una cruz de lineas MUY sutiles separa las 4 celdas -mismo espiritu que la
+   propuesta de referencia, en verde-gris tenue en vez de gris puro-. Punto del mismo tono
+   que su segmento; "Otros" en gris-verde, mas neutro. Se adapta sola a 1, 2, 3 o 4 datos. */
+.mk-carrito-datos {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: .7rem 0;
+    margin: 0 2px 1rem;
+}
+.mk-carrito-dato { display: flex; align-items: flex-start; gap: 7px; min-width: 0; padding: 0 .8rem .1rem 0; }
+.mk-carrito-dato:nth-child(odd) { border-right: 1px solid var(--linea); }
+.mk-carrito-dato:nth-child(even) { padding-left: .8rem; }
+.mk-carrito-dato:nth-child(n+3) { border-top: 1px solid var(--linea); padding-top: .7rem; }
+.mk-carrito-punto { width: 8px; height: 8px; border-radius: 50%; flex: 0 0 auto; margin-top: 5px; }
+.mk-carrito-punto--1 { background: var(--verde); }
+.mk-carrito-punto--2 { background: var(--verde-medio); }
+.mk-carrito-punto--3 { background: var(--verde-palido); }
+.mk-carrito-punto--otros { background: var(--linea); }
+.mk-carrito-dato-texto { display: flex; flex-direction: column; gap: 1px; min-width: 0; }
+.mk-carrito-dato-nombre { font-size: .78rem; font-weight: 700; color: var(--tinta); line-height: 1.28; overflow-wrap: break-word; }
+.mk-carrito-dato-cifras { font-size: .74rem; color: var(--tenue); line-height: 1.28; }
+.mk-carrito-dato--otros .mk-carrito-dato-nombre { color: var(--tenue); font-weight: 600; }
+
+/* EL CIERRE: el insight como una fichita tenida de menta -con su iconito, como en la
+   referencia- y el CTA como boton con borde propio, no un enlace suelto. Lado a lado si hay
+   espacio, apilados si no -flex-wrap, nunca desbordan a 390px-. */
+.mk-carrito-cierre {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: .6rem;
+    margin: .2rem 2px 0;
+}
+.mk-carrito-insight {
+    display: flex;
+    align-items: center;
+    gap: .55rem;
+    flex: 1 1 220px;
+    min-width: 0;
+    background: var(--tinte-verde);
+    border-radius: var(--radio-ficha);
+    padding: .6rem .75rem;
+}
+.mk-carrito-insight-icono {
+    flex: 0 0 auto;
+    width: 24px;
+    height: 24px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    background: var(--carta);
+    color: var(--verde);
+}
+.mk-carrito-conclusion { margin: 0; min-width: 0; font-size: .78rem; font-weight: 600; color: var(--gu-verde-oscuro); line-height: 1.35; }
+.mk-carrito-cta {
+    flex: 0 0 auto;
+    display: inline-flex;
+    align-items: center;
+    padding: .6rem 1rem;
+    border: 1px solid var(--estable-borde);
+    border-radius: var(--radio-boton);
+    background: var(--carta);
+    font-size: 12.5px;
+    font-weight: 700;
+    color: var(--verde);
+    text-decoration: none;
+    white-space: nowrap;
+}
+.mk-carrito-cta:hover { background: var(--tinte-verde); color: var(--verde-hondo); }
+
 /* ---- puede interesarte: mini-afiche, no fila blanca ---- */
 
+/* RONDA E (rehecho): mismo grid de 2 zonas que ".mk-cambio" -imagen fija (80px) y
+   contenido (minmax(0,1fr))-. Dentro de la columna de contenido, ".mk-oportunidad-kicker-fila"
+   es un flex propio que reparte "TU HABITUAL" y el badge "MEJOR PRECIO" en la misma fila
+   con `justify-content:space-between`: el badge deja de ser position:absolute y la columna
+   de texto ya no reserva un padding-right a ojo para el -cada uno tiene su espacio real
+   dentro del flex-. Debajo, nombre/precio/ahorro apilan en bloque, cada uno con su propia
+   linea; el nombre puede partirse en 2 lineas sin que nada se pise. */
 .mk-oportunidad {
     position: relative; overflow: hidden;
-    background: var(--tinte-verde); border-radius: 18px; padding: 15px 16px;
-    display: flex; align-items: center; gap: 12px; margin-bottom: 12px;
+    display: grid;
+    grid-template-columns: 80px minmax(0, 1fr);
+    align-items: center; gap: 12px;
+    background: var(--tinte-verde); border-radius: 18px; padding: 15px 16px; margin-bottom: 12px;
     text-decoration: none;
 }
 .mk-oportunidad-blob-a { position: absolute; width: 150px; height: 150px; border-radius: 50%; background: var(--estable-borde); top: -58px; right: -34px; }
 .mk-oportunidad-blob-b { position: absolute; width: 86px; height: 86px; border-radius: 50%; background: #d3ead6; bottom: -40px; right: 38px; }
-.mk-oportunidad-foto { position: relative; height: 64px; width: auto; object-fit: contain; flex: none; filter: drop-shadow(0 8px 12px rgba(22,60,34,.14)); }
-.mk-oportunidad-que { position: relative; flex: 1; min-width: 0; }
+.mk-oportunidad-foto {
+    grid-column: 1; grid-row: 1;
+    width: 100%; max-width: 100%; height: 80px; max-height: 80px;
+    object-fit: contain; display: block;
+}
+.mk-oportunidad-que { grid-column: 2; grid-row: 1; min-width: 0; display: flex; flex-direction: column; align-items: flex-start; }
+.mk-oportunidad-kicker-fila { display: flex; align-items: center; justify-content: space-between; gap: 8px; width: 100%; }
 .mk-oportunidad-kicker { font-size: 10px; font-weight: 800; color: var(--verde); letter-spacing: .14em; }
+.mk-oportunidad-nombre { display: block; margin-top: 3px; font-size: 14px; font-weight: 800; color: var(--tinta); letter-spacing: -.01em; overflow-wrap: break-word; }
 .mk-oportunidad-precio { display: flex; align-items: baseline; gap: 7px; margin-top: 5px; flex-wrap: wrap; }
 .mk-oportunidad-precio span:first-child { font-size: 13px; font-weight: 700; color: #41584c; }
 .mk-oportunidad-precio strong { font-size: 24px; font-weight: 800; color: var(--verde); letter-spacing: -.03em; }
-.mk-oportunidad-ahorro { position: relative; font-size: 11.5px; color: var(--tenue); margin-top: 5px; }
+.mk-oportunidad-ahorro { display: block; font-size: 11.5px; color: var(--tenue); margin-top: 5px; }
+.mk-oportunidad-ahorro strong { font-weight: 800; color: var(--verde); }
 .mk-oportunidad-badge {
-    position: absolute; top: 10px; right: 10px; font-size: 9.5px; font-weight: 800; color: var(--verde);
+    flex: none; white-space: nowrap;
+    font-size: 9.5px; font-weight: 800; color: var(--verde);
     background: #fff; border-radius: 999px; padding: 5px 9px; letter-spacing: .06em;
     box-shadow: 0 2px 6px rgba(22,60,34,.1);
 }
@@ -1890,8 +2168,51 @@ code { color: var(--gu-morado-hondo); }
 
 .mk-ayuda {
     margin-top: 1.8rem; padding-top: 1rem; border-top: 1px solid var(--linea);
-    display: flex; flex-wrap: wrap; align-items: center; gap: .6rem 1.1rem;
-    font-size: .82rem; color: var(--tenue);
 }
-.mk-ayuda a { display: inline-flex; align-items: center; gap: .35rem; color: var(--verde); font-weight: 700; text-decoration: none; }
-.mk-ayuda a:hover { color: var(--verde-hondo); text-decoration: underline; }
+.mk-ayuda-aviso { margin: .8rem 0 0; font-size: .8rem; color: var(--tenue); }
+
+/* RONDA "MAS PRESENCIA": los dos enlaces de texto sueltos pasan a ser dos accesos
+   visuales lado a lado -icono, titulo, texto secundario, flecha-, mismo lenguaje que
+   .infaltable-fila/.firma-fila pero en grilla de dos columnas porque aca son dos accesos
+   parejos, no una lista vertical. Verde MUY suave -.tinte-verde, no el verde oscuro
+   corporativo- para que se sientan utiles y no como botones. */
+.mk-accesos {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: .6rem;
+}
+.mk-acceso {
+    display: flex;
+    align-items: center;
+    gap: .5rem;
+    min-width: 0;
+    padding: .7rem .6rem;
+    background: var(--tinte-verde);
+    border: 1px solid var(--estable-borde);
+    border-radius: var(--radio-ficha);
+    box-shadow: var(--sombra-carta);
+    text-decoration: none;
+}
+.mk-acceso:hover { background: var(--estable-borde); }
+/* Variacion tonal minima en el segundo -mismo sistema, no un gemelo identico-. */
+.mk-acceso--sitio { background: #f2faf4; }
+.mk-acceso--sitio:hover { background: var(--estable-borde); }
+.mk-acceso-icono {
+    flex: 0 0 28px;
+    width: 28px;
+    height: 28px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    background: rgba(46, 158, 91, .12);
+    color: var(--verde);
+}
+.mk-acceso-icono svg { width: 15px; height: 15px; }
+.mk-acceso-que { display: flex; flex-direction: column; gap: 1px; flex: 1 1 auto; min-width: 0; }
+.mk-acceso-titulo { display: block; font-size: .78rem; font-weight: 700; color: var(--gu-verde-oscuro); line-height: 1.22; }
+.mk-acceso-sub { font-size: 10px; color: var(--tenue); line-height: 1.25; }
+.mk-acceso-flecha { flex: 0 0 auto; color: var(--tenue); font-size: 1.05rem; line-height: 1; }
+/* EN 390PX EL TEXTO ES LO PRIMERO QUE SE AJUSTA, nunca la altura: si el titulo o el texto
+   secundario necesitan partirse en dos lineas, .mk-acceso-que ya tiene min-width:0 para
+   permitirlo sin desbordar la columna. */
