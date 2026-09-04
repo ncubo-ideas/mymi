@@ -1,0 +1,104 @@
+@page "/precios"
+@using System.Globalization
+@using Compras.App.Vistas
+@using Compras.App
+@inject EstadoDeLaApp estado
+@inject NavigationManager navegacion
+
+@* TUS HABITUALES, la lista completa: la portada corta en tres -lo que cabe en una tarjeta
+   de un vistazo-, aca estan todos los que cambiaron de precio, en el mismo orden que ya
+   trae el dominio (el que mas se movio primero, via estado.Precios()). Misma fila, mismo
+   criterio de color que la portada -reusa .infaltable-fila tal cual, ver Infaltables.razor-,
+   solo que sin el limite de tres. *@
+
+<PageTitle>Tus habituales · La Guaria y vos</PageTitle>
+
+<Volver Respaldo="" />
+
+<h1>Tus habituales</h1>
+<p class="text-body-secondary mb-4">
+    Los productos que comprás seguido y cambiaron de precio.
+</p>
+
+@if (!estado.EstaArriba)
+{
+    <div class="aviso">
+        La app todavía no abrió en esta computadora.
+        <a href="">Andá a Inicio</a> y elegí tu carpeta.
+    </div>
+}
+else if (precios is null || precios.Count == 0)
+{
+    <p class="text-body-secondary">Ningún habitual cambió de precio todavía.</p>
+}
+else
+{
+    <div class="list-group mb-4">
+        @foreach (var precio in precios)
+        {
+            <button class="list-group-item list-group-item-action infaltable-fila"
+                    @onclick="@(() => navegacion.NavigateTo($"producto/{Uri.EscapeDataString(precio.Descripcion)}"))">
+                @{ string foto = Foto(precio.Sku); }
+                @if (foto.Length > 0)
+                {
+                    <img class="infaltable-fila-foto" src="@foto" alt="" />
+                }
+                else
+                {
+                    <span class="infaltable-fila-foto infaltable-sinfoto" aria-hidden="true"></span>
+                }
+                <span class="infaltable-fila-que">
+                    <strong>@precio.Descripcion</strong>
+                    <span class="d-flex align-items-baseline gap-2 flex-wrap">
+                        <span class="precio-antes">@Colones(precio.Antes)</span>
+                        <span class="text-body-secondary">&rarr;</span>
+                        <span class="precio-ahora">@Colones(precio.Ahora)</span>
+                    </span>
+                    @{ string contexto = ContextoDeHabitual(precio); }
+                    @if (contexto.Length > 0)
+                    {
+                        <span class="ritmo-rotulo">@contexto</span>
+                    }
+                </span>
+                <span class="etiqueta @(precio.Subio ? "etiqueta-cambio" : "etiqueta-verde")">
+                    @(precio.Subio ? "▲" : "▼") @Porcentaje(precio.CambioEnProporcion)
+                </span>
+                <span class="recibo-flecha" aria-hidden="true">&rsaquo;</span>
+            </button>
+        }
+    </div>
+}
+
+@code {
+    private IReadOnlyList<PrecioQueCambio> precios = new List<PrecioQueCambio>();
+    private FirmaDeLaSemana? firma;
+
+    protected override void OnInitialized()
+    {
+        if (!estado.EstaArriba) return;
+
+        precios = estado.Precios();
+        firma = estado.Firma();
+    }
+
+    // LA LINEA DE CONTEXTO por fila: solo aparece si el producto tambien vive en la firma
+    // -si sabemos que lo compra seguido-, nunca inventada. Misma frase que en Inicio.
+    private string ContextoDeHabitual(PrecioQueCambio precio)
+    {
+        var habitual = firma?.Habituales.FirstOrDefault(h => h.Sku == precio.Sku);
+        return habitual is null ? "" : Frecuencia(habitual);
+    }
+
+    private static string Frecuencia(ProductoQueVuelve habitual) =>
+        habitual.EstaEnTodas
+            ? "lo llevás cada vez que vas"
+            : "lo llevás casi cada vez que vas";
+
+    // SIN SIGNO, a proposito: el ▲/▼ de al lado ya dice la direccion.
+    private static string Porcentaje(decimal proporcion) =>
+        Math.Abs(proporcion * 100m).ToString("0.#", CultureInfo.InvariantCulture) + "%";
+
+    private static string Foto(string sku) => Compras.Wasm.Fotos.De(sku);
+
+    private static string Colones(decimal monto) => Plata.Colones(monto);
+}
