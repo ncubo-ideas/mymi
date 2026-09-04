@@ -518,6 +518,128 @@ namespace DealershipCar.Dominio
 		}
 
 		/// <summary>
+		/// Si se puede decir el ritmo de uso de ese periodo. Total: es la pregunta que se hace antes
+		/// de leer la frase, y las cuatro razones que impiden decirlo son respuestas legales.
+		/// </summary>
+		internal bool CanARateOfUseBeSaid(DateTime from, DateTime to)
+		{
+			return TheSpanOfUseBetween(from, to).TheRate().CanBeSaid();
+		}
+
+		/// <summary>
+		/// En cual de las cinco situaciones esta el ritmo de ese periodo, por el NOMBRE del miembro.
+		/// TOTAL.
+		/// </summary>
+		internal string ReadRateOfUseStanding(DateTime from, DateTime to)
+		{
+			return TheSpanOfUseBetween(from, to).TheRate().Standing().Name;
+		}
+
+		/// <summary>
+		/// El ritmo de uso de ese periodo en una frase: los dos extremos con sus instantes, la
+		/// distancia, el tiempo y la distancia por dia; o la razon con nombre que impide decirlo.
+		/// TOTAL. Los dos extremos no salen nunca sueltos: salen dentro de esta frase, que ya trae
+		/// el ritmo.
+		/// </summary>
+		internal string DescribeRateOfUse(DateTime from, DateTime to)
+		{
+			return TheSpanOfUseBetween(from, to).TheRate().Describe();
+		}
+
+		/// <summary>
+		/// Los dos periodos comparados en una sola frase: cada uno con su propio ritmo y el cambio
+		/// del PRIMERO respecto al SEGUNDO dicho adentro. TOTAL. Ninguna lectura entrega el cambio
+		/// solo.
+		/// </summary>
+		internal string DescribeTwoPeriodsOfUseCompared(
+			DateTime from1, DateTime to1, DateTime from2, DateTime to2)
+		{
+			return ATwoSpanComparison.Of(
+				TheSpanOfUseBetween(from1, to1).TheRate(),
+				TheSpanOfUseBetween(from2, to2).TheRate()).Describe();
+		}
+
+		/// <summary>Cuantas lecturas del odometro cayeron dentro de ese periodo. TOTAL.</summary>
+		internal int ReadingCountBetween(DateTime from, DateTime to)
+		{
+			return TheSpanOfUseBetween(from, to).HowManyReadings();
+		}
+
+		/// <summary>
+		/// Cuando se observo cada lectura del periodo, una por fila, en orden de observacion.
+		/// TOTAL.
+		/// </summary>
+		internal string[] ReadingInstantsBetween(DateTime from, DateTime to)
+		{
+			List<ASeriesRow> rows = TheSpanOfUseBetween(from, to).Rows();
+
+			string[] said = new string[rows.Count];
+
+			for (int row = 0; row < rows.Count; row++) said[row] = rows[row].TheInstantItWasObserved();
+
+			return said;
+		}
+
+		/// <summary>
+		/// Que valor leyo cada lectura del periodo, una por fila y en el mismo orden. TOTAL. La
+		/// unidad de cada una va en su propia columna: un valor sin su unidad no dice nada.
+		/// </summary>
+		internal int[] ReadingValuesBetween(DateTime from, DateTime to)
+		{
+			List<ASeriesRow> rows = TheSpanOfUseBetween(from, to).Rows();
+
+			int[] said = new int[rows.Count];
+
+			for (int row = 0; row < rows.Count; row++) said[row] = rows[row].TheValueItRead();
+
+			return said;
+		}
+
+		/// <summary>
+		/// En que unidad esta cada lectura del periodo, por su nombre de mundo real, una por fila y
+		/// en el mismo orden. TOTAL.
+		/// </summary>
+		internal string[] ReadingUnitsBetween(DateTime from, DateTime to)
+		{
+			List<ASeriesRow> rows = TheSpanOfUseBetween(from, to).Rows();
+
+			string[] said = new string[rows.Count];
+
+			for (int row = 0; row < rows.Count; row++) said[row] = rows[row].TheNameOfItsUnit();
+
+			return said;
+		}
+
+		/// <summary>
+		/// De que fuente vino cada lectura del periodo, por el NOMBRE del miembro, una por fila y en
+		/// el mismo orden. TOTAL. Nada se pesa ni se descarta por ella: decirla es la obligacion.
+		/// </summary>
+		internal string[] ReadingSourcesBetween(DateTime from, DateTime to)
+		{
+			List<ASeriesRow> rows = TheSpanOfUseBetween(from, to).Rows();
+
+			string[] said = new string[rows.Count];
+
+			for (int row = 0; row < rows.Count; row++) said[row] = rows[row].TheNameOfItsSource();
+
+			return said;
+		}
+
+		/// <summary>
+		/// Cada lectura del periodo en su propia frase, una por fila y en el mismo orden. TOTAL.
+		/// </summary>
+		internal string[] DescribeEachReadingBetween(DateTime from, DateTime to)
+		{
+			List<ASeriesRow> rows = TheSpanOfUseBetween(from, to).Rows();
+
+			string[] said = new string[rows.Count];
+
+			for (int row = 0; row < rows.Count; row++) said[row] = rows[row].Describe();
+
+			return said;
+		}
+
+		/// <summary>
 		/// Si se puede decir cuanta distancia le queda a esa operacion en ese instante. Total: es
 		/// la pregunta que hay que hacer antes de las dos guardadas de abajo.
 		/// </summary>
@@ -861,6 +983,22 @@ namespace DealershipCar.Dominio
 					return UsableReading.Of(_readings[reading]);
 
 			return UsableReading.None;
+		}
+
+		// EL TRAMO DE UN PERIODO, armado en cada lectura y nunca guardado. Los dos limites son
+		// INCLUSIVOS, igual que los del historial de estadias, y las lecturas salen en el orden en
+		// que _readings las guarda, que es el de OBSERVACION.
+		//
+		// ES PRIVADO, y ASpanOfUse es el unico que recibe la lista. Lo que sale de la agenda son
+		// escalares y columnas de escalares: ningun portador de lectura cruza la fachada.
+		private ASpanOfUse TheSpanOfUseBetween(DateTime from, DateTime to)
+		{
+			List<OdometerReading> inside = new List<OdometerReading>();
+
+			foreach (OdometerReading reading in _readings)
+				if (reading.ObservedAt >= from && reading.ObservedAt <= to) inside.Add(reading);
+
+			return ASpanOfUse.Of(inside, from, to);
 		}
 
 		private int ItsPlaceOnTheObservationTimeline(OdometerReading arriving)

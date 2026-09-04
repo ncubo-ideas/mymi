@@ -198,6 +198,10 @@ namespace DealershipCar.Dominio.Pruebas
 		// MS-1 AGREGA RemainderStanding, y cae bajo la misma ley por lo mismo que los tres de
 		// arriba: se elige adentro y proyecta su nombre. Su HowItIsSaid es un segundo vocabulario
 		// -- el que una persona lee -- y no es lo que cruza la puerta.
+		// OD-1 AGREGA RateStanding, por lo mismo, y con una consecuencia que vale escribir: como se
+		// elige adentro y solo PROYECTA, no cruza nada hacia adentro, asi que NO necesita miembros
+		// en WireName ni ensancha TheDoorRecognisesTheNamesOfEveryClosedSetItSpeaks. La lista de
+		// aca abajo y la de aquel barrido no son la misma lista, y esa es la razon.
 		[TestCase(typeof(FluidKind))]
 		[TestCase(typeof(TyrePosition))]
 		[TestCase(typeof(FuelGradeStanding))]
@@ -205,6 +209,7 @@ namespace DealershipCar.Dominio.Pruebas
 		[TestCase(typeof(CoverageStanding))]
 		[TestCase(typeof(EnvelopeStanding))]
 		[TestCase(typeof(RemainderStanding))]
+		[TestCase(typeof(RateStanding))]
 		public void TheProjectedNameIsTheMembersOwnName(Type conjunto)
 		{
 			foreach (FieldInfo campo in MiembrosDe(conjunto))
