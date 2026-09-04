@@ -108,8 +108,9 @@
   "presupuesto": {
     "//": "El Host mide y pone cupos. Comparar contra lo declarado convierte el cupo en algo diagnosticable.",
     "latenciaDeConsultaMs": 50,
-    "eventosPorAno": 90,
-    "//eventosPorAno": "Una carga cada ~2 semanas mas sus puntos y sus boletos de tombola: del orden de 90 eventos de la institucion por ano, mas los aportes locales de la persona. Los boletos son la mayoria porque va UNO POR BOLETO: el numero es su identidad y por lo tanto su guarda de idempotencia."
+    "eventosPorAno": 165,
+    "//eventosPorAno": "MEDIDO SOBRE EL GUION, no estimado: son 114 eventos de la institucion en los 253 dias que va de la serie, o sea del orden de 165 al ano, mas los aportes locales de la persona. Los boletos son la mayoria porque va UNO POR BOLETO: el numero es su identidad y por lo tanto su guarda de idempotencia.",
+    "//eventosPorAno-por-que-subio": "Decia 90, con la nota 'una carga cada ~2 semanas'. Esa cadencia era del guion viejo, que no respetaba el canon de Sonia: con 1.400 km/mes desde el ascenso y un tanque de 40 L, carga cada 8 o 9 dias, no cada 14. El presupuesto no cambio porque cambiara el modulo — cambio porque el anterior describia a otra persona."
   },
 
   "instrucciones": {

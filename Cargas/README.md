@@ -71,13 +71,22 @@ dotnet run --project Cargas/InyectorDeEventosDemo -- inyectar --litros 42 --prec
 
 ## El guion del demo (§13 del brief, v2)
 
-Nueve cargas de la placa `BQR-482` —la del canon, acordada con el demo del
-concesionario como llave del cruce—, con
-fechas literales. Las historias que cierran: la línea base de 12.6 km/L, la parcial
+Veintiocho cargas de la placa `BQR-482` —la del canon, acordada con el demo del
+concesionario como llave del cruce—, con fechas literales.
+
+**El odómetro es el canon de Sonia**: 49.850 en diciembre y 60.962 en agosto, con el
+quiebre de enero —850 km/mes antes del ascenso, 1.400 después—. De ahí sale todo lo
+demás: los litros no son libres, porque `litros = distancia / rendimiento`, y la fecha
+tampoco, porque sale de invertir la curva del odómetro. Por eso las cargas se aprietan
+solas de una cada 17 días a una cada 8, y **ese apretón es el ascenso**: la gasolinera
+lo cuenta sin que nadie lo explique, que es lo que ningún otro módulo puede hacer.
+
+Las historias que cierran: la línea base de 12.6 km/L sobre trece tramos, la parcial
 preseteada que la inferencia lee como «no fue lleno», la caída 12.6 → 9.4 contra la
-propia base (−25%), el tramo no comparable del surtidor B-1, el kilometraje faltante de
-la carga del 25/07 que bloquea dos tramos finos y deja el largo, la autonomía estimada
-de ~553 km, y 326 puntos nivel plata.
+propia base (−25%), el tramo no comparable del surtidor B-1 —10 L, y los únicos ₡6.520
+del guion que no alcanzan para un boleto—, el kilometraje faltante de la carga del 17/08
+que bloquea dos tramos finos y deja el largo de 743 km, la autonomía estimada de ~504 km,
+y 998 puntos que cruzan los dos umbrales del programa: plata en febrero y oro en julio.
 
 ## El MCP
 

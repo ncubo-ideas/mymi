@@ -219,18 +219,18 @@ namespace Cargas.Consola
 			BitacoraDeCargas bitacora = ElGuion();
 			IReadOnlyList<Tramo> tramos = bitacora.TramosDe("BQR-482");
 
-			Igual("nueve cargas, un vehiculo", "9 1",
+			Igual("veintiocho cargas, un vehiculo", "28 1",
 				$"{bitacora.Cantidad} {bitacora.CantidadDeVehiculos}");
-			Igual("seis tramos calculados y dos bloqueados", "6 2", Conteo(tramos));
+			Igual("veinticinco tramos calculados y dos bloqueados", "25 2", Conteo(tramos));
 
 			IReadOnlyList<Tramo> calculados = Calculados(tramos);
-			Igual("el primer tramo: 480 km / 38 L", "12.6",
+			Igual("el primer tramo: 454 km / 36 L", "12.6",
 				Formato(calculados[0].RendimientoEnKmPorLitro, "0.#"));
 			Igual("el segundo confirma la base", "12.6",
 				Formato(calculados[1].RendimientoEnKmPorLitro, "0.#"));
 			Igual("la caida empieza en 11.7", "11.7",
-				Formato(calculados[3].RendimientoEnKmPorLitro, "0.#"));
-			Igual("los litros de la carga que abre NO cuentan", "38",
+				Formato(calculados[13].RendimientoEnKmPorLitro, "0.#"));
+			Igual("los litros de la carga que abre NO cuentan", "36",
 				Formato(calculados[0].Litros, "0.#"));
 		}
 
@@ -240,14 +240,14 @@ namespace Cargas.Consola
 
 			IReadOnlyList<Tramo> calculados = Calculados(ElGuion().TramosDe("BQR-482"));
 
-			// El tramo 3 absorbe la carga preseteada: 490 km con los litros de las DOS
-			// cargas que repusieron (20 + 19).
+			// El tramo 6 absorbe la carga preseteada: 680 km con los litros de las DOS
+			// cargas que repusieron (20 + 34).
 			Igual("el tramo con la parcial adentro sigue en 12.6", "12.6",
-				Formato(calculados[2].RendimientoEnKmPorLitro, "0.#"));
-			Igual("  con los litros de la parcial y el lleno", "39",
-				Formato(calculados[2].Litros, "0.#"));
-			Igual("  y sigue siendo un solo tramo", "490",
-				Formato(calculados[2].Kilometros, "0"));
+				Formato(calculados[5].RendimientoEnKmPorLitro, "0.#"));
+			Igual("  con los litros de la parcial y el lleno", "54",
+				Formato(calculados[5].Litros, "0.#"));
+			Igual("  y sigue siendo un solo tramo", "680",
+				Formato(calculados[5].Kilometros, "0"));
 		}
 
 		// LO QUE SE PIDE CONFIRMAR HAY QUE DECIRLO PRIMERO. La pantalla pedia "la
@@ -371,7 +371,7 @@ namespace Cargas.Consola
 			// 7.9 y 10.6 seria una contradiccion que la persona ve sola.
 			Igual("ahora la frase dice MAS", "True", enLitros.ParaSonia.Contains("% más").ToString());
 			Igual("y ya no dice menos", "False", enLitros.ParaSonia.Contains("% menos").ToString());
-			Igual("el porcentaje como se ve cambia", "33",
+			Igual("el porcentaje como se ve cambia", "34",
 				enLitros.CambioPorcentualComoSeVe.ToString());
 			Igual("y el de km/L era negativo", "-25",
 				enKmPorLitro.CambioPorcentualComoSeVe.ToString());
@@ -628,13 +628,13 @@ namespace Cargas.Consola
 
 			Igual("dos tramos finos bloqueados", "2", bloqueados.Count.ToString());
 			Igual("los dos nombran la carga trunca", "True",
-				(bloqueados[0].QueFalta.Contains("25/07/2026")
-					&& bloqueados[1].QueFalta.Contains("25/07/2026")).ToString());
+				(bloqueados[0].QueFalta.Contains("17/08/2026")
+					&& bloqueados[1].QueFalta.Contains("17/08/2026")).ToString());
 
 			IReadOnlyList<Tramo> calculados = Calculados(tramos);
 			Tramo largo = calculados[calculados.Count - 1];
-			Igual("el tramo largo absorbe: 820 km", "820", Formato(largo.Kilometros, "0"));
-			Igual("  con los litros de las dos cargas siguientes", "87",
+			Igual("el tramo largo absorbe: 743 km", "743", Formato(largo.Kilometros, "0"));
+			Igual("  con los litros de las dos cargas siguientes", "79",
 				Formato(largo.Litros, "0"));
 			Igual("  y da la anomalia sostenida", "9.4",
 				Formato(largo.RendimientoEnKmPorLitro, "0.#"));
@@ -647,12 +647,12 @@ namespace Cargas.Consola
 			Titulo("otro surtidor no se compara con la serie (§6.3.1)");
 
 			IReadOnlyList<Tramo> calculados = Calculados(ElGuion().TramosDe("BQR-482"));
-			Tramo enB1 = calculados[4];
+			Tramo enB1 = calculados[15];
 
 			Igual("el tramo medido por B-1 no es comparable", "False",
 				enB1.EsComparable.ToString());
 			Igual("  y dice por que", "otro surtidor", enB1.MotivoDeReserva);
-			Igual("  aunque por dentro sea consistente", "10.5",
+			Igual("  aunque por dentro sea consistente", "12.8",
 				Formato(enB1.RendimientoEnKmPorLitro, "0.#"));
 		}
 
@@ -805,11 +805,11 @@ namespace Cargas.Consola
 			BitacoraDeCargas bitacora = ElGuion();
 
 			Igual("la guarda decide sin reventar", "False",
-				bitacora.PuedeAnotarOdometro("T-0209", 41000m, "km").ToString());
+				bitacora.PuedeAnotarOdometro("T-0228", 60000m, "km").ToString());
 			Revienta<ErrorDeDominio>("y la operacion revienta: es la segunda linea",
-				() => bitacora.AnotarOdometro("T-0209", 41000m, "km", "observado"));
+				() => bitacora.AnotarOdometro("T-0228", 60000m, "km", "observado"));
 			Igual("uno coherente si puede", "True",
-				bitacora.PuedeAnotarOdometro("T-0208", 42800m, "km").ToString());
+				bitacora.PuedeAnotarOdometro("T-0227", 60601m, "km").ToString());
 		}
 
 		// ------------------------------------------------------------- lo derivado
@@ -821,13 +821,13 @@ namespace Cargas.Consola
 			BitacoraDeCargas bitacora = ElGuion();
 
 			CapacidadEstimadaDeTanque capacidad = bitacora.CapacidadDe("BQR-482");
-			Igual("la capacidad sale de la carga maxima con lleno", "44",
+			Igual("la capacidad sale de la carga maxima con lleno", "40",
 				Formato(capacidad.Litros, "0"));
 			Igual("  y dice que carga la fijo", "25/08/2026",
 				capacidad.FechaDeLaCargaQueLaFijo.ToString("dd/MM/yyyy", CultureInfo.InvariantCulture));
 
 			AutonomiaEstimada autonomia = bitacora.AutonomiaDe("BQR-482");
-			Igual("la autonomia combina capacidad y habitual", "553",
+			Igual("la autonomia combina capacidad y habitual", "504",
 				Formato(autonomia.Kilometros, "0"));
 			Igual("  y SIEMPRE es proyeccion", "True", autonomia.EsProyeccion.ToString());
 
@@ -848,14 +848,14 @@ namespace Cargas.Consola
 			// El prellenado de la carga trunca: lo que la app le hubiera propuesto a
 			// Sonia el dia de la carga 8.
 			ProyeccionDeOdometro propuesta = bitacora.OdometroEstimadoDe("BQR-482",
-				new DateTime(2026, 7, 25));
-			Igual("propone ~42 823 km", "42823", Formato(propuesta.Kilometros, "0"));
-			Igual("  con el promedio del que salio", "12.6",
+				new DateTime(2026, 8, 17));
+			Igual("propone ~60 570 km", "60570", Formato(propuesta.Kilometros, "0"));
+			Igual("  con los km por dia del que salio", "43.9",
 				Formato(propuesta.KilometrosPorDia, "0.#"));
 			Igual("  y su origen es estimado", "estimado", propuesta.Origen);
 
 			// Hoy, con la lectura del dia, la propuesta ES la lectura.
-			Igual("al dia de la ultima lectura propone esa lectura", "43200",
+			Igual("al dia de la ultima lectura propone esa lectura", "60962",
 				Formato(bitacora.OdometroEstimadoDe("BQR-482", Hoy).Kilometros, "0"));
 		}
 
@@ -865,28 +865,28 @@ namespace Cargas.Consola
 
 			BitacoraDeCargas bitacora = ElGuion();
 
-			Igual("la linea discreta", "8 de 9 cargas con kilometraje · 6 tramos calculables",
+			Igual("la linea discreta", "27 de 28 cargas con kilometraje · 25 tramos calculables",
 				bitacora.CompletitudDe("BQR-482").Expresada);
 
 			IReadOnlyList<FaltanteDeDato> faltantes = bitacora.FaltantesDe("BQR-482");
 			Igual("un solo faltante", "1", faltantes.Count.ToString());
 			Igual("nombra la carga y lo que se desbloquea", "True",
-				(faltantes[0].ParaSonia.Contains("25/07/2026")
-					&& faltantes[0].ParaSonia.Contains("820 km")).ToString());
+				(faltantes[0].ParaSonia.Contains("17/08/2026")
+					&& faltantes[0].ParaSonia.Contains("743 km")).ToString());
 
 			// EL KILOMETRAJE ANOTADO, con miles y con su procedencia aparte. La frase entera
 			// es para quien lee la bitacora (el MCP); la caratula muestra el numero solo. El
 			// separador es el espacio fino de Cifras, el mismo de la plata.
 			Carga? ultima = null;
 			foreach (Carga carga in bitacora.CargasDe("BQR-482"))
-				if (carga.NumeroDeLaTransaccion == "T-0209") ultima = carga;
-			Igual("el numero con miles", "43\u202f200 km", ultima!.KilometrajeAnotado);
+				if (carga.NumeroDeLaTransaccion == "T-0228") ultima = carga;
+			Igual("el numero con miles", "60\u202f962 km", ultima!.KilometrajeAnotado);
 			Igual("la procedencia aparte", "observado", ultima.OrigenDelKilometraje);
-			Igual("la frase entera sigue", "43\u202f200 km (observado)", ultima.KilometrajeExpresado);
+			Igual("la frase entera sigue", "60\u202f962 km (observado)", ultima.KilometrajeExpresado);
 
 			Carga? trunca = null;
 			foreach (Carga carga in bitacora.CargasDe("BQR-482"))
-				if (carga.NumeroDeLaTransaccion == "T-0208") trunca = carga;
+				if (carga.NumeroDeLaTransaccion == "T-0227") trunca = carga;
 			Igual("sin lectura, vacio y no cero", "|", trunca!.KilometrajeAnotado + "|" + trunca.OrigenDelKilometraje);
 		}
 
@@ -895,16 +895,16 @@ namespace Cargas.Consola
 			Titulo("agregar el kilometraje parte el tramo largo en dos: el refuerzo del ingreso");
 
 			BitacoraDeCargas bitacora = ElGuion();
-			bitacora.AnotarOdometro("T-0208", 42800m, "km", "confirmado");
+			bitacora.AnotarOdometro("T-0227", 60601m, "km", "confirmado");
 
 			IReadOnlyList<Tramo> tramos = bitacora.TramosDe("BQR-482");
-			Igual("siete calculados y cero bloqueados", "7 0", Conteo(tramos));
+			Igual("veintiseis calculados y cero bloqueados", "26 0", Conteo(tramos));
 
 			IReadOnlyList<Tramo> calculados = Calculados(tramos);
 			Igual("el tramo hasta la carga trunca aparece", "9.8",
-				Formato(calculados[5].RendimientoEnKmPorLitro, "0.#"));
-			Igual("y el que sigue tambien", "9.1",
-				Formato(calculados[6].RendimientoEnKmPorLitro, "0.#"));
+				Formato(calculados[24].RendimientoEnKmPorLitro, "0.#"));
+			Igual("y el que sigue tambien", "9",
+				Formato(calculados[25].RendimientoEnKmPorLitro, "0.#"));
 			Igual("la anomalia sostenida no cambia de historia", "empeoro",
 				bitacora.EvaluarRendimientoDe("BQR-482").NombreDelVeredicto);
 			Igual("y ya no falta nada", "0",
@@ -947,10 +947,13 @@ namespace Cargas.Consola
 
 			BitacoraDeCargas bitacora = ElGuion();
 
-			Igual("el saldo es la suma de lo acreditado", "326",
+			Igual("el saldo es la suma de lo acreditado", "998",
 				bitacora.Lealtad.PuntosDelSaldo.ToString());
-			Igual("el nivel lo dijo la institucion", "plata", bitacora.Lealtad.NombreDelNivel);
-			Igual("y se sabe cuanto falta para el siguiente", "474",
+			Igual("el nivel lo dijo la institucion", "oro", bitacora.Lealtad.NombreDelNivel);
+
+			// EN EL ULTIMO NIVEL NO FALTA NADA, y cero no es "no se sabe": es que ya no
+			// hay siguiente. La caratula lo distingue por el cero y calla la frase.
+			Igual("y en el ultimo nivel no falta nada", "0",
 				bitacora.Lealtad.PuntosParaElSiguienteNivel.ToString());
 		}
 
@@ -1061,19 +1064,40 @@ namespace Cargas.Consola
 		{
 			var bitacora = new BitacoraDeCargas();
 
-			AgregarCarga(bitacora, "2025-12-15", 40m, "A-3", 615m, 24600m, "automatico", "T-0201");
-			AgregarCarga(bitacora, "2026-01-15", 38m, "A-3", 620m, 23560m, "automatico", "T-0202");
-			AgregarCarga(bitacora, "2026-02-15", 39m, "A-3", 628m, 24492m, "automatico", "T-0203");
-			AgregarCarga(bitacora, "2026-03-20", 20m, "A-3", 634m, 12680m, "preseteado", "T-0204");
-			AgregarCarga(bitacora, "2026-03-28", 19m, "A-3", 634m, 12046m, "automatico", "T-0205");
-			AgregarCarga(bitacora, "2026-05-20", 41m, "A-3", 645m, 26445m, "automatico", "T-0206");
-			AgregarCarga(bitacora, "2026-06-20", 42m, "B-1", 652m, 27384m, "automatico", "T-0207");
-			AgregarCarga(bitacora, "2026-07-25", 43m, "A-3", 660m, 28380m, "automatico", "T-0208");
-			AgregarCarga(bitacora, "2026-08-25", 44m, "A-3", 668m, 29392m, "automatico", "T-0209");
+			AgregarCarga(bitacora, "2025-12-15", 37m, "A-3", 615m, 22755m, "automatico", "T-0201");
+			AgregarCarga(bitacora, "2026-01-01", 36m, "A-3", 620m, 22320m, "automatico", "T-0202");
+			AgregarCarga(bitacora, "2026-01-17", 38m, "A-3", 620m, 23560m, "automatico", "T-0203");
+			AgregarCarga(bitacora, "2026-01-27", 37m, "A-3", 620m, 22940m, "automatico", "T-0204");
+			AgregarCarga(bitacora, "2026-02-06", 36m, "A-3", 628m, 22608m, "automatico", "T-0205");
+			AgregarCarga(bitacora, "2026-02-16", 36m, "A-3", 628m, 22608m, "automatico", "T-0206");
+			AgregarCarga(bitacora, "2026-02-21", 20m, "A-3", 628m, 12560m, "preseteado", "T-0207");
+			AgregarCarga(bitacora, "2026-03-02", 34m, "A-3", 634m, 21556m, "automatico", "T-0208");
+			AgregarCarga(bitacora, "2026-03-12", 37m, "A-3", 634m, 23458m, "automatico", "T-0209");
+			AgregarCarga(bitacora, "2026-03-22", 36m, "A-3", 634m, 22824m, "automatico", "T-0210");
+			AgregarCarga(bitacora, "2026-04-01", 38m, "A-3", 640m, 24320m, "automatico", "T-0211");
+			AgregarCarga(bitacora, "2026-04-11", 36m, "A-3", 640m, 23040m, "automatico", "T-0212");
+			AgregarCarga(bitacora, "2026-04-21", 37m, "A-3", 640m, 23680m, "automatico", "T-0213");
+			AgregarCarga(bitacora, "2026-05-02", 38m, "A-3", 645m, 24510m, "automatico", "T-0214");
+			AgregarCarga(bitacora, "2026-05-12", 36m, "A-3", 645m, 23220m, "automatico", "T-0215");
+			AgregarCarga(bitacora, "2026-05-21", 38m, "A-3", 645m, 24510m, "automatico", "T-0216");
+			AgregarCarga(bitacora, "2026-05-30", 36m, "A-3", 645m, 23220m, "automatico", "T-0217");
+			AgregarCarga(bitacora, "2026-06-02", 10m, "B-1", 652m, 6520m, "automatico", "T-0218");
+			AgregarCarga(bitacora, "2026-06-12", 39m, "A-3", 652m, 25428m, "automatico", "T-0219");
+			AgregarCarga(bitacora, "2026-06-21", 37m, "A-3", 652m, 24124m, "automatico", "T-0220");
+			AgregarCarga(bitacora, "2026-06-30", 38m, "A-3", 652m, 24776m, "automatico", "T-0221");
+			AgregarCarga(bitacora, "2026-07-09", 37m, "A-3", 660m, 24420m, "automatico", "T-0222");
+			AgregarCarga(bitacora, "2026-07-17", 39m, "A-3", 660m, 25740m, "automatico", "T-0223");
+			AgregarCarga(bitacora, "2026-07-25", 38m, "A-3", 660m, 25080m, "automatico", "T-0224");
+			AgregarCarga(bitacora, "2026-08-01", 36m, "A-3", 668m, 24048m, "automatico", "T-0225");
+			AgregarCarga(bitacora, "2026-08-09", 39m, "A-3", 668m, 26052m, "automatico", "T-0226");
+			AgregarCarga(bitacora, "2026-08-17", 39m, "A-3", 668m, 26052m, "automatico", "T-0227");
+			AgregarCarga(bitacora, "2026-08-25", 40m, "A-3", 668m, 26720m, "automatico", "T-0228");
 
-			foreach (int puntos in new[] { 40, 38, 39, 20, 19, 41, 42, 43, 44 })
+			foreach (int puntos in new[] { 37, 36, 38, 37, 36, 36, 20, 34, 37, 36, 38, 36, 37, 38, 36, 38, 36, 10, 39, 37, 38, 37, 39, 38, 36, 39, 39, 40 })
 				bitacora.AcreditarPuntos(puntos);
+			// 998 puntos cruzan los DOS umbrales del programa, 200 y 800.
 			bitacora.ActualizarNivel("plata");
+			bitacora.ActualizarNivel("oro");
 
 			foreach ((string transaccion, decimal kilometros) in Muestras.Kilometrajes)
 				bitacora.AnotarOdometro(transaccion, kilometros, "km", "observado");
