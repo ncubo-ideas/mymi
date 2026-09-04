@@ -34,6 +34,12 @@
  */
 
 :root {
+    /* EL BROWSER TAMBIÉN ES OSCURO. Sin esto, lo que dibuja el sistema y no la hoja —el
+       desplegable del <select> de la placa, los spinners de type=number, el marcador de
+       <details>, la barra de scroll en Windows— sale claro sobre el tablero: un popup blanco
+       que delata que la oscuridad es un CSS y no un producto. */
+    color-scheme: dark;
+
     /* ⚠️ PALETA PROVISIONAL: teal petróleo + cobre, el candidato del brief §3, a la
        espera de la especificación de Geaninna. Se conservan los valores que ya estaban
        —lo provisional no es lo que había que rediseñar— y los nombres se enderezaron:
