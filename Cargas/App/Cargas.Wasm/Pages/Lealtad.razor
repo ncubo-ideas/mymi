@@ -59,20 +59,19 @@
             {
                 <text>ninguno en juego ahora</text>
             }
-            @if (BoletosPasados > 0)
-            {
-                <text> &middot; y <b>@Entero(BoletosPasados)</b> de @(SorteosPasados == 1 ? "un sorteo que ya se rifó" : "sorteos que ya se rifaron")</text>
-            }
         </div>
     </div>
 </div>
 
-@* LOS SORTEOS, cada uno con sus boletos. Un vencido SE MUESTRA VENCIDO y nunca
-   desaparece: que se esfumen boletos de una app de lealtad es la forma más rápida de
-   perder la confianza que este producto entero intenta construir. *@
+@* LOS SORTEOS VIGENTES, cada uno con sus boletos. Los que ya se rifaron van abajo,
+   plegados: una tarjeta entera de una tómbola pasada no le sirve a nadie, pero que se
+   esfumen boletos de una app de lealtad es la forma más rápida de perder la confianza que
+   este producto entero intenta construir. Plegado dice «ya pasó»; ausente diría «te
+   mentimos». *@
 @foreach (SorteoEnLista sorteo in sorteos)
 {
-    <div class="sorteo @(sorteo.EstaVencido ? "sorteo--vencido" : "")" @key="@sorteo.Codigo">
+    if (sorteo.EstaVencido) continue;
+    <div class="sorteo" @key="@sorteo.Codigo">
         <div class="sorteo-cabeza">
             <div>
                 <span class="sorteo-nombre">@(sorteo.Nombre.Length > 0 ? sorteo.Nombre : sorteo.Codigo)</span>
@@ -111,6 +110,28 @@
                 ? $", un boleto por cada {sorteo.MontoPorBoleto} de una carga" : "").</p>
         }
     </div>
+}
+
+@if (SorteosPasados > 0)
+{
+    <details class="otras sorteos-pasados">
+        <summary>@(SorteosPasados == 1 ? "1 sorteo que ya se rifó" : $"{SorteosPasados} sorteos que ya se rifaron") &middot; @Entero(BoletosPasados) @(BoletosPasados == 1 ? "boleto" : "boletos")</summary>
+        <ul class="otros-carros">
+            @foreach (SorteoEnLista sorteo in sorteos)
+            {
+                if (!sorteo.EstaVencido) continue;
+                <li @key="@sorteo.Codigo">
+                    <b>@(sorteo.Nombre.Length > 0 ? sorteo.Nombre : sorteo.Codigo)</b>
+                    &middot; @sorteo.FechaDelSorteo.ToString("d 'de' MMMM 'de' yyyy", Cultura)
+                    &middot; <span class="n">@sorteo.Boletos</span> @(sorteo.Boletos == 1 ? "boleto" : "boletos")
+                    @if (sorteo.Premio.Length > 0)
+                    {
+                        <text>&middot; se rifó @sorteo.Premio</text>
+                    }
+                </li>
+            }
+        </ul>
+    </details>
 }
 
 @if (explicaciones.Count > 0)

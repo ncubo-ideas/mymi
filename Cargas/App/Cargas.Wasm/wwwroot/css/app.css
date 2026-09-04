@@ -708,7 +708,9 @@ h1:focus, h1:focus-visible { outline: none; }
     content: ""; position: absolute; inset: 0 0 auto 0; height: 1px;
     background: linear-gradient(90deg, transparent, var(--brillo), transparent);
 }
-.sorteo--vencido { opacity: .58; }
+/* Los sorteos pasados, plegados en una línea cada uno. */
+.sorteos-pasados { margin: 4px 0 18px; }
+.sorteos-pasados .otros-carros li b { color: var(--tinta); font-weight: 600; }
 
 .sorteo-cabeza { display: flex; align-items: flex-start; gap: 14px; }
 .sorteo-cabeza > :first-child { flex: 1 1 14rem; }
