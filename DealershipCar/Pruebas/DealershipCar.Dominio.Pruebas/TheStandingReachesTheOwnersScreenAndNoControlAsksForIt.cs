@@ -484,7 +484,13 @@ namespace DealershipCar.Dominio.Pruebas
 			// que no se puede decir y por que, y "no se puede decir cuanto se maneja" y "el carro no se
 			// movio" son dos cosas distintas -- confundirlas es exactamente el cero que L6 prohibe,
 			// dicho por la pantalla en vez de por el dominio.
-			Assert.That(said, Has.Count.EqualTo(10),
+			// Y SON ONCE DESDE EL BLOQUE DEL LIBRO DE COSTOS, que entra con UNA de la misma familia.
+			// Dice que un periodo sin ningun gasto registrado no es un periodo en que el carro no
+			// costo nada, y quien registra un gasto. Ninguna frase del dominio la dice: la del gasto
+			// dice que no hay ninguno REGISTRADO, y "no hay ninguno registrado" y "no se gasto nada"
+			// son dos cosas distintas -- confundirlas es exactamente el cero que L8 prohibe, dicho por
+			// la pantalla en vez de por el dominio.
+			Assert.That(said, Has.Count.EqualTo(11),
 				"Si TheOwnerIsTold gana o pierde una frase, este barrido se vuelve a mirar en vez de "
 				+ "seguir contando las de antes.");
 

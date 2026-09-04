@@ -49,7 +49,9 @@ namespace DealershipCar.Dominio.Pruebas
 
 				OdometerSeriesTools driven = TheAssistantsSeriesToolsOver(journal.Folder);
 
-				// LAS ONCE tools, varias veces, que es como pregunta un asistente de verdad. Las de
+				CostLedgerTools spent = TheAssistantsLedgerToolsOver(journal.Folder);
+
+				// LAS DOCE tools, varias veces, que es como pregunta un asistente de verdad. Las de
 				// las cinco clases van en la misma vuelta: la promesa es de la carpeta entera y no de
 				// una familia de preguntas.
 				//
@@ -73,6 +75,9 @@ namespace DealershipCar.Dominio.Pruebas
 					driven.HowMuchMyCarIsDriven();
 					driven.HowMuchMyCarIsDriven("2026-01-01", "2026-12-31");
 					driven.HowMuchMyCarIsDriven("el martes pasado", "");
+					spent.WhatIHaveSpentOnMyCar();
+					spent.WhatIHaveSpentOnMyCar("2026-01-01", "2026-12-31", "2025-01-01", "2025-12-31");
+					spent.WhatIHaveSpentOnMyCar("el martes pasado", "", "", "");
 
 					foreach (MaintenanceOperation each in TheOperationKind.All)
 						tools.CheckOne(each);
@@ -102,6 +107,7 @@ namespace DealershipCar.Dominio.Pruebas
 				WarrantyEnvelopeTools envelope = TheAssistantsEnvelopeToolsOver(journal.Folder);
 				ShopStayTools stays = TheAssistantsStayToolsOver(journal.Folder);
 				OdometerSeriesTools driven = TheAssistantsSeriesToolsOver(journal.Folder);
+				CostLedgerTools spent = TheAssistantsLedgerToolsOver(journal.Folder);
 
 				for (int round = 0; round < 12; round++)
 				{
@@ -114,6 +120,8 @@ namespace DealershipCar.Dominio.Pruebas
 					stays.DaysMyCarSpentInTheShop();
 					driven.HowMuchMyCarIsDriven();
 					driven.HowMuchMyCarIsDriven("2026-01-01", "2026-12-31");
+					spent.WhatIHaveSpentOnMyCar();
+					spent.WhatIHaveSpentOnMyCar("2026-01-01", "2026-12-31", "2025-01-01", "2025-12-31");
 				}
 
 				Assert.That(TheSecondProgramOf(journal.Folder), Is.EqualTo(before),
@@ -164,6 +172,7 @@ namespace DealershipCar.Dominio.Pruebas
 				WarrantyEnvelopeTools envelope = TheAssistantsEnvelopeToolsOver(journal.Folder);
 				ShopStayTools stays = TheAssistantsStayToolsOver(journal.Folder);
 				OdometerSeriesTools driven = TheAssistantsSeriesToolsOver(journal.Folder);
+				CostLedgerTools spent = TheAssistantsLedgerToolsOver(journal.Folder);
 
 				var everything = new StringBuilder();
 				everything.Append(JsonSerializer.Serialize(tools.Review()));
@@ -177,6 +186,7 @@ namespace DealershipCar.Dominio.Pruebas
 				everything.Append(JsonSerializer.Serialize(envelope.IsMyCarStillUnderWarranty()));
 				everything.Append(JsonSerializer.Serialize(stays.DaysMyCarSpentInTheShop()));
 				everything.Append(JsonSerializer.Serialize(driven.HowMuchMyCarIsDriven()));
+				everything.Append(JsonSerializer.Serialize(spent.WhatIHaveSpentOnMyCar()));
 				foreach (MaintenanceOperation each in TheOperationKind.All)
 					everything.Append(JsonSerializer.Serialize(tools.CheckOne(each)));
 
@@ -268,8 +278,12 @@ namespace DealershipCar.Dominio.Pruebas
 		// obligar a mirar la lista.
 		//
 		// Y OD-4 LO VOLVIO A MOVER, a ONCE: how_much_my_car_is_driven, el ritmo de uso de un periodo.
+		//
+		// Y CL-8 A DOCE: what_i_have_spent_on_my_car, en que se le fue la plata a esta persona con este
+		// carro. Es la primera tool que pregunta por DOS periodos, y por eso es la primera que toma
+		// cuatro limites.
 		[Test]
-		public void TheAssistantIsOfferedElevenToolsAndNoneOfThemIsACommand()
+		public void TheAssistantIsOfferedTwelveToolsAndNoneOfThemIsACommand()
 		{
 			var offered = new List<string>();
 
@@ -287,8 +301,8 @@ namespace DealershipCar.Dominio.Pruebas
 				"check_one_operation", "days_my_car_spent_in_the_shop", "does_the_warranty_cover",
 				"how_much_my_car_is_driven", "how_up_to_date_is_this",
 				"is_my_car_still_under_warranty", "review_my_maintenance",
-				"what_has_been_done_to_my_car", "what_is_left_before_each_service",
-				"what_my_car_takes", "what_the_service_costs",
+				"what_has_been_done_to_my_car", "what_i_have_spent_on_my_car",
+				"what_is_left_before_each_service", "what_my_car_takes", "what_the_service_costs",
 			}), "Una tool que se agrega sin pensarla es como entra un comando a una superficie de "
 				+ "solo lectura. La lista se escribe aca para que agregar una obligue a mirarla.");
 		}
@@ -303,8 +317,14 @@ namespace DealershipCar.Dominio.Pruebas
 		// parado el PLAN -- que falta, que se hizo, que tan al dia esta -- y esta contesta un hecho de
 		// USO que el plan resulta guardar. Meterla ahi habria hecho de esa clase dos sujetos sin que
 		// nada se pusiera rojo, porque esa clase no lleva ningun /// que se pudiera volver falso.
+		//
+		// LA SEXTA ES CL-8 Y ES LA MISMA DECISION TOMADA OTRA VEZ. En que se le fue la plata a esta
+		// persona no es una pregunta del plan de mantenimiento, ni de la ficha del fabricante, ni del
+		// sobre, ni de las estadias, ni del odometro: es un hecho de GASTO, que ninguna de las cinco
+		// clases que ya estaban contesta. Y a diferencia de DealershipCarTools, esta clase SI lleva un
+		// /// que decir de que habla, asi que meterle una segunda pregunta lo volveria falso.
 		[Test]
-		public void TheToolsLiveInExactlyFiveClassesAndAllOfThemAreAboutReading()
+		public void TheToolsLiveInExactlySixClassesAndAllOfThemAreAboutReading()
 		{
 			var named = new List<string>();
 
@@ -314,8 +334,8 @@ namespace DealershipCar.Dominio.Pruebas
 
 			Assert.That(named, Is.EqualTo(new[]
 			{
-				"DealershipCarTools", "ModelSpecificationTools", "OdometerSeriesTools",
-				"ShopStayTools", "WarrantyEnvelopeTools",
+				"CostLedgerTools", "DealershipCarTools", "ModelSpecificationTools",
+				"OdometerSeriesTools", "ShopStayTools", "WarrantyEnvelopeTools",
 			}), "Una clase de tools nueva tiene que pasar por aca, porque tiene que pasar tambien "
 				+ "por el .WithTools de Program.cs y esto es lo unico que lo recuerda.");
 		}
@@ -357,6 +377,11 @@ namespace DealershipCar.Dominio.Pruebas
 		private static OdometerSeriesTools TheAssistantsSeriesToolsOver(string folder)
 		{
 			return new OdometerSeriesTools(new JournalReader(folder, ""));
+		}
+
+		private static CostLedgerTools TheAssistantsLedgerToolsOver(string folder)
+		{
+			return new CostLedgerTools(new JournalReader(folder, ""));
 		}
 
 		private static AScheduleOnARealJournal AVehicleWithAPlanAndAnEvaluation()

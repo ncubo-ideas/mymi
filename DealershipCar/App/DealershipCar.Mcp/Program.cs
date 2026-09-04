@@ -34,7 +34,8 @@ builder.Services.AddMcpServer(options =>
 .WithTools<ModelSpecificationTools>()
 .WithTools<WarrantyEnvelopeTools>()
 .WithTools<ShopStayTools>()
-.WithTools<OdometerSeriesTools>();
+.WithTools<OdometerSeriesTools>()
+.WithTools<CostLedgerTools>();
 
 builder.Logging.ClearProviders();
 builder.Logging.AddConsole(o => o.LogToStandardErrorThreshold = LogLevel.Trace);
@@ -70,8 +71,8 @@ static string Instructions(string folder) => $"""
 
 	DOS CLASES DE PREGUNTA. review_my_maintenance, check_one_operation, how_up_to_date_is_this,
 	what_is_left_before_each_service, what_has_been_done_to_my_car,
-	is_my_car_still_under_warranty, days_my_car_spent_in_the_shop y how_much_my_car_is_driven
-	contestan dónde está parado ESTE VEHÍCULO.
+	is_my_car_still_under_warranty, days_my_car_spent_in_the_shop, how_much_my_car_is_driven y
+	what_i_have_spent_on_my_car contestan dónde está parado ESTE VEHÍCULO.
 	what_my_car_takes y what_the_service_costs contestan lo que el FABRICANTE
 	PUBLICÓ sobre este modelo: los fluidos, las llantas, el combustible, el precio de un servicio.
 	does_the_warranty_cover contesta las dos a la vez: el alcance publicado, y dónde está parado
@@ -131,6 +132,22 @@ static string Instructions(string folder) => $"""
 	número. La fuente de una lectura se dice y no se pondera: una que declaró la persona pesa lo
 	mismo que una que reportó el vehículo. Sus dos parámetros son los extremos del periodo por el
 	que se pregunta, no datos del carro; omítalos si nadie nombró un periodo.
+
+	EN QUÉ SE FUE LA PLATA SON DOS CIFRAS Y NUNCA UNA. what_i_have_spent_on_my_car contesta, por un
+	período, lo que salió del banco adentro y lo que el período consumió, siempre las dos juntas y
+	en la misma frase: sin separar lo que dura de lo que se consume, un total dice "el carro se puso
+	caro" cuando la verdad es "compró llantas". El registro no tiene ninguna lectura que conteste una
+	sola de las dos, a propósito. Dígalas las dos, y no las sume.
+	DOS MONEDAS NO SE SUMAN y eso es un estado con nombre, no un dato que falte: cada una se dice por
+	su lado y no hay total entre ellas, porque no existe ningún factor con que sumarlas y reconvertir
+	un histórico sería falsear el pasado. Nunca invente un total ni un tipo de cambio. El dinero ya
+	viene dicho con el signo de su moneda y sus decimales: cítelo tal cual, porque un monto sin su
+	moneda no se puede leer.
+	Y NO HAY VEREDICTO. "¿Vale la pena seguir arreglando el carro?" se contesta con las cifras y la
+	distinción que las hace legibles; el juicio es de la persona. No diga caro ni barato, no puntúe y
+	no invente un umbral: no hay ninguno en este registro. Las filas son el registro crudo y cada una
+	se dice sola; sumarlas a mano da un número que además cruzaría monedas. Sus cuatro parámetros son
+	los extremos de los dos períodos, no datos del carro.
 
 	Las dos tools de garantía dicen ALCANCE y POSICIÓN y nunca adjudican un reclamo: que una
 	reparación se pague lo decide el fabricante, así que un sistema dentro del alcance y un

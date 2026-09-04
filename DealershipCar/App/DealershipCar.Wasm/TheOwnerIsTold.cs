@@ -118,5 +118,17 @@ namespace DealershipCar.Wasm
 			+ "periodo: quiere decir que nadie mandó una lectura del odómetro. Las lecturas las manda "
 			+ "tu concesionario, o el carro mismo cuando reporta, por el mismo feed que trae todo lo "
 			+ "demás aquí, y no hay nada que tengas que llenar vos.";
+
+		/// <summary>
+		/// Que un periodo sin ningun gasto registrado no es un periodo en que el carro no costo nada,
+		/// y quien registra un gasto. Es la frase que mas facil se lee al reves en este bloque, y
+		/// ninguna del dominio la dice: la del gasto dice que no hay ninguno registrado, y "no hay
+		/// ninguno registrado" no es "no se gasto nada".
+		/// </summary>
+		public const string TheCostsAreRecordedByTheBranchThatDoesTheWork =
+			"Que no haya ningún gasto aquí no quiere decir que este carro no te haya costado nada en "
+			+ "este periodo: quiere decir que no quedó ninguno registrado. Los gastos los registra el "
+			+ "taller o la sucursal que hace el trabajo, por el mismo feed que trae todo lo demás "
+			+ "aquí, y no hay nada que tengas que llenar vos.";
 	}
 }

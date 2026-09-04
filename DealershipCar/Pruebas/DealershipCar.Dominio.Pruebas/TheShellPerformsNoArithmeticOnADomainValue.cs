@@ -56,8 +56,14 @@ namespace DealershipCar.Dominio.Pruebas
 			// misma raiz: el barrido lee la raiz entera y no solo el archivo de la puerta.
 			new object[] { TheCodeOfTheShellsAsData.App, 23 },
 			new object[] { TheCodeOfTheShellsAsData.Frontera, 2 },
-			new object[] { TheCodeOfTheShellsAsData.Consola, 4 },
-			new object[] { TheCodeOfTheShellsAsData.Mcp, 8 },
+			// EL PISO DE Consola SUBIO 4 -> 5 CON EL GUION DE LOS GASTOS, que es UN archivo: la raiz
+			// paso de 5 a 6 y el margen sigue siendo UNO, que es el mas apretado de las ocho raices
+			// con piso real. Se mueve POR LO QUE SE AGREGO y no hasta donde alcance.
+			new object[] { TheCodeOfTheShellsAsData.Consola, 5 },
+			// EL PISO DE Mcp SUBIO 8 -> 9 CON LA TOOL DEL LIBRO DE COSTOS, que es UN archivo: la raiz
+			// paso de 12 a 13 y el margen sigue siendo CUATRO. OD-4 agrego un archivo a esta raiz y
+			// dejo el piso quieto; aca se mueve, que es la convencion que Wasm dejo escrita abajo.
+			new object[] { TheCodeOfTheShellsAsData.Mcp, 9 },
 			// EL PISO DE Wasm SUBIO 22 -> 24 CON LOS DOS PORTADORES DE LA PANTALLA DE MANTENIMIENTO,
 			// para conservar el margen de cinco archivos que le dio la rebanada anterior. Un piso que
 			// se queda quieto mientras la raiz crece es un piso que deja de decir cuando algo dejo de
@@ -67,7 +73,11 @@ namespace DealershipCar.Dominio.Pruebas
 			// a 28 y el margen sigue siendo TRES. Se mueve por lo que se agrego y no hasta donde
 			// alcance -- un piso pegado al conteo se pone rojo por cualquier reordenamiento, y uno
 			// lejos deja de ver una raiz que se vacio.
-			new object[] { TheCodeOfTheShellsAsData.Wasm, 25 },
+			//
+			// Y SUBIO 25 -> 26 CON EL PORTADOR DEL LIBRO DE COSTOS, que es UN archivo: la raiz paso de
+			// 28 a 29 y el margen sigue siendo TRES. El bloque nuevo no trajo ningun .razor: va en el
+			// archivo que SH-7 creo, que es donde P-10 pone los cuatro bloques.
+			new object[] { TheCodeOfTheShellsAsData.Wasm, 26 },
 			new object[] { TheCodeOfTheShellsAsData.EndPointDeEventos, 1 },
 			new object[] { TheCodeOfTheShellsAsData.InyectorDeEventosDemo, 1 },
 			new object[] { TheCodeOfTheShellsAsData.PaginaDeDescarga, 1 },

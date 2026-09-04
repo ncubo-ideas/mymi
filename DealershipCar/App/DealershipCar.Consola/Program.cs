@@ -31,6 +31,7 @@ namespace DealershipCar.Consola
 					case "ficha":    return TheSpecSheetPublishedAndReadBack(AFolder(args, 1));
 					case "garantia": return TheWarrantyEnvelopePublishedAndReadBack(AFolder(args, 1));
 					case "taller":   return TheShopStaysRecordedAndReadBack(AFolder(args, 1));
+					case "costos":   return TheCostLedgerRecordedAndReadBack(AFolder(args, 1));
 					case "refresco": return await TheRefreshLoopAgainstTheDealership(args);
 					case "corte":    return await ACrashInTheMiddleOfABlock(args);
 					default:         Help(); return 1;
@@ -1331,6 +1332,269 @@ namespace DealershipCar.Consola
 			return 0;
 		}
 
+		private static int TheCostLedgerRecordedAndReadBack(string folder)
+		{
+			Console.WriteLine("DealershipCar - el libro de costos, registrado y leido de vuelta");
+			Console.WriteLine();
+			Console.WriteLine($"folder    : {folder}");
+			Console.WriteLine($"vin       : {Story.TheVin}");
+			Console.WriteLine($"actor     : {DealershipCarApp.TheActorFor(Story.TheVin)}");
+
+			EmptyTheJournalOfThisVehicle(folder);
+			Console.WriteLine("journal   : vaciado - esta corrida SIEMPRE borra el journal de este");
+			Console.WriteLine("            vehiculo, y es por el motivo de 'historia' y no por el de");
+			Console.WriteLine("            'ficha': ningun hecho del libro toma una clave que se gaste,");
+			Console.WriteLine("            asi que los tres se podrian volver a mandar. Borrar es lo que");
+			Console.WriteLine("            hace la corrida reproducible, y aca ni siquiera hay un estado");
+			Console.WriteLine("            con que chocar: una entrada del libro no tiene clave, asi que");
+			Console.WriteLine("            una segunda corrida sin borrar dejaria seis gastos, que es lo");
+			Console.WriteLine("            correcto. Mas abajo esta medido");
+
+			DealershipCarApp app = Open(folder);
+			var api = new DealershipCarAPI(app);
+
+			Console.WriteLine($"entrada 0 : {app.Actor.CurrentEntryId}  (la semilla, que deja OnHydrated)");
+			Console.WriteLine();
+			Console.WriteLine("Ningun instante y ninguna cifra de esta corrida sale de un reloj ni de una");
+			Console.WriteLine("cuenta: los tres montos, sus tres instantes, la vida util de las llantas y");
+			Console.WriteLine("los cuatro extremos de los dos periodos estan escritos, para que dos");
+			Console.WriteLine("corridas contesten lo mismo.");
+			Console.WriteLine();
+
+			PrintTheLedger(api, "ANTES DE QUE NINGUNA SUCURSAL REGISTRE NADA");
+
+			Act(app, "   llegan las TRES lecturas del odometro del anio",
+				() => Costs.TheThreeReadingsOfTheYear(api));
+
+			Console.WriteLine("   Las lecturas no son un gasto: son el tramo de uso contra el que se puede");
+			Console.WriteLine("   dividir el gasto del periodo. Sin ellas el costo por distancia contesta la");
+			Console.WriteLine("   razon con nombre de que no hay tramo, que es una respuesta y no un hueco.");
+			Console.WriteLine();
+
+			foreach ((string what, Action<DealershipCarAPI> act) in Costs.TheThreeCosts())
+				Act(app, "   llega " + what, () => act(api));
+
+			PrintTheLedger(api, "TRES GASTOS, UNO DURADERO Y DOS RECURRENTES, EN DOS MONEDAS");
+
+			Console.WriteLine("   La respuesta son LAS DOS VISTAS en una sola frase, siempre juntas. Lo que");
+			Console.WriteLine("   salio del banco adentro del periodo y lo que el periodo consumio: sin");
+			Console.WriteLine("   separar lo duradero de lo recurrente, un total dice 'el carro se puso");
+			Console.WriteLine("   caro' cuando la verdad es 'compro llantas'. Ninguna lectura contesta una");
+			Console.WriteLine("   vista sola, y no hay ninguna que diga si vale la pena: las cifras con la");
+			Console.WriteLine("   distincion que las hace legibles son toda la respuesta.");
+			Console.WriteLine();
+
+			TheSameLedgerAskedOverTheColonesHalf(api);
+			TheTwoPeriodsOfSpendCompared(api);
+			TheSecondEntryOfTheSameCostThatNobodyRefuses(app, api, folder);
+
+			return TheLastMomentOfTheLedgerAndWhatTheDiskSays(app, api, folder);
+		}
+
+		private static void PrintTheLedger(DealershipCarAPI api, string moment)
+		{
+			Console.WriteLine("================================================================");
+			Console.WriteLine($"  {moment}");
+			Console.WriteLine($"  el periodo preguntado va del {Instant(Costs.TheYearFrom)}");
+			Console.WriteLine($"  al {Instant(Costs.TheYearTo)}");
+			Console.WriteLine("================================================================");
+			Console.WriteLine();
+
+			TheSevenPeriodReads(api, Costs.TheYearFrom, Costs.TheYearTo);
+			TheCostPerDistanceOfThePeriod(api, Costs.TheYearFrom, Costs.TheYearTo);
+			TheRowsOfTheLedger(api, Costs.TheYearFrom, Costs.TheYearTo);
+		}
+
+		private static void TheSevenPeriodReads(DealershipCarAPI api, DateTime from, DateTime to)
+		{
+			Console.WriteLine("   -- las lecturas del periodo. TODAS son TOTALES: la ausencia es un tipo y");
+			Console.WriteLine("      dos monedas son un estado, asi que ninguna rechaza nada --");
+			Console.WriteLine($"   {"hay algun gasto",-24} : {api.HasAnyCostBetween(from, to)}");
+			Console.WriteLine($"   {"en una sola moneda",-24} : {api.IsSpendSaidInOneCurrencyBetween(from, to)}");
+			Console.WriteLine($"   {"cuantos gastos",-24} : {api.CostEntryCountBetween(from, to)}");
+			Console.WriteLine($"     el gasto, entero  : {api.DescribeSpendBetween(from, to)}");
+			Console.WriteLine($"     moneda por moneda : {api.DescribeSpendPerCurrencyBetween(from, to)}");
+			Console.WriteLine();
+		}
+
+		private static void TheCostPerDistanceOfThePeriod(
+			DealershipCarAPI api, DateTime from, DateTime to)
+		{
+			Console.WriteLine("   -- lo que costo la distancia, cruzando DOS globales de raiz adentro del");
+			Console.WriteLine("      dominio: el tramo lo dice la agenda y el dinero el libro. Ni la");
+			Console.WriteLine("      distancia ni el ancla salen por ninguna lectura como numero --");
+			Console.WriteLine($"   {"se puede decir",-24} : {api.CanCostPerDistanceBeSaid(from, to)}");
+			Console.WriteLine($"     {api.DescribeCostPerDistanceBetween(from, to)}");
+			Console.WriteLine();
+		}
+
+		private static void TheRowsOfTheLedger(DealershipCarAPI api, DateTime from, DateTime to)
+		{
+			CostLedgerRecord record = api.CostEntriesBetween(from, to);
+
+			Console.WriteLine("   -- el registro crudo: una fila por gasto incurrido adentro, en columnas");
+			Console.WriteLine("      paralelas y en orden del instante en que se incurrio --");
+
+			if (record.Says.Length == 0) Console.WriteLine("   (ninguna fila todavia)");
+
+			foreach (int row in Enumerable.Range(0, record.Says.Length))
+			{
+				Console.WriteLine($"   {record.IncurredAt[row],-21} {record.Subject[row]}");
+				Console.WriteLine($"   {"",-21} {record.Money[row]}   {record.Classification[row]}"
+					+ (record.ExpectedLife[row].Length == 0 ? "" : "   " + record.ExpectedLife[row]));
+				Console.WriteLine($"   {"",-21} {record.Says[row]}");
+			}
+
+			Console.WriteLine();
+			Console.WriteLine("   (el dinero llega DICHO por su propia moneda, con su signo y sus");
+			Console.WriteLine("    decimales. Esta caratula no lo vuelve a escribir: un segundo formateador");
+			Console.WriteLine("    seria un segundo autor de como se dice una cifra)");
+			Console.WriteLine();
+		}
+
+		private static void TheSameLedgerAskedOverTheColonesHalf(DealershipCarAPI api)
+		{
+			Console.WriteLine("================================================================");
+			Console.WriteLine("  EL MISMO LIBRO, PREGUNTADO POR EL SEMESTRE QUE SOLO TIENE COLONES");
+			Console.WriteLine($"  del {Instant(Costs.TheColonesHalfFrom)} al {Instant(Costs.TheColonesHalfTo)}");
+			Console.WriteLine();
+			Console.WriteLine("  Es donde las dos lecturas del gasto DIFIEREN: con dos monedas la de por");
+			Console.WriteLine("  moneda contesta letra por letra lo mismo que la entera, porque el total");
+			Console.WriteLine("  que las separaria es justo el que no hay. Con una sola, la de por moneda");
+			Console.WriteLine("  agrega su propia clausula.");
+			Console.WriteLine("================================================================");
+			Console.WriteLine();
+
+			TheSevenPeriodReads(api, Costs.TheColonesHalfFrom, Costs.TheColonesHalfTo);
+			TheRowsOfTheLedger(api, Costs.TheColonesHalfFrom, Costs.TheColonesHalfTo);
+		}
+
+		private static void TheTwoPeriodsOfSpendCompared(DealershipCarAPI api)
+		{
+			Console.WriteLine("================================================================");
+			Console.WriteLine("  LOS DOS PERIODOS, EL ANIO CONTRA EL ANTERIOR");
+			Console.WriteLine();
+			Console.WriteLine("  El PRIMER par de extremos es el primer periodo, y ese orden es parte del");
+			Console.WriteLine("  contrato: el dominio dice el segundo contra el primero y cruzarlos daria");
+			Console.WriteLine("  la frase al reves. El anio anterior no tiene ningun gasto, y tambien se");
+			Console.WriteLine("  dice: una constancia con nombre y nunca un cero, porque un cero de dinero");
+			Console.WriteLine("  se lee como un gasto que hubo.");
+			Console.WriteLine("================================================================");
+			Console.WriteLine();
+			Console.WriteLine($"   primer periodo, del      : {Instant(Costs.TheYearFrom)} al {Instant(Costs.TheYearTo)}");
+			Console.WriteLine($"   segundo periodo, del     : {Instant(Costs.TheEarlierYearFrom)} al {Instant(Costs.TheEarlierYearTo)}");
+			Console.WriteLine();
+			Console.WriteLine($"   los dos comparados       : {api.DescribeTwoPeriodsOfSpendCompared(Costs.TheYearFrom, Costs.TheYearTo, Costs.TheEarlierYearFrom, Costs.TheEarlierYearTo)}");
+			Console.WriteLine();
+			Console.WriteLine($"   el anio anterior solo    : {api.DescribeSpendBetween(Costs.TheEarlierYearFrom, Costs.TheEarlierYearTo)}");
+			Console.WriteLine();
+		}
+
+		private static void TheSecondEntryOfTheSameCostThatNobodyRefuses(
+			DealershipCarApp app, DealershipCarAPI api, string folder)
+		{
+			string actorFolder = Path.Combine(folder, DealershipCarApp.TheActorFor(Story.TheVin));
+			string bytesBefore = TheTreeOf(actorFolder);
+			long entryBefore = app.Actor.CurrentEntryId;
+			int countBefore = api.CostEntryCountBetween(Costs.TheYearFrom, Costs.TheYearTo);
+
+			string answer = WhatTheDoorSaysAboutASecondCost(() => Costs.TheOilChangeArrives(api));
+
+			Console.WriteLine("el MISMO gasto registrado una SEGUNDA vez, identico en monto, asunto e");
+			Console.WriteLine("instante:");
+			Console.WriteLine($"  la puerta contesta        : {answer}");
+			Console.WriteLine($"  cuantos gastos            : {countBefore} -> {api.CostEntryCountBetween(Costs.TheYearFrom, Costs.TheYearTo)}");
+			Console.WriteLine($"  entrada del journal       : {entryBefore} -> {app.Actor.CurrentEntryId}");
+			Console.WriteLine($"  arbol byte a byte igual   : {TheTreeOf(actorFolder) == bytesBefore}");
+			Console.WriteLine("  (es lo contrario de lo que pasa con una estadia, y a proposito: una");
+			Console.WriteLine("   entrada del libro no tiene clave. Dos gastos del mismo monto en el mismo");
+			Console.WriteLine("   asunto y el mismo dia son DOS gastos y no una correccion, asi que no hay");
+			Console.WriteLine("   nada que rechazar y no hay ningun estado con que chocar. Por eso esta");
+			Console.WriteLine("   corrida no tiene ninguna pre-consulta: no habria nada que preguntar)");
+			Console.WriteLine();
+		}
+
+		private static int TheLastMomentOfTheLedgerAndWhatTheDiskSays(
+			DealershipCarApp app, DealershipCarAPI api, string folder)
+		{
+			string actorFolder = Path.Combine(folder, DealershipCarApp.TheActorFor(Story.TheVin));
+			string bytesBeforeReading = TheTreeOf(actorFolder);
+			long entryBeforeReading = app.Actor.CurrentEntryId;
+
+			string spend = api.DescribeSpendBetween(Costs.TheYearFrom, Costs.TheYearTo);
+			string perCurrency =
+				api.DescribeSpendPerCurrencyBetween(Costs.TheColonesHalfFrom, Costs.TheColonesHalfTo);
+			string perDistance =
+				api.DescribeCostPerDistanceBetween(Costs.TheYearFrom, Costs.TheYearTo);
+			string bothPeriods = api.DescribeTwoPeriodsOfSpendCompared(
+				Costs.TheYearFrom, Costs.TheYearTo, Costs.TheEarlierYearFrom, Costs.TheEarlierYearTo);
+
+			Console.WriteLine("---- mediciones contra el disco -------------------------------");
+			Console.WriteLine();
+			Console.WriteLine("las nueve lecturas, leidas enteras:");
+			Console.WriteLine(
+				$"  entrada del journal       : {entryBeforeReading} -> {app.Actor.CurrentEntryId}");
+			Console.WriteLine($"  arbol byte a byte igual   : {TheTreeOf(actorFolder) == bytesBeforeReading}");
+			Console.WriteLine("  (las nueve son consultas y no comandos: preguntar en que se fue la plata");
+			Console.WriteLine("   no deja entrada en el journal de este vehiculo)");
+			Console.WriteLine();
+
+			app.Dispose();
+
+			DealershipCarApp reopened = Open(folder);
+			var again = new DealershipCarAPI(reopened);
+
+			Console.WriteLine("reabrir el journal y volver a preguntar lo mismo:");
+			Console.WriteLine($"  entrada del journal       : {reopened.Actor.CurrentEntryId}"
+				+ "  (crecio una: OnHydrated deja la semilla en CADA arranque)");
+			Console.WriteLine("  el gasto igual            : "
+				+ $"{again.DescribeSpendBetween(Costs.TheYearFrom, Costs.TheYearTo) == spend}"
+				+ "  <- letra por letra");
+			Console.WriteLine("  por moneda igual          : "
+				+ $"{again.DescribeSpendPerCurrencyBetween(Costs.TheColonesHalfFrom, Costs.TheColonesHalfTo) == perCurrency}"
+				+ "  <- letra por letra");
+			Console.WriteLine("  por distancia igual       : "
+				+ $"{again.DescribeCostPerDistanceBetween(Costs.TheYearFrom, Costs.TheYearTo) == perDistance}"
+				+ "  <- letra por letra");
+			Console.WriteLine("  los dos periodos iguales  : "
+				+ $"{again.DescribeTwoPeriodsOfSpendCompared(Costs.TheYearFrom, Costs.TheYearTo, Costs.TheEarlierYearFrom, Costs.TheEarlierYearTo) == bothPeriods}"
+				+ "  <- letra por letra");
+			Console.WriteLine();
+			Console.WriteLine("  Los gastos no son un campo de C#: salen del journal, y los cuatro hechos");
+			Console.WriteLine("  se vuelven a aplicar corriendo otra vez los mismos comandos, en el mismo");
+			Console.WriteLine("  orden. La parte que a cada periodo le toca de la duradera se deriva en");
+			Console.WriteLine("  cada lectura y no se guarda en ningun lado.");
+			Console.WriteLine();
+
+			reopened.Dispose();
+			return 0;
+		}
+
+		/// <summary>Un instante dicho como instante, con su hora, igual que lo dice el dominio.</summary>
+		private static string Instant(DateTime instant)
+		{
+			return instant.ToString("yyyy-MM-dd HH:mm:ss", CultureInfo.InvariantCulture);
+		}
+
+		/// <summary>
+		/// Lo que la puerta contesta a un comando que ESTA corrida espera que pase. Es el gemelo de
+		/// WhatThePreCheckSaysAbout y dice lo contrario: alla el rechazo es el resultado y aca lo es
+		/// que no lo haya. Solo atrapa la forma en que la puerta rechaza antes de performar nada.
+		/// </summary>
+		private static string WhatTheDoorSaysAboutASecondCost(Action call)
+		{
+			try
+			{
+				call();
+			}
+			catch (InvalidOperationException refused)
+			{
+				return $"LO RECHAZO: {refused.GetType().Name} - {FirstLineOf(refused.Message)}";
+			}
+
+			return "lo registro, y no hay nada que rechazar";
+		}
+
 		/// <summary>
 		/// El instante al que esta caratula pregunta si el carro esta adentro. Esta ESCRITO y no sale
 		/// de ningun reloj, como todo lo demas de esta corrida.
@@ -1810,6 +2074,10 @@ namespace DealershipCar.Consola
 			Console.WriteLine("  taller   [carpeta]   registra tres estadias en el taller -- una entera de un");
 			Console.WriteLine("                       solo acto, una en dos hechos y una que queda ABIERTA --");
 			Console.WriteLine("                       y lee las ocho lecturas en cada momento");
+			Console.WriteLine("                       (TAMBIEN borra el journal de este vehiculo)");
+			Console.WriteLine("  costos   [carpeta]   registra tres gastos -- uno DURADERO con su vida util y");
+			Console.WriteLine("                       dos RECURRENTES, en DOS monedas -- y lee las nueve");
+			Console.WriteLine("                       lecturas del libro en cada momento");
 			Console.WriteLine("                       (TAMBIEN borra el journal de este vehiculo)");
 			Console.WriteLine("  refresco [carpeta] [url] [recurso] [id]");
 			Console.WriteLine("                       trae los eventos del concesionario y los aplica de a uno");
