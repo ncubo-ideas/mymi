@@ -577,6 +577,9 @@ h1:focus, h1:focus-visible { outline: none; }
    la secundaria, y sin caja la que es un enlace disfrazado. */
 
 .tecla {
+    /* inline-flex y no inline-block: es lo que permite darle un alto mínimo táctil en
+       teléfono (abajo) sin que la etiqueta quede pegada al borde de arriba. */
+    display: inline-flex; align-items: center; justify-content: center;
     font: inherit; font-size: 14px; font-weight: 600;
     padding: 8px 16px; border-radius: 7px; cursor: pointer;
     background: var(--accion); color: var(--sobre-cobre); border: 1px solid transparent;
@@ -908,6 +911,14 @@ code { font-family: var(--cifras); font-size: .9em; color: var(--cobre); }
 
     /* EL COLCHÓN para que la barra fija no tape la última fila de la ruta. */
     .tablero { padding-bottom: 6rem; }
+
+    /* OBJETIVOS TÁCTILES. MEDIDO a 375 px: la pendiente plegada daba 24 px de alto, las
+       teclas y el campo 34. O sea que el toque más frecuente de la app —anotar el
+       kilometraje en la bomba, con una mano— era el más chico de la pantalla. 44 px es el
+       mínimo de Apple y el AAA de WCAG; 24 apenas el AA de 2.2. En escritorio se quedan
+       como están: ahí el puntero es fino y el alto se lo come a los instrumentos. */
+    .tecla, .campo { min-height: 44px; }
+    .falta-plegada { min-height: 44px; align-items: center; margin-top: 0; }
 }
 
 @media (max-width: 600px) {
