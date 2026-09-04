@@ -249,16 +249,22 @@
     // Y SIN VEREDICTO, LUZ NEUTRA. «Todavía no puedo calcular tu rendimiento» salía con la luz
     // verde, porque verde era el color por defecto: una pantalla que no sabe nada decía que
     // todo estaba bien. El verde queda para cuando el dominio dijo «bien».
+    //
+    // Y SIN SERIE TAMBIEN. El chequeo por Veredicto vacío no alcanzaba: «sin tramo» e
+    // «indeterminado» son veredictos CON nombre, así que pasaban al default y la luz volvía
+    // a salir verde diciendo «todavía no puedo calcular». Lo que decide si hay juicio es
+    // HaySerie; sin serie nadie dijo «bien», y la luz se queda apagada.
     private string Tono()
     {
         if (rendimiento.Veredicto.Length == 0) return "franja--neutra";
-        return rendimiento.Severidad switch
+        switch (rendimiento.Severidad)
         {
-            "urgente"         => "franja--problema",
-            "consulte pronto" => "franja--atencion",
-            "vigilar"         => "franja--atencion",
-            _                 => "",
-        };
+            case "urgente":         return "franja--problema";
+            case "consulte pronto":
+            case "vigilar":         return "franja--atencion";
+        }
+        if (!rendimiento.HaySerie) return "franja--neutra";
+        return "";
     }
 
     private string Sello()
