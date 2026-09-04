@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>CFBundleDisplayName</key>
+	<string>Gnothi Host</string>
+
+	<key>UIDeviceFamily</key>
+	<array>
+		<integer>1</integer>
+		<integer>2</integer>
+	</array>
+
+	<key>UIRequiredDeviceCapabilities</key>
+	<array>
+		<string>arm64</string>
+	</array>
+
+	<key>UISupportedInterfaceOrientations</key>
+	<array>
+		<string>UIInterfaceOrientationPortrait</string>
+	</array>
+
+	<!-- Sin esto la app corre en una ventana chica con marcos negros y parece rota. Un dict
+	     vacio alcanza desde iOS 14: el sistema pinta el color de fondo y ya. -->
+	<key>UILaunchScreen</key>
+	<dict/>
+
+	<!-- ESTAS DOS LINEAS SON LO QUE ANDROID NO PUEDE DAR.
+	     Con las dos, la carpeta Documents de la app aparece en la app ARCHIVOS del telefono:
+	     la persona puede dejar ella misma el paquete en incoming/, sin cable, sin adb y sin
+	     un desarrollador al lado. En Android el paquete se empuja por adb porque no hay otra
+	     forma, y eso siempre fue una muleta de laboratorio, no parte del producto. -->
+	<key>UIFileSharingEnabled</key>
+	<true/>
+	<key>LSSupportsOpeningDocumentsInPlace</key>
+	<true/>
+</dict>
+</plist>

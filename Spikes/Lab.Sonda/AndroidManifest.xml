@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- LA SONDA: un impostor deliberado. Ningun modulo la declara, asi que la compuerta
+     tiene que rechazarla. Ver java/.../SondaActivity.java -->
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+          package="com.ncubo.gnothi.sonda2"
+          android:versionCode="2" android:versionName="2.0">
+
+    <!-- Para poder resolver el componente de Gnothi por nombre en Android 11+. -->
+    <queries>
+        <package android:name="com.ncubo.gnothi.host" />
+    </queries>
+
+    <application android:label="Sonda Gnothi">
+        <activity android:name="com.ncubo.gnothi.sonda.SondaActivity" android:exported="true">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity>
+    </application>
+</manifest>

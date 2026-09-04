@@ -558,6 +558,10 @@ const gn = {
         + '<input id="key-in" type="text" autocomplete="off" spellcheck="false" placeholder="pegala acá — se guarda solo en este teléfono">'
         + '<div class="btns"><button class="btn" onclick="gn.saveKey()">Guardar</button>'
         + '<button class="btn ghost" onclick="gn.keyEdit=false;gn.paint()">Cancelar</button></div>'
+      // EL DE ESTE APARATO NO LLEVA LLAVE, y decir "Falta — el asistente no puede contestar"
+      // ahi seria mentir: puede contestar, y ademas sin que nada salga del telefono.
+      : s.local
+        ? '<div class="st"><i class="dot ok"></i><b>No hace falta — el modelo corre acá</b></div>'
       : (s.keyPresent
         ? '<div class="st"><i class="dot ok"></i><b>Guardada en este teléfono</b></div>'
           + '<div class="btns"><button class="btn ghost" onclick="gn.keyEdit=true;gn.paint()">Cambiar</button>'
@@ -601,7 +605,8 @@ const gn = {
     if (s) {
       gn.state = s;
       // no key for this provider yet -> open the editor right away: pick, paste, done.
-      gn.keyEdit = !s.settings.keyPresent;
+      // sin llave no hay nada que pegar: el de este aparato no usa ninguna.
+      gn.keyEdit = !s.settings.local && !s.settings.keyPresent;
       gn.paint();
     }
   },
@@ -710,6 +715,9 @@ function inline(s) {
 
 // THE PROVIDERS ON OFFER. Adding one is adding a line; all speak the OpenAI shape.
 const PROV = [
+  // EL DE ESTE APARATO va primero y sin url ni llave: es el unico donde el dato no sale del
+  // telefono, que es la tesis del producto. La cascara lo oculta si el aparato no genera.
+  { name:'En este teléfono',  url:'',                                model:'apple-on-device',     note:'sin llave · sin red · nada sale de acá', local:true },
   { name:'Groq',              url:'https://api.groq.com/openai/v1',  model:'openai/gpt-oss-120b', note:'gratis · sin tarjeta · rápido' },
   { name:'OpenAI (ChatGPT)',  url:'https://api.openai.com/v1',       model:'gpt-4o-mini',         note:'la llave de tu cuenta de OpenAI' },
   { name:'Claude (Anthropic)',url:'https://api.anthropic.com/v1',    model:'claude-sonnet-5',     note:'la llave de tu Console' },

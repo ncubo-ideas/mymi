@@ -20,6 +20,17 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <!-- LA FOTO, Y ES EL MISMO ARCHIVO QUE COMPILAN iOS Y ANDROID. No una copia: probar la foto
+         contra una reimplementacion seria repetir el antipatron del manifiesto, donde el
+         manifest.json de cada modulo era una copia, se desincronizo en silencio, y la suite
+         terminaba verificando la copia equivocada. Si Instantanea.cs cambia, el test lo ve. -->
+    <Compile Include="..\Gnothi.Movil\Instantanea.cs" Link="Instantanea.cs" />
+
+    <!-- Va Shell.cs con ella porque Instantanea usa Shell.Icon. Se enlaza entero en vez de
+         extraer el icono para NO tocar codigo compartido solo por el test: mover un metodo que
+         iOS y Android compilan es mas riesgo que compilar un archivo de mas aca. -->
+    <Compile Include="..\Gnothi.Movil\Shell.cs" Link="Shell.cs" />
+
     <ProjectReference Include="..\Gnothi.Host\Gnothi.Host.csproj" />
     <ProjectReference Include="..\Gnothi.Assistant\Gnothi.Assistant.csproj" />
   </ItemGroup>

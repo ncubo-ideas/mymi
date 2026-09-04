@@ -1,0 +1,80 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!-- ¿PUEDE UNA APP DE .NET LLEVAR APP INTENTS ADENTRO? Medido, no leido.
+
+       LA AFIRMACION QUE SE PONE A PRUEBA. El issue dotnet/macios#24863 dice que una App Intent
+       declarada en Swift y metida en una app de .NET no la descubre el sistema. Esta abierto
+       desde marzo de 2026, sin respuesta de los mantenedores y sin workaround. Lo tratamos
+       como cerrado durante toda una tarde. No lo esta: es UN reporte que vio el sintoma y no
+       busco la causa.
+
+       LO QUE EL REPORTERO NO MIRO. Las App Intents no se descubren leyendo el binario: se
+       descubren leyendo Metadata.appintents/extract.actionsdata, un directorio de JSON que
+       Xcode genera en tiempo de compilacion con una herramienta llamada
+       appintentsmetadataprocessor. El build de .NET NO corre esa herramienta. Asi que la
+       hipotesis es simple: el binario esta bien y la metadata falta.
+
+       Y LA METADATA SE PUEDE GENERAR APARTE. Bazel lo hace en produccion, fuera de Xcode, y su
+       codigo pasa como "binary-file" una RUTA FALSA: con "compile-time-extraction" el
+       procesador extrae de los fuentes Swift y de los .swiftconstvalues, no del binario. O sea
+       que se puede generar sin tocar el ejecutable de .NET y meter al bundle despues.
+
+       LO QUE PROBABLEMENTE TAMBIEN LE FALTO: ForceLoad. Una conformance a AppIntent no la
+       llama nadie por codigo · solo la lee la metadata · asi que sin ForceLoad el linker la
+       borra como codigo muerto. Y entonces la metadata apunta a un tipo que ya no existe.
+
+       ESTATICA Y NO FRAMEWORK, y es una decision. En Xcode puro, las intents dentro de un
+       framework DINAMICO no se descubren (AppIntentCounter2, hilo 757950 de Apple). Enlazar
+       estatico mete el tipo Swift en el MISMO Mach-O que la app, que es donde el runtime lo
+       busca. Es la diferencia entre este montaje y el del reportero.
+
+       SI ESTO ANDA: una sola app en iOS, con el Host de .NET bajo Mono -carga dinamica de
+       modulos incluida- y los App Intents en Swift adentro. Se abre la casilla que
+       NotasGnothiHost/33 dio por inexistente. -->
+
+  <PropertyGroup>
+    <TargetFramework>net9.0-ios</TargetFramework>
+    <OutputType>Exe</OutputType>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <SupportedOSPlatformVersion>16.0</SupportedOSPlatformVersion>
+    <RootNamespace>Lab.IntentsDesdeNet</RootNamespace>
+
+    <!-- Nombre e id DISTINTOS de las otras dos apps. En el simulador van a convivir tres
+         "Gnothi" y \(.applicationName) tiene que resolver a este sin ambiguedad. -->
+    <ApplicationId>com.ncubo.gnothi.lab-intents</ApplicationId>
+    <ApplicationTitle>Gnothi Intents</ApplicationTitle>
+    <ApplicationDisplayVersion>1.0</ApplicationDisplayVersion>
+    <ApplicationVersion>1</ApplicationVersion>
+
+    <!-- Sin linker, como el Debug de Gnothi.iOS: estamos midiendo, no adelgazando. -->
+    <MtouchLink>None</MtouchLink>
+    <PublishAot>false</PublishAot>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <!-- LA LIBRERIA SWIFT, enlazada ESTATICA.
+
+         La produce Swift/armar.sh con swiftc directo -sin proyecto de Xcode- para controlar
+         cada flag, en particular -emit-const-values-path, que es lo que el procesador de
+         metadata necesita.
+
+         ForceLoad: sin esto el linker borra la conformance a AppIntent porque ningun codigo la
+         referencia. Es la trampa mas probable del reportero.
+
+         Frameworks=AppIntents: el ejecutable final tiene que cargar AppIntents.framework, o el
+         runtime ni mira la metadata. La libreria estatica no lo arrastra sola; hay que
+         pedirlo aca.
+
+         Condicionado a que exista para que en Windows siga compilando el C# -util para no
+         romper el resto- pero armar.sh ABORTA si falta, asi que en la Mac nunca se mide sin
+         ella. -->
+    <NativeReference Include="Swift\out\libGnothiIntents.a" Condition="Exists('Swift\out\libGnothiIntents.a')">
+      <Kind>Static</Kind>
+      <ForceLoad>True</ForceLoad>
+      <SmartLink>False</SmartLink>
+      <Frameworks>AppIntents Foundation</Frameworks>
+    </NativeReference>
+  </ItemGroup>
+
+</Project>

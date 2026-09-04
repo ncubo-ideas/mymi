@@ -76,7 +76,14 @@ internal sealed class TotalDeFacturas
 	public bool HayDatos { get; init; }
 
 	[JsonPropertyName("total")]
-	[Description("Suma de todas las facturas registradas.")]
+	// SIN MONEDA, y no es un olvido: la institucion manda `preciosUnitarios` y punto -- no hay
+	// moneda en ningun tramo de la cadena, ni en el evento ni en el dominio ni en el journal.
+	// Ponerle una aca seria que el modulo AFIRME algo que la institucion nunca dijo, que es
+	// justo lo que este diseno no hace. Asi que se declara la ausencia: medido, cuando no se
+	// dice nada el asistente rellena el hueco solo y contesta "30.996,5 unidades".
+	[Description("Suma de todas las facturas registradas. Viene SIN moneda: la institucion no la "
+		+ "informa, asi que este modulo no la sabe. Es un numero pelado y hay que decirlo asi, sin "
+		+ "ponerle moneda ni unidad.")]
 	public decimal Total { get; init; }
 
 	[JsonPropertyName("cantidadDeFacturas")]

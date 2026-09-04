@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<!-- EL CONTENEDOR COMPARTIDO CON LA CARATULA.
+	     El Host de .NET deja ahi la foto (Gnothi.Movil/Instantanea.cs) y los App Intents de
+	     Swift la leen. Es la unica via: los App Intents solo existen en Swift y el Host esta
+	     en .NET, y cruzarlos directo costaria NativeAOT y perder la carga dinamica de modulos.
+
+	     ESTO SOLO ANDA ENTRE APPS DEL MISMO TEAM ID, que es por lo que sirve entre las dos
+	     nuestras y NO serviria para que una institucion entregue la suya.
+
+	     NO ALCANZA CON ESTE ARCHIVO: el App Group tiene que estar habilitado en el portal de
+	     Apple para los dos app IDs (este y el del spike de Siri) y venir en el perfil de
+	     aprovisionamiento. Si falta, GetContainerUrl devuelve null EN SILENCIO. Por eso el
+	     ViewController lo escribe en el log al arrancar. -->
+	<key>com.apple.security.application-groups</key>
+	<array>
+		<string>group.com.ncubo.gnothi</string>
+	</array>
+</dict>
+</plist>
