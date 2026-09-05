@@ -367,11 +367,12 @@ async Task Garantia()
         (Sobre(36, 60000, "2025-12-15", unidad),
             "el SOBRE: 36 meses o 60000 de distancia, publicado el dia de la entrega"),
 
-        (LecturaEn(50000, "2025-12-15", unidad),
+        (LecturaEn(49600, "2025-12-15", unidad),
             "una lectura del odometro EN LA MISMA UNIDAD que las dos de arriba, que es lo que hace "
             + "falta para que la mitad de distancia se pueda medir. Cae el MISMO DIA que la primera "
-            + "de la narrativa y con otro valor, asi que el horario la rechaza: ese rechazo es lo "
-            + "que hace aparecer el banner del navegador, y esta aca a proposito"),
+            + "de la narrativa y MAS ABAJO que ella, asi que corrida DESPUES de la narrativa la "
+            + "agenda la rechaza -- por debajo, no por el dia --, y ese rechazo es lo que hace "
+            + "aparecer el banner del navegador. Corrido solo contra un journal vacio entra"),
 
         (Sobre(48, 80000, "2026-11-01", unidad),
             "y el sobre RE-PUBLICADO, mas largo: rige desde su instante de publicacion hacia "
