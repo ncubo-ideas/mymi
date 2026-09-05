@@ -248,6 +248,12 @@ sealed class EventoDelConcesionario
     [JsonPropertyName("months")]             public int Months { get; init; }
     [JsonPropertyName("distance")]           public int Distance { get; init; }
 
+    /// <summary>La placa de este vehiculo, tal como la agencia la publico.</summary>
+    [JsonPropertyName("plate")]              public string Plate { get; init; } = "";
+
+    /// <summary>Desde cuando rige esa placa.</summary>
+    [JsonPropertyName("assignedAt")]         public DateTime AssignedAt { get; init; }
+
     [JsonPropertyName("branch")]             public string Branch { get; init; } = "";
     [JsonPropertyName("subject")]            public string Subject { get; init; } = "";
     [JsonPropertyName("enteredAt")]          public DateTime EnteredAt { get; init; }
@@ -294,6 +300,8 @@ sealed class EventoDelConcesionario
             $"entregado el {DeliveredAt:yyyy-MM-dd} con {Reading} {Unit} de odometro",
         "WarrantyEnvelopePublished" =>
             $"sobre de {Months} meses o {Distance} {Unit}, publicado el {PublishedAt:yyyy-MM-dd}",
+        "PlateAssigned" =>
+            $"placa {Plate}, asignada el {AssignedAt:yyyy-MM-dd}",
 
         "ShopEntryRecorded" =>
             $"entro a {Branch} el {EnteredAt:yyyy-MM-dd HH:mm} por {Subject}",
@@ -334,7 +342,7 @@ sealed class AlmacenDeEventos
         "ServicingPolicyPublished", "SpecificationRevisionSealed",
         "SpecificationRevisionSuperseded",
 
-        "VehicleDelivered", "WarrantyEnvelopePublished",
+        "VehicleDelivered", "WarrantyEnvelopePublished", "PlateAssigned",
 
         "ShopEntryRecorded", "ShopCollectionRecorded", "ShopStayRecorded",
 
@@ -501,6 +509,8 @@ sealed class AlmacenDeEventos
                 Reading = pedido.Reading,
                 Months = pedido.Months,
                 Distance = pedido.Distance,
+                Plate = pedido.Plate ?? "",
+                AssignedAt = pedido.AssignedAt,
                 Branch = pedido.Branch ?? "",
                 Subject = pedido.Subject ?? "",
                 EnteredAt = pedido.EnteredAt,
@@ -595,6 +605,9 @@ sealed class HechoAInyectar
     [JsonPropertyName("reading")]            public int Reading { get; set; }
     [JsonPropertyName("months")]             public int Months { get; set; }
     [JsonPropertyName("distance")]           public int Distance { get; set; }
+
+    [JsonPropertyName("plate")]              public string Plate { get; set; }
+    [JsonPropertyName("assignedAt")]         public DateTime AssignedAt { get; set; }
 
     [JsonPropertyName("branch")]             public string Branch { get; set; }
     [JsonPropertyName("subject")]            public string Subject { get; set; }

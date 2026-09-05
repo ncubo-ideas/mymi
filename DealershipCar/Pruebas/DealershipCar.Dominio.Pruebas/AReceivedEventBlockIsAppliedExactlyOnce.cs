@@ -180,9 +180,9 @@ namespace DealershipCar.Dominio.Pruebas
 		}
 
 		// CADA HECHO QUE ENTRA DEJA EL PUNTO DE CONTROL EN SU PROPIO NUMERO DE EVENTO, y son
-		// VEINTITRES scripts los que lo prometen: cinco de la agenda, once de la especificacion, dos
-		// del perfil de este vehiculo, TRES de las estadias en el taller y DOS del libro de costos. Es
-		// la promesa que hace exacto el resume, y no se hereda de un script al siguiente.
+		// VEINTICUATRO scripts los que lo prometen: cinco de la agenda, once de la especificacion,
+		// TRES del perfil de este vehiculo, TRES de las estadias en el taller y DOS del libro de
+		// costos. Es la promesa que hace exacto el resume, y no se hereda de un script al siguiente.
 		//
 		// ESTA PRUEBA EXISTE POR LA PASADA DE FALSIFICACION DE LA INGESTA DE LA FICHA. Quitarle
 		// logbook.Advance al script del fluido -- y al del intervalo de servicio -- dejo la suite EN
@@ -212,7 +212,7 @@ namespace DealershipCar.Dominio.Pruebas
 
 			everything.AddRange(ADealershipNarrative.TheWholeStory());
 			everything.AddRange(ADealershipNarrative.TheWholeSpecSheet());
-			everything.AddRange(ADealershipNarrative.TheDeliveryAndTheEnvelope());
+			everything.AddRange(ADealershipNarrative.TheDeliveryTheEnvelopeAndThePlate());
 			everything.AddRange(ADealershipNarrative.TheStays());
 			everything.AddRange(ADealershipNarrative.TheCosts());
 
@@ -238,11 +238,11 @@ namespace DealershipCar.Dominio.Pruebas
 				swept.Add(signal.Tipo);
 			}
 
-			Assert.That(swept.Count, Is.EqualTo(23),
-				"Son VEINTITRES scripts de ingesta con hecho -- cinco de la agenda, once de la "
-				+ "especificacion, dos del perfil del vehiculo, tres de las estadias en el taller y dos "
+			Assert.That(swept.Count, Is.EqualTo(24),
+				"Son VEINTICUATRO scripts de ingesta con hecho -- cinco de la agenda, once de la "
+				+ "especificacion, tres del perfil del vehiculo, tres de las estadias en el taller y dos "
 				+ "del libro de costos -- mas el comando suelto que avanza el punto de control cuando el "
-				+ "dominio rechaza uno, que es el veinticuatro y no tiene hecho que aplicar.");
+				+ "dominio rechaza uno, que es el veinticinco y no tiene hecho que aplicar.");
 		}
 
 		// LAS DOS PROMESAS VUELVEN A MEDIRSE SOBRE LOS ONCE HECHOS DE LA ESPECIFICACION, y hace falta

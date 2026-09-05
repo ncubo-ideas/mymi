@@ -57,7 +57,10 @@ namespace DealershipCar.Dominio.Pruebas
 			//
 			// Y SUBIO 23 -> 24 CON EL DTO DE LAS ASIGNACIONES DE PLACA, que es UN archivo: la raiz paso
 			// de 36 a 37 y el margen sigue siendo TRECE.
-			new object[] { TheCodeOfTheShellsAsData.App, 24 },
+			//
+			// Y SUBIO 24 -> 25 CON EL MENSAJE DEL FEED DE LA PLACA, que es UN archivo: la raiz paso de
+			// 37 a 38 y el margen sigue siendo TRECE. Va en Events/, que es de esta misma raiz.
+			new object[] { TheCodeOfTheShellsAsData.App, 25 },
 			new object[] { TheCodeOfTheShellsAsData.Frontera, 2 },
 			// EL PISO DE Consola SUBIO 4 -> 5 CON EL GUION DE LOS GASTOS, que es UN archivo: la raiz
 			// paso de 5 a 6 y el margen sigue siendo UNO, que es el mas apretado de las ocho raices

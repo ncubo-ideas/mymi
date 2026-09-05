@@ -219,9 +219,9 @@ namespace DealershipCar.Dominio.Pruebas
 				Is.Null);
 		}
 
-		// LA RUTA RECONOCE LOS VEINTITRES, y esto es lo que impide que las pruebas de arriba queden
+		// LA RUTA RECONOCE LOS VEINTICUATRO, y esto es lo que impide que las pruebas de arriba queden
 		// verdes para siempre: una ruta que devolviera null a todo las pasaria todas. Son CINCO de la
-		// agenda escritos a mano, ONCE de la especificacion, DOS del perfil del vehiculo, TRES de las
+		// agenda escritos a mano, ONCE de la especificacion, TRES del perfil del vehiculo, TRES de las
 		// estadias y DOS del libro de costos, y cada grupo se cuenta APARTE -- meterlos en una sola
 		// cuenta haria que ninguna de las cinco dijera lo que dice.
 		//
@@ -272,12 +272,12 @@ namespace DealershipCar.Dominio.Pruebas
 				+ "puerta. Si este numero baja, la ficha de la narrativa dejo de traer uno de cada "
 				+ "tipo y el barrido de arriba mide menos de lo que dice.");
 
-			// Y LOS DOS DEL PERFIL DE ESTE VEHICULO SE CUENTAN APARTE, no adentro de los once. Son
+			// Y LOS TRES DEL PERFIL DE ESTE VEHICULO SE CUENTAN APARTE, no adentro de los once. Son
 			// hechos de OTRO global de raiz -- este carro, no el modelo -- y meterlos en la cuenta de
 			// arriba haria que ese once dejara de decir lo que dice.
 			HashSet<string> ofThisVehicle = new HashSet<string>();
 
-			foreach (SenalDeEvento signal in ADealershipNarrative.TheDeliveryAndTheEnvelope())
+			foreach (SenalDeEvento signal in ADealershipNarrative.TheDeliveryTheEnvelopeAndThePlate())
 			{
 				IMensajeDeEvento message = DealershipEventRoute.Route(signal);
 
@@ -290,9 +290,9 @@ namespace DealershipCar.Dominio.Pruebas
 				ofThisVehicle.Add(signal.Tipo);
 			}
 
-			Assert.That(ofThisVehicle.Count, Is.EqualTo(2),
-				"Son DOS tipos de hecho del perfil del vehiculo, uno por comando de la agencia: la "
-				+ "entrega y el sobre.");
+			Assert.That(ofThisVehicle.Count, Is.EqualTo(3),
+				"Son TRES tipos de hecho del perfil del vehiculo, uno por comando de la agencia: la "
+				+ "entrega, el sobre y la placa.");
 
 			// Y LOS TRES DE LAS ESTADIAS SE CUENTAN APARTE POR LO MISMO: son hechos de una CUARTA
 			// global de raiz -- el registro de estadias de este carro -- y sumarlos a cualquiera de
@@ -343,7 +343,7 @@ namespace DealershipCar.Dominio.Pruebas
 		// EL TAG DE CADA MENSAJE ES SU PROPIO NOMBRE DE TIPO, y esto se enumera POR REFLEXION y no
 		// contra una lista escrita a mano: la lista de la narrativa no puede ver un tipo de mensaje
 		// que nadie ruteo y que nadie le agrego. Enumerar los tipos es enumerar los sitios donde la
-		// regla se decide (C57), y son VEINTITRES.
+		// regla se decide (C57), y son VEINTICUATRO.
 		//
 		// POR QUE IMPORTA EL NOMBRE. El tag viaja por tres sitios mas: la ruta lo compara, el mock lo
 		// lista en TiposConocidos, y el inyector lo escribe en el guion. Ninguno de esos tres tiene
@@ -358,8 +358,8 @@ namespace DealershipCar.Dominio.Pruebas
 				if (typeof(IMensajeDeEvento).IsAssignableFrom(candidate) && !candidate.IsInterface)
 					messages.Add(candidate);
 
-			Assert.That(messages.Count, Is.EqualTo(23),
-				"Son VEINTITRES tipos de mensaje: cinco de la agenda, once de la especificacion, DOS "
+			Assert.That(messages.Count, Is.EqualTo(24),
+				"Son VEINTICUATRO tipos de mensaje: cinco de la agenda, once de la especificacion, TRES "
 				+ "del perfil de este vehiculo, TRES de las estadias en el taller y DOS del libro de "
 				+ "costos. Si este numero sube, hay un tipo nuevo -- y los barridos que se apoyan en la "
 				+ "lista de la narrativa no lo van a ver hasta que alguien lo agregue ahi.");
@@ -387,9 +387,9 @@ namespace DealershipCar.Dominio.Pruebas
 				}
 			});
 
-			// Y LOS VEINTITRES ESTAN EN LA NARRATIVA, que es lo que hace que los barridos de las otras
-			// pruebas midan los veintitres y no veintidos. Son CINCO listas porque el feed le escribe a
-			// cinco globales de raiz, y el union de las cinco es lo que esta prueba mira.
+			// Y LOS VEINTICUATRO ESTAN EN LA NARRATIVA, que es lo que hace que los barridos de las
+			// otras pruebas midan los veinticuatro y no veintitres. Son CINCO listas porque el feed le
+			// escribe a cinco globales de raiz, y el union de las cinco es lo que esta prueba mira.
 			HashSet<string> inTheNarrative = new HashSet<string>();
 
 			foreach (SenalDeEvento signal in ADealershipNarrative.TheWholeStory())
@@ -398,7 +398,7 @@ namespace DealershipCar.Dominio.Pruebas
 			foreach (SenalDeEvento signal in ADealershipNarrative.TheWholeSpecSheet())
 				inTheNarrative.Add(signal.Tipo);
 
-			foreach (SenalDeEvento signal in ADealershipNarrative.TheDeliveryAndTheEnvelope())
+			foreach (SenalDeEvento signal in ADealershipNarrative.TheDeliveryTheEnvelopeAndThePlate())
 				inTheNarrative.Add(signal.Tipo);
 
 			foreach (SenalDeEvento signal in ADealershipNarrative.TheStays())
@@ -864,15 +864,15 @@ namespace DealershipCar.Dominio.Pruebas
 				+ "limites propios -- asi que la frontera no puede decidir por el.");
 		}
 
-		// LOS TRES DESCARTES QUE TODO HECHO COMPARTE, sobre los dos nuevos. Mismo barrido que el de
-		// los once, y hace falta aparte por lo mismo: ninguno de los tres puede quedar cubierto por
-		// casualidad en uno de los dos.
+		// LOS TRES DESCARTES QUE TODO HECHO COMPARTE, sobre los TRES del perfil. Mismo barrido que el
+		// de los once, y hace falta aparte por lo mismo: ninguno de los tres puede quedar cubierto por
+		// casualidad en otro.
 		[Test]
 		public void EveryVehicleRecordFactChecksItsTagItsEventNumberAndItsPayload()
 		{
 			Assert.Multiple(() =>
 			{
-				foreach (SenalDeEvento signal in ADealershipNarrative.TheDeliveryAndTheEnvelope())
+				foreach (SenalDeEvento signal in ADealershipNarrative.TheDeliveryTheEnvelopeAndThePlate())
 				{
 					Assert.That(
 						DealershipEventRoute.Route(
@@ -1476,8 +1476,8 @@ namespace DealershipCar.Dominio.Pruebas
 		// -- asi que el vehiculo es la URL, y un hecho que llegara con un VIN adentro estaria diciendo
 		// de que carro es por segunda vez, con la posibilidad de contradecir a la primera.
 		//
-		// SE ENUMERAN LOS VEINTITRES Y NO SOLO LOS DOS NUEVOS: la regla es de la app entera, y un tipo
-		// que la rompiera podria ser cualquiera.
+		// SE ENUMERAN LOS VEINTICUATRO Y NO SOLO LOS DOS NUEVOS: la regla es de la app entera, y un
+		// tipo que la rompiera podria ser cualquiera.
 		[Test]
 		public void TheIdentityOfTheVehicleIsTheFeedsAndNoFactCarriesAVin()
 		{
@@ -1487,9 +1487,9 @@ namespace DealershipCar.Dominio.Pruebas
 				if (typeof(IMensajeDeEvento).IsAssignableFrom(candidate) && !candidate.IsInterface)
 					messages.Add(candidate);
 
-			Assert.That(messages.Count, Is.EqualTo(23),
-				"El mismo VEINTITRES de arriba, re-derivado aca: si este barrido midiera menos tipos que "
-				+ "aquel, estaria diciendo de menos hechos que los que hay.");
+			Assert.That(messages.Count, Is.EqualTo(24),
+				"El mismo VEINTICUATRO de arriba, re-derivado aca: si este barrido midiera menos tipos "
+				+ "que aquel, estaria diciendo de menos hechos que los que hay.");
 
 			Assert.Multiple(() =>
 			{

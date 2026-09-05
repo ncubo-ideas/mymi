@@ -2107,6 +2107,7 @@ namespace DealershipCar.App
 				if (message is VehicleDelivered delivery) return ApplyVehicleDelivered(delivery);
 				if (message is WarrantyEnvelopePublished envelope)
 					return ApplyWarrantyEnvelopePublished(envelope);
+				if (message is PlateAssigned assignment) return ApplyPlateAssigned(assignment);
 
 				if (message is ShopEntryRecorded entry) return ApplyShopEntryRecorded(entry);
 				if (message is ShopCollectionRecorded collection)
@@ -2528,6 +2529,24 @@ namespace DealershipCar.App
 				p["distance",    typeof(int)]      = message.Distance;
 				p["unit",        typeof(Enum)]     = WireName.DistanceUnit(message.Unit, "unit");
 				p["publishedAt", typeof(DateTime)] = InUtc(message.PublishedAt);
+			})
+			.PerformCheckThenCommand();
+		}
+
+		private string ApplyPlateAssigned(PlateAssigned message)
+		{
+			return app.Using(
+				scriptForChk: TheEventIsNew,
+				@"
+					{
+						profile.RecordPlateAssignment(@plate, @assignedAt);
+						logbook.Advance(@event);
+					}
+				")
+			.WithParameters(p => {
+				p["event",      typeof(long)]     = message.EventNumber;
+				p["plate",      typeof(string)]   = message.Plate;
+				p["assignedAt", typeof(DateTime)] = InUtc(message.AssignedAt);
 			})
 			.PerformCheckThenCommand();
 		}

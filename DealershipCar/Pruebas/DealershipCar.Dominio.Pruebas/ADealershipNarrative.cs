@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using Puppets.Portador;
 
@@ -353,13 +354,17 @@ namespace DealershipCar.Dominio.Pruebas
 				+ ",\"whatPreservesCover\":\"" + whatPreservesCover + "\"}");
 		}
 
-		// ------------------------------------- la entrega y el sobre de este vehiculo, como feed
+		// ------------------------------- la entrega, el sobre y la placa de este vehiculo, como feed
 		//
 		// LA TERCERA LISTA, y son tres porque el feed le escribe a tres globales de raiz: la agenda
 		// (TheWholeStory), la ficha del fabricante (TheWholeSpecSheet) y el perfil de este vehiculo
-		// (esta). Meter estos dos tipos en cualquiera de las otras dos listas haria que el barrido que
-		// cuenta ONCE tipos de la especificacion contara trece, y contarlos es lo que impide que ese
+		// (esta). Meter estos TRES tipos en cualquiera de las otras dos listas haria que el barrido que
+		// cuenta ONCE tipos de la especificacion contara catorce, y contarlos es lo que impide que ese
 		// barrido se acorte sin que nadie lo note.
+		//
+		// EL NOMBRE ENUMERA LO QUE TRAE, a proposito: LP-3 le agrego la placa y tuvo que renombrarlo.
+		// Un nombre que se queda quieto mientras la lista crece deja de decir que hay adentro, y este
+		// modulo ya tiene un censo cuyo nombre es falso desde hace cinco tareas.
 		//
 		// HAY DOS SOBRES Y UNA SOLA ENTREGA, y la pluralidad es del sobre a proposito: un registro con
 		// un solo sobre no puede mostrar que la ley del sobre sea por instante de PUBLICACION, porque
@@ -381,12 +386,23 @@ namespace DealershipCar.Dominio.Pruebas
 		internal const int TheSecondDistance = 40000;
 		internal const string TheSecondEnvelopePublication = "2026-01-01T00:00:00Z";
 
+		// LA PLACA VIENE CON GUION Y SU LLAVE NO LO LLEVA, que es lo que hace que leer una de las dos
+		// no pruebe nada de la otra. Es la misma que el otro modulo publica para su carro, y una sola:
+		// que una segunda no reemplace a la primera es ley de la placa y lo miden las pruebas de la
+		// rebanada, no esta narrativa, que es la que todo barrido recorre entera.
+		internal const string ThePlateAsPublished = "BQR-482";
+		internal const string ThePlateJoinKey = "BQR482";
+		internal const string ThePlateAssignmentInstant = "2025-03-01T00:00:00Z";
+
+		internal static readonly DateTime TheDayThePlateIsAskedFor =
+			new DateTime(2026, 6, 1, 0, 0, 0, DateTimeKind.Utc);
+
 		// Cuantas senales del perfil se aplican, y hasta donde queda la bitacora cuando entro entero.
 		// Escritas aparte para que una prueba pueda afirmarlas sin contar la lista a mano.
-		internal const int ProfileSignalsThatApply = 3;
-		internal const long TheLastProfileEvent = 29;
+		internal const int ProfileSignalsThatApply = 4;
+		internal const long TheLastProfileEvent = 30;
 
-		internal static IReadOnlyList<SenalDeEvento> TheDeliveryAndTheEnvelope()
+		internal static IReadOnlyList<SenalDeEvento> TheDeliveryTheEnvelopeAndThePlate()
 		{
 			return new List<SenalDeEvento>
 			{
@@ -397,7 +413,17 @@ namespace DealershipCar.Dominio.Pruebas
 
 				Envelope(29, TheSecondTerm, TheSecondDistance, TheEnvelopeUnit,
 					TheSecondEnvelopePublication),
+
+				PlateAssignment(30, ThePlateAsPublished, ThePlateAssignmentInstant),
 			};
+		}
+
+		internal static SenalDeEvento PlateAssignment(long number, string plate, string assignedAt)
+		{
+			return new SenalDeEvento(number, "PlateAssigned",
+				"{\"id\":" + number + ",\"tipo\":\"PlateAssigned\""
+				+ ",\"plate\":\"" + plate + "\""
+				+ ",\"assignedAt\":\"" + assignedAt + "\"}");
 		}
 
 		internal static SenalDeEvento Delivered(
@@ -439,8 +465,8 @@ namespace DealershipCar.Dominio.Pruebas
 		// cerrara todo dejaria esas dos sin nada distinto que contestar.
 		//
 		// EL ORDEN IMPORTA Y NO ES UN DETALLE: RecordEntry rechaza una segunda entrada mientras haya
-		// otra estadia abierta, asi que la entrega del 32 tiene que llegar antes de la entrada del 33.
-		// Los numeros arrancan en el 30 y siguen al perfil, porque el proveedor sirve en orden desde
+		// otra estadia abierta, asi que la entrega del 33 tiene que llegar antes de la entrada del 34.
+		// Los numeros arrancan en el 31 y siguen al perfil, porque el proveedor sirve en orden desde
 		// el punto de control y esta lista es ese orden escrito a mano.
 		internal const string TheFirstShopBranch = "Taller Central";
 		internal const string TheFirstShopSubject = "Cambio de frenos";
@@ -466,19 +492,19 @@ namespace DealershipCar.Dominio.Pruebas
 		// Cuantas senales de las estadias se aplican, y hasta donde queda la bitacora cuando entraron
 		// enteras. Escritas aparte para que una prueba pueda afirmarlas sin contar la lista a mano.
 		internal const int StaySignalsThatApply = 4;
-		internal const long TheLastStayEvent = 33;
+		internal const long TheLastStayEvent = 34;
 
 		internal static IReadOnlyList<SenalDeEvento> TheStays()
 		{
 			return new List<SenalDeEvento>
 			{
-				CompletedStay(30, TheFirstShopBranch, TheFirstShopSubject,
+				CompletedStay(31, TheFirstShopBranch, TheFirstShopSubject,
 					TheFirstShopEntry, TheFirstShopCollection, TheFirstShopDays),
 
-				ShopEntry(31, TheSecondShopBranch, TheSecondShopSubject, TheSecondShopEntry),
-				ShopCollection(32, TheSecondShopCollection, TheSecondShopDays),
+				ShopEntry(32, TheSecondShopBranch, TheSecondShopSubject, TheSecondShopEntry),
+				ShopCollection(33, TheSecondShopCollection, TheSecondShopDays),
 
-				ShopEntry(33, TheOpenShopBranch, TheOpenShopSubject, TheOpenShopEntry),
+				ShopEntry(34, TheOpenShopBranch, TheOpenShopSubject, TheOpenShopEntry),
 			};
 		}
 
@@ -558,18 +584,18 @@ namespace DealershipCar.Dominio.Pruebas
 		// Cuantas senales del libro se aplican, y hasta donde queda la bitacora cuando entraron enteras.
 		// Escritas aparte para que una prueba pueda afirmarlas sin contar la lista a mano.
 		internal const int CostSignalsThatApply = 3;
-		internal const long TheLastCostEvent = 36;
+		internal const long TheLastCostEvent = 37;
 
 		internal static IReadOnlyList<SenalDeEvento> TheCosts()
 		{
 			return new List<SenalDeEvento>
 			{
-				DurableCost(34, TheTyresIncurred, TheTyresAmount, TheTyresCurrency, TheTyresSubject,
+				DurableCost(35, TheTyresIncurred, TheTyresAmount, TheTyresCurrency, TheTyresSubject,
 					TheTyresLifeInMonths),
 
-				RecurringCost(35, TheWashIncurred, TheWashAmount, TheWashCurrency, TheWashSubject),
+				RecurringCost(36, TheWashIncurred, TheWashAmount, TheWashCurrency, TheWashSubject),
 
-				RecurringCost(36, TheOilChangeIncurred, TheOilChangeAmount, TheOilChangeCurrency,
+				RecurringCost(37, TheOilChangeIncurred, TheOilChangeAmount, TheOilChangeCurrency,
 					TheOilChangeSubject),
 			};
 		}

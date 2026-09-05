@@ -60,8 +60,8 @@ namespace DealershipCar.Dominio.Pruebas
 	// TheOwnerIsNeverASourceOfAFactAboutTheirOwnVehicle, con el mismo limite.
 	//
 	// LAS OPERACIONES SON CIENTO CINCUENTA Y UNA Y LOS SCRIPTS SON MAS, y la ingesta es donde la
-	// diferencia se vuelve grande: Apply es UNA operacion de la puerta y tiene VEINTICUATRO scripts
-	// detras -- uno por cada tipo de hecho recibido, que son veintitres, mas el comando suelto que
+	// diferencia se vuelve grande: Apply es UNA operacion de la puerta y tiene VEINTICINCO scripts
+	// detras -- uno por cada tipo de hecho recibido, que son veinticuatro, mas el comando suelto que
 	// avanza el punto de control cuando el dominio rechaza el hecho. Contar operaciones y contar
 	// scripts son dos cuentas distintas, y la que S5 obliga a hacer es la de los scripts.
 	//
@@ -79,6 +79,12 @@ namespace DealershipCar.Dominio.Pruebas
 	// puesto a la puerta. Lo unico que se movio es la cuenta de SCRIPTS de arriba -- de veintidos a
 	// veinticuatro -- y esa cuenta es prosa, asi que la unica cosa que la mantiene honesta es
 	// re-derivarla contra el numero de tipos de mensaje que la app consume.
+	//
+	// Y EL QUE AGREGO LicensePlate/LP-3 ES EL MISMO CASO UNA TERCERA VEZ: la asignacion de placa entra
+	// por ese mismo Apply y aplica el comando que LP-2 ya le habia puesto a la puerta, asi que la lista
+	// de abajo no se movio. La cuenta de SCRIPTS de arriba paso de veinticuatro a VEINTICINCO, y se
+	// re-derivo contra los VEINTICUATRO tipos que EveryMessageTypeThisAppConsumesTagsItselfWith
+	// ItsOwnTypeName cuenta por reflexion, que es la unica de las dos cuentas que una prueba afirma.
 	//
 	// Y LA DIFERENCIA VA PARA EL OTRO LADO TAMBIEN: StaysBetween es UNA operacion y su script tiene
 	// CINCO lineas, una por columna, en una sola consulta. Correr la operacion las corre las cinco;
@@ -997,27 +1003,36 @@ namespace DealershipCar.Dominio.Pruebas
 				"La hoja quedo sellada, asi que los scripts no solo parsearon: publicaron.");
 		}
 
-		// LOS DOS SCRIPTS DE INGESTA DEL PERFIL DEL VEHICULO: la entrega y el sobre, que aplican por
-		// los DOS comandos que la puerta ya tenia y no agregan ninguna operacion.
+		// LOS TRES SCRIPTS DE INGESTA DEL PERFIL DEL VEHICULO: la entrega, el sobre y la placa, que
+		// aplican por los TRES comandos que la puerta ya tenia y no agregan ninguna operacion.
 		//
-		// LA DISCRIMINACION ES LO CARO DE ESTA PRUEBA, y sin ella se quedaria verde con los dos
-		// scripts escribiendo en el global equivocado: correr los dos y afirmar que nada revento no
+		// LA DISCRIMINACION ES LO CARO DE ESTA PRUEBA, y sin ella se quedaria verde con los tres
+		// scripts escribiendo en el global equivocado: correr los tres y afirmar que nada revento no
 		// distingue un script que publica de uno que no. Asi que cada hecho se vuelve a leer por LA
 		// LECTURA DE LA PUERTA QUE CONTESTARIA DISTINTO -- la frase del sobre trae sus dos mitades con
 		// su unidad, y los tres datos de la entrega salen uno por uno.
 		//
 		// TODO EN UnitB -- millas -- porque 'mi' en la frase es la unica prueba visible de que la
 		// unidad cruzo el cable y no se fabrico del otro lado.
+		//
+		// Y LA PLACA SE LEE POR SUS DOS TEXTOS, no por uno. El publicado lleva guion y la llave no, asi
+		// que un script que atara el parametro al campo equivocado, o que dejara la normalizacion del
+		// lado de aca, cambiaria uno de los dos renglones -- mientras que preguntar solo si hay placa
+		// se quedaria verde con cualquier texto adentro.
 		[Test]
-		public void BothProfileIngestionScriptsOfTheDoorParseBindAndRun()
+		public void EveryProfileIngestionScriptOfTheDoorParsesBindsAndRuns()
 		{
 			Assert.That(journal.Api.IsWarrantyEnvelopePublished(), Is.False,
 				"Antes de nada no hay sobre: sin esto los renglones de abajo podrian estar mirando un "
 				+ "sobre que puso otra prueba.");
 			Assert.That(journal.Api.HasDeliveryBeenRecorded(), Is.False);
+			Assert.That(journal.Api.IsAPlatePublished(ADealershipNarrative.TheDayThePlateIsAskedFor),
+				Is.False,
+				"Y no hay placa: sin esto los renglones de abajo podrian estar mirando una que puso "
+				+ "otra prueba.");
 
 			foreach (Puppets.Portador.SenalDeEvento signal
-				in ADealershipNarrative.TheDeliveryAndTheEnvelope())
+				in ADealershipNarrative.TheDeliveryTheEnvelopeAndThePlate())
 			{
 				Assert.That(Apply(signal), Is.EqualTo(""),
 					"El script de " + signal.Tipo + " tenia que correr sin rechazo.");
@@ -1025,7 +1040,7 @@ namespace DealershipCar.Dominio.Pruebas
 
 			Assert.That(journal.Api.LastEventApplied(),
 				Is.EqualTo(ADealershipNarrative.TheLastProfileEvent),
-				"Y los tres avanzan el punto de control en el MISMO comando que el hecho.");
+				"Y los cuatro avanzan el punto de control en el MISMO comando que el hecho.");
 
 			// LA ENTREGA, dato por dato: si el script cruzara la lectura con el instante, o tomara la
 			// unidad de otro lado, cada uno de estos tres renglones lo dice por separado.
@@ -1046,6 +1061,17 @@ namespace DealershipCar.Dominio.Pruebas
 				+ "quedarse con la primera publicacion, cambia esta frase.");
 			Assert.That(journal.Api.ReadEnvelopePublishedAt(),
 				Is.EqualTo(new DateTime(2026, 1, 1, 0, 0, 0, DateTimeKind.Utc)));
+
+			// LA PLACA, sus DOS textos: el publicado tal como llego y la llave normalizada. Son
+			// distintos entre si -- guion contra sin guion -- asi que cada renglon descarta un script
+			// que hubiera atado el parametro al otro campo.
+			DateTime asks = ADealershipNarrative.TheDayThePlateIsAskedFor;
+
+			Assert.That(journal.Api.IsAPlatePublished(asks), Is.True);
+			Assert.That(journal.Api.ReadPlateAsPublished(asks),
+				Is.EqualTo(ADealershipNarrative.ThePlateAsPublished));
+			Assert.That(journal.Api.ReadPlateJoinKey(asks),
+				Is.EqualTo(ADealershipNarrative.ThePlateJoinKey));
 		}
 
 		// LOS TRES SCRIPTS DE INGESTA DE LAS ESTADIAS: la entrada, la entrega y la estadia entera de un

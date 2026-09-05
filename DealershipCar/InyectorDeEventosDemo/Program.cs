@@ -19,6 +19,7 @@ try
         case "historia":  await Historia(); break;
         case "ficha":     await Ficha(); break;
         case "garantia":  await Garantia(); break;
+        case "placa":     await Placa(); break;
         case "taller":    await Taller(); break;
         case "costos":    await Costos(); break;
         case "senuelo":   await Senuelo(); break;
@@ -108,6 +109,8 @@ static string Resumen(JsonElement e)
         "WarrantyEnvelopePublished" =>
             $"sobre de {Numero(e, "months")} meses o {Numero(e, "distance")} "
             + $"{Texto(e, "unit")}, publicado el {Dia(e, "publishedAt")}",
+        "PlateAssigned" =>
+            $"placa {Texto(e, "plate")}, asignada el {Dia(e, "assignedAt")}",
 
         "ShopEntryRecorded" =>
             $"entro a {Texto(e, "branch")} el {Dia(e, "enteredAt")} por {Texto(e, "subject")}",
@@ -188,6 +191,9 @@ async Task Inyectar()
         reading = Entero(Arg(args, "--reading", "0")),
         months = Entero(Arg(args, "--months", "0")),
         distance = Entero(Arg(args, "--distance", "0")),
+
+        plate = Arg(args, "--plate", ""),
+        assignedAt = Arg(args, "--assignedAt", "2026-09-01"),
 
         branch = Arg(args, "--branch", ""),
         subject = Arg(args, "--subject", ""),
@@ -424,6 +430,56 @@ async Task Garantia()
     }
 }
 
+async Task Placa()
+{
+    Console.WriteLine($"publicando las placas de {recurso}/{id}...");
+    Console.WriteLine("  TRES asignaciones, y ninguna corrige a la anterior: una re-placa es un hecho");
+    Console.WriteLine("  nuevo, asi que la historia se queda con las tres");
+    Console.WriteLine();
+
+    (object cuerpo, string porque)[] guion =
+    {
+        (PlacaAsignada("BQR-482", "2025-03-01T00:00:00Z"),
+            "la PRIMERA, del dia de la entrega. Es la que el otro modulo publica para este carro, "
+            + "y viene CON guion: la pantalla muestra ese texto y el cruce usa la llave"),
+
+        (PlacaAsignada("CLM 903", "2026-06-15T00:00:00Z"),
+            "la SEGUNDA, separada con un ESPACIO en vez de un guion. Desde su instante es la "
+            + "vigente, y la primera se sigue leyendo por el suyo"),
+
+        (PlacaAsignada("AAA-001", "2024-11-20T00:00:00Z"),
+            "y una TERCERA asignada ANTES que las dos, llegando DESPUES: entra en su sitio de la "
+            + "historia y NO desplaza a la vigente. El orden de llegada no es el de vigencia"),
+    };
+
+    foreach ((object cuerpo, string porque) in guion)
+    {
+        using var r = await http.PostAsJsonAsync($"{recurso}/{id}/events/hecho", cuerpo);
+        Console.WriteLine($"  HTTP {(int)r.StatusCode}   {porque}");
+    }
+
+    Console.WriteLine();
+    Console.WriteLine("LAS DOS SEPARACIONES DEJAN LA MISMA CLASE DE LLAVE, y esa es la mitad que no se");
+    Console.WriteLine("ve en pantalla: el guion y el espacio se caen al normalizar, asi que la llave con");
+    Console.WriteLine("que se cruza este carro contra la estacion no lleva ninguno de los dos. Lo que la");
+    Console.WriteLine("pantalla muestra es el texto TAL COMO llego, y son dos textos de un solo hecho.");
+    Console.WriteLine();
+    Console.WriteLine("EL DESORDEN ESTA A PROPOSITO y no se ordena como la entrega. Una placa vieja que");
+    Console.WriteLine("llega tarde NO reemplaza a la vigente -- son dos hechos y no dos versiones de uno");
+    Console.WriteLine("--, mientras que una entrega vieja que llega tarde SI reemplaza, porque la entrega");
+    Console.WriteLine("es un solo hecho historico que se pudo registrar mal. Dos ordenamientos en un");
+    Console.WriteLine("mismo global de raiz, y los dos son correctos.");
+    Console.WriteLine();
+    Console.WriteLine("ESTO SE PUEDE VOLVER A CORRER contra el mismo journal, SIN NINGUNA BANDERA: una");
+    Console.WriteLine("asignacion no toma ninguna clave que se gaste. La misma placa en el mismo instante");
+    Console.WriteLine("dos veces son DOS asignaciones, que es lo correcto -- nada de lo que llego se");
+    Console.WriteLine("descarta.");
+    Console.WriteLine();
+    Console.WriteLine("UN TEXTO QUE NO DEJA NINGUNA PLACA AL NORMALIZAR SE DESCARTA EN EL BORDE y no deja");
+    Console.WriteLine("marca. Para verlo:");
+    Console.WriteLine("  inyectar --tipo PlateAssigned --plate --- --assignedAt 2026-01-15T09:00:00Z");
+}
+
 async Task Taller()
 {
     bool dejaUnaAbierta = !args.Contains("--sin-abrir");
@@ -591,6 +647,11 @@ static object Sobre(int meses, int distancia, string publicado, string unidad) =
 {
     tipo = "WarrantyEnvelopePublished", months = meses, distance = distancia, unit = unidad,
     publishedAt = publicado,
+};
+
+static object PlacaAsignada(string texto, string asignada) => new
+{
+    tipo = "PlateAssigned", plate = texto, assignedAt = asignada,
 };
 
 static object Cruce(string kind, string observado) => new
@@ -793,6 +854,11 @@ static void Ayuda()
     Console.WriteLine("                                --unit (default UnitB) manda las TRES unidades del");
     Console.WriteLine("                                guion; con UnitA calza con la narrativa del mock y la");
     Console.WriteLine("                                mitad de distancia se puede medir");
+    Console.WriteLine("  placa                         publica las placas de este vehiculo: TRES");
+    Console.WriteLine("                                asignaciones, y una asignada ANTES que las dos que");
+    Console.WriteLine("                                ya estan, llegando DESPUES: entra y NO desplaza a la");
+    Console.WriteLine("                                vigente, que es el desorden AL REVES del de la");
+    Console.WriteLine("                                entrega. Se puede repetir sin ninguna bandera");
     Console.WriteLine("  taller                        publica las estadias en el taller de este vehiculo:");
     Console.WriteLine("                                una entera de un solo acto, y una entrada con su");
     Console.WriteLine("                                entrega. La respuesta son los DIAS y no una duracion");
@@ -832,12 +898,14 @@ static void Ayuda()
     Console.WriteLine("    SpecificationRevisionSealed      (solo --revisionCode)");
     Console.WriteLine("    SpecificationRevisionSuperseded  --supersededByCode");
     Console.WriteLine();
-    Console.WriteLine("  y los DOS del perfil de ESTE vehiculo, uno por comando de la agencia. No llevan");
+    Console.WriteLine("  y los TRES del perfil de ESTE vehiculo, uno por comando de la agencia. No llevan");
     Console.WriteLine("  --revisionCode: no son del catalogo del modelo, son de este carro. Ninguno de los");
-    Console.WriteLine("  dos toma una clave que se gaste, asi que los dos se pueden repetir.");
+    Console.WriteLine("  tres toma una clave que se gaste, asi que los tres se pueden repetir. Un --plate");
+    Console.WriteLine("  que no deja ninguna placa al normalizar se DESCARTA en el borde y no deja marca.");
     Console.WriteLine();
     Console.WriteLine("    VehicleDelivered                 --deliveredAt --reading --unit");
     Console.WriteLine("    WarrantyEnvelopePublished        --months --distance --unit --publishedAt");
+    Console.WriteLine("    PlateAssigned                    --plate --assignedAt");
     Console.WriteLine();
     Console.WriteLine("  y los TRES de las estadias en el taller, uno por comando de la sucursal. Los");
     Console.WriteLine("  dias van SEPARADOS POR COMA y cada uno en yyyy-MM-dd: los dice la sucursal, no");
@@ -871,6 +939,7 @@ static void Ayuda()
     Console.WriteLine("    inyectar --tipo VehicleDelivered --deliveredAt 2025-03-01 --reading 120 --unit UnitB");
     Console.WriteLine("    inyectar --tipo WarrantyEnvelopePublished --months 36 --distance 60000");
     Console.WriteLine("             --unit UnitB --publishedAt 2025-03-01");
+    Console.WriteLine("    inyectar --tipo PlateAssigned --plate BQR-482 --assignedAt 2025-03-01");
     Console.WriteLine("    inyectar --tipo ShopEntryRecorded --branch \"Taller Central\" --subject Frenos");
     Console.WriteLine("             --enteredAt 2026-05-11T08:30:00Z");
     Console.WriteLine("    inyectar --tipo ShopCollectionRecorded --collectedAt 2026-05-13T16:45:00Z");

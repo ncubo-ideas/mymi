@@ -173,12 +173,12 @@ namespace DealershipCar.Dominio.Pruebas
 		[Test]
 		public void RedeliveringTheWholeBlockCostsNothingAndChangesNothing()
 		{
-			foreach (SenalDeEvento signal in ADealershipNarrative.TheDeliveryAndTheEnvelope())
+			foreach (SenalDeEvento signal in ADealershipNarrative.TheDeliveryTheEnvelopeAndThePlate())
 				Assert.That(Apply(signal), Is.EqualTo(""));
 
 			string afterTheFirstPass = TheBytesOf(journal.Folder);
 
-			foreach (SenalDeEvento signal in ADealershipNarrative.TheDeliveryAndTheEnvelope())
+			foreach (SenalDeEvento signal in ADealershipNarrative.TheDeliveryTheEnvelopeAndThePlate())
 				Assert.That(Apply(signal), Does.Contain("evento ya procesado"),
 					"Rechazado por REPETIDO, bajo el read lock, sin llegar a haber comando: " +
 					signal.Tipo);
