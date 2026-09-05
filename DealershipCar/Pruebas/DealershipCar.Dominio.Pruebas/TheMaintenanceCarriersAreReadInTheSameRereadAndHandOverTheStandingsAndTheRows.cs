@@ -406,9 +406,10 @@ namespace DealershipCar.Dominio.Pruebas
 				"state.ReadWhatTheServicesCost()",
 				"state.ReadHowThisVehicleIsDriven()",
 				"state.ReadWhatThisVehicleHasCost()",
+				"state.ReadThePlateOfThisVehicle()",
 			})
 				Assert.That(page, Does.Contain(read),
-					"La pagina no hace la lectura '" + read + "'. Las siete se leen en el mismo Reread: "
+					"La pagina no hace la lectura '" + read + "'. Las ocho se leen en el mismo Reread: "
 					+ "una que se leyera aparte contestaria sobre otro momento del mismo registro.");
 		}
 
@@ -427,6 +428,18 @@ namespace DealershipCar.Dominio.Pruebas
 		// La septima lee su propio instante igual que la sexta, y ademas sus dos ventanas tienen que
 		// ser LAS MISMAS que las del ritmo: el costo por distancia cruza los dos globales de raiz, asi
 		// que una ventana movida un segundo pondria el gasto de un periodo sobre la distancia de otro.
+		//
+		// Y SON OCHO DESDE EL BLOQUE DE LA PLACA, ampliada por cuarta vez nombrando la octava en su
+		// sitio. La octava lee su propio instante: cual placa rige se decide contra un momento, asi
+		// que separada de las otras siete contestaria por otro momento del mismo registro. Y AGREGARLA
+		// AL FINAL NO PONIA ROJO NADA -- la afirmacion es por contencion, asi que la secuencia de
+		// siete seguia adentro de la de ocho: una lectura nueva puesta al final se queda fuera del
+		// instrumento sin que nada avise, que es por lo que se amplia y no se deja.
+		//
+		// LOS DOS NOMBRES DE ESTE PAR LLEVAN UNA CUENTA Y LAS DOS SON FALSAS DESDE OD-5 -- "TheFive"
+		// son ocho, y "BothCarriers ... TheOtherThreeSheets" son dos y seis. Renombrarlos huerfanaria
+		// dos citas de PLAN-BuildOrder.md, que son el REGISTRO de lo que hicieron aquellas tareas, asi
+		// que la decision es de quien lea esto y no de esta tarea.
 		[Test]
 		public void AndTheFiveReadsAreContiguousWithNothingBetweenThemThatCouldAwait()
 		{
@@ -441,11 +454,12 @@ namespace DealershipCar.Dominio.Pruebas
 					+ "operations = state.ReadWhereEachOperationStands(); "
 					+ "costs = state.ReadWhatTheServicesCost(); "
 					+ "use = state.ReadHowThisVehicleIsDriven(); "
-					+ "spend = state.ReadWhatThisVehicleHasCost();"),
-				"Las siete lecturas dejaron de estar una detras de la otra. Una que se haga aparte -- en "
+					+ "spend = state.ReadWhatThisVehicleHasCost(); "
+					+ "plate = state.ReadThePlateOfThisVehicle();"),
+				"Las ocho lecturas dejaron de estar una detras de la otra. Una que se haga aparte -- en "
 				+ "otro metodo, o despues de un await -- contesta sobre otro momento del mismo registro, "
 				+ "y la pantalla mezcla dos: eso es exactamente lo que 'un solo Reread' existe para "
-				+ "impedir. Buscar cada lectura por separado NO lo ve, porque las siete siguen escritas.");
+				+ "impedir. Buscar cada lectura por separado NO lo ve, porque las ocho siguen escritas.");
 
 			// Y NINGUNA SE HACE DOS VECES. Un segundo sitio de llamada es un segundo momento aunque el
 			// bloque de arriba siga intacto.
@@ -458,6 +472,7 @@ namespace DealershipCar.Dominio.Pruebas
 				"state.ReadWhatTheServicesCost()",
 				"state.ReadHowThisVehicleIsDriven()",
 				"state.ReadWhatThisVehicleHasCost()",
+				"state.ReadThePlateOfThisVehicle()",
 			})
 				Assert.That(TimesItSays(page, read), Is.EqualTo(1),
 					"'" + read + "' se hace en mas de un sitio de la pagina.");

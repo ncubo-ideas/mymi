@@ -49,6 +49,12 @@
                 <span class="d-row__k">VIN</span>
                 <span class="d-row__v d-row__v--mono">@Vin</span>
             </div>
+            <div class="d-row d-row--stack" id="placa">
+                <span class="d-row__k">Placa</span>
+                <span class="d-row__v" style="font-weight:600;font-size:13px">
+                    @(Placa is not null ? Placa.Says : "—")
+                </span>
+            </div>
             <div class="d-row">
                 <span class="d-row__k">Odómetro</span>
                 <span class="d-row__v">@Odometro @OdometroUnidad</span>
@@ -252,6 +258,14 @@ else
     /// Va aparte de la ficha porque la vigencia de un precio se juzga contra un instante.
     /// </summary>
     [Parameter] public WhatTheServicesCost Costs { get; set; }
+
+    /// <summary>
+    /// La placa de este vehiculo, leida en el mismo momento que la ficha. Va aparte de la mitad del
+    /// vehiculo porque aquella mide este carro contra su sobre y la placa es el nombre publico del
+    /// carro. Se pinta la frase del dominio, que lleva la placa y desde cuando rige; la llave de
+    /// cruce no llega hasta aca, porque la misma placa escrita de dos formas se lee como un defecto.
+    /// </summary>
+    [Parameter] public ThePlateOfThisVehicle Placa { get; set; }
 
     [Parameter] public string Modelo { get; set; } = "";
     [Parameter] public string Vin { get; set; } = "";

@@ -210,6 +210,7 @@ else
                     <Vehiculo Sheet="@sheet"
                               Stands="@stands"
                               Costs="@costs"
+                              Placa="@plate"
                               Modelo="@(sheet is not null ? sheet.Model : "")"
                               Vin="@vin"
                               Odometro="@(stands is not null && stands.OdometerKnown ? ComoSeLee.Miles(stands.Odometer) : "--")"
@@ -321,6 +322,7 @@ else
     private WhatTheServicesCost costs;
     private HowThisVehicleIsDriven use;
     private WhatThisVehicleHasCost spend;
+    private ThePlateOfThisVehicle plate;
 
     private string error = "";
     private string destinationProblem = "";
@@ -458,6 +460,7 @@ else
         costs = state.ReadWhatTheServicesCost();
         use = state.ReadHowThisVehicleIsDriven();
         spend = state.ReadWhatThisVehicleHasCost();
+        plate = state.ReadThePlateOfThisVehicle();
     }
 
     private static Dictionary<string, string> Empty() => EveryKindStartsAt("");

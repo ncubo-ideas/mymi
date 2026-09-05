@@ -86,7 +86,11 @@ namespace DealershipCar.Dominio.Pruebas
 			// Y SUBIO 25 -> 26 CON EL PORTADOR DEL LIBRO DE COSTOS, que es UN archivo: la raiz paso de
 			// 28 a 29 y el margen sigue siendo TRES. El bloque nuevo no trajo ningun .razor: va en el
 			// archivo que SH-7 creo, que es donde P-10 pone los cuatro bloques.
-			new object[] { TheCodeOfTheShellsAsData.Wasm, 26 },
+			//
+			// Y SUBIO 26 -> 27 CON EL PORTADOR DE LA PLACA, que es UN archivo: la raiz paso de 29 a 30
+			// y el margen sigue siendo TRES. Tampoco trajo ningun .razor: el bloque es un renglon mas
+			// de la tarjeta de informacion que Vehiculo.razor ya tenia.
+			new object[] { TheCodeOfTheShellsAsData.Wasm, 27 },
 			new object[] { TheCodeOfTheShellsAsData.EndPointDeEventos, 1 },
 			new object[] { TheCodeOfTheShellsAsData.InyectorDeEventosDemo, 1 },
 			new object[] { TheCodeOfTheShellsAsData.PaginaDeDescarga, 1 },

@@ -504,6 +504,17 @@ namespace DealershipCar.Wasm
 				TheTwelveMonthsBefore(asOf));
 		}
 
+		/// <summary>
+		/// La placa de este vehiculo, leida al instante en que la pantalla pregunta, porque cual placa
+		/// rige se decide contra un momento. El instante lo lee la pantalla del reloj de la maquina y
+		/// no se lo pide a nadie: la placa la publica el concesionario y esta app solo la muestra.
+		/// </summary>
+		public ThePlateOfThisVehicle ReadThePlateOfThisVehicle()
+		{
+			Require();
+			return ThePlateOfThisVehicle.ReadThrough(api, TheInstantTheScreenAsksAt());
+		}
+
 		public bool HasCredential() { Require(); return api.StoredToken().Length > 0; }
 
 		public long JournalEntries() { Require(); return app.Actor.CurrentEntryId; }

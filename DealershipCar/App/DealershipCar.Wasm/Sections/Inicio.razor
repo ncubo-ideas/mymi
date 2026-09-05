@@ -252,9 +252,11 @@
 
     /// <summary>
     /// El enlace de WhatsApp con el mensaje ya escrito. Lo que va en el texto es lo que el registro
-    /// ya sabe -- la operacion, el modelo y el odometro -- y nada mas: ni nombre ni placa, porque
-    /// la app no los tiene y no los va a inventar. Sonia lo lee antes de enviarlo y lo cambia si
-    /// quiere; el navegador es quien abre WhatsApp, esta app no manda nada.
+    /// ya sabe -- la operacion, el modelo y el odometro -- y nada mas. El nombre no va porque la app
+    /// no lo tiene y no lo va a inventar; la placa SI la tiene y aun asi no va, que es otra cosa: el
+    /// mensaje lo escribe una persona sobre su propio carro y ahi la placa no identifica nada que el
+    /// modelo y el odometro no digan ya. Sonia lo lee antes de enviarlo y lo cambia si quiere; el
+    /// navegador es quien abre WhatsApp, esta app no manda nada.
     /// </summary>
     private string EnlaceParaAgendar
     {
