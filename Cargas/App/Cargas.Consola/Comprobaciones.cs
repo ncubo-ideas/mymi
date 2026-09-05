@@ -336,6 +336,26 @@ namespace Cargas.Consola
 				bitacora.VehiculoDe("BQR-482").AliasDeLaFicha);
 			Igual("y sin rendimiento de fabrica vuelve a cero", "0",
 				bitacora.VehiculoDe("BQR-482").RendimientoDeFabricaDeLaFicha.ToString("0"));
+	
+			// EL ANIO EN BLANCO ES "NO LO SE", igual que el rendimiento de fabrica de la
+			// linea de arriba. Lo unico que la ficha exige es el alias: marca, modelo y
+			// color entran vacios sin chistar, y el anio no tenia por que ser distinto.
+			//
+			// La lectura ya lo trataba asi -AnioDeLaFicha devuelve 0 sin ficha, y la
+			// caratula lee ese 0 como campo vacio-; la escritura no. Guardar la ficha con
+			// el anio en blanco reventaba con ErrorDeDominio en vez de guardarla.
+			bitacora.CompletarFicha("BQR-482", "la nave", "Toyota", "Corolla", 0, "gris", 0m);
+			Igual("el anio en blanco se guarda como ausencia", "0",
+				bitacora.VehiculoDe("BQR-482").AnioDeLaFicha.ToString());
+			Igual("y el resto de la ficha entra igual", "la nave",
+				bitacora.VehiculoDe("BQR-482").AliasDeLaFicha);
+
+			// Y LO IMPLAUSIBLE SIGUE SIENDO IMPLAUSIBLE. Aceptar el blanco no es aceptar
+			// cualquier cosa: un anio tecleado mal se sigue rechazando.
+			Revienta<ErrorDeDominio>("un anio de tres digitos se sigue rechazando", () =>
+				bitacora.CompletarFicha("BQR-482", "la nave", "Toyota", "Corolla", 199, "gris", 0m));
+			Revienta<ErrorDeDominio>("y uno del futuro lejano tambien", () =>
+				bitacora.CompletarFicha("BQR-482", "la nave", "Toyota", "Corolla", 2101, "gris", 0m));
 		}
 
 		// LA UNIDAD ES PRESENTACION, EL VEREDICTO ES JUICIO. Es la comprobacion que
