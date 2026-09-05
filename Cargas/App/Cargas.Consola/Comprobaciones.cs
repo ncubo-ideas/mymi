@@ -250,11 +250,6 @@ namespace Cargas.Consola
 				Formato(calculados[5].Kilometros, "0"));
 		}
 
-		// LO QUE SE PIDE CONFIRMAR HAY QUE DECIRLO PRIMERO. La pantalla pedia "la
-		// confirmacion del tanque" y ofrecia "si, quedo asi" sin decir nunca que era
-		// "asi", con los mismos dos botones tanto si la inferencia decia lleno como
-		// parcial. La suposicion es del dominio -la hace FormaDeCorte- asi que la frase
-		// que la enuncia tambien.
 		// EL TABLERO ES DE UN CARRO, asi que su gasto tambien. El instrumento mostraba el
 		// gasto de TODOS los vehiculos al lado de la autonomia, el rendimiento y el costo
 		// por kilometro de UNO: con dos carros mentia por omision y nada lo decia.
@@ -580,6 +575,11 @@ namespace Cargas.Consola
 				() => bitacora.Afiliar("SOCIO-1", "Sonia", default));
 		}
 
+		// LO QUE SE PIDE CONFIRMAR HAY QUE DECIRLO PRIMERO. La pantalla pedia "la
+		// confirmacion del tanque" y ofrecia "si, quedo asi" sin decir nunca que era
+		// "asi", con los mismos dos botones tanto si la inferencia decia lleno como
+		// parcial. La suposicion es del dominio -la hace FormaDeCorte- asi que la frase
+		// que la enuncia tambien.
 		private static void LaSuposicionDelTanqueSeEnunciaAntesDePreguntar()
 		{
 			Titulo("lo que se pide confirmar se enuncia antes de preguntar");
