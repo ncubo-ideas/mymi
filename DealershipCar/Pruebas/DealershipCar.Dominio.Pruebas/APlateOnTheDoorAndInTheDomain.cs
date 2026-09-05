@@ -6,21 +6,25 @@ using NUnit.Framework;
 
 namespace DealershipCar.Dominio.Pruebas
 {
-	// EL ANDAMIO DE LP-0, Y SE CAE EN LP-1 Y LP-2. DEC-101.
+	// EL ANDAMIO DE LP-0, Y LA MITAD DEL DOMINIO YA SE CAYO EN LP-1. DEC-101.
 	//
 	// E4 pide las pruebas ANTES de que exista el dominio. En este modulo hay UN solo proyecto de
 	// pruebas, asi que una prueba que nombre un miembro que todavia no existe deja la SUITE ENTERA sin
 	// compilar -- las 2000 y pico que ya estan verdes incluidas -- y LP-0 no puede certificar nada, ni
-	// la sesion del usuario que trabaja en el mismo arbol. Se entra por REFLEXION: compila hoy, se pone
-	// roja en runtime, y el rojo NOMBRA el miembro que falta.
+	// la sesion del usuario que trabaja en el mismo arbol. Se entro por REFLEXION: compilaba, se ponia
+	// roja en runtime, y el rojo NOMBRABA el miembro que faltaba.
 	//
-	// LA OBLIGACION QUE VIENE CON ESO: cuando LP-1 y LP-2 escriban los miembros, ESTE ARCHIVO se
-	// reescribe a llamadas directas. La reflexion que sobreviva a un verde es un instrumento mas debil
+	// LO QUE LP-1 BAJO, que es la obligacion que venia con eso: TheKeyOf, YieldsAKey y TheRefusalOf
+	// son ahora llamadas DIRECTAS a TheJoinKey, y los tipos del dominio se nombran con typeof en vez
+	// de resolverse por cadena. Una reflexion que sobrevive a un verde es un instrumento mas debil
 	// para siempre -- un cambio de firma que el compilador habria atrapado se vuelve un
 	// MissingMethodException, y un miembro resuelto por nombre sigue pasando cuando le cambian los
 	// TIPOS de los parametros por debajo.
 	//
-	// Y NO CONFUNDIR ESTO CON TheDoorRecognisesTheNamesOfEveryClosedSetItSpeaks, que entra por
+	// LO QUE SIGUE EN PIE Y ES DE LP-2: todo lo de LA PUERTA. DealershipCarAPI todavia no declara
+	// ninguno de los seis miembros, asi que nombrarlos hoy no compilaria.
+	//
+	// Y NO CONFUNDIR NADA DE ESTO CON TheDoorRecognisesTheNamesOfEveryClosedSetItSpeaks, que entra por
 	// reflexion y tiene razon PARA SIEMPRE: DealershipCar.App no declara ningun InternalsVisibleTo, asi
 	// que WireName no se puede nombrar desde aca ni despues. Aquello es un aparejo; esto es un andamio,
 	// y en un diff se ven iguales.
@@ -55,15 +59,6 @@ namespace DealershipCar.Dominio.Pruebas
 		// como los de VehicleDelivered -- "deliveredAt", "reading", "unit" -- que es el patron que
 		// LP-3 copia.
 		internal const string TheEventType = "PlateAssigned";
-
-		internal const string TheDomainAssembly = "DealershipCar.Dominio";
-
-		internal const string TheJoinKeyType = TheDomainAssembly + ".TheJoinKey";
-		internal const string TheLicensePlateType = TheDomainAssembly + ".LicensePlate";
-		internal const string ThePlateAssignmentType = TheDomainAssembly + ".APlateAssignment";
-		internal const string ThePlateOnRecordType = TheDomainAssembly + ".PlateOnRecord";
-		internal const string TheAssignedPlateType = TheDomainAssembly + ".AnAssignedPlate";
-		internal const string TheNoPlateOnRecordType = TheDomainAssembly + ".NoPlateOnRecord";
 
 		// ===== LA PUERTA ==================================================================
 
@@ -115,48 +110,34 @@ namespace DealershipCar.Dominio.Pruebas
 			return null;
 		}
 
-		// ===== EL DOMINIO =================================================================
+		// ===== EL DOMINIO, POR LLAMADA DIRECTA ============================================
 
-		internal static Type ADomainType(string fullName)
-		{
-			Type found = Assembly.Load(new AssemblyName(TheDomainAssembly)).GetType(fullName);
+		// LP-1 BAJO ESTE ANDAMIO. El proyecto de pruebas esta en el InternalsVisibleTo del dominio,
+		// asi que los tres miembros se nombran y el compilador es quien defiende la firma: si
+		// TheJoinKey.Of dejara de tomar un string, esto no compila -- por reflexion habria seguido
+		// verde hasta que alguien leyera el rojo de otra prueba.
 
-			Assert.That(found, Is.Not.Null,
-				"El dominio todavia no declara '" + fullName + "'. Es LP-1, y hasta entonces esta "
-				+ "prueba tiene que estar roja: es E4.");
-
-			return found;
-		}
-
-		// La llave de union de un texto recibido, por el tipo del dominio. Total con reventon: un
-		// texto que no deja nada al normalizar no tiene llave.
+		// La llave de union de un texto recibido. Total con reventon: un texto que no deja nada al
+		// normalizar no tiene llave.
 		internal static string TheKeyOf(string received)
 		{
-			object made = CallStatic(ADomainType(TheJoinKeyType), "Of", received);
-
-			PropertyInfo value = made.GetType().GetProperty(
-				"Value", BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic);
-
-			Assert.That(value, Is.Not.Null,
-				"TheJoinKey no expone el texto normalizado. Es lo unico que tiene que cruzar.");
-
-			return (string)value.GetValue(made);
+			return TheJoinKey.Of(received).Value;
 		}
 
-		// EL PREDICADO TOTAL. Contesta para TODO texto, incluidos los que el constructor rechaza --
-		// que es la mitad que una propiedad sobre LicensePlate no podria contestar, porque para
-		// llegar a ella hay que construir una placa primero.
+		// EL PREDICADO TOTAL. Contesta para TODO texto, incluidos los que Of rechaza -- que es la
+		// mitad que una propiedad sobre LicensePlate no podria contestar, porque para llegar a ella
+		// hay que construir una placa primero.
 		internal static bool YieldsAKey(string received)
 		{
-			return (bool)CallStatic(ADomainType(TheJoinKeyType), "CanBeMadeFrom", received);
+			return TheJoinKey.CanBeMadeFrom(received);
 		}
 
-		// El rechazo YA VIENE DESENVUELTO: Unwrapped lo hace en el sitio de la invocacion, asi que lo
-		// que llega aca es la excepcion del dominio y no la de la reflexion.
+		// El rechazo llega TAL CUAL: sin reflexion de por medio no hay TargetInvocationException que
+		// desenvolver, asi que lo que se atrapa es la excepcion del dominio y nada mas.
 		internal static Exception TheRefusalOf(string received)
 		{
 			return Assert.Catch(
-				() => TheKeyOf(received),
+				() => TheJoinKey.Of(received),
 				"'" + received + "' no deja nada al normalizar y tiene que ser rechazado.");
 		}
 
@@ -190,17 +171,6 @@ namespace DealershipCar.Dominio.Pruebas
 		private static object Call(DealershipCarAPI door, string name, params object[] arguments)
 		{
 			return Unwrapped(() => TheDoorsMember(name).Invoke(door, arguments));
-		}
-
-		private static object CallStatic(Type type, string name, params object[] arguments)
-		{
-			MethodInfo found = type.GetMethod(
-				name, BindingFlags.Static | BindingFlags.Public | BindingFlags.NonPublic);
-
-			Assert.That(found, Is.Not.Null,
-				"'" + type.Name + "' no declara '" + name + "'. Es LP-1.");
-
-			return Unwrapped(() => found.Invoke(null, arguments));
 		}
 
 		// La reflexion envuelve TODA excepcion del cuerpo en TargetInvocationException. Sin

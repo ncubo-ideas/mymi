@@ -1,12 +1,13 @@
 using System;
+using System.Collections.Generic;
 using System.Globalization;
 
 namespace DealershipCar.Dominio
 {
 	/// <summary>
 	/// Lo que la agencia registra sobre UN carro en particular: cuando lo entrego y con que odometro,
-	/// y el sobre de garantia que le publico. Es el agregado, uno por <see cref="Vin"/>, y una raiz
-	/// global del DSL.
+	/// el sobre de garantia que le publico, y las placas que le fue asignando. Es el agregado, uno
+	/// por <see cref="Vin"/>, y una raiz global del DSL.
 	/// <para>
 	/// Guarda un ANCLA y dos LIMITES, y calcula todo lo demas -- lo que queda de cada mitad, cual
 	/// llega primero, donde esta parado el vehiculo -- desde un instante recibido y una lectura
@@ -21,6 +22,7 @@ namespace DealershipCar.Dominio
 
 		private Delivery _delivery = Delivery.None;
 		private WarrantyEnvelope _envelope = WarrantyEnvelope.None;
+		private readonly List<APlateAssignment> _assignments = new List<APlateAssignment>();
 
 		/// <summary>
 		/// El constructor ES la creacion, y toma el vehiculo y nada mas. La entrega y el sobre son
@@ -66,6 +68,22 @@ namespace DealershipCar.Dominio
 			if (_envelope.Exists() && publishedAt < _envelope.PublishedAt) return;
 
 			_envelope = published;
+		}
+
+		/// <summary>
+		/// Registra la placa que el concesionario le publico a este vehiculo, con el instante desde
+		/// el que rige. Una segunda placa es un HECHO NUEVO y no una correccion de la primera:
+		/// re-placar es ordinario, asi que la anterior se sigue pudiendo leer por su propio instante.
+		/// <para>
+		/// Una asignacion que llega despues pero esta fechada antes se COLOCA donde su instante manda
+		/// y no desplaza a la vigente; con dos instantes iguales rige la ultima en llegar; y la misma
+		/// placa asignada dos veces deja dos filas, porque descartar una seria borrar un hecho que el
+		/// concesionario mando.
+		/// </para>
+		/// </summary>
+		internal void RecordPlateAssignment(string plate, DateTime assignedAt)
+		{
+			Place(new APlateAssignment(new LicensePlate(plate), assignedAt));
 		}
 
 		/// <summary>Si la agencia publico un sobre. TOTAL: nunca revienta.</summary>
@@ -310,6 +328,30 @@ namespace DealershipCar.Dominio
 		private static string TheDay(DateTime instant)
 		{
 			return instant.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture);
+		}
+
+		private void Place(APlateAssignment arriving)
+		{
+			_assignments.Insert(ItsPlaceOnTheAssignmentTimeline(arriving), arriving);
+		}
+
+		private int ItsPlaceOnTheAssignmentTimeline(APlateAssignment arriving)
+		{
+			int place = _assignments.Count;
+
+			while (place > 0 && _assignments[place - 1].AssignedAt > arriving.AssignedAt) place--;
+
+			return place;
+		}
+
+		private PlateOnRecord ThePlateAsOf(DateTime asOf)
+		{
+			PlateOnRecord found = PlateOnRecord.None;
+
+			foreach (APlateAssignment each in _assignments)
+				if (each.AssignedAt <= asOf) found = PlateOnRecord.Of(each);
+
+			return found;
 		}
 	}
 }

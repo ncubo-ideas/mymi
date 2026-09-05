@@ -27,13 +27,14 @@ namespace DealershipCar.Dominio.Pruebas
 	{
 		// ===== PRUEBA 6 · POR ENUMERACION DE LOS MIEMBROS DEL TIPO =========================
 
-		[TestCase(APlateOnTheDoorAndInTheDomain.TheLicensePlateType)]
-		[TestCase(APlateOnTheDoorAndInTheDomain.TheJoinKeyType)]
-		[TestCase(APlateOnTheDoorAndInTheDomain.ThePlateAssignmentType)]
-		public void NoPlateTypeDeclaresEqualityAHashOrIEquatable(string typeName)
+		// LOS TIPOS SE NOMBRAN CON typeof Y YA NO POR CADENA. LP-1 los escribio y el proyecto de
+		// pruebas esta en el InternalsVisibleTo del dominio, asi que un tipo renombrado o borrado deja
+		// de COMPILAR en vez de resolverse a null en runtime (DEC-101).
+		[TestCase(typeof(LicensePlate))]
+		[TestCase(typeof(TheJoinKey))]
+		[TestCase(typeof(APlateAssignment))]
+		public void NoPlateTypeDeclaresEqualityAHashOrIEquatable(Type plate)
 		{
-			Type plate = APlateOnTheDoorAndInTheDomain.ADomainType(typeName);
-
 			var written = new List<string>();
 
 			foreach (MethodInfo each in plate.GetMethods(
@@ -67,12 +68,10 @@ namespace DealershipCar.Dominio.Pruebas
 
 		// Y NINGUNO OFRECE UN "ES LA MISMA" QUE NADIE LLAMA. La omision es la decision (DEC-100), asi
 		// que si alguien lo agrega tiene que borrar esta prueba, y borrar una prueba es un acto.
-		[TestCase(APlateOnTheDoorAndInTheDomain.TheLicensePlateType)]
-		[TestCase(APlateOnTheDoorAndInTheDomain.TheJoinKeyType)]
-		public void AndNoPlateTypeOffersASamenessOperationNobodyCalls(string typeName)
+		[TestCase(typeof(LicensePlate))]
+		[TestCase(typeof(TheJoinKey))]
+		public void AndNoPlateTypeOffersASamenessOperationNobodyCalls(Type plate)
 		{
-			Type plate = APlateOnTheDoorAndInTheDomain.ADomainType(typeName);
-
 			var found = new List<string>();
 
 			foreach (MethodInfo each in plate.GetMethods(
@@ -91,16 +90,11 @@ namespace DealershipCar.Dominio.Pruebas
 		[Test]
 		public void TheTwoVariantsAreSealedAndTheBaseThePairHangsFromIsLeftOpen()
 		{
-			Assert.That(
-				APlateOnTheDoorAndInTheDomain.ADomainType(
-					APlateOnTheDoorAndInTheDomain.TheAssignedPlateType).IsSealed, Is.True);
+			Assert.That(typeof(AnAssignedPlate).IsSealed, Is.True);
 
-			Assert.That(
-				APlateOnTheDoorAndInTheDomain.ADomainType(
-					APlateOnTheDoorAndInTheDomain.TheNoPlateOnRecordType).IsSealed, Is.True);
+			Assert.That(typeof(NoPlateOnRecord).IsSealed, Is.True);
 
-			Type onRecord = APlateOnTheDoorAndInTheDomain.ADomainType(
-				APlateOnTheDoorAndInTheDomain.ThePlateOnRecordType);
+			Type onRecord = typeof(PlateOnRecord);
 
 			Assert.That(onRecord.IsSealed, Is.False,
 				"La base del par queda abierta: es a lo que se extiende una variante nueva.");
@@ -110,17 +104,15 @@ namespace DealershipCar.Dominio.Pruebas
 
 		// TODO EL DOMINIO SIGUE SIENDO internal. Un tipo publico deja que un llamador se salte el
 		// actor, y aca ademas dejaria que una caratula nombrara una placa.
-		[TestCase(APlateOnTheDoorAndInTheDomain.TheLicensePlateType)]
-		[TestCase(APlateOnTheDoorAndInTheDomain.TheJoinKeyType)]
-		[TestCase(APlateOnTheDoorAndInTheDomain.ThePlateAssignmentType)]
-		[TestCase(APlateOnTheDoorAndInTheDomain.ThePlateOnRecordType)]
-		[TestCase(APlateOnTheDoorAndInTheDomain.TheAssignedPlateType)]
-		[TestCase(APlateOnTheDoorAndInTheDomain.TheNoPlateOnRecordType)]
-		public void EveryPlateTypeIsInternal(string typeName)
+		[TestCase(typeof(LicensePlate))]
+		[TestCase(typeof(TheJoinKey))]
+		[TestCase(typeof(APlateAssignment))]
+		[TestCase(typeof(PlateOnRecord))]
+		[TestCase(typeof(AnAssignedPlate))]
+		[TestCase(typeof(NoPlateOnRecord))]
+		public void EveryPlateTypeIsInternal(Type plate)
 		{
-			Assert.That(
-				APlateOnTheDoorAndInTheDomain.ADomainType(typeName).IsPublic, Is.False,
-				typeName + " es publico.");
+			Assert.That(plate.IsPublic, Is.False, plate.FullName + " es publico.");
 		}
 
 		// ===== L4 · NADA SE LLAVEA POR UNA PLACA ==========================================
@@ -131,13 +123,7 @@ namespace DealershipCar.Dominio.Pruebas
 		[Test]
 		public void NoCollectionAnywhereInTheDomainIsKeyedByAPlate()
 		{
-			var plateTypes = new List<Type>
-			{
-				APlateOnTheDoorAndInTheDomain.ADomainType(
-					APlateOnTheDoorAndInTheDomain.TheLicensePlateType),
-				APlateOnTheDoorAndInTheDomain.ADomainType(
-					APlateOnTheDoorAndInTheDomain.TheJoinKeyType),
-			};
+			var plateTypes = new List<Type> { typeof(LicensePlate), typeof(TheJoinKey) };
 
 			var keyed = new List<string>();
 
@@ -167,17 +153,21 @@ namespace DealershipCar.Dominio.Pruebas
 		[Test]
 		public void TheProfileTakesThePlateAsReceivedTextAndNeverAsACarrier()
 		{
-			Type profile = APlateOnTheDoorAndInTheDomain.ADomainType(
-				APlateOnTheDoorAndInTheDomain.TheDomainAssembly + ".VehicleProfile");
+			// LA LLAMADA DIRECTA ES LA MITAD FUERTE, y LP-1 la puso aca. Compila solo si el miembro se
+			// sigue llamando asi y sigue tomando (string, DateTime): un cambio de firma es un error del
+			// COMPILADOR, mientras que resolverlo por nombre lo dejaba pasar hasta runtime -- y con los
+			// tipos de los parametros cambiados por debajo lo dejaba pasar del todo (DEC-101).
+			new VehicleProfile(ADealershipNarrative.TheVin).RecordPlateAssignment(
+				"BQR-482", new DateTime(2026, 1, 15, 9, 0, 0, DateTimeKind.Utc));
 
-			MethodInfo command = profile.GetMethod(
+			MethodInfo command = typeof(VehicleProfile).GetMethod(
 				APlateOnTheDoorAndInTheDomain.TheCommand,
 				BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic);
 
 			Assert.That(command, Is.Not.Null,
-				"VehicleProfile todavia no declara '" + APlateOnTheDoorAndInTheDomain.TheCommand
-				+ "'. Es LP-1, y ESTE nombre es el que el journal congela: lo que se guarda en cada "
-				+ "entrada es el texto del script, y el texto nombra el miembro del DOMINIO.");
+				"VehicleProfile ya no declara '" + APlateOnTheDoorAndInTheDomain.TheCommand
+				+ "'. ESTE nombre es el que el journal congela: lo que se guarda en cada entrada es el "
+				+ "texto del script, y el texto nombra el miembro del DOMINIO.");
 
 			ParameterInfo[] parameters = command.GetParameters();
 
@@ -191,14 +181,15 @@ namespace DealershipCar.Dominio.Pruebas
 			Assert.That(command.ReturnType, Is.EqualTo(typeof(void)));
 		}
 
+		// EL ENSAMBLADO SE ALCANZA POR UN TIPO QUE SE NOMBRA, no por su nombre en una cadena: el
+		// barrido tiene que cubrir los tipos que TODAVIA no existen, asi que sigue siendo reflexion --
+		// pero ya no puede quedarse vacio en silencio porque alguien renombro el ensamblado.
 		private static List<Type> TheDomainsTypes()
 		{
 			var found = new List<Type>();
 
-			foreach (Type each in Assembly.Load(
-				new AssemblyName(APlateOnTheDoorAndInTheDomain.TheDomainAssembly)).GetTypes())
-				if (each.Namespace == APlateOnTheDoorAndInTheDomain.TheDomainAssembly)
-					found.Add(each);
+			foreach (Type each in typeof(VehicleProfile).Assembly.GetTypes())
+				if (each.Namespace == typeof(VehicleProfile).Namespace) found.Add(each);
 
 			return found;
 		}
