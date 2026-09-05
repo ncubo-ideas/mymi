@@ -250,11 +250,6 @@ namespace Cargas.Consola
 				Formato(calculados[5].Kilometros, "0"));
 		}
 
-		// LO QUE SE PIDE CONFIRMAR HAY QUE DECIRLO PRIMERO. La pantalla pedia "la
-		// confirmacion del tanque" y ofrecia "si, quedo asi" sin decir nunca que era
-		// "asi", con los mismos dos botones tanto si la inferencia decia lleno como
-		// parcial. La suposicion es del dominio -la hace FormaDeCorte- asi que la frase
-		// que la enuncia tambien.
 		// EL TABLERO ES DE UN CARRO, asi que su gasto tambien. El instrumento mostraba el
 		// gasto de TODOS los vehiculos al lado de la autonomia, el rendimiento y el costo
 		// por kilometro de UNO: con dos carros mentia por omision y nada lo decia.
@@ -336,6 +331,26 @@ namespace Cargas.Consola
 				bitacora.VehiculoDe("BQR-482").AliasDeLaFicha);
 			Igual("y sin rendimiento de fabrica vuelve a cero", "0",
 				bitacora.VehiculoDe("BQR-482").RendimientoDeFabricaDeLaFicha.ToString("0"));
+	
+			// EL ANIO EN BLANCO ES "NO LO SE", igual que el rendimiento de fabrica de la
+			// linea de arriba. Lo unico que la ficha exige es el alias: marca, modelo y
+			// color entran vacios sin chistar, y el anio no tenia por que ser distinto.
+			//
+			// La lectura ya lo trataba asi -AnioDeLaFicha devuelve 0 sin ficha, y la
+			// caratula lee ese 0 como campo vacio-; la escritura no. Guardar la ficha con
+			// el anio en blanco reventaba con ErrorDeDominio en vez de guardarla.
+			bitacora.CompletarFicha("BQR-482", "la nave", "Toyota", "Corolla", 0, "gris", 0m);
+			Igual("el anio en blanco se guarda como ausencia", "0",
+				bitacora.VehiculoDe("BQR-482").AnioDeLaFicha.ToString());
+			Igual("y el resto de la ficha entra igual", "la nave",
+				bitacora.VehiculoDe("BQR-482").AliasDeLaFicha);
+
+			// Y LO IMPLAUSIBLE SIGUE SIENDO IMPLAUSIBLE. Aceptar el blanco no es aceptar
+			// cualquier cosa: un anio tecleado mal se sigue rechazando.
+			Revienta<ErrorDeDominio>("un anio de tres digitos se sigue rechazando", () =>
+				bitacora.CompletarFicha("BQR-482", "la nave", "Toyota", "Corolla", 199, "gris", 0m));
+			Revienta<ErrorDeDominio>("y uno del futuro lejano tambien", () =>
+				bitacora.CompletarFicha("BQR-482", "la nave", "Toyota", "Corolla", 2101, "gris", 0m));
 		}
 
 		// LA UNIDAD ES PRESENTACION, EL VEREDICTO ES JUICIO. Es la comprobacion que
@@ -560,6 +575,11 @@ namespace Cargas.Consola
 				() => bitacora.Afiliar("SOCIO-1", "Sonia", default));
 		}
 
+		// LO QUE SE PIDE CONFIRMAR HAY QUE DECIRLO PRIMERO. La pantalla pedia "la
+		// confirmacion del tanque" y ofrecia "si, quedo asi" sin decir nunca que era
+		// "asi", con los mismos dos botones tanto si la inferencia decia lleno como
+		// parcial. La suposicion es del dominio -la hace FormaDeCorte- asi que la frase
+		// que la enuncia tambien.
 		private static void LaSuposicionDelTanqueSeEnunciaAntesDePreguntar()
 		{
 			Titulo("lo que se pide confirmar se enuncia antes de preguntar");

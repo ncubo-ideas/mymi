@@ -43,7 +43,7 @@ namespace Cargas.Dominio
 		internal string AliasDeLaFicha => Ficha.Existe ? Ficha.Alias : "";
 		internal string MarcaDeLaFicha => Ficha.Existe ? Ficha.Marca : "";
 		internal string ModeloDeLaFicha => Ficha.Existe ? Ficha.Modelo : "";
-		internal int AnioDeLaFicha => Ficha.Existe ? Ficha.Anio : 0;
+		internal int AnioDeLaFicha => Ficha.Existe ? Ficha.Anio : FichaDelVehiculo.SinAnio;
 		internal string ColorDeLaFicha => Ficha.Existe ? Ficha.Color : "";
 
 		/// <summary>El rendimiento de fabrica en km/L, o 0 si no lo declaro. El cero es

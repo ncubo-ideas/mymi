@@ -14,6 +14,12 @@ namespace Cargas.Dominio
 		/// <summary>La ausencia, como instancia unica.</summary>
 		internal static readonly FichaDelVehiculo Vacia = new FichaVacia();
 
+		/// <summary>El anio que Sonia no aporto. La ficha entera es opcional y sus campos
+		/// tambien: lo unico que exige es el alias, que es lo que la motiva. El cero ya era
+		/// la ausencia del lado de la lectura -Vehiculo.AnioDeLaFicha lo devuelve cuando no
+		/// hay ficha- y ahora tambien del lado de la escritura.</summary>
+		internal const int SinAnio = 0;
+
 		internal static FichaDelVehiculo Completada(string alias, string marca, string modelo,
 			int anio, string color, RendimientoDeFabrica rendimientoDeFabrica) =>
 			new FichaCompletada(alias, marca, modelo, anio, color, rendimientoDeFabrica);
@@ -61,7 +67,16 @@ namespace Cargas.Dominio
 				// no hay ficha que completar.
 				ArgumentNullException.ThrowIfNullOrWhiteSpace(alias);
 				ArgumentNullException.ThrowIfNull(rendimientoDeFabrica);
-				if (anio < 1900 || anio > 2100)
+				// EL ANIO EN BLANCO ES "NO LO SE", no un anio invalido. Marca, modelo y
+				// color entran vacios sin chistar y el rendimiento de fabrica escala su
+				// cero a un tipo de ausencia; el anio era el unico campo opcional que
+				// reventaba. Guardar la ficha con el campo en blanco tiraba
+				// "0 no es un anio de vehiculo verosimil", que ademas no es una guarda del
+				// comando sino una excepcion: la caratula no la podia mostrar como rechazo.
+				//
+				// Lo implausible se sigue rechazando: aceptar la ausencia no es aceptar
+				// cualquier cosa, y un anio tecleado mal tiene que doler.
+				if (anio != SinAnio && (anio < 1900 || anio > 2100))
 					throw new ErrorDeDominio($"{anio} no es un anio de vehiculo verosimil.");
 
 				this.alias = alias.Trim();
