@@ -31,15 +31,28 @@
 @* UN solo lugar para los errores, y arriba. Antes habia dos bloques -uno adentro del
    arranque y otro al final de la pagina- asi que un mismo fallo se veia dos veces, y
    estando abajo quedaba fuera de pantalla: la app parecia no reaccionar al click. *@
+@* role="alert": el error es lo único de esta pantalla que un lector de pantalla tiene que
+   interrumpir para decir. Subirlo arriba resolvió el «parecía no reaccionar al click» para
+   quien ve; sin esto, para quien no ve seguía sin pasar nada. *@
 @if (error.Length > 0)
 {
-    <div class="aviso aviso--problema">
+    <div class="aviso aviso--problema" role="alert">
         <strong>@(estado.EstaArriba ? "No se pudo completar la operación." : "No se pudo abrir la app.")</strong>
         <pre>@error</pre>
     </div>
 }
 
-@if (!estado.EstaArriba)
+@if (!estado.EstaArriba && resolviendo)
+{
+    @* MIENTRAS SE RESUELVE QUÉ HABÍA RECORDADO, no se pinta el elegidor. Hasta que
+       IndexedDB contesta no sabemos si la persona ya eligió, y mostrarle «Elegí dónde» a
+       quien eligió la semana pasada es pedirle que vuelva a decidir. Encima sin la tecla
+       grande, porque «soportado» y «opfs» todavía son null y los tres modos salen
+       deshabilitados. El elegidor aparece SOLO cuando se sabe que no hay nada recordado o
+       que recuperarlo falló. *@
+    <p class="abriendo" role="status" aria-live="polite">@TextoDeAbriendo()</p>
+}
+else if (!estado.EstaArriba)
 {
     <div class="aviso aviso--neutro">
         @* Cuando el handle volvio de IndexedDB pero el permiso caduco, la accion correcta
@@ -172,16 +185,21 @@ else
         caso en que NO hay nada que hacer, y ahí no hay consejo que inventar.               *@
     @* EL @key VA EN EL CUERPO Y NO EN LA <section>, desde que Actualizar vive acá adentro.
 
-       El @key sube en cada Releer y obliga a Blazor a RECREAR estos nodos. Sin él reusa
-       el mismo elemento, la animación de CSS no se vuelve a disparar, y apretar Actualizar
-       no produce ningún cambio visible cuando no entraron exámenes nuevos — o sea que el
-       botón parecía no hacer nada. Medido: `getAnimations()[0].currentTime` se quedaba en
-       1000 y el nodo era idéntico.
+       El @key obliga a Blazor a RECREAR estos nodos. Sin él reusa el mismo elemento, la
+       animación de CSS no se vuelve a disparar, y apretar Actualizar no produce ningún
+       cambio visible cuando no entraron exámenes nuevos — o sea que el botón parecía no
+       hacer nada. Medido: `getAnimations()[0].currentTime` se quedaba en 1000 y el nodo
+       era idéntico.
 
        Pero si la sección ENTERA se recrea, también se recrea el botón que acabás de
        apretar, y el foco de teclado se pierde en el reemplazo del nodo. Con el @key un
-       nivel más abajo la cabecera sobrevive al redibujo —el foco se queda donde estaba— y
-       el cuerpo se vuelve a animar exactamente igual que antes. *@
+       nivel más abajo la cabecera sobrevive al redibujo y el cuerpo se vuelve a animar.
+
+       LA LLAVE ES estado.Refrescos Y NO UN CONTADOR DE ESTA PANTALLA. Un contador local
+       subía en cada Releer, y Releer corre en TODA interacción: declarar el sexo, importar
+       un expediente, arrancar. La animación de entrada se volvía a disparar por tocar un
+       botón que no fue a buscar nada, que es lo contrario de lo que este @key significa.
+       Refrescos sube solo cuando se fue al laboratorio, y por eso dice lo que dice. *@
     @* LA PORTADA MUESTRA DOS COSAS A LA VEZ, como el telefono del landing: el verde que
        dice cuantos valores estan donde tienen que estar, y aparte lo que pide atencion.
        Antes era UNA tarjeta que cambiaba de tono entero, y eso tenia un costo: apenas un
@@ -201,12 +219,19 @@ else
            app se pone al día sola al abrir, así que esto es «volvé a chequear AHORA». *@
         <div class="portada-cabeza">
             <p class="portada-rotulo">tu expediente, hoy</p>
-            <button class="portada-releer" @onclick="Refrescar" disabled="@refrescando">
+            @* aria-busy y no solo el texto: «Actualizando…» cambia el nombre del botón, y
+               un lector de pantalla no vuelve a leerlo si el foco ya estaba ahí. El estado
+               ocupado sí lo anuncia. *@
+            <button class="portada-releer" @onclick="Refrescar" disabled="@refrescando"
+                    aria-busy="@(refrescando ? "true" : "false")">
                 @(refrescando ? "Actualizando…" : "Actualizar")
             </button>
         </div>
 
-        <div class="portada-cuerpo" @key="@($"portada-{redibujo}")">
+        @* aria-live: este bloque ES la respuesta a Actualizar, y el @key lo recrea entero.
+           Sin esto la única señal de que la app fue y volvió es una animación. *@
+        <div class="portada-cuerpo" @key="@($"portada-{estado.Refrescos}")"
+             aria-live="polite">
             @* EL BLOQUE QUE TRANQUILIZA. No se dibuja cuando la severidad es «urgente»:
                el rojo lo reserva el dominio para lo que no puede esperar, y poner un
                «todo está bien» al lado de eso lo contradice. Fuera de ese caso el verde
@@ -412,7 +437,12 @@ else
         <div class="pedido">
             <div class="pedido-cabeza">
                 <span class="pedido-rotulo">falta un dato tuyo</span>
-                <button class="pedido-plegar" @onclick="() => pedidoPlegado = !pedidoPlegado">
+                @* «Ver» y «Ocultar» solos no dicen de qué, y fuera de contexto es lo único
+                   que se oye. El aria-expanded además dice si está abierto, que el texto
+                   deja implícito. *@
+                <button class="pedido-plegar" @onclick="() => pedidoPlegado = !pedidoPlegado"
+                        aria-expanded="@(pedidoPlegado ? "false" : "true")"
+                        aria-label="@(pedidoPlegado ? "Ver el dato que falta" : "Ocultar el dato que falta")">
                     @(pedidoPlegado ? "Ver" : "Ocultar")
                 </button>
             </div>
@@ -436,7 +466,7 @@ else
         <h2 class="seccion">Cómo vienen tus valores</h2>
         @foreach (TendenciaDeAnalito t in analitos)
         {
-            <button class="serie" @key="@($"{t.Analito}-{redibujo}")" @onclick="() => VerSerie(t.Analito)">
+            <button class="serie" @key="@($"{t.Analito}-{estado.Refrescos}")" @onclick="() => VerSerie(t.Analito)">
                 @{ InterpretacionDeAnalito lectura = Lectura(t.Analito); }
                 <div class="serie-cabeza">
                     <div>
@@ -512,7 +542,7 @@ else
        positivo y un aviso suelto. *@
     @foreach (PresenciaDeAnalito p in presencias)
     {
-        <button class="serie" @key="@($"{p.Analito}-{redibujo}")" @onclick="() => VerSerie(p.Analito)">
+        <button class="serie" @key="@($"{p.Analito}-{estado.Refrescos}")" @onclick="() => VerSerie(p.Analito)">
             @{ InterpretacionDeAnalito suya = Lectura(p.Analito); }
             <div class="serie-cabeza">
                 <div>
@@ -557,7 +587,7 @@ else
        volvió a ámbar ya no pide nada. *@
     @foreach (ConstanciaDeAnalito c in constancias)
     {
-        <button class="serie" @key="@($"{c.Analito}-{redibujo}")" @onclick="() => VerSerie(c.Analito)">
+        <button class="serie" @key="@($"{c.Analito}-{estado.Refrescos}")" @onclick="() => VerSerie(c.Analito)">
             @{ InterpretacionDeAnalito suya = Lectura(c.Analito); }
             <div class="serie-cabeza">
                 <div>
@@ -642,13 +672,20 @@ else
             Tus resultados se comparan contra los rangos de <strong>@sexo</strong>.
             @if (cambiandoSexo)
             {
-                <button class="boton boton--enlace" @onclick="@(() => Declarar("hombre"))">hombre</button>
+                @* Un lector de pantalla lista los botones fuera de su frase, y ahí «hombre»
+                   y «Cambiar» no dicen qué hacen. El texto visible se queda como está —la
+                   frase que lo rodea lo explica para quien ve—; el nombre accesible lo dice
+                   entero. *@
+                <button class="boton boton--enlace" @onclick="@(() => Declarar("hombre"))"
+                        aria-label="Comparar contra los rangos de hombre">hombre</button>
                 <text>·</text>
-                <button class="boton boton--enlace" @onclick="@(() => Declarar("mujer"))">mujer</button>
+                <button class="boton boton--enlace" @onclick="@(() => Declarar("mujer"))"
+                        aria-label="Comparar contra los rangos de mujer">mujer</button>
             }
             else
             {
-                <button class="boton boton--enlace" @onclick="() => cambiandoSexo = true">Cambiar</button>
+                <button class="boton boton--enlace" @onclick="() => cambiandoSexo = true"
+                        aria-label="Cambiar el sexo contra el que se comparan tus resultados">Cambiar</button>
             }
         </p>
     }
@@ -671,6 +708,12 @@ else
     private bool instalada;
     private bool refrescando;
 
+    // LO QUE SABEMOS DEL ARRANQUE, y son tres cosas y no dos: hasta que IndexedDB contesta
+    // no sabemos si hay un modo recordado. `resolviendo` es ese rato; `abriendo` dice qué
+    // se está reenganchando, para que el texto lo nombre.
+    private bool resolviendo = true;
+    private string abriendo = "";
+
     private IReadOnlyList<ExamenEnLista> examenes = new List<ExamenEnLista>();
     private IReadOnlyList<TendenciaDeAnalito> analitos = new List<TendenciaDeAnalito>();
     private int cantidad;
@@ -689,11 +732,6 @@ else
     private string sexo = "";
     private bool pedidoPlegado;
     private bool cambiandoSexo;
-
-    // Sube en cada Releer. Es la llave que hace que Blazor recree las tarjetas en vez de
-    // reusarlas, y con eso las formas se vuelven a dibujar: es la respuesta visible a
-    // haber apretado Actualizar.
-    private int redibujo;
 
     // El tono lo decide el DOMINIO, no esta pantalla: es la severidad que salió de
     // recorrer las series, traducida con el mapeo del semáforo de la marca. Ahora pinta
@@ -739,23 +777,76 @@ else
 
     protected override async Task OnInitializedAsync()
     {
-        if (estado.EstaArriba) { Releer(); return; }
+        if (estado.EstaArriba) { resolviendo = false; Releer(); return; }
 
-        soportado = await estado.EstaSoportado();
-        opfs = await estado.OpfsSoportado();
-        sinAlmacenamiento = await estado.MotivoSinAlmacenamiento();
-        instalada = await estado.EstaInstalada();
-        if (soportado != true) return;
+        try
+        {
+            // EL MODO RECORDADO VA PRIMERO, porque es lo único que decide qué pantalla va.
+            // La app ya guardaba cuál eligió la persona la vez pasada y ninguna pantalla lo
+            // consumía: al recargar, quien había elegido «este navegador» volvía al
+            // elegidor como si fuera la primera vez, y quien había elegido carpeta se
+            // reenganchaba de casualidad, por el handle, sin que nadie leyera el modo.
+            string recordado = await estado.ModoRecordado();
+            abriendo = recordado is "opfs" or "carpeta" ? recordado : "";
+            StateHasChanged();
 
-        // Recuperar el handle NO necesita gesto; volver a otorgar el permiso SI. Por eso
-        // acá solo se consulta, y si quedó en 'prompt' la UI ofrece el botón.
-        ResultadoDeCarpeta recuperada = await estado.RecuperarCarpeta();
-        // el estado del permiso lo lleva el puente; la pantalla lo consulta
+            soportado = await estado.EstaSoportado();
+            opfs = await estado.OpfsSoportado();
+            sinAlmacenamiento = await estado.MotivoSinAlmacenamiento();
+            instalada = await estado.EstaInstalada();
 
-        // Con permiso ya otorgado se abre solo: el usuario no tiene que apretar nada
-        // para ver sus propios examenes.
-        if (recuperada.Ok) await Arrancar();
+            // La carpeta necesita revalidar el permiso —sin gesto solo se recupera el
+            // handle—, pero OPFS no necesita nada: si eligió eso, se reengancha sola.
+            if (abriendo == "opfs" && opfs == true)
+            {
+                if ((await estado.UsarAlmacenamientoDelNavegador()).Ok)
+                {
+                    await estado.Arrancar();
+                    Releer();
+                    return;
+                }
+            }
+
+            if (soportado != true) return;
+
+            // Recuperar el handle NO necesita gesto; volver a otorgar el permiso SI. Por eso
+            // acá solo se consulta, y si quedó en 'prompt' la UI ofrece el botón. Se intenta
+            // también sin modo recordado: una instalación anterior a que se guardara el modo
+            // tiene handle y no tiene modo, y no hay que mandarla al elegidor por eso.
+            ResultadoDeCarpeta recuperada = await estado.RecuperarCarpeta();
+            // el estado del permiso lo lleva el puente; la pantalla lo consulta
+            StateHasChanged();
+
+            // Con permiso ya otorgado se abre solo: el usuario no tiene que apretar nada
+            // para ver sus propios examenes.
+            if (recuperada.Ok) { await estado.Arrancar(); Releer(); }
+        }
+        catch (Exception ex)
+        {
+            // Recuperar lo recordado falló —carpeta movida, MEMFS ilegible—. Se dice arriba
+            // y se cae al elegidor: es el caso «no se pudo», no un cartel de espera eterno.
+            var detalle = new System.Text.StringBuilder($"Paso: abrir la app\n{ex.GetType().FullName}: {ex.Message}");
+            for (Exception? interna = ex.InnerException; interna is not null; interna = interna.InnerException)
+                detalle.Append($"\n  causa: {interna.GetType().FullName}: {interna.Message}");
+            error = detalle.ToString();
+        }
+        finally
+        {
+            resolviendo = false;
+            abriendo = "";
+        }
     }
+
+    // El texto nombra lo que se está reenganchando. «Abriendo…» pelado es lo que se ve el
+    // instante antes de saber si había algo recordado.
+    private string TextoDeAbriendo() => abriendo switch
+    {
+        "opfs"    => "Abriendo tu expediente guardado en este navegador…",
+        "carpeta" => estado.NombreDeLaCarpeta.Length > 0
+                         ? $"Abriendo tu carpeta «{estado.NombreDeLaCarpeta}»…"
+                         : "Abriendo tu carpeta…",
+        _         => "Abriendo…",
+    };
 
     private Task ConectarCarpeta() => Intentar("elegir carpeta", async () =>
     {
@@ -873,7 +964,6 @@ else
         urgente = estado.Urgente();
         pedido = estado.PedidoDeSexo();
         sexo = estado.SexoDelPaciente();
-        redibujo++;
         ultimoEvento = estado.UltimoEvento();
 
         // Una lectura por analito con historia. Se piden de a uno porque cada una es una

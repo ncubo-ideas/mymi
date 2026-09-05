@@ -42,9 +42,11 @@
         La app no está abierta. <a href="">Volvé a la lista</a> para abrirla.
     </div>
 }
+@* role="alert", por lo mismo que en la lista: es lo único de esta pantalla que hay que
+   interrumpir para decir. *@
 else if (error.Length > 0)
 {
-    <div class="aviso aviso--problema">@error</div>
+    <div class="aviso aviso--problema" role="alert">@error</div>
 }
 else
 {

@@ -1,0 +1,135 @@
+{
+  "//": "EL MANIFIESTO DEL MODULO. En el modelo objetivo un modulo es dominio + repertorio + view + manifiesto (Metodologia/Guias/00-arquitectura-clientecentrica.md), y esta es la cuarta parte. Lo lee el Host Gnothi, no el browser: no confundir con App/Examenes.Wasm/wwwroot/manifest.webmanifest, que es el estandar PWA y lo lee el browser al instalar.",
+
+  "//hoy-no-tiene-lector": "NO HAY HOST TODAVIA. Nada en el repo lee este archivo, y por un rato es una DECLARACION, no una integracion. Se escribe igual porque es el lugar donde tiene que vivir lo que hoy esta disperso: las instrucciones enterradas en Examenes.Mcp/Program.cs, la ruta de URL2 dentro del Portador, y el catalogo de permisos de la IA que se borro de la app sin quedar en ningun lado.",
+
+  "//que-NO-va-aca": "Nada que el Host pueda enumerar solo. IActorIntrospection ya le da simbolos, clases, acciones en DSL canonico, pools de parametros, reacciones y entradas del journal, sin cooperacion del modulo. El manifiesto es lo que NO se deduce del DLL: intencion, politica y contexto.",
+
+  "id": "cr.delfos.examenes",
+  "nombre": "Mis exámenes",
+
+  "version": {
+    "//": "Dos versiones y no una: el repertorio cambia por otra razon que el codigo. El laboratorio actualiza un rango de referencia y el dominio no se toca; separadas, el Host puede actualizar repertorio sin re-verificar el dominio.",
+    "//pendiente": "Hoy NADA versiona el dominio. El 0.1.0 sale del ServerInfo del MCP (App/Examenes.Mcp/Program.cs) para no inventar otro numero. Falta ponerlo en Examenes.Dominio.csproj y que este archivo lo lea de ahi.",
+    "dominio": "0.1.0",
+    "repertorio": "2026.08"
+  },
+
+  "institucion": {
+    "//": "El emisor del modulo. La marca es FICTICIA y por acuerdo de equipo vive solo en los assets y en PaginaDeDescarga; entra aca porque el Host tiene que poder decirle a la persona de quien es este modulo.",
+    "nombre": "Laboratorio Clínico Delfos",
+    "url1": "http://localhost:8090/"
+  },
+
+  "marca": {
+    "//": "Lo que hoy esta en manifest.webmanifest. Cambia de lector, no de sentido: en el modelo objetivo quien renderiza es el Host, no el browser.",
+    "shortName": "Mis exámenes",
+    "lang": "es",
+    "themeColor": "#0e2f55",
+    "backgroundColor": "#0e2f55",
+    "iconos": ["icon-192.png", "icon-512.png"]
+  },
+
+  "journal": {
+    "//": "La arena de este modulo. Cada modulo tiene la suya y no se ven entre si.",
+    "carpetaPorDefecto": "ExamenesMCP",
+    "//carpeta": "Es un NOMBRE, no una ruta: la carpeta concreta la elige la persona al instalar. El MCP hoy cae a UserProfile/Examenes-journal si no le pasan una.",
+
+    "reconstruible": false,
+    "//reconstruible": "EL CAMPO QUE NO SE DEDUCE DEL CODIGO, y el que decide si el Host puede vaciar esta arena sin costo. YA LLEGO EL DIA que este campo anticipaba cuando decia true: expediente.DeclararSexo es un comando que entra por un boton de la app, no por la narrativa del laboratorio, y URL2 no lo puede devolver. Borrar la carpeta ahora pierde la declaracion de la persona y con ella el veredicto de todo analito cuyo rango dependa del sexo —ocho tarjetas vuelven a 'requiere el sexo', hacia atras en el tiempo—. El resto del expediente si se reconstruye desde URL2; lo que no se reconstruye es lo que aporto ella.",
+
+    "bytesPorEvento": 100,
+    "//bytesPorEvento": "Declarado, no medido en este negocio: el techo que da el capitulo 0 (<100 B por evento). Sirve para que el Host compare contra lo real y detecte desviacion, no como dato duro."
+  },
+
+  "red": {
+    "//": "LA RED ES DEL MECANISMO, NUNCA DEL DOMINIO. Hoy este GET lo hace Puppets.Portador detras de IFuenteDeEventos; en el modelo objetivo lo hace el Host. Sin estos campos el Host no puede reemplazar al Portador, y no hay de donde sacarlos: viven repartidos entre wwwroot/appsettings.json y el codigo del Portador.",
+    "recurso": "expediente",
+    "id": "1",
+    "eventos": "{url2}/expediente/{id}/events?after={cursor}",
+    "cursor": "after",
+    "//cursor": "Lo lleva el modulo, en bitacora.UltimoEvento. Refrescar es barato y repetible: se pide desde donde quedo.",
+    "scope": "expediente.events.read",
+    "//scope": "Scope minimo y explicito. La app NO es cliente de los servicios generales del laboratorio: lo unico que pide es su propia narrativa. URL2 lo hace falsable con un senuelo —GET expediente/{id}/perfil devuelve 403 con el token valido de la app, porque exige expediente.profile.read—, asi que un token robado del dispositivo sirve para leer los propios eventos y nada mas.",
+    "token": {
+      "obtener": "POST {url2}/device/token",
+      "rotar": "POST {url2}/device/refresh",
+      "//": "Access token corto (900 s, y se hace cumplir), refresh token durable y rotatorio, atado al device."
+    },
+    "//url2-en-desarrollo": "http://localhost:8091/. La app la resuelve como 'eventos/' RELATIVA al origen que la sirvio, a proposito: una URL absoluta con localhost adentro no funciona desde un telefono, y https no puede llamar a http."
+  },
+
+  "requiere": {
+    "//": "Lo que este modulo necesita DE LA PERSONA para funcionar, no de la institucion. Declararlo le permite al Host pedirlo una vez y prestarselo a cada modulo que lo declare, en vez de que cada uno lo queme como hace hoy la semilla.",
+    "edad": {
+      "obligatorio": true,
+      "porque": "Los rangos de referencia del dominio dependen de la edad. Hoy esta quemada en 34 en ExamenesApp.EdadDelPacienteDelDemo."
+    },
+    "sexo": {
+      "obligatorio": false,
+      "porque": "Ocho analitos se comparan contra un rango que depende del sexo y sin el no tienen veredicto: el dominio contesta requiereElSexo en vez de inventar uno. NO es obligatorio porque el resto del expediente se lee igual sin el.",
+      "//quien-lo-aporta": "LA PERSONA, y es el unico dato del modulo que no viene del laboratorio. Entra por expediente.DeclararSexo desde la caratula, queda en el journal como hecho fechado, y es la razon de journal.reconstruible: false. Si el Host lo pide una vez y se lo presta a los modulos que lo declaren, este boton deja de hacer falta."
+    },
+    "//lo-que-falta": "El expediente carga la edad, y la persona declara su sexo. Faltan antecedentes y medicacion — y por eso todo rango que dependa de algo mas que edad y sexo hoy no se puede expresar. Es el pendiente 7 del README."
+  },
+
+  "dato": {
+    "//": "Para que el Host aplique politica por modulo y no una sola para todos. Examenes es salud; Compras no.",
+    "categoria": "salud",
+    "permiteModeloRemoto": false,
+    "//permiteModeloRemoto": "En el modo hibrido el modelo corre en la nube por TLS, y eso RECREA EL INTERMEDIARIO: un relay que termina TLS puede intervenir. Para datos de salud el modulo pide que no."
+  },
+
+  "consultas": {
+    "//": "EL CATALOGO DE PERMISOS DE LA IA, del lado correcto. Hubo una pantalla de Ajustes en la app para apagar cada consulta por separado; se fue porque quien se conecta con la IA es el Host, no la app — pero se fue el mecanismo y no quedo donde declarar el catalogo. Es aca: el Host las apaga una por una y journaliza la decision, y lo hace para todos los modulos con la misma pantalla.",
+    "//solo-lectura": "Las cinco son PerformQuery. Este modulo NO expone ninguna escritura a la IA, y el unico escritor del journal es la persona a traves del modulo.",
+    "//el-criterio": "Si la IA puede contestar algo que ya esta en una pantalla, el demo no probo nada. Por eso no hay una consulta 'resumen_de_examenes': un total, un conteo o el ultimo valor los muestra la app.",
+    "lista": [
+      { "nombre": "evaluar_tendencia",  "revela": "la serie completa de un analito continuo" },
+      { "nombre": "velocidad_de",       "revela": "el tramo mas reciente de un analito continuo" },
+      { "nombre": "presencia_de",       "revela": "la serie de un hallazgo binario" },
+      { "nombre": "constancia_de",      "revela": "la serie de un analito nominal — el color de la orina, el de las heces" },
+      { "nombre": "que_me_falta_medir", "revela": "que analitos estan vencidos, y el calendario" }
+    ]
+  },
+
+  "vista": {
+    "//": "La view declarativa que trae el modulo. El Host renderiza.",
+    "pantallas": [
+      { "ruta": "/",                  "nombre": "Mis exámenes" },
+      { "ruta": "/analito/{analito}", "nombre": "Tendencia" }
+    ],
+    "formas": [
+      "CategoriaEnElTiempo",
+      "PosicionEnBanda",
+      "PresenciaEnElTiempo",
+      "ProgresoHaciaMeta",
+      "TrayectoriaConLineaBase"
+    ]
+  },
+
+  "cruzaPor": ["tiempo"],
+  "//cruzaPor": "Los modulos no se hablan: cruza el asistente, con permiso de la persona. Esto no abre un canal entre arenas — declara sobre que ejes este modulo es componible, para que el Host pueda proponer el cruce. Hoy solo tiempo. El dia que el examen traiga precio, se agrega 'dinero' y cruza con presupuesto.",
+
+  "presupuesto": {
+    "//": "El Host mide y pone cupos. Comparar contra lo declarado convierte el cupo en algo diagnosticable.",
+    "latenciaDeConsultaMs": 50,
+    "eventosPorAno": 12
+  },
+
+  "instrucciones": {
+    "//": "LO QUE LA IA NO PUEDE DEDUCIR DE UNA FIRMA: que un mismo cambio significa cosas distintas segun el tiempo, que si sugiereRepetirElExamen viene en true corresponde sugerir repetir el examen y NO alarmar, que se dicen los hechos y no consejos de plantilla, que no se diagnostica, y que el Refresh es de la persona.",
+    "//donde-esta-hoy": "Enterrado en el string Instrucciones() de App/Examenes.Mcp/Program.cs, que en el modelo objetivo NO EXISTE: sin proceso MCP por negocio ese texto se pierde. Tiene que salir de ahi a un archivo propio que lean los dos.",
+    "//por-que-un-puntero": "El presupuesto del manifiesto es <5 KB y este texto solo son ~2 KB. El Host arranca modulos sin asistente conectado la mayor parte del tiempo: que lo cargue cuando haga falta.",
+    "archivo": "App/Examenes.Mcp/Program.cs#Instrucciones"
+  },
+
+  "advertencias": [
+    {
+      "//": "Va en el manifiesto y no en un README porque el Host y el asistente tienen que saberlo para hablar con la persona, y ningun DLL lo dice.",
+      "que": "Ningun umbral clinico de este repertorio esta revisado",
+      "detalle": "81 numeros —velocidades, periodicidades, rangos, grados de anemia, la meta de 240, las severidades de los binarios— marcados con ⚠️ en el codigo y ninguno visto por alguien con criterio de laboratorio. Reflejan practica corriente y sirven para modelar la estructura.",
+      "hasta": "que se revisen, este modulo es demostrativo"
+    }
+  ]
+}
