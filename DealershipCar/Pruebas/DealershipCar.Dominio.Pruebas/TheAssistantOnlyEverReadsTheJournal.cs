@@ -267,10 +267,11 @@ namespace DealershipCar.Dominio.Pruebas
 		// C57 en esta frontera -- se enumera el sitio donde la regla se decide, no el sustantivo del
 		// que habla.
 		//
-		// LO QUE ESTE BARRIDO NO PUEDE VER, dicho en vez de omitido: que Program.cs REGISTRE las
-		// cuatro clases. Una clase con [McpServerToolType] que nadie pasa a .WithTools sale igual en
-		// esta lista y no llega a ningun asistente. Program.cs son sentencias de nivel superior de un
-		// Exe y armar aca su contenedor seria copiarlo, no probarlo.
+		// LO QUE ESTE BARRIDO NO PUEDE VER, dicho en vez de omitido: que Program.cs REGISTRE todas las
+		// clases que la prueba de mas abajo enumera. Una clase con [McpServerToolType] que nadie pasa a
+		// .WithTools sale igual en esta lista y no llega a ningun asistente. Program.cs son sentencias
+		// de nivel superior de un Exe y armar aca su contenedor seria copiarlo, no probarlo. Lo unico
+		// que atrapa un .WithTools que falta es un tools/list corrido a mano contra el servidor.
 		//
 		// ESTE NOMBRE DECIA OCHO Y MS-6 LO VOLVIO FALSO: la pantalla de mantenimiento agrega dos tools
 		// a DealershipCarTools -- la cuenta atras y el historial. El nombre se mueve con la ley, que es
@@ -282,8 +283,13 @@ namespace DealershipCar.Dominio.Pruebas
 		// Y CL-8 A DOCE: what_i_have_spent_on_my_car, en que se le fue la plata a esta persona con este
 		// carro. Es la primera tool que pregunta por DOS periodos, y por eso es la primera que toma
 		// cuatro limites.
+		//
+		// Y LP-4 A TRECE: what_plate_my_car_has, la placa de este vehiculo. Es la primera que NO toma
+		// ningun parametro y a la vez es la que mas facil los habria tomado -- el cruce es "compara mi
+		// placa contra las de otro registro" y el camino corto es recibirla --, asi que su renglon en
+		// esta lista es tambien donde se ve que se decidio que no.
 		[Test]
-		public void TheAssistantIsOfferedTwelveToolsAndNoneOfThemIsACommand()
+		public void TheAssistantIsOfferedThirteenToolsAndNoneOfThemIsACommand()
 		{
 			var offered = new List<string>();
 
@@ -302,14 +308,16 @@ namespace DealershipCar.Dominio.Pruebas
 				"how_much_my_car_is_driven", "how_up_to_date_is_this",
 				"is_my_car_still_under_warranty", "review_my_maintenance",
 				"what_has_been_done_to_my_car", "what_i_have_spent_on_my_car",
-				"what_is_left_before_each_service", "what_my_car_takes", "what_the_service_costs",
+				"what_is_left_before_each_service", "what_my_car_takes", "what_plate_my_car_has",
+				"what_the_service_costs",
 			}), "Una tool que se agrega sin pensarla es como entra un comando a una superficie de "
 				+ "solo lectura. La lista se escribe aca para que agregar una obligue a mirarla.");
 		}
 
-		// Y LAS CLASES QUE LAS LLEVAN TAMBIEN SE ESCRIBEN, por la misma razon: son los cinco sitios
-		// que Program.cs tiene que registrar, y una sexta que aparezca sin que nadie la registre queda
-		// invisible para la prueba de arriba y para el asistente.
+		// Y LAS CLASES QUE LAS LLEVAN TAMBIEN SE ESCRIBEN, por la misma razon: son los sitios que
+		// Program.cs tiene que registrar, y una que aparezca sin que nadie la registre queda invisible
+		// para la prueba de arriba y para el asistente. La cuenta va en el NOMBRE de la prueba, que es
+		// donde se puede mover a proposito; en esta prosa se quedaba vieja sin ponerse roja.
 		//
 		// LA QUINTA ES OD-4 Y ES UNA DECISION, NO UN SITIO DONDE CAYO. DEC-40 dice que la frontera de
 		// clase en esta caratula es DE QUE HABLA LA RESPUESTA, y cuanto se maneja un carro no es una
@@ -323,8 +331,14 @@ namespace DealershipCar.Dominio.Pruebas
 		// sobre, ni de las estadias, ni del odometro: es un hecho de GASTO, que ninguna de las cinco
 		// clases que ya estaban contesta. Y a diferencia de DealershipCarTools, esta clase SI lleva un
 		// /// que decir de que habla, asi que meterle una segunda pregunta lo volveria falso.
+		//
+		// LA SEPTIMA ES LP-4 Y LA DECISION SE TOMO POR ESCRITO EN EL PLAN. La placa NO es un campo de
+		// la tool del sobre ni de ninguna otra: doblarla adentro de una pregunta de garantia haria que
+		// poder leer la placa dependiera de una pregunta de garantia, y ademas la descripcion de la
+		// tool ES el mecanismo con el que el asistente se entera de para que sirve una placa -- y una
+		// descripcion necesita una tool de la que colgar.
 		[Test]
-		public void TheToolsLiveInExactlySixClassesAndAllOfThemAreAboutReading()
+		public void TheToolsLiveInExactlySevenClassesAndAllOfThemAreAboutReading()
 		{
 			var named = new List<string>();
 
@@ -334,8 +348,9 @@ namespace DealershipCar.Dominio.Pruebas
 
 			Assert.That(named, Is.EqualTo(new[]
 			{
-				"CostLedgerTools", "DealershipCarTools", "ModelSpecificationTools",
-				"OdometerSeriesTools", "ShopStayTools", "WarrantyEnvelopeTools",
+				"CostLedgerTools", "DealershipCarTools", "LicensePlateTools",
+				"ModelSpecificationTools", "OdometerSeriesTools", "ShopStayTools",
+				"WarrantyEnvelopeTools",
 			}), "Una clase de tools nueva tiene que pasar por aca, porque tiene que pasar tambien "
 				+ "por el .WithTools de Program.cs y esto es lo unico que lo recuerda.");
 		}

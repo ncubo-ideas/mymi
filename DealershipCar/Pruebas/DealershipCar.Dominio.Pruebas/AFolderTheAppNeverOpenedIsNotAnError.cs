@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Reflection;
 using DealershipCar.App;
 using DealershipCar.Mcp;
 using DealershipCar.Mcp.Tools;
@@ -16,6 +17,21 @@ namespace DealershipCar.Dominio.Pruebas
 	// property or method 'ReadVin' on type 'Object'" -- y una excepcion asi, saliendo de una tool,
 	// le llega al asistente como un fallo del protocolo. La persona leeria "la herramienta fallo"
 	// cuando el hecho es "todavia no abriste tu app".
+	//
+	// LP-4: EL NOMBRE DE ESTE FIXTURE ERA FALSO Y AHORA NO LO ES. Decia "toda tool" y el cuerpo
+	// enumeraba OCHO a mano mientras habia DOCE; las cuatro que no alcanzaba eran la de la garantia,
+	// la de las estadias, la del odometro y la del libro de costos. Doce tareas lo reportaron y
+	// ninguna lo cerro, y la tool de la placa habria sido la novena ausente. Se resolvio por la
+	// segunda de las dos salidas que se venian nombrando -- renombrarlo a lo que enumera, o
+	// ENUMERAR LAS TOOLS POR REFLEXION -- porque la ley que el nombre enuncia es verdadera de todas
+	// y lo que estaba mal era el cuerpo, no el nombre.
+	//
+	// LAS DOS PRUEBAS CONVIVEN A PROPOSITO. La escrita a mano afirma de OCHO respuestas cosas que
+	// solo se pueden afirmar sabiendo que contesta cada una -- que la lista de fluidos venga vacia,
+	// que el sistema preguntado vuelva igual, que el detalle diga "no se ha abierto" --, y eso una
+	// reflexion no lo puede escribir. La nueva afirma de TODAS lo unico que es comun: que contestan
+	// en vez de reventar. Borrar la primera para quedarse con la segunda cambiaria cobertura ancha
+	// por cobertura profunda, y aca hacen falta las dos.
 	[TestFixture]
 	public sealed class AFolderTheAppNeverOpenedIsNotAnError
 	{
@@ -91,6 +107,101 @@ namespace DealershipCar.Dominio.Pruebas
 			Assert.That(countdown.Operations, Is.Empty);
 			Assert.That(history.Completions, Is.Empty);
 			Assert.That(history.ByOperation, Is.Empty);
+		}
+
+			// EL CENSO POR REFLEXION, Y ES LO QUE VUELVE VERDADERO EL NOMBRE DEL FIXTURE. Barre el
+		// ensamblado por el atributo, construye cada clase de tools con el MISMO JournalReader e
+		// invoca CADA metodo marcado, asi que una tool nueva entra sola y ninguna se puede olvidar.
+		//
+		// SE PREGUNTA CON EL ARGUMENTO MAS VACIO QUE CADA UNA ACEPTA -- cadena vacia, primer miembro
+		// del conjunto cerrado -- porque lo que se mide no es la respuesta sino que HAYA una: sobre
+		// una carpeta sin journal ninguna lectura llega al dominio, asi que el argumento no cambia
+		// nada. Un tipo de parametro que no sea ninguno de los dos revienta a proposito: quien lo
+		// agregue decide aca como se pregunta con el.
+		[Test]
+		public void EveryToolThereIsAnswersThatThereIsNoDataYetInsteadOfThrowing()
+		{
+			var reader = new JournalReader(folder, "");
+			var answered = new List<string>();
+
+			foreach (MethodInfo each in EveryToolMethodThereIs())
+			{
+				object tools = Activator.CreateInstance(each.DeclaringType, reader);
+				object answer = each.Invoke(tools, TheEmptiestQuestion(each));
+
+				Assert.That(answer, Is.Not.Null, "'" + TheNameOfTheToolOn(each) + "' no contesto.");
+
+				PropertyInfo hasData = answer.GetType().GetProperty("HasData");
+
+				Assert.That(hasData, Is.Not.Null,
+					"'" + TheNameOfTheToolOn(each) + "' contesta un payload sin hasData, asi que el "
+					+ "asistente no tiene como distinguir una carpeta vacia de un carro al dia.");
+
+				Assert.That((bool)hasData.GetValue(answer), Is.False,
+					"'" + TheNameOfTheToolOn(each) + "' contesto que SI hay datos sobre una carpeta "
+					+ "que nadie abrio.");
+
+				answered.Add(TheNameOfTheToolOn(each));
+			}
+
+			// EL ANCLA, Y ES LA LISTA DE LAS QUE LA PRUEBA ESCRITA A MANO NO ALCANZA. Sin ella, un
+			// barrido que dejo de encontrar tools pasa: cero invocaciones son cero fallos.
+			foreach (string tool in TheToolsTheHandWrittenTestDoesNotReach)
+				Assert.That(answered, Does.Contain(tool),
+					"'" + tool + "' no lo alcanza ninguna de las dos pruebas de este fixture, y esa "
+					+ "es exactamente la forma en la que el nombre del fixture se volvio falso.");
+		}
+
+		// LAS CINCO QUE LA PRUEBA DE ARRIBA NO NOMBRA. Se escriben por nombre y no por cuenta: una
+		// cuenta se satisface sola cuando alguien agrega una tool y quita otra.
+		private static readonly string[] TheToolsTheHandWrittenTestDoesNotReach =
+		{
+			"is_my_car_still_under_warranty", "days_my_car_spent_in_the_shop",
+			"how_much_my_car_is_driven", "what_i_have_spent_on_my_car", "what_plate_my_car_has",
+		};
+
+		private static List<MethodInfo> EveryToolMethodThereIs()
+		{
+			var found = new List<MethodInfo>();
+
+			foreach (Type each in typeof(DealershipCarTools).Assembly.GetTypes())
+				foreach (MethodInfo method in each.GetMethods())
+					foreach (object attribute in method.GetCustomAttributes(true))
+						if (attribute.GetType().Name == "McpServerToolAttribute") found.Add(method);
+
+			return found;
+		}
+
+		private static string TheNameOfTheToolOn(MethodInfo method)
+		{
+			foreach (object attribute in method.GetCustomAttributes(true))
+				if (attribute.GetType().Name == "McpServerToolAttribute")
+					return (string)attribute.GetType().GetProperty("Name").GetValue(attribute);
+
+			return method.Name;
+		}
+
+		private static object[] TheEmptiestQuestion(MethodInfo method)
+		{
+			var arguments = new List<object>();
+
+			foreach (ParameterInfo each in method.GetParameters())
+			{
+				if (each.ParameterType == typeof(string)) { arguments.Add(""); continue; }
+
+				if (each.ParameterType.IsEnum)
+				{
+					arguments.Add(Enum.GetValues(each.ParameterType).GetValue(0));
+					continue;
+				}
+
+				Assert.Fail(
+					"'" + TheNameOfTheToolOn(method) + "(" + each.Name + ")' es un "
+					+ each.ParameterType.Name + ", y este censo solo sabe preguntar con nombres. "
+					+ "Escriba aca como se pregunta con el, o mire por que una tool recibe eso.");
+			}
+
+			return arguments.ToArray();
 		}
 
 		// LA PREGUNTA VA ANTES DE ABRIR EL ACTOR, Y ESTA ES LA MEDICION QUE LO OBLIGA. Start() sobre

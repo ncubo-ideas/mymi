@@ -574,14 +574,19 @@ namespace DealershipCar.Dominio.Pruebas
 		// EL CONTROL DE LOS DOS CENSOS, Y CON EL CONJUNTO DE MEDICIONES VACIO ES EL RENGLON QUE LOS
 		// SOSTIENE -- mas todavia desde P-12, que dejo VACIA tambien la lista de exenciones: dos
 		// conjuntos vacios los cumple igual un barrido que no encuentra nada. Prueba dos cosas: que el
-		// barrido de verdad encuentra las tools -- las DOCE, en SEIS clases -- y que el discriminador
+		// barrido de verdad encuentra las tools -- las TRECE, en SIETE clases -- y que el discriminador
 		// SI dispara contra un hecho de vehiculo de verdad. Las cinco mediciones de la lectura de nueve
 		// argumentos de la puerta son exactamente los hechos que aparecerian en una tool si alguien
 		// agregara el parametro de comodidad.
+		//
+		// LP-4 LA ENSANCHA DE DOCE A TRECE, Y ES LA UNICA CUENTA QUE LA TOOL DE LA PLACA MUEVE AQUI: no
+		// toma ningun parametro, asi que ni el conjunto exacto de parametros ni el censo de mediciones
+		// crecen de un renglon. Que esa tool NO aparezca en ninguna de esas dos listas es el resultado
+		// de la ley, no una omision.
 		[Test]
 		public void TheSweepFindsTheToolsAndTheDiscriminatorFiresOnARealVehicleFact()
 		{
-			Assert.That(EveryToolMethod(), Has.Count.EqualTo(12),
+			Assert.That(EveryToolMethod(), Has.Count.EqualTo(13),
 				"El barrido dejo de encontrar las tools y los dos censos no defienden nada.");
 			Assert.That(EveryParameterOfEveryTool(), Is.Not.Empty);
 
