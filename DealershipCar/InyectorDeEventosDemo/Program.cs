@@ -222,41 +222,41 @@ async Task Historia()
 
     (object cuerpo, string porque)[] guion =
     {
-        (Revision("R1", "2025-09-01"),
-            "el plan con que se entrega el vehiculo"),
+        (Revision("R1", "2025-12-15"),
+            "el plan con que entra el vehiculo al programa"),
 
-        (PlanOp("FluidChange", "TimeOrDistance", 365, 10000, true, false, "2025-09-01", 12000),
+        (PlanOp("FluidChange", "TimeOrDistance", 365, 10000, true, false, "2025-12-15", 49850),
             "tiempo O distancia: vence con la primera de las dos que llegue"),
-        (PlanOp("FilterChange", "DistanceOnly", 0, 15000, true, false, "2025-09-01", 12000),
+        (PlanOp("FilterChange", "DistanceOnly", 0, 15000, true, false, "2025-12-15", 49850),
             "solo distancia: sin lecturas no se mueve, y eso se ve"),
-        (PlanOp("TimedComponent", "TimeOnly", 550, 0, true, true, "2025-09-01", 12000),
+        (PlanOp("TimedComponent", "TimeOnly", 550, 0, true, true, "2025-12-15", 49850),
             "solo tiempo, y DE SEGURIDAD: la ley no la deja aplazar"),
-        (PlanOp("Inspection", "ConditionOnly", 0, 0, true, false, "2025-09-01", 12000),
+        (PlanOp("Inspection", "ConditionOnly", 0, 0, true, false, "2025-12-15", 49850),
             "solo condicion: no la mueve el tiempo ni la distancia, solo un cruce observado"),
 
-        (Lectura(13200, "2025-10-01", "Telemetry"), "primer mes"),
-        (Reclamo("W-9912", "2025-11-15"),
+        (Lectura(49850, "2025-12-15", "Telemetry"), "diciembre: el primer mes de la serie"),
+        (Reclamo("W-9912", "2026-01-25"),
             "UN TIPO QUE LA APP NO CONSUME: se descarta, no se inventa un comando para tragarlo"),
-        (Lectura(16000, "2025-12-01", "Telemetry"),
-            "llega ANTES que la de noviembre: el orden de llegada no es el de observacion"),
-        (Lectura(14500, "2025-11-01", "HumanEntry"), "el relleno tardio que si calza en la linea"),
-        (Lectura(17300, "2026-01-01", "Telemetry"), "enero"),
-        (Lectura(20000, "2026-03-01", "Telemetry"), "marzo llega antes que febrero"),
-        (Lectura(18600, "2026-02-01", "CustomerDeclared"), "y febrero calza entre las dos"),
+        (Lectura(51703, "2026-02-06", "Telemetry"),
+            "llega ANTES que la de enero: el orden de llegada no es el de observacion"),
+        (Lectura(50783, "2026-01-17", "HumanEntry"), "el relleno tardio que si calza en la linea"),
+        (Lectura(53303, "2026-03-12", "Telemetry"), "marzo"),
+        (Lectura(57539, "2026-06-12", "Telemetry"), "junio llega antes que mayo"),
+        (Lectura(56089, "2026-05-12", "CustomerDeclared"), "y mayo calza entre las dos"),
 
         (Cruce("Inspection", "2026-04-01"),
             "el taller informa el cruce: es lo unico que mueve una ConditionOnly"),
 
-        (Completacion("FluidChange", "2026-03-05", 20000),
+        (Completacion("FluidChange", "2026-06-12", 57539),
             "la operacion se hizo DE VERDAD: su sucesora se ancla ahi y no donde el plan decia"),
 
-        (Revision("R2", "2026-06-01"),
+        (Revision("R2", "2026-06-15"),
             "el fabricante emite una revision del plan"),
-        (PlanOp("FluidChange", "TimeOrDistance", 300, 8000, true, false, "2026-06-01", 20000),
+        (PlanOp("FluidChange", "TimeOrDistance", 300, 8000, true, false, "2026-06-15", 57539),
             "y su reemplazo SUSTITUYE al activo, no duplica: intervalo mas corto"),
 
-        (Lectura(27000, "2026-07-01", "Telemetry"), "julio: el filtro llega a su limite"),
-        (Lectura(29500, "2026-08-15", "Telemetry"), "agosto: y el fluido pasa el suyo, por distancia"),
+        (Lectura(59157, "2026-07-17", "Telemetry"), "julio"),
+        (Lectura(60962, "2026-08-25", "Telemetry"), "agosto: la ultima lectura de la serie"),
 
         (Cita("2026-09-10"),
             "OTRO TIPO QUE LA APP NO CONSUME: la cita es del concesionario, no de la agenda"),
@@ -360,16 +360,18 @@ async Task Garantia()
 
     (object cuerpo, string porque)[] guion =
     {
-        (Entrega("2025-03-01", 120, unidad),
+        (Entrega("2025-12-15", 49850, unidad),
             "la ENTREGA: cuando se entrego y en que odometro estaba ese dia. Es el ancla desde "
             + "donde se miden las dos mitades del sobre"),
 
-        (Sobre(36, 60000, "2025-03-01", unidad),
+        (Sobre(36, 60000, "2025-12-15", unidad),
             "el SOBRE: 36 meses o 60000 de distancia, publicado el dia de la entrega"),
 
-        (LecturaEn(6000, "2025-10-01", unidad),
+        (LecturaEn(50000, "2025-12-15", unidad),
             "una lectura del odometro EN LA MISMA UNIDAD que las dos de arriba, que es lo que hace "
-            + "falta para que la mitad de distancia se pueda medir"),
+            + "falta para que la mitad de distancia se pueda medir. Cae el MISMO DIA que la primera "
+            + "de la narrativa y con otro valor, asi que el horario la rechaza: ese rechazo es lo "
+            + "que hace aparecer el banner del navegador, y esta aca a proposito"),
 
         (Sobre(48, 80000, "2026-11-01", unidad),
             "y el sobre RE-PUBLICADO, mas largo: rige desde su instante de publicacion hacia "
@@ -379,7 +381,7 @@ async Task Garantia()
             "un sobre publicado ANTES que el que rige, llegando DESPUES: entra y NO gobierna. El "
             + "orden de llegada no es el de vigencia"),
 
-        (Entrega("2025-02-15", 100, unidad),
+        (Entrega("2025-12-01", 49450, unidad),
             "y la entrega CORREGIDA: gana la ultima que llego, aunque sea la mas vieja de las dos. "
             + "Un hecho historico tiene una sola version"),
     };
