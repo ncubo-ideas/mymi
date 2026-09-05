@@ -35,7 +35,24 @@ namespace DealershipCar.Dominio.Pruebas
 	// nombra ese costo y DEC-88 lo pinta -- dos gastos en un codigo que este modulo no nombra son DOS
 	// grupos de moneda -- y las dos cosas son ciertas a la vez porque hablan de dos sitios distintos.
 	// El renglon de abajo las mide juntas en vez de dejar que alguien las descubra en tension.
+	// NO SE PARALELIZA, Y ES UNA MEDICION. WhatTheEngineSaysWhenItReopens() captura con
+	// Console.SetOut/SetError lo que el motor escribe al reabrir el journal, y esos dos son del
+	// PROCESO ENTERO: en paralelo, el arranque del actor de otra prueba escribe en la misma captura y
+	// la afirmacion lee lo que dijo otra.
+	//
+	// MEDIDO 2026-09-04 con [assembly: Parallelizable(ParallelScope.Fixtures)]: en serie 2063/2063
+	// verde en 49.8 s, con 8 workers 16.0 s y SIETE rojos, todos en los CINCO fixtures que redirigen
+	// la consola. Aca el rojo fue TheRefusedCommandLeavesNothingForTheEngineToComplainAboutOnReopening,
+	// que es justo la afirmacion mas fragil de todas: espera NO oir nada.
+	//
+	// Y ESO SE CONECTA CON C70, que sigue SIN VERIFICAR: su afirmacion central es sobre en cual de los
+	// dos streams llega el rechazo. La captura escucha los dos a proposito; lo que no puede es
+	// escucharlos mientras otra prueba escribe en ellos.
+	//
+	// Son CINCO fixtures y no los tres que se pusieron rojos (C57). Sin Parallelizable en el
+	// ensamblado esto no hace nada.
 	[TestFixture]
+	[NonParallelizable]
 	public sealed class AnUnknownCurrencyIsRefusedFreeAtTheDoor
 	{
 		private const string TheVin = "1FTFW1ET5DFA12345";

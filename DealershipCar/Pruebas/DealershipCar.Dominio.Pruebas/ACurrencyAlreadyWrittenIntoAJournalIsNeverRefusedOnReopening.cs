@@ -35,7 +35,25 @@ namespace DealershipCar.Dominio.Pruebas
 	// come el IOException DESPUES de haber borrado index/index.bin y meta.bin: una carpeta sana tiene
 	// TRES archivos y lo que sobrevive tiene UNO, y no se puede reabrir. Aca se abre DealershipCarApp
 	// directo, que son las mismas tres lineas que su Open() corre.
+	// NO SE PARALELIZA, Y ES UNA MEDICION Y NO UNA PRECAUCION. WhatTheEngineSaysWhenItReopens()
+	// captura lo que el motor ESCRIBE EN CONSOLA al reabrir el journal, y lo captura con
+	// Console.SetOut/SetError, que son del PROCESO ENTERO: con los fixtures en paralelo, el arranque
+	// del actor de OTRA prueba escribe en esa misma captura y la afirmacion lee lo que dijo otra.
+	//
+	// MEDIDO 2026-09-04 con [assembly: Parallelizable(ParallelScope.Fixtures)]: en serie 2063/2063
+	// verde en 49.8 s; con 4 workers 20.0 s y CINCO rojos; con 8 workers 16.0 s y SIETE, todos en los
+	// CINCO fixtures que redirigen la consola, y el mensaje decia "1%2%3%4%Starting ... Actor" -- la
+	// salida de otra prueba. El intermitente del motor NO aparecio en ninguna configuracion.
+	//
+	// SON CINCO FIXTURES Y NO LOS TRES QUE SE PUSIERON ROJOS: los otros dos tienen la misma captura y
+	// no fallaron en esa corrida. Una carrera que no salto una vez no es una carrera que no exista, y
+	// enumerar los sintomas en vez de los sitios donde la regla se rompe es C57.
+	//
+	// LO QUE ESTE ATRIBUTO NO HACE: nada, mientras el ensamblado no declare Parallelizable. Es el
+	// registro de cuales cinco eran, puesto donde el dia que alguien lo encienda no haya que volver a
+	// descubrirlo.
 	[TestFixture]
+	[NonParallelizable]
 	public sealed class ACurrencyAlreadyWrittenIntoAJournalIsNeverRefusedOnReopening
 	{
 		private const string TheVin = "JH4KA7660MC099001";

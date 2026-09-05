@@ -40,7 +40,19 @@ namespace DealershipCar.Dominio.Pruebas
 	// Y EL TIPO DE LA EXCEPCION ES LA MITAD QUE DISCRIMINA: un Assert.Catch pasaria igual con la
 	// excepcion del dominio, que es interna y que ninguna caratula puede nombrar. Se afirma
 	// InvalidOperationException a proposito.
+	// NO SE PARALELIZA, Y ESTE FIXTURE NO SE PUSO ROJO -- POR ESO LLEVA EL ATRIBUTO.
+	// WhatTheEngineSaysWhenItReopens() captura con Console.SetOut/SetError lo que el motor escribe al
+	// reabrir el journal, y esos dos son del PROCESO ENTERO. Medido 2026-09-04 con
+	// [assembly: Parallelizable(ParallelScope.Fixtures)]: con 8 workers salieron SIETE rojos en TRES
+	// de los CINCO fixtures que redirigen la consola. Este es uno de los otros dos.
+	//
+	// UNA CARRERA QUE NO SALTO EN UNA CORRIDA NO ES UNA CARRERA QUE NO EXISTA, y marcar solo los que
+	// se pusieron rojos seria enumerar los SINTOMAS en vez de los SITIOS donde la regla se rompe, que
+	// es C57 exactamente. Los cinco sitios son los cinco Console.SetOut de Pruebas/.
+	//
+	// Sin Parallelizable en el ensamblado esto no hace nada: es el registro de cuales cinco eran.
 	[TestFixture]
+	[NonParallelizable]
 	public sealed class ASecondEntryIsRefusedFreeAtTheDoorAndScarredOnlyIfItReachesTheDomain
 	{
 		private const string TheVin = "JH4KA7660MC012345";

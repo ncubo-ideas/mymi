@@ -32,7 +32,19 @@ namespace DealershipCar.Dominio.Pruebas
 	// LO QUE ESTO NO ES: un arreglo de C22. La entrada de la primera vez sigue quedando, porque
 	// evitarla necesita que la fachada de §4 proyecte lo que cada guarda mira, y eso es un cambio de
 	// dominio que T8 no hace. Esto acota el dano; no lo elimina.
+	// NO SE PARALELIZA, Y ES UNA MEDICION. WhatTheEngineSaysWhenItReopens() captura con
+	// Console.SetOut/SetError lo que el motor escribe al reabrir el journal, y esos dos son del
+	// PROCESO ENTERO: en paralelo, el arranque del actor de otra prueba escribe en la misma captura.
+	//
+	// MEDIDO 2026-09-04 con [assembly: Parallelizable(ParallelScope.Fixtures)]: en serie 2063/2063
+	// verde, con 8 workers SIETE rojos y TRES de ellos de este fixture -- uno es
+	// TheseAreTheSpecificationGuardsThatReadTheSheetAndStillCostAPermanentEntry, que es una de las
+	// tres pruebas del intermitente del motor, y su rojo NO fue el intermitente: fue la captura.
+	//
+	// SON CINCO FIXTURES los que redirigen la consola y los cinco llevan este atributo, no solo los
+	// tres que se pusieron rojos (C57). Sin Parallelizable en el ensamblado esto no hace nada.
 	[TestFixture]
+	[NonParallelizable]
 	public sealed class AFactTheDomainRefusesDoesNotBlockTheNarrative
 	{
 		private AScheduleOnARealJournal journal;
