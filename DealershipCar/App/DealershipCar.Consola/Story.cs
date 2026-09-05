@@ -10,7 +10,7 @@ namespace DealershipCar.Consola
 
 		internal const string TheProfileAtDelivery = "Standard";
 
-		internal const string TheModelAtDelivery = "SM-SEDAN-2025";
+		internal const string TheModelAtDelivery = "YARIS-2019";
 
 		private const string UnitA = "UnitA";
 

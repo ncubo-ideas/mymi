@@ -11,10 +11,10 @@ namespace DealershipCar.Consola
 	internal static class SpecSheet
 	{
 		/// <summary>La revision que trae la ficha entera.</summary>
-		internal const string TheFirstRevision = "MY2025-R1";
+		internal const string TheFirstRevision = "MY2019-R1";
 
 		/// <summary>La revision que solo republica el aceite y sustituye a la primera.</summary>
-		internal const string TheSecondRevision = "MY2025-R2";
+		internal const string TheSecondRevision = "MY2019-R2";
 
 		/// <summary>La clase de fluido por la que la caratula pregunta.</summary>
 		internal const string TheFluidKind = "EngineOil";

@@ -11,7 +11,7 @@ namespace DealershipCar.Wasm
 	{
 		public const string TheProfileAtDelivery = "Standard";
 
-		public const string TheModelAtDelivery = "SM-SEDAN-2025";
+		public const string TheModelAtDelivery = "YARIS-2019";
 
 		private readonly JournalBridge bridge;
 		private readonly HttpClient http;

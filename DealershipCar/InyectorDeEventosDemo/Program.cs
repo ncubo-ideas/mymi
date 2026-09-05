@@ -271,8 +271,8 @@ async Task Historia()
 
 async Task Ficha()
 {
-    string primera = Arg(args, "--revision", "MY2025-R1");
-    string segunda = Arg(args, "--revision2", "MY2025-R2");
+    string primera = Arg(args, "--revision", "MY2019-R1");
+    string segunda = Arg(args, "--revision2", "MY2019-R2");
     bool sustituye = !args.Contains("--sin-sustituir");
 
     Console.WriteLine($"publicando la ficha del fabricante en {recurso}/{id}...");
@@ -441,15 +441,16 @@ async Task Placa()
 
     (object cuerpo, string porque)[] guion =
     {
-        (PlacaAsignada("BQR-482", "2025-03-01T00:00:00Z"),
-            "la PRIMERA, del dia de la entrega. Es la que el otro modulo publica para este carro, "
-            + "y viene CON guion: la pantalla muestra ese texto y el cruce usa la llave"),
+        (PlacaAsignada("CLM 903", "2024-11-20T00:00:00Z"),
+            "la PRIMERA, la que el carro traia antes, separada con un ESPACIO en vez de un guion. "
+            + "Se sigue leyendo por su instante y ya no rige"),
 
-        (PlacaAsignada("CLM 903", "2026-06-15T00:00:00Z"),
-            "la SEGUNDA, separada con un ESPACIO en vez de un guion. Desde su instante es la "
-            + "vigente, y la primera se sigue leyendo por el suyo"),
+        (PlacaAsignada("BQR-482", "2025-12-15T00:00:00Z"),
+            "la SEGUNDA, del dia en que entro al programa: RE-PLACA, no correccion. Es la que el "
+            + "otro modulo publica para este carro, viene CON guion, y es la que RIGE HOY -- asi "
+            + "que la llave de mas arriba cruza sin tener que ir a buscarla a las asignaciones"),
 
-        (PlacaAsignada("AAA-001", "2024-11-20T00:00:00Z"),
+        (PlacaAsignada("AAA-001", "2024-06-10T00:00:00Z"),
             "y una TERCERA asignada ANTES que las dos, llegando DESPUES: entra en su sitio de la "
             + "historia y NO desplaza a la vigente. El orden de llegada no es el de vigencia"),
     };
@@ -494,13 +495,14 @@ async Task Taller()
 
     (object cuerpo, string porque)[] guion =
     {
-        (EstadiaCompleta("Taller Central", "Cambio de frenos",
-                "2026-05-11T08:30:00Z", "2026-05-13T16:45:00Z",
-                ["2026-05-11", "2026-05-12", "2026-05-13"]),
+        (EstadiaCompleta("Taller Central", "Cambio de aceite",
+                "2026-06-10T08:30:00Z", "2026-06-12T16:45:00Z",
+                ["2026-06-10", "2026-06-11", "2026-06-12"]),
             "una estadia entera DE UN SOLO ACTO: los dos extremos y los TRES dias que cubrio, "
-            + "todo en un hecho. Es la forma correctiva, para lo que se registra despues"),
+            + "todo en un hecho. Es la forma correctiva, para lo que se registra despues. Son los "
+            + "TRES DIAS DEL CANON, y el ultimo es el dia en que se completo el cambio de fluido"),
 
-        (EntradaAlTaller("Taller Escazu", "Revision de los 20 mil", "2026-07-06T07:15:00Z"),
+        (EntradaAlTaller("Taller Escazu", "Revision de los 60 mil", "2026-07-06T07:15:00Z"),
             "la ENTRADA: el carro entro y desde aca la estadia queda abierta. Es lo unico que "
             + "las dos lecturas por instante alcanzan"),
         (EntregaDelTaller("2026-07-07T17:00:00Z", ["2026-07-06", "2026-07-07"]),
@@ -524,13 +526,13 @@ async Task Taller()
 
     Console.WriteLine();
     Console.WriteLine("LA RESPUESTA SON LOS DIAS Y NO UNA DURACION. Cinco dias en dos estadias, y los");
-    Console.WriteLine("cinco se pueden nombrar uno por uno: 11, 12 y 13 de mayo, 6 y 7 de julio. Una");
+    Console.WriteLine("cinco se pueden nombrar uno por uno: 10, 11 y 12 de junio, 6 y 7 de julio. Una");
     Console.WriteLine("duracion no se puede cruzar con el calendario de nadie; una lista de fechas si.");
     Console.WriteLine();
-    Console.WriteLine("LOS DIAS LLEGAN CON EL HECHO Y NO SE CALCULAN. Entro el 11 a las 08:30 y salio el");
-    Console.WriteLine("13 a las 16:45, y los dias que cubrio son tres porque la sucursal dijo tres.");
+    Console.WriteLine("LOS DIAS LLEGAN CON EL HECHO Y NO SE CALCULAN. Entro el 10 a las 08:30 y salio el");
+    Console.WriteLine("12 a las 16:45, y los dias que cubrio son tres porque la sucursal dijo tres.");
     Console.WriteLine("Sacarlos de los dos instantes pediria una zona horaria que este registro no");
-    Console.WriteLine("lleva, y con la zona equivocada el 11 podria salir siendo el 10.");
+    Console.WriteLine("lleva, y con la zona equivocada el 10 podria salir siendo el 9.");
     Console.WriteLine();
     if (dejaUnaAbierta)
     {
@@ -846,7 +848,7 @@ static void Ayuda()
     Console.WriteLine("  listar                        que eventos ve la app hoy");
     Console.WriteLine("  historia                      siembra el guion completo de la demo");
     Console.WriteLine("  ficha                         publica la ficha del fabricante en dos revisiones");
-    Console.WriteLine("                                --revision --revision2 (default MY2025-R1 y -R2)");
+    Console.WriteLine("                                --revision --revision2 (default MY2019-R1 y -R2)");
     Console.WriteLine("                                --sin-sustituir salta la sustitucion final, y esa");
     Console.WriteLine("                                es la unica forma de ver la hoja entera en pantalla");
     Console.WriteLine("  garantia                      publica la entrega y el sobre de garantia de este");
@@ -938,14 +940,14 @@ static void Ayuda()
     Console.WriteLine("    inyectar --tipo FluidSpecificationPublished --revisionCode MY2026-R1 --kind BrakeFluid");
     Console.WriteLine("             --grade \"DOT 4\" --capacity 0.5 --intervalDistance 20000 --intervalDays 730");
     Console.WriteLine("    inyectar --tipo SpecificationRevisionSealed --revisionCode MY2026-R1");
-    Console.WriteLine("    inyectar --tipo VehicleDelivered --deliveredAt 2025-03-01 --reading 120 --unit UnitB");
+    Console.WriteLine("    inyectar --tipo VehicleDelivered --deliveredAt 2025-12-15 --reading 49850 --unit UnitB");
     Console.WriteLine("    inyectar --tipo WarrantyEnvelopePublished --months 36 --distance 60000");
-    Console.WriteLine("             --unit UnitB --publishedAt 2025-03-01");
-    Console.WriteLine("    inyectar --tipo PlateAssigned --plate BQR-482 --assignedAt 2025-03-01");
-    Console.WriteLine("    inyectar --tipo ShopEntryRecorded --branch \"Taller Central\" --subject Frenos");
-    Console.WriteLine("             --enteredAt 2026-05-11T08:30:00Z");
-    Console.WriteLine("    inyectar --tipo ShopCollectionRecorded --collectedAt 2026-05-13T16:45:00Z");
-    Console.WriteLine("             --coveredDays 2026-05-11,2026-05-12,2026-05-13");
+    Console.WriteLine("             --unit UnitB --publishedAt 2025-12-15");
+    Console.WriteLine("    inyectar --tipo PlateAssigned --plate BQR-482 --assignedAt 2025-12-15");
+    Console.WriteLine("    inyectar --tipo ShopEntryRecorded --branch \"Taller Central\" --subject Aceite");
+    Console.WriteLine("             --enteredAt 2026-06-10T08:30:00Z");
+    Console.WriteLine("    inyectar --tipo ShopCollectionRecorded --collectedAt 2026-06-12T16:45:00Z");
+    Console.WriteLine("             --coveredDays 2026-06-10,2026-06-11,2026-06-12");
     Console.WriteLine("    inyectar --tipo RecurringCostRecorded --incurredAt 2026-05-20T10:30:00Z");
     Console.WriteLine("             --amount 45000.00 --currency CRC --subject \"Cambio de aceite\"");
     Console.WriteLine("    inyectar --tipo DurableCostRecorded --incurredAt 2026-03-12T09:00:00Z");

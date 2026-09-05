@@ -15,29 +15,29 @@ namespace DealershipCar.Consola
 		internal const string TheFirstBranch = "Taller Central";
 
 		/// <summary>Por que entro, con las palabras de la sucursal.</summary>
-		internal const string TheFirstSubject = "Cambio de frenos";
+		internal const string TheFirstSubject = "Cambio de aceite";
 
 		/// <summary>Cuando entro a la primera.</summary>
 		internal static readonly DateTime TheFirstEntry =
-			new DateTime(2026, 5, 11, 8, 30, 0, DateTimeKind.Utc);
+			new DateTime(2026, 6, 10, 8, 30, 0, DateTimeKind.Utc);
 
 		/// <summary>Cuando la entregaron.</summary>
 		internal static readonly DateTime TheFirstCollection =
-			new DateTime(2026, 5, 13, 16, 45, 0, DateTimeKind.Utc);
+			new DateTime(2026, 6, 12, 16, 45, 0, DateTimeKind.Utc);
 
 		/// <summary>
 		/// Los TRES dias que la sucursal dice que cubrio. No salen de los dos instantes: sacarlos
-		/// pediria una zona horaria que este registro no lleva, y con la zona equivocada el 11 podria
-		/// salir siendo el 10.
+		/// pediria una zona horaria que este registro no lleva, y con la zona equivocada el 10 podria
+		/// salir siendo el 9.
 		/// </summary>
 		internal static readonly string[] TheFirstDays =
-			{ "2026-05-11", "2026-05-12", "2026-05-13" };
+			{ "2026-06-10", "2026-06-11", "2026-06-12" };
 
 		/// <summary>La sucursal de la estadia que se abre y se cierra en dos hechos.</summary>
 		internal const string TheSecondBranch = "Taller Escazú";
 
 		/// <summary>Por que entro a la segunda.</summary>
-		internal const string TheSecondSubject = "Revisión de los 20 mil";
+		internal const string TheSecondSubject = "Revisión de los 60 mil";
 
 		/// <summary>Cuando entro a la segunda.</summary>
 		internal static readonly DateTime TheSecondEntry =
@@ -70,10 +70,10 @@ namespace DealershipCar.Consola
 		internal const string TheYearTo = "2026-12-31";
 
 		/// <summary>Un periodo que corta la primera estadia por la mitad, para el renglon de la regla 2.</summary>
-		internal const string TheCutFrom = "2026-05-12";
+		internal const string TheCutFrom = "2026-06-11";
 
 		/// <summary>El otro extremo del periodo que corta.</summary>
-		internal const string TheCutTo = "2026-05-31";
+		internal const string TheCutTo = "2026-06-30";
 
 		/// <summary>Registra de un solo acto la estadia que ya termino, que es la forma correctiva.</summary>
 		internal static void TheFirstStayArrivesWhole(DealershipCarAPI api)
