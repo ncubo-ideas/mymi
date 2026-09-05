@@ -172,16 +172,21 @@ else
         caso en que NO hay nada que hacer, y ahí no hay consejo que inventar.               *@
     @* EL @key VA EN EL CUERPO Y NO EN LA <section>, desde que Actualizar vive acá adentro.
 
-       El @key sube en cada Releer y obliga a Blazor a RECREAR estos nodos. Sin él reusa
-       el mismo elemento, la animación de CSS no se vuelve a disparar, y apretar Actualizar
-       no produce ningún cambio visible cuando no entraron exámenes nuevos — o sea que el
-       botón parecía no hacer nada. Medido: `getAnimations()[0].currentTime` se quedaba en
-       1000 y el nodo era idéntico.
+       El @key obliga a Blazor a RECREAR estos nodos. Sin él reusa el mismo elemento, la
+       animación de CSS no se vuelve a disparar, y apretar Actualizar no produce ningún
+       cambio visible cuando no entraron exámenes nuevos — o sea que el botón parecía no
+       hacer nada. Medido: `getAnimations()[0].currentTime` se quedaba en 1000 y el nodo
+       era idéntico.
 
        Pero si la sección ENTERA se recrea, también se recrea el botón que acabás de
        apretar, y el foco de teclado se pierde en el reemplazo del nodo. Con el @key un
-       nivel más abajo la cabecera sobrevive al redibujo —el foco se queda donde estaba— y
-       el cuerpo se vuelve a animar exactamente igual que antes. *@
+       nivel más abajo la cabecera sobrevive al redibujo y el cuerpo se vuelve a animar.
+
+       LA LLAVE ES estado.Refrescos Y NO UN CONTADOR DE ESTA PANTALLA. Un contador local
+       subía en cada Releer, y Releer corre en TODA interacción: declarar el sexo, importar
+       un expediente, arrancar. La animación de entrada se volvía a disparar por tocar un
+       botón que no fue a buscar nada, que es lo contrario de lo que este @key significa.
+       Refrescos sube solo cuando se fue al laboratorio, y por eso dice lo que dice. *@
     @* LA PORTADA MUESTRA DOS COSAS A LA VEZ, como el telefono del landing: el verde que
        dice cuantos valores estan donde tienen que estar, y aparte lo que pide atencion.
        Antes era UNA tarjeta que cambiaba de tono entero, y eso tenia un costo: apenas un
@@ -206,7 +211,7 @@ else
             </button>
         </div>
 
-        <div class="portada-cuerpo" @key="@($"portada-{redibujo}")">
+        <div class="portada-cuerpo" @key="@($"portada-{estado.Refrescos}")">
             @* EL BLOQUE QUE TRANQUILIZA. No se dibuja cuando la severidad es «urgente»:
                el rojo lo reserva el dominio para lo que no puede esperar, y poner un
                «todo está bien» al lado de eso lo contradice. Fuera de ese caso el verde
@@ -436,7 +441,7 @@ else
         <h2 class="seccion">Cómo vienen tus valores</h2>
         @foreach (TendenciaDeAnalito t in analitos)
         {
-            <button class="serie" @key="@($"{t.Analito}-{redibujo}")" @onclick="() => VerSerie(t.Analito)">
+            <button class="serie" @key="@($"{t.Analito}-{estado.Refrescos}")" @onclick="() => VerSerie(t.Analito)">
                 @{ InterpretacionDeAnalito lectura = Lectura(t.Analito); }
                 <div class="serie-cabeza">
                     <div>
@@ -512,7 +517,7 @@ else
        positivo y un aviso suelto. *@
     @foreach (PresenciaDeAnalito p in presencias)
     {
-        <button class="serie" @key="@($"{p.Analito}-{redibujo}")" @onclick="() => VerSerie(p.Analito)">
+        <button class="serie" @key="@($"{p.Analito}-{estado.Refrescos}")" @onclick="() => VerSerie(p.Analito)">
             @{ InterpretacionDeAnalito suya = Lectura(p.Analito); }
             <div class="serie-cabeza">
                 <div>
@@ -557,7 +562,7 @@ else
        volvió a ámbar ya no pide nada. *@
     @foreach (ConstanciaDeAnalito c in constancias)
     {
-        <button class="serie" @key="@($"{c.Analito}-{redibujo}")" @onclick="() => VerSerie(c.Analito)">
+        <button class="serie" @key="@($"{c.Analito}-{estado.Refrescos}")" @onclick="() => VerSerie(c.Analito)">
             @{ InterpretacionDeAnalito suya = Lectura(c.Analito); }
             <div class="serie-cabeza">
                 <div>
@@ -689,11 +694,6 @@ else
     private string sexo = "";
     private bool pedidoPlegado;
     private bool cambiandoSexo;
-
-    // Sube en cada Releer. Es la llave que hace que Blazor recree las tarjetas en vez de
-    // reusarlas, y con eso las formas se vuelven a dibujar: es la respuesta visible a
-    // haber apretado Actualizar.
-    private int redibujo;
 
     // El tono lo decide el DOMINIO, no esta pantalla: es la severidad que salió de
     // recorrer las series, traducida con el mapeo del semáforo de la marca. Ahora pinta
@@ -873,7 +873,6 @@ else
         urgente = estado.Urgente();
         pedido = estado.PedidoDeSexo();
         sexo = estado.SexoDelPaciente();
-        redibujo++;
         ultimoEvento = estado.UltimoEvento();
 
         // Una lectura por analito con historia. Se piden de a uno porque cada una es una
