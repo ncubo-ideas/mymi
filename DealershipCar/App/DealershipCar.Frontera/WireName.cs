@@ -95,6 +95,31 @@ namespace DealershipCar.App
 			return code;
 		}
 
+		/// <summary>
+		/// La placa que llego, comprobada ANTES de performar: un texto que no deja nada al normalizar
+		/// no es una placa. La normalizacion vive en el dominio y aca solo se le pregunta, porque una
+		/// segunda copia de esa regla se despega sin que nada se ponga rojo.
+		/// </summary>
+		internal static string Plate(string plate)
+		{
+			if (!TheJoinKey.CanBeMadeFrom(plate))
+				throw new ArgumentException(
+					$"'{plate}' no deja ninguna placa al normalizar, asi que no hay nada con que "
+					+ "cruzar este vehiculo. Quien publica la placa de un vehiculo es el concesionario.",
+					"plate");
+
+			return plate;
+		}
+
+		/// <summary>
+		/// Si ese texto deja una placa. Contesta, no revienta: es la pregunta de la ingesta, donde un
+		/// payload ajeno se descarta en vez de tumbar la lectura del feed.
+		/// </summary>
+		internal static bool NamesAPlate(string plate)
+		{
+			return TheJoinKey.CanBeMadeFrom(plate);
+		}
+
 		internal static bool NamesAnOperationKind(string kind)
 		{
 			return IsAMemberOf(typeof(OperationKindCode), kind);

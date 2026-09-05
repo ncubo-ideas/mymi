@@ -15,7 +15,7 @@ namespace DealershipCar.Dominio.Pruebas
 	// aunque el estado siga siendo correcto.
 	//
 	// Asi que ninguna linea de DSL de DealershipCarAPI puede llegar al journal de una persona sin
-	// haberse ejecutado antes aca. Esta prueba corre CADA UNA de las CIENTO CUARENTA Y CINCO
+	// haberse ejecutado antes aca. Esta prueba corre CADA UNA de las CIENTO CINCUENTA Y UNA
 	// operaciones de la puerta al menos una vez -- las veintiuna de la agenda (OS2/T6), las siete de la ingesta
 	// (OS2/T8: los dos comandos de la bitacora, sus cuatro lecturas, y el Apply), CanBeDeferred, los
 	// once comandos de publicacion de la especificacion (T5), las TREINTA Y SIETE lecturas de la
@@ -30,7 +30,9 @@ namespace DealershipCar.Dominio.Pruebas
 	// CUATRO de los precios publicados -- y las SEIS de la serie del odometro que agrego
 	// BuildOrder/OD-2, los DOS COMANDOS del libro de costos que BuildOrder/CL-4 agrego con la
 	// SEXTA global de raiz, las SIETE LECTURAS de ese libro que agrego BuildOrder/CL-5, y las DOS DEL
-	// CRUCE que agrego BuildOrder/CL-6 -- las que nombran DOS globales de raiz en un solo script.
+	// CRUCE que agrego BuildOrder/CL-6 -- las que nombran DOS globales de raiz en un solo script -- y
+	// EL COMANDO Y LAS CINCO LECTURAS DE LA PLACA que agrego LicensePlate/LP-2, que NO trajeron ninguna
+	// global de raiz nueva porque la placa es un miembro mas del perfil que ya existia.
 	// No mira reglas de negocio -- de eso se ocupan las otras pruebas del nivel B -- mira que el
 	// script exista, parsee, ate sus parametros y devuelva lo que dijo que devolvia.
 	//
@@ -57,7 +59,7 @@ namespace DealershipCar.Dominio.Pruebas
 	// escrito. Es la misma forma que el censo de escrituras de
 	// TheOwnerIsNeverASourceOfAFactAboutTheirOwnVehicle, con el mismo limite.
 	//
-	// LAS OPERACIONES SON CIENTO CUARENTA Y CINCO Y LOS SCRIPTS SON MAS, y la ingesta es donde la
+	// LAS OPERACIONES SON CIENTO CINCUENTA Y UNA Y LOS SCRIPTS SON MAS, y la ingesta es donde la
 	// diferencia se vuelve grande: Apply es UNA operacion de la puerta y tiene VEINTICUATRO scripts
 	// detras -- uno por cada tipo de hecho recibido, que son veintitres, mas el comando suelto que
 	// avanza el punto de control cuando el dominio rechaza el hecho. Contar operaciones y contar
@@ -110,9 +112,9 @@ namespace DealershipCar.Dominio.Pruebas
 	// A PASAR: al llegar CL-4 este encabezado decia "ciento veintiocho" en un parrafo y "ciento
 	// nueve" en otro mientras la puerta tenia CIENTO TREINTA Y CUATRO, y las tres cuentas se
 	// re-derivaron contra la lista de abajo en vez de arrastrarse. Una cuenta afirmada en prosa
-	// envejece en silencio, asi que la que manda es TheOperationsAreOneHundredAndFortyFive, que la
+	// envejece en silencio, asi que la que manda es TheOperationsAreOneHundredAndFiftyOne, que la
 	// afirma al lado de la lista que cuenta -- y su NOMBRE lleva la cuenta a proposito, para que
-	// subirla obligue a renombrarla. CL-5 la subio y la renombro, y CL-6 otra vez.
+	// subirla obligue a renombrarla. CL-5 la subio y la renombro, CL-6 otra vez, y LP-2 otra vez.
 	//
 	// Y VOLVIO A PASAR EN CL-5, CUARTA VEZ: su primera pasada movio las cuentas de :18 y :59 y se
 	// dejo la de :84 diciendo la vieja, asi que su bloque afirmo tres donde habian aterrizado dos. La
@@ -212,6 +214,9 @@ namespace DealershipCar.Dominio.Pruebas
 			"ReadServicingPolicyRevision", "ReadTimeRemainderStanding", "ReadTyreRevision", "ReadVin",
 			"RecordConditionThreshold", "RecordDelivery", "RecordDurableCost", "RecordReading",
 			"RecordRecurringCost",
+			"RecordPlateAssignment",
+			"IsAPlatePublished", "DescribePlate", "ReadPlateAsPublished", "ReadPlateJoinKey",
+			"PlateAssignments",
 			"CostEntriesBetween", "CostEntryCountBetween",
 			"DescribeCostPerDistanceBetween",
 			"DescribeSpendBetween", "DescribeSpendPerCurrencyBetween",
@@ -245,9 +250,9 @@ namespace DealershipCar.Dominio.Pruebas
 		// dejo escrito "setenta y siete" cuando la puerta ya tenia setenta y nueve: una cuenta
 		// afirmada en prosa envejece en silencio, y esta afirmada al lado de lo que cuenta.
 		[Test]
-		public void TheOperationsAreOneHundredAndFortyFive()
+		public void TheOperationsAreOneHundredAndFiftyOne()
 		{
-			Assert.That(EveryOperationThisFixtureRuns, Has.Length.EqualTo(145));
+			Assert.That(EveryOperationThisFixtureRuns, Has.Length.EqualTo(151));
 		}
 
 		// La semilla corre en OnHydrated, asi que para cuando la prueba arranca la agenda ya
@@ -614,6 +619,62 @@ namespace DealershipCar.Dominio.Pruebas
 				journal.Api.CostEntriesBetween(from, to).Classification,
 				Is.EqualTo(new[] { "Durable", "Recurring" }),
 				"Y las SEIS lineas del script del registro atan sus seis Out en una sola consulta.");
+		}
+
+		// EL COMANDO Y LAS CINCO LECTURAS DE LA PLACA QUE TRAJO LP-2. Ninguno de los cinco scripts de
+		// lectura lleva un IF, asi que un estado corre cada uno entero -- pero el REGISTRO tiene dos
+		// estados y el de las filas contesta distinto en cada uno, que es el patron de
+		// TheSixReadsOfTheSeriesAnswerInTwoStatesOfTheRecord y por eso van los dos.
+		//
+		// LAS DOS GUARDADAS SON DOS SCRIPTS CADA UNA: el pre-chequeo pregunta IsAPlatePublished con el
+		// MISMO instante antes de leer el texto, que es DEC-30 y su precio DEC-34. Aca se corren por el
+		// camino que CONTESTA; por el que RECHAZA las corre
+		// NoPlateIsAnAnswer.TheTwoGuardedReadsRefuseInsteadOfInventingAPlate.
+		//
+		// LO QUE SE AFIRMA ES LA FORMA: que el script parsee, ate su instante o sus cuatro Out y vuelva
+		// tipado. De que cada una conteste lo suyo se ocupan los cuatro archivos de la rebanada.
+		[Test]
+		public void EveryPlateReadOfTheDoorParsesBindsAndComesBackTypedInBothStates()
+		{
+			DateTime beforeAnyPlate = new DateTime(2026, 1, 1, 0, 0, 0, DateTimeKind.Utc);
+			DateTime afterThePlate = new DateTime(2026, 6, 1, 0, 0, 0, DateTimeKind.Utc);
+
+			// SIN NINGUNA ASIGNACION: las tres totales corren igual y ninguna rechaza.
+			Assert.That(journal.Api.IsAPlatePublished(afterThePlate), Is.False);
+			Assert.That(
+				journal.Api.DescribePlate(afterThePlate), Does.Contain("concesionario"),
+				"La ausencia se dice en palabras y nombra a quien publica una placa.");
+			Assert.That(journal.Api.PlateAssignments().AsPublished, Is.Empty);
+
+			// CON DOS ASIGNACIONES: las mismas tres, y ahora las dos guardadas por el camino que
+			// contesta.
+			journal.Api.RecordPlateAssignment(
+				"BQR-482", new DateTime(2026, 2, 10, 9, 0, 0, DateTimeKind.Utc));
+
+			journal.Api.RecordPlateAssignment(
+				"XKD-119", new DateTime(2026, 4, 20, 9, 0, 0, DateTimeKind.Utc));
+
+			Assert.That(journal.Api.IsAPlatePublished(beforeAnyPlate), Is.False,
+				"Y el instante ATA: en enero todavia no habia placa, aunque hoy la haya.");
+			Assert.That(journal.Api.IsAPlatePublished(afterThePlate), Is.True);
+
+			Assert.That(
+				journal.Api.DescribePlate(afterThePlate), Does.Contain("XKD-119"));
+
+			Assert.That(
+				journal.Api.ReadPlateAsPublished(afterThePlate), Is.EqualTo("XKD-119"));
+
+			Assert.That(
+				journal.Api.ReadPlateJoinKey(afterThePlate), Is.EqualTo("XKD119"),
+				"Y las dos guardadas corren su pre-chequeo con el MISMO instante antes de leer.");
+
+			PlateAssignmentRecord rows = journal.Api.PlateAssignments();
+
+			Assert.That(rows.AsPublished, Is.EqualTo(new[] { "BQR-482", "XKD-119" }),
+				"Y las CUATRO lineas del script del registro atan sus cuatro Out en una sola consulta.");
+			Assert.That(rows.JoinKey, Is.EqualTo(new[] { "BQR482", "XKD119" }));
+			Assert.That(rows.AssignedAt, Is.EqualTo(new[] { "2026-02-10", "2026-04-20" }));
+			Assert.That(rows.IsCurrent, Is.EqualTo(new[] { "false", "true" }));
 		}
 
 		// LAS DOS DEL CRUCE QUE TRAJO CL-6, LOS DOS CAMINOS DE UNA Y LA LINEA CORTA DE LA OTRA, EN DOS

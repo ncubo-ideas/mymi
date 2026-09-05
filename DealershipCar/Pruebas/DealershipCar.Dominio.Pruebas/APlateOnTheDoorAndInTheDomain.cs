@@ -6,7 +6,7 @@ using NUnit.Framework;
 
 namespace DealershipCar.Dominio.Pruebas
 {
-	// EL ANDAMIO DE LP-0, Y LA MITAD DEL DOMINIO YA SE CAYO EN LP-1. DEC-101.
+	// EL ANDAMIO DE LP-0, Y YA SE CAYO ENTERO -- el dominio en LP-1 y la puerta en LP-2. DEC-101.
 	//
 	// E4 pide las pruebas ANTES de que exista el dominio. En este modulo hay UN solo proyecto de
 	// pruebas, asi que una prueba que nombre un miembro que todavia no existe deja la SUITE ENTERA sin
@@ -14,15 +14,19 @@ namespace DealershipCar.Dominio.Pruebas
 	// la sesion del usuario que trabaja en el mismo arbol. Se entro por REFLEXION: compilaba, se ponia
 	// roja en runtime, y el rojo NOMBRABA el miembro que faltaba.
 	//
-	// LO QUE LP-1 BAJO, que es la obligacion que venia con eso: TheKeyOf, YieldsAKey y TheRefusalOf
-	// son ahora llamadas DIRECTAS a TheJoinKey, y los tipos del dominio se nombran con typeof en vez
-	// de resolverse por cadena. Una reflexion que sobrevive a un verde es un instrumento mas debil
-	// para siempre -- un cambio de firma que el compilador habria atrapado se vuelve un
-	// MissingMethodException, y un miembro resuelto por nombre sigue pasando cuando le cambian los
-	// TIPOS de los parametros por debajo.
+	// LO QUE LP-1 BAJO: TheKeyOf, YieldsAKey y TheRefusalOf son ahora llamadas DIRECTAS a TheJoinKey,
+	// y los tipos del dominio se nombran con typeof en vez de resolverse por cadena.
 	//
-	// LO QUE SIGUE EN PIE Y ES DE LP-2: todo lo de LA PUERTA. DealershipCarAPI todavia no declara
-	// ninguno de los seis miembros, asi que nombrarlos hoy no compilaria.
+	// LO QUE LP-2 BAJO: los seis miembros de LA PUERTA. Ya existen, asi que se nombran, y con ellos se
+	// fueron el Call y el Unwrapped que envolvian la reflexion. Una reflexion que sobrevive a un verde
+	// es un instrumento mas debil para siempre -- un cambio de firma que el compilador habria atrapado
+	// se vuelve un MissingMethodException, y un miembro resuelto por nombre sigue pasando cuando le
+	// cambian los TIPOS de los parametros por debajo.
+	//
+	// LO QUE SE QUEDA POR REFLEXION Y NO ES ANDAMIO: TheDoorsMember y TheDoorDeclares, que ENUMERAN los
+	// miembros de la puerta para afirmar una propiedad sobre TODOS. Eso es un aparejo -- la censa no se
+	// puede escribir de otra forma -- y en un diff se ve igual que un andamio, que es por que DEC-101
+	// esta escrita.
 	//
 	// Y NO CONFUNDIR NADA DE ESTO CON TheDoorRecognisesTheNamesOfEveryClosedSetItSpeaks, que entra por
 	// reflexion y tiene razon PARA SIEMPRE: DealershipCar.App no declara ningun InternalsVisibleTo, asi
@@ -60,52 +64,52 @@ namespace DealershipCar.Dominio.Pruebas
 		// LP-3 copia.
 		internal const string TheEventType = "PlateAssigned";
 
-		// ===== LA PUERTA ==================================================================
+		// ===== LA PUERTA, POR LLAMADA DIRECTA =============================================
+
+		// LP-2 BAJO ESTE ANDAMIO, que es la otra mitad de la obligacion de DEC-101. Los seis miembros
+		// existen, asi que se nombran y el COMPILADOR defiende cada firma: cambiarle el tipo a un
+		// parametro deja de compilar, mientras que resolverlo por nombre lo dejaba pasar del todo.
 
 		internal static void RecordAssignment(
 			DealershipCarAPI door, string plate, DateTime assignedAt)
 		{
-			Call(door, TheCommand, plate, assignedAt);
+			door.RecordPlateAssignment(plate, assignedAt);
 		}
 
 		internal static bool IsPublished(DealershipCarAPI door, DateTime asOf)
 		{
-			return (bool)Call(door, IsAPlatePublished, asOf);
+			return door.IsAPlatePublished(asOf);
 		}
 
 		internal static string Describe(DealershipCarAPI door, DateTime asOf)
 		{
-			return (string)Call(door, DescribePlate, asOf);
+			return door.DescribePlate(asOf);
 		}
 
 		internal static string AsPublished(DealershipCarAPI door, DateTime asOf)
 		{
-			return (string)Call(door, ReadPlateAsPublished, asOf);
+			return door.ReadPlateAsPublished(asOf);
 		}
 
 		internal static string JoinKeyAsOf(DealershipCarAPI door, DateTime asOf)
 		{
-			return (string)Call(door, ReadPlateJoinKey, asOf);
+			return door.ReadPlateJoinKey(asOf);
 		}
 
-		// LAS FILAS. El DTO no existe todavia, asi que se lee por columnas: cada columna es un array
-		// primitivo paralelo, que es la forma de ShopStayRecord y la que §9 pide.
+		// LAS FILAS, columna por columna. El DTO son arreglos primitivos paralelos -- la forma de
+		// ShopStayRecord y la que §9 pide -- y cada nombre de columna de abajo es una propiedad que
+		// el compilador resuelve: borrarla o renombrarla ya no se descubre en runtime.
 		internal static string[] AssignmentColumn(DealershipCarAPI door, string column)
 		{
-			object rows = Call(door, PlateAssignments);
+			PlateAssignmentRecord rows = door.PlateAssignments();
 
-			PropertyInfo found = rows.GetType().GetProperty(column);
+			if (column == "AsPublished") return rows.AsPublished;
+			if (column == "JoinKey") return rows.JoinKey;
+			if (column == "AssignedAt") return rows.AssignedAt;
+			if (column == "IsCurrent") return rows.IsCurrent;
 
-			Assert.That(found, Is.Not.Null,
-				"El registro de asignaciones no tiene la columna '" + column + "'. Las cuatro que §9 "
-				+ "pide son el texto publicado, la llave, el instante y cual es la vigente.");
-
-			object value = found.GetValue(rows);
-
-			if (value is string[] many) return many;
-
-			Assert.Fail("La columna '" + column + "' no es un array primitivo. Un registro crudo son "
-				+ "columnas paralelas: un carrier del dominio no puede cruzar la puerta.");
+			Assert.Fail("El registro de asignaciones no tiene la columna '" + column + "'. Las cuatro "
+				+ "que §9 pide son el texto publicado, la llave, el instante y cual es la vigente.");
 
 			return null;
 		}
@@ -168,26 +172,5 @@ namespace DealershipCar.Dominio.Pruebas
 			return false;
 		}
 
-		private static object Call(DealershipCarAPI door, string name, params object[] arguments)
-		{
-			return Unwrapped(() => TheDoorsMember(name).Invoke(door, arguments));
-		}
-
-		// La reflexion envuelve TODA excepcion del cuerpo en TargetInvocationException. Sin
-		// desenvolverla, una prueba que espera el rechazo del dominio veria siempre el mismo tipo de
-		// la infraestructura y no podria decir cual rechazo fue.
-		private static object Unwrapped(Func<object> invocation)
-		{
-			try
-			{
-				return invocation();
-			}
-			catch (TargetInvocationException wrapped)
-			{
-				if (wrapped.InnerException == null) throw;
-
-				throw wrapped.InnerException;
-			}
-		}
 	}
 }

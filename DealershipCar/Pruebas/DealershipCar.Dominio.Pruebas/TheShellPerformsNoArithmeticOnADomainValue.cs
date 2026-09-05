@@ -54,7 +54,10 @@ namespace DealershipCar.Dominio.Pruebas
 			// Y SUBIO 21 -> 23 CON LOS DOS MENSAJES DEL FEED DEL LIBRO, que son DOS archivos: la raiz
 			// paso de 34 a 36 y el margen sigue siendo TRECE. Los dos van en Events/, que es de esta
 			// misma raiz: el barrido lee la raiz entera y no solo el archivo de la puerta.
-			new object[] { TheCodeOfTheShellsAsData.App, 23 },
+			//
+			// Y SUBIO 23 -> 24 CON EL DTO DE LAS ASIGNACIONES DE PLACA, que es UN archivo: la raiz paso
+			// de 36 a 37 y el margen sigue siendo TRECE.
+			new object[] { TheCodeOfTheShellsAsData.App, 24 },
 			new object[] { TheCodeOfTheShellsAsData.Frontera, 2 },
 			// EL PISO DE Consola SUBIO 4 -> 5 CON EL GUION DE LOS GASTOS, que es UN archivo: la raiz
 			// paso de 5 a 6 y el margen sigue siendo UNO, que es el mas apretado de las ocho raices
