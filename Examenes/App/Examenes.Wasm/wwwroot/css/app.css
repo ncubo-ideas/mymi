@@ -22,6 +22,19 @@
  */
 
 :root {
+    /* EL BROWSER TAMBIÉN ES OSCURO. Sin esto, lo que dibuja el sistema y no la hoja sale
+       claro sobre el navy: la barra de scroll en Windows y Linux, el gutter de rebote al
+       llegar al final en móvil, el resaltado de selección de texto. Esta carátula no tiene
+       controles de formulario, así que no hay un popup blanco que la delate como en el
+       tablero de Cargas — pero la franja clara del scroll al costado hace lo mismo, y
+       declararlo es una línea.
+
+       No hay bloque prefers-color-scheme y no es un olvido: esta app es oscura SIEMPRE.
+       La decisión la cerró el landing con el que se vende, y los valores del semáforo son
+       los que Geaninna dio PARA fondo oscuro — lo único que marcó como no negociable. Un
+       modo claro no sería una variante de esta hoja: sería otra paleta sin especificar. */
+    color-scheme: dark;
+
     /* Institucional — «el laboratorio». Los valores vienen de las especificaciones. */
     --azul:        #123f6d;   /* color de marca */
     --azul-oscuro: #0b2c4e;
