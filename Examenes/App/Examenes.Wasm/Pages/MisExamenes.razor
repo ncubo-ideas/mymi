@@ -31,9 +31,12 @@
 @* UN solo lugar para los errores, y arriba. Antes habia dos bloques -uno adentro del
    arranque y otro al final de la pagina- asi que un mismo fallo se veia dos veces, y
    estando abajo quedaba fuera de pantalla: la app parecia no reaccionar al click. *@
+@* role="alert": el error es lo único de esta pantalla que un lector de pantalla tiene que
+   interrumpir para decir. Subirlo arriba resolvió el «parecía no reaccionar al click» para
+   quien ve; sin esto, para quien no ve seguía sin pasar nada. *@
 @if (error.Length > 0)
 {
-    <div class="aviso aviso--problema">
+    <div class="aviso aviso--problema" role="alert">
         <strong>@(estado.EstaArriba ? "No se pudo completar la operación." : "No se pudo abrir la app.")</strong>
         <pre>@error</pre>
     </div>
@@ -216,12 +219,19 @@ else
            app se pone al día sola al abrir, así que esto es «volvé a chequear AHORA». *@
         <div class="portada-cabeza">
             <p class="portada-rotulo">tu expediente, hoy</p>
-            <button class="portada-releer" @onclick="Refrescar" disabled="@refrescando">
+            @* aria-busy y no solo el texto: «Actualizando…» cambia el nombre del botón, y
+               un lector de pantalla no vuelve a leerlo si el foco ya estaba ahí. El estado
+               ocupado sí lo anuncia. *@
+            <button class="portada-releer" @onclick="Refrescar" disabled="@refrescando"
+                    aria-busy="@(refrescando ? "true" : "false")">
                 @(refrescando ? "Actualizando…" : "Actualizar")
             </button>
         </div>
 
-        <div class="portada-cuerpo" @key="@($"portada-{estado.Refrescos}")">
+        @* aria-live: este bloque ES la respuesta a Actualizar, y el @key lo recrea entero.
+           Sin esto la única señal de que la app fue y volvió es una animación. *@
+        <div class="portada-cuerpo" @key="@($"portada-{estado.Refrescos}")"
+             aria-live="polite">
             @* EL BLOQUE QUE TRANQUILIZA. No se dibuja cuando la severidad es «urgente»:
                el rojo lo reserva el dominio para lo que no puede esperar, y poner un
                «todo está bien» al lado de eso lo contradice. Fuera de ese caso el verde
@@ -427,7 +437,12 @@ else
         <div class="pedido">
             <div class="pedido-cabeza">
                 <span class="pedido-rotulo">falta un dato tuyo</span>
-                <button class="pedido-plegar" @onclick="() => pedidoPlegado = !pedidoPlegado">
+                @* «Ver» y «Ocultar» solos no dicen de qué, y fuera de contexto es lo único
+                   que se oye. El aria-expanded además dice si está abierto, que el texto
+                   deja implícito. *@
+                <button class="pedido-plegar" @onclick="() => pedidoPlegado = !pedidoPlegado"
+                        aria-expanded="@(pedidoPlegado ? "false" : "true")"
+                        aria-label="@(pedidoPlegado ? "Ver el dato que falta" : "Ocultar el dato que falta")">
                     @(pedidoPlegado ? "Ver" : "Ocultar")
                 </button>
             </div>
@@ -657,13 +672,20 @@ else
             Tus resultados se comparan contra los rangos de <strong>@sexo</strong>.
             @if (cambiandoSexo)
             {
-                <button class="boton boton--enlace" @onclick="@(() => Declarar("hombre"))">hombre</button>
+                @* Un lector de pantalla lista los botones fuera de su frase, y ahí «hombre»
+                   y «Cambiar» no dicen qué hacen. El texto visible se queda como está —la
+                   frase que lo rodea lo explica para quien ve—; el nombre accesible lo dice
+                   entero. *@
+                <button class="boton boton--enlace" @onclick="@(() => Declarar("hombre"))"
+                        aria-label="Comparar contra los rangos de hombre">hombre</button>
                 <text>·</text>
-                <button class="boton boton--enlace" @onclick="@(() => Declarar("mujer"))">mujer</button>
+                <button class="boton boton--enlace" @onclick="@(() => Declarar("mujer"))"
+                        aria-label="Comparar contra los rangos de mujer">mujer</button>
             }
             else
             {
-                <button class="boton boton--enlace" @onclick="() => cambiandoSexo = true">Cambiar</button>
+                <button class="boton boton--enlace" @onclick="() => cambiandoSexo = true"
+                        aria-label="Cambiar el sexo contra el que se comparan tus resultados">Cambiar</button>
             }
         </p>
     }
