@@ -71,6 +71,10 @@ namespace Cargas.Dominio
 
 		internal bool SePudoMedir => Situacion.SePudoMedir;
 
+		/// <summary>El nombre de la situacion, plano. Igual que Carga.NombreDelCorte: el
+		/// print de la frontera lee valores, no navega objetos.</summary>
+		internal string NombreDeLaSituacion => Situacion.Nombre;
+
 		// LA MIRADA LA PONE LA BITACORA al entregarlo, igual que en ProyeccionDeOdometro y
 		// en Tramo. Aca no es cosmetico: este numero se va a poner al lado de la distancia
 		// que le falta al carro para un service, y esa distancia viene en la unidad del
