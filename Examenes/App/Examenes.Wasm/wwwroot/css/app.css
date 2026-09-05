@@ -140,6 +140,10 @@ h1:focus, h1:focus-visible { outline: none; }
 .apunte { color: var(--tenue); font-size: 13.5px; }
 .mono   { font-family: var(--mono); }
 
+/* El cartel del reenganche, mientras IndexedDB contesta si habia un modo recordado. Va
+   centrado y alto en la pagina porque reemplaza al elegidor entero, no lo acompana. */
+.abriendo { margin: 22vh auto 0; text-align: center; font-size: 15px; color: var(--tenue); }
+
 /* ------------------------------------------------------------------ avisos */
 
 .aviso {
