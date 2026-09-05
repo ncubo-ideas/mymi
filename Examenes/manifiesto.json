@@ -35,8 +35,8 @@
     "carpetaPorDefecto": "ExamenesMCP",
     "//carpeta": "Es un NOMBRE, no una ruta: la carpeta concreta la elige la persona al instalar. El MCP hoy cae a UserProfile/Examenes-journal si no le pasan una.",
 
-    "reconstruible": true,
-    "//reconstruible": "EL CAMPO QUE NO SE DEDUCE DEL CODIGO, y el que decide si el Host puede vaciar esta arena sin costo. Hoy todo hecho viene de la institucion —hasta la edad esta quemada en la semilla—, asi que se borra la carpeta, se aprieta Refresh y vuelve entero desde URL2. EL DIA QUE LA PERSONA APORTE UN DATO PROPIO —una anotacion, un umbral suyo, su medicacion— esto pasa a false y borrar deja de ser gratis.",
+    "reconstruible": false,
+    "//reconstruible": "EL CAMPO QUE NO SE DEDUCE DEL CODIGO, y el que decide si el Host puede vaciar esta arena sin costo. YA LLEGO EL DIA que este campo anticipaba cuando decia true: expediente.DeclararSexo es un comando que entra por un boton de la app, no por la narrativa del laboratorio, y URL2 no lo puede devolver. Borrar la carpeta ahora pierde la declaracion de la persona y con ella el veredicto de todo analito cuyo rango dependa del sexo —ocho tarjetas vuelven a 'requiere el sexo', hacia atras en el tiempo—. El resto del expediente si se reconstruye desde URL2; lo que no se reconstruye es lo que aporto ella.",
 
     "bytesPorEvento": 100,
     "//bytesPorEvento": "Declarado, no medido en este negocio: el techo que da el capitulo 0 (<100 B por evento). Sirve para que el Host compare contra lo real y detecte desviacion, no como dato duro."
@@ -63,9 +63,14 @@
     "//": "Lo que este modulo necesita DE LA PERSONA para funcionar, no de la institucion. Declararlo le permite al Host pedirlo una vez y prestarselo a cada modulo que lo declare, en vez de que cada uno lo queme como hace hoy la semilla.",
     "edad": {
       "obligatorio": true,
-      "porque": "Los rangos de referencia del dominio dependen de la edad. Hoy esta quemada en 60 en ExamenesApp.EdadDelPacienteDelDemo."
+      "porque": "Los rangos de referencia del dominio dependen de la edad. Hoy esta quemada en 34 en ExamenesApp.EdadDelPacienteDelDemo."
     },
-    "//lo-que-falta": "El expediente solo carga la edad. Sin sexo, sin antecedentes, sin medicacion — y por eso todo rango que dependa de algo mas que la edad hoy no se puede expresar; el mas evidente es la hemoglobina. Es el pendiente 7 del README."
+    "sexo": {
+      "obligatorio": false,
+      "porque": "Ocho analitos se comparan contra un rango que depende del sexo y sin el no tienen veredicto: el dominio contesta requiereElSexo en vez de inventar uno. NO es obligatorio porque el resto del expediente se lee igual sin el.",
+      "//quien-lo-aporta": "LA PERSONA, y es el unico dato del modulo que no viene del laboratorio. Entra por expediente.DeclararSexo desde la caratula, queda en el journal como hecho fechado, y es la razon de journal.reconstruible: false. Si el Host lo pide una vez y se lo presta a los modulos que lo declaren, este boton deja de hacer falta."
+    },
+    "//lo-que-falta": "El expediente carga la edad, y la persona declara su sexo. Faltan antecedentes y medicacion — y por eso todo rango que dependa de algo mas que edad y sexo hoy no se puede expresar. Es el pendiente 7 del README."
   },
 
   "dato": {
@@ -77,12 +82,13 @@
 
   "consultas": {
     "//": "EL CATALOGO DE PERMISOS DE LA IA, del lado correcto. Hubo una pantalla de Ajustes en la app para apagar cada consulta por separado; se fue porque quien se conecta con la IA es el Host, no la app — pero se fue el mecanismo y no quedo donde declarar el catalogo. Es aca: el Host las apaga una por una y journaliza la decision, y lo hace para todos los modulos con la misma pantalla.",
-    "//solo-lectura": "Las cuatro son PerformQuery. Este modulo NO expone ninguna escritura a la IA, y el unico escritor del journal es la persona a traves del modulo.",
+    "//solo-lectura": "Las cinco son PerformQuery. Este modulo NO expone ninguna escritura a la IA, y el unico escritor del journal es la persona a traves del modulo.",
     "//el-criterio": "Si la IA puede contestar algo que ya esta en una pantalla, el demo no probo nada. Por eso no hay una consulta 'resumen_de_examenes': un total, un conteo o el ultimo valor los muestra la app.",
     "lista": [
       { "nombre": "evaluar_tendencia",  "revela": "la serie completa de un analito continuo" },
       { "nombre": "velocidad_de",       "revela": "el tramo mas reciente de un analito continuo" },
       { "nombre": "presencia_de",       "revela": "la serie de un hallazgo binario" },
+      { "nombre": "constancia_de",      "revela": "la serie de un analito nominal — el color de la orina, el de las heces" },
       { "nombre": "que_me_falta_medir", "revela": "que analitos estan vencidos, y el calendario" }
     ]
   },
@@ -94,6 +100,7 @@
       { "ruta": "/analito/{analito}", "nombre": "Tendencia" }
     ],
     "formas": [
+      "CategoriaEnElTiempo",
       "PosicionEnBanda",
       "PresenciaEnElTiempo",
       "ProgresoHaciaMeta",
