@@ -200,6 +200,87 @@ else
     }
 }
 
+@if (Spend is not null)
+{
+    <div class="d-sec">
+        <span class="d-sec__title">En qué se fue la plata</span>
+        <span class="d-sec__note">los últimos doce meses</span>
+    </div>
+
+    <section class="d-card" id="en-que-se-fue-la-plata">
+        <p class="d-note" style="margin-top:0;margin-bottom:10px">
+            <Glyph Name="clock" Size="14" Stroke="2" />
+            <span>Del @Spend.From al @Spend.To</span>
+        </p>
+
+        <div class="d-says" id="gasto-dice">
+            <span class="d-says__label">Lo que salió del banco y lo que el período consumió</span>
+            @Spend.PerCurrencySays
+        </div>
+
+        <div class="d-says" id="costo-por-distancia-dice">
+            <span class="d-says__label">Lo que costó la distancia</span>
+            @Spend.CostPerDistanceSays
+        </div>
+    </section>
+
+    <div class="d-sec">
+        <span class="d-sec__title">Contra los doce meses anteriores</span>
+    </div>
+
+    <section class="d-card" id="gasto-comparado">
+        <p class="d-note" style="margin-top:0;margin-bottom:10px">
+            <Glyph Name="history" Size="14" Stroke="2" />
+            <span>Del @Spend.EarlierFrom al @Spend.EarlierTo</span>
+        </p>
+
+        <div class="d-says" id="gasto-comparacion-dice">
+            <span class="d-says__label">Los dos períodos</span>
+            @Spend.BothPeriodsSay
+        </div>
+    </section>
+
+    @if (Spend.EntryCount > 0)
+    {
+        <div class="d-sec">
+            <span class="d-sec__title">Cada gasto</span>
+            <span class="d-sec__note">@Spend.EntryCount en el periodo</span>
+        </div>
+
+        <section class="d-card" id="linea-gastos">
+            <div class="d-line">
+                @foreach (ACostOnTheRecord gasto in Spend.Rows)
+                {
+                    <div class="d-step" id="@("gasto-" + gasto.IncurredAt)">
+                        <span class="d-step__bullet">
+                            <Glyph Name="sheet" Size="11" Stroke="3" />
+                        </span>
+                        <div class="d-step__when">@gasto.IncurredAt</div>
+                        <div class="d-step__title">@gasto.Subject</div>
+
+                        <div style="display:flex;flex-wrap:wrap;gap:6px;margin-top:8px">
+                            <span class="d-pill d-pill--info">@gasto.Money</span>
+                            @if (gasto.ExpectedLife.Length > 0)
+                            {
+                                <span class="d-pill">@gasto.ExpectedLife</span>
+                            }
+                        </div>
+
+                        <div class="d-says">@gasto.Says</div>
+                    </div>
+                }
+            </div>
+        </section>
+    }
+    else
+    {
+        <div class="d-empty" id="sin-gastos">
+            <span class="d-empty__title">Ningún gasto registrado en este periodo</span>
+            @TheOwnerIsTold.TheCostsAreRecordedByTheBranchThatDoesTheWork
+        </div>
+    }
+}
+
 @code {
     /// <summary>
     /// Las estadias en el taller, leidas en un solo momento. La seccion no lee nada por su cuenta.
@@ -220,4 +301,12 @@ else
     /// </summary>
     [Parameter, EditorRequired]
     public WhereEachOperationStands Operations { get; set; }
+
+    /// <summary>
+    /// En que se le fue la plata a este vehiculo, leido en el mismo momento. De aca sale el gasto de
+    /// la ventana con sus dos vistas, la comparacion con la anterior, lo que costo la distancia y los
+    /// gastos del periodo como filas.
+    /// </summary>
+    [Parameter, EditorRequired]
+    public WhatThisVehicleHasCost Spend { get; set; }
 }

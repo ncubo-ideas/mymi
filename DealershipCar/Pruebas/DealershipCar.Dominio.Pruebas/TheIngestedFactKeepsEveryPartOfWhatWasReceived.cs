@@ -385,7 +385,7 @@ namespace DealershipCar.Dominio.Pruebas
 					() => journal.Api.DescribeFluid("EngineOil")),
 				("la presión de la llanta", "presión en frío 2.4 bar",
 					() => journal.Api.DescribeTyre("Front")),
-				("el monto del precio", "89.9 USD",
+				("el monto del precio", "$89.90",
 					() => journal.Api.DescribeServicePrice(
 						"FluidChange", 10000, "UnitA",
 						new DateTime(2026, 9, 1, 0, 0, 0, DateTimeKind.Utc))),

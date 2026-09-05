@@ -77,6 +77,24 @@ namespace DealershipCar.App
 			return AMemberOf(typeof(VolumeUnitCode), unit, parameterName);
 		}
 
+		/// <summary>
+		/// La moneda en que llego un monto. Es el unico conjunto cerrado que se alcanza por un CODIGO
+		/// en texto y no por un enum de frontera, asi que se le pregunta al dominio en vez de mirar
+		/// un enum.
+		/// </summary>
+		internal static string Currency(string code)
+		{
+			ArgumentException.ThrowIfNullOrWhiteSpace(code, "currency");
+
+			if (!DealershipCar.Dominio.Currency.IsNamed(code))
+				throw new ArgumentException(
+					$"'{code}' no nombra ninguna moneda de las que este modulo nombra. Las que hay "
+					+ "son: " + DealershipCar.Dominio.Currency.TheOnesThereAre() + ".",
+					"currency");
+
+			return code;
+		}
+
 		internal static bool NamesAnOperationKind(string kind)
 		{
 			return IsAMemberOf(typeof(OperationKindCode), kind);
@@ -125,6 +143,15 @@ namespace DealershipCar.App
 		internal static bool NamesAVolumeUnit(string unit)
 		{
 			return IsAMemberOf(typeof(VolumeUnitCode), unit);
+		}
+
+		/// <summary>
+		/// Si ese texto nombra una moneda. Contesta, no revienta. Lo decide el dominio y no un
+		/// Enum.IsDefined: no hay enum de frontera que mirar.
+		/// </summary>
+		internal static bool NamesACurrency(string code)
+		{
+			return DealershipCar.Dominio.Currency.IsNamed(code);
 		}
 
 		/// <summary>

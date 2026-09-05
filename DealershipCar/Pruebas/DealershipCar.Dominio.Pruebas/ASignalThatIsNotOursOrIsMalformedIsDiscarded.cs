@@ -219,11 +219,11 @@ namespace DealershipCar.Dominio.Pruebas
 				Is.Null);
 		}
 
-		// LA RUTA RECONOCE LOS VEINTIUNO, y esto es lo que impide que las pruebas de arriba queden
+		// LA RUTA RECONOCE LOS VEINTITRES, y esto es lo que impide que las pruebas de arriba queden
 		// verdes para siempre: una ruta que devolviera null a todo las pasaria todas. Son CINCO de la
-		// agenda escritos a mano, ONCE de la especificacion, DOS del perfil del vehiculo y TRES de las
-		// estadias, y cada grupo se cuenta APARTE -- meterlos en una sola cuenta haria que ninguna de
-		// las cuatro dijera lo que dice.
+		// agenda escritos a mano, ONCE de la especificacion, DOS del perfil del vehiculo, TRES de las
+		// estadias y DOS del libro de costos, y cada grupo se cuenta APARTE -- meterlos en una sola
+		// cuenta haria que ninguna de las cinco dijera lo que dice.
 		//
 		// LOS ONCE DE LA ESPECIFICACION SE BARREN CON LA FICHA ENTERA, que es la lista que ya tiene
 		// uno de cada tipo en el orden en que un feed los manda. Barrer la lista en vez de escribir
@@ -315,12 +315,35 @@ namespace DealershipCar.Dominio.Pruebas
 			Assert.That(ofTheShop.Count, Is.EqualTo(3),
 				"Son TRES tipos de hecho de las estadias, uno por comando de la sucursal: la entrada, "
 				+ "la entrega y la estadia entera de un solo acto.");
+
+			// Y LOS DOS DEL LIBRO DE COSTOS SE CUENTAN APARTE POR LO MISMO: son hechos de una QUINTA
+			// global de raiz -- lo que se ha gastado en este carro -- y sumarlos a cualquiera de las
+			// cuatro cuentas de arriba haria que esa cuenta dejara de decir lo que dice.
+			HashSet<string> ofTheLedger = new HashSet<string>();
+
+			foreach (SenalDeEvento signal in ADealershipNarrative.TheCosts())
+			{
+				IMensajeDeEvento message = DealershipEventRoute.Route(signal);
+
+				Assert.That(message, Is.Not.Null,
+					"La ruta no reconoce " + signal.Tipo + ", asi que un feed que lo mande lo "
+					+ "descartaria en silencio.");
+				Assert.That(message.Tipo, Is.EqualTo(signal.Tipo),
+					"Y lo reconoce como lo que es, no como el tipo de al lado.");
+
+				ofTheLedger.Add(signal.Tipo);
+			}
+
+			Assert.That(ofTheLedger.Count, Is.EqualTo(2),
+				"Son DOS tipos de hecho del libro: el gasto que se consume en su periodo y el que sigue "
+				+ "dando valor despues, uno por comando de la sucursal. La clase la dice CUAL de los dos "
+				+ "es, asi que no hay ningun campo de clasificacion que un tercer tipo pudiera traer.");
 		}
 
 		// EL TAG DE CADA MENSAJE ES SU PROPIO NOMBRE DE TIPO, y esto se enumera POR REFLEXION y no
 		// contra una lista escrita a mano: la lista de la narrativa no puede ver un tipo de mensaje
 		// que nadie ruteo y que nadie le agrego. Enumerar los tipos es enumerar los sitios donde la
-		// regla se decide (C57), y son VEINTIUNO.
+		// regla se decide (C57), y son VEINTITRES.
 		//
 		// POR QUE IMPORTA EL NOMBRE. El tag viaja por tres sitios mas: la ruta lo compara, el mock lo
 		// lista en TiposConocidos, y el inyector lo escribe en el guion. Ninguno de esos tres tiene
@@ -335,11 +358,11 @@ namespace DealershipCar.Dominio.Pruebas
 				if (typeof(IMensajeDeEvento).IsAssignableFrom(candidate) && !candidate.IsInterface)
 					messages.Add(candidate);
 
-			Assert.That(messages.Count, Is.EqualTo(21),
-				"Son VEINTIUN tipos de mensaje: cinco de la agenda, once de la especificacion, DOS "
-				+ "del perfil de este vehiculo y TRES de las estadias en el taller. Si este numero "
-				+ "sube, hay un tipo nuevo -- y los barridos que se apoyan en la lista de la narrativa "
-				+ "no lo van a ver hasta que alguien lo agregue ahi.");
+			Assert.That(messages.Count, Is.EqualTo(23),
+				"Son VEINTITRES tipos de mensaje: cinco de la agenda, once de la especificacion, DOS "
+				+ "del perfil de este vehiculo, TRES de las estadias en el taller y DOS del libro de "
+				+ "costos. Si este numero sube, hay un tipo nuevo -- y los barridos que se apoyan en la "
+				+ "lista de la narrativa no lo van a ver hasta que alguien lo agregue ahi.");
 
 			Assert.Multiple(() =>
 			{
@@ -364,9 +387,9 @@ namespace DealershipCar.Dominio.Pruebas
 				}
 			});
 
-			// Y LOS VEINTIUNO ESTAN EN LA NARRATIVA, que es lo que hace que los barridos de las otras
-			// pruebas midan los veintiuno y no veinte. Son CUATRO listas porque el feed le escribe a
-			// cuatro globales de raiz, y el union de las cuatro es lo que esta prueba mira.
+			// Y LOS VEINTITRES ESTAN EN LA NARRATIVA, que es lo que hace que los barridos de las otras
+			// pruebas midan los veintitres y no veintidos. Son CINCO listas porque el feed le escribe a
+			// cinco globales de raiz, y el union de las cinco es lo que esta prueba mira.
 			HashSet<string> inTheNarrative = new HashSet<string>();
 
 			foreach (SenalDeEvento signal in ADealershipNarrative.TheWholeStory())
@@ -379,6 +402,9 @@ namespace DealershipCar.Dominio.Pruebas
 				inTheNarrative.Add(signal.Tipo);
 
 			foreach (SenalDeEvento signal in ADealershipNarrative.TheStays())
+				inTheNarrative.Add(signal.Tipo);
+
+			foreach (SenalDeEvento signal in ADealershipNarrative.TheCosts())
 				inTheNarrative.Add(signal.Tipo);
 
 			Assert.Multiple(() =>
@@ -1145,13 +1171,312 @@ namespace DealershipCar.Dominio.Pruebas
 				"Y con el tag de la entrega, ES una entrega: trae el instante de entrega y los dias.");
 		}
 
+		// ---------------------------------- la frontera de los dos hechos del libro de costos
+		//
+		// LA MISMA POLARIDAD Y LA MISMA LINEA, sobre los dos tipos que trae CL-7. Se descarta lo que no
+		// se puede DECIR -- un asunto en blanco, un monto que no es un numero o que es negativo, una
+		// vida util que no deja ninguna ventana, un instante ausente, y un codigo de moneda que este
+		// modulo no nombra -- y se le deja al dominio lo que es una LEY sobre valores que si se pueden
+		// decir.
+		//
+		// LA MONEDA ES EL ITEM DE DISENO DE ESTA TAREA Y NO ES UNA GUARDA (L14). Un codigo fuera del
+		// conjunto cerrado lo contesta una CONSULTA DE RECONOCIMIENTO TOTAL EN EL BORDE, asi que
+		// Interpret devuelve null y la senal se descarta. Nunca una guarda que reviente a traves de
+		// Apply: el dominio rechaza el HECHO, y el borde decide si hay hecho que ofrecer.
+		//
+		// Y EL BORDE NO GUARDA NINGUNA COPIA DE LA LISTA DE CODIGOS. La pregunta se la hace al dominio,
+		// que es el unico sitio donde esa lista se escribe, y el renglon de abajo lo afirma comparando
+		// las dos decisiones codigo por codigo en vez de creerlo.
+		//
+		// EL BARRIDO ES POR SITIO DE VALIDACION Y NO POR TIPO DE HECHO (C57): dos clases de mensaje
+		// tienen CUATRO textos obligatorios, DOS instantes obligatorios y TRES numeros -- los dos montos
+		// y la vida util del duradero -- porque los dos hechos traen varios de cada cosa.
+
+		[Test]
+		public void EveryRequiredTextOfACostFactIsRequired()
+		{
+			(string Where, SenalDeEvento Blanked, SenalDeEvento Absent)[] required =
+			{
+				("recurring.subject",  Blank(ARecurringCost(), "subject"),
+					Without(ARecurringCost(), "subject")),
+				("recurring.currency", Blank(ARecurringCost(), "currency"),
+					Without(ARecurringCost(), "currency")),
+				("durable.subject",    Blank(ADurableCost(), "subject"),
+					Without(ADurableCost(), "subject")),
+				("durable.currency",   Blank(ADurableCost(), "currency"),
+					Without(ADurableCost(), "currency")),
+			};
+
+			Assert.That(required.Length, Is.EqualTo(4),
+				"Son CUATRO textos obligatorios: el asunto y la moneda de cada uno de los dos hechos. La "
+				+ "moneda en blanco la descarta el mismo reconocedor que descarta un codigo que el "
+				+ "conjunto no nombra -- una cadena en blanco no nombra ninguna moneda -- asi que aca "
+				+ "hay un solo guardia y no dos.");
+
+			Assert.Multiple(() =>
+			{
+				foreach ((string where, SenalDeEvento blanked, SenalDeEvento absent) in required)
+				{
+					Assert.That(DealershipEventRoute.Route(blanked), Is.Null,
+						"Un " + where + " en blanco tiene que DESCARTAR la senal: un gasto sin asunto no "
+						+ "dice en que se fue la plata, y un monto sin moneda no se puede leer.");
+
+					Assert.That(DealershipEventRoute.Route(absent), Is.Null,
+						"Y ausente tambien, que es el OTRO camino: Payload.Text contesta cadena vacia "
+						+ "cuando la propiedad no esta, y es esa cadena la que el guardia mira. " + where);
+				}
+			});
+		}
+
+		[Test]
+		public void EveryRequiredInstantOfACostFactMustBePresent()
+		{
+			(string Where, SenalDeEvento Signal)[] missing =
+			{
+				("recurring.incurredAt", Without(ARecurringCost(), "incurredAt")),
+				("durable.incurredAt",   Without(ADurableCost(), "incurredAt")),
+			};
+
+			Assert.That(missing.Length, Is.EqualTo(2),
+				"Son DOS instantes obligatorios: el instante en que se incurrio cada uno de los dos "
+				+ "gastos. Sin el, un gasto caeria en el ano cero y ningun periodo lo alcanzaria.");
+
+			Assert.Multiple(() =>
+			{
+				foreach ((string where, SenalDeEvento signal) in missing)
+					Assert.That(DealershipEventRoute.Route(signal), Is.Null,
+						"Un " + where + " ausente tiene que DESCARTAR la senal: un gasto se ubica por el "
+						+ "instante en que se incurrio, y la ventana de un duradero arranca ahi.");
+			});
+
+			// Y UN INSTANTE QUE NO ES UN INSTANTE tampoco pasa. Va con los de arriba y no aparte:
+			// Payload.Instant mira las dos cosas -- que la propiedad este y que diga un instante.
+			Assert.That(
+				DealershipEventRoute.Route(Named(ARecurringCost(), "incurredAt", "el mes pasado")),
+				Is.Null);
+		}
+
+		// LOS TRES NUMEROS, y cada uno con sus TRES caminos de no decir un numero: ausente, entre
+		// comillas, y presente pero fuera de la escala. Son tres guardias por posicion y no uno.
+		//
+		// Y DE LAS TRES POSICIONES, LA DE LA VIDA UTIL NO SE PUEDE FALSIFICAR POR SEPARADO -- medido, y
+		// dicho aca en vez de dejarlo como un verde que parece cobertura (C56). Payload.Whole deja el
+		// valor en CERO cuando el campo falta o no es un entero, y la guarda de la linea siguiente
+		// descarta el cero: asi que quitarle a la vida util su guardia de PRESENCIA deja la suite entera
+		// EN VERDE, porque el guardia de VALOR la cubre. Los dos se quedan igual, y por dos razones: la
+		// forma es la misma que los once hechos de la ficha usan, y en las posiciones donde CERO ES
+		// LEGAL -- los dos montos, el hito de un precio -- el guardia de presencia SI es el unico que
+		// discrimina. Falsificado: el del monto recurrente pone este renglon rojo, el de la vida util no.
+		[Test]
+		public void EveryRequiredNumberOfACostFactMustBePresent()
+		{
+			(string Where, SenalDeEvento Absent, SenalDeEvento AsText)[] numbers =
+			{
+				("recurring.amount", Without(ARecurringCost(), "amount"),
+					AsText(ARecurringCost(), "amount")),
+				("durable.amount", Without(ADurableCost(), "amount"),
+					AsText(ADurableCost(), "amount")),
+				("durable.expectedLifeMonths", Without(ADurableCost(), "expectedLifeMonths"),
+					AsText(ADurableCost(), "expectedLifeMonths")),
+			};
+
+			Assert.That(numbers.Length, Is.EqualTo(3),
+				"Son TRES posiciones numericas: el monto de cada uno de los dos hechos, y la vida util "
+				+ "del duradero. El recurrente no trae ninguna vida util: la clase la dice CUAL de los "
+				+ "dos tipos es, y no hay ranura por donde decirla.");
+
+			Assert.Multiple(() =>
+			{
+				foreach ((string where, SenalDeEvento absent, SenalDeEvento asText) in numbers)
+				{
+					Assert.That(DealershipEventRoute.Route(absent), Is.Null,
+						"Un " + where + " ausente tiene que DESCARTAR la senal, no entrar como cero: un "
+						+ "cero fabricado en el borde seria un monto o una vida que nadie dijo.");
+
+					Assert.That(DealershipEventRoute.Route(asText), Is.Null,
+						"Y uno que llega ENTRE COMILLAS tambien: un serializador que escribe todo como "
+						+ "texto es un error comun del feed, y es el caso que hay que medir. " + where);
+				}
+			});
+		}
+
+		// UN MONTO QUE NO ES DINERO Y UNA VIDA UTIL QUE NO DEJA VENTANA. Las dos son una funcion pura de
+		// la senal -- no miran nada del registro -- asi que descartarlas cuesta CERO en vez de una
+		// cicatriz, y es el mismo renglon que la puerta hace con sus dos guardas antes de performar.
+		//
+		// LO QUE NO SE ADELANTA, y va dicho aca al lado para que la omision no se lea como un olvido: la
+		// ventana de un duradero incurrido tan adelante que su fin se pasa del tiempo que se puede decir
+		// es una INTERACCION entre dos valores, y adelantarla pide reproducir la aritmetica del dominio
+		// en un shell. Esa cicatriza, y quien la mide es
+		// AFactTheDomainRefusesDoesNotBlockTheNarrative.
+		[Test]
+		public void AnAmountThatIsNotMoneyAndALifeThatIsNoWindowAreDiscardedBeforeTheyCanScar()
+		{
+			(string Where, SenalDeEvento Signal)[] outsideTheScale =
+			{
+				("recurring.amount negativo", Named(ARecurringCost(), "amount", "-45000.00")),
+				("durable.amount negativo",   Named(ADurableCost(), "amount", "-240000.00")),
+				("durable.expectedLifeMonths en cero", Named(ADurableCost(), "expectedLifeMonths", "0")),
+				("durable.expectedLifeMonths negativa",
+					Named(ADurableCost(), "expectedLifeMonths", "-48")),
+			};
+
+			Assert.That(outsideTheScale.Length, Is.EqualTo(4),
+				"Son CUATRO: los dos montos negativos, y la vida util en cero y negativa. Un monto "
+				+ "negativo no es un gasto -- es la sucursal pagandole a la persona -- y una vida que no "
+				+ "es positiva no deja ninguna ventana sobre la que repartir el gasto.");
+
+			Assert.Multiple(() =>
+			{
+				foreach ((string where, SenalDeEvento signal) in outsideTheScale)
+					Assert.That(DealershipEventRoute.Route(signal), Is.Null,
+						"'" + where + "' tiene que DESCARTAR la senal.");
+			});
+
+			// Y UN CERO EN EL MONTO SI CRUZA, que es la otra mitad de la linea: cero es un gasto que se
+			// dijo, y sin este renglon todo lo de arriba quedaria verde con un guardia que exigiera
+			// positivo. Lo que el borde descarta es lo que no se puede DECIR, y cero se dice.
+			Assert.That(
+				DealershipEventRoute.Route(Named(ARecurringCost(), "amount", "0")),
+				Is.InstanceOf<RecurringCostRecorded>(),
+				"Un gasto de cero es un gasto de cero: se registro algo que no costo nada, y eso no es "
+				+ "lo mismo que no haber registrado nada.");
+		}
+
+		// L14 COMO PRUEBA, y es el item de diseno de esta tarea. Un codigo que el conjunto cerrado no
+		// nombra se DESCARTA en el borde: Interpret contesta null y no llega a haber comando, asi que no
+		// hay entrada que reventar.
+		//
+		// Y LA DECISION DEL BORDE ES LA DEL DOMINIO, CODIGO POR CODIGO. El renglon de abajo pregunta las
+		// dos cosas sobre la misma lista de codigos -- si la ruta la deja cruzar, y si el dominio la
+		// nombra -- y exige que contesten lo mismo. Una segunda copia de la lista en la frontera pondria
+		// esto rojo el dia que las dos listas se separaran, que es lo unico que puede pasarle a dos
+		// listas de lo mismo en dos sitios.
+		[Test]
+		public void ACurrencyThisModuleDoesNotNameIsDiscardedAtTheEdgeAndTheDomainNeverSeesIt()
+		{
+			string[] codes = { "CRC", "USD", "XYZ", "EUR", "crc", "usd", " CRC ", "", "   ", "C" };
+
+			// LAS SENALES SE ARMAN, no se le hace cirugia a una: la cirugia REVIENTA cuando no cambio
+			// nada, y reemplazar CRC por CRC no cambia nada. Eso no es un estorbo del aparejo -- es el
+			// aparejo diciendo que ese renglon no mediria lo que dice.
+			Assert.Multiple(() =>
+			{
+				foreach (string code in codes)
+				{
+					bool theDomainNamesIt = Currency.IsNamed(code);
+
+					SenalDeEvento recurring = ADealershipNarrative.RecurringCost(
+						1, ADealershipNarrative.TheOilChangeIncurred,
+						ADealershipNarrative.TheOilChangeAmount, code,
+						ADealershipNarrative.TheOilChangeSubject);
+
+					SenalDeEvento durable = ADealershipNarrative.DurableCost(
+						1, ADealershipNarrative.TheTyresIncurred, ADealershipNarrative.TheTyresAmount,
+						code, ADealershipNarrative.TheTyresSubject,
+						ADealershipNarrative.TheTyresLifeInMonths);
+
+					Assert.That(
+						DealershipEventRoute.Route(recurring) != null, Is.EqualTo(theDomainNamesIt),
+						"El borde y el dominio no contestan lo mismo sobre el codigo '" + code + "'. La "
+						+ "frontera no guarda ninguna lista de codigos: le pregunta al dominio, que es "
+						+ "el unico sitio donde esa lista se escribe.");
+
+					Assert.That(
+						DealershipEventRoute.Route(durable) != null, Is.EqualTo(theDomainNamesIt),
+						"Y lo mismo por el hecho duradero, sobre el codigo '" + code + "': un guardia "
+						+ "que estuviera en un solo Interpret dejaria el otro camino abierto.");
+				}
+			});
+
+			Assert.That(codes.Length, Is.EqualTo(10),
+				"Son DIEZ codigos y no dos: los dos que el conjunto nombra, dos que no, los dos en "
+				+ "minuscula, uno con espacios alrededor, dos blancos y uno truncado. Con solo los dos "
+				+ "buenos y uno malo, un reconocedor que contestara si a todo lo que empieza con C "
+				+ "pasaria.");
+
+			// Y LA MONEDA SE COMPRUEBA SOBRE EL CAMPO DE LA MONEDA Y NO SOBRE OTRO. Con el reconocedor
+			// mirando el asunto, todo lo de arriba seguiria pasando -- ninguno de los diez codigos es un
+			// asunto valido -- asi que hace falta el renglon que cruza los dos: el asunto dice 'XYZ' y
+			// la moneda dice 'CRC', y la senal SI cruza.
+			Assert.That(
+				DealershipEventRoute.Route(ADealershipNarrative.RecurringCost(
+					1, ADealershipNarrative.TheOilChangeIncurred,
+					ADealershipNarrative.TheOilChangeAmount, "CRC", "XYZ")),
+				Is.InstanceOf<RecurringCostRecorded>(),
+				"Un asunto que se llama 'XYZ' es un asunto: el reconocedor mira la moneda, y la de esta "
+				+ "senal es una de las que el conjunto nombra.");
+		}
+
+		// LOS TRES DESCARTES QUE TODO HECHO COMPARTE, sobre los dos nuevos. Mismo barrido que el de los
+		// once, el de los dos y el de los tres, y hace falta aparte por lo mismo: ninguno de los dos
+		// puede quedar cubierto por casualidad en el otro.
+		[Test]
+		public void EveryCostFactChecksItsTagItsEventNumberAndItsPayload()
+		{
+			Assert.Multiple(() =>
+			{
+				foreach (SenalDeEvento signal in ADealershipNarrative.TheCosts())
+				{
+					Assert.That(
+						DealershipEventRoute.Route(
+							new SenalDeEvento(signal.Numero, "TelemetryPing", signal.Contenido)),
+						Is.Null,
+						"El payload de " + signal.Tipo + " calza campo por campo y aun asi no es ese "
+						+ "hecho: lo que dice QUE hecho es, es el tag.");
+
+					Assert.That(
+						DealershipEventRoute.Route(
+							new SenalDeEvento(0, signal.Tipo, signal.Contenido)),
+						Is.Null,
+						"Un numero de evento que no avanza desde cero no se puede journalizar como "
+						+ "punto de control: " + signal.Tipo);
+
+					Assert.That(
+						DealershipEventRoute.Route(new SenalDeEvento(signal.Numero, signal.Tipo, "")),
+						Is.Null,
+						"Sin payload no hay hecho: " + signal.Tipo);
+
+					Assert.That(
+						DealershipEventRoute.Route(
+							new SenalDeEvento(signal.Numero, signal.Tipo, "no soy json")),
+						Is.Null,
+						"Y un payload que no parsea se descarta en vez de reventar: " + signal.Tipo);
+				}
+			});
+		}
+
+		// Y LOS DOS PAYLOADS NO SON INTERCAMBIABLES, con la MISMA asimetria que las estadias: el del
+		// duradero CONTIENE el del recurrente -- es el mismo hecho mas la vida util -- asi que con el tag
+		// del recurrente SI se lee como un recurrente, y no es un defecto: el tag decide, y lo que el tag
+		// pidio esta ahi. Al reves no: al payload del recurrente le falta la vida util, que es
+		// obligatoria y no tiene valor por defecto.
+		[Test]
+		public void TheTwoCostFactsDoNotAnswerToEachOthersPayload()
+		{
+			Assert.That(
+				DealershipEventRoute.Route(new SenalDeEvento(
+					1, DurableCostRecorded.TheEventType, ARecurringCost().Contenido)),
+				Is.Null,
+				"El payload del recurrente con el tag del duradero no trae expectedLifeMonths, y una "
+				+ "vida util que no llego no se inventa: es la segunda invencion prohibida.");
+
+			Assert.That(
+				DealershipEventRoute.Route(new SenalDeEvento(
+					1, RecurringCostRecorded.TheEventType, ADurableCost().Contenido)),
+				Is.InstanceOf<RecurringCostRecorded>(),
+				"Y con el tag del recurrente, el payload del duradero ES un recurrente: trae el "
+				+ "instante, el monto, la moneda y el asunto, y la vida util sobra. Es la asimetria que "
+				+ "un lector supondria al reves.");
+		}
+
 		// LA IDENTIDAD DEL VEHICULO ES DEL FEED Y NO DEL HECHO, y esto se escribe como prueba porque es
 		// una AUSENCIA: 'un VIN que no es el de este carro' no es un descarte que esta frontera pueda
 		// hacer, porque ninguna senal trae un VIN. El feed se pide por recurso -- /{recurso}/{id}/events
 		// -- asi que el vehiculo es la URL, y un hecho que llegara con un VIN adentro estaria diciendo
 		// de que carro es por segunda vez, con la posibilidad de contradecir a la primera.
 		//
-		// SE ENUMERAN LOS VEINTIUNO Y NO SOLO LOS TRES NUEVOS: la regla es de la app entera, y un tipo
+		// SE ENUMERAN LOS VEINTITRES Y NO SOLO LOS DOS NUEVOS: la regla es de la app entera, y un tipo
 		// que la rompiera podria ser cualquiera.
 		[Test]
 		public void TheIdentityOfTheVehicleIsTheFeedsAndNoFactCarriesAVin()
@@ -1162,8 +1487,8 @@ namespace DealershipCar.Dominio.Pruebas
 				if (typeof(IMensajeDeEvento).IsAssignableFrom(candidate) && !candidate.IsInterface)
 					messages.Add(candidate);
 
-			Assert.That(messages.Count, Is.EqualTo(21),
-				"El mismo VEINTIUNO de arriba, re-derivado aca: si este barrido midiera menos tipos que "
+			Assert.That(messages.Count, Is.EqualTo(23),
+				"El mismo VEINTITRES de arriba, re-derivado aca: si este barrido midiera menos tipos que "
 				+ "aquel, estaria diciendo de menos hechos que los que hay.");
 
 			Assert.Multiple(() =>
@@ -1268,6 +1593,21 @@ namespace DealershipCar.Dominio.Pruebas
 				1, ADealershipNarrative.TheFirstShopBranch, ADealershipNarrative.TheFirstShopSubject,
 				ADealershipNarrative.TheFirstShopEntry, ADealershipNarrative.TheFirstShopCollection,
 				ADealershipNarrative.TheFirstShopDays);
+		}
+
+		private static SenalDeEvento ARecurringCost()
+		{
+			return ADealershipNarrative.RecurringCost(
+				1, ADealershipNarrative.TheOilChangeIncurred, ADealershipNarrative.TheOilChangeAmount,
+				ADealershipNarrative.TheOilChangeCurrency, ADealershipNarrative.TheOilChangeSubject);
+		}
+
+		private static SenalDeEvento ADurableCost()
+		{
+			return ADealershipNarrative.DurableCost(
+				1, ADealershipNarrative.TheTyresIncurred, ADealershipNarrative.TheTyresAmount,
+				ADealershipNarrative.TheTyresCurrency, ADealershipNarrative.TheTyresSubject,
+				ADealershipNarrative.TheTyresLifeInMonths);
 		}
 
 		private const string TheInstant = "2025-08-15T00:00:00Z";

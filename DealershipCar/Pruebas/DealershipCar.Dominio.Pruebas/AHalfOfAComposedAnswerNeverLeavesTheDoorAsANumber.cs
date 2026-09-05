@@ -27,13 +27,14 @@ namespace DealershipCar.Dominio.Pruebas
 	//   limites. El censo solo prueba que nadie agrego un miembro sin escribirlo; esto prueba que
 	//   ninguno de los que hay entrega media respuesta.
 	//
-	// POR QUE LOS QUINCE QUE HAY SI PUEDEN, Y SON TRES CATEGORIAS. Ninguno es la mitad de una
+	// POR QUE LOS DIECISIETE QUE HAY SI PUEDEN, Y SON TRES CATEGORIAS. Ninguno es la mitad de una
 	// respuesta compuesta:
 	//
-	//   ONCE son CONTEOS QUE EL DOMINIO COMPONE y publica por su cuenta -- vencidas, atrasadas, al
+	//   TRECE son CONTEOS QUE EL DOMINIO COMPONE y publica por su cuenta -- vencidas, atrasadas, al
 	//   dia, agendadas, aplazos usados, mantenimientos perdidos, ultimo evento aplicado, dias en el
-	//   taller, estadias en un periodo, completaciones de una clase y precios publicados. Un conteo
-	//   es una respuesta entera: no le falta ni unidad ni limite ni instante.
+	//   taller, estadias en un periodo, completaciones de una clase, precios publicados, lecturas
+	//   del odometro en un periodo y entradas del libro de costos en un periodo. Un conteo es una
+	//   respuesta entera: no le falta ni unidad ni limite ni instante.
 	//
 	//   DOS son HECHOS RECIBIDOS que el registro guarda tal como llegaron: el odometro del dia de la
 	//   entrega y el de hoy. Un hecho recibido se puede dar suelto porque nadie lo derivo de otro.
@@ -99,7 +100,7 @@ namespace DealershipCar.Dominio.Pruebas
 
 		// Los dos limites con que el barrido pregunta las dos cuentas de periodo. Sin ninguna estadia
 		// registrada las dos contestan cero, que es lo que hace falta aca: lo que este fixture mide
-		// es que ninguna de las once conteste 37 ni 61111.
+		// es que ninguna de las diecisiete conteste 37 ni 61111.
 		private const string TheFirstDayOfThePeriod = "2026-01-01";
 		private const string TheLastDayOfThePeriod = "2026-12-31";
 
@@ -158,7 +159,7 @@ namespace DealershipCar.Dominio.Pruebas
 			journal.Dispose();
 		}
 
-		// LAS QUINCE PREGUNTAS DE LA PUERTA QUE CONTESTAN CON UN NUMERO. Conjunto exacto, con la
+		// LAS DIECISIETE PREGUNTAS DE LA PUERTA QUE CONTESTAN CON UN NUMERO. Conjunto exacto, con la
 		// aridad en la clave: una sobrecarga es su propio sitio y el rojo la nombra.
 		//
 		// LAS DOS DE ESTADIAS ENTRARON EN BuildOrder/SH-4 Y BAJO LA REGLA DE ADMISION QUE YA HABIA:
@@ -183,6 +184,21 @@ namespace DealershipCar.Dominio.Pruebas
 		// cuenta no salen las lecturas -- y tiene su hermana en filas al lado (ReadingsBetween) y su
 		// hermana en palabras al lado (DescribeRateOfUse). No pidio ninguna ampliacion, y decirlo es
 		// lo que impide que la ampliacion de MS-4 la cubra en silencio.
+		//
+		// Y LA DE BuildOrder/CL-5 ENTRA POR LA MISMA PRIMERA, Y SE DICE POR CUAL. CostEntryCountBetween
+		// cuenta las FILAS del registro del libro de costos en un periodo -- de las entradas sale la
+		// cuenta y de la cuenta no salen las entradas -- y tiene su hermana en filas al lado
+		// (CostEntriesBetween) y su hermana en palabras al lado (DescribeSpendBetween). NO PIDIO
+		// NINGUNA AMPLIACION.
+		//
+		// Y ES LA UNICA DEL LIBRO QUE ENTRA, que es la mitad que hay que leer aca. Las otras seis
+		// lecturas del libro contestan un si o no, dos frases, una comparacion y el registro: ningun
+		// MONTO, ninguna PARTE amortizada y ninguna DIFERENCIA entre dos periodos salen como numero
+		// por ninguna. Las tres son mitades -- un monto sin su moneda no se puede leer, una parte es
+		// media respuesta de L6, y una diferencia entre dos monedas no es un numero -- y las tres
+		// llegan a quien pregunta adentro de la frase que el dominio compuso. De eso se ocupa
+		// NoReadHandsOutABareAmountOrABareShareOrABareDelta, por tipo de retorno, por nombre y por
+		// valor con montos centinela.
 		private static readonly string[] EveryNumberTheDoorHandsOut =
 		{
 			"CountDue/0",
@@ -201,6 +217,7 @@ namespace DealershipCar.Dominio.Pruebas
 			"ReadDistanceRemaining/2",
 			"ReadDaysRemaining/2",
 			"ReadingCountBetween/2",
+			"CostEntryCountBetween/2",
 		};
 
 		[Test]
@@ -219,7 +236,7 @@ namespace DealershipCar.Dominio.Pruebas
 		}
 
 		// Y LA MITAD POR VALOR, que es la que el censo no da: con un sobre publicado, ninguna de las
-		// ONCE contesta ninguno de sus dos limites. El censo prueba que nadie agrego un miembro sin
+		// DIECISIETE contesta ninguno de sus dos limites. El censo prueba que nadie agrego un miembro sin
 		// escribirlo; esto prueba que ninguno de los que hay entrega media respuesta.
 		[Test]
 		public void NotOneOfThemAnswersWithEitherLimitOfThePublishedEnvelope()
@@ -336,7 +353,7 @@ namespace DealershipCar.Dominio.Pruebas
 			return found;
 		}
 
-		// Cada una de las once, invocada contra este registro. Los argumentos se arman por TIPO y no
+		// Cada una de las diecisiete, invocada contra este registro. Los argumentos se arman por TIPO y no
 		// por nombre: es lo que hace que una lectura nueva entre al barrido sola en vez de esperar a
 		// que alguien la agregue.
 		private List<KeyValuePair<string, long>> EveryNumberAnsweredRightNow()

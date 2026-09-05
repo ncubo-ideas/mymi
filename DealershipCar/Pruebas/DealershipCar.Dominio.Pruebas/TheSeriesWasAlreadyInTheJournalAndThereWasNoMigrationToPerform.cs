@@ -90,11 +90,22 @@ namespace DealershipCar.Dominio.Pruebas
 			Sweep(folder);
 		}
 
-		// LA AUSENCIA DE LA MIGRACION, MEDIDA EN ENTRADAS. Sobre un journal que YA TIENE la serie
-		// escrita por la app de antes, abrir con la de hoy cuesta lo que cuesta cualquier apertura.
-		// El control positivo es un SEXTO upgrade: la forma que tendria la migracion que esta
-		// rebanada no tiene, y que cuesta +2 sin que ninguno de los cinco cuerpos viejos vuelva a
-		// correr.
+		// LA AUSENCIA DE LA MIGRACION DE OD-, MEDIDA EN ENTRADAS -- Y LO QUE ESTE INSTRUMENTO MIDE DE
+		// VERDAD ES LA DISTANCIA ENTRE DOS APPS, no la deuda de una rebanada. Se escribio comparando
+		// el journal de antes de OD- contra LA APP DE HOY, y ese +1 valia mientras la app de hoy
+		// declarara los mismos CINCO upgrades que la de entonces. BuildOrder/CL-4 le agrego el SEXTO
+		// -- 'libro-de-costos' -- asi que la primera apertura con la app de hoy paga UNA migracion, y
+		// esa migracion es de CL-4 y no de OD-.
+		//
+		// LO QUE DEFIENDE LA AUSENCIA DE OD- DESPUES DE ESO SON LAS OTRAS DOS MITADES. La segunda
+		// apertura vuelve a +1, que es lo que dice que no queda nada por aplicar; y el renglon que
+		// nombra CUAL global llego dice que la unica deuda que se pago es la del libro de costos. Sin
+		// ese renglon, un +2 pasaria igual con cualquier migracion, incluida una que OD- hubiera
+		// dejado.
+		//
+		// EL CONTROL POSITIVO SIGUE SIENDO UN SEXTO upgrade sobre el journal de antes: la forma que
+		// tendria la migracion que esta rebanada no tiene, y que cuesta +2 sin que ninguno de los
+		// cinco cuerpos viejos vuelva a correr.
 		[Test]
 		public void AJournalWithTheSeriesAlreadyInItCostsTheOpeningItAlwaysCostAndNothingMore()
 		{
@@ -102,25 +113,33 @@ namespace DealershipCar.Dominio.Pruebas
 
 			DealershipCarApp today = TheAppOfTodayOpening(folder);
 			long afterTodaysApp = today.Actor.CurrentEntryId;
+			string theGlobalThatArrived = ALedgerReadWithoutTheDoor.Vin(today);
 			today.Dispose();
 
 			TestContext.Out.WriteLine(
 				"COSTO DE ABRIR UN JOURNAL DE ANTES DE OD- CON LA APP DE HOY -- CurrentEntryId: "
 				+ afterTheOlderAppWrote + " -> " + afterTodaysApp);
 
-			Assert.That(afterTodaysApp, Is.EqualTo(afterTheOlderAppWrote + 1),
-				"UNA entrada, la que toda apertura paga por el comando de la semilla. DOS querria "
-				+ "decir que corrio un cuerpo de upgrade nuevo o que el texto del script cambio, y "
-				+ "las dos cosas son una migracion. OD- no agrega global, ni nombre de upgrade, ni "
-				+ "comando: los dos textos son el mismo, y este numero es lo que lo dice.");
+			Assert.That(afterTodaysApp, Is.EqualTo(afterTheOlderAppWrote + 2),
+				"DOS, y las dos estan contadas: la que toda apertura paga por el comando de la "
+				+ "semilla, mas la del texto de script nuevo que trajo la sexta global de CL-4. OD- "
+				+ "no agrega global, ni nombre de upgrade, ni comando; lo que este numero mide es la "
+				+ "distancia entre la app de antes de OD- y la de HOY, y esa distancia ya no es cero "
+				+ "por una rebanada posterior.");
+
+			Assert.That(theGlobalThatArrived, Is.EqualTo(TheVin),
+				"Y LA MIGRACION QUE SE PAGO ES LA DEL LIBRO DE COSTOS, nombrada. Un +2 solo dice que "
+				+ "algo se aplico; esto dice que. Si OD- hubiera dejado una deuda propia, este "
+				+ "renglon seguiria verde y el de arriba se pondria rojo en +3.");
 
 			DealershipCarApp again = TheAppOfTodayOpening(folder);
 			long afterASecondOpening = again.Actor.CurrentEntryId;
 			again.Dispose();
 
 			Assert.That(afterASecondOpening, Is.EqualTo(afterTodaysApp + 1),
-				"Y sigue costando una. Si la primera hubiera migrado algo, la segunda seria mas "
-				+ "barata que la primera y este renglon lo mostraria.");
+				"Y VUELVE A COSTAR UNA, que es la mitad que sigue defendiendo lo que esta prueba "
+				+ "nombra: no queda nada por aplicar. Si la serie hubiera necesitado una migracion "
+				+ "propia, esta apertura la seguiria pagando.");
 
 			// EL CONTROL POSITIVO, y sin el un +1 constante pasaria igual. Un SEXTO upgrade sobre el
 			// mismo texto de los cinco es otra plantilla, y otra plantilla cuesta +2. Se escoge esta

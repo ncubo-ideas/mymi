@@ -247,7 +247,7 @@ else
                         <AppearanceToggle />
                     </div>
 
-                    <Historial Stays="@stays" Operations="@operations" Use="@use" />
+                    <Historial Stays="@stays" Operations="@operations" Use="@use" Spend="@spend" />
                 </div>
             }
         </div>
@@ -320,6 +320,7 @@ else
     private WhereEachOperationStands operations;
     private WhatTheServicesCost costs;
     private HowThisVehicleIsDriven use;
+    private WhatThisVehicleHasCost spend;
 
     private string error = "";
     private string destinationProblem = "";
@@ -456,6 +457,7 @@ else
         operations = state.ReadWhereEachOperationStands();
         costs = state.ReadWhatTheServicesCost();
         use = state.ReadHowThisVehicleIsDriven();
+        spend = state.ReadWhatThisVehicleHasCost();
     }
 
     private static Dictionary<string, string> Empty() => EveryKindStartsAt("");

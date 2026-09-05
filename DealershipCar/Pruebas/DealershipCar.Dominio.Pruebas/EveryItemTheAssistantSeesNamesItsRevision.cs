@@ -256,7 +256,7 @@ namespace DealershipCar.Dominio.Pruebas
 			PublishedPrice current = ThePriceAt(pricing, "10000 km");
 			PublishedPrice stale = ThePriceAt(pricing, "20000 km");
 
-			Assert.That(current.Says, Does.StartWith("Cambio de fluido a los 10000 km: 89.9 USD"),
+			Assert.That(current.Says, Does.StartWith("Cambio de fluido a los 10000 km: $89.90"),
 				"LA FORMA FUERTE: el hito y el monto en una frase con su conectiva, asi que una fila "
 				+ "armada con el hito de una y el monto de otra se ve.");
 			Assert.That(current.Says, Does.Contain("vigente del"));
@@ -267,7 +267,7 @@ namespace DealershipCar.Dominio.Pruebas
 			Assert.That(pricing.AskedAt, Is.Not.Empty,
 				"Y se dice CONTRA QUE INSTANTE se juzgo. Sin el, 'vigente' no es respecto de nada.");
 
-			Assert.That(stale.Says, Does.StartWith("Cambio de fluido a los 20000 km: 149.9 USD"));
+			Assert.That(stale.Says, Does.StartWith("Cambio de fluido a los 20000 km: $149.90"));
 			Assert.That(stale.Says, Does.Contain("esa vigencia ya pasó"),
 				"Un precio viejo mostrado como vigente es una promesa que la sucursal no hizo.");
 			Assert.That(stale.Says, Does.Not.Contain("esa vigencia está rigiendo"));

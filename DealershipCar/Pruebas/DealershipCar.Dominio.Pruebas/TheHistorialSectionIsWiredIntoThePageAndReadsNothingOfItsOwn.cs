@@ -36,18 +36,20 @@ namespace DealershipCar.Dominio.Pruebas
 				"La pagina dejo de leer las estadias, asi que la seccion recibe null y no pinta nada "
 				+ "-- sin ningun error y sin ningun aviso.");
 
-			// LA ETIQUETA GANO UN SEGUNDO PORTADOR CON EL BLOQUE DEL HISTORIAL DE MANTENIMIENTO Y UN
-			// TERCERO CON EL DEL RITMO DE USO, y esta afirmacion se AMPLIO las dos veces en vez de
-			// aflojarse: se sigue afirmando la etiqueta ENTERA, con los tres portadores nombrados y en
-			// su orden. Aflojarla a un prefijo dejaria pasar una etiqueta que perdio uno de los tres.
+			// LA ETIQUETA GANO UN SEGUNDO PORTADOR CON EL BLOQUE DEL HISTORIAL DE MANTENIMIENTO, UN
+			// TERCERO CON EL DEL RITMO DE USO Y UN CUARTO CON EL DEL LIBRO DE COSTOS, y esta afirmacion
+			// se AMPLIO las tres veces en vez de aflojarse: se sigue afirmando la etiqueta ENTERA, con
+			// los cuatro portadores nombrados y en su orden. Aflojarla a un prefijo dejaria pasar una
+			// etiqueta que perdio uno de los cuatro.
 			Assert.That(
 				page,
 				Does.Contain(
-					"<Historial Stays=\"@stays\" Operations=\"@operations\" Use=\"@use\" />"),
-				"La pagina dejo de renderizar la seccion Historial, o dejo de pasarle uno de sus tres "
+					"<Historial Stays=\"@stays\" Operations=\"@operations\" Use=\"@use\" "
+					+ "Spend=\"@spend\" />"),
+				"La pagina dejo de renderizar la seccion Historial, o dejo de pasarle uno de sus cuatro "
 				+ "portadores. Sin las estadias no llega el bloque de los dias en el taller; sin la "
 				+ "agenda no llega el de lo que le han hecho ni la ausencia por clase; sin el ritmo no "
-				+ "llega el de cuanto se maneja.");
+				+ "llega el de cuanto se maneja; sin el libro no llega el de en que se fue la plata.");
 		}
 
 		// Y HAY UNA PESTANA PARA LLEGAR A ELLA. Una seccion renderizada en una rama a la que ningun

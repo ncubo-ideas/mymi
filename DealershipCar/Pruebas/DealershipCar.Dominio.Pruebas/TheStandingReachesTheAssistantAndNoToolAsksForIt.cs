@@ -364,6 +364,20 @@ namespace DealershipCar.Dominio.Pruebas
 			// ninguna tool RECIBE un numero, que es lo unico que esas listas miran.
 			"how_much_my_car_is_driven/2(from):String",
 			"how_much_my_car_is_driven/2(to):String",
+			// CL-8: LOS CUATRO LIMITES DE LA TERCERA TOOL QUE PREGUNTA POR UN PERIODO, Y ES LA PRIMERA
+			// QUE PREGUNTA POR DOS. La misma decision (P-3, DEC-56) y la misma forma -- texto en
+			// yyyy-MM-dd, clave de catalogo y no medicion -- ensanchada de dos nombres a cuatro: el
+			// primer par elige el periodo del que hablan el gasto, la distancia y las filas, y el
+			// segundo elige el periodo contra el que se compara. Ninguno de los cuatro afirma nada de
+			// este carro, y la respuesta nombra los cuatro con que contesto.
+			//
+			// EL SEGUNDO PAR ES LO QUE OD-4 NO PUDO PEDIR. Alla la comparacion se dejo fuera de la tool
+			// justo porque toma cuatro limites y §8 le daba dos; aca §8 pide los cuatro por escrito, y
+			// por eso el censo crece de siete renglones a once y no de siete a nueve.
+			"what_i_have_spent_on_my_car/4(from):String",
+			"what_i_have_spent_on_my_car/4(to):String",
+			"what_i_have_spent_on_my_car/4(from2):String",
+			"what_i_have_spent_on_my_car/4(to2):String",
 		};
 
 		[Test]
@@ -465,38 +479,79 @@ namespace DealershipCar.Dominio.Pruebas
 		// declarado de este censo -- IsAMeasurement mira numeros e instantes -- asi que 'from' y 'to'
 		// cruzarian sin que nadie los mirara, y el ensanchamiento seria una decision que nadie tomo.
 		// Escribirlos aca es lo que la vuelve una decision.
-		private static readonly string[] TheTwoPeriodBoundsThatAreCatalogueKeys = { "from", "to" };
+		//
+		// Y SON CUATRO DESDE LA TOOL DEL LIBRO DE COSTOS, QUE ES LA PRIMERA QUE PREGUNTA POR DOS
+		// PERIODOS. El nombre de esta lista LLEVA LA CUENTA, asi que ensancharla es renombrarla y
+		// renombrarla es un acto: la comparacion de dos periodos toma 'from2' y 'to2' ademas de los
+		// dos de siempre, y esos dos son claves de catalogo por exactamente la misma razon que los
+		// primeros -- eligen CUAL pedazo del registro se compara contra cual, y no afirman nada del
+		// carro. La respuesta nombra los cuatro con que contesto.
+		private static readonly string[] TheFourPeriodBoundsThatAreCatalogueKeys =
+			{ "from", "to", "from2", "to2" };
 
-		// LAS DOS TOOLS QUE PREGUNTAN POR UN PERIODO. SIGUEN SIENDO DOS NOMBRES -- 'from' y 'to' -- y
-		// por eso el nombre de la prueba no se movio: lo que crecio es cuantas tools los toman, no
-		// cuantas claves hay. Se escriben las dos a proposito, porque un bucle sobre una sola tool
-		// dejaria a la segunda cruzando sin que nadie mirara su tipo.
+		// LAS TRES TOOLS QUE PREGUNTAN POR UN PERIODO. Se escriben las tres a proposito, porque un
+		// bucle sobre una sola dejaria a las otras cruzando sin que nadie mirara su tipo.
 		private static readonly string[] TheToolsThatAskAboutAPeriod =
 		{
 			"days_my_car_spent_in_the_shop", "how_much_my_car_is_driven",
+			"what_i_have_spent_on_my_car",
+		};
+
+		// Y CUAL TOOL TOMA CUAL LIMITE, CON SU ARIDAD Y SU TIPO. La lista de nombres de arriba dice
+		// que los cuatro son claves; esta dice quien toma cuales, que es lo que un bucle sobre el
+		// producto de las dos listas no puede decir -- las dos primeras tools toman dos limites y la
+		// tercera cuatro, asi que 'from2' de la tool de las estadias no existe y afirmarlo la pondria
+		// roja por una razon falsa.
+		private static readonly string[] EveryPeriodBoundEveryToolTakes =
+		{
+			"days_my_car_spent_in_the_shop/2(from):String",
+			"days_my_car_spent_in_the_shop/2(to):String",
+			"how_much_my_car_is_driven/2(from):String",
+			"how_much_my_car_is_driven/2(to):String",
+			"what_i_have_spent_on_my_car/4(from):String",
+			"what_i_have_spent_on_my_car/4(to):String",
+			"what_i_have_spent_on_my_car/4(from2):String",
+			"what_i_have_spent_on_my_car/4(to2):String",
 		};
 
 		[Test]
-		public void NoToolAsksForAFactAboutTheCarAndTheTwoBoundsAreKeys()
+		public void NoToolAsksForAFactAboutTheCarAndTheFourBoundsAreKeys()
 		{
-			// (a) el censo de mediciones sigue VACIO: los dos limites no lo tocan, porque son texto.
+			// (a) el censo de mediciones sigue VACIO: los cuatro limites no lo tocan, porque son texto.
 			Assert.That(EveryMeasurementOfEveryTool(), Is.EquivalentTo(EveryMeasurementAToolTakes));
 
 			// (b) y estan en el censo de parametros, POR NOMBRE Y CON SU TIPO. El conjunto exacto de
-			// mas arriba ya se pondria rojo; esto dice CUALES son los dos y que se decidio sobre ellos.
-			Assert.That(TheTwoPeriodBoundsThatAreCatalogueKeys, Is.EqualTo(new[] { "from", "to" }));
+			// mas arriba ya se pondria rojo; esto dice CUALES son los cuatro y que se decidio sobre
+			// ellos.
+			Assert.That(
+				TheFourPeriodBoundsThatAreCatalogueKeys,
+				Is.EqualTo(new[] { "from", "to", "from2", "to2" }));
 
+			foreach (string each in EveryPeriodBoundEveryToolTakes)
+				Assert.That(
+					EveryParameterOfEveryTool(),
+					Does.Contain(each),
+					"El limite '" + each + "' dejo de ser una cadena en yyyy-MM-dd, o la tool dejo de "
+					+ "tomarlo. Es la forma que lo hace una clave, y la puerta es la que decide que "
+					+ "instante preguntar: la de las estadias porque un dia de calendario LLEGA "
+					+ "ESCRITO con el hecho, y las otras dos porque la tool misma convierte el dia en "
+					+ "las puntas del periodo. Tiparlo como DateTime aca lo volveria una medicion.");
+
+			// (b2) Y LAS DOS LISTAS SE CUBREN UNA A OTRA, que es lo que impide que una crezca sola.
+			// Cada tool que pregunta por un periodo aporta al menos un renglon, y cada uno de los
+			// cuatro nombres lo toma al menos una tool: sin esto, agregar un nombre a la lista de
+			// arriba sin que ninguna tool lo tomara pasaria sin que nada se pusiera rojo.
 			foreach (string tool in TheToolsThatAskAboutAPeriod)
-				foreach (string each in TheTwoPeriodBoundsThatAreCatalogueKeys)
-					Assert.That(
-						EveryParameterOfEveryTool(),
-						Does.Contain(tool + "/2(" + each + "):String"),
-						"El limite '" + each + "' de '" + tool + "' dejo de ser una cadena en "
-						+ "yyyy-MM-dd. Es la forma que lo hace una clave, y la puerta es la que "
-						+ "decide que instante preguntar: la de las estadias porque un dia de "
-						+ "calendario LLEGA ESCRITO con el hecho, y la del odometro porque la tool "
-						+ "misma convierte el dia en las dos puntas del periodo. Tiparlo como "
-						+ "DateTime aca lo volveria una medicion.");
+				Assert.That(
+					EveryPeriodBoundEveryToolTakes,
+					Has.Some.StartsWith(tool + "/"),
+					"'" + tool + "' pregunta por un periodo y no aporta ningun limite al censo.");
+
+			foreach (string bound in TheFourPeriodBoundsThatAreCatalogueKeys)
+				Assert.That(
+					EveryPeriodBoundEveryToolTakes,
+					Has.Some.Contains("(" + bound + "):String"),
+					"'" + bound + "' esta escrito como clave de catalogo y ninguna tool lo toma.");
 
 			// (c) Y LA LISTA DE CLAVES NUMERICAS NO SE ENSANCHO, que es lo que impide que esto sea una
 			// puerta de atras. Si alguien vuelve a tipar un limite como DateTime o como int, no queda
@@ -519,14 +574,14 @@ namespace DealershipCar.Dominio.Pruebas
 		// EL CONTROL DE LOS DOS CENSOS, Y CON EL CONJUNTO DE MEDICIONES VACIO ES EL RENGLON QUE LOS
 		// SOSTIENE -- mas todavia desde P-12, que dejo VACIA tambien la lista de exenciones: dos
 		// conjuntos vacios los cumple igual un barrido que no encuentra nada. Prueba dos cosas: que el
-		// barrido de verdad encuentra las tools -- las ONCE, en CINCO clases -- y que el discriminador
+		// barrido de verdad encuentra las tools -- las DOCE, en SEIS clases -- y que el discriminador
 		// SI dispara contra un hecho de vehiculo de verdad. Las cinco mediciones de la lectura de nueve
 		// argumentos de la puerta son exactamente los hechos que aparecerian en una tool si alguien
 		// agregara el parametro de comodidad.
 		[Test]
 		public void TheSweepFindsTheToolsAndTheDiscriminatorFiresOnARealVehicleFact()
 		{
-			Assert.That(EveryToolMethod(), Has.Count.EqualTo(11),
+			Assert.That(EveryToolMethod(), Has.Count.EqualTo(12),
 				"El barrido dejo de encontrar las tools y los dos censos no defienden nada.");
 			Assert.That(EveryParameterOfEveryTool(), Is.Not.Empty);
 

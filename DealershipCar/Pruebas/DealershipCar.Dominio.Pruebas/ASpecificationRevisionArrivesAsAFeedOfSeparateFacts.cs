@@ -32,7 +32,19 @@ namespace DealershipCar.Dominio.Pruebas
 	// mismo -- que abre dos veces el mismo codigo, que publica en una revision que ya sello, que
 	// sella una vacia -- es un defecto DE QUIEN PUBLICA, y ahi el throw del dominio es lo correcto:
 	// cuesta una cicatriz, una sola, y la narrativa sigue.
+	// NO SE PARALELIZA, Y ESTE FIXTURE NO SE PUSO ROJO -- POR ESO LLEVA EL ATRIBUTO.
+	// WhatTheEngineSaysWhenItReopens() captura con Console.SetOut/SetError lo que el motor escribe al
+	// reabrir el journal, y esos dos son del PROCESO ENTERO. Medido 2026-09-04 con
+	// [assembly: Parallelizable(ParallelScope.Fixtures)]: con 8 workers salieron SIETE rojos en TRES
+	// de los CINCO fixtures que redirigen la consola. Este es el otro.
+	//
+	// UNA CARRERA QUE NO SALTO EN UNA CORRIDA NO ES UNA CARRERA QUE NO EXISTA (C57): lo que se
+	// enumera son los CINCO Console.SetOut de Pruebas/, no los tres sintomas de una corrida. Y aca la
+	// captura es UNA SOLA afirmacion de las muchas del fixture, lo que la hace mas facil de no ver.
+	//
+	// Sin Parallelizable en el ensamblado esto no hace nada: es el registro de cuales cinco eran.
 	[TestFixture]
+	[NonParallelizable]
 	public sealed class ASpecificationRevisionArrivesAsAFeedOfSeparateFacts
 	{
 		private AScheduleOnARealJournal journal;
@@ -579,7 +591,7 @@ namespace DealershipCar.Dominio.Pruebas
 					"interval Inspection : False |  | Intervalo de servicio de revisión: no se ha "
 					+ "publicado nada"),
 				("precios",    "price FluidChange : True | R1",   "price FilterChange : True | R2",
-					"89.9 USD", "45.5 USD",
+					"$89.90", "$45.50",
 					"price Inspection : False |  | Precio del servicio de revisión"),
 			};
 

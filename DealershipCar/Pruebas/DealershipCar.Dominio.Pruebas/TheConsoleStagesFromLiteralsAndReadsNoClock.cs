@@ -42,12 +42,17 @@ namespace DealershipCar.Dominio.Pruebas
 		// se rompio y trajo otra cosa pasa el piso y no pasa esto.
 		private const string TheStagingOfTheStays = "ShopStays.cs";
 
+		// Y EL DEL LIBRO DE COSTOS, que es el que agrega CL-8. Se nombra igual que el de las estadias
+		// y por lo mismo: el subcomando 'costos' guiona tres gastos y tres lecturas desde literales, y
+		// si su archivo no llega al barrido, lo de abajo esta verde por no haberlo leido.
+		private const string TheStagingOfTheCosts = "Costs.cs";
+
 		[Test]
 		public void TheConsoleStagedTheStaysAndTheSweepIsReadingThatFile()
 		{
 			string[] files = TheCodeOfTheShellsAsData.EveryFileOf(TheCodeOfTheShellsAsData.Consola);
 
-			Assert.That(files, Has.Length.GreaterThanOrEqualTo(5),
+			Assert.That(files, Has.Length.GreaterThanOrEqualTo(6),
 				"La raiz de la consola trajo menos archivos de los que tiene. Un barrido que leyo de "
 				+ "menos esta verde por no haber leido.");
 
@@ -60,6 +65,9 @@ namespace DealershipCar.Dominio.Pruebas
 			Assert.That(named, Does.Contain(TheStagingOfTheStays),
 				"El guion de las estadias de la consola no llego al barrido, asi que lo de abajo no "
 				+ "dice nada sobre el.");
+			Assert.That(named, Does.Contain(TheStagingOfTheCosts),
+				"El guion de los gastos de la consola no llego al barrido, asi que lo de abajo no dice "
+				+ "nada sobre el.");
 			Assert.That(named, Does.Contain("Program.cs"));
 			Assert.That(named, Does.Contain("Warranty.cs"));
 		}

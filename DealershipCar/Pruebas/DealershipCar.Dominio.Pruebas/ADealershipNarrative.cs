@@ -514,6 +514,90 @@ namespace DealershipCar.Dominio.Pruebas
 				+ ",\"coveredDays\":" + TheDaysSaid(coveredDays) + "}");
 		}
 
+		// ------------------------------- los gastos de este vehiculo, como feed
+		//
+		// LA QUINTA LISTA, y son cinco porque el feed le escribe a CINCO globales de raiz: la agenda, la
+		// ficha del fabricante, el perfil de este vehiculo, las estadias y el libro de costos (esta).
+		// Meter estos dos tipos en cualquiera de las otras cuatro haria que el barrido que cuenta ONCE
+		// tipos de la especificacion contara trece, y contarlos es lo que impide que un barrido se
+		// acorte sin que nadie lo note.
+		//
+		// LOS DOS TIPOS ESTAN, y con ellos las DOS MONEDAS y las TRES situaciones que un periodo puede
+		// tener: el anio entero trae las tres entradas y esta dicho en dos monedas, el primer semestre
+		// trae las dos de colones y esta dicho en una, y 2025 no trae ninguna -- la ventana de la
+		// duradera empieza despues, asi que tampoco consume nada adentro.
+		//
+		// LOS MONTOS VIAJAN COMO TEXTO Y LOS TRES LLEVAN UN CERO A LA DERECHA -- 240000.00, 45000.00,
+		// 120.50 -- por la misma razon que los tres decimales de la ficha: el journal escribe un decimal
+		// sin los ceros que sobran, asi que sin el cero la normalizacion de la frontera no cambia nada y
+		// quitarla no se nota en ninguna comparacion.
+		//
+		// Y EL ORDEN DE ESTA LISTA NO ES EL ORDEN EN QUE SE INCURRIERON, a proposito -- es la diferencia
+		// con las otras cuatro. Una entrada del libro no tiene clave, asi que ningun gasto recibido
+		// puede chocar con otro y no hay ningun estado que una segunda entrada tenga que respetar: el
+		// lavado de agosto llega ANTES del cambio de aceite de mayo, y las filas salen igual en orden
+		// del instante en que se incurrieron. Lo unico que el orden fija son los numeros de evento, que
+		// el proveedor sirve en orden desde el punto de control. Por eso esta lista se puede volver a
+		// correr contra el mismo journal sin ninguna bandera.
+		internal const string TheTyresSubject = "Llantas nuevas";
+		internal const string TheTyresAmount = "240000.00";
+		internal const string TheTyresCurrency = "CRC";
+		internal const string TheTyresIncurred = "2026-03-12T09:00:00Z";
+		internal const int TheTyresLifeInMonths = 48;
+
+		internal const string TheWashSubject = "Lavado premium";
+		internal const string TheWashAmount = "120.50";
+		internal const string TheWashCurrency = "USD";
+		internal const string TheWashIncurred = "2026-08-05T14:15:00Z";
+
+		internal const string TheOilChangeSubject = "Cambio de aceite";
+		internal const string TheOilChangeAmount = "45000.00";
+		internal const string TheOilChangeCurrency = "CRC";
+		internal const string TheOilChangeIncurred = "2026-05-20T10:30:00Z";
+
+		// Cuantas senales del libro se aplican, y hasta donde queda la bitacora cuando entraron enteras.
+		// Escritas aparte para que una prueba pueda afirmarlas sin contar la lista a mano.
+		internal const int CostSignalsThatApply = 3;
+		internal const long TheLastCostEvent = 36;
+
+		internal static IReadOnlyList<SenalDeEvento> TheCosts()
+		{
+			return new List<SenalDeEvento>
+			{
+				DurableCost(34, TheTyresIncurred, TheTyresAmount, TheTyresCurrency, TheTyresSubject,
+					TheTyresLifeInMonths),
+
+				RecurringCost(35, TheWashIncurred, TheWashAmount, TheWashCurrency, TheWashSubject),
+
+				RecurringCost(36, TheOilChangeIncurred, TheOilChangeAmount, TheOilChangeCurrency,
+					TheOilChangeSubject),
+			};
+		}
+
+		internal static SenalDeEvento RecurringCost(
+			long number, string incurredAt, string amount, string currency, string subject)
+		{
+			return new SenalDeEvento(number, "RecurringCostRecorded",
+				"{\"id\":" + number + ",\"tipo\":\"RecurringCostRecorded\""
+				+ ",\"incurredAt\":\"" + incurredAt + "\""
+				+ ",\"amount\":" + amount
+				+ ",\"currency\":\"" + currency + "\""
+				+ ",\"subject\":\"" + subject + "\"}");
+		}
+
+		internal static SenalDeEvento DurableCost(
+			long number, string incurredAt, string amount, string currency, string subject,
+			int expectedLifeMonths)
+		{
+			return new SenalDeEvento(number, "DurableCostRecorded",
+				"{\"id\":" + number + ",\"tipo\":\"DurableCostRecorded\""
+				+ ",\"incurredAt\":\"" + incurredAt + "\""
+				+ ",\"amount\":" + amount
+				+ ",\"currency\":\"" + currency + "\""
+				+ ",\"subject\":\"" + subject + "\""
+				+ ",\"expectedLifeMonths\":" + expectedLifeMonths + "}");
+		}
+
 		// Los dias como el wire los trae: una LISTA de JSON, no una cadena separada por espacios. Es
 		// el unico campo de esta app que viaja como lista, y por eso la cirugia de payload de las
 		// pruebas de descarte tuvo que aprender a verlo.

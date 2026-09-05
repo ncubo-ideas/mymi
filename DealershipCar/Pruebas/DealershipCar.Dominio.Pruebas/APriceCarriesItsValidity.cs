@@ -59,7 +59,7 @@ namespace DealershipCar.Dominio.Pruebas
 				specification.DescribeServicePrice(
 					OperationKindCode.Inspection, 10000, DistanceUnitCode.UnitA, WhileItIsInForce),
 				Is.EqualTo(
-					"Revisión a los 10000 km: 120.50 CRC, vigente del 2025-01-01 al 2025-12-31. "
+					"Revisión a los 10000 km: ₡120.50, vigente del 2025-01-01 al 2025-12-31. "
 					+ "Al 2025-06-15 esa vigencia está rigiendo. "
 					+ "Publicado en la revisión REV-2025-01."));
 		}
@@ -94,15 +94,20 @@ namespace DealershipCar.Dominio.Pruebas
 			Assert.That(answer, Does.Contain("vigente del 2025-01-01"));
 		}
 
-		// El monto sale TAL COMO SE PUBLICO, con su escala, y la moneda es texto publicado que
-		// nunca se convierte. Una moneda convertida es un precio que la sucursal no puso.
+		// El monto sale COMO SU PROPIA MONEDA LO DICE -- con el signo delante y los decimales que esa
+		// moneda tiene -- y la moneda no se convierte nunca. Una moneda convertida es un precio que la
+		// sucursal no puso.
+		//
+		// LA FRASE CAMBIO EN CL-2 y el cambio es visible: antes decia "120.50 CRC" y ahora dice
+		// "₡120.50". El monto y la moneda dejaron de ser dos campos sueltos en el precio y son un solo
+		// Money, que es quien dice la frase (DEC-85, DEC-87).
 		[Test]
 		public void TheAmountAndTheCurrencyAreAnsweredAsPublished()
 		{
 			string answer = specification.DescribeServicePrice(
 				OperationKindCode.Inspection, 10000, DistanceUnitCode.UnitA, WhileItIsInForce);
 
-			Assert.That(answer, Does.Contain("120.50 CRC"));
+			Assert.That(answer, Does.Contain("₡120.50"));
 		}
 
 		// EL HITO ES DISTANCIA MAS UNIDAD. El mismo numero en la otra unidad no es el mismo hito, y
@@ -169,6 +174,15 @@ namespace DealershipCar.Dominio.Pruebas
 				"C45: el mensaje dice la regla en palabras, no cita un documento.");
 		}
 
+		// LOS DOS RECHAZOS DEL PAR CAMBIARON DE DUENO EN CL-2, y siguen siendo el mismo rechazo. Un
+		// monto negativo lo niega Money y una moneda en blanco la niega Currency.OfPublished -- los dos
+		// tipos que TIENEN el valor -- en vez de una guarda del precio detras de un valor que el precio
+		// ya no ve. Es la forma del hermano: las guardas de valor del intervalo viven en
+		// PublishedInterval y no en ServiceIntervalEntry.
+		//
+		// LO QUE SIGUE AFIRMADO ES LO QUE LE IMPORTA A QUIEN PUBLICA: que el rechazo llega, que dice
+		// su motivo en palabras, y que es DomainException -- cualquier otro tipo se escapa de Apply y
+		// para el bloque entero del refresco (C22, C36, C37).
 		[Test]
 		public void APriceWithANegativeAmountIsNotAPublishedPrice()
 		{
@@ -292,7 +306,7 @@ namespace DealershipCar.Dominio.Pruebas
 					specification.DescribeServicePrice(
 						OperationKindCode.Inspection, 10000, DistanceUnitCode.UnitA,
 						WhileItIsInForce),
-					Does.Contain("120.50 CRC"),
+					Does.Contain("₡120.50"),
 					"Bajo una cultura con coma decimal el monto sigue saliendo con punto. Si "
 					+ "cambiara, la frase dependeria de la maquina que la compuso.");
 			}

@@ -136,6 +136,43 @@ namespace DealershipCar.Dominio.Pruebas
 			"DescribePublishedServicePrice/3",
 		};
 
+		// LAS NUEVE DEL LIBRO DE COSTOS, Y ESTAR AQUI ES OTRA COSA QUE ESTAR EN LA LISTA DE ARRIBA.
+		// Las diecinueve se restan porque son las que ESTA rebanada agrego y la comparacion es sobre
+		// lo que ya existia. Estas nueve se restan por una razon estructural: BuildOrder/CL-4 le
+		// agrego a la app una SEXTA GLOBAL DE RAIZ -- el libro de costos -- y la app de antes de
+		// MS- no la tiene, asi que sobre ella las nueve no rechazan una regla de negocio: el DSL no
+		// encuentra 'ledger' y revienta. Comparar ese rechazo contra la respuesta que da la app de hoy
+		// -- que abrio el mismo journal y le APLICO la migracion -- mide la migracion de CL-4 y no la
+		// promesa de esta rebanada.
+		//
+		// ESTE FIXTURE SE PUSO ROJO EN CL-5 Y EL ROJO ERA CORRECTO, que es la misma forma que CL-4 ya
+		// habia encontrado por el lado del CONTEO DE ENTRADAS: una prueba de ausencia-de-migracion
+		// escrita contra LA APP DE HOY envejece el dia que una rebanada POSTERIOR agrega una global, y
+		// envejece poniendose roja, que es la buena manera. La correccion es restarlas POR NOMBRE con
+		// el motivo escrito, no aflojar la comparacion.
+		//
+		// Y VOLVIO A PONERSE ROJO EN CL-6, POR LA MISMA RAZON Y CON DOS NOMBRES MAS: las dos lecturas
+		// del CRUCE nombran 'ledger' adentro de su script -- una en la rama then de un if y la otra en
+		// el segundo operando de un && -- asi que sobre la app de antes revientan igual que las siete.
+		// Que sean CRUZADAS no cambia nada aca: lo que decide es que global nombra el script.
+		//
+		// Y NO SE AFLOJA, porque la resta se defiende con las mismas dos mitades que la de arriba: la
+		// cuenta escrita, que ve un nombre que se caiga, y la afirmacion de que las nueve siguen en la
+		// puerta, que ve un nombre que sobre. Que las nueve CONTESTEN sobre el journal ya migrado lo
+		// afirma TheSixthGlobalReachesAJournalThatHasTheOtherFive, que es de quien es esa mitad.
+		private static readonly string[] TheNineTheCostLedgerAdded =
+		{
+			"HasAnyCostBetween/2",
+			"DescribeSpendBetween/2",
+			"IsSpendSaidInOneCurrencyBetween/2",
+			"DescribeSpendPerCurrencyBetween/2",
+			"DescribeTwoPeriodsOfSpendCompared/4",
+			"CostEntriesBetween/2",
+			"CostEntryCountBetween/2",
+			"CanCostPerDistanceBeSaid/2",
+			"DescribeCostPerDistanceBetween/2",
+		};
+
 		// LOS DOS MIEMBROS PUBLICOS QUE DEVUELVEN ALGO Y ESCRIBEN. No son lecturas y el barrido no los
 		// puede invocar sin ensuciar justo lo que compara.
 		private static readonly string[] TheTwoQuestionShapedWriters = { "Evaluate/1", "Apply/1" };
@@ -154,10 +191,19 @@ namespace DealershipCar.Dominio.Pruebas
 			Sweep(folder);
 		}
 
-		// LA AUSENCIA DE LA MIGRACION, MEDIDA EN ENTRADAS DEL JOURNAL. +1 es lo que cuesta una
-		// apertura en regimen; +2 es lo que cuesta una que migra, y lo cuesta tambien cuando lo unico
-		// nuevo es el TEXTO del script. El control positivo va en el mismo test para que un +1 que
-		// dejara de discriminar se vea.
+		// LA AUSENCIA DE LA MIGRACION DE MS-, MEDIDA EN ENTRADAS DEL JOURNAL -- Y LO QUE ESTE
+		// INSTRUMENTO MIDE DE VERDAD ES LA DISTANCIA ENTRE DOS APPS, no la deuda de una rebanada. +1
+		// es lo que cuesta una apertura en regimen; +2 es lo que cuesta una que migra, y lo cuesta
+		// tambien cuando lo unico nuevo es el TEXTO del script. Se escribio comparando el journal de
+		// antes de MS- contra LA APP DE HOY, y ese +1 valia mientras la app de hoy declarara los
+		// mismos CINCO upgrades que la de entonces. BuildOrder/CL-4 le agrego el SEXTO --
+		// 'libro-de-costos' -- asi que la primera apertura con la app de hoy paga UNA migracion, y esa
+		// migracion es de CL-4 y no de MS-.
+		//
+		// LO QUE DEFIENDE LA AUSENCIA DE MS- DESPUES DE ESO SON LAS OTRAS DOS MITADES: la segunda
+		// apertura vuelve a +1, y el renglon que nombra CUAL global llego dice que la unica deuda
+		// pagada es la del libro de costos. El control positivo sigue en el mismo test para que un +2
+		// que dejara de discriminar se vea.
 		[Test]
 		public void AJournalFromBeforeThisSliceCostsTheOpeningItAlwaysCostAndNothingMore()
 		{
@@ -165,25 +211,32 @@ namespace DealershipCar.Dominio.Pruebas
 
 			DealershipCarApp today = TheAppOfTodayOpening(folder);
 			long afterTodaysApp = today.Actor.CurrentEntryId;
+			string theGlobalThatArrived = ALedgerReadWithoutTheDoor.Vin(today);
 			today.Dispose();
 
 			TestContext.Out.WriteLine(
 				"COSTO DE ABRIR UN JOURNAL DE ANTES DE MS- CON LA APP DE HOY -- CurrentEntryId: "
 				+ afterTheOlderAppWrote + " -> " + afterTodaysApp);
 
-			Assert.That(afterTodaysApp, Is.EqualTo(afterTheOlderAppWrote + 1),
-				"UNA entrada, la que toda apertura paga por el comando de la semilla. DOS querria "
-				+ "decir que corrio un cuerpo de upgrade nuevo o que el texto del script cambio, y "
-				+ "las dos cosas son una migracion. MS- no agrega global, ni nombre de upgrade, ni "
-				+ "comando: los dos textos son el mismo, y este numero es lo que lo dice.");
+			Assert.That(afterTodaysApp, Is.EqualTo(afterTheOlderAppWrote + 2),
+				"DOS, y las dos estan contadas: la que toda apertura paga por el comando de la "
+				+ "semilla, mas la del texto de script nuevo que trajo la sexta global de CL-4. MS- "
+				+ "no agrega global, ni nombre de upgrade, ni comando; lo que este numero mide es la "
+				+ "distancia entre la app de antes de MS- y la de HOY, y esa distancia ya no es cero "
+				+ "por una rebanada posterior.");
+
+			Assert.That(theGlobalThatArrived, Is.EqualTo(TheVin),
+				"Y LA MIGRACION QUE SE PAGO ES LA DEL LIBRO DE COSTOS, nombrada. Un +2 solo dice que "
+				+ "algo se aplico; esto dice que.");
 
 			DealershipCarApp again = TheAppOfTodayOpening(folder);
 			long afterASecondOpening = again.Actor.CurrentEntryId;
 			again.Dispose();
 
 			Assert.That(afterASecondOpening, Is.EqualTo(afterTodaysApp + 1),
-				"Y sigue costando una. Si la primera hubiera migrado algo, la segunda seria mas "
-				+ "barata que la primera y este renglon lo mostraria.");
+				"Y VUELVE A COSTAR UNA, que es la mitad que sigue defendiendo lo que esta prueba "
+				+ "nombra: no queda nada por aplicar. Si la pantalla de mantenimiento hubiera "
+				+ "necesitado una migracion propia, esta apertura la seguiria pagando.");
 
 			// EL CONTROL POSITIVO, y sin el un +1 constante pasaria igual. Los CINCO MISMOS NOMBRES en
 			// otro orden son otro TEXTO, y otro texto cuesta +2 sin que ningun cuerpo vuelva a correr.
@@ -368,10 +421,12 @@ namespace DealershipCar.Dominio.Pruebas
 		private static List<MethodInfo> TheReadsThatAlreadyExisted()
 		{
 			var nineteen = new List<string>(TheNineteenThisSliceAdded);
+			var ofTheLedger = new List<string>(TheNineTheCostLedgerAdded);
 			var writers = new List<string>(TheTwoQuestionShapedWriters);
 
 			var reads = new List<MethodInfo>();
 			var seenNineteen = new List<string>();
+			var seenNine = new List<string>();
 
 			foreach (MethodInfo each in typeof(DealershipCarAPI).GetMethods(
 				BindingFlags.Instance | BindingFlags.Public | BindingFlags.DeclaredOnly))
@@ -381,6 +436,7 @@ namespace DealershipCar.Dominio.Pruebas
 				string key = each.Name + "/" + each.GetParameters().Length;
 
 				if (nineteen.Contains(key)) { seenNineteen.Add(key); continue; }
+				if (ofTheLedger.Contains(key)) { seenNine.Add(key); continue; }
 				if (writers.Contains(key)) continue;
 
 				reads.Add(each);
@@ -398,6 +454,17 @@ namespace DealershipCar.Dominio.Pruebas
 
 			Assert.That(seenNineteen, Is.EquivalentTo(TheNineteenThisSliceAdded),
 				"Un nombre de la lista ya no esta en la puerta, o cambio de aridad.");
+
+			// Y LAS NUEVE DEL LIBRO, CON LAS MISMAS DOS MITADES. La cuenta escrita ve un nombre que se
+			// caiga -- que se contaria como si hubiera existido antes de esta rebanada -- y la
+			// equivalencia ve uno que sobre.
+			Assert.That(TheNineTheCostLedgerAdded, Has.Length.EqualTo(9),
+				"La lista del libro dejo de tener nueve nombres. Una que se le caiga se cuenta como si "
+				+ "ya hubiera existido antes de MS-, y la comparacion volveria a medir la migracion de "
+				+ "CL-4 en vez de lo que dice medir.");
+
+			Assert.That(seenNine, Is.EquivalentTo(TheNineTheCostLedgerAdded),
+				"Un nombre de la lista del libro ya no esta en la puerta, o cambio de aridad.");
 
 			reads.Sort((a, b) => string.CompareOrdinal(
 				a.Name + "/" + a.GetParameters().Length, b.Name + "/" + b.GetParameters().Length));

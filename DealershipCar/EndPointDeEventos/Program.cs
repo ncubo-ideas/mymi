@@ -258,6 +258,12 @@ sealed class EventoDelConcesionario
     // feed no lleva.
     [JsonPropertyName("coveredDays")]        public string[] CoveredDays { get; init; } = [];
 
+    /// <summary>El instante en que se incurrio un gasto.</summary>
+    [JsonPropertyName("incurredAt")]         public DateTime IncurredAt { get; init; }
+
+    /// <summary>Los meses que se espera que dure un gasto duradero.</summary>
+    [JsonPropertyName("expectedLifeMonths")] public int ExpectedLifeMonths { get; init; }
+
     internal string Resumen() => Tipo switch
     {
         "OdometerReported" => $"{Value} {Unit} observado el {ObservedAt:yyyy-MM-dd} ({Source})",
@@ -297,6 +303,13 @@ sealed class EventoDelConcesionario
             $"estadia en {Branch} por {Subject}, del {EnteredAt:yyyy-MM-dd HH:mm} al "
             + $"{CollectedAt:yyyy-MM-dd HH:mm}, cubrio {string.Join(" ", CoveredDays)}",
 
+        "RecurringCostRecorded" =>
+            $"gasto recurrente de {Amount} {Currency} en {Subject}, "
+            + $"incurrido el {IncurredAt:yyyy-MM-dd HH:mm}",
+        "DurableCostRecorded" =>
+            $"gasto duradero de {Amount} {Currency} en {Subject}, "
+            + $"incurrido el {IncurredAt:yyyy-MM-dd HH:mm}, con {ExpectedLifeMonths} meses de vida util",
+
         _ => Tipo,
     };
 }
@@ -324,6 +337,8 @@ sealed class AlmacenDeEventos
         "VehicleDelivered", "WarrantyEnvelopePublished",
 
         "ShopEntryRecorded", "ShopCollectionRecorded", "ShopStayRecorded",
+
+        "RecurringCostRecorded", "DurableCostRecorded",
     };
 
     private List<EventoDelConcesionario> Lista(string recurso, string id) =>
@@ -491,6 +506,8 @@ sealed class AlmacenDeEventos
                 EnteredAt = pedido.EnteredAt,
                 CollectedAt = pedido.CollectedAt,
                 CoveredDays = pedido.CoveredDays ?? [],
+                IncurredAt = pedido.IncurredAt,
+                ExpectedLifeMonths = pedido.ExpectedLifeMonths,
             };
 
             lista.Add(evento);
@@ -584,4 +601,7 @@ sealed class HechoAInyectar
     [JsonPropertyName("enteredAt")]          public DateTime EnteredAt { get; set; }
     [JsonPropertyName("collectedAt")]        public DateTime CollectedAt { get; set; }
     [JsonPropertyName("coveredDays")]        public string[] CoveredDays { get; set; }
+
+    [JsonPropertyName("incurredAt")]         public DateTime IncurredAt { get; set; }
+    [JsonPropertyName("expectedLifeMonths")] public int ExpectedLifeMonths { get; set; }
 }

@@ -29,12 +29,23 @@ namespace DealershipCar.Dominio.Pruebas
 	//   CoverageStanding es una RESPUESTA, nunca una entrada (ley L9). Un codigo de frontera
 	//   que lo nombre significaria que alguien de afuera puede DECIR que algo esta cubierto,
 	//   que es justo lo que L3 prohibe: este modulo dice el alcance publicado, no adjudica.
+	//
+	//   CostClassification -- de CL-3 -- es el caso MAS interno de los cuatro, y por una razon que los
+	//   otros tres no tienen: llega POR CUAL COMANDO SE LLAMO. No hay ningun parametro de
+	//   clasificacion en ningun sitio (§7.2 del plan), asi que no existe la pregunta "que codigo de
+	//   frontera resuelve esto": nunca entra, solo sale como columna. Un XxxCode aca no seria una
+	//   puerta que el slice no quiso -- seria una puerta que no lleva a ningun lado, y ademas un
+	//   cuarto enum en la namespace unica que C52 midio, donde el nombre del miembro es lo unico que
+	//   cruza. El argumento entero esta en DECISIONS.md; la ley de la proyeccion se afirma en
+	//   TheProjectedNameIsTheMembersOwnName y la membresia en
+	//   EachClosedSetDeclaresExactlyTheMembersTheCanonNames.
 	[TestFixture]
 	public sealed class AnInternallySelectedSetIsNotReachedFromTheBoundary
 	{
 		[TestCase(typeof(RevisionState), "RevisionStateCode")]
 		[TestCase(typeof(CoverageStanding), "CoverageStandingCode")]
 		[TestCase(typeof(EnvelopeStanding), "EnvelopeStandingCode")]
+		[TestCase(typeof(CostClassification), "CostClassificationCode")]
 		public void ItHasNoResolverAndNoBoundaryEnum(Type conjunto, string enumQueNoDebeExistir)
 		{
 			Assert.That(conjunto.GetMethod("OfCode",

@@ -514,6 +514,186 @@ namespace DealershipCar.App
 			.PerformCommand();
 		}
 
+		/// <summary>
+		/// Registra un gasto que se consume en el periodo en que se incurrio: cuando se incurrio,
+		/// cuanto costo, en que moneda y en que se fue. Que sea de los que se consumen en su periodo
+		/// lo dice ESTE comando: no hay ninguna ranura por donde decir la clase, ni ninguna vida util
+		/// que darle.
+		/// </summary>
+		public void RecordRecurringCost(
+			DateTime incurredAt, decimal amount, string currency, string subject)
+		{
+			ArgumentException.ThrowIfNullOrWhiteSpace(subject);
+
+			TheAmountSpentIsNotNegative(amount);
+
+			app.Using("ledger.RecordRecurringCost(@incurredAt, @amount, @currency, @subject);")
+			.WithParameters(p => {
+				p["incurredAt", typeof(DateTime)] = InUtc(incurredAt);
+				p["amount",     typeof(decimal)]  = Normalized(amount);
+				p["currency",   typeof(string)]   = WireName.Currency(currency);
+				p["subject",    typeof(string)]   = subject;
+			})
+			.PerformCommand();
+		}
+
+		/// <summary>
+		/// Registra un gasto que sigue dando valor despues del periodo en que se incurrio, con la
+		/// vida util en meses que le dio quien lo vendio. La vida util es OBLIGATORIA y no tiene
+		/// valor por defecto, y que sea de los duraderos lo dice ESTE comando.
+		/// </summary>
+		public void RecordDurableCost(
+			DateTime incurredAt, decimal amount, string currency, string subject,
+			int expectedLifeMonths)
+		{
+			ArgumentException.ThrowIfNullOrWhiteSpace(subject);
+
+			TheAmountSpentIsNotNegative(amount);
+			TheExpectedLifeIsSaidInPositiveMonths(expectedLifeMonths);
+
+			app.Using(@"
+				ledger.RecordDurableCost(
+					@incurredAt, @amount, @currency, @subject, @expectedLifeMonths);
+			")
+			.WithParameters(p => {
+				p["incurredAt",         typeof(DateTime)] = InUtc(incurredAt);
+				p["amount",             typeof(decimal)]  = Normalized(amount);
+				p["currency",           typeof(string)]   = WireName.Currency(currency);
+				p["subject",            typeof(string)]   = subject;
+				p["expectedLifeMonths", typeof(int)]      = expectedLifeMonths;
+			})
+			.PerformCommand();
+		}
+
+		/// <summary>
+		/// Si ese periodo tiene algun gasto, salido del banco adentro o consumido adentro. TOTAL, y
+		/// contesta que NO donde no hay ninguno: la ausencia es un tipo y no un rechazo.
+		/// </summary>
+		public bool HasAnyCostBetween(DateTime from, DateTime to)
+		{
+			return ATruth(
+				"@has = ledger.HasAnyCostBetween(@from, @to);", "has",
+				APeriodOfInstants(from, to));
+		}
+
+		/// <summary>
+		/// El gasto de ese periodo en una frase, con LAS DOS VISTAS adentro -- lo que salio del banco
+		/// y lo que el periodo consumio -- o la constancia con nombre de que no hay ninguno. TOTAL, y
+		/// ninguna lectura contesta una vista sola.
+		/// </summary>
+		public string DescribeSpendBetween(DateTime from, DateTime to)
+		{
+			return AText(
+				"@says = ledger.DescribeSpendBetween(@from, @to);", "says",
+				APeriodOfInstants(from, to));
+		}
+
+		/// <summary>
+		/// Si todo el gasto de ese periodo esta dicho en una sola moneda. TOTAL, y un periodo sin
+		/// ningun gasto contesta que NO: no hay ninguna moneda en la que este dicho.
+		/// </summary>
+		public bool IsSpendSaidInOneCurrencyBetween(DateTime from, DateTime to)
+		{
+			return ATruth(
+				"@said = ledger.IsSpendSaidInOneCurrencyBetween(@from, @to);", "said",
+				APeriodOfInstants(from, to));
+		}
+
+		/// <summary>
+		/// El gasto de ese periodo dicho moneda por moneda, o el estado con nombre en que hay mas de
+		/// una y no hay total entre ellas. TOTAL. El dinero no se convierte: agrupar por moneda es de
+		/// quien consulta.
+		/// </summary>
+		public string DescribeSpendPerCurrencyBetween(DateTime from, DateTime to)
+		{
+			return AText(
+				"@says = ledger.DescribeSpendPerCurrencyBetween(@from, @to);", "says",
+				APeriodOfInstants(from, to));
+		}
+
+		/// <summary>
+		/// Los dos periodos dichos juntos en una sola frase, cada uno con sus limites y sus dos
+		/// vistas. TOTAL. El PRIMER par de extremos es el primer periodo; ninguna diferencia entre
+		/// los dos sale por ninguna lectura como numero.
+		/// </summary>
+		public string DescribeTwoPeriodsOfSpendCompared(
+			DateTime from1, DateTime to1, DateTime from2, DateTime to2)
+		{
+			return AText(@"
+				@says = ledger.DescribeTwoPeriodsOfSpendCompared(@from1, @to1, @from2, @to2);
+			", "says", TwoPeriodsOfInstants(from1, to1, from2, to2));
+		}
+
+		/// <summary>
+		/// Las entradas incurridas adentro de ese periodo como filas: cuando se incurrio cada una, en
+		/// que se fue, cuanto costo dicho por su moneda, de que clase es, su vida util si tiene, y la
+		/// frase con que el dominio la dice, en columnas paralelas y en orden del instante en que se
+		/// incurrieron. TOTAL, y contesta CERO filas donde no hay ninguna.
+		/// </summary>
+		public CostLedgerRecord CostEntriesBetween(DateTime from, DateTime to)
+		{
+			string[][] columns = TheTextColumns(@"
+				@incurredAt     = ledger.CostEntryInstantsBetween(@from, @to);
+				@subject        = ledger.CostEntrySubjectsBetween(@from, @to);
+				@money          = ledger.CostEntryMoniesBetween(@from, @to);
+				@classification = ledger.CostEntryClassificationsBetween(@from, @to);
+				@expectedLife   = ledger.CostEntryExpectedLivesBetween(@from, @to);
+				@says           = ledger.DescribeEachCostEntryBetween(@from, @to);
+			", TheColumnsOfACostLedgerRecord, APeriodOfInstants(from, to));
+
+			return CostLedgerRecord.Of(
+				columns[0], columns[1], columns[2], columns[3], columns[4], columns[5]);
+		}
+
+		/// <summary>
+		/// Si se puede decir cuanto costo la distancia de ese periodo: hace falta un tramo de uso que
+		/// medir Y algun gasto. TOTAL, y es la mitad de MEDIBILIDAD de la respuesta de abajo -- la
+		/// misma pareja que el ritmo de uso ya tiene -- y no una guarda delante de un rechazo.
+		/// </summary>
+		public bool CanCostPerDistanceBeSaid(DateTime from, DateTime to)
+		{
+			return ATruth(@"
+				@can = schedule.CanARateOfUseBeSaid(@from, @to) && ledger.HasAnyCostBetween(@from, @to);
+			", "can", APeriodOfInstants(from, to));
+		}
+
+		/// <summary>
+		/// Cuanto costo la distancia de ese periodo, moneda por moneda y con las dos unidades dichas --
+		/// el signo de cada moneda y la unidad de la distancia -- o la constancia con nombre de que no
+		/// hay tramo de uso por el que dividir. TOTAL.
+		/// <para>
+		/// Cruza DOS globales de raiz en un solo script: el tramo lo dice la agenda y el dinero el libro
+		/// de costos. Ni la distancia ni el ancla se le piden a quien pregunta, y ninguna de las dos
+		/// sale por ninguna lectura como numero.
+		/// </para>
+		/// </summary>
+		public string DescribeCostPerDistanceBetween(DateTime from, DateTime to)
+		{
+			return AText(@"
+				if (schedule.CanARateOfUseBeSaid(@from, @to)) {
+					@clause = ledger.DescribeCostPerDistance(@from, @to,
+						schedule.FirstReadingInstantBetween(@from, @to),
+						schedule.DistanceTravelledBetween(@from, @to),
+						schedule.UnitOfTravelBetween(@from, @to));
+				} else {
+					@clause = ledger.DescribeCostPerDistanceWithNoSpan(@from, @to,
+						schedule.DescribeRateOfUse(@from, @to));
+				}
+			", "clause", APeriodOfInstants(from, to));
+		}
+
+		/// <summary>
+		/// Cuantas entradas se incurrieron adentro de ese periodo. TOTAL, y es la cuenta de las FILAS
+		/// del registro de arriba: de las entradas sale la cuenta y de la cuenta no salen las
+		/// entradas.
+		/// </summary>
+		public int CostEntryCountBetween(DateTime from, DateTime to)
+		{
+			return ACount(
+				"@count = ledger.CostEntryCountBetween(@from, @to);", "count",
+				APeriodOfInstants(from, to));
+		}
+
 		public EvaluationOutcome Evaluate(DateTime asOf)
 		{
 			using (RentedParameter rented = app.Actor.RentedParameters())
@@ -1843,6 +2023,10 @@ namespace DealershipCar.App
 					return ApplyShopCollectionRecorded(collection);
 				if (message is ShopStayRecorded stay) return ApplyShopStayRecorded(stay);
 
+				if (message is RecurringCostRecorded recurring)
+					return ApplyRecurringCostRecorded(recurring);
+				if (message is DurableCostRecorded durable) return ApplyDurableCostRecorded(durable);
+
 				throw new ArgumentException(
 					$"Esta app no tiene comando para un mensaje de tipo '{message.Tipo}'. La ruta "
 					+ "debio devolver null para descartarlo.", nameof(message));
@@ -2329,6 +2513,62 @@ namespace DealershipCar.App
 			.PerformCheckThenCommand();
 		}
 
+		/// <summary>
+		/// El gasto que se consume en su periodo, tal como llego. La clase la dice CUAL de los dos
+		/// comandos se aplica y no ningun campo de la senal, y ninguna de las dos guardas de la puerta
+		/// se llama por aca: revientan con ArgumentOutOfRangeException, que por este camino se llevaria
+		/// el bloque entero, asi que el monto ya se exigio al interpretar la senal -- donde descartarla
+		/// no cuesta ninguna entrada. La moneda tambien: cruza como llego, porque el borde ya comprobo
+		/// que este modulo la nombra.
+		/// </summary>
+		private string ApplyRecurringCostRecorded(RecurringCostRecorded message)
+		{
+			return app.Using(
+				scriptForChk: TheEventIsNew,
+				@"
+					{
+						ledger.RecordRecurringCost(@incurredAt, @amount, @currency, @subject);
+						logbook.Advance(@event);
+					}
+				")
+			.WithParameters(p => {
+				p["event",      typeof(long)]     = message.EventNumber;
+				p["incurredAt", typeof(DateTime)] = InUtc(message.IncurredAt);
+				p["amount",     typeof(decimal)]  = Normalized(message.Amount);
+				p["currency",   typeof(string)]   = message.Currency;
+				p["subject",    typeof(string)]   = message.Subject;
+			})
+			.PerformCheckThenCommand();
+		}
+
+		/// <summary>
+		/// El gasto que sigue dando valor despues, con la vida util que llego con el. Mismo motivo que
+		/// arriba para no llamar ninguna guarda de la puerta, y la vida util ya se exigio positiva al
+		/// interpretar la senal. Lo que NO se adelanta es que su ventana quepa: eso lo contesta el
+		/// dominio y deja su marca.
+		/// </summary>
+		private string ApplyDurableCostRecorded(DurableCostRecorded message)
+		{
+			return app.Using(
+				scriptForChk: TheEventIsNew,
+				@"
+					{
+						ledger.RecordDurableCost(
+							@incurredAt, @amount, @currency, @subject, @expectedLifeMonths);
+						logbook.Advance(@event);
+					}
+				")
+			.WithParameters(p => {
+				p["event",              typeof(long)]     = message.EventNumber;
+				p["incurredAt",         typeof(DateTime)] = InUtc(message.IncurredAt);
+				p["amount",             typeof(decimal)]  = Normalized(message.Amount);
+				p["currency",           typeof(string)]   = message.Currency;
+				p["subject",            typeof(string)]   = message.Subject;
+				p["expectedLifeMonths", typeof(int)]      = message.ExpectedLifeMonths;
+			})
+			.PerformCheckThenCommand();
+		}
+
 		private const string TheEventIsNew =
 			"Check(@event > logbook.LastEvent()) Error 'evento ya procesado';";
 
@@ -2511,6 +2751,15 @@ namespace DealershipCar.App
 		/// </summary>
 		private static readonly string[] TheColumnsOfAPublishedPriceRecord =
 			{ "operation", "milestone", "says", "revision" };
+
+		/// <summary>
+		/// Los nombres de las seis columnas del registro del libro de costos, en el orden en que el
+		/// DTO las recibe. No hay columna de identidad ni de la parte que a un periodo le toca.
+		/// </summary>
+		private static readonly string[] TheColumnsOfACostLedgerRecord =
+		{
+			"incurredAt", "subject", "money", "classification", "expectedLife", "says",
+		};
 
 		/// <summary>
 		/// La clase por la que se pregunta, exigida como nombre de miembro ANTES de que haya consulta.
@@ -2701,6 +2950,40 @@ namespace DealershipCar.App
 				nameof(reading),
 				$"El odometro del dia de la entrega no puede ser negativo, y llego {reading}. Es la "
 				+ "lectura desde la que se cuenta todo lo que el vehiculo recorrio bajo garantia.");
+		}
+
+		/// <summary>
+		/// Que lo que se gasto sea dinero. El dominio lo exige tambien y esto no lo reemplaza: para
+		/// cuando su guarda corre, la entrada del comando ya se escribio. Un monto negativo es la
+		/// sucursal pagandole a la persona; cero SI es un monto, porque un servicio incluido tambien
+		/// se registra.
+		/// </summary>
+		private static void TheAmountSpentIsNotNegative(decimal amount)
+		{
+			if (amount >= 0) return;
+
+			throw new ArgumentOutOfRangeException(
+				nameof(amount),
+				$"Llego un gasto de {amount} y un monto negativo no es dinero: es la sucursal "
+				+ "pagandole a la persona. Un gasto se registra por lo que costo, y devolver plata "
+				+ "es otro hecho que este libro no lleva.");
+		}
+
+		/// <summary>
+		/// Que un gasto duradero traiga la vida util en meses positivos. Mismo motivo que arriba, y
+		/// no hay ninguna vida por defecto que poner en su lugar: cuanto dura una pieza lo sabe quien
+		/// la vendio.
+		/// </summary>
+		private static void TheExpectedLifeIsSaidInPositiveMonths(int expectedLifeMonths)
+		{
+			if (expectedLifeMonths > 0) return;
+
+			throw new ArgumentOutOfRangeException(
+				nameof(expectedLifeMonths),
+				$"Llego un gasto duradero con una vida util de {expectedLifeMonths} meses. Una vida "
+				+ "util que no es positiva no deja ninguna ventana sobre la que repartir el gasto, y "
+				+ "no hay ninguna por defecto: lo que se consume en su propio periodo se registra con "
+				+ "el otro comando.");
 		}
 
 		/// <summary>

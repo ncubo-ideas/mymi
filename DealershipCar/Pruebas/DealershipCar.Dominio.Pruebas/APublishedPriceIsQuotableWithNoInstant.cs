@@ -51,7 +51,7 @@ namespace DealershipCar.Dominio.Pruebas
 				specification.DescribePublishedServicePrice(
 					OperationKindCode.Inspection, 10000, DistanceUnitCode.UnitA),
 				Is.EqualTo(
-					"Revisión a los 10000 km: 120.50 CRC, vigente del 2025-01-01 al 2025-12-31. "
+					"Revisión a los 10000 km: ₡120.50, vigente del 2025-01-01 al 2025-12-31. "
 					+ "Publicado en la revisión REV-2025-01."));
 		}
 
@@ -132,11 +132,11 @@ namespace DealershipCar.Dominio.Pruebas
 
 			Assert.That(
 				composed,
-				Does.StartWith("Revisión a los 10000 km: 120.50 CRC, vigente del 2025-01-01 al "
+				Does.StartWith("Revisión a los 10000 km: ₡120.50, vigente del 2025-01-01 al "
 					+ "2025-12-31."));
 			Assert.That(
 				published,
-				Does.StartWith("Revisión a los 10000 km: 120.50 CRC, vigente del 2025-01-01 al "
+				Does.StartWith("Revisión a los 10000 km: ₡120.50, vigente del 2025-01-01 al "
 					+ "2025-12-31."));
 			Assert.That(composed, Is.Not.EqualTo(published),
 				"Y no son la misma respuesta: la compuesta agrega el veredicto sobre el instante "

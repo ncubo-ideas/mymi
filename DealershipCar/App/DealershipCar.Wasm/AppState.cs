@@ -486,6 +486,24 @@ namespace DealershipCar.Wasm
 				TheTwelveMonthsBefore(asOf));
 		}
 
+		/// <summary>
+		/// En que se le fue la plata a este vehiculo, leido entero al instante en que la pantalla
+		/// pregunta: los doce meses que terminan en ese instante y los doce anteriores. Los cuatro
+		/// limites salen de UNA sola lectura del reloj, asi que las dos ventanas son contiguas y del
+		/// mismo momento. La ventana la fija la pantalla y no se le pide a nadie -- esta app no tiene
+		/// ningun control que recoja un valor de una persona, asi que no hay selector de periodo.
+		/// </summary>
+		public WhatThisVehicleHasCost ReadWhatThisVehicleHasCost()
+		{
+			Require();
+
+			DateTime asOf = TheInstantTheScreenAsksAt();
+
+			return WhatThisVehicleHasCost.ReadThrough(
+				api, TheTwelveMonthsBefore(asOf), asOf, TheTwentyFourMonthsBefore(asOf),
+				TheTwelveMonthsBefore(asOf));
+		}
+
 		public bool HasCredential() { Require(); return api.StoredToken().Length > 0; }
 
 		public long JournalEntries() { Require(); return app.Actor.CurrentEntryId; }

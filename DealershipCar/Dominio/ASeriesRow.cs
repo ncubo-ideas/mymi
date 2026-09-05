@@ -58,6 +58,26 @@ namespace DealershipCar.Dominio
 		}
 
 		/// <summary>
+		/// Esa misma unidad, dicha con su CODIGO, para que un script pueda pasarla como argumento al
+		/// metodo de otro agregado. No sale hacia ninguna vista: el valor va directo a otro metodo de
+		/// dominio adentro del mismo script.
+		/// </summary>
+		internal DistanceUnitCode TheCodeOfItsUnit()
+		{
+			return _reading.TheCodeOfItsUnit;
+		}
+
+		/// <summary>
+		/// Ese mismo instante, como INSTANTE y no como su forma dicha, por la misma razon que el
+		/// codigo de la unidad: otro agregado lo recibe como argumento adentro del mismo script y
+		/// filtra con el.
+		/// </summary>
+		internal DateTime WhenItWasObserved()
+		{
+			return _reading.ObservedAt;
+		}
+
+		/// <summary>
 		/// El NOMBRE del miembro de la fuente, que es la mitad direccionable: quien lea la columna
 		/// puede volver a preguntar por esa fuente con el.
 		/// </summary>

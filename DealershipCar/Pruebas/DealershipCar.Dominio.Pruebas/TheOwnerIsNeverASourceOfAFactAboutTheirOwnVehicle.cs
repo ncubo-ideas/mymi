@@ -48,10 +48,11 @@ namespace DealershipCar.Dominio.Pruebas
 	// carro, y LA RESPUESTA NOMBRA LOS EXTREMOS QUE USO, asi que un extremo inventado produce una
 	// respuesta visiblemente acotada y nunca un hecho falso.
 	//
-	// Y LA MITAD QUE HACE QUE SEA UNA DECISION Y NO UNA ESCAPATORIA: los catorce pares que la
+	// Y LA MITAD QUE HACE QUE SEA UNA DECISION Y NO UNA ESCAPATORIA: los treinta y cuatro pares que la
 	// ampliacion deja pasar se ENUMERAN, exactos, con su miembro. Las claves se amplian por NOMBRE en
 	// toda la puerta, pero los sitios donde ese nombre aparece estan escritos: un 'DateTime from'
-	// nuevo en una lectura que no sea una de las SEIS de la serie se pone rojo igual.
+	// nuevo en una lectura que no sea una de las SEIS de la serie, una de las SIETE del libro o una de
+	// las DOS del cruce se pone rojo igual.
 	//
 	// ASI QUE EL CENSO SE ARMA POR ELIMINACION Y NO POR RECONOCIMIENTO: todo int y todo DateTime de
 	// una PREGUNTA que no sea una de esas dos claves es una medicion, y el censo se afirma como
@@ -76,6 +77,14 @@ namespace DealershipCar.Dominio.Pruebas
 		//
 		// NO ES UNA LISTA DE PERMITIDOS QUE CRECE SOLA: es igualdad de conjuntos, asi que tambien se
 		// pone rojo si alguien BORRA uno, y el rojo dice cual.
+		//
+		// LOS DOS DE BuildOrder/CL-4 SON GASTOS QUE UNA SUCURSAL REGISTRO, y por eso entran aqui y no
+		// del lado de las preguntas. Un gasto es un hecho ocurrido con autor: la sucursal cobro, y lo
+		// que llega es lo que cobro. El dueno no lo inventa ni lo estima -- la app del dueno sigue
+		// siendo de SOLO LECTURA, Amendment 2 -- y el que un comando tome un monto y un instante no
+		// es el dueno siendo fuente de un hecho de su propio vehiculo: es la agencia registrando el
+		// suyo, que es lo que un miembro que REGISTRA hace por oficio. La forma que separa las dos
+		// cosas es la del miembro y no el nombre de sus parametros: estos dos devuelven void.
 		private static readonly string[] EveryCommandTheDealershipHas =
 		{
 			"SeedPlanOperation", "AdoptPlanRevision", "AddOwnerOperation", "RemoveOwnerOperation",
@@ -87,6 +96,7 @@ namespace DealershipCar.Dominio.Pruebas
 			"SealRevision", "SupersedeRevision",
 			"RecordDelivery", "PublishWarrantyEnvelope",
 			"RecordShopEntry", "RecordShopCollection", "RecordShopStay",
+			"RecordRecurringCost", "RecordDurableCost",
 		};
 
 		[Test]
@@ -248,10 +258,17 @@ namespace DealershipCar.Dominio.Pruebas
 				+ "nombrar un periodo en este modulo.");
 		}
 
-		// LOS CATORCE PARES QUE LA AMPLIACION DEJA PASAR, CON SU MIEMBRO, COMO CONJUNTO EXACTO. Las
-		// claves se amplian por NOMBRE en toda la puerta; esto es lo que impide que ese nombre sirva
-		// en cualquier parte. Un 'DateTime from' en una lectura que no sea una de las SEIS de la
-		// serie es un PAR nuevo aca, y el rojo lo nombra.
+		// LOS TREINTA Y CUATRO PARES QUE LA AMPLIACION DEJA PASAR, CON SU MIEMBRO, COMO CONJUNTO
+		// EXACTO. Las claves se amplian por NOMBRE en toda la puerta; esto es lo que impide que ese
+		// nombre sirva en cualquier parte. Un 'DateTime from' en una lectura que no sea una de las SEIS
+		// de la serie, una de las SIETE del libro de costos o una de las DOS del cruce es un PAR nuevo
+		// aca, y el rojo lo nombra.
+		//
+		// CATORCE ERAN HASTA BuildOrder/CL-5, que agrego DIECISEIS con las siete lecturas del libro, y
+		// BuildOrder/CL-6 agrega CUATRO con las dos del cruce. LAS CLAVES NO SE MOVIERON NI UNA VEZ:
+		// las nueve lecturas piden from/to y from1/to1/from2/to2, que ya eran seis de las OCHO claves
+		// de catalogo desde OD-2. Lo que se movio es DONDE valen, que es exactamente lo que este
+		// conjunto enumera.
 		private static readonly string[] EveryPeriodBoundAQuestionTakes =
 		{
 			"CanARateOfUseBeSaid/2(from)",
@@ -273,10 +290,39 @@ namespace DealershipCar.Dominio.Pruebas
 
 			"ReadingCountBetween/2(from)",
 			"ReadingCountBetween/2(to)",
+
+			"HasAnyCostBetween/2(from)",
+			"HasAnyCostBetween/2(to)",
+
+			"DescribeSpendBetween/2(from)",
+			"DescribeSpendBetween/2(to)",
+
+			"IsSpendSaidInOneCurrencyBetween/2(from)",
+			"IsSpendSaidInOneCurrencyBetween/2(to)",
+
+			"DescribeSpendPerCurrencyBetween/2(from)",
+			"DescribeSpendPerCurrencyBetween/2(to)",
+
+			"DescribeTwoPeriodsOfSpendCompared/4(from1)",
+			"DescribeTwoPeriodsOfSpendCompared/4(to1)",
+			"DescribeTwoPeriodsOfSpendCompared/4(from2)",
+			"DescribeTwoPeriodsOfSpendCompared/4(to2)",
+
+			"CostEntriesBetween/2(from)",
+			"CostEntriesBetween/2(to)",
+
+			"CostEntryCountBetween/2(from)",
+			"CostEntryCountBetween/2(to)",
+
+			"CanCostPerDistanceBeSaid/2(from)",
+			"CanCostPerDistanceBeSaid/2(to)",
+
+			"DescribeCostPerDistanceBetween/2(from)",
+			"DescribeCostPerDistanceBetween/2(to)",
 		};
 
 		[Test]
-		public void OnlyTheSixReadsOfTheSeriesTakeAPeriodBoundAtAll()
+		public void OnlyTheFifteenReadsOfTheSeriesTheLedgerAndTheCrossingTakeAPeriodBoundAtAll()
 		{
 			Assert.That(EveryPeriodBound(), Is.EquivalentTo(EveryPeriodBoundAQuestionTakes),
 				"Una pregunta de la puerta gano o perdio un EXTREMO DE PERIODO. Los seis nombres son "
@@ -294,14 +340,19 @@ namespace DealershipCar.Dominio.Pruebas
 			{
 				"CanARateOfUseBeSaid", "ReadRateOfUseStanding", "DescribeRateOfUse",
 				"DescribeTwoPeriodsOfUseCompared", "ReadingsBetween", "ReadingCountBetween",
+				"HasAnyCostBetween", "DescribeSpendBetween", "IsSpendSaidInOneCurrencyBetween",
+				"DescribeSpendPerCurrencyBetween", "DescribeTwoPeriodsOfSpendCompared",
+				"CostEntriesBetween", "CostEntryCountBetween",
+				"CanCostPerDistanceBeSaid", "DescribeCostPerDistanceBetween",
 			}),
-				"Y son SEIS MIEMBROS. El censo de pares ya lo implica; escrito aparte, el rojo dice "
-				+ "que miembro en vez de que par.");
+				"Y son QUINCE MIEMBROS -- SEIS de la serie del odometro, SIETE del libro de costos y "
+				+ "DOS del cruce entre las dos globales. El censo de pares ya lo implica; escrito "
+				+ "aparte, el rojo dice que miembro en vez de que par.");
 		}
 
 		// LA AMPLIACION, HECHA VISIBLE. Las DOS claves de antes se vuelven a correr contra esta
-		// puerta y se afirma que ya NO alcanzan: con ellas, los catorce extremos de periodo son
-		// mediciones y el censo de mediciones seria de TREINTA Y TRES.
+		// puerta y se afirma que ya NO alcanzan: con ellas, los treinta y cuatro extremos de periodo
+		// son mediciones y el censo de mediciones seria de CINCUENTA Y TRES.
 		//
 		// SIN ESTE RENGLON, LA AMPLIACION SE VE IGUAL QUE UN HUECO QUE DEJO DE NOTARSE: la lista de
 		// claves habria crecido seis nombres y nada diria que crecio a proposito. Con el, quien
@@ -325,8 +376,8 @@ namespace DealershipCar.Dominio.Pruebas
 				withTheOldKeys,
 				Has.Count.EqualTo(
 					EveryMeasurementAQuestionTakes.Length + EveryPeriodBoundAQuestionTakes.Length),
-				"Y la diferencia son exactamente los catorce extremos de periodo: diecinueve mas "
-				+ "catorce son las treinta y tres que las claves de antes contarian.");
+				"Y la diferencia son exactamente los treinta y cuatro extremos de periodo: diecinueve "
+				+ "mas treinta y cuatro son las cincuenta y tres que las claves de antes contarian.");
 
 			foreach (string bound in EveryPeriodBoundAQuestionTakes)
 			{
@@ -458,8 +509,14 @@ namespace DealershipCar.Dominio.Pruebas
 		}
 
 		// El mismo censo, corrido bajo OTRO juego de claves. Es lo que hace que la ampliacion se
-		// pueda enseñar en vez de solo afirmar: con las dos claves de antes, el censo cuenta treinta
-		// y tres.
+		// pueda enseñar en vez de solo afirmar: con las dos claves de antes, el censo cuenta
+		// cincuenta y tres.
+		//
+		// ESTA CUENTA DECIA "TREINTA Y TRES" Y LLEVABA UNA REBANADA ENTERA STALE. Era cierta hasta
+		// BuildOrder/OD-2 -- 19 + 14 -- y CL-5 movio las dos cuentas del cuerpo de la prueba de arriba
+		// y se dejo esta, que esta en un helper y no al lado de lo que cuenta. Es el mismo defecto que
+		// el encabezado de EveryScriptOfTheDoorHasBeenRun documenta de si mismo, en un segundo archivo:
+		// una cuenta afirmada en prosa envejece en silencio y la suite no la puede ver.
 		private static List<string> EveryMeasurementUnder(string[] keys)
 		{
 			var pairs = new List<string>();
