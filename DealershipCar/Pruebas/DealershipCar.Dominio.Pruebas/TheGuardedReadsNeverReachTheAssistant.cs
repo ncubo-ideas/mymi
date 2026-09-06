@@ -139,24 +139,24 @@ namespace DealershipCar.Dominio.Pruebas
 		{
 			using (AScheduleOnARealJournal journal = AVehicleWithNothingDue())
 			{
-				journal.Api.OpenRevision("MY2025-R1", ThePublication);
-				journal.Api.PublishFuelGrade("MY2025-R1", "91 RON regular", "Minimum");
-				journal.Api.SealRevision("MY2025-R1");
+				journal.Api.OpenRevision("MY2019-R1", ThePublication);
+				journal.Api.PublishFuelGrade("MY2019-R1", "91 RON regular", "Minimum");
+				journal.Api.SealRevision("MY2019-R1");
 
 				var tools = new ModelSpecificationTools(new JournalReader(journal.Folder, ""));
 				SpecificationSheet sheet = tools.WhatMyCarTakes();
 
-				Assert.That(sheet.CurrentRevision, Is.EqualTo("MY2025-R1"));
+				Assert.That(sheet.CurrentRevision, Is.EqualTo("MY2019-R1"));
 				Assert.That(sheet.CurrentRevisionPublishedAt,
 					Is.EqualTo("2025-08-15T00:00:00.0000000Z"),
 					"Con la Z, por la misma razon que el instante de la evaluacion (C24).");
 
 				Assert.That(
-					tools.DoesTheWarrantyCover("").CurrentRevision, Is.EqualTo("MY2025-R1"));
+					tools.DoesTheWarrantyCover("").CurrentRevision, Is.EqualTo("MY2019-R1"));
 				Assert.That(
 					tools.WhatTheServiceCosts(MaintenanceOperation.FluidChange)
 						.CurrentRevision,
-					Is.EqualTo("MY2025-R1"));
+					Is.EqualTo("MY2019-R1"));
 			}
 		}
 

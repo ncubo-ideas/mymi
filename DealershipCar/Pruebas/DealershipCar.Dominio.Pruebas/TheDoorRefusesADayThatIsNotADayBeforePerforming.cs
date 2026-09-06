@@ -40,7 +40,7 @@ namespace DealershipCar.Dominio.Pruebas
 	public sealed class TheDoorRefusesADayThatIsNotADayBeforePerforming
 	{
 		private const string TheVin = "5NPE24AF2FH123456";
-		private const string TheModel = "SM-SEDAN-2025";
+		private const string TheModel = "YARIS-2019";
 		private const string TheBranch = "Taller Curridabat";
 		private const string TheSubject = "Cambio de aceite";
 

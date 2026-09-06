@@ -43,7 +43,7 @@ namespace DealershipCar.Dominio.Pruebas
 	{
 		private const string TheVin = "1HGCM82633A004352";
 
-		private const string TheRevision = "MY2025-R1";
+		private const string TheRevision = "MY2019-R1";
 		private const string TheSystemInside = "POWERTRAIN";
 		private const string TheSystemOnlyExcluded = "INFOTAINMENT";
 

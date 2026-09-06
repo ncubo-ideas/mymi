@@ -268,7 +268,7 @@ namespace DealershipCar.Dominio.Pruebas
 
 		private static ModelSpecification TheSheetWithThePublishedPrice()
 		{
-			ModelSpecification specification = new ModelSpecification("SM-SEDAN-2025");
+			ModelSpecification specification = new ModelSpecification("YARIS-2019");
 
 			specification.OpenRevision("REV-2025-01", new DateTime(2025, 3, 14, 10, 0, 0));
 			specification.PublishServicePrice(

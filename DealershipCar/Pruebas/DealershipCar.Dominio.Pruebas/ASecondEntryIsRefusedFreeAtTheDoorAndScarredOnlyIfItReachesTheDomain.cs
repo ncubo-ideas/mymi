@@ -56,7 +56,7 @@ namespace DealershipCar.Dominio.Pruebas
 	public sealed class ASecondEntryIsRefusedFreeAtTheDoorAndScarredOnlyIfItReachesTheDomain
 	{
 		private const string TheVin = "JH4KA7660MC012345";
-		private const string TheModel = "SM-SEDAN-2025";
+		private const string TheModel = "YARIS-2019";
 		private const string TheBranch = "Taller Curridabat";
 		private const string TheSecondBranch = "Taller Escazu";
 		private const string TheSubject = "Cambio de aceite";

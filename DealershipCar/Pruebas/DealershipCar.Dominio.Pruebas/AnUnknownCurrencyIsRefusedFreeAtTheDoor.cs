@@ -56,7 +56,7 @@ namespace DealershipCar.Dominio.Pruebas
 	public sealed class AnUnknownCurrencyIsRefusedFreeAtTheDoor
 	{
 		private const string TheVin = "1FTFW1ET5DFA12345";
-		private const string TheModel = "SM-SEDAN-2025";
+		private const string TheModel = "YARIS-2019";
 
 		private const string TheCodeTheSetDoesNotName = "XYZ";
 		private const string TheSubject = "Llantas nuevas";

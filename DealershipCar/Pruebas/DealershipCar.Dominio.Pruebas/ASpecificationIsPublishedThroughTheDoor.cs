@@ -158,7 +158,7 @@ namespace DealershipCar.Dominio.Pruebas
 			Assert.That(program, Does.Contain("specification = ModelSpecification(model)"),
 				"La tercera global quedo como sentencia con parametro formal, igual que las otras "
 				+ "dos.");
-			Assert.That(program, Does.Contain("'SM-SEDAN-2025'"),
+			Assert.That(program, Does.Contain("'YARIS-2019'"),
 				"Y el modelo viaja aparte, como argumento de la semilla.");
 			Assert.That(program, Does.Contain("'EngineOil'"));
 			Assert.That(program, Does.Contain("'Front'"));

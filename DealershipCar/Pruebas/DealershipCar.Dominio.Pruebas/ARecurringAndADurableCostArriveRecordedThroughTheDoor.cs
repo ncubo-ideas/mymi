@@ -34,7 +34,7 @@ namespace DealershipCar.Dominio.Pruebas
 	public sealed class ARecurringAndADurableCostArriveRecordedThroughTheDoor
 	{
 		private const string TheVin = "JH4KA7660MC012345";
-		private const string TheModel = "SM-SEDAN-2025";
+		private const string TheModel = "YARIS-2019";
 
 		private const string TheTyres = "Llantas nuevas";
 		private const string TheOilChange = "Cambio de aceite";

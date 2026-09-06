@@ -26,7 +26,7 @@ namespace DealershipCar.Dominio.Pruebas
 	public sealed class SeveralColumnsComeBackFromOneQuery
 	{
 		private const string TheVin = "1HGCM82633A004352";
-		private const string TheModel = "SM-SEDAN-2025";
+		private const string TheModel = "YARIS-2019";
 		private const string TheRevision = "R1";
 		private const int TheOdometer = 20000;
 

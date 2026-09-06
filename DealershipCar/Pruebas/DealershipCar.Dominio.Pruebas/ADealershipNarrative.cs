@@ -152,8 +152,8 @@ namespace DealershipCar.Dominio.Pruebas
 		// que ya tiene que existir. Por eso los numeros de evento arrancan en el 11 y siguen la
 		// historia de arriba: el proveedor sirve en orden desde el punto de control, y esta lista es
 		// ese orden escrito a mano.
-		internal const string TheFirstRevision = "MY2025-R1";
-		internal const string TheSecondRevision = "MY2025-R2";
+		internal const string TheFirstRevision = "MY2019-R1";
+		internal const string TheSecondRevision = "MY2019-R2";
 
 		internal const string TheFirstOilGrade = "5W-30 synthetic";
 		internal const string TheSecondOilGrade = "0W-20 synthetic";

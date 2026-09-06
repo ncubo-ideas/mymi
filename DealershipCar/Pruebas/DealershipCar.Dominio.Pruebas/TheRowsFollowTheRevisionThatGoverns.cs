@@ -18,7 +18,7 @@ namespace DealershipCar.Dominio.Pruebas
 	[TestFixture]
 	public sealed class TheRowsFollowTheRevisionThatGoverns
 	{
-		private const string TheModel = "SM-SEDAN-2025";
+		private const string TheModel = "YARIS-2019";
 		private const string TheOldRevision = "REV-2025-01";
 		private const string TheNewRevision = "REV-2025-02";
 

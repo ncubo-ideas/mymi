@@ -449,24 +449,24 @@ namespace DealershipCar.Dominio.Pruebas
 		{
 			DateTime published = new DateTime(2025, 8, 15, 0, 0, 0, DateTimeKind.Utc);
 
-			journal.Api.OpenRevision("MY2025-R1", published);
+			journal.Api.OpenRevision("MY2019-R1", published);
 			journal.Api.PublishFluidSpecification(
-				"MY2025-R1", "EngineOil", "5W-30 synthetic", 4.2m, "UnitA", 10000, "UnitA", 365);
+				"MY2019-R1", "EngineOil", "5W-30 synthetic", 4.2m, "UnitA", 10000, "UnitA", 365);
 			journal.Api.PublishTyreSpecification(
-				"MY2025-R1", "Front", "205/55R16", 2.4m, "UnitA", "94V");
-			journal.Api.PublishFuelGrade("MY2025-R1", "91 RON regular", "Minimum");
-			journal.Api.PublishServiceInterval("MY2025-R1", "FluidChange", 10000, "UnitA", 365);
+				"MY2019-R1", "Front", "205/55R16", 2.4m, "UnitA", "94V");
+			journal.Api.PublishFuelGrade("MY2019-R1", "91 RON regular", "Minimum");
+			journal.Api.PublishServiceInterval("MY2019-R1", "FluidChange", 10000, "UnitA", 365);
 			journal.Api.PublishServicePrice(
-				"MY2025-R1", "FluidChange", 10000, "UnitA", 89.90m, "USD",
+				"MY2019-R1", "FluidChange", 10000, "UnitA", 89.90m, "USD",
 				published, new DateTime(2099, 12, 31, 0, 0, 0, DateTimeKind.Utc));
-			journal.Api.PublishCoveredSystem("MY2025-R1", "POWERTRAIN", 0, 0, "UnitA");
+			journal.Api.PublishCoveredSystem("MY2019-R1", "POWERTRAIN", 0, 0, "UnitA");
 			journal.Api.PublishCoverageExclusion(
-				"MY2025-R1", "POWERTRAIN", "wear parts", "when the part is a consumable");
+				"MY2019-R1", "POWERTRAIN", "wear parts", "when the part is a consumable");
 			journal.Api.PublishServicingPolicy(
-				"MY2025-R1",
+				"MY2019-R1",
 				"service may be done at any qualified workshop",
 				"keep the invoices and the parts records");
-			journal.Api.SealRevision("MY2025-R1");
+			journal.Api.SealRevision("MY2019-R1");
 		}
 
 		// LA CUENTA DE ENTRADAS SE LEE ABRIENDO EN SOLO LECTURA, no del actor que la prueba tiene

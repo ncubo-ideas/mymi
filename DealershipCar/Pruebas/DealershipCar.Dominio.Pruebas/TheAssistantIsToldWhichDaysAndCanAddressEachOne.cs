@@ -38,7 +38,7 @@ namespace DealershipCar.Dominio.Pruebas
 	public sealed class TheAssistantIsToldWhichDaysAndCanAddressEachOne
 	{
 		private const string TheVin = "1FTFW1ET5DFC10312";
-		private const string TheModel = "SM-SEDAN-2025";
+		private const string TheModel = "YARIS-2019";
 
 		// LA ESTADIA DE MAYO: TRES dias, en un solo acto, que es la forma correctiva.
 		private const string TheMayBranch = "Taller Central";

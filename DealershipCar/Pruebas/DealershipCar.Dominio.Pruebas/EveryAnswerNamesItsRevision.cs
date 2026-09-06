@@ -153,7 +153,7 @@ namespace DealershipCar.Dominio.Pruebas
 		[Test]
 		public void TheOneAnswerReachableWithoutARevisionSaysItIsNotPublished()
 		{
-			ModelSpecification specification = new ModelSpecification("SM-SEDAN-2025");
+			ModelSpecification specification = new ModelSpecification("YARIS-2019");
 
 			SpecificationAnswer absent = specification.UnpublishedIsAnAnswer("EngineOil");
 

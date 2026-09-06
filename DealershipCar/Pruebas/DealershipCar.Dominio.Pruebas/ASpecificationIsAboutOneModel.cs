@@ -24,7 +24,7 @@ namespace DealershipCar.Dominio.Pruebas
 	[TestFixture]
 	public sealed class ASpecificationIsAboutOneModel
 	{
-		private const string TheModel = "SM-SEDAN-2025";
+		private const string TheModel = "YARIS-2019";
 
 		[Test]
 		public void ASpecificationWithoutAModelHasNoModelToBeAbout()
