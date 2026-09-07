@@ -568,10 +568,10 @@ borrar — lo único que deja de hacer es sincronizar.
 
 | módulo | el botón pasa a decir | el aviso |
 |---|---|---|
-| `examenes` | Ya no se actualiza | Tu registro ahora vive en Gnothi… los exámenes nuevos te llegan allá |
-| `compras` | Ya no se actualiza | Tu registro ahora vive en Gnothi… las compras nuevas te llegan allá |
-| `cargas` | Ya no se actualiza | Tu registro ahora vive en Gnothi… las cargas nuevas te llegan allá |
-| `dealership` | No longer updating | Your record now lives in Gnothi… new maintenance facts reach you there |
+| `examenes` | Ya no se actualiza | Tus exámenes nuevos ahora entran por Gnothi, en este mismo teléfono… |
+| `compras` | Ya no se actualiza | Tus compras nuevas ahora entran por Gnothi… |
+| `cargas` | Ya no se actualiza | Tus cargas nuevas ahora entran por Gnothi… |
+| `dealership` | No longer updating | New maintenance facts now arrive through Gnothi, on this same phone… |
 
 **Qué prueba:** que la marca de migración la pone **el publicador**, no el aparato. Ninguna marca
 del lado web sobrevive a «borrar datos del sitio»; ésta viaja en el sobre de eventos y certifica
@@ -579,6 +579,54 @@ que Gnothi de verdad recibió una credencial.
 
 **Mal:** si sigue en modo normal, el publicador no reconoció el device de Gnothi. Lo distingue
 por el prefijo de su clave de device.
+
+#### P8b · Y ahora el publicador REVOCA, no sólo avisa
+
+Hasta el **2026-09-07** la app suelta dejaba de sincronizar porque **decidía** obedecer la marca;
+el publicador no le quitaba nada. Con una app vieja o modificada seguía leyendo — y ahí sí hay
+dos historias divergiendo, que es lo que la marca existe para evitar (`13 §4` paso 4).
+
+Ahora la cuenta queda vinculada **con un plazo de gracia de 30 días**, que viaja en el mismo
+sobre (`account.graceUntil`), y vencido ese plazo la cuenta **es de Gnothi**. Se prueba sin
+esperar un mes, con curl contra el publicador:
+
+```bash
+curl -X POST http://127.0.0.1:8095/device/vencer-gracia
+```
+
+Y después, con el token que la app suelta ya tenía:
+
+```
+HTTP 401  {"error":"invalid_token","error_description":"la cuenta expediente/1 ya no se
+           sirve a este cliente"}
+```
+
+**Las tres puertas, y hay que probar las tres.** Cerrar una sola sería teatro: **medido en el
+cliente**, ante un 401 al leer rota la credencial, y si la rotación falla pide una concesión
+nueva con su device key. Si `/device/token` quedara abierto, el acceso vuelve en dos saltos.
+
+| puerta | qué se prueba | esperado |
+|---|---|---|
+| leer | `GET /{recurso}/1/events` con el token viejo | **401** `invalid_token` |
+| rotar | `POST /device/refresh` con su refresh | **401** |
+| pedir de nuevo | `POST /device/token` con su device key | **401** `invalid_token` |
+| y Gnothi | `GET events` con el token de Gnothi | **200**, `state=migrated` |
+
+**Y es reversible**, que es el paso 5 de `§4`:
+
+```bash
+curl -X DELETE http://127.0.0.1:8095/expediente/1/vinculo
+```
+
+La concesión de Gnothi se revoca, el vínculo se borra, y la app suelta vuelve a `active` en su
+siguiente pedido. Una decisión de la que no se puede volver no es una decisión de la persona.
+
+> **MEDIDO el 2026-09-07** contra los mocks de `examenes` y de `compras`, el ciclo entero: activa
+> → vinculada con gracia → sigue leyendo → gracia vencida → las tres puertas en 401 → Gnothi lee
+> → desvinculada → activa otra vez. Los cuatro publicadores tienen el mismo comportamiento.
+>
+> **Una app que obedece nunca llega al 401**: se entera por `account` y deja de pedir. El rechazo
+> es para la que no obedece — y por eso es un rechazo y no un aviso.
 
 ### P9 · Las mediciones
 
