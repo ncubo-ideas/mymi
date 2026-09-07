@@ -19,10 +19,29 @@ internal sealed class BundleServer
 	// `connect-src 'self'` and NOT 'none': with 'none' the module does not start, because the
 	// runtime itself fetches its blazor.boot.json. Measured. With 'self' it still cannot reach
 	// the publisher -- that is a different origin -- and it does start.
+	// `form-action` AND `base-uri` ARE HERE BECAUSE THEY DO NOT FALL BACK TO `default-src`. They
+	// are two of the very few directives that do not, so leaving them out leaves a hole that
+	// LOOKS closed: `default-src 'self'` reads as if it covered everything, and it does not.
+	//
+	// WHAT form-action CLOSES, and it was open: a form submit is NOT a fetch. It is a navigation
+	// carrying the POST body, so `connect-src` -- which is about ASKING, not about LEAVING --
+	// never applies to it. A module holds its own journal in page memory by design, so without
+	// this it could put that journal in a hidden field and post it anywhere.
+	//
+	// base-uri is the same family and, to be fair, defence in depth rather than a live hole:
+	// with connect-src 'self' and inline scripts pinned by hash there is no known way through
+	// it. It costs one clause on a line that had to be edited anyway.
+	//
+	// THE OTHER HALF OF THE HOLE IS NOT HERE, because no CSP directive can close it:
+	// `window.location = '...'` is a top-level navigation, and `navigate-to` was proposed and
+	// never standardised. That half is closed per platform -- OnlyItsOwnOrigin on iOS,
+	// ShouldOverrideUrlLoading on Android.
 	private const string CspWithoutScript =
 		"default-src 'self'; " +
 		"style-src 'self' 'unsafe-inline'; " +
 		"connect-src 'self'; " +
+		"form-action 'self'; " +
+		"base-uri 'self'; " +
 		"frame-src 'none'; " +
 		"worker-src 'none'";
 

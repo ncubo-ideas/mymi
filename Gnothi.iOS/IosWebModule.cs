@@ -102,12 +102,28 @@ internal sealed class IosWebModule : WebModule
 				web = new WKWebView(CGRect.Empty, configuration)
 				{
 					// THE SECOND LAYER OF CONTAINMENT, and the one Android is still missing.
-					// The CSP stops the module from FETCHING another origin; it does not stop
-					// it from NAVIGATING the whole view somewhere else. On Android that gap is
-					// open because `ShouldOverrideUrlLoading` was never wired. Here the hook is
-					// the framework's natural one, so it goes in from the start.
+					// The CSP stops the module from FETCHING another origin and, since
+					// `form-action`, from POSTING to one. Neither stops it from NAVIGATING the
+					// whole view somewhere else -- `navigate-to` was never standardised -- so
+					// this hook is the only place to refuse it. Android does the same in
+					// `BundleServerClient.ShouldOverrideUrlLoading`.
 					NavigationDelegate = new OnlyItsOwnOrigin(this),
 				};
+
+#if DEBUG
+				// WITHOUT THIS, SAFARI'S INSPECTOR DOES NOT SEE THIS WEBVIEW AT ALL. Since iOS
+				// 16.4 a WKWebView is inspectable only if it says so, and the default is false:
+				// Develop > Simulator simply lists nothing, with no hint as to why.
+				//
+				// It matters because PRUEBAS-WEBVIEW-IOS.md sends the person to that inspector
+				// three times, P5's navigation check included -- and that check is what measures
+				// the containment declared right above. A test that cannot be run is not a test.
+				//
+				// DEBUG ONLY, and not out of caution: an inspectable WebView lets anyone with a
+				// cable read the page's memory, and the module holds the person's journal there
+				// by design. Shipping it inspectable would undo what the CSP is for.
+				if (OperatingSystem.IsIOSVersionAtLeast(16, 4)) web.Inspectable = true;
+#endif
 
 				web.LoadRequest(new NSUrlRequest(new NSUrl(url)));
 

