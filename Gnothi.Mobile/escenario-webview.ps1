@@ -192,6 +192,9 @@ foreach ($nombre in $Modulos) {
 }
 Write-Host ""
 Write-Host "Para mirar por dentro, en otra terminal (SON TRES TAGS):"
-Write-Host "  `"$adb`" logcat -s GNOTHI:I gnothi:I modulo:examenes:I"
+# `modulo:I` y NO `modulo:examenes:I`: -s lee cada termino como TAG:PRIORIDAD, asi que un tag
+# con dos puntos es un termino invalido, y uno invalido hace que logcat rechace TODA la lista.
+# El nombre del modulo va al principio del mensaje. Medido el 2026-09-07.
+Write-Host "  `"$adb`" logcat -s GNOTHI:I gnothi:I modulo:I"
 Write-Host ""
 Write-Host "Para bajar todo:  .\escenario-webview.ps1 -Detener"
