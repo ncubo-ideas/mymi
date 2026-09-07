@@ -85,6 +85,13 @@ namespace DealershipCar.Dominio.Pruebas
 		// es el dueno siendo fuente de un hecho de su propio vehiculo: es la agencia registrando el
 		// suyo, que es lo que un miembro que REGISTRA hace por oficio. La forma que separa las dos
 		// cosas es la del miembro y no el nombre de sus parametros: estos dos devuelven void.
+		//
+		// Y EL DE LicensePlate/LP-2 ES EL MISMO CASO, con la tentacion en su forma mas fuerte: la placa
+		// es el unico hecho de este vehiculo que el dueno TIENE A LA VISTA, asi que un parametro que la
+		// pida se ve razonable. Entra aca porque REGISTRA -- devuelve void, superficie F/X -- y quien
+		// la publica es el concesionario. Que sea el UNICO miembro de la puerta que toma una placa lo
+		// afirma APlateIsReceivedAndNeverAsked por nombre, porque este censo mira la FORMA y una placa
+		// es un string, que de este lado se lee como una clave.
 		private static readonly string[] EveryCommandTheDealershipHas =
 		{
 			"SeedPlanOperation", "AdoptPlanRevision", "AddOwnerOperation", "RemoveOwnerOperation",
@@ -94,7 +101,7 @@ namespace DealershipCar.Dominio.Pruebas
 			"PublishFuelGrade", "PublishCoveredSystem", "PublishCoverageExclusion",
 			"PublishServiceInterval", "PublishServicePrice", "PublishServicingPolicy",
 			"SealRevision", "SupersedeRevision",
-			"RecordDelivery", "PublishWarrantyEnvelope",
+			"RecordDelivery", "PublishWarrantyEnvelope", "RecordPlateAssignment",
 			"RecordShopEntry", "RecordShopCollection", "RecordShopStay",
 			"RecordRecurringCost", "RecordDurableCost",
 		};

@@ -23,7 +23,7 @@ namespace DealershipCar.Dominio.Pruebas
 	[TestFixture]
 	public sealed class APriceCarriesItsValidity
 	{
-		private const string TheModel = "SM-SEDAN-2025";
+		private const string TheModel = "YARIS-2019";
 		private const string TheRevision = "REV-2025-01";
 		private const string TheNextRevision = "REV-2025-02";
 		private const string TheDraft = "REV-2025-99";

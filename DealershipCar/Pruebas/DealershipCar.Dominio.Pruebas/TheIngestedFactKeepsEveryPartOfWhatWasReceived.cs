@@ -504,7 +504,7 @@ namespace DealershipCar.Dominio.Pruebas
 						"La sentencia lleva los parametros POR NOMBRE: " + sentence);
 			});
 
-			Assert.That(secondProgram, Does.Not.Contain("specification.SealRevision('MY2025-R1')"),
+			Assert.That(secondProgram, Does.Not.Contain("specification.SealRevision('MY2019-R1')"),
 				"Y nunca el valor metido en el texto del comando: ahi el replay reproduciria el TEXTO "
 				+ "en vez de reusar el dato que se recibio.");
 

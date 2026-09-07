@@ -10,12 +10,12 @@ namespace DealershipCar.Consola
 
 		internal const string TheProfileAtDelivery = "Standard";
 
-		internal const string TheModelAtDelivery = "SM-SEDAN-2025";
+		internal const string TheModelAtDelivery = "YARIS-2019";
 
 		private const string UnitA = "UnitA";
 
-		internal static readonly DateTime Delivery = OnThe(2025, 9, 1);
-		internal const int OdometerAtDelivery = 12000;
+		internal static readonly DateTime Delivery = OnThe(2025, 12, 15);
+		internal const int OdometerAtDelivery = 49850;
 
 		internal static readonly DateTime TheFirstEvaluation = OnThe(2026, 3, 1);
 		internal static readonly DateTime SixMonthsLater = OnThe(2026, 9, 1);
@@ -58,12 +58,12 @@ namespace DealershipCar.Consola
 		internal static IEnumerable<(int Value, string Unit, DateTime ObservedAt, string Source)>
 			TheReadingsInTheOrderTheyArrive()
 		{
-			yield return (13200, UnitA, OnThe(2025, 10, 1), "Telemetry");
-			yield return (16000, UnitA, OnThe(2025, 12, 1), "Telemetry");
-			yield return (14500, UnitA, OnThe(2025, 11, 1), "HumanEntry");
-			yield return (17300, UnitA, OnThe(2026, 1, 1), "Telemetry");
-			yield return (20000, UnitA, OnThe(2026, 3, 1), "Telemetry");
-			yield return (18600, UnitA, OnThe(2026, 2, 1), "CustomerDeclared");
+			yield return (49850, UnitA, OnThe(2025, 12, 15), "Telemetry");
+			yield return (51703, UnitA, OnThe(2026, 2, 6), "Telemetry");
+			yield return (50783, UnitA, OnThe(2026, 1, 17), "HumanEntry");
+			yield return (53303, UnitA, OnThe(2026, 3, 12), "Telemetry");
+			yield return (57539, UnitA, OnThe(2026, 6, 12), "Telemetry");
+			yield return (56089, UnitA, OnThe(2026, 5, 12), "CustomerDeclared");
 		}
 
 		internal static void TheOdometerReportsForSixMonths(DealershipCarAPI api)

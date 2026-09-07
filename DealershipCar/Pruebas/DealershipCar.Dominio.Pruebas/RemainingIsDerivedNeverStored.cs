@@ -146,20 +146,38 @@ namespace DealershipCar.Dominio.Pruebas
 				+ "instante en que el sobre se alcanzo y la proxima vez que alguien pregunte.");
 		}
 
-		// Y EL AGREGADO NO GUARDA MAS QUE EL ANCLA Y LOS LIMITES (§3.2 del plan: "nada mas"). Un
-		// campo de mas es donde una respuesta cacheada entra sin que nadie lo llame cache.
+		// Y EL AGREGADO NO GUARDA MAS QUE EL ANCLA, LOS LIMITES Y LAS PLACAS RECIBIDAS (§3.2 del plan:
+		// "nada mas"). Un campo de mas es donde una respuesta cacheada entra sin que nadie lo llame
+		// cache.
+		//
+		// LP-1 LO ENSANCHO, Y ES LO QUE UN CENSO CON CONJUNTO EXACTO TIENE QUE HACER CUANDO EL
+		// AGREGADO CRECE POR DECISION. SLICE-LicensePlate.md §13 G2 decidio que la placa es un hecho
+		// por Vin y vive en este agregado, asi que PLAN-PlateAndCanon.md §4.4 le da una lista de
+		// asignaciones recibidas. La lista NO es una respuesta cacheada: guarda lo que la sucursal
+		// mando, igual que ShopStay guarda "_stays : List<AStay>", y lo derivado -- cual rige a un
+		// instante -- se vuelve a resolver en cada lectura. El nombre se renombro con el censo: uno
+		// que enumera y no se renombra al ensancharse queda MINTIENDO, que es peor que quedarse corto.
+		//
+		// SE COMPARAN TIPOS Y NO NOMBRES DE TIPO. Un "List`1" pelado habria dejado pasar una lista de
+		// cualquier cosa -- incluida una de respuestas cacheadas, que es justo el defecto que esta
+		// prueba existe para ver -- y ademas el compilador ahora defiende cada renglon.
 		[Test]
-		public void TheAggregateHoldsTheVinTheAnchorAndTheLimitsAndNothingElse()
+		public void TheAggregateHoldsTheVinTheAnchorTheLimitsAndThePlatesAndNothingElse()
 		{
-			List<string> campos = typeof(VehicleProfile)
+			List<Type> campos = typeof(VehicleProfile)
 				.GetFields(BindingFlags.Instance | BindingFlags.NonPublic
 					| BindingFlags.Public | BindingFlags.DeclaredOnly)
-				.Select(campo => campo.FieldType.Name)
-				.OrderBy(nombre => nombre, StringComparer.Ordinal)
+				.Select(campo => campo.FieldType)
+				.OrderBy(tipo => tipo.Name, StringComparer.Ordinal)
 				.ToList();
 
-			Assert.That(campos, Is.EqualTo(new[] { "Delivery", "Vin", "WarrantyEnvelope" }),
-				"§3.2: el perfil tiene el ancla y los dos limites, y calcula todo lo demas.");
+			Assert.That(campos, Is.EqualTo(new[]
+			{
+				typeof(Delivery), typeof(List<APlateAssignment>), typeof(Vin),
+				typeof(WarrantyEnvelope),
+			}),
+				"§3.2: el perfil tiene el ancla, los dos limites y las placas recibidas, y calcula "
+				+ "todo lo demas.");
 		}
 
 		// Ningun miembro del par derivado MUTA nada: son todos de lectura. Un setter aqui seria la

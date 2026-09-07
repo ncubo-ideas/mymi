@@ -54,7 +54,13 @@ namespace DealershipCar.Dominio.Pruebas
 			// Y SUBIO 21 -> 23 CON LOS DOS MENSAJES DEL FEED DEL LIBRO, que son DOS archivos: la raiz
 			// paso de 34 a 36 y el margen sigue siendo TRECE. Los dos van en Events/, que es de esta
 			// misma raiz: el barrido lee la raiz entera y no solo el archivo de la puerta.
-			new object[] { TheCodeOfTheShellsAsData.App, 23 },
+			//
+			// Y SUBIO 23 -> 24 CON EL DTO DE LAS ASIGNACIONES DE PLACA, que es UN archivo: la raiz paso
+			// de 36 a 37 y el margen sigue siendo TRECE.
+			//
+			// Y SUBIO 24 -> 25 CON EL MENSAJE DEL FEED DE LA PLACA, que es UN archivo: la raiz paso de
+			// 37 a 38 y el margen sigue siendo TRECE. Va en Events/, que es de esta misma raiz.
+			new object[] { TheCodeOfTheShellsAsData.App, 25 },
 			new object[] { TheCodeOfTheShellsAsData.Frontera, 2 },
 			// EL PISO DE Consola SUBIO 4 -> 5 CON EL GUION DE LOS GASTOS, que es UN archivo: la raiz
 			// paso de 5 a 6 y el margen sigue siendo UNO, que es el mas apretado de las ocho raices
@@ -63,7 +69,10 @@ namespace DealershipCar.Dominio.Pruebas
 			// EL PISO DE Mcp SUBIO 8 -> 9 CON LA TOOL DEL LIBRO DE COSTOS, que es UN archivo: la raiz
 			// paso de 12 a 13 y el margen sigue siendo CUATRO. OD-4 agrego un archivo a esta raiz y
 			// dejo el piso quieto; aca se mueve, que es la convencion que Wasm dejo escrita abajo.
-			new object[] { TheCodeOfTheShellsAsData.Mcp, 9 },
+			//
+			// Y SUBIO 9 -> 10 CON LA TOOL DE LA PLACA, que es UN archivo: la raiz paso de 13 a 14 y el
+			// margen sigue siendo CUATRO. Subirlo es acto de la tarea que ESCRIBE el archivo.
+			new object[] { TheCodeOfTheShellsAsData.Mcp, 10 },
 			// EL PISO DE Wasm SUBIO 22 -> 24 CON LOS DOS PORTADORES DE LA PANTALLA DE MANTENIMIENTO,
 			// para conservar el margen de cinco archivos que le dio la rebanada anterior. Un piso que
 			// se queda quieto mientras la raiz crece es un piso que deja de decir cuando algo dejo de
@@ -77,7 +86,11 @@ namespace DealershipCar.Dominio.Pruebas
 			// Y SUBIO 25 -> 26 CON EL PORTADOR DEL LIBRO DE COSTOS, que es UN archivo: la raiz paso de
 			// 28 a 29 y el margen sigue siendo TRES. El bloque nuevo no trajo ningun .razor: va en el
 			// archivo que SH-7 creo, que es donde P-10 pone los cuatro bloques.
-			new object[] { TheCodeOfTheShellsAsData.Wasm, 26 },
+			//
+			// Y SUBIO 26 -> 27 CON EL PORTADOR DE LA PLACA, que es UN archivo: la raiz paso de 29 a 30
+			// y el margen sigue siendo TRES. Tampoco trajo ningun .razor: el bloque es un renglon mas
+			// de la tarjeta de informacion que Vehiculo.razor ya tenia.
+			new object[] { TheCodeOfTheShellsAsData.Wasm, 27 },
 			new object[] { TheCodeOfTheShellsAsData.EndPointDeEventos, 1 },
 			new object[] { TheCodeOfTheShellsAsData.InyectorDeEventosDemo, 1 },
 			new object[] { TheCodeOfTheShellsAsData.PaginaDeDescarga, 1 },

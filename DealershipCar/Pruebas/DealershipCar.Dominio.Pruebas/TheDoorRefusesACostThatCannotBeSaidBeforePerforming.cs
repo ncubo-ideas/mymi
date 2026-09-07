@@ -37,7 +37,7 @@ namespace DealershipCar.Dominio.Pruebas
 	public sealed class TheDoorRefusesACostThatCannotBeSaidBeforePerforming
 	{
 		private const string TheVin = "5YJ3E1EA7JF000123";
-		private const string TheModel = "SM-SEDAN-2025";
+		private const string TheModel = "YARIS-2019";
 
 		private const string TheSubject = "Llantas nuevas";
 		private const string TheCurrency = "CRC";

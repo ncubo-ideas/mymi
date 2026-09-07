@@ -448,6 +448,24 @@ namespace DealershipCar.App
 		}
 
 		/// <summary>
+		/// Registra la placa que el concesionario le publico a ESTE vehiculo y desde cuando rige. Una
+		/// segunda placa es un hecho nuevo y no una correccion de la primera: la anterior se sigue
+		/// leyendo por su propio instante. Un texto que no deja nada al normalizar se rechaza ACA,
+		/// donde el rechazo todavia no cuesta ninguna entrada.
+		/// </summary>
+		public void RecordPlateAssignment(string plate, DateTime assignedAt)
+		{
+			WireName.Plate(plate);
+
+			app.Using("profile.RecordPlateAssignment(@plate, @assignedAt);")
+			.WithParameters(p => {
+				p["plate",      typeof(string)]   = plate;
+				p["assignedAt", typeof(DateTime)] = InUtc(assignedAt);
+			})
+			.PerformCommand();
+		}
+
+		/// <summary>
 		/// Registra la entrada de ESTE vehiculo al taller: en que sucursal, con que asunto lo
 		/// recibieron y cuando entro. Se rechaza ACA mientras el vehiculo ya estuviera adentro en ese
 		/// instante, donde el rechazo todavia no cuesta ninguna entrada.
@@ -1488,6 +1506,78 @@ namespace DealershipCar.App
 		}
 
 		/// <summary>
+		/// Si el concesionario le publico una placa a este vehiculo al instante preguntado. TOTAL, y
+		/// es la que hay que hacer antes de pedir cualquiera de los dos textos.
+		/// </summary>
+		public bool IsAPlatePublished(DateTime asOf)
+		{
+			return ATruth("@published = profile.IsAPlatePublished(@asOf);", "published", p => {
+				p["asOf", typeof(DateTime)] = InUtc(asOf);
+			});
+		}
+
+		/// <summary>
+		/// La placa dicha entera -- cual es y desde cuando rige -- o la constancia con nombre de que no
+		/// hay ninguna. TOTAL, tambien sin placa: la frase es del dominio y la caratula la imprime.
+		/// </summary>
+		public string DescribePlate(DateTime asOf)
+		{
+			return AText("@says = profile.DescribePlate(@asOf);", "says", p => {
+				p["asOf", typeof(DateTime)] = InUtc(asOf);
+			});
+		}
+
+		/// <summary>
+		/// El texto de la placa tal como la publico el concesionario. Lectura GUARDADA: una cadena
+		/// vacia parece una respuesta, y el Vin puesto en su lugar se cruzaria contra los registros de
+		/// otro sistema y no coincidiria con nada, en silencio.
+		/// </summary>
+		public string ReadPlateAsPublished(DateTime asOf)
+		{
+			APlateHasToBePublishedAt(
+				asOf,
+				"Una cadena vacia aca parece una respuesta y el Vin puesto en su lugar no coincidiria "
+				+ "con nada.");
+
+			return AText("@text = profile.ReadPlateAsPublished(@asOf);", "text", p => {
+				p["asOf", typeof(DateTime)] = InUtc(asOf);
+			});
+		}
+
+		/// <summary>
+		/// La llave normalizada con la que este vehiculo cruza contra otro sistema. Lectura GUARDADA
+		/// por lo mismo, y sale YA normalizada: ninguna caratula la deriva del texto publicado.
+		/// </summary>
+		public string ReadPlateJoinKey(DateTime asOf)
+		{
+			APlateHasToBePublishedAt(
+				asOf,
+				"Una llave vacia coincidiria contra el otro sistema con cualquier cosa o con nada, sin "
+				+ "decir cual de las dos.");
+
+			return AText("@key = profile.ReadPlateJoinKey(@asOf);", "key", p => {
+				p["asOf", typeof(DateTime)] = InUtc(asOf);
+			});
+		}
+
+		/// <summary>
+		/// Las asignaciones de placa como filas: el texto publicado, la llave, desde cuando rige cada
+		/// una y cual es la vigente, en columnas paralelas y en orden de la linea de tiempo. TOTAL, y
+		/// contesta CERO filas donde no hay ninguna.
+		/// </summary>
+		public PlateAssignmentRecord PlateAssignments()
+		{
+			string[][] columns = TheTextColumns(@"
+				@asPublished = profile.EachPlateAsPublished();
+				@joinKey     = profile.EachPlateJoinKey();
+				@assignedAt  = profile.EachPlateAssignedAt();
+				@isCurrent   = profile.EachPlateIsCurrent();
+			", TheColumnsOfAPlateAssignmentRecord, p => { });
+
+			return PlateAssignmentRecord.Of(columns[0], columns[1], columns[2], columns[3]);
+		}
+
+		/// <summary>
 		/// Si se puede decir el ritmo de uso de ese periodo. TOTAL, y es la que hay que hacer antes
 		/// de mostrar la frase donde no cabe una suspension. Las cinco situaciones contestan: ninguna
 		/// de las otras cinco lecturas de la serie rechaza por esta.
@@ -2017,6 +2107,7 @@ namespace DealershipCar.App
 				if (message is VehicleDelivered delivery) return ApplyVehicleDelivered(delivery);
 				if (message is WarrantyEnvelopePublished envelope)
 					return ApplyWarrantyEnvelopePublished(envelope);
+				if (message is PlateAssigned assignment) return ApplyPlateAssigned(assignment);
 
 				if (message is ShopEntryRecorded entry) return ApplyShopEntryRecorded(entry);
 				if (message is ShopCollectionRecorded collection)
@@ -2442,6 +2533,24 @@ namespace DealershipCar.App
 			.PerformCheckThenCommand();
 		}
 
+		private string ApplyPlateAssigned(PlateAssigned message)
+		{
+			return app.Using(
+				scriptForChk: TheEventIsNew,
+				@"
+					{
+						profile.RecordPlateAssignment(@plate, @assignedAt);
+						logbook.Advance(@event);
+					}
+				")
+			.WithParameters(p => {
+				p["event",      typeof(long)]     = message.EventNumber;
+				p["plate",      typeof(string)]   = message.Plate;
+				p["assignedAt", typeof(DateTime)] = InUtc(message.AssignedAt);
+			})
+			.PerformCheckThenCommand();
+		}
+
 		/// <summary>
 		/// NO PRE-CHEQUEA que el vehiculo estuviera afuera, y no es un olvido. La guarda de la puerta
 		/// revienta con InvalidOperationException, que no es la excepcion con que el dominio rechaza,
@@ -2732,6 +2841,13 @@ namespace DealershipCar.App
 			{ "branch", "subject", "enteredAt", "coveredDays", "says" };
 
 		/// <summary>
+		/// Los nombres de las cuatro columnas del registro de asignaciones de placa, en el orden en
+		/// que el DTO las recibe.
+		/// </summary>
+		private static readonly string[] TheColumnsOfAPlateAssignmentRecord =
+			{ "asPublished", "joinKey", "assignedAt", "isCurrent" };
+
+		/// <summary>
 		/// Los nombres de las tres columnas del registro de completaciones de UNA clase, en el orden
 		/// en que el DTO las recibe. No hay columna de clase: la puso quien pregunta.
 		/// </summary>
@@ -2998,6 +3114,21 @@ namespace DealershipCar.App
 			throw new InvalidOperationException(
 				"La agencia no registro la entrega de este vehiculo: pregunte "
 				+ "HasDeliveryBeenRecorded antes. " + whyAnEmptyAnswerWouldLie);
+		}
+
+		/// <summary>
+		/// Que haya una placa publicada a ese instante antes de dar cualquiera de sus dos textos. Se
+		/// pregunta con EL MISMO instante que la lectura de abajo va a usar, que es lo que hace que
+		/// las dos hablen de una sola placa. Mismo motivo que arriba para que la guarda viva aca.
+		/// </summary>
+		private void APlateHasToBePublishedAt(DateTime asOf, string whyAnEmptyAnswerWouldLie)
+		{
+			if (IsAPlatePublished(asOf)) return;
+
+			throw new InvalidOperationException(
+				$"Este vehiculo no tiene ninguna placa publicada al {InUtc(asOf):O} ni antes: "
+				+ "pregunte IsAPlatePublished con ese mismo instante antes. "
+				+ whyAnEmptyAnswerWouldLie);
 		}
 
 		/// <summary>

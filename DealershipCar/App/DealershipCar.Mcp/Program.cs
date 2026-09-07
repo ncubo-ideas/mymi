@@ -35,7 +35,8 @@ builder.Services.AddMcpServer(options =>
 .WithTools<WarrantyEnvelopeTools>()
 .WithTools<ShopStayTools>()
 .WithTools<OdometerSeriesTools>()
-.WithTools<CostLedgerTools>();
+.WithTools<CostLedgerTools>()
+.WithTools<LicensePlateTools>();
 
 builder.Logging.ClearProviders();
 builder.Logging.AddConsole(o => o.LogToStandardErrorThreshold = LogLevel.Trace);
@@ -71,8 +72,8 @@ static string Instructions(string folder) => $"""
 
 	DOS CLASES DE PREGUNTA. review_my_maintenance, check_one_operation, how_up_to_date_is_this,
 	what_is_left_before_each_service, what_has_been_done_to_my_car,
-	is_my_car_still_under_warranty, days_my_car_spent_in_the_shop, how_much_my_car_is_driven y
-	what_i_have_spent_on_my_car contestan dónde está parado ESTE VEHÍCULO.
+	is_my_car_still_under_warranty, days_my_car_spent_in_the_shop, how_much_my_car_is_driven,
+	what_i_have_spent_on_my_car y what_plate_my_car_has contestan dónde está parado ESTE VEHÍCULO.
 	what_my_car_takes y what_the_service_costs contestan lo que el FABRICANTE
 	PUBLICÓ sobre este modelo: los fluidos, las llantas, el combustible, el precio de un servicio.
 	does_the_warranty_cover contesta las dos a la vez: el alcance publicado, y dónde está parado
@@ -148,6 +149,20 @@ static string Instructions(string folder) => $"""
 	no invente un umbral: no hay ninguno en este registro. Las filas son el registro crudo y cada una
 	se dice sola; sumarlas a mano da un número que además cruzaría monedas. Sus cuatro parámetros son
 	los extremos de los dos períodos, no datos del carro.
+
+	LA PLACA ES EL NOMBRE PÚBLICO DE ESTE CARRO Y SALE DE AQUÍ HACIA AFUERA.
+	what_plate_my_car_has contesta cuál es la placa que el concesionario le publicó a este vehículo,
+	desde cuándo rige y todas las que ha tenido. Sirve para decir cuál es, y sirve sobre todo para
+	CRUZAR: si esta persona tiene datos de su vehículo en otra parte, lo más probable es que allá el
+	carro esté identificado por su placa y no por su VIN, porque el VIN afuera casi nadie lo tiene.
+	La respuesta trae DOS TEXTOS y cada uno tiene su oficio: asPublished es la placa tal como la
+	publicó el concesionario y es la que se le dice a la persona; joinKey es la misma placa
+	normalizada y es la que se COMPARA. Compare siempre por joinKey, porque una misma placa se
+	escribe de varias formas y solo la llave las vuelve una sola. Las dos salen ya decididas: no
+	derive una de la otra ni le arregle el formato a ninguna. Y esta tool no RECIBE ninguna placa,
+	que tampoco es un olvido: este registro es de un solo vehículo y ya dice cuál es la suya. Si no
+	hay ninguna publicada lo dice con palabras, y eso no es un carro sin placa; el VIN nunca va en su
+	lugar.
 
 	Las dos tools de garantía dicen ALCANCE y POSICIÓN y nunca adjudican un reclamo: que una
 	reparación se pague lo decide el fabricante, así que un sistema dentro del alcance y un

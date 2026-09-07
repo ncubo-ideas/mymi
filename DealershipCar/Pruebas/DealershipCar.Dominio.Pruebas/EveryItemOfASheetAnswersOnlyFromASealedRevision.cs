@@ -29,8 +29,8 @@ namespace DealershipCar.Dominio.Pruebas
 	{
 		private const string TheVin = "1HGCM82633A004352";
 
-		private const string TheFirstRevision = "MY2025-R1";
-		private const string TheSecondRevision = "MY2025-R2";
+		private const string TheFirstRevision = "MY2019-R1";
+		private const string TheSecondRevision = "MY2019-R2";
 
 		private const string TheFluidKind = "EngineOil";
 		private const string TheTyrePosition = "Front";

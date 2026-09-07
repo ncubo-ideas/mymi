@@ -19,6 +19,7 @@ try
         case "historia":  await Historia(); break;
         case "ficha":     await Ficha(); break;
         case "garantia":  await Garantia(); break;
+        case "placa":     await Placa(); break;
         case "taller":    await Taller(); break;
         case "costos":    await Costos(); break;
         case "senuelo":   await Senuelo(); break;
@@ -108,6 +109,8 @@ static string Resumen(JsonElement e)
         "WarrantyEnvelopePublished" =>
             $"sobre de {Numero(e, "months")} meses o {Numero(e, "distance")} "
             + $"{Texto(e, "unit")}, publicado el {Dia(e, "publishedAt")}",
+        "PlateAssigned" =>
+            $"placa {Texto(e, "plate")}, asignada el {Dia(e, "assignedAt")}",
 
         "ShopEntryRecorded" =>
             $"entro a {Texto(e, "branch")} el {Dia(e, "enteredAt")} por {Texto(e, "subject")}",
@@ -189,6 +192,9 @@ async Task Inyectar()
         months = Entero(Arg(args, "--months", "0")),
         distance = Entero(Arg(args, "--distance", "0")),
 
+        plate = Arg(args, "--plate", ""),
+        assignedAt = Arg(args, "--assignedAt", "2026-09-01"),
+
         branch = Arg(args, "--branch", ""),
         subject = Arg(args, "--subject", ""),
         enteredAt = Arg(args, "--enteredAt", "2026-09-01"),
@@ -216,41 +222,41 @@ async Task Historia()
 
     (object cuerpo, string porque)[] guion =
     {
-        (Revision("R1", "2025-09-01"),
-            "el plan con que se entrega el vehiculo"),
+        (Revision("R1", "2025-12-15"),
+            "el plan con que entra el vehiculo al programa"),
 
-        (PlanOp("FluidChange", "TimeOrDistance", 365, 10000, true, false, "2025-09-01", 12000),
+        (PlanOp("FluidChange", "TimeOrDistance", 365, 10000, true, false, "2025-12-15", 49850),
             "tiempo O distancia: vence con la primera de las dos que llegue"),
-        (PlanOp("FilterChange", "DistanceOnly", 0, 15000, true, false, "2025-09-01", 12000),
+        (PlanOp("FilterChange", "DistanceOnly", 0, 15000, true, false, "2025-12-15", 49850),
             "solo distancia: sin lecturas no se mueve, y eso se ve"),
-        (PlanOp("TimedComponent", "TimeOnly", 550, 0, true, true, "2025-09-01", 12000),
+        (PlanOp("TimedComponent", "TimeOnly", 550, 0, true, true, "2025-12-15", 49850),
             "solo tiempo, y DE SEGURIDAD: la ley no la deja aplazar"),
-        (PlanOp("Inspection", "ConditionOnly", 0, 0, true, false, "2025-09-01", 12000),
+        (PlanOp("Inspection", "ConditionOnly", 0, 0, true, false, "2025-12-15", 49850),
             "solo condicion: no la mueve el tiempo ni la distancia, solo un cruce observado"),
 
-        (Lectura(13200, "2025-10-01", "Telemetry"), "primer mes"),
-        (Reclamo("W-9912", "2025-11-15"),
+        (Lectura(49850, "2025-12-15", "Telemetry"), "diciembre: el primer mes de la serie"),
+        (Reclamo("W-9912", "2026-01-25"),
             "UN TIPO QUE LA APP NO CONSUME: se descarta, no se inventa un comando para tragarlo"),
-        (Lectura(16000, "2025-12-01", "Telemetry"),
-            "llega ANTES que la de noviembre: el orden de llegada no es el de observacion"),
-        (Lectura(14500, "2025-11-01", "HumanEntry"), "el relleno tardio que si calza en la linea"),
-        (Lectura(17300, "2026-01-01", "Telemetry"), "enero"),
-        (Lectura(20000, "2026-03-01", "Telemetry"), "marzo llega antes que febrero"),
-        (Lectura(18600, "2026-02-01", "CustomerDeclared"), "y febrero calza entre las dos"),
+        (Lectura(51703, "2026-02-06", "Telemetry"),
+            "llega ANTES que la de enero: el orden de llegada no es el de observacion"),
+        (Lectura(50783, "2026-01-17", "HumanEntry"), "el relleno tardio que si calza en la linea"),
+        (Lectura(53303, "2026-03-12", "Telemetry"), "marzo"),
+        (Lectura(57539, "2026-06-12", "Telemetry"), "junio llega antes que mayo"),
+        (Lectura(56089, "2026-05-12", "CustomerDeclared"), "y mayo calza entre las dos"),
 
         (Cruce("Inspection", "2026-04-01"),
             "el taller informa el cruce: es lo unico que mueve una ConditionOnly"),
 
-        (Completacion("FluidChange", "2026-03-05", 20000),
+        (Completacion("FluidChange", "2026-06-12", 57539),
             "la operacion se hizo DE VERDAD: su sucesora se ancla ahi y no donde el plan decia"),
 
-        (Revision("R2", "2026-06-01"),
+        (Revision("R2", "2026-06-15"),
             "el fabricante emite una revision del plan"),
-        (PlanOp("FluidChange", "TimeOrDistance", 300, 8000, true, false, "2026-06-01", 20000),
+        (PlanOp("FluidChange", "TimeOrDistance", 300, 8000, true, false, "2026-06-15", 57539),
             "y su reemplazo SUSTITUYE al activo, no duplica: intervalo mas corto"),
 
-        (Lectura(27000, "2026-07-01", "Telemetry"), "julio: el filtro llega a su limite"),
-        (Lectura(29500, "2026-08-15", "Telemetry"), "agosto: y el fluido pasa el suyo, por distancia"),
+        (Lectura(59157, "2026-07-17", "Telemetry"), "julio"),
+        (Lectura(60962, "2026-08-25", "Telemetry"), "agosto: la ultima lectura de la serie"),
 
         (Cita("2026-09-10"),
             "OTRO TIPO QUE LA APP NO CONSUME: la cita es del concesionario, no de la agenda"),
@@ -265,8 +271,8 @@ async Task Historia()
 
 async Task Ficha()
 {
-    string primera = Arg(args, "--revision", "MY2025-R1");
-    string segunda = Arg(args, "--revision2", "MY2025-R2");
+    string primera = Arg(args, "--revision", "MY2019-R1");
+    string segunda = Arg(args, "--revision2", "MY2019-R2");
     bool sustituye = !args.Contains("--sin-sustituir");
 
     Console.WriteLine($"publicando la ficha del fabricante en {recurso}/{id}...");
@@ -354,16 +360,19 @@ async Task Garantia()
 
     (object cuerpo, string porque)[] guion =
     {
-        (Entrega("2025-03-01", 120, unidad),
+        (Entrega("2025-12-15", 49850, unidad),
             "la ENTREGA: cuando se entrego y en que odometro estaba ese dia. Es el ancla desde "
             + "donde se miden las dos mitades del sobre"),
 
-        (Sobre(36, 60000, "2025-03-01", unidad),
+        (Sobre(36, 60000, "2025-12-15", unidad),
             "el SOBRE: 36 meses o 60000 de distancia, publicado el dia de la entrega"),
 
-        (LecturaEn(6000, "2025-10-01", unidad),
+        (LecturaEn(49600, "2025-12-15", unidad),
             "una lectura del odometro EN LA MISMA UNIDAD que las dos de arriba, que es lo que hace "
-            + "falta para que la mitad de distancia se pueda medir"),
+            + "falta para que la mitad de distancia se pueda medir. Cae el MISMO DIA que la primera "
+            + "de la narrativa y MAS ABAJO que ella, asi que corrida DESPUES de la narrativa la "
+            + "agenda la rechaza -- por debajo, no por el dia --, y ese rechazo es lo que hace "
+            + "aparecer el banner del navegador. Corrido solo contra un journal vacio entra"),
 
         (Sobre(48, 80000, "2026-11-01", unidad),
             "y el sobre RE-PUBLICADO, mas largo: rige desde su instante de publicacion hacia "
@@ -373,7 +382,7 @@ async Task Garantia()
             "un sobre publicado ANTES que el que rige, llegando DESPUES: entra y NO gobierna. El "
             + "orden de llegada no es el de vigencia"),
 
-        (Entrega("2025-02-15", 100, unidad),
+        (Entrega("2025-12-01", 49450, unidad),
             "y la entrega CORREGIDA: gana la ultima que llego, aunque sea la mas vieja de las dos. "
             + "Un hecho historico tiene una sola version"),
     };
@@ -424,6 +433,57 @@ async Task Garantia()
     }
 }
 
+async Task Placa()
+{
+    Console.WriteLine($"publicando las placas de {recurso}/{id}...");
+    Console.WriteLine("  TRES asignaciones, y ninguna corrige a la anterior: una re-placa es un hecho");
+    Console.WriteLine("  nuevo, asi que la historia se queda con las tres");
+    Console.WriteLine();
+
+    (object cuerpo, string porque)[] guion =
+    {
+        (PlacaAsignada("CLM 903", "2024-11-20T00:00:00Z"),
+            "la PRIMERA, la que el carro traia antes, separada con un ESPACIO en vez de un guion. "
+            + "Se sigue leyendo por su instante y ya no rige"),
+
+        (PlacaAsignada("BQR-482", "2025-12-15T00:00:00Z"),
+            "la SEGUNDA, del dia en que entro al programa: RE-PLACA, no correccion. Es la que el "
+            + "otro modulo publica para este carro, viene CON guion, y es la que RIGE HOY -- asi "
+            + "que la llave de mas arriba cruza sin tener que ir a buscarla a las asignaciones"),
+
+        (PlacaAsignada("AAA-001", "2024-06-10T00:00:00Z"),
+            "y una TERCERA asignada ANTES que las dos, llegando DESPUES: entra en su sitio de la "
+            + "historia y NO desplaza a la vigente. El orden de llegada no es el de vigencia"),
+    };
+
+    foreach ((object cuerpo, string porque) in guion)
+    {
+        using var r = await http.PostAsJsonAsync($"{recurso}/{id}/events/hecho", cuerpo);
+        Console.WriteLine($"  HTTP {(int)r.StatusCode}   {porque}");
+    }
+
+    Console.WriteLine();
+    Console.WriteLine("LAS DOS SEPARACIONES DEJAN LA MISMA CLASE DE LLAVE, y esa es la mitad que no se");
+    Console.WriteLine("ve en pantalla: el guion y el espacio se caen al normalizar, asi que la llave con");
+    Console.WriteLine("que se cruza este carro contra la estacion no lleva ninguno de los dos. Lo que la");
+    Console.WriteLine("pantalla muestra es el texto TAL COMO llego, y son dos textos de un solo hecho.");
+    Console.WriteLine();
+    Console.WriteLine("EL DESORDEN ESTA A PROPOSITO y no se ordena como la entrega. Una placa vieja que");
+    Console.WriteLine("llega tarde NO reemplaza a la vigente -- son dos hechos y no dos versiones de uno");
+    Console.WriteLine("--, mientras que una entrega vieja que llega tarde SI reemplaza, porque la entrega");
+    Console.WriteLine("es un solo hecho historico que se pudo registrar mal. Dos ordenamientos en un");
+    Console.WriteLine("mismo global de raiz, y los dos son correctos.");
+    Console.WriteLine();
+    Console.WriteLine("ESTO SE PUEDE VOLVER A CORRER contra el mismo journal, SIN NINGUNA BANDERA: una");
+    Console.WriteLine("asignacion no toma ninguna clave que se gaste. La misma placa en el mismo instante");
+    Console.WriteLine("dos veces son DOS asignaciones, que es lo correcto -- nada de lo que llego se");
+    Console.WriteLine("descarta.");
+    Console.WriteLine();
+    Console.WriteLine("UN TEXTO QUE NO DEJA NINGUNA PLACA AL NORMALIZAR SE DESCARTA EN EL BORDE y no deja");
+    Console.WriteLine("marca. Para verlo:");
+    Console.WriteLine("  inyectar --tipo PlateAssigned --plate --- --assignedAt 2026-01-15T09:00:00Z");
+}
+
 async Task Taller()
 {
     bool dejaUnaAbierta = !args.Contains("--sin-abrir");
@@ -436,13 +496,14 @@ async Task Taller()
 
     (object cuerpo, string porque)[] guion =
     {
-        (EstadiaCompleta("Taller Central", "Cambio de frenos",
-                "2026-05-11T08:30:00Z", "2026-05-13T16:45:00Z",
-                ["2026-05-11", "2026-05-12", "2026-05-13"]),
+        (EstadiaCompleta("Taller Central", "Cambio de aceite",
+                "2026-06-10T08:30:00Z", "2026-06-12T16:45:00Z",
+                ["2026-06-10", "2026-06-11", "2026-06-12"]),
             "una estadia entera DE UN SOLO ACTO: los dos extremos y los TRES dias que cubrio, "
-            + "todo en un hecho. Es la forma correctiva, para lo que se registra despues"),
+            + "todo en un hecho. Es la forma correctiva, para lo que se registra despues. Son los "
+            + "TRES DIAS DEL CANON, y el ultimo es el dia en que se completo el cambio de fluido"),
 
-        (EntradaAlTaller("Taller Escazu", "Revision de los 20 mil", "2026-07-06T07:15:00Z"),
+        (EntradaAlTaller("Taller Escazu", "Revision de los 60 mil", "2026-07-06T07:15:00Z"),
             "la ENTRADA: el carro entro y desde aca la estadia queda abierta. Es lo unico que "
             + "las dos lecturas por instante alcanzan"),
         (EntregaDelTaller("2026-07-07T17:00:00Z", ["2026-07-06", "2026-07-07"]),
@@ -466,13 +527,13 @@ async Task Taller()
 
     Console.WriteLine();
     Console.WriteLine("LA RESPUESTA SON LOS DIAS Y NO UNA DURACION. Cinco dias en dos estadias, y los");
-    Console.WriteLine("cinco se pueden nombrar uno por uno: 11, 12 y 13 de mayo, 6 y 7 de julio. Una");
+    Console.WriteLine("cinco se pueden nombrar uno por uno: 10, 11 y 12 de junio, 6 y 7 de julio. Una");
     Console.WriteLine("duracion no se puede cruzar con el calendario de nadie; una lista de fechas si.");
     Console.WriteLine();
-    Console.WriteLine("LOS DIAS LLEGAN CON EL HECHO Y NO SE CALCULAN. Entro el 11 a las 08:30 y salio el");
-    Console.WriteLine("13 a las 16:45, y los dias que cubrio son tres porque la sucursal dijo tres.");
+    Console.WriteLine("LOS DIAS LLEGAN CON EL HECHO Y NO SE CALCULAN. Entro el 10 a las 08:30 y salio el");
+    Console.WriteLine("12 a las 16:45, y los dias que cubrio son tres porque la sucursal dijo tres.");
     Console.WriteLine("Sacarlos de los dos instantes pediria una zona horaria que este registro no");
-    Console.WriteLine("lleva, y con la zona equivocada el 11 podria salir siendo el 10.");
+    Console.WriteLine("lleva, y con la zona equivocada el 10 podria salir siendo el 9.");
     Console.WriteLine();
     if (dejaUnaAbierta)
     {
@@ -591,6 +652,11 @@ static object Sobre(int meses, int distancia, string publicado, string unidad) =
 {
     tipo = "WarrantyEnvelopePublished", months = meses, distance = distancia, unit = unidad,
     publishedAt = publicado,
+};
+
+static object PlacaAsignada(string texto, string asignada) => new
+{
+    tipo = "PlateAssigned", plate = texto, assignedAt = asignada,
 };
 
 static object Cruce(string kind, string observado) => new
@@ -783,7 +849,7 @@ static void Ayuda()
     Console.WriteLine("  listar                        que eventos ve la app hoy");
     Console.WriteLine("  historia                      siembra el guion completo de la demo");
     Console.WriteLine("  ficha                         publica la ficha del fabricante en dos revisiones");
-    Console.WriteLine("                                --revision --revision2 (default MY2025-R1 y -R2)");
+    Console.WriteLine("                                --revision --revision2 (default MY2019-R1 y -R2)");
     Console.WriteLine("                                --sin-sustituir salta la sustitucion final, y esa");
     Console.WriteLine("                                es la unica forma de ver la hoja entera en pantalla");
     Console.WriteLine("  garantia                      publica la entrega y el sobre de garantia de este");
@@ -793,6 +859,11 @@ static void Ayuda()
     Console.WriteLine("                                --unit (default UnitB) manda las TRES unidades del");
     Console.WriteLine("                                guion; con UnitA calza con la narrativa del mock y la");
     Console.WriteLine("                                mitad de distancia se puede medir");
+    Console.WriteLine("  placa                         publica las placas de este vehiculo: TRES");
+    Console.WriteLine("                                asignaciones, y una asignada ANTES que las dos que");
+    Console.WriteLine("                                ya estan, llegando DESPUES: entra y NO desplaza a la");
+    Console.WriteLine("                                vigente, que es el desorden AL REVES del de la");
+    Console.WriteLine("                                entrega. Se puede repetir sin ninguna bandera");
     Console.WriteLine("  taller                        publica las estadias en el taller de este vehiculo:");
     Console.WriteLine("                                una entera de un solo acto, y una entrada con su");
     Console.WriteLine("                                entrega. La respuesta son los DIAS y no una duracion");
@@ -832,12 +903,14 @@ static void Ayuda()
     Console.WriteLine("    SpecificationRevisionSealed      (solo --revisionCode)");
     Console.WriteLine("    SpecificationRevisionSuperseded  --supersededByCode");
     Console.WriteLine();
-    Console.WriteLine("  y los DOS del perfil de ESTE vehiculo, uno por comando de la agencia. No llevan");
+    Console.WriteLine("  y los TRES del perfil de ESTE vehiculo, uno por comando de la agencia. No llevan");
     Console.WriteLine("  --revisionCode: no son del catalogo del modelo, son de este carro. Ninguno de los");
-    Console.WriteLine("  dos toma una clave que se gaste, asi que los dos se pueden repetir.");
+    Console.WriteLine("  tres toma una clave que se gaste, asi que los tres se pueden repetir. Un --plate");
+    Console.WriteLine("  que no deja ninguna placa al normalizar se DESCARTA en el borde y no deja marca.");
     Console.WriteLine();
     Console.WriteLine("    VehicleDelivered                 --deliveredAt --reading --unit");
     Console.WriteLine("    WarrantyEnvelopePublished        --months --distance --unit --publishedAt");
+    Console.WriteLine("    PlateAssigned                    --plate --assignedAt");
     Console.WriteLine();
     Console.WriteLine("  y los TRES de las estadias en el taller, uno por comando de la sucursal. Los");
     Console.WriteLine("  dias van SEPARADOS POR COMA y cada uno en yyyy-MM-dd: los dice la sucursal, no");
@@ -868,13 +941,14 @@ static void Ayuda()
     Console.WriteLine("    inyectar --tipo FluidSpecificationPublished --revisionCode MY2026-R1 --kind BrakeFluid");
     Console.WriteLine("             --grade \"DOT 4\" --capacity 0.5 --intervalDistance 20000 --intervalDays 730");
     Console.WriteLine("    inyectar --tipo SpecificationRevisionSealed --revisionCode MY2026-R1");
-    Console.WriteLine("    inyectar --tipo VehicleDelivered --deliveredAt 2025-03-01 --reading 120 --unit UnitB");
+    Console.WriteLine("    inyectar --tipo VehicleDelivered --deliveredAt 2025-12-15 --reading 49850 --unit UnitB");
     Console.WriteLine("    inyectar --tipo WarrantyEnvelopePublished --months 36 --distance 60000");
-    Console.WriteLine("             --unit UnitB --publishedAt 2025-03-01");
-    Console.WriteLine("    inyectar --tipo ShopEntryRecorded --branch \"Taller Central\" --subject Frenos");
-    Console.WriteLine("             --enteredAt 2026-05-11T08:30:00Z");
-    Console.WriteLine("    inyectar --tipo ShopCollectionRecorded --collectedAt 2026-05-13T16:45:00Z");
-    Console.WriteLine("             --coveredDays 2026-05-11,2026-05-12,2026-05-13");
+    Console.WriteLine("             --unit UnitB --publishedAt 2025-12-15");
+    Console.WriteLine("    inyectar --tipo PlateAssigned --plate BQR-482 --assignedAt 2025-12-15");
+    Console.WriteLine("    inyectar --tipo ShopEntryRecorded --branch \"Taller Central\" --subject Aceite");
+    Console.WriteLine("             --enteredAt 2026-06-10T08:30:00Z");
+    Console.WriteLine("    inyectar --tipo ShopCollectionRecorded --collectedAt 2026-06-12T16:45:00Z");
+    Console.WriteLine("             --coveredDays 2026-06-10,2026-06-11,2026-06-12");
     Console.WriteLine("    inyectar --tipo RecurringCostRecorded --incurredAt 2026-05-20T10:30:00Z");
     Console.WriteLine("             --amount 45000.00 --currency CRC --subject \"Cambio de aceite\"");
     Console.WriteLine("    inyectar --tipo DurableCostRecorded --incurredAt 2026-03-12T09:00:00Z");

@@ -46,7 +46,7 @@ namespace DealershipCar.Dominio.Pruebas
 	public sealed class TheFourthGlobalReachesAJournalThatHasTheOtherThree
 	{
 		private const string TheVin = "1HGCM82633A004352";
-		private const string TheModel = "SM-SEDAN-2025";
+		private const string TheModel = "YARIS-2019";
 
 		// Lo que se le escribe a cada una de las tres globales viejas antes de reordenar, para que
 		// una re-corrida silenciosa tenga por donde verse.

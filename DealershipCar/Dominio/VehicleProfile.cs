@@ -1,12 +1,13 @@
 using System;
+using System.Collections.Generic;
 using System.Globalization;
 
 namespace DealershipCar.Dominio
 {
 	/// <summary>
 	/// Lo que la agencia registra sobre UN carro en particular: cuando lo entrego y con que odometro,
-	/// y el sobre de garantia que le publico. Es el agregado, uno por <see cref="Vin"/>, y una raiz
-	/// global del DSL.
+	/// el sobre de garantia que le publico, y las placas que le fue asignando. Es el agregado, uno
+	/// por <see cref="Vin"/>, y una raiz global del DSL.
 	/// <para>
 	/// Guarda un ANCLA y dos LIMITES, y calcula todo lo demas -- lo que queda de cada mitad, cual
 	/// llega primero, donde esta parado el vehiculo -- desde un instante recibido y una lectura
@@ -21,6 +22,7 @@ namespace DealershipCar.Dominio
 
 		private Delivery _delivery = Delivery.None;
 		private WarrantyEnvelope _envelope = WarrantyEnvelope.None;
+		private readonly List<APlateAssignment> _assignments = new List<APlateAssignment>();
 
 		/// <summary>
 		/// El constructor ES la creacion, y toma el vehiculo y nada mas. La entrega y el sobre son
@@ -66,6 +68,22 @@ namespace DealershipCar.Dominio
 			if (_envelope.Exists() && publishedAt < _envelope.PublishedAt) return;
 
 			_envelope = published;
+		}
+
+		/// <summary>
+		/// Registra la placa que el concesionario le publico a este vehiculo, con el instante desde
+		/// el que rige. Una segunda placa es un HECHO NUEVO y no una correccion de la primera:
+		/// re-placar es ordinario, asi que la anterior se sigue pudiendo leer por su propio instante.
+		/// <para>
+		/// Una asignacion que llega despues pero esta fechada antes se COLOCA donde su instante manda
+		/// y no desplaza a la vigente; con dos instantes iguales rige la ultima en llegar; y la misma
+		/// placa asignada dos veces deja dos filas, porque descartar una seria borrar un hecho que el
+		/// concesionario mando.
+		/// </para>
+		/// </summary>
+		internal void RecordPlateAssignment(string plate, DateTime assignedAt)
+		{
+			Place(new APlateAssignment(new LicensePlate(plate), assignedAt));
 		}
 
 		/// <summary>Si la agencia publico un sobre. TOTAL: nunca revienta.</summary>
@@ -253,6 +271,96 @@ namespace DealershipCar.Dominio
 			return new AnEnvelopeSuspendedByAnAbsentReading(TheClause(remaining, odometer));
 		}
 
+		/// <summary>
+		/// Si hay una placa publicada al instante preguntado. TOTAL: nunca revienta, y es la que hay
+		/// que hacer antes de leer cualquiera de los dos textos.
+		/// </summary>
+		internal bool IsAPlatePublished(DateTime asOf)
+		{
+			return ThePlateAsOf(asOf).Exists();
+		}
+
+		/// <summary>
+		/// La placa dicha entera, o la constancia con nombre de que no hay ninguna. TOTAL, y la frase
+		/// es del dominio.
+		/// </summary>
+		internal string DescribePlate(DateTime asOf)
+		{
+			return ThePlateAsOf(asOf).Describe();
+		}
+
+		/// <summary>
+		/// El texto tal como lo publico el concesionario. Accesor GUARDADO, en par con la pregunta de
+		/// presencia.
+		/// </summary>
+		internal string ReadPlateAsPublished(DateTime asOf)
+		{
+			return ThePlateAsOf(asOf).AsPublished;
+		}
+
+		/// <summary>
+		/// El texto normalizado con el que se cruza. Accesor GUARDADO por lo mismo.
+		/// </summary>
+		internal string ReadPlateJoinKey(DateTime asOf)
+		{
+			return ThePlateAsOf(asOf).JoinKey;
+		}
+
+		/// <summary>
+		/// El texto publicado de cada asignacion, una por fila, en orden de la linea de tiempo.
+		/// TOTAL: sin ninguna asignacion contesta cero filas.
+		/// </summary>
+		internal string[] EachPlateAsPublished()
+		{
+			string[] said = new string[_assignments.Count];
+
+			for (int row = 0; row < _assignments.Count; row++)
+				said[row] = _assignments[row].Plate.AsPublished;
+
+			return said;
+		}
+
+		/// <summary>
+		/// La llave de cada asignacion, una por fila y en el mismo orden. TOTAL. Sale ya normalizada:
+		/// ninguna caratula la deriva del texto publicado.
+		/// </summary>
+		internal string[] EachPlateJoinKey()
+		{
+			string[] said = new string[_assignments.Count];
+
+			for (int row = 0; row < _assignments.Count; row++)
+				said[row] = _assignments[row].Plate.JoinKey;
+
+			return said;
+		}
+
+		/// <summary>
+		/// Desde cuando rige cada asignacion, una por fila y en el mismo orden. TOTAL.
+		/// </summary>
+		internal string[] EachPlateAssignedAt()
+		{
+			string[] said = new string[_assignments.Count];
+
+			for (int row = 0; row < _assignments.Count; row++)
+				said[row] = TheDay(_assignments[row].AssignedAt);
+
+			return said;
+		}
+
+		/// <summary>
+		/// Cual asignacion es la vigente, una por fila y en el mismo orden. TOTAL, y con al menos una
+		/// fila hay exactamente una vigente: la ultima de la linea de tiempo.
+		/// </summary>
+		internal string[] EachPlateIsCurrent()
+		{
+			string[] said = new string[_assignments.Count];
+
+			for (int row = 0; row < _assignments.Count; row++)
+				said[row] = SaidAsATruth(row == _assignments.Count - 1);
+
+			return said;
+		}
+
 		private EnvelopeAnswer TheUnpublishedAnswer()
 		{
 			return new ASettledEnvelopeAnswer(
@@ -310,6 +418,36 @@ namespace DealershipCar.Dominio
 		private static string TheDay(DateTime instant)
 		{
 			return instant.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture);
+		}
+
+		/// <summary>Un si o un no dicho como columna, en la grafia que el wire lleva.</summary>
+		private static string SaidAsATruth(bool said)
+		{
+			return said ? "true" : "false";
+		}
+
+		private void Place(APlateAssignment arriving)
+		{
+			_assignments.Insert(ItsPlaceOnTheAssignmentTimeline(arriving), arriving);
+		}
+
+		private int ItsPlaceOnTheAssignmentTimeline(APlateAssignment arriving)
+		{
+			int place = _assignments.Count;
+
+			while (place > 0 && _assignments[place - 1].AssignedAt > arriving.AssignedAt) place--;
+
+			return place;
+		}
+
+		private PlateOnRecord ThePlateAsOf(DateTime asOf)
+		{
+			PlateOnRecord found = PlateOnRecord.None;
+
+			foreach (APlateAssignment each in _assignments)
+				if (each.AssignedAt <= asOf) found = PlateOnRecord.Of(each);
+
+			return found;
 		}
 	}
 }

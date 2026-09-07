@@ -184,11 +184,11 @@ namespace DealershipCar.Dominio.Pruebas
 		{
 			using (var journal = new AScheduleOnARealJournal(TheVin, "Standard"))
 			{
-				journal.Api.OpenRevision("MY2025-R1", ThePublication);
+				journal.Api.OpenRevision("MY2019-R1", ThePublication);
 				journal.Api.PublishServicePrice(
-					"MY2025-R1", "FluidChange", 6000, "UnitB", 74.50m, "USD",
+					"MY2019-R1", "FluidChange", 6000, "UnitB", 74.50m, "USD",
 					ThePublication, new DateTime(2099, 12, 31, 0, 0, 0, DateTimeKind.Utc));
-				journal.Api.SealRevision("MY2025-R1");
+				journal.Api.SealRevision("MY2019-R1");
 
 				ServicePricing pricing =
 					new ModelSpecificationTools(new JournalReader(journal.Folder, ""))
@@ -207,7 +207,7 @@ namespace DealershipCar.Dominio.Pruebas
 
 				Assert.That(pricing.Prices[0].Says, Does.Contain("6000 mi"));
 				Assert.That(pricing.Prices[0].Says, Does.Not.Contain("km"));
-				Assert.That(pricing.Prices[0].Revision, Is.EqualTo("MY2025-R1"));
+				Assert.That(pricing.Prices[0].Revision, Is.EqualTo("MY2019-R1"));
 
 				// Y NINGUN CAMPO DE LA RESPUESTA ENTERA TRAE UN CODIGO DE UNIDAD. Sin este renglon,
 				// un campo nuevo podria reintroducir el mapeo inverso sin que nadie lo mire.
@@ -219,15 +219,15 @@ namespace DealershipCar.Dominio.Pruebas
 
 		private static void ARevisionWithOneFluidAndOneTyre(AScheduleOnARealJournal journal)
 		{
-			journal.Api.OpenRevision("MY2025-R1", ThePublication);
+			journal.Api.OpenRevision("MY2019-R1", ThePublication);
 
 			journal.Api.PublishFluidSpecification(
-				"MY2025-R1", "EngineOil", "5W-30 synthetic", 4.2m, "UnitA", 10000, "UnitA", 365);
+				"MY2019-R1", "EngineOil", "5W-30 synthetic", 4.2m, "UnitA", 10000, "UnitA", 365);
 
 			journal.Api.PublishTyreSpecification(
-				"MY2025-R1", "Front", "205/55R16", 2.4m, "UnitA", "94V");
+				"MY2019-R1", "Front", "205/55R16", 2.4m, "UnitA", "94V");
 
-			journal.Api.SealRevision("MY2025-R1");
+			journal.Api.SealRevision("MY2019-R1");
 		}
 	}
 }

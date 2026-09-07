@@ -73,7 +73,10 @@ namespace DealershipCar.App.Events
 			IMensajeDeEvento delivery = VehicleDelivered.Interpret(signal);
 			if (delivery != null) return delivery;
 
-			return WarrantyEnvelopePublished.Interpret(signal);
+			IMensajeDeEvento envelope = WarrantyEnvelopePublished.Interpret(signal);
+			if (envelope != null) return envelope;
+
+			return PlateAssigned.Interpret(signal);
 		}
 
 		private static IMensajeDeEvento AShopFact(SenalDeEvento signal)

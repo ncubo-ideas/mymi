@@ -357,9 +357,9 @@ namespace DealershipCar.Dominio.Pruebas
 			string sheet = journal.EverySpecificationAnswerItCanGive();
 
 			string rejection = Apply(ADealershipNarrative.Fluid(
-				27, "MY2025-R9", "BrakeFluid", "DOT 4", "0.5", "UnitA", 20000, "UnitA", 730));
+				27, "MY2019-R9", "BrakeFluid", "DOT 4", "0.5", "UnitA", 20000, "UnitA", 730));
 
-			Assert.That(rejection, Does.Contain("no tiene ninguna revision 'MY2025-R9'"));
+			Assert.That(rejection, Does.Contain("no tiene ninguna revision 'MY2019-R9'"));
 
 			Assert.That(journal.EverySpecificationAnswerItCanGive(), Is.EqualTo(sheet),
 				"Nada de la hoja se movio: el comando revento antes de publicar nada.");

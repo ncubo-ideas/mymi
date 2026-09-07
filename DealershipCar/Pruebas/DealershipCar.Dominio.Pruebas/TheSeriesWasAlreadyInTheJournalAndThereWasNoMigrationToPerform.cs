@@ -44,7 +44,7 @@ namespace DealershipCar.Dominio.Pruebas
 	public sealed class TheSeriesWasAlreadyInTheJournalAndThereWasNoMigrationToPerform
 	{
 		private const string TheVin = "JH4KA7561PC008270";
-		private const string TheModel = "SM-SEDAN-2025";
+		private const string TheModel = "YARIS-2019";
 
 		private const string TheUnitOfThePeriod = "UnitA";
 		private const string TheOtherUnit = "UnitB";

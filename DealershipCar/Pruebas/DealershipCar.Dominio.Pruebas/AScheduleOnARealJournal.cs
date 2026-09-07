@@ -44,7 +44,7 @@ namespace DealershipCar.Dominio.Pruebas
 		// El modelo con el que este aparejo siembra la tercera global de raiz. Es un hecho de la
 		// PRIMERA apertura -- el cuerpo de un upgrade no vuelve a correr -- asi que una prueba que
 		// necesite otro modelo abre su propio host, no este.
-		internal const string TheModelAtDelivery = "SM-SEDAN-2025";
+		internal const string TheModelAtDelivery = "YARIS-2019";
 
 		// Donde viven todas las carpetas temporales del nivel B. Una sola raiz, para que barrerlas
 		// sea una sola operacion -- ver TheTemporaryJournalsDoNotOutliveTheNextRun.

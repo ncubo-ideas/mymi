@@ -248,6 +248,12 @@ sealed class EventoDelConcesionario
     [JsonPropertyName("months")]             public int Months { get; init; }
     [JsonPropertyName("distance")]           public int Distance { get; init; }
 
+    /// <summary>La placa de este vehiculo, tal como la agencia la publico.</summary>
+    [JsonPropertyName("plate")]              public string Plate { get; init; } = "";
+
+    /// <summary>Desde cuando rige esa placa.</summary>
+    [JsonPropertyName("assignedAt")]         public DateTime AssignedAt { get; init; }
+
     [JsonPropertyName("branch")]             public string Branch { get; init; } = "";
     [JsonPropertyName("subject")]            public string Subject { get; init; } = "";
     [JsonPropertyName("enteredAt")]          public DateTime EnteredAt { get; init; }
@@ -294,6 +300,8 @@ sealed class EventoDelConcesionario
             $"entregado el {DeliveredAt:yyyy-MM-dd} con {Reading} {Unit} de odometro",
         "WarrantyEnvelopePublished" =>
             $"sobre de {Months} meses o {Distance} {Unit}, publicado el {PublishedAt:yyyy-MM-dd}",
+        "PlateAssigned" =>
+            $"placa {Plate}, asignada el {AssignedAt:yyyy-MM-dd}",
 
         "ShopEntryRecorded" =>
             $"entro a {Branch} el {EnteredAt:yyyy-MM-dd HH:mm} por {Subject}",
@@ -334,7 +342,7 @@ sealed class AlmacenDeEventos
         "ServicingPolicyPublished", "SpecificationRevisionSealed",
         "SpecificationRevisionSuperseded",
 
-        "VehicleDelivered", "WarrantyEnvelopePublished",
+        "VehicleDelivered", "WarrantyEnvelopePublished", "PlateAssigned",
 
         "ShopEntryRecorded", "ShopCollectionRecorded", "ShopStayRecorded",
 
@@ -346,36 +354,36 @@ sealed class AlmacenDeEventos
 
     private static List<EventoDelConcesionario> Sembrar() => new()
     {
-        Revision(101, "R1", "2025-09-01"),
+        Revision(101, "R1", "2025-12-15"),
 
         PlanOp(102, "FluidChange",    "TimeOrDistance", 365, 10000, true,  false),
         PlanOp(103, "FilterChange",   "DistanceOnly",     0, 15000, true,  false),
         PlanOp(104, "TimedComponent", "TimeOnly",       550,     0, true,  true),
         PlanOp(105, "Inspection",     "ConditionOnly",    0,     0, true,  false),
 
-        Lectura(106, 13200, "2025-10-01", "Telemetry"),
+        Lectura(106, 49850, "2025-12-15", "Telemetry"),
 
         new EventoDelConcesionario
         {
             Id = 107, Tipo = "WarrantyClaimFiled", Claim = "W-9912",
-            ObservedAt = new DateTime(2025, 11, 15),
+            ObservedAt = new DateTime(2026, 1, 25),
         },
 
-        Lectura(108, 16000, "2025-12-01", "Telemetry"),
-        Lectura(109, 14500, "2025-11-01", "HumanEntry"),
-        Lectura(110, 17300, "2026-01-01", "Telemetry"),
-        Lectura(111, 20000, "2026-03-01", "Telemetry"),
-        Lectura(112, 18600, "2026-02-01", "CustomerDeclared"),
+        Lectura(108, 51703, "2026-02-06", "Telemetry"),
+        Lectura(109, 50783, "2026-01-17", "HumanEntry"),
+        Lectura(110, 53303, "2026-03-12", "Telemetry"),
+        Lectura(111, 57539, "2026-06-12", "Telemetry"),
+        Lectura(112, 56089, "2026-05-12", "CustomerDeclared"),
 
         Cruce(113, "Inspection", "2026-04-01"),
 
-        Completacion(114, "FluidChange", "2026-03-05", 20000),
+        Completacion(114, "FluidChange", "2026-06-12", 57539),
 
-        Revision(115, "R2", "2026-06-01"),
-        PlanOpAnclada(116, "FluidChange", "TimeOrDistance", 300, 8000, true, false, "2026-06-01", 20000),
+        Revision(115, "R2", "2026-06-15"),
+        PlanOpAnclada(116, "FluidChange", "TimeOrDistance", 300, 8000, true, false, "2026-06-15", 57539),
 
-        Lectura(117, 27000, "2026-07-01", "Telemetry"),
-        Lectura(118, 29500, "2026-08-15", "Telemetry"),
+        Lectura(117, 59157, "2026-07-17", "Telemetry"),
+        Lectura(118, 60962, "2026-08-25", "Telemetry"),
 
         new EventoDelConcesionario
         {
@@ -414,7 +422,7 @@ sealed class AlmacenDeEventos
 
     private static EventoDelConcesionario PlanOp(
         long id, string kind, string basis, int dias, int distancia, bool obligatoria, bool seguridad) =>
-        PlanOpAnclada(id, kind, basis, dias, distancia, obligatoria, seguridad, "2025-09-01", 12000);
+        PlanOpAnclada(id, kind, basis, dias, distancia, obligatoria, seguridad, "2025-12-15", 49850);
 
     private static EventoDelConcesionario PlanOpAnclada(
         long id, string kind, string basis, int dias, int distancia, bool obligatoria, bool seguridad,
@@ -501,6 +509,8 @@ sealed class AlmacenDeEventos
                 Reading = pedido.Reading,
                 Months = pedido.Months,
                 Distance = pedido.Distance,
+                Plate = pedido.Plate ?? "",
+                AssignedAt = pedido.AssignedAt,
                 Branch = pedido.Branch ?? "",
                 Subject = pedido.Subject ?? "",
                 EnteredAt = pedido.EnteredAt,
@@ -595,6 +605,9 @@ sealed class HechoAInyectar
     [JsonPropertyName("reading")]            public int Reading { get; set; }
     [JsonPropertyName("months")]             public int Months { get; set; }
     [JsonPropertyName("distance")]           public int Distance { get; set; }
+
+    [JsonPropertyName("plate")]              public string Plate { get; set; }
+    [JsonPropertyName("assignedAt")]         public DateTime AssignedAt { get; set; }
 
     [JsonPropertyName("branch")]             public string Branch { get; set; }
     [JsonPropertyName("subject")]            public string Subject { get; set; }

@@ -57,7 +57,7 @@ namespace DealershipCar.Dominio.Pruebas
 	public sealed class ACurrencyAlreadyWrittenIntoAJournalIsNeverRefusedOnReopening
 	{
 		private const string TheVin = "JH4KA7660MC099001";
-		private const string TheModel = "SM-SEDAN-2025";
+		private const string TheModel = "YARIS-2019";
 		private const string TheRevision = "REV-2025-01";
 
 		// La moneda que el conjunto NO nombra. Es la de PROBE 8, y llega igual que ahi: nada en el

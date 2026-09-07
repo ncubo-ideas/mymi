@@ -41,7 +41,7 @@ namespace DealershipCar.Dominio.Pruebas
 	[TestFixture]
 	public sealed class CoverageHasFiveAnswersNotTwo
 	{
-		private const string TheModel = "SM-SEDAN-2025";
+		private const string TheModel = "YARIS-2019";
 		private const string TheRevision = "REV-2025-01";
 
 		private static readonly DateTime PublishedAt = new DateTime(2025, 3, 14, 10, 0, 0);
