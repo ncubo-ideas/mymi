@@ -19,25 +19,26 @@
 		<string>group.com.ncubo.gnothi</string>
 	</array>
 
-	<!-- EL ENLACE DE LA INSTITUCION, que es como un modulo llega de verdad: ella pone un boton
-	     en su pagina, Sonia lo toca, y iOS abre Gnothi con la URL.
+	<!-- THE INSTITUTION'S LINK, which is how a module actually arrives: the institution puts a
+	     button on its page, Sonia taps it, and iOS opens Gnothi with the URL.
 
-	     ES EL GEMELO DEL App Link DE ANDROID, y falla parecido. Alla, sin AutoVerify mas un
-	     assetlinks.json verificado, Chrome navega el mismo y muestra DNS_PROBE_FINISHED_NXDOMAIN:
-	     el boton no hace nada y no hay pista. Aca el equivalente es el AASA, y el modo de fallar
-	     es el mismo -Safari abre la pagina en vez de la app- asi que hay que verificarlo temprano
-	     y explicitamente (P2 del guion).
+	     IT IS THE TWIN OF ANDROID'S App Link, and it fails in a similar way. There, without
+	     AutoVerify plus a verified assetlinks.json, Chrome navigates the link itself and shows
+	     DNS_PROBE_FINISHED_NXDOMAIN: the button does nothing and there is no clue. Here the
+	     equivalent is the AASA, and the failure mode is the same one (Safari opens the page
+	     instead of the app), so it has to be verified early and explicitly (P2 of the script).
 
-	     LO QUE ESTO SOLO NO ALCANZA: go.gnothi.app tiene que servir
-	     /.well-known/apple-app-site-association, sin extension, como application/json, por
-	     https, sin redirecciones, con el appID <TeamID>.com.ncubo.gnothi.host y los paths
-	     /alta* y /abrir*. Y iOS lo cachea: si se sirve mal la primera vez, hay que reinstalar
-	     la app para que lo vuelva a pedir.
+	     WHAT THIS ALONE DOES NOT COVER: go.gnothi.app has to serve
+	     /.well-known/apple-app-site-association, with no extension, as application/json, over
+	     https, with no redirects, carrying the appID TEAMID.com.ncubo.gnothi.host and the
+	     paths /alta* and /abrir*. And iOS CACHES it: if it is served wrong the first time, the
+	     app has to be reinstalled before iOS asks for it again.
 
-	     EN DESARROLLO, sin dominio propio, se usa `webcredentials:` no; se usa el modo
-	     alternativo de Apple: agregar ?mode=developer en la asociacion y tener activado
-	     "Associated Domains Development" en Ajustes > Desarrollador. Android tiene el atajo de
-	     `pm set-app-links` y aca no hay equivalente por linea de comandos. -->
+	     IN DEVELOPMENT, with no domain of our own, append ?mode=developer to the applinks
+	     entry below. That makes iOS fetch the AASA straight from the domain instead of through
+	     Apple's CDN, and it also needs "Associated Domains Development" switched on in
+	     Settings > Developer. Android has the `pm set-app-links` shortcut for this; there is no
+	     command line equivalent here. -->
 	<key>com.apple.developer.associated-domains</key>
 	<array>
 		<string>applinks:go.gnothi.app</string>

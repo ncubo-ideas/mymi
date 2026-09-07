@@ -35,5 +35,42 @@
 	<true/>
 	<key>LSSupportsOpeningDocumentsInPlace</key>
 	<true/>
+
+	<!-- WHAT GNOTHI MAY SPEAK IN THE CLEAR, and the answer is: almost nothing.
+	     This is the exact twin of Gnothi.Mobile/Resources/xml/network_security_config.xml and
+	     it is here for the same reason: the postman talks to publishers over HTTPS, and the
+	     ONLY exception is loopback, which is where a local publisher lands while testing.
+
+	     IT IS NOT AN OPEN DOOR: 127.0.0.1 is the device itself. Nothing coming from the
+	     network can arrive through there, and no real publisher lives there.
+
+	     THE COST OF NOT HAVING IT, measured on the Android side: the postman failed with
+	     "Connection failure" and the module opened empty, WITH NOTHING SAYING WHY. On iOS the
+	     symptom is the same and App Transport Security produces it, having blocked plain http
+	     since iOS 9. Without these lines the first run on a simulator fails mute.
+
+	     WHY ExceptionDomains AND NOT NSAllowsArbitraryLoads: arbitrary loads turns ATS off for
+	     EVERYTHING, and it is also what Apple asks about in App Review. This names two hosts.
+
+	     [A PHYSICAL IPHONE NEEDS MORE] On the simulator this is enough, because the simulator
+	     shares the Mac's network stack and 127.0.0.1 IS its localhost. On a real device the
+	     publisher lives on another machine, so it has to be reached by its LAN address, and
+	     that additionally needs NSAllowsLocalNetworking. Said in PRUEBAS-WEBVIEW-IOS.md §0. -->
+	<key>NSAppTransportSecurity</key>
+	<dict>
+		<key>NSExceptionDomains</key>
+		<dict>
+			<key>localhost</key>
+			<dict>
+				<key>NSExceptionAllowsInsecureHTTPLoads</key>
+				<true/>
+			</dict>
+			<key>127.0.0.1</key>
+			<dict>
+				<key>NSExceptionAllowsInsecureHTTPLoads</key>
+				<true/>
+			</dict>
+		</dict>
+	</dict>
 </dict>
 </plist>

@@ -36,7 +36,7 @@ $raiz = Split-Path -Parent $PSScriptRoot
 # forma. DealershipCar va en ingles porque el modulo entero esta en ingles.
 $catalogo = @{
     'examenes' = @{
-        Proyecto    = "$raiz\Examenes\App\Examenes.Wasm\Examenes.Wasm.csproj"
+        Proyecto    = "$raiz/Examenes/App/Examenes.Wasm/Examenes.Wasm.csproj"
         Titulo      = 'Mis examenes'
         Institucion = 'Laboratorio Clinico Delfos (mock del POC)'
         Recurso     = 'expediente'
@@ -50,7 +50,7 @@ $catalogo = @{
         )
     }
     'compras' = @{
-        Proyecto    = "$raiz\Compras\App\Compras.Wasm\Compras.Wasm.csproj"
+        Proyecto    = "$raiz/Compras/App/Compras.Wasm/Compras.Wasm.csproj"
         Titulo      = 'Mis compras'
         Institucion = 'Supermercado La Guaria (mock del POC)'
         Recurso     = 'cliente'
@@ -64,7 +64,7 @@ $catalogo = @{
         )
     }
     'cargas' = @{
-        Proyecto    = "$raiz\Cargas\App\Cargas.Wasm\Cargas.Wasm.csproj"
+        Proyecto    = "$raiz/Cargas/App/Cargas.Wasm/Cargas.Wasm.csproj"
         Titulo      = 'Mis cargas'
         Institucion = 'Estacion de servicio (mock del POC)'
         Recurso     = 'cargas'
@@ -78,7 +78,7 @@ $catalogo = @{
         )
     }
     'dealership' = @{
-        Proyecto    = "$raiz\DealershipCar\App\DealershipCar.Wasm\DealershipCar.Wasm.csproj"
+        Proyecto    = "$raiz/DealershipCar/App/DealershipCar.Wasm/DealershipCar.Wasm.csproj"
         Titulo      = 'My maintenance'
         Institucion = 'DealershipCar (POC mock)'
         Recurso     = 'vehicle'
@@ -105,13 +105,13 @@ if (-not $Publicador) { $Publicador = "http://127.0.0.1:$($m.Puerto)/" }
 
 if (-not (Test-Path $Proyecto)) { throw "no existe el proyecto: $Proyecto" }
 
-if (-not $Salida) { $Salida = "$PSScriptRoot\bundles" }
-$armado = "$Salida\$Modulo"
-$zip    = "$Salida\$Modulo.zip"
+if (-not $Salida) { $Salida = "$PSScriptRoot/bundles" }
+$armado = "$Salida/$Modulo"
+$zip    = "$Salida/$Modulo.zip"
 
 # --- publicar la app -------------------------------------------------------------------
 Write-Host "publicando $Modulo..."
-$publicado = "$Salida\.publish-$Modulo"
+$publicado = "$Salida/.publish-$Modulo"
 if (Test-Path $publicado) { Remove-Item -Recurse -Force $publicado }
 
 dotnet publish $Proyecto -c Release -o $publicado -v q --nologo | Out-Null
@@ -120,13 +120,13 @@ if ($LASTEXITCODE -ne 0) { throw "fallo el publish de $Proyecto" }
 # `dotnet publish` de un Blazor Wasm deja la app en wwwroot/ y al lado deja los dll del
 # publish, que NO van al bundle: lo que la institucion sirve es exactamente lo que el
 # navegador pide.
-$web = "$publicado\wwwroot"
+$web = "$publicado/wwwroot"
 if (-not (Test-Path $web)) { throw "el publish no dejo wwwroot en $publicado" }
 
 # --- armar el bundle -------------------------------------------------------------------
 if (Test-Path $armado) { Remove-Item -Recurse -Force $armado }
 New-Item -ItemType Directory -Path $armado -Force | Out-Null
-Copy-Item -Recurse $web "$armado\web"
+Copy-Item -Recurse $web "$armado/web"
 
 $manifiesto = [ordered]@{
     '//'          = 'ESTE ARCHIVO ES DE LA INSTITUCION. Declara quien es, que ofrece y donde vive su narrativa.'
@@ -146,11 +146,11 @@ $manifiesto = [ordered]@{
 # `File.ReadAllText` lo tolera -- que es como lo lee AltaDeModulo -- un manifiesto con BOM
 # revienta en cuanto alguien lo lea con `JsonDocument.Parse(string)`. No vale la pena la trampa.
 $json = $manifiesto | ConvertTo-Json -Depth 8
-[System.IO.File]::WriteAllText("$armado\manifest.json", $json, (New-Object System.Text.UTF8Encoding($false)))
+[System.IO.File]::WriteAllText("$armado/manifest.json", $json, (New-Object System.Text.UTF8Encoding($false)))
 
 # --- el zip ----------------------------------------------------------------------------
 if (Test-Path $zip) { Remove-Item -Force $zip }
-Compress-Archive -Path "$armado\*" -DestinationPath $zip -CompressionLevel Optimal
+Compress-Archive -Path "$armado/*" -DestinationPath $zip -CompressionLevel Optimal
 
 Remove-Item -Recurse -Force $publicado
 

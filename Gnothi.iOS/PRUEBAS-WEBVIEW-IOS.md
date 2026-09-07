@@ -21,10 +21,29 @@ que **ya está corrido y en verde en Android**. Conviene tenerlo al lado: donde 
 - **Una Mac con Xcode** y el workload de .NET para iOS.
 - Un **simulador de iOS 18+** o un iPhone conectado. Para P2 y P7 conviene aparato de verdad:
   el simulador miente sobre memoria.
-- El escenario de la institución levantado **en la misma máquina**, con
-  `Gnothi.Mobile/escenario-webview.ps1`. Corre en Windows; si la Mac es otra máquina, hay que
-  apuntar los puertos a su IP y **eso cambia P6**, porque `network_security_config` no existe
-  en iOS pero App Transport Security sí.
+- El escenario de la institución levantado **en la misma Mac**, con el script de acá:
+
+```bash
+./Gnothi.iOS/scenario-ios.sh
+```
+
+Levanta los ocho servidores (un publicador y una institución por módulo), no verifica hasta
+que los ocho contestan `/salud`, y te dice cuál falló y en qué log si alguno no sube. Para
+bajarlo, `./Gnothi.iOS/scenario-ios.sh --stop`.
+
+**No hace falta ningún túnel**, y esa es la diferencia con Android: el simulador comparte el
+stack de red de la Mac, así que `127.0.0.1` adentro **es** el localhost de la Mac. En Android
+esto pide `adb reverse` y era la causa más común de «el módulo abre vacío y nada dice por qué».
+
+Necesita PowerShell (`brew install --cask powershell`) porque **el catálogo de los módulos no
+está duplicado**: el script llama a `Gnothi.Mobile/armar-bundle.ps1`, que es donde viven los
+~200 renglones de qué publica cada institución. Si no querés instalarlo, copiá `bundles/` desde
+la máquina Windows y pasale `--no-bundles`.
+
+**Si la Mac es otra máquina** que el escenario, hay que apuntar los puertos a su IP de LAN, y
+**eso cambia P6**: `network_security_config` no existe en iOS, pero App Transport Security sí,
+y la excepción de loopback que está en `Info.plist` no cubre una IP de LAN. Hace falta además
+`NSAllowsLocalNetworking`.
 
 ```bash
 dotnet build Gnothi.iOS/Gnothi.iOS.csproj -c Debug
@@ -57,18 +76,28 @@ contexto seguro, el módulo no arranca**: se caen el almacenamiento del origen y
 `crypto.subtle`. No es teoría: es exactamente lo que mordió a Android cuando su primera versión
 usaba `gnothi-mod://` allá, y por eso hoy Android usa un host virtual sobre https.
 
-Con el módulo abierto (P1), en el inspector de Safari (Develop → Simulator → el WebView):
+**Ya no lo tenés que medir a mano: la app se lo pregunta a sí misma.** El shim que Gnothi
+inyecta manda un `probe` **antes de que corra una sola línea del bundle**, así que la respuesta
+está en el log incluso si el módulo no arranca — que es justo el caso en que la ibas a
+necesitar. Abrí cualquier módulo y buscá este renglón:
 
-```javascript
-window.isSecureContext        // tiene que dar true
-!!window.crypto.subtle        // tiene que dar true
-!!navigator.storage           // tiene que dar true
+```bash
+log stream --predicate 'processImagePath CONTAINS "Gnothi"' --style compact | grep 'P0'
+```
+
+```
+GNOTHI: examenes: P0 · secureContext=true crypto.subtle=true storage=true origin=gnothi-mod://examenes
 ```
 
 | resultado | qué significa |
 |---|---|
 | **los tres `true`** | seguimos. El resto del guion vale tal cual |
 | **alguno `false`** | **el diseño cambia.** Hay que servir el bundle desde `127.0.0.1` con un servidor local en proceso, y eso trae puerto, ciclo de vida, y que ya no se intercepta «antes de la red» |
+| **no aparece el renglón** | el shim no llegó a correr. Eso NO es un `false`: es otra falla, y P1 te va a decir cuál |
+
+Si querés confirmarlo por otro lado, el inspector de Safari (Develop → Simulator → el WebView)
+responde lo mismo con `window.isSecureContext`, `!!window.crypto.subtle` y
+`!!navigator.storage`. Sirve como segunda opinión, no como la medición.
 
 **Está aislado a propósito.** Lo único que cambiaría es `OriginFor` en
 [`IosWebModule.cs`](IosWebModule.cs) y quién sirve. La arquitectura —la CSP, el journal, el
@@ -206,10 +235,27 @@ modulo:examenes: error: Refused to connect to 'http://127.0.0.1:8095/...' becaus
 violates the following Content Security Policy directive: "connect-src 'self'"
 ```
 
-**Y una rendija que iOS puede cerrar mejor que Android.** Allá quedó abierta la navegación de
-nivel superior, porque falta `ShouldOverrideUrlLoading`. Acá el punto natural es
-`WKNavigationDelegate.DecidePolicy`, y **todavía no está puesto**. Es más fácil de no olvidar
-que en Android; conviene ponerlo antes de que esto crezca.
+**Y una rendija que en iOS ya está cerrada, y en Android sigue abierta.** Allá la navegación de
+nivel superior quedó libre porque falta `ShouldOverrideUrlLoading`: si el módulo hace
+`location = 'https://…'`, el WebView va. Acá está puesto —`OnlyItsOwnOrigin`, un
+`WKNavigationDelegate` en [`IosWebModule.cs`](IosWebModule.cs)— y **sí se puede medir sin tocar
+el módulo**, porque no depende de la CSP. En el inspector de Safari, con el módulo abierto:
+
+```javascript
+window.location = 'https://example.com'
+```
+
+La página **no** tiene que cambiar, y el log tiene que decir:
+
+```
+GNOTHI: examenes: navigation refused to https://example.com -- outside its own origin
+```
+
+Probá también `gnothi-mod://otro-modulo/` : también tiene que rebotar, porque la regla es el
+origen completo (esquema **y** host), no sólo el esquema. Un módulo no puede navegar al de otro.
+
+Esto es una diferencia real de plataforma a favor de iOS, y conviene decirlo en esos términos
+cuando se compare: la contención de Android está incompleta en este punto.
 
 ---
 
@@ -299,11 +345,30 @@ dé por verificado.
 
 ## Deuda anotada, para que no parezca olvido
 
-**El flujo del alta está duplicado.** Las cuatro funciones de
-[`ViewController.cs`](ViewController.cs) —`DarDeAlta`, `AceptarAlta`, `DescartarAlta`,
-`PushPropuesta`— son casi idénticas a las de `Gnothi.Mobile/MainActivity.cs`. Deberían vivir en
-`Gnothi.Movil/Shell.cs`, que ya es dueño del catálogo, del push y del switch de `Handle`.
+**El alta ya NO está duplicada, y el merge ya está arreglado.** Las dos cosas que esta sección
+decía quedaron hechas: el flujo (`Enroll`, `AcceptEnrollment`, `DiscardEnrollment`,
+`PushEnrollment`, `PushProposal`) vive en `Gnothi.Movil/Shell.cs`, que ya era dueño del
+catálogo, del push y del switch de `Handle`; y `MainActivity.cs` volvió a compilar. Medido:
+Android **0 errores**, iOS **0 errores**.
 
-No se hizo todavía por una razón concreta: **`MainActivity.cs` viene sintácticamente roto del
-merge `38dbe22`** —balance de llaves −2, perdió la declaración de `Start()`— así que Android no
-compila y el cambio no se podría verificar de ese lado. Es el próximo movimiento.
+Lo que sí sigue abierto:
+
+**El camino de `--stop` de `scenario-ios.sh` no se probó en una Mac.** Arriba y verificación de
+los ocho puertos sí, desde Windows. El stop está escrito contra `lsof`, que macOS trae y Git
+Bash no, así que ese ramal corrió sólo por el camino de respaldo. Si no baja algo, `lsof -i
+tcp:8095` dice quién lo tiene.
+
+**Nombres en español en las dos cáscaras.** Los tipos ya están en inglés, pero quedan campos y
+locales (`anfitrion` en Android, `semilla`, `destino`, `corriendo`, `encuadre`) y comentarios en
+`MainActivity.cs` y en la mitad no tocada de `ViewController.cs`. **Se dejó a propósito, no por
+olvido:** Jonathan tiene trabajo en vuelo en `MainActivity.cs`, y un barrido de nombres ahí
+garantiza otro conflicto como el que hubo que resolver del merge `38dbe22`. Va cuando su rama
+aterrice.
+
+**Los mensajes de log siguen en español a propósito.** `alta: bajando el bundle de`, `alta:
+'<módulo>' instalado en` y compañía son **contrato observable**: este guion y
+`Gnothi.Mobile/PRUEBAS-WEBVIEW.md` les hacen grep exacto. Traducirlos rompe los dos guiones sin
+cambiar una línea de comportamiento.
+
+**`f157715` sigue sólo en `spike/ios-app-intents`.** Son las mejoras de Renan a la cáscara
+—`Quitar`, `Armar`/`Guardar`, `Iconos`— y no están en esta rama.

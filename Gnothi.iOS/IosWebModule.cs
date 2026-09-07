@@ -99,7 +99,16 @@ internal sealed class IosWebModule : WebModule
 
 				// NOT added to any view: the module has no screen here. This shell answers
 				// questions; the institution's UI is another story (11 §8).
-				web = new WKWebView(CGRect.Empty, configuration);
+				web = new WKWebView(CGRect.Empty, configuration)
+				{
+					// THE SECOND LAYER OF CONTAINMENT, and the one Android is still missing.
+					// The CSP stops the module from FETCHING another origin; it does not stop
+					// it from NAVIGATING the whole view somewhere else. On Android that gap is
+					// open because `ShouldOverrideUrlLoading` was never wired. Here the hook is
+					// the framework's natural one, so it goes in from the start.
+					NavigationDelegate = new OnlyItsOwnOrigin(this),
+				};
+
 				web.LoadRequest(new NSUrlRequest(new NSUrl(url)));
 
 				created.TrySetResult();
@@ -144,12 +153,45 @@ internal sealed class IosWebModule : WebModule
 			// It is how CSP violations and the institution's own errors become visible.
 			if (op == "console") { Log($"modulo:{Name}: {Text(root, "a")}"); return; }
 
+			// P0, ANSWERED BY THE APP AND NOT BY A PERSON. Whether this origin is a secure
+			// context decides the shape of the whole design, and it used to be three lines
+			// somebody had to type into Safari's inspector -- which means the answer lived in
+			// the memory of whoever ran it. Now it lands in the log next to everything else.
+			//
+			// If any of the three is false the module will not start: origin storage and
+			// crypto.subtle fall over. That is exactly what bit Android when it used a custom
+			// scheme, and it is why the fallback is a local server on 127.0.0.1.
+			if (op == "probe") { Log($"{Name}: P0 · {Text(root, "a")}"); return; }
+
 			Serve(op, Text(root, "id"), Optional(root, "a"), Optional(root, "b"));
 		}
 		catch (JsonException ex)
 		{
 			Log($"{Name}: unreadable bridge message: {ex.Message}");
 		}
+	}
+
+	// WHETHER THE MODULE MAY NAVIGATE THERE, which is the half of containment the CSP does not
+	// cover. `connect-src 'self'` stops a fetch; it says nothing about the view being sent
+	// somewhere else, and a module that can navigate the top frame can show whatever it likes
+	// inside Gnothi's own window.
+	//
+	// The rule is the origin, not a list: same scheme, same host as what this module was
+	// served under. Everything else -- another module's origin included -- is refused.
+	//
+	// A REFUSAL IS NEVER MUTE. On Android the equivalent gap was found by reading the code with
+	// the question already in mind, which only works if somebody thinks to ask. A logged line
+	// means the next person sees it happen instead.
+	internal bool MayNavigateTo(NSUrl? url)
+	{
+		if (url is null) return false;
+
+		bool mine = string.Equals(url.Scheme, Scheme, StringComparison.OrdinalIgnoreCase)
+			&& string.Equals(url.Host, Name, StringComparison.OrdinalIgnoreCase);
+
+		if (!mine) Log($"{Name}: navigation refused to {url.Scheme}://{url.Host} -- outside its own origin");
+
+		return mine;
 	}
 
 	private static string Text(JsonElement o, string field) => Optional(o, field) ?? "";
@@ -201,17 +243,28 @@ internal sealed class IosWebModule : WebModule
 		    listo:     function ()             { send({ op: 'listo',    id: '' }); },
 		    contesta:  function (id, j, e)     { send({ op: 'contesta', id: id, a: j, b: e }); },
 		    listar:    function (id)           { send({ op: 'listar',   id: id }); },
-		    leer:      function (id, ruta)     { send({ op: 'leer',     id: id, a: ruta }); },
-		    escribir:  function (id, ruta, c)  { send({ op: 'escribir', id: id, a: ruta, b: c }); },
-		    pull:      function (id, desde)    { send({ op: 'pull',     id: id, a: String(desde) }); }
+		    leer:      function (id, path)     { send({ op: 'leer',     id: id, a: path }); },
+		    escribir:  function (id, path, c)  { send({ op: 'escribir', id: id, a: path, b: c }); },
+		    pull:      function (id, from)     { send({ op: 'pull',     id: id, a: String(from) }); }
 		  };
 
-		  ['log', 'warn', 'error'].forEach(function (nivel) {
-		    var antes = console[nivel].bind(console);
-		    console[nivel] = function () {
-		      try { send({ op: 'console', id: '', a: nivel + ': ' + Array.prototype.join.call(arguments, ' ') }); }
+		  // P0, MEASURED BY THE APP. It runs before anything from the bundle, so the answer
+		  // arrives even if the module then fails to start -- which is exactly the case that
+		  // matters.
+		  try {
+		    send({ op: 'probe', id: '', a:
+		      'secureContext=' + !!window.isSecureContext +
+		      ' crypto.subtle=' + !!(window.crypto && window.crypto.subtle) +
+		      ' storage=' + !!navigator.storage +
+		      ' origin=' + window.location.origin });
+		  } catch (x) { }
+
+		  ['log', 'warn', 'error'].forEach(function (level) {
+		    var before = console[level].bind(console);
+		    console[level] = function () {
+		      try { send({ op: 'console', id: '', a: level + ': ' + Array.prototype.join.call(arguments, ' ') }); }
 		      catch (x) { }
-		      antes.apply(console, arguments);
+		      before.apply(console, arguments);
 		    };
 		  });
 		})();
@@ -236,4 +289,20 @@ internal sealed class BundleSchemeHandler(IosWebModule module) : NSObject, IWKUr
 	// Nothing to cancel: every response is produced and finished inside StartUrlSchemeTask.
 	// The method is not optional in the protocol, so it exists and says why it is empty.
 	public void StopUrlSchemeTask(WKWebView webView, IWKUrlSchemeTask task) { }
+}
+
+// THE SECOND LAYER OF CONTAINMENT. WebKit asks before every navigation, which is the hook
+// Android never wired -- there the equivalent is `ShouldOverrideUrlLoading` and it is still a
+// gap. Arriving later has one advantage: the gap was already written down, so it goes in from
+// the start instead of being found by reading the code with the question in mind.
+//
+// It descends from NSObject for the same reason as the other two: WebKit's delegates are ObjC
+// protocols, and IosWebModule already descends from WebModule.
+internal sealed class OnlyItsOwnOrigin(IosWebModule module) : WKNavigationDelegate
+{
+	public override void DecidePolicy(
+		WKWebView webView, WKNavigationAction action, Action<WKNavigationActionPolicy> decide) =>
+		decide(module.MayNavigateTo(action.Request.Url)
+			? WKNavigationActionPolicy.Allow
+			: WKNavigationActionPolicy.Cancel);
 }

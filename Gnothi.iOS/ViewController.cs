@@ -30,7 +30,7 @@ public sealed class ViewController : UIViewController
 
 	private WKWebView? web;
 	private Shell? shell;
-	private IosWebModuleHost? anfitrion;
+	private IosWebModuleHost? moduleHost;
 
 	public override void ViewDidLoad()
 	{
@@ -71,7 +71,7 @@ public sealed class ViewController : UIViewController
 		string incoming = Path.Combine(Home(NSSearchPathDirectory.DocumentDirectory), "incoming");
 		Directory.CreateDirectory(files);
 
-		SembrarDesdeElBundle(incoming);
+		SeedFromBundle(incoming);
 
 		shell = new Shell(
 			// ReescribirRutas: true, y es obligatorio aca. El paquete lo arma armar-paquete.ps1
@@ -82,9 +82,9 @@ public sealed class ViewController : UIViewController
 				Files: files,
 				Incoming: incoming,
 				ReescribirRutas: true,
-				Instantaneas: Compartido(),
+				Instantaneas: SharedContainer(),
 				// La foto local es la que lee Intents/GnothiIntents.swift, la intent que vive
-				// DENTRO de esta app. No depende del App Group: si Compartido() da null, esta
+				// DENTRO de esta app. No depende del App Group: si SharedContainer() da null, esta
 				// se escribe igual.
 				FotoLocal: true),
 			Log,
@@ -100,13 +100,13 @@ public sealed class ViewController : UIViewController
 			ModelFoundation.Works() ? encuadre => new ModelFoundation(encuadre) : null);
 
 		// QUIEN SABE CREAR WEBVIEWS. ChooseShell es estatico y no tiene ViewController, asi que
-		// la cascara de webview no puede construir el anfitrion: se lo registra esta clase, que
+		// la cascara de webview no puede construir el moduleHost: se lo registra esta clase, que
 		// si lo tiene. Sin esto, un modulo con "type": "webview" falla diciendo exactamente eso.
 		//
 		// Es la MISMA linea que MainActivity corre en Android, y con la misma forma: el Host solo
 		// nombra la interfaz, la plataforma pone quien la cumple.
-		anfitrion = new IosWebModuleHost(this, new IosSecretStore(), Log);
-		Gnothi.Host.WebViewShell.Host = anfitrion;
+		moduleHost = new IosWebModuleHost(this, new IosSecretStore(), Log);
+		Gnothi.Host.WebViewShell.Host = moduleHost;
 
 		_ = Task.Run(async () =>
 		{
@@ -125,7 +125,7 @@ public sealed class ViewController : UIViewController
 				// EL ENLACE QUE LLEGO ANTES DE QUE EL HOST LEVANTARA. Android tiene el mismo
 				// pendiente por la misma razon: iOS puede lanzar la app CON el universal link,
 				// y ahi ContinueUserActivity corre antes de que esto termine de armarse.
-				if (altaPendiente is { Length: > 0 } p) { altaPendiente = null; await shell.Enroll(p); }
+				if (pendingEnrollment is { Length: > 0 } p) { pendingEnrollment = null; await shell.Enroll(p); }
 
 				await corriendo;
 			}
@@ -141,7 +141,7 @@ public sealed class ViewController : UIViewController
 
 	/// La primera vez, si el paquete vino dentro de la app, se siembra Documents/incoming.
 	/// Despues no se toca: lo que la persona deje ahi por Archivos manda.
-	private void SembrarDesdeElBundle(string incoming)
+	private void SeedFromBundle(string incoming)
 	{
 		if (Directory.Exists(incoming)) return;
 
@@ -177,7 +177,7 @@ public sealed class ViewController : UIViewController
 	/// tiene que estar habilitado en el portal de Apple para los DOS app IDs y venir en el
 	/// perfil de aprovisionamiento. Si falta, esto no tira excepcion -- devuelve null en
 	/// silencio, que es la clase de falla que cuesta una tarde si no esta dicha en algun lado.
-	private static string? Compartido()
+	private static string? SharedContainer()
 	{
 		const string grupo = "group.com.ncubo.gnothi";
 		string? ruta = NSFileManager.DefaultManager.GetContainerUrl(grupo)?.Path;
@@ -197,26 +197,23 @@ public sealed class ViewController : UIViewController
 	//
 	//     log stream --predicate 'processImagePath CONTAINS "Gnothi"' --style compact
 	private static void Log(string s) => Console.WriteLine($"GNOTHI: {s}");
-	private string? altaPendiente;
+	private string? pendingEnrollment;
 
-	/// LO QUE LLEGA DEL UNIVERSAL LINK. Si el Host todavia no levanto se guarda y se atiende
-	/// cuando termine -- igual que altaPendiente en Android.
-	internal void AtenderEnlace(string url)
+	/// WHAT ARRIVES FROM THE UNIVERSAL LINK. If the Host has not come up yet this is kept and
+	/// attended when it does -- the same as altaPendiente on Android.
+	internal void HandleLink(string url)
 	{
-		if (!Uri.TryCreate(url, UriKind.Absolute, out Uri? donde)) { Log($"alta: enlace ilegible: {url}"); return; }
+		if (!Uri.TryCreate(url, UriKind.Absolute, out Uri? where)) { Log($"alta: enlace ilegible: {url}"); return; }
 
-		// El bundle viaja como parametro, no como path: la institucion sirve su zip donde
-		// quiera y go.gnothi.app solo lo transporta.
-		string bundle = System.Web.HttpUtility.ParseQueryString(donde.Query)["bundle"] ?? "";
+		// The bundle travels as a QUERY PARAMETER, not as a path: the institution serves its
+		// zip wherever it likes and go.gnothi.app only carries it.
+		string bundle = System.Web.HttpUtility.ParseQueryString(where.Query)["bundle"] ?? "";
 		if (bundle.Length == 0) { Log($"alta: el enlace no trae ?bundle= : {url}"); return; }
 
-		if (shell is null) { altaPendiente = bundle; Log("alta: el Host todavia no levanto; queda pendiente"); return; }
+		if (shell is null) { pendingEnrollment = bundle; Log("alta: el Host todavia no levanto; queda pendiente"); return; }
 
 		_ = shell.Enroll(bundle);
 	}
-
-	private void Empujar(string kind, string id, string payload) => InvokeOnMainThread(() =>
-		web?.EvaluateJavaScript(Shell.PushScript(kind, id, payload), (_, _) => { }));
 
 	// ── el puente, la mitad que SI es de iOS ────────────────────────────────────────────
 	//
