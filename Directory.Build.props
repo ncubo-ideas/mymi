@@ -21,10 +21,18 @@
 
        Se deja 10028 igual, que es la ultima publicada, para que la proxima comparacion
        parta de aca. Cuando salga una con los tres commits de la rama wasm-replay
-       (ec9177d / aa29edb / c9da4f0), esto es UNA linea. -->
+       (ec9177d / aa29edb / c9da4f0), esto es UNA linea.
+
+       10044 (2026-09-07): el journal cambio el formato con que escribe un datetime. Hasta
+       10029 era MM/dd/yyyy HH:mm:ss sin marca de zona; ahora es ISO 8601 de ida y vuelta
+       con la Z (2025-10-02T02:30:45.0000000Z). El dominio no lo nota, sigue llegando en
+       UTC y truncado al segundo, pero las pruebas que leen el journal como texto si, y
+       las tres de DealershipCar que lo hacian se ajustaron. El print con formatter JSON
+       NO cambio (medido con `Facturas.Consola medir`: sigue emitiendo "08/03/2026 10:14:00"),
+       asi que las proyecciones que parsean MM/dd/yyyy quedan como estan. -->
 
   <PropertyGroup>
-    <VersionDelMotor Condition="'$(VersionDelMotor)' == ''">3.0.0-beta.10029</VersionDelMotor>
+    <VersionDelMotor Condition="'$(VersionDelMotor)' == ''">3.0.0-beta.10044</VersionDelMotor>
   </PropertyGroup>
 
 </Project>
