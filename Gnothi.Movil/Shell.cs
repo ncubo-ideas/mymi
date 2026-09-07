@@ -182,6 +182,10 @@ public sealed class Shell : IDisposable
 		PushState();
 		await Fotografiar();
 
+		// LA COMPROBACION DE LOS MODULOS NUEVOS. Va DESPUES de PushState para que la pantalla
+		// ya este pintada: en movil comprobar un modulo web cuesta levantar su WebView.
+		await VerifyNewModules(stop.Token);
+
 		// 3 - EL INTERRUPTOR DE LA PERSONA, VIGILADO. Los switches de la UI escriben
 		//     installation.json y esto es lo que los hace efectivos; y una edicion de AFUERA
 		//     (adb, otra herramienta) repinta la pantalla por el mismo camino. Una sola
@@ -197,6 +201,66 @@ public sealed class Shell : IDisposable
 		};
 		await watch.Run(log, stop.Token);
 	}
+
+	// GNOTHI COMPRUEBA UN MODULO LA PRIMERA VEZ QUE LO VE, y deja constancia.
+	//
+	// Por que al instalar y no cuando Sonia pregunta: un modulo que declara tools y despues no
+	// contesta es un modulo roto, y el momento de descubrirlo es antes de ofrecerselas al
+	// asistente, no cuando ella ya pregunto. Es el cuarto pilar aplicado a si mismo -Gnothi
+	// responde lo que ningun modulo puede responder de si- y es la conformance que la
+	// especificacion pide (11 §15.7).
+	//
+	// Por que UNA VEZ: en movil un modulo web cuesta un WebView con el runtime adentro, medido
+	// en 216-248 MB. Comprobarlo en cada arranque seria pagar eso por nada. La marca queda en
+	// la carpeta del modulo, asi que reinstalarlo vuelve a comprobarlo.
+	//
+	// ESTABA EN MainActivity Y NO USABA NADA DE ANDROID -- Dispatcher, catalogo, archivos y
+	// json-. Al traerlo aca, iOS tambien comprueba sus modulos al instalarlos, sin escribir
+	// una linea de mas.
+	private async Task VerifyNewModules(CancellationToken ct)
+	{
+		if (dispatcher is null || catalog is null) return;
+
+		foreach (Module m in catalog.Modules)
+		{
+			string mark = Path.Combine(m.Directory, "comprobado.json");
+			if (File.Exists(mark)) continue;
+
+			try
+			{
+				// 1. LO QUE DICE CONTRA LO QUE HACE. Esto ya lo sabe hacer el Host.
+				var verify = new Request(Dispatcher.HostModule, "verify_module",
+					new Dictionary<string, object?> { ["module"] = m.Manifest.Module });
+				Response said = await dispatcher.Serve(verify, ct);
+				log($"comprobación de {m.Manifest.Module}: {JsonSerializer.Serialize(said.Content)}");
+
+				// 2. Y QUE CONTESTE DE VERDAD. Declarar bien y fallar al primer pedido es otra
+				//    forma de estar roto, y no la detecta comparar listas.
+				DeclaredTool? first = m.Manifest.Tools.FirstOrDefault(t => t.ReadOnly && t.Input.Count == 0);
+				if (first is not null)
+				{
+					Response answer = await dispatcher.Serve(new Request(m.Manifest.Module, first.Name, null), ct);
+					string text = JsonSerializer.Serialize(answer.Content);
+					log($"  {first.Name} contestó {text.Length} bytes: {text[..Math.Min(160, text.Length)]}");
+				}
+
+				File.WriteAllText(mark, JsonSerializer.Serialize(new { cuando = DateTime.UtcNow.ToString("O") }));
+			}
+			catch (Exception ex)
+			{
+				// Un modulo que no pasa la comprobacion NO se desinstala solo: eso es decision
+				// de Sonia. Queda dicho, y sin marca, asi que se vuelve a intentar.
+				log($"comprobación de {m.Manifest.Module} FALLÓ: {ex.GetType().Name}: {ex.Message}");
+			}
+		}
+	}
+
+	/// Un modulo del catalogo por nombre, o null. Lo necesita la pantalla que pone un modulo
+	/// web en pantalla, que es lo unico de esto que sigue siendo de la plataforma.
+	public Module? Find(string name) => catalog?.Find(name);
+
+	/// Los modulos instalados, para que la plataforma pueda recorrerlos sin ver el catalogo.
+	public IReadOnlyList<Module> Modules => catalog?.Modules ?? [];
 
 	/// La foto para la caratula, si esta plataforma la pide. Android pasa null y esto no hace
 	/// nada -- alla la caratula pregunta en vivo.
@@ -531,6 +595,13 @@ public sealed class Shell : IDisposable
 	{
 		IReadOnlyList<string> warnings = catalog?.Load() ?? [];
 		PushState();
+
+		// Y SE COMPRUEBA EL MODULO NUEVO, en segundo plano. Sin esta linea un modulo recien
+		// instalado no se comprobaria hasta el siguiente arranque de la app -- que es justo
+		// cuando MENOS sirve, porque el momento de descubrir que declara mal es antes de
+		// ofrecerselo al asistente.
+		_ = Task.Run(() => VerifyNewModules(stop.Token));
+
 		return warnings;
 	}
 

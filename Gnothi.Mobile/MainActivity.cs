@@ -2,6 +2,7 @@ using Android.App;
 using Android.OS;
 using Android.Webkit;
 using Gnothi.Movil;
+using System.Text.Json;
 
 // QUE PUEDE HABLAR GNOTHI EN CLARO: solo el loopback, que es donde aterriza un tunel de
 // desarrollo. Todo lo demas exige HTTPS, que es lo que Android impone desde API 28 y que el
@@ -63,7 +64,7 @@ public class MainActivity : Activity
 	private Android.Widget.FrameLayout? raiz;
 	private AndroidWebModuleHost? anfitrion;
 	private AndroidWebModule? enPantalla;
-	private ConsentWatch? watch;
+	private Shell? shell;
 	private readonly CancellationTokenSource stop = new();
 
 	protected override void OnCreate(Bundle? savedInstanceState)
@@ -97,106 +98,54 @@ public class MainActivity : Activity
 		SetContentView(frame);
 		web.LoadUrl("file:///android_asset/ui.html");
 
+		// LAS DOS CARPETAS LAS ELIGE LA PLATAFORMA, no la cascara. adb no puede escribir en el
+		// area privada, y eso es correcto: nadie de afuera instala un modulo.
+		shell = new Shell(
+			new Shell.Paths(
+				Files: FilesDir!.AbsolutePath,
+				Incoming: System.IO.Path.Combine(GetExternalFilesDir(null)!.AbsolutePath, "incoming")),
+			Log,
+			(kind, id, payload) => RunOnUiThread(() =>
+				web?.EvaluateJavascript(Shell.PushScript(kind, id, payload), null)));
+
 		_ = Task.Run(Start);
 	}
 
-	// GNOTHI COMPRUEBA UN MÓDULO LA PRIMERA VEZ QUE LO VE, y deja constancia.
-	//
-	// Por qué al instalar y no cuando Sonia pregunta: un módulo que declara tools y después no
-	// contesta es un módulo roto, y el momento de descubrirlo es antes de ofrecérselas al
-	// asistente, no cuando ella ya preguntó. Es el cuarto pilar aplicado a sí mismo —Gnothi
-	// responde lo que ningún módulo puede responder de sí— y es la conformance que la
-	// especificación pide (11 §15.7).
-	//
-	// Por qué UNA VEZ: en móvil un módulo web cuesta un WebView con el runtime adentro, medido
-	// en 216-248 MB. Comprobarlo en cada arranque sería pagar eso por nada. La marca queda en
-	// la carpeta del módulo, así que reinstalarlo vuelve a comprobarlo.
-	private async Task Comprobar(CancellationToken ct)
+
+	// EL ARRANQUE. Lo que quedo aca despues de que el refactor de master mudara el nucleo a
+	// Gnothi.Movil/Shell.cs: alla viven instalar, descubrir, el dispatcher, el vigilante del
+	// consentimiento y la comprobacion de los modulos nuevos. Aca solo lo que sabe de Android,
+	// y lo que tiene que pasar DESPUES de que el Host levante.
+	private async Task Start()
 	{
-		if (dispatcher is null || catalog is null) return;
-
-		foreach (Gnothi.Host.Module m in catalog.Modules)
-		{
-			string marca = System.IO.Path.Combine(m.Directory, "comprobado.json");
-			if (System.IO.File.Exists(marca)) continue;
-
-			try
-			{
-				// 1. LO QUE DICE CONTRA LO QUE HACE. Esto ya lo sabe hacer el Host.
-				var verificar = new Request(Dispatcher.HostModule, "verify_module",
-					new Dictionary<string, object?> { ["module"] = m.Manifest.Module });
-				Response dicho = await dispatcher.Serve(verificar, ct);
-				Log($"comprobación de {m.Manifest.Module}: {JsonSerializer.Serialize(dicho.Content)}");
-
-				// 2. Y QUE CONTESTE DE VERDAD. Declarar bien y fallar al primer pedido es otra
-				//    forma de estar roto, y no la detecta comparar listas.
-				DeclaredTool? primera = m.Manifest.Tools.FirstOrDefault(t => t.ReadOnly && t.Input.Count == 0);
-				if (primera is not null)
-				{
-					Response respuesta = await dispatcher.Serve(
-						new Request(m.Manifest.Module, primera.Name, null), ct);
-					string texto = JsonSerializer.Serialize(respuesta.Content);
-					Log($"  {primera.Name} contestó {texto.Length} bytes: {texto[..Math.Min(160, texto.Length)]}");
-				}
-
-				System.IO.File.WriteAllText(marca,
-					JsonSerializer.Serialize(new { cuando = DateTime.UtcNow.ToString("O") }));
-			}
-			catch (Exception ex)
-			{
-				// Un módulo que no pasa la comprobación NO se desinstala solo: eso es decisión
-				// de Sonia. Queda dicho, y sin marca, así que se vuelve a intentar.
-				Log($"comprobación de {m.Manifest.Module} FALLÓ: {ex.GetType().Name}: {ex.Message}");
-			}
-		}
-	}
-
-		_ = Task.Run(shell.Run);
-	}
+		if (shell is null) return;
 
 		// QUIEN SABE CREAR WEBVIEWS. ChooseShell es estatico y no tiene Context, asi que la
 		// cascara de webview no puede construir el anfitrion: se lo registra la Activity, que
 		// si lo tiene. Sin esto, un modulo con "type": "webview" falla diciendo exactamente eso.
-		anfitrion = new AndroidWebModuleHost(this, new AndroidSecretStore(FilesDir!.AbsolutePath), s => global::Android.Util.Log.Info("gnothi", s));
+		anfitrion = new AndroidWebModuleHost(
+			this, new AndroidSecretStore(FilesDir!.AbsolutePath),
+			s => global::Android.Util.Log.Info("gnothi", s));
 		Gnothi.Host.WebViewShell.Host = anfitrion;
 
-		// 2 - DISCOVER. The very same code the desktop Host runs.
-		catalog = new ModuleCatalog(root);
-		IReadOnlyList<string> warnings = catalog.Load();
-		// THIS GATE PAYS FOR ITS OWN TOKENS. The key is Sonia's, so every character the module
-		// wraps its facts in comes out of her pocket -- which is why this is the gate that
-		// declares it can also read TOON. What it does not do is DEMAND it: a module answers in
-		// whichever of the two suits the shape of that particular answer, and JSON stays valid.
-		dispatcher = new Dispatcher(catalog, new Meter(), Accepts.JsonOrToon);
+		// Run() es el bucle del Host y no termina: se arranca UNA vez y se espera al final.
+		Task corriendo = shell.Run();
 
-		foreach (string w in warnings) Log($"warning: {w}");
-		Log($"{catalog.Modules.Count} modules installed" + (copied > 0 ? $" - {copied} files this launch" : ""));
-
-		PushState();
-
-		// La comprobacion de los modulos nuevos. Va DESPUES de PushState para que la pantalla
-		// ya este pintada: en movil comprobar un modulo web cuesta levantar su WebView.
-		await Comprobar(stop.Token);
-
-		// Si la app se abrio por un enlace de alta, recien ahora hay catalogo donde instalar.
+		// Si la app se abrio POR un enlace, recien ahora hay a donde instalar o a quien
+		// entregarle. Es la misma forma que ViewController usa en iOS.
 		if (altaPendiente is { Length: > 0 } pendiente)
 		{
 			altaPendiente = null;
 			await DarDeAlta(pendiente, stop.Token);
 		}
 
-		// Y si vino con un traspaso, recien ahora hay a quien entregarselo.
 		if (traspasoPendiente is { } t)
 		{
 			traspasoPendiente = null;
 			await EntregarTraspaso(t.Modulo, t.Aserciones, stop.Token);
 		}
 
-		// 3 - THE PERSON'S SWITCH, WATCHED. The UI's switches write installation.json and this
-		//     is what makes them take effect; and an edit from OUTSIDE the app (adb, another
-		//     tool) repaints the screen through the same path. One source of truth: her file.
-		watch = new ConsentWatch(dispatcher) { Changed = (_, _) => { PushState(); return Task.CompletedTask; } };
-		await watch.Run(Log, stop.Token);
+		await corriendo;
 	}
 
 	protected override void OnDestroy()
@@ -317,8 +266,8 @@ public class MainActivity : Activity
 	// asentar las aserciones de una persona en el módulo equivocado sería peor que no asentarlas.
 	private Gnothi.Host.Module? ADondeVan(string? nombrado, string asercionesJson)
 	{
-		if (catalog is null) return null;
-		if (nombrado is { Length: > 0 }) return catalog.Find(nombrado);
+		if (shell is null) return null;
+		if (nombrado is { Length: > 0 }) return shell.Find(nombrado);
 
 		string publicador = "";
 		try
@@ -331,7 +280,7 @@ public class MainActivity : Activity
 
 		if (publicador.Length == 0) return null;
 
-		foreach (Gnothi.Host.Module m in catalog.Modules)
+		foreach (Gnothi.Host.Module m in shell.Modules)
 		{
 			System.Collections.Generic.IReadOnlyList<string> args = m.Installation.Shell.Arguments;
 			if (args.Count > 1 && args[1].StartsWith(publicador, StringComparison.OrdinalIgnoreCase)) return m;
@@ -380,7 +329,7 @@ public class MainActivity : Activity
 
 	private async Task DarDeAlta(string url, CancellationToken ct)
 	{
-		if (catalog is null) { altaPendiente = url; return; }
+		if (shell is null) { altaPendiente = url; return; }
 
 		try
 		{
@@ -421,12 +370,10 @@ public class MainActivity : Activity
 
 			// El catálogo se relee entero: es la misma ruta por la que un cambio hecho desde
 			// afuera repinta la pantalla. Una sola fuente de verdad, sus archivos.
-			foreach (string w in catalog!.Load()) Log($"warning: {w}");
-			Log($"alta: '{modulo}' quedó instalado; {catalog.Modules.Count} módulos");
+			foreach (string w in shell!.ReloadAfterInstall()) Log($"warning: {w}");
+			Log($"alta: '{modulo}' quedó instalado; {shell.ModuleCount} módulos");
 
-			PushState();
-			PushAlta("listo", $"Listo: ya tenés '{TituloDe(modulo)}' en Gnothi.");
-			_ = Task.Run(() => Comprobar(stop.Token));
+			PushAlta("listo", $"Listo: ya tenés '{shell.TitleOf(modulo)}' en Gnothi.");
 		}
 		catch (Exception ex)
 		{
@@ -480,7 +427,7 @@ public class MainActivity : Activity
 	// interrumpe" se sostiene por incapacidad, no porque el módulo se porte bien.
 	private string AbrirModulo(string nombre)
 	{
-		Gnothi.Host.Module? m = catalog?.Find(nombre);
+		Gnothi.Host.Module? m = shell?.Find(nombre);
 		if (m is null || anfitrion is null) return "{\"ok\":false}";
 
 		_ = Task.Run(async () =>
@@ -530,62 +477,6 @@ public class MainActivity : Activity
 
 	private void Log(string s) => global::Android.Util.Log.Info("GNOTHI", s);
 
-	// ── el puente, la mitad que SI es de Android ────────────────────────────────────────
-	//
-	// Three rules, enforced here: it lives ONLY in the app's private area, it is NEVER sent
-	// back to the page (StateJson carries a boolean, not the value), and the log records the
-	// event without the key.
-	private string KeyPath
-	{
-		get
-		{
-			string safe = new string(Provider().name.Where(char.IsLetterOrDigit).ToArray());
-			return System.IO.Path.Combine(FilesDir!.AbsolutePath, $"key-{safe}.key");
-		}
-	}
-
-	private string SetKey(string key)
-	{
-		key = key.Trim();
-		if (key.Length > 0)
-		{
-			File.WriteAllText(KeyPath, key);
-			Log($"model key: saved ({key.Length} chars)");
-		}
-		return StateJson();
-	}
-
-	private string ClearKey()
-	{
-		if (File.Exists(KeyPath)) File.Delete(KeyPath);
-		Log("model key: cleared");
-		return StateJson();
-	}
-
-	// ONE QUESTION, answered through Gate 2: same AgentLoop, same dispatcher, same key file.
-	// Runs detached; the trace and the answer land in the page as they happen.
-	private void Ask(string id, string question)
-	{
-		_ = Task.Run(async () =>
-		{
-			try
-			{
-				(_, string url, string model) = Provider();
-				var loop = new AgentLoop(dispatcher!, new ModelOpenAiCompatible(url, model, KeyPath));
-
-				string answer = await loop.Answer(question, line => Push("trace", id, line), stop.Token);
-				Push("answer", id, answer);
-			}
-			catch (Exception e)
-			{
-				Log($"ask failed: {e.GetType().Name}: {e.Message}");
-				Push("fail", id, $"{e.GetType().Name}: {e.Message}");
-			}
-		});
-	}
-
-	private void PushState() => Push("state", "", StateJson());
-
 	// COMO SE CUENTA EL ALTA EN LA PANTALLA. Es lo primero que la persona ve hacer a Gnothi por
 	// ella -- toco un boton en la pagina de su institucion y volvio aca-, y hasta el 2026-09-04
 	// era un silencio de 12 MB. Tres estados: trabajando, listo, error.
@@ -617,14 +508,6 @@ public class MainActivity : Activity
 		_ => "No se pudo instalar el módulo. " + ex.Message,
 	};
 
-	// El titulo que la institucion se puso, si el modulo ya esta en el catalogo. Se prefiere al
-	// nombre tecnico porque es lo que la persona reconoce.
-	private string TituloDe(string modulo)
-	{
-		Gnothi.Host.Module? m = catalog?.Find(modulo);
-		return m?.Manifest.Title is { Length: > 0 } titulo ? titulo : modulo;
-	}
-
 	private void Push(string kind, string id, string payload) => RunOnUiThread(() =>
 		web?.EvaluateJavascript(
 			$"gn.push({JsonSerializer.Serialize(kind)},{JsonSerializer.Serialize(id)},{JsonSerializer.Serialize(payload)})",
@@ -640,6 +523,12 @@ public class MainActivity : Activity
 		private readonly MainActivity host;
 		public Bridge(MainActivity host) => this.host = host;
 
+		// LO QUE LA PAGINA PIDE lo atiende Shell.Handle, que es el MISMO archivo en las dos
+		// plataformas: el estado, el consentimiento, la llave, el proveedor y la pregunta.
+		//
+		// LOS TRES VERBOS QUE SE INTERCEPTAN ACA son los que necesitan pantalla: abrir un modulo
+		// pone su WebView encima, y la propuesta de alta en curso es estado de esta Activity.
+		// iOS hace lo mismo con los dos suyos en ViewController.Bridge.
 		public override bool OnJsPrompt(WebView? view, string? url, string? message, string? defaultValue, JsPromptResult? result)
 		{
 			if (message != "gnothi" || defaultValue is null || result is null)
@@ -649,33 +538,14 @@ public class MainActivity : Activity
 			{
 				JsonElement req = JsonSerializer.Deserialize<JsonElement>(defaultValue);
 				string op = req.GetProperty("op").GetString() ?? "";
-				host.Log($"bridge: {op}");
 
-				string answer = op switch
+				result.Confirm(op switch
 				{
-					"modules" => host.StateJson(),
-					"setTool" => host.SetConsent(
-						req.GetProperty("module").GetString() ?? "",
-						req.GetProperty("tool").GetString(),
-						req.GetProperty("enabled").GetBoolean()),
-					"setModule" => host.SetConsent(
-						req.GetProperty("module").GetString() ?? "",
-						null,
-						req.GetProperty("enabled").GetBoolean()),
-					"setProvider" => host.SetProvider(
-						req.GetProperty("name").GetString() ?? "",
-						req.GetProperty("url").GetString() ?? "",
-						req.GetProperty("model").GetString() ?? ""),
-					"setKey" => host.SetKey(req.GetProperty("key").GetString() ?? ""),
-					"clearKey" => host.ClearKey(),
 					"abrir" => host.AbrirModulo(req.GetProperty("module").GetString() ?? ""),
 					"altaAceptar" => host.AceptarAlta(),
 					"altaDescartar" => host.DescartarAlta(),
-					"ask" => RunAsk(req),
-					_ => "{}",
-				};
-
-				result.Confirm(answer);
+					_ => host.shell?.Handle(defaultValue) ?? "{}",
+				});
 			}
 			catch (Exception e)
 			{
