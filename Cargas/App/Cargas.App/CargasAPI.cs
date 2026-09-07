@@ -510,6 +510,7 @@ namespace Cargas.App
 						carga.KilometrajeAnotado kilometrajeAnotado,
 						carga.OrigenDelKilometraje origenDelKilometraje,
 						carga.TanqueExpresado tanque,
+						carga.ElKilometrajeCuentaParaCalcular cuentaParaCalcular,
 						carga.NumeroDeLaTransaccion transaccion,
 						carga.TieneKilometraje tieneKilometraje,
 						carga.TieneFoto tieneFoto,
@@ -620,6 +621,42 @@ namespace Cargas.App
 
 		public AutonomiaDelVehiculo Autonomia(string placa) =>
 			ProyeccionDeVistas.Autonomia(AutonomiaEstimada(placa));
+
+		// EL RITMO: cuanto se maneja este carro, de la serie del odometro. Es la mitad que
+		// el concesionario declara no tener -su what_is_left_before_each_service dice que
+		// no puede decir cual mitad del intervalo llega primero "porque este registro no
+		// tiene ese ritmo"-, y la unica que puede darla es esta bitacora, que ve el
+		// odometro en cada carga y no una vez por service.
+		//
+		// La situacion viaja con el numero: cuando no se pudo medir, cual de las tres
+		// razones es. Y la frase la compone el dominio, no esta capa.
+		public string RitmoDeManejo(string placa)
+		{
+			ArgumentNullException.ThrowIfNullOrWhiteSpace(placa);
+
+			return app.Using(@"
+				{
+					ritmo = bitacoraDeCargas.RitmoDe(@placa);
+					print ritmo.NombreDeLaSituacion situacion,
+						ritmo.SePudoMedir sePudoMedir,
+						ritmo.Expresada expresada,
+						ritmo.KilometrosPorDia kilometrosPorDia,
+						ritmo.Kilometros kilometros,
+						ritmo.Dias dias,
+						ritmo.Desde desde,
+						ritmo.Hasta hasta,
+						ritmo.Lecturas lecturas,
+						ritmo.PorDiaComoSeVe porDiaComoSeVe,
+						ritmo.KilometrosComoSeVen kilometrosComoSeVen,
+						ritmo.SimboloDeLaDistancia simboloDeLaDistancia;
+				}
+			")
+			.WithParameters(p => { p["placa", typeof(string)] = placa; })
+			.PerformQuery();
+		}
+
+		public RitmoDelVehiculo Ritmo(string placa) =>
+			ProyeccionDeVistas.Ritmo(RitmoDeManejo(placa));
 
 		// EN CUANTOS DIAS VA A TENER QUE CARGAR. No hay un PerformQuery propio: es la
 		// COMPOSICION de dos consultas que ya existen, y por eso es un metodo de la App

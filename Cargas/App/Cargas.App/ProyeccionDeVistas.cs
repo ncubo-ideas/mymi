@@ -61,7 +61,8 @@ namespace Cargas.App
 					OrigenDelKilometraje = Texto(elemento, "origenDelKilometraje"),
 					Tanque = Texto(elemento, "tanque"),
 					Transaccion = Texto(elemento, "transaccion"),
-					TieneKilometraje = Booleano(elemento, "tieneKilometraje"),
+					CuentaParaCalcular = Booleano(elemento, "cuentaParaCalcular"),
+				TieneKilometraje = Booleano(elemento, "tieneKilometraje"),
 					TieneFoto = Booleano(elemento, "tieneFoto"),
 					Foto = Texto(elemento, "foto"),
 				});
@@ -249,6 +250,31 @@ namespace Cargas.App
 				Origen = Texto(raiz, "origen"),
 				KilometrosComoSeVen = Decimal(raiz, "kilometrosComoSeVen"),
 				PorDiaComoSeVe = Decimal(raiz, "porDiaComoSeVe"),
+				SimboloDeLaDistancia = Texto(raiz, "simboloDeLaDistancia"),
+			};
+		}
+
+		internal static RitmoDelVehiculo Ritmo(string json)
+		{
+			if (string.IsNullOrWhiteSpace(json)) return new RitmoDelVehiculo();
+
+			using JsonDocument documento = JsonDocument.Parse(json);
+			JsonElement raiz = documento.RootElement;
+
+			return new RitmoDelVehiculo
+			{
+				HayVehiculo = true,
+				Situacion = Texto(raiz, "situacion"),
+				SePudoMedir = Booleano(raiz, "sePudoMedir"),
+				Expresada = Texto(raiz, "expresada"),
+				KilometrosPorDia = Decimal(raiz, "kilometrosPorDia"),
+				Kilometros = Decimal(raiz, "kilometros"),
+				Dias = Entero(raiz, "dias"),
+				Desde = Fecha(raiz, "desde"),
+				Hasta = Fecha(raiz, "hasta"),
+				Lecturas = Entero(raiz, "lecturas"),
+				PorDiaComoSeVe = Decimal(raiz, "porDiaComoSeVe"),
+				KilometrosComoSeVen = Decimal(raiz, "kilometrosComoSeVen"),
 				SimboloDeLaDistancia = Texto(raiz, "simboloDeLaDistancia"),
 			};
 		}

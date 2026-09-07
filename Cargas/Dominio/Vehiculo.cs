@@ -260,26 +260,47 @@ namespace Cargas.Dominio
 				capacidad.Litros, habitual.KilometrosPorLitro);
 		}
 
-		/// <summary>Kilometros por dia, de las lecturas que cuentan. Cero con menos de
-		/// dos lecturas: la ausencia se dice, no se inventa.</summary>
-		internal decimal KilometrosPorDia
+		/// <summary>CUANTO SE MANEJA ESTE CARRO, de las lecturas que cuentan. Devuelve un
+		/// tipo y no un decimal porque el cero tapaba cuatro respuestas: sin lecturas, con
+		/// una sola, con todas del mismo dia, y el carro que no se movio -que es una
+		/// medicion y no una ausencia-. Ver LecturaDeRitmo.</summary>
+		internal LecturaDeRitmo Ritmo
 		{
 			get
 			{
+				// SOLO LAS QUE CUENTAN. CierraTramo es origen.CuentaParaCalcular, que es
+				// false para Estimado POR TIPO: un ritmo derivado de un odometro que a su
+				// vez se proyecto de un ritmo se confirmaria a si mismo (§7.3).
 				Carga primera = null, ultima = null;
+				int lecturas = 0;
 				foreach (Carga carga in cargas)
 				{
 					if (!carga.Odometro.CierraTramo) continue;
 					if (primera == null) primera = carga;
 					ultima = carga;
+					lecturas++;
 				}
-				if (primera == null || ReferenceEquals(primera, ultima)) return 0m;
 
+				if (primera == null)
+					return LecturaDeRitmo.NoSePudo(SituacionDelRitmo.SinLecturas, 0,
+						default, default);
+
+				if (ReferenceEquals(primera, ultima))
+					return LecturaDeRitmo.NoSePudo(SituacionDelRitmo.UnaSolaLectura, 1,
+						primera.Fecha, primera.Fecha);
+
+				// La serie esta ordenada por fecha al insertar, asi que ultima nunca es
+				// anterior a primera: este caso es EL MISMO DIA y nada mas.
 				int dias = (ultima.Fecha.Date - primera.Fecha.Date).Days;
-				if (dias <= 0) return 0m;
+				if (dias <= 0)
+					return LecturaDeRitmo.NoSePudo(SituacionDelRitmo.LecturasDelMismoDia,
+						lecturas, primera.Fecha, ultima.Fecha);
 
-				return ultima.Odometro.Kilometraje.KilometrosDesde(primera.Odometro.Kilometraje)
-					/ dias;
+				decimal kilometros =
+					ultima.Odometro.Kilometraje.KilometrosDesde(primera.Odometro.Kilometraje);
+
+				return LecturaDeRitmo.Medido(kilometros / dias, kilometros, dias,
+					primera.Fecha, ultima.Fecha, lecturas);
 			}
 		}
 
@@ -300,8 +321,15 @@ namespace Cargas.Dominio
 		/// no lee el reloj.</summary>
 		internal ProyeccionDeOdometro OdometroEstimado(DateTime hoy)
 		{
-			decimal kmPorDia = KilometrosPorDia;
-			if (kmPorDia <= 0m) return ProyeccionDeOdometro.SinProyeccion;
+			// La guarda se mantiene EXACTA: sin ritmo, o con el carro quieto, no hay
+			// nada que proyectar hacia adelante. Que ahora se pregunte por la situacion
+			// en vez de por el signo del cero no cambia que casos entran.
+			// La guarda se mantiene EXACTA. El odometro es estrictamente creciente, asi
+			// que un ritmo medido siempre es mayor que cero: preguntar por la situacion
+			// deja pasar los mismos casos que preguntaba el signo del decimal.
+			LecturaDeRitmo ritmo = Ritmo;
+			if (!ritmo.SePudoMedir) return ProyeccionDeOdometro.SinProyeccion;
+			decimal kmPorDia = ritmo.KilometrosPorDia;
 
 			Carga ultima = null;
 			foreach (Carga carga in cargas)

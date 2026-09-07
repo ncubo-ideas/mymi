@@ -34,6 +34,10 @@ namespace Cargas.App.Vistas
 		public string OrigenDelKilometraje { get; init; } = "";
 		public string Tanque { get; init; } = "";
 
+		// Si este kilometraje alimenta el ritmo y los tramos. Un estimado no, y quien lee
+		// la fila no tiene por que deducirlo del nombre del origen.
+		public bool CuentaParaCalcular { get; init; }
+
 		public string Transaccion { get; init; } = "";
 		public bool TieneKilometraje { get; init; }
 		public bool TieneFoto { get; init; }
@@ -143,6 +147,37 @@ namespace Cargas.App.Vistas
 		// La fraccion del tanque que queda, de 0 a 1: lo que mueve la aguja del medidor.
 		// Es derivada y no un dato: si no hay estimacion, no hay aguja que mover.
 		public decimal FraccionRestante { get; init; }
+	}
+
+	// CUANTO SE MANEJA ESTE CARRO. Es la mitad que el concesionario declara no tener -su
+	// what_is_left_before_each_service dice que no puede decir cual mitad del intervalo
+	// llega primero "porque este registro no tiene ese ritmo"- y que esta bitacora si
+	// tiene, porque ve el odometro en cada carga y no una vez por service.
+	public sealed class RitmoDelVehiculo
+	{
+		public bool HayVehiculo { get; init; }
+
+		/// <summary>Una de cuatro: medido, sin lecturas, una sola lectura, lecturas del
+		/// mismo dia. No es un bool porque las tres ausencias se arreglan distinto.</summary>
+		public string Situacion { get; init; } = "";
+		public bool SePudoMedir { get; init; }
+
+		/// <summary>LA RESPUESTA, compuesta por el dominio. Cuando no se pudo medir, dice
+		/// cual de las tres razones es.</summary>
+		public string Expresada { get; init; } = "";
+
+		public decimal KilometrosPorDia { get; init; }
+		public decimal Kilometros { get; init; }
+		public int Dias { get; init; }
+		public DateTime Desde { get; init; }
+		public DateTime Hasta { get; init; }
+		public int Lecturas { get; init; }
+
+		// La misma cifra en la unidad que eligio la persona, y su simbolo. Se cruza con
+		// una distancia de otra institucion: la unidad viaja o el cruce miente.
+		public decimal PorDiaComoSeVe { get; init; }
+		public decimal KilometrosComoSeVen { get; init; }
+		public string SimboloDeLaDistancia { get; init; } = "";
 	}
 
 	public sealed class CompletitudDelVehiculo
