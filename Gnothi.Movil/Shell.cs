@@ -255,6 +255,133 @@ public sealed class Shell : IDisposable
 		}
 	}
 
+	// ---------------------------------------------------------------- el alta desde el enlace
+
+	// LA PROPUESTA EN CURSO, esperando que la persona diga si o no. UNA sola a la vez: si llega
+	// otro enlace mientras hay una en pantalla, la anterior se descarta -- no se acumulan
+	// decisiones que ella no vio.
+	//
+	// ESTO VIVE ACA Y NO EN LA PLATAFORMA porque nada de esto es de una plataforma: bajar un
+	// zip, leer un manifiesto, mostrar una propuesta y esperar. Estuvo en MainActivity hasta
+	// que hubo que hacer la version de iOS, y ahi se vio: el ViewController tuvo que copiarlo
+	// entero. Dos copias de la pantalla mas importante que Gnothi le muestra a la persona.
+	private EnrollmentProposal? proposal;
+	private ModuleEnrollment? enrolling;
+
+	/// LO QUE LLEGA DEL ENLACE DE LA INSTITUCION. Baja el bundle y lee su manifiesto; NO
+	/// instala nada. La persona decide despues, y hasta entonces el bundle vive en un temporal.
+	///
+	/// Lo llaman las dos plataformas cuando su enlace aterriza: un App Link en Android, un
+	/// universal link en iOS. Lo unico que cambia es como llega la URL.
+	public async Task Enroll(string url, CancellationToken ct = default)
+	{
+		try
+		{
+			if (proposal is not null) { enrolling?.Discard(proposal); proposal = null; }
+
+			enrolling = new ModuleEnrollment(
+				Path.Combine(paths.Files, "Modulos"),
+				Path.Combine(paths.Files, "journals"),
+				log);
+
+			// BAJAR NO ES INSTALAR. Esto trae el bundle y lee su manifiesto; el modulo todavia
+			// no ocupa ningun lugar en el aparato.
+			proposal = await enrolling.Examine(url, ct, step => PushEnrollment("trabajando", step));
+
+			log($"alta: propuesta de '{proposal.Manifest.Module}' servida por {proposal.ServedBy}");
+			PushProposal(proposal);
+		}
+		catch (Exception ex)
+		{
+			// UN ALTA QUE FALLA TIENE QUE DECIRLO, Y EN LA PANTALLA. Cuando esto solo escribia
+			// en el log, la persona tocaba el boton de su institucion, volvia a Gnothi y no
+			// pasaba nada, sin ninguna pista de por que.
+			log($"alta: no se pudo leer el módulo de {url}: {ex.GetType().Name}: {ex.Message}");
+			PushEnrollment("error", InPlainWords(ex));
+		}
+	}
+
+	// LA PERSONA ACEPTO. Recien aca el modulo existe.
+	private string AcceptEnrollment()
+	{
+		if (proposal is null || enrolling is null) return "{}";
+
+		try
+		{
+			string module = enrolling.Accept(proposal);
+			proposal = null;
+
+			// El catalogo se relee entero -- y con eso se comprueba el modulo nuevo.
+			foreach (string w in ReloadAfterInstall()) log($"warning: {w}");
+			log($"alta: '{module}' quedó instalado; {ModuleCount} módulos");
+
+			PushEnrollment("listo", $"Listo: ya tenés '{TitleOf(module)}' en Gnothi.");
+		}
+		catch (Exception ex)
+		{
+			log($"alta: no se pudo instalar: {ex.GetType().Name}: {ex.Message}");
+			PushEnrollment("error", InPlainWords(ex));
+		}
+
+		return "\"ok\"";
+	}
+
+	// LA PERSONA DIJO QUE NO. No queda nada: ni carpeta, ni journal, ni entrada en el catalogo.
+	private string DiscardEnrollment()
+	{
+		if (proposal is not null)
+		{
+			enrolling?.Discard(proposal);
+			proposal = null;
+		}
+		PushEnrollment("nada", "");
+		return "\"ok\"";
+	}
+
+	// COMO SE CUENTA EL ALTA EN LA PANTALLA. Es lo primero que la persona ve hacer a Gnothi por
+	// ella -toco un boton en la pagina de su institucion y volvio aca- y era un silencio de
+	// 12 MB. Cuatro estados: trabajando, listo, error, nada.
+	private void PushEnrollment(string estado, string detalle) =>
+		Push("alta", "", JsonSerializer.Serialize(new { estado, detalle }));
+
+	// LO QUE LA INSTITUCION PROPONE, mas las dos cosas que decide Gnothi y ella tiene derecho a
+	// saber antes de aceptar: donde va a vivir el journal y contra que endpoint va a hablar.
+	private void PushProposal(EnrollmentProposal p) => Push("propuesta", "", JsonSerializer.Serialize(new
+	{
+		modulo = p.Manifest.Module,
+		titulo = p.Manifest.Title,
+		institucion = p.Manifest.Institution,
+		servido = p.ServedBy,
+		publicador = p.Publisher,
+		journal = p.JournalGoesTo,
+		yaEstaba = p.AlreadyThere,
+		tools = p.Manifest.Tools.Select(t => new { nombre = t.Name, titulo = t.Title, descripcion = t.Description }),
+	}));
+
+	// EL FALLO, DICHO EN CASTELLANO Y NO EN .NET. La persona no tiene por que leer el nombre de
+	// una excepcion para entender que su institucion movio el archivo.
+	private static string InPlainWords(Exception ex) => ex switch
+	{
+		HttpRequestException http when http.StatusCode == System.Net.HttpStatusCode.NotFound =>
+			"La dirección que dio tu institución ya no tiene el módulo. Pedile el enlace otra vez.",
+
+		HttpRequestException =>
+			"No se pudo hablar con tu institución para bajar el módulo. Revisá tu conexión y probá de nuevo.",
+
+		TaskCanceledException or OperationCanceledException =>
+			"La descarga tardó demasiado y se cortó. Probá de nuevo.",
+
+		ArgumentException =>
+			"El enlace que tocaste no es una dirección válida de módulo.",
+
+		// Lo que tira ModuleEnrollment -bundle sin manifiesto, nombre invalido, zip que escribe
+		// afuera, techo de tamano- ya viene escrito para leerse. Se pasa tal cual.
+		InvalidOperationException =>
+			"No se pudo instalar el módulo: " + ex.Message,
+
+		_ => "No se pudo instalar el módulo. " + ex.Message,
+	};
+
 	/// Un modulo del catalogo por nombre, o null. Lo necesita la pantalla que pone un modulo
 	/// web en pantalla, que es lo unico de esto que sigue siendo de la plataforma.
 	public Module? Find(string name) => catalog?.Find(name);
@@ -316,6 +443,13 @@ public sealed class Shell : IDisposable
 				"setKey" => SetKey(req.GetProperty("key").GetString() ?? ""),
 				"clearKey" => ClearKey(),
 				"ask" => RunAsk(req),
+
+				// LOS DOS VERBOS DEL ALTA. Estaban interceptados en cada plataforma porque la
+				// propuesta era estado de su pantalla; ahora que vive aca, los puentes se
+				// quedan con lo que de verdad necesita pantalla y nada mas.
+				"altaAceptar" => AcceptEnrollment(),
+				"altaDescartar" => DiscardEnrollment(),
+
 				_ => "{}",
 			};
 		}

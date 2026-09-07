@@ -136,7 +136,7 @@ public class MainActivity : Activity
 		if (altaPendiente is { Length: > 0 } pendiente)
 		{
 			altaPendiente = null;
-			await DarDeAlta(pendiente, stop.Token);
+			await shell.Enroll(pendiente, stop.Token);
 		}
 
 		if (traspasoPendiente is { } t)
@@ -173,7 +173,7 @@ public class MainActivity : Activity
 
 		string? bundle = intento?.Data?.GetQueryParameter("bundle");
 		Log($"nuevo enlace: {intento?.Data?.ToString() ?? "(sin datos)"}");
-		if (bundle is { Length: > 0 }) _ = DarDeAlta(bundle, stop.Token);
+		if (bundle is { Length: > 0 }) _ = shell?.Enroll(bundle, stop.Token);
 
 		LeerTraspasoDe(intento);
 		if (traspasoPendiente is { } t)
@@ -316,98 +316,6 @@ public class MainActivity : Activity
 	// antes: el Host todavía no sabe dónde viven los módulos.
 	private string? altaPendiente;
 
-	// LA INSTITUCIÓN PONE UN BOTÓN EN SU PÁGINA y ese botón abre a Gnothi con la dirección de
-	// su bundle (especificación 13 §7). El enlace apunta al dominio de GNOTHI y no al de la
-	// institución, por una razón de plataforma y no de gusto: Chromium mantiene en el browser
-	// los enlaces al mismo host de la página actual, y Apple hace lo mismo con los universal
-	// links del mismo dominio que la navegación previa.
-	// LA PROPUESTA EN CURSO, esperando que la persona diga si o no. Una sola a la vez: si llega
-	// otro enlace mientras hay una en pantalla, la anterior se descarta -- no se acumulan
-	// decisiones que ella no vio.
-	private EnrollmentProposal? propuesta;
-	private ModuleEnrollment? altaEnCurso;
-
-	private async Task DarDeAlta(string url, CancellationToken ct)
-	{
-		if (shell is null) { altaPendiente = url; return; }
-
-		try
-		{
-			if (propuesta is not null) { altaEnCurso?.Discard(propuesta); propuesta = null; }
-
-			altaEnCurso = new ModuleEnrollment(
-				System.IO.Path.Combine(FilesDir!.AbsolutePath, "Modulos"),
-				System.IO.Path.Combine(FilesDir!.AbsolutePath, "journals"),
-				s => global::Android.Util.Log.Info("gnothi", s));
-
-			// BAJAR NO ES INSTALAR. Esto trae el bundle y lee su manifiesto; el módulo todavía
-			// no ocupa ningún lugar en el aparato.
-			propuesta = await altaEnCurso.Examine(url, ct, paso => PushAlta("trabajando", paso));
-
-			Log($"alta: propuesta de '{propuesta.Manifest.Module}' servida por {propuesta.ServedBy}");
-			PushPropuesta(propuesta);
-		}
-		catch (Exception ex)
-		{
-			// Un alta que falla tiene que DECIRLO, Y EN LA PANTALLA. Hasta el 2026-09-04 esto
-			// solo escribia en logcat: la persona tocaba el botón de su institución, volvía a
-			// Gnothi y no pasaba nada, sin ninguna pista de por qué. El comentario decía
-			// exactamente eso y la implementación se lo contaba a un desarrollador con un cable.
-			Log($"alta: no se pudo leer el módulo de {url}: {ex.GetType().Name}: {ex.Message}");
-			PushAlta("error", EnCristiano(ex));
-		}
-	}
-
-	// LA PERSONA ACEPTÓ. Recién acá el módulo existe.
-	private string AceptarAlta()
-	{
-		if (propuesta is null || altaEnCurso is null) return "{}";
-
-		try
-		{
-			string modulo = altaEnCurso.Accept(propuesta);
-			propuesta = null;
-
-			// El catálogo se relee entero: es la misma ruta por la que un cambio hecho desde
-			// afuera repinta la pantalla. Una sola fuente de verdad, sus archivos.
-			foreach (string w in shell!.ReloadAfterInstall()) Log($"warning: {w}");
-			Log($"alta: '{modulo}' quedó instalado; {shell.ModuleCount} módulos");
-
-			PushAlta("listo", $"Listo: ya tenés '{shell.TitleOf(modulo)}' en Gnothi.");
-		}
-		catch (Exception ex)
-		{
-			Log($"alta: no se pudo instalar: {ex.GetType().Name}: {ex.Message}");
-			PushAlta("error", EnCristiano(ex));
-		}
-
-		return "\"ok\"";
-	}
-
-	// LA PERSONA DIJO QUE NO. No queda nada: ni carpeta, ni journal, ni entrada en el catálogo.
-	private string DescartarAlta()
-	{
-		if (propuesta is not null)
-		{
-			altaEnCurso?.Discard(propuesta);
-			propuesta = null;
-		}
-		PushAlta("nada", "");
-		return "\"ok\"";
-	}
-
-	private void PushPropuesta(EnrollmentProposal p) => Push("propuesta", "", JsonSerializer.Serialize(new
-	{
-		modulo = p.Manifest.Module,
-		titulo = p.Manifest.Title,
-		institucion = p.Manifest.Institution,
-		servido = p.ServedBy,
-		publicador = p.Publisher,
-		journal = p.JournalGoesTo,
-		yaEstaba = p.AlreadyThere,
-		tools = p.Manifest.Tools.Select(t => new { nombre = t.Name, titulo = t.Title, descripcion = t.Description }),
-	}));
-
 	// ── EL MÓDULO EN PANTALLA ────────────────────────────────────────────────────────────
 
 	// LA PWA DE LA INSTITUCIÓN SE DIBUJA A SÍ MISMA (especificación 11 §8). Sonia abre el
@@ -477,37 +385,6 @@ public class MainActivity : Activity
 
 	private void Log(string s) => global::Android.Util.Log.Info("GNOTHI", s);
 
-	// COMO SE CUENTA EL ALTA EN LA PANTALLA. Es lo primero que la persona ve hacer a Gnothi por
-	// ella -- toco un boton en la pagina de su institucion y volvio aca-, y hasta el 2026-09-04
-	// era un silencio de 12 MB. Tres estados: trabajando, listo, error.
-	private void PushAlta(string estado, string detalle) =>
-		Push("alta", "", JsonSerializer.Serialize(new { estado, detalle }));
-
-	// EL FALLO, DICHO PARA LA PERSONA. El detalle tecnico queda en logcat, que es donde sirve;
-	// en la pantalla va lo que ella puede hacer algo con. "Response status code does not indicate
-	// success: 404 (Not Found)" no le dice a nadie que el enlace de su institucion esta roto.
-	private static string EnCristiano(Exception ex) => ex switch
-	{
-		HttpRequestException http when http.StatusCode == System.Net.HttpStatusCode.NotFound =>
-			"La dirección que dio tu institución ya no tiene el módulo. Pedile el enlace otra vez.",
-
-		HttpRequestException =>
-			"No se pudo hablar con tu institución para bajar el módulo. Revisá tu conexión y probá de nuevo.",
-
-		TaskCanceledException or System.OperationCanceledException =>
-			"La descarga tardó demasiado y se cortó. Probá de nuevo.",
-
-		ArgumentException =>
-			"El enlace que tocaste no es una dirección válida de módulo.",
-
-		// Lo que tira ModuleEnrollment -bundle sin manifiesto, nombre invalido, zip que escribe
-		// afuera, techo de tamano- ya viene escrito para leerse. Se pasa tal cual.
-		InvalidOperationException =>
-			"No se pudo instalar el módulo: " + ex.Message,
-
-		_ => "No se pudo instalar el módulo. " + ex.Message,
-	};
-
 	private void Push(string kind, string id, string payload) => RunOnUiThread(() =>
 		web?.EvaluateJavascript(
 			$"gn.push({JsonSerializer.Serialize(kind)},{JsonSerializer.Serialize(id)},{JsonSerializer.Serialize(payload)})",
@@ -542,8 +419,6 @@ public class MainActivity : Activity
 				result.Confirm(op switch
 				{
 					"abrir" => host.AbrirModulo(req.GetProperty("module").GetString() ?? ""),
-					"altaAceptar" => host.AceptarAlta(),
-					"altaDescartar" => host.DescartarAlta(),
 					_ => host.shell?.Handle(defaultValue) ?? "{}",
 				});
 			}
