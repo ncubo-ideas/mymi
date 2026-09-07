@@ -12,7 +12,10 @@
             }
         </div>
         <div class="d-hero__odo">@Odometro @OdometroUnidad</div>
-        <div class="d-hero__vin">VIN @Vin</div>
+        @if (Placa is not null && Placa.PlatePublished)
+        {
+            <div class="d-hero__placa">@Placa.AsPublished</div>
+        }
     </div>
 </section>
 
@@ -262,8 +265,8 @@ else
     /// <summary>
     /// La placa de este vehiculo, leida en el mismo momento que la ficha. Va aparte de la mitad del
     /// vehiculo porque aquella mide este carro contra su sobre y la placa es el nombre publico del
-    /// carro. Se pinta la frase del dominio, que lleva la placa y desde cuando rige; la llave de
-    /// cruce no llega hasta aca, porque la misma placa escrita de dos formas se lee como un defecto.
+    /// carro. La caratula pinta el texto publicado y el renglon de la hoja la frase del dominio, que
+    /// dice desde cuando rige y contesta cuando no hay ninguna; la llave de cruce no llega hasta aca.
     /// </summary>
     [Parameter] public ThePlateOfThisVehicle Placa { get; set; }
 

@@ -730,11 +730,18 @@
 	font-variant-numeric: tabular-nums;
 }
 
-.d-hero__vin {
+.d-hero__placa {
+	display: inline-block;
 	font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
-	font-size: 11px;
-	color: rgba(255, 255, 255, .68);
-	margin-top: 2px;
+	font-size: 12px;
+	font-weight: 700;
+	letter-spacing: 1.2px;
+	color: #fff;
+	margin-top: 5px;
+	padding: 2px 7px;
+	border-radius: 5px;
+	background: rgba(255, 255, 255, .16);
+	border: 1px solid rgba(255, 255, 255, .3);
 }
 
 /* Pestanas de la hoja del vehiculo. */

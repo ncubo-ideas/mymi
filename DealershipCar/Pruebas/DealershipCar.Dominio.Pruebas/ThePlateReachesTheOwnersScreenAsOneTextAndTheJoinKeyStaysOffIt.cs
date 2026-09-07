@@ -157,9 +157,17 @@ namespace DealershipCar.Dominio.Pruebas
 				Is.EqualTo(ItsJoinKey));
 		}
 
-		// Y EL MARKUP NO LA NOMBRA. El portador no la lleva, asi que esto no se puede escribir hoy --
-		// y esa es la razon de escribirlo: el dia que alguien le agregue el campo al portador "por
-		// completitud", este renglon es el que dice que la pantalla sigue sin dibujarlo.
+		// Y EL MARKUP NO NOMBRA LA LLAVE, NI DICE EL TEXTO PUBLICADO DOS VECES. El portador no lleva la
+		// llave, asi que esa mitad no se puede escribir hoy -- y esa es la razon de escribirla: el dia
+		// que alguien le agregue el campo al portador "por completitud", este renglon es el que dice
+		// que la pantalla sigue sin dibujarlo.
+		//
+		// EL TEXTO PUBLICADO SI SE PINTA, UNA SOLA VEZ Y EN LA CARATULA, donde vivia el VIN: la placa
+		// es el nombre PUBLICO del carro y es lo que se lee de un vistazo. El renglon de la hoja sigue
+		// pintando la frase del dominio, que es la que dice DESDE CUANDO rige y la unica que contesta
+		// cuando no hay ninguna. Son dos sitios y UNA sola forma de escribirla, que es como el VIN ya
+		// vivia en los dos. Lo prohibido sigue siendo la SEGUNDA FORMA -- la llave -- y decir el texto
+		// publicado dos veces, que es lo que la cuenta de aca abajo mide.
 		//
 		// SE MIRA RENGLON POR RENGLON Y LOS COMENTARIOS NO CUENTAN, que es la misma forma que
 		// NoShellDoesStringSurgeryOnAPlate le dio a su barrido y por la misma razon: el '///' que
@@ -169,14 +177,33 @@ namespace DealershipCar.Dominio.Pruebas
 		[Test]
 		public void AndNoLineOfTheSectionPrintsAJoinKeyOrASecondSpellingOfThePlate()
 		{
-			foreach (string forbidden in new[]
-			{
-				"JoinKey", "Placa.AsPublished", "llave",
-			})
-				Assert.That(TheLivePartOfTheSection(), Does.Not.Contain(forbidden),
-					"La seccion del vehiculo imprime '" + forbidden + "'. La placa se dice UNA vez y en "
-					+ "la forma en que el concesionario la publico; la otra forma existe para comparar "
-					+ "contra otro registro y no para leerla.");
+			string live = TheLivePartOfTheSection();
+
+			foreach (string forbidden in new[] { "JoinKey", "llave" })
+				Assert.That(live, Does.Not.Contain(forbidden),
+					"La seccion del vehiculo imprime '" + forbidden + "'. La llave existe para comparar "
+					+ "contra otro registro y no para leerla: una persona que lee una columna veria la "
+					+ "misma placa escrita de dos formas.");
+
+			Assert.That(TimesItSays(live, "Placa.AsPublished"), Is.EqualTo(1),
+				"El texto publicado de la placa se pinta una cantidad de veces distinta de UNA. La "
+				+ "frase del dominio ya lo lleva adentro letra por letra, asi que pintarlo AL LADO de "
+				+ "ella imprime la misma placa dos veces en una columna que se lee de un vistazo.");
+
+			// Y ESA UNICA VEZ ESTA EN LA CARATULA Y NO ENTRE LOS RENGLONES. La barra de hojas es la
+			// frontera, asi que se afirma que existe antes de medir contra ella: sin ese renglon un
+			// rename la deja en -1 y la comparacion se pone roja por la razon equivocada.
+			int theSubtabs = live.IndexOf("<div class=\"d-subtabs\"", StringComparison.Ordinal);
+
+			Assert.That(theSubtabs, Is.GreaterThan(0),
+				"La seccion dejo de tener la barra de hojas, que es la frontera entre la caratula y los "
+				+ "renglones. Sin ella la afirmacion de abajo no sabe donde esta mirando.");
+
+			Assert.That(live.IndexOf("Placa.AsPublished", StringComparison.Ordinal),
+				Is.LessThan(theSubtabs),
+				"El texto publicado de la placa se fue de la caratula. Va arriba, donde vivia el VIN, y "
+				+ "no entre los renglones de la hoja: ahi abajo caeria pegado a la frase, que ya lo "
+				+ "dice.");
 
 			// Y NINGUNA CONCATENACION CON LA FRASE. Es lo que el barrido de aritmetica no ve nunca,
 			// porque un '+' con un operando de texto es concatenacion y no una cuenta.
@@ -185,8 +212,10 @@ namespace DealershipCar.Dominio.Pruebas
 					"La seccion concatena algo con la frase de la placa ('" + forbidden + "'). Lo que "
 					+ "sale de la puerta se cita letra por letra o no se cita.");
 
-			// EL CONTROL: el mismo predicado SI ve cada forma prohibida escrita como codigo vivo. Sin
-			// esto, apagar los comentarios de mas dejaria las tres afirmaciones verdes por no mirar.
+			// EL CONTROL: el mismo predicado SI ve cada forma escrita como codigo vivo. Sin esto,
+			// apagar los comentarios de mas dejaria las afirmaciones de arriba verdes por no mirar.
+			// 'Placa.AsPublished' se queda en la lista: lo que el control mide es el APAGADO de
+			// comentarios, no si la forma esta permitida, y arriba se cuenta cuantas veces aparece.
 			foreach (string planted in new[]
 			{
 				"<span>@Placa.JoinKey</span>", "<span>@Placa.AsPublished</span>",
@@ -443,6 +472,20 @@ namespace DealershipCar.Dominio.Pruebas
 		private static string Squeezed(string text)
 		{
 			return System.Text.RegularExpressions.Regex.Replace(text, @"\s+", " ");
+		}
+
+		private static int TimesItSays(string markup, string what)
+		{
+			int found = 0;
+			int at = markup.IndexOf(what, StringComparison.Ordinal);
+
+			while (at >= 0)
+			{
+				found++;
+				at = markup.IndexOf(what, at + what.Length, StringComparison.Ordinal);
+			}
+
+			return found;
 		}
 
 		private static string TheSectionAsItIsWritten()
