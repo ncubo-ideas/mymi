@@ -16,12 +16,17 @@ try
     {
         case "listar":    await Listar(); break;
         case "inyectar":  await Inyectar(); break;
+        case "canon":     await Canon(); break;
         case "historia":  await Historia(); break;
-        case "ficha":     await Ficha(); break;
-        case "garantia":  await Garantia(); break;
+        case "ficha":
+            await Ficha(Arg(args, "--revision", "MY2019-R1"), Arg(args, "--revision2", "MY2019-R2"),
+                !args.Contains("--sin-sustituir"));
+            break;
+        case "garantia":  await Garantia(Arg(args, "--unit", "UnitB")); break;
         case "placa":     await Placa(); break;
-        case "taller":    await Taller(); break;
+        case "taller":    await Taller(!args.Contains("--sin-abrir")); break;
         case "costos":    await Costos(); break;
+        case "desgaste":  await Desgaste(Entero(Arg(args, "--limite", "10000"))); break;
         case "senuelo":   await Senuelo(); break;
         default:          Ayuda(); break;
     }
@@ -216,6 +221,78 @@ async Task Inyectar()
     Console.WriteLine($"inyectado: {await respuesta.Content.ReadAsStringAsync()}");
 }
 
+/// <summary>Los CINCO guiones que el mock no siembra, en un solo proceso y en orden, cada uno
+/// con la bandera que lo deja verse entero en la caratula. Una corrida por journal.</summary>
+async Task Canon()
+{
+    string primera = Arg(args, "--revision", "MY2019-R1");
+    string segunda = Arg(args, "--revision2", "MY2019-R2");
+    string unidad = Arg(args, "--unit", "UnitA");
+    int limite = Entero(Arg(args, "--limite", "10000"));
+
+    Console.WriteLine($"sembrando el canon entero en {recurso}/{id}...");
+    Console.WriteLine();
+    Console.WriteLine("LA NARRATIVA DE SEIS MESES NO SE POSTEA: el mock ya la sirve sola, hecho por");
+    Console.WriteLine("hecho, asi que 'historia' aca la duplicaria. Lo que corre son los CINCO guiones");
+    Console.WriteLine("que el mock NO trae, y sin ellos cinco secciones de la caratula dicen -- con");
+    Console.WriteLine("razon -- que no hay nada publicado. Y un SEXTO paso que no es un guion: una");
+    Console.WriteLine("operacion que el plan no tenia agendada, para que el tablero tenga un atraso.");
+
+    Paso(1, "ficha", $"la hoja del fabricante, {primera} y {segunda}, SIN sustituir");
+    await Ficha(primera, segunda, sustituye: false);
+
+    Paso(2, "garantia", $"la entrega y el sobre, con las tres unidades en {unidad}");
+    await Garantia(unidad);
+
+    Paso(3, "placa", "las tres asignaciones");
+    await Placa();
+
+    Paso(4, "taller", "las estadias, SIN dejar ninguna abierta");
+    await Taller(dejaUnaAbierta: false);
+
+    Paso(5, "costos", "el libro: una duradera y dos recurrentes, en dos monedas");
+    await Costos();
+
+    Paso(6, "desgaste", $"una operacion que el plan no agendaba, atrasada contra {limite}");
+    await Desgaste(limite);
+
+    Console.WriteLine();
+    Console.WriteLine("EL CANON QUEDO EN LA FEED. En la app: elegir la carpeta, o apretar Refresh si ya");
+    Console.WriteLine("estaba abierta. Los hechos entran al final de la narrativa, o sea despues del");
+    Console.WriteLine("punto hasta donde la app ya leyo, y llegan en su orden.");
+    Console.WriteLine();
+    Console.WriteLine("ESTO SE CORRE UNA VEZ POR JOURNAL, y las razones no son la misma para los cinco:");
+    Console.WriteLine("  ficha     un codigo de revision se toma una sola vez y para siempre. Para una");
+    Console.WriteLine("            segunda corrida hacen falta codigos nuevos:");
+    Console.WriteLine("              canon --revision MY2027-R1 --revision2 MY2027-R2");
+    Console.WriteLine("  taller    una estadia no tiene clave, asi que entregada dos veces se DUPLICA en");
+    Console.WriteLine("            silencio: los dias siguen siendo cinco -- se deduplican por dia --");
+    Console.WriteLine("            pero las estadias pasan a cuatro, con dos filas identicas. Nada avisa");
+    Console.WriteLine("  garantia  esos tres se pueden repetir sin ninguna bandera: ninguno de sus");
+    Console.WriteLine("  placa     hechos toma una clave que se gaste, y ninguno deja un estado que la");
+    Console.WriteLine("  costos    corrida siguiente tenga que respetar");
+    Console.WriteLine();
+    Console.WriteLine("Y EL CARTEL DEL BROWSER ES ESPERADO, no un defecto de la app. La garantia postea");
+    Console.WriteLine("una lectura MAS BAJA que la que el mock ya sirve para el mismo dia, la agenda la");
+    Console.WriteLine("rechaza -- por debajo, no por el dia --, la app pierde ese hecho y sigue, que es");
+    Console.WriteLine("la ley. Blazor saca entonces su propio cartel al pie de la pantalla, el que dice");
+    Console.WriteLine("que algo salio mal y ofrece Recargar, encima de una pagina que esta completa y");
+    Console.WriteLine("correcta. Es de Blazor y no de esta app: se descarta con la equis de la derecha.");
+    Console.WriteLine();
+    Console.WriteLine("PARA VOLVER A VERLO DESDE CERO: carpeta nueva en la app Y reiniciar URL2. El");
+    Console.WriteLine("almacen del mock vive en memoria, asi que al reiniciarlo los ids vuelven a");
+    Console.WriteLine("arrancar arriba de la semilla; si el punto de control del journal ya subio mas");
+    Console.WriteLine("alto que eso, este guion queda INVISIBLE en la corrida siguiente -- no falla, no");
+    Console.WriteLine("avisa, lee cero.");
+
+    static void Paso(int numero, string guion, string que)
+    {
+        Console.WriteLine();
+        Console.WriteLine($">>> paso {numero} de 6 -- {guion}: {que}");
+        Console.WriteLine();
+    }
+}
+
 async Task Historia()
 {
     Console.WriteLine($"sembrando la historia en {recurso}/{id}...");
@@ -269,12 +346,10 @@ async Task Historia()
     }
 }
 
-async Task Ficha()
+/// <summary>La ficha del fabricante en dos revisiones. `sustituye` retira lo que la sucesora
+/// no republico, y con eso la hoja queda en una sola linea.</summary>
+async Task Ficha(string primera, string segunda, bool sustituye)
 {
-    string primera = Arg(args, "--revision", "MY2019-R1");
-    string segunda = Arg(args, "--revision2", "MY2019-R2");
-    bool sustituye = !args.Contains("--sin-sustituir");
-
     Console.WriteLine($"publicando la ficha del fabricante en {recurso}/{id}...");
     Console.WriteLine($"  revisiones: {primera} y {segunda}");
     Console.WriteLine(sustituye
@@ -349,10 +424,11 @@ async Task Ficha()
     Console.WriteLine("segunda corrida hay que pasar --revision y --revision2 con codigos nuevos.");
 }
 
-async Task Garantia()
+/// <summary>La entrega y el sobre de garantia de este vehiculo. Las TRES unidades del guion
+/// viajan en `unidad`, y solo la de la narrativa deja medir la mitad de distancia.</summary>
+async Task Garantia(string unidad)
 {
     const string unidadDeLaNarrativa = "UnitA";
-    string unidad = Arg(args, "--unit", "UnitB");
 
     Console.WriteLine($"publicando la entrega y el sobre de garantia en {recurso}/{id}...");
     Console.WriteLine($"  todo en {unidad}, que es la unidad en que la agencia leyo este carro");
@@ -484,10 +560,10 @@ async Task Placa()
     Console.WriteLine("  inyectar --tipo PlateAssigned --plate --- --assignedAt 2026-01-15T09:00:00Z");
 }
 
-async Task Taller()
+/// <summary>Las estadias en el taller de este vehiculo. Con `dejaUnaAbierta` el carro queda
+/// adentro, y esa es la unica corrida que la siguiente no puede repetir.</summary>
+async Task Taller(bool dejaUnaAbierta)
 {
-    bool dejaUnaAbierta = !args.Contains("--sin-abrir");
-
     Console.WriteLine($"publicando las estadias en el taller de {recurso}/{id}...");
     Console.WriteLine(dejaUnaAbierta
         ? "  y la ultima estadia queda ABIERTA: el carro esta adentro y todavia no lo entregan"
@@ -604,6 +680,55 @@ async Task Costos()
     Console.WriteLine("Para verlo:");
     Console.WriteLine("  inyectar --tipo RecurringCostRecorded --currency XYZ --amount 1000");
     Console.WriteLine("           --incurredAt 2026-05-20T10:30:00Z --subject Prueba");
+}
+
+/// <summary>Una operacion que el plan de este vehiculo NO tenia agendada, sembrada con su ancla
+/// en el pasado para que hoy lea atrasada. Es staging del tablero, no la narrativa.</summary>
+async Task Desgaste(int limite)
+{
+    Console.WriteLine($"agendando el cambio de pieza de desgaste de {recurso}/{id}...");
+    Console.WriteLine("  DE LAS NUEVE CLASES DE OPERACION, la narrativa agenda cuatro. Las otras cinco");
+    Console.WriteLine("  contestan 'este vehiculo no tiene agendada ninguna', que es una respuesta y no");
+    Console.WriteLine("  un hueco. Esto agenda UNA de esas cinco, y la ancla donde ya quedo atrasada");
+    Console.WriteLine();
+
+    (object cuerpo, string porque)[] guion =
+    {
+        (PlanOp("WearPartReplacement", "DistanceOnly", 0, limite, true, false, "2025-12-15", 49850),
+            $"solo DISTANCIA, {limite} desde el ancla. La narrativa ancla en 49850 del 2025-12-15 y "
+            + "deja el odometro en 60962, asi que van 11112 recorridos contra ese limite: pasado el "
+            + "limite, y pasada tambien la gracia, que es lo que separa Vencida de Atrasada"),
+    };
+
+    foreach ((object cuerpo, string porque) in guion)
+    {
+        using var r = await http.PostAsJsonAsync($"{recurso}/{id}/events/hecho", cuerpo);
+        Console.WriteLine($"  HTTP {(int)r.StatusCode}   {porque}");
+    }
+
+    Console.WriteLine();
+    Console.WriteLine("ATRASADA Y NO VENCIDA, Y LA DIFERENCIA ES LA GRACIA. Vencida es haber pasado el");
+    Console.WriteLine("limite; atrasada es haber pasado tambien lo que la agencia tolera despues de el.");
+    Console.WriteLine("Contra los 11112 recorridos, un solo numero recorre los CUATRO estados sin tocar");
+    Console.WriteLine("ningun otro hecho de este carro. MEDIDO, cada uno sobre un journal limpio:");
+    Console.WriteLine("  --limite 10000    Atrasada     1112 pasados del limite, y pasada la gracia");
+    Console.WriteLine("  --limite 11000    Vencida      112 pasados del limite, dentro de la gracia");
+    Console.WriteLine("  --limite 12000    Por vencer   11112 de 12000, adentro del aviso de cortesia");
+    Console.WriteLine("  --limite 13000    Sin vencer   11112 de 13000, y ni el aviso llega");
+    Console.WriteLine();
+    Console.WriteLine("ESTO NO ES LA NARRATIVA, ES STAGING DEL TABLERO. La historia de este carro no");
+    Console.WriteLine("cambia: no se toca ninguna lectura, ninguna fecha y ningun monto, que es lo que");
+    Console.WriteLine("los otros modulos cruzan. Lo unico que entra es lo que el plan agenda, que es del");
+    Console.WriteLine("concesionario. Por eso 'historia' y la consola no lo traen: alla el tablero sigue");
+    Console.WriteLine("mostrando las cuatro de siempre.");
+    Console.WriteLine();
+    Console.WriteLine("VOLVER A CORRERLO SUSTITUYE PERO NO SE VE SOLO, y eso esta medido. Un plan");
+    Console.WriteLine("sembrado para una clase que ya tiene una activa la SUSTITUYE en vez de duplicarla");
+    Console.WriteLine("-- la misma ley con que la revision del plan reemplaza el cambio de fluido a mitad");
+    Console.WriteLine("de la narrativa --, pero la que entra llega SIN EVALUAR, y sin evaluar el tablero");
+    Console.WriteLine("dice 'sin vencer, pero esta operacion todavia no se ha evaluado'. Evaluar es un");
+    Console.WriteLine("comando y ni el servidor MCP ni la caratula del dueno escriben. Para probar otro");
+    Console.WriteLine("limite, carpeta nueva: es una linea y no deja dudas.");
 }
 
 async Task Senuelo()
@@ -847,6 +972,17 @@ static void Ayuda()
     Console.WriteLine("Inyector de eventos de demo para URL2 (concesionario)");
     Console.WriteLine();
     Console.WriteLine("  listar                        que eventos ve la app hoy");
+    Console.WriteLine("  canon                         EL CANON ENTERO en una sola corrida: los CINCO");
+    Console.WriteLine("                                guiones que el mock no siembra -- ficha, garantia,");
+    Console.WriteLine("                                placa, taller y costos --, en orden y cada uno con");
+    Console.WriteLine("                                la bandera que lo deja verse entero en la caratula,");
+    Console.WriteLine("                                mas 'desgaste' para que el tablero tenga un atraso.");
+    Console.WriteLine("                                NO postea 'historia': el mock ya la sirve sola");
+    Console.WriteLine("                                --revision --revision2 (default MY2019-R1 y -R2),");
+    Console.WriteLine("                                --unit (default UnitA, la de la narrativa del mock),");
+    Console.WriteLine("                                --limite (default 10000, el de 'desgaste')");
+    Console.WriteLine("                                UNA corrida por journal: la ficha gasta sus codigos");
+    Console.WriteLine("                                de revision y el taller se duplica en silencio");
     Console.WriteLine("  historia                      siembra el guion completo de la demo");
     Console.WriteLine("  ficha                         publica la ficha del fabricante en dos revisiones");
     Console.WriteLine("                                --revision --revision2 (default MY2019-R1 y -R2)");
@@ -873,6 +1009,13 @@ static void Ayuda()
     Console.WriteLine("                                su vida util y dos recurrentes, en dos monedas. Se");
     Console.WriteLine("                                puede repetir SIN ninguna bandera -- una entrada del");
     Console.WriteLine("                                libro no tiene clave que se gaste");
+    Console.WriteLine("  desgaste                      agenda UNA de las cinco clases que la narrativa no");
+    Console.WriteLine("                                agenda -- cambio de pieza de desgaste --, anclada");
+    Console.WriteLine("                                donde ya quedo ATRASADA, para que el tablero tenga");
+    Console.WriteLine("                                un atraso sin tocar ni una lectura de este carro");
+    Console.WriteLine("                                --limite recorre los cuatro estados: 10000 atrasada,");
+    Console.WriteLine("                                11000 vencida, 12000 por vencer, 13000 sin vencer.");
+    Console.WriteLine("                                Repetirlo sustituye, pero la nueva llega SIN evaluar");
     Console.WriteLine("  senuelo                       demuestra el 403 de /customer con el token de la app");
     Console.WriteLine("  inyectar --tipo <tipo> ...    agrega UN hecho concreto");
     Console.WriteLine();
