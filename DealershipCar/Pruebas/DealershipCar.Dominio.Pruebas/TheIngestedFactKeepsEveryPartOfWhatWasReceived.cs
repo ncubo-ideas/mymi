@@ -24,6 +24,14 @@ namespace DealershipCar.Dominio.Pruebas
 		private static readonly DateTime AfterSixMonths =
 			new DateTime(2026, 3, 1, 0, 0, 0, DateTimeKind.Utc);
 
+		// COMO EL JOURNAL ESCRIBE UN INSTANTE. Desde el motor 3.0.0-beta.10044 es el ISO 8601 de ida
+		// y vuelta con la Z ("o" sobre un DateTime en UTC): 2025-10-02T02:30:45.0000000Z. Hasta
+		// 10029 era MM/dd/yyyy HH:mm:ss, sin marca de zona. Los tres renglones que lo usan afirman
+		// que la puerta convirtio a UTC y trunco al segundo; el formato es solo la lente con que se
+		// lee el journal, asi que vive aca, en un solo lugar, para que el proximo cambio del motor
+		// sea UNA linea.
+		private const string TheJournalsInstantFormat = "o";
+
 		private AScheduleOnARealJournal journal;
 
 		[SetUp]
@@ -154,7 +162,7 @@ namespace DealershipCar.Dominio.Pruebas
 			Assert.That(
 				TheSecondProgramOf(journal.Folder),
 				Does.Contain(toTheWholeSecond.ToString(
-					"MM/dd/yyyy HH:mm:ss", System.Globalization.CultureInfo.InvariantCulture)),
+					TheJournalsInstantFormat, System.Globalization.CultureInfo.InvariantCulture)),
 				"El journal guarda el instante ya convertido a UTC y ya truncado al segundo. Sin la "
 				+ "normalizacion en la ingesta guardaria la hora local, y la agenda mediria seis "
 				+ "horas de diferencia sobre un hecho que llego bien.");
@@ -466,7 +474,7 @@ namespace DealershipCar.Dominio.Pruebas
 			DateTime inUtc = read.ToUniversalTime();
 
 			return new DateTime(inUtc.Ticks - inUtc.Ticks % TimeSpan.TicksPerSecond, DateTimeKind.Utc)
-				.ToString("MM/dd/yyyy HH:mm:ss", System.Globalization.CultureInfo.InvariantCulture);
+				.ToString(TheJournalsInstantFormat, System.Globalization.CultureInfo.InvariantCulture);
 		}
 
 		// Y LOS ONCE HECHOS MANDAN SUS VALORES COMO ARGUMENTOS Y NO INTERPOLADOS EN EL TEXTO. Es lo
@@ -614,7 +622,7 @@ namespace DealershipCar.Dominio.Pruebas
 				inUtc.Ticks - inUtc.Ticks % TimeSpan.TicksPerSecond, DateTimeKind.Utc);
 
 			return toTheWholeSecond.ToString(
-				"MM/dd/yyyy HH:mm:ss", System.Globalization.CultureInfo.InvariantCulture);
+				TheJournalsInstantFormat, System.Globalization.CultureInfo.InvariantCulture);
 		}
 
 		private void Apply(SenalDeEvento signal)
