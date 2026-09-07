@@ -45,6 +45,20 @@ la máquina Windows y pasale `--no-bundles`.
 y la excepción de loopback que está en `Info.plist` no cubre una IP de LAN. Hace falta además
 `NSAllowsLocalNetworking`.
 
+- **El paquete de módulos**, y esto es lo que te va a frenar si no lo tenés. `P0` a `P5` y `P7`
+  necesitan **un módulo ya instalado**, y hoy el enlace de la institución **no puede
+  instalarlo** en iOS: `go.gnothi.app` no existe, y sin AASA iOS no le pasa el enlace a la app.
+  Está explicado en P6, con las dos salidas.
+
+  Así que el primer módulo entra por `Documents/incoming`, de dos maneras:
+
+  - **Que lo traiga la app.** Si existe `Gnothi.Mobile/paquete/`, el csproj lo mete como
+    `BundleResource` y `SeedFromBundle` lo copia solo la primera vez. Lo arma
+    `Gnothi.Mobile/armar-paquete.ps1` **en Windows**, porque adentro van los journals.
+  - **Que lo dejes vos, desde el teléfono.** Descomprimí el zip en la carpeta de Gnothi en la
+    app **Archivos**. Esto es lo que Android no puede dar: allá el paquete se empuja por `adb`
+    porque no hay otra forma, y eso siempre fue una muleta de laboratorio.
+
 ```bash
 dotnet build Gnothi.iOS/Gnothi.iOS.csproj -c Debug
 ```
@@ -276,6 +290,32 @@ cuando se compare: la contención de Android está incompleta en este punto.
 ---
 
 ## P6 · El alta desde el enlace de la institución
+
+> ## ⛔ HOY ESTA NO SE PUEDE CORRER, y conviene saberlo antes de perder la tarde buscándole la vuelta.
+>
+> **`go.gnothi.app` no existe.** Medido el 2026-09-07: `nslookup` da *non-existent domain*.
+> Y sin dominio no hay AASA, y sin AASA iOS no le entrega el enlace a la app: Safari abre la
+> página. **Y acá no hay `pm set-app-links`**, que es el atajo con el que Android se saltea la
+> verificación en el laboratorio — o sea que en Android esto *parece* funcionar sólo porque se
+> fuerza la aprobación local.
+>
+> `?mode=developer` tampoco alcanza: hace que iOS pida el AASA **al dominio** en vez de a la CDN
+> de Apple, y el dominio no resuelve.
+>
+> **Las dos salidas, de la más barata a la más completa:**
+>
+> 1. **Un esquema propio** (`gnothi://alta?bundle=…`): `CFBundleURLTypes` en el `Info.plist` más
+>    un `OpenUrl` en el `AppDelegate` que llame al mismo `HandleLink` que ya existe. Son ~15
+>    líneas, no necesita dominio, y deja correr P6 con
+>    `xcrun simctl openurl booted "gnothi://alta?bundle=http://127.0.0.1:8096/examenes.zip"`.
+>    **No está puesto**; si lo querés, se pone. Ojo que un esquema propio lo puede invocar
+>    cualquiera — lo que lo hace aceptable es que el alta igual pide consentimiento en pantalla
+>    antes de instalar, o sea que un enlace hostil llega hasta la hoja y no más.
+> 2. **El dominio de verdad**, sirviendo el AASA como dice acá abajo. Es lo que hay que tener
+>    para el producto igual.
+>
+> **Mientras tanto, el primer módulo entra por el paquete**, no por el enlace: ver §0. Todo el
+> resto del guion (P0 a P5, P7) se corre igual y no depende de esto.
 
 Es el gemelo del App Link, y **falla parecido**: allá, sin `AutoVerify` más un
 `assetlinks.json` verificado, Chrome navega él mismo y muestra `DNS_PROBE_FINISHED_NXDOMAIN` —
