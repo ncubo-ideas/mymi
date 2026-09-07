@@ -51,6 +51,18 @@ Gnothi.Mobile/paquete/
 # journals de la persona que armo el paquete. Eso no va a un repo compartido.
 Gnothi.Mobile/paquete.zip
 
+# LOS BUNDLES DE LOS MODULOS, que son lo que la institucion publica: 12 MB cada uno, y
+# hoy son cuatro. Medido: 136 MB en total.
+#
+# Los arma armar-bundle.ps1 -y escenario-webview.ps1 por el- CADA VEZ que se levanta el
+# escenario, porque el manifiesto lleva la URL del publicador ADENTRO: un bundle armado
+# con un puerto y probado con otro instala bien y no trae nada. O sea que versionarlos no
+# solo pesaria, ademas mentiria.
+#
+# ESTA LINEA SE AGREGO DESPUES DE CASI METERLOS. Un `git add -A` despues de correr el
+# escenario se los lleva, y 136 MB en un repo compartido no se sacan con un commit.
+Gnothi.Mobile/bundles/
+
 # Xcode: estado de UI por persona, no del proyecto. El .xcodeproj y el esquema
 # compartido si van, para no rearmar el target a mano en cada clon.
 xcuserdata/
