@@ -1,7 +1,23 @@
-# BORRADOR · Coordinación PWA ↔ Gnothi (para retomar)
+# Nota de trabajo · 2 de septiembre de 2026
+## Coordinación PWA ↔ Gnothi
 
-> Nota de trabajo, no corpus pulido. Captura la sesión sobre **cómo el dato del PWA de una
-> institución llega al módulo que Gnothi carga**, en desktop y móvil. Corte: 2026-09-02.
+> **Esto es una nota de trabajo, no un documento del set, y no se va a terminar.** Queda tal cual
+> se escribió el **2026-09-02**, con su fecha a la vista, porque la investigación que trae —sobre
+> el OPFS, el SAF y el motor— se pagó cara y sigue valiendo. Lo que **no** hay que leer de acá es
+> el estado del proyecto: para eso están [`F2`](F-evidencia/F2-estado-y-pendientes.md) y
+> [`F6`](F-evidencia/F6-lo-construido-en-movil.md).
+
+**Qué pasó después de escribirla.** Los días 3 y 4 se construyó y se corrió el camino de móvil, y
+no es ninguna de las tres rutas de §2: **la PWA corre adentro de Gnothi**, en un WebView, y escribe
+su journal en los archivos de Gnothi. Ahí la pregunta con la que abre esta nota —*¿en qué carpeta
+escribió la PWA?*— **no se contesta: desaparece**, porque la carpeta la pone Gnothi.
+
+| sección | cómo leerla hoy |
+|---|---|
+| §2 (las tres rutas), §6, §9 | **superadas en móvil** por lo construido. Siguen abiertas para el escenario en que la PWA vive **afuera** de Gnothi y un `.gmod` le lee el journal — que es una discusión viva, no un tema cerrado |
+| §4 (dos escritores), §5 (por qué no se reusan los DLLs de la PWA) | **vigentes**, y son la razón de fondo de por qué ese escenario cuesta |
+| §3, §11, §12, §13 (SAF, el plugin, el código de Chromium, el OPFS) | **vigentes y verificadas contra fuente**. Es la parte que justifica conservar la nota |
+| §10 (estado práctico) | **caduco**. Ese andamio se reemplazó por `PaginaDeLaInstitucion` y `armar-bundle.ps1` |
 
 ---
 

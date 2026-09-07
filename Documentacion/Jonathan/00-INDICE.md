@@ -6,14 +6,18 @@ capa contesta una pregunta distinta y la lee alguien distinto.
 **Se repite a propósito.** Donde dos capas se cruzan, el contenido está en las dos. Preferimos
 redundancia a mandarte a otro archivo en medio de una idea.
 
-**Corte:** 2026-08-26. Complementa el set `00-INDICE` … `07-preguntas-abiertas` del arquitecto, que está
-en la raíz del repo y es la especificación. Esto es lo que se pensó, se construyó y se midió contra
-ella.
+**Corte:** 2026-08-26. Complementa el set del arquitecto —la especificación—, que está en
+[`../Especificacion/`](../Especificacion/00-INDICE.md), con su propio índice. Esto es lo que se
+pensó, se construyó y se midió contra ella.
 
 **Actualización posterior al corte.** Lo que vino después —el **modelo de carga** (el módulo son dos
 DLLs y el Host presta el motor), las **caras de escritorio** (Gnothi.Desktop, Comercio.Shell) y los
 **dos instaladores MSI**— está reflejado dentro de los docs que tocó (marcado en su lugar) y reunido en
 `C7`. Las trampas nuevas de plataforma (WiX, `msiexec`, WebView2) están en `E1`.
+
+**Y lo de móvil, que es del 3 y 4 de septiembre**: cuatro instituciones con su app web corriendo
+**adentro de Gnothi** en Android. Está en `F6`, y movió el estado de `F2` — **P5 y P7 quedaron
+resueltos**.
 
 ---
 
@@ -101,6 +105,18 @@ Para no confundir lo verificado con lo supuesto.
 | [`F3-el-modulo-sin-motor.md`](F-evidencia/F3-el-modulo-sin-motor.md) | el módulo sin motor ni runtime, medido: `ExcludeAssets`, el sustrato prestado, la conformance |
 | [`F4-lo-hecho-contra-los-mds.md`](F-evidencia/F4-lo-hecho-contra-los-mds.md) | lo que se hizo contra lo que piden los MDs del arquitecto, honesto por categoría |
 | [`F5-la-caja-wasm.md`](F-evidencia/F5-la-caja-wasm.md) | el módulo corriendo confinado en wasmtime, alcanzado por el Host |
+| [`F6-lo-construido-en-movil.md`](F-evidencia/F6-lo-construido-en-movil.md) | el alta con permiso, el cartero, la credencial fuera del journal y el WebView que hospeda la PWA — con el resultado de la corrida en Android |
+
+---
+
+## Lo que está al lado, y no es del set
+
+| | |
+|---|---|
+| [`../Especificacion/`](../Especificacion/00-INDICE.md) | **los MDs del arquitecto**, la especificación, con su propio índice. No se editan |
+| [`NOTA-2026-09-02-coordinacion-pwa-gnothi.md`](NOTA-2026-09-02-coordinacion-pwa-gnothi.md) | **nota de trabajo del 2 de septiembre**, no un documento del set y no se va a terminar. Vale por la investigación de OPFS, SAF y el motor; su encabezado dice qué quedó superado |
+| [`imagenes/traza.svg`](imagenes/traza.svg) | el diagrama de la traza, para mostrar |
+| [`../../Gnothi.Mobile/PRUEBAS-WEBVIEW.md`](../../Gnothi.Mobile/PRUEBAS-WEBVIEW.md) | el guion de las nueve pruebas de Android, con sus comandos y 14 capturas |
 
 ---
 
@@ -108,6 +124,11 @@ Para no confundir lo verificado con lo supuesto.
 
 Leé `A2` (qué es el Host), `E1`–`E3` (las trampas) y `F2` (el estado). Con eso podés hablar del
 proyecto sin decir nada falso y sin volver a pagar lo que ya se pagó.
+
+## Si te interesa lo de móvil
+
+`F6` y nada más. Es corto y trae la corrida. Si después vas a construir algo, la especificación
+contra la que se hizo son `11`, `12` y `13` en [`../Especificacion/`](../Especificacion/00-INDICE.md).
 
 ## Si vas a tocar el Host
 
@@ -129,5 +150,10 @@ cuyo síntoma llega **años después** y sin ningún error.
 
 ## Si vas a mostrarlo
 
-`A4` (el caso de uso) y `A1` (las cuatro autoridades). Y el diagrama de la traza, que está
-publicado como artifact aparte.
+`A4` (el caso de uso) y `A1` (las cuatro autoridades). Y el **diagrama de la traza**, que está en el
+repo como archivo: [`imagenes/traza.svg`](imagenes/traza.svg). Se abre con doble clic en cualquier
+navegador y no hace falta permiso de nada.
+
+![La traza, en dos movimientos](imagenes/traza.svg)
+
+Lo que hay que hacer notar al mostrarlo: **ninguna flecha del movimiento 2 llega al publicador.**

@@ -1,7 +1,19 @@
 # F2 · Estado y pendientes
 
-## El estado, en cinco líneas
+**Corte original 2026-08-26. Actualizado el 2026-09-07** con lo que pasó en móvil: **P5 y P7 se
+resolvieron** y están medidos, y aparecieron cuatro pendientes nuevos que antes no existían porque
+el terreno no existía. Cada cosa lleva su fecha.
 
+## El estado, en líneas
+
+- **Anda, y es lo más fuerte que hay: los módulos hospedados en Android.** Cuatro instituciones —
+  Exámenes, Compras, Cargas y DealershipCar—, cada una con la app web que ya había publicado, **la
+  misma y sin recompilar**, corriendo adentro de Gnothi en un WebView, sin red propia, escribiendo
+  su journal en los archivos del Host. Corrido de punta a punta el **2026-09-04** sobre un emulador
+  `sdk_gphone64_x86_64` (Android 16 / SDK 36); la contención y la memoria vienen del **2026-09-03**
+  sobre un **Xiaomi 14T Pro físico**, con Exámenes. Eso trae el alta con consentimiento, el cartero,
+  la credencial fuera del journal y la marca de migración. Ver `F6`, y el guion completo con sus 14
+  capturas en `Gnothi.Mobile/PRUEBAS-WEBVIEW.md`.
 - **Anda:** el eslabón de agregación, en tres superficies de asistente distintas y en Docker.
 - **Anda:** el consentimiento por consulta, y desaparece en vez de denegar.
 - **Anda:** la verificación de lo declarado contra lo real.
@@ -60,13 +72,25 @@ declara que su lista puede cambiar; el mecanismo está, no está conectado.
 
 **Criterio:** instalar un módulo nuevo y que el asistente vea sus consultas **sin reiniciar**.
 
-### P5 · Sacar los tokens del journal
+### ~~P5 · Sacar los tokens del journal~~ — ✅ **RESUELTO el 2026-09-03**
 
-Hoy se asientan en texto plano, y el journal es append-only. Dos caminos, y el segundo es el bueno: llevarlos
-al **Playbill**, o —mejor— **que el módulo nunca los reciba**, porque el que hace el GET es el Host. Eso es
-P7.
+**Lo que decía este documento en su corte del 26 de agosto** —que se asentaban en texto plano en un
+journal append-only— **dejó de ser cierto el 2026-09-03.** El device key, el access token y el
+refresh token salieron del dominio en los **cinco** módulos.
 
-**Criterio:** un journal nuevo, después de un ciclo completo, sin un solo token adentro.
+Se tomó el segundo camino de los dos que estaban acá anotados, el bueno: **el módulo hospedado no
+recibe ningún token.** Y para cuando la app corre suelta, la credencial la guarda **quien hospeda**
+y no la historia: `localStorage` del origen en el navegador, el Keystore del aparato dentro de
+Gnothi, memoria que muere con el proceso en consola.
+
+**El criterio se cumplió, y está medido el 2026-09-04** en los cuatro módulos de Android: un journal
+nuevo después de un ciclo completo, **cero coincidencias de credencial**, con un grep de control
+legible dando 6, 2, 4 y 6 — o sea que el grep sabía buscar y el journal estaba limpio. En consola,
+Cargas aplicó 19 eventos con el mismo resultado. Ver `F6`, y P5 del guion.
+
+**Por qué importa más que un pendiente cerrado:** un token en un journal append-only le da a un
+contexto de sesión la durabilidad y la portabilidad de la historia de una persona. Viajaba en claro
+con cualquier copia.
 
 ---
 
@@ -88,17 +112,31 @@ posibles.
 **Criterio:** un solo artefacto de módulo corre en los dos hospedajes sin recompilar, y no expone ningún
 puerto ni tubería propia.
 
-### P7 · El Host como cartero
+> **Nota del 2026-09-07 — esto está más avanzado de lo que dice el párrafo de arriba, que es del
+> corte viejo.** `F4` ya registra el módulo sin transporte como hecho, con su cita, y `F3` lo mide.
+> En móvil el criterio se cumple **literalmente**: es el mismo binario en los dos modos —suelto en
+> el navegador y hospedado dentro de Gnothi—, sin puerto ni tubería, y sin recompilar. Lo que queda
+> abierto de esta sección es la variante wasm de escritorio, que es P8.
 
-El Host hace el pull del feed del publicador y le pasa el payload al módulo **como parámetro**. El módulo
-asienta.
+### ~~P7 · El Host como cartero~~ — ✅ **RESUELTO en escritorio antes del corte; corrido en Android el 2026-09-04**
 
-**Por qué.** Hoy lo hace la app del andamio. Y el endpoint tiene que ser **fijo por publicador, registrado en
-la instalación, no elegible en runtime** — si el módulo pudiera decir qué URL traer, exfiltra codificando
-datos en la ruta.
+Este pendiente ya estaba hecho cuando se escribió esta página y no se actualizó: `F4` lo registra
+con su cita desde el corte del 26 de agosto. **Lo nuevo es que ahora está corrido en móvil, que es
+donde el módulo de verdad no tiene con qué salir a la red.**
 
-**Criterio, y es falsable:** quitar al módulo del camino y comprobar que **no hay forma de que un asiento
-aparezca**. El Host no escribe el journal.
+El Host hace el pull del feed del publicador **con su propia credencial** y le pasa el payload al
+módulo como parámetro; el módulo asienta. El endpoint es **fijo por publicador, registrado en la
+instalación y no elegible en runtime** — el manifiesto lo declara, el Host lo copia a
+`instalacion.json` y de ahí manda esa copia.
+
+**El criterio se cumplió, y sigue siendo falsable:** la garantía no es una promesa sino la forma del
+código —**el Host no tiene ninguna llamada con la que escribir una entrada**—, y el bucle del
+sustrato pide tres piezas repartidas: la red la pone el Host, la ruta y el diario los pone el
+módulo.
+
+**Medido el 2026-09-04**, pull inicial por institución: 6 673 · 72 928 · 3 985 · 7 825 bytes; la
+segunda vuelta de Compras dio `after=387 → 24 bytes`, con el cursor avanzado y nada nuevo. Ver `F6`,
+y P4 del guion.
 
 ### P8 · El módulo como `.wasm`
 
@@ -112,6 +150,89 @@ Prerrequisitos, **ninguno instalado**: el workload de WASI experimental, y un ru
 móvil según la especificación: uno que haga intérprete y AOT en las dos plataformas.
 
 **¿Puede el módulo con el motor?** **Bloqueado por P1.**
+
+---
+
+## Lo que abrió el móvil — pendientes nuevos del 2026-09-07
+
+Ninguno de estos existía en el corte del 26 de agosto, porque el terreno no existía. Van en orden de
+lo que desbloquean. El detalle largo de los cuatro está en `13` §10.2 a §10.5.
+
+### P9 · Las tres rendijas de la contención
+
+**La contención es UNA sola capa, y conviene decirlo así.** El interceptor **no bloquea**: devuelve
+`null` para todo host ajeno, y `null` significa *«andá a la red»*. Lo único que impide salir es la
+CSP. Le faltan tres cosas:
+
+| | qué falta | cómo se cierra |
+|---|---|---|
+| **`form-action`** | no está puesta, y **no hereda de `default-src`** — es de las poquísimas que no. Un `<form action="https://…" method="post">` con submit **saldría** | agregarla a la cabecera |
+| **navegación de nivel superior** | ninguna CSP frena `window.location = 'https://…'` —`navigate-to` nunca se estandarizó— y no hay control de navegación. No filtraría el journal, pero se podría llevar datos en la URL | `ShouldOverrideUrlLoading` en Android; `WKNavigationDelegate` en iOS |
+| **la negación es muda** | el módulo intenta, el motor lo niega, y Gnothi **no se entera** | `report-to` en la CSP, o escuchar `securitypolicyviolation` |
+
+**Por qué primero.** La tercera es la que más compra: convierte la contención de silenciosa en
+**auditada**, y con eso la prueba P6 del guion **pasa a ejecutarse sola** en vez de necesitar una
+sonda temporal.
+
+**Criterio:** un intento de salida del módulo queda registrado en Gnothi sin que nadie prepare nada.
+
+### P10 · El sustrato viaja adentro del bundle
+
+**Medido:** cada módulo trae **su propio motor** — 20 MB de `_framework` con `Puppeteer.wasm`,
+`Choreography.wasm` y el runtime de .NET. Gnothi le da al módulo la red, los archivos y el ciclo de
+vida; **el sustrato no**. Dos consecuencias, y las dos incomodan:
+
+- El manifiesto declara `substrate.range` (`">=3.0.0 <4.0.0"`) y **nadie lo valida**. No falta por
+  descuido: **no hay un sustrato compartido cuya versión negociar**. Mientras el motor viaje en el
+  bundle, ese campo es documentación.
+- El costo de memoria es **por módulo**, y por eso la regla de desalojo —un módulo vivo a la vez—
+  deja de ser precaución y pasa a ser requisito. Es lo que sostiene los 199 MB con cuatro
+  instalados.
+
+**Por qué importa.** En iOS, con un presupuesto de memoria más duro, esto puede pasar de hueco
+anotado a bloqueante. Y que Gnothi provea el motor es una decisión de **arquitectura**, no un
+ajuste.
+
+### P11 · ¿La mudanza es consecuencia de instalar, o una decisión aparte? — **es para el arquitecto**
+
+Esta no es deuda técnica: es la pregunta de diseño más interesante que quedó, y por eso va acá.
+
+**Lo que pasa hoy.** Gnothi le manda al publicador `{deviceKey, recurso, id}` y nada más — ni la
+palabra `migrated`, ni un verbo de migración. **Quien decide que eso significa una mudanza es el
+publicador**, que ve el prefijo del device key y anota la cuenta como vinculada. Gnothi lo causó, no
+lo hizo, y no se entera de que lo causó.
+
+**El hueco.** Con la pantalla de consentimiento, la persona acepta **instalar el módulo**. Lo que esa
+pantalla no dice es que su app suelta va a dejar de actualizarse. Toca «Instalar», y de rebote se le
+apaga la otra instalación. **Es la misma forma del problema que el consentimiento vino a arreglar,
+un escalón más adentro.**
+
+**Y el arreglo obvio no es obviamente el correcto.** Lo barato es que Gnothi agregue una línea de
+aviso — pero eso sería **Gnothi afirmando algo sobre el comportamiento de un tercero**. Que ese
+publicador migre la cuenta al emitir credencial es política de la institución, no del protocolo: es
+cierto con nuestro mock y podría ser **falso** con otro. Una advertencia falsa en la pantalla más
+importante del sistema es peor que no tenerla.
+
+Las cinco opciones, con lo que compra y lo que cuesta cada una, están en `13` §10.5. **La pregunta a
+decidir no es técnica.**
+
+### P12 · La revocación del lado del publicador
+
+La app suelta deja de sincronizar porque **decidió obedecer** la marca de migración. Verificado: el
+guardia del endpoint comprueba token, expiración y recurso, **pero no si la cuenta está migrada**.
+O sea que la contención de la app suelta es **cooperativa, no impuesta**. Con la app tal como está
+alcanza; con una modificada o vieja, no — y ahí hay dos historias divergiendo, que es exactamente lo
+que la marca existe para evitar.
+
+**La marca sirve para que la app se despida bien. La que garantiza es la revocación.**
+
+### Y tres más chicos, para que no se pierdan
+
+| | qué | dónde está el detalle |
+|---|---|---|
+| **el traspaso en los otros tres** | las aserciones que ingresó la persona viajan de la app suelta a Gnothi. Existe **solo en Exámenes**; cuáles viajan es una decisión **por institución** (Cargas: confirmación de tanque y odómetro; DealershipCar: aplazamientos y perfil de uso) | `13` §4 |
+| **los textos que suenan a despojo** | varias pantallas dicen que el journal *«ahora vive en Gnothi»*, y eso se lee como que Sonia dejó de ser la dueña. La redacción de reemplazo ya está escrita y sin aplicar | `13` §10.6 |
+| **el bundle no está autenticado** | Gnothi baja **cualquier URL** que venga en el parámetro. Las guardas que hay —techo de 64 MB, zip-slip, nombre válido— protegen el sistema de archivos, no a la persona de una institución falsa. Hoy lo único que hay es que la hoja de alta **dice quién sirvió el bundle**: eso es honestidad, no autenticación | `F6` §1 |
 
 ---
 
