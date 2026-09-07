@@ -24,7 +24,7 @@ public sealed class AppDelegate : UIApplicationDelegate
 		// LO QUE 6b VA A LEER. El C# deja un archivo en la carpeta propia de la app; la intent
 		// de Swift lo lee y lo dice en voz alta. Si lo dice, el camino .NET -> Swift dentro de
 		// UNA sola app esta probado -- que es justo lo que Gnothi.iOS haria con la foto de
-		// Instantanea, pero sin App Group, porque ya no hace falta que sean dos apps.
+		// Snapshot, pero sin App Group, porque ya no hace falta que sean dos apps.
 		//
 		// Misma carpeta que Swift busca: Library/Application Support. Si los dos lados no
 		// coinciden, 6b lo dice con la ruta, no falla en silencio.

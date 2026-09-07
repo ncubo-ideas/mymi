@@ -1,7 +1,7 @@
 using System.Text.Json;
 using Gnothi.Assistant;
 using Gnothi.Host;
-using Gnothi.Movil;   // Instantanea: la foto que lee la App Intent de Siri
+using Gnothi.Movil;   // Snapshot: la foto que lee la App Intent de Siri
 
 namespace Gnothi.Conformance;
 
@@ -285,7 +285,7 @@ internal static class Conformance
 	// invocar por su cuenta habria pasado el CI en verde.
 	//
 	// POR QUE ESTO CUBRE TAMBIEN LA FOTO QUE LEE SIRI, que es el camino mas riesgoso porque su
-	// respuesta sale de un archivo y no de una consulta en vivo: Instantanea.cs arma la foto
+	// respuesta sale de un archivo y no de una consulta en vivo: Snapshot.cs arma la foto
 	// recorriendo dispatcher.Catalog() y pidiendo cada hecho por dispatcher.Serve. Si una tool
 	// apagada no aparece en el catalogo NI la sirve el dispatcher, no hay por donde entrar en la
 	// foto. Lo que esta prueba NO puede cubrir es que la foto EN DISCO se reescriba cuando el
@@ -406,7 +406,7 @@ internal static class Conformance
 				$"autorizado={moduloOff.Authorized} motivo: {moduloOff.Reason}");
 			// ── 5 · LA FOTO DE VERDAD, el archivo que Siri lee ─────────────────────────────
 			// Hasta aca se probo que la tool apagada no esta en el catalogo que la foto recorre.
-			// Esto prueba el ARCHIVO: se escribe con Instantanea.Escribir -- el mismo codigo que
+			// Esto prueba el ARCHIVO: se escribe con Snapshot.Escribir -- el mismo codigo que
 			// compilan iOS y Android, no una reimplementacion -- y se busca el nombre adentro.
 			//
 			// Importa que sea el archivo y no el catalogo porque en iOS la App Intent NO llama al
@@ -416,16 +416,16 @@ internal static class Conformance
 			try
 			{
 				m.Reconsent(true, []);
-				await Instantanea.Escribir(d, carpeta, _ => { }, CancellationToken.None);
-				string conLaTool = await File.ReadAllTextAsync(Path.Combine(carpeta, Instantanea.NombreDelArchivo));
+				await Snapshot.Write(d, carpeta, _ => { }, CancellationToken.None);
+				string conLaTool = await File.ReadAllTextAsync(Path.Combine(carpeta, Snapshot.FileName));
 
 				assert($"{publico}: encendida, SI aparece en la foto que lee Siri",
 					conLaTool.Contains($"\"{tool}\"", StringComparison.Ordinal),
 					"no aparecio encendida: la foto no la trae y el resto de esta prueba no diria nada");
 
 				m.Reconsent(true, [tool]);
-				await Instantanea.Escribir(d, carpeta, _ => { }, CancellationToken.None);
-				string sinLaTool = await File.ReadAllTextAsync(Path.Combine(carpeta, Instantanea.NombreDelArchivo));
+				await Snapshot.Write(d, carpeta, _ => { }, CancellationToken.None);
+				string sinLaTool = await File.ReadAllTextAsync(Path.Combine(carpeta, Snapshot.FileName));
 
 				assert($"{publico}: apagada, NO aparece en la foto que lee Siri",
 					!sinLaTool.Contains($"\"{tool}\"", StringComparison.Ordinal),
@@ -434,8 +434,8 @@ internal static class Conformance
 				// El modulo entero apagado no puede dejar NI SU NOMBRE: si la foto lo nombrara,
 				// Siri podria decir "tenes un modulo de compras" de uno que la persona revoco.
 				m.Reconsent(false, []);
-				await Instantanea.Escribir(d, carpeta, _ => { }, CancellationToken.None);
-				string sinElModulo = await File.ReadAllTextAsync(Path.Combine(carpeta, Instantanea.NombreDelArchivo));
+				await Snapshot.Write(d, carpeta, _ => { }, CancellationToken.None);
+				string sinElModulo = await File.ReadAllTextAsync(Path.Combine(carpeta, Snapshot.FileName));
 
 				assert($"{m.Name}: apagado el modulo entero, no queda ni su nombre en la foto",
 					!sinElModulo.Contains($"\"{m.Name}\"", StringComparison.Ordinal),

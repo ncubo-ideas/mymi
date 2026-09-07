@@ -68,7 +68,7 @@ Console.WriteLine();
 Console.WriteLine("=== THE CARATULA GATE FAILS CLOSED ===");
 
 const string real = "4f07f90c4633f3906c9a55889fbc33568bded70e0c81957798e9d9a5d6c85cf1";
-var declared = new Gnothi.Host.Caratula
+var declared = new Gnothi.Host.AllowedCaller
 {
 	Package = "com.ncubo.lab.caratula",
 	SignatureSha256 = real,
@@ -98,11 +98,11 @@ Assert("the same digest with colons and different case still matches",
 // ABSENT MEANS NOBODY. This is the assertion that matters most, because the failure mode is
 // somebody adding a module and forgetting the block.
 Assert("a caratula with no signature declared accepts nobody",
-	!new Gnothi.Host.Caratula { Package = "com.ncubo.lab.caratula" }.Accepts("com.ncubo.lab.caratula", real),
+	!new Gnothi.Host.AllowedCaller { Package = "com.ncubo.lab.caratula" }.Accepts("com.ncubo.lab.caratula", real),
 	"a half-declared caratula let a caller through");
 
 Assert("an empty caratula accepts nobody",
-	!new Gnothi.Host.Caratula().Accepts("", ""),
+	!new Gnothi.Host.AllowedCaller().Accepts("", ""),
 	"an empty declaration matched an empty caller");
 
 // And the seam: the core declares WHO may enter and never learns WHO DID. If Dispatcher or

@@ -41,7 +41,7 @@ public sealed record Installation
 	// ABSENT MEANS NOBODY. A module with no caratula declared cannot be reached from another
 	// process at all. That default is deliberate: forgetting to declare it must fail closed,
 	// never open.
-	[JsonPropertyName("caratula")] public Caratula? Caratula { get; init; }
+	[JsonPropertyName("caratula")] public AllowedCaller? AllowedCaller { get; init; }
 
 	// Por HostJson y no por Deserialize<T>: el lector se genera al compilar, sin reflexion.
 	// Ver HostJson.cs -- de eso depende que el Host pueda embeberse bajo NativeAOT.
@@ -56,7 +56,7 @@ public sealed record Installation
 //
 // The split matters: the same declaration will serve iOS, where the check is a different API
 // and the same three fields still name the same thing.
-public sealed record Caratula
+public sealed record AllowedCaller
 {
 	// The calling app's package name. Necessary and NOT sufficient: a package name is a
 	// string anyone can claim by naming their app the same.

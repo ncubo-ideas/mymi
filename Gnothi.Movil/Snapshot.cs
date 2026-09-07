@@ -36,17 +36,17 @@ namespace Gnothi.Movil;
 // aca no puede caer nada que el asistente no tuviera derecho a ver. Y como se reescribe entera
 // cada vez que el consentimiento cambia, apagar un modulo lo BORRA de la foto -- no queda una
 // foto vieja contestando por el.
-public static class Instantanea
+public static class Snapshot
 {
 	/// El nombre es fijo y lo conocen los dos lados. Si cambia, cambia en Swift tambien.
-	public const string NombreDelArchivo = "gnothi-instantanea.json";
+	public const string FileName = "gnothi-instantanea.json";
 
 	/// <param name="carpeta">
 	/// El contenedor compartido. Lo elige la plataforma: en iOS sale de
 	/// NSFileManager.GetContainerUrl del App Group. En Android es null y esto no corre --
 	/// alla la caratula habla por binder, en vivo, y no necesita foto.
 	/// </param>
-	public static async Task Escribir(Dispatcher dispatcher, string carpeta, Action<string> log, CancellationToken ct)
+	public static async Task Write(Dispatcher dispatcher, string carpeta, Action<string> log, CancellationToken ct)
 	{
 		try
 		{
@@ -115,7 +115,7 @@ public static class Instantanea
 			// ATOMICO. Siri puede disparar la intent justo mientras esto escribe, y leer medio
 			// archivo es peor que leer uno viejo: uno viejo se entiende, uno partido revienta el
 			// parser y la caratula no sabe por que.
-			string destino = Path.Combine(carpeta, NombreDelArchivo);
+			string destino = Path.Combine(carpeta, FileName);
 			string temporal = destino + ".tmp";
 			File.WriteAllText(temporal, json);
 			File.Move(temporal, destino, overwrite: true);

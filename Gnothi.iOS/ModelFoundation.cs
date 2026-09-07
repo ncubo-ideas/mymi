@@ -20,13 +20,13 @@ namespace Gnothi.iOS;
 internal sealed class ModelFoundation : IModel
 {
 	[DllImport("__Internal", EntryPoint = "gnothi_fm_estado")]
-	private static extern int EstadoNativo();
+	private static extern int NativeState();
 
 	[DllImport("__Internal", EntryPoint = "gnothi_fm_paso")]
-	private static extern IntPtr PasoNativo(string conversacion, string tools, string instrucciones);
+	private static extern IntPtr NativeStep(string conversacion, string tools, string instrucciones);
 
 	[DllImport("__Internal", EntryPoint = "gnothi_fm_liberar")]
-	private static extern void LiberarNativo(IntPtr p);
+	private static extern void NativeFree(IntPtr p);
 
 	// 0 no hay · 1 dice estar disponible y NO genera · 2 genera de verdad.
 	//
@@ -36,11 +36,11 @@ internal sealed class ModelFoundation : IModel
 	// GENERANDO. Es lento la primera vez; por eso se cachea.
 	private static int? estado;
 
-	public static int Estado() => estado ??= EstadoNativo();
+	public static int State() => estado ??= NativeState();
 
-	public static bool Sirve() => Estado() == 2;
+	public static bool Works() => State() == 2;
 
-	public static string Diagnostico() => Estado() switch
+	public static string Diagnosis() => State() switch
 	{
 		2 => "el modelo de este telefono contesta",
 		1 => "este telefono dice tener modelo pero no genera: hace falta iOS 26.5 o superior",
@@ -63,14 +63,14 @@ internal sealed class ModelFoundation : IModel
 			IntPtr p = IntPtr.Zero;
 			try
 			{
-				p = PasoNativo(Conversacion(conversation), Catalogo(tools), instrucciones);
+				p = NativeStep(Conversacion(conversation), Catalogo(tools), instrucciones);
 				string crudo = Marshal.PtrToStringUTF8(p) ?? "{}";
 				return Leer(crudo);
 			}
 			finally
 			{
 				// La cadena la libera quien la pide: del otro lado es un strdup.
-				if (p != IntPtr.Zero) LiberarNativo(p);
+				if (p != IntPtr.Zero) NativeFree(p);
 			}
 		}, ct);
 	}

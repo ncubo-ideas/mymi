@@ -11,20 +11,20 @@ namespace Gnothi.iOS;
 //
 // LA CADENA LA LIBERA QUIEN LA PIDE. Swift devuelve un strdup y el C# llama a gnothi_fm_liberar;
 // si eso no se hace, cada pregunta gotea. Por eso el finally.
-internal static class SondaPuente
+internal static class BridgeProbe
 {
 	[DllImport("__Internal", EntryPoint = "gnothi_fm_estado")]
-	private static extern int Estado();
+	private static extern int State();
 
 	[DllImport("__Internal", EntryPoint = "gnothi_fm_paso")]
-	private static extern IntPtr Paso(string conversacion, string tools, string instrucciones);
+	private static extern IntPtr Step(string conversacion, string tools, string instrucciones);
 
 	[DllImport("__Internal", EntryPoint = "gnothi_fm_liberar")]
-	private static extern void Liberar(IntPtr p);
+	private static extern void Free(IntPtr p);
 
 	// NO en el hilo principal: adentro del Swift se espera a que termine la generacion, y desde
 	// el hilo de UI eso se traba.
-	public static void Correr(Action<string> log) => _ = Task.Run(() =>
+	public static void Run(Action<string> log) => _ = Task.Run(() =>
 	{
 		try
 		{
@@ -32,7 +32,7 @@ internal static class SondaPuente
 
 			// 0 no disponible · 1 dice estar disponible y NO genera · 2 genera de verdad.
 			// El 1 existe porque `availability` miente: en iOS 26.2 dice available y falla.
-			int estado = Estado();
+			int estado = State();
 			log($"puente: estado = {estado}  ({(estado == 2 ? "genera" : estado == 1 ? "dice available pero NO genera" : "no disponible")})");
 			if (estado != 2) return;
 
@@ -45,23 +45,23 @@ internal static class SondaPuente
 			const string instrucciones = "Sos el asistente de Gnothi. Prosa corta, sin markdown.";
 
 			// PASO 1 · la intencion: se espera que pida la tool, no que conteste.
-			string uno = Llamar(
+			string uno = Call(
 				"""[{"tipo":"asked","texto":"¿Como viene mi colesterol total?"}]""",
 				tools, instrucciones);
-			log($"puente: paso 1 -> {Corto(uno)}");
+			log($"puente: paso 1 -> {Short(uno)}");
 
 			// PASO 2 · el Host ya calculo los hechos y se los devuelve.
 			const string hechos =
 				"""{\"hayDatos\":true,\"analito\":\"Colesterol total\",\"direccion\":\"subiendo\",\"ultimo\":{\"valor\":228},\"unidad\":\"mg/dL\",\"umbral\":200,\"lectura\":\"tu colesterol total viene subiendo: de 182 a 228 mg/dL en 29 meses, y paso el umbral de 200\"}""";
 
-			string dos = Llamar(
+			string dos = Call(
 				"""
 				[{"tipo":"asked","texto":"¿Como viene mi colesterol total?"},
 				 {"tipo":"said","texto":"","calls":[{"id":"c1","name":"examenes_evaluar_tendencia","args":{"analito":"ColesterolTotal"}}]},
 				 {"tipo":"returned","callId":"c1","toolName":"examenes_evaluar_tendencia","json":"HECHOS"}]
 				""".Replace("HECHOS", hechos),
 				tools, instrucciones);
-			log($"puente: paso 2 -> {Corto(dos)}");
+			log($"puente: paso 2 -> {Short(dos)}");
 		}
 		catch (Exception e)
 		{
@@ -69,19 +69,19 @@ internal static class SondaPuente
 		}
 	});
 
-	private static string Llamar(string conversacion, string tools, string instrucciones)
+	private static string Call(string conversacion, string tools, string instrucciones)
 	{
 		IntPtr p = IntPtr.Zero;
 		try
 		{
-			p = Paso(conversacion, tools, instrucciones);
+			p = Step(conversacion, tools, instrucciones);
 			return Marshal.PtrToStringUTF8(p) ?? "(nulo)";
 		}
 		finally
 		{
-			if (p != IntPtr.Zero) Liberar(p);
+			if (p != IntPtr.Zero) Free(p);
 		}
 	}
 
-	private static string Corto(string s) => s.Length <= 240 ? s : s[..240] + "…";
+	private static string Short(string s) => s.Length <= 240 ? s : s[..240] + "…";
 }

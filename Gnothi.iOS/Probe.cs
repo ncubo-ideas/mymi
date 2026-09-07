@@ -27,9 +27,9 @@ namespace Gnothi.iOS;
 //
 // LO QUE SE MIDE ANTES QUE NADA, y vale aunque no haya ni un dll: las dos banderas del runtime.
 // Son la respuesta directa a si el interprete esta puesto.
-internal static class Sonda
+internal static class Probe
 {
-	public static void Correr(Action<string> log)
+	public static void Run(Action<string> log)
 	{
 		log("── sonda AOT ──────────────────────────────────");
 
@@ -45,7 +45,7 @@ internal static class Sonda
 		log($"IsDynamicCodeCompiled  = {RuntimeFeature.IsDynamicCodeCompiled}");
 		log($"runtime                = {System.Runtime.InteropServices.RuntimeInformation.FrameworkDescription}");
 
-		string? dll = BuscarUnModulo();
+		string? dll = FindAModule();
 		if (dll is null)
 		{
 			log("no hay ningun dll de modulo todavia; los pasos 1-4 quedan sin correr.");
@@ -137,7 +137,7 @@ internal static class Sonda
 
 	/// El primer dll que parezca de un modulo, mire donde mire. Se buscan las dos carpetas
 	/// porque la sonda corre ANTES de que la cascara copie de incoming al area privada.
-	private static string? BuscarUnModulo()
+	private static string? FindAModule()
 	{
 		foreach (NSSearchPathDirectory which in new[] { NSSearchPathDirectory.LibraryDirectory, NSSearchPathDirectory.DocumentDirectory })
 		{

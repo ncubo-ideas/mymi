@@ -68,7 +68,7 @@ public sealed class Shell : IDisposable
 	///
 	/// iOS: el contenedor del App Group. Alla los App Intents solo existen en Swift y el Host
 	/// esta en .NET, asi que no se tocan: el Host deja la foto y la caratula la lee. Ver
-	/// Instantanea.cs.
+	/// Snapshot.cs.
 	/// </param>
 	/// <param name="FotoLocal">
 	/// Si ademas hay que dejar la foto en la carpeta PROPIA de la app, en Files/instantanea/.
@@ -398,12 +398,12 @@ public sealed class Shell : IDisposable
 		// LOCAL: para la intent que vive dentro de esta app. Sin App Group. La ruta tiene que
 		// coincidir con FotoLocal.ruta en Intents/GnothiIntents.swift.
 		if (paths.FotoLocal)
-			await Instantanea.Escribir(dispatcher, Path.Combine(paths.Files, "instantanea"), log, stop.Token);
+			await Snapshot.Write(dispatcher, Path.Combine(paths.Files, "instantanea"), log, stop.Token);
 
 		// COMPARTIDA: para una app hermana (el spike de Swift). Puede no existir si el App Group
 		// no esta aprovisionado, y eso no impide la local.
 		if (paths.Instantaneas is not null)
-			await Instantanea.Escribir(dispatcher, paths.Instantaneas, log, stop.Token);
+			await Snapshot.Write(dispatcher, paths.Instantaneas, log, stop.Token);
 	}
 
 	public void Dispose()

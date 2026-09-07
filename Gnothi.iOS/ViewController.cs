@@ -97,7 +97,7 @@ public sealed class ViewController : UIViewController
 			//
 			// La comprobacion es Sirve() y no isAvailable, que MIENTE -en iOS 26.2 dice que si y
 			// la generacion falla-. Sirve() lo verifica generando, y cachea.
-			ModelFoundation.Sirve() ? encuadre => new ModelFoundation(encuadre) : null);
+			ModelFoundation.Works() ? encuadre => new ModelFoundation(encuadre) : null);
 
 		// QUIEN SABE CREAR WEBVIEWS. ChooseShell es estatico y no tiene ViewController, asi que
 		// la cascara de webview no puede construir el anfitrion: se lo registra esta clase, que
@@ -114,8 +114,8 @@ public sealed class ViewController : UIViewController
 			// AOT no dejo cargar un modulo, la respuesta a POR QUE tiene que estar ya escrita
 			// en el log. Un spike que falla sin decir en cual de los cuatro pasos fallo cuesta
 			// una tarde.
-			Sonda.Correr(Log);
-			SondaPuente.Correr(Log);
+			Probe.Run(Log);
+			BridgeProbe.Run(Log);
 			try
 			{
 				// Run() es el bucle del Host y no termina: se arranca UNA vez y se espera al

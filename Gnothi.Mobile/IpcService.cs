@@ -157,7 +157,7 @@ public sealed class IpcService : Service
 
 			if (m is null) return $"no module named '{module}'";
 
-			Caratula? declared = m.Installation.Caratula;
+			AllowedCaller? declared = m.Installation.AllowedCaller;
 			if (declared is null || !declared.IsDeclared)
 				return "the module declares no caratula, so nobody may speak for it";
 

@@ -192,7 +192,7 @@ internal sealed class Servidor : WebViewClient
 
 	// Cuando el modulo ya se dibujo, avisa. Se inyecta por evaluateJavascript, que corre
 	// fuera de la CSP de la pagina.
-	private const string Sonda = @"
+	private const string Probe = @"
 (function () {
   var i = setInterval(function () {
     var app = document.querySelector('#app');
@@ -287,7 +287,7 @@ fetch('http://127.0.0.1:8095/expediente/1/events?after=0')
 	{
 		base.OnPageFinished(view, url);
 		Android.Util.Log.Info("SPIKE", $"documento listo a los {Android.OS.SystemClock.ElapsedRealtime() - MainActivity.Arranque} ms");
-		view?.EvaluateJavascript(Sonda, null);
+		view?.EvaluateJavascript(Probe, null);
 		view?.EvaluateJavascript(Conformance, null);
 	}
 
