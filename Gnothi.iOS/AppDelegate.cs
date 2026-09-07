@@ -48,4 +48,22 @@ public sealed class AppDelegate : UIApplicationDelegate
 		face?.HandleLink(url.AbsoluteString ?? "");
 		return true;
 	}
+
+	// THE SAME LINK, ARRIVING BY OUR OWN SCHEME. The reasoning and the security note are on
+	// CFBundleURLTypes in Info.plist; the short version is that go.gnothi.app does not resolve,
+	// so the universal link cannot be tested at all and iOS has no `pm set-app-links`.
+	//
+	// IT GOES TO THE SAME HandleLink, deliberately: a second parser is a second thing that can
+	// be wrong, and the two would drift. Verified on .NET 10 that System.Uri gives a custom
+	// scheme the same Query as https -- `gnothi://alta?bundle=...` yields the identical bundle
+	// URL -- so HandleLink needed no change whatsoever.
+	//
+	// Only the schemes declared in Info.plist reach this, so there is nothing to filter here.
+	public override bool OpenUrl(UIApplication application, NSUrl url, NSDictionary options)
+	{
+		if (url is null) return false;
+
+		face?.HandleLink(url.AbsoluteString ?? "");
+		return true;
+	}
 }

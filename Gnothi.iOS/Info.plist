@@ -56,6 +56,35 @@
 	     shares the Mac's network stack and 127.0.0.1 IS its localhost. On a real device the
 	     publisher lives on another machine, so it has to be reached by its LAN address, and
 	     that additionally needs NSAllowsLocalNetworking. Said in PRUEBAS-WEBVIEW-IOS.md §0. -->
+	<!-- A SCHEME OF OUR OWN, and it is here because P6 could not be run without it.
+	     go.gnothi.app does not resolve (measured 2026-09-07), so iOS has no AASA to verify and
+	     never hands the universal link to the app: Safari just opens the page. Android papers
+	     over exactly this with `pm set-app-links`, which force-approves the link locally. iOS
+	     has NO command line equivalent, so the escape hatch has to live in the app.
+
+	         xcrun simctl openurl booted "gnothi://alta?bundle=http://127.0.0.1:8096/examenes.zip"
+
+	     WHAT KEEPS THIS FROM BEING A HOLE: a custom scheme can be invoked by anyone, any app or
+	     any web page, and unlike a universal link nothing verifies who owns it. What arrives is
+	     only a URL to a bundle, and the alta ALWAYS shows the consent sheet first, so a hostile
+	     link gets as far as the sheet and no further. The person still reads who serves it, what
+	     it will be able to answer, and where the journal will live.
+
+	     STILL WORTH A DECISION BEFORE SHIPPING: the universal link is the product path and this
+	     is the laboratory one. It is defensible to keep -a person could get a bundle link by
+	     mail or by QR- but if it should not ship, it is one `#if DEBUG` in AppDelegate. -->
+	<key>CFBundleURLTypes</key>
+	<array>
+		<dict>
+			<key>CFBundleURLName</key>
+			<string>com.ncubo.gnothi.host</string>
+			<key>CFBundleURLSchemes</key>
+			<array>
+				<string>gnothi</string>
+			</array>
+		</dict>
+	</array>
+
 	<key>NSAppTransportSecurity</key>
 	<dict>
 		<key>NSExceptionDomains</key>
