@@ -90,7 +90,25 @@ New-Item -ItemType Directory -Path $logs -Force | Out-Null
 # levanto el servidor. Medido el 2026-09-04.
 function Levantar($nombre, $argumentos, $puerto) {
     if (Puerto-Vivo $puerto) { Write-Host "    :$puerto $nombre ya estaba arriba"; return }
-    Start-Process dotnet -ArgumentList $argumentos -WindowStyle Hidden `
+
+    # QUOTE WHATEVER CONTAINS A SPACE, and this is the same family of trap as the note above:
+    # it fails silently and the script still announces success.
+    #
+    # Start-Process joins -ArgumentList with spaces and adds NO quotes of its own. Measured:
+    # with the array as it comes, dotnet receives `--Titulo Supermercado La Guaria`, binds
+    # Titulo to "Supermercado", and `La` and `Guaria` arrive as two stray arguments. The page
+    # then comes up titled "Supermercado" and nothing anywhere says why.
+    #
+    # It also protects the PATHS: --project, --Bundle and --AppSuelta carry $raiz, so a clone
+    # in a directory whose name has a space breaks every server for the same reason.
+    #
+    # No element here ends in a backslash. If one ever does, it needs doubling first: on
+    # Windows a trailing "\" inside quotes escapes the closing quote.
+    $quoted = $argumentos | ForEach-Object {
+        if ($_ -match '\s') { '"' + $_ + '"' } else { $_ }
+    }
+
+    Start-Process dotnet -ArgumentList $quoted -WindowStyle Hidden `
         -RedirectStandardOutput "$logs\$nombre.log" -RedirectStandardError "$logs\$nombre.err"
     Write-Host "    :$puerto $nombre levantado"
 }
