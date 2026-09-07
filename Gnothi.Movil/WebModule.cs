@@ -89,7 +89,11 @@ internal abstract class WebModule : IWebModule
 		string root = BundleServer.BaseOf(Bundle);
 		Log($"{Name}: the bundle declares its base at {root}");
 
-		await Create(new BundleServer(Bundle, root), OriginFor(root), ct);
+		// El 404 sale por el log del Host, prefijado con el modulo. Es la mitad que el watchdog
+		// de la CSP no cubre: aquel dice que se RECHAZO algo, este que NO ESTA. Ver
+		// BundleServer.Serve.
+		var server = new BundleServer(Bundle, root) { NotFound = m => Log($"{Name}: {m}") };
+		await Create(server, OriginFor(root), ct);
 
 		// Wait for the actor to be hydrated. If the module never says so, the question fails
 		// saying exactly that instead of hanging forever.

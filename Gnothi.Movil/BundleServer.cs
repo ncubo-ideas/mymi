@@ -82,19 +82,39 @@ internal sealed class BundleServer
 		this.basePath = basePath;
 	}
 
+	// A DONDE VA EL 404 QUE NO SE VE. Lo pone quien construye el servidor -hoy WebModule, hacia
+	// el log del Host-. Nulo significa el comportamiento de antes: callarse. Ver Serve.
+	internal Action<string>? NotFound { get; set; }
+
 	// The path as the engine asked for it, with the bundle's base still in front. Returns what
 	// to answer; it never throws for a missing file, because a 404 is an answer.
 	internal ServedFile Serve(string requestedPath)
 	{
 		string asked = requestedPath.Length == 0 ? "/" : requestedPath;
-		if (asked.StartsWith(basePath, StringComparison.Ordinal)) asked = asked[basePath.Length..];
+
+		// LA RAIZ DEL BUNDLE, PEDIDA SIN LA BARRA FINAL. El origen es gnothi-mod://<modulo>/app/
+		// y WebKit pide "/app", no "/app/". Sin este caso el StartsWith contra basePath -que SI
+		// lleva la barra- no matchea, no se recorta nada, y se busca <bundle>/app: 404 en el
+		// documento inicial, window.gnothi nunca se define y la pantalla queda en blanco, sin un
+		// solo error. Medido en el simulador el 2026-09-07 con los cuatro modulos del paquete.
+		if (basePath.Length > 1 && asked == basePath.TrimEnd('/')) asked = "/";
+		else if (asked.StartsWith(basePath, StringComparison.Ordinal)) asked = asked[basePath.Length..];
 
 		string path = asked.TrimStart('/');
 		if (path.Length == 0 || path.EndsWith("/", StringComparison.Ordinal)) path += "index.html";
 
 		string full = Resolve(path);
 
-		if (!File.Exists(full)) return ServedFile.NotFound();
+		// UN 404 QUE SE DICE. Es silencioso a proposito -"un 404 es una respuesta"-, y eso es
+		// cierto para el protocolo y falso para diagnosticar: hace indistinguible "no encuentro
+		// el archivo" de "la CSP lo rechazo", y las dos dejan la pantalla igual de blanca.
+		//
+		// ES LA MITAD QUE EL WATCHDOG NO CUBRE. El de arriba reporta lo que la CSP RECHAZO; este
+		// reporta lo que NO ESTA. Con los dos, una pantalla en blanco se parte en los dos casos
+		// que antes se confundian. El costo de no tenerlo se pago dos veces el 2026-09-07: los
+		// dos bugs de esta tanda -la ruta bin/web y el base pedido sin barra- eran invisibles, y
+		// cada uno se leyo en un renglon apenas esta linea existio.
+		if (!File.Exists(full)) { NotFound?.Invoke($"404 {requestedPath} -> {full}"); return ServedFile.NotFound(); }
 
 		// The document is read whole because its CSP depends on its content. Everything else
 		// travels as a file the platform streams.
