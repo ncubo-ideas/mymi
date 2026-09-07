@@ -225,10 +225,26 @@ La CSP es **literalmente la misma cadena** que en Android, calculada por el mism
 (`Gnothi.Movil/BundleServer.cs`), con el hash de cada script en línea computado al servir. Lo
 que cambia es quién la pone: acá va en la respuesta del scheme handler.
 
-Como en Android, **esta no se ejecuta sola**: el módulo hospedado nunca intenta salir a la red,
-así que no hay nada que negar. Para medirla hay que agregarle una sonda temporal al módulo que
-haga `fetch` contra el publicador. Cuando está puesta, la violación aparece en la consola del
-módulo —que acá llega por el mismo canal del puente, porque iOS no tiene `WebChromeClient`—:
+**La mitad se ejecuta sola, y es lo primero que tenés que mirar.** El PWA de Blazor intenta
+registrar su service worker en cada carga y la política se lo deniega sin que nadie toque nada.
+Medido en Android el 2026-09-07 apenas instalar `examenes`:
+
+```
+examenes: Creating a worker from '.../app/service-worker.js' violates the following
+Content Security Policy directive: "worker-src 'none'". The action has been blocked.
+```
+
+**[NO MEDIDO EN iOS]** Acá tiene que pasar lo mismo, porque es la misma cadena calculada por el
+mismo código, y sería la confirmación más barata de que la CSP llega al módulo por el scheme
+handler. Si **no** aparece, la CSP no está llegando —y eso lo tenés que resolver antes de seguir
+con el resto de P5—. La denegación es benigna: en Android, en la misma corrida, `resumen`
+contestó igual, así que el módulo funciona sin su service worker.
+
+**Lo que sí pide una sonda** es la otra mitad: que no pueda alcanzar al *publicador*. Eso es
+`connect-src 'self'`, y ahí el módulo hospedado nunca lo intenta —usa el puente—, así que no hay
+nada que negar. Hay que agregarle una sonda temporal que haga `fetch` contra el publicador.
+Cuando está puesta, la violación aparece en la consola del módulo —que acá llega por el mismo
+canal del puente, porque iOS no tiene `WebChromeClient`—:
 
 ```
 modulo:examenes: error: Refused to connect to 'http://127.0.0.1:8095/...' because it

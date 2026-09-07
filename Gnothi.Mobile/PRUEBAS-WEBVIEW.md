@@ -120,14 +120,22 @@ un `assetlinks.json` con la huella de firma. Sin la aprobación, tocar «Agregar
 Dejá una segunda terminal mirando por dentro. **Son tres tags y dicen cosas distintas:**
 
 ```bash
-adb logcat -s GNOTHI:I gnothi:I modulo:examenes:I modulo:compras:I modulo:cargas:I modulo:dealership:I
+adb logcat -s GNOTHI:I gnothi:I modulo:I
 ```
 
 - `GNOTHI` (mayúscula) — el Host: catálogo, consentimiento, comprobaciones.
 - `gnothi` (minúscula) — el alta y el cartero. **Es fácil perdérselo**: casi todo lo interesante
   de estas pruebas sale acá.
-- `modulo:<módulo>` — la consola de ese módulo, incluidas las violaciones de CSP. Hay uno por
-  módulo porque cada uno corre en su propio origen.
+- `modulo` — la consola de los módulos, incluidas las violaciones de CSP. **El nombre del
+  módulo va al principio del mensaje**, no en el tag: `examenes: …`, `compras: …`. Para ver uno
+  solo, `adb logcat -s modulo:I | grep '^.*examenes:'`.
+
+> **Por qué un solo tag y no uno por módulo.** Este filtro antes decía
+> `modulo:examenes:I modulo:compras:I …` y **no podía funcionar**: `-s` lee cada término como
+> `TAG:PRIORIDAD`, así que `modulo:examenes:I` se interpreta como tag `modulo` con prioridad
+> `examenes`. Un término inválido hace que logcat rechace **toda** la lista, no sólo ese, así
+> que no salía ni `GNOTHI` y la app parecía muda. Un tag con dos puntos no se puede expresar en
+> `-s`, y por eso el nombre del módulo se mudó al mensaje.
 
 ---
 
@@ -394,20 +402,42 @@ dando 6, 2, 4 y 6 respectivamente. Los cuatro journals limpios.
 Es la prueba que vuelve **falsable** todo lo anterior: en la **misma corrida** el módulo intenta
 alcanzar al publicador y el motor se lo niega, mientras Gnothi lo alcanza sin problema.
 
-> **Esta no se ejecuta sola.** El módulo hospedado nunca intenta salir a la red —usa el puente—,
-> así que no hay nada que negar espontáneamente. Se midió el **2026-09-03** agregando una sonda
-> temporal al módulo que hacía `fetch` contra el publicador. Resultado, en la misma corrida:
-> el módulo denegado por CSP, Gnothi respondiendo. Para repetirla hay que volver a poner la sonda.
+> **La mitad SÍ se ejecuta sola, y esto es una corrección: antes acá decía que nada se negaba
+> espontáneamente.** Se negaba. El PWA de Blazor intenta registrar su service worker en cada
+> carga, y la política se lo deniega sin que nadie toque nada. Medido el **2026-09-07** apenas
+> instalar `examenes`, con `adb logcat -s modulo:I`:
+>
+> ```
+> examenes: Creating a worker from 'https://examenes.gnothi.local/app/service-worker.js'
+> violates the following Content Security Policy directive: "worker-src 'none'". The
+> action has been blocked. (35)
+> examenes: Uncaught (in promise) SecurityError: Failed to register a ServiceWorker
+> ```
+>
+> Eso prueba, **con cero preparación**, que la política llega al módulo y que el motor la
+> aplica. Y la denegación es benigna: en la misma corrida `resumen` contestó 122 bytes con
+> `examenes: 11`, así que el módulo funciona igual sin su service worker.
+>
+> **Lo que todavía pide la sonda** es la otra mitad: que no pueda alcanzar al *publicador*. Eso
+> es `connect-src 'self'`, y ahí sí el módulo hospedado nunca lo intenta —usa el puente—, así
+> que no hay nada que negar. Se midió el **2026-09-03** agregando una sonda temporal que hacía
+> `fetch` contra el publicador: el módulo denegado por CSP y Gnothi respondiendo, en la misma
+> corrida. Para repetir esa mitad hay que volver a poner la sonda.
 
-Lo que **sí** se puede mirar ahora es la política que se le sirve, en `ServidorDelBundle`
-([ModulosWeb.cs](ModulosWeb.cs)): `connect-src 'self'`, con el hash del script inline calculado
-al servir. Si ahí dijera `*`, no habría contención.
+Lo que **sí** se puede mirar ahora es la política que se le sirve, en `BundleServer`
+([../Gnothi.Movil/BundleServer.cs](../Gnothi.Movil/BundleServer.cs)): `connect-src 'self'`, con
+el hash del script inline calculado al servir. Si ahí dijera `*`, no habría contención.
 
-Cuando la sonda está puesta, la violación aparece bajo `modulo:examenes`:
+Y ahora vive en `Gnothi.Movil`, o sea que **es literalmente la misma cadena que sirve iOS**,
+calculada por el mismo código. Antes era `ServidorDelBundle` en `ModulosWeb.cs`, de este
+proyecto.
+
+Cuando la sonda está puesta, la violación aparece bajo el tag `modulo`, con el nombre del
+módulo al principio del mensaje:
 
 ```
-Refused to connect to 'http://127.0.0.1:8095/...' because it violates the following
-Content Security Policy directive: "connect-src 'self'"
+examenes: Refused to connect to 'http://127.0.0.1:8095/...' because it violates the
+following Content Security Policy directive: "connect-src 'self'"
 ```
 
 ### P7 · Las consultas del módulo llegan al Host

@@ -117,14 +117,20 @@ internal sealed class BundleServerClient(BundleServer server, string host) : Web
 	}
 }
 
-// The module's console goes to logcat under its own name. It is how CSP violations and the
-// institution's domain errors become visible.
+// The module's console goes to logcat. It is how CSP violations and the institution's domain
+// errors become visible.
+//
+// THE MODULE IS NAMED IN THE MESSAGE AND NOT IN THE TAG, and that is not a style choice: a tag
+// carrying a colon CANNOT BE FILTERED. `adb logcat -s` parses each term as `TAG:PRIORITY`, so
+// `modulo:examenes:I` reads as tag `modulo` at priority `examenes` -- and an invalid term makes
+// logcat reject the WHOLE filter list, not just that one. Measured: it printed its usage and
+// not a single line came out, GNOTHI's included, so the filter looked like a silent app.
 internal sealed class ModuleConsole(string module) : WebChromeClient
 {
 	public override bool OnConsoleMessage(ConsoleMessage? message)
 	{
 		if (message is not null)
-			Android.Util.Log.Info($"modulo:{module}", $"{message.Message()} ({message.LineNumber()})");
+			Android.Util.Log.Info("modulo", $"{module}: {message.Message()} ({message.LineNumber()})");
 		return true;
 	}
 }
