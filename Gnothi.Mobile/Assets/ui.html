@@ -451,7 +451,8 @@ const gn = {
     document.getElementById('pr-cuerpo').innerHTML =
       (p.yaEstaba ? '<p class="ojo">Ya tenés este módulo. Reinstalarlo reemplaza su app; su registro se conserva.</p>' : '')
       + '<p><b>Qué va a poder contestar</b></p><ul class="pr-tools">' + tools + '</ul>'
-      + '<p><b>Dónde va a vivir tu registro</b><br><code>' + esc(p.journal) + '</code></p>'
+      + '<p><b>Dónde se va a guardar, en tu teléfono</b><br><code>' + esc(p.journal) + '</code><br>'
+      + '<small>Es tuyo. Gnothi se lo administra a esta institución, no se lo lleva.</small></p>'
       + '<p><b>Con quién va a hablar</b><br><code>' + esc(p.publicador || '(no declara publicador)') + '</code><br>'
       + '<small>Es la única red que va a poder tocar, y la hace Gnothi por él. '
       + 'El bundle lo sirvió <b>' + esc(p.servido) + '</b>.</small></p>';
