@@ -239,6 +239,17 @@ namespace Cargas.Dominio
 		internal IReadOnlyList<FaltanteDeDato> FaltantesDe(string placa) =>
 			VehiculoDe(placa).Faltantes();
 
+		/// <summary>CUANTO SE MANEJA ESTE CARRO. Sale con la mirada puesta porque este
+		/// numero se cruza con la distancia que le falta al vehiculo para un service, y
+		/// esa viene en la unidad de la otra institucion: un ritmo en km leido como
+		/// millas corre la fecha del service 1.6 veces.</summary>
+		internal LecturaDeRitmo RitmoDe(string placa)
+		{
+			LecturaDeRitmo ritmo = VehiculoDe(placa).Ritmo;
+			ritmo.MirarloComo(Mirada);
+			return ritmo;
+		}
+
 		internal ProyeccionDeOdometro OdometroEstimadoDe(string placa, DateTime hoy)
 		{
 			ProyeccionDeOdometro proyeccion = VehiculoDe(placa).OdometroEstimado(hoy);

@@ -270,6 +270,12 @@ namespace Cargas.Consola
 						+ $" - proyeccion, no medicion"
 					: "  autonomia: todavia no se puede estimar");
 
+				// EL RITMO, que es la mitad que el concesionario declara no tener. Se
+				// imprime aca porque es la consulta que sale por MCP: si el print de la
+				// frontera se rompe, se ve en el estado y no en produccion.
+				RitmoDelVehiculo ritmo = api.Ritmo(vehiculo.Placa);
+				Console.WriteLine($"  ritmo: {ritmo.Expresada} [{ritmo.Situacion}]");
+
 				OdometroPropuesto odometro = api.Odometro(vehiculo.Placa, FechaDeCorte);
 				Console.WriteLine(odometro.Hay
 					? $"  odometro esperado hoy: ~{Formato(odometro.Kilometros)} km "

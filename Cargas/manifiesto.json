@@ -77,7 +77,7 @@
 
   "consultas": {
     "//": "EL CATALOGO DE PERMISOS DE LA IA. El Host las apaga una por una y journaliza la decision.",
-    "//solo-lectura": "Las seis son PerformQuery. Este modulo NO expone ninguna escritura a la IA: los aportes entran solo por la app de la persona, y el unico escritor del journal es ella.",
+    "//solo-lectura": "Las siete son PerformQuery. Este modulo NO expone ninguna escritura a la IA: los aportes entran solo por la app de la persona, y el unico escritor del journal es ella.",
     "//el-criterio": "Si la IA puede contestar algo que ya esta en una pantalla, el demo no probo nada. Por eso no hay una consulta 'dame las cargas': el historial lo muestra la app.",
     "lista": [
       { "nombre": "mis_cargas",                  "revela": "que vehiculos hay, con su placa y su completitud" },
@@ -85,7 +85,14 @@
       { "nombre": "rendimiento_vs_habitual",     "revela": "la serie de tramos contra la propia linea base, con veredicto semantico" },
       { "nombre": "lo_que_falta_para_calcular",  "revela": "que dato falta y que calculo se desbloquea" },
       { "nombre": "mis_boletos_de_tombola",      "revela": "los boletos por sorteo, y de que carga salio cada uno con lo que sobro" },
-      { "nombre": "dias_hasta_la_proxima_carga", "revela": "la prediccion de la proxima carga, declarada como proyeccion" }
+      { "nombre": "dias_hasta_la_proxima_carga", "revela": "la prediccion de la proxima carga, declarada como proyeccion" },
+      {
+        "nombre": "mi_ritmo_de_manejo",
+        "revela": "cuanta distancia por dia se maneja, y las lecturas del odometro de las que sale",
+        "//por-que-existe": "ES LA UNICA QUE NO SE JUSTIFICA SOLA, SINO POR EL CRUCE. what_is_left_before_each_service del concesionario dice cuanta distancia y cuantos dias le faltan al carro para cada service, y declara que NO puede decir cual de las dos mitades llega primero 'porque este registro no tiene ese ritmo'. Este modulo si lo tiene: ve el odometro cada vez que la persona carga, no una vez por service. El cruce lo hace el asistente con permiso de la persona, y la tool le pide que lo atribuya: la estacion no sabe nada del plan de mantenimiento.",
+        "//el-criterio": "Las lecturas sueltas SI estan en una pantalla -la Ruta las muestra- y por eso no hay una tool que las liste. Viajan aca como las filas que respaldan la frase del ritmo, que es lo que ninguna pantalla contesta.",
+        "//solo-lo-que-cuenta": "El ritmo se calcula solo con lecturas observadas o confirmadas. Un estimado viaja en las filas con cuentaParaCalcular en false: existe, y no participa."
+      }
     ]
   },
 

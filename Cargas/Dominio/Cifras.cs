@@ -32,5 +32,10 @@ namespace Cargas.Dominio
 
 		/// <summary>Enteros de una frase: kilometros, cuentas.</summary>
 		internal static string Entera(decimal valor) => valor.ToString("#,0", Agrupadas);
+
+		/// <summary>Promedios: hasta un decimal, sin ceros de relleno. Un ritmo de 38.2
+		/// km por dia redondeado a 38 pierde justo la precision por la que alguien
+		/// pregunta cuanto maneja.</summary>
+		internal static string Aproximada(decimal valor) => valor.ToString("#,0.#", Agrupadas);
 	}
 }

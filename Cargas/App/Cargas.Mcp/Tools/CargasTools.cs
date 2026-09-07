@@ -129,6 +129,80 @@ internal sealed class CargasTools
 		});
 	}
 
+	[McpServerTool(Name = "mi_ritmo_de_manejo", UseStructuredContent = true)]
+	[Description("Cuanto se maneja este vehiculo: la distancia por dia leida de la serie "
+		+ "del odometro, y las lecturas de las que salio una por una. Usala para "
+		+ "'¿cuanto manejo?', '¿cuantos kilometros hago por dia?', y sobre todo PARA "
+		+ "CRUZAR CON EL PLAN DE MANTENIMIENTO DE OTRO MODULO: el registro del "
+		+ "concesionario dice cuanta distancia y cuantos dias le faltan al carro para "
+		+ "cada service, y declara que NO puede decir cual de las dos mitades llega "
+		+ "primero porque no tiene el ritmo. Este es ese ritmo. "
+		+ "LO QUE DICE dice ES LA RESPUESTA, y la compuso el registro. Trae las dos "
+		+ "puntas con sus fechas, la distancia entre ellas, los dias y la distancia por "
+		+ "dia. Dila. NO la rearmes: no dividas kilometros entre dias ni saques un "
+		+ "promedio de las filas, que daria un ritmo que nadie midio y con otro redondeo. "
+		+ "UN RITMO SE PUEDE NO PODER MEDIR, Y ESO ES UNA RESPUESTA. situacion dice en "
+		+ "cual de cuatro esta: medido, o no se pudo por una de tres razones con nombre "
+		+ "-sin lecturas, una sola lectura, o todas las lecturas del mismo dia-. NINGUNA "
+		+ "de las tres quiere decir que el carro no se movio: quiere decir que falta un "
+		+ "aporte de la persona, y dice cual. "
+		+ "SOLO CUENTAN LAS LECTURAS OBSERVADAS Y CONFIRMADAS. Un kilometraje ESTIMADO lo "
+		+ "propuso la app y la persona no lo miro, asi que no entra en el ritmo: entra en "
+		+ "las filas con cuentaParaCalcular en false, para que se vea que existe y que no "
+		+ "participo. Nunca lo sumes al calculo. "
+		+ "EL CRUCE CON EL CONCESIONARIO ES TUYO, NO DE LA ESTACION. Si pones este ritmo "
+		+ "al lado de lo que le falta al carro para un service, dilo: la estacion no sabe "
+		+ "nada del plan de mantenimiento y el concesionario no sabe nada de estas "
+		+ "lecturas. Y la unidad viaja en la respuesta: no la conviertas.")]
+	public RitmoDeManejo MiRitmoDeManejo(
+		[Description("La placa del vehiculo, como la lista mis_cargas.")] string placa)
+	{
+		if (!lector.HayJournal) return new RitmoDeManejo { HayDatos = false };
+
+		return lector.Consultar(api =>
+		{
+			if (!ConocePlaca(api, placa))
+				return new RitmoDeManejo { HayDatos = true, HayVehiculo = false };
+
+			RitmoDelVehiculo ritmo = api.Ritmo(placa);
+
+			// LAS FILAS SALEN DE LA MISMA CONSULTA QUE MIRA LA PERSONA. No hay una lectura
+			// aparte para la IA: si la Ruta muestra "42 380 km (observado)", eso es lo que
+			// viaja. Van las estimadas tambien, marcadas: ocultarlas haria parecer que el
+			// kilometraje de esa carga no existe, y existe -lo que no hace es contar-.
+			var lecturas = new List<LecturaDelOdometro>();
+			foreach (CargaEnLista carga in api.Cargas(placa))
+			{
+				if (!carga.TieneKilometraje) continue;
+				lecturas.Add(new LecturaDelOdometro
+				{
+					Fecha = carga.Fecha,
+					Kilometraje = carga.KilometrajeAnotado,
+					Origen = carga.OrigenDelKilometraje,
+					CuentaParaCalcular = carga.CuentaParaCalcular,
+					Expresada = carga.Kilometraje,
+				});
+			}
+
+			return new RitmoDeManejo
+			{
+				HayDatos = true,
+				HayVehiculo = true,
+				Situacion = ritmo.Situacion,
+				SePudoMedir = ritmo.SePudoMedir,
+				Dice = ritmo.Expresada,
+				PorDia = Math.Round(ritmo.PorDiaComoSeVe, 1),
+				Distancia = Math.Round(ritmo.KilometrosComoSeVen),
+				Unidad = ritmo.SimboloDeLaDistancia,
+				Dias = ritmo.Dias,
+				Desde = ritmo.Desde,
+				Hasta = ritmo.Hasta,
+				LecturasQueCuentan = ritmo.Lecturas,
+				Lecturas = lecturas,
+			};
+		});
+	}
+
 	[McpServerTool(Name = "lo_que_falta_para_calcular", UseStructuredContent = true)]
 	[Description("Que dato falta y que calculo se desbloquea si la persona lo pone. Es "
 		+ "la consulta que ninguna pantalla contesta -una pantalla solo muestra datos "
@@ -524,4 +598,88 @@ public sealed class BoletosDeUnaCarga
 	public bool ProbablementeFaltaUnDato { get; init; }
 
 	[JsonPropertyName("paraLaPersona")] public string ParaLaPersona { get; init; } = "";
+}
+
+public sealed class RitmoDeManejo
+{
+	[JsonPropertyName("hayDatos")]
+	[Description("false si la app instalada nunca escribio su journal en esta computadora.")]
+	public bool HayDatos { get; init; }
+
+	[JsonPropertyName("hayVehiculo")]
+	[Description("false si esa placa no esta en la bitacora. Listalas con mis_cargas.")]
+	public bool HayVehiculo { get; init; }
+
+	[JsonPropertyName("situacion")]
+	[Description("Una de cuatro: 'medido', 'sin lecturas', 'una sola lectura', 'lecturas "
+		+ "del mismo dia'. Las tres ultimas son ausencias con nombre, no un ritmo de cero.")]
+	public string Situacion { get; init; } = "";
+
+	[JsonPropertyName("sePudoMedir")]
+	[Description("true solo con situacion 'medido'. Con false, porDia y distancia vienen "
+		+ "en cero y NO significan nada: la respuesta esta en dice.")]
+	public bool SePudoMedir { get; init; }
+
+	[JsonPropertyName("dice")]
+	[Description("LA RESPUESTA, escrita por el registro. Dila. Cuando no se pudo medir, "
+		+ "dice cual de las tres razones es y que aporte falta.")]
+	public string Dice { get; init; } = "";
+
+	[JsonPropertyName("porDia")]
+	[Description("La distancia por dia, en la unidad de 'unidad'. Es el numero que el "
+		+ "registro del concesionario declara no tener.")]
+	public decimal PorDia { get; init; }
+
+	[JsonPropertyName("distancia")]
+	[Description("Lo recorrido entre las dos puntas, de donde sale el ritmo.")]
+	public decimal Distancia { get; init; }
+
+	[JsonPropertyName("unidad")]
+	[Description("La unidad que eligio la persona, de porDia y distancia. NO la conviertas.")]
+	public string Unidad { get; init; } = "";
+
+	[JsonPropertyName("dias")]
+	[Description("Dias entre la primera y la ultima lectura que cuentan.")]
+	public int Dias { get; init; }
+
+	[JsonPropertyName("desde")]
+	public DateTime Desde { get; init; }
+
+	[JsonPropertyName("hasta")]
+	public DateTime Hasta { get; init; }
+
+	[JsonPropertyName("lecturasQueCuentan")]
+	[Description("Cuantas lecturas alimentaron el ritmo. Las estimadas no se cuentan aca, "
+		+ "aunque aparezcan en la lista.")]
+	public int LecturasQueCuentan { get; init; }
+
+	[JsonPropertyName("lecturas")]
+	[Description("El registro crudo, una fila por kilometraje anotado. Estan para respaldar "
+		+ "la frase, no para rearmar el ritmo.")]
+	public IReadOnlyList<LecturaDelOdometro> Lecturas { get; init; } = [];
+}
+
+public sealed class LecturaDelOdometro
+{
+	[JsonPropertyName("fecha")]
+	[Description("Cuando se cargo, que es cuando la persona leyo el tablero.")]
+	public DateTime Fecha { get; init; }
+
+	[JsonPropertyName("kilometraje")]
+	[Description("Lo que marcaba el odometro, con su unidad.")]
+	public string Kilometraje { get; init; } = "";
+
+	[JsonPropertyName("origen")]
+	[Description("'observado' lo leyo la persona del tablero; 'confirmado' lo propuso la "
+		+ "app y ella dijo que si; 'estimado' lo propuso la app y nadie lo miro.")]
+	public string Origen { get; init; } = "";
+
+	[JsonPropertyName("cuentaParaCalcular")]
+	[Description("Si esta lectura alimenta el ritmo. false para las estimadas: existen, "
+		+ "pero no participan. No las sumes.")]
+	public bool CuentaParaCalcular { get; init; }
+
+	[JsonPropertyName("expresada")]
+	[Description("La lectura con su procedencia, como la dice el registro: '42 380 km (observado)'.")]
+	public string Expresada { get; init; } = "";
 }

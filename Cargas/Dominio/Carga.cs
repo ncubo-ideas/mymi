@@ -150,6 +150,11 @@ namespace Cargas.Dominio
 		internal string OrigenDelKilometraje => Odometro.Existe ? Odometro.Origen.Nombre : "";
 		internal string TanqueExpresado => Tanque.Expresada;
 		internal bool TieneKilometraje => Odometro.Existe;
+
+		/// <summary>Si este kilometraje alimenta el ritmo y los tramos. Un estimado NO, y
+		/// quien lee la fila tiene que poder decirlo sin deducirlo del nombre del
+		/// origen.</summary>
+		internal bool ElKilometrajeCuentaParaCalcular => Odometro.CierraTramo;
 		internal bool TieneFoto => Foto.Existe;
 
 		/// <summary>Que estado se SUPONE, para poder enunciarlo antes de preguntar. Vacio

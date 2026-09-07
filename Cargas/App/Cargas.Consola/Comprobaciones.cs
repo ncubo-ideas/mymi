@@ -52,6 +52,8 @@ namespace Cargas.Consola
 			ElTotalQueNoCuadraSeReporta();
 			ElOdometroNoRetrocede();
 			LaCapacidadYLaAutonomiaSonDerivadasDeclaradas();
+			ElRitmoDiceEnCualDeCuatroSituacionesEsta();
+			ElRitmoNoSeAlimentaDeEstimados();
 			ElOdometroEstimadoProponeYNuncaEscribe();
 			LaCompletitudYLoQueFaltaMotivanElIngreso();
 			AgregarElKilometrajeParteElTramoLargo();
@@ -833,6 +835,125 @@ namespace Cargas.Consola
 		}
 
 		// ------------------------------------------------------------- lo derivado
+
+		// EL RITMO ES LA MITAD QUE EL CONCESIONARIO NO TIENE. Su
+		// what_is_left_before_each_service dice cuanta distancia y cuantos dias le faltan
+		// al carro para cada service, y declara que NO puede decir cual llega primero
+		// "porque este registro no tiene ese ritmo". Esta bitacora si lo tiene: ve el
+		// odometro cada vez que Sonia carga, no una vez por service.
+		//
+		// Y NO SE PUDO MEDIR SON TRES RESPUESTAS, NO UNA. Antes las tres daban 0m, y un
+		// cero no dice si falta anotar el primer kilometraje, el segundo, o si los dos que
+		// hay son del mismo dia. Cada una se arregla distinto.
+		private static void ElRitmoDiceEnCualDeCuatroSituacionesEsta()
+		{
+			Titulo("el ritmo dice en cual de cuatro situaciones esta");
+
+			// 1. SIN LECTURAS. No es un carro quieto: es un carro del que no se sabe.
+			var sinNada = new BitacoraDeCargas();
+			AgregarCarga(sinNada, "2026-06-03", 40m, "A-3", 615m, 24600m, "automatico", "T-1");
+			LecturaDeRitmo ninguna = sinNada.RitmoDe("BQR-482");
+			Igual("sin lecturas, la situacion lo dice", "sin lecturas", ninguna.Situacion.Nombre);
+			Igual("  y no se pudo medir", "False", ninguna.SePudoMedir.ToString());
+			Igual("  y la frase dice que hacer", "True",
+				ninguna.Expresada.Contains("no anotaste ningun kilometraje").ToString());
+
+			// 2. UNA SOLA. El caso de quien acaba de empezar a anotar.
+			var unaSola = new BitacoraDeCargas();
+			AgregarCarga(unaSola, "2026-06-03", 40m, "A-3", 615m, 24600m, "automatico", "T-1");
+			unaSola.AnotarOdometro("T-1", 42000m, "km", "observado");
+			LecturaDeRitmo sola = unaSola.RitmoDe("BQR-482");
+			Igual("una sola lectura, la situacion lo dice", "una sola lectura",
+				sola.Situacion.Nombre);
+			Igual("  y dice que hacen falta dos", "True",
+				sola.Expresada.Contains("un ritmo necesita dos").ToString());
+
+			// 3. LAS DOS EL MISMO DIA. Dividir entre cero dias no da infinito: da que no
+			// se puede, y por una razon que tiene nombre.
+			var mismoDia = new BitacoraDeCargas();
+			AgregarCarga(mismoDia, "2026-06-03", 40m, "A-3", 615m, 24600m, "automatico", "T-1");
+			AgregarCarga(mismoDia, "2026-06-03", 30m, "A-3", 615m, 18450m, "automatico", "T-2");
+			mismoDia.AnotarOdometro("T-1", 42000m, "km", "observado");
+			mismoDia.AnotarOdometro("T-2", 42150m, "km", "observado");
+			LecturaDeRitmo enUnDia = mismoDia.RitmoDe("BQR-482");
+			Igual("las dos el mismo dia, la situacion lo dice", "lecturas del mismo dia",
+				enUnDia.Situacion.Nombre);
+			Igual("  y el porque distingue el caso de los otros dos", "True",
+				enUnDia.Expresada.Contains("dos dias distintos").ToString());
+
+			// 4. MEDIDO. 1 140 km en 30 dias = 38 km/dia.
+			var medido = new BitacoraDeCargas();
+			AgregarCarga(medido, "2026-06-03", 40m, "A-3", 615m, 24600m, "automatico", "T-1");
+			AgregarCarga(medido, "2026-07-03", 40m, "A-3", 615m, 24600m, "automatico", "T-2");
+			medido.AnotarOdometro("T-1", 42000m, "km", "observado");
+			medido.AnotarOdometro("T-2", 43140m, "km", "observado");
+			LecturaDeRitmo ritmo = medido.RitmoDe("BQR-482");
+			Igual("medido, la situacion lo dice", "medido", ritmo.Situacion.Nombre);
+			Igual("  38 km por dia", "38", Formato(ritmo.KilometrosPorDia, "0.#"));
+			Igual("  sobre 30 dias", "30", ritmo.Dias.ToString());
+			Igual("  y 2 lecturas", "2", ritmo.Lecturas.ToString());
+			// La cifra se arma con Cifras y no a mano: el separador de miles del dominio es
+			// un espacio FINO, y con uno normal esta comprobacion falla mostrando dos
+			// cadenas que se ven identicas.
+			Igual("  la frase la compone el dominio, con las dos puntas",
+				$"38 km por dia: {Cifras.Entera(1140m)} km entre el 03/06/2026 y el "
+				+ "03/07/2026, sobre 2 kilometrajes que anotaste vos", ritmo.Expresada);
+
+			// UN RITMO MEDIDO NUNCA ES CERO, y no porque este calculo lo evite: porque el
+			// odometro es ESTRICTAMENTE creciente y el dominio no deja registrar dos
+			// lecturas iguales. Por eso LecturaDeRitmo no tiene rama de "el carro no se
+			// movio": seria inventar un caso inconstruible. Se comprueba el invariante del
+			// que depende, para que se entere quien lo afloje.
+			var quieto = new BitacoraDeCargas();
+			AgregarCarga(quieto, "2026-06-03", 40m, "A-3", 615m, 24600m, "automatico", "T-1");
+			AgregarCarga(quieto, "2026-07-03", 40m, "A-3", 615m, 24600m, "automatico", "T-2");
+			quieto.AnotarOdometro("T-1", 42000m, "km", "observado");
+			Igual("el mismo odometro dos veces ni se puede registrar", "False",
+				quieto.PuedeAnotarOdometro("T-2", 42000m, "km").ToString());
+			Revienta<ErrorDeDominio>("  y por eso un ritmo medido nunca es cero",
+				() => quieto.AnotarOdometro("T-2", 42000m, "km", "observado"));
+
+			// LA UNIDAD ES PRESENTACION, TAMBIEN ACA. Se cruza con la distancia que le
+			// falta al carro para un service, y esa viene en la unidad del otro lado.
+			medido.ElegirUnidadDeDistancia("mi");
+			LecturaDeRitmo enMillas = medido.RitmoDe("BQR-482");
+			Igual("en millas el numero cambia", "23.6", Formato(enMillas.PorDiaComoSeVe, "0.#"));
+			Igual("  y la situacion no", "medido", enMillas.Situacion.Nombre);
+			Igual("  ni los dias", "30", enMillas.Dias.ToString());
+		}
+
+		// LA ANTI-CIRCULARIDAD DEL §7.3, EN EL RITMO. Un estimado sale de multiplicar el
+		// ritmo por los dias transcurridos; si despues alimentara el ritmo, el ritmo se
+		// confirmaria a si mismo. Lo impide el TIPO -OrigenDeLectura.Estimado tiene
+		// CuentaParaCalcular en false- y no un if de este calculo.
+		//
+		// Importa doble aca: este numero se le pasa al asistente para cruzarlo con el
+		// registro del concesionario, cuyo MCP prohibe aceptar "un numero que no salio del
+		// registro". Un ritmo derivado de un odometro estimado seria exactamente eso.
+		private static void ElRitmoNoSeAlimentaDeEstimados()
+		{
+			Titulo("el ritmo no se alimenta de estimados");
+
+			var bitacora = new BitacoraDeCargas();
+			AgregarCarga(bitacora, "2026-06-03", 40m, "A-3", 615m, 24600m, "automatico", "T-1");
+			AgregarCarga(bitacora, "2026-07-03", 40m, "A-3", 615m, 24600m, "automatico", "T-2");
+			bitacora.AnotarOdometro("T-1", 42000m, "km", "observado");
+			bitacora.AnotarOdometro("T-2", 43140m, "km", "estimado");
+
+			LecturaDeRitmo conEstimado = bitacora.RitmoDe("BQR-482");
+			Igual("con una observada y una estimada, cuenta UNA", "una sola lectura",
+				conEstimado.Situacion.Nombre);
+			Igual("  y por eso no hay ritmo", "False", conEstimado.SePudoMedir.ToString());
+
+			// Confirmarlo lo sube a confirmado, y confirmado SI cuenta: Sonia lo miro.
+			bitacora.AnotarOdometro("T-2", 43140m, "km", "confirmado");
+			LecturaDeRitmo confirmada = bitacora.RitmoDe("BQR-482");
+			Igual("confirmado si cuenta: Sonia miro el numero", "medido",
+				confirmada.Situacion.Nombre);
+			Igual("  y ahi si hay ritmo", "38", Formato(confirmada.KilometrosPorDia, "0.#"));
+			Igual("  sobre las 2 que cuentan", "2", confirmada.Lecturas.ToString());
+		}
+
 
 		private static void LaCapacidadYLaAutonomiaSonDerivadasDeclaradas()
 		{
