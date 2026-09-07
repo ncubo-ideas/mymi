@@ -214,4 +214,10 @@ internal sealed class BridgeToModule(AndroidWebModule module) : Java.Lang.Object
 	[JavascriptInterface]
 	[Export("pull")]
 	public void Pull(string id, string after) => module.Serve("pull", id, after, null);
+
+	// The seventh, and the only one no bundle calls: the watchdog Gnothi injects into the
+	// document reports a refusal back through the same door. See WebModule.Serve.
+	[JavascriptInterface]
+	[Export("violation")]
+	public void Violation(string report) => module.Serve("violation", "", report, null);
 }

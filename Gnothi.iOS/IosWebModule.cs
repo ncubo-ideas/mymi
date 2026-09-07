@@ -261,7 +261,11 @@ internal sealed class IosWebModule : WebModule
 		    listar:    function (id)           { send({ op: 'listar',   id: id }); },
 		    leer:      function (id, path)     { send({ op: 'leer',     id: id, a: path }); },
 		    escribir:  function (id, path, c)  { send({ op: 'escribir', id: id, a: path, b: c }); },
-		    pull:      function (id, from)     { send({ op: 'pull',     id: id, a: String(from) }); }
+		    pull:      function (id, from)     { send({ op: 'pull',     id: id, a: String(from) }); },
+
+		    // The seventh, and the only one no bundle calls: the watchdog Gnothi injects into
+		    // the document reports a refusal back through the same door. See WebModule.Serve.
+		    violation: function (r)            { send({ op: 'violation', id: '', a: r }); }
 		  };
 
 		  // P0, MEASURED BY THE APP. It runs before anything from the bundle, so the answer

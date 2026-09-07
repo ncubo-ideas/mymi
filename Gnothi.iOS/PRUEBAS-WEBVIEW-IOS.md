@@ -278,6 +278,28 @@ modulo:examenes: error: Refused to connect to 'http://127.0.0.1:8095/...' becaus
 violates the following Content Security Policy directive: "connect-src 'self'"
 ```
 
+### La denegación ya no es muda: Gnothi la cuenta
+
+Desde el **2026-09-07** cada rechazo del motor le llega a Gnothi **como un hecho**. El vigía vive
+en `Gnothi.Movil/BundleServer.cs` y se inyecta en el documento que Gnothi sirve, así que **iOS y
+Android lo tienen del mismo código** — no hay una versión de cada uno que se pueda desincronizar.
+
+```
+GNOTHI: examenes: REFUSED by worker-src -- gnothi-mod://examenes/app/service-worker.js
+        (from gnothi-mod://examenes/app/:35); 1 so far
+```
+
+Trae la directiva, qué se bloqueó, de dónde salió y **la cuenta**. Esa cuenta distingue una
+política declarada de una que se sabe que está aplicando.
+
+**Qué mirar acá, y es de las comprobaciones más baratas del guion:** abrí cualquier módulo y
+tiene que aparecer al menos el `worker-src`. **[MEDIDO en Android el 2026-09-07]**, ahí sale
+solo. Si en iOS **no sale ninguno**, el vigía no está corriendo — y eso apunta a que la CSP no
+está llegando por el scheme handler, que es lo que hay que resolver antes de seguir con P5.
+
+> No va al journal, a propósito: el journal es el registro de la persona tal como lo escribe la
+> institución, y una violación de contención es de Gnothi.
+
 ### Las otras dos salidas, y ésta se corre entera
 
 `connect-src` cubre el `fetch`, pero **no es la única forma de sacar datos de una página**. Hay

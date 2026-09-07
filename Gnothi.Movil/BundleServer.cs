@@ -45,6 +45,30 @@ internal sealed class BundleServer
 		"frame-src 'none'; " +
 		"worker-src 'none'";
 
+	// THE WATCHDOG: it turns a refusal from a console line into a fact Gnothi has.
+	//
+	// The engine already refuses -- that is the CSP -- but until now Gnothi only learned about it
+	// the way a person does: by reading a console message among all the others. It could not
+	// count them, could not tell one from an ordinary log line, and could not assert anything.
+	// `securitypolicyviolation` fires with the directive, the blocked URI and the line that did
+	// it, which is the difference between "something was denied" and evidence.
+	//
+	// IT GOES IN THE DOCUMENT AND NOT IN A PLATFORM SHIM, and that is the whole reason it lives
+	// here: iOS has a `WKUserScript` that runs at document start, and Android has nothing
+	// equivalent without adding androidx.webkit. Served inside the document, both platforms get
+	// it from ONE piece of code, at the top of the page, before the module's own scripts.
+	//
+	// ITS OWN HASH IS COMPUTED FOR FREE, because the injection happens BEFORE CspFor runs and the
+	// inline-script regex below finds it like any other. Injecting after would produce a document
+	// whose CSP forbids the very script Gnothi just added -- a self-inflicted blank page.
+	private const string Watchdog =
+		"<script>(function(){document.addEventListener('securitypolicyviolation',function(e){" +
+		"try{window.gnothiPuente.violation(JSON.stringify({" +
+		"directive:e.effectiveDirective||e.violatedDirective," +
+		"blocked:e.blockedURI,source:e.sourceFile,line:e.lineNumber}));}catch(x){}});})();</script>";
+
+	private static readonly Regex HeadOpen = new(@"<head\b[^>]*>", RegexOptions.IgnoreCase);
+
 	private static readonly Regex InlineScripts =
 		new(@"<script\b(?![^>]*\bsrc\s*=)[^>]*>(.*?)</script\s*>",
 			RegexOptions.Singleline | RegexOptions.IgnoreCase);
@@ -76,11 +100,25 @@ internal sealed class BundleServer
 		// travels as a file the platform streams.
 		if (path.EndsWith(".html", StringComparison.Ordinal))
 		{
-			byte[] document = File.ReadAllBytes(full);
+			byte[] document = WithWatchdog(File.ReadAllBytes(full));
 			return ServedFile.Document(document, CspFor(document));
 		}
 
 		return ServedFile.Stream(full, MimeOf(path));
+	}
+
+	// The watchdog goes right after <head>, so it is listening before anything the institution
+	// wrote. A document with no <head> is left ALONE: guessing where to put a script in a
+	// document that does not have the shape we expect is how a page gets broken by its host.
+	private static byte[] WithWatchdog(byte[] document)
+	{
+		string html = Encoding.UTF8.GetString(document);
+
+		Match head = HeadOpen.Match(html);
+		if (!head.Success) return document;
+
+		int at = head.Index + head.Length;
+		return Encoding.UTF8.GetBytes(html[..at] + Watchdog + html[at..]);
 	}
 
 	// THE HASH IS COMPUTED, NOT WRITTEN DOWN. One written by hand goes silently out of sync the

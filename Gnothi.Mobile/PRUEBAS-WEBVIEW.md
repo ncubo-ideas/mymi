@@ -440,6 +440,33 @@ examenes: Refused to connect to 'http://127.0.0.1:8095/...' because it violates 
 following Content Security Policy directive: "connect-src 'self'"
 ```
 
+#### La denegación ya no es muda: Gnothi la cuenta
+
+Desde el **2026-09-07** cada rechazo del motor le llega a Gnothi **como un hecho**, no como una
+línea de consola entre otras. Gnothi inyecta un vigía en el documento que sirve —está en
+`BundleServer`, así que Android e iOS lo tienen del mismo código— y ese vigía escucha
+`securitypolicyviolation` y lo manda por el puente.
+
+Se ve así, bajo el tag `gnothi` y **no** bajo `modulo`:
+
+```
+examenes: REFUSED by worker-src -- https://examenes.gnothi.local/app/service-worker.js
+          (from https://examenes.gnothi.local/app/:35); 1 so far
+```
+
+Trae **la directiva, qué se bloqueó, de dónde salió y la cuenta**. Esa cuenta es lo que hace la
+diferencia entre una política declarada y una que se sabe que está aplicando: un módulo cuya
+cuenta nunca se mueve o se porta bien **o no lo está mirando nadie**, y hasta ahora no había
+forma de distinguir esos dos casos.
+
+**Qué mirar en cada corrida:** abrí cualquier módulo y tiene que aparecer al menos el
+`worker-src` de arriba. **Si no aparece ninguno, algo se rompió** — probablemente el vigía no
+está corriendo, y eso significa que tampoco te vas a enterar de los que importan.
+
+> Esto **no** va al journal, a propósito: el journal es el registro de la persona tal como lo
+> escribe la institución, y una violación de contención es de Gnothi. Meterla ahí sería poner la
+> opinión del Host adentro del libro de la institución.
+
 #### Las otras dos salidas, y cómo probarlas de verdad
 
 `connect-src` cubre el `fetch`, pero **no es la única forma de sacar datos de una página**. Hay
