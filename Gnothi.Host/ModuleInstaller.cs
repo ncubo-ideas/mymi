@@ -303,7 +303,12 @@ public static class ModuleInstaller
 		[JsonPropertyName("provenance")] public ProvenanceFile? Provenance { get; init; }
 	}
 
-	private sealed record ProvenanceFile
+	// INTERNAL POR LO MISMO QUE InstallationFile, y esto lo dijo el compilador: al traer el fix
+	// del type-info, InstallationFile paso de private a internal y esta quedo private -- CS0053,
+	// "inconsistent accessibility". Es el aviso que el comentario de HostJson.cs promete: con el
+	// generador uno se entera AL COMPILAR, y con reflexion se enteraba en el telefono, con un
+	// campo que llegaba vacio y sin error.
+	internal sealed record ProvenanceFile
 	{
 		[JsonPropertyName("servedBy")] public string ServedBy { get; init; } = "";
 		[JsonPropertyName("at")] public string At { get; init; } = "";
