@@ -36,9 +36,9 @@ puede derivar del dato ([01 §3](Investigacion/01-estado-del-arte.md)). El sustr
 | # | Qué | Estado |
 |---|---|---|
 | 1 | `git tag gimnasio-v1 8ada9a0` | ✅ hecho el 2026-09-07 (local; se pushea con el v2) |
-| 2 | **Gimnasio v2** — rehacer el bloque 1 con la regla del descarte corregida y correr las cuatro pasadas. Pasadas 1 y 2 sin firma; pasada 3 **propone** en forma ODI con valor sugerido; **Jorge firma**; pasada 4. *El gimnasio no tiene artefacto: este v2 es el **mínimo** —misma entrevista, regla corregida— y mide el método; el v3 con artefacto mide el papel* | ⏳ Hoja de firmas escrita. **N1 contestada**: el gimnasio manda la bandera *En mora* / *Al día* con fecha; el período se deriva. N3 eliminado. Faltan N2 (implícita), N4, N5, N6 y los ocho viejos |
+| 2 | **Gimnasio v2** — rehacer el bloque 1 con la regla del descarte corregida y correr las cuatro pasadas. Pasadas 1 y 2 sin firma; pasada 3 **propone** en forma ODI con valor sugerido; **Jorge firma**; pasada 4. *El gimnasio no tiene artefacto: este v2 es el **mínimo** —misma entrevista, regla corregida— y mide el método; el v3 con artefacto mide el papel* | ✅ **Construido y verificado el 2026-09-07** sobre N1 (firmada) y N2 (implícita): 25 clases, 69 comprobaciones, el ciclo con journal dos veces. *Esperaba 39, faltaron 9* → *esperaba 33, descontó 6, faltaron 3*. **Sin commitear y sin tag** hasta que Jorge confirme N2 y decida. N4, N6 y los ocho viejos siguen sin firma |
 | 3 | `Metodologia/Guias/glosario.md` v0 — 26 entradas en tres estados: **13 adoptadas, 10 en debate, 3 propias**. En `Guias/` para que lo indexe su README. Las tres búsquedas pendientes cerraron el mismo día — y una avisa que *fail-silent* significa lo contrario de lo que suena | ✅ **commiteado** el 2026-09-07 — `4770052`, con el índice del README. Sin pushear |
-| 4 | **Bitácora** de la corrida — qué se hizo, qué encontró, cuánto tardó. El 05 de la municipalidad es el prototipo | ⏳ |
+| 4 | **Bitácora** de la corrida — qué se hizo, qué encontró, cuánto tardó. El 05 de la municipalidad es el prototipo | ✅ `Pruebas/Gimnasio/BITACORA.md`, con la tabla v1/v2 y el hallazgo medido |
 | 5 | Actualizar la pasada 4 del **02** y las notas de T3 en **02 / 03 / 04** con la decisión de especialización | ⏳ |
 
 **El control de la corrida está en la respuesta esperada:** con la regla del descarte corregida, **la
@@ -53,12 +53,12 @@ promete el ciclo automático para mañana.
 
 | # | Qué |
 |---|---|
-| 6 | **El 02 se vuelve guía en el repo.** Las cuatro pasadas entran a `Metodologia/Guias/` en lenguaje llano con enlaces al glosario; el 02 queda como la justificación con citas. **Un solo dueño por cosa** — es la conciliación entre `Documents\Gnothi-Metodologia` y `Metodologia\Guias` |
+| 6 | **El 02 se vuelve guía en el repo.** Las cuatro pasadas entran a `Metodologia/Guias/` en lenguaje llano con enlaces al glosario; el 02 queda como la justificación con citas. **Un solo dueño por cosa.** ✅ **Hecho el 2026-09-07, adelantado**: [`Guias/columna-vertebral.md`](Guias/columna-vertebral.md), y el orden de trabajo del README de las guías la pone en el paso 1 con la entrevista como guion. La guía **no repite** las siete preguntas de la hoja —las enlaza— para no abrir una tercera copia que derive. **Sin correr como guía todavía: el v3** |
 | 7 | Terminología formal en el **01** y el **02**: término publicado en la primera mención, el nuestro entre paréntesis, enlace al glosario |
 | 8 | **El ciclo constructor ↔ revisor** escrito como contratos y corrido con `Workflow` sobre un dominio |
-| 9 | **Cláusula de tope** en la guía: *si después de N vueltas el revisor marca lo mismo, el hueco va al registro con dueño y el ciclo para.* Hoy la guía no la tiene y sin ella un juicio sin firma es un bucle infinito |
+| 9 | **Cláusula de tope** en la guía: *si después de N vueltas el revisor marca lo mismo, el hueco va al registro con dueño y el ciclo para.* ✅ En la guía, §7, con N = 3 |
 | 10 | **Observable 15**: todo término acuñado de las guías tiene entrada en el glosario. Con su control negativo |
-| 11 | El criterio de **consultabilidad** explícito en la guía (principio 1) |
+| 11 | El criterio de **consultabilidad** explícito en la guía (principio 1). ✅ En la guía, pasada 3: *cada juicio firmado produce al menos una pregunta que el dominio contesta* |
 | 12 | Reescribir el **análisis de enfoque** que se perdió con el scratchpad, ya con la decisión parcial: el sustrato es enchufable, la guía se enfoca en los juicios |
 
 ## Horizonte 3 · Después
@@ -99,7 +99,7 @@ CONSTRUCTOR pasada 4  →  REVISOR: las 4 preguntas de parada + las 6 dimensione
 
 | Rol | Recibe | Produce | Tiene prohibido |
 |---|---|---|---|
-| **Constructor** | El contrato de la pasada ([02, "Cómo se corre esto con un agente"](Investigacion/02-columna-vertebral.md)) | Los artefactos de la pasada + Mermaid | Inventar un campo, llenar la columna de contraste solo, inventar un umbral, crear una clase que no pase el piso |
+| **Constructor** | El contrato de la pasada ([la guía, §7](Guias/columna-vertebral.md)) | Los artefactos de la pasada + Mermaid | Inventar un campo, llenar la columna de contraste solo, inventar un umbral, crear una clase que no pase el piso |
 | **Revisor** | Los artefactos + el glosario + las guías | Marcas con la regla citada; recomendación de vuelta | Corregir en silencio — toda corrección va con la regla que la justifica |
 | **La persona** | Los juicios propuestos en forma ODI | Firmas, correcciones a los valores, o *"no sé"* con dueño | — |
 
