@@ -503,46 +503,79 @@ Cruzados, dan los nueve procesos de la tabla. Ese es el número defendible.
   simulador daba 2. El diseño de tres estados hizo su trabajo: sin él, un `if isAvailable`
   habría pasado en el simulador y roto en el teléfono.
 
-### El 404 en aparato: resuelto, y destapa un hueco de diseño
+### El 404 en aparato: era la contención haciendo su trabajo
 
-El módulo abierto en el aparato mostraba
-`refrescar contra el proveedor → HttpRequestException: 404, Not Found`. **[MEDIDO]** con la línea
-de log del 404, la causa exacta:
+**[MEDIDO]** en el iPhone. El módulo abierto mostraba
+`refrescar contra el proveedor → HttpRequestException: 404, Not Found`, y el log daba la causa
+inmediata:
 
 ```
-GNOTHI: abrir: 'compras' en pantalla
 GNOTHI: compras: 404 /app/eventos/device/token -> …/Modulos/compras/web/eventos/device/token
 ```
 
-Al abrirse, el módulo pide **`eventos/device/token`** con una URL **relativa** —así lo declara su
-propio `appsettings.json`: `"Proveedor": { "BaseUrl": "eventos/" }`—. Eso resuelve contra
-`gnothi-mod://<módulo>/app/`, así que **la petición nunca sale del origen del módulo**: la
-intercepta el scheme handler, la busca como archivo del bundle y devuelve 404.
+El módulo pide `eventos/device/token` con una URL **relativa** —así lo declara su
+`appsettings.json`: `"Proveedor": { "BaseUrl": "eventos/" }`—, así que resuelve contra
+`gnothi-mod://<módulo>/app/` y **nunca sale del origen del módulo**: la intercepta el scheme
+handler y devuelve 404.
 
-**No es un problema de red, y «ponerle la IP de la LAN» no lo arregla**, que era la conclusión
-fácil. Tampoco es una cadena de plan A y plan B: el `could not connect` del cartero ocurre
-ANTES del `abrir`, durante la verificación. Son dos caminos independientes hacia la misma
-narrativa.
+**La cadena completa**, que costó dos hipótesis equivocadas antes de dar con ella:
 
-**Y la CSP lo permite:** `connect-src 'self'` con el mismo origen pasa. Si el módulo hubiera
-usado una URL absoluta al publicador, la CSP la habría bloqueado. Es precisamente **lo
-relativo** lo que la manda a Gnothi en vez de a la red.
+1. El cartero no alcanza al publicador —el bundle llevaba `127.0.0.1`, y en un teléfono eso ES el
+   teléfono— así que el journal queda vacío.
+2. El módulo se abre, **no encuentra datos**, y corre su propio «refrescar contra el proveedor».
+3. Ese refresco pide credencial: `ProveedorDeToken` → POST relativo a `eventos/device/token`.
+4. El scheme handler lo contesta 404, y el módulo lo muestra.
 
-#### Lo que eso significa, y es lo que vale
+**Rearmado el bundle con la IP de la Mac, el paso 2 no ocurre y el 404 desaparece.** Medido:
+`pull after=0 -> 73063 bytes` —el mismo número que en el simulador—, el módulo muestra sus 87
+compras y ₡3 222 336, y en el log no queda rastro de `eventos/device/token`.
 
-**La costura ya existe.** El módulo ya le manda sus pedidos de proveedor al origen de Gnothi;
-Gnothi simplemente no los contesta —`grep eventos` en `Gnothi.Movil`, `Gnothi.iOS` y
-`Gnothi.Mobile` da **cero**—. Si el scheme handler reconociera `eventos/…` y se lo pasara al
-cartero, el módulo funcionaría hospedado **sin cambiarle una línea**.
+#### Lo que eso significa, y no es lo que parecía
 
-**Y hasta entonces la hoja de consentimiento afirma algo que no es exacto.** Le promete a Sonia
-*«es la única red que va a poder tocar, y la hace Gnothi por él»* y le muestra
-`http://127.0.0.1:8095/expediente/1`. Pero el módulo tiene **dos** caminos hacia esa narrativa
-—el verbo `pull` del puente y su propio HTTP relativo— y solo el primero es el que Gnothi
-controla y le mostró. Cuál de los dos usa, hoy, no lo decide el Host.
+**No hay hueco en el módulo.** Usa el puente cuando la entrega hospedada funciona, e intenta su
+camino propio solo cuando no le dio nada. Es un fallback razonable, no un olvido.
 
-**No es de iOS.** El bundle es el mismo y `BundleServer` es compartido, así que en Android pasa
-igual — pero era **invisible**, porque allá el cartero sí llega al publicador y el journal se
-llena. Hizo falta un aparato donde `127.0.0.1` ES el teléfono para que el hueco apareciera. Y lo
-hizo visible la línea del 404 de §2: sin ella es exactamente el silencio que el comentario
-original defendía como «un 404 es una respuesta».
+**Y el 404 no era un bug: era la contención funcionando.** El módulo intentó una ruta de red que
+hospedado no le corresponde, y la intercepción de origen se la negó — que es exactamente para lo
+que existen la CSP y el scheme handler. Si el fallback hubiera usado una URL absoluta, la CSP lo
+habría bloqueado igual.
+
+**Lo único defectuoso es el mensaje.** Dice «no se pudo completar: refrescar contra el proveedor,
+404» y le echa la culpa al proveedor, cuando la puerta está cerrada por diseño. Un módulo
+hospedado que cae a su plan B debería enterarse de que **no hay plan B**. Es de los módulos, no
+del Host.
+
+> **DOS RAZONAMIENTOS MÍOS QUE ESTABAN MAL**, y quedan acá porque el error es instructivo.
+> Primero: «rearmar los bundles con la IP de la LAN no arregla nada, porque en ese camino no hay
+> salida a la red». Falso — rearmarlos es exactamente lo que lo arregla, porque repara el paso 1 y
+> así el paso 2 nunca corre. Y después descarté la hipótesis del fallback argumentando que el
+> `could not connect` del cartero ocurría ANTES del `abrir`: ese orden es perfectamente compatible
+> con un fallback, así que el argumento no probaba nada.
+
+### Y lo que hace falta para correr el guion contra un aparato
+
+**Dos claves distintas en el `Info.plist`, y confundirlas cuesta caro.**
+
+| clave | de qué es | qué pasa sin ella |
+|---|---|---|
+| `NSAllowsLocalNetworking` | ATS: texto claro hacia la red local | la conexión se bloquea por política de transporte |
+| `NSLocalNetworkUsageDescription` | privacidad: iOS le pregunta a la persona | **deniega en silencio y el error dice «The Internet connection appears to be offline»** |
+
+Ese mensaje es el que hace daño: manda a revisar el wifi y el router cuando lo que falta es un
+permiso que nunca se pidió. **[MEDIDO]**: con la primera puesta y la segunda no, el alta falló
+exactamente así. Con las dos, iOS muestra su diálogo y el alta pasa.
+
+**Y el permiso no rige para la petición que lo dispara**: esa se deniega igual. Hay que reintentar,
+y conviene relanzar la app.
+
+**Los bundles hay que rearmarlos con la IP de la Mac** —`armar-bundle.ps1 -Publicador
+"http://<IP>:<puerto>/"`— porque el manifiesto lleva el publicador ADENTRO y el módulo no lo puede
+cambiar. Se comprueba en la hoja de consentimiento: «Con quién va a hablar» tiene que decir la IP,
+no `127.0.0.1`.
+
+**Y el alta en aparato no se puede disparar por línea de comandos.** `simctl openurl` es solo
+simulador y `devicectl` no tiene `open`. Lo práctico es servir una página con el enlace
+`gnothi://alta?bundle=…` y tocarla desde Safari: tipear esa URL en un teléfono es inviable.
+
+Nada de esto aplica en producción, donde el publicador es un servidor real por HTTPS. Las dos
+claves del `Info.plist` salen antes de publicar, y así está anotado ahí.
