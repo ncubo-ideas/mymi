@@ -100,7 +100,7 @@ internal sealed class ModuleEnrollment
 		Directory.CreateDirectory(Path.GetDirectoryName(destination)!);
 		Directory.Move(proposal.Folder, destination);
 
-		WriteInstallation(destination, module, proposal.Manifest);
+		WriteInstallation(destination, module, proposal.Manifest, proposal.ServedBy);
 
 		log($"alta: '{module}' instalado en {destination}");
 		return module;
@@ -183,7 +183,7 @@ internal sealed class ModuleEnrollment
 	// bundle. Here is where it is decided which shell the module runs under, where it keeps its
 	// journal, and against which endpoint the courier talks. The institution declared the
 	// endpoint; choosing to fix it is Gnothi's.
-	private void WriteInstallation(string folder, string module, Gnothi.Host.Manifest manifest)
+	private void WriteInstallation(string folder, string module, Gnothi.Host.Manifest manifest, string servedBy)
 	{
 		Gnothi.Host.Publicador? p = manifest.Publicador;
 		string endpoint = p is null || p.Eventos.Length == 0 ? "" : $"{p.Eventos}|{p.Recurso}|{p.Id}";
@@ -199,6 +199,17 @@ internal sealed class ModuleEnrollment
 			grantedFolder = Path.Combine(journalsRoot, module),
 			enabled = true,
 			disabledTools = Array.Empty<string>(),
+
+			// EL ACTA DEL ALTA. De que host bajo el bundle -- que Gnothi VIO, nadie se lo
+			// declaro --, cuando la persona acepto, y que version acepto. Se escribe una vez y
+			// no se vuelve a tocar: es lo que le permite al detalle del modulo contrastar
+			// despues lo que la institucion declara contra lo que de verdad paso.
+			provenance = new
+			{
+				servedBy,
+				at = DateTime.UtcNow.ToString("yyyy-MM-ddTHH:mm:ssZ"),
+				version = manifest.Publisher?.Version ?? "",
+			},
 		};
 
 		File.WriteAllText(Path.Combine(folder, "installation.json"),

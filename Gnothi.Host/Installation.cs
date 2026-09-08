@@ -43,6 +43,22 @@ public sealed record Installation
 	// never open.
 	[JsonPropertyName("caratula")] public AllowedCaller? AllowedCaller { get; init; }
 
+	// LO QUE EL HOST OBSERVO AL DAR EL ALTA, y por eso vive aca y no en el manifiesto: no lo
+	// declara nadie, lo VIO Gnothi. Es la misma razon que la carpeta concedida y que la
+	// caratula -- conceder, y atestiguar, son actos del que concede.
+	//
+	// PARA QUE HACE FALTA. La pantalla del alta puede comparar el dominio que la institucion
+	// declara contra el host del que bajo el bundle, porque en ese momento tiene las dos cosas.
+	// Despues NO: 'servedBy' era un dato del instante y se perdia, asi que el detalle del
+	// modulo mostraba la procedencia sin poder contrastarla -- y estuvo un rato pintandola de
+	// verde, que afirmaba una comprobacion que no habia ocurrido. Guardarlo convierte esa
+	// franja en lo que decia ser.
+	//
+	// LAS TRES SON DEL MISMO ACTO y una vez escritas no cambian nunca. Eso las separa de
+	// 'enabled' y 'disabledTools', que son lo unico mutable de este archivo: ReloadConsent
+	// relee esas dos y no toca esto.
+	[JsonPropertyName("provenance")] public Provenance? Provenance { get; init; }
+
 	// Por HostJson y no por Deserialize<T>: el lector se genera al compilar, sin reflexion.
 	// Ver HostJson.cs -- de eso depende que el Host pueda embeberse bajo NativeAOT.
 	public static Installation Read(string path)
@@ -88,6 +104,34 @@ public sealed record AllowedCaller
 
 	public static string Normalize(string digest) =>
 		string.Concat(digest.Where(char.IsAsciiHexDigit)).ToUpperInvariant();
+}
+
+// DE DONDE VINO ESTE MODULO, atestiguado por el Host en el momento del alta.
+public sealed record Provenance
+{
+	// EL HOST DEL QUE BAJO EL BUNDLE. Vacio es legitimo y significa "no vino de la red": un
+	// .gmod importado de un archivo no tiene servidor, y en ese caso no hay nada que contrastar
+	// -- que es distinto de contrastar y que no coincida.
+	[JsonPropertyName("servedBy")] public string ServedBy { get; init; } = "";
+
+	// Cuando la persona acepto. ISO 8601 en UTC.
+	[JsonPropertyName("at")] public string At { get; init; } = "";
+
+	// QUE VERSION ACEPTO, que es lo que permite decir despues "aceptaste la 2.4.0 y este bundle
+	// declara la 2.5.0". Sin esto, reinstalar solo puede decir "ya tenes este modulo".
+	[JsonPropertyName("version")] public string Version { get; init; } = "";
+
+	// SI LO QUE LA INSTITUCION DECLARA SE CORRESPONDE CON QUIEN LE ENTREGO EL BUNDLE.
+	//
+	// Devuelve null -- NO true -- cuando no hay con que comparar, y esa distincion es el punto
+	// entero: "coincide", "no coincide" y "no se puede saber" son tres cosas, y la pantalla
+	// tiene que poder decir la tercera en vez de pintar un visto bueno.
+	public bool? Matches(Publisher? publisher)
+	{
+		if (ServedBy.Length == 0) return null;
+		if (publisher is null || Manifest.Txt(publisher.Domain).Length == 0) return null;
+		return publisher.MatchesServer(ServedBy);
+	}
 }
 
 public sealed record Shell
