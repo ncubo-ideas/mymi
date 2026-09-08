@@ -28,19 +28,19 @@
   <Project Path="Cargas/InyectorDeEventosDemo/Cargas.InyectorDeEventosDemo.csproj" />
   <!-- El Puppets.Portador de Cargas no se lista: el slnx rechaza dos proyectos con el
        mismo nombre (el de Examenes ya esta) y se compila igual via ProjectReference,
-       como en DealershipCar. -->
+       como en Concesionario. -->
 
-  <Project Path="DealershipCar/App/DealershipCar.App/DealershipCar.App.csproj" />
-  <Project Path="DealershipCar/App/DealershipCar.Consola/DealershipCar.Consola.csproj" />
+  <Project Path="Concesionario/App/Concesionario.App/Concesionario.App.csproj" />
+  <Project Path="Concesionario/App/Concesionario.Consola/Concesionario.Consola.csproj" />
   <!-- La puerta, en su propio csproj: es el unico ensamblado de produccion que ve el dominio
-       por dentro, y separarla es lo que mantiene a DealershipCar.App cercada por el
-       compilador. Ver el AssemblyInfo de DealershipCar.Dominio. -->
-  <Project Path="DealershipCar/App/DealershipCar.Frontera/DealershipCar.Frontera.csproj" />
-  <Project Path="DealershipCar/App/DealershipCar.Mcp/DealershipCar.Mcp.csproj" />
-  <Project Path="DealershipCar/App/DealershipCar.Wasm/DealershipCar.Wasm.csproj" />
-  <Project Path="DealershipCar/Dominio/DealershipCar.Dominio.csproj" />
-  <Project Path="DealershipCar/EndPointDeEventos/DealershipCar.EventosMock.csproj" />
-  <Project Path="DealershipCar/InyectorDeEventosDemo/DealershipCar.InyectorDeEventosDemo.csproj" />
-  <Project Path="DealershipCar/Pruebas/DealershipCar.Dominio.Pruebas/DealershipCar.Dominio.Pruebas.csproj" />
+       por dentro, y separarla es lo que mantiene a Concesionario.App cercada por el
+       compilador. Ver el AssemblyInfo de Concesionario.Dominio. -->
+  <Project Path="Concesionario/App/Concesionario.Frontera/Concesionario.Frontera.csproj" />
+  <Project Path="Concesionario/App/Concesionario.Mcp/Concesionario.Mcp.csproj" />
+  <Project Path="Concesionario/App/Concesionario.Wasm/Concesionario.Wasm.csproj" />
+  <Project Path="Concesionario/Dominio/Concesionario.Dominio.csproj" />
+  <Project Path="Concesionario/EndPointDeEventos/Concesionario.EventosMock.csproj" />
+  <Project Path="Concesionario/InyectorDeEventosDemo/Concesionario.InyectorDeEventosDemo.csproj" />
+  <Project Path="Concesionario/Pruebas/Concesionario.Dominio.Pruebas/Concesionario.Dominio.Pruebas.csproj" />
 
 </Solution>
