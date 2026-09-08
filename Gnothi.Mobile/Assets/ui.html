@@ -306,7 +306,7 @@
          botón en la página de su institución y volvió acá. Sin esto son 12 MB de silencio. -->
     <div id="alta"></div>
 
-    <div class="sec"><svg class="gi" viewBox="0 0 24 24"><rect x="4" y="4" width="7" height="7" rx="2"/><rect x="13" y="4" width="7" height="7" rx="2"/><rect x="4" y="13" width="7" height="7" rx="2"/><rect x="13" y="13" width="7" height="7" rx="2"/></svg><b>Todos los módulos</b><small id="home-sub"></small></div>
+    <div class="sec"><svg class="gi" viewBox="0 0 24 24"><rect x="4" y="4" width="7" height="7" rx="2"/><rect x="13" y="4" width="7" height="7" rx="2"/><rect x="4" y="13" width="7" height="7" rx="2"/><rect x="13" y="13" width="7" height="7" rx="2"/></svg><b>Tus módulos</b><small id="home-sub"></small></div>
     <div class="grid" id="mods"></div>
   </div>
 </div>
@@ -571,7 +571,7 @@ const gn = {
     const ms = gn.state.modules;
 
     document.getElementById('home-sub').textContent =
-      ms.length + (ms.length === 1 ? ' módulo disponible' : ' módulos disponibles');
+      ms.length + (ms.length === 1 ? ' conectado' : ' conectados');
 
     const grid = document.getElementById('mods');
     if (!grid.dataset.ripple) { grid.dataset.ripple = '1'; grid.addEventListener('pointerdown', gn.ripple); }
