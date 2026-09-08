@@ -136,7 +136,13 @@
 
   .master{background:var(--card);border-radius:16px;box-shadow:var(--shadow);
        padding:14px;display:flex;align-items:center;gap:10px;margin:16px 0 4px}
-  .master span{flex:1;font-weight:600;font-size:14.5px}
+  /* SOLO EL PRIMER span CRECE, y el selector es asi por una razon. Con `.master span` la regla
+     tambien le caia al `.chev`, que es un span: su propia regla -flex:none, 20px- pierde por
+     especificidad (0,1,0 contra 0,1,1). Con flex:1 los dos spans se repartian el espacio libre,
+     el chevron se quedaba con media caja y el glifo se apoyaba en su borde izquierdo: el chevron
+     en el MEDIO y un hueco a la derecha, ademas de salir a 14.5px en vez de 20. La fila de
+     «Modulo encendido» no cambia: su segundo hijo es un <label class="sw">, no un span. */
+  .master > span:first-child{flex:1;font-weight:600;font-size:14.5px}
 
   h3.cap{font-size:11.5px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;
        color:var(--muted);margin:18px 4px 8px}
