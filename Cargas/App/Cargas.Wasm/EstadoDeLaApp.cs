@@ -352,17 +352,26 @@ public sealed class EstadoDeLaApp : IAsyncDisposable
 	{
 		Exigir();
 
-		// PIDE LA CREDENCIAL PRIMERO, igual que el arranque. Antes iba derecho al bucle, y
-		// eso hacia que Refresh no pudiera recuperarse NUNCA: si al abrir no se habia
-		// podido hablar con el laboratorio -sin red, otra maquina, la URL equivocada- no
-		// quedaba token, y cada Refresh moria diciendo "la app no tiene web token
-		// guardado". El unico camino que conseguia el token era el arranque, que ya habia
-		// pasado.
+		// LA CREDENCIAL LA CONSIGUE EL BUCLE, POR EL DELEGADO, y esta linea no vuelve.
 		//
-		// Medido en un iPhone: la app abria, el arranque no alcanzaba el proveedor, y el
-		// boton quedaba inutil reportando la consecuencia en vez de la causa.
-		await Credencial(ct);
-
+		// Aca habia un `await Credencial(ct)` sin condicion, puesto por una razon buena
+		// -medida en un iPhone: sin el, si al abrir no se podia hablar con la estacion no
+		// quedaba token y cada Refresh moria para siempre diciendo "la app no tiene web
+		// token guardado"-. Pero el arreglo estaba en el lugar equivocado.
+		//
+		// POR QUE ROMPIA HOSPEDADA. Pedir la credencial es HTTP contra el publicador, y
+		// `proveedor.BaseUrl` es RELATIVA -"eventos/"-, asi que hospedada la peticion sale
+		// a `<su origen>/app/eventos/device/token`: el propio origen del modulo, servido
+		// por Gnothi, donde ese archivo no existe. 404. Y hospedada el modulo NO TIENE NI
+		// NECESITA credencial: el cartero del Host tiene la suya.
+		//
+		// DONDE VA. `FuenteHttpDeEventos.LeerDesde` ya pide la credencial POR PULL, por el
+		// delegado que se le pasa al construirla, y su comentario dice por que: "quien lee
+		// por el puente de Gnothi no [la necesita]. Poner eso en el bucle lo obligaba,
+		// hospedada, a inventarse un token que nadie usa". El caso suelto que motivo esta
+		// linea ya estaba cubierto ahi.
+		//
+		// Es lo que Examenes ya hacia. Los cuatro modulos quedan iguales.
 		ResultadoDeRefresh resultado = await bucle!.Ejecutar(ct);
 		UltimoMensaje = $"refresh: {resultado}";
 		return resultado;
