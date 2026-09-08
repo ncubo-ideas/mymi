@@ -140,6 +140,20 @@ Con un módulo ya instalado, tocá su tarjeta y después **«Abrir…»**.
 el aviso que solo aparece hospedado: *«Se está guardando en Gnothi…»*. Los números tienen que
 ser los mismos que muestra su app suelta.
 
+> **Y ACÁ iOS SE VE DISTINTO DE ANDROID A PROPÓSITO — no es un bug.** Arriba del módulo va una
+> franja delgada de Gnothi que dice *«<nombre de la institución> · adentro de Gnothi»* con un
+> **Listo** a la derecha. Android no la necesita porque tiene el botón atrás del sistema; iOS no
+> tiene equivalente —el gesto de borde lo consume el contenido del módulo— así que la vuelta hay
+> que darla, y de paso la franja dice de quién es la app en la que estás parado en vez de dejarlo
+> como pista visual. Se probó primero un botón flotante y le tapaba el logo de «Supermercado La
+> Guaria»; el módulo arranca debajo de la franja para que eso sea imposible por construcción.
+> Decisión de Geaninna, y el alto está en `FranjaAlto` para que lo pueda ajustar.
+>
+> **[MEDIDO 2026-09-07]** simulador iPhone 17 Pro / iOS 26.5, con los cuatro módulos del paquete.
+> En el log: `GNOTHI: abrir: '<módulo>' en pantalla` al abrir, y
+> `GNOTHI: cerrar: '<módulo>' fuera de pantalla` al tocar Listo. Cerrar **no** mata el módulo:
+> sigue vivo contestándole al asistente, y volver a abrirlo es instantáneo.
+
 **En el log:**
 
 ```
