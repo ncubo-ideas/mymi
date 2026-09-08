@@ -96,6 +96,10 @@
   </PropertyGroup>
   <ItemGroup Condition="'$(TargetFramework)' == 'net9.0-windows'">
     <PackageReference Include="Microsoft.Web.WebView2" Version="1.0.3179.45" />
+    <!-- Markdown -> HTML para la burbuja del asistente. Los modelos devuelven markdown aunque el
+         encuadre pida prosa sin markdown -la instruccion es tendencia, no compuerta, medido en
+         Lab.Cruce-, asi que la ventana lo pinta en vez de mostrar los asteriscos. -->
+    <PackageReference Include="Markdig" Version="1.3.2" />
   </ItemGroup>
 
   <!-- Photino serves wwwroot FROM THE OUTPUT FOLDER (a PhysicalFileProvider over

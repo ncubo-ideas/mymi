@@ -1,3 +1,4 @@
+@using Markdig
 @inject HostState State
 @inject ModelConfig Config
 @implements IDisposable
@@ -42,7 +43,7 @@
 
         @if (t.Answer is not null)
         {
-            <div class="bubble bot">@t.Answer</div>
+            <div class="bubble bot">@Render(t.Answer)</div>
         }
         else if (t.Failed is not null)
         {
@@ -70,6 +71,18 @@
     private CancellationTokenSource? cts;
 
     private Task OpenSettings() => GoToSettings.InvokeAsync();
+
+    // LA RESPUESTA SE PINTA COMO MARKDOWN. El encuadre pide prosa sin markdown y los modelos lo
+    // devuelven igual -el de Apple, el primer dia, con negritas y viñetas-. Mostrar los
+    // asteriscos crudos es castigar a la persona por la desobediencia del modelo.
+    //
+    // DisableHtml: lo que escribe el modelo se trata como texto, nunca como HTML. Si un modulo
+    // devolviera una etiqueta dentro de un hecho y el modelo la repitiera, sale escapada.
+    private static readonly MarkdownPipeline Pipeline =
+        new MarkdownPipelineBuilder().DisableHtml().UseSoftlineBreakAsHardlineBreak().Build();
+
+    private static MarkupString Render(string markdown)
+        => (MarkupString)Markdown.ToHtml(markdown, Pipeline);
 
     private async Task OnKey(KeyboardEventArgs e)
     {
