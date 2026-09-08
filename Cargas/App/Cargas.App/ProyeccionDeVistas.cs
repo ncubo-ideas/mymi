@@ -65,6 +65,11 @@ namespace Cargas.App
 				TieneKilometraje = Booleano(elemento, "tieneKilometraje"),
 					TieneFoto = Booleano(elemento, "tieneFoto"),
 					Foto = Texto(elemento, "foto"),
+					Kilometros = Decimal(elemento, "kilometros"),
+					UnidadDelKilometraje = Texto(elemento, "unidad"),
+					TanqueDeclarado = Booleano(elemento, "tanqueDeclarado"),
+					EstadoDelTanque = Texto(elemento, "estadoDelTanque"),
+					OrigenDelTanque = Texto(elemento, "origenDelTanque"),
 				});
 			return cargas;
 		}

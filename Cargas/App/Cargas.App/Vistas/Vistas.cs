@@ -45,6 +45,16 @@ namespace Cargas.App.Vistas
 		// El nombre del archivo dentro de la carpeta, para poder volver a mostrarla. Vacio
 		// si no hay foto.
 		public string Foto { get; init; } = "";
+
+		// LOS APORTES EN PIEZAS, para el traspaso (especificacion 13 §5): el numero con su
+		// unidad y su procedencia por separado, y el tanque solo cuando lo declaro o confirmo
+		// ella -la inferencia de la estacion no cuenta-. Es lo que el sobre del traspaso
+		// lleva y lo que el modulo hospedado compara para no asentar dos veces lo mismo.
+		public decimal Kilometros { get; init; }
+		public string UnidadDelKilometraje { get; init; } = "";
+		public bool TanqueDeclarado { get; init; }
+		public string EstadoDelTanque { get; init; } = "";
+		public string OrigenDelTanque { get; init; } = "";
 	}
 
 	// UN TRAMO, calculado o bloqueado en la misma lista: el bloqueado no es la ausencia

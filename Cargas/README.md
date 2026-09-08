@@ -37,6 +37,18 @@ dotnet run --project Cargas/App/Cargas.Consola -- comprobar
 Un cambio en el dominio no está listo hasta que pasan.
 
 ```
+dotnet run --project Cargas/App/Cargas.Consola -- comprobar-traspaso
+```
+
+El traspaso de las anotaciones a Gnothi (especificación 13 §5), con dos actores reales en
+disco: la app suelta arma el sobre —solo lo que dijo la persona, sin credencial ni hechos de
+la estación— y el módulo hospedado lo recibe. Comprueba que las anotaciones **esperan** a sus
+cargas cuando todavía no llegaron, que con las cargas se asientan enteras y dan la misma
+lectura del rendimiento, que repetir el traspaso **no deja entrada**, y que un sobre ajeno o
+roto se dice y no se asienta. Imprime cuánto pesa el sobre del guion (~9.7 KB; ~21 KB escapado
+para URL), que es por lo que en Cargas va por la hoja de compartir y no por el enlace.
+
+```
 dotnet run --project Cargas/App/Cargas.Consola -- medir [carpeta]
 ```
 

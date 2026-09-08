@@ -514,7 +514,12 @@ namespace Cargas.App
 						carga.NumeroDeLaTransaccion transaccion,
 						carga.TieneKilometraje tieneKilometraje,
 						carga.TieneFoto tieneFoto,
-						carga.NombreDeLaFoto foto;
+						carga.NombreDeLaFoto foto,
+						carga.KilometrosAnotados kilometros,
+						carga.UnidadDelKilometraje unidad,
+						carga.TanqueFueDeclarado tanqueDeclarado,
+						carga.EstadoDelTanqueDeclarado estadoDelTanque,
+						carga.OrigenDelTanque origenDelTanque;
 				}
 			")
 			.WithParameters(p => { p["placa", typeof(string)] = placa; })

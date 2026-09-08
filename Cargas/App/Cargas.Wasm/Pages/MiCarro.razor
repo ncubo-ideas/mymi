@@ -1,5 +1,6 @@
 @page "/mi-carro"
 @inherits PantallaDeCargas
+@using Cargas.App
 @using Cargas.App.Vistas
 
 <PageTitle>Mi carro · Estaciones Faro</PageTitle>
@@ -216,6 +217,62 @@ else
     </button>
 </div>
 
+@* PASAR LAS ANOTACIONES A GNOTHI (especificación 13 §5). Cuando esta app pase a vivir
+   dentro de Gnothi, lo que publicó la estación vuelve solo: Gnothi lo pide de nuevo con su
+   propia credencial. Lo que ella anotó -kilometrajes, tanques, la ficha, en qué unidades lo
+   mira- solo está en este navegador, y sin esto la app hospedada arrancaría con puras
+   facturas de combustible. NO es el export de arriba: aquel se lleva el journal entero,
+   credencial incluida; esto lleva solo lo que dijo ella, y se puede repetir sin duplicar.
+
+   Va por la hoja de compartir y no por el enlace porque no cabe: medido con el guion de
+   28 cargas, el sobre pesa ~21 KB escapado para una URL. Las fotos se quedan: el journal
+   tiene el nombre y el archivo vive en la carpeta; pasar el nombre sin el archivo mentiría. *@
+<h2 class="seccion-titulo">Pasar tus anotaciones a Gnothi</h2>
+
+@if (Estado.HayTraspasoPendiente)
+{
+    <div class="parte parte--atencion">
+        <strong>Llegaron anotaciones de tu otra copia y están esperando a sus cargas.</strong>
+        Se asientan solas en cuanto la estación las publique acá.
+    </div>
+}
+
+@if (traspaso.HayAlgoQuePasar)
+{
+    <p class="apunte">
+        Lo que la estación publicó, Gnothi lo vuelve a pedir solo. Lo que anotaste vos no:
+        <b>@Piezas(traspaso)</b>. Esto se lo pasa a Gnothi de una vez, sin tu credencial, y
+        repetirlo no duplica nada.
+        @if (traspaso.FotosQueSeQuedan > 0)
+        {
+            <text> @(traspaso.FotosQueSeQuedan == 1 ? "La foto del tablero se queda" : $"Las {traspaso.FotosQueSeQuedan} fotos del tablero se quedan") en tu carpeta: no viaja@(traspaso.FotosQueSeQuedan == 1 ? "" : "n") con esto.</text>
+        }
+    </p>
+    <div class="fila">
+        <button class="tecla" @onclick="CompartirConGnothi">
+            @(puedeCompartir == true ? "Pasar mis anotaciones a Gnothi" : "Guardar mis anotaciones para Gnothi")
+        </button>
+        @* UN <a href> TOCADO, no window.location desde JS: en iOS una navegación hecha por
+           script se trata como pegar la URL en la barra y nunca abre la app; en Android,
+           sin gesto Chrome se va derecho al fallback. *@
+        <a class="tecla tecla--texto" href="@enlaceAGnothi">Abrir Gnothi</a>
+    </div>
+    @if (puedeCompartir == false)
+    {
+        <p class="apunte">
+            Este navegador no tiene hoja de compartir, así que el archivo se descarga: lo
+            abrís después desde Gnothi.
+        </p>
+    }
+}
+else
+{
+    <p class="apunte">
+        Todavía no anotaste nada que haya que pasar: los kilometrajes, los tanques y la
+        ficha aparecen acá cuando los cargues.
+    </p>
+}
+
 @code {
     private VehiculoEnLista? enFoco;
     private List<VehiculoEnLista> otros = new();
@@ -254,6 +311,7 @@ else
     {
         unidades = Estado.Unidades();
         ultimoEvento = Estado.UltimoEvento();
+        traspaso = Estado.QueSePasa();
 
         IReadOnlyList<VehiculoEnLista> vehiculos = Estado.Vehiculos();
         string placa = Estado.PlacaEnFoco(vehiculos);
@@ -308,6 +366,43 @@ else
 
     // El primer paso de importar: se muestra el aviso; el segundo llama a Estado.Importar.
     private bool porImportar;
+
+    // EL TRASPASO A GNOTHI: cuánto hay para pasar, el enlace del handoff y si este browser
+    // tiene hoja de compartir con archivos. El enlace y la hoja se preguntan una vez, al
+    // montar; el resumen se relee con el resto, porque cada aporte lo cambia.
+    private ResumenDeTraspaso traspaso = new();
+    private string enlaceAGnothi = "";
+    private bool? puedeCompartir;
+
+    protected override async Task OnInitializedAsync()
+    {
+        enlaceAGnothi = Estado.EnlaceParaAbrirGnothi(await Estado.EsAndroid());
+        puedeCompartir = await Estado.PuedeCompartirArchivos();
+    }
+
+    private static string Piezas(ResumenDeTraspaso resumen)
+    {
+        var piezas = new List<string>();
+        if (resumen.Kilometrajes > 0)
+            piezas.Add(resumen.Kilometrajes == 1 ? "1 kilometraje" : $"{resumen.Kilometrajes} kilometrajes");
+        if (resumen.Tanques > 0)
+            piezas.Add(resumen.Tanques == 1 ? "1 tanque confirmado" : $"{resumen.Tanques} tanques confirmados");
+        if (resumen.Fichas > 0)
+            piezas.Add(resumen.Fichas == 1 ? "la ficha de tu carro" : $"las fichas de {resumen.Fichas} carros");
+        piezas.Add("y en qué unidades lo mirás");
+        return piezas.Count == 2 ? $"{piezas[0]} {piezas[1]}" : string.Join(", ", piezas.GetRange(0, piezas.Count - 1)) + " " + piezas[^1];
+    }
+
+    private Task CompartirConGnothi() => Intentar("pasar tus anotaciones a Gnothi", async () =>
+    {
+        ResultadoDeCompartir resultado = await Estado.CompartirConGnothi();
+        if (resultado.Cancelado) return;
+        if (!resultado.Ok) throw new InvalidOperationException(resultado.Motivo);
+
+        MostrarListo(resultado.Como == "compartido"
+            ? "Listo: tus anotaciones salieron hacia Gnothi. Si las volvés a pasar, no se duplican."
+            : "Guardado: el archivo con tus anotaciones se descargó. Abrilo desde Gnothi cuando lo tengas.");
+    });
 
     private Task Importar() => Intentar("importar una bitácora", async () =>
     {

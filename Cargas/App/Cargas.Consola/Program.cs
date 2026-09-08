@@ -26,6 +26,8 @@ namespace Cargas.Consola
 				{
 					// Comprobaciones del dominio puro: sin actor, sin journal, sin disco.
 					case "comprobar":       return Comprobaciones.Correr();
+					// El traspaso de las anotaciones a Gnothi, con dos actores reales en disco.
+					case "comprobar-traspaso": return ComprobacionesDeTraspaso.Correr();
 					case "qr":              return Qr(args);
 					case "medir":           return Medir(Carpeta(args, 1));
 					case "estado":          return Estado(Carpeta(args, 1));
@@ -442,6 +444,7 @@ namespace Cargas.Consola
 			Console.WriteLine("Cargas - caratula de consola, para medir el dominio y el refresh");
 			Console.WriteLine();
 			Console.WriteLine("  comprobar                                      comprueba las reglas del dominio puro (sin journal)");
+			Console.WriteLine("  comprobar-traspaso                             el sobre de anotaciones hacia Gnothi: sin credencial, espera, no duplica");
 			Console.WriteLine("  medir           [carpeta]                      aplica el guion entero (eventos + aportes) y mide");
 			Console.WriteLine("  estado          [carpeta]                      abre el journal y reporta (correr en proceso nuevo)");
 			Console.WriteLine("  rendimiento     [carpeta] [placa]              la lectura de la serie de tramos");

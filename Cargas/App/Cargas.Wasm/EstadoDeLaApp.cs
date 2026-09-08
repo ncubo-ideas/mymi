@@ -28,22 +28,29 @@ public sealed class EstadoDeLaApp : IAsyncDisposable
 	private const string NombreDelActor = "cargas";
 
 	private readonly PuenteDeJournal puente;
+	private readonly PuenteDeTraspaso puenteDeTraspaso;
 	private readonly HttpClient http;
 	private readonly ConfiguracionDelProveedor proveedor;
+	private readonly ConfiguracionDeGnothi gnothi;
 
 	private CargasApp? app;
 	private CargasAPI? api;
 	private BucleDeRefresh? bucle;
 
-	public EstadoDeLaApp(PuenteDeJournal puente, HttpClient http, ConfiguracionDelProveedor proveedor)
+	public EstadoDeLaApp(PuenteDeJournal puente, PuenteDeTraspaso puenteDeTraspaso, HttpClient http,
+		ConfiguracionDelProveedor proveedor, ConfiguracionDeGnothi gnothi)
 	{
 		ArgumentNullException.ThrowIfNull(puente);
+		ArgumentNullException.ThrowIfNull(puenteDeTraspaso);
 		ArgumentNullException.ThrowIfNull(http);
 		ArgumentNullException.ThrowIfNull(proveedor);
+		ArgumentNullException.ThrowIfNull(gnothi);
 
 		this.puente = puente;
+		this.puenteDeTraspaso = puenteDeTraspaso;
 		this.http = http;
 		this.proveedor = proveedor;
+		this.gnothi = gnothi;
 	}
 
 	public bool EstaArriba => app is not null;
@@ -282,6 +289,10 @@ public sealed class EstadoDeLaApp : IAsyncDisposable
 			// a buscar y volvi con novedades". Sin novedades, la primera pintada ya animo y
 			// repetirla dos segundos despues es un parpadeo sin motivo.
 			if (alAbrir.Aplicados > 0) Refrescos++;
+
+			// Las anotaciones que llegaron antes que sus cargas: ahora que la estacion
+			// publico, se vuelven a intentar (ver Traspasar).
+			if (alAbrir.Aplicados > 0) await ReaplicarTraspasoPendiente();
 		}
 		catch (Exception ex)
 		{
@@ -398,6 +409,8 @@ public sealed class EstadoDeLaApp : IAsyncDisposable
 			UltimoMensaje = $"refresh: {resultado}";
 			ProblemaAlPonerseAlDia = "";
 			Refrescos++;
+
+			if (resultado.Aplicados > 0) await ReaplicarTraspasoPendiente();
 			return resultado;
 		}
 		finally
@@ -479,6 +492,126 @@ public sealed class EstadoDeLaApp : IAsyncDisposable
 		string rechazo = api!.AdjuntarFoto(transaccion, nombre);
 		if (rechazo.Length == 0) { await BajarADisco(); Avisar(); }
 		return rechazo;
+	}
+
+	// ------------------------------------------------- el traspaso de anotaciones a Gnothi
+
+	// LO QUE SONIA ANOTO ELLA MISMA es lo unico que cruza cuando esta app pasa a vivir dentro
+	// de Gnothi (especificacion 13 §5). Los hechos de la estacion no viajan -el modulo
+	// hospedado los vuelve a pedir con la credencial de Gnothi- y la credencial de esta
+	// instalacion tampoco. El sobre lo arma Cargas.App.Traspaso; aca solo se decide como
+	// sale (la hoja de compartir) y como entra (Traspasar).
+	//
+	// POR LA HOJA DE COMPARTIR Y NO POR EL ENLACE. En Examenes la unica asercion es el sexo
+	// declarado y cabe en la URL del handoff. Aca son decenas: medido con el guion de 28
+	// cargas, el sobre pesa ~9.7 KB (~21 KB escapado para URL). El enlace del handoff abre
+	// Gnothi nombrando el modulo; el sobre va como archivo de texto (13 §5.2).
+
+	/// <summary>Cuanto hay para pasar, en piezas, para que la pantalla lo enuncie antes del
+	/// toque. Las fotos se cuentan aparte porque NO viajan.</summary>
+	public ResumenDeTraspaso QueSePasa() { Exigir(); return Traspaso.Resumir(api!); }
+
+	/// <summary>El sobre entero. Publico para poder mirarlo; lo que la persona toca es
+	/// CompartirConGnothi.</summary>
+	public string SobreDeTraspaso() { Exigir(); return Traspaso.Armar(api!, DondeEstaElProveedor, DateTime.UtcNow); }
+
+	public ValueTask<bool> EsAndroid() => puenteDeTraspaso.EsAndroid();
+
+	public ValueTask<bool> PuedeCompartirArchivos() => puenteDeTraspaso.PuedeCompartirArchivos();
+
+	// EL ENLACE QUE ABRE GNOTHI, nombrando el modulo y sin las aserciones adentro: no caben.
+	//
+	// Android: intent:// con package y fallback explicito. Si Gnothi esta instalado el SO lo
+	// abre; si no, Chrome carga la pagina de Gnothi. EXIGE GESTO. iOS y el resto: un https
+	// normal al dominio de Gnothi, en un <a href> TOCADO -no window.location desde JS, que
+	// iOS trata como pegar la URL en la barra- y a un dominio distinto al de esta app.
+	public string EnlaceParaAbrirGnothi(bool android)
+	{
+		string consulta = $"modulo={Traspaso.Modulo}";
+		string paginaDeGnothi = $"https://{gnothi.Dominio}/abrir?{consulta}";
+
+		if (!android) return paginaDeGnothi;
+
+		return $"intent://{gnothi.Dominio}/abrir?{consulta}"
+			+ $"#Intent;scheme=https;package={gnothi.Paquete}"
+			+ $";S.browser_fallback_url={Uri.EscapeDataString(paginaDeGnothi)};end";
+	}
+
+	/// <summary>EXIGE GESTO. Arma el sobre y lo saca por la hoja de compartir; donde no hay,
+	/// lo descarga y lo dice. Repetirlo es inocuo: el modulo que lo reciba no duplica.</summary>
+	public async ValueTask<ResultadoDeCompartir> CompartirConGnothi()
+	{
+		Exigir();
+
+		string sobre = Traspaso.Armar(api!, DondeEstaElProveedor, DateTime.UtcNow);
+		string nombre = $"mis-anotaciones-cargas-{DateTime.UtcNow:yyyy-MM-dd}.txt";
+		ResultadoDeCompartir resultado = await puenteDeTraspaso.Compartir(nombre, sobre, "Mis anotaciones de cargas");
+		UltimoMensaje = $"traspaso hacia Gnothi: {(resultado.Ok ? resultado.Como : resultado.Motivo)}";
+		return resultado;
+	}
+
+	// RECIBIR EL TRASPASO. Es el verbo que Gnothi le va a llamar al modulo hospedado
+	// -`window.gnothi.traspasar`, como en Examenes- cuando la capa de hospedaje llegue a
+	// esta rama; hasta entonces no tiene quien lo llame, y esta aca para que el que la traiga
+	// solo tenga que cablearlo.
+	//
+	// NO ENTRA POR EL CAMINO DE LOS EVENTOS. Los eventos de la estacion vienen numerados,
+	// mueven el cursor y la guarda Check los hace idempotentes. Esto son comandos de la
+	// persona, sin numero: la idempotencia la pone Traspaso comparando contra lo que ya esta.
+	//
+	// LO QUE ESPERA SE GUARDA. Gnothi entrega el traspaso apenas el modulo arranca, y puede
+	// que las cargas aun no hayan llegado. Las anotaciones cuya carga no esta quedan en un
+	// archivo al lado del journal -viaja con la carpeta, igual que las fotos- y se vuelven a
+	// aplicar despues de cada refresh que traiga algo, hasta que nada espere.
+	public async Task<ResultadoDeTraspaso> Traspasar(string sobreJson)
+	{
+		Exigir();
+
+		ResultadoDeTraspaso resultado = Traspaso.Aplicar(api!, sobreJson);
+		UltimoTraspaso = resultado;
+
+		if (resultado.Pendiente) EscribirTraspasoPendiente(sobreJson);
+		else if (HayTraspasoPendiente) EscribirTraspasoPendiente("");
+
+		// Baja a disco una sola vez, al final: son comandos de la persona, no un bloque de
+		// eventos que haya que poder reanudar a mitad. Sin carpeta no hace nada.
+		await BajarADisco();
+		if (resultado.Aplicadas > 0) Avisar();
+
+		UltimoMensaje = $"traspaso recibido: {resultado}";
+		return resultado;
+	}
+
+	/// <summary>El resultado del ultimo traspaso recibido, para que la pantalla lo cuente.</summary>
+	public ResultadoDeTraspaso? UltimoTraspaso { get; private set; }
+
+	/// <summary>Si hay anotaciones recibidas que todavia esperan a sus cargas.</summary>
+	public bool HayTraspasoPendiente =>
+		File.Exists(RutaDelTraspasoPendiente) && new FileInfo(RutaDelTraspasoPendiente).Length > 0;
+
+	// Al lado del journal, no adentro: `/journal/cargas/` es del actor; esto es de la app.
+	// Se SOBREESCRIBE VACIO en vez de borrarse porque el puente no tiene "borrar": un
+	// archivo borrado solo en MEMFS volveria de la carpeta en la proxima apertura.
+	private static readonly string RutaDelTraspasoPendiente =
+		Path.Combine(PuenteDeJournal.RaizEnMemfs, "traspaso", "pendiente.json");
+
+	private static void EscribirTraspasoPendiente(string sobreJson)
+	{
+		Directory.CreateDirectory(Path.GetDirectoryName(RutaDelTraspasoPendiente)!);
+		File.WriteAllText(RutaDelTraspasoPendiente, sobreJson ?? "");
+	}
+
+	private async Task ReaplicarTraspasoPendiente()
+	{
+		if (!HayTraspasoPendiente) return;
+
+		string sobre = File.ReadAllText(RutaDelTraspasoPendiente);
+		ResultadoDeTraspaso resultado = Traspaso.Aplicar(api!, sobre);
+		UltimoTraspaso = resultado;
+
+		if (!resultado.Pendiente) EscribirTraspasoPendiente("");
+		await BajarADisco();
+		UltimoMensaje += $" | traspaso pendiente: {resultado}";
 	}
 
 	// ---------------------------------------------------------------- consultas
@@ -566,6 +699,7 @@ public sealed class EstadoDeLaApp : IAsyncDisposable
 	{
 		app?.Actor.GracefulExit();
 		await puente.DisposeAsync();
+		await puenteDeTraspaso.DisposeAsync();
 	}
 }
 
