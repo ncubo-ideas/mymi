@@ -6,8 +6,9 @@ iOS 26.5, sobre Xcode 26.6 y .NET 9.0.200. **Rama:** `fase0/modulos-hospedados-e
 Etiquetas como en `Documentacion/Movil/00-INDICE.md`: **[MEDIDO]**, **[RAZONADO]**,
 **[NO MEDIDO]**.
 
-> El guion decía «NADA DE ESTO ESTÁ MEDIDO». Ya no: **P0, P1, P3, P4, P5 y P7 están medidos.**
-> Quedan P6 y P2, y abajo se dice exactamente qué frena a cada uno.
+> El guion decía «NADA DE ESTO ESTÁ MEDIDO». Ya no: **P0, P1, P3, P4, P5, P6 y P7 están
+> medidos.** Queda **P2**, que pide Instruments, y abajo está lo que le falta a P6 para ser el
+> camino de verdad y no el de laboratorio.
 
 ---
 
@@ -22,7 +23,7 @@ Etiquetas como en `Documentacion/Movil/00-INDICE.md`: **[MEDIDO]**, **[RAZONADO]
 | **P5** contención | ✅ **[MEDIDO]** | Con una corrección al guion: la directiva no es la que dice |
 | **P3** el puente | ✅ **[MEDIDO]** | La consola del módulo vuelve por el puente |
 | **P7** comprobación | ✅ **[MEDIDO]** | `matches:true` en los cuatro, con datos reales (§7) |
-| **P6** el alta | ⛔ | Necesita las páginas de institución, que hoy no levantan (§6) |
+| **P6** el alta | ✅ **[MEDIDO]** | Por el esquema propio, con el descarte y la instalación (§9) |
 | **P2** memoria | ⛔ **[NO MEDIDO]** | Pide Instruments |
 
 ---
@@ -277,6 +278,13 @@ Dos detalles menores del script: reporta «eight ports down» listando siete cua
 proceso preexistente que no estaba en su pidfile; y en un caso dijo `SCENARIO INCOMPLETE: 8
 port(s) not answering` habiendo listado uno solo.
 
+**CORRECCIÓN a lo que decía este reporte antes:** las páginas no levantaban por **dos** cosas, y
+la segunda hacía parecer flaky a la primera. Una, el `obj/` de `PaginaDeLaInstitucion` estaba
+incompleto —un `dotnet build` limpio de ese proyecto lo arregló—. Y dos, **la ventana de espera
+del script es corta para esta máquina**: los ocho puertos suben, pero tardan más de lo que él
+aguanta, así que reportaba `SCENARIO INCOMPLETE` sobre servidores que iban a contestar 40 s
+después. Medido: con el `obj/` arreglado, a los 90 s están los ocho.
+
 **Y no se puede compilar iOS mientras el escenario está arriba**: los dos tocan los mismos
 proyectos compartidos y el publish muere. Con `armar-bundle.ps1` mandando el publish a
 `| Out-Null`, el motivo se pierde y el log queda en 23 bytes diciendo «could not be built».
@@ -349,3 +357,49 @@ tool y su argumento solo. Una nota que no es de plomería: en una corrida contes
 signo de alerta y requiere atención médica inmediata»* sobre el colesterol de Sonia, y en otra,
 con el mismo prompt, la versión sobria. Las instrucciones del módulo prohíben diagnosticar. **El
 modelo del teléfono no las está respetando de forma estable.**
+
+---
+
+## 9 · P6 — el alta desde el enlace, medida
+
+**[MEDIDO]** con el esquema propio de `9668ea4`, en el simulador. La corrida entera:
+
+```
+alta: bajando el bundle de 127.0.0.1
+alta: propuesta de 'examenes' servida por 127.0.0.1
+alta: 'examenes' descartado por la persona          ← «Ahora no»
+alta: 'examenes' instalado en …/Data/Application/…  ← «Instalar en mi teléfono»
+alta: 'examenes' quedó instalado; 1 módulos
+```
+
+La hoja de consentimiento trae **las cuatro cosas** que el guion pide: qué va a poder contestar
+(las dos tools con su descripción), dónde va a vivir el registro (la ruta completa, más *«Es
+tuyo. Gnothi se lo administra a esta institución, no se lo lleva.»*), con quién va a hablar
+(`http://127.0.0.1:8095/expediente/1`, *«Es la única red que va a poder tocar»*) y quién sirvió
+el bundle.
+
+**El descarte deja el aparato como estaba, y es la aserción fuerte:** con «Ahora no» no existe
+`Modulos/` ni `journals/`. Verificado en el contenedor, no solo en el log.
+
+**Y aceptar encadena todo lo demás solo:** base en `/app/`, P0 en verde, credencial, `pull
+after=0 -> 2223 bytes`, y la comprobación de P7 con `matches:true`.
+
+> **Regalo de `cb46c30`:** en el camino aparecieron `the publisher rejected the credential;
+> asking for another` y `Gnothi obtained its credential from the publisher`. O sea que el
+> publicador que ahora revoca ejercitó el **re-grant**, y el arreglo del Keychain (§3) lo
+> aguantó. Eso cierra la mitad que `IosSecretStore` tenía anotada como no medida.
+
+### Las dos cosas que le faltan para ser el camino de verdad
+
+**1. El esquema propio pide una confirmación, y eso lo hace no-automatizable.** iOS muestra
+*«Open in "Gnothi Host"?»* con Cancel/Open, y **alguien tiene que tocar Open**. Un
+`xcrun simctl openurl` a secas deja el diálogo esperando: la app no arranca, no aparece **nada**
+en el log, y parece que el esquema no funciona. Perdí un rato ahí. Lo que lo destapó fue mandar
+un enlace deliberadamente inválido y ver que `HandleLink` tampoco lo logueaba — o sea que el
+problema estaba antes de la app, no adentro.
+
+**2. La página de la institución todavía enlaza al universal link.**
+`PaginaDeLaInstitucion` sirve `href="https://go.gnothi.app/alta?bundle=…"`, no `gnothi://`. Así
+que **el botón «Agregar a Gnothi» sigue sin poder funcionar**: `9668ea4` le puso el esquema a la
+app y la página no se enteró. El esquema hoy solo se alcanza tipeándolo o por `simctl`. Es un
+cambio de una línea en la página, y sin él P6 se mide pero no se demuestra.
