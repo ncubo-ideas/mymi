@@ -1,4 +1,5 @@
 using Foundation;
+using Gnothi.Assistant;
 using Gnothi.Movil;
 using UIKit;
 using WebKit;
@@ -31,6 +32,13 @@ public sealed class ViewController : UIViewController
 	private WKWebView? web;
 	private Shell? shell;
 	private IosWebModuleHost? moduleHost;
+
+	// EL MODULO QUE LA PERSONA ESTA MIRANDO, y el boton para salir de el. Los dos son de esta
+	// clase y no del Shell: el Shell no sabe que existe una pantalla, y esa es la linea que
+	// permite que el mismo Host corra en escritorio sin arrastrar UIKit.
+	private IosWebModule? enPantalla;
+	private string? enPantallaNombre;
+	private UIViewController? enPantallaVc;
 
 	public override void ViewDidLoad()
 	{
@@ -196,6 +204,137 @@ public sealed class ViewController : UIViewController
 	// `adb logcat -s GNOTHI` de Android es:
 	//
 	//     log stream --predicate 'processImagePath CONTAINS "Gnothi"' --style compact
+	// ── ABRIR UN MODULO Y VERLO ──────────────────────────────────────────────────────────
+	//
+	// El espejo de AbrirModulo/Mostrar/Cerrar de Gnothi.Mobile/MainActivity.cs, y a proposito con
+	// los mismos nombres: son las tres piezas que no se pueden compartir, asi que lo unico que
+	// puede mantenerlas juntas es que se lean igual.
+
+	// CONTESTA YA Y ABRE DESPUES. Levantar un modulo es hidratar su actor, que tarda; si esto
+	// esperara, prompt() del lado de la pagina queda bloqueado y la cara se congela. La pagina
+	// recibe "ok" y la vista aparece cuando esta lista.
+	private string AbrirModulo(string nombre)
+	{
+		Gnothi.Host.Module? m = shell?.Find(nombre);
+		if (m is null || moduleHost is null) { Log($"abrir: no conozco '{nombre}'"); return "{\"ok\":false}"; }
+
+		_ = Task.Run(async () =>
+		{
+			try
+			{
+				// Si el asistente ya le pregunto algo, el modulo esta vivo y abrir es instantaneo:
+				// Open lo devuelve tal cual. Esa es la razon por la que P1a se pudo medir sin que
+				// esta pantalla existiera.
+				IosWebModule vivo = await moduleHost.Open(m, CancellationToken.None);
+				InvokeOnMainThread(() => Mostrar(vivo, nombre));
+			}
+			catch (Exception ex)
+			{
+				Log($"no se pudo abrir {nombre}: {ex.GetType().Name}: {ex.Message}");
+			}
+		});
+
+		return "{\"ok\":true}";
+	}
+
+	// EL MODULO SE PRESENTA COMO SHEET, y la decision es de Geaninna. La alternativa medida era
+	// una barra de Gnothi arriba con el modulo debajo; se descarto porque el sheet gana dos cosas
+	// que la barra no puede dar.
+	//
+	//   1. NO LE TAPA NADA A LA INSTITUCION. Un boton flotante sobre un modulo full-bleed le pisa
+	//      la marca: medido el 2026-09-07, el `‹ Gnothi` que tenia esta funcion antes quedaba
+	//      encima del logo y de la primera letra de "Supermercado La Guaria". Abajo pasa lo mismo
+	//      con su nav. El sheet le entrega el area entera y no le pone cromo arriba.
+	//
+	//   2. LA SALIDA ES EL GESTO QUE LA PERSONA YA SABE. Android no necesita nada porque tiene el
+	//      boton atras del sistema; iOS no tiene equivalente -el gesto de borde lo consume el
+	//      contenido del modulo- asi que la vuelta hay que darla. El grabber de un sheet es la
+	//      respuesta nativa: se arrastra hacia abajo y se cierra, sin que nadie lo explique.
+	//
+	// Y GNOTHI QUEDA ASOMANDO DETRAS, que no es un efecto lateral: se ve de quien es la app en la
+	// que estas parado. Para el argumento de Gnothi eso no es decoracion.
+	private void Mostrar(IosWebModule vivo, string nombre)
+	{
+		UIView? vista = vivo.View;
+		if (vista is null) return;
+
+		Cerrar();
+
+		enPantalla = vivo;
+		enPantallaNombre = nombre;
+		// Visible es del codigo compartido y NO es cosmetico: WebModuleHost.Evict se niega a
+		// desalojar un modulo que la persona esta mirando.
+		vivo.Visible = true;
+
+		// UN VIEW CONTROLLER PROPIO Y NO la vista suelta: presentar exige un controller, y de paso
+		// es quien le da al WKWebView del modulo un ciclo de vida donde apoyarse.
+		var pantalla = new UIViewController();
+		pantalla.View!.BackgroundColor = UIColor.SystemBackground;
+		vista.Frame = pantalla.View.Bounds;
+		vista.AutoresizingMask = UIViewAutoresizing.FlexibleWidth | UIViewAutoresizing.FlexibleHeight;
+		pantalla.View.AddSubview(vista);
+
+		pantalla.ModalPresentationStyle = UIModalPresentationStyle.PageSheet;
+
+		// UN SOLO DETENT, el grande. Con medium tambien disponible, el sheet se puede quedar a
+		// media altura y la app de la institucion -que es una pagina entera- queda ilegible; el
+		// grabber sigue estando igual, que es lo que hacia falta.
+		if (pantalla.SheetPresentationController is { } hoja)
+		{
+			hoja.Detents = [UISheetPresentationControllerDetent.CreateLargeDetent()];
+			hoja.PrefersGrabberVisible = true;
+		}
+
+		// EL DESCARTE POR GESTO TAMBIEN TIENE QUE LIMPIAR. Si solo se limpiara en Cerrar(), la
+		// persona arrastra el sheet hacia abajo y el modulo queda marcado como visible para
+		// siempre: WebModuleHost.Evict no lo desalojaria nunca mas, y Gnothi se quedaria con su
+		// motor de 20 MB en memoria sin nadie mirandolo.
+		pantalla.PresentationController!.Delegate = new AlDescartar(this);
+
+		enPantallaVc = pantalla;
+		PresentViewController(pantalla, animated: true, completionHandler: null);
+
+		Log($"abrir: '{nombre}' en pantalla");
+	}
+
+	// Sacarlo de la pantalla NO lo mata: el modulo sigue vivo y contestando preguntas del
+	// asistente. Solo deja de verse, y vuelve a ser desalojable.
+	private bool Cerrar()
+	{
+		if (enPantalla is null) return false;
+
+		if (enPantallaVc is { } vc && PresentedViewController == vc)
+			DismissViewController(animated: true, completionHandler: null);
+
+		Soltar();
+		return true;
+	}
+
+	// Lo que hay que deshacer pase lo que pase, venga de Cerrar() o del gesto. La vista del modulo
+	// se saca de la jerarquia del sheet para que un Mostrar() posterior la pueda volver a poner:
+	// el WKWebView es del modulo y le sobrevive a la pantalla.
+	private void Soltar()
+	{
+		if (enPantalla is null) return;
+
+		enPantalla.View?.RemoveFromSuperview();
+		enPantalla.Visible = false;
+		Log($"cerrar: '{enPantallaNombre}' fuera de pantalla");
+
+		enPantalla = null;
+		enPantallaNombre = null;
+		enPantallaVc = null;
+	}
+
+	// El gesto de arrastrar el sheet hacia abajo no pasa por Cerrar(): llega por aca.
+	private sealed class AlDescartar : UIAdaptivePresentationControllerDelegate
+	{
+		private readonly ViewController host;
+		public AlDescartar(ViewController host) => this.host = host;
+
+		public override void DidDismiss(UIPresentationController presentationController) => host.Soltar();
+	}
+
 	private static void Log(string s) => Console.WriteLine($"GNOTHI: {s}");
 	private string? pendingEnrollment;
 
@@ -239,10 +378,32 @@ public sealed class ViewController : UIViewController
 				return;
 			}
 
-			// TODO lo que la pagina pide lo atiende Shell.Handle, que es el MISMO archivo en las
-			// dos plataformas -- incluidos los dos verbos del alta, desde que la propuesta vive
-			// alla. iOS no intercepta nada: no tiene pantalla de modulo todavia.
-			completionHandler(host.shell?.Handle(defaultText) ?? "{}");
+			// CASI TODO lo que la pagina pide lo atiende Shell.Handle, que es el MISMO archivo en
+			// las dos plataformas -- los dos verbos del alta incluidos, desde que la propuesta
+			// vive alla.
+			//
+			// LA UNICA OP QUE SE INTERCEPTA ACA ES 'abrir', y por la misma razon que en Android
+			// (MainActivity.cs): poner una vista en pantalla es lo unico de todo el protocolo que
+			// NO se puede compartir, porque UIView y android.view.View no tienen nada en comun.
+			// Shell.Handle no la conoce a proposito -- si la conociera tendria que saber de
+			// pantallas- y por eso caia en su `_ => "{}"`: el boton llegaba al Host y el Host no
+			// tenia que hacer con el. Medido el 2026-09-07: se veia `bridge: abrir` en el log,
+			// que se escribe ANTES del switch, y despues nada.
+			string respuesta;
+			try
+			{
+				System.Text.Json.JsonElement req = Json.Parse(defaultText);
+				respuesta = req.GetProperty("op").GetString() == "abrir"
+					? host.AbrirModulo(req.GetProperty("module").GetString() ?? "")
+					: host.shell?.Handle(defaultText) ?? "{}";
+			}
+			catch (Exception e)
+			{
+				Log($"bridge: {e.GetType().Name}: {e.Message}");
+				respuesta = "{}";
+			}
+
+			completionHandler(respuesta);
 		}
 	}
 }
