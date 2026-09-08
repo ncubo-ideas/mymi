@@ -85,8 +85,44 @@
 		</dict>
 	</array>
 
+	<!-- EL PERMISO DE RED LOCAL, Y NO ES LO MISMO QUE NSAllowsLocalNetworking. Son DOS
+	     compuertas distintas y hay que pasar las dos:
+
+	       NSAllowsLocalNetworking       es de ATS: permite TEXTO CLARO hacia la red local.
+	       NSLocalNetworkUsageDescription es de PRIVACIDAD: desde iOS 14 hablarle a la red
+	                                      local exige permiso de la persona, y iOS solo se lo
+	                                      PIDE si esta clave existe.
+
+	     SIN ESTA CLAVE LA CONEXION SE DENIEGA Y EL ERROR MIENTE. Medido en un iPhone el
+	     2026-09-08, con NSAllowsLocalNetworking ya puesto: el alta fallo con
+	     "HttpRequestException: The Internet connection appears to be offline" -que manda a
+	     revisar el wifi cuando lo que falta es un permiso que nunca se pidio.
+
+	     [SOLO PARA EL LABORATORIO] En produccion el publicador es un servidor real por HTTPS y
+	     esto no hace falta. Esta para poder correr el guion en un aparato contra el escenario
+	     de la Mac; sale junto con NSAllowsLocalNetworking antes de publicar. -->
+	<key>NSLocalNetworkUsageDescription</key>
+	<string>Para bajar el modulo de tu institucion desde un servidor de prueba en esta red.</string>
+
 	<key>NSAppTransportSecurity</key>
 	<dict>
+		<!-- LA RED LOCAL, y hace falta SOLO en un aparato de verdad. En el simulador alcanzan
+		     las dos excepciones de abajo, porque comparte el stack de red de la Mac y el
+		     publicador vive en su 127.0.0.1. En un telefono ese 127.0.0.1 ES EL TELEFONO, asi
+		     que el publicador hay que alcanzarlo por la IP de la Mac en la LAN -y ATS bloquea
+		     texto claro hacia cualquier cosa que no sea loopback.
+
+		     NSAllowsLocalNetworking y NO NSAllowsArbitraryLoads: esto habilita texto claro
+		     hacia destinos de RED LOCAL nada mas -.local y rangos privados-, no hacia
+		     internet. Lo de afuera sigue exigiendo HTTPS, que es la unica red que un modulo
+		     hospedado deberia poder tocar en produccion.
+
+		     [SOLO PARA EL LABORATORIO] En produccion el publicador es un servidor real por
+		     HTTPS y esta clave no hace falta. Esta puesta para poder correr el guion en un
+		     aparato contra el escenario de la Mac; antes de publicar hay que sacarla, junto
+		     con las dos excepciones de loopback. -->
+		<key>NSAllowsLocalNetworking</key>
+		<true/>
 		<key>NSExceptionDomains</key>
 		<dict>
 			<key>localhost</key>

@@ -323,17 +323,19 @@ else
        de lo que pasa. Decirle a la persona "no se está guardando nada" mientras el journal
        baja a los archivos de Gnothi es la misma mentira silenciosa que este archivo evita
        en el otro sentido. *@
-    @* MIGRADA: el proveedor dice que el registro de esta cuenta ya vive en Gnothi
-       (especificación 13 §4 y §6.2). "Desaparecer" NO es desinstalar y NO es borrar: la app
+    @* MIGRADA: el proveedor marcó que los hechos nuevos de esta cuenta ya entran por Gnothi
+       (especificación 13 §4 y §6.2). El registro NO se mudó: sigue en el teléfono de la
+       persona y es de ella (§10.6). "Desaparecer" NO es desinstalar y NO es borrar: la app
        sigue mostrando lo que tiene, porque es de ella. Lo que deja de hacer es SINCRONIZAR,
        que es lo único que produciría dos historias que divergen. El ícono lo quita ella. *@
     @if (estado.Migrada)
     {
         <div class="aviso aviso--atencion fila">
             <div class="crece">
-                <strong>Tu registro ahora vive en @estado.DondeVive.</strong>
-                Lo que ves acá se queda, pero esta copia ya no se actualiza: los exámenes
-                nuevos te llegan allá.
+                <strong>Tus exámenes nuevos ahora entran por @estado.DondeVive, en este
+                mismo teléfono.</strong>
+                Lo que ves acá se queda y sigue siendo tuyo; lo que esta copia deja de
+                hacer es buscar novedades.
             </div>
             @* UN <a href> TOCADO, no window.location desde JS: en iOS una navegación hecha
                por script se trata como pegar la URL en la barra y nunca abre la app; en
@@ -345,9 +347,9 @@ else
     {
         <div class="aviso fila">
             <div class="crece">
-                <strong>Se está guardando en Gnothi.</strong>
-                Tu expediente vive en el dispositivo, en la carpeta que Gnothi le dio a este
-                laboratorio, y tu asistente lo puede leer desde ahí.
+                <strong>Se está guardando en este teléfono.</strong>
+                Tu expediente es tuyo y está acá: Gnothi le dio a este laboratorio una
+                carpeta en tu teléfono, y tu asistente la puede leer desde ahí.
             </div>
         </div>
     }

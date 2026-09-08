@@ -165,8 +165,9 @@ else
             </div>
         </MudAlert>
     }
-    @* MIGRATED: the publisher says this account's record now lives in Gnothi (spec 13 §4,
-       §6.2). "Disappearing" is NOT uninstalling and NOT deleting: the app keeps showing what
+    @* MIGRATED: the publisher marked that this account's new facts now arrive through Gnothi
+       (spec 13 §4, §6.2). The record did NOT move: it stays on the person's phone and is
+       theirs (§10.6). "Disappearing" is NOT uninstalling and NOT deleting: the app keeps showing what
        it has, because it is its own. What it stops doing is SYNCING, which is the only thing
        that would produce two histories that diverge. *@
     else if (state.Migrated)
@@ -174,9 +175,10 @@ else
         <MudAlert Severity="Severity.Warning" Variant="Variant.Filled" Class="mb-4" id="migrated">
             <div class="alert-row">
                 <div>
-                    <strong>Your record now lives in @state.WhereItLivesNow.</strong>
-                    What you see here stays, but this copy no longer updates: new maintenance
-                    facts reach you there.
+                    <strong>New maintenance facts now arrive through
+                    @state.WhereItLivesNow, on this same phone.</strong>
+                    What you see here stays and is still yours; what this copy stops doing
+                    is looking for news.
                 </div>
             </div>
         </MudAlert>
@@ -186,9 +188,9 @@ else
         <MudAlert Severity="Severity.Info" Variant="Variant.Filled" Class="mb-4" id="hosted-in-gnothi">
             <div class="alert-row">
                 <div>
-                    <strong>It is being saved in Gnothi.</strong>
-                    Your record lives on this device, in the folder Gnothi gave this dealership,
-                    and your assistant can read it from there.
+                    <strong>It is being saved on this phone.</strong>
+                    Your record is yours and it is right here: Gnothi gave this dealership a
+                    folder on your phone, and your assistant can read it from there.
                 </div>
             </div>
         </MudAlert>

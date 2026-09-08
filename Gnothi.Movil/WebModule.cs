@@ -89,7 +89,11 @@ internal abstract class WebModule : IWebModule
 		string root = BundleServer.BaseOf(Bundle);
 		Log($"{Name}: the bundle declares its base at {root}");
 
-		await Create(new BundleServer(Bundle, root), OriginFor(root), ct);
+		// El 404 sale por el log del Host, prefijado con el modulo. Es la mitad que el watchdog
+		// de la CSP no cubre: aquel dice que se RECHAZO algo, este que NO ESTA. Ver
+		// BundleServer.Serve.
+		var server = new BundleServer(Bundle, root) { NotFound = m => Log($"{Name}: {m}") };
+		await Create(server, OriginFor(root), ct);
 
 		// Wait for the actor to be hydrated. If the module never says so, the question fails
 		// saying exactly that instead of hanging forever.
@@ -184,9 +188,55 @@ internal abstract class WebModule : IWebModule
 			// The only one that does network, and the reason none of these can be synchronous.
 			case "pull": AttendAsync(id, () => Pull(a ?? "0")); return;
 
+			// NOT PART OF THE MODULE'S API, even though it arrives by the same door. No bundle
+			// calls this: it is the watchdog Gnothi injects into the document (BundleServer)
+			// talking back to Gnothi. The six above are contract and run in four published
+			// bundles; this one is ours and its name is not frozen the way theirs are.
+			case "violation": Violation(a ?? ""); return;
+
 			default: Reply(id, null, $"unknown bridge verb: {op}"); return;
 		}
 	}
+
+	// HOW MANY TIMES THE ENGINE REFUSED THIS MODULE something, since it was opened. It is the
+	// difference between a policy that is declared and one that is known to be applying: a
+	// module whose count never moves is either well behaved or NOT BEING WATCHED, and until now
+	// there was no way to tell those apart.
+	internal int Violations => violations;
+
+	private int violations;
+
+	// A REFUSAL, AS A FACT. The engine already blocked it; nothing here decides anything. What
+	// this adds is that Gnothi SAW it, with the directive, what was blocked and where.
+	//
+	// IT DOES NOT GO IN THE JOURNAL, on purpose. The journal is the person's record as the
+	// institution wrote it; a containment event is Gnothi's own and belongs to the Host, not to
+	// the institution's history. Writing it there would put Gnothi's opinion inside the
+	// institution's book.
+	private void Violation(string report)
+	{
+		Interlocked.Increment(ref violations);
+
+		try
+		{
+			using JsonDocument parsed = JsonDocument.Parse(report);
+			JsonElement r = parsed.RootElement;
+
+			Log($"{Name}: REFUSED by {Field(r, "directive")} -- {Field(r, "blocked")}"
+				+ $" (from {Field(r, "source")}:{Field(r, "line")}); {violations} so far");
+		}
+		catch (JsonException)
+		{
+			// An unreadable report is still a refusal, and losing the count would be worse than
+			// losing the detail.
+			Log($"{Name}: REFUSED, and the report was unreadable; {violations} so far");
+		}
+	}
+
+	private static string Field(JsonElement o, string name) =>
+		o.TryGetProperty(name, out JsonElement v) && v.ValueKind is not JsonValueKind.Null
+			? v.ToString()
+			: "?";
 
 	// RETURNS NOW AND ANSWERS LATER. A failure travels as an error, not as a JS exception.
 	//

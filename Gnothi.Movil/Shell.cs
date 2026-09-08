@@ -764,8 +764,13 @@ public sealed class Shell : IDisposable
 	//
 	// SE TOCAN DOS CAMPOS Y NADA MAS, y los dos son del Host, no del modulo:
 	//
-	//   shell.arguments[0]   donde esta el dll        se conserva el NOMBRE del archivo
+	//   shell.arguments[0]   donde esta lo que se carga  se conserva la HOJA de la ruta, y el
+	//                                                  molde depende del tipo de cascara:
+	//                                                  <dir>/bin/<dll> un modulo cargo
+	//                                                  <dir>/web       uno hospedado
 	//   grantedFolder        que carpeta se le otorga  se conserva el negocio
+	//
+	// Los argumentos DESPUES del primero no se tocan: no son direcciones de esta maquina.
 	//
 	// El manifiesto NO se toca nunca: eso es lo que declara la institucion. Y de la instalacion
 	// se toca solo lo que es una direccion de esta maquina; el interruptor, las tools apagadas
@@ -790,15 +795,28 @@ public sealed class Shell : IDisposable
 				string negocio = Path.GetFileName(dir);
 				Installation vieja = JsonSerializer.Deserialize(File.ReadAllText(file), HostJson.Default.Installation)!;
 
-				// El nombre del dll es lo unico que se rescata de la ruta vieja: cual dll se
-				// carga lo decidio quien armo el paquete, y eso no cambia por mudarse de
-				// aparato. Donde esta, si.
-				string dll = vieja.Shell.Arguments.Count > 0 ? Path.GetFileName(vieja.Shell.Arguments[0]) : "";
-				if (dll.Length == 0) { log($"localizar: {negocio} no declara dll; se deja como esta"); continue; }
+				// La HOJA de la ruta vieja es lo unico que se rescata: QUE se carga lo decidio
+				// quien armo el paquete, y eso no cambia por mudarse de aparato. Donde esta, si.
+				string hoja = vieja.Shell.Arguments.Count > 0 ? Path.GetFileName(vieja.Shell.Arguments[0]) : "";
+				if (hoja.Length == 0) { log($"localizar: {negocio} no declara que cargar; se deja como esta"); continue; }
 
+				// DOS FORMAS, Y CONFUNDIRLAS DEJA LA PANTALLA EN BLANCO SIN UN SOLO ERROR. Un
+				// modulo cargo guarda un dll bajo bin/; uno HOSPEDADO guarda su bundle publicado
+				// en web/, al lado del installation.json. Componer bin/web da una ruta que no
+				// existe, BundleServer.BaseOf no encuentra el index.html y devuelve "/" por
+				// omision, y el bundle -publicado para /app/- se sirve en la raiz: 404 en todo,
+				// window.gnothi nunca se define, y la pantalla queda en blanco. Medido en el
+				// simulador el 2026-09-07 con los cuatro modulos del paquete.
+				bool esWeb = string.Equals(vieja.Shell.Type, "webview", StringComparison.OrdinalIgnoreCase);
+				string local = esWeb ? Path.Combine(dir, hoja) : Path.Combine(dir, "bin", hoja);
+
+				// Y LO QUE SIGUE AL PRIMERO SE PASA TAL CUAL. En un modulo hospedado el segundo
+				// argumento es "<url del publicador>|<recurso>|<id>", que no es una direccion de
+				// esta maquina sino lo que la institucion metio en su manifiesto. Reemplazar el
+				// array entero se lo comia, y el cartero quedaba sin publicador al que pedirle.
 				Installation nueva = vieja with
 				{
-					Shell = vieja.Shell with { Arguments = [Path.Combine(dir, "bin", dll)] },
+					Shell = vieja.Shell with { Arguments = [local, .. vieja.Shell.Arguments.Skip(1)] },
 					GrantedFolder = Path.Combine(journals, negocio),
 				};
 

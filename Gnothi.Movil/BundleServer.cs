@@ -19,12 +19,55 @@ internal sealed class BundleServer
 	// `connect-src 'self'` and NOT 'none': with 'none' the module does not start, because the
 	// runtime itself fetches its blazor.boot.json. Measured. With 'self' it still cannot reach
 	// the publisher -- that is a different origin -- and it does start.
+	// `form-action` AND `base-uri` ARE HERE BECAUSE THEY DO NOT FALL BACK TO `default-src`. They
+	// are two of the very few directives that do not, so leaving them out leaves a hole that
+	// LOOKS closed: `default-src 'self'` reads as if it covered everything, and it does not.
+	//
+	// WHAT form-action CLOSES, and it was open: a form submit is NOT a fetch. It is a navigation
+	// carrying the POST body, so `connect-src` -- which is about ASKING, not about LEAVING --
+	// never applies to it. A module holds its own journal in page memory by design, so without
+	// this it could put that journal in a hidden field and post it anywhere.
+	//
+	// base-uri is the same family and, to be fair, defence in depth rather than a live hole:
+	// with connect-src 'self' and inline scripts pinned by hash there is no known way through
+	// it. It costs one clause on a line that had to be edited anyway.
+	//
+	// THE OTHER HALF OF THE HOLE IS NOT HERE, because no CSP directive can close it:
+	// `window.location = '...'` is a top-level navigation, and `navigate-to` was proposed and
+	// never standardised. That half is closed per platform -- OnlyItsOwnOrigin on iOS,
+	// ShouldOverrideUrlLoading on Android.
 	private const string CspWithoutScript =
 		"default-src 'self'; " +
 		"style-src 'self' 'unsafe-inline'; " +
 		"connect-src 'self'; " +
+		"form-action 'self'; " +
+		"base-uri 'self'; " +
 		"frame-src 'none'; " +
 		"worker-src 'none'";
+
+	// THE WATCHDOG: it turns a refusal from a console line into a fact Gnothi has.
+	//
+	// The engine already refuses -- that is the CSP -- but until now Gnothi only learned about it
+	// the way a person does: by reading a console message among all the others. It could not
+	// count them, could not tell one from an ordinary log line, and could not assert anything.
+	// `securitypolicyviolation` fires with the directive, the blocked URI and the line that did
+	// it, which is the difference between "something was denied" and evidence.
+	//
+	// IT GOES IN THE DOCUMENT AND NOT IN A PLATFORM SHIM, and that is the whole reason it lives
+	// here: iOS has a `WKUserScript` that runs at document start, and Android has nothing
+	// equivalent without adding androidx.webkit. Served inside the document, both platforms get
+	// it from ONE piece of code, at the top of the page, before the module's own scripts.
+	//
+	// ITS OWN HASH IS COMPUTED FOR FREE, because the injection happens BEFORE CspFor runs and the
+	// inline-script regex below finds it like any other. Injecting after would produce a document
+	// whose CSP forbids the very script Gnothi just added -- a self-inflicted blank page.
+	private const string Watchdog =
+		"<script>(function(){document.addEventListener('securitypolicyviolation',function(e){" +
+		"try{window.gnothiPuente.violation(JSON.stringify({" +
+		"directive:e.effectiveDirective||e.violatedDirective," +
+		"blocked:e.blockedURI,source:e.sourceFile,line:e.lineNumber}));}catch(x){}});})();</script>";
+
+	private static readonly Regex HeadOpen = new(@"<head\b[^>]*>", RegexOptions.IgnoreCase);
 
 	private static readonly Regex InlineScripts =
 		new(@"<script\b(?![^>]*\bsrc\s*=)[^>]*>(.*?)</script\s*>",
@@ -39,29 +82,63 @@ internal sealed class BundleServer
 		this.basePath = basePath;
 	}
 
+	// A DONDE VA EL 404 QUE NO SE VE. Lo pone quien construye el servidor -hoy WebModule, hacia
+	// el log del Host-. Nulo significa el comportamiento de antes: callarse. Ver Serve.
+	internal Action<string>? NotFound { get; set; }
+
 	// The path as the engine asked for it, with the bundle's base still in front. Returns what
 	// to answer; it never throws for a missing file, because a 404 is an answer.
 	internal ServedFile Serve(string requestedPath)
 	{
 		string asked = requestedPath.Length == 0 ? "/" : requestedPath;
-		if (asked.StartsWith(basePath, StringComparison.Ordinal)) asked = asked[basePath.Length..];
+
+		// LA RAIZ DEL BUNDLE, PEDIDA SIN LA BARRA FINAL. El origen es gnothi-mod://<modulo>/app/
+		// y WebKit pide "/app", no "/app/". Sin este caso el StartsWith contra basePath -que SI
+		// lleva la barra- no matchea, no se recorta nada, y se busca <bundle>/app: 404 en el
+		// documento inicial, window.gnothi nunca se define y la pantalla queda en blanco, sin un
+		// solo error. Medido en el simulador el 2026-09-07 con los cuatro modulos del paquete.
+		if (basePath.Length > 1 && asked == basePath.TrimEnd('/')) asked = "/";
+		else if (asked.StartsWith(basePath, StringComparison.Ordinal)) asked = asked[basePath.Length..];
 
 		string path = asked.TrimStart('/');
 		if (path.Length == 0 || path.EndsWith("/", StringComparison.Ordinal)) path += "index.html";
 
 		string full = Resolve(path);
 
-		if (!File.Exists(full)) return ServedFile.NotFound();
+		// UN 404 QUE SE DICE. Es silencioso a proposito -"un 404 es una respuesta"-, y eso es
+		// cierto para el protocolo y falso para diagnosticar: hace indistinguible "no encuentro
+		// el archivo" de "la CSP lo rechazo", y las dos dejan la pantalla igual de blanca.
+		//
+		// ES LA MITAD QUE EL WATCHDOG NO CUBRE. El de arriba reporta lo que la CSP RECHAZO; este
+		// reporta lo que NO ESTA. Con los dos, una pantalla en blanco se parte en los dos casos
+		// que antes se confundian. El costo de no tenerlo se pago dos veces el 2026-09-07: los
+		// dos bugs de esta tanda -la ruta bin/web y el base pedido sin barra- eran invisibles, y
+		// cada uno se leyo en un renglon apenas esta linea existio.
+		if (!File.Exists(full)) { NotFound?.Invoke($"404 {requestedPath} -> {full}"); return ServedFile.NotFound(); }
 
 		// The document is read whole because its CSP depends on its content. Everything else
 		// travels as a file the platform streams.
 		if (path.EndsWith(".html", StringComparison.Ordinal))
 		{
-			byte[] document = File.ReadAllBytes(full);
+			byte[] document = WithWatchdog(File.ReadAllBytes(full));
 			return ServedFile.Document(document, CspFor(document));
 		}
 
 		return ServedFile.Stream(full, MimeOf(path));
+	}
+
+	// The watchdog goes right after <head>, so it is listening before anything the institution
+	// wrote. A document with no <head> is left ALONE: guessing where to put a script in a
+	// document that does not have the shape we expect is how a page gets broken by its host.
+	private static byte[] WithWatchdog(byte[] document)
+	{
+		string html = Encoding.UTF8.GetString(document);
+
+		Match head = HeadOpen.Match(html);
+		if (!head.Success) return document;
+
+		int at = head.Index + head.Length;
+		return Encoding.UTF8.GetBytes(html[..at] + Watchdog + html[at..]);
 	}
 
 	// THE HASH IS COMPUTED, NOT WRITTEN DOWN. One written by hand goes silently out of sync the

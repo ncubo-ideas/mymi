@@ -60,10 +60,22 @@ internal sealed class AndroidWebModule : WebModule
 		{
 			try
 			{
+#if DEBUG
+				// THE TWIN OF web.Inspectable ON iOS, and the reason is the same: without it
+				// chrome://inspect lists nothing and the test script's checks cannot be run.
+				//
+				// This one is STATIC and process-wide, so it also covers the shell's WebView --
+				// which is a bonus, not the point.
+				//
+				// DEBUG ONLY: an inspectable WebView lets anyone with a cable read the page's
+				// memory, and the module holds the person's journal there by design.
+				WebView.SetWebContentsDebuggingEnabled(true);
+#endif
+
 				var w = new WebView(owner);
 				w.Settings.JavaScriptEnabled = true;
 				w.Settings.DomStorageEnabled = true;
-				w.SetWebViewClient(new BundleServerClient(server, HostOf(Name)));
+				w.SetWebViewClient(new BundleServerClient(server, HostOf(Name), Name, Log));
 				w.SetWebChromeClient(new ModuleConsole(Name));
 				w.AddJavascriptInterface(new BridgeToModule(this), "gnothiPuente");
 
@@ -95,8 +107,42 @@ internal sealed class AndroidWebModule : WebModule
 
 // GNOTHI SERVING THE BUNDLE. What to answer is decided by the shared BundleServer; this only
 // turns it into what the WebView expects.
-internal sealed class BundleServerClient(BundleServer server, string host) : WebViewClient
+internal sealed class BundleServerClient(BundleServer server, string host, string module, Action<string> log)
+	: WebViewClient
 {
+	// THE HALF OF CONTAINMENT NO CSP CAN COVER, and the twin of OnlyItsOwnOrigin on iOS.
+	//
+	// `connect-src 'self'` stops the module from FETCHING another origin, and `form-action`
+	// stops it from POSTING to one. Neither stops `window.location = 'https://...'`: a
+	// top-level navigation is governed by `navigate-to`, which was proposed and NEVER
+	// standardised. So the only place to refuse it is here.
+	//
+	// TWO THINGS GO OUT THROUGH THIS DOOR, not one. The obvious one is data in a URL. The one
+	// that worries more: the module could navigate to ANY page inside Gnothi's own window,
+	// which has no address bar. The person sees Gnothi's frame and a screen asking for their
+	// bank password, with nothing to say they left their laboratory.
+	//
+	// THE RULE IS THE ORIGIN, NOT A LIST -- the same host this module is served under, and
+	// nothing else, another module's host included.
+	//
+	// It is NOT called for the initial LoadUrl (Android documents that), so the module's own
+	// first load cannot be refused by accident. It IS called for redirects and for anything
+	// script-initiated, which is exactly what needs judging.
+	//
+	// Returning TRUE means "we handled it" -- and handling it is refusing. Never mute: on iOS
+	// the equivalent gap was found by reading code with the question already in mind, which
+	// only works if somebody thinks to ask. A logged line means the next person sees it happen.
+	public override bool ShouldOverrideUrlLoading(WebView? view, IWebResourceRequest? request)
+	{
+		Android.Net.Uri? url = request?.Url;
+		if (url is null) return true;
+
+		if (string.Equals(url.Host, host, StringComparison.Ordinal)) return false;
+
+		log($"{module}: navigation refused to {url.Scheme}://{url.Host} -- outside its own origin");
+		return true;
+	}
+
 	public override WebResourceResponse? ShouldInterceptRequest(WebView? view, IWebResourceRequest? request)
 	{
 		Android.Net.Uri? url = request?.Url;
@@ -168,4 +214,10 @@ internal sealed class BridgeToModule(AndroidWebModule module) : Java.Lang.Object
 	[JavascriptInterface]
 	[Export("pull")]
 	public void Pull(string id, string after) => module.Serve("pull", id, after, null);
+
+	// The seventh, and the only one no bundle calls: the watchdog Gnothi injects into the
+	// document reports a refusal back through the same door. See WebModule.Serve.
+	[JavascriptInterface]
+	[Export("violation")]
+	public void Violation(string report) => module.Serve("violation", "", report, null);
 }

