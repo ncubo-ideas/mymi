@@ -1,14 +1,21 @@
 # Corriendo `PRUEBAS-WEBVIEW-IOS.md` en una Mac — hallazgos para Edgar
 
-**Fecha:** 2026-09-07. **Quién:** Renán, con Claude. **Aparato:** simulador iPhone 17 Pro,
-iOS 26.5, sobre Xcode 26.6 y .NET 9.0.200. **Rama:** `fase0/modulos-hospedados-en-ios`.
+**Fechas:** 2026-09-07 y 08. **Quién:** Renán, con Claude. **Rama:**
+`fase0/modulos-hospedados-en-ios`. Sobre Xcode 26.6 y .NET 9.0.200.
+
+**Dos aparatos, y cuál dice qué.** P0, P1, P3, P4, P5, P6 y P7 se midieron en un **simulador
+iPhone 17 Pro / iOS 26.5**, y ahí valen: lo que prueban es comportamiento —contexto seguro, CSP,
+journal, consentimiento— y eso no depende del silicio. **P2 se midió en un iPhone 13 Pro /
+iOS 26.6.1 de verdad**, porque es memoria: el simulador no tiene presupuesto de jetsam y usa la
+RAM de la Mac, así que ahí un número tranquilizador no prueba nada.
 
 Etiquetas como en `Documentacion/Movil/00-INDICE.md`: **[MEDIDO]**, **[RAZONADO]**,
 **[NO MEDIDO]**.
 
-> El guion decía «NADA DE ESTO ESTÁ MEDIDO». Ya no: **P0, P1, P3, P4, P5, P6 y P7 están
-> medidos.** Queda **P2**, que pide Instruments, y abajo está lo que le falta a P6 para ser el
-> camino de verdad y no el de laboratorio.
+> El guion decía «NADA DE ESTO ESTÁ MEDIDO». Ya no: **las ocho pruebas están medidas.** P0, P1,
+> P3, P4, P5, P6 y P7 en el simulador; **P2 en un iPhone 13 Pro de verdad**, que es el único
+> aparato donde ese número significa algo. Lo que falta no son mediciones: son las dos cosas que
+> le faltan a P6 para ser el camino de producción (§9) y el 404 del §10.
 
 ---
 
@@ -24,7 +31,7 @@ Etiquetas como en `Documentacion/Movil/00-INDICE.md`: **[MEDIDO]**, **[RAZONADO]
 | **P3** el puente | ✅ **[MEDIDO]** | La consola del módulo vuelve por el puente |
 | **P7** comprobación | ✅ **[MEDIDO]** | `matches:true` en los cuatro, con datos reales (§7) |
 | **P6** el alta | ✅ **[MEDIDO]** | Por el esquema propio, con el descarte y la instalación (§9) |
-| **P2** memoria | ⛔ **[NO MEDIDO]** | Pide Instruments |
+| **P2** memoria | ✅ **[MEDIDO]** | En un iPhone 13 Pro. 527 MB con un módulo abierto (§10) |
 
 ---
 
@@ -403,3 +410,105 @@ problema estaba antes de la app, no adentro.
 que **el botón «Agregar a Gnothi» sigue sin poder funcionar**: `9668ea4` le puso el esquema a la
 app y la página no se enteró. El esquema hoy solo se alcanza tipeándolo o por `simctl`. Es un
 cambio de una línea en la página, y sin él P6 se mide pero no se demuestra.
+
+---
+
+## 10 · P2 — cuánto pesa un módulo, en un iPhone de verdad
+
+**[MEDIDO]** el 2026-09-08 en un **iPhone 13 Pro, iOS 26.6.1**, con los cuatro módulos del
+paquete instalados. Es la única prueba que exige aparato: el simulador no tiene presupuesto de
+jetsam, así que ahí un número tranquilizador no prueba nada.
+
+| estado | app | WebKit | **total** |
+|---|---:|---:|---:|
+| arranque en frío (siembra 998 archivos + verifica los 4) | 458.5 | 54.2 | **512.7** |
+| cuatro instalados, estabilizado, sin abrir ninguno a mano | 187.1 | 181.3 | **368.4** |
+| **un módulo abierto y pintando** | 376.6 | 150.8 | **527.3** |
+
+Contra Android —216–248 MB de PSS en aparato, 199 MB con cuatro instalados y uno vivo— **iOS
+pide más del doble**. La comparación es aproximada porque Android reporta PSS y esto es
+`phys_footprint`, que es lo que mira el jetsam; pero el orden de magnitud no se explica por la
+diferencia de métrica.
+
+### El asterisco, y es grande
+
+Es un build **Debug** con `MtouchInterpreter=-all`: el intérprete de Mono cargado y sin linkear.
+**527 MB es un techo, no la cifra de producción.** Release con `MtouchLink=SdkOnly` falta medir y
+va a ser menor. Aun así el veredicto que el guion pide se activa: con ese techo un módulo entra
+en un teléfono de 6 GB, y **cuatro módulos abiertos a la vez no**. La conversación sobre el
+sustrato compartido queda abierta con un número atrás.
+
+### Dos cosas que el total no dice
+
+**El gauge de Xcode habría mentido por casi la mitad.** En el estado estabilizado la app son
+187 MB y sus procesos de WebKit **181 MB**: mitad y mitad. `WKWebView` corre el contenido en
+procesos aparte, así que el footprint de la app **no incluye** el motor de 20 MB del módulo.
+Quien mida P2 con el gauge ve 187 y concluye que entra cómodo.
+
+**Abrir el módulo mueve el costo de lado, no solo lo suma.** De 368 a 527 MB, pero el reparto se
+invierte: la app pasa de 187 a 377 y WebKit **baja** de 181 a 151. Abrir un módulo libera los
+WebViews que la verificación había dejado vivos y engorda el proceso de la app. No era lo
+esperado, y es exactamente la razón por la que P2 pedía medir en vez de suponer.
+
+### El método, porque sin él los números no se pueden repetir
+
+Plantilla **`Activity Monitor`** de Instruments —no `Allocations`—, porque da memoria **por
+proceso de todo el aparato** y es la única forma de capturar los `WebContent`:
+
+```bash
+xcrun xctrace record --device <UDID> --template 'Activity Monitor' \
+  --all-processes --output x.trace --time-limit 12s
+xcrun xctrace export --input x.trace \
+  --xpath '/trace-toc/run[@number="1"]/data/table[@schema="sysmon-process"]'
+```
+
+**La atribución es el problema difícil, no la grabación.** El aparato tiene ~450 procesos y
+docenas de `WebContent` de otras apps; ninguna tabla del trace trae el pid padre. Dos criterios
+que hay que cruzar, y uno solo no alcanza:
+
+- **filtrar por pid ≥ el de la app** — un hijo nace después. Solo, **se pasa de largo**: recoge
+  demonios de iOS que arrancaron en el medio (medido: AirDropUI, translationd, homeenergyd,
+  SharingUIService sumaban ~90 MB ajenos).
+- **comparar contra una muestra con la app apagada** — lo que desapareció era suyo. Solo,
+  **se pasa también**: un proceso ausente de una muestra de 12 s no está muerto, está no
+  muestreado (medido: el driver de Wi-Fi, pid 113, apareció como «de Gnothi» con 341 MB).
+
+Cruzados, dan los nueve procesos de la tabla. Ese es el número defendible.
+
+### Lo que costó llegar, para que el próximo no lo pague
+
+- **Instruments necesita el aparato «online», y `devicectl` lo tira.** Lanzar la app con
+  `devicectl device process launch` deja el teléfono en `Devices Offline` para `xctrace`
+  mientras esa app viva: el `record` **sale con éxito y el trace tiene cero procesos**, sin un
+  solo error. La app hay que abrirla **desde el ícono**.
+- **`system_profiler SPUSBDataType` no lista el iPhone.** Costó dos cambios de cable y uno de
+  puerto perseguir un problema que no existía. Lo que sí lo ve es IOKit:
+  `ioreg -p IOUSB -l | grep -i iPhone` mostró el aparato `registered, matched, active` todo el
+  tiempo. **Y lo que destrabó la sesión fue abrir Xcode** en Window → Devices and Simulators.
+- **`sysdiagnose` no sirve de atajo**: falla con `DiagnoseError error 0`, y aunque funcionara
+  barre nombre, ubicación de dos días, correo e IPs para leer tres números.
+- **`devicectl device info processes` no trae memoria**: solo ejecutable y pid.
+
+### Y del build de aparato, que tampoco estaba andado
+
+- **`armar-intents.sh` solo produce la `.a` de simulador** (`TRIPLE=...-simulator`), así que el
+  build de aparato muere con `ld: building for 'iOS', but linking in object file built for
+  'iOS-simulator'`. Hay que compilarla con `-sdk iphoneos -target arm64-apple-ios16.0`. El
+  script debería saber para qué plataforma arma.
+- **El perfil de un equipo personal no puede llevar App Groups ni associated-domains**, y firmar
+  pidiendo lo que el perfil no concede **falla**, no degrada. De ahí `EntitlementsDevice.plist`,
+  que es `Entitlements.plist` menos esas dos. No se pierde nada medible: la foto local ya existe
+  y el universal link no funciona igual sin dominio.
+- **Foundation Models da `estado = 0` en el 13 Pro.** El A15 no lo tiene —pide A17 Pro— y en el
+  simulador daba 2. El diseño de tres estados hizo su trabajo: sin él, un `if isAvailable`
+  habría pasado en el simulador y roto en el teléfono.
+
+### Un hilo abierto, y no es de memoria
+
+El módulo abierto en el aparato muestra
+`refrescar contra el proveedor → HttpRequestException: 404, Not Found`, y los journals quedan en
+0 KB (salvo `My maintenance`, con 1,3 KB). **404 no es «no me pude conectar»**: algo contestó. Lo
+esperado era *connection refused*, porque el bundle lleva `http://127.0.0.1:8095/` adentro y en
+el teléfono ese `127.0.0.1` es el teléfono. Que dé 404 dice que hay un servidor escuchando **en
+el aparato** y que la ruta pedida no existe ahí. Antes de «ponerle la IP de la LAN» hay que
+entender quién contesta.
