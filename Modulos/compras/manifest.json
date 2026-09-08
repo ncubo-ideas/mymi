@@ -3,7 +3,7 @@
   "manifest": "1.0",
   "module": "compras",
   "title": "Mis compras",
-  "institution": "Supermercado La Cosecha (mock del POC)",
+  "institution": "Supermercado La Guaria",
   "substrate": { "range": ">=3.0.0 <4.0.0" },
 
   "//tools": "Cuatro tools intencionales. Las dos del medio piden numeros, y el manifiesto solo sabe declarar texto: se ve en el esquema publicado.",
