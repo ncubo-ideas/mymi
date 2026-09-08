@@ -7,26 +7,37 @@
 
 <PageTitle>Mis exámenes</PageTitle>
 
-@* EL BLOQUE DE MARCA. La gota por la muestra, el círculo por el oráculo; solo trazo,
-   nunca relleno, y el nombre va acá y no solo en el subtítulo: cuando alguien descarga
-   la app desde la página del laboratorio, lo que se abre debe reconocerse en un
-   segundo. El SVG es el mismo de la página, a 40 px — sobre oscuro va en blanco, y el
-   blanco lo dice el token para que el manual viva en un solo lugar. *@
-<div class="marca">
-    <svg viewBox="0 0 40 40" xmlns="http://www.w3.org/2000/svg"
-         fill="none" stroke="var(--logo)" stroke-width="2.4" aria-hidden="true">
-        <circle cx="20" cy="20" r="18" />
-        <path d="M20 9c4.4 5.4 6.8 9.3 6.8 12.4A6.8 6.8 0 0 1 20 28.2a6.8 6.8 0
-                 0 1-6.8-6.8C13.2 18.3 15.6 14.4 20 9z" />
-    </svg>
-    <div>
-        <div class="marca-nombre">Laboratorio Clínico Delfos</div>
-        <div class="marca-claim">Al servicio de su salud desde 1987</div>
+@* EL BLOQUE DE MARCA, SOLO PARA EL ARRANQUE. La gota por la muestra, el círculo por el
+   oráculo; solo trazo, nunca relleno. Una vez que el expediente está arriba (`else` de
+   más abajo) la marca se repite ADENTRO del hero -es contenido suyo en la referencia
+   nueva, no un encabezado aparte-, así que acá queda condicionada a antes de abrir: no
+   hay forma de compartir el mismo markup entre los dos fondos sin un componente nuevo,
+   y esta ronda es solo el hero. *@
+@if (!estado.EstaArriba)
+{
+    <div class="marca">
+        <svg viewBox="0 0 40 40" xmlns="http://www.w3.org/2000/svg"
+             fill="none" stroke="var(--logo)" stroke-width="2.4" aria-hidden="true">
+            <circle cx="20" cy="20" r="18" />
+            <path d="M20 9c4.4 5.4 6.8 9.3 6.8 12.4A6.8 6.8 0 0 1 20 28.2a6.8 6.8 0
+                     0 1-6.8-6.8C13.2 18.3 15.6 14.4 20 9z" />
+        </svg>
+        <div>
+            <div class="marca-nombre">Laboratorio Clínico Delfos</div>
+            <div class="marca-claim">Al servicio de su salud desde 1987</div>
+        </div>
     </div>
-</div>
+}
 
-<h1 class="titular">Mis exámenes</h1>
-<p class="membrete">Tu expediente, en tu computadora.</p>
+@* EL TITULO GENERICO SOLO VIVE EN LA PANTALLA DE ARRANQUE (todavia sin carpeta
+   conectada): una vez que el expediente esta arriba, este lugar lo ocupa el saludo
+   humano de Inicio (mas abajo, adentro del "else" de EstaArriba) y "Mis exámenes" no
+   hace falta decirlo dos veces. *@
+@if (!estado.EstaArriba)
+{
+    <h1 class="titular">Mis exámenes</h1>
+    <p class="membrete">Tu expediente, en tu computadora.</p>
+}
 
 @* UN solo lugar para los errores, y arriba. Antes habia dos bloques -uno adentro del
    arranque y otro al final de la pagina- asi que un mismo fallo se veia dos veces, y
@@ -169,174 +180,325 @@ else if (!estado.EstaArriba)
 }
 else
 {
-    @*  LA PRIMERA PREGUNTA, y hasta ahora esta pantalla no la hacía.
+    @*  EL HERO — RONDA 4, RECOMPOSICIÓN VISUAL (no un ajuste más de padding sobre la
+        ronda 2/3). La pregunta con la que alguien abre la app sigue siendo la misma:
+        «¿estoy bien?». La respuesta sigue siendo del dominio -LoMasUrgente/LoQueEstaEnRango-,
+        y esta pantalla no la compone: la ubica.
 
-        Alguien abre esta app para saber una cosa: «¿estoy bien?». Lo que veía primero era
-        un botón de Refresh y «leído hasta el evento 212», y para contestarse tenía que
-        leer siete tarjetas y sintetizarlas por su cuenta.
+        LA JERARQUÍA DENTRO DEL HERO SIGUE SIENDO LA DE LA RONDA 2 -la lectura, que es la
+        respuesta a "¿estoy bien?", es el titular grande; el saludo humano baja a kicker-,
+        Saludo() no cambió una línea, solo dónde se pinta. Lo que cambia esta ronda es la
+        COMPOSICIÓN EN TRES ZONAS -marca / contexto personal / protagonista-, con aire real
+        entre cada una en vez de un único bloque apilado:
 
-        El dominio ya sabía la respuesta —`Expediente.SeveridadMayor` recorre cada serie,
-        la interpreta con el criterio de SU analito y se queda con la mayor— y no la
-        consumía ninguna carátula.
+        - ZONA 1 (marca): el `<div class="inicio-hero-marca">` de siempre, sin tocar su
+          markup -mismo SVG, mismas clases `marca-nombre`/`marca-claim` que ya usa el bloque
+          de arranque-, pero con más aire propio (`margin-bottom` en el CSS).
+        - ZONA 2 (contexto personal): "Hola, Sonia." pasa a ser un `<strong>` DENTRO del
+          mismo párrafo del kicker -no un `<p>` aparte-, porque separarlos en dos bloques
+          (ronda 2) dejaba un hueco vertical inútil entre ambos sin ganar nada de lectura.
+          Debajo, la fecha deja de ser un párrafo de una sola línea ("Tu último chequeo ·
+          28 abr 2026") y pasa a `.inicio-hero-chequeo`: un rótulo y la fecha en los dos
+          extremos de una fila -la fecha "respira" a la derecha, como en la referencia, en
+          vez de sumarse a la misma columna de texto que todo lo demás-.
+        - ZONA 3 (protagonista): titular, secundario y CTA sin cambios de markup, con más
+          espacio propio en el CSS.
 
-        CUANDO HAY ALGO QUE HACER, EL TITULAR ES LA FRASE DEL DOMINIO, literal. No es una
-        oración que esta pantalla arme: sale del conjunto cerrado de `Severidad`, que es lo
-        que impide que un .razor invente un consejo. Lo único que la pantalla escribe es el
-        caso en que NO hay nada que hacer, y ahí no hay consejo que inventar.               *@
-    @* EL @key VA EN EL CUERPO Y NO EN LA <section>, desde que Actualizar vive acá adentro.
+        Lo que pide atención sigue siendo la sección de abajo (§2, sin tocar esta ronda). *@
+    @* EL @key VA EN EL CUERPO, desde que Actualizar vive acá adentro. Sube en cada Releer
+       y obliga a Blazor a RECREAR estos nodos para que la animación de CSS se vuelva a
+       disparar -sin él, apretar Actualizar sin exámenes nuevos no producía ningún cambio
+       visible-. *@
+    <section class="inicio-hero" @key="@($"hero-{estado.Refrescos}")">
+        @*  RONDA 6 — LA FOTO DEL MICROSCOPIO SE VA: NO ERA EL ASSET CORRECTO. La ronda
+            pasada usé `hero-inicio-v2.png` (recortado) sacado de `Mi Salud v2 oscuro.dc.html`
+            porque el nombre del archivo sonaba a "el hero de la propuesta" -exactamente el
+            error que se pidió no repetir: elegir por nombre y no por comparación visual-.
 
-       El @key obliga a Blazor a RECREAR estos nodos. Sin él reusa el mismo elemento, la
-       animación de CSS no se vuelve a disparar, y apretar Actualizar no produce ningún
-       cambio visible cuando no entraron exámenes nuevos — o sea que el botón parecía no
-       hacer nada. Medido: `getAnimations()[0].currentTime` se quedaba en 1000 y el nodo
-       era idéntico.
+            Comparando la captura de referencia con LOS TRES `.dc.html` del ZIP, la ilustración
+            azul/cian con curva, nodos y grid que se ve arriba a la derecha en la captura NO es
+            ninguna imagen -no hay ningún PNG del ZIP que se le parezca; se probaron los seis
+            (`hero-inicio.png`, `hero-inicio-v2.png`, `dx-hero.png`, `dx-hero-scope.png`,
+            `dx-logo-tile.png`, `dx-mark-white.png`) y todos son fotos/ilustraciones de
+            microscopio o el ícono de la marca-. Es un `<svg>` inline: vive en
+            `Mi Salud.dc.html` (el archivo SIN "v2 oscuro" en el nombre -la variante que de
+            hecho ya usa Plus Jakarta Sans, no serif-), con `ref="heroArtRef"`: una curva con
+            gradiente que se enciende de celeste a cian hacia la derecha, un par de círculos
+            de brillo (`radialGradient`), puntitos sueltos, y un mini clúster de 3 nodos
+            conectados -el "elemento abstracto tipo molécula" que se pidió en rondas
+            anteriores-. ESTA es la pieza que reaparece en el cuadrante superior derecho de la
+            captura de referencia: se confirmó comparando la captura recortada contra el
+            render de ese SVG antes de portarlo acá, no por el nombre del archivo.
 
-       Pero si la sección ENTERA se recrea, también se recrea el botón que acabás de
-       apretar, y el foco de teclado se pierde en el reemplazo del nodo. Con el @key un
-       nivel más abajo la cabecera sobrevive al redibujo y el cuerpo se vuelve a animar.
+            Se adapta -no se copia entera-: en el original mide 390×180 y cruza casi todo el
+            ancho del hero por abajo del status bar; acá se achica a ~190×130 y se ancla arriba
+            a la derecha, contenida en la zona de la marca/kicker -así nunca llega a la altura
+            del titular, sin necesitar `max-width` en el texto para evitarlo-. Sigue siendo un
+            elemento propio (`<div aria-hidden>`, primer hijo de la sección) por la misma razón
+            que antes: la máscara que la funde con el fondo aplica a TODO lo que la lleva, así
+            que si fuera parte del `background` del hero también taparía el texto. *@
+        <div class="inicio-hero-cientifico" aria-hidden="true">
+            <svg viewBox="0 0 190 130" width="190" height="130" fill="none">
+                <defs>
+                    <linearGradient id="ihcCurva" x1="0" y1="0" x2="190" y2="0" gradientUnits="userSpaceOnUse">
+                        <stop offset="0" stop-color="#7db4e0" stop-opacity="0" />
+                        <stop offset=".4" stop-color="#7db4e0" stop-opacity=".5" />
+                        <stop offset=".78" stop-color="#63d3f0" stop-opacity=".95" />
+                        <stop offset="1" stop-color="#9ae6ff" stop-opacity="1" />
+                    </linearGradient>
+                    <radialGradient id="ihcGlow">
+                        <stop offset="0" stop-color="#9ae6ff" stop-opacity=".8" />
+                        <stop offset="1" stop-color="#9ae6ff" stop-opacity="0" />
+                    </radialGradient>
+                </defs>
+                <path d="M-6 84 C 26 80 48 66 72 60 C 100 53 116 34 142 26 C 158 21 170 15 196 4"
+                      stroke="url(#ihcCurva)" stroke-width="1.5" stroke-linecap="round" />
+                <circle cx="142" cy="26" r="16" fill="url(#ihcGlow)" opacity=".55" />
+                <circle cx="178" cy="10" r="18" fill="url(#ihcGlow)" opacity=".4" />
+                <circle cx="72" cy="60" r="1.7" fill="#bfe6ff" opacity=".5" />
+                <circle cx="108" cy="46" r="1.5" fill="#bfe6ff" opacity=".5" />
+                <circle cx="142" cy="26" r="2.8" fill="#eaf8ff" />
+                <circle cx="178" cy="10" r="2.2" fill="#eaf8ff" opacity=".9" />
+                <g stroke="#9ae6ff" stroke-opacity=".3" stroke-width=".8">
+                    <path d="M150 76 L 163 68 L 174 74" />
+                    <path d="M163 68 L 163 57" />
+                </g>
+                <g fill="#bfe6ff">
+                    <circle cx="150" cy="76" r="1.5" opacity=".42" />
+                    <circle cx="163" cy="68" r="1.7" opacity=".48" />
+                    <circle cx="174" cy="74" r="1.5" opacity=".4" />
+                    <circle cx="163" cy="57" r="1.3" opacity=".32" />
+                </g>
+            </svg>
+        </div>
 
-       LA LLAVE ES estado.Refrescos Y NO UN CONTADOR DE ESTA PANTALLA. Un contador local
-       subía en cada Releer, y Releer corre en TODA interacción: declarar el sexo, importar
-       un expediente, arrancar. La animación de entrada se volvía a disparar por tocar un
-       botón que no fue a buscar nada, que es lo contrario de lo que este @key significa.
-       Refrescos sube solo cuando se fue al laboratorio, y por eso dice lo que dice. *@
-    @* LA PORTADA MUESTRA DOS COSAS A LA VEZ, como el telefono del landing: el verde que
-       dice cuantos valores estan donde tienen que estar, y aparte lo que pide atencion.
-       Antes era UNA tarjeta que cambiaba de tono entero, y eso tenia un costo: apenas un
-       analito pedia algo, la tranquilidad de los otros diecisiete desaparecia de la
-       pantalla. La severidad ya no pinta la tarjeta; pinta el bloque al que pertenece. *@
-    <section class="portada">
-        @* ACTUALIZAR VIVE EN LA PORTADA, no en una fila suelta debajo. Es el botón que
-           vuelve a contestar la pregunta que contesta esta tarjeta: si el rótulo dice
-           «hoy», entonces «¿esto es de hoy?» pertenece acá y a ningún otro lado.
+        @*  LA MARCA — RONDA 6: MÁS PRESENCIA. Mismo SVG y mismas clases `marca-nombre`/
+            `marca-claim` que el bloque de arranque de más arriba (ver el
+            `@if (!estado.EstaArriba)` guardado al principio del archivo); lo que cambia es
+            puramente CSS -logo e tipografía más grandes, más aire arriba del hero (el
+            "safe-area" de la referencia: NO se simula una status bar falsa, solo se respeta
+            ese espacio con padding) y más separación antes del saludo-. *@
+        <div class="inicio-hero-marca">
+            <svg viewBox="0 0 40 40" xmlns="http://www.w3.org/2000/svg"
+                 fill="none" stroke="var(--logo)" stroke-width="2.4" aria-hidden="true">
+                <circle cx="20" cy="20" r="18" />
+                <path d="M20 9c4.4 5.4 6.8 9.3 6.8 12.4A6.8 6.8 0 0 1 20 28.2a6.8 6.8 0
+                         0 1-6.8-6.8C13.2 18.3 15.6 14.4 20 9z" />
+            </svg>
+            <div>
+                <div class="marca-nombre">Laboratorio Clínico Delfos</div>
+                <div class="marca-claim">Al servicio de su salud desde 1987</div>
+            </div>
 
-           Suelto y en azul lleno tenía tres problemas: quedaba segundo en la pantalla sin
-           ser el segundo en importancia, le competía el ojo al titular —que es lo único
-           que alguien tiene que leer si no lee nada más—, y empujaba el aviso de que no se
-           está guardando nada a un tercer lugar que no le corresponde.
-
-           Lleva el trazo de contorno y no el de la acción principal porque no lo es: la
-           app se pone al día sola al abrir, así que esto es «volvé a chequear AHORA». *@
-        <div class="portada-cabeza">
-            <p class="portada-rotulo">tu expediente, hoy</p>
-            @* aria-busy y no solo el texto: «Actualizando…» cambia el nombre del botón, y
-               un lector de pantalla no vuelve a leerlo si el foco ya estaba ahí. El estado
-               ocupado sí lo anuncia. *@
-            <button class="portada-releer" @onclick="Refrescar" disabled="@refrescando"
+            @* ACTUALIZAR NO ESTÁ EN EL CONTENIDO DE LA REFERENCIA -ahí, arriba a la
+               derecha, va una campana de notificaciones que esta app no tiene-, pero
+               sigue siendo la única forma de volver a preguntarle al proveedor, y
+               sacarla sería perder una acción real. Ocupa el mismo lugar de esa campana,
+               como ícono chico y no como botón de texto -discreto, como pediste-: es lo
+               que le corresponde a algo que no es el foco del hero.
+               aria-busy, recuperado de origin/master: «Actualizando…» ya cambia el
+               título del botón, pero un lector de pantalla no vuelve a leerlo si el foco
+               ya estaba ahí -el estado ocupado sí lo anuncia-. *@
+            <button class="inicio-hero-actualizar" @onclick="Refrescar" disabled="@refrescando"
+                    title="@(refrescando ? "Actualizando…" : "Actualizar")" aria-label="Actualizar"
                     aria-busy="@(refrescando ? "true" : "false")">
-                @(refrescando ? "Actualizando…" : "Actualizar")
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                     stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"
+                     class="@(refrescando ? "gira" : "")">
+                    <path d="M21 12a9 9 0 1 1-2.64-6.36" />
+                    <path d="M21 4v6h-6" />
+                </svg>
             </button>
         </div>
 
-        @* aria-live: este bloque ES la respuesta a Actualizar, y el @key lo recrea entero.
-           Sin esto la única señal de que la app fue y volvió es una animación. *@
-        <div class="portada-cuerpo" @key="@($"portada-{estado.Refrescos}")"
-             aria-live="polite">
-            @* EL BLOQUE QUE TRANQUILIZA. No se dibuja cuando la severidad es «urgente»:
-               el rojo lo reserva el dominio para lo que no puede esperar, y poner un
-               «todo está bien» al lado de eso lo contradice. Fuera de ese caso el verde
-               convive con el ámbar, que es justo lo que hace el mock. *@
-            @if (enRango.HayAlgo && urgente.Severidad != "urgente")
-            {
-                <div class="veredicto veredicto--bien">
-                    @* La carita del landing, tal cual: el círculo, los dos ojos y la
-                       boca. Es lo que hace que la pantalla se reconozca de un vistazo. *@
-                    <svg viewBox="0 0 24 24" aria-hidden="true">
-                        <circle cx="12" cy="12" r="10" fill="none" stroke-width="1.6" />
-                        <circle cx="8.5" cy="10" r="0.6" fill="currentColor" stroke="none" />
-                        <circle cx="15.5" cy="10" r="0.6" fill="currentColor" stroke="none" />
-                        <path d="M8 14.5c1 1.3 2.4 2 4 2s3-.7 4-2" fill="none"
-                              stroke-width="1.6" stroke-linecap="round" />
-                    </svg>
-                    <div>
-                        @* LA FRASE ES DEL DOMINIO, igual que la del ámbar de al lado. Acá
-                           se decide UNA cosa —si va de titular o de detalle— y eso sí es
-                           presentación: con algo pidiendo atención el conteo titula, porque
-                           «Todo está bien» encima de «mostrále esto a tu médico este mes»
-                           se contradice. Sin nada pidiendo, la afirmación se puede hacer y
-                           el conteo pasa debajo, que es el bloque del mock.
+        <p class="inicio-hero-kicker"><strong>Hola, Sonia.</strong>Entendé cómo venís, no solo cómo saliste hoy.</p>
 
-                           El conteo TITULA BIEN porque se lee solo: es un hecho y no se
-                           apoya en nada que venga después. «El resto está bien» no podía —
-                           nombraba una excepción que todavía no se había dicho, y el verde
-                           va primero. *@
-                        <p class="veredicto-titulo">
-                            @(urgente.PideAlgo ? enRango.ParaSonia : "Todo está bien")
-                        </p>
-                        @if (!urgente.PideAlgo)
-                        {
-                            <p class="veredicto-detalle">@enRango.ParaSonia</p>
-                        }
-                    </div>
-                </div>
-            }
+        @* LA LÍNEA/DIVISOR "EXTREMADAMENTE SUTIL" ENTRE RÓTULO Y FECHA es la misma técnica
+           de la referencia: un `<span>` vacío que ocupa el espacio sobrante (`flex:1`) con
+           una línea de 1px, en vez del `border-bottom` de toda la fila que había antes. *@
+        @if (UltimoChequeo() is DateTime ultimo)
+        {
+            <div class="inicio-hero-chequeo">
+                <span class="inicio-hero-chequeo-label">Tu último chequeo</span>
+                <span class="inicio-hero-chequeo-linea" aria-hidden="true"></span>
+                <span class="inicio-hero-chequeo-fecha">@ultimo.ToString("dd MMM yyyy", Cultura)</span>
+            </div>
+        }
 
-            @if (urgente.PideAlgo)
-            {
-                <div class="veredicto @TonoDeLoQuePide()">
-                    @* La misma cara, con la boca recta. La diferencia entre «bien» y
-                       «mirá esto» son dos paths, no dos dibujos. *@
-                    <svg viewBox="0 0 24 24" aria-hidden="true">
-                        <circle cx="12" cy="12" r="10" fill="none" stroke-width="1.6" />
-                        <circle cx="8.5" cy="10" r="0.6" fill="currentColor" stroke="none" />
-                        <circle cx="15.5" cy="10" r="0.6" fill="currentColor" stroke="none" />
-                        <path d="M8.5 15.5h7" fill="none" stroke-width="1.6" stroke-linecap="round" />
-                    </svg>
-                    <div>
-                        <p class="veredicto-titulo">@Mayuscula(urgente.Accion).</p>
-                        <div class="portada-cuales">
-                            @foreach (InterpretacionDeAnalito lectura in LosQuePiden())
-                            {
-                                <button class="portada-cual" @onclick="() => VerSerie(lectura.Analito)">
-                                    @lectura.ParaMostrar
-                                </button>
-                            }
-                        </div>
-                    </div>
-                </div>
-            }
+        @* EL MENSAJE PRINCIPAL ES Saludo() -la misma frase de la ronda 1, sin tocar una
+           palabra-, ahora con el peso visual más grande del hero. *@
+        <h1 class="inicio-hero-titular">@Saludo()</h1>
 
-            @* NI VERDE NI ÁMBAR: no hay nada en rango que contar y nada que pida algo.
-               Es el expediente recién abierto, y decirlo es mejor que una tarjeta vacía. *@
-            @if (!enRango.HayAlgo && !urgente.PideAlgo)
-            {
-                <p class="veredicto-titulo">Todavía no hay nada que leer.</p>
-            }
+        @* LA CIFRA ("5 de 6...") sigue siendo literal LoQueEstaEnRango.ParaSonia. *@
+        @if (enRango.HayAlgo)
+        {
+            <p class="inicio-hero-secundario">@enRango.ParaSonia</p>
+        }
 
-            <div class="portada-pie">
-                <span><b>@cantidad</b> @(cantidad == 1 ? "examen" : "exámenes")</span>
-                <span><b>@enRango.Analitos</b> @(enRango.Analitos == 1 ? "analito con historia" : "analitos con historia")</span>
-                @if (Desde() is DateTime desde)
-                {
-                    <span>desde <b>@desde.ToString("MMM yyyy", Cultura)</b></span>
-                }
-                @* «leído hasta el evento N» es el MISMO tipo de dato que el resto del pie
-                   —el registro de lo que se viene juntando— y por eso termina acá en vez
-                   de pegado al botón. Siguen relacionados donde importa: es el número que
-                   el botón mueve, está en la misma tarjeta, y ahora dejó de estar a la
-                   altura de los ojos, que es donde nunca tuvo que estar el número de
-                   evento de un journal. *@
-                <span>leído hasta el evento <b>@ultimoEvento</b></span>
+        @* No hay una pantalla de "chequeo" separada todavía -esta ronda es solo el
+           hero-, así que "ver mi chequeo" baja a la visita más reciente de Tu historial
+           (§7), que ya está en esta misma página. *@
+        <a class="inicio-hero-cta" href="#historial">Ver mi chequeo &rarr;</a>
+    </section>
+
+    @* §2 LO QUE MERECE ATENCIÓN — la pieza de mayor jerarquía. Un analito entra acá
+       SOLO si su propia Interpretacion dice PideAlgo -nunca por su nombre-, así que si
+       mañana es la hemoglobina la que pide algo y el colesterol se calma, este bloque
+       cambia solo. El titular, la lectura y la acción siguen siendo del dominio; lo
+       único que agrega la pantalla es la cadena "182 → 188 → 212" -los mismos puntos
+       que ya grafica la forma, dichos también en números-. *@
+    @if (atencionAnalitos.Count > 0 || atencionPresencias.Count > 0)
+    {
+        int cuantosMerecenAtencion = atencionAnalitos.Count + atencionPresencias.Count;
+        <section class="inicio-atencion" @key="@($"atencion-{estado.Refrescos}")">
+            @* ENCABEZADO — RONDA 7: rótulo de siempre + un indicador contado, no una frase
+               genérica. Se pidió explícitamente NO agregar algo como "hay resultados que
+               salieron del rango": el colesterol de hoy sigue dentro de su rango informado,
+               y esa frase mentiría. Si no hay un texto que se derive de los datos reales,
+               se omite -acá directamente no hay ninguno-. *@
+            <div class="inicio-atencion-encabezado">
+                <p class="inicio-atencion-rotulo">merece atención</p>
+                <span class="inicio-atencion-conteo">
+                    <span class="inicio-atencion-conteo-punto" aria-hidden="true"></span>
+                    <span>@cuantosMerecenAtencion resultado@(cuantosMerecenAtencion == 1 ? "" : "s")</span>
+                </span>
             </div>
 
-            @* LA LÍNEA DEL CANDADO del landing. Allá vive en la pantalla del teléfono y
-               es lo último que se lee antes del botón; acá cierra la portada por la misma
-               razón: es la promesa desde la que alguien instaló esto.
+            @foreach (TendenciaDeAnalito t in atencionAnalitos)
+            {
+                <div class="inicio-atencion-tarjeta">
+                    @{
+                        InterpretacionDeAnalito lectura = Lectura(t.Analito);
+                        decimal? limiteSuperior = LimiteSuperior(lectura.ReferenciaLegible);
+                    }
+                    <div class="inicio-atencion-cabeza">
+                        <div class="inicio-atencion-titulo">
+                            @* EL ÍCONO — RONDA 8: puramente decorativo (un pulso/latido, el
+                               símbolo más cercano a "resultado/seguimiento" clínico que se
+                               puede dibujar a mano sin sumar una librería), en un círculo
+                               ámbar bien translúcido. No representa ningún dato -no cambia
+                               con la severidad ni con el analito-, así que no hace falta
+                               tocar el code-behind para esto. *@
+                            <span class="inicio-atencion-icono" aria-hidden="true">
+                                <svg viewBox="0 0 24 24" fill="none" stroke-width="2"
+                                     stroke-linecap="round" stroke-linejoin="round">
+                                    <path d="M2 12h4l2.5-7 4 14 2.5-7H22" />
+                                </svg>
+                            </span>
+                            <div class="inicio-atencion-nombre-grupo">
+                                <span class="inicio-atencion-nombre">@t.ParaMostrar</span>
+                                @{ string estadoBreve = EstadoBreve(t, lectura); }
+                                @if (estadoBreve.Length > 0)
+                                {
+                                    <span class="inicio-atencion-estado">@Flecha(t.Tendencia) @estadoBreve</span>
+                                }
+                            </div>
+                        </div>
+                        <span class="inicio-atencion-valor">@Valor(t.ValorFinal) <span>@t.Unidad</span></span>
+                    </div>
+                    @if (t.HaySerie)
+                    {
+                        <p class="inicio-atencion-serie">@CadenaDeValores(t)</p>
+                    }
+                    @if (lectura.ReferenciaLegible.Length > 0)
+                    {
+                        <p class="inicio-atencion-referencia">referencia: @lectura.ReferenciaLegible</p>
+                    }
+                    @if (!lectura.RequiereElSexo && lectura.Forma.Length > 0)
+                    {
+                        @switch (lectura.Forma)
+                        {
+                            case "trayectoria con linea base":
+                                <TrayectoriaConLineaBase Puntos="Serie(t.Analito)"
+                                                         Referencias="Lineas(t.Analito)"
+                                                         PideAlgo="lectura.PideAlgo"
+                                                         Descripcion="@lectura.ParaSonia" />
+                                break;
+                            case "progreso hacia meta":
+                                @* RONDA 7: ya NO usa <ProgresoHaciaMeta/> acá adentro -ese
+                                   componente es compartido con Tendencia.razor y sigue
+                                   dibujando la partida→meta orientativa, sin tocar-. Esta
+                                   tarjeta necesita otra cosa: "tu resultado" contra el ÚNICO
+                                   límite que el modelo conoce (el de ReferenciaLegible, el
+                                   mismo "hasta 220 mg/dL" que ya se ve arriba), sin zonas
+                                   normal/límite/alto que el dominio no define. *@
+                                @if (limiteSuperior is decimal limite && limite > 0)
+                                {
+                                    decimal proporcion = Math.Max(0m, Math.Min(1m, t.ValorFinal / limite));
+                                    <div class="inicio-atencion-rango">
+                                        <div class="inicio-atencion-rango-pista">
+                                            <div class="inicio-atencion-rango-limite"></div>
+                                            <div class="inicio-atencion-rango-marca" style="left:@((proporcion * 100).ToString("0.#", CultureInfo.InvariantCulture))%"></div>
+                                        </div>
+                                        <div class="inicio-atencion-rango-etiquetas">
+                                            <span>Tu resultado · <b>@Valor(t.ValorFinal) @t.Unidad</b></span>
+                                            <span>Referencia · @lectura.ReferenciaLegible</span>
+                                        </div>
+                                    </div>
+                                }
+                                break;
+                            case "posicion en banda":
+                                <PosicionEnBanda Puntos="Serie(t.Analito)"
+                                                 Referencias="Lineas(t.Analito)"
+                                                 Descripcion="@lectura.ParaSonia" />
+                                break;
+                        }
+                    }
+                    @if (!string.IsNullOrEmpty(lectura.ParaSonia))
+                    {
+                        @* EL BLOQUE INFORMATIVO — RONDA 8: mismo texto de siempre
+                           (lectura.ParaSonia + lectura.Accion, nada agregado), ahora en una
+                           caja chica con ícono "i" en vez de texto suelto bajo una línea. *@
+                        <div class="inicio-atencion-lectura">
+                            <span class="inicio-atencion-lectura-icono" aria-hidden="true">i</span>
+                            <p class="inicio-atencion-lectura-texto">
+                                <span>@Mayuscula(lectura.ParaSonia).</span>
+                                @if (lectura.PideAlgo && !string.IsNullOrEmpty(lectura.Accion))
+                                {
+                                    <span class="inicio-atencion-lectura-accion">@Mayuscula(lectura.Accion).</span>
+                                }
+                            </p>
+                        </div>
+                    }
+                    <div class="inicio-atencion-acciones">
+                        <button class="boton" @onclick="() => VerSerie(t.Analito)">Entender este resultado &rarr;</button>
+                        <button class="boton boton--contorno" @onclick="() => VerSerie(t.Analito)">Ver evolución</button>
+                    </div>
+                </div>
+            }
 
-               Va en el tuteo del resto de la app y NO en el usted del landing. La frase
-               de Geaninna es «Sus datos permanecen en su dispositivo. Usted decide qué
-               compartir.», y entra tal cual el día que ella pase el copy de toda la app a
-               usted. Una sola línea de usted entre veinticinco de tuteo se lee como un
-               descuido, no como su voz. *@
-            <p class="portada-candado">
-                <svg viewBox="0 0 20 20" aria-hidden="true">
-                    <rect x="4" y="9" width="12" height="8" rx="1.5" fill="none" stroke-width="1.6" />
-                    <path d="M7 9V6.5a3 3 0 0 1 6 0V9" fill="none" stroke-width="1.6" />
-                </svg>
-                <span>Tus datos se quedan en tu dispositivo. Vos decidís qué compartir.</span>
-            </p>
-        </div>
-    </section>
+            @foreach (PresenciaDeAnalito p in atencionPresencias)
+            {
+                <div class="inicio-atencion-tarjeta">
+                    @{ InterpretacionDeAnalito lectura = Lectura(p.Analito); }
+                    <div class="inicio-atencion-cabeza">
+                        <span class="inicio-atencion-nombre">@p.ParaMostrar</span>
+                        <span class="inicio-atencion-valor">@p.UltimoResultado</span>
+                    </div>
+                    @if (p.HaySerie)
+                    {
+                        <PresenciaEnElTiempo Pruebas="Tira(p.Analito)"
+                                             Seguidas="p.PositivasSeguidas"
+                                             Descripcion="@lectura.ParaSonia" />
+                    }
+                    @if (!string.IsNullOrEmpty(lectura.ParaSonia))
+                    {
+                        @* Mismo encuadre que la tarjeta de arriba -ícono "i" + caja-, para que
+                           el bloque informativo no quede roto por el CSS compartido
+                           (.inicio-atencion-lectura pasó a ser flex esta ronda). Mismo texto
+                           de siempre: lectura.ParaSonia + lectura.Accion, nada nuevo. *@
+                        <div class="inicio-atencion-lectura">
+                            <span class="inicio-atencion-lectura-icono" aria-hidden="true">i</span>
+                            <p class="inicio-atencion-lectura-texto">@lectura.ParaSonia@(lectura.PideAlgo ? ": " : ".")<b>@lectura.Accion</b></p>
+                        </div>
+                    }
+                    <div class="inicio-atencion-acciones">
+                        <button class="boton" @onclick="() => VerSerie(p.Analito)">Entender este resultado &rarr;</button>
+                    </div>
+                </div>
+            }
+        </section>
+    }
 
     @* Si la app no esta guardando, eso es lo MAS importante de la pantalla y va arriba,
        no en una nota al pie debajo de la tabla. Sin carpeta la app sigue funcionando
@@ -432,14 +594,71 @@ else
         SEVERIDAD INFORMATIVO: no es un hallazgo clínico y no se pinta de ámbar ni de rojo.
         El semáforo está reservado para resultados. Va en neutro, arriba de «Cómo vienen
         tus valores», y se puede COLAPSAR pero no descartar: eso es la insistencia.        *@
+    @* §3 EL RESTO VIENE TRANQUILO — compacto: una lista con un punto verde, no cuatro
+       tarjetas grandes con gráfico. "Ver todos mis resultados" no navega a otra
+       pantalla -no hay ruta nueva que inventar esta ronda-: despliega la MISMA lectura
+       del dominio (lectura.ParaSonia) debajo de cada fila. *@
+    @if (tranquiloAnalitos.Count > 0 || tranquiloPresencias.Count > 0)
+    {
+        <section class="inicio-tranquilo" id="valores" @key="@($"tranquilo-{estado.Refrescos}")">
+            <p class="inicio-tranquilo-rotulo">el resto viene tranquilo</p>
+            <ul class="inicio-tranquilo-lista">
+                @foreach (TendenciaDeAnalito t in tranquiloAnalitos)
+                {
+                    <li>
+                        @{ InterpretacionDeAnalito lectura = Lectura(t.Analito); }
+                        <button class="inicio-tranquilo-item" @onclick="() => VerSerie(t.Analito)">
+                            <span class="inicio-tranquilo-punto" aria-hidden="true"></span>
+                            <span class="inicio-tranquilo-nombre">@t.ParaMostrar</span>
+                            <span class="inicio-tranquilo-estado">@t.Tendencia</span>
+                        </button>
+                        @if (tranquiloExpandido && !string.IsNullOrEmpty(lectura.ParaSonia))
+                        {
+                            <p class="inicio-tranquilo-detalle">@lectura.ParaSonia</p>
+                        }
+                    </li>
+                }
+                @foreach (PresenciaDeAnalito p in tranquiloPresencias)
+                {
+                    <li>
+                        @{ InterpretacionDeAnalito lectura = Lectura(p.Analito); }
+                        <button class="inicio-tranquilo-item" @onclick="() => VerSerie(p.Analito)">
+                            <span class="inicio-tranquilo-punto" aria-hidden="true"></span>
+                            <span class="inicio-tranquilo-nombre">@p.ParaMostrar</span>
+                            <span class="inicio-tranquilo-estado">@p.Presencia</span>
+                        </button>
+                        @if (tranquiloExpandido && !string.IsNullOrEmpty(lectura.ParaSonia))
+                        {
+                            <p class="inicio-tranquilo-detalle">@lectura.ParaSonia</p>
+                        }
+                    </li>
+                }
+            </ul>
+            <button class="boton--enlace" @onclick="() => tranquiloExpandido = !tranquiloExpandido">
+                @(tranquiloExpandido ? "Ocultar detalle" : "Ver todos mis resultados") &rarr;
+            </button>
+        </section>
+    }
+
+    @*  §4 EL BLOQUE QUE INSISTE.
+
+        Álvaro: «la pantalla de la UI debería insistir que le diga el sexo cuando aún es
+        desconocido». INSISTIR BIEN NO ES UN MODAL BLOQUEANTE: se puede COLAPSAR pero no
+        descartar, y el texto entero -cuántos resultados, y por qué- lo sigue escribiendo
+        el dominio (pedido.ParaSonia / pedido.PorQue); esta ronda solo le cambia el
+        rótulo, que no habla con el vocabulario de "falta un dato" sino de lo que la
+        persona gana si contesta.
+
+        SEVERIDAD INFORMATIVO: no es un hallazgo clínico y no se pinta de ámbar ni de
+        rojo. El semáforo está reservado para resultados.                             *@
     @if (pedido.HaceFalta)
     {
         <div class="pedido">
             <div class="pedido-cabeza">
-                <span class="pedido-rotulo">falta un dato tuyo</span>
+                <span class="pedido-rotulo">ayudanos a interpretar mejor un resultado</span>
                 @* «Ver» y «Ocultar» solos no dicen de qué, y fuera de contexto es lo único
                    que se oye. El aria-expanded además dice si está abierto, que el texto
-                   deja implícito. *@
+                   deja implícito. Recuperado de origin/master. *@
                 <button class="pedido-plegar" @onclick="() => pedidoPlegado = !pedidoPlegado"
                         aria-expanded="@(pedidoPlegado ? "false" : "true")"
                         aria-label="@(pedidoPlegado ? "Ver el dato que falta" : "Ocultar el dato que falta")">
@@ -461,118 +680,60 @@ else
         </div>
     }
 
-    @if (analitos.Count > 0)
+    @* §5 QUÉ CAMBIÓ DESDE TU ÚLTIMO CHEQUEO — el último salto de cada serie, con la
+       MISMA tendencia que ya calculó el dominio (de ahí la flecha). No es una tabla:
+       una fila por analito, en el orden en que ya venían. *@
+    @if (Cambios().Count > 0)
     {
-        <h2 class="seccion">Cómo vienen tus valores</h2>
-        @foreach (TendenciaDeAnalito t in analitos)
-        {
-            <button class="serie" @key="@($"{t.Analito}-{estado.Refrescos}")" @onclick="() => VerSerie(t.Analito)">
-                @{ InterpretacionDeAnalito lectura = Lectura(t.Analito); }
-                <div class="serie-cabeza">
-                    <div>
-                        <span class="serie-nombre">@t.ParaMostrar</span>
-                        <span class="chip @Insignia(t)">@t.Tendencia</span>
-                        <div class="serie-relato">@Relato(t)</div>
-                    </div>
-                    <div>
-                        <div class="serie-valor">@Valor(t.ValorFinal) <span>@t.Unidad</span></div>
-                        @* NINGUN NUMERO SIN SU REFERENCIA. La escribe el dominio, no esta
-                           pantalla: sale del analito, que sabe que depende de la edad. *@
-                        @if (lectura.ReferenciaLegible.Length > 0)
-                        {
-                            <div class="serie-referencia">referencia: @lectura.ReferenciaLegible</div>
-                        }
-                    </div>
-                </div>
-
-                @* CADA ANALITO CON SU FORMA. El dominio dice cuál es -no la pantalla- y
-                   acá solo se traduce a píxeles. Un antígeno se lee como trayectoria
-                   contra su línea base, un colesterol como progreso hacia una meta, una
-                   hemoglobina como posición en una banda. Dibujarlos igual sería la misma
-                   tabla que Álvaro rechazó, un piso más arriba. *@
-                @* La trayectoria necesita serie; la meta y la banda se dibujan con un
-                   solo punto, porque no hablan del tiempo sino de dónde estás parado. *@
-                @* SIN VEREDICTO NO HAY DIBUJO. Las formas se dibujan CONTRA una referencia
-                   —la banda de la hemoglobina, el techo del antígeno— y esa referencia es
-                   justamente lo que depende del dato que falta. El valor sigue a la vista
-                   arriba; lo que se retiene es la lectura. *@
-                @if (!lectura.RequiereElSexo
-                     && (t.HaySerie || lectura.Forma != "trayectoria con linea base"))
-                {
-                    @switch (lectura.Forma)
+        <section class="inicio-cambios">
+            <h2 class="seccion">Qué cambió desde tu último chequeo</h2>
+            @foreach (CambioReciente c in Cambios())
+            {
+                <p class="inicio-cambio-fila">
+                    <span class="inicio-cambio-flecha" aria-hidden="true">@Flecha(c.Analito.Tendencia)</span>
+                    <span class="inicio-cambio-nombre">@c.Analito.ParaMostrar</span>
+                    <span class="inicio-cambio-cifras">@Valor(c.Previo.Valor) → @Valor(c.Actual.Valor) @c.Analito.Unidad</span>
+                    @if (c.Analito.Tendencia == "estable")
                     {
-                        case "trayectoria con linea base":
-                            <TrayectoriaConLineaBase Puntos="Serie(t.Analito)"
-                                                     Referencias="Lineas(t.Analito)"
-                                                     PideAlgo="lectura.PideAlgo"
-                                                     Descripcion="@lectura.ParaSonia" />
-                            break;
-                        case "progreso hacia meta":
-                            <ProgresoHaciaMeta Puntos="Serie(t.Analito)"
-                                               Referencias="Lineas(t.Analito)"
-                                               Descripcion="@lectura.ParaSonia" />
-                            break;
-                        case "posicion en banda":
-                            <PosicionEnBanda Puntos="Serie(t.Analito)"
-                                             Referencias="Lineas(t.Analito)"
-                                             Descripcion="@lectura.ParaSonia" />
-                            break;
+                        <span class="inicio-cambio-nota">&middot; se mantiene estable</span>
                     }
-                }
-
-                @* La lectura y la acción salen del ANALITO. Esta pantalla ya no decide
-                   qué decir: antes tenía escrito "Conviene que lo vea tu médico" acá
-                   adentro, igual para el antígeno que para el colesterol. *@
-                @if (!string.IsNullOrEmpty(lectura.ParaSonia))
-                {
-                    <div class="serie-lectura@(lectura.PideAlgo ? " serie-lectura--atencion" : "")">
-                        @lectura.ParaSonia@(lectura.PideAlgo ? ": " : ".")<b>@lectura.Accion</b>
-                    </div>
-                }
-            </button>
-        }
+                </p>
+            }
+            <a class="boton--enlace" href="#valores">Ver comparación completa &rarr;</a>
+        </section>
     }
 
-    @* LOS BINARIOS, con SU forma. Van en la misma sección y en tarjetas iguales porque
-       son lo mismo que los de arriba —la lectura de una serie— y se leen distinto porque
-       lo son: acá no hay «pasó de 200 a 280», hay «apareció en las 2 seguidas».
-
-       Que estén acá y no perdidos en el historial es lo que cambió: hasta ahora una
-       sangre oculta no tenía serie, así que sólo podía aparecer como una celda con un
-       positivo y un aviso suelto. *@
-    @foreach (PresenciaDeAnalito p in presencias)
+    @* §6 TODAVÍA ES PRONTO PARA HABLAR DE TENDENCIA — cualquier analito con UNA sola
+       medición (HaySerie == false: la misma Tendencia.Indeterminada del dominio), no
+       solo el LDL de hoy. Nunca se pinta la palabra "indeterminada" como protagonista;
+       la explicación es la MISMA lectura del dominio (lectura.ParaSonia). *@
+    @if (sinTendenciaAnalitos.Count > 0 || sinTendenciaPresencias.Count > 0)
     {
-        <button class="serie" @key="@($"{p.Analito}-{estado.Refrescos}")" @onclick="() => VerSerie(p.Analito)">
-            @{ InterpretacionDeAnalito suya = Lectura(p.Analito); }
-            <div class="serie-cabeza">
-                <div>
-                    <span class="serie-nombre">@p.ParaMostrar</span>
-                    <span class="chip @Insignia(p)">@p.Presencia</span>
-                    <div class="serie-relato">@Relato(p)</div>
-                </div>
-                <div>
-                    <div class="serie-valor">@p.UltimoResultado</div>
-                    @if (suya.ReferenciaLegible.Length > 0)
+        <section class="inicio-sintendencia">
+            <p class="inicio-sintendencia-rotulo">todavía es pronto para hablar de tendencia</p>
+            @foreach (TendenciaDeAnalito t in sinTendenciaAnalitos)
+            {
+                <div class="inicio-sintendencia-item">
+                    @{ InterpretacionDeAnalito lectura = Lectura(t.Analito); }
+                    <p class="inicio-sintendencia-valor">@t.ParaMostrar &middot; @Valor(t.ValorFinal) @t.Unidad</p>
+                    @if (!string.IsNullOrEmpty(lectura.ParaSonia))
                     {
-                        <div class="serie-referencia">@suya.ReferenciaLegible</div>
+                        <p class="inicio-sintendencia-texto">@lectura.ParaSonia</p>
                     }
                 </div>
-            </div>
-
-            @if (p.HaySerie)
-            {
-                <PresenciaEnElTiempo Pruebas="Tira(p.Analito)"
-                                     Seguidas="p.PositivasSeguidas"
-                                     Descripcion="@suya.ParaSonia" />
             }
-
-            @if (!string.IsNullOrEmpty(suya.ParaSonia))
+            @foreach (PresenciaDeAnalito p in sinTendenciaPresencias)
             {
-                <div class="serie-lectura@(suya.PideAlgo ? " serie-lectura--atencion" : "")">
-                    @suya.ParaSonia@(suya.PideAlgo ? ": " : ".")<b>@suya.Accion</b>
+                <div class="inicio-sintendencia-item">
+                    @{ InterpretacionDeAnalito lectura = Lectura(p.Analito); }
+                    <p class="inicio-sintendencia-valor">@p.ParaMostrar &middot; @p.UltimoResultado</p>
+                    @if (!string.IsNullOrEmpty(lectura.ParaSonia))
+                    {
+                        <p class="inicio-sintendencia-texto">@lectura.ParaSonia</p>
+                    }
                 </div>
             }
-        </button>
+        </section>
     }
 
     @* LOS NOMINALES, con SU forma. Terceras tarjetas iguales, y por la misma razón que las
@@ -584,7 +745,12 @@ else
        serie, así que su lectura salía de la magnitud —que dice lo mismo siempre— y viajaba
        colgada de la celda del cuadro. Desde que tienen serie subieron acá, que es donde
        tenían que estar, y con la lectura que mira la historia: un oscuro que después
-       volvió a ámbar ya no pide nada. *@
+       volvió a ámbar ya no pide nada.
+
+       RECUPERADO DE ORIGIN/MASTER al resolver el conflicto de stash: esta tercera puerta
+       (nominales/categóricos) es funcionalidad nueva que no existía todavía en el
+       rediseño de Inicio de esta rama; se mantiene tal cual, sin restylear -no es parte de
+       esta ronda-, mientras que el resto de la pantalla sigue con la jerarquía nueva. *@
     @foreach (ConstanciaDeAnalito c in constancias)
     {
         <button class="serie" @key="@($"{c.Analito}-{estado.Refrescos}")" @onclick="() => VerSerie(c.Analito)">
@@ -620,14 +786,14 @@ else
         </button>
     }
 
-    <h2 class="seccion">Tu historial</h2>
+    <h2 class="seccion" id="historial">Tu historial</h2>
     @if (examenes.Count == 0)
     {
         <p class="apunte">Todavía no hay exámenes. Apretá <em>Actualizar</em>.</p>
     }
     else
     {
-        @*  UNA LÍNEA DE TIEMPO DE VISITAS, no una tabla.
+        @*  UN VISTAZO COMPACTO, no una tabla.
 
             La matriz que había acá era mejor que la lista plana, pero seguía siendo una
             tabla genérica sobre analitos que no se parecen en nada — y las trayectorias
@@ -635,28 +801,28 @@ else
             tarjetas no: QUÉ PASÓ CADA DÍA. Una visita al laboratorio trae varios
             analitos a la vez, y eso es una cronología, no una grilla.
 
-            Por eso también cambia el nombre. «Tus exámenes» describía una lista de
-            papeles; esto es el historial.                                              *@
-        <ol class="visitas">
-            @foreach (Visita visita in Visitas())
+            En Inicio no hace falta la cronología entera: alcanza con saber cuándo fue la
+            última visita, cuántos resultados trajo y cómo vino en general — el detalle de
+            cada analito ya se cuenta arriba. Por eso la lista es corta por defecto y el
+            "Ver historial completo" la despliega entera, en vez de mandar a otra pantalla
+            que todavía no existe.                                                       *@
+        <ul class="inicio-historial-mini">
+            @foreach (Visita visita in VisitasRecientes())
             {
-                <li class="visita">
-                    <div class="visita-fecha">
-                        <span class="visita-dia">@visita.Fecha.ToString("dd MMM", Cultura)</span>
-                        <span class="visita-ano">@visita.Fecha.Year</span>
-                    </div>
-                    <ul class="visita-cosas">
-                        @foreach (CeldaEnCuadro celda in visita.Celdas)
-                        {
-                            <li class="visita-cosa">
-                                <span class="visita-que">@celda.ParaMostrar</span>
-                                <span class="visita-cuanto">@celda.Expresado</span>
-                            </li>
-                        }
-                    </ul>
+                string estadoVisita = EstadoDeLaVisita(visita);
+                <li class="inicio-historial-item">
+                    <span class="inicio-historial-fecha">@visita.Fecha.ToString("dd MMM yyyy", Cultura)</span>
+                    <span class="inicio-historial-cantidad">@visita.Celdas.Count resultado@(visita.Celdas.Count == 1 ? "" : "s")</span>
+                    <span class="inicio-historial-estado inicio-historial-estado--@ClaseDeSeveridad(estadoVisita)">@TextoDeSeveridad(estadoVisita)</span>
                 </li>
             }
-        </ol>
+        </ul>
+        @if (Visitas().Count > VisitasRecientes().Count || historialExpandido)
+        {
+            <button class="boton boton--enlace" @onclick="() => historialExpandido = !historialExpandido">
+                @(historialExpandido ? "Ver menos" : "Ver historial completo →")
+            </button>
+        }
     }
 
     @*  EDITABLE DESPUÉS, sin fricción. §6.2 de la spec: una vez respondido, el bloque de
@@ -699,6 +865,18 @@ else
             <strong>Sin carpeta:</strong> el registro vive solo en memoria y se pierde al cerrar.
         </p>
     }
+
+    @*  LA LINEA DE PRIVACIDAD. Vivía en la portada vieja, junto al candado; se reubica
+        acá porque ya no hay un bloque de veredicto donde ponerla sin competir con lo que
+        de verdad importa arriba —«¿estoy bien?»—, pero el mensaje sigue siendo necesario
+        y en el mismo tono de apunte que las otras notas de pie de página.               *@
+    <p class="apunte inicio-candado">
+        <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+            <rect x="4" y="11" width="16" height="9" rx="2"></rect>
+            <path d="M8 11V7a4 4 0 0 1 8 0v4"></path>
+        </svg>
+        Tus datos se quedan en tu dispositivo. Vos decidís qué compartir.
+    </p>
 }
 
 @code {
@@ -774,6 +952,204 @@ else
         frase.Length == 0 ? frase : char.ToUpperInvariant(frase[0]) + frase.Substring(1);
     private long ultimoEvento;
     private string error = "";
+
+    // ============================================================ INICIO, RONDA 1
+    //
+    // LOS TRES GRUPOS DE LA NUEVA JERARQUIA, armados una sola vez en Releer() con lo
+    // que YA calcula ese metodo (PideAlgo, HaySerie): nada de esto es un dato nuevo,
+    // es el mismo InterpretacionDeAnalito/TendenciaDeAnalito/PresenciaDeAnalito de
+    // siempre, ordenado distinto para que la pantalla no trate un colesterol que pide
+    // atencion igual que una hemoglobina estable.
+    //
+    //   atencion       PideAlgo == true                    -> la pieza mas grande
+    //   sinTendencia   HaySerie == false (una sola medicion) -> "todavia es pronto"
+    //   tranquilo      el resto                              -> compacto, en una lista
+    //
+    // Si mañana cambia CUAL analito pide atencion, estas listas cambian solas: no hay
+    // ningun nombre de analito escrito en esta pantalla.
+    private List<TendenciaDeAnalito> atencionAnalitos = new();
+    private List<PresenciaDeAnalito> atencionPresencias = new();
+    private List<TendenciaDeAnalito> sinTendenciaAnalitos = new();
+    private List<PresenciaDeAnalito> sinTendenciaPresencias = new();
+    private List<TendenciaDeAnalito> tranquiloAnalitos = new();
+    private List<PresenciaDeAnalito> tranquiloPresencias = new();
+
+    // "Ver todos mis resultados" y "Ver historial completo" no navegan a una pantalla
+    // nueva -esta ronda es solo Inicio, y no hay que inventar una ruta que no existe-:
+    // despliegan mas de lo mismo aca abajo, con el mismo boton que ya usa el pedido de
+    // sexo para plegarse/desplegarse.
+    private bool tranquiloExpandido;
+    private bool historialExpandido;
+
+    // LA CONCLUSION DEL SALUDO. Depende de la MISMA severidad que ya calcula
+    // LoMasUrgente -el semaforo del dominio-, y no es un texto fijo: el dia que exista
+    // algo mas serio que "vigilar" esta frase tiene que poder decirlo.
+    private string Saludo() => urgente.Severidad switch
+    {
+        "urgente"         => "Hay algo que conviene revisar pronto.",
+        "consulte pronto" => "Conviene comentar un resultado con tu médico.",
+        _                 => "En general, tus resultados vienen bien.",
+    };
+
+    // LA FECHA DEL ULTIMO CHEQUEO es la fecha de la visita mas reciente -Visitas() ya
+    // las trae ordenadas de la mas nueva a la mas vieja-, no un dato aparte.
+    private DateTime? UltimoChequeo()
+    {
+        List<Visita> visitas = Visitas();
+        return visitas.Count > 0 ? visitas[0].Fecha : (DateTime?)null;
+    }
+
+    // LA CADENA DE VALORES ("182 → 188 → 212"), armada con los MISMOS puntos que ya
+    // usa el grafico de la serie (Serie(analito)). Cuenta agnostica: con 2 mediciones
+    // arma un solo salto, con 5 arma una cadena de 5 -nada esta pensado para "3".
+    private string CadenaDeValores(TendenciaDeAnalito t)
+    {
+        IReadOnlyList<PuntoDeSerie> serie = Serie(t.Analito);
+        if (serie.Count == 0) return "";
+
+        var texto = new System.Text.StringBuilder();
+        for (int i = 0; i < serie.Count; i++)
+        {
+            if (i > 0) texto.Append(" → ");
+            texto.Append(Valor(serie[i].Valor));
+        }
+        return texto.ToString();
+    }
+
+    // "QUE CAMBIO DESDE TU ULTIMO CHEQUEO": el ultimo salto de CADA serie -no la serie
+    // entera, que ya se ve en "lo que merece atencion" y en el detalle-. Mira los MISMOS
+    // puntos que Serie(analito); no inventa un calculo nuevo.
+    private sealed class CambioReciente
+    {
+        public TendenciaDeAnalito Analito { get; init; } = new();
+        public PuntoDeSerie Previo { get; init; } = new();
+        public PuntoDeSerie Actual { get; init; } = new();
+    }
+
+    private List<CambioReciente> Cambios()
+    {
+        var cambios = new List<CambioReciente>();
+        foreach (TendenciaDeAnalito t in analitos)
+        {
+            if (!t.HaySerie) continue;
+            IReadOnlyList<PuntoDeSerie> serie = Serie(t.Analito);
+            if (serie.Count < 2) continue;
+
+            cambios.Add(new CambioReciente
+            {
+                Analito = t,
+                Previo = serie[serie.Count - 2],
+                Actual = serie[serie.Count - 1],
+            });
+        }
+        return cambios;
+    }
+
+    // LA FLECHA la decide la TENDENCIA que ya calculo el dominio (Analito/Tendencia.cs),
+    // no una resta hecha aca: una hemoglobina que sube de 13.1 a 13.4 sigue siendo
+    // "estable" para el dominio -que mira la banda, no el delta crudo- y por eso va con
+    // "→" y no "↑".
+    private static string Flecha(string tendencia) => tendencia switch
+    {
+        "en ascenso"  => "↑",
+        "en descenso" => "↓",
+        _             => "→",
+    };
+
+    // EL ESTADO BREVE DE LA TARJETA DE ATENCIÓN ("viene aumentando", "en seguimiento").
+    // RONDA 7: se pidió explícitamente NO mostrar "por encima del rango" -contradice un
+    // valor que todavía está dentro de lo informado- y, si hace falta un estado, que
+    // salga de la lógica existente. No es un texto nuevo: es la MISMA Tendencia que ya
+    // lee Flecha() arriba, más SugiereRepetirElExamen, dichos con el vocabulario que ya
+    // usa esta pantalla en otros lados (Insignia, Marca). Ningún nombre de analito entra
+    // en este switch.
+    private static string EstadoBreve(TendenciaDeAnalito t, InterpretacionDeAnalito lectura)
+    {
+        if (lectura.SugiereRepetirElExamen) return "posible error de medición";
+        return t.Tendencia switch
+        {
+            "en ascenso"  => "viene aumentando",
+            "en descenso" => "viene bajando",
+            "estable"     => "en seguimiento",
+            _             => "",
+        };
+    }
+
+    // EL LÍMITE NUMÉRICO PARA LA BARRA DE RANGO, leído de `ReferenciaLegible` -la MISMA
+    // frase que el dominio ya escribe y que la tarjeta ya muestra ("hasta 220 mg/dL",
+    // "entre 13 y 17 g/dL")-. No es un número inventado ni el de MetaDeColesterol (esa es
+    // una meta orientativa, 200, para otra pregunta): es el único límite que el rango de
+    // referencia expone, tomando el ÚLTIMO número de la frase -el techo, sea un rango con
+    // piso ("entre X y Y") o solo un techo ("hasta Y")-.
+    private static decimal? LimiteSuperior(string referenciaLegible)
+    {
+        if (string.IsNullOrWhiteSpace(referenciaLegible)) return null;
+
+        decimal? ultimo = null;
+        foreach (string palabra in referenciaLegible.Split(' ', StringSplitOptions.RemoveEmptyEntries))
+        {
+            string candidato = palabra.Trim(',', '.', ';');
+            if (decimal.TryParse(candidato, NumberStyles.Number, CultureInfo.InvariantCulture, out decimal valor))
+                ultimo = valor;
+            else if (decimal.TryParse(candidato, NumberStyles.Number, CultureInfo.CurrentCulture, out valor))
+                ultimo = valor;
+        }
+        return ultimo;
+    }
+
+    // "TODAVIA ES PRONTO PARA HABLAR DE TENDENCIA": las visitas recientes, recortadas a
+    // 3 salvo que la persona pida ver mas. Reusa Visitas(), que ya esta ordenada de la
+    // mas nueva a la mas vieja.
+    private List<Visita> VisitasRecientes()
+    {
+        List<Visita> todas = Visitas();
+        return historialExpandido ? todas : todas.GetRange(0, Math.Min(3, todas.Count));
+    }
+
+    // EL ESTADO GENERAL DE UNA VISITA: la peor severidad entre lo que se midio ESE dia.
+    // Todas las filas preguntan a su Interpretacion, misma fuente que el resto de la
+    // pantalla: CeldaEnCuadro ya no carga su propia severidad -la celda solo dice QUE se
+    // midio y CUANDO-, porque desde que toda fila forma serie (Marca() lo explica igual)
+    // no hay una segunda fuente que consultar.
+    private string EstadoDeLaVisita(Visita visita)
+    {
+        string peor = "";
+        int rango = -1;
+        foreach (CeldaEnCuadro celda in visita.Celdas)
+        {
+            string severidad = Lectura(celda.Analito).Severidad;
+            int actual = RangoDeSeveridad(severidad);
+            if (actual > rango) { rango = actual; peor = severidad; }
+        }
+        return peor;
+    }
+
+    // EL MISMO ORDEN DE SEMAFORO que ya usa TonoDeLoQuePide: informativo/vacio primero,
+    // urgente al final. Es la unica forma de saber cual severidad "gana" en una visita
+    // con varios resultados.
+    private static int RangoDeSeveridad(string severidad) => severidad switch
+    {
+        "urgente"         => 3,
+        "consulte pronto" => 2,
+        "vigilar"         => 1,
+        _                 => 0,
+    };
+
+    private static string ClaseDeSeveridad(string severidad) => severidad switch
+    {
+        "urgente"         => "problema",
+        "consulte pronto" => "atencion",
+        "vigilar"         => "atencion",
+        _                 => "bien",
+    };
+
+    private static string TextoDeSeveridad(string severidad) => severidad switch
+    {
+        "urgente"         => "requiere atención",
+        "consulte pronto" => "requiere atención",
+        "vigilar"         => "a seguir",
+        _                 => "en orden",
+    };
 
     protected override async Task OnInitializedAsync()
     {
@@ -977,6 +1353,17 @@ else
         var presentes = new List<PresenciaDeAnalito>();
         var categorias = new List<ConstanciaDeAnalito>();
         var leidos = new Dictionary<string, InterpretacionDeAnalito>();
+
+        // LOS TRES GRUPOS DE INICIO, armados en la MISMA pasada: es donde ya se
+        // conocen PideAlgo (de la lectura) y HaySerie (del hecho/presencia), asi que
+        // clasificar aca es leer dos booleanos, no una segunda consulta.
+        var atencionT = new List<TendenciaDeAnalito>();
+        var atencionP = new List<PresenciaDeAnalito>();
+        var sinTendenciaT = new List<TendenciaDeAnalito>();
+        var sinTendenciaP = new List<PresenciaDeAnalito>();
+        var tranquiloT = new List<TendenciaDeAnalito>();
+        var tranquiloP = new List<PresenciaDeAnalito>();
+
         foreach (string analito in estado.Analitos())
         {
             InterpretacionDeAnalito lectura = estado.Interpretacion(analito);
@@ -984,8 +1371,13 @@ else
 
             if (lectura.Forma == FormaDePresencia)
             {
-                presentes.Add(estado.Presencia(analito));
+                PresenciaDeAnalito presencia = estado.Presencia(analito);
+                presentes.Add(presencia);
                 pruebas[analito] = estado.Pruebas(analito);
+
+                if (lectura.PideAlgo) atencionP.Add(presencia);
+                else if (!presencia.HaySerie) sinTendenciaP.Add(presencia);
+                else tranquiloP.Add(presencia);
                 continue;
             }
 
@@ -999,15 +1391,27 @@ else
                 continue;
             }
 
-            hechos.Add(estado.Tendencia(analito));
+            TendenciaDeAnalito hecho = estado.Tendencia(analito);
+            hechos.Add(hecho);
             puntos[analito] = estado.Puntos(analito);
             lineas[analito] = estado.Referencias(analito);
+
+            if (lectura.PideAlgo) atencionT.Add(hecho);
+            else if (!hecho.HaySerie) sinTendenciaT.Add(hecho);
+            else tranquiloT.Add(hecho);
         }
         analitos = hechos;
         presencias = presentes;
         constancias = categorias;
         interpretaciones = leidos;
         celdas = estado.Cuadro();
+
+        atencionAnalitos = atencionT;
+        atencionPresencias = atencionP;
+        sinTendenciaAnalitos = sinTendenciaT;
+        sinTendenciaPresencias = sinTendenciaP;
+        tranquiloAnalitos = tranquiloT;
+        tranquiloPresencias = tranquiloP;
     }
 
     private void VerSerie(string analito) =>

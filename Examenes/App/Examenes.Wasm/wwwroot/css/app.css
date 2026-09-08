@@ -74,11 +74,66 @@
     --rojo-suave:  rgba(248, 113, 113, .12);
     --rojo-borde:  rgba(248, 113, 113, .35);
 
-    /* Serif para lo que se lee de un vistazo, sans para lo que se lee de verdad.
-       Ambas de sistema: cero webfonts. */
-    --serif: Georgia, "Times New Roman", serif;
-    --sans:  "Segoe UI", "Helvetica Neue", Arial, sans-serif;
-    --mono:  ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    /* UN SOLO SISTEMA TIPOGRÁFICO, sin excepciones. Antes --serif y --mono apuntaban a
+       familias de verdad distintas -Georgia para titulares, una mono para fechas y
+       valores- y esa mezcla (serif + sans + "máquina de escribir") es justo lo que se
+       pidió sacar: la jerarquía la hacen el tamaño, el peso, el color y el espaciado,
+       nunca la familia. Los dos tokens SIGUEN EXISTIENDO -los usan ~30 selectores de
+       este archivo, entre ellos varios de Tendencia.razor que esta ronda no toca- pero
+       los tres apuntan ahora a la MISMA pila: así el cambio es real en toda la app sin
+       reescribir cada selector uno por uno, que hubiera sido el cambio de alto riesgo.
+
+       LA FUENTE ES PLUS JAKARTA SANS, AUTOALOJADA, y no el system-font-stack de la
+       ronda anterior -ese cambio no se notaba lo suficiente-, ni Inter. Se revisó el
+       monorepo antes de decidir: no hay ningún asset de Inter, pero SÍ hay Plus Jakarta
+       Sans ya autoalojada en dos apps hermanas (Compras y DealershipCar) con el mismo
+       compromiso de "cero peticiones a Google" que este archivo ya documentaba. Por
+       coherencia de marca Gnothi y para no sumar una tipografía más al monorepo, esta
+       app suma esa misma familia.
+
+       CUATRO ARCHIVOS ESTÁTICOS (400/500/600/700), NO el WOFF2 VARIABLE que ya usan
+       Compras/DealershipCar. Se probó ese archivo variable primero -parecía lo obvio,
+       reusar el mismo asset- pero tiene un bug de rendering real y verificado: en
+       Chromium, con `text-transform: uppercase`, la "T" mayúscula sale con un espacio de
+       más detrás ("MERECE AT ENCIÓN"). Se confirmó con capturas que el archivo variable
+       vendorizado lo reproduce en cualquier tamaño/peso, que un WOFF2 ESTÁTICO de la
+       misma tipografía NO lo tiene, y que Compras usa `text-transform: uppercase` en
+       más de diez selectores -así que probablemente ya lo tiene en producción sin que
+       nadie lo haya notado; esta ronda no lo toca porque no se pidió tocar Compras, pero
+       vale decirlo-. Cuatro estáticos en vez de un variable es más peso (52 KB vs 26 KB)
+       a cambio de texto que se lee bien: un canje que conviene.
+       Los archivos viven en wwwroot/fuentes/PlusJakartaSans-{400,500,600,700}.woff2,
+       subset latin (cubre acentos y ñ del español). 52 KB total, cero peticiones
+       externas: sigue siendo "razonable y liviana", el límite que se pidió. */
+    --sans:  'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    --serif: var(--sans);
+    --mono:  var(--sans);
+}
+
+/* CUATRO @font-face, uno por peso -400/500/600/700, los únicos que usa la UI-, cada uno
+   con SU PROPIO `font-weight` fijo y no un rango: es la diferencia con el archivo variable
+   de Compras/DealershipCar (ver el comentario de arriba sobre el bug de la "T"). `local()`
+   no hace falta -Plus Jakarta Sans no viene instalada en los sistemas operativos-, así que
+   el único `src` es el WOFF2 propio. */
+@font-face {
+    font-family: 'Plus Jakarta Sans';
+    src: url('../fuentes/PlusJakartaSans-400.woff2') format('woff2');
+    font-weight: 400; font-style: normal; font-display: swap;
+}
+@font-face {
+    font-family: 'Plus Jakarta Sans';
+    src: url('../fuentes/PlusJakartaSans-500.woff2') format('woff2');
+    font-weight: 500; font-style: normal; font-display: swap;
+}
+@font-face {
+    font-family: 'Plus Jakarta Sans';
+    src: url('../fuentes/PlusJakartaSans-600.woff2') format('woff2');
+    font-weight: 600; font-style: normal; font-display: swap;
+}
+@font-face {
+    font-family: 'Plus Jakarta Sans';
+    src: url('../fuentes/PlusJakartaSans-700.woff2') format('woff2');
+    font-weight: 700; font-style: normal; font-display: swap;
 }
 
 * { box-sizing: border-box; }
@@ -104,11 +159,14 @@ h1:focus, h1:focus-visible { outline: none; }
 .hoja { max-width: 54rem; margin: 0 auto; padding: 44px 26px 80px; }
 
 .titular {
-    font-family: var(--serif);
+    /* 26-30px/700: "título protagonista" del sistema tipográfico nuevo. Ya no serif -es
+       la sans de toda la app-, y el tamaño baja del rango de "hero" al de "título" para
+       que la jerarquía la sigan dando el peso y el tamaño, no la familia. */
+    font-family: var(--sans);
     font-weight: 700;
-    font-size: clamp(2rem, 4.2vw, 2.9rem);
-    line-height: 1.15;
-    letter-spacing: -.015em;
+    font-size: clamp(1.625rem, 4vw, 1.875rem);
+    line-height: 1.2;
+    letter-spacing: -.01em;
     color: #ffffff;
     margin: 0 0 6px;
 }
@@ -143,7 +201,9 @@ h1:focus, h1:focus-visible { outline: none; }
 .seccion {
     font-family: var(--sans);
     font-weight: 700;
-    font-size: 0.80rem; letter-spacing: .18em; text-transform: uppercase;
+    /* .18em era la marca del "estilo máquina de escribir" que se pidió sacar; un
+       letter-spacing muy moderado sigue leyéndose como label sin ese aire vintage. */
+    font-size: 0.80rem; letter-spacing: .05em; text-transform: uppercase;
     color: var(--celeste);
     display: flex; align-items: center; gap: 12px;
     margin: 40px 0 16px;
@@ -252,6 +312,7 @@ h1:focus, h1:focus-visible { outline: none; }
     font-family: var(--serif);
     font-size: 1.9rem; font-weight: 700; line-height: 1.1;
     white-space: nowrap; text-align: right;
+    font-variant-numeric: tabular-nums;
 }
 .serie-valor span { font-family: var(--sans); font-size: 12px; color: var(--tenue); font-weight: 400; }
 
@@ -298,7 +359,7 @@ h1:focus, h1:focus-visible { outline: none; }
 
 .modo-titulo {
     font-family: var(--sans); font-weight: 700;
-    font-size: 11px; letter-spacing: .16em; text-transform: uppercase;
+    font-size: 11px; letter-spacing: .05em; text-transform: uppercase;
     color: var(--celeste);
 }
 
@@ -361,7 +422,7 @@ h1:focus, h1:focus-visible { outline: none; }
 .tabla tr:last-child td { border-bottom: 0; }
 .tabla .der { text-align: right; padding-right: 0; }
 .tabla th.der { padding-right: 0; }
-.tabla .fecha, .tabla .resultado { font-family: var(--mono); font-size: 13.5px; }
+.tabla .fecha, .tabla .resultado { font-family: var(--mono); font-size: 13.5px; font-variant-numeric: tabular-nums; }
 .tabla tbody tr:hover td { background: var(--suave); }
 
 /* ---------------------------------------------------------------- las formas
@@ -381,6 +442,7 @@ h1:focus, h1:focus-visible { outline: none; }
     display: flex; gap: 18px; flex-wrap: wrap;
     margin-top: 6px;
     font-family: var(--mono); font-size: 11px; color: var(--tenue-2);
+    font-variant-numeric: tabular-nums;
 }
 .forma-pie--extremos { justify-content: space-between; gap: 8px; }
 .forma-nota { display: inline-flex; align-items: center; gap: 5px; }
@@ -447,6 +509,7 @@ h1:focus, h1:focus-visible { outline: none; }
 .visita-fecha {
     flex: 0 0 4.5em;
     font-family: var(--mono); line-height: 1.25;
+    font-variant-numeric: tabular-nums;
 }
 .visita-dia { display: block; font-size: 13px; color: var(--tinta); text-transform: lowercase; }
 .visita-ano { display: block; font-size: 11px; color: var(--tenue-2); }
@@ -460,6 +523,7 @@ h1:focus, h1:focus-visible { outline: none; }
 .visita-cuanto {
     font-family: var(--mono); font-size: 13px; color: var(--tinta);
     text-align: right;
+    font-variant-numeric: tabular-nums;
 }
 
 /* ------------------------------------------------------------------ detalle */
@@ -486,6 +550,7 @@ h1:focus, h1:focus-visible { outline: none; }
 .medicion-fecha {
     flex: 0 0 4.5em;
     font-family: var(--mono); line-height: 1.25;
+    font-variant-numeric: tabular-nums;
 }
 .medicion-dia { display: block; font-size: 13px; color: var(--tinta); text-transform: lowercase; }
 .medicion-ano { display: block; font-size: 11px; color: var(--tenue-2); }
@@ -493,6 +558,7 @@ h1:focus, h1:focus-visible { outline: none; }
 .medicion-valor {
     flex: 0 0 6.5em;
     font-family: var(--mono); font-size: 16px; color: var(--tinta);
+    font-variant-numeric: tabular-nums;
 }
 .medicion-valor span { font-size: 11.5px; color: var(--tenue-2); margin-left: 3px; }
 
@@ -500,6 +566,7 @@ h1:focus, h1:focus-visible { outline: none; }
     flex: 1;
     font-family: var(--mono); font-size: 12.5px; color: var(--tenue);
     text-align: right;
+    font-variant-numeric: tabular-nums;
 }
 
 /* Un positivo se marca en la fila, no en una columna aparte: en un binario el resultado
@@ -520,7 +587,7 @@ h1:focus, h1:focus-visible { outline: none; }
     font-size: 11px; letter-spacing: .07em; text-transform: uppercase;
     color: var(--tenue-2);
 }
-.ritmo-cifra { font-family: var(--mono); font-size: 19px; color: var(--tinta); }
+.ritmo-cifra { font-family: var(--mono); font-size: 19px; color: var(--tinta); font-variant-numeric: tabular-nums; }
 .ritmo-nota { font-size: 12.5px; color: var(--tenue); }
 .ritmo--atencion .ritmo-cifra { color: var(--ambar); }
 
@@ -529,6 +596,7 @@ h1:focus, h1:focus-visible { outline: none; }
     font-size: clamp(28px, 5vw, 38px); font-weight: 700;
     letter-spacing: -.01em;
     margin: 14px 0 6px;
+    font-variant-numeric: tabular-nums;
 }
 .cifra-par .flecha { color: var(--tenue-2); margin: 0 10px; }
 .cifra-par .unidad { font-size: 15px; color: var(--tenue); font-weight: 400; margin-left: 8px; }
@@ -652,7 +720,7 @@ code { font-family: var(--mono); font-size: .9em; color: var(--ambar); }
 }
 
 .portada-rotulo {
-    font-family: var(--sans); font-weight: 700; font-size: 10.5px; letter-spacing: .18em;
+    font-family: var(--sans); font-weight: 700; font-size: 10.5px; letter-spacing: .05em;
     text-transform: uppercase; color: var(--tenue);
     margin: 0;
 }
@@ -719,6 +787,7 @@ code { font-family: var(--mono); font-size: .9em; color: var(--ambar); }
     display: flex; flex-wrap: wrap; gap: 6px 20px; margin-top: 18px;
     padding-top: 14px; border-top: 1px solid var(--linea);
     font-family: var(--mono); font-size: 11.5px; color: var(--tenue-2);
+    font-variant-numeric: tabular-nums;
 }
 .portada-pie b { color: var(--tinta); font-weight: 500; font-size: 13px; }
 
@@ -825,7 +894,7 @@ code { font-family: var(--mono); font-size: .9em; color: var(--ambar); }
 }
 
 .pedido-rotulo {
-    font-family: var(--sans); font-weight: 700; font-size: 10.5px; letter-spacing: .18em;
+    font-family: var(--sans); font-weight: 700; font-size: 10.5px; letter-spacing: .05em;
     text-transform: uppercase; color: var(--celeste);
 }
 
@@ -855,4 +924,580 @@ code { font-family: var(--mono); font-size: .9em; color: var(--ambar); }
 .pedido-botones {
     display: flex; flex-wrap: wrap; gap: 10px;
     margin-top: 14px;
+}
+
+/* ============================================================ INICIO — REDISEÑO §1
+
+   RONDA 1: SOLO esta pantalla. Todo lo de acá abajo es ADITIVO -tokens nuevos y clases
+   con prefijo `.inicio-`-: ningún selector ni variable de arriba se toca, porque este
+   archivo lo comparte Tendencia.razor (la pantalla de detalle) y no puede cambiar debajo
+   de ella en esta ronda.
+
+   LA IDENTIDAD SIGUE SIENDO NAVY: el fondo del body, la marca y el semáforo no cambian
+   ni un valor. Lo que cambiaba antes era que Inicio pintaba cada tarjeta con el mismo
+   navy translúcido del fondo -`--carta`-, y eso es lo que hacía que la pantalla entera
+   se sintiera oscura de punta a punta. Los paneles de Inicio ahora usan superficies mas
+   claras -azules, no grises ni blanco puro: sigue siendo Delfos- para que la cabecera y,
+   sobre todo, lo que merece atención se separen del fondo en vez de fundirse con él. */
+
+:root {
+    /* RONDA 7 — YA NO ES UN PANEL BLANCO. La ronda 1 separaba "lo que merece atención"
+       del fondo con un panel casi blanco; la referencia nueva pide integrarlo al navy
+       -una superficie apenas más clara que `--fondo`, no una ruptura- con el ámbar como
+       único acento, no como alarma. `--panel-navy*` reemplaza a `--panel-blanco*` de
+       punta a punta: son tokens privados de esta sección (no los usa nada más en este
+       archivo), así que redefinirlos es seguro para Tendencia.razor. */
+    --panel-navy:        #16406f;   /* un escalón más claro que --fondo (#0e2f55) */
+    --panel-navy-honda:  #123561;   /* el otro extremo del degradé, entre panel y fondo */
+    --panel-navy-borde:  rgba(125, 180, 224, .20);
+    --panel-navy-tinta:  var(--tinta);
+    --panel-navy-tenue:  var(--tenue);
+}
+
+/* ------------------------------------------------------------- §1 el hero
+
+   RONDA 4 — RECOMPOSICIÓN VISUAL, no otro ajuste de padding sobre la ronda 2/3. El
+   diagnóstico del pedido era correcto: técnicamente el hero de la ronda 2 ya media más
+   y tenía más margen, pero visualmente seguía leyéndose como una lista vertical de
+   textos apilados, con la marca pegada arriba y la composición científica casi sin
+   participar. Esta ronda cambia la ESTRUCTURA en tres zonas, no solo las medidas:
+
+   ZONA 1 — MARCA (`.inicio-hero-marca`): con aire propio arriba y a los costados -ya no
+   pegada al borde del hero-.
+   ZONA 2 — CONTEXTO PERSONAL: el saludo ("Hola, Sonia.") pasa a ser un `<strong>` DENTRO
+   del párrafo del kicker, no un bloque aparte -separarlos (ronda 2) dejaba un hueco
+   vertical que no sumaba lectura-. Debajo, `.inicio-hero-chequeo` reemplaza al viejo
+   `.inicio-hero-fecha`: rótulo y fecha en los dos extremos de una fila con
+   `justify-content: space-between`, así la fecha "respira" a la derecha en vez de sumarse
+   a la misma columna de texto que todo lo demás.
+   ZONA 3 — PROTAGONISTA: titular, secundario y CTA, con espacio real alrededor.
+
+   Reemplaza a `.inicio-cabecera` de la ronda 1 -esa clase y `.inicio-saludo` /
+   `.inicio-conclusion` / `.inicio-subrayado` ya no se usan en ningún lado-. Sigue
+   sangrando hasta el borde de la pantalla y cerrando con una esquina redondeada abajo,
+   igual que la ronda 2: `.hoja` tiene `padding: 44px 26px 80px` y es compartida con
+   Tendencia.razor -no se toca-, así que el sangrado es un margen negativo exactamente
+   igual a ese padding, la técnica estándar para esto.
+
+   MEDIDO CON PLAYWRIGHT, NO ESTIMADO A OJO: a 390px de ancho, con estas medidas y la
+   fuente real (Plus Jakarta Sans, ver @font-face arriba), el hero renderiza a ~322px de
+   alto y deja ~30px de aire hasta "MERECE ATENCIÓN" -dentro de los rangos pedidos
+   (300-320px / 28-32px). Ver el hallazgo de la "T" en el comentario de --sans arriba:
+   estos @font-face son estáticos, así que este hero no lo reproduce. */
+
+.inicio-hero {
+    position: relative;
+    overflow: hidden;
+    margin: -44px -26px 30px;
+    /* PADDING-TOP: 30px, no 24px -el "aire equivalente al safe-area superior" que pediste
+       en la ronda 6. No hay ninguna status bar dibujada -ni falsa hora, ni señal, ni
+       batería: eso se pidió explícitamente que NO se inventara-, así que lo único que
+       representa ese espacio es este padding de más antes de que arranque la marca. */
+    padding: 30px 26px 16px;
+    display: flex;
+    flex-direction: column;
+    color: var(--tinta);
+    border-bottom-left-radius: 30px;
+    border-bottom-right-radius: 30px;
+
+    /* SOLO DEGRADADO ACÁ -el navy base y dos halos de luz, igual que el HTML original de la
+       propuesta (`Mi Salud.dc.html`): un halo azul (`--accion`) pegado a la esquina superior
+       derecha y uno celeste (`--celeste`) mucho más tenue abajo a la izquierda, más una
+       viñeta suave abajo para que no quede plano-. La ilustración científica -la curva con
+       nodos- NO es parte de este `background`: es `.inicio-hero-cientifico` más abajo, un
+       elemento propio porque necesita una máscara que un `background-image` no puede
+       aplicar solo a una de sus capas sin taparle la máscara también al texto. */
+    background-image:
+        radial-gradient(150px at 100% 0%, rgba(26, 111, 245, .30) 0%, rgba(26, 111, 245, 0) 72%),
+        radial-gradient(170px at 0% 100%, rgba(125, 180, 224, .14) 0%, rgba(125, 180, 224, 0) 70%),
+        radial-gradient(85% 55% at 50% 118%, rgba(0, 0, 0, .28) 0%, transparent 60%),
+        linear-gradient(165deg, var(--fondo) 0%, var(--fondo-hondo) 100%);
+    background-repeat: no-repeat;
+}
+
+/* RONDA 6 — YA NO ES UNA FOTO. Ver el comentario largo en el `.razor`, junto al `<svg>`,
+   sobre por qué (comparación visual contra los assets del ZIP, no por nombre de archivo) y
+   de dónde sale exactamente -`heroArtRef` en `Mi Salud.dc.html`-. Acá solo el encuadre: chica
+   -190×130, contra los 390×180 a todo el ancho del original-, anclada arriba a la derecha
+   -`top:0; right:0`, no `bottom`- y contenida en la franja de la marca/kicker, así que
+   nunca llega a la altura del titular sin necesitar ningún `max-width` en el texto para
+   evitarla. La máscara radial la apaga hacia abajo y hacia la izquierda -"desapareciendo
+   gradualmente hacia el fondo"-, y el leve grid de puntos de atrás (la cuadrícula
+   "científica" bien tenue de la referencia) se apaga con la misma máscara. Sin
+   `mix-blend-mode` -a diferencia de la foto de la ronda pasada-: es un SVG con su propio
+   fondo transparente, no un rectángulo de imagen que haya que fundir. `pointer-events:none`
+   porque es puramente decorativa. */
+.inicio-hero-cientifico {
+    position: absolute;
+    top: 0; right: 0;
+    width: 190px; height: 130px;
+    overflow: hidden;
+    opacity: .9;
+    pointer-events: none;
+    -webkit-mask-image: radial-gradient(160px at 85% 10%, #000 28%, rgba(0, 0, 0, 0) 100%);
+            mask-image: radial-gradient(160px at 85% 10%, #000 28%, rgba(0, 0, 0, 0) 100%);
+    background-image:
+        linear-gradient(rgba(255, 255, 255, .05) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(255, 255, 255, .05) 1px, transparent 1px);
+    background-size: 24px 24px;
+}
+.inicio-hero-cientifico svg { position: absolute; top: 0; right: 0; }
+
+/* ZONA 1 — marca, RONDA 6: MÁS PRESENCIA ("respirar correctamente"). Logo y tipografía más
+   grandes que la ronda 4 (28px/.9rem/.65rem → 32px/1rem/.72rem) y más aire después
+   (`margin-bottom` 16px → 20px, dentro de los 18-22px pedidos entre la marca y "Hola,
+   Sonia."). El aire ARRIBA de la marca -el "safe-area" de la referencia- es el
+   `padding-top` de `.inicio-hero`, no algo de acá: no se simula una status bar falsa, así
+   que no hay nada que dibujar, solo espacio. */
+.inicio-hero-marca {
+    position: relative;
+    display: flex; align-items: center; gap: 12px;
+    margin-bottom: 20px;
+}
+.inicio-hero-marca svg { width: 32px; height: 32px; flex: none; }
+.inicio-hero-marca > div { flex: 1; min-width: 0; }
+.inicio-hero-marca .marca-nombre { font-size: 1rem; }
+.inicio-hero-marca .marca-claim { font-size: .72rem; color: rgba(255, 255, 255, .55); }
+
+/* ACTUALIZAR, COMO ÍCONO: la referencia trae una campana en ese lugar; esta app no tiene
+   notificaciones, así que el mismo lugar lo ocupa la única acción real del hero viejo.
+   Se mantiene chico y discreto -no crece con el resto de la marca- para no competir con
+   el nombre del laboratorio, que es lo que ahora tiene que notarse más. */
+.inicio-hero-actualizar {
+    flex: none;
+    width: 28px; height: 28px;
+    display: flex; align-items: center; justify-content: center;
+    background: rgba(255, 255, 255, .08);
+    border: 1px solid rgba(255, 255, 255, .18);
+    border-radius: 50%;
+    color: rgba(255, 255, 255, .8);
+    cursor: pointer;
+    transition: background .15s ease, border-color .15s ease, color .15s ease;
+}
+.inicio-hero-actualizar svg { width: 13px; height: 13px; }
+.inicio-hero-actualizar:hover:not(:disabled) { background: rgba(255, 255, 255, .16); border-color: rgba(255, 255, 255, .4); color: #ffffff; }
+.inicio-hero-actualizar:focus-visible { outline: 2px solid var(--celeste); outline-offset: 2px; }
+.inicio-hero-actualizar:disabled { opacity: .55; cursor: progress; }
+.inicio-hero-actualizar svg.gira { animation: gira 1s linear infinite; }
+@keyframes gira { to { transform: rotate(360deg); } }
+
+/* ZONA 2 — contexto personal. "Hola, Sonia." es un `<strong>` adentro del mismo párrafo,
+   no un bloque aparte: dos `<p>` con márgenes propios (ronda 2) dejaban un hueco vertical
+   que no sumaba nada a la lectura, y encima partía mal la línea final ("...cómo saliste
+   hoy." quedaba huérfana). Con `display: block` en el `<strong>` se conserva la misma
+   jerarquía de dos líneas sin ese costo. Ya no lleva `max-width` (ronda 5, para esquivar la
+   foto): la ilustración de esta ronda vive arriba a la derecha, fuera de esta franja, así
+   que no hace falta ningún tope de ancho para que no se crucen. */
+.inicio-hero-kicker {
+    position: relative;
+    margin: 0 0 16px; font-size: 13.5px; font-weight: 400; line-height: 1.4;
+    color: rgba(255, 255, 255, .68);
+}
+.inicio-hero-kicker strong {
+    display: block;
+    font-weight: 600; color: #ffffff;
+    margin-bottom: 2px;
+}
+
+/* "TU ÚLTIMO CHEQUEO" — RONDA 6: el divisor ya no es un `border-bottom` de toda la fila,
+   es la técnica exacta de la referencia -un `<span>` vacío entre el rótulo y la fecha con
+   `flex:1` y una línea de 1px bien tenue (`rgba(255,255,255,.12)`, la "línea/divisor
+   extremadamente sutil" que pediste)-: el rótulo y la fecha quedan pegados a sus propios
+   extremos y la línea ocupa justo lo que sobra entre los dos, en vez de correr por debajo
+   de todo el bloque. */
+.inicio-hero-chequeo {
+    position: relative;
+    display: flex; align-items: center; gap: 10px;
+    margin: 0 0 16px;
+}
+.inicio-hero-chequeo-label {
+    flex: none;
+    font-size: 10.5px; font-weight: 600; letter-spacing: .04em; text-transform: uppercase;
+    color: rgba(255, 255, 255, .45);
+}
+.inicio-hero-chequeo-linea {
+    flex: 1 1 auto;
+    height: 1px;
+    background: rgba(255, 255, 255, .12);
+}
+.inicio-hero-chequeo-fecha {
+    flex: none;
+    font-size: 13.5px; font-weight: 600;
+    color: rgba(255, 255, 255, .92);
+    font-variant-numeric: tabular-nums;
+}
+
+/* ZONA 3 — protagonista. EL MENSAJE PRINCIPAL: es Saludo() -la misma frase de la ronda 1-,
+   con el peso que antes tenía "Hola, Sonia". La respuesta a "¿estoy bien?" es lo que tiene
+   que leerse primero, no el saludo.
+
+   26-30px/700: el rango de "título protagonista" del sistema tipográfico nuevo. Ya no es
+   serif -es la misma sans que toda la app-, así que el peso y el tamaño son los que tienen
+   que cargar la jerarquía que antes daba la familia. */
+/* SIN `max-width` DESDE LA RONDA 6: existía para esquivar la foto grande de la ronda 5
+   (`.inicio-hero-cientifico` llegaba hasta la mitad del hero); la ilustración de esta
+   ronda vive arriba a la derecha, contenida en la franja de la marca/kicker, así que el
+   titular y el secundario ya no la cruzan aunque usen todo el ancho de la columna -como en
+   la referencia, que tampoco les pone un `max-width`-.
+
+   `text-wrap: wrap` y NO `balance`: se probó con `balance` en la ronda 5 y, con la variante
+   más larga de Saludo() ("Conviene comentar un resultado con tu médico."), el algoritmo de
+   balanceo elegía 3 líneas en vez de 2 para "emparejar" mejor el bloque -eso sigue siendo
+   cierto ahora que no hay `max-width`, así que se mantiene `wrap` por previsibilidad-. */
+.inicio-hero-titular {
+    position: relative;
+    font-family: var(--sans); font-weight: 700;
+    font-size: clamp(1.6rem, 6vw, 1.85rem); line-height: 1.18;
+    letter-spacing: -.01em;
+    margin: 0 0 8px; color: #ffffff;
+    text-wrap: wrap;
+}
+
+.inicio-hero-secundario {
+    position: relative;
+    margin: 0 0 14px; font-size: 14px; font-weight: 500;
+    color: rgba(255, 255, 255, .75);
+}
+
+.inicio-hero-cta {
+    position: relative;
+    display: inline-flex; align-items: center; gap: 6px; align-self: flex-start;
+    font-family: var(--sans); font-weight: 600; font-size: 14.5px;
+    padding: 11px 21px; margin-top: auto;
+    background: var(--accion); color: #ffffff;
+    border-radius: 999px; text-decoration: none;
+    box-shadow: 0 10px 22px -10px rgba(26, 111, 245, .7);
+    transition: filter .18s ease, transform .18s ease;
+}
+.inicio-hero-cta:hover { filter: brightness(1.12); transform: translateY(-1px); }
+.inicio-hero-cta:focus-visible { outline: 2px solid #ffffff; outline-offset: 2px; }
+
+/* ------------------------------------------------------------- §2 lo que merece atención
+
+   LA PIEZA DE MAYOR JERARQUÍA de toda la pantalla. RONDA 7: deja de romper con el navy
+   -el panel casi blanco de la ronda 1 "rompía completamente con la identidad visual de
+   Delfos", palabras del pedido- y pasa a ser una superficie navy propia, un escalón más
+   clara que el fondo, con el ámbar como acento chico y no como alarma. Que destaque
+   sigue sin ser un capricho: es la respuesta a «¿qué merece atención?», y ahora lo hace
+   por jerarquía y profundidad -degradé, sombra, borde sutil- en vez de por contraste de
+   color contra el resto de la pantalla. */
+
+.inicio-atencion { margin: 0 0 24px; }
+
+/* ENCABEZADO DE SECCIÓN: el rótulo de siempre más un indicador compacto a la derecha
+   -"● 1 resultado"-, contado con lo mismo que ya arma las listas (atencionAnalitos.Count
+   + atencionPresencias.Count): si mañana son dos los que piden algo, este número cambia
+   solo. No hay ninguna frase introductoria fija al lado: se pidió explícitamente no
+   inventar una ("hay resultados que salieron del rango") cuando el colesterol de hoy
+   sigue dentro de su rango informado. */
+.inicio-atencion-encabezado {
+    display: flex; align-items: baseline; justify-content: space-between; gap: 10px;
+    margin: 0 0 10px;
+}
+.inicio-atencion-rotulo {
+    font-family: var(--sans); font-weight: 700; font-size: 11px; letter-spacing: .05em;
+    text-transform: uppercase; color: var(--ambar); margin: 0;
+}
+.inicio-atencion-conteo {
+    display: inline-flex; align-items: center; gap: 5px;
+    font-family: var(--sans); font-size: 11.5px; font-weight: 600; color: var(--tenue);
+    white-space: nowrap;
+}
+.inicio-atencion-conteo-punto {
+    width: 6px; height: 6px; border-radius: 50%; background: var(--ambar); flex: none;
+}
+
+.inicio-atencion-tarjeta {
+    position: relative;
+    background: linear-gradient(165deg, var(--panel-navy) 0%, var(--panel-navy-honda) 100%);
+    border: 1px solid var(--panel-navy-borde);
+    border-radius: 18px;
+    padding: 20px 22px 20px 26px;
+    margin-bottom: 14px;
+    color: var(--panel-navy-tinta);
+    box-shadow: 0 16px 32px -20px rgba(3, 10, 22, .65), 0 2px 10px rgba(3, 10, 22, .3);
+    overflow: hidden;
+}
+.inicio-atencion-tarjeta:last-child { margin-bottom: 0; }
+
+/* EL ACENTO ÁMBAR: chico y vertical, no un borde de punta a punta -"sin sensación de
+   alerta crítica" es el pedido-. Un `::before` con inset arriba/abajo, no un
+   `border-left` sobre toda la tarjeta. */
+.inicio-atencion-tarjeta::before {
+    content: "";
+    position: absolute; left: 0; top: 18px; bottom: 18px; width: 3px;
+    border-radius: 0 3px 3px 0;
+    background: var(--ambar);
+    opacity: .8;
+}
+
+.inicio-atencion-cabeza { display: flex; justify-content: space-between; align-items: flex-start; gap: 14px; }
+
+/* RONDA 8 — EL ÍCONO. "un pequeño icono visual... asociado al resultado/seguimiento".
+   Es un pulso clínico dibujado a mano en SVG -la misma técnica que ya usa el logo y el
+   ícono de actualizar en el hero, sin librerías nuevas-, adentro de un círculo ámbar muy
+   translúcido. Puramente decorativo: no agrega ningún dato, así que no hacía falta tocar
+   el code-behind para esto. */
+.inicio-atencion-titulo { display: flex; align-items: center; gap: 9px; min-width: 0; }
+.inicio-atencion-icono {
+    flex: none; width: 26px; height: 26px; border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    background: var(--ambar-borde);
+}
+.inicio-atencion-icono svg { width: 14px; height: 14px; stroke: var(--ambar); }
+
+.inicio-atencion-nombre-grupo { display: flex; flex-direction: column; gap: 3px; min-width: 0; }
+.inicio-atencion-nombre { font-weight: 600; font-size: 16px; }
+/* EL ESTADO BREVE ("viene aumentando" / "en seguimiento") no es un texto nuevo: sale de
+   Tendencia -el mismo campo que ya usa Flecha() en §5- y de si el analito sugiere repetir
+   el examen. Nunca dice "por encima del rango": eso lo contradicen los datos cuando el
+   valor sigue dentro de lo informado. Ver EstadoBreve() en el code-behind.
+   RONDA 8: más presencia, pero sigue siendo chico -mismo tamaño de fuente-: ahora es un
+   chip con fondo ámbar muy suave, no solo texto celeste suelto. */
+.inicio-atencion-estado {
+    display: inline-flex; align-items: center; gap: 4px; width: fit-content;
+    font-family: var(--sans); font-size: 11.5px; font-weight: 700; color: var(--ambar);
+    background: var(--ambar-suave);
+    padding: 2px 8px 2px 6px; border-radius: 999px;
+}
+/* 26-32px/700: "valor importante" del sistema tipográfico nuevo. Antes esta cifra era
+   la única serif en toda la tarjeta -mezclada con el resto en sans-; ahora es la misma
+   familia que todo lo demás, y lo que la distingue es el tamaño y el peso. */
+.inicio-atencion-valor {
+    font-family: var(--sans); font-weight: 700; font-size: 2rem; line-height: 1.1;
+    white-space: nowrap;
+    font-variant-numeric: tabular-nums;
+}
+.inicio-atencion-valor span { font-family: var(--sans); font-size: 12.5px; font-weight: 400; color: var(--panel-navy-tenue); }
+
+/* La cadena "182 → 188 → 212": los mismos puntos que ya grafica la forma, en números.
+   `tabular-nums` alinea los dígitos sin pedir prestada una fuente monoespaciada. */
+.inicio-atencion-serie {
+    margin: 6px 0 0; font-family: var(--sans); font-size: 13px; color: var(--panel-navy-tenue);
+    font-variant-numeric: tabular-nums;
+}
+.inicio-atencion-referencia {
+    margin: 4px 0 0; font-family: var(--sans); font-size: 11.5px; color: var(--panel-navy-tenue);
+    font-variant-numeric: tabular-nums;
+}
+
+/* LA BARRA DE RANGO — RONDA 8: vuelve el degradé verde→ámbar→rojo, a pedido explícito
+   ("ayuda muchísimo a comprender dónde se encuentra el resultado"), pero como un
+   DEGRADÉ CONTINUO de proximidad al límite -no bandas con corte fijo "normal/límite/
+   alto", que es justo lo que la ronda pasada evitó por sugerir categorías que el modelo
+   no tiene-. Son los TRES colores que el semáforo del dominio ya usa en toda la app
+   (`--bien`/`--ambar`/`--rojo`: estable/vigilar/urgente), no colores nuevos. El límite
+   sigue siendo el único que conoce el modelo -`lectura.ReferenciaLegible`, "hasta 220
+   mg/dL"-, y el marcador de 212 cae ANTES de ese límite porque la proporción real
+   (212/220) es menor a uno: no se afirma en ningún texto que el valor esté fuera de
+   rango, sólo se ve, en color, qué tan cerca está. */
+.inicio-atencion-rango { margin: 12px 0 0; }
+.inicio-atencion-rango-pista {
+    position: relative;
+    height: 8px; border-radius: 5px;
+    /* verde→amarillo→naranja→rojo, pero con el rojo puro guardado para el último tramo
+       -no desde la mitad de la pista-: así un resultado que todavía está dentro de lo
+       informado (212 de 220) cae en un naranja de "prestale atención", no en un rojo de
+       "esto está mal", que es lo que el texto de al lado NUNCA dice. */
+    background: linear-gradient(90deg, var(--bien) 0%, var(--ambar) 58%, #f4a35f 82%, var(--rojo) 100%);
+    overflow: visible;
+}
+.inicio-atencion-rango-marca {
+    position: absolute; top: 50%; width: 13px; height: 13px; border-radius: 50%;
+    background: #ffffff; border: 2.5px solid var(--panel-navy-honda);
+    transform: translate(-50%, -50%);
+    box-shadow: 0 1px 5px rgba(3, 10, 22, .6);
+}
+.inicio-atencion-rango-limite {
+    position: absolute; right: 0; top: -3px; bottom: -3px; width: 1.5px;
+    background: var(--panel-navy-tinta); opacity: .5;
+}
+.inicio-atencion-rango-etiquetas {
+    display: flex; justify-content: space-between; gap: 10px; margin-top: 6px;
+    font-family: var(--sans); font-size: 11px; color: var(--panel-navy-tenue);
+    font-variant-numeric: tabular-nums;
+}
+.inicio-atencion-rango-etiquetas b { color: var(--panel-navy-tinta); font-weight: 600; }
+
+/* EL BLOQUE INFORMATIVO — RONDA 8: deja de ser texto suelto bajo una línea divisoria y
+   pasa a ser una caja chica -fondo apenas distinto del navy de la tarjeta, borde suave,
+   radio grande-, con un ícono "i" de información (tipográfico, no SVG: no hacía falta
+   más que eso). SIGUE SIENDO EL MISMO TEXTO -`lectura.ParaSonia` + `lectura.Accion`, sin
+   agregar ninguna oración nueva-, sólo mejor encuadrado. Sin borde ámbar grande: esto no
+   es una alerta. */
+.inicio-atencion-lectura {
+    display: flex; align-items: flex-start; gap: 9px;
+    margin: 12px 0 0; padding: 10px 11px;
+    background: rgba(125, 180, 224, .08);
+    border: 1px solid var(--panel-navy-borde);
+    border-radius: 12px;
+    font-size: 13px; line-height: 1.45; color: var(--panel-navy-tenue);
+}
+.inicio-atencion-lectura-icono {
+    flex: none; width: 17px; height: 17px; margin-top: 1px; border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    background: rgba(125, 180, 224, .2); color: var(--celeste);
+    font-family: var(--serif); font-size: 11px; font-weight: 700; font-style: italic;
+}
+.inicio-atencion-lectura-texto { flex: 1 1 auto; min-width: 0; margin: 0; }
+.inicio-atencion-lectura-texto span { display: block; }
+.inicio-atencion-lectura-accion { margin-top: 3px; color: var(--panel-navy-tinta); font-weight: 600; }
+
+/* LOS BOTONES EN UNA SOLA FILA — RONDA 8: `flex-wrap` pasa de wrap a nowrap a propósito
+   -se pidió explícitamente que nunca bajen a dos filas en 390px-, con el primario
+   ocupando ~70% (flex-grow 7) y el secundario ~30% (flex-grow 3) del mismo ancho
+   disponible. Padding y tamaño de fuente bajan un poco (13.5px/10px) SOLO acá adentro
+   -`.boton`/`.boton--contorno` a secas, en el resto de la app, no cambian-, lo mínimo
+   para que "Entender este resultado →" entre en una línea a 390px. */
+.inicio-atencion-acciones { display: flex; flex-wrap: nowrap; gap: 8px; margin-top: 14px; }
+.inicio-atencion-acciones .boton,
+.inicio-atencion-acciones .boton--contorno {
+    min-width: 0; text-align: center;
+    padding: 10px 8px; font-size: 13.5px; white-space: nowrap;
+}
+.inicio-atencion-acciones .boton { flex: 7 1 0%; }
+/* El contorno de `.boton--contorno` está pensado para navy -tinta clara sobre línea
+   traslúcida clara-, y ahora la tarjeta volvió a ser navy: no hace falta invertirlo. */
+.inicio-atencion-acciones .boton--contorno {
+    flex: 3 1 0%;
+    color: var(--panel-navy-tinta); border-color: var(--panel-navy-borde);
+}
+.inicio-atencion-acciones .boton--contorno:hover:not(:disabled) { background: rgba(125, 180, 224, .1); }
+
+/* Las formas que todavía viven acá adentro (trayectoria / presencia; la de progreso ya
+   no se usa en esta tarjeta, ver más arriba) vuelven a leerse sobre navy -el mismo
+   truco de siempre: el "hueco" de cada punto usa el color de fondo real para separarse
+   de lo que hay detrás-, ahora contra `--panel-navy` en vez de `--fondo`. */
+.inicio-atencion-tarjeta .forma--trayectoria .punto--final,
+.inicio-atencion-tarjeta .forma--trayectoria .punto--atencion,
+.inicio-atencion-tarjeta .forma--presencia .prueba,
+.inicio-atencion-tarjeta .forma--presencia .prueba--presente {
+    stroke: var(--panel-navy);
+}
+.inicio-atencion-tarjeta .forma--trayectoria .linea-techo,
+.inicio-atencion-tarjeta .forma--banda .fuera,
+.inicio-atencion-tarjeta .forma--presencia .hilo {
+    stroke: var(--panel-navy-borde);
+    fill: var(--panel-navy-borde);
+}
+.inicio-atencion-tarjeta .forma--presencia .prueba { fill: var(--panel-navy); }
+.inicio-atencion-tarjeta .forma-pie,
+.inicio-atencion-tarjeta .forma-nota { color: var(--panel-navy-tenue); }
+.inicio-atencion-tarjeta .forma-nota b { color: var(--panel-navy-tinta); }
+
+/* ------------------------------------------------------------- §3 el resto viene tranquilo
+
+   UNA LISTA, no cuatro tarjetas idénticas repitiendo el mismo marco de `.serie`. Lo que
+   está bien no necesita el mismo peso visual que lo que pide algo -si lo tuviera, "lo que
+   merece atención" dejaría de destacar-, así que acá el punto aqua y el nombre alcanzan;
+   el detalle del dominio se pide, no se sirve de entrada. */
+
+.inicio-tranquilo { margin: 0 0 22px; }
+.inicio-tranquilo-rotulo {
+    font-family: var(--sans); font-weight: 700; font-size: 11px; letter-spacing: .05em;
+    text-transform: uppercase; color: var(--tenue-2); margin: 0 0 10px;
+}
+.inicio-tranquilo-lista { list-style: none; margin: 0; padding: 0; }
+.inicio-tranquilo-lista li { border-bottom: 1px solid var(--linea); }
+.inicio-tranquilo-lista li:last-child { border-bottom: 0; }
+.inicio-tranquilo-item {
+    display: flex; align-items: center; gap: 10px; width: 100%;
+    font: inherit; text-align: left; background: none; border: 0; cursor: pointer;
+    padding: 10px 2px; color: inherit;
+}
+.inicio-tranquilo-item:focus-visible { outline: 2px solid var(--celeste); outline-offset: 2px; }
+.inicio-tranquilo-item:hover .inicio-tranquilo-nombre { color: var(--celeste); }
+.inicio-tranquilo-punto { width: 7px; height: 7px; border-radius: 50%; background: var(--bien); flex: none; }
+.inicio-tranquilo-nombre { flex: 1; font-size: 14.5px; color: var(--tinta); transition: color .12s ease; }
+.inicio-tranquilo-estado { font-size: 12.5px; color: var(--tenue); text-transform: lowercase; }
+.inicio-tranquilo-detalle { margin: 0 0 10px 17px; font-size: 13px; color: var(--tenue); }
+
+/* ------------------------------------------------------------- §5 qué cambió
+
+   Una fila por analito, con la MISMA flecha que ya decidió el dominio -nunca una calculada
+   acá contra el número crudo-, así que la hemoglobina que va de 13.1 a 13.4 muestra "→" y
+   no "↑": el dominio ya dijo que eso es estable. */
+
+.inicio-cambios { margin: 0 0 4px; }
+.inicio-cambio-fila { display: flex; align-items: baseline; flex-wrap: wrap; gap: 4px 10px; padding: 7px 0; margin: 0; }
+.inicio-cambio-flecha { font-family: var(--sans); font-weight: 600; color: var(--celeste); font-size: 15px; width: 1em; text-align: center; flex: none; }
+.inicio-cambio-nombre { flex: 0 0 auto; min-width: 9rem; font-size: 14px; color: var(--tinta); }
+.inicio-cambio-cifras { font-family: var(--sans); font-size: 13.5px; color: var(--tenue); font-variant-numeric: tabular-nums; }
+.inicio-cambio-nota { font-size: 12.5px; color: var(--tenue-2); }
+
+/* ------------------------------------------------------------- §6 todavía sin tendencia
+
+   NUNCA "INDETERMINADA" como protagonista: el rótulo de sección ya dice, en lenguaje
+   llano, por qué no hay flecha todavía, y la explicación de cada fila es la misma lectura
+   del dominio -no una frase nueva inventada para este caso-. */
+
+.inicio-sintendencia { margin: 0 0 4px; }
+.inicio-sintendencia-rotulo {
+    font-family: var(--sans); font-weight: 700; font-size: 11px; letter-spacing: .05em;
+    text-transform: uppercase; color: var(--tenue-2); margin: 0 0 10px;
+}
+.inicio-sintendencia-item { padding: 10px 0; border-bottom: 1px solid var(--linea); }
+.inicio-sintendencia-item:last-child { border-bottom: 0; }
+.inicio-sintendencia-valor { margin: 0; font-size: 14.5px; color: var(--tinta); }
+.inicio-sintendencia-texto { margin: 4px 0 0; font-size: 13px; color: var(--tenue); }
+
+/* ------------------------------------------------------------- §7 historial, en compacto
+
+   Solo lo reciente por defecto: el detalle de cada analito ya se contó arriba, así que acá
+   alcanza con cuándo, cuántos y cómo vino en general. "Ver historial completo" despliega
+   la misma lista entera en vez de llevar a una ruta que esta ronda no crea. */
+
+.inicio-historial-mini { list-style: none; margin: 4px 0 0; padding: 0; }
+.inicio-historial-item {
+    display: flex; align-items: center; gap: 12px; flex-wrap: wrap;
+    padding: 11px 0; border-bottom: 1px solid var(--linea); font-size: 14px;
+}
+.inicio-historial-item:last-child { border-bottom: 0; }
+.inicio-historial-fecha { font-family: var(--sans); font-size: 13px; color: var(--tinta); flex: 0 0 auto; font-variant-numeric: tabular-nums; }
+.inicio-historial-cantidad { color: var(--tenue); font-size: 13px; flex: 1; }
+.inicio-historial-estado {
+    font-family: var(--sans); font-weight: 600; font-size: 11px; letter-spacing: .04em; text-transform: uppercase;
+    padding: 3px 9px; border-radius: 2px; border: 1px solid transparent; white-space: nowrap;
+}
+.inicio-historial-estado--bien     { background: var(--bien-suave);  color: var(--bien);  border-color: var(--bien-borde); }
+.inicio-historial-estado--atencion { background: var(--ambar-suave); color: var(--ambar); border-color: var(--ambar-borde); }
+.inicio-historial-estado--problema { background: var(--rojo-suave);  color: var(--rojo);  border-color: var(--rojo-borde); }
+
+/* ------------------------------------------------------------- el candado, reubicado
+
+   La misma línea de privacidad que vivía en la portada vieja, junto al candado del
+   teléfono del landing. Clase nueva y no `.portada-candado` porque ya no vive adentro de
+   `.portada`: ahora cierra la página entera, después de la última nota de pie. */
+.inicio-candado {
+    display: flex; align-items: flex-start; gap: 8px;
+    margin-top: 28px;
+    color: var(--tenue-2);
+}
+.inicio-candado svg { flex: 0 0 auto; margin-top: 2px; stroke: var(--celeste); }
+
+/* ------------------------------------------------------------------ angosto — Inicio */
+
+@media (max-width: 640px) {
+    /* `.inicio-hero` SÍ SE TOCA ACÁ: el sangrado (`margin`) es un negativo exacto del
+       padding de `.hoja` -la técnica de la que habla el comentario de §1-, y `.hoja` YA
+       CAMBIA SU padding en este mismo breakpoint (línea ~628, compartido con
+       Tendencia.razor, de antes de esta ronda): pasa de `44px 26px 80px` a
+       `30px 18px 60px`. Sin este override el margen del hero -pensado para el padding de
+       escritorio- se queda desalineado del padding real de `.hoja` en angosto: el hero se
+       corre ~14px por encima del viewport y sobresale ~8px de cada lado. Se detectó
+       renderizando el archivo real con Playwright a 390px, no en una maqueta aparte.
+       El padding PROPIO del hero también baja a 18px de lado -no 26px-, para que el
+       titular quede alineado con el resto del contenido de la página en este ancho (con
+       el `.hoja` de abajo en 18px). RONDA 6: ya NO se aprieta el espaciado entre zonas acá
+       -esos overrides (kicker/chequeo/titular/secundario con menos margen) existían para
+       entrar en los 300-320px con la foto grande de la ronda 5 adentro; sin ella, y con la
+       instrucción explícita de "no quiero nuevamente un hero comprimido", el hero angosto
+       usa el mismo espaciado que ya trae cada zona por su cuenta. */
+    .inicio-hero { margin: -30px -18px 30px; padding: 24px 18px 18px; }
+    .inicio-atencion-tarjeta { padding: 16px 16px 16px 20px; }
+    .inicio-atencion-cabeza { flex-direction: column; gap: 6px; }
+    .inicio-atencion-valor { text-align: left; }
+    .inicio-atencion-conteo span { white-space: normal; }
+    .inicio-cambio-nombre { min-width: 0; flex: 1 1 auto; }
+    .inicio-historial-cantidad { flex: 0 0 100%; order: 3; }
 }
