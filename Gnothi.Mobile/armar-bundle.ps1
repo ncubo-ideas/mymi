@@ -1,4 +1,4 @@
-# ARMA EL BUNDLE DE UNA INSTITUCION: el zip que su pagina publica y que Gnothi baja al dar
+﻿# ARMA EL BUNDLE DE UNA INSTITUCION: el zip que su pagina publica y que Gnothi baja al dar
 # de alta el modulo (especificacion 11 §3, 13 §7).
 #
 # El bundle son DOS cosas y nada mas:
@@ -14,6 +14,16 @@
 # una prueba local esa URL es un tunel de `adb reverse` cuyo puerto lo elige quien corre la
 # prueba. Un puerto quemado aca daria un modulo que instala bien y despues no trae nada, sin
 # que nada diga por que.
+#
+# LA INSTITUCION SE NOMBRA COMO SE NOMBRA EN SU MARCA -la misma que su manifest.webmanifest-,
+# porque desde el 2026-09-08 ese nombre es lo GRANDE de la tarjeta en Gnothi, y su icono y su
+# color salen del webmanifest del mismo bundle (Gnothi.Mobile/Marca.cs). Nada de sufijos
+# «(mock del POC)»: eso es prosa de repo, no de tarjeta. Este archivo va con BOM a proposito:
+# PowerShell 5.1 lee un .ps1 sin BOM como ANSI y «Clínico» llegaria roto al manifiesto.
+#
+# EL ESLOGAN es una linea corta de la institucion, en su voz, que Gnothi pone debajo de la
+# marca en la tarjeta en vez del titulo del modulo. Los de aca son PROPUESTA (2026-09-08),
+# sacados de la pagina de cada una; la especificacion de marca de Geaninna manda.
 #
 # LAS TOOLS DECLARADAS TIENEN QUE COINCIDIR con lo que el modulo contesta de verdad: Gnothi
 # compara las dos listas al dar de alta (`comprobacion de <modulo>: matches`). Por eso salen
@@ -38,7 +48,8 @@ $catalogo = @{
     'examenes' = @{
         Proyecto    = "$raiz\Examenes\App\Examenes.Wasm\Examenes.Wasm.csproj"
         Titulo      = 'Mis examenes'
-        Institucion = 'Laboratorio Clinico Delfos (mock del POC)'
+        Institucion = 'Laboratorio Clínico Delfos'
+        Slogan      = 'Tu salud tiene historia'
         Recurso     = 'expediente'
         Id          = '1'
         Puerto      = 8095
@@ -52,7 +63,8 @@ $catalogo = @{
     'compras' = @{
         Proyecto    = "$raiz\Compras\App\Compras.Wasm\Compras.Wasm.csproj"
         Titulo      = 'Mis compras'
-        Institucion = 'Supermercado La Guaria (mock del POC)'
+        Institucion = 'Supermercado La Guaria'
+        Slogan      = 'La Guaria y vos'
         Recurso     = 'cliente'
         Id          = '1'
         Puerto      = 8101
@@ -66,7 +78,8 @@ $catalogo = @{
     'cargas' = @{
         Proyecto    = "$raiz\Cargas\App\Cargas.Wasm\Cargas.Wasm.csproj"
         Titulo      = 'Mis cargas'
-        Institucion = 'Estacion de servicio (mock del POC)'
+        Institucion = 'Estaciones Faro'
+        Slogan      = 'Sabé cuánto rinde tu carro'
         Recurso     = 'cargas'
         Id          = '1'
         Puerto      = 8111
@@ -80,7 +93,8 @@ $catalogo = @{
     'dealership' = @{
         Proyecto    = "$raiz\DealershipCar\App\DealershipCar.Wasm\DealershipCar.Wasm.csproj"
         Titulo      = 'My maintenance'
-        Institucion = 'DealershipCar (POC mock)'
+        Institucion = 'Sotavento Motors'
+        Slogan      = 'Your car, always ready'
         Recurso     = 'vehicle'
         Id          = '1HGCM82633A004352'
         Puerto      = 8092
@@ -134,6 +148,7 @@ $manifiesto = [ordered]@{
     module        = $Modulo
     title         = $m.Titulo
     institution   = $m.Institucion
+    slogan        = $m.Slogan
     substrate     = @{ range = '>=3.0.0 <4.0.0' }
     '//publicador'= 'DONDE ESTA SU NARRATIVA. Gnothi lo registra al dar de alta el modulo y a partir de ahi el endpoint es fijo: el modulo no lo elige ni lo puede cambiar.'
     publicador    = [ordered]@{ eventos = $Publicador; recurso = $Recurso; id = $Id }

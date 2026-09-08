@@ -20,6 +20,10 @@ public sealed record Manifest
 	[JsonPropertyName("module")] public string Module { get; init; } = "";
 	[JsonPropertyName("title")] public string Title { get; init; } = "";
 	[JsonPropertyName("institution")] public string Institution { get; init; } = "";
+	// EL ESLOGAN, opcional (2026-09-08). Una linea corta de la institucion, en su voz, que la
+	// tarjeta de Gnothi muestra debajo de su marca en vez del titulo del modulo: «La Guaria y
+	// vos» dice mas que «Mis compras». Vacio es legitimo: la tarjeta vuelve al titulo.
+	[JsonPropertyName("slogan")] public string Slogan { get; init; } = "";
 	[JsonPropertyName("substrate")] public Substrate? Substrate { get; init; }
 	[JsonPropertyName("capabilities")] public Capabilities? Capabilities { get; init; }
 

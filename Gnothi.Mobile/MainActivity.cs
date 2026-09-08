@@ -81,9 +81,10 @@ public class MainActivity : Activity
 	private const string ModelUrl = "https://api.groq.com/openai/v1";
 	private const string ModelName = "openai/gpt-oss-120b";
 
-	// The icon per business. A small explicit map: a module that is not here falls to the
-	// generic box. It does NOT come from the manifest on purpose -- the icon is the Host's
-	// business, not the institution's.
+	// El glifo por negocio, DE RESPALDO. Un mapa chico y explicito: un modulo que no este aca
+	// cae a la caja generica. Desde el 2026-09-08 la tarjeta pinta la MARCA de la institucion
+	// -su icono y su color, leidos del bundle que ella publico (Marca.cs)- y este mapa solo
+	// se usa cuando un modulo no la trae.
 	private static string Icon(string module) => module switch
 	{
 		"examenes" => "\U0001FA7A",   // stethoscope
@@ -498,6 +499,7 @@ public class MainActivity : Activity
 		modulo = p.Manifiesto.Module,
 		titulo = p.Manifiesto.Title,
 		institucion = p.Manifiesto.Institution,
+		marca = Marca.Leer(p.Carpeta),
 		servido = p.Servido,
 		publicador = p.Publicador,
 		journal = p.DondeVaElJournal,
@@ -598,7 +600,9 @@ public class MainActivity : Activity
 				["name"] = m.Name,
 				["title"] = m.Manifest.Title,
 				["institution"] = m.Manifest.Institution,
+				["slogan"] = m.Manifest.Slogan,
 				["icon"] = Icon(m.Name),
+				["brand"] = Marca.Leer(m.Directory),
 				["enabled"] = m.Installation.Enabled,
 				["journalBytes"] = bytes,
 				["journalFiles"] = files,
