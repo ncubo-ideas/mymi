@@ -87,3 +87,9 @@ Spikes/Lab.Siri/build/
 # 868c2d3 y 28e214a como la evidencia del laboratorio, 12 KB que se instalan sin recompilar.
 Spikes/Lab.Agente/out/
 Spikes/Lab.Sonda/out/
+
+# El banco de pruebas del Host en ESTA maquina: un root de modulos paralelo a Modulos/, con
+# installation.json apuntando a los dll construidos aca y a los journals de la persona. Los de
+# Modulos/ estan versionados y traen las rutas de la maquina donde se armo el POC, asi que
+# en cualquier otra publican el catalogo y fallan al llamar. Lo arma Modulos.local/armar.sh.
+Modulos.local/
