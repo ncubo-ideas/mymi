@@ -17,7 +17,7 @@ Etiquetas como en `Documentacion/Movil/00-INDICE.md`: **[MEDIDO]**, **[RAZONADO]
 |---|---|---|
 | **P0** contexto seguro | ✅ **[MEDIDO]** | `gnothi-mod://` **es** contexto seguro. El diseño no cambia |
 | **P1a** el módulo se hospeda | ✅ **[MEDIDO]** | Arranca, sirve, hidrata y contesta. Tras dos bugs, corregidos |
-| **P1b** el módulo se **ve** | ✅ **[MEDIDO]** | Implementado como sheet en `34cfb42`. Antes el botón no hacía nada (§2b) |
+| **P1b** el módulo se **ve** | ✅ **[MEDIDO]** | A pantalla entera, con una franja de Gnothi. Antes el botón no hacía nada (§2b) |
 | **P4** journal y Keychain | ✅ **[MEDIDO]** | Después de un tercer bug, corregido |
 | **P5** contención | ✅ **[MEDIDO]** | Con una corrección al guion: la directiva no es la que dice |
 | **P3** el puente | ✅ **[MEDIDO]** | La consola del módulo vuelve por el puente |
@@ -80,7 +80,7 @@ Esa línea cierra **P1a** y P3 juntas: **la consola del módulo vuelve por el pu
 El guion pide *«tocá su tarjeta y después «Abrir…». Qué tenés que ver: la UI de la institución a
 pantalla completa»*. **Eso no ocurría en iOS**, y por eso vale contarlo separado de P1a: lo que
 P1a prueba es que el módulo **se hospeda y contesta**, no que la persona pueda **verlo**. Ya está
-implementado —`34cfb42`— y medido; queda el diagnóstico porque explica por qué faltaba.
+implementado y medido; queda el diagnóstico porque explica por qué faltaba.
 
 La causa está escrita en el propio código, en `Gnothi.iOS/ViewController.cs:242`:
 
@@ -104,22 +104,43 @@ En Android sí existe, y es corto — `MainActivity.cs:421` intercepta la op ant
 y `AbrirModulo` hace `anfitrion.Open(m, …)` y después `RunOnUiThread(() => Mostrar(vivo))`.
 
 **Eso es lo que se implementó**, con los mismos tres nombres que Android. La vuelta es la única
-pieza que Android no necesita —allá la da el botón atrás del sistema— y en iOS hubo que darla:
-la primera versión puso un `‹ Gnothi` flotante y **le tapaba el logo y la primera letra a
-«Supermercado La Guaria»**, porque un módulo full-bleed no deja lugar para cromo ajeno ni arriba
-ni abajo. Geaninna decidió **sheet**: le entrega el área entera a la institución y la salida es
-el grabber, que es el gesto que la persona ya sabe.
+pieza que Android no necesita —allá la da el botón atrás del sistema— y en iOS hubo que darla.
+Costó **tres formas**, y las dos descartadas explican la que quedó:
+
+1. **Un `‹ Gnothi` flotante.** Descartado medido: **le tapaba el logo y la primera letra a
+   «Supermercado La Guaria»**. Un módulo full-bleed no deja lugar para cromo ajeno, ni arriba ni
+   abajo, donde está su nav.
+2. **Un sheet con grabber.** Descartado por criterio, no por defecto: el sheet *insinúa* que
+   estás dentro de Gnothi —la app queda asomando detrás— y una franja lo *dice*. Y un botón con
+   etiqueta le gana a un gesto: el grabber es estándar pero hay que descubrirlo, y «Listo» no.
+3. **Pantalla entera con una franja de Gnothi arriba** — el patrón del in-app browser, que es lo
+   que quedó. Decisión de Geaninna.
+
+La franja dice *«<institución> · adentro de Gnothi»* con un **Listo** a la derecha, y el módulo
+arranca **debajo** por constraint, así que la superposición de la forma 1 es imposible por
+construcción. Lo que **no** se copia del patrón es la URL: acá el contenido lo sirve Gnothi desde
+su propio contenedor y el origen es `gnothi-mod://<módulo>`, que no le dice nada a la persona —y
+mostrarlo sería peor, porque parece una dirección y no lo es.
 
 **[MEDIDO]** en el simulador: `compras` abre con sus datos reales —87 compras, ₡3 222 336, y el
 aviso «Se está guardando en Gnothi» que solo sale hospedado—, el header de la institución queda
-**entero y sin tapar**, el gesto cierra dejando `cerrar: 'compras' fuera de pantalla`, y volver a
-abrirlo es instantáneo porque `Open` lo devuelve vivo.
+**entero y sin tapar** debajo de la franja, `Listo` deja `cerrar: 'compras' fuera de pantalla`, y
+volver a abrirlo es instantáneo porque `Open` lo devuelve vivo.
 
-> **La trampa que el sheet obliga a resolver y un botón no:** el descarte por gesto no pasa por
-> `Cerrar()`. Si la limpieza viviera solo ahí, la persona arrastra el sheet hacia abajo y el
-> módulo queda `Visible` para siempre — y `WebModuleHost.Evict` se niega a desalojar uno que se
-> está mirando, así que Gnothi se quedaría con su motor de 20 MB en memoria sin nadie mirándolo.
-> De ahí un `Soltar()` que llaman los dos caminos, más un `UIAdaptivePresentationControllerDelegate`.
+> **La trampa que la pantalla obliga a resolver:** cerrar tiene que marcar el módulo como no
+> visible. Si no, queda `Visible` para siempre — y `WebModuleHost.Evict` se niega a desalojar uno
+> que se está mirando, así que Gnothi se quedaría con su motor de 20 MB en memoria sin nadie
+> mirándolo. De ahí un `Soltar()` al que llaman todos los caminos de cierre, más un
+> `UIAdaptivePresentationControllerDelegate` que lo dispara si el descarte no pasó por `Cerrar()`.
+> Con la versión de sheet eso era obligatorio, porque el gesto no pasaba por ahí; se dejó puesto
+> igual, para que agregar un cierre nuevo no reintroduzca la fuga.
+
+> **[PENDIENTE DE GEANINNA]** La franja es la mínima a propósito, para que ella la ajuste sobre
+> algo que ya corre; el alto está en `FranjaAlto`. Lo que hay que cuidar: el módulo **ya trae su
+> propio header y su propia nav**, así que son dos encabezados apilados y si la franja engorda, la
+> app de la institución parece encajonada. Y el nombre aparece dos veces con dos redacciones —la
+> que Gnothi tiene registrada, «Mis compras», y la que la institución usa para sí misma,
+> «Supermercado La Guaria»—, que no es un error pero es algo que ella va a querer resolver.
 
 > **Y la lección de producto:** `ui.html` es el MISMO archivo en las dos plataformas, así que iOS
 > dibujaba el botón igual sin tener con qué responderlo. Quien lo probaba concluía que estaba
