@@ -8,7 +8,7 @@ versiones de la guía.
 | Versión | Tag | Fecha | Qué cambió en la guía | Qué cambió en el dominio |
 |---|---|---|---|---|
 | **v1** | `gimnasio-v1` = `8ada9a0` | 2026-08-28 → 09-01 | La primera corrida del punto de partida con un peer del equipo. Sin papel: sólo la entrevista | 19 clases, 46 comprobaciones, el ciclo con journal. **Sin membresía** — huecos 9 y 12 |
-| **v2** | *(pendiente de firmas y tag)* | 2026-09-07 | La regla del descarte del bloque 1, corregida: *descartado como funcionalidad no es descartado del modelo*. **Misma entrevista, sin papel** — mide el método, no el artefacto | **Construido y verificado el mismo día**: la membresía entra —la bandera *En mora* / *Al día*, pagos, cobros, el período en mora derivado— y el incumplimiento la descuenta. 19 → 25 clases; 46 → 69 comprobaciones; el ciclo con journal dos veces sin que los números se muevan |
+| **v2** | `gimnasio-v2` = `37ba8eb` | 2026-09-07 | La regla del descarte del bloque 1, corregida: *descartado como funcionalidad no es descartado del modelo*. **Misma entrevista, sin papel** — mide el método, no el artefacto | **Construido y verificado el mismo día**: la membresía entra —la bandera *En mora* / *Al día*, pagos, cobros, el período en mora derivado— y el incumplimiento la descuenta. 19 → 25 clases; 46 → 69 comprobaciones; el ciclo con journal dos veces sin que los números se muevan |
 | **v3** | *(pendiente)* | — | Las cuatro pasadas con un **artefacto real**. La fuente está por definir: la app del teléfono de Jorge es genérica y no sirve | — |
 
 **No se compara v1 con v3 directo:** v2 mide el método con el mismo insumo; v3 mide lo que el papel
