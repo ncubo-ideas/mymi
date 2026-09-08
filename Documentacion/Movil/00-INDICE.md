@@ -15,6 +15,13 @@ igual. Si sólo vas a leer una: **`03`**, que es el cuadro de qué anda hoy y en
 | `04-por-donde-nos-devolvimos.md` | ¿Por dónde nos metimos y por qué salimos? Con las trampas |
 | `05-lo-medido.md` | Los números, con fecha y con aparato |
 | `06-lo-que-sigue-abierto.md` | ¿Qué falta decidir, y de quién es cada decisión? |
+| `07-compartir-el-sustrato-medido.md` | **Para Álvaro.** ¿Se puede compartir el motor entre módulos? Medido |
+| `08-hilos-y-procesos-del-sistema.md` | **Para Álvaro.** ¿Y si se estira con hilos o procesos del SO? Con el diagrama |
+
+Los dos últimos son **un par**: el `07` mide, el `08` contesta la pregunta de Álvaro sobre hilos y
+procesos y trae el diagrama de las seis formas de aislar un módulo. Contestan el punto 7 de la
+lista de pendientes de Jonathan — *«el sustrato compartido: cada módulo trae su propio motor»* —
+y el `08` lo hace **frase por frase**, incluida la afirmación de ese punto que no se sostiene.
 
 ---
 
