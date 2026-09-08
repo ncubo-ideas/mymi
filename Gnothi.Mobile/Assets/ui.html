@@ -526,9 +526,10 @@ const gn = {
         + ico(m)
         + '<div><b>' + esc(quien(m)) + '</b>'
         + '<small>' + esc(que(m)) + '</small></div>'
-        + (m.enabled
-            ? '<span class="chip">' + DB + ' Diario de eventos</span>'
-            : '<span class="chip no">apagado por vos</span>')
+        // Encendido, la tarjeta es solo la marca: «Diario de eventos» era un tecnicismo del Host
+        // repetido en todas (quitado 2026-09-08). Apagado sí se dice, porque explica por qué el
+        // asistente no lo ve.
+        + (m.enabled ? '' : '<span class="chip no">apagado por vos</span>')
         + '</div>';
     }).join('')
     + '<div class="mod add" onclick="gn.sheet(true)">'
