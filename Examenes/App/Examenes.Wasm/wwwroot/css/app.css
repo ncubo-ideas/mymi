@@ -1454,47 +1454,178 @@ code { font-family: var(--mono); font-size: .9em; color: var(--ambar); }
 
 /* ------------------------------------------------------------- §5 qué cambió
 
-   Una fila por analito, con la MISMA flecha que ya decidió el dominio -nunca una calculada
-   acá contra el número crudo-, así que la hemoglobina que va de 13.1 a 13.4 muestra "→" y
-   no "↑": el dominio ya dijo que eso es estable. */
+   RONDA 10: una tarjeta por analito, no una fila de texto. El acento a la izquierda y
+   el color del estado/gráfico salen del MISMO semáforo que ya usa toda la pantalla
+   (--bien/--ambar/--rojo == estable/vigilar/urgente vía Insignia()), así que un
+   colesterol que pide seguimiento se pinta ámbar -nunca rojo solo porque subió- y una
+   hemoglobina estable se pinta verde. */
 
-.inicio-cambios { margin: 0 0 4px; }
-.inicio-cambio-fila { display: flex; align-items: baseline; flex-wrap: wrap; gap: 4px 10px; padding: 7px 0; margin: 0; }
-.inicio-cambio-flecha { font-family: var(--sans); font-weight: 600; color: var(--celeste); font-size: 15px; width: 1em; text-align: center; flex: none; }
-.inicio-cambio-nombre { flex: 0 0 auto; min-width: 9rem; font-size: 14px; color: var(--tinta); }
-.inicio-cambio-cifras { font-family: var(--sans); font-size: 13.5px; color: var(--tenue); font-variant-numeric: tabular-nums; }
-.inicio-cambio-nota { font-size: 12.5px; color: var(--tenue-2); }
+.inicio-cambios { margin: 0 0 22px; }
+.inicio-cambios-intro { margin: 0 0 14px; font-size: 13.5px; color: var(--tenue); }
 
-/* ------------------------------------------------------------- §6 todavía sin tendencia
+.inicio-cambio-tarjeta {
+    position: relative; display: block; width: 100%; text-align: left;
+    font: inherit; color: var(--panel-navy-tinta); cursor: pointer;
+    background: linear-gradient(165deg, var(--panel-navy) 0%, var(--panel-navy-honda) 100%);
+    border: 1px solid var(--panel-navy-borde);
+    border-radius: 16px;
+    padding: 14px 16px 14px 20px;
+    margin-bottom: 12px;
+    box-shadow: 0 12px 26px -18px rgba(3, 10, 22, .6), 0 2px 8px rgba(3, 10, 22, .28);
+    overflow: hidden;
+    transition: border-color .18s ease, transform .18s ease;
+}
+.inicio-cambio-tarjeta:last-child { margin-bottom: 0; }
+.inicio-cambio-tarjeta:hover { border-color: var(--celeste); transform: translateY(-1px); }
+.inicio-cambio-tarjeta:focus-visible { outline: 2px solid var(--celeste); outline-offset: 2px; }
+.inicio-cambio-tarjeta::before {
+    content: ""; position: absolute; left: 0; top: 16px; bottom: 16px; width: 3px;
+    border-radius: 0 3px 3px 0; opacity: .85;
+}
+.inicio-cambio-tarjeta--atencion::before  { background: var(--ambar); }
+.inicio-cambio-tarjeta--estable::before   { background: var(--bien); }
+.inicio-cambio-tarjeta--problema::before  { background: var(--rojo); }
+.inicio-cambio-tarjeta--repetir::before,
+.inicio-cambio-tarjeta--sinserie::before  { background: var(--tenue-2); }
 
-   NUNCA "INDETERMINADA" como protagonista: el rótulo de sección ya dice, en lenguaje
-   llano, por qué no hay flecha todavía, y la explicación de cada fila es la misma lectura
-   del dominio -no una frase nueva inventada para este caso-. */
+.inicio-cambio-cabeza { display: flex; align-items: baseline; justify-content: space-between; gap: 10px; flex-wrap: wrap; }
+.inicio-cambio-nombre { font-size: 15px; font-weight: 600; color: var(--panel-navy-tinta); }
+.inicio-cambio-estado {
+    display: inline-flex; align-items: center; gap: 4px; width: fit-content;
+    font-family: var(--sans); font-size: 11.5px; font-weight: 700;
+    padding: 2px 8px 2px 6px; border-radius: 999px;
+}
+.inicio-cambio-estado--atencion  { color: var(--ambar); background: var(--ambar-suave); }
+.inicio-cambio-estado--estable   { color: var(--bien);  background: var(--bien-suave); }
+.inicio-cambio-estado--problema  { color: var(--rojo);  background: var(--rojo-suave); }
+.inicio-cambio-estado--repetir,
+.inicio-cambio-estado--sinserie  { color: var(--tenue); background: var(--suave); }
 
-.inicio-sintendencia { margin: 0 0 4px; }
+.inicio-cambio-cifras {
+    margin-top: 3px; font-family: var(--sans); font-size: 13.5px; color: var(--panel-navy-tenue);
+    font-variant-numeric: tabular-nums;
+}
+.inicio-cambio-cifras b { font-size: 19px; font-weight: 700; color: var(--panel-navy-tinta); }
+.inicio-cambio-cifras span { font-size: 12px; }
+
+/* EL MICRO-GRAFICO: chico a propósito -sin ejes, sin grilla-, para que la dirección se
+   lea antes que se lea ningún número. viewBox fijo (ver AnchoDelMicroChart/AltoDel-
+   MicroChart/MargenDelMicroChart en el code-behind); el ancho real lo da el contenedor. */
+.inicio-cambio-grafico { display: block; width: 100%; height: auto; margin-top: 4px; }
+.inicio-cambio-grafico polyline { stroke: var(--tenue-2); }
+.inicio-cambio-grafico circle   { fill: var(--tenue-2); }
+.inicio-cambio-tarjeta--atencion .inicio-cambio-grafico polyline,
+.inicio-cambio-tarjeta--atencion .inicio-cambio-grafico circle { stroke: var(--ambar); fill: var(--ambar); }
+.inicio-cambio-tarjeta--estable .inicio-cambio-grafico polyline,
+.inicio-cambio-tarjeta--estable .inicio-cambio-grafico circle { stroke: var(--bien); fill: var(--bien); }
+.inicio-cambio-tarjeta--problema .inicio-cambio-grafico polyline,
+.inicio-cambio-tarjeta--problema .inicio-cambio-grafico circle { stroke: var(--rojo); fill: var(--rojo); }
+.inicio-cambio-grafico-valor {
+    font-family: var(--sans); font-size: 9px; font-weight: 600; fill: var(--panel-navy-tinta);
+}
+.inicio-cambio-grafico-fecha {
+    font-family: var(--sans); font-size: 8px; fill: var(--panel-navy-tenue);
+}
+
+.inicio-cambio-conclusion {
+    margin: 8px 0 0; padding-top: 8px; border-top: 1px solid var(--panel-navy-borde);
+    font-size: 13px; line-height: 1.4; color: var(--panel-navy-tenue);
+}
+.inicio-cambio-conclusion b { color: var(--panel-navy-tinta); font-weight: 600; }
+
+/* ------------------------------------------------------------- §6 aún no hay tendencia
+
+   RONDA 11: vuelve a ser compacto y de bajo protagonismo -no debía competir con "qué
+   cambió" ni con "tu historial"-. Una tarjeta chica y horizontal por analito, mismo
+   lenguaje de tarjeta navy que el resto de la pantalla pero SIN acento de color lateral
+   (ni ámbar ni verde: acá no hay juicio de valor, solo falta de datos), con un ícono
+   puramente decorativo -el mismo path del pulso que ya usa "merece atención", reutilizado
+   tal cual, en tono neutro- que no representa ningún dato. */
+
+.inicio-sintendencia { margin: 0 0 22px; }
 .inicio-sintendencia-rotulo {
     font-family: var(--sans); font-weight: 700; font-size: 11px; letter-spacing: .05em;
     text-transform: uppercase; color: var(--tenue-2); margin: 0 0 10px;
 }
-.inicio-sintendencia-item { padding: 10px 0; border-bottom: 1px solid var(--linea); }
-.inicio-sintendencia-item:last-child { border-bottom: 0; }
-.inicio-sintendencia-valor { margin: 0; font-size: 14.5px; color: var(--tinta); }
-.inicio-sintendencia-texto { margin: 4px 0 0; font-size: 13px; color: var(--tenue); }
-
-/* ------------------------------------------------------------- §7 historial, en compacto
-
-   Solo lo reciente por defecto: el detalle de cada analito ya se contó arriba, así que acá
-   alcanza con cuándo, cuántos y cómo vino en general. "Ver historial completo" despliega
-   la misma lista entera en vez de llevar a una ruta que esta ronda no crea. */
-
-.inicio-historial-mini { list-style: none; margin: 4px 0 0; padding: 0; }
-.inicio-historial-item {
-    display: flex; align-items: center; gap: 12px; flex-wrap: wrap;
-    padding: 11px 0; border-bottom: 1px solid var(--linea); font-size: 14px;
+.inicio-sintendencia-tarjeta {
+    display: flex; align-items: flex-start; justify-content: space-between; gap: 14px;
+    background: linear-gradient(165deg, var(--panel-navy) 0%, var(--panel-navy-honda) 100%);
+    border: 1px solid var(--panel-navy-borde);
+    border-radius: 16px;
+    padding: 14px 16px;
+    margin-bottom: 10px;
+    box-shadow: 0 10px 22px -18px rgba(3, 10, 22, .55), 0 2px 8px rgba(3, 10, 22, .26);
 }
-.inicio-historial-item:last-child { border-bottom: 0; }
-.inicio-historial-fecha { font-family: var(--sans); font-size: 13px; color: var(--tinta); flex: 0 0 auto; font-variant-numeric: tabular-nums; }
-.inicio-historial-cantidad { color: var(--tenue); font-size: 13px; flex: 1; }
+.inicio-sintendencia-tarjeta:last-child { margin-bottom: 0; }
+.inicio-sintendencia-cuerpo { flex: 1 1 auto; min-width: 0; }
+.inicio-sintendencia-nombre { margin: 0 0 4px; font-size: 15px; font-weight: 600; color: var(--panel-navy-tinta); }
+.inicio-sintendencia-fila { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+.inicio-sintendencia-valor {
+    font-family: var(--sans); font-weight: 700; font-size: 20px; color: var(--panel-navy-tinta);
+    font-variant-numeric: tabular-nums;
+}
+.inicio-sintendencia-valor span { font-size: 12.5px; font-weight: 400; color: var(--panel-navy-tenue); margin-left: 2px; }
+.inicio-sintendencia-texto { margin: 8px 0 0; font-size: 13.5px; line-height: 1.4; color: var(--panel-navy-tenue); }
+.inicio-sintendencia-icono {
+    flex: none; width: 28px; height: 28px; border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    background: var(--panel-navy-borde); margin-top: 2px;
+}
+.inicio-sintendencia-icono svg { width: 14px; height: 14px; stroke: var(--panel-navy-tenue); }
+
+/* ------------------------------------------------------------- §7 tu historial
+
+   RONDA 11: pasa a vivir dentro de una tarjeta (mismo lenguaje navy que el resto) con una
+   línea de tiempo real -un punto por visita, conectados por una línea vertical, el más
+   reciente resaltado en celeste-. Los rangos de referencia se mudan al pie de esta misma
+   tarjeta como contexto del análisis, no como resultado. */
+
+.inicio-historial-tarjeta {
+    background: linear-gradient(165deg, var(--panel-navy) 0%, var(--panel-navy-honda) 100%);
+    border: 1px solid var(--panel-navy-borde);
+    border-radius: 18px;
+    padding: 18px 18px 16px;
+    box-shadow: 0 16px 32px -20px rgba(3, 10, 22, .65), 0 2px 10px rgba(3, 10, 22, .3);
+}
+.inicio-historial-encabezado {
+    display: flex; align-items: baseline; justify-content: space-between; flex-wrap: wrap;
+    gap: 4px 16px;
+}
+.inicio-historial-titulo { margin: 0; flex: 1 1 auto; min-width: 0; color: var(--celeste); }
+.inicio-historial-ver { flex: none; white-space: nowrap; }
+.inicio-historial-intro { margin: 6px 0 14px; font-size: 13.5px; color: var(--panel-navy-tenue); }
+
+.inicio-historial-timeline { list-style: none; margin: 0; padding: 0; }
+.inicio-historial-evento { position: relative; padding-left: 24px; margin-bottom: 10px; }
+.inicio-historial-evento:last-child { margin-bottom: 0; }
+.inicio-historial-nodo {
+    position: absolute; left: 0; top: 19px; width: 11px; height: 11px;
+    border-radius: 50%; background: var(--panel-navy); border: 2px solid var(--tenue-2);
+    z-index: 1;
+}
+.inicio-historial-evento--reciente .inicio-historial-nodo {
+    width: 14px; height: 14px; top: 17.5px; left: -1.5px;
+    border-color: var(--celeste); background: var(--celeste);
+    box-shadow: 0 0 0 4px rgba(125, 180, 224, .22);
+}
+.inicio-historial-evento:not(:last-child)::before {
+    content: ""; position: absolute; left: 5px; top: 32px; bottom: -10px; width: 2px;
+    background: var(--panel-navy-borde);
+}
+.inicio-historial-fila {
+    display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap;
+    gap: 6px 14px;
+    background: rgba(0, 0, 0, .12);
+    border: 1px solid var(--panel-navy-borde);
+    border-radius: 12px;
+    padding: 11px 13px;
+}
+.inicio-historial-datos { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.inicio-historial-fecha {
+    font-family: var(--sans); font-size: 15px; font-weight: 600; color: var(--panel-navy-tinta);
+    font-variant-numeric: tabular-nums;
+}
+.inicio-historial-cantidad { font-size: 13px; color: var(--panel-navy-tenue); }
 .inicio-historial-estado {
     font-family: var(--sans); font-weight: 600; font-size: 11px; letter-spacing: .04em; text-transform: uppercase;
     padding: 3px 9px; border-radius: 2px; border: 1px solid transparent; white-space: nowrap;
@@ -1503,17 +1634,41 @@ code { font-family: var(--mono); font-size: .9em; color: var(--ambar); }
 .inicio-historial-estado--atencion { background: var(--ambar-suave); color: var(--ambar); border-color: var(--ambar-borde); }
 .inicio-historial-estado--problema { background: var(--rojo-suave);  color: var(--rojo);  border-color: var(--rojo-borde); }
 
-/* ------------------------------------------------------------- el candado, reubicado
-
-   La misma línea de privacidad que vivía en la portada vieja, junto al candado del
-   teléfono del landing. Clase nueva y no `.portada-candado` porque ya no vive adentro de
-   `.portada`: ahora cierra la página entera, después de la última nota de pie. */
-.inicio-candado {
-    display: flex; align-items: flex-start; gap: 8px;
-    margin-top: 28px;
-    color: var(--tenue-2);
+/* Los rangos de referencia, al pie de la tarjeta de historial: mismo patrón de ícono en
+   círculo que ya usa "merece atención" (.inicio-atencion-icono), en tono neutro celeste. */
+.inicio-config-fila {
+    display: flex; align-items: flex-start; gap: 10px;
+    margin-top: 16px; padding-top: 14px; border-top: 1px solid var(--panel-navy-borde);
 }
-.inicio-candado svg { flex: 0 0 auto; margin-top: 2px; stroke: var(--celeste); }
+.inicio-config-icono {
+    flex: none; width: 26px; height: 26px; border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    background: var(--panel-navy-borde);
+}
+.inicio-config-icono svg { width: 13px; height: 13px; stroke: var(--celeste); }
+.inicio-config-texto { margin: 0; padding-top: 3px; font-size: 13.5px; line-height: 1.45; color: var(--panel-navy-tenue); }
+.inicio-config-texto strong { color: var(--panel-navy-tinta); font-weight: 600; }
+.inicio-config-texto .boton--enlace { font-size: 13.5px; }
+
+/* ------------------------------------------------------------- privacidad, en su propia nota
+
+   Mismo mensaje y mismo ícono de candado de siempre, ahora en una tarjeta muy sutil
+   (fondo tenue, borde discreto) para que se lea como nota de contexto y no compita con
+   "Tu historial" de arriba -jerarquía secundaria, tipografía legible, nada diminuto-. */
+.inicio-privacidad {
+    display: flex; align-items: flex-start; gap: 10px;
+    margin-top: 16px; padding: 13px 15px;
+    background: var(--suave); border: 1px solid var(--linea); border-radius: 14px;
+}
+.inicio-privacidad-icono {
+    flex: none; width: 26px; height: 26px; border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    background: var(--panel-navy-borde);
+}
+.inicio-privacidad-icono svg { stroke: var(--celeste); }
+.inicio-privacidad-texto { margin: 0; padding-top: 4px; font-size: 13.5px; line-height: 1.45; color: var(--tenue); }
+
+
 
 /* ------------------------------------------------------------------ angosto — Inicio */
 
@@ -1539,5 +1694,4 @@ code { font-family: var(--mono); font-size: .9em; color: var(--ambar); }
     .inicio-atencion-valor { text-align: left; }
     .inicio-atencion-conteo span { white-space: normal; }
     .inicio-cambio-nombre { min-width: 0; flex: 1 1 auto; }
-    .inicio-historial-cantidad { flex: 0 0 100%; order: 3; }
 }
