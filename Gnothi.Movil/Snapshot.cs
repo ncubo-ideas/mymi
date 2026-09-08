@@ -97,9 +97,15 @@ public static class Snapshot
 				modulos.Add(new Dictionary<string, object?>
 				{
 					["nombre"] = m.Name,
+					// La linea que identifica sale del manifiesto y no de aca, igual que en la
+					// pantalla: es una sola regla para las tres caras y para la foto.
+					["identidad"] = m.Manifest.Identity,
 					["titulo"] = m.Manifest.Title,
 					["institucion"] = m.Manifest.Institution,
-					["icono"] = Shell.Icon(m.Name),
+					// El emoji por rubro. La foto no puede pintar un logo -- la lee un intent del
+					// sistema, no un WebView -- asi que aca el icono del Host sigue siendo lo
+					// unico que hay, y ahora al menos sale de lo que la institucion declaro ser.
+					["icono"] = Shell.Icon(m.Manifest),
 					["tools"] = tools,
 				});
 			}

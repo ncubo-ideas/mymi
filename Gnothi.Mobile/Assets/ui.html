@@ -69,6 +69,34 @@
   .mod .ico{width:48px;height:48px;border-radius:14px;display:grid;place-items:center;
        margin-bottom:4px}
   .mod .ico svg{width:26px;height:26px}
+  /* EL LOGO DE LA INSTITUCION, dentro de la misma caja que el dibujo del rubro. `contain` y no
+     `cover` porque un logo recortado es un logo mal puesto, y el radio lo hereda para que la
+     institucion no pueda salirse de la forma que el Host eligio. */
+  .ico.conlogo img{width:100%;height:100%;object-fit:contain;border-radius:inherit;display:block}
+  /* LA FRANJA DE PROCEDENCIA. Verde cuando el dominio declarado coincide con quien sirvio el
+     bundle, ambar cuando no: las dos son informacion, y ninguna bloquea nada. */
+  .proc{display:flex;align-items:flex-start;gap:7px;border-radius:12px;padding:9px 11px;
+        font-size:11.5px;line-height:1.4;margin-top:2px}
+  .proc svg{width:14px;height:14px;flex:none;stroke-width:2.2;margin-top:1px}
+  .proc.ok{background:#E4F4EC;color:#0E5C3D}
+  .proc.duda{background:#FFF6E5;color:#8A5A00}
+  /* NEUTRO, Y NO VERDE, PARA EL DETALLE. Medido en el emulador el 2026-09-08: el alta salia
+     ambar -porque ahi Gnothi compara el dominio declarado contra el host que sirvio el
+     bundle- y el detalle del mismo modulo salia VERDE. La diferencia no era un estado
+     distinto: era que en el detalle no hay con que comparar, porque `servedBy` es un dato del
+     momento del alta y no se guarda en ninguna parte.
+     El verde afirmaba una comprobacion que no ocurrio. Aca la franja solo DICE lo que la
+     institucion declara, y se ve como lo que es. */
+  .proc.dice{background:var(--accent-soft);color:var(--accent-ink)}
+  .noHace{font-weight:600}
+  /* LO QUE LA INSTITUCION DICE DE SI MISMA. No usa .hint -que es para las notas al pie del
+     Host y va centrada y en gris-: esto es un parrafo de alguien, y un parrafo se lee
+     alineado. Medido mirando la pantalla: con .hint la descripcion parecia una aclaracion. */
+  .desc{font-size:12.5px;line-height:1.5;color:var(--ink);padding:0 2px}
+  .prhead{display:flex;align-items:center;gap:12px;margin-bottom:10px}
+  .prhead .ico{width:46px;height:46px;border-radius:13px;display:grid;place-items:center;flex:none}
+  .prhead .ico svg{width:25px;height:25px}
+  .prhead h4{margin-bottom:2px}
   .mod b{font-size:15px;line-height:1.25}
   .mod small{color:var(--muted);font-size:11.5px;line-height:1.35;display:block;
        white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%}
@@ -338,8 +366,10 @@
      recién si acepta el módulo ocupa un lugar. Cancelar no deja nada. -->
 <div id="propuesta" class="osheet">
   <div class="card">
-    <h4 id="pr-t"></h4>
-    <p id="pr-i"></p>
+    <!-- QUIÉN, ANTES DE QUÉ. El logo y el nombre de la institución arriba, y debajo qué le está
+         entregando: la persona está por darle una carpeta suya a alguien, así que lo primero
+         que tiene que leer es de quién se trata. -->
+    <div class="prhead"><div id="pr-logo"></div><div><h4 id="pr-t"></h4><p id="pr-i"></p></div></div>
     <div id="pr-cuerpo"></div>
     <button class="cta" onclick="gn.altaAceptar()">Instalar en mi teléfono</button>
     <button class="btn ghost" style="width:100%;margin-top:10px" onclick="gn.altaDescartar()">Ahora no</button>
@@ -384,22 +414,112 @@
 <script>
 'use strict';
 
-// Each business gets its color and its glyph HERE, not in the manifest: the icon is the
-// Host's business, not the institution's. An unknown module falls to the indigo box.
-const LOOK = {
-  examenes: { c:'#2F6BFF', bg:'#E8EEFE',
+// EL DIBUJO POR RUBRO, para cuando la institución no trae logo.
+//
+// ACÁ HABÍA UN MAPA POR NOMBRE DE MÓDULO -examenes, compras, facturas- con un comentario que
+// decía que el icono era asunto del Host y no de la institución. La posición era defendible; el
+// costo era que el Host tenía que CONOCER a cada institución para pintarla, así que un módulo
+// nuevo entraba anónimo: el concesionario y la estación de servicio, que ya estaban en el repo,
+// caían los dos a la misma caja lila.
+//
+// Ahora la institución declara su RUBRO -`about.category`, una lista cerrada- y el Host sigue
+// eligiendo el dibujo. Ella dice de qué negocio es, que es un hecho sobre ella; él dice cómo se
+// ve, que es lo que la posición anterior quería proteger.
+const RUBRO = {
+  laboratorio:  { c:'#2F6BFF', bg:'#E8EEFE',
     svg:'<svg viewBox="0 0 24 24"><path d="M10 3h4M12 3v5.5M9 8.5h6l3.6 8.2a2 2 0 0 1-1.8 2.8H7.2a2 2 0 0 1-1.8-2.8L9 8.5z"/><path d="M7.5 14h9"/></svg>' },
-  compras:  { c:'#1E9E6A', bg:'#E4F4EC',
+  salud:        { c:'#2F6BFF', bg:'#E8EEFE',
+    svg:'<svg viewBox="0 0 24 24"><path d="M12 20s-7-4.4-7-9.4A4.1 4.1 0 0 1 12 7.7a4.1 4.1 0 0 1 7 2.9c0 5-7 9.4-7 9.4z"/></svg>' },
+  supermercado: { c:'#1E9E6A', bg:'#E4F4EC',
     svg:'<svg viewBox="0 0 24 24"><path d="M3 4h2l2.4 11h11l2-8H6"/><circle cx="9.5" cy="19" r="1.4"/><circle cx="16.5" cy="19" r="1.4"/></svg>' },
-  facturas: { c:'#C0741B', bg:'#FAEFDD',
+  comercio:     { c:'#C0741B', bg:'#FAEFDD',
     svg:'<svg viewBox="0 0 24 24"><path d="M6 3h12v18l-2-1.4L14 21l-2-1.4L10 21l-2-1.4L6 21V3z"/><path d="M9 8h6M9 12h6M9 16h4"/></svg>' },
-  _:        { c:'#6C4BD9', bg:'#EEE9FC',
+  banca:        { c:'#1B5E8C', bg:'#E4EFF6',
+    svg:'<svg viewBox="0 0 24 24"><path d="M3 9.5 12 4l9 5.5M5 10v9M19 10v9M3 20h18M9 20v-6M15 20v-6"/></svg>' },
+  seguros:      { c:'#1B5E8C', bg:'#E4EFF6',
+    svg:'<svg viewBox="0 0 24 24"><path d="M12 3l7 3v5c0 4.4-2.9 8.1-7 9.5C7.9 19.1 5 15.4 5 11V6l7-3z"/></svg>' },
+  combustible:  { c:'#C2410C', bg:'#FCEBE1',
+    svg:'<svg viewBox="0 0 24 24"><path d="M6 21V5a2 2 0 0 1 2-2h5a2 2 0 0 1 2 2v16M5 21h11M8 8h5"/><path d="M15 9h3v8a2 2 0 0 0 3 0v-6"/></svg>' },
+  taller:       { c:'#4B5563', bg:'#ECEEF1',
+    svg:'<svg viewBox="0 0 24 24"><path d="M14.5 6.5a3.5 3.5 0 0 0 4.6 4.6l-8 8a2.8 2.8 0 0 1-4-4l8-8a3.5 3.5 0 0 0-.6-.6z"/></svg>' },
+  telecom:      { c:'#7C3AED', bg:'#EFE8FD',
+    svg:'<svg viewBox="0 0 24 24"><rect x="7" y="2.5" width="10" height="19" rx="2.4"/><path d="M11 19h2"/></svg>' },
+  educacion:    { c:'#B45309', bg:'#FBEFDC',
+    svg:'<svg viewBox="0 0 24 24"><path d="M3 9l9-4 9 4-9 4-9-4z"/><path d="M7 11v5c0 1.4 2.2 2.5 5 2.5s5-1.1 5-2.5v-5"/></svg>' },
+  gobierno:     { c:'#374151', bg:'#EBEDF0',
+    svg:'<svg viewBox="0 0 24 24"><path d="M4 9.5 12 4l8 5.5M5 20h14M7 20v-8M12 20v-8M17 20v-8"/></svg>' },
+  servicios:    { c:'#0F766E', bg:'#E1F1EF',
+    svg:'<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3.2"/><path d="M12 4v2M12 18v2M4 12h2M18 12h2M6.3 6.3l1.4 1.4M16.3 16.3l1.4 1.4M17.7 6.3l-1.4 1.4M7.7 16.3l-1.4 1.4"/></svg>' },
+  _:            { c:'#6C4BD9', bg:'#EEE9FC',
     svg:'<svg viewBox="0 0 24 24"><path d="M12 3l8 4.5v9L12 21l-8-4.5v-9L12 3z"/><path d="M4 7.5l8 4.5 8-4.5M12 12v9"/></svg>' },
 };
 const DB = '<svg viewBox="0 0 24 24"><ellipse cx="12" cy="5.5" rx="7" ry="2.8"/><path d="M5 5.5v13c0 1.5 3.1 2.8 7 2.8s7-1.3 7-2.8v-13"/><path d="M5 12c0 1.5 3.1 2.8 7 2.8s7-1.3 7-2.8"/></svg>';
-const look = n => LOOK[n] || LOOK._;
+const rubro = m => RUBRO[m.category] || RUBRO._;
 
-const NOMBRE = { examenes:'Tus exámenes', compras:'Tus compras', facturas:'Tus facturas' };
+// ── EL COLADOR DE LA MARCA ──────────────────────────────────────────────────────────────
+//
+// El Host ya validó los dos, y esta página los vuelve a mirar igual. No es desconfianza del
+// Host: es que `Manifest.Problems()` solo AVISA -un tope no tumba un módulo- así que un color
+// que no es un color LLEGA hasta acá. Y este documento es el que tiene el puente del
+// consentimiento: interpolar en un `style` algo que no se miró es abrirle la puerta a
+// `background:url(...)` en la pantalla donde la persona da y quita permisos.
+const HEX = /^#[0-9a-f]{6}$/i;
+const colorDe = m => HEX.test(m.color || '') ? m.color : '';
+
+// El logo llega como data: URI, ya con sus bytes revisados por la aduana del Host -tipo por
+// magic bytes, peso y dimensiones-. Lo único que queda por confirmar acá es que sea eso y no
+// otra cosa: un `javascript:` en un src es la forma clásica de esto.
+const logoDe = m => /^data:image\/(png|jpeg|webp);base64,[A-Za-z0-9+/=]+$/.test(m.logo || '') ? m.logo : '';
+
+// EL FONDO SALE DEL COLOR, NO LO ELIGE LA INSTITUCIÓN, y así el contraste está garantizado por
+// construcción: el trazo va en su color pleno sobre ese mismo color al 13%. Una institución no
+// puede pedir blanco sobre blanco porque no elige las dos partes.
+const tinte = h => { const n = parseInt(h.slice(1), 16);
+  return 'rgba(' + (n >> 16 & 255) + ',' + (n >> 8 & 255) + ',' + (n & 255) + ',.13)'; };
+
+// ── EL COLOR, CORREGIDO PARA QUE SE LEA ──────────────────────────────────────────────────
+//
+// AQUÍ ES DONDE «EL HOST COMPONE» DEJA DE SER UNA FRASE. Un color de marca sirve para un
+// logo y no necesariamente para texto: el amarillo de la flor de La Guaria es #F7E06B, y ese
+// color sobre blanco no se lee -- tiene un contraste de 1.4:1 contra el 4.5:1 que hace falta.
+//
+// La institución declara SU color; el Host lo baja de luminosidad hasta que se pueda leer,
+// conservando el tono. Así ella no puede pedir un texto ilegible, porque no elige las dos
+// partes de la ecuación: pone el matiz, y el Host pone la legibilidad.
+//
+// Luminancia relativa de WCAG, y se oscurece escalando hacia negro en pasos de 6%: escalar
+// preserva el matiz -- un lila oscurecido sigue siendo lila -- mientras que mezclar con negro
+// en HSL o bajar la saturación lo apagaría hasta volverlo gris.
+const luminancia = (r, g, b) => {
+  const f = c => { c /= 255; return c <= .03928 ? c / 12.92 : Math.pow((c + .055) / 1.055, 2.4); };
+  return .2126 * f(r) + .7152 * f(g) + .0722 * f(b);
+};
+function legible(hex) {
+  let r = parseInt(hex.substr(1, 2), 16), g = parseInt(hex.substr(3, 2), 16), b = parseInt(hex.substr(5, 2), 16);
+  for (let k = 1; k > .1; k -= .06) {
+    const rr = Math.round(r * k), gg = Math.round(g * k), bb = Math.round(b * k);
+    // 4.5:1 contra el blanco de la tarjeta, que es el fondo donde este color va a caer.
+    if (1.05 / (luminancia(rr, gg, bb) + .05) >= 4.5) return 'rgb(' + rr + ',' + gg + ',' + bb + ')';
+  }
+  return 'var(--ink)';                       // un color imposible cae a la tinta del Host
+}
+
+// El color de ESTE módulo, ya corregido, o el acento de Gnothi si no declaró ninguno. Las
+// pantallas piden esto y no `m.color`: así ninguna se olvida de la corrección.
+const acento = m => { const c = colorDe(m); return c ? legible(c) : 'var(--accent-ink)'; };
+const fondoDe = m => { const c = colorDe(m); return c ? tinte(c) : 'var(--accent-soft)'; };
+
+// LA CAJA DEL ÍCONO, una sola función para las cuatro pantallas: el logo de la institución si
+// pasó la aduana, y si no el dibujo de su rubro. `extra` es lo que la pantalla que llama quiera
+// agregarle a la clase.
+function caja(m, extra) {
+  const logo = logoDe(m), col = colorDe(m), k = rubro(m);
+  const fondo = logo ? (col ? tinte(col) : '#fff') : (col ? tinte(col) : k.bg);
+  const trazo = col || k.c;
+  return '<div class="ico' + (extra ? ' ' + extra : '') + (logo ? ' conlogo' : '') +
+    '" style="color:' + trazo + ';background:' + fondo + '">' +
+    (logo ? '<img src="' + logo + '" alt="">' : k.svg) + '</div>';
+}
 
 const gn = {
   state: null, open: null, busy: false, seq: 0,
@@ -447,21 +567,58 @@ const gn = {
     gn.propuesta = p;
     document.getElementById('alta').innerHTML = '';
 
+    // QUIÉN LE ESTÁ ENTREGANDO ESTO, primero. La cabecera decía «Agregar Mis compras», que es
+    // el nombre de una app; ahora dice quién es y qué le está entregando, porque eso es lo que
+    // cambia la decisión: instalar un módulo es darle a una institución una carpeta suya y un
+    // endpoint registrado, no agregar una app a una lista.
     document.getElementById('pr-t').textContent =
-      (p.yaEstaba ? 'Reinstalar ' : 'Agregar ') + p.titulo;
-    document.getElementById('pr-i').textContent = p.institucion;
+      (p.identidad || p.institucion) + (p.yaEstaba ? ' (reinstalar)' : '');
+    document.getElementById('pr-i').textContent =
+      (p.yaEstaba ? 'te vuelve a entregar ' : 'te está entregando ') + p.titulo;
+
+    // El logo va en la cabecera del sheet, al lado del título, y pasó por la misma aduana que
+    // en el resto de la app. `caja` espera los nombres del estado, así que se le traduce.
+    document.getElementById('pr-logo').innerHTML =
+      caja({ logo: p.logo, color: p.color, category: p.categoria });
 
     const tools = (p.tools || []).map(t =>
       '<li><b>' + esc(t.titulo || t.nombre) + '</b><br><small>' + esc(t.descripcion) + '</small></li>').join('');
 
+    // LA PROCEDENCIA, CONTRASTADA, y es lo único de todo esto que Gnothi puede afirmar por su
+    // cuenta: `coincide` lo calculó el Host comparando el dominio que la institución DECLARA
+    // contra el host del que BAJÓ el bundle. Cuando no coinciden no se bloquea nada -puede ser
+    // un CDN legítimo- pero se dice antes del sí, que es cuando sirve.
+    const proc = (p.dominio || p.razonSocial)
+      ? '<div class="proc ' + (p.coincide ? 'ok' : 'duda') + '">'
+        + '<svg viewBox="0 0 24 24"><path d="M12 3l7 3v5c0 4.4-2.9 8.1-7 9.5C7.9 19.1 5 15.4 5 11V6l7-3z"/>'
+        + (p.coincide ? '<path d="M9.2 11.8l2 2 3.6-3.9"/>' : '<path d="M12 8.5v4M12 15.2v.1"/>') + '</svg>'
+        + '<span>' + (p.razonSocial ? '<b>' + esc(p.razonSocial) + '</b>' : '')
+        + (p.cedula ? ', ' + esc(p.cedula) : '')
+        + (p.dominio
+            ? '<br>' + (p.coincide
+                ? 'Lo sirvió ' + esc(p.servido) + ', el mismo dominio que declara'
+                : 'Declara <b>' + esc(p.dominio) + '</b> y lo sirvió <b>' + esc(p.servido) + '</b>')
+            : '')
+        + (p.version ? ' · v' + esc(p.version) : '')
+        + '</span></div>'
+      : '';
+
     document.getElementById('pr-cuerpo').innerHTML =
       (p.yaEstaba ? '<p class="ojo">Ya tenés este módulo. Reinstalarlo reemplaza su app; su registro se conserva.</p>' : '')
+      + proc
+      + (p.descripcion
+          ? '<p>' + esc(p.descripcion)
+            + (p.noHace ? ' <span class="noHace">' + esc(p.noHace) + '</span>' : '') + '</p>'
+          : '')
       + '<p><b>Qué va a poder contestar</b></p><ul class="pr-tools">' + tools + '</ul>'
       + '<p><b>Dónde se va a guardar, en tu teléfono</b><br><code>' + esc(p.journal) + '</code><br>'
-      + '<small>Es tuyo. Gnothi se lo administra a esta institución, no se lo lleva.</small></p>'
+      + '<small>Es tuyo. Gnothi se lo administra a esta institución, no se lo lleva.'
+      + (p.tamano ? ' Unos ' + esc(p.tamano) + '.' : '')
+      + (p.refresco ? ' Se actualiza ' + esc(p.refresco) + '.' : '')
+      + (p.retencion ? ' La institución lo guarda ' + esc(p.retencion) + '.' : '')
+      + '</small></p>'
       + '<p><b>Con quién va a hablar</b><br><code>' + esc(p.publicador || '(no declara publicador)') + '</code><br>'
-      + '<small>Es la única red que va a poder tocar, y la hace Gnothi por él. '
-      + 'El bundle lo sirvió <b>' + esc(p.servido) + '</b>.</small></p>';
+      + '<small>Es la única red que va a poder tocar, y la hace Gnothi por él.</small></p>';
 
     document.getElementById('propuesta').classList.add('on');
   },
@@ -503,14 +660,24 @@ const gn = {
     document.getElementById('home-sub').textContent =
       ms.filter(m => m.enabled).length + ' de ' + ms.length + ' encendidos';
 
+    // LA TARJETA, CON LOS DOS RENGLONES EN SU ORDEN: arriba QUIÉN es -la línea que identifica-
+    // y abajo QUÉ es, que es el título tal cual lo escribió la institución.
+    //
+    // Estaba al revés, y no por gusto: arriba iba el `title` y abajo un mapa `NOMBRE` de este
+    // mismo archivo que TAPABA a la institución cuando el Host la conocía. El resultado era que
+    // la tarjeta de compras decía «Mis compras / Tus compras» -su nombre dos veces, el
+    // supermercado ninguna- mientras el manifiesto de esa institución decía «La Guaria y vos».
     document.getElementById('mods').innerHTML = ms.map(m => {
-      const k = look(m.name);
       return '<div class="mod' + (m.enabled ? '' : ' off') + '" onclick="gn.detail(\'' + m.name + '\')">'
-        + '<div class="ico" style="color:' + k.c + ';background:' + k.bg + '">' + k.svg + '</div>'
-        + '<div><b>' + esc(m.title) + '</b>'
-        + '<small>' + esc(NOMBRE[m.name] || m.institution) + '</small></div>'
+        + caja(m)
+        + '<div><b>' + esc(m.identity || m.institution) + '</b>'
+        + '<small>' + esc(m.title) + '</small></div>'
+        // EL CHIP LLEVA SU COLOR, y el switch no: el chip dice de quién es el registro -es
+        // información de la institución- y un interruptor es un control del Host. Ese es el
+        // corte, medido en pixeles.
         + (m.enabled
-            ? '<span class="chip">' + DB + ' Diario de eventos</span>'
+            ? '<span class="chip" style="color:' + acento(m) + ';background:' + fondoDe(m) + '">'
+              + DB + ' Diario de eventos</span>'
             : '<span class="chip no">apagado por vos</span>')
         + '</div>';
     }).join('')
@@ -521,10 +688,60 @@ const gn = {
     if (gn.open) {
       const m = ms.find(x => x.name === gn.open);
       if (!m) { gn.nav('home'); return; }
-      const k = look(m.name);
+      // EL DETALLE, PARTIDO EN DOS ZONAS. De acá hasta la franja de procedencia es lo que la
+      // institución declara de sí misma -y hasta ahora estaba vacío: lo único que la persona
+      // podía leer eran descripciones escritas para el modelo-. De los interruptores para
+      // abajo es del Host, y no se personaliza: quien puede diseñar la pantalla donde se le
+      // pide permiso a alguien diseña el contexto del permiso.
+      const proc = m.publisher || {}, dia = m.journal || {}, org = m.provenance || {};
+      // TRES ESTADOS, NO DOS. `matches` es true, false o null, y null -no hay con qué
+      // comparar- se ve distinto de las otras dos a propósito: un visto bueno que en realidad
+      // significa «no sé» es peor que no poner nada.
+      const veredicto = org.matches === true ? 'ok' : org.matches === false ? 'duda' : 'dice';
       document.getElementById('detail').innerHTML =
-        '<div class="hero"><div class="ico" style="color:' + k.c + ';background:' + k.bg + '">' + k.svg + '</div>'
-        + '<div><b>' + esc(m.title) + '</b><small>' + esc(m.institution) + '</small></div></div>'
+        // LA CABECERA DE SU PANTALLA LLEVA SU COLOR, ya corregido para que se lea. De los
+        // interruptores para abajo todo sigue siendo violeta Gnothi, y eso no es una
+        // limitación estética: el acento del Host es lo que le dice a la persona que sigue
+        // dentro de Gnothi, y los controles de consentimiento viven ahí.
+        '<div class="hero">' + caja(m)
+        + '<div><b style="color:' + acento(m) + '">' + esc(m.identity || m.institution) + '</b>'
+        + '<small>' + esc(m.title) + '</small></div></div>'
+
+        + (m.description
+            ? '<p class="desc">' + esc(m.description)
+              + (m.doesNotDo ? ' <span class="noHace">' + esc(m.doesNotDo) + '</span>' : '') + '</p>'
+            : '')
+
+        // LA PROCEDENCIA. Lo que la institución DECLARA -su dominio- al lado de lo que Gnothi
+        // OBSERVÓ -de dónde bajó el bundle-. Es la única cosa de toda la marca que el Host puede
+        // comprobar solo, y por eso es la que le da sentido al logo: sin esto, un logo es un
+        // dibujo que cualquiera copia.
+        + (proc.domain || proc.legal
+            // LA FRANJA NEUTRA TOMA SU COLOR; las otras dos NO, y es a propósito: el verde
+            // dice «comprobado» y el ámbar «ojo», y esos dos son juicios del Host. Que una
+            // institución pudiera pintar de su color la franja que la avala sería dejarla
+            // firmar su propio certificado.
+            ? '<div class="proc ' + veredicto + '"'
+              + (veredicto === 'dice' ? ' style="color:' + acento(m) + ';background:' + fondoDe(m) + '"' : '')
+              + '>'
+              // EL ESCUDO LLEVA EL CHECK SOLO CUANDO HAY ALGO COMPROBADO. Con el check dice
+              // «lo comprobé»; sin él, «esto es lo que declara».
+              + '<svg viewBox="0 0 24 24"><path d="M12 3l7 3v5c0 4.4-2.9 8.1-7 9.5C7.9 19.1 5 15.4 5 11V6l7-3z"/>'
+              + (veredicto === 'ok' ? '<path d="M9.2 11.8l2 2 3.6-3.9"/>'
+                 : veredicto === 'duda' ? '<path d="M12 8.5v4M12 15.2v.1"/>' : '') + '</svg>'
+              + '<span>' + (proc.legal ? '<b>' + esc(proc.legal) + '</b>' : '')
+              + (proc.taxId ? ' · ' + esc(proc.taxId) : '')
+              // LO QUE SE PUEDE AFIRMAR EN CADA CASO, y son tres frases distintas porque son
+              // tres hechos distintos. Antes esto decía siempre «lo publica X», que es lo que
+              // la institución declara, con el color de una comprobación que no existía.
+              + (veredicto === 'ok'
+                  ? '<br>lo bajaste de ' + esc(org.servedBy) + ', el dominio que declara'
+                  : veredicto === 'duda'
+                    ? '<br>declara <b>' + esc(proc.domain) + '</b> y lo bajaste de <b>' + esc(org.servedBy) + '</b>'
+                    : proc.domain ? '<br>declara ' + esc(proc.domain) + ' · lo importaste de un archivo' : '')
+              + (org.version ? ' · v' + esc(org.version) : proc.version ? ' · v' + esc(proc.version) : '')
+              + '</span></div>'
+            : '')
 
         + '<div class="master"><span>Módulo encendido</span>'
         + sw(m.enabled, "gn.setModule('" + m.name + "',this.checked)") + '</div>'
@@ -541,14 +758,26 @@ const gn = {
             + sw(t.enabled, "gn.setTool('" + m.name + "','" + t.name + "',this.checked)")
             + '</div>').join('')
 
-        + '<p class="hint">Una consulta apagada desaparece del catálogo:<br>el asistente no la ve y no puede pedirla.</p>';
+        + '<p class="hint">Una consulta apagada desaparece del catálogo:<br>el asistente no la ve y no puede pedirla.</p>'
+
+        // LO QUE LA INSTITUCIÓN PROMETE SOBRE EL REGISTRO. La pestaña Journal ya dice cuánto
+        // pesa HOY -medido por el Host desde afuera-; esto es lo otro, que solo ella sabe.
+        + (dia.retention || dia.updates
+            ? '<p class="hint">' + (dia.retention ? 'Lo guarda ' + esc(dia.retention) + '. ' : '')
+              + (dia.updates ? 'Se actualiza ' + esc(dia.updates) + '.' : '') + '</p>'
+            : '');
     }
 
+    // EL PESO DE CADA REGISTRO. Acá la pregunta que se le hace a la pantalla es «¿quién me está
+    // ocupando el teléfono?», así que la línea grande tiene que ser la institución: las cuatro
+    // filas llevaban el mismo icono de base de datos con distinto tinte, y dos de ellas con el
+    // mismo tinte.
     document.getElementById('journal').innerHTML = ms.map(m => {
-      const k = look(m.name);
+      const dia = m.journal || {};
       return '<div class="row">'
-        + '<div class="ico" style="color:' + k.c + ';background:' + k.bg + '">' + DB + '</div>'
-        + '<div class="t"><b>' + esc(m.title) + '</b><small>' + esc(m.institution) + '</small></div>'
+        + caja(m)
+        + '<div class="t"><b>' + esc(m.identity || m.institution) + '</b><small>' + esc(m.title)
+        + (dia.retention ? ' · ' + esc(dia.retention) : '') + '</small></div>'
         + '<div class="n"><b>' + kb(m.journalBytes) + '</b><small>' + m.journalFiles + ' archivos</small></div>'
         + '</div>';
     }).join('');
@@ -735,22 +964,70 @@ const PROV = [
 
 // THE DESKTOP MOCK. Never reached inside the app: there, prompt() always answers. It mirrors
 // the real state's shape so the page can be designed and exercised in a plain browser.
+// EL FIXTURE DE DESARROLLO. Esta página se abre en cualquier navegador -`gn.call` mira el
+// userAgent y si no está dentro de Gnothi contesta con esto- así que el MOCK es lo que hace que
+// la cara se pueda mirar sin compilar un teléfono.
+//
+// TIENE QUE TENER LA MISMA FORMA QUE Shell.StateJson, y esa es la única regla que importa acá:
+// un mock desincronizado es una pantalla que se ve bien y no existe. Los cuatro módulos son a
+// propósito los cuatro casos de la marca, del más completo al que no declara nada:
+//
+//   delfos    logo + color + rubro + descripción + procedencia + registro
+//   compras   color + rubro, sin logo          -> el dibujo del rubro, tintado con SU color
+//   cargas    solo rubro                       -> el dibujo del rubro, con el color del rubro
+//   facturas  nada de lo nuevo                 -> como los manifiestos de hoy: tiene que verse
+//                                                 sobrio, no roto. Es el caso de compatibilidad.
+const LOGO_DELFOS = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAGAAAABgCAYAAADimHc4AAABb0lEQVR42u3dMZLCQAxFwTkBJ96Ya0NtQEZorC+pVcUBeA0E9licY4wx5ts8/p6vq15q3hwcSGB0GGHhV0Ikhl8B0SH8SIiO4cdATIjfEmFS+HYQk+PHI2yIH4uwKX4UwsbwMRDiFyMIXwggeiGC2IUIIhciJL7Z/1mDAKAQIDX+Z0YjpP7WpgNchpAef/S3oMOnf/S3AEAhQKf4IxEAFAJ0jD8KAUAhQOf4IxAAANgLMCF+awQAAC6J3/b60KT4qQgt4v9i4hEmx09DAADg/vhJCJEAdw4AAFkAFQMAAAAAAAAAAAAAAAAAAAAAcC3ItSAAq29Lro6/4aaMUxEAehxLWXc/ePLxFIdznYxzOtpDGl4zHlFatUVFNI+p2iEknlUFNmiJaF2N/XFiWltmc6KwVlda3gqhOD6EgPgQAuIDCACAUBzff8j4Ix/xNyKc9BEfxO7w0xDOhBEexO7wHSDOxhF+KYbaN4OoaUzivAFT10YJlLOG1wAAAABJRU5ErkJggg==';
+
 const MOCK = { modules: [
-  { name:'examenes', title:'My lab tests', institution:'Clinical laboratory (POC mock)',
+  { name:'delfos', identity:'Laboratorio Delfos', title:'Tus exámenes, al día',
+    institution:'Laboratorio Clínico Delfos', category:'laboratorio',
+    logo:LOGO_DELFOS, color:'#0E7C86',
+    description:'Tus resultados de laboratorio, con su historia y qué te toca repetir.',
+    doesNotDo:'No interpreta resultados ni reemplaza a tu médico.',
+    publisher:{ domain:'delfos.cr', legal:'Laboratorio Clínico Delfos S.A.', taxId:'3-101-123456',
+                version:'2.4.0', released:'2026-08-12' },
+        origen:{ servedBy:'delfos.cr', at:'2026-08-20T10:12:00Z', version:'2.4.0', matches:true },
+    journal:{ retention:'5 años', expectedSize:'~2 MB al año', updates:'al abrir la app' },
     enabled:true, journalBytes:2048, journalFiles:3, tools:[
-    { name:'revisar_mis_analitos', title:'How am I doing', enabled:true,
-      description:'Reviews every analyte the person has history for and returns the trend of each one.' },
-    { name:'evaluar_tendencia', title:'How one analyte is trending', enabled:true,
-      description:'Answers whether one analyte is going up, down or stable over its whole history.' },
-    { name:'velocidad_de', title:'How fast it is changing', enabled:true,
-      description:'Answers how fast an analyte has been changing, in units per year.' }]},
-  { name:'compras', title:'Mis compras', institution:'Supermercado La Cosecha (mock del POC)',
+    { name:'que_me_falta_medir', title:'Qué me toca', enabled:true,
+      description:'Cada analito con historia, cuánto hace que se midió y si está vencido.' },
+    { name:'evaluar_tendencia', title:'Cómo viene un analito', enabled:true,
+      description:'Si un analito viene subiendo, bajando o estable, mirando toda su historia.' }]},
+
+  { name:'compras', identity:'Supermercado La Guaria', title:'La Guaria y vos',
+    institution:'Supermercado La Guaria', category:'supermercado',
+    logo:'', color:'#7B3FA0',
+    description:'Tu historial de compras, con tus garantías y lo que sueles llevar.',
+    doesNotDo:'No te dice qué comer ni juzga tu canasta.',
+    publisher:{ domain:'laguaria.cr', legal:'', taxId:'', version:'1.2.0', released:'2026-07-01' },
+        origen:{ servedBy:'cdn-barato.example', at:'2026-09-01T09:00:00Z', version:'1.2.0', matches:false },
+    journal:{ retention:'5 años', expectedSize:'', updates:'al abrir la app' },
     enabled:true, journalBytes:3172, journalFiles:3, tools:[
-    { name:'total_de_compras', title:'Cuanto gaste en total', enabled:true, description:'Total de todas las compras registradas.' },
-    { name:'canasta_del_mes', title:'Como fue mi canasta de un mes', enabled:true, description:'La canasta de un mes, sumada por perfil.' }]},
-  { name:'facturas', title:'My invoices', institution:'Supermarket (POC mock)',
+    { name:'total_de_compras', title:'Cuánto he gastado', enabled:true,
+      description:'Total de todas las compras registradas en este dispositivo.' },
+    { name:'canasta_del_mes', title:'Cómo fue mi canasta', enabled:true,
+      description:'La canasta de un mes, departamento por departamento.' }]},
+
+  { name:'cargas', identity:'Estación Los Higuerones', title:'Tus cargas',
+    institution:'Estación Los Higuerones', category:'combustible',
+    logo:'', color:'',
+    description:'', doesNotDo:'',
+    publisher:{ domain:'', legal:'', taxId:'', version:'', released:'' },
+        origen:{ servedBy:'', at:'2026-09-05T18:30:00Z', version:'', matches:null },
+    journal:{ retention:'2 años', expectedSize:'', updates:'' },
+    enabled:false, journalBytes:88000, journalFiles:2, tools:[
+    { name:'lista_de_vehiculos', title:'Mis vehículos', enabled:true,
+      description:'Los vehículos que la bitácora conoce, con su placa.' }]},
+
+  { name:'facturas', identity:'Supermarket (POC mock)', title:'My invoices',
+    institution:'Supermarket (POC mock)', category:'',
+    logo:'', color:'', description:'', doesNotDo:'',
+    publisher:{ domain:'', legal:'', taxId:'', version:'', released:'' },
+    journal:{ retention:'', expectedSize:'', updates:'' },
     enabled:true, journalBytes:1650, journalFiles:3, tools:[
-    { name:'total_de_facturas', title:'Total spent', enabled:true, description:'Total of all invoices on record.' }]},
+    { name:'total_de_facturas', title:'Total spent', enabled:true,
+      description:'Total of all invoices on record.' }]},
 ], settings: { name:'Groq', provider:'api.groq.com', model:'openai/gpt-oss-120b', keyPresent:true, root:'/data/user/0/…/files/Modulos' } };
 
 function mock(op, x) {

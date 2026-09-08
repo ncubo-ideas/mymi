@@ -132,15 +132,36 @@ public sealed class Shell : IDisposable
 	/// <summary>El proveedor que corre en el aparato, sin url y sin llave.</summary>
 	public const string ProveedorLocal = "En este teléfono";
 
-	// El icono por negocio. Un mapa chico y explicito: un modulo que no este aca cae a la caja
-	// generica. NO viene del manifiesto a proposito -- el icono es asunto del Host, no de la
-	// institucion.
-	public static string Icon(string module) => module switch
+	// EL ICONO POR RUBRO, no por nombre de modulo.
+	//
+	// ESTE SWITCH DECIA ANTES 'examenes', 'facturas' y 'compras', con un comentario que aclaraba
+	// que el icono NO venia del manifiesto a proposito, porque era asunto del Host. La posicion
+	// era defendible y el costo se veia: el Host tenia que CONOCER a cada institucion por nombre
+	// para pintarla, asi que un modulo de una institucion nueva entraba anonimo -- y eso
+	// contradice el alta dinamica, donde agregar un modulo son dos json y no dos json y un
+	// release del Host. El concesionario y la estacion de servicio, que ya estaban en el repo,
+	// caian los dos a la misma caja.
+	//
+	// EL CORTE NUEVO: la institucion declara su RUBRO -una lista cerrada, en About.Known- y el
+	// Host elige el dibujo. La institucion no elige el icono; elige de que negocio es, que es un
+	// hecho sobre ella y no una decision de diseno. Y el que sigue eligiendo el dibujo es el
+	// Host, que es lo que la posicion anterior queria proteger.
+	//
+	// SIGUE SIENDO UN EMOJI porque su unico consumidor es la FOTO -- la instantanea que lee el
+	// intent de Siri, que no puede pintar un svg. La cara del telefono usa el logo de la
+	// institucion si lo hay, y si no un dibujo propio por rubro.
+	public static string Icon(Gnothi.Host.Manifest m) => (m.About?.Category ?? "") switch
 	{
-		"examenes" => "\U0001FA7A",   // estetoscopio
-		"facturas" => "\U0001F9FE",   // recibo
-		"compras"  => "\U0001F6D2",   // carrito
-		_          => "\U0001F4E6",   // caja
+		"laboratorio" or "salud"        => "\U0001FA7A",   // estetoscopio
+		"supermercado"                  => "\U0001F6D2",   // carrito
+		"comercio"                      => "\U0001F9FE",   // recibo
+		"banca" or "seguros"            => "\U0001F3E6",   // banco
+		"combustible"                   => "⛽",       // surtidor
+		"taller"                        => "\U0001F527",   // llave
+		"telecom"                       => "\U0001F4F1",   // telefono
+		"educacion"                     => "\U0001F393",   // birrete
+		"gobierno"                      => "\U0001F3DB",   // edificio
+		_                               => "\U0001F4E6",   // caja
 	};
 
 	// ── el arranque ─────────────────────────────────────────────────────────────────────
@@ -349,11 +370,41 @@ public sealed class Shell : IDisposable
 	private void PushProposal(EnrollmentProposal p) => Push("propuesta", "", JsonSerializer.Serialize(new
 	{
 		modulo = p.Manifest.Module,
+		identidad = p.Manifest.Identity,
 		titulo = p.Manifest.Title,
 		institucion = p.Manifest.Institution,
+
+		// EL LOGO SE LEE DE LA CARPETA TEMPORAL, que es donde el bundle ya esta desempaquetado y
+		// esperando la decision de la persona. Pasa por la MISMA aduana que despues de instalado
+		// -- no hay una version relajada para la pantalla del alta, que seria justo la peor de
+		// las dos donde relajarla.
+		logo = Gnothi.Host.Module.LogoDataUri(p.Manifest, p.Folder, out _),
+		color = p.Manifest.Brand?.Color ?? "",
+		categoria = p.Manifest.About?.Category ?? "",
+		descripcion = p.Manifest.About?.Description ?? "",
+		noHace = p.Manifest.About?.DoesNotDo ?? "",
+
+		// LA PROCEDENCIA, Y LA UNICA COMPROBACION QUE GNOTHI PUEDE HACER SOLO. 'servido' es un
+		// dato OBSERVADO -- de que host bajo el bundle -- y 'dominio' es lo que la institucion
+		// DECLARA. Compararlos es el mismo patron que gnothi_verify_module: declarado contra
+		// real. Cuando no coinciden, la pantalla lo dice ANTES del si.
+		razonSocial = p.Manifest.Publisher?.Legal ?? "",
+		cedula = p.Manifest.Publisher?.TaxId ?? "",
+		dominio = p.Manifest.Publisher?.Domain ?? "",
+		version = p.Manifest.Publisher?.Version ?? "",
+		coincide = p.Manifest.Publisher?.MatchesServer(p.ServedBy) ?? true,
+
 		servido = p.ServedBy,
 		publicador = p.Publisher,
 		journal = p.JournalGoesTo,
+
+		// LO QUE LA PANTALLA NO PODIA CONTESTAR: ya decia DONDE va a vivir el registro, y no
+		// cuanto va a pesar, cada cuanto se actualiza ni por cuanto tiempo lo guardan -- que es
+		// lo que la persona pregunta antes de aceptar.
+		retencion = p.Manifest.Journal?.Retention ?? "",
+		tamano = p.Manifest.Journal?.ExpectedSize ?? "",
+		refresco = p.Manifest.Journal?.Updates ?? "",
+
 		yaEstaba = p.AlreadyThere,
 		tools = p.Manifest.Tools.Select(t => new { nombre = t.Name, titulo = t.Title, descripcion = t.Description }),
 	}));
@@ -474,7 +525,18 @@ public sealed class Shell : IDisposable
 	{
 		if (catalog is null) return "{\"loading\":true}";
 
-		var modules = catalog.Modules.Select(m =>
+		// SOBRE UNA COPIA DE LA LISTA, Y NO SOBRE LA LISTA.
+		//
+		// Medido en el emulador el 2026-09-08: `bridge: InvalidOperationException: Collection
+		// was modified; enumeration operation may not execute`. Aceptar un alta recarga el
+		// catalogo -- ModuleCatalog.Load hace Clear() y vuelve a llenar la lista -- y si la
+		// pagina pide el estado en ese instante, este recorrido estalla y la pantalla se queda
+		// sin modulos.
+		//
+		// La carrera existia antes y era estrecha. Este metodo ahora LEE EL LOGO DE CADA MODULO
+		// del disco, asi que tarda mas y la ventana se agrando: el sintoma aparecio recien
+		// cuando la marca entro. Copiar la lista cuesta cuatro punteros y la cierra.
+		var modules = catalog.Modules.ToArray().Select(m =>
 		{
 			long bytes = 0; int files = 0;
 			try
@@ -485,12 +547,61 @@ public sealed class Shell : IDisposable
 			}
 			catch { /* un modulo sin journal todavia no pesa nada */ }
 
+			// LO QUE LA INSTITUCION DECLARO DE SI MISMA, para la pantalla.
+			//
+			// 'identity' es LA LINEA GRANDE y la resuelve el manifiesto -- Manifest.Identity --
+			// y no esta pagina, porque hay tres caras y un fallback implementado tres veces es
+			// un fallback que diverge. Antes esta linea la decidia un mapa NOMBRE del propio
+			// html, que TAPABA a la institucion cuando el Host la conocia y la dejaba cruda
+			// cuando no.
+			//
+			// 'logo' viaja como data: URI ya validado por la aduana del Host -- Module.LogoDataUri
+			// --, no como ruta: la pagina se sirve como file:// y no puede leer otros file://, y
+			// darle una ruta del modulo seria dejar que el modulo elija que archivo se abre.
+			//
+			// EL PESO DEL LOGO SE PAGA EN CADA REPINTADO, porque el estado se pide entero. Con
+			// el tope de 64 KB y cuatro modulos son unos 350 KB en el peor caso y ~40 en el
+			// tipico. Es la razon practica del tope, ademas de la de seguridad.
 			return new Dictionary<string, object?>
 			{
 				["name"] = m.Name,
+				["identity"] = m.Manifest.Identity,
 				["title"] = m.Manifest.Title,
 				["institution"] = m.Manifest.Institution,
-				["icon"] = Icon(m.Name),
+				["icon"] = Icon(m.Manifest),
+				["category"] = m.Manifest.About?.Category ?? "",
+				["logo"] = m.LogoDataUri(),
+				["color"] = m.Manifest.Brand?.Color ?? "",
+				["description"] = m.Manifest.About?.Description ?? "",
+				["doesNotDo"] = m.Manifest.About?.DoesNotDo ?? "",
+				["publisher"] = new Dictionary<string, object?>
+				{
+					["domain"] = m.Manifest.Publisher?.Domain ?? "",
+					["legal"] = m.Manifest.Publisher?.Legal ?? "",
+					["taxId"] = m.Manifest.Publisher?.TaxId ?? "",
+					["version"] = m.Manifest.Publisher?.Version ?? "",
+					["released"] = m.Manifest.Publisher?.Released ?? "",
+				},
+
+				// EL ACTA DEL ALTA, para que el detalle pueda CONTRASTAR y no solo repetir.
+				//
+				// 'matches' viene en tres estados y no en dos: true, false y NULL cuando no hay
+				// con que comparar -- un .gmod importado de un archivo no tiene servidor--. La
+				// pantalla tiene que poder decir "no se puede saber" en vez de pintar un visto
+				// bueno, que es exactamente el bug que esto arregla.
+				["provenance"] = new Dictionary<string, object?>
+				{
+					["servedBy"] = m.Installation.Provenance?.ServedBy ?? "",
+					["at"] = m.Installation.Provenance?.At ?? "",
+					["version"] = m.Installation.Provenance?.Version ?? "",
+					["matches"] = m.Installation.Provenance?.Matches(m.Manifest.Publisher),
+				},
+				["journal"] = new Dictionary<string, object?>
+				{
+					["retention"] = m.Manifest.Journal?.Retention ?? "",
+					["expectedSize"] = m.Manifest.Journal?.ExpectedSize ?? "",
+					["updates"] = m.Manifest.Journal?.Updates ?? "",
+				},
 				["enabled"] = m.Installation.Enabled,
 				["journalBytes"] = bytes,
 				["journalFiles"] = files,
