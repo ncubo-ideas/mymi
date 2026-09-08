@@ -8,8 +8,9 @@ namespace Gimnasio.Dominio
 	// Expediente, Historial, Libro, Panorama.
 	//
 	// Guarda lo que el gimnasio manda -perfil, objetivo, planes, mediciones,
-	// asistencias- y contesta las preguntas del Preguntas.md. Nada de lo que hay aca lo
-	// aporto Sonia: por eso el journal es reconstruible.
+	// asistencias, y desde el v2 la membresia- y contesta las preguntas del
+	// Preguntas.md. Nada de lo que hay aca lo aporto Sonia: por eso el journal es
+	// reconstruible.
 	//
 	// EL RELOJ NO ENTRA. Ninguna operacion mira el dia de hoy; cuando hace falta una
 	// fecha de corte, entra por parametro.
@@ -19,8 +20,15 @@ namespace Gimnasio.Dominio
 		private readonly List<Medicion> mediciones = new List<Medicion>();
 		private readonly List<DateTime> asistencias = new List<DateTime>();
 
+		// LA MEMBRESIA EXISTE DESDE QUE SONIA ES SOCIA, asi que nace con la trayectoria y
+		// nunca es null: lo que puede faltar es su ESTADO, y eso lo guarda ella adentro
+		// (TieneEstadoDeclarado). Es lo que el v1 no tenia -huecos 9 y 12-: la regla del
+		// descarte mal escrita la dejo afuera del modelo entero.
+		private readonly Membresia membresia = new Membresia();
+
 		internal Perfil Perfil { get; private set; }
 		internal Objetivo Objetivo { get; private set; }
+		internal Membresia Membresia { get { return membresia; } }
 
 		internal IReadOnlyList<Plan> Planes { get { return planes; } }
 		internal IReadOnlyList<Medicion> Mediciones { get { return mediciones; } }
@@ -151,7 +159,20 @@ namespace Gimnasio.Dominio
 			foreach (DateTime dia in asistencias)
 				if (dia >= elPlan.Inicio.Date && dia <= elPlan.Fin.Date) fue++;
 
-			return new Incumplimiento(elPlan.DiasEsperadosEnTodoElPlan(), fue);
+			// EL HUECO 9, CERRADO (juicio N2 del v2): los dias en que la membresia estuvo
+			// en mora dentro del plan no se esperan. La mora la dijo el gimnasio con su
+			// bandera; la app no la deduce. Se descuenta en semanas enteras, la misma ley
+			// con que el plan cuenta su duracion.
+			//
+			// Las asistencias que hubiera DURANTE la mora se cuentan igual: son hechos que
+			// el gimnasio mando, y un hecho no se borra porque contradiga una regla. Lo
+			// que cambia es lo esperado, no lo ocurrido.
+			int diasEnMora = membresia.DiasEnMoraEntre(elPlan.Inicio, elPlan.Fin);
+			int semanasEnMora = diasEnMora / 7;
+			int esperadosSinMora = elPlan.DiasEsperadosEnTodoElPlan();
+			int esperados = elPlan.DiasEsperadosDescontando(semanasEnMora);
+
+			return new Incumplimiento(esperados, fue, esperadosSinMora - esperados);
 		}
 
 		// -------------------------------------------------- que falta para la meta
@@ -323,6 +344,29 @@ namespace Gimnasio.Dominio
 			foreach (Medicion m in mediciones)
 				if (m.Fecha.Date == fecha.Date) return !m.Trae(queSeMidio);
 			return true;
+		}
+
+		// ------------------------------------------ los tres comandos de la membresia (v2)
+		//
+		// El Check llega a la raiz, no a la membresia: igual que SePuedeAgregarMetaPara.
+		// Cada uno delega en el predicado total de Membresia, que junta todas las razones
+		// por las que ese comando fallaria (regla 17). El de la bandera rechaza ademas el
+		// MISMO estado dos veces -es el mismo hecho otra vez, regla 18-: la leccion de
+		// Asistio, que no podia fallar y conto 30 dias dos veces.
+
+		internal bool PuedeCambiarEstadoDeMembresia(string nombreDelEstado, DateTime fecha)
+		{
+			return membresia.PuedeCambiarA(nombreDelEstado, fecha);
+		}
+
+		internal bool PuedeRegistrarPago(DateTime fecha, decimal monto)
+		{
+			return membresia.PuedeRegistrarPago(fecha, monto);
+		}
+
+		internal bool PuedeAnunciarCobro(DateTime vence, decimal monto)
+		{
+			return membresia.PuedeAnunciarCobro(vence, monto);
 		}
 
 		// ------------------------------------------------------------------ internos

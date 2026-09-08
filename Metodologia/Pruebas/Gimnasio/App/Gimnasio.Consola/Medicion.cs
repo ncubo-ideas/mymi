@@ -58,6 +58,22 @@ namespace Gimnasio.Consola
 			Paso("grasa de abril", api.RegistrarMedida(new DateTime(2026, 4, 9), "grasa", 35m));
 			Paso("una medida inventada", api.RegistrarMedida(new DateTime(2026, 4, 9), "estatura", 165m));
 
+			// -------------------------------------------------- la membresia (v2, N1 y N2)
+			//
+			// El gimnasio manda la bandera; el dominio deriva el periodo. Dos semanas en
+			// mora dentro del plan 1 -del 2 al 16 de febrero- tienen que descontarle dos
+			// semanas al incumplimiento de abajo: 33 esperados, no 39. Y la misma bandera
+			// repetida tiene que RECHAZARSE, que es la leccion de Asistio.
+
+			Paso("la bandera: al dia en enero", api.CambiarEstadoDeMembresia("al-dia", new DateTime(2026, 1, 5)));
+			Paso("la bandera: en mora en febrero", api.CambiarEstadoDeMembresia("en-mora", new DateTime(2026, 2, 2)));
+			Paso("la misma bandera otra vez", api.CambiarEstadoDeMembresia("en-mora", new DateTime(2026, 2, 9)));
+			Paso("la bandera: al dia otra vez", api.CambiarEstadoDeMembresia("al-dia", new DateTime(2026, 2, 16)));
+			Paso("un estado que no existe", api.CambiarEstadoDeMembresia("suspendida", new DateTime(2026, 3, 1)));
+			Paso("un pago", api.RegistrarPago(new DateTime(2026, 1, 5), 25000m));
+			Paso("el mismo pago otra vez", api.RegistrarPago(new DateTime(2026, 1, 5), 25000m));
+			Paso("el proximo cobro", api.AnunciarCobro(new DateTime(2026, 2, 5), 25000m));
+
 			// ------------------------------------------------------------ las preguntas
 
 			Console.WriteLine();
@@ -76,8 +92,16 @@ namespace Gimnasio.Consola
 			Console.WriteLine("  " + api.ComoVoy("grasa", 21m, 33m, 1m, 5m));
 			Console.WriteLine();
 
-			Console.WriteLine("  el incumplimiento del plan 1:");
+			Console.WriteLine("  el incumplimiento del plan 1 -descontando la mora-:");
 			Console.WriteLine("  " + api.IncumplimientoDelPlan(plan1));
+			Console.WriteLine();
+
+			Console.WriteLine("  el estado de la membresia:");
+			Console.WriteLine("  " + api.EstadoDeLaMembresia());
+			Console.WriteLine();
+
+			Console.WriteLine("  los periodos en mora dentro del plan 1:");
+			Console.WriteLine("  " + api.PeriodosEnMora(plan1, new DateTime(2026, 4, 6)));
 			Console.WriteLine();
 
 			Console.WriteLine("  planes que terminaron sin medicion -la ausencia-:");

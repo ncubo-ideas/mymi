@@ -194,6 +194,66 @@ namespace Gimnasio.App
 			.PerformCheckThenCommand();
 		}
 
+		// ------------------------------------------------------ la membresia (v2, N1)
+
+		// LA BANDERA DEL GIMNASIO. Manda "en mora" y despues "al dia"; el dominio registra
+		// el cambio con su fecha y deriva el periodo. El parametro no se llama @estado ni
+		// @estadoDeMembresia porque taparia al tipo (regla 10). El Check rechaza el mismo
+		// estado dos veces: es el mismo hecho otra vez (regla 18).
+		public string CambiarEstadoDeMembresia(string nuevoEstado, DateTime fechaDelCambio)
+		{
+			return app.Using(
+				scriptForChk: @"
+					Check(trayectoria.PuedeCambiarEstadoDeMembresia(@nuevoEstado, @fechaDelCambio)) Error 'ese estado no existe, es el mismo que ya tiene, o es anterior al ultimo cambio';
+				",
+				@"
+					{
+						trayectoria.Membresia.CambiarEstado(EstadoDeMembresia.PorNombre(@nuevoEstado), @fechaDelCambio);
+					}
+				")
+			.WithParameters(p => {
+				p["nuevoEstado", typeof(string)] = nuevoEstado;
+				p["fechaDelCambio", typeof(DateTime)] = fechaDelCambio;
+			})
+			.PerformCheckThenCommand();
+		}
+
+		public string RegistrarPago(DateTime fechaDelPago, decimal montoPagado)
+		{
+			return app.Using(
+				scriptForChk: @"
+					Check(trayectoria.PuedeRegistrarPago(@fechaDelPago, @montoPagado)) Error 'el monto no sirve, o ese pago ya estaba registrado';
+				",
+				@"
+					{
+						trayectoria.Membresia.RegistrarPago(Pago(@fechaDelPago, @montoPagado));
+					}
+				")
+			.WithParameters(p => {
+				p["fechaDelPago", typeof(DateTime)] = fechaDelPago;
+				p["montoPagado", typeof(decimal)] = montoPagado;
+			})
+			.PerformCheckThenCommand();
+		}
+
+		public string AnunciarCobro(DateTime venceElCobro, decimal montoDelCobro)
+		{
+			return app.Using(
+				scriptForChk: @"
+					Check(trayectoria.PuedeAnunciarCobro(@venceElCobro, @montoDelCobro)) Error 'el monto no sirve, o ya hay un cobro con ese vencimiento';
+				",
+				@"
+					{
+						trayectoria.Membresia.AnunciarCobro(Cobro(@venceElCobro, @montoDelCobro));
+					}
+				")
+			.WithParameters(p => {
+				p["venceElCobro", typeof(DateTime)] = venceElCobro;
+				p["montoDelCobro", typeof(decimal)] = montoDelCobro;
+			})
+			.PerformCheckThenCommand();
+		}
+
 		// ----------------------------------------------------------------- consultas
 
 		// Escalares TIPADOS por parametro Out, no parseando el print -regla 16-.
@@ -259,12 +319,15 @@ namespace Gimnasio.App
 			.PerformQuery();
 		}
 
+		// Desde el v2 dice cuantos dias no se esperaron por mora (N2): el numero viaja al
+		// lado de la palabra, para que "esperaba 33" se pueda explicar con "desconto 6".
 		public string IncumplimientoDelPlan(DateTime inicioDelPlan)
 		{
 			return app.Using(@"
 				{
 					incumplimiento = trayectoria.IncumplimientoDe(trayectoria.PlanQueEmpezo(@inicioDelPlan));
 					print incumplimiento.DiasEsperados esperados,
+						incumplimiento.DiasDescontadosPorMora descontadosPorMora,
 						incumplimiento.DiasQueFue fue,
 						incumplimiento.DiasQueFaltaron faltaron,
 						incumplimiento.Cumplio cumplio;
@@ -272,6 +335,42 @@ namespace Gimnasio.App
 			")
 			.WithParameters(p => {
 				p["inicioDelPlan", typeof(DateTime)] = inicioDelPlan;
+			})
+			.PerformQuery();
+		}
+
+		// EL ESTADO DE LA MEMBRESIA. Si el gimnasio nunca mando la bandera, la consulta
+		// falla diciendo que no se sabe -igual que ComoVoy sin mediciones-: no hay "al dia"
+		// por defecto. La etiqueta es una hoja del tipo, no un ToString (regla 13).
+		public string EstadoDeLaMembresia()
+		{
+			return app.Using(@"
+				{
+					print trayectoria.Membresia.EstadoActual estado,
+						trayectoria.Membresia.CuantosCambiosDeEstado cambios,
+						trayectoria.Membresia.CuantosPagos pagos,
+						trayectoria.Membresia.CuantosCobros cobros;
+				}
+			")
+			.PerformQuery();
+		}
+
+		// LOS PERIODOS EN MORA, hoja por hoja, con los dias que caen dentro de la ventana
+		// pedida. NO se imprime el fin: el de un periodo abierto no existe, y un nullable
+		// viaja como bool mas valor (regla 13). Va si cerro, y cuantos dias de la ventana
+		// estuvo en mora -que es lo que el plan descuenta-.
+		public string PeriodosEnMora(DateTime desde, DateTime hasta)
+		{
+			return app.Using(@"
+				foreach (elPeriodo in trayectoria.Membresia.PeriodosEnMora()) {
+					print elPeriodo.Desde desde,
+						elPeriodo.TieneFin cerrado,
+						elPeriodo.DiasDentroDe(@desdeLaVentana, @hastaLaVentana) diasEnLaVentana;
+				}
+			")
+			.WithParameters(p => {
+				p["desdeLaVentana", typeof(DateTime)] = desde;
+				p["hastaLaVentana", typeof(DateTime)] = hasta;
 			})
 			.PerformQuery();
 		}

@@ -8,11 +8,53 @@ versiones de la guía.
 | Versión | Tag | Fecha | Qué cambió en la guía | Qué cambió en el dominio |
 |---|---|---|---|---|
 | **v1** | `gimnasio-v1` = `8ada9a0` | 2026-08-28 → 09-01 | La primera corrida del punto de partida con un peer del equipo. Sin papel: sólo la entrevista | 19 clases, 46 comprobaciones, el ciclo con journal. **Sin membresía** — huecos 9 y 12 |
-| **v2** | *(pendiente)* | 2026-09-07 → | La regla del descarte del bloque 1, corregida: *descartado como funcionalidad no es descartado del modelo*. **Misma entrevista, sin papel** — mide el método, no el artefacto | La membresía entra: la bandera *En mora* / *Al día*, pagos, cobros, el período en mora derivado, y el incumplimiento que lo descuenta |
+| **v2** | *(pendiente de firmas y tag)* | 2026-09-07 | La regla del descarte del bloque 1, corregida: *descartado como funcionalidad no es descartado del modelo*. **Misma entrevista, sin papel** — mide el método, no el artefacto | **Construido y verificado el mismo día**: la membresía entra —la bandera *En mora* / *Al día*, pagos, cobros, el período en mora derivado— y el incumplimiento la descuenta. 19 → 25 clases; 46 → 69 comprobaciones; el ciclo con journal dos veces sin que los números se muevan |
 | **v3** | *(pendiente)* | — | Las cuatro pasadas con un **artefacto real**. La fuente está por definir: la app del teléfono de Jorge es genérica y no sirve | — |
 
 **No se compara v1 con v3 directo:** v2 mide el método con el mismo insumo; v3 mide lo que el papel
 agrega. Dos variables, dos corridas.
+
+---
+
+## v2 · Lo que la corrida encontró — 2026-09-07
+
+> **Qué midió y qué no, dicho con precisión.** El v2 corrió contra **dos** cosas: la regla del descarte
+> del bloque 1 corregida —una guía **vieja**, el punto de partida— sobre las 19 clases del v1, que se
+> construyeron el 28 de agosto antes de que las cuatro pasadas existieran; y **las cuatro pasadas sobre
+> una rebanada**: la membresía, seis clases de veinticinco, con su pasada 1, su grilla, su hoja de
+> firmas y su especialización. **No es una corrida de la columna vertebral sobre el gimnasio.** Ésa es
+> el v3, contra [`Guias/columna-vertebral.md`](../../Guias/columna-vertebral.md), que se escribió el
+> mismo día justamente por esto.
+
+**La respuesta esperada estaba fijada de antemano y apareció.** Con la regla del descarte corregida y
+la misma entrevista del 28 de agosto, la membresía entró al modelo. Lo medido:
+
+| | v1 (`gimnasio-v1`) | v2 |
+|---|---|---|
+| Clases del dominio | 19 | **25** — `Membresia`, `EstadoDeMembresia`, `CambioDeEstado`, `Pago`, `Cobro`, `PeriodoEnMora` |
+| Comprobaciones en verde | 46 | **69** |
+| El incumplimiento del plan 1, con 15 días en mora adentro | *esperaba 39, fue 30, **faltaron 9*** | *esperaba **33**, descontó **6**, fue 30, **faltaron 3*** |
+| El ciclo con journal, segunda corrida | rechaza todo, números quietos | rechaza todo —incluidas las tres banderas y el pago—, números quietos |
+
+**Seis de los nueve días que el v1 le cobraba a Sonia no eran incumplimiento: estaba en mora y no
+podía entrar.** Es exactamente la *"respuesta creíble y equivocada"* que el hueco 9 describía desde
+el 28 de agosto, ahora medida y corregida.
+
+**Lo que N1 cambió respecto de la hoja de firmas tal como se escribió:** el gimnasio no manda una
+suspensión con fechas sino **una bandera que cambia** —*en mora*, después *al día*—. El hecho es el
+cambio con su fecha; el período se deriva de dos cambios. Es la figura 8.4 de Fowler al pie de la
+letra, y eliminó N3: quién está en mora lo decide el gimnasio. Y destapó un hallazgo para la doctrina:
+*en mora* **es una evaluación** que la institución manda — el 02 decía que el artefacto nunca trae una;
+ahora dice que trae las suyas, contra sus reglas, en un punto, y que la app evalúa sobre la serie y
+contra lo declarado.
+
+**Lo que quedó fuera del código, a propósito:** `Urgencia()` sobre la membresía (N4, sin firmar) y el
+cobro que no llegó (N6, opcional). **Y lo que se asumió:** que la bandera llega con fecha — hueco 15,
+dueño: el artefacto del v3.
+
+**Estado:** código, `Preguntas.md` y `HUECOS.md` actualizados y verificados; **N1 y N2 firmadas
+explícitamente el 2026-09-07** — N2 en sus tres partes, las tres tal como estaban implementadas, así
+que no hubo cambio de código. Sin commitear y sin tag `gimnasio-v2` hasta que Jorge lo decida.
 
 ---
 
@@ -146,7 +188,7 @@ classDiagram
 | # | El juicio | Propuesta | De dónde sale | Qué decide en el modelo | Firma |
 |---|---|---|---|---|---|
 | **N1** | **Origen de la suspensión** | ✅ **Contestado por Jorge:** el gimnasio manda la bandera *En mora* / *Al día*, con fecha. El período en mora se deriva de dos cambios | Jorge, 2026-09-07 | `CambioDeEstado` es hecho; `PeriodoEnMora` es contraste derivado; **la app no calcula atraso propio** | ✅ |
-| **N2** | **¿Un período en mora cuenta como incumplimiento?** *(pendiente nº 2 del `Preguntas.md`)* | **No.** *Reducir los días esperados de un plan por cada día que la membresía estuvo en mora dentro del plan* | Hueco 9 desde el 28-08, y Fowler 8.4: durante la suspensión las acciones propuestas no se esperan. **Tomado como firmado por la frase de Jorge** *"de ahí se pueden sacar los días de suspensión"* — corregir si no | `IncumplimientoDe(plan)` calcula los esperados sobre los días **no en mora**. Es el cambio que cierra el hueco 9 | ☐ confirmar |
+| **N2** | **¿Un período en mora cuenta como incumplimiento?** *(pendiente nº 2 del `Preguntas.md`)* | **No.** *Reducir los días esperados de un plan por cada día que la membresía estuvo en mora dentro del plan* | Hueco 9 desde el 28-08, y Fowler 8.4: durante la suspensión las acciones propuestas no se esperan. **Firmado el 2026-09-07 en sus tres partes:** el fondo; **semanas enteras**, la misma ley que la duración (hereda a propósito la fuga del hueco 6); y **las asistencias durante la mora cuentan** — un hecho no se borra porque contradiga una regla | `IncumplimientoDe(plan)` calcula los esperados sobre los días **no en mora**. Es el cambio que cierra el hueco 9 | ✅ |
 | ~~N3~~ | ~~Gracia antes del atraso~~ | **Eliminado por N1.** Quién está en mora lo decide el gimnasio; la app no tiene gracia que declarar | — | Un parámetro menos | — |
 | **N4** | **Aviso al pasar a mora.** Cuando la bandera cambia a *En mora*, ¿la app avisa? ¿Lo decide el monto o la clase? | **Avisa, y lo decide la clase**: un cambio a mora es aviso negativo, del mismo peso por ₡5.000 que por ₡50.000. Un solo nivel | Juicio 6 en los dos dominios anteriores: *la clase, no el monto* | `Membresia.Urgencia()` → negativa si `EstaEnMora()`, ninguna si no | ☐ |
 | **N5** | **Lo propio.** ¿Qué sabe la membresía que nada más sabe? | **Cuándo el plan estuvo en mora — y por eso cuándo un incumplimiento no fue incumplimiento** | Juicio 7. Y es el **relator** de *socia* (glosario nº 20) | `Membresia` se gana la clase: **juzga** (N2, N4), no sólo parametriza | ☐ |

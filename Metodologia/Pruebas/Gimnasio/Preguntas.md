@@ -33,15 +33,18 @@ miembro de la raíz y está bien que lo sea—: lo que no puede quedar es **vac�
 | **El perfil** | Género, edad, altura. **No es decoración — sin él ningún número se puede interpretar** | `Perfil`, `Genero` |
 | **El objetivo** | Lo que Sonia quiere lograr. Es lo que le da **signo** a cada medida | `Objetivo`, `Meta` |
 | **El rango de referencia** | Cada medida tiene valores **normales, bajos y altos**, y dependen del perfil. Es la misma forma que el analito de [Exámenes](../../Guias/04-requerimientos-que-agregan-valor.md) | `Referencia`, `Lectura` |
-| **La membresía** | Pagos, próximo cobro, atrasos | ❌ **nada** |
+| **La membresía** | Pagos, próximo cobro, y **la bandera** *en mora* / *al día* que el gimnasio manda con fecha | `Membresia` —el relator de *socia*—, `EstadoDeMembresia`, `CambioDeEstado`, `Pago`, `Cobro`; el período en mora **se deriva**: `PeriodoEnMora`. **Desde el v2, 2026-09-07** |
 
-> **Ese ❌ es el hallazgo que produjo la corrección del bloque 1 del punto de partida.** La membresía
-> quedó declarada acá y a la vez abajo, en *"lo que el gimnasio ya contesta, y por eso se descarta"*,
-> y el dominio se construyó sin ella. Hoy eso significa que **un período suspendido por falta de pago
-> cuenta como incumplimiento del plan** — es el [hueco 9](HUECOS.md).
+> **Este renglón dijo ❌ del 28 de agosto al 7 de setiembre, y ese ❌ produjo la corrección del bloque 1
+> del punto de partida.** La membresía quedó declarada acá y a la vez abajo, en *"lo que el gimnasio ya
+> contesta, y por eso se descarta"*, y el dominio v1 se construyó sin ella — así que **un período en
+> mora contaba como incumplimiento del plan** (huecos 9 y 12). El v2 lo cerró con la regla corregida:
+> *descartado como pantalla no es descartado del modelo*. Medido: el mismo plan que en el v1 daba
+> *"esperaba 39, faltaron 9"* da en el v2 *"esperaba 33, descontó 6 por mora, faltaron 3"*.
 >
-> Se deja el ❌ en vez de taparlo, por la misma razón que la clave `grasa:femenino:42`: un hueco
-> visible vale más que uno bien disimulado.
+> Se dejó el ❌ a la vista mientras estuvo, por la misma razón que la clave `grasa:femenino:42`: un
+> hueco visible vale más que uno bien disimulado. Y se deja esta nota por la razón contraria: que se
+> vea que se cerró, y con qué.
 
 ## Dos juicios sobre el mismo número, y no se reemplazan
 
@@ -60,13 +63,17 @@ cosas miente por omisión en la mitad de los casos.
 > —el valor contra su rango—, porque un paciente no declara hacia dónde quiere que vaya su colesterol.
 > Acá Sonia sí declara un objetivo, y eso agrega un eje entero.
 
-## Lo que el gimnasio ya contesta, y por eso se descarta
+## Lo que el gimnasio ya contesta, y por eso se descarta **como pantalla**
 
 Entregar datos no es contestar preguntas, y esto es lo segundo:
 
 - Cuántas veces fue en la semana o el mes
 - Las métricas del perfil, en serie — *"le da una hoja al iniciar y otra después de un período"*
 - Si está atrasada en pagos, si pagó por adelantado, cuándo es el próximo cobro
+
+> **Descartado como pantalla, no del modelo.** Corregido el 2026-09-07 con el v2. Los tres renglones
+> entran al dominio —el tercero es la membresía entera—; lo que no se hace es una pantalla que repita
+> lo que el gimnasio ya muestra. Leerlo como descarte total fue lo que costó la membresía.
 
 ## Lo que NADIE tiene
 
@@ -90,6 +97,8 @@ Ninguno se deduce de los datos: existen porque alguien los decidió.
 | 6 | **Qué hace urgente un hallazgo** | **Magnitud + signo respecto del objetivo.** Y existe la **urgencia positiva**: 2 cm menos de cintura avisa igual que 2 cm más |
 | 7 | **Qué sabe cada medida que ninguna otra sabe** | **Su propio rango de referencia, y qué parte del perfil necesita para leerlo.** Ver la tabla |
 | 8 | **Qué es normal, bajo o alto** | **Lo decide la medida contra el perfil**, igual que un analito de laboratorio. Es un juicio **distinto** del 1, y los dos hacen falta |
+| 9 | **De dónde sale que la membresía está en mora** — *v2, N1* | **Lo dice el gimnasio**, con una bandera *en mora* / *al día* que cambia con fecha. La app **no** deduce mora de cobros y pagos: la política de cuándo una cuenta está en mora es del gimnasio. El período en mora se **deriva** de dos cambios de bandera. **Firmado por Jorge, 2026-09-07** |
+| 10 | **Si un período en mora cuenta como incumplimiento del plan** — *v2, N2* | **No.** Los días en mora dentro del plan no se esperan: se descuentan del plan en semanas enteras, con la misma ley con que el plan cuenta su duración. Es la *Suspension* de Fowler cap. 8. **Firmado por Jorge el 2026-09-07, en sus tres partes:** el fondo; la granularidad en **semanas enteras**, la misma ley con que el plan cuenta su duración; y que **una asistencia durante la mora cuenta igual** — un hecho no se borra porque contradiga una regla |
 
 ### El 1 tiene una excepción, y rompe la regla
 
@@ -165,8 +174,11 @@ noticia. Un aviso que dispara dentro del margen de error entrena a la persona a 
 
 Se decide **al final**, y va a mostrar menos que lo que el modelo sabe. Pendiente.
 
-Un requisito ya conocido: **los pagos y el próximo cobro se muestran pero no se modelan.** El gimnasio
-los contesta completos; están porque son cómodos de tener a mano, no porque el dominio los necesite.
+Un requisito ya conocido, **corregido el 2026-09-07 al revés de como estaba escrito**: los pagos, el
+próximo cobro y la mora **se modelan y no se muestran**. El gimnasio los contesta completos —por eso
+no hay pantalla de pagos—; y el dominio **sí** los necesita: sin la mora no puede decir cuándo un
+incumplimiento no lo fue. La versión anterior de esta línea —*"se muestran pero no se modelan"*— era
+el error del bloque 1 escrito en la Parte 3.
 
 ---
 
@@ -229,7 +241,10 @@ hoy viven en dos papeles que nadie junta.
 | La urgencia tiene signo | El tipo distingue urgencia **positiva** de negativa, no sólo severidad |
 | El dominio no lee el reloj | Ninguna clase referencia `DateTime.Now`. Las fechas entran por parámetro |
 | Hay una pregunta que sólo contesta la IA | Al menos una tool que ninguna vista renderiza. Candidata: la **5** |
-| El journal es reconstruible | Nada del modelo depende de un hecho que sólo Sonia pudo aportar |
+| El journal es reconstruible | Nada del modelo depende de un hecho que sólo Sonia pudo aportar — **y la membresía tampoco**: bandera, pagos y cobros llegan del gimnasio |
+| **La mora no cuenta como incumplimiento** *(v2)* | `IncumplimientoDe` descuenta las semanas en mora dentro del plan. Hay una prueba con quince días en mora que **espera 33 y no 39**, y dice que descontó 6 |
+| **La misma bandera dos veces se rechaza** *(v2)* | Es el mismo hecho otra vez —regla 18—. Hay una prueba, y el ciclo con journal lo muestra: la segunda corrida rechaza las tres banderas |
+| **Sin bandera no hay "al día" por defecto** *(v2)* | `EstaEnMora()` **revienta** si el gimnasio nunca mandó la bandera; `EstabaEnMoraEl(fecha)` es total y da `false`; el descuento es total y da cero |
 
 ---
 
@@ -238,5 +253,5 @@ hoy viven en dos papeles que nadie junta.
 | # | Qué falta | Quién puede saberlo |
 |---|---|---|
 | 1 | **Firmar los umbrales del juicio 2 y el 4.** Hoy los da un experto IA y nadie del gimnasio los validó | Sin asignar. **Es un dominio de salud: conviene que tenga nombre antes de producción** |
-| 2 | Si un período **suspendido por atraso de pago** cuenta como incumplimiento | Sin asignar. Si cuenta, el pago entra al dominio y deja de ser sólo pantalla |
+| ~~2~~ | ~~Si un período **suspendido por atraso de pago** cuenta como incumplimiento~~ — **CERRADO el 2026-09-07** (v2, juicio 10): no cuenta. La membresía entró al dominio con la bandera del gimnasio, y el incumplimiento descuenta la mora | Jorge — **firmado el 2026-09-07** |
 | 3 | Qué pasa cuando Sonia tiene **más de un objetivo**, y se contradicen entre sí | Sin asignar. El juicio 1 depende de que haya **un** objetivo que dé signo |

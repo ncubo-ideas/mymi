@@ -36,6 +36,7 @@ namespace Gimnasio.Consola
 			ElRitmoEsDelPlan();
 			LaUrgenciaTieneSigno();
 			ElIncumplimiento();
+			LaMembresiaYLaMora();
 			LaProgresionDeLoIndicado();
 			CuantoFalta();
 			LaAusencia();
@@ -220,6 +221,75 @@ namespace Gimnasio.Consola
 
 			Plan corriendo = new Plan(new DateTime(2026, 3, 1), 3);
 			Revienta("Un plan sin terminar no se puede juzgar", () => t.IncumplimientoDe(corriendo));
+		}
+
+		// --------------------------------------------- la membresia y la mora (v2, N1 y N2)
+
+		private static void LaMembresiaYLaMora()
+		{
+			Titulo("La membresia: la mora la dice el gimnasio, y el plan no la espera");
+
+			// El plan del v1: 5-ene a 6-abr, 13 semanas, 3 dias por semana = 39 esperados.
+			Plan p = new Plan(new DateTime(2026, 1, 5), 3);
+			p.Terminar(new DateTime(2026, 4, 6));
+
+			// SIN BANDERA NO SE SABE, Y SE DICE. Ni al dia ni en mora por defecto.
+			Trayectoria sinBandera = new Trayectoria();
+			sinBandera.Agregar(p);
+			Ok("Una membresia recien nacida no tiene estado declarado", !sinBandera.Membresia.TieneEstadoDeclarado);
+			Revienta("Preguntar si esta en mora sin bandera revienta en vez de inventar 'al dia'",
+				() => sinBandera.Membresia.EstaEnMora());
+			Ok("Pero el descuento es total: sin mora registrada se descuenta cero",
+				sinBandera.IncumplimientoDe(p).DiasDescontadosPorMora == 0
+				&& sinBandera.IncumplimientoDe(p).DiasEsperados == 39);
+
+			// EL HUECO 9, CERRADO: dos semanas en mora dentro del plan esperan dos semanas menos.
+			Trayectoria t = new Trayectoria();
+			t.Agregar(p);
+			t.Membresia.CambiarEstado(EstadoDeMembresia.AlDia(), new DateTime(2026, 1, 5));
+			t.Membresia.CambiarEstado(EstadoDeMembresia.EnMora(), new DateTime(2026, 2, 2));
+			t.Membresia.CambiarEstado(EstadoDeMembresia.AlDia(), new DateTime(2026, 2, 16));
+
+			Ok("Del 2 al 16 de febrero son 15 dias en mora", t.Membresia.DiasEnMoraEntre(p.Inicio, p.Fin) == 15);
+			Incumplimiento inc = t.IncumplimientoDe(p);
+			Ok("Dos semanas en mora: el plan espera 33 dias, no 39", inc.DiasEsperados == 33);
+			Ok("Y dice cuantos desconto: 6", inc.DiasDescontadosPorMora == 6);
+			Ok("Hoy esta al dia", !t.Membresia.EstaEnMora());
+			Ok("Y el 10 de febrero estaba en mora", t.Membresia.EstabaEnMoraEl(new DateTime(2026, 2, 10)));
+			Ok("El periodo derivado es uno, y cerrado", t.Membresia.PeriodosEnMora().Count == 1
+				&& t.Membresia.PeriodosEnMora()[0].TieneFin);
+
+			// LA MISMA BANDERA DOS VECES ES EL MISMO HECHO OTRA VEZ (regla 18): se rechaza.
+			Ok("Volver a decir 'al dia' estando al dia no entra",
+				!t.PuedeCambiarEstadoDeMembresia("al-dia", new DateTime(2026, 3, 1)));
+			Revienta("Y forzarlo revienta",
+				() => t.Membresia.CambiarEstado(EstadoDeMembresia.AlDia(), new DateTime(2026, 3, 1)));
+			Ok("Un cambio con fecha anterior al ultimo tampoco entra",
+				!t.PuedeCambiarEstadoDeMembresia("en-mora", new DateTime(2026, 1, 20)));
+			Ok("Un estado que no existe tampoco",
+				!t.PuedeCambiarEstadoDeMembresia("suspendida", new DateTime(2026, 3, 1)));
+
+			// UN PERIODO ABIERTO se descuenta hasta el fin del plan, y su Hasta esta guardado.
+			Trayectoria u = new Trayectoria();
+			u.Agregar(p);
+			u.Membresia.CambiarEstado(EstadoDeMembresia.EnMora(), new DateTime(2026, 3, 20));
+			Ok("Sigue en mora", u.Membresia.EstaEnMora());
+			PeriodoEnMora abierto = u.Membresia.PeriodosEnMora()[0];
+			Ok("El periodo esta abierto", !abierto.TieneFin);
+			Revienta("Preguntarle el fin a un periodo abierto revienta: es la leccion de T1",
+				() => { DateTime fin = abierto.Hasta; });
+			Ok("Del 20 de marzo al 6 de abril son 18 dias, dos semanas: espera 33",
+				u.IncumplimientoDe(p).DiasEsperados == 33);
+
+			// EL PAGO Y EL COBRO, por identidad (regla 18).
+			Ok("Un pago entra", t.PuedeRegistrarPago(new DateTime(2026, 1, 5), 25000m));
+			t.Membresia.RegistrarPago(new Pago(new DateTime(2026, 1, 5), 25000m));
+			Ok("El mismo pago otra vez no entra", !t.PuedeRegistrarPago(new DateTime(2026, 1, 5), 25000m));
+			Revienta("Y forzarlo revienta", () => t.Membresia.RegistrarPago(new Pago(new DateTime(2026, 1, 5), 25000m)));
+			Ok("Un cobro entra", t.PuedeAnunciarCobro(new DateTime(2026, 2, 5), 25000m));
+			t.Membresia.AnunciarCobro(new Cobro(new DateTime(2026, 2, 5), 25000m));
+			Ok("El mismo vencimiento no se anuncia dos veces", !t.PuedeAnunciarCobro(new DateTime(2026, 2, 5), 25000m));
+			Revienta("Un pago de cero no es un pago", () => new Pago(new DateTime(2026, 1, 5), 0m));
 		}
 
 		// ------------------------------------------------------- la progresion del plan

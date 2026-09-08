@@ -88,5 +88,26 @@ namespace Gimnasio.Dominio
 		{
 			return SemanasQueDuro() * DiasEsperadosPorSemana;
 		}
+
+		// LA LEY CON NOMBRE (capitulo 3 §3: "nombra la ley, no la dejes como aritmetica"):
+		// DURANTE LA MORA LAS ASISTENCIAS ESPERADAS NO SE ESPERAN. Es el juicio N2 del v2
+		// y la Suspension de Fowler (fig. 8.4) aplicada al plan: las semanas en que la
+		// membresia estuvo en mora se restan de las que el plan duro, y solo las que
+		// quedan esperan dias.
+		//
+		// Se cuenta en semanas enteras, igual que SemanasQueDuro, y por eso hereda a
+		// proposito la fuga del hueco 6: seis dias en mora son cero semanas. Mismo
+		// criterio para durar y para descontar; cambiar uno sin el otro mentiria.
+		//
+		// Es el cambio que cierra el hueco 9: hoy un plan con dos semanas en mora
+		// esperaba lo mismo que uno sin mora, y contaba la mora como incumplimiento.
+		internal int DiasEsperadosDescontando(int semanasEnMora)
+		{
+			if (semanasEnMora < 0)
+				throw new ArgumentOutOfRangeException(nameof(semanasEnMora), semanasEnMora,
+					"No se pueden descontar semanas negativas.");
+			int semanas = SemanasQueDuro() - semanasEnMora;
+			return (semanas > 0 ? semanas : 0) * DiasEsperadosPorSemana;
+		}
 	}
 }
