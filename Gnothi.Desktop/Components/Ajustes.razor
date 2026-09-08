@@ -20,7 +20,7 @@
 
     <label class="field">@T("ajustes.proveedor.elegir")</label>
     <select @onchange="OnPreset">
-        @foreach (ModelConfig.Preset p in ModelConfig.Presets)
+        @foreach (ModelConfig.Preset p in Config.PresetsAvailable())
         {
             <option value="@p.Name" selected="@(p.Name == name)">@p.Name</option>
         }
@@ -28,8 +28,12 @@
 </div>
 
 <div class="card">
-    <div class="title">@T("ajustes.llave.de", ("proveedor", name))</div>
-    @if (needsKey)
+        <div class="title">@T("ajustes.llave.de", ("proveedor", name))</div>
+        @if (Config.IsApple)
+        {
+            <div class="meta" style="margin:4px 0">@T("ajustes.apple.sin-llave") @AppleModel.Diagnosis()</div>
+        }
+        else if (needsKey)
     {
         <div class="meta" style="margin:4px 0 10px">
             @if (Config.KeyPresent)
@@ -62,6 +66,8 @@
     }
 </div>
 
+@if (!Config.IsApple)
+{
 <div class="card">
     <div class="title">@T("ajustes.modelo")</div>
     <div class="meta" style="margin:4px 0 10px">
@@ -92,6 +98,7 @@
         <div class="notice denied" style="margin-top:10px">@modelsError</div>
     }
 </div>
+}
 
 @code {
     private string name = "", kind = "", url = "", model = "";

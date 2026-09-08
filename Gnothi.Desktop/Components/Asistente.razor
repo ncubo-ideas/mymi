@@ -12,7 +12,7 @@
 *@
 
 <h1>@T("asistente.titulo")</h1>
-<p class="sub">@T("asistente.sub")</p>
+<p class="sub">@T("asistente.sub")@(Config.IsApple ? " " + T("asistente.sub.apple") : "")</p>
 
 @if (Config.NeedsKey && !Config.KeyPresent)
 {
@@ -105,9 +105,14 @@
                 // El proveedor decide el adaptador: Claude habla su propia API; el resto (ChatGPT,
                 // Gemini, Groq, local…) hablan la forma OpenAI. Cambiar de uno a otro es este if,
                 // no código nuevo — para eso IModel es una interfaz.
-                IModel m = kind == "anthropic"
-                    ? new ModelClaude(keyPath, model)
-                    : new ModelOpenAiCompatible(url, model, keyPath);
+                IModel m = kind switch
+                {
+                    "anthropic" => new ModelClaude(keyPath, model),
+                    // El de esta maquina: el mismo ModelFoundation y el mismo encuadre corto que
+                    // usa el telefono. Nada sale del equipo.
+                    "apple" => AppleModel.Create(Encuadre.ParaModeloLocal),
+                    _ => new ModelOpenAiCompatible(url, model, keyPath),
+                };
                 var loop = new AgentLoop(State.Dispatcher, m);
                 return await loop.Answer(
                     question,

@@ -129,6 +129,15 @@
          origen, propuesta, y solo despues installation.json, con las tres formas. Reemplaza a
          ModuleInstaller como puerta de la ventana porque aquel toma solo cargo. -->
     <Compile Include="..\Gnothi.MobileShared\ModuleEnrollment.cs" Link="Movil\ModuleEnrollment.cs" />
+  <!-- APPLE INTELLIGENCE. El IModel del telefono es EL MISMO ARCHIVO que compila Gnothi.iOS, no
+       una copia (mismo precedente que Gnothi.Assistant.Tests con Snapshot.cs). Sus DllImport
+       apuntan a "__Internal"; AppleModel.Wire() los resuelve a la dylib. La dylib la deja
+       armar-modelo.sh en native/ y solo existe en una Mac con Xcode: sin ella el proyecto compila
+       igual y el preset no aparece. -->
+  <ItemGroup>
+    <Compile Include="..\Gnothi.iOS\ModelFoundation.cs" Link="ModelFoundation.cs" />
+    <None Include="native\libGnothiModelo.dylib" Condition="Exists('native\libGnothiModelo.dylib')"
+          CopyToOutputDirectory="PreserveNewest" Link="libGnothiModelo.dylib" />
   </ItemGroup>
 
   <ItemGroup>
