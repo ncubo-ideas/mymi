@@ -17,7 +17,8 @@
     --paper:#F5F3FB; --card:#FFFFFF; --ink:#241F3D; --muted:#6F6B85; --line:#E7E4F2;
     --accent:#6C4BD9; --accent-soft:#EEE9FC; --accent-ink:#4A2FB0;
     --off:#C0442E; --off-soft:#F9E7E2;
-    --shadow:0 1px 2px rgba(36,31,61,.05), 0 5px 16px rgba(36,31,61,.06);
+    --shadow:0 1px 2px rgba(36,31,61,.04), 0 6px 20px rgba(36,31,61,.07);
+    --shadow-up:0 2px 4px rgba(36,31,61,.06), 0 14px 34px rgba(36,31,61,.14);
   }
   *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
   html,body{height:100%}
@@ -26,7 +27,14 @@
   svg{fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
 
   .view{display:none;flex-direction:column;height:100%;padding-bottom:64px}
-  .view.on{display:flex}
+  /* MICROANIMACIONES (revisión 2026-09-08): la vista entra deslizándose, la tarjeta se hunde y
+     levanta sombra al tocarla, y el toque deja un ripple. Nada de esto cambia la funcionalidad;
+     cambia cómo se percibe. */
+  .view.on{display:flex;animation:entra .22s ease-out}
+  @keyframes entra{from{opacity:0;transform:translateX(14px)}to{opacity:1;transform:none}}
+  .rip{position:absolute;border-radius:50%;pointer-events:none;background:var(--brand,var(--accent));
+       opacity:.14;transform:scale(0);animation:ripple .55s ease-out forwards}
+  @keyframes ripple{to{transform:scale(1);opacity:0}}
   .scroll{flex:1;overflow-y:auto;padding:16px 16px 24px}
 
   nav{position:fixed;left:0;right:0;bottom:0;height:60px;display:flex;
@@ -56,27 +64,46 @@
   .hola .t{flex:1}
   .chev{color:var(--muted);font-size:20px;flex:none}
 
-  .sec{display:flex;align-items:baseline;margin:2px 2px 10px}
+  .sec{display:flex;align-items:center;gap:8px;margin:2px 2px 10px}
   .sec b{font-size:16px;flex:1}
-  .sec small{color:var(--accent);font-size:12.5px;font-weight:600}
+  .sec small{color:var(--muted);font-size:12.5px;font-weight:600}
+  .sec .gi{width:20px;height:20px;color:var(--accent);flex:none}
 
   /* ── the module grid ──────────────────────────────────────────────────── */
-  .grid{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:12px}
-  .mod{background:var(--card);border-radius:18px;box-shadow:var(--shadow);padding:18px 12px 14px;
-       display:flex;flex-direction:column;gap:6px;align-items:center;text-align:center;
-       min-height:150px;justify-content:center}
-  .mod:active{transform:scale(.97)}
-  .mod .ico{width:48px;height:48px;border-radius:14px;display:grid;place-items:center;
-       margin-bottom:4px}
-  .mod .ico svg{width:26px;height:26px}
+  /* LA TARJETA ES DE LA INSTITUCIÓN (maqueta de Geaninna, 2026-09-08): horizontal, su logo a la
+     izquierda, su nombre y su eslogan, un botón «Abrir» teñido con su color, y el color corporativo
+     en una FRANJA superior sobre tarjeta blanca, no en un fondo coloreado: cinco marcas juntas
+     tienen que convivir. Al fondo, su logo desvanecido. Dos columnas en el teléfono, más en tablet. */
+  .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(165px,1fr));gap:12px}
+  .mod{position:relative;overflow:hidden;background:var(--card);border-radius:20px;box-shadow:var(--shadow);
+       padding:14px 14px 14px;display:flex;flex-direction:column;gap:8px;align-items:stretch;
+       text-align:left;min-height:156px;border-top:4px solid var(--brand,#CFC9E4);
+       transition:transform .18s ease,box-shadow .18s ease;-webkit-tap-highlight-color:transparent}
+  .mod:active{transform:scale(.965);box-shadow:var(--shadow-up)}
+  /* En el teléfono el logo va arriba y el nombre debajo a todo lo ancho: «Supermercado» no cabe al
+     lado de un logo en 165 px. Desde tablet, lado a lado como en la maqueta. */
+  .mod .cab{display:flex;flex-direction:column;align-items:flex-start;gap:8px;min-width:0}
+  .mod .cab b{min-width:0;overflow-wrap:break-word}
+  @media (min-width:600px){ .mod .cab{flex-direction:row;align-items:center;gap:10px} .mod .cab b{flex:1} }
+  .mod .ico{width:46px;height:46px;border-radius:14px;display:grid;place-items:center;flex:none}
+  .mod .ico svg{width:24px;height:24px}
   /* LA MARCA DE LA INSTITUCIÓN: su ícono, tal cual lo publicó en su bundle, sobre su color. */
   .ico.marca{overflow:hidden;padding:0}
   .ico.marca img{width:100%;height:100%;object-fit:cover;display:block}
-  .mod > div{min-width:0;max-width:100%}
-  .mod b{font-size:15px;line-height:1.25}
+  .mod b{font-size:14.5px;line-height:1.25}
   /* el eslogan de la institución puede ser una frase: dos líneas como mucho, nunca ensancha la grilla */
   .mod small{color:var(--muted);font-size:11.5px;line-height:1.35;display:-webkit-box;
-       -webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;max-width:100%}
+       -webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;max-width:100%;flex:1}
+  .mod .abrir{margin-top:auto;align-self:flex-start;display:inline-flex;align-items:center;gap:6px;
+       padding:7px 14px;border:0;border-radius:999px;font-size:12.5px;font-weight:700;
+       font-family:inherit;color:var(--brand,var(--accent));background:var(--brand-soft,var(--accent-soft));
+       transition:transform .15s ease,filter .15s ease}
+  .mod .abrir:active{transform:scale(.94);filter:brightness(.96)}
+  .mod .abrir span{transition:transform .15s ease}
+  .mod .abrir:active span{transform:translateX(3px)}
+  .mod .abrir span{font-size:14px;line-height:1}
+  /* Sin marca de agua: los íconos PNG son cuadrados plenos y al fondo se ven como una mancha, no como
+     la silueta de la maqueta. La marca ya está en la franja, el logo y el botón. */
   /* EL ALTA EN CURSO. Vive arriba de la grilla porque es lo que la persona está esperando. */
   .alta{display:flex;align-items:center;gap:10px;margin:0 0 14px;padding:13px 15px;
         border-radius:14px;font-size:13.5px;line-height:1.4}
@@ -97,9 +124,14 @@
   .chip.no{color:var(--off)}
 
   /* the ghost card: adding a module is part of the product, so the grid says so */
-  .mod.add{background:none;box-shadow:none;border:2px dashed #CFC9E4;color:var(--muted)}
-  .mod.add .ico{background:var(--accent-soft);color:var(--accent);border-radius:50%}
-  .mod.add b{color:var(--accent);font-size:14px}
+  /* EL CTA de agregar: no es otra tarjeta de institución, es la invitación. Fondo suave del acento,
+     sin franja, el «+» en línea con el texto, y la promesa debajo. */
+  .mod.add{background:var(--accent-soft);box-shadow:none;border:0;border-top:0;color:var(--muted);
+       align-items:center;text-align:center;justify-content:center;gap:4px;--brand:var(--accent)}
+  .mod.add .cta{display:flex;flex-direction:column;align-items:center;gap:8px;color:var(--accent);font-weight:800;font-size:14.5px;line-height:1.2}
+  .mod.add .cta .mas{width:28px;height:28px;border-radius:50%;background:var(--accent);color:#fff;
+       display:grid;place-items:center;font-size:20px;line-height:1;font-weight:600;flex:none}
+  .mod.add small{flex:none;text-align:center;color:var(--accent-ink);opacity:.8}
 
   /* bottom sheets: the add-module explanation and the provider picker share the shell */
   .osheet{position:fixed;inset:0;background:rgba(36,31,61,.45);display:none;
@@ -266,7 +298,7 @@
     <div class="hola" onclick="gn.nav('chat')">
       <div class="ic"><svg viewBox="0 0 24 24"><path d="M12 3v2M5.6 5.6l1.4 1.4M18.4 5.6L17 7M12 7a5 5 0 0 1 5 5v4a3 3 0 0 1-3 3h-4a3 3 0 0 1-3-3v-4a5 5 0 0 1 5-5z"/><circle cx="10" cy="13.4" r=".9" fill="currentColor" stroke="none"/><circle cx="14" cy="13.4" r=".9" fill="currentColor" stroke="none"/></svg></div>
       <div class="t"><b>Hola Sonia 👋</b>
-      <small>Tus beneficios, resultados y servicios, reunidos aquí.</small></div>
+      <small>Todas tus instituciones en un solo lugar.</small></div>
       <span class="chev">›</span>
     </div>
 
@@ -274,7 +306,7 @@
          botón en la página de su institución y volvió acá. Sin esto son 12 MB de silencio. -->
     <div id="alta"></div>
 
-    <div class="sec"><b>Tus módulos</b><small id="home-sub"></small></div>
+    <div class="sec"><svg class="gi" viewBox="0 0 24 24"><rect x="4" y="4" width="7" height="7" rx="2"/><rect x="13" y="4" width="7" height="7" rx="2"/><rect x="4" y="13" width="7" height="7" rx="2"/><rect x="13" y="13" width="7" height="7" rx="2"/></svg><b>Todos los módulos</b><small id="home-sub"></small></div>
     <div class="grid" id="mods"></div>
   </div>
 </div>
@@ -412,6 +444,15 @@ function ico(m, glifo) {
   const k = look(m.name);
   return '<div class="ico" style="color:' + k.c + ';background:' + k.bg + '">' + (glifo || k.svg) + '</div>';
 }
+// El color corporativo de la tarjeta: el de la marca si lo declaró, si no el del glifo de respaldo.
+const colorDe = m => (m.brand && m.brand.color) ? attr(m.brand.color) : look(m.name).c;
+// Un #rrggbb con transparencia, para el fondo del botón «Abrir». Sin color-mix: el WebView de un
+// teléfono viejo no lo conoce.
+function tinte(hex, a) {
+  const h = /^#([0-9a-f]{6})$/i.exec(hex); if (!h) return 'var(--accent-soft)';
+  const n = parseInt(h[1], 16);
+  return 'rgba(' + (n >> 16) + ',' + ((n >> 8) & 255) + ',' + (n & 255) + ',' + a + ')';
+}
 // Grande la institución, chico su eslogan: es la marca lo que ella paga por ver. Sin eslogan,
 // la tarjeta va solo con el nombre; el título del módulo («My invoices») no es prosa de tarjeta
 // (quitado 2026-09-08). Un manifiesto sin institución no deja la tarjeta muda: sube el título.
@@ -514,27 +555,42 @@ const gn = {
   },
   detail(name) { gn.open = name; gn.nav('detail'); gn.paint(); },
 
+  // EL RIPPLE: un círculo que nace donde tocó el dedo y se desvanece. Va en la tarjeta entera,
+  // con el color de la marca; se borra solo al terminar.
+  ripple(e) {
+    const card = e.target.closest('.mod'); if (!card) return;
+    const r = card.getBoundingClientRect(), d = Math.max(r.width, r.height) * 2;
+    const s = document.createElement('span'); s.className = 'rip';
+    s.style.width = s.style.height = d + 'px';
+    s.style.left = (e.clientX - r.left - d / 2) + 'px'; s.style.top = (e.clientY - r.top - d / 2) + 'px';
+    card.appendChild(s); setTimeout(() => s.remove(), 600);
+  },
+
   paint() {
     if (!gn.state) return;
     const ms = gn.state.modules;
 
     document.getElementById('home-sub').textContent =
-      ms.filter(m => m.enabled).length + ' de ' + ms.length + ' encendidos';
+      ms.length + (ms.length === 1 ? ' módulo disponible' : ' módulos disponibles');
 
-    document.getElementById('mods').innerHTML = ms.map(m => {
-      return '<div class="mod' + (m.enabled ? '' : ' off') + '" onclick="gn.detail(\'' + m.name + '\')">'
-        + ico(m)
-        + '<div><b>' + esc(quien(m)) + '</b>'
-        + '<small>' + esc(que(m)) + '</small></div>'
-        // Encendido, la tarjeta es solo la marca: «Diario de eventos» era un tecnicismo del Host
-        // repetido en todas (quitado 2026-09-08). Apagado sí se dice, porque explica por qué el
-        // asistente no lo ve.
-        + (m.enabled ? '' : '<span class="chip no">apagado por vos</span>')
+    const grid = document.getElementById('mods');
+    if (!grid.dataset.ripple) { grid.dataset.ripple = '1'; grid.addEventListener('pointerdown', gn.ripple); }
+    grid.innerHTML = ms.map(m => {
+      const c = colorDe(m);
+      return '<div class="mod' + (m.enabled ? '' : ' off') + '" style="--brand:' + c + ';--brand-soft:' + tinte(c, .13) + '"'
+        + ' onclick="gn.detail(\'' + m.name + '\')">'
+        + '<div class="cab">' + ico(m) + '<b>' + esc(quien(m)) + '</b></div>'
+        + '<small>' + esc(que(m)) + '</small>'
+        // Encendido: el botón abre la app de la institución adentro de Gnothi. Apagado: se dice,
+        // porque explica por qué el asistente no lo ve, y no hay nada que abrir.
+        + (m.enabled
+            ? '<button class="abrir" onclick="event.stopPropagation();gn.abrir(\'' + m.name + '\')">Abrir <span>→</span></button>'
+            : '<span class="chip no">apagado por vos</span>')
         + '</div>';
     }).join('')
     + '<div class="mod add" onclick="gn.sheet(true)">'
-    + '<div class="ico"><svg viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg></div>'
-    + '<b>Agregar módulo</b><small>te lo da tu institución</small></div>';
+    + '<div class="cta"><span class="mas">+</span>Agregar una institución</div>'
+    + '<small>Conectá otro servicio a Gnothi</small></div>';
 
     if (gn.open) {
       const m = ms.find(x => x.name === gn.open);
@@ -770,7 +826,7 @@ const MOCK = { modules: [
     enabled:true, journalBytes:980, journalFiles:3, tools:[
     { name:'resumen', title:'How my car is doing', enabled:true, description:'How the vehicle stands right now.' }]},
   // Un módulo SIN marca, a propósito: es el camino de respaldo, y tiene que seguir viéndose bien.
-  { name:'facturas', title:'My invoices', institution:'Súper El Triunfo',
+  { name:'facturas', title:'My invoices', institution:'Súper El Triunfo', slogan:'Ahorro y calidad en un solo lugar',
     enabled:true, journalBytes:1650, journalFiles:3, tools:[
     { name:'total_de_facturas', title:'Total spent', enabled:true, description:'Total of all invoices on record.' }]},
 ], settings: { name:'Groq', provider:'api.groq.com', model:'openai/gpt-oss-120b', keyPresent:true, root:'/data/user/0/…/files/Modulos' } };
