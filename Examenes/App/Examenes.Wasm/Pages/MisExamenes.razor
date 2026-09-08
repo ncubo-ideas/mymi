@@ -594,47 +594,101 @@ else
         SEVERIDAD INFORMATIVO: no es un hallazgo clínico y no se pinta de ámbar ni de rojo.
         El semáforo está reservado para resultados. Va en neutro, arriba de «Cómo vienen
         tus valores», y se puede COLAPSAR pero no descartar: eso es la insistencia.        *@
-    @* §3 EL RESTO VIENE TRANQUILO — compacto: una lista con un punto verde, no cuatro
-       tarjetas grandes con gráfico. "Ver todos mis resultados" no navega a otra
-       pantalla -no hay ruta nueva que inventar esta ronda-: despliega la MISMA lectura
-       del dominio (lectura.ParaSonia) debajo de cada fila. *@
+    @* §3 LO DEMÁS ESTÁ BIEN — RONDA 9: una sola tarjeta compacta, no cuatro grandes con
+       gráfico. Cada fila se lee sin abrir nada: nombre, valor, y la MISMA barra
+       verde→amarillo→rojo que ya usa la tarjeta de "merece atención"
+       (.inicio-atencion-rango-pista/-marca, reutilizadas tal cual, sin una propiedad
+       nueva), con el marcador en la posición real del valor. El límite numérico sale de
+       LimitesDeRango(lectura.ReferenciaLegible) -la MISMA frase que LimiteSuperior ya
+       parsea arriba, ahora leída también por su piso: la hemoglobina es una banda
+       ("entre 12.5 g/dL y 16.5 g/dL"), no un techo, y sin el piso el marcador mentiría-.
+       Los binarios (Nitritos, Sangre en heces/orina) no reciben una escala inventada: su
+       marcador cae en un extremo u otro según p.EstaPresente, el mismo booleano real que
+       ya decide "positivo"/"negativo" en el resto de la app, y la frase bajo la barra es
+       lectura.ReferenciaLegible tal cual la escribe el dominio ("lo esperable es
+       negativo") en vez de dos palabras Negativo/Positivo inventadas por la pantalla,
+       que para una serología real dirían "reactivo" y no "positivo". El chip "en rango"
+       usa Insignia(), que ya vivía en este archivo sin usarse (servía para constancias);
+       para todo lo que llega hasta acá siempre da "chip--estable" porque solo entra lo
+       que el dominio ya decidió que no pide nada (!lectura.PideAlgo). "Ver todos mis
+       resultados" sigue sin navegar -no hay ruta nueva-: despliega la MISMA lectura del
+       dominio (lectura.ParaSonia) debajo de cada fila, como antes de esta ronda. *@
     @if (tranquiloAnalitos.Count > 0 || tranquiloPresencias.Count > 0)
     {
         <section class="inicio-tranquilo" id="valores" @key="@($"tranquilo-{estado.Refrescos}")">
-            <p class="inicio-tranquilo-rotulo">el resto viene tranquilo</p>
-            <ul class="inicio-tranquilo-lista">
-                @foreach (TendenciaDeAnalito t in tranquiloAnalitos)
-                {
-                    <li>
-                        @{ InterpretacionDeAnalito lectura = Lectura(t.Analito); }
-                        <button class="inicio-tranquilo-item" @onclick="() => VerSerie(t.Analito)">
-                            <span class="inicio-tranquilo-punto" aria-hidden="true"></span>
-                            <span class="inicio-tranquilo-nombre">@t.ParaMostrar</span>
-                            <span class="inicio-tranquilo-estado">@t.Tendencia</span>
-                        </button>
-                        @if (tranquiloExpandido && !string.IsNullOrEmpty(lectura.ParaSonia))
-                        {
-                            <p class="inicio-tranquilo-detalle">@lectura.ParaSonia</p>
-                        }
-                    </li>
-                }
-                @foreach (PresenciaDeAnalito p in tranquiloPresencias)
-                {
-                    <li>
-                        @{ InterpretacionDeAnalito lectura = Lectura(p.Analito); }
-                        <button class="inicio-tranquilo-item" @onclick="() => VerSerie(p.Analito)">
-                            <span class="inicio-tranquilo-punto" aria-hidden="true"></span>
-                            <span class="inicio-tranquilo-nombre">@p.ParaMostrar</span>
-                            <span class="inicio-tranquilo-estado">@p.Presencia</span>
-                        </button>
-                        @if (tranquiloExpandido && !string.IsNullOrEmpty(lectura.ParaSonia))
-                        {
-                            <p class="inicio-tranquilo-detalle">@lectura.ParaSonia</p>
-                        }
-                    </li>
-                }
-            </ul>
-            <button class="boton--enlace" @onclick="() => tranquiloExpandido = !tranquiloExpandido">
+            <p class="inicio-tranquilo-rotulo">lo demás está bien</p>
+            <div class="inicio-tranquilo-tarjeta">
+                <p class="inicio-tranquilo-titulo">Estos resultados están dentro de lo esperado.</p>
+                <ul class="inicio-tranquilo-lista">
+                    @foreach (TendenciaDeAnalito t in tranquiloAnalitos)
+                    {
+                        <li>
+                            @{
+                                InterpretacionDeAnalito lectura = Lectura(t.Analito);
+                                (decimal? piso, decimal? techo) = LimitesDeRango(lectura.ReferenciaLegible);
+                            }
+                            <button class="inicio-tranquilo-item" @onclick="() => VerSerie(t.Analito)">
+                                <div class="inicio-tranquilo-cabeza">
+                                    <span class="inicio-tranquilo-nombre">@t.ParaMostrar</span>
+                                    <span class="inicio-tranquilo-valor">@Valor(t.ValorFinal) <small>@t.Unidad</small></span>
+                                </div>
+                                @if (techo is decimal limite && limite > 0)
+                                {
+                                    decimal piso2 = piso ?? 0m;
+                                    decimal proporcion = limite > piso2
+                                        ? Math.Max(0m, Math.Min(1m, (t.ValorFinal - piso2) / (limite - piso2)))
+                                        : 0m;
+                                    <div class="inicio-tranquilo-rango">
+                                        <div class="inicio-atencion-rango-pista">
+                                            <div class="inicio-atencion-rango-marca" style="left:@((proporcion * 100).ToString("0.#", CultureInfo.InvariantCulture))%"></div>
+                                        </div>
+                                        @if (lectura.ReferenciaLegible.Length > 0)
+                                        {
+                                            <div class="inicio-tranquilo-rango-etiquetas">
+                                                <span>@lectura.ReferenciaLegible</span>
+                                                <span class="chip @Insignia(t)">en rango</span>
+                                            </div>
+                                        }
+                                    </div>
+                                }
+                            </button>
+                            @if (tranquiloExpandido && !string.IsNullOrEmpty(lectura.ParaSonia))
+                            {
+                                <p class="inicio-tranquilo-detalle">@lectura.ParaSonia</p>
+                            }
+                        </li>
+                    }
+                    @foreach (PresenciaDeAnalito p in tranquiloPresencias)
+                    {
+                        <li>
+                            @{ InterpretacionDeAnalito lectura = Lectura(p.Analito); }
+                            <button class="inicio-tranquilo-item" @onclick="() => VerSerie(p.Analito)">
+                                <div class="inicio-tranquilo-cabeza">
+                                    <span class="inicio-tranquilo-nombre">@p.ParaMostrar</span>
+                                    <span class="inicio-tranquilo-valor">@p.UltimoResultado</span>
+                                </div>
+                                <div class="inicio-tranquilo-rango">
+                                    <div class="inicio-atencion-rango-pista">
+                                        <div class="inicio-atencion-rango-marca" style="left:@(p.EstaPresente ? "100" : "0")%"></div>
+                                    </div>
+                                    @if (lectura.ReferenciaLegible.Length > 0)
+                                    {
+                                        <div class="inicio-tranquilo-rango-etiquetas">
+                                            <span>@lectura.ReferenciaLegible</span>
+                                            <span class="chip @Insignia(p)">en rango</span>
+                                        </div>
+                                    }
+                                </div>
+                            </button>
+                            @if (tranquiloExpandido && !string.IsNullOrEmpty(lectura.ParaSonia))
+                            {
+                                <p class="inicio-tranquilo-detalle">@lectura.ParaSonia</p>
+                            }
+                        </li>
+                    }
+                </ul>
+            </div>
+            <button class="boton--enlace inicio-tranquilo-cta" @onclick="() => tranquiloExpandido = !tranquiloExpandido">
                 @(tranquiloExpandido ? "Ocultar detalle" : "Ver todos mis resultados") &rarr;
             </button>
         </section>
@@ -1095,6 +1149,32 @@ else
                 ultimo = valor;
         }
         return ultimo;
+    }
+
+    // EL PISO Y EL TECHO PARA "LO DEMÁS ESTÁ BIEN" — RONDA 9: la MISMA frase que
+    // LimiteSuperior ya lee arriba, pero acá hace falta el piso también. Un "hasta 220
+    // mg/dL" sigue sin piso -se asume 0, el mismo criterio de siempre-, pero una "entre
+    // 12.5 g/dL y 16.5 g/dL" (la hemoglobina: una banda, no un techo) sí lo tiene, y sin
+    // él el marcador mentiría sobre dónde cae el valor real. Un solo número en la frase
+    // = sigue siendo "hasta X" (piso null); dos o más = el primero es el piso y el
+    // último el techo, igual que LimiteSuperior ya elige "el último".
+    private static (decimal? piso, decimal? techo) LimitesDeRango(string referenciaLegible)
+    {
+        if (string.IsNullOrWhiteSpace(referenciaLegible)) return (null, null);
+
+        var numeros = new List<decimal>();
+        foreach (string palabra in referenciaLegible.Split(' ', StringSplitOptions.RemoveEmptyEntries))
+        {
+            string candidato = palabra.Trim(',', '.', ';');
+            if (decimal.TryParse(candidato, NumberStyles.Number, CultureInfo.InvariantCulture, out decimal valor))
+                numeros.Add(valor);
+            else if (decimal.TryParse(candidato, NumberStyles.Number, CultureInfo.CurrentCulture, out valor))
+                numeros.Add(valor);
+        }
+
+        if (numeros.Count == 0) return (null, null);
+        if (numeros.Count == 1) return (null, numeros[0]);
+        return (numeros[0], numeros[^1]);
     }
 
     // "TODAVIA ES PRONTO PARA HABLAR DE TENDENCIA": las visitas recientes, recortadas a
