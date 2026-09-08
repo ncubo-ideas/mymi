@@ -47,6 +47,43 @@ __pycache__/
 # Lo arma Gnothi.Mobile/armar-paquete.ps1 cuando hace falta.
 Gnothi.Mobile/paquete/
 
-# Los bundles de las instituciones: 12 MB de salida de publish por modulo.
-# Los arma Gnothi.Mobile/armar-bundle.ps1 cuando hace falta.
+# Y el zip que se le manda al de iOS, por la MISMA razon y una mas: adentro van los
+# journals de la persona que armo el paquete. Eso no va a un repo compartido.
+Gnothi.Mobile/paquete.zip
+
+# LOS BUNDLES DE LOS MODULOS, que son lo que la institucion publica: 12 MB cada uno, y
+# hoy son cuatro. Medido: 136 MB en total.
+#
+# Los arma armar-bundle.ps1 -y escenario-webview.ps1 por el- CADA VEZ que se levanta el
+# escenario, porque el manifiesto lleva la URL del publicador ADENTRO: un bundle armado
+# con un puerto y probado con otro instala bien y no trae nada. O sea que versionarlos no
+# solo pesaria, ademas mentiria.
+#
+# ESTA LINEA SE AGREGO DESPUES DE CASI METERLOS. Un `git add -A` despues de correr el
+# escenario se los lleva, y 136 MB en un repo compartido no se sacan con un commit.
 Gnothi.Mobile/bundles/
+
+# Xcode: estado de UI por persona, no del proyecto. El .xcodeproj y el esquema
+# compartido si van, para no rearmar el target a mano en cada clon.
+xcuserdata/
+*.xcuserstate
+
+# Lo que armar-intents.sh compila del Swift: la .a, el modulo y los const values. Es salida
+# de build y la regenera el script; el .swiftconstvalues cambia en cada corrida.
+Gnothi.iOS/Intents/out/
+
+# Lo que deja xcodebuild al compilar Lab.Siri por linea de comandos. Xcode lo crea al lado del
+# .xcodeproj aunque se le pase CONFIGURATION_BUILD_DIR a otra parte.
+Spikes/Lab.Siri/build/
+
+# Y lo que dejan los dos laboratorios de Android al correr: el apk sin alinear, el base.apk que
+# se baja del aparato, y las clases desensambladas. Salida de build, la regeneran sus scripts.
+#
+# ACA NO ES POR PESO -son 40 KB, no los 136 MB de los bundles- sino para que `git status`
+# quede limpio: mientras estos aparecen sin trackear, lo que SI importa se pierde entre ellos.
+#
+# OJO, ESTAS LINEAS NO SACAN LO QUE YA ESTA TRACKEADO. agente.apk, sonda.apk, sus .idsig y los
+# classes.dex siguen versionados, y estan a proposito: entraron con los commits de spike
+# 868c2d3 y 28e214a como la evidencia del laboratorio, 12 KB que se instalan sin recompilar.
+Spikes/Lab.Agente/out/
+Spikes/Lab.Sonda/out/

@@ -20,8 +20,11 @@ namespace Puppets.Portador
 
 		public string Desde { get; init; } = "";
 
-		// Donde vive ahora el registro. Se dice en pantalla: "tu historia ahora vive en X"
-		// sin decir donde es un mensaje que no se puede accionar.
+		// POR DONDE ENTRAN AHORA los hechos nuevos. Se dice en pantalla -"tus X nuevos ahora
+		// entran por Y"- porque sin decir por donde es un mensaje que no se puede accionar.
+		//
+		// EL NOMBRE ES DEL CABLE, no de la pantalla: el dato no se mudo a ningun lado, sigue en
+		// el telefono de la persona. Lo que cambio es quien lo escribe (13 §10.6).
 		public string Host { get; init; } = "";
 
 		public bool Migrada => string.Equals(Estado, "migrated", System.StringComparison.OrdinalIgnoreCase);

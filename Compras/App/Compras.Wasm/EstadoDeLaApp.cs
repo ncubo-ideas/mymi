@@ -342,12 +342,32 @@ public sealed class EstadoDeLaApp : IAsyncDisposable
 	{
 		Exigir();
 
-		// PIDE LA CREDENCIAL PRIMERO, igual que el arranque. Sin esto, si al abrir no se
-		// pudo hablar con el proveedor no queda token y CADA Refresh muere para siempre
-		// diciendo "la app no tiene web token guardado", porque el unico camino que
-		// consigue el token era el arranque, que ya paso. Medido por Renan en un iPhone.
-		await Credencial(ct);
-
+		// LA CREDENCIAL LA CONSIGUE EL BUCLE, POR EL DELEGADO, y esta linea no vuelve.
+		//
+		// Aca habia un `await Credencial(ct)` sin condicion. Estaba puesto por una razon
+		// buena -medida en un iPhone: si al abrir no se podia hablar con el proveedor no
+		// quedaba token, y cada Refresh moria para siempre diciendo "la app no tiene web
+		// token guardado", porque el unico camino que lo conseguia era el arranque, que ya
+		// habia pasado-. Pero el arreglo estaba en el lugar equivocado.
+		//
+		// POR QUE ROMPIA HOSPEDADA. Pedir la credencial es HTTP contra el publicador, y
+		// `proveedor.BaseUrl` es RELATIVA -"eventos/"-, asi que hospedada la peticion sale
+		// a `<su origen>/app/eventos/device/token`: el propio origen del modulo, servido
+		// por Gnothi, donde ese archivo no existe. 404. Y hospedada el modulo NO TIENE NI
+		// NECESITA credencial: el cartero del Host tiene la suya.
+		//
+		// Medido en un iPhone por Renan el 2026-09-08: con el journal lleno, tocar
+		// "Buscar compras nuevas" devolvia el 404 sin que hubiera un solo pull por el
+		// puente. La URL decia `eventos/` y por eso parecia la llamada de eventos; era
+		// esta.
+		//
+		// DONDE VA. `FuenteHttpDeEventos.LeerDesde` ya pide la credencial POR PULL, por el
+		// delegado que se le pasa al construirla, y su propio comentario dice por que:
+		// "quien lee por el puente de Gnothi no [la necesita]. Poner eso en el bucle lo
+		// obligaba, hospedada, a inventarse un token que nadie usa". Asi que el caso suelto
+		// que motivo esta linea ya estaba cubierto, y hospedada no se pide nada.
+		//
+		// Es lo que Examenes ya hacia. Los cuatro modulos quedan iguales.
 		ResultadoDeRefresh resultado = await bucle!.Ejecutar(ct);
 		UltimoMensaje = $"refresh: {resultado}";
 		return resultado;

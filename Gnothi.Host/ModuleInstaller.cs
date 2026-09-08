@@ -152,7 +152,7 @@ public static class ModuleInstaller
 		try
 		{
 			using var reader = new StreamReader(manifestEntry.Open());
-			Manifest? m = JsonSerializer.Deserialize<Manifest>(reader.ReadToEnd(), Manifest.JsonOptions);
+			Manifest? m = JsonSerializer.Deserialize(reader.ReadToEnd(), HostJson.Default.Manifest);
 			if (m is null || string.IsNullOrWhiteSpace(m.Module))
 				return (false, "the manifest is unreadable or declares no 'module'. Not installed.");
 			manifest = m;
@@ -245,9 +245,22 @@ public static class ModuleInstaller
 			GrantedFolder = granted.Replace("\\", "/"),
 			Enabled = enabled,
 			DisabledTools = disabledTools,
+
+			// EL ACTA DEL ALTA, y aca 'servedBy' va VACIO a proposito: un .gmod se importa de
+			// un archivo, no de la red, asi que no hay ningun host que atestiguar. Vacio no es
+			// un dato que falta -- es el hecho de que no vino de ningun servidor, y por eso la
+			// pantalla no puede ni debe contrastar nada. Distinto de contrastar y que no
+			// coincida, que es lo que pasa cuando el bundle si bajo de algun lado.
+			Provenance = new ProvenanceFile
+			{
+				ServedBy = "",
+				At = DateTime.UtcNow.ToString("yyyy-MM-ddTHH:mm:ssZ"),
+				Version = manifest.Publisher?.Version ?? "",
+			},
 		};
 
-		File.WriteAllText(installationPath, JsonSerializer.Serialize(installation, Indented));
+		// Legible y no Default: este archivo lo abre la persona con un editor.
+		File.WriteAllText(installationPath, JsonSerializer.Serialize(installation, HostJson.Legible.Installation));
 
 		var line = new System.Text.StringBuilder();
 		line.Append($"installed '{manifest.Module}' ({manifest.Title})");
@@ -282,6 +295,14 @@ public static class ModuleInstaller
 		[JsonPropertyName("grantedFolder")] public string GrantedFolder { get; init; } = "";
 		[JsonPropertyName("enabled")] public bool Enabled { get; init; }
 		[JsonPropertyName("disabledTools")] public IReadOnlyList<string> DisabledTools { get; init; } = [];
+		[JsonPropertyName("provenance")] public ProvenanceFile? Provenance { get; init; }
+	}
+
+	private sealed record ProvenanceFile
+	{
+		[JsonPropertyName("servedBy")] public string ServedBy { get; init; } = "";
+		[JsonPropertyName("at")] public string At { get; init; } = "";
+		[JsonPropertyName("version")] public string Version { get; init; } = "";
 	}
 
 	private sealed record ShellFile

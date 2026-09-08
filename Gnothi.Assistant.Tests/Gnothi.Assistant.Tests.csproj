@@ -20,6 +20,23 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <!-- LA FOTO, Y ES EL MISMO ARCHIVO QUE COMPILAN iOS Y ANDROID. No una copia: probar la foto
+         contra una reimplementacion seria repetir el antipatron del manifiesto, donde el
+         manifest.json de cada modulo era una copia, se desincronizo en silencio, y la suite
+         terminaba verificando la copia equivocada. Si Snapshot.cs cambia, el test lo ve. -->
+    <Compile Include="..\Gnothi.Movil\Snapshot.cs" Link="Snapshot.cs" />
+
+    <!-- Va Shell.cs con ella porque Snapshot usa Shell.Icon. Se enlaza entero en vez de
+         extraer el icono para NO tocar codigo compartido solo por el test: mover un metodo que
+         iOS y Android compilan es mas riesgo que compilar un archivo de mas aca. -->
+    <Compile Include="..\Gnothi.Movil\Shell.cs" Link="Shell.cs" />
+
+    <!-- Y ModuleEnrollment con Shell, porque el alta se mudo ahi: la propuesta en curso dejo
+         de ser estado de cada pantalla. Esta linea la pidio el compilador y no una decision,
+         que es exactamente lo que se quiere de una suite que compila el archivo de verdad en
+         vez de una copia. -->
+    <Compile Include="..\Gnothi.Movil\ModuleEnrollment.cs" Link="ModuleEnrollment.cs" />
+
     <ProjectReference Include="..\Gnothi.Host\Gnothi.Host.csproj" />
     <ProjectReference Include="..\Gnothi.Assistant\Gnothi.Assistant.csproj" />
   </ItemGroup>

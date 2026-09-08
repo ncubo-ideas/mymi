@@ -152,17 +152,19 @@ else
         </span>
     </div>
 
-    @* MIGRADA: el proveedor dice que el registro de esta cuenta ya vive en Gnothi
-       (especificación 13 §4 y §6.2). "Desaparecer" NO es desinstalar y NO es borrar: la app
+    @* MIGRADA: el proveedor marcó que los hechos nuevos de esta cuenta ya entran por Gnothi
+       (especificación 13 §4 y §6.2). El registro NO se mudó: sigue en el teléfono de la
+       persona y es de ella (§10.6). "Desaparecer" NO es desinstalar y NO es borrar: la app
        sigue mostrando lo que tiene, porque es de ella. Lo que deja de hacer es SINCRONIZAR,
        que es lo único que produciría dos historias que divergen. *@
     @if (estado.Migrada)
     {
         <div class="aviso d-flex align-items-center flex-wrap gap-2 mb-3">
             <div class="flex-grow-1">
-                <strong>Tu registro ahora vive en @estado.DondeVive.</strong>
-                Lo que ves acá se queda, pero esta copia ya no se actualiza: las compras
-                nuevas te llegan allá.
+                <strong>Tus compras nuevas ahora entran por @estado.DondeVive, en este
+                mismo teléfono.</strong>
+                Lo que ves acá se queda y sigue siendo tuyo; lo que esta copia deja de
+                hacer es buscar novedades.
             </div>
         </div>
     }
@@ -170,9 +172,9 @@ else
     {
         <div class="aviso d-flex align-items-center flex-wrap gap-2 mb-3">
             <div class="flex-grow-1">
-                <strong>Se está guardando en Gnothi.</strong>
-                Tu registro vive en el dispositivo, en la carpeta que Gnothi le dio a este
-                supermercado, y tu asistente lo puede leer desde ahí.
+                <strong>Se está guardando en este teléfono.</strong>
+                Tu registro es tuyo y está acá: Gnothi le dio a este supermercado una
+                carpeta en tu teléfono, y tu asistente la puede leer desde ahí.
             </div>
         </div>
     }

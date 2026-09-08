@@ -109,6 +109,20 @@
        width:100%;max-height:78vh;overflow-y:auto}
   /* LA PROPUESTA DE ALTA. Lista de consultas y las dos rutas que Gnothi fija. */
   .pr-hero{margin-bottom:16px}
+  /* LA FRANJA DE PROCEDENCIA. Verde cuando el dominio que la institución declara se
+     corresponde con el host del que bajó el bundle, ámbar cuando no, y neutra cuando no hay
+     con qué comparar. Las tres son información y ninguna bloquea nada. */
+  .proc{display:flex;align-items:flex-start;gap:7px;border-radius:12px;padding:9px 11px;
+        font-size:11.5px;line-height:1.4;margin:2px 0 0}
+  .proc svg{width:14px;height:14px;flex:none;stroke-width:2.2;margin-top:1px}
+  .proc.ok{background:#E4F4EC;color:#0E5C3D}
+  .proc.duda{background:#FFF6E5;color:#8A5A00}
+  /* La neutra toma el color de la institución por style; acá solo su forma. */
+  .proc.dice{background:var(--accent-soft);color:var(--accent-ink)}
+  /* Lo que la institución dice de sí misma. No usa .hint -que es para las notas al pie del
+     Host, centrada y en gris-: esto es un párrafo de alguien, y un párrafo se lee alineado. */
+  .desc{font-size:12.5px;line-height:1.5;color:var(--ink);padding:0 2px;margin:0}
+  .noHace{font-weight:600}
   .pr-tools{list-style:none;margin:6px 0 14px;padding:0}
   .pr-tools li{padding:9px 0;border-bottom:1px solid var(--line);font-size:13.5px}
   .pr-tools li:last-child{border-bottom:0}
@@ -418,6 +432,42 @@ function ico(m, glifo) {
 const quien = m => m.shortName || m.institution || m.title;
 const que   = m => m.institution ? (m.slogan || '') : '';
 
+// ── EL COLOR DE LA INSTITUCIÓN, CORREGIDO PARA QUE SE LEA ────────────────────────────────
+//
+// AQUÍ ES DONDE «EL HOST COMPONE» DEJA DE SER UNA FRASE. Su color sirve para su logo y no
+// necesariamente para texto: un amarillo de marca como #F7E06B sobre blanco tiene 1.4:1 de
+// contraste, contra el 4.5:1 que hace falta para leerse.
+//
+// La institución declara SU color; el Host lo baja de luminosidad hasta que se pueda leer,
+// conservando el tono. Así ella no puede pedir un texto ilegible, porque no elige las dos
+// partes de la ecuación: pone el matiz, y el Host pone la legibilidad. Declarar #FFFFFF da
+// gris, no texto invisible.
+//
+// Se escala hacia negro en pasos de 6% porque escalar PRESERVA EL MATIZ -- un lila oscurecido
+// sigue siendo lila --, mientras que bajar la saturación lo apagaría hasta volverlo gris.
+// Luminancia relativa de WCAG.
+const HEX = /^#[0-9a-f]{6}$/i;
+const luminancia = (r, g, b) => {
+  const f = c => { c /= 255; return c <= .03928 ? c / 12.92 : Math.pow((c + .055) / 1.055, 2.4); };
+  return .2126 * f(r) + .7152 * f(g) + .0722 * f(b);
+};
+function legible(hex) {
+  if (!HEX.test(hex || '')) return '';
+  let r = parseInt(hex.substr(1, 2), 16), g = parseInt(hex.substr(3, 2), 16), b = parseInt(hex.substr(5, 2), 16);
+  for (let k = 1; k > .1; k -= .06) {
+    const rr = Math.round(r * k), gg = Math.round(g * k), bb = Math.round(b * k);
+    if (1.05 / (luminancia(rr, gg, bb) + .05) >= 4.5) return 'rgb(' + rr + ',' + gg + ',' + bb + ')';
+  }
+  return 'var(--ink)';
+}
+const tinte = h => { const n = parseInt(h.slice(1), 16);
+  return 'rgba(' + (n >> 16 & 255) + ',' + (n >> 8 & 255) + ',' + (n & 255) + ',.13)'; };
+
+// El color de este módulo ya corregido, o el acento de Gnothi si no declaró ninguno. Las
+// pantallas piden esto y no `m.brand.color`: así ninguna se olvida de la corrección.
+const acento  = m => legible(m.brand && m.brand.color) || 'var(--accent-ink)';
+const fondoDe = m => HEX.test((m.brand && m.brand.color) || '') ? tinte(m.brand.color) : 'var(--accent-soft)';
+
 const gn = {
   state: null, open: null, busy: false, seq: 0,
 
@@ -473,13 +523,45 @@ const gn = {
     const tools = (p.tools || []).map(t =>
       '<li><b>' + esc(t.titulo || t.nombre) + '</b><br><small>' + esc(t.descripcion) + '</small></li>').join('');
 
+    // LA PROCEDENCIA, CONTRASTADA, y es lo único de todo esto que Gnothi puede afirmar por su
+    // cuenta: `coincide` lo calculó el Host comparando el dominio que la institución DECLARA
+    // contra el host del que BAJÓ el bundle. Cuando no coinciden no se bloquea nada -- puede
+    // ser un CDN legítimo -- pero se dice antes del sí, que es cuando sirve.
+    const proc = (p.dominio || p.razonSocial)
+      ? '<div class="proc ' + (p.coincide ? 'ok' : 'duda') + '">'
+        + '<svg viewBox="0 0 24 24"><path d="M12 3l7 3v5c0 4.4-2.9 8.1-7 9.5C7.9 19.1 5 15.4 5 11V6l7-3z"/>'
+        + (p.coincide ? '<path d="M9.2 11.8l2 2 3.6-3.9"/>' : '<path d="M12 8.5v4M12 15.2v.1"/>') + '</svg>'
+        + '<span>' + (p.razonSocial ? '<b>' + esc(p.razonSocial) + '</b>' : '')
+        + (p.cedula ? ', ' + esc(p.cedula) : '')
+        + (p.dominio
+            ? '<br>' + (p.coincide
+                ? 'Lo sirvió ' + esc(p.servido) + ', el mismo dominio que declara'
+                : 'Declara <b>' + esc(p.dominio) + '</b> y lo sirvió <b>' + esc(p.servido) + '</b>')
+            : '')
+        + (p.version ? ' · v' + esc(p.version) : '')
+        + '</span></div>'
+      : '';
+
     document.getElementById('pr-cuerpo').innerHTML =
       (p.yaEstaba ? '<p class="ojo">Ya tenés este módulo. Reinstalarlo reemplaza su app; su registro se conserva.</p>' : '')
+      + proc
+      + (p.descripcion
+          ? '<p class="desc" style="margin:10px 0">' + esc(p.descripcion)
+            + (p.noHace ? ' <span class="noHace">' + esc(p.noHace) + '</span>' : '') + '</p>'
+          : '')
       + '<p><b>Qué va a poder contestar</b></p><ul class="pr-tools">' + tools + '</ul>'
-      + '<p><b>Dónde va a vivir tu registro</b><br><code>' + esc(p.journal) + '</code></p>'
+      // LO QUE LA PANTALLA NO PODÍA CONTESTAR: ya decía DÓNDE va a vivir el registro, y no
+      // cuánto va a pesar, cada cuánto se actualiza ni por cuánto tiempo lo guardan -- que es
+      // lo que la persona pregunta antes de aceptar.
+      + '<p><b>Dónde va a vivir tu registro</b><br><code>' + esc(p.journal) + '</code>'
+      + (p.tamano || p.refresco || p.retencion
+          ? '<br><small>' + (p.tamano ? 'Unos ' + esc(p.tamano) + '. ' : '')
+            + (p.refresco ? 'Se actualiza ' + esc(p.refresco) + '. ' : '')
+            + (p.retencion ? 'La institución lo guarda ' + esc(p.retencion) + '.' : '') + '</small>'
+          : '')
+      + '</p>'
       + '<p><b>Con quién va a hablar</b><br><code>' + esc(p.publicador || '(no declara publicador)') + '</code><br>'
-      + '<small>Es la única red que va a poder tocar, y la hace Gnothi por él. '
-      + 'El bundle lo sirvió <b>' + esc(p.servido) + '</b>.</small></p>';
+      + '<small>Es la única red que va a poder tocar, y la hace Gnothi por él.</small></p>';
 
     document.getElementById('propuesta').classList.add('on');
   },
@@ -539,9 +621,53 @@ const gn = {
     if (gn.open) {
       const m = ms.find(x => x.name === gn.open);
       if (!m) { gn.nav('home'); return; }
+      // EL DETALLE, PARTIDO EN DOS ZONAS. De acá hasta la franja de procedencia es lo que la
+      // institución declara de sí misma -- y hasta ahora estaba vacío: lo único que la persona
+      // podía leer eran las descripciones de las tools, escritas para el modelo. De los
+      // interruptores para abajo es del Host, y no se personaliza: quien puede diseñar la
+      // pantalla donde se le pide permiso a alguien diseña el contexto del permiso.
+      const proc = m.publisher || {}, dia = m.journal || {}, org = m.provenance || {};
+
+      // TRES ESTADOS, NO DOS. `matches` es true, false o null -- null es «no hay con qué
+      // comparar», y se ve distinto de las otras dos a propósito: un visto bueno que en
+      // realidad significa «no sé» es peor que no poner nada.
+      const veredicto = org.matches === true ? 'ok' : org.matches === false ? 'duda' : 'dice';
+
       document.getElementById('detail').innerHTML =
         '<div class="hero">' + ico(m)
-        + '<div><b>' + esc(quien(m)) + '</b><small>' + esc(que(m)) + '</small></div></div>'
+        + '<div><b style="color:' + acento(m) + '">' + esc(quien(m)) + '</b>'
+        + '<small>' + esc(que(m)) + '</small></div></div>'
+
+        + (m.description
+            ? '<p class="desc">' + esc(m.description)
+              + (m.doesNotDo ? ' <span class="noHace">' + esc(m.doesNotDo) + '</span>' : '') + '</p>'
+            : '')
+
+        // LA PROCEDENCIA: lo que la institución DECLARA -- su dominio -- al lado de lo que
+        // Gnothi OBSERVÓ al dar el alta, y guardó. Es la única cosa de toda la marca que el
+        // Host puede comprobar solo, y por eso es la que le da sentido al logo: sin esto, un
+        // logo es un dibujo que cualquiera copia.
+        //
+        // La franja neutra toma el color de la institución; las otras dos NO, y es a propósito:
+        // el verde dice «comprobado» y el ámbar «ojo», y esos son juicios del Host. Que una
+        // institución pudiera pintar de su color la franja que la avala sería dejarla firmar su
+        // propio certificado.
+        + (proc.domain || proc.legal
+            ? '<div class="proc ' + veredicto + '"'
+              + (veredicto === 'dice' ? ' style="color:' + acento(m) + ';background:' + fondoDe(m) + '"' : '')
+              + '><svg viewBox="0 0 24 24"><path d="M12 3l7 3v5c0 4.4-2.9 8.1-7 9.5C7.9 19.1 5 15.4 5 11V6l7-3z"/>'
+              + (veredicto === 'ok' ? '<path d="M9.2 11.8l2 2 3.6-3.9"/>'
+                 : veredicto === 'duda' ? '<path d="M12 8.5v4M12 15.2v.1"/>' : '') + '</svg>'
+              + '<span>' + (proc.legal ? '<b>' + esc(proc.legal) + '</b>' : '')
+              + (proc.taxId ? ' · ' + esc(proc.taxId) : '')
+              + (veredicto === 'ok'
+                  ? '<br>lo bajaste de ' + esc(org.servedBy) + ', el dominio que declara'
+                  : veredicto === 'duda'
+                    ? '<br>declara <b>' + esc(proc.domain) + '</b> y lo bajaste de <b>' + esc(org.servedBy) + '</b>'
+                    : proc.domain ? '<br>declara ' + esc(proc.domain) + ' · lo importaste de un archivo' : '')
+              + (org.version ? ' · v' + esc(org.version) : proc.version ? ' · v' + esc(proc.version) : '')
+              + '</span></div>'
+            : '')
 
         + '<div class="master"><span>Módulo encendido</span>'
         + sw(m.enabled, "gn.setModule('" + m.name + "',this.checked)") + '</div>'
@@ -558,7 +684,18 @@ const gn = {
             + sw(t.enabled, "gn.setTool('" + m.name + "','" + t.name + "',this.checked)")
             + '</div>').join('')
 
-        + '<p class="hint">Una consulta apagada desaparece del catálogo:<br>el asistente no la ve y no puede pedirla.</p>';
+        + '<p class="hint">Una consulta apagada desaparece del catálogo:<br>el asistente no la ve y no puede pedirla.</p>'
+
+        // LO QUE LA INSTITUCIÓN PROMETE SOBRE EL REGISTRO. La pestaña Journal ya dice cuánto
+        // pesa HOY -- medido por el Host desde afuera --; esto es lo otro, que solo ella sabe.
+        // `reconstruible: false` es el dato que pesa: ese diario lleva aportes de la persona y
+        // borrarlo pierde datos.
+        + (dia.retention || dia.updates || dia.reconstruible === false
+            ? '<p class="hint">' + (dia.retention ? 'Lo guarda ' + esc(dia.retention) + '. ' : '')
+              + (dia.updates ? 'Se actualiza ' + esc(dia.updates) + '. ' : '')
+              + (dia.reconstruible === false ? 'Lleva cosas que pusiste vos: si se borra, se pierden.' : '')
+              + '</p>'
+            : '');
     }
 
     document.getElementById('journal').innerHTML = ms.map(m => {
@@ -747,7 +884,13 @@ const PROV = [
 // THE DESKTOP MOCK. Never reached inside the app: there, prompt() always answers. It mirrors
 // the real state's shape so the page can be designed and exercised in a plain browser.
 const MOCK = { modules: [
-  { name:'examenes', title:'Mis exámenes', institution:'Laboratorio Clínico Delfos',
+  {
+    shortName:'Laboratorio Delfos', description:'Tus resultados de laboratorio, con su historia y qué te toca repetir.',
+    doesNotDo:'No interpreta resultados ni reemplaza a tu médico.',
+    publisher:{ domain:'delfos.cr', legal:'Laboratorio Clínico Delfos S.A.', taxId:'3-101-123456', version:'2.4.0' },
+    provenance:{ servedBy:'delfos.cr', at:'2026-08-20T10:12:00Z', version:'2.4.0', matches:true },
+    journal:{ retention:'5 años', expectedSize:'~2 MB al año', updates:'al abrir la app' },
+    name:'examenes', title:'Mis exámenes', institution:'Laboratorio Clínico Delfos',
     slogan:'Tu salud, en tus manos', brand:{ color:'#0e2f55', logo:'../bundles/examenes/web/icon-192.png' },
     enabled:true, journalBytes:2048, journalFiles:3, tools:[
     { name:'revisar_mis_analitos', title:'How am I doing', enabled:true,
@@ -756,12 +899,23 @@ const MOCK = { modules: [
       description:'Answers whether one analyte is going up, down or stable over its whole history.' },
     { name:'velocidad_de', title:'How fast it is changing', enabled:true,
       description:'Answers how fast an analyte has been changing, in units per year.' }]},
-  { name:'compras', title:'Mis compras', institution:'Supermercado La Guaria',
+  {
+    shortName:'Supermercado La Guaria', description:'Tu historial de compras, con tus garantías y lo que sueles llevar.',
+    doesNotDo:'No te dice qué comer ni juzga tu canasta.',
+    publisher:{ domain:'laguaria.cr', legal:'Supermercado La Guaria S.A.', taxId:'3-101-654321', version:'1.2.0' },
+    provenance:{ servedBy:'cdn-barato.example', at:'2026-09-01T09:00:00Z', version:'1.2.0', matches:false },
+    journal:{ retention:'5 años', updates:'al abrir la app' },
+    name:'compras', title:'Mis compras', institution:'Supermercado La Guaria',
     slogan:'Tu canasta, más cerca de vos', brand:{ color:'#2f6b3f', logo:'../bundles/compras/web/icon-192.png' },
     enabled:true, journalBytes:3172, journalFiles:3, tools:[
     { name:'total_de_compras', title:'Cuanto gaste en total', enabled:true, description:'Total de todas las compras registradas.' },
     { name:'canasta_del_mes', title:'Como fue mi canasta de un mes', enabled:true, description:'La canasta de un mes, sumada por perfil.' }]},
-  { name:'cargas', title:'Mis cargas', institution:'Estaciones Faro',
+  {
+    shortName:'Estaciones Faro',
+    publisher:{ domain:'faro.cr', legal:'Estaciones Faro S.A.' },
+    provenance:{ servedBy:'', at:'2026-09-05T18:30:00Z', version:'', matches:null },
+    journal:{ retention:'2 años', reconstruible:false },
+    name:'cargas', title:'Mis cargas', institution:'Estaciones Faro',
     slogan:'Rendimiento real, tramo a tramo', brand:{ color:'#0B3C49', logo:'../bundles/cargas/web/icon-192.png' },
     enabled:true, journalBytes:1210, journalFiles:3, tools:[
     { name:'resumen', title:'Como vengo', enabled:true, description:'Cuantas cargas y cuantos vehiculos tiene registrados.' }]},

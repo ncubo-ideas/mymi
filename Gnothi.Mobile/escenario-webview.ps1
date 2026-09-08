@@ -45,13 +45,13 @@ $logs    = "$env:TEMP\gnothi-escenario"
 # armar-bundle.ps1: el manifiesto los lleva ADENTRO y el modulo no los puede cambiar despues.
 $catalogo = [ordered]@{
     'examenes'   = @{ Mock = "$raiz\Examenes\EndPointDeEventos";     Pub = 8095; Web = 8096
-                      Titulo = 'Laboratorio Clinico Delfos'; Subtitulo = 'Mis examenes' }
+                      Titulo = 'Laboratorio Clinico Delfos'; Subtitulo = 'Tus examenes, al dia' }
     'compras'    = @{ Mock = "$raiz\Compras\EndPointDeEventos";      Pub = 8101; Web = 8102
-                      Titulo = 'Supermercado La Guaria';     Subtitulo = 'Mis compras' }
+                      Titulo = 'Supermercado La Guaria';     Subtitulo = 'La Guaria y vos' }
     'cargas'     = @{ Mock = "$raiz\Cargas\EndPointDeEventos";       Pub = 8111; Web = 8112
-                      Titulo = 'Estaciones Faro';            Subtitulo = 'Mis cargas' }
+                      Titulo = 'Estaciones Faro';            Subtitulo = 'Tus cargas' }
     'dealership' = @{ Mock = "$raiz\DealershipCar\EndPointDeEventos"; Pub = 8092; Web = 8093
-                      Titulo = 'Sotavento Motors';           Subtitulo = 'My maintenance' }
+                      Titulo = 'Sotavento Motors';           Subtitulo = 'Your maintenance' }
 }
 
 if (-not (Test-Path $adb)) { throw "no encuentro adb en $adb. Pasa -Sdk con la ruta de tu SDK de Android." }
@@ -90,7 +90,25 @@ New-Item -ItemType Directory -Path $logs -Force | Out-Null
 # levanto el servidor. Medido el 2026-09-04.
 function Levantar($nombre, $argumentos, $puerto) {
     if (Puerto-Vivo $puerto) { Write-Host "    :$puerto $nombre ya estaba arriba"; return }
-    Start-Process dotnet -ArgumentList $argumentos -WindowStyle Hidden `
+
+    # QUOTE WHATEVER CONTAINS A SPACE, and this is the same family of trap as the note above:
+    # it fails silently and the script still announces success.
+    #
+    # Start-Process joins -ArgumentList with spaces and adds NO quotes of its own. Measured:
+    # with the array as it comes, dotnet receives `--Titulo Supermercado La Guaria`, binds
+    # Titulo to "Supermercado", and `La` and `Guaria` arrive as two stray arguments. The page
+    # then comes up titled "Supermercado" and nothing anywhere says why.
+    #
+    # It also protects the PATHS: --project, --Bundle and --AppSuelta carry $raiz, so a clone
+    # in a directory whose name has a space breaks every server for the same reason.
+    #
+    # No element here ends in a backslash. If one ever does, it needs doubling first: on
+    # Windows a trailing "\" inside quotes escapes the closing quote.
+    $quoted = $argumentos | ForEach-Object {
+        if ($_ -match '\s') { '"' + $_ + '"' } else { $_ }
+    }
+
+    Start-Process dotnet -ArgumentList $quoted -WindowStyle Hidden `
         -RedirectStandardOutput "$logs\$nombre.log" -RedirectStandardError "$logs\$nombre.err"
     Write-Host "    :$puerto $nombre levantado"
 }
@@ -174,6 +192,9 @@ foreach ($nombre in $Modulos) {
 }
 Write-Host ""
 Write-Host "Para mirar por dentro, en otra terminal (SON TRES TAGS):"
-Write-Host "  `"$adb`" logcat -s GNOTHI:I gnothi:I modulo:examenes:I"
+# `modulo:I` y NO `modulo:examenes:I`: -s lee cada termino como TAG:PRIORIDAD, asi que un tag
+# con dos puntos es un termino invalido, y uno invalido hace que logcat rechace TODA la lista.
+# El nombre del modulo va al principio del mensaje. Medido el 2026-09-07.
+Write-Host "  `"$adb`" logcat -s GNOTHI:I gnothi:I modulo:I"
 Write-Host ""
 Write-Host "Para bajar todo:  .\escenario-webview.ps1 -Detener"

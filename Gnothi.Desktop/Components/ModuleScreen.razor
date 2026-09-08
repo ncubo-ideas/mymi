@@ -21,8 +21,8 @@
 }
 else
 {
-    <h1>@HostState.Icon(module.Name) @module.Manifest.Title</h1>
-    <p class="sub">@module.Manifest.Institution</p>
+    <h1>@HostState.Icon(module.Manifest) @module.Manifest.Identity</h1>
+    <p class="sub">@module.Manifest.Title</p>
 
     @foreach (DeclaredTool tool in module.EnabledTools())
     {

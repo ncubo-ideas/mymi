@@ -94,6 +94,313 @@ public sealed class Module : IAsyncDisposable
 	public Task<IReadOnlyList<string>> ActualToolNames(CancellationToken ct)
 		=> shell.ActualTools(ct);
 
+	// ── LA ADUANA DEL LOGO ──────────────────────────────────────────────────────────────
+	//
+	// EL LOGO DE LA INSTITUCION, LEIDO Y VALIDADO POR EL HOST, devuelto como un data: URI listo
+	// para una pantalla -- o vacio, y entonces la cara pone el icono de la categoria.
+	//
+	// POR QUE VIVE ACA: es el mismo verbo que BytesOnDisk. El modulo no dice cuanto pesa ni
+	// entrega su logo; el Host va, lo mide y lo mira. Y esta en Gnothi.Host y no en la cascara
+	// del telefono porque las TRES caras -los dos telefonos y el escritorio- necesitan
+	// exactamente esta aduana, y una aduana implementada tres veces es una aduana con dos
+	// agujeros.
+	//
+	// POR QUE UN data: URI Y NO UNA RUTA: la pagina de la UI se sirve como file:// y no puede
+	// leer otros file:// -- y aunque pudiera, darle a la pantalla una ruta del modulo seria
+	// dejar que el modulo elija que archivo se abre. Asi los bytes que llegan a la pantalla son
+	// los que este metodo ya aprobo, y nada mas.
+	//
+	// FAIL CLOSED, y es la decision que hace corto este codigo: si algo no se puede determinar
+	// -el tipo, el ancho, el alto- NO PASA. Un parser que cubre todos los casos exoticos de
+	// WebP es una superficie de ataque; uno que rechaza lo que no entiende es una linea.
+	// ── LA CARA DE LA INSTITUCION, RESUELTA ─────────────────────────────────────────────
+	//
+	// Lo que la pantalla necesita para pintar un modulo: su logo -- ya validado, como data URI
+	// -- y su color. En ese orden de preferencia:
+	//
+	//   1. `brand` del manifiesto: la declaracion explicita, y manda.
+	//   2. EL `manifest.webmanifest` QUE LA PWA YA TRAE EN SU BUNDLE: `icons` y `theme_color`.
+	//
+	// EL SEGUNDO ES LA MEJOR PARTE Y NO ES NUESTRA IDEA: es de la rama de la marca, y hace algo
+	// que la version que exigia declarar `brand.logo` no hacia -- un bundle 1.0 se pinta con su
+	// marca SIN TOCARLO, porque toda PWA ya declara sus iconos y su color para que el navegador
+	// la instale. Declarar `brand` pasa a ser afinar eso, no habilitarlo.
+	//
+	// Lo que esta version agrega del otro lado: los iconos del webmanifest pasan por la MISMA
+	// aduana que un logo declarado. El `type` que el webmanifest declara es una afirmacion de
+	// quien lo escribio, y aca el tipo sale de los bytes.
+	public static BrandLook LookOf(Manifest manifest, string directory, out string problem)
+	{
+		string color = Brand.ValidColor(manifest.Brand?.Color) ?? "";
+		string logo = LogoDataUri(manifest, directory, out problem);
+
+		if (logo.Length > 0 && color.Length > 0) return new BrandLook(logo, color);
+
+		// Lo que `brand` no dijo -o dijo mal-, lo completa el webmanifest de la PWA.
+		(string? webLogo, string? webColor) = FromWebManifest(directory);
+		if (logo.Length == 0 && webLogo is not null)
+		{
+			logo = webLogo;
+			// Un logo declarado que no paso la aduana Y un webmanifest que si: el problema del
+			// primero deja de importarle a la pantalla, pero no se borra -- la institucion tiene
+			// que poder enterarse de que su archivo no entro.
+		}
+		if (color.Length == 0 && webColor is not null) color = webColor;
+
+		return new BrandLook(logo, color);
+	}
+
+	// EL WEBMANIFEST DE LA PWA, que es de la institucion y ya viaja en el bundle. Un archivo
+	// torcido no tumba nada: ese modulo se pinta con el dibujo de su rubro.
+	private static (string? logo, string? color) FromWebManifest(string directory)
+	{
+		string web = Path.Combine(directory, "web");
+		string path = Path.Combine(web, "manifest.webmanifest");
+		if (!File.Exists(path)) return (null, null);
+
+		try
+		{
+			using System.Text.Json.JsonDocument doc = System.Text.Json.JsonDocument.Parse(
+				File.ReadAllText(path),
+				new System.Text.Json.JsonDocumentOptions
+				{
+					CommentHandling = System.Text.Json.JsonCommentHandling.Skip,
+					AllowTrailingCommas = true,
+				});
+
+			System.Text.Json.JsonElement root = doc.RootElement;
+
+			string? color = root.TryGetProperty("theme_color", out System.Text.Json.JsonElement c)
+				&& c.ValueKind == System.Text.Json.JsonValueKind.String
+					? Brand.ValidColor(c.GetString())
+					: null;
+
+			return (PickIcon(root, web), color);
+		}
+		catch
+		{
+			return (null, null);
+		}
+	}
+
+	// EL ICONO QUE ELIGE: el de 192 sin `purpose` o con `any`, que es el que el navegador usa
+	// para la pestana y el dialogo de instalar. Los `maskable` van cuadrados y con el simbolo
+	// chico porque Android les aplica su propia mascara, y aca no hay mascara. Si no hay de 192,
+	// el primero que pase la aduana.
+	private static string? PickIcon(System.Text.Json.JsonElement root, string web)
+	{
+		if (!root.TryGetProperty("icons", out System.Text.Json.JsonElement icons)
+			|| icons.ValueKind != System.Text.Json.JsonValueKind.Array) return null;
+
+		List<(string src, bool any, bool is192)> candidates = [];
+		foreach (System.Text.Json.JsonElement i in icons.EnumerateArray())
+		{
+			if (!i.TryGetProperty("src", out System.Text.Json.JsonElement s)
+				|| s.ValueKind != System.Text.Json.JsonValueKind.String) continue;
+
+			string src = s.GetString() ?? "";
+			if (src.Length == 0) continue;
+
+			string purpose = i.TryGetProperty("purpose", out System.Text.Json.JsonElement p)
+				&& p.ValueKind == System.Text.Json.JsonValueKind.String ? p.GetString() ?? "" : "";
+			string sizes = i.TryGetProperty("sizes", out System.Text.Json.JsonElement z)
+				&& z.ValueKind == System.Text.Json.JsonValueKind.String ? z.GetString() ?? "" : "";
+
+			bool any = purpose.Length == 0
+				|| purpose.Split(' ', StringSplitOptions.RemoveEmptyEntries).Contains("any");
+			candidates.Add((src, any, sizes.Contains("192", StringComparison.Ordinal)));
+		}
+
+		foreach ((string src, _, _) in candidates.OrderByDescending(x => x.any).ThenByDescending(x => x.is192))
+		{
+			// POR LA MISMA ADUANA. El `type` del webmanifest lo declara quien lo escribio; el
+			// tipo de verdad sale de los bytes.
+			string uri = ReadImage(web, src, out _);
+			if (uri.Length > 0) return uri;
+		}
+		return null;
+	}
+
+	public string LogoDataUri() => LogoDataUri(Manifest, Directory, out _);
+
+	// LA FORMA ESTATICA EXISTE POR EL ALTA. Cuando Gnothi le muestra a la persona lo que una
+	// institucion le propone, el modulo TODAVIA NO ESTA INSTALADO: el bundle esta desempaquetado
+	// en una carpeta temporal y no hay ningun Module. Y esa pantalla -- la del si o no -- es
+	// justamente donde el logo mas importa.
+	//
+	// Tambien dice POR QUE no paso, para que la razon llegue al warning y de ahi a la
+	// institucion, que es la unica que puede arreglarlo.
+	public static string LogoDataUri(Manifest manifest, string directory, out string problem)
+	{
+		problem = "";
+		string declared = Manifest.Txt(manifest.Brand?.Logo);
+		if (declared.Length == 0) return "";
+
+		string uri = ReadImage(directory, declared, out problem);
+		if (problem.Length > 0) problem = "brand.logo " + problem;
+		return uri;
+	}
+
+	// LA ADUANA, sobre un archivo cualquiera de la carpeta del modulo. La usan las dos entradas
+	// -- el logo declarado y los iconos del webmanifest -- porque el riesgo es el mismo y una
+	// aduana con dos puertas es una aduana con una puerta.
+	private static string ReadImage(string baseDir, string src, out string problem)
+	{
+		problem = "";
+
+		// Un logo remoto no se baja: por aca no sale nada a la red.
+		if (Uri.TryCreate(src, UriKind.Absolute, out Uri? u) && !u.IsFile)
+		{
+			problem = $"apunta a la red ('{src}') y por aca no sale nada a la red";
+			return "";
+		}
+
+		// LA RUTA SE VUELVE A VALIDAR ACA, aunque Brand.Problems() ya la mira. No es
+		// redundancia: Problems solo AVISA -- un tope no tumba un modulo -- asi que un
+		// '../../otra/cosa.png' sigue llegando hasta aca. El que lee bytes es el que tiene que
+		// decir no. Y el webmanifest, que ni pasa por Problems, entra por la misma puerta.
+		string full = Path.GetFullPath(Path.Combine(baseDir,
+			src.TrimStart('/').Replace('/', Path.DirectorySeparatorChar)));
+		string root = Path.GetFullPath(baseDir) + Path.DirectorySeparatorChar;
+		if (!full.StartsWith(root, StringComparison.OrdinalIgnoreCase))
+		{
+			problem = $"apunta fuera de la carpeta del modulo: '{src}'";
+			return "";
+		}
+
+		if (!File.Exists(full)) { problem = $"declara '{src}' y ese archivo no esta en el bundle"; return ""; }
+
+		var info = new FileInfo(full);
+		if (info.Length == 0 || info.Length > Brand.MaxLogoBytes)
+		{
+			problem = $"pesa {info.Length / 1024} KB y el tope es {Brand.MaxLogoBytes / 1024} KB";
+			return "";
+		}
+
+		byte[] bytes = File.ReadAllBytes(full);
+
+		// EL TIPO SALE DE LOS BYTES, NO DE LA EXTENSION NI DEL `type` DEL WEBMANIFEST. Los dos
+		// los declara quien escribio el archivo, y este es justo el lugar donde no se le cree.
+		string? mime = SniffImage(bytes, out int width, out int height);
+		if (mime is null)
+		{
+			problem = "no es un png, jpeg, webp ni svg legible -- se rechaza por lo que dicen sus bytes";
+			return "";
+		}
+
+		// EL TOPE DE PIXELES NO ES COSMETICO: un png de 3000x3000 de un solo color entra en 25 KB
+		// y al decodificarlo pide gigabytes. El tope de peso no lo ataja; este si.
+		//
+		// Un SVG no tiene pixeles -- es vectorial y lo escala el contenedor -- asi que ahi el
+		// tope no aplica y SniffImage devuelve 0x0 a proposito.
+		if (width > Brand.MaxLogoPixels || height > Brand.MaxLogoPixels)
+		{
+			problem = $"mide {width}x{height} y el tope es {Brand.MaxLogoPixels} de lado";
+			return "";
+		}
+
+		return $"data:{mime};base64,{Convert.ToBase64String(bytes)}";
+	}
+
+	// QUE ES ESTO Y CUANTO MIDE, leido del encabezado. Devuelve null para todo lo que no sea uno
+	// de los formatos que se aceptan, o cuyo tamano no se pueda leer.
+	private static string? SniffImage(byte[] b, out int width, out int height)
+	{
+		width = height = 0;
+
+		// PNG: firma de 8 bytes y despues el chunk IHDR, que SIEMPRE es el primero y trae el
+		// ancho y el alto en big-endian.
+		if (b.Length >= 24
+			&& b[0] == 0x89 && b[1] == 0x50 && b[2] == 0x4E && b[3] == 0x47
+			&& b[12] == 'I' && b[13] == 'H' && b[14] == 'D' && b[15] == 'R')
+		{
+			width = Be32(b, 16);
+			height = Be32(b, 20);
+			return width > 0 && height > 0 ? "image/png" : null;
+		}
+
+		// JPEG: hay que caminar los segmentos hasta el SOF, que es el que lleva las medidas.
+		if (b.Length >= 4 && b[0] == 0xFF && b[1] == 0xD8 && b[2] == 0xFF)
+		{
+			int i = 2;
+			while (i + 9 < b.Length)
+			{
+				if (b[i] != 0xFF) return null;              // desincronizado: no se adivina
+				byte marker = b[i + 1];
+				if (marker == 0xFF) { i++; continue; }        // relleno legitimo
+				int len = Be16(b, i + 2);
+				if (len < 2) return null;
+
+				// SOF0..SOF15 menos los cuatro que no son SOF (C4 DHT, C8, CC DAC).
+				if (marker >= 0xC0 && marker <= 0xCF
+					&& marker != 0xC4 && marker != 0xC8 && marker != 0xCC)
+				{
+					height = Be16(b, i + 5);
+					width = Be16(b, i + 7);
+					return width > 0 && height > 0 ? "image/jpeg" : null;
+				}
+
+				i += 2 + len;
+			}
+			return null;                                     // sin SOF: no se sabe cuanto mide
+		}
+
+		// WebP: RIFF....WEBP y despues el chunk, que dice en cual de los tres sabores viene.
+		if (b.Length >= 30
+			&& b[0] == 'R' && b[1] == 'I' && b[2] == 'F' && b[3] == 'F'
+			&& b[8] == 'W' && b[9] == 'E' && b[10] == 'B' && b[11] == 'P')
+		{
+			string chunk = System.Text.Encoding.ASCII.GetString(b, 12, 4);
+
+			if (chunk == "VP8X")                              // extendido: 24 bits, menos uno
+			{
+				width = (b[24] | b[25] << 8 | b[26] << 16) + 1;
+				height = (b[27] | b[28] << 8 | b[29] << 16) + 1;
+			}
+			else if (chunk == "VP8 ")                         // con perdida: 14 bits utiles
+			{
+				width = (b[26] | b[27] << 8) & 0x3FFF;
+				height = (b[28] | b[29] << 8) & 0x3FFF;
+			}
+			else if (chunk == "VP8L")                         // sin perdida: 14 bits, menos uno
+			{
+				int bits = b[21] | b[22] << 8 | b[23] << 16 | b[24] << 24;
+				width = (bits & 0x3FFF) + 1;
+				height = (bits >> 14 & 0x3FFF) + 1;
+			}
+			else return null;
+
+			return width > 0 && height > 0 ? "image/webp" : null;
+		}
+
+		// SVG: es texto, asi que no hay magic bytes -- lo que se mira es que EMPIECE como un
+		// documento svg, saltando el BOM y el espacio. Sale con 0x0 a proposito: no tiene
+		// pixeles, y el tope de dimensiones no le aplica.
+		//
+		// Y viaja en un `<img>`, no inline: ahi el navegador lo aisla y no corre scripts. Ese
+		// es todo el permiso que tiene.
+		int at = b.Length >= 3 && b[0] == 0xEF && b[1] == 0xBB && b[2] == 0xBF ? 3 : 0;
+		while (at < b.Length && (b[at] == ' ' || b[at] == '\n' || b[at] == '\r' || b[at] == '\t')) at++;
+		if (at + 5 <= b.Length)
+		{
+			string head = System.Text.Encoding.ASCII.GetString(b, at, Math.Min(512, b.Length - at));
+			if (head.StartsWith("<svg", StringComparison.OrdinalIgnoreCase)
+				|| (head.StartsWith("<?xml", StringComparison.OrdinalIgnoreCase)
+					&& head.Contains("<svg", StringComparison.OrdinalIgnoreCase)))
+				return "image/svg+xml";
+		}
+
+		return null;
+	}
+
+	private static int Be32(byte[] b, int at) => b[at] << 24 | b[at + 1] << 16 | b[at + 2] << 8 | b[at + 3];
+	private static int Be16(byte[] b, int at) => b[at] << 8 | b[at + 1];
+
+	// El logo y el color que la pantalla va a usar, ya resueltos. Vacio en cualquiera de los dos
+	// significa "no hay", y la cara cae a lo que tenga -- el dibujo del rubro, el acento del
+	// Host. El Host no inventa una marca que la institucion no dio.
+	public sealed record BrandLook(string Logo, string Color);
+
 	// Measured FROM OUTSIDE, with stat over the folder the Host granted. The module is not
 	// asked how much it takes up: a module that reports 4 MB while taking up 400 cannot exist
 	// if nobody asks it.

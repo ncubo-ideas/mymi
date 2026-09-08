@@ -35,10 +35,15 @@ else
         <div class="card @(m.Installation.Enabled ? "" : "off")">
             <div class="row">
                 <div>
-                    <span style="font-size:26px">@HostState.Icon(m.Name)</span>
-                    <span class="title">@m.Manifest.Title</span>
+                    <span style="font-size:26px">@HostState.Icon(m.Manifest)</span>
+                    @* QUIEN ES arriba y QUE ES abajo, igual que en el telefono. Estaba al
+                       revés: el titulo grande y la institucion en la linea chica. La linea que
+                       identifica la resuelve el manifiesto -Manifest.Identity- y no esta
+                       pagina, porque hay tres caras y un fallback implementado tres veces es un
+                       fallback que diverge. *@
+                    <span class="title">@m.Manifest.Identity</span>
                     <div class="meta">
-                        @m.Manifest.Institution
+                        @m.Manifest.Title
                         @if (!m.Installation.Enabled)
                         {
                             <text> &middot; <strong>switched off by you</strong></text>

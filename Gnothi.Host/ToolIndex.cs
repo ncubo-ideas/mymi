@@ -69,21 +69,33 @@ public sealed class ToolIndex
 
 	// THE INPUT SCHEMA, AS DATA, built from what the manifest declares.
 	//
-	// Every parameter comes out required and typed as text, because the manifest has no way to
-	// say otherwise. It is a visible simplification and it is worse for Gate 2 than for Gate 1:
-	// there the model picks by schema, and an enum whose valid values live inside the prose of
-	// the description is a much weaker signal than an enum in the schema. Carrying a literal
-	// JSON Schema per parameter in the manifest is the fix, and it is a manifest decision.
+	// It honours the declared TYPE and, when the parameter is an enum, its declared VALUES.
+	// This used to flatten everything to "string" -- worse for Gate 2 than for Gate 1, where
+	// the model picks by schema and a numeric month or a closed enum written only in prose is a
+	// weak signal. The manifest now carries both, so the schema carries both.
+	//
+	// The execution side already tolerated this: InProcessShell.Bind runs Convert.ChangeType
+	// for a numeric C# parameter and Enum.Parse for an enum one, whatever the schema said. So
+	// this change only sharpens what the model SEES; it cannot break how a value is bound.
 	public static IReadOnlyDictionary<string, object> InputSchema(DeclaredTool declared)
 	{
 		Dictionary<string, object> properties = [];
 
 		foreach (DeclaredParameter p in declared.Input)
-			properties[p.Name] = new Dictionary<string, object>
+		{
+			Dictionary<string, object> property = new()
 			{
-				["type"] = "string",
+				["type"] = JsonSchemaType(p.Type),
 				["description"] = p.Description,
 			};
+
+			// A real enum, not the values hidden in the prose. The C# side still Enum.Parses
+			// whatever arrives, so a value outside the list is caught there, not here.
+			if (p.Enum is { Count: > 0 })
+				property["enum"] = p.Enum.ToArray();
+
+			properties[p.Name] = property;
+		}
 
 		Dictionary<string, object> schema = new()
 		{
@@ -96,4 +108,14 @@ public sealed class ToolIndex
 
 		return schema;
 	}
+
+	// The manifest's 'type' string, mapped to a JSON Schema primitive. Anything unknown or empty
+	// falls to "string" -- the most permissive, and the one the binding tolerates for any input.
+	// Kept deliberately small: these are the only types a POC module has declared, and widening
+	// it is a manifest decision, not a silent default.
+	private static string JsonSchemaType(string declared) => declared switch
+	{
+		"number" or "integer" or "boolean" or "string" => declared,
+		_ => "string",
+	};
 }

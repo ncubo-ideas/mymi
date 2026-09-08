@@ -318,7 +318,7 @@ public sealed class EstadoDeLaApp : IAsyncDisposable
 		// arrastrar una segunda copia que diverge.
 		if (Migrada)
 		{
-			UltimoMensaje = $"tu registro ahora vive en {DondeVive}: esta instalación ya no sincroniza";
+			UltimoMensaje = $"tus examenes nuevos ahora entran por {DondeVive}: esta instalación ya no busca novedades";
 			return new ResultadoDeRefresh();
 		}
 
@@ -340,8 +340,12 @@ public sealed class EstadoDeLaApp : IAsyncDisposable
 	// pull. Hospedada NUNCA es true: hospedada ES el destino, no la que se retira.
 	public bool Migrada => !modo.Hospedada && Cuenta is { Migrada: true };
 
-	// A dónde se mudó. Se dice en pantalla: "tu historia ahora vive en X" sin decir dónde es
-	// un mensaje que no se puede accionar.
+	// POR DONDE ENTRAN AHORA. Se dice en pantalla -"tus examenes nuevos ahora entran por X"-
+	// porque sin decir por donde es un mensaje que no se puede accionar.
+	//
+	// EL NOMBRE DICE "DONDE VIVE" Y LA PANTALLA YA NO, a proposito: el dato no se mudo a
+	// ningun lado, sigue en el telefono de ella. Lo que cambio es quien lo escribe. El campo
+	// conserva el nombre porque viaja en el sobre de eventos, que es contrato (13 §10.6).
 	public string DondeVive => Cuenta?.Host is { Length: > 0 } donde ? donde : "Gnothi";
 
 	// LO QUE SONIA AFIRMÓ POR SÍ MISMA, que es lo único que cruza en el traspaso (13 §5.1).

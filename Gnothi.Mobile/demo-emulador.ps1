@@ -21,6 +21,17 @@ param(
     [string] $Avd     = 'Gnothi',
     [string] $Sdk     = 'C:\Program Files (x86)\Android\android-sdk',
     [string] $Imagen  = 'system-images;android-34;google_apis_playstore;x86_64',
+
+    # EL MODO DE GPU, Y ES UNA TRAMPA MEDIDA. Con 'host' el emulador va rapido y `adb shell
+    # screencap` FALLA -- tira "Assertion failed: !rcEnc->featureInfo()->hasReadColorBufferDma"
+    # y deja un archivo de 72 bytes con ese texto adentro. O sea: un PNG que no es un PNG, y
+    # el sintoma se parece a un problema de rutas de adb, que es donde se pierde el rato.
+    #
+    # 'swiftshader_indirect' renderiza por software: mas lento, y screencap anda. Por eso la
+    # captura programatica -- la que hace que una prueba sea reproducible por otra persona --
+    # pide este modo. Medido el 2026-09-08 sobre el AVD Gnothi37k4, SDK 37.
+    [string] $Gpu     = 'host',
+
     [switch] $Recrear                     # borra los datos de la app antes de empezar
 )
 
@@ -59,7 +70,7 @@ if ((& $emu -list-avds) -notcontains $Avd) {
 # --- arrancarlo -----------------------------------------------------------------------
 if (-not (& $adb devices | Select-String 'emulator-\d+\s+device')) {
     Write-Host "arrancando el emulador (la primera vez tarda ~75s)..."
-    Start-Process $emu -ArgumentList "-avd $Avd -gpu host -no-snapshot-load -no-boot-anim" -WindowStyle Normal
+    Start-Process $emu -ArgumentList "-avd $Avd -gpu $Gpu -no-snapshot-load -no-boot-anim" -WindowStyle Normal
 
     $limite = (Get-Date).AddMinutes(5)
     while ((Get-Date) -lt $limite) {

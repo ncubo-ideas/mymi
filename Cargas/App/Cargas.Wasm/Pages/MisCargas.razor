@@ -187,17 +187,19 @@ else
     @* Si la app no esta guardando, eso es lo MAS importante de la pantalla y va arriba:
        sin destino se ve completa y correcta, y no hay forma de notar que no persiste
        salvo que se diga. *@
-    @* MIGRADA: el proveedor dice que el registro de esta cuenta ya vive en Gnothi
-       (especificación 13 §4 y §6.2). "Desaparecer" NO es desinstalar y NO es borrar: la app
+    @* MIGRADA: el proveedor marcó que los hechos nuevos de esta cuenta ya entran por Gnothi
+       (especificación 13 §4 y §6.2). El registro NO se mudó: sigue en el teléfono de la
+       persona y es de ella (§10.6). "Desaparecer" NO es desinstalar y NO es borrar: la app
        sigue mostrando lo que tiene, porque es de ella. Lo que deja de hacer es SINCRONIZAR,
        que es lo único que produciría dos historias que divergen. *@
     @if (estado.Migrada)
     {
         <div class="aviso aviso--atencion fila">
             <div class="crece">
-                <strong>Tu registro ahora vive en @estado.DondeVive.</strong>
-                Lo que ves acá se queda, pero esta copia ya no se actualiza: las cargas
-                nuevas te llegan allá.
+                <strong>Tus cargas nuevas ahora entran por @estado.DondeVive, en este
+                mismo teléfono.</strong>
+                Lo que ves acá se queda y sigue siendo tuyo; lo que esta copia deja de
+                hacer es buscar novedades.
             </div>
         </div>
     }
@@ -205,9 +207,9 @@ else
     {
         <div class="aviso fila">
             <div class="crece">
-                <strong>Se está guardando en Gnothi.</strong>
-                Tu bitácora vive en el dispositivo, en la carpeta que Gnothi le dio a esta
-                estación, y tu asistente la puede leer desde ahí.
+                <strong>Se está guardando en este teléfono.</strong>
+                Tu bitácora es tuya y está acá: Gnothi le dio a esta estación una carpeta
+                en tu teléfono, y tu asistente la puede leer desde ahí.
             </div>
         </div>
     }

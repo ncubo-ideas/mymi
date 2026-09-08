@@ -19,5 +19,19 @@
   "enabled": true,
 
   "//disabledTools": "The fine cut, which is the one actually needed: 'the total yes, the detail no'. Put the name here exactly as it appears in the manifest, without the module prefix.",
-  "disabledTools": []
+  "disabledTools": [],
+
+  "//caratula": "WHO MAY SPEAK FOR THIS MODULE FROM ANOTHER PROCESS. Only Gate 3 on Android uses it today: the per-module APK that declares the app functions to the OS and forwards here. It lives in the installation and not in the manifest for the same reason the granted folder does - the module does not get to say who may impersonate it.",
+
+  "//caratula-ausente": "ABSENT MEANS NOBODY. A module without this block cannot be reached across processes at all. Forgetting to declare it fails closed, never open - that is why the other three modules do not have it and are therefore unreachable from outside.",
+
+  "//signatureSha256": "SHA-256 of the caller's signing certificate. The package name alone is worthless: anyone can name their app the same. The signature is what an impostor cannot produce. GNOTHI LOOKS IT UP ITSELF from the uid the kernel reports - it is never read from the message. Get it with: apksigner verify --print-certs <apk>",
+
+  "//esta-es-de-debug": "This digest is the ANDROID DEBUG KEY, because the caratula of the spike is signed with it (CN=Android Debug). A real institution signs with its own key and this value changes. If you rebuild the caratula on another machine, its debug key is different and the call will be denied - that is the gate working, not a bug.",
+
+  "caratula": {
+    "package": "com.ncubo.lab.caratula",
+    "signatureSha256": "4f07f90c4633f3906c9a55889fbc33568bded70e0c81957798e9d9a5d6c85cf1",
+    "releaseId": "spike-2026-08-27"
+  }
 }
