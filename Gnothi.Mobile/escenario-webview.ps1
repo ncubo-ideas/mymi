@@ -45,13 +45,13 @@ $logs    = "$env:TEMP\gnothi-escenario"
 # armar-bundle.ps1: el manifiesto los lleva ADENTRO y el modulo no los puede cambiar despues.
 $catalogo = [ordered]@{
     'examenes'   = @{ Mock = "$raiz\Examenes\EndPointDeEventos";     Pub = 8095; Web = 8096
-                      Titulo = 'Laboratorio Clinico Delfos'; Subtitulo = 'Mis examenes' }
+                      Titulo = 'Laboratorio Clinico Delfos'; Subtitulo = 'Tus examenes, al dia' }
     'compras'    = @{ Mock = "$raiz\Compras\EndPointDeEventos";      Pub = 8101; Web = 8102
-                      Titulo = 'Supermercado La Guaria';     Subtitulo = 'Mis compras' }
+                      Titulo = 'Supermercado La Guaria';     Subtitulo = 'La Guaria y vos' }
     'cargas'     = @{ Mock = "$raiz\Cargas\EndPointDeEventos";       Pub = 8111; Web = 8112
-                      Titulo = 'Estacion de servicio';       Subtitulo = 'Mis cargas' }
+                      Titulo = 'Estacion Los Higuerones';     Subtitulo = 'Tus cargas' }
     'dealership' = @{ Mock = "$raiz\DealershipCar\EndPointDeEventos"; Pub = 8092; Web = 8093
-                      Titulo = 'DealershipCar';              Subtitulo = 'My maintenance' }
+                      Titulo = 'DealershipCar';              Subtitulo = 'Your maintenance' }
 }
 
 if (-not (Test-Path $adb)) { throw "no encuentro adb en $adb. Pasa -Sdk con la ruta de tu SDK de Android." }
