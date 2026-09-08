@@ -6,8 +6,8 @@ iOS 26.5, sobre Xcode 26.6 y .NET 9.0.200. **Rama:** `fase0/modulos-hospedados-e
 Etiquetas como en `Documentacion/Movil/00-INDICE.md`: **[MEDIDO]**, **[RAZONADO]**,
 **[NO MEDIDO]**.
 
-> El guion decía «NADA DE ESTO ESTÁ MEDIDO». Ya no. P0, P1, P3, P4, P5 y P7 están medidos; P6
-> y P2 siguen abiertos y abajo se dice exactamente qué los frena.
+> El guion decía «NADA DE ESTO ESTÁ MEDIDO». Ya no: **P0, P1, P3, P4, P5 y P7 están medidos.**
+> Quedan P6 y P2, y abajo se dice exactamente qué frena a cada uno.
 
 ---
 
@@ -16,7 +16,8 @@ Etiquetas como en `Documentacion/Movil/00-INDICE.md`: **[MEDIDO]**, **[RAZONADO]
 | | Estado | |
 |---|---|---|
 | **P0** contexto seguro | ✅ **[MEDIDO]** | `gnothi-mod://` **es** contexto seguro. El diseño no cambia |
-| **P1** el módulo arranca | ✅ **[MEDIDO]** | Después de dos bugs en cadena, ya corregidos |
+| **P1a** el módulo se hospeda | ✅ **[MEDIDO]** | Arranca, sirve, hidrata y contesta. Tras dos bugs, corregidos |
+| **P1b** el módulo se **ve** | ✅ **[MEDIDO]** | Implementado como sheet en `34cfb42`. Antes el botón no hacía nada (§2b) |
 | **P4** journal y Keychain | ✅ **[MEDIDO]** | Después de un tercer bug, corregido |
 | **P5** contención | ✅ **[MEDIDO]** | Con una corrección al guion: la directiva no es la que dice |
 | **P3** el puente | ✅ **[MEDIDO]** | La consola del módulo vuelve por el puente |
@@ -63,7 +64,7 @@ sirven su documento, y arrancan su actor adentro del WebView:
 GNOTHI: modulo:cargas: log: Starting Puppeteer.EventSourcing.ActorHandler's Actor
 ```
 
-Esa línea cierra P1 y P3 juntas: **la consola del módulo vuelve por el puente**.
+Esa línea cierra **P1a** y P3 juntas: **la consola del módulo vuelve por el puente**.
 
 > **La lección, y es de proceso:** el `404` del `BundleServer` era silencioso a propósito —«un
 > 404 es una respuesta»—. Cierto para el protocolo y **falso para diagnosticar**: hace
@@ -71,6 +72,59 @@ Esa línea cierra P1 y P3 juntas: **la consola del módulo vuelve por el puente*
 > igual de blanca. Los dos bugs fueron invisibles hasta que ese 404 salió por el log, y después
 > cada uno se leyó en un renglón. La línea quedó, y es la mitad que el vigía no cubre: él dice
 > lo que se **rechazó**, ésta lo que **no está**.
+
+---
+
+## 2b · P1b — «Abrir» no hacía nada, y ya lo hace
+
+El guion pide *«tocá su tarjeta y después «Abrir…». Qué tenés que ver: la UI de la institución a
+pantalla completa»*. **Eso no ocurría en iOS**, y por eso vale contarlo separado de P1a: lo que
+P1a prueba es que el módulo **se hospeda y contesta**, no que la persona pueda **verlo**. Ya está
+implementado —`34cfb42`— y medido; queda el diagnóstico porque explica por qué faltaba.
+
+La causa está escrita en el propio código, en `Gnothi.iOS/ViewController.cs:242`:
+
+```csharp
+// TODO lo que la pagina pide lo atiende Shell.Handle, que es el MISMO archivo en las
+// dos plataformas -- incluidos los dos verbos del alta, desde que la propuesta vive
+// alla. iOS no intercepta nada: no tiene pantalla de modulo todavia.
+completionHandler(host.shell?.Handle(defaultText) ?? "{}");
+```
+
+Y `Shell.Handle` **no tiene caso `"abrir"`**: cae en `_ => "{}"`. Por eso el log muestra
+`GNOTHI: bridge: abrir` —se loguea en la línea 426, *antes* del switch— y después nada. El botón
+llega al Host y el Host no tiene qué hacer con él. **[MEDIDO]**
+
+En Android sí existe, y es corto — `MainActivity.cs:421` intercepta la op antes de delegar:
+
+```csharp
+"abrir" => host.AbrirModulo(req.GetProperty("module").GetString() ?? ""),
+```
+
+y `AbrirModulo` hace `anfitrion.Open(m, …)` y después `RunOnUiThread(() => Mostrar(vivo))`.
+
+**Eso es lo que se implementó**, con los mismos tres nombres que Android. La vuelta es la única
+pieza que Android no necesita —allá la da el botón atrás del sistema— y en iOS hubo que darla:
+la primera versión puso un `‹ Gnothi` flotante y **le tapaba el logo y la primera letra a
+«Supermercado La Guaria»**, porque un módulo full-bleed no deja lugar para cromo ajeno ni arriba
+ni abajo. Geaninna decidió **sheet**: le entrega el área entera a la institución y la salida es
+el grabber, que es el gesto que la persona ya sabe.
+
+**[MEDIDO]** en el simulador: `compras` abre con sus datos reales —87 compras, ₡3 222 336, y el
+aviso «Se está guardando en Gnothi» que solo sale hospedado—, el header de la institución queda
+**entero y sin tapar**, el gesto cierra dejando `cerrar: 'compras' fuera de pantalla`, y volver a
+abrirlo es instantáneo porque `Open` lo devuelve vivo.
+
+> **La trampa que el sheet obliga a resolver y un botón no:** el descarte por gesto no pasa por
+> `Cerrar()`. Si la limpieza viviera solo ahí, la persona arrastra el sheet hacia abajo y el
+> módulo queda `Visible` para siempre — y `WebModuleHost.Evict` se niega a desalojar uno que se
+> está mirando, así que Gnothi se quedaría con su motor de 20 MB en memoria sin nadie mirándolo.
+> De ahí un `Soltar()` que llaman los dos caminos, más un `UIAdaptivePresentationControllerDelegate`.
+
+> **Y la lección de producto:** `ui.html` es el MISMO archivo en las dos plataformas, así que iOS
+> dibujaba el botón igual sin tener con qué responderlo. Quien lo probaba concluía que estaba
+> **roto**, no que **faltaba**. Cada vez que una op del protocolo se implemente en una sola
+> plataforma, la cara compartida va a ofrecerla en las dos.
 
 ---
 
