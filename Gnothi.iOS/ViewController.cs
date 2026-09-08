@@ -29,6 +29,10 @@ public sealed class ViewController : UIViewController
 {
 	private static readonly UIColor Fondo = UIColor.FromRGB(0xF5, 0xF3, 0xFB);
 
+	// [PENDIENTE DE GEANINNA] El alto de la franja del modulo. Aca y no inline para que ajustarlo
+	// sea cambiar un numero.
+	private const int FranjaAlto = 40;
+
 	private WKWebView? web;
 	private Shell? shell;
 	private IosWebModuleHost? moduleHost;
@@ -237,22 +241,34 @@ public sealed class ViewController : UIViewController
 		return "{\"ok\":true}";
 	}
 
-	// EL MODULO SE PRESENTA COMO SHEET, y la decision es de Geaninna. La alternativa medida era
-	// una barra de Gnothi arriba con el modulo debajo; se descarto porque el sheet gana dos cosas
-	// que la barra no puede dar.
+	// EL MODULO OCUPA LA PANTALLA ENTERA, con una FRANJA de Gnothi arriba. Decision de Geaninna,
+	// y el patron es el del in-app browser: el anfitrion se queda un renglon y le da el resto.
 	//
-	//   1. NO LE TAPA NADA A LA INSTITUCION. Un boton flotante sobre un modulo full-bleed le pisa
-	//      la marca: medido el 2026-09-07, el `‹ Gnothi` que tenia esta funcion antes quedaba
-	//      encima del logo y de la primera letra de "Supermercado La Guaria". Abajo pasa lo mismo
-	//      con su nav. El sheet le entrega el area entera y no le pone cromo arriba.
+	// POR QUE LA FRANJA Y NO UN BOTON FLOTANTE. Medido el 2026-09-07: un '‹ Gnothi' encima de un
+	// modulo full-bleed le tapaba el logo y la primera letra de "Supermercado La Guaria". Abajo
+	// pasa lo mismo con su nav. Un modulo que ocupa todo no deja lugar para cromo ajeno, asi que
+	// el cromo tiene que ocupar su propio espacio y correr al modulo hacia abajo.
 	//
-	//   2. LA SALIDA ES EL GESTO QUE LA PERSONA YA SABE. Android no necesita nada porque tiene el
-	//      boton atras del sistema; iOS no tiene equivalente -el gesto de borde lo consume el
-	//      contenido del modulo- asi que la vuelta hay que darla. El grabber de un sheet es la
-	//      respuesta nativa: se arrastra hacia abajo y se cierra, sin que nadie lo explique.
+	// POR QUE LA FRANJA Y NO UN SHEET CON GRABBER, que fue la version anterior. El sheet INSINUA
+	// que estas dentro de Gnothi -la app queda asomando detras-; la franja lo DICE. Y ese es el
+	// argumento entero: esta es la app de la institucion, corriendo bajo Gnothi, leyendo un
+	// registro que vive en el telefono. Ademas un boton con etiqueta le gana a un gesto: el
+	// grabber es estandar pero hay que descubrirlo, y "Listo" no.
 	//
-	// Y GNOTHI QUEDA ASOMANDO DETRAS, que no es un efecto lateral: se ve de quien es la app en la
-	// que estas parado. Para el argumento de Gnothi eso no es decoracion.
+	// LO QUE NO SE COPIA DEL PATRON ES LA URL. Un in-app browser muestra el origen porque el
+	// contenido vino de la red y ahi el origen es lo auditable. Aca lo sirve Gnothi desde su
+	// propio contenedor y el origen es gnothi-mod://<modulo>, que no le dice nada a la persona
+	// -y mostrarlo seria peor que no mostrarlo, porque parece una direccion y no lo es. Va el
+	// NOMBRE de la institucion. Se toma el cromo del patron, no su semantica.
+	//
+	// [PENDIENTE DE GEANINNA] Esta franja es la MINIMA a proposito, para que ella la ajuste sobre
+	// algo que ya corre. Lo que hay que cuidar es el peso: el modulo YA trae su propio header y
+	// su propia nav, asi que esto son dos encabezados apilados. Si engorda, la app de la
+	// institucion parece encajonada. Alto, tipografia y si va o no el subtitulo son de ella.
+	//
+	// [DIVERGENCIA DELIBERADA CON ANDROID] Alla no hay franja porque el boton atras del sistema
+	// alcanza. Este punto se VE distinto en las dos plataformas a proposito; esta anotado en
+	// PRUEBAS-WEBVIEW-IOS.md para que nadie lo reporte como bug.
 	private void Mostrar(IosWebModule vivo, string nombre)
 	{
 		UIView? vista = vivo.View;
@@ -269,26 +285,62 @@ public sealed class ViewController : UIViewController
 		// UN VIEW CONTROLLER PROPIO Y NO la vista suelta: presentar exige un controller, y de paso
 		// es quien le da al WKWebView del modulo un ciclo de vida donde apoyarse.
 		var pantalla = new UIViewController();
-		pantalla.View!.BackgroundColor = UIColor.SystemBackground;
-		vista.Frame = pantalla.View.Bounds;
-		vista.AutoresizingMask = UIViewAutoresizing.FlexibleWidth | UIViewAutoresizing.FlexibleHeight;
-		pantalla.View.AddSubview(vista);
+		UIView raiz = pantalla.View!;
+		raiz.BackgroundColor = Fondo;
 
-		pantalla.ModalPresentationStyle = UIModalPresentationStyle.PageSheet;
+		var franja = new UIView { BackgroundColor = Fondo, TranslatesAutoresizingMaskIntoConstraints = false };
 
-		// UN SOLO DETENT, el grande. Con medium tambien disponible, el sheet se puede quedar a
-		// media altura y la app de la institucion -que es una pagina entera- queda ilegible; el
-		// grabber sigue estando igual, que es lo que hacia falta.
-		if (pantalla.SheetPresentationController is { } hoja)
+		// El nombre de la institucion, no el del modulo: 'compras' es la llave tecnica y
+		// "Mis compras" es lo que la persona reconoce.
+		var quien = new UILabel
 		{
-			hoja.Detents = [UISheetPresentationControllerDetent.CreateLargeDetent()];
-			hoja.PrefersGrabberVisible = true;
-		}
+			Text = $"{shell?.TitleOf(nombre) ?? nombre} · adentro de Gnothi",
+			Font = UIFont.SystemFontOfSize(13, UIFontWeight.Medium),
+			TextColor = UIColor.FromRGB(0x3B, 0x2E, 0x63),
+			TranslatesAutoresizingMaskIntoConstraints = false,
+		};
 
-		// EL DESCARTE POR GESTO TAMBIEN TIENE QUE LIMPIAR. Si solo se limpiara en Cerrar(), la
-		// persona arrastra el sheet hacia abajo y el modulo queda marcado como visible para
-		// siempre: WebModuleHost.Evict no lo desalojaria nunca mas, y Gnothi se quedaria con su
-		// motor de 20 MB en memoria sin nadie mirandolo.
+		var listo = UIButton.FromType(UIButtonType.System);
+		listo.SetTitle("Listo", UIControlState.Normal);
+		listo.TitleLabel!.Font = UIFont.SystemFontOfSize(15, UIFontWeight.Semibold);
+		listo.TranslatesAutoresizingMaskIntoConstraints = false;
+		listo.TouchUpInside += (_, _) => Cerrar();
+
+		franja.AddSubview(quien);
+		franja.AddSubview(listo);
+
+		vista.TranslatesAutoresizingMaskIntoConstraints = false;
+		raiz.AddSubview(franja);
+		raiz.AddSubview(vista);
+
+		NSLayoutConstraint.ActivateConstraints([
+			franja.TopAnchor.ConstraintEqualTo(raiz.SafeAreaLayoutGuide.TopAnchor),
+			franja.LeadingAnchor.ConstraintEqualTo(raiz.LeadingAnchor),
+			franja.TrailingAnchor.ConstraintEqualTo(raiz.TrailingAnchor),
+			franja.HeightAnchor.ConstraintEqualTo(FranjaAlto),
+
+			quien.LeadingAnchor.ConstraintEqualTo(franja.LeadingAnchor, 16),
+			quien.CenterYAnchor.ConstraintEqualTo(franja.CenterYAnchor),
+			quien.TrailingAnchor.ConstraintLessThanOrEqualTo(listo.LeadingAnchor, -12),
+
+			listo.TrailingAnchor.ConstraintEqualTo(franja.TrailingAnchor, -16),
+			listo.CenterYAnchor.ConstraintEqualTo(franja.CenterYAnchor),
+
+			// EL MODULO ARRANCA DEBAJO DE LA FRANJA, que es lo que evita la superposicion por
+			// construccion y no por elegir bien las coordenadas.
+			vista.TopAnchor.ConstraintEqualTo(franja.BottomAnchor),
+			vista.LeadingAnchor.ConstraintEqualTo(raiz.LeadingAnchor),
+			vista.TrailingAnchor.ConstraintEqualTo(raiz.TrailingAnchor),
+			vista.BottomAnchor.ConstraintEqualTo(raiz.BottomAnchor),
+		]);
+
+		// FullScreen y no PageSheet: con la franja diciendo donde estas, dejar a Gnothi asomando
+		// atras no agrega y le come pantalla al modulo.
+		pantalla.ModalPresentationStyle = UIModalPresentationStyle.FullScreen;
+
+		// EL DELEGADO SE QUEDA aunque en FullScreen no haya descarte por gesto. Cuesta nada y
+		// protege lo que sigue: si alguien agrega otro camino de cierre y olvida limpiar, el
+		// modulo queda Visible para siempre y WebModuleHost.Evict no lo desaloja nunca mas.
 		pantalla.PresentationController!.Delegate = new AlDescartar(this);
 
 		enPantallaVc = pantalla;
