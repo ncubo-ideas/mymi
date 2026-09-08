@@ -32,6 +32,14 @@
     <ApplicationDisplayVersion>1.0</ApplicationDisplayVersion>
     <ApplicationVersion>1</ApplicationVersion>
 
+    <!-- EL ICONO, y es el mismo que dibujo el spike de Siri (Spikes/Lab.Siri). Vive en
+         Assets.xcassets/AppIcon.appiconset con sus tres apariencias -clara, oscura y tenida-,
+         que es lo que iOS 18 pide para que el icono acompañe el tema del telefono. El SDK ya
+         recoge cualquier *.xcassets del proyecto y lo pasa por actool; esta linea solo dice
+         cual de los sets es el icono de la app. Sin ella el catalogo se compila igual y el
+         icono queda en blanco. -->
+    <AppIcon>AppIcon</AppIcon>
+
     <!-- El App Group, sin el cual la caratula de Swift no tiene donde leer la foto.
          Ver Entitlements.plist: el archivo solo no alcanza, hay que habilitarlo en el portal
          de Apple para los dos app IDs. -->
