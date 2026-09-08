@@ -530,27 +530,46 @@ handler y devuelve 404.
 `pull after=0 -> 73063 bytes` —el mismo número que en el simulador—, el módulo muestra sus 87
 compras y ₡3 222 336, y en el log no queda rastro de `eventos/device/token`.
 
-#### Lo que eso significa, y no es lo que parecía
+#### Lo que sostiene la medición, y NADA MAS
 
-**No hay hueco en el módulo.** Usa el puente cuando la entrega hospedada funciona, e intenta su
-camino propio solo cuando no le dio nada. Es un fallback razonable, no un olvido.
+Tres estados, ejercitados:
 
-**Y el 404 no era un bug: era la contención funcionando.** El módulo intentó una ruta de red que
-hospedado no le corresponde, y la intercepción de origen se la negó — que es exactamente para lo
-que existen la CSP y el scheme handler. Si el fallback hubiera usado una URL absoluta, la CSP lo
-habría bloqueado igual.
+| estado | qué hace el módulo | resultado |
+|---|---|---|
+| journal vacío, al abrir | refresca solo | 404 → caja de error |
+| journal lleno, al abrir | no refresca | sin error |
+| journal lleno, **tocando «Buscar compras nuevas»** | refresca | **404 → caja de error** |
 
-**Lo único defectuoso es el mensaje.** Dice «no se pudo completar: refrescar contra el proveedor,
-404» y le echa la culpa al proveedor, cuando la puerta está cerrada por diseño. Un módulo
-hospedado que cae a su plan B debería enterarse de que **no hay plan B**. Es de los módulos, no
-del Host.
+**El refresco del módulo NUNCA usa el puente.** Siempre va por su propio HTTP a `eventos/…`, que
+hospedado está interceptado. Los datos en pantalla —87 compras, ₡3 222 336— los trajo el cartero
+del Host al arrancar; el módulo no los pidió.
 
-> **DOS RAZONAMIENTOS MÍOS QUE ESTABAN MAL**, y quedan acá porque el error es instructivo.
-> Primero: «rearmar los bundles con la IP de la LAN no arregla nada, porque en ese camino no hay
-> salida a la red». Falso — rearmarlos es exactamente lo que lo arregla, porque repara el paso 1 y
-> así el paso 2 nunca corre. Y después descarté la hipótesis del fallback argumentando que el
-> `could not connect` del cartero ocurría ANTES del `abrir`: ese orden es perfectamente compatible
-> con un fallback, así que el argumento no probaba nada.
+**El hueco es real y es de producto.** Hospedado, «Buscar compras nuevas» no puede funcionar
+nunca, y la persona no tiene forma de pedir datos nuevos desde adentro del módulo: el único que
+los trae es el cartero, y eso ocurre solo al arrancar.
+
+**El arreglo es del módulo, no del Host, y está acotado:** cuando `hospedada()` sea true, el
+refresco tiene que llamar a `gnothiPuente.pull` en vez de a su `HttpClient`. Proxear `eventos/`
+desde el Host sería el arreglo equivocado — significaría conseguirle una credencial al módulo, que
+es justo lo que el diseño le niega.
+
+**Y el 404 en sí no es el defecto: es la contención funcionando.** El módulo intenta una ruta que
+hospedado no le corresponde y la intercepción de origen se la niega. Lo defectuoso es el mensaje,
+que le echa la culpa al proveedor cuando la puerta está cerrada por diseño.
+
+> **TRES CONCLUSIONES MÍAS SOBRE ESTE MISMO 404, Y LAS DOS PRIMERAS ESTABAN MAL.** Quedan acá
+> porque el patrón del error importa más que el error.
+>
+> 1. «Hay que rearmar los bundles con la IP de la LAN» → y después «eso no arregla nada, porque en
+>    ese camino no hay salida a la red». Lo segundo era falso: rearmarlos **sí** repara el paso 1,
+>    y así el refresco automático no corre.
+> 2. «No hay hueco en el módulo», al ver que el 404 desaparecía con el journal lleno. Concluido sin
+>    haber tocado el botón de refresco, que era lo obvio que faltaba ejercitar.
+> 3. La de arriba, que se sostiene en los tres estados de la tabla.
+>
+> **La lección es de método:** dos de las tres salieron de mirar un síntoma que aparecía o
+> desaparecía, en vez de ejercitar deliberadamente cada camino de la UI. Un síntoma ausente no es
+> un camino probado.
 
 ### Y lo que hace falta para correr el guion contra un aparato
 
