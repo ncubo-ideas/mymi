@@ -1,5 +1,6 @@
 using System.Text.Json;
 using System.Text.RegularExpressions;
+using Gnothi.Host;
 
 namespace Gnothi.Mobile;
 
@@ -11,18 +12,20 @@ namespace Gnothi.Mobile;
 // Delfos, no «Mis examenes» con una caja indigo. Asi que el icono y el color dejan de ser
 // asunto del Host y pasan a ser lo que la institucion declaro.
 //
-// DE DONDE SALE, y por que no hay un campo nuevo en manifest.json: el bundle ya trae `web/`
-// con la PWA publicada, y toda PWA declara su marca en `manifest.webmanifest` -nombre, color
-// (`theme_color`) e iconos-. Es el mismo archivo que el navegador lee al instalarla como icono
-// en el aparato, asi que la institucion lo escribe una vez y Gnothi la pinta igual que Android.
-// Cero trabajo nuevo para la institucion; los cuatro modulos del POC ya lo traian.
+// DE DONDE SALE, en este orden:
+//
+//   1. `brand` del manifest.json (formato 1.1): logo -ruta relativa al bundle-, color, slogan
+//      y shortName. Es la declaracion explicita, y manda.
+//   2. Si no hay `brand`, el `manifest.webmanifest` que la PWA ya trae en `web/`: `theme_color`
+//      e `icons`. Es el mismo archivo que el navegador lee al instalarla como icono, asi que
+//      los bundles 1.0 se pintan con su marca sin tocarlos.
 //
 // QUE DEVUELVE. Un diccionario chico que viaja en el estado de la pagina: `logo` (el icono
 // como data URI, para que un `file://` pueda pintarlo sin servir nada) y `color`. O null, y la
 // pagina cae al glifo de siempre: un modulo sin marca sigue siendo legitimo.
 //
 // LO QUE SE CUIDA. El color solo pasa si es un `#rrggbb` de verdad -va a un atributo style-,
-// la ruta del icono no puede salirse de `web/`, y un icono desmedido no se embebe: el estado
+// la ruta del logo no puede salirse del bundle, y un logo desmedido no se embebe: el estado
 // se manda entero a la pagina cada vez que repinta.
 //
 // DONDE VIVE. Aca, en Gnothi.Mobile, porque en esta rama el estado de la pagina lo arma
@@ -33,11 +36,31 @@ internal static class Marca
 	private const long IconoMaximo = 300 * 1024;
 	private static readonly Regex ColorValido = new("^#[0-9a-fA-F]{6}$", RegexOptions.Compiled);
 
-	public static Dictionary<string, object?>? Leer(string carpetaDelModulo)
+	public static Dictionary<string, object?>? Leer(string carpetaDelModulo, Manifest? manifiesto = null)
+	{
+		Brand? brand = manifiesto?.Brand;
+		string? color = Color(brand?.Color);
+		string? logo = brand?.Logo is { Length: > 0 } ruta ? DataUri(carpetaDelModulo, carpetaDelModulo, ruta, null) : null;
+
+		// Lo que `brand` no dijo, lo completa el webmanifest de la PWA.
+		if (logo is null || color is null)
+		{
+			var pwa = DelWebmanifest(carpetaDelModulo);
+			logo ??= pwa.logo;
+			color ??= pwa.color;
+		}
+
+		if (logo is null && color is null) return null;
+		return new Dictionary<string, object?> { ["logo"] = logo, ["color"] = color };
+	}
+
+	private static string? Color(string? c) => c is { } s && ColorValido.IsMatch(s) ? s : null;
+
+	private static (string? logo, string? color) DelWebmanifest(string carpetaDelModulo)
 	{
 		string web = Path.Combine(carpetaDelModulo, "web");
 		string manifiesto = Path.Combine(web, "manifest.webmanifest");
-		if (!File.Exists(manifiesto)) return null;
+		if (!File.Exists(manifiesto)) return (null, null);
 
 		try
 		{
@@ -46,17 +69,14 @@ internal static class Marca
 			JsonElement raiz = doc.RootElement;
 
 			string? color = raiz.TryGetProperty("theme_color", out JsonElement c) && c.ValueKind == JsonValueKind.String
-				&& c.GetString() is { } cs && ColorValido.IsMatch(cs) ? cs : null;
+				? Color(c.GetString()) : null;
 
-			string? logo = LogoDe(raiz, web);
-
-			if (logo is null && color is null) return null;
-			return new Dictionary<string, object?> { ["logo"] = logo, ["color"] = color };
+			return (LogoDe(raiz, web), color);
 		}
 		catch
 		{
 			// Un webmanifest torcido no tumba la pantalla: ese modulo se pinta con el glifo.
-			return null;
+			return (null, null);
 		}
 	}
 
@@ -83,20 +103,21 @@ internal static class Marca
 
 		foreach (var c in candidatos.OrderByDescending(c => c.any).ThenByDescending(c => c.sizes.Contains("192")))
 		{
-			string? uri = DataUri(web, c.src, c.type);
+			string? uri = DataUri(web, web, c.src, c.type);
 			if (uri is not null) return uri;
 		}
 		return null;
 	}
 
-	private static string? DataUri(string web, string src, string? type)
+	// `base` es desde donde se resuelve la ruta; `limite` la carpeta de la que no puede salirse.
+	private static string? DataUri(string @base, string limite, string src, string? type)
 	{
-		// Un icono remoto no se baja: por aca no sale nada a la red.
+		// Un logo remoto no se baja: por aca no sale nada a la red.
 		if (Uri.TryCreate(src, UriKind.Absolute, out Uri? u) && !u.IsFile) return null;
 
-		string raizWeb = Path.GetFullPath(web).TrimEnd(Path.DirectorySeparatorChar) + Path.DirectorySeparatorChar;
-		string ruta = Path.GetFullPath(Path.Combine(web, src.TrimStart('/').Replace('/', Path.DirectorySeparatorChar)));
-		if (!ruta.StartsWith(raizWeb, StringComparison.Ordinal)) return null;
+		string raiz = Path.GetFullPath(limite).TrimEnd(Path.DirectorySeparatorChar) + Path.DirectorySeparatorChar;
+		string ruta = Path.GetFullPath(Path.Combine(@base, src.TrimStart('/').Replace('/', Path.DirectorySeparatorChar)));
+		if (!ruta.StartsWith(raiz, StringComparison.Ordinal)) return null;
 
 		var info = new FileInfo(ruta);
 		if (!info.Exists || info.Length == 0 || info.Length > IconoMaximo) return null;

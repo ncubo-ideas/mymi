@@ -281,10 +281,10 @@ dice **«3 de 3 encendidos»** (o 4 de 4) y muestra una tarjeta por institución
 
 **La tarjeta es de la institución, no de Gnothi** (desde el 2026-09-08): su ícono sobre su color,
 su nombre en grande —*Laboratorio Clínico Delfos*, *Supermercado La Guaria*, *Estaciones Faro*,
-*Sotavento Motors*— y debajo su eslogan, o el título del módulo si no declaró uno. Todo sale del
-bundle: el ícono y el color del `manifest.webmanifest` de su PWA (`Marca.cs` los lee al pintar), el
-nombre y el eslogan del `manifest.json` (`institution`, `slogan`). Nada de «(mock del POC)» en
-pantalla. **Mal:** una tarjeta con la caja índigo genérica y el título arriba ⇒ ese bundle no trae
+*Sotavento Motors*— y debajo su eslogan, si declaró uno. Todo sale del bundle, del bloque `brand`
+del `manifest.json` (formato 1.1: `shortName`, `logo`, `color`, `slogan`); si un manifiesto 1.0 no
+trae `brand`, `Marca.cs` toma ícono y color del `manifest.webmanifest` de su PWA. Nada de «(mock del
+POC)» en pantalla. **Mal:** una tarjeta con la caja índigo genérica y el título arriba ⇒ ese bundle no trae
 `web/manifest.webmanifest` o su ícono no existe; el glifo de Gnothi es solo el respaldo.
 
 **Qué prueba:** que un módulo llega por donde llega de verdad. Hasta ahora solo entraban

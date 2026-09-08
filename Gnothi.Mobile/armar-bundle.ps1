@@ -50,6 +50,7 @@ $catalogo = @{
         Titulo      = 'Mis examenes'
         Institucion = 'Laboratorio Clínico Delfos'
         Slogan      = 'Tu salud, en tus manos'
+        Color       = '#0e2f55'
         Recurso     = 'expediente'
         Id          = '1'
         Puerto      = 8095
@@ -65,6 +66,7 @@ $catalogo = @{
         Titulo      = 'Mis compras'
         Institucion = 'Supermercado La Guaria'
         Slogan      = 'Tu canasta, más cerca de vos'
+        Color       = '#2f6b3f'
         Recurso     = 'cliente'
         Id          = '1'
         Puerto      = 8101
@@ -80,6 +82,7 @@ $catalogo = @{
         Titulo      = 'Mis cargas'
         Institucion = 'Estaciones Faro'
         Slogan      = 'Rendimiento real, tramo a tramo'
+        Color       = '#0B3C49'
         Recurso     = 'cargas'
         Id          = '1'
         Puerto      = 8111
@@ -95,6 +98,7 @@ $catalogo = @{
         Titulo      = 'My maintenance'
         Institucion = 'Sotavento Motors'
         Slogan      = 'Care that keeps you moving'
+        Color       = '#1f3a5f'
         Recurso     = 'vehicle'
         Id          = '1HGCM82633A004352'
         Puerto      = 8092
@@ -144,11 +148,12 @@ Copy-Item -Recurse $web "$armado\web"
 
 $manifiesto = [ordered]@{
     '//'          = 'ESTE ARCHIVO ES DE LA INSTITUCION. Declara quien es, que ofrece y donde vive su narrativa.'
-    manifest      = '1.0'
+    manifest      = '1.1'
     module        = $Modulo
     title         = $m.Titulo
     institution   = $m.Institucion
-    slogan        = $m.Slogan
+    '//brand'     = 'LA MARCA (1.1). El logo es una ruta relativa al bundle; el color, el theme_color de su PWA. Sin brand, Gnothi lee el manifest.webmanifest.'
+    brand         = [ordered]@{ logo = 'web/icon-192.png'; color = $m.Color; slogan = $m.Slogan }
     substrate     = @{ range = '>=3.0.0 <4.0.0' }
     '//publicador'= 'DONDE ESTA SU NARRATIVA. Gnothi lo registra al dar de alta el modulo y a partir de ahi el endpoint es fijo: el modulo no lo elige ni lo puede cambiar.'
     publicador    = [ordered]@{ eventos = $Publicador; recurso = $Recurso; id = $Id }

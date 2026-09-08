@@ -415,7 +415,7 @@ function ico(m, glifo) {
 // Grande la institución, chico su eslogan: es la marca lo que ella paga por ver. Sin eslogan,
 // la tarjeta va solo con el nombre; el título del módulo («My invoices») no es prosa de tarjeta
 // (quitado 2026-09-08). Un manifiesto sin institución no deja la tarjeta muda: sube el título.
-const quien = m => m.institution || m.title;
+const quien = m => m.shortName || m.institution || m.title;
 const que   = m => m.institution ? (m.slogan || '') : '';
 
 const gn = {
@@ -747,8 +747,8 @@ const PROV = [
 // THE DESKTOP MOCK. Never reached inside the app: there, prompt() always answers. It mirrors
 // the real state's shape so the page can be designed and exercised in a plain browser.
 const MOCK = { modules: [
-  { name:'examenes', title:'Mis exámenes', institution:'Laboratorio Clínico Delfos', slogan:'Tu salud, en tus manos',
-    brand:{ color:'#0e2f55', logo:'../bundles/examenes/web/icon-192.png' },
+  { name:'examenes', title:'Mis exámenes', institution:'Laboratorio Clínico Delfos',
+    slogan:'Tu salud, en tus manos', brand:{ color:'#0e2f55', logo:'../bundles/examenes/web/icon-192.png' },
     enabled:true, journalBytes:2048, journalFiles:3, tools:[
     { name:'revisar_mis_analitos', title:'How am I doing', enabled:true,
       description:'Reviews every analyte the person has history for and returns the trend of each one.' },
@@ -756,17 +756,17 @@ const MOCK = { modules: [
       description:'Answers whether one analyte is going up, down or stable over its whole history.' },
     { name:'velocidad_de', title:'How fast it is changing', enabled:true,
       description:'Answers how fast an analyte has been changing, in units per year.' }]},
-  { name:'compras', title:'Mis compras', institution:'Supermercado La Guaria', slogan:'Tu canasta, más cerca de vos',
-    brand:{ color:'#2f6b3f', logo:'../bundles/compras/web/icon-192.png' },
+  { name:'compras', title:'Mis compras', institution:'Supermercado La Guaria',
+    slogan:'Tu canasta, más cerca de vos', brand:{ color:'#2f6b3f', logo:'../bundles/compras/web/icon-192.png' },
     enabled:true, journalBytes:3172, journalFiles:3, tools:[
     { name:'total_de_compras', title:'Cuanto gaste en total', enabled:true, description:'Total de todas las compras registradas.' },
     { name:'canasta_del_mes', title:'Como fue mi canasta de un mes', enabled:true, description:'La canasta de un mes, sumada por perfil.' }]},
-  { name:'cargas', title:'Mis cargas', institution:'Estaciones Faro', slogan:'Rendimiento real, tramo a tramo',
-    brand:{ color:'#0B3C49', logo:'../bundles/cargas/web/icon-192.png' },
+  { name:'cargas', title:'Mis cargas', institution:'Estaciones Faro',
+    slogan:'Rendimiento real, tramo a tramo', brand:{ color:'#0B3C49', logo:'../bundles/cargas/web/icon-192.png' },
     enabled:true, journalBytes:1210, journalFiles:3, tools:[
     { name:'resumen', title:'Como vengo', enabled:true, description:'Cuantas cargas y cuantos vehiculos tiene registrados.' }]},
-  { name:'dealership', title:'My maintenance', institution:'Sotavento Motors', slogan:'Care that keeps you moving',
-    brand:{ color:'#1f3a5f', logo:'../bundles/dealership/web/icon-192.png' },
+  { name:'dealership', title:'My maintenance', institution:'Sotavento Motors',
+    slogan:'Care that keeps you moving', brand:{ color:'#1f3a5f', logo:'../bundles/dealership/web/icon-192.png' },
     enabled:true, journalBytes:980, journalFiles:3, tools:[
     { name:'resumen', title:'How my car is doing', enabled:true, description:'How the vehicle stands right now.' }]},
   // Un módulo SIN marca, a propósito: es el camino de respaldo, y tiene que seguir viéndose bien.

@@ -20,10 +20,15 @@ public sealed record Manifest
 	[JsonPropertyName("module")] public string Module { get; init; } = "";
 	[JsonPropertyName("title")] public string Title { get; init; } = "";
 	[JsonPropertyName("institution")] public string Institution { get; init; } = "";
-	// EL ESLOGAN, opcional (2026-09-08). Una linea corta de la institucion, en su voz, que la
-	// tarjeta de Gnothi muestra debajo de su marca en vez del titulo del modulo: «La Guaria y
-	// vos» dice mas que «Mis compras». Vacio es legitimo: la tarjeta vuelve al titulo.
-	[JsonPropertyName("slogan")] public string Slogan { get; init; } = "";
+	// LA MARCA, opcional (formato 1.1, 2026-09-08). Lo que la institucion quiere que la persona
+	// vea en la tarjeta: su nombre corto, su logo, su color y su eslogan. Sin `brand`, el Host
+	// la toma del manifest.webmanifest de la PWA que viaja en el bundle (Marca.cs), asi que un
+	// manifiesto 1.0 se sigue pintando con su marca.
+	[JsonPropertyName("brand")] public Brand? Brand { get; init; }
+	// EL REGISTRO, opcional (1.1). Por ahora solo `reconstruible`, que es el dato que pesa: si
+	// el diario lleva aportes de la persona, borrarlo pierde datos y el Host no puede vaciarlo
+	// sin costo. Ya existia en Cargas/manifiesto.json antes de que el Host lo leyera.
+	[JsonPropertyName("journal")] public JournalDeclaration? Journal { get; init; }
 	[JsonPropertyName("substrate")] public Substrate? Substrate { get; init; }
 	[JsonPropertyName("capabilities")] public Capabilities? Capabilities { get; init; }
 
@@ -81,6 +86,24 @@ public sealed record Publicador
 	[JsonPropertyName("recurso")] public string Recurso { get; init; } = "expediente";
 
 	[JsonPropertyName("id")] public string Id { get; init; } = "1";
+}
+
+// La marca de la institucion, declarada por ella. Todo opcional; lo que falte lo completa el
+// webmanifest de su PWA. `Logo` es una ruta RELATIVA AL BUNDLE («web/icon-192.png»), y el Host
+// no la deja salirse de el.
+public sealed record Brand
+{
+	[JsonPropertyName("shortName")] public string ShortName { get; init; } = "";
+	[JsonPropertyName("logo")] public string Logo { get; init; } = "";
+	[JsonPropertyName("color")] public string Color { get; init; } = "";
+	[JsonPropertyName("slogan")] public string Slogan { get; init; } = "";
+}
+
+public sealed record JournalDeclaration
+{
+	// true si el diario se puede volver a traer entero del publicador; false si lleva aportes
+	// de la persona que no estan en ningun otro lado. Null = la institucion no lo dijo.
+	[JsonPropertyName("reconstruible")] public bool? Reconstruible { get; init; }
 }
 
 public sealed record Substrate
