@@ -766,3 +766,174 @@ predecía, y ahora tiene una medición.
 
 **Y una salvedad honesta sobre esa medición:** la persona de esta sesión **conoce la Metodología** y
 trabaja con quien la escribió. Una hora doce con alguien de fuera es la prueba 3, no ésta.
+
+---
+
+# v1 · La primera corrida de la columna vertebral **como guía** — 2026-09-08, desde las 08:04
+
+**Qué mide esta corrida, y la del 3 de setiembre no podía:** si
+[la guía](../../Guias/columna-vertebral.md), seguida al pie de la letra, lleva de lo que ya estaba en
+papel a **un dominio que corre** — la pasada 4 con la frontera *opina vs. parametriza*, las cuatro
+preguntas de parada, y el paso al capítulo 3: `Preguntas.md`, `HUECOS.md`, el dominio, la API, la
+consola, el ciclo con journal, y el tag `municipalidad-v1`. Es el **primer dominio del repo construido
+enteramente con la guía**, sin herencia de las guías viejas.
+
+**Qué no mide:** las pasadas 1 a 3 como descubrimiento — se hicieron el 3 de setiembre con el
+documento de investigación, antes de que la guía existiera. Acá se **auditan** contra los *terminaste
+cuando* de la guía, y lo que la guía agregó después se aplica.
+
+**Los datos del dominio construido son inventados.** Reproducen los fenómenos que los papeles reales
+mostraron —los dos alfabetos de `Periodo`, mensual contra trimestral, el salto del 2025, la mora
+recibida— sin ningún monto, fecha ni identificador de la cuenta real. Es lo que el capítulo 4 §6 llama
+*orquestar los datos del demo como casos de prueba*.
+
+## Pasadas 1 y 2 · auditadas contra la guía
+
+| Criterio de la guía | ¿Se cumple con lo del 3 de setiembre? |
+|---|---|
+| **P1 ·** cada campo del papel con su escala | ✅ La tabla de campos trae *espacio de valor* para los siete de la consulta y los seis del comprobante |
+| **P1 ·** *¿significa lo mismo en todas las filas?* | ✅ Es el hallazgo K: `Periodo` lleva mes y trimestre en la misma columna |
+| **P1 ·** *¿foto o hecho?* | ✅ Hallazgo F: la consulta es foto, el comprobante es hecho |
+| **P1 ·** *¿algo en el sobre?* | ✅ El modo del pago venía en el nombre del archivo |
+| **P1 ·** verbos con dos fuentes | ✅ Del papel: *puso al cobro, cobró mora, ofreció descuento, avaluó*; de la conversación: *reservar, tener una finca, declarar el valor* |
+| **P1 ·** el dibujo del espejo | ✅ Está, y guardado para compararlo al final |
+| **P2 ·** cada cosa en una casilla | ✅ La grilla de la pasada 2 |
+| **P2 ·** la columna de contraste con al menos una, no venida del papel | ✅ **Ocho**, ninguna del papel; una es la ausencia |
+| **P2 ·** la evaluación de la institución llega como hecho | ✅ Ya estaba decidido el 3 de setiembre —*"recibir y alarmar, no verificar"*—; la guía lo volvió regla después de la bandera del gimnasio. La mora es un **hecho recibido**, no un contraste de la app |
+| **P2 ·** la app propone, la persona adopta | ✅ `ReservaPropuesta` / `ReservaDeclarada`, opción b firmada |
+
+**Las dos pasadas pasan la auditoría sin retoques.** Lo que la guía agregó después del 3 de setiembre
+—las cuatro sub-preguntas de la pasada 1, la regla de la evaluación de la institución— la sesión ya lo
+había hecho sin tenerlo escrito; de esa sesión salió.
+
+## Pasada 3 · La hoja de firmas
+
+La tabla del 3 de setiembre dejó **firmado** lo que la persona decidió y **⚠️ reconstruido o
+propuesto** lo que salió de los recibos o de quien modela. Acá se separa lo uno de lo otro, en la forma
+que la guía pide —*dirección + medida + objeto + contexto*— y con la pregunta que cada juicio produce,
+porque **un juicio que no cambia ninguna respuesta no tiene para qué firmarse**.
+
+**Lo que ya está firmado del 3 de setiembre, y no se vuelve a preguntar:**
+
+| Juicio | Firmado |
+|---|---|
+| La cadencia: servicios **por mes**, bienes inmuebles y parques **por trimestre**; vence **el último día** del período | ✅ preguntas 1 y 8 |
+| La declaración de bienes inmuebles es **cada 5 años** y puede cambiar el monto | ✅ pregunta 9 |
+| **La app recibe la mora y el monto, no los recalcula.** Las reglas se guardan sólo para proyectar | ✅ decisión de producto, pregunta 11 |
+| El descuento es **por todo el monto** | ✅ pregunta 14 |
+| **La reserva: la app propone la proyección ÷ 12, la persona ajusta y adopta.** Dos cosas, dos casillas | ✅ opción b |
+| Avisar si lo apartado queda **más de 10 % por debajo** de lo proyectado; urgente **sólo si el faltante vence en el mes** | ✅ |
+
+**Lo que hay que firmar ahora** — cada fila con su valor propuesto, de dónde salió, y la pregunta que
+produce:
+
+| # | El juicio, en forma fija | Propuesta | De dónde sale | La pregunta que produce | Firma |
+|---|---|---|---|---|---|
+| **M1** | **Identidad del hecho en un cobro mensual.** *Reconocer que un salto de más del **25 %** entre un mes y el siguiente, en el mismo rubro, no es el mismo cobro: es una tarifa nueva* | 25 % | Los recibos: la basura pasó de ~4.100 a 6.720 y a 7.360 — +65 % y +10 %. Un 25 % separa el segundo salto del primero. **Es el umbral que menos evidencia tiene**: dos saltos, uno de cada lado | *¿Por qué pago más de basura?* → `Variacion.Explicacion` = **cambio de tarifa** | ☐ |
+| **M2** | **Identidad del hecho en un cobro trimestral.** *Reconocer que un salto de más del **25 %** en bienes inmuebles o parques es un **avalúo nuevo**, no una tarifa* | 25 % | El IBI pasó +82 % en 2025 con la declaración quinquenal. Los rubros sobre base imponible responden al valor de la finca; la explicación del salto es distinta por **ley de cálculo**, y ésa es la razón de que existan `CambioDeTarifa` y `CambioDeAvaluo` | *¿Por qué pago más de IBI?* → `Variacion.Explicacion` = **avalúo** | ☐ |
+| **M3** | **Ruido.** *No avisar un cambio de menos del **2 %** en un mismo rubro entre un período y el siguiente* | 2 % | Redondeos y ajustes menores; ningún recibo mostró un cambio real menor al 10 % | Un cambio bajo el ruido no produce `Variacion` | ☐ |
+| **M4** | **Urgencia de un aumento.** *Un aumento **no** es urgente — ya pasó y no se puede evitar; lo urgente es lo que vence* | La clase decide: aumento → informativo; vencimiento → urgente | Es la respuesta del juicio 6 en los tres dominios anteriores: la clase, no el monto | `Variacion.Urgencia()` = ninguna · `VencimientoProximo.Urgencia()` = la de M5 | ☐ |
+| **M5** | **Vencimiento próximo — la ausencia.** *Avisar **7 días** antes de que venza un período, y marcarlo **urgente el día** que vence* | 7 días · el día | Un aviso más temprano se ignora; uno más tardío no deja pagar. Es la única pregunta que **ninguna pantalla del portal** contesta | *¿Qué se me vence?* → `VencimientoProximo.DiasQueFaltan`, `EsUrgente` | ☐ |
+| **M6** | **El pronto pago.** *Avisar **en enero**, con el ahorro calculado, que pagar todo el año en el primer trimestre tiene descuento* | Enero · la tasa del año **por parámetro** (2026: 3,78 %, del acuerdo municipal) | La regla de prorrateo se reconstruyó de los recibos (finding N): el descuento es la mora al revés, a la misma tasa. **La tasa entra por parámetro y no se quema** | *¿Cuánto me ahorro si pago hoy todo el año?* → `AhorroPorProntoPago(tasa)` | ☐ |
+| **M7** | **La tasa de mora, sólo para proyectar.** *Estimar cuánto costará pagar tarde, a la tasa anual del año, diaria desde el último día del período* | Por parámetro; 6,2 % en 2026, reconstruida | Finding M: siete líneas de cuatro recibos cierran con esa regla. **La app nunca la usa para contradecir lo que la municipalidad cobró** — decisión firmada | *¿Cuánto me costará si pago el 20?* → `CostoDePagarTarde(fecha, tasa)` | ☐ |
+| **M8** | **Un pago que aparece sin comprobante.** *Cuando un período figura pagado sin que la app tenga su comprobante, **decirlo**, no tapar el hueco* | Se marca como *pagado sin comprobante* | Hueco 3: si la persona paga en ventanilla, la app no ve el comprobante. Un default silencioso lo contaría como historia | `Historial.PeriodosPagadosSinComprobante` | ☐ |
+
+**Tres cosas que quedan abiertas con dueño, y no se firman acá** — van al `HUECOS.md` del sujeto:
+el **valor de la finca** (hueco 2 — entra por parámetro, dueño: la persona con su declaración); qué
+períodos cubrió cada pago (hueco 6 — se **infiere** de `Periodo` y la cadencia, y se marca inferido);
+y el recibo de la otra contribuyente que no cierra (hueco 7 — fuera de esta historia).
+
+**Lo que el v1 NO hace, y ya estaba decidido:** no hay pantalla de *cuánto debo* ni de *cuánto sería
+pagar el año* — el portal las contesta. El dominio lo sabe; la superficie no lo repite.
+
+### Los comandos y sus `Check` — reglas 17 y 18
+
+| Comando | `Puede…` en la raíz | Qué rechaza |
+|---|---|---|
+| `RegistrarPago(recibo, fecha, monto, descuento)` + `AgregarLinea(recibo, rubro, periodo, monto, intereses)` | `PuedeRegistrarPago`, `PuedeAgregarLinea` | El mismo número de recibo dos veces (**identidad**); un rubro que no existe; un período que no parsea para la cadencia del rubro; montos negativos |
+| `PonerAlCobro(rubro, periodo, monto)` | `PuedePonerAlCobro` | El mismo período ya puesto al cobro para ese rubro (**identidad**) |
+| `DeclararValorDeFinca(finca, valor, fecha)` | `PuedeDeclararValor` | Valor ≤ 0; una finca que no está en la cuenta |
+| `AdoptarReserva(monto, fecha)` | `PuedeAdoptarReserva` | Monto ≤ 0 |
+| `IncorporarFinca(numero)` | `PuedeIncorporarFinca` | La misma finca dos veces |
+
+**La doble codificación de `Periodo` se resuelve en la API, no en el dominio**: el dominio recibe un
+período ya leído según la cadencia del rubro. Es la decisión de frontera de la pasada 2.
+
+## Después de firmar — lo que la pasada 4 hace con esto
+
+La tabla de la pasada 4 del 3 de setiembre **queda como está**: fue el control negativo de la frontera
+*opina vs. parametriza*, y la guía la incorporó. Los diez rubros son instancias; la cadencia, la ley de
+cálculo, el atraso, la reserva, la variación y el vencimiento son clases porque **opinan**. Con las
+firmas, el paso al capítulo 3: `Preguntas.md` y `HUECOS.md` del sujeto, el dominio en su `csproj`
+`internal`, la API con un `Check` por comando, la consola con sus comprobaciones, el `medir` corrido
+dos veces, y el tag `municipalidad-v1`.
+
+## Pasada 4 · auditada y construida — 08:04 → 08:27
+
+**La tabla del 3 de setiembre se sostuvo entera bajo la frontera *opina vs. parametriza*.** Lo que se
+construyó, con la razón de cada clase:
+
+| Cosa | ¿Clase? | Por qué — ¿opina, o parametriza? |
+|---|---|---|
+| **Los cinco rubros** | **Instancias** de `Rubro` | Parametrizan: mensual o trimestral, por unidad o sobre base imponible. `Basura` no sabe nada que una fila del catálogo no sepa |
+| **Los otros cinco del menú** | **No están** | Sin recibo no hay cadencia ni ley conocidas. Un rubro desconocido revienta en el resolutor — hueco 9 |
+| **La cadencia** | `CobroMensual`, `CobroTrimestral` | **Opinan**: leen el mismo `4` como abril o como cuarto trimestre, y vencen distinto |
+| **El período** | `Mes`, `Trimestre` | **Opinan**: cuándo terminan, cuál sigue, cuál precede |
+| **La ley de cálculo** | `TarifaPorUnidad`, `TarifaSobreBaseImponible` | **Opinan** sobre qué explica un salto |
+| **La variación** | `SinSalto`, `CambioDeTarifa`, `CambioDeAvaluo` | La explicación del salto según la ley. ⚠️ **`CambioDeAvaluo` es la hoja más débil**: en el v1 se distingue de la de tarifa sólo por lo que dice, porque el cruce con el valor de la finca es el hueco 2. Cuando la `Finca` tenga valores, ahí opina de verdad |
+| **El vencimiento próximo** y **el atraso** | Sí, derivados | Se calculan de cobros contra pagos; nunca se guardan. No son estados de `Cobro`: un `bool Vencido` sería la porosidad de T1 |
+| **La reserva** | `ReservaPropuesta` (contraste) y `ReservaDeclarada` (intención) | Dos casillas, dos clases. Opción b firmada |
+| **El faltante** y **lo pagado sin comprobante** | Carriers planos | Para que el `print` los proyecte en un nivel |
+| **La finca** | Sí, aunque nada la llene | Con su valor guardado por `TieneValorAl` — la lección de T1 |
+
+**Lo que el dominio recibe y no calcula:** la mora. Es la decisión de producto del 3 de setiembre hecha
+código: `LineaPagada.Intereses` y `LineaPendiente.Intereses` son campos que entran. La única tasa que el
+dominio conoce es la que le pasan para **proyectar** (M7).
+
+**Los dos alfabetos de `Periodo` se resolvieron donde la pasada 2 dijo**: en la API, `Partir("2026.04")`
+da `(2026, 4)`, y `Rubro.LeerPeriodo` lo lee según su cadencia. El dominio nunca vio el texto.
+
+## Las cuatro preguntas de parada
+
+| | Resultado |
+|---|---|
+| **1 · Completitud** | ⚠️ **Dos datos sin origen en el artefacto, los dos marcados:** el valor de la finca (hueco 2, entra por comando de la persona y sin él *se dice*) y cuántos períodos cubre una línea (hueco 6, **se infiere** y `EsInferido` viaja en el carrier). Ninguno tapado con un default |
+| **2 · No-espejo** | ✅ **Ocho clases en *operación / contraste***, ninguna venida del recibo: las tres variaciones, el vencimiento, el atraso, la propuesta, el faltante, lo sin comprobante. **Ninguna clase del modelo es una fila del papel** |
+| **3 · Justificación** | ✅ con una salvedad: cada clase opina —arriba está la razón de cada una—, ninguna es una fase disfrazada de subtipo, y `CambioDeAvaluo` es la que menos opina hasta que el hueco 2 se cierre |
+| **4 · Huecos con dueño** | ✅ **Trece huecos: siete cerrados, seis abiertos, los seis con dueño** — la persona (2, 3, 10), un contribuyente que traiga su recibo (9), el artefacto (6, 11), quien tenga el otro expediente (7) |
+
+**El proceso puede parar acá**, en el sentido de la guía: lo que queda sin decidir está escrito y tiene a
+quién preguntarle.
+
+## Lo que la construcción encontró
+
+**Dos comandos sin identidad, y los encontró el `medir`, no las comprobaciones.** Las 87 comprobaciones
+del dominio puro estaban en verde; el ciclo con journal corrido dos veces dejó entrar dos veces *el
+valor de la finca* y *la reserva adoptada*. Sus `Puede…` miraban validez —monto positivo, fecha no
+anterior— y no **identidad**: la misma declaración el mismo día es el mismo hecho otra vez. Es la
+regla 18 del substrato, y es exactamente `Asistio` en el gimnasio: **el comando que "no puede fallar"
+es el que más necesita el `Check`**. Los dos son ahora los huecos 12 y 13, cerrados el mismo día, con
+cuatro comprobaciones nuevas. **Es el segundo dominio donde esta clase de defecto aparece sólo al atar
+el dominio a un journal** — el capítulo 3 §8 lo dice y otra vez se cumplió.
+
+**M8 tenía un defecto de lectura antes de correr.** Una línea pendiente *"basura hasta 2025.09 por
+24.000"* cubre tres meses, y la primera versión la trataba como uno: habría marcado julio y agosto como
+*pagados sin comprobante* cuando están **pendientes**. La cobertura del pendiente **se infiere del monto**
+contra el último monto por período conocido — la misma inferencia del hueco 6, marcada igual.
+
+## Lo medido
+
+| | |
+|---|---|
+| **Duración** | 08:04 → 08:27 — **23 minutos** de la pasada 4 auditada al dominio corriendo con el ciclo verificado dos veces. **Salvedad:** fue un agente con toda la sesión del 3 de setiembre y la guía cargadas; no es el tiempo de una persona leyendo la guía por primera vez. Eso lo mide la prueba 3 |
+| **Clases** | 29, todas `internal`, cero dependencias, sin una referencia al reloj |
+| **Comprobaciones del dominio puro** | 87 al primer verde; **91** después de cerrar los huecos 12 y 13 |
+| **El ciclo con journal** | Primera corrida: **19 entran, 5 rechazados** — los cinco a propósito: la finca repetida, un rubro desconocido, un quinto trimestre, un período ya cubierto, un recibo repetido. Segunda corrida sobre la misma carpeta: **0 entran, 23 rechazados. Los números, idénticos** |
+| **Las preguntas, cruzando el perform** | *¿Por qué pago más de basura?* → **cambio de tarifa, +60 %**. *¿Y de bienes inmuebles?* → **cambio de avalúo, +80 %**. *¿Qué se me vence al 25 de setiembre?* → tres cosas, faltan 5 días, **aviso**. *¿Cuánto me costará pagar el 5 de octubre?* → **20,38 proyectado** sobre la basura. *¿Cuánto apartar?* → 26.100 por mes, **propuesto**; la persona adoptó 30.000, **sin faltante** |
+| **Firmas** | N1–N6 del 3 de setiembre: firmadas. **M1–M8: propuestas, ⚠️ sin firmar, por parámetro.** Los valores que la consola pasa —25 %, 2 %, 7 días, 6,2 %, 10 %— son las propuestas; cambiarlos no toca una clase |
+
+**Lo que esta corrida probó:** que la guía, seguida de la pasada 4 en adelante, lleva de la columna
+vertebral en papel a un dominio que corre, en un dominio nuevo y sin herencia de las guías viejas; y que
+su compuerta del `medir` dos veces caza lo que las comprobaciones no. **Lo que no probó:** las pasadas 1
+a 3 como descubrimiento —se auditaron, no se corrieron— ni la legibilidad de la guía para alguien que
+no la escribió. Eso sigue siendo el gimnasio v3 y la prueba 3.

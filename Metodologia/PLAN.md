@@ -66,7 +66,7 @@ promete el ciclo automático para mañana.
 | # | Qué |
 |---|---|
 | 13 | **Gimnasio v3 — confirmado el 2026-09-07.** Las cuatro pasadas con un artefacto real. **La app del teléfono de Jorge es genérica y no sirve** —sería otra institución—; la fuente del artefacto está por definir (¿la hoja del gimnasio del peer del 28-08? ¿capturas del portal del gimnasio de Jorge?). No comparar v1↔v3: v2 mide el método, v3 mide el papel |
-| 13b | **Municipalidad** como segundo laboratorio versionado — la columna vertebral ya está en papel ([05](Pruebas/Municipalidad/BITACORA.md)) |
+| 13b | **Municipalidad** como segundo laboratorio versionado. ✅ **Construido el 2026-09-08 — la primera corrida de la columna vertebral como guía**, de la pasada 4 al dominio corriendo (las pasadas 1–3 del 3 de setiembre se auditaron contra los criterios de la guía y pasaron sin retoques). 29 clases, 91 comprobaciones, el `medir` dos veces con 0 entradas en la segunda. Dos huecos descubiertos al atarlo al perform y cerrados. Ver su [bitácora](Pruebas/Municipalidad/BITACORA.md). Pendiente: firmas M1–M8, commit y tag `municipalidad-v1` |
 | 14 | **Prueba 3** — la misma sesión con alguien de fuera del equipo |
 | 15 | **Para Álvaro**: T3 (ya resuelto por la decisión de especialización — se le comunica, no se le pregunta), G1 (E39 no apunta a E36), G2 (E29 sin discriminador) |
 | 16 | **G3, el relator** — control negativo contra los cinco dominios antes de proponerlo |
