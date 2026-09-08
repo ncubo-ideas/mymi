@@ -137,8 +137,10 @@ cursor, el puente— no se toca, porque vive en `Gnothi.Movil` y no sabe de esto
 Con un módulo ya instalado, tocá su tarjeta y después **«Abrir…»**.
 
 **Qué tenés que ver:** la UI de la institución a pantalla completa, sin barra de direcciones, y
-el aviso que solo aparece hospedado: *«Se está guardando en Gnothi…»*. Los números tienen que
-ser los mismos que muestra su app suelta.
+el aviso que solo aparece hospedado: *«Se está guardando en este teléfono. Tu ⟨expediente /
+registro / bitácora⟩ es tuyo y está acá: Gnothi le dio a esta institución una carpeta en tu
+teléfono…»* —cada institución le pone su palabra—. Los números tienen que ser los mismos que
+muestra su app suelta.
 
 > **Y ACÁ iOS SE VE DISTINTO DE ANDROID A PROPÓSITO — no es un bug.** Arriba del módulo va una
 > franja delgada de Gnothi que dice *«<nombre de la institución> · adentro de Gnothi»* con un
@@ -426,8 +428,9 @@ deja leer la memoria de la página a quien tenga un cable, y esa memoria tiene e
 > cualquier página—, y a diferencia del universal link nada verifica quién es dueño de él. Lo
 > que lo hace aceptable es que el alta **siempre** muestra la hoja de consentimiento antes de
 > instalar: un enlace hostil llega hasta la hoja y no más, y la persona ahí lee quién sirve el
-> bundle, qué va a poder contestar y dónde va a vivir el registro. Queda anotado en el
-> `Info.plist` que antes de publicar hay que decidir si se queda; si no, es un `#if DEBUG`.
+> bundle, qué va a poder contestar y dónde se va a guardar el registro —y que es de ella—.
+> Queda anotado en el `Info.plist` que antes de publicar hay que decidir si se queda; si no, es
+> un `#if DEBUG`.
 >
 > **La otra salida, que hay que tener igual para el producto:** el dominio sirviendo el AASA
 > como dice acá abajo.
@@ -459,8 +462,9 @@ Con eso puesto, tocá **«Agregar a Gnothi»** en la página de la institución.
 **Qué tenés que ver EN LA PANTALLA**, que es lo que se puede juzgar sin leer un log:
 
 1. ⟳ *Bajando el módulo de…* → *Revisando qué trae…*, con la lista todavía en «0 de 0»
-2. la hoja con lo que la institución propone: qué va a poder contestar, dónde va a vivir el
-   registro, con quién va a hablar, y quién sirvió el bundle. **Todavía no hay nada instalado.**
+2. la hoja con lo que la institución propone: qué va a poder contestar, dónde se va a guardar el
+   registro *(«Es tuyo. Gnothi se lo administra a esta institución, no se lo lleva»)*, con quién
+   va a hablar, y quién sirvió el bundle. **Todavía no hay nada instalado.**
 3. **«Ahora no»** ⇒ no queda **nada**. Comprobalo: no tiene que existir `Modulos/` ni
    `journals/` en el contenedor, y el log dice `alta: '<módulo>' descartado por la persona`
 

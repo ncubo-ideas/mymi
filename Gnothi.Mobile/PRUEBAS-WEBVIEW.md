@@ -248,7 +248,7 @@ El alta son **dos actos, y la persona decide en el medio**:
 |---|---|
 | *Agregar Mis compras* · Supermercado La Guaria | lo que el manifiesto **declara** de sí mismo |
 | **Qué va a poder contestar** — las consultas con su descripción | las `tools` del manifiesto |
-| **Dónde va a vivir tu registro** — `/data/user/0/…/files/journals/compras` | lo decide **Gnothi** |
+| **Dónde se va a guardar, en tu teléfono** — `/data/user/0/…/files/journals/compras`, con «Es tuyo. Gnothi se lo administra a esta institución, no se lo lleva» | lo decide **Gnothi** |
 | **Con quién va a hablar** — `http://127.0.0.1:8101/cliente/1` | lo declara la institución, lo **fija** Gnothi |
 | *El bundle lo sirvió 127.0.0.1* | de dónde se bajó de verdad |
 
@@ -314,13 +314,13 @@ Y arriba, el aviso que solo aparece hospedado:
 
 | módulo | el aviso dice |
 |---|---|
-| `examenes` | *Se está guardando en Gnothi.* Tu expediente vive en el dispositivo, en la carpeta que Gnothi le dio a este laboratorio… |
-| `compras` | *Se está guardando en Gnothi.* Tu registro vive en el dispositivo, en la carpeta que Gnothi le dio a este supermercado… |
-| `cargas` | *Se está guardando en Gnothi.* Tu bitácora vive en el dispositivo, en la carpeta que Gnothi le dio a esta estación… |
-| `dealership` | *It is being saved in Gnothi.* Your record lives on this device, in the folder Gnothi gave this dealership… |
+| `examenes` | *Se está guardando en este teléfono.* Tu expediente es tuyo y está acá: Gnothi le dio a este laboratorio una carpeta en tu teléfono… |
+| `compras` | *Se está guardando en este teléfono.* Tu registro es tuyo y está acá: Gnothi le dio a este supermercado una carpeta en tu teléfono… |
+| `cargas` | *Se está guardando en este teléfono.* Tu bitácora es tuya y está acá: Gnothi le dio a esta estación una carpeta en tu teléfono… |
+| `dealership` | *It is being saved on this phone.* Your record is yours and it is right here: Gnothi gave this dealership a folder on your phone… |
 
 **Los números tienen que ser los mismos que en P1.** Es el mismo binario leyendo su propio
-journal; lo único que cambió es dónde vive.
+journal; lo único que cambió es en qué carpeta está el archivo.
 
 **Y lo que NO tiene que aparecer:** el selector de «elegí dónde guardar». Hospedado no hay nada
 que elegir ni permiso que pedir — el destino es de Gnothi. Si aparece, el módulo no se enteró de
