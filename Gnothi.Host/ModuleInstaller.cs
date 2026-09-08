@@ -248,7 +248,7 @@ public static class ModuleInstaller
 		};
 
 		// Legible y no Default: este archivo lo abre la persona con un editor.
-		File.WriteAllText(installationPath, JsonSerializer.Serialize(installation, HostJson.Legible.Installation));
+		File.WriteAllText(installationPath, JsonSerializer.Serialize(installation, InstallerJson.Default.InstallationFile));
 
 		var line = new System.Text.StringBuilder();
 		line.Append($"installed '{manifest.Module}' ({manifest.Title})");
@@ -272,7 +272,12 @@ public static class ModuleInstaller
 
 	// Local write shapes for installation.json. Separate from the read-side Installation record
 	// so writing carries the '//' notes and omits nulls without the reader needing them.
-	private sealed record InstallationFile
+	//
+	// INTERNAL, NOT PRIVATE, because the source generator has to see it: InstallerJson in
+	// HostJson.cs is the writer. It used to be serialized through HostJson.Legible.Installation
+	// -- the type-info of the OTHER record -- and that compiled fine and threw InvalidCastException
+	// on every --install-module, on every platform. The generator only protects a type it knows.
+	internal sealed record InstallationFile
 	{
 		[JsonPropertyName("//")]
 		public string Note { get; init; } =
@@ -285,7 +290,7 @@ public static class ModuleInstaller
 		[JsonPropertyName("disabledTools")] public IReadOnlyList<string> DisabledTools { get; init; } = [];
 	}
 
-	private sealed record ShellFile
+	internal sealed record ShellFile
 	{
 		[JsonPropertyName("type")] public string Type { get; init; } = "in-process";
 		[JsonPropertyName("command")] public string Command { get; init; } = "dotnet";

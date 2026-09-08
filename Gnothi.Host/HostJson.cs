@@ -74,3 +74,17 @@ public partial class HostJson : JsonSerializerContext
 [JsonSerializable(typeof(InstalledModules))]
 [JsonSerializable(typeof(Verification))]
 internal partial class HostToolsJson : JsonSerializerContext;
+
+// LO QUE EL INSTALADOR ESCRIBE: la forma de escritura de installation.json, con su nota '//'.
+//
+// Es un contexto aparte y no una entrada mas en HostJson por dos razones. La primera es de
+// visibilidad: InstallationFile es interno (nadie fuera del Host arma una instalacion) y
+// HostJson es publico, asi que no puede exponerlo (CS0053), igual que HostToolsJson. La
+// segunda es que este archivo lo abre una persona con un editor, y por eso va indentado.
+//
+// La leccion que lo trajo: serializar InstallationFile con el type-info de Installation
+// compila -- Serialize(object, JsonTypeInfo) acepta cualquier object -- y revienta en runtime.
+// Cada tipo que se escribe tiene que tener SU entrada en algun contexto de este archivo.
+[JsonSourceGenerationOptions(WriteIndented = true)]
+[JsonSerializable(typeof(ModuleInstaller.InstallationFile))]
+internal partial class InstallerJson : JsonSerializerContext;

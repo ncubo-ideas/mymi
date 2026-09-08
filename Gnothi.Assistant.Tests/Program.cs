@@ -123,7 +123,13 @@ Assert("Request carries no caller identity -- Dispatcher.Serve still does not kn
 // would be the worst outcome: a green CI asserting nothing.
 // ============================================================================================
 
-string modulos = Gnothi.Conformance.Conformance.FindModules();
+// Un argumento manda: `dotnet run --project Gnothi.Assistant.Tests -- Modulos.local` corre la
+// suite contra el banco de ESTA maquina. Sin argumento busca ./Modulos, que esta versionado y
+// trae las rutas de la maquina donde se armo el POC: ahi el catalogo se compara igual, pero
+// ningun modulo arranca y la primera aserción de la conformance lo dice.
+string modulos = args.Length > 0 && Directory.Exists(args[0])
+	? Path.GetFullPath(args[0])
+	: Gnothi.Conformance.Conformance.FindModules();
 
 if (modulos.Length == 0)
 {
@@ -145,6 +151,58 @@ else
 	Console.WriteLine();
 	Console.WriteLine("=== UNA TOOL APAGADA NO SE CUELA POR NINGUNA PUERTA ===");
 	await Gnothi.Conformance.Conformance.Consentimiento(modulos, Assert);
+}
+
+// ============================================================================================
+// EL INSTALADOR ESCRIBE UN installation.json QUE EL HOST PUEDE LEER.
+//
+// Regresion. El refactor a JSON sin reflexion (88e0b95) dejo a --install-module serializando
+// InstallationFile con el type-info de Installation: compilaba, y reventaba con
+// InvalidCastException en cada instalacion, en todas las plataformas. Nadie lo vio porque el
+// unico camino que lo ejercitaba era la prueba manual. Este bloque instala el .gmod que el repo
+// ya versiona (el que sirve la pagina de La Guaria) en una carpeta temporal y lee el resultado
+// con el MISMO lector que usa el catalogo. Si el escritor y el lector se separan, esto falla.
+// ============================================================================================
+
+if (modulos.Length > 0)
+{
+	Console.WriteLine();
+	Console.WriteLine("=== EL INSTALADOR ESCRIBE LO QUE EL CATALOGO LEE ===");
+	string gmod = Path.Combine(Path.GetDirectoryName(modulos)!,
+		"Compras", "PaginaDeDescarga", "descarga", "descargas", "compras.gmod");
+	if (!File.Exists(gmod))
+		Assert("existe el .gmod versionado de La Guaria", false, $"no esta: {gmod}");
+	else
+	{
+		string temp = Path.Combine(Path.GetTempPath(), "gnothi-tests-" + Guid.NewGuid().ToString("N"));
+		try
+		{
+			// grantBase dentro del temp: la prueba no toca Documents/Gnothi de la persona.
+			(bool ok, string message) = Gnothi.Host.ModuleInstaller.Install(
+				gmod, Path.Combine(temp, "Modulos"), Path.Combine(temp, "datos"));
+			Assert("--install-module termina bien", ok, message);
+
+			string written = Path.Combine(temp, "Modulos", "compras", "installation.json");
+			Assert("escribio installation.json", File.Exists(written), $"no existe: {written}");
+
+			var read = Gnothi.Host.Installation.Read(written);
+			Assert("el catalogo lee lo que el instalador escribio",
+				read.Shell.Type == "in-process" && read.Shell.Arguments.Count == 1
+					&& read.GrantedFolder.Length > 0 && read.Enabled,
+				$"shell={read.Shell.Type} args={read.Shell.Arguments.Count} folder='{read.GrantedFolder}' enabled={read.Enabled}");
+			Assert("el dll de entrada que apunta existe",
+				File.Exists(read.Shell.Arguments.FirstOrDefault() ?? ""),
+				$"apunta a: {read.Shell.Arguments.FirstOrDefault()}");
+		}
+		catch (Exception ex)
+		{
+			Assert("--install-module no revienta", false, $"{ex.GetType().Name}: {ex.Message}");
+		}
+		finally
+		{
+			try { Directory.Delete(temp, recursive: true); } catch { /* temp, best effort */ }
+		}
+	}
 }
 
 Console.WriteLine();
