@@ -503,12 +503,46 @@ Cruzados, dan los nueve procesos de la tabla. Ese es el número defendible.
   simulador daba 2. El diseño de tres estados hizo su trabajo: sin él, un `if isAvailable`
   habría pasado en el simulador y roto en el teléfono.
 
-### Un hilo abierto, y no es de memoria
+### El 404 en aparato: resuelto, y destapa un hueco de diseño
 
-El módulo abierto en el aparato muestra
-`refrescar contra el proveedor → HttpRequestException: 404, Not Found`, y los journals quedan en
-0 KB (salvo `My maintenance`, con 1,3 KB). **404 no es «no me pude conectar»**: algo contestó. Lo
-esperado era *connection refused*, porque el bundle lleva `http://127.0.0.1:8095/` adentro y en
-el teléfono ese `127.0.0.1` es el teléfono. Que dé 404 dice que hay un servidor escuchando **en
-el aparato** y que la ruta pedida no existe ahí. Antes de «ponerle la IP de la LAN» hay que
-entender quién contesta.
+El módulo abierto en el aparato mostraba
+`refrescar contra el proveedor → HttpRequestException: 404, Not Found`. **[MEDIDO]** con la línea
+de log del 404, la causa exacta:
+
+```
+GNOTHI: abrir: 'compras' en pantalla
+GNOTHI: compras: 404 /app/eventos/device/token -> …/Modulos/compras/web/eventos/device/token
+```
+
+Al abrirse, el módulo pide **`eventos/device/token`** con una URL **relativa** —así lo declara su
+propio `appsettings.json`: `"Proveedor": { "BaseUrl": "eventos/" }`—. Eso resuelve contra
+`gnothi-mod://<módulo>/app/`, así que **la petición nunca sale del origen del módulo**: la
+intercepta el scheme handler, la busca como archivo del bundle y devuelve 404.
+
+**No es un problema de red, y «ponerle la IP de la LAN» no lo arregla**, que era la conclusión
+fácil. Tampoco es una cadena de plan A y plan B: el `could not connect` del cartero ocurre
+ANTES del `abrir`, durante la verificación. Son dos caminos independientes hacia la misma
+narrativa.
+
+**Y la CSP lo permite:** `connect-src 'self'` con el mismo origen pasa. Si el módulo hubiera
+usado una URL absoluta al publicador, la CSP la habría bloqueado. Es precisamente **lo
+relativo** lo que la manda a Gnothi en vez de a la red.
+
+#### Lo que eso significa, y es lo que vale
+
+**La costura ya existe.** El módulo ya le manda sus pedidos de proveedor al origen de Gnothi;
+Gnothi simplemente no los contesta —`grep eventos` en `Gnothi.Movil`, `Gnothi.iOS` y
+`Gnothi.Mobile` da **cero**—. Si el scheme handler reconociera `eventos/…` y se lo pasara al
+cartero, el módulo funcionaría hospedado **sin cambiarle una línea**.
+
+**Y hasta entonces la hoja de consentimiento afirma algo que no es exacto.** Le promete a Sonia
+*«es la única red que va a poder tocar, y la hace Gnothi por él»* y le muestra
+`http://127.0.0.1:8095/expediente/1`. Pero el módulo tiene **dos** caminos hacia esa narrativa
+—el verbo `pull` del puente y su propio HTTP relativo— y solo el primero es el que Gnothi
+controla y le mostró. Cuál de los dos usa, hoy, no lo decide el Host.
+
+**No es de iOS.** El bundle es el mismo y `BundleServer` es compartido, así que en Android pasa
+igual — pero era **invisible**, porque allá el cartero sí llega al publicador y el journal se
+llena. Hizo falta un aparato donde `127.0.0.1` ES el teléfono para que el hueco apareciera. Y lo
+hizo visible la línea del 404 de §2: sin ella es exactamente el silencio que el comentario
+original defendía como «un 404 es una respuesta».
