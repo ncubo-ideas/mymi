@@ -529,6 +529,43 @@ gnothi : examenes: navigation refused to https://example.com -- outside its own 
 > el POST llegó de verdad a la red. Y la navegación terminaba en
 > `https://example.com/?d=datos-de-sonia`. No era un agujero teórico.
 
+### P6b · El botón de refresco del módulo, hospedado, va por el puente
+
+**Vale correrla porque acá vivió un bug real hasta el 2026-09-08**, y no se veía si no se tocaba
+ese botón: el módulo mostraba datos —los había traído el cartero al arrancar— así que parecía
+andar. Un síntoma ausente no es un camino probado.
+
+Con el módulo **abierto en pantalla**, inyectá algo en su publicador y tocá su botón de refresco:
+
+```bash
+curl -X POST http://127.0.0.1:8101/cliente/1/events/compra -H 'Content-Type: application/json' \
+  -d '{"numero":"VERIF-001","fecha":"2026-09-08T12:00:00","skus":["SKU-CAFE-500"],
+       "descripciones":["Cafe molido 500g"],"cantidades":[2],"preciosUnitarios":[4250],
+       "categorias":["GranosYAbarrotes"],"mesesDeGarantia":[0]}'
+```
+
+**Qué tenés que ver.** En el log, un pull **por el puente** — o sea con Gnothi haciendo el HTTP
+con SU credencial:
+
+```
+gnothi : compras: pull after=387 -> 406 bytes
+```
+
+Y en la pantalla, el contador y el total moviéndose. **[MEDIDO 2026-09-08]** en el emulador: de
+87 compras y ₡3.222.336 a **88 y ₡3.230.836** — una diferencia de ₡8.500, que es exactamente el
+total que el publicador reportó para la compra inyectada.
+
+**Mal:** cualquier error de HTTP, y en particular un **404**. Significa que el módulo intentó su
+propio HTTP contra el publicador en vez de usar el puente. Hospedado eso no puede funcionar
+nunca: `proveedor.BaseUrl` es relativa, así que la petición sale contra el propio origen del
+módulo, que sirve Gnothi y donde ese archivo no existe. Y hospedado el módulo **no tiene ni
+necesita** credencial.
+
+> **El bug, para reconocerlo si vuelve.** `Refrescar()` pedía la credencial por adelantado y sin
+> condición, y pedir la credencial es HTTP. La URL que fallaba decía `eventos/` —porque ésa es la
+> base— así que parecía la llamada de eventos y era la del token. Estaba en **compras y cargas**;
+> exámenes y dealership nunca lo tuvieron, y por eso exámenes sirve de control.
+
 ### P7 · Las consultas del módulo llegan al Host
 
 Pasa sola al dar de alta: Gnothi comprueba el módulo apenas lo instala.
