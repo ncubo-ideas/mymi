@@ -32,7 +32,7 @@
     "concesionario": {
       "command": "dotnet",
       "args": [
-        "DealershipCar/App/DealershipCar.Mcp/bin/Debug/net9.0/DealershipCar.Mcp.dll"
+        "Concesionario/App/Concesionario.Mcp/bin/Debug/net9.0/Concesionario.Mcp.dll"
       ]
     },
     "cargas": {
