@@ -530,46 +530,60 @@ handler y devuelve 404.
 `pull after=0 -> 73063 bytes` —el mismo número que en el simulador—, el módulo muestra sus 87
 compras y ₡3 222 336, y en el log no queda rastro de `eventos/device/token`.
 
-#### Lo que sostiene la medición, y NADA MAS
+#### Lo que sostiene la medición, ejercitando LOS DOS módulos
 
-Tres estados, ejercitados:
+La prueba que pidió Édgar —insertar por fuera y ver los registros cambiar **con el webview
+abierto**— **pasa**. Y la diferencia entre módulos es lo que hace útil el resultado.
 
-| estado | qué hace el módulo | resultado |
+**`examenes`, en el simulador. [MEDIDO]** Inyectado un `Colesterol 244 mg/dL` en su publicador
+(evento #211) y tocado su botón **«Actualizar»** con el webview abierto:
+
+| | antes | después |
 |---|---|---|
-| journal vacío, al abrir | refresca solo | 404 → caja de error |
-| journal lleno, al abrir | no refresca | sin error |
-| journal lleno, **tocando «Buscar compras nuevas»** | refresca | **404 → caja de error** |
+| exámenes | 11 | **12** |
+| leído hasta el evento | 210 | **211** |
+| valores en rango | 5 de 6 | **4 de 6** |
 
-**El refresco del módulo NUNCA usa el puente.** Siempre va por su propio HTTP a `eventos/…`, que
-hospedado está interceptado. Los datos en pantalla —87 compras, ₡3 222 336— los trajo el cartero
-del Host al arrancar; el módulo no los pidió.
+El veredicto cambió solo, porque el valor nuevo está fuera de rango. **El journal es la
+superficie compartida y el módulo la relee en vivo, sin reabrirlo.**
 
-**El hueco es real y es de producto.** Hospedado, «Buscar compras nuevas» no puede funcionar
-nunca, y la persona no tiene forma de pedir datos nuevos desde adentro del módulo: el único que
-los trae es el cartero, y eso ocurre solo al arrancar.
+**`compras`, en el iPhone. [MEDIDO]** Inyectada una compra (evento #388, ₡43 900) y tocado su
+botón **«Buscar compras nuevas»** con el webview abierto: `404 /app/eventos/device/token`, sin
+ningún pull por el puente, y la caja de error en pantalla. Tres estados ejercitados —journal
+vacío al abrir, journal lleno al abrir, journal lleno tocando refrescar— y el 404 aparece en el
+primero y el tercero.
 
-**El arreglo es del módulo, no del Host, y está acotado:** cuando `hospedada()` sea true, el
-refresco tiene que llamar a `gnothiPuente.pull` en vez de a su `HttpClient`. Proxear `eventos/`
-desde el Host sería el arreglo equivocado — significaría conseguirle una credencial al módulo, que
-es justo lo que el diseño le niega.
+#### La conclusión, acotada
 
-**Y el 404 en sí no es el defecto: es la contención funcionando.** El módulo intenta una ruta que
+**El mecanismo hospedado funciona, refresco en vivo incluido.** Lo demuestra `examenes`.
+
+**`compras` tiene un bug propio:** su refresco va por su `HttpClient` a `eventos/…` en vez del
+verbo `pull` del puente. Hospedado, esa URL relativa resuelve contra `gnothi-mod://compras/app/`,
+la intercepta el scheme handler y devuelve 404. **Es de compras, no del Host ni de la
+plataforma** — y la prueba por eliminación lo confirma: si `examenes` hubiera intentado su HTTP
+propio habría dado el mismo 404, porque la URL resuelve igual. Que su contador pasara de 210 a
+211 solo puede venir del puente.
+
+**Y el arreglo tiene un modelo dentro del mismo repo: hacer lo que hace `examenes`.**
+
+**El 404 en sí no es el defecto: es la contención funcionando.** El módulo intenta una ruta que
 hospedado no le corresponde y la intercepción de origen se la niega. Lo defectuoso es el mensaje,
 que le echa la culpa al proveedor cuando la puerta está cerrada por diseño.
 
-> **TRES CONCLUSIONES MÍAS SOBRE ESTE MISMO 404, Y LAS DOS PRIMERAS ESTABAN MAL.** Quedan acá
-> porque el patrón del error importa más que el error.
+> **CUATRO CONCLUSIONES MÍAS SOBRE ESTE MISMO 404, Y LAS TRES PRIMERAS ESTABAN MAL.** Quedan acá
+> porque el patrón importa más que el error.
 >
-> 1. «Hay que rearmar los bundles con la IP de la LAN» → y después «eso no arregla nada, porque en
->    ese camino no hay salida a la red». Lo segundo era falso: rearmarlos **sí** repara el paso 1,
->    y así el refresco automático no corre.
-> 2. «No hay hueco en el módulo», al ver que el 404 desaparecía con el journal lleno. Concluido sin
->    haber tocado el botón de refresco, que era lo obvio que faltaba ejercitar.
-> 3. La de arriba, que se sostiene en los tres estados de la tabla.
+> 1. «Es un hueco del Host: hay que proxear `eventos/`.» Falso, y además peligroso: proxear ese
+>    path significaría conseguirle una credencial al módulo, que es justo lo que el diseño le
+>    niega.
+> 2. «No hay hueco», al ver que el 404 desaparecía con el journal lleno. Concluido sin tocar el
+>    botón de refresco.
+> 3. «El refresco del módulo nunca usa el puente.» Generalizado desde `compras` sin ejercitar
+>    `examenes`, que sí lo usa.
+> 4. La de arriba, que se sostiene en los dos módulos.
 >
-> **La lección es de método:** dos de las tres salieron de mirar un síntoma que aparecía o
-> desaparecía, en vez de ejercitar deliberadamente cada camino de la UI. Un síntoma ausente no es
-> un camino probado.
+> **La lección es de método, y es la misma las tres veces:** concluí desde un caso sin ejercitar
+> el otro. Un síntoma ausente no es un camino probado, y un módulo no es todos los módulos.
 
 ### Y lo que hace falta para correr el guion contra un aparato
 
