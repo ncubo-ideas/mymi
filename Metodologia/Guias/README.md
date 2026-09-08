@@ -42,6 +42,7 @@ Aparte del orden, y se lee cuando haga falta:
 |---|---|
 | [0 · La arquitectura clientecéntrica](00-arquitectura-clientecentrica.md) | Dónde corre todo, de quién es el journal, el Host y los módulos. **Contexto, no requisito**: se puede hacer el paso 1 sin haberlo leído |
 | [Las reglas del substrato](reglas-del-substrato.md) | Las 18 cosas que el motor hace y ninguna documentación dice. **Referencia, no tutorial**: si ya sabés lo que hacés, entrás por acá y no por el paso 5 |
+| [Glosario](glosario.md) | Cada término que estas guías acuñaron, al lado del nombre con que la literatura ya lo conoce, la fuente y un **estado** — adoptado, en debate o propio. Las guías siguen en lenguaje llano; acá es donde se ve que *la columna de contraste* es una *value ascription* y *el test del Curador* es *Replace Subclass with Fields* |
 | [Herramientas](../Herramientas/) | Los chequeos que se corren solos **sobre estas guías**. Hoy uno: que ningún enlace ni ancla apunte a la nada |
 | El teléfono | **pendiente, y desbloqueado.** `Gnothi.Mobile` corre el núcleo del Host adentro de una app Android, medido en un Galaxy A54 físico. Por qué la cáscara **tiene** que ser en proceso, que no es MAUI, y qué significa que sea "el mismo código" |
 | A · Compartir información entre apps | **pendiente**, con punto de partida en el cap. 0 §6 |
