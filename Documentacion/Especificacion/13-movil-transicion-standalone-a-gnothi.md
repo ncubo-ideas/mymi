@@ -466,7 +466,7 @@ es la única en la que quien pregunta es quien tiene la autoridad para hacerlo.
 > | | estado |
 > |---|---|
 > | aviso **hospedado** y **hoja de alta** | **[MEDIDO]** en pantalla: bundle rearmado, app y módulo reinstalados por el enlace, y abierto. Los cuatro Wasm compilan; **mirado en uno** |
-> | aviso de **migrada** | **[NO MEDIDO]** en pantalla. El día del commit el mock no tenía cómo marcar la cuenta; después de `cb46c30` sí lo tiene, así que ahora se puede mirar y no se miró |
+> | aviso de **migrada** | **[NO MEDIDO]** con el texto nuevo. Se midió el 2026-09-04 (P8 ✅ los cuatro) pero **con el texto viejo**, y la tabla de P8 del guion se actualizó en `cb46c30` «de paso», sin volver a correrla. Se puede medir hoy: es P1 → P2 → reabrir la app suelta, sin nada especial — el mock pone la marca solo, en cuanto una `device-gnothi*` pide credencial (`EndPointDeEventos/Program.cs:86`). El commit `60fa0f4` dijo que «el mock no tiene ese flujo» y eso era falso |
 > | los **comentarios** de las cuatro páginas | reescritos también: era donde se propagaba el encuadre viejo |
 
 **El problema.** Los avisos de los cuatro módulos dicen que el registro **vive en Gnothi**:
