@@ -571,7 +571,7 @@ const gn = {
     const ms = gn.state.modules;
 
     document.getElementById('home-sub').textContent =
-      ms.length + (ms.length === 1 ? ' conectado' : ' conectados');
+      ms.length + (ms.length === 1 ? ' institución' : ' instituciones');
 
     const grid = document.getElementById('mods');
     if (!grid.dataset.ripple) { grid.dataset.ripple = '1'; grid.addEventListener('pointerdown', gn.ripple); }
