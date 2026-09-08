@@ -1,4 +1,5 @@
 @inject HostState State
+@inject Photino.NET.PhotinoWindow Window
 
 @*
     THE LIST OF MODULES. The same thing the phone shows (MainActivity.Card): icon, title, who
@@ -84,19 +85,29 @@ else
     // extracts it, grants a folder and writes installation.json -the person's file. The
     // window itself neither parses the package nor writes that file.
     //
-    // The file picker is WinForms because this IS a WinForms host; it must run on the UI/STA
-    // thread, which is where a Blazor Hybrid event handler already is.
+    // The file picker is the OS one, through Photino: NSOpenPanel on macOS, IFileOpenDialog on
+    // Windows, GTK on Linux. It has to run on the UI thread, which is where a Blazor Hybrid
+    // event handler already is. It blocks that thread while open, and that is fine: there is
+    // nothing else the window could be doing while the person picks a file.
     private void Import()
     {
-        using var dialog = new System.Windows.Forms.OpenFileDialog
+        string[]? picked;
+        try
         {
-            Title = "Pick a module package",
-            Filter = "Gnothi module (*.gmod)|*.gmod|All files (*.*)|*.*",
-        };
+            picked = Window.ShowOpenFile(
+                title: "Pick a module package",
+                multiSelect: false,
+                filters: [("Gnothi module", [".gmod"]), ("All files", ["*"])]);
+        }
+        catch (Exception e)
+        {
+            (ok, message) = (false, $"could not open the file picker: {e.GetType().Name}: {e.Message}");
+            return;
+        }
 
-        if (dialog.ShowDialog() != System.Windows.Forms.DialogResult.OK) return;
+        if (picked is not { Length: > 0 } || string.IsNullOrWhiteSpace(picked[0])) return;
 
-        (ok, message) = ModuleInstaller.Install(dialog.FileName, State.Root);
+        (ok, message) = ModuleInstaller.Install(picked[0], State.Root);
         if (ok) State.Reload();
     }
 }

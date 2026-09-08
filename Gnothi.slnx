@@ -28,4 +28,9 @@
   <Project Path="Gnothi.Assistant/Gnothi.Assistant.csproj" />
   <Project Path="Gnothi.Assistant.Measure/Gnothi.Assistant.Measure.csproj" />
   <Project Path="Gnothi.Assistant.Tests/Gnothi.Assistant.Tests.csproj" />
+
+  <!-- The desktop window. It used to be left out for the same reason as the Android app
+       (net9.0-windows). Since 2026-09-08 it is Photino.Blazor over plain net9.0, so it builds
+       on Windows, macOS and Linux and the build catches it when it breaks. -->
+  <Project Path="Gnothi.Desktop/Gnothi.Desktop.csproj" />
 </Solution>
