@@ -49,6 +49,10 @@ namespace Compras.Wasm
 			["ARROZ-2KG"] = "p-arroz",
 			["FRIJOL-900"] = "p-frijol",
 			["PAN-CUADRADO"] = "p-pan",
+			// LA PASTA SALE DE LA SEGUNDA HOJA, no de la primera: ver
+			// generar-fotos-2.py, caja #1 ("Spaghetti"). La primera hoja no traia
+			// ningun espagueti, y este era el unico producto del catalogo sin foto.
+			["PASTA-500"] = "p-espagueti",
 
 			// aceites
 			["ACEITE-GIR-1L"] = "p-aceite",
@@ -80,10 +84,7 @@ namespace Compras.Wasm
 		// DEVUELVE VACIO Y NO NULL, igual que las lecturas del dominio: quien pinta pregunta
 		// `.Length > 0` y no tiene que acordarse de un caso nulo. Un producto sin foto no es
 		// un error — es un producto que todavia no tiene foto, y la pantalla dibuja su caja
-		// punteada.
-		//
-		// HAY UNO QUE FALTA A PROPOSITO: la pasta. La hoja de stickers no trae ninguna, y
-		// poner un tarro de granos en su lugar seria peor que el hueco.
+		// punteada. Con la segunda hoja ya no queda ninguno sin foto en el catalogo actual.
 		public static string De(string sku) =>
 			sku is not null && PorSku.TryGetValue(sku, out string nombre) ? $"assets/{nombre}.png" : "";
 	}

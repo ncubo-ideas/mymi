@@ -1,0 +1,183 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!-- Las pruebas de aceptacion. E4 las pide PRIMERO, antes de que exista el dominio:
+       rojas de compilacion, y verdes a medida que el dominio aparece.
+
+       En el repo NO HABIA NINGUN proyecto de pruebas (contradiccion C9). Este es el
+       primero, y corre en DOS NIVELES:
+
+         nivel A  contra la fachada del agregado, DIRECTO. Es la clausula de E4 para
+                  cuando no hay fixture — y aca no la hay, porque nadie la provee (C4).
+                  Sin motor, sin journal, sin disco: solo el dominio puro.
+
+         nivel B  las MISMAS afirmaciones de negocio, pero de punta a punta contra un
+                  actor journalizado de verdad, sobre una carpeta temporal por prueba.
+                  Es E4 propiamente. Llega en T6, con Concesionario.App.
+
+       El nivel B no es un lujo: MEDIDO en T0 (spike S5) que un error de tipeo en un script
+       del DSL se descubre en RUNTIME, no al compilar, y deja entradas permanentes en el
+       journal que hacen loguear un fallo de rehidratacion en cada arranque futuro. La unica
+       defensa es haber ejecutado cada script antes de que toque el journal de una persona.
+
+       NUnit y no otro: los ejemplos de la guia estan escritos con [SetUp], [Test],
+       Assert.AreEqual y Assert.Throws. -->
+
+  <PropertyGroup>
+    <TargetFramework>net9.0</TargetFramework>
+    <Nullable>disable</Nullable>
+    <ImplicitUsings>disable</ImplicitUsings>
+    <RootNamespace>Concesionario.Dominio.Pruebas</RootNamespace>
+    <AssemblyName>Concesionario.Dominio.Pruebas</AssemblyName>
+    <IsPackable>false</IsPackable>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.11.1" />
+    <PackageReference Include="NUnit" Version="4.2.2" />
+    <PackageReference Include="NUnit3TestAdapter" Version="4.6.0" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\Dominio\Concesionario.Dominio.csproj" />
+
+    <!-- El nivel B entra por aca. Se referencia desde T1 para que la primera prueba pueda
+         comprobar que el dominio NO arrastro dependencias, comparandolo con una app que si
+         las tiene. -->
+    <ProjectReference Include="..\..\App\Concesionario.App\Concesionario.App.csproj" />
+
+    <!-- La caratula MCP, desde T9. Lo que esta rebanada afirma de ella no lo puede comprobar
+         ninguna prueba del dominio ni de la puerta, porque son leyes de la caratula: que
+         ninguna pregunta de la IA escribe una entrada, que una carpeta donde la app nunca se
+         abrio contesta en vez de reventar, que las dos lecturas GUARDADAS no salen como error
+         del protocolo, y que la credencial de la persona no viaja en ninguna respuesta.
+
+         Es un Exe y se referencia igual: un Exe es un ensamblado como cualquier otro. Las
+         tools siguen internal y las pruebas entran por InternalsVisibleTo. -->
+    <ProjectReference Include="..\..\App\Concesionario.Mcp\Concesionario.Mcp.csproj" />
+
+    <!-- La caratula del browser, desde T10, y por UNA sola razon: los tres conjuntos cerrados
+         que la pantalla ofrece en sus desplegables estan escritos a mano como texto, porque una
+         caratula no referencia el dominio (C25). Un nombre mal escrito lo rechaza la puerta sin
+         escribir nada, pero una clase que el dominio AGREGUE y la lista no simplemente no se
+         muestra, en silencio y para siempre. Esa es la mitad que ninguna otra prueba cubre y la
+         que T7 solo pudo dejar dicha.
+
+         ReferenceOutputAssembly basta: se necesita el ensamblado para leer tres arrays static,
+         no los assets de browser-wasm. -->
+    <ProjectReference Include="..\..\App\Concesionario.Wasm\Concesionario.Wasm.csproj" />
+  </ItemGroup>
+
+  <!-- El csproj del dominio viaja al output COMO DATO, para que la prueba de pureza lo lea
+       y cuente sus referencias DECLARADAS.
+
+       Hace falta porque el chequeo obvio no alcanza: Assembly.GetReferencedAssemblies() solo
+       reporta lo que el compilador REALMENTE emitio, y una dependencia declarada pero no
+       usada se optimiza y desaparece. MEDIDO: con un <PackageReference Include="Newtonsoft.Json" />
+       metido en el dominio, la prueba por reflexion pasaba igual. Una prueba que no puede
+       fallar no sirve de nada, asi que se lee la fuente de la verdad: el csproj. -->
+  <ItemGroup>
+    <None Include="..\..\Dominio\Concesionario.Dominio.csproj"
+          Link="Concesionario.Dominio.csproj.dato"
+          CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
+
+  <!-- Y EL MARKUP DE LAS DOS SECCIONES DE T10, tambien COMO DATO, por la misma razon que el csproj
+       de arriba: el chequeo obvio no alcanza. Un componente Blazor compilado no se puede inspeccionar
+       sin un banco de pruebas de componentes, y en este repo no hay ninguno; lo que si se puede leer
+       es el markup, y ahi estan las dos cosas que ninguna otra prueba ve — que la pagina de verdad
+       renderiza las secciones, y que las secciones no leen nada por su cuenta.
+
+       Va por GLOB y no archivo por archivo: una seccion nueva entra sola al barrido. Con una lista
+       escrita a mano, la tercera seccion que alguien agregue no la mira nadie. -->
+  <ItemGroup>
+    <None Include="..\..\App\Concesionario.Wasm\Sections\*.razor"
+          LinkBase="SeccionesComoDato"
+          CopyToOutputDirectory="PreserveNewest" />
+
+    <None Include="..\..\App\Concesionario.Wasm\Pages\MyCar.razor"
+          Link="MyCar.razor.dato"
+          CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
+
+  <!-- Y TODO EL MARKUP DE LA CARATULA, desde T10, por una tercera cosa que ninguna prueba veia: que
+       NINGUN control de la pantalla le pida a la persona un hecho de su propio vehiculo. El censo de
+       parametros de la puerta no lo puede ver, porque un formulario guarda su valor en el estado de
+       la pagina y no cruza ninguna puerta. Es exactamente el hueco que T8 midio en la caratula MCP y
+       tuvo que tapar con un censo de su propia superficie.
+
+       Va sobre TODOS los .razor y no solo sobre las secciones, porque un formulario en la pagina es
+       igual de malo que uno en una seccion, y por GLOB recursivo para que una pagina nueva entre sola
+       al barrido. -->
+  <ItemGroup>
+    <None Include="..\..\App\Concesionario.Wasm\**\*.razor"
+          Exclude="..\..\App\Concesionario.Wasm\bin\**\*.razor;..\..\App\Concesionario.Wasm\obj\**\*.razor"
+          LinkBase="MarcadoComoDato"
+          CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
+
+  <!-- Y TODO EL CODIGO DE LAS CARATULAS, COMO DATO, por una cuarta cosa que ninguna prueba veia: que
+       la caratula no haga CUENTAS con un valor del dominio. La convencion de registro crudo (regla 3
+       de SLICE-ShopStay.md §7) dice que todo agregado en pantalla lo compone el dominio; una resta o
+       una division en un .razor construye una frase rival que el dominio nunca dijo, y ningun censo
+       de la puerta la puede ver porque nunca cruza la puerta.
+
+       Va COMO DATO y no por reflexion por la misma razon que el markup de arriba: lo que hay que
+       mirar es el TEXTO, un operador entre dos operandos, y eso no sobrevive a la compilacion.
+
+       UN GRUPO POR RAIZ, y la raiz es la carpeta bajo CodigoComoDato: asi el barrido puede decir en
+       cual de las siete carpetas del modulo esta cada acierto. EndPointDeEventos e InyectorDeEventosDemo
+       son HERMANOS de App\ y no hijos, asi que van nombrados aparte o se caen del glob. -->
+  <ItemGroup>
+    <None Include="..\..\App\Concesionario.App\**\*.cs"
+          Exclude="..\..\App\Concesionario.App\bin\**\*.cs;..\..\App\Concesionario.App\obj\**\*.cs"
+          LinkBase="CodigoComoDato\App"
+          CopyToOutputDirectory="PreserveNewest" />
+
+    <None Include="..\..\App\Concesionario.Frontera\**\*.cs"
+          Exclude="..\..\App\Concesionario.Frontera\bin\**\*.cs;..\..\App\Concesionario.Frontera\obj\**\*.cs"
+          LinkBase="CodigoComoDato\Frontera"
+          CopyToOutputDirectory="PreserveNewest" />
+
+    <None Include="..\..\App\Concesionario.Consola\**\*.cs"
+          Exclude="..\..\App\Concesionario.Consola\bin\**\*.cs;..\..\App\Concesionario.Consola\obj\**\*.cs"
+          LinkBase="CodigoComoDato\Consola"
+          CopyToOutputDirectory="PreserveNewest" />
+
+    <None Include="..\..\App\Concesionario.Mcp\**\*.cs"
+          Exclude="..\..\App\Concesionario.Mcp\bin\**\*.cs;..\..\App\Concesionario.Mcp\obj\**\*.cs"
+          LinkBase="CodigoComoDato\Mcp"
+          CopyToOutputDirectory="PreserveNewest" />
+
+    <None Include="..\..\App\Concesionario.Wasm\**\*.cs;..\..\App\Concesionario.Wasm\**\*.razor"
+          Exclude="..\..\App\Concesionario.Wasm\bin\**\*.*;..\..\App\Concesionario.Wasm\obj\**\*.*"
+          LinkBase="CodigoComoDato\Wasm"
+          CopyToOutputDirectory="PreserveNewest" />
+
+    <None Include="..\..\EndPointDeEventos\**\*.cs"
+          Exclude="..\..\EndPointDeEventos\bin\**\*.cs;..\..\EndPointDeEventos\obj\**\*.cs"
+          LinkBase="CodigoComoDato\EndPointDeEventos"
+          CopyToOutputDirectory="PreserveNewest" />
+
+    <None Include="..\..\InyectorDeEventosDemo\**\*.cs"
+          Exclude="..\..\InyectorDeEventosDemo\bin\**\*.cs;..\..\InyectorDeEventosDemo\obj\**\*.cs"
+          LinkBase="CodigoComoDato\InyectorDeEventosDemo"
+          CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
+
+  <!-- Y LA RAIZ QUE SE ENUMERA SIN JUZGARSE COMO CODIGO DE LA CARATULA.
+
+       PaginaDeDescarga es hosting: publicado\ es salida de publicacion y no es ni bin ni obj, asi que
+       se excluye por nombre o el glob se traga los .wasm del framework.
+
+       AQUI VIVIA UN SEGUNDO GRUPO, el de MiCarroAppMockup, y no se puede volver a poner tal cual: esa
+       carpeta era gitignorada, asi que el grupo copiaba algo que solo existia en la maquina de quien
+       la diseno y en cualquier clon nuevo las pruebas que la nombraban se ponian rojas. Una carpeta
+       que el barrido necesite tiene que estar versionada. -->
+  <ItemGroup>
+    <None Include="..\..\PaginaDeDescarga\**\*.conf;..\..\PaginaDeDescarga\**\*.js"
+          Exclude="..\..\PaginaDeDescarga\publicado\**\*.*"
+          LinkBase="CodigoComoDato\PaginaDeDescarga"
+          CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
+
+</Project>

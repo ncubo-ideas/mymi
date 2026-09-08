@@ -76,6 +76,11 @@ INFLACION_ANUAL = {
     # inflacion daba 25.000 solo el primer mes. Es el precio de lista de la marca que
     # compra siempre, sostenido a proposito para que el gasto del hogar sea comparable.
     "PERRO-CROQ-10KG": 0.0,
+
+    # EL TOMATE BAJA, y es el unico: sostiene la tarjeta "Puede interesarte" y la nota
+    # al pie de los recibos viejos ("hoy cuesta X menos"), que sin ninguna bajada en el
+    # guion no se podian ver nunca. Una verdura que se abarata es lo verosimil.
+    "TOMATE-KG": -0.05,
 }
 INFLACION_POR_DEFECTO = 0.06
 
@@ -109,6 +114,26 @@ def sabados():
     while dia <= ULTIMO_SABADO:
         yield dia
         dia += timedelta(days=7)
+
+
+# LA SUCURSAL DEL TICKET, y es parte del arco de Sonia (propuesta de Geannina): hasta
+# diciembre compra SIEMPRE en la de su barrio; desde enero supervisa tiendas y aparece
+# comprando en dos mas, segun donde la agarre el sabado. Determinista por semana, como
+# todo el guion.
+SUCURSAL_DE_SIEMPRE = "La Guaria Centro"
+SUCURSALES_NUEVAS = ["La Guaria Zapote", "La Guaria Del Este"]
+
+
+def sucursal_de(dia, indice):
+    if dia < ARRANQUE_DEL_CAMBIO:
+        return SUCURSAL_DE_SIEMPRE
+
+    # Desde enero: dos de cada cuatro sabados sigue en la suya; los otros dos la
+    # agarran en una tienda que supervisa.
+    resto = indice % 4
+    if resto < 2:
+        return SUCURSAL_DE_SIEMPRE
+    return SUCURSALES_NUEVAS[resto - 2]
 
 
 def canasta_de(dia, indice):
@@ -270,6 +295,7 @@ def armar():
             "preciosUnitarios": [float(precio(sku, dia)) for sku, _ in lineas],
             "categorias": [CATALOGO[sku][2] for sku, _ in lineas],
             "mesesDeGarantia": garantias,
+            "sucursal": sucursal_de(dia, indice),
         })
 
     return guion

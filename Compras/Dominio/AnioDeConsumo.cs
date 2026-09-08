@@ -18,17 +18,17 @@ namespace Compras.Dominio
 	// CUANTOS MESES TUVIERON COMPRA es el campo que evita la trampa del año a medias: 2026
 	// puede llevar 31 unidades en OCHO meses y 2025 llevar 48 en doce. Sin ese dato los dos
 	// numeros se comparan como si midieran lo mismo, y no.
-	public class AnioDeConsumo
+	internal class AnioDeConsumo
 	{
-		public int Anio { get; private set; }
-		public int Unidades { get; private set; }
-		public decimal Gasto { get; private set; }
+		internal int Anio { get; private set; }
+		internal int Unidades { get; private set; }
+		internal decimal Gasto { get; private set; }
 
 		/// <summary>En cuántas compras apareció durante el año.</summary>
-		public int Compras { get; private set; }
+		internal int Compras { get; private set; }
 
 		/// <summary>Cuántos meses distintos del año tuvieron alguna. Un año a medias tiene menos de 12.</summary>
-		public int MesesConCompras { get; private set; }
+		internal int MesesConCompras { get; private set; }
 
 		internal AnioDeConsumo(int anio)
 		{
@@ -39,7 +39,7 @@ namespace Compras.Dominio
 		}
 
 		/// <summary>Como aaaa, que es la forma en que se le dice a quien pregunta.</summary>
-		public string AnioExpresado => $"{Anio:0000}";
+		internal string AnioExpresado => $"{Anio:0000}";
 
 		internal void Sumar(MesDeConsumo mes)
 		{

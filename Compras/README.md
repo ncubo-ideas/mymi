@@ -34,6 +34,21 @@ Dentro de `App/`:
 journal. Es un invariante del diseño, no una omisión: el proveedor no conoce el dominio
 de la persona. Lo único que los conecta es HTTP.
 
+## El contrato del evento de compra (URL2)
+
+Lo que el supermercado publica por `CompraRegistrada`, y lo que la app exige en la frontera
+(`CompraRegistrada.Interpretar`): un evento mal formado se **descarta entero**, no se repara.
+
+| Campo | Tipo | | Qué es |
+|---|---|---|---|
+| `numero` | string | requerido | El número del ticket. Repetido, la app lo rechaza |
+| `fecha` | fecha con hora | requerido | Cuándo fue. La hora **no es relleno**: una lectura vive de ella |
+| `skus`, `descripciones`, `cantidades`, `preciosUnitarios`, `categorias`, `mesesDeGarantia` | listas paralelas | requeridas, mismo largo | Una posición por línea. La categoría es del conjunto cerrado de doce; una desconocida descarta el evento. `0` meses = sin garantía |
+| `sucursal` | string | **opcional** | En qué tienda fue. **Acordado con Geannina** (2026-09): sin él, el tiquete entra igual, sin situar, y la lectura de sucursales lo cuenta aparte como "tiquete que calla". Es lo que permite decir *"antes compraba siempre en la misma; desde enero aparece en tres"* |
+
+La presentación por línea (`1 L`, `12x u`) está en el dominio y **todavía no en el contrato**: ver
+`Preguntas.md`, "un defecto que hay que vigilar".
+
 `Mecanismo/Puppets.Portador` es copia textual de la de Exámenes (ver su README): con dos
 negocios vivos, lo que corresponde es subirlo a la raíz del repo — pendiente de acordar.
 

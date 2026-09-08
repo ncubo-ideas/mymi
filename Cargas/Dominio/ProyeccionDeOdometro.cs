@@ -13,9 +13,9 @@ namespace Cargas.Dominio
 	// origen Estimado, que por tipo no puede cerrar un tramo. Si cerrara, el rendimiento
 	// se calcularia con un odometro estimado desde el rendimiento: se confirmaria a si
 	// mismo.
-	public sealed class ProyeccionDeOdometro
+	internal sealed class ProyeccionDeOdometro
 	{
-		public static readonly ProyeccionDeOdometro SinProyeccion =
+		internal static readonly ProyeccionDeOdometro SinProyeccion =
 			new ProyeccionDeOdometro(0m, 0m, 0);
 
 		internal static ProyeccionDeOdometro De(decimal kilometros, decimal kmPorDia,
@@ -23,12 +23,12 @@ namespace Cargas.Dominio
 			new ProyeccionDeOdometro(kilometros, kmPorDia, diasDesdeLaUltimaLectura);
 
 		/// <summary>El valor propuesto, en kilometros. Cero si no hay proyeccion.</summary>
-		public decimal Kilometros { get; private set; }
+		internal decimal Kilometros { get; private set; }
 
 		/// <summary>El promedio del que salio, para decirselo a Sonia.</summary>
-		public decimal KilometrosPorDia { get; private set; }
+		internal decimal KilometrosPorDia { get; private set; }
 
-		public int DiasDesdeLaUltimaLectura { get; private set; }
+		internal int DiasDesdeLaUltimaLectura { get; private set; }
 
 		private ProyeccionDeOdometro(decimal kilometros, decimal kmPorDia, int dias)
 		{
@@ -37,10 +37,26 @@ namespace Cargas.Dominio
 			DiasDesdeLaUltimaLectura = dias;
 		}
 
-		public bool Hay => Kilometros > 0m;
+		internal bool Hay => Kilometros > 0m;
 
 		/// <summary>El nombre del origen con el que entraria si Sonia la acepta sin
 		/// mirar: estimado. Solo su confirmacion lo sube a confirmado.</summary>
-		public string Origen => OrigenDeLectura.Estimado.Nombre;
+		// LA MIRADA LA PONE LA BITACORA al entregarla, igual que en Tramo. Aca no es
+		// cosmetico: el campo del kilometraje llega PRELLENADO con esta proyeccion y lo que
+		// se teclea ahi se journaliza con la unidad del campo. Si la proyeccion viniera en
+		// km y el campo dijera millas, cada aceptacion entraria 1.6 veces mas grande.
+		private ComoLoMira mirada = ComoLoMira.Canonica;
+
+		internal void MirarloComo(ComoLoMira como)
+		{
+			ArgumentNullException.ThrowIfNull(como);
+			mirada = como;
+		}
+
+		internal decimal KilometrosComoSeVen => mirada.DistanciaComoSeVe(Kilometros);
+		internal decimal PorDiaComoSeVe => mirada.DistanciaComoSeVe(KilometrosPorDia);
+		internal string SimboloDeLaDistancia => mirada.SimboloDeLaDistancia;
+
+		internal string Origen => OrigenDeLectura.Estimado.Nombre;
 	}
 }

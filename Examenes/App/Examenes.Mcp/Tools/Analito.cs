@@ -1,4 +1,4 @@
-using Examenes.Dominio;
+using Examenes.App;
 
 namespace Examenes.Mcp.Tools;
 
@@ -23,6 +23,16 @@ public enum Analito
 	ColesterolTotal,
 	ColesterolLdl,
 	Hemoglobina,
+
+	// La quimica general. Se leen todos contra un rango que no depende del sexo, asi que la
+	// IA puede preguntarles la tendencia con lo que el expediente ya tiene.
+	Trigliceridos,
+	GlucosaEnAyunas,
+	NitrogenoUreico,
+	Sodio,
+	Potasio,
+	Cloro,
+	ProteinasTotales,
 }
 
 /// <summary>
@@ -31,7 +41,7 @@ public enum Analito
 ///
 /// Es un enum aparte y no tres valores mas del otro, y esa separacion es el contrato: las
 /// preguntas que se les pueden hacer NO son las mismas. Un nitrito no viene subiendo ni
-/// tiene velocidad; aparece, persiste o cede. Poner los siete en un enum unico dejaria que
+/// tiene velocidad; aparece, persiste o cede. Poner los doce en un enum unico dejaria que
 /// la IA pidiera `velocidad_de(SangreEnOrina)` y recibiera una respuesta vacia que despues
 /// tendria que interpretar.
 ///
@@ -42,6 +52,27 @@ public enum AnalitoBinario
 	Nitritos,
 	SangreEnOrina,
 	SangreEnHeces,
+
+	// Las otras tres casillas de la tira. Los tres se cuentan igual y concluyen distinto:
+	// una proteina aislada pide repetirse, unas cetonas aisladas se explican por el ayuno, y
+	// una glucosa en la orina ya amerita mostrarla la primera vez.
+	ProteinaEnOrina,
+	Cetonas,
+	GlucosaEnOrina,
+}
+
+/// <summary>
+/// Los analitos NOMINALES: los que se informan como una categoría de un conjunto. Cerrado.
+/// </summary>
+///
+/// Tercer enum por la misma razón que hay un segundo: las preguntas que se les pueden hacer
+/// no son las mismas. Un color no viene subiendo ni aparece — SALE, y sale de un conjunto
+/// donde algunas categorías son las esperables y otras no. `presencia_de(ColorDeLaOrina)`
+/// devolvería una respuesta vacía que la IA después tendría que interpretar.
+public enum AnalitoNominal
+{
+	ColorDeLaOrina,
+	ColorDeLasHeces,
 }
 
 internal static class AnalitoDelDominio
@@ -51,33 +82,52 @@ internal static class AnalitoDelDominio
 	/// conoce a cada analito.
 	/// </summary>
 	///
-	/// Los nombres salen de las constantes del propio dominio, no de literales repetidos
-	/// acá: si un analito se renombra, esto deja de compilar en vez de empezar a devolver
-	/// "sin mediciones" en silencio, que es la falla cara.
+	/// Los nombres salen de NombresDeAnalito, que es la copia que Examenes.App publica para
+	/// los nodos de afuera: desde que el dominio es enteramente `internal`, este ensamblado
+	/// -un servidor MCP, que no es ni la Superficie- no puede nombrarle un tipo. La copia
+	/// queda amarrada en Comprobaciones, que compara cada constante contra el dominio: si un
+	/// analito se renombra el fixture lo dice, en vez de que esto empiece a devolver "sin
+	/// mediciones" en silencio, que es la falla cara.
 	///
 	/// No hace falta el `default` con excepción que llevaría un resolver desde string (la
 	/// función total-con-throw de rigor): un enum no puede traer un valor que no esté, así
 	/// que la rama imposible no se escribe. Eso es exactamente lo que se gana al tipar.
 	internal static string Nombre(this Analito analito) => analito switch
 	{
-		// El namespace por delante no es ruido: en este archivo `Analito` a secas es el
-		// enum de la frontera, y el de la derecha es el conjunto cerrado del dominio. Son
-		// dos cosas distintas con el mismo nombre, y esta es justamente la linea donde se
-		// traduce una a la otra.
-		Analito.AntigenoProstatico => Examenes.Dominio.Analito.AntigenoProstatico.Nombre,
-		Analito.ColesterolTotal    => Examenes.Dominio.Analito.ColesterolTotal.Nombre,
-		Analito.ColesterolLdl      => Examenes.Dominio.Analito.ColesterolLdl.Nombre,
-		Analito.Hemoglobina        => Examenes.Dominio.Analito.Hemoglobina.Nombre,
+		// A la izquierda el enum de ESTA frontera; a la derecha el nombre canonico con el
+		// que el dominio conoce al analito, como texto.
+		Analito.AntigenoProstatico => NombresDeAnalito.AntigenoProstatico,
+		Analito.ColesterolTotal    => NombresDeAnalito.ColesterolTotal,
+		Analito.ColesterolLdl      => NombresDeAnalito.ColesterolLdl,
+		Analito.Hemoglobina        => NombresDeAnalito.Hemoglobina,
+		Analito.Trigliceridos      => NombresDeAnalito.Trigliceridos,
+		Analito.GlucosaEnAyunas    => NombresDeAnalito.GlucosaEnAyunas,
+		Analito.NitrogenoUreico    => NombresDeAnalito.NitrogenoUreico,
+		Analito.Sodio              => NombresDeAnalito.Sodio,
+		Analito.Potasio            => NombresDeAnalito.Potasio,
+		Analito.Cloro              => NombresDeAnalito.Cloro,
+		Analito.ProteinasTotales   => NombresDeAnalito.ProteinasTotales,
 		_ => throw new ArgumentOutOfRangeException(nameof(analito), analito,
 			"Se agregó un analito al enum y no se lo mapeó al dominio."),
 	};
 
 	internal static string Nombre(this AnalitoBinario analito) => analito switch
 	{
-		AnalitoBinario.Nitritos      => Examenes.Dominio.Analito.NitritosEnOrina.Nombre,
-		AnalitoBinario.SangreEnOrina => Examenes.Dominio.Analito.SangreEnLaOrina.Nombre,
-		AnalitoBinario.SangreEnHeces => Examenes.Dominio.Analito.SangreEnLasHeces.Nombre,
+		AnalitoBinario.Nitritos        => NombresDeAnalito.NitritosEnOrina,
+		AnalitoBinario.SangreEnOrina   => NombresDeAnalito.SangreEnLaOrina,
+		AnalitoBinario.SangreEnHeces   => NombresDeAnalito.SangreEnLasHeces,
+		AnalitoBinario.ProteinaEnOrina => NombresDeAnalito.ProteinaEnLaOrina,
+		AnalitoBinario.Cetonas         => NombresDeAnalito.CetonasEnOrina,
+		AnalitoBinario.GlucosaEnOrina  => NombresDeAnalito.GlucosaEnLaOrina,
 		_ => throw new ArgumentOutOfRangeException(nameof(analito), analito,
 			"Se agregó un analito binario al enum y no se lo mapeó al dominio."),
+	};
+
+	internal static string Nombre(this AnalitoNominal analito) => analito switch
+	{
+		AnalitoNominal.ColorDeLaOrina  => NombresDeAnalito.ColorDeLaOrina,
+		AnalitoNominal.ColorDeLasHeces => NombresDeAnalito.ColorDeLasHeces,
+		_ => throw new ArgumentOutOfRangeException(nameof(analito), analito,
+			"Se agregó un analito nominal al enum y no se lo mapeó al dominio."),
 	};
 }

@@ -43,6 +43,10 @@ $logs    = "$env:TEMP\gnothi-escenario"
 
 # LAS CUATRO INSTITUCIONES. Los puertos del publicador tienen que coincidir con los de
 # armar-bundle.ps1: el manifiesto los lleva ADENTRO y el modulo no los puede cambiar despues.
+#
+# Y el directorio del concesionario ahora es Concesionario, no DealershipCar: master lo renombro
+# en 0110017. Cambio la RUTA, no la marca -- su Titulo sigue en ingles porque el modulo entero
+# esta en ingles, y sus tipos tambien (DealershipCarAPI). Si esto se vuelve a romper, es esto.
 $catalogo = [ordered]@{
     'examenes'   = @{ Mock = "$raiz\Examenes\EndPointDeEventos";     Pub = 8095; Web = 8096
                       Titulo = 'Laboratorio Clinico Delfos'; Subtitulo = 'Mis examenes' }
@@ -50,7 +54,7 @@ $catalogo = [ordered]@{
                       Titulo = 'Supermercado La Guaria';     Subtitulo = 'Mis compras' }
     'cargas'     = @{ Mock = "$raiz\Cargas\EndPointDeEventos";       Pub = 8111; Web = 8112
                       Titulo = 'Estaciones Faro';            Subtitulo = 'Mis cargas' }
-    'dealership' = @{ Mock = "$raiz\DealershipCar\EndPointDeEventos"; Pub = 8092; Web = 8093
+    'dealership' = @{ Mock = "$raiz\Concesionario\EndPointDeEventos"; Pub = 8092; Web = 8093
                       Titulo = 'DealershipCar';              Subtitulo = 'My maintenance' }
 }
 

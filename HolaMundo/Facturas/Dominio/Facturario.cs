@@ -8,17 +8,17 @@ namespace Facturas.Dominio
 	//
 	// Se llama Facturario y no Facturas porque el namespace ya es Facturas.Dominio:
 	// una clase Facturas dentro de el obliga a desambiguar en cada referencia.
-	public class Facturario
+	internal class Facturario
 	{
 		private readonly List<Factura> facturas = new List<Factura>();
 		private readonly Dictionary<string, Factura> porNumero =
 			new Dictionary<string, Factura>(StringComparer.OrdinalIgnoreCase);
 
-		public IReadOnlyList<Factura> Lista => facturas;
+		internal IReadOnlyList<Factura> Lista => facturas;
 
-		public int Cantidad => facturas.Count;
+		internal int Cantidad => facturas.Count;
 
-		public decimal Total
+		internal decimal Total
 		{
 			get
 			{
@@ -29,7 +29,7 @@ namespace Facturas.Dominio
 		}
 
 		// Indexador por numero: es lo que hace valido el DSL `facturas[@numero]`.
-		public Factura this[string numero]
+		internal Factura this[string numero]
 		{
 			get
 			{
@@ -40,13 +40,13 @@ namespace Facturas.Dominio
 			}
 		}
 
-		public bool Tiene(string numero)
+		internal bool Tiene(string numero)
 		{
 			ArgumentNullException.ThrowIfNullOrWhiteSpace(numero);
 			return porNumero.ContainsKey(numero);
 		}
 
-		public void Agregar(Factura factura)
+		internal void Agregar(Factura factura)
 		{
 			ArgumentNullException.ThrowIfNull(factura);
 			if (porNumero.ContainsKey(factura.Numero))

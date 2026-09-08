@@ -31,15 +31,28 @@
 @* UN solo lugar para los errores, y arriba. Antes habia dos bloques -uno adentro del
    arranque y otro al final de la pagina- asi que un mismo fallo se veia dos veces, y
    estando abajo quedaba fuera de pantalla: la app parecia no reaccionar al click. *@
+@* role="alert": el error es lo único de esta pantalla que un lector de pantalla tiene que
+   interrumpir para decir. Subirlo arriba resolvió el «parecía no reaccionar al click» para
+   quien ve; sin esto, para quien no ve seguía sin pasar nada. *@
 @if (error.Length > 0)
 {
-    <div class="aviso aviso--problema">
+    <div class="aviso aviso--problema" role="alert">
         <strong>@(estado.EstaArriba ? "No se pudo completar la operación." : "No se pudo abrir la app.")</strong>
         <pre>@error</pre>
     </div>
 }
 
-@if (!estado.EstaArriba)
+@if (!estado.EstaArriba && resolviendo)
+{
+    @* MIENTRAS SE RESUELVE QUÉ HABÍA RECORDADO, no se pinta el elegidor. Hasta que
+       IndexedDB contesta no sabemos si la persona ya eligió, y mostrarle «Elegí dónde» a
+       quien eligió la semana pasada es pedirle que vuelva a decidir. Encima sin la tecla
+       grande, porque «soportado» y «opfs» todavía son null y los tres modos salen
+       deshabilitados. El elegidor aparece SOLO cuando se sabe que no hay nada recordado o
+       que recuperarlo falló. *@
+    <p class="abriendo" role="status" aria-live="polite">@TextoDeAbriendo()</p>
+}
+else if (!estado.EstaArriba)
 {
     <div class="aviso aviso--neutro">
         @* Cuando el handle volvio de IndexedDB pero el permiso caduco, la accion correcta
@@ -172,16 +185,21 @@ else
         caso en que NO hay nada que hacer, y ahí no hay consejo que inventar.               *@
     @* EL @key VA EN EL CUERPO Y NO EN LA <section>, desde que Actualizar vive acá adentro.
 
-       El @key sube en cada Releer y obliga a Blazor a RECREAR estos nodos. Sin él reusa
-       el mismo elemento, la animación de CSS no se vuelve a disparar, y apretar Actualizar
-       no produce ningún cambio visible cuando no entraron exámenes nuevos — o sea que el
-       botón parecía no hacer nada. Medido: `getAnimations()[0].currentTime` se quedaba en
-       1000 y el nodo era idéntico.
+       El @key obliga a Blazor a RECREAR estos nodos. Sin él reusa el mismo elemento, la
+       animación de CSS no se vuelve a disparar, y apretar Actualizar no produce ningún
+       cambio visible cuando no entraron exámenes nuevos — o sea que el botón parecía no
+       hacer nada. Medido: `getAnimations()[0].currentTime` se quedaba en 1000 y el nodo
+       era idéntico.
 
        Pero si la sección ENTERA se recrea, también se recrea el botón que acabás de
        apretar, y el foco de teclado se pierde en el reemplazo del nodo. Con el @key un
-       nivel más abajo la cabecera sobrevive al redibujo —el foco se queda donde estaba— y
-       el cuerpo se vuelve a animar exactamente igual que antes. *@
+       nivel más abajo la cabecera sobrevive al redibujo y el cuerpo se vuelve a animar.
+
+       LA LLAVE ES estado.Refrescos Y NO UN CONTADOR DE ESTA PANTALLA. Un contador local
+       subía en cada Releer, y Releer corre en TODA interacción: declarar el sexo, importar
+       un expediente, arrancar. La animación de entrada se volvía a disparar por tocar un
+       botón que no fue a buscar nada, que es lo contrario de lo que este @key significa.
+       Refrescos sube solo cuando se fue al laboratorio, y por eso dice lo que dice. *@
     @* LA PORTADA MUESTRA DOS COSAS A LA VEZ, como el telefono del landing: el verde que
        dice cuantos valores estan donde tienen que estar, y aparte lo que pide atencion.
        Antes era UNA tarjeta que cambiaba de tono entero, y eso tenia un costo: apenas un
@@ -201,12 +219,19 @@ else
            app se pone al día sola al abrir, así que esto es «volvé a chequear AHORA». *@
         <div class="portada-cabeza">
             <p class="portada-rotulo">tu expediente, hoy</p>
-            <button class="portada-releer" @onclick="Refrescar" disabled="@(refrescando || estado.Migrada)">
+            @* aria-busy y no solo el texto: «Actualizando…» cambia el nombre del botón, y
+               un lector de pantalla no vuelve a leerlo si el foco ya estaba ahí. El estado
+               ocupado sí lo anuncia. *@
+            <button class="portada-releer" @onclick="Refrescar" disabled="@(refrescando || estado.Migrada)"
+                    aria-busy="@(refrescando ? "true" : "false")">
                 @(estado.Migrada ? "Ya no se actualiza" : refrescando ? "Actualizando…" : "Actualizar")
             </button>
         </div>
 
-        <div class="portada-cuerpo" @key="@($"portada-{redibujo}")">
+        @* aria-live: este bloque ES la respuesta a Actualizar, y el @key lo recrea entero.
+           Sin esto la única señal de que la app fue y volvió es una animación. *@
+        <div class="portada-cuerpo" @key="@($"portada-{estado.Refrescos}")"
+             aria-live="polite">
             @* EL BLOQUE QUE TRANQUILIZA. No se dibuja cuando la severidad es «urgente»:
                el rojo lo reserva el dominio para lo que no puede esperar, y poner un
                «todo está bien» al lado de eso lo contradice. Fuera de ese caso el verde
@@ -447,7 +472,12 @@ else
         <div class="pedido">
             <div class="pedido-cabeza">
                 <span class="pedido-rotulo">falta un dato tuyo</span>
-                <button class="pedido-plegar" @onclick="() => pedidoPlegado = !pedidoPlegado">
+                @* «Ver» y «Ocultar» solos no dicen de qué, y fuera de contexto es lo único
+                   que se oye. El aria-expanded además dice si está abierto, que el texto
+                   deja implícito. *@
+                <button class="pedido-plegar" @onclick="() => pedidoPlegado = !pedidoPlegado"
+                        aria-expanded="@(pedidoPlegado ? "false" : "true")"
+                        aria-label="@(pedidoPlegado ? "Ver el dato que falta" : "Ocultar el dato que falta")">
                     @(pedidoPlegado ? "Ver" : "Ocultar")
                 </button>
             </div>
@@ -471,7 +501,7 @@ else
         <h2 class="seccion">Cómo vienen tus valores</h2>
         @foreach (TendenciaDeAnalito t in analitos)
         {
-            <button class="serie" @key="@($"{t.Analito}-{redibujo}")" @onclick="() => VerSerie(t.Analito)">
+            <button class="serie" @key="@($"{t.Analito}-{estado.Refrescos}")" @onclick="() => VerSerie(t.Analito)">
                 @{ InterpretacionDeAnalito lectura = Lectura(t.Analito); }
                 <div class="serie-cabeza">
                     <div>
@@ -547,7 +577,7 @@ else
        positivo y un aviso suelto. *@
     @foreach (PresenciaDeAnalito p in presencias)
     {
-        <button class="serie" @key="@($"{p.Analito}-{redibujo}")" @onclick="() => VerSerie(p.Analito)">
+        <button class="serie" @key="@($"{p.Analito}-{estado.Refrescos}")" @onclick="() => VerSerie(p.Analito)">
             @{ InterpretacionDeAnalito suya = Lectura(p.Analito); }
             <div class="serie-cabeza">
                 <div>
@@ -580,17 +610,49 @@ else
         </button>
     }
 
-    @* Un hallazgo de un examen sin serie. Va acá arriba y no perdido en una celda:
-       «apareció sangre» no es un dato de tabla. El texto y la urgencia los pone el
-       dominio — dos positivos de la misma forma pueden decir cosas muy distintas.
+    @* LOS NOMINALES, con SU forma. Terceras tarjetas iguales, y por la misma razón que las
+       de los binarios: son la lectura de una serie y se leen distinto porque lo son. Acá
+       no hay «pasó de 200 a 280» ni «apareció en las 2 seguidas»: hay «salió ámbar, y las
+       tres veces estuvo dentro de lo esperable».
 
-       Hoy esto son sólo los COLORES. Los binarios subieron a sus propias tarjetas en
-       cuanto tuvieron serie, que es donde tenían que estar desde el principio. *@
-    @foreach (FilaDelCuadro hallazgo in Hallazgos())
+       Esto reemplazó un bloque de avisos sueltos. Los colores eran lo único medido sin
+       serie, así que su lectura salía de la magnitud —que dice lo mismo siempre— y viajaba
+       colgada de la celda del cuadro. Desde que tienen serie subieron acá, que es donde
+       tenían que estar, y con la lectura que mira la historia: un oscuro que después
+       volvió a ámbar ya no pide nada. *@
+    @foreach (ConstanciaDeAnalito c in constancias)
     {
-        <div class="aviso @(hallazgo.Severidad == "urgente" ? "aviso--problema" : "aviso--atencion")" style="margin-top:26px">
-            <strong>@hallazgo.ParaMostrar.</strong> @hallazgo.ParaSonia.
-        </div>
+        <button class="serie" @key="@($"{c.Analito}-{estado.Refrescos}")" @onclick="() => VerSerie(c.Analito)">
+            @{ InterpretacionDeAnalito suya = Lectura(c.Analito); }
+            <div class="serie-cabeza">
+                <div>
+                    <span class="serie-nombre">@c.ParaMostrar</span>
+                    <span class="chip @Insignia(c)">@c.Constancia</span>
+                    <div class="serie-relato">@Relato(c)</div>
+                </div>
+                <div>
+                    <div class="serie-valor">@c.UltimaCategoria</div>
+                    @if (suya.ReferenciaLegible.Length > 0)
+                    {
+                        <div class="serie-referencia">@suya.ReferenciaLegible</div>
+                    }
+                </div>
+            </div>
+
+            @if (c.HaySerie)
+            {
+                <CategoriaEnElTiempo Observaciones="Categorias(c.Analito)"
+                                     Seguidas="c.NoEsperablesSeguidas"
+                                     Descripcion="@suya.ParaSonia" />
+            }
+
+            @if (!string.IsNullOrEmpty(suya.ParaSonia))
+            {
+                <div class="serie-lectura@(suya.PideAlgo ? " serie-lectura--atencion" : "")">
+                    @suya.ParaSonia@(suya.PideAlgo ? ": " : ".")<b>@suya.Accion</b>
+                </div>
+            }
+        </button>
     }
 
     <h2 class="seccion">Tu historial</h2>
@@ -645,21 +707,39 @@ else
             Tus resultados se comparan contra los rangos de <strong>@sexo</strong>.
             @if (cambiandoSexo)
             {
-                <button class="boton boton--enlace" @onclick="@(() => Declarar("hombre"))">hombre</button>
+                @* Un lector de pantalla lista los botones fuera de su frase, y ahí «hombre»
+                   y «Cambiar» no dicen qué hacen. El texto visible se queda como está —la
+                   frase que lo rodea lo explica para quien ve—; el nombre accesible lo dice
+                   entero. *@
+                <button class="boton boton--enlace" @onclick="@(() => Declarar("hombre"))"
+                        aria-label="Comparar contra los rangos de hombre">hombre</button>
                 <text>·</text>
-                <button class="boton boton--enlace" @onclick="@(() => Declarar("mujer"))">mujer</button>
+                <button class="boton boton--enlace" @onclick="@(() => Declarar("mujer"))"
+                        aria-label="Comparar contra los rangos de mujer">mujer</button>
             }
             else
             {
-                <button class="boton boton--enlace" @onclick="() => cambiandoSexo = true">Cambiar</button>
+                <button class="boton boton--enlace" @onclick="() => cambiandoSexo = true"
+                        aria-label="Cambiar el sexo contra el que se comparan tus resultados">Cambiar</button>
             }
         </p>
     }
 
     @* La ventana de perdida se dice, porque esconderla seria vender durabilidad que no hay.
        El conteo de archivos y bytes de MEMFS era diagnostico mio, no informacion para el
-       usuario, y se fue. *@
-    @if (!estado.HayCarpeta)
+       usuario, y se fue.
+
+       PERO HOSPEDADA SÍ HAY DURABILIDAD, y este cartel la negaba. `HayCarpeta` es el handle del
+       modo suelto y hospedada no hay ninguno porque el destino es la carpeta que Gnothi le dio en
+       el teléfono, así que la condición pelada decía «vive solo en memoria y se pierde al cerrar»
+       justo cuando es más falso — y encima a dos pantallas de distancia del aviso de arriba, que
+       dice lo contrario. Es la misma guarda que MisCompras, MiCarro y MyCar.
+
+       NO LO TRAJO EL MERGE: esta pantalla tuvo el arranque hospedado y su propio aviso desde el
+       principio, y este cartel se quedó sin guarda. Lo encontró el barrido de avisos falsos del
+       2026-09-08, preguntándole a los cuatro módulos hospedados si alguno decía que no estaba
+       guardando. Solo este. *@
+    @if (!estado.Hospedada && !estado.HayCarpeta)
     {
         <p class="apunte" style="margin-top:28px">
             <strong>Sin carpeta:</strong> el registro vive solo en memoria y se pierde al cerrar.
@@ -673,6 +753,12 @@ else
     private string sinAlmacenamiento = "";
     private bool instalada;
     private bool refrescando;
+
+    // LO QUE SABEMOS DEL ARRANQUE, y son tres cosas y no dos: hasta que IndexedDB contesta
+    // no sabemos si hay un modo recordado. `resolviendo` es ese rato; `abriendo` dice qué
+    // se está reenganchando, para que el texto lo nombre.
+    private bool resolviendo = true;
+    private string abriendo = "";
 
     private IReadOnlyList<ExamenEnLista> examenes = new List<ExamenEnLista>();
     private IReadOnlyList<TendenciaDeAnalito> analitos = new List<TendenciaDeAnalito>();
@@ -692,11 +778,6 @@ else
     private string sexo = "";
     private bool pedidoPlegado;
     private bool cambiandoSexo;
-
-    // Sube en cada Releer. Es la llave que hace que Blazor recree las tarjetas en vez de
-    // reusarlas, y con eso las formas se vuelven a dibujar: es la respuesta visible a
-    // haber apretado Actualizar.
-    private int redibujo;
 
     // El tono lo decide el DOMINIO, no esta pantalla: es la severidad que salió de
     // recorrer las series, traducida con el mapeo del semáforo de la marca. Ahora pinta
@@ -746,7 +827,7 @@ else
 
     protected override async Task OnInitializedAsync()
     {
-        if (estado.EstaArriba) { Releer(); return; }
+        if (estado.EstaArriba) { resolviendo = false; Releer(); return; }
 
         // HOSPEDADA: el destino es de Gnothi y no hay nada que elegir ni permiso que pedir.
         // La app arranca sola; el selector de almacenamiento es vocabulario del modo suelto.
@@ -761,16 +842,74 @@ else
         sinAlmacenamiento = await estado.MotivoSinAlmacenamiento();
         instalada = await estado.EstaInstalada();
         if (soportado != true) return;
+        try
+        {
+            // EL MODO RECORDADO VA PRIMERO, porque es lo único que decide qué pantalla va.
+            // La app ya guardaba cuál eligió la persona la vez pasada y ninguna pantalla lo
+            // consumía: al recargar, quien había elegido «este navegador» volvía al
+            // elegidor como si fuera la primera vez, y quien había elegido carpeta se
+            // reenganchaba de casualidad, por el handle, sin que nadie leyera el modo.
+            string recordado = await estado.ModoRecordado();
+            abriendo = recordado is "opfs" or "carpeta" ? recordado : "";
+            StateHasChanged();
 
-        // Recuperar el handle NO necesita gesto; volver a otorgar el permiso SI. Por eso
-        // acá solo se consulta, y si quedó en 'prompt' la UI ofrece el botón.
-        ResultadoDeCarpeta recuperada = await estado.RecuperarCarpeta();
-        // el estado del permiso lo lleva el puente; la pantalla lo consulta
+            soportado = await estado.EstaSoportado();
+            opfs = await estado.OpfsSoportado();
+            sinAlmacenamiento = await estado.MotivoSinAlmacenamiento();
+            instalada = await estado.EstaInstalada();
 
-        // Con permiso ya otorgado se abre solo: el usuario no tiene que apretar nada
-        // para ver sus propios examenes.
-        if (recuperada.Ok) await Arrancar();
+            // La carpeta necesita revalidar el permiso —sin gesto solo se recupera el
+            // handle—, pero OPFS no necesita nada: si eligió eso, se reengancha sola.
+            if (abriendo == "opfs" && opfs == true)
+            {
+                if ((await estado.UsarAlmacenamientoDelNavegador()).Ok)
+                {
+                    await estado.Arrancar();
+                    Releer();
+                    return;
+                }
+            }
+
+            if (soportado != true) return;
+
+            // Recuperar el handle NO necesita gesto; volver a otorgar el permiso SI. Por eso
+            // acá solo se consulta, y si quedó en 'prompt' la UI ofrece el botón. Se intenta
+            // también sin modo recordado: una instalación anterior a que se guardara el modo
+            // tiene handle y no tiene modo, y no hay que mandarla al elegidor por eso.
+            ResultadoDeCarpeta recuperada = await estado.RecuperarCarpeta();
+            // el estado del permiso lo lleva el puente; la pantalla lo consulta
+            StateHasChanged();
+
+            // Con permiso ya otorgado se abre solo: el usuario no tiene que apretar nada
+            // para ver sus propios examenes.
+            if (recuperada.Ok) { await estado.Arrancar(); Releer(); }
+        }
+        catch (Exception ex)
+        {
+            // Recuperar lo recordado falló —carpeta movida, MEMFS ilegible—. Se dice arriba
+            // y se cae al elegidor: es el caso «no se pudo», no un cartel de espera eterno.
+            var detalle = new System.Text.StringBuilder($"Paso: abrir la app\n{ex.GetType().FullName}: {ex.Message}");
+            for (Exception? interna = ex.InnerException; interna is not null; interna = interna.InnerException)
+                detalle.Append($"\n  causa: {interna.GetType().FullName}: {interna.Message}");
+            error = detalle.ToString();
+        }
+        finally
+        {
+            resolviendo = false;
+            abriendo = "";
+        }
     }
+
+    // El texto nombra lo que se está reenganchando. «Abriendo…» pelado es lo que se ve el
+    // instante antes de saber si había algo recordado.
+    private string TextoDeAbriendo() => abriendo switch
+    {
+        "opfs"    => "Abriendo tu expediente guardado en este navegador…",
+        "carpeta" => estado.NombreDeLaCarpeta.Length > 0
+                         ? $"Abriendo tu carpeta «{estado.NombreDeLaCarpeta}»…"
+                         : "Abriendo tu carpeta…",
+        _         => "Abriendo…",
+    };
 
     private Task ConectarCarpeta() => Intentar("elegir carpeta", async () =>
     {
@@ -903,7 +1042,6 @@ else
         urgente = estado.Urgente();
         pedido = estado.PedidoDeSexo();
         sexo = estado.SexoDelPaciente();
-        redibujo++;
         ultimoEvento = estado.UltimoEvento();
 
         // Una lectura por analito con historia. Se piden de a uno porque cada una es una
@@ -915,6 +1053,7 @@ else
         // pantalla la lee, no la inventa.
         var hechos = new List<TendenciaDeAnalito>();
         var presentes = new List<PresenciaDeAnalito>();
+        var categorias = new List<ConstanciaDeAnalito>();
         var leidos = new Dictionary<string, InterpretacionDeAnalito>();
         foreach (string analito in estado.Analitos())
         {
@@ -928,12 +1067,23 @@ else
                 continue;
             }
 
+            // TERCERA PUERTA, y por la misma razón que la segunda. Un color no tiene
+            // tendencia ni puntos con número: tiene categorías. Antes caía por la puerta
+            // continua y salía como una tarjeta de tendencia «no aplica» con un valor cero.
+            if (lectura.Forma == FormaDeCategoria)
+            {
+                categorias.Add(estado.Constancia(analito));
+                observaciones[analito] = estado.Observaciones(analito);
+                continue;
+            }
+
             hechos.Add(estado.Tendencia(analito));
             puntos[analito] = estado.Puntos(analito);
             lineas[analito] = estado.Referencias(analito);
         }
         analitos = hechos;
         presencias = presentes;
+        constancias = categorias;
         interpretaciones = leidos;
         celdas = estado.Cuadro();
     }
@@ -955,6 +1105,12 @@ else
             ? $"{p.Positivas} de {p.Mediciones} pruebas en {p.Dias} {(p.Dias == 1 ? "día" : "días")}"
             : "";
 
+    private static string Relato(ConstanciaDeAnalito c) =>
+        c.HaySerie
+            ? $"{c.Mediciones - c.NoEsperables} de {c.Mediciones} veces dentro de lo esperable, "
+              + $"en {c.Dias} {(c.Dias == 1 ? "día" : "días")}"
+            : "";
+
     private static string Relato(TendenciaDeAnalito t) =>
         t.HaySerie
             ? $"pasó de {Valor(t.ValorInicial)} a {Valor(t.ValorFinal)} {t.Unidad} "
@@ -967,12 +1123,7 @@ else
     {
         public string Analito { get; init; } = "";
         public string ParaMostrar { get; init; } = "";
-        public bool AportaSerie { get; init; }
         public string[] Celdas { get; init; } = new string[0];
-
-        // Las filas sin serie traen su lectura en la celda; las de serie la piden aparte.
-        public string Severidad { get; init; } = "";
-        public string ParaSonia { get; init; } = "";
     }
 
     // Las columnas salen de las celdas: el dominio manda la fecha en cada una, ya
@@ -1002,9 +1153,6 @@ else
                 {
                     Analito = celda.Analito,
                     ParaMostrar = celda.ParaMostrar,
-                    AportaSerie = celda.AportaSerie,
-                    Severidad = celda.Severidad,
-                    ParaSonia = celda.ParaSonia,
                     // Vacias por defecto: lo que el dominio no mando, no se midio.
                     Celdas = new string[columnas],
                 };
@@ -1020,43 +1168,36 @@ else
         return ordenadas;
     }
 
-    // El indicador del final de la fila. Lo provee el DOMINIO: es la severidad que
-    // decidio el analito. Una fila que no forma serie -la orina- no lleva ninguno, y eso
-    // no es un hueco: es que no hay veredicto que dar sobre un color.
+    // El indicador del final de la fila. Lo provee el DOMINIO: es la severidad que decidió
+    // el analito, pedida a su Interpretación.
+    //
+    // Había acá una rama para las filas que no forman serie —los colores— que leía la
+    // severidad de la celda. Se fue con ellas: todas las filas tienen serie, así que todas
+    // se preguntan igual, y la pantalla dejó de tener dos fuentes para la misma respuesta.
     private string Marca(FilaDelCuadro fila)
     {
-        // Las filas sin serie traen su severidad en la celda: una orina o unas heces se
-        // leen de un solo punto. Las de serie la piden a su Interpretación.
-        if (!fila.AportaSerie)
-            return fila.Severidad == "informativo" || fila.Severidad == "" ? "·" : "⚠";
-
         InterpretacionDeAnalito lectura = Lectura(fila.Analito);
         if (lectura.SugiereRepetirElExamen) return "↻";
         return lectura.PideAlgo ? "⚠" : "·";
-    }
-
-    // Los hallazgos de los exámenes que no forman serie. No entran en «Cómo vienen tus
-    // valores» porque no vienen de ningún lado: son de un solo punto. Pero un positivo
-    // no puede quedar escondido en una celda de tabla.
-    private List<FilaDelCuadro> Hallazgos()
-    {
-        var hallazgos = new List<FilaDelCuadro>();
-        foreach (FilaDelCuadro fila in FilasDelCuadro())
-            if (!fila.AportaSerie && fila.Severidad != "" && fila.Severidad != "informativo")
-                hallazgos.Add(fila);
-        return hallazgos;
     }
 
     // El nombre de la forma tal como lo dice el dominio. La pantalla hace un switch sobre
     // esto y ese switch SÍ es presentación legítima: traduce una forma del dominio a
     // píxeles. Lo que no puede es decidirla.
     private const string FormaDePresencia = "presencia en el tiempo";
+    private const string FormaDeCategoria = "categoria en el tiempo";
 
     private List<PresenciaDeAnalito> presencias = new();
     private Dictionary<string, IReadOnlyList<PruebaEnSerie>> pruebas = new();
 
     private IReadOnlyList<PruebaEnSerie> Tira(string analito) =>
         pruebas.TryGetValue(analito, out var p) ? p : new List<PruebaEnSerie>();
+
+    private List<ConstanciaDeAnalito> constancias = new();
+    private Dictionary<string, IReadOnlyList<ObservacionEnSerie>> observaciones = new();
+
+    private IReadOnlyList<ObservacionEnSerie> Categorias(string analito) =>
+        observaciones.TryGetValue(analito, out var o) ? o : new List<ObservacionEnSerie>();
 
     private Dictionary<string, IReadOnlyList<PuntoDeSerie>> puntos = new();
     private Dictionary<string, IReadOnlyList<LineaDeReferencia>> lineas = new();
@@ -1114,6 +1255,15 @@ else
         if (lectura.Severidad == "urgente") return "chip--problema";
         if (lectura.PideAlgo) return "chip--atencion";
         if (!p.HaySerie) return "chip--sinserie";
+        return "chip--estable";
+    }
+
+    private string Insignia(ConstanciaDeAnalito c)
+    {
+        InterpretacionDeAnalito lectura = Lectura(c.Analito);
+        if (lectura.Severidad == "urgente") return "chip--problema";
+        if (lectura.PideAlgo) return "chip--atencion";
+        if (!c.HaySerie) return "chip--sinserie";
         return "chip--estable";
     }
 

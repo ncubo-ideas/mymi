@@ -15,19 +15,19 @@ namespace Examenes.Dominio
 	//
 	// Y por eso tambien viaja plana: el print del motor proyecta un nivel, y una lista de
 	// pares nombre-valor cruza sin inventar nada.
-	public sealed class ReferenciaDeLectura
+	internal sealed class ReferenciaDeLectura
 	{
 		// Como se llama esta linea para quien la dibuja. Es de un vocabulario acotado
 		// -habitual, meta, partida, piso, techo, umbral- y cada forma sabe cuales espera.
-		public string Nombre { get; private set; }
+		internal string Nombre { get; private set; }
 
-		public Medicion Valor { get; private set; }
+		internal Medicion Valor { get; private set; }
 
 		// Que decirle a la persona cuando pregunta por esa linea. La pantalla no la
 		// inventa: la muestra.
-		public string ParaSonia { get; private set; }
+		internal string ParaSonia { get; private set; }
 
-		public ReferenciaDeLectura(string nombre, Medicion valor, string paraSonia)
+		internal ReferenciaDeLectura(string nombre, Medicion valor, string paraSonia)
 		{
 			ArgumentNullException.ThrowIfNullOrWhiteSpace(nombre);
 			ArgumentNullException.ThrowIfNull(valor);
@@ -37,8 +37,8 @@ namespace Examenes.Dominio
 			ParaSonia = paraSonia ?? "";
 		}
 
-		public decimal Numero => Valor.Valor;
+		internal decimal Numero => Valor.Valor;
 
-		public string Unidad => Valor.Unidad.Simbolo;
+		internal string Unidad => Valor.Unidad.Simbolo;
 	}
 }

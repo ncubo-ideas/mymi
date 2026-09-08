@@ -1,0 +1,100 @@
+{
+  "//": "ESTE ARCHIVO ES DEL MODULO. Lo escribe la institucion, y algun dia lo firma. Declara quien es, que sustrato necesita, que capacidades pide, y su lista de tools. Gnothi lo lee para armar el catalogo SIN arrancar el modulo. El instalacion.json es del HOST -son dos autoridades- y no viene aca: lo escribe quien opera Gnothi, con la cascara y la carpeta que concede.",
+
+  "manifiesto": "1.0",
+  "modulo": "concesionario",
+  "titulo": "Mi plan de mantenimiento",
+  "institucion": "Sotavento Motors (mock del POC)",
+
+  "//idioma": "LAS LLAVES VAN EN ESPANOL, como en el resto del set del equipo, porque el esquema es compartido y no es de este modulo. TODO LO QUE LEE LA IA O LA PERSONA VA EN ESPANOL -titulo, institucion, y cada descripcion- porque este modulo habla espanol de punta a punta: la app se llama 'Mi plan de mantenimiento' y el servidor MCP entrega sus instrucciones en espanol. Cada descripcion de tool esta copiada TAL CUAL del [Description] del codigo, con sus acentos: no es documentacion de este archivo, es el mismo texto que viaja. ASI QUE ESTE ARCHIVO CAMBIA CADA VEZ QUE CAMBIA LA VOZ DEL CODIGO, y quedarse atras no es una imprecision: ya paso una vez, el modulo paso a espanol y aca quedaron siete descripciones en ingles que ninguna tool decia. Lo unico que NO es copia son las dos descripciones del parametro 'operation', y abajo esta por que. El nombre de cada tool, los miembros del enum y los campos del json se quedan en ingles porque son identidad y no prosa. Estas notas van en espanol sin acentos, igual que los /// del codigo.",
+
+  "//sustrato": "Un RANGO, no una version exacta: si un modulo pinea una version puntual, cada actualizacion del Host huerfana a todos los modulos instalados.",
+  "sustrato": { "rango": ">=3.0.0 <4.0.0" },
+
+  "//capacidades": "Lo que el modulo declara necesitar. Es CONTRASTABLE: la cascara MCP abre una carpeta y ningun socket -no le pregunta nada a la agencia, y no puede escribir- asi que 'red' en false y 'carpeta' en 'propia' son la verdad y son detectables. Ojo con leerlo de mas: la app de la persona SI habla con la agencia para traer hechos nuevos, y eso no es lo que se declara aca. Aca se declara lo que corre bajo Gnothi.",
+  "capacidades": {
+    "red": false,
+    "carpeta": "propia",
+    "parlante": false,
+    "microfono": false
+  },
+
+  "//tools": "LA LISTA QUE GNOTHI LE PASA AL ASISTENTE. La descripcion viaja tal cual: no es documentacion, es lo unico que la IA tiene para decidir si esta tool contesta la pregunta de la persona. Van en el orden en que Program.cs registra las cuatro clases -agenda, ficha del modelo, sobre de garantia, estadias en el taller-, que es el orden en que el modulo las escribe. OJO, y esto se midio: NO es el orden en que vuelve su tools/list real. El SDK las devuelve en otro, estable entre corridas pero propio de el, asi que la comparacion contra el modulo es POR NOMBRE y nunca por posicion.",
+
+  "//sin-mediciones": "NINGUNA DE LAS OCHO PIDE UN DATO DEL CARRO, y eso es la regla central del modulo y no una omision. El sobre de garantia, el dia de la entrega, el odometro de ese dia, el ultimo que trajo el feed y los dias que el carro paso en un taller salen del registro que la agencia escribe. Un parametro que le pidiera el kilometraje al asistente seria un numero que nadie midio con un esquema encima, y un default seria el mismo invento sin esquema. Los seis parametros que hay -dos clases de operacion, un codigo de sistema, un hito de servicio y los dos extremos de un periodo- son NOMBRES que la persona dice, o el pedazo del registro por el que se pregunta, nunca mediciones.",
+
+  "//el-hueco": "ESTE MODULO NO TIENE EL HUECO QUE TIENE COMPRAS, y conviene decirlo en vez de inventarle uno. Aca la pantalla es de la agencia y muestra casi todo: la agenda completa, la ficha del modelo, donde para este carro contra el sobre de garantia, los dias que estuvo en el taller, y en la pestana Mi registro hasta el ultimo evento aplicado con el instante en que se evaluo el plan. La UNICA que ninguna pantalla renderiza es what_the_service_costs, porque necesita un hito que la persona nombre y ninguna seccion le pide un valor a nadie. Lo que compran las otras siete no es un dato que la pantalla no pueda dibujar, y son tres cosas distintas que conviene no confundir. Preguntar EN PALABRAS por una sola operacion. Preguntar por un periodo que la pantalla no elige: los dias en el taller SI estan en pantalla, pero solo los del ano corrido, porque la ventana la fija la pantalla con su propio reloj y no hay selector de periodo -ni puede haberlo, por la misma razon-, asi que una semana, un mes, el ano pasado o todo el registro solo se alcanzan preguntando. Y una distincion que la pantalla no dice aunque muestre el numero: how_up_to_date_is_this separa 'cero eventos' de 'este registro lo escribio una app que no llevaba la cuenta', y en la pantalla las dos son el mismo 0.",
+
+  "//parametros-cerrados": "PRECEDENTE NUEVO, y el primero del set que va PARA ATRAS: 'operation' es un CONJUNTO CERRADO y en el codigo es un enum de verdad, asi que el cliente MCP no puede mandar un valor que no exista. El formato de 'entrada' no sabe expresar eso -llega hasta string y number- asi que aca se declara string y los nueve nombres se repiten en la prosa de las dos descripciones que lo llevan, igual que en compras el rango de un numero. Por eso esas dos son las unicas descripciones que no son copia literal: el [Description] del codigo es corto justamente porque alla la lista vive en el schema. Es decir: EL MANIFIESTO ES MAS DEBIL QUE EL MODULO en este punto, y quien lo lea tiene que saberlo. Si el equipo cierra ese pendiente, este archivo cambia y el modulo no se entera.",
+
+  "//sin-vista-y-sin-carga": "No hay 'vista' y no hay 'carga', y ninguna de las dos ausencias es un olvido. La pantalla de este modulo es una app Blazor wasm, no un json que el Host pueda renderizar: apuntarle a MyCar.razor seria declarar algo que el Host no sabe leer. Y es un modulo stdio -embarca su propio servidor MCP- asi que no declara punto de entrada.",
+
+  "tools": [
+    {
+      "nombre": "review_my_maintenance",
+      "titulo": "Qué necesita mi carro",
+      "soloLectura": true,
+      "entrada": [],
+      "descripcion": "Contesta qué necesita ahora mismo el vehículo de esta persona: qué operaciones de mantenimiento están vencidas, cuáles pasaron su periodo de gracia, cuáles cuentan como no hechas, y qué dice el plan sobre cada una. Úsela cuando pregunten algo general como '¿mi carro necesita algo?', '¿qué está atrasado?', '¿qué hago primero?' o '¿cómo va mi carro?'. Reporta el plan entero en una sola lectura, así que prefiérala a preguntar operación por operación. Cada operación lleva el motivo que compuso el plan mismo: diga ese motivo, no lo reescriba como consejo genérico. Las operaciones que este vehículo nunca tuvo agendadas lo dicen en su motivo; no están atrasadas, simplemente no existen para este carro."
+    },
+    {
+      "nombre": "check_one_operation",
+      "titulo": "Cómo va esta operación",
+      "soloLectura": true,
+      "entrada": [
+        { "nombre": "operation", "tipo": "string", "descripcion": "Qué operación de mantenimiento hay que consultar. Es un conjunto cerrado y el nombre se toma letra por letra: Inspection, FluidChange, FilterChange, WearPartReplacement, TimedComponent, SoftwareUpdate, RecallRemedy, Diagnostic, Repair." }
+      ],
+      "descripcion": "Contesta dónde está parada UNA operación de mantenimiento en el vehículo de esta persona: si está vencida, cuánto se pasó de su límite, y cuántas veces la ha aplazado ya. Úsela cuando pregunten por una operación concreta, como '¿me toca el cambio de aceite?', '¿cuánto puedo aplazar la revisión?' o '¿ya hicieron el llamado a revisión?'. Si preguntan por el vehículo en general, use review_my_maintenance: esa contesta por todas las operaciones en una sola lectura. deferralsUsed es cuántos aplazamientos ha gastado ya en esta operación; una operación de seguridad no se puede aplazar en absoluto."
+    },
+    {
+      "nombre": "how_up_to_date_is_this",
+      "titulo": "Qué tan al día está esto",
+      "soloLectura": true,
+      "entrada": [],
+      "descripcion": "Contesta hasta dónde ha leído la app de esta persona el registro del concesionario, y hasta qué instante se ha evaluado el plan. Úsela cuando esperen ver algo nuevo y no esté ahí -- después de una visita al taller, o después de apretar Actualizar -- y cuando necesite saber si la respuesta que acaba de darles está al día. lastEventApplied es el número de evento del concesionario hasta el que la app ha leído: si sube entre dos llamadas, entraron hechos nuevos. Usted NO puede hacerlo subir; solo la app de la persona puede."
+    },
+    {
+      "nombre": "what_my_car_takes",
+      "titulo": "Qué lleva mi carro",
+      "soloLectura": true,
+      "entrada": [],
+      "descripcion": "Contesta lo que el fabricante publicó que lleva el vehículo de esta persona: el aceite de motor y los otros cinco fluidos con su grado, capacidad e intervalo de cambio; la medida y la presión en frío de las llantas en cada posición; y los grados de combustible, separados en el mínimo, los permitidos y los prohibidos. Úsela para '¿qué aceite lleva mi carro?', '¿a qué presión van mis llantas?', '¿le puedo echar regular?'. Reporta la ficha entera en una sola lectura, así que prefiérala a preguntar ítem por ítem. Cada respuesta lleva la revisión de la ficha de la que salió: diga esa revisión, porque un número sin ella es un rumor y una revisión posterior puede haberlo cambiado. Un ítem cuyo published es false nunca se publicó para este modelo: eso es una respuesta, no un hueco, y nunca se puede llenar con un modelo parecido ni con un año anterior. Las presiones, las capacidades y las distancias llevan una unidad que nunca se convierte: diga el valor con la unidad exactamente como viene. De las tres listas de combustible, la de prohibidos es la que vale la pena plantear primero."
+    },
+    {
+      "nombre": "does_the_warranty_cover",
+      "titulo": "Qué cubre la garantía",
+      "soloLectura": true,
+      "entrada": [
+        { "nombre": "system", "tipo": "string", "descripcion": "El código del fabricante para el sistema por el que se pregunta, copiado letra por letra de coveredSystems o de una exclusión. Omítalo para leer el alcance publicado entero, que es de donde salen los códigos." }
+      ],
+      "descripcion": "Contesta lo que el fabricante publicó sobre el ALCANCE de la garantía del modelo de esta persona -- qué sistemas declara adentro el alcance, qué exclusiones publicó y bajo qué condición muerde cada una, y si un sistema que la persona nombre está siquiera en el catálogo del fabricante -- Y dónde está parado ESTE vehículo frente a ese alcance en el sistema que nombraron. Úsela para '¿mi caja tiene garantía?' o '¿qué no cubre la garantía?'. DICE ALCANCE Y POSICIÓN, Y NUNCA ADJUDICA UN RECLAMO. Que una reparación se pague lo decide el fabricante y nada de aquí dice que se vaya a pagar, así que nunca convierta un sistema que está dentro del alcance, ni un vehículo que está dentro de su sobre, en 'usted está cubierto'. LA POSICIÓN SALE DEL REGISTRO PROPIO DE LA PERSONA y nunca de usted ni de ella. Necesita el sobre de garantía del vehículo, la fecha en que se entregó, el odómetro tomado ese día y el último que haya traído el feed; los cuatro se leen aquí. Nunca le pida a la persona un kilometraje ni una fecha para contestar esto, y nunca acepte uno: un número que no salió del registro volvería como una medición que nadie hizo. Cuando falta uno de los cuatro, standingSays viene vacío y says y thisVehicleSays contestan cada uno su propia mitad entera: cite las dos, y lea detail para saber qué hecho falta y quién lo registra. 'NO NOS LO DIJERON' NO ES 'NO ESTÁ CUBIERTO', y confundir los dos es la falla que hay que evitar: systemInTheCatalogue en false quiere decir que el alcance publicado nunca nombra ese sistema, lo cual no dice nada ni a favor ni en contra de que el fabricante lo cubra. Un código que está en coveredSystems es uno que el alcance declara adentro; un código que aparece solo entre las exclusiones es uno que el alcance nombra y deja fuera. El código de sistema es el vocabulario DEL FABRICANTE y no una lista de esta app, así que tómelo de coveredSystems o de una exclusión y pásela letra por letra: la coincidencia es exacta, y un código escrito con otra ortografía o con otras mayúsculas contesta 'no nos lo dijeron'. No invente un código, y llame a la tool sin ningún sistema para ver primero el alcance publicado entero."
+    },
+    {
+      "nombre": "what_the_service_costs",
+      "titulo": "Cuánto cuesta el servicio",
+      "soloLectura": true,
+      "entrada": [
+        { "nombre": "operation", "tipo": "string", "descripcion": "Por qué operación de mantenimiento está preguntando la persona. Es un conjunto cerrado y el nombre se toma letra por letra: Inspection, FluidChange, FilterChange, WearPartReplacement, TimedComponent, SoftwareUpdate, RecallRemedy, Diagnostic, Repair." },
+        { "nombre": "milestoneDistance", "tipo": "number", "descripcion": "El hito de servicio que nombró la persona, por ejemplo 10000. Omítalo cuando no nombraron ninguno; no adivine un hito." }
+      ],
+      "descripcion": "Contesta lo que el fabricante publicó sobre el servicio de UNA operación de mantenimiento en este modelo: si se publicó un intervalo de servicio para ella, y qué cuesta el servicio en un hito que la persona nombre, con la vigencia de ese precio y si esa vigencia rige al instante en que se hizo la pregunta. Úsela para '¿cuánto cuesta el servicio de los 10.000?' o '¿ese precio sigue vigente?'. MILESTONEDISTANCE ES EL HITO QUE NOMBRÓ LA PERSONA. Omítalo si no nombraron ninguno y pregúnteles a qué servicio se refieren: este registro no lista los hitos que publicó el fabricante, así que un hito adivinado vuelve sin precio y eso se lee como 'el fabricante nunca publicó uno', que sería falso. El hito se busca en cada una de las dos unidades de distancia que usa este registro y se contesta en la unidad en que se publicó: entre ellas nunca se convierte nada, así que diga la unidad que vuelve en vez de suponer cuál quería decir la persona. UN PRECIO NUNCA SE DICE SIN SU VIGENCIA: la frase lleva la ventana y si askedAt cae dentro de ella. Un precio viejo presentado como el de hoy es una promesa que la sucursal nunca hizo. Los números del intervalo de servicio publicado no están en esta respuesta: citarlos necesita cuánto le falta a este vehículo contra ese intervalo, y este registro sí tiene el odómetro pero no devuelve esa distancia restante. Use review_my_maintenance para cuándo toca el próximo servicio. Los intervalos de cambio de fluido se publican como parte del fluido mismo, así que esos los lleva what_my_car_takes."
+    },
+    {
+      "nombre": "is_my_car_still_under_warranty",
+      "titulo": "Cuánta garantía me queda",
+      "soloLectura": true,
+      "entrada": [],
+      "descripcion": "Contesta si el vehículo de esta persona sigue dentro del sobre de garantía que el concesionario le publicó, y cuánto le queda de cada mitad. Úsela para '¿mi carro todavía tiene garantía?', '¿hasta cuándo estoy cubierto?', '¿cuánta garantía me queda?'. Todo lo que necesita sale del registro propio de la persona -- el sobre, la fecha en que se entregó el carro, la lectura del odómetro tomada ese día y la última que ha traído el feed del concesionario --, así que nunca les pida un kilometraje ni una fecha, y nunca acepte uno para devolverlo como dato. UN SOBRE TIENE DOS MITADES Y LAS DOS SE DICEN SIEMPRE: un plazo en meses y una distancia. La cobertura termina cuando se acaba la PRIMERA de las dos, así que citar solo la mitad cómoda es la forma de darle a alguien una respuesta equivocada que suena bien. Cuál mitad va a llegar primero no se pronostica a propósito -- eso necesitaría un ritmo que este registro no tiene --, así que diga las dos y diga que depende de cuánto manejen. DICE POSICIÓN Y NUNCA ADJUDICA UN RECLAMO. Estar dentro del sobre no es una promesa de que una reparación se pague; eso lo decide el fabricante. LO QUE DICE says ES LA RESPUESTA. Es una frase que compuso el registro mismo y ya lleva adentro la posición, las dos mitades, cuál llegó primero, el sobre contra el que se midió con su fecha de publicación, y el odómetro contra el que se midió con el día en que se observó esa lectura. Dígala en vez de rearmarla a partir de los campos, y diga la fecha de observación: si tiene meses, la mitad de distancia es igual de vieja, y presentarla como la de hoy es el error que hay que evitar. CUANDO FALTA ALGO SE NOMBRA, NO SE ESTIMA. La frase de says pone en palabras el hueco mismo y nombra qué hecho lo decidiría; el concesionario es quien registra estos, nunca la persona y nunca usted. Un sobre que nunca se publicó no es un carro sin garantía. Para lo que el FABRICANTE publicó sobre el alcance de la garantía -- qué sistemas están adentro y qué exclusiones muerden -- use does_the_warranty_cover; esa además contesta dónde está parado este vehículo en un sistema que la persona nombre."
+    },
+    {
+      "nombre": "days_my_car_spent_in_the_shop",
+      "titulo": "Qué días estuvo en el taller",
+      "soloLectura": true,
+      "entrada": [
+        { "nombre": "from", "tipo": "string", "descripcion": "El primer día del periodo por el que se pregunta, en yyyy-MM-dd. Omítalo para no poner límite por ese lado." },
+        { "nombre": "to", "tipo": "string", "descripcion": "El último día del periodo, en yyyy-MM-dd, inclusive. Omítalo para no poner límite por ese lado." }
+      ],
+      "descripcion": "Contesta qué días estuvo el vehículo de esta persona adentro de un taller, en cuántas estadías, y qué dijo cada sucursal de cada una. Úsela para '¿cuántos días me dejaron sin carro?', '¿qué días estuvo en el taller?', '¿cuándo fue la última vez que lo llevaron?' y '¿está en el taller ahora?'. LA RESPUESTA SON LOS DÍAS Y NO UNA DURACIÓN. days trae cada día por separado en yyyy-MM-dd, y eso es a propósito: una duración no se puede cruzar con el calendario de nadie y una lista de fechas sí. Si la persona pregunta algo como qué días de escuela se perdieron o qué semana se quedó sin carro, cruce esas fechas: para eso están. LOS DÍAS LOS DICE LA SUCURSAL Y NO SE CALCULAN de los dos instantes de la estadía. No los derive usted tampoco, y no rellene los días entre dos fechas: si la sucursal dijo tres, son tres. FROM Y TO SON LOS EXTREMOS DEL PERIODO POR EL QUE SE PREGUNTA, los dos inclusive, en yyyy-MM-dd. NO son datos del carro: dicen qué pedazo del registro se está pidiendo. OMÍTALOS LOS DOS si la persona no nombró ningún periodo, y entonces se contesta sobre todo el registro; omita uno solo para dejar ese extremo abierto. La respuesta siempre dice con qué dos límites contestó: cítelos, para que se vea de qué periodo se está hablando. LAS FILAS Y LOS DÍAS SON LAS ESTADÍAS YA CERRADAS DEL PERIODO. Una estadía todavía abierta no tiene ningún día -- los días llegan cuando entregan el carro --, así que no está entre ellas: insideRightNow y currentStaySays son las que la dicen. Si insideRightNow viene en true, el carro está en el taller AHORA y dayCount no lo incluye: dígalo, o estará dando un total cierto que engaña. LO QUE DICE says ES LA RESPUESTA DEL PERIODO, una frase que compuso el registro mismo con los días y en cuántas estadías. Un periodo sin ninguna estadía la dice con palabras y nombra el periodo: eso es una respuesta, no un dato que falte."
+    }
+  ]
+}

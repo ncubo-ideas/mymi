@@ -9,18 +9,21 @@ namespace Compras.Dominio
 	/// listas sueltas se vuelven una abstraccion, y por eso donde se rechaza un evento
 	/// mal formado.
 	/// </summary>
-	public class Compra
+	internal class Compra
 	{
 		private readonly List<Item> items = new List<Item>();
 
-		public string Numero { get; private set; }
-		public DateTime Fecha { get; private set; }
+		internal string Numero { get; private set; }
+		internal DateTime Fecha { get; private set; }
 
-		public IReadOnlyList<Item> Items => items;
+		/// <summary>En qué sucursal fue, o vacío si el tiquete no lo dijo.</summary>
+		internal string Sucursal { get; private set; } = "";
 
-		public int CantidadDeLineas => items.Count;
+		internal IReadOnlyList<Item> Items => items;
 
-		public decimal Total
+		internal int CantidadDeLineas => items.Count;
+
+		internal decimal Total
 		{
 			get
 			{
@@ -32,7 +35,7 @@ namespace Compras.Dominio
 
 		// La forma NUEVA: siete listas, con la presentacion de cada linea. Una compra que
 		// no dice como se vende cada cosa no puede contestar cuantos litros entraron.
-		public Compra(string numero, DateTime fecha, string[] skus, string[] descripciones,
+		internal Compra(string numero, DateTime fecha, string[] skus, string[] descripciones,
 			int[] cantidades, decimal[] preciosUnitarios, string[] categorias, int[] mesesDeGarantia,
 			string[] presentaciones)
 			: this(numero, fecha, skus, descripciones, cantidades, preciosUnitarios, categorias, mesesDeGarantia)
@@ -55,7 +58,7 @@ namespace Compras.Dominio
 		// La forma VIEJA, la que tienen los journals ya escritos. Se conserva a proposito:
 		// un historial escrito antes de que existiera la presentacion sigue reproduciendo
 		// igual, y sus lineas se leen como piezas sueltas.
-		public Compra(string numero, DateTime fecha, string[] skus, string[] descripciones,
+		internal Compra(string numero, DateTime fecha, string[] skus, string[] descripciones,
 			int[] cantidades, decimal[] preciosUnitarios, string[] categorias, int[] mesesDeGarantia)
 		{
 			ArgumentNullException.ThrowIfNullOrWhiteSpace(numero);
@@ -88,6 +91,22 @@ namespace Compras.Dominio
 					Categoria.Desde(categorias[i]), mesesDeGarantia[i]));
 		}
 
-		public bool EsDelMes(int anio, int mes) => Fecha.Year == anio && Fecha.Month == mes;
+		/// <summary>La misma compra, situada: una copia con la sucursal puesta.</summary>
+		// UN WITHER Y NO OTRO CONSTRUCTOR, a proposito. Compra ya tiene dos formas -con y
+		// sin presentaciones- y el DSL del journal resuelve por nombre y cantidad de
+		// argumentos: una tercera forma con un string en la posicion del string[] seria
+		// una ambiguedad esperando turno. El comando nuevo arma la compra como siempre y
+		// la situa en una segunda sentencia; los journals viejos ni se enteran.
+		internal Compra EnSucursal(string sucursal)
+		{
+			ArgumentNullException.ThrowIfNullOrWhiteSpace(sucursal);
+
+			// La copia comparte los items (son inmutables); solo cambia donde fue.
+			var situada = (Compra)MemberwiseClone();
+			situada.Sucursal = sucursal.Trim();
+			return situada;
+		}
+
+		internal bool EsDelMes(int anio, int mes) => Fecha.Year == anio && Fecha.Month == mes;
 	}
 }

@@ -24,29 +24,29 @@ namespace Examenes.Dominio
 	// Un 280 que viene bajando desde 320 es BUENA NOTICIA aunque siga fuera de rango. La
 	// app decia "EN ASCENSO" y "conviene que lo vea tu medico" a cualquier colesterol que
 	// se moviera, sin mirar hacia donde. Ese es el caso que este analito ahora distingue.
-	public sealed class Colesterol : ExamenDeSangre
+	internal sealed class Colesterol : ExamenDeSangre
 	{
 		private static readonly AnalitoContinuo Suyo = Examenes.Dominio.Analito.ColesterolTotal;
 
-		public Colesterol(DateTime fecha, decimal valor, string unidad)
+		internal Colesterol(DateTime fecha, decimal valor, string unidad)
 			: base(fecha, Suyo, Medida(valor, unidad, Suyo))
 		{
 		}
 
-		public override string Nombre => Suyo.ParaMostrar;
+		internal override string Nombre => Suyo.ParaMostrar;
 
 		// El techo de lo deseable baja con la edad: a los 60 el mismo 210 pesa mas que
 		// a los 30.
 		// NO DEPENDE DEL SEXO, y decirlo importa: la regla nueva no es plana. De los nueve
 		// analitos del expediente, uno cambia de aplicabilidad y dos cambian de rango; este
 		// y los otros seis se leen exactamente igual que antes.
-		public override RangoDeReferencia RangoPara(Paciente paciente)
+		internal override RangoDeReferencia RangoPara(Paciente paciente)
 		{
 			ArgumentNullException.ThrowIfNull(paciente);
 			return RangoDeReferencia.HastaUnMaximoDe(paciente.Edad >= 50 ? 200m : 220m, Suyo.Unidad);
 		}
 
-		public override decimal CambioMaximoVerosimilPorDia => 1.0m;
+		internal override decimal CambioMaximoVerosimilPorDia => 1.0m;
 
 		// 15 mg/dL, y no es un numero de demo. La variacion biologica intraindividual del
 		// colesterol ronda 6%, que sobre un valor tipico de 200-250 son 12-15 mg/dL: por
@@ -55,25 +55,25 @@ namespace Examenes.Dominio
 		// MEDIDO sobre un caso real: 220 (2022) -> 234 (2026) son 14 mg/dL en 1362 dias.
 		// Parece un ascenso y no lo es; con este umbral el veredicto es Estable, que es
 		// lo correcto. Antes el umbral era 50 y tapaba el caso por el otro lado.
-		public override decimal CambioMinimoSignificativo => 15m;
+		internal override decimal CambioMinimoSignificativo => 15m;
 
-		public override DireccionDeseable Direccion => DireccionDeseable.Bajar;
+		internal override DireccionDeseable Direccion => DireccionDeseable.Bajar;
 
 		// EN RANGO se revisa cada cinco anos; FUERA, todos los anos. Es el ejemplo mas
 		// claro de por que esto no puede ser una constante: el mismo analito, la misma
 		// persona, y la respuesta cambia segun donde quedo el ultimo valor.
 		// El colesterol se mueve mucho mas que el antigeno con la dieta y con la vida, asi
 		// que el corte va mas arriba: triplicarse si es plausible en anos.
-		public override decimal MultiploQueNingunIntervaloJustifica => 4m;
+		internal override decimal MultiploQueNingunIntervaloJustifica => 4m;
 
-		public override int MesesHastaElProximo(Paciente paciente) =>
+		internal override int MesesHastaElProximo(Paciente paciente) =>
 			EsNormalPara(paciente) ? 60 : 12;
 
 		// Lo que se puede contestar con UNA medicion: a donde tiene que llegar desde aca.
 		// La partida del episodio y el progreso necesitan la historia y viven en
 		// SerieDeColesterol.
-		public MetaDeColesterol Meta() => MetaDeColesterol.Para(Valor);
+		internal MetaDeColesterol Meta() => MetaDeColesterol.Para(Valor);
 
-		public override SerieContinua NuevaSerie() => new SerieDeColesterol();
+		internal override SerieContinua NuevaSerie() => new SerieDeColesterol();
 	}
 }

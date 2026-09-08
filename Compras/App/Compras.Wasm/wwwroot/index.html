@@ -16,7 +16,6 @@
     <link rel="stylesheet" href="lib/bootstrap/dist/css/bootstrap.min.css" />
     <link rel="stylesheet" href="css/app.css" />
     <link rel="icon" type="image/png" href="favicon.png" />
-    <link href="Compras.Wasm.styles.css" rel="stylesheet" />
     <link href="manifest.webmanifest" rel="manifest" />
     <!-- iOS NO respeta la transparencia -compone sobre negro- y aplica su propio redondeo,
          asi que apple-touch-icon va PLENO y sin redondear. Apuntarlo al icono redondeado
@@ -39,6 +38,9 @@
         <span class="dismiss">🗙</span>
     </div>
     <script src="_framework/blazor.webassembly.js"></script>
+    <!-- Ronda D: header con dos estados en scroll -ver MainLayout.razor / app.css-. -->
+    <script src="js/barra-compacta.js"></script>
+    <script src="js/hero-carrusel.js"></script>
     <script>navigator.serviceWorker.register('service-worker.js');</script>
 </body>
 

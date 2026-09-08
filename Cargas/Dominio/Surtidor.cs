@@ -19,21 +19,21 @@ namespace Cargas.Dominio
 	// del orden de medio por ciento segun la metrologia legal de cada pais- y la
 	// COMPENSACION POR TEMPERATURA -un litro a 30 grados rinde menos que uno a 15-.
 	// Los dos afinarian EsComparableCon; ninguno se necesita para el demo.
-	public sealed class Surtidor
+	internal sealed class Surtidor
 	{
 		/// <summary>Isla y numero: "A-3". Identifica el instrumento dentro de su estacion.</summary>
-		public string Identificacion { get; private set; }
+		internal string Identificacion { get; private set; }
 
-		public Estacion Estacion { get; private set; }
+		internal Estacion Estacion { get; private set; }
 
 		/// <summary>Una manguera despacha UN grado. Si la estacion vende tres, son tres
 		/// surtidores para este dominio.</summary>
-		public TipoDeCombustible Despacha { get; private set; }
+		internal TipoDeCombustible Despacha { get; private set; }
 
 		/// <summary>El precio por unidad de volumen desplegado cuando se cargo.</summary>
-		public Dinero PrecioPorUnidad { get; private set; }
+		internal Dinero PrecioPorUnidad { get; private set; }
 
-		public Surtidor(string identificacion, Estacion estacion,
+		internal Surtidor(string identificacion, Estacion estacion,
 			TipoDeCombustible despacha, Dinero precioPorUnidad)
 		{
 			ArgumentNullException.ThrowIfNullOrWhiteSpace(identificacion);
@@ -49,7 +49,7 @@ namespace Cargas.Dominio
 
 		/// <summary>Si es el mismo instrumento fisico: misma identificacion en la misma
 		/// estacion. El precio no participa: es estado, no identidad.</summary>
-		public bool EsElMismo(Surtidor otro)
+		internal bool EsElMismo(Surtidor otro)
 		{
 			ArgumentNullException.ThrowIfNull(otro);
 			return string.Equals(Identificacion, otro.Identificacion, StringComparison.OrdinalIgnoreCase)
@@ -60,6 +60,6 @@ namespace Cargas.Dominio
 		// por instrumentos distintos, la calibracion puede diferir (§6.3.1 del brief).
 		// Cuando la calibracion se modele, esta pregunta se afina aca y en ningun otro
 		// lado.
-		public bool EsComparableCon(Surtidor otro) => EsElMismo(otro);
+		internal bool EsComparableCon(Surtidor otro) => EsElMismo(otro);
 	}
 }

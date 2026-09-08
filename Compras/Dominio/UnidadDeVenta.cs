@@ -16,20 +16,20 @@ namespace Compras.Dominio
 	//
 	// Comparar entre familias no tiene respuesta: un litro no es mas ni menos que un kilo.
 	// Por eso EsComparableCon existe y ALaBase de otra familia no se intenta.
-	public sealed class UnidadDeVenta
+	internal sealed class UnidadDeVenta
 	{
-		public static readonly UnidadDeVenta Unidad = new UnidadDeVenta("u", Familia.Conteo, 1m);
-		public static readonly UnidadDeVenta Gramo = new UnidadDeVenta("g", Familia.Peso, 0.001m);
-		public static readonly UnidadDeVenta Kilogramo = new UnidadDeVenta("kg", Familia.Peso, 1m);
-		public static readonly UnidadDeVenta Mililitro = new UnidadDeVenta("ml", Familia.Volumen, 0.001m);
-		public static readonly UnidadDeVenta Litro = new UnidadDeVenta("L", Familia.Volumen, 1m);
+		internal static readonly UnidadDeVenta Unidad = new UnidadDeVenta("u", Familia.Conteo, 1m);
+		internal static readonly UnidadDeVenta Gramo = new UnidadDeVenta("g", Familia.Peso, 0.001m);
+		internal static readonly UnidadDeVenta Kilogramo = new UnidadDeVenta("kg", Familia.Peso, 1m);
+		internal static readonly UnidadDeVenta Mililitro = new UnidadDeVenta("ml", Familia.Volumen, 0.001m);
+		internal static readonly UnidadDeVenta Litro = new UnidadDeVenta("L", Familia.Volumen, 1m);
 
 		private enum Familia { Conteo, Peso, Volumen }
 
 		private readonly Familia familia;
 		private readonly decimal enLaBase;
 
-		public string Simbolo { get; private set; }
+		internal string Simbolo { get; private set; }
 
 		private UnidadDeVenta(string simbolo, Familia familia, decimal enLaBase)
 		{
@@ -39,7 +39,7 @@ namespace Compras.Dominio
 		}
 
 		/// <summary>La unidad en la que se expresa el total de su familia: u, kg o L.</summary>
-		public UnidadDeVenta Base => familia switch
+		internal UnidadDeVenta Base => familia switch
 		{
 			Familia.Peso => Kilogramo,
 			Familia.Volumen => Litro,
@@ -47,24 +47,24 @@ namespace Compras.Dominio
 		};
 
 		/// <summary>La misma unidad solo si es el mismo objeto: es lo que garantiza el conjunto cerrado.</summary>
-		public bool EsLaMisma(UnidadDeVenta otra)
+		internal bool EsLaMisma(UnidadDeVenta otra)
 		{
 			ArgumentNullException.ThrowIfNull(otra);
 			return ReferenceEquals(this, otra);
 		}
 
 		/// <summary>Si dos cantidades se pueden sumar o comparar: hace falta la misma familia.</summary>
-		public bool EsComparableCon(UnidadDeVenta otra)
+		internal bool EsComparableCon(UnidadDeVenta otra)
 		{
 			ArgumentNullException.ThrowIfNull(otra);
 			return familia == otra.familia;
 		}
 
 		/// <summary>Cuanto es esta cantidad en la unidad base de su familia. 500 g son 0,5 kg.</summary>
-		public decimal ALaBase(decimal cantidad) => cantidad * enLaBase;
+		internal decimal ALaBase(decimal cantidad) => cantidad * enLaBase;
 
 		/// <summary>El resolver de la frontera: un simbolo desconocido es un evento mal formado.</summary>
-		public static UnidadDeVenta PorSimbolo(string simbolo)
+		internal static UnidadDeVenta PorSimbolo(string simbolo)
 		{
 			ArgumentNullException.ThrowIfNullOrWhiteSpace(simbolo);
 
@@ -78,7 +78,7 @@ namespace Compras.Dominio
 		}
 
 		/// <summary>Reconocimiento total: la pareja de PorSimbolo.</summary>
-		public static bool Existe(string simbolo)
+		internal static bool Existe(string simbolo)
 		{
 			if (string.IsNullOrWhiteSpace(simbolo)) return false;
 
@@ -89,6 +89,6 @@ namespace Compras.Dominio
 			return false;
 		}
 
-		public static readonly UnidadDeVenta[] Todas = { Unidad, Gramo, Kilogramo, Mililitro, Litro };
+		internal static readonly UnidadDeVenta[] Todas = { Unidad, Gramo, Kilogramo, Mililitro, Litro };
 	}
 }

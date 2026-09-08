@@ -7,24 +7,24 @@ namespace Cargas.Dominio
 	/// dia cruzara desde el modulo del concesionario), no una medicion de este dominio:
 	/// participa del cruce "el manual dice 18, tus cargas dicen 9" y de nada mas.
 	/// </summary>
-	public abstract class RendimientoDeFabrica
+	internal abstract class RendimientoDeFabrica
 	{
 		/// <summary>La ausencia, como instancia unica: Sonia no lo aporto.</summary>
-		public static readonly RendimientoDeFabrica SinDato = new NoAportado();
+		internal static readonly RendimientoDeFabrica SinDato = new NoAportado();
 
-		public static RendimientoDeFabrica Declarado(decimal kilometrosPorLitro) =>
+		internal static RendimientoDeFabrica Declarado(decimal kilometrosPorLitro) =>
 			new Aportado(Rendimiento.DeFabrica(kilometrosPorLitro));
 
-		public abstract bool Existe { get; }
+		internal abstract bool Existe { get; }
 
 		/// <summary>Revienta si no fue aportado: consultar antes Existe.</summary>
-		public abstract Rendimiento Valor { get; }
+		internal abstract Rendimiento Valor { get; }
 
 		private sealed class NoAportado : RendimientoDeFabrica
 		{
-			public override bool Existe => false;
+			internal override bool Existe => false;
 
-			public override Rendimiento Valor =>
+			internal override Rendimiento Valor =>
 				throw new ErrorDeDominio(
 					"El rendimiento de fabrica no fue aportado: consultar antes Existe.");
 		}
@@ -38,8 +38,8 @@ namespace Cargas.Dominio
 				this.valor = valor;
 			}
 
-			public override bool Existe => true;
-			public override Rendimiento Valor => valor;
+			internal override bool Existe => true;
+			internal override Rendimiento Valor => valor;
 		}
 	}
 }

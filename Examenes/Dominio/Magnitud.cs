@@ -29,7 +29,7 @@ namespace Examenes.Dominio
 	/// <c>decimal Valor</c>, cuatro de las seis formas tendrian que devolver cero y mentir.
 	///
 	/// No es sealed: existe para que se herede (E43 — las hojas si se sellan).
-	public abstract class Magnitud
+	internal abstract class Magnitud
 	{
 		/// <summary>
 		/// El resultado ya dicho, completo. "280.0 mg/dL", "ambar", "negativo".
@@ -37,27 +37,30 @@ namespace Examenes.Dominio
 		/// No es un volcado de estado ni un contrato para parsear: es la forma en que el
 		/// dominio DICE un resultado, que para un valor medido incluye la unidad y para un
 		/// binario incluye el vocabulario de su analito.
-		public abstract string Expresado { get; }
+		internal abstract string Expresado { get; }
 	}
 
 	/// <summary>
 	/// Forma 1 y 2 — una cantidad continua: se ordena y admite aritmetica.
 	/// </summary>
 	///
-	/// Es la unica rama sobre la que tienen sentido una SERIE y una VELOCIDAD. Restar dos
-	/// colesteroles significa algo; restar "3+" menos "trazas" no significa nada, y restar
-	/// "ambar" menos "rojizo" menos todavia. Que <see cref="SerieDeAnalito"/> solo se
-	/// construya a partir de examenes que informan una magnitud continua es lo que hace
-	/// cumplir esa verdad clinica sin un solo if.
+	/// Es la unica rama sobre la que tiene sentido una VELOCIDAD. Restar dos colesteroles
+	/// significa algo; restar "3+" menos "trazas" no significa nada, y restar "ambar" menos
+	/// "rojizo" menos todavia. Que la tendencia y la velocidad vivan SOLO en
+	/// <see cref="SerieContinua"/> es lo que hace cumplir esa verdad clinica sin un solo if.
+	///
+	/// La SERIE, en cambio, ya no es de esta rama sola: las tres formas construidas tienen
+	/// la suya —ver <see cref="SerieDeAnalito"/>—. Lo que las distingue no es tenerla, es
+	/// que se puede leer de ella.
 	///
 	/// La forma 2 (continua SIN unidad: pH, densidad relativa) colgaria de aca y no esta
 	/// construida. Trae ademas su propia trampa, anotada para quien la agregue: el pH es
 	/// logaritmico, asi que promediarlo o restarlo NO significa lo que parece — de 5 a 6 no
 	/// cambio "1", cambio diez veces la concentracion de iones.
-	public abstract class MagnitudContinua : Magnitud
+	internal abstract class MagnitudContinua : Magnitud
 	{
 		/// <summary>El numero. Sin la unidad no es un dato clinico — de ahi la rama entera.</summary>
-		public abstract decimal Valor { get; }
+		internal abstract decimal Valor { get; }
 	}
 
 	/// <summary>
@@ -80,21 +83,21 @@ namespace Examenes.Dominio
 	///
 	/// No es un caso particular de la ordinal: las cruces tienen una escala detras, un
 	/// binario no. No hay "mas positivo".
-	public abstract class MagnitudBinaria : Magnitud
+	internal abstract class MagnitudBinaria : Magnitud
 	{
 		/// <summary>Si la prueba se llego a hacer. Un resultado ausente no es un resultado negativo.</summary>
-		public abstract bool FueRealizada { get; }
+		internal abstract bool FueRealizada { get; }
 
 		/// <summary>Si la prueba dio positiva. Solo tiene sentido preguntarlo cuando fue realizada.</summary>
 		/// Lectura guardada, no total: preguntar el resultado de una prueba que no se hizo es
 		/// un defecto de quien pregunta, no un "no" (E41). Consultar antes
 		/// <see cref="FueRealizada"/>.
-		public abstract bool EsPositivo { get; }
+		internal abstract bool EsPositivo { get; }
 
 		/// <summary>Si este resultado es un HALLAZGO. Positivo y anormal no son lo mismo.</summary>
 		/// En nitritos coinciden; en un factor Rh no. Por eso lo contesta cada analito y no
 		/// se deduce de <see cref="EsPositivo"/> afuera.
-		public abstract bool EsHallazgo { get; }
+		internal abstract bool EsHallazgo { get; }
 
 		/// <summary>QUE HACER si este hallazgo esta presente. Lo decide cada binario.</summary>
 		///
@@ -114,18 +117,18 @@ namespace Examenes.Dominio
 		///
 		/// Cuando no hay hallazgo la respuesta es Informativo, y eso es una respuesta: la
 		/// mayoria de los resultados no piden nada.
-		public abstract Severidad SeveridadDelHallazgo { get; }
+		internal abstract Severidad SeveridadDelHallazgo { get; }
 
 		/// <summary>QUE HACER con este hallazgo, y CUANDO. Null cuando no hay hallazgo.</summary>
 		///
 		/// Va al lado de la severidad y no se deduce de ella: el plazo es del analito. Los
 		/// nitritos y el antigeno pueden pedir los dos ConsultePronto y no correr igual —
 		/// una infeccion urinaria no espera un mes.
-		public abstract Accion AccionDelHallazgo { get; }
+		internal abstract Accion AccionDelHallazgo { get; }
 
 		/// <summary>La lectura para la persona, escrita por el propio analito.</summary>
 		/// Una linea, no un consejo: el consejo sale de la accion. Ver Interpretacion.
-		public abstract string ParaSonia { get; }
+		internal abstract string ParaSonia { get; }
 
 		/// <summary>QUE SERIE LEE A ESTE ANALITO. La fabrica de "el plural" de la forma 5.</summary>
 		///
@@ -137,7 +140,7 @@ namespace Examenes.Dominio
 		///
 		/// Con esto el Expediente arma la serie correcta sin un switch: le pregunta al
 		/// resultado cual es la suya.
-		public abstract SerieBinaria NuevaSerie();
+		internal abstract SerieBinaria NuevaSerie();
 	}
 
 	/// <summary>
@@ -147,13 +150,18 @@ namespace Examenes.Dominio
 	/// No se ordena y no se le saca tendencia: preguntar si un color "viene subiendo" no es
 	/// una pregunta. Es la forma del ejemplo favorito de Alvaro —el color de la orina— y la
 	/// razon concreta de que <see cref="Examen"/> no declare un valor medido.
-	public abstract class MagnitudNominal : Magnitud
+	///
+	/// PERO SI TIENE PLURAL. Que no se ordene no quiere decir que una sola observacion sea
+	/// todo lo que hay: tres colores en fila dicen si el inesperado se repitio o si volvio,
+	/// y eso cambia la conducta. Por eso declara <see cref="NuevaSerie"/>, igual que la
+	/// binaria, y por eso existe <see cref="SerieNominal"/>.
+	internal abstract class MagnitudNominal : Magnitud
 	{
 		/// <summary>Como se llama esta categoria para el paciente.</summary>
-		public abstract string Nombre { get; }
+		internal abstract string Nombre { get; }
 
 		/// <summary>Si esta categoria es de las que se esperan. Un ámbar si, un rojizo no.</summary>
-		public abstract bool EsEsperable { get; }
+		internal abstract bool EsEsperable { get; }
 
 		/// <summary>QUE HACER si esta categoria no es la esperada. Lo decide cada nominal.</summary>
 		///
@@ -162,12 +170,20 @@ namespace Examenes.Dominio
 		/// EXAMEN, mezclada con la de sus binarios, y desde que los binarios tienen serie
 		/// esa mezcla es incorrecta — la lectura de una sangre oculta ya no sale del examen
 		/// donde aparecio, sale de su historia.
-		public abstract Severidad SeveridadDelHallazgo { get; }
+		internal abstract Severidad SeveridadDelHallazgo { get; }
 
 		/// <summary>QUE HACER con esta categoria inesperada, y CUANDO. Null si es la esperada.</summary>
-		public abstract Accion AccionDelHallazgo { get; }
+		internal abstract Accion AccionDelHallazgo { get; }
 
 		/// <summary>La lectura para la persona, escrita por la propia categoria.</summary>
-		public abstract string ParaSonia { get; }
+		internal abstract string ParaSonia { get; }
+
+		/// <summary>QUE SERIE LEE A ESTE ANALITO. La fabrica de "el plural" de la forma 6.</summary>
+		///
+		/// Vive aca por la misma regla que la pone en <see cref="MagnitudBinaria"/> para la
+		/// forma 5 y en <see cref="ExamenDeSangre"/> para la continua: <b>la declara la
+		/// clase que carga el conocimiento clinico del analito</b>. En un nominal esa clase
+		/// es esta, donde estan las categorias, cuales son esperables y la severidad.
+		internal abstract SerieNominal NuevaSerie();
 	}
 }

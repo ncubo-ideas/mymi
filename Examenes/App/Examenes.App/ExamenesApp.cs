@@ -1,5 +1,4 @@
 using Choreography.Theater;
-using Examenes.Dominio;
 
 namespace Examenes.App
 {
@@ -52,7 +51,7 @@ namespace Examenes.App
 		public const int EdadDelPacienteDelDemo = 34;
 
 		public ExamenesApp(string nombreDelActor)
-			: base(nombreDelActor, typeof(Expediente).Assembly)
+			: base(nombreDelActor, ElDominio.Assembly)
 		{
 		}
 

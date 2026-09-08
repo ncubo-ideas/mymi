@@ -1,6 +1,7 @@
 @inherits LayoutComponentBase
 @inject EstadoDeLaApp estado
 @inject ConfiguracionDeLaInstitucion institucion
+@inject NavigationManager navegacionDelLayout
 
 @* Sin sidebar, sin navegacion, sin barra "About" del template. La UI de la app son cuatro
    cosas y nada mas: el boton de refresh, la portada, las lecturas y el back para volver a
@@ -14,7 +15,23 @@
    lea como la app de una institucion.
 
    El BLOQUE DE MARCA vive aca y no en la pagina: es de toda la app, y repetirlo en cada
-   pantalla ademas competia con el titulo de la pantalla. *@
+   pantalla ademas competia con el titulo de la pantalla.
+
+   EN INICIO NO SE DIBUJA. La segunda pasada visual de Fernanda pide que Inicio no tenga
+   ninguna franja corporativa por encima de la pantalla -la marca se muda adentro de SU
+   hero, ver MisCompras.razor-. Las demas pantallas (Recibos, Infaltables, Detalle, Producto,
+   Ritmo) siguen recibiendo esta misma barra, sin cambiar un pixel: la condicion es la unica
+   linea que se agrego aca.
+
+   CORRECCION: LA NAV YA NO VA ADENTRO. Hasta esta ronda `<nav class="pestanas">` vivia
+   DENTRO de este `@if`, bajo el supuesto de que el hero de Inicio traia su propia nav
+   adentro -"la marca y la nav se mudan adentro de SU hero"-. Eso nunca paso: el hero de
+   MisCompras.razor no tiene ningun toggle Inicio/Compras, asi que ocultar la barra en
+   Inicio apagaba TAMBIEN la unica forma de ir de Inicio a Compras. La nav es la marca la
+   que se oculta en Inicio, no la nav: por eso `<nav class="pestanas">` bajo es hermana de
+   este `<header>` y se dibuja siempre, en cada ruta, sin el `@if`. *@
+@if (!EsInicio)
+{
 <header class="barra">
     <div class="barra-dentro">
         @* LA GUARIA MORADA (Guarianthe skinneri), la flor nacional. Es una cattleya y se
@@ -45,59 +62,66 @@
             </g>
             <circle fill="var(--gu-corazon)" cx="20" cy="19.2" r="2"/>
         </svg>
+        @* RONDA D — DOS ESTADOS: arriba va el nombre completo; al bajar el scroll,
+           js/barra-compacta.js le agrega `barra--compacta` a `.barra` y el CSS cambia cual
+           de los dos `.marca-nombre--*` se dibuja (uno solo puede estar visible a la vez,
+           nunca los dos). Van los dos en el markup porque CSS no puede acortar el texto de
+           un nodo -si hiciera falta manipular el DOM para eso, ya no seria "cambio visual,
+           no de logica"-. *@
         <div class="marca-texto">
-            <div class="marca-nombre">Supermercado La Guaria</div>
+            <div class="marca-nombre marca-nombre--completo">Supermercado La Guaria</div>
+            <div class="marca-nombre marca-nombre--corto">La Guaria</div>
             <div class="marca-bajada">Su barrio, su despensa, desde 1992</div>
         </div>
         <span class="sello-demo">demo</span>
-
-        @* LAS DOS PESTAÑAS, y son UNA sola UI que se comporta distinto por resolucion — que
-           es lo que pidio Alvaro: "lo ideal es mantener una sola ui que mantenga a mobile y
-           desktop, quizas dependiendo de la resolucion se comporte distinto, en vez de dos
-           uis separadas".
-
-           VIVEN DENTRO DE LA BARRA DE MARCA, y antes tenian una banda propia debajo. La
-           banda se fue por tres razones que eran la misma: de sus 885 px, 641 estaban
-           VACIOS -el 72 %- porque su unico trabajo era sostener dos elementos chicos;
-           sumaba una segunda franja oscura hasta los 104 px de cromo antes de la primera
-           linea de contenido; y obligaba a la pestaña activa a empalmar con el fondo de la
-           pagina, que es lo que no cerraba (ver el CSS).
-
-           EN TELEFONO SIGUEN AL PIE Y FIJAS, que es donde llega el pulgar. `position:
-           fixed` las saca del flujo, asi que estar adentro de la barra no las ata a ella:
-           el markup es uno solo y el CSS decide donde se paran. *@
-        <nav class="pestanas">
-            <div class="pestanas-dentro">
-                <NavLink class="pestana" href="" Match="NavLinkMatch.All">
-                    @* LOS ICONOS SE DIBUJAN, no se escriben. Antes eran dos glifos -☉ y ☰-
-                       y la fuente recortada NO LOS TRAE: caian en otra familia, con otro
-                       peso y otras metricas, justo al lado de la etiqueta que si carga. Es
-                       el mismo problema que el cuadro del "sin foto", y se arregla igual.
-
-                       Y el ☰ ademas mentia: un hamburguesa significa "menu", no "compras".
-                       Este es un RECIBO, que es a donde lleva la pestaña y lo que la
-                       canasta del hero trae adentro. *@
-                    <svg class="pestana-icono" viewBox="0 0 20 20" fill="none"
-                         stroke="currentColor" stroke-width="1.7" stroke-linecap="round"
-                         stroke-linejoin="round" aria-hidden="true">
-                        <path d="M2.9 9.2 10 3.4l7.1 5.8v7.4H2.9z"/>
-                        <path d="M7.8 16.6v-4.7h4.4v4.7"/>
-                    </svg>
-                    Inicio
-                </NavLink>
-                <NavLink class="pestana" href="recibos">
-                    <svg class="pestana-icono" viewBox="0 0 20 20" fill="none"
-                         stroke="currentColor" stroke-width="1.7" stroke-linecap="round"
-                         stroke-linejoin="round" aria-hidden="true">
-                        <path d="M5.2 3.2h9.6v13.6l-2.4-1.5-2.4 1.5-2.4-1.5-2.4 1.5z"/>
-                        <path d="M7.9 7.1h4.2M7.9 10.3h4.2"/>
-                    </svg>
-                    Compras
-                </NavLink>
-            </div>
-        </nav>
     </div>
 </header>
+}
+
+@* LAS DOS PESTAÑAS, y son UNA sola UI que se comporta distinto por resolucion — que es lo
+   que pidio Alvaro: "lo ideal es mantener una sola ui que mantenga a mobile y desktop,
+   quizas dependiendo de la resolucion se comporte distinto, en vez de dos uis separadas".
+
+   SIEMPRE SE DIBUJAN, Inicio incluido: es la unica forma de moverse entre Inicio y Compras,
+   asi que no puede depender de `EsInicio` como la barra de marca -ver el comentario arriba
+   del `@if`, esta correccion es justamente por eso-.
+
+   EN TELEFONO VAN AL PIE Y FIJAS, que es donde llega el pulgar. `position: fixed` las saca
+   del flujo, asi que no importa si en escritorio son su propia franja en vez de vivir
+   dentro de la barra: el markup es uno solo y el CSS decide donde se paran en cada ancho
+   (ver `.pestanas` en app.css). El colchon de abajo para que esta barra fija no tape la
+   ultima fila del contenido ya existe -`main.container { padding-bottom: 5.5rem }` en
+   telefono, ver app.css- y no depende de que haya pie: corre en cualquier ruta. *@
+<nav class="pestanas">
+    <div class="pestanas-dentro">
+        <NavLink class="pestana" href="" Match="NavLinkMatch.All">
+            @* LOS ICONOS SE DIBUJAN, no se escriben. Antes eran dos glifos -☉ y ☰- y la
+               fuente recortada NO LOS TRAE: caian en otra familia, con otro peso y otras
+               metricas, justo al lado de la etiqueta que si carga. Es el mismo problema
+               que el cuadro del "sin foto", y se arregla igual.
+
+               Y el ☰ ademas mentia: un hamburguesa significa "menu", no "compras". Este es
+               un RECIBO, que es a donde lleva la pestaña y lo que la canasta del hero trae
+               adentro. *@
+            <svg class="pestana-icono" viewBox="0 0 20 20" fill="none"
+                 stroke="currentColor" stroke-width="1.7" stroke-linecap="round"
+                 stroke-linejoin="round" aria-hidden="true">
+                <path d="M2.9 9.2 10 3.4l7.1 5.8v7.4H2.9z"/>
+                <path d="M7.8 16.6v-4.7h4.4v4.7"/>
+            </svg>
+            Inicio
+        </NavLink>
+        <NavLink class="pestana" href="recibos">
+            <svg class="pestana-icono" viewBox="0 0 20 20" fill="none"
+                 stroke="currentColor" stroke-width="1.7" stroke-linecap="round"
+                 stroke-linejoin="round" aria-hidden="true">
+                <path d="M5.2 3.2h9.6v13.6l-2.4-1.5-2.4 1.5-2.4-1.5-2.4 1.5z"/>
+                <path d="M7.9 7.1h4.2M7.9 10.3h4.2"/>
+            </svg>
+            Compras
+        </NavLink>
+    </div>
+</nav>
 
 @* EL CUERPO NO SE PINTA HASTA SABER SI LA APP ABRE, y esa espera es el arreglo de un bug
    real. Abrir la app es asincrono; las paginas leen `estado.EstaArriba` cuando se
@@ -128,8 +152,12 @@
    noreferrer, el navegador le manda al super la URL desde la que se salio — o sea
    /app/producto/Leche%20semidescremada%201L, que le dice QUE ESTABA MIRANDO la persona
    cuando decidio escribirle. Todo el modulo existe para que el super no se entere de eso;
-   dejarlo salir por la cabecera de un enlace seria regalarlo en la puerta. *@
-@if (institucion.HayAlguno)
+   dejarlo salir por la cabecera de un enlace seria regalarlo en la puerta.
+
+   TAMPOCO SE DIBUJA EN INICIO: ahi el contacto vive como una linea liviana de ayuda al
+   final de la pantalla (ver MisCompras.razor), no como este pie completo. En las demas
+   pantallas el pie sigue siendo exactamente este. *@
+@if (institucion.HayAlguno && !EsInicio)
 {
     <footer class="pie">
         @* EL PIE ESPEJA LA BARRA: el mismo bloque de marca -flor, nombre, bajada- con el que
@@ -181,7 +209,12 @@
                             <path d="M10 3.4a6.6 6.6 0 0 0-5.7 9.9L3.4 16.6l3.4-.9A6.6 6.6 0 1 0 10 3.4z"/>
                             <path d="M7.6 7.3c.2-.5.5-.5.8-.5l.6 1.2c.1.2 0 .4-.1.5l-.4.5c.3.7 1 1.4 1.7 1.7l.5-.4c.1-.2.3-.2.5-.1l1.2.6c0 .3 0 .6-.5.8-1.9.7-4.9-2.3-4.3-4.3z"/>
                         </svg>
-                        WhatsApp
+                        @* RONDA D: "priorizar el icono, evitando un boton verde grande" — el
+                           icono ya dice "WhatsApp" a simple vista, asi que la palabra se
+                           queda solo para quien usa lector de pantalla y no se dibuja. El
+                           numero, cuando esta configurado, sigue visible: es lo unico que el
+                           icono no puede decir por si solo. *@
+                        <span class="visually-hidden">WhatsApp</span>
                         @if (institucion.TelefonoParaMostrar.Length > 0)
                         {
                             <span class="pie-numero">@institucion.TelefonoParaMostrar</span>
@@ -220,6 +253,13 @@
     // 'prompt' hace falta un click, y ese boton lo ofrece la portada — que es donde se
     // explica lo que esta pasando.
     private bool loIntento;
+
+    // SE LEE DIRECTO DE NavigationManager en cada render, sin guardarlo en un campo: Body
+    // cambia de parametro en cada navegacion, y eso ya fuerza el re-render del layout. Un
+    // campo cacheado en OnInitializedAsync se hubiera quedado con la ruta de la PRIMERA
+    // carga para siempre.
+    private bool EsInicio =>
+        navegacionDelLayout.ToBaseRelativePath(navegacionDelLayout.Uri).TrimEnd('/').Length == 0;
 
     protected override async Task OnInitializedAsync()
     {

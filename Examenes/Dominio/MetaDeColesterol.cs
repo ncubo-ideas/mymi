@@ -22,21 +22,21 @@ namespace Examenes.Dominio
 	// Y por eso este tipo existe en vez de que Interpretar devuelva un decimal suelto: la
 	// meta no es un numero, es un numero MAS cuanto falta MAS si viene acercandose. Las
 	// tres cosas juntas son lo que la app puede mostrar como progreso.
-	public sealed class MetaDeColesterol
+	internal sealed class MetaDeColesterol
 	{
 		// Los escalones. Salen de los umbrales de uso corriente -deseable bajo 200,
 		// limitrofe hasta 239, alto de 240 para arriba- y son ORIENTATIVOS.
 		private const decimal Deseable = 200m;
 		private const decimal Alto = 240m;
 
-		public Medicion Actual { get; private set; }
+		internal Medicion Actual { get; private set; }
 
-		public Medicion Objetivo { get; private set; }
+		internal Medicion Objetivo { get; private set; }
 
 		// Con signo: positivo si todavia falta bajar.
-		public decimal CuantoFalta => Actual.Valor - Objetivo.Valor;
+		internal decimal CuantoFalta => Actual.Valor - Objetivo.Valor;
 
-		public bool YaLlego => CuantoFalta <= 0m;
+		internal bool YaLlego => CuantoFalta <= 0m;
 
 		private MetaDeColesterol(Medicion actual, Medicion objetivo)
 		{
@@ -46,7 +46,7 @@ namespace Examenes.Dominio
 
 		// EL ESCALON SIGUIENTE desde donde esta parado. Un 280 apunta a 240; un 230 apunta
 		// a 200; un 190 ya llego y la meta es sostenerlo.
-		public static MetaDeColesterol Para(Medicion actual)
+		internal static MetaDeColesterol Para(Medicion actual)
 		{
 			ArgumentNullException.ThrowIfNull(actual);
 
@@ -62,7 +62,7 @@ namespace Examenes.Dominio
 		//
 		// Sin punto de partida -o si el partida ya estaba en la meta- no hay progreso que
 		// mostrar y devuelve cero: no se inventa una barra llena.
-		public decimal ProgresoDesde(Medicion partida)
+		internal decimal ProgresoDesde(Medicion partida)
 		{
 			if (partida == null) return 0m;
 
@@ -76,14 +76,14 @@ namespace Examenes.Dominio
 		}
 
 		// La meta dicha entera, para cuando la frase todavia no nombro el valor actual.
-		public string Expresada => YaLlego
+		internal string Expresada => YaLlego
 			? $"estás en {Actual.Expresado}, dentro de lo deseable"
 			: $"de {Actual.Expresado} a {Objetivo.Expresado}: te faltan {CuantoFalta} {Actual.Unidad.Simbolo}";
 
 		// La meta dicha SIN repetir el valor actual, para encadenar despues de una frase
 		// que ya lo dijo. Son dos por lo mismo que ParaMostrar y Nombre son dos en Analito:
 		// la misma cosa se dice distinto segun donde caiga.
-		public string ComoObjetivo => YaLlego
+		internal string ComoObjetivo => YaLlego
 			? "y ya estás dentro de lo deseable"
 			: $"tu meta ahora es bajar a {Objetivo.Expresado}";
 	}

@@ -1,6 +1,38 @@
 <Project>
+
+  <!-- La version del motor Puppeteer, en un solo lugar para todo el repo.
+
+       El motor se consume por NuGet, no por ProjectReference. Eso importa: mientras se
+       referenciaba el repo, el build dependia de QUE RAMA estuviera checkouteada en un
+       repo que no es parte del entregable — y se rompio de verdad cuando alguien volvio a
+       master. Con el paquete la version queda fijada aca y nadie la cambia por accidente.
+
+       PENDIENTE CONOCIDO: el replay secuencial TODAVIA NO ESTA. La caratula wasm carga,
+       renderiza y llega a la pantalla de permisos, y revienta al abrir el actor con
+       PlatformNotSupportedException: "Cannot wait on monitors on this runtime".
+
+       10028 se anuncio como el arreglo y NO lo trae. Medido, no inferido:
+
+         - 0 referencias a IsBrowser en su Puppeteer.dll, igual que 10027
+         - MISMO TAMANO EXACTO que 10027 (Puppeteer.dll 815104 b, Choreography.dll
+           176128 b) y solo 281 y 283 bytes distintos respectivamente: es el MVID y el
+           timestamp del PE, o sea una RECOMPILACION del mismo codigo
+         - probado en el browser con 10028 servido de verdad: mismo error, mismo paso
+
+       Se deja 10028 igual, que es la ultima publicada, para que la proxima comparacion
+       parta de aca. Cuando salga una con los tres commits de la rama wasm-replay
+       (ec9177d / aa29edb / c9da4f0), esto es UNA linea.
+
+       10044 (2026-09-07): el journal cambio el formato con que escribe un datetime. Hasta
+       10029 era MM/dd/yyyy HH:mm:ss sin marca de zona; ahora es ISO 8601 de ida y vuelta
+       con la Z (2025-10-02T02:30:45.0000000Z). El dominio no lo nota, sigue llegando en
+       UTC y truncado al segundo, pero las pruebas que leen el journal como texto si, y
+       las tres de Concesionario que lo hacian se ajustaron. El print con formatter JSON
+       NO cambio (medido con `Facturas.Consola medir`: sigue emitiendo "08/03/2026 10:14:00"),
+       asi que las proyecciones que parsean MM/dd/yyyy quedan como estan. -->
+
   <PropertyGroup>
-    <VersionDelMotor Condition="'$(VersionDelMotor)' == ''">3.0.0-beta.10029</VersionDelMotor>
+    <VersionDelMotor Condition="'$(VersionDelMotor)' == ''">3.0.0-beta.10044</VersionDelMotor>
   </PropertyGroup>
 
 </Project>

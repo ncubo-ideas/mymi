@@ -22,21 +22,21 @@ namespace Compras.Dominio
 	//                          tienen periodicidad esperada A PROPOSITO: este modulo no
 	//                          existe para decirle a nadie que hace un mes que no compra
 	//                          helado. Y un electrodomestico no se reabastece.
-	public abstract class Categoria
+	internal abstract class Categoria
 	{
-		public static readonly Categoria Proteinas =
+		internal static readonly Categoria Proteinas =
 			new Comestible("Proteinas", "proteínas", "una proteína", diasDeReabastecimiento: 10);
-		public static readonly Categoria FrutasYVerduras =
+		internal static readonly Categoria FrutasYVerduras =
 			new Comestible("FrutasYVerduras", "frutas y verduras", "una fruta o verdura", diasDeReabastecimiento: 10);
-		public static readonly Categoria LacteosYHuevos =
+		internal static readonly Categoria LacteosYHuevos =
 			new Comestible("LacteosYHuevos", "lácteos y huevos", "un lácteo", diasDeReabastecimiento: 12);
-		public static readonly Categoria GranosYAbarrotes =
+		internal static readonly Categoria GranosYAbarrotes =
 			new Comestible("GranosYAbarrotes", "granos y abarrotes", "un grano o abarrote", diasDeReabastecimiento: 35);
-		public static readonly Categoria AceitesYGrasas =
+		internal static readonly Categoria AceitesYGrasas =
 			new Comestible("AceitesYGrasas", "aceites y grasas", "un aceite o una grasa", diasDeReabastecimiento: 0);
-		public static readonly Categoria Azucarados =
+		internal static readonly Categoria Azucarados =
 			new Comestible("Azucarados", "dulces y postres", "algo dulce", diasDeReabastecimiento: 0);
-		public static readonly Categoria Snacks =
+		internal static readonly Categoria Snacks =
 			new Comestible("Snacks", "snacks", "un snack", diasDeReabastecimiento: 0);
 		// ENTRAN EN ENERO DE 2026, y por eso existen: el guion de la wiki dice que "embutidos
 		// y preparadas entran en ene 2026", y sin departamento propio el cambio se
@@ -48,9 +48,9 @@ namespace Compras.Dominio
 		// periodicidad existe para lo que se ACABA y hay que reponer, no para lo que
 		// alguien puede haber dejado de comprar a proposito. Decirle "hace un mes que no
 		// compra embutidos" seria justo el reclamo que este modulo no hace.
-		public static readonly Categoria Embutidos =
+		internal static readonly Categoria Embutidos =
 			new Comestible("Embutidos", "embutidos", "un embutido", diasDeReabastecimiento: 0);
-		public static readonly Categoria ComidasPreparadas =
+		internal static readonly Categoria ComidasPreparadas =
 			new Comestible("ComidasPreparadas", "comidas preparadas", "una comida preparada", diasDeReabastecimiento: 0);
 
 		// LA COMIDA DE LA PERRA NO ES COMESTIBLE, y la palabra engaña: EsComestible
@@ -60,33 +60,33 @@ namespace Compras.Dominio
 		// Y SI SE REABASTECE: Luna come todos los meses -₡25.000 en el carrito, dice el
 		// invariante 14- asi que un hueco aca es un hueco de verdad. Es lo contrario de los
 		// azucarados: nadie deja de comprarle comida al perro a proposito.
-		public static readonly Categoria Mascotas =
+		internal static readonly Categoria Mascotas =
 			new NoComestible("Mascotas", "mascotas", "comida para la mascota", diasDeReabastecimiento: 30);
 
-		public static readonly Categoria Limpieza =
+		internal static readonly Categoria Limpieza =
 			new NoComestible("Limpieza", "limpieza", "algo de limpieza", diasDeReabastecimiento: 45);
-		public static readonly Categoria Electrohogar =
+		internal static readonly Categoria Electrohogar =
 			new NoComestible("Electrohogar", "electrodomésticos", "un electrodoméstico", diasDeReabastecimiento: 0);
 
 		private readonly int diasDeReabastecimiento;
 
 		/// <summary>La LLAVE del departamento, la que viaja en el evento. No se le muestra a nadie.</summary>
-		public string Nombre { get; private set; }
+		internal string Nombre { get; private set; }
 
 		/// <summary>El nombre del departamento como lo lee una persona: "frutas y verduras".</summary>
-		public string Titulo { get; private set; }
+		internal string Titulo { get; private set; }
 
 		/// <summary>Como se menciona UNO de sus productos dentro de una frase: "una fruta o verdura".</summary>
-		public string Mencion { get; private set; }
+		internal string Mencion { get; private set; }
 
 		/// <summary>Si el departamento es de comida. Es donde esta la gondola, no un juicio.</summary>
-		public abstract bool EsComestible { get; }
+		internal abstract bool EsComestible { get; }
 
 		/// <summary>Consulta de presencia, total: si este departamento espera reponerse cada tanto.</summary>
-		public bool SeReabastece => diasDeReabastecimiento > 0;
+		internal bool SeReabastece => diasDeReabastecimiento > 0;
 
 		/// <summary>Cada cuantos dias se repone normalmente. Preguntar SeReabastece primero.</summary>
-		public int DiasDeReabastecimiento
+		internal int DiasDeReabastecimiento
 		{
 			get
 			{
@@ -114,7 +114,7 @@ namespace Compras.Dominio
 		}
 
 		/// <summary>El resolver de la frontera: un nombre desconocido es un error de quien llama.</summary>
-		public static Categoria Desde(string nombre)
+		internal static Categoria Desde(string nombre)
 		{
 			ArgumentNullException.ThrowIfNullOrWhiteSpace(nombre);
 
@@ -126,7 +126,7 @@ namespace Compras.Dominio
 		}
 
 		/// <summary>Reconocimiento total: la pareja de Desde, para poder preguntar sin reventar.</summary>
-		public static bool Existe(string nombre)
+		internal static bool Existe(string nombre)
 		{
 			if (string.IsNullOrWhiteSpace(nombre)) return false;
 
@@ -137,7 +137,31 @@ namespace Compras.Dominio
 			return false;
 		}
 
-		public static readonly Categoria[] Todas =
+		/// <summary>
+		/// Reconocimiento total sobre la LISTA de una compra: true solo si el departamento de
+		/// cada linea existe.
+		/// </summary>
+		///
+		/// Existe para que el Check de ComprasAPI pueda preguntarlo DESDE EL SCRIPT. La
+		/// frontera recibe las categorias como un `string[]` del wire y no puede recorrerlo
+		/// preguntando en C# sin nombrar esta clase -- y nombrarla obligaria al dominio
+		/// entero a ser internal. Con esto el nombre viaja adentro del texto del script, que el
+		/// motor resuelve por reflexion, y el reconocimiento pasa DENTRO del actor.
+		///
+		/// Sigue valiendo lo de Existe: el conjunto lo posee el dominio. Una lista espejo
+		/// mantenida a mano en la frontera ya se desincronizo una vez y descarto 47 de 87
+		/// compras en silencio.
+		internal static bool TodasExisten(string[] nombres)
+		{
+			if (nombres == null) return false;
+
+			foreach (string nombre in nombres)
+				if (!Existe(nombre)) return false;
+
+			return true;
+		}
+
+		internal static readonly Categoria[] Todas =
 		{
 			Proteinas, FrutasYVerduras, LacteosYHuevos, GranosYAbarrotes,
 			AceitesYGrasas, Azucarados, Snacks, Embutidos, ComidasPreparadas,
@@ -149,7 +173,7 @@ namespace Compras.Dominio
 			internal Comestible(string nombre, string titulo, string mencion, int diasDeReabastecimiento)
 				: base(nombre, titulo, mencion, diasDeReabastecimiento) { }
 
-			public override bool EsComestible => true;
+			internal override bool EsComestible => true;
 		}
 
 		private sealed class NoComestible : Categoria
@@ -157,7 +181,7 @@ namespace Compras.Dominio
 			internal NoComestible(string nombre, string titulo, string mencion, int diasDeReabastecimiento)
 				: base(nombre, titulo, mencion, diasDeReabastecimiento) { }
 
-			public override bool EsComestible => false;
+			internal override bool EsComestible => false;
 		}
 	}
 }

@@ -15,14 +15,19 @@ namespace Compras.Dominio
 	// mentiria en cada cambio de formato, que es justo cuando la persona mas quiere saber.
 	//
 	// Total: un sku con una sola compra no tiene serie de precios, y lo dice.
-	public abstract class PrecioEnElTiempo
+	internal abstract class PrecioEnElTiempo
 	{
+		// Cuanto tiene que moverse para llamarlo un cambio real. Un 3% es redondeo de
+		// gondola; mas que eso lo siente quien paga. PUBLICO porque es UN SOLO juicio:
+		// la rebaja de un recibo (RebajaDesdeLaCompra) juzga con este mismo numero.
+		internal const decimal CambioQueCuentaComoReal = 0.03m;
+
 		internal static PrecioEnElTiempo Ninguno(string sku) => new SinPrecios(sku);
 
 		internal static PrecioEnElTiempo De(Producto producto, IReadOnlyList<PrecioObservado> observados) =>
 			new Serie(producto, observados);
 
-		public string Sku { get; private set; }
+		internal string Sku { get; private set; }
 
 		private PrecioEnElTiempo(string sku)
 		{
@@ -31,63 +36,59 @@ namespace Compras.Dominio
 		}
 
 		/// <summary>Consulta de presencia, total: si hay al menos un precio observado.</summary>
-		public abstract bool Existe();
+		internal abstract bool Existe();
 
 		/// <summary>Si hay DOS o más precios: sin eso no hay cambio que leer.</summary>
-		public abstract bool HaySerie { get; }
+		internal abstract bool HaySerie { get; }
 
-		public abstract string Descripcion { get; }
-		public abstract IReadOnlyList<PrecioObservado> Observados { get; }
-		public abstract int VecesQueLoCompro { get; }
+		internal abstract string Descripcion { get; }
+		internal abstract IReadOnlyList<PrecioObservado> Observados { get; }
+		internal abstract int VecesQueLoCompro { get; }
 
-		public abstract decimal PrimerPrecioPorUnidad { get; }
-		public abstract decimal UltimoPrecioPorUnidad { get; }
-		public abstract string UnidadDeReferencia { get; }
+		internal abstract decimal PrimerPrecioPorUnidad { get; }
+		internal abstract decimal UltimoPrecioPorUnidad { get; }
+		internal abstract string UnidadDeReferencia { get; }
 
 		/// <summary>El HECHO, con signo: cuánto cambió el precio por unidad de medida.</summary>
-		public abstract decimal Cambio { get; }
+		internal abstract decimal Cambio { get; }
 
 		/// <summary>El cambio en proporción del primer precio. 0,18 es un 18% más caro.</summary>
-		public abstract decimal CambioEnProporcion { get; }
+		internal abstract decimal CambioEnProporcion { get; }
 
 		/// <summary>Si el precio se movio lo bastante como para no ser redondeo de góndola.</summary>
-		public abstract bool HayCambioReal { get; }
+		internal abstract bool HayCambioReal { get; }
 
 		/// <summary>La dirección del cambio. Preguntar HayCambioReal primero.</summary>
-		public abstract bool Subio { get; }
+		internal abstract bool Subio { get; }
 
 		/// <summary>La lectura en una línea, escrita por el dominio con SUS hechos.</summary>
-		public abstract string ParaElAsistente { get; }
+		internal abstract string ParaElAsistente { get; }
 
 		private sealed class SinPrecios : PrecioEnElTiempo
 		{
 			internal SinPrecios(string sku) : base(sku) { }
 
-			public override bool Existe() => false;
-			public override bool HaySerie => false;
-			public override string Descripcion => "";
-			public override IReadOnlyList<PrecioObservado> Observados => Array.Empty<PrecioObservado>();
-			public override int VecesQueLoCompro => 0;
-			public override decimal PrimerPrecioPorUnidad => 0m;
-			public override decimal UltimoPrecioPorUnidad => 0m;
-			public override string UnidadDeReferencia => "";
-			public override decimal Cambio => 0m;
-			public override decimal CambioEnProporcion => 0m;
-			public override bool HayCambioReal => false;
+			internal override bool Existe() => false;
+			internal override bool HaySerie => false;
+			internal override string Descripcion => "";
+			internal override IReadOnlyList<PrecioObservado> Observados => Array.Empty<PrecioObservado>();
+			internal override int VecesQueLoCompro => 0;
+			internal override decimal PrimerPrecioPorUnidad => 0m;
+			internal override decimal UltimoPrecioPorUnidad => 0m;
+			internal override string UnidadDeReferencia => "";
+			internal override decimal Cambio => 0m;
+			internal override decimal CambioEnProporcion => 0m;
+			internal override bool HayCambioReal => false;
 
-			public override bool Subio =>
+			internal override bool Subio =>
 				throw new InvalidOperationException(
 					$"No hay compras de «{Sku}»: no hay dirección que dar. Preguntar HayCambioReal antes.");
 
-			public override string ParaElAsistente => $"no hay compras de «{Sku}» en el historial";
+			internal override string ParaElAsistente => $"no hay compras de «{Sku}» en el historial";
 		}
 
 		private sealed class Serie : PrecioEnElTiempo
 		{
-			// Cuanto tiene que moverse para llamarlo un cambio real. Un 3% es redondeo de
-			// gondola; mas que eso lo siente quien paga.
-			private const decimal CambioQueCuentaComoReal = 0.03m;
-
 			private readonly Producto producto;
 			private readonly IReadOnlyList<PrecioObservado> observados;
 
@@ -110,27 +111,27 @@ namespace Compras.Dominio
 				return producto.Sku;
 			}
 
-			public override bool Existe() => true;
-			public override bool HaySerie => observados.Count >= 2;
-			public override string Descripcion => producto.Descripcion;
-			public override IReadOnlyList<PrecioObservado> Observados => observados;
-			public override int VecesQueLoCompro => observados.Count;
+			internal override bool Existe() => true;
+			internal override bool HaySerie => observados.Count >= 2;
+			internal override string Descripcion => producto.Descripcion;
+			internal override IReadOnlyList<PrecioObservado> Observados => observados;
+			internal override int VecesQueLoCompro => observados.Count;
 
-			public override decimal PrimerPrecioPorUnidad => observados[0].PrecioPorUnidad;
-			public override decimal UltimoPrecioPorUnidad => observados[observados.Count - 1].PrecioPorUnidad;
-			public override string UnidadDeReferencia => producto.Presentacion.UnidadBase.Simbolo;
+			internal override decimal PrimerPrecioPorUnidad => observados[0].PrecioPorUnidad;
+			internal override decimal UltimoPrecioPorUnidad => observados[observados.Count - 1].PrecioPorUnidad;
+			internal override string UnidadDeReferencia => producto.Presentacion.UnidadBase.Simbolo;
 
-			public override decimal Cambio => HaySerie ? UltimoPrecioPorUnidad - PrimerPrecioPorUnidad : 0m;
+			internal override decimal Cambio => HaySerie ? UltimoPrecioPorUnidad - PrimerPrecioPorUnidad : 0m;
 
-			public override decimal CambioEnProporcion =>
+			internal override decimal CambioEnProporcion =>
 				HaySerie && PrimerPrecioPorUnidad != 0m
 					? Math.Round(Cambio / PrimerPrecioPorUnidad, 4)
 					: 0m;
 
-			public override bool HayCambioReal =>
+			internal override bool HayCambioReal =>
 				HaySerie && Math.Abs(CambioEnProporcion) >= CambioQueCuentaComoReal;
 
-			public override bool Subio
+			internal override bool Subio
 			{
 				get
 				{
@@ -143,7 +144,7 @@ namespace Compras.Dominio
 				}
 			}
 
-			public override string ParaElAsistente
+			internal override string ParaElAsistente
 			{
 				get
 				{
@@ -179,13 +180,13 @@ namespace Compras.Dominio
 	/// Un precio que la persona pagó de verdad, en una compra concreta: la fecha, el
 	/// precio de línea y —el que importa— el precio por unidad de medida.
 	/// </summary>
-	public class PrecioObservado
+	internal class PrecioObservado
 	{
-		public DateTime Fecha { get; private set; }
-		public string NumeroDeCompra { get; private set; }
-		public decimal PrecioDeLinea { get; private set; }
-		public decimal PrecioPorUnidad { get; private set; }
-		public string PresentacionExpresada { get; private set; }
+		internal DateTime Fecha { get; private set; }
+		internal string NumeroDeCompra { get; private set; }
+		internal decimal PrecioDeLinea { get; private set; }
+		internal decimal PrecioPorUnidad { get; private set; }
+		internal string PresentacionExpresada { get; private set; }
 
 		internal PrecioObservado(DateTime fecha, string numeroDeCompra, decimal precioDeLinea,
 			decimal precioPorUnidad, string presentacionExpresada)
@@ -200,6 +201,6 @@ namespace Compras.Dominio
 			PresentacionExpresada = presentacionExpresada;
 		}
 
-		public string MesExpresado => $"{Fecha.Year:0000}-{Fecha.Month:00}";
+		internal string MesExpresado => $"{Fecha.Year:0000}-{Fecha.Month:00}";
 	}
 }

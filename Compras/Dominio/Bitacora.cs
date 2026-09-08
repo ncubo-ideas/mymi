@@ -16,10 +16,10 @@ namespace Compras.Dominio
 	// del browser del origen- y el bucle de refresh la recibe de ahi, no del diario.
 	public class Bitacora
 	{
-		public long UltimoEvento { get; private set; }
+		internal long UltimoEvento { get; private set; }
 
 		/// <summary>Solo hacia adelante. La guarda Check del comando ya rechaza el repetido; esta es la segunda linea.</summary>
-		public void Avanzar(long evento)
+		internal void Avanzar(long evento)
 		{
 			if (evento <= UltimoEvento)
 				throw new InvalidOperationException(
@@ -39,7 +39,7 @@ namespace Compras.Dominio
 		{
 		}
 
-		public void GuardarCredencial(string token, string refreshToken)
+		internal void GuardarCredencial(string token, string refreshToken)
 		{
 		}
 	}

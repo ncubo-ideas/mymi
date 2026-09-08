@@ -8,6 +8,10 @@
 
   <Project Path="Examenes/App/Examenes.App/Examenes.App.csproj" />
   <Project Path="Examenes/App/Examenes.Consola/Examenes.Consola.csproj" />
+  <!-- La frontera de entrada, en su propio csproj: es el unico ensamblado de produccion
+       que ve el dominio por dentro, y separarlo es lo que mantiene a Examenes.App cercada
+       por el compilador. Ver el InternalsVisibleTo de Examenes.Dominio. -->
+  <Project Path="Examenes/App/Examenes.Eventos/Examenes.Eventos.csproj" />
   <Project Path="Examenes/App/Examenes.Mcp/Examenes.Mcp.csproj" />
   <Project Path="Examenes/App/Examenes.Wasm/Examenes.Wasm.csproj" />
   <Project Path="Examenes/Dominio/Examenes.Dominio.csproj" />
@@ -24,6 +28,29 @@
 
        The Android app is NOT listed here on purpose. It targets net9.0-android and
        would break the build for anyone without that workload installed. -->
+  <Project Path="Cargas/App/Cargas.App/Cargas.App.csproj" />
+  <Project Path="Cargas/App/Cargas.Consola/Cargas.Consola.csproj" />
+  <Project Path="Cargas/App/Cargas.Mcp/Cargas.Mcp.csproj" />
+  <Project Path="Cargas/App/Cargas.Wasm/Cargas.Wasm.csproj" />
+  <Project Path="Cargas/Dominio/Cargas.Dominio.csproj" />
+  <Project Path="Cargas/EndPointDeEventos/Cargas.EventosMock.csproj" />
+  <Project Path="Cargas/InyectorDeEventosDemo/Cargas.InyectorDeEventosDemo.csproj" />
+  <!-- El Puppets.Portador de Cargas no se lista: el slnx rechaza dos proyectos con el
+       mismo nombre (el de Examenes ya esta) y se compila igual via ProjectReference,
+       como en Concesionario. -->
+
+  <Project Path="Concesionario/App/Concesionario.App/Concesionario.App.csproj" />
+  <Project Path="Concesionario/App/Concesionario.Consola/Concesionario.Consola.csproj" />
+  <!-- La puerta, en su propio csproj: es el unico ensamblado de produccion que ve el dominio
+       por dentro, y separarla es lo que mantiene a Concesionario.App cercada por el
+       compilador. Ver el AssemblyInfo de Concesionario.Dominio. -->
+  <Project Path="Concesionario/App/Concesionario.Frontera/Concesionario.Frontera.csproj" />
+  <Project Path="Concesionario/App/Concesionario.Mcp/Concesionario.Mcp.csproj" />
+  <Project Path="Concesionario/App/Concesionario.Wasm/Concesionario.Wasm.csproj" />
+  <Project Path="Concesionario/Dominio/Concesionario.Dominio.csproj" />
+  <Project Path="Concesionario/EndPointDeEventos/Concesionario.EventosMock.csproj" />
+  <Project Path="Concesionario/InyectorDeEventosDemo/Concesionario.InyectorDeEventosDemo.csproj" />
+  <Project Path="Concesionario/Pruebas/Concesionario.Dominio.Pruebas/Concesionario.Dominio.Pruebas.csproj" />
 
   <Project Path="Gnothi.Assistant/Gnothi.Assistant.csproj" />
   <Project Path="Gnothi.Assistant.Measure/Gnothi.Assistant.Measure.csproj" />

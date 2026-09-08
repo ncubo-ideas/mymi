@@ -35,3 +35,12 @@ export function observar(dotnet) {
         dotnet.invokeMethodAsync('CambioElAncho', evento.matches);
     });
 }
+
+// VOLVER A DONDE SE ESTABA, no a un destino fijo. history.back() conserva de DONDE vino
+// la persona -recibos, la portada, infaltables-, que es lo que un boton con destino
+// escrito no puede saber. El respaldo cubre la entrada EN FRIO: un enlace compartido o un
+// bookmark abren la pagina sin historia, y ahi "volver" significa ir al inicio de la app.
+export function volver(respaldo) {
+    if (history.length > 1) history.back();
+    else location.href = respaldo;
+}

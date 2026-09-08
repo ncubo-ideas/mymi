@@ -431,6 +431,18 @@ sealed class EventoDeCarga : EventoDeLaEstacion
         + $"({FormaDeCorte}) = {TotalMonto} {TotalMoneda}";
 }
 
+// El carnet de socia. El numero es DE CARA AL CLIENTE: se dicta por telefono y se
+// muestra en la bomba. La llave con la que la app se baja el historial es otra cosa y no
+// viaja por aca.
+sealed class EventoDeMembresia : EventoDeLaEstacion
+{
+    public override string Tipo => "MembresiaEmitida";
+
+    [JsonPropertyName("numeroDeSocio")] public string NumeroDeSocio { get; init; } = "";
+    [JsonPropertyName("nombre")]        public string Nombre { get; init; } = "";
+    [JsonPropertyName("desde")]         public DateTime Desde { get; init; }
+}
+
 sealed class EventoDePuntos : EventoDeLaEstacion
 {
     public override string Tipo => "PuntosAcreditados";
@@ -445,6 +457,27 @@ sealed class EventoDeNivel : EventoDeLaEstacion
     [JsonPropertyName("nivel")] public string Nivel { get; init; } = "";
 }
 
+sealed class EventoDeSorteo : EventoDeLaEstacion
+{
+    public override string Tipo => "SorteoAnunciado";
+
+    [JsonPropertyName("codigo")]         public string Codigo { get; init; } = "";
+    [JsonPropertyName("nombre")]         public string Nombre { get; init; } = "";
+    [JsonPropertyName("premio")]         public string Premio { get; init; } = "";
+    [JsonPropertyName("fechaDelSorteo")] public DateTime FechaDelSorteo { get; init; }
+    [JsonPropertyName("montoPorBoleto")] public decimal MontoPorBoleto { get; init; }
+    [JsonPropertyName("moneda")]         public string Moneda { get; init; } = "CRC";
+}
+
+sealed class EventoDeBoleto : EventoDeLaEstacion
+{
+    public override string Tipo => "BoletoEmitido";
+
+    [JsonPropertyName("numeroDeBoleto")]      public string NumeroDeBoleto { get; init; } = "";
+    [JsonPropertyName("codigoDelSorteo")]     public string CodigoDelSorteo { get; init; } = "";
+    [JsonPropertyName("numeroDeTransaccion")] public string NumeroDeTransaccion { get; init; } = "";
+}
+
 sealed class AlmacenDeEventos
 {
     private readonly ConcurrentDictionary<string, List<EventoDeLaEstacion>> porRecurso = new();
@@ -457,37 +490,174 @@ sealed class AlmacenDeEventos
     // fechas son literales a proposito: una demo con fechas relativas al dia de hoy deja
     // de ser reproducible, y los tramos dependen de los dias transcurridos.
     //
-    // La historia: tres tramos parejos de 12.6 km/L (la linea base), la carga PRESETEADA
-    // de 20.000 L exactos (la inferencia dice "no fue lleno" y acierta), la caida que
-    // empieza en 11.7, la carga en OTRO SURTIDOR (el tramo no comparable), la carga a la
-    // que Sonia no le va a poner kilometraje, y el cierre de hoy que da 9.4.
+    // La historia, realineada al CANON de Sonia: el odometro va de 49.850 a 60.962 con el
+    // quiebre de enero -850 km/mes antes del ascenso, 1.400 despues-, y por eso las cargas
+    // se aprietan de una cada 17 dias a una cada 8. Adentro van los trece tramos de 12.6
+    // km/L (la linea base), la carga PRESETEADA de 20.000 L exactos (la inferencia dice
+    // "no fue lleno" y acierta), la caida que empieza en 11.7, la carga en OTRO SURTIDOR
+    // (el tramo no comparable), la carga a la que Sonia no le va a poner kilometraje, y el
+    // cierre de hoy que da 9.4.
+    //
+    // ESTA TABLA LA GENERA EL CANON, no el gusto: los litros salen de dividir la distancia
+    // entre el rendimiento del tramo, y la fecha de invertir la curva del odometro. Editar
+    // un numero suelto aca descuadra la serie sin que nada se queje. La copia que mide el
+    // dominio esta en Muestras.cs y las dos tienen que moverse juntas.
     //
     // Los totales cuadran EXACTO con precio por volumen: el caso que no cuadra se
     // demuestra inyectando, no de fabrica.
     private static List<EventoDeLaEstacion> Sembrar() => new()
     {
-        Carga(201, new DateTime(2025, 12, 15, 8, 10, 0), 40m, "A-3", 615m, 24600m, "automatico", "T-0201"),
-        Carga(202, new DateTime(2026, 1, 15, 9, 20, 0), 38m, "A-3", 620m, 23560m, "automatico", "T-0202"),
-        Carga(203, new DateTime(2026, 2, 15, 8, 45, 0), 39m, "A-3", 628m, 24492m, "automatico", "T-0203"),
-        Carga(204, new DateTime(2026, 3, 20, 17, 30, 0), 20m, "A-3", 634m, 12680m, "preseteado", "T-0204"),
-        Carga(205, new DateTime(2026, 3, 28, 8, 15, 0), 19m, "A-3", 634m, 12046m, "automatico", "T-0205"),
-        Carga(206, new DateTime(2026, 5, 20, 8, 50, 0), 41m, "A-3", 645m, 26445m, "automatico", "T-0206"),
-        Carga(207, new DateTime(2026, 6, 20, 9, 5, 0), 42m, "B-1", 652m, 27384m, "automatico", "T-0207"),
-        Carga(208, new DateTime(2026, 7, 25, 8, 30, 0), 43m, "A-3", 660m, 28380m, "automatico", "T-0208"),
-        Carga(209, new DateTime(2026, 8, 25, 8, 40, 0), 44m, "A-3", 668m, 29392m, "automatico", "T-0209"),
+        Carga(201, new DateTime(2025, 12, 15, 8, 10, 0), 37m, "A-3", 615m, 22755m, "automatico", "T-0201"),
+        Carga(202, new DateTime(2026, 1, 1, 9, 20, 0), 36m, "A-3", 620m, 22320m, "automatico", "T-0202"),
+        Carga(203, new DateTime(2026, 1, 17, 8, 45, 0), 38m, "A-3", 620m, 23560m, "automatico", "T-0203"),
+        Carga(204, new DateTime(2026, 1, 27, 7, 55, 0), 37m, "A-3", 620m, 22940m, "automatico", "T-0204"),
+        Carga(205, new DateTime(2026, 2, 6, 8, 15, 0), 36m, "A-3", 628m, 22608m, "automatico", "T-0205"),
+        Carga(206, new DateTime(2026, 2, 16, 9, 5, 0), 36m, "A-3", 628m, 22608m, "automatico", "T-0206"),
+        Carga(207, new DateTime(2026, 2, 21, 17, 30, 0), 20m, "A-3", 628m, 12560m, "preseteado", "T-0207"),
+        Carga(208, new DateTime(2026, 3, 2, 8, 40, 0), 34m, "A-3", 634m, 21556m, "automatico", "T-0208"),
+        Carga(209, new DateTime(2026, 3, 12, 7, 40, 0), 37m, "A-3", 634m, 23458m, "automatico", "T-0209"),
+        Carga(210, new DateTime(2026, 3, 22, 9, 30, 0), 36m, "A-3", 634m, 22824m, "automatico", "T-0210"),
+        Carga(211, new DateTime(2026, 4, 1, 8, 10, 0), 38m, "A-3", 640m, 24320m, "automatico", "T-0211"),
+        Carga(212, new DateTime(2026, 4, 11, 9, 20, 0), 36m, "A-3", 640m, 23040m, "automatico", "T-0212"),
+        Carga(213, new DateTime(2026, 4, 21, 8, 45, 0), 37m, "A-3", 640m, 23680m, "automatico", "T-0213"),
+        Carga(214, new DateTime(2026, 5, 2, 7, 55, 0), 38m, "A-3", 645m, 24510m, "automatico", "T-0214"),
+        Carga(215, new DateTime(2026, 5, 12, 8, 15, 0), 36m, "A-3", 645m, 23220m, "automatico", "T-0215"),
+        Carga(216, new DateTime(2026, 5, 21, 9, 5, 0), 38m, "A-3", 645m, 24510m, "automatico", "T-0216"),
+        Carga(217, new DateTime(2026, 5, 30, 8, 30, 0), 36m, "A-3", 645m, 23220m, "automatico", "T-0217"),
+        Carga(218, new DateTime(2026, 6, 2, 8, 40, 0), 10m, "B-1", 652m, 6520m, "automatico", "T-0218"),
+        Carga(219, new DateTime(2026, 6, 12, 7, 40, 0), 39m, "A-3", 652m, 25428m, "automatico", "T-0219"),
+        Carga(220, new DateTime(2026, 6, 21, 9, 30, 0), 37m, "A-3", 652m, 24124m, "automatico", "T-0220"),
+        Carga(221, new DateTime(2026, 6, 30, 8, 10, 0), 38m, "A-3", 652m, 24776m, "automatico", "T-0221"),
+        Carga(222, new DateTime(2026, 7, 9, 9, 20, 0), 37m, "A-3", 660m, 24420m, "automatico", "T-0222"),
+        Carga(223, new DateTime(2026, 7, 17, 8, 45, 0), 39m, "A-3", 660m, 25740m, "automatico", "T-0223"),
+        Carga(224, new DateTime(2026, 7, 25, 7, 55, 0), 38m, "A-3", 660m, 25080m, "automatico", "T-0224"),
+        Carga(225, new DateTime(2026, 8, 1, 8, 15, 0), 36m, "A-3", 668m, 24048m, "automatico", "T-0225"),
+        Carga(226, new DateTime(2026, 8, 9, 9, 5, 0), 39m, "A-3", 668m, 26052m, "automatico", "T-0226"),
+        Carga(227, new DateTime(2026, 8, 17, 8, 30, 0), 39m, "A-3", 668m, 26052m, "automatico", "T-0227"),
+        Carga(228, new DateTime(2026, 8, 25, 8, 40, 0), 40m, "A-3", 668m, 26720m, "automatico", "T-0228"),
 
-        // La lealtad, discreta: un punto por litro entero (tasa del demo), y el nivel
-        // que la estacion decidio subir a mitad de la serie.
-        Puntos(210, new DateTime(2025, 12, 15, 8, 10, 5), 40),
-        Puntos(211, new DateTime(2026, 1, 15, 9, 20, 5), 38),
-        Puntos(212, new DateTime(2026, 2, 15, 8, 45, 5), 39),
-        Puntos(213, new DateTime(2026, 3, 20, 17, 30, 5), 20),
-        Puntos(214, new DateTime(2026, 3, 28, 8, 15, 5), 19),
-        Puntos(215, new DateTime(2026, 5, 20, 8, 50, 5), 41),
-        Puntos(216, new DateTime(2026, 6, 20, 9, 5, 5), 42),
-        new EventoDeNivel { Id = 217, Fecha = new DateTime(2026, 6, 20, 9, 5, 10), Nivel = "plata" },
-        Puntos(218, new DateTime(2026, 7, 25, 8, 30, 5), 43),
-        Puntos(219, new DateTime(2026, 8, 25, 8, 40, 5), 44),
+        // La lealtad, discreta: un punto por litro entero (tasa del demo). Con 998 puntos
+        // la serie cruza LOS DOS umbrales del programa -200 y 800-, asi que la estacion
+        // promueve dos veces: plata en febrero y oro en julio.
+        Puntos(229, new DateTime(2025, 12, 15, 8, 10, 5), 37),
+        Puntos(230, new DateTime(2026, 1, 1, 9, 20, 5), 36),
+        Puntos(231, new DateTime(2026, 1, 17, 8, 45, 5), 38),
+        Puntos(232, new DateTime(2026, 1, 27, 7, 55, 5), 37),
+        Puntos(233, new DateTime(2026, 2, 6, 8, 15, 5), 36),
+        Puntos(234, new DateTime(2026, 2, 16, 9, 5, 5), 36),
+        new EventoDeNivel { Id = 235, Fecha = new DateTime(2026, 2, 16, 9, 5, 7), Nivel = "plata" },
+        Puntos(236, new DateTime(2026, 2, 21, 17, 30, 5), 20),
+        Puntos(237, new DateTime(2026, 3, 2, 8, 40, 5), 34),
+        Puntos(238, new DateTime(2026, 3, 12, 7, 40, 5), 37),
+        Puntos(239, new DateTime(2026, 3, 22, 9, 30, 5), 36),
+        Puntos(240, new DateTime(2026, 4, 1, 8, 10, 5), 38),
+        Puntos(241, new DateTime(2026, 4, 11, 9, 20, 5), 36),
+        Puntos(242, new DateTime(2026, 4, 21, 8, 45, 5), 37),
+        Puntos(243, new DateTime(2026, 5, 2, 7, 55, 5), 38),
+        Puntos(244, new DateTime(2026, 5, 12, 8, 15, 5), 36),
+        Puntos(245, new DateTime(2026, 5, 21, 9, 5, 5), 38),
+        Puntos(246, new DateTime(2026, 5, 30, 8, 30, 5), 36),
+        Puntos(247, new DateTime(2026, 6, 2, 8, 40, 5), 10),
+        Puntos(248, new DateTime(2026, 6, 12, 7, 40, 5), 39),
+        Puntos(249, new DateTime(2026, 6, 21, 9, 30, 5), 37),
+        Puntos(250, new DateTime(2026, 6, 30, 8, 10, 5), 38),
+        Puntos(251, new DateTime(2026, 7, 9, 9, 20, 5), 37),
+        Puntos(252, new DateTime(2026, 7, 17, 8, 45, 5), 39),
+        new EventoDeNivel { Id = 253, Fecha = new DateTime(2026, 7, 17, 8, 45, 7), Nivel = "oro" },
+        Puntos(254, new DateTime(2026, 7, 25, 7, 55, 5), 38),
+        Puntos(255, new DateTime(2026, 8, 1, 8, 15, 5), 36),
+        Puntos(256, new DateTime(2026, 8, 9, 9, 5, 5), 39),
+        Puntos(257, new DateTime(2026, 8, 17, 8, 30, 5), 39),
+        Puntos(258, new DateTime(2026, 8, 25, 8, 40, 5), 40),
+
+        // LA TOMBOLA. Un boleto por cada 10 000 colones de una carga, y el resto NO se
+        // acumula para la siguiente. Los boletos los EMITE la estacion: el sorteo se rifa
+        // sobre numeros, asi que uno fabricado por la app no serviria para reclamar nada.
+        //
+        // SOLO SE AGREGA AL FINAL, del 259 en adelante, y 201-258 no se renumeran nunca:
+        // una bitacora existente pide after=258 y unos boletos intercalados no le llegarian
+        // jamas — sin error, porque el Check los rechazaria en silencio.
+        //
+        // DOS SORTEOS para que el vencimiento se pueda enseñar: al "hoy" del arnes
+        // (2026-08-25) el de junio ya se rifo y el de diciembre sigue abierto.
+        Sorteo(259, new DateTime(2025, 12, 1), "SORTEO-2026-06", "Tómbola de medio año",
+            "un Hyundai Grand i10", new DateTime(2026, 6, 15), 10000m),
+
+        // Treinta y cinco boletos, dos por carga salvo la del surtidor B-1: esos 6.520
+        // colones no llegan al corte y NO dan ninguno. Es el unico caso del guion donde
+        // una carga se queda sin boleto, y ensena que el resto no se acumula.
+        Boleto(260, new DateTime(2025, 12, 15, 8, 10, 10), "B-000101", "SORTEO-2026-06", "T-0201"),
+        Boleto(261, new DateTime(2025, 12, 15, 8, 10, 11), "B-000102", "SORTEO-2026-06", "T-0201"),
+        Boleto(262, new DateTime(2026, 1, 1, 9, 20, 10), "B-000103", "SORTEO-2026-06", "T-0202"),
+        Boleto(263, new DateTime(2026, 1, 1, 9, 20, 11), "B-000104", "SORTEO-2026-06", "T-0202"),
+        Boleto(264, new DateTime(2026, 1, 17, 8, 45, 10), "B-000105", "SORTEO-2026-06", "T-0203"),
+        Boleto(265, new DateTime(2026, 1, 17, 8, 45, 11), "B-000106", "SORTEO-2026-06", "T-0203"),
+        Boleto(266, new DateTime(2026, 1, 27, 7, 55, 10), "B-000107", "SORTEO-2026-06", "T-0204"),
+        Boleto(267, new DateTime(2026, 1, 27, 7, 55, 11), "B-000108", "SORTEO-2026-06", "T-0204"),
+        Boleto(268, new DateTime(2026, 2, 6, 8, 15, 10), "B-000109", "SORTEO-2026-06", "T-0205"),
+        Boleto(269, new DateTime(2026, 2, 6, 8, 15, 11), "B-000110", "SORTEO-2026-06", "T-0205"),
+        Boleto(270, new DateTime(2026, 2, 16, 9, 5, 10), "B-000111", "SORTEO-2026-06", "T-0206"),
+        Boleto(271, new DateTime(2026, 2, 16, 9, 5, 11), "B-000112", "SORTEO-2026-06", "T-0206"),
+        Boleto(272, new DateTime(2026, 2, 21, 17, 30, 10), "B-000113", "SORTEO-2026-06", "T-0207"),
+        Boleto(273, new DateTime(2026, 3, 2, 8, 40, 10), "B-000114", "SORTEO-2026-06", "T-0208"),
+        Boleto(274, new DateTime(2026, 3, 2, 8, 40, 11), "B-000115", "SORTEO-2026-06", "T-0208"),
+        Boleto(275, new DateTime(2026, 3, 12, 7, 40, 10), "B-000116", "SORTEO-2026-06", "T-0209"),
+        Boleto(276, new DateTime(2026, 3, 12, 7, 40, 11), "B-000117", "SORTEO-2026-06", "T-0209"),
+        Boleto(277, new DateTime(2026, 3, 22, 9, 30, 10), "B-000118", "SORTEO-2026-06", "T-0210"),
+        Boleto(278, new DateTime(2026, 3, 22, 9, 30, 11), "B-000119", "SORTEO-2026-06", "T-0210"),
+        Boleto(279, new DateTime(2026, 4, 1, 8, 10, 10), "B-000120", "SORTEO-2026-06", "T-0211"),
+        Boleto(280, new DateTime(2026, 4, 1, 8, 10, 11), "B-000121", "SORTEO-2026-06", "T-0211"),
+        Boleto(281, new DateTime(2026, 4, 11, 9, 20, 10), "B-000122", "SORTEO-2026-06", "T-0212"),
+        Boleto(282, new DateTime(2026, 4, 11, 9, 20, 11), "B-000123", "SORTEO-2026-06", "T-0212"),
+        Boleto(283, new DateTime(2026, 4, 21, 8, 45, 10), "B-000124", "SORTEO-2026-06", "T-0213"),
+        Boleto(284, new DateTime(2026, 4, 21, 8, 45, 11), "B-000125", "SORTEO-2026-06", "T-0213"),
+        Boleto(285, new DateTime(2026, 5, 2, 7, 55, 10), "B-000126", "SORTEO-2026-06", "T-0214"),
+        Boleto(286, new DateTime(2026, 5, 2, 7, 55, 11), "B-000127", "SORTEO-2026-06", "T-0214"),
+        Boleto(287, new DateTime(2026, 5, 12, 8, 15, 10), "B-000128", "SORTEO-2026-06", "T-0215"),
+        Boleto(288, new DateTime(2026, 5, 12, 8, 15, 11), "B-000129", "SORTEO-2026-06", "T-0215"),
+        Boleto(289, new DateTime(2026, 5, 21, 9, 5, 10), "B-000130", "SORTEO-2026-06", "T-0216"),
+        Boleto(290, new DateTime(2026, 5, 21, 9, 5, 11), "B-000131", "SORTEO-2026-06", "T-0216"),
+        Boleto(291, new DateTime(2026, 5, 30, 8, 30, 10), "B-000132", "SORTEO-2026-06", "T-0217"),
+        Boleto(292, new DateTime(2026, 5, 30, 8, 30, 11), "B-000133", "SORTEO-2026-06", "T-0217"),
+        Boleto(293, new DateTime(2026, 6, 12, 7, 40, 10), "B-000134", "SORTEO-2026-06", "T-0219"),
+        Boleto(294, new DateTime(2026, 6, 12, 7, 40, 11), "B-000135", "SORTEO-2026-06", "T-0219"),
+
+        // LOS DIECIOCHO DE DICIEMBRE LLEGAN ANTES QUE SU ANUNCIO, y es a proposito: el
+        // desorden de llegada es real -los eventos vienen en el orden en que la estacion
+        // los publico- y asi el guion de fabrica lo ejercita en CADA corrida, en vez de
+        // quedar escondido en un test que nadie mira.
+        Boleto(295, new DateTime(2026, 6, 21, 9, 30, 10), "B-000201", "SORTEO-2026-12", "T-0220"),
+        Boleto(296, new DateTime(2026, 6, 21, 9, 30, 11), "B-000202", "SORTEO-2026-12", "T-0220"),
+        Boleto(297, new DateTime(2026, 6, 30, 8, 10, 10), "B-000203", "SORTEO-2026-12", "T-0221"),
+        Boleto(298, new DateTime(2026, 6, 30, 8, 10, 11), "B-000204", "SORTEO-2026-12", "T-0221"),
+        Boleto(299, new DateTime(2026, 7, 9, 9, 20, 10), "B-000205", "SORTEO-2026-12", "T-0222"),
+        Boleto(300, new DateTime(2026, 7, 9, 9, 20, 11), "B-000206", "SORTEO-2026-12", "T-0222"),
+        Boleto(301, new DateTime(2026, 7, 17, 8, 45, 10), "B-000207", "SORTEO-2026-12", "T-0223"),
+        Boleto(302, new DateTime(2026, 7, 17, 8, 45, 11), "B-000208", "SORTEO-2026-12", "T-0223"),
+        Boleto(303, new DateTime(2026, 7, 25, 7, 55, 10), "B-000209", "SORTEO-2026-12", "T-0224"),
+        Boleto(304, new DateTime(2026, 7, 25, 7, 55, 11), "B-000210", "SORTEO-2026-12", "T-0224"),
+        Boleto(305, new DateTime(2026, 8, 1, 8, 15, 10), "B-000211", "SORTEO-2026-12", "T-0225"),
+        Boleto(306, new DateTime(2026, 8, 1, 8, 15, 11), "B-000212", "SORTEO-2026-12", "T-0225"),
+        Boleto(307, new DateTime(2026, 8, 9, 9, 5, 10), "B-000213", "SORTEO-2026-12", "T-0226"),
+        Boleto(308, new DateTime(2026, 8, 9, 9, 5, 11), "B-000214", "SORTEO-2026-12", "T-0226"),
+        Boleto(309, new DateTime(2026, 8, 17, 8, 30, 10), "B-000215", "SORTEO-2026-12", "T-0227"),
+        Boleto(310, new DateTime(2026, 8, 17, 8, 30, 11), "B-000216", "SORTEO-2026-12", "T-0227"),
+        Boleto(311, new DateTime(2026, 8, 25, 8, 40, 10), "B-000217", "SORTEO-2026-12", "T-0228"),
+        Boleto(312, new DateTime(2026, 8, 25, 8, 40, 11), "B-000218", "SORTEO-2026-12", "T-0228"),
+
+        Sorteo(313, new DateTime(2026, 8, 26), "SORTEO-2026-12", "Tómbola de fin de año",
+            "un Toyota Yaris", new DateTime(2026, 12, 15), 10000m),
+
+        // El carnet, que en la vida real llega el dia que uno se afilia y aca llega
+        // ultimo por la misma razon que los boletos: solo se agrega al final.
+        new EventoDeMembresia
+        {
+            Id = 314,
+            Fecha = new DateTime(2026, 8, 26, 9, 0, 0),
+            NumeroDeSocio = "SOCIO-000142",
+            Nombre = "Sonia Vargas",
+            Desde = new DateTime(2025, 11, 3),
+        },
     };
 
     private static EventoDeCarga Carga(long id, DateTime fecha, decimal litros, string surtidor,
@@ -496,7 +666,7 @@ sealed class AlmacenDeEventos
         {
             Id = id,
             Fecha = fecha,
-            Placa = "ABC-123",
+            Placa = "BQR-482",
             TipoDeCombustible = "regular",
             SurtidorIdentificacion = surtidor,
             SurtidorEstacion = "La Sabana",
@@ -512,6 +682,22 @@ sealed class AlmacenDeEventos
 
     private static EventoDePuntos Puntos(long id, DateTime fecha, int puntos) =>
         new EventoDePuntos { Id = id, Fecha = fecha, Puntos = puntos };
+
+    private static EventoDeSorteo Sorteo(long id, DateTime fecha, string codigo, string nombre,
+        string premio, DateTime fechaDelSorteo, decimal montoPorBoleto) =>
+        new EventoDeSorteo
+        {
+            Id = id, Fecha = fecha, Codigo = codigo, Nombre = nombre, Premio = premio,
+            FechaDelSorteo = fechaDelSorteo, MontoPorBoleto = montoPorBoleto, Moneda = "CRC",
+        };
+
+    private static EventoDeBoleto Boleto(long id, DateTime fecha, string numero,
+        string sorteo, string transaccion) =>
+        new EventoDeBoleto
+        {
+            Id = id, Fecha = fecha, NumeroDeBoleto = numero,
+            CodigoDelSorteo = sorteo, NumeroDeTransaccion = transaccion,
+        };
 
     // La lista viaja como object para que el serializador emita el tipo CONCRETO de cada
     // evento: declarada como base, un EventoDeCarga saldria sin sus campos.

@@ -11,9 +11,9 @@ namespace Examenes.Dominio
 	// Lo que vive aca y en ninguna otra: la VELOCIDAD -que para la hemoglobina no
 	// significa nada-, la LINEA BASE de esta persona, y la CONFIRMACION de un pico. Las
 	// tres necesitan la serie entera: por eso son de la serie y no de una medicion.
-	public sealed class SerieDeAntigenoProstatico : SerieContinua
+	internal sealed class SerieDeAntigenoProstatico : SerieContinua
 	{
-		public SerieDeAntigenoProstatico() : base(Analito.AntigenoProstatico) { }
+		internal SerieDeAntigenoProstatico() : base(Analito.AntigenoProstatico) { }
 
 		// La ultima medicion, que es la que se esta juzgando. Tipada, para poder pedirle
 		// lo suyo sin castear en cada linea.
@@ -32,7 +32,7 @@ namespace Examenes.Dominio
 		//   tramo reciente 3.0 (2025) -> 5.2 (2026)   2.2 ng/mL en  365 dias = 2.20/ano
 		//
 		// Con el umbral en 0.75 la serie entera diria que NO exige atencion.
-		public Velocidad VelocidadDelTramo()
+		internal Velocidad VelocidadDelTramo()
 		{
 			string unidad = Ultima.Valor.Unidad.Simbolo;
 			int dias = DiasDelUltimoTramo;
@@ -62,7 +62,7 @@ namespace Examenes.Dominio
 		// promedio, y el pico es justamente lo que se quiere medir CONTRA el fondo. Se
 		// excluye la ultima porque es la que se esta juzgando. Null si todavia no hay
 		// fondo del que hablar.
-		public Medicion NivelHabitual()
+		internal Medicion NivelHabitual()
 		{
 			if (Cantidad < 3) return null;
 
@@ -83,7 +83,7 @@ namespace Examenes.Dominio
 		// Si el ultimo valor se salio de LO SUYO, que no es lo mismo que salirse del rango
 		// de la poblacion. Un 3.0 en alguien que vive en 2.0 se salio; en alguien que vive
 		// en 3.0 no, y los dos estan por debajo del techo de su edad.
-		public bool SeSalioDeLoSuyo()
+		internal bool SeSalioDeLoSuyo()
 		{
 			Medicion habitual = NivelHabitual();
 			if (habitual == null) return false;
@@ -105,7 +105,7 @@ namespace Examenes.Dominio
 		//
 		// Un valor que APARECE de la nada en dias es sospechoso. Uno que VUELVE en dias es
 		// la repeticion, y es buena noticia.
-		public bool PicoNoConfirmado()
+		internal bool PicoNoConfirmado()
 		{
 			if (Cantidad < 3) return false;
 
@@ -136,7 +136,7 @@ namespace Examenes.Dominio
 
 		// Si el antigeno se mantuvo plano durante los ultimos anos. Es la otra pregunta
 		// propia: la linea base es lo que le da sentido al ultimo valor.
-		public bool EsEstableDurante(int anos)
+		internal bool EsEstableDurante(int anos)
 		{
 			if (anos <= 0)
 				throw new ArgumentOutOfRangeException(nameof(anos), anos,
@@ -159,7 +159,7 @@ namespace Examenes.Dominio
 		//
 		// Se toma el ULTIMO valor de cada ano y no el promedio: es el estado en que quedo
 		// la persona al cerrar ese ano, no una mezcla.
-		public IReadOnlyList<MedicionDelAno> PorAno()
+		internal IReadOnlyList<MedicionDelAno> PorAno()
 		{
 			var anos = new List<int>();
 			var ultimaDelAno = new Dictionary<int, ExamenDeSangre>();
@@ -203,7 +203,7 @@ namespace Examenes.Dominio
 		// poblacion: alguien que vive entre 1.8 y 2.1 no necesita bandas que lleguen al
 		// techo de su edad. Se devuelven TODAS, incluidas las vacias, para que la pantalla
 		// pueda dibujar los huecos sin recalcular nada.
-		public IReadOnlyList<BandaDelHistograma> Histograma(int cuantasBandas)
+		internal IReadOnlyList<BandaDelHistograma> Histograma(int cuantasBandas)
 		{
 			if (cuantasBandas <= 0)
 				throw new ArgumentOutOfRangeException(nameof(cuantasBandas), cuantasBandas,
@@ -270,11 +270,11 @@ namespace Examenes.Dominio
 
 		// ---------------------------------------------------------------- como se dibuja
 
-		public override FormaDeLectura Forma => FormaDeLectura.TrayectoriaConLineaBase;
+		internal override FormaDeLectura Forma => FormaDeLectura.TrayectoriaConLineaBase;
 
 		// La linea base y el techo de la edad. La base solo aparece cuando hay fondo: sin
 		// ella no se dibuja una banda inventada.
-		public override IReadOnlyList<ReferenciaDeLectura> Referencias(Paciente paciente)
+		internal override IReadOnlyList<ReferenciaDeLectura> Referencias(Paciente paciente)
 		{
 			var lineas = new List<ReferenciaDeLectura>();
 			if (Ultimo == null) return lineas;

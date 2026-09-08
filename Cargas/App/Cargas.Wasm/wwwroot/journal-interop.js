@@ -194,6 +194,43 @@ export async function modoRecordado() {
     }
 }
 
+// ------------------------------------------------------------- preferencias de pantalla
+
+// LAS PREFERENCIAS QUE NO SON HECHOS. Que pestaña quedo abierta y que carro se estaba
+// mirando son de ESTE browser, no de la persona: no son hechos de la estacion ni aportes
+// sobre el carro, asi que no tienen nada que hacer en el journal. Si estuvieran ahi, el
+// servidor MCP las leeria y no significarian nada para el.
+//
+// Distinto es la UNIDAD en que ella mira su rendimiento: esa SI va al journal, porque
+// cambia lo que la IA *dice* y no solo lo que se *ve*. La linea esta ahi.
+//
+// Va en el mismo store que el handle de la carpeta, con clave propia. El precedente es
+// CLAVE_DE_MODO, que ya guarda un string de preferencia ahi mismo desde el primer dia.
+const PREFIJO_DE_PREFERENCIA = 'preferencia:';
+
+// Devuelve '' cuando no hay nada guardado, y TAMBIEN cuando IndexedDB falla. Una
+// preferencia que no se pudo leer no puede tumbar el arranque: la pantalla cae a su
+// default y la persona ni se entera.
+export async function preferencia(nombre) {
+    try {
+        return (await enTransaccion('readonly',
+            almacen => almacen.get(PREFIJO_DE_PREFERENCIA + nombre))) || '';
+    } catch (e) {
+        return '';
+    }
+}
+
+// Guardar tampoco puede tumbar nada: si no se pudo, la proxima vez se abre en el default.
+export async function recordarPreferencia(nombre, valor) {
+    try {
+        await enTransaccion('readwrite',
+            almacen => almacen.put(valor, PREFIJO_DE_PREFERENCIA + nombre));
+        return true;
+    } catch (e) {
+        return false;
+    }
+}
+
 // El permiso vigente, sin pedir nada. Devuelve 'granted', 'prompt', 'denied' o
 // 'sin-carpeta'. El browser puede degradar un 'granted' a 'prompt' al reabrir la app,
 // y ahi las escrituras empiezan a fallar aunque todo lo demas parezca normal.
@@ -329,13 +366,14 @@ export async function exportarJournal() {
         const url = URL.createObjectURL(new Blob([sobre], { type: 'application/json' }));
         const ancla = document.createElement('a');
         ancla.href = url;
-        ancla.download = `mis-cargas-${new Date().toISOString().slice(0, 10)}.json`;
+        const nombre = `mis-cargas-${new Date().toISOString().slice(0, 10)}.json`;
+        ancla.download = nombre;
         document.body.appendChild(ancla);
         ancla.click();
         ancla.remove();
         URL.revokeObjectURL(url);
 
-        return { ok: true, motivo: '', archivos: archivos.length };
+        return { ok: true, motivo: '', archivos: archivos.length, nombre };
     } catch (e) {
         return { ok: false, motivo: `${e.name}: ${e.message}` };
     }

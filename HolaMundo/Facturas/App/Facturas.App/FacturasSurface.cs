@@ -1,7 +1,6 @@
 using System;
 using System.IO;
 using Choreography.Theater;
-using Facturas.Dominio;
 using Gnothi.Contract;
 using Puppeteer;
 
@@ -81,7 +80,7 @@ namespace Facturas.App
 
 		private sealed class ReadOnly : PerformanceV2
 		{
-			internal ReadOnly(string actorName) : base(actorName, typeof(Facturario).Assembly) { }
+			internal ReadOnly(string actorName) : base(actorName, ElDominio.Assembly) { }
 
 			protected override void OnHydrated()
 			{

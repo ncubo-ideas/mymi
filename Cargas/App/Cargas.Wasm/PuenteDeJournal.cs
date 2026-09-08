@@ -150,6 +150,21 @@ public sealed class PuenteDeJournal : IDestinoDelJournal, IAsyncDisposable
 	public async ValueTask<string> ModoRecordado() =>
 		await (await Modulo()).InvokeAsync<string>("modoRecordado");
 
+	// LAS PREFERENCIAS DE PANTALLA. Que pestaña quedo abierta y que carro se estaba
+	// mirando: son de este browser y no del expediente, asi que viven en IndexedDB al
+	// lado del handle de la carpeta y NO en el journal.
+	//
+	// La unidad de rendimiento NO usa esto: esa va al journal, porque cambia lo que la IA
+	// dice y no solo lo que se ve.
+	//
+	// Devuelve "" si no hay nada guardado o si IndexedDB fallo. Una preferencia ilegible
+	// no puede tumbar el arranque: la pantalla cae a su default.
+	public async ValueTask<string> Preferencia(string nombre) =>
+		await (await Modulo()).InvokeAsync<string>("preferencia", nombre);
+
+	public async ValueTask RecordarPreferencia(string nombre, string valor) =>
+		await (await Modulo()).InvokeAsync<bool>("recordarPreferencia", nombre, valor);
+
 	// El tercer modo: un archivo que la persona se lleva. No depende de ninguna API de
 	// almacenamiento, asi que funciona en cualquier navegador.
 	public async ValueTask<ResultadoDeExportacion> Exportar() =>
@@ -269,6 +284,22 @@ public sealed class PuenteDeJournal : IDestinoDelJournal, IAsyncDisposable
 	// Guarda un archivo BINARIO directo en la carpeta de la persona, fuera de MEMFS:
 	// la foto del tablero no es parte del journal -el journal guarda su NOMBRE-, es el
 	// respaldo del dato. Devuelve "" si se guardo, o el motivo del rechazo.
+	/// <summary>Lee un archivo de la carpeta y lo devuelve en base64, o "" si no se pudo.
+	///
+	/// Es la vuelta de GuardarArchivo, y existe para la foto del tablero: sacar la foto en
+	/// la bomba y anotar el kilometraje despues, en el sillon, solo sirve si la foto se
+	/// puede volver a mirar. Devuelve "" en vez de reventar porque una foto ilegible -la
+	/// borraron de la carpeta, cambio el permiso- no puede tumbar la pantalla entera.</summary>
+	public async ValueTask<string> LeerArchivo(string ruta)
+	{
+		ArgumentNullException.ThrowIfNullOrWhiteSpace(ruta);
+
+		ResultadoDeLectura leido = await (await Modulo())
+			.InvokeAsync<ResultadoDeLectura>("leer", ruta);
+
+		return leido.Ok ? leido.Contenido : "";
+	}
+
 	public async ValueTask<string> GuardarArchivo(string ruta, byte[] contenido)
 	{
 		ArgumentNullException.ThrowIfNullOrWhiteSpace(ruta);
@@ -382,6 +413,10 @@ public sealed class ResultadoDeExportacion
 	public bool Ok { get; set; }
 	public string Motivo { get; set; } = "";
 	public int Archivos { get; set; }
+
+	// El nombre lo decide el JS (lleva la fecha en UTC, la de toISOString); se devuelve para
+	// que la pantalla pueda nombrarlo en vez de recomponerlo y errarle a medianoche.
+	public string Nombre { get; set; } = "";
 }
 
 public sealed class ResultadoDeImportacion

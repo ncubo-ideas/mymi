@@ -9,19 +9,19 @@ namespace Examenes.Dominio
 	// puede decir por si solo mirando UN valor: normal, alto o bajo. La lectura que
 	// necesita la serie completa - si viene subiendo, si el salto es inverosimil - no
 	// vive aca sino en Tendencia, porque no se puede contestar con un solo punto.
-	public sealed class ClasificacionDeValor
+	internal sealed class ClasificacionDeValor
 	{
-		public static readonly ClasificacionDeValor Normal = new ClasificacionDeValor("normal");
-		public static readonly ClasificacionDeValor Alto = new ClasificacionDeValor("alto");
-		public static readonly ClasificacionDeValor Bajo = new ClasificacionDeValor("bajo");
+		internal static readonly ClasificacionDeValor Normal = new ClasificacionDeValor("normal");
+		internal static readonly ClasificacionDeValor Alto = new ClasificacionDeValor("alto");
+		internal static readonly ClasificacionDeValor Bajo = new ClasificacionDeValor("bajo");
 
-		public string Nombre { get; private set; }
+		internal string Nombre { get; private set; }
 
 		private ClasificacionDeValor(string nombre)
 		{
 			Nombre = nombre;
 		}
 
-		public bool EsNormal => ReferenceEquals(this, Normal);
+		internal bool EsNormal => ReferenceEquals(this, Normal);
 	}
 }

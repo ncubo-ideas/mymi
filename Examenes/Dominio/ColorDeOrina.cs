@@ -8,42 +8,47 @@ namespace Examenes.Dominio
 	// Existe porque el color es una caracteristica de la ORINA. Un examen de sangre no
 	// tiene color, y por eso esto no vive en Examen sino en ExamenDeOrina: es el caso
 	// que obliga a que la herencia sea real y no una jerarquia decorativa.
-	// Es la FORMA 6 de la taxonomia de Magnitud: nominal. No se ordena y no tiene serie,
-	// y eso no es una carencia sino lo que un color ES.
-	public sealed class ColorDeOrina : MagnitudNominal
+	// Es la FORMA 6 de la taxonomia de Magnitud: nominal. No se ordena —preguntarle si viene
+	// subiendo no es una pregunta— y sin embargo SI forma serie: ver SerieDeColorDeOrina,
+	// que es donde vive lo que tres colores en fila dicen y uno solo no.
+	internal sealed class ColorDeOrina : MagnitudNominal
 	{
-		public static readonly ColorDeOrina Transparente = new ColorDeOrina("transparente", "transparente", true);
-		public static readonly ColorDeOrina AmarilloPalido = new ColorDeOrina("amarillo palido", "amarillo pálido", true);
-		public static readonly ColorDeOrina Ambar = new ColorDeOrina("ambar", "ámbar", true);
-		public static readonly ColorDeOrina Oscuro = new ColorDeOrina("oscuro", "oscuro", false);
-		public static readonly ColorDeOrina Rojizo = new ColorDeOrina("rojizo", "rojizo", false);
+		internal static readonly ColorDeOrina Transparente = new ColorDeOrina("transparente", "transparente", true);
+		internal static readonly ColorDeOrina AmarilloPalido = new ColorDeOrina("amarillo palido", "amarillo pálido", true);
+		internal static readonly ColorDeOrina Ambar = new ColorDeOrina("ambar", "ámbar", true);
+		internal static readonly ColorDeOrina Oscuro = new ColorDeOrina("oscuro", "oscuro", false);
+		internal static readonly ColorDeOrina Rojizo = new ColorDeOrina("rojizo", "rojizo", false);
 
-		public override string Nombre { get; }
+		internal override string Nombre { get; }
 
 		// El nombre CON ACENTO, que es el que ve la persona. El canonico -sin acento- es
 		// la llave con la que llega del laboratorio y con la que se compara.
-		public string ParaMostrar { get; private set; }
+		internal string ParaMostrar { get; private set; }
 
-		public override string Expresado => ParaMostrar;
+		internal override string Expresado => ParaMostrar;
 
 		// El color es lo que un examen de orina informa, y algunos colores son un
 		// hallazgo. Que el propio color sepa si es esperable evita un switch afuera.
-		public override bool EsEsperable { get; }
+		internal override bool EsEsperable { get; }
 
 		// Un color inesperado se mira, no se corre: el color solo no distingue una causa
 		// banal de una que no lo es. Que lo conteste el color y no el examen es lo que
 		// permite que su lectura viaje sola, sin la de los binarios que van al lado.
 		//
 		// ⚠️ Orientativo, igual que todos los umbrales de este dominio.
-		public override Severidad SeveridadDelHallazgo =>
+		internal override Severidad SeveridadDelHallazgo =>
 			EsEsperable ? Severidad.Informativo : Severidad.Vigilar;
 
-		public override Accion AccionDelHallazgo =>
+		internal override Accion AccionDelHallazgo =>
 			EsEsperable ? null : Accion.ConversarloConTuMedico(Plazo.EnLaProximaCita);
 
-		public override string ParaSonia => EsEsperable
+		internal override string ParaSonia => EsEsperable
 			? $"el color de la orina salió {ParaMostrar}, que es de lo esperable"
 			: $"el color de la orina salió {ParaMostrar}";
+
+		// La serie que lo lee. Es la fabrica de MagnitudNominal: el Expediente arma la
+		// serie correcta sin un switch, preguntandole al resultado cual es la suya.
+		internal override SerieNominal NuevaSerie() => new SerieDeColorDeOrina();
 
 		private ColorDeOrina(string nombre, string paraMostrar, bool esEsperable)
 		{
@@ -53,7 +58,7 @@ namespace Examenes.Dominio
 		}
 
 		// La frontera: el color llega como texto en el evento y se resuelve una vez.
-		public static ColorDeOrina PorNombre(string nombre)
+		internal static ColorDeOrina PorNombre(string nombre)
 		{
 			ArgumentNullException.ThrowIfNullOrWhiteSpace(nombre);
 

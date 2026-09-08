@@ -20,16 +20,16 @@ namespace Examenes.Dominio
 	/// en el urianalisis: es OTRA MUESTRA. Que el dominio tenga dos examenes distintos con
 	/// un binario cada uno es lo que hace que la comparacion sea real y no dos campos de la
 	/// misma fila.
-	public sealed class SangreEnHeces : MagnitudBinaria
+	internal sealed class SangreEnHeces : MagnitudBinaria
 	{
-		public static readonly SangreEnHeces Positivo =
+		internal static readonly SangreEnHeces Positivo =
 			new SangreEnHeces("positivo", realizada: true, positivo: true);
-		public static readonly SangreEnHeces Negativo =
+		internal static readonly SangreEnHeces Negativo =
 			new SangreEnHeces("negativo", realizada: true, positivo: false);
-		public static readonly SangreEnHeces NoRealizado =
+		internal static readonly SangreEnHeces NoRealizado =
 			new SangreEnHeces("no realizado", realizada: false, positivo: false);
 
-		public string Etiqueta { get; }
+		internal string Etiqueta { get; }
 
 		private readonly bool realizada;
 		private readonly bool positivo;
@@ -41,11 +41,11 @@ namespace Examenes.Dominio
 			this.positivo = positivo;
 		}
 
-		public override string Expresado => Etiqueta;
+		internal override string Expresado => Etiqueta;
 
-		public override bool FueRealizada => realizada;
+		internal override bool FueRealizada => realizada;
 
-		public override bool EsPositivo
+		internal override bool EsPositivo
 		{
 			get
 			{
@@ -58,7 +58,7 @@ namespace Examenes.Dominio
 			}
 		}
 
-		public override bool EsHallazgo => realizada && positivo;
+		internal override bool EsHallazgo => realizada && positivo;
 
 		/// <summary>
 		/// SE REVISA, NO SE CORRE. La causa mas frecuente es local y banal —el ejemplo del
@@ -72,20 +72,20 @@ namespace Examenes.Dominio
 		/// ⚠️ Refleja el criterio del feedback y sirve para modelar la estructura. Conviene
 		/// que lo revise alguien con criterio medico antes de mostrarlo fuera del equipo.
 		/// </summary>
-		public override Severidad SeveridadDelHallazgo =>
+		internal override Severidad SeveridadDelHallazgo =>
 			EsHallazgo ? Severidad.Vigilar : Severidad.Informativo;
 
 		// Se repite, y no espera al tamizaje del ano que viene: lo que hay que saber es
 		// si vuelve a salir.
-		public override Accion AccionDelHallazgo =>
+		internal override Accion AccionDelHallazgo =>
 			EsHallazgo ? Accion.RepetirElExamen(Plazo.EsteMes) : null;
 
-		public override string ParaSonia =>
+		internal override string ParaSonia =>
 			!realizada ? "el laboratorio no corrió esta prueba"
 			: positivo ? "apareció sangre en las heces, que muchas veces se debe a algo común; conviene revisarlo"
 			: "no apareció sangre en las heces, que es lo esperable";
 
-		public static SangreEnHeces PorNombre(string nombre)
+		internal static SangreEnHeces PorNombre(string nombre)
 		{
 			if (string.IsNullOrWhiteSpace(nombre)) return NoRealizado;
 
@@ -100,6 +100,6 @@ namespace Examenes.Dominio
 		}
 
 		/// <summary>El plural de este analito. Ver <see cref="SerieDeSangreEnHeces"/>.</summary>
-		public override SerieBinaria NuevaSerie() => new SerieDeSangreEnHeces();
+		internal override SerieBinaria NuevaSerie() => new SerieDeSangreEnHeces();
 	}
 }

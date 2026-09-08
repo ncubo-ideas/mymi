@@ -196,9 +196,13 @@ app.MapPost("/{recurso}/{id}/events/examen", (string recurso, string id, ExamenA
             error = "examen desconocido",
             conocidos = AlmacenDeEventos.ExamenesConocidos,
         });
-    if (pedido.Examen == "Orina" && Vacio(pedido.Color))
-        return Results.BadRequest(new { error = "un examen de orina necesita color" });
-    if (pedido.Examen != "Orina" && Vacio(pedido.Unidad))
+    // Las dos muestras que no tienen numero necesitan color; las demas, unidad. Estaban
+    // preguntadas solo por "Orina", asi que a un examen de heces se le exigia una unidad que
+    // no tiene y no se le exigia el color que si necesita.
+    bool sinNumero = pedido.Examen == "Orina" || pedido.Examen == "Heces";
+    if (sinNumero && Vacio(pedido.Color))
+        return Results.BadRequest(new { error = "un examen de orina o de heces necesita color" });
+    if (!sinNumero && Vacio(pedido.Unidad))
         return Results.BadRequest(new { error = "un examen de sangre necesita unidad" });
 
     EventoDeExamen nuevo = almacen.Agregar(recurso, id, pedido);
@@ -482,6 +486,13 @@ sealed class EventoDeExamen
     // cita y la otra no- lo decide la app, no este mock.
     [JsonPropertyName("sangre")]          public string Sangre { get; init; } = "";
 
+    // Las otras tres casillas de la tira reactiva. Vacio es "el laboratorio no corrio esa
+    // prueba", que es un estado legitimo del urianalisis y distinto de un negativo: un
+    // reporte viejo no trae ninguna de las tres.
+    [JsonPropertyName("proteina")]        public string Proteina { get; init; } = "";
+    [JsonPropertyName("cetonas")]         public string Cetonas { get; init; } = "";
+    [JsonPropertyName("glucosa")]         public string Glucosa { get; init; } = "";
+
     // SOLO EN LOS EVENTOS DE PACIENTE. Viaja en el mismo sobre porque este mock guarda una
     // sola lista ordenada por id —que es lo que hace que el checkpoint de la app sea un
     // solo numero— y no porque un examen tenga sexo.
@@ -495,6 +506,9 @@ sealed class EventoDeExamen
         string texto = Color;
         if (!string.IsNullOrWhiteSpace(Nitritos)) texto += $", nitritos {Nitritos}";
         if (!string.IsNullOrWhiteSpace(Sangre)) texto += $", sangre {Sangre}";
+        if (!string.IsNullOrWhiteSpace(Proteina)) texto += $", proteina {Proteina}";
+        if (!string.IsNullOrWhiteSpace(Cetonas)) texto += $", cetonas {Cetonas}";
+        if (!string.IsNullOrWhiteSpace(Glucosa)) texto += $", glucosa {Glucosa}";
         return texto;
     }
 }
@@ -505,7 +519,16 @@ sealed class AlmacenDeEventos
     private readonly Lock candado = new();
 
     internal static readonly string[] ExamenesConocidos =
-        { "Colesterol", "ColesterolDetallado", "AntigenoProstatico", "Hemoglobina", "Orina", "Heces" };
+    {
+        "Colesterol", "ColesterolDetallado", "AntigenoProstatico", "Hemoglobina",
+        "Orina", "Heces",
+
+        // La quimica general. Los nombres son los que la app resuelve en su frontera:
+        // ademas de estos acepta las abreviaturas del reporte -TG, GLU, BUN, NA, K, CL-
+        // porque el analito lleva sus sinonimos.
+        "Trigliceridos", "Glucosa en ayunas", "Nitrogeno ureico",
+        "Sodio", "Potasio", "Cloro", "Proteinas totales",
+    };
 
     internal static bool EsExamenConocido(string examen) =>
         Array.IndexOf(ExamenesConocidos, examen) >= 0;
@@ -569,6 +592,11 @@ sealed class AlmacenDeEventos
         {
             Id = 206, Examen = "Orina", Fecha = new DateTime(2026, 4, 28, 8, 42, 0),
             Color = "ambar", Nitritos = "negativo", Sangre = "negativo",
+
+            // LA TIRA ENTERA, que es lo que el reporte del CSS trae. Las tres casillas
+            // nuevas no agregan eventos: agregan tres analitos al mismo urianalisis, y eso
+            // es lo que las lleva a las 18 del conteo.
+            Proteina = "negativo", Cetonas = "negativo", Glucosa = "negativo",
         },
 
         // EL EXPEDIENTE DE SONIA ESTA LIMPIO A PROPOSITO. La demo se abre con "todo esta
@@ -604,12 +632,33 @@ sealed class AlmacenDeEventos
             Color = "marrón", Sangre = "negativo",
         },
 
-        // Y la orina, con su segunda tira: dos pruebas y ninguna aparicion.
+        // Y la orina, con su segunda tira: dos pruebas y ninguna aparicion. El color cambia
+        // -amarillo palido y despues ambar- y las dos categorias son esperables, que es lo
+        // que la serie del color sabe leer y una prueba binaria no sabria nombrar.
         new EventoDeExamen
         {
             Id = 210, Examen = "Orina", Fecha = new DateTime(2025, 4, 26, 8, 32, 0),
             Color = "amarillo palido", Nitritos = "negativo", Sangre = "negativo",
+            Proteina = "negativo", Cetonas = "negativo", Glucosa = "negativo",
         },
+
+        // LA QUIMICA GENERAL DEL MISMO REPORTE del 28 de abril: los siete, todos en rango.
+        //
+        // SIETE EVENTOS Y NO UNO, que no es como un laboratorio la emite. Es una limitacion
+        // conocida y anotada: un ExamenDeSangre mide UN analito, asi que un panel llega como
+        // N eventos. Abrir el camino continuo por lectura es el follow-on, y es lo mismo que
+        // haria falta para que un hemograma de 32 parametros no sean 32 eventos.
+        //
+        // UNA MEDICION CADA UNO, como en el reporte real: sin serie no hay tendencia, y sin
+        // embargo el analito cuenta en el conteo de la portada porque su valor esta en su
+        // rango. Los siete tienen rango independiente del sexo a proposito.
+        Sangre(211, "Trigliceridos", new DateTime(2026, 4, 28, 8, 44, 0), 92m, "mg/dL"),
+        Sangre(212, "Glucosa en ayunas", new DateTime(2026, 4, 28, 8, 45, 0), 88m, "mg/dL"),
+        Sangre(213, "Nitrogeno ureico", new DateTime(2026, 4, 28, 8, 46, 0), 13m, "mg/dL"),
+        Sangre(214, "Sodio", new DateTime(2026, 4, 28, 8, 47, 0), 140m, "mEq/L"),
+        Sangre(215, "Potasio", new DateTime(2026, 4, 28, 8, 48, 0), 4.2m, "mEq/L"),
+        Sangre(216, "Cloro", new DateTime(2026, 4, 28, 8, 49, 0), 103m, "mEq/L"),
+        Sangre(217, "Proteinas totales", new DateTime(2026, 4, 28, 8, 50, 0), 7.2m, "g/dL"),
     };
 
     private static EventoDeExamen Sangre(long id, string examen, DateTime fecha, decimal valor, string unidad) =>
@@ -670,6 +719,14 @@ sealed class AlmacenDeEventos
                 Unidad = pedido.Unidad ?? "",
                 Color = pedido.Color ?? "",
                 Nitritos = pedido.Nitritos ?? "",
+
+                // La sangre oculta se copiaba en el guion sembrado y NO en la inyeccion en
+                // vivo, asi que el unico camino por el que no se podia demostrar la serie
+                // binaria era justamente el de la demo.
+                Sangre = pedido.Sangre ?? "",
+                Proteina = pedido.Proteina ?? "",
+                Cetonas = pedido.Cetonas ?? "",
+                Glucosa = pedido.Glucosa ?? "",
             };
 
             lista.Add(evento);
@@ -703,6 +760,10 @@ sealed class ExamenAInyectar
 {
     [JsonPropertyName("examen")]          public string Examen { get; set; }
     [JsonPropertyName("nitritos")]        public string Nitritos { get; set; }
+    [JsonPropertyName("sangre")]          public string Sangre { get; set; }
+    [JsonPropertyName("proteina")]        public string Proteina { get; set; }
+    [JsonPropertyName("cetonas")]         public string Cetonas { get; set; }
+    [JsonPropertyName("glucosa")]         public string Glucosa { get; set; }
     [JsonPropertyName("fecha")]           public DateTime Fecha { get; set; }
     [JsonPropertyName("valor")]           public decimal Valor { get; set; }
     [JsonPropertyName("valorSecundario")] public decimal ValorSecundario { get; set; }

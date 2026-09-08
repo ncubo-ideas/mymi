@@ -26,26 +26,26 @@ namespace Examenes.Dominio
 	// ORDENADA. Tiene peso porque hay que poder decir "lo mas urgente de todo el
 	// expediente", y comparar por peso es lo unico que permite ordenar cuatro cosas que
 	// no son numeros.
-	public sealed class Severidad
+	internal sealed class Severidad
 	{
 		// Un dato: valor en rango, o algo sin accion. Decir que hay algo que hacer con
 		// esto es ruido que entrena a la persona a ignorar los avisos que si importan.
-		public static readonly Severidad Informativo = new Severidad("informativo", 0);
+		internal static readonly Severidad Informativo = new Severidad("informativo", 0);
 
 		// Fuera de rango o para mirar, sin urgencia. Cubre tambien el valor que hay que
 		// volver a medir: la salida de la regla del intervalo corto.
-		public static readonly Severidad Vigilar = new Severidad("vigilar", 1);
+		internal static readonly Severidad Vigilar = new Severidad("vigilar", 1);
 
 		// Amerita cita, y la accion que acompana dice el plazo explicito.
-		public static readonly Severidad ConsultePronto = new Severidad("consulte pronto", 2);
+		internal static readonly Severidad ConsultePronto = new Severidad("consulte pronto", 2);
 
 		// RESERVADO para lo que de verdad es urgente (ej. sangre en orina). Es el unico
 		// que la UI puede pintar de rojo.
-		public static readonly Severidad Urgente = new Severidad("urgente", 3);
+		internal static readonly Severidad Urgente = new Severidad("urgente", 3);
 
 		// La etiqueta interna, sin acentos: con este texto se compara y se serializa, no
 		// se le habla a nadie — igual que Nombre en Tendencia.
-		public string Nombre { get; private set; }
+		internal string Nombre { get; private set; }
 
 		private readonly int peso;
 
@@ -55,9 +55,9 @@ namespace Examenes.Dominio
 			this.peso = peso;
 		}
 
-		public bool PideAlgo => peso > 0;
+		internal bool PideAlgo => peso > 0;
 
-		public bool EsMasUrgenteQue(Severidad otra)
+		internal bool EsMasUrgenteQue(Severidad otra)
 		{
 			ArgumentNullException.ThrowIfNull(otra);
 			return peso > otra.peso;
@@ -65,7 +65,7 @@ namespace Examenes.Dominio
 
 		// La mas urgente de dos. Es lo que permite resumir un expediente entero sin que
 		// la superficie tenga que conocer el orden.
-		public static Severidad LaMayor(Severidad una, Severidad otra)
+		internal static Severidad LaMayor(Severidad una, Severidad otra)
 		{
 			ArgumentNullException.ThrowIfNull(una);
 			ArgumentNullException.ThrowIfNull(otra);

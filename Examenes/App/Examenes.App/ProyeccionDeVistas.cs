@@ -40,9 +40,7 @@ namespace Examenes.App
 					Nombre = Texto(elemento, "nombre"),
 					Fecha = Fecha(elemento, "fecha"),
 					Resultado = Texto(elemento, "resultado"),
-					AportaSerie = Booleano(elemento, "aportaSerie"),
-					Severidad = Texto(elemento, "severidad"),
-					ParaSonia = Texto(elemento, "paraSonia"),
+					AportaSerieContinua = Booleano(elemento, "aportaSerieContinua"),
 				});
 
 			return examenes;
@@ -113,6 +111,51 @@ namespace Examenes.App
 			return pruebas;
 		}
 
+		internal static ConstanciaDeAnalito Constancia(string json)
+		{
+			if (string.IsNullOrWhiteSpace(json)) return new ConstanciaDeAnalito();
+
+			using JsonDocument documento = JsonDocument.Parse(json);
+			JsonElement raiz = documento.RootElement;
+
+			return new ConstanciaDeAnalito
+			{
+				Analito = Texto(raiz, "analito"),
+				ParaMostrar = Texto(raiz, "paraMostrar"),
+				Constancia = Texto(raiz, "constancia"),
+				Mediciones = Entero(raiz, "mediciones"),
+				UltimaCategoria = Texto(raiz, "ultimaCategoria"),
+				UltimaEsEsperable = Booleano(raiz, "ultimaEsEsperable"),
+				NoEsperables = Entero(raiz, "noEsperables"),
+				NoEsperablesSeguidas = Entero(raiz, "noEsperablesSeguidas"),
+				LaUltimaSeRepitio = Booleano(raiz, "laUltimaSeRepitio"),
+				Dias = Entero(raiz, "dias"),
+				EstaFueraDeLoEsperable = Booleano(raiz, "estaFueraDeLoEsperable"),
+				HaySerie = Booleano(raiz, "haySerie"),
+			};
+		}
+
+		internal static IReadOnlyList<ObservacionEnSerie> Observaciones(string json)
+		{
+			var observaciones = new List<ObservacionEnSerie>();
+			if (string.IsNullOrWhiteSpace(json)) return observaciones;
+
+			using JsonDocument documento = JsonDocument.Parse(json);
+			if (!documento.RootElement.TryGetProperty("observacion", out JsonElement arreglo))
+				return observaciones;
+
+			foreach (JsonElement elemento in Elementos(arreglo))
+				observaciones.Add(new ObservacionEnSerie
+				{
+					Fecha = Fecha(elemento, "fecha"),
+					Expresado = Texto(elemento, "expresado"),
+					EsEsperable = Booleano(elemento, "esEsperable"),
+					EsHallazgo = Booleano(elemento, "esHallazgo"),
+				});
+
+			return observaciones;
+		}
+
 		internal static LoMasUrgente Urgente(string json)
 		{
 			if (string.IsNullOrWhiteSpace(json)) return new LoMasUrgente();
@@ -147,9 +190,6 @@ namespace Examenes.App
 					ParaMostrar = Texto(elemento, "paraMostrar"),
 					Fecha = Fecha(elemento, "fecha"),
 					Expresado = Texto(elemento, "expresado"),
-					AportaSerie = Booleano(elemento, "aportaSerie"),
-					Severidad = Texto(elemento, "severidad"),
-					ParaSonia = Texto(elemento, "paraSonia"),
 				});
 
 			return celdas;

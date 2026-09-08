@@ -46,17 +46,39 @@ namespace Compras.App
 				throw new ArgumentOutOfRangeException(nameof(evento), evento.Evento,
 					"El numero de evento debe ser positivo.");
 
-			return app.Using(
-				scriptForChk: @"
-					Check(@evento > bitacora.UltimoEvento) Error 'evento ya procesado';
-				",
-				@"
+			// DOS SCRIPTS Y NO UNO CON GUARDA: el evento sin sucursal journalea EXACTAMENTE
+			// el comando de siempre -los journals nuevos y los viejos quedan iguales linea a
+			// linea-, y el que si la trae journalea la forma situada. La sucursal entra por
+			// el wither EnSucursal en una sentencia aparte, no por otro constructor: Compra
+			// ya tiene dos formas y el DSL resuelve por cantidad de argumentos.
+			string script = evento.Sucursal.Length == 0
+				? @"
 					{
 						compra = Compra(@numero, @fecha, @skus, @descripciones, @cantidades, @preciosUnitarios, @categorias, @mesesDeGarantia);
 						compras.Agregar(compra);
 						bitacora.Avanzar(@evento);
 					}
-				")
+				"
+				: @"
+					{
+						compra = Compra(@numero, @fecha, @skus, @descripciones, @cantidades, @preciosUnitarios, @categorias, @mesesDeGarantia);
+						situada = compra.EnSucursal(@sucursal);
+						compras.Agregar(situada);
+						bitacora.Avanzar(@evento);
+					}
+				";
+
+			// EL RECONOCIMIENTO DEL DEPARTAMENTO VIVE ACA, no en la frontera. El nombre del
+			// tipo va DENTRO del script: el motor lo resuelve por reflexion -que no tiene
+			// frontera de assembly- asi que el dominio se queda entero `internal` y este
+			// proyecto no nombra un solo tipo suyo en C#. Rechazar por Check no deja entrada
+			// en el journal, igual que la idempotencia.
+			return app.Using(
+				scriptForChk: @"
+					Check(@evento > bitacora.UltimoEvento) Error 'evento ya procesado';
+					Check(Categoria.TodasExisten(@categorias)) Error 'departamento no modelado';
+				",
+				script)
 			.WithParameters(p => {
 				p["evento",           typeof(long)]      = evento.Evento;
 				p["numero",           typeof(string)]    = evento.Numero;
@@ -67,6 +89,39 @@ namespace Compras.App
 				p["preciosUnitarios", typeof(decimal[])] = evento.PreciosUnitarios;
 				p["categorias",       typeof(string[])]  = evento.Categorias;
 				p["mesesDeGarantia",  typeof(int[])]     = evento.MesesDeGarantia;
+				if (evento.Sucursal.Length > 0)
+					p["sucursal", typeof(string)] = evento.Sucursal;
+			})
+			.PerformCheckThenCommand();
+		}
+
+		// El segundo evento: una promocion del super. MISMO esquema de idempotencia que la
+		// compra -Check contra la bitacora, checkpoint DENTRO del mismo comando- porque
+		// viajan por el mismo stream numerado: o entran los dos o no entra ninguno.
+		public string AplicarPromocionPublicada(PromocionPublicada evento)
+		{
+			ArgumentNullException.ThrowIfNull(evento);
+			if (evento.Evento <= 0)
+				throw new ArgumentOutOfRangeException(nameof(evento), evento.Evento,
+					"El numero de evento debe ser positivo.");
+
+			return app.Using(
+				scriptForChk: @"
+					Check(@evento > bitacora.UltimoEvento) Error 'evento ya procesado';
+				",
+				@"
+					{
+						promocion = Promocion(@gancho, @detalle, @sku, @validaHasta);
+						cartelera.Colgar(promocion);
+						bitacora.Avanzar(@evento);
+					}
+				")
+			.WithParameters(p => {
+				p["evento",      typeof(long)]     = evento.Evento;
+				p["gancho",      typeof(string)]   = evento.Gancho;
+				p["detalle",     typeof(string)]   = evento.Detalle;
+				p["sku",         typeof(string)]   = evento.Sku ?? "";
+				p["validaHasta", typeof(DateTime)] = evento.ValidaHasta;
 			})
 			.PerformCheckThenCommand();
 		}
@@ -144,6 +199,7 @@ namespace Compras.App
 				foreach (compra in compras.Lista) {
 					print compra.Numero numero,
 						compra.Fecha fecha,
+						compra.Sucursal sucursal,
 						compra.CantidadDeLineas lineas,
 						compra.Total total;
 				}
@@ -163,6 +219,7 @@ namespace Compras.App
 					compra = compras[@numero];
 					print compra.Numero numero,
 						compra.Fecha fecha,
+						compra.Sucursal sucursal,
 						compra.Total total;
 					foreach (item in compra.Items) {
 						print item.Sku sku,
@@ -571,6 +628,123 @@ namespace Compras.App
 			})
 			.PerformQuery();
 
+		// EN QUE SUCURSALES COMPRA, y desde cuando se mueve. LaDeSiempre NO se imprime:
+		// es una lectura guardada (revienta sin datos) y en un print plano eso mata la
+		// consulta; la primera del arreglo ES la de siempre.
+		public string SucursalesQueFrecuenta() =>
+			app.Using(@"
+				{
+					recorrido = compras.Sucursales();
+					print recorrido.HayDatos hayDatos,
+						recorrido.CuantasDistintas cuantasDistintas,
+						recorrido.ComprasSinSucursal comprasSinSucursal,
+						recorrido.SeMueve seMueve,
+						recorrido.SeMueveDesdeExpresado seMueveDesde,
+						recorrido.ParaElAsistente paraElAsistente;
+					foreach (sucursal in recorrido.Sucursales) {
+						print sucursal.Nombre nombre,
+							sucursal.Compras compras,
+							sucursal.PrimeraVez primeraVez,
+							sucursal.UltimaVez ultimaVez;
+					}
+				}
+			")
+			.PerformQuery();
+
+		// LA SERIE DE PRECIOS de UN producto, con cada observacion fechada: es la que
+		// contesta "el mismo helado te costaba 3.680 en enero de 2025 y hoy 4.214".
+		// Geannina la pidio publicada: estaba construida y solo la leian las
+		// comprobaciones.
+		//
+		// OJO: Subio NO se imprime a proposito. Es una lectura GUARDADA (revienta sin
+		// cambio real) y en un print plano eso mata la consulta entera; el signo ya
+		// viaja en cambio.
+		public string SerieDePrecios(string termino)
+		{
+			ArgumentNullException.ThrowIfNullOrWhiteSpace(termino);
+
+			return app.Using(@"
+				{
+					serie = compras.PrecioBuscado(@termino);
+					print serie.Sku sku,
+						serie.Descripcion descripcion,
+						serie.VecesQueLoCompro vecesQueLoCompro,
+						serie.HaySerie haySerie,
+						serie.PrimerPrecioPorUnidad primero,
+						serie.UltimoPrecioPorUnidad ultimo,
+						serie.UnidadDeReferencia unidad,
+						serie.Cambio cambio,
+						serie.CambioEnProporcion cambioEnProporcion,
+						serie.HayCambioReal hayCambioReal,
+						serie.ParaElAsistente paraElAsistente;
+					foreach (observado in serie.Observados) {
+						print observado.Fecha fecha,
+							observado.MesExpresado mes,
+							observado.PrecioPorUnidad precioPorUnidad,
+							observado.PrecioDeLinea precioDeLinea,
+							observado.PresentacionExpresada presentacion,
+							observado.NumeroDeCompra numeroDeCompra;
+					}
+				}
+			")
+			.WithParameters(p => {
+				p["termino", typeof(string)] = termino;
+			})
+			.PerformQuery();
+		}
+
+		// LA CANASTA FRENTE A SU PASADO: cuanto cuesta hoy una pieza de cada habitual
+		// contra lo que costaba hace tantos meses, sumado en colones. Es la cifra que
+		// encabeza la tarjeta de precios ("+₡1.150 vs. hace 3 meses", del mock de
+		// Fernanda), con el detalle por producto para quien quiera saber de donde sale.
+		public string CanastaFrenteA(DateTime hoy, int mesesAtras, int cuantasCompras) =>
+			app.Using(@"
+				{
+					frente = compras.CanastaFrenteA(@hoy, @meses, @cuantas);
+					print frente.HayConQueComparar hayConQueComparar,
+						frente.MesesDeVentana mesesDeVentana,
+						frente.Cambio cambio,
+						frente.ParaElAsistente paraElAsistente;
+					foreach (producto in frente.Productos) {
+						print producto.Sku sku,
+							producto.Descripcion descripcion,
+							producto.Presentacion presentacion,
+							producto.Antes antes,
+							producto.Ahora ahora,
+							producto.Cambio cambio;
+					}
+				}
+			")
+			.WithParameters(p => {
+				p["hoy", typeof(DateTime)] = hoy;
+				p["meses", typeof(int)] = mesesAtras;
+				p["cuantas", typeof(int)] = cuantasCompras;
+			})
+			.PerformQuery();
+
+		// LA BUENA NOTICIA DE UN RECIBO: que, de esa compra, esta hoy mas barato. Todas
+		// las lecturas son totales -Hay en false trae el resto vacio o en cero-, asi que
+		// el print plano no corre peligro.
+		public string RebajaDesde(string numeroDeCompra)
+		{
+			ArgumentNullException.ThrowIfNullOrWhiteSpace(numeroDeCompra);
+
+			return app.Using(@"
+				{
+					rebaja = compras.RebajaDesde(@numero);
+					print rebaja.Hay hay,
+						rebaja.Sku sku,
+						rebaja.Descripcion descripcion,
+						rebaja.CuantoMenos cuantoMenos,
+						rebaja.ParaElAsistente paraElAsistente;
+				}
+			")
+			.WithParameters(p => {
+				p["numero", typeof(string)] = numeroDeCompra;
+			})
+			.PerformQuery();
+		}
+
 		// La garantia de un producto, con su respaldo: en que compra fue, cuando, y si
 		// sigue vigente. La FECHA DE CONSULTA entra como parametro porque el dominio no
 		// lee el reloj: quien pregunta pone su "hoy".
@@ -728,6 +902,7 @@ namespace Compras.App
 					foreach (compra in busqueda.Compras) {
 						print compra.Numero numero,
 							compra.FechaExpresada fecha,
+							compra.Sucursal sucursal,
 							compra.Unidades unidades,
 							compra.Gasto gasto,
 							compra.LineasDeLaCompra lineasDeLaCompra,
@@ -770,6 +945,26 @@ namespace Compras.App
 			")
 			.WithParameters(p => {
 				p["hoy", typeof(DateTime)] = hoy;
+			})
+			.PerformQuery();
+
+		// LAS PROMOCIONES VIGENTES a una fecha. El "hoy" viene recibido: el dominio no lee
+		// el reloj, y una promocion vigente-o-no depende de cuando se pregunta.
+		public string PromocionesVigentesEl(DateTime fecha) =>
+			app.Using(@"
+				{
+					foreach (promocion in cartelera.VigentesEl(@fecha)) {
+						print promocion.Gancho gancho,
+							promocion.Detalle detalle,
+							promocion.Sku sku,
+							promocion.ValidaHastaExpresada validaHasta,
+							promocion.DiasQueQuedanEl(@fecha) diasQueQuedan,
+							promocion.ParaElAsistente paraElAsistente;
+					}
+				}
+			")
+			.WithParameters(p => {
+				p["fecha", typeof(DateTime)] = fecha;
 			})
 			.PerformQuery();
 
@@ -839,6 +1034,30 @@ namespace Compras.App
 		public IReadOnlyList<PrecioQueCambio> Precios(int cuantasCompras = ComprasQueSeMiranParaLaFirma) =>
 			ProyeccionDeVistas.Precios(PreciosDeLosHabituales(cuantasCompras));
 
+		/// <summary>La ventana contra la que se mira el pasado, si nadie pide otra.</summary>
+		// ESPEJO DEL JUICIO DEL DOMINIO, y la copia esta AMARRADA. El juicio es suyo
+		// -CanastaFrenteAlPasado.VentanaPorDefectoEnMeses, "esta aca para que ninguna
+		// superficie invente el suyo"- pero un valor por defecto de un parametro tiene que
+		// ser una constante de compilacion, y desde que el dominio es enteramente `internal`
+		// esta Superficie no puede nombrarlo. Comprobaciones compara las dos: si el dominio
+		// cambia su juicio y esto no, el fixture lo dice, en vez de que la portada empiece a
+		// mirar una ventana distinta de la que el dominio documenta.
+		public const int VentanaPorDefectoEnMeses = 3;
+
+		public CanastaFrenteAlPasadoVista FrenteAlPasado(DateTime hoy,
+			int mesesAtras = VentanaPorDefectoEnMeses,
+			int cuantasCompras = ComprasQueSeMiranParaLaFirma) =>
+			ProyeccionDeVistas.FrenteAlPasado(CanastaFrenteA(hoy, mesesAtras, cuantasCompras));
+
+		public RebajaVista Rebaja(string numeroDeCompra) =>
+			ProyeccionDeVistas.Rebaja(RebajaDesde(numeroDeCompra));
+
+		public SerieDePreciosVista Serie(string termino) =>
+			ProyeccionDeVistas.Serie(SerieDePrecios(termino));
+
+		public RecorridoDeSucursalesVista Recorrido() =>
+			ProyeccionDeVistas.Recorrido(SucursalesQueFrecuenta());
+
 		public CanastasComparadas Comparacion(int anioAntes, int mesAntes, int anioDespues, int mesDespues) =>
 			ProyeccionDeVistas.Comparacion(ComparacionDeCanastas(anioAntes, mesAntes, anioDespues, mesDespues));
 
@@ -860,6 +1079,9 @@ namespace Compras.App
 		public ListaDeLaProximaCompra Lista(DateTime hoy) =>
 			ProyeccionDeVistas.LaProximaCompra(LoQueVaAFaltar(hoy));
 
+		public IReadOnlyList<PromocionVista> Promociones(DateTime fecha) =>
+			ProyeccionDeVistas.Promociones(PromocionesVigentesEl(fecha));
+
 		public GarantiaDeProducto Garantia(string texto, DateTime fechaDeConsulta) =>
 			ProyeccionDeVistas.Garantia(GarantiaDe(texto, fechaDeConsulta));
 
@@ -879,6 +1101,7 @@ namespace Compras.App
 			ArgumentNullException.ThrowIfNull(mensaje);
 
 			if (mensaje is CompraRegistrada registrada) return AplicarCompraRegistrada(registrada);
+			if (mensaje is PromocionPublicada promocion) return AplicarPromocionPublicada(promocion);
 
 			throw new ArgumentException(
 				$"Esta app no tiene comando para un mensaje de tipo '{mensaje.Tipo}'. La ruta debio devolver null "

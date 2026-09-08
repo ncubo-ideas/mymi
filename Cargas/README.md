@@ -37,6 +37,18 @@ dotnet run --project Cargas/App/Cargas.Consola -- comprobar
 Un cambio en el dominio no está listo hasta que pasan.
 
 ```
+dotnet run --project Cargas/App/Cargas.Consola -- comprobar-traspaso
+```
+
+El traspaso de las anotaciones a Gnothi (especificación 13 §5), con dos actores reales en
+disco: la app suelta arma el sobre —solo lo que dijo la persona, sin credencial ni hechos de
+la estación— y el módulo hospedado lo recibe. Comprueba que las anotaciones **esperan** a sus
+cargas cuando todavía no llegaron, que con las cargas se asientan enteras y dan la misma
+lectura del rendimiento, que repetir el traspaso **no deja entrada**, y que un sobre ajeno o
+roto se dice y no se asienta. Imprime cuánto pesa el sobre del guion (~9.7 KB; ~21 KB escapado
+para URL), que es por lo que en Cargas va por la hoja de compartir y no por el enlace.
+
+```
 dotnet run --project Cargas/App/Cargas.Consola -- medir [carpeta]
 ```
 
@@ -71,12 +83,22 @@ dotnet run --project Cargas/InyectorDeEventosDemo -- inyectar --litros 42 --prec
 
 ## El guion del demo (§13 del brief, v2)
 
-Nueve cargas de la placa `ABC-123` (⚠️ coordinar con el demo del concesionario), con
-fechas literales. Las historias que cierran: la línea base de 12.6 km/L, la parcial
+Veintiocho cargas de la placa `BQR-482` —la del canon, acordada con el demo del
+concesionario como llave del cruce—, con fechas literales.
+
+**El odómetro es el canon de Sonia**: 49.850 en diciembre y 60.962 en agosto, con el
+quiebre de enero —850 km/mes antes del ascenso, 1.400 después—. De ahí sale todo lo
+demás: los litros no son libres, porque `litros = distancia / rendimiento`, y la fecha
+tampoco, porque sale de invertir la curva del odómetro. Por eso las cargas se aprietan
+solas de una cada 17 días a una cada 8, y **ese apretón es el ascenso**: la gasolinera
+lo cuenta sin que nadie lo explique, que es lo que ningún otro módulo puede hacer.
+
+Las historias que cierran: la línea base de 12.6 km/L sobre trece tramos, la parcial
 preseteada que la inferencia lee como «no fue lleno», la caída 12.6 → 9.4 contra la
-propia base (−25%), el tramo no comparable del surtidor B-1, el kilometraje faltante de
-la carga del 25/07 que bloquea dos tramos finos y deja el largo, la autonomía estimada
-de ~553 km, y 326 puntos nivel plata.
+propia base (−25%), el tramo no comparable del surtidor B-1 —10 L, y los únicos ₡6.520
+del guion que no alcanzan para un boleto—, el kilometraje faltante de la carga del 17/08
+que bloquea dos tramos finos y deja el largo de 743 km, la autonomía estimada de ~504 km,
+y 998 puntos que cruzan los dos umbrales del programa: plata en febrero y oro en julio.
 
 ## El MCP
 

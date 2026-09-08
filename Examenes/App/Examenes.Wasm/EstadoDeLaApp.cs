@@ -73,6 +73,15 @@ public sealed class EstadoDeLaApp : IAsyncDisposable
 
 	public string UltimoMensaje { get; private set; } = "";
 
+	/// <summary>Cuantas veces se fue a buscar al laboratorio y volvio con algo. Es la llave
+	/// que hace que la portada se recree y vuelva a entrar animada.
+	///
+	/// La animacion se dispara al MONTAR, asi que lo que decide cuando corre no es el CSS:
+	/// es que el nodo se recree, y eso lo decide el @key. Sube SOLO aca y no en cada
+	/// lectura, para que declarar el sexo o plegar el pedido no vuelva a animar la portada:
+	/// eso es respuesta a "fui a buscar y volvi", no a tocar un boton.</summary>
+	public int Refrescos { get; private set; }
+
 	// Cuando la carpeta rechaza una escritura, lo que se ve en pantalla deja de estar
 	// respaldado. La app tiene que DECIRLO, porque el estado de la carpeta es el que
 	// sobrevive: al reabrir, la precarga vuelve a partir de ahi y lo no guardado se
@@ -201,6 +210,11 @@ public sealed class EstadoDeLaApp : IAsyncDisposable
 			ResultadoDeRefresh alAbrir = await bucle.Ejecutar(CancellationToken.None);
 			if (alAbrir.Cuenta is not null) Cuenta = alAbrir.Cuenta;
 			UltimoMensaje += $" | al abrir: {alAbrir}";
+
+			// La portada entra animada al abrir SOLO si llego algo. Sin novedades, la
+			// primera pintada ya animo y repetirla al volver del laboratorio es un
+			// parpadeo sin motivo.
+			if (alAbrir.Aplicados > 0) Refrescos++;
 		}
 		catch (Exception ex)
 		{
@@ -325,6 +339,11 @@ public sealed class EstadoDeLaApp : IAsyncDisposable
 		ResultadoDeRefresh resultado = await bucle!.Ejecutar(ct);
 		if (resultado.Cuenta is not null) Cuenta = resultado.Cuenta;
 		UltimoMensaje = $"refresh: {resultado}";
+
+		// Aca sube SIEMPRE, aunque no entre nada. Es la diferencia con el arranque: la
+		// persona apreto Actualizar y la pantalla le tiene que contestar algo visible,
+		// que es justo lo que este @key existia para resolver.
+		Refrescos++;
 		return resultado;
 	}
 
@@ -573,6 +592,13 @@ public sealed class EstadoDeLaApp : IAsyncDisposable
 	public PresenciaDeAnalito Presencia(string analito) { Exigir(); return api!.Presencia(analito); }
 
 	public IReadOnlyList<PruebaEnSerie> Pruebas(string analito) { Exigir(); return api!.Pruebas(analito); }
+
+	// Y LOS NOMINALES POR UNA TERCERA. Un color no tiene tendencia ni un si o un no: tiene
+	// una categoria por fecha, y lo que se puede leer de la serie es si volvio a lo
+	// esperable.
+	public ConstanciaDeAnalito Constancia(string analito) { Exigir(); return api!.Constancia(analito); }
+
+	public IReadOnlyList<ObservacionEnSerie> Observaciones(string analito) { Exigir(); return api!.Observaciones(analito); }
 
 	public int Cantidad() { Exigir(); return api!.CantidadDeExamenes(); }
 

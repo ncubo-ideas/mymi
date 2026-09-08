@@ -9,17 +9,17 @@ namespace Cargas.Dominio
 	// Como Placa: viene del wire, no es conjunto cerrado, y la comparacion es una
 	// operacion nombrada sobre el texto normalizado. Los diccionarios se llavean por
 	// Texto, no por el objeto.
-	public sealed class NumeroDeTransaccion
+	internal sealed class NumeroDeTransaccion
 	{
-		public string Texto { get; private set; }
+		internal string Texto { get; private set; }
 
-		public NumeroDeTransaccion(string texto)
+		internal NumeroDeTransaccion(string texto)
 		{
 			ArgumentNullException.ThrowIfNullOrWhiteSpace(texto);
 			Texto = texto.Trim();
 		}
 
-		public bool EsElMismo(NumeroDeTransaccion otro)
+		internal bool EsElMismo(NumeroDeTransaccion otro)
 		{
 			ArgumentNullException.ThrowIfNull(otro);
 			return string.Equals(Texto, otro.Texto, StringComparison.OrdinalIgnoreCase);

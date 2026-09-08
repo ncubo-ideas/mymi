@@ -7,19 +7,19 @@ namespace Cargas.Dominio
 	/// es un tercer estado del tanque sino la AUSENCIA de declaracion, y esa ausencia es
 	/// su propio tipo (ver DeclaracionDeTanque.Ninguna).
 	/// </summary>
-	public sealed class EstadoDelTanque
+	internal sealed class EstadoDelTanque
 	{
-		public static readonly EstadoDelTanque Lleno = new EstadoDelTanque("lleno");
-		public static readonly EstadoDelTanque Parcial = new EstadoDelTanque("parcial");
+		internal static readonly EstadoDelTanque Lleno = new EstadoDelTanque("lleno");
+		internal static readonly EstadoDelTanque Parcial = new EstadoDelTanque("parcial");
 
-		public string Nombre { get; private set; }
+		internal string Nombre { get; private set; }
 
 		private EstadoDelTanque(string nombre)
 		{
 			Nombre = nombre;
 		}
 
-		public static EstadoDelTanque PorNombre(string nombre)
+		internal static EstadoDelTanque PorNombre(string nombre)
 		{
 			ArgumentNullException.ThrowIfNullOrWhiteSpace(nombre);
 
@@ -32,6 +32,6 @@ namespace Cargas.Dominio
 				+ $"{Lleno.Nombre}, {Parcial.Nombre}.");
 		}
 
-		public bool EsLleno => ReferenceEquals(this, Lleno);
+		internal bool EsLleno => ReferenceEquals(this, Lleno);
 	}
 }

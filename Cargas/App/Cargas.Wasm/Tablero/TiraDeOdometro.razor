@@ -1,0 +1,43 @@
+@using System.Globalization
+
+@* EL ODÓMETRO, dígito por ventanilla. Es la pieza que hace que el instrumento se lea
+   como el de un carro y no como un número cualquiera en una tarjeta.
+
+   LOS CEROS A LA IZQUIERDA VAN TENUES, como en el contador mecánico: están porque la
+   ventanilla existe, no porque el número los tenga.
+
+   LO QUE MUESTRA ES UNA PROYECCIÓN, y el pie del instrumento lo dice. El odómetro real
+   solo lo sabe quien mira el tablero del carro; esto es lo que da su promedio de
+   kilómetros por día desde la última lectura que ella anotó. *@
+
+<div class="tira" role="img" aria-label="@Descripcion">
+    @foreach ((char digito, bool significativo) in Digitos())
+    {
+        <span class="@(significativo ? "tira-digito" : "tira-digito tira-digito--tenue")">@digito</span>
+    }
+</div>
+
+@code {
+    [Parameter] public decimal Kilometros { get; set; }
+    [Parameter] public string Descripcion { get; set; } = "";
+
+    /// <summary>Cuántas ventanillas tiene el contador. Seis cubre la vida de un carro.</summary>
+    [Parameter] public int Ventanillas { get; set; } = 6;
+
+    private List<(char digito, bool significativo)> Digitos()
+    {
+        // Sin cultura invariante, un separador de miles se colaría entre las
+        // ventanillas y el contador dejaría de alinear.
+        string crudo = Math.Max(0m, Math.Truncate(Kilometros))
+            .ToString("0", CultureInfo.InvariantCulture);
+
+        if (crudo.Length > Ventanillas) crudo = crudo.Substring(crudo.Length - Ventanillas);
+        string relleno = crudo.PadLeft(Ventanillas, '0');
+
+        var digitos = new List<(char, bool)>();
+        int desdeDonde = Ventanillas - crudo.Length;
+        for (int i = 0; i < relleno.Length; i++)
+            digitos.Add((relleno[i], i >= desdeDonde));
+        return digitos;
+    }
+}

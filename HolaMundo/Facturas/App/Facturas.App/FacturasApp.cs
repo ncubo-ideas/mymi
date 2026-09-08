@@ -1,6 +1,5 @@
 using System.Reflection;
 using Choreography.Theater;
-using Facturas.Dominio;
 
 namespace Facturas.App
 {
@@ -14,7 +13,7 @@ namespace Facturas.App
 	public sealed class FacturasApp : PerformanceV2
 	{
 		public FacturasApp(string nombreDelActor)
-			: base(nombreDelActor, typeof(Facturario).Assembly)
+			: base(nombreDelActor, ElDominio.Assembly)
 		{
 		}
 

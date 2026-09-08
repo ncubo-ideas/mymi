@@ -22,15 +22,15 @@ namespace Cargas.Dominio
 	//    un kilometraje faltante rompe DOS tramos finos y produce igual el tramo largo-.
 	// 5. UN ESTIMADO NO ABRE NI CIERRA NADA: la procedencia lo dice (OrigenDeLectura),
 	//    no un if de este algoritmo.
-	public sealed class SerieDeTramos
+	internal sealed class SerieDeTramos
 	{
 		private readonly List<Tramo> tramos = new List<Tramo>();
 
-		public LineaBaseDeRendimiento LineaBase { get; private set; }
+		internal LineaBaseDeRendimiento LineaBase { get; private set; }
 
 		/// <summary>Las cargas deben venir ordenadas por fecha; el orden lo garantiza el
 		/// Vehiculo, que es quien las guarda.</summary>
-		public SerieDeTramos(IReadOnlyList<Carga> cargasPorFecha)
+		internal SerieDeTramos(IReadOnlyList<Carga> cargasPorFecha)
 		{
 			ArgumentNullException.ThrowIfNull(cargasPorFecha);
 
@@ -40,7 +40,7 @@ namespace Cargas.Dominio
 			MarcarSospechosos();
 		}
 
-		public IReadOnlyList<Tramo> Tramos => tramos;
+		internal IReadOnlyList<Tramo> Tramos => tramos;
 
 		private void Partir(IReadOnlyList<Carga> cargas)
 		{

@@ -65,7 +65,7 @@ namespace Compras.Consola
 				""cantidades"": {Crudo(compra, "cantidades")},
 				""preciosUnitarios"": {Crudo(compra, "preciosUnitarios")},
 				""categorias"": {Crudo(compra, "categorias")},
-				""mesesDeGarantia"": {Crudo(compra, "mesesDeGarantia")}
+				""mesesDeGarantia"": {Crudo(compra, "mesesDeGarantia")}{Sucursal(compra)}
 			}}";
 
 				senales.Add(new SenalDeEvento(id, "CompraRegistrada", cuerpo));
@@ -74,6 +74,13 @@ namespace Compras.Consola
 			historia = senales.ToArray();
 			return historia;
 		}
+
+		// La sucursal viaja solo si el guion la trae: el campo es opcional en el
+		// contrato, y estas muestras tienen que poder reproducir las dos formas.
+		private static string Sucursal(JsonElement compra) =>
+			compra.TryGetProperty("sucursal", out JsonElement s) && s.ValueKind == JsonValueKind.String
+				? $@", ""sucursal"": {s.GetRawText()}"
+				: "";
 
 		private static string Texto(JsonElement compra, string llave) =>
 			JsonSerializer.Serialize(compra.GetProperty(llave).GetString());

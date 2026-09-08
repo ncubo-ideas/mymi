@@ -10,8 +10,8 @@
 
   "version": {
     "//": "Dos versiones y no una: el repertorio cambia por otra razon que el codigo. La estacion actualiza una tasa de puntos y el dominio no se toca; separadas, el Host puede actualizar repertorio sin re-verificar el dominio.",
-    "dominio": "0.1.0",
-    "repertorio": "2026.08"
+    "dominio": "0.2.0",
+    "repertorio": "2026.09"
   },
 
   "institucion": {
@@ -77,14 +77,22 @@
 
   "consultas": {
     "//": "EL CATALOGO DE PERMISOS DE LA IA. El Host las apaga una por una y journaliza la decision.",
-    "//solo-lectura": "Las cinco son PerformQuery. Este modulo NO expone ninguna escritura a la IA: los aportes entran solo por la app de la persona, y el unico escritor del journal es ella.",
+    "//solo-lectura": "Las siete son PerformQuery. Este modulo NO expone ninguna escritura a la IA: los aportes entran solo por la app de la persona, y el unico escritor del journal es ella.",
     "//el-criterio": "Si la IA puede contestar algo que ya esta en una pantalla, el demo no probo nada. Por eso no hay una consulta 'dame las cargas': el historial lo muestra la app.",
     "lista": [
       { "nombre": "mis_cargas",                  "revela": "que vehiculos hay, con su placa y su completitud" },
       { "nombre": "autonomia_estimada",          "revela": "capacidad estimada por rendimiento habitual: dos derivaciones combinadas" },
       { "nombre": "rendimiento_vs_habitual",     "revela": "la serie de tramos contra la propia linea base, con veredicto semantico" },
       { "nombre": "lo_que_falta_para_calcular",  "revela": "que dato falta y que calculo se desbloquea" },
-      { "nombre": "dias_hasta_la_proxima_carga", "revela": "la prediccion de la proxima carga, declarada como proyeccion" }
+      { "nombre": "mis_boletos_de_tombola",      "revela": "los boletos por sorteo, y de que carga salio cada uno con lo que sobro" },
+      { "nombre": "dias_hasta_la_proxima_carga", "revela": "la prediccion de la proxima carga, declarada como proyeccion" },
+      {
+        "nombre": "mi_ritmo_de_manejo",
+        "revela": "cuanta distancia por dia se maneja, y las lecturas del odometro de las que sale",
+        "//por-que-existe": "ES LA UNICA QUE NO SE JUSTIFICA SOLA, SINO POR EL CRUCE. what_is_left_before_each_service del concesionario dice cuanta distancia y cuantos dias le faltan al carro para cada service, y declara que NO puede decir cual de las dos mitades llega primero 'porque este registro no tiene ese ritmo'. Este modulo si lo tiene: ve el odometro cada vez que la persona carga, no una vez por service. El cruce lo hace el asistente con permiso de la persona, y la tool le pide que lo atribuya: la estacion no sabe nada del plan de mantenimiento.",
+        "//el-criterio": "Las lecturas sueltas SI estan en una pantalla -la Ruta las muestra- y por eso no hay una tool que las liste. Viajan aca como las filas que respaldan la frase del ritmo, que es lo que ninguna pantalla contesta.",
+        "//solo-lo-que-cuenta": "El ritmo se calcula solo con lecturas observadas o confirmadas. Un estimado viaja en las filas con cuentaParaCalcular en false: existe, y no participa."
+      }
     ]
   },
 
@@ -107,8 +115,9 @@
   "presupuesto": {
     "//": "El Host mide y pone cupos. Comparar contra lo declarado convierte el cupo en algo diagnosticable.",
     "latenciaDeConsultaMs": 50,
-    "eventosPorAno": 30,
-    "//eventosPorAno": "Una carga cada ~2 semanas mas sus puntos: del orden de 30 eventos de la institucion por ano, mas los aportes locales de la persona."
+    "eventosPorAno": 165,
+    "//eventosPorAno": "MEDIDO SOBRE EL GUION, no estimado: son 114 eventos de la institucion en los 253 dias que va de la serie, o sea del orden de 165 al ano, mas los aportes locales de la persona. Los boletos son la mayoria porque va UNO POR BOLETO: el numero es su identidad y por lo tanto su guarda de idempotencia.",
+    "//eventosPorAno-por-que-subio": "Decia 90, con la nota 'una carga cada ~2 semanas'. Esa cadencia era del guion viejo, que no respetaba el canon de Sonia: con 1.400 km/mes desde el ascenso y un tanque de 40 L, carga cada 8 o 9 dias, no cada 14. El presupuesto no cambio porque cambiara el modulo — cambio porque el anterior describia a otra persona."
   },
 
   "instrucciones": {
@@ -117,6 +126,7 @@
   },
 
   "advertencias": [
+    { "que": "El monto por boleto, los nombres y los premios de las tombolas son del demo y nadie con criterio del negocio los vio" },
     {
       "//": "Va en el manifiesto y no en un README porque el Host y el asistente tienen que saberlo para hablar con la persona, y ningun DLL lo dice.",
       "que": "Ningun umbral de este repertorio esta revisado",

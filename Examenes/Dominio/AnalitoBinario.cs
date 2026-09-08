@@ -12,17 +12,11 @@ namespace Examenes.Dominio
 	// analitos distintos y no uno con un parametro es el mismo argumento de siempre: la
 	// forma es identica y la conducta es opuesta. Si fueran el mismo analito, la severidad
 	// tendria que decidirse afuera.
-	public sealed class AnalitoBinario : Analito
+	internal sealed class AnalitoBinario : Analito
 	{
 		internal AnalitoBinario(string nombre, string paraMostrar, params string[] sinonimos)
 			: base(nombre, paraMostrar, RequisitoAnatomico.Ninguno, sinonimos)
 		{
 		}
-
-		// SI forma serie, y esa es la correccion. "Negativo, negativo, positivo" es una
-		// serie legitima —el brief la nombra en §6.5— y hasta ahora no se podia tener
-		// porque la serie estaba tipada a los examenes de sangre. Ver SerieBinaria para
-		// que aporta: una sangre oculta positiva DOS VECES SEGUIDAS no se lee como una.
-		public override bool FormaSerie => true;
 	}
 }

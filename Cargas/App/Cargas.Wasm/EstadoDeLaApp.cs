@@ -31,32 +31,123 @@ public sealed class EstadoDeLaApp : IAsyncDisposable
 	private readonly ModoDeLaApp modo;
 	private readonly PuenteDeGnothi puenteDeGnothi;
 	private readonly AlmacenDeCredencial almacen;
+	private readonly PuenteDeTraspaso puenteDeTraspaso;
 	private readonly HttpClient http;
 	private readonly ConfiguracionDelProveedor proveedor;
+	private readonly ConfiguracionDeGnothi gnothi;
 
 	private CargasApp? app;
 	private CargasAPI? api;
 	private BucleDeRefresh? bucle;
 
+	// UN SOLO CONSTRUCTOR CON LOS DOS JUEGOS DE DEPENDENCIAS. El merge de master trajo dos:
+	// el del hospedaje -- modo, puenteDeGnothi, almacen -- y el del traspaso de anotaciones,
+	// que agrego puenteDeTraspaso y configuracionDeGnothi. Ninguno reemplaza al otro: la app
+	// suelta y la hospedada siguen siendo el mismo binario, y el traspaso es una operacion
+	// mas sobre eso. Asi que se unen, y no hay sobrecarga: dos constructores en un servicio
+	// que resuelve el contenedor es una forma de que el contenedor elija el equivocado.
 	public EstadoDeLaApp(PuenteDeJournal puente, ModoDeLaApp modo, PuenteDeGnothi puenteDeGnothi,
-		AlmacenDeCredencial almacen, HttpClient http, ConfiguracionDelProveedor proveedor)
+		AlmacenDeCredencial almacen, PuenteDeTraspaso puenteDeTraspaso, HttpClient http,
+		ConfiguracionDelProveedor proveedor, ConfiguracionDeGnothi gnothi)
 	{
 		ArgumentNullException.ThrowIfNull(puente);
 		ArgumentNullException.ThrowIfNull(modo);
 		ArgumentNullException.ThrowIfNull(puenteDeGnothi);
 		ArgumentNullException.ThrowIfNull(almacen);
+		ArgumentNullException.ThrowIfNull(puenteDeTraspaso);
 		ArgumentNullException.ThrowIfNull(http);
 		ArgumentNullException.ThrowIfNull(proveedor);
+		ArgumentNullException.ThrowIfNull(gnothi);
 
 		this.puente = puente;
 		this.modo = modo;
 		this.puenteDeGnothi = puenteDeGnothi;
 		this.almacen = almacen;
+		this.puenteDeTraspaso = puenteDeTraspaso;
 		this.http = http;
 		this.proveedor = proveedor;
+		this.gnothi = gnothi;
 	}
 
 	public bool EstaArriba => app is not null;
+
+	/// <summary>SE DISPARA CUANDO EL ACTOR CAMBIO y las pantallas tienen que releer.
+	///
+	/// Existe por las pestañas: el boton de Actualizar vive en el layout y lo que hay que
+	/// releer vive en la pagina, asi que no alcanza con que quien aprieta repinte. Blazor
+	/// no observa servicios inyectados, y este singleton es lo unico que las cuatro
+	/// pantallas comparten.
+	///
+	/// Lo dispara TODO lo que cambia el estado del actor -arrancar, refrescar y cada
+	/// aporte-, y no solo el refresh: si un aporte hecho en la Ruta desbloquea un tramo,
+	/// el Tablero tiene que enterarse aunque nadie lo haya tocado.</summary>
+	// ------------------------------------------------------- el carro que se esta mirando
+
+	// LA PLACA ELEGIDA es una PREFERENCIA DE PANTALLA, no un hecho: vive en IndexedDB al
+	// lado del handle de la carpeta y no en el journal. Que carro estaba mirando alguien
+	// no es un hecho de la estacion ni un aporte sobre el carro, y si estuviera en el
+	// journal el servidor MCP la leeria sin que significara nada para el.
+	private string placaElegida = "";
+
+	/// <summary>La placa que se esta mirando, resuelta contra los vehiculos que HAY.
+	///
+	/// La preferencia guardada es una PISTA, no una verdad: el carro pudo dejar de estar
+	/// -otra computadora, otra bitacora importada- y en ese caso se cae al primero en vez
+	/// de dejar el tablero en blanco apuntando a una placa que ya no existe. Total a
+	/// proposito: sin vehiculos devuelve "".
+	///
+	/// Recibe la lista en vez de volver a consultarla porque quien llama ya la tiene: es
+	/// un PerformQuery, y pedirlo dos veces por repintado no es gratis.</summary>
+	public string PlacaEnFoco(IReadOnlyList<VehiculoEnLista> vehiculos)
+	{
+		ArgumentNullException.ThrowIfNull(vehiculos);
+		if (vehiculos.Count == 0) return "";
+
+		foreach (VehiculoEnLista vehiculo in vehiculos)
+			if (vehiculo.Placa == placaElegida) return placaElegida;
+
+		return vehiculos[0].Placa;
+	}
+
+	/// <summary>Elegir carro. Se recuerda para la proxima vez y se avisa, porque lo que
+	/// cambia no es una pantalla: cambian las cuatro.</summary>
+	public async ValueTask ElegirVehiculo(string placa)
+	{
+		ArgumentNullException.ThrowIfNullOrWhiteSpace(placa);
+		if (placa == placaElegida) return;
+
+		placaElegida = placa;
+		await puente.RecordarPreferencia(ClaveDelCarro, placa);
+		Avisar();
+	}
+
+	private const string ClaveDelCarro = "carro-en-foco";
+
+	/// <summary>Cuantas veces se fue a buscar datos. Es la llave que hace que el cuadro de
+	/// instrumentos se recree y vuelva a entrar animado.
+	///
+	/// La animacion se dispara al MONTAR, asi que lo que decide cuando corre no es el CSS:
+	/// es que el nodo se recree, y eso lo decide el @key. Sube SOLO acá y no en cada
+	/// lectura, para que anotar un kilometraje no haga entrar de nuevo a los seis
+	/// instrumentos: eso es respuesta a "fui a buscar y volvi", no a teclear un numero.</summary>
+	public int Refrescos { get; private set; }
+
+	/// <summary>SI SE ESTA PONIENDO AL DIA con la estacion, sea al abrir o por la tecla.
+	///
+	/// Vive aca y no en el layout porque el arranque tambien refresca, y el layout no
+	/// puede saber cuando empieza ni cuando termina ese refresh: solo ve el aviso. Con esto
+	/// la tecla dice "Actualizando…" tambien durante el arranque, que es cuando mas dura.</summary>
+	public bool Refrescando { get; private set; }
+
+	/// <summary>EL REFRESH QUE NO LLEGO. Antes esto iba a UltimoMensaje, que ninguna
+	/// pantalla lee, asi que una estacion caida y una estacion sin novedades se veian
+	/// identicas. No es un error de la app -el journal propio se muestra igual- pero hay
+	/// que decirlo, y se limpia solo con el siguiente refresh que si llega.</summary>
+	public string ProblemaAlPonerseAlDia { get; private set; } = "";
+
+	public event Action? Cambio;
+
+	private void Avisar() => Cambio?.Invoke();
 
 	public bool HayCarpeta => puente.HayCarpeta;
 
@@ -95,6 +186,12 @@ public sealed class EstadoDeLaApp : IAsyncDisposable
 
 
 	public ValueTask<string> ModoRecordado() => puente.ModoRecordado();
+
+	// Las preferencias de pantalla, tal cual salen del puente. Ver PuenteDeJournal.
+	public ValueTask<string> Preferencia(string nombre) => puente.Preferencia(nombre);
+
+	public ValueTask RecordarPreferencia(string nombre, string valor) =>
+		puente.RecordarPreferencia(nombre, valor);
 
 	public async ValueTask<ResultadoDeCarpeta> UsarAlmacenamientoDelNavegador()
 	{
@@ -185,6 +282,18 @@ public sealed class EstadoDeLaApp : IAsyncDisposable
 				? $"arriba. {precargados} archivos precargados de la carpeta '{puente.NombreDeLaCarpeta}'"
 				: "arriba, pero SIN carpeta: el journal vive solo en memoria y se pierde al cerrar";
 
+		// La preferencia se lee ANTES de avisar: asi la primera pintada ya sale con el
+		// carro que quedo elegido, en vez de mostrar el primero y saltar despues.
+		placaElegida = await puente.Preferencia(ClaveDelCarro);
+
+		// ARRIBA YA, ANTES DE IR A LA ESTACION. El journal propio alcanza para pintar el
+		// tablero; ponerse al dia es lo siguiente, no la condicion. Antes el aviso iba
+		// despues del refresh, y con la estacion lenta -o caida, hasta el timeout- la
+		// pantalla se quedaba en "elegí dónde guardar" mientras el actor ya estaba vivo.
+		// Medido: entre 2 y 8 segundos de elegidor para alguien que ya habia elegido.
+		Refrescando = true;
+		Avisar();
+
 		// La app se pone al dia sola: consigue su credencial si no la tiene y lee lo
 		// nuevo. Es el "el app puede hacer cada manana o cada vez que abre" del diseno.
 		// Si el proveedor no esta disponible, abrir NO falla: se muestra lo que ya hay
@@ -199,11 +308,27 @@ public sealed class EstadoDeLaApp : IAsyncDisposable
 			ResultadoDeRefresh alAbrir = await bucle.Ejecutar(CancellationToken.None);
 			if (alAbrir.Cuenta is not null) Cuenta = alAbrir.Cuenta;
 			UltimoMensaje += $" | al abrir: {alAbrir}";
+			ProblemaAlPonerseAlDia = "";
+
+			// El cuadro vuelve a entrar animado SOLO si llego algo: es la respuesta a "fui
+			// a buscar y volvi con novedades". Sin novedades, la primera pintada ya animo y
+			// repetirla dos segundos despues es un parpadeo sin motivo.
+			if (alAbrir.Aplicados > 0) Refrescos++;
+
+			// Las anotaciones que llegaron antes que sus cargas: ahora que la estacion
+			// publico, se vuelven a intentar (ver Traspasar).
+			if (alAbrir.Aplicados > 0) await ReaplicarTraspasoPendiente();
 		}
 		catch (Exception ex)
 		{
 			UltimoMensaje += $" | al abrir no se pudo poner al dia ({ex.GetType().Name}: {ex.Message}). "
 			               + "Lo que ya estaba registrado se muestra igual.";
+			ProblemaAlPonerseAlDia = $"{ex.GetType().Name}: {ex.Message}";
+		}
+		finally
+		{
+			Refrescando = false;
+			Avisar();
 		}
 
 		// RECIEN AHORA el modulo puede recibir: el actor esta hidratado. Gnothi no puede
@@ -372,9 +497,29 @@ public sealed class EstadoDeLaApp : IAsyncDisposable
 		// linea ya estaba cubierto ahi.
 		//
 		// Es lo que Examenes ya hacia. Los cuatro modulos quedan iguales.
-		ResultadoDeRefresh resultado = await bucle!.Ejecutar(ct);
-		UltimoMensaje = $"refresh: {resultado}";
-		return resultado;
+		// Medido en un iPhone: la app abria, el arranque no alcanzaba el proveedor, y el
+		// boton quedaba inutil reportando la consecuencia en vez de la causa.
+		// Se avisa al ENTRAR y no solo al salir: la tecla del capo tiene que decir
+		// "Actualizando…" en el acto, no cuando el Intentar de la cascara repinte.
+		Refrescando = true;
+		Avisar();
+		try
+		{
+			await Credencial(ct);
+
+			ResultadoDeRefresh resultado = await bucle!.Ejecutar(ct);
+			UltimoMensaje = $"refresh: {resultado}";
+			ProblemaAlPonerseAlDia = "";
+			Refrescos++;
+
+			if (resultado.Aplicados > 0) await ReaplicarTraspasoPendiente();
+			return resultado;
+		}
+		finally
+		{
+			Refrescando = false;
+			Avisar();
+		}
 	}
 
 	// ------------------------------------------------------- los aportes de Sonia
@@ -384,12 +529,21 @@ public sealed class EstadoDeLaApp : IAsyncDisposable
 	// de refresh. Devuelven el mensaje del Check ("" si entro): un kilometraje que
 	// retrocede se rechaza sin dejar entrada, y la pantalla lo dice.
 
-	public async ValueTask<string> AnotarOdometro(string transaccion, decimal kilometros,
-		string origen)
+	/// <summary>El kilometraje que ella leyo, EN LA UNIDAD EN QUE LO LEYO.
+	///
+	/// La unidad iba clavada en "km", y con el selector de unidades eso pasaba de detalle a
+	/// bug silencioso: si el campo muestra millas y el comando dice km, cada lectura entra
+	/// 1.6 veces mas grande, ya journalizada, la coherencia por monotonia empieza a
+	/// rechazar entradas validas y la linea base queda envenenada sin que nada lo diga.
+	///
+	/// La preferencia decide el DEFAULT del campo; lo que se journaliza es la unidad en la
+	/// que ella lo leyo, que es la que el dominio necesita para normalizar.</summary>
+	public async ValueTask<string> AnotarOdometro(string transaccion, decimal kilometraje,
+		string unidad, string origen)
 	{
 		Exigir();
-		string rechazo = api!.AnotarOdometro(transaccion, kilometros, "km", origen);
-		if (rechazo.Length == 0) await BajarADisco();
+		string rechazo = api!.AnotarOdometro(transaccion, kilometraje, unidad, origen);
+		if (rechazo.Length == 0) { await BajarADisco(); Avisar(); }
 		return rechazo;
 	}
 
@@ -397,7 +551,7 @@ public sealed class EstadoDeLaApp : IAsyncDisposable
 	{
 		Exigir();
 		string rechazo = api!.ConfirmarTanque(transaccion);
-		if (rechazo.Length == 0) await BajarADisco();
+		if (rechazo.Length == 0) { await BajarADisco(); Avisar(); }
 		return rechazo;
 	}
 
@@ -405,7 +559,7 @@ public sealed class EstadoDeLaApp : IAsyncDisposable
 	{
 		Exigir();
 		string rechazo = api!.DeclararTanque(transaccion, estado);
-		if (rechazo.Length == 0) await BajarADisco();
+		if (rechazo.Length == 0) { await BajarADisco(); Avisar(); }
 		return rechazo;
 	}
 
@@ -415,7 +569,7 @@ public sealed class EstadoDeLaApp : IAsyncDisposable
 		Exigir();
 		string rechazo = api!.CompletarFicha(placa, alias, marca, modelo, anio, color,
 			rendimientoDeFabrica);
-		if (rechazo.Length == 0) await BajarADisco();
+		if (rechazo.Length == 0) { await BajarADisco(); Avisar(); }
 		return rechazo;
 	}
 
@@ -423,6 +577,9 @@ public sealed class EstadoDeLaApp : IAsyncDisposable
 	// (fotos/) y el journal guarda solo el nombre. Es el respaldo de un dato que, por
 	// ser aporte de Sonia, no tiene otra evidencia. La lectura del numero sigue siendo
 	// de ella: aca no hay OCR, y si algun dia lo hay, escribe solo tras su visto bueno.
+	/// <summary>La foto del tablero, de vuelta de la carpeta, en base64. "" si no se pudo.</summary>
+	public ValueTask<string> LeerFoto(string nombreDeArchivo) => puente.LeerArchivo(nombreDeArchivo);
+
 	public async ValueTask<string> AdjuntarFoto(string transaccion, string extension,
 		byte[] contenido)
 	{
@@ -435,8 +592,128 @@ public sealed class EstadoDeLaApp : IAsyncDisposable
 		if (motivo.Length > 0) return motivo;
 
 		string rechazo = api!.AdjuntarFoto(transaccion, nombre);
-		if (rechazo.Length == 0) await BajarADisco();
+		if (rechazo.Length == 0) { await BajarADisco(); Avisar(); }
 		return rechazo;
+	}
+
+	// ------------------------------------------------- el traspaso de anotaciones a Gnothi
+
+	// LO QUE SONIA ANOTO ELLA MISMA es lo unico que cruza cuando esta app pasa a vivir dentro
+	// de Gnothi (especificacion 13 §5). Los hechos de la estacion no viajan -el modulo
+	// hospedado los vuelve a pedir con la credencial de Gnothi- y la credencial de esta
+	// instalacion tampoco. El sobre lo arma Cargas.App.Traspaso; aca solo se decide como
+	// sale (la hoja de compartir) y como entra (Traspasar).
+	//
+	// POR LA HOJA DE COMPARTIR Y NO POR EL ENLACE. En Examenes la unica asercion es el sexo
+	// declarado y cabe en la URL del handoff. Aca son decenas: medido con el guion de 28
+	// cargas, el sobre pesa ~9.7 KB (~21 KB escapado para URL). El enlace del handoff abre
+	// Gnothi nombrando el modulo; el sobre va como archivo de texto (13 §5.2).
+
+	/// <summary>Cuanto hay para pasar, en piezas, para que la pantalla lo enuncie antes del
+	/// toque. Las fotos se cuentan aparte porque NO viajan.</summary>
+	public ResumenDeTraspaso QueSePasa() { Exigir(); return Traspaso.Resumir(api!); }
+
+	/// <summary>El sobre entero. Publico para poder mirarlo; lo que la persona toca es
+	/// CompartirConGnothi.</summary>
+	public string SobreDeTraspaso() { Exigir(); return Traspaso.Armar(api!, DondeEstaElProveedor, DateTime.UtcNow); }
+
+	public ValueTask<bool> EsAndroid() => puenteDeTraspaso.EsAndroid();
+
+	public ValueTask<bool> PuedeCompartirArchivos() => puenteDeTraspaso.PuedeCompartirArchivos();
+
+	// EL ENLACE QUE ABRE GNOTHI, nombrando el modulo y sin las aserciones adentro: no caben.
+	//
+	// Android: intent:// con package y fallback explicito. Si Gnothi esta instalado el SO lo
+	// abre; si no, Chrome carga la pagina de Gnothi. EXIGE GESTO. iOS y el resto: un https
+	// normal al dominio de Gnothi, en un <a href> TOCADO -no window.location desde JS, que
+	// iOS trata como pegar la URL en la barra- y a un dominio distinto al de esta app.
+	public string EnlaceParaAbrirGnothi(bool android)
+	{
+		string consulta = $"modulo={Traspaso.Modulo}";
+		string paginaDeGnothi = $"https://{gnothi.Dominio}/abrir?{consulta}";
+
+		if (!android) return paginaDeGnothi;
+
+		return $"intent://{gnothi.Dominio}/abrir?{consulta}"
+			+ $"#Intent;scheme=https;package={gnothi.Paquete}"
+			+ $";S.browser_fallback_url={Uri.EscapeDataString(paginaDeGnothi)};end";
+	}
+
+	/// <summary>EXIGE GESTO. Arma el sobre y lo saca por la hoja de compartir; donde no hay,
+	/// lo descarga y lo dice. Repetirlo es inocuo: el modulo que lo reciba no duplica.</summary>
+	public async ValueTask<ResultadoDeCompartir> CompartirConGnothi()
+	{
+		Exigir();
+
+		string sobre = Traspaso.Armar(api!, DondeEstaElProveedor, DateTime.UtcNow);
+		string nombre = $"mis-anotaciones-cargas-{DateTime.UtcNow:yyyy-MM-dd}.txt";
+		ResultadoDeCompartir resultado = await puenteDeTraspaso.Compartir(nombre, sobre, "Mis anotaciones de cargas");
+		UltimoMensaje = $"traspaso hacia Gnothi: {(resultado.Ok ? resultado.Como : resultado.Motivo)}";
+		return resultado;
+	}
+
+	// RECIBIR EL TRASPASO. Es el verbo que Gnothi le va a llamar al modulo hospedado
+	// -`window.gnothi.traspasar`, como en Examenes- cuando la capa de hospedaje llegue a
+	// esta rama; hasta entonces no tiene quien lo llame, y esta aca para que el que la traiga
+	// solo tenga que cablearlo.
+	//
+	// NO ENTRA POR EL CAMINO DE LOS EVENTOS. Los eventos de la estacion vienen numerados,
+	// mueven el cursor y la guarda Check los hace idempotentes. Esto son comandos de la
+	// persona, sin numero: la idempotencia la pone Traspaso comparando contra lo que ya esta.
+	//
+	// LO QUE ESPERA SE GUARDA. Gnothi entrega el traspaso apenas el modulo arranca, y puede
+	// que las cargas aun no hayan llegado. Las anotaciones cuya carga no esta quedan en un
+	// archivo al lado del journal -viaja con la carpeta, igual que las fotos- y se vuelven a
+	// aplicar despues de cada refresh que traiga algo, hasta que nada espere.
+	public async Task<ResultadoDeTraspaso> Traspasar(string sobreJson)
+	{
+		Exigir();
+
+		ResultadoDeTraspaso resultado = Traspaso.Aplicar(api!, sobreJson);
+		UltimoTraspaso = resultado;
+
+		if (resultado.Pendiente) EscribirTraspasoPendiente(sobreJson);
+		else if (HayTraspasoPendiente) EscribirTraspasoPendiente("");
+
+		// Baja a disco una sola vez, al final: son comandos de la persona, no un bloque de
+		// eventos que haya que poder reanudar a mitad. Sin carpeta no hace nada.
+		await BajarADisco();
+		if (resultado.Aplicadas > 0) Avisar();
+
+		UltimoMensaje = $"traspaso recibido: {resultado}";
+		return resultado;
+	}
+
+	/// <summary>El resultado del ultimo traspaso recibido, para que la pantalla lo cuente.</summary>
+	public ResultadoDeTraspaso? UltimoTraspaso { get; private set; }
+
+	/// <summary>Si hay anotaciones recibidas que todavia esperan a sus cargas.</summary>
+	public bool HayTraspasoPendiente =>
+		File.Exists(RutaDelTraspasoPendiente) && new FileInfo(RutaDelTraspasoPendiente).Length > 0;
+
+	// Al lado del journal, no adentro: `/journal/cargas/` es del actor; esto es de la app.
+	// Se SOBREESCRIBE VACIO en vez de borrarse porque el puente no tiene "borrar": un
+	// archivo borrado solo en MEMFS volveria de la carpeta en la proxima apertura.
+	private static readonly string RutaDelTraspasoPendiente =
+		Path.Combine(PuenteDeJournal.RaizEnMemfs, "traspaso", "pendiente.json");
+
+	private static void EscribirTraspasoPendiente(string sobreJson)
+	{
+		Directory.CreateDirectory(Path.GetDirectoryName(RutaDelTraspasoPendiente)!);
+		File.WriteAllText(RutaDelTraspasoPendiente, sobreJson ?? "");
+	}
+
+	private async Task ReaplicarTraspasoPendiente()
+	{
+		if (!HayTraspasoPendiente) return;
+
+		string sobre = File.ReadAllText(RutaDelTraspasoPendiente);
+		ResultadoDeTraspaso resultado = Traspaso.Aplicar(api!, sobre);
+		UltimoTraspaso = resultado;
+
+		if (!resultado.Pendiente) EscribirTraspasoPendiente("");
+		await BajarADisco();
+		UltimoMensaje += $" | traspaso pendiente: {resultado}";
 	}
 
 	// ---------------------------------------------------------------- consultas
@@ -453,6 +730,10 @@ public sealed class EstadoDeLaApp : IAsyncDisposable
 
 	public AutonomiaDelVehiculo Autonomia(string placa) { Exigir(); return api!.Autonomia(placa); }
 
+	// El "hoy" lo pone la caratula, como en Odometro(): el dominio no lee el reloj.
+	public ProximaCargaDelVehiculo ProximaCarga(string placa, DateTime hoy)
+	{ Exigir(); return api!.ProximaCarga(placa, hoy); }
+
 	public CompletitudDelVehiculo Completitud(string placa) { Exigir(); return api!.Completitud(placa); }
 
 	public IReadOnlyList<FaltanteEnLista> Faltantes(string placa) { Exigir(); return api!.Faltantes(placa); }
@@ -467,7 +748,41 @@ public sealed class EstadoDeLaApp : IAsyncDisposable
 
 	public IReadOnlyList<GastoEnLista> Gastos(int anio, int mes) { Exigir(); return api!.Gastos(anio, mes); }
 
+	/// <summary>El gasto de UN carro. El de la persona -Gastos(anio, mes)- sigue existiendo
+	/// para cuando la pregunta sea de la billetera; el tablero usa este.</summary>
+	public IReadOnlyList<GastoEnLista> Gastos(string placa, int anio, int mes)
+	{ Exigir(); return api!.GastosDe(placa, anio, mes); }
+
 	public EstadoDeLealtad Lealtad() { Exigir(); return api!.Lealtad(); }
+
+	// ---------------------------------------------------------------- las unidades
+
+	public UnidadesElegidas Unidades() { Exigir(); return api!.Unidades(); }
+
+	// LAS TOMBOLAS. El "hoy" lo pone esta caratula, como en Odometro y ProximaCarga.
+	public IReadOnlyList<SorteoEnLista> Sorteos(DateTime hoy)
+	{ Exigir(); return api!.Sorteos(hoy); }
+
+	public IReadOnlyList<BoletosDeLaCargaEnLista> BoletosDeLasCargas(string placa)
+	{ Exigir(); return api!.BoletosDeLasCargas(placa); }
+
+	/// <summary>Elegir en que se mira. Va al journal -cambia lo que la IA DICE, no solo lo
+	/// que se ve- y por eso baja a disco como cualquier otro aporte.</summary>
+	public async ValueTask<string> ElegirPresentacionDeRendimiento(string simbolo)
+	{
+		Exigir();
+		string rechazo = api!.ElegirPresentacionDeRendimiento(simbolo);
+		if (rechazo.Length == 0) { await BajarADisco(); Avisar(); }
+		return rechazo;
+	}
+
+	public async ValueTask<string> ElegirUnidadDeDistancia(string simbolo)
+	{
+		Exigir();
+		string rechazo = api!.ElegirUnidadDeDistancia(simbolo);
+		if (rechazo.Length == 0) { await BajarADisco(); Avisar(); }
+		return rechazo;
+	}
 
 	public int Cantidad() { Exigir(); return api!.CantidadDeCargas(); }
 
@@ -490,6 +805,7 @@ public sealed class EstadoDeLaApp : IAsyncDisposable
 		await puente.DisposeAsync();
 		await almacen.DisposeAsync();
 		await puenteDeGnothi.DisposeAsync();
+		await puenteDeTraspaso.DisposeAsync();
 	}
 }
 

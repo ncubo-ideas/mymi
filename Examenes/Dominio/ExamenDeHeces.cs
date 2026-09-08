@@ -20,37 +20,38 @@ namespace Examenes.Dominio
 	// tipo de magnitud, misma pregunta, distinta conducta, y la diferencia vive en el
 	// analito. Ver SangreEnOrina y SangreEnHeces, que estan escritas para leerse juntas.
 	//
-	// Igual que la orina, NO tiene numero ni unidad ni rango, y no aporta serie. Y trae
-	// dos magnitudes de formas distintas:
+	// Igual que la orina, NO tiene numero ni unidad ni rango, asi que el examen entero no es
+	// el punto de ninguna serie continua. Sus DOS magnitudes si tienen serie, cada una la
+	// suya, y son de formas distintas:
 	//
 	//   el color   -> MagnitudNominal   (forma 6)
 	//   la sangre  -> MagnitudBinaria   (forma 5)
-	public sealed class ExamenDeHeces : Examen
+	internal sealed class ExamenDeHeces : Examen
 	{
-		public ColorDeHeces Color { get; private set; }
+		internal ColorDeHeces Color { get; private set; }
 
-		public SangreEnHeces Sangre { get; private set; }
+		internal SangreEnHeces Sangre { get; private set; }
 
-		public ExamenDeHeces(DateTime fecha, string color)
+		internal ExamenDeHeces(DateTime fecha, string color)
 			: this(fecha, color, null)
 		{
 		}
 
-		public ExamenDeHeces(DateTime fecha, string color, string sangre) : base(fecha)
+		internal ExamenDeHeces(DateTime fecha, string color, string sangre) : base(fecha)
 		{
 			Color = ColorDeHeces.PorNombre(color);
 			Sangre = SangreEnHeces.PorNombre(sangre);
 		}
 
-		public override string Nombre => "Examen general de heces";
+		internal override string Nombre => "Examen general de heces";
 
-		public override bool AportaSerie => false;
+		internal override bool AportaSerieContinua => false;
 
-		public override string ResultadoExpresado => Sangre.FueRealizada
+		internal override string ResultadoExpresado => Sangre.FueRealizada
 			? $"{Color.Expresado}, sangre {Sangre.Expresado}"
 			: Color.Expresado;
 
-		public override IReadOnlyList<LecturaDeExamen> Lecturas
+		internal override IReadOnlyList<LecturaDeExamen> Lecturas
 		{
 			get
 			{
@@ -67,12 +68,12 @@ namespace Examenes.Dominio
 			}
 		}
 
-		public bool TieneHallazgo => !Color.EsEsperable || Sangre.EsHallazgo;
+		internal bool TieneHallazgo => !Color.EsEsperable || Sangre.EsHallazgo;
 
 		// LA COMPARACION QUE JUSTIFICA ESTA CLASE. Con una sangre positiva esto devuelve
 		// Seguimiento; el mismo positivo en ExamenDeOrina devuelve AtencionInmediata. Dos
 		// binarios, dos severidades, y ni la pantalla ni la IA tienen que saber por que.
-		public Severidad SeveridadDelExamen
+		internal Severidad SeveridadDelExamen
 		{
 			get
 			{
@@ -81,7 +82,7 @@ namespace Examenes.Dominio
 			}
 		}
 
-		public string ParaSonia
+		internal string ParaSonia
 		{
 			get
 			{

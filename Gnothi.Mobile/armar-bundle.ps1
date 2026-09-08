@@ -78,7 +78,7 @@ $catalogo = @{
         )
     }
     'dealership' = @{
-        Proyecto    = "$raiz/DealershipCar/App/DealershipCar.Wasm/DealershipCar.Wasm.csproj"
+        Proyecto    = "$raiz/Concesionario/App/Concesionario.Wasm/Concesionario.Wasm.csproj"
         Titulo      = 'My maintenance'
         Institucion = 'DealershipCar (POC mock)'
         Recurso     = 'vehicle'

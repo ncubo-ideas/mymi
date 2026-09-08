@@ -14,25 +14,25 @@ namespace Compras.Dominio
 	//
 	// Y ES LO QUE HACE POSIBLE UNA PREGUNTA QUE ANTES NO SE PODIA HACER: cuantos productos
 	// distintos de una categoria compra esta persona. Eso no esta en ningun ticket.
-	public class Catalogo
+	internal class Catalogo
 	{
 		private readonly List<Producto> productos = new List<Producto>();
 		private readonly Dictionary<string, Producto> porSku =
 			new Dictionary<string, Producto>(StringComparer.OrdinalIgnoreCase);
 
-		public IReadOnlyList<Producto> Lista => productos;
+		internal IReadOnlyList<Producto> Lista => productos;
 
-		public int Cantidad => productos.Count;
+		internal int Cantidad => productos.Count;
 
 		/// <summary>Reconocimiento total: la pareja del indexador, para preguntar sin reventar.</summary>
-		public bool Tiene(string sku)
+		internal bool Tiene(string sku)
 		{
 			ArgumentNullException.ThrowIfNullOrWhiteSpace(sku);
 			return porSku.ContainsKey(sku);
 		}
 
 		/// <summary>Un sku que nunca se compró es un error de quien pregunta, no un producto vacío.</summary>
-		public Producto this[string sku]
+		internal Producto this[string sku]
 		{
 			get
 			{
@@ -79,7 +79,7 @@ namespace Compras.Dominio
 		}
 
 		/// <summary>Los productos de una categoría que esta persona compra. No está en ningún ticket.</summary>
-		public IReadOnlyList<Producto> De(Categoria categoria)
+		internal IReadOnlyList<Producto> De(Categoria categoria)
 		{
 			ArgumentNullException.ThrowIfNull(categoria);
 
@@ -91,6 +91,6 @@ namespace Compras.Dominio
 		}
 
 		/// <summary>Cuántos productos distintos conoce de una categoría.</summary>
-		public int CuantosDe(Categoria categoria) => De(categoria).Count;
+		internal int CuantosDe(Categoria categoria) => De(categoria).Count;
 	}
 }

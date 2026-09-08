@@ -8,11 +8,11 @@ namespace Cargas.Dominio
 	/// la primera lectura valida, entre los kilometros recorridos desde ella -lo pagado
 	/// en la primera ancla movio los kilometros del periodo anterior-.
 	/// </summary>
-	public sealed class CostoPorDistanciaEnMoneda
+	internal sealed class CostoPorDistanciaEnMoneda
 	{
-		public Moneda Moneda { get; private set; }
-		public decimal MontoPorKilometro { get; private set; }
-		public decimal Kilometros { get; private set; }
+		internal Moneda Moneda { get; private set; }
+		internal decimal MontoPorKilometro { get; private set; }
+		internal decimal Kilometros { get; private set; }
 
 		internal CostoPorDistanciaEnMoneda(Moneda moneda, decimal montoPorKilometro,
 			decimal kilometros)
@@ -24,8 +24,8 @@ namespace Cargas.Dominio
 			Kilometros = kilometros;
 		}
 
-		public string CodigoDeMoneda => Moneda.Codigo;
-		public string Expresado =>
-			$"{Moneda.Simbolo}{MontoPorKilometro:0.##} por km, sobre {Kilometros:0} km";
+		internal string CodigoDeMoneda => Moneda.Codigo;
+		internal string Expresado =>
+			$"{Moneda.Simbolo}{Cifras.Plata(MontoPorKilometro)} por km, sobre {Cifras.Entera(Kilometros)} km";
 	}
 }

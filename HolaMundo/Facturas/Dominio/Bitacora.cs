@@ -23,7 +23,7 @@ namespace Facturas.Dominio
 	// bucle de refresh la recibe de ahi, no del diario.
 	public class Bitacora
 	{
-		public long UltimoEvento { get; private set; }
+		internal long UltimoEvento { get; private set; }
 
 		public void Avanzar(long evento)
 		{

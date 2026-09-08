@@ -7,7 +7,7 @@ using System.Threading.Tasks;
 using Compras.App;
 using Compras.App.Eventos;
 using Compras.App.Vistas;
-using Compras.Dominio;
+
 using Puppeteer;
 using Puppets.Portador;
 
@@ -93,11 +93,25 @@ namespace Compras.Consola
 			}
 			Console.WriteLine($"aplicados={aplicados} descartados={descartados} rechazados={rechazados}");
 
-			// Dos formas distintas de descartar, y las dos tienen que devolver null.
+			// DOS RECHAZOS EN DOS PLANOS DISTINTOS, y esa diferencia es el diseno.
+			//
+			// Un TIPO DE EVENTO que esta app no conoce se descarta en la RUTA: no hay mensaje
+			// que armar, y eso no necesita al dominio para saberse.
+			//
+			// Un DEPARTAMENTO no modelado ya no se descarta ahi. Reconocer un conjunto
+			// cerrado obligaba a la Superficie a NOMBRAR Categoria en C#, y con eso el
+			// dominio entero tenia que ser public. Ahora entra como mensaje y lo rechaza el
+			// Check DENTRO del actor, donde el motor resuelve el tipo por reflexion desde el
+			// texto del script. Lo que importa que no cambie es el efecto: no se aplica y NO
+			// deja entrada en el journal.
 			bool descartaTipo = RutaDeCompras.Rutear(Muestras.TipoDesconocido()) == null;
-			bool descartaCategoria = RutaDeCompras.Rutear(Muestras.CategoriaNoModelada()) == null;
 			Console.WriteLine($"descarta tipo desconocido       : {descartaTipo}");
-			Console.WriteLine($"descarta categoria no modelada  : {descartaCategoria}");
+
+			long antesDeLaCategoria = app.Actor.CurrentEntryId;
+			string rechazoDeCategoria =
+				api.AplicarCompraRegistrada((CompraRegistrada)RutaDeCompras.Rutear(Muestras.CategoriaNoModelada()));
+			Console.WriteLine($"rechaza categoria no modelada   : {rechazoDeCategoria.Length > 0}");
+			Console.WriteLine($"  y NO deja entrada             : {app.Actor.CurrentEntryId == antesDeLaCategoria}");
 
 			ImprimirEstado(app, api, conVeredicto: true);
 
