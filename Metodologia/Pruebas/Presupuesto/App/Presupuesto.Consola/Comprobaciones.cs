@@ -64,13 +64,13 @@ namespace Presupuesto.Consola
 			tarjeta.RespondeTambienA("PAGO TARJETA VISA");
 
 			var super = new GastoDeLaPersona("Supermercado", Periodicidad.Mensual);
-			super.RespondeTambienA("SUPERMERCADO LA COSECHA");
+			super.RespondeTambienA("SUPERMERCADO LA GUARIA");
 
 			var p = new Panorama(0.10m);
 			p.Reconoce(tarjeta);
 			p.Reconoce(super);
 
-			p.Entra(Banco("SUPERMERCADO LA COSECHA", 2026, 5, 43500));
+			p.Entra(Banco("SUPERMERCADO LA GUARIA", 2026, 5, 43500));
 			p.Entra(Banco("PAGO TARJETA VISA", 2026, 5, 43500));
 
 			Verificar("Pagar la tarjeta no suma al consumo: la compra ya estaba contada",

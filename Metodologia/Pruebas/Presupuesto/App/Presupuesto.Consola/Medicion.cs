@@ -73,13 +73,13 @@ namespace Presupuesto.Consola
 			api.ReconocerGastoDeLaPersona("Cine", "mensual", "CINEPOLIS");
 			api.MarcarReducibilidad("Cine", "discrecional");
 
-			api.ReconocerGastoDeLaPersona("Supermercado", "mensual", "SUPERMERCADO LA COSECHA");
+			api.ReconocerGastoDeLaPersona("Supermercado", "mensual", "SUPERMERCADO LA GUARIA");
 
 			// Mayo: la línea base.
 			api.EntraCargoDelBanco(new DateTime(2026, 5, 5), 20000m, "CNFL", "debito");
 			api.EntraCargoDelBanco(new DateTime(2026, 5, 5), 150000m, "CUOTA CARRO", "debito");
 			api.EntraCargoDelBanco(new DateTime(2026, 5, 8), 20000m, "CINEPOLIS", "tarjeta");
-			api.EntraCargoDelBanco(new DateTime(2026, 5, 12), 90000m, "SUPERMERCADO LA COSECHA", "tarjeta");
+			api.EntraCargoDelBanco(new DateTime(2026, 5, 12), 90000m, "SUPERMERCADO LA GUARIA", "tarjeta");
 			api.EntraCargoDelBanco(new DateTime(2026, 5, 20), 110000m, "PAGO TARJETA VISA", "debito");
 
 			// Junio: el súper se dispara. El total tiene que moverse más del 10 %, y el
@@ -87,7 +87,7 @@ namespace Presupuesto.Consola
 			api.EntraCargoDelBanco(new DateTime(2026, 6, 5), 21500m, "cnfl s.a.", "debito");
 			api.EntraCargoDelBanco(new DateTime(2026, 6, 5), 150000m, "CUOTA CARRO", "debito");
 			api.EntraCargoDelBanco(new DateTime(2026, 6, 8), 20000m, "CINEPOLIS", "tarjeta");
-			api.EntraCargoDelBanco(new DateTime(2026, 6, 12), 165000m, "SUPERMERCADO LA COSECHA", "tarjeta");
+			api.EntraCargoDelBanco(new DateTime(2026, 6, 12), 165000m, "SUPERMERCADO LA GUARIA", "tarjeta");
 			api.EntraCargoDelBanco(new DateTime(2026, 6, 20), 185000m, "PAGO TARJETA VISA", "debito");
 
 			// El bien, con su valor: sin él no hay porcentaje y no se puede comparar.
