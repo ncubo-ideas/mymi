@@ -170,5 +170,24 @@ namespace Cargas.Dominio
 		/// FotoDelTablero.NombreDeArchivo revienta cuando no existe -y hace bien, devolver
 		/// algo mentiria- pero una proyeccion plana para el print no puede reventar.</summary>
 		internal string NombreDeLaFoto => Foto.Existe ? Foto.NombreDeArchivo : "";
+
+		// ------------------------- los aportes EN PIEZAS, para el traspaso (especificacion 13 §5)
+
+		// Lo que Sonia afirmo sobre esta carga, con las mismas piezas con las que lo afirmo:
+		// numero, unidad y procedencia por separado, no la frase compuesta. Es lo unico de la
+		// carga que cruza cuando la app suelta le pasa la mano a Gnothi; el resto lo vuelve a
+		// publicar la estacion. Cero y vacio cuando no hay aporte: la ausencia se pregunta por
+		// TieneKilometraje / TanqueFueDeclarado, nunca por el cero.
+		internal decimal KilometrosAnotados => Odometro.Existe ? Odometro.Kilometraje.Valor : 0m;
+		internal string UnidadDelKilometraje => Odometro.Existe ? Odometro.Kilometraje.Unidad.Simbolo : "";
+
+		// EL TANQUE SOLO ES APORTE CUANDO CUENTA. La inferencia de la forma de corte es de la
+		// estacion -un estimado- y el modulo nuevo la rehace solo al recibir la carga; lo que
+		// Sonia declaro (observado) o confirmo (confirmado) es lo que no esta en ningun otro lado.
+		internal bool TanqueFueDeclarado => Tanque.FueDeclarada && Tanque.Origen.CuentaParaCalcular;
+		internal string EstadoDelTanqueDeclarado => !TanqueFueDeclarado
+			? ""
+			: (Tanque.EsLleno ? EstadoDelTanque.Lleno.Nombre : EstadoDelTanque.Parcial.Nombre);
+		internal string OrigenDelTanque => TanqueFueDeclarado ? Tanque.Origen.Nombre : "";
 	}
 }
