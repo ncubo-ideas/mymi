@@ -412,11 +412,11 @@ function ico(m, glifo) {
   const k = look(m.name);
   return '<div class="ico" style="color:' + k.c + ';background:' + k.bg + '">' + (glifo || k.svg) + '</div>';
 }
-// Grande la institución, chico su eslogan (o el título del módulo si no declaró uno): es la
-// marca lo que ella paga por ver. Un manifiesto sin institución no deja la tarjeta muda: sube
-// el título.
+// Grande la institución, chico su eslogan: es la marca lo que ella paga por ver. Sin eslogan,
+// la tarjeta va solo con el nombre; el título del módulo («My invoices») no es prosa de tarjeta
+// (quitado 2026-09-08). Un manifiesto sin institución no deja la tarjeta muda: sube el título.
 const quien = m => m.institution || m.title;
-const que   = m => m.institution ? (m.slogan || m.title) : '';
+const que   = m => m.institution ? (m.slogan || '') : '';
 
 const gn = {
   state: null, open: null, busy: false, seq: 0,
