@@ -459,9 +459,22 @@ diferencia entre una política declarada y una que se sabe que está aplicando: 
 cuenta nunca se mueve o se porta bien **o no lo está mirando nadie**, y hasta ahora no había
 forma de distinguir esos dos casos.
 
-**Qué mirar en cada corrida:** abrí cualquier módulo y tiene que aparecer al menos el
-`worker-src` de arriba. **Si no aparece ninguno, algo se rompió** — probablemente el vigía no
-está corriendo, y eso significa que tampoco te vas a enterar de los que importan.
+**Qué mirar en cada corrida:** abrí un módulo y fijate si aparece **alguna** línea `REFUSED`, sin
+esperar una directiva concreta. Si no aparece ninguna, confirmalo con el intento del formulario de
+más abajo, que **sí es determinista** — si ése tampoco produce una línea, ahí el vigía no está
+corriendo.
+
+> **No esperes una directiva en particular, y esto costó una corrección.** El guion decía *«tiene
+> que aparecer al menos el `worker-src`»*, y **[MEDIDO 2026-09-07]** que ese testigo se mueve:
+>
+> | | directiva que aparece |
+> |---|---|
+> | dealership, antes del arreglo del hash CRLF | **`script-src-elem`** — el script de registro estaba bloqueado y nunca pedía el worker |
+> | dealership, después del arreglo | **`worker-src`** — el script corre y se bloquea el worker |
+> | en iOS, sobre un esquema propio | **[RAZONADO]** puede no aparecer ninguna: WebKit no expone `navigator.serviceWorker` ahí |
+>
+> O sea que la denegación del service worker depende de la plataforma, del formato del bundle y de
+> si el hash coincide. **El testigo bueno es el formulario**, que lo provocás vos y da siempre.
 
 > Esto **no** va al journal, a propósito: el journal es el registro de la persona tal como lo
 > escribe la institución, y una violación de contención es de Gnothi. Meterla ahí sería poner la

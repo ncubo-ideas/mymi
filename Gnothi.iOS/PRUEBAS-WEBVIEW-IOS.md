@@ -306,10 +306,33 @@ GNOTHI: examenes: REFUSED by worker-src -- gnothi-mod://examenes/app/service-wor
 Trae la directiva, qué se bloqueó, de dónde salió y **la cuenta**. Esa cuenta distingue una
 política declarada de una que se sabe que está aplicando.
 
-**Qué mirar acá, y es de las comprobaciones más baratas del guion:** abrí cualquier módulo y
-tiene que aparecer al menos el `worker-src`. **[MEDIDO en Android el 2026-09-07]**, ahí sale
-solo. Si en iOS **no sale ninguno**, el vigía no está corriendo — y eso apunta a que la CSP no
-está llegando por el scheme handler, que es lo que hay que resolver antes de seguir con P5.
+> **⚠️ CORRECCIÓN 2026-09-07 · noche.** Acá decía *«abrí cualquier módulo y tiene que aparecer al
+> menos el `worker-src`; si no sale ninguno, el vigía no está corriendo»*. **Ese criterio da un
+> falso negativo en iOS, y Renán lo encontró corriéndolo.** Queda escrito porque el motivo
+> enseña más que la regla.
+>
+> Allá la denegación llegó como **`script-src-elem`**, un paso antes: el script de registro fue
+> bloqueado, así que nunca llegó a pedir el worker. Y su hipótesis para los otros tres módulos
+> —**[RAZONADO]**, se confirma con un renglón en el inspector— es que sobre un esquema propio
+> WebKit **no expone `navigator.serviceWorker`**, así que `register()` ni se llama y no hay nada
+> que denegar. No sería contención más débil: sería que la superficie no existe.
+>
+> **Y desde el arreglo del hash CRLF, ni siquiera es estable en Android.** El script ahora corre,
+> así que la directiva pasó de `script-src-elem` a `worker-src` — **[MEDIDO 2026-09-07]** en el
+> emulador. O sea que la denegación del service worker **depende de la plataforma, del formato
+> del bundle y de si el hash coincide**. Es un mal testigo.
+
+**Qué mirar acá, entonces.** Abrí un módulo y fijate si aparece **alguna** línea `REFUSED`, sin
+esperar una directiva concreta:
+
+- **si aparece alguna** → el vigía corre y la CSP está llegando. Seguí.
+- **si no aparece ninguna** → **no concluyas que está roto todavía.** Puede ser legítimo, y en
+  iOS es lo más probable. Confirmalo con el intento del formulario de acá abajo, que **sí es
+  determinista en las dos plataformas**: si ése tampoco produce una línea, ahí sí el vigía no
+  está corriendo o la CSP no está llegando por el scheme handler.
+
+**El testigo bueno es el formulario, no el service worker.** El del service worker es gratis y
+sirve de indicio; el del formulario lo provocás vos y tiene que dar siempre.
 
 > No va al journal, a propósito: el journal es el registro de la persona tal como lo escribe la
 > institución, y una violación de contención es de Gnothi.

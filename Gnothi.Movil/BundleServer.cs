@@ -144,6 +144,22 @@ internal sealed class BundleServer
 	// THE HASH IS COMPUTED, NOT WRITTEN DOWN. One written by hand goes silently out of sync the
 	// first time the institution rebuilds, and the symptom is a blank screen with no clue.
 	// Gnothi has the file in its hand: it computes it here.
+	//
+	// AND IT HASHES WHAT THE PARSER WILL SEE, NOT WHAT THE FILE HOLDS -- which is a distinction
+	// that cost a real blank screen. The HTML input stream is preprocessed before parsing: CRLF
+	// becomes LF, and any lone CR becomes LF. So the engine hashes text with LF, and a file saved
+	// with CRLF hashed as-is produces a DIFFERENT digest.
+	//
+	// MEASURED 2026-09-07 by Renan, running the script on a Mac. Three of the four bundles ship
+	// their inline script minified on ONE line -- no newlines, so nothing to normalise, and their
+	// hash matched. DealershipCar ships the same script indented over five lines with CRLF: its
+	// hash did not match, the engine refused it, and the watchdog is what made it visible:
+	//
+	//     dealership: REFUSED by script-src-elem -- inline (from :34); 1 so far
+	//
+	// The failure is nasty in both directions: Gnothi ends up forbidding the very script it just
+	// hashed, and it only shows on documents that have a multi-line inline script -- so it hides
+	// behind whatever formatting the institution happens to use.
 	private static string CspFor(byte[] document)
 	{
 		string html = Encoding.UTF8.GetString(document);
@@ -151,7 +167,7 @@ internal sealed class BundleServer
 		var hashes = new List<string>();
 		foreach (Match m in InlineScripts.Matches(html))
 		{
-			string body = m.Groups[1].Value;
+			string body = AsTheParserSeesIt(m.Groups[1].Value);
 			if (body.Length == 0) continue;
 
 			byte[] digest = System.Security.Cryptography.SHA256.HashData(Encoding.UTF8.GetBytes(body));
@@ -161,6 +177,12 @@ internal sealed class BundleServer
 		string script = string.Join(" ", new[] { "'self'", "'wasm-unsafe-eval'" }.Concat(hashes));
 		return $"{CspWithoutScript}; script-src {script}";
 	}
+
+	// The HTML input stream preprocessing, which is the only part of it that changes a hash:
+	// CRLF -> LF first, then any surviving lone CR -> LF. Order matters -- doing CR first would
+	// turn every CRLF into two newlines.
+	private static string AsTheParserSeesIt(string body) =>
+		body.Replace("\r\n", "\n").Replace('\r', '\n');
 
 	// A module's path CANNOT climb out of its bundle. That is Gnothi's responsibility, not
 	// trust in the module.
