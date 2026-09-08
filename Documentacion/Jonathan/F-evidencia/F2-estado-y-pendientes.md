@@ -226,6 +226,90 @@ que la marca existe para evitar.
 
 **La marca sirve para que la app se despida bien. La que garantiza es la revocación.**
 
+### P13 · La opción A — la PWA afuera y un `.gmod` leyéndole el journal — **cerrada por medición el 2026-09-08**
+
+No es un pendiente: es una pregunta que estuvo abierta varios días y ya tiene respuesta. Se deja
+acá para que no se reabra sola.
+
+**La idea era** que la PWA de la institución siguiera viviendo **afuera** de Gnothi, eligiera su
+carpeta con el picker del navegador (en Chrome Android ≥132 eso es el SAF) y que un módulo `.gmod`
+**adentro** de Gnothi leyera ese mismo journal. Una segunda ruta contenida en la que ya está
+construida.
+
+**Se midió y no se puede**, y el detalle con su reproducción está en `F1`. En una palabra: con la
+concesión de árbol tomada y viva —verificado leyendo los bytes por `ContentResolver`—,
+`Directory.EnumerateFiles` sobre la ruta deducida devuelve **cero archivos sin lanzar excepción** y
+`File.OpenRead` da `UnauthorizedAccessException`. Con «acceso a todos los archivos» sí funciona, lo
+que prueba **dónde está el corte**: la concesión del SAF vive en la tabla del `ContentResolver`,
+indexada por URI, y el `open()` al que `System.IO` baja pasa por scoped storage, que nunca consulta
+esa tabla. **El permiso no cruza de un mundo al otro.**
+
+**Pero se midió una cosa más, y cambia el veredicto de «no se puede» a «falta UNA cosa, y es
+chica».** SAF no solo da streams: `ContentResolver.OpenFileDescriptor(uri, "rw")` da un
+**descriptor de archivo POSIX de verdad**, que envuelto en un `SafeFileHandle` produce un
+`FileStream` normal. Medido en el mismo aparato: `CanSeek=True`, seek + leer del medio, escribir al
+final con flush que **persiste** (verificado desde `adb shell`), y **crear archivos nuevos** por
+`DocumentsContract.CreateDocument`. Las cuatro cosas que el motor hace.
+
+**Y después se leyó el motor, que era lo que faltaba.** No hay `mmap` —`MemoryMappedFile` no
+aparece ni una vez—, así que ese miedo se descarta. Pero **el pedido no es chico**, y la primera
+lectura de esta medición lo subestimó:
+
+El motor no es cliente de un archivo, es cliente de un **sistema de archivos**. Su backend
+`FileSystem` son unas **6 000 líneas** que crean 8 directorios al arrancar, abren por ruta para
+rolar y compactar, **listan por glob** (`journal_*.bin`, `*.batch`) y hacen **rename atómico** con un
+puerto propio por plataforma. Y de eso, **dos cosas SAF no las tiene**: un *replace-si-existe*
+atómico, y el **lock a nivel de SO** que hoy consigue con `FileShare.None` — que es un concepto del
+open-por-ruta y por `ContentResolver` no se puede expresar. Las dos son de seguridad ante cortes y
+ante dos escritores. El detalle con archivo y línea está en `F1`.
+
+**La buena noticia es estructural:** la abstracción ya está donde corresponde. `DiaryStorage` es
+abstracta, `DatabaseType` tiene **cinco** valores conviviendo, y `IAtomicFileOperation` prueba que ya
+aceptaron que una operación de archivo puede ser específica de la plataforma. **El pedido correcto
+es un puerto de archivos inyectado** en lugar de llamar a `System.IO` directo — interfaz chica,
+travesía grande.
+
+**Y lo que NO hay que pedirle es que entienda SAF.** El motor corre en wasm dentro del navegador, en
+.NET de escritorio y en Android; meterle SAF sería colgarle una plataforma al sustrato y no ayudaría
+ni al navegador ni a iOS. El puerto va del lado del Host, que sí sabe de Android.
+
+**Y el peligro concreto que la medición evita:** el fallo es **mudo**. Un motor apuntado a esa ruta
+no vería un error, vería un journal vacío, y arrancaría uno nuevo — con la historia de la persona
+intacta al lado, invisible.
+
+**El segundo bloqueante —los dos escritores— también se midió, y ese SÍ tiene arreglo chico.**
+Spike `Spikes/ReaderModeSpike/` en un worktree del repo del motor. Tres hallazgos: la puerta de
+solo-lectura **que ya existe** (`ConfigureStorageForIntrospection`) **no es de solo lectura**;
+**leer no escribe, abrir sí** —toda la mutación está en el constructor de
+`DiaryStorageFileSystem`—; y las dos escrituras son **reconciliación de caché, no estado**, porque
+`index.bin` es *«a hint, not an authority»* y los totales de `meta.bin` son *«potentially stale»*,
+recomputados desde los archivos del journal, que son la autoridad.
+
+Se midió sobre **tres** escenarios, porque un journal limpio y chico ejercita las menos rutas de
+escritura y favorecería cualquier respuesta: **CLEAN** (3 entradas), **ROLLED** (40 entradas y varios
+archivos sellados) y **TORN** (un registro partido pegado al final, lo que deja un proceso muerto a
+media escritura). ROLLED no agregó nada; **TORN destapó dos escrituras más**, y ninguna estaba en el
+`open`: el **truncado de la cola partida** en `Initialize()` —curaba el archivo del dueño, 715→695
+bytes— y una reescritura del **header al cerrar**, en `Dispose()`, que apareció como un *crash* y no
+como un diff.
+
+**El parche final son 72 líneas en 3 archivos, 19 de lógica**: un `readOnly=true` en el connection
+string —la convención del propio repo—, cuatro compuertas, y el archivo activo abierto en
+`FileAccess.Read`. Con eso los tres escenarios salen **byte por byte idénticos** y el lector **lee
+las mismas 41 entradas**, incluso en TORN. Es no-op sin opt-in, y la suite completa del motor da
+igual que master limpio: **5 fallan · 2 087 pasan**, los mismos cinco nombres, todos de locale.
+
+El detalle está en `F1` — incluida **la trampa del instrumento, que vale más que el parche**:
+`GracefulExit()` no libera el `JournalWriter`, así que un diff tomado al cerrar corre una carrera
+contra el GC, y me dio un falso negativo y después un falso positivo. **Un journal recién cerrado no
+está quieto.**
+
+Lo que ese arreglo **no** resuelve: al lector escribiendo el dueño **al mismo tiempo**. Y quedan sin
+sembrar elisiones, checkpoints de reacciones y outbox — es el próximo escenario, y donde podría
+aparecer una quinta escritura.
+
+**Es una propuesta para quien mantiene el motor**, en un worktree, sin commit ni merge ni push.
+
 ### Y tres más chicos, para que no se pierdan
 
 | | qué | dónde está el detalle |
