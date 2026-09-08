@@ -116,6 +116,15 @@ compartir. Por el puente pasa **texto**, no objetos cargados.
 
 Dicho en una línea: **la C no comparte porque en la C el Host no es dueño del runtime.**
 
+**Y dicho sin jerga**, porque es la parte que hay que poder explicar en una reunión: prestarle
+algo a la forma A es como prestarle un libro a alguien de tu misma oficina — lo agarra del
+estante y listo. La forma C es alguien que sólo recibe **fotocopias por una ranura**: podés
+pasarle todas las páginas, pero él tiene que armar su propio ejemplar. Y una vez armado, **ya son
+dos ejemplares**.
+
+Esa ranura es el puente, y no está angosta por descuido: es lo que hace que el módulo de la
+farmacia no pueda leer el journal del laboratorio.
+
 Lo único que sí se le puede prestar es **el archivo, no el motor corriendo**. **[MEDIDO]** de los
 11,4 MB que sirve cada módulo, **7,4 MB (65%) son byte-idénticos en los cuatro** —
 `dotnet.native.wasm`, los tres shards de ICU, `Puppeteer.wasm`, `Choreography.wasm`,
@@ -128,6 +137,25 @@ tienen hashes distintos y tamaños distintos —1.873.173 / 1.872.661 / 1.873.68
 bytes—, y el diff byte a byte de dos de ellos da **1.603.141 de 1.873.173 bytes distintos, el
 86%**. No es metadata de build: ningún `Deterministic=true` arregla un 86%. Se probó
 explícitamente para descartar esa hipótesis antes de dar por buena la otra.
+
+### El nudo, y es lo que hay que decidir
+
+**El aislamiento y el motor compartido piden cosas opuestas.** Compartir un motor *corriendo*
+exige que los módulos vivan en el mismo runtime; el mismo runtime exige el mismo origen; y el
+origen propio por módulo **es toda la contención**. No es un problema de implementación que
+alguien no resolvió: es un intercambio.
+
+Por eso el repo terminó con **dos tipos de módulo, que son los dos extremos**:
+
+| | trae la UI de la institución | origen aislado | el motor |
+|---|---|---|---|
+| **en proceso** | no | no | **prestado** — 188 KB |
+| **hospedado** | **sí** | **sí** | **propio** — 11,3 MB |
+
+Y con eso, la pregunta cambia de forma. **Los 11 MB no son desperdicio: son el precio de que la
+institución traiga su propia pantalla y su propio origen.** Así que no es *«¿por qué no
+compartimos el motor?»* sino **«¿ese precio vale lo que compra?»** — y los dos números para
+compararlo están arriba.
 
 ---
 

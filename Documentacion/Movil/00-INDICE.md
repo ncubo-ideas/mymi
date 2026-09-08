@@ -15,13 +15,27 @@ igual. Si sólo vas a leer una: **`03`**, que es el cuadro de qué anda hoy y en
 | `04-por-donde-nos-devolvimos.md` | ¿Por dónde nos metimos y por qué salimos? Con las trampas |
 | `05-lo-medido.md` | Los números, con fecha y con aparato |
 | `06-lo-que-sigue-abierto.md` | ¿Qué falta decidir, y de quién es cada decisión? |
-| `07-compartir-el-sustrato-medido.md` | **Para Álvaro.** ¿Se puede compartir el motor entre módulos? Medido |
-| `08-hilos-y-procesos-del-sistema.md` | **Para Álvaro.** ¿Y si se estira con hilos o procesos del SO? Con el diagrama |
+## ANEXO — y no es parte del recorrido
 
-Los dos últimos son **un par**: el `07` mide, el `08` contesta la pregunta de Álvaro sobre hilos y
-procesos y trae el diagrama de las seis formas de aislar un módulo. Contestan el punto 7 de la
-lista de pendientes de Jonathan — *«el sustrato compartido: cada módulo trae su propio motor»* —
-y el `08` lo hace **frase por frase**, incluida la afirmación de ese punto que no se sostiene.
+Los dos que siguen **no contestan lo que se pidió documentar.** Son la respuesta a una pregunta
+técnica puntual de Álvaro sobre compartir el motor entre módulos, y están escritos como una
+respuesta para él: se apoyan en su propio set de notas (`NotasGnothi/04` R1, R2, R9, y el spike
+S1 de `06`) y entran en un detalle que no hace falta para entender qué construimos.
+
+**Si esto va a un wiki, el anexo no va** — o va aparte, con su propio título. Están acá porque el
+análisis vale y porque el `06` los referencia, no porque haya que leerlos para entender el resto.
+
+| Doc | La pregunta que contesta |
+|---|---|
+| `07-compartir-el-sustrato-medido.md` | ¿Se puede compartir el motor entre módulos? Medido, y por qué la forma que corre no puede |
+| `08-hilos-y-procesos-del-sistema.md` | ¿Y si se estira con hilos o con procesos del SO? Con el diagrama de las seis formas |
+
+Son **un par**: el `07` mide y el `08` contesta. Entre los dos cubren el punto 7 de la lista de
+pendientes de Jonathan —*«el sustrato compartido: cada módulo trae su propio motor»*— y el `08` lo
+hace **frase por frase**, incluida la afirmación de ese punto que no se sostiene.
+
+Si de los dos hay que leer una sola cosa, es el **§3 del `07`**: por qué la forma que corre hoy no
+puede compartir el motor, con la analogía y el intercambio que hay detrás.
 
 ---
 
