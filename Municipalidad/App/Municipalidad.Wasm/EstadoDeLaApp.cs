@@ -351,27 +351,19 @@ namespace Municipalidad.Wasm
 		}
 
 		/// <summary>
-		/// Lo que la persona aporta sobre su propia cuenta: cuanto decide apartar por mes. El instante
+		/// EL UNICO aporte que esta app le pide a la persona: cuanto decide apartar por mes. El instante
 		/// lo pone esta app con su sello de comando y no se le pide a ella.
+		/// <para>
+		/// El valor de una finca NO esta aca, y su ausencia es la decision: el avaluo lo publica la
+		/// municipalidad y es el valor con que cobra, asi que esta app no le pide a la persona un numero
+		/// que la institucion ya tiene. La puerta sigue publicando el comando para la consola.
+		/// </para>
 		/// </summary>
 		public async ValueTask<LoQueDijoElAporte> AdoptarReservaAsync(decimal montoMensual)
 		{
 			Exigir();
 
 			return await MandarAsync(() => api.AdoptarReserva(montoMensual, UnSelloQueNoVaParaAtras()));
-		}
-
-		/// <summary>
-		/// El otro aporte de la persona: el valor de una finca suya. La finca tiene que ser una de las
-		/// que la municipalidad ya mando, asi que la pantalla las ofrece en vez de pedir un numero.
-		/// </summary>
-		public async ValueTask<LoQueDijoElAporte> DeclararValorDeFincaAsync(
-			string numeroDeFinca, decimal valorDeclarado)
-		{
-			Exigir();
-
-			return await MandarAsync(
-				() => api.DeclararValorDeFinca(numeroDeFinca, UnSelloQueNoVaParaAtras(), valorDeclarado));
 		}
 
 		/// <summary>

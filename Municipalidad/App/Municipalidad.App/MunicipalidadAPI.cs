@@ -80,8 +80,31 @@ namespace Municipalidad.App
 		}
 
 		/// <summary>
-		/// La persona declara el valor de su finca. Es un aporte suyo y no de la municipalidad: ningun
-		/// artefacto trae ese valor, y por eso esta cuenta es hibrida.
+		/// La municipalidad fija el avaluo de una finca. Es el valor con que ella cobra los rubros sobre
+		/// base imponible, asi que es un hecho de la institucion y llega por su feed.
+		/// </summary>
+		public string FijarAvaluoDeFinca(string numeroDeFinca, DateTime fechaDelAvaluo, decimal valorAvaluado)
+		{
+			return app.Using(
+				scriptForChk: @"
+					Check(cuenta.PuedeFijarAvaluoDeFinca(@numeroDeFinca, @fechaDelAvaluo, @valorAvaluado)) Error 'Ese avalúo no se pudo fijar. Tiene que ser una finca que la municipalidad ya haya mandado, un monto mayor que cero, y con fecha posterior al último avalúo que ya mandó de esa finca: se fija uno por día.';
+				",
+				@"
+					{
+						cuenta.FijarAvaluoDeFinca(@numeroDeFinca, @fechaDelAvaluo, @valorAvaluado);
+					}
+				")
+			.WithParameters(p => {
+				p["numeroDeFinca", typeof(string)] = numeroDeFinca;
+				p["fechaDelAvaluo", typeof(DateTime)] = fechaDelAvaluo;
+				p["valorAvaluado", typeof(decimal)] = valorAvaluado;
+			})
+			.PerformCheckThenCommand();
+		}
+
+		/// <summary>
+		/// La persona declara el valor de su finca. Es un aporte suyo y no de la municipalidad: queda en
+		/// su carpeta, su asistente lo lee, y no es el valor con que le cobraron.
 		/// </summary>
 		public string DeclararValorDeFinca(string numeroDeFinca, DateTime fechaDeLaDeclaracion, decimal valorDeclarado)
 		{
@@ -294,6 +317,7 @@ namespace Municipalidad.App
 			ArgumentNullException.ThrowIfNull(mensaje);
 
 			if (mensaje is FincaIncorporada finca) return AplicarFincaIncorporada(finca);
+			if (mensaje is AvaluoFijado avaluo) return AplicarAvaluoFijado(avaluo);
 			if (mensaje is CobroPuesto cobro) return AplicarCobroPuesto(cobro);
 			if (mensaje is PagoRegistrado pago) return AplicarPagoRegistrado(pago);
 			if (mensaje is LineaDePagoRegistrada linea) return AplicarLineaDePagoRegistrada(linea);
@@ -328,6 +352,27 @@ namespace Municipalidad.App
 			.WithParameters(p => {
 				p["evento", typeof(long)] = mensaje.NumeroDelEvento;
 				p["numeroDeFinca", typeof(string)] = mensaje.NumeroDeFinca;
+			})
+			.PerformCheckThenCommand();
+		}
+
+		private string AplicarAvaluoFijado(AvaluoFijado mensaje)
+		{
+			return app.Using(
+				scriptForChk: ElEventoEsNuevo + @"
+					Check(cuenta.PuedeFijarAvaluoDeFinca(@numeroDeFinca, @fechaDelAvaluo, @valorAvaluado)) Error 'esa finca no esta, el monto no sirve, o ya hay un avaluo con esa fecha o posterior';
+				",
+				@"
+					{
+						cuenta.FijarAvaluoDeFinca(@numeroDeFinca, @fechaDelAvaluo, @valorAvaluado);
+						bitacora.Avanzar(@evento);
+					}
+				")
+			.WithParameters(p => {
+				p["evento", typeof(long)] = mensaje.NumeroDelEvento;
+				p["numeroDeFinca", typeof(string)] = mensaje.NumeroDeFinca;
+				p["fechaDelAvaluo", typeof(DateTime)] = mensaje.FechaDelAvaluo;
+				p["valorAvaluado", typeof(decimal)] = mensaje.ValorAvaluado;
 			})
 			.PerformCheckThenCommand();
 		}
@@ -563,10 +608,44 @@ namespace Municipalidad.App
 		public bool TieneValorDeclaradoLaFinca(string numeroDeFinca, DateTime fechaDeCorte)
 		{
 			return UnaVerdad(
-				"@tiene = cuenta.TieneValorDeFincaAl(@numeroDeFinca, @fechaDeCorte);", "tiene", p => {
+				"@tiene = cuenta.TieneValorDeclaradoDeFincaAl(@numeroDeFinca, @fechaDeCorte);", "tiene", p => {
 					p["numeroDeFinca", typeof(string)] = numeroDeFinca;
 					p["fechaDeCorte", typeof(DateTime)] = fechaDeCorte;
 				});
+		}
+
+		/// <summary>
+		/// Si la MUNICIPALIDAD habia publicado un avaluo de esa finca vigente a esa fecha. TOTAL, y es la
+		/// PRE-PREGUNTA de la de abajo: contesta que no tanto para una finca que no esta como para una
+		/// sin avaluo publicado.
+		/// </summary>
+		public bool TieneAvaluoLaFinca(string numeroDeFinca, DateTime fechaDeCorte)
+		{
+			return UnaVerdad(
+				"@tiene = cuenta.TieneAvaluoDeFincaAl(@numeroDeFinca, @fechaDeCorte);", "tiene", p => {
+					p["numeroDeFinca", typeof(string)] = numeroDeFinca;
+					p["fechaDeCorte", typeof(DateTime)] = fechaDeCorte;
+				});
+		}
+
+		/// <summary>
+		/// El avaluo con que la MUNICIPALIDAD cobraba esa finca a esa fecha. Lo publica la institucion, no
+		/// la persona. GUARDADO: preguntar TieneAvaluoLaFinca antes.
+		/// </summary>
+		public decimal AvaluoDeFincaAl(string numeroDeFinca, DateTime fechaDeCorte)
+		{
+			using (RentedParameter alquilados = app.Actor.RentedParameters())
+			{
+				app.Actor.Using("@valor = cuenta.AvaluoDeFincaAl(@numeroDeFinca, @fechaDeCorte);")
+				.WithParameters(alquilados, p => {
+					p["numeroDeFinca", typeof(string)] = numeroDeFinca;
+					p["fechaDeCorte", typeof(DateTime)] = fechaDeCorte;
+					p[Parameter.Out, "valor", typeof(decimal)] = default;
+				})
+				.PerformQuery();
+
+				return alquilados["valor"].GetValue<decimal>();
+			}
 		}
 
 		/// <summary>
@@ -577,7 +656,7 @@ namespace Municipalidad.App
 		{
 			using (RentedParameter alquilados = app.Actor.RentedParameters())
 			{
-				app.Actor.Using("@valor = cuenta.ValorDeFincaAl(@numeroDeFinca, @fechaDeCorte);")
+				app.Actor.Using("@valor = cuenta.ValorDeclaradoDeFincaAl(@numeroDeFinca, @fechaDeCorte);")
 				.WithParameters(alquilados, p => {
 					p["numeroDeFinca", typeof(string)] = numeroDeFinca;
 					p["fechaDeCorte", typeof(DateTime)] = fechaDeCorte;
@@ -686,6 +765,8 @@ namespace Municipalidad.App
 						@esSalto     = laVariacion.EsSalto;
 						@urgencia    = laVariacion.Urgencia().Etiqueta;
 						@dice        = laVariacion.Dice();
+						@hayAvaluo   = laVariacion.SePuedeDecirElAvaluo;
+						@elAvaluo    = laVariacion.EtiquetaDelAvaluo;
 					}
 				")
 				.WithParameters(alquilados, p => {
@@ -699,6 +780,8 @@ namespace Municipalidad.App
 					p[Parameter.Out, "esSalto",     typeof(bool)]    = default;
 					p[Parameter.Out, "urgencia",    typeof(string)]  = default;
 					p[Parameter.Out, "dice",        typeof(string)]  = default;
+					p[Parameter.Out, "hayAvaluo",   typeof(bool)]    = default;
+					p[Parameter.Out, "elAvaluo",    typeof(string)]  = default;
 					p["nombreDelRubro", typeof(string)] = nombreDelRubro;
 					p["umbralDeSalto", typeof(decimal)] = umbralDeSalto;
 					p["ruido", typeof(decimal)] = ruido;
@@ -715,7 +798,9 @@ namespace Municipalidad.App
 					alquilados["explicacion"].GetValue<string>(),
 					alquilados["esSalto"].GetValue<bool>(),
 					alquilados["urgencia"].GetValue<string>(),
-					alquilados["dice"].GetValue<string>());
+					alquilados["dice"].GetValue<string>(),
+					alquilados["hayAvaluo"].GetValue<bool>(),
+					alquilados["elAvaluo"].GetValue<string>());
 			}
 		}
 

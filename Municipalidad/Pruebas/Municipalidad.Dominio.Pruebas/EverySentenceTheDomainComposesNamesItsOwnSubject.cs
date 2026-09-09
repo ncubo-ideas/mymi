@@ -33,20 +33,62 @@ namespace Municipalidad.Dominio.Pruebas
 
 		// EL MISMO SALTO EN DOS RUBROS, que es el caso de DEC-05: +80 % por periodo en los dos, y la
 		// ley del rubro es lo unico que cambia entre ellos.
+		// LOS DOS TRIMESTRES DEL SALTO DEL IBI, y los DOS AVALUOS que la municipalidad publico entre
+		// ellos: 2023-01-15 esta vigente cuando cierra 2024-T1 y 2025-01-20 cuando cierra 2025-T1. Los
+		// montos NO comparten digitos con los montos por periodo (20000 / 36000) a proposito: si los
+		// compartieran, una afirmacion sobre el monto por periodo se pondria verde leyendo el avaluo.
+		private static readonly Periodo ElTrimestreAnterior = new Trimestre(2024, 1);
+		private static readonly Periodo ElTrimestreActual = new Trimestre(2025, 1);
+
+		private const decimal ElAvaluoAnterior = 18500000m;
+		private const decimal ElAvaluoActual = 33300000m;
+
+		private static EstadoDelAvaluo SinNingunaFinca()
+		{
+			return EstadoDelAvaluo.De(ElTrimestreAnterior, ElTrimestreActual, new List<Finca>());
+		}
+
+		private static EstadoDelAvaluo ConLosDosAvaluosPublicados()
+		{
+			Finca laFinca = new Finca("F-1");
+			laFinca.FijarAvaluo(new ValorDeFinca(new DateTime(2023, 1, 15), ElAvaluoAnterior));
+			laFinca.FijarAvaluo(new ValorDeFinca(new DateTime(2025, 1, 20), ElAvaluoActual));
+
+			return EstadoDelAvaluo.De(
+				ElTrimestreAnterior, ElTrimestreActual, new List<Finca> { laFinca });
+		}
+
+		private static EstadoDelAvaluo SinAvaluoPublicado()
+		{
+			return EstadoDelAvaluo.De(
+				ElTrimestreAnterior, ElTrimestreActual, new List<Finca> { new Finca("F-1") });
+		}
+
+		private static EstadoDelAvaluo ConVariasFincas()
+		{
+			return EstadoDelAvaluo.De(ElTrimestreAnterior, ElTrimestreActual,
+				new List<Finca> { new Finca("F-1"), new Finca("F-2") });
+		}
+
 		private static Variacion ElSaltoDeBasura()
 		{
 			return Variacion.Entre(
 				new LineaPagada(Rubro.Basura(), new Mes(2024, 3), 5000m, 0m, 1, false),
 				new LineaPagada(Rubro.Basura(), new Mes(2025, 3), 9000m, 0m, 1, false),
-				0.25m, 0.02m);
+				0.25m, 0.02m, SinNingunaFinca());
 		}
 
 		private static Variacion ElSaltoDeBienesInmuebles()
 		{
+			return ElSaltoDeBienesInmueblesCon(ConLosDosAvaluosPublicados());
+		}
+
+		private static Variacion ElSaltoDeBienesInmueblesCon(EstadoDelAvaluo elAvaluo)
+		{
 			return Variacion.Entre(
-				new LineaPagada(Rubro.BienesInmuebles(), new Trimestre(2024, 1), 20000m, 0m, 1, false),
-				new LineaPagada(Rubro.BienesInmuebles(), new Trimestre(2025, 1), 36000m, 0m, 1, false),
-				0.25m, 0.02m);
+				new LineaPagada(Rubro.BienesInmuebles(), ElTrimestreAnterior, 20000m, 0m, 1, false),
+				new LineaPagada(Rubro.BienesInmuebles(), ElTrimestreActual, 36000m, 0m, 1, false),
+				0.25m, 0.02m, elAvaluo);
 		}
 
 		private static Variacion UnCambioMenor()
@@ -54,7 +96,7 @@ namespace Municipalidad.Dominio.Pruebas
 			return Variacion.Entre(
 				new LineaPagada(Rubro.Policia(), new Mes(2024, 3), 6000m, 0m, 1, false),
 				new LineaPagada(Rubro.Policia(), new Mes(2025, 3), 6600m, 0m, 1, false),
-				0.25m, 0.02m);
+				0.25m, 0.02m, SinNingunaFinca());
 		}
 
 		private static Variacion UnSinCambio()
@@ -62,7 +104,7 @@ namespace Municipalidad.Dominio.Pruebas
 			return Variacion.Entre(
 				new LineaPagada(Rubro.Policia(), new Mes(2024, 3), 6000m, 0m, 1, false),
 				new LineaPagada(Rubro.Policia(), new Mes(2025, 3), 6006m, 0m, 1, false),
-				0.25m, 0.02m);
+				0.25m, 0.02m, SinNingunaFinca());
 		}
 
 		private static IReadOnlyList<LineaPagada> DosLineasDeBasura()
@@ -96,6 +138,10 @@ namespace Municipalidad.Dominio.Pruebas
 			yield return Una("NoHayConsultaDeEseDia", ElCotejo(false, 0).Dice());
 			yield return Una("LaConsultaNoDestapaNada", ElCotejo(true, 0).Dice());
 			yield return Una("LaConsultaDestapaPeriodos", ElCotejo(true, 2).Dice());
+			yield return Una("ElAvaluoExplicaElSalto", ConLosDosAvaluosPublicados().Dice());
+			yield return Una("LaMunicipalidadNoPublicoElAvaluo", SinAvaluoPublicado().Dice());
+			yield return Una("LaCuentaNoTieneNingunaFinca", SinNingunaFinca().Dice());
+			yield return Una("ElReciboNoDiceDeCualFinca", ConVariasFincas().Dice());
 		}
 
 		private static KeyValuePair<string, string> Una(string portador, string frase)
@@ -242,20 +288,86 @@ namespace Municipalidad.Dominio.Pruebas
 			});
 		}
 
-		// LA HOJA DEL AVALUO DICE EL HUECO EN VEZ DE TAPARLO -- D5 y el hueco 2. Con que valor de finca
-		// se calculo cada periodo no llega en ningun artefacto, y la frase lo dice: rellenarlo con un
-		// numero plausible seria afirmar como hecho algo que nadie registro.
+		// LA HOJA DEL AVALUO DICE DE CUANTO A CUANTO CUANDO LA MUNICIPALIDAD LO PUBLICO, que es la mitad
+		// del hueco 2 que el avaluo por el feed cierra. Los dos montos estan ANCLADOS a los literales
+		// que esta prueba escribio (E49): compararlos contra otro miembro del mismo portador seria
+		// comparar dos consumidores de un mismo resolutor.
 		[Test]
-		public void TheAssessedValueLeafSaysThatTheValueItselfNeverReachedTheApp()
+		public void TheAssessedValueLeafSaysFromWhatToWhatOnceTheMunicipalityHasPublishedIt()
 		{
 			string ibi = ElSaltoDeBienesInmuebles().Dice();
 
 			Assert.Multiple(() =>
 			{
-				Assert.That(ibi, Does.Contain("no le llega a esta app"),
-					"la frase dice que el valor con que se calculo no esta");
-				Assert.That(ibi, Does.Contain("dice el salto"),
-					"y dice que lo que si puede decir es el salto");
+				Assert.That(ibi, Does.Contain("18500000"), "el avaluo vigente cuando cerro 2024-T1");
+				Assert.That(ibi, Does.Contain("33300000"), "y el vigente cuando cerro 2025-T1");
+				Assert.That(ibi, Does.Contain("F-1"), "y de cual finca es, que es su sujeto");
+				Assert.That(ibi, Does.Contain("la municipalidad cobró"),
+					"y dice que ese es el valor con que cobro la INSTITUCION, no uno declarado");
+				Assert.That(ibi, Does.Not.Contain("no le llega a esta app"),
+					"y ya no dice que el valor no llegue: llego");
+			});
+		}
+
+		// LAS TRES HOJAS QUE NO PUEDEN DECIRLO DICEN RAZONES DISTINTAS, y ninguna contesta un cero. Es
+		// la tercera anti-pauta de E47, la callada: un cero se leeria como una finca que no vale nada, y
+		// todo consumidor de abajo lo repetiria como hecho.
+		[Test]
+		public void TheThreeLeavesThatCannotSayTheAssessedValueEachSayADifferentReasonAndNoneSaysZero()
+		{
+			string sinAvaluo = ElSaltoDeBienesInmueblesCon(SinAvaluoPublicado()).Dice();
+			string sinFinca = ElSaltoDeBienesInmueblesCon(SinNingunaFinca()).Dice();
+			string variasFincas = ElSaltoDeBienesInmueblesCon(ConVariasFincas()).Dice();
+
+			Assert.Multiple(() =>
+			{
+				Assert.That(sinAvaluo, Does.Contain("no publicó un avalúo de la finca F-1"),
+					"la finca ESTA y lo que falta es el avaluo, que es lo que la separa de la de abajo");
+				Assert.That(sinAvaluo, Does.Contain("Lo que vos hayás declarado es tuyo"),
+					"y dice que lo declarado por la persona no es el valor con que le cobraron");
+
+				Assert.That(sinFinca, Does.Contain("no tiene ninguna finca incorporada"),
+					"aca no hay ni sobre cual leerlo");
+				Assert.That(sinFinca, Does.Not.Contain("F-1"), "y no nombra una finca que no tiene");
+
+				Assert.That(variasFincas, Does.Contain("2 fincas"),
+					"y aca sobran: el recibo no dice de cual es la linea");
+				Assert.That(variasFincas, Does.Contain("consolida por cédula"),
+					"y dice POR QUE no lo dice, que es el hueco 2 en su mitad que sigue abierta");
+
+				foreach (string cada in new[] { sinAvaluo, sinFinca, variasFincas })
+				{
+					Assert.That(cada, Does.Contain("dice el salto"),
+						"las tres dicen lo que SI se puede decir");
+					Assert.That(cada, Does.Not.Match(@"avalúo[^.]* 0[ ,.]"),
+						"y ninguna contesta un cero por avaluo");
+				}
+
+				Assert.That(sinAvaluo, Is.Not.EqualTo(sinFinca), "las tres razones son tres frases");
+				Assert.That(sinFinca, Is.Not.EqualTo(variasFincas));
+			});
+		}
+
+		// Y EL MONTO SE PIDE CON GUARDA: donde no se puede decir, preguntarlo revienta en vez de
+		// contestar un cero. Es la pareja pregunta-total + lectura-guardada de E41.
+		[Test]
+		public void TheAssessedValueIsGuardedAndNeverAnswersZeroWhereItCannotBeSaid()
+		{
+			Assert.Multiple(() =>
+			{
+				Assert.That(ConLosDosAvaluosPublicados().SePuedeDecir, Is.True);
+				Assert.That(ConLosDosAvaluosPublicados().AvaluoAnterior, Is.EqualTo(ElAvaluoAnterior));
+				Assert.That(ConLosDosAvaluosPublicados().AvaluoActual, Is.EqualTo(ElAvaluoActual));
+
+				foreach (EstadoDelAvaluo cada in
+					new[] { SinAvaluoPublicado(), SinNingunaFinca(), ConVariasFincas() })
+				{
+					Assert.That(cada.SePuedeDecir, Is.False, cada.Etiqueta + ".SePuedeDecir");
+					Assert.Throws<DomainException>(
+						() => { decimal _ = cada.AvaluoAnterior; }, cada.Etiqueta + ".AvaluoAnterior");
+					Assert.Throws<DomainException>(
+						() => { decimal _ = cada.AvaluoActual; }, cada.Etiqueta + ".AvaluoActual");
+				}
 			});
 		}
 

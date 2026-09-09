@@ -43,9 +43,10 @@ namespace Municipalidad.Mcp.Tools
 			+ "finca si lo declaró. hayReservaAdoptada y las fincas con valorDeclarado en false son "
 			+ "aportes que la persona todavía no hizo. Eso lo pone ella en su app: no lo invente y no se "
 			+ "lo pida para usarlo como si estuviera registrado. "
-			+ "fincasSinValorDeclarado ES LA RAZÓN DE QUE UNA RESPUESTA SOBRE EL IBI PUEDA QUEDAR A "
-			+ "MEDIAS. Sin el valor de la finca, esta app puede decir que el avalúo cambió pero no de "
-			+ "cuánto a cuánto. Dígalo así cuando salga.")]
+			+ "fincasSinAvaluoPublicado ES LA RAZÓN DE QUE UNA RESPUESTA SOBRE EL IBI PUEDA QUEDAR A "
+			+ "MEDIAS. El avalúo lo publica la MUNICIPALIDAD, no la persona: sin él, esta app puede "
+			+ "decir que el avalúo cambió pero no de cuánto a cuánto. Dígalo así cuando salga, y no use "
+			+ "el valor declarado en su lugar.")]
 		public QueTanAlDiaEstaEsto QueTanAlDiaEstaEsto()
 		{
 			DateTime preguntadoEn = ElRelojQueLeeElAsistente.ElInstanteEnQueSePregunto();
@@ -70,19 +71,26 @@ namespace Municipalidad.Mcp.Tools
 			foreach (string numero in api.NumerosDeLasFincas())
 			{
 				bool declarado = api.TieneValorDeclaradoLaFinca(numero, preguntadoEn);
+				bool avaluada = api.TieneAvaluoLaFinca(numero, preguntadoEn);
 
 				fincas.Add(new FincaDeLaPersona
 				{
 					Numero = numero,
+					AvaluoPublicado = avaluada,
+					Avaluo = avaluada ? api.AvaluoDeFincaAl(numero, preguntadoEn) : 0m,
 					ValorDeclarado = declarado,
 					Valor = declarado ? api.ValorDeFincaAl(numero, preguntadoEn) : 0m,
 				});
 			}
 
 			int sinValor = 0;
+			int sinAvaluo = 0;
 
 			foreach (FincaDeLaPersona cada in fincas)
+			{
 				if (!cada.ValorDeclarado) sinValor++;
+				if (!cada.AvaluoPublicado) sinAvaluo++;
+			}
 
 			return new QueTanAlDiaEstaEsto
 			{
@@ -97,12 +105,13 @@ namespace Municipalidad.Mcp.Tools
 				HayReservaAdoptada = api.SePuedeVerElFaltanteDeReserva(),
 				Fincas = fincas,
 				FincasSinValorDeclarado = sinValor,
+				FincasSinAvaluoPublicado = sinAvaluo,
 				LaFotoDeLaCuenta = api.EstadoDeLaCuenta(),
 				Carpeta = lector.Carpeta,
 				Detalle = LoQueSeLeDiceAlAsistente.TodoLoQueValeLaPenaDecir(
 					PregunteloDosVecesAlrededorDeUnRefresco,
 					LoQueSeLeDiceAlAsistente.LoQueAportaLaPersonaNoLoAportaUsted,
-					sinValor > 0 ? SinElValorDeLaFincaElIbiQuedaAMedias : "",
+					sinAvaluo > 0 ? SinElAvaluoElIbiQuedaAMedias : "",
 					hayConsulta ? "" : SinConsultaNoSePuedeCotejar,
 					LaFotoEsUnDocumentoDeLaApp,
 					LoQueSeLeDiceAlAsistente.LoQueFaltaLoTraeUnRefresco),
@@ -115,11 +124,13 @@ namespace Municipalidad.Mcp.Tools
 			+ "nuevos. Un número solo no dice si el registro está al día, porque nadie sabe cuántos "
 			+ "hechos ha publicado la municipalidad.";
 
-		private const string SinElValorDeLaFincaElIbiQuedaAMedias =
-			"HAY FINCAS SIN VALOR DECLARADO. Sin ese valor, esta app puede decir que el cobro de bienes "
-			+ "inmuebles subió por un avalúo, pero no de cuánto a cuánto pasó el avalúo. Diga la mitad "
-			+ "que sí hay y diga que la otra falta; el valor lo declara la persona en su app, con su "
-			+ "declaración o su avalúo, y aquí no hay por dónde escribirlo.";
+		private const string SinElAvaluoElIbiQuedaAMedias =
+			"HAY FINCAS SIN AVALÚO PUBLICADO. El avalúo lo manda la MUNICIPALIDAD y es el valor con que "
+			+ "ella cobra: sin él, esta app puede decir que el cobro de bienes inmuebles subió por un "
+			+ "avalúo nuevo, pero no de cuánto a cuánto pasó. Diga la mitad que sí hay y diga que la "
+			+ "otra falta, y que llega sola cuando la municipalidad la publique. "
+			+ "NO USE EL VALOR DECLARADO PARA TAPAR ESE HUECO: es un número de la persona, no el que le "
+			+ "cobraron, y presentarlo como el avalúo afirmaría como hecho algo que nadie publicó.";
 
 		private const string SinConsultaNoSePuedeCotejar =
 			"NO HAY NINGUNA CONSULTA AL PORTAL REGISTRADA, así que que_quedo_sin_comprobante no va a "
@@ -133,12 +144,25 @@ namespace Municipalidad.Mcp.Tools
 			+ "no saque de la foto un número que ya está aquí arriba.";
 	}
 
-	/// <summary>Una finca de la persona y si ella declaro su valor.</summary>
+	/// <summary>
+	/// Una finca de la persona con sus DOS valuaciones: el avaluo que publico la municipalidad y el
+	/// valor que declaro la persona. Ninguno contesta por el otro.
+	/// </summary>
 	internal sealed class FincaDeLaPersona
 	{
 		[JsonPropertyName("numero")]
 		[Description("El número con que la municipalidad identifica esta finca.")]
 		public string Numero { get; init; } = "";
+
+		[JsonPropertyName("avaluoPublicado")]
+		[Description("false cuando la MUNICIPALIDAD todavía no ha publicado un avalúo de esta finca. El "
+			+ "avalúo es el valor con que ella cobra: llega por su feed, no lo pone la persona.")]
+		public bool AvaluoPublicado { get; init; }
+
+		[JsonPropertyName("avaluo")]
+		[Description("El avalúo con que LA MUNICIPALIDAD cobra esta finca, vigente al día preguntado. "
+			+ "Cero quiere decir que no ha publicado ninguno, no que la finca valga cero.")]
+		public decimal Avaluo { get; init; }
 
 		[JsonPropertyName("valorDeclarado")]
 		[Description("false cuando la persona no ha declarado el valor de esta finca en su app. Es un "
@@ -147,7 +171,8 @@ namespace Municipalidad.Mcp.Tools
 
 		[JsonPropertyName("valor")]
 		[Description("El valor que LA PERSONA declaró, vigente al día preguntado. Cero quiere decir que "
-			+ "no ha declarado ninguno, no que la finca valga cero.")]
+			+ "no ha declarado ninguno, no que la finca valga cero. NO ES el avalúo con que le cobran: "
+			+ "para eso está avaluo, y los dos pueden diferir sin que ninguno esté mal.")]
 		public decimal Valor { get; init; }
 	}
 
@@ -196,13 +221,21 @@ namespace Municipalidad.Mcp.Tools
 		public bool HayReservaAdoptada { get; init; }
 
 		[JsonPropertyName("fincas")]
-		[Description("Las fincas de esta persona, con si ella declaró el valor de cada una.")]
+		[Description("Las fincas de esta persona, cada una con el avalúo que publicó la municipalidad y "
+			+ "con el valor que ella declaró.")]
 		public IReadOnlyList<FincaDeLaPersona> Fincas { get; init; } = new List<FincaDeLaPersona>();
 
 		[JsonPropertyName("fincasSinValorDeclarado")]
-		[Description("Cuántas fincas están sin valor declarado. Mientras haya alguna, una respuesta "
-			+ "sobre por qué subió el IBI queda a medias, y hay que decirlo.")]
+		[Description("Cuántas fincas están sin valor declarado POR LA PERSONA. Es un aporte suyo que "
+			+ "todavía no hizo; no bloquea la explicación de un salto en el IBI, para eso está "
+			+ "fincasSinAvaluoPublicado.")]
 		public int FincasSinValorDeclarado { get; init; }
+
+		[JsonPropertyName("fincasSinAvaluoPublicado")]
+		[Description("Cuántas fincas están sin avalúo publicado POR LA MUNICIPALIDAD. Mientras haya "
+			+ "alguna, una respuesta sobre por qué subió el IBI queda a medias, y hay que decirlo: "
+			+ "ésta es la mitad que falta, no la declarada.")]
+		public int FincasSinAvaluoPublicado { get; init; }
 
 		[JsonPropertyName("laFotoDeLaCuenta")]
 		[Description("EL DOCUMENTO QUE LA APP MISMA COMPONE, tal cual, para las cuentas que ningún campo "

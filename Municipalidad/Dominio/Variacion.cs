@@ -84,15 +84,34 @@ namespace Municipalidad.Dominio
 		internal string EtiquetaDelPeriodoActual { get { return PeriodoActual.Etiqueta; } }
 
 		/// <summary>
+		/// PREDICADO TOTAL: puede esta app decir con cual avaluo se cobro cada periodo? En un rubro que
+		/// no se cobra sobre base imponible la pregunta no aplica, y la respuesta es que no.
+		/// </summary>
+		internal virtual bool SePuedeDecirElAvaluo { get { return false; } }
+
+		/// <summary>
+		/// El nombre del estado del avaluo de este cambio, que es como cruza a una caratula. Donde el
+		/// avaluo no explica nada dice que no aplica, y no una razon que seria de otro rubro.
+		/// </summary>
+		internal virtual string EtiquetaDelAvaluo { get { return "no-aplica"; } }
+
+		/// <summary>
 		/// UN AUMENTO NO ES URGENTE: ya paso y no se puede evitar. Lo urgente es lo que vence, y quien lo
 		/// decide es la clase y no el monto.
 		/// </summary>
 		internal Urgencia Urgencia() { return Dominio.Urgencia.Ninguna(); }
 
-		internal static Variacion Entre(LineaPagada anterior, LineaPagada actual, decimal umbralDeSalto, decimal ruido)
+		/// <summary>
+		/// La variacion entre dos lineas del mismo rubro. El avaluo de los dos periodos entra por
+		/// parametro porque lo resuelve la cuenta, que es la experta en sus fincas: una linea de recibo
+		/// no dice de cual finca es. Solo la hoja del avaluo lo lee.
+		/// </summary>
+		internal static Variacion Entre(LineaPagada anterior, LineaPagada actual, decimal umbralDeSalto,
+			decimal ruido, EstadoDelAvaluo elAvaluo)
 		{
 			ArgumentNullException.ThrowIfNull(anterior);
 			ArgumentNullException.ThrowIfNull(actual);
+			ArgumentNullException.ThrowIfNull(elAvaluo);
 			if (!anterior.EsDe(actual.Rubro))
 				throw new ArgumentException(
 					"Una variacion es de un rubro consigo mismo: no se compara basura contra policia.", nameof(actual));
@@ -110,7 +129,7 @@ namespace Municipalidad.Dominio
 				return new SinSalto(anterior, actual, superaElRuido: magnitud >= ruido);
 
 			return actual.Rubro.Ley.RespondeAlAvaluo
-				? new CambioDeAvaluo(anterior, actual)
+				? new CambioDeAvaluo(anterior, actual, elAvaluo)
 				: (Variacion)new CambioDeTarifa(anterior, actual);
 		}
 	}
@@ -170,32 +189,46 @@ namespace Municipalidad.Dominio
 	}
 
 	/// <summary>
-	/// El salto en un rubro sobre base imponible: cambio el valor de la finca, por un avaluo nuevo o por
-	/// una declaracion nueva.
+	/// El salto en un rubro sobre base imponible: cambio el valor de la finca, porque la municipalidad
+	/// la avaluo de nuevo.
 	/// <para>
-	/// LO QUE ESTA HOJA NO SABE es con que valor de finca se calculo cada periodo: ningun artefacto lo
-	/// trae, asi que en el v1 se distingue de la de tarifa solo por la explicacion que da.
+	/// CON CUAL AVALUO SE COBRO CADA PERIODO NO LO SABE ESTA HOJA: se lo contesta el estado del avaluo,
+	/// que la cuenta resuelve y que dice el monto donde lo hay y la razon donde no. Un valor DECLARADO
+	/// por la persona no entra aca — es suyo, y no es con el que le cobraron.
 	/// </para>
 	/// </summary>
 	internal sealed class CambioDeAvaluo : Variacion
 	{
-		internal CambioDeAvaluo(LineaPagada anterior, LineaPagada actual) : base(anterior, actual) { }
+		private readonly EstadoDelAvaluo elAvaluo;
+
+		internal CambioDeAvaluo(LineaPagada anterior, LineaPagada actual, EstadoDelAvaluo elAvaluo)
+			: base(anterior, actual)
+		{
+			ArgumentNullException.ThrowIfNull(elAvaluo);
+			this.elAvaluo = elAvaluo;
+		}
 
 		internal override string Etiqueta { get { return "cambio-de-avaluo"; } }
 		internal override bool EsSalto { get { return true; } }
 
+		/// <summary>El estado del avaluo de este salto, para quien quiera sus dos mitades por separado.</summary>
+		internal EstadoDelAvaluo ElAvaluo { get { return elAvaluo; } }
+
+		internal override bool SePuedeDecirElAvaluo { get { return elAvaluo.SePuedeDecir; } }
+
+		internal override string EtiquetaDelAvaluo { get { return elAvaluo.Etiqueta; } }
+
 		/// <summary>
-		/// La clausula dice el salto Y dice que el valor con que se calculo no le llega a la app: es un
-		/// hueco declarado, nunca un numero supuesto.
+		/// La clausula dice el salto, dice que lo que cambio fue el valor de la finca, y le deja al
+		/// estado del avaluo decir de cuanto a cuanto — o por que no se puede decir. Nunca un numero
+		/// supuesto.
 		/// </summary>
 		protected override string LaExplicacion
 		{
 			get
 			{
 				return "Es un salto, y este rubro " + Rubro.Ley.Dice() + ": lo que cambió fue el valor "
-					+ "de la finca, por un avalúo nuevo o por una declaración nueva. Con cuál valor se "
-					+ "calculó cada período no le llega a esta app, así que dice el salto y no de cuánto "
-					+ "a cuánto pasó el avalúo.";
+					+ "de la finca. " + elAvaluo.Dice();
 			}
 		}
 	}

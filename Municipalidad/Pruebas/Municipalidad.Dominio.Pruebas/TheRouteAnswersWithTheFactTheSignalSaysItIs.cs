@@ -14,9 +14,9 @@ namespace Municipalidad.Dominio.Pruebas
 	// consume llega a su comando, y que llega COMO LO QUE ES y no como el tipo de al lado.
 	//
 	// Y EL ORDEN DE LA RUTA NO DECIDE NADA, que es una propiedad y no una casualidad: cada interprete
-	// compara su propio tag antes de mirar el payload, y los seis tags son distintos. Eso se afirma
+	// compara su propio tag antes de mirar el payload, y los siete tags son distintos. Eso se afirma
 	// aparte, porque si dejara de ser cierto la ruta pasaria a depender del orden en que estan escritas
-	// las seis lineas -- y nada mas en la suite lo veria.
+	// las siete lineas -- y nada mas en la suite lo veria.
 	[TestFixture]
 	public sealed class TheRouteAnswersWithTheFactTheSignalSaysItIs
 	{
@@ -44,14 +44,14 @@ namespace Municipalidad.Dominio.Pruebas
 				}
 			});
 
-			Assert.That(reconocidos.Count, Is.EqualTo(6),
-				"Son SEIS tipos, uno por comando de la puerta que la municipalidad manda. Si esta cuenta "
+			Assert.That(reconocidos.Count, Is.EqualTo(7),
+				"Son SIETE tipos, uno por comando de la puerta que la municipalidad manda. Si esta cuenta "
 				+ "baja, la narrativa dejo de traer uno de cada tipo y el barrido mide menos de lo que "
 				+ "dice.");
 		}
 
-		// A LO SUMO UNO CONTESTA, y eso es lo que hace que el orden de las seis lineas de la ruta sea
-		// indiferente. Se mide sobre los seis interpretes directamente y no a traves de la ruta: la ruta
+		// A LO SUMO UNO CONTESTA, y eso es lo que hace que el orden de las siete lineas de la ruta sea
+		// indiferente. Se mide sobre los siete interpretes directamente y no a traves de la ruta: la ruta
 		// devuelve el PRIMERO que contesta, asi que preguntarle a ella no puede ver un segundo.
 		[Test]
 		public void ExactlyOneInterpreterAnswersEachSignalSoTheRoutesOrderDecidesNothing()

@@ -28,6 +28,14 @@ namespace Municipalidad.Dominio.Pruebas
 				"{\"numeroDeFinca\":\"" + numeroDeFinca + "\"}");
 		}
 
+		internal static SenalDeEvento Avaluo(long numero, string numeroDeFinca, string fechaDelAvaluo,
+			string valor)
+		{
+			return new SenalDeEvento(numero, AvaluoFijado.ElTipoDelEvento,
+				"{\"numeroDeFinca\":\"" + numeroDeFinca + "\",\"fechaDelAvaluo\":\"" + fechaDelAvaluo + "\""
+				+ ",\"valor\":" + valor + "}");
+		}
+
 		internal static SenalDeEvento Cobro(long numero, string rubro, string periodo, string monto,
 			string puestoEl)
 		{
@@ -73,11 +81,12 @@ namespace Municipalidad.Dominio.Pruebas
 		internal static IEnumerable<SenalDeEvento> LaNarrativaEntera()
 		{
 			yield return Finca(1, "1-234-567");
-			yield return Cobro(2, "recoleccion-de-basura", "2026.01", "8000", "2026-01-05T00:00:00Z");
-			yield return Recibo(3, "R-9001", "2026-02-10T00:00:00Z", "0");
-			yield return Linea(4, "R-9001", "recoleccion-de-basura", "2026.01", "8000", "0");
-			yield return Consulta(5, ElDiaDeLaConsulta);
-			yield return Pendiente(6, ElDiaDeLaConsulta, "bienes-inmuebles", "2026.01", "45000", "1200");
+			yield return Avaluo(2, "1-234-567", "2026-01-02T00:00:00Z", "45000000");
+			yield return Cobro(3, "recoleccion-de-basura", "2026.01", "8000", "2026-01-05T00:00:00Z");
+			yield return Recibo(4, "R-9001", "2026-02-10T00:00:00Z", "0");
+			yield return Linea(5, "R-9001", "recoleccion-de-basura", "2026.01", "8000", "0");
+			yield return Consulta(6, ElDiaDeLaConsulta);
+			yield return Pendiente(7, ElDiaDeLaConsulta, "bienes-inmuebles", "2026.01", "45000", "1200");
 		}
 
 		// LOS TIPOS DE MENSAJE, POR REFLEXION Y NO CONTRA UNA LISTA ESCRITA A MANO. Enumerar los tipos es

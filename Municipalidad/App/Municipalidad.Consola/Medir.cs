@@ -31,6 +31,9 @@ namespace Municipalidad.Consola
 
 			Paso("la finca", api.IncorporarFinca("F-1"));
 			Paso("la finca otra vez", api.IncorporarFinca("F-1"));
+			Paso("el avaluo de 2023", api.FijarAvaluoDeFinca("F-1", new DateTime(2023, 1, 15), 20000000m));
+			Paso("el avaluo de 2025", api.FijarAvaluoDeFinca("F-1", new DateTime(2025, 1, 20), 36000000m));
+			Paso("el mismo avaluo otra vez", api.FijarAvaluoDeFinca("F-1", new DateTime(2025, 1, 20), 36000000m));
 			Paso("el valor de la finca", api.DeclararValorDeFinca("F-1", new DateTime(2025, 1, 15), 60000000m));
 
 			Paso("recibo R-1", api.RegistrarPago("R-1", new DateTime(2024, 3, 31), 0m));
@@ -199,10 +202,16 @@ namespace Municipalidad.Consola
 					: "ninguna todavia"));
 			Console.WriteLine("    las fincas              : " + string.Join(", ", api.NumerosDeLasFincas()));
 			foreach (string numeroDeFinca in api.NumerosDeLasFincas())
+			{
+				Console.WriteLine("    el avaluo de " + numeroDeFinca + " al 30 de junio : "
+					+ (api.TieneAvaluoLaFinca(numeroDeFinca, new DateTime(2025, 6, 30))
+						? api.AvaluoDeFincaAl(numeroDeFinca, new DateTime(2025, 6, 30)).ToString()
+						: "sin avaluo publicado a esa fecha"));
 				Console.WriteLine("    el valor de " + numeroDeFinca + " al 30 de junio : "
 					+ (api.TieneValorDeclaradoLaFinca(numeroDeFinca, new DateTime(2025, 6, 30))
 						? api.ValorDeFincaAl(numeroDeFinca, new DateTime(2025, 6, 30)).ToString()
 						: "sin valor declarado a esa fecha"));
+			}
 			Console.WriteLine();
 
 			Console.WriteLine("  hasta que evento leyo la app : " + api.UltimoEventoAplicado());

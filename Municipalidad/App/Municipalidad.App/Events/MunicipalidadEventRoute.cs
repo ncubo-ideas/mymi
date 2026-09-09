@@ -11,13 +11,16 @@ namespace Municipalidad.App.Events
 	{
 		/// <summary>
 		/// Contesta el hecho que la senal dice ser, o null. Cada interprete compara su propio tag antes
-		/// de mirar el payload y los seis tags son distintos, asi que a lo sumo uno puede contestar y el
+		/// de mirar el payload y los siete tags son distintos, asi que a lo sumo uno puede contestar y el
 		/// ORDEN de abajo no decide nada.
 		/// </summary>
 		public static IMensajeDeEvento Route(SenalDeEvento senal)
 		{
 			IMensajeDeEvento finca = FincaIncorporada.Interpret(senal);
 			if (finca != null) return finca;
+
+			IMensajeDeEvento avaluo = AvaluoFijado.Interpret(senal);
+			if (avaluo != null) return avaluo;
 
 			IMensajeDeEvento cobro = CobroPuesto.Interpret(senal);
 			if (cobro != null) return cobro;

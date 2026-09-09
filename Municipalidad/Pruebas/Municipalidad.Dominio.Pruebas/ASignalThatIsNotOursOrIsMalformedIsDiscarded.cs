@@ -110,15 +110,19 @@ namespace Municipalidad.Dominio.Pruebas
 					}
 			});
 
-			Assert.That(pares, Is.EqualTo(30),
-				"Son SEIS senales por los CINCO tipos que no son el suyo. Si esta cuenta baja, la "
+			Assert.That(pares, Is.EqualTo(42),
+				"Son SIETE senales por los SEIS tipos que no son el suyo. Si esta cuenta baja, la "
 				+ "narrativa dejo de traer una de cada tipo y el barrido mide menos de lo que dice.");
 
-			Assert.That(contenidos, Is.EqualTo(1),
-				"Y hay UN solo par contenido en los treinta: los campos de ConsultaTomada -- que es uno "
-				+ "solo, el dia -- estan dentro del payload de PendienteRegistrado, que cuelga de esa "
-				+ "misma consulta. Si este numero sube, hay un segundo par que solo el tag separa y "
-				+ "alguien tiene que haberlo decidido.");
+			Assert.That(contenidos, Is.EqualTo(2),
+				"Y hay DOS pares contenidos en los cuarenta y dos, cada uno decidido:\n"
+				+ "  ConsultaTomada dentro de PendienteRegistrado -- los campos de la primera son uno "
+				+ "solo, el dia, y el pendiente cuelga de esa misma consulta.\n"
+				+ "  FincaIncorporada dentro de AvaluoFijado -- los campos de la primera son uno solo, "
+				+ "el numero de finca, y todo avaluo lo trae porque es de una finca. El segundo par "
+				+ "entro con el avaluo, y es aceptable por lo mismo que el primero: lo que dice QUE "
+				+ "hecho es una senal, es su tag. Si este numero sube otra vez, hay un tercer par que "
+				+ "solo el tag separa y alguien tiene que haberlo decidido.");
 		}
 
 		private static HashSet<string> LosCamposDe(SenalDeEvento senal)

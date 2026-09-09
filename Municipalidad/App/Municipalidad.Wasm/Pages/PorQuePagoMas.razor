@@ -63,11 +63,11 @@ else
             <h2>El valor de tu finca</h2>
 
             <p class="nota">
-                Tres de los cinco rubros se cobran sobre el valor de tu finca, y tu municipalidad no
-                publica con cuál valor calculó cada período. El que sabés vos es tuyo y podés
-                registrarlo aquí: queda en tu carpeta y tu asistente lo lee.
-                <strong>Esta pantalla no lo va a usar para explicar un salto</strong> — para eso
-                haría falta el valor con que cobró la municipalidad, y ése no llega.
+                Tres de los cinco rubros se cobran sobre el valor de tu finca. El
+                <strong>avalúo</strong> lo fija tu municipalidad y lo manda a esta app: es el valor
+                con que te cobra, y es el que se usa arriba para explicar un salto.
+                <strong>No hay nada que llenar aquí</strong> — llega solo, con el resto de tus
+                movimientos.
             </p>
 
             @foreach (var finca in fincas.Fincas)
@@ -75,53 +75,24 @@ else
                 <article class="tarjeta">
                     <div class="tarjeta__cabeza">
                         <LlaveDelRubro Rubro="@finca.Numero" />
-                        @if (finca.TieneValorDeclarado)
+                        @if (finca.TieneAvaluo)
                         {
-                            <span class="periodo">declarado: @Formato.Monto(finca.Valor)</span>
+                            <span class="periodo">avalúo: @Formato.Monto(finca.Avaluo)</span>
                         }
                         else
                         {
-                            <span class="periodo">sin valor declarado</span>
+                            <span class="periodo">sin avalúo publicado</span>
                         }
                     </div>
 
-                    <div class="aporte">
-                        <label for="@("valor-" + finca.Numero)">Declarar su valor, en colones</label>
-                        <div class="aporte__linea">
-                            <input id="@("valor-" + finca.Numero)" type="number" min="1" step="1"
-                                   inputmode="numeric" value="@ElValorEscritoDe(finca.Numero)"
-                                   @oninput="@(e => Escribio(finca.Numero, e))"
-                                   disabled="@(declarando == finca.Numero)" />
-                            <button type="button" id="@("declarar-" + finca.Numero)"
-                                    @onclick="@(() => DeclararAsync(finca.Numero))"
-                                    disabled="@(declarando.Length > 0 || !EsUnValorQuePuedoMandar(finca.Numero))">
-                                @(declarando == finca.Numero ? "Guardando…" : "Declarar")
-                            </button>
-                        </div>
-                    </div>
+                    @if (!finca.TieneAvaluo)
+                    {
+                        <p class="nota">
+                            Tu municipalidad todavía no ha mandado un avalúo de esta finca. Llega
+                            solo, con el resto de tus movimientos, cuando ella lo publique.
+                        </p>
+                    }
                 </article>
-            }
-
-            @if (loQuePaso is not null)
-            {
-                @if (loQuePaso.QuedoSinRespaldo)
-                {
-                    <Aviso Tono="mala" Id="aporte-sin-respaldo" Titulo="Quedó registrado y NO se guardó.">
-                        <p>@loQuePaso.Dice</p>
-                    </Aviso>
-                }
-                else if (loQuePaso.QuedoRegistrado)
-                {
-                    <Aviso Tono="quieta" Id="aporte-entro" Titulo="Listo, quedó tuyo.">
-                        <p>El valor quedó registrado y guardado en tu carpeta.</p>
-                    </Aviso>
-                }
-                else
-                {
-                    <Aviso Tono="tibia" Id="aporte-rechazado" Titulo="No se registró, y ésta es la razón.">
-                        <p>@loQuePaso.Dice</p>
-                    </Aviso>
-                }
             }
         </section>
     }
@@ -136,10 +107,6 @@ else
 	private LaVariacionDeCadaRubro variacion;
 	private LasFincasQueTengo fincas;
 
-	private readonly Dictionary<string, decimal> escrito = new Dictionary<string, decimal>();
-	private string declarando = "";
-	private LoQueDijoElAporte loQuePaso;
-
 	protected override void OnInitialized() => Releer();
 
 	/// <summary>La unica pasada de lectura de esta pantalla, y las dos partes del mismo momento.</summary>
@@ -149,35 +116,5 @@ else
 
 		variacion = estado.LeerLaVariacionDeCadaRubro();
 		fincas = estado.LeerLasFincas();
-	}
-
-	private decimal ElValorEscritoDe(string finca) =>
-		escrito.TryGetValue(finca, out decimal valor) ? valor : 0m;
-
-	private void Escribio(string finca, ChangeEventArgs e) =>
-		escrito[finca] = decimal.TryParse(
-			e.Value?.ToString(), System.Globalization.NumberStyles.Number,
-			System.Globalization.CultureInfo.InvariantCulture, out decimal valor) ? valor : 0m;
-
-	/// <summary>
-	/// Que el valor sea positivo lo decide esta pantalla: es un numero que la persona acaba de
-	/// escribir aca, no un hecho del registro.
-	/// </summary>
-	private bool EsUnValorQuePuedoMandar(string finca) => ElValorEscritoDe(finca) > 0m;
-
-	private async Task DeclararAsync(string finca)
-	{
-		if (!EsUnValorQuePuedoMandar(finca)) return;
-
-		declarando = finca;
-		try
-		{
-			loQuePaso = await estado.DeclararValorDeFincaAsync(finca, ElValorEscritoDe(finca));
-		}
-		finally
-		{
-			declarando = "";
-			Releer();
-		}
 	}
 }

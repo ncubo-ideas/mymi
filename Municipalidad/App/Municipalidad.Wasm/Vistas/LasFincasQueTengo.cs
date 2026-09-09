@@ -3,8 +3,9 @@ using Municipalidad.App;
 namespace Municipalidad.Wasm.Vistas
 {
 	/// <summary>
-	/// Las fincas que la municipalidad mando y el valor que la persona declaro de cada una, leidas al
-	/// instante en que la pantalla pregunta. La finca la manda la institucion; el valor es de ella.
+	/// Las fincas que la municipalidad mando y el AVALUO con que cobra cada una, leidos al instante en
+	/// que la pantalla pregunta. Las dos cosas las publica la institucion: esta pantalla no le pide nada
+	/// a la persona sobre su finca.
 	/// </summary>
 	public sealed class LasFincasQueTengo
 	{
@@ -14,7 +15,7 @@ namespace Municipalidad.Wasm.Vistas
 
 		public bool HayAlguna => Fincas.Count > 0;
 
-		/// <summary>Cada finca detras de su par: sin valor declarado no se pregunta por el valor.</summary>
+		/// <summary>Cada avaluo detras de su par: sin avaluo publicado no se pregunta por el monto.</summary>
 		public static LasFincasQueTengo LeerPor(MunicipalidadAPI api, DateTime fechaDeCorte)
 		{
 			ArgumentNullException.ThrowIfNull(api);
@@ -23,13 +24,13 @@ namespace Municipalidad.Wasm.Vistas
 
 			foreach (string numero in api.NumerosDeLasFincas())
 			{
-				bool declarado = api.TieneValorDeclaradoLaFinca(numero, fechaDeCorte);
+				bool avaluada = api.TieneAvaluoLaFinca(numero, fechaDeCorte);
 
 				fincas.Add(new UnaFinca
 				{
 					Numero = numero,
-					TieneValorDeclarado = declarado,
-					Valor = declarado ? api.ValorDeFincaAl(numero, fechaDeCorte) : 0m,
+					TieneAvaluo = avaluada,
+					Avaluo = avaluada ? api.AvaluoDeFincaAl(numero, fechaDeCorte) : 0m,
 				});
 			}
 
@@ -37,13 +38,15 @@ namespace Municipalidad.Wasm.Vistas
 		}
 	}
 
-	/// <summary>Una finca de esta cuenta, con el valor que la persona haya declarado o sin el.</summary>
+	/// <summary>Una finca de esta cuenta, con el avaluo que la municipalidad haya publicado de ella.</summary>
 	public sealed class UnaFinca
 	{
 		public string Numero { get; init; } = "";
 
-		public bool TieneValorDeclarado { get; init; }
+		/// <summary>Si la municipalidad publico un avaluo suyo vigente a la fecha de corte.</summary>
+		public bool TieneAvaluo { get; init; }
 
-		public decimal Valor { get; init; }
+		/// <summary>El avaluo con que la MUNICIPALIDAD cobra. Solo se lee con TieneAvaluo.</summary>
+		public decimal Avaluo { get; init; }
 	}
 }

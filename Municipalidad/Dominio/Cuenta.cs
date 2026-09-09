@@ -73,6 +73,24 @@ namespace Municipalidad.Dominio
 			FincaNumero(numero).DeclararValor(new ValorDeFinca(fecha, monto));
 		}
 
+		internal bool PuedeFijarAvaluoDeFinca(string numero, DateTime fecha, decimal monto)
+		{
+			return TieneFinca(numero) && monto > 0 && FincaNumero(numero).PuedeFijarAvaluo(fecha);
+		}
+
+		/// <summary>
+		/// La municipalidad fija el avaluo de una de las fincas de esta cuenta. Es el valor con que ella
+		/// cobra, y por eso llega por el feed y no por la persona.
+		/// </summary>
+		internal void FijarAvaluoDeFinca(string numero, DateTime fecha, decimal monto)
+		{
+			if (!PuedeFijarAvaluoDeFinca(numero, fecha, monto))
+				throw new DomainException(
+					"No se puede fijar ese avaluo: la finca no esta, el monto no sirve, o hay un avaluo con esa fecha o posterior. "
+					+ "Preguntar PuedeFijarAvaluoDeFinca antes.");
+			FincaNumero(numero).FijarAvaluo(new ValorDeFinca(fecha, monto));
+		}
+
 		private bool EstaPuestoAlCobro(Rubro rubro, Periodo periodo)
 		{
 			foreach (Cobro c in cobros)
@@ -321,7 +339,20 @@ namespace Municipalidad.Dominio
 				throw new DomainException(
 					"Hacen falta al menos dos pagos de ese rubro para ver una variacion. Preguntar SePuedeVerLaVariacionDe antes.");
 			IReadOnlyList<LineaPagada> serie = HistorialDe(nombreDelRubro);
-			return Variacion.Entre(serie[serie.Count - 2], serie[serie.Count - 1], umbralDeSalto, ruido);
+			LineaPagada anterior = serie[serie.Count - 2];
+			LineaPagada actual = serie[serie.Count - 1];
+			return Variacion.Entre(anterior, actual, umbralDeSalto, ruido,
+				ElAvaluoEntre(anterior.Periodo, actual.Periodo));
+		}
+
+		/// <summary>
+		/// EL UNICO RESOLUTOR del avaluo que explica un salto: la cuenta es la experta en sus fincas, y
+		/// una linea de recibo no dice de cual es. TOTAL — donde no se puede decir contesta la hoja que
+		/// dice por que.
+		/// </summary>
+		private EstadoDelAvaluo ElAvaluoEntre(Periodo periodoAnterior, Periodo periodoActual)
+		{
+			return EstadoDelAvaluo.De(periodoAnterior, periodoActual, fincas);
 		}
 
 		/// <summary>
@@ -884,26 +915,49 @@ namespace Municipalidad.Dominio
 		}
 
 		/// <summary>
-		/// PREDICADO TOTAL: esa finca esta Y tenia un valor declarado vigente a esa fecha? Junta las
-		/// DOS razones por las que el valor no se puede leer, para que quien pregunta no tenga que
-		/// distinguirlas antes de saber si hay respuesta.
+		/// PREDICADO TOTAL: esa finca esta Y la municipalidad tenia un avaluo suyo vigente a esa fecha?
+		/// Junta las DOS razones por las que el avaluo no se puede leer, para que quien pregunta no tenga
+		/// que distinguirlas antes de saber si hay respuesta.
 		/// </summary>
-		internal bool TieneValorDeFincaAl(string numero, DateTime fecha)
+		internal bool TieneAvaluoDeFincaAl(string numero, DateTime fecha)
 		{
-			return TieneFinca(numero) && FincaNumero(numero).TieneValorAl(fecha);
+			return TieneFinca(numero) && FincaNumero(numero).TieneAvaluoAl(fecha);
 		}
 
 		/// <summary>
-		/// El valor que esa finca tenia declarado a esa fecha. GUARDADO: no se inventa un valor que la
-		/// persona no declaro. Preguntar TieneValorDeFincaAl antes.
+		/// El avaluo con que la municipalidad cobraba esa finca a esa fecha. GUARDADO: no se inventa uno
+		/// que la institucion no publico. Preguntar TieneAvaluoDeFincaAl antes.
 		/// </summary>
-		internal decimal ValorDeFincaAl(string numero, DateTime fecha)
+		internal decimal AvaluoDeFincaAl(string numero, DateTime fecha)
 		{
-			if (!TieneValorDeFincaAl(numero, fecha))
+			if (!TieneAvaluoDeFincaAl(numero, fecha))
+				throw new DomainException(
+					"Esa finca no esta, o la municipalidad no publico un avaluo suyo a esa fecha. "
+					+ "Preguntar TieneAvaluoDeFincaAl antes.");
+			return FincaNumero(numero).AvaluoVigenteAl(fecha);
+		}
+
+		/// <summary>
+		/// PREDICADO TOTAL: esa finca esta Y tenia un valor declarado por la PERSONA vigente a esa fecha?
+		/// Junta las DOS razones por las que el valor no se puede leer, por la misma razon que su gemela
+		/// del avaluo.
+		/// </summary>
+		internal bool TieneValorDeclaradoDeFincaAl(string numero, DateTime fecha)
+		{
+			return TieneFinca(numero) && FincaNumero(numero).TieneValorDeclaradoAl(fecha);
+		}
+
+		/// <summary>
+		/// El valor que la PERSONA tenia declarado de esa finca a esa fecha. GUARDADO: no se inventa un
+		/// valor que nadie declaro. Preguntar TieneValorDeclaradoDeFincaAl antes.
+		/// </summary>
+		internal decimal ValorDeclaradoDeFincaAl(string numero, DateTime fecha)
+		{
+			if (!TieneValorDeclaradoDeFincaAl(numero, fecha))
 				throw new DomainException(
 					"Esa finca no esta, o no tenia valor declarado a esa fecha. "
-					+ "Preguntar TieneValorDeFincaAl antes.");
-			return FincaNumero(numero).ValorVigenteAl(fecha);
+					+ "Preguntar TieneValorDeclaradoDeFincaAl antes.");
+			return FincaNumero(numero).ValorDeclaradoVigenteAl(fecha);
 		}
 	}
 }

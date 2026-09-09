@@ -26,22 +26,23 @@ namespace Municipalidad.Dominio.Pruebas
 	// escrito antes se habria reescrito entero en la tarea siguiente. DEC-10 lo dice con esas palabras
 	// y lo agenda "inmediatamente despues de M-4".
 	//
-	// LAS OPERACIONES SON 35 Y LOS TEXTOS DE SCRIPT SON 60, y son dos cuentas distintas. Re-derivadas
-	// el 2026-09-08 con `puerta.ps1 -Modulo Municipalidad -Clase MunicipalidadAPI`, despues de E-2:
+	// LAS OPERACIONES SON 38 Y LOS TEXTOS DE SCRIPT SON 66, y son dos cuentas distintas. Re-derivadas
+	// con `puerta.ps1 -Modulo Municipalidad -Clase MunicipalidadAPI`, despues del avaluo por el feed:
 	//
-	//   10 comandos x 2 textos (el del Check y el del cuerpo)         = 20
-	//    6 Aplicar... x 2 textos (el del Check y el del cuerpo)       = 12
-	//   27 llamadas de consulta x 1 texto                             = 27
+	//   11 comandos x 2 textos (el del Check y el del cuerpo)         = 22
+	//    7 Aplicar... x 2 textos (el del Check y el del cuerpo)       = 14
+	//   29 llamadas de consulta x 1 texto                             = 29
 	//   MunicipalidadApp.OnHydrated, los dos upgrade en un texto      =  1
 	//                                                                  ---
-	//                                                                   60
+	//                                                                   66
 	//
-	// LOS SEIS Aplicar... SON PRIVADOS Y MANDAN SCRIPT, que es la primera vez que este modulo tiene esa
+	// LOS SIETE Aplicar... SON PRIVADOS Y MANDAN SCRIPT, que es la primera vez que este modulo tiene esa
 	// forma: hasta E-1, puerta.ps1 reportaba `0 llamadas al DSL en miembros no publicos`. Ahora reporta
-	// doce, y una sola operacion publica -- Aplicar -- `sin script propio`, porque despacha por tipo. Es
-	// la misma forma que DealershipCarAPI.Apply tiene en el modulo de referencia.
+	// SIETE llamadas ahi -- que son CATORCE textos, dos por llamada --, y una sola operacion publica
+	// -- Aplicar -- `sin script propio`, porque despacha por tipo. Es la misma forma que
+	// DealershipCarAPI.Apply tiene en el modulo de referencia.
 	//
-	// Las 27 llamadas de consulta salen de 24 lecturas porque TRES de ellas -- TokenGuardado,
+	// Las 29 llamadas de consulta salen de 26 lecturas porque TRES de ellas -- TokenGuardado,
 	// TokenDeRefrescoGuardado y ClaveDeDispositivoGuardada -- son PRE-PREGUNTA: preguntan primero si
 	// hay, y solo entonces leen. Dos scripts cada una. La cuenta se afirma en prosa y por eso envejece
 	// en silencio; lo unico que la mantiene honesta es volver a correr puerta.ps1 y LEER su listado.
@@ -125,12 +126,13 @@ namespace Municipalidad.Dominio.Pruebas
 			}
 		}
 
-		// LOS DIEZ COMANDOS POR EL CAMINO QUE ACEPTA, que es el que corre los VEINTE textos: el del
-		// Check y el del cuerpo de cada uno. El expediente que dejan es el estado en que las catorce
-		// lecturas contestan en vez de negarse.
+		// LOS ONCE COMANDOS POR EL CAMINO QUE ACEPTA, que es el que corre los VEINTIDOS textos: el del
+		// Check y el del cuerpo de cada uno. El expediente que dejan es el estado en que las lecturas
+		// contestan en vez de negarse.
 		private void ElExpedienteCompleto()
 		{
 			api.IncorporarFinca(LaFinca);
+			api.FijarAvaluoDeFinca(LaFinca, new DateTime(2025, 1, 10), 36000000m);
 			api.DeclararValorDeFinca(LaFinca, new DateTime(2025, 1, 15), 60000000m);
 
 			api.RegistrarPago("R-1", new DateTime(2024, 3, 31), 0m);
@@ -168,13 +170,19 @@ namespace Municipalidad.Dominio.Pruebas
 			"ConsultaMasReciente", "HayAlgunaConsulta", "LosRubrosQueHay", "NumerosDeLasFincas",
 			"RubrosConHistoria", "TieneValorDeclaradoLaFinca", "ValorDeFincaAl",
 
+			// LAS TRES DEL AVALUO: el comando con que la MUNICIPALIDAD fija el valor con que cobra, y
+			// su par pregunta-total + lectura-guardada. Son las gemelas de TieneValorDeclaradoLaFinca y
+			// ValorDeFincaAl, y estan las dos parejas porque son dos hechos de dos duenos: E48 pide que
+			// cada mitad se pueda leer sola, y aca las mitades ni siquiera son del mismo autor.
+			"FijarAvaluoDeFinca", "TieneAvaluoLaFinca", "AvaluoDeFincaAl",
+
 			// LAS TRES DE M-7, el par de las tres lecturas compuestas guardadas. Es C5 tomando su
 			// tercer arreglo candidato -- el par-- para que una caratula pueda preguntar antes en vez
 			// de atrapar un tipo que no puede nombrar.
 			"SePuedeProyectar", "SePuedeVerElFaltanteDeReserva", "SePuedeVerLaVariacionDe",
 
 			// LA UNA DE E-2, la ingesta. Es la unica operacion publica que NO manda un script propio:
-			// despacha por tipo a seis Aplicar... privados, y cada uno de esos manda el suyo. Por eso
+			// despacha por tipo a siete Aplicar... privados, y cada uno de esos manda el suyo. Por eso
 			// puerta.ps1 ahora reporta `sin script propio 1`, que es la misma forma que
 			// DealershipCarAPI.Apply tiene en el modulo de referencia.
 			//
@@ -206,12 +214,12 @@ namespace Municipalidad.Dominio.Pruebas
 		// que subirla obligue a renombrar el metodo. Una cuenta afirmada solo en un comentario envejece
 		// en silencio, que es lo que le paso cuatro veces al censo de Concesionario.
 		[Test]
-		public void TheOperationsAreThirtyFive()
+		public void TheOperationsAreThirtyEight()
 		{
-			Assert.That(EveryOperationThisFixtureRuns, Has.Length.EqualTo(35));
+			Assert.That(EveryOperationThisFixtureRuns, Has.Length.EqualTo(38));
 		}
 
-		// Y SON DIEZ COMANDOS Y VEINTICUATRO LECTURAS, partido por lo que la puerta devuelve: un comando
+		// Y SON ONCE COMANDOS Y VEINTISEIS LECTURAS, partido por lo que la puerta devuelve: un comando
 		// devuelve el documento del rechazo, que es `string`, y desde M-7 la unica lectura que devuelve
 		// un `string` es EstadoDeLaCuenta, que sigue contestando por print. Se afirma la suma y no el
 		// reparto, porque el reparto lo dice puerta.ps1 leyendo el perform de cada miembro y la
@@ -224,7 +232,7 @@ namespace Municipalidad.Dominio.Pruebas
 
 			Assert.Multiple(() =>
 			{
-				Assert.That(declaradas, Has.Length.EqualTo(35),
+				Assert.That(declaradas, Has.Length.EqualTo(38),
 					"MunicipalidadAPI: miembros publicos de instancia declarados");
 
 				Assert.That(
@@ -253,10 +261,10 @@ namespace Municipalidad.Dominio.Pruebas
 			});
 		}
 
-		// LOS DIEZ COMANDOS, CADA UNO POR EL CAMINO QUE ACEPTA. Son los VEINTE textos de comando: el del
-		// Check corre y contesta que si, y entonces corre el del cuerpo. Lo que se afirma es que ninguno
-		// fue rechazado -- el marcador de rechazo es la propiedad EWI en la raiz del documento -- y que
-		// el journal crecio, que es lo que distingue "el script corrio" de "la llamada no revento".
+		// LOS ONCE COMANDOS, CADA UNO POR EL CAMINO QUE ACEPTA. Son los VEINTIDOS textos de comando: el
+		// del Check corre y contesta que si, y entonces corre el del cuerpo. Lo que se afirma es que
+		// ninguno fue rechazado -- el marcador de rechazo es la propiedad EWI en la raiz del documento --
+		// y que el journal crecio, que es lo que distingue "el script corrio" de "la llamada no revento".
 		[Test]
 		public void EveryCommandOfTheDoorParsesBindsAndRuns()
 		{
@@ -265,6 +273,7 @@ namespace Municipalidad.Dominio.Pruebas
 			string[] loQueDevolvieron =
 			{
 				api.IncorporarFinca(LaFinca),
+				api.FijarAvaluoDeFinca(LaFinca, new DateTime(2025, 1, 10), 36000000m),
 				api.DeclararValorDeFinca(LaFinca, new DateTime(2025, 1, 15), 60000000m),
 				api.RegistrarPago("R-1", new DateTime(2024, 3, 31), 0m),
 				api.AgregarLineaAlPago("R-1", ElRubro, "2024.03", 5000m, 0m),
@@ -278,8 +287,8 @@ namespace Municipalidad.Dominio.Pruebas
 
 			Assert.Multiple(() =>
 			{
-				Assert.That(loQueDevolvieron, Has.Length.EqualTo(10),
-					"los diez comandos de la puerta, cada uno una vez");
+				Assert.That(loQueDevolvieron, Has.Length.EqualTo(11),
+					"los once comandos de la puerta, cada uno una vez");
 
 				for (int cual = 0; cual < loQueDevolvieron.Length; cual++)
 					Assert.That(loQueDevolvieron[cual], Does.Not.Contain("EWI"),
@@ -287,30 +296,30 @@ namespace Municipalidad.Dominio.Pruebas
 						+ "y un tipeo ahi adentro sigue sin descubrirse.");
 
 				Assert.That(app.Actor.CurrentEntryId, Is.GreaterThan(antesDeTodo),
-					"Y los diez dejaron entradas: el journal crecio, que es la diferencia entre que el "
+					"Y los once dejaron entradas: el journal crecio, que es la diferencia entre que el "
 					+ "cuerpo se haya ejecutado y que la llamada no haya reventado.");
 			});
 		}
 
-		// LOS SEIS Aplicar... DE E-2, POR SUS DOS CAMINOS, que son los DOCE textos que la ingesta agrego.
+		// LOS SIETE Aplicar... DE E-2, POR SUS DOS CAMINOS, que son los CATORCE textos que la ingesta agrego.
 		// Van aca y no solo en AReceivedEventBlockIsAppliedExactlyOnce por la obligacion que este censo
 		// existe para tener: un script del DSL que nunca corrio se descubre al correrlo, y el journal de
 		// una persona no es donde se quiere descubrirlo.
 		//
 		// SE CORREN LOS DOS CAMINOS Y NO SOLO EL QUE ACEPTA, por la leccion de M-3 medida en DEC-10: un
 		// tipeo en el CUERPO es invisible para una prueba que solo es rechazada. La segunda vuelta es la
-		// que corre solo los seis Check; la primera corre los doce.
+		// que corre solo los siete Check; la primera corre los catorce.
 		[Test]
 		public void EveryApplyOfTheIngestionParsesBindsAndRunsAndThenRefusesTheSameBlock()
 		{
 			long antesDeTodo = app.Actor.CurrentEntryId;
 
-			IMensajeDeEvento[] laNarrativa = LosSeisHechos();
+			IMensajeDeEvento[] laNarrativa = LosSieteHechos();
 
 			Assert.Multiple(() =>
 			{
-				Assert.That(laNarrativa, Has.Length.EqualTo(6),
-					"los seis hechos que la municipalidad manda, uno por tipo de mensaje");
+				Assert.That(laNarrativa, Has.Length.EqualTo(7),
+					"los siete hechos que la municipalidad manda, uno por tipo de mensaje");
 
 				foreach (IMensajeDeEvento hecho in laNarrativa)
 					Assert.That(api.Aplicar(hecho), Does.Not.Contain("EWI"),
@@ -318,7 +327,7 @@ namespace Municipalidad.Dominio.Pruebas
 						+ "corrio y un tipeo ahi adentro sigue sin descubrirse.");
 
 				Assert.That(app.Actor.CurrentEntryId, Is.GreaterThan(antesDeTodo),
-					"Y los seis dejaron entradas.");
+					"Y los siete dejaron entradas.");
 			});
 
 			long despuesDeAplicar = app.Actor.CurrentEntryId;
@@ -330,14 +339,14 @@ namespace Municipalidad.Dominio.Pruebas
 						"El mismo hecho otra vez lo rechaza el Check del punto de control: " + hecho.Tipo);
 
 				Assert.That(app.Actor.CurrentEntryId, Is.EqualTo(despuesDeAplicar),
-					"Y ninguno de los seis rechazos dejo entrada: es la mitad barata de la idempotencia, "
+					"Y ninguno de los siete rechazos dejo entrada: es la mitad barata de la idempotencia, "
 					+ "y es lo que hace que re-entregar un bloque cueste cero.");
 			});
 		}
 
-		// LOS SEIS HECHOS, RUTEADOS DESDE SUS SENALES y no construidos a mano: construirlos a mano
+		// LOS SIETE HECHOS, RUTEADOS DESDE SUS SENALES y no construidos a mano: construirlos a mano
 		// saltearia la ruta y los interpretes, que es justo el camino que un feed recorre.
-		private static IMensajeDeEvento[] LosSeisHechos()
+		private static IMensajeDeEvento[] LosSieteHechos()
 		{
 			List<IMensajeDeEvento> hechos = new List<IMensajeDeEvento>();
 
@@ -354,7 +363,7 @@ namespace Municipalidad.Dominio.Pruebas
 			return hechos.ToArray();
 		}
 
-		// LOS DIEZ TEXTOS DE Check POR EL CAMINO QUE NIEGA, que es el otro camino de cada uno y el que
+		// LOS ONCE TEXTOS DE Check POR EL CAMINO QUE NIEGA, que es el otro camino de cada uno y el que
 		// una corrida siempre aceptada no toca. Cada rechazo es una razon distinta que cruza la puerta.
 		//
 		// Y UN RECHAZO NO DEJA ENTRADA: es la unica forma de negar sin escribir en el journal de una
@@ -369,6 +378,7 @@ namespace Municipalidad.Dominio.Pruebas
 			string[] rechazos =
 			{
 				api.IncorporarFinca(LaFinca),
+				api.FijarAvaluoDeFinca("F-9", new DateTime(2025, 1, 10), 36000000m),
 				api.DeclararValorDeFinca("F-9", new DateTime(2025, 1, 15), 60000000m),
 				api.RegistrarPago("R-1", new DateTime(2024, 3, 31), 0m),
 				api.AgregarLineaAlPago("R-9", ElRubro, "2024.03", 5000m, 0m),
@@ -382,8 +392,8 @@ namespace Municipalidad.Dominio.Pruebas
 
 			Assert.Multiple(() =>
 			{
-				Assert.That(rechazos, Has.Length.EqualTo(10),
-					"los diez textos de Check de la puerta, cada uno por su camino de no");
+				Assert.That(rechazos, Has.Length.EqualTo(11),
+					"los once textos de Check de la puerta, cada uno por su camino de no");
 
 				for (int cual = 0; cual < rechazos.Length; cual++)
 					Assert.That(rechazos[cual], Does.Contain("EWI"),
@@ -391,7 +401,7 @@ namespace Municipalidad.Dominio.Pruebas
 						+ "el reparto entre los dos caminos es una ilusion.");
 
 				Assert.That(app.Actor.CurrentEntryId, Is.EqualTo(despuesDelExpediente),
-					"Y los diez rechazos no dejaron NI UNA entrada: el Check niega antes de que el "
+					"Y los once rechazos no dejaron NI UNA entrada: el Check niega antes de que el "
 					+ "cuerpo del comando escriba.");
 			});
 		}
@@ -528,6 +538,16 @@ namespace Municipalidad.Dominio.Pruebas
 				Assert.That(
 					api.ValorDeFincaAl(LaFinca, new DateTime(2025, 6, 30)), Is.EqualTo(60000000m),
 					"ValorDeFincaAl: lo que la PERSONA declaro, no lo que la municipalidad mando");
+
+				// LAS DOS DEL AVALUO, por el camino que CONTESTA, y anclado al literal que
+				// ElExpedienteCompleto escribio. Las dos parejas se corren juntas a proposito: la unica
+				// forma de ver que una contesta por la otra es pedirle a cada una su propio numero.
+				Assert.That(
+					api.TieneAvaluoLaFinca(LaFinca, new DateTime(2025, 6, 30)), Is.True,
+					"TieneAvaluoLaFinca");
+				Assert.That(
+					api.AvaluoDeFincaAl(LaFinca, new DateTime(2025, 6, 30)), Is.EqualTo(36000000m),
+					"AvaluoDeFincaAl: lo que la MUNICIPALIDAD mando, no lo que la persona declaro");
 			});
 		}
 

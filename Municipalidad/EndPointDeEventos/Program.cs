@@ -249,13 +249,14 @@ namespace Municipalidad.EventosMock
 		internal const string LaCedulaDelDemo = "CEDULA-DEMO-1";
 
 		/// <summary>
-		/// Los seis tipos que la municipalidad publica, uno por comando de la puerta que ella manda. El
-		/// valor de la finca y la reserva NO estan y no faltan: los aporta la persona.
+		/// Los siete tipos que la municipalidad publica, uno por comando de la puerta que ella manda. El
+		/// AVALUO esta porque lo fija la institucion y es el valor con que cobra; la reserva y el valor
+		/// DECLARADO no estan y no faltan, porque los aporta la persona.
 		/// </summary>
 		internal static readonly string[] LosTiposQueLaMunicipalidadPublica =
 		{
-			"FincaIncorporada", "CobroPuesto", "PagoRegistrado", "LineaDePagoRegistrada",
-			"ConsultaTomada", "PendienteRegistrado",
+			"FincaIncorporada", "AvaluoFijado", "CobroPuesto", "PagoRegistrado",
+			"LineaDePagoRegistrada", "ConsultaTomada", "PendienteRegistrado",
 		};
 
 		private readonly ConcurrentDictionary<string, List<Dictionary<string, object>>> porContribuyente =
@@ -347,6 +348,8 @@ namespace Municipalidad.EventosMock
 			List<Dictionary<string, object>> narrativa = new();
 
 			Finca(narrativa, "F-1");
+			Avaluo(narrativa, "F-1", "2023-01-15T00:00:00Z", 20000000m);
+			Avaluo(narrativa, "F-1", "2025-01-20T00:00:00Z", 36000000m);
 
 			Recibo(narrativa, "R-1", "2024-03-31T00:00:00Z", 0m);
 			Linea(narrativa, "R-1", "recoleccion-de-basura", "2024.03", 5000m, 0m);
@@ -378,6 +381,17 @@ namespace Municipalidad.EventosMock
 			Poner(narrativa, "FincaIncorporada", new Dictionary<string, object>
 			{
 				["numeroDeFinca"] = numeroDeFinca,
+			});
+		}
+
+		private static void Avaluo(List<Dictionary<string, object>> narrativa, string numeroDeFinca,
+			string fechaDelAvaluo, decimal valor)
+		{
+			Poner(narrativa, "AvaluoFijado", new Dictionary<string, object>
+			{
+				["numeroDeFinca"] = numeroDeFinca,
+				["fechaDelAvaluo"] = fechaDelAvaluo,
+				["valor"] = valor,
 			});
 		}
 

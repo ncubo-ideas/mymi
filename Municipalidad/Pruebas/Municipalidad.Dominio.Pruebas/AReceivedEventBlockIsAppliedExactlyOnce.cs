@@ -88,14 +88,14 @@ namespace Municipalidad.Dominio.Pruebas
 
 			Assert.Multiple(() =>
 			{
-				Assert.That(primero.Leidos, Is.EqualTo(6));
-				Assert.That(primero.Aplicados, Is.EqualTo(6));
+				Assert.That(primero.Leidos, Is.EqualTo(7));
+				Assert.That(primero.Aplicados, Is.EqualTo(7));
 				Assert.That(primero.Descartados, Is.EqualTo(0));
 				Assert.That(primero.Rechazados, Is.EqualTo(0));
-				Assert.That(primero.UltimoEvento, Is.EqualTo(6L));
+				Assert.That(primero.UltimoEvento, Is.EqualTo(7L));
 			});
 
-			Assert.That(api.UltimoEventoAplicado(), Is.EqualTo(6L),
+			Assert.That(api.UltimoEventoAplicado(), Is.EqualTo(7L),
 				"Y el punto de control esta en el JOURNAL, no en el resultado: es lo que hace exacto el "
 				+ "resume tras una caida.");
 		}
@@ -107,19 +107,19 @@ namespace Municipalidad.Dominio.Pruebas
 		public async Task ATypeThisAppDoesNotConsumeIsCountedAsDiscardedAndDoesNotMoveTheCheckpoint()
 		{
 			List<SenalDeEvento> conUnaAjena = new List<SenalDeEvento>(LaNarrativa());
-			conUnaAjena.Add(new SenalDeEvento(7, "AvisoDeCorteDeAgua", "{\"aviso\":\"del 12 al 13\"}"));
+			conUnaAjena.Add(new SenalDeEvento(8, "AvisoDeCorteDeAgua", "{\"aviso\":\"del 12 al 13\"}"));
 
 			ResultadoDeRefresh resultado = await UnRefreshDe(conUnaAjena);
 
 			Assert.Multiple(() =>
 			{
-				Assert.That(resultado.Leidos, Is.EqualTo(7));
-				Assert.That(resultado.Aplicados, Is.EqualTo(6));
+				Assert.That(resultado.Leidos, Is.EqualTo(8));
+				Assert.That(resultado.Aplicados, Is.EqualTo(7));
 				Assert.That(resultado.Descartados, Is.EqualTo(1));
 			});
 
-			Assert.That(api.UltimoEventoAplicado(), Is.EqualTo(6L),
-				"El 7 se descarto en la frontera, asi que la bitacora queda en el 6: nada se escribio "
+			Assert.That(api.UltimoEventoAplicado(), Is.EqualTo(7L),
+				"El 8 se descarto en la frontera, asi que la bitacora queda en el 7: nada se escribio "
 				+ "por el.");
 		}
 
@@ -143,15 +143,15 @@ namespace Municipalidad.Dominio.Pruebas
 			Assert.Multiple(() =>
 			{
 				Assert.That(otraVez.Aplicados, Is.EqualTo(0), "Ninguno vuelve a entrar.");
-				Assert.That(otraVez.Rechazados, Is.EqualTo(6),
-					"Los seis los rechaza el Check, uno por uno.");
+				Assert.That(otraVez.Rechazados, Is.EqualTo(7),
+					"Los siete los rechaza el Check, uno por uno.");
 			});
 
 			Assert.That(ElArbolDe(carpeta), Is.EqualTo(antes),
 				"Y el arbol queda BYTE A BYTE igual. Es la forma fuerte del criterio, y solo se sostiene "
 				+ "alrededor de algo que no debe escribir NADA: un rechazo bajo el read lock no deja ni "
 				+ "una entrada no-op. Con un if adentro del cuerpo en vez de un Check, este renglon "
-				+ "diria False y el journal habria crecido en seis.");
+				+ "diria False y el journal habria crecido en siete.");
 
 			Assert.That(LoQueLaCuentaContesta(), Is.EqualTo(respuestas));
 		}
@@ -305,6 +305,8 @@ namespace Municipalidad.Dominio.Pruebas
 				MunicipalidadAPI porLaPuerta = new MunicipalidadAPI(otraApp);
 
 				porLaPuerta.IncorporarFinca("1-234-567");
+				porLaPuerta.FijarAvaluoDeFinca(
+					"1-234-567", new DateTime(2026, 1, 2, 0, 0, 0, DateTimeKind.Utc), 45000000m);
 				porLaPuerta.PonerAlCobro(
 					"recoleccion-de-basura", "2026.01", 8000m,
 					new DateTime(2026, 1, 5, 0, 0, 0, DateTimeKind.Utc));
@@ -318,7 +320,7 @@ namespace Municipalidad.Dominio.Pruebas
 					45000m, 1200m);
 
 				Assert.That(LoQueContesta(porLaPuerta), Is.EqualTo(porElFeed),
-					"Los mismos seis hechos, por los dos caminos, tienen que dejar la misma CUENTA.");
+					"Los mismos siete hechos, por los dos caminos, tienen que dejar la misma CUENTA.");
 
 				// Y LO UNICO QUE DIFIERE ES EL PUNTO DE CONTROL, que no es un hecho de la cuenta sino
 				// de la bitacora. La comparacion de arriba lo omite a proposito -- y esta prueba
@@ -327,7 +329,7 @@ namespace Municipalidad.Dominio.Pruebas
 				// exactamente lo que TIENE que diferir.
 				Assert.Multiple(() =>
 				{
-					Assert.That(api.UltimoEventoAplicado(), Is.EqualTo(6L),
+					Assert.That(api.UltimoEventoAplicado(), Is.EqualTo(7L),
 						"Por el feed, el punto de control siguio a los hechos.");
 					Assert.That(porLaPuerta.UltimoEventoAplicado(), Is.EqualTo(0L),
 						"Por la puerta no se movio, y no deberia: la persona y la municipalidad "
@@ -365,14 +367,14 @@ namespace Municipalidad.Dominio.Pruebas
 			await new BucleDeRefresh(api, fuente, MunicipalidadEventRoute.Route).Ejecutar();
 			await new BucleDeRefresh(api, fuente, MunicipalidadEventRoute.Route).Ejecutar();
 
-			Assert.That(fuente.DesdeDondeLePidieron, Is.EqualTo(new List<long> { 0L, 6L }),
+			Assert.That(fuente.DesdeDondeLePidieron, Is.EqualTo(new List<long> { 0L, 7L }),
 				"La primera corrida pide desde 0 y la segunda desde 6, que es lo que quedo escrito.");
 
 			Assert.That(fuente.ConQueTokenLePidieron, Is.EqualTo(new List<string> { ElToken, ElToken }),
 				"Y con el token GUARDADO, leido del journal en cada corrida.");
 
-			Assert.That(fuente.LoQueSirvio, Is.EqualTo(new List<int> { 6, 0 }),
-				"Y la segunda corrida trae CERO senales, no seis rechazadas: un proveedor que respeta el "
+			Assert.That(fuente.LoQueSirvio, Is.EqualTo(new List<int> { 7, 0 }),
+				"Y la segunda corrida trae CERO senales, no siete rechazadas: un proveedor que respeta el "
 				+ "checkpoint no reenvia lo que la app ya dijo tener. Lo que pasa cuando SI reenvia lo "
 				+ "mide ARedeliveredBlockLeavesTheJournalByteForByteIdentical, con una fuente que "
 				+ "reentrega todo.");
@@ -437,8 +439,8 @@ namespace Municipalidad.Dominio.Pruebas
 				() => { flushes++; return Task.CompletedTask; })
 			.Ejecutar();
 
-			Assert.That(flushes, Is.EqualTo(6),
-				"Seis aplicados, seis flushes. Uno solo al final diria que el flush es por bloque.");
+			Assert.That(flushes, Is.EqualTo(7),
+				"Siete aplicados, siete flushes. Uno solo al final diria que el flush es por bloque.");
 
 			flushes = 0;
 

@@ -15,7 +15,8 @@ namespace Municipalidad.App
 	{
 		private RegistroDeLaVariacion(
 			string rubro, string desde, string hasta, decimal antes, decimal ahora, decimal proporcion,
-			string explicacion, bool esSalto, string urgencia, string dice)
+			string explicacion, bool esSalto, string urgencia, string dice,
+			bool sePuedeDecirElAvaluo, string estadoDelAvaluo)
 		{
 			Rubro = rubro;
 			Desde = desde;
@@ -27,6 +28,8 @@ namespace Municipalidad.App
 			EsSalto = esSalto;
 			Urgencia = urgencia;
 			Dice = dice;
+			SePuedeDecirElAvaluo = sePuedeDecirElAvaluo;
+			EstadoDelAvaluo = estadoDelAvaluo;
 		}
 
 		/// <summary>De que rubro es esta variacion, por el nombre del rubro.</summary>
@@ -66,12 +69,27 @@ namespace Municipalidad.App
 		public string Dice { get; }
 
 		/// <summary>
+		/// Si esta app puede decir con cual avaluo la municipalidad cobro cada uno de los dos periodos.
+		/// Falso tambien donde el rubro no se cobra sobre base imponible, que es donde no aplica.
+		/// </summary>
+		public bool SePuedeDecirElAvaluo { get; }
+
+		/// <summary>
+		/// En que estado esta el avaluo de este cambio, por el nombre: `con-avaluo-publicado`,
+		/// `sin-avaluo-publicado`, `sin-finca`, `varias-fincas`, o `no-aplica` donde el rubro no se cobra
+		/// sobre base imponible. La frase de arriba ya lo dice en palabras; esto es para decidir que
+		/// ofrecer, no para rehacerla.
+		/// </summary>
+		public string EstadoDelAvaluo { get; }
+
+		/// <summary>
 		/// Arma el registro y refusa una frase o un nombre en blanco: una respuesta sin frase se
 		/// veria igual que una con frase vacia, y es lo unico que una caratula no puede rehacer.
 		/// </summary>
 		internal static RegistroDeLaVariacion Of(
 			string rubro, string desde, string hasta, decimal antes, decimal ahora, decimal proporcion,
-			string explicacion, bool esSalto, string urgencia, string dice)
+			string explicacion, bool esSalto, string urgencia, string dice,
+			bool sePuedeDecirElAvaluo, string estadoDelAvaluo)
 		{
 			ArgumentException.ThrowIfNullOrWhiteSpace(rubro);
 			ArgumentException.ThrowIfNullOrWhiteSpace(desde);
@@ -79,9 +97,11 @@ namespace Municipalidad.App
 			ArgumentException.ThrowIfNullOrWhiteSpace(explicacion);
 			ArgumentException.ThrowIfNullOrWhiteSpace(urgencia);
 			ArgumentException.ThrowIfNullOrWhiteSpace(dice);
+			ArgumentException.ThrowIfNullOrWhiteSpace(estadoDelAvaluo);
 
 			return new RegistroDeLaVariacion(
-				rubro, desde, hasta, antes, ahora, proporcion, explicacion, esSalto, urgencia, dice);
+				rubro, desde, hasta, antes, ahora, proporcion, explicacion, esSalto, urgencia, dice,
+				sePuedeDecirElAvaluo, estadoDelAvaluo);
 		}
 	}
 }

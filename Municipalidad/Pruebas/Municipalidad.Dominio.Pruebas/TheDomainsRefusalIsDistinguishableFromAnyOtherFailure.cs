@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.IO;
 using NUnit.Framework;
 
@@ -22,17 +23,19 @@ namespace Municipalidad.Dominio.Pruebas
 	{
 		private static readonly DateTime LaConsulta = new DateTime(2025, 9, 3);
 		private static readonly DateTime ElValorDeLaFinca = new DateTime(2025, 1, 15);
+		private static readonly DateTime ElAvaluoDeLaFinca = new DateTime(2025, 2, 10);
 		private static readonly DateTime LaAdopcion = new DateTime(2025, 8, 1);
 
-		// UNA CUENTA CON LOS OCHO COMANDOS YA EJERCIDOS, para que cada uno pueda ser negado por
-		// el registro y no por un argumento. F-2 entra sin valor declarado a proposito: es lo que
-		// niega a Finca.ValorVigenteAl.
+		// UNA CUENTA CON LOS NUEVE COMANDOS YA EJERCIDOS, para que cada uno pueda ser negado por
+		// el registro y no por un argumento. F-2 entra sin valor declarado Y SIN AVALUO a proposito:
+		// es lo que niega a las dos lecturas guardadas de Finca.
 		private static Cuenta UnaCuentaConHistoria()
 		{
 			Cuenta cuenta = new Cuenta();
 			cuenta.IncorporarFinca("F-1");
 			cuenta.IncorporarFinca("F-2");
 			cuenta.DeclararValorDeFinca("F-1", ElValorDeLaFinca, 60000000m);
+			cuenta.FijarAvaluoDeFinca("F-1", ElAvaluoDeLaFinca, 36000000m);
 			cuenta.RegistrarPago("R-1", new DateTime(2024, 3, 31), 0m);
 			cuenta.AgregarLineaAlPago("R-1", "recoleccion-de-basura", 2024, 3, 5000m, 0m);
 			cuenta.PonerAlCobro("recoleccion-de-basura", 2024, 4, 5000m, new DateTime(2024, 4, 1));
@@ -145,8 +148,12 @@ namespace Municipalidad.Dominio.Pruebas
 					"Cuenta.FaltanteDeReservaAl");
 
 				Assert.Throws<DomainException>(
-					() => cuenta.FincaNumero("F-2").ValorVigenteAl(new DateTime(2025, 9, 15)),
-					"Finca.ValorVigenteAl");
+					() => cuenta.FincaNumero("F-2").ValorDeclaradoVigenteAl(new DateTime(2025, 9, 15)),
+					"Finca.ValorDeclaradoVigenteAl");
+
+				Assert.Throws<DomainException>(
+					() => cuenta.FincaNumero("F-2").AvaluoVigenteAl(new DateTime(2025, 9, 15)),
+					"Finca.AvaluoVigenteAl");
 
 				Assert.Throws<DomainException>(
 					() => cuenta.ConsultaDel(LaConsulta).PendienteMasViejoDe(Rubro.Basura()),
@@ -161,8 +168,16 @@ namespace Municipalidad.Dominio.Pruebas
 					"Cuenta.ConsultaMasReciente");
 
 				Assert.Throws<DomainException>(
-					() => cuenta.ValorDeFincaAl("F-2", new DateTime(2025, 9, 15)),
-					"Cuenta.ValorDeFincaAl");
+					() => cuenta.ValorDeclaradoDeFincaAl("F-2", new DateTime(2025, 9, 15)),
+					"Cuenta.ValorDeclaradoDeFincaAl");
+
+				Assert.Throws<DomainException>(
+					() => cuenta.AvaluoDeFincaAl("F-2", new DateTime(2025, 9, 15)),
+					"Cuenta.AvaluoDeFincaAl");
+
+				Assert.Throws<DomainException>(
+					() => cuenta.FijarAvaluoDeFinca("F-1", ElAvaluoDeLaFinca, 36000000m),
+					"Cuenta.FijarAvaluoDeFinca");
 			});
 		}
 
@@ -234,7 +249,9 @@ namespace Municipalidad.Dominio.Pruebas
 						() => Variacion.Entre(
 							new LineaPagada(Rubro.Basura(), new Mes(2024, 3), 5000m, 0m, 1, false),
 							new LineaPagada(Rubro.Basura(), new Mes(2024, 4), 6000m, 0m, 1, false),
-							umbralDeSalto: 0.01m, ruido: 0.02m),
+							umbralDeSalto: 0.01m, ruido: 0.02m,
+							elAvaluo: EstadoDelAvaluo.De(
+								new Mes(2024, 3), new Mes(2024, 4), new List<Finca>())),
 						"Variacion.Entre(umbralDeSalto, ruido)"),
 					Is.Not.InstanceOf<DomainException>(), "Variacion.Entre(umbralDeSalto, ruido)");
 			});
