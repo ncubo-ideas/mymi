@@ -335,9 +335,9 @@ namespace Municipalidad.EventosMock
 
 		/// <summary>
 		/// La historia del demo, que es la misma que `medir` corre por la puerta: los dos alfabetos del
-		/// periodo, el salto de 2025 por tarifa en basura y por avaluo en bienes inmuebles, la mora que
+		/// periodo, el salto de 2026 por tarifa en basura y por avaluo en bienes inmuebles, la mora que
 		/// la municipalidad cobro, y el pendiente de basura que cubre un solo mes y deja julio y agosto
-		/// de 2025 pagados sin comprobante. El encabezado de cada recibo va ANTES de sus lineas y la
+		/// de 2026 pagados sin comprobante. El encabezado de cada recibo va ANTES de sus lineas y la
 		/// consulta antes de sus pendientes, porque una linea sin encabezado se rechaza y no se reintenta.
 		/// <para>
 		/// NINGUN INSTANTE SALE DE UN RELOJ. Lo que guiona una secuencia recibida no lee la hora: cada
@@ -349,30 +349,30 @@ namespace Municipalidad.EventosMock
 			List<Dictionary<string, object>> narrativa = new();
 
 			Finca(narrativa, "F-1");
-			Avaluo(narrativa, "F-1", "2023-01-15T00:00:00Z", 20000000m);
-			Avaluo(narrativa, "F-1", "2025-01-20T00:00:00Z", 36000000m);
+			Avaluo(narrativa, "F-1", "2024-01-15T00:00:00Z", 20000000m);
+			Avaluo(narrativa, "F-1", "2026-01-20T00:00:00Z", 36000000m);
 
-			Recibo(narrativa, "R-1", "2024-03-31T00:00:00Z", 0m);
-			Linea(narrativa, "R-1", "recoleccion-de-basura", "2024.03", 5000m, 0m);
-			Linea(narrativa, "R-1", "servicio-policia", "2024.03", 6000m, 0m);
-			Linea(narrativa, "R-1", "bienes-inmuebles", "2024.01", 20000m, 0m);
+			Recibo(narrativa, "R-1", "2025-03-31T00:00:00Z", 0m);
+			Linea(narrativa, "R-1", "recoleccion-de-basura", "2025.03", 5000m, 0m);
+			Linea(narrativa, "R-1", "servicio-policia", "2025.03", 6000m, 0m);
+			Linea(narrativa, "R-1", "bienes-inmuebles", "2025.01", 20000m, 0m);
 
-			Recibo(narrativa, "R-2", "2024-06-30T00:00:00Z", 0m);
-			Linea(narrativa, "R-2", "recoleccion-de-basura", "2024.06", 15000m, 0m);
-			Linea(narrativa, "R-2", "servicio-policia", "2024.06", 18000m, 0m);
-			Linea(narrativa, "R-2", "bienes-inmuebles", "2024.02", 20000m, 0m);
+			Recibo(narrativa, "R-2", "2025-06-30T00:00:00Z", 0m);
+			Linea(narrativa, "R-2", "recoleccion-de-basura", "2025.06", 15000m, 0m);
+			Linea(narrativa, "R-2", "servicio-policia", "2025.06", 18000m, 0m);
+			Linea(narrativa, "R-2", "bienes-inmuebles", "2025.02", 20000m, 0m);
 
-			Recibo(narrativa, "R-3", "2025-06-30T00:00:00Z", 0m);
-			Linea(narrativa, "R-3", "recoleccion-de-basura", "2025.06", 96000m, 310m);
-			Linea(narrativa, "R-3", "servicio-policia", "2025.06", 73200m, 240m);
-			Linea(narrativa, "R-3", "bienes-inmuebles", "2025.02", 144000m, 470m);
+			Recibo(narrativa, "R-3", "2026-06-30T00:00:00Z", 0m);
+			Linea(narrativa, "R-3", "recoleccion-de-basura", "2026.06", 96000m, 310m);
+			Linea(narrativa, "R-3", "servicio-policia", "2026.06", 73200m, 240m);
+			Linea(narrativa, "R-3", "bienes-inmuebles", "2026.02", 144000m, 470m);
 
-			Consulta(narrativa, "2025-09-03T00:00:00Z");
-			Pendiente(narrativa, "2025-09-03T00:00:00Z", "recoleccion-de-basura", "2025.09", 8000m, 45m);
-			Pendiente(narrativa, "2025-09-03T00:00:00Z", "servicio-policia", "2025.09", 18300m, 34m);
-			Pendiente(narrativa, "2025-09-03T00:00:00Z", "bienes-inmuebles", "2025.03", 36000m, 0m);
+			Consulta(narrativa, "2026-09-03T00:00:00Z");
+			Pendiente(narrativa, "2026-09-03T00:00:00Z", "recoleccion-de-basura", "2026.09", 8000m, 45m);
+			Pendiente(narrativa, "2026-09-03T00:00:00Z", "servicio-policia", "2026.09", 18300m, 34m);
+			Pendiente(narrativa, "2026-09-03T00:00:00Z", "bienes-inmuebles", "2026.03", 36000m, 0m);
 
-			Cobro(narrativa, "recoleccion-de-basura", "2025.10", 8000m, "2025-10-01T00:00:00Z");
+			Cobro(narrativa, "recoleccion-de-basura", "2026.10", 8000m, "2026-10-01T00:00:00Z");
 
 			return narrativa;
 		}
