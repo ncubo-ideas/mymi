@@ -85,6 +85,73 @@
 		</dict>
 	</array>
 
+	<!-- LA CAMARA, para leer el codigo de la institucion desde adentro de Gnothi. La pagina la
+	     pide con getUserMedia y WebKit no le pregunta a la persona si esta clave no existe: el
+	     lector muere con NotAllowedError y la hoja dice que Gnothi no tiene permiso. El texto es
+	     el que iOS muestra en su dialogo, asi que habla en la voz de la persona. Escrito el
+	     2026-09-09 en Windows, sin compilar: lo mide quien tenga la Mac. -->
+	<key>NSCameraUsageDescription</key>
+	<string>Gnothi usa la cámara solo para leer el código que te da tu institución y agregar su módulo. No guarda fotos ni video.</string>
+
+	<!-- EL PAQUETE COMO DOCUMENTO: un .gmod que llega por Archivos, por AirDrop o por un chat
+	     ofrece «Copiar en Gnothi», igual que «Abrir con» en Android. Dos tipos a proposito, como
+	     alla: el propio (app.gnothi.module, declarado abajo) y el zip pelado, porque un archivo
+	     que paso por correo o chat suele perder el tipo; la inspeccion separa un modulo de
+	     cualquier otro zip. Rango Alternate: Gnothi se ofrece, no se apropia de todos los zips.
+	     Los documentos llegan por AppDelegate.OpenUrl como file:// y de ahi al alta. -->
+	<key>CFBundleDocumentTypes</key>
+	<array>
+		<dict>
+			<key>CFBundleTypeName</key>
+			<string>Módulo de Gnothi</string>
+			<key>LSHandlerRank</key>
+			<string>Owner</string>
+			<key>LSItemContentTypes</key>
+			<array>
+				<string>app.gnothi.module</string>
+			</array>
+		</dict>
+		<dict>
+			<key>CFBundleTypeName</key>
+			<string>Archivo zip</string>
+			<key>LSHandlerRank</key>
+			<string>Alternate</string>
+			<key>LSItemContentTypes</key>
+			<array>
+				<string>public.zip-archive</string>
+			</array>
+		</dict>
+	</array>
+
+	<!-- EL TIPO DEL PAQUETE, exportado: la extension .gmod y el mime que la pagina de la
+	     institucion sirve. Conforma a zip porque ES un zip, y eso es lo que deja que Archivos lo
+	     abra como carpeta si la persona quiere mirar adentro. -->
+	<key>UTExportedTypeDeclarations</key>
+	<array>
+		<dict>
+			<key>UTTypeIdentifier</key>
+			<string>app.gnothi.module</string>
+			<key>UTTypeDescription</key>
+			<string>Módulo de Gnothi</string>
+			<key>UTTypeConformsTo</key>
+			<array>
+				<string>public.zip-archive</string>
+				<string>public.data</string>
+			</array>
+			<key>UTTypeTagSpecification</key>
+			<dict>
+				<key>public.filename-extension</key>
+				<array>
+					<string>gmod</string>
+				</array>
+				<key>public.mime-type</key>
+				<array>
+					<string>application/vnd.gnothi.module</string>
+				</array>
+			</dict>
+		</dict>
+	</array>
+
 	<!-- EL PERMISO DE RED LOCAL, Y NO ES LO MISMO QUE NSAllowsLocalNetworking. Son DOS
 	     compuertas distintas y hay que pasar las dos:
 

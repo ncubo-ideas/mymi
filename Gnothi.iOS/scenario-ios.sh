@@ -149,8 +149,11 @@ for entry in "${modules[@]}"; do
       exit 1
     }
     echo "    building the bundle..."
+    # -Origen: the page's own origin, so the manifest declares the origin that serves it and
+    # Gnothi's origin check comes back "verificado". The script also SIGNS the bundle with the
+    # institution's key (bundles/.keys/<name>.key.json, created the first time, git-ignored).
     "$ps" -NoProfile -File "$mobile/armar-bundle.ps1" -Modulo "$name" \
-      -Publicador "http://127.0.0.1:$pub/" >"$logs/bundle-$name.log" 2>&1 || {
+      -Publicador "http://127.0.0.1:$pub/" -Origen "http://127.0.0.1:$web" >"$logs/bundle-$name.log" 2>&1 || {
         echo "    the bundle of $name could not be built -- see $logs/bundle-$name.log"
         exit 1; }
   fi
@@ -186,6 +189,8 @@ for entry in "${modules[@]}"; do
       --UrlPublica "http://127.0.0.1:$web" \
       --Titulo "$title" \
       --Subtitulo "$subtitle" \
+      --Llave "$mobile/bundles/.keys/$name.key.json" \
+      --LlavesRetiradas "$mobile/bundles/.keys/$name.revoked.json" \
       >"$logs/web-$name.log" 2>&1 &
     echo "$!" >> "$pidfile"
     echo "    :$web  institution started"

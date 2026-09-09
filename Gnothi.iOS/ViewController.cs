@@ -139,6 +139,10 @@ public sealed class ViewController : UIViewController
 				// y ahi ContinueUserActivity corre antes de que esto termine de armarse.
 				if (pendingEnrollment is { Length: > 0 } p) { pendingEnrollment = null; await shell.Enroll(p); }
 
+				// AND THE FILES THAT ARRIVED BEFORE IT: a .gmod opened with «Copiar en Gnothi» can
+				// launch the app too. Same shape as archivoPendiente on Android.
+				if (pendingFiles is { Count: > 0 } files) { pendingFiles = null; await shell.EnrollFiles(files); }
+
 				await corriendo;
 			}
 			catch (Exception e) { Log($"shell fallo: {e.GetType().Name}: {e.Message}"); }
@@ -390,6 +394,98 @@ public sealed class ViewController : UIViewController
 	private static void Log(string s) => Console.WriteLine($"GNOTHI: {s}");
 	private string? pendingEnrollment;
 
+	// ── EL ALTA DESDE UN ARCHIVO, la mitad que SI es de iOS ────────────────────────────────
+	//
+	// WRITTEN ON WINDOWS ON 2026-09-09, WITHOUT A MAC TO COMPILE IT: it mirrors what
+	// MainActivity.cs does and was measured to do on Android that day -the document picker with
+	// several files, the list of what was found, and "open with"- and it was proofread against
+	// the .NET for iOS bindings, not built. Whoever has the Mac compiles it and runs
+	// PRUEBAS-WEBVIEW-IOS.md P6d. The shared part -reading the zips, the quick look, the list,
+	// the proposal- is Shell.EnrollFiles and needs nothing here.
+
+	// The same ceiling a download has: a wrong file cannot fill the phone either.
+	private const long FileCeiling = 64L * 1024 * 1024;
+
+	// What a document brought before the Host was up, waiting like pendingEnrollment does.
+	private List<(byte[] Bytes, string Name)>? pendingFiles;
+
+	/// «Copiar en Gnothi»: a .gmod handed over by Archivos, AirDrop or a chat, as a file url.
+	/// The url may be security-scoped (LSSupportsOpeningDocumentsInPlace is on), so it is
+	/// opened under its scope and read at once; nothing of it is kept but the bytes.
+	internal void HandleFile(NSUrl url)
+	{
+		(byte[] Bytes, string Name)? archivo = LeerDocumento(url);
+		if (archivo is null) return;
+
+		if (shell is null) { (pendingFiles ??= []).Add(archivo.Value); Log("alta: el Host todavia no levanto; el archivo queda pendiente"); return; }
+		_ = shell.EnrollFile(archivo.Value.Bytes, archivo.Value.Name);
+	}
+
+	// THE SYSTEM'S DOCUMENT PICKER, asked for the module type, zips and generic data -a .gmod
+	// that went through a chat often arrives typed as nothing- and for SEVERAL at once: the
+	// shell shows what it found in them and the person chooses which to install, one proposal at
+	// a time. `asCopy: true` gives Gnothi its own copies under tmp, readable without any scope.
+	// No storage permission is involved: the system searches, the person chooses, Gnothi
+	// receives those files and nothing else (NotasGnothiHost/42 §8).
+	internal string PickModuleFiles()
+	{
+		UniformTypeIdentifiers.UTType?[] candidates =
+		[
+			UniformTypeIdentifiers.UTType.CreateFromIdentifier("app.gnothi.module"),
+			UniformTypeIdentifiers.UTTypes.Zip,
+			UniformTypeIdentifiers.UTTypes.Data,
+		];
+		var picker = new UIDocumentPickerViewController(candidates.OfType<UniformTypeIdentifiers.UTType>().ToArray(), asCopy: true)
+		{
+			AllowsMultipleSelection = true,
+		};
+		picker.DidPickDocumentAtUrls += (_, e) =>
+		{
+			var archivos = new List<(byte[] Bytes, string Name)>();
+			foreach (NSUrl url in e.Urls)
+				if (LeerDocumento(url) is { } archivo) archivos.Add(archivo);
+
+			if (archivos.Count == 0) { Log("alta: la persona no eligió ningún archivo"); return; }
+			if (shell is null) pendingFiles = archivos;
+			else _ = shell.EnrollFiles(archivos);
+		};
+		picker.WasCancelled += (_, _) => Log("alta: la persona no eligió ningún archivo");
+		PresentViewController(picker, true, null);
+		return "{\"ok\":true}";
+	}
+
+	// Read whole, under the url's security scope when it has one, with the ceiling enforced
+	// while it reads. The name is what Archivos shows: the last path component.
+	private (byte[] Bytes, string Name)? LeerDocumento(NSUrl url)
+	{
+		string name = url.LastPathComponent ?? "archivo";
+		bool scoped = url.StartAccessingSecurityScopedResource();
+		try
+		{
+			string? path = url.Path;
+			if (path is null) { Log($"alta: no se pudo leer el archivo '{name}': la url no tiene ruta"); return null; }
+
+			using FileStream file = File.OpenRead(path);
+			if (file.Length > FileCeiling) throw new IOException($"the file weighs {file.Length / 1048576} MB and the ceiling is {FileCeiling / 1048576} MB");
+			byte[] bytes = new byte[file.Length];
+			int at = 0, read;
+			while (at < bytes.Length && (read = file.Read(bytes, at, bytes.Length - at)) > 0) at += read;
+
+			Log($"alta: archivo '{name}' ({bytes.Length} bytes) por documento");
+			return (bytes, name);
+		}
+		catch (Exception ex)
+		{
+			Log($"alta: no se pudo leer el archivo '{name}': {ex.GetType().Name}: {ex.Message}");
+			shell?.ReportEnrollmentError($"No se pudo leer el archivo {name}.");
+			return null;
+		}
+		finally
+		{
+			if (scoped) url.StopAccessingSecurityScopedResource();
+		}
+	}
+
 	/// WHAT ARRIVES FROM THE UNIVERSAL LINK. If the Host has not come up yet this is kept and
 	/// attended when it does -- the same as altaPendiente on Android.
 	internal void HandleLink(string url)
@@ -422,6 +518,20 @@ public sealed class ViewController : UIViewController
 		private readonly ViewController host;
 		public Bridge(ViewController host) => this.host = host;
 
+		// THE CAMERA, for the code reader (iOS 15+). The page asks with getUserMedia; WebKit asks
+		// this delegate before asking the person, and without an answer the request is denied
+		// and the reader dies with NotAllowedError. Granting here is not skipping her: iOS still
+		// shows its own dialog the first time, with NSCameraUsageDescription as the text. Only the
+		// camera, and only for our own page: the modules run in their own WKWebViews with their
+		// own delegate, so nothing of theirs reaches this. Written 2026-09-09 without a Mac.
+		public override void RequestMediaCapturePermission(
+			WKWebView webView, WKSecurityOrigin origin, WKFrameInfo frame, WKMediaCaptureType type, Action<WKPermissionDecision> decisionHandler)
+		{
+			bool camera = type == WKMediaCaptureType.Camera;
+			Log($"cámara: {(camera ? "concedida a la página" : "pedido de " + type + " denegado")}");
+			decisionHandler(camera ? WKPermissionDecision.Grant : WKPermissionDecision.Deny);
+		}
+
 		public override void RunJavaScriptTextInputPanel(
 			WKWebView webView, string prompt, string? defaultText, WKFrameInfo frame, Action<string?> completionHandler)
 		{
@@ -443,13 +553,19 @@ public sealed class ViewController : UIViewController
 			// pantallas- y por eso caia en su `_ => "{}"`: el boton llegaba al Host y el Host no
 			// tenia que hacer con el. Medido el 2026-09-07: se veia `bridge: abrir` en el log,
 			// que se escribe ANTES del switch, y despues nada.
+			//
+			// AND 'altaArchivo' (2026-09-09), for the same reason: the document picker is a view
+			// controller of this screen. What she picks comes back into the shared enrollment.
 			string respuesta;
 			try
 			{
 				System.Text.Json.JsonElement req = Json.Parse(defaultText);
-				respuesta = req.GetProperty("op").GetString() == "abrir"
-					? host.AbrirModulo(req.GetProperty("module").GetString() ?? "")
-					: host.shell?.Handle(defaultText) ?? "{}";
+				respuesta = req.GetProperty("op").GetString() switch
+				{
+					"abrir" => host.AbrirModulo(req.GetProperty("module").GetString() ?? ""),
+					"altaArchivo" => host.PickModuleFiles(),
+					_ => host.shell?.Handle(defaultText) ?? "{}",
+				};
 			}
 			catch (Exception e)
 			{

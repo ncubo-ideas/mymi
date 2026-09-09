@@ -483,6 +483,101 @@ abierta**. Lo que cambia es si la cara ya existe, y el enlace que llega antes qu
 
 ---
 
+## P6b · El alta desde adentro de Gnothi: el enlace pegado, con la barra
+
+> **Escrito el 2026-09-09 en Windows, sin Mac.** Todo lo de P6b a P6e corre en `Gnothi.Movil` y en
+> `ui.html`, que iOS comparte tal cual con Android, más cuatro piezas propias de iOS escritas ese día
+> sin compilar: los recursos de la marca en el csproj, la cámara (`NSCameraUsageDescription` y
+> `RequestMediaCapturePermission` en el `Bridge`), el selector de documentos (`PickModuleFiles`) y
+> «Copiar en Gnothi» (`CFBundleDocumentTypes`, `UTExportedTypeDeclarations`, `HandleFile`). Quien
+> tenga la Mac compila primero; si algo no compila, casi seguro es una firma de binding, y el espejo
+> de cada pieza está en `Gnothi.Mobile/MainActivity.cs`. En Android todo esto está medido
+> (`Gnothi.Mobile/PRUEBAS-WEBVIEW.md` §2b); acá lo que se mide es que iOS haga lo mismo.
+
+**Qué prueba:** que un módulo entra sin universal link y sin `gnothi://`: la persona pega el enlace de
+su institución en Gnothi, ve bajar el paquete y decide.
+
+**Antes:** `./scenario-ios.sh` (ahora arma los bundles con `-Origen` y los **firma**, y las páginas
+publican `keys`, `revoked` y `modules` en su `/.well-known/gnothi/modules.json`). En el simulador no
+hace falta túnel: comparte la red de la Mac.
+
+1. Abrí Gnothi. El inicio es el mosaico de marcas con el botón **«Agregar»** arriba a la derecha.
+   Si la cara sale con la tipografía del sistema o el logo de Gnothi roto, faltan los
+   `BundleResource` de `Assets/fonts` y `Assets/img` en el csproj: están puestos, pero es lo primero
+   que hay que mirar.
+2. «Agregar» abre *Tus instituciones, siempre contigo* con tres filas. Tocá **Pegar su enlace**, pegá
+   `http://127.0.0.1:8096/examenes.gmod` y «Agregar».
+3. **Qué tiene que verse:** la franja *Bajando el módulo de 127.0.0.1…* crece con una barra y los
+   megabytes (*4,5 MB de 13,0 MB · 35 %*). En el simulador baja tan rápido que casi no se ve: la
+   página acepta `--LentoKBps 700` para servir el bundle despacio (agregalo a mano al `dotnet run` de
+   la página en `scenario-ios.sh`, o levantá esa página aparte). Después *Revisando qué trae…* y la hoja:
+   el bloque de identidad (*Laboratorio Clínico Delfos S.A., 3-101-123456 · Declara delfos.cr y lo
+   sirvió 127.0.0.1*, en ámbar porque el mock declara un dominio que no es el que lo sirve), la
+   descripción, y «Lo que Gnothi revisó»: *Lo respalda 127.0.0.1, del enlace que pegaste*, *Firmado por
+   la llave «examenes-…», que su origen publica. Gnothi la va a recordar*, los archivos y MB.
+4. «Instalar en mi teléfono» → la tarjeta de Delfos con logo, banner y eslogan. En la consola:
+   `GNOTHI: alta: respaldo de 127.0.0.1: Verified; firma: Published` y `alta: 'examenes' quedó instalado`.
+   `installation.json` (en Documents, visible por Archivos) queda con `provenance` y `signer`.
+5. Repetilo: *Ya tenés este módulo* y *Firmado con la misma llave que la vez pasada (desde …)*.
+
+**Lo que se rechaza, sin hoja:** un enlace con `&h=` de otro manifiesto, un paquete con un archivo
+tocado después de firmado, uno que dice ser de otro origen del que lo sirvió o que su origen ya no
+lista, y uno firmado con una llave retirada. Las franjas son las mismas de Android (§2b paso 6 de su
+guion).
+
+## P6c · El alta desde el código, con la cámara
+
+**Qué prueba:** que el lector de códigos de la página funciona en WKWebView: `getUserMedia` con la
+cámara trasera, jsQR decodificando, y el enlace leído entrando por el mismo camino que el pegado.
+**Sólo en un iPhone real**: el simulador no tiene cámara.
+
+1. Con la página de una institución abierta en la Mac (su QR está debajo del botón «Agregar a
+   Gnothi»), en Gnothi: «Agregar» → **Escanear su código**.
+2. **La primera vez iOS pide permiso** con el texto de `NSCameraUsageDescription`. Si en vez del
+   diálogo la hoja dice *Gnothi no tiene permiso para usar la cámara*, el `Bridge` no está contestando
+   `RequestMediaCapturePermission`, o falta la clave en el plist. En la consola tiene que salir
+   `GNOTHI: cámara: concedida a la página`.
+3. Apuntá al código. Lee en un par de segundos y sigue solo: la barra, *Revisando qué trae…*, y la hoja
+   con *del código que escaneaste* y *El paquete es el mismo que sellaba el enlace*.
+
+**Si no lee:** el código de la página tiene que salir **entero** (se dibuja con `viewBox` desde el
+2026-09-09; antes se recortaba y ningún teléfono lo leía). Y el lector pide la cámara a 720p; si el
+`videoWidth` que imprime la consola del WebView es 640, la cámara dio menos y un código en un monitor a
+un brazo de distancia no se resuelve.
+
+## P6d · El alta desde un archivo: «Copiar en Gnothi» y el selector, con varios
+
+**Qué prueba:** las dos puertas del archivo en iOS.
+
+**«Copiar en Gnothi».** Mandale un `.gmod` al teléfono (AirDrop, correo, o dejándolo en la carpeta de
+Gnothi por Archivos) y tocalo: en la hoja de compartir aparece **Gnothi**. Es `CFBundleDocumentTypes` con
+nuestro tipo `app.gnothi.module` (extensión `.gmod`, mime `application/vnd.gnothi.module`, conforma a
+zip) y con `public.zip-archive` en rango *Alternate*, porque un archivo que pasó por chat suele perder
+el tipo. Llega a `AppDelegate.OpenUrl` como `file://` y de ahí a `HandleFile`, que lo lee bajo su
+security scope y lo manda al alta. Consola: `alta: archivo 'examenes.gmod' (… bytes) por documento` →
+`alta: archivo 'examenes.gmod': 127.0.0.1 dice Verified` → la hoja con *Llegó como el archivo
+examenes.gmod, y 127.0.0.1 lo respalda: publica exactamente este paquete*.
+
+En el simulador, sin AirDrop: `xcrun simctl openurl booted "file:///ruta/al/examenes.gmod"` no sirve
+(no pasa por el sistema de documentos); arrastrá el archivo a la ventana del simulador, que lo deja en
+Archivos, y desde ahí «Copiar en Gnothi».
+
+**El selector, con varios.** «Agregar» → **Elegir archivos en mi teléfono** abre el
+`UIDocumentPickerViewController` con nuestro tipo, zip y datos, y **selección múltiple** (`asCopy`,
+así Gnothi recibe copias suyas y no necesita scope). Elegí dos módulos y un zip cualquiera → la hoja
+**«Esto encontré en lo que elegiste»**: una fila por archivo, con la institución y su eslogan si es un
+módulo, *ya lo tenés* o *instalado* según corresponda, y *no entra* con el porqué si no lo es. Tocá uno
+→ su hoja → instalar → la lista vuelve con esa fila marcada. Consola: `alta: la persona eligió 3
+archivos; 2 son módulos`. Si el botón dice *En este teléfono todavía no se puede elegir un archivo*, el
+`Bridge` no está interceptando `altaArchivo`.
+
+## P6e · La firma, el pin y la revocación
+
+Idéntico a Android, porque es todo `Gnothi.Movil`: `Gnothi.Mobile/PRUEBAS-WEBVIEW.md` §P2d y §2b paso 7.
+Lo que vale medir en iOS es que `installation.json` guarda `signer` y que la **marca de llave
+retirada** aparece en la tarjeta al relanzar la app tras un `--revoke` del lado del publicador (la
+comprobación corre al arrancar, en segundo plano, y repinta la pantalla sola).
+
 ## P7 · Las consultas del módulo llegan al Host
 
 Pasa sola al dar de alta: Gnothi comprueba el módulo apenas lo instala.
@@ -518,10 +613,21 @@ dé por verificado.
 - **La contención (P5) sin sonda**, igual que en Android.
 - **`WKNavigationDelegate.DecidePolicy`** no está puesto: la navegación de nivel superior no
   está controlada.
+- **La cámara y el selector, hasta que alguien los corra en un iPhone.** P6c y P6d están escritos
+  contra los bindings, sin Mac; en Android las mismas cosas están medidas. Lo que falta no es
+  código, es la corrida.
 
 ---
 
 ## Deuda anotada, para que no parezca olvido
+
+**Las cuatro piezas de iOS del 2026-09-09 no están compiladas.** `Gnothi.iOS.csproj` (los
+`BundleResource` de `Assets/fonts` y `Assets/img`), `Info.plist` (`NSCameraUsageDescription`,
+`CFBundleDocumentTypes`, `UTExportedTypeDeclarations`), `ViewController.cs` (`RequestMediaCapturePermission`
+en el `Bridge`, `PickModuleFiles`, `HandleFile`, `LeerDocumento`, `pendingFiles`) y `AppDelegate.OpenUrl`
+(`file://` → `HandleFile`). Se escribieron en Windows mirando `MainActivity.cs`, que sí está medido, y
+los bindings de .NET para iOS. Si algo no compila, va a ser una firma de binding; el comportamiento
+esperado está en P6b a P6e.
 
 **El alta ya NO está duplicada, y el merge ya está arreglado.** Las dos cosas que esta sección
 decía quedaron hechas: el flujo (`Enroll`, `AcceptEnrollment`, `DiscardEnrollment`,
