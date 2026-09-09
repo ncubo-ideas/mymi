@@ -2,15 +2,15 @@ using System;
 
 namespace Municipalidad.Dominio
 {
-	// UN PERIODO VENCIDO Y NO PAGADO. Nace al vencer, muere al pagar -la fila Completed /
-	// Abandoned de la pasada 2-. No es un pago negativo ni un cobro con una bandera: un
-	// `Cobro` con `bool Vencido` seria la porosidad del Plan.Termino del gimnasio.
-	//
-	// LA MORA REAL NO ESTA ACA. La app la recibe en el recibo o en la consulta, tal cual
-	// la municipalidad la cobro. Lo unico que este tipo calcula es una PROYECCION -"cuanto
-	// me costara si pago el 20?"- a la tasa que le pasen (M7, propuesta, reconstruida de
-	// los recibos), y esa proyeccion se muestra como proyeccion: nunca contradice lo
-	// cobrado. Es la decision de producto del 3 de setiembre.
+	/// <summary>
+	/// Un periodo vencido y no pagado. Nace al vencer y muere al pagar, y no se guarda: se deriva de
+	/// comparar los cobros contra los pagos.
+	/// <para>
+	/// LA MORA REAL NO ESTA ACA. La app la recibe en el recibo o en la consulta, tal cual la
+	/// municipalidad la cobro. Lo unico que este tipo calcula es una PROYECCION, a la tasa que le pasen,
+	/// y se dice COMO proyeccion: nunca contradice lo cobrado.
+	/// </para>
+	/// </summary>
 	internal sealed class Atraso
 	{
 		internal Rubro Rubro { get; }
@@ -27,20 +27,27 @@ namespace Municipalidad.Dominio
 
 		internal DateTime Vencio { get { return Periodo.UltimoDia; } }
 
-		// Hojas planas para el print (regla 13).
+		/// <summary>El nombre del rubro, aplanado para que el print lo alcance en un solo nivel.</summary>
 		internal string NombreDelRubro { get { return Rubro.Nombre; } }
+
+		/// <summary>El periodo, aplanado por la misma razon.</summary>
 		internal string EtiquetaDelPeriodo { get { return Periodo.Etiqueta; } }
 
-		// TOTAL: cero si todavia no vencio -pero entonces la Cuenta no lo construye-.
+		/// <summary>
+		/// Cuantos dias de atraso lleva a esa fecha. TOTAL: cero si todavia no vencio, aunque entonces la
+		/// cuenta no construye un atraso.
+		/// </summary>
 		internal int DiasDeAtraso(DateTime fecha)
 		{
 			int dias = (fecha.Date - Vencio).Days;
 			return dias < 0 ? 0 : dias;
 		}
 
-		// M4: lo vencido es urgente por CLASE, pese igual un mes de basura que un trimestre
-		// de IBI. Lo que cambia entre ellos es cuanto cuesta cada dia, y eso lo dice
-		// CostoDePagarTarde.
+		/// <summary>
+		/// Lo vencido es urgente por CLASE y no por monto: un mes de basura y un trimestre de bienes
+		/// inmuebles pesan igual. Lo que cambia entre ellos es cuanto cuesta cada dia, y eso lo dice
+		/// CostoDePagarTarde.
+		/// </summary>
 		internal Urgencia Urgencia() { return Dominio.Urgencia.Urgente(); }
 
 		/// <summary>
@@ -60,8 +67,11 @@ namespace Municipalidad.Dominio
 				+ "en el recibo.";
 		}
 
-		// PROYECCION, no verificacion (M7). Tasa anual, diaria desde el ultimo dia del
-		// periodo: monto x tasa x dias / 365. La tasa entra por parametro y no vive aca.
+		/// <summary>
+		/// Lo que PROYECTA costar pagarlo tarde, y no una verificacion de lo cobrado: monto por tasa por
+		/// dias de atraso sobre 365, diaria desde el ultimo dia del periodo. La tasa anual entra por
+		/// parametro y no vive aca.
+		/// </summary>
 		internal decimal CostoDePagarTarde(DateTime fechaDePago, decimal tasaAnual)
 		{
 			if (tasaAnual < 0)

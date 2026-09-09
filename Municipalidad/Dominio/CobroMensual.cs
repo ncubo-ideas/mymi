@@ -1,7 +1,8 @@
 namespace Municipalidad.Dominio
 {
-	// LA CADENCIA DE LOS SERVICIOS: basura, limpieza de calles, policia. Doce periodos
-	// por anio; el numero del periodo es el MES.
+	/// <summary>
+	/// La cadencia de los servicios: doce periodos por anio, y el numero del periodo es el MES.
+	/// </summary>
 	internal sealed class CobroMensual : Cadencia
 	{
 		internal override string Nombre { get { return "mensual"; } }

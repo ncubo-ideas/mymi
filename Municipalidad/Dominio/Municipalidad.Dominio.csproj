@@ -1,15 +1,5 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
-  <!-- El puppet. CERO dependencias.
-
-       Este dominio es el TERCER SUJETO DE PRUEBA de la Metodologia, y el primero construido
-       enteramente con la guia de la columna vertebral, desde cero, el 2026-09-08. Salio de
-       la corrida en vivo del 2026-09-03 con los papeles reales de una cuenta municipal;
-       sus datos de demo son inventados y reproducen los fenomenos, no los montos.
-
-       Lo que el Preguntas.md no alcanzo a decidir esta marcado con HUECO y listado en
-       HUECOS.md. -->
-
   <PropertyGroup>
     <TargetFramework>net9.0</TargetFramework>
     <Nullable>disable</Nullable>
@@ -17,15 +7,6 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <!-- QUIEN VE EL DOMINIO POR DENTRO, y nadie entra sin una razon escrita aca.
-
-         Municipalidad.Dominio.Pruebas, y NADA MAS: entra por la clausula de las pruebas de
-         aceptacion contra la fachada del agregado, que es el nivel A cuando nadie provee un
-         fixture.
-
-         Municipalidad.Consola estuvo en esta lista hasta M-6, porque las 91 comprobaciones del
-         dominio puro vivian dentro de ella. Es una CARATULA, y una caratula que puede nombrar
-         tipos del dominio puede re-derivar. Las 91 se mudaron a Pruebas/ y el permiso se cayo. -->
     <InternalsVisibleTo Include="Municipalidad.Dominio.Pruebas" />
   </ItemGroup>
 

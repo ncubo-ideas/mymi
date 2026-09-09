@@ -2,9 +2,10 @@ using System;
 
 namespace Municipalidad.Dominio
 {
-	// UN MES: el periodo de los servicios -basura, limpieza, policia-.
-	//
-	// Lo propio: termina el ultimo dia del mes, y el que sigue puede cambiar de anio.
+	/// <summary>
+	/// Un mes: el periodo de los servicios. Termina el ultimo dia del mes, y el que sigue puede caer en
+	/// otro anio.
+	/// </summary>
 	internal sealed class Mes : Periodo
 	{
 		internal Mes(int anio, int mes) : base(anio, mes)

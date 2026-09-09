@@ -7,17 +7,20 @@ using Puppets.Portador;
 
 namespace Municipalidad.App
 {
-	// LA SUPERFICIE INTENCIONAL. Un metodo por intencion, con nombre de negocio.
-	//
-	// ACA SE RESUELVEN LOS DOS ALFABETOS DE `Periodo`. El recibo escribe "2026.04" y eso
-	// es abril en una fila y cuarto trimestre en otra. Este nodo parte el texto en anio y
-	// numero, y el dominio recibe los dos enteros: la cadencia del rubro decide que son.
-	// Si esa logica entrara al dominio, el dominio hablaria el idioma del portal.
-	//
-	// OJO CON LOS NOMBRES DE PARAMETRO (regla 10). Ninguno se llama como un tipo del
-	// dominio: un @rubro taparia a Rubro, un @periodo a Periodo, un @pago a Pago, un
-	// @consulta a Consulta, un @finca a Finca. Por eso son @nombreDelRubro,
-	// @anioDelPeriodo, @numeroDeRecibo, @fechaDeLaConsulta, @numeroDeFinca.
+	/// <summary>
+	/// La superficie intencional: un metodo por intencion, con nombre de negocio.
+	/// <para>
+	/// ACA SE RESUELVEN LOS DOS ALFABETOS DEL PERIODO. El recibo escribe el periodo como un anio y un
+	/// numero pegados, y ese numero es un mes en una fila y un trimestre en otra. Este nodo parte el
+	/// texto, y el dominio recibe los dos enteros: la cadencia del rubro decide que son. Si esa logica
+	/// entrara al dominio, el dominio hablaria el idioma del portal.
+	/// </para>
+	/// <para>
+	/// NINGUN PARAMETRO SE LLAMA COMO UN TIPO DEL DOMINIO, y no es casual: un parametro llamado como un
+	/// tipo lo tapa adentro del script. Por eso son nombreDelRubro, anioDelPeriodo, numeroDeRecibo,
+	/// fechaDeLaConsulta y numeroDeFinca.
+	/// </para>
+	/// </summary>
 	public sealed class MunicipalidadAPI : IDiarioDeLaApp
 	{
 		private readonly PerformanceV2 app;
@@ -28,9 +31,10 @@ namespace Municipalidad.App
 			this.app = app;
 		}
 
-		// EL ADAPTADOR DEL ALFABETO: "2026.04" -> (2026, 4). Es una guarda de C# antes de
-		// tocar el actor (capitulo 3 §5, paso 1): un texto que no tenga esa forma nunca
-		// llega al dominio.
+		/// <summary>
+		/// El adaptador del alfabeto: parte el periodo del recibo en anio y numero. Es una guarda de C#
+		/// ANTES de tocar el actor, asi que un texto que no tenga esa forma nunca llega al dominio.
+		/// </summary>
 		private static void Partir(string periodoComoDiceElRecibo, out int anio, out int numero)
 		{
 			ArgumentException.ThrowIfNullOrWhiteSpace(periodoComoDiceElRecibo);
@@ -58,8 +62,6 @@ namespace Municipalidad.App
 				&& int.TryParse(partes[1], NumberStyles.None, CultureInfo.InvariantCulture, out numero);
 		}
 
-		// ------------------------------------------------------------------ comandos
-
 		public string IncorporarFinca(string numeroDeFinca)
 		{
 			return app.Using(
@@ -77,8 +79,10 @@ namespace Municipalidad.App
 			.PerformCheckThenCommand();
 		}
 
-		// LA PERSONA DECLARA EL VALOR DE SU FINCA. Es de ella, no de la municipalidad: por
-		// eso este dominio es hibrido. Hueco 2.
+		/// <summary>
+		/// La persona declara el valor de su finca. Es un aporte suyo y no de la municipalidad: ningun
+		/// artefacto trae ese valor, y por eso esta cuenta es hibrida.
+		/// </summary>
 		public string DeclararValorDeFinca(string numeroDeFinca, DateTime fechaDeLaDeclaracion, decimal valorDeclarado)
 		{
 			return app.Using(
@@ -98,8 +102,10 @@ namespace Municipalidad.App
 			.PerformCheckThenCommand();
 		}
 
-		// LA CONSULTA ES UNA FOTO, FECHADA. Se registra el dia y despues se le agregan sus
-		// pendientes uno por uno, porque asi llegan.
+		/// <summary>
+		/// Registra la consulta de un dia, que es una FOTO fechada. Sus pendientes se agregan despues,
+		/// uno por uno, porque asi llegan.
+		/// </summary>
 		public string RegistrarConsulta(DateTime fechaDeLaConsulta)
 		{
 			return app.Using(
@@ -163,8 +169,10 @@ namespace Municipalidad.App
 			.PerformCheckThenCommand();
 		}
 
-		// EL COMPROBANTE. El recibo es la identidad (regla 18): el mismo numero dos veces es
-		// el mismo hecho otra vez, y se rechaza.
+		/// <summary>
+		/// Registra un comprobante. El numero de recibo es su identidad, asi que el mismo numero dos
+		/// veces es el mismo hecho otra vez y se rechaza.
+		/// </summary>
 		public string RegistrarPago(string numeroDeRecibo, DateTime fechaDelPago, decimal descuentoDelRecibo)
 		{
 			return app.Using(
@@ -184,7 +192,9 @@ namespace Municipalidad.App
 			.PerformCheckThenCommand();
 		}
 
-		// LA LINEA DEL COMPROBANTE. La mora viene tal cual la cobro la municipalidad.
+		/// <summary>
+		/// Agrega una linea a un comprobante. La mora entra tal cual la cobro la municipalidad.
+		/// </summary>
 		public string AgregarLineaAlPago(string numeroDeRecibo, string nombreDelRubro, string periodoComoDiceElRecibo,
 			decimal montoDeLaLinea, decimal interesesDeLaLinea)
 		{
@@ -209,8 +219,10 @@ namespace Municipalidad.App
 			.PerformCheckThenCommand();
 		}
 
-		// LA RESERVA ES DE LA PERSONA. La app le propuso un numero (ReservaPropuesta, una
-		// consulta); esto es lo que ella adopto. Un comando con fecha.
+		/// <summary>
+		/// La persona adopta una reserva mensual. La app le propuso un numero por una consulta aparte;
+		/// esto es lo que ella adopto, con la fecha en que lo hizo.
+		/// </summary>
 		public string AdoptarReserva(decimal montoMensual, DateTime fechaDeAdopcion)
 		{
 			return app.Using(
@@ -443,8 +455,6 @@ namespace Municipalidad.App
 			return UltimoEventoAplicado();
 		}
 
-		// ----------------------------------------------------------------- consultas
-
 		/// <summary>
 		/// Hasta donde leyo la app la narrativa de la municipalidad. Cero es "todavia no se leyo
 		/// nada": los eventos se numeran desde uno.
@@ -579,7 +589,9 @@ namespace Municipalidad.App
 			}
 		}
 
-		// Escalares TIPADOS por parametro Out, no parseando el print -regla 16-.
+		/// <summary>
+		/// Cuanto pago en ese anio. Cruza como escalar TIPADO por parametro Out, sin parsear el print.
+		/// </summary>
 		public decimal LoPagadoEn(int anioPagado)
 		{
 			using (RentedParameter alquilados = app.Actor.RentedParameters())
@@ -654,7 +666,7 @@ namespace Municipalidad.App
 		/// <summary>
 		/// Por que se paga mas de ese rubro: los dos periodos, los dos montos por periodo, cuanto
 		/// cambio, que lo explica, y la frase que el dominio compone. El umbral y el ruido los pone
-		/// quien pregunta -- son M1 a M3, propuestos y sin firmar-, y el dominio hace la comparacion.
+		/// quien pregunta -- estan propuestos y sin firmar-, y el dominio hace la comparacion.
 		/// GUARDADO: preguntar SePuedeVerLaVariacionDe antes.
 		/// </summary>
 		public RegistroDeLaVariacion VariacionDe(string nombreDelRubro, decimal umbralDeSalto, decimal ruido)
@@ -897,7 +909,9 @@ namespace Municipalidad.App
 			}
 		}
 
-		// M6, por parametro: cuanto me ahorro si pago hoy todo el anio.
+		/// <summary>
+		/// Cuanto se ahorra pagando hoy todo el anio. La tasa la pone quien pregunta.
+		/// </summary>
 		public decimal AhorroPorProntoPago(DateTime fechaDePago, decimal tasaAnual)
 		{
 			using (RentedParameter alquilados = app.Actor.RentedParameters())

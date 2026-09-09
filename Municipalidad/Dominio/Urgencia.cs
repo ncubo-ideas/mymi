@@ -2,14 +2,17 @@ using System;
 
 namespace Municipalidad.Dominio
 {
-	// CUANTO APURA UN HALLAZGO. Tres niveles y nada mas: ninguna, aviso, urgente.
-	//
-	// Juicio M4, propuesto: LA CLASE DECIDE, NO EL MONTO. Un aumento no es urgente -ya
-	// paso y no se puede evitar-; lo que vence si: aviso siete dias antes, urgente el dia
-	// (M5). Los dias entran por parametro; aca solo viven los tres niveles.
-	//
-	// CONJUNTO CERRADO, comparado por nombre, con Etiqueta como hoja para el actor
-	// (regla 13, corregida): la superficie decide que imprime, el tipo expone el nombre.
+	/// <summary>
+	/// Cuanto apura un hallazgo: tres niveles y nada mas, ninguna, aviso y urgente.
+	/// <para>
+	/// LA CLASE DECIDE, NO EL MONTO. Un aumento no es urgente, porque ya paso y no se puede evitar; lo
+	/// que vence si. Los dias de aviso entran por parametro y aca solo viven los tres niveles.
+	/// </para>
+	/// <para>
+	/// Conjunto cerrado, comparado por nombre, con Etiqueta como hoja para el actor: la superficie
+	/// decide que imprime y el tipo expone el nombre.
+	/// </para>
+	/// </summary>
 	internal sealed class Urgencia
 	{
 		private readonly string nombre;

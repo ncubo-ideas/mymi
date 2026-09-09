@@ -2,26 +2,24 @@ using System;
 
 namespace Municipalidad.Dominio
 {
-	// LA EXPLICACION DE UN SALTO: "por que este trimestre pago mas?"
-	//
-	// Es CONTRASTE -operacion / contraste en la grilla- y es lo unico que la app agrega
-	// que el portal no dice: el portal muestra el monto nuevo, no por que cambio. La
-	// respuesta depende de la LEY DE CALCULO del rubro: el mismo +80 % es tarifa nueva en
-	// basura y avaluo nuevo en bienes inmuebles. Es la "identidad del hecho" de la pasada
-	// 3 en este dominio: en el laboratorio un salto imposible dice "repeti el examen";
-	// aca dice "hubo avaluo" o "hubo tarifa nueva".
-	//
-	// Los umbrales -que tan grande es un salto (M1, M2), que tan chico es ruido (M3)-
-	// entran POR PARAMETRO y no viven aca: estan propuestos, no firmados. El dominio se
-	// queda con la forma y hace la comparacion.
-	//
-	// Compara MONTO POR PERIODO, no monto crudo: una linea de tres meses contra una de
-	// uno daria un salto falso (hueco 6).
-	//
-	// Tres hojas, no una con un estado: CambioDeTarifa y CambioDeAvaluo son las dos
-	// explicaciones que la pasada 4 decidio; SinSalto es lo que no llega a explicar nada.
-	// El orden de las preguntas esta fijo -ruido, umbral, ley-, como la Tendencia del
-	// gimnasio.
+	/// <summary>
+	/// La explicacion de un salto. Es lo unico que esta app agrega y el portal no dice: el portal
+	/// muestra el monto nuevo, no por que cambio. La respuesta depende de la LEY DE CALCULO del rubro,
+	/// asi que el mismo salto es tarifa nueva en un rubro por unidad y avaluo nuevo en uno sobre base
+	/// imponible.
+	/// <para>
+	/// Los umbrales — que tan grande es un salto, que tan chico es ruido — entran POR PARAMETRO y no
+	/// viven aca: estan propuestos y sin firmar. El dominio se queda con la forma y hace la comparacion.
+	/// </para>
+	/// <para>
+	/// Compara MONTO POR PERIODO y no monto crudo, porque una linea de tres meses contra una de uno
+	/// daria un salto falso. Y el orden de las preguntas es fijo: ruido, umbral, ley.
+	/// </para>
+	/// <para>
+	/// Tres hojas y no una con un estado: dos explican el salto, y la tercera es lo que no llega a
+	/// explicar nada.
+	/// </para>
+	/// </summary>
 	internal abstract class Variacion
 	{
 		internal Rubro Rubro { get; }
@@ -39,7 +37,10 @@ namespace Municipalidad.Dominio
 			MontoActualPorPeriodo = actual.MontoPorPeriodo;
 		}
 
-		// El cambio, como proporcion: 0.80 es +80 %.
+		/// <summary>
+		/// El cambio dicho como proporcion y no como porcentaje: cero coma ocho es un ochenta por ciento
+		/// mas.
+		/// </summary>
 		internal decimal Proporcion
 		{
 			get { return (MontoActualPorPeriodo - MontoAnteriorPorPeriodo) / MontoAnteriorPorPeriodo; }
@@ -73,13 +74,19 @@ namespace Municipalidad.Dominio
 		/// <summary>La clausula que explica el cambio. Cada hoja dice la suya y ninguna dice la ajena.</summary>
 		protected abstract string LaExplicacion { get; }
 
-		// Hojas planas para el print (regla 13).
+		/// <summary>El nombre del rubro, aplanado para que el print lo alcance en un solo nivel.</summary>
 		internal string NombreDelRubro { get { return Rubro.Nombre; } }
+
+		/// <summary>El periodo anterior, aplanado por la misma razon.</summary>
 		internal string EtiquetaDelPeriodoAnterior { get { return PeriodoAnterior.Etiqueta; } }
+
+		/// <summary>El periodo actual, aplanado por la misma razon.</summary>
 		internal string EtiquetaDelPeriodoActual { get { return PeriodoActual.Etiqueta; } }
 
-		// M4, propuesto: UN AUMENTO NO ES URGENTE. Ya paso y no se puede evitar; lo
-		// urgente es lo que vence. La clase decide, no el monto.
+		/// <summary>
+		/// UN AUMENTO NO ES URGENTE: ya paso y no se puede evitar. Lo urgente es lo que vence, y quien lo
+		/// decide es la clase y no el monto.
+		/// </summary>
 		internal Urgencia Urgencia() { return Dominio.Urgencia.Ninguna(); }
 
 		internal static Variacion Entre(LineaPagada anterior, LineaPagada actual, decimal umbralDeSalto, decimal ruido)
@@ -108,8 +115,10 @@ namespace Municipalidad.Dominio
 		}
 	}
 
-	// NO HAY SALTO. Puede haber un cambio menor -por encima del ruido, por debajo del
-	// umbral- y se dice cual de las dos cosas es.
+	/// <summary>
+	/// No hay salto. Puede haber un cambio menor — por encima del ruido, por debajo del umbral — y se
+	/// dice cual de las dos cosas es.
+	/// </summary>
 	internal sealed class SinSalto : Variacion
 	{
 		internal bool SuperaElRuido { get; }
@@ -139,8 +148,10 @@ namespace Municipalidad.Dominio
 		}
 	}
 
-	// EL SALTO EN UN RUBRO POR UNIDAD: cambio la tarifa. "Por que subio mi basura?" ->
-	// la municipalidad actualizo lo que cobra por recoleccion.
+	/// <summary>
+	/// El salto en un rubro por unidad: cambio la tarifa, porque la municipalidad actualizo lo que cobra
+	/// por el servicio.
+	/// </summary>
 	internal sealed class CambioDeTarifa : Variacion
 	{
 		internal CambioDeTarifa(LineaPagada anterior, LineaPagada actual) : base(anterior, actual) { }
@@ -158,14 +169,14 @@ namespace Municipalidad.Dominio
 		}
 	}
 
-	// EL SALTO EN UN RUBRO SOBRE BASE IMPONIBLE: cambio el valor de la finca. "Por que
-	// subio mi IBI?" -> hubo avaluo, o la persona declaro otro valor (juicio 2, cada
-	// cinco anios).
-	//
-	// LO QUE ESTA HOJA DEBERIA SABER Y TODAVIA NO: que valor de finca cambio, y cuanto.
-	// Es el hueco 2 -el valor no viene en ningun artefacto- y por eso en el v1 esta hoja
-	// solo se distingue de la de tarifa por la explicacion que da. Cuando la Finca tenga
-	// valores, aca es donde se cruzan.
+	/// <summary>
+	/// El salto en un rubro sobre base imponible: cambio el valor de la finca, por un avaluo nuevo o por
+	/// una declaracion nueva.
+	/// <para>
+	/// LO QUE ESTA HOJA NO SABE es con que valor de finca se calculo cada periodo: ningun artefacto lo
+	/// trae, asi que en el v1 se distingue de la de tarifa solo por la explicacion que da.
+	/// </para>
+	/// </summary>
 	internal sealed class CambioDeAvaluo : Variacion
 	{
 		internal CambioDeAvaluo(LineaPagada anterior, LineaPagada actual) : base(anterior, actual) { }

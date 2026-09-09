@@ -2,18 +2,19 @@ using System;
 
 namespace Municipalidad.Dominio
 {
-	// EL PERIODO QUE UNA LINEA CUBRE: un mes o un trimestre.
-	//
-	// Es abstracto porque las dos formas OPINAN distinto sobre lo mismo -pasada 4 de la
-	// guia-: cuando termina, y cual sigue. Un `int meses` perderia las dos cosas.
-	//
-	// NO SABE COMO SE ESCRIBE. El recibo dice "2026.04" y eso significa abril en una fila
-	// y cuarto trimestre en otra; ese alfabeto doble es del portal y se resuelve en la
-	// API, que parte el texto en anio y numero. Aca llegan los dos enteros ya separados,
-	// y quien decide si el 4 es un mes o un trimestre es la Cadencia del rubro.
-	//
-	// ENTIDAD CON IDENTIDAD, sin Equals ni GetHashCode (E23). Dos periodos se comparan
-	// con EsElMismoQue, y si hace falta llavearlos se usa Clave, que es un primitivo.
+	/// <summary>
+	/// El periodo que una linea cubre: un mes o un trimestre. Es abstracto porque las dos formas
+	/// contestan distinto cuando terminan y cual sigue, y un numero de meses perderia las dos cosas.
+	/// <para>
+	/// NO SABE COMO SE ESCRIBE. El alfabeto doble del recibo es del portal y se resuelve en la puerta;
+	/// aca llegan el anio y el numero ya separados, y quien decide si ese numero es un mes o un
+	/// trimestre es la cadencia del rubro.
+	/// </para>
+	/// <para>
+	/// Es una entidad con identidad y no lleva Equals ni GetHashCode: dos periodos se comparan con
+	/// EsElMismoQue, y donde hace falta llavearlos se usa Clave, que es un primitivo.
+	/// </para>
+	/// </summary>
 	internal abstract class Periodo
 	{
 		internal int Anio { get; }
@@ -27,8 +28,7 @@ namespace Municipalidad.Dominio
 			Numero = numero;
 		}
 
-		// EL ULTIMO DIA es cuando vence: juicio 1 del Preguntas.md, firmado -"vence el
-		// ultimo dia del mes que cierra el periodo"-.
+		/// <summary>El ultimo dia del mes que cierra el periodo, que es el dia en que vence.</summary>
 		internal abstract DateTime UltimoDia { get; }
 		internal abstract Periodo Siguiente();
 		internal abstract Periodo Anterior();
@@ -43,8 +43,10 @@ namespace Municipalidad.Dominio
 			get { return Dichos.Dia(UltimoDia); }
 		}
 
-		// Llave primitiva para ordenar y comparar: anio*100 + numero. Un mes y un
-		// trimestre nunca se comparan entre si porque cada rubro tiene una sola cadencia.
+		/// <summary>
+		/// Llave primitiva para ordenar y comparar: el anio por cien, mas el numero. Un mes y un
+		/// trimestre nunca se comparan entre si, porque cada rubro tiene una sola cadencia.
+		/// </summary>
 		internal int Clave { get { return Anio * 100 + Numero; } }
 
 		internal bool EsElMismoQue(Periodo otro)
@@ -58,7 +60,7 @@ namespace Municipalidad.Dominio
 			return Clave < otro.Clave;
 		}
 
-		// PREDICADO TOTAL: ya vencio a esa fecha?
+		/// <summary>PREDICADO TOTAL: ya vencio a esa fecha?</summary>
 		internal bool VencioAl(DateTime fecha)
 		{
 			return UltimoDia < fecha.Date;

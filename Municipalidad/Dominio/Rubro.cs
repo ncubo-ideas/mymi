@@ -2,23 +2,22 @@ using System;
 
 namespace Municipalidad.Dominio
 {
-	// QUE COSA SE COBRA. Es el CATALOGO: cinco instancias, no cinco clases.
-	//
-	// Es la decision mas visible de la pasada 4, y la frontera de la guia la fija: un
-	// rubro PARAMETRIZA -es mensual o trimestral, por unidad o sobre base imponible- una
-	// misma operacion de cobro; no opina por si mismo. Basura no sabe nada que una fila
-	// del catalogo con su nombre, su cadencia y su ley no sepa. Lo que si opina son la
-	// Cadencia y la LeyDeCalculo, y por eso esas dos son clases. Diez clases de rubro
-	// seria el error que la barra de activo permite solo cuando cada tipo juzga algo.
-	//
-	// SOLO LOS CINCO QUE LOS RECIBOS MOSTRARON. El menu del portal lista otros cinco
-	// -cementerio, patentes, licores, arreglo de pago, permiso- de los que no se sabe
-	// cadencia ni ley. No se inventan: un rubro desconocido revienta en el resolutor y el
-	// Check lo rechaza antes. Es el hueco 9, con dueno.
-	//
-	// Comparado por nombre, con resolutor total desde primitivo (regla 11). Los
-	// miembros son metodos estaticos y no `static readonly` porque el DSL no alcanza un
-	// campo estatico y si un metodo (regla 11).
+	/// <summary>
+	/// Que cosa se cobra. Es el CATALOGO: cinco instancias y no cinco clases, porque un rubro
+	/// PARAMETRIZA una misma operacion de cobro — es mensual o trimestral, por unidad o sobre base
+	/// imponible — y no opina por si mismo. Ninguno sabe nada que una fila del catalogo con su nombre,
+	/// su cadencia y su ley no sepa. Lo que si opina son la cadencia y la ley de calculo, y por eso esas
+	/// dos son clases.
+	/// <para>
+	/// SOLO LOS CINCO QUE LOS RECIBOS MOSTRARON. El menu del portal lista otros de los que no se sabe
+	/// cadencia ni ley, y no se inventan: un rubro desconocido revienta en el resolutor, y el Check lo
+	/// rechaza antes de que llegue a un comando.
+	/// </para>
+	/// <para>
+	/// Comparado por nombre, con resolutor total desde el primitivo. Los miembros del catalogo son
+	/// metodos estaticos y no campos, porque el DSL alcanza un metodo y no un campo estatico.
+	/// </para>
+	/// </summary>
 	internal sealed class Rubro
 	{
 		internal string Nombre { get; }
@@ -70,7 +69,8 @@ namespace Municipalidad.Dominio
 				default:
 					throw new ArgumentOutOfRangeException(nameof(nombre), nombre,
 						"Rubro desconocido. Los que existen son: recoleccion-de-basura, limpieza-de-calles, "
-						+ "servicio-policia, bienes-inmuebles, parques-y-zonas-verdes. Ver el hueco 9.");
+						+ "servicio-policia, bienes-inmuebles, parques-y-zonas-verdes. El portal cobra otros de los "
+						+ "que no se sabe cadencia ni ley, y no se inventan.");
 			}
 		}
 
@@ -109,9 +109,10 @@ namespace Municipalidad.Dominio
 			return otro != null && otro.Nombre == Nombre;
 		}
 
-		// LA LECTURA DEL PERIODO PASA POR EL RUBRO, porque es su cadencia la que sabe si el
-		// numero es un mes o un trimestre. Es la puerta por la que el "2026.04" del portal
-		// entra al dominio ya interpretado.
+		/// <summary>
+		/// La lectura del periodo pasa por el rubro, porque es su cadencia la que sabe si el numero es un
+		/// mes o un trimestre. Es por donde el periodo del portal entra al dominio ya interpretado.
+		/// </summary>
 		internal Periodo LeerPeriodo(int anio, int numero)
 		{
 			return Cadencia.Leer(anio, numero);

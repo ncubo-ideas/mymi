@@ -2,15 +2,15 @@ using System;
 
 namespace Municipalidad.Dominio
 {
-	// LO ADOPTADO CONTRA LO PROYECTADO: cuanto le falta a la reserva de la persona para
-	// cubrir lo que la app proyecta. Contraste entre una intencion y un calculo.
-	//
-	// Juicio 6, FIRMADO el 3 de setiembre: avisar si lo adoptado queda mas de un 10 % por
-	// debajo de lo proyectado -el umbral entra por parametro igual-, y URGENTE solo si lo
-	// que vence en el mes en curso supera lo que la persona aparta. Por eso lleva lo que
-	// vence este mes: sin eso no puede decir urgente.
-	//
-	// Carrier PLANO: cuatro numeros, porque el print proyecta un solo nivel (regla 13).
+	/// <summary>
+	/// Lo adoptado contra lo proyectado: cuanto le falta a la reserva de la persona para cubrir lo que
+	/// la app proyecta. Es el contraste entre una intencion suya y un calculo de la app.
+	/// <para>
+	/// Avisa si lo adoptado queda por debajo de lo proyectado en mas que el umbral con que se pregunte,
+	/// y es URGENTE solo si ademas lo que vence en el mes en curso supera lo que la persona aparta. Por
+	/// eso lleva lo que vence este mes: sin eso no puede decir urgente.
+	/// </para>
+	/// </summary>
 	internal sealed class FaltanteDeReserva
 	{
 		internal decimal PropuestoPorMes { get; }

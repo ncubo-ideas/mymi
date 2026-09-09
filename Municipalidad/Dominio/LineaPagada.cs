@@ -2,18 +2,19 @@ using System;
 
 namespace Municipalidad.Dominio
 {
-	// UNA LINEA DE UN COMPROBANTE: un rubro, hasta que periodo cubre, cuanto, y la mora.
-	//
-	// LA MORA SE RECIBE, NO SE CALCULA. `Intereses` es lo que la municipalidad cobro, tal
-	// cual vino en el recibo. Es la decision de producto del 3 de setiembre -"recibir y
-	// alarmar, no verificar"- y la regla de la guia: la evaluacion de la institucion llega
-	// como hecho. La app no la recalcula ni la discute.
-	//
-	// CUANTOS PERIODOS CUBRE ES INFERIDO -hueco 6-. El recibo dice hasta que periodo
-	// llega la linea y cuanto, pero no cuantos periodos son: 22.080 de basura en 2026.06
-	// eran tres meses a 7.360. La Cuenta lo deduce de la distancia al ultimo periodo
-	// pagado de ese rubro, y por eso `PeriodosQueCubre` lo pone ella, no el recibo. Sin
-	// historia previa se asume 1 y `EsInferido` lo dice.
+	/// <summary>
+	/// Una linea de un comprobante: un rubro, hasta que periodo cubre, cuanto, y la mora.
+	/// <para>
+	/// LA MORA SE RECIBE, NO SE CALCULA. Intereses es lo que la municipalidad cobro, tal cual vino en el
+	/// recibo: la evaluacion de la institucion llega como hecho, y la app no la recalcula ni la discute.
+	/// </para>
+	/// <para>
+	/// CUANTOS PERIODOS CUBRE ES INFERIDO. El recibo dice hasta que periodo llega la linea y cuanto,
+	/// pero no cuantos periodos son; la cuenta lo deduce de la distancia al ultimo periodo pagado de ese
+	/// rubro, y por eso PeriodosQueCubre lo pone ella y no el recibo. Sin historia previa se asume uno, y
+	/// EsInferido lo dice.
+	/// </para>
+	/// </summary>
 	internal sealed class LineaPagada
 	{
 		internal Rubro Rubro { get; }
@@ -45,14 +46,20 @@ namespace Municipalidad.Dominio
 
 		internal decimal Total { get { return Monto + Intereses; } }
 
-		// HOJAS PLANAS para el print (regla 13): un objeto adentro de un carrier se
-		// aplana con un accesor. `linea.Periodo.Etiqueta` son dos niveles y no cruzan.
+		/// <summary>
+		/// El nombre del rubro, aplanado: el print proyecta un solo nivel, asi que un objeto adentro de
+		/// un carrier se alcanza por un accesor y no por dos saltos.
+		/// </summary>
 		internal string NombreDelRubro { get { return Rubro.Nombre; } }
+
+		/// <summary>El periodo, aplanado por la misma razon.</summary>
 		internal string EtiquetaDelPeriodo { get { return Periodo.Etiqueta; } }
 
-		// EL MONTO COMPARABLE entre lineas: lo que costo UN periodo. Es lo que la
-		// Variacion compara; comparar los montos crudos de lineas que cubren distinta
-		// cantidad de periodos daria saltos falsos.
+		/// <summary>
+		/// El monto comparable entre lineas: lo que costo UN periodo. Es lo que la variacion compara;
+		/// comparar los montos crudos de lineas que cubren distinta cantidad de periodos daria saltos
+		/// falsos.
+		/// </summary>
 		internal decimal MontoPorPeriodo { get { return Monto / PeriodosQueCubre; } }
 
 		internal bool EsDe(Rubro rubro)
@@ -60,9 +67,10 @@ namespace Municipalidad.Dominio
 			return Rubro.Es(rubro);
 		}
 
-		// Cubre este periodo? Una linea que llega a P y cubre n periodos cubre los n que
-		// terminan en P. Se camina hacia adelante desde el candidato porque Periodo no
-		// sabe retroceder, y con eso alcanza.
+		/// <summary>
+		/// Si esta linea cubre ese periodo. Una linea que llega a un periodo y cubre n cubre los n que
+		/// terminan en el, asi que se camina hacia adelante desde el candidato.
+		/// </summary>
 		internal bool Cubre(Periodo periodo)
 		{
 			ArgumentNullException.ThrowIfNull(periodo);

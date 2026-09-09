@@ -3,21 +3,23 @@ using System.Collections.Generic;
 
 namespace Municipalidad.Dominio
 {
-	// LA RAIZ. Se llama Cuenta y no Municipalidad porque la raiz nunca se llama como el
-	// negocio -el namespace y el assembly ya se llaman asi-: nombra lo que contiene. Es la
-	// cuenta de un contribuyente con la municipalidad: sus fincas, lo que le pusieron al
-	// cobro, lo que pago, lo que consulto, y lo que decidio apartar.
-	//
-	// Guarda lo que la municipalidad manda -cobros, pagos, la mora recibida- y lo que la
-	// persona aporta -la reserva, el valor de su finca-. Por eso este dominio es hibrido
-	// y su journal no es enteramente reconstruible.
-	//
-	// EL RELOJ NO ENTRA. Ninguna operacion mira el dia de hoy; toda fecha de corte llega
-	// por parametro.
-	//
-	// UN PREDICADO TOTAL POR COMANDO (reglas 17 y 18): cada Puede... junta TODAS las
-	// razones por las que ese comando fallaria, para que el Check pregunte exactamente lo
-	// que el dominio rechaza y un rechazo no envenene el journal.
+	/// <summary>
+	/// La raiz: la cuenta de un contribuyente con su municipalidad — sus fincas, lo que le pusieron al
+	/// cobro, lo que pago, lo que consulto, y lo que decidio apartar.
+	/// <para>
+	/// Guarda lo que la municipalidad manda — cobros, pagos, la mora recibida — y lo que la persona
+	/// aporta — la reserva, el valor de su finca —, asi que su journal no es enteramente reconstruible.
+	/// </para>
+	/// <para>
+	/// EL RELOJ NO ENTRA: ninguna operacion mira el dia de hoy, y toda fecha de corte llega por
+	/// parametro.
+	/// </para>
+	/// <para>
+	/// UN PREDICADO TOTAL POR COMANDO: cada Puede... junta TODAS las razones por las que ese comando
+	/// fallaria, para que el Check pregunte exactamente lo que el dominio rechaza y un rechazo no
+	/// envenene el journal.
+	/// </para>
+	/// </summary>
 	internal sealed class Cuenta
 	{
 		private readonly List<Finca> fincas = new List<Finca>();
@@ -30,8 +32,6 @@ namespace Municipalidad.Dominio
 		internal int CuantosCobros { get { return cobros.Count; } }
 		internal int CuantosPagos { get { return pagos.Count; } }
 		internal int CuantasConsultas { get { return consultas.Count; } }
-
-		// ================================================================ las fincas
 
 		internal bool TieneFinca(string numero)
 		{
@@ -73,8 +73,6 @@ namespace Municipalidad.Dominio
 			FincaNumero(numero).DeclararValor(new ValorDeFinca(fecha, monto));
 		}
 
-		// ========================================================= lo puesto al cobro
-
 		private bool EstaPuestoAlCobro(Rubro rubro, Periodo periodo)
 		{
 			foreach (Cobro c in cobros)
@@ -101,8 +99,6 @@ namespace Municipalidad.Dominio
 			cobros.Add(new Cobro(r, r.LeerPeriodo(anio, numero), monto, puestoEl));
 		}
 
-		// ================================================================== los pagos
-
 		internal bool TienePago(string numeroDeRecibo)
 		{
 			foreach (Pago p in pagos)
@@ -110,8 +106,10 @@ namespace Municipalidad.Dominio
 			return false;
 		}
 
-		// EL MISMO RECIBO DOS VECES ES EL MISMO HECHO OTRA VEZ (regla 18): un replay lo
-		// repite siempre, y un feed tambien puede. Es la leccion de Asistio en el gimnasio.
+		/// <summary>
+		/// PREDICADO TOTAL: el mismo recibo dos veces es el mismo hecho otra vez, asi que se rechaza. Un
+		/// replay lo repite siempre, y un feed tambien puede.
+		/// </summary>
 		internal bool PuedeRegistrarPago(string numeroDeRecibo, DateTime fecha, decimal descuento)
 		{
 			return !string.IsNullOrWhiteSpace(numeroDeRecibo) && !TienePago(numeroDeRecibo) && descuento >= 0;
@@ -158,10 +156,11 @@ namespace Municipalidad.Dominio
 			PagoNumero(numeroDeRecibo).AgregarLinea(new LineaPagada(r, periodo, monto, intereses, cubre, inferido));
 		}
 
-		// LA INFERENCIA DEL HUECO 6. El recibo dice hasta que periodo llega la linea, no
-		// cuantos periodos cubre. Se deduce de la distancia al ultimo periodo pagado de ese
-		// rubro: si lo ultimo pagado fue marzo y esta linea llega a junio, cubre tres. Sin
-		// historia previa se asume UNO y se marca inferido, porque no hay con que saber.
+		/// <summary>
+		/// Cuantos periodos cubriria esa linea, DEDUCIDO: el recibo dice hasta que periodo llega y
+		/// cuanto, no cuantos periodos son. Se deduce de la distancia al ultimo periodo pagado de ese
+		/// rubro, y sin historia previa se asume UNO y se marca inferido, porque no hay con que saber.
+		/// </summary>
 		private int PeriodosQueCubriria(Rubro rubro, Periodo periodo, out bool inferido)
 		{
 			Periodo ultimo = UltimoPeriodoPagadoDe(rubro, periodo);
@@ -183,7 +182,7 @@ namespace Municipalidad.Dominio
 			return ultimo;
 		}
 
-		// PREDICADO TOTAL: hay alguna linea pagada que cubra ese periodo?
+		/// <summary>PREDICADO TOTAL: hay alguna linea pagada que cubra ese periodo?</summary>
 		internal bool EstaPagado(Rubro rubro, Periodo periodo)
 		{
 			foreach (Pago pago in pagos)
@@ -191,8 +190,6 @@ namespace Municipalidad.Dominio
 					if (l.EsDe(rubro) && l.Cubre(periodo)) return true;
 			return false;
 		}
-
-		// ============================================================== las consultas
 
 		internal bool TieneConsultaDel(DateTime fecha)
 		{
@@ -231,9 +228,11 @@ namespace Municipalidad.Dominio
 			return !ConsultaDel(fechaDeConsulta).Trae(r, r.LeerPeriodo(anio, numero));
 		}
 
-		// HUECO 11: lo pendiente de una consulta queda PUESTO AL COBRO con la fecha de la
-		// consulta, si no lo estaba. Es la lectura mas simple de "el portal dice que debo
-		// esto".
+		/// <summary>
+		/// Agrega una linea pendiente a la consulta de ese dia, y deja el periodo PUESTO AL COBRO con la
+		/// fecha de la consulta si no lo estaba. Es la lectura mas simple de que el portal diga que se
+		/// debe eso.
+		/// </summary>
 		internal void AgregarPendiente(DateTime fechaDeConsulta, string nombreDelRubro, int anio, int numero,
 			decimal monto, decimal intereses)
 		{
@@ -248,14 +247,10 @@ namespace Municipalidad.Dominio
 				cobros.Add(new Cobro(r, periodo, monto, fechaDeConsulta));
 		}
 
-		// ================================================= la reserva, que es de ella
-
-		// UNA ADOPCION POR DIA, Y EN ORDEN. La misma reserva el mismo dia es el mismo hecho
-		// otra vez -regla 18-. La primera version de este predicado solo miraba que el
-		// monto fuera positivo, y el ciclo con journal corrido dos veces dejo entrar la
-		// misma adopcion en la segunda corrida: es el comando que "no podia fallar", igual
-		// que Asistio en el gimnasio (hueco 13). Los numeros no se movieron porque la
-		// vigente es la ultima, pero el journal tenia un acto de mas.
+		/// <summary>
+		/// PREDICADO TOTAL: UNA ADOPCION POR DIA, Y EN ORDEN. La misma reserva el mismo dia es el mismo
+		/// hecho otra vez, asi que se rechaza aunque la vigente siga siendo la ultima.
+		/// </summary>
 		internal bool PuedeAdoptarReserva(decimal montoMensual, DateTime fecha)
 		{
 			if (montoMensual <= 0) return false;
@@ -285,9 +280,7 @@ namespace Municipalidad.Dominio
 			}
 		}
 
-		// =================================================================== preguntas
-
-		// "Cuanto he pagado este anio?" Total: cero si nada.
+		/// <summary>Cuanto pago en ese anio. TOTAL: cero donde no pago nada.</summary>
 		internal decimal LoPagadoEn(int anio)
 		{
 			decimal suma = 0m;
@@ -296,8 +289,10 @@ namespace Municipalidad.Dominio
 			return suma;
 		}
 
-		// La serie de un rubro, en orden de periodo. Total: vacia para un rubro sin
-		// historia o desconocido -es una lectura keyed sobre un espacio, E41-.
+		/// <summary>
+		/// La serie de un rubro, en orden de periodo. TOTAL: vacia para un rubro sin historia, y tambien
+		/// para uno que no existe — un nombre desconocido es una pregunta sin respuesta, no un error.
+		/// </summary>
 		internal IReadOnlyList<LineaPagada> HistorialDe(string nombreDelRubro)
 		{
 			List<LineaPagada> serie = new List<LineaPagada>();
@@ -315,8 +310,11 @@ namespace Municipalidad.Dominio
 			return HistorialDe(nombreDelRubro).Count >= 2;
 		}
 
-		// "Por que este trimestre pago mas?" Las dos ultimas lineas del rubro, comparadas
-		// por monto por periodo. Umbral y ruido entran por parametro (M1-M3).
+		/// <summary>
+		/// Por que se paga mas de ese rubro: las dos ultimas lineas de su serie, comparadas por monto por
+		/// periodo. El umbral y el ruido los pone quien pregunta. GUARDADO: preguntar
+		/// SePuedeVerLaVariacionDe antes.
+		/// </summary>
 		internal Variacion VariacionDe(string nombreDelRubro, decimal umbralDeSalto, decimal ruido)
 		{
 			if (!SePuedeVerLaVariacionDe(nombreDelRubro))
@@ -326,8 +324,10 @@ namespace Municipalidad.Dominio
 			return Variacion.Entre(serie[serie.Count - 2], serie[serie.Count - 1], umbralDeSalto, ruido);
 		}
 
-		// "Que se me vence?" Lo puesto al cobro, no pagado, que todavia no vencio a la
-		// fecha. Total: vacia si nada.
+		/// <summary>
+		/// Lo puesto al cobro, no pagado, que todavia no vencio a esa fecha. TOTAL: vacia donde no hay
+		/// ninguno.
+		/// </summary>
 		internal IReadOnlyList<VencimientoProximo> VencimientosAl(DateTime fecha)
 		{
 			List<VencimientoProximo> proximos = new List<VencimientoProximo>();
@@ -338,7 +338,9 @@ namespace Municipalidad.Dominio
 			return proximos;
 		}
 
-		// Lo puesto al cobro, no pagado, ya vencido a la fecha. Total: vacia si nada.
+		/// <summary>
+		/// Lo puesto al cobro, no pagado, ya vencido a esa fecha. TOTAL: vacia donde no hay ninguno.
+		/// </summary>
 		internal IReadOnlyList<Atraso> AtrasosAl(DateTime fecha)
 		{
 			List<Atraso> atrasos = new List<Atraso>();
@@ -348,8 +350,6 @@ namespace Municipalidad.Dominio
 			atrasos.Sort((a, b) => a.Vencio.CompareTo(b.Vencio));
 			return atrasos;
 		}
-
-		// ---------------------------------------------- la proyeccion y la reserva
 
 		/// <summary>
 		/// Los rubros de los que la app vio pagar algo, en el orden en que aparecieron. TOTAL: vacia
@@ -377,9 +377,11 @@ namespace Municipalidad.Dominio
 
 		internal bool SePuedeProyectar { get { return RubrosConHistoria().Count > 0; } }
 
-		// "Cuanto probablemente tendre que pagar en el anio?" El ultimo monto por periodo
-		// de cada rubro con historia, por sus periodos por anio. Es una proyeccion y se
-		// muestra como tal. Total: cero sin historia.
+		/// <summary>
+		/// Cuanto probablemente tendra que pagar en el anio: el ultimo monto por periodo de cada rubro
+		/// con historia, por sus periodos por anio. Es una PROYECCION y se muestra como tal. TOTAL: cero
+		/// sin historia.
+		/// </summary>
 		internal decimal ProyeccionDelAnio()
 		{
 			decimal suma = 0m;
@@ -411,10 +413,12 @@ namespace Municipalidad.Dominio
 			return new FaltanteDeReserva(ReservaPropuestaPara(fecha.Year).MontoMensual, ReservaVigente.MontoMensual, venceEsteMes);
 		}
 
-		// M6, propuesto: "cuanto me ahorro si pago hoy todo el anio?" El descuento por
-		// pronto pago es la mora al reves -misma tasa, signo contrario-: por cada periodo
-		// del anio no pagado, monto x tasa x dias adelantados / 365. La tasa entra por
-		// parametro. Total: cero sin historia o sin nada por adelantar.
+		/// <summary>
+		/// Cuanto se ahorra pagando hoy todo el anio. El descuento por pronto pago es la mora al reves
+		/// — misma tasa, signo contrario —: por cada periodo del anio no pagado, monto por tasa por dias
+		/// adelantados sobre 365. La tasa entra por parametro. TOTAL: cero sin historia, y cero sin nada
+		/// por adelantar.
+		/// </summary>
 		internal decimal AhorroPorProntoPago(DateTime fechaDePago, decimal tasaAnual)
 		{
 			if (tasaAnual < 0)
@@ -435,17 +439,18 @@ namespace Municipalidad.Dominio
 			return Math.Round(ahorro, 2);
 		}
 
-		// M8, propuesto: lo que la consulta dice pagado y la app no vio pagar. Para cada
-		// rubro de la consulta, todo periodo desde lo mas viejo que la app conoce hasta el
-		// PRIMERO que el pendiente cubre, que ninguna linea pagada cubra. Total: vacia si
-		// nada.
-		//
-		// CUANTOS PERIODOS CUBRE EL PENDIENTE TAMBIEN SE INFIERE (hueco 6), y aca del monto:
-		// "basura hasta 2025.09 por 24.000" con un ultimo monto por periodo de 8.000 son
-		// tres meses, asi que cubre desde julio, y julio y agosto estan PENDIENTES, no
-		// pagados sin comprobante. Sin esta inferencia se marcaria mal. Asume que la tarifa
-		// no cambio entre el ultimo pago y el pendiente; si cambio, la cuenta sale distinta
-		// y por eso el resultado entero se lee como inferido.
+		/// <summary>
+		/// Lo que la consulta de ese dia da por pagado y la app no vio pagar: para cada rubro de la
+		/// consulta, todo periodo desde lo mas viejo que la app conoce hasta el PRIMERO que el pendiente
+		/// cubre, que ninguna linea pagada cubra. TOTAL: vacia donde no hay ninguno, y tambien donde no
+		/// hay consulta de ese dia.
+		/// <para>
+		/// CUANTOS PERIODOS CUBRE EL PENDIENTE TAMBIEN SE INFIERE, y aca del monto contra el ultimo monto
+		/// por periodo: sin esa inferencia se marcaria como pagado sin comprobante lo que en realidad
+		/// sigue pendiente. Asume que la tarifa no cambio entre el ultimo pago y el pendiente; si cambio,
+		/// la cuenta sale distinta, y por eso el resultado entero se lee como inferido.
+		/// </para>
+		/// </summary>
 		internal IReadOnlyList<PeriodoSinComprobante> PeriodosPagadosSinComprobante(DateTime fechaDeConsulta)
 		{
 			List<PeriodoSinComprobante> sinComprobante = new List<PeriodoSinComprobante>();

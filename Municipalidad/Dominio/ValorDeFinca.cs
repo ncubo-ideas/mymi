@@ -2,11 +2,11 @@ using System;
 
 namespace Municipalidad.Dominio
 {
-	// UN VALOR DE LA FINCA EN UNA FECHA. Hecho: la persona lo declaro, o la municipalidad
-	// la avaluo -y cual de las dos es el hueco 10, que el v1 no distingue-.
-	//
-	// Es la base imponible de los rubros que responden al avaluo. Cuando cambia, el IBI
-	// salta, y eso es lo que CambioDeAvaluo explica.
+	/// <summary>
+	/// Un valor de la finca en una fecha, sin distinguir si lo fijo un avaluo de la municipalidad o una
+	/// declaracion de la persona. Es la base imponible de los rubros que se cobran sobre ella, asi que
+	/// un valor nuevo es lo que explica un salto en esos rubros.
+	/// </summary>
 	internal sealed class ValorDeFinca
 	{
 		internal DateTime Fecha { get; }

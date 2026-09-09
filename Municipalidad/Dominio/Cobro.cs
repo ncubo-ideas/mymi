@@ -2,16 +2,18 @@ using System;
 
 namespace Municipalidad.Dominio
 {
-	// LO QUE LA MUNICIPALIDAD DICE QUE VA A COBRAR: un rubro, un periodo, un monto.
-	//
-	// Es INTENCION de la institucion, no hecho: la Proposed Action de la pasada 2. El
-	// pago es su Implemented Action. Un cobro puesto y no pagado, con el periodo vencido,
-	// es un Atraso; con el periodo por vencer, un VencimientoProximo. Ninguno de los dos
-	// se guarda: se derivan de comparar cobros contra pagos.
-	//
-	// HUECO 11: la app nunca ve "el cobro" como evento. Lo que ve es la consulta -la foto-
-	// con sus lineas pendientes, y eso es lo que se registra como puesto al cobro, con la
-	// fecha de la consulta. Si el portal algun dia manda los cobros de otra forma, cambia.
+	/// <summary>
+	/// Lo que la municipalidad dice que va a cobrar: un rubro, un periodo y un monto positivo. Es
+	/// INTENCION de la institucion y no un hecho; el hecho es el pago.
+	/// <para>
+	/// Un cobro sin pagar no guarda su estado: el atraso y el vencimiento proximo se derivan de
+	/// compararlo contra los pagos.
+	/// </para>
+	/// <para>
+	/// La app nunca ve el cobro como evento. Lo que ve es la consulta con sus lineas pendientes, y eso
+	/// es lo que queda puesto al cobro, con la fecha de la consulta.
+	/// </para>
+	/// </summary>
 	internal sealed class Cobro
 	{
 		internal Rubro Rubro { get; }

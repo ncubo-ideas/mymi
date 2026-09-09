@@ -4,12 +4,15 @@ using Choreography.Theater;
 
 namespace Municipalidad.App
 {
-	// EL ACTOR. La caratula lo construye una vez y lo mantiene vivo.
-	//
-	// La semilla va en upgrade('semilla') porque OnHydrated corre en CADA hidratacion y
-	// la guarda de upgrade es una-vez-por-actor: asi el arranque es idempotente sin un
-	// ejecutable de migracion. La raiz se construye ADENTRO de un comando, como global
-	// raiz: un campo de C# no se journaliza y vuelve vacio al siguiente arranque.
+	/// <summary>
+	/// El actor. La caratula lo construye una vez y lo mantiene vivo.
+	/// <para>
+	/// La semilla va dentro de un upgrade porque OnHydrated corre en CADA hidratacion y la guarda de
+	/// upgrade es una-vez-por-actor: asi el arranque es idempotente sin un ejecutable de migracion. Y
+	/// las raices se construyen ADENTRO de un comando, como globales de raiz: un campo de C# no se
+	/// journaliza y vuelve vacio al siguiente arranque.
+	/// </para>
+	/// </summary>
 	public sealed class MunicipalidadApp : PerformanceV2
 	{
 		/// <summary>

@@ -1,7 +1,9 @@
 namespace Municipalidad.Dominio
 {
-	// LA CADENCIA DE BIENES INMUEBLES Y PARQUES. Cuatro periodos por anio; el numero del
-	// periodo es el TRIMESTRE, no el mes -el "4" de 2026.04 es el cuarto trimestre-.
+	/// <summary>
+	/// La cadencia de bienes inmuebles y parques: cuatro periodos por anio, y el numero del periodo es
+	/// el TRIMESTRE y no el mes.
+	/// </summary>
 	internal sealed class CobroTrimestral : Cadencia
 	{
 		internal override string Nombre { get { return "trimestral"; } }

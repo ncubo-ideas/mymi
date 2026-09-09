@@ -2,12 +2,10 @@ using System;
 
 namespace Municipalidad.Dominio
 {
-	// LO QUE LA PERSONA DECIDIO APARTAR POR MES. Es INTENCION, y es de ella: la app le
-	// propuso un numero, ella lo ajusto o no, y lo adopto. Un comando con fecha, que
-	// entra al journal como hecho de la persona.
-	//
-	// Por eso este dominio es hibrido y el journal no es enteramente reconstruible:
-	// esto no lo manda la municipalidad, y borrar la carpeta lo pierde.
+	/// <summary>
+	/// Lo que la persona decidio apartar por mes: una INTENCION suya, con la fecha en que la adopto. Es
+	/// la mitad de esta cuenta que la municipalidad no manda, asi que borrar la carpeta la pierde.
+	/// </summary>
 	internal sealed class ReservaDeclarada
 	{
 		internal decimal MontoMensual { get; }

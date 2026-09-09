@@ -2,15 +2,14 @@ using System;
 
 namespace Municipalidad.Dominio
 {
-	// LO QUE LA APP PROPONE APARTAR POR MES: la proyeccion del anio dividida en doce.
-	//
-	// ES UN CONTRASTE -un numero que la app calculo-, NO UNA INTENCION. Nunca se
-	// journaliza: se recalcula cada vez. Lo que la persona adopta, ajustado o no, es otra
-	// cosa en otra casilla: ReservaDeclarada, un comando con fecha. Colapsarlas en una
-	// `Reserva` con `bool adoptada` haria que un numero de la app pasara por decision de
-	// la persona. Opcion b, firmada el 3 de setiembre.
-	//
-	// La superficie la muestra como propuesta; solo lo adoptado se muestra como suyo.
+	/// <summary>
+	/// Lo que la app propone apartar por mes: la proyeccion del anio dividida en doce. ES UN NUMERO QUE
+	/// LA APP CALCULO y no una intencion de la persona, asi que nunca se journaliza: se recalcula cada
+	/// vez. Lo que la persona adopta, ajustado o no, es otra cosa en otra casilla.
+	/// <para>
+	/// La superficie la muestra como propuesta; solo lo adoptado se muestra como suyo.
+	/// </para>
+	/// </summary>
 	internal sealed class ReservaPropuesta
 	{
 		internal int Anio { get; }

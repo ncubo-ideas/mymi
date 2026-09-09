@@ -2,13 +2,14 @@ using System;
 
 namespace Municipalidad.Dominio
 {
-	// UN TRIMESTRE: el periodo de bienes inmuebles y parques.
-	//
-	// Lo propio: termina el ultimo dia del tercer mes del trimestre -marzo, junio,
-	// setiembre, diciembre-, y hay cuatro por anio.
-	//
-	// El mismo "4" que en un Mes es abril, aca es el cuarto trimestre. Por eso el numero
-	// entra ya separado del anio y lo lee la cadencia: el dominio no adivina.
+	/// <summary>
+	/// Un trimestre: el periodo de bienes inmuebles y parques. Termina el ultimo dia de su tercer mes, y
+	/// hay cuatro por anio.
+	/// <para>
+	/// El mismo numero que en un mes es abril, aca es el cuarto trimestre. Por eso el numero entra ya
+	/// separado del anio y quien lo lee es la cadencia: el dominio no adivina.
+	/// </para>
+	/// </summary>
 	internal sealed class Trimestre : Periodo
 	{
 		internal Trimestre(int anio, int trimestre) : base(anio, trimestre)

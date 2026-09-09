@@ -5,15 +5,16 @@ using Puppeteer;
 
 namespace Municipalidad.Consola
 {
-	// EL CICLO COMPLETO CONTRA UN JOURNAL REAL.
-	//
-	// Es lo que `comprobar` NO puede ver: el binding de parametros, la resolucion de los
-	// tipos por reflexion, los conjuntos cerrados alcanzables desde un comando, la forma
-	// de los carriers al pasar por el print, y el adaptador de los dos alfabetos.
-	//
-	// Se corre DOS veces sobre la misma carpeta: la segunda tiene que rechazar todo y los
-	// numeros no se pueden mover. Capitulo 3 §8: un dominio no esta terminado hasta que un
-	// perform lo toco.
+	/// <summary>
+	/// El ciclo completo contra un journal real, por la PUERTA. Es lo que una comprobacion del dominio
+	/// puro no puede ver: el binding de parametros, la resolucion de los tipos por reflexion, los
+	/// conjuntos cerrados alcanzables desde un comando, la forma de los carriers al pasar por el print,
+	/// y el adaptador de los dos alfabetos.
+	/// <para>
+	/// Se corre DOS veces sobre la misma carpeta: la segunda tiene que rechazar todo, y los numeros no
+	/// se pueden mover. Un dominio no esta terminado hasta que un perform lo toco.
+	/// </para>
+	/// </summary>
 	internal static class Medir
 	{
 		internal static int Correr(string carpeta)
@@ -28,16 +29,9 @@ namespace Municipalidad.Consola
 
 			MunicipalidadAPI api = new MunicipalidadAPI(app);
 
-			// ------------------------------------------ lo que aporta la persona
-
 			Paso("la finca", api.IncorporarFinca("F-1"));
 			Paso("la finca otra vez", api.IncorporarFinca("F-1"));
 			Paso("el valor de la finca", api.DeclararValorDeFinca("F-1", new DateTime(2025, 1, 15), 60000000m));
-
-			// ------------------------------------------- lo que manda la municipalidad
-			//
-			// Los periodos van COMO LOS ESCRIBE EL RECIBO -"2024.03", "2024.01"- y la API los
-			// parte; el dominio los lee segun la cadencia del rubro.
 
 			Paso("recibo R-1", api.RegistrarPago("R-1", new DateTime(2024, 3, 31), 0m));
 			Paso("  basura 2024.03", api.AgregarLineaAlPago("R-1", "recoleccion-de-basura", "2024.03", 5000m, 0m));
@@ -75,8 +69,6 @@ namespace Municipalidad.Consola
 			Paso("el dispositivo otra vez", api.RegistrarDispositivo("DISPOSITIVO-DEMO-1"));
 			Paso("la credencial", api.GuardarCredencial("token-demo-1", "refresco-demo-1"));
 			Paso("la credencial otra vez", api.GuardarCredencial("token-demo-1", "refresco-demo-1"));
-
-			// ------------------------------------------------------------ las preguntas
 
 			Console.WriteLine();
 			Console.WriteLine("Las preguntas del Preguntas.md, cruzando el perform:");
@@ -249,9 +241,11 @@ namespace Municipalidad.Consola
 			Console.WriteLine("      dice: " + variacion.Dice);
 		}
 
-		// El marcador de rechazo es la propiedad EWI en la raiz del documento -regla 2-,
-		// no que el texto empiece con esas letras: con el formatter JSON empieza con
-		// una llave.
+		/// <summary>
+		/// Imprime si un paso entro o se rechazo. El marcador de rechazo es la propiedad EWI en la raiz
+		/// del documento, y no que el texto empiece con esas letras: con el formatter JSON el texto
+		/// empieza con una llave.
+		/// </summary>
 		private static void Paso(string que, string salida)
 		{
 			string s = (salida ?? "").Trim();

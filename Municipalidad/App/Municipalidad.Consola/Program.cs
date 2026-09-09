@@ -11,7 +11,7 @@ namespace Municipalidad.Consola
 	/// <para>
 	/// No nombra ni un tipo del dominio. Eso es lo que la saca de la lista de InternalsVisibleTo del
 	/// dominio y lo que le quita su ProjectReference: las 91 comprobaciones del dominio puro que
-	/// vivian aca se mudaron a Pruebas/ en M-6, donde SI pueden ponerse rojas en CI.
+	/// vivian aca se mudaron a Pruebas/, donde SI pueden ponerse rojas en CI.
 	/// </para>
 	/// <para>
 	/// NINGUNO DE LOS DOS BORRA UN JOURNAL. Los dos escriben en la carpeta que se les da, y sobre una

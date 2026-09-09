@@ -3,16 +3,18 @@ using System.Collections.Generic;
 
 namespace Municipalidad.Dominio
 {
-	// EL COMPROBANTE: un pago que ocurrio, con su numero, su fecha y sus lineas.
-	//
-	// ES UN HECHO, y de aca sale la historia de la app -no de la consulta, que es una
-	// foto-. Es la Implemented Action del cobro. Su identidad es el numero de recibo, que
-	// la municipalidad da y es correlativo (regla 18: el mismo recibo dos veces es el
-	// mismo hecho otra vez).
-	//
-	// NO SABE QUE MODO DE PAGO FUE -vencido, pendiente, anual- porque el recibo no lo
-	// dice (hueco 6). El modo es que periodos eligio pagar la persona, y se lee de las
-	// lineas, no se guarda.
+	/// <summary>
+	/// El comprobante: un pago que ocurrio, con su numero de recibo, su fecha y sus lineas. ES UN HECHO,
+	/// y de aca sale la historia de la app y no de la consulta, que es una foto.
+	/// <para>
+	/// Su identidad es el numero de recibo, que la municipalidad da y es correlativo, asi que el mismo
+	/// recibo dos veces es el mismo hecho otra vez.
+	/// </para>
+	/// <para>
+	/// NO SABE QUE MODO DE PAGO FUE — vencido, pendiente, anual — porque el recibo no lo dice. El modo
+	/// es que periodos eligio pagar la persona, y se lee de las lineas en vez de guardarse.
+	/// </para>
+	/// </summary>
 	internal sealed class Pago
 	{
 		private readonly List<LineaPagada> lineas = new List<LineaPagada>();
@@ -39,8 +41,10 @@ namespace Municipalidad.Dominio
 			return !string.IsNullOrWhiteSpace(numeroDeRecibo) && NumeroDeRecibo == numeroDeRecibo.Trim();
 		}
 
-		// PREDICADO TOTAL: ya trae una linea de ese rubro para ese periodo? Dos lineas
-		// iguales en el mismo recibo no se pueden distinguir.
+		/// <summary>
+		/// PREDICADO TOTAL: ya trae una linea de ese rubro para ese periodo? Dos lineas iguales en el
+		/// mismo recibo no se podrian distinguir.
+		/// </summary>
 		internal bool Trae(Rubro rubro, Periodo periodo)
 		{
 			foreach (LineaPagada l in lineas)
@@ -69,8 +73,10 @@ namespace Municipalidad.Dominio
 
 		internal decimal Total { get { return SubTotal - Descuento; } }
 
-		// Si pago algo antes de que venciera. Es lo que el portal llama "pago anual" o
-		// "por adelantado", y el recibo no lo dice: se lee de las fechas.
+		/// <summary>
+		/// Si pago algo antes de que venciera. Es lo que el portal llama pago anual o por adelantado, y
+		/// el recibo no lo dice: se lee de las fechas.
+		/// </summary>
 		internal bool PagoPorAdelantado()
 		{
 			foreach (LineaPagada l in lineas)

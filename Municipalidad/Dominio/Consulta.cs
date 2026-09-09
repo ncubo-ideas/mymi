@@ -3,16 +3,16 @@ using System.Collections.Generic;
 
 namespace Municipalidad.Dominio
 {
-	// LA CONSULTA DE PENDIENTES: la FOTO del estado de hoy en el portal.
-	//
-	// Es un hecho -alguien consulto tal dia y el portal dijo esto- pero de otra clase que
-	// el comprobante: la de manana sera otra y la de ayer no se puede recuperar. Por eso
-	// va FECHADA y por eso la historia no sale de aca sino de los comprobantes (hallazgo
-	// F de la sesion; paper 8 sobre foto y narracion).
-	//
-	// Lo que si sale de aca es lo puesto al cobro (hueco 11) y la evidencia de lo que
-	// NO esta pendiente: si la consulta de hoy no debe nada anterior a X, lo anterior a X
-	// se pago -con o sin comprobante en la app-. Es lo que M8 usa.
+	/// <summary>
+	/// La consulta de pendientes: la FOTO del estado de hoy en el portal, y por eso va FECHADA. Es un
+	/// hecho de otra clase que el comprobante — la de manana sera otra y la de ayer no se puede
+	/// recuperar —, asi que la historia de la app no sale de aca sino de los comprobantes.
+	/// <para>
+	/// Lo que si sale de aca es lo que queda puesto al cobro, y la evidencia de lo que NO esta
+	/// pendiente: si la consulta de hoy no debe nada anterior a un periodo, lo anterior se pago, con o
+	/// sin comprobante en la app.
+	/// </para>
+	/// </summary>
 	internal sealed class Consulta
 	{
 		private readonly List<LineaPendiente> pendientes = new List<LineaPendiente>();
@@ -57,8 +57,10 @@ namespace Municipalidad.Dominio
 			}
 		}
 
-		// El periodo pendiente MAS VIEJO de un rubro: todo lo anterior a el, el portal lo
-		// considera pagado. Guardado: preguntar TraeAlgoDe antes.
+		/// <summary>
+		/// El periodo pendiente MAS VIEJO de un rubro: todo lo anterior a el, el portal lo da por pagado.
+		/// GUARDADO: preguntar TraeAlgoDe antes.
+		/// </summary>
 		internal Periodo PendienteMasViejoDe(Rubro rubro)
 		{
 			Periodo masViejo = null;

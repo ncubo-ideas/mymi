@@ -2,9 +2,11 @@ using System;
 
 namespace Municipalidad.Dominio
 {
-	// UNA LINEA DE LA CONSULTA: lo que el portal dice que se debe hoy, por rubro, hasta
-	// que periodo, y con cuanta mora acumulada. La mora es recibida, igual que en el
-	// recibo: la app no la recalcula.
+	/// <summary>
+	/// Una linea de la consulta: lo que el portal dice que se debe hoy, de que rubro, hasta que periodo,
+	/// y con cuanta mora acumulada. La mora llega RECIBIDA, igual que en el recibo: la app no la
+	/// recalcula.
+	/// </summary>
 	internal sealed class LineaPendiente
 	{
 		internal Rubro Rubro { get; }

@@ -2,15 +2,15 @@ using System;
 
 namespace Municipalidad.Dominio
 {
-	// LA AUSENCIA: algo puesto al cobro que todavia no vencio y nadie pago.
-	//
-	// Es la pregunta que NINGUNA PANTALLA DEL PORTAL contesta -el portal muestra lo puesto
-	// al cobro, no cuando vence- y la que la persona pidio con la palabra "recordatorios".
-	// Se calcula de la cadencia y del calendario; no hay dato del que sea proyeccion.
-	//
-	// Los dias de aviso (M5: siete, propuesto) entran por parametro. La forma es la de
-	// la Tendencia del gimnasio: la fecha de corte llega de afuera, el dominio no lee el
-	// reloj.
+	/// <summary>
+	/// Algo puesto al cobro que todavia no vencio y nadie pago. Es la pregunta que ninguna pantalla del
+	/// portal contesta — el portal muestra lo puesto al cobro, no cuando vence — y se calcula de la
+	/// cadencia y del calendario, sin ser proyeccion de ningun dato.
+	/// <para>
+	/// Los dias de aviso entran por parametro, y la fecha de corte llega de afuera: este dominio no lee
+	/// el reloj.
+	/// </para>
+	/// </summary>
 	internal sealed class VencimientoProximo
 	{
 		internal Rubro Rubro { get; }
@@ -27,12 +27,16 @@ namespace Municipalidad.Dominio
 
 		internal DateTime Vence { get { return Periodo.UltimoDia; } }
 
-		// Hojas planas para el print (regla 13).
+		/// <summary>El nombre del rubro, aplanado para que el print lo alcance en un solo nivel.</summary>
 		internal string NombreDelRubro { get { return Rubro.Nombre; } }
+
+		/// <summary>El periodo, aplanado por la misma razon.</summary>
 		internal string EtiquetaDelPeriodo { get { return Periodo.Etiqueta; } }
 
-		// TOTAL: si la fecha ya paso, cero -pero entonces esto no es un vencimiento
-		// proximo sino un Atraso, y la Cuenta no lo construye asi-.
+		/// <summary>
+		/// Cuantos dias faltan a esa fecha. TOTAL: cero si la fecha ya paso, aunque entonces esto seria
+		/// un atraso y la cuenta no lo construye asi.
+		/// </summary>
 		internal int DiasQueFaltan(DateTime fecha)
 		{
 			int dias = (Vence - fecha.Date).Days;
@@ -66,7 +70,10 @@ namespace Municipalidad.Dominio
 				+ diasDeAviso + " de aviso con que se preguntó, así que todavía no apura.";
 		}
 
-		// M5, propuesto: aviso dentro de la ventana, urgente el dia. M4: la clase decide.
+		/// <summary>
+		/// Cuanto apura a esa fecha: aviso dentro de la ventana de dias con que se pregunte, y urgente el
+		/// dia en que vence. Quien lo decide es la clase y no el monto.
+		/// </summary>
 		internal Urgencia Urgencia(DateTime fecha, int diasDeAviso)
 		{
 			if (diasDeAviso < 0)

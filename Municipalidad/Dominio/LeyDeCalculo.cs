@@ -2,22 +2,25 @@ using System;
 
 namespace Municipalidad.Dominio
 {
-	// COMO SE CALCULA UN RUBRO: por unidad, o sobre la base imponible.
-	//
-	// Es una clase porque OPINA sobre algo que la app agrega y el recibo no trae: QUE
-	// EXPLICA UN AUMENTO. Un rubro sobre base imponible responde al valor de la finca;
-	// cuando salta, hubo avaluo. Un rubro por unidad no: cuando salta, hubo tarifa nueva.
-	// "Por que subio mi IBI?" y "por que subio mi basura?" tienen respuestas distintas
-	// por esta clase, y es lo unico que la app puede decir que el portal no dice.
-	//
-	// El recibo la esconde en un sufijo -"LIMPIEZA DE CALLES BASE IMP"- y en nada mas.
-	//
-	// CONJUNTO CERRADO de dos, resolutor total (regla 11), comparado por nombre.
+	/// <summary>
+	/// Como se calcula un rubro: por unidad, o sobre la base imponible. Es una clase porque decide QUE
+	/// EXPLICA UN AUMENTO, que es algo que la app agrega y el recibo no trae: un rubro sobre base
+	/// imponible responde al valor de la finca, y cuando salta hubo avaluo; uno por unidad no, y cuando
+	/// salta hubo tarifa nueva.
+	/// <para>
+	/// El recibo la esconde en un sufijo del nombre del rubro y en nada mas.
+	/// </para>
+	/// <para>
+	/// Conjunto cerrado de dos, comparado por nombre, con resolutor total desde el primitivo.
+	/// </para>
+	/// </summary>
 	internal abstract class LeyDeCalculo
 	{
 		internal abstract string Nombre { get; }
 
-		// LO PROPIO: si responde al avaluo, un salto se explica por el valor de la finca.
+		/// <summary>
+		/// Lo propio de cada ley: si responde al avaluo, un salto se explica por el valor de la finca.
+		/// </summary>
 		internal abstract bool RespondeAlAvaluo { get; }
 
 		/// <summary>
@@ -60,8 +63,9 @@ namespace Municipalidad.Dominio
 		}
 	}
 
-	// COBRADO POR UNIDAD -una casa, una recoleccion-. No responde al valor de la finca:
-	// cuando salta, cambio la tarifa.
+	/// <summary>
+	/// Cobrado por unidad. No responde al valor de la finca: cuando salta, cambio la tarifa.
+	/// </summary>
 	internal sealed class TarifaPorUnidad : LeyDeCalculo
 	{
 		internal override string Nombre { get { return "por-unidad"; } }
@@ -70,8 +74,10 @@ namespace Municipalidad.Dominio
 		internal override string Dice() { return "se cobra por unidad"; }
 	}
 
-	// COBRADO SOBRE LA BASE IMPONIBLE: el valor de la finca, declarado cada cinco anios o
-	// avaluado por la municipalidad (juicio 2, firmado). Cuando salta, hubo avaluo.
+	/// <summary>
+	/// Cobrado sobre la base imponible, que es el valor de la finca: el que la persona declara o el que
+	/// la municipalidad avalua. Cuando salta, hubo avaluo.
+	/// </summary>
 	internal sealed class TarifaSobreBaseImponible : LeyDeCalculo
 	{
 		internal override string Nombre { get { return "sobre-base-imponible"; } }
