@@ -1052,7 +1052,9 @@ const gn = {
 
       // The platform grants or denies the camera here (Android asks the person the first time).
       try {
-        gn.scan.stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' }, audio: false });
+        // The back camera, asked for 720p: at the 640x480 some phones default to, a code shown on a
+        // monitor across a desk is a blur of modules (measured 2026-09-09 on the A54).
+        gn.scan.stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment', width: { ideal: 1280 }, height: { ideal: 720 } }, audio: false });
       } catch (e) {
         hint.textContent = e && e.name === 'NotAllowedError'
           ? 'Gnothi no tiene permiso para usar la cámara.'
@@ -1073,7 +1075,7 @@ const gn = {
         if (busy || video.readyState < 2 || !video.videoWidth) return;
         busy = true;
         try {
-          const scale = Math.min(1, 640 / video.videoWidth);
+          const scale = Math.min(1, 960 / video.videoWidth);
           const text = await gn.scan.decode(video, Math.round(video.videoWidth * scale), Math.round(video.videoHeight * scale));
           if (text) gn.scan.found(text);
         } catch (e) { msg.textContent = 'No se pudo leer: ' + (e && e.message || e); }

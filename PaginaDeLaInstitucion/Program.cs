@@ -207,7 +207,10 @@ app.MapGet("/", () =>
     string qr;
     using (var generator = new QRCoder.QRCodeGenerator())
     using (QRCoder.QRCodeData data = generator.CreateQrCode(alta, QRCoder.QRCodeGenerator.ECCLevel.M))
-        qr = new QRCoder.SvgQRCode(data).GetGraphic(6, "#16202c", "#ffffff", drawQuietZones: true);
+        // ViewBox, not width/height: an svg sized by width/height attributes does NOT scale when CSS
+        // gives it another size -it gets CROPPED-, and the 294 px drawing squeezed into 176 px on the
+        // page lost its right and bottom edges. Measured 2026-09-09 with a real phone: unreadable.
+        qr = new QRCoder.SvgQRCode(data).GetGraphic(6, "#16202c", "#ffffff", drawQuietZones: true, sizingMode: QRCoder.SvgQRCode.SizingMode.ViewBoxAttribute);
 
     return Results.Content($$"""
         <!doctype html><meta charset=utf-8>
@@ -223,7 +226,7 @@ app.MapGet("/", () =>
           a.otra { display: inline-block; margin-top: 14px; color: #3f34a8; }
           code { background: #e9ecf2; padding: 2px 6px; border-radius: 4px; font-size: 13px; }
           .qr { display: flex; align-items: center; gap: 20px; flex-wrap: wrap; margin-top: 28px; }
-          .qr svg { width: 176px; height: 176px; display: block; border-radius: 8px; background: #fff;
+          .qr svg { width: 240px; height: 240px; display: block; border-radius: 8px; background: #fff;
                     box-shadow: 0 1px 4px rgba(0,0,0,.12); }
           .qr p { margin: 0; font-size: 14px; max-width: 22em; }
         </style>
