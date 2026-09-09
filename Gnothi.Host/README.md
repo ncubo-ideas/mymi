@@ -290,8 +290,16 @@ capacidades nuevas, publicador, origen, promesa del registro y sustrato.
 Al actualizar se conserva lo que la persona decidió: sus interruptores para las consultas que siguen
 (las que se fueron se sueltan; las nuevas entran encendidas porque las aceptó viéndolas en la hoja) y
 **el publicador que Gnothi fijó**, que sólo se mueve si ella marca «Aceptar la dirección nueva». La
-versión anterior se permite con aviso. Lo que falta de la nota 44: la etiqueta «hay una versión nueva»
-desde el well-known, la instalación con vuelta atrás, y quitar un módulo.
+versión anterior se permite con aviso.
+
+La **etiqueta «hay una versión nueva»** sale del well-known de la institución, no de un servicio nuestro:
+la lista publica `version` junto al sello de cada módulo, y la revisión del origen al arrancar
+(`Shell.ReviewOrigins`, la misma que mira las llaves retiradas) compara sello y versión con lo instalado.
+Si lo publicado es mayor, lo anota en `installation.json` (`update`: versión, bundle, sello y cuándo se
+vio) y la tarjeta lo dice. Es una **nota, no una acción**: nada baja ni se instala hasta que la persona
+toca la tarjeta, y entonces el paquete pasa por la misma hoja de actualizar. Una versión publicada menor
+no se anuncia, y al instalar lo publicado la nota se va. Lo que falta de la nota 44: la instalación con
+vuelta atrás, y quitar un módulo.
 
 ## Pendientes
 

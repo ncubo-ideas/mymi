@@ -493,6 +493,12 @@ abierta**. Lo que cambia es si la cara ya existe, y el enlace que llega antes qu
 > tenga la Mac compila primero; si algo no compila, casi seguro es una firma de binding, y el espejo
 > de cada pieza está en `Gnothi.Mobile/MainActivity.cs`. En Android todo esto está medido
 > (`Gnothi.Mobile/PRUEBAS-WEBVIEW.md` §2b); acá lo que se mide es que iOS haga lo mismo.
+>
+> **Y la actualización de un módulo (nota 44, pasos 1 y 2, la misma noche)** tampoco tiene pieza propia de
+> iOS: el plan vive en `Gnothi.Host/UpdatePlan.cs`, la revisión del origen al arrancar (`Shell.ReviewOrigins`)
+> y la op `actualizar` en `Gnothi.Movil/Shell.cs`, y la hoja de «Actualizar» y la pastilla «Hay una versión
+> nueva» en `ui.html`. Se prueban con los pasos 9 y 10 de la guía de Android, tal cual, con la página de la
+> institución alcanzable desde el iPhone como en P6b.
 
 **Qué prueba:** que un módulo entra sin universal link y sin `gnothi://`: la persona pega el enlace de
 su institución en Gnothi, ve bajar el paquete y decide.

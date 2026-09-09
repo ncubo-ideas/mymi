@@ -361,6 +361,68 @@ internal sealed class ModuleEnrollment
 	internal static Uri? DeclaredOrigin(string? declared)
 		=> OriginOf(declared) is string origin ? new Uri(origin + "/") : null;
 
+	// WHAT THE ORIGIN PUBLISHES FOR THIS MODULE, NEXT TO WHAT IS INSTALLED (NotasGnothiHost/44 §4).
+	// The well-known lists each module with its bundle, seal and version. Nothing newer when the
+	// module is not listed, when the published seal is the installed one, or when both sides
+	// declare a version and the published one is not greater -an origin that rolled back is not
+	// announced as news. Otherwise the answer names the version, the bundle to fetch -resolved
+	// against the origin when the list gives a relative address- and the seal, dated now. Pure.
+	internal static AvailableUpdate? UpdatePublished(string? wellKnownJson, string module, string? installedSeal, string? installedVersion, Uri origin, DateTimeOffset now)
+	{
+		if (wellKnownJson is null) return null;
+		try
+		{
+			using JsonDocument published = JsonDocument.Parse(wellKnownJson);
+			foreach (JsonElement m in Modules(published))
+			{
+				if (!m.TryGetProperty("module", out JsonElement name) || name.ValueKind != JsonValueKind.String
+					|| !string.Equals(name.GetString(), module, StringComparison.Ordinal)) continue;
+
+				string seal = m.TryGetProperty("seal", out JsonElement s) && s.ValueKind == JsonValueKind.String ? s.GetString() ?? "" : "";
+				string version = m.TryGetProperty("version", out JsonElement v) && v.ValueKind == JsonValueKind.String ? v.GetString() ?? "" : "";
+				string bundle = m.TryGetProperty("bundle", out JsonElement b) && b.ValueKind == JsonValueKind.String ? b.GetString() ?? "" : "";
+				if (seal.Length == 0 || bundle.Length == 0) return null;
+				if (string.Equals(seal, installedSeal, StringComparison.Ordinal)) return null;
+
+				Version? was = UpdatePlan.ParseVersion(installedVersion);
+				Version? announced = UpdatePlan.ParseVersion(version);
+				if (was is not null && announced is not null && announced.CompareTo(was) <= 0) return null;
+
+				if (!Uri.TryCreate(origin, bundle, out Uri? where)) return null;
+				return new AvailableUpdate { Version = version, Bundle = where.ToString(), Seal = seal, SeenAt = now.ToString("O") };
+			}
+			return null;
+		}
+		catch (JsonException)
+		{
+			return null;
+		}
+	}
+
+	// The seal of the manifest installed in a module's folder, or null when it cannot be read.
+	internal static string? InstalledSeal(string moduleDirectory)
+	{
+		try
+		{
+			string path = Path.Combine(moduleDirectory, "manifest.json");
+			return File.Exists(path) ? PackageSeal.Of(File.ReadAllBytes(path)) : null;
+		}
+		catch (Exception) { return null; }
+	}
+
+	// WRITE THE NOTE -or clear it- in installation.json, touching nothing else: the switches, the
+	// endpoint, the act and the pin stay as they are. False when the file already said the same
+	// (the same version and seal noted, or nothing noted and nothing to note), so a launch that
+	// finds nothing new rewrites nothing.
+	internal static bool WriteUpdateNote(string installationPath, AvailableUpdate? update)
+	{
+		Installation installation = Installation.Read(installationPath);
+		if (update is null ? installation.Update is null : update.SameAs(installation.Update)) return false;
+
+		File.WriteAllText(installationPath, JsonSerializer.Serialize(installation with { Update = update }, HostJson.Legible.Installation));
+		return true;
+	}
+
 	// MARK AN INSTALLED MODULE whose pinned key the origin retired: the date goes into the pin, the
 	// rest of the file -switches included- stays exactly as the person left it. Returns the date
 	// written, so the module in memory can take the same one; null when there was nothing to mark,

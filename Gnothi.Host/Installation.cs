@@ -68,6 +68,14 @@ public sealed record Installation
 	// origin can retire the key later, and the mark of that (revokedAt) is written here too.
 	[JsonPropertyName("signer")] public PackageSigner? Signer { get; init; }
 
+	// A NEWER PACKAGE THE ORIGIN PUBLISHES, if Gnothi saw one when it last asked: the version,
+	// where to download it and its seal, and when it was seen. Written by the startup review of
+	// the origins (NotasGnothiHost/44 §4) and cleared when the installed package matches what is
+	// published again -after she updates. It is a NOTE, not an action: nothing downloads or
+	// installs until she taps the card. Absent when nothing newer is published, or the origin
+	// publishes no list.
+	[JsonPropertyName("update")] public AvailableUpdate? Update { get; init; }
+
 	// Por HostJson y no por Deserialize<T>: el lector se genera al compilar, sin reflexion.
 	// Ver HostJson.cs -- de eso depende que el Host pueda embeberse bajo NativeAOT.
 	public static Installation Read(string path)
@@ -141,6 +149,20 @@ public sealed record Provenance
 		if (publisher is null || Manifest.Txt(publisher.Domain).Length == 0) return null;
 		return publisher.MatchesServer(ServedBy);
 	}
+}
+
+// WHAT THE ORIGIN PUBLISHES AND GNOTHI DOES NOT HAVE YET. Version and seal as the well-known lists
+// them, the bundle's absolute address to fetch it from when she asks, and the moment it was seen.
+public sealed record AvailableUpdate
+{
+	[JsonPropertyName("version")] public string Version { get; init; } = "";
+	[JsonPropertyName("bundle")] public string Bundle { get; init; } = "";
+	[JsonPropertyName("seal")] public string Seal { get; init; } = "";
+	[JsonPropertyName("seenAt")] public string SeenAt { get; init; } = "";
+
+	// The same thing published: version and seal, not the time it was seen.
+	public bool SameAs(AvailableUpdate? other)
+		=> other is not null && string.Equals(Seal, other.Seal, StringComparison.Ordinal) && string.Equals(Version, other.Version, StringComparison.Ordinal);
 }
 
 public sealed record Shell
