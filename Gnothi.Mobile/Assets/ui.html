@@ -932,7 +932,7 @@ const gn = {
       const cabecera = up.tipo === 'misma'
           ? '<p class="ojo">Ya tenés <b>exactamente este paquete</b>. Reinstalarlo solo repara la app; tu registro y tus interruptores quedan como están.</p>'
         : up.tipo === 'anterior'
-          ? '<p class="ojo"><b>Es más viejo que el que tenés</b>' + versiones + '. Volver atrás puede servir si la versión nueva falla; si no lo esperabas, «Ahora no».</p>'
+          ? '<p class="ojo"><b>Es más viejo que el que tenés</b>' + (up.versionada ? ': es la ' + esc(up.versionNueva) + ' y tenés la ' + esc(up.versionInstalada) : '') + '. Volver atrás puede servir si la versión nueva falla; si no lo esperabas, «Ahora no».</p>'
         : up.tipo === 'otro-contenido'
           ? '<p class="ojo"><b>Misma versión, contenido distinto.</b> La institución cambió el paquete sin subir la versión' + (up.versionada ? ' (' + esc(up.versionNueva) + ')' : '') + '. Abajo dice qué cambia.</p>'
           : '<p class="ojo suave"><b>Actualización</b>' + versiones + (up.versionada ? '' : '. La institución no versiona sus paquetes; Gnothi compara el contenido') + '. Tu registro y tus interruptores quedan como están.</p>';
