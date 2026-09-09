@@ -1504,12 +1504,12 @@ const MOCK = { modules: [
     name:'examenes', installedAt:'2026-09-09T14:05:00Z', title:'Mis exámenes', institution:'Laboratorio Clínico Delfos',
     slogan:'Tu salud, en tus manos', shortName:'Delfos', brand:{ color:'#0e2f55', logo:'../bundles/examenes/web/icon-192.png', banner:'../bundles/examenes/web/brand/banner.jpg' },
     enabled:true, journalBytes:2048, journalFiles:3, tools:[
-    { name:'revisar_mis_analitos', title:'How am I doing', enabled:true,
-      description:'Reviews every analyte the person has history for and returns the trend of each one.' },
-    { name:'evaluar_tendencia', title:'How one analyte is trending', enabled:true,
-      description:'Answers whether one analyte is going up, down or stable over its whole history.' },
-    { name:'velocidad_de', title:'How fast it is changing', enabled:true,
-      description:'Answers how fast an analyte has been changing, in units per year.' }]},
+    { name:'revisar_mis_analitos', title:'Cómo vengo', enabled:true,
+      description:'Revisa cada analito del que la persona tiene historia y dice cómo viene cada uno.' },
+    { name:'evaluar_tendencia', title:'Cómo viene un analito', enabled:true,
+      description:'Dice si un analito va subiendo, bajando o estable en toda su historia.' },
+    { name:'velocidad_de', title:'Qué tan rápido cambia', enabled:true,
+      description:'Dice qué tan rápido viene cambiando un analito, en unidades por año.' }]},
   {
     shortName:'Supermercado La Guaria', description:'Tu historial de compras, con tus garantías y lo que sueles llevar.',
     doesNotDo:'No te dice qué comer ni juzga tu canasta.',
@@ -1530,15 +1530,15 @@ const MOCK = { modules: [
     slogan:'Rendimiento real, tramo a tramo', shortName:'Faro', brand:{ color:'#0B3C49', logo:'../bundles/cargas/web/icon-192.png', banner:'../bundles/cargas/web/brand/banner.jpg', font:{ family:'Barlow', regular:'../bundles/cargas/web/brand/Barlow-600.woff2', bold:'' } },
     enabled:true, journalBytes:1210, journalFiles:3, tools:[
     { name:'resumen', title:'Como vengo', enabled:true, description:'Cuantas cargas y cuantos vehiculos tiene registrados.' }]},
-  { name:'dealership', installedAt:'2026-09-06T09:00:00Z', title:'My maintenance', institution:'Sotavento Motors',
-    slogan:'Care that keeps you moving', brand:{ color:'#1f3a5f', logo:'../bundles/dealership/web/icon-192.png', banner:'../bundles/dealership/web/brand/banner.jpg', font:{ family:'Sora', regular:'../bundles/dealership/web/brand/Sora-600.woff2', bold:'' } },
+  { name:'dealership', installedAt:'2026-09-06T09:00:00Z', title:'Mi plan de mantenimiento', institution:'Sotavento Motors',
+    slogan:'Tu carro, siempre listo', brand:{ color:'#1f3a5f', logo:'../bundles/dealership/web/icon-192.png', banner:'../bundles/dealership/web/brand/banner.jpg', font:{ family:'Sora', regular:'../bundles/dealership/web/brand/Sora-600.woff2', bold:'' } },
     enabled:true, journalBytes:980, journalFiles:3, tools:[
-    { name:'resumen', title:'How my car is doing', enabled:true, description:'How the vehicle stands right now.' }]},
+    { name:'resumen', title:'Cómo va mi carro', enabled:true, description:'Cómo está el vehículo ahora mismo.' }]},
   // A module WITHOUT a brand, on purpose: it is the fallback path, and it has to keep looking good.
-  { name:'facturas', installedAt:'2026-09-05T09:00:00Z', title:'My invoices', institution:'Súper El Triunfo', slogan:'Ahorro y calidad en un solo lugar',
+  { name:'facturas', installedAt:'2026-09-05T09:00:00Z', title:'Mis facturas', institution:'Súper El Triunfo', slogan:'Ahorro y calidad en un solo lugar',
     brand:{ color:'#C86B12', logo:'../bundles/facturas/web/brand/logo.png', banner:'../bundles/facturas/web/brand/banner.jpg', font:{ family:'Lora', regular:'../bundles/facturas/web/brand/Lora-700.woff2', bold:'' } },
     enabled:true, journalBytes:1650, journalFiles:3, signerKey:'facturas-202603', signerRevokedAt:'2026-09-09T12:00:00Z', tools:[
-    { name:'total_de_facturas', title:'Total spent', enabled:true, description:'Total of all invoices on record.' }]},
+    { name:'total_de_facturas', title:'Cuánto gasté en total', enabled:true, description:'El total de todas las facturas registradas.' }]},
 ], settings: { name:'Groq', provider:'api.groq.com', model:'openai/gpt-oss-120b', keyPresent:true, root:'/data/user/0/…/files/Modulos' } };
 
 // What a pasted link produces in the mock, so the proposal sheet -- review block included -- can

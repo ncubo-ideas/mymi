@@ -53,7 +53,8 @@ $ErrorActionPreference = 'Stop'
 $raiz = Split-Path -Parent $PSScriptRoot
 
 # LOS CUATRO MODULOS DEL POC. Cada institucion declara lo suyo; lo unico que comparten es la
-# forma. DealershipCar va en ingles porque el modulo entero esta en ingles.
+# forma. El concesionario tambien va en espanol: Kenneth paso su PWA a espanol el 2026-09-08 y la
+# tarjeta lo sigue (2026-09-09).
 $catalogo = @{
     'examenes' = @{
         Proyecto    = "$raiz/Examenes/App/Examenes.Wasm/Examenes.Wasm.csproj"
@@ -140,30 +141,30 @@ $catalogo = @{
     }
     'dealership' = @{
         Proyecto    = "$raiz/Concesionario/App/Concesionario.Wasm/Concesionario.Wasm.csproj"
-        Titulo      = 'Your maintenance'
+        Titulo      = 'Mi plan de mantenimiento'
         Institucion = 'Sotavento Motors'
         Marca       = 'Sotavento Motors'
-        Slogan      = 'Care that keeps you moving'
+        Slogan      = 'Tu carro, siempre listo'
         Color       = '#1f3a5f'
         Fuente      = @{ family = 'Sora'; file = 'web/brand/Sora-600.woff2' }
         Rubro       = 'taller'
-        Descripcion = 'Your vehicle maintenance schedule and what is due.'
+        Descripcion = 'El plan de mantenimiento de tu vehiculo y lo que le toca.'
         NoHace      = ''
         Dominio     = 'sotavento.com'
         RazonSocial = 'Sotavento Motors Inc.'
         Cedula      = ''
         Version     = '3.1.0'
-        Retencion   = '10 years'
-        Tamano      = '~2 MB/year'
-        Refresco    = 'when the app opens'
+        Retencion   = '10 anos'
+        Tamano      = '~2 MB al ano'
+        Refresco    = 'al abrir la app'
         Recurso     = 'vehicle'
         Id          = '1HGCM82633A004352'
         Puerto      = 8092
         Tools       = @(
-            @{ name = 'resumen'; title = 'How my car is doing'
-               description = 'How the vehicle stands right now: how many maintenance operations are due, overdue and missed, and up to which dealership event the app has read.' },
-            @{ name = 'hasta_donde_leyo'; title = 'How up to date this is'
-               description = 'How far the app has read the dealership record and up to what instant the schedule was evaluated. If it goes up between two calls, new facts came in.' }
+            @{ name = 'resumen'; title = 'Como va mi carro'
+               description = 'Como esta el vehiculo ahora mismo: cuantas operaciones de mantenimiento estan por vencer, vencidas y no hechas, y hasta que evento del concesionario leyo la app.' },
+            @{ name = 'hasta_donde_leyo'; title = 'Que tan al dia esta esto'
+               description = 'Hasta donde leyo la app el registro del concesionario y hasta que instante se evaluo el plan. Si sube entre dos llamadas, entraron hechos nuevos.' }
         )
     }
 }
