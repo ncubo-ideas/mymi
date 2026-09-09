@@ -485,13 +485,15 @@ public sealed class Shell : IDisposable
 	}
 
 	// LA PERSONA ACEPTO. Recien aca el modulo existe.
-	private string AcceptEnrollment()
+	// `acceptNewPublisher`: on an update whose manifest moved the publisher's endpoint, whether she
+	// said yes to the new one on the sheet. Otherwise the endpoint Gnothi fixed stays.
+	private string AcceptEnrollment(bool acceptNewPublisher = false)
 	{
 		if (proposal is null || enrolling is null) return "{}";
 
 		try
 		{
-			string module = enrolling.Accept(proposal);
+			string module = enrolling.Accept(proposal, acceptNewPublisher);
 			proposal = null;
 
 			// El catalogo se relee entero -- y con eso se comprueba el modulo nuevo.
@@ -635,6 +637,36 @@ public sealed class Shell : IDisposable
 		refresco = p.Manifest.Journal?.Updates ?? "",
 
 		yaEstaba = p.AlreadyThere,
+
+		// WHAT THIS PACKAGE IS NEXT TO WHAT SHE HAS (Gnothi.Host/UpdatePlan.cs), by name, so the
+		// sheet says "update from 2.4.0 to 2.5.0" and lists the change instead of "you already
+		// have this". Null the first time.
+		actualizacion = p.Update.Kind == UpdateKind.Fresh ? null : new
+		{
+			tipo = p.Update.Kind switch
+			{
+				UpdateKind.Same => "misma",
+				UpdateKind.Downgrade => "anterior",
+				UpdateKind.SameVersionOtherContent => "otro-contenido",
+				_ => "actualizacion",
+			},
+			versionada = p.Update.Versioned,
+			versionInstalada = p.Update.InstalledVersion,
+			versionNueva = p.Update.IncomingVersion,
+			consultasNuevas = p.Update.NewTools.Select(t => new { nombre = t.Name, titulo = t.Title }).ToArray(),
+			consultasQuitadas = p.Update.RemovedTools.Select(t => new { nombre = t.Name, titulo = t.Title }).ToArray(),
+			capacidadesNuevas = p.Update.NewCapabilities,
+			publicadorCambia = p.Update.PublisherChanged,
+			publicadorInstalado = p.Update.InstalledPublisher,
+			publicadorNuevo = p.Update.IncomingPublisher,
+			origenCambia = p.Update.OriginChanged,
+			origenInstalado = p.Update.InstalledOrigin,
+			origenNuevo = p.Update.IncomingOrigin,
+			registroCambia = p.Update.JournalChanged,
+			sustratoCambia = p.Update.SubstrateChanged,
+			sustratoNuevo = p.Update.IncomingSubstrate,
+			hayCambios = p.Update.HasVisibleChanges,
+		},
 		tools = p.Manifest.Tools.Select(t => new { nombre = t.Name, titulo = t.Title, descripcion = t.Description }),
 
 		// WHERE IT CAME FROM: which way in, which host answered, whether the package still
@@ -723,6 +755,11 @@ public sealed class Shell : IDisposable
 		PackageKeyRevokedException =>
 			"El paquete viene firmado con una llave que tu institución retiró: no se instala. Pedile un paquete nuevo.",
 
+		// Another institution's package under the name of a module she has: refused, no sheet.
+		PackageCollisionException col =>
+			$"Ya tenés un módulo llamado «{col.Module}», de {(col.InstalledInstitution.Length > 0 ? col.InstalledInstitution : "otra institución")}. "
+			+ $"Este paquete dice ser de {(col.IncomingInstitution.Length > 0 ? col.IncomingInstitution : "otra institución")} y no se instala. Si es el mismo, pedile a tu institución su enlace actual.",
+
 		// The origin contradicts the package: refused, no sheet. Which contradiction, in her words.
 		PackageNotBackedException nb => nb.Origin == OriginCheck.DeclaresAnother
 			? "El paquete dice ser de otro origen del que lo sirvió: no se instala. Pedile a tu institución su enlace."
@@ -801,7 +838,7 @@ public sealed class Shell : IDisposable
 				// LOS DOS VERBOS DEL ALTA. Estaban interceptados en cada plataforma porque la
 				// propuesta era estado de su pantalla; ahora que vive aca, los puentes se
 				// quedan con lo que de verdad necesita pantalla y nada mas.
-				"altaAceptar" => AcceptEnrollment(),
+				"altaAceptar" => AcceptEnrollment(req.TryGetProperty("publicadorNuevo", out JsonElement pn) && pn.ValueKind == JsonValueKind.True),
 				"altaDescartar" => DiscardEnrollment(),
 
 				// THE LINK FROM INSIDE GNOTHI: pasted by hand, or read off the institution's

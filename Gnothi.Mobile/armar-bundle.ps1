@@ -38,6 +38,7 @@ param(
     [string] $Origen     = '',        # the origin that serves the bundle (scheme://host:port); goes into the manifest as "origin"
     [string] $Llave      = '',        # the institution's signing key file; created on first use. Default: <Salida>/.keys/<Modulo>.key.json
     [string] $Salida     = '',        # por omision: <Gnothi.Mobile>/bundles
+    [string] $Version    = '',        # overrides the catalog's publisher.version, to rehearse an UPDATE of an installed module
 
     # REESCRIBIR SOLO EL MANIFIESTO Y EL LOGO, sobre un bundle YA armado, y rezipear.
     #
@@ -271,7 +272,7 @@ $manifiesto = [ordered]@{
         domain    = $m.Dominio
         legal     = $m.RazonSocial
         taxId     = $m.Cedula
-        version   = $m.Version
+        version   = if ($Version) { $Version } else { $m.Version }
         released  = (Get-Date -Format 'yyyy-MM-dd')
     }
     '//about'     = 'QUE ES, EN PALABRAS PARA LA PERSONA. Las descripciones de las tools estan escritas para el modelo; esto es lo primero del manifiesto escrito para quien lo lee.'

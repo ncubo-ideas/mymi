@@ -240,6 +240,9 @@
        background:var(--accent-soft);color:var(--accent-ink)}
   .hallazgo .tag.ok{background:#E6F6EC;color:#1D6B39}
   .hallazgo .tag.no{background:var(--off-soft);color:var(--off)}
+  .ojo.suave{background:var(--accent-soft);color:var(--accent-ink)}
+  .osheet label.chk{display:flex;align-items:center;gap:8px;margin-top:8px;font-size:13px;font-weight:600;color:var(--ink)}
+  .osheet label.chk input{width:18px;height:18px;margin:0;accent-color:var(--accent)}
   .osheet{position:fixed;inset:0;background:rgba(36,31,61,.45);display:none;
        align-items:flex-end;z-index:9}
   .osheet.on{display:flex}
@@ -829,7 +832,9 @@ const gn = {
     document.getElementById('pr-h').innerHTML =
       iconOf({ name: p.modulo, brand: p.brand })
       + '<div><b>' + esc(p.institucion || p.titulo) + '</b>'
-      + '<small>' + esc((p.yaEstaba ? 'Reinstalar ' : 'Agregar ') + p.titulo) + '</small></div>';
+      + '<small>' + esc((p.actualizacion && p.actualizacion.tipo === 'actualizacion' ? 'Actualizar '
+                         : p.actualizacion && p.actualizacion.tipo === 'anterior' ? 'Volver a una versión anterior de '
+                         : p.yaEstaba ? 'Reinstalar ' : 'Agregar ') + p.titulo) + '</small></div>';
 
     const tools = (p.tools || []).map(t =>
       '<li><b>' + esc(t.titulo || t.nombre) + '</b><br><small>' + esc(t.descripcion) + '</small></li>').join('');
@@ -917,6 +922,41 @@ const gn = {
     // THE PUBLISHER'S IDENTITY, from the brand line: legal name, tax id, version, and the domain it
     // DECLARES next to the host that served it. Three states, like the detail: coincide, no
     // coincide, and nothing to compare -a file came from no server- which is said, not painted.
+    // WHAT THIS PACKAGE IS NEXT TO WHAT SHE HAS, when she has it: the same, newer, older, or the same
+    // version over other content. It lists the CHANGE -queries, capabilities, publisher, origin,
+    // journal, substrate- not the module again, and says what stays hers: the journal and the
+    // switches. The publisher's endpoint only moves with her own yes, the checkbox below.
+    const up = p.actualizacion;
+    const cambio = !up ? '' : (() => {
+      const versiones = up.versionada ? ' de <b>' + esc(up.versionInstalada) + '</b> a <b>' + esc(up.versionNueva) + '</b>' : '';
+      const cabecera = up.tipo === 'misma'
+          ? '<p class="ojo">Ya tenés <b>exactamente este paquete</b>. Reinstalarlo solo repara la app; tu registro y tus interruptores quedan como están.</p>'
+        : up.tipo === 'anterior'
+          ? '<p class="ojo"><b>Es más viejo que el que tenés</b>' + versiones + '. Volver atrás puede servir si la versión nueva falla; si no lo esperabas, «Ahora no».</p>'
+        : up.tipo === 'otro-contenido'
+          ? '<p class="ojo"><b>Misma versión, contenido distinto.</b> La institución cambió el paquete sin subir la versión' + (up.versionada ? ' (' + esc(up.versionNueva) + ')' : '') + '. Abajo dice qué cambia.</p>'
+          : '<p class="ojo suave"><b>Actualización</b>' + versiones + (up.versionada ? '' : '. La institución no versiona sus paquetes; Gnothi compara el contenido') + '. Tu registro y tus interruptores quedan como están.</p>';
+      const nombres = ts => ts.map(t => esc(t.titulo || t.nombre)).join(', ');
+      const items = [];
+      if (up.consultasNuevas.length)  items.push('<b>Consultas nuevas:</b> ' + nombres(up.consultasNuevas) + '.<small>Entran encendidas: las estás aceptando con esta hoja.</small>');
+      if (up.consultasQuitadas.length) items.push('<b>Consultas que ya no están:</b> ' + nombres(up.consultasQuitadas) + '.');
+      if (up.capacidadesNuevas.length) items.push('<b>Ahora pide más:</b> ' + esc(up.capacidadesNuevas.join(', ')) + '.<small>Se instala apagado. Vos decidís si lo encendés.</small>');
+      if (up.publicadorCambia) items.push('<b>Cambia a dónde habla:</b> de <code>' + esc(up.publicadorInstalado || '(nada)') + '</code> a <code>' + esc(up.publicadorNuevo || '(nada)') + '</code>.'
+        + '<small>Gnothi conserva la dirección de antes salvo que aceptés la nueva.</small>'
+        + '<label class="chk"><input type="checkbox" id="pr-publicador"> Aceptar la dirección nueva</label>');
+      if (up.origenCambia) items.push('<b>Cambia el origen que declara:</b> de ' + esc(up.origenInstalado || '(ninguno)') + ' a ' + esc(up.origenNuevo || '(ninguno)') + '.');
+      if (up.registroCambia) items.push('<b>Cambia lo que promete sobre tu registro</b> (retención, tamaño o frecuencia): abajo está lo nuevo.');
+      if (up.sustratoCambia) items.push('<b>Pide otro sustrato:</b> ' + esc(up.sustratoNuevo || '(ninguno)') + '.');
+      const lista = items.length
+        ? '<p><b>Qué cambia</b></p><ul class="pr-tools">' + items.map(i => '<li>' + i + '</li>').join('') + '</ul>'
+        : up.tipo === 'misma' ? '' : '<p><b>Qué cambia</b><br><small>Nada de lo que Gnothi compara: consultas, capacidades, publicador, origen, registro. Cambia la app adentro.</small></p>';
+      // The button says what it does.
+      document.querySelector('#propuesta button.cta').textContent =
+        up.tipo === 'actualizacion' ? 'Actualizar' : up.tipo === 'anterior' ? 'Volver a esa versión' : 'Reinstalar';
+      return cabecera + lista;
+    })();
+    if (!up) document.querySelector('#propuesta button.cta').textContent = 'Instalar en mi teléfono';
+
     const veredicto = p.coincide === true ? 'ok' : p.coincide === false ? 'duda' : 'dice';
     const proc = (p.dominio || p.razonSocial)
       ? '<div class="proc ' + veredicto + '">'
@@ -936,7 +976,7 @@ const gn = {
       : '';
 
     document.getElementById('pr-cuerpo').innerHTML =
-      (p.yaEstaba ? '<p class="ojo">Ya tenés este módulo. Reinstalarlo reemplaza su app; su registro se conserva.</p>' : '')
+      cambio
       + alerta
       + proc
       + (p.descripcion
@@ -963,7 +1003,13 @@ const gn = {
     document.getElementById('propuesta').classList.add('on');
   },
 
-  altaAceptar()   { document.getElementById('propuesta').classList.remove('on'); gn.call('altaAceptar'); },
+  // On an update that moved the publisher's endpoint, the checkbox on the sheet is her yes to the
+  // move; without it Gnothi keeps the endpoint it fixed the first time.
+  altaAceptar()   {
+    const publicadorNuevo = !!(document.getElementById('pr-publicador') || {}).checked;
+    document.getElementById('propuesta').classList.remove('on');
+    gn.call('altaAceptar', { publicadorNuevo });
+  },
   altaDescartar() { document.getElementById('propuesta').classList.remove('on'); gn.propuesta = null; gn.call('altaDescartar'); },
 
   // THE WAY IN THAT STARTS INSIDE GNOTHI: the person pastes the link her institution gave her.
@@ -1591,7 +1637,20 @@ function mock(op, x) {
     const procedencia = { origen: x.via === 'qr' ? 'qr' : 'pegado', servido: host, sello: /[?&]h=/.test(x.url || ''),
       respaldo: evil ? 'otro-origen' : 'verificado', seguro: true, origenDeclarado: 'https://estaciones-faro.cr',
       firma: evil ? 'cambiada' : 'publicada', firmante: evil ? 'alguien-202609' : 'estaciones-faro-202609', firmaDesde: evil ? '' : '2026-09-01T12:00:00Z' };
-    setTimeout(() => gn.push('propuesta', '', JSON.stringify(Object.assign({}, MOCK_PROPUESTA, { procedencia }))), 1100);
+    // A link with "v2" in it rehearses an UPDATE of a module she has; "viejo", going back to an
+    // older version. Shape mirrors Shell.PushProposal's `actualizacion`.
+    const up = /v2/.test(x.url || '')
+      ? { tipo: 'actualizacion', versionada: true, versionInstalada: '2.4.0', versionNueva: '2.5.0',
+          consultasNuevas: [{ nombre: 'garantias_por_vencer', titulo: 'Garantías por vencer' }], consultasQuitadas: [],
+          capacidadesNuevas: [], publicadorCambia: true, publicadorInstalado: 'https://estaciones-faro.cr/eventos/cliente/1', publicadorNuevo: 'https://api.estaciones-faro.cr/eventos/cliente/1',
+          origenCambia: false, origenInstalado: 'https://estaciones-faro.cr', origenNuevo: 'https://estaciones-faro.cr', registroCambia: true, sustratoCambia: false, sustratoNuevo: '', hayCambios: true }
+      : /viejo/.test(x.url || '')
+      ? { tipo: 'anterior', versionada: true, versionInstalada: '2.4.0', versionNueva: '2.3.0',
+          consultasNuevas: [], consultasQuitadas: [{ nombre: 'rendimiento_vs_habitual', titulo: 'Cómo viene el rendimiento' }],
+          capacidadesNuevas: [], publicadorCambia: false, publicadorInstalado: '', publicadorNuevo: '', origenCambia: false, origenInstalado: '', origenNuevo: '',
+          registroCambia: false, sustratoCambia: false, sustratoNuevo: '', hayCambios: true }
+      : null;
+    setTimeout(() => gn.push('propuesta', '', JSON.stringify(Object.assign({}, MOCK_PROPUESTA, { procedencia, yaEstaba: !!up, actualizacion: up }))), 1100);
     return 'ok';
   }
   if (op === 'setTool')   { const m = MOCK.modules.find(m => m.name === x.module);

@@ -206,6 +206,16 @@ terminal con `adb logcat -s GNOTHI:I gnothi:I` para las líneas que se citan.
    la conduce con toques reales. El selector de documentos es nativo y no se conduce desde ahí: la lista
    del paso 5 se prueba a mano, o en la maqueta del escritorio (`Herramientas/servir-la-cara.mjs`, botón
    «Agregar» → «Elegir archivos»). Las trampas del emulador están en §4.
+9. **Actualizar un módulo.** Apagá una consulta de Delfos en su detalle. Publicá una versión nueva sin
+   rearmar la app: `.\armar-bundle.ps1 -Modulo examenes -SoloManifiesto -Version 2.5.0 -Publicador
+   http://127.0.0.1:8095/ -Origen http://127.0.0.1:8096` (la página lee bundle y sello en cada pedido).
+   Pegá el enlace de nuevo: la hoja abre con *Actualización de 2.4.0 a 2.5.0. Tu registro y tus interruptores
+   quedan como están*, lista «Qué cambia» —o dice *Nada de lo que Gnothi compara… cambia la app adentro*— y
+   el botón dice **Actualizar**. Después, en `installation.json`: `version: 2.5.0` y la consulta apagada
+   sigue apagada. Log: `alta: 'examenes': update 2.4.0 -> 2.5.0`. Pegá el mismo enlace otra vez: *Ya tenés
+   exactamente este paquete* y el botón dice «Reinstalar». Con `-Version 2.3.0`: *Es más viejo que el que
+   tenés* y «Volver a esa versión». Si el manifiesto nuevo cambia el `publicador`, la hoja lo dice con la
+   casilla «Aceptar la dirección nueva»: sin marcarla, Gnothi conserva la fijada.
 
 ---
 

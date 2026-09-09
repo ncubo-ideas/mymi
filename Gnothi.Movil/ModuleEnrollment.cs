@@ -181,6 +181,16 @@ internal sealed class PackageNotBackedException(OriginCheck origin, string messa
 	public OriginCheck Origin { get; } = origin;
 }
 
+// The package carries the name of a module already installed, and it is not that module: another
+// institution under the same name. Not an update, not a reinstall: refused before any sheet, so a
+// stranger's package can never replace what she has (NotasGnothiHost/44 §2).
+internal sealed class PackageCollisionException(string module, string installedInstitution, string incomingInstitution, string message) : InvalidOperationException(message)
+{
+	public string Module { get; } = module;
+	public string InstalledInstitution { get; } = installedInstitution;
+	public string IncomingInstitution { get; } = incomingInstitution;
+}
+
 internal sealed class ModuleEnrollment
 {
 	// A module's bundle weighs about 11 MB measured. This ceiling is not an optimisation: it is
@@ -236,8 +246,7 @@ internal sealed class ModuleEnrollment
 	// THE SEAL: the first 16 bytes of the SHA-256 of manifest.json exactly as it sits in the
 	// zip, base64url without padding. PaginaDeLaInstitucion computes the same thing for its
 	// link, over the same bytes; neither side normalises anything, so they agree byte for byte.
-	internal static string SealOf(byte[] manifestBytes)
-		=> Convert.ToBase64String(SHA256.HashData(manifestBytes), 0, 16).TrimEnd('=').Replace('+', '-').Replace('/', '_');
+	internal static string SealOf(byte[] manifestBytes) => PackageSeal.Of(manifestBytes);
 
 	// THE ORIGIN CHECK, over what was fetched: the bundle's address, what its origin publishes
 	// (null when it publishes nothing readable) and the origin the manifest declares. Pure, so
@@ -437,7 +446,10 @@ internal sealed class ModuleEnrollment
 		OriginCheck origin = servedFrom is null ? OriginCheck.NoOrigin : VerifyOrigin(servedFrom, wellKnownJson, manifest.Origin);
 		RefuseIfRequired(origin, servedFrom?.Host ?? "", manifest.Origin ?? "", file: false);
 
-		(SignerCheck signer, PackageSigner? pin, bool sameKey) = ResolveSigner(signature, wellKnownJson, ReadPin(manifest.Module), DateTimeOffset.UtcNow);
+		(Manifest? installed, string? installedSeal, Installation? prior) = ReadInstalled(manifest.Module);
+		UpdatePlan update = PlanAgainstInstalled(installed, installedSeal, prior, manifest, seal, signature);
+
+		(SignerCheck signer, PackageSigner? pin, bool sameKey) = ResolveSigner(signature, wellKnownJson, prior?.Signer, DateTimeOffset.UtcNow);
 		RefuseIfRevoked(signer, signature);
 
 		var provenance = new Provenance(source, servedFrom?.Host ?? "",
@@ -449,7 +461,7 @@ internal sealed class ModuleEnrollment
 			SignerId: signature.KeyId,
 			SignedSince: sameKey ? pin!.Since : "");
 
-		return Propose(zip, manifest, inspection, provenance, pin);
+		return Propose(zip, manifest, inspection, provenance, pin, update, prior);
 	}
 
 	// A FILE. No address was involved, so there is no origin to compare with and no seal from a
@@ -476,7 +488,10 @@ internal sealed class ModuleEnrollment
 		}
 		RefuseIfRequired(origin, fileName, manifest.Origin ?? "", file: true);
 
-		(SignerCheck signer, PackageSigner? pin, bool sameKey) = ResolveSigner(signature, published, ReadPin(manifest.Module), DateTimeOffset.UtcNow);
+		(Manifest? installed, string? installedSeal, Installation? prior) = ReadInstalled(manifest.Module);
+		UpdatePlan update = PlanAgainstInstalled(installed, installedSeal, prior, manifest, seal, signature);
+
+		(SignerCheck signer, PackageSigner? pin, bool sameKey) = ResolveSigner(signature, published, prior?.Signer, DateTimeOffset.UtcNow);
 		RefuseIfRevoked(signer, signature);
 
 		var provenance = new Provenance(EnrollmentSource.File, fileName,
@@ -488,7 +503,20 @@ internal sealed class ModuleEnrollment
 			SignerId: signature.KeyId,
 			SignedSince: sameKey ? pin!.Since : "");
 
-		return Propose(zip, manifest, inspection, provenance, pin);
+		return Propose(zip, manifest, inspection, provenance, pin, update, prior);
+	}
+
+	// WHAT THIS PACKAGE IS NEXT TO WHAT IS INSTALLED UNDER ITS NAME (Gnothi.Host/UpdatePlan.cs):
+	// the same, newer, older, or somebody else's. The last one is refused right here: another
+	// institution's package must never get as far as a sheet that offers to replace hers.
+	private static UpdatePlan PlanAgainstInstalled(Manifest? installed, string? installedSeal, Installation? prior, Manifest incoming, string seal, SignatureVerification signature)
+	{
+		UpdatePlan plan = UpdatePlan.Compare(installed, installedSeal, prior?.Signer, incoming, seal,
+			signature.State == SignatureState.Valid ? signature.Public : null);
+		if (plan.Kind == UpdateKind.Collision)
+			throw new PackageCollisionException(incoming.Module, plan.InstalledInstitution, plan.IncomingInstitution,
+				$"'{incoming.Module}' is already installed from '{plan.InstalledInstitution}'; this package says it is from '{plan.IncomingInstitution}'");
+		return plan;
 	}
 
 	// THE MIDDLE ROAD (NotasGnothiHost/43 §8, decided 2026-09-09): a contradiction is refused in every
@@ -551,17 +579,44 @@ internal sealed class ModuleEnrollment
 	}
 
 	// The key this module was accepted with last time, if it is installed and was signed.
-	private PackageSigner? ReadPin(string module)
+	private PackageSigner? ReadPin(string module) => ReadInstalled(module).installation?.Signer;
+
+	// WHAT IS INSTALLED UNDER THIS NAME, if anything: its manifest as the institution wrote it, the
+	// seal of that manifest, and Gnothi's installation with the switches and the pin. Null when the
+	// module is not there or its files cannot be read -then the incoming package is a first install
+	// as far as the comparison goes, and the rewrite is what it always was.
+	private (Manifest? manifest, string? seal, Installation? installation) ReadInstalled(string module)
 	{
-		string path = Path.Combine(modulesRoot, module, "installation.json");
-		if (!File.Exists(path)) return null;
-		try { return Installation.Read(path).Signer; }
-		catch (Exception) { return null; }
+		string folder = Path.Combine(modulesRoot, module);
+		if (!Directory.Exists(folder)) return (null, null, null);
+
+		Manifest? manifest = null;
+		string? seal = null;
+		Installation? installation = null;
+		try
+		{
+			string manifestPath = Path.Combine(folder, "manifest.json");
+			if (File.Exists(manifestPath))
+			{
+				byte[] bytes = File.ReadAllBytes(manifestPath);
+				manifest = JsonSerializer.Deserialize(bytes, HostJson.Default.Manifest);
+				seal = PackageSeal.Of(bytes);
+			}
+		}
+		catch (Exception) { /* unreadable manifest: compared as a first install */ }
+		try
+		{
+			string installationPath = Path.Combine(folder, "installation.json");
+			if (File.Exists(installationPath)) installation = Installation.Read(installationPath);
+		}
+		catch (Exception) { /* unreadable installation: nothing to keep */ }
+
+		return (manifest, seal, installation);
 	}
 
 	// The proposal, once everything is known: a refused package never gets here to be shown, and
 	// an accepted one is unpacked into a temporary folder that lives until she decides.
-	private EnrollmentProposal Propose(byte[] zip, Manifest manifest, PackageInspection inspection, Provenance provenance, PackageSigner? signer)
+	private EnrollmentProposal Propose(byte[] zip, Manifest manifest, PackageInspection inspection, Provenance provenance, PackageSigner? signer, UpdatePlan update, Installation? prior)
 	{
 		// A refused package never reaches the sheet: there is nothing to decide about a package
 		// that would not be installed anyway. The reasons are written to be read, and they are
@@ -576,7 +631,7 @@ internal sealed class ModuleEnrollment
 
 			string module = manifest.Module;
 			return new EnrollmentProposal(temporary, manifest, provenance, inspection,
-				Path.Combine(journalsRoot, module), Directory.Exists(Path.Combine(modulesRoot, module)), signer);
+				Path.Combine(journalsRoot, module), Directory.Exists(Path.Combine(modulesRoot, module)), signer, update, prior);
 		}
 		catch
 		{
@@ -589,7 +644,12 @@ internal sealed class ModuleEnrollment
 
 	// THE PERSON SAID YES. Only here does the module take up a place: its folder, its journal,
 	// its fixed endpoint -and the key it came signed with, remembered for next time.
-	internal string Accept(EnrollmentProposal proposal)
+	//
+	// ON AN UPDATE (NotasGnothiHost/44 §3) what she decided before stays hers: the switches she set
+	// are kept for the tools that survive, the ones that went are dropped, the new ones enter on
+	// -she accepted the sheet that listed them-, and the publisher's endpoint Gnothi fixed the first
+	// time does not move unless she said yes to the new one (`acceptNewPublisher`).
+	internal string Accept(EnrollmentProposal proposal, bool acceptNewPublisher = false)
 	{
 		string module = proposal.Manifest.Module;
 		string destination = Path.Combine(modulesRoot, module);
@@ -601,9 +661,19 @@ internal sealed class ModuleEnrollment
 		// The act records the HOST that served the bundle; a file came from no server, and there
 		// the act says so with an empty string rather than the file's name.
 		string servedBy = proposal.Provenance.Source == EnrollmentSource.File ? "" : proposal.Provenance.ServedBy;
-		WriteInstallation(destination, module, proposal.Manifest, proposal.Inspection.InstallEnabled, proposal.Signer, servedBy);
+
+		Installation? prior = proposal.Update.Kind == UpdateKind.Fresh ? null : proposal.Prior;
+		bool enabled = proposal.Inspection.InstallEnabled && (prior?.Enabled ?? true);
+		IReadOnlyList<string> disabledTools = prior is null ? []
+			: [.. prior.DisabledTools.Where(t => proposal.Manifest.Tools.Any(x => string.Equals(x.Name, t, StringComparison.Ordinal)))];
+		string? keptEndpoint = prior is not null && proposal.Update.PublisherChanged && !acceptNewPublisher && prior.Shell.Arguments.Count > 1
+			? prior.Shell.Arguments[1] : null;
+
+		WriteInstallation(destination, module, proposal.Manifest, enabled, disabledTools, keptEndpoint, proposal.Signer, servedBy);
 
 		log($"alta: '{module}' instalado en {destination}");
+		if (proposal.Update.Kind != UpdateKind.Fresh)
+			log($"alta: '{module}': {proposal.Update.Describe()}" + (keptEndpoint is null ? "" : "; el publicador fijado se conserva"));
 		return module;
 	}
 
@@ -766,10 +836,13 @@ internal sealed class ModuleEnrollment
 	//
 	// THE ACT (provenance) is what Gnothi SAW: the host that served the bundle -empty for a file,
 	// which came from no server-, when the person accepted, and which version. Written once.
-	private void WriteInstallation(string folder, string module, Manifest manifest, bool enabled, PackageSigner? signer, string servedBy)
+	//
+	// `keptEndpoint` is the publisher's endpoint fixed at an earlier install when the new manifest
+	// moved it and the person did not accept the move: what Gnothi fixed stays fixed.
+	private void WriteInstallation(string folder, string module, Manifest manifest, bool enabled, IReadOnlyList<string> disabledTools, string? keptEndpoint, PackageSigner? signer, string servedBy)
 	{
 		Publicador? p = manifest.Publicador;
-		string endpoint = p is null || p.Eventos.Length == 0 ? "" : $"{p.Eventos}|{p.Recurso}|{p.Id}";
+		string endpoint = keptEndpoint ?? (p is null || p.Eventos.Length == 0 ? "" : $"{p.Eventos}|{p.Recurso}|{p.Id}");
 
 		var installation = new
 		{
@@ -781,7 +854,7 @@ internal sealed class ModuleEnrollment
 			},
 			grantedFolder = Path.Combine(journalsRoot, module),
 			enabled,
-			disabledTools = Array.Empty<string>(),
+			disabledTools = disabledTools.ToArray(),
 
 			// EL ACTA DEL ALTA. De que host bajo el bundle -- que Gnothi VIO, nadie se lo
 			// declaro --, cuando la persona acepto, y que version acepto. Se escribe una vez y
@@ -836,8 +909,14 @@ internal sealed record EnrollmentProposal(
 	PackageInspection Inspection,
 	string JournalGoesTo,
 	bool AlreadyThere,
-	PackageSigner? Signer = null)
+	PackageSigner? Signer = null,
+	// What this package is next to what is installed under its name, and the installation it
+	// would replace -the switches and the endpoint to keep. Fresh, with no prior, the first time.
+	UpdatePlan? Update = null,
+	Installation? Prior = null)
 {
+	public UpdatePlan Update { get; init; } = Update ?? UpdatePlan.Fresh(Manifest);
+
 	// The host that answered the download -or the file's name-, for the log line the test scripts grep.
 	internal string ServedBy => Provenance.ServedBy;
 

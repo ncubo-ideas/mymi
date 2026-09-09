@@ -281,6 +281,79 @@ internal static class Enrollment
 			assert("a quick look at a module the inspection rejects keeps its name and says it would not install",
 				engineInCargo.IsModule && !engineInCargo.Installable && engineInCargo.Inspection!.Rejected, $"{engineInCargo.Inspection?.Rejections.Count}");
 
+			// ── updates: what a package is next to what is installed under its name ─────────
+
+			static string Versioned(string module, string version, string publisher, string institution, string? origin, params string[] tools) =>
+				"{ \"manifest\": \"1.1\", \"module\": \"" + module + "\", \"title\": \"Demo\", \"institution\": \"" + institution + "\", "
+				+ (origin is null ? "" : "\"origin\": \"" + origin + "\", ")
+				+ "\"publisher\": { \"domain\": \"delfos.cr\", \"version\": \"" + version + "\" }, "
+				+ "\"publicador\": { \"eventos\": \"" + publisher + "\", \"recurso\": \"expediente\", \"id\": \"1\" }, "
+				+ "\"tools\": [ " + string.Join(", ", tools.Select(t => "{ \"name\": \"" + t + "\", \"title\": \"" + t + "\", \"description\": \"d\", \"readOnly\": true, \"input\": [] }")) + " ] }";
+
+			byte[] v1 = Zip(("manifest.json", Versioned("actualizable", "1.0.0", "https://delfos.cr/eventos/", "Delfos", DelfosOrigin, "resumen", "viejo")), ("web/index.html", "<html>v1</html>"));
+			byte[] v2 = Zip(("manifest.json", Versioned("actualizable", "1.1.0", "https://delfos.cr/eventos2/", "Delfos", DelfosOrigin, "resumen", "nuevo")), ("web/index.html", "<html>v2</html>"));
+			byte[] v2b = Zip(("manifest.json", Versioned("actualizable", "1.1.0", "https://delfos.cr/eventos2/", "Delfos", DelfosOrigin, "resumen", "nuevo", "extra")), ("web/index.html", "<html>v2b</html>"));
+			byte[] ajeno = Zip(("manifest.json", Versioned("actualizable", "3.0.0", "https://otro.cr/eventos/", "Otro Laboratorio", null, "resumen")), ("web/index.html", "<html>x</html>"));
+
+			EnrollmentProposal first = enrolling.Examine(v1, EnrollmentSource.Link, Delfos);
+			assert("a first install plans as fresh", first.Update.Kind == UpdateKind.Fresh && !first.AlreadyThere, first.Update.Describe());
+			enrolling.Accept(first);
+
+			// She switches one query off, as the detail lets her.
+			string updatable = Path.Combine(root, "Modulos", "actualizable", "installation.json");
+			Installation before1 = Installation.Read(updatable);
+			File.WriteAllText(updatable, JsonSerializer.Serialize(before1 with { DisabledTools = ["resumen"] }, HostJson.Legible.Installation));
+
+			EnrollmentProposal same = enrolling.Examine(v1, EnrollmentSource.Link, Delfos);
+			assert("the very same package again is Same, and already there", same.Update.Kind == UpdateKind.Same && same.AlreadyThere, same.Update.Describe());
+			enrolling.Discard(same);
+
+			EnrollmentProposal up = enrolling.Examine(v2, EnrollmentSource.Link, Delfos);
+			assert("a newer version is an update, and the plan lists the change",
+				up.Update.Kind == UpdateKind.Update && up.Update.Versioned && up.Update.InstalledVersion == "1.0.0" && up.Update.IncomingVersion == "1.1.0"
+					&& up.Update.NewTools.Select(t => t.Name).SequenceEqual(["nuevo"]) && up.Update.RemovedTools.Select(t => t.Name).SequenceEqual(["viejo"])
+					&& up.Update.PublisherChanged && up.Update.InstalledPublisher.Contains("eventos/") && up.Update.IncomingPublisher.Contains("eventos2/")
+					&& !up.Update.OriginChanged && up.Update.HasVisibleChanges,
+				up.Update.Describe());
+			enrolling.Accept(up);
+			Installation after1 = Installation.Read(updatable);
+			assert("an update keeps her switches for the tools that survive and drops the ones that went",
+				after1.Enabled && after1.DisabledTools.SequenceEqual(["resumen"]), string.Join(",", after1.DisabledTools));
+			assert("the publisher's endpoint Gnothi fixed stays unless she accepts the new one",
+				after1.Shell.Arguments.Count > 1 && after1.Shell.Arguments[1].StartsWith("https://delfos.cr/eventos/|"), string.Join(" ", after1.Shell.Arguments));
+
+			EnrollmentProposal up2 = enrolling.Examine(v2b, EnrollmentSource.Link, Delfos);
+			assert("the same version over other content is said as such",
+				up2.Update.Kind == UpdateKind.SameVersionOtherContent && up2.Update.NewTools.Select(t => t.Name).SequenceEqual(["extra"]), up2.Update.Describe());
+			enrolling.Accept(up2, acceptNewPublisher: true);
+			Installation after2 = Installation.Read(updatable);
+			assert("with her yes the endpoint moves", after2.Shell.Arguments[1].StartsWith("https://delfos.cr/eventos2/|"), after2.Shell.Arguments[1]);
+
+			EnrollmentProposal back = enrolling.Examine(v1, EnrollmentSource.Link, Delfos);
+			assert("an older version is a downgrade, allowed and said",
+				back.Update.Kind == UpdateKind.Downgrade && back.Update.RemovedTools.Count == 2 && back.Update.NewTools.Select(t => t.Name).SequenceEqual(["viejo"]), back.Update.Describe());
+			enrolling.Discard(back);
+
+			try
+			{
+				enrolling.Examine(ajeno, EnrollmentSource.Link, Delfos);
+				assert("another institution's package under the same name is refused", false, "Examine returned a proposal");
+			}
+			catch (PackageCollisionException e)
+			{
+				assert("another institution's package under the same name is refused",
+					e.Module == "actualizable" && e.IncomingInstitution == "Otro Laboratorio" && e.InstalledInstitution == "Delfos", e.Message);
+			}
+
+			// The comparison alone, with no files.
+			assert("versions parse padded and tolerate a v prefix; garbage is null",
+				UpdatePlan.ParseVersion("v2.4") == new Version(2, 4, 0, 0) && UpdatePlan.ParseVersion("2.4.0-beta") == new Version(2, 4, 0, 0)
+					&& UpdatePlan.ParseVersion("") is null && UpdatePlan.ParseVersion("beta") is null, "");
+			assert("unversioned sides with different content are an update of unknown direction",
+				UpdatePlan.Compare(new Manifest { Module = "x", Institution = "A" }, "s1", null, new Manifest { Module = "x", Institution = "A" }, "s2", null) is { Kind: UpdateKind.Update, Versioned: false }, "");
+			assert("the pinned key settles who it is, whatever the names say",
+				UpdatePlan.Compare(new Manifest { Module = "x", Institution = "A" }, "s1", new PackageSigner { Public = "K" }, new Manifest { Module = "x", Institution = "B" }, "s2", "K").Kind != UpdateKind.Collision, "");
+
 			// ── the signature ────────────────────────────────────────────────────────────────
 
 			SigningKey key = PackageSignature.Generate("demo-202609");
