@@ -302,6 +302,51 @@ Tiene que decir `go.gnothi.app: approved`. Si dice `none`, corré:
 adb shell pm set-app-links --package com.ncubo.gnothi.host 2 go.gnothi.app
 ```
 
+### P2b · El alta desde el enlace pegado en Gnothi
+
+Desde el 2026-09-08 el alta también empieza **adentro** de Gnothi: la tarjeta «Agregar módulo»
+abre una hoja con un campo, la persona pega el enlace que le dio su institución —el de
+`go.gnothi.app/alta?bundle=…` o la dirección del bundle, los dos valen— y toca «Agregar» (o Enter).
+De ahí en adelante es el mismo camino que P2: la franja *Bajando el módulo de 127.0.0.1…*, la
+misma hoja de propuesta, y los dos actos. No necesita que `go.gnothi.app` esté aprobado, así que es
+la forma de probar el alta en un aparato donde el App Link no resuelve.
+
+**Qué tenés que ver de más en la hoja:** un bloque **«Lo que Gnothi revisó»**, que sale de la
+inspección del paquete (`Gnothi.Host/PackageInspector.cs`) y no de lo que la institución declara:
+
+- *Lo sirvió 127.0.0.1, del enlace que pegaste. Gnothi todavía no verifica que ese dominio sea el
+  de la institución* — la procedencia, dicha con su límite;
+- la forma y el peso: *Trae la app de la institución, publicada: 232 archivos, 19,4 MB. Con su
+  propio motor adentro (1,7 MB)*;
+- *No pide red, ni micrófono, ni parlante* — o, si pide, cuáles y que se instala **apagado**;
+- *Sin ejecutables ni datos de muestra adentro.*
+
+Un paquete que la inspección rechaza (motor propio en un cargo, un `.exe`, un `installation.json`
+adentro) no llega a la hoja: la franja lo dice y el log trae los motivos.
+
+**En el logcat** aparece un verbo nuevo del puente antes de la línea de siempre:
+
+```
+GNOTHI : bridge: alta
+GNOTHI : alta: bajando el bundle de 127.0.0.1
+GNOTHI : alta: propuesta de '<módulo>' servida por 127.0.0.1
+```
+
+**Sin manos, desde la máquina** — y sin capturas, que en el AVD G37 salen vacías. Node 22 o más:
+
+```bash
+node Gnothi.Mobile/conducir-el-alta.mjs pegar http://127.0.0.1:8096/examenes.zip
+node Gnothi.Mobile/conducir-el-alta.mjs instalar        # o descartar
+```
+
+Toca de verdad —`input tap` a coordenadas que lee de la página por CDP— y lee la pantalla como
+texto: imprime la hoja entera y la franja. `pantalla.mjs` es la pieza de abajo: evalúa una
+expresión adentro del WebView de la cáscara (`node Gnothi.Mobile/pantalla.mjs
+"gn.state.modules.length"`). Buscan adb en `$ADB`, `$ANDROID_HOME` o los SDK de siempre.
+**Medido el 2026-09-08 en el G37**: app limpia → enlace pegado → hoja con la inspección real →
+instalado, `comprobación matches:true`, `resumen` con 18 exámenes; y el enlace a un zip
+inexistente deja en pantalla *La dirección que dio tu institución ya no tiene el módulo*.
+
 ### P3 · El módulo corre hospedado, a pantalla completa
 
 Tocá la tarjeta del módulo, y después **«Abrir \<módulo\>»** — la fila que dice *la app de tu
@@ -759,6 +804,15 @@ Ojo: `pm clear` borra los módulos instalados **y** los journals. Y el publicado
 en memoria, así que reiniciarlo es lo que devuelve la cuenta a «no migrada».
 
 ---
+
+**Un toque automatizado cae en el teclado, o bajo el pliegue.** La ventana es `ADJUST_PAN`: con el
+teclado arriba la página se corre en pantalla pero `getBoundingClientRect` no, así que un `input tap`
+calculado desde la página cae sobre el teclado (y escribe una letra). Confirmá el campo con Enter
+(`input keyevent 66`). Y la hoja de propuesta es más alta que la pantalla: «Instalar» queda abajo,
+hay que deslizar la tarjeta antes de tocar. `conducir-el-alta.mjs` ya hace las dos cosas.
+
+**`INSTALL_FAILED_INSUFFICIENT_STORAGE` al instalar encima.** El `/data` del AVD G37 anda casi
+lleno; `pm uninstall com.ncubo.gnothi.host` y después `adb install` limpio.
 
 ## 5 · Lo que este guion NO puede probar
 
