@@ -57,13 +57,13 @@ namespace Municipalidad.Consola
 
 			DateTime consulta = new DateTime(2025, 9, 3);
 			Paso("la consulta del 3 de setiembre", api.RegistrarConsulta(consulta));
-			Paso("  pendiente basura 2025.09", api.AgregarPendiente(consulta, "recoleccion-de-basura", "2025.09", 24000m, 45m));
+			Paso("  pendiente basura 2025.09 -un mes: julio y agosto quedan sin comprobante-", api.AgregarPendiente(consulta, "recoleccion-de-basura", "2025.09", 8000m, 45m));
 			Paso("  pendiente policia 2025.09", api.AgregarPendiente(consulta, "servicio-policia", "2025.09", 18300m, 34m));
 			Paso("  pendiente bienes inmuebles 2025.03", api.AgregarPendiente(consulta, "bienes-inmuebles", "2025.03", 36000m, 0m));
 
 			Paso("al cobro basura 2025.10", api.PonerAlCobro("recoleccion-de-basura", "2025.10", 8000m, new DateTime(2025, 10, 1)));
 			Paso("al cobro basura 2025.10 otra vez", api.PonerAlCobro("recoleccion-de-basura", "2025.10", 8000m, new DateTime(2025, 10, 1)));
-			Paso("al cobro basura 2025.09, que el pendiente ya puso", api.PonerAlCobro("recoleccion-de-basura", "2025.09", 24000m, new DateTime(2025, 10, 1)));
+			Paso("al cobro basura 2025.09, que el pendiente ya puso", api.PonerAlCobro("recoleccion-de-basura", "2025.09", 8000m, new DateTime(2025, 10, 1)));
 			Paso("al cobro un trimestre que no existe", api.PonerAlCobro("bienes-inmuebles", "2025.05", 36000m, new DateTime(2025, 10, 1)));
 
 			Paso("la reserva que la persona adopto", api.AdoptarReserva(30000m, new DateTime(2025, 8, 1)));

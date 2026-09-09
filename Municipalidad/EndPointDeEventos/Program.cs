@@ -335,9 +335,10 @@ namespace Municipalidad.EventosMock
 
 		/// <summary>
 		/// La historia del demo, que es la misma que `medir` corre por la puerta: los dos alfabetos del
-		/// periodo, el salto de 2025 por tarifa en basura y por avaluo en bienes inmuebles, y la mora que
-		/// la municipalidad cobro. El encabezado de cada recibo va ANTES de sus lineas y la consulta antes
-		/// de sus pendientes, porque una linea sin encabezado se rechaza y no se reintenta.
+		/// periodo, el salto de 2025 por tarifa en basura y por avaluo en bienes inmuebles, la mora que
+		/// la municipalidad cobro, y el pendiente de basura que cubre un solo mes y deja julio y agosto
+		/// de 2025 pagados sin comprobante. El encabezado de cada recibo va ANTES de sus lineas y la
+		/// consulta antes de sus pendientes, porque una linea sin encabezado se rechaza y no se reintenta.
 		/// <para>
 		/// NINGUN INSTANTE SALE DE UN RELOJ. Lo que guiona una secuencia recibida no lee la hora: cada
 		/// fecha de aca es un literal, para que dos corridas sirvan la misma narrativa.
@@ -367,7 +368,7 @@ namespace Municipalidad.EventosMock
 			Linea(narrativa, "R-3", "bienes-inmuebles", "2025.02", 144000m, 470m);
 
 			Consulta(narrativa, "2025-09-03T00:00:00Z");
-			Pendiente(narrativa, "2025-09-03T00:00:00Z", "recoleccion-de-basura", "2025.09", 24000m, 45m);
+			Pendiente(narrativa, "2025-09-03T00:00:00Z", "recoleccion-de-basura", "2025.09", 8000m, 45m);
 			Pendiente(narrativa, "2025-09-03T00:00:00Z", "servicio-policia", "2025.09", 18300m, 34m);
 			Pendiente(narrativa, "2025-09-03T00:00:00Z", "bienes-inmuebles", "2025.03", 36000m, 0m);
 

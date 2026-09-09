@@ -180,7 +180,7 @@ namespace Municipalidad.InyectorDeEventosDemo
 			{
 				nombreDelRubro = "recoleccion-de-basura",
 				periodo = "2025.09",
-				monto = 24000m,
+				monto = 8000m,
 				puestoEl = "2025-10-01T00:00:00Z",
 			}, "al cobro un periodo que el pendiente de la consulta ya puso");
 
