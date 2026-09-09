@@ -228,6 +228,11 @@ terminal con `adb logcat -s GNOTHI:I gnothi:I` para las líneas que se citan.
     abre la misma hoja del paso 9 → **Actualizar** → la pastilla desaparece y `update` se va del archivo.
     Publicá una versión **menor** y relanzá: no hay pastilla (una vuelta atrás no es noticia). Sin capturas:
     `node Gnothi.Mobile/pantalla.mjs "gn.state.modules.find(m=>m.name==='examenes').updateAvailable"`.
+    La revisión se repite al volver al frente y al salir de un módulo con «atrás», a lo sumo **una vez por
+    hora**: mandá Gnothi atrás (`adb shell input keyevent 3`) y volvé a abrirla; el log dice `revisión: la
+    última consulta a los orígenes fue hace poco; la próxima, en 59 min`. Una hora después
+    de la última, el mismo gesto vuelve a consultar y la pastilla aparece sin relanzar. Adentro del módulo Gnothi
+    no muestra nada: el aviso vive en la tarjeta.
 
 ---
 

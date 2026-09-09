@@ -298,8 +298,9 @@ la lista publica `version` junto al sello de cada módulo, y la revisión del or
 Si lo publicado es mayor, lo anota en `installation.json` (`update`: versión, bundle, sello y cuándo se
 vio) y la tarjeta lo dice. Es una **nota, no una acción**: nada baja ni se instala hasta que la persona
 toca la tarjeta, y entonces el paquete pasa por la misma hoja de actualizar. Una versión publicada menor
-no se anuncia, y al instalar lo publicado la nota se va. Lo que falta de la nota 44: la instalación con
-vuelta atrás, y quitar un módulo.
+no se anuncia, y al instalar lo publicado la nota se va. La revisión se repite cuando Gnothi vuelve al frente o
+se cierra un módulo, a lo sumo una vez por hora (`ReviewSchedule`); adentro del módulo Gnothi no pinta nada, el
+aviso vive en la tarjeta. Lo que falta de la nota 44: la instalación con vuelta atrás, y quitar un módulo.
 
 ## Pendientes
 

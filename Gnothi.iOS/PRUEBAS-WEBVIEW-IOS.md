@@ -631,7 +631,9 @@ dé por verificado.
 `BundleResource` de `Assets/fonts` y `Assets/img`), `Info.plist` (`NSCameraUsageDescription`,
 `CFBundleDocumentTypes`, `UTExportedTypeDeclarations`), `ViewController.cs` (`RequestMediaCapturePermission`
 en el `Bridge`, `PickModuleFiles`, `HandleFile`, `LeerDocumento`, `pendingFiles`) y `AppDelegate.OpenUrl`
-(`file://` → `HandleFile`). Se escribieron en Windows mirando `MainActivity.cs`, que sí está medido, y
+(`file://` → `HandleFile`), más el observador de `WillEnterForegroundNotification` en `ViewDidLoad` y la llamada a
+`shell.ReviewOriginsIfDue()` en `Soltar()` (nota 44, paso 2b: volver a mirar los orígenes al volver al frente, a lo
+sumo una vez por hora). Se escribieron en Windows mirando `MainActivity.cs`, que sí está medido, y
 los bindings de .NET para iOS. Si algo no compila, va a ser una firma de binding; el comportamiento
 esperado está en P6b a P6e.
 

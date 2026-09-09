@@ -30,6 +30,7 @@
          extraer el icono para NO tocar codigo compartido solo por el test: mover un metodo que
          iOS y Android compilan es mas riesgo que compilar un archivo de mas aca. -->
     <Compile Include="..\Gnothi.Movil\Shell.cs" Link="Shell.cs" />
+    <Compile Include="..\Gnothi.Movil\ReviewSchedule.cs" Link="ReviewSchedule.cs" />
 
     <!-- Y ModuleEnrollment con Shell, porque el alta se mudo ahi: la propuesta en curso dejo
          de ser estado de cada pantalla. Esta linea la pidio el compilador y no una decision,

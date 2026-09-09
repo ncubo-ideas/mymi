@@ -36,6 +36,7 @@ public sealed class ViewController : UIViewController
 	private WKWebView? web;
 	private Shell? shell;
 	private IosWebModuleHost? moduleHost;
+	private NSObject? foregroundWatch;   // keeps the WillEnterForeground observer alive with this controller
 
 	// EL MODULO QUE LA PERSONA ESTA MIRANDO, y el boton para salir de el. Los dos son de esta
 	// clase y no del Shell: el Shell no sabe que existe una pantalla, y esa es la linea que
@@ -47,6 +48,12 @@ public sealed class ViewController : UIViewController
 	public override void ViewDidLoad()
 	{
 		base.ViewDidLoad();
+
+		// GNOTHI CAME BACK TO THE FRONT, the twin of OnResume on Android: the origins are asked again
+		// if it has been a while -the shell caps it at one review an hour, and the launch review
+		// counts. The shell may not exist yet when this is registered; it is read when it fires.
+		foregroundWatch = NSNotificationCenter.DefaultCenter.AddObserver(
+			UIApplication.WillEnterForegroundNotification, _ => shell?.ReviewOriginsIfDue());
 
 		var config = new WKWebViewConfiguration();
 		// LA MARCA QUE LA PAGINA BUSCA. ui.html hace navigator.userAgent.includes('GnothiHost')
@@ -380,6 +387,9 @@ public sealed class ViewController : UIViewController
 		enPantalla = null;
 		enPantallaNombre = null;
 		enPantallaVc = null;
+
+		// The home is on screen again, whichever way the module went: same question, same cap.
+		shell?.ReviewOriginsIfDue();
 	}
 
 	// El gesto de arrastrar el sheet hacia abajo no pasa por Cerrar(): llega por aca.
