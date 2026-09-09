@@ -4,18 +4,26 @@
 
 @*  LA FORMA DE LA HEMOGLOBINA: dónde caés dentro de una banda con piso Y techo.
 
+    RONDA 13: la pista pasa de dos rectángulos plano gris/verde a la MISMA pista continua
+    verde→amarillo→rojo que el resto de la app ya usa para "rango de referencia", pero con
+    sus tramos calculados desde EL PISO Y EL TECHO REALES -nunca un degradé fijo por
+    porcentaje-: el verde cubre EXACTAMENTE el tramo [piso, techo] que el dominio marca
+    como esperado, y el amarillo/rojo sólo aparecen FUERA de esa banda (más rojo cuanto
+    más lejos). Así un valor real adentro de la banda SIEMPRE cae en zona verde -nunca en
+    una franja amarilla decorativa que no le corresponde-, y si no hay banda que dibujar
+    (Piso o Techo ausentes) no hay "afuera" que marcar: la pista entera queda verde en vez
+    de inventar un degradé sin base real.
+
     Es el único analito del demo al que le conviene quedarse quieto: alejarse es peor en
     las dos direcciones. Por eso su dibujo no es una flecha ni un progreso — es una
     posición.                                                                            *@
 
 <div class="forma forma--banda">
-    <svg viewBox="0 0 320 52" role="img" aria-label="@Descripcion">
-        <rect x="12" y="18" width="296" height="16" rx="3" class="fuera" />
-        <rect x="@Izquierda" y="18" width="@Ancho" height="16" rx="3" class="dentro" />
-
-        <line x1="@Marca" y1="10" x2="@Marca" y2="42"
-              class="@(Dentro ? "aguja" : "aguja aguja--fuera")" />
-    </svg>
+    <p class="detalle-rango-rotulo">Rango de referencia</p>
+    <div class="detalle-rango-pista" style="background:@Gradiente">
+        <div class="detalle-rango-marca @(Dentro ? "detalle-rango-marca--dentro" : "detalle-rango-marca--fuera")"
+             style="left:@(Marca)%"></div>
+    </div>
 
     <div class="forma-pie forma-pie--extremos">
         <span class="forma-nota">@Numero(Piso?.Valor ?? 0) @Unidad</span>
@@ -39,26 +47,43 @@
         && Actual >= Piso.Valor && Actual <= Techo.Valor;
 
     // El eje muestra la banda con aire a los lados, para que un valor por fuera se vea
-    // FUERA y no pegado al borde.
+    // FUERA y no pegado al borde. Mismo criterio que antes de esta ronda.
     private decimal Minimo => (Piso?.Valor ?? Actual) - Aire;
     private decimal Maximo => (Techo?.Valor ?? Actual) + Aire;
     private decimal Aire => Piso is null || Techo is null ? 1m : (Techo.Valor - Piso.Valor) * 0.35m;
 
-    private string Izquierda => Posicion(Piso?.Valor ?? Minimo);
-    private string Ancho =>
-        (double.Parse(Posicion(Techo?.Valor ?? Maximo), CultureInfo.InvariantCulture)
-            - double.Parse(Izquierda, CultureInfo.InvariantCulture))
-        .ToString("0.#", CultureInfo.InvariantCulture);
-    private string Marca => Posicion(Actual);
+    private double PosPiso => Posicion(Piso?.Valor ?? Minimo);
+    private double PosTecho => Posicion(Techo?.Valor ?? Maximo);
+    private string Marca => Posicion(Actual).ToString("0.#", CultureInfo.InvariantCulture);
 
-    private string Posicion(decimal valor)
+    private double Posicion(decimal valor)
     {
         decimal recorrido = Maximo - Minimo;
-        if (recorrido == 0m) return "160";
+        if (recorrido == 0m) return 50;
 
         double p = (double)((valor - Minimo) / recorrido);
         p = p < 0 ? 0 : p > 1 ? 1 : p;
-        return (12 + p * 296).ToString("0.#", CultureInfo.InvariantCulture);
+        return p * 100;
+    }
+
+    // EL DEGRADE: calculado desde piso/techo reales, nunca porcentajes clínicos
+    // inventados. Verde cubre [PosPiso, PosTecho] tal cual caen esos dos puntos reales
+    // en la pista; afuera de ahí, ámbar y después rojo, a mitad de camino hacia cada
+    // borde. Sin banda real (Piso o Techo null) no hay "afuera" que dibujar: todo verde.
+    private string Gradiente
+    {
+        get
+        {
+            if (Piso is null || Techo is null) return "var(--bien)";
+
+            string N(double v) => v.ToString("0.#", CultureInfo.InvariantCulture);
+            double mitadIzquierda = PosPiso / 2;
+            double mitadDerecha = PosTecho + (100 - PosTecho) / 2;
+            return "linear-gradient(90deg, "
+                 + $"var(--rojo) 0%, var(--ambar) {N(mitadIzquierda)}%, "
+                 + $"var(--bien) {N(PosPiso)}%, var(--bien) {N(PosTecho)}%, "
+                 + $"var(--ambar) {N(mitadDerecha)}%, var(--rojo) 100%)";
+        }
     }
 
     private static string Numero(decimal valor) => valor.ToString("0.##", CultureInfo.InvariantCulture);
