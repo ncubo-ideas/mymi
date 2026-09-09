@@ -139,6 +139,63 @@ adb logcat -s GNOTHI:I gnothi:I modulo:I
 
 ---
 
+## 2b · El guion del alta, para correrlo en diez minutos
+
+Todo lo de P2b a P2d en orden, con lo que tiene que **verse** en cada paso. Sirve para cualquiera con
+el repo, un emulador o un teléfono, y Node 22 si quiere los conductores del paso 8. Al lado, una
+terminal con `adb logcat -s GNOTHI:I gnothi:I` para las líneas que se citan.
+
+1. **Levantá el mundo** (§2): `cd Gnothi.Mobile; .\escenario-webview.ps1`. Arma y **firma** los cuatro
+   bundles —la llave de cada institución queda en `bundles/.keys/<modulo>.key.json`, fuera de git—,
+   levanta publicadores y páginas, e instala Gnothi conservando sus datos. Cada página publica su
+   `/.well-known/gnothi/modules.json` con `keys`, `revoked` y `modules`; comprobalo con
+   `curl http://127.0.0.1:8096/.well-known/gnothi/modules.json`.
+2. **Abrí Gnothi.** El inicio es el mosaico de marcas —vacío la primera vez— con el botón **«Agregar»**
+   arriba a la derecha. Tocarlo abre *Tus instituciones, siempre contigo*, con tres filas.
+3. **Pegar su enlace.** Tocá la fila, pegá `http://127.0.0.1:8096/examenes.gmod` —o el enlace largo con
+   `bundle=` y `&h=` que la página muestra bajo su QR— y «Agregar». Franja *Bajando el módulo de
+   127.0.0.1…* → *Revisando qué trae…* → la hoja. Tiene que decir: el bloque de identidad (*Laboratorio
+   Clínico Delfos S.A., 3-101-123456 · Declara delfos.cr y lo sirvió 127.0.0.1*, en ámbar porque el mock
+   declara un dominio que no es el que lo sirve) y, en «Lo que Gnothi revisó», *Lo respalda 127.0.0.1…*,
+   *Firmado por la llave «examenes-…», que su origen publica. Gnothi la va a recordar*, los archivos y
+   los MB, *No pide red…*. Log: `alta: respaldo de 127.0.0.1: Verified; firma: Published`. «Instalar en mi
+   teléfono» → la tarjeta de Delfos con su logo, banner y eslogan, y `installation.json` con
+   `provenance` y `signer`. Repetilo: *Ya tenés este módulo* y *Firmado con la misma llave que la vez
+   pasada (desde …)*.
+4. **Escanear su código.** Con cámara real (el emulador no tiene): la fila abre el visor; apuntalo al QR
+   de `http://127.0.0.1:8096/` en otra pantalla. Es el mismo camino que el enlace, con *del código que
+   escaneaste* y *El paquete es el mismo que sellaba el enlace*. En el emulador,
+   `node conducir-el-alta.mjs codigo <imagen-del-qr.png>` le inyecta el código al lector.
+5. **Elegir archivos.** `adb push Gnothi.Mobile/bundles/compras.gmod /sdcard/Download/` y algún zip
+   cualquiera; la fila abre el selector; **mantené presionado** para elegir varios → *Esto encontré en lo
+   que elegiste*, con La Guaria y el zip que *no entra* → tocá La Guaria → su hoja (*Llegó como el archivo
+   compras.gmod, y 127.0.0.1 lo respalda: publica exactamente este paquete*) → instalar → la lista vuelve
+   con *instalado*. «Abrir con» desde Descargas hace lo mismo con uno (P2c).
+6. **Lo que se rechaza, sin hoja** (franja roja, nada instalado): un enlace con `&h=` de otro manifiesto
+   (*El paquete no es el que sellaba el enlace*); un bundle firmado con un archivo tocado (*lo tocaron
+   después de firmarlo*; P2d dice cómo armarlo); un paquete que dice ser de otro origen del que lo sirvió,
+   o cuyo origen ya no lo lista (*Tu institución no reconoce este paquete como suyo*); y uno firmado con
+   una llave retirada, que es el paso 7.
+7. **La institución retira su llave.** Guardá una copia de `bundles/examenes.gmod`. Después:
+
+   ```bash
+   dotnet run --project Gnothi.Host/Gnothi.Host.csproj -- --revoke Gnothi.Mobile/bundles/.keys/examenes.key.json Gnothi.Mobile/bundles/.keys/examenes.revoked.json "prueba"
+   .\Gnothi.Mobile\armar-bundle.ps1 -Modulo examenes -Publicador http://127.0.0.1:8095/ -Origen http://127.0.0.1:8096
+   ```
+
+   El bundle se rearma con una llave nueva y la página, que lee bundle y llaves en cada pedido, publica
+   `revoked`. Relanzá Gnothi: log `revocación: 'examenes': 127.0.0.1 retiró la llave …`, la tarjeta dice
+   **llave retirada por la institución** y el detalle explica qué hacer, sin apagar nada. La copia vieja
+   abierta como archivo se rechaza. El enlace de la página → *Firmado con una llave nueva («examenes-…»),
+   que su origen publica* → instalar → la marca desaparece.
+8. **Sin capturas**, que es como está el emulador G37: `node Gnothi.Mobile/pantalla.mjs "<expresión JS>"`
+   lee la pantalla por CDP, y `node Gnothi.Mobile/conducir-el-alta.mjs pegar|escanear|codigo|archivo|instalar|descartar`
+   la conduce con toques reales. El selector de documentos es nativo y no se conduce desde ahí: la lista
+   del paso 5 se prueba a mano, o en la maqueta del escritorio (`Herramientas/servir-la-cara.mjs`, botón
+   «Agregar» → «Elegir archivos»). Las trampas del emulador están en §4.
+
+---
+
 ## 3 · Las pruebas
 
 **Corrélas en orden, y por módulo.** P1 tiene que ir **antes** de P2 del mismo módulo: en cuanto
@@ -991,6 +1048,10 @@ por verificado.
   Android da para probar sin dominio propio — pero no es lo mismo que la verificación real.
 - **Install Referrer** (que el alta sobreviva a pasar por la tienda): necesita Play.
 - **iOS**: los universal links no se disparan desde JS, y no hay aparato acá.
+- **La cámara real y el selector de varios archivos.** El emulador G37 no tiene cámara (el lector se
+  prueba inyectándole la imagen del código, §2b paso 4) y el selector de documentos es nativo: elegir
+  varios con una pulsación larga es un gesto que la conducción por CDP no alcanza. Las dos cosas se
+  prueban a mano en el emulador, o en el A54.
 - **El traspaso de aserciones** está implementado en Exámenes y probado por sus dos puertas —el
   enlace y la hoja de compartir—, pero no está en este guion, y los otros tres módulos todavía
   no lo tienen: cada institución tiene aserciones distintas de la persona, y cuáles viajan es
