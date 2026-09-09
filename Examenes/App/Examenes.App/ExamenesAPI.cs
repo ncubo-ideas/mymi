@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using Choreography.Theater;
 using Examenes.App.Eventos;
 using Examenes.App.Vistas;
-using Examenes.Dominio;
+
 using Puppeteer;
 using Puppets.Portador;
 
@@ -77,28 +77,41 @@ namespace Examenes.App
 			return UnValor(evento, ClaseDelDominio(evento.Analito));
 		}
 
-		// La ULTIMA traduccion que queda: de la identidad del analito al nombre de la clase
-		// que el comando construye. Vive aca y no en el dominio porque es un detalle del
-		// DSL -el journal guarda texto y ese texto nombra una clase-, no conocimiento
+		// La ULTIMA traduccion que queda: del nombre canonico del analito al nombre de la
+		// clase que el comando construye. Vive aca y no en el dominio porque es un detalle
+		// del DSL -el journal guarda texto y ese texto nombra una clase-, no conocimiento
 		// clinico.
 		//
-		// Se compara por identidad y no por cadena: da igual como haya escrito el
-		// laboratorio el nombre, para cuando llega aca ya se resolvio.
-		private static string ClaseDelDominio(Analito analito)
+		// Compara contra NombresDeAnalito, que es texto y no una referencia a Analito: desde
+		// que el dominio es enteramente `internal`, esta Superficie no puede nombrar un tipo
+		// suyo en C#, y no le hace falta porque la ruta ya resolvio el sinonimo del
+		// laboratorio a su nombre canonico. Comprobaciones amarra esas constantes al dominio.
+		private static string ClaseDelDominio(string analito)
 		{
-			if (analito.EsElMismo(Analito.ColesterolTotal)) return "Colesterol";
-			if (analito.EsElMismo(Analito.AntigenoProstatico)) return "AntigenoProstatico";
-			if (analito.EsElMismo(Analito.Hemoglobina)) return "Hemoglobina";
+			if (analito == NombresDeAnalito.ColesterolTotal) return "Colesterol";
+			if (analito == NombresDeAnalito.AntigenoProstatico) return "AntigenoProstatico";
+			if (analito == NombresDeAnalito.Hemoglobina) return "Hemoglobina";
+
+			// La quimica general. Los siete se construyen igual —fecha, valor y unidad— asi
+			// que entran por el mismo comando UnValor; lo unico que cambia es el nombre de la
+			// clase que el journal va a guardar.
+			if (analito == NombresDeAnalito.Trigliceridos) return "Trigliceridos";
+			if (analito == NombresDeAnalito.GlucosaEnAyunas) return "GlucosaEnAyunas";
+			if (analito == NombresDeAnalito.NitrogenoUreico) return "NitrogenoUreico";
+			if (analito == NombresDeAnalito.Sodio) return "Sodio";
+			if (analito == NombresDeAnalito.Potasio) return "Potasio";
+			if (analito == NombresDeAnalito.Cloro) return "Cloro";
+			if (analito == NombresDeAnalito.ProteinasTotales) return "ProteinasTotales";
 
 			// El conjunto de analitos es mas grande que el de examenes construibles: el
 			// LDL entra fraccionado y el HDL no entra solo, y las dos cosas ya las filtro
 			// la ruta. Llegar aca significa que se agrego un analito y no su comando.
 			throw new ArgumentException(
-				$"Esta app no tiene comando para construir un examen de '{analito.Nombre}'. "
+				$"Esta app no tiene comando para construir un examen de '{analito}'. "
 				+ "La ruta debio devolver null para descartarlo.", nameof(analito));
 		}
 
-		// Los tres analitos que se construyen igual: fecha, valor y unidad. El nombre de
+		// Los analitos que se construyen igual: fecha, valor y unidad. El nombre de
 		// la clase entra en el TEXTO del comando, no como parametro, porque es parte de
 		// que comando es: el journal guarda "AntigenoProstatico(...)" y al reproducirlo
 		// construye esa clase.
@@ -158,7 +171,7 @@ namespace Examenes.App
 				")
 			.WithParameters(p => {
 				p["evento", typeof(long)]   = evento.Evento;
-				p["sexo",   typeof(string)] = evento.Sexo.Nombre;
+				p["sexo",   typeof(string)] = evento.Sexo;
 			})
 			.PerformCheckThenCommand();
 		}
@@ -185,14 +198,15 @@ namespace Examenes.App
 			})
 			.PerformCheckThenCommand();
 
-		// La orina no tiene valor ni unidad: informa un COLOR y unos NITRITOS, que son dos
+		// La orina no tiene valor ni unidad: informa un COLOR y cinco binarios, que son dos
 		// formas de magnitud distintas y ninguna de las dos es un numero. El comando es
 		// distinto porque el examen es distinto, y eso es exactamente lo que la jerarquia
 		// del dominio esta diciendo.
 		//
-		// Los journals ya escritos tienen la forma de DOS argumentos. El dominio conserva
-		// ese constructor a proposito (ver ExamenDeOrina), asi que un expediente viejo
-		// sigue reproduciendo igual; lo que entra de ahora en adelante lleva los tres.
+		// Los journals ya escritos tienen la forma de DOS, de TRES y de CUATRO argumentos. El
+		// dominio conserva esos constructores a proposito (ver ExamenDeOrina), asi que un
+		// expediente viejo sigue reproduciendo igual; lo que entra de ahora en adelante lleva
+		// la tira entera, que son siete.
 		private string Orina(ExamenAgregado evento) =>
 			app.Using(
 				scriptForChk: @"
@@ -200,7 +214,8 @@ namespace Examenes.App
 				",
 				@"
 					{
-						examen = ExamenDeOrina(@fecha, @color, @nitritos, @sangre);
+						examen = ExamenDeOrina(@fecha, @color, @nitritos, @sangre,
+							@proteina, @cetonas, @glucosa);
 						expediente.Agregar(examen);
 						bitacora.Avanzar(@evento);
 					}
@@ -211,6 +226,9 @@ namespace Examenes.App
 				p["color",    typeof(string)]   = evento.Color;
 				p["nitritos", typeof(string)]   = evento.Nitritos ?? "";
 				p["sangre",   typeof(string)]   = evento.Sangre ?? "";
+				p["proteina", typeof(string)]   = evento.Proteina ?? "";
+				p["cetonas",  typeof(string)]   = evento.Cetonas ?? "";
+				p["glucosa",  typeof(string)]   = evento.GlucosaEnOrina ?? "";
 			})
 			.PerformCheckThenCommand();
 
@@ -340,7 +358,7 @@ namespace Examenes.App
 					print examen.Nombre nombre,
 						examen.Fecha fecha,
 						examen.ResultadoExpresado resultado,
-						examen.AportaSerie aportaSerie;
+						examen.AportaSerieContinua aportaSerieContinua;
 				}
 			")
 			.PerformQuery();
@@ -470,6 +488,58 @@ namespace Examenes.App
 		public PresenciaDeAnalito Presencia(string analito) =>
 			ProyeccionDeVistas.Presencia(PresenciaDe(analito));
 
+		// LAS OBSERVACIONES DE UNA SERIE NOMINAL: fechas con una categoria. Es el tercer par
+		// de PuntosDe, y va aparte por lo mismo que las pruebas: un color no tiene
+		// ValorNumerico ni un si o un no, tiene un nombre.
+		public string ObservacionesDe(string analito)
+		{
+			ArgumentNullException.ThrowIfNullOrWhiteSpace(analito);
+
+			return app.Using(@"
+				foreach (observacion in expediente.ObservacionesDe(@analito)) {
+					print observacion.Fecha fecha,
+						observacion.Expresado expresado,
+						observacion.EsEsperable esEsperable,
+						observacion.EsHallazgo esHallazgo;
+				}
+			")
+			.WithParameters(p => { p["analito", typeof(string)] = analito; })
+			.PerformQuery();
+		}
+
+		public IReadOnlyList<ObservacionEnSerie> Observaciones(string analito) =>
+			ProyeccionDeVistas.Observaciones(ObservacionesDe(analito));
+
+		// LOS HECHOS DE UNA SERIE NOMINAL. Es el par de PresenciaDe para la forma 6: aquella
+		// trae cuantas veces aparecio, esta trae CUAL salio y si volvio a lo esperable.
+		public string ConstanciaDe(string analito)
+		{
+			ArgumentNullException.ThrowIfNullOrWhiteSpace(analito);
+
+			return app.Using(@"
+				{
+					constancia = expediente.EvaluarConstanciaDe(@analito);
+					print constancia.Analito analito,
+						constancia.AnalitoParaMostrar paraMostrar,
+						constancia.NombreDeLaConstancia constancia,
+						constancia.CantidadDeMediciones mediciones,
+						constancia.UltimaCategoria ultimaCategoria,
+						constancia.UltimaEsEsperable ultimaEsEsperable,
+						constancia.NoEsperables noEsperables,
+						constancia.NoEsperablesSeguidas noEsperablesSeguidas,
+						constancia.LaUltimaSeRepitio laUltimaSeRepitio,
+						constancia.DiasTranscurridos dias,
+						constancia.EstaFueraDeLoEsperable estaFueraDeLoEsperable,
+						constancia.HaySerie haySerie;
+				}
+			")
+			.WithParameters(p => { p["analito", typeof(string)] = analito; })
+			.PerformQuery();
+		}
+
+		public ConstanciaDeAnalito Constancia(string analito) =>
+			ProyeccionDeVistas.Constancia(ConstanciaDe(analito));
+
 		// LAS LINEAS que se dibujan junto a los puntos, y COMO se dibujan. Cada analito
 		// emite solo las que tiene; ninguno devuelve cero para rellenar.
 		public string ReferenciasDe(string analito)
@@ -533,10 +603,7 @@ namespace Examenes.App
 						celda.Analito analito,
 						celda.ParaMostrar paraMostrar,
 						celda.Fecha fecha,
-						celda.Expresado expresado,
-						celda.AportaSerie aportaSerie,
-						celda.Severidad severidad,
-						celda.ParaSonia paraSonia;
+						celda.Expresado expresado;
 				}
 			")
 			.PerformQuery();

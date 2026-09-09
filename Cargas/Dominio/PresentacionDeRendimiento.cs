@@ -10,20 +10,20 @@ namespace Cargas.Dominio
 	// Es la DireccionDeseable de examenes con mas filo: alla dependia del analito, aca
 	// depende de como lo estas mirando (§5.3 del brief). El selector de unidades de la
 	// UI cambia cual de estas tres se usa, y nada mas.
-	public sealed class PresentacionDeRendimiento
+	internal sealed class PresentacionDeRendimiento
 	{
-		public static readonly PresentacionDeRendimiento KilometrosPorLitro =
+		internal static readonly PresentacionDeRendimiento KilometrosPorLitro =
 			new PresentacionDeRendimiento("km/L", DireccionDeseable.MasEsMejor);
 
-		public static readonly PresentacionDeRendimiento MillasPorGalonUS =
+		internal static readonly PresentacionDeRendimiento MillasPorGalonUS =
 			new PresentacionDeRendimiento("mpg", DireccionDeseable.MasEsMejor);
 
 		// La inversa: volumen por distancia. Es la que invierte la direccion.
-		public static readonly PresentacionDeRendimiento LitrosPorCienKilometros =
+		internal static readonly PresentacionDeRendimiento LitrosPorCienKilometros =
 			new PresentacionDeRendimiento("L/100km", DireccionDeseable.MenosEsMejor);
 
-		public string Simbolo { get; private set; }
-		public DireccionDeseable Direccion { get; private set; }
+		internal string Simbolo { get; private set; }
+		internal DireccionDeseable Direccion { get; private set; }
 
 		private PresentacionDeRendimiento(string simbolo, DireccionDeseable direccion)
 		{
@@ -35,11 +35,19 @@ namespace Cargas.Dominio
 		private const decimal KilometrosPorMilla = 1.609344m;
 		private const decimal LitrosPorGalonUS = 3.785412m;
 
-		public decimal Convertir(Rendimiento rendimiento)
+		internal decimal Convertir(Rendimiento rendimiento)
 		{
 			ArgumentNullException.ThrowIfNull(rendimiento);
+			return ConvertirKmPorLitro(rendimiento.KilometrosPorLitro);
+		}
 
-			decimal kmPorLitro = rendimiento.KilometrosPorLitro;
+		/// <summary>La misma conversion desde el canonico suelto. Existe porque varias
+		/// lecturas ya viajan como decimal en km/L y volver a envolverlas en un Rendimiento
+		/// solo para convertirlas seria ceremonia.</summary>
+		internal decimal ConvertirKmPorLitro(decimal kmPorLitro)
+		{
+			if (kmPorLitro == 0m) return 0m;
+
 			if (ReferenceEquals(this, KilometrosPorLitro)) return kmPorLitro;
 			if (ReferenceEquals(this, MillasPorGalonUS))
 				return kmPorLitro / KilometrosPorMilla * LitrosPorGalonUS;
@@ -49,10 +57,39 @@ namespace Cargas.Dominio
 			return 100m / kmPorLitro;
 		}
 
-		public string Formatear(Rendimiento rendimiento) =>
+		internal string Formatear(Rendimiento rendimiento) =>
 			$"{Convertir(rendimiento):0.#} {Simbolo}";
 
-		public static PresentacionDeRendimiento PorSimbolo(string simbolo)
+		/// <summary>EL CAMBIO TAL COMO SE VE EN ESTA PRESENTACION, y no es el canonico.
+		///
+		/// La inversa no es lineal: 12.6 -> 9.4 km/L es un 25% MENOS, y esos mismos dos
+		/// tramos en L/100km son un 33% MAS -porque 1/(1-0.25) - 1 = 0.33, no 0.25-, asi
+		/// que decir "25% menos" al lado de 7.9 y 10.6 es una contradiccion que la
+		/// persona ve sola.
+		///
+		/// El VEREDICTO no sale de aca -ese se juzgo en canonico y no cambia con la
+		/// unidad-: de aca salen la palabra y la magnitud, que son presentacion.</summary>
+		internal decimal CambioComoSeVe(Rendimiento desde, Rendimiento hasta)
+		{
+			ArgumentNullException.ThrowIfNull(desde);
+			ArgumentNullException.ThrowIfNull(hasta);
+
+			decimal antes = Convertir(desde);
+			return antes == 0m ? 0m : (Convertir(hasta) - antes) / antes;
+		}
+
+		/// <summary>RECONOCE sin reventar. Ver UnidadDeDistancia.EsConocida: la elegida se
+		/// journaliza y la leen dos binarios distintos.</summary>
+		internal static bool EsConocida(string simbolo)
+		{
+			if (string.IsNullOrWhiteSpace(simbolo)) return false;
+			string normalizado = simbolo.Trim();
+			return normalizado == KilometrosPorLitro.Simbolo
+				|| normalizado == MillasPorGalonUS.Simbolo
+				|| normalizado == LitrosPorCienKilometros.Simbolo;
+		}
+
+		internal static PresentacionDeRendimiento PorSimbolo(string simbolo)
 		{
 			ArgumentNullException.ThrowIfNullOrWhiteSpace(simbolo);
 

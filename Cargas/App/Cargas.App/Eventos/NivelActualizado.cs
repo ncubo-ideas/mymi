@@ -1,5 +1,4 @@
 using System.Text.Json;
-using Cargas.Dominio;
 using Puppets.Portador;
 
 namespace Cargas.App.Eventos
@@ -29,7 +28,10 @@ namespace Cargas.App.Eventos
 				string nivel = documento.RootElement.TryGetProperty("nivel", out JsonElement e)
 					&& e.ValueKind == JsonValueKind.String ? e.GetString() : "";
 
-				if (!NivelDeLealtad.EsConocido(nivel)) return null;
+				// El nivel que esta app no modela ya no se descarta aca: reconocerlo
+				// obligaba a nombrar NivelDeLealtad en C#. El Check de CargasAPI lo rechaza
+				// adentro del actor, sin dejar entrada en el journal.
+				if (nivel.Length == 0) return null;
 
 				return new NivelActualizado { Evento = senal.Numero, Nivel = nivel };
 			}

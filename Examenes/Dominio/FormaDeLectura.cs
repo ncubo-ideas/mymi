@@ -17,18 +17,18 @@ namespace Examenes.Dominio
 	//
 	// Conjunto cerrado. La superficie hace un switch sobre esto, y ese switch SI es
 	// presentacion legitima: traduce una forma del dominio a pixeles.
-	public sealed class FormaDeLectura
+	internal sealed class FormaDeLectura
 	{
 		// Una trayectoria en el tiempo contra la linea base de la persona. El antigeno.
-		public static readonly FormaDeLectura TrayectoriaConLineaBase =
+		internal static readonly FormaDeLectura TrayectoriaConLineaBase =
 			new FormaDeLectura("trayectoria con linea base");
 
 		// Un progreso desde donde arranco el episodio hasta una meta. El colesterol.
-		public static readonly FormaDeLectura ProgresoHaciaMeta =
+		internal static readonly FormaDeLectura ProgresoHaciaMeta =
 			new FormaDeLectura("progreso hacia meta");
 
 		// Una posicion dentro de una banda con piso Y techo. La hemoglobina.
-		public static readonly FormaDeLectura PosicionEnBanda =
+		internal static readonly FormaDeLectura PosicionEnBanda =
 			new FormaDeLectura("posicion en banda");
 
 		// UNA TIRA DE PRUEBAS EN EL TIEMPO: estuvo, no estuvo, volvio a estar. Los
@@ -38,15 +38,31 @@ namespace Examenes.Dominio
 		// positivo". Lo que se dibuja son las fechas y si en cada una habia o no habia. Y
 		// eso ES un dibujo, no una frase: ver tres pruebas seguidas marcadas dice algo que
 		// la ultima sola no dice.
-		public static readonly FormaDeLectura PresenciaEnElTiempo =
+		internal static readonly FormaDeLectura PresenciaEnElTiempo =
 			new FormaDeLectura("presencia en el tiempo");
 
-		// Un hecho, sin escala ni serie. Los nominales: el color de la orina, el de las
-		// heces. No se dibuja: se dice, porque un color no forma una serie que se pueda
-		// leer —preguntar si viene subiendo no es una pregunta—.
-		public static readonly FormaDeLectura Afirmacion = new FormaDeLectura("afirmacion");
+		// UNA TIRA DE CATEGORIAS EN EL TIEMPO: ambar, ambar, oscuro. Los nominales: el
+		// color de la orina, el de las heces.
+		//
+		// No es una curva y no puede serlo: no hay eje vertical, porque las categorias no se
+		// ordenan. Y no es la Afirmacion que usaban antes, por la MISMA razon por la que los
+		// binarios dejaron de usarla -ver SerieBinaria.Forma-: ver tres observaciones en fila
+		// dice algo que la ultima sola no dice, que el color inesperado se repitio o que
+		// volvio a lo esperable. Sigue siendo cierto que preguntarle a un color si viene
+		// subiendo no es una pregunta; lo que hay es si salio y si volvio.
+		internal static readonly FormaDeLectura CategoriaEnElTiempo =
+			new FormaDeLectura("categoria en el tiempo");
 
-		public string Nombre { get; private set; }
+		// Un hecho, sin escala ni SERIE DETRAS. Es lo que contesta InterpretarSerieDe cuando
+		// no hay serie de ese analito o cuando no le corresponde a la persona: no queda
+		// ninguna forma que dibujar, y lo unico que se puede hacer es decir lo que hay.
+		//
+		// Antes era la forma de los nominales. Dejo de serlo cuando los colores formaron
+		// serie: una lectura sin serie y una serie que no se dibuja con numeros son dos cosas
+		// distintas, y si comparten forma la pantalla no puede separarlas.
+		internal static readonly FormaDeLectura Afirmacion = new FormaDeLectura("afirmacion");
+
+		internal string Nombre { get; private set; }
 
 		private FormaDeLectura(string nombre)
 		{
@@ -54,12 +70,13 @@ namespace Examenes.Dominio
 		}
 
 		// Si esta forma se dibuja sobre una serie de puntos en el tiempo. La afirmacion no.
-		public bool NecesitaLaSerie => !ReferenceEquals(this, Afirmacion);
+		internal bool NecesitaLaSerie => !ReferenceEquals(this, Afirmacion);
 
-		// Si los puntos que dibuja son NUMEROS. La presencia en el tiempo necesita la
-		// serie y sin embargo no tiene valores: sus puntos son fechas con un si o un no.
-		// Es la distincion que evita que la pantalla le pida ValorNumerico a un nitrito.
-		public bool SeDibujaConNumeros =>
+		// Si los puntos que dibuja son NUMEROS. La presencia en el tiempo y la categoria en
+		// el tiempo necesitan la serie y sin embargo no tienen valores: sus puntos son fechas
+		// con un si o un no, o fechas con un nombre. Es la distincion que evita que la
+		// pantalla le pida ValorNumerico a un nitrito o a un color.
+		internal bool SeDibujaConNumeros =>
 			ReferenceEquals(this, TrayectoriaConLineaBase)
 			|| ReferenceEquals(this, ProgresoHaciaMeta)
 			|| ReferenceEquals(this, PosicionEnBanda);

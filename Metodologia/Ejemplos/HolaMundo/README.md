@@ -10,7 +10,7 @@ Son **siete archivos de código**. Se lee de una sentada.
 > que describe se rompen juntos, y eso se nota.
 
 > **Es nuestro, y es de mentira.** No es un negocio: es material de enseñanza. Los negocios de
-> verdad —`Examenes`, `Compras`, `Cargas`, `DealershipCar`— están en la raíz del repo, son de sus
+> verdad —`Examenes`, `Compras`, `Cargas`, `Concesionario`— están en la raíz del repo, son de sus
 > equipos, y son entre 15 y 30 veces más grandes. Cuando quieras ver cómo se ve esto en serio, andá
 > ahí.
 

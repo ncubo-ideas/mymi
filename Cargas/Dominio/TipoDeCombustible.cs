@@ -7,13 +7,13 @@ namespace Cargas.Dominio
 	/// Importa para la COMPARABILIDAD: cambiar de regular a super, o de gasolina a
 	/// diesel, hace que los tramos no sean del todo comparables entre si.
 	/// </summary>
-	public sealed class TipoDeCombustible
+	internal sealed class TipoDeCombustible
 	{
-		public static readonly TipoDeCombustible Regular = new TipoDeCombustible("regular");
-		public static readonly TipoDeCombustible Super = new TipoDeCombustible("super");
-		public static readonly TipoDeCombustible Diesel = new TipoDeCombustible("diesel");
+		internal static readonly TipoDeCombustible Regular = new TipoDeCombustible("regular");
+		internal static readonly TipoDeCombustible Super = new TipoDeCombustible("super");
+		internal static readonly TipoDeCombustible Diesel = new TipoDeCombustible("diesel");
 
-		public string Nombre { get; private set; }
+		internal string Nombre { get; private set; }
 
 		private TipoDeCombustible(string nombre)
 		{
@@ -23,7 +23,7 @@ namespace Cargas.Dominio
 		// PorNombre revienta y EsConocido decide: reventar es lo correcto cuando alguien
 		// PREGUNTA por un tipo -es un error de quien pregunta- y es lo incorrecto cuando
 		// una estacion PUBLICA uno que esta app no modela, que la frontera descarta.
-		public static bool EsConocido(string nombre)
+		internal static bool EsConocido(string nombre)
 		{
 			if (string.IsNullOrWhiteSpace(nombre)) return false;
 			string normalizado = nombre.Trim().ToLowerInvariant();
@@ -31,7 +31,7 @@ namespace Cargas.Dominio
 				|| normalizado == Diesel.Nombre;
 		}
 
-		public static TipoDeCombustible PorNombre(string nombre)
+		internal static TipoDeCombustible PorNombre(string nombre)
 		{
 			ArgumentNullException.ThrowIfNullOrWhiteSpace(nombre);
 
@@ -45,7 +45,7 @@ namespace Cargas.Dominio
 				+ $"{Regular.Nombre}, {Super.Nombre}, {Diesel.Nombre}.");
 		}
 
-		public bool EsElMismo(TipoDeCombustible otro)
+		internal bool EsElMismo(TipoDeCombustible otro)
 		{
 			ArgumentNullException.ThrowIfNull(otro);
 			return ReferenceEquals(this, otro);

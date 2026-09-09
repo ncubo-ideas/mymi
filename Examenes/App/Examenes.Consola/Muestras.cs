@@ -17,7 +17,7 @@ namespace Examenes.Consola
 	// reproducido manana daria otra cantidad de dias transcurridos y por lo tanto otra
 	// tendencia. Un guion de demo con fechas moviles no es reproducible.
 	//
-	// La historia que cuentan estos once eventos:
+	// La historia que cuentan estos dieciocho eventos:
 	//
 	//   colesterol total     182 -> 188 -> 212 mg/dL   en dos anos
 	//     los dos primeros son la LINEA BASE, y el 188 esta ahi para que se vea lo que el
@@ -44,6 +44,20 @@ namespace Examenes.Consola
 	//     esta bien" y un solo ambar. Para ver el otro lado de la serie binaria alcanza
 	//     cambiar UN negativo por positivo aca; con el positivo de fabrica, el hallazgo
 	//     tapaba el veredicto con el que la demo se abre.
+	//
+	//     Y LOS COLORES TAMBIEN SON SERIE: amarillo palido en 2025 y ambar en 2026 son dos
+	//     categorias distintas y las dos esperables, que es el caso que Presencia no sabe
+	//     nombrar. Para ver el otro lado alcanza poner "oscuro" en el 206.
+	//
+	//   la quimica general del 28 de abril: siete analitos con UNA medicion cada uno, todos
+	//     en rango. Es lo que hace que el conteo de la portada sea 17 de 18 y no 8 de 9, y
+	//     los siete tienen rango independiente del sexo a proposito —ver Analito—: cada uno
+	//     que dependiera del sexo bajaria el numerador, porque un analito cuyo rango no se
+	//     puede determinar no esta en su rango.
+	//
+	//     LOS 18 ANALITOS SON 18 EXAMENES por casualidad, no por construccion: el LDL y el
+	//     HDL vienen en un evento y el urianalisis aporta tres analitos, y eso se compensa
+	//     con los siete de la quimica que llegan en siete.
 	//
 	// NO HAY ANTIGENO PROSTATICO, y su ausencia es el dato: a Sonia no se lo hicieron
 	// porque no le corresponde. Que el dominio conteste "este analito no te corresponde"
@@ -74,7 +88,8 @@ namespace Examenes.Consola
 			// --- el 28 de abril, el dia que la landing muestra ---
 			Sangre(204, "Colesterol", "2026-04-28T08:40:00", "212.0", "mg/dL"),
 			Sangre(205, "Hemoglobina", "2026-04-28T08:41:00", "13.4", "g/dL"),
-			Orina(206, "2026-04-28T08:42:00", "ambar", "negativo", "negativo"),
+			Orina(206, "2026-04-28T08:42:00", "ambar", "negativo", "negativo",
+				"negativo", "negativo", "negativo"),
 			Heces(207, "2026-04-28T08:43:00", "marrón", "negativo"),
 
 			// LA HISTORIA DE LOS BINARIOS, con ids posteriores y fechas anteriores: es el
@@ -86,7 +101,29 @@ namespace Examenes.Consola
 			// las tres veces nunca aparecio.
 			Heces(208, "2024-04-24T08:22:00", "marrón", "negativo"),
 			Heces(209, "2025-04-26T08:31:00", "marrón", "negativo"),
-			Orina(210, "2025-04-26T08:32:00", "amarillo palido", "negativo", "negativo"),
+			Orina(210, "2025-04-26T08:32:00", "amarillo palido", "negativo", "negativo",
+				"negativo", "negativo", "negativo"),
+
+			// LA QUIMICA GENERAL DEL 28 DE ABRIL, los siete del mismo reporte del CSS.
+			//
+			// SIETE EVENTOS Y NO UNO, que no es como el laboratorio la emite: el camino
+			// continuo entra POR EL EXAMEN y un ExamenDeSangre mide UN analito, asi que un
+			// panel de siete llega como siete. Esta anotado como el follow-on del handoff -
+			// abrir el camino continuo por lectura- y es lo mismo que haria falta para que un
+			// hemograma de 32 parametros no sean 32 eventos.
+			//
+			// UNA MEDICION CADA UNO, y eso es a proposito: es lo que el reporte real de Sonia
+			// trae. Con un punto no hay tendencia -y la consola lo dice: "una sola medicion"-
+			// y sin embargo el analito SI cuenta en el conteo de la portada, porque su valor
+			// esta en su rango y eso no necesita serie. Son las dos mitades de la misma
+			// honestidad.
+			Sangre(211, "Trigliceridos", "2026-04-28T08:44:00", "92", "mg/dL"),
+			Sangre(212, "Glucosa en ayunas", "2026-04-28T08:45:00", "88", "mg/dL"),
+			Sangre(213, "Nitrogeno ureico", "2026-04-28T08:46:00", "13", "mg/dL"),
+			Sangre(214, "Sodio", "2026-04-28T08:47:00", "140", "mEq/L"),
+			Sangre(215, "Potasio", "2026-04-28T08:48:00", "4.2", "mEq/L"),
+			Sangre(216, "Cloro", "2026-04-28T08:49:00", "103", "mEq/L"),
+			Sangre(217, "Proteinas totales", "2026-04-28T08:50:00", "7.2", "g/dL"),
 		};
 
 		private static SenalDeEvento Sangre(long id, string examen, string fecha, string valor, string unidad) =>
@@ -120,14 +157,17 @@ namespace Examenes.Consola
 		// diferencia con el mock ya escondio un defecto una vez: lo que la consola no
 		// manda, la consola no puede medir.
 		private static SenalDeEvento Orina(long id, string fecha, string color,
-			string nitritos, string sangre) =>
+			string nitritos, string sangre, string proteina, string cetonas, string glucosa) =>
 			new SenalDeEvento(id, "ExamenAgregado", $@"{{
 				""id"": {id}, ""tipo"": ""ExamenAgregado"",
 				""examen"": ""Orina"",
 				""fecha"": ""{fecha}"",
 				""color"": ""{color}"",
 				""nitritos"": ""{nitritos}"",
-				""sangre"": ""{sangre}""
+				""sangre"": ""{sangre}"",
+				""proteina"": ""{proteina}"",
+				""cetonas"": ""{cetonas}"",
+				""glucosa"": ""{glucosa}""
 			}}");
 
 		// Lo que la historia tiene que dar. Son los criterios de la fase 1: si esto no
@@ -136,7 +176,14 @@ namespace Examenes.Consola
 		// LAS DOS TENDENCIAS SON DE ANALITOS DISTINTOS a proposito: una que se movio y una
 		// que no. Medir dos ascensos no habria descubierto un umbral roto, porque un
 		// dominio que llamara "cambio" a cualquier diferencia habria pasado las dos.
-		internal const int ExamenesEsperados = 11;
+		internal const int ExamenesEsperados = 18;
+
+		// EL TITULAR DE LA PORTADA, y la razon de que este arnes exista. La landing lo tiene
+		// escrito a mano —"17 de sus 18 valores estan en su rango"— y por eso pudo derivar
+		// del dominio sin que nada fallara: llego a decir 17 de 18 mientras el dominio media
+		// 5 de 6. Con esto puesto, quitar un analito de la semilla o cambiarle un valor lo
+		// rompe aca antes de que llegue a la demo.
+		internal const string ConteoEsperadoDeLaPortada = "17 de 18";
 		internal const string TendenciaEsperadaDelColesterol = "en ascenso";
 		internal const string TendenciaEsperadaDeLaHemoglobina = "estable";
 

@@ -14,7 +14,14 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <!-- El dominio se referencia pero NO se puede nombrar: es enteramente `internal` y
+         este ensamblado no esta en su lista de InternalsVisibleTo. La referencia existe
+         porque el dll tiene que llegar al output y figurar en el deps.json de cada host:
+         ElDominio lo carga por nombre en tiempo de ejecucion. Referenciar sin poder
+         nombrar es exactamente la cerca: el atajo no es de mal gusto, es un error de
+         compilacion. -->
     <ProjectReference Include="..\..\Dominio\Examenes.Dominio.csproj" />
+    <ProjectReference Include="..\Examenes.Eventos\Examenes.Eventos.csproj" />
     <ProjectReference Include="..\..\Mecanismo\Puppets.Portador\Puppets.Portador.csproj" />
 
     <!-- THE CARGO CONTRACT, compiled against but NOT copied (ExcludeAssets=runtime). The

@@ -17,12 +17,12 @@ namespace Examenes.Dominio
 	// analito es la combinacion que + plazo.
 	//
 	// Carrier por identidad: sin Equals, sin GetHashCode, no es llave de nada.
-	public sealed class Accion
+	internal sealed class Accion
 	{
 		// Que hacer, ya escrito como se le muestra a la persona, con acentos.
-		public string Que { get; private set; }
+		internal string Que { get; private set; }
 
-		public Plazo Plazo { get; private set; }
+		internal Plazo Plazo { get; private set; }
 
 		private Accion(string que, Plazo plazo)
 		{
@@ -34,25 +34,25 @@ namespace Examenes.Dominio
 
 		// La accion dicha entera: "mostráselo a tu médico este mes". Es lo unico que una
 		// pantalla necesita imprimir, y viene armada para que no la componga ella.
-		public string Legible => $"{Que} {Plazo.ParaMostrar}";
+		internal string Legible => $"{Que} {Plazo.ParaMostrar}";
 
 		// -------------------------------------------------------- el conjunto cerrado
 
 		// Hay algo que un medico tiene que VER: un valor, una serie, un salto.
-		public static Accion MostrarleEstoATuMedico(Plazo plazo) =>
+		internal static Accion MostrarleEstoATuMedico(Plazo plazo) =>
 			new Accion("mostrále esto a tu médico", plazo);
 
 		// Hay algo para CONVERSAR, sin que corra: la direccion, los habitos, la meta.
-		public static Accion ConversarloConTuMedico(Plazo plazo) =>
+		internal static Accion ConversarloConTuMedico(Plazo plazo) =>
 			new Accion("conversalo con tu médico", plazo);
 
 		// El hallazgo puede ser real o puede ser la medicion: lo que corresponde es
 		// volver a medir, no alarmarse.
-		public static Accion RepetirElExamen(Plazo plazo) =>
+		internal static Accion RepetirElExamen(Plazo plazo) =>
 			new Accion("repetí el examen", plazo);
 
 		// No espera. Es la accion del rojo reservado.
-		public static Accion BuscarAtencionMedica(Plazo plazo) =>
+		internal static Accion BuscarAtencionMedica(Plazo plazo) =>
 			new Accion("buscá atención médica", plazo);
 	}
 }

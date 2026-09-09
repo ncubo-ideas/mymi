@@ -183,7 +183,7 @@ tools usan el default y nadie lo pisa, en la práctica el juicio lo toma `App/`.
 suave que un umbral quemado adentro de una fórmula, y sigue siendo una: el día que alguien quiera
 cambiar de ocho a doce, no lo va a buscar en el proyecto donde está.
 
-**`DealershipCar` pasa, y es el caso que más enseña.** Su `Wasm` tiene tres conjuntos cerrados
+**`Concesionario` pasa, y es el caso que más enseña.** Su `Wasm` tiene tres conjuntos cerrados
 escritos a mano como arreglos de texto —`TheNineKinds`, `TheFourProfiles`, `TheFiveDeferralReasons`—
 que a primera vista son exactamente lo que este observable busca. **No lo son**, porque el browser no
 puede referenciar el dominio (es `internal`) y porque hay una prueba que los fija miembro por miembro
@@ -214,7 +214,7 @@ Los cuatro pasan, pero sólo **dos tuvieron ocasión de fallar**:
 | | Argumento de conjunto cerrado | |
 |---|---|---|
 | `Examenes` | `Analito`, `AnalitoBinario` | ✅ `enum`, con el porqué escrito: *"sin strings en el contrato… con un enum vive en el `inputSchema`"* |
-| `DealershipCar` | `MaintenanceOperation` | ✅ `enum` |
+| `Concesionario` | `MaintenanceOperation` | ✅ `enum` |
 | `Cargas` | `string placa` | — una placa no es un conjunto cerrado: son las del dueño |
 | `Compras` | ninguno | — sus 13 tools no reciben ninguno |
 

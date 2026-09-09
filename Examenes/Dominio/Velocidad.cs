@@ -23,28 +23,28 @@ namespace Examenes.Dominio
 	/// sobre toda la historia es exactamente como se pierde un cambio recien empezado.
 	///
 	/// Carrier por identidad: sin Equals, sin GetHashCode, no es llave de nada (E9/E23).
-	public sealed class Velocidad
+	internal sealed class Velocidad
 	{
 		/// <summary>El analito del que se hablo, por su nombre canonico.</summary>
-		public string Analito { get; }
+		internal string Analito { get; }
 
 		/// <summary>El mismo analito como se le muestra a la persona, con acentos.</summary>
-		public string AnalitoParaMostrar { get; }
+		internal string AnalitoParaMostrar { get; }
 
 		/// <summary>Cambio por ano, con signo. Positivo si subio. En la unidad del analito.</summary>
-		public decimal PorAno { get; }
+		internal decimal PorAno { get; }
 
 		/// <summary>La unidad, para poder decir "0.75 ng/mL por ano" y no "0.75".</summary>
-		public string Unidad { get; }
+		internal string Unidad { get; }
 
 		/// <summary>Los dias del tramo sobre el que se calculo. Cero si no hay tramo.</summary>
-		public int DiasDelTramo { get; }
+		internal int DiasDelTramo { get; }
 
 		/// <summary>Si este analito se interpreta por velocidad. El colesterol no; el PSA si.</summary>
-		public bool EsAplicable { get; }
+		internal bool EsAplicable { get; }
 
 		/// <summary>El umbral de ESTE analito, para que la superficie pueda decir contra que se comparo.</summary>
-		public decimal UmbralPorAno { get; }
+		internal decimal UmbralPorAno { get; }
 
 		private Velocidad(Analito analito, decimal porAno, string unidad, int diasDelTramo,
 			bool esAplicable, decimal umbralPorAno)
@@ -78,10 +78,10 @@ namespace Examenes.Dominio
 		/// </summary>
 		/// Que el signo importe no es un detalle: un PSA que BAJA 2 ng/mL por ano no exige
 		/// nada, y sin comparar con signo el valor absoluto lo reportaria como alarma.
-		public bool ExigeAtencion => EsAplicable && PorAno >= UmbralPorAno;
+		internal bool ExigeAtencion => EsAplicable && PorAno >= UmbralPorAno;
 
 		/// <summary>La velocidad ya dicha. "2.20 ng/mL por ano".</summary>
-		public string Expresada => EsAplicable
+		internal string Expresada => EsAplicable
 			? $"{PorAno:0.00} {Unidad} por año"
 			: "no se interpreta por velocidad";
 	}

@@ -1,0 +1,82 @@
+@using Cargas.App.Vistas
+
+@* EL CARNET, dibujado acá y sin red.
+
+   El QR se arma en el navegador (Cargas.App.Vistas.CodigoQR): pedírselo a un generador
+   web sería mandarle a un tercero justo el dato que este carnet existe para manejar, y
+   además dejaría de dibujarse en la bomba, que es donde hace falta y donde no siempre
+   hay señal.
+
+   LO QUE LLEVA ES EL NÚMERO DE SOCIA Y NADA MÁS. No la llave con la que la app se baja el
+   historial: ésa se cambia por un token, así que un carnet que la llevara sería una
+   credencial fotografiable. *@
+@if (lealtad.EstaAfiliada)
+{
+    <div class="carnet">
+        <div class="carnet-datos">
+            <span class="rotulo">Carnet de socia</span>
+            @if (lealtad.NombreDelSocio.Length > 0)
+            {
+                <div class="carnet-nombre">@lealtad.NombreDelSocio</div>
+            }
+            <div class="carnet-numero">@lealtad.NumeroDeSocio</div>
+            <div class="cifra-pie">
+                socia desde @lealtad.SocioDesde.ToString("MMMM yyyy", Cultura)
+                @if (lealtad.Nivel.Length > 0)
+                {
+                    <text> &middot; nivel <b>@lealtad.Nivel</b></text>
+                }
+            </div>
+        </div>
+
+        <div class="carnet-codigo">
+            <svg viewBox="@ViewBox" role="img"
+                 aria-label="Código QR con el número de socia @lealtad.NumeroDeSocio">
+                <rect x="-2" y="-2" width="@(lado + 4)" height="@(lado + 4)" fill="#ffffff" />
+                <path d="@trazo" fill="#04171d" />
+            </svg>
+        </div>
+    </div>
+
+    <p class="apunte carnet-apunte">
+        Se dibuja en tu teléfono, sin internet. Lleva tu número de socia y nada más: ni tu
+        historial, ni la llave que lo abre.
+    </p>
+}
+else
+{
+    <div class="carnet carnet--sin">
+        <div class="carnet-datos">
+            <span class="rotulo">Carnet de socia</span>
+            <div class="cifra-pie" style="margin-top:6px">
+                Todavía no llegó tu número de socia. Lo emite la estación, no la app.
+            </div>
+        </div>
+    </div>
+}
+
+@code {
+    [Parameter, EditorRequired] public EstadoDeLealtad lealtad { get; set; } = new();
+
+    private string trazo = "";
+    private int lado = 21;
+
+    // El margen de silencio: cuatro módulos manda el estándar, pero la tarjeta ya rodea el
+    // código de blanco, así que acá alcanzan dos y el código queda más grande.
+    private string ViewBox => $"-2 -2 {lado + 4} {lado + 4}";
+
+    // Se codifica UNA VEZ por número y no en cada render: son ocho máscaras evaluadas con
+    // su penalización, y esta pantalla se vuelve a dibujar cada vez que entra un evento.
+    private string dibujado = "";
+
+    protected override void OnParametersSet()
+    {
+        if (!lealtad.EstaAfiliada) { dibujado = ""; return; }
+        if (lealtad.NumeroDeSocio == dibujado) return;
+
+        bool[,] matriz = CodigoQR.Matriz(lealtad.NumeroDeSocio);
+        lado = matriz.GetLength(0);
+        trazo = CodigoQR.TrazoSvg(matriz);
+        dibujado = lealtad.NumeroDeSocio;
+    }
+}

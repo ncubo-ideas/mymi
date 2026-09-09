@@ -23,25 +23,25 @@ namespace Compras.Dominio
 	//
 	// La fecha llega como PARAMETRO. Quien tiene derecho a saber que dia es hoy es la
 	// superficie, no el modelo.
-	public class AbastecimientoPendiente
+	internal class AbastecimientoPendiente
 	{
-		public Categoria Categoria { get; private set; }
+		internal Categoria Categoria { get; private set; }
 
 		/// <summary>Siempre hay una: de algo que nunca se compró no se puede decir que falta.</summary>
-		public DateTime UltimaCompra { get; private set; }
+		internal DateTime UltimaCompra { get; private set; }
 
-		public int DiasDesdeLaUltima { get; private set; }
+		internal int DiasDesdeLaUltima { get; private set; }
 
 		/// <summary>El ritmo con el que se lee este hueco: el de ella, o el del catálogo.</summary>
-		public RitmoDeCompra Ritmo { get; private set; }
+		internal RitmoDeCompra Ritmo { get; private set; }
 
 		/// <summary>Los días que se esperaban entre compras. Salen del ritmo.</summary>
-		public int DiasEsperados => Ritmo.DiasParaLeerElHueco;
+		internal int DiasEsperados => Ritmo.DiasParaLeerElHueco;
 
 		/// <summary>Si los días esperados se MIDIERON en su historial o se supusieron.</summary>
-		public bool EsRitmoObservado => Ritmo.EsObservado;
+		internal bool EsRitmoObservado => Ritmo.EsObservado;
 
-		public AbastecimientoPendiente(Categoria categoria, DateTime ultimaCompra, int diasDesdeLaUltima,
+		internal AbastecimientoPendiente(Categoria categoria, DateTime ultimaCompra, int diasDesdeLaUltima,
 			RitmoDeCompra ritmo)
 		{
 			ArgumentNullException.ThrowIfNull(categoria);
@@ -60,14 +60,14 @@ namespace Compras.Dominio
 			Ritmo = ritmo;
 		}
 
-		public bool EstaVencido => DiasDesdeLaUltima > DiasEsperados;
+		internal bool EstaVencido => DiasDesdeLaUltima > DiasEsperados;
 
 		/// <summary>Con signo: negativo si ya se pasó.</summary>
-		public int DiasQueFaltan => DiasEsperados - DiasDesdeLaUltima;
+		internal int DiasQueFaltan => DiasEsperados - DiasDesdeLaUltima;
 
 		// Al DOBLE del intervalo deja de ser "se me paso" y pasa a ser que la categoria
 		// salio de la canasta.
-		public Severidad Severidad
+		internal Severidad Severidad
 		{
 			get
 			{
@@ -78,14 +78,14 @@ namespace Compras.Dominio
 			}
 		}
 
-		public string NombreDeLaCategoria => Categoria.Nombre;
+		internal string NombreDeLaCategoria => Categoria.Nombre;
 
-		public string NombreDeLaSeveridad => Severidad.Nombre;
+		internal string NombreDeLaSeveridad => Severidad.Nombre;
 
-		public bool EsComestible => Categoria.EsComestible;
+		internal bool EsComestible => Categoria.EsComestible;
 
 		/// <summary>La línea, escrita por el dominio con SUS hechos. No es un consejo: es lo que pasó.</summary>
-		public string ParaElAsistente
+		internal string ParaElAsistente
 		{
 			get
 			{

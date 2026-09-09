@@ -16,16 +16,16 @@ namespace Examenes.Dominio
 	// Se lee al lado de SerieDeSangreEnOrina, igual que sus magnitudes: misma forma,
 	// mismo conteo, conclusiones distintas. La diferencia esta abajo, en Interpretar, y
 	// es la unica parte que importa.
-	public sealed class SerieDeSangreEnHeces : SerieBinaria
+	internal sealed class SerieDeSangreEnHeces : SerieBinaria
 	{
-		public SerieDeSangreEnHeces() : base(Analito.SangreEnLasHeces) { }
+		internal SerieDeSangreEnHeces() : base(Analito.SangreEnLasHeces) { }
 
 		// Anual como tamizaje, y a los tres meses si aparecio: lo que hay que saber es si
 		// se repite, y eso no se ve esperando un ano.
 		//
 		// ⚠️ Orientativa. La periodicidad real depende de la edad y de los antecedentes,
 		// y conviene que la revise alguien con criterio de laboratorio.
-		public override int MesesHastaElProximo(Paciente paciente) =>
+		internal override int MesesHastaElProximo(Paciente paciente) =>
 			Ultima != null && Ultima.EsHallazgo ? 3 : 12;
 
 		protected override Interpretacion Leer(Paciente paciente)

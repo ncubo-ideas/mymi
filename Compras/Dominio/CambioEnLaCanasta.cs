@@ -16,14 +16,14 @@ namespace Compras.Dominio
 	// mensual a semanal es un dato, no una falta. La app lo senala y se calla; el juicio no
 	// es suyo." Por eso aca no hay veredicto: hay lo que entro, lo que salio y lo que se
 	// mantuvo.
-	public class CambioEnLaCanasta
+	internal class CambioEnLaCanasta
 	{
 		private readonly List<ProductoQueEntro> entraron = new List<ProductoQueEntro>();
 		private readonly List<ProductoHabitual> salieron = new List<ProductoHabitual>();
 		private readonly List<ProductoHabitual> siguen = new List<ProductoHabitual>();
 
-		public FirmaDeLaCanasta FirmaAntes { get; private set; }
-		public FirmaDeLaCanasta FirmaDespues { get; private set; }
+		internal FirmaDeLaCanasta FirmaAntes { get; private set; }
+		internal FirmaDeLaCanasta FirmaDespues { get; private set; }
 
 		private readonly DateTime corte;
 
@@ -36,7 +36,7 @@ namespace Compras.Dominio
 		// el MES DEL CAMBIO es el mes mas viejo entre los productos que entraron, o sea un
 		// hecho de los datos. Suelen caer juntos o pegados, y cuando no, la diferencia es
 		// informacion: quiere decir que lo nuevo tardo en aparecer despues del corte.
-		public DateTime Corte
+		internal DateTime Corte
 		{
 			get
 			{
@@ -50,7 +50,7 @@ namespace Compras.Dominio
 		}
 
 		/// <summary>El corte como aaaa-mm. Vacío cuando no hay con qué comparar: lectura total para el cable.</summary>
-		public string CorteExpresado =>
+		internal string CorteExpresado =>
 			HayConQueComparar ? $"{corte.Year:0000}-{corte.Month:00}" : "";
 
 		internal CambioEnLaCanasta(FirmaDeLaCanasta antes, FirmaDeLaCanasta despues,
@@ -89,24 +89,24 @@ namespace Compras.Dominio
 			entraron.Sort((uno, otro) => uno.Desde.CompareTo(otro.Desde));
 		}
 
-		public IReadOnlyList<ProductoQueEntro> Entraron => entraron;
-		public IReadOnlyList<ProductoHabitual> Salieron => salieron;
-		public IReadOnlyList<ProductoHabitual> Siguen => siguen;
+		internal IReadOnlyList<ProductoQueEntro> Entraron => entraron;
+		internal IReadOnlyList<ProductoHabitual> Salieron => salieron;
+		internal IReadOnlyList<ProductoHabitual> Siguen => siguen;
 
 		/// <summary>
 		/// Si los DOS lados tienen una firma con la que comparar. Sin eso no se afirma
 		/// nada: que de un lado no haya compras no es que la canasta cambió.
 		/// </summary>
-		public bool HayConQueComparar => FirmaAntes.Existe() && FirmaDespues.Existe();
+		internal bool HayConQueComparar => FirmaAntes.Existe() && FirmaDespues.Existe();
 
 		/// <summary>Si hubo algún cambio de fondo: algo entró o algo se cayó.</summary>
-		public bool HayCambio => HayConQueComparar && (entraron.Count > 0 || salieron.Count > 0);
+		internal bool HayCambio => HayConQueComparar && (entraron.Count > 0 || salieron.Count > 0);
 
 		/// <summary>
 		/// El mes desde el que se nota el cambio: el más viejo entre los productos que
 		/// entraron. Preguntar HayCambio primero.
 		/// </summary>
-		public string MesDelCambioExpresado
+		internal string MesDelCambioExpresado
 		{
 			get
 			{
@@ -121,7 +121,7 @@ namespace Compras.Dominio
 		}
 
 		/// <summary>La línea de la portada. Dice qué pasó y se calla: el juicio no es del súper.</summary>
-		public string ParaElAsistente
+		internal string ParaElAsistente
 		{
 			get
 			{
@@ -169,11 +169,11 @@ namespace Compras.Dominio
 	}
 
 	/// <summary>Un producto que se volvió habitual, con el mes en que apareció por primera vez.</summary>
-	public class ProductoQueEntro
+	internal class ProductoQueEntro
 	{
 		private readonly ProductoHabitual habitual;
 
-		public DateTime Desde { get; private set; }
+		internal DateTime Desde { get; private set; }
 
 		internal ProductoQueEntro(ProductoHabitual habitual, DateTime desde)
 		{
@@ -183,11 +183,11 @@ namespace Compras.Dominio
 			Desde = desde;
 		}
 
-		public string Sku => habitual.Sku;
-		public string Descripcion => habitual.Descripcion;
-		public int ComprasEnQueAparece => habitual.ComprasEnQueAparece;
-		public decimal Proporcion => habitual.Proporcion;
+		internal string Sku => habitual.Sku;
+		internal string Descripcion => habitual.Descripcion;
+		internal int ComprasEnQueAparece => habitual.ComprasEnQueAparece;
+		internal decimal Proporcion => habitual.Proporcion;
 
-		public string DesdeExpresado => $"{Desde.Year:0000}-{Desde.Month:00}";
+		internal string DesdeExpresado => $"{Desde.Year:0000}-{Desde.Month:00}";
 	}
 }

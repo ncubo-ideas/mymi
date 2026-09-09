@@ -1,0 +1,82 @@
+@using System.Globalization
+@using System.Linq
+@using Examenes.App.Vistas
+
+@*  LA FORMA DE LOS NOMINALES: qué categoría salió cada vez.
+
+    No es una curva y no puede serlo — no hay eje vertical, porque las categorías no se
+    ordenan: ámbar no es «más» que amarillo pálido. Lo que se dibuja son las fechas y si
+    en cada una la categoría fue de las esperables.
+
+    Y ESO ES UN DIBUJO, no una frase. Ver dos inesperadas seguidas dice algo que la última
+    sola no dice: que ya se repitió. Es el mismo hecho que en la presencia, con un
+    vocabulario distinto — y por eso son dos componentes y no uno con un flag.
+
+    Las que se salieron de lo esperable se pintan llenas; las que no, huecas. La racha
+    final lleva el trazo grueso, porque es lo que cambia la conducta.                    *@
+
+<div class="forma forma--presencia">
+    <svg viewBox="0 0 320 46" role="img" aria-label="@Descripcion">
+        <line x1="12" y1="23" x2="308" y2="23" class="hilo" />
+
+        @if (Seguidas >= 2)
+        {
+            <line x1="@X(Observaciones.Count - Seguidas)" y1="23" x2="@X(Observaciones.Count - 1)" y2="23"
+                  class="racha" />
+        }
+
+        @for (int i = 0; i < Observaciones.Count; i++)
+        {
+            <circle cx="@X(i)" cy="23" r="@(Observaciones[i].EsHallazgo ? "6.5" : "5")"
+                    class="@(Observaciones[i].EsHallazgo ? "prueba prueba--presente" : "prueba")" />
+        }
+    </svg>
+
+    <div class="forma-pie forma-pie--extremos">
+        <span class="forma-nota">@Fecha(Primera)</span>
+        <span class="forma-nota forma-nota--centro">@Conteo</span>
+        <span class="forma-nota forma-nota--der"><b>@Ultima</b></span>
+    </div>
+</div>
+
+@code {
+    [Parameter] public IReadOnlyList<ObservacionEnSerie> Observaciones { get; set; } =
+        new List<ObservacionEnSerie>();
+    [Parameter] public int Seguidas { get; set; }
+    [Parameter] public string Descripcion { get; set; } = "";
+
+    private static readonly System.Globalization.CultureInfo Cultura = new("es-CR");
+
+    private DateTime Primera => Observaciones.Count == 0 ? default : Observaciones[0].Fecha;
+    private string Ultima => Observaciones.Count == 0 ? "" : Observaciones[^1].Expresado;
+
+    // CUÁNTAS DENTRO DE LO ESPERABLE Y DE CUÁNTAS. La tira sola no se cuenta de un vistazo
+    // cuando hay muchas, y «ninguna se salió» es una respuesta y no un vacío.
+    private string Conteo
+    {
+        get
+        {
+            int afuera = Observaciones.Count(o => o.EsHallazgo);
+            if (afuera == 0) return $"{Observaciones.Count} veces, siempre lo esperable";
+            return $"{afuera} de {Observaciones.Count} fuera de lo esperable";
+        }
+    }
+
+    // Las observaciones se reparten POR FECHA y no en pasos iguales, por la misma razón que
+    // en la presencia: dos seguidas con un año en medio y dos con un mes no cuentan lo
+    // mismo, y un eje que las espaciara igual diría algo que no es.
+    private string X(int indice)
+    {
+        if (Observaciones.Count <= 1) return "160";
+
+        double recorrido = (Observaciones[^1].Fecha - Observaciones[0].Fecha).TotalDays;
+        double p = recorrido <= 0
+            ? indice / (double)(Observaciones.Count - 1)
+            : (Observaciones[indice].Fecha - Observaciones[0].Fecha).TotalDays / recorrido;
+
+        return (12 + p * 296).ToString("0.#", CultureInfo.InvariantCulture);
+    }
+
+    private static string Fecha(DateTime fecha) =>
+        fecha == default ? "" : fecha.ToString("MMM yyyy", Cultura);
+}

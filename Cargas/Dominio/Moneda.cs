@@ -11,14 +11,14 @@ namespace Cargas.Dominio
 	/// </summary>
 	// El balboa esta anclado 1:1 al dolar y el colon no: la conversion ni siquiera es
 	// simetrica en dificultad. Que el tipo no tenga factor hace imposible olvidarlo.
-	public sealed class Moneda
+	internal sealed class Moneda
 	{
-		public static readonly Moneda Colon = new Moneda("CRC", "₡");
-		public static readonly Moneda Balboa = new Moneda("PAB", "B/.");
-		public static readonly Moneda Dolar = new Moneda("USD", "$");
+		internal static readonly Moneda Colon = new Moneda("CRC", "₡");
+		internal static readonly Moneda Balboa = new Moneda("PAB", "B/.");
+		internal static readonly Moneda Dolar = new Moneda("USD", "$");
 
-		public string Codigo { get; private set; }
-		public string Simbolo { get; private set; }
+		internal string Codigo { get; private set; }
+		internal string Simbolo { get; private set; }
 
 		private Moneda(string codigo, string simbolo)
 		{
@@ -27,7 +27,7 @@ namespace Cargas.Dominio
 		}
 
 		// La query de reconocimiento para la frontera: decide sin reventar.
-		public static bool EsConocida(string codigo)
+		internal static bool EsConocida(string codigo)
 		{
 			if (string.IsNullOrWhiteSpace(codigo)) return false;
 			string normalizado = codigo.Trim().ToUpperInvariant();
@@ -35,7 +35,7 @@ namespace Cargas.Dominio
 				|| normalizado == Dolar.Codigo;
 		}
 
-		public static Moneda PorCodigo(string codigo)
+		internal static Moneda PorCodigo(string codigo)
 		{
 			ArgumentNullException.ThrowIfNullOrWhiteSpace(codigo);
 
@@ -49,7 +49,7 @@ namespace Cargas.Dominio
 				+ $"{Colon.Codigo}, {Balboa.Codigo}, {Dolar.Codigo}.");
 		}
 
-		public bool EsLaMisma(Moneda otra)
+		internal bool EsLaMisma(Moneda otra)
 		{
 			ArgumentNullException.ThrowIfNull(otra);
 			return ReferenceEquals(this, otra);

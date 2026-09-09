@@ -1,0 +1,28 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net9.0</TargetFramework>
+    <Nullable>disable</Nullable>
+    <ImplicitUsings>disable</ImplicitUsings>
+    <RootNamespace>Concesionario.App</RootNamespace>
+    <AssemblyName>Concesionario.App</AssemblyName>
+    <AssemblyTitle>Maintenance schedule API</AssemblyTitle>
+    <Description>The only door into the maintenance schedule: the commands and queries that the app, the console and the MCP server all enter through.</Description>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <!-- El dominio se referencia pero NO se puede nombrar: es enteramente `internal` y este
+         ensamblado no esta en su lista de InternalsVisibleTo. La referencia existe porque el
+         dll tiene que llegar al output y figurar en el deps.json de cada host: TheDomain lo
+         carga por nombre en tiempo de ejecucion. Referenciar sin poder nombrar es la cerca. -->
+    <ProjectReference Include="..\..\Dominio\Concesionario.Dominio.csproj" />
+    <ProjectReference Include="..\Concesionario.Frontera\Concesionario.Frontera.csproj" />
+
+    <ProjectReference Include="..\..\Mecanismo\Puppets.Portador\Puppets.Portador.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Ncubo.Puppeteer" Version="$(VersionDelMotor)" />
+  </ItemGroup>
+
+</Project>

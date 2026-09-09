@@ -6,12 +6,12 @@ namespace Cargas.Dominio
 	/// kilometraje"-, nunca un reproche: alimenta la motivacion del §10 mostrando el
 	/// trabajo a medio hacer, no un formulario en blanco.
 	/// </summary>
-	public sealed class CompletitudDeDatos
+	internal sealed class CompletitudDeDatos
 	{
-		public int CargasConKilometraje { get; private set; }
-		public int TotalDeCargas { get; private set; }
-		public int TramosCalculados { get; private set; }
-		public int TramosBloqueados { get; private set; }
+		internal int CargasConKilometraje { get; private set; }
+		internal int TotalDeCargas { get; private set; }
+		internal int TramosCalculados { get; private set; }
+		internal int TramosBloqueados { get; private set; }
 
 		internal CompletitudDeDatos(int conKilometraje, int total, int calculados, int bloqueados)
 		{
@@ -21,7 +21,7 @@ namespace Cargas.Dominio
 			TramosBloqueados = bloqueados;
 		}
 
-		public string Expresada =>
+		internal string Expresada =>
 			$"{CargasConKilometraje} de {TotalDeCargas} cargas con kilometraje · "
 			+ $"{TramosCalculados} tramos calculables";
 	}

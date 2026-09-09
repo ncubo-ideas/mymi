@@ -24,13 +24,13 @@ namespace Examenes.Dominio
 	// pide, desde las dos afirmaciones sobre el sexo que si guarda. Asi no puede quedar
 	// desincronizado de ellas, y ninguna consulta a medio hacer ve una persona que cambio
 	// debajo.
-	public sealed class Paciente
+	internal sealed class Paciente
 	{
-		public int Edad { get; private set; }
+		internal int Edad { get; private set; }
 
-		public Sexo Sexo { get; private set; }
+		internal Sexo Sexo { get; private set; }
 
-		public Paciente(int edad, Sexo sexo)
+		internal Paciente(int edad, Sexo sexo)
 		{
 			ArgumentNullException.ThrowIfNull(sexo);
 			if (edad <= 0 || edad > 120)
@@ -43,13 +43,13 @@ namespace Examenes.Dominio
 
 		// El paciente del que todavia no se sabe el sexo. Es el estado en el que arranca
 		// un expediente: el laboratorio no lo publico y la persona no lo declaro.
-		public static Paciente DeEdad(int edad) => new Paciente(edad, Sexo.Desconocido);
+		internal static Paciente DeEdad(int edad) => new Paciente(edad, Sexo.Desconocido);
 
 		// SI TIENE PROSTATA. Tres estados y no un bool, porque el dato del que se deriva
 		// tiene tres: con el sexo desconocido esto no es falso, es indeterminado — y
 		// devolver false "mientras tanto" haria desaparecer una tarjeta que quizas
 		// corresponde, en silencio.
-		public Aplicabilidad TieneProstata
+		internal Aplicabilidad TieneProstata
 		{
 			get
 			{
@@ -62,7 +62,7 @@ namespace Examenes.Dominio
 		// Si de esta persona se sabe lo que hace falta para comparar contra un rango que
 		// depende del sexo. Lo preguntan los analitos que tienen ese rango —la hemoglobina,
 		// el HDL— y NO los que no lo tienen, que siguen interpretandose igual que siempre.
-		public bool SeSabeElSexo => Sexo.EsConocido;
+		internal bool SeSabeElSexo => Sexo.EsConocido;
 
 		public override string ToString() => $"{Edad} años, {Sexo.ParaMostrar}";
 	}

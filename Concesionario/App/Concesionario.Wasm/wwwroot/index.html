@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+    <title>Mi carro · Sotavento Motors</title>
+    <base href="/app/" />
+
+    <meta name="theme-color" content="#05132E" media="(prefers-color-scheme: light)" />
+    <meta name="theme-color" content="#060C16" media="(prefers-color-scheme: dark)" />
+
+    <link rel="preload" as="font" type="font/woff2" crossorigin
+          href="fonts/plus-jakarta-sans-latin.woff2" />
+
+    <link rel="stylesheet" href="css/app.css" />
+    <link rel="stylesheet" href="css/dueno.css" />
+    <link rel="icon" type="image/png" href="favicon.png" />
+    <link href="manifest.webmanifest" rel="manifest" />
+    <link rel="apple-touch-icon" sizes="512x512" href="icon-512.png" />
+    <link rel="apple-touch-icon" sizes="192x192" href="icon-192.png" />
+
+    <script>
+        window.appearance = {
+            stored: function () {
+                try { return localStorage.getItem('appearance') || ''; } catch (e) { return ''; }
+            },
+            systemPrefersDark: function () {
+                return window.matchMedia('(prefers-color-scheme: dark)').matches;
+            },
+            apply: function (choice) {
+                document.documentElement.dataset.theme = choice;
+                try { localStorage.setItem('appearance', choice); } catch (e) { }
+            }
+        };
+
+        document.documentElement.dataset.theme =
+            window.appearance.stored()
+            || (window.appearance.systemPrefersDark() ? 'dark' : 'light');
+    </script>
+</head>
+
+<body>
+    <div id="app">
+        <svg class="loading-progress">
+            <circle r="40%" cx="50%" cy="50%" />
+            <circle r="40%" cx="50%" cy="50%" />
+        </svg>
+        <div class="loading-progress-text"></div>
+    </div>
+
+    <div id="blazor-error-ui">
+        Algo salió mal.
+        <a href="." class="reload">Recargar</a>
+        <span class="dismiss">🗙</span>
+    </div>
+    <script src="_framework/blazor.webassembly.js"></script>
+    <script>
+        if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.register('service-worker.js').catch(() => { });
+        }
+    </script>
+</body>
+
+</html>

@@ -82,6 +82,24 @@
           ]
         }
       ]
+    },
+    {
+      "//": "2026-09-08: LA TRAJO EL MERGE DE master. El modulo gano constancia_de -la tercera forma de un analito, la categorica- y esta copia se quedo con cuatro, asi que gnothi_verify_module la reporto como expuesta-sin-declarar. Es exactamente lo que anticipa el //sincronizado de arriba, y esta vez el guardian de la suite lo atajo en vez de que pasara en silencio. La descripcion es la del modulo (Examenes.Mcp/Tools/ExamenesTools.cs) traducida al ingles como las otras cuatro: QUE LA REVISE EL DUENO, que es quien las unifico.",
+      "name": "constancia_de",
+      "title": "Whether the colour keeps coming out odd",
+      "description": "Answers how an analyte reported as a CATEGORY - the colour of the urine, of the stool - is doing, looking at its whole history and not at the latest test. Use it when they ask 'does the colour still come out odd?', 'has this happened to me before?' or 'is this colour normal?'. It returns whether it was always within what is expected, whether it went outside, whether it PERSISTS -two or more consecutive times outside: it was already repeated-, whether it was not confirmed -it went outside once and the next one came back- or whether it returned to what is expected. It differs from evaluar_tendencia, which only works for analytes carrying a number, and from presencia_de, which works for the ones reported as positive or negative: a colour is not going up and does not appear, it COMES OUT. Pay attention to noEsperablesSeguidas: an isolated unexpected category and a repeated one do NOT call for the same thing, and the right action comes in the accion field. The analyte is passed as one of these exact values: ColorDeLaOrina, ColorDeLasHeces.",
+      "readOnly": true,
+      "input": [
+        {
+          "name": "analito",
+          "type": "string",
+          "description": "Which nominal analyte to evaluate. Valid values: ColorDeLaOrina, ColorDeLasHeces.",
+          "enum": [
+            "ColorDeLaOrina",
+            "ColorDeLasHeces"
+          ]
+        }
+      ]
     }
   ]
 }

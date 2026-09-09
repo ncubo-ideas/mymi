@@ -13,44 +13,44 @@ namespace Cargas.Dominio
 	// consulta que motiva el ingreso. Las proyecciones son planas y totales -ceros con
 	// su bandera- porque asi cruzan el print de a un nivel, igual que los carriers de
 	// examenes.
-	public sealed class Tramo
+	internal sealed class Tramo
 	{
-		public bool EstaCalculado { get; private set; }
-		public DateTime Desde { get; private set; }
-		public DateTime Hasta { get; private set; }
+		internal bool EstaCalculado { get; private set; }
+		internal DateTime Desde { get; private set; }
+		internal DateTime Hasta { get; private set; }
 
 		/// <summary>Cero cuando esta bloqueado: falta justamente el kilometraje.</summary>
-		public decimal Kilometros { get; private set; }
+		internal decimal Kilometros { get; private set; }
 
 		/// <summary>Los litros que se consumieron: la suma de las cargas POSTERIORES a la
 		/// que abre, incluida la que cierra. Los de la que abre ya se contaron en el tramo
 		/// anterior. Se sabe aunque el tramo este bloqueado.</summary>
-		public decimal Litros { get; private set; }
+		internal decimal Litros { get; private set; }
 
-		public decimal RendimientoEnKmPorLitro { get; private set; }
+		internal decimal RendimientoEnKmPorLitro { get; private set; }
 
 		/// <summary>Si se puede leer contra la linea base sin reservas: mismo instrumento
 		/// y mismo combustible que el resto de la serie.</summary>
-		public bool EsComparable { get; private set; }
+		internal bool EsComparable { get; private set; }
 
 		/// <summary>"otro surtidor" u "otro combustible"; vacio si es comparable.</summary>
-		public string MotivoDeReserva { get; private set; }
+		internal string MotivoDeReserva { get; private set; }
 
 		/// <summary>Rendimiento implausible sobre la linea base: probable carga sin
 		/// registrar. Lo marca la serie despues de conocer la base.</summary>
-		public bool EsSospechoso { get; private set; }
+		internal bool EsSospechoso { get; private set; }
 
 		/// <summary>Que dato falta, cuando esta bloqueado: "el kilometraje de tu carga
 		/// del 25/07/2026". Vacio si esta calculado.</summary>
-		public string QueFalta { get; private set; }
+		internal string QueFalta { get; private set; }
 
 		/// <summary>El instrumento que midio los litros consumidos; vacio si los midieron
 		/// varios. Con el la serie decide la comparabilidad.</summary>
-		public string InstrumentoDeLosLitros { get; private set; }
+		internal string InstrumentoDeLosLitros { get; private set; }
 
 		/// <summary>El combustible que se quemo en el tramo -el de la carga que abre y
 		/// las que aportan-; vacio si se mezclo mas de uno.</summary>
-		public string CombustibleDelTramo { get; private set; }
+		internal string CombustibleDelTramo { get; private set; }
 
 		private Rendimiento rendimiento;
 
@@ -94,7 +94,7 @@ namespace Cargas.Dominio
 
 		/// <summary>El rendimiento como magnitud, para el calculo. Leerlo en un tramo
 		/// bloqueado es un bug del llamador: consultar antes EstaCalculado.</summary>
-		public Rendimiento Rendimiento =>
+		internal Rendimiento Rendimiento =>
 			rendimiento ?? throw new ErrorDeDominio(
 				"Un tramo bloqueado no tiene rendimiento: consultar antes EstaCalculado. "
 				+ $"Lo que falta: {QueFalta}");
@@ -112,7 +112,27 @@ namespace Cargas.Dominio
 			EsSospechoso = true;
 		}
 
-		public string Expresado => EstaCalculado
+		// LA MIRADA LA PONE LA BITACORA al entregarlo, igual que la serie le pone las
+		// marcas: el tramo solo la porta. Asi el trecho de la pantalla se dice en la unidad
+		// que ella eligio, sin que el calculo deje de ser canonico ni un momento — la curva
+		// y la barra siguen leyendo RendimientoEnKmPorLitro.
+		private ComoLoMira mirada = ComoLoMira.Canonica;
+
+		internal void MirarloComo(ComoLoMira como)
+		{
+			ArgumentNullException.ThrowIfNull(como);
+			mirada = como;
+		}
+
+		internal decimal RendimientoComoSeVe => EstaCalculado
+			? mirada.Rendimiento.ConvertirKmPorLitro(RendimientoEnKmPorLitro)
+			: 0m;
+
+		internal decimal KilometrosComoSeVen => mirada.DistanciaComoSeVe(Kilometros);
+		internal string SimboloDelRendimiento => mirada.SimboloDelRendimiento;
+		internal string SimboloDeLaDistancia => mirada.SimboloDeLaDistancia;
+
+		internal string Expresado => EstaCalculado
 			? $"{Kilometros:0} km / {Litros:0.#} L = {RendimientoEnKmPorLitro:0.#} km/L"
 			: $"bloqueado: falta {QueFalta}";
 	}

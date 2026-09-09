@@ -9,15 +9,15 @@ namespace Examenes.Dominio
 	// Lo suyo es PeorGrado(): la anemia mas profunda que hubo en toda la serie. Un valor
 	// que hoy esta bien despues de haber estado en 8.0 no se lee igual que uno que nunca
 	// bajo, y eso no se puede preguntar mirando una medicion sola.
-	public sealed class SerieDeHemoglobina : SerieContinua
+	internal sealed class SerieDeHemoglobina : SerieContinua
 	{
-		public SerieDeHemoglobina() : base(Analito.Hemoglobina) { }
+		internal SerieDeHemoglobina() : base(Analito.Hemoglobina) { }
 
 		private Hemoglobina Ultima => (Hemoglobina)Ultimo;
 
 		// ---------------------------------------------------------------- lo suyo
 
-		public GradoDeAnemia PeorGrado(Paciente paciente)
+		internal GradoDeAnemia PeorGrado(Paciente paciente)
 		{
 			GradoDeAnemia peor = GradoDeAnemia.Ninguna;
 			foreach (ExamenDeSangre medicion in Mediciones)
@@ -30,12 +30,12 @@ namespace Examenes.Dominio
 
 		// Si hubo anemia antes y hoy ya no la hay. Es la unica forma de decir "te
 		// recuperaste", y necesita los dos extremos.
-		public bool VieneRecuperandose(Paciente paciente) =>
+		internal bool VieneRecuperandose(Paciente paciente) =>
 			Cantidad >= 2 && PeorGrado(paciente).HayAnemia && !Ultima.GradoDeAnemia(paciente).HayAnemia;
 
 		// ---------------------------------------------------------------- como se dibuja
 
-		public override FormaDeLectura Forma => FormaDeLectura.PosicionEnBanda;
+		internal override FormaDeLectura Forma => FormaDeLectura.PosicionEnBanda;
 
 		// LA SERIE QUE NO SE PUEDE LEER SIN SEXO. Es una de las dos —la otra es el HDL, que
 		// viaja adentro del colesterol fraccionado— y la razon es concreta: 12.2 g/dL es
@@ -46,7 +46,7 @@ namespace Examenes.Dominio
 
 		// Piso Y techo: es el unico analito del demo donde alejarse es peor en las dos
 		// direcciones, y por eso su dibujo es una banda y no una linea.
-		public override IReadOnlyList<ReferenciaDeLectura> Referencias(Paciente paciente)
+		internal override IReadOnlyList<ReferenciaDeLectura> Referencias(Paciente paciente)
 		{
 			var lineas = new List<ReferenciaDeLectura>();
 			if (Ultimo == null) return lineas;

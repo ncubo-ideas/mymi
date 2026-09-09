@@ -1,7 +1,6 @@
 using System;
 using System.Collections.Generic;
 using System.Text.Json;
-using Compras.Dominio;
 using Puppets.Portador;
 
 namespace Compras.App.Eventos
@@ -36,6 +35,10 @@ namespace Compras.App.Eventos
 		public decimal[] PreciosUnitarios { get; private set; }
 		public string[] Categorias { get; private set; }
 		public int[] MesesDeGarantia { get; private set; }
+
+		/// <summary>En qué sucursal fue, o vacío: el campo es OPCIONAL en el wire, y un
+		/// tiquete que no lo trae sigue siendo un tiquete válido.</summary>
+		public string Sucursal { get; private set; } = "";
 
 		private CompraRegistrada() { }
 
@@ -72,14 +75,22 @@ namespace Compras.App.Eventos
 				if (categorias.Length != skus.Length) return null;
 				if (meses.Length != skus.Length) return null;
 
-				foreach (string categoria in categorias)
-					if (!EsCategoriaConocida(categoria)) return null;
+				// EL DEPARTAMENTO YA NO SE RECONOCE ACA. Preguntarle al dominio era lo
+				// correcto -y el comentario de abajo explica por que una lista espejo no lo
+				// es- pero para preguntarle habia que NOMBRAR Categoria en C#, y eso obliga
+				// al dominio entero a ser public. El reconocimiento se mudo al Check de
+				// ComprasAPI: el nombre viaja adentro del script, el motor lo resuelve por
+				// reflexion y la decision queda DENTRO del actor. Sigue siendo el dominio
+				// quien posee el conjunto, que es lo que importaba.
 
 				return new CompraRegistrada
 				{
 					Evento = senal.Numero,
 					Numero = numero,
 					Fecha = fecha,
+					// Opcional a proposito: los proveedores que no lo mandan siguen
+					// entrando. Sin el, la compra queda sin situar, no rechazada.
+					Sucursal = Texto(raiz, "sucursal"),
 					Skus = skus,
 					Descripciones = descripciones,
 					Cantidades = cantidades,
@@ -93,17 +104,6 @@ namespace Compras.App.Eventos
 				return null;
 			}
 		}
-
-		// LO PREGUNTA AL DOMINIO, que es quien posee el conjunto. Aca habia una copia de
-		// los nueve nombres, con el argumento de "descartar en la frontera sin referenciar
-		// al dominio desde el wire" — y el argumento era falso: este ensamblado YA
-		// referencia Compras.Dominio, porque es el que consulta el historial.
-		//
-		// La copia se desincronizo y costo caro: al agregar mascotas, embutidos y comidas
-		// preparadas, el borde descarto 47 de 87 compras EN SILENCIO. Ni un error, ni un
-		// log: solo un historial que empezaba en 2026 sin que nada dijera por que. Una
-		// lista espejo mantenida a mano no falla haciendo ruido, falla callada.
-		private static bool EsCategoriaConocida(string categoria) => Categoria.Existe(categoria);
 
 		private static string Texto(JsonElement raiz, string nombre) =>
 			raiz.TryGetProperty(nombre, out JsonElement e) && e.ValueKind == JsonValueKind.String

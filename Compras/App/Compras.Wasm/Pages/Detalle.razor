@@ -1,7 +1,7 @@
 @page "/compra/{Numero}"
 @using System.Globalization
 @using Compras.App.Vistas
-@using Compras.Dominio
+@using Compras.App
 @using Microsoft.JSInterop
 @inject EstadoDeLaApp estado
 @inject NavigationManager navegacion
@@ -14,7 +14,10 @@
     ? "Una compra · La Guaria y vos"
     : $"{Dia(compra.Fecha)} {compra.Fecha.Day} de {MesLargo(compra.Fecha.Month)} · La Guaria y vos")</PageTitle>
 
-<button class="btn btn-link p-0 mb-3" @onclick="Volver">&larr; Mis compras</button>
+@* Decia "← Mis compras" y navegaba a la PORTADA con destino fijo — pero a un recibo se
+   llega desde recibos, desde la portada y desde la busqueda, y ese boton acertaba solo en
+   uno de los tres. El componente vuelve a donde se estaba. *@
+<Volver Respaldo="recibos" />
 
 @if (!estado.EstaArriba)
 {
@@ -29,58 +32,77 @@ else
     @* LA FECHA ES EL TITULO, no el numero de ticket. Decia "Compra T-90349": ese numero es
        como el super identifica ese papel en SU sistema, y encabezar con el convierte la
        pantalla en una factura. Lo que ella recuerda de una compra es CUANDO fue. *@
-    <h1 class="h4">@Dia(compra.Fecha) @compra.Fecha.Day de @MesLargo(compra.Fecha.Month)</h1>
+    <p class="kicker mb-1">Tu compra del</p>
+    <h1 class="h3 mb-0">@Dia(compra.Fecha).ToLower() @compra.Fecha.Day de @MesLargo(compra.Fecha.Month)</h1>
     <p class="text-body-secondary">
-        @compra.Lineas.Count @(compra.Lineas.Count == 1 ? "cosa" : "cosas") &middot;
-        @Colones(compra.Total) &middot; a las @Hora(compra.Fecha)
+        a las @Hora(compra.Fecha)@(compra.Sucursal.Length > 0 ? " · " + compra.Sucursal : "")
     </p>
 
-    @* LA TABLA SE VUELVE FILAS EN TELÉFONO, y no es cosmético: medida, su ancho mínimo es
-       566 px, así que en una pantalla de 375 se salía 191 px y arrastraba la página entera
-       con una barra de scroll horizontal. Nada la contenía. El CSS la apila debajo de 768;
-       el markup es el mismo, y cada celda lleva su rótulo para que apilada se siga
-       entendiendo sin el encabezado. *@
-    <table class="table align-middle lineas">
-        <thead>
-            @* TRES COLUMNAS Y NO CINCO. Se fueron "Departamento" y "Precio" unitario, que
-               son columnas de FACTURA: el departamento es la taxonomia de pasillos del
-               super -util para sumar la canasta, no para recordar una compra- y el precio
-               unitario tiene su propia lectura en "lo que cambio de precio".
+    @* EL RESUMEN ANTES DE LA LISTA, del mock de Fernanda: tres fotos de muestra y el total
+       en grande. Es lo que se busca al abrir un recibo -"cuanto fue"- y estaba escondido en
+       la linea de texto de arriba. *@
+    <div class="detalle-resumen mb-4">
+        <div class="detalle-muestras">
+            <span class="fotitos" aria-hidden="true">
+                @foreach (LineaDeCompra muestra in Muestras())
+                {
+                    <img src="@Foto(muestra.Sku)" alt="" />
+                }
+            </span>
+            <div class="small text-body-secondary detalle-nombres">@Nombres()</div>
+        </div>
+        <div class="text-end">
+            <div class="detalle-total">@Colones(compra.Total)</div>
+            <div class="small text-body-secondary">
+                @compra.Lineas.Count @(compra.Lineas.Count == 1 ? "producto" : "productos")
+            </div>
+        </div>
+    </div>
 
-               Queda lo que una persona recuerda de una compra: QUE llevo, CUANTO y QUE
-               costo. Los otros dos siguen viajando en la vista y el asistente los tiene
-               enteros por sus tools, que es donde el detalle no estorba. *@
-            <tr>
-                <th>Lo que llevaste</th>
-                <th class="text-end">Cantidad</th><th class="text-end">Precio</th>
-            </tr>
-        </thead>
-        <tbody>
-            @foreach (LineaDeCompra linea in Visibles())
-            {
-                <tr>
-                    <td>
-                        @linea.Descripcion
-                        @* EL SKU NO SE PINTA. La especificacion de marca lo prohibe con nombre
-                           propio: "nada de «SKU», «ticket promedio» ni «categorias de consumo» en
-                           lo que ve Sonia". Es la llave con la que el supermercado identifica un
-                           producto en SU inventario, y no le dice nada a quien compro.
+    @* FILAS Y NO TABLA, del mock de Fernanda: Juan la vio y dijo que la tabla "no se ve
+       user friendly". Cada linea es una fila con su foto, el nombre, y "4 × ₡890" debajo
+       -que es como una persona lee lo que llevo, no como una columna-; el total de la linea
+       va a la derecha. De paso se fue el @media que desarmaba la tabla en telefono: una
+       fila asi cabe en 375 px sin apilarse.
 
-                           Sigue viva adentro -es la identidad del producto en el catalogo y lo
-                           que cruza sus compras entre si- y sigue viajando en las vistas para
-                           que la pantalla pueda pedir su foto. Lo que no hace es salir a
-                           pantalla. *@
+       El precio unitario VUELVE aca -la tabla lo habia soltado- pero como parte de la
+       frase "4 × ₡890", no como columna de factura. El departamento sigue afuera: es la
+       taxonomia de pasillos del super, y el asistente lo tiene entero por sus tools. *@
+    <div class="seccion-cabeza">
+        <span class="seccion-icono" aria-hidden="true">
+            <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6"
+                 stroke-linecap="round" stroke-linejoin="round">
+                <path d="M3.5 8h13l-1.4 7.5H4.9z"/><path d="M7 8l3-4.5L13 8"/>
+            </svg>
+        </span>
+        <span class="kicker">Esto fue lo que llevaste</span>
+    </div>
+    <div class="list-group lineas-compra">
+        @foreach (LineaDeCompra linea in Visibles())
+        {
+            <div class="list-group-item linea-compra">
+                @* EL SKU NO SE PINTA -la especificacion de marca lo prohibe con nombre
+                   propio- pero es con lo que la fila pide su foto. *@
+                <span class="proxima-foto @(Foto(linea.Sku).Length == 0 ? "proxima-foto--sin" : "")">
+                    @if (Foto(linea.Sku).Length > 0)
+                    {
+                        <img src="@Foto(linea.Sku)" alt="" />
+                    }
+                </span>
+                <span class="linea-que">
+                    <span class="linea-nombre">
+                        <strong>@linea.Descripcion</strong>
                         @if (linea.TieneGarantia)
                         {
                             <span class="etiqueta etiqueta-verde">con garantía</span>
                         }
-                    </td>
-                    <td class="text-end" data-rotulo="Cantidad">@linea.Cantidad</td>
-                    <td class="text-end" data-rotulo="Precio">@Colones(linea.Total)</td>
-                </tr>
-            }
-        </tbody>
-    </table>
+                    </span>
+                    <span class="linea-precio">@linea.Cantidad &times; @Colones(linea.PrecioUnitario)</span>
+                </span>
+                <strong class="linea-total">@Colones(linea.Total)</strong>
+            </div>
+        }
+    </div>
 
     @* DOS COMPORTAMIENTOS, uno por resolución, y es lo que Juan pidió.
 
@@ -91,6 +113,27 @@ else
 
        Es lo único de esta app donde la resolución cambia QUÉ SE RENDERIZA y no sólo cómo se
        ve, así que es lo único que necesita saber el ancho desde C#. Ver Pantalla.cs. *@
+    @* LA BUENA NOTICIA AL PIE, del mock de Fernanda ("la leche que llevaste esta hoy
+       ₡100 mas barata"): de lo que llevo en ESTA compra, lo que hoy cuesta menos. El
+       "hoy" es el ultimo precio que ELLA pago -esta lectura no sabe de gondolas-, solo
+       bajadas reales (el mismo umbral del 3% de la serie), y una sola: es una nota, no
+       otra lista. *@
+    @if (rebaja is not null && rebaja.Hay)
+    {
+        <div class="nota-rebaja d-flex align-items-center gap-2 mb-3">
+            <span class="proxima-foto @(Foto(rebaja.Sku).Length == 0 ? "proxima-foto--sin" : "")">
+                @if (Foto(rebaja.Sku).Length > 0)
+                {
+                    <img src="@Foto(rebaja.Sku)" alt="" />
+                }
+            </span>
+            <span class="small">
+                <strong>@rebaja.Descripcion</strong> hoy cuesta
+                <strong>@Colones(rebaja.CuantoMenos) menos</strong> que en esta compra.
+            </span>
+        </div>
+    }
+
     @* EL NUMERO SIGUE ESTANDO, y abajo, dicho por lo que le sirve A ELLA. No es dato
        interno -es lo que le van a pedir en el mostrador si va a reclamar algo, y la tarjeta
        de garantias ya lo nombra-, pero encabezar con el es hablarle en el idioma del
@@ -155,6 +198,7 @@ else
     [Parameter] public string Numero { get; set; } = "";
 
     private CompraDetallada? compra;
+    private RebajaVista? rebaja;
 
     // EL ESTADO ES UNO POR MODO y no se comparte: en telefono "esta abierto o no", en
     // escritorio "en que pagina voy". Meter los dos en un solo campo obligaria a traducir
@@ -179,6 +223,9 @@ else
 
         try { compra = estado.Detalle(Numero); }
         catch { compra = new CompraDetallada(); }
+
+        try { rebaja = estado.Rebaja(Numero); }
+        catch { rebaja = new RebajaVista(); }
     }
 
     // EL ANCHO SE PREGUNTA DESPUES DE PINTAR, porque antes no hay JS con quien hablar. El
@@ -247,8 +294,6 @@ else
         return deLaPagina;
     }
 
-    private void Volver() => navegacion.NavigateTo("");
-
     // Los nombres van a mano: en wasm la globalizacion viene recortada y pedirle a la
     // cultura los dias o los meses devuelve los ingleses o vacio.
     private static string Dia(DateTime cuando) => cuando.DayOfWeek switch
@@ -276,6 +321,33 @@ else
         if (hora == 0) hora = 12;
 
         return $"{hora}:{cuando.Minute:00} {(cuando.Hour < 12 ? "a.m." : "p.m.")}";
+    }
+
+    // LA FOTO VIENE DEL MISMO MAPA de toda la app; sin foto, la fila dibuja su hueco.
+    private static string Foto(string sku) => Compras.Wasm.Fotos.De(sku);
+
+    // Las tres primeras lineas CON foto: son muestra, no indice, y un hueco punteado en la
+    // cabecera no ensena nada.
+    private IEnumerable<LineaDeCompra> Muestras()
+    {
+        int dadas = 0;
+        foreach (LineaDeCompra linea in compra!.Lineas)
+        {
+            if (Foto(linea.Sku).Length == 0) continue;
+            yield return linea;
+            if (++dadas == 3) yield break;
+        }
+    }
+
+    // Los nombres de muestra siguen a las fotos: las mismas lineas, con elipsis del CSS si
+    // no caben.
+    private string Nombres()
+    {
+        var nombres = new List<string>();
+        foreach (LineaDeCompra muestra in Muestras()) nombres.Add(muestra.Descripcion);
+        if (nombres.Count == 0 && compra!.Lineas.Count > 0) nombres.Add(compra.Lineas[0].Descripcion);
+
+        return string.Join(" · ", nombres);
     }
 
     private static string Colones(decimal monto) =>

@@ -13,7 +13,7 @@ namespace Cargas.Dominio
 	// objeto: los objetos de este dominio se comparan por identidad y no son llave de
 	// nada. Los conjuntos cerrados (Moneda) si pueden llavear, porque su identidad de
 	// referencia es unica por miembro.
-	public sealed class BitacoraDeCargas
+	internal sealed class BitacoraDeCargas
 	{
 		private readonly Dictionary<string, Vehiculo> vehiculosPorPlaca =
 			new Dictionary<string, Vehiculo>();
@@ -24,16 +24,16 @@ namespace Cargas.Dominio
 		// El orden de llegada de las placas, para que la lista de vehiculos sea estable.
 		private readonly List<Vehiculo> vehiculos = new List<Vehiculo>();
 
-		public ProgramaDeLealtad Lealtad { get; private set; }
+		internal ProgramaDeLealtad Lealtad { get; private set; }
 
-		public BitacoraDeCargas()
+		internal BitacoraDeCargas()
 		{
 			Lealtad = new ProgramaDeLealtad();
 		}
 
 		// ------------------------------------------------------ lo que publica la estacion
 
-		public void Agregar(Carga carga)
+		internal void Agregar(Carga carga)
 		{
 			ArgumentNullException.ThrowIfNull(carga);
 
@@ -60,14 +60,19 @@ namespace Cargas.Dominio
 			return vehiculo;
 		}
 
-		public void AcreditarPuntos(int puntos)
+		internal void AcreditarPuntos(int puntos)
 		{
 			Lealtad.Acreditar(new Puntos(puntos));
 		}
 
-		public void ActualizarNivel(string nivel)
+		internal void ActualizarNivel(string nivel)
 		{
 			Lealtad.ActualizarNivel(NivelDeLealtad.PorNombre(nivel));
+		}
+
+		internal void Afiliar(string numeroDeSocio, string nombre, DateTime desde)
+		{
+			Lealtad.Afiliar(numeroDeSocio, nombre, desde);
 		}
 
 		// ---------------------------------------------------------- los aportes de Sonia
@@ -78,13 +83,13 @@ namespace Cargas.Dominio
 
 		/// <summary>Si la transaccion existe. Total: la query de reconocimiento que
 		/// acompana a la lectura guardada (CargaDe).</summary>
-		public bool ConoceTransaccion(string transaccion) =>
+		internal bool ConoceTransaccion(string transaccion) =>
 			!string.IsNullOrWhiteSpace(transaccion)
 			&& cargasPorTransaccion.ContainsKey(transaccion.Trim());
 
 		/// <summary>Revienta ante una transaccion desconocida: devolver "nada" mentiria,
 		/// porque confundiria "no existe la carga" con "no tiene aportes".</summary>
-		public Carga CargaDe(string transaccion)
+		internal Carga CargaDe(string transaccion)
 		{
 			ArgumentNullException.ThrowIfNullOrWhiteSpace(transaccion);
 			if (!cargasPorTransaccion.TryGetValue(transaccion.Trim(), out Carga carga))
@@ -96,7 +101,7 @@ namespace Cargas.Dominio
 
 		/// <summary>La guarda del comando AnotarOdometro: la carga existe y el
 		/// kilometraje es coherente con la serie (el odometro no retrocede).</summary>
-		public bool PuedeAnotarOdometro(string transaccion, decimal kilometros, string unidad)
+		internal bool PuedeAnotarOdometro(string transaccion, decimal kilometros, string unidad)
 		{
 			if (!ConoceTransaccion(transaccion)) return false;
 			if (kilometros <= 0m) return false;
@@ -106,7 +111,7 @@ namespace Cargas.Dominio
 			return VehiculoDe(carga.Placa.Texto).EsKilometrajeCoherente(carga, enKilometros);
 		}
 
-		public void AnotarOdometro(string transaccion, decimal kilometros, string unidad,
+		internal void AnotarOdometro(string transaccion, decimal kilometros, string unidad,
 			string origen)
 		{
 			Carga carga = CargaDe(transaccion);
@@ -115,21 +120,21 @@ namespace Cargas.Dominio
 			carga.AnotarOdometro(kilometros, unidad, origen);
 		}
 
-		public void DeclararTanque(string transaccion, string estado)
+		internal void DeclararTanque(string transaccion, string estado)
 		{
 			CargaDe(transaccion).DeclararTanque(estado);
 		}
 
 		/// <summary>La guarda de ConfirmarTanque: hay una inferencia esperando.</summary>
-		public bool PuedeConfirmarTanque(string transaccion) =>
+		internal bool PuedeConfirmarTanque(string transaccion) =>
 			ConoceTransaccion(transaccion) && CargaDe(transaccion).TieneInferenciaSinConfirmar;
 
-		public void ConfirmarTanque(string transaccion)
+		internal void ConfirmarTanque(string transaccion)
 		{
 			CargaDe(transaccion).ConfirmarTanque();
 		}
 
-		public void AdjuntarFoto(string transaccion, string nombreDeArchivo)
+		internal void AdjuntarFoto(string transaccion, string nombreDeArchivo)
 		{
 			CargaDe(transaccion).AdjuntarFoto(nombreDeArchivo);
 		}
@@ -137,7 +142,40 @@ namespace Cargas.Dominio
 		/// <summary>La ficha entra con primitivos del wire y escala aca: el cero en el
 		/// rendimiento de fabrica es el "no lo se" del formulario, y se convierte en el
 		/// tipo de ausencia antes de tocar el dominio.</summary>
-		public void CompletarFicha(string placa, string alias, string marca, string modelo,
+		// ------------------------------------------------------ como lo mira ella
+
+		/// <summary>En que unidades lo mira. Nace canonica y solo ella la cambia.</summary>
+		internal ComoLoMira Mirada { get; private set; } = ComoLoMira.Canonica;
+
+		/// <summary>Elegir en que se mira el rendimiento. SIN Check, a proposito: viene de
+		/// un boton, y volver a elegir lo mismo es legitimo -no es un reintento del que
+		/// haya que defenderse-. Es el mismo criterio que DeclararSexo en examenes.
+		///
+		/// RECONOCE en la frontera: un simbolo desconocido se rechaza aca y no se
+		/// journaliza. Si entrara, el journal quedaria irreproducible para cualquier
+		/// binario que no conozca ese simbolo.</summary>
+		internal void ElegirPresentacionDeRendimiento(string simbolo)
+		{
+			if (!PresentacionDeRendimiento.EsConocida(simbolo))
+				throw new ErrorDeDominio(
+					$"'{simbolo}' no es una forma conocida de mirar el rendimiento.");
+
+			Mirada = Mirada.ConRendimiento(PresentacionDeRendimiento.PorSimbolo(simbolo));
+		}
+
+		internal void ElegirUnidadDeDistancia(string simbolo)
+		{
+			if (!UnidadDeDistancia.EsConocida(simbolo))
+				throw new ErrorDeDominio(
+					$"'{simbolo}' no es una unidad de distancia conocida.");
+
+			Mirada = Mirada.ConDistancia(UnidadDeDistancia.PorSimbolo(simbolo));
+		}
+
+		internal string SimboloDelRendimiento => Mirada.SimboloDelRendimiento;
+		internal string SimboloDeLaDistancia => Mirada.SimboloDeLaDistancia;
+
+		internal void CompletarFicha(string placa, string alias, string marca, string modelo,
 			int anio, string color, decimal rendimientoDeFabricaKmPorLitro)
 		{
 			RendimientoDeFabrica deFabrica = rendimientoDeFabricaKmPorLitro > 0m
@@ -150,19 +188,19 @@ namespace Cargas.Dominio
 
 		// ------------------------------------------------------------------- consultas
 
-		public int Cantidad => cargasPorTransaccion.Count;
-		public int CantidadDeVehiculos => vehiculos.Count;
+		internal int Cantidad => cargasPorTransaccion.Count;
+		internal int CantidadDeVehiculos => vehiculos.Count;
 
-		public IReadOnlyList<Vehiculo> Vehiculos => vehiculos;
+		internal IReadOnlyList<Vehiculo> Vehiculos => vehiculos;
 
 		/// <summary>Total: la query de reconocimiento que acompana a VehiculoDe.</summary>
-		public bool ConocePlaca(string placa) =>
+		internal bool ConocePlaca(string placa) =>
 			!string.IsNullOrWhiteSpace(placa)
 			&& vehiculosPorPlaca.ContainsKey(new Placa(placa).Texto);
 
 		/// <summary>Revienta ante una placa desconocida: quien pregunta por un vehiculo
 		/// concreto tiene un defecto si no existe.</summary>
-		public Vehiculo VehiculoDe(string placa)
+		internal Vehiculo VehiculoDe(string placa)
 		{
 			ArgumentNullException.ThrowIfNullOrWhiteSpace(placa);
 			string llave = new Placa(placa).Texto;
@@ -172,67 +210,141 @@ namespace Cargas.Dominio
 			return vehiculo;
 		}
 
-		public IReadOnlyList<Carga> CargasDe(string placa) => VehiculoDe(placa).Cargas;
+		internal IReadOnlyList<Carga> CargasDe(string placa) => VehiculoDe(placa).Cargas;
 
-		public IReadOnlyList<Tramo> TramosDe(string placa) => VehiculoDe(placa).Serie().Tramos;
+		/// <summary>Los tramos, ya marcados con la mirada. La bitacora es quien conoce en
+		/// que unidades lo mira ella, igual que la serie es quien conoce la linea base: cada
+		/// una pone la marca que sabe y el tramo las porta.</summary>
+		internal IReadOnlyList<Tramo> TramosDe(string placa)
+		{
+			IReadOnlyList<Tramo> tramos = VehiculoDe(placa).Serie().Tramos;
+			foreach (Tramo tramo in tramos) tramo.MirarloComo(Mirada);
+			return tramos;
+		}
 
-		public EvaluacionDeRendimiento EvaluarRendimientoDe(string placa) =>
-			VehiculoDe(placa).Evaluar();
+		internal EvaluacionDeRendimiento EvaluarRendimientoDe(string placa) =>
+			VehiculoDe(placa).Evaluar(Mirada);
 
-		public LineaBaseDeRendimiento LineaBaseDe(string placa) =>
+		internal LineaBaseDeRendimiento LineaBaseDe(string placa) =>
 			VehiculoDe(placa).Serie().LineaBase;
 
-		public CapacidadEstimadaDeTanque CapacidadDe(string placa) =>
+		internal CapacidadEstimadaDeTanque CapacidadDe(string placa) =>
 			VehiculoDe(placa).Capacidad();
 
-		public AutonomiaEstimada AutonomiaDe(string placa) => VehiculoDe(placa).Autonomia();
+		internal AutonomiaEstimada AutonomiaDe(string placa) => VehiculoDe(placa).Autonomia();
 
-		public CompletitudDeDatos CompletitudDe(string placa) =>
+		internal CompletitudDeDatos CompletitudDe(string placa) =>
 			VehiculoDe(placa).Completitud();
 
-		public IReadOnlyList<FaltanteDeDato> FaltantesDe(string placa) =>
+		internal IReadOnlyList<FaltanteDeDato> FaltantesDe(string placa) =>
 			VehiculoDe(placa).Faltantes();
 
-		public ProyeccionDeOdometro OdometroEstimadoDe(string placa, DateTime hoy) =>
-			VehiculoDe(placa).OdometroEstimado(hoy);
+		/// <summary>CUANTO SE MANEJA ESTE CARRO. Sale con la mirada puesta porque este
+		/// numero se cruza con la distancia que le falta al vehiculo para un service, y
+		/// esa viene en la unidad de la otra institucion: un ritmo en km leido como
+		/// millas corre la fecha del service 1.6 veces.</summary>
+		internal LecturaDeRitmo RitmoDe(string placa)
+		{
+			LecturaDeRitmo ritmo = VehiculoDe(placa).Ritmo;
+			ritmo.MirarloComo(Mirada);
+			return ritmo;
+		}
 
-		public IReadOnlyList<CostoPorDistanciaEnMoneda> CostoPorDistanciaDe(string placa) =>
+		internal ProyeccionDeOdometro OdometroEstimadoDe(string placa, DateTime hoy)
+		{
+			ProyeccionDeOdometro proyeccion = VehiculoDe(placa).OdometroEstimado(hoy);
+			proyeccion.MirarloComo(Mirada);
+			return proyeccion;
+		}
+
+		internal IReadOnlyList<CostoPorDistanciaEnMoneda> CostoPorDistanciaDe(string placa) =>
 			VehiculoDe(placa).CostoPorDistancia();
 
-		public IReadOnlyList<PrecioEnElTiempo> PreciosDe(string placa) =>
+		internal IReadOnlyList<PrecioEnElTiempo> PreciosDe(string placa) =>
 			VehiculoDe(placa).Precios();
 
-		/// <summary>El gasto de un mes, POR MONEDA y sobre todos los vehiculos: es la
-		/// pregunta de la billetera, no la del carro.</summary>
-		public IReadOnlyList<GastoEnMoneda> GastoDelPeriodo(int anio, int mes)
+		// ------------------------------------------------------- las tombolas
+
+		internal void AnunciarSorteo(string codigo, string nombre, string premio,
+			DateTime fechaDelSorteo, decimal montoPorBoleto, string moneda) =>
+			Lealtad.AnunciarSorteo(codigo, nombre, premio, fechaDelSorteo, montoPorBoleto, moneda);
+
+		internal void EmitirBoleto(string numeroDeBoleto, string codigoDelSorteo,
+			DateTime fecha, string numeroDeTransaccion) =>
+			Lealtad.EmitirBoleto(numeroDeBoleto, codigoDelSorteo, fecha, numeroDeTransaccion);
+
+		internal bool ConoceSorteo(string codigo) => Lealtad.ConoceSorteo(codigo);
+
+		internal bool ConoceBoleto(string codigoDelSorteo, string numeroDeBoleto) =>
+			Lealtad.ConoceSorteo(codigoDelSorteo)
+			&& Lealtad.SorteoDe(codigoDelSorteo).ConoceBoleto(numeroDeBoleto);
+
+		/// <summary>Los sorteos con sus boletos, juzgados contra ese dia.</summary>
+		internal IReadOnlyList<BoletosDelSorteo> BoletosPorSorteo(DateTime hoy)
 		{
-			var montos = new Dictionary<Moneda, GastoAcumulado>();
-			foreach (Carga carga in cargasPorTransaccion.Values)
-			{
-				if (carga.Fecha.Year != anio || carga.Fecha.Month != mes) continue;
-
-				if (!montos.TryGetValue(carga.Total.Moneda, out GastoAcumulado acumulado))
-				{
-					acumulado = new GastoAcumulado();
-					montos[carga.Total.Moneda] = acumulado;
-				}
-				acumulado.Monto += carga.Total.Monto;
-				acumulado.Cargas++;
-				acumulado.Litros += carga.Volumen.EnLitros;
-			}
-
-			var filas = new List<GastoEnMoneda>();
-			foreach (KeyValuePair<Moneda, GastoAcumulado> par in montos)
-				filas.Add(new GastoEnMoneda(par.Key, par.Value.Monto, par.Value.Cargas,
-					par.Value.Litros));
+			var filas = new List<BoletosDelSorteo>();
+			foreach (Sorteo sorteo in Lealtad.Sorteos) filas.Add(new BoletosDelSorteo(sorteo, hoy));
 			return filas;
 		}
 
-		private sealed class GastoAcumulado
+		/// <summary>LA EXPLICACION, carga por carga. Vive ACA y no en el vehiculo ni en el
+		/// programa porque es lo unico que CRUZA los dos: el dinero de una carga con la
+		/// regla de un sorteo. Mismo argumento que GastoDelPeriodo.
+		///
+		/// Los boletos emitidos se cuentan sobre TODOS los sorteos y no solo sobre el que
+		/// cubre la fecha: la estacion es la autoritativa sobre a cual mando cada boleto, y
+		/// nuestra ventana es para explicar, no para mandar.</summary>
+		internal IReadOnlyList<BoletosDeLaCarga> BoletosPorCargaDe(string placa)
 		{
-			internal decimal Monto;
-			internal int Cargas;
-			internal decimal Litros;
+			var filas = new List<BoletosDeLaCarga>();
+
+			foreach (Carga carga in VehiculoDe(placa).Cargas)
+			{
+				int emitidos = 0;
+				foreach (Sorteo cualquiera in Lealtad.Sorteos)
+					emitidos += cualquiera.BoletosDeLaTransaccion(carga.Transaccion.Texto);
+
+				if (!Lealtad.HaySorteoQueCubra(carga.Fecha))
+				{
+					filas.Add(new BoletosDeLaCarga(carga.Fecha, carga.Transaccion.Texto, "", "",
+						false, "esta carga es de antes o de después de los sorteos que conozco",
+						0, emitidos, 0m, ""));
+					continue;
+				}
+
+				Sorteo sorteo = Lealtad.SorteoQueCubre(carga.Fecha);
+				if (!sorteo.LaReglaAplicaA(carga.Total))
+				{
+					filas.Add(new BoletosDeLaCarga(carga.Fecha, carga.Transaccion.Texto,
+						sorteo.TextoDelCodigo, sorteo.NombreDelSorteo, false,
+						$"el sorteo da boletos por {sorteo.MonedaDeLaRegla} y esta carga fue "
+						+ $"en {carga.MonedaDelTotal}", 0, emitidos, 0m, ""));
+					continue;
+				}
+
+				decimal sobrante = sorteo.SobranteDe(carga.Total);
+				filas.Add(new BoletosDeLaCarga(carga.Fecha, carga.Transaccion.Texto,
+					sorteo.TextoDelCodigo, sorteo.NombreDelSorteo, true, "",
+					sorteo.BoletosQueDaria(carga.Total), emitidos, sobrante,
+					new Dinero(sobrante, carga.Total.Moneda).Expresado));
+			}
+
+			return filas;
 		}
+
+		internal int CantidadDeBoletos => Lealtad.CantidadDeBoletos;
+		internal int CantidadDeSorteos => Lealtad.CantidadDeSorteos;
+
+		/// <summary>El gasto de un mes, POR MONEDA y sobre TODOS los vehiculos: es la
+		/// pregunta de la billetera, no la del carro.</summary>
+		internal IReadOnlyList<GastoEnMoneda> GastoDelPeriodo(int anio, int mes) =>
+			GastoEnMoneda.DelPeriodo(cargasPorTransaccion.Values, anio, mes);
+
+		/// <summary>El gasto de un mes DE UN CARRO. Existe porque el tablero es de un
+		/// vehiculo: ahi el gasto de todos convivia con la autonomia, el rendimiento y el
+		/// costo por kilometro de UNO solo, y con dos carros el instrumento mentia por
+		/// omision sin que nada lo dijera.</summary>
+		internal IReadOnlyList<GastoEnMoneda> GastoDelPeriodoDe(string placa, int anio, int mes) =>
+			GastoEnMoneda.DelPeriodo(VehiculoDe(placa).Cargas, anio, mes);
 	}
 }

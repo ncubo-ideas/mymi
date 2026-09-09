@@ -12,9 +12,9 @@ namespace Cargas.Dominio
 	// L/100km) es presentacion y vive en PresentacionDeRendimiento. Si el veredicto se
 	// calculara en la unidad de presentacion, cambiar a L/100km invertiria "mejoro" y
 	// "empeoro" (§5.3 del brief).
-	public sealed class Rendimiento
+	internal sealed class Rendimiento
 	{
-		public decimal KilometrosPorLitro { get; private set; }
+		internal decimal KilometrosPorLitro { get; private set; }
 
 		private Rendimiento(decimal kilometrosPorLitro)
 		{
@@ -23,7 +23,7 @@ namespace Cargas.Dominio
 
 		/// <summary>La unica construccion desde datos medidos: lo que se recorrio entre
 		/// dos tanques llenos, dividido por lo que se consumio en el medio.</summary>
-		public static Rendimiento DeTramo(Distancia recorrida, Volumen consumido)
+		internal static Rendimiento DeTramo(Distancia recorrida, Volumen consumido)
 		{
 			ArgumentNullException.ThrowIfNull(recorrida);
 			ArgumentNullException.ThrowIfNull(consumido);
@@ -36,7 +36,7 @@ namespace Cargas.Dominio
 
 		/// <summary>Lo que declara el fabricante en el manual. Entra como dato, no como
 		/// medicion: es la otra mitad del cruce con el concesionario.</summary>
-		public static Rendimiento DeFabrica(decimal kilometrosPorLitro)
+		internal static Rendimiento DeFabrica(decimal kilometrosPorLitro)
 		{
 			if (kilometrosPorLitro <= 0m)
 				throw new ErrorDeDominio(
@@ -58,19 +58,19 @@ namespace Cargas.Dominio
 
 		// El cambio proporcional contra otro rendimiento, en canonico. Positivo = este
 		// rinde mas. Es el numero sobre el que se juzga Mejoro/Empeoro/Estable.
-		public decimal CambioProporcionalDesde(Rendimiento referencia)
+		internal decimal CambioProporcionalDesde(Rendimiento referencia)
 		{
 			ArgumentNullException.ThrowIfNull(referencia);
 			return (KilometrosPorLitro - referencia.KilometrosPorLitro)
 				/ referencia.KilometrosPorLitro;
 		}
 
-		public bool SuperaPorMultiploA(Rendimiento referencia, decimal multiplo)
+		internal bool SuperaPorMultiploA(Rendimiento referencia, decimal multiplo)
 		{
 			ArgumentNullException.ThrowIfNull(referencia);
 			return KilometrosPorLitro > referencia.KilometrosPorLitro * multiplo;
 		}
 
-		public string Expresado => $"{KilometrosPorLitro:0.#} km/L";
+		internal string Expresado => $"{KilometrosPorLitro:0.#} km/L";
 	}
 }

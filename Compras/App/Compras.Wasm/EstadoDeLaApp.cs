@@ -420,6 +420,11 @@ public sealed class EstadoDeLaApp : IAsyncDisposable
 	public ListaDeLaProximaCompra Lista()
 	{ Exigir(); return api!.Lista(DateTime.Now); }
 
+	// LAS PROMOCIONES VIGENTES. El "hoy" lo pone la caratula: vigente-o-no depende de
+	// cuando se mira, y el dominio no lee el reloj.
+	public IReadOnlyList<PromocionVista> Promociones()
+	{ Exigir(); return api!.Promociones(DateTime.Now); }
+
 	// EN CUALES COMPRAS APARECIO ESTO. La busca el DOMINIO y no la pantalla: la pantalla
 	// solo tiene la lista de compras -numero, fecha, lineas, total-, sin las lineas, asi que
 	// filtrar aca obligaria a bajar el detalle de las 87 en cada tecla.
@@ -451,6 +456,17 @@ public sealed class EstadoDeLaApp : IAsyncDisposable
 
 	// SU PROPIA INFLACION, solo de los productos que si lleva.
 	public IReadOnlyList<PrecioQueCambio> Precios() { Exigir(); return api!.Precios(); }
+
+	// LA CANASTA FRENTE A HACE UNOS MESES. El "hoy" lo pone la caratula, y la ventana la
+	// pone el dominio (3 meses): la pantalla no inventa la suya.
+	public CanastaFrenteAlPasadoVista FrenteAlPasado()
+	{ Exigir(); return api!.FrenteAlPasado(DateTime.Now); }
+
+	public RebajaVista Rebaja(string numero) { Exigir(); return api!.Rebaja(numero); }
+
+	// EN QUE SUCURSALES COMPRA. La portada lo pinta plegado en una fila; el detalle
+	// entero es del asistente (donde_compro).
+	public RecorridoDeSucursalesVista Recorrido() { Exigir(); return api!.Recorrido(); }
 
 	// CADA CUANTO VA AL SUPER, que dia y en que momento. No lleva parametros: el dominio lo
 	// mide sobre todo el historial, y no hay reloj de por medio.

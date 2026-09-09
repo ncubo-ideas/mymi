@@ -12,13 +12,13 @@ namespace Cargas.Dominio
 	// matricula, patente, chapa). NO es un conjunto cerrado -viene del wire- asi que la
 	// comparacion es una operacion nombrada sobre el texto normalizado, nunca un Equals:
 	// los diccionarios se llavean por Texto, no por este objeto.
-	public sealed class Placa
+	internal sealed class Placa
 	{
 		/// <summary>El texto normalizado: mayusculas, sin espacios ni guiones. Es la
 		/// llave con la que se busca y se cruza.</summary>
-		public string Texto { get; private set; }
+		internal string Texto { get; private set; }
 
-		public Placa(string texto)
+		internal Placa(string texto)
 		{
 			ArgumentNullException.ThrowIfNullOrWhiteSpace(texto);
 
@@ -35,7 +35,7 @@ namespace Cargas.Dominio
 			return limpio.ToString();
 		}
 
-		public bool EsLaMisma(Placa otra)
+		internal bool EsLaMisma(Placa otra)
 		{
 			ArgumentNullException.ThrowIfNull(otra);
 			return Texto == otra.Texto;
@@ -44,6 +44,6 @@ namespace Cargas.Dominio
 		// Como se muestra: con un guion entre letras y numeros seria adivinar el formato
 		// del pais. Se muestra normalizada tal cual; abreviarla cuando ya hay alias es
 		// decision de la pantalla (pregunta abierta 11 del brief).
-		public string ParaMostrar => Texto;
+		internal string ParaMostrar => Texto;
 	}
 }

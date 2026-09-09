@@ -144,6 +144,10 @@
     border: 1px solid var(--linea); border-radius: 2px; padding: 4px 7px;
   }
   .ticket-cab input[type=date] { width: 140px; }
+  .ticket-cab select {
+    font-family: "IBM Plex Mono", monospace; font-size: 12.5px;
+    border: 1px solid var(--linea); border-radius: 2px; padding: 4px 7px; background: #fff;
+  }
   .ticket-cab input.numero { width: 100px; }
 
   .lineas { padding: 4px 15px; min-height: 90px; }
@@ -242,6 +246,8 @@
         <input class="numero" id="numero" spellcheck="false">
         <label for="fecha">Fecha</label>
         <input type="date" id="fecha">
+        <label for="sucursal">Sucursal</label>
+        <select id="sucursal"><option value="">(sin sucursal)</option></select>
       </div>
       <div class="lineas" id="lineas"></div>
       <div class="totales">
@@ -328,8 +334,19 @@ async function cargarCatalogo() {
   const datos = await fetch(base() + "catalogo").then(r => r.json());
   catalogo = datos.productos || [];
   $("contadorCatalogo").textContent = catalogo.length + " productos";
+  pintarSucursales(datos.sucursales || []);
   pintarFiltros();
   pintarCatalogo();
+}
+
+// Las sucursales las dice el mismo sistema del super, como el catalogo. La primera
+// opcion queda vacia a proposito: la sucursal es OPCIONAL en el contrato, y la caja
+// tiene que poder mostrar el caso del tiquete que no la trae.
+function pintarSucursales(sucursales) {
+  const select = $("sucursal");
+  select.innerHTML = `<option value="">(sin sucursal)</option>`
+    + sucursales.map(s => `<option value="${s}">${s}</option>`).join("");
+  if (sucursales.length > 0) select.value = sucursales[0];
 }
 
 function pintarFiltros() {
@@ -430,9 +447,10 @@ function pintarTotal() {
 
 // ------------------------------------------------------------------ registrar
 
-// El POST es la MISMA forma que usa el CLI: seis listas paralelas. La categoria y los
-// meses de garantia viajan por linea, que es lo que le permite a la app del cliente
-// leer su canasta y sus garantias sin preguntarle nada a nadie.
+// El POST es la MISMA forma que usa el CLI: seis listas paralelas, mas la sucursal
+// OPCIONAL del tiquete. La categoria y los meses de garantia viajan por linea, que es lo
+// que le permite a la app del cliente leer su canasta y sus garantias sin preguntarle
+// nada a nadie; la sucursal viaja por compra, y sin ella el tiquete entra igual.
 async function registrar() {
   const numero = $("numero").value.trim();
   if (!numero) return avisar(false, "Falta el número de ticket.");
@@ -441,6 +459,7 @@ async function registrar() {
   const cuerpo = {
     numero,
     fecha: $("fecha").value,
+    sucursal: $("sucursal").value || undefined,   // undefined no viaja en el JSON
     skus: lineas.map(l => l.sku),
     descripciones: lineas.map(l => l.descripcion),
     cantidades: lineas.map(l => l.cantidad),

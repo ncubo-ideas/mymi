@@ -26,6 +26,9 @@ namespace Cargas.Consola
 				{
 					// Comprobaciones del dominio puro: sin actor, sin journal, sin disco.
 					case "comprobar":       return Comprobaciones.Correr();
+					// El traspaso de las anotaciones a Gnothi, con dos actores reales en disco.
+					case "comprobar-traspaso": return ComprobacionesDeTraspaso.Correr();
+					case "qr":              return Qr(args);
 					case "medir":           return Medir(Carpeta(args, 1));
 					case "estado":          return Estado(Carpeta(args, 1));
 					case "rendimiento":     return RendimientoDe(args);
@@ -45,6 +48,28 @@ namespace Cargas.Consola
 					Console.Error.WriteLine($"  causa: {interna.GetType().FullName}: {interna.Message}");
 				return 2;
 			}
+		}
+
+		// LA MATRIZ DEL QR, en crudo. Herramienta de verificacion: un codigo QR mal armado
+		// se ve perfecto y no lo lee ningun telefono, asi que mirarlo no alcanza como
+		// prueba. Esto imprime la matriz para poder compararla, modulo por modulo, contra
+		// un codificador de referencia independiente.
+		private static int Qr(string[] args)
+		{
+			string contenido = args.Length > 1 ? args[1] : "SOCIO-000142";
+
+			bool[,] matriz = Cargas.App.Vistas.CodigoQR.Matriz(contenido);
+			int lado = matriz.GetLength(0);
+
+			Console.WriteLine($"### {contenido} {lado}");
+			for (int fila = 0; fila < lado; fila++)
+			{
+				var linea = new System.Text.StringBuilder();
+				for (int columna = 0; columna < lado; columna++)
+					linea.Append(matriz[fila, columna] ? '1' : '0');
+				Console.WriteLine(linea.ToString());
+			}
+			return 0;
 		}
 
 		// Abre el puppet sobre una carpeta real. Es el mismo par ConfigureStorage + Start
@@ -92,11 +117,24 @@ namespace Cargas.Consola
 			}
 			Console.WriteLine($"aplicados={aplicados} descartados={descartados} rechazados={rechazados}");
 
-			// Dos formas distintas de descartar, y las dos tienen que devolver null.
+			// DOS RECHAZOS EN DOS PLANOS DISTINTOS, y esa diferencia es el diseno.
+			//
+			// Un TIPO DE EVENTO que esta app no conoce se descarta en la RUTA: no hay
+			// mensaje que armar, y eso no necesita al dominio para saberse.
+			//
+			// Un galon ambiguo -"gal" pelado, que no dice cual galon es- ya no se descarta
+			// ahi. Reconocer un conjunto cerrado obligaba a la Superficie a NOMBRAR
+			// UnidadDeVolumen en C#, y con eso el dominio entero tenia que ser public. Ahora
+			// entra como mensaje y lo rechaza el Check DENTRO del actor, donde el motor
+			// resuelve el tipo por reflexion desde el texto del script. Lo que importa que
+			// no cambie es el efecto: no se aplica y NO deja entrada en el journal.
 			bool descartaTipo = RutaDeCargas.Rutear(Muestras.TipoDesconocido()) == null;
-			bool descartaGalon = RutaDeCargas.Rutear(Muestras.GalonAmbiguo()) == null;
 			Console.WriteLine($"descarta tipo desconocido   : {descartaTipo}");
-			Console.WriteLine($"descarta el galon ambiguo   : {descartaGalon}");
+
+			long antesDelGalon = app.Actor.CurrentEntryId;
+			string rechazoDelGalon = diario.Aplicar(RutaDeCargas.Rutear(Muestras.GalonAmbiguo()));
+			Console.WriteLine($"rechaza el galon ambiguo    : {rechazoDelGalon.Length > 0}");
+			Console.WriteLine($"  y NO deja entrada         : {app.Actor.CurrentEntryId == antesDelGalon}");
 
 			// LOS APORTES DE SONIA: lo que URL2 no sabe. Sin esto todo es SinTramo, que
 			// es exactamente la tesis del dominio.
@@ -139,7 +177,14 @@ namespace Cargas.Consola
 			foreach (string transaccion in Muestras.TanquesPorConfirmar)
 				if (api.ConfirmarTanque(transaccion).Length == 0) confirmados++;
 
-			Console.WriteLine($"aportes: kilometrajes={anotados} tanques confirmados={confirmados}");
+			// La ficha va DESPUES de las cargas y no antes: sin una carga de esa placa no
+			// hay vehiculo que completar, y el Check lo rechazaria con razon.
+			var ficha = Muestras.FichaDelDemo;
+			bool conFicha = api.CompletarFicha(Muestras.PlacaDelDemo, ficha.alias, ficha.marca,
+				ficha.modelo, ficha.anio, ficha.color, ficha.rendimientoDeFabrica).Length == 0;
+
+			Console.WriteLine(
+				$"aportes: kilometrajes={anotados} tanques confirmados={confirmados} ficha={conFicha}");
 		}
 
 		// Los aportes sobre una carpeta ya refrescada contra URL2. Idempotente a su
@@ -225,6 +270,12 @@ namespace Cargas.Consola
 						+ $"({Formato(autonomia.CapacidadEnLitros)} L x {Formato(autonomia.HabitualKmPorLitro)} km/L)"
 						+ $" - proyeccion, no medicion"
 					: "  autonomia: todavia no se puede estimar");
+
+				// EL RITMO, que es la mitad que el concesionario declara no tener. Se
+				// imprime aca porque es la consulta que sale por MCP: si el print de la
+				// frontera se rompe, se ve en el estado y no en produccion.
+				RitmoDelVehiculo ritmo = api.Ritmo(vehiculo.Placa);
+				Console.WriteLine($"  ritmo: {ritmo.Expresada} [{ritmo.Situacion}]");
 
 				OdometroPropuesto odometro = api.Odometro(vehiculo.Placa, FechaDeCorte);
 				Console.WriteLine(odometro.Hay
@@ -399,12 +450,14 @@ namespace Cargas.Consola
 			Console.WriteLine("Cargas - caratula de consola, para medir el dominio y el refresh");
 			Console.WriteLine();
 			Console.WriteLine("  comprobar                                      comprueba las reglas del dominio puro (sin journal)");
+			Console.WriteLine("  comprobar-traspaso                             el sobre de anotaciones hacia Gnothi: sin credencial, espera, no duplica");
 			Console.WriteLine("  medir           [carpeta]                      aplica el guion entero (eventos + aportes) y mide");
 			Console.WriteLine("  estado          [carpeta]                      abre el journal y reporta (correr en proceso nuevo)");
 			Console.WriteLine("  rendimiento     [carpeta] [placa]              la lectura de la serie de tramos");
 			Console.WriteLine("  autonomia       [carpeta] [placa]              capacidad estimada x rendimiento habitual");
 			Console.WriteLine("  sembrar-aportes [carpeta]                      los aportes de Sonia sobre un journal refrescado");
 			Console.WriteLine("  refrescar       [carpeta] [baseUrl] [recurso] [id]   trae eventos de la estacion y los aplica");
+			Console.WriteLine("  qr              [contenido]                    imprime la matriz del QR en 0 y 1, para contrastarla");
 			Console.WriteLine();
 			Console.WriteLine("carpeta por defecto: ~/Cargas-journal");
 			Console.WriteLine("baseUrl por defecto: http://localhost:8111/");

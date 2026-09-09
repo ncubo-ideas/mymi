@@ -1,7 +1,6 @@
 using System;
 using System.IO;
 using Choreography.Theater;
-using Compras.Dominio;
 using Gnothi.Contract;
 using Puppeteer;
 
@@ -70,7 +69,7 @@ namespace Compras.App
 
 		private sealed class ReadOnly : PerformanceV2
 		{
-			internal ReadOnly(string actorName) : base(actorName, typeof(Historial).Assembly) { }
+			internal ReadOnly(string actorName) : base(actorName, ElDominio.Assembly) { }
 
 			protected override void OnHydrated()
 			{

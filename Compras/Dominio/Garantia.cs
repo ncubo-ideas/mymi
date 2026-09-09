@@ -8,34 +8,34 @@ namespace Compras.Dominio
 	/// cobertura real sabe desde cuando corre (la fecha de la compra) y contesta si
 	/// esta vigente en una fecha RECIBIDA (el dominio no lee el reloj).
 	/// </summary>
-	public abstract class Garantia
+	internal abstract class Garantia
 	{
 		/// <summary>Ausencia con nombre: lo que no trae cobertura porta esto, nunca null.</summary>
-		public static readonly Garantia Ninguna = new SinGarantia();
+		internal static readonly Garantia Ninguna = new SinGarantia();
 
-		public static Garantia De(int mesesDeCobertura) => new ConGarantia(mesesDeCobertura);
+		internal static Garantia De(int mesesDeCobertura) => new ConGarantia(mesesDeCobertura);
 
 		/// <summary>Consulta de presencia, total: preguntar primero, leer despues.</summary>
-		public abstract bool Existe();
+		internal abstract bool Existe();
 
-		public abstract int MesesDeCobertura { get; }
+		internal abstract int MesesDeCobertura { get; }
 
 		/// <summary>Corre desde la fecha de la compra: la factura es el respaldo que el comercio honra.</summary>
-		public abstract DateTime VenceEl(DateTime fechaDeCompra);
+		internal abstract DateTime VenceEl(DateTime fechaDeCompra);
 
-		public abstract bool EstaVigenteEl(DateTime fechaDeCompra, DateTime fechaDeConsulta);
+		internal abstract bool EstaVigenteEl(DateTime fechaDeCompra, DateTime fechaDeConsulta);
 
 		private sealed class SinGarantia : Garantia
 		{
-			public override bool Existe() => false;
+			internal override bool Existe() => false;
 
-			public override int MesesDeCobertura =>
+			internal override int MesesDeCobertura =>
 				throw new InvalidOperationException("El producto no tiene garantia. Preguntar Existe() primero.");
 
-			public override DateTime VenceEl(DateTime fechaDeCompra) =>
+			internal override DateTime VenceEl(DateTime fechaDeCompra) =>
 				throw new InvalidOperationException("El producto no tiene garantia. Preguntar Existe() primero.");
 
-			public override bool EstaVigenteEl(DateTime fechaDeCompra, DateTime fechaDeConsulta) => false;
+			internal override bool EstaVigenteEl(DateTime fechaDeCompra, DateTime fechaDeConsulta) => false;
 		}
 
 		private sealed class ConGarantia : Garantia
@@ -51,13 +51,13 @@ namespace Compras.Dominio
 				meses = mesesDeCobertura;
 			}
 
-			public override bool Existe() => true;
+			internal override bool Existe() => true;
 
-			public override int MesesDeCobertura => meses;
+			internal override int MesesDeCobertura => meses;
 
-			public override DateTime VenceEl(DateTime fechaDeCompra) => fechaDeCompra.AddMonths(meses);
+			internal override DateTime VenceEl(DateTime fechaDeCompra) => fechaDeCompra.AddMonths(meses);
 
-			public override bool EstaVigenteEl(DateTime fechaDeCompra, DateTime fechaDeConsulta) =>
+			internal override bool EstaVigenteEl(DateTime fechaDeCompra, DateTime fechaDeConsulta) =>
 				fechaDeConsulta <= VenceEl(fechaDeCompra);
 		}
 	}

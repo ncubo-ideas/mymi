@@ -1,0 +1,38 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <!-- LA FRONTERA DE ENTRADA, y es su PROPIO csproj a proposito.
+       Traduce la senal cruda del laboratorio al mensaje tipado que un comando sabe
+       aplicar, y descarta lo que esta app no modela.
+
+       POR QUE VIVE SOLA. Este es el unico codigo de produccion que necesita NOMBRAR tipos
+       del dominio en C#: resuelve el sinonimo del laboratorio ("HGB" a Hemoglobina),
+       decide si el analito es continuo, si el valor es verosimil y si un LDL viene con su
+       HDL. Son decisiones con conocimiento clinico cuyo resultado es DESCARTAR la senal
+       antes de que llegue al actor, y por eso no pueden mudarse adentro sin rediseniar
+       como esta app descarta.
+
+       Mientras esto vivia dentro de Examenes.App, el grant de InternalsVisibleTo tenia que
+       cubrir TODA la Superficie: ExamenesAPI podia declarar variables del dominio y nadie
+       mas que la disciplina lo impedia. Justamente lo que la recomendacion dice que no
+       alcanza. Separado, el grant nombra a ESTE ensamblado y solo a este: Examenes.App
+       vuelve a estar cercada por el compilador.
+
+       El motor NO entra aca: esto no hace performs, arma mensajes. -->
+
+  <PropertyGroup>
+    <TargetFramework>net9.0</TargetFramework>
+    <Nullable>disable</Nullable>
+    <ImplicitUsings>disable</ImplicitUsings>
+    <AssemblyName>Examenes.Eventos</AssemblyName>
+    <RootNamespace>Examenes.App.Eventos</RootNamespace>
+
+    <AssemblyTitle>Examenes - frontera de entrada</AssemblyTitle>
+    <Description>Traduce la senal cruda del laboratorio al mensaje tipado que un comando aplica, y descarta lo que esta app no modela. Es el unico ensamblado fuera del dominio que puede verlo por dentro.</Description>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\Dominio\Examenes.Dominio.csproj" />
+    <ProjectReference Include="..\..\Mecanismo\Puppets.Portador\Puppets.Portador.csproj" />
+  </ItemGroup>
+
+</Project>

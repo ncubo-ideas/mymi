@@ -13,31 +13,31 @@ namespace Compras.Dominio
 	// presentaciones del mismo producto.
 	//
 	// NO todo lo que se compra tiene garantia: el helado no la tiene y no la finge.
-	public class Item
+	internal class Item
 	{
-		public string Sku { get; private set; }
-		public string Descripcion { get; private set; }
-		public int Cantidad { get; private set; }
-		public decimal PrecioUnitario { get; private set; }
-		public Categoria Categoria { get; private set; }
-		public Presentacion Presentacion { get; private set; }
-		public Garantia Garantia { get; private set; }
+		internal string Sku { get; private set; }
+		internal string Descripcion { get; private set; }
+		internal int Cantidad { get; private set; }
+		internal decimal PrecioUnitario { get; private set; }
+		internal Categoria Categoria { get; private set; }
+		internal Presentacion Presentacion { get; private set; }
+		internal Garantia Garantia { get; private set; }
 
-		public decimal Total => Cantidad * PrecioUnitario;
+		internal decimal Total => Cantidad * PrecioUnitario;
 
-		public bool TieneGarantia => Garantia.Existe();
+		internal bool TieneGarantia => Garantia.Existe();
 
 		/// <summary>Cuánto entró a la canasta en la unidad base: 6 L, 1 kg, 24 u.</summary>
-		public decimal TotalEnUnidadBase => Presentacion.TotalEnBase(Cantidad);
+		internal decimal TotalEnUnidadBase => Presentacion.TotalEnBase(Cantidad);
 
-		public UnidadDeVenta UnidadBase => Presentacion.UnidadBase;
+		internal UnidadDeVenta UnidadBase => Presentacion.UnidadBase;
 
 		/// <summary>
 		/// Cuánto cuesta la unidad de medida — el colón por litro o por kilo. Es lo único
 		/// con lo que se pueden comparar dos presentaciones del mismo producto: una leche
 		/// de 2 L a ₡1.800 es más barata que dos de 1 L a ₡950.
 		/// </summary>
-		public decimal PrecioPorUnidadBase
+		internal decimal PrecioPorUnidadBase
 		{
 			get
 			{
@@ -51,10 +51,10 @@ namespace Compras.Dominio
 		}
 
 		/// <summary>La cantidad ya dicha, con su unidad: "6 L", "1 kg", "3 u".</summary>
-		public string CantidadExpresada =>
+		internal string CantidadExpresada =>
 			$"{TotalEnUnidadBase.ToString("0.###", CultureInfo.InvariantCulture)} {UnidadBase.Simbolo}";
 
-		public Item(string sku, string descripcion, int cantidad, decimal precioUnitario,
+		internal Item(string sku, string descripcion, int cantidad, decimal precioUnitario,
 			Categoria categoria, int mesesDeGarantia, Presentacion presentacion)
 		{
 			ArgumentNullException.ThrowIfNullOrWhiteSpace(sku);
@@ -84,7 +84,7 @@ namespace Compras.Dominio
 		// conserva a proposito para que un historial viejo siga reproduciendo igual: lo que
 		// entro sin decir como se vende se lee como piezas sueltas, que es lo que la app
 		// asumia cuando se escribio.
-		public Item(string sku, string descripcion, int cantidad, decimal precioUnitario,
+		internal Item(string sku, string descripcion, int cantidad, decimal precioUnitario,
 			Categoria categoria, int mesesDeGarantia)
 			: this(sku, descripcion, cantidad, precioUnitario, categoria, mesesDeGarantia,
 				Presentacion.PorUnidad)

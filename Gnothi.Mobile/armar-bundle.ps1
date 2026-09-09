@@ -136,7 +136,7 @@ $catalogo = @{
         )
     }
     'dealership' = @{
-        Proyecto    = "$raiz/DealershipCar/App/DealershipCar.Wasm/DealershipCar.Wasm.csproj"
+        Proyecto    = "$raiz/Concesionario/App/Concesionario.Wasm/Concesionario.Wasm.csproj"
         Titulo      = 'Your maintenance'
         Institucion = 'Sotavento Motors'
         Marca       = 'Sotavento Motors'

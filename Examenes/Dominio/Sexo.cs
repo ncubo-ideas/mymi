@@ -19,22 +19,22 @@ namespace Examenes.Dominio
 	// vocabulario -Nombre para serializar, ParaMostrar para la persona- y resuelve un
 	// texto de afuera en la frontera con una funcion total-con-excepcion. La spec lo
 	// escribio como enum; acá el idioma de la casa es este.
-	public sealed class Sexo
+	internal sealed class Sexo
 	{
-		public static readonly Sexo Hombre = new Sexo("hombre", "hombre");
+		internal static readonly Sexo Hombre = new Sexo("hombre", "hombre");
 
-		public static readonly Sexo Mujer = new Sexo("mujer", "mujer");
+		internal static readonly Sexo Mujer = new Sexo("mujer", "mujer");
 
 		// Todavia nadie lo dijo: ni el laboratorio lo publico ni la persona lo declaro.
-		public static readonly Sexo Desconocido = new Sexo("desconocido", "desconocido");
+		internal static readonly Sexo Desconocido = new Sexo("desconocido", "desconocido");
 
 		private static readonly Sexo[] todos = { Hombre, Mujer, Desconocido };
 
 		// La etiqueta interna, sin acentos: con este texto se compara y se serializa —es
 		// el que viaja en el comando del journal— y no se le habla a nadie.
-		public string Nombre { get; private set; }
+		internal string Nombre { get; private set; }
 
-		public string ParaMostrar { get; private set; }
+		internal string ParaMostrar { get; private set; }
 
 		private Sexo(string nombre, string paraMostrar)
 		{
@@ -44,10 +44,10 @@ namespace Examenes.Dominio
 
 		// Si hay dato. Es la pregunta que gobierna todo lo demas: sin esto el dominio no
 		// puede decidir aplicabilidad ni rango, y lo DICE en vez de suponer.
-		public bool EsConocido => !ReferenceEquals(this, Desconocido);
+		internal bool EsConocido => !ReferenceEquals(this, Desconocido);
 
 		// Operacion con nombre en vez de sobrecargar ==, igual que Analito y UnidadDeMedida.
-		public bool EsElMismo(Sexo otro)
+		internal bool EsElMismo(Sexo otro)
 		{
 			ArgumentNullException.ThrowIfNull(otro);
 			return ReferenceEquals(this, otro);
@@ -60,7 +60,7 @@ namespace Examenes.Dominio
 		//
 		// Un texto VACIO si resuelve, y a Desconocido: es lo que manda un laboratorio que
 		// no publica el dato, y eso no es un error de nadie.
-		public static Sexo PorNombre(string nombre)
+		internal static Sexo PorNombre(string nombre)
 		{
 			Sexo hallado = Resolver(nombre);
 			if (hallado != null) return hallado;
@@ -73,7 +73,7 @@ namespace Examenes.Dominio
 		// Para quien tiene que DECIDIR en vez de fallar: la ruta de eventos descarta lo que
 		// no entiende, y descartar no es un error — un laboratorio puede publicar en el
 		// campo `sexo` algo que este dominio no modela.
-		public static bool EsConocidoElNombre(string nombre) => Resolver(nombre) != null;
+		internal static bool EsConocidoElNombre(string nombre) => Resolver(nombre) != null;
 
 		// Null cuando no resuelve. Es el unico lugar donde se decide que textos entran, y
 		// las dos funciones de la frontera —la que revienta y la que descarta— salen de

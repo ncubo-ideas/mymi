@@ -26,11 +26,14 @@ dotnet build Gnothi.slnx -c Debug
 
 **Tenés que ver** `Compilación correcta.` y `0 Errores`. (Los `warning NU1900` son de red al índice de NuGet, inofensivos.)
 
-La ventana es un proyecto aparte —`net9.0-windows`, fuera del `.slnx` a propósito, como la app Android— así que se compila sola:
+La ventana ya viene adentro del `.slnx`: desde el 2026-09-08 es Photino.Blazor sobre `net9.0`
+puro, así que compila y corre en **Windows, macOS y Linux** con el mismo comando de arriba. (Antes
+era WinForms, `net9.0-windows`, y por eso estaba afuera, como la app Android.)
 
-```powershell
-dotnet build Gnothi.Desktop\Gnothi.Desktop.csproj -c Debug
-```
+> **En una Mac** los comandos son los mismos con `/` en vez de `\`, y en vez de `%TEMP%` usá
+> `$TMPDIR`. Lo que NO corre en Mac es la Parte 3 tal cual está —`--install` todavía busca la
+> config de Claude Desktop solo en rutas de Windows— y los `docker compose` de las Partes 4 y 5
+> necesitan Docker Desktop igual que en Windows.
 
 ---
 
@@ -144,10 +147,16 @@ Y que las consultas **no tocan el journal** (solo lectura): corré `--query ... 
 dotnet run --project Gnothi.Desktop -- "$env:TEMP\gnothi-demo\Modulos"
 ```
 
-Se abre una ventana nativa. **Tenés que ver** el módulo *My lab tests* como tarjeta, con su institución y `2 queries`.
+En una Mac, lo mismo apuntando al banco local de esa máquina (ver `Modulos.local/README.md`):
+
+```bash
+dotnet run --project Gnothi.Desktop -- Modulos.local
+```
+
+Se abre una ventana nativa (WebView2 en Windows, WKWebView en macOS, WebKitGTK en Linux). **Tenés que ver** el módulo *My lab tests* como tarjeta, con su institución y `2 queries`.
 
 - **Open** → la pantalla del módulo, con un botón por consulta. **Run** en `resumen` o `lista_de_examenes` muestra los datos (tabla si es una lista).
-- **Import a module…** → elegí `%TEMP%\gnothi-demo\examenes.gmod` y lo instala desde la interfaz (esto es la Parte 1.3, pero con un clic).
+- **Import a module…** → se abre el selector de archivos **del sistema** (NSOpenPanel en Mac); elegí `%TEMP%\gnothi-demo\examenes.gmod` y lo instala desde la interfaz (esto es la Parte 1.3, pero con un clic).
 - **Reload** relee `installation.json` del disco (así se ve un cambio de consentimiento hecho a mano).
 
 > Sin argumento, la ventana busca `Modulos` al lado del ejecutable (instalada) o en la raíz del repo (desarrollo).

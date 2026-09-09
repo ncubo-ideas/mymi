@@ -1,6 +1,6 @@
 @page "/infaltables"
 @using Compras.App.Vistas
-@using Compras.Dominio
+@using Compras.App
 @inject EstadoDeLaApp estado
 @inject NavigationManager navegacion
 
@@ -12,6 +12,8 @@
    vistazo; acá lo que importa es poder recorrer la lista y entrar a un producto. *@
 
 <PageTitle>Los que nunca faltan · La Guaria y vos</PageTitle>
+
+<Volver Respaldo="" />
 
 <h1>Los que nunca faltan</h1>
 <p class="text-body-secondary mb-4">

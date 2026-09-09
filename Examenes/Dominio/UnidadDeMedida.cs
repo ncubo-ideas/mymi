@@ -15,22 +15,29 @@ namespace Examenes.Dominio
 	// PorSimbolo es la frontera: el simbolo llega como texto en el evento del proveedor
 	// y se resuelve UNA vez, aca. Un simbolo desconocido es un evento mal formado, no
 	// una unidad nueva: revienta, no se inventa una instancia.
-	public sealed class UnidadDeMedida
+	internal sealed class UnidadDeMedida
 	{
-		public static readonly UnidadDeMedida MiligramosPorDecilitro = new UnidadDeMedida("mg/dL");
-		public static readonly UnidadDeMedida NanogramosPorMililitro = new UnidadDeMedida("ng/mL");
-		public static readonly UnidadDeMedida GramosPorDecilitro = new UnidadDeMedida("g/dL");
+		internal static readonly UnidadDeMedida MiligramosPorDecilitro = new UnidadDeMedida("mg/dL");
+		internal static readonly UnidadDeMedida NanogramosPorMililitro = new UnidadDeMedida("ng/mL");
+		internal static readonly UnidadDeMedida GramosPorDecilitro = new UnidadDeMedida("g/dL");
 
-		public string Simbolo { get; private set; }
+		// Los electrolitos —sodio, potasio, cloro— se informan en miliequivalentes por
+		// litro. Es una constante mas y no el refactor de FAMILIAS de unidad: mEq/L es un
+		// escalar sin conversion contra las otras tres, igual que ellas entre si. Lo caro de
+		// las unidades son los porcentajes, los conteos por volumen y los /CAP contra /CBP,
+		// donde dos simbolos distintos SI miden lo mismo y hay que convertir.
+		internal static readonly UnidadDeMedida MiliequivalentesPorLitro = new UnidadDeMedida("mEq/L");
+
+		internal string Simbolo { get; private set; }
 
 		private UnidadDeMedida(string simbolo)
 		{
 			Simbolo = simbolo;
 		}
 
-		// Funcion total con excepcion: el simbolo viene del wire y solo hay tres
-		// unidades validas. Que no coincida ninguna es un defecto del emisor.
-		public static UnidadDeMedida PorSimbolo(string simbolo)
+		// Funcion total con excepcion: el simbolo viene del wire y solo hay cuatro unidades
+		// validas. Que no coincida ninguna es un defecto del emisor.
+		internal static UnidadDeMedida PorSimbolo(string simbolo)
 		{
 			ArgumentNullException.ThrowIfNullOrWhiteSpace(simbolo);
 
@@ -38,16 +45,18 @@ namespace Examenes.Dominio
 			if (normalizado == MiligramosPorDecilitro.Simbolo) return MiligramosPorDecilitro;
 			if (normalizado == NanogramosPorMililitro.Simbolo) return NanogramosPorMililitro;
 			if (normalizado == GramosPorDecilitro.Simbolo) return GramosPorDecilitro;
+			if (normalizado == MiliequivalentesPorLitro.Simbolo) return MiliequivalentesPorLitro;
 
 			throw new ArgumentException(
 				$"'{simbolo}' no es una unidad de medida conocida. Las validas son: "
-				+ $"{MiligramosPorDecilitro.Simbolo}, {NanogramosPorMililitro.Simbolo}, {GramosPorDecilitro.Simbolo}.",
+				+ $"{MiligramosPorDecilitro.Simbolo}, {NanogramosPorMililitro.Simbolo}, "
+				+ $"{GramosPorDecilitro.Simbolo}, {MiliequivalentesPorLitro.Simbolo}.",
 				nameof(simbolo));
 		}
 
 		// Operacion con nombre en vez de sobrecargar ==. La pregunta del dominio no es
 		// "son iguales" sino "puedo comparar estos dos valores".
-		public bool EsLaMisma(UnidadDeMedida otra)
+		internal bool EsLaMisma(UnidadDeMedida otra)
 		{
 			ArgumentNullException.ThrowIfNull(otra);
 			return ReferenceEquals(this, otra);

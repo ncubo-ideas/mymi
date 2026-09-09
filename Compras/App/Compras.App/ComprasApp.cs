@@ -1,5 +1,4 @@
 using Choreography.Theater;
-using Compras.Dominio;
 
 namespace Compras.App
 {
@@ -13,7 +12,7 @@ namespace Compras.App
 	public sealed class ComprasApp : PerformanceV2
 	{
 		public ComprasApp(string nombreDelActor)
-			: base(nombreDelActor, typeof(Historial).Assembly)
+			: base(nombreDelActor, ElDominio.Assembly)
 		{
 		}
 
@@ -23,6 +22,17 @@ namespace Compras.App
 				upgrade('semilla') {
 					compras = Historial();
 					bitacora = Bitacora();
+				}
+			")
+			.PerformCommand();
+
+			// UN UPGRADE NUEVO, no una linea mas en 'semilla': la guarda es una-vez-por-
+			// actor POR NOMBRE, asi que un journal viejo -que ya aplico 'semilla'- ejecuta
+			// este bloque en su proxima hidratacion y gana la cartelera sin migracion.
+			// Meterla en 'semilla' habria dejado a todos los journals existentes sin ella.
+			Using(@"
+				upgrade('cartelera') {
+					cartelera = Cartelera();
 				}
 			")
 			.PerformCommand();

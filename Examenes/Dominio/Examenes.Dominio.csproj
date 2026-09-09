@@ -11,4 +11,31 @@
     <ImplicitUsings>disable</ImplicitUsings>
   </PropertyGroup>
 
+  <!-- QUIEN VE EL INTERIOR DEL DOMINIO. Dos nombres, y cada uno con su razon escrita.
+       Grants NOMINALES: explicitos, auditables, y se le puede pedir cuentas a quien agregue
+       el tercero. `public` no le pide permiso a nadie ni deja rastro.
+       Sin PublicKey porque nada de este ecosistema esta firmado.
+
+       Examenes.Consola : el fixture. Instancia el modelo directo, sin pasar por scripts.
+       Es la excepcion legitima de siempre: no despacha nada a produccion.
+
+       Examenes.Eventos : la frontera de entrada, y por eso tiene su propio csproj. Resuelve
+       el sinonimo del laboratorio ("HGB" a Hemoglobina), decide si el analito es continuo,
+       si el valor es verosimil y si un LDL viene con su HDL: decisiones con conocimiento
+       clinico cuyo resultado es DESCARTAR la senal antes de que llegue al actor, que no
+       pueden mudarse adentro sin rediseniar como esta app descarta.
+
+       Este grant decia `Examenes.App` mientras esa frontera vivia dentro de la Superficie, y
+       eso abria TODA la Superficie: ExamenesAPI podia declarar variables del dominio y solo
+       la disciplina lo impedia. Separando el csproj, el permiso nombra al ensamblado que de
+       verdad lo necesita y Examenes.App vuelve a estar cercada por el compilador.
+
+       NOTAR que Examenes.App NO esta en esta lista aunque referencie al dominio: referenciar
+       sin poder nombrar es la cerca. Cargas, Compras y Facturas no necesitan ningun grant
+       fuera de su fixture. -->
+  <ItemGroup>
+    <InternalsVisibleTo Include="Examenes.Consola" />
+    <InternalsVisibleTo Include="Examenes.Eventos" />
+  </ItemGroup>
+
 </Project>

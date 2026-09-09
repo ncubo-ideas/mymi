@@ -49,6 +49,14 @@ builder.Services.AddSingleton<PuenteDeJournal>(sp =>
 builder.Services.AddSingleton<AlmacenDeCredencial>(sp => new AlmacenDeCredencial(sp.GetRequiredService<IJSRuntime>()));
 
 builder.Services.AddSingleton<PuenteDeGnothi>(sp => new PuenteDeGnothi(sp.GetRequiredService<IJSRuntime>()));
+// Como se llega a Gnothi desde la app suelta, para el handoff y el traspaso de anotaciones.
+// Tambien de appsettings: el dominio y el paquete son de Gnothi, no de la estacion.
+var gnothi = new ConfiguracionDeGnothi();
+builder.Configuration.GetSection("Gnothi").Bind(gnothi);
+builder.Services.AddSingleton(gnothi);
+
+builder.Services.AddSingleton<PuenteDeJournal>(sp => new PuenteDeJournal(sp.GetRequiredService<IJSRuntime>()));
+builder.Services.AddSingleton<PuenteDeTraspaso>(sp => new PuenteDeTraspaso(sp.GetRequiredService<IJSRuntime>()));
 
 // SINGLETON a proposito: el actor NO se crea por pantalla. Owna estado persistente, se
 // construye una vez y se mantiene alcanzable mientras la app vive.

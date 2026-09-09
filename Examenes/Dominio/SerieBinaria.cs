@@ -32,7 +32,7 @@ namespace Examenes.Dominio
 	// cual fue la ultima. QUE SIGNIFICAN lo contesta cada subclase en Interpretar(), y
 	// por eso hay tres y no una: los nitritos, la sangre en la orina y la sangre en las
 	// heces cuentan igual y concluyen distinto.
-	public abstract class SerieBinaria : SerieDeAnalito
+	internal abstract class SerieBinaria : SerieDeAnalito
 	{
 		private readonly List<PruebaBinaria> pruebas = new List<PruebaBinaria>();
 
@@ -40,14 +40,14 @@ namespace Examenes.Dominio
 		{
 		}
 
-		public IReadOnlyList<PruebaBinaria> Pruebas => pruebas;
+		internal IReadOnlyList<PruebaBinaria> Pruebas => pruebas;
 
-		public override int Cantidad => pruebas.Count;
+		internal override int Cantidad => pruebas.Count;
 
 		// Se inserta manteniendo el orden por fecha, igual que en la serie continua y por
 		// la misma razon: el proveedor puede emitir un examen viejo despues de uno nuevo,
 		// y en un binario una serie desordenada convierte un "cedió" en un "apareció".
-		public void Agregar(PruebaBinaria prueba)
+		internal void Agregar(PruebaBinaria prueba)
 		{
 			ArgumentNullException.ThrowIfNull(prueba);
 
@@ -57,36 +57,36 @@ namespace Examenes.Dominio
 			pruebas.Insert(posicion, prueba);
 		}
 
-		public PruebaBinaria Primera => pruebas.Count == 0 ? null : pruebas[0];
+		internal PruebaBinaria Primera => pruebas.Count == 0 ? null : pruebas[0];
 
-		public PruebaBinaria Ultima => pruebas.Count == 0 ? null : pruebas[pruebas.Count - 1];
+		internal PruebaBinaria Ultima => pruebas.Count == 0 ? null : pruebas[pruebas.Count - 1];
 
-		public override DateTime FechaDeLaUltima => Ultima == null ? default : Ultima.Fecha;
+		internal override DateTime FechaDeLaUltima => Ultima == null ? default : Ultima.Fecha;
 
 		// Para un binario, "hay algo que no deberia estar" es literal: que el hallazgo
 		// este presente hoy. No hace falta nada de la persona —ni la edad ni el sexo— y eso
 		// esta bien: la firma es una sola para que el Expediente pregunte sin saber que
 		// forma tiene enfrente. Ninguno de los tres binarios del demo cambia con el sexo,
 		// y que el parametro llegue igual es lo que lo deja dicho.
-		public override bool UltimaEsHallazgo(Paciente paciente) => Ultima != null && Ultima.EsHallazgo;
+		internal override bool UltimaEsHallazgo(Paciente paciente) => Ultima != null && Ultima.EsHallazgo;
 
 		// UNA TIRA DE PUNTOS EN EL TIEMPO, no una curva. Un binario no tiene eje vertical:
 		// tiene presencias y ausencias en fechas. Que sea su propia forma —y no la
 		// Afirmacion que usaban antes— es lo que le permite a la pantalla dibujar la
 		// historia en vez de repetir el ultimo resultado.
-		public override FormaDeLectura Forma => FormaDeLectura.PresenciaEnElTiempo;
+		internal override FormaDeLectura Forma => FormaDeLectura.PresenciaEnElTiempo;
 
 		// NINGUNA. No hay linea que trazar sobre un positivo: no existe un umbral, ni una
 		// meta, ni un piso. Devolver una lista vacia es la respuesta correcta, y es la
 		// razon de que las referencias sean una lista plana y no un record con campos que
 		// habria que llenar con ceros.
-		public override IReadOnlyList<ReferenciaDeLectura> Referencias(Paciente paciente) =>
+		internal override IReadOnlyList<ReferenciaDeLectura> Referencias(Paciente paciente) =>
 			new List<ReferenciaDeLectura>();
 
 		// Un binario no tiene rango: su referencia es la polaridad. En los tres del demo
 		// lo esperable es negativo, y decirlo al lado del resultado es lo que le da a un
 		// "positivo" el mismo acompanamiento que la referencia le da a un 5.2.
-		public override string ReferenciaLegible(Paciente paciente) =>
+		internal override string ReferenciaLegible(Paciente paciente) =>
 			Ultima == null ? "" : "lo esperable es negativo";
 
 		// LOS HECHOS DE LA SERIE. Cuantas pruebas, cuantas dieron positivas, y —la que
@@ -96,7 +96,7 @@ namespace Examenes.Dominio
 		// positivo son dos positivos y no son una persistencia. Lo que cambia la conducta
 		// es que se haya repetido y haya vuelto a salir, no que haya salido dos veces
 		// alguna vez.
-		public EvaluacionDePresencia Evaluar()
+		internal EvaluacionDePresencia Evaluar()
 		{
 			string ultimoResultado = Ultima == null ? "" : Ultima.Expresado;
 

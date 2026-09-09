@@ -1,7 +1,6 @@
 using System;
 using System.IO;
 using Choreography.Theater;
-using Examenes.Dominio;
 using Gnothi.Contract;
 using Puppeteer;
 
@@ -76,10 +75,12 @@ namespace Examenes.App
 		}
 
 		// Same actor and same domain as the app, without the seed. The domain assembly is found
-		// by reflection from any of its types -Expediente here- exactly as ExamenesApp does.
+		// by its NAME -see ElDominio- exactly as ExamenesApp does. This said `typeof(Expediente)`
+		// while Examenes.App still had the grant; naming a domain type here would ask for the
+		// fence back open, and ElDominio exists precisely so no host has to.
 		private sealed class ReadOnly : PerformanceV2
 		{
-			internal ReadOnly(string actorName) : base(actorName, typeof(Expediente).Assembly) { }
+			internal ReadOnly(string actorName) : base(actorName, ElDominio.Assembly) { }
 
 			protected override void OnHydrated()
 			{

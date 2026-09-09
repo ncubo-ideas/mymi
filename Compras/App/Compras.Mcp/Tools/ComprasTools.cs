@@ -111,7 +111,11 @@ internal sealed class ComprasTools
 		+ "-falta un lado de la comparacion- y es distinto de hayCambio en false, que significa "
 		+ "que la canasta viene igual. El campo corte dice POR QUE MES se partio la historia: si no "
 		+ "pasaste fecha, es el que el dominio encontro, y conviene nombrarselo a la persona. Este modulo dice QUE cambio y no si esta bien: el helado "
-		+ "que pasa de mensual a semanal es un dato, no una falta.")]
+		+ "que pasa de mensual a semanal es un dato, no una falta. OJO CON LO OCASIONAL: esta tool "
+		+ "lista lo que entro Y SE VOLVIO HABITO (el umbral de la firma); un producto que entro "
+		+ "en el mismo mes SIN volverse costumbre -la mantequilla ocasional- NO aparece aca, y "
+		+ "solo consumo_de lo encuentra. Para responder 'que entro desde tal mes' COMPLETO, usa "
+		+ "las dos juntas.")]
 	public CambioDeLaCanasta Cambio(
 		[Description("OPCIONAL, en formato aaaa-mm-dd. Omitilo y el dominio busca solo el mes del quiebre, que es lo normal; pasalo unicamente si la persona nombro una fecha suya.")]
 		DateTime corte = default,
@@ -289,6 +293,22 @@ internal sealed class ComprasTools
 		return lector.Consultar(api => api.Consumo(termino));
 	}
 
+	[McpServerTool(Name = "promociones_vigentes", UseStructuredContent = true)]
+	[Description("LAS PROMOCIONES DEL SUPER vigentes hoy, la que vence antes primero: el gancho "
+		+ "('2 x 1'), el detalle, hasta cuando vale y cuantos dias quedan (cero = ultimo dia). "
+		+ "IMPORTANTE sobre su origen: llegaron como EVENTOS al journal de la persona, igual que "
+		+ "sus compras — son contenido DE LA INSTITUCION, publicado a todos por igual, NO elegido "
+		+ "con los datos de ella, y el super no se entera de cuales vio. Usala cuando pregunte "
+		+ "'¿hay ofertas?', '¿que promociones tiene el super?' o al armarle la lista de compras, "
+		+ "para avisarle si algo que le falta esta en promocion. Una lista vacia significa que no "
+		+ "hay ninguna vigente, y es una respuesta.")]
+	public IReadOnlyList<PromocionVista> PromocionesVigentes()
+	{
+		if (!lector.HayJournal) return new List<PromocionVista>();
+
+		return lector.Consultar(api => api.Promociones(DateTime.Now));
+	}
+
 	[McpServerTool(Name = "para_mi_proxima_compra", UseStructuredContent = true)]
 	[Description("LA LISTA DE LO QUE LE VA A FALTAR a la persona, armada con el RITMO de cada "
 		+ "producto: cada cuanto suele volver y cuanto hace que no entra. Del mas atrasado al que "
@@ -320,7 +340,9 @@ internal sealed class ComprasTools
 		+ "persona pregunte '¿cuando compre esto?', '¿en que compra estaba?' o quiera llegar a un "
 		+ "recibo puntual. El campo productos dice que descripciones coincidieron: si trae mas de "
 		+ "una, el texto alcanzo a varios productos y conviene decirselo antes de dar los totales. "
-		+ "Con cuantasCompras en 0 no hay ninguna, y eso es una respuesta valida, no un error.")]
+		+ "Con cuantasCompras en 0 no hay ninguna, y eso es una respuesta valida, no un error. "
+		+ "Cada compra trae su sucursal si el tiquete la dijo (vacia si no): sirve para "
+		+ "'¿donde compre el helado?' sin otra consulta.")]
 	public ComprasHalladas EnCualesCompras(
 		[Description("Un texto de producto o una categoria del catalogo, por ejemplo 'leche' o 'Limpieza'.")] string termino)
 	{
@@ -341,6 +363,86 @@ internal sealed class ComprasTools
 		if (!lector.HayJournal) return new List<GarantiaDeProducto>();
 
 		return lector.Consultar(api => api.GarantiasPorVencer(DateTime.Now));
+	}
+
+	[McpServerTool(Name = "donde_compro", UseStructuredContent = true)]
+	[Description("EN QUE SUCURSALES compra la persona, y DESDE CUANDO se mueve: cada sucursal "
+		+ "con sus compras, la primera y la ultima vez; la mas frecuentada viene primero y esa "
+		+ "es 'la de siempre'. seMueveDesde trae el mes (aaaa-mm) de la primera compra en una "
+		+ "sucursal distinta — el dato que corrobora un cambio de vida desde una fuente que "
+		+ "nadie esperaria: alguien que empezo a moverse por trabajo aparece comprando en "
+		+ "tiendas nuevas ese mismo mes. comprasSinSucursal cuenta los tiquetes que NO dicen "
+		+ "donde fueron (el campo es nuevo y los viejos callan): decilo si es grande, porque el "
+		+ "recorrido se lee solo de los que si lo dicen. Con hayDatos en false ningun tiquete "
+		+ "trae el dato todavia, y eso es la respuesta, no un error.")]
+	public RecorridoDeSucursalesVista DondeCompro()
+	{
+		if (!lector.HayJournal) return new RecorridoDeSucursalesVista();
+
+		return lector.Consultar(api => api.Recorrido());
+	}
+
+	[McpServerTool(Name = "como_me_cambio_el_precio", UseStructuredContent = true)]
+	[Description("LA SERIE DE PRECIOS de UN producto: cada precio que la persona pago, con su "
+		+ "FECHA, su presentacion y el numero de compra. Es la que contesta 'el mismo helado te "
+		+ "costaba 3.680 en enero de 2025 y hoy 4.214' — el dato que ninguna otra fuente le da: "
+		+ "el banco le dice cuanto gasto, nadie le dice que el MISMO producto le subio. Los "
+		+ "precios van por UNIDAD DE MEDIDA (unidad, litro, kilo); precioDeLinea es lo que ese "
+		+ "dia costo el empaque. Acepta sku o texto ('helado'); si hay varios que coinciden gana "
+		+ "el comprado mas recientemente. La direccion se lee del SIGNO de cambio, y "
+		+ "hayCambioReal dice si el movimiento supera el 3% (menos es redondeo de gondola). Con "
+		+ "hay en false el producto no esta en el historial; con haySerie en false hay UNA sola "
+		+ "compra y no hay cambio que leer — las dos son respuestas. Usala cuando pregunten por "
+		+ "el precio de UN producto en el tiempo; para el panorama de todos los habituales esta "
+		+ "como_me_cambiaron_los_precios.")]
+	public SerieDePreciosVista ComoMeCambioElPrecio(
+		[Description("El producto, por sku o por texto: 'helado', 'LECHE-1L', 'detergente'.")] string producto)
+	{
+		if (!lector.HayJournal) return new SerieDePreciosVista();
+
+		return lector.Consultar(api => api.Serie(producto));
+	}
+
+	[McpServerTool(Name = "como_me_cambiaron_los_precios", UseStructuredContent = true)]
+	[Description("COMO SE MOVIO EL PRECIO de cada producto que la persona SI lleva -sus "
+		+ "habituales-, comparando SIEMPRE por unidad de medida (el litro, el kilo, la unidad): "
+		+ "si paso de la leche de 1 L a la de 2 L, el precio de linea sube y el del litro puede "
+		+ "haber bajado, y esta lectura no se deja engañar por eso. Cada producto trae antes (el "
+		+ "primer precio que pago), ahora (el ultimo), la unidad, el cambio en proporcion y si "
+		+ "subio. Es SU propia inflacion -la de lo que ella compra, con los precios que ella "
+		+ "pago-, no la del pais ni la lista del super. El que mas se movio viene primero, y las "
+		+ "BAJADAS tambien vienen: subio en false es una buena noticia, no un error. Usala para "
+		+ "'¿que me subio de precio?', '¿el helado esta mas caro?' o '¿que me conviene comprar "
+		+ "ahora?'. Una lista vacia significa que ningun habitual tuvo un cambio real (mas del "
+		+ "3%: menos que eso es redondeo de gondola).")]
+	public IReadOnlyList<PrecioQueCambio> ComoMeCambiaronLosPrecios()
+	{
+		if (!lector.HayJournal) return new List<PrecioQueCambio>();
+
+		return lector.Consultar(api => api.Precios());
+	}
+
+	[McpServerTool(Name = "mi_canasta_frente_a_antes", UseStructuredContent = true)]
+	[Description("CUANTO CUESTA HOY lo mismo que la persona suele llevar, frente a hace unos "
+		+ "meses: una pieza de cada habitual, a los precios de hoy contra los de entonces, "
+		+ "SUMADA en colones. cambio es la cifra con signo (positivo = mas caro hoy) y productos "
+		+ "trae el detalle -antes, ahora y cambio por producto, en colones por SU presentacion "
+		+ "mas reciente-, el que mas se movio primero. El 'entonces' de cada producto es el "
+		+ "ultimo precio que ELLA pago en o antes del corte; un habitual sin precio tan viejo "
+		+ "queda AFUERA de la suma, no en cero. Usala para '¿cuanto mas caro me sale el super?', "
+		+ "'¿me esta rindiendo menos la plata?' o para ponerle numero a una sospecha de "
+		+ "inflacion propia. Si hayConQueComparar viene en false, ningun habitual tiene un "
+		+ "precio tan viejo todavia, y eso es la respuesta.")]
+	public CanastaFrenteAlPasadoVista MiCanastaFrenteAAntes(
+		[Description("OPCIONAL: contra hace cuantos meses comparar. Omitilo para usar la ventana "
+			+ "de la app (3 meses); pasalo solo si la persona nombro otro plazo.")]
+		int meses = 0)
+	{
+		if (!lector.HayJournal) return new CanastaFrenteAlPasadoVista();
+
+		// SIN MESES, LA VENTANA LA PONE EL DOMINIO (3): el mismo juicio que usa la app.
+		return lector.Consultar(api =>
+			meses <= 0 ? api.FrenteAlPasado(DateTime.Now) : api.FrenteAlPasado(DateTime.Now, meses));
 	}
 
 	private const string SinJournal =

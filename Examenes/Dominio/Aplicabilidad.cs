@@ -18,33 +18,33 @@ namespace Examenes.Dominio
 	// —eso seria esconder la tarjeta por las dudas— ni "aplica" —eso seria interpretar un
 	// analito que quizas no corresponde—. Es "no se puede saber", y tiene su propio
 	// veredicto (ver Veredicto.RequiereSexo).
-	public sealed class Aplicabilidad
+	internal sealed class Aplicabilidad
 	{
-		public static readonly Aplicabilidad Aplica = new Aplicabilidad("aplica");
+		internal static readonly Aplicabilidad Aplica = new Aplicabilidad("aplica");
 
-		public static readonly Aplicabilidad NoAplica = new Aplicabilidad("no aplica");
+		internal static readonly Aplicabilidad NoAplica = new Aplicabilidad("no aplica");
 
 		// No se puede decidir con lo que se sabe hoy de la persona. Se resuelve en dos
 		// toques, y por eso la superficie insiste.
-		public static readonly Aplicabilidad Indeterminada = new Aplicabilidad("indeterminada");
+		internal static readonly Aplicabilidad Indeterminada = new Aplicabilidad("indeterminada");
 
-		public string Nombre { get; private set; }
+		internal string Nombre { get; private set; }
 
 		private Aplicabilidad(string nombre)
 		{
 			Nombre = nombre;
 		}
 
-		public bool EsAplica => ReferenceEquals(this, Aplica);
+		internal bool EsAplica => ReferenceEquals(this, Aplica);
 
-		public bool EsNoAplica => ReferenceEquals(this, NoAplica);
+		internal bool EsNoAplica => ReferenceEquals(this, NoAplica);
 
-		public bool EsIndeterminada => ReferenceEquals(this, Indeterminada);
+		internal bool EsIndeterminada => ReferenceEquals(this, Indeterminada);
 
 		// Si de este analito se puede decir ALGO. Es lo que la superficie pregunta para
 		// saber si la tarjeta existe: con NoAplica no existe, con Indeterminada existe
 		// mostrando el valor y reteniendo el veredicto.
-		public bool HayAlgoQueDecir => !EsNoAplica;
+		internal bool HayAlgoQueDecir => !EsNoAplica;
 
 		public override string ToString() => Nombre;
 	}

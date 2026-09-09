@@ -16,11 +16,11 @@ namespace Examenes.App.Vistas
 		public string Nombre { get; init; } = "";
 		public DateTime Fecha { get; init; }
 		public string Resultado { get; init; } = "";
-		public bool AportaSerie { get; init; }
 
-		// Solo para las filas que no forman serie. Ver CeldaDelCuadro.
-		public string Severidad { get; init; } = "";
-		public string ParaSonia { get; init; } = "";
+		// Si el examen ENTERO es un punto de una serie continua. Ver
+		// Examen.AportaSerieContinua: no es "si aporta serie" —un urianalisis aporta tres y
+		// no es punto de ninguna—.
+		public bool AportaSerieContinua { get; init; }
 	}
 
 	// La lectura de la serie. Es la vista que NO tiene equivalente en una pantalla de
@@ -85,6 +85,52 @@ namespace Examenes.App.Vistas
 		public bool EsHallazgo { get; init; }
 	}
 
+	// LOS HECHOS DE UNA SERIE NOMINAL. Vista aparte de las otras dos porque no trae lo
+	// mismo: no hay valor inicial ni final, y tampoco hay positivas. Hay una CATEGORIA —
+	// cual salio— y si volvio a lo esperable.
+	//
+	// "Dos oscuros seguidos" es lo que hace que un color deje de esperar a la proxima cita,
+	// y "un oscuro y despues un ambar" es la buena noticia que ninguna observacion sola
+	// puede dar.
+	public sealed class ConstanciaDeAnalito
+	{
+		public string Analito { get; init; } = "";
+		public string ParaMostrar { get; init; } = "";
+
+		// "siempre lo esperable", "apareció", "persiste", "no confirmado",
+		// "volvió a lo esperable".
+		public string Constancia { get; init; } = "";
+
+		public int Mediciones { get; init; }
+
+		// La ultima categoria con el vocabulario de SU muestra: "ámbar" en la orina,
+		// "marrón" en las heces. Es la razon de que la magnitud no sea un bool.
+		public string UltimaCategoria { get; init; } = "";
+
+		public bool UltimaEsEsperable { get; init; }
+		public int NoEsperables { get; init; }
+		public int NoEsperablesSeguidas { get; init; }
+
+		// Si esas seguidas son la MISMA categoria. Un negro seguido de un palido no es un
+		// mismo hallazgo persistiendo, y la frase no puede ser la misma.
+		public bool LaUltimaSeRepitio { get; init; }
+
+		public int Dias { get; init; }
+		public bool EstaFueraDeLoEsperable { get; init; }
+		public bool HaySerie { get; init; }
+	}
+
+	// UNA OBSERVACION NOMINAL en una fecha: el punto de una tira de categorias. Es el par
+	// de PruebaEnSerie para la forma 6, y no tiene Valor ni EsPositivo porque un color no
+	// es un si o un no: es un nombre.
+	public sealed class ObservacionEnSerie
+	{
+		public DateTime Fecha { get; init; }
+		public string Expresado { get; init; } = "";
+		public bool EsEsperable { get; init; }
+		public bool EsHallazgo { get; init; }
+	}
+
 	// LO MAS URGENTE DE TODO EL EXPEDIENTE, en una sola respuesta.
 	//
 	// Es la pregunta con la que una persona ABRE la app —«¿estoy bien?»— y hasta ahora
@@ -134,11 +180,6 @@ namespace Examenes.App.Vistas
 		public string ParaMostrar { get; init; } = "";
 		public DateTime Fecha { get; init; }
 		public string Expresado { get; init; } = "";
-		public bool AportaSerie { get; init; }
-
-		// Solo para las filas que no forman serie. Ver CeldaDelCuadro.
-		public string Severidad { get; init; } = "";
-		public string ParaSonia { get; init; } = "";
 	}
 
 	// CUANTO HACE que no se mide un analito, y si eso ya es demasiado para el. Ver

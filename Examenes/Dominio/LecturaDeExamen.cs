@@ -19,16 +19,16 @@ namespace Examenes.Dominio
 	// principio y que no habiamos construido.
 	//
 	// Carrier por identidad: sin Equals, sin GetHashCode, no es llave de nada.
-	public sealed class LecturaDeExamen
+	internal sealed class LecturaDeExamen
 	{
-		public Analito Analito { get; private set; }
+		internal Analito Analito { get; private set; }
 
 		// El resultado, como la magnitud que sea. Un numero con unidad, un color, un
 		// binario: cada una sabe decirse, y por eso aca no hay un decimal ni un string
 		// suelto.
-		public Magnitud Resultado { get; private set; }
+		internal Magnitud Resultado { get; private set; }
 
-		public LecturaDeExamen(Analito analito, Magnitud resultado)
+		internal LecturaDeExamen(Analito analito, Magnitud resultado)
 		{
 			ArgumentNullException.ThrowIfNull(analito);
 			ArgumentNullException.ThrowIfNull(resultado);
@@ -37,15 +37,15 @@ namespace Examenes.Dominio
 			Resultado = resultado;
 		}
 
-		// SI ESTA COSA MEDIDA FORMA SERIE. Lo contesta el ANALITO, no el examen que la
-		// contiene, y esa es la correccion: un urianalisis trae tres lecturas y solo dos
-		// de ellas forman serie —los nitritos y la sangre si, el color no—. Preguntarselo
-		// al examen obligaba a una sola respuesta para las tres.
-		public bool AportaSerie => Analito.FormaSerie;
+		// LAS TRES LECTURAS DE UN URIANALISIS FORMAN SERIE, cada una con la suya: los
+		// nitritos y la sangre una de presencia, el color una de categorias. Hubo aca un
+		// bool que contestaba cual de las tres la formaba, y dejo de tener sentido cuando
+		// la respuesta paso a ser "todas". Lo que las distingue —como se leen y como se
+		// dibujan— lo dice la FormaDeLectura de cada serie.
 
 		// Proyecciones planas, para que el print del DSL no navegue dos niveles.
-		public string Nombre => Analito.Nombre;
-		public string ParaMostrar => Analito.ParaMostrar;
-		public string Expresado => Resultado.Expresado;
+		internal string Nombre => Analito.Nombre;
+		internal string ParaMostrar => Analito.ParaMostrar;
+		internal string Expresado => Resultado.Expresado;
 	}
 }

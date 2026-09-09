@@ -18,25 +18,25 @@ namespace Compras.Dominio
 	// siete, que es cuando una ida al super deja de ser un mandado del dia y pasa a ser
 	// despues del trabajo. Son de Costa Rica y de una familia que cocina en casa; en otro
 	// pais o para otra vida serian otros.
-	public sealed class MomentoDelDia
+	internal sealed class MomentoDelDia
 	{
 		/// <summary>La hora en que la mañana se termina.</summary>
-		public const int HoraEnQueEmpiezaLaTarde = 13;
+		internal const int HoraEnQueEmpiezaLaTarde = 13;
 
 		/// <summary>La hora en que la tarde se termina.</summary>
-		public const int HoraEnQueEmpiezaLaNoche = 19;
+		internal const int HoraEnQueEmpiezaLaNoche = 19;
 
-		public static readonly MomentoDelDia Manana = new MomentoDelDia("manana", "mañana", 1);
-		public static readonly MomentoDelDia Tarde = new MomentoDelDia("tarde", "tarde", 2);
-		public static readonly MomentoDelDia Noche = new MomentoDelDia("noche", "noche", 3);
+		internal static readonly MomentoDelDia Manana = new MomentoDelDia("manana", "mañana", 1);
+		internal static readonly MomentoDelDia Tarde = new MomentoDelDia("tarde", "tarde", 2);
+		internal static readonly MomentoDelDia Noche = new MomentoDelDia("noche", "noche", 3);
 
-		public static readonly MomentoDelDia[] Todos = { Manana, Tarde, Noche };
+		internal static readonly MomentoDelDia[] Todos = { Manana, Tarde, Noche };
 
 		/// <summary>La etiqueta interna, sin acentos: para comparar y serializar.</summary>
-		public string Nombre { get; private set; }
+		internal string Nombre { get; private set; }
 
 		/// <summary>Como se le dice a la persona: "en la mañana".</summary>
-		public string ParaMostrar { get; private set; }
+		internal string ParaMostrar { get; private set; }
 
 		private readonly int orden;
 
@@ -50,7 +50,7 @@ namespace Compras.Dominio
 		/// <summary>
 		/// El momento de una hora del día. TOTAL: cualquier hora válida cae en uno.
 		/// </summary>
-		public static MomentoDelDia De(DateTime cuando)
+		internal static MomentoDelDia De(DateTime cuando)
 		{
 			if (cuando.Hour < HoraEnQueEmpiezaLaTarde) return Manana;
 			if (cuando.Hour < HoraEnQueEmpiezaLaNoche) return Tarde;
@@ -59,7 +59,7 @@ namespace Compras.Dominio
 		}
 
 		/// <summary>Si este momento va antes que el otro en el día.</summary>
-		public bool EsAntesQue(MomentoDelDia otro)
+		internal bool EsAntesQue(MomentoDelDia otro)
 		{
 			ArgumentNullException.ThrowIfNull(otro);
 			return orden < otro.orden;

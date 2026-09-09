@@ -7,12 +7,12 @@ namespace Cargas.Dominio
 	/// dolares revienta, porque el dominio no tiene tipo de cambio (ver Moneda). Toda
 	/// agregacion de dinero de este dominio agrupa por moneda, nunca suma cruzado.
 	/// </summary>
-	public sealed class Dinero
+	internal sealed class Dinero
 	{
-		public decimal Monto { get; private set; }
-		public Moneda Moneda { get; private set; }
+		internal decimal Monto { get; private set; }
+		internal Moneda Moneda { get; private set; }
 
-		public Dinero(decimal monto, Moneda moneda)
+		internal Dinero(decimal monto, Moneda moneda)
 		{
 			ArgumentNullException.ThrowIfNull(moneda);
 			if (monto < 0m)
@@ -22,7 +22,7 @@ namespace Cargas.Dominio
 			Moneda = moneda;
 		}
 
-		public Dinero Mas(Dinero otro)
+		internal Dinero Mas(Dinero otro)
 		{
 			ArgumentNullException.ThrowIfNull(otro);
 			if (!Moneda.EsLaMisma(otro.Moneda))
@@ -34,7 +34,7 @@ namespace Cargas.Dominio
 		}
 
 		// La diferencia absoluta, para la tolerancia de redondeo del total (ver Carga).
-		public decimal DiferenciaAbsolutaCon(Dinero otro)
+		internal decimal DiferenciaAbsolutaCon(Dinero otro)
 		{
 			ArgumentNullException.ThrowIfNull(otro);
 			if (!Moneda.EsLaMisma(otro.Moneda))
@@ -44,6 +44,6 @@ namespace Cargas.Dominio
 			return Math.Abs(Monto - otro.Monto);
 		}
 
-		public string Expresado => $"{Moneda.Simbolo}{Monto:0.##}";
+		internal string Expresado => Moneda.Simbolo + Cifras.Plata(Monto);
 	}
 }

@@ -15,14 +15,14 @@ namespace Examenes.Dominio
 	// el ajuste necesita un dato que aporta la persona y que el laboratorio no manda.
 	// Queda nombrado y sin implementar, igual que las formas de Magnitud que no se
 	// construyeron.
-	public sealed class GradoDeAnemia
+	internal sealed class GradoDeAnemia
 	{
-		public static readonly GradoDeAnemia Ninguna = new GradoDeAnemia("ninguna", 0);
-		public static readonly GradoDeAnemia Leve = new GradoDeAnemia("leve", 1);
-		public static readonly GradoDeAnemia Moderada = new GradoDeAnemia("moderada", 2);
-		public static readonly GradoDeAnemia Severa = new GradoDeAnemia("severa", 3);
+		internal static readonly GradoDeAnemia Ninguna = new GradoDeAnemia("ninguna", 0);
+		internal static readonly GradoDeAnemia Leve = new GradoDeAnemia("leve", 1);
+		internal static readonly GradoDeAnemia Moderada = new GradoDeAnemia("moderada", 2);
+		internal static readonly GradoDeAnemia Severa = new GradoDeAnemia("severa", 3);
 
-		public string Nombre { get; private set; }
+		internal string Nombre { get; private set; }
 
 		private readonly int peso;
 
@@ -32,9 +32,9 @@ namespace Examenes.Dominio
 			this.peso = peso;
 		}
 
-		public bool HayAnemia => peso > 0;
+		internal bool HayAnemia => peso > 0;
 
-		public bool EsPeorQue(GradoDeAnemia otro)
+		internal bool EsPeorQue(GradoDeAnemia otro)
 		{
 			ArgumentNullException.ThrowIfNull(otro);
 			return peso > otro.peso;
@@ -42,7 +42,7 @@ namespace Examenes.Dominio
 
 		// La severidad que le corresponde a cada grado. Vive aca y no en la hemoglobina
 		// para que agregar un grado obligue a decir que hacer con el.
-		public Severidad Severidad
+		internal Severidad Severidad
 		{
 			get
 			{
@@ -55,7 +55,7 @@ namespace Examenes.Dominio
 
 		// Y la accion con su plazo, por la misma razon: cada grado dice que hacer y
 		// cuando, y agregar un grado obliga a decir las dos cosas.
-		public Accion Accion
+		internal Accion Accion
 		{
 			get
 			{

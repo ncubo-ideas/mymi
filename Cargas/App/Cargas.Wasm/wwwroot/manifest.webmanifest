@@ -1,13 +1,13 @@
 {
-  "name": "Mis cargas · Estaciones Faro",
-  "short_name": "Mis cargas",
+  "name": "Estaciones Faro",
+  "short_name": "Estaciones Faro",
   "description": "Tus cargas de combustible, guardadas en una carpeta tuya. Funciona sin conexion.",
   "id": "./",
   "start_url": "./",
   "scope": "./",
   "display": "standalone",
-  "background_color": "#0B3C49",
-  "theme_color": "#0B3C49",
+  "background_color": "#04171D",
+  "theme_color": "#04171D",
   "lang": "es",
   "prefer_related_applications": false,
   "icons": [

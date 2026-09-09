@@ -1,0 +1,35 @@
+@inject IJSRuntime js
+
+<button type="button" id="theme-toggle" @onclick="Flip"
+        class="@(OnNight ? "iconbtn iconbtn--onNight" : "iconbtn")"
+        title="@(dark ? "Cambiar al tema claro" : "Cambiar al tema oscuro")"
+        aria-label="@(dark ? "Cambiar al tema claro" : "Cambiar al tema oscuro")">
+    <Glyph Name="@(dark ? "sun" : "moon")" Size="19" />
+</button>
+
+@code {
+    /// <summary>Si el boton va encima del encabezado oscuro, donde un boton blanco no se lee.</summary>
+    [Parameter]
+    public bool OnNight { get; set; }
+
+    private bool dark = true;
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (!firstRender) return;
+
+        string chosen = await js.InvokeAsync<string>("appearance.stored");
+
+        dark = chosen.Length > 0
+            ? chosen == "dark"
+            : await js.InvokeAsync<bool>("appearance.systemPrefersDark");
+
+        StateHasChanged();
+    }
+
+    private async Task Flip()
+    {
+        dark = !dark;
+        await js.InvokeVoidAsync("appearance.apply", dark ? "dark" : "light");
+    }
+}
