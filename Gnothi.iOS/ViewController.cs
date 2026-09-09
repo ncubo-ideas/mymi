@@ -401,9 +401,11 @@ public sealed class ViewController : UIViewController
 		string bundle = System.Web.HttpUtility.ParseQueryString(where.Query)["bundle"] ?? "";
 		if (bundle.Length == 0) { Log($"alta: el enlace no trae ?bundle= : {url}"); return; }
 
-		if (shell is null) { pendingEnrollment = bundle; Log("alta: el Host todavia no levanto; queda pendiente"); return; }
+		// The whole link goes to the shell, which takes it apart itself: since 2026-09-08 it may
+		// carry the seal of the manifest (&h=), and handing over only ?bundle= would drop it.
+		if (shell is null) { pendingEnrollment = url; Log("alta: el Host todavia no levanto; queda pendiente"); return; }
 
-		_ = shell.Enroll(bundle);
+		_ = shell.Enroll(url);
 	}
 
 	// ── el puente, la mitad que SI es de iOS ────────────────────────────────────────────

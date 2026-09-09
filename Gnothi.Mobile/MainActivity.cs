@@ -9,6 +9,12 @@ using System.Text.Json;
 // cartero cumple. Ver Resources/xml/network_security_config.xml.
 [assembly: Android.App.Application(NetworkSecurityConfig = "@xml/network_security_config")]
 
+// THE CAMERA, for reading the institution's code from inside Gnothi. The page asks for it
+// through getUserMedia, and the WebView will not even ask the person unless the app declares
+// the permission. Not required: a phone without a camera pastes the link instead.
+[assembly: Android.App.UsesPermission(Android.Manifest.Permission.Camera)]
+[assembly: Android.App.UsesFeature("android.hardware.camera", Required = false)]
+
 namespace Gnothi.Mobile;
 
 // EL HOST DE GNOTHI EN UN TELEFONO, con cara. LA MITAD DE ANDROID Y NADA MAS.
@@ -71,12 +77,16 @@ public class MainActivity : Activity
 	{
 		base.OnCreate(savedInstanceState);
 
-		// Si Gnothi se abrio POR un enlace de alta, la direccion del bundle viene ahi.
-		altaPendiente = Intent?.Data?.GetQueryParameter("bundle");
+		// Si Gnothi se abrio POR un enlace de alta, el enlace ENTERO va a la cascara -con su
+		// sello, si trae- y ella lo desarma. Antes viajaba solo ?bundle=, y el sello se perdia.
+		altaPendiente = Intent?.Data?.GetQueryParameter("bundle") is { Length: > 0 } ? Intent!.Data!.ToString() : null;
 		LeerTraspasoDe(Intent);
 
 		web = new WebView(this);
 		web.Settings.JavaScriptEnabled = true;
+		// The camera preview is a <video> the page plays as soon as the stream arrives; without
+		// this the WebView would wait for a gesture that already happened, on the button.
+		web.Settings.MediaPlaybackRequiresUserGesture = false;
 		// La pagina detecta la app por esta marca y NUNCA llama prompt() fuera de ella: en un
 		// browser comun ese dialogo es modal y congela la pagina -- medido en el panel de
 		// vista previa.
@@ -173,7 +183,7 @@ public class MainActivity : Activity
 
 		string? bundle = intento?.Data?.GetQueryParameter("bundle");
 		Log($"nuevo enlace: {intento?.Data?.ToString() ?? "(sin datos)"}");
-		if (bundle is { Length: > 0 }) _ = shell?.Enroll(bundle, stop.Token);
+		if (bundle is { Length: > 0 }) _ = shell?.Enroll(intento!.Data!.ToString()!, stop.Token);
 
 		LeerTraspasoDe(intento);
 		if (traspasoPendiente is { } t)
@@ -383,6 +393,43 @@ public class MainActivity : Activity
 		return true;
 	}
 
+	// ── LA CÁMARA, PARA LEER EL CÓDIGO ──────────────────────────────────────────────────
+
+	// The page's pending camera request while Android asks the person. One at a time: a second
+	// request while the dialog is up replaces the first, which is denied.
+	private PermissionRequest? cameraRequest;
+	private const int CameraRequestCode = 7;
+
+	// THE PAGE ASKED FOR THE CAMERA (getUserMedia, to read a code). The WebView cannot grant what
+	// the app does not hold, so: held -> granted right away; not held -> the request waits while
+	// Android asks the person, and OnRequestPermissionsResult answers it. Only video is ever
+	// granted: the page reads codes, nothing else.
+	internal void GrantCameraOrAsk(PermissionRequest request)
+	{
+		if (CheckSelfPermission(Android.Manifest.Permission.Camera) == Android.Content.PM.Permission.Granted)
+		{
+			request.Grant([PermissionRequest.ResourceVideoCapture]);
+			return;
+		}
+
+		cameraRequest?.Deny();
+		cameraRequest = request;
+		RequestPermissions([Android.Manifest.Permission.Camera], CameraRequestCode);
+	}
+
+	public override void OnRequestPermissionsResult(int requestCode, string[] permissions, Android.Content.PM.Permission[] grantResults)
+	{
+		base.OnRequestPermissionsResult(requestCode, permissions, grantResults);
+		if (requestCode != CameraRequestCode || cameraRequest is null) return;
+
+		bool granted = grantResults.Length > 0 && grantResults[0] == Android.Content.PM.Permission.Granted;
+		if (granted) cameraRequest.Grant([PermissionRequest.ResourceVideoCapture]);
+		else cameraRequest.Deny();
+		cameraRequest = null;
+
+		Log(granted ? "cámara: concedida a la página" : "cámara: la persona no la concedió");
+	}
+
 	private void Log(string s) => global::Android.Util.Log.Info("GNOTHI", s);
 
 	private void Push(string kind, string id, string payload) => RunOnUiThread(() =>
@@ -399,6 +446,18 @@ public class MainActivity : Activity
 	{
 		private readonly MainActivity host;
 		public Bridge(MainActivity host) => this.host = host;
+
+		// getUserMedia from the page lands here. Anything that is not the camera is denied: the
+		// page has no business with the microphone or anything else.
+		public override void OnPermissionRequest(PermissionRequest? request)
+		{
+			if (request is null) return;
+
+			string[] resources = request.GetResources() ?? [];
+			if (!resources.Contains(PermissionRequest.ResourceVideoCapture)) { request.Deny(); return; }
+
+			host.GrantCameraOrAsk(request);
+		}
 
 		// LO QUE LA PAGINA PIDE lo atiende Shell.Handle, que es el MISMO archivo en las dos
 		// plataformas: el estado, el consentimiento, la llave, el proveedor y la pregunta.

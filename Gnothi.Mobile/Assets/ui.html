@@ -125,6 +125,18 @@
        padding:11px 14px;font-size:13px;font-family:ui-monospace,monospace;
        background:var(--paper);color:var(--ink);outline:none}
 
+  /* ── the code reader: the camera full screen, a frame, one way out ───── */
+  .scan{position:fixed;inset:0;background:#000;display:none;z-index:12}
+  .scan.on{display:block}
+  .scan video{width:100%;height:100%;object-fit:cover}
+  .scan-ui{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;
+       justify-content:center;gap:18px;padding:24px}
+  .scan-box{width:62vw;max-width:280px;aspect-ratio:1;border:3px solid #fff;border-radius:18px;
+       box-shadow:0 0 0 200vmax rgba(0,0,0,.45)}
+  .scan-ui p{color:#fff;font-size:15px;text-align:center;margin:0;text-shadow:0 1px 2px rgba(0,0,0,.6)}
+  .scan-ui button{background:rgba(255,255,255,.18);color:#fff;border:0;border-radius:14px;
+       padding:12px 24px;font-size:15px}
+
   /* ── module detail ────────────────────────────────────────────────────── */
   .back{display:flex;align-items:center;gap:6px;color:var(--accent);font-weight:600;
        font-size:14px;margin-bottom:14px}
@@ -344,6 +356,24 @@
   </div>
 </div>
 
+<!-- ═══ THE CODE READER ═══
+     The institution's page shows a QR with the SAME link as its button, for the person who reads
+     the page on a computer and has Gnothi on her phone. Here it is read with the phone's camera,
+     inside Gnothi. Decoding is jsQR (jsqr.js next to this file, Apache-2.0): pure JavaScript that
+     ships with the page, so it reads the same on every phone and nothing leaves it. The WebView's
+     own BarcodeDetector is only a fallback: the emulator offered it and Play Services never
+     downloaded the barcode module behind it, so detect() returned nothing, forever, silently.
+     What the code says goes down the same road as a pasted link, with its provenance marked. -->
+<script src="jsqr.js"></script>
+<div id="scan" class="scan">
+  <video id="cam" autoplay playsinline muted></video>
+  <div class="scan-ui">
+    <div class="scan-box"></div>
+    <p id="scan-msg">Apuntá al código de tu institución</p>
+    <button onclick="gn.scan.stop()">Cancelar</button>
+  </div>
+</div>
+
 <!-- ═══ ADDING A MODULE: THE WAYS IN ═══
      Until 2026-09-08 this sheet only explained and closed with "Entendido": every enrollment
      began OUTSIDE, on the institution's link. Now the person can paste that link here. Gnothi
@@ -357,6 +387,10 @@
     <input id="alta-url" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false" inputmode="url" placeholder="https://…">
     <div id="alta-hint" style="min-height:18px;margin:6px 2px 0;font-size:13px;color:#8E2A1F"></div>
     <button class="cta" onclick="gn.altaDesdeEnlace()">Agregar</button>
+    <div id="alta-o" class="hint">o</div>
+    <button id="alta-scan" class="btn ghost" style="width:100%" onclick="gn.scan.start()">Escanear el código de la institución</button>
+    <p id="alta-noscan" style="display:none"><small>Este teléfono no puede leer códigos desde Gnothi:
+    pegá el enlace, o escaneá el código con la cámara del sistema.</small></p>
     <p style="margin-top:12px"><small>Gnothi lo baja, lo revisa y te muestra qué trae antes de instalar nada.
     Si estás en la página de tu institución, su botón «Agregar a Gnothi» hace lo mismo.</small></p>
   </div>
@@ -465,9 +499,12 @@ const gn = {
     // says what is NOT checked yet -- that the host that served the package is the institution's.
     const rev = p.revision || {}, pro = p.procedencia || {};
     const mb = n => (Math.max(n || 0, 0) / 1048576).toFixed(1).replace('.', ',') + ' MB';
-    const respaldo = 'Lo sirvió <b>' + esc(pro.servido || p.servido || '?') + '</b>'
-      + (pro.origen === 'pegado' ? ', del enlace que pegaste' : '') + '.'
-      + '<small>Gnothi todavía no verifica que ese dominio sea el de la institución: fijate que lo reconozcas.</small>';
+    const via = pro.origen === 'qr' ? ', del código que escaneaste'
+              : pro.origen === 'pegado' ? ', del enlace que pegaste' : '';
+    const sello = pro.sello ? ' El paquete es el mismo que sellaba el enlace: no cambió desde que se generó.' : '';
+    const respaldo = 'Lo sirvió <b>' + esc(pro.servido || p.servido || '?') + '</b>' + via + '.'
+      + '<small>Gnothi todavía no verifica que ese dominio sea el de la institución: fijate que lo reconozcas.'
+      + esc(sello) + '</small>';
     const forma = rev.forma === 'hospedado'
       ? 'Trae la app de la institución, publicada: ' + (rev.archivos || 0) + ' archivos, ' + mb(rev.bytes) + '.'
         + '<small>Con su propio motor adentro (' + mb(rev.motorBytes) + '): un navegador no corre C# sin él.</small>'
@@ -505,6 +542,80 @@ const gn = {
     gn.sheet(false);
     inp.value = '';
     gn.call('alta', { url });
+  },
+
+  // THE CODE READER. Camera in, link out, and then the same road as a pasted link.
+  scan: {
+    stream: null, timer: null,
+    supported() {
+      return !!(navigator.mediaDevices && navigator.mediaDevices.getUserMedia)
+        && (typeof jsQR === 'function' || 'BarcodeDetector' in window);
+    },
+
+    // Read a code out of one frame -- the camera's, or an image a test hands in. jsQR first: pure
+    // JS, the same everywhere, no Google module. The platform's detector only if jsQR is missing.
+    async decode(source, width, height) {
+      const c = gn.scan.canvas || (gn.scan.canvas = document.createElement('canvas'));
+      c.width = width; c.height = height;
+      const g = c.getContext('2d', { willReadFrequently: true });
+      g.drawImage(source, 0, 0, width, height);
+      if (typeof jsQR === 'function') {
+        const px = g.getImageData(0, 0, width, height);
+        const hit = jsQR(px.data, width, height, { inversionAttempts: 'dontInvert' });
+        return hit && hit.data ? hit.data : null;
+      }
+      const codes = await new BarcodeDetector({ formats: ['qr_code'] }).detect(c);
+      return codes.length ? codes[0].rawValue : null;
+    },
+
+    async start() {
+      const hint = document.getElementById('alta-hint');
+      if (!gn.scan.supported()) { hint.textContent = 'Este teléfono no puede leer códigos desde Gnothi.'; return; }
+      hint.textContent = '';
+
+      // The platform grants or denies the camera here (Android asks the person the first time).
+      try {
+        gn.scan.stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' }, audio: false });
+      } catch (e) {
+        hint.textContent = e && e.name === 'NotAllowedError'
+          ? 'Gnothi no tiene permiso para usar la cámara.'
+          : 'No se pudo abrir la cámara: ' + (e && e.message || e);
+        return;
+      }
+
+      gn.sheet(false);
+      const video = document.getElementById('cam'), msg = document.getElementById('scan-msg');
+      msg.textContent = 'Apuntá al código de tu institución';
+      video.srcObject = gn.scan.stream;
+      document.getElementById('scan').classList.add('on');
+
+      // Four frames a second, downscaled to 640 wide: plenty for a code held up to the camera,
+      // and cheap enough for jsQR on a phone.
+      let busy = false;
+      gn.scan.timer = setInterval(async () => {
+        if (busy || video.readyState < 2 || !video.videoWidth) return;
+        busy = true;
+        try {
+          const scale = Math.min(1, 640 / video.videoWidth);
+          const text = await gn.scan.decode(video, Math.round(video.videoWidth * scale), Math.round(video.videoHeight * scale));
+          if (text) gn.scan.found(text);
+        } catch (e) { msg.textContent = 'No se pudo leer: ' + (e && e.message || e); }
+        busy = false;
+      }, 250);
+    },
+
+    stop() {
+      if (gn.scan.timer) { clearInterval(gn.scan.timer); gn.scan.timer = null; }
+      if (gn.scan.stream) { gn.scan.stream.getTracks().forEach(t => t.stop()); gn.scan.stream = null; }
+      document.getElementById('cam').srcObject = null;
+      document.getElementById('scan').classList.remove('on');
+    },
+
+    // What the code said. One entry for the camera and for a test that hands in a frame.
+    found(text) {
+      gn.scan.stop();
+      gn.call('alta', { url: text, via: 'qr' });
+    },
   },
 
   altaTimer: null,
@@ -812,7 +923,8 @@ function mock(op, x) {
     let host = 'tu institución';
     try { const u = new URL(x.url); host = new URL(u.searchParams.get('bundle') || x.url).host || host; } catch {}
     setTimeout(() => gn.push('alta', '', JSON.stringify({ estado: 'trabajando', detalle: 'Bajando el módulo de ' + host + '…' })), 150);
-    setTimeout(() => gn.push('propuesta', '', JSON.stringify(Object.assign({}, MOCK_PROPUESTA, { procedencia: { origen: 'pegado', servido: host } }))), 1100);
+    const procedencia = { origen: x.via === 'qr' ? 'qr' : 'pegado', servido: host, sello: /[?&]h=/.test(x.url || '') };
+    setTimeout(() => gn.push('propuesta', '', JSON.stringify(Object.assign({}, MOCK_PROPUESTA, { procedencia }))), 1100);
     return 'ok';
   }
   if (op === 'setTool')   { const m = MOCK.modules.find(m => m.name === x.module);
@@ -839,6 +951,14 @@ function mock(op, x) {
 
 document.getElementById('q').addEventListener('keydown', e => { if (e.key === 'Enter') gn.ask(); });
 document.getElementById('alta-url').addEventListener('keydown', e => { if (e.key === 'Enter') gn.altaDesdeEnlace(); });
+
+// A phone that cannot read codes from inside Gnothi (no BarcodeDetector, no camera API) is told
+// so, instead of being shown a button that does nothing.
+if (!gn.scan.supported()) {
+  document.getElementById('alta-scan').style.display = 'none';
+  document.getElementById('alta-o').style.display = 'none';
+  document.getElementById('alta-noscan').style.display = '';
+}
 
 const first = gn.call('modules');
 if (first && !first.loading) { gn.state = first; gn.paint(); }

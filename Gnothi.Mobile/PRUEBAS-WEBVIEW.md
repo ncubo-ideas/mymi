@@ -324,6 +324,28 @@ inspección del paquete (`Gnothi.Host/PackageInspector.cs`) y no de lo que la in
 Un paquete que la inspección rechaza (motor propio en un cargo, un `.exe`, un `installation.json`
 adentro) no llega a la hoja: la franja lo dice y el log trae los motivos.
 
+**Con el código, desde la computadora.** La página de la institución muestra, junto al botón, un
+QR con **el mismo enlace** (`http://127.0.0.1:8096/` en el navegador de la máquina). En Gnothi:
+«Agregar módulo» → **«Escanear el código de la institución»** → la cámara a pantalla completa →
+apuntá al código. Lo que sigue es idéntico; la hoja dice *del código que escaneaste*. Lo lee
+**jsQR** (`Assets/jsqr.js`, JavaScript puro, Apache-2.0), así que lee igual en cualquier aparato y
+no depende de Play Services: el `BarcodeDetector` del WebView quedó solo de respaldo, porque en el
+emulador existía y Play Services nunca bajó el módulo de códigos que tiene detrás — `detect()`
+devolvía vacío para siempre y sin decir nada. La primera vez Android pide el permiso de cámara.
+
+**El sello.** El enlace —botón y código— lleva `&h=`: los primeros 16 bytes del SHA-256 del
+`manifest.json` tal como va en el zip, en base64url. Si el servidor cambia el paquete después de
+que el código se imprimió, Gnothi lo rechaza: *El paquete no es el que sellaba el enlace*. Cuando
+coincide, la hoja lo dice: *El paquete es el mismo que sellaba el enlace*. Es **integridad**, no
+autenticidad: quien imprime el código elige la dirección y el sello. Probalo rearmando el bundle
+con otro manifiesto sin recargar la página.
+
+⚠️ **En el emulador la cámara es `emulated`** (un patrón de prueba, sin QR): la lectura de verdad
+se prueba con un teléfono apuntando a la pantalla de la computadora, o arrancando el emulador con
+`-camera-back webcam0` y mostrándole el código a la webcam. Sin eso, lo que sí se comprueba en el
+emulador es que el botón abre la cámara (el `<video>` recibe cuadros) y que lo que el lector
+entrega baja por el camino de siempre.
+
 **En el logcat** aparece un verbo nuevo del puente antes de la línea de siempre:
 
 ```
@@ -813,6 +835,16 @@ hay que deslizar la tarjeta antes de tocar. `conducir-el-alta.mjs` ya hace las d
 
 **`INSTALL_FAILED_INSUFFICIENT_STORAGE` al instalar encima.** El `/data` del AVD G37 anda casi
 lleno; `pm uninstall com.ncubo.gnothi.host` y después `adb install` limpio.
+
+**Después de abrir la cámara, la app deja de responder al toque (solo en el AVD G37).** Medido el
+2026-09-08, dos veces: la cámara abre y el `<video>` recibe cuadros, pero desde ese instante ningún
+toque ni tecla llega a la página, y `dumpsys input` dice `FocusedWindows: <none>` y
+`InputDispatcher: No new touched window at (…)` — para Android no hay ventana donde caen los toques,
+aunque `dumpsys window` sigue dando el foco a Gnothi. Recargar la página no lo arregla ni
+`am start` sobre la misma tarea; solo relanzar la app (y `force-stop` tumba `system_server` en este
+AVD: esperar `service check package` y volver a abrir). No es la página: pasa por debajo del WebView,
+y coincide con `Failed to find ColorBuffer` en el log del emulador (`-gpu swangle`). La lectura del
+código en el emulador se prueba con `conducir-el-alta.mjs codigo`; la cámara de verdad, en un teléfono.
 
 ## 5 · Lo que este guion NO puede probar
 

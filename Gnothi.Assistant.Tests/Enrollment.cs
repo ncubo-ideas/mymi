@@ -78,15 +78,20 @@ internal static class Enrollment
 		assert("capabilities beyond a data module are reported, and the module installs OFF",
 			!network.Rejected && network.Excesses.Contains("network") && !network.InstallEnabled, Detail(network));
 
-		// ── the pasted link ──────────────────────────────────────────────────────────────
+		// ── the link, taken apart ────────────────────────────────────────────────────────
 
 		const string wrapped = "https://go.gnothi.app/alta?bundle=https%3A%2F%2Fdelfos.cr%2Fexamenes.zip";
+		EnrollmentLink plain = ModuleEnrollment.ParseLink(wrapped);
 		assert("the institution's link is unwrapped to the bundle's address",
-			ModuleEnrollment.BundleUrlOf(wrapped) == "https://delfos.cr/examenes.zip", ModuleEnrollment.BundleUrlOf(wrapped));
-		assert("a bundle address pasted as is passes through, trimmed",
-			ModuleEnrollment.BundleUrlOf(" https://delfos.cr/examenes.zip ") == "https://delfos.cr/examenes.zip", "");
+			plain.Bundle == "https://delfos.cr/examenes.zip" && plain.Seal is null, $"{plain}");
+
+		EnrollmentLink sealed_ = ModuleEnrollment.ParseLink(wrapped + "&h=abc-DEF_123");
+		assert("the seal travels with the link", sealed_.Bundle == "https://delfos.cr/examenes.zip" && sealed_.Seal == "abc-DEF_123", $"{sealed_}");
+
+		assert("a bundle address pasted as is passes through, trimmed, with no seal",
+			ModuleEnrollment.ParseLink(" https://delfos.cr/examenes.zip ") == new EnrollmentLink("https://delfos.cr/examenes.zip", null), "");
 		assert("text that is not an address passes through, for the enrollment to refuse",
-			ModuleEnrollment.BundleUrlOf("hola") == "hola", "");
+			ModuleEnrollment.ParseLink("hola").Bundle == "hola", "");
 
 		// ── the enrollment over bytes ────────────────────────────────────────────────────
 
@@ -94,11 +99,11 @@ internal static class Enrollment
 		try
 		{
 			var enrolling = new ModuleEnrollment(Path.Combine(root, "Modulos"), Path.Combine(root, "journals"), _ => { });
-			var pasted = new Provenance(EnrollmentSource.PastedLink, "delfos.cr");
 
-			EnrollmentProposal p = enrolling.Examine(HostedOk, pasted);
+			EnrollmentProposal p = enrolling.Examine(HostedOk, EnrollmentSource.PastedLink, "delfos.cr");
 			assert("examining bytes keeps the provenance for the sheet",
-				p.ServedBy == "delfos.cr" && p.Provenance.Source == EnrollmentSource.PastedLink, $"served by '{p.ServedBy}'");
+				p.ServedBy == "delfos.cr" && p.Provenance.Source == EnrollmentSource.PastedLink && !p.Provenance.MatchesLink,
+				$"{p.Provenance}");
 			assert("the proposal carries the inspection",
 				p.Inspection.Form == PackageForm.Hosted && !p.Inspection.Rejected && p.Inspection.EngineFiles == 2, Detail(p.Inspection));
 			assert("nothing is installed before she decides",
@@ -108,14 +113,14 @@ internal static class Enrollment
 			assert("discarding leaves nothing behind",
 				!Directory.Exists(p.Folder) && !Directory.Exists(Path.Combine(root, "Modulos")), p.Folder);
 
-			p = enrolling.Examine(HostedOk, pasted);
+			p = enrolling.Examine(HostedOk, EnrollmentSource.PastedLink, "delfos.cr");
 			string module = enrolling.Accept(p);
 			Installation on = Installation.Read(Path.Combine(root, "Modulos", module, "installation.json"));
 			assert("accepting writes the Host's installation, switched on",
 				on.Enabled && on.Shell.Type == "webview" && on.GrantedFolder.EndsWith("demo"),
 				$"enabled={on.Enabled} shell={on.Shell.Type} folder={on.GrantedFolder}");
 
-			string red = enrolling.Accept(enrolling.Examine(HostedNetwork, pasted));
+			string red = enrolling.Accept(enrolling.Examine(HostedNetwork, EnrollmentSource.PastedLink, "delfos.cr"));
 			Installation off = Installation.Read(Path.Combine(root, "Modulos", red, "installation.json"));
 			assert("a module asking for network is installed switched OFF, the desktop's rule",
 				!off.Enabled, $"enabled={off.Enabled}");
@@ -124,12 +129,35 @@ internal static class Enrollment
 			{
 				enrolling.Examine(Zip(
 					("manifest.json", ManifestJson("demo", load: "dominio/Demo.App.dll")),
-					("dominio/Demo.App.dll", "x"), ("dominio/Puppeteer.dll", "engine")), pasted);
+					("dominio/Demo.App.dll", "x"), ("dominio/Puppeteer.dll", "engine")), EnrollmentSource.PastedLink, "delfos.cr");
 				assert("a refused package never becomes a proposal", false, "Examine returned a proposal");
 			}
 			catch (InvalidOperationException e)
 			{
 				assert("a refused package never becomes a proposal", e.Message.Contains("engine"), e.Message);
+			}
+
+			// ── the seal ─────────────────────────────────────────────────────────────────
+
+			// The seal is over the manifest's bytes exactly as they sit in the zip: the same
+			// string the package was built from, hashed the same way the institution's page does.
+			string seal = ModuleEnrollment.SealOf(Encoding.UTF8.GetBytes(ManifestJson("demo")));
+			assert("the seal is 16 bytes of SHA-256, base64url, no padding",
+				seal.Length == 22 && !seal.Contains('=') && !seal.Contains('+') && !seal.Contains('/'), seal);
+
+			EnrollmentProposal scanned = enrolling.Examine(HostedOk, EnrollmentSource.Qr, "delfos.cr", seal);
+			assert("a code whose seal matches the package is marked as such, and remembered as a code",
+				scanned.Provenance.MatchesLink && scanned.Provenance.Source == EnrollmentSource.Qr, $"{scanned.Provenance}");
+			enrolling.Discard(scanned);
+
+			try
+			{
+				enrolling.Examine(HostedOk, EnrollmentSource.Qr, "delfos.cr", "not-the-seal-of-this-one");
+				assert("a package that no longer matches the link's seal is refused", false, "Examine returned a proposal");
+			}
+			catch (PackageSealMismatchException e)
+			{
+				assert("a package that no longer matches the link's seal is refused", e.Message.Contains(seal), e.Message);
 			}
 		}
 		finally

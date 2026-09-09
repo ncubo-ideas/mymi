@@ -1,13 +1,14 @@
 using System.IO.Compression;
+using System.Security.Cryptography;
 using System.Text.Json;
 
 namespace Gnothi.Movil;
 
 // ENROLLING A MODULE. This is how a person really gets a module: the institution puts a button
-// on its page, Sonia taps it -or pastes the link it gave her into Gnothi- and Gnothi downloads
-// the bundle, INSPECTS it, shows her what it found, and installs it only if she says yes
-// (specification 11 §3, 13 §7, 13 §10.4). Until this existed modules only got in by pushing
-// files with adb, which is not a path that exists for anybody.
+// and a code on its page, Sonia taps the button -or pastes the link, or points Gnothi's camera
+// at the code- and Gnothi downloads the bundle, INSPECTS it, shows her what it found, and
+// installs it only if she says yes (specification 11 §3, 13 §7, 13 §10.4). Until this existed
+// modules only got in by pushing files with adb, which is not a path that exists for anybody.
 //
 // THE BUNDLE IS A ZIP and carries two things: the institution's `manifest.json` and the `web/`
 // folder with its published app. Nothing else. No executable, no installation: the
@@ -18,10 +19,16 @@ namespace Gnothi.Movil;
 // its publisher is; Gnothi registers it once and from then on the module cannot change it.
 //
 // WHERE THE BYTES CAME FROM IS RECORDED, NOT ASSUMED. Every way in -the institution's link, a
-// pasted link, later a QR or a file- ends in the same Examine over the same bytes, carrying a
-// Provenance that says which way it was and who served it. The sheet reads it: a package that
-// arrived from a link has a host to name; one that arrives as a file will not, and the sheet
-// has to say so instead of pretending.
+// pasted link, a scanned code, later a file- ends in the same Examine over the same bytes,
+// carrying a Provenance that says which way it was and who served it. The sheet reads it: a
+// package that arrived from a link has a host to name; one that arrives as a file will not, and
+// the sheet has to say so instead of pretending.
+//
+// THE SEAL. A link can carry the hash of the manifest it was made for (&h=). When it does, a
+// package whose manifest no longer hashes to it is refused: whoever made the link -or printed
+// the code- fixed WHICH package it points at, and a swap on the server afterwards is caught.
+// That is integrity, not authenticity: the one who makes the link chooses both the address and
+// the seal, so a forged code is not caught by this. The sheet says the first and not the second.
 //
 // WHAT GNOTHI CHECKS BEFORE SHOWING ANYTHING is PackageInspector -the same inspection the
 // desktop installer runs (Gnothi.Host/PackageInspector.cs): the package's form, whether it
@@ -35,8 +42,8 @@ namespace Gnothi.Movil;
 // in the Android project until iOS needed it, and moving it cost one parameter -- where the log
 // goes.
 
-// HOW THE BUNDLE REACHED GNOTHI. The next ways in -a QR read inside Gnothi, a file shared to
-// it- add their value here, and nothing downstream has to change to carry it.
+// HOW THE BUNDLE REACHED GNOTHI. The next way in -a file shared to Gnothi- adds its value here,
+// and nothing downstream has to change to carry it.
 public enum EnrollmentSource
 {
 	// The institution's button: an App Link (Android) or universal link (iOS) landed on Gnothi.
@@ -44,11 +51,30 @@ public enum EnrollmentSource
 
 	// The person pasted the institution's link into Gnothi herself.
 	PastedLink,
+
+	// The person pointed Gnothi's camera at the institution's code.
+	Qr,
 }
 
 // WHERE THE BYTES CAME FROM. ServedBy is the host that answered the download: a fact about
-// transport, not a verified identity, and the sheet says exactly that.
-public sealed record Provenance(EnrollmentSource Source, string ServedBy);
+// transport, not a verified identity, and the sheet says exactly that. MatchesLink is true when
+// the link carried a seal and the package hashed to it -- integrity against the link, nothing
+// more; false when the link carried none.
+public sealed record Provenance(EnrollmentSource Source, string ServedBy, bool MatchesLink = false);
+
+// THE LINK, TAKEN APART. The institution's page links to Gnothi's domain with the bundle's
+// address as a parameter and, since 2026-09-08, the seal of its manifest:
+//
+//     https://go.gnothi.app/alta?bundle=<url>&h=<seal>
+//
+// A pasted link or a scanned code can be that, or the bundle's address itself. Both are
+// accepted. Text that is not an address comes back as the bundle untouched, for Examine to
+// refuse with its own words.
+public sealed record EnrollmentLink(string Bundle, string? Seal);
+
+// The link carried a seal and the package does not hash to it. Its own type so the shell can
+// say it in the person's words: this is not a broken zip, it is a package that changed.
+internal sealed class PackageSealMismatchException(string message) : InvalidOperationException(message);
 
 internal sealed class ModuleEnrollment
 {
@@ -69,27 +95,34 @@ internal sealed class ModuleEnrollment
 		this.log = log;
 	}
 
-	// THE LINK, AS THE PERSON HAS IT. The institution's page links to Gnothi's domain with the
-	// bundle's address as a parameter (https://go.gnothi.app/alta?bundle=...), and the platforms
-	// unwrap it when the link lands. A pasted link can be that, or the bundle's address itself:
-	// both are accepted, and what comes back is the address to download. Text that is not an
-	// address comes back untouched, for Examine to refuse with its own words.
-	internal static string BundleUrlOf(string link)
+	internal static EnrollmentLink ParseLink(string link)
 	{
 		string trimmed = link.Trim();
-		if (!Uri.TryCreate(trimmed, UriKind.Absolute, out Uri? uri)) return trimmed;
+		if (!Uri.TryCreate(trimmed, UriKind.Absolute, out Uri? uri)) return new EnrollmentLink(trimmed, null);
 
+		string? bundle = null, seal = null;
 		foreach (string pair in uri.Query.TrimStart('?').Split('&', StringSplitOptions.RemoveEmptyEntries))
 		{
 			int eq = pair.IndexOf('=');
-			if (eq <= 0 || !pair[..eq].Equals("bundle", StringComparison.OrdinalIgnoreCase)) continue;
+			if (eq <= 0) continue;
 
+			string key = pair[..eq];
 			string value = Uri.UnescapeDataString(pair[(eq + 1)..].Replace('+', ' '));
-			if (value.Length > 0) return value;
+			if (value.Length == 0) continue;
+
+			if (key.Equals("bundle", StringComparison.OrdinalIgnoreCase)) bundle = value;
+			else if (key.Equals("h", StringComparison.OrdinalIgnoreCase)) seal = value;
 		}
 
-		return trimmed;
+		// A seal only means something next to the bundle it was made for.
+		return bundle is null ? new EnrollmentLink(trimmed, null) : new EnrollmentLink(bundle, seal);
 	}
+
+	// THE SEAL: the first 16 bytes of the SHA-256 of manifest.json exactly as it sits in the
+	// zip, base64url without padding. PaginaDeLaInstitucion computes the same thing for its
+	// link, over the same bytes; neither side normalises anything, so they agree byte for byte.
+	internal static string SealOf(byte[] manifestBytes)
+		=> Convert.ToBase64String(SHA256.HashData(manifestBytes), 0, 16).TrimEnd('=').Replace('+', '-').Replace('/', '_');
 
 	// ENROLLING IS TWO ACTS, AND THE PERSON DECIDES IN BETWEEN (specification 13 §7).
 	//
@@ -105,7 +138,7 @@ internal sealed class ModuleEnrollment
 	// and WHAT it offers, the manifest has to be read, and the manifest comes inside the zip. So
 	// it is downloaded, inspected, unpacked into a temporary folder, shown, and installed only if
 	// she accepts. If she says no, the temporary folder is deleted and nothing was left behind.
-	internal async Task<EnrollmentProposal> Examine(string url, EnrollmentSource source, CancellationToken ct, Action<string>? progress = null)
+	internal async Task<EnrollmentProposal> Examine(string url, EnrollmentSource source, string? seal, CancellationToken ct, Action<string>? progress = null)
 	{
 		if (!Uri.TryCreate(url, UriKind.Absolute, out Uri? where)
 			|| (where.Scheme != Uri.UriSchemeHttps && where.Scheme != Uri.UriSchemeHttp))
@@ -115,23 +148,29 @@ internal sealed class ModuleEnrollment
 		progress?.Invoke($"Bajando el módulo de {where.Host}…");
 
 		byte[] zip = await Download(where, ct);
-		return Examine(zip, new Provenance(source, where.Host), progress);
+		return Examine(zip, source, where.Host, seal, progress);
 	}
 
-	// THE SAME EXAMINATION FOR EVERY WAY IN. Bytes and provenance come in; the manifest is read
-	// and the package inspected BEFORE anything touches the disk; only then is it unpacked into a
-	// temporary folder that lives until she decides.
-	internal EnrollmentProposal Examine(byte[] zip, Provenance provenance, Action<string>? progress = null)
+	// THE SAME EXAMINATION FOR EVERY WAY IN. Bytes and where they came from come in; the
+	// manifest is read, checked against the seal if the link carried one, and the package
+	// inspected BEFORE anything touches the disk; only then is it unpacked into a temporary
+	// folder that lives until she decides.
+	internal EnrollmentProposal Examine(byte[] zip, EnrollmentSource source, string servedBy, string? expectedSeal = null, Action<string>? progress = null)
 	{
 		progress?.Invoke("Revisando qué trae…");
 
 		Gnothi.Host.Manifest manifest;
+		string seal;
 		Gnothi.Host.PackageInspection inspection;
 		using (var archive = new ZipArchive(new MemoryStream(zip), ZipArchiveMode.Read))
 		{
-			manifest = ReadManifest(archive);
+			(manifest, seal) = ReadManifest(archive);
 			inspection = Gnothi.Host.PackageInspector.Inspect(archive, manifest);
 		}
+
+		if (expectedSeal is not null && !string.Equals(expectedSeal, seal, StringComparison.Ordinal))
+			throw new PackageSealMismatchException(
+				$"the link was made for a manifest sealed {expectedSeal}; the package served now seals {seal}");
 
 		// A refused package never reaches the sheet: there is nothing to decide about a package
 		// that would not be installed anyway. The reasons are written to be read, and they are
@@ -145,8 +184,9 @@ internal sealed class ModuleEnrollment
 			Unpack(zip, temporary);
 
 			string module = manifest.Module;
-			return new EnrollmentProposal(temporary, manifest, provenance, inspection,
-				Path.Combine(journalsRoot, module), Directory.Exists(Path.Combine(modulesRoot, module)));
+			return new EnrollmentProposal(temporary, manifest,
+				new Provenance(source, servedBy, MatchesLink: expectedSeal is not null),
+				inspection, Path.Combine(journalsRoot, module), Directory.Exists(Path.Combine(modulesRoot, module)));
 		}
 		catch
 		{
@@ -239,22 +279,31 @@ internal sealed class ModuleEnrollment
 	}
 
 	// Read straight from the archive, before unpacking: the inspection needs the manifest, and
-	// nothing should be written to disk for a package that is about to be refused. Through the
-	// Host's generated JSON context, not reflection -- this file also compiles into the iOS app.
-	private static Gnothi.Host.Manifest ReadManifest(ZipArchive archive)
+	// nothing should be written to disk for a package that is about to be refused. The raw bytes
+	// are hashed for the seal BEFORE parsing -- the seal is over the file, not over a rendering
+	// of it. Through the Host's generated JSON context, not reflection: this file also compiles
+	// into the iOS app.
+	private static (Gnothi.Host.Manifest manifest, string seal) ReadManifest(ZipArchive archive)
 	{
 		ZipArchiveEntry? entry = archive.Entries.FirstOrDefault(e =>
 			e.FullName.Replace('\\', '/').Equals("manifest.json", StringComparison.OrdinalIgnoreCase));
 		if (entry is null)
 			throw new InvalidOperationException("the bundle carries no manifest.json: it does not say who it is nor what it offers");
 
+		byte[] bytes;
+		using (var buffer = new MemoryStream())
+		{
+			using Stream content = entry.Open();
+			content.CopyTo(buffer);
+			bytes = buffer.ToArray();
+		}
+
 		try
 		{
-			using var reader = new StreamReader(entry.Open());
-			Gnothi.Host.Manifest? manifest = JsonSerializer.Deserialize(reader.ReadToEnd(), Gnothi.Host.HostJson.Default.Manifest);
+			Gnothi.Host.Manifest? manifest = JsonSerializer.Deserialize(bytes, Gnothi.Host.HostJson.Default.Manifest);
 			if (manifest is null || string.IsNullOrWhiteSpace(manifest.Module))
 				throw new InvalidOperationException("the bundle's manifest.json could not be read, or declares no 'module'");
-			return manifest;
+			return (manifest, SealOf(bytes));
 		}
 		catch (JsonException e)
 		{
@@ -296,8 +345,8 @@ internal sealed class ModuleEnrollment
 // WHAT GNOTHI SHOWS THE PERSON BEFORE INSTALLING ANYTHING. It comes out of the bundle's
 // manifest -- that is, out of what the institution DECLARES about itself -- plus what Gnothi
 // found out by itself and she has a right to know before accepting: where the bytes came from,
-// what the inspection saw, where the journal will live, and against which endpoint the courier
-// will talk.
+// whether they match the link, what the inspection saw, where the journal will live, and
+// against which endpoint the courier will talk.
 //
 // `Folder` is the temporary place where the bundle is already unpacked. It exists until she
 // decides: Accept moves it where it belongs, Discard deletes it.

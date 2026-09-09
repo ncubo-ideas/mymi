@@ -146,6 +146,12 @@
     <!-- LA CARA, Y ES EL MISMO ARCHIVO. No una copia: el mismo ui.html que renderiza Android.
          Esa es la mitad de la respuesta a «que se vea igual». -->
     <BundleResource Include="..\Gnothi.Mobile\Assets\ui.html" Link="Assets\ui.html" LogicalName="Assets/ui.html" />
+    <!-- THE CODE READER'S DECODER, next to the page as ui.html expects (<script src="jsqr.js">).
+         Pure JavaScript, so iOS -which has no BarcodeDetector- reads the same codes as Android.
+         The camera itself still needs NSCameraUsageDescription and the WKUIDelegate permission
+         decision; until those land, tapping "Escanear" ends in the page's own message that Gnothi
+         has no permission for the camera, and the link can still be pasted. -->
+    <BundleResource Include="..\Gnothi.Mobile\Assets\jsqr.js" Link="Assets\jsqr.js" LogicalName="Assets/jsqr.js" />
 
     <!-- EL PAQUETE, SI YA SE ARMO. Es lo mismo que armar-paquete.ps1 le empuja al Android por
          adb: los journals y los modulos. Va condicionado porque paquete/ esta gitignoreado

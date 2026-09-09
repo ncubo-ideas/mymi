@@ -134,8 +134,23 @@ if (Directory.Exists(appSuelta))
 
 app.MapGet("/", () =>
 {
+    // ONE LINK FOR THE BUTTON AND FOR THE CODE. It carries the bundle's address and, when the
+    // bundle is there to be read, the seal of its manifest (&h=): Gnothi refuses a package whose
+    // manifest no longer hashes to it, so whoever made this link or printed this code fixed
+    // WHICH package it points at, and a swap on the server afterwards is caught. Integrity, not
+    // authenticity -- the one who prints the code chooses both the address and the seal -- and
+    // Gnothi's sheet says exactly that.
+    string? seal = SealOf(bundle);
     string alta = "https://go.gnothi.app/alta?bundle="
-        + Uri.EscapeDataString($"{suPropiaUrl}/{nombreDelZip}");
+        + Uri.EscapeDataString($"{suPropiaUrl}/{nombreDelZip}")
+        + (seal is null ? "" : "&h=" + seal);
+
+    // THE CODE, drawn here. The same link as the button, for the person who is reading this
+    // page on a laptop and has Gnothi on her phone: no link crosses that gap, a code does.
+    string qr;
+    using (var generator = new QRCoder.QRCodeGenerator())
+    using (QRCoder.QRCodeData data = generator.CreateQrCode(alta, QRCoder.QRCodeGenerator.ECCLevel.M))
+        qr = new QRCoder.SvgQRCode(data).GetGraphic(6, "#16202c", "#ffffff", drawQuietZones: true);
 
     return Results.Content($$"""
         <!doctype html><meta charset=utf-8>
@@ -150,6 +165,10 @@ app.MapGet("/", () =>
                   background: #3f34a8; color: #fff; text-decoration: none; font-weight: 600; }
           a.otra { display: inline-block; margin-top: 14px; color: #3f34a8; }
           code { background: #e9ecf2; padding: 2px 6px; border-radius: 4px; font-size: 13px; }
+          .qr { display: flex; align-items: center; gap: 20px; flex-wrap: wrap; margin-top: 28px; }
+          .qr svg { width: 176px; height: 176px; display: block; border-radius: 8px; background: #fff;
+                    box-shadow: 0 1px 4px rgba(0,0,0,.12); }
+          .qr p { margin: 0; font-size: 14px; max-width: 22em; }
         </style>
         <h1>{{titulo}}</h1>
         <p>{{subtitulo}}</p>
@@ -157,6 +176,12 @@ app.MapGet("/", () =>
            tus datos viven ahi, no en nuestro servidor.</p>
         <a class="cta" href="{{alta}}">Agregar a Gnothi</a>
         <br><a class="otra" href="/app/">o abrir la app en el navegador</a>
+        <div class="qr">
+          <div>{{qr}}</div>
+          <p>Si estas leyendo esto en una computadora, escanea el codigo desde Gnothi en tu
+             telefono: <b>Agregar modulo &rarr; Escanear el codigo de la institucion</b>.
+             Es el mismo enlace que el boton.</p>
+        </div>
         <p style="margin-top:32px;font-size:13px">El bundle esta en <code>{{suPropiaUrl}}/{{nombreDelZip}}</code></p>
         """, "text/html");
 });
@@ -172,3 +197,22 @@ app.MapGet("/salud", () => Results.Ok(new
 }));
 
 app.Run();
+
+// THE SEAL OF A BUNDLE: the first 16 bytes of the SHA-256 of manifest.json exactly as it sits
+// in the zip, base64url without padding. Gnothi computes the same thing over the same bytes
+// (ModuleEnrollment.SealOf) and the two have to agree byte for byte, so nothing is normalised
+// on either side. Null when there is no bundle to read: the link then carries no seal, which is
+// what it did before, not an error.
+static string? SealOf(string bundlePath)
+{
+    if (!File.Exists(bundlePath)) return null;
+
+    using var zip = System.IO.Compression.ZipFile.OpenRead(bundlePath);
+    System.IO.Compression.ZipArchiveEntry? manifest = zip.Entries.FirstOrDefault(e =>
+        e.FullName.Replace('\\', '/').Equals("manifest.json", StringComparison.OrdinalIgnoreCase));
+    if (manifest is null) return null;
+
+    using Stream bytes = manifest.Open();
+    byte[] hash = System.Security.Cryptography.SHA256.HashData(bytes);
+    return Convert.ToBase64String(hash, 0, 16).TrimEnd('=').Replace('+', '-').Replace('/', '_');
+}

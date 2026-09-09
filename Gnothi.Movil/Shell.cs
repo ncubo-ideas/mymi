@@ -273,10 +273,16 @@ public sealed class Shell : IDisposable
 	///
 	/// Lo llaman las dos plataformas cuando su enlace aterriza: un App Link en Android, un
 	/// universal link en iOS. Lo unico que cambia es como llega la URL.
-	public Task Enroll(string url, CancellationToken ct = default) => Enroll(url, EnrollmentSource.Link, ct);
+	public Task Enroll(string url, CancellationToken ct = default)
+	{
+		// The platforms hand over the link as it landed -go.gnothi.app/alta?bundle=…&h=…- or
+		// just the bundle's address. Either way the seal, when there is one, travels with it.
+		EnrollmentLink link = ModuleEnrollment.ParseLink(url);
+		return Enroll(link.Bundle, EnrollmentSource.Link, link.Seal, ct);
+	}
 
 	// ONE ENTRY FOR EVERY WAY IN; only the provenance differs, and it travels to the sheet.
-	private async Task Enroll(string url, EnrollmentSource source, CancellationToken ct)
+	private async Task Enroll(string bundle, EnrollmentSource source, string? seal, CancellationToken ct)
 	{
 		try
 		{
@@ -289,7 +295,7 @@ public sealed class Shell : IDisposable
 
 			// BAJAR NO ES INSTALAR. Esto trae el bundle, lo inspecciona y lee su manifiesto; el
 			// modulo todavia no ocupa ningun lugar en el aparato.
-			proposal = await enrolling.Examine(url, source, ct, step => PushEnrollment("trabajando", step));
+			proposal = await enrolling.Examine(bundle, source, seal, ct, step => PushEnrollment("trabajando", step));
 
 			log($"alta: propuesta de '{proposal.Manifest.Module}' servida por {proposal.ServedBy}");
 			PushProposal(proposal);
@@ -299,7 +305,7 @@ public sealed class Shell : IDisposable
 			// UN ALTA QUE FALLA TIENE QUE DECIRLO, Y EN LA PANTALLA. Cuando esto solo escribia
 			// en el log, la persona tocaba el boton de su institucion, volvia a Gnothi y no
 			// pasaba nada, sin ninguna pista de por que.
-			log($"alta: no se pudo leer el módulo de {url}: {ex.GetType().Name}: {ex.Message}");
+			log($"alta: no se pudo leer el módulo de {bundle}: {ex.GetType().Name}: {ex.Message}");
 			PushEnrollment("error", InPlainWords(ex));
 		}
 	}
@@ -341,19 +347,24 @@ public sealed class Shell : IDisposable
 		return "\"ok\"";
 	}
 
-	// The person pasted the institution's link. It may be the link to Gnothi's domain with the
-	// bundle as a parameter, or the bundle's address itself; both are accepted. Fire and forget,
-	// like RunAsk: the page hears back through the same "alta"/"propuesta" pushes as a link.
-	private string EnrollPasted(string link)
+	// The page brought a link: pasted by the person, or read off the institution's code. It may
+	// be the link to Gnothi's domain with the bundle and its seal as parameters, or the bundle's
+	// address itself; both are accepted. Fire and forget, like RunAsk: the page hears back
+	// through the same "alta"/"propuesta" pushes as a link that landed.
+	private string EnrollFromPage(JsonElement req)
 	{
-		string bundle = ModuleEnrollment.BundleUrlOf(link);
-		if (bundle.Length == 0)
+		string text = req.GetProperty("url").GetString() ?? "";
+		bool scanned = req.TryGetProperty("via", out JsonElement via) && via.GetString() == "qr";
+		EnrollmentSource source = scanned ? EnrollmentSource.Qr : EnrollmentSource.PastedLink;
+
+		EnrollmentLink link = ModuleEnrollment.ParseLink(text);
+		if (link.Bundle.Length == 0)
 		{
-			PushEnrollment("error", "Pegá el enlace que te dio tu institución.");
+			PushEnrollment("error", scanned ? "El código no traía ningún enlace." : "Pegá el enlace que te dio tu institución.");
 			return "\"ok\"";
 		}
 
-		_ = Enroll(bundle, EnrollmentSource.PastedLink, stop.Token);
+		_ = Enroll(link.Bundle, source, link.Seal, stop.Token);
 		return "\"ok\"";
 	}
 
@@ -376,12 +387,19 @@ public sealed class Shell : IDisposable
 		yaEstaba = p.AlreadyThere,
 		tools = p.Manifest.Tools.Select(t => new { nombre = t.Name, titulo = t.Title, descripcion = t.Description }),
 
-		// WHERE IT CAME FROM, as a fact about transport: which way in, and which host answered.
-		// The sheet says out loud that the host is not yet verified against the institution.
+		// WHERE IT CAME FROM, as a fact about transport: which way in, which host answered, and
+		// whether the package still matches the seal the link carried. The sheet says out loud
+		// that the host is not yet verified against the institution.
 		procedencia = new
 		{
-			origen = p.Provenance.Source == EnrollmentSource.PastedLink ? "pegado" : "enlace",
+			origen = p.Provenance.Source switch
+			{
+				EnrollmentSource.Qr => "qr",
+				EnrollmentSource.PastedLink => "pegado",
+				_ => "enlace",
+			},
 			servido = p.Provenance.ServedBy,
+			sello = p.Provenance.MatchesLink,
 		},
 
 		// WHAT GNOTHI CHECKED before showing this, so she decides with it in view: the form, the
@@ -413,6 +431,12 @@ public sealed class Shell : IDisposable
 
 		ArgumentException =>
 			"El enlace no es una dirección válida de módulo.",
+
+		// The link carried the seal of the manifest it was made for, and the package served now
+		// does not hash to it: what the address serves changed after the code was made. Before
+		// the InvalidOperationException arm on purpose: it derives from it.
+		PackageSealMismatchException =>
+			"El paquete no es el que sellaba el enlace: cambió después de que se generó el código. Pedile a tu institución uno nuevo.",
 
 		// Lo que tira ModuleEnrollment -bundle sin manifiesto, nombre invalido, zip que escribe
 		// afuera, techo de tamano- ya viene escrito para leerse. Se pasa tal cual.
@@ -490,11 +514,12 @@ public sealed class Shell : IDisposable
 				"altaAceptar" => AcceptEnrollment(),
 				"altaDescartar" => DiscardEnrollment(),
 
-				// THE LINK, PASTED BY HAND. The first way in that starts INSIDE Gnothi: until
-				// now every enrollment began outside, on the institution's page, and the
-				// "Agregar módulo" card only explained. It is also what makes the enrollment
-				// testable on a phone while go.gnothi.app does not resolve.
-				"alta" => EnrollPasted(req.GetProperty("url").GetString() ?? ""),
+				// THE LINK FROM INSIDE GNOTHI: pasted by hand, or read off the institution's
+				// code by the page's own reader ("via": "qr"). Until 2026-09-08 every enrollment
+				// began outside, on the institution's page, and the "Agregar módulo" card only
+				// explained. It is also what makes the enrollment testable on a phone while
+				// go.gnothi.app does not resolve.
+				"alta" => EnrollFromPage(req),
 
 				_ => "{}",
 			};

@@ -6,8 +6,15 @@
 // PRUEBAS-WEBVIEW.md for the pasted link, without hands and without screenshots.
 //
 //   node Gnothi.Mobile/conducir-el-alta.mjs pegar [urlDelBundle]   card -> paste -> Enter -> prints the sheet
+//   node Gnothi.Mobile/conducir-el-alta.mjs escanear               card -> "Escanear" -> the camera opens -> Cancelar
+//   node Gnothi.Mobile/conducir-el-alta.mjs codigo <imagen>        shows the reader an image of a code (svg or png)
 //   node Gnothi.Mobile/conducir-el-alta.mjs instalar               "Instalar en mi teléfono" -> prints the result
 //   node Gnothi.Mobile/conducir-el-alta.mjs descartar              "Ahora no"
+//
+// `codigo` exists because the emulator's camera (hw.camera.back=emulated) shows a test pattern
+// and never a code: the image is decoded inside the page with the SAME reader the camera path
+// uses (gn.scan.decode), and what it says goes down the same road (gn.scan.found). On a phone,
+// `escanear` pointed at the institution's page is the real thing.
 //
 // THREE THINGS A FINGER KNOWS AND A SCRIPT HAD TO LEARN (measured 2026-09-08 on the G37 AVD):
 //
@@ -20,6 +27,7 @@
 //   - BACK with the keyboard already hidden reaches the Activity, and gn.back() on the home view
 //     lets Android send the app away. So the keyboard is dismissed only when dumpsys says it is
 //     showing.
+import { readFileSync } from 'node:fs';
 import { adb, conectar, sleep } from './pantalla.mjs';
 
 const phase = process.argv[2] ?? 'pegar';
@@ -81,11 +89,22 @@ async function waitFor(done, seconds) {
 	return false;
 }
 
-async function pegar() {
-	console.log('modules before:', await evaluate('(gn.state && gn.state.modules || []).length'));
-
+async function openTheCard() {
 	await tap('.mod.add');
 	if (!/\bon\b/.test(await evaluate("document.getElementById('sheet').className"))) throw new Error('the sheet did not open');
+}
+
+async function printTheProposal() {
+	const opened = await waitFor(() => evaluate("document.getElementById('propuesta').classList.contains('on')"), 30);
+	if (!opened) { console.log('no proposal; the screen says:', (await text('#alta')).replace(/\n/g, ' ')); return; }
+
+	console.log('--- the sheet ---');
+	for (const selector of ['#pr-t', '#pr-i', '#pr-cuerpo']) console.log(await text(selector));
+}
+
+async function pegar() {
+	console.log('modules before:', await evaluate('(gn.state && gn.state.modules || []).length'));
+	await openTheCard();
 
 	await tap('#alta-url');
 	type(bundle);
@@ -93,12 +112,50 @@ async function pegar() {
 	console.log('typed:', await evaluate("document.getElementById('alta-url').value"));
 
 	adb('shell input keyevent 66');
+	await printTheProposal();
+}
 
-	const opened = await waitFor(() => evaluate("document.getElementById('propuesta').classList.contains('on')"), 30);
-	if (!opened) { console.log('no proposal; the screen says:', (await text('#alta')).replace(/\n/g, ' ')); return; }
+// The camera path up to the frames: the button, the permission, the stream. Then Cancelar.
+async function escanear() {
+	await openTheCard();
+	console.log('reader offered:', await evaluate("document.getElementById('alta-scan').style.display !== 'none' && gn.scan.supported()"));
+	await tap('#alta-scan');
 
-	console.log('--- the sheet ---');
-	for (const selector of ['#pr-t', '#pr-i', '#pr-cuerpo']) console.log(await text(selector));
+	const open = await waitFor(() => evaluate("document.getElementById('scan').classList.contains('on')"), 10);
+	console.log('reader open:', open, open ? '' : '| hint: ' + await text('#alta-hint'));
+	if (!open) return;
+
+	for (let i = 0; i < 12; i++) {
+		await sleep(500);
+		const state = await evaluate("(() => { const v = document.getElementById('cam'); return v.readyState + ':' + v.videoWidth + 'x' + v.videoHeight; })()");
+		console.log('  video', state);
+		if (/^[2-4]:[1-9]/.test(state)) break;
+	}
+
+	// Under the tap: the reader keeps the main thread busy decoding frames (four a second, on
+	// software rendering in the emulator), so the click may take a moment to be handled.
+	console.log('under Cancelar:', await evaluate("(() => { const b = document.querySelector('#scan button'), r = b.getBoundingClientRect(); const e = document.elementFromPoint(r.left + r.width / 2, r.top + r.height / 2); return e ? e.tagName + (e.id ? '#' + e.id : '') + '.' + e.className : 'nothing'; })()"));
+	await tap('#scan button');
+	const closed = await waitFor(async () => !(await evaluate("document.getElementById('scan').classList.contains('on')")), 6);
+	console.log('reader closed:', closed);
+}
+
+// An image of a code, shown to the reader instead of the camera.
+async function codigo() {
+	const file = process.argv[3];
+	if (!file) throw new Error('codigo needs the path of an image (svg or png)');
+	const mime = file.toLowerCase().endsWith('.svg') ? 'image/svg+xml' : 'image/png';
+	const data = readFileSync(file).toString('base64');
+
+	// Through the page's own decoder, so what is tested is the reader the camera path uses.
+	const said = await evaluate(`(async () => {
+		const img = new Image(); img.src = 'data:${mime};base64,${data}'; await img.decode();
+		return await gn.scan.decode(img, 600, 600); })()`);
+	if (!said) { console.log('the reader saw no code in', file); return; }
+
+	console.log('the code says:', said);
+	await evaluate(`gn.scan.found(${JSON.stringify(said)})`);
+	await printTheProposal();
 }
 
 async function instalar() {
@@ -118,8 +175,8 @@ async function descartar() {
 }
 
 try {
-	const run = { pegar, instalar, descartar }[phase];
-	if (!run) { console.error('usage: node conducir-el-alta.mjs pegar [urlDelBundle] | instalar | descartar'); process.exit(2); }
+	const run = { pegar, escanear, codigo, instalar, descartar }[phase];
+	if (!run) { console.error('usage: node conducir-el-alta.mjs pegar [urlDelBundle] | escanear | codigo <imagen> | instalar | descartar'); process.exit(2); }
 	console.log(`screen ${screenW}x${screenH} · page ${page.url}`);
 	await run();
 }
