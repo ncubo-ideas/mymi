@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+    <title>Mi cuenta municipal</title>
+    <base href="/app/" />
+
+    <meta name="theme-color" content="#2C306C" />
+
+    <link rel="stylesheet" href="css/app.css" />
+    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 48 48'%3E%3Crect width='48' height='48' rx='10' fill='%232C306C'/%3E%3Cg fill='%23fff' transform='translate(7 7) scale(.7)'%3E%3Cpath d='M24 4 2 17v5h44v-5L24 4Z'/%3E%3Crect x='5' y='25' width='5' height='13' rx='1'/%3E%3Crect x='16' y='25' width='5' height='13' rx='1'/%3E%3Crect x='27' y='25' width='5' height='13' rx='1'/%3E%3Crect x='38' y='25' width='5' height='13' rx='1'/%3E%3Crect x='2' y='41' width='44' height='4' rx='1.5'/%3E%3C/g%3E%3C/svg%3E" />
+    <link href="manifest.webmanifest" rel="manifest" />
+</head>
+
+<body>
+    <div id="app">
+        <div class="arranque">
+            <svg class="arranque__sello" viewBox="0 0 48 48" aria-hidden="true" focusable="false">
+                <path d="M24 4 2 17v5h44v-5L24 4Z" />
+                <rect x="5" y="25" width="5" height="13" rx="1" />
+                <rect x="16" y="25" width="5" height="13" rx="1" />
+                <rect x="27" y="25" width="5" height="13" rx="1" />
+                <rect x="38" y="25" width="5" height="13" rx="1" />
+                <rect x="2" y="41" width="44" height="4" rx="1.5" />
+            </svg>
+            <p class="cargando">Abriendo&hellip;</p>
+        </div>
+    </div>
+
+    <div id="blazor-error-ui">
+        Algo salió mal.
+        <a href="." class="reload">Recargar</a>
+        <span class="dismiss">&#128473;</span>
+    </div>
+    <script src="_framework/blazor.webassembly.js"></script>
+    <script>
+        if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.register('service-worker.js').catch(() => { });
+        }
+    </script>
+</body>
+
+</html>

@@ -1,0 +1,13 @@
+@if (Urgencia.Length > 0 && Urgencia != "ninguna")
+{
+    <span class="sello sello--@Urgencia">@Urgencia</span>
+}
+
+@code {
+    /// <summary>
+    /// La urgencia que decidio el dominio, tal cual. 'ninguna' no se dibuja: un sello que dijera
+    /// "ninguna" en cada renglon volveria ruido la calma.
+    /// </summary>
+    [Parameter, EditorRequired]
+    public string Urgencia { get; set; } = "";
+}

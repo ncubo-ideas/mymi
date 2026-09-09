@@ -1,0 +1,120 @@
+@page "/por-que-pago-mas"
+@inject EstadoDeLaApp estado
+
+<PageTitle>Por qué pago más · Mi cuenta municipal</PageTitle>
+
+<h1>Por qué pago más</h1>
+<p class="bajada">
+    Entre los dos últimos comprobantes de cada rubro: de cuánto a cuánto cambió, y qué lo explica.
+    Lo que explica un aumento depende de cómo se cobra ese rubro, y ésa es la mitad que el portal no
+    contesta.
+</p>
+
+@if (!estado.EstaArriba)
+{
+    <SinAbrir />
+}
+else
+{
+    <NumeroSinFirmar Dicho="@($"Un cambio se llama salto cuando pasa el {Formato.Porcentaje(variacion.UmbralDeSalto)}, y por debajo del {Formato.Porcentaje(variacion.Ruido)} se considera ruido.")" />
+
+    @foreach (var rubro in variacion.Rubros)
+    {
+        <article class="tarjeta" id="@("rubro-" + rubro.Rubro)">
+            <div class="tarjeta__cabeza">
+                <LlaveDelRubro Rubro="@rubro.Rubro" />
+                @if (rubro.SePuedeVer)
+                {
+                    <span class="sello sello--@(rubro.EsSalto ? "salto" : "quieto")">
+                        @rubro.Explicacion
+                    </span>
+                }
+            </div>
+
+            <Frase Dice="@rubro.Dice" Apagada="@(!rubro.SePuedeVer)" />
+
+            @if (rubro.SePuedeVer)
+            {
+                <dl class="renglones">
+                    <dt>Períodos</dt>
+                    <dd>@rubro.Desde &rarr; @rubro.Hasta</dd>
+                    <dt>Por período</dt>
+                    <dd>@Formato.Monto(rubro.Antes) &rarr; @Formato.Monto(rubro.Ahora)</dd>
+                    <dt>El cambio</dt>
+                    <dd>@Formato.Porcentaje(rubro.Proporcion)</dd>
+                </dl>
+            }
+        </article>
+    }
+
+    @if (!variacion.AlgunoSePuedeVer)
+    {
+        <Aviso Tono="tibia" Id="ninguna-variacion" Titulo="Todavía no hay ninguna variación que ver.">
+            <p>
+                Una variación necesita dos comprobantes del mismo rubro. Aparecen solas conforme tus
+                pagos vayan llegando a esta app.
+            </p>
+        </Aviso>
+    }
+
+    @if (fincas.HayAlguna)
+    {
+        <section class="bloque" id="el-valor-de-mi-finca">
+            <h2>El valor de tu finca</h2>
+
+            <p class="nota">
+                Tres de los cinco rubros se cobran sobre el valor de tu finca. El
+                <strong>avalúo</strong> lo fija tu municipalidad y lo manda a esta app: es el valor
+                con que te cobra, y es el que se usa arriba para explicar un salto.
+                <strong>No hay nada que llenar aquí</strong> — llega solo, con el resto de tus
+                movimientos.
+            </p>
+
+            @foreach (var finca in fincas.Fincas)
+            {
+                <article class="tarjeta">
+                    <div class="tarjeta__cabeza">
+                        <LlaveDelRubro Rubro="@finca.Numero" />
+                        @if (finca.TieneAvaluo)
+                        {
+                            <span class="periodo">avalúo: @Formato.Monto(finca.Avaluo)</span>
+                        }
+                        else
+                        {
+                            <span class="periodo">sin avalúo publicado</span>
+                        }
+                    </div>
+
+                    @if (!finca.TieneAvaluo)
+                    {
+                        <p class="nota">
+                            Tu municipalidad todavía no ha mandado un avalúo de esta finca. Llega
+                            solo, con el resto de tus movimientos, cuando ella lo publique.
+                        </p>
+                    }
+                </article>
+            }
+        </section>
+    }
+
+    <p class="nota">
+        Un aumento nunca apura: ya pasó. Lo que apura es lo que vence, y eso está en
+        <a href="que-se-me-vence">qué se me vence</a>.
+    </p>
+}
+
+@code {
+	private LaVariacionDeCadaRubro variacion;
+	private LasFincasQueTengo fincas;
+
+	protected override void OnInitialized() => Releer();
+
+	/// <summary>La unica pasada de lectura de esta pantalla, y las dos partes del mismo momento.</summary>
+	private void Releer()
+	{
+		if (!estado.EstaArriba) return;
+
+		variacion = estado.LeerLaVariacionDeCadaRubro();
+		fincas = estado.LeerLasFincas();
+	}
+}
