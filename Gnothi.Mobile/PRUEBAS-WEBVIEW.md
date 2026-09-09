@@ -42,7 +42,14 @@ Sirve igual en un **emulador** y en un **teléfono físico de cualquier marca y 
 | P1b PWA como ícono | — | — | — | ✅ |
 | P8 migración | ✅ | ✅ | ✅ | ✅ |
 
-P6 y P9 vienen del 2026-09-03 sobre un **Xiaomi 14T Pro** físico; ver su nota. P1b se corrió en
+P6 y P9 vienen del 2026-09-03 sobre un **Xiaomi 14T Pro** físico; ver su nota.
+
+**Y el alta nueva, corrida el 2026-09-09.** En un **Samsung A54 (Android 16)**: P2b **por QR con la cámara
+real** ✅ —el código de Sotavento Motors en el monitor, la barra de descarga, la hoja con *del código que
+escaneaste*, instalado, `matches:true`—. En el emulador `Gnothi37k4` (Android 37, `-gpu host`): P2b por
+enlace pegado ✅ (Delfos, La Guaria, Sotavento), P2c por archivo con **varios a la vez y la lista** ✅
+(Faro elegida entre tres), P2d firma ✅, revocación ✅, y el rechazo por origen ✅. El guion completo, en
+orden, está en §2b. P1b se corrió en
 DealershipCar y vale para los cuatro: el mecanismo es del navegador, no del módulo.
 
 **Dos precisiones sobre esa tabla**, para que nadie la lea de más:
@@ -75,6 +82,10 @@ adb devices
 
 Tiene que decir `device`. `unauthorized` = el diálogo espera en la pantalla del teléfono.
 `offline` = desconectá y volvé a conectar.
+
+**Con un emulador y el teléfono conectados a la vez**, `adb` se niega a adivinar (*more than one
+device*). Exportá `ANDROID_SERIAL=<la serie que lista adb devices>` antes de correr el escenario o los
+conductores —lo leen `adb`, `pantalla.mjs` y `conducir-el-alta.mjs`—, o cerrá el emulador.
 
 Si nunca compilaste este proyecto acá, hacé antes los pasos 1 y 2 del [README](README.md) —el
 workload de Android y el JDK—; son una sola vez.
