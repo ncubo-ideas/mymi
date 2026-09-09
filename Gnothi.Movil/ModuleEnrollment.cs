@@ -40,8 +40,9 @@ namespace Gnothi.Movil;
 // sheet says the module is BACKED by its origin. When they do not, the sheet says which of the
 // three failed. A FILE came from no origin, but its manifest still claims one: that origin is
 // asked whether it publishes exactly this manifest -its seal- and the same backing follows, over
-// the same TLS. Nothing is refused for it yet: whether the backing is a requirement or a warning
-// is a decision still open (NotasGnothiHost/42 §9), and it lives in ONE place -OriginIsRequired.
+// the same TLS. A CONTRADICTION is refused -the origin lists its modules and this is not one, or
+// the package claims an origin other than the one that served it-; SILENCE is described on the
+// sheet, and whether it becomes a refusal too lives in ONE place -OriginIsRequired (NotasGnothiHost/43).
 //
 // THE SIGNATURE. A package may come signed (Gnothi.Host/PackageSignature.cs): every file digested,
 // the list signed, the public key inside. Integrity is checked with nothing else in hand, and a
@@ -171,6 +172,15 @@ internal sealed class PackageSignatureInvalidException(string message) : Invalid
 // there is no "warning" reading of that, and the sheet is never shown.
 internal sealed class PackageKeyRevokedException(string message) : InvalidOperationException(message);
 
+// The origin CONTRADICTS the package: it publishes its modules and this one is not among them, or
+// the package claims an origin other than the one that served it. Somebody spoke and said no, so
+// it is refused in every mode; silence -no well-known, no origin declared- stays a warning until
+// OriginIsRequired says otherwise (NotasGnothiHost/43 §8, the middle road, taken 2026-09-09).
+internal sealed class PackageNotBackedException(OriginCheck origin, string message) : InvalidOperationException(message)
+{
+	public OriginCheck Origin { get; } = origin;
+}
+
 internal sealed class ModuleEnrollment
 {
 	// A module's bundle weighs about 11 MB measured. This ceiling is not an optimisation: it is
@@ -182,8 +192,9 @@ internal sealed class ModuleEnrollment
 	internal const string WellKnownPath = "/.well-known/gnothi/modules.json";
 	private const long WellKnownCeiling = 64 * 1024;
 
-	// Whether a module its origin does not back is refused, or only reported on the sheet. A
-	// warning until the decision is taken (NotasGnothiHost/42 §9); flipping this is the change.
+	// Whether SILENCE from the origin -no well-known, no origin declared- refuses the module or is
+	// only reported on the sheet. A contradiction is refused regardless (RefuseIfRequired). Flipping
+	// this is the whole change to the full requirement (NotasGnothiHost/43).
 	private static readonly bool OriginIsRequired = false;
 
 	private static readonly HttpClient http = new() { Timeout = TimeSpan.FromMinutes(2) };
@@ -423,7 +434,7 @@ internal sealed class ModuleEnrollment
 				$"the link was made for a manifest sealed {expectedSeal}; the package served now seals {seal}");
 
 		OriginCheck origin = servedFrom is null ? OriginCheck.NoOrigin : VerifyOrigin(servedFrom, wellKnownJson, manifest.Origin);
-		RefuseIfRequired(origin);
+		RefuseIfRequired(origin, servedFrom?.Host ?? "", manifest.Origin ?? "", file: false);
 
 		(SignerCheck signer, PackageSigner? pin, bool sameKey) = ResolveSigner(signature, wellKnownJson, ReadPin(manifest.Module), DateTimeOffset.UtcNow);
 		RefuseIfRevoked(signer, signature);
@@ -462,7 +473,7 @@ internal sealed class ModuleEnrollment
 			origin = VerifyBySeal(seal, published);
 			log($"alta: archivo '{fileName}': {claimed.Host} dice {origin}");
 		}
-		RefuseIfRequired(origin);
+		RefuseIfRequired(origin, fileName, manifest.Origin ?? "", file: true);
 
 		(SignerCheck signer, PackageSigner? pin, bool sameKey) = ResolveSigner(signature, published, ReadPin(manifest.Module), DateTimeOffset.UtcNow);
 		RefuseIfRevoked(signer, signature);
@@ -479,10 +490,24 @@ internal sealed class ModuleEnrollment
 		return Propose(zip, manifest, inspection, provenance, pin);
 	}
 
-	private static void RefuseIfRequired(OriginCheck origin)
+	// THE MIDDLE ROAD (NotasGnothiHost/43 §8, decided 2026-09-09): a contradiction is refused in every
+	// mode -the origin spoke and does not recognise the package, or the package claims an origin other
+	// than the one that served it-; silence -nothing published, nothing declared- is described on the
+	// sheet, and OriginIsRequired is the one line that turns it into a refusal too.
+	private static void RefuseIfRequired(OriginCheck origin, string servedBy, string declaredOrigin, bool file)
 	{
+		switch (origin)
+		{
+			case OriginCheck.NotListed:
+				throw new PackageNotBackedException(origin, file
+					? $"the origin the package claims ({declaredOrigin}) does not publish this package"
+					: $"the origin that served the package ({servedBy}) does not list it among its modules");
+			case OriginCheck.DeclaresAnother:
+				throw new PackageNotBackedException(origin, $"the package claims origin {declaredOrigin} but {servedBy} served it");
+		}
+
 		if (OriginIsRequired && origin != OriginCheck.Verified)
-			throw new InvalidOperationException($"Gnothi rechazó el paquete: su origen no lo respalda ({origin})");
+			throw new PackageNotBackedException(origin, $"the origin does not back the package ({origin})");
 	}
 
 	// Not a policy: the institution retired the key itself, and a retired key signs nothing that

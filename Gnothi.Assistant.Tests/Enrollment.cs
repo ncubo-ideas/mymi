@@ -186,10 +186,33 @@ internal static class Enrollment
 				scanned.Provenance.Origin == OriginCheck.Verified && scanned.Provenance.Secure, $"{scanned.Provenance}");
 			enrolling.Discard(scanned);
 
-			EnrollmentProposal elsewhere = enrolling.Examine(HostedOk, EnrollmentSource.Link, new Uri("http://127.0.0.1:8096/examenes.gmod"));
-			assert("a package claiming delfos.cr but served from 127.0.0.1 declares another origin, and the transport was not secure",
-				elsewhere.Provenance.Origin == OriginCheck.DeclaresAnother && !elsewhere.Provenance.Secure, $"{elsewhere.Provenance}");
-			enrolling.Discard(elsewhere);
+			// The middle road (NotasGnothiHost/43 §8): a package that claims one origin and was served by
+			// another is a contradiction, and a contradiction is refused before any sheet exists -so
+			// nothing is unpacked: the temporary folders of the enrollment are the same before and after.
+			int stagingBefore = Directory.GetDirectories(Path.GetTempPath(), "alta-*").Length;
+			try
+			{
+				enrolling.Examine(HostedOk, EnrollmentSource.Link, new Uri("http://127.0.0.1:8096/examenes.gmod"));
+				assert("a package claiming delfos.cr but served from 127.0.0.1 is refused: it declares another origin", false, "Examine returned a proposal");
+			}
+			catch (PackageNotBackedException e)
+			{
+				assert("a package claiming delfos.cr but served from 127.0.0.1 is refused: it declares another origin",
+					e.Origin == OriginCheck.DeclaresAnother && e.Message.Contains("127.0.0.1") && e.Message.Contains("delfos.cr"), e.Message);
+			}
+			assert("a refused package is never unpacked: no temporary folder appears",
+				Directory.GetDirectories(Path.GetTempPath(), "alta-*").Length == stagingBefore, "");
+
+			// The other contradiction: the origin publishes its list and this bundle is not on it.
+			try
+			{
+				enrolling.Examine(HostedOk, EnrollmentSource.Link, Delfos, null, listsElsewhere);
+				assert("a package the serving origin does not list is refused", false, "Examine returned a proposal");
+			}
+			catch (PackageNotBackedException e)
+			{
+				assert("a package the serving origin does not list is refused", e.Origin == OriginCheck.NotListed && e.Message.Contains("delfos.cr"), e.Message);
+			}
 
 			try
 			{
@@ -220,11 +243,19 @@ internal static class Enrollment
 				$"asked={asked} {file.Provenance}");
 			enrolling.Discard(file);
 
-			EnrollmentProposal otherVersion = enrolling.ExamineFile(HostedOk, "examenes.gmod", CancellationToken.None, null,
-				(_, _) => Task.FromResult<string?>(lists)).GetAwaiter().GetResult();
-			assert("a file whose origin publishes another version is not backed",
-				otherVersion.Provenance.Origin == OriginCheck.NotListed, $"{otherVersion.Provenance}");
-			enrolling.Discard(otherVersion);
+			// A file whose declared origin publishes another version: the origin spoke and does not
+			// recognise this one, so it is refused -the institution keeps old seals listed if it wants
+			// old files to keep entering.
+			try
+			{
+				enrolling.ExamineFile(HostedOk, "examenes.gmod", CancellationToken.None, null,
+					(_, _) => Task.FromResult<string?>(lists)).GetAwaiter().GetResult();
+				assert("a file whose origin publishes another version is refused", false, "ExamineFile returned a proposal");
+			}
+			catch (PackageNotBackedException e)
+			{
+				assert("a file whose origin publishes another version is refused", e.Origin == OriginCheck.NotListed && e.Message.Contains("delfos.cr"), e.Message);
+			}
 
 			bool askedAnyone = false;
 			EnrollmentProposal orphan = enrolling.ExamineFile(HostedNetwork, "demored.gmod", CancellationToken.None, null,

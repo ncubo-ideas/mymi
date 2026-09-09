@@ -617,6 +617,11 @@ public sealed class Shell : IDisposable
 		PackageKeyRevokedException =>
 			"El paquete viene firmado con una llave que tu institución retiró: no se instala. Pedile un paquete nuevo.",
 
+		// The origin contradicts the package: refused, no sheet. Which contradiction, in her words.
+		PackageNotBackedException nb => nb.Origin == OriginCheck.DeclaresAnother
+			? "El paquete dice ser de otro origen del que lo sirvió: no se instala. Pedile a tu institución su enlace."
+			: "Tu institución no reconoce este paquete como suyo: no se instala. Pedile el enlace o el paquete actual.",
+
 		// Lo que tira ModuleEnrollment -bundle sin manifiesto, nombre invalido, zip que escribe
 		// afuera, techo de tamano- ya viene escrito para leerse. Se pasa tal cual.
 		InvalidOperationException =>

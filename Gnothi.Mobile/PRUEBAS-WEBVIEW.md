@@ -354,11 +354,19 @@ origen dice ser (`origin`, que `armar-bundle.ps1 -Origen` escribe). Cuando las d
 coinciden con el origen que de verdad lo sirvió, la hoja abre con *Lo respalda 127.0.0.1: ese
 origen publica este módulo y el paquete dice ser suyo* — y, sobre http, agrega *La conexión no va
 cifrada: así solo sirve en desarrollo*, porque lo que hace valer la respuesta en producción es TLS.
-Cuando no coinciden, la hoja es **otra**: una caja de aviso arriba (*sin respaldo verificable*, o
-*Desconfiá de este módulo* si el paquete dice ser de otro origen o el origen no lo reconoce) y abajo
-cuál de las tres piezas falló. Hoy es **aviso, no requisito**: nada se rechaza por el origen
-(`ModuleEnrollment.OriginIsRequired`, una sola línea, decisión pendiente). Probalo sirviendo el
-bundle sin el `.well-known`, o rearmándolo con otro `-Origen`.
+Cuando no coinciden hay dos casos, y desde el 2026-09-09 se tratan distinto (el «punto medio» de
+`NotasGnothiHost/43`):
+
+- **Una contradicción se rechaza**, sin hoja: el origen publica su lista y este bundle no está
+  (franja *Tu institución no reconoce este paquete como suyo: no se instala. Pedile el enlace o el
+  paquete actual*), o el paquete dice ser de otro origen del que lo sirvió (*El paquete dice ser de otro
+  origen del que lo sirvió: no se instala*). Alguien habló y dijo que no.
+- **El silencio es aviso**: el origen no publica nada, o el manifiesto no declara origen. La hoja es
+  **otra**, con la caja *sin respaldo verificable* arriba y abajo cuál pieza faltó, y la persona decide.
+  Subirlo a rechazo es una línea, `ModuleEnrollment.OriginIsRequired`, el día que el onboarding exija
+  la lista.
+
+Probalo sirviendo el bundle sin el `.well-known` (aviso), o rearmándolo con otro `-Origen` (rechazo).
 
 ⚠️ **En el emulador la cámara es `emulated`** (un patrón de prueba, sin QR): la lectura de verdad
 se prueba con un teléfono apuntando a la pantalla de la computadora, o arrancando el emulador con
