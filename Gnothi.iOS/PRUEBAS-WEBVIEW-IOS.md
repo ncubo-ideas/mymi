@@ -51,7 +51,7 @@ y la excepción de loopback que está en `Info.plist` no cubre una IP de LAN. Ha
   **a) El alta, con el esquema propio.** Es el camino real y además prueba P6:
 
   ```bash
-  xcrun simctl openurl booted "gnothi://alta?bundle=http://127.0.0.1:8096/examenes.zip"
+  xcrun simctl openurl booted "gnothi://alta?bundle=http://127.0.0.1:8096/examenes.gmod"
   ```
 
   El universal link `https://go.gnothi.app/…` **no** funciona hoy —el dominio no existe, y sin
@@ -412,7 +412,7 @@ deja leer la memoria de la página a quien tenga un cable, y esa memoria tiene e
 > manda **al mismo `HandleLink`** que atiende el universal link. No necesita dominio:
 >
 > ```bash
-> xcrun simctl openurl booted "gnothi://alta?bundle=http://127.0.0.1:8096/examenes.zip"
+> xcrun simctl openurl booted "gnothi://alta?bundle=http://127.0.0.1:8096/examenes.gmod"
 > ```
 >
 > Y en un aparato de verdad, pegando `gnothi://alta?bundle=…` en Safari.

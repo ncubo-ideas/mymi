@@ -7,23 +7,25 @@ namespace Gnothi.Movil;
 
 // ENROLLING A MODULE. This is how a person really gets a module: the institution puts a button
 // and a code on its page, Sonia taps the button -or pastes the link, or points Gnothi's camera
-// at the code- and Gnothi downloads the bundle, INSPECTS it, shows her what it found, and
-// installs it only if she says yes (specification 11 §3, 13 §7, 13 §10.4). Until this existed
-// modules only got in by pushing files with adb, which is not a path that exists for anybody.
+// at the code, or opens the file it sent her- and Gnothi downloads or reads the bundle, INSPECTS
+// it, shows her what it found, and installs it only if she says yes (specification 11 §3, 13 §7,
+// 13 §10.4). Until this existed modules only got in by pushing files with adb, which is not a
+// path that exists for anybody.
 //
-// THE BUNDLE IS A ZIP and carries two things: the institution's `manifest.json` and the `web/`
-// folder with its published app. Nothing else. No executable, no installation: the
-// installation is written by GNOTHI, because it is Gnothi's file and Gnothi's authority.
+// THE BUNDLE IS A ZIP -named <modulo>.gmod, like the desktop's cargo- and carries two things: the
+// institution's `manifest.json` and the `web/` folder with its published app. Nothing else. No
+// executable, no installation: the installation is written by GNOTHI, because it is Gnothi's
+// file and Gnothi's authority.
 //
 // WHAT GNOTHI DECIDES AND THE INSTITUTION DOES NOT: where the journal is kept, which shell the
 // module runs under, and that the publisher's endpoint is fixed. The manifest DECLARES where
 // its publisher is; Gnothi registers it once and from then on the module cannot change it.
 //
 // WHERE THE BYTES CAME FROM IS RECORDED, NOT ASSUMED. Every way in -the institution's link, a
-// pasted link, a scanned code, later a file- ends in the same Examine over the same bytes,
+// pasted link, a scanned code, a file- ends in the same examination over the same bytes,
 // carrying a Provenance that says which way it was and who served it. The sheet reads it: a
-// package that arrived from a link has a host to name; one that arrives as a file will not, and
-// the sheet has to say so instead of pretending.
+// package that arrived from a link has a host to name; one that arrived as a file has only its
+// name, and the sheet says so instead of pretending.
 //
 // THE SEAL. A link can carry the hash of the manifest it was made for (&h=). When it does, a
 // package whose manifest no longer hashes to it is refused: whoever made the link -or printed
@@ -35,7 +37,9 @@ namespace Gnothi.Movil;
 // /.well-known/gnothi/modules.json- and the manifest is asked which origin it claims. When both
 // agree with the origin that actually served it, TLS is what stands behind the answer, and the
 // sheet says the module is BACKED by its origin. When they do not, the sheet says which of the
-// three failed. Nothing is refused for it yet: whether the backing is a requirement or a warning
+// three failed. A FILE came from no origin, but its manifest still claims one: that origin is
+// asked whether it publishes exactly this manifest -its seal- and the same backing follows, over
+// the same TLS. Nothing is refused for it yet: whether the backing is a requirement or a warning
 // is a decision still open (NotasGnothiHost/42 §9), and it lives in ONE place -OriginIsRequired.
 //
 // WHAT GNOTHI CHECKS BEFORE SHOWING ANYTHING is PackageInspector -the same inspection the
@@ -49,8 +53,7 @@ namespace Gnothi.Movil;
 // in the Android project until iOS needed it, and moving it cost one parameter -- where the log
 // goes.
 
-// HOW THE BUNDLE REACHED GNOTHI. The next way in -a file shared to Gnothi- adds its value here,
-// and nothing downstream has to change to carry it.
+// HOW THE BUNDLE REACHED GNOTHI.
 public enum EnrollmentSource
 {
 	// The institution's button: an App Link (Android) or universal link (iOS) landed on Gnothi.
@@ -61,38 +64,42 @@ public enum EnrollmentSource
 
 	// The person pointed Gnothi's camera at the institution's code.
 	Qr,
+
+	// The person opened a .gmod, shared it to Gnothi, or picked it from her phone.
+	File,
 }
 
 // WHAT THE ORIGIN CHECK FOUND. The origin that served the bundle is asked -at its well-known-
 // whether the bundle is its own, and the manifest is asked which origin it claims. Only when both
 // answers agree with what actually served it is the module BACKED by its origin; every other
-// outcome is named, because the sheet tells the person which one it was.
+// outcome is named, because the sheet tells the person which one it was. For a file, the origin
+// asked is the one the manifest claims, and "its own" means "publishes exactly this manifest".
 public enum OriginCheck
 {
 	// The origin publishes this bundle and the manifest declares that origin.
 	Verified,
 
-	// The bytes did not come from an origin at all (a file, some day).
+	// No check was made: the bytes came from no origin and none was asked.
 	NoOrigin,
 
 	// The origin publishes nothing Gnothi can read at /.well-known/gnothi/modules.json.
 	NoWellKnown,
 
-	// The origin publishes its modules, and this bundle is not among them.
+	// The origin publishes its modules, and this one is not among them.
 	NotListed,
 
-	// The origin publishes it, but the manifest declares no origin: it cannot be tied down.
+	// The manifest declares no origin: there is nobody to ask, and it cannot be tied down.
 	NotDeclared,
 
 	// The manifest claims an origin other than the one that served it.
 	DeclaresAnother,
 }
 
-// WHERE THE BYTES CAME FROM. ServedBy is the host that answered the download: a fact about
-// transport, and Origin says how far that fact could be tied to the institution. MatchesLink is
-// true when the link carried a seal and the package hashed to it -- integrity against the link,
-// nothing more. Secure says whether TLS stood behind the transport: over plain http (development)
-// the origin check proves consistency, not authenticity, and the sheet says so.
+// WHERE THE BYTES CAME FROM. ServedBy is the host that answered the download -or the file's name-
+// a fact about transport, and Origin says how far that fact could be tied to the institution.
+// MatchesLink is true when the link carried a seal and the package hashed to it -- integrity
+// against the link, nothing more. Secure says whether TLS stood behind the answer: over plain
+// http (development) the origin check proves consistency, not authenticity, and the sheet says so.
 public sealed record Provenance(
 	EnrollmentSource Source,
 	string ServedBy,
@@ -191,14 +198,12 @@ internal sealed class ModuleEnrollment
 		try
 		{
 			using JsonDocument published = JsonDocument.Parse(wellKnownJson);
-			listed = published.RootElement.TryGetProperty("modules", out JsonElement modules)
-				&& modules.ValueKind == JsonValueKind.Array
-				&& modules.EnumerateArray().Any(m =>
-					m.TryGetProperty("bundle", out JsonElement b) && b.ValueKind == JsonValueKind.String
-					// Relative or absolute, resolved against the origin: an absolute address on
-					// another origin resolves to that other origin and does not match.
-					&& Uri.TryCreate(new Uri(served + "/"), b.GetString(), out Uri? listedBundle)
-					&& SameResource(listedBundle, bundle));
+			listed = Modules(published).Any(m =>
+				m.TryGetProperty("bundle", out JsonElement b) && b.ValueKind == JsonValueKind.String
+				// Relative or absolute, resolved against the origin: an absolute address on
+				// another origin resolves to that other origin and does not match.
+				&& Uri.TryCreate(new Uri(served + "/"), b.GetString(), out Uri? listedBundle)
+				&& SameResource(listedBundle, bundle));
 		}
 		catch (JsonException)
 		{
@@ -208,6 +213,33 @@ internal sealed class ModuleEnrollment
 		if (!listed) return OriginCheck.NotListed;
 		return declared is null ? OriginCheck.NotDeclared : OriginCheck.Verified;
 	}
+
+	// THE SAME QUESTION FOR A FILE, which has no address to look up: does the origin the manifest
+	// claims publish exactly this manifest? The seal is the binding -the institution publishes it
+	// next to each module- so a file that went through chat or mail is backed by its origin as
+	// much as a download is, with the same residue: the person still judges the origin's name.
+	internal static OriginCheck VerifyBySeal(string seal, string? wellKnownJson)
+	{
+		if (wellKnownJson is null) return OriginCheck.NoWellKnown;
+
+		try
+		{
+			using JsonDocument published = JsonDocument.Parse(wellKnownJson);
+			bool listed = Modules(published).Any(m =>
+				m.TryGetProperty("seal", out JsonElement s) && s.ValueKind == JsonValueKind.String
+				&& string.Equals(s.GetString(), seal, StringComparison.Ordinal));
+			return listed ? OriginCheck.Verified : OriginCheck.NotListed;
+		}
+		catch (JsonException)
+		{
+			return OriginCheck.NoWellKnown;
+		}
+	}
+
+	private static IEnumerable<JsonElement> Modules(JsonDocument published)
+		=> published.RootElement.TryGetProperty("modules", out JsonElement modules) && modules.ValueKind == JsonValueKind.Array
+			? modules.EnumerateArray()
+			: [];
 
 	// scheme://host[:port], lower case, default port dropped: what "the same origin" means.
 	private static string OriginOf(Uri uri) => uri.GetLeftPart(UriPartial.Authority).ToLowerInvariant();
@@ -267,24 +299,74 @@ internal sealed class ModuleEnrollment
 	internal EnrollmentProposal Examine(byte[] zip, EnrollmentSource source, Uri? servedFrom, string? expectedSeal = null, string? wellKnownJson = null, Action<string>? progress = null)
 	{
 		progress?.Invoke("Revisando qué trae…");
-
-		Gnothi.Host.Manifest manifest;
-		string seal;
-		Gnothi.Host.PackageInspection inspection;
-		using (var archive = new ZipArchive(new MemoryStream(zip), ZipArchiveMode.Read))
-		{
-			(manifest, seal) = ReadManifest(archive);
-			inspection = Gnothi.Host.PackageInspector.Inspect(archive, manifest);
-		}
+		(Gnothi.Host.Manifest manifest, string seal, Gnothi.Host.PackageInspection inspection) = Open(zip);
 
 		if (expectedSeal is not null && !string.Equals(expectedSeal, seal, StringComparison.Ordinal))
 			throw new PackageSealMismatchException(
 				$"the link was made for a manifest sealed {expectedSeal}; the package served now seals {seal}");
 
 		OriginCheck origin = servedFrom is null ? OriginCheck.NoOrigin : VerifyOrigin(servedFrom, wellKnownJson, manifest.Origin);
+		RefuseIfRequired(origin);
+
+		var provenance = new Provenance(source, servedFrom?.Host ?? "",
+			MatchesLink: expectedSeal is not null,
+			Origin: origin,
+			Secure: servedFrom?.Scheme == Uri.UriSchemeHttps,
+			DeclaredOrigin: manifest.Origin ?? "");
+
+		return Propose(zip, manifest, inspection, provenance);
+	}
+
+	// A FILE. No address was involved, so there is no origin to compare with and no seal from a
+	// link; but the manifest may claim an origin, and that origin is asked whether it publishes
+	// exactly this manifest. `fetch` is how the well-known is obtained -the network, or a stand-in
+	// for the suite.
+	internal async Task<EnrollmentProposal> ExamineFile(byte[] zip, string fileName, CancellationToken ct, Action<string>? progress = null, Func<Uri, CancellationToken, Task<string?>>? fetch = null)
+	{
+		progress?.Invoke("Revisando qué trae…");
+		(Gnothi.Host.Manifest manifest, string seal, Gnothi.Host.PackageInspection inspection) = Open(zip);
+
+		OriginCheck origin = OriginCheck.NotDeclared;
+		bool secure = false;
+		if (OriginOf(manifest.Origin) is string declared)
+		{
+			var claimed = new Uri(declared + "/");
+			secure = claimed.Scheme == Uri.UriSchemeHttps;
+			progress?.Invoke($"Preguntándole a {claimed.Host} si este paquete es suyo…");
+
+			string? published = await (fetch ?? FetchWellKnown)(claimed, ct);
+			origin = VerifyBySeal(seal, published);
+			log($"alta: archivo '{fileName}': {claimed.Host} dice {origin}");
+		}
+		RefuseIfRequired(origin);
+
+		var provenance = new Provenance(EnrollmentSource.File, fileName,
+			MatchesLink: false,
+			Origin: origin,
+			Secure: secure,
+			DeclaredOrigin: manifest.Origin ?? "");
+
+		return Propose(zip, manifest, inspection, provenance);
+	}
+
+	private static void RefuseIfRequired(OriginCheck origin)
+	{
 		if (OriginIsRequired && origin != OriginCheck.Verified)
 			throw new InvalidOperationException($"Gnothi rechazó el paquete: su origen no lo respalda ({origin})");
+	}
 
+	// Read and inspect, writing nothing: the manifest, its seal, and what the inspection saw.
+	private static (Gnothi.Host.Manifest manifest, string seal, Gnothi.Host.PackageInspection inspection) Open(byte[] zip)
+	{
+		using var archive = new ZipArchive(new MemoryStream(zip), ZipArchiveMode.Read);
+		(Gnothi.Host.Manifest manifest, string seal) = ReadManifest(archive);
+		return (manifest, seal, Gnothi.Host.PackageInspector.Inspect(archive, manifest));
+	}
+
+	// The proposal, once everything is known: a refused package never gets here to be shown, and
+	// an accepted one is unpacked into a temporary folder that lives until she decides.
+	private EnrollmentProposal Propose(byte[] zip, Gnothi.Host.Manifest manifest, Gnothi.Host.PackageInspection inspection, Provenance provenance)
+	{
 		// A refused package never reaches the sheet: there is nothing to decide about a package
 		// that would not be installed anyway. The reasons are written to be read, and they are
 		// what the person sees.
@@ -297,12 +379,6 @@ internal sealed class ModuleEnrollment
 			Unpack(zip, temporary);
 
 			string module = manifest.Module;
-			var provenance = new Provenance(source, servedFrom?.Host ?? "",
-				MatchesLink: expectedSeal is not null,
-				Origin: origin,
-				Secure: servedFrom?.Scheme == Uri.UriSchemeHttps,
-				DeclaredOrigin: manifest.Origin ?? "");
-
 			return new EnrollmentProposal(temporary, manifest, provenance, inspection,
 				Path.Combine(journalsRoot, module), Directory.Exists(Path.Combine(modulesRoot, module)));
 		}
@@ -370,15 +446,16 @@ internal sealed class ModuleEnrollment
 	// WHAT THE ORIGIN PUBLISHES, or null: a 404, a timeout, a body too big or a broken connection
 	// all mean the same thing to the sheet -- the origin does not say which modules are its own --
 	// and none of them stops the enrollment. Ten seconds, so a slow origin does not hold the
-	// person hostage for a check that is a warning.
-	private static async Task<string?> FetchWellKnown(Uri bundle, CancellationToken ct)
+	// person hostage for a check that is a warning. `at` may be the bundle's address or the
+	// origin itself: the well-known path is absolute either way.
+	private static async Task<string?> FetchWellKnown(Uri at, CancellationToken ct)
 	{
 		try
 		{
 			using var brief = CancellationTokenSource.CreateLinkedTokenSource(ct);
 			brief.CancelAfter(TimeSpan.FromSeconds(10));
 
-			using HttpResponseMessage response = await http.GetAsync(new Uri(bundle, WellKnownPath), HttpCompletionOption.ResponseHeadersRead, brief.Token);
+			using HttpResponseMessage response = await http.GetAsync(new Uri(at, WellKnownPath), HttpCompletionOption.ResponseHeadersRead, brief.Token);
 			if (!response.IsSuccessStatusCode) return null;
 			if (response.Content.Headers.ContentLength is long length && length > WellKnownCeiling) return null;
 
@@ -511,7 +588,7 @@ internal sealed record EnrollmentProposal(
 	string JournalGoesTo,
 	bool AlreadyThere)
 {
-	// The host that answered the download, for the log line the test scripts grep.
+	// The host that answered the download -or the file's name-, for the log line the test scripts grep.
 	internal string ServedBy => Provenance.ServedBy;
 
 	// The publisher's endpoint, as it would end up fixed. It is said on screen because it is the

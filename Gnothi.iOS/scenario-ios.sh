@@ -136,7 +136,7 @@ for entry in "${modules[@]}"; do
   IFS='|' read -r name pub web mock title subtitle <<< "$entry"
   echo "  $name"
 
-  zip="$mobile/bundles/$name.zip"
+  zip="$mobile/bundles/$name.gmod"
 
   # THE BUNDLE DEPENDS ON THE PORT: the manifest carries the publisher's URL INSIDE. A bundle
   # built for one port and tested against another installs fine and brings nothing back, with

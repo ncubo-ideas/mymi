@@ -95,8 +95,9 @@ Conceder es un acto del que concede.
 
 ### El paquete se inspecciona antes de instalarse
 
-Hoy un módulo llega como paquete —`<modulo>.gmod` en escritorio, el bundle que baja el
-teléfono— y **antes de escribir un byte** pasa por `PackageInspector` (`PackageInspector.cs`),
+Hoy un módulo llega como paquete —`<modulo>.gmod`, en escritorio y en el teléfono; un solo nombre,
+y las dos formas se distinguen desde adentro— y **antes de escribir un byte** pasa por
+`PackageInspector` (`PackageInspector.cs`),
 la misma inspección en los dos instaladores. Distingue las dos formas —**cargo** (declara
 `load.entry`, dos DLLs, el Host presta el motor) y **hospedado** (trae la app publicada en
 `web/`, con su motor adentro porque un navegador no corre C# sin él)— y por eso lo que rechaza

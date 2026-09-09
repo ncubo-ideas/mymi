@@ -281,8 +281,23 @@ public sealed class Shell : IDisposable
 		return Enroll(link.Bundle, EnrollmentSource.Link, link.Seal, ct);
 	}
 
-	// ONE ENTRY FOR EVERY WAY IN; only the provenance differs, and it travels to the sheet.
-	private async Task Enroll(string bundle, EnrollmentSource source, string? seal, CancellationToken ct)
+	/// THE PACKAGE ARRIVED AS A FILE: opened from Files or Downloads, shared from another app, or
+	/// picked from inside Gnothi. The platform read the bytes and knows the file's name; nothing
+	/// else about where it came from is known, and the sheet says so -unless the package claims an
+	/// origin that publishes exactly this manifest, which the enrollment asks.
+	public Task EnrollFile(byte[] zip, string fileName, CancellationToken ct = default)
+		=> Propose(e => e.ExamineFile(zip, fileName, ct, step => PushEnrollment("trabajando", step)), fileName);
+
+	/// Something the platform could not turn into an enrollment -a picked file that could not be
+	/// read- said on the screen, in the person's words. Same strip as any failed enrollment.
+	public void ReportEnrollmentError(string message) => PushEnrollment("error", message);
+
+	private Task Enroll(string bundle, EnrollmentSource source, string? seal, CancellationToken ct)
+		=> Propose(e => e.Examine(bundle, source, seal, ct, step => PushEnrollment("trabajando", step)), bundle);
+
+	// ONE ENTRY FOR EVERY WAY IN; only how the bytes are obtained differs, and the provenance
+	// that comes back travels to the sheet. `what` is what to blame in the log: an address, a file.
+	private async Task Propose(Func<ModuleEnrollment, Task<EnrollmentProposal>> examine, string what)
 	{
 		try
 		{
@@ -295,7 +310,7 @@ public sealed class Shell : IDisposable
 
 			// BAJAR NO ES INSTALAR. Esto trae el bundle, lo inspecciona y lee su manifiesto; el
 			// modulo todavia no ocupa ningun lugar en el aparato.
-			proposal = await enrolling.Examine(bundle, source, seal, ct, step => PushEnrollment("trabajando", step));
+			proposal = await examine(enrolling);
 
 			log($"alta: propuesta de '{proposal.Manifest.Module}' servida por {proposal.ServedBy}");
 			PushProposal(proposal);
@@ -305,7 +320,7 @@ public sealed class Shell : IDisposable
 			// UN ALTA QUE FALLA TIENE QUE DECIRLO, Y EN LA PANTALLA. Cuando esto solo escribia
 			// en el log, la persona tocaba el boton de su institucion, volvia a Gnothi y no
 			// pasaba nada, sin ninguna pista de por que.
-			log($"alta: no se pudo leer el módulo de {bundle}: {ex.GetType().Name}: {ex.Message}");
+			log($"alta: no se pudo leer el módulo de {what}: {ex.GetType().Name}: {ex.Message}");
 			PushEnrollment("error", InPlainWords(ex));
 		}
 	}
@@ -396,6 +411,7 @@ public sealed class Shell : IDisposable
 			{
 				EnrollmentSource.Qr => "qr",
 				EnrollmentSource.PastedLink => "pegado",
+				EnrollmentSource.File => "archivo",
 				_ => "enlace",
 			},
 			servido = p.Provenance.ServedBy,

@@ -60,6 +60,19 @@ namespace Gnothi.Mobile;
 [IntentFilter(new[] { Android.Content.Intent.ActionSend },
 	Categories = new[] { Android.Content.Intent.CategoryDefault },
 	DataMimeType = "text/plain")]
+// A MODULE PACKAGE ARRIVING AS A FILE: "open with" from Files or Downloads, or the share sheet
+// from another app. Two mimes, on purpose: the institution's page serves the .gmod as
+// application/vnd.gnothi.module, but a file that travelled through chat or mail usually arrives
+// as plain application/zip -- the inspection tells a module from any other zip, so Gnothi offers
+// itself for both. The mime is what is matched, not the extension: for content:// files the path
+// is opaque. A file that shows up as anything else is reached from inside Gnothi, with the picker.
+[IntentFilter(new[] { Android.Content.Intent.ActionView },
+	Categories = new[] { Android.Content.Intent.CategoryDefault },
+	DataSchemes = new[] { "content", "file" },
+	DataMimeTypes = new[] { "application/vnd.gnothi.module", "application/zip" })]
+[IntentFilter(new[] { Android.Content.Intent.ActionSend },
+	Categories = new[] { Android.Content.Intent.CategoryDefault },
+	DataMimeTypes = new[] { "application/vnd.gnothi.module", "application/zip" })]
 [Activity(Label = "Gnothi", MainLauncher = true, Theme = "@android:style/Theme.Material.Light.NoActionBar")]
 public class MainActivity : Activity
 {
@@ -80,7 +93,11 @@ public class MainActivity : Activity
 		// Si Gnothi se abrio POR un enlace de alta, el enlace ENTERO va a la cascara -con su
 		// sello, si trae- y ella lo desarma. Antes viajaba solo ?bundle=, y el sello se perdia.
 		altaPendiente = Intent?.Data?.GetQueryParameter("bundle") is { Length: > 0 } ? Intent!.Data!.ToString() : null;
-		LeerTraspasoDe(Intent);
+		// Or by a file -opened, shared- which is read now and enrolled once the Host is up. A
+		// share of text is the other thing a share can be: the handoff from the institution's
+		// standalone app, read below.
+		archivoPendiente = LeerArchivoDeModulo(Intent, strict: true);
+		if (archivoPendiente is null) LeerTraspasoDe(Intent);
 
 		web = new WebView(this);
 		web.Settings.JavaScriptEnabled = true;
@@ -149,6 +166,12 @@ public class MainActivity : Activity
 			await shell.Enroll(pendiente, stop.Token);
 		}
 
+		if (archivoPendiente is { } archivo)
+		{
+			archivoPendiente = null;
+			await shell.EnrollFile(archivo.Bytes, archivo.Name, stop.Token);
+		}
+
 		if (traspasoPendiente is { } t)
 		{
 			traspasoPendiente = null;
@@ -184,6 +207,13 @@ public class MainActivity : Activity
 		string? bundle = intento?.Data?.GetQueryParameter("bundle");
 		Log($"nuevo enlace: {intento?.Data?.ToString() ?? "(sin datos)"}");
 		if (bundle is { Length: > 0 }) _ = shell?.Enroll(intento!.Data!.ToString()!, stop.Token);
+
+		// A file, with Gnothi already open: the same reader as at launch.
+		if (LeerArchivoDeModulo(intento, strict: true) is { } archivo)
+		{
+			_ = shell?.EnrollFile(archivo.Bytes, archivo.Name, stop.Token);
+			return;
+		}
 
 		LeerTraspasoDe(intento);
 		if (traspasoPendiente is { } t)
@@ -325,6 +355,115 @@ public class MainActivity : Activity
 	// Lo que trajo el enlace de alta, esperando a que el catálogo exista. No se puede instalar
 	// antes: el Host todavía no sabe dónde viven los módulos.
 	private string? altaPendiente;
+
+	// ── EL ALTA DESDE UN ARCHIVO ─────────────────────────────────────────────────────────
+
+	// What a file brought, waiting for the catalog to exist -the same reason as altaPendiente.
+	private (byte[] Bytes, string Name)? archivoPendiente;
+
+	private const string ModuleMime = "application/vnd.gnothi.module";
+	private const long FileCeiling = 64L * 1024 * 1024;
+	private const int PickModuleRequest = 8;
+
+	// THE FILE, IF THE INTENT BROUGHT ONE: opened (ACTION_VIEW on a content:// or file://) or
+	// shared (ACTION_SEND with a stream). `strict` is for intents that arrive on their own -- they
+	// are taken only when they look like a module, by mime or by name, so a shared text file still
+	// reaches the handoff below. A file the person picked herself is read whatever it looks like:
+	// she chose it, and the inspection is what tells her if it is not a module.
+	private (byte[] Bytes, string Name)? LeerArchivoDeModulo(Android.Content.Intent? intento, bool strict)
+	{
+		if (intento is null) return null;
+
+		Android.Net.Uri? uri = intento.Action == Android.Content.Intent.ActionView ? intento.Data
+			: intento.Action == Android.Content.Intent.ActionSend ? intento.GetParcelableExtra(Android.Content.Intent.ExtraStream) as Android.Net.Uri
+			: null;
+		if (uri is null || uri.Scheme is not ("content" or "file")) return null;
+
+		string name = DisplayNameOf(uri);
+		string type = intento.Type ?? ContentResolver!.GetType(uri) ?? "";
+		bool looksLikeModule = type == ModuleMime || type == "application/zip" || name.EndsWith(".gmod", StringComparison.OrdinalIgnoreCase);
+		if (strict && !looksLikeModule) return null;
+
+		try
+		{
+			byte[] bytes = LeerTodo(uri);
+			Log($"alta: archivo '{name}' ({bytes.Length} bytes, {type}) por {intento.Action}");
+			return (bytes, name);
+		}
+		catch (Exception ex)
+		{
+			Log($"alta: no se pudo leer el archivo '{name}': {ex.GetType().Name}: {ex.Message}");
+			shell?.ReportEnrollmentError($"No se pudo leer el archivo {name}.");
+			return null;
+		}
+	}
+
+	// Through the ContentResolver, with the same ceiling as a download: a wrong file cannot fill
+	// the device either.
+	private byte[] LeerTodo(Android.Net.Uri uri)
+	{
+		using System.IO.Stream? content = ContentResolver!.OpenInputStream(uri)
+			?? throw new System.IO.IOException("the content resolver returned no stream");
+		using var buffer = new System.IO.MemoryStream();
+		var chunk = new byte[81920];
+		int read;
+		while ((read = content.Read(chunk, 0, chunk.Length)) > 0)
+		{
+			buffer.Write(chunk, 0, read);
+			if (buffer.Length > FileCeiling) throw new System.IO.IOException($"the file went past the {FileCeiling / 1048576} MB ceiling");
+		}
+		return buffer.ToArray();
+	}
+
+	// The name the person sees in Files, for the sheet: a content:// path says nothing.
+	private string DisplayNameOf(Android.Net.Uri uri)
+	{
+		try
+		{
+			using Android.Database.ICursor? cursor = ContentResolver!.Query(uri, [Android.Provider.OpenableColumns.DisplayName], null, null, null);
+			if (cursor is not null && cursor.MoveToFirst())
+			{
+				string? name = cursor.GetString(0);
+				if (!string.IsNullOrWhiteSpace(name)) return name;
+			}
+		}
+		catch (Exception) { /* a provider that will not say: fall back to the path */ }
+
+		return uri.LastPathSegment ?? "archivo";
+	}
+
+	// "ELEGIR EL ARCHIVO EN MI TELÉFONO", from the page. The system's document picker: no storage
+	// permission, no walk over the disk -- the system finds, the person chooses, Gnothi receives
+	// exactly that one file. This is the phone-side of the "buscador" the plan turned down:
+	// scanning Downloads would have asked the app whose thesis is that the data is hers for
+	// permission over all of it.
+	internal string PickModuleFile()
+	{
+		var pick = new Android.Content.Intent(Android.Content.Intent.ActionOpenDocument);
+		pick.AddCategory(Android.Content.Intent.CategoryOpenable);
+		pick.SetType("*/*");
+		pick.PutExtra(Android.Content.Intent.ExtraMimeTypes, new[] { ModuleMime, "application/zip", "application/octet-stream" });
+		StartActivityForResult(pick, PickModuleRequest);
+		return "{\"ok\":true}";
+	}
+
+	protected override void OnActivityResult(int requestCode, Result resultCode, Android.Content.Intent? data)
+	{
+		base.OnActivityResult(requestCode, resultCode, data);
+		if (requestCode != PickModuleRequest) return;
+
+		if (resultCode != Result.Ok || data?.Data is null)
+		{
+			Log("alta: la persona no eligió ningún archivo");
+			return;
+		}
+
+		// The picker's answer, shaped as an "open" of that document. Not strict: she chose it.
+		var abrir = new Android.Content.Intent(Android.Content.Intent.ActionView, data.Data);
+		abrir.SetType(data.Type ?? ContentResolver!.GetType(data.Data));
+		if (LeerArchivoDeModulo(abrir, strict: false) is { } archivo)
+			_ = shell?.EnrollFile(archivo.Bytes, archivo.Name, stop.Token);
+	}
 
 	// ── EL MÓDULO EN PANTALLA ────────────────────────────────────────────────────────────
 
@@ -478,6 +617,9 @@ public class MainActivity : Activity
 				result.Confirm(op switch
 				{
 					"abrir" => host.AbrirModulo(req.GetProperty("module").GetString() ?? ""),
+					// The document picker is the platform's: the page asks, the Activity opens it,
+					// and what she picks comes back through OnActivityResult into the enrollment.
+					"altaArchivo" => host.PickModuleFile(),
 					_ => host.shell?.Handle(defaultValue) ?? "{}",
 				});
 			}

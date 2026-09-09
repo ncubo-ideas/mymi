@@ -80,24 +80,24 @@ internal static class Enrollment
 
 		// ── the link, taken apart ────────────────────────────────────────────────────────
 
-		const string wrapped = "https://go.gnothi.app/alta?bundle=https%3A%2F%2Fdelfos.cr%2Fexamenes.zip";
+		const string wrapped = "https://go.gnothi.app/alta?bundle=https%3A%2F%2Fdelfos.cr%2Fexamenes.gmod";
 		EnrollmentLink plain = ModuleEnrollment.ParseLink(wrapped);
 		assert("the institution's link is unwrapped to the bundle's address",
-			plain.Bundle == "https://delfos.cr/examenes.zip" && plain.Seal is null, $"{plain}");
+			plain.Bundle == "https://delfos.cr/examenes.gmod" && plain.Seal is null, $"{plain}");
 
 		EnrollmentLink sealed_ = ModuleEnrollment.ParseLink(wrapped + "&h=abc-DEF_123");
-		assert("the seal travels with the link", sealed_.Bundle == "https://delfos.cr/examenes.zip" && sealed_.Seal == "abc-DEF_123", $"{sealed_}");
+		assert("the seal travels with the link", sealed_.Bundle == "https://delfos.cr/examenes.gmod" && sealed_.Seal == "abc-DEF_123", $"{sealed_}");
 
 		assert("a bundle address pasted as is passes through, trimmed, with no seal",
-			ModuleEnrollment.ParseLink(" https://delfos.cr/examenes.zip ") == new EnrollmentLink("https://delfos.cr/examenes.zip", null), "");
+			ModuleEnrollment.ParseLink(" https://delfos.cr/examenes.gmod ") == new EnrollmentLink("https://delfos.cr/examenes.gmod", null), "");
 		assert("text that is not an address passes through, for the enrollment to refuse",
 			ModuleEnrollment.ParseLink("hola").Bundle == "hola", "");
 
 		// ── the origin check, over what an origin publishes ──────────────────────────────
 
-		const string lists = "{\"gnothi\":1,\"institution\":\"Delfos\",\"modules\":[{\"module\":\"examenes\",\"bundle\":\"https://delfos.cr/examenes.zip\",\"seal\":\"x\"}]}";
-		const string listsRelative = "{\"modules\":[{\"module\":\"examenes\",\"bundle\":\"/examenes.zip\"}]}";
-		const string listsElsewhere = "{\"modules\":[{\"module\":\"examenes\",\"bundle\":\"https://evil.cr/examenes.zip\"}]}";
+		const string lists = "{\"gnothi\":1,\"institution\":\"Delfos\",\"modules\":[{\"module\":\"examenes\",\"bundle\":\"https://delfos.cr/examenes.gmod\",\"seal\":\"x\"}]}";
+		const string listsRelative = "{\"modules\":[{\"module\":\"examenes\",\"bundle\":\"/examenes.gmod\"}]}";
+		const string listsElsewhere = "{\"modules\":[{\"module\":\"examenes\",\"bundle\":\"https://evil.cr/examenes.gmod\"}]}";
 
 		assert("origin publishes the bundle and the manifest declares it: verified",
 			ModuleEnrollment.VerifyOrigin(Delfos, lists, DelfosOrigin) == OriginCheck.Verified, "");
@@ -113,6 +113,7 @@ internal static class Enrollment
 			ModuleEnrollment.VerifyOrigin(Delfos, lists, "") == OriginCheck.NotDeclared, "");
 		assert("the manifest claims an origin other than the one that served it: the loudest signal, before the list",
 			ModuleEnrollment.VerifyOrigin(Delfos, lists, "https://evil.cr") == OriginCheck.DeclaresAnother, "");
+
 		// A manifest from before the field existed: the generated reader leaves the property NULL,
 		// not at its initializer -- measured here, and the check has to survive it.
 		Manifest bare = JsonSerializer.Deserialize("{ \"module\": \"x\" }", HostJson.Default.Manifest)!;
@@ -120,8 +121,8 @@ internal static class Enrollment
 			ModuleEnrollment.VerifyOrigin(Delfos, lists, bare.Origin) == OriginCheck.NotDeclared,
 			bare.Origin is null ? "Origin read back as null" : $"Origin read back as '{bare.Origin}'");
 		assert("a development origin with a port verifies the same way, over http",
-			ModuleEnrollment.VerifyOrigin(new Uri("http://127.0.0.1:8096/examenes.zip"),
-				"{\"modules\":[{\"bundle\":\"http://127.0.0.1:8096/examenes.zip\"}]}", "http://127.0.0.1:8096") == OriginCheck.Verified, "");
+			ModuleEnrollment.VerifyOrigin(new Uri("http://127.0.0.1:8096/examenes.gmod"),
+				"{\"modules\":[{\"bundle\":\"http://127.0.0.1:8096/examenes.gmod\"}]}", "http://127.0.0.1:8096") == OriginCheck.Verified, "");
 
 		// ── the enrollment over bytes ────────────────────────────────────────────────────
 
@@ -185,7 +186,7 @@ internal static class Enrollment
 				scanned.Provenance.Origin == OriginCheck.Verified && scanned.Provenance.Secure, $"{scanned.Provenance}");
 			enrolling.Discard(scanned);
 
-			EnrollmentProposal elsewhere = enrolling.Examine(HostedOk, EnrollmentSource.Link, new Uri("http://127.0.0.1:8096/examenes.zip"));
+			EnrollmentProposal elsewhere = enrolling.Examine(HostedOk, EnrollmentSource.Link, new Uri("http://127.0.0.1:8096/examenes.gmod"));
 			assert("a package claiming delfos.cr but served from 127.0.0.1 declares another origin, and the transport was not secure",
 				elsewhere.Provenance.Origin == OriginCheck.DeclaresAnother && !elsewhere.Provenance.Secure, $"{elsewhere.Provenance}");
 			enrolling.Discard(elsewhere);
@@ -199,6 +200,38 @@ internal static class Enrollment
 			{
 				assert("a package that no longer matches the link's seal is refused", e.Message.Contains(seal), e.Message);
 			}
+
+			// ── a file: no address, but a claimed origin that publishes seals ────────────────
+
+			string listsThisSeal = "{\"modules\":[{\"module\":\"demo\",\"bundle\":\"/demo.gmod\",\"seal\":\"" + seal + "\"}]}";
+			assert("an origin that publishes exactly this manifest's seal backs the file",
+				ModuleEnrollment.VerifyBySeal(seal, listsThisSeal) == OriginCheck.Verified, "");
+			assert("an origin that publishes another seal does not",
+				ModuleEnrollment.VerifyBySeal(seal, lists) == OriginCheck.NotListed, "");
+			assert("no well-known: nothing to compare the seal with",
+				ModuleEnrollment.VerifyBySeal(seal, null) == OriginCheck.NoWellKnown, "");
+
+			Uri? asked = null;
+			EnrollmentProposal file = enrolling.ExamineFile(HostedOk, "examenes.gmod", CancellationToken.None, null,
+				(at, _) => { asked = at; return Task.FromResult<string?>(listsThisSeal); }).GetAwaiter().GetResult();
+			assert("a file is asked about at the origin its manifest claims, and comes back backed",
+				asked?.ToString() == "https://delfos.cr/" && file.Provenance.Origin == OriginCheck.Verified && file.Provenance.Secure
+					&& file.Provenance.Source == EnrollmentSource.File && file.ServedBy == "examenes.gmod" && !file.Provenance.MatchesLink,
+				$"asked={asked} {file.Provenance}");
+			enrolling.Discard(file);
+
+			EnrollmentProposal otherVersion = enrolling.ExamineFile(HostedOk, "examenes.gmod", CancellationToken.None, null,
+				(_, _) => Task.FromResult<string?>(lists)).GetAwaiter().GetResult();
+			assert("a file whose origin publishes another version is not backed",
+				otherVersion.Provenance.Origin == OriginCheck.NotListed, $"{otherVersion.Provenance}");
+			enrolling.Discard(otherVersion);
+
+			bool askedAnyone = false;
+			EnrollmentProposal orphan = enrolling.ExamineFile(HostedNetwork, "demored.gmod", CancellationToken.None, null,
+				(_, _) => { askedAnyone = true; return Task.FromResult<string?>(listsThisSeal); }).GetAwaiter().GetResult();
+			assert("a file whose manifest declares no origin asks nobody, and is not backed",
+				!askedAnyone && orphan.Provenance.Origin == OriginCheck.NotDeclared && !orphan.Provenance.Secure, $"{orphan.Provenance}");
+			enrolling.Discard(orphan);
 		}
 		finally
 		{
@@ -207,7 +240,7 @@ internal static class Enrollment
 	}
 
 	private const string DelfosOrigin = "https://delfos.cr";
-	private static readonly Uri Delfos = new("https://delfos.cr/examenes.zip");
+	private static readonly Uri Delfos = new("https://delfos.cr/examenes.gmod");
 
 	// A hosted bundle as armar-bundle.ps1 would produce it: the app, its engine with fingerprints,
 	// and a piece of the runtime, all under web/, and a manifest that declares its origin.

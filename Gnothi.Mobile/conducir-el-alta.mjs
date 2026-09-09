@@ -8,6 +8,7 @@
 //   node Gnothi.Mobile/conducir-el-alta.mjs pegar [urlDelBundle]   card -> paste -> Enter -> prints the sheet
 //   node Gnothi.Mobile/conducir-el-alta.mjs escanear               card -> "Escanear" -> the camera opens -> Cancelar
 //   node Gnothi.Mobile/conducir-el-alta.mjs codigo <imagen>        shows the reader an image of a code (svg or png)
+//   node Gnothi.Mobile/conducir-el-alta.mjs archivo                card -> "Elegir el archivo" -> the system picker -> BACK
 //   node Gnothi.Mobile/conducir-el-alta.mjs instalar               "Instalar en mi teléfono" -> prints the result
 //   node Gnothi.Mobile/conducir-el-alta.mjs descartar              "Ahora no"
 //
@@ -31,7 +32,7 @@ import { readFileSync } from 'node:fs';
 import { adb, adbArgs, conectar, sleep } from './pantalla.mjs';
 
 const phase = process.argv[2] ?? 'pegar';
-const bundle = process.argv[3] ?? 'http://127.0.0.1:8096/examenes.zip';
+const bundle = process.argv[3] ?? 'http://127.0.0.1:8096/examenes.gmod';
 
 const page = await conectar('ui.html');
 const { evaluate } = page;
@@ -147,6 +148,18 @@ async function escanear() {
 	console.log('reader closed:', closed);
 }
 
+// "Elegir el archivo en mi teléfono": the tap, and whether the system's picker came up. The picker
+// itself is native and not driven from here; BACK closes it, and the log says she chose nothing.
+async function archivo() {
+	await openTheCard();
+	await tap('#alta-file');
+	await sleep(1500);
+	const top = adb('shell dumpsys activity activities').split('\n').find(l => /topResumedActivity|ResumedActivity/.test(l)) || '';
+	const picker = /documentsui/i.test(top);
+	console.log('picker on top:', picker, picker ? '' : '| top: ' + top.trim().slice(0, 120));
+	if (picker) { adb('shell input keyevent 4'); await sleep(1200); console.log('back to Gnothi:', /gnothi/i.test(adb('shell dumpsys activity activities').split('\n').find(l => /topResumedActivity|ResumedActivity/.test(l)) || '')); }
+}
+
 // An image of a code, shown to the reader instead of the camera.
 async function codigo() {
 	const file = process.argv[3];
@@ -182,8 +195,8 @@ async function descartar() {
 }
 
 try {
-	const run = { pegar, escanear, codigo, instalar, descartar }[phase];
-	if (!run) { console.error('usage: node conducir-el-alta.mjs pegar [urlDelBundle] | escanear | codigo <imagen> | instalar | descartar'); process.exit(2); }
+	const run = { pegar, escanear, codigo, archivo, instalar, descartar }[phase];
+	if (!run) { console.error('usage: node conducir-el-alta.mjs pegar [urlDelBundle] | escanear | codigo <imagen> | archivo | instalar | descartar'); process.exit(2); }
 	console.log(`screen ${screenW}x${screenH} · page ${page.url}`);
 	await run();
 }

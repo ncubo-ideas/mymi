@@ -266,7 +266,7 @@ interruptor por tool; para que existiera el módulo entero no había nada.
 **Si falla** (probalo apuntando a un zip que no existe):
 
 ```bash
-adb shell am start -a android.intent.action.VIEW -d "https://go.gnothi.app/alta?bundle=http%3A%2F%2F127.0.0.1%3A8102%2Fno-existe.zip"
+adb shell am start -a android.intent.action.VIEW -d "https://go.gnothi.app/alta?bundle=http%3A%2F%2F127.0.0.1%3A8102%2Fno-existe.gmod"
 ```
 
 Tiene que aparecer **en la pantalla** —*La dirección que dio tu institución ya no tiene el
@@ -369,7 +369,7 @@ GNOTHI : alta: propuesta de '<módulo>' servida por 127.0.0.1
 **Sin manos, desde la máquina** — y sin capturas, que en el AVD G37 salen vacías. Node 22 o más:
 
 ```bash
-node Gnothi.Mobile/conducir-el-alta.mjs pegar http://127.0.0.1:8096/examenes.zip
+node Gnothi.Mobile/conducir-el-alta.mjs pegar http://127.0.0.1:8096/examenes.gmod
 node Gnothi.Mobile/conducir-el-alta.mjs instalar        # o descartar
 ```
 
@@ -380,6 +380,48 @@ expresión adentro del WebView de la cáscara (`node Gnothi.Mobile/pantalla.mjs
 **Medido el 2026-09-08 en el G37**: app limpia → enlace pegado → hoja con la inspección real →
 instalado, `comprobación matches:true`, `resumen` con 18 exámenes; y el enlace a un zip
 inexistente deja en pantalla *La dirección que dio tu institución ya no tiene el módulo*.
+
+### P2c · El alta desde un archivo
+
+Desde el 2026-09-09 el bundle del teléfono se llama **`<modulo>.gmod`**, como el cargo de escritorio
+—las dos formas se distinguen desde adentro, por el manifiesto— y la página lo sirve con su tipo
+propio, `application/vnd.gnothi.module`. Con eso el paquete también entra **como archivo**, por tres
+puertas, y las tres terminan en la misma hoja con la procedencia *Llegó como el archivo X*:
+
+- **«Abrir con»**: un `.gmod` bajado con Chrome, tocado en Descargas o en Archivos, ofrece Gnothi.
+  Gnothi se anota para `application/vnd.gnothi.module` y para `application/zip` (un archivo que
+  pasó por chat o correo suele llegar como zip pelado); la inspección separa un módulo de cualquier
+  otro zip.
+- **Compartir**: desde otra app, la hoja de compartir lista a Gnothi para los mismos tipos. Un texto
+  compartido sigue siendo el traspaso de la app suelta (P8), no se confunden.
+- **«Elegir el archivo en mi teléfono»**, dentro de la hoja «Agregar módulo»: el selector de
+  documentos del sistema, sin permiso de almacenamiento y sin recorrer el disco — el sistema busca,
+  la persona elige, Gnothi recibe ese archivo y nada más.
+
+**El respaldo, también para el archivo.** Un archivo no viene de ningún origen, pero su manifiesto
+declara uno; Gnothi le pregunta a ese origen si publica **exactamente este paquete** —el sello que
+la página publica junto a cada módulo en su `.well-known`— y la hoja dice *…y 127.0.0.1 lo respalda:
+publica exactamente este paquete*. Si el origen publica otra versión, *Desconfiá de este módulo*; si
+no declara origen, *nadie responde por él*. Sin firma, el archivo queda tan respaldado como el
+enlace, con el mismo residuo: que la persona reconozca el nombre del origen.
+
+**Cómo probarlo en el emulador** (el `.gmod` que arma el escenario):
+
+```bash
+adb push Gnothi.Mobile/bundles/examenes.gmod /sdcard/Download/examenes.gmod
+```
+
+y en Gnothi: «Agregar módulo» → «Elegir el archivo en mi teléfono» → Descargas → `examenes.gmod`.
+O abrirlo directo, que es «abrir con»:
+
+```bash
+adb shell am start -a android.intent.action.VIEW -t application/vnd.gnothi.module \
+  -d "content://com.android.externalstorage.documents/document/primary%3ADownload%2Fexamenes.gmod"
+```
+
+**En el logcat:** `alta: archivo 'examenes.gmod' (… bytes, application/vnd.gnothi.module) por
+android.intent.action.VIEW`, después `alta: archivo 'examenes.gmod': 127.0.0.1 dice Verified`, y lo
+de siempre. iOS todavía no tiene selector ni «abrir con»: el botón lo dice.
 
 ### P3 · El módulo corre hospedado, a pantalla completa
 

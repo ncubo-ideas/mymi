@@ -108,7 +108,10 @@ if (-not (Test-Path $Proyecto)) { throw "no existe el proyecto: $Proyecto" }
 
 if (-not $Salida) { $Salida = "$PSScriptRoot/bundles" }
 $armado = "$Salida/$Modulo"
-$zip    = "$Salida/$Modulo.zip"
+# ONE NAME FOR THE PACKAGE, whatever its form: the desktop's cargo is <modulo>.gmod, and so is the
+# phone's hosted bundle since 2026-09-09. The two are told apart from INSIDE, by the manifest
+# (load.entry vs web/), and a person who sees the file sees one kind of thing. Still a zip.
+$zip    = "$Salida/$Modulo.gmod"
 
 # --- publicar la app -------------------------------------------------------------------
 Write-Host "publicando $Modulo..."
@@ -157,7 +160,12 @@ $json = $manifiesto | ConvertTo-Json -Depth 8
 
 # --- el zip ----------------------------------------------------------------------------
 if (Test-Path $zip) { Remove-Item -Force $zip }
-Compress-Archive -Path "$armado/*" -DestinationPath $zip -CompressionLevel Optimal
+# Compress-Archive (PowerShell 5.1) only writes a destination that ends in .zip: it is written
+# there and renamed. The container IS a zip; only the name says what is inside.
+$zipTemporal = "$zip.zip"
+if (Test-Path $zipTemporal) { Remove-Item -Force $zipTemporal }
+Compress-Archive -Path "$armado/*" -DestinationPath $zipTemporal -CompressionLevel Optimal
+Move-Item -Force $zipTemporal $zip
 
 Remove-Item -Recurse -Force $publicado
 

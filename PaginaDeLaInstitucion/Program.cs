@@ -4,7 +4,7 @@
 //   /              su pagina, con el boton "Agregar a Gnothi"
 //   /app/          su PWA, la app suelta que la persona usa hoy
 //   /app/eventos/  su narrativa, relevada al publicador
-//   /<modulo>.zip  el bundle que Gnothi baja al dar de alta el modulo
+//   /<modulo>.gmod el bundle que Gnothi baja al dar de alta el modulo (un zip, con su mime propio)
 //
 // ES LA MISMA PLANTILLA PARA LAS CUATRO instituciones del POC -- laboratorio, supermercado,
 // estacion, concesionario -- y todo lo que cambia entra por configuracion: el bundle, la app
@@ -30,7 +30,14 @@ var app = builder.Build();
 // Todo se pasa por configuracion porque el puerto del tunel (`adb reverse`) lo elige quien
 // corre la prueba, no este archivo.
 string bundle = app.Configuration["Bundle"]
-    ?? Path.Combine(AppContext.BaseDirectory, "examenes.zip");
+    ?? Path.Combine(AppContext.BaseDirectory, "examenes.gmod");
+
+// THE PACKAGE'S OWN TYPE. Served as this, and not as application/zip, so a phone that receives
+// the file -a download, a share- knows what it is without opening it: Gnothi's intent filters
+// match on the mime, because for content:// files the path is opaque and the extension is not
+// there to match. A file that went through chat as plain application/zip is caught too, and the
+// inspection tells a module from any other zip.
+const string ModuleMime = "application/vnd.gnothi.module";
 
 // La carpeta `web/` del bundle ya desempaquetado: se sirve la MISMA app que va adentro del
 // zip, no otra copia. Si lo suelto y lo hospedado fueran binarios distintos, la comparacion
@@ -77,7 +84,7 @@ app.UseRouting();
 string nombreDelZip = Path.GetFileName(bundle);
 
 app.MapGet($"/{nombreDelZip}", () => File.Exists(bundle)
-    ? Results.File(bundle, "application/zip")
+    ? Results.File(bundle, ModuleMime)
     : Results.NotFound($"no hay bundle en {bundle}. Corre armar-bundle.ps1 primero."));
 
 // WHAT THIS ORIGIN PUBLISHES. Gnothi asks the origin that served a bundle whether that bundle is

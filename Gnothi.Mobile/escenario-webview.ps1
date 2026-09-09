@@ -126,7 +126,7 @@ foreach ($nombre in $Modulos) {
     Write-Host "  $nombre"
 
     # EL BUNDLE DEPENDE DEL PUERTO: el manifiesto lleva la URL del publicador adentro.
-    $zip = "$PSScriptRoot\bundles\$nombre.zip"
+    $zip = "$PSScriptRoot\bundles\$nombre.gmod"
     if (-not $SinBundle -or -not (Test-Path $zip)) {
         Write-Host "    armando el bundle..."
         # -Origen: the page's own origin, so the manifest declares the origin that serves it and

@@ -382,13 +382,14 @@
 <div id="sheet" class="osheet" onclick="if(event.target===this)gn.sheet(false)">
   <div class="card">
     <h4>Agregar un módulo</h4>
-    <p>Tu institución —tu laboratorio, tu supermercado, tu emisor de facturas— te da un enlace:
-    en su página, por correo o por mensaje. Pegalo acá.</p>
+    <p>Tu institución —tu laboratorio, tu supermercado, tu emisor de facturas— te da un enlace o
+    un archivo <code>.gmod</code>. Pegá el enlace, escaneá su código, o elegí el archivo.</p>
     <input id="alta-url" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false" inputmode="url" placeholder="https://…">
     <div id="alta-hint" style="min-height:18px;margin:6px 2px 0;font-size:13px;color:#8E2A1F"></div>
     <button class="cta" onclick="gn.altaDesdeEnlace()">Agregar</button>
     <div id="alta-o" class="hint">o</div>
     <button id="alta-scan" class="btn ghost" style="width:100%" onclick="gn.scan.start()">Escanear el código de la institución</button>
+    <button id="alta-file" class="btn ghost" style="width:100%;margin-top:8px" onclick="gn.altaArchivo()">Elegir el archivo en mi teléfono</button>
     <p id="alta-noscan" style="display:none"><small>Este teléfono no puede leer códigos desde Gnothi:
     pegá el enlace, o escaneá el código con la cámara del sistema.</small></p>
     <p style="margin-top:12px"><small>Gnothi lo baja, lo revisa y te muestra qué trae antes de instalar nada.
@@ -504,9 +505,23 @@ const gn = {
     const host = esc(pro.servido || p.servido || '?');
     const sello = pro.sello ? '<small>El paquete es el mismo que sellaba el enlace: no cambió desde que se generó.</small>' : '';
 
+    // A FILE came from no origin; but the package claims one, and that origin was asked whether
+    // it publishes exactly this package. `host` is the file's name here.
+    const quien = esc((pro.origenDeclarado || '').replace(/^https?:\/\//, '') || '?');
+    const archivoTexto = {
+      'verificado': 'Llegó como el archivo <b>' + host + '</b>, y <b>' + quien + '</b> lo respalda: publica exactamente este paquete.'
+        + (pro.seguro ? '' : '<small>La conexión no va cifrada: así solo sirve en desarrollo.</small>'),
+      'sin-publicacion': 'Llegó como el archivo <b>' + host + '</b>.'
+        + '<small>Dice ser de <b>' + quien + '</b>, pero ese origen no publica cuáles módulos son suyos: no se pudo verificar.</small>',
+      'no-publicado': 'Llegó como el archivo <b>' + host + '</b>.'
+        + '<small>Dice ser de <b>' + quien + '</b>, y ese origen <b>no publica este paquete</b> (o publica otra versión).</small>',
+      'sin-origen-declarado': 'Llegó como el archivo <b>' + host + '</b>.'
+        + '<small>No declara de qué origen es: nadie responde por él.</small>',
+    };
+
     // THE ORIGIN CHECK, in the person's words: the origin that served the package was asked
     // whether the package is its own, and the package was asked which origin it claims.
-    const respaldoTexto = {
+    const respaldoTexto = pro.origen === 'archivo' ? archivoTexto : {
       'verificado': 'Lo respalda <b>' + host + '</b>' + via + ': ese origen publica este módulo y el paquete dice ser suyo.'
         + (pro.seguro ? '' : '<small>La conexión no va cifrada: así solo sirve en desarrollo.</small>'),
       'sin-publicacion': 'Lo sirvió <b>' + host + '</b>' + via + '.'
@@ -517,19 +532,23 @@ const gn = {
         + '<small>Ese origen lo publica, pero el paquete no declara de qué origen es: no queda atado del todo.</small>',
       'otro-origen': 'Lo sirvió <b>' + host + '</b>' + via + '.'
         + '<small>El paquete dice ser de <b>' + esc(pro.origenDeclarado || '?') + '</b>, y no lo sirvió ese origen.</small>',
-    }[pro.respaldo] || ('Lo sirvió <b>' + host + '</b>' + via + '.'
-        + '<small>Gnothi no pudo verificar que ese origen sea el de la institución: fijate que lo reconozcas.</small>');
-    const respaldo = respaldoTexto + sello;
+    };
+    const respaldo = (respaldoTexto[pro.respaldo]
+      || (pro.origen === 'archivo'
+        ? 'Llegó como el archivo <b>' + host + '</b>.<small>No viene de ningún origen: nadie responde por él.</small>'
+        : 'Lo sirvió <b>' + host + '</b>' + via + '.<small>Gnothi no pudo verificar que ese origen sea el de la institución: fijate que lo reconozcas.</small>'))
+      + sello;
 
     // A module without a verifiable backing gets a DIFFERENT sheet, not the same one with a
     // footnote: the warning goes first, and says how bad it is.
+    const desconfiar = pro.respaldo === 'otro-origen' ? 'Dice ser de otro origen del que lo sirvió.'
+      : pro.respaldo === 'no-publicado' ? (pro.origen === 'archivo' ? 'El origen que dice ser suyo no publica este paquete.' : 'El origen que lo sirvió no lo reconoce como suyo.')
+      : null;
     const alerta = pro.respaldo === 'verificado' ? ''
-      : (pro.respaldo === 'otro-origen' || pro.respaldo === 'no-publicado')
-        ? '<p class="ojo"><b>Desconfiá de este módulo.</b> '
-          + (pro.respaldo === 'otro-origen' ? 'Dice ser de otro origen del que lo sirvió.' : 'El origen que lo sirvió no lo reconoce como suyo.')
-          + ' Si no lo esperabas, «Ahora no».</p>'
+      : desconfiar
+        ? '<p class="ojo"><b>Desconfiá de este módulo.</b> ' + desconfiar + ' Si no lo esperabas, «Ahora no».</p>'
         : '<p class="ojo">Este módulo llega <b>sin respaldo verificable</b>: Gnothi no pudo confirmar que '
-          + host + ' publique este módulo. Abajo dice por qué.</p>';
+          + (pro.origen === 'archivo' ? 'alguien responda por este archivo' : host + ' publique este módulo') + '. Abajo dice por qué.</p>';
     const forma = rev.forma === 'hospedado'
       ? 'Trae la app de la institución, publicada: ' + (rev.archivos || 0) + ' archivos, ' + mb(rev.bytes) + '.'
         + '<small>Con su propio motor adentro (' + mb(rev.motorBytes) + '): un navegador no corre C# sin él.</small>'
@@ -568,6 +587,17 @@ const gn = {
     gn.sheet(false);
     inp.value = '';
     gn.call('alta', { url });
+  },
+
+  // THE FILE, PICKED. The picker is the platform's (the system's document picker, no storage
+  // permission); the platform answers ok:true when it has one, and what she picks comes back down
+  // the same road, with its provenance marked as a file. A platform without a picker yet says so.
+  altaArchivo() {
+    const hint = document.getElementById('alta-hint');
+    const r = gn.call('altaArchivo');
+    if (!r || r.ok !== true) { hint.textContent = 'En este teléfono todavía no se puede elegir un archivo: pegá el enlace.'; return; }
+    hint.textContent = '';
+    gn.sheet(false);
   },
 
   // THE CODE READER. Camera in, link out, and then the same road as a pasted link.
@@ -943,6 +973,13 @@ const MOCK_PROPUESTA = {
 };
 
 function mock(op, x) {
+  if (op === 'altaArchivo') {
+    // The mock "picks" a file whose declared origin publishes exactly this package.
+    setTimeout(() => gn.push('alta', '', JSON.stringify({ estado: 'trabajando', detalle: 'Revisando qué trae…' })), 150);
+    setTimeout(() => gn.push('propuesta', '', JSON.stringify(Object.assign({}, MOCK_PROPUESTA,
+      { servido: 'cargas.gmod', procedencia: { origen: 'archivo', servido: 'cargas.gmod', sello: false, respaldo: 'verificado', seguro: true, origenDeclarado: 'https://estaciones-faro.cr' } }))), 1100);
+    return { ok: true };
+  }
   if (op === 'alta') {
     // Unwrap the go.gnothi.app link the way ModuleEnrollment.BundleUrlOf does, so the host the
     // mock shows is the bundle's, as it would be on the phone.
