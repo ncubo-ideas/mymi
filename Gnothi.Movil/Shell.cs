@@ -373,6 +373,14 @@ public sealed class Shell : IDisposable
 	//
 	// EXISTE PARA LA PROPUESTA DEL ALTA, donde el modulo todavia no esta instalado: el bundle
 	// esta desempaquetado en una carpeta temporal y no hay ningun Module al que preguntarle.
+	private static string InstalledAt(Module m)
+	{
+		string at = m.Installation.Provenance?.At ?? "";
+		if (at.Length > 0) return at;
+		try { return File.GetLastWriteTimeUtc(Path.Combine(m.Directory, "installation.json")).ToString("yyyy-MM-ddTHH:mm:ssZ"); }
+		catch { return ""; }
+	}
+
 	private static Dictionary<string, object?>? Marca(Gnothi.Host.Manifest manifest, string folder)
 		=> BrandOf(Gnothi.Host.Module.LookOf(manifest, folder, out _));
 
@@ -624,6 +632,10 @@ public sealed class Shell : IDisposable
 				// con que comparar -- un .gmod importado de un archivo no tiene servidor--. La
 				// pantalla tiene que poder decir "no se puede saber" en vez de pintar un visto
 				// bueno, que es exactamente el bug que esto arregla.
+				// WHEN IT ARRIVED, for the order of the home: the most recently added module is the hero
+				// and stays there until the next one arrives (Geaninna, 2026-09-09). The enrollment act
+				// says when; a module that came in by other means falls back to its installation file.
+				["installedAt"] = InstalledAt(m),
 				["provenance"] = new Dictionary<string, object?>
 				{
 					["servedBy"] = m.Installation.Provenance?.ServedBy ?? "",

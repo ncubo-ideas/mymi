@@ -821,7 +821,10 @@ const gn = {
 
   paint() {
     if (!gn.state) return;
-    const ms = gn.state.modules;
+    // NEWEST FIRST: the module added most recently is the hero, and stays there until another one
+    // arrives. Predictable, and it makes installing satisfying -- you add La Guaria, come back, and
+    // La Guaria is the big card. The Host says when each one arrived (installedAt, ISO UTC).
+    const ms = [...gn.state.modules].sort((a, b) => String(b.installedAt || '').localeCompare(String(a.installedAt || '')));
 
     document.getElementById('home-sub').textContent = ms.length + (ms.length === 1 ? ' conectada' : ' conectadas');
 
@@ -1149,7 +1152,7 @@ const MOCK = { modules: [
     publisher:{ domain:'delfos.cr', legal:'Laboratorio Clínico Delfos S.A.', taxId:'3-101-123456', version:'2.4.0' },
     provenance:{ servedBy:'delfos.cr', at:'2026-08-20T10:12:00Z', version:'2.4.0', matches:true },
     journal:{ retention:'5 años', expectedSize:'~2 MB al año', updates:'al abrir la app' },
-    name:'examenes', title:'Mis exámenes', institution:'Laboratorio Clínico Delfos',
+    name:'examenes', installedAt:'2026-09-09T14:05:00Z', title:'Mis exámenes', institution:'Laboratorio Clínico Delfos',
     slogan:'Tu salud, en tus manos', shortName:'Delfos', brand:{ color:'#0e2f55', logo:'../bundles/examenes/web/icon-192.png', banner:'../bundles/examenes/web/brand/banner.jpg' },
     enabled:true, journalBytes:2048, journalFiles:3, tools:[
     { name:'revisar_mis_analitos', title:'How am I doing', enabled:true,
@@ -1164,7 +1167,7 @@ const MOCK = { modules: [
     publisher:{ domain:'laguaria.cr', legal:'Supermercado La Guaria S.A.', taxId:'3-101-654321', version:'1.2.0' },
     provenance:{ servedBy:'cdn-barato.example', at:'2026-09-01T09:00:00Z', version:'1.2.0', matches:false },
     journal:{ retention:'5 años', updates:'al abrir la app' },
-    name:'compras', title:'Mis compras', institution:'Supermercado La Guaria',
+    name:'compras', installedAt:'2026-09-08T10:00:00Z', title:'Mis compras', institution:'Supermercado La Guaria',
     slogan:'Tu canasta, más cerca de vos', shortName:'La Guaria', brand:{ color:'#2f6b3f', logo:'../bundles/compras/web/icon-192.png', banner:'../bundles/compras/web/brand/banner.jpg', font:{ family:'Nunito Sans', regular:'../bundles/compras/web/brand/NunitoSans-800.woff2', bold:'' } },
     enabled:true, journalBytes:3172, journalFiles:3, tools:[
     { name:'total_de_compras', title:'Cuanto gaste en total', enabled:true, description:'Total de todas las compras registradas.' },
@@ -1174,16 +1177,16 @@ const MOCK = { modules: [
     publisher:{ domain:'faro.cr', legal:'Estaciones Faro S.A.' },
     provenance:{ servedBy:'', at:'2026-09-05T18:30:00Z', version:'', matches:null },
     journal:{ retention:'2 años', reconstruible:false },
-    name:'cargas', title:'Mis cargas', institution:'Estaciones Faro',
+    name:'cargas', installedAt:'2026-09-07T09:00:00Z', title:'Mis cargas', institution:'Estaciones Faro',
     slogan:'Rendimiento real, tramo a tramo', shortName:'Faro', brand:{ color:'#0B3C49', logo:'../bundles/cargas/web/icon-192.png', banner:'../bundles/cargas/web/brand/banner.jpg', font:{ family:'Barlow', regular:'../bundles/cargas/web/brand/Barlow-600.woff2', bold:'' } },
     enabled:true, journalBytes:1210, journalFiles:3, tools:[
     { name:'resumen', title:'Como vengo', enabled:true, description:'Cuantas cargas y cuantos vehiculos tiene registrados.' }]},
-  { name:'dealership', title:'My maintenance', institution:'Sotavento Motors',
+  { name:'dealership', installedAt:'2026-09-06T09:00:00Z', title:'My maintenance', institution:'Sotavento Motors',
     slogan:'Care that keeps you moving', brand:{ color:'#1f3a5f', logo:'../bundles/dealership/web/icon-192.png', banner:'../bundles/dealership/web/brand/banner.jpg', font:{ family:'Sora', regular:'../bundles/dealership/web/brand/Sora-600.woff2', bold:'' } },
     enabled:true, journalBytes:980, journalFiles:3, tools:[
     { name:'resumen', title:'How my car is doing', enabled:true, description:'How the vehicle stands right now.' }]},
   // A module WITHOUT a brand, on purpose: it is the fallback path, and it has to keep looking good.
-  { name:'facturas', title:'My invoices', institution:'Súper El Triunfo', slogan:'Ahorro y calidad en un solo lugar',
+  { name:'facturas', installedAt:'2026-09-05T09:00:00Z', title:'My invoices', institution:'Súper El Triunfo', slogan:'Ahorro y calidad en un solo lugar',
     brand:{ color:'#C86B12', logo:'../bundles/facturas/web/brand/logo.png', banner:'../bundles/facturas/web/brand/banner.jpg', font:{ family:'Lora', regular:'../bundles/facturas/web/brand/Lora-700.woff2', bold:'' } },
     enabled:true, journalBytes:1650, journalFiles:3, tools:[
     { name:'total_de_facturas', title:'Total spent', enabled:true, description:'Total of all invoices on record.' }]},
