@@ -1,5 +1,6 @@
 using System.IO.Compression;
 using System.Security.Cryptography;
+using System.Text;
 using System.Text.Json;
 
 namespace Gnothi.Movil;
@@ -30,12 +31,18 @@ namespace Gnothi.Movil;
 // That is integrity, not authenticity: the one who makes the link chooses both the address and
 // the seal, so a forged code is not caught by this. The sheet says the first and not the second.
 //
+// THE ORIGIN. The origin that served the bundle is asked whether the bundle is its own -at
+// /.well-known/gnothi/modules.json- and the manifest is asked which origin it claims. When both
+// agree with the origin that actually served it, TLS is what stands behind the answer, and the
+// sheet says the module is BACKED by its origin. When they do not, the sheet says which of the
+// three failed. Nothing is refused for it yet: whether the backing is a requirement or a warning
+// is a decision still open (NotasGnothiHost/42 §9), and it lives in ONE place -OriginIsRequired.
+//
 // WHAT GNOTHI CHECKS BEFORE SHOWING ANYTHING is PackageInspector -the same inspection the
 // desktop installer runs (Gnothi.Host/PackageInspector.cs): the package's form, whether it
 // carries an engine, executables or a sample journal, and which capabilities it asks for. It
 // runs over the zip BEFORE a byte is written to disk, and its result travels in the proposal so
-// the sheet can say what was checked. What it does NOT check is who stands behind the package:
-// that is the origin and signature work, not done yet, and the sheet says that too.
+// the sheet can say what was checked.
 //
 // NOTHING HERE IS PLATFORM-SPECIFIC and that is not an accident: downloading a zip, refusing a
 // zip-slip, reading a manifest and writing an installation are the same on any phone. It lived
@@ -56,11 +63,43 @@ public enum EnrollmentSource
 	Qr,
 }
 
+// WHAT THE ORIGIN CHECK FOUND. The origin that served the bundle is asked -at its well-known-
+// whether the bundle is its own, and the manifest is asked which origin it claims. Only when both
+// answers agree with what actually served it is the module BACKED by its origin; every other
+// outcome is named, because the sheet tells the person which one it was.
+public enum OriginCheck
+{
+	// The origin publishes this bundle and the manifest declares that origin.
+	Verified,
+
+	// The bytes did not come from an origin at all (a file, some day).
+	NoOrigin,
+
+	// The origin publishes nothing Gnothi can read at /.well-known/gnothi/modules.json.
+	NoWellKnown,
+
+	// The origin publishes its modules, and this bundle is not among them.
+	NotListed,
+
+	// The origin publishes it, but the manifest declares no origin: it cannot be tied down.
+	NotDeclared,
+
+	// The manifest claims an origin other than the one that served it.
+	DeclaresAnother,
+}
+
 // WHERE THE BYTES CAME FROM. ServedBy is the host that answered the download: a fact about
-// transport, not a verified identity, and the sheet says exactly that. MatchesLink is true when
-// the link carried a seal and the package hashed to it -- integrity against the link, nothing
-// more; false when the link carried none.
-public sealed record Provenance(EnrollmentSource Source, string ServedBy, bool MatchesLink = false);
+// transport, and Origin says how far that fact could be tied to the institution. MatchesLink is
+// true when the link carried a seal and the package hashed to it -- integrity against the link,
+// nothing more. Secure says whether TLS stood behind the transport: over plain http (development)
+// the origin check proves consistency, not authenticity, and the sheet says so.
+public sealed record Provenance(
+	EnrollmentSource Source,
+	string ServedBy,
+	bool MatchesLink = false,
+	OriginCheck Origin = OriginCheck.NoOrigin,
+	bool Secure = false,
+	string DeclaredOrigin = "");
 
 // THE LINK, TAKEN APART. The institution's page links to Gnothi's domain with the bundle's
 // address as a parameter and, since 2026-09-08, the seal of its manifest:
@@ -81,6 +120,15 @@ internal sealed class ModuleEnrollment
 	// A module's bundle weighs about 11 MB measured. This ceiling is not an optimisation: it is
 	// so that a wrong URL cannot fill the device before anybody notices.
 	private const long BundleCeiling = 64L * 1024 * 1024;
+
+	// Where an origin says which modules are its own. A list, not one file per module: an
+	// institution can publish several, and Gnothi looks for the bundle it was handed.
+	internal const string WellKnownPath = "/.well-known/gnothi/modules.json";
+	private const long WellKnownCeiling = 64 * 1024;
+
+	// Whether a module its origin does not back is refused, or only reported on the sheet. A
+	// warning until the decision is taken (NotasGnothiHost/42 §9); flipping this is the change.
+	private static readonly bool OriginIsRequired = false;
 
 	private static readonly HttpClient http = new() { Timeout = TimeSpan.FromMinutes(2) };
 
@@ -124,6 +172,59 @@ internal sealed class ModuleEnrollment
 	internal static string SealOf(byte[] manifestBytes)
 		=> Convert.ToBase64String(SHA256.HashData(manifestBytes), 0, 16).TrimEnd('=').Replace('+', '-').Replace('/', '_');
 
+	// THE ORIGIN CHECK, over what was fetched: the bundle's address, what its origin publishes
+	// (null when it publishes nothing readable) and the origin the manifest declares. Pure, so
+	// the suite can try every outcome without a network.
+	//
+	// The order is the order of how bad it is: a manifest claiming an origin other than the one
+	// that served it is the loudest signal, and it is reported before anything about the list.
+	internal static OriginCheck VerifyOrigin(Uri bundle, string? wellKnownJson, string? declaredOrigin)
+	{
+		string served = OriginOf(bundle);
+		string? declared = OriginOf(declaredOrigin);
+		if (declared is not null && !declared.Equals(served, StringComparison.OrdinalIgnoreCase))
+			return OriginCheck.DeclaresAnother;
+
+		if (wellKnownJson is null) return OriginCheck.NoWellKnown;
+
+		bool listed;
+		try
+		{
+			using JsonDocument published = JsonDocument.Parse(wellKnownJson);
+			listed = published.RootElement.TryGetProperty("modules", out JsonElement modules)
+				&& modules.ValueKind == JsonValueKind.Array
+				&& modules.EnumerateArray().Any(m =>
+					m.TryGetProperty("bundle", out JsonElement b) && b.ValueKind == JsonValueKind.String
+					// Relative or absolute, resolved against the origin: an absolute address on
+					// another origin resolves to that other origin and does not match.
+					&& Uri.TryCreate(new Uri(served + "/"), b.GetString(), out Uri? listedBundle)
+					&& SameResource(listedBundle, bundle));
+		}
+		catch (JsonException)
+		{
+			return OriginCheck.NoWellKnown;
+		}
+
+		if (!listed) return OriginCheck.NotListed;
+		return declared is null ? OriginCheck.NotDeclared : OriginCheck.Verified;
+	}
+
+	// scheme://host[:port], lower case, default port dropped: what "the same origin" means.
+	private static string OriginOf(Uri uri) => uri.GetLeftPart(UriPartial.Authority).ToLowerInvariant();
+
+	// Null for "declares nothing": a missing key, an empty string, or text that is not an origin.
+	// A manifest written before 2026-09-09 has no `origin` at all, and the generated reader hands
+	// that back as null, not as the property's initializer.
+	private static string? OriginOf(string? declared)
+		=> !string.IsNullOrWhiteSpace(declared)
+			&& Uri.TryCreate(declared.Trim(), UriKind.Absolute, out Uri? uri)
+			&& (uri.Scheme == Uri.UriSchemeHttps || uri.Scheme == Uri.UriSchemeHttp)
+			? OriginOf(uri)
+			: null;
+
+	private static bool SameResource(Uri a, Uri b)
+		=> Uri.Compare(a, b, UriComponents.SchemeAndServer | UriComponents.PathAndQuery, UriFormat.SafeUnescaped, StringComparison.OrdinalIgnoreCase) == 0;
+
 	// ENROLLING IS TWO ACTS, AND THE PERSON DECIDES IN BETWEEN (specification 13 §7).
 	//
 	//     Examine   downloads the bundle, inspects it and reads its manifest. Installs NOTHING.
@@ -148,14 +249,22 @@ internal sealed class ModuleEnrollment
 		progress?.Invoke($"Bajando el módulo de {where.Host}…");
 
 		byte[] zip = await Download(where, ct);
-		return Examine(zip, source, where.Host, seal, progress);
+
+		// What the origin says about itself, fetched on top of the bundle. Its absence is an
+		// outcome the sheet reports, not an error that stops the enrollment.
+		string? published = await FetchWellKnown(where, ct);
+
+		EnrollmentProposal proposal = Examine(zip, source, where, seal, published, progress);
+		log($"alta: respaldo de {where.Host}: {proposal.Provenance.Origin}");
+		return proposal;
 	}
 
 	// THE SAME EXAMINATION FOR EVERY WAY IN. Bytes and where they came from come in; the
-	// manifest is read, checked against the seal if the link carried one, and the package
-	// inspected BEFORE anything touches the disk; only then is it unpacked into a temporary
-	// folder that lives until she decides.
-	internal EnrollmentProposal Examine(byte[] zip, EnrollmentSource source, string servedBy, string? expectedSeal = null, Action<string>? progress = null)
+	// manifest is read, checked against the seal if the link carried one and against its origin,
+	// and the package inspected BEFORE anything touches the disk; only then is it unpacked into a
+	// temporary folder that lives until she decides. `servedFrom` is null for bytes that came
+	// from no origin at all, and `wellKnownJson` is what that origin publishes, if anything.
+	internal EnrollmentProposal Examine(byte[] zip, EnrollmentSource source, Uri? servedFrom, string? expectedSeal = null, string? wellKnownJson = null, Action<string>? progress = null)
 	{
 		progress?.Invoke("Revisando qué trae…");
 
@@ -172,6 +281,10 @@ internal sealed class ModuleEnrollment
 			throw new PackageSealMismatchException(
 				$"the link was made for a manifest sealed {expectedSeal}; the package served now seals {seal}");
 
+		OriginCheck origin = servedFrom is null ? OriginCheck.NoOrigin : VerifyOrigin(servedFrom, wellKnownJson, manifest.Origin);
+		if (OriginIsRequired && origin != OriginCheck.Verified)
+			throw new InvalidOperationException($"Gnothi rechazó el paquete: su origen no lo respalda ({origin})");
+
 		// A refused package never reaches the sheet: there is nothing to decide about a package
 		// that would not be installed anyway. The reasons are written to be read, and they are
 		// what the person sees.
@@ -184,9 +297,14 @@ internal sealed class ModuleEnrollment
 			Unpack(zip, temporary);
 
 			string module = manifest.Module;
-			return new EnrollmentProposal(temporary, manifest,
-				new Provenance(source, servedBy, MatchesLink: expectedSeal is not null),
-				inspection, Path.Combine(journalsRoot, module), Directory.Exists(Path.Combine(modulesRoot, module)));
+			var provenance = new Provenance(source, servedFrom?.Host ?? "",
+				MatchesLink: expectedSeal is not null,
+				Origin: origin,
+				Secure: servedFrom?.Scheme == Uri.UriSchemeHttps,
+				DeclaredOrigin: manifest.Origin ?? "");
+
+			return new EnrollmentProposal(temporary, manifest, provenance, inspection,
+				Path.Combine(journalsRoot, module), Directory.Exists(Path.Combine(modulesRoot, module)));
 		}
 		catch
 		{
@@ -247,6 +365,41 @@ internal sealed class ModuleEnrollment
 		}
 
 		return buffer.ToArray();
+	}
+
+	// WHAT THE ORIGIN PUBLISHES, or null: a 404, a timeout, a body too big or a broken connection
+	// all mean the same thing to the sheet -- the origin does not say which modules are its own --
+	// and none of them stops the enrollment. Ten seconds, so a slow origin does not hold the
+	// person hostage for a check that is a warning.
+	private static async Task<string?> FetchWellKnown(Uri bundle, CancellationToken ct)
+	{
+		try
+		{
+			using var brief = CancellationTokenSource.CreateLinkedTokenSource(ct);
+			brief.CancelAfter(TimeSpan.FromSeconds(10));
+
+			using HttpResponseMessage response = await http.GetAsync(new Uri(bundle, WellKnownPath), HttpCompletionOption.ResponseHeadersRead, brief.Token);
+			if (!response.IsSuccessStatusCode) return null;
+			if (response.Content.Headers.ContentLength is long length && length > WellKnownCeiling) return null;
+
+			using var buffer = new MemoryStream();
+			await using (Stream body = await response.Content.ReadAsStreamAsync(brief.Token))
+			{
+				var chunk = new byte[8192];
+				int read;
+				while ((read = await body.ReadAsync(chunk, brief.Token)) > 0)
+				{
+					buffer.Write(chunk, 0, read);
+					if (buffer.Length > WellKnownCeiling) return null;
+				}
+			}
+
+			return Encoding.UTF8.GetString(buffer.ToArray());
+		}
+		catch (Exception e) when (e is HttpRequestException or OperationCanceledException or IOException)
+		{
+			return null;
+		}
 	}
 
 	// ZIP SLIP: an entry in the zip can be called "../../something" and write outside where one
@@ -345,8 +498,8 @@ internal sealed class ModuleEnrollment
 // WHAT GNOTHI SHOWS THE PERSON BEFORE INSTALLING ANYTHING. It comes out of the bundle's
 // manifest -- that is, out of what the institution DECLARES about itself -- plus what Gnothi
 // found out by itself and she has a right to know before accepting: where the bytes came from,
-// whether they match the link, what the inspection saw, where the journal will live, and
-// against which endpoint the courier will talk.
+// whether they match the link and whether their origin backs them, what the inspection saw,
+// where the journal will live, and against which endpoint the courier will talk.
 //
 // `Folder` is the temporary place where the bundle is already unpacked. It exists until she
 // decides: Accept moves it where it belongs, Discard deletes it.

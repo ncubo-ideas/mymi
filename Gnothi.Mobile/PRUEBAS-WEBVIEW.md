@@ -340,6 +340,18 @@ coincide, la hoja lo dice: *El paquete es el mismo que sellaba el enlace*. Es **
 autenticidad: quien imprime el código elige la dirección y el sello. Probalo rearmando el bundle
 con otro manifiesto sin recargar la página.
 
+**El respaldo de origen.** Gnothi le pregunta al origen que sirvió el bundle si el bundle es suyo
+—en `/.well-known/gnothi/modules.json`, que la página publica— y le pregunta al manifiesto de qué
+origen dice ser (`origin`, que `armar-bundle.ps1 -Origen` escribe). Cuando las dos respuestas
+coinciden con el origen que de verdad lo sirvió, la hoja abre con *Lo respalda 127.0.0.1: ese
+origen publica este módulo y el paquete dice ser suyo* — y, sobre http, agrega *La conexión no va
+cifrada: así solo sirve en desarrollo*, porque lo que hace valer la respuesta en producción es TLS.
+Cuando no coinciden, la hoja es **otra**: una caja de aviso arriba (*sin respaldo verificable*, o
+*Desconfiá de este módulo* si el paquete dice ser de otro origen o el origen no lo reconoce) y abajo
+cuál de las tres piezas falló. Hoy es **aviso, no requisito**: nada se rechaza por el origen
+(`ModuleEnrollment.OriginIsRequired`, una sola línea, decisión pendiente). Probalo sirviendo el
+bundle sin el `.well-known`, o rearmándolo con otro `-Origen`.
+
 ⚠️ **En el emulador la cámara es `emulated`** (un patrón de prueba, sin QR): la lectura de verdad
 se prueba con un teléfono apuntando a la pantalla de la computadora, o arrancando el emulador con
 `-camera-back webcam0` y mostrándole el código a la webcam. Sin eso, lo que sí se comprueba en el

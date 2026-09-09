@@ -28,7 +28,7 @@
 //     lets Android send the app away. So the keyboard is dismissed only when dumpsys says it is
 //     showing.
 import { readFileSync } from 'node:fs';
-import { adb, conectar, sleep } from './pantalla.mjs';
+import { adb, adbArgs, conectar, sleep } from './pantalla.mjs';
 
 const phase = process.argv[2] ?? 'pegar';
 const bundle = process.argv[3] ?? 'http://127.0.0.1:8096/examenes.zip';
@@ -72,9 +72,10 @@ async function hideKeyboard() {
 	if (keyboardShowing()) { adb('shell input keyevent 4'); await sleep(800); }
 }
 
-// `input text` on the device: quoted for its shell (a bundle link may carry ? & =), spaces as %s.
+// `input text` on the device: quoted for ITS shell (a link carries ? & = %), spaces as %s, and
+// handed to adb without a host shell, which would take the `&` apart first.
 function type(value) {
-	adb(`shell input text '${value.replace(/'/g, `'\\''`).replace(/ /g, '%s')}'`);
+	adbArgs('shell', `input text '${value.replace(/'/g, `'\\''`).replace(/ /g, '%s')}'`);
 }
 
 // Poll up to `seconds`, printing the enrollment strip every time it changes.
@@ -89,9 +90,13 @@ async function waitFor(done, seconds) {
 	return false;
 }
 
+// Idempotent: a sheet left open by an earlier run stays open -- tapping the card behind it would
+// land on the backdrop and close it instead.
 async function openTheCard() {
+	const isOpen = async () => /\bon\b/.test(await evaluate("document.getElementById('sheet').className"));
+	if (await isOpen()) return;
 	await tap('.mod.add');
-	if (!/\bon\b/.test(await evaluate("document.getElementById('sheet').className"))) throw new Error('the sheet did not open');
+	if (!(await isOpen())) throw new Error('the sheet did not open');
 }
 
 async function printTheProposal() {
@@ -106,7 +111,9 @@ async function pegar() {
 	console.log('modules before:', await evaluate('(gn.state && gn.state.modules || []).length'));
 	await openTheCard();
 
-	await tap('#alta-url');
+	// A field that already has the focus is not tapped again: with the keyboard up the window
+	// pans, and a tap computed from the page lands on a key (a stray letter, measured twice).
+	if ((await evaluate("document.activeElement && document.activeElement.id")) !== 'alta-url') await tap('#alta-url');
 	type(bundle);
 	await sleep(600);
 	console.log('typed:', await evaluate("document.getElementById('alta-url').value"));

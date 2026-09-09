@@ -129,7 +129,9 @@ foreach ($nombre in $Modulos) {
     $zip = "$PSScriptRoot\bundles\$nombre.zip"
     if (-not $SinBundle -or -not (Test-Path $zip)) {
         Write-Host "    armando el bundle..."
-        & "$PSScriptRoot\armar-bundle.ps1" -Modulo $nombre -Publicador "http://127.0.0.1:$($m.Pub)/" | Out-Null
+        # -Origen: the page's own origin, so the manifest declares the origin that serves it and
+        # Gnothi's origin check comes back "verificado" (over http: consistent, not authentic).
+        & "$PSScriptRoot\armar-bundle.ps1" -Modulo $nombre -Publicador "http://127.0.0.1:$($m.Pub)/" -Origen "http://127.0.0.1:$($m.Web)" | Out-Null
     }
     if (-not (Test-Path $zip)) { Write-Warning "no se armo el bundle de $nombre"; continue }
 

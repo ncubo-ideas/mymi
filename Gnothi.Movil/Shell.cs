@@ -387,9 +387,9 @@ public sealed class Shell : IDisposable
 		yaEstaba = p.AlreadyThere,
 		tools = p.Manifest.Tools.Select(t => new { nombre = t.Name, titulo = t.Title, descripcion = t.Description }),
 
-		// WHERE IT CAME FROM, as a fact about transport: which way in, which host answered, and
-		// whether the package still matches the seal the link carried. The sheet says out loud
-		// that the host is not yet verified against the institution.
+		// WHERE IT CAME FROM: which way in, which host answered, whether the package still
+		// matches the seal the link carried, and how far that host could be tied to the
+		// institution -the origin check, by name, so the sheet can say which piece failed.
 		procedencia = new
 		{
 			origen = p.Provenance.Source switch
@@ -400,6 +400,17 @@ public sealed class Shell : IDisposable
 			},
 			servido = p.Provenance.ServedBy,
 			sello = p.Provenance.MatchesLink,
+			respaldo = p.Provenance.Origin switch
+			{
+				OriginCheck.Verified => "verificado",
+				OriginCheck.NoWellKnown => "sin-publicacion",
+				OriginCheck.NotListed => "no-publicado",
+				OriginCheck.NotDeclared => "sin-origen-declarado",
+				OriginCheck.DeclaresAnother => "otro-origen",
+				_ => "sin-origen",
+			},
+			seguro = p.Provenance.Secure,
+			origenDeclarado = p.Provenance.DeclaredOrigin,
 		},
 
 		// WHAT GNOTHI CHECKED before showing this, so she decides with it in view: the form, the

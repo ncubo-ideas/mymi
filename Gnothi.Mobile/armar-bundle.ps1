@@ -25,6 +25,7 @@ param(
     [string] $Publicador = '',        # por omision, el puerto de su propio mock
     [string] $Recurso    = '',
     [string] $Id         = '',
+    [string] $Origen     = '',        # the origin that serves the bundle (scheme://host:port); goes into the manifest as "origin"
     [string] $Salida     = ''         # por omision: <Gnothi.Mobile>/bundles
 )
 
@@ -134,6 +135,11 @@ $manifiesto = [ordered]@{
     module        = $Modulo
     title         = $m.Titulo
     institution   = $m.Institucion
+    # THE ORIGIN THE INSTITUTION CLAIMS. Gnothi compares it with the origin that actually served
+    # the bundle and with what that origin publishes at /.well-known/gnothi/modules.json; when the
+    # three agree the sheet says the module is backed by its origin. Left out when not given, and
+    # then the sheet says the package declares no origin.
+    origin        = $Origen
     substrate     = @{ range = '>=3.0.0 <4.0.0' }
     '//publicador'= 'DONDE ESTA SU NARRATIVA. Gnothi lo registra al dar de alta el modulo y a partir de ahi el endpoint es fijo: el modulo no lo elige ni lo puede cambiar.'
     publicador    = [ordered]@{ eventos = $Publicador; recurso = $Recurso; id = $Id }
@@ -145,6 +151,7 @@ $manifiesto = [ordered]@{
 # SIN BOM, a proposito. `Set-Content -Encoding utf8` de PowerShell 5.1 escribe BOM, y aunque
 # `File.ReadAllText` lo tolera -- que es como lo lee AltaDeModulo -- un manifiesto con BOM
 # revienta en cuanto alguien lo lea con `JsonDocument.Parse(string)`. No vale la pena la trampa.
+if (-not $Origen) { $manifiesto.Remove('origin') }
 $json = $manifiesto | ConvertTo-Json -Depth 8
 [System.IO.File]::WriteAllText("$armado/manifest.json", $json, (New-Object System.Text.UTF8Encoding($false)))
 
@@ -162,4 +169,5 @@ Write-Host "bundle listo : $zip"
 Write-Host "  archivos   : $n"
 Write-Host "  tamano     : $mb MB"
 Write-Host "  publicador : $Publicador$Recurso/$Id/events"
+if ($Origen) { Write-Host "  origen     : $Origen" } else { Write-Host "  origen     : (no declarado: la hoja de Gnothi lo va a decir)" }
 Write-Host "  tools      : $(($m.Tools | ForEach-Object { $_.name }) -join ', ')"

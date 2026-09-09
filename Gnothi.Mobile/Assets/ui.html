@@ -501,10 +501,35 @@ const gn = {
     const mb = n => (Math.max(n || 0, 0) / 1048576).toFixed(1).replace('.', ',') + ' MB';
     const via = pro.origen === 'qr' ? ', del código que escaneaste'
               : pro.origen === 'pegado' ? ', del enlace que pegaste' : '';
-    const sello = pro.sello ? ' El paquete es el mismo que sellaba el enlace: no cambió desde que se generó.' : '';
-    const respaldo = 'Lo sirvió <b>' + esc(pro.servido || p.servido || '?') + '</b>' + via + '.'
-      + '<small>Gnothi todavía no verifica que ese dominio sea el de la institución: fijate que lo reconozcas.'
-      + esc(sello) + '</small>';
+    const host = esc(pro.servido || p.servido || '?');
+    const sello = pro.sello ? '<small>El paquete es el mismo que sellaba el enlace: no cambió desde que se generó.</small>' : '';
+
+    // THE ORIGIN CHECK, in the person's words: the origin that served the package was asked
+    // whether the package is its own, and the package was asked which origin it claims.
+    const respaldoTexto = {
+      'verificado': 'Lo respalda <b>' + host + '</b>' + via + ': ese origen publica este módulo y el paquete dice ser suyo.'
+        + (pro.seguro ? '' : '<small>La conexión no va cifrada: así solo sirve en desarrollo.</small>'),
+      'sin-publicacion': 'Lo sirvió <b>' + host + '</b>' + via + '.'
+        + '<small>Ese origen no publica cuáles módulos son suyos, así que Gnothi no pudo verificarlo: fijate que lo reconozcas.</small>',
+      'no-publicado': 'Lo sirvió <b>' + host + '</b>' + via + '.'
+        + '<small>Ese origen publica sus módulos y <b>este no está entre ellos</b>.</small>',
+      'sin-origen-declarado': 'Lo sirvió <b>' + host + '</b>' + via + '.'
+        + '<small>Ese origen lo publica, pero el paquete no declara de qué origen es: no queda atado del todo.</small>',
+      'otro-origen': 'Lo sirvió <b>' + host + '</b>' + via + '.'
+        + '<small>El paquete dice ser de <b>' + esc(pro.origenDeclarado || '?') + '</b>, y no lo sirvió ese origen.</small>',
+    }[pro.respaldo] || ('Lo sirvió <b>' + host + '</b>' + via + '.'
+        + '<small>Gnothi no pudo verificar que ese origen sea el de la institución: fijate que lo reconozcas.</small>');
+    const respaldo = respaldoTexto + sello;
+
+    // A module without a verifiable backing gets a DIFFERENT sheet, not the same one with a
+    // footnote: the warning goes first, and says how bad it is.
+    const alerta = pro.respaldo === 'verificado' ? ''
+      : (pro.respaldo === 'otro-origen' || pro.respaldo === 'no-publicado')
+        ? '<p class="ojo"><b>Desconfiá de este módulo.</b> '
+          + (pro.respaldo === 'otro-origen' ? 'Dice ser de otro origen del que lo sirvió.' : 'El origen que lo sirvió no lo reconoce como suyo.')
+          + ' Si no lo esperabas, «Ahora no».</p>'
+        : '<p class="ojo">Este módulo llega <b>sin respaldo verificable</b>: Gnothi no pudo confirmar que '
+          + host + ' publique este módulo. Abajo dice por qué.</p>';
     const forma = rev.forma === 'hospedado'
       ? 'Trae la app de la institución, publicada: ' + (rev.archivos || 0) + ' archivos, ' + mb(rev.bytes) + '.'
         + '<small>Con su propio motor adentro (' + mb(rev.motorBytes) + '): un navegador no corre C# sin él.</small>'
@@ -516,6 +541,7 @@ const gn = {
 
     document.getElementById('pr-cuerpo').innerHTML =
       (p.yaEstaba ? '<p class="ojo">Ya tenés este módulo. Reinstalarlo reemplaza su app; su registro se conserva.</p>' : '')
+      + alerta
       + '<p><b>Qué va a poder contestar</b></p><ul class="pr-tools">' + tools + '</ul>'
       + '<p><b>Dónde se va a guardar, en tu teléfono</b><br><code>' + esc(p.journal) + '</code><br>'
       + '<small>Es tuyo. Gnothi se lo administra a esta institución, no se lo lleva.</small></p>'
@@ -923,7 +949,9 @@ function mock(op, x) {
     let host = 'tu institución';
     try { const u = new URL(x.url); host = new URL(u.searchParams.get('bundle') || x.url).host || host; } catch {}
     setTimeout(() => gn.push('alta', '', JSON.stringify({ estado: 'trabajando', detalle: 'Bajando el módulo de ' + host + '…' })), 150);
-    const procedencia = { origen: x.via === 'qr' ? 'qr' : 'pegado', servido: host, sello: /[?&]h=/.test(x.url || '') };
+    // The mock's institution backs its module; paste a link with "evil" in it to see the other sheet.
+    const procedencia = { origen: x.via === 'qr' ? 'qr' : 'pegado', servido: host, sello: /[?&]h=/.test(x.url || ''),
+      respaldo: /evil/.test(x.url || '') ? 'otro-origen' : 'verificado', seguro: true, origenDeclarado: 'https://estaciones-faro.cr' };
     setTimeout(() => gn.push('propuesta', '', JSON.stringify(Object.assign({}, MOCK_PROPUESTA, { procedencia }))), 1100);
     return 'ok';
   }

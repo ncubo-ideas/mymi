@@ -80,6 +80,17 @@ app.MapGet($"/{nombreDelZip}", () => File.Exists(bundle)
     ? Results.File(bundle, "application/zip")
     : Results.NotFound($"no hay bundle en {bundle}. Corre armar-bundle.ps1 primero."));
 
+// WHAT THIS ORIGIN PUBLISHES. Gnothi asks the origin that served a bundle whether that bundle is
+// its own -here- and compares with the origin the manifest declares: that is the backing of
+// origin. TLS is what makes the answer worth anything; over http, as in development, it only
+// proves that the three pieces are consistent, and Gnothi's sheet says so.
+app.MapGet("/.well-known/gnothi/modules.json", () =>
+{
+    string? module = ModuleNameOf(bundle);
+    object[] modules = module is null ? [] : [new { module, bundle = $"{suPropiaUrl}/{nombreDelZip}", seal = SealOf(bundle) }];
+    return Results.Json(new { gnothi = 1, institution = titulo, modules });
+});
+
 // ---------------------------------------------------------------- la narrativa, relevada
 
 // ANTES que los archivos estaticos, o el catch-all de /app/ se comeria esta ruta y la app
@@ -182,7 +193,8 @@ app.MapGet("/", () =>
              telefono: <b>Agregar modulo &rarr; Escanear el codigo de la institucion</b>.
              Es el mismo enlace que el boton.</p>
         </div>
-        <p style="margin-top:32px;font-size:13px">El bundle esta en <code>{{suPropiaUrl}}/{{nombreDelZip}}</code></p>
+        <p style="margin-top:32px;font-size:13px">El bundle esta en <code>{{suPropiaUrl}}/{{nombreDelZip}}</code>
+           y este origen publica sus modulos en <code>{{suPropiaUrl}}/.well-known/gnothi/modules.json</code></p>
         """, "text/html");
 });
 
@@ -215,4 +227,20 @@ static string? SealOf(string bundlePath)
     using Stream bytes = manifest.Open();
     byte[] hash = System.Security.Cryptography.SHA256.HashData(bytes);
     return Convert.ToBase64String(hash, 0, 16).TrimEnd('=').Replace('+', '-').Replace('/', '_');
+}
+
+// The module's name as its manifest declares it, for the list this origin publishes. Null when
+// there is no bundle to read.
+static string? ModuleNameOf(string bundlePath)
+{
+    if (!File.Exists(bundlePath)) return null;
+
+    using var zip = System.IO.Compression.ZipFile.OpenRead(bundlePath);
+    System.IO.Compression.ZipArchiveEntry? manifest = zip.Entries.FirstOrDefault(e =>
+        e.FullName.Replace('\\', '/').Equals("manifest.json", StringComparison.OrdinalIgnoreCase));
+    if (manifest is null) return null;
+
+    using Stream bytes = manifest.Open();
+    using var declared = System.Text.Json.JsonDocument.Parse(bytes);
+    return declared.RootElement.TryGetProperty("module", out System.Text.Json.JsonElement m) ? m.GetString() : null;
 }

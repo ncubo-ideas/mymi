@@ -21,7 +21,7 @@
 // one on every call. adb is $ADB, or platform-tools under $ANDROID_HOME / $ANDROID_SDK_ROOT, or
 // the SDKs the PowerShell scripts use; with two devices attached, set $ANDROID_SERIAL as adb
 // itself expects. Node 22 or later (global WebSocket and fetch).
-import { execSync } from 'node:child_process';
+import { execFileSync, execSync } from 'node:child_process';
 import { existsSync } from 'node:fs';
 import { pathToFileURL } from 'node:url';
 
@@ -34,6 +34,11 @@ export const ADB = process.env.ADB
 
 // One adb call, output trimmed. Throws on a non-zero exit, with adb's own message.
 export const adb = args => execSync(`"${ADB}" ${args}`, { encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'] }).trim();
+
+// The same, with the arguments handed to adb.exe directly, no host shell in between. For text
+// that a shell would take apart: `execSync` goes through cmd.exe, which reads an `&` in a link as
+// a command separator before adb ever sees it (measured with a sealed link, `&h=`).
+export const adbArgs = (...args) => execFileSync(ADB, args, { encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'] }).trim();
 
 export const sleep = ms => new Promise(resolve => setTimeout(resolve, ms));
 

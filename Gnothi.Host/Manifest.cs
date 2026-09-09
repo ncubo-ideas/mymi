@@ -20,6 +20,13 @@ public sealed record Manifest
 	[JsonPropertyName("module")] public string Module { get; init; } = "";
 	[JsonPropertyName("title")] public string Title { get; init; } = "";
 	[JsonPropertyName("institution")] public string Institution { get; init; } = "";
+
+	// WHERE THE INSTITUTION PUBLISHES, as an origin: scheme://host[:port]. It declares it; the
+	// enrollment compares it with the origin that actually served the bundle, and asks that
+	// origin -at /.well-known/gnothi/modules.json- whether the bundle is its own. The three have
+	// to agree for the sheet to say the module is backed by its origin. Optional: a manifest
+	// without it still installs, and the sheet says it arrived without a verifiable backing.
+	[JsonPropertyName("origin")] public string Origin { get; init; } = "";
 	[JsonPropertyName("substrate")] public Substrate? Substrate { get; init; }
 	[JsonPropertyName("capabilities")] public Capabilities? Capabilities { get; init; }
 

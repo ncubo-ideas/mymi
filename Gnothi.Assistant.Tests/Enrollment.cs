@@ -93,6 +93,36 @@ internal static class Enrollment
 		assert("text that is not an address passes through, for the enrollment to refuse",
 			ModuleEnrollment.ParseLink("hola").Bundle == "hola", "");
 
+		// ── the origin check, over what an origin publishes ──────────────────────────────
+
+		const string lists = "{\"gnothi\":1,\"institution\":\"Delfos\",\"modules\":[{\"module\":\"examenes\",\"bundle\":\"https://delfos.cr/examenes.zip\",\"seal\":\"x\"}]}";
+		const string listsRelative = "{\"modules\":[{\"module\":\"examenes\",\"bundle\":\"/examenes.zip\"}]}";
+		const string listsElsewhere = "{\"modules\":[{\"module\":\"examenes\",\"bundle\":\"https://evil.cr/examenes.zip\"}]}";
+
+		assert("origin publishes the bundle and the manifest declares it: verified",
+			ModuleEnrollment.VerifyOrigin(Delfos, lists, DelfosOrigin) == OriginCheck.Verified, "");
+		assert("a relative bundle in the list resolves against the origin, and a trailing slash in the declaration is fine",
+			ModuleEnrollment.VerifyOrigin(Delfos, listsRelative, DelfosOrigin + "/") == OriginCheck.Verified, "");
+		assert("no well-known at the origin: not verified, and the sheet says the origin publishes nothing",
+			ModuleEnrollment.VerifyOrigin(Delfos, null, DelfosOrigin) == OriginCheck.NoWellKnown, "");
+		assert("a well-known that is not json counts as no well-known",
+			ModuleEnrollment.VerifyOrigin(Delfos, "not json at all", DelfosOrigin) == OriginCheck.NoWellKnown, "");
+		assert("a list that names the bundle on ANOTHER origin does not list this one",
+			ModuleEnrollment.VerifyOrigin(Delfos, listsElsewhere, DelfosOrigin) == OriginCheck.NotListed, "");
+		assert("listed, but the manifest declares no origin: it cannot be tied down",
+			ModuleEnrollment.VerifyOrigin(Delfos, lists, "") == OriginCheck.NotDeclared, "");
+		assert("the manifest claims an origin other than the one that served it: the loudest signal, before the list",
+			ModuleEnrollment.VerifyOrigin(Delfos, lists, "https://evil.cr") == OriginCheck.DeclaresAnother, "");
+		// A manifest from before the field existed: the generated reader leaves the property NULL,
+		// not at its initializer -- measured here, and the check has to survive it.
+		Manifest bare = JsonSerializer.Deserialize("{ \"module\": \"x\" }", HostJson.Default.Manifest)!;
+		assert("a manifest without 'origin' does not break the check (declares nothing)",
+			ModuleEnrollment.VerifyOrigin(Delfos, lists, bare.Origin) == OriginCheck.NotDeclared,
+			bare.Origin is null ? "Origin read back as null" : $"Origin read back as '{bare.Origin}'");
+		assert("a development origin with a port verifies the same way, over http",
+			ModuleEnrollment.VerifyOrigin(new Uri("http://127.0.0.1:8096/examenes.zip"),
+				"{\"modules\":[{\"bundle\":\"http://127.0.0.1:8096/examenes.zip\"}]}", "http://127.0.0.1:8096") == OriginCheck.Verified, "");
+
 		// ── the enrollment over bytes ────────────────────────────────────────────────────
 
 		string root = Path.Combine(Path.GetTempPath(), "gnothi-alta-" + Guid.NewGuid().ToString("N")[..8]);
@@ -100,9 +130,12 @@ internal static class Enrollment
 		{
 			var enrolling = new ModuleEnrollment(Path.Combine(root, "Modulos"), Path.Combine(root, "journals"), _ => { });
 
-			EnrollmentProposal p = enrolling.Examine(HostedOk, EnrollmentSource.PastedLink, "delfos.cr");
+			EnrollmentProposal p = enrolling.Examine(HostedOk, EnrollmentSource.PastedLink, Delfos);
 			assert("examining bytes keeps the provenance for the sheet",
 				p.ServedBy == "delfos.cr" && p.Provenance.Source == EnrollmentSource.PastedLink && !p.Provenance.MatchesLink,
+				$"{p.Provenance}");
+			assert("with nothing published by the origin, the module is not backed and the sheet is told why",
+				p.Provenance.Origin == OriginCheck.NoWellKnown && p.Provenance.Secure && p.Provenance.DeclaredOrigin == DelfosOrigin,
 				$"{p.Provenance}");
 			assert("the proposal carries the inspection",
 				p.Inspection.Form == PackageForm.Hosted && !p.Inspection.Rejected && p.Inspection.EngineFiles == 2, Detail(p.Inspection));
@@ -113,14 +146,14 @@ internal static class Enrollment
 			assert("discarding leaves nothing behind",
 				!Directory.Exists(p.Folder) && !Directory.Exists(Path.Combine(root, "Modulos")), p.Folder);
 
-			p = enrolling.Examine(HostedOk, EnrollmentSource.PastedLink, "delfos.cr");
+			p = enrolling.Examine(HostedOk, EnrollmentSource.PastedLink, Delfos);
 			string module = enrolling.Accept(p);
 			Installation on = Installation.Read(Path.Combine(root, "Modulos", module, "installation.json"));
 			assert("accepting writes the Host's installation, switched on",
 				on.Enabled && on.Shell.Type == "webview" && on.GrantedFolder.EndsWith("demo"),
 				$"enabled={on.Enabled} shell={on.Shell.Type} folder={on.GrantedFolder}");
 
-			string red = enrolling.Accept(enrolling.Examine(HostedNetwork, EnrollmentSource.PastedLink, "delfos.cr"));
+			string red = enrolling.Accept(enrolling.Examine(HostedNetwork, EnrollmentSource.PastedLink, Delfos));
 			Installation off = Installation.Read(Path.Combine(root, "Modulos", red, "installation.json"));
 			assert("a module asking for network is installed switched OFF, the desktop's rule",
 				!off.Enabled, $"enabled={off.Enabled}");
@@ -129,7 +162,7 @@ internal static class Enrollment
 			{
 				enrolling.Examine(Zip(
 					("manifest.json", ManifestJson("demo", load: "dominio/Demo.App.dll")),
-					("dominio/Demo.App.dll", "x"), ("dominio/Puppeteer.dll", "engine")), EnrollmentSource.PastedLink, "delfos.cr");
+					("dominio/Demo.App.dll", "x"), ("dominio/Puppeteer.dll", "engine")), EnrollmentSource.PastedLink, Delfos);
 				assert("a refused package never becomes a proposal", false, "Examine returned a proposal");
 			}
 			catch (InvalidOperationException e)
@@ -141,18 +174,25 @@ internal static class Enrollment
 
 			// The seal is over the manifest's bytes exactly as they sit in the zip: the same
 			// string the package was built from, hashed the same way the institution's page does.
-			string seal = ModuleEnrollment.SealOf(Encoding.UTF8.GetBytes(ManifestJson("demo")));
+			string seal = ModuleEnrollment.SealOf(Encoding.UTF8.GetBytes(HostedOkManifest));
 			assert("the seal is 16 bytes of SHA-256, base64url, no padding",
 				seal.Length == 22 && !seal.Contains('=') && !seal.Contains('+') && !seal.Contains('/'), seal);
 
-			EnrollmentProposal scanned = enrolling.Examine(HostedOk, EnrollmentSource.Qr, "delfos.cr", seal);
+			EnrollmentProposal scanned = enrolling.Examine(HostedOk, EnrollmentSource.Qr, Delfos, seal, lists);
 			assert("a code whose seal matches the package is marked as such, and remembered as a code",
 				scanned.Provenance.MatchesLink && scanned.Provenance.Source == EnrollmentSource.Qr, $"{scanned.Provenance}");
+			assert("served by an origin that publishes it, declaring that origin: backed, over TLS",
+				scanned.Provenance.Origin == OriginCheck.Verified && scanned.Provenance.Secure, $"{scanned.Provenance}");
 			enrolling.Discard(scanned);
+
+			EnrollmentProposal elsewhere = enrolling.Examine(HostedOk, EnrollmentSource.Link, new Uri("http://127.0.0.1:8096/examenes.zip"));
+			assert("a package claiming delfos.cr but served from 127.0.0.1 declares another origin, and the transport was not secure",
+				elsewhere.Provenance.Origin == OriginCheck.DeclaresAnother && !elsewhere.Provenance.Secure, $"{elsewhere.Provenance}");
+			enrolling.Discard(elsewhere);
 
 			try
 			{
-				enrolling.Examine(HostedOk, EnrollmentSource.Qr, "delfos.cr", "not-the-seal-of-this-one");
+				enrolling.Examine(HostedOk, EnrollmentSource.Qr, Delfos, "not-the-seal-of-this-one");
 				assert("a package that no longer matches the link's seal is refused", false, "Examine returned a proposal");
 			}
 			catch (PackageSealMismatchException e)
@@ -166,10 +206,14 @@ internal static class Enrollment
 		}
 	}
 
+	private const string DelfosOrigin = "https://delfos.cr";
+	private static readonly Uri Delfos = new("https://delfos.cr/examenes.zip");
+
 	// A hosted bundle as armar-bundle.ps1 would produce it: the app, its engine with fingerprints,
-	// and a piece of the runtime, all under web/.
+	// and a piece of the runtime, all under web/, and a manifest that declares its origin.
+	private static readonly string HostedOkManifest = ManifestJson("demo", origin: DelfosOrigin);
 	private static readonly byte[] HostedOk = Zip(
-		("manifest.json", ManifestJson("demo")),
+		("manifest.json", HostedOkManifest),
 		("web/index.html", "<html></html>"),
 		("web/_framework/Demo.App.abc123.wasm", "app"),
 		("web/_framework/Puppeteer.hfyg9by0r8.wasm", "engine-engine"),
@@ -180,8 +224,9 @@ internal static class Enrollment
 		("manifest.json", ManifestJson("demored", caps: "\"capabilities\": { \"network\": true, \"folder\": \"own\" }, ")),
 		("web/index.html", "<html></html>"));
 
-	private static string ManifestJson(string module, string? load = null, string caps = "") =>
+	private static string ManifestJson(string module, string? load = null, string caps = "", string? origin = null) =>
 		"{ \"manifest\": \"1.0\", \"module\": \"" + module + "\", \"title\": \"Demo\", \"institution\": \"Demo (test)\", "
+		+ (origin is null ? "" : "\"origin\": \"" + origin + "\", ")
 		+ caps
 		+ (load is null ? "" : "\"load\": { \"entry\": \"" + load + "\" }, ")
 		+ "\"tools\": [ { \"name\": \"resumen\", \"title\": \"Resumen\", \"description\": \"d\", \"readOnly\": true, \"input\": [] } ] }";
