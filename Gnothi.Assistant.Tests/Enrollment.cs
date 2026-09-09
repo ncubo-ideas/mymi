@@ -312,6 +312,55 @@ internal static class Enrollment
 			{
 				assert("a tampered signed package never becomes a proposal", e.Message.Contains("web/index.html"), e.Message);
 			}
+
+			// ── revocation: the institution retires the key ──────────────────────────────────
+
+			string revokedJson = "{\"keys\":[],\"revoked\":[{\"id\":\"demo-202609\",\"public\":\"" + key.Public + "\",\"since\":\"2026-09-09T13:00:00Z\"}],\"modules\":[{\"module\":\"demo\",\"bundle\":\"https://delfos.cr/examenes.gmod\"}]}";
+			assert("a key the origin lists as retired is revoked", ModuleEnrollment.IsRevoked(revokedJson, key.Public), "");
+			assert("a key the origin does not list as retired is not", !ModuleEnrollment.IsRevoked(keysJson, key.Public) && !ModuleEnrollment.IsRevoked(null, key.Public), "");
+			r = ModuleEnrollment.ResolveSigner(good, revokedJson, pinnedSame, now);
+			assert("retired beats the pin: revoked, even for the key of last time", r.check == SignerCheck.Revoked && r.pin == pinnedSame, $"{r}");
+
+			try
+			{
+				enrolling.Examine(signedZip, EnrollmentSource.Link, Delfos, null, revokedJson);
+				assert("a package signed with a retired key never becomes a proposal", false, "Examine returned a proposal");
+			}
+			catch (PackageKeyRevokedException e)
+			{
+				assert("a package signed with a retired key never becomes a proposal", e.Message.Contains("demo-202609"), e.Message);
+			}
+
+			// The module already installed under that key: marked, once, and nothing else moves.
+			string demoInstallation = Path.Combine(root, "Modulos", "demo", "installation.json");
+			Installation before = Installation.Read(demoInstallation);
+			string? markedAt = ModuleEnrollment.MarkRevoked(demoInstallation, now);
+			assert("an installed module whose pinned key was retired gets marked, and the date comes back",
+				markedAt?.StartsWith("2026-09-09") == true, $"MarkRevoked returned {markedAt ?? "null"}");
+			Installation after = Installation.Read(demoInstallation);
+			assert("the mark is the date, and the rest of the file is as the person left it",
+				after.Signer?.RevokedAt == markedAt && after.Signer.KeyId == before.Signer!.KeyId && after.Enabled == before.Enabled
+					&& after.GrantedFolder == before.GrantedFolder && after.Shell.Type == before.Shell.Type,
+				$"{after.Signer} enabled={after.Enabled}");
+			assert("marking twice does nothing the second time", ModuleEnrollment.MarkRevoked(demoInstallation, now) is null, "");
+
+			// The module in memory takes the same mark, once, and its consent does not move.
+			var running = new Module(new Manifest { Module = "demo" }, before, Path.GetDirectoryName(demoInstallation)!);
+			assert("a running module takes the mark on its pin, and only there",
+				running.MarkSignerRevoked(markedAt!) && running.Installation.Signer?.RevokedAt == markedAt && running.Installation.Enabled == before.Enabled
+					&& !running.MarkSignerRevoked(markedAt!),
+				$"{running.Installation.Signer}");
+
+			// The institution's side: --revoke moves the key into the retired list and renames the file.
+			string keyPath = Path.Combine(root, "keys", "demo.key.json");
+			string revokedPath = Path.Combine(root, "keys", "demo.revoked.json");
+			PackageSignature.WriteKey(keyPath, key);
+			RevokedKey retired = PackageSignature.Revoke(keyPath, revokedPath, now, "leaked");
+			assert("--revoke lists the key's public half, dated, with the reason, and retires the file",
+				retired.Public == key.Public && retired.Reason == "leaked" && File.Exists(revokedPath) && !File.Exists(keyPath)
+					&& Directory.GetFiles(Path.Combine(root, "keys"), "demo.key.retirada-*.json").Length == 1
+					&& File.ReadAllText(revokedPath).Contains(key.Public),
+				$"revoked={File.Exists(revokedPath)} key={File.Exists(keyPath)} files=[{string.Join(", ", Directory.GetFiles(Path.Combine(root, "keys")).Select(Path.GetFileName))}]");
 		}
 		finally
 		{

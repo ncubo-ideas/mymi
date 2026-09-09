@@ -415,9 +415,12 @@ y en Gnothi: «Agregar módulo» → «Elegir el archivo en mi teléfono» → D
 O abrirlo directo, que es «abrir con»:
 
 ```bash
-adb shell am start -a android.intent.action.VIEW -t application/vnd.gnothi.module \
+adb shell am start -a android.intent.action.VIEW -t application/vnd.gnothi.module --grant-read-uri-permission \
   -d "content://com.android.externalstorage.documents/document/primary%3ADownload%2Fexamenes.gmod"
 ```
+
+(`--grant-read-uri-permission` hace lo que Descargas hace solo al tocar el archivo: sin él, `am start` no
+concede el `content://` y el log dice `Permission Denial: opening provider … ExternalStorageProvider`.)
 
 **En el logcat:** `alta: archivo 'examenes.gmod' (… bytes, application/vnd.gnothi.module) por
 android.intent.action.VIEW`, después `alta: archivo 'examenes.gmod': 127.0.0.1 dice Verified`, y lo
@@ -434,7 +437,7 @@ la primera vez) y la página publica su mitad pública en el `.well-known` (`key
 
 **Qué tenés que ver en la hoja**, en «Lo que Gnothi revisó», debajo del respaldo:
 
-- primera vez: *Firmado por la llave «examenes-202609», que su origen publica. Gnothi la va a recordar
+- primera vez: *Firmado por la llave «examenes-20260909», que su origen publica. Gnothi la va a recordar
   para la próxima vez.* Al instalar, la llave queda en `installation.json` (`signer`): el **pin**;
 - la segunda vez (reinstalar): *Firmado con la **misma llave** que la vez pasada (desde 9 sept 2026), y
   su origen la publica*;
@@ -452,6 +455,25 @@ pegá el enlace a ese zip (o pasalo como archivo).
 
 **Lo que la firma prueba y lo que no:** el mismo autor que la vez pasada, y que nada cambió desde que
 firmó. No que el autor sea de fiar. La hoja nunca dice «verificado por Gnothi».
+
+**La revocación.** Si la institución retira una llave (`Gnothi.Host --revoke <llave.json>
+<retiradas.json> [motivo]`: la mitad pública pasa a la lista de retiradas, el archivo se renombra y el
+próximo `armar-bundle` crea una llave nueva), su `.well-known` publica `revoked` aparte de `keys`. Dos
+consecuencias, que se ven:
+
+- un paquete firmado con esa llave **no se instala** — franja *El paquete viene firmado con una llave
+  que tu institución retiró: no se instala* — aunque sea la llave que Gnothi conocía: la institución
+  misma dijo que no;
+- un módulo **ya instalado** con esa llave queda **marcado** al arrancar Gnothi (le pregunta al origen
+  de cada módulo firmado): la tarjeta dice *llave retirada por la institución* y el detalle explica
+  qué hacer. Nada más cambia en `installation.json` (`signer.revokedAt`): los interruptores son de la
+  persona. Al volver a agregar el módulo con el paquete nuevo, la llave nueva reemplaza al pin y la
+  marca desaparece.
+
+Para probarlo en el emulador: guardá una copia del `.gmod` firmado, corré `--revoke` sobre
+`bundles/.keys/examenes.key.json`, relanzá el escenario (rearma el bundle con llave nueva y la página
+publica ambas listas) y relanzá Gnothi: la tarjeta marca el módulo; el `.gmod` viejo abierto como
+archivo se rechaza; el enlace de la página instala el nuevo como *llave nueva, que su origen publica*.
 
 ### P3 · El módulo corre hospedado, a pantalla completa
 

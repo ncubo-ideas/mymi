@@ -28,6 +28,9 @@ if (args.Length > 0 && args[0] is "--pack")
 // SIGN one (publisher-side too): the same code that verifies on the phone signs here.
 if (args.Length > 0 && args[0] is "--sign")
 	return PackageSignature.SignFromCli(args[1..]);
+// RETIRE a signing key: into the institution's revoked list, and the file renamed away.
+if (args.Length > 0 && args[0] is "--revoke")
+	return PackageSignature.RevokeFromCli(args[1..]);
 if (args.Length > 0 && (args[0] is "--install-module" or "--instalar-modulo"))
 	return ModuleInstaller.InstallFromCli(args[1..]);
 

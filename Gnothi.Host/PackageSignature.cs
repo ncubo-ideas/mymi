@@ -55,6 +55,24 @@ public sealed record PackageSigner
 	[JsonPropertyName("keyId")] public string KeyId { get; init; } = "";
 	[JsonPropertyName("public")] public string Public { get; init; } = "";
 	[JsonPropertyName("since")] public string Since { get; init; } = "";
+
+	// WHEN GNOTHI LEARNT THE ORIGIN RETIRED THIS KEY, if it did: the mark the startup check writes
+	// when the origin's well-known lists the pinned key as revoked. Null while the key stands. The
+	// module stays installed and its switches stay as the person left them -consent is hers- but
+	// the card says it, and a package signed with this key is not accepted again.
+	[JsonPropertyName("revokedAt")] public string? RevokedAt { get; init; }
+}
+
+// A KEY THE INSTITUTION RETIRED, as its well-known publishes it (public half only). Listed apart
+// from the active keys on purpose: a key that is simply absent may have been rotated quietly or
+// never have been the institution's; one listed here was the institution's and must not be
+// trusted any more, which is a stronger thing to say.
+public sealed record RevokedKey
+{
+	[JsonPropertyName("id")] public string Id { get; init; } = "";
+	[JsonPropertyName("public")] public string Public { get; init; } = "";
+	[JsonPropertyName("since")] public string Since { get; init; } = "";
+	[JsonPropertyName("reason")] public string? Reason { get; init; }
 }
 
 public enum SignatureState
@@ -82,7 +100,7 @@ public static class PackageSignature
 	public const string FileName = "signature.json";
 	public const string Alg = "ES256";
 
-	// A fresh key pair, P-256. The id is the institution's label for it ("examenes-202609").
+	// A fresh key pair, P-256. The id is the institution's label for it ("examenes-20260909").
 	public static SigningKey Generate(string id)
 	{
 		using var key = ECDsa.Create(ECCurve.NamedCurves.nistP256);
@@ -238,7 +256,9 @@ public static class PackageSignature
 			key = ReadKey(keyPath);
 		else
 		{
-			string id = args.Length > 2 ? args[2] : $"{Path.GetFileNameWithoutExtension(package)}-{DateTime.UtcNow:yyyyMM}";
+			// Dated to the day: a key retired and replaced the same month must not get the same
+			// label as the one it replaces, or the well-known lists the two under one name.
+			string id = args.Length > 2 ? args[2] : $"{Path.GetFileNameWithoutExtension(package)}-{DateTime.UtcNow:yyyyMMdd}";
 			key = Generate(id);
 			WriteKey(keyPath, key);
 			Console.Error.WriteLine($"[gnothi] new key '{id}' ({Fingerprint(key.Public)}) -> {keyPath}");
@@ -255,6 +275,52 @@ public static class PackageSignature
 		}
 
 		Console.Error.WriteLine($"[gnothi] signed {Path.GetFileName(package)} with key '{key.Id}' ({Fingerprint(key.Public)})");
+		return 0;
+	}
+
+	// RETIRE A KEY: its public half goes into the institution's list of revoked keys -which its
+	// well-known publishes- and the key file is renamed so it is never used to sign again. The
+	// next --sign against the old path creates a fresh key: that is the rotation. Nothing is
+	// deleted: the retired file stays, renamed, for whoever has to look back.
+	public static RevokedKey Revoke(string keyPath, string revokedPath, DateTimeOffset now, string? reason = null)
+	{
+		SigningKey key = ReadKey(keyPath);
+
+		List<RevokedKey> revoked = File.Exists(revokedPath)
+			? JsonSerializer.Deserialize(File.ReadAllText(revokedPath), SignatureJson.Default.ListRevokedKey) ?? []
+			: [];
+
+		RevokedKey entry = revoked.FirstOrDefault(r => string.Equals(r.Public, key.Public, StringComparison.Ordinal))
+			?? new RevokedKey { Id = key.Id, Public = key.Public, Since = now.ToString("O"), Reason = reason };
+		if (!revoked.Contains(entry)) revoked.Add(entry);
+
+		Directory.CreateDirectory(Path.GetDirectoryName(Path.GetFullPath(revokedPath))!);
+		File.WriteAllText(revokedPath, JsonSerializer.Serialize(revoked, SignatureJson.Default.ListRevokedKey));
+
+		string retired = Path.Combine(Path.GetDirectoryName(Path.GetFullPath(keyPath))!,
+			$"{Path.GetFileNameWithoutExtension(keyPath)}.retirada-{now:yyyyMMddHHmm}{Path.GetExtension(keyPath)}");
+		File.Move(keyPath, retired, overwrite: true);
+		return entry;
+	}
+
+	//   Gnothi.Host.exe --revoke <key.json> <revoked.json> [<reason>]
+	public static int RevokeFromCli(string[] args)
+	{
+		if (args.Length < 2)
+		{
+			Console.Error.WriteLine("[gnothi] usage: --revoke <key.json> <revoked.json> [<reason>]");
+			return 2;
+		}
+
+		string keyPath = Path.GetFullPath(args[0]);
+		if (!File.Exists(keyPath))
+		{
+			Console.Error.WriteLine($"[gnothi] no such key file: {keyPath}");
+			return 1;
+		}
+
+		RevokedKey entry = Revoke(keyPath, Path.GetFullPath(args[1]), DateTimeOffset.UtcNow, args.Length > 2 ? args[2] : null);
+		Console.Error.WriteLine($"[gnothi] retired key '{entry.Id}' ({Fingerprint(entry.Public)}); the next --sign creates a new one");
 		return 0;
 	}
 
@@ -283,4 +349,5 @@ internal sealed record SignatureFile
 [JsonSourceGenerationOptions(WriteIndented = true)]
 [JsonSerializable(typeof(SignatureFile))]
 [JsonSerializable(typeof(SigningKey))]
+[JsonSerializable(typeof(List<RevokedKey>))]
 internal partial class SignatureJson : JsonSerializerContext;

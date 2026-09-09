@@ -125,6 +125,10 @@ public enum SignerCheck
 
 	// Not the key of last time, and the origin does not publish the new one. The loudest word.
 	Changed,
+
+	// The origin lists this key among the ones it RETIRED. The institution itself says no: the
+	// package is refused, pinned or not, and a module already accepted with it is marked.
+	Revoked,
 }
 
 // WHERE THE BYTES CAME FROM. ServedBy is the host that answered the download -or the file's name-
@@ -162,6 +166,10 @@ internal sealed class PackageSealMismatchException(string message) : InvalidOper
 // The package is signed and the signature does not hold: a file changed, or the signature is
 // not the key's. Its own type for the same reason: somebody touched it, and that is what to say.
 internal sealed class PackageSignatureInvalidException(string message) : InvalidOperationException(message);
+
+// The package is signed with a key its origin retired. The institution said so itself, over TLS;
+// there is no "warning" reading of that, and the sheet is never shown.
+internal sealed class PackageKeyRevokedException(string message) : InvalidOperationException(message);
 
 internal sealed class ModuleEnrollment
 {
@@ -286,6 +294,9 @@ internal sealed class ModuleEnrollment
 	{
 		if (signature.State != SignatureState.Valid) return (SignerCheck.Unsigned, pinned, false);
 
+		// Retired beats everything, the pin included: the institution said this key is no more.
+		if (IsRevoked(wellKnownJson, signature.Public)) return (SignerCheck.Revoked, pinned, false);
+
 		bool published = PublishedKeys(wellKnownJson).Contains(signature.Public, StringComparer.Ordinal);
 		bool same = pinned is not null && string.Equals(pinned.Public, signature.Public, StringComparison.Ordinal);
 		var fresh = new PackageSigner { KeyId = signature.KeyId, Public = signature.Public, Since = now.ToString("O") };
@@ -302,13 +313,20 @@ internal sealed class ModuleEnrollment
 
 	// The public keys an origin publishes, as base64url SPKI strings. Empty when it publishes
 	// none, or nothing readable at all.
-	private static List<string> PublishedKeys(string? wellKnownJson)
+	private static List<string> PublishedKeys(string? wellKnownJson) => Keys(wellKnownJson, "keys");
+
+	// Whether the origin lists this key among the ones it retired. Pure; the startup check and the
+	// enrollment ask the same question.
+	internal static bool IsRevoked(string? wellKnownJson, string publicKey)
+		=> Keys(wellKnownJson, "revoked").Contains(publicKey, StringComparer.Ordinal);
+
+	private static List<string> Keys(string? wellKnownJson, string list)
 	{
 		if (wellKnownJson is null) return [];
 		try
 		{
 			using JsonDocument published = JsonDocument.Parse(wellKnownJson);
-			if (!published.RootElement.TryGetProperty("keys", out JsonElement keys) || keys.ValueKind != JsonValueKind.Array) return [];
+			if (!published.RootElement.TryGetProperty(list, out JsonElement keys) || keys.ValueKind != JsonValueKind.Array) return [];
 			return [.. keys.EnumerateArray()
 				.Where(k => k.TryGetProperty("public", out JsonElement p) && p.ValueKind == JsonValueKind.String)
 				.Select(k => k.GetProperty("public").GetString()!)];
@@ -317,6 +335,26 @@ internal sealed class ModuleEnrollment
 		{
 			return [];
 		}
+	}
+
+	// The origin a manifest declares, as an address to ask -or null when it declares none.
+	internal static Uri? DeclaredOrigin(string? declared)
+		=> OriginOf(declared) is string origin ? new Uri(origin + "/") : null;
+
+	// MARK AN INSTALLED MODULE whose pinned key the origin retired: the date goes into the pin, the
+	// rest of the file -switches included- stays exactly as the person left it. Returns the date
+	// written, so the module in memory can take the same one; null when there was nothing to mark,
+	// or it was already marked. Read and written through the Host's generated context, the same way
+	// the consent switches are.
+	internal static string? MarkRevoked(string installationPath, DateTimeOffset now)
+	{
+		Installation installation = Installation.Read(installationPath);
+		if (installation.Signer is not { RevokedAt: null } signer) return null;
+
+		string at = now.ToString("O");
+		Installation marked = installation with { Signer = signer with { RevokedAt = at } };
+		File.WriteAllText(installationPath, JsonSerializer.Serialize(marked, HostJson.Legible.Installation));
+		return at;
 	}
 
 	// scheme://host[:port], lower case, default port dropped: what "the same origin" means.
@@ -388,6 +426,7 @@ internal sealed class ModuleEnrollment
 		RefuseIfRequired(origin);
 
 		(SignerCheck signer, PackageSigner? pin, bool sameKey) = ResolveSigner(signature, wellKnownJson, ReadPin(manifest.Module), DateTimeOffset.UtcNow);
+		RefuseIfRevoked(signer, signature);
 
 		var provenance = new Provenance(source, servedFrom?.Host ?? "",
 			MatchesLink: expectedSeal is not null,
@@ -426,6 +465,7 @@ internal sealed class ModuleEnrollment
 		RefuseIfRequired(origin);
 
 		(SignerCheck signer, PackageSigner? pin, bool sameKey) = ResolveSigner(signature, published, ReadPin(manifest.Module), DateTimeOffset.UtcNow);
+		RefuseIfRevoked(signer, signature);
 
 		var provenance = new Provenance(EnrollmentSource.File, fileName,
 			MatchesLink: false,
@@ -443,6 +483,14 @@ internal sealed class ModuleEnrollment
 	{
 		if (OriginIsRequired && origin != OriginCheck.Verified)
 			throw new InvalidOperationException($"Gnothi rechazó el paquete: su origen no lo respalda ({origin})");
+	}
+
+	// Not a policy: the institution retired the key itself, and a retired key signs nothing that
+	// gets installed.
+	private static void RefuseIfRevoked(SignerCheck signer, SignatureVerification signature)
+	{
+		if (signer == SignerCheck.Revoked)
+			throw new PackageKeyRevokedException($"the origin retired the key '{signature.KeyId}' ({PackageSignature.Fingerprint(signature.Public)}) this package is signed with");
 	}
 
 	// Read, inspect and check the signature, writing nothing. A signed package whose signature
@@ -553,7 +601,7 @@ internal sealed class ModuleEnrollment
 	// and none of them stops the enrollment. Ten seconds, so a slow origin does not hold the
 	// person hostage for a check that is a warning. `at` may be the bundle's address or the
 	// origin itself: the well-known path is absolute either way.
-	private static async Task<string?> FetchWellKnown(Uri at, CancellationToken ct)
+	internal static async Task<string?> FetchWellKnown(Uri at, CancellationToken ct)
 	{
 		try
 		{

@@ -186,6 +186,10 @@ public sealed class Shell : IDisposable
 		// ya este pintada: en movil comprobar un modulo web cuesta levantar su WebView.
 		await VerifyNewModules(stop.Token);
 
+		// THE KEYS OF WHAT IS INSTALLED, against what their origins say now. In the background: it
+		// is network, it is a warning, and the screen is already painted.
+		_ = Task.Run(() => CheckRevocations(stop.Token));
+
 		// 3 - EL INTERRUPTOR DE LA PERSONA, VIGILADO. Los switches de la UI escriben
 		//     installation.json y esto es lo que los hace efectivos; y una edicion de AFUERA
 		//     (adb, otra herramienta) repinta la pantalla por el mismo camino. Una sola
@@ -253,6 +257,44 @@ public sealed class Shell : IDisposable
 				log($"comprobación de {m.Manifest.Module} FALLÓ: {ex.GetType().Name}: {ex.Message}");
 			}
 		}
+	}
+
+	// WHAT AN INSTALLED MODULE'S ORIGIN SAYS NOW ABOUT THE KEY IT WAS ACCEPTED WITH. A signature
+	// is checked when a package arrives; a revocation happens later, to something already here,
+	// and the only way to learn of it is to ask. So every launch, for each module that came signed
+	// and whose manifest names an origin, the origin's well-known is fetched and its retired keys
+	// compared with the pin. A hit is written into the pin (RevokedAt) -nothing else in the file
+	// moves: the switches are the person's- and the card says it. The screen is repainted from
+	// here on purpose: the consent watcher only wakes for a switch that moved, and no switch did.
+	private async Task CheckRevocations(CancellationToken ct)
+	{
+		if (catalog is null) return;
+		bool marked = false;
+
+		foreach (Module m in catalog.Modules)
+		{
+			if (m.Installation.Signer is not { RevokedAt: null } signer) continue;
+			Uri? origin = ModuleEnrollment.DeclaredOrigin(m.Manifest.Origin);
+			if (origin is null) continue;
+
+			try
+			{
+				string? published = await ModuleEnrollment.FetchWellKnown(origin, ct);
+				if (published is null || !ModuleEnrollment.IsRevoked(published, signer.Public)) continue;
+
+				string? at = ModuleEnrollment.MarkRevoked(Path.Combine(m.Directory, "installation.json"), DateTimeOffset.UtcNow);
+				if (at is null) continue;
+				m.MarkSignerRevoked(at);
+				marked = true;
+				log($"revocación: '{m.Name}': {origin.Host} retiró la llave '{signer.KeyId}' con la que se aceptó");
+			}
+			catch (Exception ex)
+			{
+				log($"revocación: no se pudo consultar a {origin.Host} por '{m.Name}': {ex.GetType().Name}: {ex.Message}");
+			}
+		}
+
+		if (marked) PushState();
 	}
 
 	// ---------------------------------------------------------------- el alta desde el enlace
@@ -436,6 +478,7 @@ public sealed class Shell : IDisposable
 				SignerCheck.Rotated => "rotada",
 				SignerCheck.Unknown => "desconocida",
 				SignerCheck.Changed => "cambiada",
+				SignerCheck.Revoked => "retirada",
 				_ => "sin-firma",
 			},
 			firmante = p.Provenance.SignerId,
@@ -482,6 +525,10 @@ public sealed class Shell : IDisposable
 		// signed. Not "broken": tampered, and that is the word.
 		PackageSignatureInvalidException =>
 			"El paquete viene firmado y la firma no cierra: lo tocaron después de firmarlo. Pedile a tu institución uno nuevo.",
+
+		// The institution retired the key this package is signed with. Not installed, no sheet.
+		PackageKeyRevokedException =>
+			"El paquete viene firmado con una llave que tu institución retiró: no se instala. Pedile un paquete nuevo.",
 
 		// Lo que tira ModuleEnrollment -bundle sin manifiesto, nombre invalido, zip que escribe
 		// afuera, techo de tamano- ya viene escrito para leerse. Se pasa tal cual.
@@ -610,6 +657,9 @@ public sealed class Shell : IDisposable
 				["enabled"] = m.Installation.Enabled,
 				["journalBytes"] = bytes,
 				["journalFiles"] = files,
+				// The key it was accepted with, and whether its origin has since retired it.
+				["signerKey"] = m.Installation.Signer?.KeyId,
+				["signerRevokedAt"] = m.Installation.Signer?.RevokedAt,
 				["tools"] = m.Manifest.Tools.Select(t => new Dictionary<string, object?>
 				{
 					["name"] = t.Name,

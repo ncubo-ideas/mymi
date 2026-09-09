@@ -149,8 +149,10 @@ foreach ($nombre in $Modulos) {
         "--UrlPublica", "http://127.0.0.1:$($m.Web)",
         "--Titulo", $m.Titulo,
         "--Subtitulo", $m.Subtitulo,
-        # The signing key armar-bundle.ps1 created: the page publishes its public half.
-        "--Llave", "$PSScriptRoot\bundles\.keys\$nombre.key.json") $m.Web
+        # The signing key armar-bundle.ps1 created: the page publishes its public half. And the
+        # keys the institution retired (Gnothi.Host --revoke), if any.
+        "--Llave", "$PSScriptRoot\bundles\.keys\$nombre.key.json",
+        "--LlavesRetiradas", "$PSScriptRoot\bundles\.keys\$nombre.revoked.json") $m.Web
 
     $puertos += $m.Pub, $m.Web
 }

@@ -731,9 +731,11 @@ const gn = {
         + '<div class="ico" style="color:' + k.c + ';background:' + k.bg + '">' + k.svg + '</div>'
         + '<div><b>' + esc(m.title) + '</b>'
         + '<small>' + esc(NOMBRE[m.name] || m.institution) + '</small></div>'
-        + (m.enabled
-            ? '<span class="chip">' + DB + ' Diario de eventos</span>'
-            : '<span class="chip no">apagado por vos</span>')
+        + (m.signerRevokedAt
+            ? '<span class="chip no">llave retirada por la institución</span>'
+            : m.enabled
+              ? '<span class="chip">' + DB + ' Diario de eventos</span>'
+              : '<span class="chip no">apagado por vos</span>')
         + '</div>';
     }).join('')
     + '<div class="mod add" onclick="gn.sheet(true)">'
@@ -747,6 +749,14 @@ const gn = {
       document.getElementById('detail').innerHTML =
         '<div class="hero"><div class="ico" style="color:' + k.c + ';background:' + k.bg + '">' + k.svg + '</div>'
         + '<div><b>' + esc(m.title) + '</b><small>' + esc(m.institution) + '</small></div></div>'
+
+        // The institution retired the key this module was accepted with. Said here, once, and
+        // nothing is switched for her: what she has is hers; what she does about it is hers too.
+        + (m.signerRevokedAt
+            ? '<p class="ojo"><b>Tu institución retiró la llave</b> con la que firmó este módulo'
+              + ' (Gnothi lo supo el ' + new Date(m.signerRevokedAt).toLocaleDateString('es', { day: 'numeric', month: 'short', year: 'numeric' }) + ').'
+              + ' Lo que ya tenés sigue siendo tuyo. Pedile un paquete nuevo y volvé a agregarlo: Gnothi va a recordar la llave nueva.</p>'
+            : '')
 
         + '<div class="master"><span>Módulo encendido</span>'
         + sw(m.enabled, "gn.setModule('" + m.name + "',this.checked)") + '</div>'
@@ -970,8 +980,10 @@ const MOCK = { modules: [
     enabled:true, journalBytes:3172, journalFiles:3, tools:[
     { name:'total_de_compras', title:'Cuanto gaste en total', enabled:true, description:'Total de todas las compras registradas.' },
     { name:'canasta_del_mes', title:'Como fue mi canasta de un mes', enabled:true, description:'La canasta de un mes, sumada por perfil.' }]},
+  // Accepted with a signed package whose key the institution has since retired: the card and
+  // the detail say it, and nothing is switched for her.
   { name:'facturas', title:'My invoices', institution:'Supermarket (POC mock)',
-    enabled:true, journalBytes:1650, journalFiles:3, tools:[
+    enabled:true, journalBytes:1650, journalFiles:3, signerKey:'facturas-202603', signerRevokedAt:'2026-09-09T12:00:00Z', tools:[
     { name:'total_de_facturas', title:'Total spent', enabled:true, description:'Total of all invoices on record.' }]},
 ], settings: { name:'Groq', provider:'api.groq.com', model:'openai/gpt-oss-120b', keyPresent:true, root:'/data/user/0/…/files/Modulos' } };
 

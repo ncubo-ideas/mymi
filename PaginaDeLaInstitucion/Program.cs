@@ -53,6 +53,10 @@ string suPropiaUrl = app.Configuration["UrlPublica"] ?? "http://127.0.0.1:8096";
 // the origin publishes no keys, and Gnothi's sheet says the package's key is unknown to it.
 string? llave = app.Configuration["Llave"];
 
+// THE KEYS THE INSTITUTION RETIRED, the list Gnothi.Host --revoke keeps (public halves and dates).
+// Published apart from the active keys: "retired" is a stronger thing to say than "absent".
+string? llavesRetiradas = app.Configuration["LlavesRetiradas"];
+
 string titulo = app.Configuration["Titulo"] ?? "Laboratorio Clinico Delfos";
 string subtitulo = app.Configuration["Subtitulo"] ?? "Mis examenes";
 
@@ -101,7 +105,8 @@ app.MapGet("/.well-known/gnothi/modules.json", () =>
     string? module = ModuleNameOf(bundle);
     object[] modules = module is null ? [] : [new { module, bundle = $"{suPropiaUrl}/{nombreDelZip}", seal = SealOf(bundle) }];
     object[] keys = PublishedKey(llave) is { } key ? [key] : [];
-    return Results.Json(new { gnothi = 1, institution = titulo, keys, modules });
+    object[] revoked = RevokedKeys(llavesRetiradas);
+    return Results.Json(new { gnothi = 1, institution = titulo, keys, revoked, modules });
 });
 
 // ---------------------------------------------------------------- la narrativa, relevada
@@ -258,6 +263,30 @@ static object? PublishedKey(string? keyPath)
         alg = root.TryGetProperty("alg", out System.Text.Json.JsonElement a) ? a.GetString() : "",
         @public = root.TryGetProperty("public", out System.Text.Json.JsonElement p) ? p.GetString() : "",
     };
+}
+
+// The retired keys, as --revoke wrote them: id, public half, since, reason. Empty when the file
+// does not exist -nothing was ever retired- or cannot be read.
+static object[] RevokedKeys(string? revokedPath)
+{
+    if (revokedPath is null || !File.Exists(revokedPath)) return [];
+
+    try
+    {
+        using var list = System.Text.Json.JsonDocument.Parse(File.ReadAllText(revokedPath));
+        if (list.RootElement.ValueKind != System.Text.Json.JsonValueKind.Array) return [];
+        return [.. list.RootElement.EnumerateArray().Select(r => (object)new
+        {
+            id = r.TryGetProperty("id", out System.Text.Json.JsonElement i) ? i.GetString() : "",
+            @public = r.TryGetProperty("public", out System.Text.Json.JsonElement p) ? p.GetString() : "",
+            since = r.TryGetProperty("since", out System.Text.Json.JsonElement s) ? s.GetString() : "",
+            reason = r.TryGetProperty("reason", out System.Text.Json.JsonElement z) ? z.GetString() : null,
+        })];
+    }
+    catch (System.Text.Json.JsonException)
+    {
+        return [];
+    }
 }
 
 // The module's name as its manifest declares it, for the list this origin publishes. Null when
