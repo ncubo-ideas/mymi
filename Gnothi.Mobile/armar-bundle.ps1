@@ -297,7 +297,11 @@ $manifiesto = [ordered]@{
         # up to 160 KB, typed by its bytes. A file that does not pass leaves the card without it.
         # The typeface dresses ONLY the brand name; the rest of the card is Gnothi's Manrope. An
         # institution without one (Delfos) gets its name in Manrope ExtraBold, and declares nothing.
-        banner    = 'web/brand/banner.jpg'
+        # SE DECLARA SI ESTA, igual que el logo. La institucion que no publica banner en su
+        # wwwroot/brand/ no tiene ninguno en el bundle, y declararlo igual seria nombrar un
+        # archivo que no viaja: la aduana del Host lo dejaria pasar sin banner, pero el
+        # manifiesto habria dicho algo falso. Los cuatro primeros mocks si lo traen.
+        banner    = if (Test-Path "$armado/web/brand/banner.jpg") { 'web/brand/banner.jpg' } else { '' }
         font      = if ($m.Fuente) { [ordered]@{ family = $m.Fuente.family; file = $m.Fuente.file } } else { $null }
     }
     '//publisher' = 'DE DONDE VIENE Y QUE VERSION ES. El dominio es el unico campo CONTRASTABLE: Gnothi ya sabe de que host bajo el bundle y compara.'
