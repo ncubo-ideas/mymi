@@ -203,6 +203,33 @@ public static class ModuleInstaller
 			catch { /* unreadable prior: rewritten */ }
 		}
 
+		// WHAT THIS PACKAGE IS NEXT TO WHAT IS INSTALLED (UpdatePlan.cs): the same, newer, older, or
+		// another institution's under the same name -which is refused, here as on the phone. The
+		// desktop has no sheet, so the plan is said in the message below.
+		UpdatePlan update = UpdatePlan.Fresh(manifest);
+		string installedManifestPath = Path.Combine(moduleDir, "manifest.json");
+		if (File.Exists(installedManifestPath))
+		{
+			try
+			{
+				byte[] installedBytes = File.ReadAllBytes(installedManifestPath);
+				Manifest? installedManifest = JsonSerializer.Deserialize(installedBytes, HostJson.Default.Manifest);
+				byte[] incomingBytes;
+				using (Stream s = zip.GetEntry("manifest.json")!.Open())
+				using (var m = new MemoryStream()) { s.CopyTo(m); incomingBytes = m.ToArray(); }
+				update = UpdatePlan.Compare(installedManifest, PackageSeal.Of(installedBytes), priorSigner, manifest, PackageSeal.Of(incomingBytes),
+					signature.State == SignatureState.Valid ? signature.Public : null);
+			}
+			catch { /* unreadable prior manifest: compared as a first install */ }
+		}
+		if (update.Kind == UpdateKind.Collision)
+			return (false, $"REJECTED, not installed: '{manifest.Module}' is already installed from '{update.InstalledInstitution}' and this package says it is from '{update.IncomingInstitution}'. Not an update: another institution under the same name.");
+
+		// On an update the person's switches are kept for the tools that survive; the ones that
+		// went are dropped, and the new ones enter on -she is installing the package that lists them.
+		if (update.Kind != UpdateKind.Fresh)
+			disabledTools = [.. disabledTools.Where(t => manifest.Tools.Any(x => string.Equals(x.Name, t, StringComparison.Ordinal)))];
+
 		// THE PIN. The same key as before keeps its date; a new key -first install, or a change-
 		// is remembered from now. The change itself is said in the line below: the desktop has no
 		// sheet to warn on, so the message is where the person reads it.
@@ -266,6 +293,7 @@ public static class ModuleInstaller
 					: string.Equals(priorSigner.Public, signature.Public, StringComparison.Ordinal) ? $" -- the same key as before, since {priorSigner.Since}"
 					: $" -- KEY CHANGED: the earlier package was signed by '{priorSigner.KeyId}' ({PackageSignature.Fingerprint(priorSigner.Public)})")
 			: "none (the package is not signed)"));
+		line.Append($"\n  update   : {update.Describe()}");
 		line.Append($"\n  data     : {granted}");
 		line.Append($"\n  enabled  : {enabled}");
 		if (!enabled)

@@ -276,6 +276,23 @@ todos se publican requeridos.
 
 ---
 
+### Un paquete de un módulo que ya está: el plan de actualización
+
+Desde el 2026-09-09 el Host **compara** el paquete entrante con lo instalado bajo su nombre antes de
+proponer nada (`UpdatePlan.cs`, compartido por el alta móvil y por `--install-module`). La identidad de
+un módulo son su nombre y **quién responde por él** —la llave del pin, la institución, el origen
+declarado—; el sello del manifiesto y `publisher.version` dicen *cuál* paquete es. De ahí salen seis
+casos: primera instalación, **el mismo paquete**, **actualización**, **versión anterior**, misma versión
+con otro contenido, y **colisión** —otra institución con el mismo nombre—, que se rechaza antes de la hoja
+(`PackageCollisionException`). El plan lista el cambio, no el módulo: consultas nuevas y quitadas,
+capacidades nuevas, publicador, origen, promesa del registro y sustrato.
+
+Al actualizar se conserva lo que la persona decidió: sus interruptores para las consultas que siguen
+(las que se fueron se sueltan; las nuevas entran encendidas porque las aceptó viéndolas en la hoja) y
+**el publicador que Gnothi fijó**, que sólo se mueve si ella marca «Aceptar la dirección nueva». La
+versión anterior se permite con aviso. Lo que falta de la nota 44: la etiqueta «hay una versión nueva»
+desde el well-known, la instalación con vuelta atrás, y quitar un módulo.
+
 ## Pendientes
 
 | # | Pendiente |
