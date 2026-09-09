@@ -273,7 +273,10 @@ public sealed class Shell : IDisposable
 	///
 	/// Lo llaman las dos plataformas cuando su enlace aterriza: un App Link en Android, un
 	/// universal link en iOS. Lo unico que cambia es como llega la URL.
-	public async Task Enroll(string url, CancellationToken ct = default)
+	public Task Enroll(string url, CancellationToken ct = default) => Enroll(url, EnrollmentSource.Link, ct);
+
+	// ONE ENTRY FOR EVERY WAY IN; only the provenance differs, and it travels to the sheet.
+	private async Task Enroll(string url, EnrollmentSource source, CancellationToken ct)
 	{
 		try
 		{
@@ -284,9 +287,9 @@ public sealed class Shell : IDisposable
 				Path.Combine(paths.Files, "journals"),
 				log);
 
-			// BAJAR NO ES INSTALAR. Esto trae el bundle y lee su manifiesto; el modulo todavia
-			// no ocupa ningun lugar en el aparato.
-			proposal = await enrolling.Examine(url, ct, step => PushEnrollment("trabajando", step));
+			// BAJAR NO ES INSTALAR. Esto trae el bundle, lo inspecciona y lee su manifiesto; el
+			// modulo todavia no ocupa ningun lugar en el aparato.
+			proposal = await enrolling.Examine(url, source, ct, step => PushEnrollment("trabajando", step));
 
 			log($"alta: propuesta de '{proposal.Manifest.Module}' servida por {proposal.ServedBy}");
 			PushProposal(proposal);
@@ -338,6 +341,22 @@ public sealed class Shell : IDisposable
 		return "\"ok\"";
 	}
 
+	// The person pasted the institution's link. It may be the link to Gnothi's domain with the
+	// bundle as a parameter, or the bundle's address itself; both are accepted. Fire and forget,
+	// like RunAsk: the page hears back through the same "alta"/"propuesta" pushes as a link.
+	private string EnrollPasted(string link)
+	{
+		string bundle = ModuleEnrollment.BundleUrlOf(link);
+		if (bundle.Length == 0)
+		{
+			PushEnrollment("error", "Pegá el enlace que te dio tu institución.");
+			return "\"ok\"";
+		}
+
+		_ = Enroll(bundle, EnrollmentSource.PastedLink, stop.Token);
+		return "\"ok\"";
+	}
+
 	// COMO SE CUENTA EL ALTA EN LA PANTALLA. Es lo primero que la persona ve hacer a Gnothi por
 	// ella -toco un boton en la pagina de su institucion y volvio aca- y era un silencio de
 	// 12 MB. Cuatro estados: trabajando, listo, error, nada.
@@ -356,6 +375,27 @@ public sealed class Shell : IDisposable
 		journal = p.JournalGoesTo,
 		yaEstaba = p.AlreadyThere,
 		tools = p.Manifest.Tools.Select(t => new { nombre = t.Name, titulo = t.Title, descripcion = t.Description }),
+
+		// WHERE IT CAME FROM, as a fact about transport: which way in, and which host answered.
+		// The sheet says out loud that the host is not yet verified against the institution.
+		procedencia = new
+		{
+			origen = p.Provenance.Source == EnrollmentSource.PastedLink ? "pegado" : "enlace",
+			servido = p.Provenance.ServedBy,
+		},
+
+		// WHAT GNOTHI CHECKED before showing this, so she decides with it in view: the form, the
+		// weight, whether it carries an engine, and what it asks for beyond a data module.
+		revision = new
+		{
+			forma = p.Inspection.Form == PackageForm.Hosted ? "hospedado" : "cargo",
+			archivos = p.Inspection.Files,
+			bytes = p.Inspection.Bytes,
+			motorArchivos = p.Inspection.EngineFiles,
+			motorBytes = p.Inspection.EngineBytes,
+			excesos = p.Inspection.Excesses,
+			encendido = p.Inspection.InstallEnabled,
+		},
 	}));
 
 	// EL FALLO, DICHO EN CASTELLANO Y NO EN .NET. La persona no tiene por que leer el nombre de
@@ -372,7 +412,7 @@ public sealed class Shell : IDisposable
 			"La descarga tardó demasiado y se cortó. Probá de nuevo.",
 
 		ArgumentException =>
-			"El enlace que tocaste no es una dirección válida de módulo.",
+			"El enlace no es una dirección válida de módulo.",
 
 		// Lo que tira ModuleEnrollment -bundle sin manifiesto, nombre invalido, zip que escribe
 		// afuera, techo de tamano- ya viene escrito para leerse. Se pasa tal cual.
@@ -449,6 +489,12 @@ public sealed class Shell : IDisposable
 				// quedan con lo que de verdad necesita pantalla y nada mas.
 				"altaAceptar" => AcceptEnrollment(),
 				"altaDescartar" => DiscardEnrollment(),
+
+				// THE LINK, PASTED BY HAND. The first way in that starts INSIDE Gnothi: until
+				// now every enrollment began outside, on the institution's page, and the
+				// "Agregar módulo" card only explained. It is also what makes the enrollment
+				// testable on a phone while go.gnothi.app does not resolve.
+				"alta" => EnrollPasted(req.GetProperty("url").GetString() ?? ""),
 
 				_ => "{}",
 			};

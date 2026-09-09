@@ -93,6 +93,22 @@ Que sean dos archivos no es cosmético: **son dos autoridades distintas**. Si la
 carpeta vinieran en el manifiesto, el módulo elegiría cómo se lo ejecuta y dónde escribe.
 Conceder es un acto del que concede.
 
+### El paquete se inspecciona antes de instalarse
+
+Hoy un módulo llega como paquete —`<modulo>.gmod` en escritorio, el bundle que baja el
+teléfono— y **antes de escribir un byte** pasa por `PackageInspector` (`PackageInspector.cs`),
+la misma inspección en los dos instaladores. Distingue las dos formas —**cargo** (declara
+`load.entry`, dos DLLs, el Host presta el motor) y **hospedado** (trae la app publicada en
+`web/`, con su motor adentro porque un navegador no corre C# sin él)— y por eso lo que rechaza
+depende de la forma: un cargo que trae el motor se rechaza; un hospedado lo trae y se **cuenta**.
+Rechaza en las dos: ejecutables, un `installation.json` (ese lo escribe el Host), un journal de
+muestra, rutas que salen de su carpeta, un nombre que no es identificador. Y reporta lo que la
+persona tiene derecho a ver antes de aceptar: la forma, cuánto pesa, si trae motor, y qué
+capacidades pide de más —con eso el módulo se instala **apagado**.
+
+Lo que **no** hace es autenticar: dice qué trae el paquete, no quién lo respalda. Eso es el
+pendiente 7.
+
 **Medido:** el módulo de exámenes entró así, con sus tres tools, sin tocar una línea de
 `Gnothi.Host` ni de `Examenes.Mcp`.
 
@@ -269,3 +285,4 @@ todos se publican requeridos.
 | 4 | **`Aísla`.** La cáscara wasm con `--dir`. Es el spike bloqueante de la Etapa 2 |
 | 5 | **Costo de arranque en frío.** Levantar, hacer replay del journal y desalojar se paga en CADA llamada, porque el módulo se desaloja al terminar. **Medido: 378 ms** por llamada sobre stdio con el journal del POC — no "unos segundos", como decía este README antes de medirlo. Falta el número de la cáscara en proceso y con journals grandes |
 | 6 | **El catálogo se paga completo en cada pregunta.** Medido por la Puerta 2: con 8 tools son ~1 163 tokens, el **86%** del costo fijo por consulta, y viaja entero aunque la pregunta use una sola tool. Filtrarlo antes de mandarlo es opinar sobre semántica, que es del módulo: se decide con Álvaro |
+| 7 | **El paquete no está autenticado.** La inspección dice qué trae, no quién lo respalda: nadie firma el zip y no se verifica que quien lo sirve sea quien el manifiesto dice ser. Falta atar el bundle a su origen (un `.well-known` en el dominio de la institución, y el manifiesto declarando ese origen) y, después, la firma |

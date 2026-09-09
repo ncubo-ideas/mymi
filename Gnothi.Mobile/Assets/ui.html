@@ -329,8 +329,6 @@
   </div>
 </div>
 
-<!-- adding a module, explained honestly: it is not ours to fabricate here -->
-
 <!-- ═══ EL ALTA: LO QUE LA INSTITUCIÓN PROPONE ═══
      Instalar un módulo es el acto más grande que Sonia hace en Gnothi: le da a una
      institución una carpeta suya y un endpoint registrado. Hasta el 2026-09-04 pasaba sola,
@@ -346,13 +344,21 @@
   </div>
 </div>
 
+<!-- ═══ ADDING A MODULE: THE WAYS IN ═══
+     Until 2026-09-08 this sheet only explained and closed with "Entendido": every enrollment
+     began OUTSIDE, on the institution's link. Now the person can paste that link here. Gnothi
+     downloads it, inspects it and shows what it carries before installing anything -- the same
+     "propuesta" sheet a landed link gets. -->
 <div id="sheet" class="osheet" onclick="if(event.target===this)gn.sheet(false)">
   <div class="card">
-    <h4>Un módulo te lo entrega una institución</h4>
-    <p>Tu laboratorio, tu supermercado, tu emisor de facturas: cada uno publica el suyo.</p>
-    <p>Cuando lo descargués, <b>Gnothi lo instala</b> y aparece acá, con su diario de
-    eventos propio y sus interruptores — vos decidís qué consultas quedan encendidas.</p>
-    <button class="cta" onclick="gn.sheet(false)">Entendido</button>
+    <h4>Agregar un módulo</h4>
+    <p>Tu institución —tu laboratorio, tu supermercado, tu emisor de facturas— te da un enlace:
+    en su página, por correo o por mensaje. Pegalo acá.</p>
+    <input id="alta-url" autocomplete="off" spellcheck="false" inputmode="url" placeholder="https://…">
+    <div id="alta-hint" style="min-height:18px;margin:6px 2px 0;font-size:13px;color:#8E2A1F"></div>
+    <button class="cta" onclick="gn.altaDesdeEnlace()">Agregar</button>
+    <p style="margin-top:12px"><small>Gnothi lo baja, lo revisa y te muestra qué trae antes de instalar nada.
+    Si estás en la página de tu institución, su botón «Agregar a Gnothi» hace lo mismo.</small></p>
   </div>
 </div>
 
@@ -454,20 +460,52 @@ const gn = {
     const tools = (p.tools || []).map(t =>
       '<li><b>' + esc(t.titulo || t.nombre) + '</b><br><small>' + esc(t.descripcion) + '</small></li>').join('');
 
+    // WHAT GNOTHI CHECKED before showing anything. It comes from the package inspection and the
+    // provenance: facts Gnothi found out by itself, not what the institution declares. And it
+    // says what is NOT checked yet -- that the host that served the package is the institution's.
+    const rev = p.revision || {}, pro = p.procedencia || {};
+    const mb = n => (Math.max(n || 0, 0) / 1048576).toFixed(1).replace('.', ',') + ' MB';
+    const respaldo = 'Lo sirvió <b>' + esc(pro.servido || p.servido || '?') + '</b>'
+      + (pro.origen === 'pegado' ? ', del enlace que pegaste' : '') + '.'
+      + '<small>Gnothi todavía no verifica que ese dominio sea el de la institución: fijate que lo reconozcas.</small>';
+    const forma = rev.forma === 'hospedado'
+      ? 'Trae la app de la institución, publicada: ' + (rev.archivos || 0) + ' archivos, ' + mb(rev.bytes) + '.'
+        + '<small>Con su propio motor adentro (' + mb(rev.motorBytes) + '): un navegador no corre C# sin él.</small>'
+      : 'Trae solo su dominio, sin motor propio.<small>El motor se lo presta Gnothi.</small>';
+    const caps = (rev.excesos && rev.excesos.length)
+      ? 'Pide más de lo que un módulo de datos necesita: <b>' + esc(rev.excesos.join(', ')) + '</b>.'
+        + '<small>Se instala apagado. Vos decidís si lo encendés.</small>'
+      : 'No pide red, ni micrófono, ni parlante.';
+
     document.getElementById('pr-cuerpo').innerHTML =
       (p.yaEstaba ? '<p class="ojo">Ya tenés este módulo. Reinstalarlo reemplaza su app; su registro se conserva.</p>' : '')
       + '<p><b>Qué va a poder contestar</b></p><ul class="pr-tools">' + tools + '</ul>'
       + '<p><b>Dónde se va a guardar, en tu teléfono</b><br><code>' + esc(p.journal) + '</code><br>'
       + '<small>Es tuyo. Gnothi se lo administra a esta institución, no se lo lleva.</small></p>'
       + '<p><b>Con quién va a hablar</b><br><code>' + esc(p.publicador || '(no declara publicador)') + '</code><br>'
-      + '<small>Es la única red que va a poder tocar, y la hace Gnothi por él. '
-      + 'El bundle lo sirvió <b>' + esc(p.servido) + '</b>.</small></p>';
+      + '<small>Es la única red que va a poder tocar, y la hace Gnothi por él.</small></p>'
+      + '<p><b>Lo que Gnothi revisó</b></p><ul class="pr-tools">'
+      + '<li>' + respaldo + '</li><li>' + forma + '</li><li>' + caps + '</li>'
+      + '<li>Sin ejecutables ni datos de muestra adentro.</li></ul>';
 
     document.getElementById('propuesta').classList.add('on');
   },
 
   altaAceptar()   { document.getElementById('propuesta').classList.remove('on'); gn.call('altaAceptar'); },
   altaDescartar() { document.getElementById('propuesta').classList.remove('on'); gn.propuesta = null; gn.call('altaDescartar'); },
+
+  // THE WAY IN THAT STARTS INSIDE GNOTHI: the person pastes the link her institution gave her.
+  // Either the go.gnothi.app link with the bundle as a parameter or the bundle's address work;
+  // the Host unwraps it. From here on it is identical to a link that landed: "alta", "propuesta".
+  altaDesdeEnlace() {
+    const inp = document.getElementById('alta-url'), hint = document.getElementById('alta-hint');
+    const url = (inp.value || '').trim();
+    if (!url) { hint.textContent = 'Pegá el enlace primero.'; inp.focus(); return; }
+    hint.textContent = '';
+    gn.sheet(false);
+    inp.value = '';
+    gn.call('alta', { url });
+  },
 
   altaTimer: null,
   alta(a) {
@@ -753,7 +791,30 @@ const MOCK = { modules: [
     { name:'total_de_facturas', title:'Total spent', enabled:true, description:'Total of all invoices on record.' }]},
 ], settings: { name:'Groq', provider:'api.groq.com', model:'openai/gpt-oss-120b', keyPresent:true, root:'/data/user/0/…/files/Modulos' } };
 
+// What a pasted link produces in the mock, so the proposal sheet -- review block included -- can
+// be iterated on a monitor with no phone attached. Shape mirrors Shell.PushProposal.
+const MOCK_PROPUESTA = {
+  modulo: 'cargas', titulo: 'Mis cargas', institucion: 'Estaciones Faro (mock del POC)',
+  servido: 'estaciones-faro.cr', publicador: 'https://estaciones-faro.cr/eventos/cliente/1',
+  journal: '/data/user/0/com.ncubo.gnothi.host/files/journals/cargas', yaEstaba: false,
+  tools: [
+    { nombre: 'mis_cargas', titulo: 'Mis cargas', descripcion: 'Las cargas de combustible registradas en este teléfono.' },
+    { nombre: 'rendimiento_vs_habitual', titulo: 'Cómo viene el rendimiento', descripcion: 'Si el último tramo mejoró o empeoró contra tu nivel de siempre.' },
+  ],
+  procedencia: { origen: 'pegado', servido: 'estaciones-faro.cr' },
+  revision: { forma: 'hospedado', archivos: 214, bytes: 11862016, motorArchivos: 12, motorBytes: 1017000, excesos: [], encendido: true },
+};
+
 function mock(op, x) {
+  if (op === 'alta') {
+    // Unwrap the go.gnothi.app link the way ModuleEnrollment.BundleUrlOf does, so the host the
+    // mock shows is the bundle's, as it would be on the phone.
+    let host = 'tu institución';
+    try { const u = new URL(x.url); host = new URL(u.searchParams.get('bundle') || x.url).host || host; } catch {}
+    setTimeout(() => gn.push('alta', '', JSON.stringify({ estado: 'trabajando', detalle: 'Bajando el módulo de ' + host + '…' })), 150);
+    setTimeout(() => gn.push('propuesta', '', JSON.stringify(Object.assign({}, MOCK_PROPUESTA, { procedencia: { origen: 'pegado', servido: host } }))), 1100);
+    return 'ok';
+  }
   if (op === 'setTool')   { const m = MOCK.modules.find(m => m.name === x.module);
                             const t = m.tools.find(t => t.name === x.tool); t.enabled = x.enabled; return MOCK; }
   if (op === 'setModule') { MOCK.modules.find(m => m.name === x.module).enabled = x.enabled; return MOCK; }
@@ -777,6 +838,7 @@ function mock(op, x) {
 }
 
 document.getElementById('q').addEventListener('keydown', e => { if (e.key === 'Enter') gn.ask(); });
+document.getElementById('alta-url').addEventListener('keydown', e => { if (e.key === 'Enter') gn.altaDesdeEnlace(); });
 
 const first = gn.call('modules');
 if (first && !first.loading) { gn.state = first; gn.paint(); }
