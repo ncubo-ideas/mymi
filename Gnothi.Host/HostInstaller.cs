@@ -51,10 +51,12 @@ internal static class HostInstaller
 		Console.Error.WriteLine($"executable    : {self}");
 		Console.Error.WriteLine($"modules folder: {modulesFolder}");
 
-		// THE SPACE IN THE PATH. The assistant launches the command through cmd.exe, and with a
-		// space the launch dies with two messages that look nothing like the cause. It is warned
-		// HERE, the only moment anything can be done about it.
-		if (self.Contains(' '))
+		// THE SPACE IN THE PATH. On Windows the assistant launches the command through cmd.exe,
+		// and with a space the launch dies with two messages that look nothing like the cause. It
+		// is warned HERE, the only moment anything can be done about it. On macOS the command is
+		// spawned with an argument vector and a space is just a character, so the check is
+		// Windows-only: "Application Support" has one and is where things live there.
+		if (OperatingSystem.IsWindows() && self.Contains(' '))
 		{
 			Console.Error.WriteLine();
 			Console.Error.WriteLine("!  Gnothi's path has a SPACE. The assistant launches it through cmd, and with a");
@@ -111,7 +113,20 @@ internal static class HostInstaller
 				if (File.Exists(cfg)) hits.Add(new Assistant("Claude Desktop", cfg, "mcpServers"));
 			}
 
-		// Unpackaged Claude Desktop.
+		// Claude Desktop on macOS. There is ONE place, and it is not what SpecialFolder gives:
+		// ApplicationData on macOS resolves to ~/.config, which the app never reads. The file
+		// may not exist yet on a fresh install -the app creates it on first "edit config"-, so
+		// the FOLDER is the evidence that the app is there, and the file gets created.
+		if (OperatingSystem.IsMacOS())
+		{
+			string home = Environment.GetFolderPath(Environment.SpecialFolder.UserProfile);
+			string macFolder = Path.Combine(home, "Library", "Application Support", "Claude");
+			string macCfg = Path.Combine(macFolder, "claude_desktop_config.json");
+			if (Directory.Exists(macFolder))
+				hits.Add(new Assistant("Claude Desktop", macCfg, "mcpServers"));
+		}
+
+		// Unpackaged Claude Desktop (Windows), and ~/.config/Claude on Linux.
 		//
 		// TRAP PAID FOR: if a packaged config was ALREADY found, this one under %APPDATA% exists
 		// but the app does NOT read it. Editing it does nothing, and the symptom is "I configured
