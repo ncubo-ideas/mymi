@@ -177,7 +177,18 @@ if (-not (Test-Path $apk)) {
     dotnet build "$PSScriptRoot\Gnothi.Mobile.csproj" -c Debug -v q --nologo
     if ($LASTEXITCODE -ne 0) { throw "fallo el build de Gnothi.Mobile" }
 }
-& $adb install -r $apk 2>&1 | Select-Object -Last 1
+# INSTALL, KEEPING THE DATA. On the G37 emulator `install -r` dies with
+# INSTALL_FAILED_INSUFFICIENT_STORAGE ("Failed to override installation location") even with room
+# to spare; `pm uninstall -k` -keep data and cache- followed by a plain install gets the new build in
+# with the modules, journals and pins of the previous one untouched (measured 2026-09-09).
+$instalado = (& $adb install -r $apk 2>&1 | Select-Object -Last 1)
+if ("$instalado" -notmatch 'Success') {
+    Write-Host "    install -r no pudo ($instalado); reinstalando sin perder los datos..."
+    & $adb shell pm uninstall -k $paquete 2>&1 | Out-Null
+    Start-Sleep -Seconds 3
+    $instalado = (& $adb install $apk 2>&1 | Select-Object -Last 1)
+}
+Write-Host "apk        : $instalado"
 
 # EL DOMINIO, APROBADO A MANO. Chrome solo le entrega un enlace https a una app cuando esa app
 # es un handler VERIFICADO del dominio, y verificar go.gnothi.app de verdad exige servir un

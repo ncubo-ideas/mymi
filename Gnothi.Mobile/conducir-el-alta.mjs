@@ -113,6 +113,9 @@ async function pegar() {
 	console.log('modules before:', await evaluate('(gn.state && gn.state.modules || []).length'));
 	await openTheCard();
 
+	// "Pegar su enlace" unfolds the field; the sheet opens with the three ways in, field folded.
+	if (!(await evaluate("document.getElementById('alta-enlace').classList.contains('on')"))) { await tap('#alta-link'); await sleep(400); }
+
 	// A field that already has the focus is not tapped again: with the keyboard up the window
 	// pans, and a tap computed from the page lands on a key (a stray letter, measured twice).
 	if ((await evaluate("document.activeElement && document.activeElement.id")) !== 'alta-url') await tap('#alta-url');

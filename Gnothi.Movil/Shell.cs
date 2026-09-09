@@ -351,6 +351,101 @@ public sealed class Shell : IDisposable
 	public Task EnrollFile(byte[] zip, string fileName, CancellationToken ct = default)
 		=> Propose(e => e.ExamineFile(zip, fileName, ct, step => PushEnrollment("trabajando", step)), fileName);
 
+	// ── SEVERAL FILES AT ONCE ────────────────────────────────────────────────────────────
+
+	// WHAT SHE PICKED, when she picked more than one: the bytes wait here, with the quick look
+	// Gnothi took at each, until she chooses which one to examine for real. The list on the screen
+	// is repainted as she installs them one by one; a single file skips all this and goes straight
+	// to its proposal, as before.
+	private List<(byte[] Bytes, PackagePeek Peek)>? picked;
+	private readonly HashSet<int> pickedInstalled = [];
+	private readonly Dictionary<int, string> pickedProblems = [];
+	private int pickedChosen = -1;
+
+	/// THE PICKER LET HER CHOOSE SEVERAL, so first the screen shows what Gnothi found in them -which
+	/// are modules, of whom, which are not- and she chooses which to install. Each choice runs the
+	/// whole examination, origin and signature included; the list only looks inside the zips.
+	public Task EnrollFiles(IReadOnlyList<(byte[] Bytes, string Name)> files, CancellationToken ct = default)
+	{
+		if (files.Count == 1) return EnrollFile(files[0].Bytes, files[0].Name, ct);
+
+		picked = [.. files.Select(f => (f.Bytes, ModuleEnrollment.Peek(f.Bytes, f.Name)))];
+		pickedInstalled.Clear();
+		pickedProblems.Clear();
+		pickedChosen = -1;
+		log($"alta: la persona eligió {files.Count} archivos; {picked.Count(p => p.Peek.IsModule)} son módulos");
+		PushPicked();
+		return Task.CompletedTask;
+	}
+
+	// The list as the page paints it: one row per file, in the person's words. `problema` is why a
+	// row cannot be chosen -not a module, rejected by the inspection, or refused when she tried-.
+	private void PushPicked()
+	{
+		if (picked is null) return;
+
+		var rows = picked.Select((p, i) =>
+		{
+			PackagePeek peek = p.Peek;
+			string problem = pickedProblems.TryGetValue(i, out string? refused) ? refused
+				: peek.Manifest is null ? "No es un módulo de Gnothi: no trae un manifiesto legible."
+				: peek.Inspection is { Rejected: true } inspection ? "Gnothi no lo instalaría: " + string.Join("; ", inspection.Rejections)
+				: "";
+			return new
+			{
+				indice = i,
+				archivo = peek.FileName,
+				bytes = peek.Bytes,
+				modulo = peek.Manifest?.Module ?? "",
+				titulo = peek.Manifest?.Title ?? "",
+				institucion = peek.Manifest?.Institution ?? "",
+				nombreCorto = peek.Manifest?.Brand?.ShortName ?? "",
+				eslogan = peek.Manifest?.Brand?.Slogan ?? "",
+				color = Brand.ValidColor(peek.Manifest?.Brand?.Color) ?? "",
+				categoria = peek.Manifest?.About?.Category ?? "",
+				firmado = peek.Signature == SignatureState.Valid,
+				problema = problem,
+				instalado = pickedInstalled.Contains(i),
+				yaEstaba = peek.Manifest is not null && !pickedInstalled.Contains(i) && Find(peek.Manifest.Module) is not null,
+			};
+		}).ToArray();
+
+		Push("hallazgos", "", JsonSerializer.Serialize(new { archivos = rows }));
+	}
+
+	// She chose one of the list: the whole examination, as if she had opened that file alone.
+	private string ChoosePicked(int index)
+	{
+		if (picked is null || index < 0 || index >= picked.Count) return "{}";
+		pickedChosen = index;
+		_ = EnrollFile(picked[index].Bytes, picked[index].Peek.FileName, stop.Token);
+		return "\"ok\"";
+	}
+
+	// She is done with the list: the bytes go, nothing else was kept.
+	private string ClosePicked()
+	{
+		picked = null;
+		pickedInstalled.Clear();
+		pickedProblems.Clear();
+		pickedChosen = -1;
+		return "\"ok\"";
+	}
+
+	// After a proposal from the list ends -installed, declined or refused- the list comes back with
+	// that row marked, so she can go on with the next one.
+	private void PickedResolved(bool installed, string? refusal = null)
+	{
+		if (picked is null) return;
+		if (pickedChosen >= 0)
+		{
+			if (installed) pickedInstalled.Add(pickedChosen);
+			if (refusal is not null) pickedProblems[pickedChosen] = refusal;
+		}
+		pickedChosen = -1;
+		PushPicked();
+	}
+
 	/// Something the platform could not turn into an enrollment -a picked file that could not be
 	/// read- said on the screen, in the person's words. Same strip as any failed enrollment.
 	public void ReportEnrollmentError(string message) => PushEnrollment("error", message);
@@ -385,6 +480,7 @@ public sealed class Shell : IDisposable
 			// pasaba nada, sin ninguna pista de por que.
 			log($"alta: no se pudo leer el módulo de {what}: {ex.GetType().Name}: {ex.Message}");
 			PushEnrollment("error", InPlainWords(ex));
+			PickedResolved(installed: false, refusal: InPlainWords(ex));
 		}
 	}
 
@@ -403,11 +499,13 @@ public sealed class Shell : IDisposable
 			log($"alta: '{module}' quedó instalado; {ModuleCount} módulos");
 
 			PushEnrollment("listo", $"Listo: ya tenés '{TitleOf(module)}' en Gnothi.");
+			PickedResolved(installed: true);
 		}
 		catch (Exception ex)
 		{
 			log($"alta: no se pudo instalar: {ex.GetType().Name}: {ex.Message}");
 			PushEnrollment("error", InPlainWords(ex));
+			PickedResolved(installed: false, refusal: InPlainWords(ex));
 		}
 
 		return "\"ok\"";
@@ -422,6 +520,7 @@ public sealed class Shell : IDisposable
 			proposal = null;
 		}
 		PushEnrollment("nada", "");
+		PickedResolved(installed: false);
 		return "\"ok\"";
 	}
 
@@ -704,6 +803,11 @@ public sealed class Shell : IDisposable
 				// explained. It is also what makes the enrollment testable on a phone while
 				// go.gnothi.app does not resolve.
 				"alta" => EnrollFromPage(req),
+
+				// THE LIST OF WHAT SHE PICKED: one row chosen -the whole examination follows- or
+				// the list closed. The picker itself is the platform's; the list is not.
+				"altaElegido" => ChoosePicked(req.GetProperty("indice").GetInt32()),
+				"altaCerrarLista" => ClosePicked(),
 
 				_ => "{}",
 			};

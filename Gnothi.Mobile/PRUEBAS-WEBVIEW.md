@@ -410,9 +410,20 @@ puertas, y las tres terminan en la misma hoja con la procedencia *Llegó como el
   otro zip.
 - **Compartir**: desde otra app, la hoja de compartir lista a Gnothi para los mismos tipos. Un texto
   compartido sigue siendo el traspaso de la app suelta (P8), no se confunden.
-- **«Elegir el archivo en mi teléfono»**, dentro de la hoja «Agregar módulo»: el selector de
-  documentos del sistema, sin permiso de almacenamiento y sin recorrer el disco — el sistema busca,
-  la persona elige, Gnothi recibe ese archivo y nada más.
+- **«Elegir archivos en mi teléfono»**, dentro de la hoja que abre el botón **«Agregar»** del inicio:
+  el selector de documentos del sistema, sin permiso de almacenamiento y sin recorrer el disco — el
+  sistema busca, la persona elige, Gnothi recibe esos archivos y nada más. **Puede elegir varios**
+  (2026-09-09): Gnothi les da un vistazo —manifiesto, inspección, si vienen firmados, sin preguntarle a
+  nadie— y abre la hoja **«Esto encontré en lo que elegiste»**: una fila por archivo, con la institución
+  y su eslogan si es un módulo, o el nombre del archivo y por qué no entra si no lo es (*No es un módulo
+  de Gnothi*, *Gnothi no lo instalaría: …*), y una etiqueta *ya lo tenés* o *instalado*. Tocar una fila
+  corre el examen completo —origen, firma, pin— y abre su propuesta; al instalar o decir «Ahora no», la
+  lista vuelve con esa fila marcada para seguir con la siguiente. Un solo archivo va directo a su hoja.
+
+La hoja «Agregar» misma se rediseñó ese día en el lenguaje visual de la marca: *Tus instituciones,
+siempre contigo*, y tres filas —**Escanear su código**, **Pegar su enlace** (despliega el campo debajo),
+**Elegir archivos en mi teléfono**—. Los ids que conducen las pruebas no cambiaron (`#alta-url`,
+`#alta-scan`, `#alta-file`), y el campo del enlace se abre con `#alta-link`.
 
 **El respaldo, también para el archivo.** Un archivo no viene de ningún origen, pero su manifiesto
 declara uno; Gnothi le pregunta a ese origen si publica **exactamente este paquete** —el sello que
@@ -427,7 +438,9 @@ enlace, con el mismo residuo: que la persona reconozca el nombre del origen.
 adb push Gnothi.Mobile/bundles/examenes.gmod /sdcard/Download/examenes.gmod
 ```
 
-y en Gnothi: «Agregar módulo» → «Elegir el archivo en mi teléfono» → Descargas → `examenes.gmod`.
+y en Gnothi: **«Agregar»** → «Elegir archivos en mi teléfono» → Descargas → `examenes.gmod`. Para ver la
+lista, empujá dos o tres (`compras.gmod`, `examenes.gmod`, y cualquier zip que no sea un módulo) y en el
+selector **mantené presionado** uno para elegir varios; Gnothi abre «Esto encontré en lo que elegiste».
 O abrirlo directo, que es «abrir con»:
 
 ```bash

@@ -460,6 +460,9 @@ public class MainActivity : Activity
 		pick.AddCategory(Android.Content.Intent.CategoryOpenable);
 		pick.SetType("*/*");
 		pick.PutExtra(Android.Content.Intent.ExtraMimeTypes, new[] { ModuleMime, "application/zip", "application/octet-stream" });
+		// SEVERAL AT ONCE: she may have downloaded more than one. The shell shows what it found in
+		// them and she chooses which to install, one proposal at a time.
+		pick.PutExtra(Android.Content.Intent.ExtraAllowMultiple, true);
 		StartActivityForResult(pick, PickModuleRequest);
 		return "{\"ok\":true}";
 	}
@@ -469,17 +472,30 @@ public class MainActivity : Activity
 		base.OnActivityResult(requestCode, resultCode, data);
 		if (requestCode != PickModuleRequest) return;
 
-		if (resultCode != Result.Ok || data?.Data is null)
+		// One document comes in Data; several come in ClipData, one item each.
+		var uris = new List<Android.Net.Uri>();
+		if (resultCode == Result.Ok && data is not null)
+		{
+			if (data.ClipData is { } clip)
+				for (int i = 0; i < clip.ItemCount; i++)
+					if (clip.GetItemAt(i)?.Uri is { } uri) uris.Add(uri);
+			else if (data.Data is { } one) uris.Add(one);
+		}
+		if (uris.Count == 0)
 		{
 			Log("alta: la persona no eligió ningún archivo");
 			return;
 		}
 
-		// The picker's answer, shaped as an "open" of that document. Not strict: she chose it.
-		var abrir = new Android.Content.Intent(Android.Content.Intent.ActionView, data.Data);
-		abrir.SetType(data.Type ?? ContentResolver!.GetType(data.Data));
-		if (LeerArchivoDeModulo(abrir, strict: false) is { } archivo)
-			_ = shell?.EnrollFile(archivo.Bytes, archivo.Name, stop.Token);
+		// Each answer of the picker, shaped as an "open" of that document. Not strict: she chose them.
+		var archivos = new List<(byte[] Bytes, string Name)>();
+		foreach (Android.Net.Uri uri in uris)
+		{
+			var abrir = new Android.Content.Intent(Android.Content.Intent.ActionView, uri);
+			abrir.SetType(ContentResolver!.GetType(uri) ?? data!.Type);
+			if (LeerArchivoDeModulo(abrir, strict: false) is { } archivo) archivos.Add(archivo);
+		}
+		if (archivos.Count > 0) _ = shell?.EnrollFiles(archivos, stop.Token);
 	}
 
 	// ── EL MÓDULO EN PANTALLA ────────────────────────────────────────────────────────────

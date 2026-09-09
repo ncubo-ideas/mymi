@@ -207,6 +207,33 @@
   .mod.add .go{color:var(--accent)}
 
   /* bottom sheets: the add-module explanation and the provider picker share the shell */
+  .vias{display:flex;flex-direction:column;gap:10px;margin-top:14px}
+  .via{display:flex;align-items:center;gap:12px;width:100%;text-align:left;border:0;background:var(--paper);
+       border-radius:16px;padding:12px 14px;font:inherit;color:var(--ink);cursor:pointer}
+  .via:active{transform:scale(.99)}
+  .via .vi{width:42px;height:42px;border-radius:12px;background:var(--accent-soft);color:var(--accent-ink);
+       display:grid;place-items:center;flex:none}
+  .via .vi svg{width:22px;height:22px}
+  .via .vt{flex:1;min-width:0}
+  .via .vt b{display:block;font-size:14.5px;font-weight:700}
+  .via .vt small{display:block;color:var(--muted);font-size:12px;line-height:1.35;margin-top:1px}
+  .enlace{display:none;padding:0 4px 4px}
+  .enlace.on{display:block}
+  .osheet .enlace input{margin-top:0}
+  .osheet .enlace button.cta{margin-top:10px}
+  .hallazgo{display:flex;align-items:center;gap:12px;width:100%;text-align:left;border:0;background:var(--paper);
+       border-radius:16px;padding:12px 14px;font:inherit;color:var(--ink);margin-top:10px}
+  .hallazgo:disabled{cursor:default}
+  .hallazgo.mal{opacity:.72}
+  .hallazgo .ico{width:46px;height:46px;border-radius:14px;display:grid;place-items:center;flex:none}
+  .hallazgo .ico svg{width:24px;height:24px}
+  .hallazgo .ht{flex:1;min-width:0}
+  .hallazgo .ht b{display:block;font-size:14.5px}
+  .hallazgo .ht small{display:block;color:var(--muted);font-size:12px;line-height:1.35;margin-top:1px}
+  .hallazgo .tag{font-size:11px;font-weight:700;border-radius:999px;padding:3px 9px;flex:none;
+       background:var(--accent-soft);color:var(--accent-ink)}
+  .hallazgo .tag.ok{background:#E6F6EC;color:#1D6B39}
+  .hallazgo .tag.no{background:var(--off-soft);color:var(--off)}
   .osheet{position:fixed;inset:0;background:rgba(36,31,61,.45);display:none;
        align-items:flex-end;z-index:9}
   .osheet.on{display:flex}
@@ -554,19 +581,50 @@
      "propuesta" sheet a landed link gets. -->
 <div id="sheet" class="osheet" onclick="if(event.target===this)gn.sheet(false)">
   <div class="card">
-    <h4>Agregar un módulo</h4>
-    <p>Tu institución —tu laboratorio, tu supermercado, tu emisor de facturas— te da un enlace o
-    un archivo <code>.gmod</code>. Pegá el enlace, escaneá su código, o elegí el archivo.</p>
-    <input id="alta-url" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false" inputmode="url" placeholder="https://…">
-    <div id="alta-hint" style="min-height:18px;margin:6px 2px 0;font-size:13px;color:#8E2A1F"></div>
-    <button class="cta" onclick="gn.altaDesdeEnlace()">Agregar</button>
-    <div id="alta-o" class="hint">o</div>
-    <button id="alta-scan" class="btn ghost" style="width:100%" onclick="gn.scan.start()">Escanear el código de la institución</button>
-    <button id="alta-file" class="btn ghost" style="width:100%;margin-top:8px" onclick="gn.altaArchivo()">Elegir el archivo en mi teléfono</button>
+    <h4>Tus instituciones, siempre contigo.</h4>
+    <p>Tu laboratorio, tu supermercado, tu emisor de facturas te dan un módulo. Agregalo y llevá con
+    vos su información y sus servicios. Gnothi lo revisa y te muestra qué trae antes de instalar nada.</p>
+    <!-- THE THREE WAYS IN, as rows: the code, the link, the files. The link field unfolds under its
+         row so the sheet opens quiet; the ids stay because conducir-el-alta.mjs drives them. -->
+    <div class="vias">
+      <button class="via" id="alta-scan" onclick="gn.scan.start()">
+        <span class="vi"><svg viewBox="0 0 24 24"><rect x="4" y="4" width="6" height="6" rx="1"/><rect x="14" y="4" width="6" height="6" rx="1"/><rect x="4" y="14" width="6" height="6" rx="1"/><path d="M14 14h3v3h-3zM20 14v3M17 20h3M14 20h.5"/></svg></span>
+        <span class="vt"><b>Escanear su código</b><small>el QR de su página, o el de tu hoja de resultados</small></span>
+        <span class="chev">›</span>
+      </button>
+      <button class="via" id="alta-link" onclick="gn.altaMostrarEnlace()">
+        <span class="vi"><svg viewBox="0 0 24 24"><path d="M10 14a4 4 0 0 0 5.7 0l3-3a4 4 0 0 0-5.7-5.7l-1 1"/><path d="M14 10a4 4 0 0 0-5.7 0l-3 3a4 4 0 0 0 5.7 5.7l1-1"/></svg></span>
+        <span class="vt"><b>Pegar su enlace</b><small>el que te llegó por correo o por WhatsApp</small></span>
+        <span class="chev">›</span>
+      </button>
+      <div id="alta-enlace" class="enlace">
+        <input id="alta-url" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false" inputmode="url" placeholder="https://…">
+        <button class="cta" onclick="gn.altaDesdeEnlace()">Agregar</button>
+      </div>
+      <button class="via" id="alta-file" onclick="gn.altaArchivo()">
+        <span class="vi"><svg viewBox="0 0 24 24"><path d="M4 7a2 2 0 0 1 2-2h4l2 2h6a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2z"/></svg></span>
+        <span class="vt"><b>Elegir archivos en mi teléfono</b><small>los .gmod que ya descargaste; podés elegir varios</small></span>
+        <span class="chev">›</span>
+      </button>
+    </div>
+    <div id="alta-hint" style="min-height:18px;margin:8px 4px 0;font-size:13px;color:#8E2A1F"></div>
     <p id="alta-noscan" style="display:none"><small>Este teléfono no puede leer códigos desde Gnothi:
     pegá el enlace, o escaneá el código con la cámara del sistema.</small></p>
-    <p style="margin-top:12px"><small>Gnothi lo baja, lo revisa y te muestra qué trae antes de instalar nada.
-    Si estás en la página de tu institución, su botón «Agregar a Gnothi» hace lo mismo.</small></p>
+    <p style="margin-top:8px"><small>Si estás en la página de tu institución, su botón «Agregar a Gnothi» hace lo mismo.</small></p>
+  </div>
+</div>
+
+<!-- ═══ WHAT SHE PICKED: the modules Gnothi found among the files, to choose from ═══
+     Several files come from the picker; each got a quick look (manifest, inspection, signed or not)
+     and nothing else. Tapping one runs the whole examination and opens its proposal; when that ends
+     the list comes back with the row marked, so she goes on with the next. -->
+<div id="hallazgos" class="osheet" onclick="if(event.target===this)gn.altaCerrarLista()">
+  <div class="card">
+    <h4>Esto encontré en lo que elegiste</h4>
+    <p>Tocá el módulo que querés agregar. Gnothi te muestra qué trae antes de instalarlo, y después
+    podés seguir con el siguiente.</p>
+    <div id="ha-lista"></div>
+    <button class="btn ghost" style="width:100%;margin-top:14px" onclick="gn.altaCerrarLista()">Listo</button>
   </div>
 </div>
 
@@ -710,7 +768,15 @@ const gn = {
   // (especificacion 11 §8). La pone en pantalla el lado nativo; esta pagina solo lo pide.
   abrir(name) { gn.call('abrir', { module: name }); },
 
-  sheet(on) { document.getElementById('sheet').classList.toggle('on', on); },
+  sheet(on) {
+    document.getElementById('sheet').classList.toggle('on', on);
+    if (!on) document.getElementById('alta-enlace').classList.remove('on');
+  },
+  // "Pegar su enlace" unfolds the field under its row and puts the cursor in it.
+  altaMostrarEnlace() {
+    document.getElementById('alta-enlace').classList.add('on');
+    document.getElementById('alta-url').focus();
+  },
 
   // THE PHONE'S BACK BUTTON lands here: the Activity asks the page first. Returns whether
   // the page consumed it -- sheet open closes, any view that is not home goes home, and on
@@ -739,6 +805,7 @@ const gn = {
     if (kind === 'fail')   { gn.answer('No pude contestar: ' + payload, true); return; }
     if (kind === 'alta')   { if (JSON.parse(payload).estado === 'nada') { document.getElementById('alta').innerHTML = ''; return; } gn.alta(JSON.parse(payload)); return; }
     if (kind === 'propuesta') { gn.verPropuesta(JSON.parse(payload)); return; }
+    if (kind === 'hallazgos') { gn.hallazgos(JSON.parse(payload)); return; }
   },
 
   // EL ALTA, MIENTRAS PASA. "listo" se va solo a los 6 segundos porque ya se ve la tarjeta
@@ -750,6 +817,7 @@ const gn = {
   verPropuesta(p) {
     gn.propuesta = p;
     document.getElementById('alta').innerHTML = '';
+    document.getElementById('hallazgos').classList.remove('on');
 
     // Who proposes, with its brand, and what: the same face the card is going to have.
     document.getElementById('pr-h').innerHTML =
@@ -908,6 +976,37 @@ const gn = {
   // THE FILE, PICKED. The picker is the platform's (the system's document picker, no storage
   // permission); the platform answers ok:true when it has one, and what she picks comes back down
   // the same road, with its provenance marked as a file. A platform without a picker yet says so.
+  // WHAT GNOTHI FOUND IN THE FILES SHE PICKED, one row each: the institution's name and slogan when
+  // it is a module, the file's name when it is not, and a tag for what happened to it. A row that
+  // is a module she does not have yet is the only one that can be tapped.
+  hallazgos(h) {
+    const mb = n => (Math.max(n || 0, 0) / 1048576).toFixed(1).replace('.', ',') + ' MB';
+    gn.sheet(false);
+    document.getElementById('propuesta').classList.remove('on');
+    const rows = (h.archivos || []).map(a => {
+      const esModulo = !!a.modulo;
+      const nombre = esModulo ? (a.nombreCorto || a.institucion || a.titulo) : a.archivo;
+      const linea = esModulo
+        ? ((a.institucion && a.nombreCorto && a.institucion !== a.nombreCorto) ? a.institucion + ' · ' : '')
+          + a.archivo + ' · ' + mb(a.bytes) + (a.firmado ? ' · firmado' : '')
+        : a.archivo + ' · ' + mb(a.bytes);
+      const tag = a.instalado ? '<span class="tag ok">instalado</span>'
+        : a.problema ? '<span class="tag no">no entra</span>'
+        : a.yaEstaba ? '<span class="tag">ya lo tenés</span>'
+        : '<span class="chev">›</span>';
+      const bloqueado = !!a.problema || a.instalado;
+      return '<button class="hallazgo' + (a.problema ? ' mal' : '') + '"'
+        + (bloqueado ? ' disabled' : ' onclick="gn.altaElegido(' + a.indice + ')"') + '>'
+        + iconOf({ name: esModulo ? a.modulo : '_' })
+        + '<div class="ht"><b>' + esc(nombre) + '</b><small>' + esc(a.problema || linea) + '</small></div>'
+        + tag + '</button>';
+    }).join('');
+    document.getElementById('ha-lista').innerHTML = rows || '<p>No encontré ningún módulo en lo que elegiste.</p>';
+    document.getElementById('hallazgos').classList.add('on');
+  },
+  altaElegido(i) { document.getElementById('hallazgos').classList.remove('on'); gn.call('altaElegido', { indice: i }); },
+  altaCerrarLista() { document.getElementById('hallazgos').classList.remove('on'); gn.call('altaCerrarLista'); },
+
   altaArchivo() {
     const hint = document.getElementById('alta-hint');
     const r = gn.call('altaArchivo');
@@ -1443,13 +1542,26 @@ const MOCK_PROPUESTA = {
 
 function mock(op, x) {
   if (op === 'altaArchivo') {
-    // The mock "picks" a file whose declared origin publishes exactly this package.
+    // The mock "picks" three files: two modules -one she already has- and a zip that is not one.
+    setTimeout(() => gn.push('hallazgos', '', JSON.stringify({ archivos: [
+      { indice: 0, archivo: 'cargas.gmod', bytes: 11862016, modulo: 'cargas', titulo: 'Mis cargas', institucion: 'Estaciones Faro',
+        nombreCorto: 'Faro', eslogan: 'Rendimiento real, tramo a tramo', color: '#0B3C49', categoria: 'estacion', firmado: true, problema: '', instalado: false, yaEstaba: false },
+      { indice: 1, archivo: 'examenes.gmod', bytes: 13027208, modulo: 'examenes', titulo: 'Tus examenes, al dia', institucion: 'Laboratorio Clínico Delfos',
+        nombreCorto: 'Delfos', eslogan: 'Tu salud, en tus manos', color: '#0e2f55', categoria: 'laboratorio', firmado: true, problema: '', instalado: false, yaEstaba: true },
+      { indice: 2, archivo: 'fotos-vacaciones.zip', bytes: 40210000, modulo: '', titulo: '', institucion: '', nombreCorto: '', eslogan: '', color: '', categoria: '',
+        firmado: false, problema: 'No es un módulo de Gnothi: no trae un manifiesto legible.', instalado: false, yaEstaba: false },
+    ] })), 400);
+    return { ok: true };
+  }
+  if (op === 'altaElegido') {
+    // The chosen file goes through the whole examination: its declared origin publishes exactly it.
     setTimeout(() => gn.push('alta', '', JSON.stringify({ estado: 'trabajando', detalle: 'Revisando qué trae…' })), 150);
     setTimeout(() => gn.push('propuesta', '', JSON.stringify(Object.assign({}, MOCK_PROPUESTA,
       { servido: 'cargas.gmod', procedencia: { origen: 'archivo', servido: 'cargas.gmod', sello: false, respaldo: 'verificado', seguro: true, origenDeclarado: 'https://estaciones-faro.cr',
         firma: 'publicada', firmante: 'estaciones-faro-202609', firmaDesde: '' } }))), 1100);
-    return { ok: true };
+    return 'ok';
   }
+  if (op === 'altaCerrarLista') return 'ok';
   if (op === 'alta') {
     // Unwrap the go.gnothi.app link the way ModuleEnrollment.BundleUrlOf does, so the host the
     // mock shows is the bundle's, as it would be on the phone.
@@ -1493,7 +1605,6 @@ document.getElementById('alta-url').addEventListener('keydown', e => { if (e.key
 // so, instead of being shown a button that does nothing.
 if (!gn.scan.supported()) {
   document.getElementById('alta-scan').style.display = 'none';
-  document.getElementById('alta-o').style.display = 'none';
   document.getElementById('alta-noscan').style.display = '';
 }
 

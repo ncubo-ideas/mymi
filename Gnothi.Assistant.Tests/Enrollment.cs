@@ -264,6 +264,23 @@ internal static class Enrollment
 				!askedAnyone && orphan.Provenance.Origin == OriginCheck.NotDeclared && !orphan.Provenance.Secure, $"{orphan.Provenance}");
 			enrolling.Discard(orphan);
 
+			// ── several files at once: the quick look behind the list ────────────────────────
+
+			PackagePeek peeked = ModuleEnrollment.Peek(HostedOk, "examenes.gmod");
+			assert("a quick look at a module names it, counts it and says it is unsigned, without asking anyone",
+				peeked.IsModule && peeked.Installable && peeked.Manifest!.Module == "demo" && peeked.Inspection!.Form == PackageForm.Hosted
+					&& peeked.Signature == SignatureState.Unsigned && peeked.Problem is null && peeked.Bytes == HostedOk.LongLength && peeked.FileName == "examenes.gmod",
+				$"{peeked}");
+			PackagePeek notAModule = ModuleEnrollment.Peek(Zip(("fotos/playa.jpg", "jpeg"), ("fotos/cena.jpg", "jpeg")), "fotos-vacaciones.zip");
+			assert("a quick look at a zip that is not a module says so, and keeps the file's name",
+				!notAModule.IsModule && !notAModule.Installable && notAModule.Problem is not null && notAModule.FileName == "fotos-vacaciones.zip", $"{notAModule.Problem?.Message}");
+			PackagePeek garbage = ModuleEnrollment.Peek([1, 2, 3, 4], "roto.gmod");
+			assert("a quick look at bytes that are not a zip does not throw",
+				!garbage.IsModule && garbage.Problem is not null, "");
+			PackagePeek engineInCargo = ModuleEnrollment.Peek(Zip(("manifest.json", ManifestJson("demo", load: "dominio/Demo.App.dll")), ("dominio/Demo.App.dll", "x"), ("dominio/Puppeteer.dll", "engine")), "demo.gmod");
+			assert("a quick look at a module the inspection rejects keeps its name and says it would not install",
+				engineInCargo.IsModule && !engineInCargo.Installable && engineInCargo.Inspection!.Rejected, $"{engineInCargo.Inspection?.Rejections.Count}");
+
 			// ── the signature ────────────────────────────────────────────────────────────────
 
 			SigningKey key = PackageSignature.Generate("demo-202609");

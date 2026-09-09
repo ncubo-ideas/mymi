@@ -520,6 +520,23 @@ internal sealed class ModuleEnrollment
 
 	// Read, inspect and check the signature, writing nothing. A signed package whose signature
 	// does not hold stops here: whatever else it says, somebody touched it after it was signed.
+	// A LOOK WITHOUT UNPACKING, for the list of what the person picked when she picked several: the
+	// manifest, the inspection and whether it comes signed -or why it is not a module at all. Nothing
+	// touches the disk and nobody is asked anything; the origin, the signature's owner and the pin
+	// wait for the one she chooses, which goes through the whole examination like any other file.
+	internal static PackagePeek Peek(byte[] zip, string fileName)
+	{
+		try
+		{
+			(Manifest manifest, _, PackageInspection inspection, SignatureVerification signature) = Open(zip);
+			return new PackagePeek(fileName, zip.LongLength, manifest, inspection, signature.State, null);
+		}
+		catch (Exception ex)
+		{
+			return new PackagePeek(fileName, zip.LongLength, null, null, SignatureState.Unsigned, ex);
+		}
+	}
+
 	private static (Manifest manifest, string seal, PackageInspection inspection, SignatureVerification signature) Open(byte[] zip)
 	{
 		using var archive = new ZipArchive(new MemoryStream(zip), ZipArchiveMode.Read);
@@ -769,6 +786,15 @@ internal sealed class ModuleEnrollment
 		File.WriteAllText(Path.Combine(folder, "installation.json"),
 			JsonSerializer.Serialize(installation, new JsonSerializerOptions { WriteIndented = true }));
 	}
+}
+
+// WHAT A QUICK LOOK AT A PICKED FILE FOUND, for the list the person chooses from. Manifest and
+// Inspection are null when the file is not a module at all, and Problem says why; a module the
+// inspection rejects keeps its manifest -the list can name it- and its rejections.
+internal sealed record PackagePeek(string FileName, long Bytes, Manifest? Manifest, PackageInspection? Inspection, SignatureState Signature, Exception? Problem)
+{
+	internal bool IsModule => Manifest is not null;
+	internal bool Installable => Manifest is not null && Inspection is { Rejected: false };
 }
 
 // WHAT GNOTHI SHOWS THE PERSON BEFORE INSTALLING ANYTHING. It comes out of the bundle's
