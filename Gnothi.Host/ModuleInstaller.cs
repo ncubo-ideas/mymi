@@ -19,16 +19,12 @@ namespace Gnothi.Host;
 // (the person imports a module from the UI). That is decision B1: the window may write
 // installation.json -through this one path, which serializes it and never lets the module
 // choose its own shell.
+//
+// WHAT IS CHECKED lives in PackageInspector, not here: the phone's enrollment runs the same
+// inspection over the same kind of package. While the list lived in this file the guarantee
+// held on the desktop and not on the phone (Documentacion/Movil/06, open item #2).
 public static class ModuleInstaller
 {
-	// The substrate the Host lends. A package that carries any of these is trying to bring its
-	// own engine, which defeats the two-DLL shape and the single-thing-to-audit property.
-	private static readonly string[] Forbidden =
-	[
-		"Puppeteer.dll", "Choreography.dll", "Puppets.Portador.dll", "Gnothi.Contract.dll",
-		"ModelContextProtocol.dll", "ModelContextProtocol.Core.dll",
-	];
-
 	// Written, never string-interpolated. installation.json is assembled from records and
 	// serialized: a manifest field with a quote in it comes out escaped and stays a value,
 	// instead of being able to inject a second key. (A templated version of this once let a
@@ -72,36 +68,23 @@ public static class ModuleInstaller
 		try { manifest = Manifest.Read(manifestPath); }
 		catch (Exception e) { Console.Error.WriteLine($"[gnothi] manifest unreadable: {e.Message}"); return 1; }
 
-		if (!ValidName(manifest.Module))
+		List<string> files = [.. Directory.EnumerateFiles(source, "*", SearchOption.AllDirectories)];
+
+		// The same inspection the installers run, over the folder about to be zipped: a package
+		// that would be refused on arrival is not built in the first place.
+		PackageInspection inspection = PackageInspector.Inspect(
+			files.Select(f => new PackageEntry(Path.GetRelativePath(source, f).Replace('\\', '/'), new FileInfo(f).Length)),
+			manifest);
+		if (inspection.Rejected)
 		{
-			Console.Error.WriteLine($"[gnothi] 'module' = '{manifest.Module}' is not an identifier. Not packing.");
+			Console.Error.WriteLine("[gnothi] NOT packing:");
+			foreach (string r in inspection.Rejections) Console.Error.WriteLine($"[gnothi]   x {r}");
 			return 1;
 		}
 
 		string output = args.Length > 1
 			? Path.GetFullPath(args[1])
 			: Path.Combine(Directory.GetParent(source)!.FullName, $"{manifest.Module}.gmod");
-
-		List<string> files = [.. Directory.EnumerateFiles(source, "*", SearchOption.AllDirectories)];
-		List<string> rejects = [];
-		foreach (string f in files)
-		{
-			string name = Path.GetFileName(f);
-			if (Forbidden.Contains(name, StringComparer.OrdinalIgnoreCase))
-				rejects.Add($"carries the engine: {name}");
-			if (name.EndsWith(".exe", StringComparison.OrdinalIgnoreCase))
-				rejects.Add($"carries an executable: {name} (a module is cargo, not a program)");
-			if (name.StartsWith("System.", StringComparison.OrdinalIgnoreCase)
-				&& name.EndsWith(".dll", StringComparison.OrdinalIgnoreCase))
-				rejects.Add($"carries the BCL: {name}");
-		}
-
-		if (rejects.Count > 0)
-		{
-			Console.Error.WriteLine("[gnothi] NOT packing:");
-			foreach (string r in rejects.Distinct()) Console.Error.WriteLine($"[gnothi]   x {r}");
-			return 1;
-		}
 
 		if (File.Exists(output)) File.Delete(output);
 		using (var zip = ZipFile.Open(output, ZipArchiveMode.Create))
@@ -162,36 +145,36 @@ public static class ModuleInstaller
 			return (false, $"the manifest is not valid json: {e.Message}. Not installed.");
 		}
 
-		// The module name is used as a folder component: it must be an identifier, or a name
-		// like '../../x' escapes the modules root and the traversal guard would compare two
-		// paths built on the same fake root and approve itself.
-		if (!ValidName(manifest.Module))
-			return (false, $"'module' = '{manifest.Module}' is not an identifier (letters/digits . _ -, up to 64). Not installed.");
+		// Everything is checked BEFORE writing anything, by the inspection the phone runs too. It
+		// also guarantees the module name is an identifier: a name like '../../x' would escape
+		// the modules root, and the traversal guard below would compare two paths built on the
+		// same fake root and approve itself.
+		PackageInspection inspection = PackageInspector.Inspect(zip, manifest);
+		if (inspection.Rejected)
+			return (false, "REJECTED, not installed:\n" + string.Join("\n", inspection.Rejections.Select(r => "  x " + r)));
 
-		if (manifest.Load is null || string.IsNullOrWhiteSpace(manifest.Load.Entry))
-			return (false, "the manifest declares no 'load.entry' (which dll is the surface). Not installed as cargo.");
+		// This installer runs cargo only: the Host lends the engine and loads the surface DLL. A
+		// hosted module -the institution's app under web/- needs a WebView shell, which is the
+		// phone's enrollment, not this path.
+		if (inspection.Form != PackageForm.Cargo)
+			return (false, "the package is a hosted module (web/); this installer takes cargo modules only. Not installed.");
+
+		// A signed package whose signature does not hold is not installed, whatever its manifest
+		// says: somebody touched it after it was signed. An unsigned one still installs, and the
+		// line below says so.
+		SignatureVerification signature = PackageSignature.Verify(zip);
+		if (signature.State == SignatureState.Invalid)
+			return (false, "REJECTED, not installed: the package is signed and the signature does not hold -- " + signature.Detail);
 
 		string moduleDir = Path.Combine(modulesRoot, manifest.Module);
 		string moduleRootFull = Path.GetFullPath(moduleDir);
 
-		// Verify every entry BEFORE writing anything.
+		// The last guard, against the REAL destination, on top of the inspection's portable one:
+		// this is the path that is actually written.
 		List<string> rejects = [];
 		foreach (ZipArchiveEntry e in zip.Entries)
 		{
-			string name = Path.GetFileName(e.FullName);
-			if (name.Length == 0) continue;
-
-			if (Forbidden.Contains(name, StringComparer.OrdinalIgnoreCase))
-				rejects.Add($"carries the engine: {e.FullName}");
-			if (name.EndsWith(".exe", StringComparison.OrdinalIgnoreCase))
-				rejects.Add($"carries an executable: {e.FullName}");
-			if (name.StartsWith("System.", StringComparison.OrdinalIgnoreCase)
-				&& name.EndsWith(".dll", StringComparison.OrdinalIgnoreCase))
-				rejects.Add($"carries the BCL: {e.FullName}");
-			if (name.Equals("meta.bin", StringComparison.OrdinalIgnoreCase)
-				|| e.FullName.Contains("/journal/", StringComparison.OrdinalIgnoreCase))
-				rejects.Add($"carries a sample journal: {e.FullName}");
-
+			if (Path.GetFileName(e.FullName).Length == 0) continue;
 			string dest = Path.GetFullPath(Path.Combine(moduleDir, e.FullName));
 			if (!dest.StartsWith(moduleRootFull + Path.DirectorySeparatorChar, StringComparison.OrdinalIgnoreCase))
 				rejects.Add($"entry points outside its folder: {e.FullName}");
@@ -203,9 +186,10 @@ public static class ModuleInstaller
 		// A reinstall keeps the person's earlier consent decisions: reenabling on update would
 		// be a back door.
 		string installationPath = Path.Combine(moduleDir, "installation.json");
-		bool enabled = (manifest.Capabilities?.Excesses().Any() ?? false) == false;
+		bool enabled = inspection.InstallEnabled;
 		IReadOnlyList<string> disabledTools = [];
 		string? priorGranted = null;
+		PackageSigner? priorSigner = null;
 		if (File.Exists(installationPath))
 		{
 			try
@@ -214,9 +198,17 @@ public static class ModuleInstaller
 				enabled = prior.Enabled;
 				disabledTools = prior.DisabledTools;
 				if (!string.IsNullOrWhiteSpace(prior.GrantedFolder)) priorGranted = prior.GrantedFolder;
+				priorSigner = prior.Signer;
 			}
 			catch { /* unreadable prior: rewritten */ }
 		}
+
+		// THE PIN. The same key as before keeps its date; a new key -first install, or a change-
+		// is remembered from now. The change itself is said in the line below: the desktop has no
+		// sheet to warn on, so the message is where the person reads it.
+		PackageSigner? signer = signature.State != SignatureState.Valid ? null
+			: priorSigner is not null && string.Equals(priorSigner.Public, signature.Public, StringComparison.Ordinal) ? priorSigner
+			: new PackageSigner { KeyId = signature.KeyId, Public = signature.Public, Since = DateTimeOffset.UtcNow.ToString("O") };
 
 		Directory.CreateDirectory(moduleDir);
 		foreach (ZipArchiveEntry e in zip.Entries)
@@ -240,7 +232,7 @@ public static class ModuleInstaller
 			{
 				Type = "in-process",
 				Command = "dotnet",
-				Arguments = [Path.GetFullPath(Path.Combine(moduleDir, manifest.Load.Entry))],
+				Arguments = [Path.GetFullPath(Path.Combine(moduleDir, manifest.Load!.Entry))],
 			},
 			GrantedFolder = granted.Replace("\\", "/"),
 			Enabled = enabled,
@@ -257,6 +249,7 @@ public static class ModuleInstaller
 				At = DateTime.UtcNow.ToString("yyyy-MM-ddTHH:mm:ssZ"),
 				Version = manifest.Publisher?.Version ?? "",
 			},
+			Signer = signer,
 		};
 
 		// Legible y no Default: este archivo lo abre la persona con un editor.
@@ -266,21 +259,19 @@ public static class ModuleInstaller
 		line.Append($"installed '{manifest.Module}' ({manifest.Title})");
 		line.Append($"\n  from     : {Path.GetFileName(package)}");
 		line.Append($"\n  into     : {moduleDir}");
+		line.Append($"\n  checked  : cargo, {inspection.Files} files, {inspection.Bytes / 1024.0:F1} KB, no engine of its own");
+		line.Append("\n  signature: " + (signature.State == SignatureState.Valid
+			? $"valid, key '{signature.KeyId}' ({PackageSignature.Fingerprint(signature.Public)})"
+				+ (priorSigner is null ? " -- first time, remembered"
+					: string.Equals(priorSigner.Public, signature.Public, StringComparison.Ordinal) ? $" -- the same key as before, since {priorSigner.Since}"
+					: $" -- KEY CHANGED: the earlier package was signed by '{priorSigner.KeyId}' ({PackageSignature.Fingerprint(priorSigner.Public)})")
+			: "none (the package is not signed)"));
 		line.Append($"\n  data     : {granted}");
 		line.Append($"\n  enabled  : {enabled}");
 		if (!enabled)
 			line.Append("  (switched off: it asked for capabilities a data module does not need)");
 		return (true, line.ToString());
 	}
-
-	// An identifier, not a path. Allow-list, because a deny-list of dangerous characters always
-	// falls short -separators, a drive colon, reserved Windows names, unicode that normalizes
-	// to a separator.
-	private static bool ValidName(string name)
-		=> name.Length is > 0 and <= 64
-			&& char.IsAsciiLetterOrDigit(name[0])
-			&& name.All(c => char.IsAsciiLetterOrDigit(c) || c is '.' or '_' or '-')
-			&& !name.Contains("..", StringComparison.Ordinal);
 
 	// Local write shapes for installation.json. Separate from the read-side Installation record
 	// so writing carries the '//' notes and omits nulls without the reader needing them.
@@ -301,6 +292,9 @@ public static class ModuleInstaller
 		[JsonPropertyName("enabled")] public bool Enabled { get; init; }
 		[JsonPropertyName("disabledTools")] public IReadOnlyList<string> DisabledTools { get; init; } = [];
 		[JsonPropertyName("provenance")] public ProvenanceFile? Provenance { get; init; }
+
+		// The pin: the key the package was signed with, when it was. See Installation.Signer.
+		[JsonPropertyName("signer")] public PackageSigner? Signer { get; init; }
 	}
 
 	// INTERNAL POR LO MISMO QUE InstallationFile, y esto lo dijo el compilador: al traer el fix

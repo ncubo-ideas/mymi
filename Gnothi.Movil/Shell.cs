@@ -207,6 +207,10 @@ public sealed class Shell : IDisposable
 		// ya este pintada: en movil comprobar un modulo web cuesta levantar su WebView.
 		await VerifyNewModules(stop.Token);
 
+		// THE KEYS OF WHAT IS INSTALLED, against what their origins say now. In the background: it
+		// is network, it is a warning, and the screen is already painted.
+		_ = Task.Run(() => CheckRevocations(stop.Token));
+
 		// 3 - EL INTERRUPTOR DE LA PERSONA, VIGILADO. Los switches de la UI escriben
 		//     installation.json y esto es lo que los hace efectivos; y una edicion de AFUERA
 		//     (adb, otra herramienta) repinta la pantalla por el mismo camino. Una sola
@@ -276,6 +280,44 @@ public sealed class Shell : IDisposable
 		}
 	}
 
+	// WHAT AN INSTALLED MODULE'S ORIGIN SAYS NOW ABOUT THE KEY IT WAS ACCEPTED WITH. A signature
+	// is checked when a package arrives; a revocation happens later, to something already here,
+	// and the only way to learn of it is to ask. So every launch, for each module that came signed
+	// and whose manifest names an origin, the origin's well-known is fetched and its retired keys
+	// compared with the pin. A hit is written into the pin (RevokedAt) -nothing else in the file
+	// moves: the switches are the person's- and the card says it. The screen is repainted from
+	// here on purpose: the consent watcher only wakes for a switch that moved, and no switch did.
+	private async Task CheckRevocations(CancellationToken ct)
+	{
+		if (catalog is null) return;
+		bool marked = false;
+
+		foreach (Module m in catalog.Modules)
+		{
+			if (m.Installation.Signer is not { RevokedAt: null } signer) continue;
+			Uri? origin = ModuleEnrollment.DeclaredOrigin(m.Manifest.Origin);
+			if (origin is null) continue;
+
+			try
+			{
+				string? published = await ModuleEnrollment.FetchWellKnown(origin, ct);
+				if (published is null || !ModuleEnrollment.IsRevoked(published, signer.Public)) continue;
+
+				string? at = ModuleEnrollment.MarkRevoked(Path.Combine(m.Directory, "installation.json"), DateTimeOffset.UtcNow);
+				if (at is null) continue;
+				m.MarkSignerRevoked(at);
+				marked = true;
+				log($"revocación: '{m.Name}': {origin.Host} retiró la llave '{signer.KeyId}' con la que se aceptó");
+			}
+			catch (Exception ex)
+			{
+				log($"revocación: no se pudo consultar a {origin.Host} por '{m.Name}': {ex.GetType().Name}: {ex.Message}");
+			}
+		}
+
+		if (marked) PushState();
+	}
+
 	// ---------------------------------------------------------------- el alta desde el enlace
 
 	// LA PROPUESTA EN CURSO, esperando que la persona diga si o no. UNA sola a la vez: si llega
@@ -294,7 +336,126 @@ public sealed class Shell : IDisposable
 	///
 	/// Lo llaman las dos plataformas cuando su enlace aterriza: un App Link en Android, un
 	/// universal link en iOS. Lo unico que cambia es como llega la URL.
-	public async Task Enroll(string url, CancellationToken ct = default)
+	public Task Enroll(string url, CancellationToken ct = default)
+	{
+		// The platforms hand over the link as it landed -go.gnothi.app/alta?bundle=…&h=…- or
+		// just the bundle's address. Either way the seal, when there is one, travels with it.
+		EnrollmentLink link = ModuleEnrollment.ParseLink(url);
+		return Enroll(link.Bundle, EnrollmentSource.Link, link.Seal, ct);
+	}
+
+	/// THE PACKAGE ARRIVED AS A FILE: opened from Files or Downloads, shared from another app, or
+	/// picked from inside Gnothi. The platform read the bytes and knows the file's name; nothing
+	/// else about where it came from is known, and the sheet says so -unless the package claims an
+	/// origin that publishes exactly this manifest, which the enrollment asks.
+	public Task EnrollFile(byte[] zip, string fileName, CancellationToken ct = default)
+		=> Propose(e => e.ExamineFile(zip, fileName, ct, PushEnrollment), fileName);
+
+	// ── SEVERAL FILES AT ONCE ────────────────────────────────────────────────────────────
+
+	// WHAT SHE PICKED, when she picked more than one: the bytes wait here, with the quick look
+	// Gnothi took at each, until she chooses which one to examine for real. The list on the screen
+	// is repainted as she installs them one by one; a single file skips all this and goes straight
+	// to its proposal, as before.
+	private List<(byte[] Bytes, PackagePeek Peek)>? picked;
+	private readonly HashSet<int> pickedInstalled = [];
+	private readonly Dictionary<int, string> pickedProblems = [];
+	private int pickedChosen = -1;
+
+	/// THE PICKER LET HER CHOOSE SEVERAL, so first the screen shows what Gnothi found in them -which
+	/// are modules, of whom, which are not- and she chooses which to install. Each choice runs the
+	/// whole examination, origin and signature included; the list only looks inside the zips.
+	public Task EnrollFiles(IReadOnlyList<(byte[] Bytes, string Name)> files, CancellationToken ct = default)
+	{
+		if (files.Count == 1) return EnrollFile(files[0].Bytes, files[0].Name, ct);
+
+		picked = [.. files.Select(f => (f.Bytes, ModuleEnrollment.Peek(f.Bytes, f.Name)))];
+		pickedInstalled.Clear();
+		pickedProblems.Clear();
+		pickedChosen = -1;
+		log($"alta: la persona eligió {files.Count} archivos; {picked.Count(p => p.Peek.IsModule)} son módulos");
+		PushPicked();
+		return Task.CompletedTask;
+	}
+
+	// The list as the page paints it: one row per file, in the person's words. `problema` is why a
+	// row cannot be chosen -not a module, rejected by the inspection, or refused when she tried-.
+	private void PushPicked()
+	{
+		if (picked is null) return;
+
+		var rows = picked.Select((p, i) =>
+		{
+			PackagePeek peek = p.Peek;
+			string problem = pickedProblems.TryGetValue(i, out string? refused) ? refused
+				: peek.Manifest is null ? "No es un módulo de Gnothi: no trae un manifiesto legible."
+				: peek.Inspection is { Rejected: true } inspection ? "Gnothi no lo instalaría: " + string.Join("; ", inspection.Rejections)
+				: "";
+			return new
+			{
+				indice = i,
+				archivo = peek.FileName,
+				bytes = peek.Bytes,
+				modulo = peek.Manifest?.Module ?? "",
+				titulo = peek.Manifest?.Title ?? "",
+				institucion = peek.Manifest?.Institution ?? "",
+				nombreCorto = peek.Manifest?.Brand?.ShortName ?? "",
+				eslogan = peek.Manifest?.Brand?.Slogan ?? "",
+				color = Brand.ValidColor(peek.Manifest?.Brand?.Color) ?? "",
+				categoria = peek.Manifest?.About?.Category ?? "",
+				firmado = peek.Signature == SignatureState.Valid,
+				problema = problem,
+				instalado = pickedInstalled.Contains(i),
+				yaEstaba = peek.Manifest is not null && !pickedInstalled.Contains(i) && Find(peek.Manifest.Module) is not null,
+			};
+		}).ToArray();
+
+		Push("hallazgos", "", JsonSerializer.Serialize(new { archivos = rows }));
+	}
+
+	// She chose one of the list: the whole examination, as if she had opened that file alone.
+	private string ChoosePicked(int index)
+	{
+		if (picked is null || index < 0 || index >= picked.Count) return "{}";
+		pickedChosen = index;
+		_ = EnrollFile(picked[index].Bytes, picked[index].Peek.FileName, stop.Token);
+		return "\"ok\"";
+	}
+
+	// She is done with the list: the bytes go, nothing else was kept.
+	private string ClosePicked()
+	{
+		picked = null;
+		pickedInstalled.Clear();
+		pickedProblems.Clear();
+		pickedChosen = -1;
+		return "\"ok\"";
+	}
+
+	// After a proposal from the list ends -installed, declined or refused- the list comes back with
+	// that row marked, so she can go on with the next one.
+	private void PickedResolved(bool installed, string? refusal = null)
+	{
+		if (picked is null) return;
+		if (pickedChosen >= 0)
+		{
+			if (installed) pickedInstalled.Add(pickedChosen);
+			if (refusal is not null) pickedProblems[pickedChosen] = refusal;
+		}
+		pickedChosen = -1;
+		PushPicked();
+	}
+
+	/// Something the platform could not turn into an enrollment -a picked file that could not be
+	/// read- said on the screen, in the person's words. Same strip as any failed enrollment.
+	public void ReportEnrollmentError(string message) => PushEnrollment("error", message);
+
+	private Task Enroll(string bundle, EnrollmentSource source, string? seal, CancellationToken ct)
+		=> Propose(e => e.Examine(bundle, source, seal, ct, PushEnrollment), bundle);
+
+	// ONE ENTRY FOR EVERY WAY IN; only how the bytes are obtained differs, and the provenance
+	// that comes back travels to the sheet. `what` is what to blame in the log: an address, a file.
+	private async Task Propose(Func<ModuleEnrollment, Task<EnrollmentProposal>> examine, string what)
 	{
 		try
 		{
@@ -305,9 +466,9 @@ public sealed class Shell : IDisposable
 				Path.Combine(paths.Files, "journals"),
 				log);
 
-			// BAJAR NO ES INSTALAR. Esto trae el bundle y lee su manifiesto; el modulo todavia
-			// no ocupa ningun lugar en el aparato.
-			proposal = await enrolling.Examine(url, ct, step => PushEnrollment("trabajando", step));
+			// BAJAR NO ES INSTALAR. Esto trae el bundle, lo inspecciona y lee su manifiesto; el
+			// modulo todavia no ocupa ningun lugar en el aparato.
+			proposal = await examine(enrolling);
 
 			log($"alta: propuesta de '{proposal.Manifest.Module}' servida por {proposal.ServedBy}");
 			PushProposal(proposal);
@@ -317,8 +478,9 @@ public sealed class Shell : IDisposable
 			// UN ALTA QUE FALLA TIENE QUE DECIRLO, Y EN LA PANTALLA. Cuando esto solo escribia
 			// en el log, la persona tocaba el boton de su institucion, volvia a Gnothi y no
 			// pasaba nada, sin ninguna pista de por que.
-			log($"alta: no se pudo leer el módulo de {url}: {ex.GetType().Name}: {ex.Message}");
+			log($"alta: no se pudo leer el módulo de {what}: {ex.GetType().Name}: {ex.Message}");
 			PushEnrollment("error", InPlainWords(ex));
+			PickedResolved(installed: false, refusal: InPlainWords(ex));
 		}
 	}
 
@@ -337,11 +499,13 @@ public sealed class Shell : IDisposable
 			log($"alta: '{module}' quedó instalado; {ModuleCount} módulos");
 
 			PushEnrollment("listo", $"Listo: ya tenés '{TitleOf(module)}' en Gnothi.");
+			PickedResolved(installed: true);
 		}
 		catch (Exception ex)
 		{
 			log($"alta: no se pudo instalar: {ex.GetType().Name}: {ex.Message}");
 			PushEnrollment("error", InPlainWords(ex));
+			PickedResolved(installed: false, refusal: InPlainWords(ex));
 		}
 
 		return "\"ok\"";
@@ -356,6 +520,28 @@ public sealed class Shell : IDisposable
 			proposal = null;
 		}
 		PushEnrollment("nada", "");
+		PickedResolved(installed: false);
+		return "\"ok\"";
+	}
+
+	// The page brought a link: pasted by the person, or read off the institution's code. It may
+	// be the link to Gnothi's domain with the bundle and its seal as parameters, or the bundle's
+	// address itself; both are accepted. Fire and forget, like RunAsk: the page hears back
+	// through the same "alta"/"propuesta" pushes as a link that landed.
+	private string EnrollFromPage(JsonElement req)
+	{
+		string text = req.GetProperty("url").GetString() ?? "";
+		bool scanned = req.TryGetProperty("via", out JsonElement via) && via.GetString() == "qr";
+		EnrollmentSource source = scanned ? EnrollmentSource.Qr : EnrollmentSource.PastedLink;
+
+		EnrollmentLink link = ModuleEnrollment.ParseLink(text);
+		if (link.Bundle.Length == 0)
+		{
+			PushEnrollment("error", scanned ? "El código no traía ningún enlace." : "Pegá el enlace que te dio tu institución.");
+			return "\"ok\"";
+		}
+
+		_ = Enroll(link.Bundle, source, link.Seal, stop.Token);
 		return "\"ok\"";
 	}
 
@@ -364,6 +550,13 @@ public sealed class Shell : IDisposable
 	// 12 MB. Cuatro estados: trabajando, listo, error, nada.
 	private void PushEnrollment(string estado, string detalle) =>
 		Push("alta", "", JsonSerializer.Serialize(new { estado, detalle }));
+
+	// WHILE IT WORKS, with the numbers: how many bytes of how many came down, so the screen draws a
+	// bar and says "4,1 de 12,6 MB" instead of spinning in silence over twelve megabytes. The
+	// fraction is null before the server says how much is coming, and for the steps that are not
+	// a download.
+	private void PushEnrollment(EnrollmentProgress step) =>
+		Push("alta", "", JsonSerializer.Serialize(new { estado = "trabajando", detalle = step.Text, progreso = step.Fraction, bytes = step.Bytes, total = step.Total }));
 
 	// LO QUE LA INSTITUCION PROPONE, mas las dos cosas que decide Gnothi y ella tiene derecho a
 	// saber antes de aceptar: donde va a vivir el journal y contra que endpoint va a hablar.
@@ -426,7 +619,9 @@ public sealed class Shell : IDisposable
 		cedula = p.Manifest.Publisher?.TaxId ?? "",
 		dominio = p.Manifest.Publisher?.Domain ?? "",
 		version = p.Manifest.Publisher?.Version ?? "",
-		coincide = p.Manifest.Publisher?.MatchesServer(p.ServedBy) ?? true,
+		// A file came from no server: nothing to compare, and the sheet says so instead of painting
+		// a verdict. Null is that third state, the same one Provenance.Matches gives the detail.
+		coincide = p.Provenance.Source == EnrollmentSource.File ? null : (bool?)(p.Manifest.Publisher?.MatchesServer(p.ServedBy) ?? true),
 
 		servido = p.ServedBy,
 		publicador = p.Publisher,
@@ -441,6 +636,60 @@ public sealed class Shell : IDisposable
 
 		yaEstaba = p.AlreadyThere,
 		tools = p.Manifest.Tools.Select(t => new { nombre = t.Name, titulo = t.Title, descripcion = t.Description }),
+
+		// WHERE IT CAME FROM: which way in, which host answered, whether the package still
+		// matches the seal the link carried, and how far that host could be tied to the
+		// institution -the origin check, by name, so the sheet can say which piece failed.
+		procedencia = new
+		{
+			origen = p.Provenance.Source switch
+			{
+				EnrollmentSource.Qr => "qr",
+				EnrollmentSource.PastedLink => "pegado",
+				EnrollmentSource.File => "archivo",
+				_ => "enlace",
+			},
+			servido = p.Provenance.ServedBy,
+			sello = p.Provenance.MatchesLink,
+			respaldo = p.Provenance.Origin switch
+			{
+				OriginCheck.Verified => "verificado",
+				OriginCheck.NoWellKnown => "sin-publicacion",
+				OriginCheck.NotListed => "no-publicado",
+				OriginCheck.NotDeclared => "sin-origen-declarado",
+				OriginCheck.DeclaresAnother => "otro-origen",
+				_ => "sin-origen",
+			},
+			seguro = p.Provenance.Secure,
+			origenDeclarado = p.Provenance.DeclaredOrigin,
+
+			// Whose key signed the package, by name, and since when Gnothi knows that key.
+			firma = p.Provenance.Signer switch
+			{
+				SignerCheck.Published => "publicada",
+				SignerCheck.Pinned => "conocida",
+				SignerCheck.Rotated => "rotada",
+				SignerCheck.Unknown => "desconocida",
+				SignerCheck.Changed => "cambiada",
+				SignerCheck.Revoked => "retirada",
+				_ => "sin-firma",
+			},
+			firmante = p.Provenance.SignerId,
+			firmaDesde = p.Provenance.SignedSince,
+		},
+
+		// WHAT GNOTHI CHECKED before showing this, so she decides with it in view: the form, the
+		// weight, whether it carries an engine, and what it asks for beyond a data module.
+		revision = new
+		{
+			forma = p.Inspection.Form == PackageForm.Hosted ? "hospedado" : "cargo",
+			archivos = p.Inspection.Files,
+			bytes = p.Inspection.Bytes,
+			motorArchivos = p.Inspection.EngineFiles,
+			motorBytes = p.Inspection.EngineBytes,
+			excesos = p.Inspection.Excesses,
+			encendido = p.Inspection.InstallEnabled,
+		},
 	}));
 
 	// EL FALLO, DICHO EN CASTELLANO Y NO EN .NET. La persona no tiene por que leer el nombre de
@@ -457,7 +706,27 @@ public sealed class Shell : IDisposable
 			"La descarga tardó demasiado y se cortó. Probá de nuevo.",
 
 		ArgumentException =>
-			"El enlace que tocaste no es una dirección válida de módulo.",
+			"El enlace no es una dirección válida de módulo.",
+
+		// The link carried the seal of the manifest it was made for, and the package served now
+		// does not hash to it: what the address serves changed after the code was made. Before
+		// the InvalidOperationException arm on purpose: it derives from it.
+		PackageSealMismatchException =>
+			"El paquete no es el que sellaba el enlace: cambió después de que se generó el código. Pedile a tu institución uno nuevo.",
+
+		// Signed, and the signature does not hold: somebody touched the package after it was
+		// signed. Not "broken": tampered, and that is the word.
+		PackageSignatureInvalidException =>
+			"El paquete viene firmado y la firma no cierra: lo tocaron después de firmarlo. Pedile a tu institución uno nuevo.",
+
+		// The institution retired the key this package is signed with. Not installed, no sheet.
+		PackageKeyRevokedException =>
+			"El paquete viene firmado con una llave que tu institución retiró: no se instala. Pedile un paquete nuevo.",
+
+		// The origin contradicts the package: refused, no sheet. Which contradiction, in her words.
+		PackageNotBackedException nb => nb.Origin == OriginCheck.DeclaresAnother
+			? "El paquete dice ser de otro origen del que lo sirvió: no se instala. Pedile a tu institución su enlace."
+			: "Tu institución no reconoce este paquete como suyo: no se instala. Pedile el enlace o el paquete actual.",
 
 		// Lo que tira ModuleEnrollment -bundle sin manifiesto, nombre invalido, zip que escribe
 		// afuera, techo de tamano- ya viene escrito para leerse. Se pasa tal cual.
@@ -534,6 +803,18 @@ public sealed class Shell : IDisposable
 				// quedan con lo que de verdad necesita pantalla y nada mas.
 				"altaAceptar" => AcceptEnrollment(),
 				"altaDescartar" => DiscardEnrollment(),
+
+				// THE LINK FROM INSIDE GNOTHI: pasted by hand, or read off the institution's
+				// code by the page's own reader ("via": "qr"). Until 2026-09-08 every enrollment
+				// began outside, on the institution's page, and the "Agregar módulo" card only
+				// explained. It is also what makes the enrollment testable on a phone while
+				// go.gnothi.app does not resolve.
+				"alta" => EnrollFromPage(req),
+
+				// THE LIST OF WHAT SHE PICKED: one row chosen -the whole examination follows- or
+				// the list closed. The picker itself is the platform's; the list is not.
+				"altaElegido" => ChoosePicked(req.GetProperty("indice").GetInt32()),
+				"altaCerrarLista" => ClosePicked(),
 
 				_ => "{}",
 			};
@@ -652,6 +933,9 @@ public sealed class Shell : IDisposable
 				["enabled"] = m.Installation.Enabled,
 				["journalBytes"] = bytes,
 				["journalFiles"] = files,
+				// The key it was accepted with, and whether its origin has since retired it.
+				["signerKey"] = m.Installation.Signer?.KeyId,
+				["signerRevokedAt"] = m.Installation.Signer?.RevokedAt,
 				["tools"] = m.Manifest.Tools.Select(t => new Dictionary<string, object?>
 				{
 					["name"] = t.Name,

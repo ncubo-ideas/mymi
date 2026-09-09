@@ -154,6 +154,15 @@ else
 }
 
 // ============================================================================================
+// THE PACKAGE IS INSPECTED BEFORE ANYBODY ACCEPTS IT, AND THE SAME WAY ON BOTH INSTALLERS.
+// Synthetic packages, built in memory: see Enrollment.cs.
+// ============================================================================================
+
+Console.WriteLine();
+Console.WriteLine("=== THE PACKAGE IS INSPECTED BEFORE SHE DECIDES ===");
+Gnothi.Tests.Enrollment.Run(Assert);
+
+// ============================================================================================
 // EL INSTALADOR ESCRIBE UN installation.json QUE EL HOST PUEDE LEER.
 //
 // Regresion. El refactor a JSON sin reflexion (88e0b95) dejo a --install-module serializando

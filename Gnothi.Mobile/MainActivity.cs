@@ -9,6 +9,12 @@ using System.Text.Json;
 // cartero cumple. Ver Resources/xml/network_security_config.xml.
 [assembly: Android.App.Application(NetworkSecurityConfig = "@xml/network_security_config")]
 
+// THE CAMERA, for reading the institution's code from inside Gnothi. The page asks for it
+// through getUserMedia, and the WebView will not even ask the person unless the app declares
+// the permission. Not required: a phone without a camera pastes the link instead.
+[assembly: Android.App.UsesPermission(Android.Manifest.Permission.Camera)]
+[assembly: Android.App.UsesFeature("android.hardware.camera", Required = false)]
+
 namespace Gnothi.Mobile;
 
 // EL HOST DE GNOTHI EN UN TELEFONO, con cara. LA MITAD DE ANDROID Y NADA MAS.
@@ -54,6 +60,19 @@ namespace Gnothi.Mobile;
 [IntentFilter(new[] { Android.Content.Intent.ActionSend },
 	Categories = new[] { Android.Content.Intent.CategoryDefault },
 	DataMimeType = "text/plain")]
+// A MODULE PACKAGE ARRIVING AS A FILE: "open with" from Files or Downloads, or the share sheet
+// from another app. Two mimes, on purpose: the institution's page serves the .gmod as
+// application/vnd.gnothi.module, but a file that travelled through chat or mail usually arrives
+// as plain application/zip -- the inspection tells a module from any other zip, so Gnothi offers
+// itself for both. The mime is what is matched, not the extension: for content:// files the path
+// is opaque. A file that shows up as anything else is reached from inside Gnothi, with the picker.
+[IntentFilter(new[] { Android.Content.Intent.ActionView },
+	Categories = new[] { Android.Content.Intent.CategoryDefault },
+	DataSchemes = new[] { "content", "file" },
+	DataMimeTypes = new[] { "application/vnd.gnothi.module", "application/zip" })]
+[IntentFilter(new[] { Android.Content.Intent.ActionSend },
+	Categories = new[] { Android.Content.Intent.CategoryDefault },
+	DataMimeTypes = new[] { "application/vnd.gnothi.module", "application/zip" })]
 [Activity(Label = "Gnothi", MainLauncher = true, Icon = "@mipmap/ic_launcher", Theme = "@android:style/Theme.Material.Light.NoActionBar")]
 public class MainActivity : Activity
 {
@@ -71,12 +90,20 @@ public class MainActivity : Activity
 	{
 		base.OnCreate(savedInstanceState);
 
-		// Si Gnothi se abrio POR un enlace de alta, la direccion del bundle viene ahi.
-		altaPendiente = Intent?.Data?.GetQueryParameter("bundle");
-		LeerTraspasoDe(Intent);
+		// Si Gnothi se abrio POR un enlace de alta, el enlace ENTERO va a la cascara -con su
+		// sello, si trae- y ella lo desarma. Antes viajaba solo ?bundle=, y el sello se perdia.
+		altaPendiente = Intent?.Data?.GetQueryParameter("bundle") is { Length: > 0 } ? Intent!.Data!.ToString() : null;
+		// Or by a file -opened, shared- which is read now and enrolled once the Host is up. A
+		// share of text is the other thing a share can be: the handoff from the institution's
+		// standalone app, read below.
+		archivoPendiente = LeerArchivoDeModulo(Intent, strict: true);
+		if (archivoPendiente is null) LeerTraspasoDe(Intent);
 
 		web = new WebView(this);
 		web.Settings.JavaScriptEnabled = true;
+		// The camera preview is a <video> the page plays as soon as the stream arrives; without
+		// this the WebView would wait for a gesture that already happened, on the button.
+		web.Settings.MediaPlaybackRequiresUserGesture = false;
 		// La pagina detecta la app por esta marca y NUNCA llama prompt() fuera de ella: en un
 		// browser comun ese dialogo es modal y congela la pagina -- medido en el panel de
 		// vista previa.
@@ -156,6 +183,18 @@ public class MainActivity : Activity
 			await shell.Enroll(pendiente, stop.Token);
 		}
 
+		if (archivoPendiente is { } archivo)
+		{
+			archivoPendiente = null;
+			await shell.EnrollFile(archivo.Bytes, archivo.Name, stop.Token);
+		}
+
+		if (archivosPendientes is { } archivos)
+		{
+			archivosPendientes = null;
+			await shell.EnrollFiles(archivos, stop.Token);
+		}
+
 		if (traspasoPendiente is { } t)
 		{
 			traspasoPendiente = null;
@@ -190,7 +229,14 @@ public class MainActivity : Activity
 
 		string? bundle = intento?.Data?.GetQueryParameter("bundle");
 		Log($"nuevo enlace: {intento?.Data?.ToString() ?? "(sin datos)"}");
-		if (bundle is { Length: > 0 }) _ = shell?.Enroll(bundle, stop.Token);
+		if (bundle is { Length: > 0 }) _ = shell?.Enroll(intento!.Data!.ToString()!, stop.Token);
+
+		// A file, with Gnothi already open: the same reader as at launch.
+		if (LeerArchivoDeModulo(intento, strict: true) is { } archivo)
+		{
+			_ = shell?.EnrollFile(archivo.Bytes, archivo.Name, stop.Token);
+			return;
+		}
 
 		LeerTraspasoDe(intento);
 		if (traspasoPendiente is { } t)
@@ -333,6 +379,147 @@ public class MainActivity : Activity
 	// antes: el Host todavía no sabe dónde viven los módulos.
 	private string? altaPendiente;
 
+	// ── EL ALTA DESDE UN ARCHIVO ─────────────────────────────────────────────────────────
+
+	// What a file brought, waiting for the catalog to exist -the same reason as altaPendiente.
+	private (byte[] Bytes, string Name)? archivoPendiente;
+
+	// What the picker brought back while the Host was not up yet -the system may recreate the
+	// process behind the picker-, waiting like archivoPendiente does.
+	private List<(byte[] Bytes, string Name)>? archivosPendientes;
+
+	private const string ModuleMime = "application/vnd.gnothi.module";
+	private const long FileCeiling = 64L * 1024 * 1024;
+	private const int PickModuleRequest = 8;
+
+	// THE FILE, IF THE INTENT BROUGHT ONE: opened (ACTION_VIEW on a content:// or file://) or
+	// shared (ACTION_SEND with a stream). `strict` is for intents that arrive on their own -- they
+	// are taken only when they look like a module, by mime or by name, so a shared text file still
+	// reaches the handoff below. A file the person picked herself is read whatever it looks like:
+	// she chose it, and the inspection is what tells her if it is not a module.
+	private (byte[] Bytes, string Name)? LeerArchivoDeModulo(Android.Content.Intent? intento, bool strict)
+	{
+		if (intento is null) return null;
+
+		Android.Net.Uri? uri = intento.Action == Android.Content.Intent.ActionView ? intento.Data
+			: intento.Action == Android.Content.Intent.ActionSend ? intento.GetParcelableExtra(Android.Content.Intent.ExtraStream) as Android.Net.Uri
+			: null;
+		if (uri is null || uri.Scheme is not ("content" or "file")) return null;
+
+		string name = DisplayNameOf(uri);
+		string type = intento.Type ?? ContentResolver!.GetType(uri) ?? "";
+		bool looksLikeModule = type == ModuleMime || type == "application/zip" || name.EndsWith(".gmod", StringComparison.OrdinalIgnoreCase);
+		if (strict && !looksLikeModule) return null;
+
+		try
+		{
+			byte[] bytes = LeerTodo(uri);
+			Log($"alta: archivo '{name}' ({bytes.Length} bytes, {type}) por {intento.Action}");
+			return (bytes, name);
+		}
+		catch (Exception ex)
+		{
+			Log($"alta: no se pudo leer el archivo '{name}': {ex.GetType().Name}: {ex.Message}");
+			shell?.ReportEnrollmentError($"No se pudo leer el archivo {name}.");
+			return null;
+		}
+	}
+
+	// Through the ContentResolver, with the same ceiling as a download: a wrong file cannot fill
+	// the device either.
+	private byte[] LeerTodo(Android.Net.Uri uri)
+	{
+		using System.IO.Stream? content = ContentResolver!.OpenInputStream(uri)
+			?? throw new System.IO.IOException("the content resolver returned no stream");
+		using var buffer = new System.IO.MemoryStream();
+		var chunk = new byte[81920];
+		int read;
+		while ((read = content.Read(chunk, 0, chunk.Length)) > 0)
+		{
+			buffer.Write(chunk, 0, read);
+			if (buffer.Length > FileCeiling) throw new System.IO.IOException($"the file went past the {FileCeiling / 1048576} MB ceiling");
+		}
+		return buffer.ToArray();
+	}
+
+	// The name the person sees in Files, for the sheet: a content:// path says nothing.
+	private string DisplayNameOf(Android.Net.Uri uri)
+	{
+		try
+		{
+			using Android.Database.ICursor? cursor = ContentResolver!.Query(uri, [Android.Provider.OpenableColumns.DisplayName], null, null, null);
+			if (cursor is not null && cursor.MoveToFirst())
+			{
+				string? name = cursor.GetString(0);
+				if (!string.IsNullOrWhiteSpace(name)) return name;
+			}
+		}
+		catch (Exception) { /* a provider that will not say: fall back to the path */ }
+
+		return uri.LastPathSegment ?? "archivo";
+	}
+
+	// "ELEGIR EL ARCHIVO EN MI TELÉFONO", from the page. The system's document picker: no storage
+	// permission, no walk over the disk -- the system finds, the person chooses, Gnothi receives
+	// exactly that one file. This is the phone-side of the "buscador" the plan turned down:
+	// scanning Downloads would have asked the app whose thesis is that the data is hers for
+	// permission over all of it.
+	internal string PickModuleFile()
+	{
+		var pick = new Android.Content.Intent(Android.Content.Intent.ActionOpenDocument);
+		pick.AddCategory(Android.Content.Intent.CategoryOpenable);
+		pick.SetType("*/*");
+		pick.PutExtra(Android.Content.Intent.ExtraMimeTypes, new[] { ModuleMime, "application/zip", "application/octet-stream" });
+		// SEVERAL AT ONCE: she may have downloaded more than one. The shell shows what it found in
+		// them and she chooses which to install, one proposal at a time.
+		pick.PutExtra(Android.Content.Intent.ExtraAllowMultiple, true);
+		// OPEN IN DOWNLOADS, where a .gmod that came through the browser or a chat lands, instead of
+		// "Recent" and a drawer to find the folder. The picker's own filter is by MIME and cannot be
+		// tighter than this: a .gmod has no registered type on the phone and shows up as
+		// application/octet-stream, so the list Gnothi shows afterwards is what tells a module from
+		// any other file.
+		pick.PutExtra(Android.Provider.DocumentsContract.ExtraInitialUri,
+			Android.Net.Uri.Parse("content://com.android.externalstorage.documents/document/primary%3ADownload"));
+		StartActivityForResult(pick, PickModuleRequest);
+		return "{\"ok\":true}";
+	}
+
+	protected override void OnActivityResult(int requestCode, Result resultCode, Android.Content.Intent? data)
+	{
+		base.OnActivityResult(requestCode, resultCode, data);
+		Log($"alta: el selector volvió: request={requestCode} result={resultCode} data={data?.Data?.ToString() ?? "-"} clip={data?.ClipData?.ItemCount ?? 0}");
+		if (requestCode != PickModuleRequest) return;
+
+		// One document comes in Data; several come in ClipData, one item each.
+		var uris = new List<Android.Net.Uri>();
+		if (resultCode == Result.Ok && data is not null)
+		{
+			if (data.ClipData is { } clip)
+				for (int i = 0; i < clip.ItemCount; i++)
+					if (clip.GetItemAt(i)?.Uri is { } uri) uris.Add(uri);
+			else if (data.Data is { } one) uris.Add(one);
+		}
+		if (uris.Count == 0)
+		{
+			Log("alta: la persona no eligió ningún archivo");
+			return;
+		}
+
+		// Each answer of the picker, shaped as an "open" of that document. Not strict: she chose them.
+		// SetDataAndType, never SetType: Intent.setType CLEARS the data uri (measured 2026-09-09: the
+		// picker came back with three documents and the reader saw an intent without any).
+		var archivos = new List<(byte[] Bytes, string Name)>();
+		foreach (Android.Net.Uri uri in uris)
+		{
+			var abrir = new Android.Content.Intent(Android.Content.Intent.ActionView);
+			abrir.SetDataAndType(uri, ContentResolver!.GetType(uri) ?? data!.Type);
+			if (LeerArchivoDeModulo(abrir, strict: false) is { } archivo) archivos.Add(archivo);
+		}
+		if (archivos.Count == 0) return;
+		if (shell is null) archivosPendientes = archivos;
+		else _ = shell.EnrollFiles(archivos, stop.Token);
+	}
+
 	// ── EL MÓDULO EN PANTALLA ────────────────────────────────────────────────────────────
 
 	// LA PWA DE LA INSTITUCIÓN SE DIBUJA A SÍ MISMA (especificación 11 §8). Sonia abre el
@@ -400,6 +587,43 @@ public class MainActivity : Activity
 		return true;
 	}
 
+	// ── LA CÁMARA, PARA LEER EL CÓDIGO ──────────────────────────────────────────────────
+
+	// The page's pending camera request while Android asks the person. One at a time: a second
+	// request while the dialog is up replaces the first, which is denied.
+	private PermissionRequest? cameraRequest;
+	private const int CameraRequestCode = 7;
+
+	// THE PAGE ASKED FOR THE CAMERA (getUserMedia, to read a code). The WebView cannot grant what
+	// the app does not hold, so: held -> granted right away; not held -> the request waits while
+	// Android asks the person, and OnRequestPermissionsResult answers it. Only video is ever
+	// granted: the page reads codes, nothing else.
+	internal void GrantCameraOrAsk(PermissionRequest request)
+	{
+		if (CheckSelfPermission(Android.Manifest.Permission.Camera) == Android.Content.PM.Permission.Granted)
+		{
+			request.Grant([PermissionRequest.ResourceVideoCapture]);
+			return;
+		}
+
+		cameraRequest?.Deny();
+		cameraRequest = request;
+		RequestPermissions([Android.Manifest.Permission.Camera], CameraRequestCode);
+	}
+
+	public override void OnRequestPermissionsResult(int requestCode, string[] permissions, Android.Content.PM.Permission[] grantResults)
+	{
+		base.OnRequestPermissionsResult(requestCode, permissions, grantResults);
+		if (requestCode != CameraRequestCode || cameraRequest is null) return;
+
+		bool granted = grantResults.Length > 0 && grantResults[0] == Android.Content.PM.Permission.Granted;
+		if (granted) cameraRequest.Grant([PermissionRequest.ResourceVideoCapture]);
+		else cameraRequest.Deny();
+		cameraRequest = null;
+
+		Log(granted ? "cámara: concedida a la página" : "cámara: la persona no la concedió");
+	}
+
 	private void Log(string s) => global::Android.Util.Log.Info("GNOTHI", s);
 
 	private void Push(string kind, string id, string payload) => RunOnUiThread(() =>
@@ -416,6 +640,18 @@ public class MainActivity : Activity
 	{
 		private readonly MainActivity host;
 		public Bridge(MainActivity host) => this.host = host;
+
+		// getUserMedia from the page lands here. Anything that is not the camera is denied: the
+		// page has no business with the microphone or anything else.
+		public override void OnPermissionRequest(PermissionRequest? request)
+		{
+			if (request is null) return;
+
+			string[] resources = request.GetResources() ?? [];
+			if (!resources.Contains(PermissionRequest.ResourceVideoCapture)) { request.Deny(); return; }
+
+			host.GrantCameraOrAsk(request);
+		}
 
 		// LO QUE LA PAGINA PIDE lo atiende Shell.Handle, que es el MISMO archivo en las dos
 		// plataformas: el estado, el consentimiento, la llave, el proveedor y la pregunta.
@@ -436,6 +672,9 @@ public class MainActivity : Activity
 				result.Confirm(op switch
 				{
 					"abrir" => host.AbrirModulo(req.GetProperty("module").GetString() ?? ""),
+					// The document picker is the platform's: the page asks, the Activity opens it,
+					// and what she picks comes back through OnActivityResult into the enrollment.
+					"altaArchivo" => host.PickModuleFile(),
 					_ => host.shell?.Handle(defaultValue) ?? "{}",
 				});
 			}

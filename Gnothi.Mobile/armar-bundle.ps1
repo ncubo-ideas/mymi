@@ -35,13 +35,16 @@ param(
     [string] $Publicador = '',        # por omision, el puerto de su propio mock
     [string] $Recurso    = '',
     [string] $Id         = '',
+    [string] $Origen     = '',        # the origin that serves the bundle (scheme://host:port); goes into the manifest as "origin"
+    [string] $Llave      = '',        # the institution's signing key file; created on first use. Default: <Salida>/.keys/<Modulo>.key.json
     [string] $Salida     = '',        # por omision: <Gnothi.Mobile>/bundles
 
     # REESCRIBIR SOLO EL MANIFIESTO Y EL LOGO, sobre un bundle YA armado, y rezipear.
     #
     # Existe porque iterar la marca no tiene por que costar cuatro `dotnet publish` de Blazor
     # Wasm: la app no cambio, cambio lo que la institucion declara de si misma. Con esto el
-    # ciclo de prueba en el emulador baja de minutos a segundos.
+    # ciclo de prueba en el emulador baja de minutos a segundos. The bundle is signed again
+    # afterwards, like any other: a rewritten manifest under the old signature would be refused.
     [switch] $SoloManifiesto
 )
 
@@ -179,7 +182,10 @@ if (-not $SoloManifiesto -and -not (Test-Path $Proyecto)) { throw "no existe el 
 
 if (-not $Salida) { $Salida = "$PSScriptRoot/bundles" }
 $armado = "$Salida/$Modulo"
-$zip    = "$Salida/$Modulo.zip"
+# ONE NAME FOR THE PACKAGE, whatever its form: the desktop's cargo is <modulo>.gmod, and so is the
+# phone's hosted bundle since 2026-09-09. The two are told apart from INSIDE, by the manifest
+# (load.entry vs web/), and a person who sees the file sees one kind of thing. Still a zip.
+$zip    = "$Salida/$Modulo.gmod"
 
 # --- publicar la app -------------------------------------------------------------------
 $publicado = $null
@@ -233,6 +239,13 @@ $manifiesto = [ordered]@{
     module        = $Modulo
     title         = $m.Titulo
     institution   = $m.Institucion
+    # THE ORIGIN THE INSTITUTION CLAIMS. Gnothi compares it with the origin that actually served
+    # the bundle and with what that origin publishes at /.well-known/gnothi/modules.json; when the
+    # three agree the sheet says the module is backed by its origin. Left out when not given, and
+    # then the sheet says the package declares no origin. It sits next to publisher.domain below,
+    # which the brand line compares with the serving host on its own: two declarations of one
+    # fact, and which one stays is a decision for the team (NotasGnothiHost/43).
+    origin        = $Origen
     '//brand'     = 'LA MARCA. La institucion declara y el Host compone: ella pone el material, el decide el lugar, el tamano y el contraste.'
     brand         = [ordered]@{
         shortName = $m.Marca
@@ -285,12 +298,32 @@ $manifiesto = [ordered]@{
 # SIN BOM, a proposito. `Set-Content -Encoding utf8` de PowerShell 5.1 escribe BOM, y aunque
 # `File.ReadAllText` lo tolera -- que es como lo lee AltaDeModulo -- un manifiesto con BOM
 # revienta en cuanto alguien lo lea con `JsonDocument.Parse(string)`. No vale la pena la trampa.
+if (-not $Origen) { $manifiesto.Remove('origin') }
 $json = $manifiesto | ConvertTo-Json -Depth 8
 [System.IO.File]::WriteAllText("$armado/manifest.json", $json, (New-Object System.Text.UTF8Encoding($false)))
 
 # --- el zip ----------------------------------------------------------------------------
 if (Test-Path $zip) { Remove-Item -Force $zip }
-Compress-Archive -Path "$armado/*" -DestinationPath $zip -CompressionLevel Optimal
+# Compress-Archive (PowerShell 5.1) only writes a destination that ends in .zip: it is written
+# there and renamed. The container IS a zip; only the name says what is inside.
+$zipTemporal = "$zip.zip"
+if (Test-Path $zipTemporal) { Remove-Item -Force $zipTemporal }
+Compress-Archive -Path "$armado/*" -DestinationPath $zipTemporal -CompressionLevel Optimal
+Move-Item -Force $zipTemporal $zip
+
+# --- la firma ----------------------------------------------------------------------------
+# The Host signs, as the publisher-side helper it already is for --pack: the same code that
+# verifies on the phone signs here, so the two cannot drift. The key pair lives next to the
+# bundles (git-ignored) and is created the first time; the page publishes its public half in the
+# well-known. Built into its own bin because the MCP servers of a Claude session hold the default
+# one (see NotasGnothiHost); forward slashes because a trailing backslash inside quotes escapes
+# the quote on Windows.
+if (-not $Llave) { $Llave = "$Salida/.keys/$Modulo.key.json" }
+$raiz = (Split-Path -Parent $PSScriptRoot) -replace '\\', '/'
+# No build flags before the `--`: `dotnet run` forwards what it does not recognise to the app, and
+# the Host took a stray --nologo for its modules directory and never signed (measured 2026-09-09).
+dotnet run --project "$raiz/Gnothi.Host/Gnothi.Host.csproj" -p:BaseOutputPath="$raiz/bin/firmar/" -- --sign $zip $Llave
+if ($LASTEXITCODE -ne 0) { throw "fallo la firma del bundle de $Modulo" }
 
 if ($publicado -and (Test-Path $publicado)) { Remove-Item -Recurse -Force $publicado }
 
@@ -302,5 +335,7 @@ Write-Host "bundle listo : $zip"
 Write-Host "  archivos   : $n"
 Write-Host "  tamano     : $mb MB"
 Write-Host "  publicador : $Publicador$Recurso/$Id/events"
+if ($Origen) { Write-Host "  origen     : $Origen" } else { Write-Host "  origen     : (no declarado: la hoja de Gnothi lo va a decir)" }
+Write-Host "  llave      : $Llave"
 Write-Host "  tools      : $(($m.Tools | ForEach-Object { $_.name }) -join ', ')"
 Write-Host "  marca      : $($m.Marca) $(if ($traeLogo) { "con logo ($([math]::Round((Get-Item $logo).Length / 1KB, 1)) KB)" } else { 'SIN logo -- entra con el dibujo de su rubro' })"

@@ -93,6 +93,23 @@ Que sean dos archivos no es cosmético: **son dos autoridades distintas**. Si la
 carpeta vinieran en el manifiesto, el módulo elegiría cómo se lo ejecuta y dónde escribe.
 Conceder es un acto del que concede.
 
+### El paquete se inspecciona antes de instalarse
+
+Hoy un módulo llega como paquete —`<modulo>.gmod`, en escritorio y en el teléfono; un solo nombre,
+y las dos formas se distinguen desde adentro— y **antes de escribir un byte** pasa por
+`PackageInspector` (`PackageInspector.cs`),
+la misma inspección en los dos instaladores. Distingue las dos formas —**cargo** (declara
+`load.entry`, dos DLLs, el Host presta el motor) y **hospedado** (trae la app publicada en
+`web/`, con su motor adentro porque un navegador no corre C# sin él)— y por eso lo que rechaza
+depende de la forma: un cargo que trae el motor se rechaza; un hospedado lo trae y se **cuenta**.
+Rechaza en las dos: ejecutables, un `installation.json` (ese lo escribe el Host), un journal de
+muestra, rutas que salen de su carpeta, un nombre que no es identificador. Y reporta lo que la
+persona tiene derecho a ver antes de aceptar: la forma, cuánto pesa, si trae motor, y qué
+capacidades pide de más —con eso el módulo se instala **apagado**.
+
+Lo que **no** hace es autenticar: dice qué trae el paquete, no quién lo respalda. Eso es el
+pendiente 7.
+
 **Medido:** el módulo de exámenes entró así, con sus tres tools, sin tocar una línea de
 `Gnothi.Host` ni de `Examenes.Mcp`.
 
@@ -269,3 +286,4 @@ todos se publican requeridos.
 | 4 | **`Aísla`.** La cáscara wasm con `--dir`. Es el spike bloqueante de la Etapa 2 |
 | 5 | **Costo de arranque en frío.** Levantar, hacer replay del journal y desalojar se paga en CADA llamada, porque el módulo se desaloja al terminar. **Medido: 378 ms** por llamada sobre stdio con el journal del POC — no "unos segundos", como decía este README antes de medirlo. Falta el número de la cáscara en proceso y con journals grandes |
 | 6 | **El catálogo se paga completo en cada pregunta.** Medido por la Puerta 2: con 8 tools son ~1 163 tokens, el **86%** del costo fijo por consulta, y viaja entero aunque la pregunta use una sola tool. Filtrarlo antes de mandarlo es opinar sobre semántica, que es del módulo: se decide con Álvaro |
+| 7 | **El respaldo del paquete es aviso, no requisito.** El alta móvil ya lo ata a su **origen** (el manifiesto declara `origin`, el origen publica sus módulos y sus llaves en `/.well-known/gnothi/modules.json`) y verifica su **firma** (`PackageSignature`: ECDSA P-256 sobre el resumen de todos los archivos, la llave pública adentro, y el **pin** de la llave en `installation.json` desde el primer alta). Un paquete firmado cuya firma no cierra no se instala, y tampoco uno firmado con una llave que su origen **retiró** (`revoked` en el `.well-known`, `--revoke` del lado del publicador); un módulo ya instalado con una llave retirada queda marcado al arrancar (`signer.revokedAt`) y la tarjeta lo dice, sin tocar sus interruptores. Y desde el 2026-09-09 tampoco se instala un paquete que su origen **contradice**: el origen publica su lista y este no está, o el paquete dice ser de otro origen del que lo sirvió (`PackageNotBackedException`). El **silencio** del origen (sin `.well-known`, sin `origin` declarado) sigue siendo aviso, y la hoja lo dice; subirlo a rechazo es una línea, `ModuleEnrollment.OriginIsRequired`. Exigir la firma y la custodia de la llave quedaron apuntadas (`NotasGnothiHost/43`) |

@@ -20,8 +20,9 @@ public sealed class Module : IAsyncDisposable
 	}
 
 	public Manifest Manifest { get; }
-	// Consent is the ONLY thing about a module that is mutable while it is running: private
-	// setter and a single write path, Reconsent. The shell and the granted folder are not
+	// Two things about a module change while it is running, and each has its one named write
+	// path: consent (Reconsent), and the mark on its pin when the origin retires the key it was
+	// accepted with (MarkSignerRevoked). Private setter. The shell and the granted folder are not
 	// reloaded, because changing those is reinstalling, not reconsenting.
 	public Installation Installation { get; private set; }
 	public string Directory { get; }
@@ -80,6 +81,17 @@ public sealed class Module : IAsyncDisposable
 		if (sameSwitch && sameDisabled) return false;
 
 		Installation = Installation with { Enabled = enabled, DisabledTools = disabledTools };
+		return true;
+	}
+
+	// THE ORIGIN RETIRED THE KEY THIS MODULE WAS ACCEPTED WITH, and Gnothi learnt it now: the mark
+	// goes on the pin, in memory, mirroring what was just written to installation.json. Nothing
+	// else moves -the switches stay as the person left them- and the screen repaints from here.
+	// False when there is no pin, or it was already marked.
+	public bool MarkSignerRevoked(string at)
+	{
+		if (Installation.Signer is not { RevokedAt: null } signer) return false;
+		Installation = Installation with { Signer = signer with { RevokedAt = at } };
 		return true;
 	}
 

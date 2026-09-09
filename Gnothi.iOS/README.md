@@ -261,5 +261,10 @@ aot-only mode`, **el intérprete no está puesto.**
   pero eso lo resuelve el empaquetado, que es de la Mac. Si la pantalla sale en blanco, el log
   dice `NO se encontro ...` con la ruta exacta.
 - **Los cinco pasos de la sonda.** Nadie los corrió en un iPhone todavía.
+- **El alta nueva, la mitad de iOS (2026-09-09).** El lector de códigos con la cámara, el selector de
+  documentos con varios archivos y «Copiar en Gnothi» están escritos sin compilar, espejando
+  `MainActivity.cs`; y los recursos de la marca (`Assets/fonts`, `Assets/img`) recién se agregaron al
+  csproj. La mitad compartida —inspección, origen, firma, revocación, la lista, la barra— es
+  `Gnothi.Movil` y corre igual. Guion: `PRUEBAS-WEBVIEW-IOS.md` P6b a P6e.
 - **Release con `MtouchInterpreter=-all` y `MtouchLink=SdkOnly`.** Debug es lo que está
   pensado para medir; Release es lo que hay que probar después.

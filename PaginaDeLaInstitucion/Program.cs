@@ -4,7 +4,7 @@
 //   /              su pagina, con el boton "Agregar a Gnothi"
 //   /app/          su PWA, la app suelta que la persona usa hoy
 //   /app/eventos/  su narrativa, relevada al publicador
-//   /<modulo>.zip  el bundle que Gnothi baja al dar de alta el modulo
+//   /<modulo>.gmod el bundle que Gnothi baja al dar de alta el modulo (un zip, con su mime propio)
 //
 // ES LA MISMA PLANTILLA PARA LAS CUATRO instituciones del POC -- laboratorio, supermercado,
 // estacion, concesionario -- y todo lo que cambia entra por configuracion: el bundle, la app
@@ -30,7 +30,14 @@ var app = builder.Build();
 // Todo se pasa por configuracion porque el puerto del tunel (`adb reverse`) lo elige quien
 // corre la prueba, no este archivo.
 string bundle = app.Configuration["Bundle"]
-    ?? Path.Combine(AppContext.BaseDirectory, "examenes.zip");
+    ?? Path.Combine(AppContext.BaseDirectory, "examenes.gmod");
+
+// THE PACKAGE'S OWN TYPE. Served as this, and not as application/zip, so a phone that receives
+// the file -a download, a share- knows what it is without opening it: Gnothi's intent filters
+// match on the mime, because for content:// files the path is opaque and the extension is not
+// there to match. A file that went through chat as plain application/zip is caught too, and the
+// inspection tells a module from any other zip.
+const string ModuleMime = "application/vnd.gnothi.module";
 
 // La carpeta `web/` del bundle ya desempaquetado: se sirve la MISMA app que va adentro del
 // zip, no otra copia. Si lo suelto y lo hospedado fueran binarios distintos, la comparacion
@@ -40,6 +47,15 @@ string appSuelta = app.Configuration["AppSuelta"]
 
 string publicador = app.Configuration["Publicador"] ?? "http://127.0.0.1:8095/";
 string suPropiaUrl = app.Configuration["UrlPublica"] ?? "http://127.0.0.1:8096";
+
+// THE INSTITUTION'S SIGNING KEY, the file armar-bundle.ps1 / Gnothi.Host --sign keep. Only its
+// public half is published here; the private half never leaves that file. Optional: without it
+// the origin publishes no keys, and Gnothi's sheet says the package's key is unknown to it.
+string? llave = app.Configuration["Llave"];
+
+// THE KEYS THE INSTITUTION RETIRED, the list Gnothi.Host --revoke keeps (public halves and dates).
+// Published apart from the active keys: "retired" is a stronger thing to say than "absent".
+string? llavesRetiradas = app.Configuration["LlavesRetiradas"];
 
 string titulo = app.Configuration["Titulo"] ?? "Laboratorio Clinico Delfos";
 string subtitulo = app.Configuration["Subtitulo"] ?? "Mis examenes";
@@ -76,9 +92,50 @@ app.UseRouting();
 // cualquier institucion y el nombre del bundle es lo unico que cambia.
 string nombreDelZip = Path.GetFileName(bundle);
 
-app.MapGet($"/{nombreDelZip}", () => File.Exists(bundle)
-    ? Results.File(bundle, "application/zip")
-    : Results.NotFound($"no hay bundle en {bundle}. Corre armar-bundle.ps1 primero."));
+// THE BUNDLE, with its length announced -Gnothi draws a progress bar from it- and, for rehearsing
+// a slow network on a fast machine, an optional throttle: --LentoKBps 600 serves it at ~600 KB/s,
+// which is what lets a person actually see the download happen in the emulator. Development only.
+int lentoKBps = int.TryParse(app.Configuration["LentoKBps"], out int kbps) ? kbps : 0;
+app.MapGet($"/{nombreDelZip}", async (HttpContext ctx) =>
+{
+    if (!File.Exists(bundle))
+    {
+        ctx.Response.StatusCode = StatusCodes.Status404NotFound;
+        await ctx.Response.WriteAsync($"no hay bundle en {bundle}. Corre armar-bundle.ps1 primero.");
+        return;
+    }
+
+    ctx.Response.ContentType = ModuleMime;
+    ctx.Response.ContentLength = new FileInfo(bundle).Length;
+    await using FileStream file = File.OpenRead(bundle);
+    if (lentoKBps <= 0)
+    {
+        await file.CopyToAsync(ctx.Response.Body, ctx.RequestAborted);
+        return;
+    }
+
+    var chunk = new byte[64 * 1024];
+    int read;
+    while ((read = await file.ReadAsync(chunk, ctx.RequestAborted)) > 0)
+    {
+        await ctx.Response.Body.WriteAsync(chunk.AsMemory(0, read), ctx.RequestAborted);
+        await ctx.Response.Body.FlushAsync(ctx.RequestAborted);
+        await Task.Delay(TimeSpan.FromMilliseconds(read / 1024.0 * 1000 / lentoKBps), ctx.RequestAborted);
+    }
+});
+
+// WHAT THIS ORIGIN PUBLISHES. Gnothi asks the origin that served a bundle whether that bundle is
+// its own -here- and compares with the origin the manifest declares: that is the backing of
+// origin. TLS is what makes the answer worth anything; over http, as in development, it only
+// proves that the three pieces are consistent, and Gnothi's sheet says so.
+app.MapGet("/.well-known/gnothi/modules.json", () =>
+{
+    string? module = ModuleNameOf(bundle);
+    object[] modules = module is null ? [] : [new { module, bundle = $"{suPropiaUrl}/{nombreDelZip}", seal = SealOf(bundle) }];
+    object[] keys = PublishedKey(llave) is { } key ? [key] : [];
+    object[] revoked = RevokedKeys(llavesRetiradas);
+    return Results.Json(new { gnothi = 1, institution = titulo, keys, revoked, modules });
+});
 
 // ---------------------------------------------------------------- la narrativa, relevada
 
@@ -134,8 +191,26 @@ if (Directory.Exists(appSuelta))
 
 app.MapGet("/", () =>
 {
+    // ONE LINK FOR THE BUTTON AND FOR THE CODE. It carries the bundle's address and, when the
+    // bundle is there to be read, the seal of its manifest (&h=): Gnothi refuses a package whose
+    // manifest no longer hashes to it, so whoever made this link or printed this code fixed
+    // WHICH package it points at, and a swap on the server afterwards is caught. Integrity, not
+    // authenticity -- the one who prints the code chooses both the address and the seal -- and
+    // Gnothi's sheet says exactly that.
+    string? seal = SealOf(bundle);
     string alta = "https://go.gnothi.app/alta?bundle="
-        + Uri.EscapeDataString($"{suPropiaUrl}/{nombreDelZip}");
+        + Uri.EscapeDataString($"{suPropiaUrl}/{nombreDelZip}")
+        + (seal is null ? "" : "&h=" + seal);
+
+    // THE CODE, drawn here. The same link as the button, for the person who is reading this
+    // page on a laptop and has Gnothi on her phone: no link crosses that gap, a code does.
+    string qr;
+    using (var generator = new QRCoder.QRCodeGenerator())
+    using (QRCoder.QRCodeData data = generator.CreateQrCode(alta, QRCoder.QRCodeGenerator.ECCLevel.M))
+        // ViewBox, not width/height: an svg sized by width/height attributes does NOT scale when CSS
+        // gives it another size -it gets CROPPED-, and the 294 px drawing squeezed into 176 px on the
+        // page lost its right and bottom edges. Measured 2026-09-09 with a real phone: unreadable.
+        qr = new QRCoder.SvgQRCode(data).GetGraphic(6, "#16202c", "#ffffff", drawQuietZones: true, sizingMode: QRCoder.SvgQRCode.SizingMode.ViewBoxAttribute);
 
     return Results.Content($$"""
         <!doctype html><meta charset=utf-8>
@@ -150,6 +225,10 @@ app.MapGet("/", () =>
                   background: #3f34a8; color: #fff; text-decoration: none; font-weight: 600; }
           a.otra { display: inline-block; margin-top: 14px; color: #3f34a8; }
           code { background: #e9ecf2; padding: 2px 6px; border-radius: 4px; font-size: 13px; }
+          .qr { display: flex; align-items: center; gap: 20px; flex-wrap: wrap; margin-top: 28px; }
+          .qr svg { width: 240px; height: 240px; display: block; border-radius: 8px; background: #fff;
+                    box-shadow: 0 1px 4px rgba(0,0,0,.12); }
+          .qr p { margin: 0; font-size: 14px; max-width: 22em; }
         </style>
         <h1>{{titulo}}</h1>
         <p>{{subtitulo}}</p>
@@ -157,7 +236,14 @@ app.MapGet("/", () =>
            tus datos viven ahi, no en nuestro servidor.</p>
         <a class="cta" href="{{alta}}">Agregar a Gnothi</a>
         <br><a class="otra" href="/app/">o abrir la app en el navegador</a>
-        <p style="margin-top:32px;font-size:13px">El bundle esta en <code>{{suPropiaUrl}}/{{nombreDelZip}}</code></p>
+        <div class="qr">
+          <div>{{qr}}</div>
+          <p>Si estas leyendo esto en una computadora, escanea el codigo desde Gnothi en tu
+             telefono: <b>Agregar modulo &rarr; Escanear el codigo de la institucion</b>.
+             Es el mismo enlace que el boton.</p>
+        </div>
+        <p style="margin-top:32px;font-size:13px">El bundle esta en <code>{{suPropiaUrl}}/{{nombreDelZip}}</code>
+           y este origen publica sus modulos en <code>{{suPropiaUrl}}/.well-known/gnothi/modules.json</code></p>
         """, "text/html");
 });
 
@@ -169,6 +255,83 @@ app.MapGet("/salud", () => Results.Ok(new
     appSuelta,
     hayAppSuelta = Directory.Exists(appSuelta),
     publicador,
+    llave,
+    hayLlave = llave is not null && File.Exists(llave),
 }));
 
 app.Run();
+
+// THE SEAL OF A BUNDLE: the first 16 bytes of the SHA-256 of manifest.json exactly as it sits
+// in the zip, base64url without padding. Gnothi computes the same thing over the same bytes
+// (ModuleEnrollment.SealOf) and the two have to agree byte for byte, so nothing is normalised
+// on either side. Null when there is no bundle to read: the link then carries no seal, which is
+// what it did before, not an error.
+static string? SealOf(string bundlePath)
+{
+    if (!File.Exists(bundlePath)) return null;
+
+    using var zip = System.IO.Compression.ZipFile.OpenRead(bundlePath);
+    System.IO.Compression.ZipArchiveEntry? manifest = zip.Entries.FirstOrDefault(e =>
+        e.FullName.Replace('\\', '/').Equals("manifest.json", StringComparison.OrdinalIgnoreCase));
+    if (manifest is null) return null;
+
+    using Stream bytes = manifest.Open();
+    byte[] hash = System.Security.Cryptography.SHA256.HashData(bytes);
+    return Convert.ToBase64String(hash, 0, 16).TrimEnd('=').Replace('+', '-').Replace('/', '_');
+}
+
+// The public half of the institution's key, as the well-known publishes it: id, algorithm, key.
+// Read from the key file --sign writes, and NOTHING else is read from it.
+static object? PublishedKey(string? keyPath)
+{
+    if (keyPath is null || !File.Exists(keyPath)) return null;
+
+    using var key = System.Text.Json.JsonDocument.Parse(File.ReadAllText(keyPath));
+    System.Text.Json.JsonElement root = key.RootElement;
+    return new
+    {
+        id = root.TryGetProperty("id", out System.Text.Json.JsonElement i) ? i.GetString() : "",
+        alg = root.TryGetProperty("alg", out System.Text.Json.JsonElement a) ? a.GetString() : "",
+        @public = root.TryGetProperty("public", out System.Text.Json.JsonElement p) ? p.GetString() : "",
+    };
+}
+
+// The retired keys, as --revoke wrote them: id, public half, since, reason. Empty when the file
+// does not exist -nothing was ever retired- or cannot be read.
+static object[] RevokedKeys(string? revokedPath)
+{
+    if (revokedPath is null || !File.Exists(revokedPath)) return [];
+
+    try
+    {
+        using var list = System.Text.Json.JsonDocument.Parse(File.ReadAllText(revokedPath));
+        if (list.RootElement.ValueKind != System.Text.Json.JsonValueKind.Array) return [];
+        return [.. list.RootElement.EnumerateArray().Select(r => (object)new
+        {
+            id = r.TryGetProperty("id", out System.Text.Json.JsonElement i) ? i.GetString() : "",
+            @public = r.TryGetProperty("public", out System.Text.Json.JsonElement p) ? p.GetString() : "",
+            since = r.TryGetProperty("since", out System.Text.Json.JsonElement s) ? s.GetString() : "",
+            reason = r.TryGetProperty("reason", out System.Text.Json.JsonElement z) ? z.GetString() : null,
+        })];
+    }
+    catch (System.Text.Json.JsonException)
+    {
+        return [];
+    }
+}
+
+// The module's name as its manifest declares it, for the list this origin publishes. Null when
+// there is no bundle to read.
+static string? ModuleNameOf(string bundlePath)
+{
+    if (!File.Exists(bundlePath)) return null;
+
+    using var zip = System.IO.Compression.ZipFile.OpenRead(bundlePath);
+    System.IO.Compression.ZipArchiveEntry? manifest = zip.Entries.FirstOrDefault(e =>
+        e.FullName.Replace('\\', '/').Equals("manifest.json", StringComparison.OrdinalIgnoreCase));
+    if (manifest is null) return null;
+
+    using Stream bytes = manifest.Open();
+    using var declared = System.Text.Json.JsonDocument.Parse(bytes);
+    return declared.RootElement.TryGetProperty("module", out System.Text.Json.JsonElement m) ? m.GetString() : null;
+}

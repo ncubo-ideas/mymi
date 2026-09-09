@@ -63,6 +63,11 @@ public sealed class AppDelegate : UIApplicationDelegate
 	{
 		if (url is null) return false;
 
+		// A DOCUMENT, not a link: «Copiar en Gnothi» from Archivos, AirDrop or a chat hands the
+		// .gmod over as a file:// url (CFBundleDocumentTypes in Info.plist). It goes to the same
+		// enrollment a picked or shared file gets on Android. Written 2026-09-09 without a Mac.
+		if (url.IsFileUrl) { face?.HandleFile(url); return true; }
+
 		face?.HandleLink(url.AbsoluteString ?? "");
 		return true;
 	}

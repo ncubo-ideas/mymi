@@ -42,7 +42,14 @@ Sirve igual en un **emulador** y en un **teléfono físico de cualquier marca y 
 | P1b PWA como ícono | — | — | — | ✅ |
 | P8 migración | ✅ | ✅ | ✅ | ✅ |
 
-P6 y P9 vienen del 2026-09-03 sobre un **Xiaomi 14T Pro** físico; ver su nota. P1b se corrió en
+P6 y P9 vienen del 2026-09-03 sobre un **Xiaomi 14T Pro** físico; ver su nota.
+
+**Y el alta nueva, corrida el 2026-09-09.** En un **Samsung A54 (Android 16)**: P2b **por QR con la cámara
+real** ✅ —el código de Sotavento Motors en el monitor, la barra de descarga, la hoja con *del código que
+escaneaste*, instalado, `matches:true`—. En el emulador `Gnothi37k4` (Android 37, `-gpu host`): P2b por
+enlace pegado ✅ (Delfos, La Guaria, Sotavento), P2c por archivo con **varios a la vez y la lista** ✅
+(Faro elegida entre tres), P2d firma ✅, revocación ✅, y el rechazo por origen ✅. El guion completo, en
+orden, está en §2b. P1b se corrió en
 DealershipCar y vale para los cuatro: el mecanismo es del navegador, no del módulo.
 
 **Dos precisiones sobre esa tabla**, para que nadie la lea de más:
@@ -75,6 +82,10 @@ adb devices
 
 Tiene que decir `device`. `unauthorized` = el diálogo espera en la pantalla del teléfono.
 `offline` = desconectá y volvé a conectar.
+
+**Con un emulador y el teléfono conectados a la vez**, `adb` se niega a adivinar (*more than one
+device*). Exportá `ANDROID_SERIAL=<la serie que lista adb devices>` antes de correr el escenario o los
+conductores —lo leen `adb`, `pantalla.mjs` y `conducir-el-alta.mjs`—, o cerrá el emulador.
 
 Si nunca compilaste este proyecto acá, hacé antes los pasos 1 y 2 del [README](README.md) —el
 workload de Android y el JDK—; son una sola vez.
@@ -136,6 +147,65 @@ adb logcat -s GNOTHI:I gnothi:I modulo:I
 > `examenes`. Un término inválido hace que logcat rechace **toda** la lista, no sólo ese, así
 > que no salía ni `GNOTHI` y la app parecía muda. Un tag con dos puntos no se puede expresar en
 > `-s`, y por eso el nombre del módulo se mudó al mensaje.
+
+---
+
+## 2b · El guion del alta, para correrlo en diez minutos
+
+Todo lo de P2b a P2d en orden, con lo que tiene que **verse** en cada paso. Sirve para cualquiera con
+el repo, un emulador o un teléfono, y Node 22 si quiere los conductores del paso 8. Al lado, una
+terminal con `adb logcat -s GNOTHI:I gnothi:I` para las líneas que se citan.
+
+1. **Levantá el mundo** (§2): `cd Gnothi.Mobile; .\escenario-webview.ps1`. Arma y **firma** los cuatro
+   bundles —la llave de cada institución queda en `bundles/.keys/<modulo>.key.json`, fuera de git—,
+   levanta publicadores y páginas, e instala Gnothi conservando sus datos. Cada página publica su
+   `/.well-known/gnothi/modules.json` con `keys`, `revoked` y `modules`; comprobalo con
+   `curl http://127.0.0.1:8096/.well-known/gnothi/modules.json`.
+2. **Abrí Gnothi.** El inicio es el mosaico de marcas —vacío la primera vez— con el botón **«Agregar»**
+   arriba a la derecha. Tocarlo abre *Tus instituciones, siempre contigo*, con tres filas.
+3. **Pegar su enlace.** Tocá la fila, pegá `http://127.0.0.1:8096/examenes.gmod` —o el enlace largo con
+   `bundle=` y `&h=` que la página muestra bajo su QR— y «Agregar». La franja *Bajando el módulo de
+   127.0.0.1…* crece con una barra y los megabytes (*4,5 MB de 13,0 MB · 35 %*) mientras baja —en el
+   emulador el túnel es tan rápido que casi no se ve: la página acepta `--LentoKBps 700` para servir
+   el bundle a esa velocidad y verla llenarse—, después *Revisando qué trae…* → la hoja. Tiene que decir: el bloque de identidad (*Laboratorio
+   Clínico Delfos S.A., 3-101-123456 · Declara delfos.cr y lo sirvió 127.0.0.1*, en ámbar porque el mock
+   declara un dominio que no es el que lo sirve) y, en «Lo que Gnothi revisó», *Lo respalda 127.0.0.1…*,
+   *Firmado por la llave «examenes-…», que su origen publica. Gnothi la va a recordar*, los archivos y
+   los MB, *No pide red…*. Log: `alta: respaldo de 127.0.0.1: Verified; firma: Published`. «Instalar en mi
+   teléfono» → la tarjeta de Delfos con su logo, banner y eslogan, y `installation.json` con
+   `provenance` y `signer`. Repetilo: *Ya tenés este módulo* y *Firmado con la misma llave que la vez
+   pasada (desde …)*.
+4. **Escanear su código.** Con cámara real (el emulador no tiene): la fila abre el visor; apuntalo al QR
+   de `http://127.0.0.1:8096/` en otra pantalla. Es el mismo camino que el enlace, con *del código que
+   escaneaste* y *El paquete es el mismo que sellaba el enlace*. En el emulador,
+   `node conducir-el-alta.mjs codigo <imagen-del-qr.png>` le inyecta el código al lector.
+5. **Elegir archivos.** `adb push Gnothi.Mobile/bundles/compras.gmod /sdcard/Download/` y algún zip
+   cualquiera; la fila abre el selector; **mantené presionado** para elegir varios → *Esto encontré en lo
+   que elegiste*, con La Guaria y el zip que *no entra* → tocá La Guaria → su hoja (*Llegó como el archivo
+   compras.gmod, y 127.0.0.1 lo respalda: publica exactamente este paquete*) → instalar → la lista vuelve
+   con *instalado*. «Abrir con» desde Descargas hace lo mismo con uno (P2c).
+6. **Lo que se rechaza, sin hoja** (franja roja, nada instalado): un enlace con `&h=` de otro manifiesto
+   (*El paquete no es el que sellaba el enlace*); un bundle firmado con un archivo tocado (*lo tocaron
+   después de firmarlo*; P2d dice cómo armarlo); un paquete que dice ser de otro origen del que lo sirvió,
+   o cuyo origen ya no lo lista (*Tu institución no reconoce este paquete como suyo*); y uno firmado con
+   una llave retirada, que es el paso 7.
+7. **La institución retira su llave.** Guardá una copia de `bundles/examenes.gmod`. Después:
+
+   ```bash
+   dotnet run --project Gnothi.Host/Gnothi.Host.csproj -- --revoke Gnothi.Mobile/bundles/.keys/examenes.key.json Gnothi.Mobile/bundles/.keys/examenes.revoked.json "prueba"
+   .\Gnothi.Mobile\armar-bundle.ps1 -Modulo examenes -Publicador http://127.0.0.1:8095/ -Origen http://127.0.0.1:8096
+   ```
+
+   El bundle se rearma con una llave nueva y la página, que lee bundle y llaves en cada pedido, publica
+   `revoked`. Relanzá Gnothi: log `revocación: 'examenes': 127.0.0.1 retiró la llave …`, la tarjeta dice
+   **llave retirada por la institución** y el detalle explica qué hacer, sin apagar nada. La copia vieja
+   abierta como archivo se rechaza. El enlace de la página → *Firmado con una llave nueva («examenes-…»),
+   que su origen publica* → instalar → la marca desaparece.
+8. **Sin capturas**, que es como está el emulador G37: `node Gnothi.Mobile/pantalla.mjs "<expresión JS>"`
+   lee la pantalla por CDP, y `node Gnothi.Mobile/conducir-el-alta.mjs pegar|escanear|codigo|archivo|instalar|descartar`
+   la conduce con toques reales. El selector de documentos es nativo y no se conduce desde ahí: la lista
+   del paso 5 se prueba a mano, o en la maqueta del escritorio (`Herramientas/servir-la-cara.mjs`, botón
+   «Agregar» → «Elegir archivos»). Las trampas del emulador están en §4.
 
 ---
 
@@ -266,7 +336,7 @@ interruptor por tool; para que existiera el módulo entero no había nada.
 **Si falla** (probalo apuntando a un zip que no existe):
 
 ```bash
-adb shell am start -a android.intent.action.VIEW -d "https://go.gnothi.app/alta?bundle=http%3A%2F%2F127.0.0.1%3A8102%2Fno-existe.zip"
+adb shell am start -a android.intent.action.VIEW -d "https://go.gnothi.app/alta?bundle=http%3A%2F%2F127.0.0.1%3A8102%2Fno-existe.gmod"
 ```
 
 Tiene que aparecer **en la pantalla** —*La dirección que dio tu institución ya no tiene el
@@ -309,6 +379,200 @@ Tiene que decir `go.gnothi.app: approved`. Si dice `none`, corré:
 ```bash
 adb shell pm set-app-links --package com.ncubo.gnothi.host 2 go.gnothi.app
 ```
+
+### P2b · El alta desde el enlace pegado en Gnothi
+
+Desde el 2026-09-08 el alta también empieza **adentro** de Gnothi: la tarjeta «Agregar módulo»
+abre una hoja con un campo, la persona pega el enlace que le dio su institución —el de
+`go.gnothi.app/alta?bundle=…` o la dirección del bundle, los dos valen— y toca «Agregar» (o Enter).
+De ahí en adelante es el mismo camino que P2: la franja *Bajando el módulo de 127.0.0.1…*, la
+misma hoja de propuesta, y los dos actos. No necesita que `go.gnothi.app` esté aprobado, así que es
+la forma de probar el alta en un aparato donde el App Link no resuelve.
+
+**Qué tenés que ver de más en la hoja:** un bloque **«Lo que Gnothi revisó»**, que sale de la
+inspección del paquete (`Gnothi.Host/PackageInspector.cs`) y no de lo que la institución declara:
+
+- *Lo sirvió 127.0.0.1, del enlace que pegaste. Gnothi todavía no verifica que ese dominio sea el
+  de la institución* — la procedencia, dicha con su límite;
+- la forma y el peso: *Trae la app de la institución, publicada: 232 archivos, 19,4 MB. Con su
+  propio motor adentro (1,7 MB)*;
+- *No pide red, ni micrófono, ni parlante* — o, si pide, cuáles y que se instala **apagado**;
+- *Sin ejecutables ni datos de muestra adentro.*
+
+Un paquete que la inspección rechaza (motor propio en un cargo, un `.exe`, un `installation.json`
+adentro) no llega a la hoja: la franja lo dice y el log trae los motivos.
+
+**Con el código, desde la computadora.** La página de la institución muestra, junto al botón, un
+QR con **el mismo enlace** (`http://127.0.0.1:8096/` en el navegador de la máquina). En Gnothi:
+«Agregar módulo» → **«Escanear el código de la institución»** → la cámara a pantalla completa →
+apuntá al código. Lo que sigue es idéntico; la hoja dice *del código que escaneaste*. Lo lee
+**jsQR** (`Assets/jsqr.js`, JavaScript puro, Apache-2.0), así que lee igual en cualquier aparato y
+no depende de Play Services: el `BarcodeDetector` del WebView quedó solo de respaldo, porque en el
+emulador existía y Play Services nunca bajó el módulo de códigos que tiene detrás — `detect()`
+devolvía vacío para siempre y sin decir nada. La primera vez Android pide el permiso de cámara.
+
+**El sello.** El enlace —botón y código— lleva `&h=`: los primeros 16 bytes del SHA-256 del
+`manifest.json` tal como va en el zip, en base64url. Si el servidor cambia el paquete después de
+que el código se imprimió, Gnothi lo rechaza: *El paquete no es el que sellaba el enlace*. Cuando
+coincide, la hoja lo dice: *El paquete es el mismo que sellaba el enlace*. Es **integridad**, no
+autenticidad: quien imprime el código elige la dirección y el sello. Probalo rearmando el bundle
+con otro manifiesto sin recargar la página.
+
+**El respaldo de origen.** Gnothi le pregunta al origen que sirvió el bundle si el bundle es suyo
+—en `/.well-known/gnothi/modules.json`, que la página publica— y le pregunta al manifiesto de qué
+origen dice ser (`origin`, que `armar-bundle.ps1 -Origen` escribe). Cuando las dos respuestas
+coinciden con el origen que de verdad lo sirvió, la hoja abre con *Lo respalda 127.0.0.1: ese
+origen publica este módulo y el paquete dice ser suyo* — y, sobre http, agrega *La conexión no va
+cifrada: así solo sirve en desarrollo*, porque lo que hace valer la respuesta en producción es TLS.
+Cuando no coinciden hay dos casos, y desde el 2026-09-09 se tratan distinto (el «punto medio» de
+`NotasGnothiHost/43`):
+
+- **Una contradicción se rechaza**, sin hoja: el origen publica su lista y este bundle no está
+  (franja *Tu institución no reconoce este paquete como suyo: no se instala. Pedile el enlace o el
+  paquete actual*), o el paquete dice ser de otro origen del que lo sirvió (*El paquete dice ser de otro
+  origen del que lo sirvió: no se instala*). Alguien habló y dijo que no.
+- **El silencio es aviso**: el origen no publica nada, o el manifiesto no declara origen. La hoja es
+  **otra**, con la caja *sin respaldo verificable* arriba y abajo cuál pieza faltó, y la persona decide.
+  Subirlo a rechazo es una línea, `ModuleEnrollment.OriginIsRequired`, el día que el onboarding exija
+  la lista.
+
+Probalo sirviendo el bundle sin el `.well-known` (aviso), o rearmándolo con otro `-Origen` (rechazo).
+
+⚠️ **En el emulador la cámara es `emulated`** (un patrón de prueba, sin QR): la lectura de verdad
+se prueba con un teléfono apuntando a la pantalla de la computadora, o arrancando el emulador con
+`-camera-back webcam0` y mostrándole el código a la webcam. Sin eso, lo que sí se comprueba en el
+emulador es que el botón abre la cámara (el `<video>` recibe cuadros) y que lo que el lector
+entrega baja por el camino de siempre.
+
+**En el logcat** aparece un verbo nuevo del puente antes de la línea de siempre:
+
+```
+GNOTHI : bridge: alta
+GNOTHI : alta: bajando el bundle de 127.0.0.1
+GNOTHI : alta: propuesta de '<módulo>' servida por 127.0.0.1
+```
+
+**Sin manos, desde la máquina** — y sin capturas, que en el AVD G37 salen vacías. Node 22 o más:
+
+```bash
+node Gnothi.Mobile/conducir-el-alta.mjs pegar http://127.0.0.1:8096/examenes.gmod
+node Gnothi.Mobile/conducir-el-alta.mjs instalar        # o descartar
+```
+
+Toca de verdad —`input tap` a coordenadas que lee de la página por CDP— y lee la pantalla como
+texto: imprime la hoja entera y la franja. `pantalla.mjs` es la pieza de abajo: evalúa una
+expresión adentro del WebView de la cáscara (`node Gnothi.Mobile/pantalla.mjs
+"gn.state.modules.length"`). Buscan adb en `$ADB`, `$ANDROID_HOME` o los SDK de siempre.
+**Medido el 2026-09-08 en el G37**: app limpia → enlace pegado → hoja con la inspección real →
+instalado, `comprobación matches:true`, `resumen` con 18 exámenes; y el enlace a un zip
+inexistente deja en pantalla *La dirección que dio tu institución ya no tiene el módulo*.
+
+### P2c · El alta desde un archivo
+
+Desde el 2026-09-09 el bundle del teléfono se llama **`<modulo>.gmod`**, como el cargo de escritorio
+—las dos formas se distinguen desde adentro, por el manifiesto— y la página lo sirve con su tipo
+propio, `application/vnd.gnothi.module`. Con eso el paquete también entra **como archivo**, por tres
+puertas, y las tres terminan en la misma hoja con la procedencia *Llegó como el archivo X*:
+
+- **«Abrir con»**: un `.gmod` bajado con Chrome, tocado en Descargas o en Archivos, ofrece Gnothi.
+  Gnothi se anota para `application/vnd.gnothi.module` y para `application/zip` (un archivo que
+  pasó por chat o correo suele llegar como zip pelado); la inspección separa un módulo de cualquier
+  otro zip.
+- **Compartir**: desde otra app, la hoja de compartir lista a Gnothi para los mismos tipos. Un texto
+  compartido sigue siendo el traspaso de la app suelta (P8), no se confunden.
+- **«Elegir archivos en mi teléfono»**, dentro de la hoja que abre el botón **«Agregar»** del inicio:
+  el selector de documentos del sistema, sin permiso de almacenamiento y sin recorrer el disco — el
+  sistema busca, la persona elige, Gnothi recibe esos archivos y nada más. **Puede elegir varios**
+  (2026-09-09): Gnothi les da un vistazo —manifiesto, inspección, si vienen firmados, sin preguntarle a
+  nadie— y abre la hoja **«Esto encontré en lo que elegiste»**: una fila por archivo, con la institución
+  y su eslogan si es un módulo, o el nombre del archivo y por qué no entra si no lo es (*No es un módulo
+  de Gnothi*, *Gnothi no lo instalaría: …*), y una etiqueta *ya lo tenés* o *instalado*. Tocar una fila
+  corre el examen completo —origen, firma, pin— y abre su propuesta; al instalar o decir «Ahora no», la
+  lista vuelve con esa fila marcada para seguir con la siguiente. Un solo archivo va directo a su hoja.
+
+La hoja «Agregar» misma se rediseñó ese día en el lenguaje visual de la marca: *Tus instituciones,
+siempre contigo*, y tres filas —**Escanear su código**, **Pegar su enlace** (despliega el campo debajo),
+**Elegir archivos en mi teléfono**—. Los ids que conducen las pruebas no cambiaron (`#alta-url`,
+`#alta-scan`, `#alta-file`), y el campo del enlace se abre con `#alta-link`.
+
+**El respaldo, también para el archivo.** Un archivo no viene de ningún origen, pero su manifiesto
+declara uno; Gnothi le pregunta a ese origen si publica **exactamente este paquete** —el sello que
+la página publica junto a cada módulo en su `.well-known`— y la hoja dice *…y 127.0.0.1 lo respalda:
+publica exactamente este paquete*. Si el origen publica otra versión, *Desconfiá de este módulo*; si
+no declara origen, *nadie responde por él*. Sin firma, el archivo queda tan respaldado como el
+enlace, con el mismo residuo: que la persona reconozca el nombre del origen.
+
+**Cómo probarlo en el emulador** (el `.gmod` que arma el escenario):
+
+```bash
+adb push Gnothi.Mobile/bundles/examenes.gmod /sdcard/Download/examenes.gmod
+```
+
+y en Gnothi: **«Agregar»** → «Elegir archivos en mi teléfono» → Descargas → `examenes.gmod`. Para ver la
+lista, empujá dos o tres (`compras.gmod`, `examenes.gmod`, y cualquier zip que no sea un módulo) y en el
+selector **mantené presionado** uno para elegir varios; Gnothi abre «Esto encontré en lo que elegiste».
+O abrirlo directo, que es «abrir con»:
+
+```bash
+adb shell am start -a android.intent.action.VIEW -t application/vnd.gnothi.module --grant-read-uri-permission \
+  -d "content://com.android.externalstorage.documents/document/primary%3ADownload%2Fexamenes.gmod"
+```
+
+(`--grant-read-uri-permission` hace lo que Descargas hace solo al tocar el archivo: sin él, `am start` no
+concede el `content://` y el log dice `Permission Denial: opening provider … ExternalStorageProvider`.)
+
+**En el logcat:** `alta: archivo 'examenes.gmod' (… bytes, application/vnd.gnothi.module) por
+android.intent.action.VIEW`, después `alta: archivo 'examenes.gmod': 127.0.0.1 dice Verified`, y lo
+de siempre. iOS todavía no tiene selector ni «abrir con»: el botón lo dice.
+
+### P2d · La firma del paquete
+
+Desde el 2026-09-09 `armar-bundle.ps1` **firma** el bundle: el Host, como ayudante del lado del
+publicador (`Gnothi.Host --sign <gmod> <llave.json>`, el mismo código que verifica en el teléfono),
+resume **todos** los archivos del paquete, firma la lista y deja `signature.json` adentro con la llave
+pública. La llave de la institución vive en `bundles/.keys/<modulo>.key.json` (fuera de git; se crea
+la primera vez) y la página publica su mitad pública en el `.well-known` (`keys`). Es ECDSA P-256
+(`ES256`) del propio .NET: ninguna librería nueva en el Host ni en los teléfonos.
+
+**Qué tenés que ver en la hoja**, en «Lo que Gnothi revisó», debajo del respaldo:
+
+- primera vez: *Firmado por la llave «examenes-20260909», que su origen publica. Gnothi la va a recordar
+  para la próxima vez.* Al instalar, la llave queda en `installation.json` (`signer`): el **pin**;
+- la segunda vez (reinstalar): *Firmado con la **misma llave** que la vez pasada (desde 9 sept 2026), y
+  su origen la publica*;
+- si el origen no contesta pero la llave es la conocida: *…Su origen no contestó, pero la llave ya la
+  conocías* — la continuidad, sin red;
+- si la institución cambió de llave y la publica: *Firmado con una llave nueva…, que su origen publica*;
+- si viene con otra llave que nadie publica: **Desconfiá de este módulo. Viene firmado con otra llave
+  que la vez pasada** — lo único que el respaldo de origen no puede decir;
+- sin firma: *El paquete no viene firmado.* Se instala igual (es aviso).
+
+**Lo que no se instala nunca:** un paquete firmado cuya firma no cierra —un archivo cambiado, agregado
+o quitado después de firmar—. La franja dice *El paquete viene firmado y la firma no cierra: lo tocaron
+después de firmarlo.* Probalo: descomprimí el `.gmod`, cambiá un archivo de `web/`, volvé a comprimir y
+pegá el enlace a ese zip (o pasalo como archivo).
+
+**Lo que la firma prueba y lo que no:** el mismo autor que la vez pasada, y que nada cambió desde que
+firmó. No que el autor sea de fiar. La hoja nunca dice «verificado por Gnothi».
+
+**La revocación.** Si la institución retira una llave (`Gnothi.Host --revoke <llave.json>
+<retiradas.json> [motivo]`: la mitad pública pasa a la lista de retiradas, el archivo se renombra y el
+próximo `armar-bundle` crea una llave nueva), su `.well-known` publica `revoked` aparte de `keys`. Dos
+consecuencias, que se ven:
+
+- un paquete firmado con esa llave **no se instala** — franja *El paquete viene firmado con una llave
+  que tu institución retiró: no se instala* — aunque sea la llave que Gnothi conocía: la institución
+  misma dijo que no;
+- un módulo **ya instalado** con esa llave queda **marcado** al arrancar Gnothi (le pregunta al origen
+  de cada módulo firmado): la tarjeta dice *llave retirada por la institución* y el detalle explica
+  qué hacer. Nada más cambia en `installation.json` (`signer.revokedAt`): los interruptores son de la
+  persona. Al volver a agregar el módulo con el paquete nuevo, la llave nueva reemplaza al pin y la
+  marca desaparece.
+
+Para probarlo en el emulador: guardá una copia del `.gmod` firmado, corré `--revoke` sobre
+`bundles/.keys/examenes.key.json`, relanzá el escenario (rearma el bundle con llave nueva y la página
+publica ambas listas) y relanzá Gnothi: la tarjeta marca el módulo; el `.gmod` viejo abierto como
+archivo se rechaza; el enlace de la página instala el nuevo como *llave nueva, que su origen publica*.
 
 ### P3 · El módulo corre hospedado, a pantalla completa
 
@@ -768,6 +1032,25 @@ en memoria, así que reiniciarlo es lo que devuelve la cuenta a «no migrada».
 
 ---
 
+**Un toque automatizado cae en el teclado, o bajo el pliegue.** La ventana es `ADJUST_PAN`: con el
+teclado arriba la página se corre en pantalla pero `getBoundingClientRect` no, así que un `input tap`
+calculado desde la página cae sobre el teclado (y escribe una letra). Confirmá el campo con Enter
+(`input keyevent 66`). Y la hoja de propuesta es más alta que la pantalla: «Instalar» queda abajo,
+hay que deslizar la tarjeta antes de tocar. `conducir-el-alta.mjs` ya hace las dos cosas.
+
+**`INSTALL_FAILED_INSUFFICIENT_STORAGE` al instalar encima.** El `/data` del AVD G37 anda casi
+lleno; `pm uninstall com.ncubo.gnothi.host` y después `adb install` limpio.
+
+**Después de abrir la cámara, la app deja de responder al toque (solo en el AVD G37).** Medido el
+2026-09-08, dos veces: la cámara abre y el `<video>` recibe cuadros, pero desde ese instante ningún
+toque ni tecla llega a la página, y `dumpsys input` dice `FocusedWindows: <none>` y
+`InputDispatcher: No new touched window at (…)` — para Android no hay ventana donde caen los toques,
+aunque `dumpsys window` sigue dando el foco a Gnothi. Recargar la página no lo arregla ni
+`am start` sobre la misma tarea; solo relanzar la app (y `force-stop` tumba `system_server` en este
+AVD: esperar `service check package` y volver a abrir). No es la página: pasa por debajo del WebView,
+y coincide con `Failed to find ColorBuffer` en el log del emulador (`-gpu swangle`). La lectura del
+código en el emulador se prueba con `conducir-el-alta.mjs codigo`; la cámara de verdad, en un teléfono.
+
 ## 5 · Lo que este guion NO puede probar
 
 No es que falte hacerlo: **no se puede desde acá**, y conviene que esté dicho para que nadie lo dé
@@ -778,6 +1061,10 @@ por verificado.
   Android da para probar sin dominio propio — pero no es lo mismo que la verificación real.
 - **Install Referrer** (que el alta sobreviva a pasar por la tienda): necesita Play.
 - **iOS**: los universal links no se disparan desde JS, y no hay aparato acá.
+- **La cámara real y el selector de varios archivos.** El emulador G37 no tiene cámara (el lector se
+  prueba inyectándole la imagen del código, §2b paso 4) y el selector de documentos es nativo: elegir
+  varios con una pulsación larga es un gesto que la conducción por CDP no alcanza. Las dos cosas se
+  prueban a mano en el emulador, o en el A54.
 - **El traspaso de aserciones** está implementado en Exámenes y probado por sus dos puertas —el
   enlace y la hoja de compartir—, pero no está en este guion, y los otros tres módulos todavía
   no lo tienen: cada institución tiene aserciones distintas de la persona, y cuáles viajan es

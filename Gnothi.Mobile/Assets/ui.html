@@ -185,6 +185,12 @@
             animation:girar .8s linear infinite}
   @keyframes girar{to{transform:rotate(360deg)}}
   .alta .ic{flex:0 0 16px;font-size:15px;line-height:1}
+  .alta.trabajando{flex-wrap:wrap;padding:16px 18px;gap:8px 12px}
+  .alta .txt{flex:1;min-width:0}
+  .alta .txt b{display:block;font-weight:700}
+  .alta .txt small{display:block;font-size:12px;opacity:.8;margin-top:2px}
+  .alta .bar{flex:0 0 100%;height:6px;border-radius:999px;background:rgba(58,53,119,.15);overflow:hidden}
+  .alta .bar i{display:block;height:100%;background:#3A3577;border-radius:999px;transition:width .25s linear}
   .chip{display:inline-flex;align-items:center;gap:5px;font-size:10.5px;font-weight:600;
        color:var(--muted);margin-top:4px;justify-content:center}
   .chip svg{width:12px;height:12px}
@@ -207,6 +213,33 @@
   .mod.add .go{color:var(--accent)}
 
   /* bottom sheets: the add-module explanation and the provider picker share the shell */
+  .vias{display:flex;flex-direction:column;gap:10px;margin-top:14px}
+  .via{display:flex;align-items:center;gap:12px;width:100%;text-align:left;border:0;background:var(--paper);
+       border-radius:16px;padding:12px 14px;font:inherit;color:var(--ink);cursor:pointer}
+  .via:active{transform:scale(.99)}
+  .via .vi{width:42px;height:42px;border-radius:12px;background:var(--accent-soft);color:var(--accent-ink);
+       display:grid;place-items:center;flex:none}
+  .via .vi svg{width:22px;height:22px}
+  .via .vt{flex:1;min-width:0}
+  .via .vt b{display:block;font-size:14.5px;font-weight:700}
+  .via .vt small{display:block;color:var(--muted);font-size:12px;line-height:1.35;margin-top:1px}
+  .enlace{display:none;padding:0 4px 4px}
+  .enlace.on{display:block}
+  .osheet .enlace input{margin-top:0}
+  .osheet .enlace button.cta{margin-top:10px}
+  .hallazgo{display:flex;align-items:center;gap:12px;width:100%;text-align:left;border:0;background:var(--paper);
+       border-radius:16px;padding:12px 14px;font:inherit;color:var(--ink);margin-top:10px}
+  .hallazgo:disabled{cursor:default}
+  .hallazgo.mal{opacity:.72}
+  .hallazgo .ico{width:46px;height:46px;border-radius:14px;display:grid;place-items:center;flex:none}
+  .hallazgo .ico svg{width:24px;height:24px}
+  .hallazgo .ht{flex:1;min-width:0}
+  .hallazgo .ht b{display:block;font-size:14.5px}
+  .hallazgo .ht small{display:block;color:var(--muted);font-size:12px;line-height:1.35;margin-top:1px}
+  .hallazgo .tag{font-size:11px;font-weight:700;border-radius:999px;padding:3px 9px;flex:none;
+       background:var(--accent-soft);color:var(--accent-ink)}
+  .hallazgo .tag.ok{background:#E6F6EC;color:#1D6B39}
+  .hallazgo .tag.no{background:var(--off-soft);color:var(--off)}
   .osheet{position:fixed;inset:0;background:rgba(36,31,61,.45);display:none;
        align-items:flex-end;z-index:9}
   .osheet.on{display:flex}
@@ -250,6 +283,18 @@
   .osheet input{width:100%;margin-top:8px;border:1.5px solid var(--line);border-radius:12px;
        padding:11px 14px;font-size:13px;font-family:ui-monospace,monospace;
        background:var(--paper);color:var(--ink);outline:none}
+
+  /* ── the code reader: the camera full screen, a frame, one way out ───── */
+  .scan{position:fixed;inset:0;background:#000;display:none;z-index:12}
+  .scan.on{display:block}
+  .scan video{width:100%;height:100%;object-fit:cover}
+  .scan-ui{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;
+       justify-content:center;gap:18px;padding:24px}
+  .scan-box{width:62vw;max-width:280px;aspect-ratio:1;border:3px solid #fff;border-radius:18px;
+       box-shadow:0 0 0 200vmax rgba(0,0,0,.45)}
+  .scan-ui p{color:#fff;font-size:15px;text-align:center;margin:0;text-shadow:0 1px 2px rgba(0,0,0,.6)}
+  .scan-ui button{background:rgba(255,255,255,.18);color:#fff;border:0;border-radius:14px;
+       padding:12px 24px;font-size:15px}
 
   /* ── module detail ────────────────────────────────────────────────────── */
   .back{display:flex;align-items:center;gap:6px;color:var(--accent);font-weight:600;
@@ -503,8 +548,6 @@
   </div>
 </div>
 
-<!-- adding a module, explained honestly: it is not ours to fabricate here -->
-
 <!-- ═══ EL ALTA: LO QUE LA INSTITUCIÓN PROPONE ═══
      Instalar un módulo es el acto más grande que Sonia hace en Gnothi: le da a una
      institución una carpeta suya y un endpoint registrado. Hasta el 2026-09-04 pasaba sola,
@@ -519,12 +562,75 @@
   </div>
 </div>
 
+<!-- ═══ THE CODE READER ═══
+     The institution's page shows a QR with the SAME link as its button, for the person who reads
+     the page on a computer and has Gnothi on her phone. Here it is read with the phone's camera,
+     inside Gnothi. Decoding is jsQR (jsqr.js next to this file, Apache-2.0): pure JavaScript that
+     ships with the page, so it reads the same on every phone and nothing leaves it. The WebView's
+     own BarcodeDetector is only a fallback: the emulator offered it and Play Services never
+     downloaded the barcode module behind it, so detect() returned nothing, forever, silently.
+     What the code says goes down the same road as a pasted link, with its provenance marked. -->
+<script src="jsqr.js"></script>
+<div id="scan" class="scan">
+  <video id="cam" autoplay playsinline muted></video>
+  <div class="scan-ui">
+    <div class="scan-box"></div>
+    <p id="scan-msg">Apuntá al código de tu institución</p>
+    <button onclick="gn.scan.stop()">Cancelar</button>
+  </div>
+</div>
+
+<!-- ═══ ADDING A MODULE: THE WAYS IN ═══
+     Until 2026-09-08 this sheet only explained and closed with "Entendido": every enrollment
+     began OUTSIDE, on the institution's link. Now the person can paste that link here. Gnothi
+     downloads it, inspects it and shows what it carries before installing anything -- the same
+     "propuesta" sheet a landed link gets. -->
 <div id="sheet" class="osheet" onclick="if(event.target===this)gn.sheet(false)">
   <div class="card">
     <h4>Tus instituciones, siempre contigo.</h4>
-    <p>Agregá sus módulos a Gnothi y llevá con vos la información y los servicios que ofrecen.</p>
-    <p>Buscá <b>«Agregar a Gnothi»</b> en las instituciones participantes.</p>
-    <button class="cta" onclick="gn.sheet(false)">Entendido</button>
+    <p>Tu laboratorio, tu supermercado, tu emisor de facturas te dan un módulo. Agregalo y llevá con
+    vos su información y sus servicios. Gnothi lo revisa y te muestra qué trae antes de instalar nada.</p>
+    <!-- THE THREE WAYS IN, as rows: the code, the link, the files. The link field unfolds under its
+         row so the sheet opens quiet; the ids stay because conducir-el-alta.mjs drives them. -->
+    <div class="vias">
+      <button class="via" id="alta-scan" onclick="gn.scan.start()">
+        <span class="vi"><svg viewBox="0 0 24 24"><rect x="4" y="4" width="6" height="6" rx="1"/><rect x="14" y="4" width="6" height="6" rx="1"/><rect x="4" y="14" width="6" height="6" rx="1"/><path d="M14 14h3v3h-3zM20 14v3M17 20h3M14 20h.5"/></svg></span>
+        <span class="vt"><b>Escanear su código</b><small>el QR de su página, o el de tu hoja de resultados</small></span>
+        <span class="chev">›</span>
+      </button>
+      <button class="via" id="alta-link" onclick="gn.altaMostrarEnlace()">
+        <span class="vi"><svg viewBox="0 0 24 24"><path d="M10 14a4 4 0 0 0 5.7 0l3-3a4 4 0 0 0-5.7-5.7l-1 1"/><path d="M14 10a4 4 0 0 0-5.7 0l-3 3a4 4 0 0 0 5.7 5.7l1-1"/></svg></span>
+        <span class="vt"><b>Pegar su enlace</b><small>el que te llegó por correo o por WhatsApp</small></span>
+        <span class="chev">›</span>
+      </button>
+      <div id="alta-enlace" class="enlace">
+        <input id="alta-url" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false" inputmode="url" placeholder="https://…">
+        <button class="cta" onclick="gn.altaDesdeEnlace()">Agregar</button>
+      </div>
+      <button class="via" id="alta-file" onclick="gn.altaArchivo()">
+        <span class="vi"><svg viewBox="0 0 24 24"><path d="M4 7a2 2 0 0 1 2-2h4l2 2h6a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2z"/></svg></span>
+        <span class="vt"><b>Elegir archivos en mi teléfono</b><small>se abre en Descargas; podés elegir varios</small></span>
+        <span class="chev">›</span>
+      </button>
+    </div>
+    <div id="alta-hint" style="min-height:18px;margin:8px 4px 0;font-size:13px;color:#8E2A1F"></div>
+    <p id="alta-noscan" style="display:none"><small>Este teléfono no puede leer códigos desde Gnothi:
+    pegá el enlace, o escaneá el código con la cámara del sistema.</small></p>
+    <p style="margin-top:8px"><small>Si estás en la página de tu institución, su botón «Agregar a Gnothi» hace lo mismo.</small></p>
+  </div>
+</div>
+
+<!-- ═══ WHAT SHE PICKED: the modules Gnothi found among the files, to choose from ═══
+     Several files come from the picker; each got a quick look (manifest, inspection, signed or not)
+     and nothing else. Tapping one runs the whole examination and opens its proposal; when that ends
+     the list comes back with the row marked, so she goes on with the next. -->
+<div id="hallazgos" class="osheet" onclick="if(event.target===this)gn.altaCerrarLista()">
+  <div class="card">
+    <h4>Esto encontré en lo que elegiste</h4>
+    <p>Tocá el módulo que querés agregar. Gnothi te muestra qué trae antes de instalarlo, y después
+    podés seguir con el siguiente.</p>
+    <div id="ha-lista"></div>
+    <button class="btn ghost" style="width:100%;margin-top:14px" onclick="gn.altaCerrarLista()">Listo</button>
   </div>
 </div>
 
@@ -668,7 +774,15 @@ const gn = {
   // (especificacion 11 §8). La pone en pantalla el lado nativo; esta pagina solo lo pide.
   abrir(name) { gn.call('abrir', { module: name }); },
 
-  sheet(on) { document.getElementById('sheet').classList.toggle('on', on); },
+  sheet(on) {
+    document.getElementById('sheet').classList.toggle('on', on);
+    if (!on) document.getElementById('alta-enlace').classList.remove('on');
+  },
+  // "Pegar su enlace" unfolds the field under its row and puts the cursor in it.
+  altaMostrarEnlace() {
+    document.getElementById('alta-enlace').classList.add('on');
+    document.getElementById('alta-url').focus();
+  },
 
   // THE PHONE'S BACK BUTTON lands here: the Activity asks the page first. Returns whether
   // the page consumed it -- sheet open closes, any view that is not home goes home, and on
@@ -697,6 +811,7 @@ const gn = {
     if (kind === 'fail')   { gn.answer('No pude contestar: ' + payload, true); return; }
     if (kind === 'alta')   { if (JSON.parse(payload).estado === 'nada') { document.getElementById('alta').innerHTML = ''; return; } gn.alta(JSON.parse(payload)); return; }
     if (kind === 'propuesta') { gn.verPropuesta(JSON.parse(payload)); return; }
+    if (kind === 'hallazgos') { gn.hallazgos(JSON.parse(payload)); return; }
   },
 
   // EL ALTA, MIENTRAS PASA. "listo" se va solo a los 6 segundos porque ya se ve la tarjeta
@@ -708,6 +823,7 @@ const gn = {
   verPropuesta(p) {
     gn.propuesta = p;
     document.getElementById('alta').innerHTML = '';
+    document.getElementById('hallazgos').classList.remove('on');
 
     // Who proposes, with its brand, and what: the same face the card is going to have.
     document.getElementById('pr-h').innerHTML =
@@ -718,20 +834,102 @@ const gn = {
     const tools = (p.tools || []).map(t =>
       '<li><b>' + esc(t.titulo || t.nombre) + '</b><br><small>' + esc(t.descripcion) + '</small></li>').join('');
 
-    // LA PROCEDENCIA, CONTRASTADA, y es lo único de todo esto que Gnothi puede afirmar por su
-    // cuenta: `coincide` lo calculó el Host comparando el dominio que la institución DECLARA
-    // contra el host del que BAJÓ el bundle. Cuando no coinciden no se bloquea nada -- puede
-    // ser un CDN legítimo -- pero se dice antes del sí, que es cuando sirve.
+    // WHAT GNOTHI CHECKED before showing anything. It comes from the package inspection and the
+    // provenance: facts Gnothi found out by itself, not what the institution declares. And it
+    // says what is NOT checked yet -- that the host that served the package is the institution's.
+    const rev = p.revision || {}, pro = p.procedencia || {};
+    const mb = n => (Math.max(n || 0, 0) / 1048576).toFixed(1).replace('.', ',') + ' MB';
+    const via = pro.origen === 'qr' ? ', del código que escaneaste'
+              : pro.origen === 'pegado' ? ', del enlace que pegaste' : '';
+    const host = esc(pro.servido || p.servido || '?');
+    const sello = pro.sello ? '<small>El paquete es el mismo que sellaba el enlace: no cambió desde que se generó.</small>' : '';
+
+    // A FILE came from no origin; but the package claims one, and that origin was asked whether
+    // it publishes exactly this package. `host` is the file's name here.
+    const quien = esc((pro.origenDeclarado || '').replace(/^https?:\/\//, '') || '?');
+    const archivoTexto = {
+      'verificado': 'Llegó como el archivo <b>' + host + '</b>, y <b>' + quien + '</b> lo respalda: publica exactamente este paquete.'
+        + (pro.seguro ? '' : '<small>La conexión no va cifrada: así solo sirve en desarrollo.</small>'),
+      'sin-publicacion': 'Llegó como el archivo <b>' + host + '</b>.'
+        + '<small>Dice ser de <b>' + quien + '</b>, pero ese origen no publica cuáles módulos son suyos: no se pudo verificar.</small>',
+      'no-publicado': 'Llegó como el archivo <b>' + host + '</b>.'
+        + '<small>Dice ser de <b>' + quien + '</b>, y ese origen <b>no publica este paquete</b> (o publica otra versión).</small>',
+      'sin-origen-declarado': 'Llegó como el archivo <b>' + host + '</b>.'
+        + '<small>No declara de qué origen es: nadie responde por él.</small>',
+    };
+
+    // THE ORIGIN CHECK, in the person's words: the origin that served the package was asked
+    // whether the package is its own, and the package was asked which origin it claims.
+    const respaldoTexto = pro.origen === 'archivo' ? archivoTexto : {
+      'verificado': 'Lo respalda <b>' + host + '</b>' + via + ': ese origen publica este módulo y el paquete dice ser suyo.'
+        + (pro.seguro ? '' : '<small>La conexión no va cifrada: así solo sirve en desarrollo.</small>'),
+      'sin-publicacion': 'Lo sirvió <b>' + host + '</b>' + via + '.'
+        + '<small>Ese origen no publica cuáles módulos son suyos, así que Gnothi no pudo verificarlo: fijate que lo reconozcas.</small>',
+      'no-publicado': 'Lo sirvió <b>' + host + '</b>' + via + '.'
+        + '<small>Ese origen publica sus módulos y <b>este no está entre ellos</b>.</small>',
+      'sin-origen-declarado': 'Lo sirvió <b>' + host + '</b>' + via + '.'
+        + '<small>Ese origen lo publica, pero el paquete no declara de qué origen es: no queda atado del todo.</small>',
+      'otro-origen': 'Lo sirvió <b>' + host + '</b>' + via + '.'
+        + '<small>El paquete dice ser de <b>' + esc(pro.origenDeclarado || '?') + '</b>, y no lo sirvió ese origen.</small>',
+    };
+    const respaldo = (respaldoTexto[pro.respaldo]
+      || (pro.origen === 'archivo'
+        ? 'Llegó como el archivo <b>' + host + '</b>.<small>No viene de ningún origen: nadie responde por él.</small>'
+        : 'Lo sirvió <b>' + host + '</b>' + via + '.<small>Gnothi no pudo verificar que ese origen sea el de la institución: fijate que lo reconozcas.</small>'))
+      + sello;
+
+    // THE SIGNATURE: whose key, and since when Gnothi knows it. Continuity, not virtue.
+    const desde = pro.firmaDesde ? new Date(pro.firmaDesde).toLocaleDateString('es', { day: 'numeric', month: 'short', year: 'numeric' }) : '';
+    const llave = esc(pro.firmante || '?');
+    const firma = {
+      'sin-firma': 'El paquete no viene firmado.',
+      'publicada': desde
+        ? 'Firmado con la <b>misma llave</b> que la vez pasada (desde ' + desde + '), y su origen la publica.'
+        : 'Firmado por la llave «' + llave + '», que su origen publica.<small>Gnothi la va a recordar para la próxima vez.</small>',
+      'conocida': 'Firmado con la <b>misma llave</b> que la vez pasada (desde ' + desde + ').<small>Su origen no contestó, pero la llave ya la conocías.</small>',
+      'rotada': 'Firmado con una <b>llave nueva</b> («' + llave + '»), que su origen publica.<small>No es la de la vez pasada. Gnothi va a recordar esta.</small>',
+      'desconocida': 'Firmado por una llave («' + llave + '») que su origen <b>no publica</b> y que Gnothi no conocía.',
+      'cambiada': '<b>La llave cambió</b>: no es la que firmaba la vez pasada, y su origen no publica la nueva («' + llave + '»).',
+    }[pro.firma] || 'El paquete no viene firmado.';
+
+    // A module without a verifiable backing gets a DIFFERENT sheet, not the same one with a
+    // footnote: the warning goes first, and says how bad it is. A changed key is the loudest.
+    const desconfiar = pro.firma === 'cambiada' ? 'Viene firmado con otra llave que la vez pasada, y su origen no publica la nueva.'
+      : pro.respaldo === 'otro-origen' ? 'Dice ser de otro origen del que lo sirvió.'
+      : pro.respaldo === 'no-publicado' ? (pro.origen === 'archivo' ? 'El origen que dice ser suyo no publica este paquete.' : 'El origen que lo sirvió no lo reconoce como suyo.')
+      : null;
+    const alerta = desconfiar
+      ? '<p class="ojo"><b>Desconfiá de este módulo.</b> ' + desconfiar + ' Si no lo esperabas, «Ahora no».</p>'
+      : pro.respaldo === 'verificado' && pro.firma !== 'desconocida' ? ''
+      : pro.respaldo === 'verificado'
+        ? '<p class="ojo">Su origen lo publica, pero viene firmado por una llave que ese origen <b>no publica</b>. Abajo dice más.</p>'
+        : '<p class="ojo">Este módulo llega <b>sin respaldo verificable</b>: Gnothi no pudo confirmar que '
+          + (pro.origen === 'archivo' ? 'alguien responda por este archivo' : host + ' publique este módulo') + '. Abajo dice por qué.</p>';
+    const forma = rev.forma === 'hospedado'
+      ? 'Trae la app de la institución, publicada: ' + (rev.archivos || 0) + ' archivos, ' + mb(rev.bytes) + '.'
+        + '<small>Con su propio motor adentro (' + mb(rev.motorBytes) + '): un navegador no corre C# sin él.</small>'
+      : 'Trae solo su dominio, sin motor propio.<small>El motor se lo presta Gnothi.</small>';
+    const caps = (rev.excesos && rev.excesos.length)
+      ? 'Pide más de lo que un módulo de datos necesita: <b>' + esc(rev.excesos.join(', ')) + '</b>.'
+        + '<small>Se instala apagado. Vos decidís si lo encendés.</small>'
+      : 'No pide red, ni micrófono, ni parlante.';
+
+    // THE PUBLISHER'S IDENTITY, from the brand line: legal name, tax id, version, and the domain it
+    // DECLARES next to the host that served it. Three states, like the detail: coincide, no
+    // coincide, and nothing to compare -a file came from no server- which is said, not painted.
+    const veredicto = p.coincide === true ? 'ok' : p.coincide === false ? 'duda' : 'dice';
     const proc = (p.dominio || p.razonSocial)
-      ? '<div class="proc ' + (p.coincide ? 'ok' : 'duda') + '">'
+      ? '<div class="proc ' + veredicto + '">'
         + '<svg viewBox="0 0 24 24"><path d="M12 3l7 3v5c0 4.4-2.9 8.1-7 9.5C7.9 19.1 5 15.4 5 11V6l7-3z"/>'
-        + (p.coincide ? '<path d="M9.2 11.8l2 2 3.6-3.9"/>' : '<path d="M12 8.5v4M12 15.2v.1"/>') + '</svg>'
+        + (veredicto === 'ok' ? '<path d="M9.2 11.8l2 2 3.6-3.9"/>' : veredicto === 'duda' ? '<path d="M12 8.5v4M12 15.2v.1"/>' : '') + '</svg>'
         + '<span>' + (p.razonSocial ? '<b>' + esc(p.razonSocial) + '</b>' : '')
         + (p.cedula ? ', ' + esc(p.cedula) : '')
         + (p.dominio
-            ? '<br>' + (p.coincide
+            ? '<br>' + (veredicto === 'ok'
                 ? 'Lo sirvió ' + esc(p.servido) + ', el mismo dominio que declara'
-                : 'Declara <b>' + esc(p.dominio) + '</b> y lo sirvió <b>' + esc(p.servido) + '</b>')
+                : veredicto === 'duda'
+                  ? 'Declara <b>' + esc(p.dominio) + '</b> y lo sirvió <b>' + esc(p.servido) + '</b>'
+                  : 'Declara ' + esc(p.dominio) + ' · llegó como archivo')
             : '')
         + (p.version ? ' · v' + esc(p.version) : '')
         + '</span></div>'
@@ -739,6 +937,7 @@ const gn = {
 
     document.getElementById('pr-cuerpo').innerHTML =
       (p.yaEstaba ? '<p class="ojo">Ya tenés este módulo. Reinstalarlo reemplaza su app; su registro se conserva.</p>' : '')
+      + alerta
       + proc
       + (p.descripcion
           ? '<p class="desc" style="margin:10px 0">' + esc(p.descripcion)
@@ -756,13 +955,147 @@ const gn = {
           : '')
       + '</p>'
       + '<p><b>Con quién va a hablar</b><br><code>' + esc(p.publicador || '(no declara publicador)') + '</code><br>'
-      + '<small>Es la única red que va a poder tocar, y la hace Gnothi por él.</small></p>';
+      + '<small>Es la única red que va a poder tocar, y la hace Gnothi por él.</small></p>'
+      + '<p><b>Lo que Gnothi revisó</b></p><ul class="pr-tools">'
+      + '<li>' + respaldo + '</li><li>' + firma + '</li><li>' + forma + '</li><li>' + caps + '</li>'
+      + '<li>Sin ejecutables ni datos de muestra adentro.</li></ul>';
 
     document.getElementById('propuesta').classList.add('on');
   },
 
   altaAceptar()   { document.getElementById('propuesta').classList.remove('on'); gn.call('altaAceptar'); },
   altaDescartar() { document.getElementById('propuesta').classList.remove('on'); gn.propuesta = null; gn.call('altaDescartar'); },
+
+  // THE WAY IN THAT STARTS INSIDE GNOTHI: the person pastes the link her institution gave her.
+  // Either the go.gnothi.app link with the bundle as a parameter or the bundle's address work;
+  // the Host unwraps it. From here on it is identical to a link that landed: "alta", "propuesta".
+  altaDesdeEnlace() {
+    const inp = document.getElementById('alta-url'), hint = document.getElementById('alta-hint');
+    const url = (inp.value || '').trim();
+    if (!url) { hint.textContent = 'Pegá el enlace primero.'; inp.focus(); return; }
+    hint.textContent = '';
+    gn.sheet(false);
+    inp.value = '';
+    gn.call('alta', { url });
+  },
+
+  // THE FILE, PICKED. The picker is the platform's (the system's document picker, no storage
+  // permission); the platform answers ok:true when it has one, and what she picks comes back down
+  // the same road, with its provenance marked as a file. A platform without a picker yet says so.
+  // WHAT GNOTHI FOUND IN THE FILES SHE PICKED, one row each: the institution's name and slogan when
+  // it is a module, the file's name when it is not, and a tag for what happened to it. A row that
+  // is a module she does not have yet is the only one that can be tapped.
+  hallazgos(h) {
+    const mb = n => (Math.max(n || 0, 0) / 1048576).toFixed(1).replace('.', ',') + ' MB';
+    gn.sheet(false);
+    document.getElementById('propuesta').classList.remove('on');
+    const rows = (h.archivos || []).map(a => {
+      const esModulo = !!a.modulo;
+      const nombre = esModulo ? (a.nombreCorto || a.institucion || a.titulo) : a.archivo;
+      const linea = esModulo
+        ? ((a.institucion && a.nombreCorto && a.institucion !== a.nombreCorto) ? a.institucion + ' · ' : '')
+          + a.archivo + ' · ' + mb(a.bytes) + (a.firmado ? ' · firmado' : '')
+        : a.archivo + ' · ' + mb(a.bytes);
+      const tag = a.instalado ? '<span class="tag ok">instalado</span>'
+        : a.problema ? '<span class="tag no">no entra</span>'
+        : a.yaEstaba ? '<span class="tag">ya lo tenés</span>'
+        : '<span class="chev">›</span>';
+      const bloqueado = !!a.problema || a.instalado;
+      return '<button class="hallazgo' + (a.problema ? ' mal' : '') + '"'
+        + (bloqueado ? ' disabled' : ' onclick="gn.altaElegido(' + a.indice + ')"') + '>'
+        + iconOf({ name: esModulo ? a.modulo : '_' })
+        + '<div class="ht"><b>' + esc(nombre) + '</b><small>' + esc(a.problema || linea) + '</small></div>'
+        + tag + '</button>';
+    }).join('');
+    document.getElementById('ha-lista').innerHTML = rows || '<p>No encontré ningún módulo en lo que elegiste.</p>';
+    document.getElementById('hallazgos').classList.add('on');
+  },
+  altaElegido(i) { document.getElementById('hallazgos').classList.remove('on'); gn.call('altaElegido', { indice: i }); },
+  altaCerrarLista() { document.getElementById('hallazgos').classList.remove('on'); gn.call('altaCerrarLista'); },
+
+  altaArchivo() {
+    const hint = document.getElementById('alta-hint');
+    const r = gn.call('altaArchivo');
+    if (!r || r.ok !== true) { hint.textContent = 'En este teléfono todavía no se puede elegir un archivo: pegá el enlace.'; return; }
+    hint.textContent = '';
+    gn.sheet(false);
+  },
+
+  // THE CODE READER. Camera in, link out, and then the same road as a pasted link.
+  scan: {
+    stream: null, timer: null,
+    supported() {
+      return !!(navigator.mediaDevices && navigator.mediaDevices.getUserMedia)
+        && (typeof jsQR === 'function' || 'BarcodeDetector' in window);
+    },
+
+    // Read a code out of one frame -- the camera's, or an image a test hands in. jsQR first: pure
+    // JS, the same everywhere, no Google module. The platform's detector only if jsQR is missing.
+    async decode(source, width, height) {
+      const c = gn.scan.canvas || (gn.scan.canvas = document.createElement('canvas'));
+      c.width = width; c.height = height;
+      const g = c.getContext('2d', { willReadFrequently: true });
+      g.drawImage(source, 0, 0, width, height);
+      if (typeof jsQR === 'function') {
+        const px = g.getImageData(0, 0, width, height);
+        const hit = jsQR(px.data, width, height, { inversionAttempts: 'dontInvert' });
+        return hit && hit.data ? hit.data : null;
+      }
+      const codes = await new BarcodeDetector({ formats: ['qr_code'] }).detect(c);
+      return codes.length ? codes[0].rawValue : null;
+    },
+
+    async start() {
+      const hint = document.getElementById('alta-hint');
+      if (!gn.scan.supported()) { hint.textContent = 'Este teléfono no puede leer códigos desde Gnothi.'; return; }
+      hint.textContent = '';
+
+      // The platform grants or denies the camera here (Android asks the person the first time).
+      try {
+        // The back camera, asked for 720p: at the 640x480 some phones default to, a code shown on a
+        // monitor across a desk is a blur of modules (measured 2026-09-09 on the A54).
+        gn.scan.stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment', width: { ideal: 1280 }, height: { ideal: 720 } }, audio: false });
+      } catch (e) {
+        hint.textContent = e && e.name === 'NotAllowedError'
+          ? 'Gnothi no tiene permiso para usar la cámara.'
+          : 'No se pudo abrir la cámara: ' + (e && e.message || e);
+        return;
+      }
+
+      gn.sheet(false);
+      const video = document.getElementById('cam'), msg = document.getElementById('scan-msg');
+      msg.textContent = 'Apuntá al código de tu institución';
+      video.srcObject = gn.scan.stream;
+      document.getElementById('scan').classList.add('on');
+
+      // Four frames a second, downscaled to 640 wide: plenty for a code held up to the camera,
+      // and cheap enough for jsQR on a phone.
+      let busy = false;
+      gn.scan.timer = setInterval(async () => {
+        if (busy || video.readyState < 2 || !video.videoWidth) return;
+        busy = true;
+        try {
+          const scale = Math.min(1, 960 / video.videoWidth);
+          const text = await gn.scan.decode(video, Math.round(video.videoWidth * scale), Math.round(video.videoHeight * scale));
+          if (text) gn.scan.found(text);
+        } catch (e) { msg.textContent = 'No se pudo leer: ' + (e && e.message || e); }
+        busy = false;
+      }, 250);
+    },
+
+    stop() {
+      if (gn.scan.timer) { clearInterval(gn.scan.timer); gn.scan.timer = null; }
+      if (gn.scan.stream) { gn.scan.stream.getTracks().forEach(t => t.stop()); gn.scan.stream = null; }
+      document.getElementById('cam').srcObject = null;
+      document.getElementById('scan').classList.remove('on');
+    },
+
+    // What the code said. One entry for the camera and for a test that hands in a frame.
+    found(text) {
+      gn.scan.stop();
+      gn.call('alta', { url: text, via: 'qr' });
+    },
+  },
 
   altaTimer: null,
   alta(a) {
@@ -773,8 +1106,15 @@ const gn = {
                  : a.estado === 'listo'      ? '<span class="ic">✓</span>'
                  :                              '<span class="ic">!</span>';
 
-    caja.innerHTML = '<div class="alta ' + a.estado + '">' + adorno
-                   + '<span>' + esc(a.detalle) + '</span></div>';
+    // While a bundle downloads the strip grows into a card with a bar and the megabytes: the
+    // shell sends how far it got (progreso, bytes, total) about every quarter megabyte.
+    const mb = n => (Math.max(n || 0, 0) / 1048576).toFixed(1).replace('.', ',') + ' MB';
+    const pct = a.progreso == null ? null : Math.round(Math.min(1, a.progreso) * 100);
+    const cuerpo = a.estado === 'trabajando' && pct != null
+      ? '<span class="txt"><b>' + esc(a.detalle) + '</b><small>' + mb(a.bytes) + ' de ' + mb(a.total) + ' · ' + pct + ' %</small></span>'
+        + '<div class="bar"><i style="width:' + pct + '%"></i></div>'
+      : '<span>' + esc(a.detalle) + '</span>';
+    caja.innerHTML = '<div class="alta ' + a.estado + '">' + adorno + cuerpo + '</div>';
 
     if (a.estado === 'listo') gn.altaTimer = setTimeout(() => { caja.innerHTML = ''; }, 6000);
   },
@@ -858,6 +1198,7 @@ const gn = {
         + (nm.pre ? '<span class="pre">' + esc(nm.pre) + '</span>' : '') + '<b' + (b.font && b.font.regular ? '' : ' class="mf"') + '>' + esc(nm.big) + '</b></div></div>'
         + '<small>' + esc(taglineOf(m)) + '</small>'
         + '<div class="acts">'
+        + (m.signerRevokedAt ? '<span class="off-tag">Llave retirada por la institución</span>' : '')
         + '<button class="perm" onclick="event.stopPropagation();gn.detail(\'' + m.name + '\')">'
         + '<svg viewBox="0 0 24 24"><rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/></svg>'
         + on + (on === 1 ? ' permiso activo' : ' permisos activos') + '</button>'
@@ -886,6 +1227,14 @@ const gn = {
         + '<div>'
         + '<b style="color:' + acento(m) + (m.brand && m.brand.font && m.brand.font.regular ? ";font-family:'gn-" + attr(m.name) + "'" : '') + '">' + esc(nameOf(m)) + '</b>'
         + '<small>' + esc(taglineOf(m)) + '</small></div></div>'
+
+        // The institution retired the key this module was accepted with. Said here, once, and
+        // nothing is switched for her: what she has is hers; what she does about it is hers too.
+        + (m.signerRevokedAt
+            ? '<p class="ojo"><b>Tu institución retiró la llave</b> con la que firmó este módulo'
+              + ' (Gnothi lo supo el ' + new Date(m.signerRevokedAt).toLocaleDateString('es', { day: 'numeric', month: 'short', year: 'numeric' }) + ').'
+              + ' Lo que ya tenés sigue siendo tuyo. Pedile un paquete nuevo y volvé a agregarlo: Gnothi va a recordar la llave nueva.</p>'
+            : '')
 
         // WHAT THE CARD PROMISED: the queries, first. This is the point of entry to what the
         // institution exposes to the AI, and the person's switches live here.
@@ -1188,11 +1537,63 @@ const MOCK = { modules: [
   // A module WITHOUT a brand, on purpose: it is the fallback path, and it has to keep looking good.
   { name:'facturas', installedAt:'2026-09-05T09:00:00Z', title:'My invoices', institution:'Súper El Triunfo', slogan:'Ahorro y calidad en un solo lugar',
     brand:{ color:'#C86B12', logo:'../bundles/facturas/web/brand/logo.png', banner:'../bundles/facturas/web/brand/banner.jpg', font:{ family:'Lora', regular:'../bundles/facturas/web/brand/Lora-700.woff2', bold:'' } },
-    enabled:true, journalBytes:1650, journalFiles:3, tools:[
+    enabled:true, journalBytes:1650, journalFiles:3, signerKey:'facturas-202603', signerRevokedAt:'2026-09-09T12:00:00Z', tools:[
     { name:'total_de_facturas', title:'Total spent', enabled:true, description:'Total of all invoices on record.' }]},
 ], settings: { name:'Groq', provider:'api.groq.com', model:'openai/gpt-oss-120b', keyPresent:true, root:'/data/user/0/…/files/Modulos' } };
 
+// What a pasted link produces in the mock, so the proposal sheet -- review block included -- can
+// be iterated on a monitor with no phone attached. Shape mirrors Shell.PushProposal.
+const MOCK_PROPUESTA = {
+  modulo: 'cargas', titulo: 'Mis cargas', institucion: 'Estaciones Faro (mock del POC)',
+  servido: 'estaciones-faro.cr', publicador: 'https://estaciones-faro.cr/eventos/cliente/1',
+  journal: '/data/user/0/com.ncubo.gnothi.host/files/journals/cargas', yaEstaba: false,
+  tools: [
+    { nombre: 'mis_cargas', titulo: 'Mis cargas', descripcion: 'Las cargas de combustible registradas en este teléfono.' },
+    { nombre: 'rendimiento_vs_habitual', titulo: 'Cómo viene el rendimiento', descripcion: 'Si el último tramo mejoró o empeoró contra tu nivel de siempre.' },
+  ],
+  procedencia: { origen: 'pegado', servido: 'estaciones-faro.cr' },
+  revision: { forma: 'hospedado', archivos: 214, bytes: 11862016, motorArchivos: 12, motorBytes: 1017000, excesos: [], encendido: true },
+};
+
 function mock(op, x) {
+  if (op === 'altaArchivo') {
+    // The mock "picks" three files: two modules -one she already has- and a zip that is not one.
+    setTimeout(() => gn.push('hallazgos', '', JSON.stringify({ archivos: [
+      { indice: 0, archivo: 'cargas.gmod', bytes: 11862016, modulo: 'cargas', titulo: 'Mis cargas', institucion: 'Estaciones Faro',
+        nombreCorto: 'Faro', eslogan: 'Rendimiento real, tramo a tramo', color: '#0B3C49', categoria: 'estacion', firmado: true, problema: '', instalado: false, yaEstaba: false },
+      { indice: 1, archivo: 'examenes.gmod', bytes: 13027208, modulo: 'examenes', titulo: 'Tus examenes, al dia', institucion: 'Laboratorio Clínico Delfos',
+        nombreCorto: 'Delfos', eslogan: 'Tu salud, en tus manos', color: '#0e2f55', categoria: 'laboratorio', firmado: true, problema: '', instalado: false, yaEstaba: true },
+      { indice: 2, archivo: 'fotos-vacaciones.zip', bytes: 40210000, modulo: '', titulo: '', institucion: '', nombreCorto: '', eslogan: '', color: '', categoria: '',
+        firmado: false, problema: 'No es un módulo de Gnothi: no trae un manifiesto legible.', instalado: false, yaEstaba: false },
+    ] })), 400);
+    return { ok: true };
+  }
+  if (op === 'altaElegido') {
+    // The chosen file goes through the whole examination: its declared origin publishes exactly it.
+    setTimeout(() => gn.push('alta', '', JSON.stringify({ estado: 'trabajando', detalle: 'Revisando qué trae…' })), 150);
+    setTimeout(() => gn.push('propuesta', '', JSON.stringify(Object.assign({}, MOCK_PROPUESTA,
+      { servido: 'cargas.gmod', procedencia: { origen: 'archivo', servido: 'cargas.gmod', sello: false, respaldo: 'verificado', seguro: true, origenDeclarado: 'https://estaciones-faro.cr',
+        firma: 'publicada', firmante: 'estaciones-faro-202609', firmaDesde: '' } }))), 1100);
+    return 'ok';
+  }
+  if (op === 'altaCerrarLista') return 'ok';
+  if (op === 'alta') {
+    // Unwrap the go.gnothi.app link the way ModuleEnrollment.BundleUrlOf does, so the host the
+    // mock shows is the bundle's, as it would be on the phone.
+    let host = 'tu institución';
+    try { const u = new URL(x.url); host = new URL(u.searchParams.get('bundle') || x.url).host || host; } catch {}
+    setTimeout(() => gn.push('alta', '', JSON.stringify({ estado: 'trabajando', detalle: 'Bajando el módulo de ' + host + '…' })), 150);
+    // The bar, as the shell feeds it: three steps of a 12 MB download.
+    [[0.35, 450], [0.72, 750], [1, 950]].forEach(([f, t]) => setTimeout(() => gn.push('alta', '', JSON.stringify(
+      { estado: 'trabajando', detalle: 'Bajando el módulo de ' + host + '…', progreso: f, bytes: Math.round(11862016 * f), total: 11862016 })), t));
+    // The mock's institution backs its module; paste a link with "evil" in it to see the other sheet.
+    const evil = /evil/.test(x.url || '');
+    const procedencia = { origen: x.via === 'qr' ? 'qr' : 'pegado', servido: host, sello: /[?&]h=/.test(x.url || ''),
+      respaldo: evil ? 'otro-origen' : 'verificado', seguro: true, origenDeclarado: 'https://estaciones-faro.cr',
+      firma: evil ? 'cambiada' : 'publicada', firmante: evil ? 'alguien-202609' : 'estaciones-faro-202609', firmaDesde: evil ? '' : '2026-09-01T12:00:00Z' };
+    setTimeout(() => gn.push('propuesta', '', JSON.stringify(Object.assign({}, MOCK_PROPUESTA, { procedencia }))), 1100);
+    return 'ok';
+  }
   if (op === 'setTool')   { const m = MOCK.modules.find(m => m.name === x.module);
                             const t = m.tools.find(t => t.name === x.tool); t.enabled = x.enabled; return MOCK; }
   if (op === 'setModule') { MOCK.modules.find(m => m.name === x.module).enabled = x.enabled; return MOCK; }
@@ -1216,6 +1617,14 @@ function mock(op, x) {
 }
 
 document.getElementById('q').addEventListener('keydown', e => { if (e.key === 'Enter') gn.ask(); });
+document.getElementById('alta-url').addEventListener('keydown', e => { if (e.key === 'Enter') gn.altaDesdeEnlace(); });
+
+// A phone that cannot read codes from inside Gnothi (no BarcodeDetector, no camera API) is told
+// so, instead of being shown a button that does nothing.
+if (!gn.scan.supported()) {
+  document.getElementById('alta-scan').style.display = 'none';
+  document.getElementById('alta-noscan').style.display = '';
+}
 
 const first = gn.call('modules');
 if (first && !first.loading) { gn.state = first; gn.paint(); }
