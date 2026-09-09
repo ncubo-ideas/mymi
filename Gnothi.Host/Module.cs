@@ -20,10 +20,11 @@ public sealed class Module : IAsyncDisposable
 	}
 
 	public Manifest Manifest { get; }
-	// Two things about a module change while it is running, and each has its one named write
-	// path: consent (Reconsent), and the mark on its pin when the origin retires the key it was
-	// accepted with (MarkSignerRevoked). Private setter. The shell and the granted folder are not
-	// reloaded, because changing those is reinstalling, not reconsenting.
+	// Three things about a module change while it is running, and each has its one named write
+	// path: consent (Reconsent), the mark on its pin when the origin retires the key it was
+	// accepted with (MarkSignerRevoked), and the note that the origin publishes a newer package
+	// (NoteUpdate). Private setter. The shell and the granted folder are not reloaded, because
+	// changing those is reinstalling, not reconsenting.
 	public Installation Installation { get; private set; }
 	public string Directory { get; }
 	public string Name => Manifest.Module;
@@ -92,6 +93,17 @@ public sealed class Module : IAsyncDisposable
 	{
 		if (Installation.Signer is not { RevokedAt: null } signer) return false;
 		Installation = Installation with { Signer = signer with { RevokedAt = at } };
+		return true;
+	}
+
+	// THE ORIGIN PUBLISHES A NEWER PACKAGE -or stopped doing so-, and Gnothi learnt it now: the note
+	// goes on the installation in memory, mirroring what was just written to installation.json, and
+	// the card shows it. Nothing downloads, nothing installs: that is hers to start. False when the
+	// note did not change -the same version and seal already noted, or nothing to clear.
+	public bool NoteUpdate(AvailableUpdate? update)
+	{
+		if (update is null ? Installation.Update is null : update.SameAs(Installation.Update)) return false;
+		Installation = Installation with { Update = update };
 		return true;
 	}
 

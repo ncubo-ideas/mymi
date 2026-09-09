@@ -216,6 +216,18 @@ terminal con `adb logcat -s GNOTHI:I gnothi:I` para las líneas que se citan.
    exactamente este paquete* y el botón dice «Reinstalar». Con `-Version 2.3.0`: *Es más viejo que el que
    tenés* y «Volver a esa versión». Si el manifiesto nuevo cambia el `publicador`, la hoja lo dice con la
    casilla «Aceptar la dirección nueva»: sin marcarla, Gnothi conserva la fijada.
+10. **«Hay una versión nueva».** Con Delfos instalada, publicá una versión **mayor** (`-SoloManifiesto
+    -Version 2.7.0`, como en el paso 9) y **relanzá Gnothi**: la revisión del origen corre al arrancar, con
+    el mismo pedido que mira las llaves retiradas. El well-known de la página trae ahora `version` por
+    módulo (`curl http://127.0.0.1:8096/.well-known/gnothi/modules.json`) y Gnothi la compara con la
+    instalada: la tarjeta de Delfos muestra la pastilla **«Hay una versión nueva»** y su detalle dice *Hay una
+    versión nueva. Delfos publicó la 2.7.0; tenés la 2.6.0. Nada se instala solo: primero vas a ver qué
+    cambia*. Log: `actualización: 'examenes': 127.0.0.1 publica 2.7.0; instalada 2.6.0`; en
+    `installation.json` aparece `update: { version, bundle, seal, seenAt }` —una nota, no una acción—.
+    Tocá la pastilla (o «Ver qué cambia» en el detalle): baja el paquete desde el `bundle` publicado y
+    abre la misma hoja del paso 9 → **Actualizar** → la pastilla desaparece y `update` se va del archivo.
+    Publicá una versión **menor** y relanzá: no hay pastilla (una vuelta atrás no es noticia). Sin capturas:
+    `node Gnothi.Mobile/pantalla.mjs "gn.state.modules.find(m=>m.name==='examenes').updateAvailable"`.
 
 ---
 

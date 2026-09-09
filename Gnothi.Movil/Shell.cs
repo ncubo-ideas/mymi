@@ -209,7 +209,7 @@ public sealed class Shell : IDisposable
 
 		// THE KEYS OF WHAT IS INSTALLED, against what their origins say now. In the background: it
 		// is network, it is a warning, and the screen is already painted.
-		_ = Task.Run(() => CheckRevocations(stop.Token));
+		_ = Task.Run(() => ReviewOrigins(stop.Token));
 
 		// 3 - EL INTERRUPTOR DE LA PERSONA, VIGILADO. Los switches de la UI escriben
 		//     installation.json y esto es lo que los hace efectivos; y una edicion de AFUERA
@@ -287,35 +287,72 @@ public sealed class Shell : IDisposable
 	// compared with the pin. A hit is written into the pin (RevokedAt) -nothing else in the file
 	// moves: the switches are the person's- and the card says it. The screen is repainted from
 	// here on purpose: the consent watcher only wakes for a switch that moved, and no switch did.
-	private async Task CheckRevocations(CancellationToken ct)
+	//
+	// AND, WITH THE SAME ANSWER, WHETHER THE ORIGIN PUBLISHES SOMETHING NEWER (NotasGnothiHost/44
+	// §4): the list carries each module's seal and version; when the published one is newer than
+	// what is installed the note goes into installation.json and the card says "hay una versión
+	// nueva". A note, never an action: nothing downloads or installs until she taps it. When the
+	// installed package matches what is published again, the note is cleared.
+	private async Task ReviewOrigins(CancellationToken ct)
 	{
 		if (catalog is null) return;
-		bool marked = false;
+		bool changed = false;
 
 		foreach (Module m in catalog.Modules)
 		{
-			if (m.Installation.Signer is not { RevokedAt: null } signer) continue;
 			Uri? origin = ModuleEnrollment.DeclaredOrigin(m.Manifest.Origin);
 			if (origin is null) continue;
 
 			try
 			{
 				string? published = await ModuleEnrollment.FetchWellKnown(origin, ct);
-				if (published is null || !ModuleEnrollment.IsRevoked(published, signer.Public)) continue;
+				if (published is null) continue;
+				string installationPath = Path.Combine(m.Directory, "installation.json");
 
-				string? at = ModuleEnrollment.MarkRevoked(Path.Combine(m.Directory, "installation.json"), DateTimeOffset.UtcNow);
-				if (at is null) continue;
-				m.MarkSignerRevoked(at);
-				marked = true;
-				log($"revocación: '{m.Name}': {origin.Host} retiró la llave '{signer.KeyId}' con la que se aceptó");
+				// The key it was accepted with, against the keys the origin retired.
+				if (m.Installation.Signer is { RevokedAt: null } signer && ModuleEnrollment.IsRevoked(published, signer.Public))
+				{
+					string? at = ModuleEnrollment.MarkRevoked(installationPath, DateTimeOffset.UtcNow);
+					if (at is not null)
+					{
+						m.MarkSignerRevoked(at);
+						changed = true;
+						log($"revocación: '{m.Name}': {origin.Host} retiró la llave '{signer.KeyId}' con la que se aceptó");
+					}
+				}
+
+				// The package installed, against the one the origin publishes now.
+				AvailableUpdate? newer = ModuleEnrollment.UpdatePublished(published, m.Name,
+					ModuleEnrollment.InstalledSeal(m.Directory), m.Manifest.Publisher?.Version, origin, DateTimeOffset.UtcNow);
+				if (ModuleEnrollment.WriteUpdateNote(installationPath, newer))
+				{
+					m.NoteUpdate(newer);
+					changed = true;
+					log(newer is null
+						? $"actualización: '{m.Name}' está al día con {origin.Host}"
+						: $"actualización: '{m.Name}': {origin.Host} publica {(newer.Version.Length > 0 ? newer.Version : "otro paquete")}; instalada {(m.Manifest.Publisher?.Version is { Length: > 0 } v ? v : "sin versión")}");
+				}
 			}
 			catch (Exception ex)
 			{
-				log($"revocación: no se pudo consultar a {origin.Host} por '{m.Name}': {ex.GetType().Name}: {ex.Message}");
+				log($"revisión: no se pudo consultar a {origin.Host} por '{m.Name}': {ex.GetType().Name}: {ex.Message}");
 			}
 		}
 
-		if (marked) PushState();
+		if (changed) PushState();
+	}
+
+	// SHE TAPPED «HAY UNA VERSIÓN NUEVA»: the package the origin publishes is fetched from the address
+	// the note kept, with its seal, and goes through the whole examination like a link that landed.
+	// The sheet is the update sheet, and only her yes there installs anything.
+	private string StartUpdate(string module)
+	{
+		Module? m = Find(module);
+		if (m?.Installation.Update is not { } update || update.Bundle.Length == 0) return "{}";
+
+		log($"alta: actualización de '{module}' pedida desde la tarjeta: {update.Bundle}");
+		_ = Enroll(update.Bundle, EnrollmentSource.Link, update.Seal.Length > 0 ? update.Seal : null, stop.Token);
+		return "\"ok\"";
 	}
 
 	// ---------------------------------------------------------------- el alta desde el enlace
@@ -853,6 +890,10 @@ public sealed class Shell : IDisposable
 				"altaElegido" => ChoosePicked(req.GetProperty("indice").GetInt32()),
 				"altaCerrarLista" => ClosePicked(),
 
+				// THE CARD'S «HAY UNA VERSIÓN NUEVA»: fetch what the origin publishes and open the
+				// update sheet. Her yes on that sheet is what installs, as with any package.
+				"actualizar" => StartUpdate(req.GetProperty("module").GetString() ?? ""),
+
 				_ => "{}",
 			};
 		}
@@ -973,6 +1014,10 @@ public sealed class Shell : IDisposable
 				// The key it was accepted with, and whether its origin has since retired it.
 				["signerKey"] = m.Installation.Signer?.KeyId,
 				["signerRevokedAt"] = m.Installation.Signer?.RevokedAt,
+				// What the origin publishes and she does not have yet, if Gnothi saw it.
+				["updateAvailable"] = m.Installation.Update is { } up
+					? new Dictionary<string, object?> { ["version"] = up.Version, ["seenAt"] = up.SeenAt }
+					: null,
 				["tools"] = m.Manifest.Tools.Select(t => new Dictionary<string, object?>
 				{
 					["name"] = t.Name,

@@ -354,6 +354,50 @@ internal static class Enrollment
 			assert("the pinned key settles who it is, whatever the names say",
 				UpdatePlan.Compare(new Manifest { Module = "x", Institution = "A" }, "s1", new PackageSigner { Public = "K" }, new Manifest { Module = "x", Institution = "B" }, "s2", "K").Kind != UpdateKind.Collision, "");
 
+			// ── «hay una versión nueva»: what the origin publishes, next to what is installed ──
+
+			// The well-known names the module with its bundle, seal and version; installed is v2b
+			// (1.1.0). Same seal: nothing. Greater version: news, dated, with the bundle resolved
+			// against the origin. Not greater: silence, whatever the seal -a rollback is not announced.
+			string installedSeal = ModuleEnrollment.InstalledSeal(Path.GetDirectoryName(updatable)!)!;
+			Uri origen = new("https://delfos.cr/");
+			DateTimeOffset seen = new(2026, 9, 9, 15, 0, 0, TimeSpan.Zero);
+			string Lista(string seal, string version) => "{\"modules\":[{\"module\":\"actualizable\",\"bundle\":\"actualizable.gmod\",\"seal\":\"" + seal + "\",\"version\":\"" + version + "\"}]}";
+			AvailableUpdate? nueva = ModuleEnrollment.UpdatePublished(Lista("otro-sello", "1.2.0"), "actualizable", installedSeal, "1.1.0", origen, seen);
+			assert("the seal installed is the one published: nothing new",
+				ModuleEnrollment.UpdatePublished(Lista(installedSeal, "1.2.0"), "actualizable", installedSeal, "1.1.0", origen, seen) is null, "");
+			assert("a greater version under another seal is news, with the bundle resolved against the origin",
+				nueva is { Version: "1.2.0", Seal: "otro-sello", Bundle: "https://delfos.cr/actualizable.gmod" } && nueva.SeenAt.StartsWith("2026-09-09"), $"{nueva}");
+			assert("a version that is not greater is not news, whatever the seal says",
+				ModuleEnrollment.UpdatePublished(Lista("otro-sello", "1.0.0"), "actualizable", installedSeal, "1.1.0", origen, seen) is null
+					&& ModuleEnrollment.UpdatePublished(Lista("otro-sello", "1.1.0"), "actualizable", installedSeal, "1.1.0", origen, seen) is null, "");
+			assert("unversioned sides under another seal are news of unknown version",
+				ModuleEnrollment.UpdatePublished(Lista("otro-sello", ""), "actualizable", installedSeal, null, origen, seen) is { Version: "" }, "");
+			assert("a module the list does not name, no list, or a broken list: nothing",
+				ModuleEnrollment.UpdatePublished(Lista("otro-sello", "9.0.0"), "otro", installedSeal, "1.1.0", origen, seen) is null
+					&& ModuleEnrollment.UpdatePublished(null, "actualizable", installedSeal, "1.1.0", origen, seen) is null
+					&& ModuleEnrollment.UpdatePublished("{not json", "actualizable", installedSeal, "1.1.0", origen, seen) is null, "");
+
+			// The note in the file: written once, not rewritten for the same news, cleared when asked.
+			Installation quiet = Installation.Read(updatable);
+			assert("the note goes into installation.json and nothing else moves",
+				ModuleEnrollment.WriteUpdateNote(updatable, nueva) && Installation.Read(updatable) is { Update: { Version: "1.2.0" } } noted
+					&& noted.Enabled == quiet.Enabled && noted.DisabledTools.SequenceEqual(quiet.DisabledTools) && noted.Shell.Arguments.SequenceEqual(quiet.Shell.Arguments), "");
+			assert("the same news again rewrites nothing", !ModuleEnrollment.WriteUpdateNote(updatable, nueva! with { SeenAt = "2026-09-10T00:00:00Z" }), "");
+			assert("clearing the note leaves the file without it, once",
+				ModuleEnrollment.WriteUpdateNote(updatable, null) && Installation.Read(updatable).Update is null && !ModuleEnrollment.WriteUpdateNote(updatable, null), "");
+
+			// The module in memory takes the same note, once, and its consent does not move.
+			var noting = new Module(new Manifest { Module = "actualizable" }, quiet, Path.GetDirectoryName(updatable)!);
+			assert("a running module takes the note, and only the note",
+				noting.NoteUpdate(nueva) && noting.Installation.Update?.Version == "1.2.0" && noting.Installation.Enabled == quiet.Enabled
+					&& !noting.NoteUpdate(nueva) && noting.NoteUpdate(null) && noting.Installation.Update is null, $"{noting.Installation.Update}");
+
+			// Installing what the origin publishes rewrites the installation without the note.
+			ModuleEnrollment.WriteUpdateNote(updatable, nueva);
+			enrolling.Accept(enrolling.Examine(v2b, EnrollmentSource.Link, Delfos), acceptNewPublisher: true);
+			assert("installing what was published leaves no note behind", Installation.Read(updatable).Update is null, "");
+
 			// ── the signature ────────────────────────────────────────────────────────────────
 
 			SigningKey key = PackageSignature.Generate("demo-202609");
