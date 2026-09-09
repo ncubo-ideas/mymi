@@ -1,0 +1,36 @@
+<Project Sdk="Microsoft.NET.Sdk.BlazorWebAssembly">
+
+  <PropertyGroup>
+    <TargetFramework>net9.0</TargetFramework>
+    <Nullable>disable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <RootNamespace>Municipalidad.Wasm</RootNamespace>
+    <AssemblyName>Municipalidad.Wasm</AssemblyName>
+    <ServiceWorkerAssetsManifest>service-worker-assets.js</ServiceWorkerAssetsManifest>
+
+    <AssemblyTitle>Mi cuenta municipal</AssemblyTitle>
+    <Description>La cuenta de una persona con su municipalidad, guardada en una carpeta suya. Funciona sin conexion.</Description>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.AspNetCore.Components.WebAssembly" Version="9.0.19" />
+    <PackageReference Include="Microsoft.AspNetCore.Components.WebAssembly.DevServer" Version="9.0.19" PrivateAssets="all" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ServiceWorker Include="wwwroot\service-worker.js" PublishedContent="wwwroot\service-worker.published.js" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Municipalidad.App\Municipalidad.App.csproj" />
+  </ItemGroup>
+
+  <ItemGroup Condition="'$(RootTheDomain)' != 'false'">
+    <TrimmerRootDescriptor Include="ILLink.Descriptors.xml" />
+  </ItemGroup>
+
+  <ItemGroup Condition="'$(TrimTheDomain)' == 'true'">
+    <TrimmableAssembly Include="Municipalidad.Dominio" />
+  </ItemGroup>
+
+</Project>

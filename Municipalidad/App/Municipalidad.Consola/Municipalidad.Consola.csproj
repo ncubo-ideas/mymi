@@ -1,0 +1,30 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!-- La caratula de consola. Es el arnes con el que se trabaja: mide el ciclo completo
+       sin el sandbox del browser encima, y por eso es donde se valida primero.
+
+       `medir <carpeta>` corre el ciclo contra un journal real, y se corre DOS veces sobre
+       la misma carpeta: la segunda tiene que rechazar todo.
+
+       NO REFERENCIA AL DOMINIO, desde M-6. `comprobar` corria aca las 91 comprobaciones
+       del dominio puro y por eso esta caratula podia nombrar sus tipos, que es lo que el
+       contrato de capas prohibe: una caratula que puede nombrar el dominio puede
+       re-derivar. Las 91 se mudaron a Pruebas/, donde ademas si pueden ponerse rojas en
+       CI. El dominio llega al output por la cadena de Municipalidad.App, que si lo
+       referencia sin poder nombrarlo: ElDominio lo carga por nombre en tiempo de
+       ejecucion. -->
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net9.0</TargetFramework>
+    <Nullable>disable</Nullable>
+    <ImplicitUsings>disable</ImplicitUsings>
+    <RootNamespace>Municipalidad.Consola</RootNamespace>
+    <AssemblyName>Municipalidad.Consola</AssemblyName>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Municipalidad.App\Municipalidad.App.csproj" />
+  </ItemGroup>
+
+</Project>

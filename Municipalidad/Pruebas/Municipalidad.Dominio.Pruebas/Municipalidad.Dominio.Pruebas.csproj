@@ -1,0 +1,122 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!-- El primer proyecto de pruebas de este modulo. Antes de el, las 91 comprobaciones del
+       dominio vivian dentro de Municipalidad.Consola como llamadas Ok(bool) escritas a mano:
+       no emitian resumen de prueba, no se podian filtrar, y NO PODIAN PONERSE ROJAS en CI.
+       Municipalidad tampoco estaba en Gnothi.slnx, asi que `dotnet test Gnothi.slnx` no la
+       cubria en absoluto.
+
+       En S-0 arranca con las DOS afirmaciones que hacen medible el contrato de capas, y nada
+       mas. Las 91 se mudan aca en M-6, que es cuando la Consola deja de ver el dominio por
+       dentro.
+
+       NUnit y no otro: los ejemplos de las guias estan escritos con [Test], Assert.That y
+       Assert.Throws. -->
+
+  <PropertyGroup>
+    <TargetFramework>net9.0</TargetFramework>
+    <Nullable>disable</Nullable>
+    <ImplicitUsings>disable</ImplicitUsings>
+    <RootNamespace>Municipalidad.Dominio.Pruebas</RootNamespace>
+    <AssemblyName>Municipalidad.Dominio.Pruebas</AssemblyName>
+    <IsPackable>false</IsPackable>
+
+    <!-- VSTHRD200 pide que un metodo que devuelve un awaitable termine en 'Async'. Desde E-2 hay
+         pruebas asincronas, porque el BucleDeRefresh lo es y se corre de verdad en vez de reescribir
+         su lazo. El nombre de una prueba de este modulo es la LEY que afirma, escrita como frase, y
+         pegarle 'Async' al final la rompe: la regla de nombres del repo es mas fuerte que una
+         convencion de un analizador, y esta es la unica regla del analizador que choca con ella.
+
+         Se apaga SOLO aca, y solo esa: VSTHRD002 -esperar sincronicamente una tarea- se queda
+         prendida, porque esa si avisa de un defecto y no de un nombre. Bloquear con
+         GetAwaiter().GetResult() para esquivar el nombre fue medido y cambia una advertencia de
+         estilo por una de correccion, ademas de meter un quinto codigo en el conteo del build. -->
+    <NoWarn>$(NoWarn);VSTHRD200</NoWarn>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.11.1" />
+    <PackageReference Include="NUnit" Version="4.2.2" />
+    <PackageReference Include="NUnit3TestAdapter" Version="4.6.0" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\Dominio\Municipalidad.Dominio.csproj" />
+
+    <!-- EL NIVEL B ENTRA POR ACA, desde M-2. Las comprobaciones puras no pueden ver lo que
+         solo existe cuando el dominio esta atado a un journal: que un upgrade nuevo le llegue
+         a un journal que ya existia, y que la semilla siga costando UNA entrada por apertura.
+         La segunda global de raiz es exactamente ese caso. -->
+    <ProjectReference Include="..\..\App\Municipalidad.App\Municipalidad.App.csproj" />
+
+    <!-- Y LA CARATULA DEL ASISTENTE, desde C-1. La promesa de que leer no escribe se afirma sobre
+         el LectorDeJournal de verdad y no sobre una copia suya: una copia no se pondria roja el dia
+         que el anfitrion de solo lectura ganara un OnHydrated con cuerpo. Entra por su
+         InternalsVisibleTo, igual que en el modulo de referencia. -->
+    <ProjectReference Include="..\..\App\Municipalidad.Mcp\Municipalidad.Mcp.csproj" />
+
+    <!-- Y LA CARATULA DEL NAVEGADOR, desde W-3. Es la unica del modulo que lee el reloj de las DOS
+         formas vivas, el sello de un comando y el instante de una lectura, y la diferencia la
+         sostiene la FORMA de cada miembro y no el comentario que la explica. Una forma no se puede
+         afirmar sobre una copia: hay que mirar el tipo de verdad, por reflexion. -->
+    <ProjectReference Include="..\..\App\Municipalidad.Wasm\Municipalidad.Wasm.csproj" />
+  </ItemGroup>
+
+  <!-- EL CSPROJ DEL DOMINIO VIAJA AL OUTPUT COMO DATO, para que la prueba de pureza lea sus
+       referencias DECLARADAS.
+
+       Hace falta porque el chequeo obvio no alcanza: Assembly.GetReferencedAssemblies() solo
+       reporta lo que el compilador REALMENTE emitio, asi que una dependencia declarada y no
+       usada se optimiza y desaparece. Concesionario lo midio: con un PackageReference a
+       Newtonsoft.Json metido en su dominio, la prueba por reflexion pasaba igual. Una prueba
+       que no puede fallar no sirve de nada, asi que se lee la fuente de la verdad. -->
+  <ItemGroup>
+    <None Include="..\..\Dominio\Municipalidad.Dominio.csproj"
+          Link="Municipalidad.Dominio.csproj.dato"
+          CopyToOutputDirectory="PreserveNewest" />
+
+    <!-- Y LOS DE LAS DOS CARATULAS, desde M-6, por la misma razon y para la pregunta inversa.
+         La cerca del dominio dice quien PUEDE verlo por dentro; estos dicen que ninguna de las
+         dos caratulas COMPILA contra el.
+
+         Se leen como dato y no por reflexion porque Municipalidad.Consola no esta en el cierre
+         de este proyecto -no hay dll suyo en este output que cargar- y no se leen como FUENTE
+         porque el artifacts-path reubica el output entero y ninguna cantidad fija de '..'
+         llega de vuelta al modulo. -->
+    <None Include="..\..\App\Municipalidad.App\Municipalidad.App.csproj"
+          Link="Municipalidad.App.csproj.dato"
+          CopyToOutputDirectory="PreserveNewest" />
+    <None Include="..\..\App\Municipalidad.Consola\Municipalidad.Consola.csproj"
+          Link="Municipalidad.Consola.csproj.dato"
+          CopyToOutputDirectory="PreserveNewest" />
+
+    <!-- Y EL DE LA TERCERA CARATULA, desde C-1. Esta si esta en el cierre de este proyecto, porque
+         se referencia arriba, asi que la reflexion la alcanzaria; se lee igual como dato para que la
+         afirmacion sea la misma para las tres y no dos leyes con una excepcion. -->
+    <None Include="..\..\App\Municipalidad.Mcp\Municipalidad.Mcp.csproj"
+          Link="Municipalidad.Mcp.csproj.dato"
+          CopyToOutputDirectory="PreserveNewest" />
+
+    <!-- Y EL DE LA CUARTA, desde W-1. La caratula del navegador es la unica que no puede cargar el
+         dominio por una ruta de disco, asi que es la que mas facil habria tomado el atajo de
+         referenciarlo en compilacion. No se referencia aca arriba: no hace falta un dll suyo, y
+         un ProjectReference a un proyecto de Blazor WASM desde un proyecto de pruebas no aporta
+         nada que este dato no diga. -->
+    <None Include="..\..\App\Municipalidad.Wasm\Municipalidad.Wasm.csproj"
+          Link="Municipalidad.Wasm.csproj.dato"
+          CopyToOutputDirectory="PreserveNewest" />
+
+    <!-- Y EL MANIFIESTO, desde C-3, por la misma razon y para una pregunta nueva: que lo que este
+         archivo declara sea lo que el ensamblado ofrece de verdad. Viaja como dato porque no es
+         codigo y porque el artifacts-path reubica el output entero: ninguna cantidad fija de '..'
+         llega de vuelta al modulo.
+
+         La prueba existe por una MEDICION y no por prolijidad: el manifiesto del modulo de
+         referencia declara ocho tools y su codigo declara trece. Un manifiesto no se mantiene al
+         dia con disciplina, porque nada se pone rojo cuando se atrasa. -->
+    <None Include="..\..\manifiesto.json"
+          Link="manifiesto.json.dato"
+          CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
+
+</Project>

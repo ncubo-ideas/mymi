@@ -1,0 +1,323 @@
+@page "/"
+@inject EstadoDeLaApp estado
+
+<PageTitle>Mi cuenta municipal</PageTitle>
+
+<h1>Mi cuenta municipal</h1>
+<p class="bajada">
+    Tu municipalidad te dice cuánto debés. Esta app te ayuda a entenderlo, anticiparlo y
+    administrarlo, con tu cuenta guardada en una carpeta tuya.
+</p>
+
+@if (estado.NoSeEstaGuardando.Length > 0)
+{
+    <div class="parte mala" role="alert" id="no-se-guarda">
+        <h3>Lo que ves NO se está guardando.</h3>
+        <p>@estado.NoSeEstaGuardando</p>
+    </div>
+}
+
+@if (falla.Length > 0)
+{
+    <div class="parte mala" role="alert" id="falla">
+        <h3>@(estado.EstaArriba ? "No se pudo completar el paso." : "No se pudo abrir la app.")</h3>
+        <p class="mono">@falla</p>
+    </div>
+}
+
+@if (estado.NoSeAlcanzaLaInstitucion.Length > 0)
+{
+    <div class="parte tibia" id="sin-institucion">
+        <h3>No se pudo hablar con la institución.</h3>
+        <p>
+            @estado.NoSeAlcanzaLaInstitucion Lo que ya está en tu carpeta se ve igual: para eso es
+            tuya.
+        </p>
+    </div>
+}
+
+@if (elNavegadorDijoQueNo.Length > 0)
+{
+    <div class="parte tibia" id="navegador-dijo-no">
+        <h3>El navegador dijo que no.</h3>
+        <p>@elNavegadorDijoQueNo</p>
+    </div>
+}
+
+@if (!estado.EstaArriba)
+{
+    @if (sinAlmacenamiento == "inseguro")
+    {
+        <div class="parte tibia" id="sin-almacenamiento-inseguro">
+            <h3>Esta página no está en una conexión segura.</h3>
+            <p>
+                Ningún navegador la va a dejar guardar nada. Abrila por <span class="mono">https</span>,
+                o por <span class="mono">localhost</span>.
+            </p>
+        </div>
+    }
+    else if (sinAlmacenamiento == "navegador")
+    {
+        <div class="parte tibia" id="sin-almacenamiento-navegador">
+            <h3>Este navegador no puede guardar nada para esta app.</h3>
+            <p>No tiene ni selector de carpetas ni almacenamiento propio. La salida es abrir la app en otro.</p>
+        </div>
+    }
+
+    <div class="tarjeta">
+        <h2>Dónde guardar</h2>
+
+        @if (estado.FaltaReotorgarPermiso)
+        {
+            <p>
+                Tu carpeta es <strong>&laquo;@estado.NombreDeLaCarpeta&raquo;</strong>. El navegador
+                te vuelve a pedir el permiso de escritura cada vez que la app se abre.
+            </p>
+            <div class="botones">
+                <button type="button" id="reotorgar" @onclick="ReotorgarElPermiso">
+                    Dar permiso a &laquo;@estado.NombreDeLaCarpeta&raquo;
+                </button>
+                <button class="suave" type="button" id="elegir-carpeta" @onclick="ConectarCarpetaAsync"
+                        disabled="@(haySelector == false)">
+                    Elegir otra carpeta
+                </button>
+                <button class="suave" type="button" id="olvidar-carpeta" @onclick="OlvidarCarpetaAsync">
+                    Olvidar esta carpeta
+                </button>
+            </div>
+        }
+        else
+        {
+            <div class="botones">
+                @if (haySelector == true)
+                {
+                    <button type="button" id="elegir-carpeta" @onclick="ConectarCarpetaAsync">
+                        Elegir una carpeta
+                    </button>
+                }
+                @if (hayNavegador == true)
+                {
+                    <button class="suave" type="button" id="usar-navegador" @onclick="UsarElNavegadorAsync">
+                        @(instalada ? "Guardar dentro de esta app" : "Guardar en este navegador")
+                    </button>
+                }
+                <button class="suave" type="button" id="abrir-sin-guardar" @onclick="AbrirAsync">
+                    Abrir sin guardar nada
+                </button>
+            </div>
+            <p class="nota">
+                Una carpeta tuya es la opción que hace que valga la pena: el servidor MCP la lee desde
+                afuera del navegador, y el almacenamiento del navegador no. Abrir sin guardar deja el
+                registro solo en memoria, y se pierde al cerrar.
+            </p>
+        }
+    </div>
+}
+else
+{
+    <div class="botones">
+        <button type="button" id="refrescar" @onclick="RefrescarAsync" disabled="@refrescando">
+            @(refrescando ? "Trayendo…" : "Traer lo que haya publicado la institución")
+        </button>
+    </div>
+
+    <nav class="cuatro" id="las-cuatro">
+        <a href="por-que-pago-mas">
+            <strong>Por qué pago más</strong>
+            <span>Qué cambió entre tus dos últimos comprobantes de cada rubro, y qué lo explica.</span>
+        </a>
+        <a href="que-se-me-vence">
+            <strong>Qué se me vence</strong>
+            <span>Lo que está por vencerse y lo que ya venció. Tu portal no contesta esto.</span>
+        </a>
+        <a href="cuanto-apartar">
+            <strong>Cuánto apartar</strong>
+            <span>Lo que esta app propone por mes, y lo que vos adoptaste.</span>
+        </a>
+        <a href="sin-comprobante">
+            <strong>Qué quedó sin comprobante</strong>
+            <span>Lo que tu portal da por pagado y aquí no tiene recibo.</span>
+        </a>
+    </nav>
+
+    <p class="nota">
+        Cuánto debés hoy, cuánto sería el año entero y si estás atrasado los contesta tu portal, que es
+        la autoridad sobre tu deuda. Esta app muestra lo otro.
+    </p>
+
+    <details class="plomeria">
+        <summary>Cómo quedó guardada tu cuenta</summary>
+
+    <div class="tarjeta">
+        <h2>Dónde vive el registro</h2>
+        <dl class="renglones">
+            <dt>Modo</dt>
+            <dd>@ElModoDicho()</dd>
+            @if (estado.EnCarpetaPropia)
+            {
+                <dt>Carpeta</dt>
+                <dd>@estado.NombreDeLaCarpeta</dd>
+            }
+            <dt>Permiso</dt>
+            <dd class="mono">@permiso</dd>
+            <dt>En MEMFS</dt>
+            <dd>@archivos @(archivos == 1 ? "archivo" : "archivos"), @bytes bytes</dd>
+        </dl>
+    </div>
+
+    <div class="tarjeta">
+        <h2>Qué dice el journal</h2>
+        <dl class="renglones">
+            <dt>Entradas</dt>
+            <dd>@entradas</dd>
+            <dt>Último evento leído</dt>
+            <dd>@ultimoEvento</dd>
+            <dt>Esta instalación</dt>
+            <dd class="mono">@(dispositivo.Length > 0 ? dispositivo : "sin registrar")</dd>
+            <dt>Credencial</dt>
+            <dd>@(hayCredencial ? "guardada" : "no hay")</dd>
+        </dl>
+    </div>
+
+    <div class="tarjeta">
+        <h2>A quién se le pide</h2>
+        <dl class="renglones">
+            <dt>Feed</dt>
+            <dd class="mono">@estado.DondeEstaElFeed@estado.Recurso/@estado.Id/events</dd>
+        </dl>
+        <p class="nota">
+            Sale de <span class="mono">wwwroot/appsettings.json</span>, no de una constante compilada.
+        </p>
+    </div>
+
+    <p class="nota">@estado.UltimoMensaje</p>
+
+    <p class="nota">
+        El registro se baja a la carpeta después de cada comando. Entre que el actor confirma y la
+        carpeta recibe hay un instante en que un cierre abrupto pierde entradas: es lo más angosta
+        que se puede hacer esa ventana, y no es durabilidad transaccional.
+    </p>
+    </details>
+}
+
+@code {
+	private bool? haySelector;
+	private bool? hayNavegador;
+	private bool instalada;
+	private string sinAlmacenamiento = "";
+	private bool refrescando;
+
+	private string falla = "";
+	private string elNavegadorDijoQueNo = "";
+
+	private string permiso = "";
+	private int archivos;
+	private long bytes;
+	private long entradas;
+	private long ultimoEvento;
+	private string dispositivo = "";
+	private bool hayCredencial;
+
+	protected override async Task OnInitializedAsync()
+	{
+		haySelector = await estado.HaySelectorDeCarpetasAsync();
+		hayNavegador = await estado.HayAlmacenamientoDelNavegadorAsync();
+		instalada = await estado.CorreComoAppInstaladaAsync();
+		sinAlmacenamiento = await estado.MotivoSinAlmacenamientoAsync();
+
+		if (estado.EstaArriba) { await Releer(); return; }
+
+		if (await estado.ModoRecordadoAsync() == "opfs" && hayNavegador == true)
+		{
+			if ((await estado.UsarElNavegadorAsync()).Ok) { await AbrirAsync(); return; }
+		}
+
+		if (haySelector != true) return;
+
+		ResultadoDeCarpeta recuperada = await estado.RecuperarCarpetaAsync();
+
+		if (recuperada.Ok) await AbrirAsync();
+	}
+
+	private Task ConectarCarpetaAsync() => Intentar("elegir una carpeta", async () =>
+		await AbrirODecir(await estado.ConectarCarpetaAsync(), "elegir esa carpeta"));
+
+	private Task ReotorgarElPermiso() => Intentar("dar permiso a la carpeta", async () =>
+		await AbrirODecir(await estado.PedirPermisoAsync(), "obtener permiso de escritura sobre esa carpeta"));
+
+	private Task UsarElNavegadorAsync() => Intentar("guardar en este navegador", async () =>
+		await AbrirODecir(await estado.UsarElNavegadorAsync(), "usar el almacenamiento de este navegador"));
+
+	private Task OlvidarCarpetaAsync() => Intentar("olvidar la carpeta guardada", async () =>
+	{
+		await estado.OlvidarLaCarpetaAsync();
+		elNavegadorDijoQueNo = "";
+	});
+
+	private Task AbrirAsync() => Intentar("abrir la app", async () =>
+	{
+		await estado.AbrirAsync();
+		await Releer();
+	});
+
+	private Task RefrescarAsync() => Intentar("traer lo que haya publicado la institución", async () =>
+	{
+		refrescando = true;
+		try { await estado.RefrescarAsync(); }
+		finally { refrescando = false; await Releer(); }
+	});
+
+	private async Task AbrirODecir(ResultadoDeCarpeta resultado, string queEstabaIntentando)
+	{
+		if (resultado.Ok)
+		{
+			elNavegadorDijoQueNo = "";
+			await estado.AbrirAsync();
+			await Releer();
+			return;
+		}
+
+		elNavegadorDijoQueNo = resultado.Permiso == "denied"
+			? $"El navegador se negó a {queEstabaIntentando}, sin preguntarte. O el permiso de edición "
+			  + "de archivos de este sitio está bloqueado — abrí el candado al lado de la dirección, "
+			  + "reiniciá los permisos de este sitio, recargá y volvé a elegir la carpeta — o este "
+			  + "navegador no da edición de archivos del todo, que es lo normal en un navegador "
+			  + "embebido. Si no hay candado que abrir, es lo segundo."
+			: $"No se pudo {queEstabaIntentando}. El navegador dijo: "
+			  + (resultado.Motivo.Length > 0 ? resultado.Motivo : resultado.Permiso);
+	}
+
+	/// <summary>La unica pasada de lectura de esta pantalla: todo lo que muestra sale de aca.</summary>
+	private async Task Releer()
+	{
+		permiso = await estado.PermisoActualAsync();
+
+		(archivos, bytes) = estado.EstadoDeMemfs();
+
+		entradas = estado.EntradasDelJournal();
+		ultimoEvento = estado.UltimoEventoAplicado();
+		dispositivo = estado.ClaveDeDispositivo();
+		hayCredencial = estado.HayCredencial();
+	}
+
+	private string ElModoDicho() => estado.EnCarpetaPropia
+		? "una carpeta tuya"
+		: estado.EnElNavegador ? "el almacenamiento de este navegador" : "solo memoria";
+
+	private async Task Intentar(string paso, Func<Task> accion)
+	{
+		falla = "";
+
+		try
+		{
+			await accion();
+		}
+		catch (Exception ex)
+		{
+			var detalle = new System.Text.StringBuilder($"Paso: {paso}\n{ex.GetType().FullName}: {ex.Message}");
+			for (Exception adentro = ex.InnerException; adentro is not null; adentro = adentro.InnerException)
+				detalle.Append($"\n  causa: {adentro.GetType().FullName}: {adentro.Message}");
+			falla = detalle.ToString();
+		}
+	}
+}

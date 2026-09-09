@@ -1,0 +1,179 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Mi cuenta municipal</title>
+<meta name="description" content="Tu cuenta con la municipalidad, guardada en una carpeta tuya. Funciona sin conexión.">
+<link rel="icon" href="data:,">
+
+<style>
+:root {
+    --tinta: #14211C;
+    --tinta-suave: #4B5A53;
+    --fondo: #F4F6F4;
+    --papel: #FFFFFF;
+    --linea: #D5DDD8;
+    --verde: #1B3A2E;
+    --verde-claro: #E4EDE7;
+    --aviso: #7A5A12;
+    --sobre-verde: #FFFFFF;
+}
+
+@media (prefers-color-scheme: dark) {
+    :root {
+        --tinta: #E7EDE9;
+        --tinta-suave: #9AA9A2;
+        --fondo: #101714;
+        --papel: #18211D;
+        --linea: #2C3833;
+        --verde: #B9D6C8;
+        --verde-claro: #22302A;
+        --aviso: #E3C376;
+        --sobre-verde: #101714;
+    }
+}
+
+* { box-sizing: border-box; }
+
+body {
+    margin: 0;
+    background: var(--fondo);
+    color: var(--tinta);
+    font-family: "Segoe UI", system-ui, -apple-system, sans-serif;
+    line-height: 1.6;
+}
+
+header {
+    background: var(--verde);
+    color: var(--sobre-verde);
+    padding: 20px 24px;
+}
+
+header .nombre { font-size: 19px; font-weight: 600; letter-spacing: 0.01em; }
+header .apunte { opacity: 0.78; font-size: 14px; }
+
+main { max-width: 780px; margin: 0 auto; padding: 40px 24px 56px; }
+
+h1 { font-size: 34px; line-height: 1.2; margin: 0 0 12px; letter-spacing: -0.02em; }
+.entrada { font-size: 18px; color: var(--tinta-suave); margin: 0 0 32px; }
+
+.tarjeta {
+    background: var(--papel);
+    border: 1px solid var(--linea);
+    border-radius: 10px;
+    padding: 24px;
+    margin: 0 0 22px;
+}
+
+.tarjeta h2 { font-size: 17px; margin: 0 0 10px; }
+.tarjeta p:last-child { margin-bottom: 0; }
+
+.boton {
+    display: inline-block;
+    background: var(--verde);
+    color: var(--sobre-verde);
+    text-decoration: none;
+    padding: 12px 22px;
+    border-radius: 7px;
+    font-weight: 600;
+}
+
+.rejilla { display: flex; gap: 22px; flex-wrap: wrap; }
+.rejilla > div { flex: 1 1 300px; }
+
+ul { padding-left: 20px; margin: 0; }
+li { margin-bottom: 6px; }
+
+.mono { font-family: "Cascadia Mono", Consolas, "SF Mono", monospace; font-size: 13px; }
+.suave { color: var(--tinta-suave); font-size: 14px; }
+.pendiente { border-left: 4px solid var(--aviso); padding-left: 14px; }
+.limite { background: var(--verde-claro); border-color: transparent; }
+
+footer { max-width: 780px; margin: 0 auto; padding: 0 24px 56px; }
+</style>
+</head>
+
+<body>
+
+<header>
+    <div class="nombre">Mi cuenta municipal</div>
+    <div class="apunte">Tu cuenta, en tu carpeta</div>
+</header>
+
+<main>
+    <h1>Tu cuenta con la municipalidad, en tu propia computadora.</h1>
+    <p class="entrada">
+        No en la nuestra. La app se abre en tu navegador, guarda tu cuenta en una carpeta que elegís
+        vos, y sigue contestando con la red apagada.
+    </p>
+
+    <div class="tarjeta">
+        <h2>Abrila</h2>
+        <p>
+            <a class="boton" href="/app/">Abrir la app</a>
+        </p>
+        <p class="suave">
+            Se abre en tu navegador. La primera vez te pide una carpeta &mdash; esa carpeta es donde
+            vive tu cuenta, y es tuya. Guardate la dirección: es por ahí por donde volvés.
+        </p>
+    </div>
+
+    <div class="rejilla">
+        <div class="tarjeta">
+            <h2>Qué contesta</h2>
+            <ul>
+                <li>Qué cambió entre tus dos últimos comprobantes de cada rubro, y qué lo explica.</li>
+                <li>Lo que está por vencerse y lo que ya venció.</li>
+                <li>Cuánto convendría apartar por mes, y lo que vos adoptaste.</li>
+                <li>Lo que figura pagado y acá no tiene recibo.</li>
+            </ul>
+        </div>
+        <div class="tarjeta">
+            <h2>Quién lo puede leer</h2>
+            <ul>
+                <li>Vos, desde la app.</li>
+                <li><strong>Tu propio asistente</strong>, que lee esa carpeta directamente.</li>
+                <li>Nadie más. El registro no sale de tu máquina.</li>
+            </ul>
+        </div>
+    </div>
+
+    <div class="tarjeta">
+        <h2>Todavía no se agrega a tu pantalla de inicio</h2>
+        <p class="pendiente">
+            Un navegador ofrece agregar una app a la pantalla de inicio solamente si la app le entrega
+            un ícono propio, y esta no le entrega ninguno: un ícono ahí es un escudo, y esta app no
+            habla en nombre de ninguna municipalidad en particular. Así que se abre desde el navegador,
+            por su dirección. <strong>Lo demás funciona igual</strong>, sin conexión incluida.
+        </p>
+    </div>
+
+    <div class="tarjeta">
+        <h2>Qué no hace</h2>
+        <p>
+            No le pregunta nada de vos a la institución, y no puede. La app lee una sola cosa &mdash;
+            los hechos de <em>tu</em> cuenta &mdash; con una credencial que sirve para exactamente eso.
+            Cualquier otra cosa que la institución tenga sobre vos le contesta
+            <span class="mono">403</span> a esta app, por construcción y no por promesa.
+        </p>
+    </div>
+
+    <div class="tarjeta limite">
+        <h2>Y qué le toca a tu portal</h2>
+        <p>
+            Cuánto debés hoy, cuánto sería el año entero y si estás atrasado los contesta tu portal,
+            que es la autoridad sobre tu deuda. Esta app muestra lo otro.
+        </p>
+    </div>
+</main>
+
+<footer>
+    <p class="suave">
+        Esta app no nombra a ninguna municipalidad. La institución que la entregue es la que pone su
+        nombre. Esta página y la app que enlaza son un prototipo que funciona.
+    </p>
+</footer>
+
+</body>
+</html>

@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+    <title>Mi cuenta municipal</title>
+    <base href="/app/" />
+
+    <meta name="theme-color" content="#1B3A2E" />
+
+    <link rel="stylesheet" href="css/app.css" />
+    <link rel="icon" href="data:," />
+    <link href="manifest.webmanifest" rel="manifest" />
+</head>
+
+<body>
+    <div id="app">
+        <p class="cargando">Abriendo&hellip;</p>
+    </div>
+
+    <div id="blazor-error-ui">
+        Algo salió mal.
+        <a href="." class="reload">Recargar</a>
+        <span class="dismiss">&#128473;</span>
+    </div>
+    <script src="_framework/blazor.webassembly.js"></script>
+    <script>
+        if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.register('service-worker.js').catch(() => { });
+        }
+    </script>
+</body>
+
+</html>

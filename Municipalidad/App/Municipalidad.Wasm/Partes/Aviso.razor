@@ -1,0 +1,22 @@
+<div class="aviso aviso--@Tono" id="@Id" role="@(Tono == "mala" ? "alert" : null)">
+    @if (Titulo.Length > 0)
+    {
+        <h3>@Titulo</h3>
+    }
+    <div class="aviso__cuerpo">@ChildContent</div>
+</div>
+
+@code {
+    /// <summary>'mala', 'tibia' o 'quieta'. Decide el color y si la parte se anuncia como alerta.</summary>
+    [Parameter]
+    public string Tono { get; set; } = "quieta";
+
+    [Parameter]
+    public string Titulo { get; set; } = "";
+
+    [Parameter]
+    public string Id { get; set; } = "";
+
+    [Parameter]
+    public RenderFragment ChildContent { get; set; }
+}

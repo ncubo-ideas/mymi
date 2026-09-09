@@ -1,0 +1,10 @@
+<span class="llave">@Rubro</span>
+
+@code {
+    /// <summary>
+    /// El nombre del rubro tal como lo escribe el registro. Se muestra como llave y no como titulo
+    /// porque nadie ha decidido todavia como se llama un rubro delante de una persona.
+    /// </summary>
+    [Parameter, EditorRequired]
+    public string Rubro { get; set; } = "";
+}

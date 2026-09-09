@@ -1,0 +1,31 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!-- LA SUPERFICIE INTENCIONAL. Aca viven los PerformCommand y los PerformQuery.
+
+       REFERENCIA AL DOMINIO PERO NO LO PUEDE NOMBRAR, y es a proposito: el dominio es
+       enteramente internal y este nodo no esta en su lista de InternalsVisibleTo, asi que
+       no nombra ni un tipo suyo en C#. Los nombres viajan DENTRO de los scripts y los
+       resuelve el motor por reflexion, que no tiene frontera de assembly. La referencia
+       existe para que el dll llegue al output y figure en el deps.json -y en el manifiesto
+       de arranque de wasm- de cada anfitrion: ElDominio lo carga por NOMBRE.
+
+       Es tambien donde los dos alfabetos de `Periodo` se resuelven: el texto "2026.04"
+       se parte en anio y numero ACA, y el dominio recibe los dos enteros. -->
+
+  <PropertyGroup>
+    <TargetFramework>net9.0</TargetFramework>
+    <Nullable>disable</Nullable>
+    <ImplicitUsings>disable</ImplicitUsings>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Ncubo.Puppeteer" Version="$(VersionDelMotor)" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\Dominio\Municipalidad.Dominio.csproj" />
+
+    <ProjectReference Include="..\..\Mecanismo\Puppets.Portador\Puppets.Portador.csproj" />
+  </ItemGroup>
+
+</Project>

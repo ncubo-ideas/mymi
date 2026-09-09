@@ -1,0 +1,11 @@
+<Project Sdk="Microsoft.NET.Sdk.Web">
+
+  <PropertyGroup>
+    <TargetFramework>net9.0</TargetFramework>
+    <Nullable>disable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <RootNamespace>Municipalidad.EventosMock</RootNamespace>
+    <AssemblyName>Municipalidad.EventosMock</AssemblyName>
+  </PropertyGroup>
+
+</Project>
