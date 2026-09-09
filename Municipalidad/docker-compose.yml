@@ -1,0 +1,23 @@
+services:
+  eventos-api:
+    build:
+      context: ./EndPointDeEventos
+    container_name: municipalidad-eventos-api
+    ports:
+      - "8121:8121"
+    restart: unless-stopped
+
+  wasm-host:
+    image: nginx:1.27-alpine
+    container_name: municipalidad-wasm-host
+    ports:
+      - "8120:8120"
+      - "8483:8483"
+    volumes:
+      - ./PaginaDeDescarga/nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./PaginaDeDescarga/descarga:/usr/share/nginx/descarga:ro
+      - ./PaginaDeDescarga/publicado/wwwroot:/usr/share/nginx/app:ro
+      - ./PaginaDeDescarga/certs:/etc/nginx/certs:ro
+    depends_on:
+      - eventos-api
+    restart: unless-stopped

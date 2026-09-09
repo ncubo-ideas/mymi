@@ -1,0 +1,112 @@
+@page "/que-se-me-vence"
+@inject EstadoDeLaApp estado
+
+<PageTitle>Qué se me vence · Mi cuenta municipal</PageTitle>
+
+<h1>Qué se me vence</h1>
+<p class="bajada">
+    Ésta es la pregunta que tu portal no contesta. El portal te dice cuánto debés hoy; esto te dice
+    qué está por vencerse y qué ya se venció.
+</p>
+
+@if (!estado.EstaArriba)
+{
+    <SinAbrir />
+}
+else
+{
+    <NumeroSinFirmar Dicho="@($"Se avisa {Formato.Dias(vence.DiasDeAviso)} antes del vencimiento, y el costo de pagar tarde se proyecta a una tasa anual del {Formato.Porcentaje(vence.TasaConQueSeProyecto)}.")" />
+
+    <section class="bloque" id="por-vencer">
+        <h2>Por vencer</h2>
+
+        @if (vence.PorVencer.Count == 0)
+        {
+            <p class="nota">
+                Al @vence.PreguntadoEl no hay nada dentro de la ventana de aviso. Eso no dice que no
+                tengás nada que pagar más adelante: dice que nada cae dentro de los próximos
+                @Formato.Dias(vence.DiasDeAviso).
+            </p>
+        }
+
+        @foreach (var periodo in vence.PorVencer)
+        {
+            <article class="tarjeta">
+                <div class="tarjeta__cabeza">
+                    <LlaveDelRubro Rubro="@periodo.Rubro" />
+                    <span class="periodo">@periodo.Periodo</span>
+                    <SelloDeUrgencia Urgencia="@periodo.Urgencia" />
+                </div>
+
+                <Frase Dice="@periodo.Dice" />
+
+                <dl class="renglones">
+                    <dt>Vence</dt>
+                    <dd>@periodo.Vence</dd>
+                    <dt>Faltan</dt>
+                    <dd>@Formato.Dias(periodo.Faltan)</dd>
+                    <dt>Monto</dt>
+                    <dd>@Formato.Monto(periodo.Monto)</dd>
+                </dl>
+            </article>
+        }
+    </section>
+
+    <section class="bloque" id="vencidos">
+        <h2>Ya vencidos</h2>
+
+        @if (vence.Vencidos.Count == 0)
+        {
+            <p class="nota">
+                No hay nada vencido sin pagar en lo que esta app ha visto. Eso no es una constancia de
+                estar al día con la municipalidad: tu portal es la autoridad sobre eso.
+            </p>
+        }
+
+        @foreach (var periodo in vence.Vencidos)
+        {
+            <article class="tarjeta">
+                <div class="tarjeta__cabeza">
+                    <LlaveDelRubro Rubro="@periodo.Rubro" />
+                    <span class="periodo">@periodo.Periodo</span>
+                    <SelloDeUrgencia Urgencia="@periodo.Urgencia" />
+                </div>
+
+                <Frase Dice="@periodo.Dice" />
+
+                <dl class="renglones">
+                    <dt>Venció</dt>
+                    <dd>@periodo.Vencio</dd>
+                    <dt>De atraso</dt>
+                    <dd>@Formato.Dias(periodo.Dias)</dd>
+                    <dt>Monto</dt>
+                    <dd>@Formato.Monto(periodo.Monto)</dd>
+                    <dt>Proyección de mora</dt>
+                    <dd>@Formato.Monto(periodo.CostoProyectado)</dd>
+                </dl>
+            </article>
+        }
+    </section>
+
+    <Aviso Tono="quieta" Id="las-dos-no-se-suman" Titulo="Las dos listas no se suman">
+        <p>
+            Un período por vencer y uno vencido son situaciones distintas, y un total que los mezcle
+            no es un número que nadie haya calculado. Si querés saber cuánto debés en total, eso lo
+            dice tu portal.
+        </p>
+    </Aviso>
+
+    <p class="nota">Contestado al @vence.PreguntadoEl.</p>
+}
+
+@code {
+	private LoQueSeVence vence;
+
+	protected override void OnInitialized() => Releer();
+
+	/// <summary>La unica pasada de lectura de esta pantalla: las dos listas del mismo momento.</summary>
+	private void Releer()
+	{
+		if (estado.EstaArriba) vence = estado.LeerLoQueSeVence();
+	}
+}

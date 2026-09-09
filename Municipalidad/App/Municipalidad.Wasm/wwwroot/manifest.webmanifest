@@ -1,0 +1,13 @@
+{
+  "name": "Mi cuenta municipal",
+  "short_name": "Mi cuenta",
+  "description": "Su cuenta con la municipalidad, guardada en una carpeta suya. Funciona sin conexión.",
+  "id": "./",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#F2F3FA",
+  "theme_color": "#2C306C",
+  "lang": "es",
+  "prefer_related_applications": false
+}

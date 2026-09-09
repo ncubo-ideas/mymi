@@ -60,4 +60,13 @@
        (net9.0-windows). Since 2026-09-08 it is Photino.Blazor over plain net9.0, so it builds
        on Windows, macOS and Linux and the build catches it when it breaks. -->
   <Project Path="Gnothi.Desktop/Gnothi.Desktop.csproj" />
+  <Project Path="Municipalidad/App/Municipalidad.App/Municipalidad.App.csproj" />
+  <Project Path="Municipalidad/App/Municipalidad.Consola/Municipalidad.Consola.csproj" />
+  <Project Path="Municipalidad/App/Municipalidad.Mcp/Municipalidad.Mcp.csproj" />
+  <Project Path="Municipalidad/App/Municipalidad.Wasm/Municipalidad.Wasm.csproj" />
+  <Project Path="Municipalidad/Dominio/Municipalidad.Dominio.csproj" />
+  <Project Path="Municipalidad/EndPointDeEventos/Municipalidad.EventosMock.csproj" />
+  <Project Path="Municipalidad/InyectorDeEventosDemo/Municipalidad.InyectorDeEventosDemo.csproj" />
+  <Project Path="Municipalidad/Pruebas/Municipalidad.Dominio.Pruebas/Municipalidad.Dominio.Pruebas.csproj" />
+
 </Solution>

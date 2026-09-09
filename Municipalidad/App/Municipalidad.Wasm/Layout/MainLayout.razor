@@ -1,0 +1,33 @@
+@inherits LayoutComponentBase
+
+<header class="marco">
+    <div class="marco__banda">
+        <a class="marco__marca" href="">
+            <span class="marco__sello">
+                <svg viewBox="0 0 48 48" aria-hidden="true" focusable="false">
+                    <path d="M24 4 2 17v5h44v-5L24 4Z" />
+                    <rect x="5" y="25" width="5" height="13" rx="1" />
+                    <rect x="16" y="25" width="5" height="13" rx="1" />
+                    <rect x="27" y="25" width="5" height="13" rx="1" />
+                    <rect x="38" y="25" width="5" height="13" rx="1" />
+                    <rect x="2" y="41" width="44" height="4" rx="1.5" />
+                </svg>
+            </span>
+            <span class="marco__titulos">
+                <span class="marco__nombre">Mi cuenta municipal</span>
+                <span class="marco__apunte">Tu cuenta, en tu carpeta</span>
+            </span>
+        </a>
+
+        <nav class="marco__nav">
+            <NavLink href="por-que-pago-mas">Por qué pago más</NavLink>
+            <NavLink href="que-se-me-vence">Qué se me vence</NavLink>
+            <NavLink href="cuanto-apartar">Cuánto apartar</NavLink>
+            <NavLink href="sin-comprobante">Sin comprobante</NavLink>
+        </nav>
+    </div>
+</header>
+
+<main class="hoja">
+    @Body
+</main>

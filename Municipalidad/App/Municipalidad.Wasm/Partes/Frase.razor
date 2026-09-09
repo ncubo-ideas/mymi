@@ -1,0 +1,11 @@
+<p class="frase @(Apagada ? "frase--apagada" : "")">@Dice</p>
+
+@code {
+    /// <summary>La frase que compuso el dominio. Esta parte la dice; no la rearma.</summary>
+    [Parameter, EditorRequired]
+    public string Dice { get; set; } = "";
+
+    /// <summary>Cuando la frase explica una ausencia en vez de contestar la pregunta.</summary>
+    [Parameter]
+    public bool Apagada { get; set; }
+}

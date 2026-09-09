@@ -1,0 +1,21 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!-- EL MECANISMO, no la app. Nada aca nombra facturas.
+       Lo que es igual para toda app entregada al usuario: adquirir el token,
+       traer el bloque de eventos, aplicarlos uno a la vez con checkpoint, y
+       hacer flush del journal despues de cada uno.
+       Cada app llena las costuras: IFuenteDeEventos, Ruta, IMensajeDeEvento,
+       IDiarioDeLaApp. APP2 (hipotecas) reusa este proyecto tal cual.
+
+       Deliberadamente delgado: la abstraccion solo queda validada cuando exista
+       APP2, asi que aca no hay generalidad especulativa. Tampoco referencia a
+       Puppeteer: el bucle habla con el journal por IDiarioDeLaApp, que la app
+       implementa. -->
+
+  <PropertyGroup>
+    <TargetFramework>net9.0</TargetFramework>
+    <Nullable>disable</Nullable>
+    <ImplicitUsings>disable</ImplicitUsings>
+  </PropertyGroup>
+
+</Project>

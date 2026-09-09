@@ -1,0 +1,301 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Mi cuenta municipal</title>
+<meta name="description" content="Tu cuenta con la municipalidad, guardada en una carpeta tuya. Funciona sin conexión.">
+<meta name="theme-color" content="#2C306C">
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 48 48'%3E%3Crect width='48' height='48' rx='10' fill='%232C306C'/%3E%3Cg fill='%23fff' transform='translate(7 7) scale(.7)'%3E%3Cpath d='M24 4 2 17v5h44v-5L24 4Z'/%3E%3Crect x='5' y='25' width='5' height='13' rx='1'/%3E%3Crect x='16' y='25' width='5' height='13' rx='1'/%3E%3Crect x='27' y='25' width='5' height='13' rx='1'/%3E%3Crect x='38' y='25' width='5' height='13' rx='1'/%3E%3Crect x='2' y='41' width='44' height='4' rx='1.5'/%3E%3C/g%3E%3C/svg%3E">
+
+<style>
+:root {
+    --indigo: #2C306C;
+    --indigo-alto: #1E2150;
+    --indigo-medio: #3A3F86;
+
+    --cian: #1EBAC6;
+    --violeta: #806EBA;
+    --rosa: #DE60A0;
+    --amarillo: #FDC820;
+    --rojo: #EC3049;
+
+    --tinta: #1A1D3C;
+    --tinta-suave: #5C6088;
+    --tinta-tenue: #8A8DAB;
+    --fondo: #F2F3FA;
+    --papel: #FFFFFF;
+    --linea: #E1E3F0;
+    --acento-fondo: #ECEDF7;
+    --aviso: #8A6300;
+    --sobre-indigo: #FFFFFF;
+
+    --sombra: 0 1px 2px rgba(26, 29, 60, .05), 0 6px 18px rgba(26, 29, 60, .06);
+    --sombra-alta: 0 2px 6px rgba(26, 29, 60, .07), 0 18px 40px rgba(26, 29, 60, .12);
+}
+
+@media (prefers-color-scheme: dark) {
+    :root {
+        --indigo: #4A4F9C;
+        --indigo-alto: #0E1029;
+        --indigo-medio: #22265A;
+
+        --tinta: #E9EAF6;
+        --tinta-suave: #A3A7CC;
+        --tinta-tenue: #767AA0;
+        --fondo: #0F1128;
+        --papel: #1A1D3A;
+        --linea: #2A2E52;
+        --acento-fondo: #23274F;
+        --aviso: #F3CE6A;
+        --sobre-indigo: #FFFFFF;
+
+        --sombra: 0 1px 2px rgba(0, 0, 0, .4), 0 6px 18px rgba(0, 0, 0, .3);
+        --sombra-alta: 0 2px 6px rgba(0, 0, 0, .45), 0 18px 40px rgba(0, 0, 0, .45);
+    }
+}
+
+* { box-sizing: border-box; }
+
+body {
+    margin: 0;
+    background: var(--fondo);
+    color: var(--tinta);
+    font-family: system-ui, "Segoe UI", -apple-system, sans-serif;
+    line-height: 1.6;
+}
+
+header.marco {
+    background: linear-gradient(150deg, var(--indigo-alto) 0%, var(--indigo) 62%, var(--indigo-medio) 100%);
+    color: var(--sobre-indigo);
+}
+
+.marco__banda {
+    max-width: 780px;
+    margin: 0 auto;
+    padding: 18px 24px;
+    display: flex;
+    align-items: center;
+    gap: 14px;
+}
+
+.marco__sello {
+    width: 42px;
+    height: 42px;
+    flex: none;
+    border-radius: 13px;
+    background: rgba(255, 255, 255, .14);
+    display: grid;
+    place-items: center;
+    color: var(--sobre-indigo);
+}
+
+.marco__sello svg { width: 23px; height: 23px; fill: currentColor; }
+
+.marco__titulos { display: flex; flex-direction: column; }
+
+.nombre { font-size: 16px; font-weight: 700; letter-spacing: -.01em; line-height: 1.2; }
+
+.apunte {
+    font-size: 11px;
+    font-weight: 650;
+    letter-spacing: .14em;
+    text-transform: uppercase;
+    color: rgba(255, 255, 255, .62);
+}
+
+header.marco::after {
+    content: "";
+    display: block;
+    height: 3px;
+    background: linear-gradient(to right,
+        var(--cian) 0 20%, var(--violeta) 20% 40%, var(--rosa) 40% 60%,
+        var(--rojo) 60% 80%, var(--amarillo) 80% 100%);
+}
+
+main { max-width: 780px; margin: 0 auto; padding: 40px 24px 56px; }
+
+h1 { font-size: 34px; line-height: 1.16; margin: 0 0 14px; letter-spacing: -.025em; font-weight: 750; }
+.entrada { font-size: 18px; color: var(--tinta-suave); margin: 0 0 32px; }
+
+.tarjeta {
+    background: var(--papel);
+    border: 1px solid var(--linea);
+    border-radius: 14px;
+    padding: 24px;
+    margin: 0 0 22px;
+    box-shadow: var(--sombra);
+}
+
+.tarjeta h2 {
+    font-size: 13px;
+    font-weight: 750;
+    letter-spacing: .09em;
+    text-transform: uppercase;
+    color: var(--tinta-tenue);
+    margin: 0 0 12px;
+}
+
+.tarjeta p:last-child { margin-bottom: 0; }
+
+.abrir {
+    border: 0;
+    background: linear-gradient(145deg, var(--indigo) 0%, var(--indigo-alto) 100%);
+    color: var(--sobre-indigo);
+    box-shadow: var(--sombra-alta);
+    position: relative;
+    overflow: hidden;
+}
+
+.abrir::before {
+    content: "";
+    position: absolute;
+    top: 0;
+    right: 0;
+    width: min(208px, 34%);
+    height: 100%;
+    background:
+        radial-gradient(circle at 24% 22%, var(--cian) 0 5.5%, transparent 6%),
+        radial-gradient(circle at 52% 12%, var(--amarillo) 0 4%, transparent 4.5%),
+        radial-gradient(circle at 78% 32%, var(--rosa) 0 5%, transparent 5.5%),
+        radial-gradient(circle at 44% 52%, var(--violeta) 0 6.5%, transparent 7%),
+        radial-gradient(circle at 86% 72%, var(--rojo) 0 3.5%, transparent 4%),
+        radial-gradient(circle at 62% 86%, var(--cian) 0 4.5%, transparent 5%);
+    opacity: .42;
+    pointer-events: none;
+}
+
+.abrir > * { position: relative; }
+.abrir h2 { color: rgba(255, 255, 255, .66); }
+.abrir .suave { color: rgba(255, 255, 255, .74); }
+
+.boton {
+    display: inline-block;
+    background: var(--papel);
+    color: var(--indigo);
+    text-decoration: none;
+    padding: 13px 24px;
+    border-radius: 10px;
+    font-weight: 700;
+}
+
+.rejilla { display: flex; gap: 22px; flex-wrap: wrap; }
+.rejilla > div { flex: 1 1 300px; }
+
+ul { padding-left: 20px; margin: 0; }
+li { margin-bottom: 8px; }
+li:last-child { margin-bottom: 0; }
+
+.mono {
+    font-family: ui-monospace, "Cascadia Mono", Consolas, "SF Mono", monospace;
+    font-size: 13px;
+}
+
+.suave { color: var(--tinta-suave); font-size: 14px; }
+
+.pendiente { border-left: 4px solid var(--aviso); padding-left: 16px; }
+
+.limite { background: var(--acento-fondo); border-color: transparent; box-shadow: none; }
+
+footer { max-width: 780px; margin: 0 auto; padding: 0 24px 56px; }
+</style>
+</head>
+
+<body>
+
+<header class="marco">
+    <div class="marco__banda">
+        <span class="marco__sello">
+            <svg viewBox="0 0 48 48" aria-hidden="true" focusable="false">
+                <path d="M24 4 2 17v5h44v-5L24 4Z" />
+                <rect x="5" y="25" width="5" height="13" rx="1" />
+                <rect x="16" y="25" width="5" height="13" rx="1" />
+                <rect x="27" y="25" width="5" height="13" rx="1" />
+                <rect x="38" y="25" width="5" height="13" rx="1" />
+                <rect x="2" y="41" width="44" height="4" rx="1.5" />
+            </svg>
+        </span>
+        <div class="marco__titulos">
+            <div class="nombre">Mi cuenta municipal</div>
+            <div class="apunte">Tu cuenta, en tu carpeta</div>
+        </div>
+    </div>
+</header>
+
+<main>
+    <h1>Tu cuenta con la municipalidad, en tu propia computadora.</h1>
+    <p class="entrada">
+        No en la nuestra. La app se abre en tu navegador, guarda tu cuenta en una carpeta que elegís
+        vos, y sigue contestando con la red apagada.
+    </p>
+
+    <div class="tarjeta abrir">
+        <h2>Abrila</h2>
+        <p>
+            <a class="boton" href="/app/">Abrir la app</a>
+        </p>
+        <p class="suave">
+            Se abre en tu navegador. La primera vez te pide una carpeta &mdash; esa carpeta es donde
+            vive tu cuenta, y es tuya. Guardate la dirección: es por ahí por donde volvés.
+        </p>
+    </div>
+
+    <div class="rejilla">
+        <div class="tarjeta">
+            <h2>Qué contesta</h2>
+            <ul>
+                <li>Qué cambió entre tus dos últimos comprobantes de cada rubro, y qué lo explica.</li>
+                <li>Lo que está por vencerse y lo que ya venció.</li>
+                <li>Cuánto convendría apartar por mes, y lo que vos adoptaste.</li>
+                <li>Lo que figura pagado y acá no tiene recibo.</li>
+            </ul>
+        </div>
+        <div class="tarjeta">
+            <h2>Quién lo puede leer</h2>
+            <ul>
+                <li>Vos, desde la app.</li>
+                <li><strong>Tu propio asistente</strong>, que lee esa carpeta directamente.</li>
+                <li>Nadie más. El registro no sale de tu máquina.</li>
+            </ul>
+        </div>
+    </div>
+
+    <div class="tarjeta">
+        <h2>Todavía no se agrega a tu pantalla de inicio</h2>
+        <p class="pendiente">
+            Un navegador ofrece agregar una app a la pantalla de inicio solamente si la app le entrega
+            un ícono en su manifiesto, y ésta todavía no le entrega ninguno: la marca ya está en la
+            app y en la pestaña, pero no en el manifiesto, y si un navegador va a ofrecer instalarla
+            es algo que nadie ha medido. Así que se abre desde el navegador, por su dirección.
+            <strong>Lo demás funciona igual</strong>, sin conexión incluida.
+        </p>
+    </div>
+
+    <div class="tarjeta">
+        <h2>Qué no hace</h2>
+        <p>
+            No le pregunta nada de vos a la institución, y no puede. La app lee una sola cosa &mdash;
+            los hechos de <em>tu</em> cuenta &mdash; con una credencial que sirve para exactamente eso.
+            Cualquier otra cosa que la institución tenga sobre vos le contesta
+            <span class="mono">403</span> a esta app, por construcción y no por promesa.
+        </p>
+    </div>
+
+    <div class="tarjeta limite">
+        <h2>Y qué le toca a tu portal</h2>
+        <p>
+            Cuánto debés hoy, cuánto sería el año entero y si estás atrasado los contesta tu portal,
+            que es la autoridad sobre tu deuda. Esta app muestra lo otro.
+        </p>
+    </div>
+</main>
+
+<footer>
+    <p class="suave">
+        Esta app no nombra a ninguna municipalidad. La institución que la entregue es la que pone su
+        nombre. Esta página y la app que enlaza son un prototipo que funciona.
+    </p>
+</footer>
+
+</body>
+</html>
