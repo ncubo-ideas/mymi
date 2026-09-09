@@ -3,7 +3,7 @@
   "manifest": "1.0",
   "module": "compras",
   "title": "La Guaria y vos",
-  "institution": "Supermercado La Guaria (mock del POC)",
+  "institution": "Supermercado La Guaria",
   "substrate": {
     "range": ">=3.0.0 <4.0.0"
   },

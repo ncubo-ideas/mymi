@@ -555,7 +555,10 @@ internal sealed class ModuleEnrollment
 		Directory.CreateDirectory(Path.GetDirectoryName(destination)!);
 		Directory.Move(proposal.Folder, destination);
 
-		WriteInstallation(destination, module, proposal.Manifest, proposal.Inspection.InstallEnabled, proposal.Signer);
+		// The act records the HOST that served the bundle; a file came from no server, and there
+		// the act says so with an empty string rather than the file's name.
+		string servedBy = proposal.Provenance.Source == EnrollmentSource.File ? "" : proposal.Provenance.ServedBy;
+		WriteInstallation(destination, module, proposal.Manifest, proposal.Inspection.InstallEnabled, proposal.Signer, servedBy);
 
 		log($"alta: '{module}' instalado en {destination}");
 		return module;
@@ -705,7 +708,10 @@ internal sealed class ModuleEnrollment
 	//
 	// THE PIN is the key the package came signed with -kept from last time when it is the same,
 	// new when it is not- so the next package can be compared with it. Null when unsigned.
-	private void WriteInstallation(string folder, string module, Manifest manifest, bool enabled, PackageSigner? signer)
+	//
+	// THE ACT (provenance) is what Gnothi SAW: the host that served the bundle -empty for a file,
+	// which came from no server-, when the person accepted, and which version. Written once.
+	private void WriteInstallation(string folder, string module, Manifest manifest, bool enabled, PackageSigner? signer, string servedBy)
 	{
 		Publicador? p = manifest.Publicador;
 		string endpoint = p is null || p.Eventos.Length == 0 ? "" : $"{p.Eventos}|{p.Recurso}|{p.Id}";
@@ -721,6 +727,17 @@ internal sealed class ModuleEnrollment
 			grantedFolder = Path.Combine(journalsRoot, module),
 			enabled,
 			disabledTools = Array.Empty<string>(),
+
+			// EL ACTA DEL ALTA. De que host bajo el bundle -- que Gnothi VIO, nadie se lo
+			// declaro --, cuando la persona acepto, y que version acepto. Se escribe una vez y
+			// no se vuelve a tocar: es lo que le permite al detalle del modulo contrastar
+			// despues lo que la institucion declara contra lo que de verdad paso.
+			provenance = new
+			{
+				servedBy,
+				at = DateTime.UtcNow.ToString("yyyy-MM-ddTHH:mm:ssZ"),
+				version = manifest.Publisher?.Version ?? "",
+			},
 			signer = signer is null ? null : new { keyId = signer.KeyId, @public = signer.Public, since = signer.Since },
 		};
 

@@ -96,7 +96,8 @@ async function waitFor(done, seconds) {
 async function openTheCard() {
 	const isOpen = async () => /\bon\b/.test(await evaluate("document.getElementById('sheet').className"));
 	if (await isOpen()) return;
-	await tap('.mod.add');
+	// The "Agregar" button in the home header (the brand mosaic has no add card any more).
+	await tap('.addbtn');
 	if (!(await isOpen())) throw new Error('the sheet did not open');
 }
 

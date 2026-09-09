@@ -246,7 +246,7 @@ El alta son **dos actos, y la persona decide en el medio**:
 
 | | de dónde sale |
 |---|---|
-| *Agregar Mis compras* · Supermercado La Guaria | lo que el manifiesto **declara** de sí mismo |
+| El logo de **Supermercado La Guaria** sobre su verde, su nombre, y debajo *Agregar Mis compras* | la marca sale del `manifest.webmanifest` del bundle; el nombre, de lo que el manifiesto **declara** de sí mismo |
 | **Qué va a poder contestar** — las consultas con su descripción | las `tools` del manifiesto |
 | **Dónde se va a guardar, en tu teléfono** — `/data/user/0/…/files/journals/compras`, con «Es tuyo. Gnothi se lo administra a esta institución, no se lo lleva» | lo decide **Gnothi** |
 | **Con quién va a hablar** — `http://127.0.0.1:8101/cliente/1` | lo declara la institución, lo **fija** Gnothi |
@@ -286,6 +286,14 @@ GNOTHI : alta: '<módulo>' quedó instalado; N módulos
 
 Y Gnothi abierto, con la tarjeta del módulo. Con los cuatro dados de alta, la pantalla de inicio
 dice **«3 de 3 encendidos»** (o 4 de 4) y muestra una tarjeta por institución.
+
+**La tarjeta es de la institución, no de Gnothi** (desde el 2026-09-08): su ícono sobre su color,
+su nombre en grande —*Laboratorio Clínico Delfos*, *Supermercado La Guaria*, *Estaciones Faro*,
+*Sotavento Motors*— y debajo su eslogan, si declaró uno. Todo sale del bundle, del bloque `brand`
+del `manifest.json` (formato 1.1: `shortName`, `logo`, `color`, `slogan`); si un manifiesto 1.0 no
+trae `brand`, `Marca.cs` toma ícono y color del `manifest.webmanifest` de su PWA. Nada de «(mock del
+POC)» en pantalla. **Mal:** una tarjeta con la caja índigo genérica y el título arriba ⇒ ese bundle no trae
+`web/manifest.webmanifest` o su ícono no existe; el glifo de Gnothi es solo el respaldo.
 
 **Qué prueba:** que un módulo llega por donde llega de verdad. Hasta ahora solo entraban
 empujando archivos con `adb`, que no es un camino que exista para nadie.

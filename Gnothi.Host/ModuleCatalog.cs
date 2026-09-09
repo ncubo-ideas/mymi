@@ -12,7 +12,19 @@ namespace Gnothi.Host;
 // is a Host that hands a third party the availability of every other module.
 public sealed class ModuleCatalog : IAsyncDisposable
 {
-	private readonly List<Module> modules = [];
+	// LA LISTA SE REEMPLAZA, NO SE VACIA. Y no es un detalle de estilo: es lo que hace que
+	// recorrerla sea seguro mientras el catalogo se recarga.
+	//
+	// Load() hacia Clear() y volvia a llenar ESTA MISMA lista, asi que cualquiera que la
+	// estuviera recorriendo -- la pantalla armando su estado, VerifyNewModules con sus await
+	// adentro -- se llevaba un `InvalidOperationException: Collection was modified`. Medido en
+	// el emulador el 2026-09-08: aceptar un alta recarga el catalogo, y la pagina pedia su
+	// estado en ese mismo instante.
+	//
+	// Con el reemplazo, quien tomo la referencia vieja termina de recorrerla completa y sin
+	// excepcion -- una lista inmutable de hecho -- y el que llega despues ve la nueva. Cuesta
+	// una asignacion y cierra la clase entera de bugs, en vez de un recorrido a la vez.
+	private List<Module> modules = [];
 
 	public IReadOnlyList<Module> Modules => modules;
 	public string Root { get; }
@@ -21,11 +33,18 @@ public sealed class ModuleCatalog : IAsyncDisposable
 
 	public IReadOnlyList<string> Load()
 	{
-		modules.Clear();
+		// SE LLENA UNA LISTA NUEVA y al final se publica de un tiro. Ver el comentario de
+		// `modules`: mientras esto corre, quien este recorriendo la anterior no se entera.
+		List<Module> cargados = [];
 		List<string> warnings = [];
 
 		if (!Directory.Exists(Root))
 		{
+			// LA LISTA VACIA SE PUBLICA IGUAL. Antes este camino salia despues del Clear(), asi
+			// que dejaba el catalogo vacio; con el reemplazo hay que decirlo explicitamente o
+			// una carpeta que desaparece dejaria en pie la lista anterior -- modulos que ya no
+			// estan, contestando.
+			modules = cargados;
 			warnings.Add($"the modules directory does not exist: {Root}");
 			return warnings;
 		}
@@ -76,19 +95,44 @@ public sealed class ModuleCatalog : IAsyncDisposable
 				}
 
 				Installation i = Installation.Read(installationPath);
-				modules.Add(new Module(m, i, dir));
+				cargados.Add(new Module(m, i, dir));
 
 				// Excess capabilities are the cheap alarm signal: an invoices module that asks
 				// for a microphone does not need analysis, it needs a warning.
 				string[] excesses = [.. m.Capabilities?.Excesses() ?? []];
 				if (excesses.Length > 0)
 					warnings.Add($"{m.Module}: declares excess capabilities ({string.Join(", ", excesses)})");
+
+				// Y lo mismo con los topes de lo que la institucion declara de si misma -- el
+				// nombre corto, el logo, el color, los textos. NO tumban el modulo: dejar a la
+				// persona sin su laboratorio porque a alguien se le fue un renglon seria peor
+				// que el renglon. Se dicen, y se dicen aca, que es donde ya se dicen estas cosas.
+				foreach (string problem in m.Problems())
+					warnings.Add($"{m.Module}: {problem}");
+
+				// Y EL LOGO, QUE ES EL UNICO QUE HAY QUE ABRIR PARA REVISAR. Se hace aca a
+				// proposito, aunque el catalogo se arma leyendo json: sin esto, un logo
+				// rechazado es un SILENCIO -- la institucion ve la caja del rubro, cree que su
+				// archivo no llego, y no tiene forma de saber que llego y no paso.
+				//
+				// El costo es leer un archivo de pocos KB por modulo, y no es lo que la regla
+				// del arranque perezoso protege: eso es no DESPERTAR veinte modulos. Un stat y
+				// un read de 8 KB no despiertan nada.
+				if (Manifest.Txt(m.Brand?.Logo).Length > 0)
+				{
+					Module.LogoDataUri(m, dir, out string logoProblem);
+					if (logoProblem.Length > 0) warnings.Add($"{m.Module}: {logoProblem}");
+				}
 			}
 			catch (Exception e)
 			{
 				warnings.Add($"{Path.GetFileName(dir)}: {e.GetType().Name}: {e.Message}");
 			}
 		}
+
+		// LA PUBLICACION, y es la unica linea que el resto del programa ve: hasta aca la lista
+		// vieja seguia siendo la buena.
+		modules = cargados;
 
 		return warnings;
 	}

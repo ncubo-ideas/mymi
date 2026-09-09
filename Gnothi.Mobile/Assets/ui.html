@@ -17,17 +17,28 @@
     --paper:#F5F3FB; --card:#FFFFFF; --ink:#241F3D; --muted:#6F6B85; --line:#E7E4F2;
     --accent:#6C4BD9; --accent-soft:#EEE9FC; --accent-ink:#4A2FB0;
     --off:#C0442E; --off-soft:#F9E7E2;
-    --shadow:0 1px 2px rgba(36,31,61,.05), 0 5px 16px rgba(36,31,61,.06);
+    --shadow:0 1px 2px rgba(36,31,61,.04), 0 6px 20px rgba(36,31,61,.07);
+    --shadow-up:0 2px 4px rgba(36,31,61,.06), 0 14px 34px rgba(36,31,61,.14);
   }
   *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
   html,body{height:100%}
   body{background:var(--paper);color:var(--ink);
-       font-family:system-ui,Roboto,"Segoe UI",sans-serif;font-size:15px;line-height:1.5}
+       font-family:Manrope,system-ui,Roboto,"Segoe UI",sans-serif;font-size:15px;line-height:1.5}
+  /* GNOTHI'S OWN TYPEFACE: Manrope, technological and neutral, shipped in the app's assets. Each
+     institution's card can bring its own (brand.font); everything that is the Host's stays here. */
+  @font-face{font-family:Manrope;src:url(fonts/Manrope-400-800.woff2) format('woff2');font-weight:400 800;font-display:swap}
   svg{fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
 
   .view{display:none;flex-direction:column;height:100%;padding-bottom:64px}
-  .view.on{display:flex}
-  .scroll{flex:1;overflow-y:auto;padding:16px 16px 24px}
+  /* MICRO-ANIMATIONS (review 2026-09-08): the view slides in, the card sinks and lifts its shadow
+     when touched, and the touch leaves a ripple. None of this changes what the app does; it
+     changes how it feels. */
+  .view.on{display:flex;animation:enter .22s ease-out}
+  @keyframes enter{from{opacity:0;transform:translateX(14px)}to{opacity:1;transform:none}}
+  .rip{position:absolute;border-radius:50%;pointer-events:none;background:var(--brand,var(--accent));
+       opacity:.14;transform:scale(0);animation:ripple .55s ease-out forwards}
+  @keyframes ripple{to{transform:scale(1);opacity:0}}
+  .scroll{flex:1;overflow-y:auto;padding:12px 16px 24px}
 
   nav{position:fixed;left:0;right:0;bottom:0;height:60px;display:flex;
       background:var(--card);border-top:1px solid var(--line)}
@@ -37,41 +48,131 @@
   nav svg{width:22px;height:22px}
 
   /* ── header ───────────────────────────────────────────────────────────── */
-  .top{display:flex;align-items:center;gap:9px;margin-bottom:16px}
+  .top{display:flex;align-items:center;gap:9px;margin-bottom:8px}
   .logo{width:34px;height:34px;border-radius:10px;background:var(--accent);color:#fff;
        display:grid;place-items:center}
   .logo svg{width:19px;height:19px}
+  .logo.mark{background:none;overflow:hidden;border-radius:10px}
+  .logo.mark img{width:34px;height:34px;display:block}
   .top b{font-size:21px;font-weight:800;letter-spacing:-.02em;flex:1}
+  /* THE HIERARCHY (review 2026-09-08): Gnothi + its promise, «Tus instituciones · N conectadas», the
+     cards. The greeting is gone: the space belongs to the modules, and the Assistant has its tab. */
+  .top .tt{flex:1;min-width:0}
+  .top .tt b{display:block;line-height:1.15}
+  .top .tt small{display:block;color:var(--muted);font-size:12px;line-height:1.3;margin-top:1px}
   .ava{width:34px;height:34px;border-radius:50%;background:var(--accent-soft);
        color:var(--accent-ink);font-weight:700;font-size:14px;display:grid;place-items:center}
 
   /* ── the greeting, straight from the mockup ───────────────────────────── */
-  .hola{background:linear-gradient(135deg,#EFE9FE,#E4EDFD);border-radius:18px;padding:14px;
-       display:flex;align-items:center;gap:12px;margin-bottom:20px;box-shadow:var(--shadow)}
-  .hola .ic{width:44px;height:44px;border-radius:50%;background:var(--card);color:var(--accent);
-       display:grid;place-items:center;flex:none}
-  .hola .ic svg{width:24px;height:24px}
-  .hola b{font-size:15.5px;display:block}
-  .hola small{color:var(--muted);font-size:12.5px;display:block;line-height:1.4}
-  .hola .t{flex:1}
   .chev{color:var(--muted);font-size:20px;flex:none}
 
-  .sec{display:flex;align-items:baseline;margin:2px 2px 10px}
+  /* «HOLA, SONIA» + «AGREGAR MÓDULO» (mockup 2026-09-09): the greeting is the section head, and the
+     action that grows Gnothi sits next to it, in the Host's violet -- and STAYS on screen while the
+     list scrolls, whether Sonia has five modules or thirty. The connect card left the grid. */
+  .hola{display:flex;align-items:flex-end;gap:12px;margin:0 -16px 4px;padding:2px 18px 6px;
+       position:sticky;top:0;z-index:5;background:var(--paper)}
+  .hola .t{flex:1;min-width:0}
+  .hola{align-items:center}
+  .hola b{display:block;font-size:17px;font-weight:800;letter-spacing:-.01em;line-height:1.2}
+  .hola small{display:block;color:var(--muted);font-size:12px;margin-top:1px}
+  .hola .addbtn{flex:none;display:inline-flex;align-items:center;gap:6px;border:0;border-radius:999px;
+       padding:9px 14px;background:var(--accent);color:#fff;font:inherit;font-size:13px;font-weight:700;
+       box-shadow:0 6px 16px rgba(108,75,217,.28);transition:transform .15s ease}
+  .hola .addbtn:active{transform:scale(.96)}
+  .hola .addbtn span{font-size:17px;line-height:1}
+  .sec{display:flex;align-items:center;gap:8px;margin:2px 2px 10px}
   .sec b{font-size:16px;flex:1}
-  .sec small{color:var(--accent);font-size:12.5px;font-weight:600}
+  .sec small{color:var(--muted);font-size:12.5px;font-weight:600}
+  .sec .grid-icon{width:20px;height:20px;color:var(--accent);flex:none}
 
   /* ── the module grid ──────────────────────────────────────────────────── */
+  /* THE CARD BELONGS TO THE INSTITUTION (Geaninna's mockup, 2026-09-08): its logo, its name and its
+     slogan, and the corporate color as a top STRIPE on a white card, not as a colored background:
+     five brands side by side have to get along. Two columns on the phone, more on a tablet. */
   .grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
-  .mod{background:var(--card);border-radius:18px;box-shadow:var(--shadow);padding:18px 12px 14px;
-       display:flex;flex-direction:column;gap:6px;align-items:center;text-align:center;
-       min-height:150px;justify-content:center}
-  .mod:active{transform:scale(.97)}
-  .mod .ico{width:48px;height:48px;border-radius:14px;display:grid;place-items:center;
-       margin-bottom:4px}
-  .mod .ico svg{width:26px;height:26px}
-  .mod b{font-size:15px;line-height:1.25}
-  .mod small{color:var(--muted);font-size:11.5px;line-height:1.35;display:block;
-       white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%}
+  @media (min-width:600px){ .grid{grid-template-columns:repeat(auto-fill,minmax(240px,1fr))} }
+  /* THE PHOTO CARD (mockup 2026-09-09): the institution's banner fills the card, a gradient in its
+     color keeps the text readable, the name comes in two tiers -«Laboratorio Clínico» small, «Delfos»
+     big, in its typeface-, then the slogan, a chip with how many queries are on, and a white pill
+     «Abrir →». The first card spans both columns (.wide; `hero` is the detail's class). Without a banner, the card is a gradient
+     of the brand color: still the brand, never a grey box. */
+  .mod.photo{color:#fff;border-top:0;min-height:196px;padding:14px 14px 14px;justify-content:flex-start;gap:6px;
+       background:linear-gradient(100deg,var(--brand) 0%,color-mix(in srgb,var(--brand) 70%,transparent) 48%,transparent 100%),
+                  var(--banner,linear-gradient(135deg,var(--brand),var(--brand-deep,#000)));
+       background-size:cover;background-position:center}
+  .mod.photo.wide{grid-column:1 / -1;min-height:200px}
+  .mod.photo .head{flex-direction:row;align-items:center;gap:10px}
+  .mod.photo .ico{width:44px;height:44px;border-radius:12px;background:rgba(255,255,255,.18);
+       box-shadow:0 2px 8px rgba(0,0,0,.18)}
+  .mod.photo .ico.brand{background:rgba(255,255,255,.92)}
+  .mod.photo .ico.brand img{object-fit:contain;padding:5px;background:transparent}
+  .mod.photo .nm{min-width:0}
+  /* THE TYPOGRAPHY (Geaninna, 2026-09-09): Manrope for everything; the institution's typeface ONLY
+     on its brand name, and moderate. «LABORATORIO CLÍNICO» small caps 10-11 px; the name 20-21 px,
+     26 on the hero; the slogan 12-13 px in Manrope. The brand is the protagonist, the slogan is
+     secondary, and the chip and «Abrir» are Gnothi's -- identical on every card. */
+  .mod.photo .nm .pre{display:block;font-size:10px;font-weight:500;opacity:.85;letter-spacing:.08em;
+       text-transform:uppercase;line-height:1.3}
+  .mod.photo .nm b{display:block;font-family:var(--font,inherit);font-size:21px;font-weight:700;line-height:1.05;
+       letter-spacing:-.01em;text-shadow:0 1px 2px rgba(0,0,0,.25)}
+  .mod.photo .nm b.mf{font-weight:800}
+  .mod.photo.wide .nm .pre{font-size:11px}
+  .mod.photo.wide .nm b{font-size:26px}
+  .mod.photo small{color:#fff;opacity:.85;font-size:12px;font-weight:400;line-height:1.35;
+       display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;flex:0 0 auto;
+       text-shadow:0 1px 2px rgba(0,0,0,.25)}
+  .mod.photo.wide small{font-size:13px;font-weight:500}
+  .mod.photo .acts{margin-top:auto;flex-direction:column;align-items:flex-start;gap:8px;padding-top:8px}
+  .mod.photo .perm{display:inline-flex;align-items:center;gap:6px;border:0;padding:5px 10px;border-radius:999px;
+       background:rgba(10,20,40,.42);color:#fff;font:inherit;font-size:11px;font-weight:600;
+       backdrop-filter:blur(4px);cursor:pointer}
+  .mod.photo .perm svg{width:11px;height:11px}
+  .mod.photo .abrir{display:inline-flex;align-items:center;gap:8px;border:0;border-radius:999px;padding:8px 16px;
+       background:#fff;color:var(--accent-ink);font:inherit;font-size:13px;font-weight:800;
+       box-shadow:0 3px 10px rgba(0,0,0,.18);transition:transform .15s ease}
+  .mod.photo .abrir span{transition:transform .15s ease}
+  .mod.photo:active .abrir span{transform:translateX(3px)}
+  .mod.photo.off{opacity:.7;filter:saturate(.4)}
+  .mod.photo .off-tag{color:#fff;opacity:.9}
+  .mod.photo .rip{background:#fff;opacity:.18}
+  .mod{position:relative;overflow:hidden;background:var(--card);border-radius:20px;box-shadow:var(--shadow);
+       padding:14px 14px 14px;display:flex;flex-direction:column;gap:8px;align-items:stretch;
+       text-align:left;min-height:156px;border-top:4px solid var(--brand,#CFC9E4);
+       transition:transform .18s ease,box-shadow .18s ease;-webkit-tap-highlight-color:transparent}
+  .mod:active{transform:scale(.965);box-shadow:var(--shadow-up)}
+  /* On the phone the logo goes on top and the name below at full width: «Supermercado» does not fit
+     next to a logo in 165 px. From tablet up, side by side as in the mockup. */
+  .mod .head{display:flex;flex-direction:column;align-items:flex-start;gap:8px;min-width:0}
+  .mod .head b{min-width:0}
+  @media (min-width:600px){ .grid{grid-template-columns:repeat(auto-fill,minmax(240px,1fr))}
+    .mod .head{flex-direction:row;align-items:center;gap:10px} .mod .head b{flex:1} .mod{min-height:0} }
+  .mod .ico{width:46px;height:46px;border-radius:14px;display:grid;place-items:center;flex:none}
+  .mod .ico svg{width:24px;height:24px}
+  /* THE INSTITUTION'S BRAND: its icon, exactly as published in its bundle, over its color. */
+  .ico.brand{overflow:hidden;padding:0}
+  .ico.brand img{width:100%;height:100%;object-fit:cover;display:block}
+  .mod b{font-size:14.5px;line-height:1.25}
+  /* the institution's slogan can be a sentence: two lines at most, never widens the grid */
+  .mod small{color:var(--muted);font-size:11.5px;line-height:1.35;display:-webkit-box;
+       -webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;max-width:100%;flex:1}
+  /* THE WHOLE CARD IS THE SHORTCUT: touching it opens the institution's app. The arrow at the top
+     right only hints at it, discreet and in the brand color; no button (review 2026-09-08). The
+     detail (consent, the switches of the queries) opens from «✦ Consultas disponibles». */
+  /* THE ACTIONS, at the bottom of the card (Geaninna, 2026-09-09): «Abrir <institución> →» in the
+     brand color says what a tap does, and «✦ Consultas disponibles» is the entry to what the
+     institution exposes to the AI -- no more press-and-hold to find the switches. */
+  .mod .acts{margin-top:auto;display:flex;flex-direction:column;align-items:flex-start;gap:7px;padding-top:6px}
+  .mod .go{display:inline-flex;align-items:center;gap:6px;color:var(--brand,var(--accent));
+       font-size:13px;font-weight:700;line-height:1.2;transition:transform .15s ease}
+  .mod .go span{font-size:15px;transition:transform .15s ease}
+  .mod:active .go span{transform:translateX(3px)}
+  .mod .qs{border:0;background:none;padding:0;margin:0;font-family:inherit;text-align:left;cursor:pointer;
+       display:inline-flex;align-items:center;gap:5px;color:var(--muted);font-size:11.5px;font-weight:600;line-height:1.2}
+  .mod .qs:active{color:var(--accent)}
+  .mod .off-tag{font-size:13px;font-weight:700;color:var(--muted)}
+  .mod .abrir span{font-size:14px;line-height:1}
+  /* No watermark: the PNG icons are full squares and in the background they read as a smudge, not
+     as the silhouette in the mockup. The brand is already in the stripe, the logo and the arrow. */
   /* EL ALTA EN CURSO. Vive arriba de la grilla porque es lo que la persona está esperando. */
   .alta{display:flex;align-items:center;gap:10px;margin:0 0 14px;padding:13px 15px;
         border-radius:14px;font-size:13.5px;line-height:1.4}
@@ -87,14 +188,23 @@
   .chip{display:inline-flex;align-items:center;gap:5px;font-size:10.5px;font-weight:600;
        color:var(--muted);margin-top:4px;justify-content:center}
   .chip svg{width:12px;height:12px}
-  .mod.off{opacity:.75}
+  .mod.off{opacity:.7}
   .mod.off .ico{filter:grayscale(1);opacity:.5}
   .chip.no{color:var(--off)}
 
   /* the ghost card: adding a module is part of the product, so the grid says so */
-  .mod.add{background:none;box-shadow:none;border:2px dashed #CFC9E4;color:var(--muted)}
-  .mod.add .ico{background:var(--accent-soft);color:var(--accent);border-radius:50%}
-  .mod.add b{color:var(--accent);font-size:14px}
+  /* CONNECTING AN INSTITUTION is the action that grows Gnothi: a card unlike the brand ones (dashed
+     accent border, soft background, no stripe). */
+  .mod.add{background:linear-gradient(160deg,#F1ECFF,#E6E0FA);box-shadow:none;border:1.5px dashed #C4B7F2;border-top-width:1.5px;
+       color:var(--muted);align-items:center;text-align:center;justify-content:center;gap:8px;--brand:var(--accent);min-height:196px}
+  .mod.add .cta{flex-direction:column;align-items:center}
+  .mod.add small{text-align:center;flex:0 0 auto}
+  .mod.add .cta{display:flex;flex-direction:column;align-items:flex-start;gap:8px;color:var(--accent-ink);font-weight:800;font-size:14.5px;line-height:1.2;padding-right:30px}
+  @media (min-width:600px){ .mod.add .cta{flex-direction:row;align-items:center} }
+  .mod.add .cta .plus{width:30px;height:30px;border-radius:10px;background:var(--accent);color:#fff;
+       display:grid;place-items:center;font-size:22px;line-height:1;font-weight:600;flex:none}
+  .mod.add small{color:var(--accent-ink);opacity:.8}
+  .mod.add .go{color:var(--accent)}
 
   /* bottom sheets: the add-module explanation and the provider picker share the shell */
   .osheet{position:fixed;inset:0;background:rgba(36,31,61,.45);display:none;
@@ -103,6 +213,22 @@
   .osheet .card{background:var(--card);border-radius:22px 22px 0 0;padding:24px 22px 30px;
        width:100%;max-height:78vh;overflow-y:auto}
   /* LA PROPUESTA DE ALTA. Lista de consultas y las dos rutas que Gnothi fija. */
+  .pr-hero{margin-bottom:16px}
+  /* LA FRANJA DE PROCEDENCIA. Verde cuando el dominio que la institución declara se
+     corresponde con el host del que bajó el bundle, ámbar cuando no, y neutra cuando no hay
+     con qué comparar. Las tres son información y ninguna bloquea nada. */
+  .proc{display:flex;align-items:flex-start;gap:7px;border-radius:12px;padding:9px 11px;
+        font-size:11.5px;line-height:1.4;margin:2px 0 0}
+  .proc svg{width:14px;height:14px;flex:none;stroke-width:2.2;margin-top:1px}
+  .proc.ok{background:#E4F4EC;color:#0E5C3D}
+  .proc.duda{background:#FFF6E5;color:#8A5A00}
+  /* La neutra toma el color de la institución por style; acá solo su forma. */
+  .proc.dice{background:var(--accent-soft);color:var(--accent-ink)}
+  /* Lo que la institución dice de sí misma. No usa .hint -que es para las notas al pie del
+     Host, centrada y en gris-: esto es un párrafo de alguien, y un párrafo se lee alineado. */
+  .desc{font-size:12.5px;line-height:1.5;color:var(--ink);padding:0 2px;margin:0}
+  .hint + .desc{margin-top:16px}
+  .noHace{font-weight:600}
   .pr-tools{list-style:none;margin:6px 0 14px;padding:0}
   .pr-tools li{padding:9px 0;border-bottom:1px solid var(--line);font-size:13.5px}
   .pr-tools li:last-child{border-bottom:0}
@@ -148,16 +274,13 @@
 
   .master{background:var(--card);border-radius:16px;box-shadow:var(--shadow);
        padding:14px;display:flex;align-items:center;gap:10px;margin:16px 0 4px}
-  /* SOLO EL PRIMER span CRECE, y el selector es asi por una razon. Con `.master span` la regla
-     tambien le caia al `.chev`, que es un span: su propia regla -flex:none, 20px- pierde por
-     especificidad (0,1,0 contra 0,1,1). Con flex:1 los dos spans se repartian el espacio libre,
-     el chevron se quedaba con media caja y el glifo se apoyaba en su borde izquierdo: el chevron
-     en el MEDIO y un hueco a la derecha, ademas de salir a 14.5px en vez de 20. La fila de
-     «Modulo encendido» no cambia: su segundo hijo es un <label class="sw">, no un span. */
-  .master > span:first-child{flex:1;font-weight:600;font-size:14.5px}
+  .master span{flex:1;font-weight:600;font-size:14.5px}
 
   h3.cap{font-size:11.5px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;
        color:var(--muted);margin:18px 4px 8px}
+  /* «Consultas de La Guaria» is what the card's link promised: it is the headline of the detail. */
+  .qtitle{font-size:17px;font-weight:800;margin:20px 2px 2px;line-height:1.2}
+  .qlead{color:var(--muted);font-size:13px;margin:0 2px 10px;line-height:1.45}
   .tool{background:var(--card);border-radius:16px;box-shadow:var(--shadow);
        padding:13px 14px;display:flex;gap:10px;margin-bottom:10px;align-items:flex-start}
   .tool .t{flex:1;min-width:0}
@@ -240,6 +363,30 @@
   .row .n b{font-size:14px;display:block}
   .row .n small{color:var(--muted);font-size:10.5px}
   .lede{color:var(--muted);font-size:12.5px;margin:-6px 2px 14px;line-height:1.55}
+  /* AJUSTES, SMALL (spec 2026-09-09): three rows, each opens a screen. Datos, Proveedor, Clave. */
+  .srow{background:var(--card);border-radius:16px;box-shadow:var(--shadow);padding:13px 14px;display:flex;
+       gap:12px;align-items:center;margin-bottom:10px;transition:transform .15s ease}
+  .srow:active{transform:scale(.985)}
+  .srow .ico{width:40px;height:40px;border-radius:12px;display:grid;place-items:center;flex:none;
+       background:var(--accent-soft);color:var(--accent)}
+  .srow .ico svg{width:20px;height:20px}
+  .srow .t{flex:1;min-width:0}
+  .srow .t b{font-size:14.5px;display:block}
+  .srow .t small{color:var(--muted);font-size:12px;display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .srow.tall{align-items:flex-start}
+  .srow.tall .ico{margin-top:2px}
+  .srow.tall .t b{margin-bottom:6px}
+  .srow.tall .t small{line-height:1.5}
+  .srow.tall .chev{align-self:center}
+  .row .chev{margin-left:4px}
+  /* INFORMACIÓN TÉCNICA: the folder gets its own row, full width, monospaced, with a quiet Copy. */
+  .kv .path{flex-wrap:wrap;gap:4px 10px;align-items:center}
+  .kv .path span{flex:1 0 100%}
+  .kv .path code{flex:1;min-width:0;font-family:ui-monospace,Consolas,monospace;font-size:11.5px;color:var(--ink);
+       word-break:break-all;line-height:1.4}
+  .kv .path .copy{flex:none;border:0;border-radius:999px;padding:6px 12px;background:var(--accent-soft);color:var(--accent-ink);
+       font:inherit;font-size:12px;font-weight:700;cursor:pointer}
+  .kv .path .copy:active{transform:scale(.95)}
 
   /* the key card: state + actions, and an editor that NEVER echoes the stored value */
   .key{background:var(--card);border-radius:16px;box-shadow:var(--shadow);padding:14px}
@@ -270,24 +417,24 @@
 <div class="view on" id="v-home">
   <div class="scroll">
     <div class="top">
-      <div class="logo"><svg viewBox="0 0 24 24"><path d="M12 3l7 3v5c0 4.4-2.9 8.1-7 9.5C7.9 19.1 5 15.4 5 11V6l7-3z"/><path d="M9.2 11.8l2 2 3.6-3.9"/></svg></div>
-      <b>Gnothi</b>
+      <!-- THE MARK (identidad visual v1.0, 2025): four petals around a four-point star -- your
+           institutions around you, your information in the centre. Rebuilt as geometry from the
+           brand board until the designer's vector arrives. -->
+      <div class="logo mark"><img alt="Gnothi" src="img/gnothi-mark.png"></div>
+      <div class="tt"><b>Gnothi</b></div>
       <div class="ava">S</div>
-    </div>
-
-    <div class="hola" onclick="gn.nav('chat')">
-      <div class="ic"><svg viewBox="0 0 24 24"><path d="M12 3v2M5.6 5.6l1.4 1.4M18.4 5.6L17 7M12 7a5 5 0 0 1 5 5v4a3 3 0 0 1-3 3h-4a3 3 0 0 1-3-3v-4a5 5 0 0 1 5-5z"/><circle cx="10" cy="13.4" r=".9" fill="currentColor" stroke="none"/><circle cx="14" cy="13.4" r=".9" fill="currentColor" stroke="none"/></svg></div>
-      <div class="t"><b>Hola, Sonia 👋</b>
-      <small>Tu asistente está listo.<br>Consultá tu historia y decidí.</small></div>
-      <span class="chev">›</span>
     </div>
 
     <!-- EL ALTA, MIENTRAS PASA. Es lo primero que Sonia ve hacer a Gnothi por ella: tocó un
          botón en la página de su institución y volvió acá. Sin esto son 12 MB de silencio. -->
     <div id="alta"></div>
 
-    <div class="sec"><b>Tus módulos</b><small id="home-sub"></small></div>
+    <div class="hola">
+      <div class="t"><b>Tus instituciones</b><small id="home-sub"></small></div>
+      <button class="addbtn" onclick="gn.sheet(true)"><span>+</span>Agregar</button>
+    </div>
     <div class="grid" id="mods"></div>
+    <style id="brand-fonts"></style>
   </div>
 </div>
 
@@ -316,9 +463,10 @@
 <!-- ═══ JOURNAL ═══ -->
 <div class="view" id="v-journal">
   <div class="scroll">
-    <div class="top"><div class="logo"><svg viewBox="0 0 24 24"><path d="M20 4c-6 0-11 2-13.5 8.5C5 17 5 20 5 20s2.5-1 5-1c6 0 9.5-5.5 10-15z"/><path d="M5 20C8 14 12 10 17 7"/></svg></div><b>Journal</b></div>
-    <p class="lede">Tu historia, escrita en este teléfono. Un único escritor: vos.
-    Gnothi lo pesa desde afuera — sin preguntarle a nadie.</p>
+    <div class="back" onclick="gn.nav('set')">‹ Ajustes</div>
+    <h2 class="qtitle" style="margin-top:0">Datos de tus instituciones</h2>
+    <p class="qlead">Información que Gnothi mantiene en este dispositivo. Nadie más la lee: al preguntar,
+    al asistente viaja solo lo que la consulta elegida devuelve.</p>
     <div id="journal"></div>
   </div>
 </div>
@@ -327,17 +475,43 @@
 <div class="view" id="v-set">
   <div class="scroll">
     <div class="top"><div class="logo"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3.2"/><path d="M19 12a7 7 0 0 0-.1-1.2l2-1.5-2-3.4-2.3 1a7 7 0 0 0-2-1.2L14.2 3h-4L9.4 5.7a7 7 0 0 0-2 1.2l-2.3-1-2 3.4 2 1.5A7 7 0 0 0 5 12c0 .4 0 .8.1 1.2l-2 1.5 2 3.4 2.3-1a7 7 0 0 0 2 1.2L9.8 21h4l.8-2.7a7 7 0 0 0 2-1.2l2.3 1 2-3.4-2-1.5c.1-.4.1-.8.1-1.2z"/></svg></div><b>Ajustes</b></div>
-    <h3 class="cap">El modelo</h3>
+
+    <h3 class="cap">Datos en este teléfono</h3>
+    <div class="srow" onclick="gn.nav('journal')">
+      <div class="ico"><svg viewBox="0 0 24 24"><rect x="7" y="2.5" width="10" height="19" rx="2.5"/><path d="M11 18.5h2"/></svg></div>
+      <div class="t"><b>Datos de tus instituciones</b><small id="set-datos-sub"></small></div><span class="chev">›</span>
+    </div>
+
+    <h3 class="cap">Asistente</h3>
+    <div class="srow tall" onclick="gn.nav('prov')">
+      <div class="ico"><svg viewBox="0 0 24 24"><path d="M12 3l1.8 5.2L19 10l-5.2 1.8L12 17l-1.8-5.2L5 10l5.2-1.8L12 3z"/><path d="M19 16l.8 2.2L22 19l-2.2.8L19 22l-.8-2.2L16 19l2.2-.8L19 16z"/></svg></div>
+      <div class="t"><b>Proveedor de IA</b>
+        <small id="set-prov-sub"></small><small id="set-key-sub"></small></div>
+      <span class="chev">›</span>
+    </div>
+
+    <h3 class="cap">Información técnica</h3>
+    <div class="kv tech" id="set-host"></div>
+
+    <p class="hint" style="margin-top:22px">Tus datos permanecen en este dispositivo.</p>
+  </div>
+</div>
+
+<!-- ═══ PROVEEDOR DE IA ═══ -->
+<div class="view" id="v-prov">
+  <div class="scroll">
+    <div class="back" onclick="gn.nav('set')">‹ Ajustes</div>
+    <h2 class="qtitle" style="margin-top:0">Proveedor de IA</h2>
+    <p class="qlead">Todos hablan el mismo formato. El asistente le manda solo lo que la consulta elegida devuelve.</p>
     <div class="kv" id="set-model"></div>
-    <button class="btn ghost" style="width:100%;margin-top:10px" onclick="gn.psheet(true)">Cambiar proveedor</button>
-    <h3 class="cap">Tu llave</h3>
+
+    <h3 class="cap">Acceso</h3>
+    <!-- The key card: state and actions, and an editor that NEVER echoes the stored value. -->
     <div class="key" id="set-key"></div>
-    <p class="hint">Sirve cualquier llave del proveedor configurado — gratuita o de pago.
-    Se guarda solo en este teléfono y no viaja a ningún lado salvo al proveedor.</p>
-    <h3 class="cap">El Host</h3>
-    <div class="kv" id="set-host"></div>
-    <p class="hint">Tus journals viven en este teléfono. Al preguntar, al modelo viaja
-    solo lo que la consulta elegida devuelve.</p>
+    <p class="hint">Sirve cualquier clave del proveedor — gratuita o de pago. Se guarda solo en este teléfono
+    y no viaja a ningún lado salvo al proveedor.</p>
+
+    <button class="btn ghost" style="width:100%;margin-top:18px" onclick="gn.psheet(true)">Cambiar proveedor</button>
   </div>
 </div>
 
@@ -348,8 +522,7 @@
      recién si acepta el módulo ocupa un lugar. Cancelar no deja nada. -->
 <div id="propuesta" class="osheet">
   <div class="card">
-    <h4 id="pr-t"></h4>
-    <p id="pr-i"></p>
+    <div id="pr-h" class="hero pr-hero"></div>
     <div id="pr-cuerpo"></div>
     <button class="cta" onclick="gn.altaAceptar()">Instalar en mi teléfono</button>
     <button class="btn ghost" style="width:100%;margin-top:10px" onclick="gn.altaDescartar()">Ahora no</button>
@@ -416,8 +589,6 @@
     <svg viewBox="0 0 24 24"><path d="M4 11l8-7 8 7"/><path d="M6 10v9h12v-9"/></svg>Inicio</button>
   <button id="n-chat" onclick="gn.nav('chat')">
     <svg viewBox="0 0 24 24"><path d="M21 11.5a8.4 8.4 0 0 1-8.5 8.3 9 9 0 0 1-3.8-.8L3 20l1.1-4.1a8 8 0 0 1-1.1-4.4A8.4 8.4 0 0 1 11.5 3 8.4 8.4 0 0 1 21 11.5z"/></svg>Asistente</button>
-  <button id="n-journal" onclick="gn.nav('journal')">
-    <svg viewBox="0 0 24 24"><path d="M20 4c-6 0-11 2-13.5 8.5C5 17 5 20 5 20s2.5-1 5-1c6 0 9.5-5.5 10-15z"/></svg>Journal</button>
   <button id="n-set" onclick="gn.nav('set')">
     <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3.2"/><path d="M19 12a7 7 0 0 0-.1-1.2l2-1.5-2-3.4-2.3 1a7 7 0 0 0-2-1.2L14.2 3h-4L9.4 5.7a7 7 0 0 0-2 1.2l-2.3-1-2 3.4 2 1.5A7 7 0 0 0 5 12c0 .4 0 .8.1 1.2l-2 1.5 2 3.4 2.3-1a7 7 0 0 0 2 1.2L9.8 21h4l.8-2.7a7 7 0 0 0 2-1.2l2.3 1 2-3.4-2-1.5c.1-.4.1-.8.1-1.2z"/></svg>Ajustes</button>
 </nav>
@@ -425,22 +596,112 @@
 <script>
 'use strict';
 
-// Each business gets its color and its glyph HERE, not in the manifest: the icon is the
-// Host's business, not the institution's. An unknown module falls to the indigo box.
+// THE BRAND COMES FROM THE BUNDLE (2026-09-08). Until now the icon was the Host's: a small map keyed
+// by module name, and the institution went in grey small print under «Mis exámenes». Institutions
+// put their module in Gnothi so Sonia sees THEIR brand, so the icon and the color come from the
+// manifest.webmanifest they publish inside the bundle (BrandAssets.cs reads it and it travels in
+// the state as `brand`). The map below stays as a FALLBACK: a module without a brand falls to its
+// glyph, and an unknown one to the indigo box.
 const LOOK = {
   examenes: { c:'#2F6BFF', bg:'#E8EEFE',
     svg:'<svg viewBox="0 0 24 24"><path d="M10 3h4M12 3v5.5M9 8.5h6l3.6 8.2a2 2 0 0 1-1.8 2.8H7.2a2 2 0 0 1-1.8-2.8L9 8.5z"/><path d="M7.5 14h9"/></svg>' },
   compras:  { c:'#1E9E6A', bg:'#E4F4EC',
     svg:'<svg viewBox="0 0 24 24"><path d="M3 4h2l2.4 11h11l2-8H6"/><circle cx="9.5" cy="19" r="1.4"/><circle cx="16.5" cy="19" r="1.4"/></svg>' },
-  facturas: { c:'#C0741B', bg:'#FAEFDD',
-    svg:'<svg viewBox="0 0 24 24"><path d="M6 3h12v18l-2-1.4L14 21l-2-1.4L10 21l-2-1.4L6 21V3z"/><path d="M9 8h6M9 12h6M9 16h4"/></svg>' },
+  facturas: { c:'#C0741B', bg:'#FAEFDD',   // a supermarket: a cart, not a receipt (requested 2026-09-08)
+    svg:'<svg viewBox="0 0 24 24"><path d="M3 4h2l2.4 11h11l2-8H6"/><circle cx="9.5" cy="19" r="1.4"/><circle cx="16.5" cy="19" r="1.4"/></svg>' },
   _:        { c:'#6C4BD9', bg:'#EEE9FC',
     svg:'<svg viewBox="0 0 24 24"><path d="M12 3l8 4.5v9L12 21l-8-4.5v-9L12 3z"/><path d="M4 7.5l8 4.5 8-4.5M12 12v9"/></svg>' },
 };
 const DB = '<svg viewBox="0 0 24 24"><ellipse cx="12" cy="5.5" rx="7" ry="2.8"/><path d="M5 5.5v13c0 1.5 3.1 2.8 7 2.8s7-1.3 7-2.8v-13"/><path d="M5 12c0 1.5 3.1 2.8 7 2.8s7-1.3 7-2.8"/></svg>';
 const look = n => LOOK[n] || LOOK._;
 
-const NOMBRE = { examenes:'Tus exámenes', compras:'Tus compras', facturas:'Tus facturas' };
+// A module's little square: the brand if it brings one, the glyph if not. `glyph` replaces the
+// fallback drawing (the Journal uses the drum), never the institution's logo.
+function iconOf(m, glyph) {
+  const b = m.brand;
+  if (b && b.logo)
+    return '<div class="ico brand" style="background:' + attr(b.color || '#fff') + '">'
+      + '<img alt="" src="' + attr(b.logo) + '"></div>';
+  const k = look(m.name);
+  return '<div class="ico" style="color:' + k.c + ';background:' + k.bg + '">' + (glyph || k.svg) + '</div>';
+}
+// The card's corporate color: the brand's if declared, otherwise the fallback glyph's.
+const colorOf = m => (m.brand && m.brand.color) ? attr(m.brand.color) : look(m.name).c;
+// A #rrggbb with transparency, for the arrow's background. No color-mix: the WebView of an old
+// phone does not know it.
+function tint(hex, a) {
+  const h = /^#([0-9a-f]{6})$/i.exec(hex); if (!h) return 'var(--accent-soft)';
+  const n = parseInt(h[1], 16);
+  return 'rgba(' + (n >> 16) + ',' + ((n >> 8) & 255) + ',' + (n & 255) + ',' + a + ')';
+}
+// The institution big, its slogan small: the brand is what it pays to be seen. Without a slogan
+// the card carries only the name; the module title («My invoices») is not card copy (removed
+// 2026-09-08). A manifest without an institution does not leave the card mute: the title steps up.
+const nameOf    = m => m.shortName || m.institution || m.title;
+// THE NAME IN TWO TIERS, as the mockup reads it: «Laboratorio Clínico» small over «Delfos» big. The
+// big one is brand.shortName; the small one is what the institution's full name has before it. When
+// there is no shortName the split is at the first word -«Sotavento» / «Motors»-, and a one-word
+// name goes big alone.
+function tiers(m) {
+  const full = (m.institution || m.title || '').trim(), short = (m.shortName || '').trim();
+  if (short && full.toLowerCase().endsWith(short.toLowerCase()) && full.length > short.length)
+    return { pre: full.slice(0, full.length - short.length).trim(), big: short };
+  if (short) return { pre: '', big: short };
+  const i = full.indexOf(' ');
+  return i > 0 && full.length > 12 ? { pre: full.slice(0, i), big: full.slice(i + 1) } : { pre: '', big: full };
+}
+const taglineOf = m => m.institution ? (m.slogan || '') : '';
+
+// ── EL COLOR DE LA INSTITUCIÓN, CORREGIDO PARA QUE SE LEA ────────────────────────────────
+//
+// AQUÍ ES DONDE «EL HOST COMPONE» DEJA DE SER UNA FRASE. Su color sirve para su logo y no
+// necesariamente para texto: un amarillo de marca como #F7E06B sobre blanco tiene 1.4:1 de
+// contraste, contra el 4.5:1 que hace falta para leerse.
+//
+// La institución declara SU color; el Host lo baja de luminosidad hasta que se pueda leer,
+// conservando el tono. Así ella no puede pedir un texto ilegible, porque no elige las dos
+// partes de la ecuación: pone el matiz, y el Host pone la legibilidad. Declarar #FFFFFF da
+// gris, no texto invisible.
+//
+// Se escala hacia negro en pasos de 6% porque escalar PRESERVA EL MATIZ -- un lila oscurecido
+// sigue siendo lila --, mientras que bajar la saturación lo apagaría hasta volverlo gris.
+// Luminancia relativa de WCAG.
+const HEX = /^#[0-9a-f]{6}$/i;
+const luminancia = (r, g, b) => {
+  const f = c => { c /= 255; return c <= .03928 ? c / 12.92 : Math.pow((c + .055) / 1.055, 2.4); };
+  return .2126 * f(r) + .7152 * f(g) + .0722 * f(b);
+};
+function legible(hex) {
+  if (!HEX.test(hex || '')) return '';
+  let r = parseInt(hex.substr(1, 2), 16), g = parseInt(hex.substr(3, 2), 16), b = parseInt(hex.substr(5, 2), 16);
+  for (let k = 1; k > .1; k -= .06) {
+    const rr = Math.round(r * k), gg = Math.round(g * k), bb = Math.round(b * k);
+    if (1.05 / (luminancia(rr, gg, bb) + .05) >= 4.5) return 'rgb(' + rr + ',' + gg + ',' + bb + ')';
+  }
+  return 'var(--ink)';
+}
+// El color de este módulo ya corregido, o el acento de Gnothi si no declaró ninguno. Las
+// pantallas piden esto y no `m.brand.color`: así ninguna se olvida de la corrección.
+//
+// El fondo sale del `tint(hex, a)` de más arriba, que ya estaba y es más general que el que
+// traía esta pieza -- toma el alpha y valida el hex.
+const acento  = m => legible(m.brand && m.brand.color) || 'var(--accent-ink)';
+const fondoDe = m => tint((m.brand && m.brand.color) || '', .13);
+
+// LA OTRA MITAD, y hace falta desde que el botón «Abrir →» se llena con el color de la marca:
+// ahí el texto va SOBRE ese color, no EN ese color. `color:#fff` fijo se rompe con una marca
+// clara -- un amarillo de marca con letras blancas no se lee --, y una institución no puede
+// quedar con un botón ilegible por haber declarado su propio color.
+//
+// Devuelve el blanco o la tinta del Host, el que contraste con SU fondo. Es la misma idea que
+// legible(): ella pone el color, el Host garantiza que se lea.
+const sobre = c => {
+  if (!HEX.test(c || '')) return '#fff';
+  const n = parseInt(c.slice(1), 16);
+  const L = luminancia(n >> 16 & 255, n >> 8 & 255, n & 255);
+  // Contraste contra blanco vs contra la tinta oscura del Host: gana el que más contraste dé.
+  return (1.05 / (L + .05)) >= ((L + .05) / .09) ? '#fff' : '#241F3D';
+};
 
 const gn = {
   state: null, open: null, busy: false, seq: 0,
@@ -456,6 +717,8 @@ const gn = {
   // home it answers false so Android does its own thing (the app steps aside).
   back() {
     if (document.getElementById('sheet').classList.contains('on')) { gn.sheet(false); return true; }
+    for (const sub of ['journal', 'prov'])
+      if (document.getElementById('v-' + sub).classList.contains('on')) { gn.nav('set'); return true; }
     if (!document.getElementById('v-home').classList.contains('on')) { gn.nav('home'); return true; }
     return false;
   },
@@ -488,9 +751,11 @@ const gn = {
     gn.propuesta = p;
     document.getElementById('alta').innerHTML = '';
 
-    document.getElementById('pr-t').textContent =
-      (p.yaEstaba ? 'Reinstalar ' : 'Agregar ') + p.titulo;
-    document.getElementById('pr-i').textContent = p.institucion;
+    // Who proposes, with its brand, and what: the same face the card is going to have.
+    document.getElementById('pr-h').innerHTML =
+      iconOf({ name: p.modulo, brand: p.brand })
+      + '<div><b>' + esc(p.institucion || p.titulo) + '</b>'
+      + '<small>' + esc((p.yaEstaba ? 'Reinstalar ' : 'Agregar ') + p.titulo) + '</small></div>';
 
     const tools = (p.tools || []).map(t =>
       '<li><b>' + esc(t.titulo || t.nombre) + '</b><br><small>' + esc(t.descripcion) + '</small></li>').join('');
@@ -575,12 +840,46 @@ const gn = {
         + '<small>Se instala apagado. Vos decidís si lo encendés.</small>'
       : 'No pide red, ni micrófono, ni parlante.';
 
+    // THE PUBLISHER'S IDENTITY, from the brand line: legal name, tax id, version, and the domain it
+    // DECLARES next to the host that served it. Three states, like the detail: coincide, no
+    // coincide, and nothing to compare -a file came from no server- which is said, not painted.
+    const veredicto = p.coincide === true ? 'ok' : p.coincide === false ? 'duda' : 'dice';
+    const proc = (p.dominio || p.razonSocial)
+      ? '<div class="proc ' + veredicto + '">'
+        + '<svg viewBox="0 0 24 24"><path d="M12 3l7 3v5c0 4.4-2.9 8.1-7 9.5C7.9 19.1 5 15.4 5 11V6l7-3z"/>'
+        + (veredicto === 'ok' ? '<path d="M9.2 11.8l2 2 3.6-3.9"/>' : veredicto === 'duda' ? '<path d="M12 8.5v4M12 15.2v.1"/>' : '') + '</svg>'
+        + '<span>' + (p.razonSocial ? '<b>' + esc(p.razonSocial) + '</b>' : '')
+        + (p.cedula ? ', ' + esc(p.cedula) : '')
+        + (p.dominio
+            ? '<br>' + (veredicto === 'ok'
+                ? 'Lo sirvió ' + esc(p.servido) + ', el mismo dominio que declara'
+                : veredicto === 'duda'
+                  ? 'Declara <b>' + esc(p.dominio) + '</b> y lo sirvió <b>' + esc(p.servido) + '</b>'
+                  : 'Declara ' + esc(p.dominio) + ' · llegó como archivo')
+            : '')
+        + (p.version ? ' · v' + esc(p.version) : '')
+        + '</span></div>'
+      : '';
+
     document.getElementById('pr-cuerpo').innerHTML =
       (p.yaEstaba ? '<p class="ojo">Ya tenés este módulo. Reinstalarlo reemplaza su app; su registro se conserva.</p>' : '')
       + alerta
+      + proc
+      + (p.descripcion
+          ? '<p class="desc" style="margin:10px 0">' + esc(p.descripcion)
+            + (p.noHace ? ' <span class="noHace">' + esc(p.noHace) + '</span>' : '') + '</p>'
+          : '')
       + '<p><b>Qué va a poder contestar</b></p><ul class="pr-tools">' + tools + '</ul>'
-      + '<p><b>Dónde se va a guardar, en tu teléfono</b><br><code>' + esc(p.journal) + '</code><br>'
-      + '<small>Es tuyo. Gnothi se lo administra a esta institución, no se lo lleva.</small></p>'
+      // LO QUE LA PANTALLA NO PODÍA CONTESTAR: ya decía DÓNDE va a vivir el registro, y no
+      // cuánto va a pesar, cada cuánto se actualiza ni por cuánto tiempo lo guardan -- que es
+      // lo que la persona pregunta antes de aceptar.
+      + '<p><b>Dónde va a vivir tu registro</b><br><code>' + esc(p.journal) + '</code>'
+      + (p.tamano || p.refresco || p.retencion
+          ? '<br><small>' + (p.tamano ? 'Unos ' + esc(p.tamano) + '. ' : '')
+            + (p.refresco ? 'Se actualiza ' + esc(p.refresco) + '. ' : '')
+            + (p.retencion ? 'La institución lo guarda ' + esc(p.retencion) + '.' : '') + '</small>'
+          : '')
+      + '</p>'
       + '<p><b>Con quién va a hablar</b><br><code>' + esc(p.publicador || '(no declara publicador)') + '</code><br>'
       + '<small>Es la única red que va a poder tocar, y la hace Gnothi por él.</small></p>'
       + '<p><b>Lo que Gnothi revisó</b></p><ul class="pr-tools">'
@@ -710,45 +1009,110 @@ const gn = {
     console.log('nav:' + v);
     document.querySelectorAll('.view').forEach(x => x.classList.remove('on'));
     document.getElementById('v-' + v).classList.add('on');
-    ['home','chat','journal','set'].forEach(n => {
+    // The screens under Ajustes light its tab; Journal left the bar on 2026-09-09.
+    const tab = { journal: 'set', prov: 'set' }[v] || v;
+    ['home','chat','set'].forEach(n => {
       const b = document.getElementById('n-' + n);
-      if (b) b.classList.toggle('on', n === v);
+      if (b) b.classList.toggle('on', n === tab);
     });
     if (v !== 'detail') gn.open = null;
   },
   detail(name) { gn.open = name; gn.nav('detail'); gn.paint(); },
 
+  // COPY TO THE CLIPBOARD, and say so on the button for a moment. The async API needs a secure
+  // context; inside the app the page is file:// and it may be missing, so the old textarea trick
+  // stays as the fallback.
+  copy(btn, text) {
+    const done = () => { const was = btn.textContent; btn.textContent = 'Copiado'; setTimeout(() => btn.textContent = was, 1400); };
+    const legacy = () => {
+      const ta = document.createElement('textarea'); ta.value = text; ta.setAttribute('readonly', '');
+      ta.style.position = 'fixed'; ta.style.opacity = '0'; document.body.appendChild(ta); ta.select();
+      try { document.execCommand('copy'); done(); } catch (e) { console.log('copy failed: ' + e); }
+      ta.remove();
+    };
+    if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(text).then(done, legacy);
+    else legacy();
+  },
+
+  // THE RIPPLE: a circle born where the finger touched, fading out. It covers the whole card, in
+  // the brand color; it removes itself when done.
+  ripple(e) {
+    const card = e.target.closest('.mod'); if (!card) return;
+    const r = card.getBoundingClientRect(), d = Math.max(r.width, r.height) * 2;
+    const s = document.createElement('span'); s.className = 'rip';
+    s.style.width = s.style.height = d + 'px';
+    s.style.left = (e.clientX - r.left - d / 2) + 'px'; s.style.top = (e.clientY - r.top - d / 2) + 'px';
+    card.appendChild(s); setTimeout(() => s.remove(), 600);
+  },
+
   paint() {
     if (!gn.state) return;
-    const ms = gn.state.modules;
+    // NEWEST FIRST: the module added most recently is the hero, and stays there until another one
+    // arrives. Predictable, and it makes installing satisfying -- you add La Guaria, come back, and
+    // La Guaria is the big card. The Host says when each one arrived (installedAt, ISO UTC).
+    const ms = [...gn.state.modules].sort((a, b) => String(b.installedAt || '').localeCompare(String(a.installedAt || '')));
 
-    document.getElementById('home-sub').textContent =
-      ms.filter(m => m.enabled).length + ' de ' + ms.length + ' encendidos';
+    document.getElementById('home-sub').textContent = ms.length + (ms.length === 1 ? ' conectada' : ' conectadas');
 
-    document.getElementById('mods').innerHTML = ms.map(m => {
-      const k = look(m.name);
-      return '<div class="mod' + (m.enabled ? '' : ' off') + '" onclick="gn.detail(\'' + m.name + '\')">'
-        + '<div class="ico" style="color:' + k.c + ';background:' + k.bg + '">' + k.svg + '</div>'
-        + '<div><b>' + esc(m.title) + '</b>'
-        + '<small>' + esc(NOMBRE[m.name] || m.institution) + '</small></div>'
-        + (m.signerRevokedAt
-            ? '<span class="chip no">llave retirada por la institución</span>'
-            : m.enabled
-              ? '<span class="chip">' + DB + ' Diario de eventos</span>'
-              : '<span class="chip no">apagado por vos</span>')
-        + '</div>';
-    }).join('')
-    + '<div class="mod add" onclick="gn.sheet(true)">'
-    + '<div class="ico"><svg viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg></div>'
-    + '<b>Agregar módulo</b><small>te lo da tu institución</small></div>';
+    // THE INSTITUTIONS' TYPEFACES, one @font-face per module that declared one, under a name the
+    // Host chooses (gn-<module>): the institution brings the file, never the CSS.
+    document.getElementById('brand-fonts').textContent = ms.map(m => {
+      const f = m.brand && m.brand.font; if (!f || !f.regular) return '';
+      const fam = "'gn-" + attr(m.name) + "'";
+      // One file per institution: it carries the weight its brand name is set in, and it answers for
+      // the whole range so the card never asks for a weight the file does not have.
+      return '@font-face{font-family:' + fam + ";src:url(" + attr(f.regular) + ");font-weight:100 900;font-display:swap}";
+    }).join('');
+
+    const grid = document.getElementById('mods');
+    if (!grid.dataset.ripple) {
+      grid.dataset.ripple = '1';
+      grid.addEventListener('pointerdown', gn.ripple);
+    }
+    grid.innerHTML = ms.map((m, i) => {
+      const c = colorOf(m), b = m.brand || {};
+      // Enabled: touching the card opens the institution's app inside Gnothi. Disabled: nothing to
+      // open, so it goes to the detail, which is where it gets switched on.
+      const onTap = m.enabled ? "gn.abrir('" + m.name + "')" : "gn.detail('" + m.name + "')";
+      const nm = tiers(m), on = (m.tools || []).filter(t => t.enabled).length;
+      const style = '--brand:' + c + ';--brand-soft:' + tint(c, .13) + ';--brand-deep:' + tint(c, .55).replace('rgba', 'rgb').replace(/,[^,]*\)$/, ')')
+        + (b.banner ? ';--banner:url(' + attr(b.banner) + ')' : '')
+        + (b.font && b.font.regular ? ";--font:'gn-" + attr(m.name) + "'" : '');
+      return '<div class="mod photo' + (i === 0 ? ' wide' : '') + (m.enabled ? '' : ' off') + '" data-mod="' + attr(m.name) + '" style="' + style + '"'
+        + ' onclick="' + onTap + '">'
+        + '<div class="head">' + iconOf(m) + '<div class="nm">'
+        + (nm.pre ? '<span class="pre">' + esc(nm.pre) + '</span>' : '') + '<b' + (b.font && b.font.regular ? '' : ' class="mf"') + '>' + esc(nm.big) + '</b></div></div>'
+        + '<small>' + esc(taglineOf(m)) + '</small>'
+        + '<div class="acts">'
+        + (m.signerRevokedAt ? '<span class="off-tag">Llave retirada por la institución</span>' : '')
+        + '<button class="perm" onclick="event.stopPropagation();gn.detail(\'' + m.name + '\')">'
+        + '<svg viewBox="0 0 24 24"><rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/></svg>'
+        + on + (on === 1 ? ' permiso activo' : ' permisos activos') + '</button>'
+        + (m.enabled ? '<button class="abrir" onclick="event.stopPropagation();gn.abrir(\'' + m.name + '\')">Abrir <span>→</span></button>'
+                     : '<span class="off-tag">Apagado</span>')
+        + '</div></div>';
+    }).join('');
 
     if (gn.open) {
       const m = ms.find(x => x.name === gn.open);
       if (!m) { gn.nav('home'); return; }
-      const k = look(m.name);
+      // EL DETALLE, PARTIDO EN DOS ZONAS. De acá hasta la franja de procedencia es lo que la
+      // institución declara de sí misma -- y hasta ahora estaba vacío: lo único que la persona
+      // podía leer eran las descripciones de las tools, escritas para el modelo. De los
+      // interruptores para abajo es del Host, y no se personaliza: quien puede diseñar la
+      // pantalla donde se le pide permiso a alguien diseña el contexto del permiso.
+      const proc = m.publisher || {}, dia = m.journal || {}, org = m.provenance || {};
+
+      // TRES ESTADOS, NO DOS. `matches` es true, false o null -- null es «no hay con qué
+      // comparar», y se ve distinto de las otras dos a propósito: un visto bueno que en
+      // realidad significa «no sé» es peor que no poner nada.
+      const veredicto = org.matches === true ? 'ok' : org.matches === false ? 'duda' : 'dice';
+
       document.getElementById('detail').innerHTML =
-        '<div class="hero"><div class="ico" style="color:' + k.c + ';background:' + k.bg + '">' + k.svg + '</div>'
-        + '<div><b>' + esc(m.title) + '</b><small>' + esc(m.institution) + '</small></div></div>'
+        '<div class="hero">' + iconOf(m)
+        + '<div>'
+        + '<b style="color:' + acento(m) + (m.brand && m.brand.font && m.brand.font.regular ? ";font-family:'gn-" + attr(m.name) + "'" : '') + '">' + esc(nameOf(m)) + '</b>'
+        + '<small>' + esc(taglineOf(m)) + '</small></div></div>'
 
         // The institution retired the key this module was accepted with. Said here, once, and
         // nothing is switched for her: what she has is hers; what she does about it is hers too.
@@ -758,58 +1122,108 @@ const gn = {
               + ' Lo que ya tenés sigue siendo tuyo. Pedile un paquete nuevo y volvé a agregarlo: Gnothi va a recordar la llave nueva.</p>'
             : '')
 
-        + '<div class="master"><span>Módulo encendido</span>'
-        + sw(m.enabled, "gn.setModule('" + m.name + "',this.checked)") + '</div>'
-
-        + (m.enabled
-            ? '<div class="master" onclick="gn.abrir(\'' + m.name + '\')"><span><b>Abrir ' + esc(m.title) + '</b><br>'
-              + '<small>la app de tu institución, adentro de Gnothi</small></span><span class="chev">›</span></div>'
-            : '')
-
-        + '<h3 class="cap">Consultas que ofrece</h3>'
+        // WHAT THE CARD PROMISED: the queries, first. This is the point of entry to what the
+        // institution exposes to the AI, and the person's switches live here.
+        + '<h2 class="qtitle">Consultas de ' + esc(m.shortName || m.institution || m.title) + '</h2>'
+        + '<p class="qlead">Podés preguntarle a tu asistente sobre:</p>'
         + m.tools.map(t =>
             '<div class="tool' + (m.enabled && t.enabled ? '' : ' dim') + '">'
             + '<div class="t"><b>' + esc(t.title || t.name) + '</b><p>' + esc(t.description) + '</p></div>'
             + sw(t.enabled, "gn.setTool('" + m.name + "','" + t.name + "',this.checked)")
             + '</div>').join('')
+        + '<p class="hint">Una consulta apagada desaparece del catálogo:<br>el asistente no la ve y no puede pedirla.</p>'
 
-        + '<p class="hint">Una consulta apagada desaparece del catálogo:<br>el asistente no la ve y no puede pedirla.</p>';
+        + (m.description
+            ? '<p class="desc">' + esc(m.description)
+              + (m.doesNotDo ? ' <span class="noHace">' + esc(m.doesNotDo) + '</span>' : '') + '</p>'
+            : '')
+
+        // LA PROCEDENCIA: lo que la institución DECLARA -- su dominio -- al lado de lo que
+        // Gnothi OBSERVÓ al dar el alta, y guardó. Es la única cosa de toda la marca que el
+        // Host puede comprobar solo, y por eso es la que le da sentido al logo: sin esto, un
+        // logo es un dibujo que cualquiera copia.
+        //
+        // La franja neutra toma el color de la institución; las otras dos NO, y es a propósito:
+        // el verde dice «comprobado» y el ámbar «ojo», y esos son juicios del Host. Que una
+        // institución pudiera pintar de su color la franja que la avala sería dejarla firmar su
+        // propio certificado.
+        + (proc.domain || proc.legal
+            ? '<div class="proc ' + veredicto + '"'
+              + (veredicto === 'dice' ? ' style="color:' + acento(m) + ';background:' + fondoDe(m) + '"' : '')
+              + '><svg viewBox="0 0 24 24"><path d="M12 3l7 3v5c0 4.4-2.9 8.1-7 9.5C7.9 19.1 5 15.4 5 11V6l7-3z"/>'
+              + (veredicto === 'ok' ? '<path d="M9.2 11.8l2 2 3.6-3.9"/>'
+                 : veredicto === 'duda' ? '<path d="M12 8.5v4M12 15.2v.1"/>' : '') + '</svg>'
+              + '<span>' + (proc.legal ? '<b>' + esc(proc.legal) + '</b>' : '')
+              + (proc.taxId ? ' · ' + esc(proc.taxId) : '')
+              + (veredicto === 'ok'
+                  ? '<br>lo bajaste de ' + esc(org.servedBy) + ', el dominio que declara'
+                  : veredicto === 'duda'
+                    ? '<br>declara <b>' + esc(proc.domain) + '</b> y lo bajaste de <b>' + esc(org.servedBy) + '</b>'
+                    : proc.domain ? '<br>declara ' + esc(proc.domain) + ' · lo importaste de un archivo' : '')
+              + (org.version ? ' · v' + esc(org.version) : proc.version ? ' · v' + esc(proc.version) : '')
+              + '</span></div>'
+            : '')
+
+        + '<div class="master"><span>Módulo encendido</span>'
+        + sw(m.enabled, "gn.setModule('" + m.name + "',this.checked)") + '</div>'
+
+        + (m.enabled
+            ? '<div class="master" onclick="gn.abrir(\'' + m.name + '\')"><span><b>Abrir ' + esc(m.shortName || m.institution || m.title) + '</b><br>'
+              + '<small>la app de tu institución, adentro de Gnothi</small></span><span class="chev">›</span></div>'
+            : '')
+
+
+        // LO QUE LA INSTITUCIÓN PROMETE SOBRE EL REGISTRO. La pestaña Journal ya dice cuánto
+        // pesa HOY -- medido por el Host desde afuera --; esto es lo otro, que solo ella sabe.
+        // `reconstruible: false` es el dato que pesa: ese diario lleva aportes de la persona y
+        // borrarlo pierde datos.
+        + (dia.retention || dia.updates || dia.reconstruible === false
+            ? '<p class="hint">' + (dia.retention ? 'Lo guarda ' + esc(dia.retention) + '. ' : '')
+              + (dia.updates ? 'Se actualiza ' + esc(dia.updates) + '. ' : '')
+              + (dia.reconstruible === false ? 'Lleva cosas que pusiste vos: si se borra, se pierden.' : '')
+              + '</p>'
+            : '');
     }
 
+    // DATOS EN ESTE TELÉFONO: one row per institution, with its logo, what its record weighs and how
+    // many files it is. Tapping it opens the module's detail.
     document.getElementById('journal').innerHTML = ms.map(m => {
-      const k = look(m.name);
-      return '<div class="row">'
-        + '<div class="ico" style="color:' + k.c + ';background:' + k.bg + '">' + DB + '</div>'
-        + '<div class="t"><b>' + esc(m.title) + '</b><small>' + esc(m.institution) + '</small></div>'
-        + '<div class="n"><b>' + kb(m.journalBytes) + '</b><small>' + m.journalFiles + ' archivos</small></div>'
+      return '<div class="row" onclick="gn.detail(\'' + m.name + '\')">'
+        + iconOf(m)
+        + '<div class="t"><b>' + esc(nameOf(m)) + '</b><small>' + kb(m.journalBytes) + ' · ' + m.journalFiles + (m.journalFiles === 1 ? ' archivo' : ' archivos') + '</small></div>'
+        + '<span class="chev">›</span>'
         + '</div>';
     }).join('');
+    const files = ms.reduce((a, m) => a + (m.journalFiles || 0), 0);
+    document.getElementById('set-datos-sub').textContent =
+      ms.length + (ms.length === 1 ? ' módulo' : ' módulos') + ' · ' + files + (files === 1 ? ' archivo' : ' archivos');
 
     const s = gn.state.settings || {};
     document.getElementById('set-model').innerHTML =
         '<div><span>Proveedor</span><b>' + esc(s.name || s.provider) + '</b></div>'
       + '<div><span>Servidor</span><b>' + esc(s.provider) + '</b></div>'
       + '<div><span>Modelo</span><b>' + esc(s.model) + '</b></div>';
+    document.getElementById('set-prov-sub').textContent = (s.name || s.provider || '—') + (s.model ? ' · ' + s.model : '');
+    document.getElementById('set-key-sub').innerHTML = s.keyPresent
+      ? '<i style="display:inline-block;width:8px;height:8px;border-radius:50%;background:#1E9E6A;margin-right:6px"></i>Clave configurada'
+      : '<i style="display:inline-block;width:8px;height:8px;border-radius:50%;background:var(--off);margin-right:6px"></i>Falta la clave — el asistente no puede contestar';
 
     // The stored key is NEVER echoed back into the page: the editor opens empty, always.
     document.getElementById('set-key').innerHTML = gn.keyEdit
-      ? '<div class="st"><b>Pegá la llave nueva</b></div>'
+      ? '<div class="st"><b>Pegá la clave nueva</b></div>'
         + '<input id="key-in" type="text" autocomplete="off" spellcheck="false" placeholder="pegala acá — se guarda solo en este teléfono">'
         + '<div class="btns"><button class="btn" onclick="gn.saveKey()">Guardar</button>'
         + '<button class="btn ghost" onclick="gn.keyEdit=false;gn.paint()">Cancelar</button></div>'
-      // EL DE ESTE APARATO NO LLEVA LLAVE, y decir "Falta — el asistente no puede contestar"
-      // ahi seria mentir: puede contestar, y ademas sin que nada salga del telefono.
-      : s.local
-        ? '<div class="st"><i class="dot ok"></i><b>No hace falta — el modelo corre acá</b></div>'
       : (s.keyPresent
-        ? '<div class="st"><i class="dot ok"></i><b>Guardada en este teléfono</b></div>'
-          + '<div class="btns"><button class="btn ghost" onclick="gn.keyEdit=true;gn.paint()">Cambiar</button>'
+        ? '<div class="st"><i class="dot ok"></i><div><b>Clave configurada</b><br><small style="color:var(--muted)">Guardada en este teléfono.</small></div></div>'
+          + '<div class="btns"><button class="btn ghost" onclick="gn.keyEdit=true;gn.paint()">Cambiar clave</button>'
           + '<button class="btn danger" onclick="gn.clearKey()">Borrar</button></div>'
-        : '<div class="st"><i class="dot no"></i><b>Falta — el asistente no puede contestar</b></div>'
-          + '<div class="btns"><button class="btn" onclick="gn.keyEdit=true;gn.paint()">Pegar llave</button></div>');
+        : '<div class="st"><i class="dot no"></i><b>Falta la clave — el asistente no puede contestar</b></div>'
+          + '<div class="btns"><button class="btn" onclick="gn.keyEdit=true;gn.paint()">Pegar clave</button></div>');
     document.getElementById('set-host').innerHTML =
         '<div><span>Módulos instalados</span><b>' + ms.length + '</b></div>'
-      + '<div><span>Carpeta</span><b>' + esc(s.root) + '</b></div>';
+      + '<div class="path"><span>Carpeta</span><code>' + esc(s.root) + '</code>'
+      + '<button class="copy" onclick="gn.copy(this, ' + JSON.stringify(String(s.root || '')).replace(/"/g, '&quot;') + ')">Copiar</button></div>';
   },
 
   setTool(mod, tool, on)  { const s = gn.call('setTool',  {module: mod, tool: tool, enabled: on}); if (s) { gn.state = s; gn.paint(); } },
@@ -844,8 +1258,7 @@ const gn = {
     if (s) {
       gn.state = s;
       // no key for this provider yet -> open the editor right away: pick, paste, done.
-      // sin llave no hay nada que pegar: el de este aparato no usa ninguna.
-      gn.keyEdit = !s.settings.local && !s.settings.keyPresent;
+      gn.keyEdit = !s.settings.keyPresent;
       gn.paint();
     }
   },
@@ -907,6 +1320,9 @@ function sw(on, fn) {
 function esc(s) {
   return String(s ?? '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
 }
+// For a value that goes INSIDE an attribute (the brand's color and logo): besides esc, no quote
+// survives.
+function attr(s) { return esc(s).replace(/["']/g, ''); }
 function kb(b) {
   if (!b) return '0 KB';
   return b < 1024*1024 ? (b/1024).toFixed(1).replace('.',',') + ' KB'
@@ -954,9 +1370,6 @@ function inline(s) {
 
 // THE PROVIDERS ON OFFER. Adding one is adding a line; all speak the OpenAI shape.
 const PROV = [
-  // EL DE ESTE APARATO va primero y sin url ni llave: es el unico donde el dato no sale del
-  // telefono, que es la tesis del producto. La cascara lo oculta si el aparato no genera.
-  { name:'En este teléfono',  url:'',                                model:'apple-on-device',     note:'sin llave · sin red · nada sale de acá', local:true },
   { name:'Groq',              url:'https://api.groq.com/openai/v1',  model:'openai/gpt-oss-120b', note:'gratis · sin tarjeta · rápido' },
   { name:'OpenAI (ChatGPT)',  url:'https://api.openai.com/v1',       model:'gpt-4o-mini',         note:'la llave de tu cuenta de OpenAI' },
   { name:'Claude (Anthropic)',url:'https://api.anthropic.com/v1',    model:'claude-sonnet-5',     note:'la llave de tu Console' },
@@ -968,7 +1381,14 @@ const PROV = [
 // THE DESKTOP MOCK. Never reached inside the app: there, prompt() always answers. It mirrors
 // the real state's shape so the page can be designed and exercised in a plain browser.
 const MOCK = { modules: [
-  { name:'examenes', title:'My lab tests', institution:'Clinical laboratory (POC mock)',
+  {
+    shortName:'Laboratorio Delfos', description:'Tus resultados de laboratorio, con su historia y qué te toca repetir.',
+    doesNotDo:'No interpreta resultados ni reemplaza a tu médico.',
+    publisher:{ domain:'delfos.cr', legal:'Laboratorio Clínico Delfos S.A.', taxId:'3-101-123456', version:'2.4.0' },
+    provenance:{ servedBy:'delfos.cr', at:'2026-08-20T10:12:00Z', version:'2.4.0', matches:true },
+    journal:{ retention:'5 años', expectedSize:'~2 MB al año', updates:'al abrir la app' },
+    name:'examenes', installedAt:'2026-09-09T14:05:00Z', title:'Mis exámenes', institution:'Laboratorio Clínico Delfos',
+    slogan:'Tu salud, en tus manos', shortName:'Delfos', brand:{ color:'#0e2f55', logo:'../bundles/examenes/web/icon-192.png', banner:'../bundles/examenes/web/brand/banner.jpg' },
     enabled:true, journalBytes:2048, journalFiles:3, tools:[
     { name:'revisar_mis_analitos', title:'How am I doing', enabled:true,
       description:'Reviews every analyte the person has history for and returns the trend of each one.' },
@@ -976,13 +1396,33 @@ const MOCK = { modules: [
       description:'Answers whether one analyte is going up, down or stable over its whole history.' },
     { name:'velocidad_de', title:'How fast it is changing', enabled:true,
       description:'Answers how fast an analyte has been changing, in units per year.' }]},
-  { name:'compras', title:'Mis compras', institution:'Supermercado La Cosecha (mock del POC)',
+  {
+    shortName:'Supermercado La Guaria', description:'Tu historial de compras, con tus garantías y lo que sueles llevar.',
+    doesNotDo:'No te dice qué comer ni juzga tu canasta.',
+    publisher:{ domain:'laguaria.cr', legal:'Supermercado La Guaria S.A.', taxId:'3-101-654321', version:'1.2.0' },
+    provenance:{ servedBy:'cdn-barato.example', at:'2026-09-01T09:00:00Z', version:'1.2.0', matches:false },
+    journal:{ retention:'5 años', updates:'al abrir la app' },
+    name:'compras', installedAt:'2026-09-08T10:00:00Z', title:'Mis compras', institution:'Supermercado La Guaria',
+    slogan:'Tu canasta, más cerca de vos', shortName:'La Guaria', brand:{ color:'#2f6b3f', logo:'../bundles/compras/web/icon-192.png', banner:'../bundles/compras/web/brand/banner.jpg', font:{ family:'Nunito Sans', regular:'../bundles/compras/web/brand/NunitoSans-800.woff2', bold:'' } },
     enabled:true, journalBytes:3172, journalFiles:3, tools:[
     { name:'total_de_compras', title:'Cuanto gaste en total', enabled:true, description:'Total de todas las compras registradas.' },
     { name:'canasta_del_mes', title:'Como fue mi canasta de un mes', enabled:true, description:'La canasta de un mes, sumada por perfil.' }]},
-  // Accepted with a signed package whose key the institution has since retired: the card and
-  // the detail say it, and nothing is switched for her.
-  { name:'facturas', title:'My invoices', institution:'Supermarket (POC mock)',
+  {
+    shortName:'Estaciones Faro',
+    publisher:{ domain:'faro.cr', legal:'Estaciones Faro S.A.' },
+    provenance:{ servedBy:'', at:'2026-09-05T18:30:00Z', version:'', matches:null },
+    journal:{ retention:'2 años', reconstruible:false },
+    name:'cargas', installedAt:'2026-09-07T09:00:00Z', title:'Mis cargas', institution:'Estaciones Faro',
+    slogan:'Rendimiento real, tramo a tramo', shortName:'Faro', brand:{ color:'#0B3C49', logo:'../bundles/cargas/web/icon-192.png', banner:'../bundles/cargas/web/brand/banner.jpg', font:{ family:'Barlow', regular:'../bundles/cargas/web/brand/Barlow-600.woff2', bold:'' } },
+    enabled:true, journalBytes:1210, journalFiles:3, tools:[
+    { name:'resumen', title:'Como vengo', enabled:true, description:'Cuantas cargas y cuantos vehiculos tiene registrados.' }]},
+  { name:'dealership', installedAt:'2026-09-06T09:00:00Z', title:'My maintenance', institution:'Sotavento Motors',
+    slogan:'Care that keeps you moving', brand:{ color:'#1f3a5f', logo:'../bundles/dealership/web/icon-192.png', banner:'../bundles/dealership/web/brand/banner.jpg', font:{ family:'Sora', regular:'../bundles/dealership/web/brand/Sora-600.woff2', bold:'' } },
+    enabled:true, journalBytes:980, journalFiles:3, tools:[
+    { name:'resumen', title:'How my car is doing', enabled:true, description:'How the vehicle stands right now.' }]},
+  // A module WITHOUT a brand, on purpose: it is the fallback path, and it has to keep looking good.
+  { name:'facturas', installedAt:'2026-09-05T09:00:00Z', title:'My invoices', institution:'Súper El Triunfo', slogan:'Ahorro y calidad en un solo lugar',
+    brand:{ color:'#C86B12', logo:'../bundles/facturas/web/brand/logo.png', banner:'../bundles/facturas/web/brand/banner.jpg', font:{ family:'Lora', regular:'../bundles/facturas/web/brand/Lora-700.woff2', bold:'' } },
     enabled:true, journalBytes:1650, journalFiles:3, signerKey:'facturas-202603', signerRevokedAt:'2026-09-09T12:00:00Z', tools:[
     { name:'total_de_facturas', title:'Total spent', enabled:true, description:'Total of all invoices on record.' }]},
 ], settings: { name:'Groq', provider:'api.groq.com', model:'openai/gpt-oss-120b', keyPresent:true, root:'/data/user/0/…/files/Modulos' } };
