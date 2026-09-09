@@ -92,9 +92,37 @@ app.UseRouting();
 // cualquier institucion y el nombre del bundle es lo unico que cambia.
 string nombreDelZip = Path.GetFileName(bundle);
 
-app.MapGet($"/{nombreDelZip}", () => File.Exists(bundle)
-    ? Results.File(bundle, ModuleMime)
-    : Results.NotFound($"no hay bundle en {bundle}. Corre armar-bundle.ps1 primero."));
+// THE BUNDLE, with its length announced -Gnothi draws a progress bar from it- and, for rehearsing
+// a slow network on a fast machine, an optional throttle: --LentoKBps 600 serves it at ~600 KB/s,
+// which is what lets a person actually see the download happen in the emulator. Development only.
+int lentoKBps = int.TryParse(app.Configuration["LentoKBps"], out int kbps) ? kbps : 0;
+app.MapGet($"/{nombreDelZip}", async (HttpContext ctx) =>
+{
+    if (!File.Exists(bundle))
+    {
+        ctx.Response.StatusCode = StatusCodes.Status404NotFound;
+        await ctx.Response.WriteAsync($"no hay bundle en {bundle}. Corre armar-bundle.ps1 primero.");
+        return;
+    }
+
+    ctx.Response.ContentType = ModuleMime;
+    ctx.Response.ContentLength = new FileInfo(bundle).Length;
+    await using FileStream file = File.OpenRead(bundle);
+    if (lentoKBps <= 0)
+    {
+        await file.CopyToAsync(ctx.Response.Body, ctx.RequestAborted);
+        return;
+    }
+
+    var chunk = new byte[64 * 1024];
+    int read;
+    while ((read = await file.ReadAsync(chunk, ctx.RequestAborted)) > 0)
+    {
+        await ctx.Response.Body.WriteAsync(chunk.AsMemory(0, read), ctx.RequestAborted);
+        await ctx.Response.Body.FlushAsync(ctx.RequestAborted);
+        await Task.Delay(TimeSpan.FromMilliseconds(read / 1024.0 * 1000 / lentoKBps), ctx.RequestAborted);
+    }
+});
 
 // WHAT THIS ORIGIN PUBLISHES. Gnothi asks the origin that served a bundle whether that bundle is
 // its own -here- and compares with the origin the manifest declares: that is the backing of

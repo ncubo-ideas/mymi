@@ -398,16 +398,17 @@ internal sealed class ModuleEnrollment
 	// and WHAT it offers, the manifest has to be read, and the manifest comes inside the zip. So
 	// it is downloaded, inspected, unpacked into a temporary folder, shown, and installed only if
 	// she accepts. If she says no, the temporary folder is deleted and nothing was left behind.
-	internal async Task<EnrollmentProposal> Examine(string url, EnrollmentSource source, string? seal, CancellationToken ct, Action<string>? progress = null)
+	internal async Task<EnrollmentProposal> Examine(string url, EnrollmentSource source, string? seal, CancellationToken ct, Action<EnrollmentProgress>? progress = null)
 	{
 		if (!Uri.TryCreate(url, UriKind.Absolute, out Uri? where)
 			|| (where.Scheme != Uri.UriSchemeHttps && where.Scheme != Uri.UriSchemeHttp))
 			throw new ArgumentException($"the module's link is not a valid address: {url}");
 
 		log($"alta: bajando el bundle de {where.Host}");
-		progress?.Invoke($"Bajando el módulo de {where.Host}…");
+		string downloading = $"Bajando el módulo de {where.Host}…";
+		progress?.Invoke(new EnrollmentProgress(downloading));
 
-		byte[] zip = await Download(where, ct);
+		byte[] zip = await Download(where, ct, (bytes, total) => progress?.Invoke(new EnrollmentProgress(downloading, bytes, total)));
 
 		// What the origin says about itself, fetched on top of the bundle. Its absence is an
 		// outcome the sheet reports, not an error that stops the enrollment.
@@ -424,9 +425,9 @@ internal sealed class ModuleEnrollment
 	// touches the disk; only then is it unpacked into a temporary folder that lives until she
 	// decides. `servedFrom` is null for bytes that came from no origin at all, and
 	// `wellKnownJson` is what that origin publishes, if anything.
-	internal EnrollmentProposal Examine(byte[] zip, EnrollmentSource source, Uri? servedFrom, string? expectedSeal = null, string? wellKnownJson = null, Action<string>? progress = null)
+	internal EnrollmentProposal Examine(byte[] zip, EnrollmentSource source, Uri? servedFrom, string? expectedSeal = null, string? wellKnownJson = null, Action<EnrollmentProgress>? progress = null)
 	{
-		progress?.Invoke("Revisando qué trae…");
+		progress?.Invoke(new EnrollmentProgress("Revisando qué trae…"));
 		(Manifest manifest, string seal, PackageInspection inspection, SignatureVerification signature) = Open(zip);
 
 		if (expectedSeal is not null && !string.Equals(expectedSeal, seal, StringComparison.Ordinal))
@@ -455,9 +456,9 @@ internal sealed class ModuleEnrollment
 	// link; but the manifest may claim an origin, and that origin is asked whether it publishes
 	// exactly this manifest -and which keys it signs with. `fetch` is how the well-known is
 	// obtained: the network, or a stand-in for the suite.
-	internal async Task<EnrollmentProposal> ExamineFile(byte[] zip, string fileName, CancellationToken ct, Action<string>? progress = null, Func<Uri, CancellationToken, Task<string?>>? fetch = null)
+	internal async Task<EnrollmentProposal> ExamineFile(byte[] zip, string fileName, CancellationToken ct, Action<EnrollmentProgress>? progress = null, Func<Uri, CancellationToken, Task<string?>>? fetch = null)
 	{
-		progress?.Invoke("Revisando qué trae…");
+		progress?.Invoke(new EnrollmentProgress("Revisando qué trae…"));
 		(Manifest manifest, string seal, PackageInspection inspection, SignatureVerification signature) = Open(zip);
 
 		OriginCheck origin = OriginCheck.NotDeclared;
@@ -467,7 +468,7 @@ internal sealed class ModuleEnrollment
 		{
 			var claimed = new Uri(declared + "/");
 			secure = claimed.Scheme == Uri.UriSchemeHttps;
-			progress?.Invoke($"Preguntándole a {claimed.Host} si este paquete es suyo…");
+			progress?.Invoke(new EnrollmentProgress($"Preguntándole a {claimed.Host} si este paquete es suyo…"));
 
 			published = await (fetch ?? FetchWellKnown)(claimed, ct);
 			origin = VerifyBySeal(seal, published);
@@ -614,12 +615,16 @@ internal sealed class ModuleEnrollment
 		log($"alta: '{proposal.Manifest.Module}' descartado por la persona");
 	}
 
-	private static async Task<byte[]> Download(Uri where, CancellationToken ct)
+	// `downloading` hears how far it got -bytes so far, and the total if the server announced one-
+	// about every quarter megabyte and once at the end, which is enough for a bar and few enough
+	// calls not to flood the bridge to the screen.
+	private static async Task<byte[]> Download(Uri where, CancellationToken ct, Action<long, long?>? downloading = null)
 	{
 		using HttpResponseMessage response = await http.GetAsync(where, HttpCompletionOption.ResponseHeadersRead, ct);
 		response.EnsureSuccessStatusCode();
 
-		if (response.Content.Headers.ContentLength is long length && length > BundleCeiling)
+		long? total = response.Content.Headers.ContentLength;
+		if (total is long length && length > BundleCeiling)
 			throw new InvalidOperationException($"the bundle weighs {length / 1048576} MB and the ceiling is {BundleCeiling / 1048576} MB");
 
 		using var buffer = new MemoryStream();
@@ -627,6 +632,7 @@ internal sealed class ModuleEnrollment
 		{
 			var chunk = new byte[81920];
 			int read;
+			long reportedAt = 0;
 			while ((read = await body.ReadAsync(chunk, ct)) > 0)
 			{
 				buffer.Write(chunk, 0, read);
@@ -635,9 +641,16 @@ internal sealed class ModuleEnrollment
 				// while it downloads.
 				if (buffer.Length > BundleCeiling)
 					throw new InvalidOperationException($"the bundle went past the {BundleCeiling / 1048576} MB ceiling while downloading");
+
+				if (buffer.Length - reportedAt >= 256 * 1024)
+				{
+					reportedAt = buffer.Length;
+					downloading?.Invoke(buffer.Length, total);
+				}
 			}
 		}
 
+		downloading?.Invoke(buffer.Length, total ?? buffer.Length);
 		return buffer.ToArray();
 	}
 
@@ -786,6 +799,16 @@ internal sealed class ModuleEnrollment
 		File.WriteAllText(Path.Combine(folder, "installation.json"),
 			JsonSerializer.Serialize(installation, new JsonSerializerOptions { WriteIndented = true }));
 	}
+}
+
+// WHAT THE SCREEN IS TOLD WHILE AN ENROLLMENT WORKS: a line in the person's words and, while the
+// bundle downloads, how far it got -the bytes so far and the total when the server announced it-
+// so the screen can draw a bar and say "4,1 de 12,6 MB" instead of spinning in silence over
+// twelve megabytes. Fraction is null before the total is known and for the steps that are not
+// a download.
+public sealed record EnrollmentProgress(string Text, long Bytes = 0, long? Total = null)
+{
+	public double? Fraction => Total is > 0 ? Math.Min(1, (double)Bytes / Total.Value) : null;
 }
 
 // WHAT A QUICK LOOK AT A PICKED FILE FOUND, for the list the person chooses from. Manifest and

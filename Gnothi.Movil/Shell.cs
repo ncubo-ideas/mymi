@@ -349,7 +349,7 @@ public sealed class Shell : IDisposable
 	/// else about where it came from is known, and the sheet says so -unless the package claims an
 	/// origin that publishes exactly this manifest, which the enrollment asks.
 	public Task EnrollFile(byte[] zip, string fileName, CancellationToken ct = default)
-		=> Propose(e => e.ExamineFile(zip, fileName, ct, step => PushEnrollment("trabajando", step)), fileName);
+		=> Propose(e => e.ExamineFile(zip, fileName, ct, PushEnrollment), fileName);
 
 	// ── SEVERAL FILES AT ONCE ────────────────────────────────────────────────────────────
 
@@ -451,7 +451,7 @@ public sealed class Shell : IDisposable
 	public void ReportEnrollmentError(string message) => PushEnrollment("error", message);
 
 	private Task Enroll(string bundle, EnrollmentSource source, string? seal, CancellationToken ct)
-		=> Propose(e => e.Examine(bundle, source, seal, ct, step => PushEnrollment("trabajando", step)), bundle);
+		=> Propose(e => e.Examine(bundle, source, seal, ct, PushEnrollment), bundle);
 
 	// ONE ENTRY FOR EVERY WAY IN; only how the bytes are obtained differs, and the provenance
 	// that comes back travels to the sheet. `what` is what to blame in the log: an address, a file.
@@ -550,6 +550,13 @@ public sealed class Shell : IDisposable
 	// 12 MB. Cuatro estados: trabajando, listo, error, nada.
 	private void PushEnrollment(string estado, string detalle) =>
 		Push("alta", "", JsonSerializer.Serialize(new { estado, detalle }));
+
+	// WHILE IT WORKS, with the numbers: how many bytes of how many came down, so the screen draws a
+	// bar and says "4,1 de 12,6 MB" instead of spinning in silence over twelve megabytes. The
+	// fraction is null before the server says how much is coming, and for the steps that are not
+	// a download.
+	private void PushEnrollment(EnrollmentProgress step) =>
+		Push("alta", "", JsonSerializer.Serialize(new { estado = "trabajando", detalle = step.Text, progreso = step.Fraction, bytes = step.Bytes, total = step.Total }));
 
 	// LO QUE LA INSTITUCION PROPONE, mas las dos cosas que decide Gnothi y ella tiene derecho a
 	// saber antes de aceptar: donde va a vivir el journal y contra que endpoint va a hablar.

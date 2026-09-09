@@ -473,6 +473,13 @@ public class MainActivity : Activity
 		// SEVERAL AT ONCE: she may have downloaded more than one. The shell shows what it found in
 		// them and she chooses which to install, one proposal at a time.
 		pick.PutExtra(Android.Content.Intent.ExtraAllowMultiple, true);
+		// OPEN IN DOWNLOADS, where a .gmod that came through the browser or a chat lands, instead of
+		// "Recent" and a drawer to find the folder. The picker's own filter is by MIME and cannot be
+		// tighter than this: a .gmod has no registered type on the phone and shows up as
+		// application/octet-stream, so the list Gnothi shows afterwards is what tells a module from
+		// any other file.
+		pick.PutExtra(Android.Provider.DocumentsContract.ExtraInitialUri,
+			Android.Net.Uri.Parse("content://com.android.externalstorage.documents/document/primary%3ADownload"));
 		StartActivityForResult(pick, PickModuleRequest);
 		return "{\"ok\":true}";
 	}

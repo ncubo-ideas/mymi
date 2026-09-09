@@ -153,8 +153,10 @@ terminal con `adb logcat -s GNOTHI:I gnothi:I` para las líneas que se citan.
 2. **Abrí Gnothi.** El inicio es el mosaico de marcas —vacío la primera vez— con el botón **«Agregar»**
    arriba a la derecha. Tocarlo abre *Tus instituciones, siempre contigo*, con tres filas.
 3. **Pegar su enlace.** Tocá la fila, pegá `http://127.0.0.1:8096/examenes.gmod` —o el enlace largo con
-   `bundle=` y `&h=` que la página muestra bajo su QR— y «Agregar». Franja *Bajando el módulo de
-   127.0.0.1…* → *Revisando qué trae…* → la hoja. Tiene que decir: el bloque de identidad (*Laboratorio
+   `bundle=` y `&h=` que la página muestra bajo su QR— y «Agregar». La franja *Bajando el módulo de
+   127.0.0.1…* crece con una barra y los megabytes (*4,5 MB de 13,0 MB · 35 %*) mientras baja —en el
+   emulador el túnel es tan rápido que casi no se ve: la página acepta `--LentoKBps 700` para servir
+   el bundle a esa velocidad y verla llenarse—, después *Revisando qué trae…* → la hoja. Tiene que decir: el bloque de identidad (*Laboratorio
    Clínico Delfos S.A., 3-101-123456 · Declara delfos.cr y lo sirvió 127.0.0.1*, en ámbar porque el mock
    declara un dominio que no es el que lo sirve) y, en «Lo que Gnothi revisó», *Lo respalda 127.0.0.1…*,
    *Firmado por la llave «examenes-…», que su origen publica. Gnothi la va a recordar*, los archivos y
