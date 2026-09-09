@@ -189,6 +189,12 @@ public class MainActivity : Activity
 			await shell.EnrollFile(archivo.Bytes, archivo.Name, stop.Token);
 		}
 
+		if (archivosPendientes is { } archivos)
+		{
+			archivosPendientes = null;
+			await shell.EnrollFiles(archivos, stop.Token);
+		}
+
 		if (traspasoPendiente is { } t)
 		{
 			traspasoPendiente = null;
@@ -378,6 +384,10 @@ public class MainActivity : Activity
 	// What a file brought, waiting for the catalog to exist -the same reason as altaPendiente.
 	private (byte[] Bytes, string Name)? archivoPendiente;
 
+	// What the picker brought back while the Host was not up yet -the system may recreate the
+	// process behind the picker-, waiting like archivoPendiente does.
+	private List<(byte[] Bytes, string Name)>? archivosPendientes;
+
 	private const string ModuleMime = "application/vnd.gnothi.module";
 	private const long FileCeiling = 64L * 1024 * 1024;
 	private const int PickModuleRequest = 8;
@@ -470,6 +480,7 @@ public class MainActivity : Activity
 	protected override void OnActivityResult(int requestCode, Result resultCode, Android.Content.Intent? data)
 	{
 		base.OnActivityResult(requestCode, resultCode, data);
+		Log($"alta: el selector volvió: request={requestCode} result={resultCode} data={data?.Data?.ToString() ?? "-"} clip={data?.ClipData?.ItemCount ?? 0}");
 		if (requestCode != PickModuleRequest) return;
 
 		// One document comes in Data; several come in ClipData, one item each.
@@ -488,14 +499,18 @@ public class MainActivity : Activity
 		}
 
 		// Each answer of the picker, shaped as an "open" of that document. Not strict: she chose them.
+		// SetDataAndType, never SetType: Intent.setType CLEARS the data uri (measured 2026-09-09: the
+		// picker came back with three documents and the reader saw an intent without any).
 		var archivos = new List<(byte[] Bytes, string Name)>();
 		foreach (Android.Net.Uri uri in uris)
 		{
-			var abrir = new Android.Content.Intent(Android.Content.Intent.ActionView, uri);
-			abrir.SetType(ContentResolver!.GetType(uri) ?? data!.Type);
+			var abrir = new Android.Content.Intent(Android.Content.Intent.ActionView);
+			abrir.SetDataAndType(uri, ContentResolver!.GetType(uri) ?? data!.Type);
 			if (LeerArchivoDeModulo(abrir, strict: false) is { } archivo) archivos.Add(archivo);
 		}
-		if (archivos.Count > 0) _ = shell?.EnrollFiles(archivos, stop.Token);
+		if (archivos.Count == 0) return;
+		if (shell is null) archivosPendientes = archivos;
+		else _ = shell.EnrollFiles(archivos, stop.Token);
 	}
 
 	// ── EL MÓDULO EN PANTALLA ────────────────────────────────────────────────────────────
