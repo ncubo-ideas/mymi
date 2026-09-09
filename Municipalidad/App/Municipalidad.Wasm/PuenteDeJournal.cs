@@ -8,18 +8,36 @@ namespace Municipalidad.Wasm
 	/// navegador y nunca toca MEMFS; este lado lee y escribe MEMFS con System.IO, y los bytes cruzan
 	/// en base64.
 	/// </summary>
-	public sealed class PuenteDeJournal : IAsyncDisposable
+	public sealed class PuenteDeJournal : IDestinoDelJournal, IAsyncDisposable
 	{
 		/// <summary>La raiz del journal dentro de MEMFS. Es lo que recibe ConfigureStorage.</summary>
 		public const string RaizEnMemfs = "/journal";
 
 		private readonly IJSRuntime js;
+		private readonly IDestinoDelJournal destino;
 		private IJSObjectReference modulo;
 
+		/// <summary>
+		/// MODO SUELTO: el destino es el almacenamiento del navegador, y de eso se ocupa esta misma clase.
+		/// </summary>
 		public PuenteDeJournal(IJSRuntime js)
 		{
 			ArgumentNullException.ThrowIfNull(js);
 			this.js = js;
+			destino = this;
+		}
+
+		/// <summary>
+		/// MODO HOSPEDADO: el destino son los archivos de Gnothi, por el puente nativo. El movimiento
+		/// entre MEMFS y el destino es EL MISMO; lo unico que cambia es donde aterrizan los bytes. El
+		/// selector, el permiso y el almacenamiento del navegador no se usan en este modo.
+		/// </summary>
+		public PuenteDeJournal(IJSRuntime js, IDestinoDelJournal destino)
+		{
+			ArgumentNullException.ThrowIfNull(js);
+			ArgumentNullException.ThrowIfNull(destino);
+			this.js = js;
+			this.destino = destino;
 		}
 
 		public string NombreDeLaCarpeta { get; private set; } = "";
@@ -31,6 +49,16 @@ namespace Municipalidad.Wasm
 
 		/// <summary>Hay carpeta y el navegador degrado el permiso al reabrir: falta reotorgarlo.</summary>
 		public bool FaltaReotorgarPermiso => NombreDeLaCarpeta.Length > 0 && !PermisoOtorgado;
+
+		/// <summary>
+		/// Si hay donde escribir, sea el almacenamiento del navegador o los archivos de Gnothi. Es lo que
+		/// mira el arranque para decidir si precarga: la carpeta es vocabulario del modo suelto, y
+		/// hospedada no aplica.
+		/// </summary>
+		public bool HayDestino => destino.Disponible;
+
+		/// <summary>Si el destino es el almacenamiento de este navegador, y no los archivos de Gnothi.</summary>
+		private bool ElDestinoEsElNavegador => ReferenceEquals(destino, this);
 
 		private async ValueTask<IJSObjectReference> ModuloAsync() =>
 			modulo ??= await js.InvokeAsync<IJSObjectReference>("import", "./journal-interop.js");
@@ -93,32 +121,31 @@ namespace Municipalidad.Wasm
 		/// </summary>
 		public async ValueTask<int> PrecargarEnMemfsAsync()
 		{
-			IJSObjectReference cargado = await ModuloAsync();
-			ResultadoDeListado listado = await cargado.InvokeAsync<ResultadoDeListado>("listar");
+			ResultadoDeListado listado = await destino.ListarAsync();
 
 			if (!listado.Ok)
 			{
-				await OlvidarCarpetaAsync();
+				if (ElDestinoEsElNavegador) await OlvidarCarpetaAsync();
 				throw new CarpetaNoDisponibleException(
-					$"No se pudo leer la carpeta guardada: {listado.Motivo}. Elija una carpeta otra "
+					$"No se pudo leer '{destino.Nombre}': {listado.Motivo}. Elija una carpeta otra "
 					+ "vez.");
 			}
 
 			int copiados = 0;
 			foreach (string ruta in listado.Rutas)
 			{
-				ResultadoDeLectura leido = await cargado.InvokeAsync<ResultadoDeLectura>("leer", ruta);
+				ResultadoDeLectura leido = await destino.LeerAsync(ruta);
 
 				if (!leido.Ok)
 					throw new CarpetaNoDisponibleException(
-						$"No se pudo leer '{ruta}' de '{NombreDeLaCarpeta}': {leido.Motivo}. Abrir con "
+						$"No se pudo leer '{ruta}' de '{destino.Nombre}': {leido.Motivo}. Abrir con "
 						+ "medio journal daria una cuenta equivocada.");
 
-				string destino = Path.Combine(RaizEnMemfs, ruta.Replace('/', Path.DirectorySeparatorChar));
-				string directorio = Path.GetDirectoryName(destino);
+				string destinoEnMemfs = Path.Combine(RaizEnMemfs, ruta.Replace('/', Path.DirectorySeparatorChar));
+				string directorio = Path.GetDirectoryName(destinoEnMemfs);
 				if (!string.IsNullOrEmpty(directorio)) Directory.CreateDirectory(directorio);
 
-				File.WriteAllBytes(destino, Convert.FromBase64String(leido.Contenido));
+				File.WriteAllBytes(destinoEnMemfs, Convert.FromBase64String(leido.Contenido));
 				copiados++;
 			}
 			return copiados;
@@ -130,15 +157,14 @@ namespace Municipalidad.Wasm
 		/// </summary>
 		public async ValueTask<int> BajarDeMemfsAsync()
 		{
-			if (FaltaReotorgarPermiso)
+			if (ElDestinoEsElNavegador && FaltaReotorgarPermiso)
 				throw new EscrituraRechazadaException(
 					$"No hay permiso de escritura sobre '{NombreDeLaCarpeta}'. El navegador lo da aparte "
 					+ "del de elegir la carpeta, y se lo quita cuando la app se vuelve a abrir. Volver a "
 					+ "darlo lo recupera; hasta entonces nada de lo que ve se está guardando.");
 
-			if (!HayCarpeta || !Directory.Exists(RaizEnMemfs)) return 0;
+			if (!destino.Disponible || !Directory.Exists(RaizEnMemfs)) return 0;
 
-			IJSObjectReference cargado = await ModuloAsync();
 			int escritos = 0;
 			var fallaron = new List<string>();
 
@@ -147,18 +173,40 @@ namespace Municipalidad.Wasm
 				string relativa = Path.GetRelativePath(RaizEnMemfs, archivo).Replace(Path.DirectorySeparatorChar, '/');
 				string base64 = Convert.ToBase64String(File.ReadAllBytes(archivo));
 
-				ResultadoDeEscritura resultado = await cargado.InvokeAsync<ResultadoDeEscritura>("escribir", relativa, base64);
+				ResultadoDeEscritura resultado = await destino.EscribirAsync(relativa, base64);
 				if (resultado.Ok) escritos++;
 				else fallaron.Add($"{relativa} ({resultado.Motivo})");
 			}
 
 			if (fallaron.Count > 0)
 				throw new EscrituraRechazadaException(
-					$"No se pudo guardar en '{NombreDeLaCarpeta}': fallaron {fallaron.Count} de "
+					$"No se pudo guardar en '{destino.Nombre}': fallaron {fallaron.Count} de "
 					+ $"{fallaron.Count + escritos} archivos. {string.Join("; ", fallaron)}");
 
 			return escritos;
 		}
+
+		/// <summary>
+		/// El almacenamiento del navegador COMO destino del journal. Esta clase ya tenia las tres
+		/// operaciones y el estado del permiso, asi que las expone por la costura en vez de mudarlas: el
+		/// modo suelto no cambia una linea de comportamiento.
+		/// </summary>
+		/// <remarks>
+		/// Implementacion EXPLICITA a proposito: son para el mecanismo y no para la caratula, que sigue
+		/// hablando de carpeta y de permiso, que es lo que la persona entiende.
+		/// </remarks>
+		string IDestinoDelJournal.Nombre => NombreDeLaCarpeta;
+
+		bool IDestinoDelJournal.Disponible => HayCarpeta;
+
+		async ValueTask<ResultadoDeListado> IDestinoDelJournal.ListarAsync() =>
+			await (await ModuloAsync()).InvokeAsync<ResultadoDeListado>("listar");
+
+		async ValueTask<ResultadoDeLectura> IDestinoDelJournal.LeerAsync(string ruta) =>
+			await (await ModuloAsync()).InvokeAsync<ResultadoDeLectura>("leer", ruta);
+
+		async ValueTask<ResultadoDeEscritura> IDestinoDelJournal.EscribirAsync(string ruta, string contenidoBase64) =>
+			await (await ModuloAsync()).InvokeAsync<ResultadoDeEscritura>("escribir", ruta, contenidoBase64);
 
 		/// <summary>Cuantos archivos y cuantos bytes tiene el journal en MEMFS ahora mismo.</summary>
 		public static (int archivos, long bytes) EstadoDeMemfs()

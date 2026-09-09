@@ -60,6 +60,13 @@
          sostiene la FORMA de cada miembro y no el comentario que la explica. Una forma no se puede
          afirmar sobre una copia: hay que mirar el tipo de verdad, por reflexion. -->
     <ProjectReference Include="..\..\App\Municipalidad.Wasm\Municipalidad.Wasm.csproj" />
+
+    <!-- Y EL CONTRATO DE CARGA DE GNOTHI, desde que el modulo puede correr hospedado. Municipalidad.App
+         lo referencia con Private=false -a la carga se lo presta el Host, asi que el paquete no lo
+         lleva-, y por eso no llega solo al output de este proyecto. La prueba que afirma declarado
+         contra real NOMBRA el atributo [Query] para leer los nombres del ensamblado, asi que aca si
+         hace falta la copia. -->
+    <ProjectReference Include="..\..\..\Gnothi.Contract\Gnothi.Contract.csproj" />
   </ItemGroup>
 
   <!-- EL CSPROJ DEL DOMINIO VIAJA AL OUTPUT COMO DATO, para que la prueba de pureza lea sus

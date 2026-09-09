@@ -14,6 +14,9 @@
     <ProjectReference Include="..\..\Dominio\Municipalidad.Dominio.csproj" />
 
     <ProjectReference Include="..\..\Mecanismo\Puppets.Portador\Puppets.Portador.csproj" />
+
+    <ProjectReference Include="..\..\..\Gnothi.Contract\Gnothi.Contract.csproj"
+                      ExcludeAssets="runtime" Private="false" />
   </ItemGroup>
 
 </Project>

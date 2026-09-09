@@ -53,9 +53,14 @@ $ErrorActionPreference = 'Stop'
 
 $raiz = Split-Path -Parent $PSScriptRoot
 
-# LOS CUATRO MODULOS DEL POC. Cada institucion declara lo suyo; lo unico que comparten es la
+# LOS CINCO MODULOS DEL POC. Cada institucion declara lo suyo; lo unico que comparten es la
 # forma. El concesionario tambien va en espanol: Kenneth paso su PWA a espanol el 2026-09-08 y la
 # tarjeta lo sigue (2026-09-09).
+#
+# LA MUNICIPALIDAD NO SE NOMBRA, y no es una casilla pendiente: es la respuesta. El concesionario
+# inventa una marca y no pasa nada; toda municipalidad plausible es una que existe, con vecinos que
+# le pagan, asi que su modulo usa el sustantivo comun y su dominio es el TLD reservado para
+# ejemplos. El nombre real llega el dia que una municipalidad de verdad adopte el modulo.
 $catalogo = @{
     'examenes' = @{
         Proyecto    = "$raiz/Examenes/App/Examenes.Wasm/Examenes.Wasm.csproj"
@@ -166,6 +171,33 @@ $catalogo = @{
                description = 'Como esta el vehiculo ahora mismo: cuantas operaciones de mantenimiento estan por vencer, vencidas y no hechas, y hasta que evento del concesionario leyo la app.' },
             @{ name = 'hasta_donde_leyo'; title = 'Que tan al dia esta esto'
                description = 'Hasta donde leyo la app el registro del concesionario y hasta que instante se evaluo el plan. Si sube entre dos llamadas, entraron hechos nuevos.' }
+        )
+    }
+    'municipalidad' = @{
+        Proyecto    = "$raiz/Municipalidad/App/Municipalidad.Wasm/Municipalidad.Wasm.csproj"
+        Titulo      = 'Mi cuenta municipal'
+        Institucion = 'Tu municipalidad'
+        Marca       = 'Tu municipalidad'
+        Slogan      = 'Lo que el portal no te dice'
+        Color       = '#2C306C'
+        Rubro       = 'municipalidad'
+        Descripcion = 'Tus cobros municipales: por qué te subieron, qué se te vence y cuánto apartar.'
+        NoHace      = 'No dice cuánto debés hoy: eso lo dice el portal de tu municipalidad.'
+        Dominio     = 'municipalidad.example'
+        RazonSocial = 'Municipalidad del POC'
+        Cedula      = ''
+        Version     = '1.0.0'
+        Retencion   = '5 anos'
+        Tamano      = '~1 MB al ano'
+        Refresco    = 'al abrir la app'
+        Recurso     = 'contribuyente'
+        Id          = 'CEDULA-DEMO-1'
+        Puerto      = 8121
+        Tools       = @(
+            @{ name = 'resumen'; title = 'Como vengo'
+               description = 'Cuántas fincas y cuántos rubros con historia tiene registrados la persona en este dispositivo, cuántos períodos están por vencer y cuántos vencidos al día de hoy, y hasta qué evento de la municipalidad leyó su app.' },
+            @{ name = 'lista_de_vencimientos'; title = 'Que se me vence'
+               description = 'Los períodos que se le vencen a la persona y los que ya se le vencieron, con su rubro, su monto, cuántos días faltan o cuántos lleva de atraso, y la frase con que el registro dice cada fila. Son DOS listas y no se suman. Es la pregunta que el portal de la municipalidad no contesta.' }
         )
     }
 }
