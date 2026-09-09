@@ -423,6 +423,36 @@ adb shell am start -a android.intent.action.VIEW -t application/vnd.gnothi.modul
 android.intent.action.VIEW`, después `alta: archivo 'examenes.gmod': 127.0.0.1 dice Verified`, y lo
 de siempre. iOS todavía no tiene selector ni «abrir con»: el botón lo dice.
 
+### P2d · La firma del paquete
+
+Desde el 2026-09-09 `armar-bundle.ps1` **firma** el bundle: el Host, como ayudante del lado del
+publicador (`Gnothi.Host --sign <gmod> <llave.json>`, el mismo código que verifica en el teléfono),
+resume **todos** los archivos del paquete, firma la lista y deja `signature.json` adentro con la llave
+pública. La llave de la institución vive en `bundles/.keys/<modulo>.key.json` (fuera de git; se crea
+la primera vez) y la página publica su mitad pública en el `.well-known` (`keys`). Es ECDSA P-256
+(`ES256`) del propio .NET: ninguna librería nueva en el Host ni en los teléfonos.
+
+**Qué tenés que ver en la hoja**, en «Lo que Gnothi revisó», debajo del respaldo:
+
+- primera vez: *Firmado por la llave «examenes-202609», que su origen publica. Gnothi la va a recordar
+  para la próxima vez.* Al instalar, la llave queda en `installation.json` (`signer`): el **pin**;
+- la segunda vez (reinstalar): *Firmado con la **misma llave** que la vez pasada (desde 9 sept 2026), y
+  su origen la publica*;
+- si el origen no contesta pero la llave es la conocida: *…Su origen no contestó, pero la llave ya la
+  conocías* — la continuidad, sin red;
+- si la institución cambió de llave y la publica: *Firmado con una llave nueva…, que su origen publica*;
+- si viene con otra llave que nadie publica: **Desconfiá de este módulo. Viene firmado con otra llave
+  que la vez pasada** — lo único que el respaldo de origen no puede decir;
+- sin firma: *El paquete no viene firmado.* Se instala igual (es aviso).
+
+**Lo que no se instala nunca:** un paquete firmado cuya firma no cierra —un archivo cambiado, agregado
+o quitado después de firmar—. La franja dice *El paquete viene firmado y la firma no cierra: lo tocaron
+después de firmarlo.* Probalo: descomprimí el `.gmod`, cambiá un archivo de `web/`, volvé a comprimir y
+pegá el enlace a ese zip (o pasalo como archivo).
+
+**Lo que la firma prueba y lo que no:** el mismo autor que la vez pasada, y que nada cambió desde que
+firmó. No que el autor sea de fiar. La hoja nunca dice «verificado por Gnothi».
+
 ### P3 · El módulo corre hospedado, a pantalla completa
 
 Tocá la tarjeta del módulo, y después **«Abrir \<módulo\>»** — la fila que dice *la app de tu

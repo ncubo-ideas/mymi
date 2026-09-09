@@ -539,14 +539,31 @@ const gn = {
         : 'Lo sirvió <b>' + host + '</b>' + via + '.<small>Gnothi no pudo verificar que ese origen sea el de la institución: fijate que lo reconozcas.</small>'))
       + sello;
 
+    // THE SIGNATURE: whose key, and since when Gnothi knows it. Continuity, not virtue.
+    const desde = pro.firmaDesde ? new Date(pro.firmaDesde).toLocaleDateString('es', { day: 'numeric', month: 'short', year: 'numeric' }) : '';
+    const llave = esc(pro.firmante || '?');
+    const firma = {
+      'sin-firma': 'El paquete no viene firmado.',
+      'publicada': desde
+        ? 'Firmado con la <b>misma llave</b> que la vez pasada (desde ' + desde + '), y su origen la publica.'
+        : 'Firmado por la llave «' + llave + '», que su origen publica.<small>Gnothi la va a recordar para la próxima vez.</small>',
+      'conocida': 'Firmado con la <b>misma llave</b> que la vez pasada (desde ' + desde + ').<small>Su origen no contestó, pero la llave ya la conocías.</small>',
+      'rotada': 'Firmado con una <b>llave nueva</b> («' + llave + '»), que su origen publica.<small>No es la de la vez pasada. Gnothi va a recordar esta.</small>',
+      'desconocida': 'Firmado por una llave («' + llave + '») que su origen <b>no publica</b> y que Gnothi no conocía.',
+      'cambiada': '<b>La llave cambió</b>: no es la que firmaba la vez pasada, y su origen no publica la nueva («' + llave + '»).',
+    }[pro.firma] || 'El paquete no viene firmado.';
+
     // A module without a verifiable backing gets a DIFFERENT sheet, not the same one with a
-    // footnote: the warning goes first, and says how bad it is.
-    const desconfiar = pro.respaldo === 'otro-origen' ? 'Dice ser de otro origen del que lo sirvió.'
+    // footnote: the warning goes first, and says how bad it is. A changed key is the loudest.
+    const desconfiar = pro.firma === 'cambiada' ? 'Viene firmado con otra llave que la vez pasada, y su origen no publica la nueva.'
+      : pro.respaldo === 'otro-origen' ? 'Dice ser de otro origen del que lo sirvió.'
       : pro.respaldo === 'no-publicado' ? (pro.origen === 'archivo' ? 'El origen que dice ser suyo no publica este paquete.' : 'El origen que lo sirvió no lo reconoce como suyo.')
       : null;
-    const alerta = pro.respaldo === 'verificado' ? ''
-      : desconfiar
-        ? '<p class="ojo"><b>Desconfiá de este módulo.</b> ' + desconfiar + ' Si no lo esperabas, «Ahora no».</p>'
+    const alerta = desconfiar
+      ? '<p class="ojo"><b>Desconfiá de este módulo.</b> ' + desconfiar + ' Si no lo esperabas, «Ahora no».</p>'
+      : pro.respaldo === 'verificado' && pro.firma !== 'desconocida' ? ''
+      : pro.respaldo === 'verificado'
+        ? '<p class="ojo">Su origen lo publica, pero viene firmado por una llave que ese origen <b>no publica</b>. Abajo dice más.</p>'
         : '<p class="ojo">Este módulo llega <b>sin respaldo verificable</b>: Gnothi no pudo confirmar que '
           + (pro.origen === 'archivo' ? 'alguien responda por este archivo' : host + ' publique este módulo') + '. Abajo dice por qué.</p>';
     const forma = rev.forma === 'hospedado'
@@ -567,7 +584,7 @@ const gn = {
       + '<p><b>Con quién va a hablar</b><br><code>' + esc(p.publicador || '(no declara publicador)') + '</code><br>'
       + '<small>Es la única red que va a poder tocar, y la hace Gnothi por él.</small></p>'
       + '<p><b>Lo que Gnothi revisó</b></p><ul class="pr-tools">'
-      + '<li>' + respaldo + '</li><li>' + forma + '</li><li>' + caps + '</li>'
+      + '<li>' + respaldo + '</li><li>' + firma + '</li><li>' + forma + '</li><li>' + caps + '</li>'
       + '<li>Sin ejecutables ni datos de muestra adentro.</li></ul>';
 
     document.getElementById('propuesta').classList.add('on');
@@ -977,7 +994,8 @@ function mock(op, x) {
     // The mock "picks" a file whose declared origin publishes exactly this package.
     setTimeout(() => gn.push('alta', '', JSON.stringify({ estado: 'trabajando', detalle: 'Revisando qué trae…' })), 150);
     setTimeout(() => gn.push('propuesta', '', JSON.stringify(Object.assign({}, MOCK_PROPUESTA,
-      { servido: 'cargas.gmod', procedencia: { origen: 'archivo', servido: 'cargas.gmod', sello: false, respaldo: 'verificado', seguro: true, origenDeclarado: 'https://estaciones-faro.cr' } }))), 1100);
+      { servido: 'cargas.gmod', procedencia: { origen: 'archivo', servido: 'cargas.gmod', sello: false, respaldo: 'verificado', seguro: true, origenDeclarado: 'https://estaciones-faro.cr',
+        firma: 'publicada', firmante: 'estaciones-faro-202609', firmaDesde: '' } }))), 1100);
     return { ok: true };
   }
   if (op === 'alta') {
@@ -987,8 +1005,10 @@ function mock(op, x) {
     try { const u = new URL(x.url); host = new URL(u.searchParams.get('bundle') || x.url).host || host; } catch {}
     setTimeout(() => gn.push('alta', '', JSON.stringify({ estado: 'trabajando', detalle: 'Bajando el módulo de ' + host + '…' })), 150);
     // The mock's institution backs its module; paste a link with "evil" in it to see the other sheet.
+    const evil = /evil/.test(x.url || '');
     const procedencia = { origen: x.via === 'qr' ? 'qr' : 'pegado', servido: host, sello: /[?&]h=/.test(x.url || ''),
-      respaldo: /evil/.test(x.url || '') ? 'otro-origen' : 'verificado', seguro: true, origenDeclarado: 'https://estaciones-faro.cr' };
+      respaldo: evil ? 'otro-origen' : 'verificado', seguro: true, origenDeclarado: 'https://estaciones-faro.cr',
+      firma: evil ? 'cambiada' : 'publicada', firmante: evil ? 'alguien-202609' : 'estaciones-faro-202609', firmaDesde: evil ? '' : '2026-09-01T12:00:00Z' };
     setTimeout(() => gn.push('propuesta', '', JSON.stringify(Object.assign({}, MOCK_PROPUESTA, { procedencia }))), 1100);
     return 'ok';
   }

@@ -427,6 +427,19 @@ public sealed class Shell : IDisposable
 			},
 			seguro = p.Provenance.Secure,
 			origenDeclarado = p.Provenance.DeclaredOrigin,
+
+			// Whose key signed the package, by name, and since when Gnothi knows that key.
+			firma = p.Provenance.Signer switch
+			{
+				SignerCheck.Published => "publicada",
+				SignerCheck.Pinned => "conocida",
+				SignerCheck.Rotated => "rotada",
+				SignerCheck.Unknown => "desconocida",
+				SignerCheck.Changed => "cambiada",
+				_ => "sin-firma",
+			},
+			firmante = p.Provenance.SignerId,
+			firmaDesde = p.Provenance.SignedSince,
 		},
 
 		// WHAT GNOTHI CHECKED before showing this, so she decides with it in view: the form, the
@@ -464,6 +477,11 @@ public sealed class Shell : IDisposable
 		// the InvalidOperationException arm on purpose: it derives from it.
 		PackageSealMismatchException =>
 			"El paquete no es el que sellaba el enlace: cambió después de que se generó el código. Pedile a tu institución uno nuevo.",
+
+		// Signed, and the signature does not hold: somebody touched the package after it was
+		// signed. Not "broken": tampered, and that is the word.
+		PackageSignatureInvalidException =>
+			"El paquete viene firmado y la firma no cierra: lo tocaron después de firmarlo. Pedile a tu institución uno nuevo.",
 
 		// Lo que tira ModuleEnrollment -bundle sin manifiesto, nombre invalido, zip que escribe
 		// afuera, techo de tamano- ya viene escrito para leerse. Se pasa tal cual.

@@ -26,6 +26,7 @@ param(
     [string] $Recurso    = '',
     [string] $Id         = '',
     [string] $Origen     = '',        # the origin that serves the bundle (scheme://host:port); goes into the manifest as "origin"
+    [string] $Llave      = '',        # the institution's signing key file; created on first use. Default: <Salida>/.keys/<Modulo>.key.json
     [string] $Salida     = ''         # por omision: <Gnothi.Mobile>/bundles
 )
 
@@ -167,6 +168,20 @@ if (Test-Path $zipTemporal) { Remove-Item -Force $zipTemporal }
 Compress-Archive -Path "$armado/*" -DestinationPath $zipTemporal -CompressionLevel Optimal
 Move-Item -Force $zipTemporal $zip
 
+# --- la firma ----------------------------------------------------------------------------
+# The Host signs, as the publisher-side helper it already is for --pack: the same code that
+# verifies on the phone signs here, so the two cannot drift. The key pair lives next to the
+# bundles (git-ignored) and is created the first time; the page publishes its public half in the
+# well-known. Built into its own bin because the MCP servers of a Claude session hold the default
+# one (see NotasGnothiHost); forward slashes because a trailing backslash inside quotes escapes
+# the quote on Windows.
+if (-not $Llave) { $Llave = "$Salida/.keys/$Modulo.key.json" }
+$raiz = (Split-Path -Parent $PSScriptRoot) -replace '\\', '/'
+# No build flags before the `--`: `dotnet run` forwards what it does not recognise to the app, and
+# the Host took a stray --nologo for its modules directory and never signed (measured 2026-09-09).
+dotnet run --project "$raiz/Gnothi.Host/Gnothi.Host.csproj" -p:BaseOutputPath="$raiz/bin/firmar/" -- --sign $zip $Llave
+if ($LASTEXITCODE -ne 0) { throw "fallo la firma del bundle de $Modulo" }
+
 Remove-Item -Recurse -Force $publicado
 
 $mb = [math]::Round((Get-Item $zip).Length / 1MB, 1)
@@ -178,4 +193,5 @@ Write-Host "  archivos   : $n"
 Write-Host "  tamano     : $mb MB"
 Write-Host "  publicador : $Publicador$Recurso/$Id/events"
 if ($Origen) { Write-Host "  origen     : $Origen" } else { Write-Host "  origen     : (no declarado: la hoja de Gnothi lo va a decir)" }
+Write-Host "  llave      : $Llave"
 Write-Host "  tools      : $(($m.Tools | ForEach-Object { $_.name }) -join ', ')"

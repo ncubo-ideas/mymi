@@ -48,6 +48,11 @@ string appSuelta = app.Configuration["AppSuelta"]
 string publicador = app.Configuration["Publicador"] ?? "http://127.0.0.1:8095/";
 string suPropiaUrl = app.Configuration["UrlPublica"] ?? "http://127.0.0.1:8096";
 
+// THE INSTITUTION'S SIGNING KEY, the file armar-bundle.ps1 / Gnothi.Host --sign keep. Only its
+// public half is published here; the private half never leaves that file. Optional: without it
+// the origin publishes no keys, and Gnothi's sheet says the package's key is unknown to it.
+string? llave = app.Configuration["Llave"];
+
 string titulo = app.Configuration["Titulo"] ?? "Laboratorio Clinico Delfos";
 string subtitulo = app.Configuration["Subtitulo"] ?? "Mis examenes";
 
@@ -95,7 +100,8 @@ app.MapGet("/.well-known/gnothi/modules.json", () =>
 {
     string? module = ModuleNameOf(bundle);
     object[] modules = module is null ? [] : [new { module, bundle = $"{suPropiaUrl}/{nombreDelZip}", seal = SealOf(bundle) }];
-    return Results.Json(new { gnothi = 1, institution = titulo, modules });
+    object[] keys = PublishedKey(llave) is { } key ? [key] : [];
+    return Results.Json(new { gnothi = 1, institution = titulo, keys, modules });
 });
 
 // ---------------------------------------------------------------- la narrativa, relevada
@@ -213,6 +219,8 @@ app.MapGet("/salud", () => Results.Ok(new
     appSuelta,
     hayAppSuelta = Directory.Exists(appSuelta),
     publicador,
+    llave,
+    hayLlave = llave is not null && File.Exists(llave),
 }));
 
 app.Run();
@@ -234,6 +242,22 @@ static string? SealOf(string bundlePath)
     using Stream bytes = manifest.Open();
     byte[] hash = System.Security.Cryptography.SHA256.HashData(bytes);
     return Convert.ToBase64String(hash, 0, 16).TrimEnd('=').Replace('+', '-').Replace('/', '_');
+}
+
+// The public half of the institution's key, as the well-known publishes it: id, algorithm, key.
+// Read from the key file --sign writes, and NOTHING else is read from it.
+static object? PublishedKey(string? keyPath)
+{
+    if (keyPath is null || !File.Exists(keyPath)) return null;
+
+    using var key = System.Text.Json.JsonDocument.Parse(File.ReadAllText(keyPath));
+    System.Text.Json.JsonElement root = key.RootElement;
+    return new
+    {
+        id = root.TryGetProperty("id", out System.Text.Json.JsonElement i) ? i.GetString() : "",
+        alg = root.TryGetProperty("alg", out System.Text.Json.JsonElement a) ? a.GetString() : "",
+        @public = root.TryGetProperty("public", out System.Text.Json.JsonElement p) ? p.GetString() : "",
+    };
 }
 
 // The module's name as its manifest declares it, for the list this origin publishes. Null when

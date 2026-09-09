@@ -2,6 +2,7 @@ using System.IO.Compression;
 using System.Security.Cryptography;
 using System.Text;
 using System.Text.Json;
+using Gnothi.Host;
 
 namespace Gnothi.Movil;
 
@@ -41,6 +42,14 @@ namespace Gnothi.Movil;
 // asked whether it publishes exactly this manifest -its seal- and the same backing follows, over
 // the same TLS. Nothing is refused for it yet: whether the backing is a requirement or a warning
 // is a decision still open (NotasGnothiHost/42 §9), and it lives in ONE place -OriginIsRequired.
+//
+// THE SIGNATURE. A package may come signed (Gnothi.Host/PackageSignature.cs): every file digested,
+// the list signed, the public key inside. Integrity is checked with nothing else in hand, and a
+// signed package whose signature does not hold is REFUSED -somebody touched it. Whose key it is,
+// the origin's well-known says (it publishes its keys) or the PIN says: the key the module was
+// accepted with the first time, kept in installation.json. That is what the origin check cannot
+// give: continuity -"the same key as last time"- with the origin down, and a loud word when the
+// key changed and nobody published the new one.
 //
 // WHAT GNOTHI CHECKS BEFORE SHOWING ANYTHING is PackageInspector -the same inspection the
 // desktop installer runs (Gnothi.Host/PackageInspector.cs): the package's form, whether it
@@ -95,18 +104,46 @@ public enum OriginCheck
 	DeclaresAnother,
 }
 
+// WHOSE KEY SIGNED THE PACKAGE, once the signature itself holds. A package that comes unsigned is
+// just that; an invalid one never gets this far.
+public enum SignerCheck
+{
+	Unsigned,
+
+	// The key is among those the origin publishes. First time, or the same key as last time.
+	Published,
+
+	// The origin did not answer -or publishes no keys-, but the key is the one Gnothi accepted
+	// last time: continuity, offline.
+	Pinned,
+
+	// A new key, but the origin publishes it: the institution rotated. Remembered from now.
+	Rotated,
+
+	// The origin does not publish this key and Gnothi never saw it: nobody vouches for it.
+	Unknown,
+
+	// Not the key of last time, and the origin does not publish the new one. The loudest word.
+	Changed,
+}
+
 // WHERE THE BYTES CAME FROM. ServedBy is the host that answered the download -or the file's name-
 // a fact about transport, and Origin says how far that fact could be tied to the institution.
 // MatchesLink is true when the link carried a seal and the package hashed to it -- integrity
 // against the link, nothing more. Secure says whether TLS stood behind the answer: over plain
 // http (development) the origin check proves consistency, not authenticity, and the sheet says so.
+// Signer says whose key signed the package, SignerId names it, and SignedSince is when that same
+// key was first accepted -- empty the first time.
 public sealed record Provenance(
 	EnrollmentSource Source,
 	string ServedBy,
 	bool MatchesLink = false,
 	OriginCheck Origin = OriginCheck.NoOrigin,
 	bool Secure = false,
-	string DeclaredOrigin = "");
+	string DeclaredOrigin = "",
+	SignerCheck Signer = SignerCheck.Unsigned,
+	string SignerId = "",
+	string SignedSince = "");
 
 // THE LINK, TAKEN APART. The institution's page links to Gnothi's domain with the bundle's
 // address as a parameter and, since 2026-09-08, the seal of its manifest:
@@ -122,14 +159,18 @@ public sealed record EnrollmentLink(string Bundle, string? Seal);
 // say it in the person's words: this is not a broken zip, it is a package that changed.
 internal sealed class PackageSealMismatchException(string message) : InvalidOperationException(message);
 
+// The package is signed and the signature does not hold: a file changed, or the signature is
+// not the key's. Its own type for the same reason: somebody touched it, and that is what to say.
+internal sealed class PackageSignatureInvalidException(string message) : InvalidOperationException(message);
+
 internal sealed class ModuleEnrollment
 {
 	// A module's bundle weighs about 11 MB measured. This ceiling is not an optimisation: it is
 	// so that a wrong URL cannot fill the device before anybody notices.
 	private const long BundleCeiling = 64L * 1024 * 1024;
 
-	// Where an origin says which modules are its own. A list, not one file per module: an
-	// institution can publish several, and Gnothi looks for the bundle it was handed.
+	// Where an origin says which modules are its own, and which keys sign them. A list, not one
+	// file per module: an institution can publish several, and Gnothi looks for the one it holds.
 	internal const string WellKnownPath = "/.well-known/gnothi/modules.json";
 	private const long WellKnownCeiling = 64 * 1024;
 
@@ -236,10 +277,47 @@ internal sealed class ModuleEnrollment
 		}
 	}
 
+	// WHOSE KEY. The signature already holds (or there is none); this decides what to tell the
+	// person and what to remember. Pure: what the origin publishes, what Gnothi pinned, the clock.
+	//
+	//   published  the origin lists this public key           |  pinned  the key of last time
+	//   sameKey    the pinned key is this one -continuity-     |  fresh   a new pin, from now
+	internal static (SignerCheck check, PackageSigner? pin, bool sameKey) ResolveSigner(SignatureVerification signature, string? wellKnownJson, PackageSigner? pinned, DateTimeOffset now)
+	{
+		if (signature.State != SignatureState.Valid) return (SignerCheck.Unsigned, pinned, false);
+
+		bool published = PublishedKeys(wellKnownJson).Contains(signature.Public, StringComparer.Ordinal);
+		bool same = pinned is not null && string.Equals(pinned.Public, signature.Public, StringComparison.Ordinal);
+		var fresh = new PackageSigner { KeyId = signature.KeyId, Public = signature.Public, Since = now.ToString("O") };
+
+		if (same) return (published ? SignerCheck.Published : SignerCheck.Pinned, pinned, true);
+		if (pinned is not null) return (published ? SignerCheck.Rotated : SignerCheck.Changed, fresh, false);
+		return (published ? SignerCheck.Published : SignerCheck.Unknown, fresh, false);
+	}
+
 	private static IEnumerable<JsonElement> Modules(JsonDocument published)
 		=> published.RootElement.TryGetProperty("modules", out JsonElement modules) && modules.ValueKind == JsonValueKind.Array
 			? modules.EnumerateArray()
 			: [];
+
+	// The public keys an origin publishes, as base64url SPKI strings. Empty when it publishes
+	// none, or nothing readable at all.
+	private static List<string> PublishedKeys(string? wellKnownJson)
+	{
+		if (wellKnownJson is null) return [];
+		try
+		{
+			using JsonDocument published = JsonDocument.Parse(wellKnownJson);
+			if (!published.RootElement.TryGetProperty("keys", out JsonElement keys) || keys.ValueKind != JsonValueKind.Array) return [];
+			return [.. keys.EnumerateArray()
+				.Where(k => k.TryGetProperty("public", out JsonElement p) && p.ValueKind == JsonValueKind.String)
+				.Select(k => k.GetProperty("public").GetString()!)];
+		}
+		catch (JsonException)
+		{
+			return [];
+		}
+	}
 
 	// scheme://host[:port], lower case, default port dropped: what "the same origin" means.
 	private static string OriginOf(Uri uri) => uri.GetLeftPart(UriPartial.Authority).ToLowerInvariant();
@@ -287,19 +365,20 @@ internal sealed class ModuleEnrollment
 		string? published = await FetchWellKnown(where, ct);
 
 		EnrollmentProposal proposal = Examine(zip, source, where, seal, published, progress);
-		log($"alta: respaldo de {where.Host}: {proposal.Provenance.Origin}");
+		log($"alta: respaldo de {where.Host}: {proposal.Provenance.Origin}; firma: {proposal.Provenance.Signer}");
 		return proposal;
 	}
 
 	// THE SAME EXAMINATION FOR EVERY WAY IN. Bytes and where they came from come in; the
 	// manifest is read, checked against the seal if the link carried one and against its origin,
-	// and the package inspected BEFORE anything touches the disk; only then is it unpacked into a
-	// temporary folder that lives until she decides. `servedFrom` is null for bytes that came
-	// from no origin at all, and `wellKnownJson` is what that origin publishes, if anything.
+	// the signature checked and its key resolved, and the package inspected BEFORE anything
+	// touches the disk; only then is it unpacked into a temporary folder that lives until she
+	// decides. `servedFrom` is null for bytes that came from no origin at all, and
+	// `wellKnownJson` is what that origin publishes, if anything.
 	internal EnrollmentProposal Examine(byte[] zip, EnrollmentSource source, Uri? servedFrom, string? expectedSeal = null, string? wellKnownJson = null, Action<string>? progress = null)
 	{
 		progress?.Invoke("Revisando qué trae…");
-		(Gnothi.Host.Manifest manifest, string seal, Gnothi.Host.PackageInspection inspection) = Open(zip);
+		(Manifest manifest, string seal, PackageInspection inspection, SignatureVerification signature) = Open(zip);
 
 		if (expectedSeal is not null && !string.Equals(expectedSeal, seal, StringComparison.Ordinal))
 			throw new PackageSealMismatchException(
@@ -308,45 +387,56 @@ internal sealed class ModuleEnrollment
 		OriginCheck origin = servedFrom is null ? OriginCheck.NoOrigin : VerifyOrigin(servedFrom, wellKnownJson, manifest.Origin);
 		RefuseIfRequired(origin);
 
+		(SignerCheck signer, PackageSigner? pin, bool sameKey) = ResolveSigner(signature, wellKnownJson, ReadPin(manifest.Module), DateTimeOffset.UtcNow);
+
 		var provenance = new Provenance(source, servedFrom?.Host ?? "",
 			MatchesLink: expectedSeal is not null,
 			Origin: origin,
 			Secure: servedFrom?.Scheme == Uri.UriSchemeHttps,
-			DeclaredOrigin: manifest.Origin ?? "");
+			DeclaredOrigin: manifest.Origin ?? "",
+			Signer: signer,
+			SignerId: signature.KeyId,
+			SignedSince: sameKey ? pin!.Since : "");
 
-		return Propose(zip, manifest, inspection, provenance);
+		return Propose(zip, manifest, inspection, provenance, pin);
 	}
 
 	// A FILE. No address was involved, so there is no origin to compare with and no seal from a
 	// link; but the manifest may claim an origin, and that origin is asked whether it publishes
-	// exactly this manifest. `fetch` is how the well-known is obtained -the network, or a stand-in
-	// for the suite.
+	// exactly this manifest -and which keys it signs with. `fetch` is how the well-known is
+	// obtained: the network, or a stand-in for the suite.
 	internal async Task<EnrollmentProposal> ExamineFile(byte[] zip, string fileName, CancellationToken ct, Action<string>? progress = null, Func<Uri, CancellationToken, Task<string?>>? fetch = null)
 	{
 		progress?.Invoke("Revisando qué trae…");
-		(Gnothi.Host.Manifest manifest, string seal, Gnothi.Host.PackageInspection inspection) = Open(zip);
+		(Manifest manifest, string seal, PackageInspection inspection, SignatureVerification signature) = Open(zip);
 
 		OriginCheck origin = OriginCheck.NotDeclared;
 		bool secure = false;
+		string? published = null;
 		if (OriginOf(manifest.Origin) is string declared)
 		{
 			var claimed = new Uri(declared + "/");
 			secure = claimed.Scheme == Uri.UriSchemeHttps;
 			progress?.Invoke($"Preguntándole a {claimed.Host} si este paquete es suyo…");
 
-			string? published = await (fetch ?? FetchWellKnown)(claimed, ct);
+			published = await (fetch ?? FetchWellKnown)(claimed, ct);
 			origin = VerifyBySeal(seal, published);
 			log($"alta: archivo '{fileName}': {claimed.Host} dice {origin}");
 		}
 		RefuseIfRequired(origin);
 
+		(SignerCheck signer, PackageSigner? pin, bool sameKey) = ResolveSigner(signature, published, ReadPin(manifest.Module), DateTimeOffset.UtcNow);
+
 		var provenance = new Provenance(EnrollmentSource.File, fileName,
 			MatchesLink: false,
 			Origin: origin,
 			Secure: secure,
-			DeclaredOrigin: manifest.Origin ?? "");
+			DeclaredOrigin: manifest.Origin ?? "",
+			Signer: signer,
+			SignerId: signature.KeyId,
+			SignedSince: sameKey ? pin!.Since : "");
 
-		return Propose(zip, manifest, inspection, provenance);
+		return Propose(zip, manifest, inspection, provenance, pin);
 	}
 
 	private static void RefuseIfRequired(OriginCheck origin)
@@ -355,17 +445,32 @@ internal sealed class ModuleEnrollment
 			throw new InvalidOperationException($"Gnothi rechazó el paquete: su origen no lo respalda ({origin})");
 	}
 
-	// Read and inspect, writing nothing: the manifest, its seal, and what the inspection saw.
-	private static (Gnothi.Host.Manifest manifest, string seal, Gnothi.Host.PackageInspection inspection) Open(byte[] zip)
+	// Read, inspect and check the signature, writing nothing. A signed package whose signature
+	// does not hold stops here: whatever else it says, somebody touched it after it was signed.
+	private static (Manifest manifest, string seal, PackageInspection inspection, SignatureVerification signature) Open(byte[] zip)
 	{
 		using var archive = new ZipArchive(new MemoryStream(zip), ZipArchiveMode.Read);
-		(Gnothi.Host.Manifest manifest, string seal) = ReadManifest(archive);
-		return (manifest, seal, Gnothi.Host.PackageInspector.Inspect(archive, manifest));
+		(Manifest manifest, string seal) = ReadManifest(archive);
+
+		SignatureVerification signature = PackageSignature.Verify(archive);
+		if (signature.State == SignatureState.Invalid)
+			throw new PackageSignatureInvalidException("the package is signed and the signature does not hold: " + signature.Detail);
+
+		return (manifest, seal, PackageInspector.Inspect(archive, manifest), signature);
+	}
+
+	// The key this module was accepted with last time, if it is installed and was signed.
+	private PackageSigner? ReadPin(string module)
+	{
+		string path = Path.Combine(modulesRoot, module, "installation.json");
+		if (!File.Exists(path)) return null;
+		try { return Installation.Read(path).Signer; }
+		catch (Exception) { return null; }
 	}
 
 	// The proposal, once everything is known: a refused package never gets here to be shown, and
 	// an accepted one is unpacked into a temporary folder that lives until she decides.
-	private EnrollmentProposal Propose(byte[] zip, Gnothi.Host.Manifest manifest, Gnothi.Host.PackageInspection inspection, Provenance provenance)
+	private EnrollmentProposal Propose(byte[] zip, Manifest manifest, PackageInspection inspection, Provenance provenance, PackageSigner? signer)
 	{
 		// A refused package never reaches the sheet: there is nothing to decide about a package
 		// that would not be installed anyway. The reasons are written to be read, and they are
@@ -380,7 +485,7 @@ internal sealed class ModuleEnrollment
 
 			string module = manifest.Module;
 			return new EnrollmentProposal(temporary, manifest, provenance, inspection,
-				Path.Combine(journalsRoot, module), Directory.Exists(Path.Combine(modulesRoot, module)));
+				Path.Combine(journalsRoot, module), Directory.Exists(Path.Combine(modulesRoot, module)), signer);
 		}
 		catch
 		{
@@ -391,8 +496,8 @@ internal sealed class ModuleEnrollment
 		}
 	}
 
-	// THE PERSON SAID YES. Only here does the module take up a place: its folder, its journal
-	// and its fixed endpoint.
+	// THE PERSON SAID YES. Only here does the module take up a place: its folder, its journal,
+	// its fixed endpoint -and the key it came signed with, remembered for next time.
 	internal string Accept(EnrollmentProposal proposal)
 	{
 		string module = proposal.Manifest.Module;
@@ -402,7 +507,7 @@ internal sealed class ModuleEnrollment
 		Directory.CreateDirectory(Path.GetDirectoryName(destination)!);
 		Directory.Move(proposal.Folder, destination);
 
-		WriteInstallation(destination, module, proposal.Manifest, proposal.Inspection.InstallEnabled);
+		WriteInstallation(destination, module, proposal.Manifest, proposal.Inspection.InstallEnabled, proposal.Signer);
 
 		log($"alta: '{module}' instalado en {destination}");
 		return module;
@@ -513,7 +618,7 @@ internal sealed class ModuleEnrollment
 	// are hashed for the seal BEFORE parsing -- the seal is over the file, not over a rendering
 	// of it. Through the Host's generated JSON context, not reflection: this file also compiles
 	// into the iOS app.
-	private static (Gnothi.Host.Manifest manifest, string seal) ReadManifest(ZipArchive archive)
+	private static (Manifest manifest, string seal) ReadManifest(ZipArchive archive)
 	{
 		ZipArchiveEntry? entry = archive.Entries.FirstOrDefault(e =>
 			e.FullName.Replace('\\', '/').Equals("manifest.json", StringComparison.OrdinalIgnoreCase));
@@ -530,7 +635,7 @@ internal sealed class ModuleEnrollment
 
 		try
 		{
-			Gnothi.Host.Manifest? manifest = JsonSerializer.Deserialize(bytes, Gnothi.Host.HostJson.Default.Manifest);
+			Manifest? manifest = JsonSerializer.Deserialize(bytes, HostJson.Default.Manifest);
 			if (manifest is null || string.IsNullOrWhiteSpace(manifest.Module))
 				throw new InvalidOperationException("the bundle's manifest.json could not be read, or declares no 'module'");
 			return (manifest, SealOf(bytes));
@@ -549,9 +654,12 @@ internal sealed class ModuleEnrollment
 	// THE SWITCH comes from the inspection: a module that asks for capabilities a data module
 	// does not need starts OFF, and the person switches it on once she has read why. Same rule
 	// the desktop installer has had since the start; until 2026-09-08 the phone wrote `true`.
-	private void WriteInstallation(string folder, string module, Gnothi.Host.Manifest manifest, bool enabled)
+	//
+	// THE PIN is the key the package came signed with -kept from last time when it is the same,
+	// new when it is not- so the next package can be compared with it. Null when unsigned.
+	private void WriteInstallation(string folder, string module, Manifest manifest, bool enabled, PackageSigner? signer)
 	{
-		Gnothi.Host.Publicador? p = manifest.Publicador;
+		Publicador? p = manifest.Publicador;
 		string endpoint = p is null || p.Eventos.Length == 0 ? "" : $"{p.Eventos}|{p.Recurso}|{p.Id}";
 
 		var installation = new
@@ -565,6 +673,7 @@ internal sealed class ModuleEnrollment
 			grantedFolder = Path.Combine(journalsRoot, module),
 			enabled,
 			disabledTools = Array.Empty<string>(),
+			signer = signer is null ? null : new { keyId = signer.KeyId, @public = signer.Public, since = signer.Since },
 		};
 
 		File.WriteAllText(Path.Combine(folder, "installation.json"),
@@ -575,18 +684,20 @@ internal sealed class ModuleEnrollment
 // WHAT GNOTHI SHOWS THE PERSON BEFORE INSTALLING ANYTHING. It comes out of the bundle's
 // manifest -- that is, out of what the institution DECLARES about itself -- plus what Gnothi
 // found out by itself and she has a right to know before accepting: where the bytes came from,
-// whether they match the link and whether their origin backs them, what the inspection saw,
-// where the journal will live, and against which endpoint the courier will talk.
+// whether they match the link and whether their origin backs them, who signed them, what the
+// inspection saw, where the journal will live, and against which endpoint the courier will talk.
 //
 // `Folder` is the temporary place where the bundle is already unpacked. It exists until she
-// decides: Accept moves it where it belongs, Discard deletes it.
+// decides: Accept moves it where it belongs, Discard deletes it. `Signer` is the pin Accept
+// writes: the key to remember, or null for an unsigned package.
 internal sealed record EnrollmentProposal(
 	string Folder,
-	Gnothi.Host.Manifest Manifest,
+	Manifest Manifest,
 	Provenance Provenance,
-	Gnothi.Host.PackageInspection Inspection,
+	PackageInspection Inspection,
 	string JournalGoesTo,
-	bool AlreadyThere)
+	bool AlreadyThere,
+	PackageSigner? Signer = null)
 {
 	// The host that answered the download -or the file's name-, for the log line the test scripts grep.
 	internal string ServedBy => Provenance.ServedBy;
@@ -597,7 +708,7 @@ internal sealed record EnrollmentProposal(
 	{
 		get
 		{
-			Gnothi.Host.Publicador? p = Manifest.Publicador;
+			Publicador? p = Manifest.Publicador;
 			return p is null || p.Eventos.Length == 0 ? "" : $"{p.Eventos}{p.Recurso}/{p.Id}";
 		}
 	}

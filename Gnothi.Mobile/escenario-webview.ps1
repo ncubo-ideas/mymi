@@ -148,7 +148,9 @@ foreach ($nombre in $Modulos) {
         "--Publicador", "http://127.0.0.1:$($m.Pub)/",
         "--UrlPublica", "http://127.0.0.1:$($m.Web)",
         "--Titulo", $m.Titulo,
-        "--Subtitulo", $m.Subtitulo) $m.Web
+        "--Subtitulo", $m.Subtitulo,
+        # The signing key armar-bundle.ps1 created: the page publishes its public half.
+        "--Llave", "$PSScriptRoot\bundles\.keys\$nombre.key.json") $m.Web
 
     $puertos += $m.Pub, $m.Web
 }

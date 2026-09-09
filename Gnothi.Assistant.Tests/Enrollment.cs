@@ -232,6 +232,86 @@ internal static class Enrollment
 			assert("a file whose manifest declares no origin asks nobody, and is not backed",
 				!askedAnyone && orphan.Provenance.Origin == OriginCheck.NotDeclared && !orphan.Provenance.Secure, $"{orphan.Provenance}");
 			enrolling.Discard(orphan);
+
+			// ── the signature ────────────────────────────────────────────────────────────────
+
+			SigningKey key = PackageSignature.Generate("demo-202609");
+			string signedPath = Path.Combine(root, "signed.gmod");
+			File.WriteAllBytes(signedPath, HostedOk);
+			PackageSignature.Sign(signedPath, key);
+			byte[] signedZip = File.ReadAllBytes(signedPath);
+
+			SignatureVerification good = VerifySignature(signedZip);
+			assert("a signed package verifies, and names its key",
+				good.State == SignatureState.Valid && good.KeyId == "demo-202609" && good.Public == key.Public, $"{good}");
+			assert("an unsigned package is unsigned, not invalid",
+				VerifySignature(HostedOk).State == SignatureState.Unsigned, "");
+
+			SignatureVerification touched = VerifySignature(Retouch(signedZip, "web/index.html", "<html>not what was signed</html>"));
+			assert("a file changed after signing: invalid, and it says which",
+				touched.State == SignatureState.Invalid && touched.Detail.Contains("changed") && touched.Detail.Contains("web/index.html"), touched.Detail);
+			SignatureVerification grown = VerifySignature(Retouch(signedZip, "web/extra.js", "alert(1)"));
+			assert("a file added after signing: invalid",
+				grown.State == SignatureState.Invalid && grown.Detail.Contains("added"), grown.Detail);
+			SignatureVerification resigned = VerifySignature(Retouch(signedZip, PackageSignature.FileName, "{ \"alg\": \"ES256\", \"keyId\": \"x\", \"public\": \"" + key.Public + "\", \"files\": {}, \"signature\": \"AAAA\" }"));
+			assert("a signature that does not hold under its own key: invalid",
+				resigned.State == SignatureState.Invalid, resigned.Detail);
+
+			// Whose key: what the origin publishes against what Gnothi pinned.
+			string keysJson = "{\"keys\":[{\"id\":\"demo-202609\",\"alg\":\"ES256\",\"public\":\"" + key.Public + "\"}],\"modules\":[{\"module\":\"demo\",\"bundle\":\"https://delfos.cr/examenes.gmod\"}]}";
+			var now = new DateTimeOffset(2026, 9, 9, 12, 0, 0, TimeSpan.Zero);
+			var pinnedSame = new PackageSigner { KeyId = "demo-202609", Public = key.Public, Since = "2026-09-01T00:00:00.0000000+00:00" };
+			SigningKey other = PackageSignature.Generate("other-202601");
+			var pinnedOther = new PackageSigner { KeyId = "other-202601", Public = other.Public, Since = "2026-01-01T00:00:00.0000000+00:00" };
+
+			(SignerCheck check, PackageSigner? pin, bool sameKey) r;
+			r = ModuleEnrollment.ResolveSigner(good, keysJson, null, now);
+			assert("first time, key published by the origin: published, and pinned from now", r.check == SignerCheck.Published && r.pin?.KeyId == "demo-202609" && r.pin.Since.StartsWith("2026-09-09") && !r.sameKey, $"{r}");
+			r = ModuleEnrollment.ResolveSigner(good, null, null, now);
+			assert("first time, nobody publishes the key: unknown, pinned anyway for next time", r.check == SignerCheck.Unknown && r.pin?.Public == key.Public, $"{r}");
+			r = ModuleEnrollment.ResolveSigner(good, null, pinnedSame, now);
+			assert("same key as last time, origin silent: pinned, and the old date is kept", r.check == SignerCheck.Pinned && r.pin == pinnedSame && r.sameKey, $"{r}");
+			r = ModuleEnrollment.ResolveSigner(good, keysJson, pinnedSame, now);
+			assert("same key as last time, published too: published, old date kept", r.check == SignerCheck.Published && r.pin == pinnedSame, $"{r}");
+			r = ModuleEnrollment.ResolveSigner(good, keysJson, pinnedOther, now);
+			assert("a new key that the origin publishes: rotated, re-pinned", r.check == SignerCheck.Rotated && r.pin?.Public == key.Public, $"{r}");
+			r = ModuleEnrollment.ResolveSigner(good, null, pinnedOther, now);
+			assert("a new key nobody publishes: CHANGED", r.check == SignerCheck.Changed, $"{r}");
+			r = ModuleEnrollment.ResolveSigner(VerifySignature(HostedOk), keysJson, pinnedSame, now);
+			assert("an unsigned package resolves to unsigned and touches no pin", r.check == SignerCheck.Unsigned && r.pin == pinnedSame, $"{r}");
+
+			// Through the enrollment: the pin is written on accept and read back next time.
+			EnrollmentProposal s1 = enrolling.Examine(signedZip, EnrollmentSource.Link, Delfos, null, keysJson);
+			assert("a signed package served by its origin, key published, first time",
+				s1.Provenance.Signer == SignerCheck.Published && s1.Provenance.SignerId == "demo-202609" && s1.Provenance.SignedSince == "" && s1.Signer is not null,
+				$"{s1.Provenance}");
+			enrolling.Accept(s1);
+			Installation pinnedNow = Installation.Read(Path.Combine(root, "Modulos", "demo", "installation.json"));
+			assert("accepting writes the pin into installation.json",
+				pinnedNow.Signer?.KeyId == "demo-202609" && pinnedNow.Signer.Public == key.Public && pinnedNow.Signer.Since.Length > 0, $"{pinnedNow.Signer}");
+
+			EnrollmentProposal s2 = enrolling.Examine(signedZip, EnrollmentSource.Link, Delfos, null, keysJson);
+			assert("the second time it is the same key, since the date of the first",
+				s2.Provenance.Signer == SignerCheck.Published && s2.Provenance.SignedSince == pinnedNow.Signer!.Since, $"{s2.Provenance}");
+			enrolling.Discard(s2);
+
+			string otherPath = Path.Combine(root, "other.gmod");
+			File.WriteAllBytes(otherPath, HostedOk);
+			PackageSignature.Sign(otherPath, other);
+			EnrollmentProposal s3 = enrolling.Examine(File.ReadAllBytes(otherPath), EnrollmentSource.Link, Delfos, null, keysJson);
+			assert("the same module signed by a key the origin does not publish: CHANGED against the pin",
+				s3.Provenance.Signer == SignerCheck.Changed && s3.Provenance.SignerId == "other-202601", $"{s3.Provenance}");
+			enrolling.Discard(s3);
+
+			try
+			{
+				enrolling.Examine(Retouch(signedZip, "web/index.html", "<html>evil</html>"), EnrollmentSource.Link, Delfos, null, keysJson);
+				assert("a tampered signed package never becomes a proposal", false, "Examine returned a proposal");
+			}
+			catch (PackageSignatureInvalidException e)
+			{
+				assert("a tampered signed package never becomes a proposal", e.Message.Contains("web/index.html"), e.Message);
+			}
 		}
 		finally
 		{
@@ -274,6 +354,27 @@ internal static class Enrollment
 				byte[] bytes = Encoding.UTF8.GetBytes(content);
 				s.Write(bytes, 0, bytes.Length);
 			}
+		return ms.ToArray();
+	}
+
+	private static SignatureVerification VerifySignature(byte[] zip)
+	{
+		using var archive = new ZipArchive(new MemoryStream(zip), ZipArchiveMode.Read);
+		return PackageSignature.Verify(archive);
+	}
+
+	// The same zip with one entry replaced -or added-: what a tamperer does.
+	private static byte[] Retouch(byte[] zip, string path, string content)
+	{
+		using var ms = new MemoryStream();
+		ms.Write(zip, 0, zip.Length);
+		using (var archive = new ZipArchive(ms, ZipArchiveMode.Update, leaveOpen: true))
+		{
+			archive.GetEntry(path)?.Delete();
+			using Stream s = archive.CreateEntry(path).Open();
+			byte[] bytes = Encoding.UTF8.GetBytes(content);
+			s.Write(bytes, 0, bytes.Length);
+		}
 		return ms.ToArray();
 	}
 

@@ -25,6 +25,9 @@ if (args.Length > 0 && (args[0] is "--query" or "--consultar"))
 // what the desktop window calls; the CLI exists so the whole loop is testable without a UI.
 if (args.Length > 0 && args[0] is "--pack")
 	return ModuleInstaller.Pack(args[1..]);
+// SIGN one (publisher-side too): the same code that verifies on the phone signs here.
+if (args.Length > 0 && args[0] is "--sign")
+	return PackageSignature.SignFromCli(args[1..]);
 if (args.Length > 0 && (args[0] is "--install-module" or "--instalar-modulo"))
 	return ModuleInstaller.InstallFromCli(args[1..]);
 

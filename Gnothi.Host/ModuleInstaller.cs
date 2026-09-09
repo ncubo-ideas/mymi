@@ -159,6 +159,13 @@ public static class ModuleInstaller
 		if (inspection.Form != PackageForm.Cargo)
 			return (false, "the package is a hosted module (web/); this installer takes cargo modules only. Not installed.");
 
+		// A signed package whose signature does not hold is not installed, whatever its manifest
+		// says: somebody touched it after it was signed. An unsigned one still installs, and the
+		// line below says so.
+		SignatureVerification signature = PackageSignature.Verify(zip);
+		if (signature.State == SignatureState.Invalid)
+			return (false, "REJECTED, not installed: the package is signed and the signature does not hold -- " + signature.Detail);
+
 		string moduleDir = Path.Combine(modulesRoot, manifest.Module);
 		string moduleRootFull = Path.GetFullPath(moduleDir);
 
@@ -182,6 +189,7 @@ public static class ModuleInstaller
 		bool enabled = inspection.InstallEnabled;
 		IReadOnlyList<string> disabledTools = [];
 		string? priorGranted = null;
+		PackageSigner? priorSigner = null;
 		if (File.Exists(installationPath))
 		{
 			try
@@ -190,9 +198,17 @@ public static class ModuleInstaller
 				enabled = prior.Enabled;
 				disabledTools = prior.DisabledTools;
 				if (!string.IsNullOrWhiteSpace(prior.GrantedFolder)) priorGranted = prior.GrantedFolder;
+				priorSigner = prior.Signer;
 			}
 			catch { /* unreadable prior: rewritten */ }
 		}
+
+		// THE PIN. The same key as before keeps its date; a new key -first install, or a change-
+		// is remembered from now. The change itself is said in the line below: the desktop has no
+		// sheet to warn on, so the message is where the person reads it.
+		PackageSigner? signer = signature.State != SignatureState.Valid ? null
+			: priorSigner is not null && string.Equals(priorSigner.Public, signature.Public, StringComparison.Ordinal) ? priorSigner
+			: new PackageSigner { KeyId = signature.KeyId, Public = signature.Public, Since = DateTimeOffset.UtcNow.ToString("O") };
 
 		Directory.CreateDirectory(moduleDir);
 		foreach (ZipArchiveEntry e in zip.Entries)
@@ -221,6 +237,7 @@ public static class ModuleInstaller
 			GrantedFolder = granted.Replace("\\", "/"),
 			Enabled = enabled,
 			DisabledTools = disabledTools,
+			Signer = signer,
 		};
 
 		// Legible y no Default: este archivo lo abre la persona con un editor.
@@ -231,6 +248,12 @@ public static class ModuleInstaller
 		line.Append($"\n  from     : {Path.GetFileName(package)}");
 		line.Append($"\n  into     : {moduleDir}");
 		line.Append($"\n  checked  : cargo, {inspection.Files} files, {inspection.Bytes / 1024.0:F1} KB, no engine of its own");
+		line.Append("\n  signature: " + (signature.State == SignatureState.Valid
+			? $"valid, key '{signature.KeyId}' ({PackageSignature.Fingerprint(signature.Public)})"
+				+ (priorSigner is null ? " -- first time, remembered"
+					: string.Equals(priorSigner.Public, signature.Public, StringComparison.Ordinal) ? $" -- the same key as before, since {priorSigner.Since}"
+					: $" -- KEY CHANGED: the earlier package was signed by '{priorSigner.KeyId}' ({PackageSignature.Fingerprint(priorSigner.Public)})")
+			: "none (the package is not signed)"));
 		line.Append($"\n  data     : {granted}");
 		line.Append($"\n  enabled  : {enabled}");
 		if (!enabled)
@@ -256,6 +279,9 @@ public static class ModuleInstaller
 		[JsonPropertyName("grantedFolder")] public string GrantedFolder { get; init; } = "";
 		[JsonPropertyName("enabled")] public bool Enabled { get; init; }
 		[JsonPropertyName("disabledTools")] public IReadOnlyList<string> DisabledTools { get; init; } = [];
+
+		// The pin: the key the package was signed with, when it was. See Installation.Signer.
+		[JsonPropertyName("signer")] public PackageSigner? Signer { get; init; }
 	}
 
 	internal sealed record ShellFile

@@ -43,6 +43,14 @@ public sealed record Installation
 	// never open.
 	[JsonPropertyName("caratula")] public AllowedCaller? AllowedCaller { get; init; }
 
+	// THE KEY THIS MODULE WAS ACCEPTED WITH, when its package came signed: the pin. Written at
+	// the first install and kept while the key stays the same, so the next package can be
+	// answered with "signed with the same key as last time" -- or with "the key changed", which
+	// is the one thing an origin check cannot say. Absent for an unsigned package. It lives here
+	// and not in the manifest for the usual reason: what Gnothi remembers about a module is
+	// Gnothi's, not the module's to rewrite.
+	[JsonPropertyName("signer")] public PackageSigner? Signer { get; init; }
+
 	// Por HostJson y no por Deserialize<T>: el lector se genera al compilar, sin reflexion.
 	// Ver HostJson.cs -- de eso depende que el Host pueda embeberse bajo NativeAOT.
 	public static Installation Read(string path)
