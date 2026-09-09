@@ -5,7 +5,7 @@ namespace Gimnasio.Dominio
 	// UN TRAMO EN QUE LA MEMBRESIA ESTUVO EN MORA.
 	//
 	// DERIVADO, NUNCA GUARDADO: nace de un cambio a en-mora y termina en el siguiente
-	// cambio a al-dia -o queda ABIERTO si ese cambio todavia no llego-. Es la Suspension
+	// cambio a activo -o queda ABIERTO si ese cambio todavia no llego-. Es la Suspension
 	// de Fowler (fig. 8.4): un Time Period sobre la accion, calculado a partir de los
 	// cambios de estado.
 	//
@@ -13,31 +13,31 @@ namespace Gimnasio.Dominio
 	// (regla 13), y el fin, que puede no existir, viaja como bool mas valor y no como
 	// hueco. El Hasta nace GUARDADO por TieneFin: es la leccion de T1 -el Fin del Plan
 	// se leia sin guarda y devolvia 01/01/0001 en silencio- aplicada al codigo nuevo.
-	internal sealed class PeriodoEnMora
+	internal sealed class PeriodoInactivo
 	{
 		private readonly DateTime hasta;
 
 		internal DateTime Desde { get; }
 		internal bool TieneFin { get; }
 
-		private PeriodoEnMora(DateTime desde, bool tieneFin, DateTime hasta)
+		private PeriodoInactivo(DateTime desde, bool tieneFin, DateTime hasta)
 		{
 			Desde = desde.Date;
 			TieneFin = tieneFin;
 			this.hasta = hasta.Date;
 		}
 
-		internal static PeriodoEnMora Abierto(DateTime desde)
+		internal static PeriodoInactivo Abierto(DateTime desde)
 		{
-			return new PeriodoEnMora(desde, false, DateTime.MaxValue);
+			return new PeriodoInactivo(desde, false, DateTime.MaxValue);
 		}
 
-		internal static PeriodoEnMora Cerrado(DateTime desde, DateTime hasta)
+		internal static PeriodoInactivo Cerrado(DateTime desde, DateTime hasta)
 		{
 			if (hasta.Date < desde.Date)
 				throw new ArgumentOutOfRangeException(nameof(hasta), hasta,
 					"Un periodo en mora no puede terminar antes de empezar.");
-			return new PeriodoEnMora(desde, true, hasta);
+			return new PeriodoInactivo(desde, true, hasta);
 		}
 
 		internal DateTime Hasta
@@ -46,7 +46,7 @@ namespace Gimnasio.Dominio
 			{
 				if (!TieneFin)
 					throw new InvalidOperationException(
-						"Este periodo en mora sigue abierto: el gimnasio no mando todavia el cambio a al-dia. "
+						"Este periodo en mora sigue abierto: el gimnasio no mando todavia el cambio a activo. "
 						+ "Preguntar TieneFin antes.");
 				return hasta;
 			}

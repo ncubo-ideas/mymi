@@ -21,7 +21,7 @@ namespace Gimnasio.Dominio
 		// otros dos numeros para que el actor pueda decir "esperaba 27, no 39, porque
 		// estuviste dos semanas en mora": el numero al lado de la palabra, capitulo 0 §8.
 		// Cero cuando no hubo mora, que es lo que el v1 asumia siempre.
-		internal int DiasDescontadosPorMora { get; }
+		internal int DiasDescontadosPorInactividad { get; }
 
 		internal Incumplimiento(int diasEsperados, int diasQueFue)
 			: this(diasEsperados, diasQueFue, 0) { }
@@ -31,7 +31,7 @@ namespace Gimnasio.Dominio
 			if (diasDescontadosPorMora < 0)
 				throw new ArgumentOutOfRangeException(nameof(diasDescontadosPorMora), diasDescontadosPorMora,
 					"No se pueden descontar dias negativos.");
-			DiasDescontadosPorMora = diasDescontadosPorMora;
+			DiasDescontadosPorInactividad = diasDescontadosPorMora;
 
 			if (diasEsperados < 0)
 				throw new ArgumentOutOfRangeException(nameof(diasEsperados), diasEsperados,

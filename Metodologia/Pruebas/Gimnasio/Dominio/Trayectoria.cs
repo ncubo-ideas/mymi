@@ -115,7 +115,7 @@ namespace Gimnasio.Dominio
 			return Tendencia.Entre(primera, ultima, ultima.DireccionDeseable(Objetivo), referencia);
 		}
 
-		// ------------------------------------------------- la progresion de lo indicado
+		// ------------------------------------------------- la progresion de lo prescrito
 
 		internal bool SePuedeVerLaProgresionDe(string nombreDelEjercicio)
 		{
@@ -125,24 +125,88 @@ namespace Gimnasio.Dominio
 			return cuantos >= 2;
 		}
 
-		// Cuanto subio lo que el gimnasio le PIDE levantar. No es lo que levanto: eso no
-		// lo registra nadie, y el archivo lo dice.
+		// COMO CAMBIO LO QUE LE PRESCRIBEN (N8, v3): del primer plan que trae el ejercicio
+		// al ultimo, sobre lo que el papel SI trae -volumen para fuerza, minutos para
+		// cardio-. Total el predicado: dos planes, y la misma forma en los dos. Un
+		// ejercicio que paso de fuerza a cardio no se compara, y se dice.
+		internal bool SePuedeCompararLoPrescrito(string nombreDelEjercicio)
+		{
+			if (!SePuedeVerLaProgresionDe(nombreDelEjercicio)) return false;
+			Prescripcion primera = PrimerPlanQuePrescribe(nombreDelEjercicio).Prescrito(nombreDelEjercicio).Prescripcion;
+			Prescripcion ultima = UltimoPlanQuePrescribe(nombreDelEjercicio).Prescrito(nombreDelEjercicio).Prescripcion;
+			return primera.EsDeLaMismaFormaQue(ultima);
+		}
+
+		internal Progresion ComoCambioLoPrescrito(string nombreDelEjercicio)
+		{
+			if (!SePuedeCompararLoPrescrito(nombreDelEjercicio))
+				throw new InvalidOperationException(
+					"Ese ejercicio aparece en menos de dos planes, o se prescribe de dos formas distintas. "
+					+ "Preguntar SePuedeCompararLoPrescrito antes.");
+
+			return new Progresion(nombreDelEjercicio,
+				PrimerPlanQuePrescribe(nombreDelEjercicio).Prescrito(nombreDelEjercicio).Prescripcion,
+				UltimoPlanQuePrescribe(nombreDelEjercicio).Prescrito(nombreDelEjercicio).Prescripcion);
+		}
+
+		// LA PREGUNTA DEL V2, GUARDADA: cuanto subio lo que le PIDEN levantar. Desde el v3
+		// el peso es opcional -el papel no lo trae-, asi que solo se contesta cuando el
+		// primer y el ultimo plan que traen el ejercicio lo indican. Si el detalle del
+		// ejercicio algun dia trae peso (hueco 17), esta pregunta vuelve a vivir sola.
+		internal bool SePuedeVerLaProgresionDelPeso(string nombreDelEjercicio)
+		{
+			return SePuedeVerLaProgresionDe(nombreDelEjercicio)
+				&& PrimerPlanQuePrescribe(nombreDelEjercicio).TienePesoIndicadoPara(nombreDelEjercicio)
+				&& UltimoPlanQuePrescribe(nombreDelEjercicio).TienePesoIndicadoPara(nombreDelEjercicio);
+		}
+
 		internal decimal CuantoSubioLoIndicado(string nombreDelEjercicio)
 		{
-			if (!SePuedeVerLaProgresionDe(nombreDelEjercicio))
+			if (!SePuedeVerLaProgresionDelPeso(nombreDelEjercicio))
 				throw new InvalidOperationException(
-					"Ese ejercicio aparece en menos de dos planes, asi que no hay progresion. "
-					+ "Preguntar SePuedeVerLaProgresionDe antes.");
+					"Ese ejercicio aparece en menos de dos planes, o alguno no indica peso -el papel no lo trae-. "
+					+ "Preguntar SePuedeVerLaProgresionDelPeso antes.");
 
-			decimal primero = 0m, ultimo = 0m;
-			bool hayPrimero = false;
+			return UltimoPlanQuePrescribe(nombreDelEjercicio).PesoIndicadoDe(nombreDelEjercicio)
+				- PrimerPlanQuePrescribe(nombreDelEjercicio).PesoIndicadoDe(nombreDelEjercicio);
+		}
+
+		private Plan PrimerPlanQuePrescribe(string nombreDelEjercicio)
+		{
 			foreach (Plan p in planes)
-			{
-				if (!p.Prescribe(nombreDelEjercicio)) continue;
-				if (!hayPrimero) { primero = p.PesoIndicadoDe(nombreDelEjercicio); hayPrimero = true; }
-				ultimo = p.PesoIndicadoDe(nombreDelEjercicio);
-			}
-			return ultimo - primero;
+				if (p.Prescribe(nombreDelEjercicio)) return p;
+			throw new KeyNotFoundException("Ningun plan prescribe ese ejercicio.");
+		}
+
+		private Plan UltimoPlanQuePrescribe(string nombreDelEjercicio)
+		{
+			Plan encontrado = null;
+			foreach (Plan p in planes)
+				if (p.Prescribe(nombreDelEjercicio)) encontrado = p;
+			if (encontrado == null)
+				throw new KeyNotFoundException("Ningun plan prescribe ese ejercicio.");
+			return encontrado;
+		}
+
+		// ------------------------------------------ lo que dijo el aparato (N7, v3)
+
+		// Si la ultima medicion que trae esta medida vino con la palabra del aparato.
+		// Total: contesta que no para una medida que nunca se midio o llego sin ella.
+		internal bool ElAparatoEvaluo(string nombreDeLaMedida)
+		{
+			if (CuantasVecesSeMidio(nombreDeLaMedida) == 0) return false;
+			return UltimaCon(nombreDeLaMedida).Traida(nombreDeLaMedida).TieneEvaluacionDelAparato;
+		}
+
+		// La evaluacion del aparato sobre la ultima medicion. Es la LECTURA de esa
+		// medida, y no la calcula la app: la registro. Al lado va ComoVengo, que si es de
+		// la app: el aparato dice "Increased" hoy; no dice "y viene bajando".
+		internal EvaluacionDelAparato LoQueDijoElAparato(string nombreDeLaMedida)
+		{
+			if (!ElAparatoEvaluo(nombreDeLaMedida))
+				throw new InvalidOperationException(
+					"El aparato no evaluo esa medida, o nunca se midio. Preguntar ElAparatoEvaluo antes.");
+			return UltimaCon(nombreDeLaMedida).Traida(nombreDeLaMedida).EvaluacionDelAparato;
 		}
 
 		// ------------------------------------------------------------ el incumplimiento
@@ -167,10 +231,10 @@ namespace Gimnasio.Dominio
 			// Las asistencias que hubiera DURANTE la mora se cuentan igual: son hechos que
 			// el gimnasio mando, y un hecho no se borra porque contradiga una regla. Lo
 			// que cambia es lo esperado, no lo ocurrido.
-			int diasEnMora = membresia.DiasEnMoraEntre(elPlan.Inicio, elPlan.Fin);
-			int semanasEnMora = diasEnMora / 7;
+			int diasInactiva = membresia.DiasInactivaEntre(elPlan.Inicio, elPlan.Fin);
+			int semanasInactiva = diasInactiva / 7;
 			int esperadosSinMora = elPlan.DiasEsperadosEnTodoElPlan();
-			int esperados = elPlan.DiasEsperadosDescontando(semanasEnMora);
+			int esperados = elPlan.DiasEsperadosDescontando(semanasInactiva);
 
 			return new Incumplimiento(esperados, fue, esperadosSinMora - esperados);
 		}
@@ -320,12 +384,36 @@ namespace Gimnasio.Dominio
 				&& diasPorSemana >= 1 && diasPorSemana <= 7;
 		}
 
-		internal bool PuedePrescribir(DateTime inicioDelPlan, string nombreDelEjercicio, decimal peso)
+		// LAS DOS FORMAS DE PRESCRIBIR DEL PAPEL (v3), cada una con su predicado total que
+		// junta todo lo que el constructor rechazaria (regla 17).
+		internal bool PuedePrescribirFuerza(DateTime inicioDelPlan, string nombreDelEjercicio,
+			int series, int repeticionesDesde, int repeticionesHasta, int descansoEnSegundos)
+		{
+			return PuedePrescribir(inicioDelPlan, nombreDelEjercicio)
+				&& series > 0 && repeticionesDesde > 0 && repeticionesHasta >= repeticionesDesde
+				&& descansoEnSegundos >= 0;
+		}
+
+		internal bool PuedePrescribirCardio(DateTime inicioDelPlan, string nombreDelEjercicio, int minutos)
+		{
+			return PuedePrescribir(inicioDelPlan, nombreDelEjercicio) && minutos > 0;
+		}
+
+		private bool PuedePrescribir(DateTime inicioDelPlan, string nombreDelEjercicio)
 		{
 			if (!TienePlanQueEmpezo(inicioDelPlan)) return false;
 			if (string.IsNullOrWhiteSpace(nombreDelEjercicio)) return false;
-			if (peso < 0) return false;
 			return !PlanQueEmpezo(inicioDelPlan).Prescribe(nombreDelEjercicio);
+		}
+
+		// El peso es un hecho aparte sobre un ejercicio ya prescrito -solo cuando la maquina
+		// lo requiere-, y entra UNA vez (regla 18).
+		internal bool PuedeIndicarPeso(DateTime inicioDelPlan, string nombreDelEjercicio, decimal peso)
+		{
+			if (peso <= 0) return false;
+			if (!TienePlanQueEmpezo(inicioDelPlan)) return false;
+			Plan p = PlanQueEmpezo(inicioDelPlan);
+			return p.Prescribe(nombreDelEjercicio) && !p.Prescrito(nombreDelEjercicio).TienePesoIndicado;
 		}
 
 		internal bool PuedeTerminarPlan(DateTime inicioDelPlan, DateTime fin)
@@ -339,11 +427,18 @@ namespace Gimnasio.Dominio
 		{
 			if (!Medida.EsUnNombreConocido(queSeMidio)) return false;
 			if (valor <= 0) return false;
-			if (string.Equals(queSeMidio, "grasa", StringComparison.OrdinalIgnoreCase) && valor >= 100m)
-				return false;
+			if (Medida.EsUnPorcentaje(queSeMidio) && valor >= 100m) return false;
 			foreach (Medicion m in mediciones)
 				if (m.Fecha.Date == fecha.Date) return !m.Trae(queSeMidio);
 			return true;
+		}
+
+		// La misma medida, con la palabra del aparato al lado (N7). Rechaza ademas una
+		// palabra que el papel no mostro.
+		internal bool PuedeRegistrarMedidaEvaluada(DateTime fecha, string queSeMidio, decimal valor, string evaluacion)
+		{
+			return PuedeRegistrarMedida(fecha, queSeMidio, valor)
+				&& EvaluacionDelAparato.EsUnNombreConocido(evaluacion);
 		}
 
 		// ------------------------------------------ los tres comandos de la membresia (v2)
@@ -364,9 +459,20 @@ namespace Gimnasio.Dominio
 			return membresia.PuedeRegistrarPago(fecha, monto);
 		}
 
-		internal bool PuedeAnunciarCobro(DateTime vence, decimal monto)
+		internal bool PuedeAnunciarCobro(DateTime vence, decimal monto, string etiqueta,
+			DateTime cubreDesde, DateTime cubreHasta, string nombreDelEstado)
 		{
-			return membresia.PuedeAnunciarCobro(vence, monto);
+			return membresia.PuedeAnunciarCobro(vence, monto, etiqueta, cubreDesde, cubreHasta, nombreDelEstado);
+		}
+
+		internal bool PuedeContratar(string producto, int diaDeVencimiento, DateTime fecha)
+		{
+			return membresia.PuedeContratar(producto, diaDeVencimiento, fecha);
+		}
+
+		internal bool PuedeCambiarEstadoDeCobro(DateTime vence, string nombreDelEstado)
+		{
+			return membresia.PuedeCambiarEstadoDeCobro(vence, nombreDelEstado);
 		}
 
 		// ------------------------------------------------------------------ internos

@@ -39,7 +39,7 @@ namespace Gimnasio.Dominio
 			foreach (EjercicioPrescrito ya in ejercicios)
 				if (ya.EsElMismo(ejercicio.Nombre))
 					throw new InvalidOperationException(
-						$"El plan ya prescribe '{ejercicio.Nombre}'. Dos pesos indicados para el mismo "
+						$"El plan ya prescribe '{ejercicio.Nombre}'. Dos prescripciones del mismo "
 						+ "ejercicio en el mismo plan no se pueden distinguir.");
 			ejercicios.Add(ejercicio);
 		}
@@ -64,12 +64,27 @@ namespace Gimnasio.Dominio
 			return false;
 		}
 
-		internal decimal PesoIndicadoDe(string nombreDelEjercicio)
+		internal EjercicioPrescrito Prescrito(string nombreDelEjercicio)
 		{
 			foreach (EjercicioPrescrito e in ejercicios)
-				if (e.EsElMismo(nombreDelEjercicio)) return e.PesoIndicado;
+				if (e.EsElMismo(nombreDelEjercicio)) return e;
 			throw new KeyNotFoundException(
 				$"Este plan no prescribe '{nombreDelEjercicio}'. Preguntar Prescribe antes.");
+		}
+
+		// EL PESO ES OPCIONAL DESDE EL V3: el papel no lo trae (hueco 17). Total: un plan
+		// que no prescribe el ejercicio, o lo prescribe sin peso, contesta que no.
+		internal bool TienePesoIndicadoPara(string nombreDelEjercicio)
+		{
+			return Prescribe(nombreDelEjercicio) && Prescrito(nombreDelEjercicio).TienePesoIndicado;
+		}
+
+		internal decimal PesoIndicadoDe(string nombreDelEjercicio)
+		{
+			if (!TienePesoIndicadoPara(nombreDelEjercicio))
+				throw new InvalidOperationException(
+					$"Este plan no indica peso para '{nombreDelEjercicio}'. Preguntar TienePesoIndicadoPara antes.");
+			return Prescrito(nombreDelEjercicio).PesoIndicado;
 		}
 
 		// EL DOMINIO DICE DURACIONES, NO FECHAS -regla 14 del substrato-. Las semanas
@@ -101,12 +116,12 @@ namespace Gimnasio.Dominio
 		//
 		// Es el cambio que cierra el hueco 9: hoy un plan con dos semanas en mora
 		// esperaba lo mismo que uno sin mora, y contaba la mora como incumplimiento.
-		internal int DiasEsperadosDescontando(int semanasEnMora)
+		internal int DiasEsperadosDescontando(int semanasInactiva)
 		{
-			if (semanasEnMora < 0)
-				throw new ArgumentOutOfRangeException(nameof(semanasEnMora), semanasEnMora,
+			if (semanasInactiva < 0)
+				throw new ArgumentOutOfRangeException(nameof(semanasInactiva), semanasInactiva,
 					"No se pueden descontar semanas negativas.");
-			int semanas = SemanasQueDuro() - semanasEnMora;
+			int semanas = SemanasQueDuro() - semanasInactiva;
 			return (semanas > 0 ? semanas : 0) * DiasEsperadosPorSemana;
 		}
 	}

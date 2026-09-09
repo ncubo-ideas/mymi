@@ -117,16 +117,65 @@ namespace Gimnasio.App
 			.PerformCheckThenCommand();
 		}
 
-		public string PrescribirEjercicio(DateTime inicioDelPlan, string nombreDelEjercicio, decimal pesoIndicado)
+		// LAS DOS FORMAS DE PRESCRIBIR DEL PAPEL (v3): "3x 12 a 15 · 00:30" y "15 minutos".
+		// Dos comandos y no uno con un tipo adentro: un ternario no unifica dos subclases
+		// (regla 12), y cada forma tiene su propia puerta total (regla 11). El peso YA NO
+		// viene aca: el papel no lo trae; si algun dia viene, entra por IndicarPeso.
+		public string PrescribirFuerza(DateTime inicioDelPlan, string nombreDelEjercicio,
+			int series, int repeticionesDesde, int repeticionesHasta, int descansoEnSegundos)
 		{
 			return app.Using(
 				scriptForChk: @"
-					Check(trayectoria.PuedePrescribir(@inicioDelPlan, @nombreDelEjercicio, @pesoIndicado)) Error 'no hay plan ese dia, o ya prescribe ese ejercicio';
+					Check(trayectoria.PuedePrescribirFuerza(@inicioDelPlan, @nombreDelEjercicio, @series, @repeticionesDesde, @repeticionesHasta, @descansoEnSegundos)) Error 'no hay plan ese dia, ya prescribe ese ejercicio, o los numeros no sirven';
 				",
 				@"
 					{
 						trayectoria.PlanQueEmpezo(@inicioDelPlan)
-							.Prescribir(EjercicioPrescrito(@nombreDelEjercicio, @pesoIndicado));
+							.Prescribir(EjercicioPrescrito.DeFuerza(@nombreDelEjercicio, @series, @repeticionesDesde, @repeticionesHasta, @descansoEnSegundos));
+					}
+				")
+			.WithParameters(p => {
+				p["inicioDelPlan", typeof(DateTime)] = inicioDelPlan;
+				p["nombreDelEjercicio", typeof(string)] = nombreDelEjercicio;
+				p["series", typeof(int)] = series;
+				p["repeticionesDesde", typeof(int)] = repeticionesDesde;
+				p["repeticionesHasta", typeof(int)] = repeticionesHasta;
+				p["descansoEnSegundos", typeof(int)] = descansoEnSegundos;
+			})
+			.PerformCheckThenCommand();
+		}
+
+		public string PrescribirCardio(DateTime inicioDelPlan, string nombreDelEjercicio, int minutos)
+		{
+			return app.Using(
+				scriptForChk: @"
+					Check(trayectoria.PuedePrescribirCardio(@inicioDelPlan, @nombreDelEjercicio, @minutos)) Error 'no hay plan ese dia, ya prescribe ese ejercicio, o los minutos no sirven';
+				",
+				@"
+					{
+						trayectoria.PlanQueEmpezo(@inicioDelPlan)
+							.Prescribir(EjercicioPrescrito.DeCardio(@nombreDelEjercicio, @minutos));
+					}
+				")
+			.WithParameters(p => {
+				p["inicioDelPlan", typeof(DateTime)] = inicioDelPlan;
+				p["nombreDelEjercicio", typeof(string)] = nombreDelEjercicio;
+				p["minutos", typeof(int)] = minutos;
+			})
+			.PerformCheckThenCommand();
+		}
+
+		// EL PESO, cuando la maquina lo requiere (hueco 17, Jorge). Un hecho aparte sobre un
+		// ejercicio ya prescrito.
+		public string IndicarPeso(DateTime inicioDelPlan, string nombreDelEjercicio, decimal pesoIndicado)
+		{
+			return app.Using(
+				scriptForChk: @"
+					Check(trayectoria.PuedeIndicarPeso(@inicioDelPlan, @nombreDelEjercicio, @pesoIndicado)) Error 'no hay ese ejercicio en ese plan, ya tiene peso, o el peso no sirve';
+				",
+				@"
+					{
+						trayectoria.PlanQueEmpezo(@inicioDelPlan).Prescrito(@nombreDelEjercicio).IndicarPeso(@pesoIndicado);
 					}
 				")
 			.WithParameters(p => {
@@ -194,9 +243,76 @@ namespace Gimnasio.App
 			.PerformCheckThenCommand();
 		}
 
+		// LA MEDIDA CON LA PALABRA DEL APARATO AL LADO (v3, N7). "Increased", "High":
+		// llega como hecho y el dominio la registra. El parametro no se llama @evaluacion
+		// a secas por costumbre de la regla 10, aunque el tipo se llame distinto.
+		public string RegistrarMedidaEvaluada(DateTime fechaDeLaMedicion, string queSeMidio, decimal valor,
+			string loQueDijoElAparato)
+		{
+			return app.Using(
+				scriptForChk: @"
+					Check(trayectoria.PuedeRegistrarMedidaEvaluada(@fechaDeLaMedicion, @queSeMidio, @valor, @loQueDijoElAparato)) Error 'esa medida no existe, el valor no sirve, ya estaba en esa hoja, o el aparato nunca dijo esa palabra';
+				",
+				@"
+					{
+						trayectoria.AbrirMedicionDe(@fechaDeLaMedicion)
+							.Registrar(Medida.Crear(@queSeMidio, @valor).ConEvaluacion(EvaluacionDelAparato.PorNombre(@loQueDijoElAparato)));
+					}
+				")
+			.WithParameters(p => {
+				p["fechaDeLaMedicion", typeof(DateTime)] = fechaDeLaMedicion;
+				p["queSeMidio", typeof(string)] = queSeMidio;
+				p["valor", typeof(decimal)] = valor;
+				p["loQueDijoElAparato", typeof(string)] = loQueDijoElAparato;
+			})
+			.PerformCheckThenCommand();
+		}
+
 		// ------------------------------------------------------ la membresia (v2, N1)
 
-		// LA BANDERA DEL GIMNASIO. Manda "en mora" y despues "al dia"; el dominio registra
+		// EL PRODUCTO Y EL DIA DE VENCIMIENTO (v3, N11): "Plan Black", "Dia 10". El
+		// parametro no se llama @producto ni @plan: el segundo taparia a la clase Plan
+		// (regla 10), y "plan" ya son tres cosas en el papel.
+		public string Contratar(string nombreDelProducto, int diaDeVencimiento, DateTime fechaDeContratacion)
+		{
+			return app.Using(
+				scriptForChk: @"
+					Check(trayectoria.PuedeContratar(@nombreDelProducto, @diaDeVencimiento, @fechaDeContratacion)) Error 'es el mismo producto que ya tiene, el dia no es del mes, o es anterior a la ultima contratacion';
+				",
+				@"
+					{
+						trayectoria.Membresia.Contratar(Contratacion(@fechaDeContratacion, @nombreDelProducto, @diaDeVencimiento));
+					}
+				")
+			.WithParameters(p => {
+				p["nombreDelProducto", typeof(string)] = nombreDelProducto;
+				p["diaDeVencimiento", typeof(int)] = diaDeVencimiento;
+				p["fechaDeContratacion", typeof(DateTime)] = fechaDeContratacion;
+			})
+			.PerformCheckThenCommand();
+		}
+
+		// EL COBRO PASO A PAGADO (hueco 18, Jorge). Se nombra por su vencimiento; el mismo
+		// estado otra vez se rechaza (regla 18).
+		public string CambiarEstadoDeCobro(DateTime venceElCobro, string comoEstaElCobro)
+		{
+			return app.Using(
+				scriptForChk: @"
+					Check(trayectoria.PuedeCambiarEstadoDeCobro(@venceElCobro, @comoEstaElCobro)) Error 'no hay un cobro con ese vencimiento, el estado no existe, o ya estaba asi';
+				",
+				@"
+					{
+						trayectoria.Membresia.CambiarEstadoDeCobro(@venceElCobro, EstadoDeCobro.PorNombre(@comoEstaElCobro));
+					}
+				")
+			.WithParameters(p => {
+				p["venceElCobro", typeof(DateTime)] = venceElCobro;
+				p["comoEstaElCobro", typeof(string)] = comoEstaElCobro;
+			})
+			.PerformCheckThenCommand();
+		}
+
+		// LA BANDERA DEL GIMNASIO. Manda "no activa" y despues "activo"; el dominio registra
 		// el cambio con su fecha y deriva el periodo. El parametro no se llama @estado ni
 		// @estadoDeMembresia porque taparia al tipo (regla 10). El Check rechaza el mismo
 		// estado dos veces: es el mismo hecho otra vez (regla 18).
@@ -236,20 +352,29 @@ namespace Gimnasio.App
 			.PerformCheckThenCommand();
 		}
 
-		public string AnunciarCobro(DateTime venceElCobro, decimal montoDelCobro)
+		// EL COBRO TAL COMO EL PAPEL LO TRAE (v3, N10): etiqueta, monto, vencimiento, el
+		// periodo que cubre y su estado. El estado no se llama @estado: taparia a los
+		// tipos de estado (regla 10).
+		public string AnunciarCobro(DateTime venceElCobro, decimal montoDelCobro, string etiquetaDelCobro,
+			DateTime cubreDesde, DateTime cubreHasta, string comoEstaElCobro)
 		{
 			return app.Using(
 				scriptForChk: @"
-					Check(trayectoria.PuedeAnunciarCobro(@venceElCobro, @montoDelCobro)) Error 'el monto no sirve, o ya hay un cobro con ese vencimiento';
+					Check(trayectoria.PuedeAnunciarCobro(@venceElCobro, @montoDelCobro, @etiquetaDelCobro, @cubreDesde, @cubreHasta, @comoEstaElCobro)) Error 'el monto o el periodo no sirven, el estado no existe, ya hay un cobro con ese vencimiento, o se solapa con otro';
 				",
 				@"
 					{
-						trayectoria.Membresia.AnunciarCobro(Cobro(@venceElCobro, @montoDelCobro));
+						trayectoria.Membresia.AnunciarCobro(
+							Cobro(@venceElCobro, @montoDelCobro, @etiquetaDelCobro, @cubreDesde, @cubreHasta, EstadoDeCobro.PorNombre(@comoEstaElCobro)));
 					}
 				")
 			.WithParameters(p => {
 				p["venceElCobro", typeof(DateTime)] = venceElCobro;
 				p["montoDelCobro", typeof(decimal)] = montoDelCobro;
+				p["etiquetaDelCobro", typeof(string)] = etiquetaDelCobro;
+				p["cubreDesde", typeof(DateTime)] = cubreDesde;
+				p["cubreHasta", typeof(DateTime)] = cubreHasta;
+				p["comoEstaElCobro", typeof(string)] = comoEstaElCobro;
 			})
 			.PerformCheckThenCommand();
 		}
@@ -272,6 +397,89 @@ namespace Gimnasio.App
 			}
 		}
 
+		// COMO CAMBIO LO QUE LE PRESCRIBEN (v3, N8): la pregunta 2 reformulada sobre lo
+		// que el papel trae. Carrier plano: antes, despues, cambio, en que se mide.
+		public string ComoCambioLoPrescrito(string nombreDelEjercicio)
+		{
+			return app.Using(@"
+				{
+					progresion = trayectoria.ComoCambioLoPrescrito(@nombreDelEjercicio);
+					print progresion.NombreDelEjercicio ejercicio,
+						progresion.EnQueSeMide enQueSeMide,
+						progresion.Antes antes,
+						progresion.Despues despues,
+						progresion.Cambio cambio,
+						progresion.Subio subio;
+				}
+			")
+			.WithParameters(p => {
+				p["nombreDelEjercicio", typeof(string)] = nombreDelEjercicio;
+			})
+			.PerformQuery();
+		}
+
+		// LO QUE EL APARATO DIJO DE UNA MEDIDA (v3, N7), al lado de lo que la app dice del
+		// movimiento: el aparato lee el punto; la app lee la serie. Los dos juicios, y el
+		// primero ya no lo calcula la app.
+		public string LoQueDijoElAparato(string nombreDeLaMedida, decimal ruido, decimal noCreible)
+		{
+			return app.Using(@"
+				{
+					referencia = Referencia(@sinRango, @sinRango, @ruido, @noCreible);
+					tendencia = trayectoria.ComoVengo(@nombreDeLaMedida, referencia);
+					print trayectoria.LoQueDijoElAparato(@nombreDeLaMedida).Etiqueta elAparatoDijo,
+						tendencia.ToString() movimiento,
+						tendencia.Cambio cambio,
+						tendencia.Urgencia().ToString() urgencia;
+				}
+			")
+			.WithParameters(p => {
+				p["nombreDeLaMedida", typeof(string)] = nombreDeLaMedida;
+				p["sinRango", typeof(decimal)] = 0m;
+				p["ruido", typeof(decimal)] = ruido;
+				p["noCreible", typeof(decimal)] = noCreible;
+			})
+			.PerformQuery();
+		}
+
+		// QUE COBRO CUBRE UN DIA (v3, N10). El gimnasio manda el periodo de cada cobro;
+		// que cobro cubre el dia que entrene lo contesta la app.
+		public string CobroQueCubre(DateTime elDia)
+		{
+			return app.Using(@"
+				{
+					cobro = trayectoria.Membresia.CobroQueCubre(@elDia);
+					print cobro.Etiqueta etiqueta,
+						cobro.Monto monto,
+						cobro.Vence vence,
+						cobro.CubreDesde cubreDesde,
+						cobro.CubreHasta cubreHasta,
+						cobro.DiasQueCubre dias,
+						cobro.VenceDentroDelPeriodo venceDentroDelPeriodo,
+						cobro.Estado.Etiqueta comoEsta;
+				}
+			")
+			.WithParameters(p => {
+				p["elDia", typeof(DateTime)] = elDia;
+			})
+			.PerformQuery();
+		}
+
+		// EL PRODUCTO Y EL DIA DE VENCIMIENTO (v3, N11). Si el gimnasio nunca lo mando,
+		// falla diciendo que no se sabe.
+		public string ElProducto()
+		{
+			return app.Using(@"
+				{
+					print trayectoria.Membresia.Producto producto,
+						trayectoria.Membresia.DiaDeVencimiento venceElDia;
+				}
+			")
+			.PerformQuery();
+		}
+
+		// La pregunta del v2, guardada desde el v3: solo contesta si los dos planes traen
+		// peso. Hoy ninguno lo trae.
 		public decimal CuantoSubioLoIndicado(string nombreDelEjercicio)
 		{
 			using (RentedParameter alquilados = app.Actor.RentedParameters())
@@ -284,6 +492,21 @@ namespace Gimnasio.App
 				.PerformQuery();
 
 				return alquilados["cuanto"].GetValue<decimal>();
+			}
+		}
+
+		public bool SePuedeVerLaProgresionDelPeso(string nombreDelEjercicio)
+		{
+			using (RentedParameter alquilados = app.Actor.RentedParameters())
+			{
+				app.Actor.Using("@sePuede = trayectoria.SePuedeVerLaProgresionDelPeso(@nombreDelEjercicio);")
+				.WithParameters(alquilados, p => {
+					p["nombreDelEjercicio", typeof(string)] = nombreDelEjercicio;
+					p[Parameter.Out, "sePuede", typeof(bool)] = default;
+				})
+				.PerformQuery();
+
+				return alquilados["sePuede"].GetValue<bool>();
 			}
 		}
 
@@ -327,7 +550,7 @@ namespace Gimnasio.App
 				{
 					incumplimiento = trayectoria.IncumplimientoDe(trayectoria.PlanQueEmpezo(@inicioDelPlan));
 					print incumplimiento.DiasEsperados esperados,
-						incumplimiento.DiasDescontadosPorMora descontadosPorMora,
+						incumplimiento.DiasDescontadosPorInactividad descontadosPorInactividad,
 						incumplimiento.DiasQueFue fue,
 						incumplimiento.DiasQueFaltaron faltaron,
 						incumplimiento.Cumplio cumplio;
@@ -340,7 +563,7 @@ namespace Gimnasio.App
 		}
 
 		// EL ESTADO DE LA MEMBRESIA. Si el gimnasio nunca mando la bandera, la consulta
-		// falla diciendo que no se sabe -igual que ComoVoy sin mediciones-: no hay "al dia"
+		// falla diciendo que no se sabe -igual que ComoVoy sin mediciones-: no hay "activo"
 		// por defecto. La etiqueta es una hoja del tipo, no un ToString (regla 13).
 		public string EstadoDeLaMembresia()
 		{
@@ -359,10 +582,10 @@ namespace Gimnasio.App
 		// pedida. NO se imprime el fin: el de un periodo abierto no existe, y un nullable
 		// viaja como bool mas valor (regla 13). Va si cerro, y cuantos dias de la ventana
 		// estuvo en mora -que es lo que el plan descuenta-.
-		public string PeriodosEnMora(DateTime desde, DateTime hasta)
+		public string PeriodosInactivos(DateTime desde, DateTime hasta)
 		{
 			return app.Using(@"
-				foreach (elPeriodo in trayectoria.Membresia.PeriodosEnMora()) {
+				foreach (elPeriodo in trayectoria.Membresia.PeriodosInactivos()) {
 					print elPeriodo.Desde desde,
 						elPeriodo.TieneFin cerrado,
 						elPeriodo.DiasDentroDe(@desdeLaVentana, @hastaLaVentana) diasEnLaVentana;

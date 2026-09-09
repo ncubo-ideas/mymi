@@ -2,12 +2,19 @@ using System;
 
 namespace Gimnasio.Dominio
 {
-	// LA BANDERA QUE EL GIMNASIO MANDA: al dia o en mora.
+	// LA BANDERA QUE EL GIMNASIO MANDA SOBRE LA MEMBRESIA.
 	//
 	// Es SU evaluacion de la cuenta de Sonia -contra sus reglas, en un instante-, y aca
 	// llega como HECHO: la app la registra, no la recalcula. El gimnasio es la autoridad
 	// sobre su propia mora (paper 8), y la app no cruza cobros contra pagos para
 	// deducirla. Juicio N1 del v2, contestado por Jorge el 2026-09-07.
+	//
+	// CON LAS PALABRAS DEL GIMNASIO (N9, v3). El papel dice "Tu plan esta: Activo"; el
+	// otro estado es "No Activa" -Jorge, 2026-09-08, hueco 18 cerrado-. El v2 decia
+	// "al-dia" y "en-mora", que eran las palabras de la entrevista. Con el renombre, todo
+	// lo que el modelo derivaba de la mora -el periodo, los dias descontados del plan-
+	// paso a derivarse de la INACTIVIDAD: la bandera no dice por que la membresia no esta
+	// activa, y el plan no espera dias mientras no lo este, sea la razon que sea.
 	//
 	// CONJUNTO CERRADO de dos, comparado por nombre, con resolutor total desde primitivo
 	// (regla 11): desde un comando solo se puede nombrar. No es un bool: un bool no se
@@ -23,8 +30,8 @@ namespace Gimnasio.Dominio
 
 		private EstadoDeMembresia(string nombre) { this.nombre = nombre; }
 
-		internal static EstadoDeMembresia AlDia() { return new EstadoDeMembresia("al-dia"); }
-		internal static EstadoDeMembresia EnMora() { return new EstadoDeMembresia("en-mora"); }
+		internal static EstadoDeMembresia Activo() { return new EstadoDeMembresia("activo"); }
+		internal static EstadoDeMembresia NoActiva() { return new EstadoDeMembresia("no-activa"); }
 
 		// RESOLUTOR TOTAL. Un nombre desconocido revienta: un conjunto cerrado no tiene
 		// miembro "vacio" fuera de el, asi que "no encontrado" es un bug del llamador,
@@ -34,11 +41,11 @@ namespace Gimnasio.Dominio
 			ArgumentException.ThrowIfNullOrWhiteSpace(nombre);
 			switch (nombre.Trim().ToLowerInvariant())
 			{
-				case "al-dia": return AlDia();
-				case "en-mora": return EnMora();
+				case "activo": return Activo();
+				case "no-activa": return NoActiva();
 				default:
 					throw new ArgumentOutOfRangeException(nameof(nombre), nombre,
-						"Estado de membresia desconocido. Los que existen son: al-dia, en-mora.");
+						"Estado de membresia desconocido. Los que existen son: activo, no-activa.");
 			}
 		}
 
@@ -49,8 +56,8 @@ namespace Gimnasio.Dominio
 			if (string.IsNullOrWhiteSpace(nombre)) return false;
 			switch (nombre.Trim().ToLowerInvariant())
 			{
-				case "al-dia":
-				case "en-mora": return true;
+				case "activo":
+				case "no-activa": return true;
 				default: return false;
 			}
 		}
@@ -60,8 +67,8 @@ namespace Gimnasio.Dominio
 			return otro != null && otro.nombre == nombre;
 		}
 
-		internal bool EsMora() { return nombre == "en-mora"; }
-		internal bool EsAlDia() { return nombre == "al-dia"; }
+		internal bool EsNoActiva() { return nombre == "no-activa"; }
+		internal bool EsActivo() { return nombre == "activo"; }
 
 		// LA ETIQUETA ES UNA HOJA, no solo un ToString. Regla 13, corregida el
 		// 2026-09-04: decidir que se ve del material es del actor, y para eso el

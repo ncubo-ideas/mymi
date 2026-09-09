@@ -22,7 +22,7 @@ namespace Gimnasio.Dominio
 	// journal sigue siendo reconstruible.
 	//
 	// SIN ESTADO DECLARADO NO HAY "AL DIA" POR DEFECTO. Si el gimnasio nunca mando la
-	// bandera, la membresia no esta al dia ni en mora: NO SE SABE, y EstaEnMora lo dice
+	// bandera, la membresia no esta al dia ni en mora: NO SE SABE, y EstaInactiva lo dice
 	// reventando. Arrancar en al-dia seria un juicio inventado con mejores modales
 	// (capitulo 3 §3). Lo que SI es total es el descuento: sin mora registrada se
 	// descuenta cero, porque solo se descuenta lo que el gimnasio dijo -"si el gimnasio
@@ -32,10 +32,57 @@ namespace Gimnasio.Dominio
 		private readonly List<CambioDeEstado> cambios = new List<CambioDeEstado>();
 		private readonly List<Pago> pagos = new List<Pago>();
 		private readonly List<Cobro> cobros = new List<Cobro>();
+		private readonly List<Contratacion> contrataciones = new List<Contratacion>();
 
 		internal int CuantosCambiosDeEstado { get { return cambios.Count; } }
 		internal int CuantosPagos { get { return pagos.Count; } }
 		internal int CuantosCobros { get { return cobros.Count; } }
+
+		// ------------------------------------------------ el producto contratado (N11, v3)
+
+		// "Plan Black" y "Fecha de vencimiento: Dia 10" entran juntos como una contratacion
+		// con fecha. Se guarda la historia porque la persona puede cambiar de producto;
+		// la vigente es la ultima.
+		internal void Contratar(Contratacion contratacion)
+		{
+			ArgumentNullException.ThrowIfNull(contratacion);
+			if (!PuedeContratar(contratacion.Producto, contratacion.DiaDeVencimiento, contratacion.Fecha))
+				throw new InvalidOperationException(
+					"Esa contratacion no entra: es el mismo producto que ya tiene, o es anterior a la ultima. "
+					+ "Preguntar PuedeContratar antes.");
+			contrataciones.Add(contratacion);
+		}
+
+		// EL MISMO PRODUCTO OTRA VEZ ES EL MISMO HECHO OTRA VEZ (regla 18); y no se
+		// contrata hacia atras.
+		internal bool PuedeContratar(string producto, int diaDeVencimiento, DateTime fecha)
+		{
+			if (string.IsNullOrWhiteSpace(producto)) return false;
+			if (diaDeVencimiento < 1 || diaDeVencimiento > 31) return false;
+			if (contrataciones.Count == 0) return true;
+			Contratacion ultima = contrataciones[contrataciones.Count - 1];
+			if (ultima.EsElMismoProducto(producto)) return false;
+			return fecha.Date > ultima.Fecha;
+		}
+
+		internal bool TieneProductoContratado { get { return contrataciones.Count > 0; } }
+
+		internal string Producto
+		{
+			get { ExigirContratacion(); return contrataciones[contrataciones.Count - 1].Producto; }
+		}
+
+		internal int DiaDeVencimiento
+		{
+			get { ExigirContratacion(); return contrataciones[contrataciones.Count - 1].DiaDeVencimiento; }
+		}
+
+		private void ExigirContratacion()
+		{
+			if (!TieneProductoContratado)
+				throw new InvalidOperationException(
+					"El gimnasio nunca mando que producto tiene esta membresia. Preguntar TieneProductoContratado antes.");
+		}
 
 		// ------------------------------------------------------------------ lo que entra
 
@@ -61,10 +108,52 @@ namespace Gimnasio.Dominio
 		internal void AnunciarCobro(Cobro cobro)
 		{
 			ArgumentNullException.ThrowIfNull(cobro);
-			if (!PuedeAnunciarCobro(cobro.Vence, cobro.Monto))
+			if (!PuedeAnunciarCobro(cobro.Vence, cobro.Monto, cobro.Etiqueta, cobro.CubreDesde, cobro.CubreHasta,
+					cobro.Estado.Etiqueta))
 				throw new InvalidOperationException(
-					"Ya hay un cobro anunciado para ese vencimiento. Preguntar PuedeAnunciarCobro antes.");
+					"Ya hay un cobro anunciado para ese vencimiento, o el cobro no es valido. "
+					+ "Preguntar PuedeAnunciarCobro antes.");
 			cobros.Add(cobro);
+		}
+
+		// EL GIMNASIO DICE QUE UN COBRO PASO A PAGADO (hueco 18). Se identifica por su
+		// vencimiento; el predicado junta cobro inexistente, estado desconocido y mismo
+		// estado otra vez (reglas 17 y 18).
+		internal bool PuedeCambiarEstadoDeCobro(DateTime vence, string nombreDelEstado)
+		{
+			if (!EstadoDeCobro.EsUnNombreConocido(nombreDelEstado)) return false;
+			foreach (Cobro c in cobros)
+				if (c.EsElMismoQue(vence)) return c.PuedeCambiarA(EstadoDeCobro.PorNombre(nombreDelEstado));
+			return false;
+		}
+
+		internal void CambiarEstadoDeCobro(DateTime vence, EstadoDeCobro estado)
+		{
+			ArgumentNullException.ThrowIfNull(estado);
+			foreach (Cobro c in cobros)
+				if (c.EsElMismoQue(vence)) { c.CambiarEstado(estado); return; }
+			throw new KeyNotFoundException(
+				"No hay un cobro con ese vencimiento. Preguntar PuedeCambiarEstadoDeCobro antes.");
+		}
+
+		// ------------------------------------------------ que cobro cubre un dia (N10, v3)
+
+		// PREDICADO TOTAL. El gimnasio manda cada cobro con el periodo que cubre; la app
+		// puede decir que cobro cubre el dia que la persona entreno. A lo sumo uno: dos
+		// cobros sobre el mismo dia se rechazan al anunciar (hueco 22, cerrado por Jorge).
+		internal bool TieneCobroQueCubre(DateTime dia)
+		{
+			foreach (Cobro c in cobros)
+				if (c.Cubre(dia)) return true;
+			return false;
+		}
+
+		internal Cobro CobroQueCubre(DateTime dia)
+		{
+			foreach (Cobro c in cobros)
+				if (c.Cubre(dia)) return c;
+			throw new KeyNotFoundException(
+				"Ningun cobro anunciado cubre ese dia. Preguntar TieneCobroQueCubre antes.");
 		}
 
 		// -------------------------------- UN PREDICADO POR COMANDO (reglas 17 y 18)
@@ -73,7 +162,7 @@ namespace Gimnasio.Dominio
 		// mora" no esta diciendo nada nuevo, y un replay lo repite siempre. Es la
 		// leccion de Asistio: el comando que no podia fallar conto 30 dias dos veces.
 		// Y no se cambia hacia atras: los cambios quedan en orden, que es lo que
-		// PeriodosEnMora necesita para derivar los tramos.
+		// PeriodosInactivos necesita para derivar los tramos.
 		internal bool PuedeCambiarA(EstadoDeMembresia estado, DateTime fecha)
 		{
 			if (estado == null) return false;
@@ -100,11 +189,20 @@ namespace Gimnasio.Dominio
 			return true;
 		}
 
-		internal bool PuedeAnunciarCobro(DateTime vence, decimal monto)
+		// Junta todo lo que el constructor de Cobro rechazaria (regla 17) mas la identidad
+		// por vencimiento (regla 18) y el estado desconocido (regla 11).
+		internal bool PuedeAnunciarCobro(DateTime vence, decimal monto, string etiqueta,
+			DateTime cubreDesde, DateTime cubreHasta, string nombreDelEstado)
 		{
 			if (monto <= 0) return false;
+			if (string.IsNullOrWhiteSpace(etiqueta)) return false;
+			if (cubreHasta.Date < cubreDesde.Date) return false;
+			if (!EstadoDeCobro.EsUnNombreConocido(nombreDelEstado)) return false;
 			foreach (Cobro c in cobros)
+			{
 				if (c.EsElMismoQue(vence)) return false;
+				if (c.SeSolapaCon(cubreDesde, cubreHasta)) return false;   // hueco 22: es un error
+			}
 			return true;
 		}
 
@@ -113,10 +211,10 @@ namespace Gimnasio.Dominio
 		internal bool TieneEstadoDeclarado { get { return cambios.Count > 0; } }
 
 		// GUARDADO: sin bandera no hay estado, y no se inventa uno.
-		internal bool EstaEnMora()
+		internal bool EstaInactiva()
 		{
 			ExigirEstado();
-			return cambios[cambios.Count - 1].Estado.EsMora();
+			return cambios[cambios.Count - 1].Estado.EsNoActiva();
 		}
 
 		// La hoja para el actor: el nombre del estado actual. Guardado igual.
@@ -132,44 +230,44 @@ namespace Gimnasio.Dominio
 		// PREDICADO TOTAL: contesta para cualquier fecha. Antes del primer cambio, o sin
 		// cambios, no consta mora -que no es lo mismo que "al dia", pero para descontar
 		// del plan es lo unico honesto: solo se descuenta lo que el gimnasio dijo-.
-		internal bool EstabaEnMoraEl(DateTime fecha)
+		internal bool EstabaInactivaEl(DateTime fecha)
 		{
 			DateTime f = fecha.Date;
 			CambioDeEstado vigente = null;
 			foreach (CambioDeEstado c in cambios)
 				if (c.Fecha <= f) vigente = c;
-			return vigente != null && vigente.Estado.EsMora();
+			return vigente != null && vigente.Estado.EsNoActiva();
 		}
 
 		// ------------------------------------------ los periodos, derivados (fig. 8.4)
 
-		// Cada tramo en mora, del cambio a en-mora al siguiente cambio a al-dia. El
+		// Cada tramo en mora, del cambio a en-mora al siguiente cambio a activo. El
 		// ultimo puede quedar ABIERTO. Se recalcula cada vez: no se guarda.
-		internal IReadOnlyList<PeriodoEnMora> PeriodosEnMora()
+		internal IReadOnlyList<PeriodoInactivo> PeriodosInactivos()
 		{
-			List<PeriodoEnMora> periodos = new List<PeriodoEnMora>();
-			bool enMora = false;
+			List<PeriodoInactivo> periodos = new List<PeriodoInactivo>();
+			bool inactiva = false;
 			DateTime desde = DateTime.MinValue;
 			foreach (CambioDeEstado c in cambios)
 			{
-				if (c.Estado.EsMora() && !enMora) { enMora = true; desde = c.Fecha; }
-				else if (c.Estado.EsAlDia() && enMora)
+				if (c.Estado.EsNoActiva() && !inactiva) { inactiva = true; desde = c.Fecha; }
+				else if (c.Estado.EsActivo() && inactiva)
 				{
-					periodos.Add(PeriodoEnMora.Cerrado(desde, c.Fecha));
-					enMora = false;
+					periodos.Add(PeriodoInactivo.Cerrado(desde, c.Fecha));
+					inactiva = false;
 				}
 			}
-			if (enMora) periodos.Add(PeriodoEnMora.Abierto(desde));
+			if (inactiva) periodos.Add(PeriodoInactivo.Abierto(desde));
 			return periodos;
 		}
 
 		// CUANTOS DIAS EN MORA CAEN DENTRO DE [desde, hasta]. Total: cero sin mora. Es
 		// el numero que N2 le descuenta al plan: durante la mora las asistencias
 		// esperadas no se esperan (Fowler 8.4, la suspension).
-		internal int DiasEnMoraEntre(DateTime desde, DateTime hasta)
+		internal int DiasInactivaEntre(DateTime desde, DateTime hasta)
 		{
 			int dias = 0;
-			foreach (PeriodoEnMora p in PeriodosEnMora())
+			foreach (PeriodoInactivo p in PeriodosInactivos())
 				dias += p.DiasDentroDe(desde, hasta);
 			return dias;
 		}

@@ -40,6 +40,10 @@ namespace Gimnasio.Consola
 			LaProgresionDeLoIndicado();
 			CuantoFalta();
 			LaAusencia();
+			LaEvaluacionDelAparatoEsHecho();
+			LasDosFormasDePrescribir();
+			ElCobroCubreUnPeriodo();
+			ElProductoContratado();
 
 			Console.WriteLine();
 			Console.WriteLine(fallas == 0
@@ -142,19 +146,15 @@ namespace Gimnasio.Consola
 
 			Perfil sonia = PerfilDeSonia();
 
-			Ok("El peso se compara como IMC, y su rango no depende del perfil",
-				new Peso(70m).ClaveDeReferencia(sonia) == "imc");
+			// HUECO 19, CERRADO POR JORGE: el IMC lo manda el gimnasio; el peso ya no lo calcula.
+			Ok("El peso ya no se lee contra un rango propio: el IMC llega del gimnasio", new Peso(70m).ElAparatoLaEvalua);
+			Revienta("Y pedirle su clave de referencia revienta", () => new Peso(70m).ClaveDeReferencia(sonia));
 			Ok("La grasa depende de genero y edad",
 				new PorcentajeDeGrasa(30m).ClaveDeReferencia(sonia) == "grasa:femenino:42");
 			Ok("La cintura depende solo del genero",
 				new Cintura(88m).ClaveDeReferencia(sonia) == "cintura:femenino");
 			Ok("La masa muscular no depende de nada del perfil",
 				new MasaMuscular(30m).ClaveDeReferencia(sonia) == "masa-muscular");
-
-			// Lo propio del peso: es la unica que no se compara consigo misma.
-			decimal imc = new Peso(70m).ValorComparable(sonia);
-			Ok("Y el peso no se compara consigo mismo: 70 kg con 1,65 m son 25,7 de IMC",
-				Math.Round(imc, 1) == 25.7m);
 		}
 
 		// ------------------------------------------------------------------ juicio 3
@@ -233,48 +233,50 @@ namespace Gimnasio.Consola
 			Plan p = new Plan(new DateTime(2026, 1, 5), 3);
 			p.Terminar(new DateTime(2026, 4, 6));
 
-			// SIN BANDERA NO SE SABE, Y SE DICE. Ni al dia ni en mora por defecto.
+			// SIN BANDERA NO SE SABE, Y SE DICE. Ni activo ni en mora por defecto.
 			Trayectoria sinBandera = new Trayectoria();
 			sinBandera.Agregar(p);
 			Ok("Una membresia recien nacida no tiene estado declarado", !sinBandera.Membresia.TieneEstadoDeclarado);
-			Revienta("Preguntar si esta en mora sin bandera revienta en vez de inventar 'al dia'",
-				() => sinBandera.Membresia.EstaEnMora());
+			Revienta("Preguntar si esta en mora sin bandera revienta en vez de inventar 'activo'",
+				() => sinBandera.Membresia.EstaInactiva());
 			Ok("Pero el descuento es total: sin mora registrada se descuenta cero",
-				sinBandera.IncumplimientoDe(p).DiasDescontadosPorMora == 0
+				sinBandera.IncumplimientoDe(p).DiasDescontadosPorInactividad == 0
 				&& sinBandera.IncumplimientoDe(p).DiasEsperados == 39);
 
 			// EL HUECO 9, CERRADO: dos semanas en mora dentro del plan esperan dos semanas menos.
 			Trayectoria t = new Trayectoria();
 			t.Agregar(p);
-			t.Membresia.CambiarEstado(EstadoDeMembresia.AlDia(), new DateTime(2026, 1, 5));
-			t.Membresia.CambiarEstado(EstadoDeMembresia.EnMora(), new DateTime(2026, 2, 2));
-			t.Membresia.CambiarEstado(EstadoDeMembresia.AlDia(), new DateTime(2026, 2, 16));
+			t.Membresia.CambiarEstado(EstadoDeMembresia.Activo(), new DateTime(2026, 1, 5));
+			t.Membresia.CambiarEstado(EstadoDeMembresia.NoActiva(), new DateTime(2026, 2, 2));
+			t.Membresia.CambiarEstado(EstadoDeMembresia.Activo(), new DateTime(2026, 2, 16));
 
-			Ok("Del 2 al 16 de febrero son 15 dias en mora", t.Membresia.DiasEnMoraEntre(p.Inicio, p.Fin) == 15);
+			Ok("Del 2 al 16 de febrero son 15 dias en mora", t.Membresia.DiasInactivaEntre(p.Inicio, p.Fin) == 15);
 			Incumplimiento inc = t.IncumplimientoDe(p);
 			Ok("Dos semanas en mora: el plan espera 33 dias, no 39", inc.DiasEsperados == 33);
-			Ok("Y dice cuantos desconto: 6", inc.DiasDescontadosPorMora == 6);
-			Ok("Hoy esta al dia", !t.Membresia.EstaEnMora());
-			Ok("Y el 10 de febrero estaba en mora", t.Membresia.EstabaEnMoraEl(new DateTime(2026, 2, 10)));
-			Ok("El periodo derivado es uno, y cerrado", t.Membresia.PeriodosEnMora().Count == 1
-				&& t.Membresia.PeriodosEnMora()[0].TieneFin);
+			Ok("Y dice cuantos desconto: 6", inc.DiasDescontadosPorInactividad == 6);
+			Ok("Hoy esta activa", !t.Membresia.EstaInactiva());
+			Ok("Y el 10 de febrero estaba en mora", t.Membresia.EstabaInactivaEl(new DateTime(2026, 2, 10)));
+			Ok("El periodo derivado es uno, y cerrado", t.Membresia.PeriodosInactivos().Count == 1
+				&& t.Membresia.PeriodosInactivos()[0].TieneFin);
 
 			// LA MISMA BANDERA DOS VECES ES EL MISMO HECHO OTRA VEZ (regla 18): se rechaza.
-			Ok("Volver a decir 'al dia' estando al dia no entra",
-				!t.PuedeCambiarEstadoDeMembresia("al-dia", new DateTime(2026, 3, 1)));
+			Ok("Volver a decir 'activo' estando activa no entra",
+				!t.PuedeCambiarEstadoDeMembresia("activo", new DateTime(2026, 3, 1)));
 			Revienta("Y forzarlo revienta",
-				() => t.Membresia.CambiarEstado(EstadoDeMembresia.AlDia(), new DateTime(2026, 3, 1)));
+				() => t.Membresia.CambiarEstado(EstadoDeMembresia.Activo(), new DateTime(2026, 3, 1)));
+			Ok("La palabra del v2, 'al-dia', ya no existe: la del papel es 'activo' (N9)",
+				!EstadoDeMembresia.EsUnNombreConocido("al-dia"));
 			Ok("Un cambio con fecha anterior al ultimo tampoco entra",
-				!t.PuedeCambiarEstadoDeMembresia("en-mora", new DateTime(2026, 1, 20)));
+				!t.PuedeCambiarEstadoDeMembresia("no-activa", new DateTime(2026, 1, 20)));
 			Ok("Un estado que no existe tampoco",
 				!t.PuedeCambiarEstadoDeMembresia("suspendida", new DateTime(2026, 3, 1)));
 
 			// UN PERIODO ABIERTO se descuenta hasta el fin del plan, y su Hasta esta guardado.
 			Trayectoria u = new Trayectoria();
 			u.Agregar(p);
-			u.Membresia.CambiarEstado(EstadoDeMembresia.EnMora(), new DateTime(2026, 3, 20));
-			Ok("Sigue en mora", u.Membresia.EstaEnMora());
-			PeriodoEnMora abierto = u.Membresia.PeriodosEnMora()[0];
+			u.Membresia.CambiarEstado(EstadoDeMembresia.NoActiva(), new DateTime(2026, 3, 20));
+			Ok("Sigue en mora", u.Membresia.EstaInactiva());
+			PeriodoInactivo abierto = u.Membresia.PeriodosInactivos()[0];
 			Ok("El periodo esta abierto", !abierto.TieneFin);
 			Revienta("Preguntarle el fin a un periodo abierto revienta: es la leccion de T1",
 				() => { DateTime fin = abierto.Hasta; });
@@ -286,9 +288,10 @@ namespace Gimnasio.Consola
 			t.Membresia.RegistrarPago(new Pago(new DateTime(2026, 1, 5), 25000m));
 			Ok("El mismo pago otra vez no entra", !t.PuedeRegistrarPago(new DateTime(2026, 1, 5), 25000m));
 			Revienta("Y forzarlo revienta", () => t.Membresia.RegistrarPago(new Pago(new DateTime(2026, 1, 5), 25000m)));
-			Ok("Un cobro entra", t.PuedeAnunciarCobro(new DateTime(2026, 2, 5), 25000m));
-			t.Membresia.AnunciarCobro(new Cobro(new DateTime(2026, 2, 5), 25000m));
-			Ok("El mismo vencimiento no se anuncia dos veces", !t.PuedeAnunciarCobro(new DateTime(2026, 2, 5), 25000m));
+			DateTime vence = new DateTime(2026, 2, 10), desde = new DateTime(2026, 1, 24), hasta = new DateTime(2026, 2, 23);
+			Ok("Un cobro entra", t.PuedeAnunciarCobro(vence, 25000m, "Enero", desde, hasta, "abierto"));
+			t.Membresia.AnunciarCobro(new Cobro(vence, 25000m, "Enero", desde, hasta, EstadoDeCobro.Abierto()));
+			Ok("El mismo vencimiento no se anuncia dos veces", !t.PuedeAnunciarCobro(vence, 25000m, "Enero", desde, hasta, "abierto"));
 			Revienta("Un pago de cero no es un pago", () => new Pago(new DateTime(2026, 1, 5), 0m));
 		}
 
@@ -296,27 +299,37 @@ namespace Gimnasio.Consola
 
 		private static void LaProgresionDeLoIndicado()
 		{
-			Titulo("La progresion es de lo PRESCRITO, no de lo levantado");
+			Titulo("La progresion es de lo PRESCRITO, no de lo levantado -y desde el v3, sobre lo que el papel trae-");
 
 			Trayectoria t = new Trayectoria();
 
 			Plan uno = new Plan(new DateTime(2026, 1, 5), 3);
-			uno.Prescribir(new EjercicioPrescrito("prensa", 40m));
+			uno.Prescribir(EjercicioPrescrito.DeFuerza("prensa", 3, 12, 15, 30));
 			uno.Terminar(new DateTime(2026, 4, 6));
 			t.Agregar(uno);
 
 			Ok("Con un solo plan no hay progresion", !t.SePuedeVerLaProgresionDe("prensa"));
-			Revienta("Y pedirla revienta", () => t.CuantoSubioLoIndicado("prensa"));
+			Revienta("Y pedirla revienta", () => t.ComoCambioLoPrescrito("prensa"));
 
 			Plan dos = new Plan(new DateTime(2026, 4, 7), 3);
-			dos.Prescribir(new EjercicioPrescrito("prensa", 55m));
+			dos.Prescribir(EjercicioPrescrito.DeFuerza("prensa", 4, 12, 15, 30));
 			t.Agregar(dos);
 
-			Ok("Con dos planes si", t.SePuedeVerLaProgresionDe("prensa"));
-			Ok("Y subio 15 kilos lo que le piden", t.CuantoSubioLoIndicado("prensa") == 15m);
+			Ok("Con dos planes si", t.SePuedeCompararLoPrescrito("prensa"));
+			Progresion prog = t.ComoCambioLoPrescrito("prensa");
+			Ok("De 3x15 a 4x15: el volumen subio 15 repeticiones", prog.EnQueSeMide == "volumen" && prog.Cambio == 15m && prog.Subio);
 
 			Revienta("Un plan no puede prescribir dos veces el mismo ejercicio",
-				() => dos.Prescribir(new EjercicioPrescrito("prensa", 60m)));
+				() => dos.Prescribir(EjercicioPrescrito.DeFuerza("prensa", 4, 12, 15, 30)));
+
+			// EL PESO YA NO ESTA EN EL PAPEL (hueco 17): la pregunta del v2 sigue, guardada.
+			Ok("Sin peso indicado no hay 'cuanto subio lo que levanto'", !t.SePuedeVerLaProgresionDelPeso("prensa"));
+			Revienta("Y pedirlo revienta en vez de inventar cero", () => t.CuantoSubioLoIndicado("prensa"));
+			uno.Prescrito("prensa").IndicarPeso(40m);
+			dos.Prescrito("prensa").IndicarPeso(55m);
+			Ok("Si el detalle algun dia trae peso, la pregunta del v2 vuelve: subio 15 kilos",
+				t.SePuedeVerLaProgresionDelPeso("prensa") && t.CuantoSubioLoIndicado("prensa") == 15m);
+			Revienta("El peso se indica una vez (regla 18)", () => uno.Prescrito("prensa").IndicarPeso(45m));
 		}
 
 		// ----------------------------------------------------------------- que falta
@@ -383,6 +396,157 @@ namespace Gimnasio.Consola
 			// para el plan que termino el 6.
 			Ok("Con dos dias de gracia, el primero tambien queda sin medir",
 				t.PlanesQueTerminaronSinMedicion(2).Count == 2);
+		}
+
+		// ----------------------------------------------- lo que el papel trajo (v3, N7)
+
+		private static void LaEvaluacionDelAparatoEsHecho()
+		{
+			Titulo("La evaluacion del aparato llega como hecho, y la app no la recalcula (N7)");
+
+			Perfil sonia = PerfilDeSonia();
+			Referencia cualquiera = new Referencia(0m, 10m, 1m, 5m);
+
+			Medida visceral = Medida.Crear("grasa-visceral", 12m);
+			Ok("Las cinco medidas nuevas se crean por nombre", visceral is GrasaVisceral
+				&& Medida.Crear("imc", 24m) is IndiceDeMasaCorporal
+				&& Medida.Crear("agua", 50m) is Agua
+				&& Medida.Crear("metabolismo-basal", 1400m) is MetabolismoBasal
+				&& Medida.Crear("masa-osea", 2.5m) is MasaOsea);
+			Ok("Y las cuatro del v2 siguen", Medida.EsUnNombreConocido("cintura") && Medida.EsUnNombreConocido("masa-muscular"));
+			Revienta("Cien por ciento de agua no existe", () => Medida.Crear("agua", 100m));
+
+			Ok("Una medida nueva sabe que el aparato la evalua", visceral.ElAparatoLaEvalua);
+			Ok("Y una del v2 sabe que no", !new Cintura(88m).ElAparatoLaEvalua);
+			Revienta("Leerla contra un rango propio revienta: el aparato ya la leyo",
+				() => visceral.Leer(sonia, cualquiera));
+			Revienta("Y no tiene clave de referencia: nadie dijo de que dependeria",
+				() => visceral.ClaveDeReferencia(sonia));
+
+			Ok("Recien creada no trae evaluacion", !visceral.TieneEvaluacionDelAparato);
+			Revienta("Y pedirla revienta en vez de inventar 'normal'", () => { EvaluacionDelAparato e = visceral.EvaluacionDelAparato; });
+			visceral.ConEvaluacion(EvaluacionDelAparato.PorNombre("high"));
+			Ok("Con la palabra del aparato, la trae tal cual", visceral.EvaluacionDelAparato.Etiqueta == "high");
+			Revienta("Y no se anota dos veces", () => visceral.ConEvaluacion(EvaluacionDelAparato.High()));
+			Revienta("Una palabra que el papel no mostro revienta", () => EvaluacionDelAparato.PorNombre("normal"));
+			Revienta("Y la meta del aparato -'Didn't reach goals'- no entra: Jorge la saco (hueco 20)",
+				() => EvaluacionDelAparato.PorNombre("didnt-reach-goals"));
+
+			// LOS DOS JUICIOS SIGUEN SIENDO DOS: el aparato dice el punto, la app dice la serie.
+			Objetivo bajar = new Objetivo();
+			bajar.Agregar(Meta.SoloDireccion("grasa-visceral", Direccion.Bajar()));
+			Trayectoria t = new Trayectoria();
+			t.DeclararPerfil(sonia);
+			t.DeclararObjetivo(bajar);
+			t.Agregar(MedicionCon(new DateTime(2026, 1, 10), Medida.Crear("grasa-visceral", 14m).ConEvaluacion(EvaluacionDelAparato.High())));
+			t.Agregar(MedicionCon(new DateTime(2026, 4, 10), Medida.Crear("grasa-visceral", 12m).ConEvaluacion(EvaluacionDelAparato.High())));
+			Ok("El aparato dice HIGH hoy...", t.LoQueDijoElAparato("grasa-visceral").Etiqueta == "high");
+			Ok("...y la app dice que MEJORA", t.ComoVengo("grasa-visceral", cualquiera).Mejora());
+			Revienta("ComoEstoy ya no existe para lo que el aparato evalua", () => t.ComoEstoy("grasa-visceral", cualquiera));
+			Ok("Una medida sin evaluacion contesta que el aparato no la evaluo", !t.ElAparatoEvaluo("cintura"));
+
+			// SIN META, NADA DE DIRECCION INVENTADA para las nuevas: la hoja del v3 no la firmo.
+			Trayectoria sinMeta = new Trayectoria();
+			sinMeta.DeclararPerfil(sonia);
+			sinMeta.DeclararObjetivo(new Objetivo());
+			sinMeta.Agregar(MedicionCon(new DateTime(2026, 1, 10), Medida.Crear("masa-osea", 2.5m)));
+			sinMeta.Agregar(MedicionCon(new DateTime(2026, 4, 10), Medida.Crear("masa-osea", 2.6m)));
+			Revienta("'La masa osea sube y punto' esta sin firmar: sin meta, revienta",
+				() => sinMeta.ComoVengo("masa-osea", cualquiera));
+		}
+
+		// ----------------------------------------------- las dos formas del papel (v3, N8)
+
+		private static void LasDosFormasDePrescribir()
+		{
+			Titulo("Fuerza y cardio se prescriben en escalas distintas, y no se comparan entre si (N8)");
+
+			EjercicioPrescrito remo = EjercicioPrescrito.DeFuerza("remo", 3, 12, 15, 30);
+			EjercicioPrescrito cardio = EjercicioPrescrito.DeCardio("caminadora", 15);
+
+			Ok("La fuerza dice '3x 12 a 15' con las palabras del papel", remo.Prescripcion.Etiqueta == "3x 12 a 15");
+			Ok("El cardio dice '15 minutos'", cardio.Prescripcion.Etiqueta == "15 minutos");
+			Ok("Su magnitud es el volumen: 45", remo.Prescripcion.Magnitud == 45m && remo.Prescripcion.EnQueSeMide == "volumen");
+			Ok("La del cardio son los minutos", cardio.Prescripcion.Magnitud == 15m && cardio.Prescripcion.EnQueSeMide == "minutos");
+			Ok("No son de la misma forma", !remo.Prescripcion.EsDeLaMismaFormaQue(cardio.Prescripcion));
+			Revienta("Un rango invertido no entra", () => new PrescripcionDeFuerza(3, 15, 12, 30));
+			Revienta("Cero minutos no es cardio", () => new PrescripcionDeCardio(0));
+
+
+			// Un ejercicio que cambia de forma entre planes no se compara, y se dice.
+			Trayectoria t = new Trayectoria();
+			Plan uno = new Plan(new DateTime(2026, 1, 5), 3);
+			uno.Prescribir(EjercicioPrescrito.DeCardio("bici", 10));
+			t.Agregar(uno);
+			Plan dos = new Plan(new DateTime(2026, 4, 7), 3);
+			dos.Prescribir(EjercicioPrescrito.DeFuerza("bici", 3, 12, 15, 30));
+			t.Agregar(dos);
+			Ok("Aparece en dos planes...", t.SePuedeVerLaProgresionDe("bici"));
+			Ok("...pero cambio de forma, asi que no se compara", !t.SePuedeCompararLoPrescrito("bici"));
+			Revienta("Y pedirlo revienta", () => t.ComoCambioLoPrescrito("bici"));
+		}
+
+		// -------------------------------------------------- el cobro con periodo (v3, N10)
+
+		private static void ElCobroCubreUnPeriodo()
+		{
+			Titulo("El cobro cubre un periodo, y el vencimiento cae adentro (N10)");
+
+			// Como en el papel: "Agosto" cubre del 24/08 al 23/09 y vence el 10/09.
+			Cobro agosto = new Cobro(new DateTime(2026, 9, 10), 100m, "Agosto",
+				new DateTime(2026, 8, 24), new DateTime(2026, 9, 23), EstadoDeCobro.Abierto());
+			Ok("Cubre 31 dias", agosto.DiasQueCubre == 31);
+			Ok("Cubre el 1 de septiembre", agosto.Cubre(new DateTime(2026, 9, 1)));
+			Ok("No cubre el 23 de agosto", !agosto.Cubre(new DateTime(2026, 8, 23)));
+			Ok("Y vence ADENTRO del periodo que cubre: se paga despues de empezar", agosto.VenceDentroDelPeriodo);
+			Ok("Esta abierto, con la palabra del gimnasio", agosto.Estado.EstaAbierto() && agosto.Estado.Etiqueta == "abierto");
+			Revienta("Un periodo invertido no entra", () => new Cobro(new DateTime(2026, 9, 10), 100m, "Agosto",
+				new DateTime(2026, 9, 23), new DateTime(2026, 8, 24), EstadoDeCobro.Abierto()));
+			Revienta("Un estado que nadie dijo revienta", () => EstadoDeCobro.PorNombre("vencido"));
+
+			// LA FASE CAMBIA: de abierto a pagado, cuando el gimnasio lo dice (hueco 18, Jorge).
+			Ok("Pasar a pagado entra", agosto.PuedeCambiarA(EstadoDeCobro.Pagado()));
+			agosto.CambiarEstado(EstadoDeCobro.Pagado());
+			Ok("Y ahora esta pagado", agosto.Estado.EstaPagado() && !agosto.Estado.EstaAbierto());
+			Ok("Pagado otra vez es el mismo hecho otra vez (regla 18)", !agosto.PuedeCambiarA(EstadoDeCobro.Pagado()));
+			Revienta("Y forzarlo revienta", () => agosto.CambiarEstado(EstadoDeCobro.Pagado()));
+
+			Trayectoria t = new Trayectoria();
+			Ok("Sin cobros, ningun dia esta cubierto", !t.Membresia.TieneCobroQueCubre(new DateTime(2026, 9, 1)));
+			Revienta("Y pedir el cobro revienta", () => t.Membresia.CobroQueCubre(new DateTime(2026, 9, 1)));
+			t.Membresia.AnunciarCobro(agosto);
+			t.Membresia.AnunciarCobro(new Cobro(new DateTime(2026, 10, 10), 100m, "Septiembre",
+				new DateTime(2026, 9, 24), new DateTime(2026, 10, 23), EstadoDeCobro.Abierto()));
+			Ok("El 1 de septiembre lo cubre 'Agosto'", t.Membresia.CobroQueCubre(new DateTime(2026, 9, 1)).Etiqueta == "Agosto");
+			Ok("El 24 de septiembre ya lo cubre 'Septiembre'", t.Membresia.CobroQueCubre(new DateTime(2026, 9, 24)).Etiqueta == "Septiembre");
+			Ok("El Check rechaza un estado desconocido antes de construir",
+				!t.PuedeAnunciarCobro(new DateTime(2026, 11, 10), 100m, "Octubre", new DateTime(2026, 10, 24), new DateTime(2026, 11, 23), "vencido"));
+			Ok("Dos cobros sobre el mismo dia son un error (hueco 22): el que se solapa no entra",
+				!t.PuedeAnunciarCobro(new DateTime(2026, 10, 15), 100m, "Otro", new DateTime(2026, 10, 1), new DateTime(2026, 10, 30), "abierto"));
+			Ok("Uno que empieza justo despues del ultimo si entra",
+				t.PuedeAnunciarCobro(new DateTime(2026, 11, 10), 100m, "Octubre", new DateTime(2026, 10, 24), new DateTime(2026, 11, 23), "abierto"));
+			Ok("Cambiar el estado de un cobro que no existe no entra",
+				!t.PuedeCambiarEstadoDeCobro(new DateTime(2026, 12, 10), "pagado"));
+			Ok("El de septiembre puede pasar a pagado", t.PuedeCambiarEstadoDeCobro(new DateTime(2026, 10, 10), "pagado"));
+		}
+
+		// -------------------------------------------- el producto y el dia (v3, N11)
+
+		private static void ElProductoContratado()
+		{
+			Titulo("El producto y el dia de vencimiento entran como contratacion (N11)");
+
+			Trayectoria t = new Trayectoria();
+			Ok("Sin contratacion no hay producto", !t.Membresia.TieneProductoContratado);
+			Revienta("Y pedirlo revienta en vez de inventar uno", () => { string p = t.Membresia.Producto; });
+
+			Ok("Contratar entra", t.PuedeContratar("Black", 10, new DateTime(2026, 8, 24)));
+			t.Membresia.Contratar(new Contratacion(new DateTime(2026, 8, 24), "Black", 10));
+			Ok("Y dice el producto y el dia", t.Membresia.Producto == "Black" && t.Membresia.DiaDeVencimiento == 10);
+			Ok("El mismo producto otra vez no entra (regla 18)", !t.PuedeContratar("black", 10, new DateTime(2026, 9, 1)));
+			Ok("Otro producto, despues, si", t.PuedeContratar("Otro", 10, new DateTime(2026, 9, 1)));
+			Ok("Pero no hacia atras", !t.PuedeContratar("Otro", 10, new DateTime(2026, 8, 1)));
+			Revienta("El dia 32 no es del mes", () => new Contratacion(new DateTime(2026, 8, 24), "Black", 32));
 		}
 
 		// ------------------------------------------------------------------ utilitarios
