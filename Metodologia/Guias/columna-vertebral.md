@@ -92,6 +92,15 @@ pasada para sus campos.
 espejo**: si al final el modelo se le parece, no agregaste nada. Se guarda para compararlo en la pasada
 4. Tiene varios nombres en la literatura, ninguno halagador — están en el [glosario](glosario.md#adoptados).
 
+<!-- regla: el-papel-manda-que-existe -->
+**El espejo se copia entero; el modelo no.** Esta pasada lee **todo** lo que el papel trae, sin filtrar
+— es lo barato, y es la línea base. Pero **el papel manda qué existe; la persona manda qué entra**: en
+la pasada 3 un campo que ninguna pregunta necesita **se anota y no entra**. Salió del gimnasio v3, donde
+Jorge sacó dos campos que el papel traía —el número de la máquina, una meta del aparato— con una
+pregunta: *"¿de qué serviría para saber si estoy mejorando?"*. Lo que no vale es sacar algo porque la
+institución ya lo muestra (ver la [hoja](hoja-de-la-entrevista.md), bloque 1); sacarlo porque ninguna
+pregunta lo usa es la pasada 3 haciendo su trabajo.
+
 **Terminaste cuando:** cada campo del papel está en la lista con su escala anotada, y la lista de verbos
 tiene los de la institución **y** los de la persona.
 
@@ -274,7 +283,7 @@ preguntas, y las cuatro tienen que dar que sí.**
 <!-- regla: las-cuatro-preguntas-de-parada -->
 | | La pregunta | Si da que no |
 |---|---|---|
-| **1 · Completitud** | ¿Cada dato que una pregunta necesita tiene origen — un campo del papel **o** un juicio declarado? | Descubriste un campo faltante, un evento faltante o **una decisión faltante**. Va al `HUECOS.md` |
+| **1 · Completitud** | ¿Cada dato que una pregunta necesita tiene origen — un campo del papel **o** un juicio declarado? **Y al revés:** ¿cada campo que entró lo necesita alguna pregunta? | Descubriste un campo faltante, un evento faltante o **una decisión faltante**. Va al `HUECOS.md`. Al revés: un campo que nadie usa — se anota y sale |
 | **2 · No-espejo** | ¿La columna de contraste tiene al menos una cosa, y ninguna venía en el papel? | Volvé a la descripción funcional |
 | **3 · Justificación** | ¿Cada clase opina por sí misma, y ninguna es una fase disfrazada? | Volvé a la pasada 4 |
 | **4 · Huecos con dueño** | ¿Todo lo que quedó sin decidir está **escrito y con dueño**? | Escribilo. Un `HUECOS.md` vacío en un dominio joven es sospechoso, no admirable |
@@ -345,8 +354,10 @@ Es la versión en lenguaje llano de la doctrina que está en
 fue cambiando. Se corrió tres veces antes de escribirse como guía: contra `Examenes`, el dominio de
 referencia —once de once decisiones coinciden—; contra la municipalidad, en vivo, con papeles reales
 —una hora doce, dos *"no sé"*, seis juicios firmados sin corregir—; y sobre una rebanada del gimnasio
-—la membresía del v2—. **Todavía no se corrió como guía**: su primera corrida completa es el v3 del
-gimnasio.
+—la membresía del v2—. **Como guía se corrió dos veces el 2026-09-08**: la municipalidad, de la pasada 4
+al dominio corriendo; y el **gimnasio v3**, la primera corrida completa con un papel real — veinte
+minutos del papel al verde, y de ahí salió la regla *el papel manda qué existe; la persona manda qué
+entra*. Ver su [bitácora](../Pruebas/Gimnasio/BITACORA.md).
 
 Lo que no resuelve, dicho para que nadie lo descubra tarde: **no produce el modelo completo**, sólo la
 columna vertebral — los casos de borde y el ciclo de vida aparecen construyendo y van al `HUECOS.md`;
