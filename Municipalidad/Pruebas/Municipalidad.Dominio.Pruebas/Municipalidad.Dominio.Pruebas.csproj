@@ -124,6 +124,18 @@
     <None Include="..\..\manifiesto.json"
           Link="manifiesto.json.dato"
           CopyToOutputDirectory="PreserveNewest" />
+
+    <!-- Y LAS DOS MITADES DEL PUENTE CON GNOTHI, desde que el modulo puede correr hospedado. Los dos
+         lados se nombran por CADENA -el JS invoca metodos de C# por su nombre, y el C# le pide
+         funciones al JS por el suyo-, asi que un nombre cambiado en uno solo compila igual y falla en
+         el aparato. Viajan como dato porque lo que se afirma es lo que dice el texto, no lo que la
+         reflexion ve: una cadena adentro de un cuerpo no la ve nadie. -->
+    <None Include="..\..\App\Municipalidad.Wasm\wwwroot\gnothi-interop.js"
+          Link="gnothi-interop.js.dato"
+          CopyToOutputDirectory="PreserveNewest" />
+    <None Include="..\..\App\Municipalidad.Wasm\PuenteDeGnothi.cs"
+          Link="PuenteDeGnothi.cs.dato"
+          CopyToOutputDirectory="PreserveNewest" />
   </ItemGroup>
 
 </Project>
