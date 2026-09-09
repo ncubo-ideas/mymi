@@ -116,9 +116,11 @@ body { min-height: 100dvh; }
     background: linear-gradient(150deg, var(--indigo-alto) 0%, var(--indigo) 62%, var(--indigo-medio) 100%);
 }
 
-.arranque__logo {
-    width: min(18rem, 62vw);
+.arranque__sello {
+    width: min(7rem, 30vw);
     height: auto;
+    fill: #FFFFFF;
+    opacity: .92;
 }
 
 .cargando {
@@ -195,19 +197,27 @@ h2 {
     margin-right: auto;
 }
 
-.marco__logo {
-    display: block;
+.marco__sello {
+    width: 2.5rem;
     height: 2.5rem;
-    width: auto;
     flex: none;
+    border-radius: .75rem;
+    background: rgba(255, 255, 255, .14);
+    display: grid;
+    place-items: center;
+    color: #FFFFFF;
+}
+
+.marco__sello svg {
+    width: 1.375rem;
+    height: 1.375rem;
+    fill: currentColor;
 }
 
 .marco__titulos {
     display: flex;
     flex-direction: column;
     min-width: 0;
-    padding-left: .875rem;
-    border-left: 1px solid rgba(255, 255, 255, .28);
 }
 
 .marco__nombre {

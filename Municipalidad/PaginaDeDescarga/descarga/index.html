@@ -6,7 +6,7 @@
 <title>Mi cuenta municipal</title>
 <meta name="description" content="Tu cuenta con la municipalidad, guardada en una carpeta tuya. Funciona sin conexión.">
 <meta name="theme-color" content="#2C306C">
-<link rel="icon" href="data:,">
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 48 48'%3E%3Crect width='48' height='48' rx='10' fill='%232C306C'/%3E%3Cg fill='%23fff' transform='translate(7 7) scale(.7)'%3E%3Cpath d='M24 4 2 17v5h44v-5L24 4Z'/%3E%3Crect x='5' y='25' width='5' height='13' rx='1'/%3E%3Crect x='16' y='25' width='5' height='13' rx='1'/%3E%3Crect x='27' y='25' width='5' height='13' rx='1'/%3E%3Crect x='38' y='25' width='5' height='13' rx='1'/%3E%3Crect x='2' y='41' width='44' height='4' rx='1.5'/%3E%3C/g%3E%3C/svg%3E">
 
 <style>
 :root {
@@ -79,14 +79,20 @@ header.marco {
     gap: 14px;
 }
 
-.marco__logo { display: block; height: 42px; width: auto; flex: none; }
-
-.marco__titulos {
-    display: flex;
-    flex-direction: column;
-    padding-left: 14px;
-    border-left: 1px solid rgba(255, 255, 255, .28);
+.marco__sello {
+    width: 42px;
+    height: 42px;
+    flex: none;
+    border-radius: 13px;
+    background: rgba(255, 255, 255, .14);
+    display: grid;
+    place-items: center;
+    color: var(--sobre-indigo);
 }
+
+.marco__sello svg { width: 23px; height: 23px; fill: currentColor; }
+
+.marco__titulos { display: flex; flex-direction: column; }
 
 .nombre { font-size: 16px; font-weight: 700; letter-spacing: -.01em; line-height: 1.2; }
 
@@ -199,7 +205,16 @@ footer { max-width: 780px; margin: 0 auto; padding: 0 24px 56px; }
 
 <header class="marco">
     <div class="marco__banda">
-        <img class="marco__logo" src="data:image/png;base64,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" alt="Municipalidad de San José">
+        <span class="marco__sello">
+            <svg viewBox="0 0 48 48" aria-hidden="true" focusable="false">
+                <path d="M24 4 2 17v5h44v-5L24 4Z" />
+                <rect x="5" y="25" width="5" height="13" rx="1" />
+                <rect x="16" y="25" width="5" height="13" rx="1" />
+                <rect x="27" y="25" width="5" height="13" rx="1" />
+                <rect x="38" y="25" width="5" height="13" rx="1" />
+                <rect x="2" y="41" width="44" height="4" rx="1.5" />
+            </svg>
+        </span>
         <div class="marco__titulos">
             <div class="nombre">Mi cuenta municipal</div>
             <div class="apunte">Tu cuenta, en tu carpeta</div>
@@ -249,7 +264,7 @@ footer { max-width: 780px; margin: 0 auto; padding: 0 24px 56px; }
         <h2>Todavía no se agrega a tu pantalla de inicio</h2>
         <p class="pendiente">
             Un navegador ofrece agregar una app a la pantalla de inicio solamente si la app le entrega
-            un ícono en su manifiesto, y ésta todavía no le entrega ninguno: el escudo ya está en la
+            un ícono en su manifiesto, y ésta todavía no le entrega ninguno: la marca ya está en la
             app y en la pestaña, pero no en el manifiesto, y si un navegador va a ofrecer instalarla
             es algo que nadie ha medido. Así que se abre desde el navegador, por su dirección.
             <strong>Lo demás funciona igual</strong>, sin conexión incluida.
@@ -277,9 +292,8 @@ footer { max-width: 780px; margin: 0 auto; padding: 0 24px 56px; }
 
 <footer>
     <p class="suave">
-        Esta app lleva el escudo y los colores de la Municipalidad de San José, y no es un sitio de la
-        Municipalidad de San José: es un prototipo que funciona, con tu cuenta guardada en tu propia
-        máquina. Esta página y la app que enlaza son ese prototipo.
+        Esta app no nombra a ninguna municipalidad. La institución que la entregue es la que pone su
+        nombre. Esta página y la app que enlaza son un prototipo que funciona.
     </p>
 </footer>
 
