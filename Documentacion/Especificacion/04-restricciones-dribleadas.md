@@ -212,6 +212,39 @@ No es hipotético: el peligro ya está documentado un piso más abajo — el jou
 
 ---
 
+## R13. 🚫 ChatGPT no puede ser la Puerta 1: sus conectores solo llegan a servidores remotos
+
+**El hecho (2026-09-09).** Los conectores de ChatGPT —Apps & Connectors, Developer Mode, Apps SDK— reciben **una URL de un servidor MCP remoto**, por SSE o Streamable HTTP, con OAuth o sin auth. Quien se conecta a esa URL **son los servidores de OpenAI**, no la app de escritorio. La app de ChatGPT para macOS no lanza procesos ni habla stdio, y una URL `localhost` la rechaza con «Unsafe URL». Todos los tutoriales de «MCP local con ChatGPT» pasan por un túnel público (ngrok, cloudflared) o un relay de terceros.
+
+Gnothi es lo contrario: **un servidor MCP local por stdio**, sin puerto, sin URL, sin auth, que el asistente lanza como proceso hijo. Es lo que Claude Desktop y Claude Code saben consumir, y por eso la Puerta 1 en Mac se cerró en una tarde (medido: 48 tools, cruces examenes×compras y cargas×concesionario).
+
+**Qué bloquea.** El pitch «conectá Gnothi a tu asistente» dicho en genérico. Hoy vale para los asistentes que lanzan servidores MCP locales; ChatGPT no es uno de ellos.
+
+**Es el gemelo de escritorio de R3.** Allá la app móvil del asistente no puede lanzar un proceso local; acá la app de escritorio de ChatGPT tampoco. La diferencia es que en escritorio **sí existe** un asistente de terceros que lo hace, y esa excepción es la que sostiene la Puerta 1.
+
+**Lo que haría falta, y qué le hace a la premisa.** Un transporte HTTP en el Host (el SDK lo trae; no toca el despacho, igual que el `.mcpb` y el MSI no lo tocaron), una URL pública hacia la máquina de la persona, y OAuth delante. Lo primero es acotado. Lo segundo y lo tercero son el problema, y **no es el que parece**: que la respuesta de cada tool viaje al modelo ya pasa con Claude Desktop, y está dicho en `00` y `05` («nunca se transfiere la historia completa»). Lo que ChatGPT rompe es otra cosa:
+
+| | Claude Desktop (stdio local) | ChatGPT (MCP remoto) |
+|---|---|---|
+| **quién inicia** | la app de la persona lanza el Host cuando lo necesita | los servidores de OpenAI llaman a la máquina de la persona |
+| **superficie expuesta** | ninguna: no hay puerto ni URL | una URL pública hacia el Host, viva mientras se quiera usar ChatGPT |
+| **terceros en el camino** | ninguno | el túnel o relay, que ve pasar cada pregunta y cada respuesta |
+| **quién opera** | nadie: no hay servicio | alguien mantiene un servicio con auth, por persona |
+
+Y una de producto: «tu laboratorio y tu súper solo se juntan en tu computadora» deja de poder decirse con un relay en medio, aunque el relay no guarde nada. Es la misma razón por la que R3 cierra el camino B.
+
+**Cómo lo dribleamos.** No se driblea: se dice. Es una restricción de OpenAI, documentada, y no nuestra. El Host es compatible por protocolo con cualquier cliente MCP; el día que ChatGPT lance servidores locales, entra sin cambiar el despacho.
+
+🚫 **No construir un relay propio.** Sería construir la pieza que Gnothi existe para no tener: un servidor de ncubo en el camino de los datos de la persona. Un spike de compatibilidad —HTTP en el Host más ngrok más Developer Mode, una tarde— vale solo como evidencia de «habla con cualquier cliente MCP», y no se entrega a personas.
+
+**Formulación honesta para el pitch:**
+
+> **Gnothi funciona hoy con Claude Desktop y Claude Code, y con cualquier asistente que lance servidores MCP locales. Con ChatGPT, cuando OpenAI lo permita: la razón es de ellos.**
+
+Fuentes: OpenAI, *Developer mode* (`developers.openai.com/api/docs/guides/developer-mode`: «Supported MCP protocols: SSE and streaming HTTP», «remote MCP server»); el rechazo «Unsafe URL» a `localhost` reportado en dev.to (`how-can-i-connect-a-local-mcp-server-python-to-chatgpt-unsafe-url-issue`); Claude Desktop, *Getting started with local MCP servers*.
+
+---
+
 ## El patrón que se repite
 
 Vale nombrarlo porque predice dónde van a aparecer los próximos problemas:
