@@ -1,0 +1,23 @@
+<Project>
+
+  <Import Project="$([MSBuild]::GetPathOfFileAbove('Directory.Build.props', '$(MSBuildThisFileDirectory)../'))" />
+
+  <PropertyGroup>
+    <IncludeSourceRevisionInInformationalVersion>false</IncludeSourceRevisionInInformationalVersion>
+  </PropertyGroup>
+
+  <PropertyGroup Condition="'$(MSBuildProjectName)' != 'Puppets.Portador'">
+
+    <Company>Municipalidad del POC (institucion mock)</Company>
+    <Product>Mi cuenta municipal</Product>
+    <Copyright>Copyright (c) 2026</Copyright>
+
+    <VersionDeLaApp Condition="'$(VersionDeLaApp)' == ''">0.1.0</VersionDeLaApp>
+    <Version>$(VersionDeLaApp)</Version>
+    <AssemblyVersion>0.1.0.0</AssemblyVersion>
+
+    <Description>Part of the Mi cuenta municipal app.</Description>
+
+  </PropertyGroup>
+
+</Project>

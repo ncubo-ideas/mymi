@@ -1,0 +1,29 @@
+<p class="sin-firmar">
+    @Dicho&nbsp;
+    @if (Firmado)
+    {
+        <span class="sin-firmar__estado sin-firmar__estado--firmado">
+            firmado el @Dia
+        </span>
+    }
+    else
+    {
+        <span class="sin-firmar__estado">nadie lo ha firmado todavía</span>
+    }
+</p>
+
+@code {
+    /// <summary>El numero con que se midio, ya escrito, y contra que se midio.</summary>
+    [Parameter, EditorRequired]
+    public string Dicho { get; set; } = "";
+
+    /// <summary>
+    /// Si la persona firmo ese criterio. De los seis que esta app usa, uno solo lo esta; decirlo es
+    /// la mitad de la respuesta, porque la respuesta cambia si el numero cambia.
+    /// </summary>
+    [Parameter]
+    public bool Firmado { get; set; }
+
+    [Parameter]
+    public string Dia { get; set; } = "";
+}

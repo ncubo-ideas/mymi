@@ -1,0 +1,79 @@
+@page "/sin-comprobante"
+@inject EstadoDeLaApp estado
+
+<PageTitle>Qué quedó sin comprobante · Mi cuenta municipal</PageTitle>
+
+<h1>Qué quedó sin comprobante</h1>
+<p class="bajada">
+    Los períodos que tu portal da por pagados y de los que esta app nunca vio un recibo. Se dice, no
+    se tapa: un hueco nombrado es una respuesta, y uno callado se ve igual que no tener huecos.
+</p>
+
+@if (!estado.EstaArriba)
+{
+    <SinAbrir />
+}
+else
+{
+    @if (!cotejo.HayAlgunaConsulta)
+    {
+        <Aviso Tono="tibia" Id="sin-consulta" Titulo="Todavía no se puede cotejar">
+            <Frase Dice="@cotejo.Dice" Apagada="true" />
+            <p>
+                <strong>No poder cotejar no es estar en orden.</strong> Es una tercera respuesta, y
+                cambia en cuanto entre una consulta al portal.
+            </p>
+        </Aviso>
+    }
+    else
+    {
+        <article class="tarjeta" id="el-estado">
+            <div class="tarjeta__cabeza">
+                <span class="sello sello--@cotejo.Estado">@cotejo.Estado</span>
+                <span class="periodo">cotejado contra el @cotejo.DiaDeLaConsulta</span>
+            </div>
+
+            <Frase Dice="@cotejo.Dice" />
+        </article>
+
+        @foreach (var periodo in cotejo.Periodos)
+        {
+            <article class="tarjeta">
+                <div class="tarjeta__cabeza">
+                    <LlaveDelRubro Rubro="@periodo.Rubro" />
+                    <span class="periodo">@periodo.Periodo</span>
+                </div>
+
+                <Frase Dice="@periodo.Dice" />
+            </article>
+        }
+
+        @if (cotejo.Periodos.Count > 0)
+        {
+            <Aviso Tono="quieta" Id="no-es-una-deuda" Titulo="Esto no es una deuda">
+                <p>
+                    Tu portal da esos períodos por saldados; lo que falta es el respaldo aquí, casi
+                    siempre porque se pagaron por un camino que no deja comprobante digital —la
+                    ventanilla, por ejemplo. No los sumés a nada que se te venza.
+                </p>
+            </Aviso>
+        }
+
+        <p class="nota">
+            La consulta es una foto con fecha: el portal dice qué está pendiente hoy, y mañana dice
+            otra cosa. El cotejo es contra el @cotejo.DiaDeLaConsulta y no contra hoy.
+        </p>
+    }
+}
+
+@code {
+	private LoSinComprobante cotejo;
+
+	protected override void OnInitialized() => Releer();
+
+	/// <summary>La unica pasada de lectura de esta pantalla.</summary>
+	private void Releer()
+	{
+		if (estado.EstaArriba) cotejo = estado.LeerLoSinComprobante();
+	}
+}

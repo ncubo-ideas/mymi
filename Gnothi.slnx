@@ -43,4 +43,13 @@
   <Project Path="Concesionario/InyectorDeEventosDemo/Concesionario.InyectorDeEventosDemo.csproj" />
   <Project Path="Concesionario/Pruebas/Concesionario.Dominio.Pruebas/Concesionario.Dominio.Pruebas.csproj" />
 
+  <Project Path="Municipalidad/App/Municipalidad.App/Municipalidad.App.csproj" />
+  <Project Path="Municipalidad/App/Municipalidad.Consola/Municipalidad.Consola.csproj" />
+  <Project Path="Municipalidad/App/Municipalidad.Mcp/Municipalidad.Mcp.csproj" />
+  <Project Path="Municipalidad/App/Municipalidad.Wasm/Municipalidad.Wasm.csproj" />
+  <Project Path="Municipalidad/Dominio/Municipalidad.Dominio.csproj" />
+  <Project Path="Municipalidad/EndPointDeEventos/Municipalidad.EventosMock.csproj" />
+  <Project Path="Municipalidad/InyectorDeEventosDemo/Municipalidad.InyectorDeEventosDemo.csproj" />
+  <Project Path="Municipalidad/Pruebas/Municipalidad.Dominio.Pruebas/Municipalidad.Dominio.Pruebas.csproj" />
+
 </Solution>
