@@ -67,6 +67,16 @@ internal static class HostInstaller
 
 		Directory.CreateDirectory(modulesFolder);
 
+		// SAY HOW MANY MODULES ARE THERE, NOW. An empty folder is legitimate -a fresh install
+		// gets its modules later, from each institution's page- but it is also what a mangled
+		// path looks like. Paid for: a pasted command lost its line break and the folder came
+		// out as "Modulos.local~/Gnothi/Gnothi.Host"; the install went through, the assistant
+		// reported zero modules, and nothing had said so. Now this line does.
+		int modules = Directory.EnumerateDirectories(modulesFolder)
+			.Count(d => File.Exists(Path.Combine(d, "manifest.json")));
+		Console.Error.WriteLine($"modules there : {modules}"
+			+ (modules == 0 ? "   <- empty. Fine for a fresh install; if you expected modules, check the path." : ""));
+
 		IReadOnlyList<Assistant> found = Find();
 		if (found.Count == 0)
 		{
