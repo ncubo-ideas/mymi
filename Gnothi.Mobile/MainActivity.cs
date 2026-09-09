@@ -54,7 +54,7 @@ namespace Gnothi.Mobile;
 [IntentFilter(new[] { Android.Content.Intent.ActionSend },
 	Categories = new[] { Android.Content.Intent.CategoryDefault },
 	DataMimeType = "text/plain")]
-[Activity(Label = "Gnothi", MainLauncher = true, Theme = "@android:style/Theme.Material.Light.NoActionBar")]
+[Activity(Label = "Gnothi", MainLauncher = true, Icon = "@mipmap/ic_launcher", Theme = "@android:style/Theme.Material.Light.NoActionBar")]
 public class MainActivity : Activity
 {
 	private WebView? web;
@@ -96,6 +96,23 @@ public class MainActivity : Activity
 
 		raiz = frame;
 		SetContentView(frame);
+
+		// DARK ICONS ON THE SYSTEM BARS. The page is light lilac and edge-to-edge puts the status
+		// bar over it: with the default (light) icons the clock and the battery came out white on
+		// white -- seen on the Honor, 2026-09-09. Android 11+ has the controller; older ones, the flags.
+		if (OperatingSystem.IsAndroidVersionAtLeast(30) && Window?.InsetsController is { } bars)
+		{
+			var light = Android.Views.WindowInsetsControllerAppearance.LightStatusBars
+			          | Android.Views.WindowInsetsControllerAppearance.LightNavigationBars;
+			bars.SetSystemBarsAppearance((int)light, (int)light);
+		}
+		else if (Window?.DecorView is { } decor)
+		{
+#pragma warning disable CA1422 // the pre-30 path, by design
+			decor.SystemUiFlags |= Android.Views.SystemUiFlags.LightStatusBar | Android.Views.SystemUiFlags.LightNavigationBar;
+#pragma warning restore CA1422
+		}
+
 		web.LoadUrl("file:///android_asset/ui.html");
 
 		// LAS DOS CARPETAS LAS ELIGE LA PLATAFORMA, no la cascara. adb no puede escribir en el

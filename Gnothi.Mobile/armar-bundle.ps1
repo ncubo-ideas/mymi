@@ -56,7 +56,7 @@ $catalogo = @{
         Proyecto    = "$raiz/Examenes/App/Examenes.Wasm/Examenes.Wasm.csproj"
         Titulo      = 'Tus examenes, al dia'
         Institucion = 'Laboratorio Clínico Delfos'
-        Marca       = 'Laboratorio Clínico Delfos'
+        Marca       = 'Delfos'
         Slogan      = 'Tu salud, en tus manos'
         Color       = '#0e2f55'
         Rubro       = 'laboratorio'
@@ -83,9 +83,10 @@ $catalogo = @{
         Proyecto    = "$raiz/Compras/App/Compras.Wasm/Compras.Wasm.csproj"
         Titulo      = 'La Guaria y vos'
         Institucion = 'Supermercado La Guaria'
-        Marca       = 'Supermercado La Guaria'
+        Marca       = 'La Guaria'
         Slogan      = 'Tu canasta, más cerca de vos'
         Color       = '#2f6b3f'
+        Fuente      = @{ family = 'Nunito Sans'; file = 'web/brand/NunitoSans-800.woff2' }
         Rubro       = 'supermercado'
         Descripcion = 'Tu historial de compras, con tus garantias y lo que sueles llevar.'
         NoHace      = 'No te dice que comer ni juzga tu canasta.'
@@ -110,9 +111,10 @@ $catalogo = @{
         Proyecto    = "$raiz/Cargas/App/Cargas.Wasm/Cargas.Wasm.csproj"
         Titulo      = 'Tus cargas'
         Institucion = 'Estaciones Faro'
-        Marca       = 'Estaciones Faro'
+        Marca       = 'Faro'
         Slogan      = 'Rendimiento real, tramo a tramo'
         Color       = '#0B3C49'
+        Fuente      = @{ family = 'Barlow'; file = 'web/brand/Barlow-600.woff2' }
         Rubro       = 'combustible'
         Descripcion = 'Tus cargas de combustible y el rendimiento de cada vehiculo.'
         NoHace      = ''
@@ -140,6 +142,7 @@ $catalogo = @{
         Marca       = 'Sotavento Motors'
         Slogan      = 'Care that keeps you moving'
         Color       = '#1f3a5f'
+        Fuente      = @{ family = 'Sora'; file = 'web/brand/Sora-600.woff2' }
         Rubro       = 'taller'
         Descripcion = 'Your vehicle maintenance schedule and what is due.'
         NoHace      = ''
@@ -241,6 +244,14 @@ $manifiesto = [ordered]@{
         logo      = if ($traeLogo) { 'brand/logo.png' } else { '' }
         color     = $m.Color
         slogan    = $m.Slogan
+        # THE BANNER AND THE TYPEFACE (2026-09-09) live in the institution's own wwwroot/brand/ and
+        # get published with its app, so they land in web/brand/ of the bundle. The Host reads them
+        # through the same customs as the logo: banner up to 200 KB and 1600 px; font woff2/woff/ttf
+        # up to 160 KB, typed by its bytes. A file that does not pass leaves the card without it.
+        # The typeface dresses ONLY the brand name; the rest of the card is Gnothi's Manrope. An
+        # institution without one (Delfos) gets its name in Manrope ExtraBold, and declares nothing.
+        banner    = 'web/brand/banner.jpg'
+        font      = if ($m.Fuente) { [ordered]@{ family = $m.Fuente.family; file = $m.Fuente.file } } else { $null }
     }
     '//publisher' = 'DE DONDE VIENE Y QUE VERSION ES. El dominio es el unico campo CONTRASTABLE: Gnothi ya sabe de que host bajo el bundle y compara.'
     publisher     = [ordered]@{

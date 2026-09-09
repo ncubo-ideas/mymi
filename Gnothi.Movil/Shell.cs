@@ -374,10 +374,23 @@ public sealed class Shell : IDisposable
 	// EXISTE PARA LA PROPUESTA DEL ALTA, donde el modulo todavia no esta instalado: el bundle
 	// esta desempaquetado en una carpeta temporal y no hay ningun Module al que preguntarle.
 	private static Dictionary<string, object?>? Marca(Gnothi.Host.Manifest manifest, string folder)
+		=> BrandOf(Gnothi.Host.Module.LookOf(manifest, folder, out _));
+
+	// THE BRAND AS THE PAGE EXPECTS IT: logo and color as before, plus the banner behind the card
+	// and the typeface (2026-09-09), all as data URIs already through the Host's customs. Null when
+	// the institution declared none of it, and the card falls to the drawing of its category.
+	private static Dictionary<string, object?>? BrandOf(Gnothi.Host.Module.BrandLook look)
 	{
-		Gnothi.Host.Module.BrandLook look = Gnothi.Host.Module.LookOf(manifest, folder, out _);
-		if (look.Logo.Length == 0 && look.Color.Length == 0) return null;
-		return new Dictionary<string, object?> { ["logo"] = look.Logo, ["color"] = look.Color };
+		if (!look.Any) return null;
+		return new Dictionary<string, object?>
+		{
+			["logo"] = look.Logo,
+			["color"] = look.Color,
+			["banner"] = look.Banner,
+			["font"] = look.FontFamily.Length > 0
+				? new Dictionary<string, object?> { ["family"] = look.FontFamily, ["regular"] = look.FontRegular, ["bold"] = look.FontBold }
+				: null,
+		};
 	}
 
 	private void PushProposal(EnrollmentProposal p) => Push("propuesta", "", JsonSerializer.Serialize(new
@@ -593,9 +606,7 @@ public sealed class Shell : IDisposable
 				// caminos pasan por la misma aduana.
 				["shortName"] = m.Manifest.Brand?.ShortName ?? "",
 				["slogan"] = m.Manifest.Brand?.Slogan ?? "",
-				["brand"] = look.Logo.Length > 0 || look.Color.Length > 0
-					? new Dictionary<string, object?> { ["logo"] = look.Logo, ["color"] = look.Color }
-					: null,
+				["brand"] = BrandOf(look),
 				["description"] = m.Manifest.About?.Description ?? "",
 				["doesNotDo"] = m.Manifest.About?.DoesNotDo ?? "",
 				["publisher"] = new Dictionary<string, object?>

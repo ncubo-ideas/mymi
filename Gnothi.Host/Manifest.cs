@@ -189,10 +189,33 @@ public sealed record Brand
 	// para saber quien le esta hablando, y por eso lleva tope como todo lo que llega al ojo.
 	[JsonPropertyName("slogan")] public string Slogan { get; init; } = "";
 
+	// THE BANNER (2026-09-09): a wide picture the Host puts BEHIND the card, with the institution's
+	// name and slogan over it. Same rules as the logo -a file inside the bundle, never a URL, read
+	// and validated by the Host- with wider tops because it is a photo, not an icon. No svg: a
+	// banner has pixels or it is not a banner.
+	[JsonPropertyName("banner")] public string Banner { get; init; } = "";
+
+	// THE TYPEFACE (2026-09-09): the family the institution's name and slogan are set in, on its
+	// own card and detail, so La Guaria reads like La Guaria and Sotavento like Sotavento. A font
+	// file inside the bundle (woff2, woff, ttf or otf), optionally a second one for bold. The Host
+	// embeds it as a data URI under a name of its own: no CSS from the institution ever runs.
+	[JsonPropertyName("font")] public BrandFont? Font { get; init; }
+
 	public const int MaxShortName = 28;
 	public const int MaxSlogan = 40;
 	public const int MaxLogoBytes = 64 * 1024;
 	public const int MaxLogoPixels = 512;
+	public const int MaxBannerBytes = 200 * 1024;
+	public const int MaxBannerPixels = 1600;
+	public const int MaxFontBytes = 160 * 1024;
+	public const int MaxFontFamily = 40;
+
+	private static readonly string[] AllowedBanner = [".png", ".jpg", ".jpeg", ".webp"];
+	private static readonly string[] AllowedFont = [".woff2", ".woff", ".ttf", ".otf"];
+
+	// A path that stays inside the bundle: relative, no '..', no drive, no scheme.
+	public static bool InsideBundle(string path)
+		=> !(path.Contains("..", StringComparison.Ordinal) || Path.IsPathRooted(path) || path.Contains(':'));
 
 	// El svg entra por lo dicho arriba: viaja en un `<img>`, no inline. Y el webmanifest de una
 	// PWA suele declarar png, asi que el camino por omision no lo usa.
@@ -230,7 +253,42 @@ public sealed record Brand
 		string color = Manifest.Txt(Color);
 		if (color.Length > 0 && ValidColor(color) is null)
 			yield return $"brand.color debe ser #rrggbb y es '{color}'";
+
+		string banner = Manifest.Txt(Banner);
+		if (banner.Length > 0)
+		{
+			if (!InsideBundle(banner))
+				yield return $"brand.banner debe ser una ruta dentro del modulo, y '{banner}' no lo es";
+			else if (!AllowedBanner.Contains(Path.GetExtension(banner), StringComparer.OrdinalIgnoreCase))
+				yield return $"brand.banner es '{Path.GetExtension(banner)}' y solo se aceptan png, jpg y webp";
+		}
+
+		if (Font is not null)
+		{
+			if (Manifest.Txt(Font.Family).Length == 0)
+				yield return "brand.font declara un archivo sin decir la familia (family)";
+			else if (Manifest.Txt(Font.Family).Length > MaxFontFamily)
+				yield return $"brand.font.family tiene {Manifest.Txt(Font.Family).Length} caracteres y el tope es {MaxFontFamily}";
+			foreach ((string key, string file) in new[] { ("file", Manifest.Txt(Font.File)), ("bold", Manifest.Txt(Font.Bold)) })
+			{
+				if (file.Length == 0) { if (key == "file") yield return "brand.font no dice que archivo (file)"; continue; }
+				if (!InsideBundle(file))
+					yield return $"brand.font.{key} debe ser una ruta dentro del modulo, y '{file}' no lo es";
+				else if (!AllowedFont.Contains(Path.GetExtension(file), StringComparer.OrdinalIgnoreCase))
+					yield return $"brand.font.{key} es '{Path.GetExtension(file)}' y solo se aceptan woff2, woff, ttf y otf";
+			}
+		}
 	}
+}
+
+// The institution's typeface: a family name and the file(s) inside the bundle that carry it. A
+// variable font covers every weight with one file; a static family gives `file` for regular and
+// `bold` for the name.
+public sealed record BrandFont
+{
+	[JsonPropertyName("family")] public string Family { get; init; } = "";
+	[JsonPropertyName("file")] public string File { get; init; } = "";
+	[JsonPropertyName("bold")] public string Bold { get; init; } = "";
 }
 
 // DE DONDE VIENE ESTE MODULO Y QUE VERSION ES. Es el grupo que le da sentido a la marca: un logo

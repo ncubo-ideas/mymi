@@ -134,7 +134,20 @@ public sealed class Module : IAsyncDisposable
 		string color = Brand.ValidColor(manifest.Brand?.Color) ?? "";
 		string logo = LogoDataUri(manifest, directory, out problem);
 
-		if (logo.Length > 0 && color.Length > 0) return new BrandLook(logo, color);
+		// The banner and the typeface only come declared: the webmanifest has nothing to say about
+		// them. A file that does not pass leaves the card without it, and the reason is kept.
+		string banner = BannerDataUri(manifest, directory, out string bannerProblem);
+		string family = "", regular = "", bold = "";
+		if (manifest.Brand?.Font is { } font && Manifest.Txt(font.Family).Length > 0)
+		{
+			regular = FontDataUri(directory, font.File, out string fontProblem);
+			bold = FontDataUri(directory, font.Bold, out _);
+			if (regular.Length > 0) family = Manifest.Txt(font.Family);
+			else if (fontProblem.Length > 0) bannerProblem = (bannerProblem.Length > 0 ? bannerProblem + "; " : "") + "brand.font " + fontProblem;
+		}
+		if (problem.Length == 0) problem = bannerProblem;
+
+		if (logo.Length > 0 && color.Length > 0) return new BrandLook(logo, color, banner, family, regular, bold);
 
 		// Lo que `brand` no dijo -o dijo mal-, lo completa el webmanifest de la PWA.
 		(string? webLogo, string? webColor) = FromWebManifest(directory);
@@ -147,7 +160,7 @@ public sealed class Module : IAsyncDisposable
 		}
 		if (color.Length == 0 && webColor is not null) color = webColor;
 
-		return new BrandLook(logo, color);
+		return new BrandLook(logo, color, banner, family, regular, bold);
 	}
 
 	// EL WEBMANIFEST DE LA PWA, que es de la institucion y ya viaja en el bundle. Un archivo
@@ -245,6 +258,83 @@ public sealed class Module : IAsyncDisposable
 	// -- el logo declarado y los iconos del webmanifest -- porque el riesgo es el mismo y una
 	// aduana con dos puertas es una aduana con una puerta.
 	private static string ReadImage(string baseDir, string src, out string problem)
+		=> ReadImage(baseDir, src, Brand.MaxLogoBytes, Brand.MaxLogoPixels, out problem);
+
+	// THE BANNER, through the same customs as the logo but with a photo's tops. Empty when the
+	// institution declared none, and `problem` says why one that was declared did not get in.
+	public static string BannerDataUri(Manifest manifest, string directory, out string problem)
+	{
+		problem = "";
+		string declared = Manifest.Txt(manifest.Brand?.Banner);
+		if (declared.Length == 0) return "";
+		string uri = ReadImage(directory, declared, Brand.MaxBannerBytes, Brand.MaxBannerPixels, out problem);
+		if (problem.Length > 0) problem = "brand.banner " + problem;
+		return uri;
+	}
+
+	// THE TYPEFACE. The file is resolved inside the bundle like any other asset, weighed, and
+	// its type comes from its first bytes -woff2, woff, TrueType or OpenType- not from its
+	// extension. It leaves as a data URI the page can put in an @font-face of its own.
+	public static string FontDataUri(string directory, string src, out string problem)
+	{
+		problem = "";
+		if (Manifest.Txt(src).Length == 0) return "";
+		string full = ResolveInside(directory, src, out problem);
+		if (full.Length == 0) return "";
+
+		var info = new FileInfo(full);
+		if (info.Length == 0 || info.Length > Brand.MaxFontBytes)
+		{
+			problem = $"pesa {info.Length / 1024} KB y el tope es {Brand.MaxFontBytes / 1024} KB";
+			return "";
+		}
+
+		byte[] bytes = File.ReadAllBytes(full);
+		string? mime = SniffFont(bytes);
+		if (mime is null)
+		{
+			problem = "no es un woff2, woff, ttf ni otf legible -- se rechaza por lo que dicen sus bytes";
+			return "";
+		}
+		return $"data:{mime};base64,{Convert.ToBase64String(bytes)}";
+	}
+
+	private static string? SniffFont(byte[] b)
+	{
+		if (b.Length < 4) return null;
+		string tag = System.Text.Encoding.ASCII.GetString(b, 0, 4);
+		return tag switch
+		{
+			"wOF2" => "font/woff2",
+			"wOFF" => "font/woff",
+			"OTTO" => "font/otf",
+			"true" => "font/ttf",
+			_ => b[0] == 0 && b[1] == 1 && b[2] == 0 && b[3] == 0 ? "font/ttf" : null,
+		};
+	}
+
+	// A path declared by the institution, resolved inside its own folder or refused. Shared by
+	// every asset that comes in through the manifest: one door, one rule.
+	private static string ResolveInside(string baseDir, string src, out string problem)
+	{
+		problem = "";
+		if (Uri.TryCreate(src, UriKind.Absolute, out Uri? u) && !u.IsFile)
+		{
+			problem = $"apunta a la red ('{src}') y por aca no sale nada a la red";
+			return "";
+		}
+		string full = Path.GetFullPath(Path.Combine(baseDir, src.TrimStart('/').Replace('/', Path.DirectorySeparatorChar)));
+		string root = Path.GetFullPath(baseDir) + Path.DirectorySeparatorChar;
+		if (!full.StartsWith(root, StringComparison.OrdinalIgnoreCase))
+		{
+			problem = $"apunta fuera de la carpeta del modulo: '{src}'";
+			return "";
+		}
+		if (!File.Exists(full)) { problem = $"declara '{src}' y ese archivo no esta en el bundle"; return ""; }
+		return full;
+	}
+
+	private static string ReadImage(string baseDir, string src, long maxBytes, int maxPixels, out string problem)
 	{
 		problem = "";
 
@@ -271,9 +361,9 @@ public sealed class Module : IAsyncDisposable
 		if (!File.Exists(full)) { problem = $"declara '{src}' y ese archivo no esta en el bundle"; return ""; }
 
 		var info = new FileInfo(full);
-		if (info.Length == 0 || info.Length > Brand.MaxLogoBytes)
+		if (info.Length == 0 || info.Length > maxBytes)
 		{
-			problem = $"pesa {info.Length / 1024} KB y el tope es {Brand.MaxLogoBytes / 1024} KB";
+			problem = $"pesa {info.Length / 1024} KB y el tope es {maxBytes / 1024} KB";
 			return "";
 		}
 
@@ -293,9 +383,9 @@ public sealed class Module : IAsyncDisposable
 		//
 		// Un SVG no tiene pixeles -- es vectorial y lo escala el contenedor -- asi que ahi el
 		// tope no aplica y SniffImage devuelve 0x0 a proposito.
-		if (width > Brand.MaxLogoPixels || height > Brand.MaxLogoPixels)
+		if (width > maxPixels || height > maxPixels)
 		{
-			problem = $"mide {width}x{height} y el tope es {Brand.MaxLogoPixels} de lado";
+			problem = $"mide {width}x{height} y el tope es {maxPixels} de lado";
 			return "";
 		}
 
@@ -399,7 +489,11 @@ public sealed class Module : IAsyncDisposable
 	// El logo y el color que la pantalla va a usar, ya resueltos. Vacio en cualquiera de los dos
 	// significa "no hay", y la cara cae a lo que tenga -- el dibujo del rubro, el acento del
 	// Host. El Host no inventa una marca que la institucion no dio.
-	public sealed record BrandLook(string Logo, string Color);
+	public sealed record BrandLook(string Logo, string Color, string Banner = "", string FontFamily = "",
+		string FontRegular = "", string FontBold = "")
+	{
+		public bool Any => Logo.Length > 0 || Color.Length > 0 || Banner.Length > 0 || FontFamily.Length > 0;
+	}
 
 	// Measured FROM OUTSIDE, with stat over the folder the Host granted. The module is not
 	// asked how much it takes up: a module that reports 4 MB while taking up 400 cannot exist

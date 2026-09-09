@@ -23,7 +23,13 @@
     "logo": "brand/logo.png",
 
     "//color": "Un color en #rrggbb, uno solo. El Host lo usa para el tinte del icono y le garantiza el contraste. No se acepta CSS.",
-    "color": "#0E7C86"
+    "color": "#0E7C86",
+
+    "//banner": "OPCIONAL. Una foto ancha que el Host pone DETRAS de la tarjeta, con el nombre y el eslogan encima. Archivo dentro del bundle, como el logo: png, jpg o webp, hasta 200 KB y 1600 px de lado. Sin svg.",
+    "banner": "brand/banner.jpg",
+
+    "//font": "OPCIONAL. La tipografia del NOMBRE DE MARCA en la tarjeta y el detalle de ESTE modulo -solo el nombre: el eslogan y todo lo demas van en la letra de Gnothi-, para que la marca se lea como la marca sin pelear con las otras. Un archivo woff2, woff, ttf u otf dentro del bundle, hasta 160 KB, con el peso en que se escribe el nombre. El Host la embebe bajo un nombre propio: nunca corre CSS de la institucion.",
+    "font": { "family": "Nunito Sans", "file": "brand/NunitoSans-800.woff2" }
   },
 
   "//publisher": "DE DONDE VIENE ESTE MODULO Y QUE VERSION ES. Es el grupo que le da sentido a la marca: un logo sin procedencia es un dibujo que cualquiera copia. Aca va la razon social y la cedula juridica -y no arriba- porque nadie dice 'voy a Laboratorio Clinico Delfos S.A.': el nombre legal no es con lo que una persona reconoce a nadie, es LO QUE SE COMPRUEBA.",

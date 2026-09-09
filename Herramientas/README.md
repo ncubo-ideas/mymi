@@ -20,6 +20,8 @@ tamaño y el contraste. En ningún campo hay una medida ni una regla de estilo.
 | `brand.shortName` | **la línea grande** de la tarjeta, el detalle, el alta y el journal | 28 caracteres |
 | `brand.logo` | la caja del ícono en esas mismas cuatro pantallas | png/jpg/webp · 64 KB · 512 px |
 | `brand.color` | el tinte de esa caja, y nada más | `#rrggbb` |
+| `brand.banner` | la foto detrás de la tarjeta del inicio, con el nombre y el eslogan encima | png/jpg/webp · 200 KB · 1600 px |
+| `brand.font` | la tipografía del **nombre de marca** en la tarjeta y el detalle de ese módulo; el resto de la tarjeta va en la letra de Gnothi | woff2/woff/ttf/otf · 160 KB · un archivo con el peso del nombre |
 | `title` | la segunda línea, y el botón «Abrir …» | 32 caracteres |
 | `institution` | la línea grande **cuando no hay** `brand.shortName` | — |
 | `publisher.domain` | la franja de procedencia — **se contrasta** contra quien sirvió el bundle | un dominio, sin `https://` |
