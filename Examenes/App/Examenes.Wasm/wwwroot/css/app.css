@@ -602,6 +602,248 @@ h1:focus, h1:focus-visible { outline: none; }
 .cifra-par .unidad { font-size: 15px; color: var(--tenue); font-weight: 400; margin-left: 8px; }
 .cifra-par .final  { color: var(--ambar); }
 
+/* ------------------------------------------------------------- detalle - RONDA 13
+
+   NAV MINIMA: un link de texto, no una tarjeta-boton, para no gastar espacio en un
+   telefono con esto arriba de todo. RANGO/CONCLUSION/TIMELINE: mismo vocabulario visual
+   -verde/ambar/rojo, punto+linea de tiempo- que ya vive en Home, pero con la sutileza
+   -- .carta, bordes finos, sin sombra elevada -- que ya usa el resto de esta pagina
+   (.ritmo, .permiso), en vez de copiar las tarjetas navy-degrade de Home. */
+
+.detalle-volver { font-size: 13.5px; margin-bottom: 18px; display: inline-block; }
+
+/* El micro-grafico comparativo: mismas proporciones y mismo trazo verde que ya usa
+   "Qué cambió" en Home, para que Home y Detalle se sientan la misma app (Paso 14). */
+.detalle-grafico { display: block; width: 100%; height: auto; margin: 14px 0 2px; }
+.detalle-grafico polyline { stroke: var(--bien); }
+.detalle-grafico circle   { fill: var(--bien); }
+.detalle-grafico-valor { font-family: var(--sans); font-size: 11px; font-weight: 600; fill: var(--tinta); }
+.detalle-grafico-fecha { font-family: var(--sans); font-size: 10px; fill: var(--tenue-2); }
+
+.detalle-delta {
+    margin: 6px 0 0; font-size: 13.5px; color: var(--tenue);
+    font-variant-numeric: tabular-nums;
+}
+
+/* EL RANGO DE REFERENCIA — ver Formas/PosicionEnBanda.razor: el degradé y la posición
+   del marcador se calculan ahí, desde piso/techo reales; acá sólo el vocabulario visual. */
+.detalle-rango-rotulo {
+    font-family: var(--sans); font-weight: 700; font-size: 11px; letter-spacing: .05em;
+    text-transform: uppercase; color: var(--tenue-2); margin: 0 0 8px;
+}
+.detalle-rango-pista { position: relative; height: 8px; border-radius: 5px; overflow: visible; }
+.detalle-rango-marca {
+    position: absolute; top: 50%; width: 15px; height: 15px; border-radius: 50%;
+    background: #ffffff; border: 2.5px solid var(--bien);
+    transform: translate(-50%, -50%);
+    box-shadow: 0 1px 5px rgba(0, 0, 0, .35);
+}
+.detalle-rango-marca--fuera { border-color: var(--ambar); }
+.forma--banda .forma-pie { font-size: 12.5px; margin-top: 10px; }
+
+/* LA CONCLUSION — Paso 8: una frase con acento verde, no otro dashboard. */
+.detalle-conclusion {
+    display: flex; align-items: flex-start; gap: 9px;
+    margin: 22px 0 0; padding: 12px 14px;
+    background: var(--carta); border: 1px solid var(--linea); border-radius: 12px;
+    font-size: 13.5px; line-height: 1.45; color: var(--tenue);
+}
+.detalle-conclusion-icono {
+    flex: none; width: 18px; height: 18px; border-radius: 50%; margin-top: 1px;
+    display: flex; align-items: center; justify-content: center;
+    background: var(--bien-suave); color: var(--bien);
+    font-size: 12px; font-weight: 700;
+}
+
+/* LA HISTORIA EN LA CABECERA — Paso 3: la frase que ya escribe el propio analito
+   (interpretacion.ParaSonia), mostrada una sola vez, arriba de todo. No es prosa nueva
+   de esta pantalla. */
+.detalle-historia {
+    margin: 8px 0 0; font-size: 14.5px; line-height: 1.5; color: var(--tenue);
+    max-width: 34rem;
+}
+
+/* EL RESUMEN COMPACTO DE LA EVOLUCION — Paso 4: mediciones, días, cambio total. */
+.detalle-resumen-evolucion {
+    margin: 6px 0 0; font-size: 12.5px; color: var(--tenue-2);
+    font-variant-numeric: tabular-nums;
+}
+
+/* LA NOTA QUE SEPARA META DE REFERENCIA — Paso 11: sólo aparece en "progreso hacia
+   meta" (colesterol total/LDL/triglicéridos), la única forma con las dos cosas juntas. */
+.detalle-meta-nota {
+    margin: 8px 0 0; font-size: 12px; color: var(--tenue-2); line-height: 1.4;
+}
+
+/* LA INTERPRETACION — Paso 8, RECONSTRUIDA RONDA 17 (sólo visual, el contenido de las
+   tres líneas -ESTADO ACTUAL/EVOLUCIÓN/ACCIÓN, RONDA 16-7- no cambió). Se pidió que dejara
+   de leerse como una alerta de sistema: nada de fondo gris pesado ni barra lateral gruesa
+   de "warning". Ahora es una tarjeta integrada -mismo tono `--panel-navy` que ya usa Inicio
+   para "lo que merece atención"-, con un borde fino y parejo del color de la severidad
+   -`--ambar-borde`/`--rojo-borde`, ya eran sutiles de por sí- y esquinas más redondeadas.
+   El ícono ya no es un triángulo: es una "i" informativa dentro de un círculo sólido del
+   color de la severidad -ver `.detalle-interpretacion-icono` abajo-. */
+.detalle-interpretacion {
+    display: flex; align-items: flex-start; gap: 12px;
+    background: var(--panel-navy); border: 1px solid var(--linea); border-radius: 18px;
+    padding: 16px 17px; margin-top: 22px;
+}
+.detalle-interpretacion--atencion { border-color: var(--ambar-borde); }
+.detalle-interpretacion--problema { border-color: var(--rojo-borde); }
+.detalle-interpretacion--neutro { border-color: var(--linea); }
+.detalle-interpretacion-icono {
+    flex: none; width: 26px; height: 26px; border-radius: 50%; margin-top: 1px;
+    display: flex; align-items: center; justify-content: center;
+    font-family: var(--serif); font-style: italic; font-weight: 700; font-size: 15px;
+    background: var(--tenue-2); color: var(--panel-navy-honda);
+}
+.detalle-interpretacion--atencion .detalle-interpretacion-icono { background: var(--ambar); color: var(--panel-navy-honda); }
+.detalle-interpretacion--problema .detalle-interpretacion-icono { background: var(--rojo); color: var(--panel-navy-honda); }
+.detalle-interpretacion-accion { margin: 8px 0 0; font-size: 13.5px; color: var(--tenue); line-height: 1.45; }
+.detalle-interpretacion-accion b { color: var(--tinta); font-weight: 700; }
+
+/* EL RESUMEN VISUAL DE TRES COLUMNAS — RONDA 16-3: antes era una línea de microcopy
+   ("3 mediciones · 734 días..."); ahora son cifras grandes con su rótulo debajo, la
+   misma jerarquía que el resto de la pantalla. */
+.detalle-stats {
+    display: flex; gap: 8px; margin: 14px 0 0;
+}
+.detalle-stats-item {
+    flex: 1 1 0; min-width: 0;
+    background: var(--carta); border: 1px solid var(--linea); border-radius: 12px;
+    padding: 10px 8px; text-align: center;
+}
+.detalle-stats-valor {
+    display: block; font-family: var(--serif); font-weight: 700;
+    font-size: clamp(16px, 4.4vw, 20px); color: var(--tinta);
+    font-variant-numeric: tabular-nums; white-space: nowrap;
+}
+.detalle-stats-valor small { font-size: 60%; font-weight: 400; color: var(--tenue); }
+.detalle-stats-valor--sube { color: var(--ambar); }
+.detalle-stats-valor--baja { color: var(--celeste); }
+.detalle-stats-rotulo {
+    display: block; margin-top: 2px; font-size: 10.5px; color: var(--tenue-2);
+    line-height: 1.25;
+}
+
+/* EL COLOR DEL GRAFICO SEGUN LA SEVERIDAD — RONDA 16-4: nunca verde por defecto. */
+.detalle-grafico--atencion polyline { stroke: var(--ambar); }
+.detalle-grafico--atencion circle   { fill: var(--ambar); }
+.detalle-grafico--problema polyline { stroke: var(--rojo); }
+.detalle-grafico--problema circle   { fill: var(--rojo); }
+
+/* LA BARRA GRANDE DE "TU RESULTADO Y EL RANGO" — RONDA 16-6/16-11: fidelidad visual con
+   la referencia (marcador con su valor flotando arriba, degradé verde→ámbar→rojo,
+   mínimo/máximo debajo con el máximo anotado como "límite de referencia"). Sólo para la
+   forma "progreso hacia meta" -las otras dos formas ya tienen su propio dibujo real
+   (PosicionEnBanda/TrayectoriaConLineaBase), que esta ronda no toca-. */
+.detalle-rango-grande { position: relative; margin: 34px 0 0; }
+.detalle-rango-grande-pista {
+    height: 10px; border-radius: 6px;
+    background: linear-gradient(90deg, var(--bien) 0%, var(--ambar) 58%, #f4a35f 82%, var(--rojo) 100%);
+}
+.detalle-rango-grande-marcador {
+    position: absolute; bottom: 100%; transform: translateX(-50%);
+    display: flex; flex-direction: column; align-items: center;
+    margin-bottom: 2px;
+}
+.detalle-rango-grande-valor {
+    font-family: var(--serif); font-weight: 700; font-size: 18px; color: var(--tinta);
+    font-variant-numeric: tabular-nums; white-space: nowrap;
+}
+.detalle-rango-grande-flecha { color: var(--tinta); font-size: 11px; margin-top: -2px; }
+.detalle-rango-grande-limites {
+    display: flex; justify-content: space-between; gap: 10px; margin-top: 6px;
+    font-family: var(--sans); font-size: 11.5px; color: var(--tenue-2);
+    font-variant-numeric: tabular-nums;
+}
+.detalle-rango-grande-limite-der { text-align: right; }
+.detalle-rango-grande-limite-der small { color: var(--tenue-2); font-size: 10px; }
+.detalle-rango-resumen {
+    margin: 10px 0 0; font-size: 13px; color: var(--tenue);
+}
+.detalle-rango-resumen b { color: var(--tinta); }
+
+/* LA META ORIENTATIVA, ahora secundaria — RONDA 16-5: mismo componente ProgresoHaciaMeta
+   de siempre, pero debajo del rango real y con su propio rótulo chico para que no se lea
+   como una segunda barra de referencia casi igual. */
+.detalle-meta-rotulo {
+    margin: 26px 0 6px; font-family: var(--sans); font-weight: 700; font-size: 11px;
+    letter-spacing: .05em; text-transform: uppercase; color: var(--tenue-2);
+}
+
+/* LA INTERPRETACION EN TRES LINEAS — RONDA 16-7: ya no hay título con el Veredicto del
+   dominio ("empeorando"); ESTADO ACTUAL predomina (primera línea, más grande), EVOLUCIÓN
+   y ACCIÓN quedan debajo, cada una su propia línea.
+   RONDA 17-3: NIVEL 1 -esta línea- ahora se lee primero con más peso, con un tinte ámbar
+   -o rojo si es urgente- en vez del blanco genérico de antes, siempre calculado por
+   EstadoActualTexto() en @code, nunca hardcodeado por analito. NIVEL 2 -evolución- se
+   mantiene con menos peso pero con tamaño legible -13.5px, nunca microtexto-. */
+.detalle-interpretacion-estado {
+    margin: 0; font-weight: 700; font-size: 15.5px; line-height: 1.4; color: var(--tinta);
+}
+.detalle-interpretacion--atencion .detalle-interpretacion-estado { color: var(--ambar); }
+.detalle-interpretacion--problema .detalle-interpretacion-estado { color: var(--rojo); }
+.detalle-interpretacion-evolucion {
+    margin: 7px 0 0; font-size: 13.5px; color: var(--tenue); line-height: 1.45;
+}
+
+/* EL CONTEXTO DEL RANGO, discreto — RONDA 16-9, recoloreado RONDA 17-7: aparte del
+   "leído hasta el evento" técnico del pie, y aparte del bloque de interpretación -no
+   compite con él-. Dos niveles de color bien distintos para que nunca se confundan: ÁMBAR
+   es interpretación que merece atención (el bloque de arriba), CELESTE es información de
+   contexto -cómo se calculó el rango-, siempre secundaria. El `border-top` es la línea
+   fina que separa ambos bloques, tal como en la referencia. */
+.detalle-contexto {
+    margin: 14px 0 0; padding-top: 12px; border-top: 1px solid var(--linea);
+    font-size: 11.5px; color: var(--tenue-2); line-height: 1.4;
+}
+.detalle-contexto-icono {
+    display: inline-flex; align-items: center; justify-content: center;
+    width: 15px; height: 15px; margin-right: 1px; border-radius: 50%;
+    background: rgba(125, 180, 224, .16); color: var(--celeste); font-size: 11px;
+}
+
+/* CADA MEDICION COMO TIMELINE — Paso 9: punto + línea, la más reciente con más peso.
+   Clases propias (no .medicion/.mediciones) para no tocar "Cada prueba"/"Cada
+   observación" de los binarios y nominales, que quedan fuera del alcance de esta ronda. */
+.detalle-timeline { list-style: none; margin: 4px 0 0; padding: 0; }
+.detalle-evento { position: relative; padding: 12px 0 12px 22px; border-bottom: 1px solid var(--linea); }
+.detalle-evento:first-child { padding-top: 2px; }
+.detalle-evento:last-child { padding-bottom: 2px; border-bottom: 0; }
+.detalle-punto {
+    position: absolute; left: 0; top: 50%; margin-top: -5px; width: 10px; height: 10px;
+    border-radius: 50%; background: var(--fondo); border: 2px solid var(--tenue-2);
+}
+.detalle-evento--reciente .detalle-punto {
+    width: 13px; height: 13px; margin-top: -6.5px; left: -1.5px;
+    border-color: var(--celeste); background: var(--celeste);
+    box-shadow: 0 0 0 4px rgba(125, 180, 224, .18);
+}
+.detalle-evento:not(:last-child)::before {
+    content: ""; position: absolute; left: 4px; top: calc(50% + 7px); bottom: -12px; width: 2px;
+    background: var(--linea);
+}
+.detalle-evento-fila {
+    display: flex; align-items: baseline; justify-content: space-between; flex-wrap: wrap;
+    gap: 4px 14px;
+}
+.detalle-evento-datos { display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap; }
+.detalle-evento-fecha {
+    font-family: var(--sans); font-size: 14px; font-weight: 600; color: var(--tinta);
+    font-variant-numeric: tabular-nums;
+}
+.detalle-evento--reciente .detalle-evento-fecha { font-size: 15px; }
+.detalle-evento-valor {
+    font-family: var(--sans); font-size: 15px; font-weight: 700; color: var(--tinta);
+    font-variant-numeric: tabular-nums;
+}
+.detalle-evento-valor small { font-size: 11.5px; font-weight: 400; color: var(--tenue-2); margin-left: 2px; }
+.detalle-evento-salto {
+    font-size: 12.5px; color: var(--tenue); white-space: nowrap;
+    font-variant-numeric: tabular-nums;
+}
+
 /* ------------------------------------------------------------------ arranque */
 
 .loading-progress {
@@ -1212,7 +1454,7 @@ code { font-family: var(--mono); font-size: .9em; color: var(--ambar); }
     background: linear-gradient(165deg, var(--panel-navy) 0%, var(--panel-navy-honda) 100%);
     border: 1px solid var(--panel-navy-borde);
     border-radius: 18px;
-    padding: 20px 22px 20px 26px;
+    padding: 20px 25px 20px 26px;
     margin-bottom: 14px;
     color: var(--panel-navy-tinta);
     box-shadow: 0 16px 32px -20px rgba(3, 10, 22, .65), 0 2px 10px rgba(3, 10, 22, .3);
@@ -1349,18 +1591,24 @@ code { font-family: var(--mono); font-size: .9em; color: var(--ambar); }
    disponible. Padding y tamaño de fuente bajan un poco (13.5px/10px) SOLO acá adentro
    -`.boton`/`.boton--contorno` a secas, en el resto de la app, no cambian-, lo mínimo
    para que "Entender este resultado →" entre en una línea a 390px. */
-.inicio-atencion-acciones { display: flex; flex-wrap: nowrap; gap: 8px; margin-top: 14px; }
+.inicio-atencion-acciones { display: flex; flex-wrap: nowrap; gap: 14px; margin-top: 14px; }
 .inicio-atencion-acciones .boton,
 .inicio-atencion-acciones .boton--contorno {
-    min-width: 0; text-align: center;
-    padding: 10px 8px; font-size: 13.5px; white-space: nowrap;
+    min-width: 0; text-align: center; white-space: nowrap;
 }
-.inicio-atencion-acciones .boton { flex: 7 1 0%; }
+.inicio-atencion-acciones .boton { flex: 7 1 0%; font-weight: 700; padding: 10px 8px; font-size: 13.5px; }
 /* El contorno de `.boton--contorno` está pensado para navy -tinta clara sobre línea
-   traslúcida clara-, y ahora la tarjeta volvió a ser navy: no hace falta invertirlo. */
+   traslúcida clara-, y ahora la tarjeta volvió a ser navy: no hace falta invertirlo.
+   AJUSTE PUNTUAL: a 390px "Ver evolución" quedaba pegado al borde derecho -texto
+   más largo que "Entender este resultado →" para el mismo ~30% de ancho (flex: 3)-.
+   Se achica sólo la fuente de ESTE botón (13.5px -> 11px, el primario no se toca) y
+   sube un poco el padding horizontal (8px -> 9px) para dejarle aire real a los dos
+   lados sin ensanchar el botón -sigue siendo flex: 3, mismo ancho relativo de
+   siempre- ni bajar a dos líneas -white-space: nowrap ya estaba arriba-. */
 .inicio-atencion-acciones .boton--contorno {
     flex: 3 1 0%;
     color: var(--panel-navy-tinta); border-color: var(--panel-navy-borde);
+    padding: 10px 9px; font-size: 11px;
 }
 .inicio-atencion-acciones .boton--contorno:hover:not(:disabled) { background: rgba(125, 180, 224, .1); }
 
@@ -1392,7 +1640,7 @@ code { font-family: var(--mono); font-size: .9em; color: var(--ambar); }
    merece atención" dejaría de destacar-, así que acá el punto aqua y el nombre alcanzan;
    el detalle del dominio se pide, no se sirve de entrada. */
 
-.inicio-tranquilo { margin: 0 0 22px; }
+.inicio-tranquilo { margin: 0 0 22px; scroll-margin-top: 14px; }
 
 /* RONDA 9 — LO DEMÁS ESTÁ BIEN: una sola tarjeta compacta, no cuatro grandes, con el
    MISMO acento navy-sobre-navy que ya usa "merece atención" pero en verde (`--bien`, el
@@ -1435,12 +1683,27 @@ code { font-family: var(--mono); font-size: .9em; color: var(--ambar); }
 .inicio-tranquilo-item:focus-visible { outline: 2px solid var(--celeste); outline-offset: 2px; }
 .inicio-tranquilo-item:hover .inicio-tranquilo-nombre { color: var(--celeste); }
 .inicio-tranquilo-cabeza { display: flex; align-items: baseline; justify-content: space-between; gap: 10px; }
-.inicio-tranquilo-nombre { font-size: 14px; font-weight: 600; color: var(--panel-navy-tinta); transition: color .12s ease; }
+.inicio-tranquilo-nombre {
+    font-size: 14px; font-weight: 600; color: var(--panel-navy-tinta); transition: color .12s ease;
+    min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+/* RONDA 18 — AFFORDANCE DE NAVEGACION: valor + chevron van juntos en su propio grupo de
+   ancho fijo -`flex: none`, nunca se encoge- para que el chevron quede siempre pegado al
+   valor y al borde interno derecho de la fila, sin importar cuánto mida el nombre a la
+   izquierda -que ahora trunca con "…" en vez de forzar un wrap a 390px-. El chevron es
+   sólo el afordance visual: toda la fila ya era -y sigue siendo- el <button> clickeable
+   de siempre (.inicio-tranquilo-item), con su propio :hover/:focus-visible. */
+.inicio-tranquilo-cabeza-derecha { display: flex; align-items: center; gap: 6px; flex: none; }
 .inicio-tranquilo-valor {
     font-family: var(--sans); font-weight: 700; font-size: 15px; color: var(--panel-navy-tinta);
     white-space: nowrap; font-variant-numeric: tabular-nums;
 }
 .inicio-tranquilo-valor small { font-size: 11px; font-weight: 400; color: var(--panel-navy-tenue); margin-left: 2px; }
+.inicio-tranquilo-chevron {
+    flex: none; font-size: 16px; line-height: 1; color: var(--celeste); opacity: .6;
+}
+.inicio-tranquilo-item:hover .inicio-tranquilo-chevron,
+.inicio-tranquilo-item:focus-visible .inicio-tranquilo-chevron { opacity: .95; }
 .inicio-tranquilo-rango { margin-top: 8px; }
 .inicio-tranquilo-rango-etiquetas {
     display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-top: 6px;
@@ -1448,6 +1711,25 @@ code { font-family: var(--mono); font-size: .9em; color: var(--ambar); }
 }
 .inicio-tranquilo-rango-etiquetas span:first-child { flex: 1; min-width: 0; }
 .inicio-tranquilo-rango-etiquetas .chip { flex: none; }
+
+/* RONDA 14 — RESULTADOS CUALITATIVOS (Nitritos, sangre en heces/orina): la pastilla
+   discreta de 52px de la ronda 12 evitaba sugerir una posición numérica, pero achicó
+   la fila y perdió la evidencia real (Relato) que la versión anterior mostraba. Vuelve
+   la MISMA pista larga que ya usa el resto de la pantalla
+   (.inicio-atencion-rango-pista, verde→ámbar→rojo): acá el degradé de tres tramos no
+   describe una proporción -no existe una "hemoglobina a mitad de camino entre negativo
+   y positivo"- sino dos extremos de un espectro binario, y el marcador se clava en uno
+   de los dos (6%/94%, nunca un valor intermedio ni un porcentaje clínico inventado).
+
+   RONDA 14 — LA BANDA DE HEMOGLOBINA dentro de esta lista ya no usa el degradé de tres
+   tramos de "merece atención" -pensado para un único límite que preocupa- sino una
+   pista plana verde: la banda tiene DOS bordes, alejarse del piso preocupa igual que
+   acercarse al techo, y todo lo que llega a esta lista ya lo decidió tranquilo el
+   dominio (!PideAlgo). El marcador sigue siendo la proporción real dentro de
+   [piso, techo]; sólo cambia el fondo, que ya no inventa una zona de riesgo que esta
+   fila no tiene cómo mostrar. */
+.inicio-atencion-rango-pista--serena { background: var(--bien); }
+.inicio-tranquilo-nota { margin: 4px 2px 0; font-family: var(--sans); font-size: 12.5px; color: var(--panel-navy-tenue); }
 .inicio-tranquilo-detalle { margin: 2px 0 10px 2px; font-size: 12.5px; color: var(--panel-navy-tenue); }
 .inicio-tranquilo-cta { margin-top: 12px; }
 
@@ -1549,12 +1831,11 @@ code { font-family: var(--mono); font-size: .9em; color: var(--ambar); }
 }
 .inicio-sintendencia-tarjeta {
     display: flex; align-items: flex-start; justify-content: space-between; gap: 14px;
-    background: linear-gradient(165deg, var(--panel-navy) 0%, var(--panel-navy-honda) 100%);
+    background: var(--panel-navy);
     border: 1px solid var(--panel-navy-borde);
-    border-radius: 16px;
+    border-radius: 14px;
     padding: 14px 16px;
     margin-bottom: 10px;
-    box-shadow: 0 10px 22px -18px rgba(3, 10, 22, .55), 0 2px 8px rgba(3, 10, 22, .26);
 }
 .inicio-sintendencia-tarjeta:last-child { margin-bottom: 0; }
 .inicio-sintendencia-cuerpo { flex: 1 1 auto; min-width: 0; }
@@ -1581,11 +1862,10 @@ code { font-family: var(--mono); font-size: .9em; color: var(--ambar); }
    tarjeta como contexto del análisis, no como resultado. */
 
 .inicio-historial-tarjeta {
-    background: linear-gradient(165deg, var(--panel-navy) 0%, var(--panel-navy-honda) 100%);
+    background: var(--panel-navy);
     border: 1px solid var(--panel-navy-borde);
-    border-radius: 18px;
+    border-radius: 16px;
     padding: 18px 18px 16px;
-    box-shadow: 0 16px 32px -20px rgba(3, 10, 22, .65), 0 2px 10px rgba(3, 10, 22, .3);
 }
 .inicio-historial-encabezado {
     display: flex; align-items: baseline; justify-content: space-between; flex-wrap: wrap;
@@ -1596,43 +1876,35 @@ code { font-family: var(--mono); font-size: .9em; color: var(--ambar); }
 .inicio-historial-intro { margin: 6px 0 14px; font-size: 13.5px; color: var(--panel-navy-tenue); }
 
 .inicio-historial-timeline { list-style: none; margin: 0; padding: 0; }
-.inicio-historial-evento { position: relative; padding-left: 24px; margin-bottom: 10px; }
-.inicio-historial-evento:last-child { margin-bottom: 0; }
+.inicio-historial-evento {
+    position: relative; padding: 12px 0 12px 24px;
+    border-bottom: 1px solid var(--panel-navy-borde);
+}
+.inicio-historial-evento:first-child { padding-top: 2px; }
+.inicio-historial-evento:last-child { padding-bottom: 2px; border-bottom: 0; }
 .inicio-historial-nodo {
-    position: absolute; left: 0; top: 19px; width: 11px; height: 11px;
+    position: absolute; left: 0; top: 50%; margin-top: -5.5px; width: 11px; height: 11px;
     border-radius: 50%; background: var(--panel-navy); border: 2px solid var(--tenue-2);
     z-index: 1;
 }
 .inicio-historial-evento--reciente .inicio-historial-nodo {
-    width: 14px; height: 14px; top: 17.5px; left: -1.5px;
+    width: 14px; height: 14px; margin-top: -7px; left: -1.5px;
     border-color: var(--celeste); background: var(--celeste);
     box-shadow: 0 0 0 4px rgba(125, 180, 224, .22);
 }
 .inicio-historial-evento:not(:last-child)::before {
-    content: ""; position: absolute; left: 5px; top: 32px; bottom: -10px; width: 2px;
+    content: ""; position: absolute; left: 5px; top: calc(50% + 8px); bottom: -12px; width: 2px;
     background: var(--panel-navy-borde);
 }
 .inicio-historial-fila {
-    display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap;
-    gap: 6px 14px;
-    background: rgba(0, 0, 0, .12);
-    border: 1px solid var(--panel-navy-borde);
-    border-radius: 12px;
-    padding: 11px 13px;
+    display: flex; align-items: baseline; justify-content: space-between; flex-wrap: wrap;
+    gap: 4px 14px;
 }
-.inicio-historial-datos { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
 .inicio-historial-fecha {
-    font-family: var(--sans); font-size: 15px; font-weight: 600; color: var(--panel-navy-tinta);
+    font-family: var(--sans); font-size: 16px; font-weight: 700; color: var(--panel-navy-tinta);
     font-variant-numeric: tabular-nums;
 }
-.inicio-historial-cantidad { font-size: 13px; color: var(--panel-navy-tenue); }
-.inicio-historial-estado {
-    font-family: var(--sans); font-weight: 600; font-size: 11px; letter-spacing: .04em; text-transform: uppercase;
-    padding: 3px 9px; border-radius: 2px; border: 1px solid transparent; white-space: nowrap;
-}
-.inicio-historial-estado--bien     { background: var(--bien-suave);  color: var(--bien);  border-color: var(--bien-borde); }
-.inicio-historial-estado--atencion { background: var(--ambar-suave); color: var(--ambar); border-color: var(--ambar-borde); }
-.inicio-historial-estado--problema { background: var(--rojo-suave);  color: var(--rojo);  border-color: var(--rojo-borde); }
+.inicio-historial-cantidad { font-size: 13px; color: var(--panel-navy-tenue); white-space: nowrap; }
 
 /* Los rangos de referencia, al pie de la tarjeta de historial: mismo patrón de ícono en
    círculo que ya usa "merece atención" (.inicio-atencion-icono), en tono neutro celeste. */
@@ -1657,13 +1929,12 @@ code { font-family: var(--mono); font-size: .9em; color: var(--ambar); }
    "Tu historial" de arriba -jerarquía secundaria, tipografía legible, nada diminuto-. */
 .inicio-privacidad {
     display: flex; align-items: flex-start; gap: 10px;
-    margin-top: 16px; padding: 13px 15px;
-    background: var(--suave); border: 1px solid var(--linea); border-radius: 14px;
+    margin-top: 18px; padding-top: 14px; border-top: 1px solid var(--linea);
 }
 .inicio-privacidad-icono {
-    flex: none; width: 26px; height: 26px; border-radius: 50%;
+    flex: none; width: 22px; height: 22px; border-radius: 50%;
     display: flex; align-items: center; justify-content: center;
-    background: var(--panel-navy-borde);
+    background: var(--suave);
 }
 .inicio-privacidad-icono svg { stroke: var(--celeste); }
 .inicio-privacidad-texto { margin: 0; padding-top: 4px; font-size: 13.5px; line-height: 1.45; color: var(--tenue); }

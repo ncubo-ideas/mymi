@@ -335,10 +335,13 @@ else
             <p class="inicio-hero-secundario">@enRango.ParaSonia</p>
         }
 
-        @* No hay una pantalla de "chequeo" separada todavía -esta ronda es solo el
-           hero-, así que "ver mi chequeo" baja a la visita más reciente de Tu historial
-           (§7), que ya está en esta misma página. *@
-        <a class="inicio-hero-cta" href="#historial">Ver mi chequeo &rarr;</a>
+        @* AJUSTE PUNTUAL: "ver mi chequeo" apuntaba a #historial -la visita más
+           reciente de Tu historial, cerca de LDL/histórico-, que no es lo que promete
+           el CTA. El destino correcto es el inicio de "lo demás está bien" (§3): ya
+           existe el ancla real -`id="valores"` en la propia <section>, más abajo en
+           este mismo archivo-, así que sólo cambia el href, sin crear navegación
+           nueva. *@
+        <a class="inicio-hero-cta" href="#valores">Ver mi chequeo &rarr;</a>
     </section>
 
     @* §2 LO QUE MERECE ATENCIÓN — la pieza de mayor jerarquía. Un analito entra acá
@@ -627,25 +630,46 @@ else
         SEVERIDAD INFORMATIVO: no es un hallazgo clínico y no se pinta de ámbar ni de rojo.
         El semáforo está reservado para resultados. Va en neutro, arriba de «Cómo vienen
         tus valores», y se puede COLAPSAR pero no descartar: eso es la insistencia.        *@
-    @* §3 LO DEMÁS ESTÁ BIEN — RONDA 9: una sola tarjeta compacta, no cuatro grandes con
-       gráfico. Cada fila se lee sin abrir nada: nombre, valor, y la MISMA barra
-       verde→amarillo→rojo que ya usa la tarjeta de "merece atención"
-       (.inicio-atencion-rango-pista/-marca, reutilizadas tal cual, sin una propiedad
-       nueva), con el marcador en la posición real del valor. El límite numérico sale de
-       LimitesDeRango(lectura.ReferenciaLegible) -la MISMA frase que LimiteSuperior ya
-       parsea arriba, ahora leída también por su piso: la hemoglobina es una banda
-       ("entre 12.5 g/dL y 16.5 g/dL"), no un techo, y sin el piso el marcador mentiría-.
-       Los binarios (Nitritos, Sangre en heces/orina) no reciben una escala inventada: su
-       marcador cae en un extremo u otro según p.EstaPresente, el mismo booleano real que
-       ya decide "positivo"/"negativo" en el resto de la app, y la frase bajo la barra es
-       lectura.ReferenciaLegible tal cual la escribe el dominio ("lo esperable es
-       negativo") en vez de dos palabras Negativo/Positivo inventadas por la pantalla,
-       que para una serología real dirían "reactivo" y no "positivo". El chip "en rango"
-       usa Insignia(), que ya vivía en este archivo sin usarse (servía para constancias);
-       para todo lo que llega hasta acá siempre da "chip--estable" porque solo entra lo
-       que el dominio ya decidió que no pide nada (!lectura.PideAlgo). "Ver todos mis
-       resultados" sigue sin navegar -no hay ruta nueva-: despliega la MISMA lectura del
-       dominio (lectura.ParaSonia) debajo de cada fila, como antes de esta ronda. *@
+    @* §3 LO DEMÁS ESTÁ BIEN — RONDA 14: la ronda 12 dejó la fila demasiado desnuda
+       -sólo nombre y valor- y con eso se perdió evidencia real que la versión anterior,
+       de tarjetas grandes por analito (commit 54c7afc, previo al primer rediseño), sí
+       mostraba: "pasó de X a Y en N días, sobre M mediciones" y "P de M pruebas en N
+       días". Esas dos frases nunca dejaron de existir -son Relato(TendenciaDeAnalito) y
+       Relato(PresenciaDeAnalito), ahí abajo en el code-behind, sin tocar desde entonces-,
+       sólo dejaron de leerse en esta lista compacta. Lo que sigue las vuelve a leer, con
+       el mismo criterio de siempre: HaySerie en falso es "" y no una frase inventada.
+
+       LA BARRA DE HEMOGLOBINA (numérica, con piso Y techo) deja de compartir el degradé
+       de tres tramos (verde 0-58%, ámbar 58-82%, rojo 82-100%) que usa "merece atención"
+       para un colesterol: ese degradé asume un ÚNICO límite que preocupa -cuanto más
+       cerca del techo, más rojo-, y es el modelo correcto para una meta con un solo
+       borde. Una banda con DOS bordes no tiene ese sesgo: alejarse del piso preocupa
+       exactamente igual que acercarse al techo, y con el degradé viejo un valor bien
+       dentro de lo normal pero cerca del techo (91% de su propio rango) se pintaba en
+       rojo por un límite que no le correspondía. El marcador YA calculaba una proporción
+       real -eso no cambió-; lo que cambia es que la pista entera queda verde: quien
+       entra a esta lista ya lo decidió el dominio (!PideAlgo), así que en esta fila no
+       hay "afuera" que dibujar, sólo DÓNDE cae dentro de lo esperado. Debajo, una nota
+       corta -mediciones y tendencia, ambas reales (t.Mediciones, t.Tendencia)- sin
+       repetir el valor ni la referencia que ya están arriba.
+
+       LOS CUALITATIVOS (Nitritos, sangre en heces/orina) recuperan la barra LARGA -la
+       MISMA pista .inicio-atencion-rango-pista, mismo lenguaje verde→ámbar→rojo que el
+       resto de la pantalla- en lugar de la pastilla de 52px que dejó la ronda 12. Acá
+       el degradé de tres tramos SÍ tiene sentido: no describe una proporción -no existe
+       una "hemoglobina a mitad de camino entre negativo y positivo"- sino dos extremos
+       de un espectro binario, y el marcador se clava en uno de los dos -6% del lado
+       esperado, 94% del lado hallazgo-, nunca en un punto intermedio ni en un porcentaje
+       clínico inventado. Como esta lista sólo trae lo que el dominio ya calificó de
+       tranquilo, en la práctica el marcador siempre cae del lado esperado; la rama del
+       hallazgo queda escrita por si el dominio cambia de opinión, no porque esta
+       pantalla la necesite hoy. Debajo de la barra, Relato(p) -"0 de 2 pruebas en 367
+       días"- vuelve a acompañar al chip, que sigue mostrando la palabra real del
+       dominio (p.UltimoResultado), nunca un "Negativo" fijo escrito acá.
+
+       LOS COLORES (Constancia) ya traían su evidencia real -Relato(c)- desde la ronda
+       10, y no se tocan: no tienen un límite numérico que dibujar, la frase ya alcanza
+       ("2 de 2 veces dentro de lo esperable, en 367 días"). *@
     @if (tranquiloAnalitos.Count > 0 || tranquiloPresencias.Count > 0 || tranquiloConstancias.Count > 0)
     {
         <section class="inicio-tranquilo" id="valores" @key="@($"tranquilo-{estado.Refrescos}")">
@@ -663,7 +687,10 @@ else
                             <button class="inicio-tranquilo-item" @onclick="() => VerSerie(t.Analito)">
                                 <div class="inicio-tranquilo-cabeza">
                                     <span class="inicio-tranquilo-nombre">@t.ParaMostrar</span>
-                                    <span class="inicio-tranquilo-valor">@Valor(t.ValorFinal) <small>@t.Unidad</small></span>
+                                    <span class="inicio-tranquilo-cabeza-derecha">
+                                        <span class="inicio-tranquilo-valor">@Valor(t.ValorFinal) <small>@t.Unidad</small></span>
+                                        <span class="inicio-tranquilo-chevron" aria-hidden="true">&rsaquo;</span>
+                                    </span>
                                 </div>
                                 @if (techo is decimal limite && limite > 0)
                                 {
@@ -672,7 +699,7 @@ else
                                         ? Math.Max(0m, Math.Min(1m, (t.ValorFinal - piso2) / (limite - piso2)))
                                         : 0m;
                                     <div class="inicio-tranquilo-rango">
-                                        <div class="inicio-atencion-rango-pista">
+                                        <div class="inicio-atencion-rango-pista inicio-atencion-rango-pista--serena">
                                             <div class="inicio-atencion-rango-marca" style="left:@((proporcion * 100).ToString("0.#", CultureInfo.InvariantCulture))%"></div>
                                         </div>
                                         @if (lectura.ReferenciaLegible.Length > 0)
@@ -681,6 +708,10 @@ else
                                                 <span>@lectura.ReferenciaLegible</span>
                                                 <span class="chip @Insignia(t)">en rango</span>
                                             </div>
+                                        }
+                                        @if (t.HaySerie)
+                                        {
+                                            <p class="inicio-tranquilo-nota">@t.Mediciones @(t.Mediciones == 1 ? "medición" : "mediciones") · @t.Tendencia</p>
                                         }
                                     </div>
                                 }
@@ -698,19 +729,23 @@ else
                             <button class="inicio-tranquilo-item" @onclick="() => VerSerie(p.Analito)">
                                 <div class="inicio-tranquilo-cabeza">
                                     <span class="inicio-tranquilo-nombre">@p.ParaMostrar</span>
-                                    <span class="inicio-tranquilo-valor">@p.UltimoResultado</span>
+                                    <span class="inicio-tranquilo-cabeza-derecha">
+                                        <span class="inicio-tranquilo-valor">@p.UltimoResultado</span>
+                                        <span class="inicio-tranquilo-chevron" aria-hidden="true">&rsaquo;</span>
+                                    </span>
                                 </div>
                                 <div class="inicio-tranquilo-rango">
                                     <div class="inicio-atencion-rango-pista">
-                                        <div class="inicio-atencion-rango-marca" style="left:@(p.EstaPresente ? "100" : "0")%"></div>
+                                        <div class="inicio-atencion-rango-marca" style="left:@(p.EstaPresente ? "94" : "6")%"></div>
                                     </div>
-                                    @if (lectura.ReferenciaLegible.Length > 0)
-                                    {
-                                        <div class="inicio-tranquilo-rango-etiquetas">
-                                            <span>@lectura.ReferenciaLegible</span>
-                                            <span class="chip @Insignia(p)">en rango</span>
-                                        </div>
-                                    }
+                                    <div class="inicio-tranquilo-rango-etiquetas">
+                                        @{ string relatoP = Relato(p); }
+                                        @if (relatoP.Length > 0)
+                                        {
+                                            <span>@relatoP</span>
+                                        }
+                                        <span class="chip @Insignia(p)">@p.UltimoResultado</span>
+                                    </div>
                                 </div>
                             </button>
                             @if (tranquiloExpandido && !string.IsNullOrEmpty(lectura.ParaSonia))
@@ -734,7 +769,10 @@ else
                             <button class="inicio-tranquilo-item" @onclick="() => VerSerie(c.Analito)">
                                 <div class="inicio-tranquilo-cabeza">
                                     <span class="inicio-tranquilo-nombre">@c.ParaMostrar</span>
-                                    <span class="inicio-tranquilo-valor">@c.UltimaCategoria</span>
+                                    <span class="inicio-tranquilo-cabeza-derecha">
+                                        <span class="inicio-tranquilo-valor">@c.UltimaCategoria</span>
+                                        <span class="inicio-tranquilo-chevron" aria-hidden="true">&rsaquo;</span>
+                                    </span>
                                 </div>
                                 <div class="inicio-tranquilo-rango-etiquetas" style="margin-top:6px">
                                     <span>@Relato(c)</span>
@@ -809,7 +847,7 @@ else
     {
         <section class="inicio-cambios">
             <h2 class="seccion">Qué cambió desde tu último chequeo</h2>
-            <p class="inicio-cambios-intro">Esto es lo que cambió desde tu resultado anterior.</p>
+            <p class="inicio-cambios-intro">Así han cambiado tus resultados recientes.</p>
             @foreach (CambioReciente c in Cambios())
             {
                 InterpretacionDeAnalito lectura = Lectura(c.Analito.Analito);
@@ -868,7 +906,7 @@ else
     @if (sinTendenciaAnalitos.Count > 0 || sinTendenciaPresencias.Count > 0 || sinTendenciaConstancias.Count > 0)
     {
         <section class="inicio-sintendencia">
-            <p class="inicio-sintendencia-rotulo">aún no hay tendencia</p>
+            <p class="inicio-sintendencia-rotulo">todavía no podemos ver la tendencia</p>
             @foreach (TendenciaDeAnalito t in sinTendenciaAnalitos)
             {
                 <div class="inicio-sintendencia-tarjeta">
@@ -878,7 +916,7 @@ else
                             <span class="inicio-sintendencia-valor">@Valor(t.ValorFinal) <span>@t.Unidad</span></span>
                             <span class="chip chip--repetir">@t.Mediciones medición@(t.Mediciones == 1 ? "" : "es")</span>
                         </div>
-                        <p class="inicio-sintendencia-texto">Con tu próximo resultado podremos empezar a mostrarte cómo viene cambiando.</p>
+                        <p class="inicio-sintendencia-texto">@TextoSinTendencia(t.Mediciones)</p>
                     </div>
                     <span class="inicio-sintendencia-icono" aria-hidden="true">
                         <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -896,7 +934,7 @@ else
                             <span class="inicio-sintendencia-valor">@p.UltimoResultado</span>
                             <span class="chip chip--repetir">@p.Mediciones medición@(p.Mediciones == 1 ? "" : "es")</span>
                         </div>
-                        <p class="inicio-sintendencia-texto">Con tu próximo resultado podremos empezar a mostrarte cómo viene cambiando.</p>
+                        <p class="inicio-sintendencia-texto">@TextoSinTendencia(p.Mediciones)</p>
                     </div>
                     <span class="inicio-sintendencia-icono" aria-hidden="true">
                         <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -914,7 +952,7 @@ else
                             <span class="inicio-sintendencia-valor">@c.UltimaCategoria</span>
                             <span class="chip chip--repetir">@c.Mediciones medición@(c.Mediciones == 1 ? "" : "es")</span>
                         </div>
-                        <p class="inicio-sintendencia-texto">Con tu próximo resultado podremos empezar a mostrarte cómo viene cambiando.</p>
+                        <p class="inicio-sintendencia-texto">@TextoSinTendencia(c.Mediciones)</p>
                     </div>
                     <span class="inicio-sintendencia-icono" aria-hidden="true">
                         <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -933,18 +971,21 @@ else
        HaySerie que ya separa tendencias y presencias: ver atencionConstancias/
        sinTendenciaConstancias/tranquiloConstancias en Releer(). *@
 
-    @* §7 TU HISTORIAL — RONDA 11: pasa a vivir dentro de una tarjeta (el mismo lenguaje
-       navy/gradiente que ya usan atención/qué cambió/lo demás está bien) con una línea de
-       tiempo real: un punto por visita, conectados por una línea vertical, el más
-       reciente resaltado. Los datos son los MISMOS de siempre -Visitas()/
-       VisitasRecientes(), EstadoDeLaVisita()/ClaseDeSeveridad()/TextoDeSeveridad()-, no
-       se agregó ninguna fuente nueva. Las filas NO son clickeables porque hoy no existe
-       una pantalla de detalle por visita -VerSerie() navega por analito, no por fecha-:
-       agregar una flecha ahí prometería una navegación que todavía no hay. "Ver
-       historial completo" comparte encabezado con "Tu historial" y, si no entra en 390px,
-       el propio flex-wrap de la fila lo manda a su propia línea sin achicar la letra. Los
-       rangos de referencia se mudan al pie de esta misma tarjeta, como contexto del
-       análisis -no como resultado-, con exactamente la misma lógica de siempre
+    @* §7 TU HISTORIAL — RONDA 12: el timeline es el componente visual -punto por
+       visita, conectados por una línea vertical, el más reciente resaltado-, sin fila
+       recuadrada adentro. Los datos son los MISMOS de siempre -Visitas()/
+       VisitasRecientes(), visita.Fecha/visita.Celdas.Count-. SE QUITÓ el chip de estado
+       por visita ("a seguir"/"en orden"): salía de EstadoDeLaVisita(), que aplicaba la
+       Severidad de HOY de cada analito a cualquier visita pasada que lo midiera -no un
+       estado por chequeo que exista en el dominio-, y podía leerse como un veredicto
+       clínico de esa fecha que master nunca guardó. Representación neutra: sólo fecha y
+       cantidad de resultados, los dos únicos datos por-visita que sí son reales. Las
+       filas NO son clickeables porque hoy no existe una pantalla de detalle por visita
+       -VerSerie() navega por analito, no por fecha-. "Ver historial completo" comparte
+       encabezado con "Tu historial" y, si no entra en 390px, el propio flex-wrap de la
+       fila lo manda a su propia línea sin achicar la letra. Los rangos de referencia se
+       mudan al pie de esta misma tarjeta, como contexto del análisis -no como resultado-,
+       con exactamente la misma lógica de siempre
        (pedido.HaceFalta/sexo/cambiandoSexo/Declarar). *@
     <div class="inicio-historial-tarjeta">
         <div class="inicio-historial-encabezado">
@@ -967,17 +1008,13 @@ else
                 @{ int indiceVisita = 0; }
                 @foreach (Visita visita in VisitasRecientes())
                 {
-                    string estadoVisita = EstadoDeLaVisita(visita);
                     bool esReciente = indiceVisita == 0;
                     indiceVisita++;
                     <li class="inicio-historial-evento @(esReciente ? "inicio-historial-evento--reciente" : "")">
                         <span class="inicio-historial-nodo" aria-hidden="true"></span>
                         <div class="inicio-historial-fila">
-                            <div class="inicio-historial-datos">
-                                <span class="inicio-historial-fecha">@visita.Fecha.ToString("dd MMM yyyy", Cultura)</span>
-                                <span class="inicio-historial-cantidad">@visita.Celdas.Count resultado@(visita.Celdas.Count == 1 ? "" : "s")</span>
-                            </div>
-                            <span class="inicio-historial-estado inicio-historial-estado--@ClaseDeSeveridad(estadoVisita)">@TextoDeSeveridad(estadoVisita)</span>
+                            <span class="inicio-historial-fecha">@visita.Fecha.ToString("dd MMM yyyy", Cultura)</span>
+                            <span class="inicio-historial-cantidad">@visita.Celdas.Count resultado@(visita.Celdas.Count == 1 ? "" : "s")</span>
                         </div>
                     </li>
                 }
@@ -1170,22 +1207,32 @@ else
         return visitas.Count > 0 ? visitas[0].Fecha : (DateTime?)null;
     }
 
-    // LA CADENA DE VALORES ("182 → 188 → 212"), armada con los MISMOS puntos que ya
-    // usa el grafico de la serie (Serie(analito)). Cuenta agnostica: con 2 mediciones
-    // arma un solo salto, con 5 arma una cadena de 5 -nada esta pensado para "3".
+    // LA CADENA DE VALORES EN "MERECE ATENCION" — RONDA 12: se acorta al ULTIMO
+    // salto real (el valor previo y el actual), con los MISMOS puntos que ya usa el
+    // grafico de "Que cambio" (Serie(analito)). Ya no repite la cadena completa: esa
+    // evolucion completa vive en el grafico de "Que cambio", asi que mostrarla dos
+    // veces era la redundancia que se pidio reducir. Sin invertir el orden ni
+    // inventar puntos: si solo hay uno, no hay salto que mostrar.
     private string CadenaDeValores(TendenciaDeAnalito t)
     {
         IReadOnlyList<PuntoDeSerie> serie = Serie(t.Analito);
-        if (serie.Count == 0) return "";
+        if (serie.Count < 2) return "";
 
-        var texto = new System.Text.StringBuilder();
-        for (int i = 0; i < serie.Count; i++)
-        {
-            if (i > 0) texto.Append(" → ");
-            texto.Append(Valor(serie[i].Valor));
-        }
-        return texto.ToString();
+        PuntoDeSerie previo = serie[serie.Count - 2];
+        PuntoDeSerie actual = serie[serie.Count - 1];
+        return $"{Valor(previo.Valor)} → {Valor(actual.Valor)}";
     }
+
+    // EL TEXTO DE "TODAVIA NO PODEMOS VER LA TENDENCIA" — RONDA 12: antes era una
+    // frase fija para cualquier cantidad de mediciones. Ahora depende de Mediciones:
+    // con una sola, tiene sentido decir que el PROXIMO resultado habilita la
+    // comparacion; con mas de una (y sin embargo !HaySerie, por ejemplo por dias
+    // insuficientes entre mediciones) esa frase mentiria, asi que se usa una version
+    // honesta que no promete una fecha concreta.
+    private static string TextoSinTendencia(int mediciones) =>
+        mediciones <= 1
+            ? "Con tu próximo resultado podremos empezar a mostrarte cómo viene cambiando."
+            : "Todavía no hay datos suficientes para mostrar cómo viene cambiando.";
 
     // "QUE CAMBIO DESDE TU ULTIMO CHEQUEO": el ultimo salto de CADA serie -no la serie
     // entera, que ya se ve en "lo que merece atencion" y en el detalle-. Mira los MISMOS
@@ -1373,51 +1420,6 @@ else
         List<Visita> todas = Visitas();
         return historialExpandido ? todas : todas.GetRange(0, Math.Min(3, todas.Count));
     }
-
-    // EL ESTADO GENERAL DE UNA VISITA: la peor severidad entre lo que se midio ESE dia.
-    // Todas las filas preguntan a su Interpretacion, misma fuente que el resto de la
-    // pantalla: CeldaEnCuadro ya no carga su propia severidad -la celda solo dice QUE se
-    // midio y CUANDO-, porque desde que toda fila forma serie (Marca() lo explica igual)
-    // no hay una segunda fuente que consultar.
-    private string EstadoDeLaVisita(Visita visita)
-    {
-        string peor = "";
-        int rango = -1;
-        foreach (CeldaEnCuadro celda in visita.Celdas)
-        {
-            string severidad = Lectura(celda.Analito).Severidad;
-            int actual = RangoDeSeveridad(severidad);
-            if (actual > rango) { rango = actual; peor = severidad; }
-        }
-        return peor;
-    }
-
-    // EL MISMO ORDEN DE SEMAFORO que ya usa TonoDeLoQuePide: informativo/vacio primero,
-    // urgente al final. Es la unica forma de saber cual severidad "gana" en una visita
-    // con varios resultados.
-    private static int RangoDeSeveridad(string severidad) => severidad switch
-    {
-        "urgente"         => 3,
-        "consulte pronto" => 2,
-        "vigilar"         => 1,
-        _                 => 0,
-    };
-
-    private static string ClaseDeSeveridad(string severidad) => severidad switch
-    {
-        "urgente"         => "problema",
-        "consulte pronto" => "atencion",
-        "vigilar"         => "atencion",
-        _                 => "bien",
-    };
-
-    private static string TextoDeSeveridad(string severidad) => severidad switch
-    {
-        "urgente"         => "requiere atención",
-        "consulte pronto" => "requiere atención",
-        "vigilar"         => "a seguir",
-        _                 => "en orden",
-    };
 
     protected override async Task OnInitializedAsync()
     {
