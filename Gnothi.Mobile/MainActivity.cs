@@ -172,6 +172,15 @@ public class MainActivity : Activity
 			s => global::Android.Util.Log.Info("gnothi", s));
 		Gnothi.Host.WebViewShell.Host = anfitrion;
 
+		// Y QUIEN SABE CERRARLOS: una actualizacion mueve la carpeta del modulo mientras su
+		// WebView puede estar encima (44 §3.6). El Shell solo nombra el gancho; aca se cumple.
+		shell.CloseModule = modulo =>
+		{
+			if (!anfitrion.IsLive(modulo)) return false;
+			anfitrion.Evict(modulo);
+			return true;
+		};
+
 		// Run() es el bucle del Host y no termina: se arranca UNA vez y se espera al final.
 		Task corriendo = shell.Run();
 

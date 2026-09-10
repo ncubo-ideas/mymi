@@ -127,6 +127,15 @@ public sealed class ViewController : UIViewController
 		moduleHost = new IosWebModuleHost(this, new IosSecretStore(), Log);
 		Gnothi.Host.WebViewShell.Host = moduleHost;
 
+		// AND WHO CAN CLOSE THEM: an update moves the module's folder while its WebView may be
+		// sitting on it (44 §3.6). The Shell only names the hook; the platform fulfils it.
+		shell.CloseModule = module =>
+		{
+			if (!moduleHost.IsLive(module)) return false;
+			moduleHost.Evict(module);
+			return true;
+		};
+
 		_ = Task.Run(async () =>
 		{
 			// LA SONDA VA ANTES DEL ARRANQUE, y a proposito: si el Host no levanta porque el
