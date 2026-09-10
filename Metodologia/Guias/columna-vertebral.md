@@ -161,7 +161,16 @@ legítimos:
 Lo que un contraste **no** hace en ningún caso es renderizarse solo: el dominio expone la hoja —el
 estado, el nombre, la etiqueta— y la superficie decide qué imprime. Un `ToString()` como única salida es
 el dominio decidiendo por la superficie
-([regla 13 del substrato](reglas-del-substrato.md#13--el-print-proyecta-un-solo-nivel)).
+([regla 13 del substrato](reglas-del-substrato.md#13--el-print-emite-valores-no-material)).
+
+<!-- regla: nombrar-no-es-renderizar -->
+> **Nombrar no es renderizar, y por eso el capítulo 0 y esta guía no se contradicen.** El
+> [capítulo 0](00-arquitectura-clientecentrica.md) dice que el dominio *"arma su propia lectura"* —*"viene
+> bajando"*, *"lleva 15 días sin aparecer"*—: eso es **nombrar la hoja**, producir el veredicto que sólo
+> el dominio sabe decir. Esta guía dice que el contraste no se renderiza solo: eso es **no componer la
+> vista** —qué se muestra, cómo se formatea, para quién—. El dominio produce el valor con nombre; la
+> superficie arma la frase final. Un tipo que sólo se deja leer por `ToString()` colapsa las dos: obliga
+> al dominio a renderizar porque no dejó ninguna hoja para elegir.
 
 <!-- regla: la-app-propone-la-persona-adopta -->
 > ### Cuando la intención no está declarada: la app propone, la persona adopta
@@ -193,6 +202,19 @@ ruido, alcance, urgencia, lo propio— y ahí está también cómo se hacen sin 
 *"**Reducir** la **cantidad de días** entre **una medición y la siguiente** **cuando el valor está fuera
 de rango**."* Obliga a que sea medible y a que no traiga la solución adentro. Tiene nombre publicado:
 [la forma de un juicio](glosario.md#adoptados).
+
+<!-- regla: identidad-en-dos-niveles -->
+**Una de las siete preguntas tiene un gemelo que aparece recién al construir: la identidad del hecho.**
+En la pasada 3 se pregunta por *magnitud* —*un salto del 80% probablemente no es el mismo cobro*—. Al
+atar el journal, la misma pregunta vuelve como *comando* —*el mismo recibo dos veces es el mismo hecho*—,
+y eso pide un `Check` por identidad:
+[la regla 18 del substrato](reglas-del-substrato.md#18--todo-comando-necesita-check-incluso-el-que-no-puede-fallar).
+Son la misma pregunta en dos niveles. Saltearla no se ve modelando —el dominio compila y las
+comprobaciones pasan— y sólo muerde cuando un hecho llega dos veces: un replay, un feed que repite. Le
+costó identidad a dos dominios seguidos: `Asistio` en el gimnasio contó 30 días dos veces, y
+`AdoptarReserva` en la municipalidad entró de más. Por eso **todo comando que el dominio pueda rechazar
+se guarda con un `Puede…` y un `Check` antes de correr** —la columna vertebral lo nombra acá; el
+[capítulo 3](03-construir-la-app.md) y las [reglas del substrato](reglas-del-substrato.md) lo desarrollan.
 
 <!-- regla: cuatro-reglas-de-la-pasada-3 -->
 **Y cuatro reglas que esta pasada no puede romper:**
@@ -259,6 +281,27 @@ El tell mecánico sigue valiendo, en una dirección: si aparece *"si es de tipo 
 tipo Y, otra"*, eso es comportamiento y **pide** clase. Lo que ya no vale es la inversa —*"sólo
 constantes → colapsá"*—: una constante que es conocimiento del dominio se gana la clase; una constante
 suelta sin significado propio, no.
+
+<!-- regla: opina-vive-en-la-clase -->
+**Y una segunda pregunta después de *"¿opina?"*: ¿la opinión vive en la clase, o la hicimos clase y la
+dejamos afuera?** Una fila puede pasar *"opina"* en el papel —tiene una propiedad que la distingue— y que
+el comportamiento que esa propiedad implica lo ejecute un tercero. El tell es mecánico: **si otra clase
+hace `if (x.EsAsi) … else …` sobre tu bandera, el conocimiento no está donde la clase dice que está.** La
+`LeyDeCalculo` de la municipalidad lo tenía: exponía un `RespondeAlAvaluo` y otra clase ramificaba sobre
+él para elegir la explicación del aumento. Opinar de verdad es que el comportamiento viva adentro —la
+`Cadencia` devuelve el `Mes` o el `Trimestre`, sin que nadie afuera pregunte `EsMensual`—. Una clase que
+opina en el papel pero no en el comportamiento es una clase anémica con ropa de clase, la misma porosidad
+que la pasada 4 quiere evitar (guía de dominios, **E40** y **E24**).
+
+<!-- regla: comparaciones-guardan-el-tipo -->
+**Cuando un tipo abstracto lleva varias comparaciones, todas guardan que los dos lados sean del mismo
+tipo — no sólo algunas.** Y la respuesta al desajuste depende de la operación: la **igualdad** entre
+clases distintas es un *no* honesto —`false`—; el **orden** entre clases distintas no existe —*¿abril es
+anterior al segundo trimestre?*— y preguntarlo es un bug de quien llama, así que **revienta**, no
+devuelve `false`. En la municipalidad `EsElMismoQue` guardaba el tipo y `EsAnteriorA` no, y ordenaba dos
+alfabetos por el mismo primitivo. No lo agarró ningún test —el único camino que llega ahí ya fuerza el
+mismo tipo—: salió leyendo las dos comparaciones lado a lado. Por eso va con su **control negativo**: una
+comprobación que afirme que la comparación cruzada revienta.
 
 <!-- regla: fase-no-es-subtipo -->
 > **Y un control que ninguna de las dos preguntas hace: ¿una instancia puede *dejar de ser* esto sin

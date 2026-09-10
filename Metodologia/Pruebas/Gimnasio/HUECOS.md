@@ -141,7 +141,7 @@ cuatro veces seguidas.
 | Qué pasó | Dónde vive ahora |
 |---|---|
 | El parámetro `@genero` tapó al tipo `Genero`, y el error acusaba a `String` | [Regla 10](../../Guias/reglas-del-substrato.md#10--un-parámetro-le-puede-robar-el-nombre-a-un-tipo) — **ya lo decía**, ver abajo |
-| Un `ToString()` sobrescrito no se llama solo desde el `print` | [Regla 13](../../Guias/reglas-del-substrato.md#13--el-print-proyecta-un-solo-nivel), último punto |
+| Un `ToString()` sobrescrito no se llama solo desde el `print` | [Regla 13](../../Guias/reglas-del-substrato.md#13--el-print-emite-valores-no-material), último punto |
 | Tres journals envenenados: el `Check` preguntaba **otra cosa** que la que el dominio rechazaba | [Regla 17](../../Guias/reglas-del-substrato.md#17--el-check-tiene-que-preguntar-exactamente-lo-que-el-dominio-rechaza) |
 | `Asistio` no podía fallar, no llevaba `Check`, y contó los mismos 30 días dos veces | [Regla 18](../../Guias/reglas-del-substrato.md#18--todo-comando-necesita-check-incluso-el-que-no-puede-fallar) |
 

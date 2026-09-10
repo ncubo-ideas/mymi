@@ -26,7 +26,7 @@ como *§7.5*.
 | **10** | [Un parámetro le puede robar el nombre a un tipo](#10--un-parámetro-le-puede-robar-el-nombre-a-un-tipo) | Al nombrar `@examen` teniendo `Examen` |
 | **11** | [Un `static readonly` no se alcanza desde el DSL](#11--un-static-readonly-no-se-alcanza-desde-el-dsl-un-método-estático-sí) | Con conjuntos cerrados |
 | **12** | [El ternario no unifica dos subclases](#12--el-ternario-no-unifica-dos-subclases-a-su-base-común) | Al devolver una u otra rama |
-| **13** | [El `print` proyecta un solo nivel](#13--el-print-proyecta-un-solo-nivel) | Con carriers anidados o nullables |
+| **13** | [El `print` emite valores, no material](#13--el-print-emite-valores-no-material) | Con material anidado; la profundidad no importa |
 | **14** | [El dominio dice duraciones, no fechas](#14--el-dominio-dice-duraciones-no-fechas) | Es de diseño, no del motor |
 | **15** | [El `print` de varios campos lleva alias sin comillas](#15--el-print-de-varios-campos-lleva-alias-sin-comillas-separados-por-coma) | Al armar cualquier vista |
 | **16** | [Un escalar tipado sale por parámetro `out`](#16--un-escalar-tipado-sale-por-parámetro-out-no-parseando-el-print) | Al querer un número y no un texto |
@@ -249,6 +249,24 @@ La guía de dominio ya pide ese resolutor —`Periodicidad.PorNombre('mensual')`
 desconocido— por la **totalidad**. En este substrato es además la **única puerta de entrada**. Si tu
 conjunto cerrado no tiene uno, no es que quede feo: es que ningún comando lo puede nombrar.
 
+<!-- regla: una-instancia-por-miembro -->
+**Y el método devuelve una instancia cacheada, no un `new` por llamada.** Que el resolutor tenga que ser
+un método no obliga a reconstruir el miembro cada vez:
+
+```csharp
+private static readonly Rubro _basura =
+    new Rubro("recoleccion-de-basura", Cadencia.Mensual(), LeyDeCalculo.PorUnidad());
+internal static Rubro Basura() { return _basura; }
+```
+
+Un `Basura()` que hace `new Rubro(...)` con un `new Cadencia` y un `new LeyDeCalculo` adentro rebuildea
+un grafo de tres objetos en cada llamada, y renuncia a la identidad por referencia. **Una instancia por
+miembro** —como el `static readonly SOCCER = new Soccer(1)` de un enum de tipos— lo evita, y el DSL
+sigue entrando por el método. **La condición es la inmutabilidad:** se cachea sólo un miembro inmutable,
+y un miembro de conjunto cerrado debería serlo; si tuviera estado que cambia, compartir la instancia
+sería un error. El payoff crece con el grafo: en un `Rubro` con su cadencia y su ley se nota, en un
+estado que sólo lleva un string es apenas prolijidad.
+
 ## 12 · El ternario no unifica dos subclases a su base común
 
 ```
@@ -266,38 +284,48 @@ Las dos ramas tienen que dar **el mismo tipo**, aunque el parámetro que las rec
 honesto: el journal guarda **cuál se ejecutó de verdad**, en vez de una condición que hay que volver
 a evaluar en cada replay.
 
-## 13 · El `print` proyecta un solo nivel
+## 13 · El `print` emite valores, no material
 
-`print v.Responsables` no cruza. `print r.Gasto.Nombre` tampoco. Lo que cruza es **un nivel de
-escalares**, y eso decide la forma de tus carriers antes de que escribas el primero:
+`print laLinea.Rubro` no cruza: `Rubro` es material. `print laLinea.Rubro.Cadencia.Nombre.Length`
+**sí cruza**, a cuatro saltos, porque termina en un `int`. **La profundidad no importa.** Lo único que
+el motor mira es el **tipo declarado con que termina el campo**:
 
-- **Un objeto adentro de un carrier** se aplana con un accesor: `NombreDelGasto`, `NombreDeLaSeveridad`.
-- **Una colección adentro de un carrier** no cruza: o se convierte en un escalar (`CuantosSinMarcar`)
-  o va en **una consulta aparte** con su propio `foreach`.
-- **Una colección de filas que a su vez tienen celdas** tampoco. Se aplana con índices —una fila por
-  celda, con su `fila` y su `columna`— y la superficie rearma la grilla sin volver a decidir nada.
-- **Un nullable viaja como bool más valor**, nunca como hueco. Si mandás sólo el número, quien lo
-  reciba no puede distinguir *"cero"* de *"no se sabe"*, y ésas son dos respuestas muy distintas.
-- **Un `ToString()` sobrescrito no se llama solo.** Aunque la clase lo tenga puesto justamente para
-  poder imprimirse, hay que escribirlo en el script: `print lectura.ToString() estado`. Si no:
+- **Un valor cruza, a cualquier profundidad** — `string`, `int`, `decimal`, `bool`, `DateTime`, y
+  arreglos de ésos. Un método con argumentos que devuelve un valor también cruza.
+- **Material revienta, aunque sea a un solo salto** — una clase del dominio, una interfaz, una
+  colección. El mensaje del motor:
 
   ```
-  'Print estado' emits a value of type 'Lectura', which is material, not a value.
+  'Print x' emits a value of type 'Rubro', which is material, not a value.
   The projection is the actor's to author, not the material's: emit the leaves the
   view needs, or state the rendering explicitly (for instance '.ToString()').
   ```
 
-  **La primera salida es la buena; la segunda es la escapatoria.** Escribir `.ToString()` en el
-  script cambia **quién llama**, no **quién decide**: el material sigue eligiendo el texto y el actor
-  sólo lo pide en voz alta. Si el tipo tiene una etiqueta, **exponela como hoja** — `Nitritos` en
-  `Examenes` expone `Etiqueta`; los tipos de juicio del gimnasio guardan su `estado` privado y sólo
-  se dejan leer por `ToString()`, que es el material eligiendo por el actor.
+> **Medido el 2026-09-09** contra el motor real, reproduciendo una revisión externa: un valor a tres
+> saltos cruzó, el material a uno reventó. La versión vieja de esta regla —*"proyecta un solo nivel"*—
+> era falsa; **la profundidad nunca fue el criterio**. Ese error costó accesores aplanadores de más en
+> cuatro dominios, y dos guías lo citaban.
 
-  **El tell: si la única forma de sacarle el texto a un tipo es `ToString()`, el actor no tiene entre
-  qué elegir.** `.ToString()` en el script se justifica sólo cuando el tipo tiene **una sola**
-  rendición y es del dominio —un conjunto cerrado diciendo su nombre—; un juicio que la superficie
-  puede querer mostrar de varias formas expone hojas. (Guía de dominios, **E24**: `ToString` es para
-  intención de dominio o depuración, **nunca un contrato que alguien parsee**.)
+Lo que sigue vigente es qué hacés con eso, y ahora es **elección de diseño, no obligación del motor**:
+
+- **Aplanar un objeto con un accesor** —`NombreDelRubro`, `EtiquetaDelPeriodo`— **fija el contrato de
+  la vista en un lugar**. La cadena larga en el script —`laLinea.Rubro.Nombre`— también funciona y deja
+  que la superficie navegue el grafo del dominio. Las dos son legítimas; lo que no lo era es aplanar
+  **creyendo que el motor lo obligaba**. El propio mensaje lo dice: *the projection is the actor's to
+  author*.
+- **Una colección no se emite** — se recorre con un `foreach` que imprime las hojas de cada elemento,
+  una fila por elemento. La colección no viaja; sus hojas sí.
+- **Un nullable viaja como bool más valor**, nunca como hueco. Mandar sólo el número no deja
+  distinguir *"cero"* de *"no se sabe"*, y ésas son dos respuestas muy distintas.
+- **El `ToString()` sobrescrito no se llama solo** — hay que escribirlo en el script:
+  `print lectura.ToString() estado`. Y una **trampa medida**: si el tipo **no** sobrescribe `ToString`,
+  el motor no se queja y emite el nombre CLR —`"Municipalidad.Dominio.Mes"`— a la superficie, sin un
+  solo error. Si el tipo tiene una etiqueta, **exponela como hoja**.
+
+**El tell: si la única forma de sacarle el texto a un tipo es `ToString()`, el actor no tiene entre qué
+elegir.** Un conjunto cerrado diciendo su nombre puede usarlo; un juicio que la superficie querrá
+mostrar de varias formas expone hojas. (Guía de dominios, **E24**: `ToString` es para intención de
+dominio o depuración, **nunca un contrato que alguien parsee**.)
 
 ## 14 · El dominio dice duraciones, no fechas
 

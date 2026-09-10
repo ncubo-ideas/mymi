@@ -141,6 +141,30 @@ es opcional, y cuando no está **se dice**, en vez de inventar un número para p
 Cuál de las dos depende de si el juicio es necesario para que el objeto tenga sentido, o sólo para
 una respuesta en particular. Lo que no es una opción es la tercera.
 
+<!-- regla: la-excepcion-es-del-dominio -->
+### La excepción es del dominio, y no toda validación es una excepción
+
+El `throw` de arriba es el **único** de estas guías, y por eso se copió como si fuera *la* forma de
+guardar: `ArgumentOutOfRangeException` es la excepción número uno en los tres dominios de prueba. No lo
+es. Hay **tres casos distintos** y sólo uno es una excepción del framework:
+
+1. **Un rechazo de negocio que quien llama pudo prevenir** —*"ese rubro no existe"*, *"ese cobro ya
+   estaba"*—. No se descubre reventando: es un `Puede…` que devuelve `false` y el `Check` consulta antes
+   de correr ([regla 1](reglas-del-substrato.md)). El `throw` adentro del mutador es sólo el **respaldo**
+   para *"llamaron sin preguntar"*, y cuando salta tiene que ser **la excepción propia del dominio**
+   —un `ErrorDeDominio`—, para distinguirlo de un error del framework. *Un desenlace esperado del negocio
+   nunca es una excepción: es un veredicto o un estado* (guía de dominios, **E32**).
+2. **Una violación de contrato de quien llama** —un conteo negativo, una proporción fuera de `0..1`—.
+   Eso **sí** es `ArgumentException` / `ArgumentOutOfRangeException`: es un bug del que llama, no una
+   condición de negocio. El `throw` de arriba, *"es una proporción"*, es este caso, y por eso está bien.
+3. **Un invariante roto adentro del dominio** —no debería pasar nunca—. Excepción del dominio, o dejarlo
+   reventar: es un bug a arreglar, no una condición a manejar.
+
+La norma, entonces: el dominio define **un** tipo de excepción para sus respaldos e invariantes; el
+rechazo de negocio va por `Puede…` y veredicto, no por `throw`; y `ArgumentException` queda para el error
+de quien llama. La mayoría de lo que un dominio hoy tira como `ArgumentException` son veredictos que ya
+están guardados por un `Puede…` — el `throw` es el respaldo, y le falta el tipo propio.
+
 ### El dominio va `internal`, y el csproj separado es lo que lo hace cierto
 
 Es la regla que más se rompe, casi siempre con la misma justificación —*"el motor necesita que sea
@@ -346,8 +370,12 @@ public sealed class AppPuppet : PerformanceV2
 
 Cuatro cosas que hay que entender de ese bloque:
 
-1. **`Assembly.Load` por nombre**, no `typeof(X).Assembly`. Nombrar un tipo obligaría a hacerlo
-   público y a que el host lo vea. Cargando por nombre, el dominio entero queda `internal`.
+1. **`Assembly.LoadFrom` por ruta**, no `typeof(X).Assembly`. Nombrar un tipo obligaría a hacerlo
+   público y a que el host lo vea; cargando por ruta, el dominio entero queda `internal`. **No es
+   `Assembly.Load` por nombre simple:** ése falla aunque el DLL esté al lado del ejecutable, porque se
+   resuelve contra el `deps.json` que un proyecto sin referencia de compilación no tiene (ver el recuadro
+   de arriba y la [regla 3](reglas-del-substrato.md)). El `ElDominio.Assembly` de cada dominio hace
+   exactamente ese `LoadFrom`.
 2. **El seed va en un `upgrade`**, no en un `if (esNuevo)`. El `upgrade` se aplica una vez por actor;
    agregar una liberación nueva después es agregar otro `upgrade('nombre_v2')`, y se aplica solo.
 3. **El agregado se construye DENTRO de un comando**, como global raíz. Un campo de C# no se
@@ -462,7 +490,7 @@ la *regla 5* de allá es la que hasta hoy se citaba como *§7.5*, acá y en comm
 | **1** | Un comando rechazado se journaliza igual | Es la peor de todas: envenena el replay para siempre |
 | **17 y 18** | El `Check` pregunta exactamente lo que el dominio rechaza, y **todo** comando lleva `Check` | **Corrigen a la 1**, que se puede cumplir al pie de la letra y envenenar el journal igual. De acá sale la forma del dominio: **un predicado total por comando** |
 | **10** | Un parámetro le puede robar el nombre a un tipo | Te muerde al nombrar el primer perform |
-| **13** | El `print` proyecta un solo nivel | Decide la forma de tus carriers, y rehacerla después duele |
+| **13** | El `print` emite valores, no material | Decide la forma de tus carriers; la profundidad no importa, el tipo terminal sí |
 
 ---
 
