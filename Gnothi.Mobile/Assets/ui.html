@@ -839,7 +839,8 @@ const gn = {
 
     // Who proposes, with its brand, and what: the same face the card is going to have.
     document.getElementById('pr-h').innerHTML =
-      iconOf({ name: p.modulo, brand: p.brand })
+      // The shell sends the proposal's brand as `marca`; the state uses `brand`. Take either.
+      iconOf({ name: p.modulo, brand: p.brand || p.marca })
       + '<div><b>' + esc(p.institucion || p.titulo) + '</b>'
       + '<small>' + esc((p.actualizacion && p.actualizacion.tipo === 'actualizacion' ? 'Actualizar '
                          : p.actualizacion && p.actualizacion.tipo === 'anterior' ? 'Volver a una versión anterior de '

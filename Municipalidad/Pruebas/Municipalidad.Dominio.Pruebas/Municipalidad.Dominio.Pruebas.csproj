@@ -60,6 +60,13 @@
          sostiene la FORMA de cada miembro y no el comentario que la explica. Una forma no se puede
          afirmar sobre una copia: hay que mirar el tipo de verdad, por reflexion. -->
     <ProjectReference Include="..\..\App\Municipalidad.Wasm\Municipalidad.Wasm.csproj" />
+
+    <!-- Y EL CONTRATO DE CARGA DE GNOTHI, desde que el modulo puede correr hospedado. Municipalidad.App
+         lo referencia con Private=false -a la carga se lo presta el Host, asi que el paquete no lo
+         lleva-, y por eso no llega solo al output de este proyecto. La prueba que afirma declarado
+         contra real NOMBRA el atributo [Query] para leer los nombres del ensamblado, asi que aca si
+         hace falta la copia. -->
+    <ProjectReference Include="..\..\..\Gnothi.Contract\Gnothi.Contract.csproj" />
   </ItemGroup>
 
   <!-- EL CSPROJ DEL DOMINIO VIAJA AL OUTPUT COMO DATO, para que la prueba de pureza lea sus
@@ -116,6 +123,18 @@
          dia con disciplina, porque nada se pone rojo cuando se atrasa. -->
     <None Include="..\..\manifiesto.json"
           Link="manifiesto.json.dato"
+          CopyToOutputDirectory="PreserveNewest" />
+
+    <!-- Y LAS DOS MITADES DEL PUENTE CON GNOTHI, desde que el modulo puede correr hospedado. Los dos
+         lados se nombran por CADENA -el JS invoca metodos de C# por su nombre, y el C# le pide
+         funciones al JS por el suyo-, asi que un nombre cambiado en uno solo compila igual y falla en
+         el aparato. Viajan como dato porque lo que se afirma es lo que dice el texto, no lo que la
+         reflexion ve: una cadena adentro de un cuerpo no la ve nadie. -->
+    <None Include="..\..\App\Municipalidad.Wasm\wwwroot\gnothi-interop.js"
+          Link="gnothi-interop.js.dato"
+          CopyToOutputDirectory="PreserveNewest" />
+    <None Include="..\..\App\Municipalidad.Wasm\PuenteDeGnothi.cs"
+          Link="PuenteDeGnothi.cs.dato"
           CopyToOutputDirectory="PreserveNewest" />
   </ItemGroup>
 

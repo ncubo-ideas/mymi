@@ -39,14 +39,13 @@ namespace Municipalidad.Consola
 				MunicipalidadAPI api = new MunicipalidadAPI(app);
 				ProveedorDeToken proveedor = new ProveedorDeToken(http);
 
-				await LaCredencialAsync(api, proveedor, recurso, id).ConfigureAwait(false);
-
 				BucleDeRefresh bucle = new BucleDeRefresh(
 					api,
-					new FuenteHttpDeEventos(http, recurso, id),
-					MunicipalidadEventRoute.Route,
-					null,
-					ct => RenovarAsync(api, proveedor, recurso, id, ct));
+					new FuenteHttpDeEventos(
+						http, recurso, id,
+						ct => LaCredencialAsync(api, proveedor, recurso, id, ct),
+						ct => RenovarAsync(api, proveedor, recurso, id, ct)),
+					MunicipalidadEventRoute.Route);
 
 				Console.WriteLine("-- refresh 1 --");
 				Console.WriteLine("   punto de control antes   : " + api.UltimoEventoAplicado());
@@ -71,11 +70,16 @@ namespace Municipalidad.Consola
 		}
 
 		/// <summary>
-		/// Registra esta instalacion y guarda la credencial, UNA vez. La clave del dispositivo y el token
-		/// viven en el journal desde ahi: el bucle los lee de ahi y no de una variable.
+		/// La credencial con que se leen los eventos: registra esta instalacion y la guarda, UNA vez. La
+		/// clave del dispositivo y el token viven en el journal desde ahi.
+		/// <para>
+		/// La pide LA FUENTE y no el bucle, que es lo que separa leer por HTTP -- que necesita token --
+		/// de leer por el puente de Gnothi, que no lo necesita porque la credencial la sostiene Gnothi.
+		/// </para>
 		/// </summary>
-		private static async Task LaCredencialAsync(
-			MunicipalidadAPI api, ProveedorDeToken proveedor, string recurso, string id)
+		private static async Task<string> LaCredencialAsync(
+			MunicipalidadAPI api, ProveedorDeToken proveedor, string recurso, string id,
+			CancellationToken ct)
 		{
 			string clave = api.ClaveDeDispositivoGuardada();
 
@@ -85,18 +89,22 @@ namespace Municipalidad.Consola
 				Console.WriteLine("   registra el dispositivo  : " + Dicho(api.RegistrarDispositivo(clave)));
 			}
 
-			if (api.TokenGuardado().Length > 0)
+			string guardado = api.TokenGuardado();
+
+			if (guardado.Length > 0)
 			{
 				Console.WriteLine("   credencial               : ya estaba guardada");
 				Console.WriteLine();
-				return;
+				return guardado;
 			}
 
-			Credencial credencial = await proveedor.Pedir(clave, recurso, id).ConfigureAwait(false);
+			Credencial credencial = await proveedor.Pedir(clave, recurso, id, ct).ConfigureAwait(false);
 
 			Console.WriteLine("   guarda la credencial     : "
 				+ Dicho(api.GuardarCredencial(credencial.AccessToken, credencial.RefreshToken)));
 			Console.WriteLine();
+
+			return credencial.AccessToken;
 		}
 
 		/// <summary>

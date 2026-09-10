@@ -12,10 +12,16 @@ namespace Puppets.Portador
 	// eventos de un recurso. Access token corto, refresh token durable y rotatorio.
 	//
 	// Esta pieza existe para que la consola y las pruebas puedan correr solas. En
-	// la app instalada el usuario consigue el token por fuera y lo pega: la app lo
-	// guarda con un comando propio y desde ahi vive en el journal. Que el usuario
-	// lo pegue no es una limitacion del MVP - es que el token es del usuario, no de
-	// la app.
+	// la app instalada el usuario consigue el token por fuera y lo pega. Que el
+	// usuario lo pegue no es una limitacion del MVP - es que el token es del
+	// usuario, no de la app.
+	//
+	// DONDE QUEDA lo decide el HOST de la app, y NO el journal: en el browser es
+	// localStorage, hospedada en Gnothi es el Keystore del aparato, y en la consola
+	// es una variable en memoria que muere con el proceso. Hasta el 2026-09-03 se
+	// journalizaba, que era darle a un contexto de sesion la durabilidad y la
+	// portabilidad de la historia de la persona: el journal se copia a otra maquina
+	// y se le entrega a Gnothi, y el token viajaba adentro.
 	public sealed class ProveedorDeToken
 	{
 		private readonly HttpClient http;

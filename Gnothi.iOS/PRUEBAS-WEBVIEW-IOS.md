@@ -494,6 +494,15 @@ abierta**. Lo que cambia es si la cara ya existe, y el enlace que llega antes qu
 > de cada pieza está en `Gnothi.Mobile/MainActivity.cs`. En Android todo esto está medido
 > (`Gnothi.Mobile/PRUEBAS-WEBVIEW.md` §2b); acá lo que se mide es que iOS haga lo mismo.
 >
+> **[MEDIDO 2026-09-09]** simulador iPhone 17 Pro / iOS 26.5. **Compiló sin tocar una línea**:
+> ninguna firma de binding estaba mal. **P6b pasa los cinco pasos y P6d las dos puertas.** P6c no
+> se puede acá —el simulador no tiene cámara— y P6e queda pendiente. El detalle, con los números y
+> cuatro hallazgos que no son del alta, está en
+> [`HALLAZGOS-CORRIENDO-EL-GUION.md`](HALLAZGOS-CORRIENDO-EL-GUION.md) §11. **Dos de esos
+> hallazgos cambian este guion:** el paquete del §0 choca con los bundles de hoy si el mismo
+> módulo entra por los dos caminos (§11.3), y la comprobación de P7 **no pasa en la primera
+> alta** porque se rinde a los 60 s mientras el WASM tarda ~64 en arrancar en frío (§11.4).
+>
 > **Y la actualización de un módulo (nota 44, pasos 1 y 2, la misma noche)** tampoco tiene pieza propia de
 > iOS: el plan vive en `Gnothi.Host/UpdatePlan.cs`, la revisión del origen al arrancar (`Shell.ReviewOrigins`)
 > y la op `actualizar` en `Gnothi.Movil/Shell.cs`, y la hoja de «Actualizar» y la pastilla «Hay una versión
