@@ -4,17 +4,23 @@ using System.Threading.Tasks;
 namespace Municipalidad.Consola
 {
 	/// <summary>
-	/// La caratula de consola. Dos subcomandos: `medir carpeta`, el ciclo completo por la PUERTA contra
-	/// un journal real, y `refrescar carpeta`, el ciclo de INGESTA contra el endpoint de eventos. Los dos
-	/// se corren DOS veces sobre la misma carpeta -- la segunda tiene que rechazar todo y los numeros no
-	/// se pueden mover.
+	/// La caratula de consola. Tres subcomandos: `medir carpeta`, el ciclo completo por la PUERTA contra
+	/// un journal real; `refrescar carpeta`, el ciclo de INGESTA contra el endpoint de eventos; y
+	/// `aportar carpeta`, lo que solo la persona puede poner y la institucion no publica. Correr
+	/// cualquiera DOS veces sobre la misma carpeta tiene que rechazar todo la segunda vez, y los numeros
+	/// no se pueden mover.
+	/// <para>
+	/// SEMBRAR EL JOURNAL DEL DEMO ES `refrescar` Y DESPUES `aportar`, no `medir`: solo la via del feed
+	/// mueve el punto de control, que es lo unico con que el asistente sabe si entro algo nuevo. `medir`
+	/// entra por la puerta y lo deja en cero.
+	/// </para>
 	/// <para>
 	/// No nombra ni un tipo del dominio. Eso es lo que la saca de la lista de InternalsVisibleTo del
 	/// dominio y lo que le quita su ProjectReference: las 91 comprobaciones del dominio puro que
 	/// vivian aca se mudaron a Pruebas/, donde SI pueden ponerse rojas en CI.
 	/// </para>
 	/// <para>
-	/// NINGUNO DE LOS DOS BORRA UN JOURNAL. Los dos escriben en la carpeta que se les da, y sobre una
+	/// NINGUNO DE LOS TRES BORRA UN JOURNAL. Los tres escriben en la carpeta que se les da, y sobre una
 	/// carpeta que ya tiene una cuenta lo que hacen es agregarle hechos.
 	/// </para>
 	/// </summary>
@@ -36,9 +42,13 @@ namespace Municipalidad.Consola
 						Argumento(args, "--recurso", "contribuyente"),
 						Argumento(args, "--id", "CEDULA-DEMO-1"));
 
+				case "aportar":
+					return Aportar.Correr(LaCarpeta(args, "municipalidad-aporte"));
+
 				default:
 					Console.WriteLine("Comandos:  medir <carpeta>");
 					Console.WriteLine("           refrescar <carpeta> [--url U] [--recurso R] [--id CEDULA]");
+					Console.WriteLine("           aportar <carpeta>");
 					return 1;
 			}
 		}
