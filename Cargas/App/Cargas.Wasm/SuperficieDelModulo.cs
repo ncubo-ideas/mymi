@@ -5,12 +5,13 @@ using Microsoft.JSInterop;
 
 namespace Cargas.Wasm;
 
-// LO QUE EL MODULO LE OFRECE A GNOTHI (especificacion 11 §7). Tres verbos, y ninguno le da
-// iniciativa al modulo: los tres los ARRANCA Gnothi.
+// LO QUE EL MODULO LE OFRECE A GNOTHI (especificacion 11 §7). Cuatro verbos, y ninguno le
+// da iniciativa al modulo: los cuatro los ARRANCA Gnothi.
 //
 //     gnothi.tools()                 que sabe contestar este modulo, de verdad
 //     gnothi.call(tool, argsJson)    una consulta, la misma que en escritorio
 //     gnothi.deliver(payloadJson)    el cartero entrega eventos y el modulo los asienta
+//     gnothi.traspasar(sobreJson)    las anotaciones de la persona, desde la app suelta
 //
 // LA OTRA DIRECCION NO VA ACA. `pull` -el modulo pidiendole eventos a Gnothi- viaja por el
 // puente que Gnothi inyecta (`window.gnothiPuente`, ver PuenteDeGnothi), no por esta
@@ -18,9 +19,9 @@ namespace Cargas.Wasm;
 // aquello lo inyecta el nativo y lo llama el modulo. Mezclarlos en un solo objeto se leia
 // como si el modulo pudiera llamarse a si mismo.
 //
-// LO QUE TODAVIA NO ESTA: `traspasar`. La migracion de las aserciones de la persona desde la
-// instalacion suelta existe en Examenes, pero cuales aserciones viajan es una decision de
-// diseno POR INSTITUCION -este modulo tiene las suyas- y se dejo para despues a proposito.
+// CUALES ASERCIONES VIAJAN en `traspasar` es una decision POR INSTITUCION, y la de esta
+// esta tomada en Cargas.App.Traspaso: kilometrajes, tanques, la ficha y las unidades; la
+// foto se queda. Aca no se decide nada de eso, solo se abre la puerta.
 //
 // ESTATICO POR OBLIGACION: DotNet.invokeMethodAsync solo alcanza metodos estaticos, y el
 // estado de la app es un singleton del contenedor. Program.cs registra el vivo al arrancar.
@@ -76,6 +77,38 @@ public static class SuperficieDelModulo
 		{
 			ResultadoDeRefresh resultado = await estado.Entregar(payloadJson);
 			return JsonSerializer.Serialize(resultado);
+		}
+		catch (Exception ex)
+		{
+			return Error($"{ex.GetType().Name}: {ex.Message}");
+		}
+	}
+
+	// EL TRASPASO de la instalacion suelta. Aserciones de la persona, no eventos de la
+	// estacion: por eso no entra por Deliver (ver EstadoDeLaApp.Traspasar). Gnothi lo trae
+	// de la hoja de compartir, porque el sobre no cabe en el enlace del handoff.
+	//
+	// SE CUENTA TODO, no solo lo aplicado. `Esperando` es lo que se guardo al lado del
+	// journal porque su carga aun no llego, y `Rechazadas` con sus motivos es lo unico que
+	// puede explicar por que una anotacion no aparece: quien llama es Gnothi y lo va a
+	// dejar en su log, no en la pantalla.
+	[JSInvokable]
+	public static async Task<string> Traspasar(string sobreJson)
+	{
+		if (estado is null) return Error("el modulo todavia no arranco");
+
+		try
+		{
+			ResultadoDeTraspaso resultado = await estado.Traspasar(sobreJson);
+			return JsonSerializer.Serialize(new
+			{
+				ok = true,
+				resultado.Aplicadas,
+				resultado.Omitidas,
+				resultado.Esperando,
+				resultado.Rechazadas,
+				motivos = resultado.Motivos,
+			});
 		}
 		catch (Exception ex)
 		{
