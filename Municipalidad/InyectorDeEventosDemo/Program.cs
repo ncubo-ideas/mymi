@@ -18,7 +18,7 @@ namespace Municipalidad.InyectorDeEventosDemo
 	/// </summary>
 	public static class Program
 	{
-		private const string ElDiaDeLaConsulta = "2025-09-03T00:00:00Z";
+		private const string ElDiaDeLaConsulta = "2026-09-03T00:00:00Z";
 
 		private static HttpClient http;
 		private static string recurso;
@@ -122,7 +122,7 @@ namespace Municipalidad.InyectorDeEventosDemo
 			{
 				numeroDeRecibo = "R-DESORDENADO",
 				nombreDelRubro = "recoleccion-de-basura",
-				periodo = "2025.11",
+				periodo = "2026.11",
 				monto = 8000m,
 				intereses = 0m,
 			}, "la linea, SIN su encabezado. La cuenta la refusa: no deja entrada y nadie la reintenta");
@@ -130,7 +130,7 @@ namespace Municipalidad.InyectorDeEventosDemo
 			await Inyectar("PagoRegistrado", new
 			{
 				numeroDeRecibo = "R-DESORDENADO",
-				fechaDelPago = "2025-11-30T00:00:00Z",
+				fechaDelPago = "2026-11-30T00:00:00Z",
 				descuento = 0m,
 			}, "el encabezado, tarde. Entra -- y su linea NO vuelve: ya se paso de largo");
 
@@ -154,7 +154,7 @@ namespace Municipalidad.InyectorDeEventosDemo
 			await Inyectar("PagoRegistrado", new
 			{
 				numeroDeRecibo = "R-1",
-				fechaDelPago = "2024-03-31T00:00:00Z",
+				fechaDelPago = "2025-03-31T00:00:00Z",
 				descuento = 0m,
 			}, "el recibo R-1 otra vez: el numero de recibo es la identidad");
 
@@ -162,7 +162,7 @@ namespace Municipalidad.InyectorDeEventosDemo
 			{
 				numeroDeRecibo = "R-1",
 				nombreDelRubro = "cementerio",
-				periodo = "2024.03",
+				periodo = "2025.03",
 				monto = 1000m,
 				intereses = 0m,
 			}, "un rubro que el catalogo no tiene");
@@ -171,7 +171,7 @@ namespace Municipalidad.InyectorDeEventosDemo
 			{
 				numeroDeRecibo = "R-1",
 				nombreDelRubro = "bienes-inmuebles",
-				periodo = "2024.05",
+				periodo = "2025.05",
 				monto = 20000m,
 				intereses = 0m,
 			}, "un quinto trimestre: bien escrito, y la cadencia del rubro no lo lee");
@@ -179,9 +179,9 @@ namespace Municipalidad.InyectorDeEventosDemo
 			await Inyectar("CobroPuesto", new
 			{
 				nombreDelRubro = "recoleccion-de-basura",
-				periodo = "2025.09",
-				monto = 24000m,
-				puestoEl = "2025-10-01T00:00:00Z",
+				periodo = "2026.09",
+				monto = 8000m,
+				puestoEl = "2026-10-01T00:00:00Z",
 			}, "al cobro un periodo que el pendiente de la consulta ya puso");
 
 			Console.WriteLine();
@@ -190,18 +190,18 @@ namespace Municipalidad.InyectorDeEventosDemo
 		}
 
 		/// <summary>
-		/// LOS DOS ALFABETOS, sobre el mismo numero. `2026.02` es FEBRERO para un rubro mensual y el
+		/// LOS DOS ALFABETOS, sobre el mismo numero. `2027.02` es FEBRERO para un rubro mensual y el
 		/// SEGUNDO TRIMESTRE para uno que se cobra por trimestre: el texto es del recibo y quien decide
 		/// que significa es la cadencia del rubro, no el que lo escribio.
 		/// </summary>
 		private static async Task Alfabetos()
 		{
-			Titulo("alfabetos: el mismo 2026.02 como mes y como trimestre");
+			Titulo("alfabetos: el mismo 2027.02 como mes y como trimestre");
 
 			await Inyectar("PagoRegistrado", new
 			{
 				numeroDeRecibo = "R-ALFABETOS",
-				fechaDelPago = "2026-06-30T00:00:00Z",
+				fechaDelPago = "2027-06-30T00:00:00Z",
 				descuento = 0m,
 			}, "el encabezado, primero");
 
@@ -209,16 +209,16 @@ namespace Municipalidad.InyectorDeEventosDemo
 			{
 				numeroDeRecibo = "R-ALFABETOS",
 				nombreDelRubro = "recoleccion-de-basura",
-				periodo = "2026.02",
+				periodo = "2027.02",
 				monto = 8000m,
 				intereses = 0m,
-			}, "para basura, 2026.02 es FEBRERO");
+			}, "para basura, 2027.02 es FEBRERO");
 
 			await Inyectar("LineaDePagoRegistrada", new
 			{
 				numeroDeRecibo = "R-ALFABETOS",
 				nombreDelRubro = "bienes-inmuebles",
-				periodo = "2026.02",
+				periodo = "2027.02",
 				monto = 36000m,
 				intereses = 0m,
 			}, "para bienes inmuebles, el MISMO texto es el segundo trimestre");

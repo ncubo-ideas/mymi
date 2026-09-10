@@ -97,6 +97,7 @@ namespace Municipalidad.EventosMock
 				recurso = AlmacenDeEventos.ElRecurso,
 				cedula = AlmacenDeEventos.LaCedulaDelDemo,
 				eventos = almacen.UltimoNumero(AlmacenDeEventos.ElRecurso, AlmacenDeEventos.LaCedulaDelDemo),
+				narrativas = almacen.LasNarrativasSembradas(),
 			}));
 
 			app.Run();
@@ -249,6 +250,33 @@ namespace Municipalidad.EventosMock
 		internal const string LaCedulaDelDemo = "CEDULA-DEMO-1";
 
 		/// <summary>
+		/// La cedula de la narrativa alterna cuyo cotejo sale limpio. Es una segunda cedula y no un
+		/// segundo momento de la primera: el cotejo tiene UN estado por cuenta, asi que la misma cuenta
+		/// no puede a la vez dejar periodos sin comprobante y no dejar ninguno.
+		/// </summary>
+		internal const string LaCedulaConTodoComprobado = "CEDULA-DEMO-2";
+
+		/// <summary>
+		/// La cedula de la narrativa alterna en que la app nunca registro una consulta al portal, asi
+		/// que no hay con que cotejar. No poder cotejar no es estar en orden, y esa distincion no se
+		/// puede ver en una cuenta que si tiene consulta.
+		/// </summary>
+		internal const string LaCedulaSinConsulta = "CEDULA-DEMO-3";
+
+		/// <summary>
+		/// Lo que el portal deja pendiente de basura en la narrativa principal: un mes a la tarifa
+		/// nueva, que no alcanza hasta el ultimo periodo pagado y deja julio y agosto de 2026 pagados
+		/// sin comprobante.
+		/// </summary>
+		private const decimal ElPendienteDeBasuraQueDejaDosMesesSinComprobante = 8000m;
+
+		/// <summary>
+		/// Lo mismo en la alterna: tres meses a la tarifa nueva, que llegan justo hasta el ultimo
+		/// periodo pagado y no dejan ninguno sin comprobante.
+		/// </summary>
+		private const decimal ElPendienteDeBasuraQueNoDejaNinguno = 24000m;
+
+		/// <summary>
 		/// Los siete tipos que la municipalidad publica, uno por comando de la puerta que ella manda. El
 		/// AVALUO esta porque lo fija la institucion y es el valor con que cobra; la reserva y el valor
 		/// DECLARADO no estan y no faltan, porque los aporta la persona.
@@ -262,9 +290,34 @@ namespace Municipalidad.EventosMock
 		private readonly ConcurrentDictionary<string, List<Dictionary<string, object>>> porContribuyente =
 			new();
 
+		private readonly List<string> cedulasSembradas = new List<string>();
+
 		public AlmacenDeEventos()
 		{
-			porContribuyente[Llave(ElRecurso, LaCedulaDelDemo)] = LaNarrativaSembrada();
+			Sembrar(LaCedulaDelDemo, LaNarrativaSembrada());
+			Sembrar(LaCedulaConTodoComprobado, LaNarrativaConTodoComprobado());
+			Sembrar(LaCedulaSinConsulta, LaNarrativaSinConsulta());
+		}
+
+		/// <summary>
+		/// Una fila por narrativa sembrada, con su cedula y cuantos hechos tiene. Sale de la misma lista
+		/// que el constructor lleno, asi que no puede quedar desalineada con lo que el feed sirve.
+		/// </summary>
+		internal IReadOnlyList<object> LasNarrativasSembradas()
+		{
+			List<object> filas = new List<object>();
+
+			foreach (string cedula in cedulasSembradas)
+				filas.Add(new { cedula, eventos = UltimoNumero(ElRecurso, cedula) });
+
+			return filas;
+		}
+
+		/// <summary>Deja una narrativa bajo su cedula y anota la cedula, que es lo que /salud enumera.</summary>
+		private void Sembrar(string cedula, List<Dictionary<string, object>> narrativa)
+		{
+			porContribuyente[Llave(ElRecurso, cedula)] = narrativa;
+			cedulasSembradas.Add(cedula);
 		}
 
 		internal IReadOnlyList<Dictionary<string, object>> Posteriores(
@@ -335,9 +388,15 @@ namespace Municipalidad.EventosMock
 
 		/// <summary>
 		/// La historia del demo, que es la misma que `medir` corre por la puerta: los dos alfabetos del
-		/// periodo, el salto de 2025 por tarifa en basura y por avaluo en bienes inmuebles, y la mora que
-		/// la municipalidad cobro. El encabezado de cada recibo va ANTES de sus lineas y la consulta antes
-		/// de sus pendientes, porque una linea sin encabezado se rechaza y no se reintenta.
+		/// periodo, el salto de 2026 por tarifa en basura y por avaluo en bienes inmuebles, la mora que
+		/// la municipalidad cobro, el pendiente de basura que cubre un solo mes y deja julio y agosto
+		/// de 2026 pagados sin comprobante, el cambio de limpieza de calles que queda encima del ruido y
+		/// debajo del umbral, y el mes de limpieza que la municipalidad puso al cobro, nadie pago y ya
+		/// vencio.
+		/// <para>
+		/// LAS TRES NARRATIVAS SE COMPONEN DE LAS MISMAS ESCENAS Y NINGUN LITERAL ESTA ESCRITO DOS
+		/// VECES. Lo que una alterna cambia se lee en la escena que le falta o en el monto que le pasa.
+		/// </para>
 		/// <para>
 		/// NINGUN INSTANTE SALE DE UN RELOJ. Lo que guiona una secuencia recibida no lee la hora: cada
 		/// fecha de aca es un literal, para que dos corridas sirvan la misma narrativa.
@@ -347,33 +406,108 @@ namespace Municipalidad.EventosMock
 		{
 			List<Dictionary<string, object>> narrativa = new();
 
-			Finca(narrativa, "F-1");
-			Avaluo(narrativa, "F-1", "2023-01-15T00:00:00Z", 20000000m);
-			Avaluo(narrativa, "F-1", "2025-01-20T00:00:00Z", 36000000m);
-
-			Recibo(narrativa, "R-1", "2024-03-31T00:00:00Z", 0m);
-			Linea(narrativa, "R-1", "recoleccion-de-basura", "2024.03", 5000m, 0m);
-			Linea(narrativa, "R-1", "servicio-policia", "2024.03", 6000m, 0m);
-			Linea(narrativa, "R-1", "bienes-inmuebles", "2024.01", 20000m, 0m);
-
-			Recibo(narrativa, "R-2", "2024-06-30T00:00:00Z", 0m);
-			Linea(narrativa, "R-2", "recoleccion-de-basura", "2024.06", 15000m, 0m);
-			Linea(narrativa, "R-2", "servicio-policia", "2024.06", 18000m, 0m);
-			Linea(narrativa, "R-2", "bienes-inmuebles", "2024.02", 20000m, 0m);
-
-			Recibo(narrativa, "R-3", "2025-06-30T00:00:00Z", 0m);
-			Linea(narrativa, "R-3", "recoleccion-de-basura", "2025.06", 96000m, 310m);
-			Linea(narrativa, "R-3", "servicio-policia", "2025.06", 73200m, 240m);
-			Linea(narrativa, "R-3", "bienes-inmuebles", "2025.02", 144000m, 470m);
-
-			Consulta(narrativa, "2025-09-03T00:00:00Z");
-			Pendiente(narrativa, "2025-09-03T00:00:00Z", "recoleccion-de-basura", "2025.09", 24000m, 45m);
-			Pendiente(narrativa, "2025-09-03T00:00:00Z", "servicio-policia", "2025.09", 18300m, 34m);
-			Pendiente(narrativa, "2025-09-03T00:00:00Z", "bienes-inmuebles", "2025.03", 36000m, 0m);
-
-			Cobro(narrativa, "recoleccion-de-basura", "2025.10", 8000m, "2025-10-01T00:00:00Z");
+			LaFincaConSusAvaluos(narrativa);
+			LosTresRecibos(narrativa);
+			ElMesDeLimpiezaQueVencio(narrativa);
+			LaConsultaConSusPendientes(narrativa, ElPendienteDeBasuraQueDejaDosMesesSinComprobante);
+			ElMesDeBasuraPuestoAlCobro(narrativa);
 
 			return narrativa;
+		}
+
+		/// <summary>
+		/// LA ALTERNA EN QUE EL COTEJO SALE LIMPIO. La misma historia con un pendiente de basura de tres
+		/// meses en vez de uno: llega hasta el ultimo periodo pagado, asi que todo lo que el portal da
+		/// por pagado tiene comprobante en la app. Es la unica diferencia con la principal.
+		/// </summary>
+		private static List<Dictionary<string, object>> LaNarrativaConTodoComprobado()
+		{
+			List<Dictionary<string, object>> narrativa = new();
+
+			LaFincaConSusAvaluos(narrativa);
+			LosTresRecibos(narrativa);
+			ElMesDeLimpiezaQueVencio(narrativa);
+			LaConsultaConSusPendientes(narrativa, ElPendienteDeBasuraQueNoDejaNinguno);
+			ElMesDeBasuraPuestoAlCobro(narrativa);
+
+			return narrativa;
+		}
+
+		/// <summary>
+		/// LA ALTERNA SIN CONSULTA. La misma historia sin la escena de la consulta, asi que la app tiene
+		/// recibos y cobros de la municipalidad y ninguna foto del portal contra la cual cotejarlos. Los
+		/// pendientes se van con ella: un pendiente cuya consulta no esta se rechaza.
+		/// </summary>
+		private static List<Dictionary<string, object>> LaNarrativaSinConsulta()
+		{
+			List<Dictionary<string, object>> narrativa = new();
+
+			LaFincaConSusAvaluos(narrativa);
+			LosTresRecibos(narrativa);
+			ElMesDeLimpiezaQueVencio(narrativa);
+			ElMesDeBasuraPuestoAlCobro(narrativa);
+
+			return narrativa;
+		}
+
+		/// <summary>La finca y los dos avaluos con que la municipalidad la cobro, el segundo un 80 % mas
+		/// alto que el primero.</summary>
+		private static void LaFincaConSusAvaluos(List<Dictionary<string, object>> narrativa)
+		{
+			Finca(narrativa, "F-1");
+			Avaluo(narrativa, "F-1", "2024-01-15T00:00:00Z", 20000000m);
+			Avaluo(narrativa, "F-1", "2026-01-20T00:00:00Z", 36000000m);
+		}
+
+		/// <summary>
+		/// Los tres comprobantes con sus lineas. EL ENCABEZADO DE CADA RECIBO VA ANTES DE SUS LINEAS:
+		/// una linea sin encabezado se rechaza y no se reintenta.
+		/// </summary>
+		private static void LosTresRecibos(List<Dictionary<string, object>> narrativa)
+		{
+			Recibo(narrativa, "R-1", "2025-03-31T00:00:00Z", 0m);
+			Linea(narrativa, "R-1", "recoleccion-de-basura", "2025.03", 5000m, 0m);
+			Linea(narrativa, "R-1", "limpieza-de-calles", "2025.03", 2500m, 0m);
+			Linea(narrativa, "R-1", "servicio-policia", "2025.03", 6000m, 0m);
+			Linea(narrativa, "R-1", "bienes-inmuebles", "2025.01", 20000m, 0m);
+
+			Recibo(narrativa, "R-2", "2025-06-30T00:00:00Z", 0m);
+			Linea(narrativa, "R-2", "recoleccion-de-basura", "2025.06", 15000m, 0m);
+			Linea(narrativa, "R-2", "limpieza-de-calles", "2025.06", 8100m, 0m);
+			Linea(narrativa, "R-2", "servicio-policia", "2025.06", 18000m, 0m);
+			Linea(narrativa, "R-2", "bienes-inmuebles", "2025.02", 20000m, 0m);
+
+			Recibo(narrativa, "R-3", "2026-06-30T00:00:00Z", 0m);
+			Linea(narrativa, "R-3", "recoleccion-de-basura", "2026.06", 96000m, 310m);
+			Linea(narrativa, "R-3", "servicio-policia", "2026.06", 73200m, 240m);
+			Linea(narrativa, "R-3", "bienes-inmuebles", "2026.02", 144000m, 470m);
+		}
+
+		/// <summary>El mes de limpieza que la municipalidad puso al cobro, nadie pago y ya vencio.</summary>
+		private static void ElMesDeLimpiezaQueVencio(List<Dictionary<string, object>> narrativa)
+		{
+			Cobro(narrativa, "limpieza-de-calles", "2026.07", 2700m, "2026-07-01T00:00:00Z");
+		}
+
+		/// <summary>
+		/// La foto del portal con lo que dejo pendiente. LA CONSULTA VA ANTES DE SUS PENDIENTES: un
+		/// pendiente cuya consulta no esta se rechaza y no se reintenta. Lo unico que cambia entre la
+		/// narrativa principal y la alterna es el monto de basura.
+		/// </summary>
+		private static void LaConsultaConSusPendientes(
+			List<Dictionary<string, object>> narrativa, decimal pendienteDeBasura)
+		{
+			Consulta(narrativa, "2026-09-03T00:00:00Z");
+			Pendiente(narrativa, "2026-09-03T00:00:00Z", "recoleccion-de-basura", "2026.09",
+				pendienteDeBasura, 45m);
+			Pendiente(narrativa, "2026-09-03T00:00:00Z", "servicio-policia", "2026.09", 18300m, 34m);
+			Pendiente(narrativa, "2026-09-03T00:00:00Z", "bienes-inmuebles", "2026.03", 36000m, 0m);
+		}
+
+		/// <summary>El mes de basura que la municipalidad puso al cobro despues de la consulta.</summary>
+		private static void ElMesDeBasuraPuestoAlCobro(List<Dictionary<string, object>> narrativa)
+		{
+			Cobro(narrativa, "recoleccion-de-basura", "2026.10", 8000m, "2026-10-01T00:00:00Z");
 		}
 
 		private static void Finca(List<Dictionary<string, object>> narrativa, string numeroDeFinca)

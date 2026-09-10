@@ -1,5 +1,6 @@
 @page "/analito/{Analito}"
 @using System.Globalization
+@using System.Linq
 @using Examenes.App.Vistas
 @inject EstadoDeLaApp estado
 @inject NavigationManager navegacion
@@ -34,7 +35,7 @@
 
 <PageTitle>@Analito</PageTitle>
 
-<button class="boton boton--contorno" @onclick="Volver" style="margin-bottom:24px">&larr; Volver a mis exámenes</button>
+<button class="boton boton--enlace detalle-volver" @onclick="Volver">&larr; Mis exámenes</button>
 
 @if (!estado.EstaArriba)
 {
@@ -112,7 +113,6 @@ else
         @if (interpretacion.PideAlgo)
         {
             <div class="aviso @(interpretacion.Severidad == "urgente" ? "aviso--problema" : "aviso--atencion")" style="margin-top:22px">
-                <strong>@interpretacion.Veredicto.</strong>
                 @interpretacion.ParaSonia. No es un diagnóstico: es la lectura de tu propia
                 serie. Lo que corresponde es <strong>@interpretacion.Accion</strong>.
             </div>
@@ -191,7 +191,6 @@ else
         @if (interpretacion.PideAlgo)
         {
             <div class="aviso @(interpretacion.Severidad == "urgente" ? "aviso--problema" : "aviso--atencion")" style="margin-top:22px">
-                <strong>@interpretacion.Veredicto.</strong>
                 @interpretacion.ParaSonia. No es un diagnóstico: es la lectura de tu propia
                 serie. Lo que corresponde es <strong>@interpretacion.Accion</strong>.
             </div>
@@ -223,135 +222,271 @@ else
             </ol>
         }
     }
-    else if (!lectura.HaySerie)
-    {
-        <p class="apunte" style="margin-top:14px">
-            @(lectura.Mediciones == 0
-                ? "No hay ninguna medición de este analito todavía."
-                : "Hay una sola medición. Con un solo punto no se puede decir para dónde viene: "
-                  + "hace falta al menos una segunda para que haya serie.")
-        </p>
-        @if (lectura.Mediciones == 1)
-        {
-            <p class="cifra-par">@Valor(lectura.ValorFinal)<span class="unidad">@lectura.Unidad</span></p>
-            @if (interpretacion.ReferenciaLegible.Length > 0)
-            {
-                <p class="apunte">referencia: @interpretacion.ReferenciaLegible</p>
-            }
-        }
-    }
     else
     {
-        <p style="margin:10px 0 0"><span class="chip chip--grande @Insignia()">@lectura.Tendencia</span></p>
+        List<Paso> pasos = Pasos();
 
-        @* Los dos extremos, grandes y monoespaciados: es LA lectura de la pantalla. El
-           valor final se tiñe solo cuando exige atencion - el color dice algo o no esta. *@
-        <p class="cifra-par">
-            @Valor(lectura.ValorInicial)<span class="flecha">&rarr;</span><span class="@(interpretacion.PideAlgo ? "final" : "")">@Valor(lectura.ValorFinal)</span><span class="unidad">@lectura.Unidad</span>
-        </p>
-        <p class="apunte">
-            en @lectura.Dias @(lectura.Dias == 1 ? "día" : "días"),
-            sobre @lectura.Mediciones mediciones
-            @(lectura.Cambio >= 0 ? "· subió " : "· bajó ")@Valor(Math.Abs(lectura.Cambio)) @lectura.Unidad
-            @if (interpretacion.ReferenciaLegible.Length > 0)
-            {
-                <text>· referencia: @interpretacion.ReferenciaLegible</text>
-            }
-        </p>
-
-        @* LA FORMA, la misma que en la tarjeta y por la misma razón: el dominio dice cuál
-           le toca a este analito y acá sólo se traduce a píxeles. Que la tarjeta la
-           tuviera y el detalle no era el bug: se perdía la forma justo al pedir más. *@
-        @* SIN VEREDICTO NO HAY DIBUJO: las tres formas se trazan CONTRA una referencia
-           —la banda, la meta, el techo— y esa referencia es justamente lo que depende del
-           dato que falta. Los valores de arriba siguen estando; lo que se retiene es la
-           lectura. *@
-        @switch (interpretacion.RequiereElSexo ? "" : interpretacion.Forma)
+        @if (lectura.Mediciones == 0)
         {
-            case "trayectoria con linea base":
-                <TrayectoriaConLineaBase Puntos="puntos"
-                                         Referencias="referencias"
-                                         PideAlgo="interpretacion.PideAlgo"
-                                         Descripcion="@interpretacion.ParaSonia" />
-                break;
-            case "progreso hacia meta":
-                <ProgresoHaciaMeta Puntos="puntos"
-                                   Referencias="referencias"
-                                   Descripcion="@interpretacion.ParaSonia" />
-                break;
-            case "posicion en banda":
-                <PosicionEnBanda Puntos="puntos"
-                                 Referencias="referencias"
-                                 Descripcion="@interpretacion.ParaSonia" />
-                break;
-        }
-
-        @* TODO este bloque salia de la pantalla: dos textos fijos que se elegian con un
-           bool. Ahora la frase la escribe el analito y la accion sale del conjunto cerrado
-           de severidades, asi que agregar un analito no obliga a tocar este .razor. *@
-        @if (interpretacion.PideAlgo)
-        {
-            <div class="aviso @(interpretacion.SugiereRepetirElExamen ? "aviso--neutro" : "aviso--atencion")" style="margin-top:22px">
-                <strong>@interpretacion.Veredicto.</strong>
-                @interpretacion.ParaSonia. No es un diagnóstico: es la lectura de tu propia
-                serie. Lo que corresponde es <strong>@interpretacion.Accion</strong>.
-            </div>
-        }
-        else if (interpretacion.RequiereElSexo)
-        {
-            @* NI VERDE NI AMBAR. No se puede decir que esto esté bien —no se sabe— y
-               tampoco es un hallazgo. La frase la escribe el analito, que es el único que
-               sabe por qué no puede leerse. *@
-            <div class="aviso aviso--neutro" style="margin-top:22px">
-                <strong>Falta un dato tuyo.</strong> @interpretacion.ParaSonia.
-                Los valores de arriba son reales; lo que no hay todavía es la lectura.
-                <a href="">Decilo en tus exámenes</a> y esto se interpreta solo.
-            </div>
+            <p class="apunte" style="margin-top:14px">No hay ninguna medición de este analito todavía.</p>
         }
         else
         {
-            <div class="aviso" style="margin-top:22px;border-left-color:var(--bien)">
-                Se mantiene dentro de lo esperable para tu historia.
-            </div>
-        }
-
-        @* EL RITMO, cuando el analito lo tiene. Es otra pregunta que la tendencia y sobre
-           otro tramo: la tendencia mira la serie entera, esto mira el más reciente. Hoy
-           sólo el antígeno la contesta —el dominio dice «no aplica» en el resto— y por eso
-           el bloque aparece o no aparece, en vez de mostrar un cero. *@
-        @if (velocidad.EsAplicable)
-        {
-            <p class="ritmo @(velocidad.ExigeAtencion ? "ritmo--atencion" : "")">
-                <span class="ritmo-rotulo">al ritmo del último tramo</span>
-                <span class="ritmo-cifra">@velocidad.Expresada</span>
-                <span class="ritmo-nota">
-                    medido sobre @velocidad.Dias @(velocidad.Dias == 1 ? "día" : "días")
-                    · el umbral de este analito es @Valor(velocidad.Umbral) @velocidad.Unidad al año
-                </span>
+            @* CABECERA — Paso 3: el chip con el vocabulario REAL del dominio (el mismo que
+               ya usa Home: Flecha()+EstadoCabecera() para una serie, "1 medición" -mismo
+               chip--sinserie que ya usa Home- cuando no la hay todavía) y, debajo, la frase
+               que ya escribe el propio analito (interpretacion.ParaSonia) contando la
+               historia con SUS hechos. No es prosa nueva de esta pantalla. *@
+            <p style="margin:10px 0 0">
+                <span class="chip chip--grande @Insignia()">@(lectura.HaySerie ? $"{Flecha()} {EstadoCabecera()}" : "1 medición")</span>
             </p>
-        }
-
-        @* CADA MEDICIÓN, con el salto contra la anterior. Es lo que esta pantalla aporta y
-           la tarjeta no puede: los extremos y el promedio esconden si el cambio fue parejo
-           o fue de golpe, y eso es justo lo que hay que ver.
-
-           La resta la hace la PANTALLA, y puede: son dos puntos contiguos que el dominio
-           ya mandó, sin criterio ni umbral de por medio. Es el mismo desarmado que
-           reconstruir las columnas del cuadro, no una interpretación. *@
-        <h2 class="seccion">Cada medición</h2>
-        <ol class="mediciones">
-            @foreach (Paso paso in Pasos())
+            @if (interpretacion.ParaSonia.Length > 0)
             {
-                <li class="medicion">
-                    <div class="medicion-fecha">
-                        <span class="medicion-dia">@paso.Fecha.ToString("dd MMM", Cultura)</span>
-                        <span class="medicion-ano">@paso.Fecha.Year</span>
-                    </div>
-                    <div class="medicion-valor">@paso.Expresado <span>@lectura.Unidad</span></div>
-                    <div class="medicion-salto">@paso.Salto</div>
-                </li>
+                <p class="detalle-historia">@Mayuscula(interpretacion.ParaSonia).</p>
             }
-        </ol>
+
+            @* EVOLUCION — Paso 4/RONDA 16-3: los dos extremos cuando hay serie, con el
+               micro-gráfico (RONDA 13, duplicado de "Qué cambió" en Home -esta página no
+               puede referenciar miembros privados de MisExamenes.razor-, ahora coloreado
+               según la Severidad real -RONDA 16-4: nunca verde sólo porque es un gráfico,
+               ámbar/rojo cuando el dominio dice que pide algo-) y un RESUMEN VISUAL de tres
+               columnas -RONDA 16-3: antes era una línea chica de microcopy, ahora son cifras
+               grandes, igual jerarquía que la referencia-. SIN SERIE -Paso 5- no se inventa
+               un "antes": se muestra el valor actual solo. *@
+            @if (lectura.HaySerie)
+            {
+                <p class="cifra-par">
+                    @Valor(lectura.ValorInicial)<span class="flecha">&rarr;</span><span class="@(interpretacion.PideAlgo ? "final" : "")">@Valor(lectura.ValorFinal)</span><span class="unidad">@lectura.Unidad</span>
+                </p>
+
+                List<PuntoDelMicroChart> puntosChart = MicroChart();
+                @if (puntosChart.Count >= 2)
+                {
+                    <svg class="detalle-grafico @ClaseDelGrafico()" viewBox="0 0 @VbAncho @VbAlto" aria-hidden="true">
+                        <polyline points="@PolilineaDelMicroChart(puntosChart)" fill="none" stroke-width="2.5" />
+                        @foreach (PuntoDelMicroChart p in puntosChart)
+                        {
+                            <circle cx="@(p.X.ToString("0.#", CultureInfo.InvariantCulture))" cy="@(p.Y.ToString("0.#", CultureInfo.InvariantCulture))" r="4" />
+                            string xTexto = p.X.ToString("0.#", CultureInfo.InvariantCulture);
+                            @((MarkupString)$"<text x='{xTexto}' y='14' text-anchor='middle' class='detalle-grafico-valor'>{System.Net.WebUtility.HtmlEncode(p.Valor)}</text>")
+                            @((MarkupString)$"<text x='{xTexto}' y='{YFecha}' text-anchor='middle' class='detalle-grafico-fecha'>{System.Net.WebUtility.HtmlEncode(p.Fecha)}</text>")
+                        }
+                    </svg>
+                }
+
+                <div class="detalle-stats">
+                    <div class="detalle-stats-item">
+                        <span class="detalle-stats-valor @(lectura.Cambio > 0 ? "detalle-stats-valor--sube" : lectura.Cambio < 0 ? "detalle-stats-valor--baja" : "")">@(lectura.Cambio > 0 ? "+" : lectura.Cambio < 0 ? "−" : "")@Valor(Math.Abs(lectura.Cambio)) <small>@lectura.Unidad</small></span>
+                        <span class="detalle-stats-rotulo">@(lectura.Cambio > 0 ? "aumento total" : lectura.Cambio < 0 ? "descenso total" : "cambio total")</span>
+                    </div>
+                    <div class="detalle-stats-item">
+                        <span class="detalle-stats-valor">@lectura.Mediciones</span>
+                        <span class="detalle-stats-rotulo">mediciones</span>
+                    </div>
+                    <div class="detalle-stats-item">
+                        <span class="detalle-stats-valor">@lectura.Dias <small>@(lectura.Dias == 1 ? "día" : "días")</small></span>
+                        <span class="detalle-stats-rotulo">entre primera y última</span>
+                    </div>
+                </div>
+                @if (pasos.Count > 0 && pasos[0].Salto.Length > 0)
+                {
+                    <p class="detalle-delta">último salto: @pasos[0].Salto</p>
+                }
+            }
+            else
+            {
+                <p class="cifra-par">
+                    <span class="@(interpretacion.PideAlgo ? "final" : "")">@Valor(lectura.ValorFinal)</span><span class="unidad">@lectura.Unidad</span>
+                </p>
+            }
+
+            @* La frase de referencia en texto plano — Paso 14: no se pierde para las formas
+               que no muestran ya un "Resultado actual/Referencia" propio (posicion en
+               banda/trayectoria con linea base la dicen en números en su forma-pie, no en
+               esta frase completa). "progreso hacia meta" la repite dentro de su propia
+               barra nueva de abajo, así que acá se omite para no duplicarla. *@
+            @if (interpretacion.ReferenciaLegible.Length > 0 && interpretacion.Forma != "progreso hacia meta")
+            {
+                <p class="apunte">referencia: @interpretacion.ReferenciaLegible</p>
+            }
+
+            @* TU RESULTADO Y EL RANGO — Paso 6/RONDA 16-6: prioridad visual sobre la meta
+               orientativa (Paso 11/RONDA 16-5). RangoNumerico() busca PRIMERO las líneas
+               reales estructuradas (piso/techo de "posicion en banda", o el techo real de
+               "trayectoria con linea base") y sólo si no existen cae al único número que
+               expone ReferenciaLegible ("progreso hacia meta": Colesterol/LDL/Triglicéridos,
+               que no tienen piso/techo estructurado). Alcanzable con serie o con una sola
+               medición -Paso 9-B-. Sin veredicto no hay dibujo -Paso 12-. *@
+            @if (!interpretacion.RequiereElSexo && interpretacion.Forma.Length > 0)
+            {
+                <h2 class="seccion">Tu resultado y el rango</h2>
+                @switch (interpretacion.Forma)
+                {
+                    case "trayectoria con linea base":
+                        <TrayectoriaConLineaBase Puntos="puntos"
+                                                 Referencias="referencias"
+                                                 PideAlgo="interpretacion.PideAlgo"
+                                                 Descripcion="@interpretacion.ParaSonia" />
+                        break;
+                    case "progreso hacia meta":
+                        (decimal? piso, decimal? techo) = RangoNumerico();
+                        @if (techo is decimal techoReal)
+                        {
+                            decimal pisoReal = piso ?? 0m;
+                            decimal recorrido = techoReal - pisoReal;
+                            decimal proporcion = recorrido <= 0 ? 0m : Math.Max(0m, Math.Min(1m, (lectura.ValorFinal - pisoReal) / recorrido));
+                            <div class="detalle-rango-grande">
+                                <div class="detalle-rango-grande-marcador" style="left:@((proporcion * 100).ToString("0.#", CultureInfo.InvariantCulture))%">
+                                    <span class="detalle-rango-grande-valor">@Valor(lectura.ValorFinal)</span>
+                                    <span class="detalle-rango-grande-flecha" aria-hidden="true">&#9660;</span>
+                                </div>
+                                <div class="detalle-rango-grande-pista"></div>
+                                <div class="detalle-rango-grande-limites">
+                                    <span>@Valor(pisoReal) @lectura.Unidad</span>
+                                    <span class="detalle-rango-grande-limite-der">@Valor(techoReal) @lectura.Unidad<br /><small>(límite de referencia)</small></span>
+                                </div>
+                            </div>
+                            <p class="detalle-rango-resumen">Resultado actual: <b>@Valor(lectura.ValorFinal) @lectura.Unidad</b> · Referencia: @interpretacion.ReferenciaLegible</p>
+                        }
+                        @* Paso 11 — "META" Y "REFERENCIA" NO SON LO MISMO, y ahora quedan en ese
+                           orden: primero el rango de referencia clínico (arriba), después,
+                           más chica y con su propia nota, la meta orientativa -partida→meta:
+                           MetaDeColesterol para el colesterol total; para LDL/Triglicéridos,
+                           un alias del propio techo clínico, sin escalón de coaching-. *@
+                        <p class="detalle-meta-rotulo">Tu progreso hacia una meta orientativa</p>
+                        <ProgresoHaciaMeta Puntos="puntos"
+                                           Referencias="referencias"
+                                           Descripcion="@interpretacion.ParaSonia" />
+                        <p class="detalle-meta-nota">
+                            Es un paso sugerido desde tu valor actual, no el rango de
+                            referencia clínico de arriba.
+                        </p>
+                        break;
+                    case "posicion en banda":
+                        <PosicionEnBanda Puntos="puntos"
+                                         Referencias="referencias"
+                                         Descripcion="@interpretacion.ParaSonia" />
+                        break;
+                }
+            }
+
+            @* LA INTERPRETACION — Paso 8/RONDA 16-1 y 16-7: YA NO usa interpretacion.Veredicto
+               como título -esa palabra del dominio ("empeorando"/"mejorando") es justo lo que
+               se pidió sacar de pantalla por alarmista-. En su lugar tres líneas separadas y
+               siempre reales: ESTADO ACTUAL (posición contra el rango, calculada -Paso 8 y
+               RONDA 16-8: nunca "extremo alto" fijo, sale de EstadoActualTexto() con los
+               piso/techo reales de este analito), EVOLUCIÓN (la MISMA Tendencia neutra del
+               chip de cabecera, nunca "empeorando") y ACCIÓN (interpretacion.Accion, el
+               conjunto cerrado de siempre). Paso 7 -MUY IMPORTANTE- esta rama sólo se toma
+               cuando interpretacion.PideAlgo es real.
+
+               RONDA 17 -sólo visual, el contenido de arriba no cambia-: se sacó el
+               triángulo de alerta -ya no hay ⚠ en ningún lado de este bloque, ni
+               siquiera para "urgente"- y en su lugar hay un ícono "i" informativo
+               dentro de un círculo de color (ámbar para lo que merece atención, rojo
+               sólo para lo urgente). El contenedor pasó de "panel con barra lateral
+               gruesa" a una tarjeta integrada -fondo `--panel-navy`, el mismo tono que
+               ya usa Inicio para "lo que merece atención", con un borde fino y sutil
+               del color de la severidad-, para que se sienta informativa y no como una
+               alerta de sistema. *@
+            @if (interpretacion.PideAlgo)
+            {
+                string estadoActual = (!interpretacion.RequiereElSexo && !EsBinario && !EsNominal) ? EstadoActualTexto() : "";
+                string evolucion = EvolucionTexto();
+                <div class="detalle-interpretacion @(interpretacion.Severidad == "urgente" ? "detalle-interpretacion--problema" : (interpretacion.SugiereRepetirElExamen ? "detalle-interpretacion--neutro" : "detalle-interpretacion--atencion"))">
+                    <span class="detalle-interpretacion-icono" aria-hidden="true">@(interpretacion.SugiereRepetirElExamen ? "↻" : "i")</span>
+                    <div class="detalle-interpretacion-cuerpo">
+                        @if (estadoActual.Length > 0)
+                        {
+                            <p class="detalle-interpretacion-estado">@estadoActual</p>
+                        }
+                        @if (evolucion.Length > 0)
+                        {
+                            <p class="detalle-interpretacion-evolucion">@evolucion</p>
+                        }
+                        @if (interpretacion.Accion.Length > 0)
+                        {
+                            <p class="detalle-interpretacion-accion">Vale la pena <b>@interpretacion.Accion</b>.</p>
+                        }
+                    </div>
+                </div>
+            }
+            else if (interpretacion.RequiereElSexo)
+            {
+                @* NI VERDE NI AMBAR. No se puede decir que esto esté bien —no se sabe— y
+                   tampoco es un hallazgo. La frase la escribe el analito, que es el único que
+                   sabe por qué no puede leerse. *@
+                <div class="aviso aviso--neutro" style="margin-top:22px">
+                    <strong>Falta un dato tuyo.</strong> @interpretacion.ParaSonia.
+                    Los valores de arriba son reales; lo que no hay todavía es la lectura.
+                    <a href="">Decilo en tus exámenes</a> y esto se interpreta solo.
+                </div>
+            }
+            else
+            {
+                <p class="detalle-conclusion">
+                    <span class="detalle-conclusion-icono" aria-hidden="true">&check;</span>
+                    @Mayuscula(interpretacion.ParaSonia).
+                </p>
+            }
+
+            @* CONTEXTO DEL RANGO — Paso 12/RONDA 16-9, recoloreado RONDA 17-7: dos niveles
+               de color bien distintos -ÁMBAR es el bloque de arriba, lo que merece
+               atención; CELESTE es este, información de cómo se calculó el rango, nunca se
+               confunden-, separados por una línea fina (el "divider" de la referencia).
+               Dinámico -edad/sexo reales-, y ausente por completo si RequiereElSexo -ahí ya
+               lo explica el aviso de arriba- o si esta forma no tiene rango. *@
+            @if (!interpretacion.RequiereElSexo && interpretacion.Forma.Length > 0)
+            {
+                <p class="detalle-contexto">
+                    <span class="detalle-contexto-icono" aria-hidden="true">&#9432;</span> El rango de referencia se evalúa para @estado.EdadDelPaciente() años@(Sexo()).
+                </p>
+            }
+
+            @* EL RITMO, cuando el analito lo tiene. Es otra pregunta que la tendencia y sobre
+               otro tramo: la tendencia mira la serie entera, esto mira el más reciente. *@
+            @if (velocidad.EsAplicable)
+            {
+                <p class="ritmo @(velocidad.ExigeAtencion ? "ritmo--atencion" : "")">
+                    <span class="ritmo-rotulo">al ritmo del último tramo</span>
+                    <span class="ritmo-cifra">@velocidad.Expresada</span>
+                    <span class="ritmo-nota">
+                        medido sobre @velocidad.Dias @(velocidad.Dias == 1 ? "día" : "días")
+                        · el umbral de este analito es @Valor(velocidad.Umbral) @velocidad.Unidad al año
+                    </span>
+                </p>
+            }
+
+            @* CADA MEDICIÓN — Paso 13: compacta, con fecha, valor, unidad y el salto contra
+               la anterior cuando lo hay. Con una sola medición muestra esa única fila, sin
+               salto -no hay contra qué compararla-. Totalmente dinámica: tantas filas como
+               mediciones reales haya -Paso 10 de esta ronda-. *@
+            @if (pasos.Count > 0)
+            {
+                <h2 class="seccion">Cada medición</h2>
+                <ol class="detalle-timeline">
+                    @{ int indiceMedicion = 0; }
+                    @foreach (Paso paso in pasos)
+                    {
+                        bool esReciente = indiceMedicion == 0;
+                        indiceMedicion++;
+                        <li class="detalle-evento @(esReciente ? "detalle-evento--reciente" : "")">
+                            <span class="detalle-punto" aria-hidden="true"></span>
+                            <div class="detalle-evento-fila">
+                                <div class="detalle-evento-datos">
+                                    <span class="detalle-evento-fecha">@paso.Fecha.ToString("dd MMM yyyy", Cultura)</span>
+                                    <span class="detalle-evento-valor">@paso.Expresado <small>@lectura.Unidad</small></span>
+                                </div>
+                                @if (paso.Salto.Length > 0)
+                                {
+                                    <span class="detalle-evento-salto">@paso.Salto</span>
+                                }
+                            </div>
+                        </li>
+                    }
+                </ol>
+            }
+        }
     }
 
     @* DOS CASOS SIN ESCALA QUE PROMETER, y por la misma razón de fondo: decir «se
@@ -360,7 +495,7 @@ else
        es cada cuánto conviene repetirlo—, y un analito que no le corresponde no tiene
        contra qué compararse en ningún sexo ni a ninguna edad. *@
     <p class="apunte" style="margin-top:30px">
-        @if (!EsBinario && !interpretacion.NoLeCorresponde)
+        @if (EsNominal)
         {
             @* Los DOS parámetros clínicos con los que el dominio elige los rangos, dichos
                juntos porque juntos deciden: 12.2 g/dL no significa lo mismo a los 30 que
@@ -446,6 +581,12 @@ else
     private string Insignia()
     {
         if (interpretacion.SugiereRepetirElExamen) return "chip--repetir";
+        // SIN SERIE (Paso 5/9-B): el mismo chip--sinserie que ya usa Home cuando
+        // !HaySerie -- nunca lo pinta la lectura por defecto ("indeterminado"), que
+        // seria un verde "todo bien" sin base real. Sólo en la forma continua: en un
+        // binario/nominal `lectura` sigue en su valor por defecto y esta rama no debe
+        // aplicar ahí.
+        if (!EsBinario && !EsNominal && !lectura.HaySerie) return "chip--sinserie";
         if (interpretacion.Severidad == "urgente") return "chip--problema";
         if (interpretacion.PideAlgo) return "chip--atencion";
         return "chip--estable";
@@ -560,4 +701,203 @@ else
     // no sobrevive el journal (5571.50 entra, 5571.5 sale del replay), así que un
     // ToString() pelado mostraría valores distintos antes y después de reabrir la app.
     private static string Valor(decimal medido) => medido.ToString("0.##", CultureInfo.InvariantCulture);
+
+    // EL ESTADO EN PALABRAS PARA EL CHIP GRANDE — RONDA 15: el MISMO vocabulario que ya
+    // usa Home (EstadoBreve/Flecha en MisExamenes.razor) para que la cabecera del detalle
+    // cuente la misma historia que la tarjeta de "merece atención" (Paso 15).
+    // SugiereRepetirElExamen antes que la tendencia, igual que en Home.
+    private string EstadoCabecera()
+    {
+        if (interpretacion.SugiereRepetirElExamen) return "posible error de medición";
+        return lectura.Tendencia switch
+        {
+            "en ascenso"  => "viene aumentando",
+            "en descenso" => "viene bajando",
+            "estable"     => "en seguimiento",
+            _             => "",
+        };
+    }
+
+    // LA FLECHA, igual que en Home: la decide la Tendencia que ya calculó el dominio, no
+    // una resta hecha acá.
+    private string Flecha() => lectura.Tendencia switch
+    {
+        "en ascenso"  => "↑",
+        "en descenso" => "↓",
+        _             => "→",
+    };
+
+    // Primera letra en mayúscula, para arrancar como oración una frase del dominio que
+    // viene toda en minúscula. Duplicado de Home (MisExamenes.razor.Mayuscula) por la
+    // misma razón que MicroChart: esta página no referencia miembros privados de otra.
+    private static string Mayuscula(string frase) =>
+        frase.Length == 0 ? frase : char.ToUpperInvariant(frase[0]) + frase.Substring(1);
+
+    // EL PISO Y EL TECHO NUMÉRICOS — RONDA 16: PRIMERO las líneas reales y estructuradas
+    // que ya trae Referencias(analito) ("piso"/"techo" de "posicion en banda", el "techo"
+    // de "trayectoria con linea base"); si esta forma no expone ninguna -"progreso hacia
+    // meta": Colesterol Total/LDL/Triglicéridos, que sólo tienen "partida"/"meta"-, el
+    // único número real que queda es el que ya escribe ReferenciaLegible ("hasta 220
+    // mg/dL"), parseado con el MISMO método que ya usa Home (LimitesDeRango, duplicado
+    // acá por la misma razón de siempre). Nunca inventa un piso: si el texto es "hasta
+    // X" el piso vuelve null y la pantalla asume 0, igual que ya hacía Home.
+    private (decimal? piso, decimal? techo) RangoNumerico()
+    {
+        LineaDeReferencia? pisoLinea = referencias.FirstOrDefault(r => r.Nombre == "piso");
+        LineaDeReferencia? techoLinea = referencias.FirstOrDefault(r => r.Nombre == "techo");
+        if (pisoLinea is not null || techoLinea is not null)
+            return (pisoLinea?.Valor, techoLinea?.Valor);
+
+        return LimitesDeRango(interpretacion.ReferenciaLegible);
+    }
+
+    private static (decimal? piso, decimal? techo) LimitesDeRango(string referenciaLegible)
+    {
+        if (string.IsNullOrWhiteSpace(referenciaLegible)) return (null, null);
+
+        var numeros = new List<decimal>();
+        foreach (string palabra in referenciaLegible.Split(' ', StringSplitOptions.RemoveEmptyEntries))
+        {
+            string candidato = palabra.Trim(',', '.', ';');
+            if (decimal.TryParse(candidato, NumberStyles.Number, CultureInfo.InvariantCulture, out decimal valor))
+                numeros.Add(valor);
+            else if (decimal.TryParse(candidato, NumberStyles.Number, CultureInfo.CurrentCulture, out valor))
+                numeros.Add(valor);
+        }
+
+        if (numeros.Count == 0) return (null, null);
+        if (numeros.Count == 1) return (null, numeros[0]);
+        return (numeros[0], numeros[^1]);
+    }
+
+    // EL ESTADO ACTUAL, separado de la EVOLUCIÓN — RONDA 16-7/16-8: dónde cae el valor
+    // respecto al rango, calculado con datos reales (nunca "extremo alto" fijo). 85%/15%
+    // del recorrido real son el único umbral -no un valor clínico-: son la distancia a la
+    // que un marcador ya se lee "cerca del borde" en la barra de abajo, la misma pista
+    // que dibuja el marcador. Sin rango resoluble, no se inventa una posición: se cae al
+    // propio texto del dominio (ParaSonia), nunca a una frase nueva de esta pantalla.
+    private string EstadoActualTexto()
+    {
+        (decimal? piso, decimal? techo) = RangoNumerico();
+        decimal actual = lectura.ValorFinal;
+
+        if (techo is decimal t)
+        {
+            if (actual > t) return "Tu resultado está por encima del rango de referencia.";
+
+            decimal desdePiso = piso ?? 0m;
+            decimal recorrido = t - desdePiso;
+            if (recorrido > 0)
+            {
+                decimal proporcion = (actual - desdePiso) / recorrido;
+                if (proporcion >= 0.85m)
+                    return "Tu resultado sigue dentro del rango de referencia, pero está cerca del extremo alto.";
+                if (piso is not null && proporcion <= 0.15m)
+                    return "Tu resultado sigue dentro del rango de referencia, pero está cerca del extremo bajo.";
+            }
+            return "Tu resultado sigue dentro del rango de referencia.";
+        }
+        if (piso is decimal p && actual < p)
+            return "Tu resultado está por debajo del rango de referencia.";
+
+        return interpretacion.ParaSonia.Length > 0 ? Mayuscula(interpretacion.ParaSonia) + "." : "";
+    }
+
+    // LA EVOLUCIÓN, en el MISMO vocabulario neutro del chip de cabecera — RONDA 16-1: acá
+    // NUNCA aparece "empeorando"/"mejorando" (eso es Veredicto, la palabra que se pidió
+    // sacar de esta pantalla): sólo el HECHO de Tendencia, igual que EstadoCabecera().
+    // Sin serie no hay evolución que contar -Paso 5-, así que devuelve vacío.
+    private string EvolucionTexto()
+    {
+        if (!lectura.HaySerie) return "";
+        return lectura.Tendencia switch
+        {
+            "en ascenso"  => "Ha venido aumentando en tus últimas mediciones.",
+            "en descenso" => "Ha venido bajando en tus últimas mediciones.",
+            "estable"     => "Se mantiene estable en tus últimas mediciones.",
+            _             => "",
+        };
+    }
+
+    // EL COLOR DEL GRÁFICO — RONDA 16-4: nunca verde por defecto sólo porque hay una
+    // línea; sigue la MISMA Severidad que ya pinta el chip (Insignia()) y el bloque de
+    // interpretación, nunca una lectura de color aparte.
+    private string ClaseDelGrafico()
+    {
+        if (!interpretacion.PideAlgo) return "";
+        return interpretacion.Severidad == "urgente" ? "detalle-grafico--problema" : "detalle-grafico--atencion";
+    }
+
+
+    // EL MICRO-GRAFICO COMPARATIVO — RONDA 13: mismo lenguaje visual y mismo algoritmo
+    // que ya usa "Qué cambió" en Home (línea + puntos, sin ejes ni escala clínica),
+    // duplicado acá -no compartido- porque esta página no puede referenciar los
+    // miembros privados de MisExamenes.razor y esa pantalla queda fuera del alcance de
+    // esta ronda. Usa TODOS los puntos reales de la serie (puntos), nunca solo el
+    // último salto: si hay 2 mediciones dibuja 2, si hay 5 dibuja 5. Esta rama sólo se
+    // alcanza con lectura.HaySerie, así que puntos.Count siempre es >= 2 acá.
+    private const double AnchoDelMicroChart = 260;
+    private const double AltoDelMicroChart = 40;
+    private const double MargenDelMicroChart = 20;
+    private string VbAncho => (AnchoDelMicroChart + 2 * MargenDelMicroChart).ToString("0", CultureInfo.InvariantCulture);
+    private string VbAlto => (AltoDelMicroChart + 2 * MargenDelMicroChart).ToString("0", CultureInfo.InvariantCulture);
+    private string YFecha => (AltoDelMicroChart + 2 * MargenDelMicroChart - 4).ToString("0", CultureInfo.InvariantCulture);
+
+    private sealed class PuntoDelMicroChart
+    {
+        public double X { get; init; }
+        public double Y { get; init; }
+        public string Valor { get; init; } = "";
+        public string Fecha { get; init; } = "";
+    }
+
+    private List<PuntoDelMicroChart> MicroChart()
+    {
+        var lista = new List<PuntoDelMicroChart>();
+        if (puntos.Count == 0) return lista;
+
+        decimal minimo = puntos[0].Valor, maximo = puntos[0].Valor;
+        foreach (PuntoDeSerie p in puntos)
+        {
+            if (p.Valor < minimo) minimo = p.Valor;
+            if (p.Valor > maximo) maximo = p.Valor;
+        }
+        decimal rango = maximo - minimo;
+
+        for (int i = 0; i < puntos.Count; i++)
+        {
+            double x = MargenDelMicroChart + (puntos.Count == 1 ? AnchoDelMicroChart / 2 : AnchoDelMicroChart * i / (puntos.Count - 1));
+            double y;
+            if (rango == 0)
+            {
+                y = MargenDelMicroChart + AltoDelMicroChart / 2;
+            }
+            else
+            {
+                double proporcion = (double)((puntos[i].Valor - minimo) / rango);
+                y = MargenDelMicroChart + AltoDelMicroChart - proporcion * AltoDelMicroChart;
+            }
+            lista.Add(new PuntoDelMicroChart
+            {
+                X = x,
+                Y = y,
+                Valor = Valor(puntos[i].Valor),
+                Fecha = puntos[i].Fecha.ToString("MMM yyyy", Cultura),
+            });
+        }
+        return lista;
+    }
+
+    private static string PolilineaDelMicroChart(List<PuntoDelMicroChart> pts)
+    {
+        var texto = new System.Text.StringBuilder();
+        for (int i = 0; i < pts.Count; i++)
+        {
+            if (i > 0) texto.Append(' ');
+            texto.Append(pts[i].X.ToString("0.#", CultureInfo.InvariantCulture));
+            texto.Append(',');
+            texto.Append(pts[i].Y.ToString("0.#", CultureInfo.InvariantCulture));
+        }
+        return texto.ToString();
+    }
 }

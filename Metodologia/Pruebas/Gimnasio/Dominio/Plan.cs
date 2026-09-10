@@ -39,7 +39,7 @@ namespace Gimnasio.Dominio
 			foreach (EjercicioPrescrito ya in ejercicios)
 				if (ya.EsElMismo(ejercicio.Nombre))
 					throw new InvalidOperationException(
-						$"El plan ya prescribe '{ejercicio.Nombre}'. Dos pesos indicados para el mismo "
+						$"El plan ya prescribe '{ejercicio.Nombre}'. Dos prescripciones del mismo "
 						+ "ejercicio en el mismo plan no se pueden distinguir.");
 			ejercicios.Add(ejercicio);
 		}
@@ -64,12 +64,27 @@ namespace Gimnasio.Dominio
 			return false;
 		}
 
-		internal decimal PesoIndicadoDe(string nombreDelEjercicio)
+		internal EjercicioPrescrito Prescrito(string nombreDelEjercicio)
 		{
 			foreach (EjercicioPrescrito e in ejercicios)
-				if (e.EsElMismo(nombreDelEjercicio)) return e.PesoIndicado;
+				if (e.EsElMismo(nombreDelEjercicio)) return e;
 			throw new KeyNotFoundException(
 				$"Este plan no prescribe '{nombreDelEjercicio}'. Preguntar Prescribe antes.");
+		}
+
+		// EL PESO ES OPCIONAL DESDE EL V3: el papel no lo trae (hueco 17). Total: un plan
+		// que no prescribe el ejercicio, o lo prescribe sin peso, contesta que no.
+		internal bool TienePesoIndicadoPara(string nombreDelEjercicio)
+		{
+			return Prescribe(nombreDelEjercicio) && Prescrito(nombreDelEjercicio).TienePesoIndicado;
+		}
+
+		internal decimal PesoIndicadoDe(string nombreDelEjercicio)
+		{
+			if (!TienePesoIndicadoPara(nombreDelEjercicio))
+				throw new InvalidOperationException(
+					$"Este plan no indica peso para '{nombreDelEjercicio}'. Preguntar TienePesoIndicadoPara antes.");
+			return Prescrito(nombreDelEjercicio).PesoIndicado;
 		}
 
 		// EL DOMINIO DICE DURACIONES, NO FECHAS -regla 14 del substrato-. Las semanas
@@ -87,6 +102,27 @@ namespace Gimnasio.Dominio
 		internal int DiasEsperadosEnTodoElPlan()
 		{
 			return SemanasQueDuro() * DiasEsperadosPorSemana;
+		}
+
+		// LA LEY CON NOMBRE (capitulo 3 §3: "nombra la ley, no la dejes como aritmetica"):
+		// DURANTE LA MORA LAS ASISTENCIAS ESPERADAS NO SE ESPERAN. Es el juicio N2 del v2
+		// y la Suspension de Fowler (fig. 8.4) aplicada al plan: las semanas en que la
+		// membresia estuvo en mora se restan de las que el plan duro, y solo las que
+		// quedan esperan dias.
+		//
+		// Se cuenta en semanas enteras, igual que SemanasQueDuro, y por eso hereda a
+		// proposito la fuga del hueco 6: seis dias en mora son cero semanas. Mismo
+		// criterio para durar y para descontar; cambiar uno sin el otro mentiria.
+		//
+		// Es el cambio que cierra el hueco 9: hoy un plan con dos semanas en mora
+		// esperaba lo mismo que uno sin mora, y contaba la mora como incumplimiento.
+		internal int DiasEsperadosDescontando(int semanasInactiva)
+		{
+			if (semanasInactiva < 0)
+				throw new ArgumentOutOfRangeException(nameof(semanasInactiva), semanasInactiva,
+					"No se pueden descontar semanas negativas.");
+			int semanas = SemanasQueDuro() - semanasInactiva;
+			return (semanas > 0 ? semanas : 0) * DiasEsperadosPorSemana;
 		}
 	}
 }
