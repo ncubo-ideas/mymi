@@ -29,7 +29,11 @@ internal static class HostInstaller
 	// they open the file is only our key.
 	private static readonly JsonSerializerOptions AsTheAppWritesIt = new() { WriteIndented = true };
 
-	private sealed record Assistant(string Name, string Config, string Key);
+	// Two file formats, one registration. Claude Desktop keeps a JSON with an "mcpServers" object;
+	// Codex -and the ChatGPT desktop app through it- keeps a TOML with [mcp_servers.*] tables.
+	private enum ConfigFormat { ClaudeJson, CodexToml }
+
+	private sealed record Assistant(string Name, string Config, string Key, ConfigFormat Format = ConfigFormat.ClaudeJson);
 
 	public static int Install(string[] args)
 	{
@@ -153,6 +157,19 @@ internal static class HostInstaller
 				unpackaged, "mcpServers"));
 		}
 
+		// THE CHATGPT DESKTOP APP, THROUGH CODEX. Since 2026-07-09 the ChatGPT app carries Codex and
+		// Work inside, and both launch the local stdio servers declared in ~/.codex/config.toml, which
+		// the Codex CLI shares. The Chat tab does not read it (measured, NotasGnothiHost/45). The
+		// folder is the evidence: the app creates it on first run, and the CLI too. CODEX_HOME moves
+		// it, so it is honored. The file itself may not exist yet; it gets created.
+		string codexHome = Environment.GetEnvironmentVariable("CODEX_HOME") is { Length: > 0 } fromEnv
+			? fromEnv
+			: Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile), ".codex");
+		if (Directory.Exists(codexHome))
+			hits.Add(new Assistant(
+				"ChatGPT desktop app (Codex and Work tabs) and Codex CLI",
+				Path.Combine(codexHome, "config.toml"), "mcp_servers", ConfigFormat.CodexToml));
+
 		return hits;
 	}
 
@@ -160,6 +177,9 @@ internal static class HostInstaller
 
 	private static int Register(Assistant assistant, string executable, string modulesFolder)
 	{
+		if (assistant.Format == ConfigFormat.CodexToml)
+			return RegisterInCodex(assistant, executable, modulesFolder);
+
 		Console.Error.WriteLine();
 		Console.Error.WriteLine($"I am going to add Gnothi to: {assistant.Config}");
 
@@ -229,6 +249,53 @@ internal static class HostInstaller
 		Console.Error.WriteLine();
 		Console.Error.WriteLine($"Done. Restart {assistant.Name} and ask it what modules you have installed.");
 		Console.Error.WriteLine("(The assistant reads its query list at startup, so the restart is needed.)");
+		return 0;
+	}
+
+	// THE SAME THREE CARES, IN TOML. The table itself -and why it has four lines and not two-
+	// lives in CodexTable, which is pure text and is what the suite tests. Here: read, show,
+	// ask, back up, write.
+	private static int RegisterInCodex(Assistant assistant, string executable, string modulesFolder)
+	{
+		Console.Error.WriteLine();
+		Console.Error.WriteLine($"I am going to add Gnothi to: {assistant.Config}");
+
+		string original = File.Exists(assistant.Config) ? File.ReadAllText(assistant.Config) : "";
+		bool wasThere = CodexTable.Has(original);
+		string updated = CodexTable.Upsert(original, executable, modulesFolder);
+
+		Console.Error.WriteLine();
+		Console.Error.WriteLine(wasThere
+			? $"  [mcp_servers.{CodexTable.Server}] was already there: I replace that table."
+			: $"  I append the [mcp_servers.{CodexTable.Server}] table at the end.");
+		Console.Error.WriteLine("  Everything else in the file stays as it is.");
+		Console.Error.WriteLine();
+		Console.Error.WriteLine("  The table:");
+		foreach (string line in CodexTable.Render(executable, modulesFolder).TrimEnd().Split('\n'))
+			Console.Error.WriteLine("    " + line.TrimEnd('\r'));
+		Console.Error.WriteLine();
+		Console.Error.Write("Write it? [y/N] ");
+
+		string? yes = Console.ReadLine();
+		if (yes is null || !yes.Trim().StartsWith("y", StringComparison.OrdinalIgnoreCase))
+		{
+			Console.Error.WriteLine("I wrote nothing.");
+			return 0;
+		}
+
+		if (original.Length > 0)
+		{
+			string backup = assistant.Config + ".before-gnothi";
+			File.WriteAllText(backup, original, new UTF8Encoding(false));
+			Console.Error.WriteLine($"  backup: {backup}");
+		}
+
+		File.WriteAllText(assistant.Config, updated, new UTF8Encoding(false));
+
+		Console.Error.WriteLine();
+		Console.Error.WriteLine("Done. Restart the ChatGPT app -or, in its Codex tab, Settings > MCP servers > Restart-");
+		Console.Error.WriteLine("and in a NEW Codex or Work chat ask it what modules you have installed.");
+		Console.Error.WriteLine("(The Chat tab does not launch local servers; that is OpenAI's, not ours.)");
 		return 0;
 	}
 
