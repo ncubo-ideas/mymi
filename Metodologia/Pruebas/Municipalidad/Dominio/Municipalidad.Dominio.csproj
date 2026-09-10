@@ -1,0 +1,23 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!-- El puppet. CERO dependencias.
+
+       Este dominio es el TERCER SUJETO DE PRUEBA de la Metodologia, y el primero construido
+       enteramente con la guia de la columna vertebral, desde cero, el 2026-09-08. Salio de
+       la corrida en vivo del 2026-09-03 con los papeles reales de una cuenta municipal;
+       sus datos de demo son inventados y reproducen los fenomenos, no los montos.
+
+       Lo que el Preguntas.md no alcanzo a decidir esta marcado con HUECO y listado en
+       HUECOS.md. -->
+
+  <PropertyGroup>
+    <TargetFramework>net9.0</TargetFramework>
+    <Nullable>disable</Nullable>
+    <ImplicitUsings>disable</ImplicitUsings>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <InternalsVisibleTo Include="Municipalidad.Consola" />
+  </ItemGroup>
+
+</Project>

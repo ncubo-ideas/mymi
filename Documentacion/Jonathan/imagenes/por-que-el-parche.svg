@@ -1,0 +1,128 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="800" height="660" font-family="IBM Plex Sans, Segoe UI, system-ui, sans-serif" viewBox="0 0 800 660" aria-label="Dos tiras de tres cuadros. Arriba, sin el parche: un lector abre la carpeta de otro y al abrirla le corta la página que estaba escribiendo, le borra dos papeles y le deja ocho carpetas vacías. Abajo, con el parche: la misma escena, y al final la carpeta queda igual.">
+
+  <!-- ════════ TIRA A · SIN PARCHE ════════ -->
+  <text x="0" y="14" font-size="12" font-family="IBM Plex Mono, monospace" letter-spacing="1.6" font-weight="600" fill="#c4402a">HOY</text>
+
+  <!-- ── A1 · antes ── -->
+  <rect x="0" y="26" width="244" height="238" rx="10" fill="#ffffff" stroke="#dfe1e8" stroke-width="1.4"/>
+  <circle cx="46" cy="62" r="12" fill="none" stroke="#3d5ca8" stroke-width="2"/>
+  <path d="M28 94 q0 -20 18 -20 q18 0 18 20" fill="none" stroke="#3d5ca8" stroke-width="2" stroke-linecap="round"/>
+  <text x="76" y="62" font-size="12" font-weight="600" fill="#3d5ca8">el dueño</text>
+  <text x="76" y="78" font-size="11" fill="#5c6178">está escribiendo</text>
+  <path d="M20 136 h50 l9 12 h137 v98 h-196 z" fill="#3d5ca8" fill-opacity="0.06" stroke="#3d5ca8" stroke-width="2"/>
+  <rect x="50" y="154" width="30" height="12" rx="2" fill="#ffffff" stroke="#3d5ca8" stroke-width="1.8"/>
+  <rect x="36" y="166" width="46" height="56" rx="3" fill="#ffffff" stroke="#3d5ca8" stroke-width="1.8"/>
+  <path d="M44 182 h30 M44 194 h30 M44 206 h18" stroke="#5c6178" stroke-width="1.5" stroke-linecap="round"/>
+  <rect x="102" y="186" width="20" height="26" rx="2" fill="#ffffff" stroke="#b7bac6" stroke-width="1.8"/>
+  <rect x="128" y="186" width="20" height="26" rx="2" fill="#ffffff" stroke="#b7bac6" stroke-width="1.8"/>
+  <text x="122" y="284" text-anchor="middle" font-size="12.5" fill="#5c6178">su carpeta, con sus cosas</text>
+
+  <path d="M254 145 L266 145" stroke="#2c3040" stroke-width="2"/>
+  <path d="M266 139 L278 145 L266 151 Z" fill="#2c3040"/>
+
+  <!-- ── A2 · abre ── -->
+  <rect x="278" y="26" width="244" height="238" rx="10" fill="#ffffff" stroke="#dfe1e8" stroke-width="1.4"/>
+  <circle cx="324" cy="62" r="12" fill="none" stroke="#c4402a" stroke-width="2"/>
+  <path d="M306 94 q0 -20 18 -20 q18 0 18 20" fill="none" stroke="#c4402a" stroke-width="2" stroke-linecap="round"/>
+  <text x="354" y="62" font-size="12" font-weight="600" fill="#c4402a">un lector</text>
+  <text x="354" y="78" font-size="11" fill="#5c6178">solo quiere leer</text>
+  <path d="M298 136 h50 l9 12 h137 v98 h-196 z" fill="#3d5ca8" fill-opacity="0.06" stroke="#3d5ca8" stroke-width="2"/>
+  <rect x="328" y="154" width="30" height="12" rx="2" fill="#ffffff" stroke="#3d5ca8" stroke-width="1.8"/>
+  <rect x="314" y="166" width="46" height="56" rx="3" fill="#ffffff" stroke="#3d5ca8" stroke-width="1.8"/>
+  <path d="M322 182 h30 M322 194 h30 M322 206 h18" stroke="#5c6178" stroke-width="1.5" stroke-linecap="round"/>
+  <rect x="380" y="186" width="20" height="26" rx="2" fill="#ffffff" stroke="#b7bac6" stroke-width="1.8"/>
+  <rect x="406" y="186" width="20" height="26" rx="2" fill="#ffffff" stroke="#b7bac6" stroke-width="1.8"/>
+  <path d="M456 108 L410 152" stroke="#c4402a" stroke-width="2.4"/>
+  <path d="M410 144 L406 158 L420 154 Z" fill="#c4402a"/>
+  <text x="400" y="284" text-anchor="middle" font-size="12.5" fill="#5c6178">la abre</text>
+
+  <path d="M532 145 L544 145" stroke="#2c3040" stroke-width="2"/>
+  <path d="M544 139 L556 145 L544 151 Z" fill="#2c3040"/>
+
+  <!-- ── A3 · después, con daño ── -->
+  <rect x="556" y="26" width="244" height="238" rx="10" fill="#ffffff" stroke="#c4402a" stroke-width="2"/>
+  <path d="M576 136 h50 l9 12 h137 v98 h-196 z" fill="#3d5ca8" fill-opacity="0.06" stroke="#3d5ca8" stroke-width="2"/>
+
+  <!-- la pagina cortada -->
+  <rect x="592" y="166" width="46" height="56" rx="3" fill="#ffffff" stroke="#3d5ca8" stroke-width="1.8"/>
+  <path d="M600 182 h30 M600 194 h30 M600 206 h18" stroke="#5c6178" stroke-width="1.5" stroke-linecap="round"/>
+  <path d="M598 156 L644 156" stroke="#c4402a" stroke-width="2.4" stroke-dasharray="4 3"/>
+  <path d="M614 140 l14 -8 l4 12 z" fill="#c4402a" fill-opacity="0.5"/>
+  <path d="M630 132 l10 -6 l3 9 z" fill="#c4402a" fill-opacity="0.3"/>
+
+  <!-- los papeles borrados -->
+  <rect x="658" y="186" width="20" height="26" rx="2" fill="none" stroke="#c4402a" stroke-width="1.6" stroke-dasharray="3 3"/>
+  <rect x="684" y="186" width="20" height="26" rx="2" fill="none" stroke="#c4402a" stroke-width="1.6" stroke-dasharray="3 3"/>
+  <path d="M661 189 L675 209 M675 189 L661 209" stroke="#c4402a" stroke-width="1.6" stroke-linecap="round"/>
+  <path d="M687 189 L701 209 M701 189 L687 209" stroke="#c4402a" stroke-width="1.6" stroke-linecap="round"/>
+
+  <!-- las 8 carpetas nuevas -->
+  <g stroke="#c4402a" stroke-width="1.5" fill="none">
+    <path d="M720 156 h12 l3 4 h29"/>
+    <path d="M720 166 h12 l3 4 h29"/>
+    <path d="M720 176 h12 l3 4 h29"/>
+    <path d="M720 186 h12 l3 4 h29"/>
+    <path d="M720 196 h12 l3 4 h29"/>
+    <path d="M720 206 h12 l3 4 h29"/>
+    <path d="M720 216 h12 l3 4 h29"/>
+    <path d="M720 226 h12 l3 4 h29"/>
+  </g>
+
+  <text x="678" y="284" text-anchor="middle" font-size="13" font-weight="600" fill="#c4402a">la carpeta quedó distinta</text>
+
+  <!-- llamadas del daño -->
+  <text x="556" y="308" font-size="11.5" fill="#c4402a">✂ le cortó la página que el dueño estaba escribiendo</text>
+  <text x="556" y="326" font-size="11.5" fill="#c4402a">✕ le borró dos papeles que él no había resuelto</text>
+  <text x="556" y="344" font-size="11.5" fill="#c4402a">+ le dejó 8 carpetas vacías</text>
+
+  <!-- ════════ TIRA B · CON PARCHE ════════ -->
+  <text x="0" y="396" font-size="12" font-family="IBM Plex Mono, monospace" letter-spacing="1.6" font-weight="600" fill="#2e7d54">CON EL PARCHE</text>
+
+  <!-- ── B1 ── -->
+  <rect x="0" y="408" width="244" height="238" rx="10" fill="#ffffff" stroke="#dfe1e8" stroke-width="1.4"/>
+  <circle cx="46" cy="444" r="12" fill="none" stroke="#3d5ca8" stroke-width="2"/>
+  <path d="M28 476 q0 -20 18 -20 q18 0 18 20" fill="none" stroke="#3d5ca8" stroke-width="2" stroke-linecap="round"/>
+  <text x="76" y="444" font-size="12" font-weight="600" fill="#3d5ca8">el dueño</text>
+  <text x="76" y="460" font-size="11" fill="#5c6178">está escribiendo</text>
+  <path d="M20 518 h50 l9 12 h137 v98 h-196 z" fill="#3d5ca8" fill-opacity="0.06" stroke="#3d5ca8" stroke-width="2"/>
+  <rect x="50" y="536" width="30" height="12" rx="2" fill="#ffffff" stroke="#3d5ca8" stroke-width="1.8"/>
+  <rect x="36" y="548" width="46" height="56" rx="3" fill="#ffffff" stroke="#3d5ca8" stroke-width="1.8"/>
+  <path d="M44 564 h30 M44 576 h30 M44 588 h18" stroke="#5c6178" stroke-width="1.5" stroke-linecap="round"/>
+  <rect x="102" y="568" width="20" height="26" rx="2" fill="#ffffff" stroke="#b7bac6" stroke-width="1.8"/>
+  <rect x="128" y="568" width="20" height="26" rx="2" fill="#ffffff" stroke="#b7bac6" stroke-width="1.8"/>
+  <text x="122" y="666" text-anchor="middle" font-size="12.5" fill="#5c6178">la misma carpeta</text>
+
+  <path d="M254 527 L266 527" stroke="#2c3040" stroke-width="2"/>
+  <path d="M266 521 L278 527 L266 533 Z" fill="#2c3040"/>
+
+  <!-- ── B2 ── -->
+  <rect x="278" y="408" width="244" height="238" rx="10" fill="#ffffff" stroke="#dfe1e8" stroke-width="1.4"/>
+  <circle cx="324" cy="444" r="12" fill="none" stroke="#2e7d54" stroke-width="2"/>
+  <path d="M306 476 q0 -20 18 -20 q18 0 18 20" fill="none" stroke="#2e7d54" stroke-width="2" stroke-linecap="round"/>
+  <text x="354" y="444" font-size="12" font-weight="600" fill="#2e7d54">el mismo lector</text>
+  <text x="354" y="460" font-size="11" fill="#5c6178">avisa que no es suya</text>
+  <path d="M298 518 h50 l9 12 h137 v98 h-196 z" fill="#3d5ca8" fill-opacity="0.06" stroke="#3d5ca8" stroke-width="2"/>
+  <rect x="328" y="536" width="30" height="12" rx="2" fill="#ffffff" stroke="#3d5ca8" stroke-width="1.8"/>
+  <rect x="314" y="548" width="46" height="56" rx="3" fill="#ffffff" stroke="#3d5ca8" stroke-width="1.8"/>
+  <path d="M322 564 h30 M322 576 h30 M322 588 h18" stroke="#5c6178" stroke-width="1.5" stroke-linecap="round"/>
+  <rect x="380" y="568" width="20" height="26" rx="2" fill="#ffffff" stroke="#b7bac6" stroke-width="1.8"/>
+  <rect x="406" y="568" width="20" height="26" rx="2" fill="#ffffff" stroke="#b7bac6" stroke-width="1.8"/>
+  <path d="M456 490 L410 534" stroke="#2e7d54" stroke-width="2.4"/>
+  <path d="M410 526 L406 540 L420 536 Z" fill="#2e7d54"/>
+  <text x="400" y="666" text-anchor="middle" font-size="12.5" fill="#5c6178">la abre igual</text>
+
+  <path d="M532 527 L544 527" stroke="#2c3040" stroke-width="2"/>
+  <path d="M544 521 L556 527 L544 533 Z" fill="#2c3040"/>
+
+  <!-- ── B3 · intacta ── -->
+  <rect x="556" y="408" width="244" height="238" rx="10" fill="#ffffff" stroke="#2e7d54" stroke-width="2"/>
+  <path d="M576 518 h50 l9 12 h137 v98 h-196 z" fill="#3d5ca8" fill-opacity="0.06" stroke="#3d5ca8" stroke-width="2"/>
+  <rect x="606" y="536" width="30" height="12" rx="2" fill="#ffffff" stroke="#3d5ca8" stroke-width="1.8"/>
+  <rect x="592" y="548" width="46" height="56" rx="3" fill="#ffffff" stroke="#3d5ca8" stroke-width="1.8"/>
+  <path d="M600 564 h30 M600 576 h30 M600 588 h18" stroke="#5c6178" stroke-width="1.5" stroke-linecap="round"/>
+  <rect x="658" y="568" width="20" height="26" rx="2" fill="#ffffff" stroke="#b7bac6" stroke-width="1.8"/>
+  <rect x="684" y="568" width="20" height="26" rx="2" fill="#ffffff" stroke="#b7bac6" stroke-width="1.8"/>
+  <path d="M726 556 l10 12 l20 -24" fill="none" stroke="#2e7d54" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+  <text x="678" y="666" text-anchor="middle" font-size="13" font-weight="600" fill="#2e7d54">quedó exactamente igual</text>
+</svg>

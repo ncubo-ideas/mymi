@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<!-- LOS ENTITLEMENTS PARA UN APARATO DE VERDAD, FIRMADO CON UNA CUENTA PERSONAL.
+	     Es Entitlements.plist MENOS las dos capacidades que un equipo gratis no puede tener, y
+	     existe porque firmar pidiendo algo que el perfil no concede FALLA, no se degrada.
+
+	     LO QUE NO ESTA, Y QUE CUESTA NO TENERLO:
+
+	     com.apple.security.application-groups  · App Groups es capacidad del programa PAGO.
+	         Solo lo usa la foto que la caratula de Swift lee del contenedor compartido. El Host
+	         escribe TAMBIEN una foto local (Shell.Paths.FotoLocal: true) y GetContainerUrl
+	         devolviendo null ya esta manejado y logueado, asi que sin esto la app corre igual y
+	         lo unico que se pierde es la via vieja hacia Lab.Siri.
+
+	     com.apple.developer.associated-domains · el universal link. No se pierde nada medible:
+	         go.gnothi.app no resuelve, asi que esa via no funciona ni con el entitlement puesto.
+	         El alta se prueba por el esquema propio, que no necesita ninguno.
+
+	     COMO SE USA, y no toca el csproj a proposito:
+
+	         dotnet build Gnothi.iOS/Gnothi.iOS.csproj -f net9.0-ios -r ios-arm64 \
+	           -p:CodesignEntitlements=EntitlementsDevice.plist
+
+	     El dia que haya cuenta paga esto se borra y se vuelve a Entitlements.plist. -->
+	<key>keychain-access-groups</key>
+	<array>
+		<string>$(AppIdentifierPrefix)com.ncubo.gnothi.host</string>
+	</array>
+</dict>
+</plist>

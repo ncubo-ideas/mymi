@@ -1,0 +1,83 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!-- THE HOST'S CORE, RUNNING ON A PHONE.
+       Not "loading some dll": these are the SAME files as the desktop Host, compiled inside
+       an Android app.
+
+       <Compile Include> is used instead of a project reference for a concrete reason: the
+       Host is an Exe and its core types were internal until the public seam was opened. The
+       shells stay internal, so the app has to compile them in to name StdioShell.
+
+       WHAT DOES NOT COME IN, and that is the point: Program.cs, ToolBridge.cs and
+       ConsentWatcher.cs. All of that is Gate 1, which speaks MCP. Here the caller is the
+       app (the future assistant) and it does not need the protocol.
+
+       HostTools.cs USED TO BE ON THAT LIST and no longer is. It carried [McpServerToolType],
+       so it could not be compiled here, and the consequence was that on the phone the
+       assistant could not ask what Gnothi knows about itself: how many modules there are, how
+       much each record takes up, how often it was asked. The Host's fourth verb was missing
+       from the only place the person actually lives. Now the tools are declared below the
+       seam and travel through the shared index, so this file compiles and every gate gets
+       them.
+       ConsentWatch.cs DOES come in, and that split is the point: watching the person's file
+       and reloading her consent is not the protocol's business, only ANNOUNCING it is. While
+       the two lived fused, the phone had no hot reload at all.
+
+       If this compiles without the MCP SDK, the core is proven transport-agnostic. -->
+
+  <PropertyGroup>
+    <TargetFramework>net9.0-android</TargetFramework>
+    <OutputType>Exe</OutputType>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <SupportedOSPlatformVersion>24.0</SupportedOSPlatformVersion>
+    <ApplicationId>com.ncubo.gnothi.host</ApplicationId>
+    <ApplicationDisplayVersion>1.0</ApplicationDisplayVersion>
+    <ApplicationVersion>1</ApplicationVersion>
+    <RootNamespace>Gnothi.Mobile</RootNamespace>
+
+    <!-- No AOT and no linker: reflection IS the mechanism, not a detail. Measuring Release
+         with the linker on is a separate test. -->
+    <RunAOTCompilation>false</RunAOTCompilation>
+    <PublishTrimmed>false</PublishTrimmed>
+    <AndroidLinkMode>None</AndroidLinkMode>
+
+    <!-- APK AUTOCONTENIDO. Por omision un build Debug usa Fast Deployment: los assemblies
+         NO viajan dentro del apk, se empujan aparte a files/.__override__/. Es mas rapido
+         para iterar y tiene una trampa: 'adb shell pm clear' borra ese directorio y la app
+         deja de arrancar con "No assemblies found ... Exiting". Medido.
+
+         Embebidos, el apk se basta solo: se puede pasar por chat e instalar. -->
+    <EmbedAssembliesIntoApk>true</EmbedAssembliesIntoApk>
+  </PropertyGroup>
+
+<ItemGroup>
+  <!-- El núcleo del Host, POR GLOB. Un .cs nuevo del núcleo entra solo; uno de Puerta 1 /
+       escritorio hay que excluirlo, y si no, rompe el build, que es la señal correcta.
+
+       StdioShell.cs se excluye por una razon distinta a Puerta 1: no habla MCP de mas, ES el
+       cliente MCP. En el telefono no puede existir (exec() bloqueado por W^X, sin dotnet CLI),
+       asi que este proyecto trae su propio StdioShellStub.cs con el MISMO nombre. Si el real
+       entrara por el glob, chocarian dos definiciones de StdioShell y ademas arrastraria el
+       SDK de MCP -las dos cosas que el stub existe para evitar. -->
+  <Compile Include="..\Gnothi.Host\*.cs"
+           Exclude="..\Gnothi.Host\Program.cs;..\Gnothi.Host\ToolBridge.cs;..\Gnothi.Host\ConsentWatcher.cs;..\Gnothi.Host\HostInstaller.cs;..\Gnothi.Host\QueryConsole.cs;..\Gnothi.Host\StdioShell.cs;..\Gnothi.Host\WebViewShellStub.cs" />
+  <Compile Include="..\Gnothi.Assistant\*.cs" />
+
+  <!-- LA CASCARA DEL TELEFONO, compartida con iOS. Vivia dentro de MainActivity.cs y se saco
+       cuando hubo que hacer la version de iOS: la alternativa era copiar 250 lineas y
+       mantenerlas en dos lados, que es como se desincronizan.
+
+       Aca queda lo que NO depende de la plataforma -el estado que la pagina necesita, el
+       consentimiento, la llave, el proveedor, y el switch que atiende lo que la pagina pide-
+       y en MainActivity.cs solo lo que sabe de WebView, de hilos de UI y del log del sistema.
+
+       Gnothi.iOS incluye este MISMO glob. Si algo se agrega aca, aparece en los dos. -->
+  <Compile Include="..\Gnothi.Movil\*.cs" />
+</ItemGroup>
+<ItemGroup>
+  <PackageReference Include="Ncubo.Puppeteer" Version="$(VersionDelMotor)" />
+  <ProjectReference Include="..\Examenes\Mecanismo\Puppets.Portador\Puppets.Portador.csproj" />
+  <ProjectReference Include="..\Gnothi.Contract\Gnothi.Contract.csproj" />
+</ItemGroup>
+</Project>

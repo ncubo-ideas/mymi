@@ -1,0 +1,26 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!-- LA MITAD POR RED DEL MISMO EXPERIMENTO. La otra mitad es ../Cruce.swift, que corre el
+       modelo on-device. Las dos hacen la MISMA pregunta con las MISMAS tools y los MISMOS
+       payloads, para que la diferencia que quede sea el modelo y nada mas.
+
+       Habla con IModel y no con AgentLoop a proposito: AgentLoop pide un Dispatcher, o sea
+       modulos que arranquen, y los installation.json del repo traen rutas de otra maquina
+       -limitacion abierta, seccion 8 de la Metodologia-. El bucle de aca es el mismo de
+       AgentLoop.Answer reducido a lo que la comparacion necesita, y eso ADEMAS iguala la
+       comparacion: el experimento en Swift tampoco pasa por el Dispatcher. -->
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net9.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <AssemblyName>cruce-red</AssemblyName>
+    <RootNamespace>Gnothi.Spikes.CruceRed</RootNamespace>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\..\Gnothi.Assistant\Gnothi.Assistant.csproj" />
+  </ItemGroup>
+
+</Project>

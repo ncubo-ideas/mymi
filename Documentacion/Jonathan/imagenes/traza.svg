@@ -1,0 +1,118 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 980 600" width="980" height="600" role="img"
+     aria-label="La traza de Gnothi en dos movimientos: la historia entra desde el publicador hasta el journal de la persona, y la pregunta sale desde el modelo hasta ese mismo journal sin tocar al publicador.">
+  <defs>
+    <marker id="f" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M 0 0 L 10 5 L 0 10 z" fill="#626b74"/>
+    </marker>
+    <style>
+      .s   { font-family: ui-sans-serif, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; }
+      .m   { font-family: ui-monospace, "Cascadia Mono", Consolas, "Courier New", monospace; }
+      .t   { font-family: "Palatino Linotype", Palatino, Georgia, serif; }
+      .h1  { font-size: 22px; font-weight: 600; fill: #1b1f23; }
+      .sub { font-size: 12.5px; fill: #626b74; }
+      .mov { font-size: 10.5px; font-weight: 700; letter-spacing: 1.6px; fill: #626b74; }
+      .box { font-size: 13px; font-weight: 600; fill: #1b1f23; }
+      .cap { font-size: 10px; fill: #626b74; }
+      .hop { font-size: 9.5px; fill: #626b74; }
+      .out { font-size: 11px; fill: #1b1f23; }
+      .foot{ font-size: 11.5px; fill: #3d454d; }
+    </style>
+  </defs>
+
+  <rect x="0" y="0" width="980" height="600" fill="#fbfaf7"/>
+
+  <text class="t h1" x="40" y="46">La traza, en dos movimientos</text>
+  <text class="s sub" x="40" y="68">El registro entra una vez y se queda. La pregunta lo lee sin volver a salir.</text>
+
+  <rect x="640" y="32" width="10" height="10" rx="2" fill="#9a5b2a"/>
+  <text class="s cap" x="656" y="41">afuera</text>
+  <rect x="710" y="32" width="10" height="10" rx="2" fill="#1f6a72"/>
+  <text class="s cap" x="726" y="41">en el dispositivo de ella</text>
+
+  <line x1="40" y1="88" x2="940" y2="88" stroke="#e2e0dc" stroke-width="1"/>
+
+  <text class="s mov" x="40" y="122">MOVIMIENTO 1 · LA HISTORIA ENTRA</text>
+
+  <rect x="40" y="140" width="230" height="76" rx="6" fill="#ffffff" stroke="#d8d5d0" stroke-width="1"/>
+  <rect x="40" y="140" width="230" height="4" rx="2" fill="#9a5b2a"/>
+  <text class="s box" x="60" y="173">El publicador</text>
+  <text class="s cap" x="60" y="192">un solo verbo de lectura.</text>
+  <text class="s cap" x="60" y="206">No entrega una API</text>
+
+  <line x1="278" y1="178" x2="362" y2="178" stroke="#626b74" stroke-width="1.4" marker-end="url(#f)"/>
+  <text class="m hop" x="320" y="169" text-anchor="middle">GET …?after=103</text>
+  <text class="s hop" x="320" y="196" text-anchor="middle">4 eventos</text>
+
+  <rect x="370" y="140" width="230" height="76" rx="6" fill="#ffffff" stroke="#d8d5d0" stroke-width="1"/>
+  <rect x="370" y="140" width="230" height="4" rx="2" fill="#1f6a72"/>
+  <text class="s box" x="390" y="173">La app de la institución</text>
+  <text class="s cap" x="390" y="192">los aplica uno por uno,</text>
+  <text class="s cap" x="390" y="206">con flush después de cada uno</text>
+
+  <line x1="608" y1="178" x2="692" y2="178" stroke="#626b74" stroke-width="1.4" marker-end="url(#f)"/>
+  <text class="s hop" x="650" y="169" text-anchor="middle">asienta</text>
+
+  <rect x="700" y="140" width="230" height="76" rx="6" fill="#ffffff" stroke="#d8d5d0" stroke-width="1"/>
+  <rect x="700" y="140" width="230" height="4" rx="2" fill="#1f6a72"/>
+  <text class="s box" x="720" y="173">El journal</text>
+  <text class="s cap" x="720" y="192">una carpeta de ella.</text>
+  <text class="s cap" x="720" y="206">Append-only, con checkpoint</text>
+
+  <text class="m out" x="930" y="244" text-anchor="end">4 facturas · total 27.991,50 · leído hasta el evento 104</text>
+
+  <line x1="40" y1="272" x2="940" y2="272" stroke="#e2e0dc" stroke-width="1"/>
+
+  <text class="s mov" x="40" y="306">MOVIMIENTO 2 · LA PREGUNTA SALE</text>
+
+  <rect x="40" y="324" width="150" height="80" rx="6" fill="#ffffff" stroke="#d8d5d0" stroke-width="1"/>
+  <rect x="40" y="324" width="150" height="4" rx="2" fill="#9a5b2a"/>
+  <text class="s box" x="58" y="357">El modelo</text>
+  <text class="s cap" x="58" y="376">no sabe que hay</text>
+  <text class="s cap" x="58" y="389">un módulo detrás</text>
+
+  <line x1="196" y1="364" x2="224" y2="364" stroke="#626b74" stroke-width="1.4" marker-end="url(#f)"/>
+  <text class="s hop" x="210" y="355" text-anchor="middle">https</text>
+
+  <rect x="230" y="324" width="150" height="80" rx="6" fill="#ffffff" stroke="#d8d5d0" stroke-width="1"/>
+  <rect x="230" y="324" width="150" height="4" rx="2" fill="#1f6a72"/>
+  <text class="s box" x="248" y="357">El cliente</text>
+  <text class="s cap" x="248" y="376">lanza el Host como</text>
+  <text class="s cap" x="248" y="389">proceso hijo</text>
+
+  <line x1="386" y1="364" x2="414" y2="364" stroke="#626b74" stroke-width="1.4" marker-end="url(#f)"/>
+  <text class="s hop" x="400" y="355" text-anchor="middle">stdio</text>
+
+  <rect x="420" y="324" width="150" height="80" rx="6" fill="#ffffff" stroke="#d8d5d0" stroke-width="1"/>
+  <rect x="420" y="324" width="150" height="4" rx="2" fill="#1f6a72"/>
+  <text class="s box" x="438" y="357">El Host</text>
+  <text class="s cap" x="438" y="376">ya tenía el catálogo:</text>
+  <text class="s cap" x="438" y="389">leyó el manifiesto</text>
+
+  <line x1="576" y1="364" x2="604" y2="364" stroke="#626b74" stroke-width="1.4" marker-end="url(#f)"/>
+  <text class="s hop" x="590" y="355" text-anchor="middle">carga</text>
+
+  <rect x="610" y="324" width="150" height="80" rx="6" fill="#ffffff" stroke="#d8d5d0" stroke-width="1"/>
+  <rect x="610" y="324" width="150" height="4" rx="2" fill="#1f6a72"/>
+  <text class="s box" x="628" y="357">El módulo</text>
+  <text class="s cap" x="628" y="376">rehidrata, contesta,</text>
+  <text class="s cap" x="628" y="389">y el Host lo desaloja</text>
+
+  <line x1="766" y1="364" x2="794" y2="364" stroke="#626b74" stroke-width="1.4" marker-end="url(#f)"/>
+  <text class="s hop" x="780" y="355" text-anchor="middle">lee</text>
+
+  <rect x="800" y="324" width="140" height="80" rx="6" fill="#f2efe9" stroke="#d8d5d0" stroke-width="1"/>
+  <rect x="800" y="324" width="140" height="4" rx="2" fill="#1f6a72"/>
+  <text class="s box" x="818" y="357">El journal</text>
+  <text class="s cap" x="818" y="376">el mismo</text>
+  <text class="s cap" x="818" y="389">de arriba</text>
+
+  <text class="m out" x="40" y="440">{"total": 27991.5, "cantidadDeFacturas": 4, "ultimoEventoLeido": 104}</text>
+
+  <line x1="40" y1="470" x2="940" y2="470" stroke="#e2e0dc" stroke-width="1"/>
+
+  <text class="s foot" x="40" y="500"><tspan font-weight="700">Ninguna flecha del movimiento 2 llega al publicador.</tspan><tspan fill="#626b74"> Esa es la tesis: el asistente contesta leyendo el registro que ya está en el disco de ella.</tspan></text>
+  <text class="s foot" x="40" y="524"><tspan font-weight="700">Y es falsable.</tspan><tspan fill="#626b74"> El endpoint señuelo del publicador devuelve </tspan><tspan class="m" font-weight="700">403</tspan><tspan fill="#626b74"> con el token de la app: su scope es un solo verbo de lectura y nada más.</tspan></text>
+  <text class="s foot" x="40" y="548"><tspan font-weight="700">El Host nunca escribe el journal.</tspan><tspan fill="#626b74"> Trae bytes; el módulo asienta. Es cartero, no escriba: no puede abrir el sobre ni dictar la carta.</tspan></text>
+
+  <text class="s cap" x="40" y="578" fill="#8b939b">Traza del POC de «facturas» · los números son los medidos · ver A4-el-caso-de-uso.md</text>
+</svg>

@@ -40,6 +40,27 @@ var concesiones = new Concesiones();
 
 // ---------------------------------------------------------------- credenciales
 
+
+// LAS CUENTAS QUE YA SE MUDARON A GNOTHI. La marca de migracion la pone EL PROVEEDOR y no el
+// aparato: ninguna marca del lado web sobrevive a "borrar datos del sitio", y una que se
+// escribe la app a si misma no prueba que Gnothi haya recibido nada. Esta si, porque la
+// escribe quien emitio la credencial.
+//
+// Se escribe SOLA cuando un device de Gnothi pide su primera concesion, que es el instante
+// que el documento describe. En un proveedor de verdad ese instante lleva una pantalla de
+// consentimiento -"mover el registro de esta cuenta a Gnothi en este telefono"- para que la
+// marca sea un acto de la persona y no un efecto secundario.
+// LA GRACIA, y por que la marca sola no alcanzaba. Hasta ahora la app suelta dejaba de
+// sincronizar porque DECIDIA obedecer la marca; el proveedor no le quitaba nada. El
+// razonamiento completo esta en Examenes/EndPointDeEventos/Program.cs, escrito una sola vez a
+// proposito. En corto: vencida la gracia la cuenta ES de Gnothi, y el proveedor se lo hace
+// cumplir en las TRES puertas -- emitir, rotar y leer. Cerrar una sola seria teatro (13 §4).
+const int DiasDeGracia = 30;
+
+var vinculadas = new ConcurrentDictionary<string, Vinculo>();
+
+static bool EsDeGnothi(string deviceKey) =>
+    deviceKey.StartsWith("device-gnothi", StringComparison.Ordinal);
 // La estacion le da al DEVICE del usuario un access token corto y un refresh token
 // durable y rotatorio. El scope queda acotado a leer los eventos de UN recurso concreto:
 // nada de cargas de otros clientes, ni perfil, ni facturacion.
@@ -50,7 +71,23 @@ app.MapPost("/device/token", (PedidoDeToken pedido) =>
     string recurso = Vacio(pedido.Recurso) ? "cargas" : pedido.Recurso;
     string id = Vacio(pedido.Id) ? "1" : pedido.Id;
 
+    // PUERTA 1 DE 3: no se le emite credencial nueva a un device ajeno sobre una cuenta que ya
+    // es de Gnothi. Sin esto, la app a la que se le revoco el token vuelve a pedir una.
+    if (!EsDeGnothi(pedido.DeviceKey) && SinGracia(vinculadas, recurso, id))
+        return Revocado($"la cuenta {recurso}/{id} ya no se sirve a este cliente");
     Concesion concesion = concesiones.Otorgar(pedido.DeviceKey, recurso, id);
+
+    // EL INSTANTE DE LA MIGRACION: el proveedor le acaba de emitir credencial a Gnothi para
+    // esta cuenta. Ahi queda vinculada, y la app suelta se entera en su proximo pull porque
+    // el sobre pasa a decir "migrated". Un device de Gnothi se reconoce por su prefijo, que
+    // en un proveedor de verdad seria un client_id registrado.
+    if (EsDeGnothi(pedido.DeviceKey))
+    {
+        Vinculo vinculo = vinculadas.GetOrAdd($"{recurso}/{id}", _ => new Vinculo(
+            "Gnothi", DateTime.UtcNow.ToString("O"), DateTime.UtcNow.AddDays(DiasDeGracia)));
+        Console.WriteLine($"cuenta {recurso}/{id} vinculada a Gnothi ({pedido.DeviceKey}); hasta {vinculo.GraciaHasta:O}");
+    }
+
     return Results.Ok(concesion.ComoRespuesta());
 });
 
@@ -58,6 +95,14 @@ app.MapPost("/device/refresh", (PedidoDeRefresh pedido) =>
 {
     if (string.IsNullOrWhiteSpace(pedido?.RefreshToken)) return Results.BadRequest(new { error = "refreshToken requerido" });
 
+    // PUERTA 2 DE 3. Se mira ANTES de rotar: rotar y despues negar dejaria la concesion vieja
+    // invalidada y la nueva sin entregar.
+    Concesion actual = concesiones.PorRefresh(pedido.RefreshToken);
+    if (actual != null && !EsDeGnothi(actual.DeviceKey) && SinGracia(vinculadas, actual.Recurso, actual.Id))
+    {
+        concesiones.Revocar(actual.Recurso, actual.Id, salvoGnothi: true);
+        return Revocado($"la cuenta {actual.Recurso}/{actual.Id} ya no se sirve a este cliente");
+    }
     Concesion rotada = concesiones.Rotar(pedido.RefreshToken);
     return rotada == null
         ? Results.Unauthorized()
@@ -73,10 +118,29 @@ app.MapGet("/{recurso}/{id}/events", (string recurso, string id, long? after, Ht
     IResult negado = concesiones.Exigir(pedido, $"{recurso}.events.read", recurso, id);
     if (negado != null) return negado;
 
+    // PUERTA 3 DE 3, la que nombra el documento: vencida la gracia, el proximo pull de la app
+    // suelta recibe 401.
+    if (!concesiones.EsDeGnothi(pedido) && SinGracia(vinculadas, recurso, id))
+    {
+        concesiones.Revocar(recurso, id, salvoGnothi: true);
+        return Revocado($"la cuenta {recurso}/{id} ya no se sirve a este cliente");
+    }
     long desde = after ?? 0;
 
     return Results.Ok(new
     {
+        // EL ESTADO DE LA CUENTA VIAJA EN EL SOBRE, y viaja SIEMPRE, aunque no haya un solo
+        // evento nuevo: es justamente lo que la app suelta necesita para enterarse de que su
+        // registro ya se mudo. Campo aditivo: un cliente viejo lo ignora.
+        account = vinculadas.TryGetValue($"{recurso}/{id}", out Vinculo vinculo)
+            ? new
+            {
+                state = "migrated",
+                migratedAt = vinculo.Desde,
+                host = vinculo.Host,
+                graceUntil = vinculo.GraciaHasta.ToString("O"),
+            }
+            : new { state = "active", migratedAt = "", host = "", graceUntil = "" },
         events = almacen.Posteriores(recurso, id, desde),
         last = almacen.UltimoNumero(recurso, id),
     });
@@ -142,13 +206,52 @@ app.MapPost("/device/expirar-access", () =>
     return Results.Ok(new { expirados, refreshSiguenVivos = true });
 });
 
+// Adelanta los 30 dias. Mismo espiritu que /device/expirar-access. Solo mueve el reloj: las
+// tres puertas revocan al pasar, asi que el rechazo lleva el codigo invalid_token.
+app.MapPost("/device/vencer-gracia", () =>
+{
+    var vencidas = new List<string>();
+    foreach (string cuenta in vinculadas.Keys)
+    {
+        if (!vinculadas.TryGetValue(cuenta, out Vinculo v)) continue;
+        vinculadas[cuenta] = v with { GraciaHasta = DateTime.UtcNow.AddSeconds(-1) };
+        vencidas.Add(cuenta);
+    }
+    return Results.Ok(new { cuentas = vencidas, revoca = false });
+});
+
+// DESVINCULAR, paso 5 de 13 §4: la migracion es REVERSIBLE. Una decision de la que no se puede
+// volver no es una decision de la persona: es una trampa.
+app.MapDelete("/{recurso}/{id}/vinculo", (string recurso, string id) =>
+{
+    if (!vinculadas.TryRemove($"{recurso}/{id}", out Vinculo _))
+        return Results.NotFound(new { error = "esa cuenta no estaba vinculada" });
+
+    int revocadas = concesiones.Revocar(recurso, id, salvoGnothi: false, soloGnothi: true);
+    return Results.Ok(new { cuenta = $"{recurso}/{id}", concesionesRevocadas = revocadas });
+});
+
 app.MapGet("/salud", () => Results.Ok(new { estado = "arriba" }));
 
 app.Run();
 
 static bool Vacio(string s) => string.IsNullOrWhiteSpace(s);
+// Vinculada a Gnothi Y la gracia ya vencio. Mientras dura la gracia esto es false y la app
+// suelta lee igual, sabiendo que se muda.
+static bool SinGracia(System.Collections.Concurrent.ConcurrentDictionary<string, Vinculo> vinculadas,
+    string recurso, string id) =>
+    vinculadas.TryGetValue($"{recurso}/{id}", out Vinculo v) && v.GraciaHasta <= DateTime.UtcNow;
+
+// 401 con el codigo de RFC 6750, que es el que el documento nombra. El cliente mira el ESTADO y
+// no el cuerpo.
+static IResult Revocado(string detalle) => Results.Json(
+    new { error = "invalid_token", error_description = detalle }, statusCode: 401);
+
 
 // ---------------------------------------------------------------- credenciales
+
+// A que host esta vinculada una cuenta, y hasta cuando la sigue leyendo quien estaba antes.
+sealed record Vinculo(string Host, string Desde, DateTime GraciaHasta);
 
 sealed record Concesion(string DeviceKey, string Recurso, string Id, string Scope,
     string AccessToken, string RefreshToken, DateTime Expira)
@@ -200,6 +303,39 @@ sealed class Concesiones
         return expirados;
     }
 
+
+    // Quitarle el acceso a un cliente de verdad: se van los DOS tokens. Sacar solo el access no
+    // revoca nada -- el cliente rota con su refresh y sigue leyendo.
+    internal int Revocar(string recurso, string id, bool salvoGnothi, bool soloGnothi = false)
+    {
+        int revocadas = 0;
+        foreach (Concesion c in porAccessToken.Values.ToArray())
+        {
+            if (c.Recurso != recurso || c.Id != id) continue;
+
+            bool esGnothi = c.DeviceKey.StartsWith("device-gnothi", StringComparison.Ordinal);
+            if (salvoGnothi && esGnothi) continue;
+            if (soloGnothi && !esGnothi) continue;
+
+            porAccessToken.TryRemove(c.AccessToken, out _);
+            porRefreshToken.TryRemove(c.RefreshToken, out _);
+            revocadas++;
+        }
+        return revocadas;
+    }
+
+    // La concesion detras de un refresh token, SIN rotarla.
+    internal Concesion PorRefresh(string refreshToken) =>
+        porRefreshToken.TryGetValue(refreshToken, out Concesion c) ? c : null;
+
+    // De quien es el token que viene en el pedido. Solo se llama despues de que Exigir dejo pasar.
+    internal bool EsDeGnothi(HttpRequest pedido)
+    {
+        string presentado = Bearer(pedido);
+        return presentado != null
+            && porAccessToken.TryGetValue(presentado, out Concesion c)
+            && c.DeviceKey.StartsWith("device-gnothi", StringComparison.Ordinal);
+    }
     // Durable y ROTATORIO: el refresh viejo se invalida y sale uno nuevo.
     internal Concesion Rotar(string refreshToken)
     {

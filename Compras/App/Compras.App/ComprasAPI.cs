@@ -25,33 +25,6 @@ namespace Compras.App
 
 		// ---------------------------------------------------------------- comandos
 
-		// La clave de ESTA instalacion ante el proveedor. Se genera en C# y entra como
-		// parametro, no dentro del DSL: asi el valor queda journalizado y el replay lo
-		// reusa. Un Guid.NewGuid() en codigo de dominio daria una clave distinta en cada
-		// replay y la app perderia su identidad ante el proveedor.
-		public void RegistrarDevice(string deviceKey)
-		{
-			ArgumentNullException.ThrowIfNullOrWhiteSpace(deviceKey);
-
-			app.Using("bitacora.RegistrarDevice(@device);")
-			.WithParameters(p => {
-				p["device", typeof(string)] = deviceKey;
-			})
-			.PerformCommand();
-		}
-
-		public void GuardarCredencial(string token, string refreshToken)
-		{
-			ArgumentNullException.ThrowIfNullOrWhiteSpace(token);
-
-			app.Using("bitacora.GuardarCredencial(@token, @refresh);")
-			.WithParameters(p => {
-				p["token",   typeof(string)] = token;
-				p["refresh", typeof(string)] = refreshToken ?? "";
-			})
-			.PerformCommand();
-		}
-
 		// Aplica UN evento como UN comando. Devuelve "" si entro, o el mensaje del Check
 		// si se rechazo.
 		//
@@ -212,26 +185,6 @@ namespace Compras.App
 				}
 			")
 			.PerformQuery();
-
-		public string TokenGuardado() => Texto("bitacora.Token");
-
-		public string RefreshTokenGuardado() => Texto("bitacora.RefreshToken");
-
-		public string DeviceKeyGuardado() => Texto("bitacora.DeviceKey");
-
-		private string Texto(string expresion)
-		{
-			using (RentedParameter alquilados = app.Actor.RentedParameters())
-			{
-				app.Actor.Using($"@valor = {expresion};")
-				.WithParameters(alquilados, p => {
-					p[Parameter.Out, "valor", typeof(string)] = default;
-				})
-				.PerformQuery();
-
-				return alquilados["valor"].GetValue<string>() ?? "";
-			}
-		}
 
 		// Las vistas de la app. Devuelven la emision del print tal cual - con el
 		// formatter JSON eso YA es el JSON serializado, asi que no hay DTO ni

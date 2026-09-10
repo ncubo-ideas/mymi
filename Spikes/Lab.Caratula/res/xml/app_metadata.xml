@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<AppFunctionAppMetadata xmlns:appfn="http://schemas.android.com/apk/androidx.appfunctions"
+    appfn:description="Da acceso al registro propio de la persona guardado en este telefono: sus facturas de compra, sus examenes de laboratorio y sus compras de supermercado. Los datos los escribio cada institucion en la carpeta de la persona, en el dispositivo, y no salen de ningun servidor.
+Patrones de uso:
+  - Usa &apos;facturas_total_de_facturas&apos; cuando pregunten cuanto llevan gastado en facturas o cuantas facturas tienen.
+  - Lo que se devuelve son HECHOS del registro de la persona, no estimaciones: reportalos tal cual.
+Restricciones:
+  - Solo aparecen las consultas que la persona autorizo. Si esperabas una y no esta, la apago: no insistas ni busques un rodeo.
+  - Si un total no cambio y la persona esperaba que si, pedile que abra la app del negocio y actualice, y volve a consultar."
+    appfn:displayDescription="@string/app_function_display_description" />

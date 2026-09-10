@@ -1,9 +1,31 @@
 @inherits LayoutComponentBase
 
-@* Sin sidebar, sin navegacion, sin barra "About" del template. La UI de la app son cuatro
-   cosas y nada mas: el boton de refresh, la lista de facturas, el detalle al seleccionar una,
-   y el back para volver a la lista. Una app que le entregas a una persona para ver SUS datos
-   no tiene por que traer el andamio del framework con el que se hizo. *@
+@* LA MARCA DE SÚPER EL TRIUNFO, la misma que la página de descarga: barra superior verde,
+   membrete con el logo de bolsa de solo trazo y el nombre en serif. Es lo que hace que la
+   app se SIENTA del súper y no un formulario de Bootstrap.
+
+   Sin sidebar ni "About" del template: la UI de la app son el refresh, la lista, el
+   detalle y el back. Una app que le entregás a una persona para ver SUS datos no trae el
+   andamio del framework. *@
+
+<div class="triunfo-cinta"></div>
+
+<header class="triunfo-barra">
+    <div class="triunfo-membrete">
+        <span class="triunfo-sello" aria-hidden="true">
+            <svg viewBox="0 0 40 40" xmlns="http://www.w3.org/2000/svg" fill="none"
+                 stroke="#1a7a3c" stroke-width="2.4">
+                <path d="M9 13h22l-1.6 20a2 2 0 0 1-2 1.9H12.6a2 2 0 0 1-2-1.9L9 13z"/>
+                <path d="M15 15V11a5 5 0 0 1 10 0v4" stroke-linecap="round"/>
+            </svg>
+        </span>
+        <span class="triunfo-marca">
+            <b>Súper El Triunfo</b>
+            <i>Tu barrio, bien surtido desde 1998</i>
+        </span>
+    </div>
+</header>
+
 <main class="container py-4" style="max-width:56rem">
     @Body
 </main>

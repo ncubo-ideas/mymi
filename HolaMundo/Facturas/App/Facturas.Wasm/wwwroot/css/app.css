@@ -112,3 +112,89 @@ code {
 .form-floating > .form-control-plaintext:focus::placeholder, .form-floating > .form-control:focus::placeholder {
     text-align: start;
 }
+/* ============================================================================
+   MARCA DE SÚPER EL TRIUNFO. La misma paleta verde de la página de descarga
+   (Delfos-style), aplicada sobre Bootstrap: encabezado, botones, enlaces y
+   títulos dejan de ser el azul del template y pasan a ser del súper.
+   ========================================================================== */
+:root {
+  --triunfo-verde:     #1a7a3c;
+  --triunfo-verde-osc: #0f5028;
+  --triunfo-verde-cl:  #2e9e57;
+  --triunfo-menta:     #e8f4ec;
+  --triunfo-tinta:     #17281d;
+  --triunfo-tinta-2:   #566b5c;
+}
+
+/* La cinta verde delgada de arriba, como la barra de teléfono/horario del landing. */
+.triunfo-cinta { height: 6px; background: var(--triunfo-verde); }
+
+/* El membrete: fondo papel, borde verde abajo, logo + nombre en serif. */
+.triunfo-barra { background: #fff; border-bottom: 2px solid var(--triunfo-verde-osc); }
+.triunfo-membrete {
+  max-width: 56rem; margin: 0 auto;
+  display: flex; align-items: center; gap: 13px;
+  padding: 14px 16px;
+}
+.triunfo-sello { width: 40px; height: 40px; flex: none; }
+.triunfo-sello svg { display: block; width: 100%; height: 100%; }
+.triunfo-marca b {
+  display: block;
+  font-family: Georgia, "Times New Roman", serif; font-weight: 700;
+  font-size: 18px; letter-spacing: -.01em; line-height: 1.2;
+  color: var(--triunfo-verde-osc);
+}
+.triunfo-marca i { font-style: normal; color: var(--triunfo-tinta-2); font-size: 12.5px; }
+
+/* El título de la pantalla y el color de acento, en verde. */
+h1 { color: var(--triunfo-verde-osc); font-weight: 700; letter-spacing: -.01em; }
+a, .btn-link { color: var(--triunfo-verde); }
+a:hover, .btn-link:hover { color: var(--triunfo-verde-osc); }
+
+/* Los botones primarios de Bootstrap, en verde de marca. Con propiedad DURA (no las
+   variables --bs-btn-*), porque este Bootstrap trae el background-color hardcodeado y las
+   variables no le ganan. Se cubren las variables igual, por si algún día actualiza. */
+.btn-primary {
+  color: #fff;
+  background-color: var(--triunfo-verde);
+  border-color: var(--triunfo-verde-osc);
+  --bs-btn-bg: var(--triunfo-verde);
+  --bs-btn-border-color: var(--triunfo-verde-osc);
+  --bs-btn-hover-bg: var(--triunfo-verde-cl);
+  --bs-btn-hover-border-color: var(--triunfo-verde-osc);
+  --bs-btn-active-bg: var(--triunfo-verde-osc);
+  --bs-btn-active-border-color: var(--triunfo-verde-osc);
+}
+.btn-primary:hover,
+.btn-primary:focus { color: #fff; background-color: var(--triunfo-verde-cl); border-color: var(--triunfo-verde-osc); }
+.btn-primary:active,
+.btn-primary:disabled,
+.btn-primary.disabled { color: #fff; background-color: var(--triunfo-verde-osc); border-color: var(--triunfo-verde-osc); }
+.btn:focus, .btn:active:focus, .form-control:focus, .form-check-input:focus {
+  box-shadow: 0 0 0 0.1rem #fff, 0 0 0 0.25rem var(--triunfo-verde-cl);
+}
+
+/* La fila clickeable de la tabla resalta en menta, no en gris. */
+.table-hover > tbody > tr:hover > * { background-color: var(--triunfo-menta); }
+
+/* Botón secundario (el "Volver" del detalle) en verde de marca, no el gris de Bootstrap. */
+.btn-outline-secondary {
+  color: var(--triunfo-verde);
+  border-color: var(--triunfo-verde);
+}
+.btn-outline-secondary:hover,
+.btn-outline-secondary:focus,
+.btn-outline-secondary:active {
+  color: #fff;
+  background-color: var(--triunfo-verde);
+  border-color: var(--triunfo-verde);
+}
+
+/* Encabezados de tabla con acento de marca: texto verde y subrayado verde, en la lista
+   de facturas y en el detalle. Antes eran el negro/gris por defecto de Bootstrap. */
+.table > thead > tr > th,
+.table > thead th {
+  color: var(--triunfo-verde-osc);
+  border-bottom: 2px solid var(--triunfo-verde-cl);
+  font-weight: 600;
+}

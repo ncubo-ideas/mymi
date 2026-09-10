@@ -156,6 +156,7 @@ else
                         Contacto="@dealership.Contact"
                         Trayendo="@refreshing"
                         Actualizar="@Refresh"
+                        Migrada="@state.Migrated"
                         VerServicios="@(() => tab = "servicios")" />
 
                 <div class="d__pad d__gap" style="margin-top:14px">
@@ -195,6 +196,37 @@ else
                     {
                         <Notice Tone="warn" Id="evaluation-skipped" Title="Esta no es la lectura de hoy.">
                             @state.EvaluationSkipped
+                        </Notice>
+                    }
+
+                    @* MIGRADA: el proveedor marcó que los hechos nuevos de esta cuenta ya entran
+                       por Gnothi (especificación 13 §4 y §6.2). El registro NO se mudó: sigue en
+                       el teléfono de la persona y es de ella (§10.6). «Desaparecer» NO es
+                       desinstalar y NO es borrar: la app sigue mostrando lo que tiene, porque es
+                       de ella. Lo que deja de hacer es SINCRONIZAR, que es lo único que
+                       produciría dos historias que divergen.
+
+                       ESTABA EN MySchedule.razor CON MudBlazor, y master reescribió esta pantalla
+                       a CSS propio con pestañas: hubo que re-expresarlo con Notice, no fusionarlo.
+                       Va último de los avisos porque nada está roto — los de arriba son fallas.
+                       Y es lo que explica la tecla «Ya no se actualiza» de Inicio. *@
+                    @if (state.Migrated)
+                    {
+                        <Notice Tone="warn" Id="migrated"
+                                Title="@($"Tus servicios nuevos ahora entran por {state.WhereItLivesNow}, en este mismo teléfono.")">
+                            Lo que ves acá se queda y sigue siendo tuyo; lo que esta copia deja de
+                            hacer es buscar novedades.
+                        </Notice>
+                    }
+                    else if (state.Hosted)
+                    {
+                        @* Y HOSPEDADA lo dice en tono neutro: no pasó nada malo, es dónde vive el
+                           registro. Es la contracara del anterior y por eso van en la misma
+                           cadena: no pueden ser verdad las dos. *@
+                        <Notice Tone="info" Id="hosted-in-gnothi"
+                                Title="Se está guardando en este teléfono.">
+                            Tu registro es tuyo y está acá: Gnothi le dio a este concesionario una
+                            carpeta en tu teléfono, y tu asistente la puede leer desde ahí.
                         </Notice>
                     }
                 </div>
@@ -329,6 +361,10 @@ else
 
     protected override async Task OnInitializedAsync()
     {
+        // HOSPEDADA: el destino es de Gnothi y no hay nada que elegir ni permiso que pedir.
+        // La app arranca sola; el selector de almacenamiento es vocabulario del modo suelto.
+        if (state.Hosted) { await state.StartAsync(); Reread(); return; }
+
         pickerSupported = await state.PickerIsSupportedAsync();
         browserStorageSupported = await state.BrowserStorageIsSupportedAsync();
         installedApp = await state.RunsAsInstalledAppAsync();

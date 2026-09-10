@@ -1,0 +1,77 @@
+<Project Sdk="Microsoft.NET.Sdk.Razor">
+
+  <!-- THE GNOTHI DESKTOP WINDOW. The same face the Android app (Gnothi.Mobile) already has,
+       on the desktop: the installed modules as cards, whose they are, on/off state, and one
+       button per query. Plus the assistant (Gate 2) and its settings.
+
+       ═══ WHY A SEPARATE PROJECT, NOT A MODE OF THE HOST ═══
+
+       Because Gnothi.Host must stay a headless net9.0 library-plus-CLI. The Host is the core;
+       this window is one more face, like the MCP front end or the phone.
+
+       ═══ PHOTINO, NOT WINFORMS (decision of 2026-09-08) ═══
+
+       The first version was net9.0-windows + WinForms + BlazorWebView, and for that reason it
+       was left out of Gnothi.slnx: it only built on Windows. The team then made the Mac window
+       an objective, and chose Photino.Blazor over MAUI/MacCatalyst: ONE project that builds and
+       runs on Windows, macOS and Linux, with no extra workload, over the OS WebView (WebView2,
+       WKWebView, WebKitGTK). The five Razor components and HostState did not change: they never
+       knew about WinForms. Only the host of the window did -Program.cs- and the file picker.
+
+       ═══ BLAZOR HYBRID, NOT BLAZOR WASM ═══
+
+       The C# runs NATIVE, in this process. The WebView only paints the DOM. So: no second
+       runtime, no open port, no HTTP -the components call the Dispatcher in C# directly- and
+       no wasm payload. Photino serves wwwroot through a custom scheme, not a socket.
+
+       ═══ IT USES ONLY THE HOST'S PUBLIC SURFACE ═══
+
+       ProjectReference, not <Compile Include>, and it names only public types: ModuleCatalog,
+       Dispatcher, Module, Request, Response, Meter, ModuleInstaller. Exactly like
+       Gnothi.Assistant. If this ever needs an internal type, that is the signal the public seam
+       is missing something - the fix is to widen the seam in the Host, never to reach through it.
+
+       ═══ NOW IN Gnothi.slnx ═══
+
+       Because it builds everywhere, `dotnet build Gnothi.slnx` compiles it on every machine and
+       in CI. Breaking the window is now something the build catches, not something somebody
+       notices on a Windows box a week later. -->
+
+  <PropertyGroup>
+    <!-- WinExe: on Windows no console pops up behind the window; on macOS and Linux the SDK
+         treats it as a plain Exe, which is what we want. -->
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>net9.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <RootNamespace>Gnothi.Desktop</RootNamespace>
+    <AssemblyName>Gnothi.Desktop</AssemblyName>
+  </PropertyGroup>
+
+  <!-- Per-monitor DPI on Windows (see app.manifest). The manifest is a Win32 resource, so it
+       is only embedded when the apphost being produced is a Windows one. -->
+  <PropertyGroup Condition="$([MSBuild]::IsOSPlatform('Windows'))">
+    <ApplicationManifest>app.manifest</ApplicationManifest>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <!-- Pinned exactly, like the engine: a floating Photino brought a different native lib to
+         two machines once. Photino.Native ships win/linux/osx, x64 and arm64. -->
+    <PackageReference Include="Photino.Blazor" Version="4.0.13" />
+  </ItemGroup>
+
+  <!-- Photino serves wwwroot FROM THE OUTPUT FOLDER (a PhysicalFileProvider over
+       bin/.../wwwroot), unlike the WinForms BlazorWebView, which read it from the project via
+       static web assets. Without this the process dies at startup with
+       DirectoryNotFoundException on .../bin/Debug/net9.0/wwwroot/ -paid for once. -->
+  <ItemGroup>
+    <Content Update="wwwroot\**" CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Gnothi.Host\Gnothi.Host.csproj" />
+    <!-- The assistant brain -the SAME AgentLoop the phone runs- reused, not reimplemented. -->
+    <ProjectReference Include="..\Gnothi.Assistant\Gnothi.Assistant.csproj" />
+  </ItemGroup>
+
+</Project>

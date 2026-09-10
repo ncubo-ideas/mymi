@@ -89,10 +89,6 @@ namespace Concesionario.Dominio.Pruebas
 				"El upgrade nuevo se aplico donde faltaba. Cero es 'todavia no se leyo nada', que "
 				+ "es un valor legal de esta escala: los eventos se numeran desde uno.");
 
-			Assert.That(after.StoredToken(), Is.EqualTo(""));
-			Assert.That(after.StoredRefreshToken(), Is.EqualTo(""));
-			Assert.That(after.StoredDeviceKey(), Is.EqualTo(""));
-
 			Assert.That(after.ReadVin(), Is.EqualTo(TheVin),
 				"Y la agenda que ya estaba no se toco: el upgrade viejo sigue aplicado y no volvio "
 				+ "a correr.");

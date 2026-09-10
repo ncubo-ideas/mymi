@@ -48,7 +48,9 @@ namespace Concesionario.Dominio.Pruebas
 
 		private const string TheUnitOfThePeriod = "UnitA";
 		private const string TheOtherUnit = "UnitB";
-		private const string TheDeviceKey = "device-de-la-ausencia-de-la-serie";
+		// TheDeviceKey SE FUE con la credencial (2026-09-03). Aca solo se sembraba y nunca se
+		// afirmaba nada sobre el: la app de antes escribe sus cinco lecturas y son esas las que
+		// esta prueba mira. Quitarlo no le saca ni una afirmacion.
 
 		// LAS CINCO LECTURAS, escritas por la app de antes con el comando que ya existia.
 		private const int TheFirstReading = 13200;
@@ -362,8 +364,6 @@ namespace Concesionario.Dominio.Pruebas
 			older.Start();
 
 			DealershipCarAPI api = new DealershipCarAPI(older);
-
-			api.RegisterDevice(TheDeviceKey);
 
 			api.RecordReading(
 				TheFirstReading, TheUnitOfThePeriod, TheFirstObservation, "Telemetry");

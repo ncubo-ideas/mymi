@@ -192,9 +192,9 @@
 
     <div style="margin-top:10px">
         <button class="btn btn--ghost" type="button" id="traer-novedades" @onclick="Actualizar"
-                disabled="@Trayendo">
+                disabled="@(Trayendo || Migrada)">
             <Glyph Name="sync" Size="18" />
-            @(Trayendo ? "Trayendo…" : "Traer lo que haya nuevo")
+            @(Migrada ? "Ya no se actualiza" : Trayendo ? "Trayendo…" : "Traer lo que haya nuevo")
         </button>
     </div>
 </div>
@@ -243,6 +243,12 @@
 
     /// <summary>Lo que hay que hacer cuando la duena pide traer lo que haya nuevo.</summary>
     [Parameter] public EventCallback Actualizar { get; set; }
+
+    /// <summary>Si el proveedor ya marco que los hechos nuevos entran por Gnothi. Cuando es
+    /// true esta app deja de SINCRONIZAR -no de mostrar-, asi que traer novedades no haria
+    /// nada: la tecla se apaga y lo DICE -"Ya no se actualiza"- en vez de quedarse gris, que
+    /// se leeria como que la app se rompio. El aviso de MyCar.razor dice por que.</summary>
+    [Parameter] public bool Migrada { get; set; }
 
     private bool porQue;
 

@@ -4,32 +4,28 @@ namespace Gimnasio.Dominio
 {
 	// EL PESO, en kilos.
 	//
-	// Lo propio, del Preguntas.md: "sola no dice nada - su rango solo existe combinada
-	// con la altura". Es la unica medida que NO se compara consigo misma: se convierte
-	// a IMC y ese es el numero que va contra el rango.
+	// El v1 y el v2 lo convertian a IMC con la altura del perfil y ese numero iba contra
+	// el rango: "sola no dice nada - su rango solo existe combinada con la altura". El v3
+	// lo cambio, y lo cambio Jorge (hueco 19, 2026-09-08): EL IMC LO MANDA EL GIMNASIO,
+	// ya calculado y ya evaluado, con aparatos mas especializados que una division. Dos
+	// fuentes de la misma verdad eran una de mas.
 	//
-	// Y por eso su referencia NO depende del perfil: una vez que es IMC, el rango es
-	// el mismo para todos. La altura ya hizo su trabajo en la conversion. Es la unica
-	// que funciona asi, y es exactamente lo que la vuelve una clase propia.
+	// Asi que el peso ya no se lee contra un rango propio: su lectura es la del IMC del
+	// aparato, y ElAparatoLaEvalua lo dice. Lo que el peso conserva es la SERIE -como
+	// vengo-, que sigue siendo de la app.
 	internal sealed class Peso : Medida
 	{
 		internal Peso(decimal kilos) : base(kilos) { }
 
 		internal override string Nombre { get { return "peso"; } }
 
+		internal override bool ElAparatoLaEvalua { get { return true; } }
+
 		internal override string ClaveDeReferencia(Perfil perfil)
 		{
-			ArgumentNullException.ThrowIfNull(perfil);
-			return "imc";
+			throw new InvalidOperationException(
+				"El peso no se lee contra un rango propio: el gimnasio manda el IMC ya evaluado (hueco 19). "
+				+ "Preguntar ElAparatoLaEvalua antes, y pedir la evaluacion del imc.");
 		}
-
-		internal override decimal ValorComparable(Perfil perfil)
-		{
-			ArgumentNullException.ThrowIfNull(perfil);
-			decimal metros = perfil.AlturaEnCentimetros / 100m;
-			return Valor / (metros * metros);
-		}
-
-		internal override string QueSeCompara { get { return "imc"; } }
 	}
 }

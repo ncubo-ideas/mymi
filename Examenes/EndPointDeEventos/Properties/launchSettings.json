@@ -1,0 +1,12 @@
+{
+  "profiles": {
+    "Examenes.EventosMock": {
+      "commandName": "Project",
+      "launchBrowser": true,
+      "environmentVariables": {
+        "ASPNETCORE_ENVIRONMENT": "Development"
+      },
+      "applicationUrl": "https://localhost:58905;http://localhost:58906"
+    }
+  }
+}

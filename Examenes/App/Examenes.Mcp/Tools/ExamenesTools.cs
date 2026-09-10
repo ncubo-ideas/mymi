@@ -400,10 +400,14 @@ internal sealed class ExamenesTools
 	// dato del expediente, es una conclusion sobre el expediente MAS el calendario MAS la
 	// periodicidad que cada analito define para si mismo.
 	[McpServerTool(Name = "que_me_falta_medir", UseStructuredContent = true)]
-	[Description("Que analitos estan vencidos: cuanto hace que no se miden y cada cuanto conviene "
-		+ "repetir cada uno. Usala cuando pregunte '¿que examenes me toca hacerme?', '¿hace "
-		+ "cuanto que no me chequeo el colesterol?' o '¿estoy al dia?'. Es lo que NINGUNA "
-		+ "pantalla puede mostrar: la app muestra lo que hay, esto dice lo que FALTA. La "
+	[Description("Todos los analitos con historia, con cuanto hace que no se miden, cada cuanto "
+		+ "conviene repetir cada uno, y SI ESTA VENCIDO O NO. Usala cuando pregunte '¿que "
+		+ "examenes me toca hacerme?', '¿hace cuanto que no me chequeo el colesterol?' o "
+		+ "'¿estoy al dia?'. DEVUELVE TAMBIEN LOS QUE ESTAN AL DIA, asi que un renglon no "
+		+ "significa que este pendiente: mira estaVencido en cada uno, y mira cuantosVencidos, "
+		+ "que es el numero que contesta la pregunta -en cero, la persona esta al dia con todo-. "
+		+ "Es lo que NINGUNA pantalla puede mostrar: la app muestra lo que hay, esto dice lo "
+		+ "que FALTA. La "
 		+ "periodicidad la decide cada analito y no es fija — un colesterol en rango se repite "
 		+ "cada cinco anos y uno alto todos los anos. Solo aparecen analitos que ya se midieron "
 		+ "alguna vez: de uno que nunca se hizo no hay nada que repetir.")]

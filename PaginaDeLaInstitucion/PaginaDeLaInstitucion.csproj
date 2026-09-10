@@ -1,0 +1,19 @@
+<Project Sdk="Microsoft.NET.Sdk.Web">
+
+  <PropertyGroup>
+    <TargetFramework>net9.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <RootNamespace>PaginaDeLaInstitucion</RootNamespace>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <!-- THE PAGE'S QR CODE, drawn on the server and not asked of anybody: the enrollment link
+         is the address of the person's own record, and it does not leave this machine to be
+         encoded. QRCoder is pure .NET; its SVG output needs no System.Drawing. It is NOT the
+         Cargas module's CodigoQR: that one stops at 42 bytes on purpose (one block, no
+         interleaving), and it is the institution's code, not the page's. -->
+    <PackageReference Include="QRCoder" Version="1.6.0" />
+  </ItemGroup>
+
+</Project>

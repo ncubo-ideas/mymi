@@ -20,6 +20,11 @@
    los mismos tres campos de siempre, mas los mismos dos textos de respaldo, solo que ahora
    TODAS las señales vigentes se muestran -antes "else if" se quedaba con la primera y
    escondia las demas-. WhatsApp se va de aca: ahora es boton flotante, mas abajo. *@
+@* THE COVER: the same photo the institution declares as `brand.banner` for its Gnothi card,
+   behind the mini header, the greeting and the carousel, so the app opens with the brand the
+   person already saw on the card (Geaninna, 2026-09-09). Photo + dark green veil + white text;
+   the slides keep their own pastel and float on it, like the white pill on the card. *@
+<section class="lg-home-portada">
 <div class="lg-home-arriba">
     <span class="lg-home-marca">
         <img src="assets/logo.png" alt="" />
@@ -77,6 +82,7 @@
         }
     </div>
 }
+</section>
 
 @* EL BOTON REDONDO no es una campana de notificaciones -esta app no tiene, y no inventa
    una-: es WhatsApp, si el súper lo configuró. Contacto real, no adorno. RONDA "carrusel":
@@ -195,13 +201,55 @@
 }
 else
 {
-    @* LA FRANJA DE ARRIBA YA NO DICE NUMEROS HISTORICOS -"87 compras · ₡3.222.336 en
-       total"-: eso es la app hablando de si misma. "Buscar compras nuevas" tampoco es ya
-       un boton grande a mitad del Home -el mock no tiene ninguno-: la actualizacion contra
-       el proveedor SIGUE existiendo (Refrescar/refrescando, sin tocar), pero ahora vive en
-       el icono chiquito junto a "Tus compras", ahi abajo. *@
+    @* LA FRANJA DE ARRIBA, en el idioma de ella y no en el del sistema. Decia:
+       "Refresh · 87 compras · ₡3.222.336 en total · leído hasta el evento 387".
 
-    @if (!estado.HayCarpeta)
+       "Refresh" es un verbo de programa. "leído hasta el evento 387" es el checkpoint
+       INTERNO de la bitacora, o sea la app hablando de si misma en la primera linea de la
+       pantalla: no le dice nada a quien compra, y le dice que esto es un sistema. Sigue
+       existiendo donde sirve —la tool total_de_compras lo devuelve, porque para saber si la
+       app esta al dia SI hace falta— pero eso lo mira el asistente, no ella. *@
+    <div class="d-flex align-items-center flex-wrap gap-2 mb-3">
+        <button class="btn btn-primary" @onclick="Refrescar" disabled="@(refrescando || estado.Migrada)">
+            @(estado.Migrada ? "Ya no se actualiza" : refrescando ? "Buscando…" : "Buscar compras nuevas")
+        </button>
+        <span class="text-body-secondary">
+            @cantidad @(cantidad == 1 ? "compra tuya" : "compras tuyas")
+            @if (desdeCuando.Length > 0)
+            {
+                @: desde @desdeCuando
+            }
+            &middot; @Colones(total)
+        </span>
+    </div>
+
+    @* MIGRADA: el proveedor marcó que los hechos nuevos de esta cuenta ya entran por Gnothi
+       (especificación 13 §4 y §6.2). El registro NO se mudó: sigue en el teléfono de la
+       persona y es de ella (§10.6). "Desaparecer" NO es desinstalar y NO es borrar: la app
+       sigue mostrando lo que tiene, porque es de ella. Lo que deja de hacer es SINCRONIZAR,
+       que es lo único que produciría dos historias que divergen. *@
+    @if (estado.Migrada)
+    {
+        <div class="aviso d-flex align-items-center flex-wrap gap-2 mb-3">
+            <div class="flex-grow-1">
+                <strong>Tus compras nuevas ahora entran por @estado.DondeVive, en este
+                mismo teléfono.</strong>
+                Lo que ves acá se queda y sigue siendo tuyo; lo que esta copia deja de
+                hacer es buscar novedades.
+            </div>
+        </div>
+    }
+    else if (estado.Hospedada)
+    {
+        <div class="aviso d-flex align-items-center flex-wrap gap-2 mb-3">
+            <div class="flex-grow-1">
+                <strong>Se está guardando en este teléfono.</strong>
+                Tu registro es tuyo y está acá: Gnothi le dio a este supermercado una
+                carpeta en tu teléfono, y tu asistente la puede leer desde ahí.
+            </div>
+        </div>
+    }
+    else if (!estado.HayCarpeta)
     {
         <div class="aviso d-flex align-items-center flex-wrap gap-2 mb-3">
             <div class="flex-grow-1">
@@ -1012,7 +1060,10 @@ else
                 </a>
             }
         </div>
-        @if (!estado.HayCarpeta)
+        @* Y HOSPEDADA NO AVISA: Gnothi le dio una carpeta en el telefono, asi que
+           "sin carpeta" seria falso. Este aviso es vocabulario del modo suelto, donde
+           la persona todavia no eligio donde vive su registro. *@
+        @if (!estado.Hospedada && !estado.HayCarpeta)
         {
             <p class="mk-ayuda-aviso">Sin carpeta: el registro vive solo en memoria y se pierde al cerrar.</p>
         }
@@ -1121,6 +1172,10 @@ else
     protected override async Task OnInitializedAsync()
     {
         if (estado.EstaArriba) { Releer(); return; }
+
+        // HOSPEDADA: el destino es de Gnothi y no hay nada que elegir ni permiso que pedir.
+        // La app arranca sola; el selector de almacenamiento es vocabulario del modo suelto.
+        if (estado.Hospedada) { await Arrancar(); return; }
 
         // SE PREGUNTA TODO ANTES DE DECIDIR NADA. Antes esto hacia
         // `if (soportado != true) return;` y se iba: en un telefono -donde no hay picker-
@@ -1299,8 +1354,9 @@ else
             banners.Add(new HeroBanner
             {
                 Variante = "habitual",
-                Kicker = "TU HABITUAL",
-                Titulo = $"Tu {Corto(oportunidad.Descripcion).ToLowerInvariant()} habitual bajó de precio",
+                // Plain words (Geaninna, 2026-09-09): "tu habitual" meant nothing to a reader.
+                Kicker = "BAJÓ DE PRECIO",
+                Titulo = $"El {Corto(oportunidad.Descripcion).ToLowerInvariant()} que comprás siempre bajó de precio",
                 PrecioAntes = oportunidad.Antes,
                 PrecioAhora = oportunidad.Ahora,
                 Cta = "Verlo",

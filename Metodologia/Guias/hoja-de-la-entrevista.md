@@ -52,8 +52,14 @@ descartado **como funcionalidad**: si el portal ya lo contesta, hacer esa pantal
 <!-- regla: descarte-es-de-la-pantalla -->
 > ⚠️ **Descartado como funcionalidad NO es descartado del modelo.** Es el error que costó la
 > membresía del gimnasio: quedó declarada en la Parte 1 y a la vez en *"lo que el gimnasio ya
-> contesta"*, y el dominio salió sin ninguna clase de membresía ni de pago. **Todo lo que la
-> institución manda entra al modelo**; lo que se descarta es hacerle una pantalla.
+> contesta"*, y el dominio salió sin ninguna clase de membresía ni de pago. **Nada se descarta del modelo
+> por estar en la pantalla de la institución**; lo que se descarta es hacerle una pantalla.
+
+<!-- regla: lo-que-entra-lo-decide-la-pregunta -->
+> **Y lo que entra lo decide la pregunta.** Todo lo que la institución manda **se lee**, campo por
+> campo; entra al modelo lo que **alguna pregunta necesita**; lo que ninguna usa se anota y no entra.
+> El número de la máquina venía en el plan del gimnasio y no dice si la persona mejora: afuera. **El
+> papel manda qué existe; la persona manda qué entra.**
 
 <!-- regla: trae-el-papel -->
 ### Y no cierres el bloque sin el papel
@@ -91,7 +97,8 @@ Insistí hasta juntar **tres a cinco**. A cada una:
 > ⚠️ **Los filtros se aplican a las PREGUNTAS, nunca a la capacidad.** Es el error más fácil de
 > cometer y descarta cosas imprescindibles. La clasificación de gastos la hacen hoy muchos bancos, y
 > aun así el modelo la necesita: sin ella no hay cómo contestar *"¿se incrementó un gasto fijo?"*.
-> **La Parte 1 no se filtra.** Es la misma regla del bloque 1, dicha en general.
+> **La Parte 1 no se filtra por lo que el portal ya muestra.** Es la misma regla del bloque 1, dicha
+> en general. El único filtro que sí le cabe es el de la pregunta: lo que ninguna pregunta usa no entra.
 
 <!-- regla: pregunta-de-ausencia -->
 > **Una tiene que ser sobre una AUSENCIA.** *"¿Hace cuánto que no…?"*, *"¿qué me falta?"*, *"¿se me

@@ -22,6 +22,10 @@ builder.Services.AddSingleton(_ => new HttpClient { BaseAddress = new Uri(provee
 
 builder.Services.AddSingleton<PuenteDeJournal>(sp => new PuenteDeJournal(sp.GetRequiredService<IJSRuntime>()));
 
+// LA CREDENCIAL ANTE EL PROVEEDOR vive aca -storage del browser del origen-, no en el
+// journal. Singleton por la misma razon que el puente: es estado de la instalacion.
+builder.Services.AddSingleton<AlmacenDeCredencial>(sp => new AlmacenDeCredencial(sp.GetRequiredService<IJSRuntime>()));
+
 // SINGLETON a proposito: el actor NO se crea por pantalla. Owna estado persistente, se
 // construye una vez y se mantiene alcanzable mientras la app vive.
 builder.Services.AddSingleton<EstadoDeLaApp>();

@@ -140,8 +140,11 @@
         @* La tecla va DESPUES de las pestañas: en escritorio queda al borde derecho, donde
            no compite con la navegacion. Es tenue a proposito -la app se pone al dia sola al
            abrir-, asi que esto es "volve a chequear AHORA" y no el punto de partida. *@
-        <button class="tecla tecla--releer" @onclick="Refrescar" disabled="@estado.Refrescando">
-            @(estado.Refrescando ? "Actualizando…" : "Actualizar")
+        @* MIGRADA LA APAGA, y lo DICE en vez de quedarse gris: una tecla deshabilitada sin
+           explicación se lee como que la app se rompió. El aviso de más abajo dice por qué. *@
+        <button class="tecla tecla--releer" @onclick="Refrescar"
+                disabled="@(estado.Refrescando || estado.Migrada)">
+            @(estado.Migrada ? "Ya no se actualiza" : estado.Refrescando ? "Actualizando…" : "Actualizar")
         </button>
         }
     </div>
@@ -320,8 +323,14 @@
     {
         @* Si la app no está guardando, eso es lo MÁS importante de la pantalla y va antes que
            los instrumentos: sin destino se ve completa y correcta, y no hay forma de notar
-           que no persiste salvo que se diga. *@
-        @if (!estado.HayCarpeta)
+           que no persiste salvo que se diga.
+
+           PERO HOSPEDADA SÍ ESTÁ GUARDANDO: `HayCarpeta` es el handle del modo suelto, y
+           hospedada no hay ninguno porque el destino es la carpeta que Gnothi le dio en el
+           teléfono. Sin esta condición el cartel dice «no se está guardando nada» y «tus
+           kilometrajes se pierden» justo cuando es más falso. Es la misma guarda que
+           MisCompras.razor. *@
+        @if (!estado.Hospedada && !estado.HayCarpeta)
         {
             <div class="parte parte--atencion fila">
                 <div class="crece">
@@ -363,9 +372,38 @@
                     Lo que ya estaba registrado se muestra igual.
                     <div class="apunte mono">@estado.ProblemaAlPonerseAlDia</div>
                 </div>
-                <button class="tecla tecla--contorno" @onclick="Refrescar" disabled="@estado.Refrescando">
+                @* También la apaga migrada: este cartel puede quedar de un refresh fallido de
+                   ANTES de la migración, y ofrecer un reintento que no va a hacer nada. *@
+                <button class="tecla tecla--contorno" @onclick="Refrescar"
+                        disabled="@(estado.Refrescando || estado.Migrada)">
                     Volver a intentar
                 </button>
+            </div>
+        }
+
+        @* MIGRADA: el proveedor marcó que los hechos nuevos de esta cuenta ya entran por Gnothi
+           (especificación 13 §4 y §6.2). El registro NO se mudó: sigue en el teléfono de la
+           persona y es de ella (§10.6). «Desaparecer» NO es desinstalar y NO es borrar: la app
+           sigue mostrando lo que tiene, porque es de ella. Lo que deja de hacer es SINCRONIZAR,
+           que es lo único que produciría dos historias que divergen.
+
+           VA EN LA CÁSCARA Y NO EN UNA PESTAÑA, al contrario que el aviso neutro de acá abajo:
+           no es un dato informativo sino un cambio en lo que la app VA A HACER de ahora en más,
+           vale para las cuatro pestañas, y es lo que explica que la tecla de Actualizar diga «Ya
+           no se actualiza» — que también vive en esta cáscara. Estaba en MisCargas.razor, que
+           master partió en cuatro pantallas, y por eso hubo que re-expresarlo y no fusionarlo.
+
+           Y NO ES UNA ALARMA: va después de "no se está guardando nada" y del refresh que no
+           llegó, porque nada está roto. Es el orden que pide el comentario de abajo. *@
+        @if (estado.Migrada)
+        {
+            <div class="parte parte--atencion fila">
+                <div class="crece">
+                    <strong>Tus cargas nuevas ahora entran por @estado.DondeVive, en este
+                    mismo teléfono.</strong>
+                    Lo que ves acá se queda y sigue siendo tuyo; lo que esta copia deja de
+                    hacer es buscar novedades.
+                </div>
             </div>
         }
 
@@ -428,6 +466,28 @@
         estado.Cambio += CuandoElEstadoCambia;
 
         if (estado.EstaArriba) { resolviendo = false; Releer(); return; }
+
+        // HOSPEDADA ARRANCA SOLA, y no pasa por nada de lo de abajo: el destino ya lo puso
+        // Gnothi, no hay carpeta que elegir, modo que recordar ni permiso que revalidar. Todo
+        // eso es vocabulario del modo suelto.
+        //
+        // ESTO VIVIA EN MisCargas.razor, que master partio en cuatro pantallas y le mudo el
+        // arranque al layout. Sin esta linea el modulo instala y corre, pero se queda en el
+        // elegidor de almacenamiento —que hospedada no tiene sentido— y el actor nunca arranca:
+        // la comprobacion del Host contesta «La app todavia no arranco» y toda tool falla.
+        // Medido en el emulador el 2026-09-08.
+        //
+        // CON SU PROPIO try/finally y no con un `return` pelado: `resolviendo` arranca en true
+        // y quien lo apaga es el finally de abajo, que este atajo se saltea. Sin esto, un
+        // Arrancar que falle deja «Abriendo…» para siempre — la misma advertencia que ese
+        // finally ya tiene escrita.
+        if (estado.Hospedada)
+        {
+            try { await estado.Arrancar(); }
+            catch (Exception ex) { error = Fallo.Detalle("abrir la app", ex); }
+            finally { resolviendo = false; StateHasChanged(); }
+            return;
+        }
 
         try
         {

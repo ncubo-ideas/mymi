@@ -1,0 +1,51 @@
+{
+  "//": "VISTA DE EJEMPLO. Es el archivo que el manifiesto nombra en su campo 'view', y adentro del bundle se llama view.json. Describe la pantalla que la institucion diseno PARA LA PERSONA -no para el asistente-. El modulo DESCRIBE y el Host RENDERIZA: la institucion elige QUE bloques y en QUE ORDEN, y el Host decide como se ven.",
+
+  "//estado": "OJO, EL FORMATO ESTA DEFINIDO Y EL RENDERER TODAVIA NO EXISTE. Es la fase 4 del plan: hoy este archivo se puede escribir y viajar en el bundle, y no se pinta nada. Cuando el renderer entre, se pinta sin tocar el bundle. El campo 'view' del manifiesto existe desde el primer dia por la misma razon.",
+
+  "//donde": "SE PINTA EN LA MITAD DE ARRIBA DEL DETALLE DEL MODULO. La mitad de abajo -el interruptor del modulo, las consultas con su switch, el peso del registro- es del Host y no se personaliza: quien puede disenar la pantalla donde se le pide permiso a alguien, disena el contexto del permiso. No hace falta suponer mala fe, basta un disenador optimizando su propia conversion.",
+
+  "//nada-de-la-persona": "NINGUN VALOR DE AQUI PUEDE SER UN DATO DE LA PERSONA. Este archivo viaja en el bundle, y el bundle es EL MISMO para todos los clientes de la institucion: 'tu sucursal' o 'cliente desde' no pueden vivir en un archivo que se publica una vez y se baja mil veces. Un dato de la persona va en la pantalla propia del modulo -la que abre con 'Abrir ...', que lee su journal- o en una consulta, que es la forma que Gnothi ya tiene para un hecho sobre alguien.",
+
+  "view": "1.0",
+
+  "detalle": [
+    {
+      "//": "TEXTO. Un parrafo. Hasta 240 caracteres, hasta 2 bloques de este tipo.",
+      "tipo": "texto",
+      "cuerpo": "Recibís acá los resultados que firmamos en cualquiera de nuestras tres sedes, con toda tu historia desde 2019."
+    },
+    {
+      "//": "DATOS. Pares etiqueta/valor, hasta 6 filas. Etiqueta hasta 24 caracteres, valor hasta 48. Son hechos de la INSTITUCION, iguales para todos sus clientes.",
+      "tipo": "datos",
+      "filas": [
+        { "etiqueta": "Sedes", "valor": "Escazú, Heredia y Cartago" },
+        { "etiqueta": "Horario", "valor": "L-V 6:30am a 4pm · S 7 a 11am" },
+        { "etiqueta": "Ayunas", "valor": "8 horas para perfil lipídico" },
+        { "etiqueta": "Resultados en línea", "valor": "delfos.cr/mis-examenes" }
+      ]
+    },
+    {
+      "//": "AVISO. Uno solo por modulo, hasta 140 caracteres, y 'hasta' es OBLIGATORIO -formato aaaa-mm-dd, maximo 90 dias-. Sin fecha no se pinta. La razon es simple: un aviso sin vencimiento es un cartel permanente, y un cartel permanente es publicidad. Con fecha, el Host lo deja de pintar solo cuando pasa.",
+      "tipo": "aviso",
+      "cuerpo": "Del 1 al 15 de octubre la sede de Escazú atiende solo en la mañana.",
+      "hasta": "2026-10-15"
+    },
+    {
+      "//": "CONTACTO. Un solo bloque. Son DATOS y no botones: llamar o abrir un sitio es un acto de la persona, no del Host, y el enlace se abre en SU navegador, afuera de Gnothi.",
+      "tipo": "contacto",
+      "telefono": "2222-0000",
+      "sitio": "delfos.cr",
+      "ayuda": "delfos.cr/ayuda"
+    },
+    {
+      "//": "SALIDA. Como se da de baja DEL SERVICIO DE LA INSTITUCION, que es distinto de apagar el modulo -eso ya es un interruptor del Host, y esta abajo-. Hasta 160 caracteres, un solo bloque.",
+      "tipo": "salida",
+      "cuerpo": "Para que dejemos de enviarte resultados, pedilo en recepción o llamá al 2222-0000."
+    }
+  ],
+
+  "//tipos": "LOS SEIS TIPOS QUE EL HOST VA A CONOCER: texto, datos, aviso, contacto, salida y enlace -este ultimo con 'texto' y 'url', hasta 2-. UN TIPO QUE EL HOST NO CONOZCA SE IGNORA EN SILENCIO Y EL RESTO SE PINTA: eso es lo que permite agregar bloques nuevos sin huerfanar a los modulos ya instalados, por la misma razon por la que el sustrato pide un rango y no una version.",
+
+  "//lo-que-no-hay": "NO HAY html, css, script, ni imagenes fuera del brand.logo del manifiesto, y no es una omision: la pagina que pinta esto es la misma que tiene el puente del consentimiento de Gnothi, asi que nada de aca se ejecuta -cada bloque se pinta como texto, nunca como markup-. Tampoco hay color, fuente ni tamano: los bloques heredan el estilo de Gnothi, y por eso un modulo se ve como Gnothi aunque su institucion tenga otro gusto. Lo que la institucion gana es AUTORIA DE CONTENIDO Y DE ORDEN, no de pixeles."
+}

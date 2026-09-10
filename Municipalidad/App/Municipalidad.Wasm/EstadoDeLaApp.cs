@@ -17,6 +17,8 @@ namespace Municipalidad.Wasm
 		private readonly PuenteDeJournal puente;
 		private readonly HttpClient http;
 		private readonly AjustesDeLaMunicipalidad ajustes;
+		private readonly ModoDeLaApp modo;
+		private readonly PuenteDeGnothi puenteDeGnothi;
 
 		private MunicipalidadApp app;
 		private MunicipalidadAPI api;
@@ -24,18 +26,29 @@ namespace Municipalidad.Wasm
 
 		private DateTime ultimoSelloMandado = DateTime.MinValue;
 
-		public EstadoDeLaApp(PuenteDeJournal puente, HttpClient http, AjustesDeLaMunicipalidad ajustes)
+		public EstadoDeLaApp(PuenteDeJournal puente, HttpClient http, AjustesDeLaMunicipalidad ajustes,
+			ModoDeLaApp modo, PuenteDeGnothi puenteDeGnothi)
 		{
 			ArgumentNullException.ThrowIfNull(puente);
 			ArgumentNullException.ThrowIfNull(http);
 			ArgumentNullException.ThrowIfNull(ajustes);
+			ArgumentNullException.ThrowIfNull(modo);
+			ArgumentNullException.ThrowIfNull(puenteDeGnothi);
 
 			this.puente = puente;
 			this.http = http;
 			this.ajustes = ajustes;
+			this.modo = modo;
+			this.puenteDeGnothi = puenteDeGnothi;
 		}
 
 		public bool EstaArriba => app is not null;
+
+		/// <summary>
+		/// Si esta app corre HOSPEDADA dentro de Gnothi. Hospedada no hay carpeta que elegir ni
+		/// credencial que conseguir: el destino y la credencial son de Gnothi.
+		/// </summary>
+		public bool Hospedada => modo.Hospedada;
 
 		public bool HayCarpeta => puente.HayCarpeta;
 
@@ -142,7 +155,7 @@ namespace Municipalidad.Wasm
 		{
 			if (app is not null) return;
 
-			int precargados = puente.HayCarpeta ? await puente.PrecargarEnMemfsAsync() : 0;
+			int precargados = puente.HayDestino ? await puente.PrecargarEnMemfsAsync() : 0;
 
 			var abierto = new MunicipalidadApp(MunicipalidadApp.ElActor);
 			abierto.ConfigureStorage(DatabaseType.FileSystem, "path=" + PuenteDeJournal.RaizEnMemfs);
@@ -151,22 +164,18 @@ namespace Municipalidad.Wasm
 			app = abierto;
 			api = new MunicipalidadAPI(abierto);
 
-			bucle = new BucleDeRefresh(
-				api,
-				new FuenteHttpDeEventos(http, ajustes.Recurso, ajustes.Id),
-				MunicipalidadEventRoute.Route,
-				BajarAsync,
-				ct => RenovarLaCredencialAsync(ct));
+			bucle = new BucleDeRefresh(api, LaFuenteDeEventos(), MunicipalidadEventRoute.Route, BajarAsync);
 
 			try { await BajarAsync(); } catch (EscrituraRechazadaException) { }
 
-			UltimoMensaje = puente.HayCarpeta
-				? $"arriba. {precargados} archivos precargados de '{puente.NombreDeLaCarpeta}'"
-				: "arriba, pero SIN carpeta: el journal vive solo en memoria y se pierde al cerrar";
+			UltimoMensaje = modo.Hospedada
+				? $"arriba, hospedada en Gnothi. {precargados} archivos precargados"
+				: puente.HayCarpeta
+					? $"arriba. {precargados} archivos precargados de '{puente.NombreDeLaCarpeta}'"
+					: "arriba, pero SIN carpeta: el journal vive solo en memoria y se pierde al cerrar";
 
 			try
 			{
-				await LaCredencialAsync(CancellationToken.None);
 				ResultadoDeRefresh alAbrir = await bucle.Ejecutar(CancellationToken.None);
 				await BajarAsync();
 				NoSeAlcanzaLaInstitucion = "";
@@ -182,7 +191,22 @@ namespace Municipalidad.Wasm
 					$"No se pudo alcanzar {DondeEstaElFeed} ({ex.GetType().Name}: {ex.Message}).";
 				UltimoMensaje += " | " + NoSeAlcanzaLaInstitucion;
 			}
+
+			if (modo.Hospedada) await puenteDeGnothi.ListoAsync();
 		}
+
+		/// <summary>
+		/// De donde salen los eventos, que es lo unico que depende del hospedaje junto con el destino del
+		/// journal. Suelta hace su propio pedido con su credencial; hospedada se lo pide a Gnothi, que lo
+		/// releva con la suya. El punto de control lo pone el actor en los dos casos.
+		/// </summary>
+		private IFuenteDeEventos LaFuenteDeEventos() =>
+			modo.Hospedada
+				? new FuenteDeEventosPorGnothi((desde, _) => modo.Puente.PullAsync(desde).AsTask())
+				: new FuenteHttpDeEventos(
+					http, ajustes.Recurso, ajustes.Id,
+					ct => LaCredencialAsync(ct).AsTask(),
+					ct => RenovarLaCredencialAsync(ct));
 
 		/// <summary>
 		/// Trae lo que la institucion haya publicado desde el punto de control que dice el journal.
@@ -191,14 +215,53 @@ namespace Municipalidad.Wasm
 		{
 			Exigir();
 
-			await LaCredencialAsync(ct);
-
 			ResultadoDeRefresh resultado = await bucle.Ejecutar(ct);
 
 			NoSeAlcanzaLaInstitucion = "";
 			UltimoMensaje = $"actualización: {resultado}";
 
 			await BajarAsync();
+			return resultado;
+		}
+
+		/// <summary>
+		/// UNA CONSULTA DEL HOST, contra el actor vivo. Los cuerpos son los mismos que usa la superficie
+		/// de carga, asi que el modulo contesta igual corra donde corra, y el instante es el mismo que
+		/// lee una pantalla. Una consulta que no existe se dice; no se contesta con algo inventado.
+		/// </summary>
+		public object Consultar(string tool)
+		{
+			Exigir();
+
+			DateTime preguntadoEn = ElInstanteEnQueLaPantallaPregunta();
+
+			return tool switch
+			{
+				ConsultasDelModulo.Resumen => ConsultasDelModulo.HacerResumen(api, preguntadoEn),
+				ConsultasDelModulo.ListaDeVencimientos =>
+					ConsultasDelModulo.HacerListaDeVencimientos(api, preguntadoEn),
+				_ => throw new ArgumentException($"El módulo no atiende la consulta '{tool}'."),
+			};
+		}
+
+		/// <summary>
+		/// EL CARTERO ENTREGA: Gnothi trae un sobre ya leido y se asienta por EL MISMO camino que el
+		/// refresco propio -- misma ruta, mismo Check, mismo flush --, asi que entregar dos veces el
+		/// mismo sobre no duplica nada.
+		/// </summary>
+		public async Task<ResultadoDeRefresh> EntregarAsync(string sobreJson, CancellationToken ct = default)
+		{
+			Exigir();
+
+			var unaVez = new BucleDeRefresh(
+				api,
+				new FuenteDeEventosPorGnothi((_, _) => Task.FromResult(sobreJson ?? ""), "gnothi.deliver"),
+				MunicipalidadEventRoute.Route,
+				BajarAsync);
+
+			ResultadoDeRefresh resultado = await unaVez.Ejecutar(ct);
+
+			UltimoMensaje = $"entrega de Gnothi: {resultado}";
 			return resultado;
 		}
 

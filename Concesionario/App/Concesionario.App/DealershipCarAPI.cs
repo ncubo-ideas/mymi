@@ -151,28 +151,7 @@ namespace Concesionario.App
 			.PerformCommand();
 		}
 
-		public void RegisterDevice(string deviceKey)
-		{
-			ArgumentException.ThrowIfNullOrWhiteSpace(deviceKey);
 
-			app.Using("logbook.RegisterDevice(@device);")
-			.WithParameters(p => {
-				p["device", typeof(string)] = deviceKey;
-			})
-			.PerformCommand();
-		}
-
-		public void StoreCredential(string token, string refreshToken)
-		{
-			ArgumentException.ThrowIfNullOrWhiteSpace(token);
-
-			app.Using("logbook.StoreCredential(@token, @refresh);")
-			.WithParameters(p => {
-				p["token",   typeof(string)] = token;
-				p["refresh", typeof(string)] = refreshToken ?? "";
-			})
-			.PerformCommand();
-		}
 
 		/// <summary>
 		/// ABRE una revision de la especificacion del modelo, con el codigo y el instante en que el
@@ -2718,10 +2697,10 @@ namespace Concesionario.App
 			return LastEventApplied();
 		}
 
-		string IDiarioDeLaApp.TokenGuardado()
-		{
-			return StoredToken();
-		}
+		// TokenGuardado() SE FUE DE IDiarioDeLaApp con la credencial: desde el 2026-09-03 el token
+		// no se journaliza -- es contexto de sesion de quien hospeda la app, no un hecho de la
+		// vida de la persona -- y el bucle de refresh lo recibe del almacen, no del diario.
+		// Dejar la implementacion explicita de un miembro que la interfaz ya no declara es CS0539.
 
 		string IDiarioDeLaApp.Aplicar(IMensajeDeEvento message)
 		{

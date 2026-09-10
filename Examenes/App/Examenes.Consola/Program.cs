@@ -231,7 +231,6 @@ namespace Examenes.Consola
 			// fijo, y esta linea es lo unico que hace ruido cuando el dominio deja de decirlo.
 			Console.WriteLine($"esperado por la portada     : {Muestras.ConteoEsperadoDeLaPortada}"
 				+ (conteo == Muestras.ConteoEsperadoDeLaPortada ? " OK" : "  <-- NO COINCIDE"));
-			Console.WriteLine($"token guardado              : [{api.TokenGuardado()}]");
 
 			Console.WriteLine();
 			Console.WriteLine("-- lista (print, formatter JSON) --");
@@ -541,37 +540,74 @@ namespace Examenes.Consola
 
 			// La app consigue su credencial SOLA, contra su device key. Ni la consola ni
 			// la persona pegan un token: el laboratorio lo emite para ESTA instalacion.
-			if (api.DeviceKeyGuardado().Length == 0)
-				api.RegistrarDevice("device-consola-de-medicion");
+			//
+			// LA CREDENCIAL VIVE EN MEMORIA DURANTE LA CORRIDA, no en el journal: es contexto
+			// de sesion de este host -la consola-, no historia de la persona. Hasta el
+			// 2026-09-03 se journalizaba y quedaba en claro en la carpeta.
+			const string deviceKey = "device-consola-de-medicion";
+			string accessToken = "";
+			string refreshToken = "";
 
-			if (api.TokenGuardado().Length == 0)
+			async Task<string> CredencialVigente(System.Threading.CancellationToken ct)
 			{
-				Credencial credencial = await proveedorDeToken.Pedir(api.DeviceKeyGuardado(), recurso, id);
+				if (accessToken.Length > 0) return accessToken;
+
+				Credencial credencial = await proveedorDeToken.Pedir(deviceKey, recurso, id, ct);
 				Console.WriteLine($"credencial: scope={credencial.Scope} expiresIn={credencial.ExpiresIn}s");
-				api.GuardarCredencial(credencial.AccessToken, credencial.RefreshToken);
+				(accessToken, refreshToken) = (credencial.AccessToken, credencial.RefreshToken ?? "");
+				return accessToken;
 			}
 
 			// Que hacer cuando el laboratorio rechaza el access token: rotar con el
 			// refresh token, que es para lo que existe. El access es corto a proposito.
 			async Task<string> Renovar(System.Threading.CancellationToken ct)
 			{
-				string refresh = api.RefreshTokenGuardado();
-
 				// Rotar devuelve null si el refresh ya no vale; ahi se pide una credencial
 				// nueva con el device key, que es lo que la instalacion siempre puede hacer.
-				Credencial renovada = refresh.Length > 0
-					? await proveedorDeToken.Rotar(refresh, ct)
+				Credencial renovada = refreshToken.Length > 0
+					? await proveedorDeToken.Rotar(refreshToken, ct)
 					: null;
 				string comoSeObtuvo = renovada != null ? "rotada con el refresh token" : "nueva contra el device key";
-				renovada ??= await proveedorDeToken.Pedir(api.DeviceKeyGuardado(), recurso, id, ct);
+				renovada ??= await proveedorDeToken.Pedir(deviceKey, recurso, id, ct);
 
 				Console.WriteLine($"  credencial renovada: {comoSeObtuvo} (scope {renovada.Scope})");
-				api.GuardarCredencial(renovada.AccessToken, renovada.RefreshToken);
-				return renovada.AccessToken;
+				(accessToken, refreshToken) = (renovada.AccessToken, renovada.RefreshToken ?? "");
+				return accessToken;
 			}
 
-			var bucle = new BucleDeRefresh(api, new FuenteHttpDeEventos(http, recurso, id),
-				RutaDeExamenes.Rutear, null, Renovar);
+			// LOS DOS MODOS DE LA APP, sobre el MISMO bucle y el MISMO journal (especificacion
+			// 11 §2). Lo unico que cambia es de donde salen los eventos:
+			//
+			//   suelta      la app hace su propio pull con su credencial      FuenteHttpDeEventos
+			//   hospedada   la app le PIDE a Gnothi, que releva y responde    FuenteDeEventosPorGnothi
+			//
+			// Con --hospedado la consola hace de Gnothi: recibe el after del actor, hace el
+			// HTTP con la credencial que sostiene ELLA, y devuelve el sobre tal cual. Es la
+			// misma topologia que el puente del WebView, sin WebView. Si esto da igual que el
+			// modo suelto, el adaptador esta bien.
+			bool hospedado = Array.IndexOf(args, "--hospedado") >= 0;
+
+			IFuenteDeEventos fuente = hospedado
+				? new FuenteDeEventosPorGnothi(async (despuesDe, ct) =>
+					{
+						// Esto es lo que hara Gnothi nativo: el cursor lo pone el actor, la
+						// credencial y el endpoint los pone Gnothi, y el sobre vuelve entero.
+						string token = await CredencialVigente(ct);
+						using var pedido = new HttpRequestMessage(HttpMethod.Get,
+							$"{recurso}/{Uri.EscapeDataString(id)}/events?after={despuesDe}");
+						pedido.Headers.Authorization =
+							new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", token);
+
+						using HttpResponseMessage r = await http.SendAsync(pedido, ct);
+						r.EnsureSuccessStatusCode();
+						return await r.Content.ReadAsStringAsync(ct);
+					})
+				: new FuenteHttpDeEventos(http, recurso, id, CredencialVigente, Renovar);
+
+			Console.WriteLine($"fuente de eventos           : {fuente.Nombre}"
+				+ (hospedado ? "  (hospedada: el modulo pide, Gnothi releva)" : "  (suelta: la app hace su pull)"));
+
+			var bucle = new BucleDeRefresh(api, fuente, RutaDeExamenes.Rutear);
 
 			ResultadoDeRefresh primero = await bucle.Ejecutar();
 			Console.WriteLine($"refresh 1 : {primero}");
@@ -606,7 +642,7 @@ namespace Examenes.Consola
 			Console.WriteLine("  estado    [carpeta]                            abre el journal y reporta (correr en proceso nuevo)");
 			Console.WriteLine("  tendencia [carpeta] [analito]                  evalua la serie de un analito");
 			Console.WriteLine("  velocidad [carpeta] [analito]                  a que ritmo viene cambiando (ng/mL por ano)");
-			Console.WriteLine("  refrescar [carpeta] [baseUrl] [recurso] [id]   trae eventos del laboratorio y los aplica de a uno");
+			Console.WriteLine("  refrescar [carpeta] [baseUrl] [recurso] [id] [--hospedado]   trae eventos y los aplica; --hospedado usa la fuente por Gnothi");
 			Console.WriteLine();
 			Console.WriteLine("carpeta por defecto: ~/Examenes-journal");
 			Console.WriteLine("baseUrl por defecto: http://localhost:8091/");

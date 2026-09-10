@@ -68,7 +68,21 @@ namespace Concesionario.Dominio.Pruebas
 		private const string TheUnitEverythingIsIn = "UnitA";
 		private const string TheRevision = "REV-2025-01";
 		private const string TheSystemThatIsCovered = "POWERTRAIN";
-		private const string TheDeviceKey = "device-de-la-prueba-de-la-ausencia";
+
+		// LA MARCA DE QUE LA CADENA BARRIDA TRAE CONTENIDO DE VERDAD. Era TheDeviceKey, que se fue
+		// con la credencial el 2026-09-03 (un token no es un hecho de la vida de la persona).
+		//
+		// TIENE QUE SER UN VALOR QUE EL BARRIDO NO INYECTE, y eso descarta a casi todas las otras
+		// constantes: Invoke() le pasa TheRevision a cualquier `revisionCode`, TheSystemThatIsCovered
+		// a `systemCode`, TheUnitEverythingIsIn a lo que termine en Unit y TheKindThatMeasuresDistance
+		// a cualquier otro string, asi que aparecen ECHADAS en las respuestas hasta de un journal
+		// vacio y la marca dejaria de distinguir nada. Se probo con TheRevision y esta prueba se puso
+		// roja por eso mismo. El grado de combustible lo escribe PublishFuelGrade, lo contesta
+		// ReadMinimumFuelGrade() -sin parametros, asi que nadie se lo inyecta- y un journal fresco no
+		// lo tiene.
+		private const string TheFuelGradeThatWasPublished = "91 RON";
+
+		// TheDeviceKey SE FUE con la credencial. Era la marca; ver TheFuelGradeThatWasPublished.
 
 		private const int TheTimeLimitInDays = 365;
 		private const int TheDistanceLimit = 12345;
@@ -303,7 +317,7 @@ namespace Concesionario.Dominio.Pruebas
 				+ "cambio lo que esa pregunta responde -- que es exactamente lo que la rebanada "
 				+ "prometio no hacer.");
 
-			Assert.That(beforeThisAppOpenedIt, Does.Contain(TheDeviceKey),
+			Assert.That(beforeThisAppOpenedIt, Does.Contain(TheFuelGradeThatWasPublished),
 				"Y la cadena comparada trae de verdad lo que se escribio. Sin esto, dos cadenas "
 				+ "vacias serian iguales y este test estaria verde sin mirar nada.");
 		}
@@ -403,7 +417,7 @@ namespace Concesionario.Dominio.Pruebas
 					"La MISMA clase de app sobre una carpeta vacia contesta otra cosa. Eso es lo que "
 					+ "dice que las respuestas de arriba vienen de los bytes del journal y no de un "
 					+ "campo que la app se siembra sola al arrancar.");
-				Assert.That(fromAJournalNobodyWroteTo, Does.Not.Contain(TheDeviceKey));
+				Assert.That(fromAJournalNobodyWroteTo, Does.Not.Contain(TheFuelGradeThatWasPublished));
 				Assert.That(onAFreshJournal, Is.LessThan(onTheWrittenJournal),
 					"Y el actor de hoy sabe cuantas entradas traia el journal, que es un numero que "
 					+ "solo se puede saber leyendolo.");
@@ -611,7 +625,6 @@ namespace Concesionario.Dominio.Pruebas
 
 			DealershipCarAPI api = new DealershipCarAPI(older);
 
-			api.RegisterDevice(TheDeviceKey);
 
 			api.SeedPlanOperation(
 				TheKindThatMeasuresDistance, "TimeOrDistance",
@@ -637,7 +650,7 @@ namespace Concesionario.Dominio.Pruebas
 			api.PublishWarrantyEnvelope(36, 60000, TheUnitEverythingIsIn, ThePublication);
 
 			api.OpenRevision(TheRevision, ThePublication);
-			api.PublishFuelGrade(TheRevision, "91 RON", "Minimum");
+			api.PublishFuelGrade(TheRevision, TheFuelGradeThatWasPublished, "Minimum");
 			api.PublishServiceInterval(
 				TheRevision, TheKindThatMeasuresDistance, 10000, TheUnitEverythingIsIn, 365);
 			api.PublishCoveredSystem(

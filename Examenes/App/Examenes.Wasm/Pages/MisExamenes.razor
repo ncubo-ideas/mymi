@@ -298,9 +298,13 @@ else
                que le corresponde a algo que no es el foco del hero.
                aria-busy, recuperado de origin/master: «Actualizando…» ya cambia el
                título del botón, pero un lector de pantalla no vuelve a leerlo si el foco
-               ya estaba ahí -el estado ocupado sí lo anuncia-. *@
-            <button class="inicio-hero-actualizar" @onclick="Refrescar" disabled="@refrescando"
-                    title="@(refrescando ? "Actualizando…" : "Actualizar")" aria-label="Actualizar"
+               ya estaba ahí -el estado ocupado sí lo anuncia-.
+               MIGRADA: cuando los hechos nuevos ya entran por Gnothi, volver a preguntarle
+               al proveedor desde acá no trae nada; el botón se apaga y lo dice en su
+               título, igual que lo decía el botón de texto que este reemplazó. *@
+            <button class="inicio-hero-actualizar" @onclick="Refrescar" disabled="@(refrescando || estado.Migrada)"
+                    title="@(estado.Migrada ? "Ya no se actualiza" : refrescando ? "Actualizando…" : "Actualizar")"
+                    aria-label="@(estado.Migrada ? "Ya no se actualiza" : "Actualizar")"
                     aria-busy="@(refrescando ? "true" : "false")">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
                      stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"
@@ -541,7 +545,42 @@ else
        -se pone al dia contra el proveedor en cada apertura- asi que se ve completa y
        correcta, y no hay forma de notar que no persiste salvo que se diga. Es la
        degradacion silenciosa que hizo que el servidor MCP leyera un estado viejo. *@
-    @if (!estado.HayCarpeta)
+    @* HOSPEDADA: el destino es Gnothi y sí se está guardando. El cartel de abajo mira
+       HayCarpeta, que es vocabulario del modo suelto, y ahí diría exactamente lo contrario
+       de lo que pasa. Decirle a la persona "no se está guardando nada" mientras el journal
+       baja a los archivos de Gnothi es la misma mentira silenciosa que este archivo evita
+       en el otro sentido. *@
+    @* MIGRADA: el proveedor marcó que los hechos nuevos de esta cuenta ya entran por Gnothi
+       (especificación 13 §4 y §6.2). El registro NO se mudó: sigue en el teléfono de la
+       persona y es de ella (§10.6). "Desaparecer" NO es desinstalar y NO es borrar: la app
+       sigue mostrando lo que tiene, porque es de ella. Lo que deja de hacer es SINCRONIZAR,
+       que es lo único que produciría dos historias que divergen. El ícono lo quita ella. *@
+    @if (estado.Migrada)
+    {
+        <div class="aviso aviso--atencion fila">
+            <div class="crece">
+                <strong>Tus exámenes nuevos ahora entran por @estado.DondeVive, en este
+                mismo teléfono.</strong>
+                Lo que ves acá se queda y sigue siendo tuyo; lo que esta copia deja de
+                hacer es buscar novedades.
+            </div>
+            @* UN <a href> TOCADO, no window.location desde JS: en iOS una navegación hecha
+               por script se trata como pegar la URL en la barra y nunca abre la app; en
+               Android, sin gesto Chrome se va derecho al fallback. *@
+            <a class="boton boton--atencion" href="@enlaceAGnothi">Abrir @estado.DondeVive</a>
+        </div>
+    }
+    else if (estado.Hospedada)
+    {
+        <div class="aviso fila">
+            <div class="crece">
+                <strong>Se está guardando en este teléfono.</strong>
+                Tu expediente es tuyo y está acá: Gnothi le dio a este laboratorio una
+                carpeta en tu teléfono, y tu asistente la puede leer desde ahí.
+            </div>
+        </div>
+    }
+    else if (!estado.HayCarpeta)
     {
         <div class="aviso aviso--atencion fila">
             <div class="crece">
@@ -1055,8 +1094,19 @@ else
 
     @* La ventana de perdida se dice, porque esconderla seria vender durabilidad que no hay.
        El conteo de archivos y bytes de MEMFS era diagnostico mio, no informacion para el
-       usuario, y se fue. *@
-    @if (!estado.HayCarpeta)
+       usuario, y se fue.
+
+       PERO HOSPEDADA SÍ HAY DURABILIDAD, y este cartel la negaba. `HayCarpeta` es el handle del
+       modo suelto y hospedada no hay ninguno porque el destino es la carpeta que Gnothi le dio en
+       el teléfono, así que la condición pelada decía «vive solo en memoria y se pierde al cerrar»
+       justo cuando es más falso — y encima a dos pantallas de distancia del aviso de arriba, que
+       dice lo contrario. Es la misma guarda que MisCompras, MiCarro y MyCar.
+
+       NO LO TRAJO EL MERGE: esta pantalla tuvo el arranque hospedado y su propio aviso desde el
+       principio, y este cartel se quedó sin guarda. Lo encontró el barrido de avisos falsos del
+       2026-09-08, preguntándole a los cuatro módulos hospedados si alguno decía que no estaba
+       guardando. Solo este. *@
+    @if (!estado.Hospedada && !estado.HayCarpeta)
     {
         <p class="apunte" style="margin-top:28px">
             <strong>Sin carpeta:</strong> el registro vive solo en memoria y se pierde al cerrar.
@@ -1152,6 +1202,9 @@ else
     private long ultimoEvento;
     private string error = "";
 
+    // EL ENLACE QUE ABRE GNOTHI, ya armado. Tiene que estar en el markup como <a href> y no
+    // construirse al hacer clic: en iOS una navegacion hecha por script no abre la app.
+    private string enlaceAGnothi = "";
     // ============================================================ INICIO, RONDA 1
     //
     // LOS TRES GRUPOS DE LA NUEVA JERARQUIA, armados una sola vez en Releer() con lo
@@ -1425,6 +1478,19 @@ else
     {
         if (estado.EstaArriba) { resolviendo = false; Releer(); return; }
 
+        // HOSPEDADA: el destino es de Gnothi y no hay nada que elegir ni permiso que pedir.
+        // La app arranca sola; el selector de almacenamiento es vocabulario del modo suelto.
+        if (estado.Hospedada) { await Arrancar(); return; }
+
+        // El enlace del handoff depende de la plataforma, y se arma una sola vez.
+        // Si la app ya estaba arriba de una carga anterior, el enlace se arma igual.
+        await ArmarEnlace();
+
+        soportado = await estado.EstaSoportado();
+        opfs = await estado.OpfsSoportado();
+        sinAlmacenamiento = await estado.MotivoSinAlmacenamiento();
+        instalada = await estado.EstaInstalada();
+        if (soportado != true) return;
         try
         {
             // EL MODO RECORDADO VA PRIMERO, porque es lo único que decide qué pantalla va.
@@ -1499,6 +1565,7 @@ else
         if ((await estado.ConectarCarpeta()).Ok)
         {
             await estado.Arrancar();
+            await ArmarEnlace();
             Releer();
         }
     });
@@ -1508,6 +1575,7 @@ else
         if ((await estado.PedirPermiso()).Ok)
         {
             await estado.Arrancar();
+            await ArmarEnlace();
             Releer();
         }
     });
@@ -1517,6 +1585,7 @@ else
         if ((await estado.UsarAlmacenamientoDelNavegador()).Ok)
         {
             await estado.Arrancar();
+            await ArmarEnlace();
             Releer();
         }
     });
@@ -1536,9 +1605,21 @@ else
         Releer();
     });
 
+    // EL ENLACE DEL HANDOFF. Depende de la plataforma -intent:// con fallback en Android,
+    // https en el resto- y de las aserciones que haya para pasar, asi que se arma cuando ya
+    // se sabe que esta instalacion se retiro. Se guarda en un campo porque tiene que ser un
+    // <a href> de verdad: iOS no abre la app desde una navegacion hecha por script.
+    private async Task ArmarEnlace()
+    {
+        if (!estado.EstaArriba || !estado.Migrada) { enlaceAGnothi = ""; return; }
+
+        enlaceAGnothi = estado.EnlaceParaAbrirGnothi(await estado.EsAndroid());
+    }
+
     private Task Arrancar() => Intentar("abrir la app", async () =>
     {
         await estado.Arrancar();
+        await ArmarEnlace();
         Releer();
     });
 
@@ -1560,7 +1641,7 @@ else
     private Task Refrescar() => Intentar("refrescar contra el proveedor", async () =>
     {
         refrescando = true;
-        try { await estado.Refrescar(); }
+        try { await estado.Refrescar(); await ArmarEnlace(); }
         finally { refrescando = false; Releer(); }
     });
 
