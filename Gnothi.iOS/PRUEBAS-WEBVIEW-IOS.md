@@ -494,6 +494,15 @@ abierta**. Lo que cambia es si la cara ya existe, y el enlace que llega antes qu
 > de cada pieza está en `Gnothi.Mobile/MainActivity.cs`. En Android todo esto está medido
 > (`Gnothi.Mobile/PRUEBAS-WEBVIEW.md` §2b); acá lo que se mide es que iOS haga lo mismo.
 >
+> **[MEDIDO 2026-09-09]** simulador iPhone 17 Pro / iOS 26.5. **Compiló sin tocar una línea**:
+> ninguna firma de binding estaba mal. **P6b pasa los cinco pasos y P6d las dos puertas.** P6c no
+> se puede acá —el simulador no tiene cámara— y P6e queda pendiente. El detalle, con los números y
+> cuatro hallazgos que no son del alta, está en
+> [`HALLAZGOS-CORRIENDO-EL-GUION.md`](HALLAZGOS-CORRIENDO-EL-GUION.md) §11. **Dos de esos
+> hallazgos cambian este guion:** el paquete del §0 choca con los bundles de hoy si el mismo
+> módulo entra por los dos caminos (§11.3), y la comprobación de P7 **no pasa en la primera
+> alta** porque se rinde a los 60 s mientras el WASM tarda ~64 en arrancar en frío (§11.4).
+>
 > **Y la actualización de un módulo (nota 44, pasos 1 y 2, la misma noche)** tampoco tiene pieza propia de
 > iOS: el plan vive en `Gnothi.Host/UpdatePlan.cs`, la revisión del origen al arrancar (`Shell.ReviewOrigins`)
 > y la op `actualizar` en `Gnothi.Movil/Shell.cs`, y la hoja de «Actualizar» y la pastilla «Hay una versión
@@ -631,7 +640,9 @@ dé por verificado.
 `BundleResource` de `Assets/fonts` y `Assets/img`), `Info.plist` (`NSCameraUsageDescription`,
 `CFBundleDocumentTypes`, `UTExportedTypeDeclarations`), `ViewController.cs` (`RequestMediaCapturePermission`
 en el `Bridge`, `PickModuleFiles`, `HandleFile`, `LeerDocumento`, `pendingFiles`) y `AppDelegate.OpenUrl`
-(`file://` → `HandleFile`). Se escribieron en Windows mirando `MainActivity.cs`, que sí está medido, y
+(`file://` → `HandleFile`), más el observador de `WillEnterForegroundNotification` en `ViewDidLoad` y la llamada a
+`shell.ReviewOriginsIfDue()` en `Soltar()` (nota 44, paso 2b: volver a mirar los orígenes al volver al frente, a lo
+sumo una vez por hora). Se escribieron en Windows mirando `MainActivity.cs`, que sí está medido, y
 los bindings de .NET para iOS. Si algo no compila, va a ser una firma de binding; el comportamiento
 esperado está en P6b a P6e.
 

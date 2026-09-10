@@ -34,6 +34,7 @@ compilador garantiza que no se colara semántica de dominio.
 | `Manifest.cs` · `Installation.cs` | Los dos archivos, las dos autoridades |
 | `HostTools.cs` | Las tools `gnothi_*`: hablan de los módulos, no de los datos |
 | `ConsentWatcher.cs` | Mira el archivo de la persona y manda `list_changed` |
+| `HostInstaller.cs` · `CodexTable.cs` | `--install`: Gnothi se presenta al asistente. Una llave JSON en Claude Desktop; una tabla TOML en Codex, que es cómo la app de ChatGPT lanza servidores locales |
 
 ### La dirección de las flechas es la propiedad
 
@@ -57,6 +58,19 @@ UNA SALIDA, dos cascaras, elegida por modulo en su instalacion.json:
 > diseñada para poder borrarse. **Ya existe**, en `Gnothi.Assistant`, con un test que falla si
 > llega a nombrar algo interno del Host. La salida hacia los módulos no es una Puerta: es la
 > **cáscara**.
+
+### La Puerta 1 con ChatGPT
+
+La app de escritorio de ChatGPT lleva adentro a Codex y a Work desde julio de 2026, y las dos
+pestañas lanzan los servidores MCP locales declarados en `~/.codex/config.toml`, el archivo que
+comparte la CLI de Codex. `--install` lo detecta por la carpeta y escribe ahí la tabla
+`[mcp_servers.gnothi]`, sin tocar el resto del archivo y con respaldo (`CodexTable.cs`). La tabla
+tiene **cuatro líneas y no dos**, y las dos de más no son opcionales: `required = true`, porque
+Codex espera un segundo a los servidores opcionales y el Host tarda más en arrancar; y
+`omit_tools_from = ["code_mode", "deferred"]`, porque Codex esconde las tools de MCP detrás de una
+búsqueda que el modelo no hace solo, y sin la línea el agente prefirió leer el journal a mano con
+la shell. Medido en Windows el 2026-09-09: las pestañas Codex y Work llaman a las tools de Gnothi;
+la pestaña Chat no lee ese archivo, y eso es de OpenAI, no nuestro.
 
 > **Y un hueco que este diagrama cerró a medias:** el diseño dice que el eslabón Host ↔
 > módulos es **invocación local, una llamada a función, sin transporte** — en escritorio y en
@@ -298,8 +312,9 @@ la lista publica `version` junto al sello de cada módulo, y la revisión del or
 Si lo publicado es mayor, lo anota en `installation.json` (`update`: versión, bundle, sello y cuándo se
 vio) y la tarjeta lo dice. Es una **nota, no una acción**: nada baja ni se instala hasta que la persona
 toca la tarjeta, y entonces el paquete pasa por la misma hoja de actualizar. Una versión publicada menor
-no se anuncia, y al instalar lo publicado la nota se va. Lo que falta de la nota 44: la instalación con
-vuelta atrás, y quitar un módulo.
+no se anuncia, y al instalar lo publicado la nota se va. La revisión se repite cuando Gnothi vuelve al frente o
+se cierra un módulo, a lo sumo una vez por hora (`ReviewSchedule`); adentro del módulo Gnothi no pinta nada, el
+aviso vive en la tarjeta. Lo que falta de la nota 44: la instalación con vuelta atrás, y quitar un módulo.
 
 ## Pendientes
 

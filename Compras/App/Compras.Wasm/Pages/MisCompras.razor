@@ -20,6 +20,11 @@
    los mismos tres campos de siempre, mas los mismos dos textos de respaldo, solo que ahora
    TODAS las señales vigentes se muestran -antes "else if" se quedaba con la primera y
    escondia las demas-. WhatsApp se va de aca: ahora es boton flotante, mas abajo. *@
+@* THE COVER: the same photo the institution declares as `brand.banner` for its Gnothi card,
+   behind the mini header, the greeting and the carousel, so the app opens with the brand the
+   person already saw on the card (Geaninna, 2026-09-09). Photo + dark green veil + white text;
+   the slides keep their own pastel and float on it, like the white pill on the card. *@
+<section class="lg-home-portada">
 <div class="lg-home-arriba">
     <span class="lg-home-marca">
         <img src="assets/logo.png" alt="" />
@@ -77,6 +82,7 @@
         }
     </div>
 }
+</section>
 
 @* EL BOTON REDONDO no es una campana de notificaciones -esta app no tiene, y no inventa
    una-: es WhatsApp, si el súper lo configuró. Contacto real, no adorno. RONDA "carrusel":
@@ -1348,8 +1354,9 @@ else
             banners.Add(new HeroBanner
             {
                 Variante = "habitual",
-                Kicker = "TU HABITUAL",
-                Titulo = $"Tu {Corto(oportunidad.Descripcion).ToLowerInvariant()} habitual bajó de precio",
+                // Plain words (Geaninna, 2026-09-09): "tu habitual" meant nothing to a reader.
+                Kicker = "BAJÓ DE PRECIO",
+                Titulo = $"El {Corto(oportunidad.Descripcion).ToLowerInvariant()} que comprás siempre bajó de precio",
                 PrecioAntes = oportunidad.Antes,
                 PrecioAhora = oportunidad.Ahora,
                 Cta = "Verlo",

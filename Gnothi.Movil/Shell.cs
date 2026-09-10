@@ -89,6 +89,12 @@ public sealed class Shell : IDisposable
 	private readonly Action<string, string, string> push;
 	private readonly CancellationTokenSource stop = new();
 
+	// THE ORIGINS ARE ASKED AGAIN WHEN GNOTHI COMES BACK TO THE FRONT, at most once an hour
+	// (NotasGnothiHost/44 §7, step 2b): the card is fresh when she returns after a while, and an
+	// institution hears from this phone no more than once an hour however often she switches apps.
+	public static readonly TimeSpan ReviewEvery = TimeSpan.FromHours(1);
+	private readonly ReviewSchedule reviews = new(ReviewEvery);
+
 	private Dispatcher? dispatcher;
 	private ModuleCatalog? catalog;
 	private ConsentWatch? watch;
@@ -296,6 +302,44 @@ public sealed class Shell : IDisposable
 	private async Task ReviewOrigins(CancellationToken ct)
 	{
 		if (catalog is null) return;
+		DateTimeOffset started = DateTimeOffset.UtcNow;
+		if (!reviews.TryBegin(started)) return;
+		try
+		{
+			bool changed = await ReviewEachOrigin(ct);
+			if (changed) PushState();
+		}
+		finally
+		{
+			reviews.End(DateTimeOffset.UtcNow);
+		}
+	}
+
+	// GNOTHI CAME BACK TO THE FRONT -or a module was closed and the home is on screen again-: ask
+	// the origins again if the last time was long enough ago. Cheap to call from every lifecycle
+	// hook: the schedule says no when it is not due -the launch review counts- and never runs two
+	// at once. The line in the log says which of the two happened.
+	public void ReviewOriginsIfDue()
+	{
+		// Before the launch review has begun there is nothing to repeat -and on Android OnResume
+		// fires right after OnCreate, while the catalog may still be loading. The launch owns
+		// the first one; this only ever repeats it.
+		if (catalog is null || stop.IsCancellationRequested || !reviews.Started) return;
+		DateTimeOffset now = DateTimeOffset.UtcNow;
+		if (!reviews.IsDue(now))
+		{
+			log($"revisión: la última consulta a los orígenes fue hace poco; la próxima, en {Math.Ceiling(reviews.Until(now).TotalMinutes):0} min");
+			return;
+		}
+		log("revisión: se vuelve a consultar a los orígenes");
+		_ = Task.Run(() => ReviewOrigins(stop.Token));
+	}
+
+	// One pass over the installed modules that declare an origin. True when something was marked
+	// or noted -a retired key, a newer package, or a note cleared- and the screen must repaint.
+	private async Task<bool> ReviewEachOrigin(CancellationToken ct)
+	{
+		if (catalog is null) return false;
 		bool changed = false;
 
 		foreach (Module m in catalog.Modules)
@@ -339,7 +383,7 @@ public sealed class Shell : IDisposable
 			}
 		}
 
-		if (changed) PushState();
+		return changed;
 	}
 
 	// SHE TAPPED «HAY UNA VERSIÓN NUEVA»: the package the origin publishes is fetched from the address

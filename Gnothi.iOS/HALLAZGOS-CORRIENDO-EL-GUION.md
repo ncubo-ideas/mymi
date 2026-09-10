@@ -1,6 +1,6 @@
 # Corriendo `PRUEBAS-WEBVIEW-IOS.md` en una Mac — hallazgos para Edgar
 
-**Fechas:** 2026-09-07 y 08. **Quién:** Renán, con Claude. **Rama:**
+**Fechas:** 2026-09-07, 08 y **09**. **Quién:** Renán, con Claude. **Rama:**
 `fase0/modulos-hospedados-en-ios`. Sobre Xcode 26.6 y .NET 9.0.200.
 
 **Dos aparatos, y cuál dice qué.** P0, P1, P3, P4, P5, P6 y P7 se midieron en un **simulador
@@ -16,6 +16,10 @@ Etiquetas como en `Documentacion/Movil/00-INDICE.md`: **[MEDIDO]**, **[RAZONADO]
 > P3, P4, P5, P6 y P7 en el simulador; **P2 en un iPhone 13 Pro de verdad**, que es el único
 > aparato donde ese número significa algo. Lo que falta no son mediciones: son las dos cosas que
 > le faltan a P6 para ser el camino de producción (§9) y el 404 del §10.
+>
+> **Y el 09 se le sumaron P6b y P6d** —el alta desde adentro de Gnothi, que llegó de `507ab50`
+> escrita sin Mac—: **compila sin tocar nada y las dos pasan enteras** (§11). Quedan P6c, que
+> pide cámara de verdad, y P6e.
 
 ---
 
@@ -32,6 +36,10 @@ Etiquetas como en `Documentacion/Movil/00-INDICE.md`: **[MEDIDO]**, **[RAZONADO]
 | **P7** comprobación | ✅ **[MEDIDO]** | `matches:true` en los cuatro, con datos reales (§7) |
 | **P6** el alta | ✅ **[MEDIDO]** | Por el esquema propio, con el descarte y la instalación (§9) |
 | **P2** memoria | ✅ **[MEDIDO]** | En un iPhone 13 Pro. 527 MB con un módulo abierto (§10) |
+| **P6b** el enlace pegado | ✅ **[MEDIDO]** | Los cinco pasos, con la barra y el pin de la llave (§11) |
+| **P6d** el archivo | ✅ **[MEDIDO]** | El selector con varios y «Copiar en Gnothi», los dos (§11) |
+| **P6c** la cámara | ⛔ **[NO MEDIDO]** | El simulador no tiene cámara. Pide iPhone de verdad |
+| **P6e** la revocación | ⛔ **[NO MEDIDO]** | Pide un `--revoke` del publicador y relanzar |
 
 ---
 
@@ -612,3 +620,190 @@ simulador y `devicectl` no tiene `open`. Lo práctico es servir una página con 
 
 Nada de esto aplica en producción, donde el publicador es un servidor real por HTTPS. Las dos
 claves del `Info.plist` salen antes de publicar, y así está anotado ahí.
+
+---
+
+## 11 · P6b a P6e — el alta desde adentro de Gnothi, medida
+
+**2026-09-09, simulador iPhone 17 Pro / iOS 26.5, sobre `2cb985e`.** Es la mitad de iOS que
+`507ab50` dejó escrita en Windows y sin compilar: los recursos de marca en el csproj, la cámara,
+`PickModuleFiles` y «Copiar en Gnothi».
+
+**Lo primero, que era la pregunta abierta: compila sin tocar una línea.** 0 errores. Ninguna
+firma de binding estaba mal. Lo que sigue es lo que hace cuando corre.
+
+### P6b · el enlace pegado — los cinco pasos, verdes
+
+| paso | lo que se vio |
+|---|---|
+| 1 | El mosaico con **Manrope y el logo de Gnothi enteros**: los `BundleResource` de `Assets/fonts` y `Assets/img` funcionan, que era lo primero a mirar |
+| 2 | «Tus instituciones, siempre contigo» con las tres filas, y el campo se despliega bajo «Pegar su enlace» con el cursor puesto |
+| 3 | *Bajando el módulo de 127.0.0.1… **8,0 MB de 12,5 MB · 64 %*** con la barra, y después la hoja: identidad **en ámbar** (*Laboratorio Clínico Delfos S.A., 3-101-123456 · Declara delfos.cr y lo sirvió 127.0.0.1 · v2.4.0*) y «Lo que Gnothi revisó» completo |
+| 4 | La tarjeta de Delfos con logo, banner y *«Tu salud, en tus manos»*. `installation.json` con `provenance` y `signer` |
+| 5 | *«Ya tenés **exactamente este paquete**»* y *«Firmado con la **misma llave** que la vez pasada (desde 9 sept 2026)»*. El botón cambia a **Reinstalar** |
+
+El log dio los renglones que el guion promete, textuales:
+
+```
+alta: bajando el bundle de 127.0.0.1
+alta: respaldo de 127.0.0.1: Verified; firma: Published
+alta: propuesta de 'examenes' servida por 127.0.0.1
+alta: 'examenes' instalado en …/Library/Application Support/Modulos/examenes
+alta: 'examenes' quedó instalado; 4 módulos
+```
+
+**La barra hay que estrangularla para verla**, como dice el guion: sobre localhost los 13 MB se
+van en menos de un segundo. Con `--LentoKBps 700` en la página tarda 18,7 s y la barra se lee.
+
+> **Un número del guion que no coincide:** dice que la barra muestra «13,0 MB» y muestra
+> **«12,5 MB»**. El `.gmod` son 13 064 608 bytes, que son 13,0 MB decimales y 12,5 MiB. La
+> pantalla cuenta en MiB. No es un bug; es el ejemplo del guion el que hay que corregir.
+
+### P6d · el archivo — las dos puertas, verdes
+
+**El selector con varios.** Abre el `UIDocumentPickerViewController` con selección múltiple, y
+con dos módulos y un zip cualquiera salió **«Esto encontré en lo que elegiste»** con sus tres
+filas: *Faro · Estaciones Faro · cargas.gmod · 12,6 MB · firmado* con la pastilla **ya lo tenés**,
+lo mismo *La Guaria*, y *cualquiera.zip · No es un módulo de Gnothi: no trae un manifiesto
+legible* con **no entra**. En la consola, el renglón exacto del guion:
+
+```
+alta: la persona eligió 3 archivos; 2 son módulos
+```
+
+> **Otro renglón de copy que es de Android:** la fila dice *«se abre en Descargas»*. En iOS abre
+> en **Recents**, y de ahí a *Browse → Gnothi Host*. No hay Descargas.
+
+**«Copiar en Gnothi».** Archivos muestra los `.gmod` con su badge **GMOD**, o sea que el
+`UTExportedTypeDeclarations` del `Info.plist` prendió. Tocar el archivo lo manda a la app, entra
+por `HandleFile` y se verifica el origen:
+
+```
+alta: archivo 'cargas.gmod' (13207731 bytes) por documento
+alta: archivo 'cargas.gmod': 127.0.0.1 dice Verified
+alta: no se pudo leer el módulo de cargas.gmod: PackageCollisionException:
+      'cargas' is already installed from 'Estacion de servicio (mock del POC)';
+      this package says it is from 'Estaciones Faro'
+```
+
+El camino entero anda. Que terminara en un rechazo es el §11.3 de acá abajo, no la puerta.
+
+### P6c y P6e, que no se corrieron
+
+**P6c pide cámara y el simulador no tiene.** El guion ya lo dice. **P6e** pide un `--revoke` del
+lado del publicador y relanzar la app; queda para la próxima pasada.
+
+---
+
+### 11.1 · El perfil de aprovisionamiento vence cada 7 días, y hoy estaba vencido
+
+**[MEDIDO]** `armar-intents.sh` y un `dotnet build` a secas mueren con:
+
+```
+error : Could not find any available provisioning profiles for Gnothi.iOS on iOS.
+```
+
+El perfil de `com.ncubo.gnothi.host` había vencido el **2026-09-08 21:07 UTC** — es de cuenta
+personal, y esos duran una semana. **No tiene nada que ver con el alta**, pero cuesta media hora
+si uno lo lee como que el código nuevo no compila.
+
+**Para el simulador se esquiva y no se pierde nada:**
+
+```bash
+dotnet build -f net9.0-ios -r iossimulator-arm64 -c Debug \
+  -p:ValidateXcodeVersion=false -p:CodesignEntitlements=
+```
+
+Los dos entitlements que exigen perfil no hacen falta ahí: el **App Group** solo lo usa la foto
+que lee la carátula de Swift —y `GetContainerUrl` devolviendo null ya está manejado y logueado—,
+y **`associated-domains`** es el universal link, que no funciona igual porque `go.gnothi.app` no
+resuelve. Esto se suma al §8: son dos banderas, no una.
+
+### 11.2 · `scenario-ios.sh` apuntaba a una carpeta que ya no existe
+
+**[MEDIDO]** El escenario levantaba **siete de ocho** puertos. `:8092` no contestaba y su log
+decía «Couldn't find a project to run». La línea 53 nombraba `DealershipCar/EndPointDeEventos`, y
+master renombró esa carpeta a `Concesionario/` el 2026-09-08 en `0110017`. El gemelo de
+PowerShell **ya estaba arreglado y hasta lo comenta** en su línea 47; el de acá quedó atrás.
+Corregido en este mismo commit: con eso suben los ocho.
+
+### 11.3 · El paquete semilla choca con los bundles de hoy, de dos formas
+
+**[MEDIDO]** El paquete que la app trae adentro como semilla es del **1 de septiembre**, y los
+bundles que arma `scenario-ios.sh` son de hoy. Cuando el mismo módulo entra por los dos caminos
+del §0 —el paquete (b) y el alta (a)—, chocan:
+
+**El journal**, y este deja al módulo sin arrancar:
+
+```
+Puppeteer.LanguageException: Upgrade 'semilla' differs from the one previously
+applied to this actor.
+  Applied:            { expediente = Expediente(60); bitacora = Bitacora(); }
+  Attempting to apply:{ expediente = Expediente(34); bitacora = Bitacora(); }
+```
+
+El journal sembrado aplicó `Expediente(60)`; el bundle de hoy trae `Expediente(34)`. Puppeteer
+hace lo correcto —esa es su regla— pero el módulo muere en `OnHydrated()` y la pantalla no dice
+por qué.
+
+**El nombre de la institución**, y este frena el alta: `cargas` sembrado dice «Estacion de
+servicio (mock del POC)» y el bundle de hoy dice «Estaciones Faro» → `PackageCollisionException`,
+con su banner en pantalla. Ese banner está **bien escrito** y dice qué hacer.
+
+**Cómo se limpia**, y hay que borrar los cuatro o vuelve, porque el cartero re-siembra desde
+`incoming` en cada instalación:
+
+```
+Documents/incoming/journals/<mod>
+Documents/incoming/Modulos/<mod>
+Library/Application Support/journals/<mod>
+Library/Application Support/Modulos/<mod>
+```
+
+**Va en el §0 del guion**, que hoy presenta los dos caminos como intercambiables. Lo son para
+módulos distintos; para el mismo módulo, no.
+
+### 11.4 · P7 no pasa en la primera alta, y no es el módulo: es una carrera
+
+**[MEDIDO]** El guion dice de P7 «Pasa sola al dar de alta». En la **primera** instalación no
+pasa nunca:
+
+```json
+{"module":"examenes","matches":false,"declared":["lista_de_examenes","resumen"],
+ "actual":[],"detail":"could not query the module: TimeoutException: The operation has timed out."}
+```
+
+La corrida, con los relojes al lado:
+
+```
+18:30:34  alta: 'examenes' quedó instalado
+18:30:39  examenes: P0 · secureContext=true crypto.subtle=true storage=true
+18:31:36  comprobación: matches:false — TimeoutException      ← se rinde a los 60 s
+18:31:38  modulo:examenes: Starting ActorHandler's Actor      ← arranca 2 s tarde
+18:31:46  examenes: pull after=0 -> 4278 bytes                ← y anda perfecto
+```
+
+**El WASM tarda ~64 s en arrancar en frío en el simulador y la comprobación espera 60.** El
+módulo no está roto: dos segundos después de que la comprobación se rinde, arranca, saca su
+credencial y tira datos. Y en la **reinstalación**, con el módulo ya vivo, la misma comprobación
+contesta `matches:true` **en 1,2 s**.
+
+O sea que P7 mide una carrera, no la conformidad. Dos salidas, y son de distinta profundidad:
+subir el timeout tapa el síntoma; **reintentar la comprobación cuando el módulo levanta** —o
+correrla contra el módulo ya arrancado, como hace la reinstalación— la vuelve una medición de
+verdad. Queda anotado, sin tocar nada: el arreglo es de Édgar, que es dueño de esa comprobación.
+
+### 11.5 · Tres detalles menores, que son de copy
+
+- La barra dice **12,5 MB** y el guion dice 13,0 MB (§11, MiB contra MB).
+- *«se abre en Descargas»* en la fila del selector: en iOS abre en **Recents**.
+- Los módulos sembrados salen **sin tildes** en el mosaico —«ESTACION», «Clinico»— mientras el
+  que entró hoy por el alta las trae bien: «Laboratorio Clínico Delfos». Es dato viejo del
+  paquete, no la cara.
+
+### 11.6 · Lo que este §11 NO cubre
+
+Los bundles se armaron con `armar-bundle.ps1` tal como estaba en `2cb985e`. Los dos commits que
+llegaron después —`ba9798f` y `17b2b48`— tocan **solo ese script**, así que lo medido acá vale
+para la app pero **no para los paquetes que ese catálogo arma ahora**. Vale rearmarlos y repetir
+P6b una vez, que son diez minutos.

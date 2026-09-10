@@ -398,6 +398,20 @@ internal static class Enrollment
 			enrolling.Accept(enrolling.Examine(v2b, EnrollmentSource.Link, Delfos), acceptNewPublisher: true);
 			assert("installing what was published leaves no note behind", Installation.Read(updatable).Update is null, "");
 
+			// When the origins are asked again (44 §7, step 2b): at launch always; on coming back to
+			// the front only after an hour, and never two at once. The clock is turned by hand.
+			var schedule = new ReviewSchedule(TimeSpan.FromHours(1));
+			DateTimeOffset t0 = new(2026, 9, 9, 16, 0, 0, TimeSpan.Zero);
+			assert("before the launch review begins, a lifecycle hook has nothing to repeat", !schedule.Started && schedule.IsDue(t0), "");
+			assert("the first review is due and claims the slot", schedule.TryBegin(t0) && schedule.Started, "");
+			assert("while one runs, another is neither due nor allowed", !schedule.IsDue(t0) && !schedule.TryBegin(t0.AddMinutes(5)), "");
+			schedule.End(t0.AddSeconds(4));
+			assert("right after it ends, the next one waits for the hour",
+				!schedule.IsDue(t0.AddMinutes(10)) && !schedule.TryBegin(t0.AddMinutes(59)) && Math.Round(schedule.Until(t0.AddMinutes(30)).TotalMinutes) == 30, $"{schedule.Until(t0.AddMinutes(30))}");
+			assert("an hour after it ended, it is due again and may run",
+				schedule.IsDue(t0.AddMinutes(61)) && schedule.Until(t0.AddMinutes(61)) == TimeSpan.Zero && schedule.TryBegin(t0.AddMinutes(61)), "");
+			schedule.End(t0.AddMinutes(61));
+
 			// ── the signature ────────────────────────────────────────────────────────────────
 
 			SigningKey key = PackageSignature.Generate("demo-202609");

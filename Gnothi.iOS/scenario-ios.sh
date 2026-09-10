@@ -50,7 +50,7 @@ modules=(
   "examenes|8095|8096|Examenes/EndPointDeEventos|Laboratorio Clinico Delfos|Mis examenes"
   "compras|8101|8102|Compras/EndPointDeEventos|Supermercado La Guaria|Mis compras"
   "cargas|8111|8112|Cargas/EndPointDeEventos|Estaciones Faro|Mis cargas"
-  "dealership|8092|8093|DealershipCar/EndPointDeEventos|DealershipCar|My maintenance"
+  "dealership|8092|8093|Concesionario/EndPointDeEventos|DealershipCar|My maintenance"
 )
 
 ports=()

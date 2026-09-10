@@ -212,9 +212,36 @@ No es hipotético: el peligro ya está documentado un piso más abajo — el jou
 
 ---
 
-## R13. 🚫 ChatGPT no puede ser la Puerta 1: sus conectores solo llegan a servidores remotos
+## R13. 🚫 La app de ChatGPT no puede ser la Puerta 1: sus conectores solo llegan a servidores remotos
 
-**El hecho (2026-09-09).** Los conectores de ChatGPT —Apps & Connectors, Developer Mode, Apps SDK— reciben **una URL de un servidor MCP remoto**, por SSE o Streamable HTTP, con OAuth o sin auth. Quien se conecta a esa URL **son los servidores de OpenAI**, no la app de escritorio. La app de ChatGPT para macOS no lanza procesos ni habla stdio, y una URL `localhost` la rechaza con «Unsafe URL». Todos los tutoriales de «MCP local con ChatGPT» pasan por un túnel público (ngrok, cloudflared) o un relay de terceros.
+**Antes que nada, la distinción que importa (2026-09-10).** OpenAI tiene **dos productos** que hablan MCP y se comportan al revés uno del otro. **ChatGPT**, la app de chat (web, Windows, Mac), es un cliente delgado: el bucle corre en sus servidores, y esta restricción es sobre ella. **Codex** —la CLI, la extensión de IDE y su app de escritorio, con el mismo `~/.codex/config.toml`— es un agente que **corre el bucle en la máquina** y **lanza servidores MCP locales por stdio** (`[mcp_servers.gnothi] command = ...`), igual que Claude Code. **Edgar registró Gnothi en Codex y funcionó**, sin tocar el Host. Así que la frase correcta no es «OpenAI no», es «la app de chat no; el agente sí».
+
+**Y más fino todavía, medido en la interfaz (2026-09-09 y 10, Windows, cuenta Free).** Desde el
+2026-07-09 **la app de escritorio de ChatGPT y la de Codex son la misma** (`OpenAI.Codex` en la
+tienda de Windows, `ChatGPT.exe`): una ventana con tres superficies que se cambian con Alt+1/2/3
+(Ctrl en Mac), y no se comportan igual.
+
+| superficie de la app de ChatGPT | ¿lanza el Host y llama sus tools? | cómo se midió |
+|---|---|---|
+| **Codex** (Alt+3) | **sí** | dos preguntas, dos tool calls directas, cero shell |
+| **Work** (Alt+2) | **sí** | cuatro preguntas, cuatro tool calls, cero shell |
+| **Chat** (Alt+1) | **no** | sin sesión local, sin Host lanzado; «no tengo en mi contexto» |
+
+La tabla en `~/.codex/config.toml` **tiene cuatro líneas y no dos**, y sin las dos de más la
+prueba ingenua falla y parece confirmar R13: `required = true`, porque Codex espera un segundo a
+los servidores opcionales al armar el catálogo y el Host tarda más (la primera respuesta fue «no
+encuentro Gnothi instalado»); y `omit_tools_from = ["code_mode", "deferred"]`, porque Codex
+esconde las tools de MCP detrás de una búsqueda que el modelo no hace solo, y sin la línea el
+agente leyó el journal `.bin` **a mano con la shell** —dieciséis órdenes, número correcto,
+saltándose el consentimiento— en vez de llamar la tool. `Gnothi.Host.exe --install` ya escribe
+esa tabla (`CodexTable.cs`). Un plugin local que declare al Host como servidor también carga en
+Codex y Work, e instala desde el directorio de la app; en el Chat aparece pero contesta que «el
+plugin no está disponible como herramienta conectada en esta conversación».
+
+Con eso la restricción queda **acotada a la pestaña Chat** —y a la web y al móvil, que son lo
+mismo—: el bucle de esa superficie corre en la nube de OpenAI y no lee la configuración local.
+
+**El hecho (2026-09-09).** Los conectores de ChatGPT —Apps & Connectors, Developer Mode, Apps SDK— reciben **una URL de un servidor MCP remoto**, por SSE o Streamable HTTP, con OAuth o sin auth. Quien se conecta a esa URL **son los servidores de OpenAI**, no la app de escritorio. La app de ChatGPT anterior a la fusión —hoy «ChatGPT Classic»— no lanzaba procesos ni hablaba stdio, y la pestaña Chat de la unificada tampoco; una URL `localhost` la rechaza con «Unsafe URL». Todos los tutoriales de «MCP local con ChatGPT» pasan por un túnel público (ngrok, cloudflared) o un relay de terceros.
 
 Gnothi es lo contrario: **un servidor MCP local por stdio**, sin puerto, sin URL, sin auth, que el asistente lanza como proceso hijo. Es lo que Claude Desktop y Claude Code saben consumir, y por eso la Puerta 1 en Mac se cerró en una tarde (medido: 48 tools, cruces examenes×compras y cargas×concesionario).
 
@@ -222,14 +249,14 @@ Gnothi es lo contrario: **un servidor MCP local por stdio**, sin puerto, sin URL
 
 **Es el gemelo de escritorio de R3.** Allá la app móvil del asistente no puede lanzar un proceso local; acá la app de escritorio de ChatGPT tampoco. La diferencia es que en escritorio **sí existe** un asistente de terceros que lo hace, y esa excepción es la que sostiene la Puerta 1.
 
-**Lo que haría falta, y qué le hace a la premisa.** Un transporte HTTP en el Host (el SDK lo trae; no toca el despacho, igual que el `.mcpb` y el MSI no lo tocaron), una URL pública hacia la máquina de la persona, y OAuth delante. Lo primero es acotado. Lo segundo y lo tercero son el problema, y **no es el que parece**: que la respuesta de cada tool viaje al modelo ya pasa con Claude Desktop, y está dicho en `00` y `05` («nunca se transfiere la historia completa»). Lo que ChatGPT rompe es otra cosa:
+**Lo que haría falta para el Chat, y qué le hace a la premisa.** OpenAI publicó su propio camino: **Secure MCP Tunnel** (`openai/tunnel-client`, Apache 2.0, binarios Windows/macOS/Linux). Un daemon al lado del Host hace *long-polling* saliente por HTTPS contra un endpoint que OpenAI hospeda, sin puerto entrante, y lanza el servidor stdio con `--mcp-command`: **el Host no necesita HTTP**. Su FAQ contesta textual nuestra pregunta: *«Can I connect to a local MCP server? Not directly… use Secure MCP Tunnel»*. Pide una organización de Platform (llave runtime y `tunnel_id`) y modo desarrollador en ChatGPT, que hoy es para Plus o superior en la web; y llega también al móvil, porque el conector vive en la nube. Sin medir: la cuenta del equipo es Free. El problema **no es el que parece**: que la respuesta de cada tool viaje al modelo ya pasa con Claude Desktop, y está dicho en `00` y `05` («nunca se transfiere la historia completa»). Lo que ChatGPT rompe es otra cosa:
 
 | | Claude Desktop (stdio local) | ChatGPT (MCP remoto) |
 |---|---|---|
 | **quién inicia** | la app de la persona lanza el Host cuando lo necesita | los servidores de OpenAI llaman a la máquina de la persona |
 | **superficie expuesta** | ninguna: no hay puerto ni URL | una URL pública hacia el Host, viva mientras se quiera usar ChatGPT |
-| **terceros en el camino** | ninguno | el túnel o relay, que ve pasar cada pregunta y cada respuesta |
-| **quién opera** | nadie: no hay servicio | alguien mantiene un servicio con auth, por persona |
+| **terceros en el camino** | ninguno | con ngrok o un relay ajeno, alguien que ve pasar cada pregunta y cada respuesta; con el túnel oficial, **nadie nuevo**: el payload cruza la cola de OpenAI, que ya ve la conversación |
+| **quién opera** | nadie: no hay servicio | la persona mantiene un daemon corriendo y la computadora prendida |
 
 Y una de producto: «tu laboratorio y tu súper solo se juntan en tu computadora» deja de poder decirse con un relay en medio, aunque el relay no guarde nada. Es la misma razón por la que R3 cierra el camino B.
 
@@ -239,9 +266,11 @@ Y una de producto: «tu laboratorio y tu súper solo se juntan en tu computadora
 
 **Formulación honesta para el pitch:**
 
-> **Gnothi funciona hoy con Claude Desktop y Claude Code, y con cualquier asistente que lance servidores MCP locales. Con ChatGPT, cuando OpenAI lo permita: la razón es de ellos.**
+> **Gnothi funciona hoy con Claude Desktop, Claude Code y la app de ChatGPT en sus pestañas Codex y Work, incluso en plan gratuito, y con cualquier asistente que lance servidores MCP locales. En el chat común de ChatGPT, por el túnel oficial de OpenAI o cuando OpenAI lo permita: la razón es de ellos.**
 
-Fuentes: OpenAI, *Developer mode* (`developers.openai.com/api/docs/guides/developer-mode`: «Supported MCP protocols: SSE and streaming HTTP», «remote MCP server»); el rechazo «Unsafe URL» a `localhost` reportado en dev.to (`how-can-i-connect-a-local-mcp-server-python-to-chatgpt-unsafe-url-issue`); Claude Desktop, *Getting started with local MCP servers*.
+**Y una puerta que Codex abre y vale un spike.** Codex puede correr con un modelo local (`codex --oss`, gpt-oss por Ollama o LM Studio). Sería la Puerta 1 con un asistente ajeno **y el paso 4 sin cruzar la línea**: ni la pregunta ni el resultado de la tool salen del equipo. Sin medir: gpt-oss:20b son 14 GB y pide 32K de contexto, y no sabemos cómo elige tools frente a un catálogo de 48. Es el mismo problema del catálogo del modelo chico, en otro anfitrión.
+
+Fuentes: OpenAI, *Model Context Protocol*, selectores «ChatGPT desktop app» y «ChatGPT web» (`learn.chatgpt.com/docs/extend/mcp`: «The ChatGPT desktop app, Codex CLI, and IDE extension support MCP servers and share MCP configuration»; «ChatGPT web doesn't read local Codex configuration files»); OpenAI Help, *Developer mode and MCP apps in ChatGPT*, FAQ «Can I connect to a local MCP server?»; OpenAI, *Secure MCP Tunnel* (`developers.openai.com/api/docs/guides/secure-mcp-tunnels`) y `github.com/openai/tunnel-client`; OpenAI, *Codex · Model Context Protocol* (`developers.openai.com/codex/mcp`: «stdio — the MCP server runs as a local child process that Codex launches»); OpenAI, *Developer mode* (`developers.openai.com/api/docs/guides/developer-mode`: «Supported MCP protocols: SSE and streaming HTTP», «remote MCP server»); el rechazo «Unsafe URL» a `localhost` reportado en dev.to (`how-can-i-connect-a-local-mcp-server-python-to-chatgpt-unsafe-url-issue`); Claude Desktop, *Getting started with local MCP servers*.
 
 ---
 

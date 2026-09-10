@@ -246,9 +246,19 @@ public class MainActivity : Activity
 		}
 	}
 
+	// GNOTHI CAME BACK TO THE FRONT: the origins are asked again if it has been a while -the shell
+	// caps it at one review an hour, and the launch review counts. OnResume also fires right after
+	// OnCreate, while that first review is still running, and the shell's schedule says no to it.
+	protected override void OnResume()
+	{
+		base.OnResume();
+		shell?.ReviewOriginsIfDue();
+	}
+
 	public override void OnBackPressed()
 	{
-		if (Cerrar()) return;
+		// Back out of a module puts the home on screen again: same question, same cap.
+		if (Cerrar()) { shell?.ReviewOriginsIfDue(); return; }
 
 		web!.EvaluateJavascript("gn.back()", new BackAnswer(this));
 	}

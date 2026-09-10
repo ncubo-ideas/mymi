@@ -163,6 +163,57 @@ Console.WriteLine("=== THE PACKAGE IS INSPECTED BEFORE SHE DECIDES ===");
 Gnothi.Tests.Enrollment.Run(Assert);
 
 // ============================================================================================
+// --install WRITES THE CODEX TABLE WITHOUT TOUCHING THE REST OF config.toml.
+//
+// The ChatGPT desktop app (Codex and Work tabs) reads ~/.codex/config.toml. Measured
+// 2026-09-09 (NotasGnothiHost/45): two of the four lines are not optional -without `required`
+// the first answer goes out before the Host starts, without `omit_tools_from` the agent reads
+// the journal by hand instead of calling the tool. CodexTable is pure text, so this checks the
+// splice: other tables intact, our table replaced and not duplicated, the two lines present.
+// ============================================================================================
+
+Console.WriteLine();
+Console.WriteLine("=== --install WRITES THE CODEX TABLE AND KEEPS THE REST ===");
+{
+	const string others =
+		"[desktop]\nfollowUpQueueMode = \"steer\"\n\n[mcp_servers.other]\ncommand = \"node\"\n\n[plugins.\"x@y\"]\nenabled = true\n";
+	string exe = @"C:\Gnothi\Gnothi.Host.exe";
+	string modules = @"C:\Gnothi\Modulos";
+
+	string once = Gnothi.Host.CodexTable.Upsert(others, exe, modules);
+	Assert("appends the table when it is not there",
+		once.Contains("[mcp_servers.gnothi]") && once.StartsWith(others.TrimEnd('\n')),
+		once);
+	Assert("keeps the other tables byte for byte",
+		once.Contains("[mcp_servers.other]\ncommand = \"node\"") && once.Contains("[plugins.\"x@y\"]\nenabled = true"),
+		once);
+	Assert("the two lines Codex needs are there",
+		once.Contains("required = true") && once.Contains("omit_tools_from = [\"code_mode\", \"deferred\"]"),
+		once);
+	Assert("windows paths go as TOML literal strings, unescaped",
+		once.Contains("command = 'C:\\Gnothi\\Gnothi.Host.exe'") && once.Contains("args = ['C:\\Gnothi\\Modulos']"),
+		once);
+
+	// Old table in the middle, with a subtable and a stale cwd: replaced whole, nothing doubled.
+	string stale = others.Replace("[mcp_servers.other]",
+		"[mcp_servers.gnothi]\ncommand = \"dotnet\"\ncwd = 'C:\\old'\n\n[mcp_servers.gnothi.env]\nX = \"1\"\n\n[mcp_servers.other]");
+	string replaced = Gnothi.Host.CodexTable.Upsert(stale, exe, modules);
+	int headers = replaced.Split("[mcp_servers.gnothi]").Length - 1;
+	Assert("replaces an existing table instead of adding a second one", headers == 1, replaced);
+	Assert("the stale lines and our old subtable are gone",
+		!replaced.Contains("cwd = 'C:\\old'") && !replaced.Contains("[mcp_servers.gnothi.env]"),
+		replaced);
+	Assert("what surrounded the old table survives",
+		replaced.Contains("[desktop]\nfollowUpQueueMode") && replaced.Contains("[mcp_servers.other]\ncommand = \"node\"") && replaced.Contains("[plugins.\"x@y\"]"),
+		replaced);
+
+	string twice = Gnothi.Host.CodexTable.Upsert(once, exe, modules);
+	Assert("upsert is idempotent", twice == once, twice);
+	Assert("an empty file gets just the table",
+		Gnothi.Host.CodexTable.Upsert("", exe, modules).StartsWith("[mcp_servers.gnothi]"), "");
+}
+
+// ============================================================================================
 // EL INSTALADOR ESCRIBE UN installation.json QUE EL HOST PUEDE LEER.
 //
 // Regresion. El refactor a JSON sin reflexion (88e0b95) dejo a --install-module serializando
