@@ -31,9 +31,8 @@ puro, así que compila y corre en **Windows, macOS y Linux** con el mismo comand
 era WinForms, `net9.0-windows`, y por eso estaba afuera, como la app Android.)
 
 > **En una Mac** los comandos son los mismos con `/` en vez de `\`, y en vez de `%TEMP%` usá
-> `$TMPDIR`. Lo que NO corre en Mac es la Parte 3 tal cual está —`--install` todavía busca la
-> config de Claude Desktop solo en rutas de Windows— y los `docker compose` de las Partes 4 y 5
-> necesitan Docker Desktop igual que en Windows.
+> `$TMPDIR`. La Parte 3 corre en Mac desde el 2026-09-09 y tiene su bloque propio abajo. Los
+> `docker compose` de las Partes 4 y 5 necesitan Docker Desktop igual que en Windows.
 
 ---
 
@@ -165,16 +164,45 @@ Se abre una ventana nativa (WebView2 en Windows, WKWebView en macOS, WebKitGTK e
 
 ## Parte 3 · Registrar Gnothi con el asistente
 
-Esto hace que Claude Desktop vea los módulos. **Ojo: modifica la config de Claude** (con respaldo y preguntando). Necesita el ejecutable **publicado**, no `dotnet run`:
+Esto hace que el asistente vea los módulos. **Ojo: modifica la config del asistente** (con respaldo y preguntando). Necesita el ejecutable **publicado**, no `dotnet run`:
 
 ```powershell
 dotnet publish Gnothi.Host -c Release -o C:\Gnothi
 C:\Gnothi\Gnothi.Host.exe --install "C:\Gnothi\Modulos"
 ```
 
-**Tenés que ver** que descubre tu Claude Desktop, y **te pregunta** `Write it? [y/N]` antes de tocar nada. Si decís que sí, respalda el archivo (`.before-gnothi`) y agrega una sola llave `gnothi`. Reiniciá Claude y preguntale qué módulos tenés.
+**En una Mac**, el mismo paso publica un binario autocontenido de un solo archivo para Apple
+Silicon (~80 MB; el `dotnet` x64 bajo Rosetta lo produce igual con `-r osx-arm64`) y lo registra
+desde `~/Gnothi`. La carpeta de módulos es la que quieras registrar; el banco local de esta
+máquina es `Modulos.local` (ver `Modulos.local/README.md`):
 
-> Si Gnothi ya estaba registrado (probable), lo **actualiza** al nuevo exe + carpeta.
+```bash
+dotnet publish Gnothi.Host -c Release -r osx-arm64 --self-contained -p:PublishSingleFile=true -o ~/Gnothi
+~/Gnothi/Gnothi.Host --install ~/DevProjects/ncubo/Gnothi/Modulos.local
+```
+
+**Tenés que ver** primero `modules there : N` con la cuenta de módulos de esa carpeta (un `0`
+casi siempre es una ruta mal pegada), y después la lista de **asistentes que encontró**. Hoy busca
+tres, y los busca por su carpeta, nunca por una ruta fija:
+
+| asistente | dónde lo busca en Mac | qué escribe |
+|---|---|---|
+| **Claude Desktop** | `~/Library/Application Support/Claude/` | la llave `gnothi` en `claude_desktop_config.json` |
+| **ChatGPT (pestañas Codex y Work) y la CLI de Codex** | `~/.codex/` (o `$CODEX_HOME`) | la tabla `[mcp_servers.gnothi]` en `config.toml`, con `required = true` y `omit_tools_from` |
+| **Antigravity (Google)** | `~/.gemini/config/` **y** `~/.gemini/antigravity/` | la llave `gnothi` en `mcp_config.json` de la carpeta que exista |
+
+Si encuentra más de uno, ofrece **«all of them»**: registra en cada uno, y **te pregunta**
+`Write it? [y/N]` archivo por archivo antes de tocar nada. Si decís que sí, respalda el archivo
+(`.before-gnothi`) y agrega o reemplaza solo lo nuestro. Reiniciá el asistente y preguntale qué
+módulos tenés.
+
+> Si Gnothi ya estaba registrado (probable), lo **actualiza** al nuevo ejecutable + carpeta. En
+> Codex eso importa: una tabla escrita a mano con solo `command` y `args` queda reemplazada por
+> la de cuatro líneas, que es la que hace que el agente llame la tool en vez de leer el journal
+> con la shell.
+
+> En Mac la pestaña Codex de la app de ChatGPT es **Ctrl+3** (Alt+3 en Windows). La pestaña Chat
+> no lanza servidores locales; eso es de OpenAI (R13 en `Documentacion/Especificacion/04`).
 
 ---
 
