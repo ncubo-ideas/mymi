@@ -34,7 +34,7 @@ compilador garantiza que no se colara semántica de dominio.
 | `Manifest.cs` · `Installation.cs` | Los dos archivos, las dos autoridades |
 | `HostTools.cs` | Las tools `gnothi_*`: hablan de los módulos, no de los datos |
 | `ConsentWatcher.cs` | Mira el archivo de la persona y manda `list_changed` |
-| `HostInstaller.cs` · `CodexTable.cs` | `--install`: Gnothi se presenta al asistente. Una llave JSON en Claude Desktop; una tabla TOML en Codex, que es cómo la app de ChatGPT lanza servidores locales |
+| `HostInstaller.cs` · `CodexTable.cs` | `--install`: Gnothi se presenta al asistente. Una llave JSON en Claude Desktop y en Antigravity; una tabla TOML en Codex, que es cómo la app de ChatGPT lanza servidores locales |
 
 ### La dirección de las flechas es la propiedad
 
@@ -59,7 +59,14 @@ UNA SALIDA, dos cascaras, elegida por modulo en su instalacion.json:
 > llega a nombrar algo interno del Host. La salida hacia los módulos no es una Puerta: es la
 > **cáscara**.
 
-### La Puerta 1 con ChatGPT
+### La Puerta 1 con ChatGPT y con Antigravity
+
+**Antigravity, el agente de Google** (IDE y CLI), lee `~/.gemini/config/mcp_config.json`, que tiene
+la misma forma que el JSON de Claude Desktop, así que `--install` lo ofrece como destino y le
+escribe la entrada con el mismo código. Medido el 2026-09-10: el IDE lee el archivo al arrancar
+—no en caliente—, lanza el Host desde su servidor de lenguaje y contesta por las tools, incluido
+el cruce entre exámenes y compras, sin líneas extra. La app de Gemini no es esto: solo acepta URLs
+remotas.
 
 La app de escritorio de ChatGPT lleva adentro a Codex y a Work desde julio de 2026, y las dos
 pestañas lanzan los servidores MCP locales declarados en `~/.codex/config.toml`, el archivo que

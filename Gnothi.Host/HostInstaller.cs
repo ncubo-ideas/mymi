@@ -9,6 +9,10 @@ namespace Gnothi.Host;
 // Today this is done by hand editing a json, and it was the only RED step of the install
 // flow. The person has no reason to know a config file exists, let alone where it lives.
 //
+// Three assistants, two file shapes: Claude Desktop and Antigravity keep a JSON with an
+// "mcpServers" object; Codex -and the ChatGPT desktop app through it- keeps a TOML table.
+// Each one is found by looking for its folder, never by assuming a path.
+//
 // Run it once, from the PUBLISHED executable:  Gnothi.Host.exe --install [modules-folder]
 //
 // ═══ THREE CARES, AND ALL THREE COME FROM HAVING PAID FOR THEM ═══
@@ -169,6 +173,22 @@ internal static class HostInstaller
 			hits.Add(new Assistant(
 				"ChatGPT desktop app (Codex and Work tabs) and Codex CLI",
 				Path.Combine(codexHome, "config.toml"), "mcp_servers", ConfigFormat.CodexToml));
+
+		// GOOGLE'S AGENT: ANTIGRAVITY, the IDE and the CLI, which share ~/.gemini/config/mcp_config.json
+		// (the SDK too). Its shape is the SAME as Claude Desktop's -an "mcpServers" object, one entry
+		// per server with command and args- so the JSON path above serves it unchanged. Measured
+		// 2026-09-10 (NotasGnothiHost/45 §9): the IDE reads the file at startup, launches the Host from
+		// its language server and answers through the tools, cross-module included, with no extra
+		// lines. It does NOT re-read the file while running: it has to be restarted. The Gemini app
+		// itself -web, phone, the Windows one- is not this: it only takes remote URLs.
+		//
+		// The folder is the evidence, as with Codex; the app creates ~/.gemini/config on first run.
+		string geminiConfig = Path.Combine(
+			Environment.GetFolderPath(Environment.SpecialFolder.UserProfile), ".gemini", "config");
+		if (Directory.Exists(geminiConfig))
+			hits.Add(new Assistant(
+				"Antigravity (Google): IDE and CLI",
+				Path.Combine(geminiConfig, "mcp_config.json"), "mcpServers"));
 
 		return hits;
 	}
