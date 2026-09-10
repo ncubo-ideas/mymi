@@ -336,9 +336,11 @@ namespace Municipalidad.EventosMock
 		/// <summary>
 		/// La historia del demo, que es la misma que `medir` corre por la puerta: los dos alfabetos del
 		/// periodo, el salto de 2026 por tarifa en basura y por avaluo en bienes inmuebles, la mora que
-		/// la municipalidad cobro, y el pendiente de basura que cubre un solo mes y deja julio y agosto
-		/// de 2026 pagados sin comprobante. El encabezado de cada recibo va ANTES de sus lineas y la
-		/// consulta antes de sus pendientes, porque una linea sin encabezado se rechaza y no se reintenta.
+		/// la municipalidad cobro, el pendiente de basura que cubre un solo mes y deja julio y agosto
+		/// de 2026 pagados sin comprobante, el cambio de limpieza de calles que queda encima del ruido y
+		/// debajo del umbral, y el mes de limpieza que la municipalidad puso al cobro, nadie pago y ya
+		/// vencio. El encabezado de cada recibo va ANTES de sus lineas y la consulta antes de sus
+		/// pendientes, porque una linea sin encabezado se rechaza y no se reintenta.
 		/// <para>
 		/// NINGUN INSTANTE SALE DE UN RELOJ. Lo que guiona una secuencia recibida no lee la hora: cada
 		/// fecha de aca es un literal, para que dos corridas sirvan la misma narrativa.
@@ -354,11 +356,13 @@ namespace Municipalidad.EventosMock
 
 			Recibo(narrativa, "R-1", "2025-03-31T00:00:00Z", 0m);
 			Linea(narrativa, "R-1", "recoleccion-de-basura", "2025.03", 5000m, 0m);
+			Linea(narrativa, "R-1", "limpieza-de-calles", "2025.03", 2500m, 0m);
 			Linea(narrativa, "R-1", "servicio-policia", "2025.03", 6000m, 0m);
 			Linea(narrativa, "R-1", "bienes-inmuebles", "2025.01", 20000m, 0m);
 
 			Recibo(narrativa, "R-2", "2025-06-30T00:00:00Z", 0m);
 			Linea(narrativa, "R-2", "recoleccion-de-basura", "2025.06", 15000m, 0m);
+			Linea(narrativa, "R-2", "limpieza-de-calles", "2025.06", 8100m, 0m);
 			Linea(narrativa, "R-2", "servicio-policia", "2025.06", 18000m, 0m);
 			Linea(narrativa, "R-2", "bienes-inmuebles", "2025.02", 20000m, 0m);
 
@@ -366,6 +370,8 @@ namespace Municipalidad.EventosMock
 			Linea(narrativa, "R-3", "recoleccion-de-basura", "2026.06", 96000m, 310m);
 			Linea(narrativa, "R-3", "servicio-policia", "2026.06", 73200m, 240m);
 			Linea(narrativa, "R-3", "bienes-inmuebles", "2026.02", 144000m, 470m);
+
+			Cobro(narrativa, "limpieza-de-calles", "2026.07", 2700m, "2026-07-01T00:00:00Z");
 
 			Consulta(narrativa, "2026-09-03T00:00:00Z");
 			Pendiente(narrativa, "2026-09-03T00:00:00Z", "recoleccion-de-basura", "2026.09", 8000m, 45m);

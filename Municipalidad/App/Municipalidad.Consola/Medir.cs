@@ -38,6 +38,7 @@ namespace Municipalidad.Consola
 
 			Paso("recibo R-1", api.RegistrarPago("R-1", new DateTime(2025, 3, 31), 0m));
 			Paso("  basura 2025.03", api.AgregarLineaAlPago("R-1", "recoleccion-de-basura", "2025.03", 5000m, 0m));
+			Paso("  limpieza 2025.03", api.AgregarLineaAlPago("R-1", "limpieza-de-calles", "2025.03", 2500m, 0m));
 			Paso("  policia 2025.03", api.AgregarLineaAlPago("R-1", "servicio-policia", "2025.03", 6000m, 0m));
 			Paso("  bienes inmuebles 2025.01 -primer trimestre-", api.AgregarLineaAlPago("R-1", "bienes-inmuebles", "2025.01", 20000m, 0m));
 			Paso("  un rubro que no existe", api.AgregarLineaAlPago("R-1", "cementerio", "2025.03", 1000m, 0m));
@@ -45,6 +46,7 @@ namespace Municipalidad.Consola
 
 			Paso("recibo R-2", api.RegistrarPago("R-2", new DateTime(2025, 6, 30), 0m));
 			Paso("  basura 2025.06 -tres meses-", api.AgregarLineaAlPago("R-2", "recoleccion-de-basura", "2025.06", 15000m, 0m));
+			Paso("  limpieza 2025.06 -tres meses, cambio menor-", api.AgregarLineaAlPago("R-2", "limpieza-de-calles", "2025.06", 8100m, 0m));
 			Paso("  policia 2025.06", api.AgregarLineaAlPago("R-2", "servicio-policia", "2025.06", 18000m, 0m));
 			Paso("  bienes inmuebles 2025.02", api.AgregarLineaAlPago("R-2", "bienes-inmuebles", "2025.02", 20000m, 0m));
 			Paso("  basura 2025.05, que ya esta cubierta", api.AgregarLineaAlPago("R-2", "recoleccion-de-basura", "2025.05", 5000m, 0m));
@@ -61,12 +63,13 @@ namespace Municipalidad.Consola
 			Paso("  pendiente policia 2026.09", api.AgregarPendiente(consulta, "servicio-policia", "2026.09", 18300m, 34m));
 			Paso("  pendiente bienes inmuebles 2026.03", api.AgregarPendiente(consulta, "bienes-inmuebles", "2026.03", 36000m, 0m));
 
+			Paso("al cobro limpieza 2026.07 -ya vencido y sin pagar-", api.PonerAlCobro("limpieza-de-calles", "2026.07", 2700m, new DateTime(2026, 7, 1)));
 			Paso("al cobro basura 2026.10", api.PonerAlCobro("recoleccion-de-basura", "2026.10", 8000m, new DateTime(2026, 10, 1)));
 			Paso("al cobro basura 2026.10 otra vez", api.PonerAlCobro("recoleccion-de-basura", "2026.10", 8000m, new DateTime(2026, 10, 1)));
 			Paso("al cobro basura 2026.09, que el pendiente ya puso", api.PonerAlCobro("recoleccion-de-basura", "2026.09", 8000m, new DateTime(2026, 10, 1)));
 			Paso("al cobro un trimestre que no existe", api.PonerAlCobro("bienes-inmuebles", "2026.05", 36000m, new DateTime(2026, 10, 1)));
 
-			Paso("la reserva que la persona adopto", api.AdoptarReserva(30000m, new DateTime(2026, 8, 1)));
+			Paso("la reserva que la persona adopto -por debajo de lo propuesto-", api.AdoptarReserva(20000m, new DateTime(2026, 8, 1)));
 
 			Paso("el dispositivo", api.RegistrarDispositivo("DISPOSITIVO-DEMO-1"));
 			Paso("el dispositivo otra vez", api.RegistrarDispositivo("DISPOSITIVO-DEMO-1"));
