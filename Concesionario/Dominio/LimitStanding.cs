@@ -155,18 +155,30 @@ namespace Concesionario.Dominio
 		internal abstract ARemainder WhatRemains();
 
 		/// <summary>
-		/// Si llego mas lejos que la otra. Con ella se dice la ley: decide la mas avanzada.
+		/// Si llego mas lejos que la otra. Con ella se dice la ley: decide la mas avanzada. La otra
+		/// dimension es obligatoria: sin ella no hay cual decide.
 		/// </summary>
 		internal bool IsMoreAdvancedThan(LimitStanding other)
 		{
+			if (other == null)
+				throw new DomainException(
+					"Se comparo el avance de una dimension contra ninguna. Sin la otra no hay cual "
+					+ "decide, y comparar contra nada dejaria la ley decidida por el hueco.");
+
 			return Advancement() > other.Advancement();
 		}
 
 		/// <summary>
 		/// Si las dos llegaron igual de lejos. Entonces deciden las dos y el motivo nombra las dos.
+		/// La otra dimension es obligatoria, por lo mismo que en <see cref="IsMoreAdvancedThan"/>.
 		/// </summary>
 		internal bool IsAsAdvancedAs(LimitStanding other)
 		{
+			if (other == null)
+				throw new DomainException(
+					"Se pregunto si dos dimensiones llegaron igual de lejos sin decir la segunda. "
+					+ "Comparar contra nada dejaria la ley decidida por el hueco.");
+
 			return Advancement() == other.Advancement();
 		}
 
