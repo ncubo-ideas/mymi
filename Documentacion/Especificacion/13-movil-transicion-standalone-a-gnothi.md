@@ -458,16 +458,7 @@ es la única en la que quien pregunta es quien tiene la autoridad para hacerlo.
 ---
 
 
-### 10.6 HECHO: los textos decían que Sonia dejó de ser dueña de sus datos — 2026-09-04
-
-> **Aplicado en `60fa0f4`.** Lo que sigue se deja como estaba porque el contraste *antes /
-> nuevo* es el argumento; «hoy» de acá abajo es el 2026-09-04, no el estado actual.
->
-> | | estado |
-> |---|---|
-> | aviso **hospedado** y **hoja de alta** | **[MEDIDO]** en pantalla: bundle rearmado, app y módulo reinstalados por el enlace, y abierto. Los cuatro Wasm compilan; **mirado en uno** |
-> | aviso de **migrada** | **[NO MEDIDO]** con el texto nuevo. Se midió el 2026-09-04 (P8 ✅ los cuatro) pero **con el texto viejo**, y la tabla de P8 del guion se actualizó en `cb46c30` «de paso», sin volver a correrla. Se puede medir hoy: es P1 → P2 → reabrir la app suelta, sin nada especial — el mock pone la marca solo, en cuanto una `device-gnothi*` pide credencial (`EndPointDeEventos/Program.cs:86`). El commit `60fa0f4` dijo que «el mock no tiene ese flujo» y eso era falso |
-> | los **comentarios** de las cuatro páginas | reescritos también: era donde se propagaba el encuadre viejo |
+### 10.6 PENDIENTE: los textos dicen que Sonia dejó de ser dueña de sus datos — 2026-09-04
 
 **El problema.** Los avisos de los cuatro módulos dicen que el registro **vive en Gnothi**:
 
@@ -488,9 +479,8 @@ primer pilar. No es una cuestión de redacción.
 **El giro propuesto:** dejar de decir DÓNDE VIVE el dato y pasar a decir QUIÉN LO TIENE Y DE QUIÉN
 ES. «Entran **por** Gnothi», no «viven **en** Gnothi».
 
-**La redacción aplicada.** Se escribió y compiló el 2026-09-04, se **revirtió** ese día para no
-meter texto sin verificar en un merge, y se volvió a aplicar —esta vez corrida y mirada en
-pantalla— en `60fa0f4`:
+**La redacción propuesta**, ya escrita y probada a compilar el 2026-09-04, y **revertida** para
+no meter texto sin verificar en un merge:
 
 ```
 MIGRADA
@@ -525,12 +515,8 @@ this phone. Your record is yours and it is right here: …»*
 **Archivos a tocar:** `MisExamenes.razor`, `MisCompras.razor`, `MisCargas.razor`,
 `MySchedule.razor`, `Examenes.Wasm/EstadoDeLaApp.cs` y `Gnothi.Mobile/Assets/ui.html`.
 
-**Los que citaban el texto viejo, y ya se corrigieron:** `Gnothi.Mobile/PRUEBAS-WEBVIEW.md` (la
-tabla del aviso hospedado y la hoja de alta) y `Gnothi.iOS/PRUEBAS-WEBVIEW-IOS.md` (P3 y el
-alta). La carpeta de entrega para iOS que decía este párrafo —`02-como-funciona-por-dentro.md`—
-ya no existe: es `Documentacion/Movil/`, que nació con el texto nuevo. Queda sin tocar
-`Gnothi.iOS/HALLAZGOS-CORRIENDO-EL-GUION.md`, que es el reporte de Renan y era exacto el día
-que lo midió.
+**Y al aplicarlo, actualizar también** la carpeta de entrega para iOS: `02-como-funciona-por-
+dentro.md` §5 y §6 citan los textos viejos.
 
 ---
 

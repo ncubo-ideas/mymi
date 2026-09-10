@@ -351,6 +351,270 @@ está quieto.**
 - **Es una propuesta para quien mantiene el motor, no una decisión nuestra.** Vive en un worktree, sin
   commit, sin merge y sin push.
 
+
+---
+
+## El camino A4, medido de punta a punta — 2026-09-08
+
+**El camino.** La PWA vive **afuera** de Gnothi y escribe su journal en una carpeta física que la
+persona eligió con el picker del navegador (el SAF). Gnothi **no lee esa carpeta con el motor** —está
+medido más arriba que no puede—: la **copia** a su área privada por `ContentResolver`, y el módulo
+lee la copia.
+
+**Lo que lo distingue de las otras rutas de la opción A: no necesita ningún cambio en el motor.** El
+`.gmod` abre la copia, que está en el área privada de Gnothi, donde `System.IO` sí llega. El parche
+de modo lector no hace falta acá.
+
+Instrumento: `Gnothi.Mobile/SondaA4.cs` (temporal), emulador `sdk_gphone64_x86_64` (Android 16 / SDK
+36), `targetSdk=35`, **sin permisos de almacenamiento**. El journal de prueba lo escribió **el mismo
+motor** que después lo lee, para que la prueba no dependa de un formato inventado.
+
+| paso | resultado |
+|---|---|
+| 1 · concesión de árbol pidiendo **solo lectura** | ✅ tomada y persistida |
+| 2 · ¿la concesión de lectura impide escribir? | **depende — ver abajo** |
+| 3 · **la huella**: ¿es un journal, y de quién? | ✅ reconoció el actor `pwa-suelta` |
+| 4 · copiar con sellado, y **abrir la copia con el motor** | ✅ **13 entradas leídas** |
+| 5 · refresco **sin picker**, con la concesión guardada | ✅ funciona desatendido |
+
+### La huella: no hay que plantar nada
+
+El SAF no verifica nada — la persona puede conceder **cualquier** carpeta, incluida una vacía o la de
+otra institución. Copiar a ciegas y descubrirlo al abrir es el peor orden posible.
+
+**Y no hace falta que la institución plante una marca: la huella es intrínseca.** Un journal del
+motor es `<actor>/meta.bin` cuyos cuatro primeros bytes son el mágico **`PPMM`**, con `journal/` al
+lado. El nombre de la carpeta del actor dice de quién es. Medido: reconoció `pwa-suelta` y, si no lo
+encontrara, **lo dice en vez de adivinar**.
+
+### El permiso de solo lectura: sí se impone, pero NO en la sesión del picker
+
+Esto tiene un matiz que hay que decir entero, porque medirlo a medias da la respuesta contraria.
+
+- **Dentro de la sesión en que la persona concede la carpeta**, Gnothi **sí puede escribir**: el
+  probe creó un archivo. `ACTION_OPEN_DOCUMENT_TREE` entrega en caliente una concesión de
+  lectura **y escritura**, y `takePersistableUriPermission` solo decide qué se **persiste**.
+- **La concesión guardada sí quedó de solo lectura** — el sistema la reporta como
+  `lectura=True  escritura=False`.
+- **Y después de reiniciar el aparato, cuando solo queda lo persistido, escribir falla:**
+
+```
+SecurityException: Permission Denial: writing com.android.externalstorage.ExternalStorageProvider
+uri content://…/tree/primary%3ADocuments%2Fpwa-journal/document/… from pid=2110, uid=10218
+requires android.permission.MANAGE_DOCUMENTS, or grantUriPermission()
+```
+
+**Conclusión honesta:** el sistema **sí impone** la lectura-sola sobre la concesión duradera, que es
+la que Gnothi va a usar el 99% del tiempo. Lo que **no** cubre es la ventana de la sesión del alta.
+Ahí la contención es disciplina, no incapacidad — y conviene decirlo así en vez de afirmar «Gnothi no
+puede escribir en la carpeta de la persona», que sería falso en ese rato.
+
+### El sellado, y por qué no se detecta el candado
+
+La condición pedida era *«si alguien tiene tomados los files, no copiar»*. **Detectar el candado no
+da la garantía que parece**: es una carrera —contesta que no hay nadie y el escritor arranca un
+milisegundo después—, y en Android el bloqueo sobre almacenamiento compartido es consultivo.
+
+Lo que sí da garantía es **verificar lo copiado**, y el formato lo permite: el journal es append-only,
+cada registro lleva su largo y su CRC, y el motor **se detiene en el último válido** — medido arriba,
+en el escenario TORN. Una copia tomada a media escritura no queda corrupta: queda **vieja**, y de
+forma detectable.
+
+El **sellado** —listar, copiar, volver a listar, y descartar si el listado cambió— queda como
+detector barato del caso común, no como la garantía. Medido: `el listado no cambió durante la copia`.
+
+### El refresco
+
+El módulo es un `.gmod` y **no se abre**, así que no hay evento de apertura del que colgarse. El
+refresco va **al entrar a Gnothi**, más alguna pasada extra durante el día. Eso exige que la copia
+corra **sin persona y sin picker**, con la concesión guardada — y es el paso 5: corrió desatendido,
+reconoció la huella, copió y el motor leyó las 13 entradas. También después del reinicio.
+
+### Cuánto pesa un journal, y cuánto cuesta refrescarlo
+
+**Cuántos registros son 1 MB.** La pregunta no tiene una respuesta sino un rango, porque un registro
+mínimo y uno realista no pesan igual. Medido con 2 000 registros en cada caso:
+
+| carga por registro | bytes por registro | registros para 1 MB |
+|---|---:|---:|
+| ninguna (el mínimo) | **40,5** | **≈ 25 900** |
+| 200 b | 243,5 | ≈ 4 300 |
+| 2 000 b | 2 043,5 | ≈ 513 |
+
+La relación es limpia: **≈ 43,5 bytes de sobrecarga por registro**, más lo que pese el contenido. Con
+eso se estima cualquier institución sin volver a medir — basta saber cuánto ocupa uno de sus hechos.
+
+**Cuánto cuesta el refresco**, que es lo que decide si copiar el árbol entero es viable. Journal de
+**4,09 MB**, tres vueltas por configuración (los números son el rango de las tres):
+
+| | 4 MB en **1** archivo | 4 MB en **16** archivos |
+|---|---:|---:|
+| listar (sellado, 1.ª vez) | 114–163 ms | 101–129 ms |
+| **copiar por `ContentResolver`** | **162–224 ms** | **359–502 ms** |
+| listar (sellado, 2.ª vez) | 83–112 ms | 68–101 ms |
+| **abrir la copia con el motor** | **913–1 035 ms** | 766–882 ms |
+| **refresco completo** | **≈ 1,3–1,6 s** | ≈ 1,3–1,6 s |
+
+**Tres cosas que salen de ahí:**
+
+1. **Copiar el árbol entero es barato: 4 MB en ~0,2 s.** La preocupación de que no escalara era
+   infundada a esta escala; no hace falta comparar tamaño y fecha todavía.
+2. **Lo que manda no son los bytes, es la CANTIDAD DE ARCHIVOS.** Los mismos 4 MB partidos en 16
+   cuestan **~2× más** de copiar (≈190 ms → ≈420 ms): unos 15 ms de sobrecarga por archivo, porque
+   cada uno es una consulta al `ContentResolver`. El parámetro que gobierna eso es el `maxFileSize`
+   del journal, y hoy nadie lo eligió pensando en esto.
+3. **El costo dominante es abrir la copia con el motor (~0,9 s), no copiarla.** Y no depende de si
+   la carpeta es compartida: es lo que el módulo paga igual. O sea que el SAF **no es** el cuello.
+
+**El sellado cuesta ~200 ms** y es casi constante — listar 16 archivos costó lo mismo que listar 1—,
+así que suma poco al refresco pero **no es gratis frente a una copia de 0,2 s**. Con journals chicos
+el detector cuesta más que lo que protege.
+
+**Y hasta dónde aguanta.** Se subió a decenas de MB —la carga por registro sube para llegar rápido al
+tamaño; para el costo de la copia lo que importa son los bytes y la cantidad de archivos, no cuántos
+hechos los produjeron—:
+
+| journal | archivos | copiar | **abrir con el motor** | refresco |
+|---|---:|---:|---:|---:|
+| **4 MB** | 1 | 0,16–0,22 s | 0,91–1,04 s | **~1,3–1,6 s** |
+| **40 MB** | 10 | 0,46–1,67 s | 2,07–2,36 s | **~2,7–4,1 s** |
+| **120 MB** | 29 | 1,47–2,64 s | 5,16–5,20 s | **~6,8–8,0 s** |
+
+**La conclusión cambia de lugar respecto de lo que se suponía, y esto es lo importante:**
+
+1. **Refrescar al entrar a Gnothi es viable hasta unas decenas de MB.** Bajo 4 s a los 40 MB. A los
+   120 MB son 7–8 s: demasiado para bloquear nada, así que ahí el refresco tiene que ser de fondo,
+   no en el camino de abrir la app.
+2. **La palanca NO es la copia, es abrir.** A 120 MB abrir cuesta **2–3× lo que copiar**. Optimizar
+   la copia —comparar tamaño y fecha en vez de copiar todo— solo recortaría la mitad más chica. Lo
+   que valdría la pena es **no reabrir el motor en cada refresco**: mantener vivo el actor del módulo.
+3. La copia es **aproximadamente lineal** con el tamaño (20–80 MB/s, muy variable según la caché del
+   sistema); abrir tiene un costo fijo de ~0,7 s más ~38 ms por MB.
+
+> ⚠️ **Una trampa que aparece al escalar, y hay que decirla.** Recorrer entradas con `ShowEntry` pasó
+> de **170 ms** por entrada a 4 MB, a **1,4 s** a 40 MB, a **3,85 s** a 120 MB. Es O(tamaño del
+> journal) **por llamada**. Un `.gmod` no hace eso —rehidrata una vez y proyecta—, pero cualquier
+> diseño que recorra entrada por entrada muere a escala. El número de arriba de «abrir» es el que
+> vale; el del paseo no es el costo del módulo.
+
+### Corrección: esa tabla tiene la cantidad de entradas fija, y eso la vuelve optimista
+
+**Las tres filas de arriba son de journals de 2 000 entradas.** Para llegar rápido al tamaño se subió
+la carga por registro, no la cantidad de hechos. Pero abrir hace **replay**, y el replay cuesta **por
+entrada**, no por byte — así que la tabla mide una sola de las dos variables.
+
+Se aisló, a tamaño constante:
+
+| ~4 MB | entradas | copiar | **abrir** |
+|---|---:|---:|---:|
+| 2 000 registros de 2 KB | 2 000 | 0,16–0,22 s | **0,91–1,04 s** |
+| 40 000 registros de 60 b | 40 000 | 0,17–0,19 s | **4,45–4,47 s** |
+
+**Mismo tamaño, 20× las entradas: la copia no se mueve y abrir se multiplica por 4,4.** Copiar depende
+de los bytes; **abrir depende sobre todo de cuántas entradas hay.**
+
+Con los cuatro puntos medidos, un ajuste grueso —cuatro puntos, en emulador, tómese como orden de
+magnitud y no como fórmula—:
+
+```
+abrir ≈ 0,6 s  +  0,09 ms por entrada  +  37 ms por MB
+```
+
+**Y esto corrige hacia arriba la tabla anterior para un caso realista.** Un journal de 120 MB hecho de
+registros de 2 KB son ~58 800 entradas, no 2 000: abrir sale **~10 s**, casi el doble de los 5,2 s
+medidos. A 40 MB realistas (~19 600 entradas) son **~3,9 s** en vez de 2,2 s.
+
+**El techo práctico baja, entonces:** el refresco al entrar a Gnothi aguanta cómodo hasta la decena de
+MB; en el orden de los 40 MB ya está en varios segundos, y a 120 MB hay que sacarlo del camino de
+abrir la app. Y refuerza la conclusión de dónde está la palanca: no en copiar menos bytes, sino en
+**no reabrir el motor** — que es lo que paga por entrada.
+
+### Lo que falta medir
+
+- **`.crswap`.** Chrome, al escribir por File System Access, trabaja sobre un archivo temporal en la
+  misma carpeta y lo renombra al cerrar. Si eso es visible por `ContentResolver`, es un detector
+  directo de «hay una escritura en vuelo», mejor que el sellado. **No está verificado** — sale de
+  cómo está implementada la API, no de una medición nuestra, y exige la PWA real escribiendo.
+- **La copia a media escritura, sobre el SAF de verdad.** El escenario TORN se midió en el motor;
+  falta hacerlo cruzando la copia.
+- **Journals de decenas de MB.** Todo lo de arriba es hasta 4 MB. El punto donde la copia entera deje
+  de pagar existe; solo que está más lejos de lo que se suponía.
+
+---
+
+## Qué deja Chrome en la carpeta mientras escribe — 2026-09-08
+
+**Qué se fue a contestar.** La condición que se pidió para A4 era *«si alguien tiene tomados los
+archivos, no copiar»*. La hipótesis era que Chrome, al escribir por File System Access, deja un
+archivo temporal `.crswap` en la misma carpeta, y que eso serviría de detector directo. **Estaba
+anotada como NO verificada.** Ahora está medida, y el resultado es otro — mejor.
+
+Instrumento: una página mínima servida por `PaginaDeLaInstitucion` en `http://127.0.0.1:8200/app/`,
+alcanzada por `adb reverse`, abierta en el **Chrome real del emulador**. Mide el mecanismo del
+navegador, no una app: da control exacto de cuándo el `createWritable()` está abierto.
+
+### Lo primero, y confirma de primera mano lo que estaba citado de fuentes
+
+```
+isSecureContext      : true
+showDirectoryPicker  : function
+crypto.subtle        : true
+navigator.storage    : true
+userAgent            : … Chrome/133.0.0.0 Mobile Safari/537.36
+```
+
+**Chrome Android SÍ tiene el picker**, y al invocarlo abre **DocumentsUI** — o sea el SAF. Hasta hoy
+eso estaba tomado del código de Chromium y de un blog; ahora está visto correr.
+
+### Y una que no esperábamos: el permiso de la PWA es por sesión de pestañas
+
+Chrome muestra su **propio** diálogo, además del del sistema:
+
+> *«Let site edit files? http://127.0.0.1:8200 will be able to edit files in fsa-prueba **until you
+> close all tabs for this site**»*
+
+**La concesión de escritura de la PWA no es duradera.** Eso contrasta con la de Gnothi, que sí
+persiste y sobrevive reinicios (medido arriba). Asimetría que conviene tener presente: la app suelta
+tiene que volver a pedir permiso más seguido que el Host.
+
+### El hallazgo: la escritura es ATÓMICA al cerrar
+
+Se abrió un `createWritable()` y se dejó **abierto 30 segundos**, escribiendo de a un pedazo por
+segundo, mientras el shell listaba la carpeta cada 2 s. El writable estuvo abierto de **19:54:48.873
+a 19:55:19.178**, y el sondeo cubrió toda esa ventana.
+
+**No apareció ningún `.crswap` ni archivo temporal.** Solo el archivo destino, siempre.
+
+Y como el tamaño no bastaba —la escritura sobrescribía la misma longitud—, se repitió mirando el
+**contenido**: primero una escritura normal dejó la marca `escritura-normal-…`, y después la lenta
+escribió `chunk-0-…`.
+
+```
+t+2s  … t+28s   escritura-normal-.......   ← el contenido VIEJO, con el writable abierto
+t+30s … t+36s   chunk-0-................   ← cambió de golpe, al close()
+```
+
+**Chrome materializa la escritura de una sola vez, al cerrar.** El archivo en la carpeta compartida
+**nunca está a medias** para otra app.
+
+### Qué significa para el diseño
+
+**La condición pedida no es difícil de cumplir: es innecesaria en este camino.** Una copia tomada en
+cualquier instante obtiene **la versión anterior completa o la nueva completa**, nunca un archivo
+partido. No hace falta detectar el candado, y tampoco hay detector que encontrar.
+
+**Con dos precisiones que hay que decir:**
+
+1. **La atomicidad es POR ARCHIVO, no por conjunto.** Un journal son varios archivos —
+   `journal_00000N.bin`, `meta.bin`, `index.bin`—, y copiar entre la escritura de uno y la del
+   siguiente da un conjunto **coherente pero desactualizado**. Ahí sigue valiendo lo de siempre:
+   `meta.bin` e `index.bin` son caché reconstruible y el journal es append-only, así que el resultado
+   es «viejo», no «roto». **El sellado se justifica por esto**, no por el desgarro de un archivo.
+2. **Es de Chrome sobre SAF, no del estándar.** El `.crswap` existe en otras implementaciones; acá no
+   aparece. Un navegador distinto, o una versión distinta, puede comportarse de otro modo. Si el
+   diseño se apoya en esta atomicidad, hay que volver a medirla al cambiar de plataforma —y en iOS
+   no hay picker, así que la pregunta no se traslada.
+
 ## Lo que NO está medido
 
 | ❓ | por qué importa |
@@ -391,3 +655,547 @@ un conteo de ocurrencias de la cadena en sus recursos.
 
 **La evidencia no lo sostenía.** Al mirar el contexto, los hits eran falsos positivos: encodings de buffer,
 gramáticas de resaltado de sintaxis. Un conteo no es una medición.
+
+## El censo del backend de archivos: qué toca en realidad un lector
+
+*2026-09-08. Censo de código sobre `Puppeteer/EventSourcing/DB/FileSystem` + `DiaryStorageFileSystem.cs`
+(5 890 líneas), en `C:\Users\jon32\source\repos\Puppeteer`, master `8ef4415`.*
+
+Vale corregir algo que se dijo antes: **«el puerto de archivos son ~6 000 líneas y dos operaciones que
+SAF no tiene»**. Eso mide el puerto **completo** — un motor que lee *y escribe* sobre SAF. No es la
+pregunta que hay sobre la mesa. La que hay es más chica: **qué necesita un lector**.
+
+El censo de llamadas estáticas a `System.IO` en todo el backend:
+
+| operación | usos | operación | usos |
+|---|---|---|---|
+| `File.Exists` | 52 | `Directory.Exists` | 9 |
+| `Path.Combine` | 35 *(no es E/S)* | `Directory.GetFiles` | 6 |
+| `File.Delete` | 19 | `File.Replace` | 4 |
+| `File.WriteAllBytes` | 14 | `File.GetLastWriteTimeUtc` | 3 |
+| `File.ReadAllBytes` | 14 | `Directory.GetDirectories` | 2 |
+| `File.Move` | 11 | `Directory.EnumerateFiles` | 1 |
+| `Directory.CreateDirectory` | 11 | | |
+
+Más 24 `new FileStream`, con `FileShare.ReadWrite` 17 veces, `FileShare.Delete` 13 y **`FileShare.None`
+solo 7** (de las cuales 4 son comentarios: los usos reales son **dos**).
+
+### Lo que toca el camino de lectura
+
+Recortado a los archivos que un lector recorre — `JournalReader.cs`, `SparseIndex.cs`,
+`MetadataStore.cs` — la superficie entera es **cuatro operaciones**:
+
+| lo que usa | dónde | ¿tiene equivalente en SAF? |
+|---|---|---|
+| `File.Exists` | `JournalReader:54,79` · `SparseIndex:37` · `MetadataStore:43` | ✅ medido |
+| `File.ReadAllBytes` | `SparseIndex:40` · `MetadataStore:46` | ✅ medido (`OpenInputStream`) |
+| `FileStream` **solo lectura** + `Seek` | `JournalReader:91,224` | ✅ medido (`OpenFileDescriptor`, buscable) |
+| listar la carpeta | `Directory.GetFiles`/`EnumerateFiles` | ✅ medido (query al `ContentResolver`) |
+
+**Y los dos bloqueantes no aparecen en ninguna de las cuatro.** Los dos son del lado de la escritura:
+
+- El **replace atómico** ya está **detrás de un puerto** — `IAtomicFileOperation`, con
+  `AtomicFileOperationFactory` que elige por plataforma y tres implementaciones (Ntfs, Posix, y un
+  `SafeAtomicFileOperation` de reserva para «cualquier otra»). Solo lo llama quien escribe.
+- El **lock entre procesos** tiene **dos usos reales**: el rollover en `JournalWriter:487` y el
+  consolidador de elisiones en `PendingBatchDirectory:64`. Ninguno de los dos corre en un lector.
+
+### Lo que esto significa
+
+**El modo lector no solo hace que leer no perturbe: le colapsa la superficie al puerto.** Con las
+compuertas del parche puestas, las dos `File.WriteAllBytes` que quedaban en el camino de lectura
+(`SparseIndex:85`, `MetadataStore:85`) son exactamente las que el parche cierra.
+
+Así que el pedido a quien mantiene el motor deja de ser *«un puerto de archivos»* y pasa a ser
+**un puerto de lectura de cuatro métodos**, más el modo lector ya medido.
+
+### Lo que este censo NO prueba
+
+1. **El hueco es el mismo de A3**: elisiones, checkpoints de reacciones y outbox nunca se sembraron
+   en el spike. Si abrir un journal que las tenga saca E/S fuera de esas cuatro operaciones, el cuadro
+   cambia. Es un solo experimento que ahora responde dos preguntas.
+2. **Sin comprobar**: qué implementación de `IAtomicFileOperation` le toca a Android.
+   `IsOSPlatform(OSPlatform.Linux)` probablemente da `false` ahí y caería en `SafeAtomicFileOperation`.
+   Importa poco mientras se hable de un lector, pero está sin verificar.
+3. Es un censo **estático**. Cuenta sitios de llamada, no ejecuciones.
+
+## Sembrando lo que faltaba: reacciones, checkpoints, outbox y elisiones
+
+*2026-09-08. `Spikes/ReaderModeSpike`, worktree `Puppeteer-spike-reader`, desprendido de master
+`8ef4415`. Dos escenarios nuevos sobre los tres de la ronda anterior.*
+
+La ronda anterior dejó un hueco declarado: **elisiones, checkpoints de reacciones y outbox nunca se
+sembraron**. Un journal de verdad no es solo entradas — una reacción deja un registro, un checkpoint,
+una frontera de cobertura, un mensaje en el outbox y, si elide, un `elision.bin` consolidado más una
+carpeta `pending/`. Cada uno es un store aparte con su propio camino de carga.
+
+Dos escenarios nuevos:
+
+- **RICH** — entradas más dos reacciones, una que emite al outbox y otra que elide. Dos y no una,
+  porque con una sola quedaría ambiguo cuál produjo cada archivo.
+- **RICH-INTERRUPTED** — RICH, y después el dueño **muerto a mitad de un replace atómico**: un `.tmp`
+  y un `.bak` al lado de cada store, que es exactamente lo que `NtfsAtomicFileOperation` deja si el
+  proceso muere entre `File.Replace` y su limpieza.
+
+RICH-INTERRUPTED es el que decide, y por una razón: `RecoverFromIncompleteOperation` **se llama desde
+los `LoadX()`** — o sea **al abrir, en el camino de lectura** — en `ReactionStore` (×3), `SkipStore`,
+checkpoints, outbox y elisiones. Sobre un journal ordenado no encuentra nada y no cuesta nada, que es
+justo por qué RICH **solo** habría halagado la respuesta.
+
+### Lo que encontró
+
+**RICH: el parche aguantó.** `rehydrate+readOnly` → **no escribió nada**, leyendo las 8 entradas. Las
+tres piezas que faltaban no agregan escrituras nuevas al abrir. El hueco declarado quedó cerrado.
+
+**RICH-INTERRUPTED: el parche falló, y de la peor forma.** El lector «de solo lectura» **borró 12
+archivos del dueño** — el `.tmp` y el `.bak` de cada store. No modificó un byte: **eliminó archivos**.
+(`introspect+readOnly` borró 10; los dos de diferencia son `skips/`, que la introspección no carga.)
+
+Es la misma forma que TORN, una vuelta más arriba: **curar al abrir es escribir**. Un consumidor al
+que le prestaron una carpeta le estaba terminando la transacción al dueño — que puede seguir
+recuperándose de ella.
+
+### Las dos compuertas que faltaban
+
+Las dos salieron del mismo punto, `DiaryStorageFileSystem`:
+
+**Compuerta 5 — no crear carpetas.** El open hace `Directory.CreateDirectory` **siete veces**. Sobre
+un journal que escribió este mismo backend ya existen, que es por qué **un spike que siembra su propio
+fixture no puede ver esto**. Sobre uno que escribió otra implementación, un lector dejaría siete
+carpetas nuevas en la carpeta de otro. Los stores toleran que falten: cada `LoadX` arranca preguntando
+`File.Exists`.
+
+**Compuerta 6 — una operación atómica inerte.** Todos los stores reciben su `IAtomicFileOperation` de
+**un solo punto de inyección**, así que la compuerta es una línea: en modo lector se les entrega un
+`ReadOnlyAtomicFileOperation` cuyo `RecoverFromIncompleteOperation` no hace nada.
+
+Su `AtomicReplace` **lanza** en vez de no hacer nada — un no-op silencioso ahí convertiría un camino
+de escritura que se me pasó en pérdida de datos. **Y nunca lanzó**, en ninguno de los cinco
+escenarios: el camino de lectura no la llama. Eso confirma el censo por el lado dinámico.
+
+### El estado final
+
+| escenario | `rehydrate+readOnly` | entradas leídas (control) |
+|---|---|---|
+| CLEAN | **no escribió nada** | 4 (4) |
+| ROLLED | **no escribió nada** | 41 (41) |
+| TORN | **no escribió nada** | 41 (41) |
+| RICH | **no escribió nada** | 8 (8) |
+| RICH-INTERRUPTED | **no escribió nada** | 8 (8) |
+
+**El parche completo son 131 líneas en 4 archivos, ~44 de lógica, 6 compuertas.** Sigue siendo no-op
+sin opt-in, y la suite completa del motor da igual que master limpio: **5 fallan · 2 087 pasan**, los
+mismos cinco nombres, todos de locale.
+
+### Lo que sigue sin probarse
+
+- El **lector mientras el dueño escribe al mismo tiempo**. Sigue sin medirse, y es lo que separa
+  «puedo leer una carpeta prestada» de «puedo leerla en vivo».
+- Las reacciones sembradas se saltaron la entrada 1 (ver abajo).
+- Las reacciones sembradas **se saltaron la entrada 1** (`upgrade` literal, un ScriptEvent de estilo
+  V1). Los stores quedaron creados igual — que es lo que este experimento mide— pero `elision.bin`
+  puede haber quedado sin registros.
+
+### FOREIGN: la compuerta 5, medida y no razonada
+
+La compuerta 5 se había puesto **por lectura de código**, y eso no es una medición. El problema para
+medirla es que todo escenario que siembra su propio fixture crea las siete carpetas auxiliares, con
+lo cual los `CreateDirectory` del open son invisibles.
+
+Pero esa **no es la forma del caso real**. En el caso real la carpeta es de una app de afuera, y lo
+que dejó son entradas — no el esqueleto completo de este backend. Un sexto escenario, **FOREIGN**:
+sembrar, borrar las carpetas auxiliares que quedaron vacías, y leer.
+
+| caso | veredicto | entradas |
+|---|---|---|
+| `rehydrate` (control) | **escribió 7: 6 carpetas nuevas + el índice** | 7 |
+| `introspect` (control) | **escribió 7: 6 carpetas nuevas + el índice** | 7 |
+| `introspect+readOnly` | **no escribió nada** | 7 |
+| `rehydrate+readOnly` | **no escribió nada** | 7 |
+
+`followers/`, `index/`, `materialization/`, `outbox/`, `reactions/`, `skips/`. Sin el parche, «leer»
+la carpeta de otro **la amuebla**. Con el parche no deja nada, y lee las mismas 7 entradas.
+
+## El lector mientras el dueño escribe — 2026-09-08
+
+Todos los escenarios anteriores siembran, cierran, y recién entonces leen. Eso contesta *«¿puedo leer
+una carpeta que me prestaron?»*, no *«¿puedo leerla MIENTRAS la escriben?»* — que es la que decide si
+compartir en vivo existe siquiera. Si no existe, ni el puerto ni el proveedor sirven de nada, y la
+copia deja de ser un rodeo para pasar a ser **la** respuesta.
+
+**Montaje: dos PROCESOS, no dos hilos.** Con hilos compartirían los handles del backend y sus locks
+en proceso, que es exactamente lo que la topología real no comparte: la app que escribe y el módulo
+que lee son programas distintos. El hijo escribe 120 entradas separadas por 25 ms con
+`maxFileSize=1024`; el padre abre un lector y lo recorre, diez veces, mientras eso pasa. Al final
+reabre solo y cuenta — porque un lector que rompió algo cuando nadie miraba pasaría todos los
+chequeos anteriores.
+
+Se corrió **dos veces**: con el parche y **sin él** (dos motores completos sobre el mismo journal).
+
+| | control (sin `readOnly`) | con `readOnly` |
+|---|---|---|
+| el dueño | **escribió las 120, sin fallar** | **escribió las 120, sin fallar** |
+| el lector lanzó | **nada** | **nada** |
+| lo que el lector fue viendo | 14, 19, 25, 30, 36, 41, 47, 53, 59, 66 | 14, 19, 25, 30, 36, 41, 46, 52, 58, 64 |
+| al final | **126 entradas legibles** | **126 entradas legibles** |
+| la última entrada | **dice `owner-120`**, lo último que escribió el dueño | **dice `owner-120`** |
+
+Y **hubo 6 rollovers durante la corrida** —siete archivos de journal en ambos casos, del mismo
+tamaño byte a byte— así que el momento peligroso, donde el escritor crea un archivo con
+`FileShare.None` y lo mueve a su lugar, se ejercitó de sobra con el lector entrando y saliendo.
+
+### Leer en vivo no rompe. Pero esta prueba NO demuestra que el parche sirva.
+
+**El control pasó igual de limpio**, y eso hay que decirlo antes que nada: dos motores completos
+martillando el mismo journal, con rollovers, no perdieron una entrada ni corrompieron un registro.
+La premisa de que la concurrencia es catastrófica **no se sostiene** con esta medición.
+
+Con lo cual el argumento del modo lector **se corre de lugar**. No es «corrompe» — es que **toca lo
+que no es suyo**: crea seis carpetas, escribe el índice, reescribe el header, y con una transacción
+a medias **borra doce archivos del dueño**. Eso está medido en los escenarios de diff de bytes, y
+sigue en pie. Es un argumento de propiedad y de consentimiento, no de corrupción — que además le
+queda mejor a la tesis del proyecto.
+
+### Y un detalle que cambia la comparación con A4
+
+**El lector ve una foto del momento en que abrió.** Nunca alcanza al dueño mientras está abierto:
+llegó a 64-66 de 126. O sea que «en vivo» significa **«fresco en cada apertura»**, no un flujo.
+
+Si el módulo tiene que reabrir igual para ver lo nuevo, la distancia entre «leer en vivo» y «leer una
+copia» se reduce a **latencia de frescura y costo de disco** — no a una diferencia de naturaleza.
+Vale tenerlo a la vista antes de pedirle nada al equipo del motor.
+
+### Lo que esta prueba NO cubre
+
+- **La comprobación es cantidad de entradas y el contenido de la última**, no la integridad byte a
+  byte de cada registro. Bajo concurrencia no hay una línea base estable contra la cual diffear.
+- **No se escribieron elisiones ni reacciones concurrentemente.** El consolidador de elisiones es
+  **el único lugar donde el backend diseña explícitamente para dos procesos** —con el lock de
+  testigo por `FileShare.None`— y quedó **sin ejercitar**. Es el hueco más filoso que queda.
+- **Solo Windows.** Las semánticas de compartición de POSIX y de Android son otras.
+
+## A2 + A3 de punta a punta, con la app de verdad — 2026-09-09
+
+*Emulador `GnothiWeb` (Android 16 / SDK 36). La PWA de Exámenes instalada como WebAPK, escribiendo
+su journal en una carpeta que la persona eligió por el SAF. Gnothi con el motor parcheado —puerto de
+lectura (A2) + modo lector (A3)— leyendo ESA carpeta, sin copiarla.*
+
+**El reparto es el realista, y salió así de casualidad:** la PWA quedó publicada con el motor **sin
+parchear** (`3.0.0-beta.10029`, de la caché local) y Gnothi con el parcheado. O sea que el dueño
+escribe con el motor tal como está publicado hoy, y el único que lleva el parche es el lector.
+
+### La secuencia, y qué contestó cada uno
+
+| paso | la PWA dice | Gnothi dice |
+|---|---|---|
+| 1 · la PWA trae su expediente | **11 exámenes · evento 210** | — |
+| 2 · Gnothi lee la misma carpeta | 11 · 210 | **11 exámenes · evento 210** |
+| 3 · dos exámenes nuevos **en el proveedor** (211, 212) | 11 · 210 | **11 · 210** |
+| 4 · la PWA reabre y los trae | **13 exámenes · evento 212** | — |
+| 5 · Gnothi lee otra vez | 13 · 212 | **13 exámenes · evento 212** |
+
+**El paso 5 es el resultado:** Gnothi vio los datos nuevos **sin copia, sin refresco y sin que la PWA
+le avisara nada**. Volvió a leer la misma carpeta y ahí estaban.
+
+**Y el paso 3 es el otro resultado, el que conviene no pasar por alto:** con los eventos ya
+publicados en el servidor del laboratorio, Gnothi siguió diciendo 11 y 210. **No puede ver lo que la
+persona no trajo** — el módulo no tiene red, y el único camino por el que esos eventos llegan es la
+app de ella. Eso no es una limitación del transporte: es la propiedad.
+
+### La carpeta ajena, en cada paso
+
+| momento | `meta.bin` | `journal_000001.bin` | `index/index.bin` |
+|---|---|---|---|
+| la PWA escribe (01:30) | 48 b | 2 173 b | — |
+| **después de que Gnothi leyera** | 48 b · 01:30 | 2 173 b · 01:30 | — |
+| la PWA reabre y agrega (14:11) | 48 b | 2 427 b | 30 b |
+| **después de que Gnothi leyera otra vez** | 48 b · 14:11 | 2 427 b · 14:11 | 30 b · 14:11 |
+
+**Byte por byte y hora por hora, intacta.** El motor la abrió, rehidrató y contestó dos veces sin
+escribirle nada. Y el área de Gnothi terminó con **cero archivos**: no hay copia.
+
+### Lo que la corrida real destapó y el spike no podía
+
+**1 · Una octava compuerta.** El motor sí intentó crear carpetas: apareció
+`files/journals/examenes/examenes/elision/pending` en el área de Gnothi. Es `PendingBatchDirectory`,
+que quedó fuera del gateo. **No cayó en la carpeta de la persona por la forma del montaje** —la
+creación va por `System.IO` y la raíz fingida es una ruta real del área privada—, no por la
+compuerta. En escritorio, donde la ruta *es* su carpeta, ese mismo `CreateDirectory` le caería
+adentro. El spike no lo vio porque FOREIGN solo borra carpetas **vacías** y `elision/` contenía
+`pending/`.
+
+**2 · La asimetría de los permisos, y va a favor del lector.** Tras reiniciar el emulador:
+
+| | ¿sobrevivió? |
+|---|---|
+| la concesión de **Gnothi** sobre la carpeta | ✅ sí — `takePersistableUriPermission` |
+| el permiso de **escritura de la PWA**, que es la dueña | ❌ no — es por sesión de pestaña |
+
+La PWA recuerda *cuál* es su carpeta (el handle vive en IndexedDB) pero tiene que **volver a pedir
+permiso de escritura cada vez que se abre**. La app lo dice en pantalla y ofrece el botón, así que
+está manejado — pero es fricción real y recurrente, y **el lector resultó más durable que el
+escritor.**
+
+**3 · Gnothi le informa que su expediente pesa 0 KB.** La pestaña Journal muestra
+*«Mis examenes — 0 KB, 0 archivos»*, porque `Module.BytesOnDisk` pesa la carpeta concedida con
+`System.IO` y en este camino está vacía. La pantalla dice, en su propio texto, *«Gnothi lo pesa desde
+afuera — sin preguntarle a nadie»*: cierto, pero **acá pesa la carpeta equivocada**. Su expediente
+existe y tiene 13 exámenes.
+
+### Lo que sigue sin explicarse
+
+En el paso 2 la PWA marcaba **Colesterol total** fuera de rango y el módulo contestaba
+`analitosFueraDeRango: 0`. Después del paso 4 los dos coinciden —la PWA también dice «todo está
+bien»—, así que la discrepancia dejó de verse, **pero no se explicó**. Puede ser que calculen
+distinto o puede ser un error de uno de los dos.
+
+### El control que faltaba: la misma corrida SIN el modo lector — 2026-09-09
+
+Lo pidió el usuario, y tenía razón en que faltaba: el spike tenía su control, pero **la corrida real
+nunca se había hecho sin las compuertas**, así que no estaba medido si el parche hace falta *en este
+camino*.
+
+El control correcto no es «sin nada»: **el puerto (A2) hace falta igual**, porque sin él Gnothi no
+llega a la carpeta. Así que se quitó **solo** `;readOnly=true` de la superficie, dejando todo lo
+demás idéntico: mismo puerto, misma carpeta, misma concesión.
+
+| | qué contestó `resumen` |
+|---|---|
+| **con** `readOnly=true` | `{"hayDatos":true,"examenes":13,…,"ultimoEventoLeido":212}` |
+| **sin** `readOnly=true` | **`null`** — 4 bytes |
+
+Y el diff de la carpeta ajena, por md5:
+
+| archivo | antes | después del control |
+|---|---|---|
+| `meta.bin` | `78524…` | `78524…` |
+| `journal/journal_000001.bin` | `61aa4…` | `61aa4…` |
+| `index/index.bin` | `98cee…` | `98cee…` |
+
+**Idénticos.** Pero en el área privada de Gnothi aparecieron **las siete carpetas auxiliares**
+(`followers`, `index`, `journal`, `materialization`, `outbox`, `reactions`, `skips`).
+
+### Lo que esto corrige, y es un matiz que cambia el argumento
+
+Yo venía diciendo que el valor del modo lector es **de propiedad, no de corrupción** — que sin él el
+lector «toca lo que no es suyo». Eso sale de los escenarios de diff de bytes, donde el journal vive
+en una **ruta real**. En este camino no es así, y el control lo muestra:
+
+| | ¿protege la carpeta ajena? | ¿hace falta para que FUNCIONE? |
+|---|---|---|
+| **escritorio** — la ruta es su carpeta | **sí**: sin él crea carpetas, escribe el índice y le borra `.tmp`/`.bak` | no; sin él «anda», perturbando |
+| **Android por el puerto** | no: las escrituras caen en el área de Gnothi, porque van por `System.IO` y la raíz fingida es ruta real ahí | **sí**: sin él la lectura **se rompe** |
+
+**Por qué se rompe, que es el detalle interesante:** el motor le pregunta al puerto si el archivo
+activo del journal existe —el puerto dice que sí, y es cierto—, y después lo abre **con `System.IO`**
+sobre una ruta que **solo existe a través del puerto**. Las dos mitades no coinciden. Un `open` de
+lectura-escritura sobre un journal alcanzable solo por el puerto **no está bien definido**, y el
+único `open` que sí lo está es el de solo lectura.
+
+Así que la respuesta a «¿hace falta el parche?» es **sí**, con tres justificaciones distintas según
+dónde:
+
+1. **En escritorio: protege.** Sin él, leer la carpeta prestada la modifica y le borra archivos.
+2. **En Android por el puerto: habilita.** Sin él no hay lectura, se rompe.
+3. **En los dos: la carpeta ajena la protege la asimetría del puerto** —que es de solo lectura—
+   tanto o más que las compuertas. Vale saberlo, porque significa que un puerto que algún día
+   admita escrituras **traslada toda la protección a las compuertas**.
+
+### Las dos debilidades del pedido, cerradas y verificadas — 2026-09-09
+
+Antes de llevarle esto a quien mantiene el motor había dos cosas que lo debilitaban. Las dos están
+cerradas y medidas en el aparato.
+
+**1 · La 8.ª compuerta.** `PendingBatchDirectory` hacía dos escrituras escondidas en su constructor,
+y las dos corrían **al abrir**: `CreateDirectory` de un `pending/` que un lector no va a usar, y
+`RecoverOrphans`, que **borra los `.tmp` huérfanos del dueño** — la misma clase de daño que
+terminarle un reemplazo atómico. Un `.tmp` ahí es un batch cuyo dueño murió entre escribirlo y
+renombrarlo; descartarlo es decisión de él, no de un lector.
+
+Verificado borrando el área de Gnothi y volviendo a leer:
+
+| | antes de la compuerta | después |
+|---|---|---|
+| carpetas creadas al leer | `elision/pending` + las 7 auxiliares | **ninguna** |
+
+**2 · La costura, de estático de proceso a selección por conexión.** Era
+`JournalFiles.Install(impl)` — un único «lector actual» para todo el proceso. Estaba mal por una
+razón concreta: **dos módulos leyendo dos carpetas por dos puertas distintas no podían coexistir**;
+el último en instalar decidía por los dos, en silencio.
+
+Ahora el host **registra por nombre** —`JournalFiles.Register("examenes", impl)`— y la conexión
+elige con **`files=examenes`**, en el mismo lugar donde ya viven `readOnly`, `maxFileSize`,
+`compression` y `encryption`. Un nombre que nadie registró **lanza** en vez de caer a `System.IO`,
+porque caer abriría otra carpeta y contestaría «acá no hay nada»: una respuesta que parece cierta.
+
+**Y sin romperles nada**, que era la propiedad a preservar: las firmas viejas se conservaron
+encadenando al puerto por default, así que **la solución completa compila sin tocar un solo test del
+motor**. Sin eso, el cambio rompía **144 sitios de compilación** en su suite — y un pedido que te
+obliga a reescribir los tests ajenos no se acepta.
+
+| | |
+|---|---|
+| suite del motor | **5 fallan · 2 087 pasan** — igual que master limpio |
+| los 7 escenarios del spike | **ninguno escribe un byte** |
+| la corrida en el teléfono | **13 exámenes · evento 212**, carpeta ajena con md5 idénticos |
+
+**Queda una pregunta de diseño abierta, y conviene nombrarla en vez de inventarle respuesta:** cómo
+le dice el host al módulo **qué nombre** usar. Acá la convención es el nombre del actor, que funciona
+y no agrega plomería, pero la forma honesta es probablemente que **quien concede la carpeta también
+diga por qué puerta se lee**.
+
+## La red de una PWA instalada no se puede acotar desde afuera — 2026-09-09
+
+**Qué se fue a contestar.** En el camino B —la app de la institución adentro de Gnothi, en un
+WebView— está medido que **el módulo no tiene red**: la interfaz es solo `lo`, sin DNS, y el pull lo
+hace el Host con su credencial contra un endpoint fijo. La pregunta es si esa misma garantía se puede
+dar cuando la app vive **afuera**, instalada como PWA con su ícono propio.
+
+**Instrumento:** la WebAPK que se instaló desde la página del laboratorio en el emulador —
+`org.chromium.webapk.ac970f0088360685e_v2`, standalone, fuera de Gnothi.
+
+| | resultado |
+|---|---|
+| permisos que pide la WebAPK | `POST_NOTIFICATIONS` y `REORDER_TASKS` |
+| **`android.permission.INTERNET` en la WebAPK** | ❌ **no lo pide** |
+| en Chrome | ✅ lo pide |
+| quién corre la pantalla | `com.android.chrome/…webapps.SameTaskWebApkActivity` |
+
+**La WebAPK no tiene red que restringir.** Es una cáscara: manifiesto, ícono, nombre y `scope`. La red
+la hace **Chrome**, en su proceso y bajo su uid.
+
+**Y esto NO significa que la app suelta no tenga red — tiene toda la de Chrome.** Conviene decirlo
+así porque la tabla de arriba invita a leerlo al revés: en esta misma corrida la PWA, andando como
+WebAPK, le pidió sus eventos al proveedor y pasó de 11 a 13 exámenes. Los uids lo muestran: la
+WebAPK es `10222` y Chrome es `10150`, y el `fetch()` de la página sale por **10150**.
+
+La WebAPK no pide `INTERNET` porque **nunca hace una petición**: se la pide a Chrome. Y es justo
+**porque la red es prestada que no hay dónde acotarla** — un módulo nativo confinado tiene uid propio
+y ahí sí se corta; una PWA hereda el del navegador, así que la perilla es la misma que la de todo lo
+que la persona navega.
+
+De ahí que las tres palancas obvias no sirvan:
+
+- restringirle la red al paquete de la WebAPK **no hace nada** — no tiene
+- restringírsela a Chrome le rompe el navegador entero a la persona
+- lo que Android ofrece por app —datos en segundo plano, ahorro de datos— apunta al paquete
+  equivocado
+
+**Lo único que la acota es autoimpuesto:** `Content-Security-Policy: connect-src`, que el navegador
+sí hace cumplir de verdad — pero lo sirve **la misma institución** a la que se le quiere poner el
+límite. Es una promesa suya verificada por el navegador, no una garantía del aparato. Y si viaja por
+cabecera, la persona ni siquiera la puede leer.
+
+### Lo que esto cambia entre A y B, y hay que decirlo así
+
+| | ¿tiene red? | de qué tipo es la garantía |
+|---|---|---|
+| **adentro de Gnothi** (WebView) | **no**, medido | **de forma**: el módulo no tiene con qué salir |
+| **suelta**, PWA instalada | **sí, la de Chrome entera** | **ninguna desde afuera**; solo lo que ella declare |
+
+Esto **no invalida el camino A**: la app de la institución ya tenía red antes de que Gnothi
+existiera, y la persona ya se la había concedido al usarla. Lo que cambia es **qué se puede
+prometer**. Con la app suelta la frase honesta es *«tus datos quedan en tu carpeta»* — **no** *«esta
+app no puede salir a la red»*.
+
+### Las dos preguntas directas sobre la PWA suelta
+
+Esto es **material de respaldo**, no algo para llevar a nadie: son las dos preguntas que vuelven
+cada vez que se discute el camino A, con su respuesta y con de dónde sale cada parte.
+
+---
+
+#### 1 · ¿Se puede blindar la PWA suelta para que no salga a la red? **NO**
+
+**Medido** (emulador, WebAPK instalada desde la página del laboratorio):
+
+| | |
+|---|---|
+| uid de la WebAPK | `10222` — **no pide `INTERNET`** |
+| uid de Chrome | `10150` — sí lo pide |
+| el `fetch()` de la página sale por | **`10150`** |
+
+**La PWA no tiene red propia que quitarle.** Por eso ninguna palanca alcanza:
+
+| palanca | por qué no sirve |
+|---|---|
+| restringir el paquete de la WebAPK | no tiene red que restringir |
+| datos en 2.º plano / ahorro de datos | apuntan al paquete equivocado |
+| firewall por uid vía `VpnService` | el uid es el de **Chrome entero**: le cortás el navegador a la persona |
+| CSP `connect-src` | **la sirve la institución**, que es a quien se quiere limitar |
+| service worker | es código del mismo sitio |
+
+No hay API del navegador, campo del manifiesto ni permiso de Android que le quite la red a **un solo
+origen web**.
+
+**La única forma en que sería «sí», y por eso es «no»:** que el CSP lo ponga alguien que no sea la
+institución. El CSP viaja con el documento, o sea que lo pone **quien sirve la página**. Si lo sirve
+Gnothi, Gnothi pone `connect-src` y el navegador se lo hace cumplir a la institución — que es
+exactamente lo que hace el modo B, con su watchdog reportando violaciones por el puente.
+
+**Pero en el instante en que Gnothi sirve la página, ya no es una PWA suelta.** Una PWA instalada
+necesita un origen `https` estable para su manifiesto y sus asset links; `localhost` no puede serlo.
+
+> **Blindar = que alguien más sirva. Suelta = que la sirva ella. Son excluyentes**, y no por un
+> tecnicismo: es la definición de las dos cosas.
+
+---
+
+#### 2 · ¿Se puede alimentar su UI con datos que saque de Gnothi? **SÍ**
+
+**Cómo:** Gnothi levanta un servidor HTTP en loopback y la PWA le hace `fetch` a
+`http://127.0.0.1:<puerto>`.
+
+**Investigado** (documentación de Chrome, septiembre 2026):
+
+- **`localhost` / `127.0.0.1` está exento del bloqueo de contenido mixto**, explícitamente. Una
+  página `https` le puede pegar. *(Corrige lo que se dijo antes en este mismo frente: se había
+  afirmado que era contenido mixto con reglas enredadas, y es falso.)*
+- Desde **Chrome 142** lo gatea el permiso de **Local Network Access**, con un prompt a la persona.
+- Gnothi ya tiene `INTERNET`, así que puede abrir el socket.
+
+**El problema real y su solución.** El puerto no sabe quién llama: cualquier app del aparato, o
+cualquier sitio que la persona visite, le puede preguntar. Se resuelve con un **token**, y el canal
+para entregarlo **ya está medido**: el enlace profundo que funciona desde el WebAPK. Gnothi genera un
+token por app, lo manda en el enlace, la PWA lo guarda, y Gnothi solo contesta pedidos que lo traen.
+
+**Lo que hay que aceptar:**
+
+| | |
+|---|---|
+| el prompt de LNA dice | *«buscar y conectarse a cualquier dispositivo de tu red local»* — mucho más ancho de lo que hace |
+| Gnothi tiene que estar corriendo | con el socket abierto mientras la PWA esté abierta |
+
+##### El proceso en segundo plano, que es lo que esto exige
+
+**Android: se puede, con un costo visible.** Un socket abierto de forma indefinida necesita un
+**foreground service**, o sea **una notificación permanente**. Desde Android 14 hay que declarar un
+`foregroundServiceType` y **no existe uno para «servidor local»**: caería en `specialUse`, que Play
+revisa y obliga a justificar. Sin foreground service, los límites de ejecución en segundo plano lo
+matan; y **Doze más los gestores de batería de los fabricantes** lo matan igual — el Xiaomi de las
+pruebas es de los agresivos.
+
+Salida parcial: **levantarlo bajo demanda**. Pero nada lo puede despertar salvo que la persona abra
+Gnothi por el enlace profundo — un salto de app por sesión.
+
+**iOS: FUERA DE ALCANCE, y no es un pendiente.** El camino A está enfocado en **Android + Chrome**,
+que es donde el picker del navegador entrega una carpeta y donde existe el SAF. No hay que ir a
+medirlo.
+
+Para que quede la razón por si vuelve: la documentación y los foros de Apple coinciden en que **no
+hay forma general de mantener sockets vivos con la app en segundo plano** — un socket de escucha se
+congela o lo matan tras un rato de inactividad, y ningún background mode cubre «servidor HTTP local».
+Es **coincidente con lo esperado, no medido por nosotros**.
+
+---
+
+#### Lo que hay que decir junto, o el argumento se cae
+
+**Las dos respuestas no se combinan.** Se puede alimentar la UI desde Gnothi (2 = sí) y **no** se
+puede impedir que además salga por su cuenta (1 = no).
+
+Que pida por el API es una **convención, no una restricción**, y se ve en el inspector en dos toques.
+
+Eso no la vuelve inútil: da el **dueño único del journal** —un solo juego de semáforos— y adelgaza la
+app enormemente. Pero es un argumento de **arquitectura**, no de **garantía**. Presentado como
+garantía se cae solo.

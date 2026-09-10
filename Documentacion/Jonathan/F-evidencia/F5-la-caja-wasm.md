@@ -136,6 +136,7 @@ Y un `.gmod` con `"modulo": "../../../fuga"` se rechaza antes de extraer:
 
 ## La prueba manual
 
-Paso a paso, con qué tenés que ver en cada paso, en
-[PRUEBA-MANUAL-CAJA.md](../../GnothiHolaMundo/PRUEBA-MANUAL-CAJA.md). Corre contra
-`C:\Gnothi-caja`, una instalación aparte que no toca el Gnothi de verdad.
+Paso a paso, con qué tenés que ver en cada paso, en `GnothiHolaMundo/PRUEBA-MANUAL-CAJA.md`
+— que **vive en el repo `MCP Hola Mundo`, no en este**, así que no hay enlace relativo
+posible. Corre contra `C:\Gnothi-caja`, una instalación aparte que no toca el Gnothi de
+verdad.

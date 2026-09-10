@@ -45,6 +45,7 @@ Para quien tiene que diseñar. Decisiones y sus razones, sin implementación.
 | [`B3-el-journal-como-protocolo.md`](B-arquitectura/B3-el-journal-como-protocolo.md) | un escritor, dos autores, y el precio de compartir carpeta |
 | [`B4-manifiesto-vs-instalacion.md`](B-arquitectura/B4-manifiesto-vs-instalacion.md) | dos archivos porque son dos autoridades |
 | [`B5-el-browser-y-por-que-no.md`](B-arquitectura/B5-el-browser-y-por-que-no.md) | el camino descartado, y qué sí sirvió de él |
+| [`B6-los-cuatro-caminos-de-la-pwa.md`](B-arquitectura/B6-los-cuatro-caminos-de-la-pwa.md) | **las cuatro formas de que la app de una institución y Gnothi convivan**, comparadas renglón por renglón: cuántas copias del expediente, quién sale a la red, qué le toca hacer a ella. Con el traslado de la app hacia adentro, y **las aserciones de la persona como el único pedazo que no se puede reconstruir** |
 
 ### C · Implementación — *«¿qué hay escrito y cómo?»*
 
@@ -59,6 +60,7 @@ lo escribe el developer de cada institución, y sus preguntas son otras.
 | [`C2-decisiones-de-codigo.md`](C-implementacion/host/C2-decisiones-de-codigo.md) | diez decisiones, y cómo se rompe cada una |
 | [`C3-el-bundle-mcpb.md`](C-implementacion/host/C3-el-bundle-mcpb.md) | empaquetar el Host como extensión instalable |
 | [`C7-los-instaladores-y-las-caras-de-escritorio.md`](C-implementacion/host/C7-los-instaladores-y-las-caras-de-escritorio.md) | los dos instaladores MSI, la marca de descubrimiento en el registro, y las dos caras de escritorio |
+| [`C8-el-journal-que-escribe-otro.md`](C-implementacion/host/C8-el-journal-que-escribe-otro.md) | cuando la app suelta escribe el journal afuera y Gnothi lo copia para que el módulo lo lea: el cartero de archivos, la huella y el refresco |
 
 **C · modulo/** — para quien escribe un módulo
 
@@ -115,6 +117,8 @@ Para no confundir lo verificado con lo supuesto.
 |---|---|
 | [`../Especificacion/`](../Especificacion/00-INDICE.md) | **los MDs del arquitecto**, la especificación, con su propio índice. No se editan |
 | [`NOTA-2026-09-02-coordinacion-pwa-gnothi.md`](NOTA-2026-09-02-coordinacion-pwa-gnothi.md) | **nota de trabajo del 2 de septiembre**, no un documento del set y no se va a terminar. Vale por la investigación de OPFS, SAF y el motor; su encabezado dice qué quedó superado |
+| [`2026-09-09-modo-lector-y-puerto-de-lectura.md`](2026-09-09-modo-lector-y-puerto-de-lectura.md) | **el pedido a quien mantiene el motor** — esto es lo que se entrega. Autocontenido y para otra audiencia: los dos cambios al backend `FileSystem`, lo que cuestan, la evidencia, lo que NO se pide, la objeción que esperamos y lo que **no** está medido |
+| [`PEDIDO-2026-09-09-lo-que-no-va-en-el-pedido.md`](PEDIDO-2026-09-09-lo-que-no-va-en-el-pedido.md) | **compañero interno del anterior, y NO se entrega**: cuánto vale el pedido, qué pasa si lo rechazan, la pregunta de diseño que conviene hacer hablando, y por qué cada una de esas cosas se sacó |
 | [`imagenes/traza.svg`](imagenes/traza.svg) | el diagrama de la traza, para mostrar |
 | [`../../Gnothi.Mobile/PRUEBAS-WEBVIEW.md`](../../Gnothi.Mobile/PRUEBAS-WEBVIEW.md) | el guion de las nueve pruebas de Android, con sus comandos y 14 capturas |
 
