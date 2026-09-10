@@ -308,7 +308,101 @@ Lo que ese arreglo **no** resuelve: al lector escribiendo el dueño **al mismo t
 sembrar elisiones, checkpoints de reacciones y outbox — es el próximo escenario, y donde podría
 aparecer una quinta escritura.
 
+### CORRECCIÓN: el modo lector alcanza en escritorio, NO en Android
+
+Esto se dijo mal en su momento —*«el modo lector es lo único que desbloquea algo vivo»*— y conviene
+arreglarlo antes de que alguien planifique con eso.
+
+**El modo lector resuelve que el lector no MOLESTE al dueño. No resuelve que LLEGUE a la carpeta.**
+Y en Android no llega: la concesión del SAF no alcanza a `System.IO`, medido arriba.
+
+| | ¿llega a la carpeta? | ¿molesta al dueño? | qué hace falta |
+|---|---|---|---|
+| **escritorio** | ✅ es una ruta real, `System.IO` llega | ❌ sí | **solo el modo lector** |
+| **Android (SAF)** | ❌ no llega | ❌ sí | **puerto de archivos + modo lector** |
+
+Así que el modo lector es un camino real **en escritorio**, y ahí el parche medido alcanza tal cual.
+En un teléfono es **la mitad del trabajo**: sin el puerto de archivos tendrías un motor que no
+perturba a nadie y que igual no puede abrir la carpeta.
+
+**Y el orden para atacar el puerto no empieza en el motor.** Primero hay que medir, en Android, si
+SAF puede sostener el contrato que el puerto necesitaría — porque ya hay **dos operaciones sin
+equivalente conocido**: el *replace-si-existe* **atómico** (`IAtomicFileOperation`, 35 usos de
+Move/Replace/Delete) y el **lock entre procesos** de `FileShare.None`. Eso se responde en un rato y
+sin tocar una línea del motor; si sale que no, el puerto nacería con un agujero y no vale la pena
+recorrer las 6 000 líneas.
+
 **Es una propuesta para quien mantiene el motor**, en un worktree, sin commit ni merge ni push.
+
+### El camino elegido: A4, la copia — medido el 2026-09-08
+
+**Y no necesita nada de lo anterior.** La PWA vive afuera, escribe en la carpeta que la persona
+eligió, y Gnothi **la copia** a su área privada por `ContentResolver`; el `.gmod` lee **la copia**,
+donde `System.IO` sí llega. Ni puerto de archivos en el motor, ni modo lector: **cero cambios al
+motor**. Medido de punta a punta en `F1` — el motor abrió la copia y leyó sus 13 entradas.
+
+Las dos condiciones que se pidieron, y cómo quedaron:
+
+| condición | cómo quedó |
+|---|---|
+| **permiso explícito la primera vez** | ✅ lo hace el SAF. Se pide **solo lectura**, y el sistema **sí la impone** sobre la concesión guardada —falla con `SecurityException` tras reiniciar—, **pero no durante la sesión del alta**, donde el picker entrega lectura+escritura. Ahí es disciplina, no incapacidad, y hay que decirlo así |
+| **no copiar si alguien tiene tomados los archivos** | ✅ **resuelta, y resultó innecesaria.** Medido en el Chrome real del emulador: la escritura por File System Access es **atómica al `close()`** — el archivo mantuvo el contenido viejo durante los 28 s que el writable estuvo abierto y cambió de golpe al cerrar. Una copia tomada en cualquier instante obtiene **la versión anterior completa o la nueva completa, nunca una partida**. Y **no hay `.crswap`**: la hipótesis del detector era falsa |
+
+**Decidido además:** la carpeta se reconoce por **huella intrínseca** (`<actor>/meta.bin` con mágico
+`PPMM` + `journal/` al lado) — la institución no tiene que plantar nada; y el **refresco va al entrar
+a Gnothi**, más alguna pasada extra durante el día, porque el `.gmod` no se abre y no hay evento de
+apertura. Medido que corre **desatendido**, sin picker, con la concesión guardada.
+
+**El costo del refresco: medido de 4 a 120 MB.** Refresco completo (copiar + abrir con el motor),
+sin persona y sin picker:
+
+| journal | archivos | refresco |
+|---|---:|---:|
+| 4 MB | 1 | **~1,3–1,6 s** |
+| 40 MB | 10 | **~2,7–4,1 s** |
+| 120 MB | 29 | **~6,8–8,0 s** |
+
+⚠️ **Esa tabla es optimista y hay que leerla con la corrección al lado:** las tres filas tienen
+**2 000 entradas**; para llegar al tamaño se subió la carga por registro. Pero abrir hace **replay**,
+que cuesta **por entrada**. Aislado a tamaño constante: los mismos ~4 MB en **40 000** entradas chicas
+tardan **4,5 s** en abrir contra **0,95 s** en 2 000 gordas — la copia no se mueve, abrir se
+multiplica por 4,4. Ajuste grueso: `abrir ≈ 0,6 s + 0,09 ms/entrada + 37 ms/MB`.
+
+**Con registros realistas de 2 KB**, 120 MB son ~58 800 entradas y abrir sale **~10 s**, no 5,2.
+
+**Viable al entrar a Gnothi hasta la decena de MB.** En el orden de los 40 MB ya son varios segundos,
+y a 120 MB el refresco tiene que pasar a segundo plano, fuera del camino de abrir la app.
+
+**Y la palanca no es la que parecía: es ABRIR, no copiar.** A 120 MB abrir el journal con el motor
+cuesta **2–3× lo que copiarlo**. Comparar tamaño y fecha para copiar menos solo recortaría la mitad
+más chica; lo que valdría la pena es **no reabrir el motor en cada refresco** — mantener vivo el
+actor del módulo.
+
+Dos cosas que sí conviene saber:
+
+- **Lo que manda no son los bytes, es la cantidad de archivos.** Los mismos 4 MB partidos en 16
+  cuestan **~2× más** de copiar (≈15 ms de sobrecarga por archivo, cada uno una consulta al
+  `ContentResolver`). Eso lo gobierna el `maxFileSize` del journal, que hoy nadie eligió pensando en
+  esto.
+- **El costo dominante es abrir la copia con el motor, no copiarla.** El SAF no es el cuello.
+
+**Y cuántos registros pesan 1 MB:** ≈ **43,5 bytes de sobrecarga por registro** más el contenido. Van
+de **~25 900** registros mínimos a **~513** de 2 KB. Con eso se estima cualquier institución sin
+volver a medir.
+
+**Dos cosas más que salieron del Chrome real** y hay que tener presentes:
+
+- **El sellado se justifica por el CONJUNTO, no por el archivo.** La atomicidad es por archivo; un
+  journal son varios, y copiar entre la escritura de uno y la del siguiente da un conjunto coherente
+  pero desactualizado. Como `meta.bin` e `index.bin` son caché reconstruible y el journal es
+  append-only, eso queda «viejo», no «roto».
+- **El permiso de escritura de la PWA es por sesión de pestañas.** Chrome lo dice: *«until you close
+  all tabs for this site»*. Contrasta con el de Gnothi, que persiste y sobrevive reinicios. La app
+  suelta tiene que volver a pedir permiso más seguido que el Host.
+
+**Lo que falta:** journals de decenas de MB —el punto donde la copia entera deje de pagar existe,
+solo que está más lejos de lo que se suponía—, y volver a medir la atomicidad si cambia el navegador
+o la plataforma: es de **Chrome sobre SAF**, no del estándar.
 
 ### Y tres más chicos, para que no se pierdan
 
@@ -357,3 +451,93 @@ Tres cosas cambian decisiones aguas arriba:
    con mediciones; cada una mueve el pitch de «creemos» a «medimos».
 3. **Cualquier cosa de estos documentos que el código contradiga.** Ya pasó una vez con los comentarios del
    motor. Mejor corregirlo que defenderlo.
+
+---
+
+## P14 · El modo lector, cerrado — y qué queda del puerto de archivos · 2026-09-08
+
+**Resuelto lo que estaba declarado como hueco.** Elisiones, checkpoints de reacciones y outbox se
+sembraron. Sobre un journal ordenado no agregan escrituras: el parche aguanta.
+
+**Pero aparecieron dos compuertas más**, y las dos las destapó ponerse en el caso real en vez del
+caso cómodo:
+
+| # | qué escribía una «lectura» | cómo apareció |
+|---|---|---|
+| 5 | **crea 6 carpetas** en la carpeta ajena (`Directory.CreateDirectory` ×7 al abrir) | escenario **FOREIGN**: un journal sin el esqueleto de este backend |
+| 6 | **borra 12 archivos** del dueño (`RecoverFromIncompleteOperation` desde cada `LoadX`) | escenario **RICH-INTERRUPTED**: el dueño muerto a mitad de un replace atómico |
+
+La 6 es la grave: no modifica bytes, **elimina archivos**. Un consumidor al que le prestaron una
+carpeta le estaba terminando la transacción al dueño.
+
+Las dos salieron del mismo punto de inyección, así que la 6 es **una línea**: en modo lector los
+stores reciben un `IAtomicFileOperation` inerte.
+
+**Estado del parche: 131 líneas en 4 archivos, ~44 de lógica, 6 compuertas.** Seis escenarios
+(CLEAN · ROLLED · TORN · RICH · RICH-INTERRUPTED · FOREIGN), **los seis sin escribir un byte** y
+leyendo lo mismo que el control. No-op sin opt-in. Suite completa: **5 fallan · 2 087 pasan**, igual
+que master limpio.
+
+### Y de paso quedó medido algo de A2
+
+El `AtomicReplace` del modo lector **lanza** en vez de callar, a propósito. **No lanzó en ninguno de
+los seis escenarios** — el camino de lectura no lo llama. Junto con el censo (ver F1), eso deja el
+puerto que un lector necesitaría en **cinco operaciones**:
+
+| operación | ¿medida sobre SAF? |
+|---|---|
+| `File.Exists` | ✅ sí |
+| `File.ReadAllBytes` | ✅ sí |
+| `FileStream` de solo lectura con `Seek` | ✅ sí |
+| listar la carpeta | ✅ sí |
+| `File.GetLastWriteTimeUtc` | ❌ **NO** |
+
+**Corrección:** se dijo *«las cinco ya medidas»*. Son **cuatro**. `GetLastWriteTimeUtc` no se midió
+nunca: `FileCourier` consulta solo `ColumnSize`, y la sonda del SAF no leía la fecha. SAF expone
+`COLUMN_LAST_MODIFIED` en la consulta del documento, así que casi seguro anda — pero *casi seguro*
+no es medido, y por eso está en la columna de la derecha como falta.
+
+**El replace atómico y el lock entre procesos —los dos que SAF no tiene— son del lado de la
+escritura, y el camino de lectura no los toca.** Eso viene del censo (código) y del guardia de
+`AtomicReplace` (medición); el lock **no** tiene todavía un guardia equivalente.
+
+### Lo que sigue abierto
+
+- **El lector mientras el dueño escribe al mismo tiempo.** Sin medir. Es lo que separa «puedo leer
+  una carpeta prestada» de «puedo leerla en vivo», y es el experimento que falta para que A3 sirva
+  de algo en escritorio.
+- Las reacciones del escenario RICH **se saltaron la entrada 1** (un ScriptEvent literal de estilo
+  V1). Los stores quedaron creados igual, pero `elision.bin` puede haber quedado sin registros.
+- Nada de esto está commiteado ni fusionado. Worktree `Puppeteer-spike-reader`, desprendido de master
+  `8ef4415`.
+
+---
+
+## P15 · Leer en vivo SÍ se puede — y el argumento del modo lector se corre de lugar · 2026-09-08
+
+**Medido** (ver F1): un lector abriendo diez veces mientras **otro proceso** escribe 120 entradas,
+con **6 rollovers** en el medio. Ni el dueño ni el lector fallaron, quedaron las 126 entradas y la
+última dice lo que el dueño escribió último.
+
+**Y el control pasó igual.** Dos motores completos sobre el mismo journal, sin parche, tampoco
+rompieron nada. Con lo cual:
+
+1. **«En vivo» no está muerto.** La concurrencia no es catastrófica. Eso abre A2, A3 y A6 como
+   caminos con sentido, en vez de rodeos a un callejón.
+2. **Pero esta prueba no justifica el parche.** Su justificación sigue siendo la otra: el lector sin
+   parche **toca lo que no es suyo** — crea 6 carpetas, escribe el índice, y con una transacción a
+   medias **borra 12 archivos del dueño**. Es propiedad y consentimiento, no corrupción.
+
+**Y un dato que conviene mirar antes de pedirle nada a nadie:** el lector ve **una foto del momento
+en que abrió** — llegó a 64 de 126 y nunca alcanzó al dueño. «En vivo» quiere decir «fresco en cada
+apertura», no un flujo. Si el módulo tiene que reabrir igual, **la distancia entre leer en vivo y
+leer una copia (A4) es latencia y disco, no naturaleza**.
+
+### Lo que queda abierto en este frente
+
+- **El consolidador de elisiones sin ejercitar.** Es el único lugar donde el backend diseña
+  explícitamente para dos procesos, con el lock de testigo por `FileShare.None`. Ninguna prueba lo
+  tocó. Es el hueco más filoso.
+- La comprobación bajo concurrencia es cantidad + contenido de la última entrada, **no** integridad
+  byte a byte de cada registro.
+- **Solo Windows.**
