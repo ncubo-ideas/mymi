@@ -37,17 +37,32 @@ const bundle = process.argv[3] ?? 'http://127.0.0.1:8096/examenes.gmod';
 const page = await conectar('ui.html');
 const { evaluate } = page;
 
-const [screenW, screenH] = adb('shell wm size').match(/(\d+)x(\d+)/).slice(1).map(Number);
+// `wm size` prints the physical size and, when the phone runs a smaller resolution, an "Override
+// size" too; the taps have to use the override, or they land short (Honor REA-NX9: 1200x2664 physical,
+// 1100x2442 in use).
+const wm = adb('shell wm size');
+const [screenW, screenH] = (wm.match(/Override size:\s*(\d+)x(\d+)/) ?? wm.match(/(\d+)x(\d+)/)).slice(1).map(Number);
 
 const text = async selector =>
 	(await evaluate(`(document.querySelector(${JSON.stringify(selector)}) || {}).innerText || ''`)).trim();
 
-const center = selector => evaluate(`(() => {
-	const e = document.querySelector(${JSON.stringify(selector)});
-	if (!e) return null;
-	const r = e.getBoundingClientRect(), d = devicePixelRatio;
-	return [Math.round((r.left + r.width / 2) * d), Math.round((r.top + r.height / 2) * d)];
-})()`);
+// WHERE THE PAGE SITS ON THE SCREEN. getBoundingClientRect is relative to the WebView's viewport,
+// which starts under the status bar, so a tap computed from the page lands that much too high: on
+// the Honor REA-NX9 it is 117 px, enough to miss the "Agregar" button in the header and get "the
+// sheet did not open". The viewport reaches the bottom of the screen, so what is left over is the
+// top inset. Measured with no keyboard up, which is when taps are computed anyway.
+const viewport = await evaluate('[Math.round(innerWidth * devicePixelRatio), Math.round(innerHeight * devicePixelRatio)]');
+const topInset = screenH - viewport[1];
+
+const center = async selector => {
+	const c = await evaluate(`(() => {
+		const e = document.querySelector(${JSON.stringify(selector)});
+		if (!e) return null;
+		const r = e.getBoundingClientRect(), d = devicePixelRatio;
+		return [Math.round((r.left + r.width / 2) * d), Math.round((r.top + r.height / 2) * d)];
+	})()`);
+	return c && [c[0], c[1] + topInset];
+};
 
 // Tap an element, swiping first while its centre is off the screen.
 async function tap(selector) {
@@ -161,7 +176,20 @@ async function archivo() {
 	const top = adb('shell dumpsys activity activities').split('\n').find(l => /topResumedActivity|ResumedActivity/.test(l)) || '';
 	const picker = /documentsui/i.test(top);
 	console.log('picker on top:', picker, picker ? '' : '| top: ' + top.trim().slice(0, 120));
-	if (picker) { adb('shell input keyevent 4'); await sleep(1200); console.log('back to Gnothi:', /gnothi/i.test(adb('shell dumpsys activity activities').split('\n').find(l => /topResumedActivity|ResumedActivity/.test(l)) || '')); }
+	// BACK UNTIL GNOTHI IS BACK, up to three times: on the emulator one BACK dismissed the picker,
+	// but Google's DocumentsUI on the Honor takes the first one for itself and needs a second.
+	// Asking who is on top after each one costs a dumpsys and says when to stop.
+	if (picker) {
+		const onTop = () => adb('shell dumpsys activity activities').split('\n').find(l => /topResumedActivity|ResumedActivity/.test(l)) || '';
+		let now = '';
+		for (let n = 1; n <= 3; n++) {
+			adb('shell input keyevent 4');
+			await sleep(1200);
+			now = onTop();
+			if (/gnothi/i.test(now)) { console.log(`back to Gnothi: true (${n} back)`); return; }
+		}
+		console.log('back to Gnothi: false | top:', now.trim().slice(0, 120));
+	}
 }
 
 // An image of a code, shown to the reader instead of the camera.
