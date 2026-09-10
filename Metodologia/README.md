@@ -19,16 +19,25 @@ plantillas del esqueleto de un negocio nuevo.
 
 ```
 Metodologia/
-├── Guias/         los capítulos, el guion de la entrevista y los observables   ← hay contenido
+├── PLAN.md        qué se está construyendo, en qué orden, y qué decisiones ya se tomaron
+├── Guias/         los capítulos, el guion de la entrevista, los observables y el glosario  ← hay contenido
+├── Investigacion/ el porqué con bibliografía: estado del arte, las cuatro pasadas, los papers ← hay contenido
 ├── Ejemplos/      lo mínimo que se toca y se rompe — el capítulo 2 vive acá    ← hay contenido
 ├── Pruebas/       los sujetos con los que se falsan las guías                  ← hay contenido
+├── Herramientas/  los chequeos que corren solos sobre todo esto                ← hay contenido
 ├── Ambiente/      preparar el escritorio: qué se baja, qué se verifica   (paso 3)
 ├── Recetas/       MySQL, SQL Server, un API de ejemplo                   (paso 6)
 └── Plantillas/    el esqueleto de un negocio nuevo, con los cinco nodos
 ```
 
-Los tres primeros tienen contenido. El resto está nombrado y no construido, a propósito: es más
+Los cinco primeros tienen contenido. El resto está nombrado y no construido, a propósito: es más
 útil ver la forma completa y saber qué falta que encontrarse carpetas vacías sin explicación.
+
+**`Guias/` e `Investigacion/` no son lo mismo.** Las guías dicen *cómo* se hace, en lenguaje llano,
+para gente que puede no ser técnica. La investigación dice *por qué*, con las fuentes, para quien
+conoce esas literaturas y quiere saber qué nombre publicado tiene cada cosa. El
+[glosario](Guias/glosario.md) es el puente. Y el [`PLAN.md`](PLAN.md) es el único lugar donde está
+escrito qué sigue y qué se decidió — se versiona con todo lo demás, para que su diff también cuente.
 
 **`Ejemplos/` y `Pruebas/` no son lo mismo**, y conviene tenerlo claro desde el principio: los
 ejemplos son chiquitos y están para enseñar; las pruebas son completas y están para **falsar** — se

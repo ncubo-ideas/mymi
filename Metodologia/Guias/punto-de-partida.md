@@ -157,6 +157,24 @@ contesta, reproducirlo no agrega valor, lo reempaqueta.
 > Que el gimnasio ya te diga si estás al día es razón perfecta para **no hacer una pantalla de
 > pagos**. No es ninguna razón para que el dominio no sepa qué es una membresía.
 
+<!-- regla: lo-que-entra-lo-decide-la-pregunta sesion -->
+> ### Pero tampoco es *todo entra*: lo que entra lo decide la pregunta
+>
+> **Salió de la corrida siguiente, el gimnasio v3 (2026-09-08), con el papel en la mesa.** La regla de
+> arriba, leída sin más, dice que todo lo que la institución manda entra al modelo. Jorge la afinó al
+> sacar dos campos que el papel traía —el número de la máquina y una meta del aparato—: *"lo que envíe
+> la institución podría entrar, pero no tan rígido. Pensá en el número de máquina: ¿de qué serviría para
+> saber si estoy mejorando?"*
+>
+> **El criterio es la pregunta.** Todo lo que la institución manda **se lee** en el espejo, campo por
+> campo; **entra al modelo lo que alguna pregunta necesita**; lo que ninguna pregunta usa se anota y no
+> entra. Es la primera pregunta de parada de la columna vertebral —*cada dato que una pregunta necesita
+> tiene origen*— leída al revés.
+>
+> Las dos reglas se sostienen juntas: **el papel manda qué existe; la persona manda qué entra.** Lo que
+> sigue prohibido es descartar algo *porque la institución ya lo muestra* —eso fue lo que costó la
+> membresía—. Descartarlo *porque ninguna pregunta lo usa* es la pasada 3 haciendo su trabajo.
+
 <!-- regla: trae-el-papel sesion -->
 ### Y antes de cerrar el bloque: traé el papel
 
