@@ -214,6 +214,34 @@ Console.WriteLine("=== --install WRITES THE CODEX TABLE AND KEEPS THE REST ===")
 }
 
 // ============================================================================================
+// --install READS AN EMPTY JSON CONFIG AS EMPTY, NOT AS BROKEN.
+//
+// Antigravity leaves a 0-byte mcp_config.json on a fresh install (seen on a Mac, 2026-09-10).
+// JsonNode.Parse("") throws, and the installer took that for a corrupt file and sent the person
+// to register by hand. Whitespace is {}; comments and trailing commas are tolerated because
+// Claude Desktop's own file may carry them; garbage still throws, so the file is not touched.
+// ============================================================================================
+
+Console.WriteLine();
+Console.WriteLine("=== --install READS AN EMPTY JSON CONFIG AS EMPTY, NOT AS BROKEN ===");
+{
+	Assert("a 0-byte file reads as {}", Gnothi.Host.HostInstaller.ReadConfig("").Count == 0, "");
+	Assert("whitespace reads as {}", Gnothi.Host.HostInstaller.ReadConfig(" \r\n\t\n").Count == 0, "");
+
+	var kept = Gnothi.Host.HostInstaller.ReadConfig("{ \"mcpServers\": { \"other\": { \"command\": \"node\" } }, \"theme\": \"dark\" }");
+	Assert("what is there is kept, key by key",
+		kept.Count == 2 && kept["mcpServers"]?["other"]?["command"]?.GetValue<string>() == "node" && kept["theme"]?.GetValue<string>() == "dark",
+		kept.ToJsonString());
+
+	var lenient = Gnothi.Host.HostInstaller.ReadConfig("{ // the app's own comment\n \"a\": 1, }");
+	Assert("comments and trailing commas are tolerated", lenient["a"]?.GetValue<int>() == 1, lenient.ToJsonString());
+
+	bool threw = false;
+	try { Gnothi.Host.HostInstaller.ReadConfig("{ not json"); } catch (System.Text.Json.JsonException) { threw = true; }
+	Assert("garbage still throws, so the file is left alone", threw, "");
+}
+
+// ============================================================================================
 // EL INSTALADOR ESCRIBE UN installation.json QUE EL HOST PUEDE LEER.
 //
 // Regresion. El refactor a JSON sin reflexion (88e0b95) dejo a --install-module serializando
