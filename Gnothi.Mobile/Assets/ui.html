@@ -134,6 +134,10 @@
   .mod.photo:active .abrir span{transform:translateX(3px)}
   .mod.photo.off{opacity:.7;filter:saturate(.4)}
   .mod.photo .off-tag{color:#fff;opacity:.9}
+  /* «Hay una versión nueva» (NotasGnothiHost/44 §4): a pill she can tap, with a dot so it reads as
+     news and not as another permission count. It downloads nothing by itself: the update sheet follows. */
+  .mod.photo .perm.nueva{background:rgba(255,255,255,.2);box-shadow:inset 0 0 0 1px rgba(255,255,255,.55)}
+  .mod.photo .perm.nueva::before{content:'';width:7px;height:7px;border-radius:50%;background:#FFD166;flex:none}
   .mod.photo .rip{background:#fff;opacity:.18}
   .mod{position:relative;overflow:hidden;background:var(--card);border-radius:20px;box-shadow:var(--shadow);
        padding:14px 14px 14px;display:flex;flex-direction:column;gap:8px;align-items:stretch;
@@ -777,6 +781,11 @@ const gn = {
   // (especificacion 11 §8). La pone en pantalla el lado nativo; esta pagina solo lo pide.
   abrir(name) { gn.call('abrir', { module: name }); },
 
+  // «HAY UNA VERSIÓN NUEVA» (NotasGnothiHost/44 §4): the package the institution publishes is
+  // fetched and examined like a link that landed; the update sheet follows, and only her yes
+  // there installs it.
+  actualizar(name) { gn.call('actualizar', { module: name }); },
+
   sheet(on) {
     document.getElementById('sheet').classList.toggle('on', on);
     if (!on) document.getElementById('alta-enlace').classList.remove('on');
@@ -1246,6 +1255,7 @@ const gn = {
         + '<small>' + esc(taglineOf(m)) + '</small>'
         + '<div class="acts">'
         + (m.signerRevokedAt ? '<span class="off-tag">Llave retirada por la institución</span>' : '')
+        + (m.updateAvailable ? '<button class="perm nueva" onclick="event.stopPropagation();gn.actualizar(\'' + m.name + '\')">Hay una versión nueva</button>' : '')
         + '<button class="perm" onclick="event.stopPropagation();gn.detail(\'' + m.name + '\')">'
         + '<svg viewBox="0 0 24 24"><rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/></svg>'
         + on + (on === 1 ? ' permiso activo' : ' permisos activos') + '</button>'
@@ -1281,6 +1291,16 @@ const gn = {
             ? '<p class="ojo"><b>Tu institución retiró la llave</b> con la que firmó este módulo'
               + ' (Gnothi lo supo el ' + new Date(m.signerRevokedAt).toLocaleDateString('es', { day: 'numeric', month: 'short', year: 'numeric' }) + ').'
               + ' Lo que ya tenés sigue siendo tuyo. Pedile un paquete nuevo y volvé a agregarlo: Gnothi va a recordar la llave nueva.</p>'
+            : '')
+
+        // The origin publishes a newer package than the one she has (NotasGnothiHost/44 §4). A note
+        // and a door: nothing downloads until she taps, and the update sheet says what changes.
+        + (m.updateAvailable
+            ? '<div class="ojo suave"><b>Hay una versión nueva.</b> ' + esc(m.shortName || m.institution || m.title) + ' publicó '
+              + (m.updateAvailable.version ? 'la ' + esc(m.updateAvailable.version) : 'otro paquete')
+              + (m.publisher && m.publisher.version ? '; tenés la ' + esc(m.publisher.version) : '') + '.'
+              + ' Nada se instala solo: primero vas a ver qué cambia.'
+              + '<button class="btn" style="width:100%;margin-top:10px" onclick="gn.actualizar(\'' + m.name + '\')">Ver qué cambia</button></div>'
             : '')
 
         // WHAT THE CARD PROMISED: the queries, first. This is the point of entry to what the
@@ -1570,11 +1590,12 @@ const MOCK = { modules: [
     { name:'canasta_del_mes', title:'Como fue mi canasta de un mes', enabled:true, description:'La canasta de un mes, sumada por perfil.' }]},
   {
     shortName:'Estaciones Faro',
-    publisher:{ domain:'faro.cr', legal:'Estaciones Faro S.A.' },
+    publisher:{ domain:'faro.cr', legal:'Estaciones Faro S.A.', version:'2.4.0' },
     provenance:{ servedBy:'', at:'2026-09-05T18:30:00Z', version:'', matches:null },
     journal:{ retention:'2 años', reconstruible:false },
     name:'cargas', installedAt:'2026-09-07T09:00:00Z', title:'Mis cargas', institution:'Estaciones Faro',
     slogan:'Rendimiento real, tramo a tramo', shortName:'Faro', brand:{ color:'#0B3C49', logo:'../bundles/cargas/web/icon-192.png', banner:'../bundles/cargas/web/brand/banner.jpg', font:{ family:'Barlow', regular:'../bundles/cargas/web/brand/Barlow-600.woff2', bold:'' } },
+    updateAvailable:{ version:'2.5.0', seenAt:'2026-09-09T12:00:00Z' },
     enabled:true, journalBytes:1210, journalFiles:3, tools:[
     { name:'resumen', title:'Como vengo', enabled:true, description:'Cuantas cargas y cuantos vehiculos tiene registrados.' }]},
   { name:'dealership', installedAt:'2026-09-06T09:00:00Z', title:'Mi plan de mantenimiento', institution:'Sotavento Motors',
@@ -1623,6 +1644,8 @@ function mock(op, x) {
         firma: 'publicada', firmante: 'estaciones-faro-202609', firmaDesde: '' } }))), 1100);
     return 'ok';
   }
+  // The card's «Hay una versión nueva»: in the mock it is the v2 link, so the update sheet follows.
+  if (op === 'actualizar') return mock('alta', { url: 'https://estaciones-faro.cr/' + x.module + '-v2.gmod' });
   if (op === 'altaCerrarLista') return 'ok';
   if (op === 'alta') {
     // Unwrap the go.gnothi.app link the way ModuleEnrollment.BundleUrlOf does, so the host the

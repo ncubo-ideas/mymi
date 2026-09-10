@@ -1,10 +1,22 @@
 ﻿# ARMA EL BUNDLE DE UNA INSTITUCION: el zip que su pagina publica y que Gnothi baja al dar
 # de alta el modulo (especificacion 11 §3, 13 §7).
 #
-# El bundle son DOS cosas y nada mas:
+# EL MISMO MODULO VIAJA EN DOS FORMAS, y esta tabla las arma las dos desde UNA fila:
 #
-#   manifest.json   quien es la institucion, que ofrece, y donde vive su narrativa
-#   web/            su app publicada, tal cual sale de `dotnet publish`
+#   -Forma hospedada   manifest.json + web/        la app publicada, que el Host hospeda en un
+#                      (por omision)               WebView. Es la del telefono.
+#   -Forma cargo       manifest.json + dominio/    los dll del modulo, que el Host carga en
+#                                                  proceso. Es la del escritorio.
+#
+# LO QUE CAMBIA ES LO QUE VIAJA, NO LO QUE SE DECLARA. Quien es la institucion, que ofrece y
+# donde vive su narrativa sale de la misma fila del catalogo en las dos formas: una lista de
+# tools escrita dos veces se desincroniza, y esa es la falla que este archivo existe para
+# evitar. La forma se distingue desde ADENTRO -- load.entry contra web/ --, asi que las dos
+# se llaman <modulo>.gmod y la cargo vive en su propio subdirectorio.
+#
+# EN LA FORMA CARGO EL PAQUETE NO LLEVA EL MOTOR: Puppeteer, Choreography, Puppets.Portador y
+# el contrato los PRESTA el Host, y un paquete que los trajera se rechaza al instalarlo (ver
+# PackageInspector.Engine). Por eso viajan solo los ensamblados propios del modulo.
 #
 # NO trae ejecutable ni instalacion. La instalacion la escribe Gnothi cuando lo adopta,
 # porque es su archivo y su autoridad: la institucion declara donde esta su publicador, y
@@ -31,6 +43,13 @@
 
 param(
     [string] $Modulo     = 'examenes',
+
+    # QUE FORMA DEL PAQUETE. 'hospedada' arma la app publicada para el WebView del telefono;
+    # 'cargo' arma los dll que el Host carga en proceso en el escritorio. La declaracion de la
+    # institucion es la misma en las dos: sale de la fila del catalogo.
+    [ValidateSet('hospedada', 'cargo')]
+    [string] $Forma      = 'hospedada',
+
     [string] $Proyecto   = '',        # se deduce del modulo si no se pasa
     [string] $Publicador = '',        # por omision, el puerto de su propio mock
     [string] $Recurso    = '',
@@ -53,9 +72,14 @@ $ErrorActionPreference = 'Stop'
 
 $raiz = Split-Path -Parent $PSScriptRoot
 
-# LOS CUATRO MODULOS DEL POC. Cada institucion declara lo suyo; lo unico que comparten es la
+# LOS CINCO MODULOS DEL POC. Cada institucion declara lo suyo; lo unico que comparten es la
 # forma. El concesionario tambien va en espanol: Kenneth paso su PWA a espanol el 2026-09-08 y la
 # tarjeta lo sigue (2026-09-09).
+#
+# LA MUNICIPALIDAD NO SE NOMBRA, y no es una casilla pendiente: es la respuesta. El concesionario
+# inventa una marca y no pasa nada; toda municipalidad plausible es una que existe, con vecinos que
+# le pagan, asi que su modulo usa el sustantivo comun y su dominio es el TLD reservado para
+# ejemplos. El nombre real llega el dia que una municipalidad de verdad adopte el modulo.
 $catalogo = @{
     'examenes' = @{
         Proyecto    = "$raiz/Examenes/App/Examenes.Wasm/Examenes.Wasm.csproj"
@@ -168,6 +192,33 @@ $catalogo = @{
                description = 'Hasta donde leyo la app el registro del concesionario y hasta que instante se evaluo el plan. Si sube entre dos llamadas, entraron hechos nuevos.' }
         )
     }
+    'municipalidad' = @{
+        Proyecto    = "$raiz/Municipalidad/App/Municipalidad.Wasm/Municipalidad.Wasm.csproj"
+        Titulo      = 'Mi cuenta municipal'
+        Institucion = 'Tu municipalidad'
+        Marca       = 'Tu municipalidad'
+        Slogan      = 'Lo que el portal no te dice'
+        Color       = '#2C306C'
+        Rubro       = 'gobierno'
+        Descripcion = 'Tus cobros municipales: por qué te subieron, qué se te vence y cuánto apartar.'
+        NoHace      = 'No dice cuánto debés hoy: eso lo dice el portal de tu municipalidad.'
+        Dominio     = 'municipalidad.example'
+        RazonSocial = 'Municipalidad del POC'
+        Cedula      = ''
+        Version     = '1.0.0'
+        Retencion   = '5 anos'
+        Tamano      = '~1 MB al ano'
+        Refresco    = 'al abrir la app'
+        Recurso     = 'contribuyente'
+        Id          = 'CEDULA-DEMO-1'
+        Puerto      = 8121
+        Tools       = @(
+            @{ name = 'resumen'; title = 'Como vengo'
+               description = 'Cuántas fincas y cuántos rubros con historia tiene registrados la persona en este dispositivo, cuántos períodos están por vencer y cuántos vencidos al día de hoy, y hasta qué evento de la municipalidad leyó su app.' },
+            @{ name = 'lista_de_vencimientos'; title = 'Que se me vence'
+               description = 'Los períodos que se le vencen a la persona y los que ya se le vencieron, con su rubro, su monto, cuántos días faltan o cuántos lleva de atraso, y la frase con que el registro dice cada fila. Son DOS listas y no se suman. Es la pregunta que el portal de la municipalidad no contesta.' }
+        )
+    }
 }
 
 if (-not $catalogo.ContainsKey($Modulo)) {
@@ -175,7 +226,22 @@ if (-not $catalogo.ContainsKey($Modulo)) {
 }
 $m = $catalogo[$Modulo]
 
-if (-not $Proyecto)   { $Proyecto = $m.Proyecto }
+$esCargo = $Forma -eq 'cargo'
+
+# EL PROYECTO DEPENDE DE LA FORMA, y el de la forma cargo se DEDUCE del otro en vez de ser una
+# sexta columna: los cinco modulos ponen su app en <X>/App/<X>.Wasm y su superficie en
+# <X>/App/<X>.App, asi que la fila ya dice donde estan las dos. Una columna mas seria un dato
+# que se puede contradecir con el que esta al lado.
+if (-not $Proyecto) {
+    $Proyecto = $m.Proyecto
+
+    if ($esCargo) {
+        $carpetaDeApp = Split-Path -Parent (Split-Path -Parent $m.Proyecto)
+        $raizDelModulo = [IO.Path]::GetFileNameWithoutExtension($m.Proyecto) -replace '\.Wasm$', ''
+        $Proyecto = "$carpetaDeApp/$raizDelModulo.App/$raizDelModulo.App.csproj"
+    }
+}
+
 if (-not $Recurso)    { $Recurso = $m.Recurso }
 if (-not $Id)         { $Id = $m.Id }
 if (-not $Publicador) { $Publicador = "http://127.0.0.1:$($m.Puerto)/" }
@@ -183,37 +249,66 @@ if (-not $Publicador) { $Publicador = "http://127.0.0.1:$($m.Puerto)/" }
 if (-not $SoloManifiesto -and -not (Test-Path $Proyecto)) { throw "no existe el proyecto: $Proyecto" }
 
 if (-not $Salida) { $Salida = "$PSScriptRoot/bundles" }
-$armado = "$Salida/$Modulo"
+
 # ONE NAME FOR THE PACKAGE, whatever its form: the desktop's cargo is <modulo>.gmod, and so is the
 # phone's hosted bundle since 2026-09-09. The two are told apart from INSIDE, by the manifest
 # (load.entry vs web/), and a person who sees the file sees one kind of thing. Still a zip.
-$zip    = "$Salida/$Modulo.gmod"
+#
+# Y POR ESO LA CARGO VA EN SU PROPIO SUBDIRECTORIO: dos archivos del mismo nombre no caben en
+# una carpeta, y renombrar uno de los dos rompe la decision de arriba.
+$dondeVa = if ($esCargo) { "$Salida/cargo" } else { $Salida }
+$armado  = "$dondeVa/$Modulo"
+$zip     = "$dondeVa/$Modulo.gmod"
 
-# --- publicar la app -------------------------------------------------------------------
+# LO QUE TIENE QUE ESTAR PARA REESCRIBIR SOLO EL MANIFIESTO, que es distinto en cada forma.
+$loQueTraeElPaquete = if ($esCargo) { 'dominio' } else { 'web' }
+
+# --- publicar lo que viaja -------------------------------------------------------------
 $publicado = $null
+$dllsQueViajan = @()
 if ($SoloManifiesto) {
-    if (-not (Test-Path "$armado/web")) {
-        throw "-SoloManifiesto necesita un bundle ya armado, y no hay $armado/web. Corre el script sin el switch la primera vez."
+    if (-not (Test-Path "$armado/$loQueTraeElPaquete")) {
+        throw "-SoloManifiesto necesita un paquete ya armado, y no hay $armado/$loQueTraeElPaquete. Corre el script sin el switch la primera vez."
     }
-    Write-Host "solo el manifiesto de $Modulo (la app queda como esta)"
+    Write-Host "solo el manifiesto de $Modulo ($Forma; lo que viaja queda como esta)"
+    if ($esCargo) { $dllsQueViajan = Get-ChildItem "$armado/dominio" -Filter *.dll }
 } else {
-    Write-Host "publicando $Modulo..."
-    $publicado = "$Salida/.publish-$Modulo"
+    Write-Host "publicando $Modulo ($Forma)..."
+    $publicado = "$dondeVa/.publish-$Modulo"
     if (Test-Path $publicado) { Remove-Item -Recurse -Force $publicado }
 
     dotnet publish $Proyecto -c Release -o $publicado -v q --nologo | Out-Null
     if ($LASTEXITCODE -ne 0) { throw "fallo el publish de $Proyecto" }
 
-    # `dotnet publish` de un Blazor Wasm deja la app en wwwroot/ y al lado deja los dll del
-    # publish, que NO van al bundle: lo que la institucion sirve es exactamente lo que el
-    # navegador pide.
-    $web = "$publicado/wwwroot"
-    if (-not (Test-Path $web)) { throw "el publish no dejo wwwroot en $publicado" }
-
-    # --- armar el bundle ---------------------------------------------------------------
+    # --- armar el paquete --------------------------------------------------------------
     if (Test-Path $armado) { Remove-Item -Recurse -Force $armado }
     New-Item -ItemType Directory -Path $armado -Force | Out-Null
-    Copy-Item -Recurse $web "$armado/web"
+
+    if ($esCargo) {
+        # SOLO LOS ENSAMBLADOS PROPIOS DEL MODULO, por su prefijo. El publish deja al lado el
+        # motor, el contrato y la BCL, y los tres se rechazan al instalar: los presta el Host.
+        # El filtro por prefijo es tambien lo que hace que un modulo con TRES ensamblados
+        # propios -examenes tiene su Eventos aparte- viaje entero sin que nadie los liste.
+        $prefijo = ([IO.Path]::GetFileNameWithoutExtension($Proyecto) -replace '\.App$', '') + '.'
+        $dllsQueViajan = Get-ChildItem $publicado -Filter *.dll |
+            Where-Object { $_.Name.StartsWith($prefijo, [StringComparison]::OrdinalIgnoreCase) }
+
+        if (-not $dllsQueViajan) { throw "el publish no dejo ningun dll '$prefijo*' en $publicado" }
+
+        $entrada = $dllsQueViajan | Where-Object { $_.Name -eq "$prefijo`App.dll" }
+        if (-not $entrada) { throw "el publish no dejo $prefijo`App.dll, que es el punto de entrada" }
+
+        New-Item -ItemType Directory -Path "$armado/dominio" -Force | Out-Null
+        $dllsQueViajan | ForEach-Object { Copy-Item $_.FullName "$armado/dominio/" }
+    } else {
+        # `dotnet publish` de un Blazor Wasm deja la app en wwwroot/ y al lado deja los dll del
+        # publish, que NO van al bundle: lo que la institucion sirve es exactamente lo que el
+        # navegador pide.
+        $web = "$publicado/wwwroot"
+        if (-not (Test-Path $web)) { throw "el publish no dejo wwwroot en $publicado" }
+
+        Copy-Item -Recurse $web "$armado/web"
+    }
 }
 
 # EL LOGO DE LA INSTITUCION, si tiene uno en logos/. Va adentro del bundle porque es de ella:
@@ -248,6 +343,18 @@ $manifiesto = [ordered]@{
     # which the brand line compares with the serving host on its own: two declarations of one
     # fact, and which one stays is a decision for the team (NotasGnothiHost/43).
     origin        = $Origen
+    # DONDE VIVE LA SUPERFICIE, y solo en la forma cargo: el Host carga exactamente este
+    # ensamblado y encuentra adentro la clase marcada; el resto del modulo se resuelve al lado,
+    # por vecindad. En la forma hospedada no hay nada que cargar en proceso y la llave no va
+    # -- declararla ademas de traer web/ hace que el paquete se rechace, porque un modulo es
+    # cargo o es hospedado y no los dos.
+    '//load'      = 'DONDE VIVE LA SUPERFICIE. El Host carga exactamente este ensamblado; el dominio se resuelve al lado. El motor NO viaja: se lo presta el Host.'
+    load          = if ($esCargo) { [ordered]@{ entry = "dominio/$([IO.Path]::GetFileNameWithoutExtension($Proyecto)).dll" } } else { $null }
+    # LO QUE EL MODULO DECLARA NECESITAR, y tambien solo en la forma cargo: ahi corre EN
+    # PROCESO bajo el Host, que es donde la declaracion es contrastable y donde su exceso sale
+    # como warning al instalar. Lo que corre en un WebView lo acota la CSP y no esta lista.
+    '//capabilities' = 'Lo que el modulo declara necesitar. Es CONTRASTABLE: la superficie abre una carpeta y ningun socket, asi que network en false y folder en own son la verdad y son detectables.'
+    capabilities  = if ($esCargo) { [ordered]@{ network = $false; folder = 'own'; speaker = $false; microphone = $false } } else { $null }
     '//brand'     = 'LA MARCA. La institucion declara y el Host compone: ella pone el material, el decide el lugar, el tamano y el contraste.'
     brand         = [ordered]@{
         shortName = $m.Marca
@@ -265,7 +372,11 @@ $manifiesto = [ordered]@{
         # up to 160 KB, typed by its bytes. A file that does not pass leaves the card without it.
         # The typeface dresses ONLY the brand name; the rest of the card is Gnothi's Manrope. An
         # institution without one (Delfos) gets its name in Manrope ExtraBold, and declares nothing.
-        banner    = 'web/brand/banner.jpg'
+        # SE DECLARA SI ESTA, igual que el logo. La institucion que no publica banner en su
+        # wwwroot/brand/ no tiene ninguno en el bundle, y declararlo igual seria nombrar un
+        # archivo que no viaja: la aduana del Host lo dejaria pasar sin banner, pero el
+        # manifiesto habria dicho algo falso. Los cuatro primeros mocks si lo traen.
+        banner    = if (Test-Path "$armado/web/brand/banner.jpg") { 'web/brand/banner.jpg' } else { '' }
         font      = if ($m.Fuente) { [ordered]@{ family = $m.Fuente.family; file = $m.Fuente.file } } else { $null }
     }
     '//publisher' = 'DE DONDE VIENE Y QUE VERSION ES. El dominio es el unico campo CONTRASTABLE: Gnothi ya sabe de que host bajo el bundle y compara.'
@@ -301,17 +412,44 @@ $manifiesto = [ordered]@{
 # `File.ReadAllText` lo tolera -- que es como lo lee AltaDeModulo -- un manifiesto con BOM
 # revienta en cuanto alguien lo lea con `JsonDocument.Parse(string)`. No vale la pena la trampa.
 if (-not $Origen) { $manifiesto.Remove('origin') }
+if (-not $esCargo) {
+    $manifiesto.Remove('//load'); $manifiesto.Remove('load')
+    $manifiesto.Remove('//capabilities'); $manifiesto.Remove('capabilities')
+}
 $json = $manifiesto | ConvertTo-Json -Depth 8
 [System.IO.File]::WriteAllText("$armado/manifest.json", $json, (New-Object System.Text.UTF8Encoding($false)))
 
 # --- el zip ----------------------------------------------------------------------------
 if (Test-Path $zip) { Remove-Item -Force $zip }
-# Compress-Archive (PowerShell 5.1) only writes a destination that ends in .zip: it is written
-# there and renamed. The container IS a zip; only the name says what is inside.
-$zipTemporal = "$zip.zip"
-if (Test-Path $zipTemporal) { Remove-Item -Force $zipTemporal }
-Compress-Archive -Path "$armado/*" -DestinationPath $zipTemporal -CompressionLevel Optimal
-Move-Item -Force $zipTemporal $zip
+if (-not $Llave) { $Llave = "$Salida/.keys/$Modulo.key.json" }
+$raiz = (Split-Path -Parent $PSScriptRoot) -replace '\\', '/'
+# No build flags before the `--`: `dotnet run` forwards what it does not recognise to the app, and
+# the Host took a stray --nologo for its modules directory and never signed (measured 2026-09-09).
+#
+# Y LA LINEA VA ESCRITA ENTERA LAS DOS VECES, sin juntar los argumentos comunes en un arreglo para
+# splatear: medido el 2026-09-09, con splatting el `-p:BaseOutputPath=` llega vacio y MSBuild
+# revienta con MSB5029 enumerando el disco entero. Dos lineas largas iguales cuestan menos que eso.
+
+if ($esCargo) {
+    # LA FORMA CARGO LA EMPAQUETA EL HOST, con su propio --pack, y no es por comodidad: ese
+    # empaquetador corre LA MISMA INSPECCION que corre al instalar, asi que un paquete que
+    # llegaria rechazado -- con el motor adentro, con un ejecutable, con un journal de muestra --
+    # no se llega a armar. La garantia no puede depender solo de la herramienta del publicador,
+    # y aca el publicador usa la del Host.
+    dotnet run --project "$raiz/Gnothi.Host/Gnothi.Host.csproj" -p:BaseOutputPath="$raiz/bin/firmar/" -- --pack $armado $zip
+    if ($LASTEXITCODE -ne 0) { throw "fallo el empaquetado cargo de $Modulo" }
+} else {
+    # Compress-Archive (PowerShell 5.1) only writes a destination that ends in .zip: it is written
+    # there and renamed. The container IS a zip; only the name says what is inside.
+    #
+    # LA FORMA HOSPEDADA NO PASA POR --pack porque ese empaquetador es del formato cargo: le pone
+    # el load.entry por delante y no sabe de web/. Su inspeccion la corre igual el alta, en el
+    # telefono, sobre el mismo zip.
+    $zipTemporal = "$zip.zip"
+    if (Test-Path $zipTemporal) { Remove-Item -Force $zipTemporal }
+    Compress-Archive -Path "$armado/*" -DestinationPath $zipTemporal -CompressionLevel Optimal
+    Move-Item -Force $zipTemporal $zip
+}
 
 # --- la firma ----------------------------------------------------------------------------
 # The Host signs, as the publisher-side helper it already is for --pack: the same code that
@@ -320,12 +458,8 @@ Move-Item -Force $zipTemporal $zip
 # well-known. Built into its own bin because the MCP servers of a Claude session hold the default
 # one (see NotasGnothiHost); forward slashes because a trailing backslash inside quotes escapes
 # the quote on Windows.
-if (-not $Llave) { $Llave = "$Salida/.keys/$Modulo.key.json" }
-$raiz = (Split-Path -Parent $PSScriptRoot) -replace '\\', '/'
-# No build flags before the `--`: `dotnet run` forwards what it does not recognise to the app, and
-# the Host took a stray --nologo for its modules directory and never signed (measured 2026-09-09).
 dotnet run --project "$raiz/Gnothi.Host/Gnothi.Host.csproj" -p:BaseOutputPath="$raiz/bin/firmar/" -- --sign $zip $Llave
-if ($LASTEXITCODE -ne 0) { throw "fallo la firma del bundle de $Modulo" }
+if ($LASTEXITCODE -ne 0) { throw "fallo la firma del paquete de $Modulo" }
 
 if ($publicado -and (Test-Path $publicado)) { Remove-Item -Recurse -Force $publicado }
 
@@ -333,9 +467,14 @@ $mb = [math]::Round((Get-Item $zip).Length / 1MB, 1)
 $n  = (Get-ChildItem -Recurse $armado -File).Count
 
 Write-Host ""
-Write-Host "bundle listo : $zip"
+Write-Host "paquete listo: $zip"
+Write-Host "  forma      : $Forma$(if ($esCargo) { "  (load.entry $($manifiesto.load.entry))" } else { '  (web/)' })"
 Write-Host "  archivos   : $n"
 Write-Host "  tamano     : $mb MB"
+if ($esCargo) {
+    Write-Host "  ensamblados: $(($dllsQueViajan | ForEach-Object { $_.Name }) -join ', ')"
+    Write-Host "               el motor NO viaja: lo presta el Host"
+}
 Write-Host "  publicador : $Publicador$Recurso/$Id/events"
 if ($Origen) { Write-Host "  origen     : $Origen" } else { Write-Host "  origen     : (no declarado: la hoja de Gnothi lo va a decir)" }
 Write-Host "  llave      : $Llave"

@@ -130,8 +130,11 @@ app.MapGet($"/{nombreDelZip}", async (HttpContext ctx) =>
 // proves that the three pieces are consistent, and Gnothi's sheet says so.
 app.MapGet("/.well-known/gnothi/modules.json", () =>
 {
-    string? module = ModuleNameOf(bundle);
-    object[] modules = module is null ? [] : [new { module, bundle = $"{suPropiaUrl}/{nombreDelZip}", seal = SealOf(bundle) }];
+    // `version` next to the seal (2026-09-09): Gnothi compares it with what it has installed and
+    // shows "hay una versión nueva" on the card. The seal alone says "different"; the version
+    // says "newer", which is the thing worth a label.
+    (string? module, string? version) = ModuleFactsOf(bundle);
+    object[] modules = module is null ? [] : [new { module, bundle = $"{suPropiaUrl}/{nombreDelZip}", seal = SealOf(bundle), version }];
     object[] keys = PublishedKey(llave) is { } key ? [key] : [];
     object[] revoked = RevokedKeys(llavesRetiradas);
     return Results.Json(new { gnothi = 1, institution = titulo, keys, revoked, modules });
@@ -322,16 +325,25 @@ static object[] RevokedKeys(string? revokedPath)
 
 // The module's name as its manifest declares it, for the list this origin publishes. Null when
 // there is no bundle to read.
-static string? ModuleNameOf(string bundlePath)
+static string? ModuleNameOf(string bundlePath) => ModuleFactsOf(bundlePath).module;
+
+// The module's name and its publisher's version, as its manifest declares them. Both null when
+// there is no bundle to read; the version alone null when the institution does not version.
+static (string? module, string? version) ModuleFactsOf(string bundlePath)
 {
-    if (!File.Exists(bundlePath)) return null;
+    if (!File.Exists(bundlePath)) return (null, null);
 
     using var zip = System.IO.Compression.ZipFile.OpenRead(bundlePath);
     System.IO.Compression.ZipArchiveEntry? manifest = zip.Entries.FirstOrDefault(e =>
         e.FullName.Replace('\\', '/').Equals("manifest.json", StringComparison.OrdinalIgnoreCase));
-    if (manifest is null) return null;
+    if (manifest is null) return (null, null);
 
     using Stream bytes = manifest.Open();
     using var declared = System.Text.Json.JsonDocument.Parse(bytes);
-    return declared.RootElement.TryGetProperty("module", out System.Text.Json.JsonElement m) ? m.GetString() : null;
+    string? module = declared.RootElement.TryGetProperty("module", out System.Text.Json.JsonElement m) ? m.GetString() : null;
+    string? version = declared.RootElement.TryGetProperty("publisher", out System.Text.Json.JsonElement p)
+        && p.ValueKind == System.Text.Json.JsonValueKind.Object
+        && p.TryGetProperty("version", out System.Text.Json.JsonElement v) && v.ValueKind == System.Text.Json.JsonValueKind.String
+        ? v.GetString() : null;
+    return (module, version);
 }
