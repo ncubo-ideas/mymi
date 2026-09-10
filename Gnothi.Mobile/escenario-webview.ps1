@@ -6,10 +6,11 @@
 #   publicador     su narrativa (<Modulo>/EndPointDeEventos)
 #   institucion    su pagina con el boton, su app suelta en /app/, y el relevo de eventos
 #
-#   examenes    :8095 publicador   :8096 institucion
-#   compras     :8101              :8102
-#   cargas      :8111              :8112
-#   dealership  :8092              :8093
+#   examenes      :8095 publicador   :8096 institucion
+#   compras       :8101              :8102
+#   cargas        :8111              :8112
+#   dealership    :8092              :8093
+#   municipalidad :8121              :8122
 #
 # Mas un tunel `adb reverse` por puerto, que es lo que hace que el aparato los alcance.
 #
@@ -29,7 +30,7 @@
 
 param(
     [string]   $Sdk      = 'C:\Program Files (x86)\Android\android-sdk',
-    [string[]] $Modulos  = @('examenes', 'compras', 'cargas', 'dealership'),
+    [string[]] $Modulos  = @('examenes', 'compras', 'cargas', 'dealership', 'municipalidad'),
     [switch]   $SinBundle,        # no rearma los bundles (mas rapido si no cambio nada)
     [switch]   $Detener           # baja todo y limpia los tuneles
 )
@@ -41,21 +42,27 @@ $paquete = 'com.ncubo.gnothi.host'
 $adb     = "$Sdk\platform-tools\adb.exe"
 $logs    = "$env:TEMP\gnothi-escenario"
 
-# LAS CUATRO INSTITUCIONES. Los puertos del publicador tienen que coincidir con los de
+# LAS CINCO INSTITUCIONES. Los puertos del publicador tienen que coincidir con los de
 # armar-bundle.ps1: el manifiesto los lleva ADENTRO y el modulo no los puede cambiar despues.
 #
 # Y el directorio del concesionario ahora es Concesionario, no DealershipCar: master lo renombro
 # en 0110017. Cambio la RUTA, no la marca -- su Titulo sigue en ingles porque el modulo entero
 # esta en ingles, y sus tipos tambien (DealershipCarAPI). Si esto se vuelve a romper, es esto.
+#
+# El publicador de municipalidad es el 8121 y NO es una eleccion libre: es el mismo puerto que su
+# docker-compose publica, asi que los contenedores del modulo hay que bajarlos antes de correr
+# esto. Su Web quedo en 8122 -- pegado a su publicador, y libre.
 $catalogo = [ordered]@{
-    'examenes'   = @{ Mock = "$raiz\Examenes\EndPointDeEventos";     Pub = 8095; Web = 8096
-                      Titulo = 'Laboratorio Clinico Delfos'; Subtitulo = 'Tus examenes, al dia' }
-    'compras'    = @{ Mock = "$raiz\Compras\EndPointDeEventos";      Pub = 8101; Web = 8102
-                      Titulo = 'Supermercado La Guaria';     Subtitulo = 'La Guaria y vos' }
-    'cargas'     = @{ Mock = "$raiz\Cargas\EndPointDeEventos";       Pub = 8111; Web = 8112
-                      Titulo = 'Estaciones Faro';            Subtitulo = 'Tus cargas' }
-    'dealership' = @{ Mock = "$raiz\Concesionario\EndPointDeEventos"; Pub = 8092; Web = 8093
-                      Titulo = 'Sotavento Motors';           Subtitulo = 'Your maintenance' }
+    'examenes'      = @{ Mock = "$raiz\Examenes\EndPointDeEventos";      Pub = 8095; Web = 8096
+                         Titulo = 'Laboratorio Clinico Delfos'; Subtitulo = 'Tus examenes, al dia' }
+    'compras'       = @{ Mock = "$raiz\Compras\EndPointDeEventos";       Pub = 8101; Web = 8102
+                         Titulo = 'Supermercado La Guaria';     Subtitulo = 'La Guaria y vos' }
+    'cargas'        = @{ Mock = "$raiz\Cargas\EndPointDeEventos";        Pub = 8111; Web = 8112
+                         Titulo = 'Estaciones Faro';            Subtitulo = 'Tus cargas' }
+    'dealership'    = @{ Mock = "$raiz\Concesionario\EndPointDeEventos"; Pub = 8092; Web = 8093
+                         Titulo = 'Sotavento Motors';           Subtitulo = 'Your maintenance' }
+    'municipalidad' = @{ Mock = "$raiz\Municipalidad\EndPointDeEventos"; Pub = 8121; Web = 8122
+                         Titulo = 'Tu municipalidad';           Subtitulo = 'Mi cuenta municipal' }
 }
 
 if (-not (Test-Path $adb)) { throw "no encuentro adb en $adb. Pasa -Sdk con la ruta de tu SDK de Android." }
