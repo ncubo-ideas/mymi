@@ -652,10 +652,9 @@ public sealed class EstadoDeLaApp : IAsyncDisposable
 		return resultado;
 	}
 
-	// RECIBIR EL TRASPASO. Es el verbo que Gnothi le va a llamar al modulo hospedado
-	// -`window.gnothi.traspasar`, como en Examenes- cuando la capa de hospedaje llegue a
-	// esta rama; hasta entonces no tiene quien lo llame, y esta aca para que el que la traiga
-	// solo tenga que cablearlo.
+	// RECIBIR EL TRASPASO. Es el verbo que Gnothi le llama al modulo hospedado por
+	// `window.gnothi.traspasar` (SuperficieDelModulo.Traspasar), como en Examenes, cuando
+	// la persona comparte el sobre desde la app suelta.
 	//
 	// NO ENTRA POR EL CAMINO DE LOS EVENTOS. Los eventos de la estacion vienen numerados,
 	// mueven el cursor y la guarda Check los hace idempotentes. Esto son comandos de la
