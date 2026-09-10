@@ -19,25 +19,25 @@ namespace Puppets.Portador
 	// aplicarse de a uno y en orden, la idempotencia la da la guarda Check contra
 	// el checkpoint journalizado (mas fuerte que una ventana en memoria, porque
 	// sobrevive al reinicio), y no hay handover de nodos en la PC de una persona.
+	//
+	// LO QUE ESTE BUCLE NO SABE, y es el punto: de donde salen los eventos y con que
+	// credencial. Eso es del transporte. La fuente HTTP se consigue su token y lo
+	// rota; la fuente que pasa por Gnothi no tiene ninguno. El bucle solo sabe hasta
+	// donde leyo el actor, y eso lo saca del journal.
 	public sealed class BucleDeRefresh
 	{
 		private readonly IDiarioDeLaApp diario;
 		private readonly IFuenteDeEventos fuente;
 		private readonly Ruta ruta;
 		private readonly Func<Task> flush;
-		private readonly Func<CancellationToken, Task<string>> renovarCredencial;
 
 		// flush corre DESPUES de cada comando, no por timer: angosta al maximo la
 		// ventana en la que un cierre abrupto perderia entradas ya commiteadas en
 		// el actor pero todavia no bajadas a la carpeta del usuario. En la consola
 		// es un no-op (el journal ya esta en disco de verdad); en wasm es el puente
-		// MEMFS -> carpeta.
-		// renovarCredencial: que hacer cuando el proveedor rechaza el token. Devuelve el
-		// access token nuevo. Es opcional porque no todo host puede rotar (la consola de
-		// medicion no lo necesita), pero la app instalada SI lo pasa: el access token es
-		// corto a proposito, asi que sin rotacion la app se rompe sola al rato.
+		// MEMFS -> carpeta, y hospedado es el puente MEMFS -> archivos de Gnothi.
 		public BucleDeRefresh(IDiarioDeLaApp diario, IFuenteDeEventos fuente, Ruta ruta,
-			Func<Task> flush = null, Func<CancellationToken, Task<string>> renovarCredencial = null)
+			Func<Task> flush = null)
 		{
 			ArgumentNullException.ThrowIfNull(diario);
 			ArgumentNullException.ThrowIfNull(fuente);
@@ -47,24 +47,25 @@ namespace Puppets.Portador
 			this.fuente = fuente;
 			this.ruta = ruta;
 			this.flush = flush;
-			this.renovarCredencial = renovarCredencial;
 		}
 
 		public async Task<ResultadoDeRefresh> Ejecutar(CancellationToken ct = default)
 		{
-			// Ambos salen del journal. El "desde" NO se guarda entre llamadas en un
-			// campo: si la app se cayo a mitad del bloque anterior, el journal es el
+			// EL CURSOR ES DEL ACTOR y sale del journal. NO se guarda entre llamadas en
+			// un campo: si la app se cayo a mitad del bloque anterior, el journal es el
 			// unico que sabe la verdad.
 			long desde = diario.UltimoEventoProcesado();
-			string token = diario.TokenGuardado();
 
-			if (string.IsNullOrWhiteSpace(token))
-				throw new InvalidOperationException(
-					"La app no tiene web token guardado. Guardalo primero (es un comando aparte) y volve a refrescar.");
-
-			IReadOnlyList<SenalDeEvento> senales = await LeerRotandoSiHaceFalta(desde, token, ct).ConfigureAwait(false);
+			SobreLeido sobre = await fuente.LeerDesde(desde, ct).ConfigureAwait(false);
 
 			var resultado = new ResultadoDeRefresh { UltimoEvento = desde };
+			if (sobre == null) return resultado;
+
+			// El estado de la cuenta sube SIEMPRE, aunque no venga ningun evento: es
+			// justamente lo que la app suelta necesita para enterarse de que ya se mudo.
+			resultado.Cuenta = sobre.Cuenta;
+
+			IReadOnlyList<SenalDeEvento> senales = sobre.Senales;
 			if (senales == null) return resultado;
 
 			resultado.Leidos = senales.Count;
@@ -98,25 +99,6 @@ namespace Puppets.Portador
 			}
 
 			return resultado;
-		}
-
-		// Un solo reintento, y solo ante un rechazo de credencial. Si el token rotado
-		// tambien es rechazado, el problema no es la expiracion y reintentar seria
-		// castigar al proveedor con pedidos que ya sabemos que fallan.
-		private async Task<IReadOnlyList<SenalDeEvento>> LeerRotandoSiHaceFalta(
-			long desde, string token, CancellationToken ct)
-		{
-			try
-			{
-				return await fuente.LeerDesde(desde, token, ct).ConfigureAwait(false);
-			}
-			catch (CredencialRechazadaException) when (renovarCredencial != null)
-			{
-				string renovado = await renovarCredencial(ct).ConfigureAwait(false);
-				if (string.IsNullOrWhiteSpace(renovado)) throw;
-
-				return await fuente.LeerDesde(desde, renovado, ct).ConfigureAwait(false);
-			}
 		}
 	}
 }

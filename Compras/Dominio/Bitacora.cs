@@ -3,29 +3,20 @@ using System;
 namespace Compras.Dominio
 {
 	/// <summary>
-	/// Hasta donde leyo la app la narrativa del supermercado, y con que credencial la
-	/// sigue leyendo. Vive en el journal, no en memoria: es lo que hace exacto el resume
-	/// tras una caida, porque avanza DENTRO del mismo comando que aplica la compra.
+	/// Hasta donde leyo la app la narrativa del supermercado. Vive en el journal, no en
+	/// memoria: es lo que hace exacto el resume tras una caida, porque avanza DENTRO del
+	/// mismo comando que aplica la compra.
 	/// </summary>
-	// DEUDA CONOCIDA Y DELIBERADA (heredada de Facturas/Examenes): las tres piezas quedan
-	// en claro en una carpeta del usuario que tambien lee el proceso MCP. El access token
-	// expira pronto, pero el refresh es DURABLE: quien lea esa carpeta puede seguir
-	// leyendo los eventos hasta que el proveedor lo revoque. Para el MVP se acepta.
-	internal class Bitacora
+	// LA CREDENCIAL YA NO VIVE ACA. Hasta el 2026-09-03 el device key, el access token y el
+	// refresh token eran estado de esta clase y se journalizaban, con una deuda declarada:
+	// quedaban en claro en una carpeta del usuario que tambien lee el proceso MCP, y el
+	// refresh es DURABLE. Se pago: un token no es un hecho de la vida de la persona, es
+	// contexto de sesion de quien hospeda la app. Ademas viajaba con cualquier copia o
+	// traspaso del journal. Ahora la guarda el host fuera del journal -en la PWA, el storage
+	// del browser del origen- y el bucle de refresh la recibe de ahi, no del diario.
+	public class Bitacora
 	{
 		internal long UltimoEvento { get; private set; }
-
-		internal string DeviceKey { get; private set; } = "";
-
-		internal string Token { get; private set; } = "";
-
-		internal string RefreshToken { get; private set; } = "";
-
-		internal bool TieneDevice => DeviceKey.Length > 0;
-
-		internal bool TieneToken => Token.Length > 0;
-
-		internal bool PuedeRotar => RefreshToken.Length > 0;
 
 		/// <summary>Solo hacia adelante. La guarda Check del comando ya rechaza el repetido; esta es la segunda linea.</summary>
 		internal void Avanzar(long evento)
@@ -37,25 +28,19 @@ namespace Compras.Dominio
 			UltimoEvento = evento;
 		}
 
-		/// <summary>Una sola vez por instalacion: re-registrar dejaria huerfana la credencial vieja.</summary>
-		internal void RegistrarDevice(string deviceKey)
+		// COMPATIBILIDAD CON JOURNALS ANTERIORES, y nada mas. Los journals escritos antes
+		// del 2026-09-03 contienen entradas `bitacora.RegistrarDevice(...)` y
+		// `bitacora.GuardarCredencial(...)`; el replay las vuelve a ejecutar y necesita que
+		// los metodos existan con la misma firma. Aceptan y descartan: no guardan nada, no
+		// validan nada, no fallan. Ninguna API los emite ya. Lo que esos journals tienen en
+		// claro sigue ahi -el journal es append-only-: la credencial vieja se revoca en el
+		// proveedor, no se edita el historial.
+		public void RegistrarDevice(string deviceKey)
 		{
-			ArgumentNullException.ThrowIfNullOrWhiteSpace(deviceKey);
-			if (DeviceKey.Length > 0 && DeviceKey != deviceKey)
-				throw new InvalidOperationException(
-					$"Esta instalacion ya esta registrada como device '{DeviceKey}'; no se puede cambiar a '{deviceKey}'.");
-
-			DeviceKey = deviceKey;
 		}
 
 		internal void GuardarCredencial(string token, string refreshToken)
 		{
-			ArgumentNullException.ThrowIfNullOrWhiteSpace(token);
-			// Vacio es legitimo: hay proveedores que solo dan el access token.
-			ArgumentNullException.ThrowIfNull(refreshToken);
-
-			Token = token;
-			RefreshToken = refreshToken;
 		}
 	}
 }

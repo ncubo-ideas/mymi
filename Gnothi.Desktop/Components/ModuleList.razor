@@ -1,0 +1,118 @@
+@inject HostState State
+@inject Photino.NET.PhotinoWindow Window
+
+@*
+    THE LIST OF MODULES. The same thing the phone shows (MainActivity.Card): icon, title, who
+    handed it over, and its on/off state -read from installation.json.
+
+    WHAT IT DELIBERATELY DOES NOT HAVE: a switch to turn a module on or off. That is not an
+    omission. The real Host states it in HostTools: "There is deliberately NO tool to enable,
+    disable or change permissions... It is changed by editing installation.json." A button
+    here would quietly become that tool. So the window SHOWS consent and RESPECTS it; changing
+    it stays the person's explicit act on her file, and "Reload" picks it up.
+*@
+
+<h1>Your modules</h1>
+<p class="sub">What each institution handed you. Gnothi reads what is already on this device.</p>
+
+@if (State.Warnings.Count > 0)
+{
+    @foreach (string w in State.Warnings)
+    {
+        <div class="notice">@w</div>
+    }
+}
+
+@if (State.Catalog.Modules.Count == 0)
+{
+    <div class="empty">
+        No modules installed in<br /><code>@State.Root</code>
+    </div>
+}
+else
+{
+    @foreach (Module m in State.Catalog.Modules)
+    {
+        <div class="card @(m.Installation.Enabled ? "" : "off")">
+            <div class="row">
+                <div>
+                    <span style="font-size:26px">@HostState.Icon(m.Manifest)</span>
+                    @* QUIEN ES arriba y QUE ES abajo, igual que en el telefono. Estaba al
+                       revés: el titulo grande y la institucion en la linea chica. La linea que
+                       identifica la resuelve el manifiesto -Manifest.Identity- y no esta
+                       pagina, porque hay tres caras y un fallback implementado tres veces es un
+                       fallback que diverge. *@
+                    <span class="title">@m.Manifest.Identity</span>
+                    <div class="meta">
+                        @m.Manifest.Title
+                        @if (!m.Installation.Enabled)
+                        {
+                            <text> &middot; <strong>switched off by you</strong></text>
+                        }
+                        else
+                        {
+                            <text> &middot; @CountEnabled(m) quer@(CountEnabled(m) == 1 ? "y" : "ies")</text>
+                        }
+                    </div>
+                </div>
+                @if (m.Installation.Enabled && CountEnabled(m) > 0)
+                {
+                    <button class="small" @onclick="() => Open.InvokeAsync(m.Name)">Open</button>
+                }
+            </div>
+        </div>
+    }
+}
+
+<p class="crumb" style="margin-top:18px">
+    <button @onclick="Import">Import a module…</button>
+    <button class="ghost" @onclick="Reload">Reload</button>
+    <span class="meta"> &nbsp;re-reads installation.json from disk</span>
+</p>
+
+@if (message.Length > 0)
+{
+    <pre class="@(ok ? "" : "notice denied")">@message</pre>
+}
+
+@code {
+    [Parameter] public EventCallback<string> Open { get; set; }
+
+    private string message = "";
+    private bool ok = true;
+
+    private static int CountEnabled(Module m) => m.EnabledTools().Count();
+
+    private void Reload() => State.Reload();
+
+    // IMPORT A MODULE FROM A .gmod. The window is one more caller of the Host's install
+    // authority (decision B1): it hands the package to ModuleInstaller, which verifies it,
+    // extracts it, grants a folder and writes installation.json -the person's file. The
+    // window itself neither parses the package nor writes that file.
+    //
+    // The file picker is the OS one, through Photino: NSOpenPanel on macOS, IFileOpenDialog on
+    // Windows, GTK on Linux. It has to run on the UI thread, which is where a Blazor Hybrid
+    // event handler already is. It blocks that thread while open, and that is fine: there is
+    // nothing else the window could be doing while the person picks a file.
+    private void Import()
+    {
+        string[]? picked;
+        try
+        {
+            picked = Window.ShowOpenFile(
+                title: "Pick a module package",
+                multiSelect: false,
+                filters: [("Gnothi module", [".gmod"]), ("All files", ["*"])]);
+        }
+        catch (Exception e)
+        {
+            (ok, message) = (false, $"could not open the file picker: {e.GetType().Name}: {e.Message}");
+            return;
+        }
+
+        if (picked is not { Length: > 0 } || string.IsNullOrWhiteSpace(picked[0])) return;
+
+        (ok, message) = ModuleInstaller.Install(picked[0], State.Root);
+        if (ok) State.Reload();
+    }
+}

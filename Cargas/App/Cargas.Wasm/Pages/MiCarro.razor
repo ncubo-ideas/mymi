@@ -165,7 +165,19 @@ else
 
 <h2 class="seccion-titulo">Dónde vive tu bitácora</h2>
 
-@if (Estado.HayCarpeta && !Estado.EnAlmacenamientoDelNavegador)
+@* HOSPEDADA VA PRIMERO, y es la rama que faltaba. `HayCarpeta` es el handle del modo suelto y
+   hospedada no hay ninguno, así que sin esto cae en el `else` y dice «en ningún lado, se pierde
+   al cerrar» — justo cuando es más falso: Gnothi le dio una carpeta en el teléfono, y ahí es
+   donde el asistente SÍ la lee. Es el aviso neutro que MainLayout mandó a esta pantalla; estaba
+   en MisCargas.razor, que master partió en cuatro. *@
+@if (Estado.Hospedada)
+{
+    <p class="apunte">
+        En una carpeta que Gnothi le dio a esta estación, en este mismo teléfono, y es tuya.
+        <b>Tu asistente la puede leer desde ahí.</b>
+    </p>
+}
+else if (Estado.HayCarpeta && !Estado.EnAlmacenamientoDelNavegador)
 {
     <p class="apunte">
         En la carpeta &laquo;@Estado.NombreDeLaCarpeta&raquo;, y se guarda después de cada

@@ -1,0 +1,144 @@
+@inject HostState State
+@inject ModelConfig Config
+@implements IDisposable
+
+@*
+    EL ASISTENTE. El MISMO bucle de Puerta 2 que corre el telefono -- AgentLoop sobre el MISMO
+    Dispatcher -- con una cara Blazor en vez del WebView del telefono. Los hechos son de los modulos;
+    la frase es del modelo. La llave es de la persona (se pone en Ajustes).
+
+    NO reimplementa nada del loop, el despacho ni el consentimiento: solo los muestra. Si el dia de
+    manana Puerta 2 se borra, este archivo se va con ella y el Host no cambia una linea.
+*@
+
+<h1>Asistente</h1>
+<p class="sub">Tus módulos responden; el modelo redacta.</p>
+
+@if (Config.NeedsKey && !Config.KeyPresent)
+{
+    <div class="notice">
+        Todavía no hay una llave para <strong>@Config.Provider().Name</strong>.
+        Ponela en <button class="link" @onclick="OpenSettings">Ajustes</button> para usar el asistente.
+    </div>
+}
+
+<div class="chat">
+    @if (turns.Count == 0)
+    {
+        <div class="empty">Preguntá algo sobre tus módulos.</div>
+    }
+    @foreach (Turn t in turns)
+    {
+        <div class="bubble me">@t.Question</div>
+
+        @if (t.Trace.Count > 0)
+        {
+            <div class="trace-label">· qué pasó por debajo</div>
+            @foreach (string line in t.Trace)
+            {
+                <div class="trace">@line</div>
+            }
+        }
+
+        @if (t.Answer is not null)
+        {
+            <div class="bubble bot">@t.Answer</div>
+        }
+        else if (t.Failed is not null)
+        {
+            <div class="bubble bot fail">@t.Failed</div>
+        }
+        else
+        {
+            <div class="bubble bot pending">pensando…</div>
+        }
+    }
+</div>
+
+<div class="ask">
+    <input type="text" placeholder="Escribí tu pregunta…" @bind="draft" @bind:event="oninput"
+           @onkeydown="OnKey" disabled="@busy" />
+    <button class="small" disabled="@(busy || draft.Trim().Length == 0)" @onclick="Send">Enviar</button>
+</div>
+
+@code {
+    [Parameter] public EventCallback GoToSettings { get; set; }
+
+    private readonly List<Turn> turns = new();
+    private string draft = "";
+    private bool busy;
+    private CancellationTokenSource? cts;
+
+    private Task OpenSettings() => GoToSettings.InvokeAsync();
+
+    private async Task OnKey(KeyboardEventArgs e)
+    {
+        if (e.Key == "Enter") await Send();
+    }
+
+    private async Task Send()
+    {
+        string question = draft.Trim();
+        if (question.Length == 0 || busy) return;
+
+        draft = "";
+        busy = true;
+        var turn = new Turn(question);
+        turns.Add(turn);
+
+        cts?.Dispose();
+        cts = new CancellationTokenSource();
+        CancellationToken ct = cts.Token;
+
+        (_, string kind, string url, string model) = Config.Provider();
+        string keyPath = Config.KeyPath;
+
+        try
+        {
+            // FUERA DEL HILO DE UI: el loop reproduce journals (trabajo real de CPU) entre llamadas
+            // HTTP; en Blazor Hybrid los componentes corren en el hilo de UI, asi que esto colgaria
+            // la ventana. La traza llega desde el hilo de fondo -> se marshalla con InvokeAsync
+            // (que ademas hace el List.Add en el hilo de UI, para no modificar la lista mientras
+            // el render la recorre).
+            string answer = await Task.Run(async () =>
+            {
+                // El proveedor decide el adaptador: Claude habla su propia API; el resto (ChatGPT,
+                // Gemini, Groq, local…) hablan la forma OpenAI. Cambiar de uno a otro es este if,
+                // no código nuevo — para eso IModel es una interfaz.
+                IModel m = kind == "anthropic"
+                    ? new ModelClaude(keyPath, model)
+                    : new ModelOpenAiCompatible(url, model, keyPath);
+                var loop = new AgentLoop(State.Dispatcher, m);
+                return await loop.Answer(
+                    question,
+                    line => _ = InvokeAsync(() => { turn.Trace.Add(line); StateHasChanged(); }),
+                    ct);
+            });
+            turn.Answer = answer;
+        }
+        catch (Exception ex)
+        {
+            turn.Failed = $"{ex.GetType().Name}: {ex.Message}";
+        }
+        finally
+        {
+            busy = false;
+            StateHasChanged();
+        }
+    }
+
+    public void Dispose()
+    {
+        cts?.Cancel();
+        cts?.Dispose();
+    }
+
+    private sealed class Turn
+    {
+        public Turn(string q) => Question = q;
+        public string Question { get; }
+        public List<string> Trace { get; } = new();
+        public string? Answer { get; set; }
+        public string? Failed { get; set; }
+    }
+}

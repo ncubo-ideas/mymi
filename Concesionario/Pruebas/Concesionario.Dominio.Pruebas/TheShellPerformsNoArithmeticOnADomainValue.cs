@@ -267,6 +267,19 @@ namespace Concesionario.Dominio.Pruebas
 				Snippet = "expirados++;",
 				Reason = "Cuenta de tokens vencidos a mano por la ruta de prueba del mock.",
 			},
+			// LA TRAJO EL MERGE DEL 2026-09-08, y es un cruce y no un descuido: `Revocar` es de
+			// fase0/modulos-hospedados-en-ios -- de ahi los parametros salvoGnothi/soloGnothi, que
+			// existen para quitarle el acceso a la copia suelta sin tocar el de Gnothi -- y esta
+			// prueba con su lista de permitidos es de master. Ninguna de las dos ramas la vio: la
+			// linea nunca convivio con el barrido hasta que se juntaron.
+			new AllowedArithmetic
+			{
+				Root = TheCodeOfTheShellsAsData.EndPointDeEventos, File = "Program.cs",
+				Member = "Revocar",
+				Snippet = "revocadas++;",
+				Reason = "Cuenta de sesiones revocadas por la ruta de prueba del mock. Es del "
+					+ "protocolo de la sesion y no del vehiculo, igual que expirados++.",
+			},
 			new AllowedArithmetic
 			{
 				Root = TheCodeOfTheShellsAsData.EndPointDeEventos, File = "Program.cs", Member = "Agregar",

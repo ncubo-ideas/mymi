@@ -16,6 +16,11 @@
   <ItemGroup>
     <ProjectReference Include="..\..\Dominio\Facturas.Dominio.csproj" />
     <ProjectReference Include="..\..\..\Mecanismo\Puppets.Portador\Puppets.Portador.csproj" />
+
+    <!-- The cargo contract, compiled against but NOT copied (the Host lends its copy at run
+         time). Private=false keeps it out of the OTHER consumers' output too. -->
+    <ProjectReference Include="..\..\..\..\Gnothi.Contract\Gnothi.Contract.csproj"
+                      ExcludeAssets="runtime" Private="false" />
   </ItemGroup>
 
   <!-- Solo el core. Los tres paquetes de adapters (Adapters, Adapters.Sql,

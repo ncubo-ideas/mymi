@@ -3,17 +3,33 @@ using Microsoft.JSInterop;
 
 namespace Concesionario.Wasm
 {
-	public sealed class JournalBridge : IAsyncDisposable
+	public sealed class JournalBridge : IJournalDestination, IAsyncDisposable
 	{
 		public const string RootInMemfs = "/journal";
 
 		private readonly IJSRuntime js;
+		private readonly IJournalDestination destination;
 		private IJSObjectReference module;
 
+		// MODO SUELTO: el destino es el storage del browser, y de eso se ocupa esta misma
+		// clase (ver la region "the destination" al final). Es el constructor de siempre.
 		public JournalBridge(IJSRuntime js)
 		{
 			ArgumentNullException.ThrowIfNull(js);
 			this.js = js;
+			destination = this;
+		}
+
+		// MODO HOSPEDADO: el destino son los archivos de Gnothi, por el puente nativo. El
+		// movimiento MEMFS <-> destino es EL MISMO; lo unico que cambia es donde aterrizan los
+		// bytes. La plomeria de browser que queda abajo -picker, permisos, OPFS- no se usa en
+		// este modo: Gnothi no le pregunta a nadie donde escribir.
+		public JournalBridge(IJSRuntime js, IJournalDestination destination)
+		{
+			ArgumentNullException.ThrowIfNull(js);
+			ArgumentNullException.ThrowIfNull(destination);
+			this.js = js;
+			this.destination = destination;
 		}
 
 		public string FolderName { get; private set; } = "";
@@ -23,6 +39,11 @@ namespace Concesionario.Wasm
 		public bool HasFolder => FolderName.Length > 0 && PermissionGranted;
 
 		public bool NeedsRegrant => FolderName.Length > 0 && !PermissionGranted;
+
+		// SI HAY DONDE ESCRIBIR, sea el storage del browser o los archivos de Gnothi. Es lo que
+		// mira el arranque para decidir si precarga: "folder" es vocabulario del modo suelto y
+		// hospedado no aplica.
+		public bool HasDestination => destination.Available;
 
 		private async ValueTask<IJSObjectReference> ModuleAsync() =>
 			module ??= await js.InvokeAsync<IJSObjectReference>("import", "./journal-interop.js");
@@ -44,6 +65,27 @@ namespace Concesionario.Wasm
 
 		public async ValueTask<string> RememberedModeAsync() =>
 			await (await ModuleAsync()).InvokeAsync<string>("modoRecordado");
+
+		// ------------------------------------------------------------ the destination, standalone
+
+		// EL STORAGE DEL BROWSER como destino del journal. Esta clase ya tenia las tres
+		// operaciones y el estado del permiso, asi que las expone por la costura en vez de
+		// mudarlas: el modo suelto no cambia una linea de comportamiento.
+		//
+		// Implementacion EXPLICITA a proposito: son para el mecanismo, no para la caratula. La
+		// pantalla sigue hablando de carpeta y permiso, que es lo que la persona entiende.
+		string IJournalDestination.Name => FolderName;
+
+		bool IJournalDestination.Available => HasFolder;
+
+		async ValueTask<ListResult> IJournalDestination.ListAsync() =>
+			await (await ModuleAsync()).InvokeAsync<ListResult>("listar");
+
+		async ValueTask<ReadResult> IJournalDestination.ReadAsync(string path) =>
+			await (await ModuleAsync()).InvokeAsync<ReadResult>("leer", path);
+
+		async ValueTask<WriteResult> IJournalDestination.WriteAsync(string path, string contentBase64) =>
+			await (await ModuleAsync()).InvokeAsync<WriteResult>("escribir", path, contentBase64);
 
 		public async ValueTask<string> CurrentPermissionAsync() =>
 			await (await ModuleAsync()).InvokeAsync<string>("permisoActual");
@@ -77,12 +119,13 @@ namespace Concesionario.Wasm
 
 		public async ValueTask<int> PreloadIntoMemfsAsync()
 		{
-			IJSObjectReference loaded = await ModuleAsync();
-			ListResult listing = await loaded.InvokeAsync<ListResult>("listar");
+			ListResult listing = await destination.ListAsync();
 
+			// Solo en el modo suelto: hospedado no hay handle que olvidar ni carpeta que volver
+			// a elegir, y un fallo al listar es un error de verdad de Gnothi.
 			if (!listing.Ok)
 			{
-				await ForgetFolderAsync();
+				if (ReferenceEquals(destination, this)) await ForgetFolderAsync();
 				throw new FolderNotAvailableException(
 					$"No se pudo leer la carpeta guardada: {listing.Reason}. Elija una carpeta otra "
 					+ "vez.");
@@ -91,18 +134,18 @@ namespace Concesionario.Wasm
 			int copied = 0;
 			foreach (string path in listing.Paths)
 			{
-				ReadResult read = await loaded.InvokeAsync<ReadResult>("leer", path);
+				ReadResult read = await destination.ReadAsync(path);
 
 				if (!read.Ok)
 					throw new FolderNotAvailableException(
 						$"No se pudo leer '{path}' de '{FolderName}': {read.Reason}. Abrir con medio "
 						+ "journal daria un plan equivocado.");
 
-				string destination = Path.Combine(RootInMemfs, path.Replace('/', Path.DirectorySeparatorChar));
-				string directory = Path.GetDirectoryName(destination);
+				string destinationInMemfs = Path.Combine(RootInMemfs, path.Replace('/', Path.DirectorySeparatorChar));
+				string directory = Path.GetDirectoryName(destinationInMemfs);
 				if (!string.IsNullOrEmpty(directory)) Directory.CreateDirectory(directory);
 
-				File.WriteAllBytes(destination, Convert.FromBase64String(read.Content));
+				File.WriteAllBytes(destinationInMemfs, Convert.FromBase64String(read.Content));
 				copied++;
 			}
 			return copied;
@@ -110,15 +153,16 @@ namespace Concesionario.Wasm
 
 		public async ValueTask<int> FlushFromMemfsAsync()
 		{
-			if (NeedsRegrant)
+			// El permiso es vocabulario del modo suelto: hospedado el destino es de Gnothi y
+			// nadie le revoca el permiso sobre lo suyo.
+			if (ReferenceEquals(destination, this) && NeedsRegrant)
 				throw new WriteRefusedException(
 					$"No hay permiso de escritura sobre '{FolderName}'. El navegador lo da aparte del "
 					+ "de elegir la carpeta, y se lo quita cuando la app se vuelve a abrir. Volver a "
 					+ "darlo lo recupera; hasta entonces nada de lo que ve se está guardando.");
 
-			if (!HasFolder || !Directory.Exists(RootInMemfs)) return 0;
+			if (!destination.Available || !Directory.Exists(RootInMemfs)) return 0;
 
-			IJSObjectReference loaded = await ModuleAsync();
 			int written = 0;
 			var failed = new List<string>();
 
@@ -127,7 +171,7 @@ namespace Concesionario.Wasm
 				string relative = Path.GetRelativePath(RootInMemfs, file).Replace(Path.DirectorySeparatorChar, '/');
 				string base64 = Convert.ToBase64String(File.ReadAllBytes(file));
 
-				WriteResult result = await loaded.InvokeAsync<WriteResult>("escribir", relative, base64);
+				WriteResult result = await destination.WriteAsync(relative, base64);
 				if (result.Ok) written++;
 				else failed.Add($"{relative} ({result.Reason})");
 			}

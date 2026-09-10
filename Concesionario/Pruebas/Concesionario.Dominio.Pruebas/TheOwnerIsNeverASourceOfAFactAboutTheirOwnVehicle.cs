@@ -96,7 +96,10 @@ namespace Concesionario.Dominio.Pruebas
 		{
 			"SeedPlanOperation", "AdoptPlanRevision", "AddOwnerOperation", "RemoveOwnerOperation",
 			"DeclareUsageProfile", "DeferOperation", "RecordReading", "RecordConditionThreshold",
-			"CompleteOperation", "RegisterDevice", "StoreCredential",
+			// RegisterDevice y StoreCredential ya no estan en la puerta (2026-09-03: la credencial
+			// salio del journal), asi que salen de este censo. No cambia lo que el censo afirma:
+			// ninguno de los dos tomaba un hecho del vehiculo.
+			"CompleteOperation",
 			"OpenRevision", "PublishFluidSpecification", "PublishTyreSpecification",
 			"PublishFuelGrade", "PublishCoveredSystem", "PublishCoverageExclusion",
 			"PublishServiceInterval", "PublishServicePrice", "PublishServicingPolicy",

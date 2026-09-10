@@ -1,0 +1,31 @@
+{
+  "//": "THIS FILE BELONGS TO THE MODULE. The institution writes it, and some day will sign it. It declares who it is, which substrate it needs, which capabilities it asks for, and its list of tools. Gnothi reads it to build the catalog WITHOUT starting the module.",
+  "manifest": "1.0",
+  "module": "facturas",
+  "title": "Mis facturas",
+  "institution": "Súper El Triunfo",
+  "brand": { "slogan": "Ahorro y calidad en un solo lugar" },
+
+  "//substrate": "A RANGE, not an exact version: if a module pins one precise version, every Host update orphans every installed module.",
+  "substrate": {
+    "range": ">=3.0.0 <4.0.0"
+  },
+  "//capabilities": "What the module declares it needs. It is useful because it is CHECKABLE: an invoices module that asks for a microphone does not need analysis, it needs a warning. In this POC Gnothi only warns; enforcing it needs the Stage 2 sandbox.",
+  "capabilities": {
+    "network": false,
+    "folder": "own",
+    "speaker": false,
+    "microphone": false
+  },
+  "//tools": "THE LIST GNOTHI HANDS TO THE ASSISTANT. The description travels as is: it is not documentation, it is the only thing the AI has in order to decide whether this tool answers the person's question.",
+  "//names": "The tool names and their parameter names are the module's REAL ones, over the protocol. They are not translated: they have to match what the module's MCP server exposes, or tools/call fails and gnothi_verify_module reports a mismatch.",
+  "tools": [
+    {
+      "name": "total_de_facturas",
+      "title": "Cuánto gasté en total",
+      "description": "How much the person spent in total, adding up every purchase invoice their app has recorded on this computer. It also returns how many invoices there are and up to which provider event the app has read, which tells you whether it is up to date. The data comes from the record the app wrote in the person's folder, not from any server. THE TOTAL HAS NO CURRENCY: the institution does not report one in its events, so this module does not know it and neither do you. Say the amount as the bare number it is, and do not attach a currency or a unit to it - not 'units' either, which is not a thing anybody spends.",
+      "readOnly": true,
+      "input": []
+    }
+  ]
+}

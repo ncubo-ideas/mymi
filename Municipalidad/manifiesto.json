@@ -22,7 +22,24 @@
   "//sin-mediciones": "NINGUNA DE LAS SEIS PIDE UN HECHO DE LA CUENTA DE ESTA PERSONA, y eso es la regla central y no una omision. Hay UN parametro en total -el ano por el que se pregunta- y un ano es el alcance de la pregunta, no un dato de la cuenta. El caso que mas facil se habria colado es el dia contra el que se coteja lo pagado sin comprobante: es una fecha, pero tiene que ser un dia en que hubo consulta al portal, asi que es un hecho de la cuenta y la tool lo saca del registro. Un parametro que se lo pidiera al asistente seria un dato que nadie registro con un esquema encima.",
   "//los-umbrales": "LOS UMBRALES NO SON PARAMETROS Y ESTE ARCHIVO NO LOS PUEDE DECLARAR. Cinco de las seis preguntas se contestan contra un numero -cuanto tiene que subir un cobro para llamarse salto, que es ruido, cuantos dias antes se avisa, con que tasa se proyecta pagar tarde, y cuanto puede quedar corta la reserva-. Los pone la cascara, en un solo sitio, y CADA RESPUESTA TRAE EL NUMERO CON QUE SE MIDIO. CINCO DE LOS SEIS NO LOS HA FIRMADO NADIE todavia: los propuso quien modelo, leyendo seis recibos. El unico firmado es el de la reserva. El formato de este archivo no tiene donde decir eso, asi que se dice aca y se dice tambien en cada respuesta, que es donde el asistente lo va a leer.",
   "//el-hueco": "LO QUE ESTAS SEIS COMPRAN ES EXACTAMENTE LO QUE EL PORTAL NO CONTESTA, y conviene decirlo porque es la razon de ser del modulo. El portal de la municipalidad ya dice cuanto debe la persona hoy, cuanto seria pagar el ano entero, y si esta atrasada; ninguna de esas tiene pantalla en esta app ni tool aca, a proposito. Lo que ninguna pantalla del portal contesta es por que subio un cobro y que lo explica, que esta por vencerse antes de vencerse, cuanto habria que apartar por mes, y que figura pagado sin que exista comprobante. HAY UNA LECTURA DE LA PUERTA QUE NINGUNA TOOL ALCANZA: el ahorro por pronto pago. Contesta un juicio que Preguntas.md propone -avisar en enero que pagar el ano en el primer trimestre tiene descuento- y ese juicio no esta entre las seis preguntas que esta tarea escribe. Se dice en vez de disimularse.",
-  "//sin-vista-y-sin-carga": "No hay 'vista' y no hay 'carga', y ninguna de las dos ausencias es un olvido. La pantalla de este modulo todavia no existe -es la tarea siguiente- y cuando exista va a ser una app Blazor wasm, no un json que el Host pueda renderizar. Y es un modulo stdio -embarca su propio servidor MCP- asi que no declara punto de entrada.",
+  "//sin-vista-y-sin-carga": "SIGUE SIN HABER 'vista' NI 'carga' EN ESTE ARCHIVO, y ahora es por otra razon: LAS DOS SON LLAVES DEL MANIFIESTO DEL HOST -el manifest.json 1.1 que va adentro del paquete-, no de este archivo, que es el del modulo y va en espanol. 'vista' es el nombre de un json declarativo que el Host renderiza, y este modulo no trae uno: trae su propia app Blazor wasm, que el Host hospeda desde el web/ del paquete. 'carga' es el punto de entrada del paquete de carga, y desde que existe MunicipalidadSurface este modulo TAMBIEN puede viajar asi: el load.entry de ese paquete es Municipalidad.App.dll, y quien lo escribe es Gnothi.Mobile/armar-bundle.ps1. LA RAZON QUE ESTA NOTA DABA ANTES ERA CIERTA Y YA NO LO ES: decia que la pantalla no existia todavia; existe desde que se armaron las cuatro pantallas de la app.",
+  "//consultas-hospedadas": "LAS DOS QUE CONTESTA CUANDO CORRE ADENTRO DE GNOTHI, y NO son tools del servidor del asistente: la lista 'tools' de abajo es exactamente la del ensamblado MCP y una prueba lo afirma. Estas dos las contesta el modulo por otra puerta -la superficie de carga en escritorio, y la superficie del WebView en el telefono-, con los MISMOS cuerpos, que viven en ConsultasDelModulo. Los nombres de aca son una COPIA legible: la autoridad es ese archivo, y el paquete las declara otra vez en su manifest.json 1.1, que es el que Gnothi coteja contra lo que el modulo contesta de verdad al dar de alta.",
+  "consultasHospedadas": [
+    {
+      "nombre": "resumen",
+      "titulo": "Cómo vengo",
+      "soloLectura": true,
+      "entrada": [],
+      "descripcion": "Cuántas fincas y cuántos rubros con historia tiene registrados la persona en este dispositivo, cuántos períodos están por vencer y cuántos vencidos al día de hoy, y hasta qué evento de la municipalidad leyó su app. CUENTA PERÍODOS Y NO PLATA, a propósito: cuánto debe la persona hoy lo dice el portal de la municipalidad, que es la autoridad sobre su deuda."
+    },
+    {
+      "nombre": "lista_de_vencimientos",
+      "titulo": "Qué se me vence",
+      "soloLectura": true,
+      "entrada": [],
+      "descripcion": "Los períodos que se le vencen a la persona y los que ya se le vencieron, con su rubro, su monto, cuántos días faltan o cuántos lleva de atraso, y la frase con que el registro dice cada fila. SON DOS LISTAS Y NO SE SUMAN. Es la pregunta que ninguna pantalla del portal contesta."
+    }
+  ],
   "tools": [
     {
       "nombre": "por_que_pago_mas",

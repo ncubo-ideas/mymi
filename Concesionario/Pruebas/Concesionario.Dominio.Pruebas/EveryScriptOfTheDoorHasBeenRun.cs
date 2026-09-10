@@ -15,7 +15,7 @@ namespace Concesionario.Dominio.Pruebas
 	// aunque el estado siga siendo correcto.
 	//
 	// Asi que ninguna linea de DSL de DealershipCarAPI puede llegar al journal de una persona sin
-	// haberse ejecutado antes aca. Esta prueba corre CADA UNA de las CIENTO CINCUENTA Y UNA
+	// haberse ejecutado antes aca. Esta prueba corre CADA UNA de las CIENTO CUARENTA Y NUEVE
 	// operaciones de la puerta al menos una vez -- las veintiuna de la agenda (OS2/T6), las siete de la ingesta
 	// (OS2/T8: los dos comandos de la bitacora, sus cuatro lecturas, y el Apply), CanBeDeferred, los
 	// once comandos de publicacion de la especificacion (T5), las TREINTA Y SIETE lecturas de la
@@ -59,7 +59,7 @@ namespace Concesionario.Dominio.Pruebas
 	// escrito. Es la misma forma que el censo de escrituras de
 	// TheOwnerIsNeverASourceOfAFactAboutTheirOwnVehicle, con el mismo limite.
 	//
-	// LAS OPERACIONES SON CIENTO CINCUENTA Y UNA Y LOS SCRIPTS SON MAS, y la ingesta es donde la
+	// LAS OPERACIONES SON CIENTO CUARENTA Y NUEVE Y LOS SCRIPTS SON MAS, y la ingesta es donde la
 	// diferencia se vuelve grande: Apply es UNA operacion de la puerta y tiene VEINTICINCO scripts
 	// detras -- uno por cada tipo de hecho recibido, que son veinticuatro, mas el comando suelto que
 	// avanza el punto de control cuando el dominio rechaza el hecho. Contar operaciones y contar
@@ -118,9 +118,12 @@ namespace Concesionario.Dominio.Pruebas
 	// A PASAR: al llegar CL-4 este encabezado decia "ciento veintiocho" en un parrafo y "ciento
 	// nueve" en otro mientras la puerta tenia CIENTO TREINTA Y CUATRO, y las tres cuentas se
 	// re-derivaron contra la lista de abajo en vez de arrastrarse. Una cuenta afirmada en prosa
-	// envejece en silencio, asi que la que manda es TheOperationsAreOneHundredAndFiftyOne, que la
+	// envejece en silencio, asi que la que manda es TheOperationsAreOneHundredAndFortyNine, que la
 	// afirma al lado de la lista que cuenta -- y su NOMBRE lleva la cuenta a proposito, para que
 	// subirla obligue a renombrarla. CL-5 la subio y la renombro, CL-6 otra vez, y LP-2 otra vez.
+	// Y EL 2026-09-08 LA BAJO un merge, que es la primera vez: master traia el traspaso montado
+	// sobre RegisterDevice y StoreCredential, y esta rama los saco de la puerta el 2026-09-03
+	// porque un token no es un hecho de la vida de la persona. Bajar tambien obliga a renombrar.
 	//
 	// Y VOLVIO A PASAR EN CL-5, CUARTA VEZ: su primera pasada movio las cuentas de :18 y :59 y se
 	// dejo la de :84 diciendo la vieja, asi que su bloque afirmo tres donde habian aterrizado dos. La
@@ -228,9 +231,13 @@ namespace Concesionario.Dominio.Pruebas
 			"DescribeSpendBetween", "DescribeSpendPerCurrencyBetween",
 			"DescribeTwoPeriodsOfSpendCompared", "HasAnyCostBetween",
 			"IsSpendSaidInOneCurrencyBetween",
-			"RecordShopCollection", "RecordShopEntry", "RecordShopStay", "RegisterDevice",
+			// RegisterDevice y StoreCredential SALIERON de esta lista el 2026-09-08, con el merge de
+			// master: la puerta ya no los tiene desde el 2026-09-03 -un token no es un hecho de la
+			// vida de la persona-. Los LECTORES si siguen abajo (StoredDeviceKey, StoredToken,
+			// StoredRefreshToken): quedaron sin escritor, y eso es un cabo suelto de ese cambio.
+			"RecordShopCollection", "RecordShopEntry", "RecordShopStay",
 			"RemoveOwnerOperation", "SealRevision", "SeedPlanOperation",
-			"StayCountBetween", "StaysBetween", "StoreCredential",
+			"StayCountBetween", "StaysBetween",
 			"StoredDeviceKey", "StoredRefreshToken", "StoredToken", "SupersedeRevision",
 			"TheVocabularyIsTheManufacturers",
 		};
@@ -256,9 +263,9 @@ namespace Concesionario.Dominio.Pruebas
 		// dejo escrito "setenta y siete" cuando la puerta ya tenia setenta y nueve: una cuenta
 		// afirmada en prosa envejece en silencio, y esta afirmada al lado de lo que cuenta.
 		[Test]
-		public void TheOperationsAreOneHundredAndFiftyOne()
+		public void TheOperationsAreOneHundredAndFortyNine()
 		{
-			Assert.That(EveryOperationThisFixtureRuns, Has.Length.EqualTo(151));
+			Assert.That(EveryOperationThisFixtureRuns, Has.Length.EqualTo(149));
 		}
 
 		// La semilla corre en OnHydrated, asi que para cuando la prueba arranca la agenda ya
@@ -748,6 +755,11 @@ namespace Concesionario.Dominio.Pruebas
 			Assert.Throws<InvalidOperationException>(() => journal.Api.LastEvaluatedAt());
 		}
 
+		// EL UNICO SCRIPT QUE LE QUEDA A LA BITACORA: la lectura del punto de control. Hasta el
+		// 2026-09-03 eran nueve -- dos comandos de credencial y siete lecturas, siete y no cuatro
+		// porque las tres de credencial eran GUARDADAS del lado del dominio y la puerta preguntaba
+		// la presencia antes que el valor --. Se fueron con la credencial: un token es contexto de
+		// sesion del host, no historia de la persona, y ya no se journaliza.
 		// LOS ONCE COMANDOS DE PUBLICACION QUE TRAJO T5, cada uno una vez, contra la tercera global
 		// de raiz. Se abren DOS revisiones porque sustituir necesita una sucesora sellada: sin eso,
 		// SupersedeRevision seria el unico script de la puerta que nunca corrio.
@@ -958,16 +970,6 @@ namespace Concesionario.Dominio.Pruebas
 		public void EveryScriptOfTheEventLogParsesBindsAndRuns()
 		{
 			Assert.That(journal.Api.LastEventApplied(), Is.EqualTo(0L));
-			Assert.That(journal.Api.StoredDeviceKey(), Is.EqualTo(""));
-			Assert.That(journal.Api.StoredToken(), Is.EqualTo(""));
-			Assert.That(journal.Api.StoredRefreshToken(), Is.EqualTo(""));
-
-			journal.Api.RegisterDevice("device-de-prueba");
-			journal.Api.StoreCredential("at_1234", "rt_5678");
-
-			Assert.That(journal.Api.StoredDeviceKey(), Is.EqualTo("device-de-prueba"));
-			Assert.That(journal.Api.StoredToken(), Is.EqualTo("at_1234"));
-			Assert.That(journal.Api.StoredRefreshToken(), Is.EqualTo("rt_5678"));
 		}
 
 		// LOS ONCE SCRIPTS DE INGESTA QUE TRAJO T9, uno por comando de publicacion de la

@@ -1,0 +1,126 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<!-- ═══════════════════════════════════════════════════════════════════════════════════════
+     INSTALADOR DE LA APP DE COMERCIO (Super La Guaria) - MSI, per-usuario, MINIMO.
+
+     A diferencia del instalador de Gnothi, este NO registra la maquina: no toca HKLM, ni
+     startup, ni default de nada. Su unica huella fuera de su carpeta es instalar el modulo
+     DENTRO de Gnothi. El "a raya" del comercio vive en dos jaulas: el modulo, dentro de Gnothi
+     (carpeta otorgada, solo lectura, sin motor propio); y el PWA, dentro del WebView2 del shell.
+
+     QUE CONTIENE (todo en stage\laguaria):
+       - Comercio.Shell.exe + WebView2: la ventana que muestra el PWA.
+       - web\: el PWA branded de La Guaria (Blazor WASM), servido por host virtual.
+       - compras.gmod: el modulo (manifest + view.json + dos DLLs) para Gnothi.
+       - comercio.json: titulo/host que lee el shell.
+
+     QUE HACE AL INSTALAR:
+       1. DESCUBRE Gnothi leyendo HKCU\Software\Ncubo\Gnothi (HostExe y ModulesPath). Si no
+          esta, se detiene con un mensaje que manda a instalar Gnothi primero (decision 4).
+       2. Copia todo a %LocalAppData%\Programs\LaGuaria.
+       3. Corre el comando install-module de Gnothi.Host sobre compras.gmod para meter el modulo
+          en Gnothi. Reusa el instalador de modulos ya probado (extrae, otorga carpeta en
+          Documents\Gnothi\compras, escribe installation.json), no reimplementa nada.
+       4. Deja un acceso directo que abre el shell (el PWA de La Guaria).
+     ═══════════════════════════════════════════════════════════════════════════════════════ -->
+
+<Wix xmlns="http://wixtoolset.org/schemas/v4/wxs"
+     xmlns:ui="http://wixtoolset.org/schemas/v4/wxs/ui">
+
+  <Package
+      Name="Súper La Guaria"
+      Manufacturer="Supermercado La Guaria"
+      Version="0.1.0"
+      UpgradeCode="A1F2C3D4-5E6F-4A7B-8C9D-0E1F2A3B4C5D"
+      Scope="perUser"
+      Compressed="yes">
+
+    <MajorUpgrade AllowSameVersionUpgrades="yes"
+                  DowngradeErrorMessage="Ya hay una version mas nueva de Super La Guaria instalada." />
+    <MediaTemplate EmbedCab="yes" />
+
+    <!-- ═══ UI INTERACTIVA ═══ Mismo asistente que Gnothi: Bienvenida -> Licencia -> Carpeta
+         (con "Examinar...") -> Confirmar -> Progreso -> Fin. La carpeta elegida reemplaza
+         INSTALLFOLDER (la app del comercio). La deteccion de Gnothi y el drop del modulo siguen
+         automaticos por debajo, no son un paso del asistente. Requiere -ext WixToolset.UI.wixext
+         al construir. -->
+    <Property Id="WIXUI_INSTALLDIR" Value="INSTALLFOLDER" />
+    <ui:WixUI Id="WixUI_InstallDir" />
+    <WixVariable Id="WixUILicenseRtf" Value="license.rtf" />
+
+    <!-- DESCUBRIR GNOTHI. RegistrySearch lee la marca que dejo el instalador de Gnothi. Type=raw
+         devuelve el string tal cual (sin backslash final, ver comentario en Gnothi.wxs). -->
+    <Property Id="GNOTHIHOSTEXE">
+      <RegistrySearch Id="BuscarHostExe" Root="HKCU" Key="Software\Ncubo\Gnothi" Name="HostExe" Type="raw" />
+    </Property>
+    <Property Id="GNOTHIMODULES">
+      <RegistrySearch Id="BuscarModules" Root="HKCU" Key="Software\Ncubo\Gnothi" Name="ModulesPath" Type="raw" />
+    </Property>
+
+    <!-- Si Gnothi no esta instalado en esta cuenta, no seguir. -->
+    <Launch Condition="GNOTHIHOSTEXE AND GNOTHIMODULES"
+            Message="Gnothi no esta instalado en esta cuenta. Instala primero Gnothi desde su pagina de descarga y vuelve a ejecutar este instalador de Super La Guaria." />
+
+    <!-- Per-usuario, sin admin. -->
+    <StandardDirectory Id="LocalAppDataFolder">
+      <Directory Id="ProgramsFolder" Name="Programs">
+        <Directory Id="INSTALLFOLDER" Name="LaGuaria" />
+      </Directory>
+    </StandardDirectory>
+
+    <ComponentGroup Id="AppFiles" Directory="INSTALLFOLDER">
+      <Files Include="stage\laguaria\**" />
+    </ComponentGroup>
+
+    <!-- METER EL MODULO EN GNOTHI, despues de que los archivos ya estan en disco. Tipo 50: el
+         exe es la propiedad GNOTHIHOSTEXE y ExeCommand son los argumentos. Return=ignore para
+         que un tropiezo del modulo no tumbe la instalacion del PWA; el modulo se verifica aparte
+         con el comando query. Condicion NOT Installed: solo al instalar, no al desinstalar. -->
+    <CustomAction Id="InstalarModulo"
+                  Property="GNOTHIHOSTEXE"
+                  ExeCommand="--install-module &quot;[INSTALLFOLDER]compras.gmod&quot; &quot;[GNOTHIMODULES]&quot;"
+                  Execute="immediate"
+                  Return="ignore" />
+
+    <!-- AL DESINSTALAR, quitar el modulo que la custom action metio en Gnothi (el MSI no lo
+         rastrea, por eso hay que borrarlo a mano). Solo borra la carpeta del modulo; los DATOS
+         de la persona en Documents\Gnothi\compras se dejan. Condicion: desinstalacion REAL
+         (REMOVE=ALL) que NO sea parte de un upgrade, y solo si Gnothi sigue presente
+         (GNOTHIMODULES no vacio). -->
+    <CustomAction Id="LimpiarModulo" Directory="INSTALLFOLDER"
+                  ExeCommand="[SystemFolder]cmd.exe /c rmdir /s /q &quot;[GNOTHIMODULES]\compras&quot;"
+                  Execute="immediate"
+                  Return="ignore" />
+
+    <InstallExecuteSequence>
+      <Custom Action="InstalarModulo" After="InstallFinalize" Condition="NOT Installed" />
+      <Custom Action="LimpiarModulo" After="InstallInitialize"
+              Condition="REMOVE=&quot;ALL&quot; AND NOT UPGRADINGPRODUCTCODE AND GNOTHIMODULES" />
+    </InstallExecuteSequence>
+
+    <!-- Accesos directos al shell del comercio. -->
+    <StandardDirectory Id="ProgramMenuFolder">
+      <Component Id="StartShortcut">
+        <Shortcut Id="SmLaGuaria" Name="Súper La Guaria"
+                  Description="Abrir Super La Guaria"
+                  Target="[INSTALLFOLDER]Comercio.Shell.exe" WorkingDirectory="INSTALLFOLDER" />
+        <RegistryValue Root="HKCU" Key="Software\LaGuaria" Name="startMenu" Type="integer" Value="1" KeyPath="yes" />
+      </Component>
+    </StandardDirectory>
+    <StandardDirectory Id="DesktopFolder">
+      <Component Id="DeskShortcut">
+        <Shortcut Id="DkLaGuaria" Name="Súper La Guaria"
+                  Description="Abrir Super La Guaria"
+                  Target="[INSTALLFOLDER]Comercio.Shell.exe" WorkingDirectory="INSTALLFOLDER" />
+        <RegistryValue Root="HKCU" Key="Software\LaGuaria" Name="desktop" Type="integer" Value="1" KeyPath="yes" />
+      </Component>
+    </StandardDirectory>
+
+    <Feature Id="Main" Title="Súper La Guaria" Level="1">
+      <ComponentGroupRef Id="AppFiles" />
+      <ComponentRef Id="StartShortcut" />
+      <ComponentRef Id="DeskShortcut" />
+    </Feature>
+
+  </Package>
+</Wix>

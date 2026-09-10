@@ -148,7 +148,6 @@ namespace Compras.Consola
 			Console.WriteLine($"cantidad de compras         : {api.CantidadDeCompras()}");
 			Console.WriteLine($"esperadas                   : {Muestras.ComprasEsperadas}");
 			Console.WriteLine($"gasto total registrado      : {Formato(api.TotalDeCompras())}");
-			Console.WriteLine($"token guardado              : [{api.TokenGuardado()}]");
 
 			// LA PORTADA, y va primero por eso: la especificacion de marca pide que la app
 			// abra con la firma y con el quiebre, no con la lista de recibos.
@@ -507,35 +506,42 @@ namespace Compras.Consola
 
 			// La app consigue su credencial SOLA, contra su device key. Ni la consola ni
 			// la persona pegan un token: el supermercado lo emite para ESTA instalacion.
-			if (api.DeviceKeyGuardado().Length == 0)
-				api.RegistrarDevice("device-consola-de-medicion");
+			//
+			// LA CREDENCIAL VIVE EN MEMORIA DURANTE LA CORRIDA, no en el journal: es contexto
+			// de sesion de este host -la consola-, no historia de la persona. Hasta el
+			// 2026-09-03 se journalizaba y quedaba en claro en la carpeta.
+			const string deviceKey = "device-consola-de-medicion";
+			string accessToken = "";
+			string refreshToken = "";
 
-			if (api.TokenGuardado().Length == 0)
+			async Task<string> CredencialVigente(System.Threading.CancellationToken ct)
 			{
-				Credencial credencial = await proveedorDeToken.Pedir(api.DeviceKeyGuardado(), recurso, id);
+				if (accessToken.Length > 0) return accessToken;
+
+				Credencial credencial = await proveedorDeToken.Pedir(deviceKey, recurso, id, ct);
 				Console.WriteLine($"credencial: scope={credencial.Scope} expiresIn={credencial.ExpiresIn}s");
-				api.GuardarCredencial(credencial.AccessToken, credencial.RefreshToken);
+				(accessToken, refreshToken) = (credencial.AccessToken, credencial.RefreshToken ?? "");
+				return accessToken;
 			}
 
-			// Que hacer cuando el supermercado rechaza el access token: rotar con el
-			// refresh token, que es para lo que existe. El access es corto a proposito.
+			// Que hacer cuando el supermercado rechaza el access token: rotar con el refresh
+			// token, que es para lo que existe. El access es corto a proposito.
 			async Task<string> Renovar(System.Threading.CancellationToken ct)
 			{
-				string refresh = api.RefreshTokenGuardado();
-
-				Credencial renovada = refresh.Length > 0
-					? await proveedorDeToken.Rotar(refresh, ct)
+				Credencial renovada = refreshToken.Length > 0
+					? await proveedorDeToken.Rotar(refreshToken, ct)
 					: null;
 				string comoSeObtuvo = renovada != null ? "rotada con el refresh token" : "nueva contra el device key";
-				renovada ??= await proveedorDeToken.Pedir(api.DeviceKeyGuardado(), recurso, id, ct);
+				renovada ??= await proveedorDeToken.Pedir(deviceKey, recurso, id, ct);
 
 				Console.WriteLine($"  credencial renovada: {comoSeObtuvo} (scope {renovada.Scope})");
-				api.GuardarCredencial(renovada.AccessToken, renovada.RefreshToken);
-				return renovada.AccessToken;
+				(accessToken, refreshToken) = (renovada.AccessToken, renovada.RefreshToken ?? "");
+				return accessToken;
 			}
 
-			var bucle = new BucleDeRefresh(api, new FuenteHttpDeEventos(http, recurso, id),
-				RutaDeCompras.Rutear, null, Renovar);
+			var bucle = new BucleDeRefresh(api,
+				new FuenteHttpDeEventos(http, recurso, id, CredencialVigente, Renovar),
+				RutaDeCompras.Rutear);
 
 			ResultadoDeRefresh primero = await bucle.Ejecutar();
 			Console.WriteLine($"refresh 1 : {primero}");

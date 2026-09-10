@@ -1,0 +1,13 @@
+﻿{
+  "//": "ESTE ARCHIVO ES DEL HOST. Separado del manifiesto a proposito: son dos autoridades.",
+  "shell": {
+    "type": "in-process",
+    "command": "dotnet",
+    "arguments": [
+      "C:/Users/edgar/Documents/Game/Gnothi/Compras/App/Compras.Mcp/bin/Debug/net9.0/Compras.Mcp.dll"
+    ]
+  },
+  "grantedFolder": "C:/Gnothi/compras",
+  "enabled": true,
+  "disabledTools": []
+}

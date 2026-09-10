@@ -1,0 +1,55 @@
+@inject HostState State
+
+@*
+    THE ROOT. Three faces now: the modules (list or one module's screen), the assistant, and
+    settings. The visible face is `view`; inside Modules, the open module's name is the whole
+    sub-navigation -a string, not the Module object, because the catalog can be reloaded and the
+    object replaced underneath.
+*@
+
+<header>
+    <span class="brand">Gnothi</span>
+    <span class="path">@State.Root</span>
+</header>
+
+<nav class="tabs">
+    <button class="@Cls(View.Modules)" @onclick="() => view = View.Modules">Módulos</button>
+    <button class="@Cls(View.Asistente)" @onclick="() => view = View.Asistente">Asistente</button>
+    <button class="@Cls(View.Ajustes)" @onclick="() => view = View.Ajustes">Ajustes</button>
+</nav>
+
+<main>
+    @switch (view)
+    {
+        case View.Modules:
+            @if (open is null)
+            {
+                <ModuleList Open="@(name => open = name)" />
+            }
+            else
+            {
+                <p class="crumb">
+                    <button @onclick="() => open = null">&larr; Todos tus módulos</button>
+                </p>
+                <ModuleScreen Name="@open" />
+            }
+            break;
+
+        case View.Asistente:
+            <Asistente GoToSettings="() => view = View.Ajustes" />
+            break;
+
+        case View.Ajustes:
+            <Ajustes />
+            break;
+    }
+</main>
+
+@code {
+    private enum View { Modules, Asistente, Ajustes }
+
+    private View view = View.Modules;
+    private string? open;
+
+    private string Cls(View v) => v == view ? "active" : "";
+}

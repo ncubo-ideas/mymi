@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- The caller side of the Puerta 3 spike.
+
+     FOUND BY MEASUREMENT: bindService() returned false in 24 ms with NO error in logcat,
+     even after the target service was verifiably exported. That silence is the signature of
+     PACKAGE VISIBILITY (Android 11+): a caller targeting API 30 or higher cannot even SEE
+     another package unless it declares it in <queries>. It is not a permission denial, so
+     nothing is logged; the bind just fails.
+
+     This matters beyond the spike: any real adapter APK will need the same declaration, and
+     it is the kind of thing that would have been blamed on AppFunctions. -->
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+
+  <uses-permission android:name="android.permission.EXECUTE_APP_FUNCTIONS" />
+
+  <queries>
+    <package android:name="com.ncubo.gnothi.host" />
+  </queries>
+
+  <application />
+</manifest>

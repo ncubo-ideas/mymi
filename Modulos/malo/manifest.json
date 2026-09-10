@@ -1,0 +1,15 @@
+{
+  "//": "FIXTURE DE PRUEBAS. Modulo que se porta mal a proposito, para medir que hace el Host. NO va al repo.",
+  "manifest": "1.0",
+  "module": "malo",
+  "title": "Modulo que se porta mal",
+  "institution": "Gnothi (fixture de pruebas)",
+  "substrate": { "range": ">=3.0.0 <4.0.0" },
+  "tools": [
+    { "name": "portate_bien",    "title": "Control",           "description": "Devuelve normal. Control de que el modulo estaba sano.", "readOnly": true, "input": [] },
+    { "name": "explota",         "title": "Excepcion normal",   "description": "Tira una excepcion sincrona desde el hilo de la llamada.", "readOnly": true, "input": [] },
+    { "name": "hilo_suelto",     "title": "Hilo que revienta",  "description": "Lanza un hilo propio que revienta 300 ms despues.", "readOnly": true, "input": [] },
+    { "name": "se_cuelga",       "title": "Cuelgue de CPU",     "description": "Bucle infinito. Nunca devuelve.", "readOnly": true, "input": [] },
+    { "name": "mata_el_proceso", "title": "Environment.Exit",   "description": "Termina el proceso con codigo 42.", "readOnly": true, "input": [] }
+  ]
+}

@@ -2,8 +2,7 @@ using System;
 
 namespace Facturas.Dominio
 {
-	// Hasta donde leyo la app la narrativa del proveedor, y con que credencial la
-	// sigue leyendo.
+	// Hasta donde leyo la app la narrativa del proveedor.
 	//
 	// UltimoEvento es lo que hace exacto el resume: vive en el journal, no en una
 	// variable en memoria, y avanza DENTRO del mismo comando que aplica la factura.
@@ -14,34 +13,19 @@ namespace Facturas.Dominio
 	// un evento repetido antes de escribir nada; esta validacion es la segunda linea,
 	// para que el invariante viva en el dominio y no solo en el llamador.
 	//
-	// La credencial son tres piezas y las tres viven aca porque las tres son "con que
-	// sigo leyendo": el DeviceKey identifica a ESTA instalacion ante el proveedor, el
-	// access token es corto, y el refresh token es durable y rotatorio. Guardarlos en
-	// el journal es lo que le permite a la app abrir y ponerse al dia sola, sin que la
-	// persona pegue nada.
-	//
-	// DEUDA CONOCIDA Y DELIBERADA: quedan en claro en una carpeta del usuario que
-	// tambien lee el proceso MCP. El access token expira pronto, pero el refresh token
-	// es DURABLE - quien lea esa carpeta puede seguir leyendo los eventos del usuario
-	// hasta que el proveedor lo revoque. Para el MVP se acepta; documentarlo es parte
-	// de aceptarlo.
-	internal class Bitacora
+	// LA CREDENCIAL YA NO VIVE ACA. Hasta el 2026-09-03 el device key, el access token y
+	// el refresh token eran estado de esta clase y se journalizaban, "porque las tres
+	// piezas son con que sigo leyendo". Era una deuda declarada y se pago: un token no es
+	// un hecho de la vida de la persona, es contexto de sesion de quien hospeda la app (el
+	// browser, la consola, Gnothi). En el journal quedaba en claro, viajaba con cualquier
+	// copia o traspaso del journal, y lo leia todo proceso que lee la carpeta. Ahora la
+	// guarda el host fuera del journal -en la PWA, el storage del browser del origen- y el
+	// bucle de refresh la recibe de ahi, no del diario.
+	public class Bitacora
 	{
 		internal long UltimoEvento { get; private set; }
 
-		internal string DeviceKey { get; private set; } = "";
-
-		internal string Token { get; private set; } = "";
-
-		internal string RefreshToken { get; private set; } = "";
-
-		internal bool TieneDevice => DeviceKey.Length > 0;
-
-		internal bool TieneToken => Token.Length > 0;
-
-		internal bool PuedeRotar => RefreshToken.Length > 0;
-
-		internal void Avanzar(long evento)
+		public void Avanzar(long evento)
 		{
 			if (evento <= UltimoEvento)
 				throw new InvalidOperationException(
@@ -50,26 +34,19 @@ namespace Facturas.Dominio
 			UltimoEvento = evento;
 		}
 
-		// Una sola vez por instalacion. Si se re-registrara con otra clave, el
-		// proveedor veria otro device y la credencial vieja quedaria huerfana.
-		internal void RegistrarDevice(string deviceKey)
+		// COMPATIBILIDAD CON JOURNALS ANTERIORES, y nada mas. Los journals escritos antes
+		// del 2026-09-03 contienen entradas `bitacora.RegistrarDevice(...)` y
+		// `bitacora.GuardarCredencial(...)`; el replay las vuelve a ejecutar y necesita que
+		// los metodos existan con la misma firma. Aceptan y descartan: no guardan nada, no
+		// validan nada, no fallan. Ninguna API los emite ya. Lo que esos journals tienen en
+		// claro sigue ahi -el journal es append-only-: la credencial vieja se revoca en el
+		// proveedor, no se edita el historial.
+		public void RegistrarDevice(string deviceKey)
 		{
-			ArgumentNullException.ThrowIfNullOrWhiteSpace(deviceKey);
-			if (DeviceKey.Length > 0 && DeviceKey != deviceKey)
-				throw new InvalidOperationException(
-					$"Esta instalacion ya esta registrada como device '{DeviceKey}'; no se puede cambiar a '{deviceKey}'.");
-
-			DeviceKey = deviceKey;
 		}
 
-		// El refresh token es opcional: hay proveedores que solo dan el access token.
-		internal void GuardarCredencial(string token, string refreshToken)
+		public void GuardarCredencial(string token, string refreshToken)
 		{
-			ArgumentNullException.ThrowIfNullOrWhiteSpace(token);
-			ArgumentNullException.ThrowIfNull(refreshToken);
-
-			Token = token;
-			RefreshToken = refreshToken;
 		}
 	}
 }

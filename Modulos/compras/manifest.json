@@ -1,0 +1,207 @@
+{
+  "//": "GENERADO desde Compras/manifiesto.json por scratchpad/traducir-manifiesto.js. NO editar a mano: el fuente esta en esquema espanol (modulo/titulo/nombre/entrada) y este es la traduccion al esquema que Manifest.cs lee (module/title/name/input). Regenerar cuando el modulo agregue tools.",
+  "manifest": "1.0",
+  "module": "compras",
+  "title": "La Guaria y vos",
+  "institution": "Supermercado La Guaria",
+  "substrate": {
+    "range": ">=3.0.0 <4.0.0"
+  },
+  "capabilities": {
+    "network": false,
+    "folder": "own",
+    "speaker": false,
+    "microphone": false
+  },
+  "tools": [
+    {
+      "name": "total_de_compras",
+      "title": "Cuanto he gastado",
+      "description": "Cuanto gasto en total la persona en el supermercado, cuantas compras tiene registradas, y DESDE QUE MES HASTA QUE MES hay compras en su historial. Ese rango -primerMes, ultimoMes, mesesConCompras, en formato aaaa-mm- es el contexto para elegir que meses pedirle a las otras tools: pedir un mes fuera del rango devuelve vacio, y eso no significa que la persona no tenga datos. Devuelve tambien hasta que evento del supermercado leyo su app. Si hayDatos viene en false, la app nunca se abrio en esta computadora: hay que pedirle que la abra, no es un error.",
+      "readOnly": true,
+      "input": []
+    },
+    {
+      "name": "como_viene_mi_canasta",
+      "title": "Como vengo",
+      "description": "Como viene la canasta de la persona SIN TENER QUE ELEGIR MESES: compara el ultimo mes que tiene compras contra el mismo mes del anio anterior, que es la lectura que la app le muestra. Usala para preguntas generales como '¿como vengo?', '¿en que se me va la plata en el super?' o '¿que cambio en mis compras?'. Preferila sobre comparar_canastas salvo que la persona nombre dos meses concretos. Trae los dos totales y, en diferencias, DE DONDE sale el cambio pasillo por pasillo: mira las que tienen explicaElCambio en true y esNuevo para los pasillos que antes no aparecian. Usa titulo y nunca categoria al hablarle a la persona. Este modulo reporta hechos de compra y NO juzga la alimentacion de nadie: el cruce con cualquier otra fuente es del asistente, con permiso de la persona.",
+      "readOnly": true,
+      "input": []
+    },
+    {
+      "name": "la_firma_de_mi_canasta",
+      "title": "Lo que no falla",
+      "description": "LO QUE NO FALLA en las compras de la persona: los productos que vuelven compra tras compra. Es una de las dos lecturas con las que la app ABRE. Usala para '¿que compro yo?', '¿cual es mi canasta tipica?' y como contexto antes de contestar cualquier otra cosa sobre sus compras. Un producto entra si aparece en al menos la MITAD de las compras miradas, y cada uno trae en cuantas de cuantas aparece; estaEnTodas marca los que no fallaron ni una vez. Si existe viene en false, o no hay compras todavia o no hay nada que se repita lo suficiente, y paraElAsistente lo dice tal cual.",
+      "readOnly": true,
+      "input": [
+        {
+          "name": "cuantasCompras",
+          "type": "integer",
+          "description": "Cuantas de sus ultimas compras mirar. Omitilo para usar el valor de la app (8)."
+        }
+      ]
+    },
+    {
+      "name": "que_cambio_en_mi_canasta",
+      "title": "Que cambio, y desde cuando",
+      "description": "QUE SE VOLVIO HABITUAL Y DESDE CUANDO, y que dejo de estar. Es la otra lectura de la portada, y la que le pone FECHA a un cambio de habitos: usala para '¿que cambio en mis compras?', '¿desde cuando compro tanto helado?' o cuando la persona quiere relacionar sus compras con algo que le paso en un mes concreto. Cada producto que entro trae el mes de su primera aparicion, en formato aaaa-mm. Ojo: hayConQueComparar en false significa que falta un lado de la comparacion, y es distinto de hayCambio en false, que significa que la canasta viene igual. Dice QUE cambio y no si esta bien.",
+      "readOnly": true,
+      "input": [
+        {
+          "name": "corte",
+          "type": "string",
+          "description": "La fecha de corte, en formato aaaa-mm-dd. Lo de antes se compara con lo de despues."
+        },
+        {
+          "name": "cuantasCompras",
+          "type": "integer",
+          "description": "Cuantas compras mirar de cada lado. Omitilo para usar el valor de la app (8)."
+        }
+      ]
+    },
+    {
+      "name": "cada_cuanto_compro",
+      "title": "Cada cuanto lo compro",
+      "description": "CADA CUANTO compra la persona un producto, ANTES y DESPUES de una fecha. El producto se NOMBRA, no se codifica: se resuelve por nombre o parte del nombre. La respuesta viene en el lenguaje en que la gente habla de sus habitos -'1 vez/mes', '1 vez/semana', 'de vez en cuando'- y no en dias. Necesita al menos TRES compras del producto de cada lado: si hayConQueComparar viene en false no hay ritmo que medir, y no es un error. cambio en false significa que el ritmo viene igual, que tambien es una respuesta.",
+      "readOnly": true,
+      "input": [
+        {
+          "name": "producto",
+          "type": "string",
+          "description": "El producto como lo nombraria la persona: 'leche', 'helado'. Se busca por nombre o por parte del nombre; tambien acepta el codigo interno, pero no hace falta."
+        },
+        {
+          "name": "corte",
+          "type": "string",
+          "description": "La fecha de corte, en formato aaaa-mm-dd."
+        }
+      ]
+    },
+    {
+      "name": "que_cambio_en_mi_rutina",
+      "title": "Que cambio en mi rutina",
+      "description": "LOS PRODUCTOS A LOS QUE LES CAMBIO EL RITMO, el mas notorio primero, cada uno con cada cuanto se compraba antes y cada cuanto ahora. Se ordena por cuanto salto la frecuencia y no por plata: lo que cambia una rutina es cada cuanto, no cuanto cuesta. esMasSeguido distingue lo que entro de lo que se fue apagando. Una lista vacia significa que ningun producto cambio de ritmo, que es una respuesta y no una falla.",
+      "readOnly": true,
+      "input": [
+        {
+          "name": "corte",
+          "type": "string",
+          "description": "La fecha de corte, en formato aaaa-mm-dd."
+        }
+      ]
+    },
+    {
+      "name": "mi_ritmo_de_super",
+      "title": "Mi ritmo de super",
+      "description": "COMO VA AL SUPER esta persona: cada cuantos dias vuelve, que dia de la semana suele comprar y en que momento del dia. Usala para '¿cada cuanto voy al super?' o cuando la persona quiere entender su propia rutina. OJO: esto es cada cuanto VA AL SUPER, no cada cuanto compra un producto (cada_cuanto_compro) ni cada cuanto entra un departamento (que_dejaste_de_comprar). porMomento siempre trae los tres momentos del dia aunque alguno venga en cero. Si esObservado viene en false, no hay suficientes compras para medir un ritmo, y no es un error.",
+      "readOnly": true,
+      "input": []
+    },
+    {
+      "name": "canasta_del_mes",
+      "title": "Como fue mi canasta",
+      "description": "Como se compuso la canasta de UN mes, DEPARTAMENTO POR DEPARTAMENTO: cuanto entro de cada pasillo, ordenados del que mas pesa al que menos, con la proporcionDelTotal de cada uno entre 0 y 1. Trae aparte el gasto comestible y el no comestible, para que un electrodomestico caro no se coma la lectura de la comida. Usa titulo y nunca categoria al hablarle a la persona: categoria es una llave tecnica. Son hechos para razonar, no un juicio sobre la alimentacion de la persona: eso el supermercado no lo emite.",
+      "readOnly": true,
+      "input": [
+        {
+          "name": "anio",
+          "type": "integer",
+          "description": "El anio, por ejemplo 2026."
+        },
+        {
+          "name": "mes",
+          "type": "integer",
+          "description": "El mes, de 1 a 12."
+        }
+      ]
+    },
+    {
+      "name": "comparar_canastas",
+      "title": "Como cambio mi canasta",
+      "description": "Como cambio la canasta entre DOS MESES QUE LA PERSONA NOMBRE. Si no nombro meses concretos, usa como_viene_mi_canasta en vez de esta: los meses validos salen del rango que devuelve total_de_compras, y pedir un mes fuera de ese rango devuelve hayComparacion en false aunque la persona si tenga datos. Devuelve los dos totales y, en diferencias, que pasillos explican el cambio (mira explicaElCambio, esNuevo y desaparecio). La direccion va en el SIGNO del cambio; no hay veredicto porque el supermercado no opina sobre la alimentacion de nadie. El campo paraElAsistente trae la lectura ya redactada.",
+      "readOnly": true,
+      "input": [
+        {
+          "name": "anioAntes",
+          "type": "integer",
+          "description": "El anio del mes de referencia."
+        },
+        {
+          "name": "mesAntes",
+          "type": "integer",
+          "description": "El mes de referencia, de 1 a 12."
+        },
+        {
+          "name": "anioDespues",
+          "type": "integer",
+          "description": "El anio del mes a comparar."
+        },
+        {
+          "name": "mesDespues",
+          "type": "integer",
+          "description": "El mes a comparar, de 1 a 12."
+        }
+      ]
+    },
+    {
+      "name": "garantia_de_producto",
+      "title": "Hasta cuando tiene garantia",
+      "description": "Cuando compro la persona un producto y hasta cuando tiene garantia, con el respaldo completo: numero de compra, fecha, meses de cobertura, vencimiento, cuantos dias le quedan y si esta vigente hoy. Si encontrada viene en false, o el producto no esta en el registro o no tiene garantia: son dos hechos legitimos, no un error. El campo queHacer viene vacio cuando no hay nada que hacer, y eso tambien es una respuesta.",
+      "readOnly": true,
+      "input": [
+        {
+          "name": "producto",
+          "type": "string",
+          "description": "Nombre (o parte del nombre) o sku del producto, por ejemplo 'olla arrocera'. Es una busqueda por texto, no un valor de una lista."
+        }
+      ]
+    },
+    {
+      "name": "consumo_de",
+      "title": "Cuanto y cuando compro esto",
+      "description": "CUANTO Y CUANDO entro algo a la canasta, MES A MES: unidades, gasto y en cuantas compras, mas el mes mas alto y como cambio entre el primer mes y el ultimo. Trae la serie DOS VECES: meses, mes a mes, y anios, la misma serie agrupada; en cada anio, mesesConCompras dice cuantos meses tuvieron alguna, para no comparar un anio a medias con uno entero. Es la serie completa, no un total, y es lo que permite decir DESDE QUE MES cambio un consumo: ninguna pantalla lo muestra. Usala cuando la persona pregunte por un producto o categoria a lo largo del tiempo, o cuando quiera relacionar sus compras con algo mas que le este pasando -por ejemplo un resultado de laboratorio-, porque ahi lo que sirve es la fecha y no el total. Si sePuedeJuzgar viene en false, entrega los hechos y no te apoyes en el veredicto: puede haber un solo mes, o la busqueda puede cruzar categorias con perfiles distintos. IMPORTANTE: esto dice que compro y cuando, NO por que; la relacion con cualquier otra cosa la propone la persona o vos, con su permiso, y siempre como una posibilidad a conversar con su medico, nunca como una causa.",
+      "readOnly": true,
+      "input": [
+        {
+          "name": "termino",
+          "type": "string",
+          "description": "Una categoria del catalogo -Proteinas, FrutasYVerduras, LacteosYHuevos, GranosYAbarrotes, AceitesYGrasas, Azucarados, Snacks, Limpieza, Electrohogar- o un texto de producto como 'helado' u 'olla'."
+        }
+      ]
+    },
+    {
+      "name": "en_cuales_compras",
+      "title": "En cuales compras aparecio",
+      "description": "EN CUALES COMPRAS aparecio un producto o un pasillo entero, de la mas reciente a la mas vieja, con el NUMERO DE TICKET de cada una y cuanto de eso entro ahi. NO es consumo_de: aquella agrupa por mes y contesta 'cuanto y cuando'; esta devuelve los TICKETS, y su numero es lo que despues se le pasa a detalle_de_compra para ver la compra entera. Usala cuando la persona pregunte 'cuando compre esto', 'en que compra estaba' o quiera llegar a un recibo puntual. El campo productos dice que descripciones coincidieron: si trae mas de una, el texto alcanzo a varios productos y conviene decirselo antes de dar los totales. Con cuantasCompras en 0 no hay ninguna, y eso es una respuesta valida, no un error.",
+      "readOnly": true,
+      "input": [
+        {
+          "name": "termino",
+          "type": "string",
+          "description": "Un texto de producto -'leche', 'helado', 'olla'- o una categoria del catalogo: Proteinas, FrutasYVerduras, LacteosYHuevos, GranosYAbarrotes, AceitesYGrasas, Embutidos, ComidasPreparadas, Azucarados, Snacks, Limpieza, Mascotas, Electrohogar."
+        }
+      ]
+    },
+    {
+      "name": "para_mi_proxima_compra",
+      "title": "Que tengo que comprar",
+      "description": "LA LISTA DE LO QUE LE VA A FALTAR, armada con el RITMO de cada producto: cada cuanto suele volver y cuanto hace que no entra, del mas atrasado al que menos falta. Cada uno trae toca, diasTipicos, diasDesdeLaUltima y diasDeMas -negativo cuando todavia no toca-. No es que_dejaste_de_comprar: esta EXCLUYE lo abandonado, porque un producto con mas de tres ciclos sin entrar ya no es una falta sino un cambio de habito. Es una lista de lo PROBABLE y no de lo necesario: la persona puede tener el producto en su casa y la app no lo sabe, asi que se presenta como sugerencia para confirmar, nunca como una orden.",
+      "readOnly": true,
+      "input": []
+    },
+    {
+      "name": "que_dejaste_de_comprar",
+      "title": "Que me esta faltando",
+      "description": "Que categorias de las que la persona reponia con regularidad HACE DEMASIADO QUE NO COMPRA -proteinas, frutas y verduras, lacteos, granos, limpieza-, segun la periodicidad propia de cada una y la fecha de hoy. Es lo que NO esta en su historial, asi que no es la lista de compras que la app le muestra: ninguna pantalla puede renderizar una ausencia. Usala cuando pregunte '¿que me esta faltando?', '¿estoy comiendo peor?' o '¿que deje de comprar?'. Devuelve solo las atrasadas, de la mas atrasada a la menos; una lista vacia significa que esta al dia. Los azucarados y los snacks NO se reportan aca a proposito: este modulo no le dice a nadie que hace un mes que no compra helado.",
+      "readOnly": true,
+      "input": []
+    },
+    {
+      "name": "garantias_por_vencer",
+      "title": "Que garantia se me vence",
+      "description": "Las garantias cuya VENTANA PARA RECLAMAR se esta cerrando, de la mas urgente a la menos, con cuantos dias quedan y que conviene hacer. No es la lista de garantias vigentes que la app muestra: son solo las que ya piden algo, y eso sale del plazo de cada una contra la fecha de hoy. Usala cuando pregunte si se le vence alguna garantia, si tiene algo por reclamar, o antes de que tire una factura. Una lista vacia significa que ninguna esta cerca de vencer.",
+      "readOnly": true,
+      "input": []
+    }
+  ]
+}

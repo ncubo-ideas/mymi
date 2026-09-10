@@ -154,53 +154,16 @@ namespace Concesionario.Dominio.Pruebas
 			}
 		}
 
-		// LA CREDENCIAL DE LA PERSONA NO VIAJA EN NINGUNA RESPUESTA, y se comprueba por el valor y
-		// no por la lista de campos: una tool nueva que la copiara en un 'detail' pasaria cualquier
-		// prueba escrita sobre nombres de propiedad. El token esta EN CLARO en el journal (deuda
-		// aceptada, plan §8) en una carpeta que este proceso ademas lee, asi que lo unico que lo
-		// separa del asistente es que ninguna tool lo pida.
-		[Test]
-		public void NoAnswerTheAssistantGetsCarriesThePersonsCredential()
-		{
-			using (AScheduleOnARealJournal journal = AVehicleWithAPlanAndAnEvaluation())
-			{
-				journal.Api.RegisterDevice("device-que-no-tiene-que-salir");
-				journal.Api.StoreCredential("token-que-no-tiene-que-salir", "refresh-que-tampoco");
-
-				DealershipCarTools tools = TheAssistantsToolsOver(journal.Folder);
-				ModelSpecificationTools sheet = TheAssistantsSheetToolsOver(journal.Folder);
-				WarrantyEnvelopeTools envelope = TheAssistantsEnvelopeToolsOver(journal.Folder);
-				ShopStayTools stays = TheAssistantsStayToolsOver(journal.Folder);
-				OdometerSeriesTools driven = TheAssistantsSeriesToolsOver(journal.Folder);
-				CostLedgerTools spent = TheAssistantsLedgerToolsOver(journal.Folder);
-
-				var everything = new StringBuilder();
-				everything.Append(JsonSerializer.Serialize(tools.Review()));
-				everything.Append(JsonSerializer.Serialize(tools.HowUpToDate()));
-				everything.Append(JsonSerializer.Serialize(tools.WhatIsLeftBeforeEachService()));
-				everything.Append(JsonSerializer.Serialize(tools.WhatHasBeenDoneToMyCar()));
-				everything.Append(JsonSerializer.Serialize(sheet.WhatMyCarTakes()));
-				everything.Append(JsonSerializer.Serialize(sheet.DoesTheWarrantyCover("POWERTRAIN")));
-				everything.Append(JsonSerializer.Serialize(
-					sheet.WhatTheServiceCosts(MaintenanceOperation.FluidChange)));
-				everything.Append(JsonSerializer.Serialize(envelope.IsMyCarStillUnderWarranty()));
-				everything.Append(JsonSerializer.Serialize(stays.DaysMyCarSpentInTheShop()));
-				everything.Append(JsonSerializer.Serialize(driven.HowMuchMyCarIsDriven()));
-				everything.Append(JsonSerializer.Serialize(spent.WhatIHaveSpentOnMyCar()));
-				foreach (MaintenanceOperation each in TheOperationKind.All)
-					everything.Append(JsonSerializer.Serialize(tools.CheckOne(each)));
-
-				string answers = everything.ToString();
-
-				Assert.That(answers, Does.Not.Contain("token-que-no-tiene-que-salir"));
-				Assert.That(answers, Does.Not.Contain("refresh-que-tampoco"));
-				Assert.That(answers, Does.Not.Contain("device-que-no-tiene-que-salir"));
-
-				// Y el control: la puerta SI las tiene guardadas, asi que lo de arriba mide que la
-				// caratula no las pide y no que el journal no las tenga.
-				Assert.That(journal.Api.StoredToken(), Is.EqualTo("token-que-no-tiene-que-salir"));
-			}
-		}
+		// LA CREDENCIAL DE LA PERSONA YA NO ESTA EN EL JOURNAL, asi que la prueba que vigilaba que
+		// ninguna respuesta del asistente la copiara se fue con ella (estaba aca hasta el
+		// 2026-09-03). Escribia un token por la puerta, serializaba todas las tools y verificaba
+		// que el valor no apareciera en ninguna. Hoy la puerta no tiene con que escribirlo: el
+		// token lo sostiene el host fuera del journal y el asistente lee el journal.
+		//
+		// LO QUE ESA PRUEBA YA NO CUBRE, y conviene decirlo en vez de dar por cerrado el asunto:
+		// los journals escritos ANTES de ese cambio SI tienen el token en claro, porque el journal
+		// es append-only y no se edita el historial. El asistente lee esas carpetas igual. Lo que
+		// separa al token del asistente sigue siendo que ninguna tool lo pida.
 
 		// HASTA DONDE LEYO LA APP LA NARRATIVA DEL CONCESIONARIO, que es la unica pregunta con la que
 		// el asistente puede saber si lo que acaba de contestar esta al dia. Las instructions se

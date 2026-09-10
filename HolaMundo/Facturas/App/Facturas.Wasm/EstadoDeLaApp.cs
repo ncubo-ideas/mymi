@@ -28,6 +28,7 @@ public sealed class EstadoDeLaApp : IAsyncDisposable
 	private const string NombreDelActor = "facturas";
 
 	private readonly PuenteDeJournal puente;
+	private readonly AlmacenDeCredencial almacen;
 	private readonly HttpClient http;
 	private readonly ConfiguracionDelProveedor proveedor;
 
@@ -35,13 +36,15 @@ public sealed class EstadoDeLaApp : IAsyncDisposable
 	private FacturasAPI? api;
 	private BucleDeRefresh? bucle;
 
-	public EstadoDeLaApp(PuenteDeJournal puente, HttpClient http, ConfiguracionDelProveedor proveedor)
+	public EstadoDeLaApp(PuenteDeJournal puente, AlmacenDeCredencial almacen, HttpClient http, ConfiguracionDelProveedor proveedor)
 	{
 		ArgumentNullException.ThrowIfNull(puente);
+		ArgumentNullException.ThrowIfNull(almacen);
 		ArgumentNullException.ThrowIfNull(http);
 		ArgumentNullException.ThrowIfNull(proveedor);
 
 		this.puente = puente;
+		this.almacen = almacen;
 		this.http = http;
 		this.proveedor = proveedor;
 	}
@@ -107,10 +110,9 @@ public sealed class EstadoDeLaApp : IAsyncDisposable
 		api = new FacturasAPI(arrancada);
 		bucle = new BucleDeRefresh(
 			api,
-			new FuenteHttpDeEventos(http, proveedor.Recurso, proveedor.Id),
+			new FuenteHttpDeEventos(http, proveedor.Recurso, proveedor.Id, Credencial, Renovar),
 			RutaDeFacturas.Rutear,
-			BajarADisco,
-			Renovar);
+			BajarADisco);
 
 		UltimoMensaje = puente.HayCarpeta
 			? $"arriba. {precargados} archivos precargados de la carpeta '{puente.NombreDeLaCarpeta}'"
@@ -153,17 +155,24 @@ public sealed class EstadoDeLaApp : IAsyncDisposable
 	// ---------------------------------------------------------------- credencial
 
 	// El token lo pide LA APP, no la persona. El proveedor lo emite contra el device key
-	// de esta instalacion, acotado a leer los eventos de un recurso. Las tres piezas
-	// viven en el journal, asi que al reabrir la app ya sabe quien es.
-	private async ValueTask<string> Credencial(CancellationToken ct)
+	// de esta instalacion, acotado a leer los eventos de un recurso. Las tres piezas viven
+	// en el ALMACEN DE CREDENCIAL -storage del browser del origen-, NO en el journal: un
+	// token es contexto de sesion, no historia de la persona, y en el journal quedaba en
+	// claro y viajaba con cualquier copia o traspaso (hasta el 2026-09-03 era asi). El
+	// bucle de refresh recibe Credencial y Renovar como delegados y nunca toca el diario
+	// para esto.
+
+	private async Task<string> Credencial(CancellationToken ct)
 	{
-		Exigir();
+		CredencialGuardada guardada = await almacen.Leer();
 
-		if (api!.DeviceKeyGuardado().Length == 0)
-			api.RegistrarDevice(NuevaClaveDeDevice());
+		if (guardada.DeviceKey.Length == 0)
+		{
+			guardada.DeviceKey = NuevaClaveDeDevice();
+			await almacen.Guardar(guardada);
+		}
 
-		string vigente = api.TokenGuardado();
-		if (vigente.Length > 0) return vigente;
+		if (guardada.Token.Length > 0) return guardada.Token;
 
 		return await PedirCredencialNueva(ct);
 	}
@@ -172,14 +181,12 @@ public sealed class EstadoDeLaApp : IAsyncDisposable
 	// hay o el proveedor lo rechaza, pedir una credencial nueva con el device key.
 	private async Task<string> Renovar(CancellationToken ct)
 	{
-		Exigir();
-
-		string refresh = api!.RefreshTokenGuardado();
-		if (refresh.Length > 0)
+		CredencialGuardada guardada = await almacen.Leer();
+		if (guardada.Refresh.Length > 0)
 		{
 			// Rotar devuelve null si el refresh ya no vale (caducado, rotado por otra
 			// instancia, revocado). No es un error: se cae a pedir una credencial nueva.
-			Credencial rotada = await new ProveedorDeToken(http).Rotar(refresh, ct);
+			Credencial rotada = await new ProveedorDeToken(http).Rotar(guardada.Refresh, ct);
 			if (rotada is not null) return await Guardar(rotada, "credencial rotada con el refresh token");
 		}
 
@@ -188,22 +195,31 @@ public sealed class EstadoDeLaApp : IAsyncDisposable
 
 	private async Task<string> PedirCredencialNueva(CancellationToken ct)
 	{
+		CredencialGuardada guardada = await almacen.Leer();
 		Credencial nueva = await new ProveedorDeToken(http)
-			.Pedir(api!.DeviceKeyGuardado(), proveedor.Recurso, proveedor.Id, ct);
+			.Pedir(guardada.DeviceKey, proveedor.Recurso, proveedor.Id, ct);
 
 		return await Guardar(nueva, $"credencial nueva (scope {nueva.Scope})");
 	}
 
-	private async Task<string> Guardar(Credencial credencial, string quePaso)
+	// Guarda en el almacen, no en el journal: por eso ya no baja nada a disco.
+	private async Task<string> Guardar(Credencial nueva, string quePaso)
 	{
-		api!.GuardarCredencial(credencial.AccessToken, credencial.RefreshToken);
-		await BajarADisco();
-		UltimoMensaje = quePaso;
-		return credencial.AccessToken;
+		CredencialGuardada guardada = await almacen.Leer();
+		guardada.Token = nueva.AccessToken;
+		guardada.Refresh = nueva.RefreshToken ?? "";
+		await almacen.Guardar(guardada);
+
+		UltimoMensaje = almacen.SinRespaldo
+			? quePaso + " (solo en memoria: el browser no dejo guardarla; al reabrir se pedira otra)"
+			: quePaso;
+		return nueva.AccessToken;
 	}
 
-	// Identidad de esta instalacion. Se genera una sola vez y se journaliza como
-	// parametro, asi el replay la reusa en vez de inventar otra.
+	// Identidad de esta instalacion. Se genera una sola vez y se guarda en el almacen de
+	// credencial (storage del browser), NO en el journal. Si el browser la desaloja, la app
+	// se presenta ante el proveedor como un device nuevo y pide otra concesion; la vieja
+	// queda huerfana hasta que el proveedor la revoque.
 	private static string NuevaClaveDeDevice() => "device-" + Guid.NewGuid().ToString("N")[..16];
 
 	public async ValueTask<ResultadoDeRefresh> Refrescar(CancellationToken ct = default)
@@ -226,7 +242,9 @@ public sealed class EstadoDeLaApp : IAsyncDisposable
 
 	public long UltimoEvento() { Exigir(); return api!.UltimoEventoProcesado(); }
 
-	public bool TieneToken() { Exigir(); return api!.TokenGuardado().Length > 0; }
+	// Del almacen, no del journal. Sincrono: la pantalla lo pregunta al renderizar y el
+	// almacen ya tiene la credencial en cache despues del primer Leer.
+	public bool TieneToken() => almacen.TieneToken;
 
 	public (int archivos, long bytes) EstadoDeMemfs() => PuenteDeJournal.EstadoDeMemfs();
 
@@ -239,6 +257,7 @@ public sealed class EstadoDeLaApp : IAsyncDisposable
 	{
 		app?.Actor.GracefulExit();
 		await puente.DisposeAsync();
+		await almacen.DisposeAsync();
 	}
 }
 

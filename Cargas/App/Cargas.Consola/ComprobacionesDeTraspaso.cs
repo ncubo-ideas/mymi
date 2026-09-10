@@ -60,13 +60,30 @@ namespace Cargas.Consola
 		{
 			Titulo("la app suelta arma el sobre: solo lo que dijo la persona, sin credencial");
 
-			// La suelta vivio su vida: la historia de la estacion, los aportes de Sonia, una
-			// preferencia distinta a la canonica y la credencial con la que leia.
+			// La suelta vivio su vida: la historia de la estacion, los aportes de Sonia y una
+			// preferencia distinta a la canonica.
 			Historia(api);
 			Aportes(api);
 			api.ElegirPresentacionDeRendimiento("mpg");
-			api.RegistrarDevice("device-de-prueba");
-			api.GuardarCredencial("token-secreto", "refresh-secreto");
+
+			// Y ACA IBA LA CREDENCIAL CON LA QUE LEIA:
+			//     api.RegistrarDevice("device-de-prueba");
+			//     api.GuardarCredencial("token-secreto", "refresh-secreto");
+			//
+			// Se plantaba A PROPOSITO para que el "NO lleva la credencial" de abajo tuviera algo
+			// que encontrar. El 2026-09-03 la credencial salio del journal -"un token no es un
+			// hecho de la vida de la persona, es contexto de sesion de quien hospeda la app"-, y
+			// con ella los dos metodos: ya no se puede plantar.
+			//
+			// ESTA COMPROBACION PERDIO SUS DIENTES, y conviene decirlo en vez de dejarla verde:
+			// afirmaba lo mismo que esa decision, asi que ahora la propiedad se cumple POR
+			// ESTRUCTURA -no hay credencial en el journal que pueda filtrarse al sobre- y el
+			// renglon de abajo quedo como guarda residual: se pondria rojo si alguien volviera a
+			// meter una credencial por otro camino, y es lo unico que sigue aportando.
+			//
+			// Quien hizo el traspaso (PR 10064) es quien tiene que decidir si eso alcanza o si la
+			// forma fuerte pasa a ser afirmar que el JOURNAL no la tiene, que es donde vive la
+			// garantia desde el 2026-09-03. Medido en el merge del 2026-09-08.
 
 			ResumenDeTraspaso resumen = Traspaso.Resumir(api);
 			Igual("hay tantos kilometrajes como el guion", Muestras.Kilometrajes.Length.ToString(),
@@ -79,7 +96,7 @@ namespace Cargas.Consola
 			string sobre = Traspaso.Armar(api, Publicador, Hoy);
 			Igual("el sobre dice de que modulo es", "True", sobre.Contains("\"modulo\": \"cargas\"").ToString());
 			Igual("y de que publicador vienen las cargas", "True", sobre.Contains(Publicador).ToString());
-			Igual("NO lleva la credencial", "False",
+			Igual("NO lleva la credencial (guarda residual: ya no hay ninguna que plantar)", "False",
 				(sobre.Contains("token-secreto") || sobre.Contains("refresh-secreto") || sobre.Contains("device-de-prueba")).ToString());
 			Igual("NO lleva los hechos de la estacion (litros, precio)", "False",
 				(sobre.Contains("litros") || sobre.Contains("precio")).ToString());

@@ -1,0 +1,85 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!-- ¿EL NUCLEO DEL HOST SOBREVIVE A AOT? Esta es toda la pregunta, y se contesta SIN Mac.
+
+       DE DONDE SALE. En Android el nucleo del Host no se carga: se COMPILA ADENTRO de la app
+       (ver Gnothi.Mobile.csproj, <Compile Include="..\Gnothi.Host\*.cs">). Lo unico que se
+       carga en runtime son los DLL de los MODULOS, por InProcessShell.
+
+       Y Gnothi.Mobile puede darse el lujo de apagar todo:
+
+           <RunAOTCompilation>false</RunAOTCompilation>
+           <PublishTrimmed>false</PublishTrimmed>
+           <AndroidLinkMode>None</AndroidLinkMode>
+
+       con el comentario que las acompaña: «No AOT and no linker: reflection IS the
+       mechanism, not a detail.»
+
+       EN iOS ESA LINEA NO SE PUEDE ESCRIBIR. Apple prohibe generar codigo nativo en el
+       aparato, asi que .NET compila AOT y punto. La pregunta no es si queremos AOT: es
+       cuanto de nuestro codigo sobrevive.
+
+       QUE HACE ESTE PROYECTO. Compila EXACTAMENTE los mismos archivos que Gnothi.Mobile
+       compila, con los analizadores de AOT y trimming encendidos. Los analizadores son
+       ESTATICOS: corren en el compilador, en Windows, y reportan cada lugar donde la
+       reflexion no se puede garantizar. No necesitan iPhone, ni Mac, ni Xcode.
+
+       COMO SE LEE EL RESULTADO. Cada warning IL2xxx/IL3xxx es un lugar donde el AOT no puede
+       probar que la reflexion va a encontrar lo que busca. NO todos son fatales -en iOS el
+       runtime es Mono AOT y no NativeAOT, y el interprete tapa varios- pero la LISTA es el
+       inventario de lo que hay que mirar, y ahora mismo no existe.
+
+       LO QUE ESTE PROYECTO NO CONTESTA, y hay que decirlo: si un modulo que llega DESPUES de
+       instalar se puede cargar. Eso no es un problema de analizador sino de plataforma y de
+       la clausula 2.5.2 de Apple. Va aparte. -->
+
+  <PropertyGroup>
+    <TargetFramework>net9.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <RootNamespace>Gnothi.Host</RootNamespace>
+
+    <!-- LOS ANALIZADORES, que es todo el aparato de medicion.
+         IsAotCompatible enciende de una: EnableAotAnalyzer, EnableTrimAnalyzer,
+         EnableSingleFileAnalyzer e IsTrimmable. Se declaran igual uno por uno porque el
+         atajo cambio de nombre entre versiones del SDK y un flag que no prende no avisa:
+         el build sale limpio y uno cree que no hay nada que arreglar. -->
+    <IsAotCompatible>true</IsAotCompatible>
+    <EnableAotAnalyzer>true</EnableAotAnalyzer>
+    <EnableTrimAnalyzer>true</EnableTrimAnalyzer>
+    <EnableSingleFileAnalyzer>true</EnableSingleFileAnalyzer>
+    <IsTrimmable>true</IsTrimmable>
+
+    <!-- Que los warnings NO se conviertan en errores: el inventario completo vale mas que
+         parar en el primero. -->
+    <TreatWarningsAsErrors>false</TreatWarningsAsErrors>
+    <WarningsNotAsErrors>IL2026;IL2055;IL2057;IL2059;IL2060;IL2062;IL2065;IL2067;IL2070;IL2072;IL2075;IL2080;IL2087;IL2090;IL3050;IL3051</WarningsNotAsErrors>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <!-- EL MISMO GLOB QUE Gnothi.Mobile, con las mismas exclusiones. Si divergen, la medicion
+         deja de valer para el telefono. -->
+    <Compile Include="..\..\Gnothi.Host\*.cs"
+             Exclude="..\..\Gnothi.Host\Program.cs;..\..\Gnothi.Host\ToolBridge.cs;..\..\Gnothi.Host\ConsentWatcher.cs;..\..\Gnothi.Host\HostInstaller.cs;..\..\Gnothi.Host\QueryConsole.cs;..\..\Gnothi.Host\StdioShell.cs" />
+
+    <!-- El stub de Android sirve igual en iOS y por la MISMA razon: no hay exec() de la
+         carpeta de datos y no hay dotnet CLI. Se reusa el archivo en vez de copiarlo para
+         que el dia que la explicacion cambie, cambie en un solo lugar. -->
+    <Compile Include="..\..\Gnothi.Mobile\StdioShellStub.cs" />
+
+    <Compile Include="..\..\Gnothi.Assistant\*.cs" />
+
+    <!-- LA CASCARA, que faltaba y era un hueco de la medicion. Gnothi.Movil/Shell.cs se
+         compila DENTRO de las dos apps de telefono, asi que su reflexion cuenta igual que la
+         del nucleo. Mientras no estuvo aca, la linea base decia 37 cuando en realidad habia
+         mas. Una medicion que no mide todo lo que embarca miente por omision. -->
+    <Compile Include="..\..\Gnothi.Movil\*.cs" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Ncubo.Puppeteer" Version="$(VersionDelMotor)" />
+    <ProjectReference Include="..\..\Examenes\Mecanismo\Puppets.Portador\Puppets.Portador.csproj" />
+    <ProjectReference Include="..\..\Gnothi.Contract\Gnothi.Contract.csproj" />
+  </ItemGroup>
+
+</Project>
