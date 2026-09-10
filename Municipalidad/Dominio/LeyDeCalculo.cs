@@ -11,7 +11,8 @@ namespace Municipalidad.Dominio
 	/// El recibo la esconde en un sufijo del nombre del rubro y en nada mas.
 	/// </para>
 	/// <para>
-	/// Conjunto cerrado de dos, comparado por nombre, con resolutor total desde el primitivo.
+	/// Conjunto cerrado de dos, comparado por nombre, con resolutor total desde el primitivo. Cada
+	/// miembro es UNA instancia compartida que su metodo entrega sin volver a armarla.
 	/// </para>
 	/// </summary>
 	internal abstract class LeyDeCalculo
@@ -35,8 +36,11 @@ namespace Municipalidad.Dominio
 			return otra != null && otra.Nombre == Nombre;
 		}
 
-		internal static LeyDeCalculo PorUnidad() { return new TarifaPorUnidad(); }
-		internal static LeyDeCalculo SobreBaseImponible() { return new TarifaSobreBaseImponible(); }
+		private static readonly LeyDeCalculo porUnidad = new TarifaPorUnidad();
+		private static readonly LeyDeCalculo sobreBaseImponible = new TarifaSobreBaseImponible();
+
+		internal static LeyDeCalculo PorUnidad() { return porUnidad; }
+		internal static LeyDeCalculo SobreBaseImponible() { return sobreBaseImponible; }
 
 		internal static LeyDeCalculo PorNombre(string nombre)
 		{

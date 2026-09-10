@@ -15,7 +15,8 @@ namespace Municipalidad.Dominio
 	/// </para>
 	/// <para>
 	/// Comparado por nombre, con resolutor total desde el primitivo. Los miembros del catalogo son
-	/// metodos estaticos y no campos, porque el DSL alcanza un metodo y no un campo estatico.
+	/// metodos estaticos y no campos, porque el DSL alcanza un metodo y no un campo estatico, y cada
+	/// uno entrega UNA instancia compartida en vez de volver a armarla.
 	/// </para>
 	/// </summary>
 	internal sealed class Rubro
@@ -31,29 +32,40 @@ namespace Municipalidad.Dominio
 			Ley = ley;
 		}
 
+		private static readonly Rubro basura =
+			new Rubro("recoleccion-de-basura", Cadencia.Mensual(), LeyDeCalculo.PorUnidad());
+		private static readonly Rubro limpiezaDeCalles =
+			new Rubro("limpieza-de-calles", Cadencia.Mensual(), LeyDeCalculo.SobreBaseImponible());
+		private static readonly Rubro policia =
+			new Rubro("servicio-policia", Cadencia.Mensual(), LeyDeCalculo.PorUnidad());
+		private static readonly Rubro bienesInmuebles =
+			new Rubro("bienes-inmuebles", Cadencia.Trimestral(), LeyDeCalculo.SobreBaseImponible());
+		private static readonly Rubro parques =
+			new Rubro("parques-y-zonas-verdes", Cadencia.Trimestral(), LeyDeCalculo.SobreBaseImponible());
+
 		internal static Rubro Basura()
 		{
-			return new Rubro("recoleccion-de-basura", Cadencia.Mensual(), LeyDeCalculo.PorUnidad());
+			return basura;
 		}
 
 		internal static Rubro LimpiezaDeCalles()
 		{
-			return new Rubro("limpieza-de-calles", Cadencia.Mensual(), LeyDeCalculo.SobreBaseImponible());
+			return limpiezaDeCalles;
 		}
 
 		internal static Rubro Policia()
 		{
-			return new Rubro("servicio-policia", Cadencia.Mensual(), LeyDeCalculo.PorUnidad());
+			return policia;
 		}
 
 		internal static Rubro BienesInmuebles()
 		{
-			return new Rubro("bienes-inmuebles", Cadencia.Trimestral(), LeyDeCalculo.SobreBaseImponible());
+			return bienesInmuebles;
 		}
 
 		internal static Rubro Parques()
 		{
-			return new Rubro("parques-y-zonas-verdes", Cadencia.Trimestral(), LeyDeCalculo.SobreBaseImponible());
+			return parques;
 		}
 
 		internal static Rubro PorNombre(string nombre)

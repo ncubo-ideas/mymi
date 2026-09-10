@@ -10,7 +10,8 @@ namespace Municipalidad.Dominio
 	/// El recibo no dice la cadencia de un rubro: no viene en ningun campo.
 	/// </para>
 	/// <para>
-	/// Conjunto cerrado de dos, comparado por nombre, con resolutor total desde el primitivo.
+	/// Conjunto cerrado de dos, comparado por nombre, con resolutor total desde el primitivo. Cada
+	/// miembro es UNA instancia compartida que su metodo entrega sin volver a armarla.
 	/// </para>
 	/// </summary>
 	internal abstract class Cadencia
@@ -38,8 +39,11 @@ namespace Municipalidad.Dominio
 		internal bool EsMensual() { return Nombre == "mensual"; }
 		internal bool EsTrimestral() { return Nombre == "trimestral"; }
 
-		internal static Cadencia Mensual() { return new CobroMensual(); }
-		internal static Cadencia Trimestral() { return new CobroTrimestral(); }
+		private static readonly Cadencia mensual = new CobroMensual();
+		private static readonly Cadencia trimestral = new CobroTrimestral();
+
+		internal static Cadencia Mensual() { return mensual; }
+		internal static Cadencia Trimestral() { return trimestral; }
 
 		internal static Cadencia PorNombre(string nombre)
 		{

@@ -54,9 +54,19 @@ namespace Municipalidad.Dominio
 			return otro != null && otro.GetType() == GetType() && otro.Clave == Clave;
 		}
 
+		/// <summary>
+		/// Si este periodo es anterior al otro. Los dos tienen que ser de la misma cadencia: un mes y
+		/// un trimestre no se ordenan entre si, y pedirlo es un defecto de quien llama.
+		/// </summary>
 		internal bool EsAnteriorA(Periodo otro)
 		{
 			ArgumentNullException.ThrowIfNull(otro);
+			if (otro.GetType() != GetType())
+				throw new ArgumentException(
+					"Un mes y un trimestre no se ordenan entre si. El mismo numero nombra periodos "
+					+ "distintos en cada cadencia, asi que decir cual es anterior seria ordenar dos "
+					+ "alfabetos: no es que la respuesta sea que no, es que no hay respuesta.",
+					nameof(otro));
 			return Clave < otro.Clave;
 		}
 
