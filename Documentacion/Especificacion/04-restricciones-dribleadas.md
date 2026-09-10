@@ -241,6 +241,18 @@ plugin no está disponible como herramienta conectada en esta conversación».
 Con eso la restricción queda **acotada a la pestaña Chat** —y a la web y al móvil, que son lo
 mismo—: el bucle de esa superficie corre en la nube de OpenAI y no lee la configuración local.
 
+**Y Google repite la estructura, medido el mismo día (2026-09-10).** La **app de Gemini** —web,
+móvil y la de Windows que salió ese día— es la pestaña Chat de ChatGPT con otro nombre: sus
+«Custom apps for Spark» reciben una URL de servidor remoto, y además solo en EE. UU., con cuenta
+personal y en inglés; Google no tiene un túnel oficial. **Antigravity**, el agente de Google (IDE y
+CLI; la Gemini CLI dejó de servir cuentas gratuitas el 2026-06-18), lee
+`~/.gemini/config/mcp_config.json` al arrancar, **lanzó el Host desde su servidor de lenguaje y
+contestó por las tools las cuatro preguntas de control, incluido el cruce exámenes×compras**, con
+el veredicto «salto inverosímil, repetí el examen» que es del dominio y no del modelo; cero
+lecturas del journal con el repo entero abierto como workspace, y **sin las dos líneas de Codex**:
+las tools van directas al catálogo. `--install` lo ofrece como destino, con el mismo JSON que
+Claude Desktop.
+
 **El hecho (2026-09-09).** Los conectores de ChatGPT —Apps & Connectors, Developer Mode, Apps SDK— reciben **una URL de un servidor MCP remoto**, por SSE o Streamable HTTP, con OAuth o sin auth. Quien se conecta a esa URL **son los servidores de OpenAI**, no la app de escritorio. La app de ChatGPT anterior a la fusión —hoy «ChatGPT Classic»— no lanzaba procesos ni hablaba stdio, y la pestaña Chat de la unificada tampoco; una URL `localhost` la rechaza con «Unsafe URL». Todos los tutoriales de «MCP local con ChatGPT» pasan por un túnel público (ngrok, cloudflared) o un relay de terceros.
 
 Gnothi es lo contrario: **un servidor MCP local por stdio**, sin puerto, sin URL, sin auth, que el asistente lanza como proceso hijo. Es lo que Claude Desktop y Claude Code saben consumir, y por eso la Puerta 1 en Mac se cerró en una tarde (medido: 48 tools, cruces examenes×compras y cargas×concesionario).
@@ -266,7 +278,7 @@ Y una de producto: «tu laboratorio y tu súper solo se juntan en tu computadora
 
 **Formulación honesta para el pitch:**
 
-> **Gnothi funciona hoy con Claude Desktop, Claude Code y la app de ChatGPT en sus pestañas Codex y Work, incluso en plan gratuito, y con cualquier asistente que lance servidores MCP locales. En el chat común de ChatGPT, por el túnel oficial de OpenAI o cuando OpenAI lo permita: la razón es de ellos.**
+> **Gnothi funciona hoy con Claude Desktop, Claude Code, la app de ChatGPT en sus pestañas Codex y Work, y Antigravity de Google, todo en plan gratuito, y con cualquier asistente que lance servidores MCP locales. En el chat común de ChatGPT y en la app de Gemini, cuando ellos lo permitan: la razón es de ellos.**
 
 **Y una puerta que Codex abre y vale un spike.** Codex puede correr con un modelo local (`codex --oss`, gpt-oss por Ollama o LM Studio). Sería la Puerta 1 con un asistente ajeno **y el paso 4 sin cruzar la línea**: ni la pregunta ni el resultado de la tool salen del equipo. Sin medir: gpt-oss:20b son 14 GB y pide 32K de contexto, y no sabemos cómo elige tools frente a un catálogo de 48. Es el mismo problema del catálogo del modelo chico, en otro anfitrión.
 

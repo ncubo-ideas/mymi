@@ -36,7 +36,7 @@ El riesgo concreto que este set evita es re-derivar. Varias decisiones que parec
 
 | | quién corre el bucle | estado |
 |---|---|---|
-| **Puerta 1** | un asistente externo; nosotros servimos | ✅ funciona hoy en escritorio, con Claude Desktop, Claude Code (Windows y Mac) y la app de ChatGPT en sus pestañas Codex y Work (Windows, plan Free). La pestaña Chat no: ver `04` R13 |
+| **Puerta 1** | un asistente externo; nosotros servimos | ✅ funciona hoy en escritorio, con Claude Desktop, Claude Code (Windows y Mac), la app de ChatGPT en sus pestañas Codex y Work, y Antigravity de Google (Windows, planes gratuitos). El chat de ChatGPT y la app de Gemini no: ver `04` R13 |
 | **Puerta 2** | **nuestro** bucle de agente | ✅ la muleta del POC, con BYOK |
 | **Puerta 3** | el asistente del sistema, vía funciones de app del SO | 🔍 el destino — **sin verificar** |
 
