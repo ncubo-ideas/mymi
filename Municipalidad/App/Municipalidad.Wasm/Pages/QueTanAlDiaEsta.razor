@@ -1,0 +1,154 @@
+@page "/que-tan-al-dia-esta"
+@inject EstadoDeLaApp estado
+
+<PageTitle>Qué tan al día está esto · Mi cuenta municipal</PageTitle>
+
+<h1>Qué tan al día está esto</h1>
+<p class="bajada">
+    Hasta dónde leyó esta app lo que tu municipalidad publicó, y qué falta. Tu cuenta es híbrida: ella
+    manda los cobros, los recibos y la mora; vos aportás cuánto querés apartar.
+</p>
+
+@if (!estado.EstaArriba)
+{
+    <SinAbrir />
+}
+else
+{
+    <section class="bloque" id="hasta-donde-leyo">
+        <h2>Hasta dónde leyó</h2>
+
+        <article class="tarjeta">
+            <dl class="renglones">
+                <dt>Último hecho leído</dt>
+                <dd class="cifra">@entrado.UltimoEventoLeido</dd>
+                <dt>Rubros con algún comprobante</dt>
+                <dd>@entrado.RubrosConHistoria de @entrado.Rubros.Count</dd>
+                <dt>Última consulta al portal</dt>
+                <dd>@(entrado.HayAlgunaConsulta ? entrado.DiaDeLaUltimaConsulta : "ninguna")</dd>
+            </dl>
+
+            <p class="nota">
+                Ese número sólo sirve comparado consigo mismo: sube cuando entra algo nuevo. Nadie sabe
+                cuántos hechos ha publicado tu municipalidad, así que un número solo no dice si estás al
+                día. Mirálo, apretá <strong>traer lo que haya publicado la institución</strong> en el
+                inicio, y volvé a mirarlo.
+            </p>
+        </article>
+    </section>
+
+    <section class="bloque" id="que-llego-de-cada-rubro">
+        <h2>Qué llegó de cada rubro</h2>
+
+        @foreach (var rubro in entrado.Rubros)
+        {
+            <article class="tarjeta">
+                <div class="tarjeta__cabeza">
+                    <LlaveDelRubro Rubro="@rubro.Nombre" />
+                    <span class="sello sello--@(rubro.TieneHistoria ? "nada-sin-comprobante" : "sin-consulta")">
+                        @(rubro.TieneHistoria ? "con comprobantes" : "sin comprobantes")
+                    </span>
+                </div>
+
+                @if (!rubro.TieneHistoria)
+                {
+                    <p class="nota">
+                        Esta app no ha visto ningún comprobante de este rubro. Eso no quiere decir que no
+                        lo pagués: quiere decir que tus pagos de este rubro todavía no han llegado aquí.
+                    </p>
+                }
+            </article>
+        }
+    </section>
+
+    <section class="bloque" id="que-falta">
+        <h2>Qué falta</h2>
+
+        @if (entrado.NoFaltaNadaQueEstaPantallaSepaMirar)
+        {
+            <Aviso Tono="quieta" Id="no-falta-nada" Titulo="No falta ninguna de las dos mitades">
+                <p>
+                    Tu municipalidad publicó el avalúo de cada finca, hay una consulta al portal con que
+                    cotejar, y vos ya adoptaste una reserva. Eso no dice que no haya hechos nuevos sin
+                    traer: para eso está el número de arriba.
+                </p>
+            </Aviso>
+        }
+
+        @if (!entrado.HayReservaAdoptada)
+        {
+            <Aviso Tono="tibia" Id="falta-la-reserva" Titulo="Falta tu mitad: no has adoptado una reserva">
+                <p>
+                    Cuánto querés apartar por mes es lo único que tu municipalidad no puede saber, y es
+                    lo único que esta app te pide. Se adopta en
+                    <a href="cuanto-apartar">cuánto apartar</a>.
+                </p>
+            </Aviso>
+        }
+
+        @if (!entrado.HayAlgunaConsulta)
+        {
+            <Aviso Tono="tibia" Id="falta-una-consulta" Titulo="Falta una consulta al portal">
+                <p>
+                    Sin una consulta registrada no hay con qué cotejar lo que esta app sí vio pagar, así
+                    que <a href="sin-comprobante">qué quedó sin comprobante</a> todavía no puede
+                    contestar. <strong>No poder cotejar no es estar en orden.</strong>
+                </p>
+            </Aviso>
+        }
+
+        @if (entrado.FincasSinAvaluoPublicado > 0)
+        {
+            <Aviso Tono="tibia" Id="falta-un-avaluo" Titulo="Falta la mitad de tu municipalidad: un avalúo">
+                <p>
+                    Hay @entrado.FincasSinAvaluoPublicado de @entrado.Fincas.Fincas.Count
+                    @(entrado.Fincas.Fincas.Count == 1 ? "finca" : "fincas") sin avalúo publicado. El
+                    avalúo lo fija ella y es el valor con que te cobra: sin él, esta app puede decir que
+                    tu cobro de bienes inmuebles subió por un avalúo nuevo, pero no de cuánto a cuánto.
+                    <strong>No hay nada que llenar</strong> — llega solo cuando ella lo publique.
+                </p>
+            </Aviso>
+        }
+
+        @if (entrado.Fincas.HayAlguna)
+        {
+            <div class="tabla">
+                <table>
+                    <thead>
+                        <tr>
+                            <th scope="col">Finca</th>
+                            <th scope="col">Avalúo de tu municipalidad</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var finca in entrado.Fincas.Fincas)
+                        {
+                            <tr>
+                                <td><span class="llave">@finca.Numero</span></td>
+                                <td>
+                                    @(finca.TieneAvaluo
+                                        ? Formato.Monto(finca.Avaluo)
+                                        : "sin avalúo publicado")
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        }
+    </section>
+
+    <p class="nota">Contestado al @entrado.PreguntadoEl.</p>
+}
+
+@code {
+	private LoQueEntroYLoQueFalta entrado;
+
+	protected override void OnInitialized() => Releer();
+
+	/// <summary>La unica pasada de lectura de esta pantalla: las dos mitades del mismo momento.</summary>
+	private void Releer()
+	{
+		if (estado.EstaArriba) entrado = estado.LeerLoQueEntroYLoQueFalta();
+	}
+}

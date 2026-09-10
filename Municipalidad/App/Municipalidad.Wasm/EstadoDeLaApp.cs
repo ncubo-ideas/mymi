@@ -351,6 +351,34 @@ namespace Municipalidad.Wasm
 		}
 
 		/// <summary>
+		/// Lo pagado en un anio y la serie de cada rubro. Con anio en cero contesta por el anio del
+		/// instante en que la pantalla pregunta, que es la unica forma en que esta app elige un anio.
+		/// </summary>
+		public LoQuePagueEnUnAnio LeerLoQuePague(int anio)
+		{
+			Exigir();
+
+			bool loEligioLaPersona = anio > 0;
+
+			int elAnio = loEligioLaPersona ? anio : ElInstanteEnQueLaPantallaPregunta().Year;
+
+			return LoQuePagueEnUnAnio.LeerPor(api, elAnio, loEligioLaPersona);
+		}
+
+		/// <summary>
+		/// Hasta donde leyo esta app y que mitad falta, al instante en que la pantalla pregunta: cual
+		/// avaluo rige se decide contra un dia, asi que las dos mitades salen de UNA lectura del reloj.
+		/// </summary>
+		public LoQueEntroYLoQueFalta LeerLoQueEntroYLoQueFalta()
+		{
+			Exigir();
+
+			DateTime alDia = ElInstanteEnQueLaPantallaPregunta();
+
+			return LoQueEntroYLoQueFalta.LeerPor(api, alDia, ElDiaDe(alDia));
+		}
+
+		/// <summary>
 		/// EL UNICO aporte que esta app le pide a la persona: cuanto decide apartar por mes. El instante
 		/// lo pone esta app con su sello de comando y no se le pide a ella.
 		/// <para>
