@@ -55,7 +55,6 @@ var gnothi = new ConfiguracionDeGnothi();
 builder.Configuration.GetSection("Gnothi").Bind(gnothi);
 builder.Services.AddSingleton(gnothi);
 
-builder.Services.AddSingleton<PuenteDeJournal>(sp => new PuenteDeJournal(sp.GetRequiredService<IJSRuntime>()));
 builder.Services.AddSingleton<PuenteDeTraspaso>(sp => new PuenteDeTraspaso(sp.GetRequiredService<IJSRuntime>()));
 
 // SINGLETON a proposito: el actor NO se crea por pantalla. Owna estado persistente, se

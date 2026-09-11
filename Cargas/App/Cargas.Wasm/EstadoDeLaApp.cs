@@ -265,6 +265,10 @@ public sealed class EstadoDeLaApp : IAsyncDisposable
 		if (app is not null) return;
 
 		int precargados = puente.HayDestino ? await puente.PrecargarEnMemfs() : 0;
+		// DICHO EN EL LOG, no adivinado: hospedada, esta linea sale por el log de Gnothi como
+		// «modulo:cargas: log: ...» y es la unica forma de saber desde afuera si el boton de la
+		// foto tiene donde guardar. Medido el 2026-09-11: el boton no salia y nadie decia por que.
+		Console.WriteLine($"[cargas] destino: hospedada={modo.Hospedada} hayDestino={puente.HayDestino} hayCarpeta={puente.HayCarpeta}");
 
 		var arrancada = new CargasApp(NombreDelActor);
 		arrancada.ConfigureStorage(DatabaseType.FileSystem, "path=" + PuenteDeJournal.RaizEnMemfs);
