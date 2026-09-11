@@ -97,8 +97,13 @@
 	     (Cargas.Wasm/Pages/Ruta.razor, un <input type=file accept="image/*">). El modulo corre
 	     dentro del WKWebView del Host, asi que quien le pide Fotos al sistema es Gnothi.Host, no
 	     Cargas. Sin esta clave, en la Mac el dialogo sale con la frase generica de Apple y en un
-	     iPhone tocar la fototeca puede matar la app en vez de preguntar. Medido en la Mac el
-	     2026-09-11; el iPhone real queda pendiente. -->
+	     iPhone tocar la fototeca puede matar la app en vez de preguntar.
+
+	     HOY ES PREVENTIVA. Medido en el 13 Pro el 2026-09-11 con Cargas dado de alta: hospedado
+	     el boton NO se dibuja, porque Ruta.razor lo condiciona a Estado.HayCarpeta, que es el
+	     handle del modo suelto, y GuardarArchivo escribe por journal-interop.js y no por el
+	     destino de Gnothi. El dia que la foto hospedada exista -HayDestino en vez de HayCarpeta
+	     y fotos/ por DestinoPorPuente-, esta clave ya esta puesta y el dialogo dice lo de arriba. -->
 	<key>NSPhotoLibraryUsageDescription</key>
 	<string>Gnothi abre tus fotos solo cuando elegís adjuntar una, como la del odómetro en una carga. No las recorre ni las sube a ningún lado.</string>
 
