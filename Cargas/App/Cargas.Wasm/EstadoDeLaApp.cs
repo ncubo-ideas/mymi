@@ -151,6 +151,11 @@ public sealed class EstadoDeLaApp : IAsyncDisposable
 
 	public bool HayCarpeta => puente.HayCarpeta;
 
+	// SI HAY DONDE GUARDAR, en cualquiera de los dos modos. HayCarpeta es el handle del modo
+	// suelto y hospedada es siempre false; lo que decide si un archivo se puede guardar es
+	// esto. La pantalla que ofrece la foto pregunta aca, no alla.
+	public bool HayDestino => puente.HayDestino;
+
 	public bool FaltaReotorgarPermiso => puente.FaltaReotorgarPermiso;
 
 	public string NombreDeLaCarpeta => puente.NombreDeLaCarpeta;
@@ -221,7 +226,7 @@ public sealed class EstadoDeLaApp : IAsyncDisposable
 
 		// Lo importado vive en MEMFS. Si hay destino, se baja para que quede persistido
 		// tambien ahi; sin destino se pierde al cerrar, igual que todo lo demas.
-		if (puente.HayCarpeta) await BajarADisco();
+		if (puente.HayDestino) await BajarADisco();
 
 		UltimoMensaje = $"importados {escritos} archivos del expediente";
 		return "";
@@ -584,7 +589,7 @@ public sealed class EstadoDeLaApp : IAsyncDisposable
 		byte[] contenido)
 	{
 		Exigir();
-		if (!puente.HayCarpeta)
+		if (!puente.HayDestino)
 			return "para guardar la foto hace falta una carpeta tuya";
 
 		string nombre = $"fotos/{transaccion}{extension}";
