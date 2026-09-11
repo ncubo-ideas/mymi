@@ -293,6 +293,59 @@ if (modulos.Length > 0)
 	}
 }
 
+// ============================================================================================
+// THE LANGUAGE OF THE RECORD TRAVELS WITH EVERY FREE-TEXT PARAMETER, AND ONLY WITH THOSE.
+//
+// Measured 2026-09-11 (NotasGnothiHost/46): a free-text value in the person's language ("milk")
+// against a journal in the institution's language ("leche") finds nothing, and the model had no
+// way to know which language the record is in. about.locale is that way. The hint lives in the
+// shared schema, so asserting it here covers Gate 1, Gate 2 and the on-device catalog at once.
+Console.WriteLine();
+Console.WriteLine("=== THE RECORD'S LANGUAGE RIDES ON FREE-TEXT PARAMETERS ===");
+{
+	var tool = new Gnothi.Host.DeclaredTool
+	{
+		Name = "consumo_de",
+		Input =
+		[
+			new Gnothi.Host.DeclaredParameter { Name = "termino", Type = "string", Description = "A product text." },
+			new Gnothi.Host.DeclaredParameter { Name = "analito", Type = "string", Description = "Which analyte.", Enum = ["ColesterolTotal", "Hemoglobina"] },
+			new Gnothi.Host.DeclaredParameter { Name = "cuantas", Type = "number", Description = "How many." },
+			new Gnothi.Host.DeclaredParameter { Name = "vacio", Type = "string", Description = "" },
+		],
+	};
+
+	string Description(IReadOnlyDictionary<string, object> schema, string parameter) =>
+		(string)((Dictionary<string, object>)((Dictionary<string, object>)schema["properties"])[parameter])["description"];
+
+	string hint = Gnothi.Host.ToolIndex.RecordLanguageHint("es-CR");
+	var withLocale = Gnothi.Host.ToolIndex.InputSchema(tool, "es-CR");
+	var without = Gnothi.Host.ToolIndex.InputSchema(tool, null);
+	var legacy = Gnothi.Host.ToolIndex.InputSchema(tool);
+
+	Assert("a free-text parameter carries the record's locale, after its own description",
+		Description(withLocale, "termino") == "A product text. " + hint,
+		Description(withLocale, "termino"));
+	Assert("the hint names the module's locale, not a language of the Host",
+		hint.Contains("es-CR") && Gnothi.Host.ToolIndex.RecordLanguageHint("en-US").Contains("en-US"),
+		hint);
+	Assert("an enum parameter carries NO hint: its values are already closed",
+		Description(withLocale, "analito") == "Which analyte.",
+		Description(withLocale, "analito"));
+	Assert("a numeric parameter carries NO hint",
+		Description(withLocale, "cuantas") == "How many.",
+		Description(withLocale, "cuantas"));
+	Assert("an empty description becomes just the hint, without a stray period",
+		Description(withLocale, "vacio") == hint,
+		Description(withLocale, "vacio"));
+	Assert("a module that declares no locale gets nothing: the model keeps guessing, as before",
+		Description(without, "termino") == "A product text." && Description(legacy, "termino") == "A product text.",
+		Description(without, "termino"));
+	Assert("a Host tool has no module and therefore no record locale",
+		Gnothi.Host.ToolIndex.RecordLocaleOf(null) is null,
+		"expected null");
+}
+
 Console.WriteLine();
 Console.WriteLine(failures == 0
 	? "=== TODO PASA: el asistente se puede borrar, la compuerta falla cerrada, y las tres puertas coinciden ==="

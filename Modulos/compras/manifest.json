@@ -4,6 +4,7 @@
   "module": "compras",
   "title": "La Guaria y vos",
   "institution": "Supermercado La Guaria",
+  "about": { "locale": "es-CR" },
   "substrate": {
     "range": ">=3.0.0 <4.0.0"
   },

@@ -5,6 +5,7 @@
   "module": "examenes",
   "title": "Mis exámenes",
   "institution": "Clinical laboratory (POC mock)",
+  "about": { "locale": "es-CR" },
   "//substrate": "A RANGE, not an exact version: if a module pins one precise version, every Host update orphans every installed module.",
   "substrate": {
     "range": ">=3.0.0 <4.0.0"

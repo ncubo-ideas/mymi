@@ -25,7 +25,7 @@ compilador garantiza que no se colara semántica de dominio.
 | `Program.cs` | El arranque y la **Puerta 1**. Traduce y delega, nada más |
 | `ToolBridge.cs` | Contesta `tools/list` y `tools/call`. El `inputSchema` sale del manifiesto |
 | `Dispatcher.cs` | El núcleo: `Catalog()` y `Serve()`. **No sabe que existe MCP** |
-| `ToolIndex.cs` | El índice de tools publicadas, **compartido por las dos Puertas** |
+| `ToolIndex.cs` | El índice de tools publicadas, **compartido por las dos Puertas**. Al proyectar el `inputSchema`, a cada parámetro de texto libre le anexa el idioma del registro que el módulo declara en `about.locale` («This module's record is written in es-CR…»), para que el modelo pase «leche» y no «milk» a un journal en español; enums y numéricos no lo llevan, y un módulo sin `locale` queda como antes |
 | `IShell.cs` | La costura hacia el módulo. **No nombra un solo tipo de MCP** |
 | `StdioShell.cs` | Cáscara por proceso hijo con MCP sobre stdio |
 | `InProcessShell.cs` | Cáscara por reflexión: el dll cargado en su propio contexto, sin proceso |
