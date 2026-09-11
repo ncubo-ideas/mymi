@@ -65,6 +65,18 @@ public sealed class ViewController : UIViewController
 		// pierde todo lo demas, y eso rompe cualquier otra deteccion de la pagina.
 		config.ApplicationNameForUserAgent = "GnothiHost";
 
+		// LA CAMARA DEL LECTOR SE QUEDA EN LA PAGINA. En iPhone un WKWebView manda TODO video al
+		// reproductor nativo de pantalla completa, y el playsinline del <video> de ui.html no
+		// alcanza solo: hace falta esta linea. Sin ella el stream de getUserMedia salia como
+		// una pelicula -X, imagen en imagen, LIVE- y al cerrarla iOS lo dejaba pausado detras
+		// del recuadro. Medido en el 13 Pro el 2026-09-11.
+		//
+		// Y la segunda es la gemela de MediaPlaybackRequiresUserGesture = false en
+		// MainActivity.cs: el play() viene despues del await de getUserMedia, y WebKit puede
+		// dar por perdido el gesto de la persona para entonces.
+		config.AllowsInlineMediaPlayback = true;
+		config.MediaTypesRequiringUserActionForPlayback = WKAudiovisualMediaTypes.None;
+
 		web = new WKWebView(View!.Bounds, config)
 		{
 			AutoresizingMask = UIViewAutoresizing.FlexibleWidth | UIViewAutoresizing.FlexibleHeight,

@@ -52,7 +52,7 @@ public sealed class AgentLoop
 		[.. index.All.Select(e => new ToolForTheModel(
 			e.PublicName,
 			e.Tool.Description,
-			Json.Write(ToolIndex.InputSchema(e.Tool))))];
+			Json.Write(ToolIndex.InputSchema(e))))];
 
 	// One question from the person, one answer in words.
 	public async Task<string> Answer(string question, Action<string>? trace, CancellationToken ct)

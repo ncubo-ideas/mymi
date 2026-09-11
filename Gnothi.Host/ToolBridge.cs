@@ -51,7 +51,7 @@ internal static class ToolBridge
 				Name = e.PublicName,
 				Title = string.IsNullOrWhiteSpace(e.Tool.Title) ? null : e.Tool.Title,
 				Description = e.Tool.Description,
-				InputSchema = JsonSerializer.SerializeToElement(ToolIndex.InputSchema(e.Tool)),
+				InputSchema = JsonSerializer.SerializeToElement(ToolIndex.InputSchema(e)),
 				Annotations = new ToolAnnotations { ReadOnlyHint = e.Tool.ReadOnly },
 			});
 		}
